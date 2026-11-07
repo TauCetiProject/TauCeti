@@ -33,8 +33,13 @@ the two valuative topologies.
 * `TauCeti.ValuativeExtension.trans`: compatibility of valuative relations in an algebra tower.
 * `ValuativeExtension.valuationHasExtension`: the canonical valuation on `B` extends the
   canonical valuation on `A`.
+* `ValuativeRel.IsNontrivial.of_valuativeExtension`: a compatible extension of a nontrivial
+  valuative relation is nontrivial.
 * `TauCeti.integerRingAlgebra`: the induced algebra structure on the valuation rings.
 * `TauCeti.residueFieldAlgebra`: the induced algebra structure on the residue fields.
+* `TauCeti.algebraMap_comp_algebraMap_integerRing`: the structure maps of the valuation rings and
+  of the fields form a commuting square.
+* `TauCeti.algebraMap_integerRing_dvd_iff`: the map of valuation rings reflects divisibility.
 * `TauCeti.aroots_eq_map_roots_integerRing`: the roots in `L` of a monic polynomial over the
   valuation ring of `K` are its roots in the valuation ring of `L`.
 * `IsAlgebraic.exists_ne_zero_vle`: a nonzero algebraic element has value at least that of some
@@ -57,6 +62,17 @@ instance valuationHasExtension :
     Valuation.HasExtension (valuation A) (valuation B) where
   val_isEquiv_comap :=
     (ValuativeRel.isEquiv ((valuation B).comap (algebraMap A B)) (valuation A)).symm
+
+variable (A) in
+/-- A compatible extension of a nontrivial valuative relation is nontrivial: the map of value
+groups is strictly monotone, so it carries a value other than `0` and `1` to another such value.
+-/
+theorem _root_.ValuativeRel.IsNontrivial.of_valuativeExtension [IsNontrivial A] :
+    IsNontrivial B := by
+  obtain ⟨γ, h0, h1⟩ := IsNontrivial.condition (R := A)
+  have hinj := (mapValueGroupWithZero_strictMono (A := A) (B := B)).injective
+  exact ⟨mapValueGroupWithZero A B γ, by rwa [← map_zero (mapValueGroupWithZero A B), hinj.ne_iff],
+    by rwa [← map_one (mapValueGroupWithZero A B), hinj.ne_iff]⟩
 
 end ValuativeExtension
 
@@ -89,6 +105,23 @@ noncomputable instance residueFieldAlgebra : Algebra 𝓀ᵥ[K] 𝓀ᵥ[L] :=
 theorem coe_algebraMap_integerRing (x : 𝒪ᵥ[K]) :
     ((algebraMap 𝒪ᵥ[K] 𝒪ᵥ[L] x : 𝒪ᵥ[L]) : L) = algebraMap K L (x : K) :=
   Valuation.HasExtension.coe_algebraMap_valuationSubring_eq (valuation K) (valuation L) x
+
+/-- The square from `𝒪ᵥ[K]` to `L` through `𝒪ᵥ[L]` and through `K` commutes. -/
+theorem algebraMap_comp_algebraMap_integerRing :
+    (algebraMap 𝒪ᵥ[L] L).comp (algebraMap 𝒪ᵥ[K] 𝒪ᵥ[L]) =
+      (algebraMap K L).comp (algebraMap 𝒪ᵥ[K] K) := by
+  rw [← IsScalarTower.algebraMap_eq, ← IsScalarTower.algebraMap_eq]
+
+/-- The integer-ring structure map reflects divisibility: an integer of `K` divides another in the
+integers of `L` exactly when it does in the integers of `K`, since both say that its value is
+at least the other's. -/
+@[simp]
+theorem algebraMap_integerRing_dvd_iff {x y : 𝒪ᵥ[K]} :
+    algebraMap 𝒪ᵥ[K] 𝒪ᵥ[L] x ∣ algebraMap 𝒪ᵥ[K] 𝒪ᵥ[L] y ↔ x ∣ y := by
+  rw [(Valuation.integer.integers _).dvd_iff_le, (Valuation.integer.integers _).dvd_iff_le,
+    ← RingHom.comp_apply, ← RingHom.comp_apply, ← IsScalarTower.algebraMap_eq]
+  simp only [IsScalarTower.algebraMap_apply 𝒪ᵥ[K] K L]
+  exact Valuation.HasExtension.val_map_le_iff (vR := valuation K) (vA := valuation L) _ _
 
 open Polynomial in
 variable (L) in

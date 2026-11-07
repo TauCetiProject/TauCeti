@@ -55,8 +55,9 @@ Eisenstein series through their constant terms.
 ## Main results
 
 * `ModularForm.qExpansionAt_mul`: the `q`-expansion at a cusp is multiplicative.
-* `ModularForm.qExpansionAt_mul_left`, `ModularForm.qExpansionAt_neg`: the dependence of the
-  `q`-expansion at a cusp on the representative.
+* `ModularForm.qExpansionAt_mul_left`, `ModularForm.qExpansionAt_neg`,
+  `ModularForm.qExpansionAt_SL2Z`: the dependence of the `q`-expansion at a cusp on the
+  representative, and collapse to `qExpansion 1` at level one.
 * `ModularForm.qExpansionAt_diamondOp`: diamond operators act on the `q`-expansions at the
   cusps by left multiplication of cusp representatives.
 * `ModularForm.exists_qExpansion_translate_eq_expand_qExpansionAt`: at a strict period `N` of
@@ -99,7 +100,7 @@ public section
 
 noncomputable section
 
-open Complex CongruenceSubgroup Filter Matrix Matrix.SpecialLinearGroup ModularForm OnePoint
+open Complex CongruenceSubgroup Filter Matrix Matrix.SpecialLinearGroup ModularForm OnePoint TauCeti
   UpperHalfPlane
 open scoped CongruenceSubgroup MatrixGroups Pointwise Topology
 
@@ -219,6 +220,14 @@ theorem qExpansionAt_mul_left {h : SL(2, ℤ)} (hh : mapGL ℝ h ∈ Γ) (γ : S
   simp only [qExpansionAt_apply, coe_translate, map_mul, SlashAction.slash_mul,
     SlashInvariantFormClass.slash_action_eq f _ hh, _root_.mul_inv_rev, mul_smul, hΓ]
 
+/-- At level one, `SL₂(ℤ)` acts transitively on the cusps with trivial slash action, so the
+`q`-expansion at every representative `γ ∈ SL₂(ℤ)` is the expansion `qExpansion 1 f` at `∞`. -/
+@[simp]
+theorem qExpansionAt_SL2Z (γ : SL(2, ℤ)) (f : ModularForm 𝒮ℒ k) :
+    qExpansionAt γ f = qExpansion 1 f := by
+  have hγ : mapGL ℝ γ ∈ 𝒮ℒ := ⟨γ, rfl⟩
+  rw [← mul_one γ, qExpansionAt_mul_left hγ, qExpansionAt_one, Subgroup.strictWidthInfty_SL2Z]
+
 /-- Negating the representative multiplies the `q`-expansion at the cusp by `(-1)^k`. -/
 theorem qExpansionAt_neg (γ : SL(2, ℤ)) (f : ModularForm Γ k) :
     qExpansionAt (-γ) f = (-1 : ℂ) ^ k • qExpansionAt γ f := by
@@ -261,9 +270,9 @@ theorem exists_qExpansion_translate_eq_expand_qExpansionAt {N : ℕ} (hN : 0 < N
     rw [ha, Nat.cast_mul, Nat.cast_mul, hm]
     ring
   rw [qExpansionAt_apply, hNw]
-  exact TauCeti.qExpansion_nat_mul hw (Nat.mul_pos ha0 hm0)
+  exact TauCeti.qExpansion_nat_mul hw.ne' (Nat.mul_pos ha0 hm0)
     (SlashInvariantFormClass.periodic_comp_ofComplex _ Γγ.strictWidthInfty_mem_strictPeriods)
-    (ModularFormClass.bdd_at_infty _) (ModularFormClass.holo _)
+    (ModularFormClass.analyticAt_cuspFunction_zero _ hw Γγ.strictWidthInfty_mem_strictPeriods)
 
 /-- The constant term of `f` at the cusp represented by `γ ∈ SL₂(ℤ)`, as a linear functional.
 

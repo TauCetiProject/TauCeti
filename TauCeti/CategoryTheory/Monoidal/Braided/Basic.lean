@@ -8,7 +8,7 @@ module
 public import Mathlib.CategoryTheory.Monoidal.Braided.Basic
 
 /-!
-# Braiding past morphisms to and from the unit
+# Braiding coherence and naturality lemmas
 
 In a braided monoidal category, braiding an object `Z` past a morphism `f : A ⊗ A' ⟶ 𝟙_ C`
 or `g : 𝟙_ C ⟶ A ⊗ A'` moves `Z` from one side of the morphism to the other. Splitting the
@@ -16,6 +16,15 @@ braiding of `Z` with `A ⊗ A'` into crossings with `A` and `A'` by the hexagon 
 crossing with one factor can be traded for the inverse crossing with the other factor. These
 identities are used to move objects past evaluations and coevaluations of exact pairings, for
 which no rigidity is needed.
+
+This file also records naturality of the re-associated crossing
+`(α_ X Y Z).inv ≫ (β_ X Y).hom ▷ Z ≫ (α_ Y X Z).hom : X ⊗ (Y ⊗ Z) ⟶ Y ⊗ (X ⊗ Z)` of the first
+two factors of a right-bracketed triple with respect to whiskered and tensor-product morphisms,
+and the unitor identity `(λ_ X).hom ▷ 𝟙_ C ≫ (ρ_ X).hom` expressed through the braiding
+`β_ X (𝟙_ C)` of `X` past the tensor unit.
+
+It also records that the inverse tensorator `δ` of a braided functor commutes with the braiding
+(`CategoryTheory.Functor.δ_braiding`), the `δ`-form of `Functor.map_braiding`.
 -/
 
 public section
@@ -76,6 +85,51 @@ theorem whiskerRight_comp_whiskerLeft_braiding {A A' : C} (Z : C) (g : 𝟙_ C �
   rw [braiding_tensorUnit_left, braiding_tensor_left_hom] at h
   simp only [Category.assoc] at h
   rw [← reassoc_of% h]
+  simp
+
+/-- Whiskering a morphism on the first factor of `X ⊗ (Y ⊗ Z)` commutes with swapping the first
+two factors via `(α_ _ Y Z).inv ≫ (β_ _ Y).hom ▷ Z ≫ (α_ Y _ Z).hom`, moving the morphism onto
+the middle factor. -/
+@[reassoc]
+theorem whiskerRight_comp_associator_inv_braiding_associator_hom {X X' : C} (f : X ⟶ X')
+    (Y Z : C) :
+    f ▷ (Y ⊗ Z) ≫ (α_ X' Y Z).inv ≫ (β_ X' Y).hom ▷ Z ≫ (α_ Y X' Z).hom =
+      (α_ X Y Z).inv ≫ (β_ X Y).hom ▷ Z ≫ (α_ Y X Z).hom ≫ Y ◁ (f ▷ Z) := by
+  rw [associator_inv_naturality_left_assoc, ← comp_whiskerRight_assoc, braiding_naturality_left,
+    comp_whiskerRight_assoc, associator_naturality_middle]
+
+/-- Whiskering `f ⊗ₘ g` on the right two factors of `X ⊗ (Y ⊗ Z)` commutes with swapping the first
+two factors via `(α_ X _ _).inv ≫ (β_ X _).hom ▷ _ ≫ (α_ _ X _).hom`, moving `f` onto the first
+factor and `g` onto the third factor. -/
+@[reassoc]
+theorem whiskerLeft_tensorHom_comp_associator_inv_braiding_associator_hom (X : C)
+    {Y Y' Z Z' : C} (f : Y ⟶ Y') (g : Z ⟶ Z') :
+    X ◁ (f ⊗ₘ g) ≫ (α_ X Y' Z').inv ≫ (β_ X Y').hom ▷ Z' ≫ (α_ Y' X Z').hom =
+      (α_ X Y Z).inv ≫ (β_ X Y).hom ▷ Z ≫ (α_ Y X Z).hom ≫ f ▷ (X ⊗ Z) ≫ Y' ◁ (X ◁ g) := by
+  rw [tensorHom_def, MonoidalCategory.whiskerLeft_comp_assoc,
+    associator_inv_naturality_right_assoc, whisker_exchange_assoc, associator_naturality_right,
+    associator_inv_naturality_middle_assoc, ← comp_whiskerRight_assoc, braiding_naturality_right,
+    comp_whiskerRight_assoc, associator_naturality_left_assoc]
+
+/-- **Unitors through the braiding with the unit.** The two ways of mapping
+`(𝟙_ C ⊗ X) ⊗ 𝟙_ C` to `X` agree: whiskering the left unitor and applying the right unitor, or
+reassociating, braiding `X` past the unit, reassociating back, and applying the unitors. -/
+@[reassoc]
+theorem leftUnitor_whiskerRight_comp_rightUnitor_eq (X : C) :
+    (λ_ X).hom ▷ 𝟙_ C ≫ (ρ_ X).hom =
+      (α_ (𝟙_ C) X (𝟙_ C)).hom ≫ 𝟙_ C ◁ (β_ X (𝟙_ C)).hom ≫
+        (α_ (𝟙_ C) (𝟙_ C) X).inv ≫ (λ_ (𝟙_ C)).hom ▷ X ≫ (λ_ X).hom := by
+  rw [braiding_tensorUnit_right]
+  monoidal
+
+/-- The inverse tensorator `δ` of a braided functor intertwines the braiding of the images with the
+image of the braiding. This is the `δ` counterpart of `Functor.map_braiding`. -/
+@[reassoc]
+theorem _root_.CategoryTheory.Functor.δ_braiding {D : Type*} [Category* D] [MonoidalCategory D]
+    [BraidedCategory D] (F : C ⥤ D) [F.Braided] (X Y : C) :
+    Functor.OplaxMonoidal.δ F X Y ≫ (β_ (F.obj X) (F.obj Y)).hom =
+      F.map (β_ X Y).hom ≫ Functor.OplaxMonoidal.δ F Y X := by
+  rw [← cancel_mono (Functor.LaxMonoidal.μ F Y X)]
   simp
 
 end TauCeti

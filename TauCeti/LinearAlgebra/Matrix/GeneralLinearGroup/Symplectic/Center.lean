@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.RootsOfUnity.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Basic
+public import TauCeti.LinearAlgebra.Matrix.SkewAdjoint
 
 /-!
 # The center of the symplectic group
@@ -119,7 +120,8 @@ theorem mem_center_iff (hm : m ≠ 0) (g : GLSymplecticFin m R) :
         exact congrArg (fun x : GLSymplecticFin m R ↦
           (x.val : Matrix (Fin (m + m)) (Fin (m + m)) R)) he.symm)
     refine ⟨c, hc.symm, ?_⟩
-    apply sq_eq_one_of_smul_one_mul_JFin_mul_transpose_eq hm
+    have : Nonempty (Fin (m + m)) := ⟨⟨0, by omega⟩⟩
+    apply Matrix.sq_eq_one_of_smul_one_mul_mul_transpose_eq (isUnit_JFin m R)
     simpa only [← hc, Matrix.scalar_apply, Matrix.smul_one_eq_diagonal] using
       GLSymplecticFin.mem_iff.mp g.property
   · rintro ⟨c, hc, -⟩

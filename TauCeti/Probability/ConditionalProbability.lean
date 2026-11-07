@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Probability.ConditionalProbability
 import Mathlib.Probability.Kernel.MeasurableLIntegral
+import Mathlib.MeasureTheory.Integral.Average
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Interval
@@ -47,6 +48,7 @@ recovers the law.
 
 * `ProbabilityTheory.sum_meas_smul_cond_fiber_of_countable`
 * `ProbabilityTheory.cond_congr_ae`
+* `MeasureTheory.Measure.toNNReal_smul_integral_cond_eq_setIntegral`
 * `Measurable.cond`, `Measurable.cond_const`, and `Measurable.cond_preimage_Ioc` (with the
   corresponding `Icc`, `Ioo`, and `Ico` forms)
 * `ProbabilityTheory.integrable_cond_of_norm_le`
@@ -64,6 +66,7 @@ recovers the law.
 public section
 
 open MeasureTheory Set
+open scoped ENNReal NNReal
 
 namespace ProbabilityTheory
 
@@ -73,6 +76,17 @@ variable {Ω β : Type*} [MeasurableSpace Ω] [MeasurableSpace β]
 theorem cond_congr_ae {μ : Measure Ω} {s t : Set Ω} (h : s =ᵐ[μ] t) :
     μ[|s] = μ[|t] := by
   rw [cond, cond, measure_congr h, Measure.restrict_congr_set h]
+
+/-- Scaling an integral under a conditional measure by the finite mass of the conditioning
+event recovers the corresponding set integral. -/
+theorem _root_.MeasureTheory.Measure.toNNReal_smul_integral_cond_eq_setIntegral
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (μ : Measure Ω) (s : Set Ω) (f : Ω → E)
+    (h : μ s ≠ ⊤) :
+    (μ s).toNNReal • ∫ x, f x ∂cond μ s = ∫ x in s, f x ∂μ := by
+  have haverage := measure_smul_setAverage f h
+  rw [setAverage_eq', ← cond, Measure.real, ← ENNReal.coe_toNNReal_eq_toReal] at haverage
+  simpa only [NNReal.smul_def] using haverage
 
 /-! ### Measurability in a law and a conditioning event -/
 
@@ -235,6 +249,18 @@ theorem integrable_cond_compl_singleton_iff [IsFiniteMeasure μ] {E : Type*}
   rw [hcompl, ← integrableOn_univ, ← compl_union_self {a}, integrableOn_union,
     and_iff_left hatom]
 
+omit [MeasurableSingletonClass Ω] in
+/-- Conditioning away from a point rescales the nonnegative integral of a function vanishing
+there by the reciprocal retained mass. This identity includes infinite integrals and arbitrary
+measures. -/
+theorem lintegral_cond_compl_singleton_of_eq_zero {f : Ω → ℝ≥0∞} (hf : f a = 0) :
+    ∫⁻ x, f x ∂μ[|{a}ᶜ] = (μ {a}ᶜ)⁻¹ * ∫⁻ x, f x ∂μ := by
+  rw [cond, lintegral_smul_measure,
+    setLIntegral_eq_of_support_subset (fun x hx => by
+      simp only [mem_compl_iff, mem_singleton_iff]
+      intro h
+      exact hx (h ▸ hf)), smul_eq_mul]
+
 variable [IsProbabilityMeasure μ]
 
 /-- Conditioning a probability measure away from a point removes all mass exactly when the measure
@@ -306,6 +332,19 @@ namespace MeasureTheory.Measure
 
 open Filter ProbabilityTheory
 open scoped ENNReal Topology
+
+/-- Removing zero increments and dividing by a nonzero spacing rescales the extended mean by
+the reciprocal spacing and reciprocal retained mass. No normalization hypothesis is needed. -/
+theorem lintegral_div_cond_compl_zero (μ : Measure ℝ≥0) {a : ℝ≥0} (ha : a ≠ 0) :
+    ∫⁻ t, (t / a : ℝ≥0) ∂μ[|{0}ᶜ] =
+      (∫⁻ t, (t : ℝ≥0∞) ∂μ) / ((a : ℝ≥0∞) * μ {0}ᶜ) := by
+  simp_rw [ENNReal.coe_div ha]
+  rw [lintegral_cond_compl_singleton_of_eq_zero
+    (f := fun t : ℝ≥0 ↦ (t : ℝ≥0∞) / a) (by simp)]
+  simp_rw [div_eq_mul_inv]
+  rw [lintegral_mul_const _ measurable_coe_nnreal_ennreal]
+  rw [ENNReal.mul_inv (.inl (by exact_mod_cast ha)) (.inl ENNReal.coe_ne_top)]
+  simp only [mul_comm, mul_left_comm, mul_assoc]
 
 /-- Mathlib's total variation distance from a probability law conditioned on a positive-mass
 measurable event to the original law is twice the excluded mass. -/

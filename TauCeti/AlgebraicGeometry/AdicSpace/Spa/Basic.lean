@@ -49,6 +49,8 @@ it; the subspace form here needs no such comparison.)
   module boundary, so these two are the exported interface.
 * `TauCeti.ValuationSpectrum.valuation_le_one_of_mem_spa` : a point of `Spa (A, A⁺)` has
   valuation at most `1` on `A⁺`.
+* `TauCeti.ValuationSpectrum.valuation_units_eq_one_of_mem_spa` : a point of `Spa (A, A⁺)` has
+  valuation `1` on every unit `u` with `u, u⁻¹ ∈ A⁺`.
 * `TauCeti.ValuationSpectrum.spa_antitone` : the spectrum shrinks as the plus ring grows. Its
   inclusion into `Cont A` is `spa_def ▸ Set.inter_subset_left`.
 * `TauCeti.ValuationSpectrum.spa_integralClosure` : replacing the plus ring by its integral
@@ -125,6 +127,14 @@ theorem valuation_le_one_of_mem_spa {Aplus : Subring A} {v : Spv A} (hv : v ∈ 
     (ha : a ∈ Aplus) : v.valuation a ≤ 1 := by
   rw [← map_one v.valuation, valuation_le_iff]
   exact ((mem_spa_iff Aplus v).mp hv).2 a ha
+
+/-- At a point of `Spa (A, A⁺)`, a unit `u` of `A` with `u, u⁻¹ ∈ A⁺` has valuation `1`. -/
+theorem valuation_units_eq_one_of_mem_spa {Aplus : Subring A} {v : Spv A} (hv : v ∈ spa Aplus)
+    (u : Aˣ) (hu : (u : A) ∈ Aplus) (hu' : ((u⁻¹ : Aˣ) : A) ∈ Aplus) :
+    v.valuation (u : A) = 1 :=
+  Valuation.Integers.one_of_isUnit' (O := Aplus) (x := ⟨u, hu⟩)
+    ⟨⟨⟨u, hu⟩, ⟨_, hu'⟩, by ext; simp, by ext; simp⟩, rfl⟩
+    fun x ↦ valuation_le_one_of_mem_spa hv x.2
 
 /-- Enlarging the plus ring shrinks the adic spectrum. -/
 theorem spa_antitone : Antitone (spa (A := A)) := fun _ _ hle ↦ by

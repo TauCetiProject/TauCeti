@@ -7,8 +7,9 @@ module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Riesz
-import TauCeti.Geometry.Manifold.MFDeriv.Chart
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
@@ -42,7 +43,8 @@ of `df` on a chart-local frame are `C^n`, and so is the Riesz dual of such a fie
 * `TauCeti.Manifold.contMDiff_mgradient`: the gradient of a `C^{n+1}` function for a `C^n`
   metric is a `C^n` vector field.
 * `TauCeti.Manifold.continuous_inner_mgradient`: the inner product of the gradients of two `C¹`
-  functions is continuous.
+  functions is continuous, and so are the length `TauCeti.Manifold.continuous_norm_mgradient` and
+  squared length `TauCeti.Manifold.continuous_norm_sq_mgradient` of the gradient.
 * `TauCeti.Manifold.mdifferentiable_mgradient`: a `C²` function has a differentiable Riemannian
   gradient section.
 * `TauCeti.Manifold.contMDiff_neg_mgradient`: so is the negative gradient, and
@@ -50,6 +52,9 @@ of `df` on a chart-local frame are `C^n`, and so is the Riesz dual of such a fie
 * `TauCeti.Manifold.eventually_norm_fderiv_comp_extChartAt_symm_le_mul_norm_mgradient`: for a
   continuous metric, the differential of `f` read in a chart is locally bounded by a multiple of
   the length of the gradient. This is how coordinate estimates for `df` become metric estimates.
+* `TauCeti.Manifold.eventually_norm_mgradient_le_mul_norm_fderiv_comp_extChartAt_symm`: the
+  sharp converse, comparing the length of the gradient near `p` with the length, for the metric
+  at `p`, of the coordinate differential, up to a factor arbitrarily close to `1`.
 -/
 
 public section
@@ -118,6 +123,14 @@ protected theorem _root_.HasCompactSupport.mgradient (hf : HasCompactSupport f) 
   hf.mono' fun _ hx ↦ by_contra fun h ↦ hx <| mgradient_eq_zero_iff.2 <|
     (notMem_tsupport_iff_eventuallyEq.1 h).mvfderiv_eq.trans mvfderiv_zero
 
+/-- Pairing the gradient of a compactly supported function with any vector field gives a
+compactly supported scalar function. No differentiability assumption is needed. -/
+protected theorem _root_.HasCompactSupport.inner_mgradient (hf : HasCompactSupport f)
+    (X : Π x : M, TangentSpace I x) :
+    HasCompactSupport (fun x ↦ inner ℝ (mgradient I f x) (X x)) := by
+  refine (hf.mgradient I).mono' fun x hx ↦ subset_tsupport _ ?_
+  exact fun h ↦ hx ((congrArg (fun v ↦ inner ℝ v (X x)) h).trans (inner_zero_left _))
+
 /-- The gradient has the same length as the differential it represents: the Riesz equivalence is
 an isometry. -/
 theorem norm_mgradient_eq_norm_mvfderiv (f : M → ℝ) (x : M) :
@@ -149,12 +162,23 @@ theorem mgradient_mul {g : M → ℝ} (hf : MDifferentiable I 𝓘(ℝ) f)
   simp only [add_apply, smul_apply, smul_eq_mul]
 
 /-- The gradient commutes with multiplication by a real constant. -/
-theorem mgradient_smul (c : ℝ) (hf : MDifferentiable I 𝓘(ℝ) f) :
+@[simp]
+theorem mgradient_smul (c : ℝ) :
     mgradient I (c • f) = c • mgradient I f := by
   funext x
-  simpa [mgradient, mvfderiv_const, Pi.smul_def, smul_eq_mul] using
-    congrArg (Riemannian.Tensor.rieszDual (I := I) x)
-      (mvfderiv_fun_smul (a := fun _ : M ↦ c) mdifferentiableAt_const (hf x))
+  simp [mgradient]
+
+/-- Along the line `f + t g`, the squared length of the gradient is the quadratic polynomial
+`‖grad f‖² + 2 t ⟪grad g, grad f⟫ + t² ‖grad g‖²` in `t`. -/
+theorem norm_sq_mgradient_add_smul {g : M → ℝ} (hf : MDifferentiable I 𝓘(ℝ) f)
+    (hg : MDifferentiable I 𝓘(ℝ) g) (t : ℝ) (x : M) :
+    ‖mgradient I (f + t • g) x‖ ^ 2 =
+      ‖mgradient I f x‖ ^ 2 + 2 * t * inner ℝ (mgradient I g x) (mgradient I f x) +
+        t ^ 2 * ‖mgradient I g x‖ ^ 2 := by
+  rw [mgradient_add hf (hg.const_smul t), mgradient_smul t]
+  simp only [Pi.add_apply, Pi.smul_apply, norm_add_sq_real, norm_smul, inner_smul_right,
+    Real.norm_eq_abs, mul_pow, sq_abs, real_inner_comm]
+  ring
 
 /-- The gradient of `-f` is the opposite of the gradient of `f`. -/
 @[simp]
@@ -296,15 +320,39 @@ theorem contMDiff_inner_mgradient {n : ℕ∞ω} [IsManifold I (n + 1) M]
     (E := fun x : M ↦ TangentSpace I x) (b := id)
     (contMDiff_mgradient hf) (contMDiff_mgradient hg)
 
+/-- For a `C^n` Riemannian metric, the squared norm of the gradient of a `C^{n+1}`
+function is `C^n`. -/
+theorem contMDiff_norm_sq_mgradient {n : ℕ∞ω} [IsManifold I (n + 1) M]
+    [IsContMDiffRiemannianBundle I n E (fun x : M ↦ TangentSpace I x)]
+    (hf : ContMDiff I 𝓘(ℝ) (n + 1) f) :
+    ContMDiff I 𝓘(ℝ) n (fun x ↦ ‖mgradient I f x‖ ^ 2) := by
+  simpa only [real_inner_self_eq_norm_sq] using contMDiff_inner_mgradient hf hf
+
 /-- **The inner product of two gradients is continuous.** For a continuous Riemannian metric, the
 pointwise inner product `⟪grad f, grad g⟫` of two `C¹` functions is a continuous function. -/
 theorem continuous_inner_mgradient
-    [IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x)] {g : M → ℝ}
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] {g : M → ℝ}
     (hf : ContMDiff I 𝓘(ℝ) 1 f) (hg : ContMDiff I 𝓘(ℝ) 1 g) :
     Continuous fun x ↦ inner ℝ (mgradient I f x) (mgradient I g x) := by
   have : IsManifold I (0 + 1) M := by rwa [zero_add]
+  have : IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x) :=
+    IsContinuousRiemannianBundle.toIsContMDiffZero
   exact (contMDiff_inner_mgradient (n := 0) (by rwa [zero_add])
     (by rwa [zero_add])).continuous
+
+/-- For a continuous Riemannian metric, the squared length `‖grad f‖²` of the gradient of a `C¹`
+function is continuous. -/
+theorem continuous_norm_sq_mgradient
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
+    (hf : ContMDiff I 𝓘(ℝ) 1 f) : Continuous fun x ↦ ‖mgradient I f x‖ ^ 2 := by
+  simpa only [real_inner_self_eq_norm_sq] using continuous_inner_mgradient hf hf
+
+/-- For a continuous Riemannian metric, the length `‖grad f‖` of the gradient of a `C¹` function
+is continuous. -/
+theorem continuous_norm_mgradient
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
+    (hf : ContMDiff I 𝓘(ℝ) 1 f) : Continuous fun x ↦ ‖mgradient I f x‖ := by
+  simpa only [Real.sqrt_sq (norm_nonneg _)] using (continuous_norm_sq_mgradient hf).sqrt
 
 /-! ### Comparison with the differential in a chart -/
 
@@ -351,5 +399,37 @@ theorem eventually_norm_fderiv_comp_extChartAt_symm_le_mul_norm_mgradient
         gcongr
         exact (ContinuousLinearMap.le_opNorm _ _).trans (by gcongr)
     _ = C * ‖mvfderiv I f y‖ * ‖w‖ := by ring
+
+/-- **The gradient is sharply controlled by the differential in a chart.** For a continuous
+metric and any `r > 1`, near `p` the Riemannian length of the gradient of `f` is at most `r` times
+the length of the coordinate differential of `f` in the extended chart at `p`, transported to the
+tangent space at `p` by the tangent chart and measured with the metric at `p`. The constant `r`
+can be taken arbitrarily close to `1` because the metric read in the chart is continuous. -/
+theorem eventually_norm_mgradient_le_mul_norm_fderiv_comp_extChartAt_symm
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] (p : M) {r : ℝ}
+    (hr : 1 < r) :
+    ∀ᶠ y in 𝓝 p, ∀ f : M → ℝ,
+      DifferentiableAt ℝ (f ∘ (extChartAt I p).symm) (extChartAt I p y) →
+      ‖mgradient I f y‖ ≤ r * ‖(fderiv ℝ (f ∘ (extChartAt I p).symm) (extChartAt I p y) ∘L
+        (trivializationAt E (TangentSpace I) p).continuousLinearMapAt ℝ p :
+          TangentSpace I p →L[ℝ] ℝ)‖ := by
+  set e := trivializationAt E (TangentSpace I) p
+  have hp : p ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' p
+  filter_upwards [eventually_norm_symmL_trivializationAt_self_comp_lt E
+    (fun x : M ↦ TangentSpace I x) p hr, chart_source_mem_nhds H p] with y hy hys f hd
+  set ℓ := fderiv ℝ (f ∘ (extChartAt I p).symm) (extChartAt I p y)
+  have hmf := TauCeti.mfderiv_eq_fderiv_comp_mfderiv_extChartAt
+    (by rwa [extChartAt_source]) hd
+  rw [← TangentBundle.continuousLinearMapAt_trivializationAt hys] at hmf
+  -- `df_y` factors through the tangent space at `p` by `e.symmL p ∘ e_y`, whose norm is `< r`.
+  have hfac : mvfderiv I f y = (ℓ ∘L e.continuousLinearMapAt ℝ p) ∘L
+      (e.symmL ℝ p ∘L e.continuousLinearMapAt ℝ y) := by
+    ext v
+    rw [mvfderiv_apply_eq_mfderiv_apply, hmf]
+    simp only [ContinuousLinearMap.comp_apply, e.continuousLinearMapAt_symmL hp, ℓ]
+    -- The two sides write the tangent bundle as `TangentSpace I` and as its eta-expansion.
+    rfl
+  rw [norm_mgradient_eq_norm_mvfderiv, hfac, mul_comm]
+  exact (ContinuousLinearMap.opNorm_comp_le _ _).trans (by gcongr)
 
 end TauCeti.Manifold

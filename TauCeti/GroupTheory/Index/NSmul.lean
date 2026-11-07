@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.IndexNSmul
 
 import Mathlib.GroupTheory.FiniteAbelian.Basic
 import Mathlib.LinearAlgebra.Dimension.Constructions
+import Mathlib.LinearAlgebra.Dimension.Torsion.Finite
 
 /-!
 # The index of `n • G` in a finitely generated commutative group
@@ -39,6 +40,8 @@ as a `ℤ`-module: `AddSubgroup.index_range_nsmul` gives `n ^ finrank ℤ M`. Th
 * `AddEquiv.map_ker_nsmulAddMonoidHom` and `AddEquiv.index_range_nsmulAddMonoidHom`: an additive
   equivalence carries `G[n]` to `H[n]` and preserves the index of `n • G`. These are the kernel
   counterparts of Mathlib's `AddEquiv.map_range_nsmulAddMonoidHom`.
+* `AddEquiv.injective_nsmul_iff`: multiplication by `n` is injective on one side of an additive
+  equivalence exactly when it is injective on the other.
 
 What the descent needs here is the exact count, not merely finiteness of the index.
 `TauCetiRoadmap/EllipticCurves/README.md` §Layer 6 makes explicit `2`-descent a target in its own
@@ -73,8 +76,8 @@ rather than a finite ambient group, so the counting lemma that derived it is unn
 `n` on a product is identified with the componentwise `AddMonoidHom.prodMap`, a step the proof
 below takes directly), and its `Subgroup.fg_of_commGroup_fg` and
 `Group.fg_of_fg_ker_of_fg_range` (both in `TauCeti/GroupTheory/Finiteness.lean`). Its
-`Module.rank_eq_zero_of_finite` has no Mathlib counterpart but is a three-line consequence of
-`rank_eq_zero_iff` used exactly once, so it is inlined at that use site rather than given a name.
+`Module.rank_eq_zero_of_finite` is replaced by Mathlib's `Module.IsTorsion.rank_eq_zero` applied
+to `isAddTorsion_of_finite`.
 The source predates those additions, several of which its own author upstreamed, so check Mathlib
 again before porting anything further from it.
 
@@ -189,6 +192,15 @@ end Subgroup
 
 namespace AddEquiv
 
+/-- Multiplication by `n` is injective on `M` exactly when it is injective on `N`, for an additive
+equivalence `M ≃+ N`, since the equivalence commutes with it. -/
+theorem injective_nsmul_iff {M N : Type*} [AddMonoid M] [AddMonoid N] (e : M ≃+ N) (n : ℕ) :
+    Function.Injective (fun x : M ↦ n • x) ↔ Function.Injective (fun y : N ↦ n • y) := by
+  have h : (fun y : N ↦ n • y) = e ∘ (fun x : M ↦ n • x) ∘ e.symm := by
+    ext y
+    simp
+  rw [h, EquivLike.comp_injective, EquivLike.injective_comp]
+
 variable {M N : Type*} [AddCommGroup M] [AddCommGroup N]
 
 /-- An additive equivalence maps `M[n]` to `N[n]`. This is the kernel counterpart of Mathlib's
@@ -215,6 +227,21 @@ end AddEquiv
 
 namespace AddSubgroup
 
+open Module in
+/-- The case `n = 0` of `AddSubgroup.index_range_nsmul_of_fg`: the range is trivial and the kernel
+is everything, so both sides are `Nat.card G` (for finite `G` the rank is `0`, and for infinite `G`
+both sides vanish). -/
+private theorem index_range_zero_nsmul (G : Type*) [AddCommGroup G] :
+    (nsmulAddMonoidHom (α := G) 0).range.index =
+      0 ^ finrank ℤ G * Nat.card (nsmulAddMonoidHom (α := G) 0).ker := by
+  have h0 : nsmulAddMonoidHom (α := G) 0 = 0 := by ext; simp
+  rw [h0, AddMonoidHom.range_zero, AddMonoidHom.ker_zero, AddSubgroup.index_bot,
+    Nat.card_congr AddSubgroup.topEquiv.toEquiv]
+  rcases finite_or_infinite G with hG | hG
+  · simp [Module.IsTorsion.finrank_eq_zero
+    (isAddTorsion_iff_isTorsion_int.mp (isAddTorsion_of_finite (G := G)))]
+  · simp [Nat.card_eq_zero_of_infinite]
+
 open scoped DirectSum in
 /-- **The index of `n • G` in a finitely generated commutative group** `G` is
 `n ^ finrank ℤ G * #G[n]`, where `G[n]` is the `n`-torsion subgroup.
@@ -224,11 +251,13 @@ subgroup is trivial and the second factor is `1`. -/
 -- Adapted from `AddSubgroup.index_range_nsmul_of_fg` in Michael Stoll's `EllipticCurves`
 -- (`EllipticCurves/Mathlib/SelmerGroup.lean`, pin `66889eada51a`). Two steps are discharged from
 -- Mathlib rather than from the source's own helpers: `AddSubgroup.index_range` replaces its
--- `AddMonoidHom.index_range_eq_card_ker`, and the rank-zero step is inlined in place of its
+-- `AddMonoidHom.index_range_eq_card_ker`, and `Module.IsTorsion.rank_eq_zero` replaces its
 -- `Module.rank_eq_zero_of_finite`.
-theorem index_range_nsmul_of_fg (G : Type*) [AddCommGroup G] [AddGroup.FG G] {n : ℕ} (hn : n ≠ 0) :
+theorem index_range_nsmul_of_fg (G : Type*) [AddCommGroup G] [AddGroup.FG G] (n : ℕ) :
     (nsmulAddMonoidHom (α := G) n).range.index =
       n ^ finrank ℤ G * Nat.card (nsmulAddMonoidHom (α := G) n).ker := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · exact index_range_zero_nsmul G
   obtain ⟨r, ι, fι, p, hp, e, ⟨eqv⟩⟩ := AddCommGroup.equiv_free_prod_directSum_zmod G
   have hne (i : ι) : NeZero (p i ^ e i) := ⟨pow_ne_zero _ (hp i).pos.ne'⟩
   have hTfin : Finite (⨁ i, ZMod (p i ^ e i)) := Finite.of_equiv _ DFinsupp.equivFunOnFintype.symm
@@ -252,10 +281,8 @@ theorem index_range_nsmul_of_fg (G : Type*) [AddCommGroup G] [AddGroup.FG G] {n 
             left_inv x := Subtype.ext (Prod.ext (x.2 : x.1.1 = 0).symm rfl)
             right_inv t := rfl }
         rw [e2.rank_eq]
-        -- a finite module over a ring of characteristic zero has rank `0`
-        exact rank_eq_zero_iff.mpr fun x ↦ ⟨addOrderOf x,
-          Nat.cast_ne_zero.mpr (addOrderOf_pos x).ne',
-          by rw [Nat.cast_smul_eq_nsmul]; exact addOrderOf_nsmul_eq_zero x⟩
+        exact Module.IsTorsion.rank_eq_zero
+          (isAddTorsion_iff_isTorsion_int.mp isAddTorsion_of_finite)
       rw [← π.rank_range_add_rank_ker, LinearMap.range_eq_top.mpr Prod.fst_surjective, rank_top,
         rank_finsupp_self', Cardinal.mk_fin, h0, add_zero]
     have h2 : finrank ℤ ((Fin r →₀ ℤ) × ⨁ i, ZMod (p i ^ e i)) = r := by
@@ -283,14 +310,13 @@ namespace Subgroup
 /-- **The index of the `n`-th powers in a finitely generated commutative group** `G` is
 `n ^ finrank ℤ (Additive G) * #G[n]`, where `G[n]` is the `n`-torsion subgroup. This is
 `AddSubgroup.index_range_nsmul_of_fg` read in `Additive G`. -/
-theorem index_range_powMonoidHom_of_fg (G : Type*) [CommGroup G] [Group.FG G] {n : ℕ}
-    (hn : n ≠ 0) :
+theorem index_range_powMonoidHom_of_fg (G : Type*) [CommGroup G] [Group.FG G] (n : ℕ) :
     (powMonoidHom (α := G) n).range.index =
       n ^ finrank ℤ (Additive G) * Nat.card (powMonoidHom (α := G) n).ker := by
   have h : (powMonoidHom (α := G) n).toAdditive = nsmulAddMonoidHom n := by
     ext x
     simp
-  have := AddSubgroup.index_range_nsmul_of_fg (Additive G) hn
+  have := AddSubgroup.index_range_nsmul_of_fg (Additive G) n
   rwa [← h, MonoidHom.coe_toAdditive_range, MonoidHom.coe_toAdditive_ker,
     index_toAddSubgroup] at this
 

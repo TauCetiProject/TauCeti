@@ -50,7 +50,7 @@ variable {R : Type*} [CommRing R] [IsLocalRing R] [IsNoetherianRing R]
 the ring. -/
 @[stacks 07NV]
 theorem ringKrullDim_eq : ringKrullDim (AdicCompletion (maximalIdeal R) R) = ringKrullDim R :=
-  ringKrullDim_eq_of_flat_of_map_maximalIdeal_eq AdicCompletion.maximalIdeal_eq_map.symm
+  ringKrullDim_eq_of_hasGoingDown_of_map_maximalIdeal_eq AdicCompletion.maximalIdeal_eq_map.symm
 
 /-- The completion of a Noetherian local ring at its maximal ideal is regular if and only if the
 ring is. -/

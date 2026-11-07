@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Discriminant.Defs
 public import TauCeti.LinearAlgebra.Matrix.LeibnizPart
-public import TauCeti.NumberTheory.AlgebraicClosure.Integral
+public import TauCeti.RingTheory.Invariant.Galois
 
 /-!
 # Stickelberger's congruence
@@ -70,17 +70,20 @@ theorem exists_discr_eq_sq_sub_four_mul_of_isIntegral {ι : Type*} [Fintype ι] 
     rw [leibnizPart_def]
     refine IsIntegral.sum _ fun σ _ ↦ IsIntegral.prod _ fun i _ ↦ ?_
     exact (hb (σ i)).map ((e i).restrictScalars ℤ)
-  obtain ⟨s, hs⟩ := TauCeti.AlgebraicClosure.exists_algebraMap_int_eq_of_isIntegral_of_fixed
-    (x := M.permanent)
-    (by rw [← leibnizPart_one_add_leibnizPart_neg_one]; exact (hint 1).add (hint (-1)))
-    (fun τ ↦ by
-      rw [← leibnizPart_one_add_leibnizPart_neg_one, map_add, ← leibnizPart_map τ,
-        ← leibnizPart_map τ, leibnizPart_one_add_leibnizPart_neg_one, hmap τ,
-        permanent_permute_rows, leibnizPart_one_add_leibnizPart_neg_one])
-  obtain ⟨p, hp⟩ := TauCeti.AlgebraicClosure.exists_algebraMap_int_eq_of_isIntegral_of_fixed
-    (x := M.leibnizPart 1 * M.leibnizPart (-1)) ((hint 1).mul (hint (-1))) (fun τ ↦ by
+  have := (isIntegrallyClosed_iff_isIntegrallyClosedIn ℚ).mp (inferInstance : IsIntegrallyClosed ℤ)
+  obtain ⟨s, hs⟩ :=
+    (TauCeti.InfiniteGalois.mem_range_algebraMap_iff_isIntegral_and_fixed ℚ M.permanent).mpr
+    ⟨by rw [← leibnizPart_one_add_leibnizPart_neg_one]; exact (hint 1).add (hint (-1)),
+      fun τ ↦ by
+        rw [← leibnizPart_one_add_leibnizPart_neg_one, map_add, ← leibnizPart_map τ,
+          ← leibnizPart_map τ, leibnizPart_one_add_leibnizPart_neg_one, hmap τ,
+          permanent_permute_rows, leibnizPart_one_add_leibnizPart_neg_one]⟩
+  obtain ⟨p, hp⟩ :=
+    (TauCeti.InfiniteGalois.mem_range_algebraMap_iff_isIntegral_and_fixed ℚ
+      (M.leibnizPart 1 * M.leibnizPart (-1))).mpr
+    ⟨(hint 1).mul (hint (-1)), fun τ ↦ by
       rw [map_mul, ← leibnizPart_map τ, ← leibnizPart_map τ, hmap τ,
-        leibnizPart_one_mul_leibnizPart_neg_one_submatrix_right])
+        leibnizPart_one_mul_leibnizPart_neg_one_submatrix_right]⟩
   refine ⟨s, p, (algebraMap ℚ E).injective ?_⟩
   rw [Algebra.discr_eq_det_embeddingsMatrixReindex_pow_two ℚ E b e, ← hM,
     det_sq_eq_permanent_sq_sub_four_mul, ← hs, ← hp]

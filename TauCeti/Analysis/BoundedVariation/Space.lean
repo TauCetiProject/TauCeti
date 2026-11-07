@@ -51,6 +51,21 @@ def MemBV (μ : Measure E) (Ω : Opens E) (u : E → ℝ) : Prop :=
 theorem memBV_iff {u : E → ℝ} : MemBV μ Ω u ↔
     IntegrableOn u Ω μ ∧ totalVariationOn μ Ω u < ∞ := (Iff.rfl)
 
+/-- A BV function is integrable on its domain. -/
+theorem MemBV.integrableOn {u : E → ℝ} (hu : MemBV μ Ω u) : IntegrableOn u Ω μ :=
+  (memBV_iff.mp hu).1
+
+/-- A BV function has finite total variation on its domain. -/
+theorem MemBV.totalVariationOn_lt_top {u : E → ℝ} (hu : MemBV μ Ω u) :
+    totalVariationOn μ Ω u < ∞ :=
+  (memBV_iff.mp hu).2
+
+/-- Restriction to an open subset preserves BV membership. -/
+theorem MemBV.mono {U : Opens E} {u : E → ℝ} (hu : MemBV μ Ω u) (hU : U ≤ Ω) :
+    MemBV μ U u :=
+  memBV_iff.mpr ⟨hu.integrableOn.mono_set hU,
+    (totalVariationOn_mono hU).trans_lt hu.totalVariationOn_lt_top⟩
+
 /-- BV membership is unchanged by equality almost everywhere on the domain. -/
 theorem memBV_congr_ae {u v : E → ℝ} (h : u =ᵐ[μ.restrict Ω] v) :
     MemBV μ Ω u ↔ MemBV μ Ω v := by
@@ -63,9 +78,8 @@ theorem MemBV.zero : MemBV μ Ω 0 :=
   memBV_iff.mpr ⟨integrableOn_zero, by simp⟩
 
 /-- Negation preserves BV membership. -/
-theorem MemBV.neg {u : E → ℝ} (hu : MemBV μ Ω u) : MemBV μ Ω (-u) := by
-  rcases memBV_iff.mp hu with ⟨hu, hfinite⟩
-  exact memBV_iff.mpr ⟨hu.neg, by simpa using hfinite⟩
+theorem MemBV.neg {u : E → ℝ} (hu : MemBV μ Ω u) : MemBV μ Ω (-u) :=
+  memBV_iff.mpr ⟨hu.integrableOn.neg, by simpa using hu.totalVariationOn_lt_top⟩
 
 /-- BV membership is unchanged by negation. -/
 @[simp]
@@ -74,19 +88,16 @@ theorem memBV_neg_iff {u : E → ℝ} : MemBV μ Ω (-u) ↔ MemBV μ Ω u :=
 
 /-- Multiplication by a real scalar preserves BV membership. -/
 theorem MemBV.smul {u : E → ℝ} (hu : MemBV μ Ω u) (c : ℝ) : MemBV μ Ω (c • u) := by
-  rcases memBV_iff.mp hu with ⟨hu, hfinite⟩
-  refine memBV_iff.mpr ⟨hu.smul c, ?_⟩
+  refine memBV_iff.mpr ⟨hu.integrableOn.smul c, ?_⟩
   rw [totalVariationOn_smul]
-  exact ENNReal.mul_lt_top (by finiteness) hfinite
+  exact ENNReal.mul_lt_top (by finiteness) hu.totalVariationOn_lt_top
 
 /-- The sum of two BV functions belongs to BV. -/
 theorem MemBV.add [OpensMeasurableSpace E] {u v : E → ℝ}
-    (hu : MemBV μ Ω u) (hv : MemBV μ Ω v) : MemBV μ Ω (u + v) := by
-  rcases memBV_iff.mp hu with ⟨hu, hufinite⟩
-  rcases memBV_iff.mp hv with ⟨hv, hvfinite⟩
-  exact memBV_iff.mpr ⟨hu.add hv,
-    (totalVariationOn_add_le hu.locallyIntegrableOn).trans_lt
-      (ENNReal.add_lt_top.mpr ⟨hufinite, hvfinite⟩)⟩
+    (hu : MemBV μ Ω u) (hv : MemBV μ Ω v) : MemBV μ Ω (u + v) :=
+  memBV_iff.mpr ⟨hu.integrableOn.add hv.integrableOn,
+    (totalVariationOn_add_le hu.integrableOn.locallyIntegrableOn).trans_lt
+      (ENNReal.add_lt_top.mpr ⟨hu.totalVariationOn_lt_top, hv.totalVariationOn_lt_top⟩)⟩
 
 /-- The difference of two BV functions belongs to BV. -/
 theorem MemBV.sub [OpensMeasurableSpace E] {u v : E → ℝ}
@@ -159,21 +170,21 @@ theorem memBV (u : BV μ Ω) : MemBV μ Ω u :=
 
 /-- Form the almost-everywhere class of an integrable function of finite variation. -/
 def ofFunction (u : E → ℝ) (hu : MemBV μ Ω u) : BV μ Ω :=
-  BV.mk ⟨(memBV_iff.mp hu).1.toL1 u, (mem_bvSubmodule_iff _).mpr <| by
-    rw [totalVariationOn_congr_ae (memBV_iff.mp hu).1.coeFn_toL1]
-    exact (memBV_iff.mp hu).2⟩
+  BV.mk ⟨hu.integrableOn.integrable.toL1 u, (mem_bvSubmodule_iff _).mpr <| by
+    rw [totalVariationOn_congr_ae hu.integrableOn.integrable.coeFn_toL1]
+    exact hu.totalVariationOn_lt_top⟩
 
 /-- The `L¹` class of the BV class constructed from a function. -/
-@[simp]
 theorem toL1_ofFunction (u : E → ℝ) (hu : MemBV μ Ω u) :
-    (ofFunction u hu).toL1 = (memBV_iff.mp hu).1.toL1 u := (rfl)
+    (ofFunction u hu).toL1 = hu.integrableOn.integrable.toL1 u := (rfl)
 
 /-- Forming a BV class preserves the function almost everywhere on `Ω`. -/
 theorem coeFn_ofFunction (u : E → ℝ) (hu : MemBV μ Ω u) :
     (ofFunction u hu : E → ℝ) =ᵐ[μ.restrict Ω] u :=
-  (memBV_iff.mp hu).1.coeFn_toL1
+  hu.integrableOn.integrable.coeFn_toL1
 
 /-- Construction of a BV class preserves its total variation. -/
+@[simp]
 theorem totalVariationOn_ofFunction (u : E → ℝ) (hu : MemBV μ Ω u) :
     totalVariationOn μ Ω (ofFunction u hu) = totalVariationOn μ Ω u :=
   totalVariationOn_congr_ae (coeFn_ofFunction u hu)

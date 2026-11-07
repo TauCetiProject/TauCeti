@@ -7,7 +7,6 @@ module
 
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.RingTheory.Algebraic.Basic
-public import Mathlib.Algebra.Polynomial.Derivative
 public import Mathlib.RingTheory.Algebraic.Integral
 import Mathlib.RingTheory.Polynomial.Basic
 
@@ -26,9 +25,6 @@ The kernel of an algebra map into a field algebraic over the base field is a max
 (`AlgHom.ker_isMaximal_of_isAlgebraic`).
 Every element of a finite-dimensional left ideal of an algebra over a field is algebraic
 (`Submodule.isAlgebraic_of_mem`).
-Over a base ring without additive torsion that embeds into the algebra, every algebraic element is
-a root of a polynomial whose derivative does not vanish at it
-(`IsAlgebraic.exists_aeval_eq_zero_and_aeval_derivative_ne_zero`).
 -/
 
 public section
@@ -70,26 +66,6 @@ theorem isAlgebraic_of_mem {K B : Type*} [Field K] [Ring B] [Algebra K B] (J : S
   exact ⟨p * X, mul_ne_zero hp0 X_ne_zero, by rw [map_mul, aeval_X, hpx]⟩
 
 end Submodule
-
-/-- An element algebraic over a ring `R` without additive torsion, in an algebra into which `R`
-embeds, is a root of a polynomial whose derivative does not vanish at it. -/
-theorem IsAlgebraic.exists_aeval_eq_zero_and_aeval_derivative_ne_zero {R A : Type*} [CommRing R]
-    [HasUniqueDiv R] [CommRing A] [Algebra R A] (hinj : Function.Injective (algebraMap R A))
-    {a : A} (ha : IsAlgebraic R a) :
-    ∃ P : R[X], aeval a P = 0 ∧ aeval a (derivative P) ≠ 0 := by
-  classical
-  -- A nonzero relation of least degree has this property.
-  have hex : ∃ n, ∃ P : R[X], P ≠ 0 ∧ P.natDegree = n ∧ aeval a P = 0 := by
-    obtain ⟨P, hP, hPa⟩ := ha
-    exact ⟨_, P, hP, rfl, hPa⟩
-  obtain ⟨P, hP0, hPdeg, hPa⟩ := Nat.find_spec hex
-  have hdeg : P.natDegree ≠ 0 := by
-    intro h0
-    rw [eq_C_of_natDegree_eq_zero h0, aeval_C] at hPa
-    rw [eq_C_of_natDegree_eq_zero h0, ne_eq, C_eq_zero] at hP0
-    exact hP0 (hinj (hPa.trans (map_zero _).symm))
-  exact ⟨P, hPa, fun h ↦ Nat.find_min hex (hPdeg ▸ natDegree_derivative_lt hdeg)
-    ⟨_, derivative_ne_zero.2 hdeg, rfl, h⟩⟩
 
 namespace Transcendental
 

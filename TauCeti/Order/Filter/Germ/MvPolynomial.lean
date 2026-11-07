@@ -9,8 +9,6 @@ public import Mathlib.Algebra.MvPolynomial.Eval
 public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.Order.Filter.Germ.Basic
 public import Mathlib.RingTheory.Algebraic.Defs
-public import Mathlib.Topology.Perfect
-import TauCeti.Topology.Algebra.MvPolynomial.Nonvanishing
 
 /-!
 # Polynomial relations on germs of functions of several variables
@@ -23,9 +21,7 @@ algebra structure (`Filter.Germ.mvPolynomialAlgebra`) is not an instance; activa
 With this structure, a polynomial `P : (MvPolynomial σ R)[X]` evaluated at the germ of `f` is the
 germ of `y ↦ P (y, f y)` (`Filter.Germ.aeval_coe`). Consequently the germ of `f` is algebraic over
 the coordinate polynomials exactly when `f` satisfies a nonzero polynomial relation `P (y, f y) = 0`
-eventually along `l` (`Filter.Germ.isAlgebraic_coe_iff`). Over a domain with a perfect T1
-topology, distinct polynomials have distinct germs at every point
-(`Filter.Germ.mvPolynomialAlgebra_algebraMap_injective`). This turns closure properties of functions
+eventually along `l` (`Filter.Germ.isAlgebraic_coe_iff`). This turns closure properties of functions
 satisfying polynomial relations, such as Nash germs, into Mathlib's closure properties of algebraic
 elements.
 
@@ -35,8 +31,6 @@ elements.
 * `Filter.Germ.aeval_coe`: evaluating a polynomial relation at the germ of a function.
 * `Filter.Germ.isAlgebraic_coe_iff`: algebraic germs are germs of functions satisfying a nonzero
   polynomial relation.
-* `Filter.Germ.mvPolynomialAlgebra_algebraMap_injective`: the coordinate polynomials embed into the
-  germs at a point.
 -/
 
 public section
@@ -87,15 +81,5 @@ theorem isAlgebraic_coe_iff [CommRing R] {l : Filter (σ → R)} {f : (σ → R)
     IsAlgebraic (MvPolynomial σ R) (f : Germ l R) ↔ ∃ P : (MvPolynomial σ R)[X], P ≠ 0 ∧
       ∀ᶠ y in l, (P.map (MvPolynomial.eval y)).eval (f y) = 0 := by
   simp only [IsAlgebraic, aeval_coe, ← coe_zero, coe_eq, EventuallyEq, Pi.zero_apply]
-
-open Topology in
-/-- Over a domain with a perfect T1 topology, a nonzero polynomial has a nonzero germ at every
-point: the coordinate polynomials embed into the germs at `a`. -/
-theorem mvPolynomialAlgebra_algebraMap_injective [CommRing R] [IsDomain R] [TopologicalSpace R]
-    [T1Space R] [PerfectSpace R] (a : σ → R) :
-    Function.Injective (algebraMap (MvPolynomial σ R) (Germ (𝓝 a) R)) := by
-  refine (injective_iff_map_eq_zero _).2 fun p hp ↦ ?_
-  rw [mvPolynomialAlgebra_algebraMap_apply, ← coe_zero, coe_eq] at hp
-  simpa using MvPolynomial.eq_C_of_eventually_eval_eq (c := 0) hp
 
 end Filter.Germ

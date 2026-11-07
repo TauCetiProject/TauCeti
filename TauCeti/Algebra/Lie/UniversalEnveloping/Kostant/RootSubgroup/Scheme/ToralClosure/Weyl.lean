@@ -7,8 +7,7 @@ module
 
 import TauCeti.Algebra.Algebra.Hom
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Weyl.Elementary
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Weyl.Torus
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Weyl.RankOne
 
 /-!
 # Weyl representatives in the Kostant toral closure
@@ -23,7 +22,8 @@ Each factor is a point of the Kostant toral closure, so this product gives a can
 the assembled Chevalley carrier over every commutative ring. This file packages that point in the
 carrier, identifies its matrix with the integral Weyl automorphism of the admissible lattice, and
 proves that it normalizes the represented split torus. Its conjugation action is the reflection
-attached to the root and coroot of the `sl₂` pair.
+attached to the root and coroot of the `sl₂` pair. The rank-one square relation
+`nᵢ² = hᵢ(-1)` is transported from `kostantWeylParam_sq` to these carrier-valued points.
 
 These representatives supply the point-level Weyl group data used to transport simple-root
 subgroups to arbitrary roots and to compare the normalizer of the represented torus with the Weyl
@@ -33,10 +33,14 @@ group of the root datum.
 
 * `TauCeti.UniversalEnvelopingAlgebra.kostantToralWeylPoint`: the Weyl representative as a point
   of the toral closure.
+* `TauCeti.UniversalEnvelopingAlgebra.kostantToralWeylPoint_inv`: its inverse is the same word
+  with the signs reversed.
 * `TauCeti.UniversalEnvelopingAlgebra.map_kostantToralWeylPoint`: the representative is natural
   in the value ring.
 * `TauCeti.UniversalEnvelopingAlgebra.coe_kostantToralWeylPoint`: its matrix is the integral Weyl
   automorphism in the chosen basis.
+* `TauCeti.UniversalEnvelopingAlgebra.kostantToralWeylPoint_sq`: its square is the coordinate
+  coroot evaluated at `-1`.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantToralWeylPoint_conj_rootSubgroupPoints`: conjugation
   sends the `i` root subgroup to the `j` root subgroup, negating the parameter.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantToralWeylPoint_conj_weightTorusPoints`: its conjugation
@@ -126,6 +130,17 @@ theorem kostantToralWeylPoint_def (i j : I) (A : Type v) [CommRing A] :
           (Multiplicative.ofAdd (1 : A)) :=
   (rfl)
 
+/-- The inverse of the Weyl representative is the word `xᵢ(-1) xⱼ(1) xᵢ(-1)`. -/
+theorem kostantToralWeylPoint_inv (i j : I) (A : Type v) [CommRing A] :
+    (kostantToralWeylPoint e h ρ M hM hnil b wt i j A)⁻¹ =
+      kostantToralRootSubgroupPoints e h ρ M hM hnil b wt i A
+          (Multiplicative.ofAdd (-1 : A)) *
+        kostantToralRootSubgroupPoints e h ρ M hM hnil b wt j A
+          (Multiplicative.ofAdd (1 : A)) *
+        kostantToralRootSubgroupPoints e h ρ M hM hnil b wt i A
+          (Multiplicative.ofAdd (-1 : A)) := by
+  simp [kostantToralWeylPoint_def, mul_assoc]
+
 /-- The carrier's Weyl representative is natural in the value ring. Applying a ring homomorphism
 entrywise sends the representative over the source ring to the representative over the target
 ring. -/
@@ -211,6 +226,24 @@ theorem kostantToralWeylPoint_conj_rootSubgroupPoints (A : Type v) [CommRing A] 
     basisMatrix_kostantWeylConjRoot e h ρ M hM hnil b hT A u
 
 include hT hα hαneg in
+/-- The square of the carrier's pinned Weyl representative is the coordinate coroot at `-1`.
+In particular it need not be the identity over an arbitrary commutative ring. -/
+theorem kostantToralWeylPoint_sq [DecidableEq κ]
+    (hwt : ∀ x, IsCartanWeightVector h ρ (wt x) ((b x : M) : V))
+    (A : Type v) [CommRing A] :
+    kostantToralWeylPoint e h ρ M hM hnil b wt i j A ^ 2 =
+      kostantToralWeightTorusPoints e h ρ M hM hnil b wt A (Pi.mulSingle c (-1)) := by
+  have hsquare := kostantWeylParam_sq e h ρ M hM (hnil i) (hnil j) b wt hwt hT hα hαneg
+    (CommAlgCat.of ℤ A) 1
+  rw [kostantWeylParam_one, kostantCoordinateCocharacter_apply] at hsquare
+  have hmatrix := congrArg
+    (Units.map (LinearMap.toMatrixAlgEquiv (b.baseChange A)).toMonoidHom) hsquare
+  apply Subtype.ext
+  simpa only [Subgroup.coe_pow, coe_kostantToralWeylPoint,
+    coe_kostantToralWeightTorusPoints, map_pow, MulEquiv.toMonoidHom_eq_coe,
+    basisMatrix_kostantTorusPoints] using hmatrix
+
+include hT hα hαneg in
 /-- Conjugating a represented weight-torus point by the carrier's Weyl representative reflects
 the torus point by the root `α` and its coroot coordinate `c`. -/
 theorem kostantToralWeylPoint_conj_weightTorusPoints
@@ -232,6 +265,26 @@ theorem kostantToralWeylPoint_conj_weightTorusPoints
       hT hα hαneg b wt hwt s)
   simpa only [map_mul, map_inv, MulEquiv.toMonoidHom_eq_coe,
     basisMatrix_kostantTorusPoints] using hmatrix
+
+include hT in
+/-- Conjugation by a Weyl representative reflects weight-torus points when the root-generator
+weights at the two chosen indices are `α` and `-α`. This form accepts a uniform family of
+Cartan bracket equations, as supplied by the numbered generators of concrete carriers. -/
+theorem kostantToralWeylPoint_conj_weightTorusPoints_of_rootWeight
+    [DecidableEq κ] (rootWeight : I → κ → ℤ)
+    (hroot : ∀ k q, ⁅h q, e k⁆ = (rootWeight k q : ℚ) • e k)
+    (hpos : ∀ q, rootWeight i q = α q) (hneg : ∀ q, rootWeight j q = -α q)
+    (hwt : ∀ x, IsCartanWeightVector h ρ (wt x) ((b x : M) : V))
+    (A : Type v) [CommRing A] (s : κ → Aˣ) :
+    kostantToralWeylPoint e h ρ M hM hnil b wt i j A *
+        kostantToralWeightTorusPoints e h ρ M hM hnil b wt A s *
+        (kostantToralWeylPoint e h ρ M hM hnil b wt i j A)⁻¹ =
+      kostantToralWeightTorusPoints e h ρ M hM hnil b wt A
+        (weylReflectTorusPoint α c s) := by
+  exact kostantToralWeylPoint_conj_weightTorusPoints e h ρ M hM hnil b wt hT
+    (fun q ↦ by simpa only [hpos q] using hroot i q)
+    (fun q ↦ by simpa only [hneg q, Int.cast_neg, neg_smul] using hroot j q)
+    hwt A s
 
 include hT hα hαneg in
 /-- The Weyl representative is in the normalizer of the represented weight torus inside the

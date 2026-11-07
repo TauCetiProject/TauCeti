@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Stabilization.SimplyBlocked.Basic
-public import TauCeti.KnotTheory.Grid.Homology.SimplyBlocked
+public import TauCeti.KnotTheory.Grid.Homology.SimplyBlocked.Basic
 
 /-!
 # The stabilization map on simply blocked knot grid homology
@@ -99,10 +99,12 @@ noncomputable def simplyBlockedStabilizeXHomologyMap :
 /-- The stabilization comparison takes a cycle class to the class of its specified
 stabilization image. -/
 @[simp]
-theorem simplyBlockedStabilizeXHomologyMap_simplyBlockedHomologyClass
+theorem simplyBlockedStabilizeXHomologyMap_oneVariableSpecializationHomologyClass
     (z : (hG').simplyBlockedCycles R j) :
-    hG.simplyBlockedStabilizeXHomologyMap s i R ((hG').simplyBlockedHomologyClass R j z) =
-      hG.simplyBlockedHomologyClass R i (hG.simplyBlockedStabilizeXCyclesMap s i R z) := by
+    hG.simplyBlockedStabilizeXHomologyMap s i R
+        ((G').oneVariableSpecializationHomologyClass R j z) =
+      G.oneVariableSpecializationHomologyClass R i
+        (hG.simplyBlockedStabilizeXCyclesMap s i R z) := by
   simp only [simplyBlockedStabilizeXHomologyMap, LinearMap.comp_apply, LinearEquiv.coe_coe,
     LinearEquiv.symm_apply_eq]
   -- Pass through the categorical isomorphisms to the explicit quotient classes.

@@ -9,6 +9,8 @@ public import Mathlib.AlgebraicGeometry.Limits
 public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 public import TauCeti.FieldTheory.FunctionField.HolomorphyRing.Localization
 
+import TauCeti.AlgebraicGeometry.Scheme.LocallyDirected
+
 /-!
 # The scheme of a function field glued from two affine charts
 
@@ -197,18 +199,7 @@ theorem range_ιFinite_union_range_ιInfinity :
     Set.range (ιFinite hF hx) ∪ Set.range (ιInfinity hF hx) = Set.univ := by
   have := isOpenImmersion_specMap_finiteChartRestriction hF hx
   have := isOpenImmersion_specMap_infinityChartRestriction hF hx
-  refine Set.eq_univ_of_forall fun p ↦ ?_
-  -- Every point of a locally directed colimit comes from one of the three pieces of the span,
-  -- and the overlap maps through the finite chart.
-  obtain ⟨i, q, rfl⟩ := Scheme.IsLocallyDirected.ι_jointly_surjective (span _ _) p
-  rcases i with _ | _ | _
-  · refine Or.inl
-      ⟨Spec.map (CommRingCat.ofHom (finiteChartRestriction (k := k) x).toRingHom) q, ?_⟩
-    rw [← Scheme.Hom.comp_apply, ← colimit.w (span _ _) (WidePushoutShape.Hom.init .left)]
-    -- `ιFinite` is `pushout.inl`, the colimit inclusion of the left piece of the span.
-    rfl
-  · exact Or.inl ⟨q, rfl⟩
-  · exact Or.inr ⟨q, rfl⟩
+  exact Scheme.range_pushout_inl_union_range_pushout_inr _ _
 
 /-- **The two charts meet.** The overlap `Spec 𝒪_{x, x⁻¹}` is nonempty, and its image lies in
 both charts. -/

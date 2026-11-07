@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.LinearAlgebra.ExteriorPower.HodgeStar
 public import Mathlib.LinearAlgebra.Trace
+public import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
 public import TauCeti.Analysis.InnerProductSpace.Nondegenerate
 public import TauCeti.LinearAlgebra.Trace.Idempotent
 -- Private: `stdOrthonormalBasis`, `InnerProductSpace.ext_inner_right_basis`,
@@ -67,6 +68,8 @@ of a curvature form, its self-dual part and its Chern–Weil density.
 * `Orientation.hodgeStar_basis`: the formula `⋆ e_I = ε(I) e_{Iᶜ}` on an orthonormal basis.
 * `Orientation.hodgeStar_hodgeStar`: `⋆⋆x = (-1) ^ (k * l) x`, and
   `Orientation.hodgeStar_hodgeStar_of_even`: `⋆⋆x = x` in an even middle degree.
+* `Orientation.hodgeStar_smul_add_hodgeStar`, `Orientation.hodgeStar_smul_sub_hodgeStar`: in an
+  even middle degree, `(x + ⋆x) / 2` is self-dual and `(x - ⋆x) / 2` is anti-self-dual.
 * `Orientation.trace_hodgeStar`: in a positive middle degree the Hodge star is trace free, so
   `Orientation.two_mul_finrank_eigenspace_hodgeStar_one` and
   `Orientation.two_mul_finrank_eigenspace_hodgeStar_neg_one`: in an even positive middle degree
@@ -74,9 +77,7 @@ of a curvature form, its self-dual part and its Chern–Weil density.
   `Λ⁻` have dimension three.
 * `Orientation.hodgeStar_coe_of_mem_eigenspace_one`: forms in the `1`-eigenspace of `⋆` are
   self-dual, `⋆x = x`.
-* `TauCeti.inner_ιMulti_two_eq_inner_ιInv_contractLeft`: on two-forms, wedging with `u` is adjoint
-  to contracting with `⟪u, ·⟫`, `⟪u ∧ w, b⟫ = ⟪w, u ⌟ b⟫`.
-* `Orientation.inner_ιMulti_ιInv_contractLeft_add_hodgeStar`: for a unit vector `s` in dimension
+* `Orientation.inner_ιMulti_twoVectorContraction_add_hodgeStar`: for a unit vector `s` in dimension
   four, `⟪s ∧ (s ⌟ F), F + ⋆F⟫ = ‖s ⌟ F‖² + vol (F ∧ F) / 2`.
 
 ## References
@@ -102,25 +103,6 @@ theorem exteriorPower_innerₗ (k : ℕ) :
     LinearMap.BilinForm.exteriorPower (innerₗ V) k = innerₗ (⋀[ℝ]^k V) := by
   ext v w
   simp [LinearMap.BilinForm.bilinForm_ιMulti_ιMulti, inner_ιMulti_ιMulti]
-
-open CliffordAlgebra in
-/-- **Wedging with a vector is adjoint to contracting with it**, on two-forms: for `u, w : V` and
-`b ∈ ⋀² V`, `⟪u ∧ w, b⟫ = ⟪w, u ⌟ b⟫`. Here `u ⌟ b` is the contraction of `b` by the functional
-`⟪u, ·⟫`, a vector of `V` read off with `ExteriorAlgebra.ιInv`. -/
-theorem inner_ιMulti_two_eq_inner_ιInv_contractLeft (u w : V) (b : ⋀[ℝ]^2 V) :
-    ⟪ιMulti ℝ 2 ![u, w], b⟫ =
-      ⟪w, ExteriorAlgebra.ιInv (contractLeft (innerₗ V u) (b : ExteriorAlgebra ℝ V))⟫ := by
-  -- Both sides are linear in `b`, so it suffices to compare them on `p ∧ q`.
-  have key : innerₗ (⋀[ℝ]^2 V) (ιMulti ℝ 2 ![u, w]) =
-      innerₗ V w ∘ₗ ExteriorAlgebra.ιInv ∘ₗ contractLeft (Q := (0 : QuadraticForm ℝ V))
-        (innerₗ V u) ∘ₗ (⋀[ℝ]^2 V).subtype := by
-    refine exteriorPower.linearMap_ext ?_
-    ext v
-    simp [inner_ιMulti_ιMulti, Matrix.det_fin_two, ExteriorAlgebra.ιMulti_apply,
-      contractLeft_ι_mul, ← Algebra.commutes, ← Algebra.smul_def, ExteriorAlgebra.ι_leftInverse _,
-      inner_sub_right, real_inner_smul_right, Matrix.vecTail]
-    ring
-  simpa using LinearMap.congr_fun key b
 
 end TauCeti
 
@@ -210,10 +192,9 @@ theorem hodgeStar_orthonormalBasis (b : OrthonormalBasis (Fin n) ℝ V) {k l : �
   -- Pair both sides with the orthonormal basis of `⋀ˡ V`.
   refine InnerProductSpace.ext_inner_right_basis (b.toBasis.exteriorPower l) fun t ↦ ?_
   rw [inner_hodgeStar_apply, wedgePairing_exteriorPower_apply, volumeEquiv,
-    LinearEquiv.ofBijective_apply, volumeLinearMap_topVector,
-    ← OrthonormalBasis.toBasis_exteriorPower, OrthonormalBasis.coe_toBasis]
+    LinearEquiv.ofBijective_apply, volumeLinearMap_topVector]
   simp only [Units.smul_def, ← Int.cast_smul_eq_zsmul ℝ, real_inner_smul_left,
-    OrthonormalBasis.inner_eq_ite, smul_eq_mul]
+    OrthonormalBasis.inner_toBasis_exteriorPower, smul_eq_mul]
   -- `s` and `t` are disjoint exactly when `t` is the complement of `s`.
   have hcard : l + k = Fintype.card (Fin n) := by rw [Fintype.card_fin, ← _i.out]; omega
   rw [if_congr (disjoint_comm.trans (powersetCard.disjoint_iff_eq_compl hcard) |>.trans eq_comm)
@@ -263,6 +244,22 @@ anti-self-dual two-forms are the `±1` eigenspaces of `⋆`. -/
 theorem hodgeStar_hodgeStar_of_even {k : ℕ} (hk : Even k) (hkk : k + k = finrank ℝ V)
     (x : ⋀[ℝ]^k V) : o.hodgeStar hkk (o.hodgeStar hkk x) = x := by
   rw [hodgeStar_hodgeStar, (hk.mul_right k).neg_one_pow, one_smul]
+
+/-- In an even middle degree, `k + k = finrank ℝ V` with `k` even, the part `(x + ⋆x) / 2` of `x`
+is self-dual. -/
+theorem hodgeStar_smul_add_hodgeStar {k : ℕ} (hk : Even k) (hkk : k + k = finrank ℝ V)
+    (x : ⋀[ℝ]^k V) :
+    o.hodgeStar hkk ((2⁻¹ : ℝ) • (x + o.hodgeStar hkk x)) =
+      (2⁻¹ : ℝ) • (x + o.hodgeStar hkk x) := by
+  rw [map_smul, map_add, o.hodgeStar_hodgeStar_of_even hk, add_comm]
+
+/-- In an even middle degree, `k + k = finrank ℝ V` with `k` even, the part `(x - ⋆x) / 2` of `x`
+is anti-self-dual. -/
+theorem hodgeStar_smul_sub_hodgeStar {k : ℕ} (hk : Even k) (hkk : k + k = finrank ℝ V)
+    (x : ⋀[ℝ]^k V) :
+    o.hodgeStar hkk ((2⁻¹ : ℝ) • (x - o.hodgeStar hkk x)) =
+      -((2⁻¹ : ℝ) • (x - o.hodgeStar hkk x)) := by
+  rw [map_smul, map_sub, o.hodgeStar_hodgeStar_of_even hk, ← smul_neg, neg_sub]
 
 /-- In a positive middle degree, `k + k = finrank ℝ V` with `0 < k`, the Hodge star is trace free:
 it sends each vector `e_I` of the basis of `⋀ᵏ V` induced by an orthonormal basis to a multiple of
@@ -337,24 +334,23 @@ theorem hodgeStar_coe_of_mem_eigenspace_one {k : ℕ} (hkk : k + k = finrank ℝ
 open CliffordAlgebra in
 /-- **The pointwise energy identity of a two-form split along a unit vector.** Let `s` be a unit
 vector of an oriented four-dimensional real inner product space, let `F ∈ ⋀² V`, and let
-`a = s ⌟ F` be the contraction of `F` by `⟪s, ·⟫`, read as a vector with
-`ExteriorAlgebra.ιInv`. Then `⟪s ∧ a, F + ⋆F⟫ = ‖a‖² + vol (F ∧ F) / 2`; equivalently, with the
-self-dual part `F⁺ = (F + ⋆F) / 2`, `2 ⟪s ∧ a, F⁺⟫ = ‖a‖² + vol (F ∧ F) / 2`.
+`a = s ⌟ F` be the contraction of `F` by `⟪s, ·⟫` (`TauCeti.twoVectorContraction`). Then
+`⟪s ∧ a, F + ⋆F⟫ = ‖a‖² + vol (F ∧ F) / 2`; equivalently, with the self-dual part
+`F⁺ = (F + ⋆F) / 2`, `2 ⟪s ∧ a, F⁺⟫ = ‖a‖² + vol (F ∧ F) / 2`.
 
 On a product `S¹ × Y` with `s = ds` and `T = ∂ₛ`, this is the pointwise identity
 `2 ⟨ds ∧ ι_T F, F⁺⟩ dvol = |ι_T F|² dvol + (F ∧ F) / 2` for a real two-form `F`. -/
-theorem inner_ιMulti_ιInv_contractLeft_add_hodgeStar (hkk : 2 + 2 = finrank ℝ V) {s : V}
+theorem inner_ιMulti_twoVectorContraction_add_hodgeStar (hkk : 2 + 2 = finrank ℝ V) {s : V}
     (hs : ‖s‖ = 1) (F : ⋀[ℝ]^2 V) :
-    ⟪ιMulti ℝ 2 ![s, ExteriorAlgebra.ιInv (contractLeft (innerₗ V s) (F : ExteriorAlgebra ℝ V))],
-      F + o.hodgeStar hkk F⟫ =
-      ‖ExteriorAlgebra.ιInv (contractLeft (innerₗ V s) (F : ExteriorAlgebra ℝ V))‖ ^ 2 +
-        wedgePairing o.volumeEquiv hkk F F / 2 := by
-  set a := ExteriorAlgebra.ιInv (contractLeft (innerₗ V s) (F : ExteriorAlgebra ℝ V)) with ha
+    ⟪ιMulti ℝ 2 ![s, TauCeti.twoVectorContraction F s], F + o.hodgeStar hkk F⟫ =
+      ‖TauCeti.twoVectorContraction F s‖ ^ 2 + wedgePairing o.volumeEquiv hkk F F / 2 := by
+  set a := TauCeti.twoVectorContraction F s with ha
   have hss : innerₗ V s s = 1 := by
     rw [innerₗ_apply_apply, real_inner_self_eq_norm_sq, hs, one_pow]
   -- The contraction `s ⌟ F` is a one-form, the image of the vector `a`.
-  have hιa : ExteriorAlgebra.ι ℝ a = contractLeft (innerₗ V s) (F : ExteriorAlgebra ℝ V) :=
-    TauCeti.ExteriorAlgebra.ι_ιInv_of_mem_exteriorPower_one
+  have hιa : ExteriorAlgebra.ι ℝ a = contractLeft (innerₗ V s) (F : ExteriorAlgebra ℝ V) := by
+    rw [ha, TauCeti.twoVectorContraction_apply]
+    exact TauCeti.ExteriorAlgebra.ι_ιInv_of_mem_exteriorPower_one
       (TauCeti.ExteriorAlgebra.contractLeft_mem_exteriorPower (innerₗ V s) (n := 1) F.2)
   -- In dimension four, `F ∧ F` is twice `F ∧ (s ∧ a)`.
   have hwedge : exteriorPower.wedge ℝ V 2 2 F F =
@@ -365,7 +361,7 @@ theorem inner_ιMulti_ιInv_contractLeft_add_hodgeStar (hkk : 2 + 2 = finrank �
     simp only [List.ofFn_succ, List.ofFn_zero, List.prod_cons, List.prod_nil, mul_one,
       Matrix.cons_val_zero, Matrix.cons_val_succ, hιa]
     exact TauCeti.ExteriorAlgebra.mul_self_eq_two_smul_mul_ι_mul_contractLeft hss (by omega) F.2
-  rw [inner_add_right, TauCeti.inner_ιMulti_two_eq_inner_ιInv_contractLeft, ← ha,
+  rw [inner_add_right, real_inner_comm, ← TauCeti.inner_twoVectorContraction_apply, ← ha,
     real_inner_self_eq_norm_sq, real_inner_comm, inner_hodgeStar_apply]
   simp only [LinearMap.compr₂_apply, hwedge, map_nsmul, nsmul_eq_mul]
   ring

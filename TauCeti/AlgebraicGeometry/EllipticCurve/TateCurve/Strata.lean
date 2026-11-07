@@ -18,7 +18,7 @@ point is the origin and whose nonsingular points are parametrised by
 `u ↦ (u / (1 - u)², u² / (1 - u)³)` for `u ≠ 0, 1`. This file shows that the Tate coordinates
 `X(u)` and `Y(u)` are this parametrisation up to an error of norm at most
 `max (‖q‖ ‖u‖) (‖q‖ / ‖u‖)` throughout the annulus `‖q‖ < ‖u‖ < ‖q‖⁻¹`; on the unit circle the
-error has norm at most `‖q‖`.
+error has norm at most `‖q‖` and is Lipschitz with constant `‖q‖`.
 
 Consequently the representative `u` of a class in `Kˣ ⧸ q^ℤ` in the fundamental annulus
 `‖q‖ < ‖u‖ ≤ 1` determines the reduction behaviour of its Tate coordinates:
@@ -39,7 +39,12 @@ group nor any restriction on the characteristic is needed.
 
 * `TauCeti.norm_tateUniformizationX_sub_le`, `TauCeti.norm_tateUniformizationY_sub_le`: the
   Tate coordinates are the nodal parametrisation up to `max (‖q‖ ‖u‖) (‖q‖ / ‖u‖)`.
+* `TauCeti.norm_tateUniformizationX_sub_sub_le`, `TauCeti.norm_tateUniformizationY_sub_sub_le`:
+  on the unit circle the differences between the Tate coordinates and the nodal parametrisation
+  are Lipschitz with constant `‖q‖`.
 * `TauCeti.norm_tateUniformizationX_of_norm_one_sub_lt_one`: `‖X(u)‖ = ‖1 - u‖⁻²` near `u = 1`.
+* `TauCeti.norm_tateUniformizationX_eq_one`, `TauCeti.norm_tateUniformizationY_eq_one`:
+  `‖X(u)‖ = ‖Y(u)‖ = 1` when `‖u‖ = ‖1 - u‖ = 1`.
 * `TauCeti.norm_tateUniformizationX_add_tateUniformizationY`: `‖X(u) + Y(u)‖ = 1` when
   `‖u‖ = ‖1 - u‖ = 1`.
 * `TauCeti.norm_tateUniformizationX_le_max`, `TauCeti.norm_tateUniformizationY_le_max`: both
@@ -150,12 +155,47 @@ theorem norm_tateUniformizationY_sub_le_of_norm_eq_one (q u : Kˣ) (hq : ‖(q :
     exact (one_lt_inv₀ (norm_pos_iff.mpr q.ne_zero)).mpr hq
   simpa [hu] using norm_tateUniformizationY_sub_le q u (by rwa [hu]) huq
 
+/-- **The first Tate coordinate is the nodal parametrisation up to a `‖q‖`-Lipschitz error.** On
+the unit circle, `u ↦ X(u) - u / (1 - u)²` is Lipschitz with constant `‖q‖`. -/
+theorem norm_tateUniformizationX_sub_sub_le (q u u' : Kˣ) (hq : ‖(q : K)‖ < 1)
+    (hu : ‖(u : K)‖ = 1) (hu' : ‖(u' : K)‖ = 1) :
+    ‖(tateUniformizationX q u - u / (1 - u) ^ 2) -
+        (tateUniformizationX q u' - u' / (1 - u') ^ 2)‖ ≤ ‖(q : K)‖ * ‖(u : K) - u'‖ := by
+  have e (a A B s a' A' B' : K) :
+      a + A + B - 2 * s - a - (a' + A' + B' - 2 * s - a') = (A - A') + (B - B') := by ring
+  rw [tateUniformizationX_eq_tsum_nat q hq u, tateUniformizationX_eq_tsum_nat q hq u', e]
+  exact norm_tsum_sub_tsum_add_tsum_sub_tsum_le hq hu hu' (fun w ↦ w / (1 - w) ^ 2)
+    (fun w ↦ w / (1 - w) ^ 2) (fun _ _ ↦ norm_div_one_sub_sq_sub_div_one_sub_sq_le)
+    (fun _ _ ↦ norm_div_one_sub_sq_sub_div_one_sub_sq_le)
+    (summable_tateUniformizationX_nat _ hq _) (summable_tateUniformizationX_nat _ hq _)
+    (summable_tateUniformizationX_nat _ hq _) (summable_tateUniformizationX_nat _ hq _)
+
+/-- **The second Tate coordinate is the nodal parametrisation up to a `‖q‖`-Lipschitz error.** On
+the unit circle, `u ↦ Y(u) - u² / (1 - u)³` is Lipschitz with constant `‖q‖`. -/
+theorem norm_tateUniformizationY_sub_sub_le (q u u' : Kˣ) (hq : ‖(q : K)‖ < 1)
+    (hu : ‖(u : K)‖ = 1) (hu' : ‖(u' : K)‖ = 1) :
+    ‖(tateUniformizationY q u - (u : K) ^ 2 / (1 - u) ^ 3) -
+        (tateUniformizationY q u' - (u' : K) ^ 2 / (1 - u') ^ 3)‖ ≤
+      ‖(q : K)‖ * ‖(u : K) - u'‖ := by
+  have e (a A B s a' A' B' : K) :
+      a + A + B + s - a - (a' + A' + B' + s - a') = (A - A') + (B - B') := by ring
+  rw [tateUniformizationY_eq_tsum_nat q hq u, tateUniformizationY_eq_tsum_nat q hq u', e]
+  exact norm_tsum_sub_tsum_add_tsum_sub_tsum_le hq hu hu' (fun w ↦ w ^ 2 / (1 - w) ^ 3)
+    (fun w ↦ -w / (1 - w) ^ 3)
+    (fun _ _ ht ht' ↦ (norm_sq_div_one_sub_cube_sub_sq_div_one_sub_cube_le_max_mul ht ht').trans
+      (mul_le_of_le_one_left (norm_nonneg _) (max_le ht.le ht'.le)))
+    (fun _ _ ht ht' ↦ by
+      rw [neg_div, neg_div, neg_sub_neg]
+      exact (norm_div_one_sub_cube_sub_div_one_sub_cube_le ht' ht).trans_eq (norm_sub_rev _ _))
+    (summable_tateUniformizationY_nat _ hq _) (summable_tateUniformizationY_nat _ hq _)
+    (summable_tateUniformizationY_nat_neg _ hq _) (summable_tateUniformizationY_nat_neg _ hq _)
+
 /-- **Points near the identity: the kernel of reduction.** If `‖1 - u‖ < 1` and `u ≠ 1`, then
 `‖X(u)‖ = ‖1 - u‖⁻²`, which exceeds one. -/
 theorem norm_tateUniformizationX_of_norm_one_sub_lt_one (q u : Kˣ) (hq : ‖(q : K)‖ < 1)
     (hu : (u : K) ≠ 1) (h : ‖1 - (u : K)‖ < 1) :
     ‖tateUniformizationX q u‖ = (‖1 - (u : K)‖ ^ 2)⁻¹ := by
-  have hnorm : ‖(u : K)‖ = 1 := by simpa using norm_one_sub_of_norm_lt_one h
+  have hnorm : ‖(u : K)‖ = 1 := norm_eq_one_of_norm_one_sub_lt_one h
   have hd : 0 < ‖1 - (u : K)‖ := norm_pos_iff.mpr (sub_ne_zero.mpr hu.symm)
   have hmain : ‖(u : K) / (1 - u) ^ 2‖ = (‖1 - (u : K)‖ ^ 2)⁻¹ := by
     rw [norm_div, norm_pow, hnorm, one_div]
@@ -169,18 +209,26 @@ theorem norm_tateUniformizationX_of_norm_one_sub_lt_one (q u : Kˣ) (hq : ‖(q 
       (one_le_inv₀ (by positivity)).mpr (pow_le_one₀ hd.le h.le)
     _ = _ := hmain.symm
 
-/-- **Points with nonsingular reduction: the first coordinate is integral.** -/
-theorem norm_tateUniformizationX_le_one (q u : Kˣ) (hq : ‖(q : K)‖ < 1)
-    (hu : ‖(u : K)‖ = 1) (h : ‖1 - (u : K)‖ = 1) : ‖tateUniformizationX q u‖ ≤ 1 :=
-  IsUltrametricDist.norm_le_of_norm_sub_le (by rw [norm_div, norm_pow, hu, h, one_pow, div_one])
-    ((norm_tateUniformizationX_sub_le_of_norm_eq_one q u hq hu).trans hq.le)
+/-- **Points with nonsingular reduction have a unit first coordinate.** If `‖u‖ = ‖1 - u‖ = 1`,
+then `‖X(u)‖ = 1`. -/
+theorem norm_tateUniformizationX_eq_one (q u : Kˣ) (hq : ‖(q : K)‖ < 1)
+    (hu : ‖(u : K)‖ = 1) (h : ‖1 - (u : K)‖ = 1) : ‖tateUniformizationX q u‖ = 1 := by
+  have hmain : ‖(u : K) / (1 - u) ^ 2‖ = 1 := by rw [norm_div, norm_pow, hu, h, one_pow, div_one]
+  rw [← hmain]
+  refine (IsUltrametricDist.norm_eq_of_norm_sub_lt_left ?_).symm
+  rw [norm_sub_rev, hmain]
+  exact (norm_tateUniformizationX_sub_le_of_norm_eq_one q u hq hu).trans_lt hq
 
-/-- **Points with nonsingular reduction: the second coordinate is integral.** -/
-theorem norm_tateUniformizationY_le_one (q u : Kˣ) (hq : ‖(q : K)‖ < 1)
-    (hu : ‖(u : K)‖ = 1) (h : ‖1 - (u : K)‖ = 1) : ‖tateUniformizationY q u‖ ≤ 1 :=
-  IsUltrametricDist.norm_le_of_norm_sub_le
-    (by rw [norm_div, norm_pow, norm_pow, hu, h, one_pow, one_pow, div_one])
-    ((norm_tateUniformizationY_sub_le_of_norm_eq_one q u hq hu).trans hq.le)
+/-- **Points with nonsingular reduction have a unit second coordinate.** If `‖u‖ = ‖1 - u‖ = 1`,
+then `‖Y(u)‖ = 1`. -/
+theorem norm_tateUniformizationY_eq_one (q u : Kˣ) (hq : ‖(q : K)‖ < 1)
+    (hu : ‖(u : K)‖ = 1) (h : ‖1 - (u : K)‖ = 1) : ‖tateUniformizationY q u‖ = 1 := by
+  have hmain : ‖(u : K) ^ 2 / (1 - u) ^ 3‖ = 1 := by
+    rw [norm_div, norm_pow, norm_pow, hu, h, one_pow, one_pow, div_one]
+  rw [← hmain]
+  refine (IsUltrametricDist.norm_eq_of_norm_sub_lt_left ?_).symm
+  rw [norm_sub_rev, hmain]
+  exact (norm_tateUniformizationY_sub_le_of_norm_eq_one q u hq hu).trans_lt hq
 
 /-- **Points with nonsingular reduction avoid the node.** If `‖u‖ = ‖1 - u‖ = 1`, then
 `‖X(u) + Y(u)‖ = 1`, so the coordinates do not both lie in the maximal ideal. -/
@@ -238,7 +286,7 @@ theorem one_lt_norm_tateQuotientCoordinates_fst_iff (q : Kˣ) (hq : ‖(q : K)�
         (max_le hlt.le ((div_le_one (norm_pos_iff.mpr r.ne_zero)).mpr hr₁.le))
     · have h1 : ‖1 - (r : K)‖ = 1 :=
         le_antisymm (by simpa [heq] using IsUltrametricDist.norm_sub_le_max (1 : K) r) hge
-      exact norm_tateUniformizationX_le_one q r hq heq h1
+      exact (norm_tateUniformizationX_eq_one q r hq heq h1).le
   · rintro ⟨u, rfl, hu⟩
     have hu1 : (u : K) ≠ 1 := fun h ↦ hx (by rw [Units.val_eq_one.mp h, QuotientGroup.mk_one])
     rw [tateQuotientCoordinates_mk,

@@ -23,8 +23,12 @@ We also prove local continuity of inversion for Hom-bundle sections with a Banac
 source. This local result does not require finite rank or invertibility away from the
 point under consideration. The inverse is Mathlib's `ContinuousLinearMap.inverse`,
 which is zero at noninvertible maps. In the same generality, invertibility of the fibre
-maps is an open condition along a continuous Hom-bundle section, and composition of
-continuous Hom-bundle sections is continuous.
+maps is an open condition along a continuous Hom-bundle section, composition of
+continuous Hom-bundle sections is continuous, and a `σ`-semilinear Hom-bundle section whose
+preferred-frame coordinate expression is locally constant around each frame centre is continuous
+(`TauCeti.continuous_hom_bundle_of_inCoordinates_eq_const`). Read in the trivializations at a
+fixed point, a continuous Hom-bundle section is a continuous family of operators on their common
+base set (`TauCeti.continuousOn_inCoordinates`).
 
 For two vector bundle cores, a section of Mathlib's Hom bundle between them is continuous
 exactly when it is continuous in every pair of a source chart and a target chart, on their
@@ -60,6 +64,23 @@ variable {𝕜 B F₁ F₂ M : Type*} [NontriviallyNormedField 𝕜]
   [FiberBundle F₂ E₂] [VectorBundle 𝕜 F₂ E₂]
   [∀ x, IsTopologicalAddGroup (E₂ x)] [∀ x, ContinuousSMul 𝕜 (E₂ x)]
 
+/-- Inverse Hom-frame coordinates conjugate a model operator by the inverse target frame and
+forward source frame. No square identity or equality of the two model fibres is required. -/
+theorem Bundle.Trivialization.continuousLinearMap_symmL
+    (e₁ : Trivialization F₁ (TotalSpace.proj : TotalSpace F₁ E₁ → B))
+    (e₂ : Trivialization F₂ (TotalSpace.proj : TotalSpace F₂ E₂ → B))
+    [MemTrivializationAtlas e₁] [MemTrivializationAtlas e₂]
+    {x : B} (hx : x ∈ e₁.baseSet ∩ e₂.baseSet) (A : F₁ →L[𝕜] F₂) :
+    (e₁.continuousLinearMap (RingHom.id 𝕜) e₂).symmL 𝕜 x A =
+      (e₂.symmL 𝕜 x).comp (A.comp (e₁.continuousLinearMapAt 𝕜 x)) := by
+  rw [Trivialization.symmL_apply (R := 𝕜)
+    (e := e₁.continuousLinearMap (RingHom.id 𝕜) e₂) (by simpa only
+      [Trivialization.baseSet_continuousLinearMap] using hx)]
+  -- The Hom trivialization and its native pretrivialization share the inverse fibre map.
+  convert! Bundle.Pretrivialization.continuousLinearMap_symm_apply'
+    (RingHom.id 𝕜) e₁ e₂ hx A using 1
+
+
 namespace TauCeti
 
 /-- For a finite-dimensional model source, a fibrewise continuous linear map is continuous
@@ -93,6 +114,23 @@ theorem continuous_hom_bundle_iff [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F
     -- `TotalSpace.mk'` is the total-space constructor; the second component of
     -- `e₂` applied to this point is precisely its fibre coordinate.
     rfl
+
+/-- On the common base set of the trivializations at `x₀`, the coordinate expressions of a
+continuous Hom-bundle section in these fixed trivializations form a continuous family of
+operators. -/
+theorem continuousOn_inCoordinates {ϕ : ∀ x, E₁ x →L[𝕜] E₂ x}
+    (hϕ : Continuous fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun x ↦ E₁ x →L[𝕜] E₂ x) x (ϕ x))
+    (x₀ : B) :
+    ContinuousOn (fun x ↦ ContinuousLinearMap.inCoordinates F₁ E₁ F₂ E₂ x₀ x x₀ x (ϕ x))
+      ((trivializationAt F₁ E₁ x₀).baseSet ∩ (trivializationAt F₂ E₂ x₀).baseSet) := by
+  let e := trivializationAt (F₁ →L[𝕜] F₂) (fun x ↦ E₁ x →L[𝕜] E₂ x) x₀
+  -- The section stays in the source of `e` over its base set, the common base set.
+  have hmaps : MapsTo (fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun x ↦ E₁ x →L[𝕜] E₂ x) x (ϕ x))
+      ((trivializationAt F₁ E₁ x₀).baseSet ∩ (trivializationAt F₂ E₂ x₀).baseSet) e.source :=
+    fun x hx ↦ by rwa [e.mem_source, hom_trivializationAt_baseSet]
+  -- The fibre coordinate of `e` is the coordinate expression in the trivializations at `x₀`.
+  refine (e.continuousOn.comp hϕ.continuousOn hmaps).snd.congr fun x _ ↦ ?_
+  simp only [Function.comp_apply, e, hom_trivializationAt_apply]
 
 end TauCeti
 
@@ -377,3 +415,40 @@ theorem continuous_hom_bundle_iff_forall_continuousOn {f : B → F →L[𝕜] G}
 end inChartCoordinates
 
 end VectorBundleCore
+
+namespace TauCeti
+
+section ConstantCoordinates
+
+variable {𝕜₁ 𝕜₂ B F₁ F₂ : Type*} [NontriviallyNormedField 𝕜₁] [NontriviallyNormedField 𝕜₂]
+  {σ : 𝕜₁ →+* 𝕜₂} [RingHomIsometric σ]
+  [TopologicalSpace B]
+  [NormedAddCommGroup F₁] [NormedSpace 𝕜₁ F₁]
+  [NormedAddCommGroup F₂] [NormedSpace 𝕜₂ F₂]
+  {E₁ : B → Type*} {E₂ : B → Type*}
+  [∀ x, AddCommGroup (E₁ x)] [∀ x, Module 𝕜₁ (E₁ x)] [∀ x, TopologicalSpace (E₁ x)]
+  [∀ x, AddCommGroup (E₂ x)] [∀ x, Module 𝕜₂ (E₂ x)] [∀ x, TopologicalSpace (E₂ x)]
+  [∀ x, IsTopologicalAddGroup (E₂ x)] [∀ x, ContinuousSMul 𝕜₂ (E₂ x)]
+  [TopologicalSpace (TotalSpace F₁ E₁)] [FiberBundle F₁ E₁] [VectorBundle 𝕜₁ F₁ E₁]
+  [TopologicalSpace (TotalSpace F₂ E₂)] [FiberBundle F₂ E₂] [VectorBundle 𝕜₂ F₂ E₂]
+
+/-- A section of the `σ`-semilinear Hom bundle is continuous whenever its coordinate expression in
+each preferred frame pair is locally constant around the frame centre. Topological counterpart of
+`TauCeti.contMDiff_hom_bundle_of_inCoordinates_eq_const`. -/
+theorem continuous_hom_bundle_of_inCoordinates_eq_const
+    {ϕ : ∀ x, E₁ x →SL[σ] E₂ x} {c : B → F₁ →SL[σ] F₂}
+    (hϕ : ∀ a x, x ∈ (trivializationAt F₁ E₁ a).baseSet →
+      x ∈ (trivializationAt F₂ E₂ a).baseSet →
+      ContinuousLinearMap.inCoordinates F₁ E₁ F₂ E₂ a x a x (ϕ x) = c a) :
+    Continuous (fun x ↦ TotalSpace.mk' (F₁ →SL[σ] F₂) x (ϕ x)) := by
+  refine continuous_iff_continuousAt.mpr fun a ↦ ?_
+  rw [continuousAt_hom_bundle]
+  refine ⟨continuousAt_id, (continuousAt_const (y := c a)).congr_of_eventuallyEq ?_⟩
+  filter_upwards [(trivializationAt F₁ E₁ a).open_baseSet.mem_nhds
+    (mem_baseSet_trivializationAt F₁ E₁ a), (trivializationAt F₂ E₂ a).open_baseSet.mem_nhds
+    (mem_baseSet_trivializationAt F₂ E₂ a)] with x hx₁ hx₂
+  exact hϕ a x hx₁ hx₂
+
+end ConstantCoordinates
+
+end TauCeti

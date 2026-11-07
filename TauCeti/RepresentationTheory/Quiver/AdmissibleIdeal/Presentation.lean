@@ -220,23 +220,28 @@ theorem IsBasic.exists_surjective_pathAlgebra_isAdmissibleIdeal_ker {k : Type w}
     rw [hbasis]
     exact (Module.finBasis k (W i j)).linearIndependent.map' _ (Submodule.ker_subtype _)
 
+open scoped ModuleCat.Algebra in
 /-- **Gabriel's presentation theorem.** Every finite-dimensional algebra `A` over an algebraically
 closed field `k` is Morita equivalent to a bound quiver algebra: there are a finite quiver `Q`
 and an admissible ideal `I` of the path algebra `kQ` such that `A` is Morita equivalent to
 `kQ ⧸ I`. The algebra `kQ ⧸ I` is isomorphic to the basic corner `eAe` of `A`
 (`TauCeti.IsSemiperfectRing.exists_isIdempotentElem_full_isBasic_corner`), presented by
 `TauCeti.IsBasic.exists_surjective_pathAlgebra_isAdmissibleIdeal_ker`. -/
-theorem exists_quiver_admissibleIdeal_morita (k A : Type u) [Field k] [IsAlgClosed k] [Ring A]
-    [Algebra k A] [FiniteDimensional k A] :
+theorem exists_quiver_admissibleIdeal_morita (k : Type w) (A : Type u) [Field k] [IsAlgClosed k]
+    [Ring A] [Algebra k A] [FiniteDimensional k A] :
     ∃ (Q : Type) (_ : Quiver.{0} Q) (_ : Finite Q) (_ : ∀ i j : Q, Finite (i ⟶ j))
       (I : Ideal (pathAlgebra k Q)) (_ : I.IsTwoSided),
       IsAdmissibleIdeal I ∧ IsMoritaEquivalent k A (pathAlgebra k Q ⧸ I) := by
-  have := isSemiperfectRing_of_finiteDimensional k A
+  have := IsSemiperfectRing.of_finite k A
   obtain ⟨e, he, hfull, hB⟩ := IsSemiperfectRing.exists_isIdempotentElem_full_isBasic_corner A
   obtain ⟨Q, hQ, hfin, harr, F, hF, hI⟩ :=
     hB.exists_surjective_pathAlgebra_isAdmissibleIdeal_ker (k := k)
+  obtain ⟨⟨E⟩⟩ : IsMoritaEquivalent k he.Corner (pathAlgebra k Q ⧸ RingHom.ker F.toRingHom) :=
+    .of_algEquiv k (Ideal.quotientKerAlgEquivOfSurjective hF).symm
+  -- `IsMoritaEquivalent.trans` needs `A`, `eAe` and `kQ ⧸ I` in one universe; the corner
+  -- equivalence works in any module universe, so compose the equivalences directly.
   exact ⟨Q, hQ, hfin, harr, RingHom.ker F.toRingHom, inferInstance, hI,
-    IsMoritaEquivalent.trans k (he.isMoritaEquivalent_corner k hfull)
-      (IsMoritaEquivalent.of_algEquiv k (Ideal.quotientKerAlgEquivOfSurjective hF).symm)⟩
+    ⟨⟨{ eqv := (he.cornerEquivalence hfull).trans E.eqv
+        linear := he.cornerFunctor.instLinearComp E.eqv.functor }⟩⟩⟩
 
 end TauCeti

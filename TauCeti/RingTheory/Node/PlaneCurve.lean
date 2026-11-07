@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.Extension.Presentation.Basic
 public import TauCeti.RingTheory.LocalRing.Coordinates
-public import TauCeti.RingTheory.Node.Cotangent
+public import TauCeti.RingTheory.Node.Cotangent.Basic
 public import TauCeti.RingTheory.Node.Hessian
 import TauCeti.RingTheory.Smooth.Jacobian
 import Mathlib.RingTheory.Etale.Kaehler
@@ -171,8 +171,8 @@ theorem exists_hypersurface_presentation_of_formallyUnramified (b : Basis ι Q �
     simp only [Fintype.card_fin] at h
     rw [h, Ideal.map_top]
   exact ⟨s₀, hloc, y, b', hsmooth, hy', hb', hf2,
-    (mem_maximalIdeal_sq_and_isUnit_det_hessian_of_formallyUnramified b' hy' hb'
-      (Ideal.pow_le_self two_ne_zero hf2) hsing').2, φ', hφ⟩
+    (mem_maximalIdeal_sq_and_isUnit_det_hessian_of_formallyUnramified b' hy' hb' hsing').2, φ',
+    hφ⟩
 
 end TauCeti
 

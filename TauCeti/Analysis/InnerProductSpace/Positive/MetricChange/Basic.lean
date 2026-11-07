@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.InnerProductSpace.ContinuousFunctionalCalculus
 public import TauCeti.Analysis.InnerProductSpace.Dual
 
+import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Isometric
+
 /-!
 # Changing the inner product by the inverse square root
 
@@ -27,18 +29,23 @@ inverse, the square root `CFC.sqrt H`, carries `h`-orthonormal frames back.
 Unlike the eigenbasis construction of `TauCeti.exists_continuousLinearEquiv_inner_map_map`, this
 transport involves no choice. It is characterized as the unique positive operator `S` with
 `S * H * S = 1`, and it is natural: pulling `h` back along a linear isometry equivalence `e`
-conjugates the transport by `e`. When `E` is finite-dimensional, every other isometry from
-`(E, ⟪·, ·⟫)` to `(E, h)` is the transport composed with an orthogonal automorphism of `E`. This
-classification is the tool for comparing the composite of the transports of two successive changes
-of inner product with the transport of the composite change; that comparison is not formalized
-here, since every result in this file is relative to the fixed inner product of `E`.
+conjugates the transport by `e`, and likewise its inverse. The transport and its inverse depend
+continuously on `h`, because the real continuous functional calculus is isometric. When `E` is
+finite-dimensional, every other isometry from `(E, ⟪·, ·⟫)` to `(E, h)` is the transport composed
+with an orthogonal automorphism of `E`. This classification is the tool for comparing the
+composite of the transports of two successive changes of inner product with the transport of the
+composite change; that comparison is not formalized here, since every result in this file is
+relative to the fixed inner product of `E`.
 
 ## Main declarations
 
 * `InnerProductSpace.isStrictlyPositive_continuousLinearMapOfBilin_iff`: in finite dimension,
   the Riesz operator of `h` is strictly positive exactly when `h` is symmetric and positive
-  definite.
+  definite; `InnerProductSpace.isStrictlyPositive_continuousLinearMapOfBilin_of_injective`: in
+  particular for an inner product pulled back along an injective linear map.
 * `ContinuousLinearMap.metricChangeTransport`: the inverse square root of the Riesz operator.
+* `ContinuousLinearMap.metricChangeEquiv`: the same transport as a continuous linear equivalence,
+  with the positive square root as inverse.
 * `ContinuousLinearMap.metricChangeTransport_eq_iff`: it is the unique positive `S` with
   `S * H * S = 1`.
 * `ContinuousLinearMap.apply_metricChangeTransport_metricChangeTransport`: it is an isometry from
@@ -46,8 +53,12 @@ here, since every result in this file is relative to the fixed inner product of 
   version.
 * `ContinuousLinearMap.inner_sqrt_apply_sqrt_apply`, `ContinuousLinearMap.orthonormal_sqrt_apply`:
   the inverse transport `CFC.sqrt H` is an isometry from `h` back to `⟪·, ·⟫`.
-* `ContinuousLinearMap.metricChangeTransport_bilinearComp`: naturality under linear isometry
-  equivalences.
+* `ContinuousLinearMap.metricChangeTransport_bilinearComp`,
+  `ContinuousLinearMap.sqrt_continuousLinearMapOfBilin_bilinearComp`: naturality of the transport
+  and of its inverse under linear isometry equivalences.
+* `ContinuousLinearMap.continuousOn_metricChangeTransport`,
+  `ContinuousLinearMap.continuousOn_sqrt_continuousLinearMapOfBilin`: the transport and its inverse
+  depend continuously on `h`.
 * `ContinuousLinearMap.forall_apply_apply_eq_inner_iff_exists_linearIsometryEquiv`: in finite
   dimension, the isometries from `⟪·, ·⟫` to `h` are exactly the transport composed with
   orthogonal automorphisms.
@@ -158,6 +169,39 @@ theorem metricChangeTransport_apply_sqrt_apply (hH : IsStrictlyPositive h♯) (x
   simpa only [mul_apply_eq_comp, one_apply_eq_self] using
     congr($(metricChangeTransport_mul_sqrt hH) x)
 
+/-- The canonical metric transport as a continuous linear equivalence, with inverse the
+positive square root of the Riesz operator. This equivalence is linear on the underlying space;
+its isometry property compares the original inner product with `h`. -/
+noncomputable def metricChangeEquiv (h : E →L[ℝ] E →L[ℝ] ℝ)
+    (hH : IsStrictlyPositive h♯) : E ≃L[ℝ] E :=
+  ContinuousLinearEquiv.ofUnit
+    ⟨h.metricChangeTransport, CFC.sqrt h♯, metricChangeTransport_mul_sqrt hH,
+      sqrt_mul_metricChangeTransport hH⟩
+
+/-- The underlying operator of the canonical metric equivalence is the inverse square root. -/
+@[simp]
+theorem coe_metricChangeEquiv (hH : IsStrictlyPositive h♯) :
+    (h.metricChangeEquiv hH : E →L[ℝ] E) = h.metricChangeTransport :=
+  (rfl)
+
+/-- The inverse metric equivalence has the positive square root as its underlying operator. -/
+@[simp]
+theorem coe_metricChangeEquiv_symm (hH : IsStrictlyPositive h♯) :
+    ((h.metricChangeEquiv hH).symm : E →L[ℝ] E) = CFC.sqrt h♯ :=
+  (rfl)
+
+/-- Evaluation of the canonical metric equivalence. -/
+@[simp]
+theorem metricChangeEquiv_apply (hH : IsStrictlyPositive h♯) (x : E) :
+    h.metricChangeEquiv hH x = h.metricChangeTransport x :=
+  (rfl)
+
+/-- Evaluation of the inverse metric equivalence. -/
+@[simp]
+theorem metricChangeEquiv_symm_apply (hH : IsStrictlyPositive h♯) (x : E) :
+    (h.metricChangeEquiv hH).symm x = CFC.sqrt h♯ x :=
+  (rfl)
+
 /-- The square root of a positive Riesz operator `H` of `h` is an isometry from `h` to the
 original inner product. -/
 @[simp]
@@ -180,6 +224,15 @@ theorem metricChangeTransport_innerSL :
     (innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ).metricChangeTransport = 1 := by
   rw [metricChangeTransport_def, continuousLinearMapOfBilin_innerSL, CFC.one_rpow]
 
+/-- The canonical metric equivalence for the original inner product is the identity. -/
+@[simp]
+theorem metricChangeEquiv_innerSL
+    (hR : IsStrictlyPositive (innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ)♯) :
+    (innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ).metricChangeEquiv hR =
+      ContinuousLinearEquiv.refl ℝ E := by
+  ext x
+  simp
+
 /-- **Naturality of the metric change transport.** Pulling an inner product `k` on `F` back along
 a linear isometry equivalence `e : E ≃ₗᵢ[ℝ] F` conjugates its metric change transport by `e`. -/
 theorem metricChangeTransport_bilinearComp (e : E ≃ₗᵢ[ℝ] F) {k : F →L[ℝ] F →L[ℝ] ℝ}
@@ -188,14 +241,7 @@ theorem metricChangeTransport_bilinearComp (e : E ≃ₗᵢ[ℝ] F) {k : F →L[
       e.symm (k.metricChangeTransport (e x)) := by
   -- Pulling back along `e` conjugates the Riesz operator by the `⋆`-algebra equivalence induced by
   -- `e`, and that equivalence preserves the characterization `metricChangeTransport_eq_iff`.
-  have hk : (k.bilinearComp (e : E →L[ℝ] F) (e : E →L[ℝ] F))♯ = e.symm.conjStarAlgEquiv k♯ := by
-    ext v
-    refine ext_inner_right ℝ fun w ↦ ?_
-    rw [continuousLinearMapOfBilin_apply, bilinearComp_apply,
-      LinearIsometryEquiv.conjStarAlgEquiv_apply_apply, LinearIsometryEquiv.symm_symm,
-      ← LinearIsometryEquiv.inner_map_map e, e.apply_symm_apply, continuousLinearMapOfBilin_apply]
-    -- Only the coercion of `e` to a continuous linear map remains to be unfolded.
-    simp
+  have hk := continuousLinearMapOfBilin_bilinearComp e k
   have hK' : IsStrictlyPositive (e.symm.conjStarAlgEquiv k♯) :=
     IsStrictlyPositive.iff_of_unital.mpr
       ⟨map_nonneg e.symm.conjStarAlgEquiv hK.nonneg, hK.isUnit.map e.symm.conjStarAlgEquiv⟩
@@ -204,6 +250,18 @@ theorem metricChangeTransport_bilinearComp (e : E ≃ₗᵢ[ℝ] F) {k : F →L[
   rw [metricChangeTransport_eq_iff (hk ▸ hK'), hk, ← map_mul, ← map_mul,
     metricChangeTransport_mul_mul_self hK, map_one]
   exact ⟨map_nonneg _ (isStrictlyPositive_metricChangeTransport hK).nonneg, rfl⟩
+
+/-- **Naturality of the inverse transport.** Pulling a bilinear form `k` on `F` with positive Riesz
+operator back along a linear isometry equivalence `e : E ≃ₗᵢ[ℝ] F` conjugates the square root of
+its Riesz operator by `e`. -/
+theorem sqrt_continuousLinearMapOfBilin_bilinearComp (e : E ≃ₗᵢ[ℝ] F) {k : F →L[ℝ] F →L[ℝ] ℝ}
+    (hK : 0 ≤ k♯) (x : E) :
+    CFC.sqrt (k.bilinearComp (e : E →L[ℝ] F) (e : E →L[ℝ] F))♯ x =
+      e.symm (CFC.sqrt k♯ (e x)) := by
+  suffices CFC.sqrt (k.bilinearComp (e : E →L[ℝ] F) (e : E →L[ℝ] F))♯ =
+      e.symm.conjStarAlgEquiv (CFC.sqrt k♯) from congr($this x)
+  rw [continuousLinearMapOfBilin_bilinearComp, CFC.sqrt_eq_iff _ _ (map_nonneg _ hK)
+    (map_nonneg _ (CFC.sqrt_nonneg _)), ← map_mul, CFC.sqrt_mul_sqrt_self _ hK]
 
 /-- **Isometries onto a second inner product.** On a finite-dimensional space, the linear maps
 `S` that are isometries from the original inner product to `h` are exactly the composites of the
@@ -265,4 +323,36 @@ theorem isStrictlyPositive_continuousLinearMapOfBilin_iff [FiniteDimensional ℝ
       rw [← continuousLinearMapOfBilin_apply (𝕜 := ℝ) h, hv, inner_zero_left]
     exact ⟨hinj, (LinearMap.injective_iff_surjective (f := (h♯ : E →ₗ[ℝ] E))).mp hinj⟩
 
+/-- The inner product of `F` pulled back along an injective linear map `K : E → F` has strictly
+positive Riesz operator. -/
+theorem isStrictlyPositive_continuousLinearMapOfBilin_of_injective [FiniteDimensional ℝ E]
+    {K : E →ₗ[ℝ] F} (hK : Function.Injective K) {h : E →L[ℝ] E →L[ℝ] ℝ}
+    (hh : ∀ u v, h u v = ⟪K u, K v⟫_ℝ) : IsStrictlyPositive h♯ :=
+  isStrictlyPositive_continuousLinearMapOfBilin_iff.2
+    ⟨fun u v ↦ by rw [hh, hh, real_inner_comm], fun v hv ↦ by
+      rw [hh]
+      exact real_inner_self_pos.2 fun h0 ↦ hv (hK (h0.trans K.map_zero.symm))⟩
+
 end InnerProductSpace
+
+namespace ContinuousLinearMap
+
+variable [CompleteSpace E]
+
+/-- **Continuity of the metric change transport.** The metric change transport depends
+continuously on the inner product `h`, among the bilinear forms with strictly positive Riesz
+operator. -/
+theorem continuousOn_metricChangeTransport :
+    ContinuousOn (fun h : E →L[ℝ] E →L[ℝ] ℝ ↦ h.metricChangeTransport)
+      {h | IsStrictlyPositive h♯} := by
+  simp_rw [metricChangeTransport_def]
+  exact (CFC.continuousOn_rpow _).comp continuous_continuousLinearMapOfBilin.continuousOn
+    fun _ hH ↦ hH
+
+/-- The inverse transport `CFC.sqrt h♯` depends continuously on the bilinear form `h`, among those
+with positive Riesz operator. -/
+theorem continuousOn_sqrt_continuousLinearMapOfBilin :
+    ContinuousOn (fun h : E →L[ℝ] E →L[ℝ] ℝ ↦ CFC.sqrt h♯) {h | 0 ≤ h♯} :=
+  CFC.continuousOn_sqrt.comp continuous_continuousLinearMapOfBilin.continuousOn fun _ hH ↦ hH
+
+end ContinuousLinearMap

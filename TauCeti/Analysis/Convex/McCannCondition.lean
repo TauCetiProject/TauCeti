@@ -11,10 +11,11 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import TauCeti.Analysis.Convex.RecessionConstant
 import Mathlib.Analysis.Convex.Continuous
+import Mathlib.Analysis.Convex.SpecificFunctions.Pow
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
-import TauCeti.Analysis.Convex.FunctionTopology
+import TauCeti.Analysis.Convex.Function.Topology
 import TauCeti.Analysis.InnerProductSpace.Spectrum
 import TauCeti.Analysis.Matrix.MinkowskiDeterminant
 
@@ -39,6 +40,9 @@ inequality at a positive operator, where the dimension `n` is that of the underl
   the recession constant of `U` bounds `φ` above there.
 * `TauCeti.measurable_apply_max_of_convexOn`: if `φ` is convex on `(0, ∞)`, then `U` is measurable
   on `[0, ∞)`.
+* `TauCeti.convexOn_pow_mul_neg_mul_rpow_neg`, `TauCeti.antitoneOn_pow_mul_neg_mul_rpow_neg`: the
+  integrand `U(r) = -r · r^{-1/N}` of the Rényi entropy satisfies McCann's condition in every
+  dimension `n ≤ N`, with `φ(s) = -s^{n/N}` on `(0, ∞)`.
 
 ## References
 
@@ -197,5 +201,42 @@ theorem measurable_apply_max_of_convexOn (hn : n ≠ 0)
     have := pow_mul_apply_div_pow_eq (U := U) hn hr' one_pos
     simp only [one_pow, div_one, one_mul, mul_one] at this
     rw [max_eq_left (le_of_lt hr'), this]
+
+section Renyi
+
+variable {N : ℝ}
+
+/-- On `(0, ∞)`, the function `φ(s) = sⁿ U(s⁻ⁿ)` of the Rényi integrand `U(r) = -r · r^{-1/N}` is
+`-s^{n/N}`. -/
+theorem pow_mul_neg_mul_rpow_neg_eq {s : ℝ} (hs : 0 < s) :
+    s ^ n * -((s ^ n)⁻¹ * ((s ^ n)⁻¹) ^ (-N⁻¹)) = -s ^ ((n : ℝ) / N) := by
+  have hsn : 0 < s ^ n := pow_pos hs n
+  -- `((sⁿ)⁻¹)^(-1/N) = (sⁿ)^(1/N)`.
+  have h₁ : ((s ^ n)⁻¹) ^ (-N⁻¹) = (s ^ n) ^ N⁻¹ := by
+    rw [Real.inv_rpow hsn.le, Real.rpow_neg hsn.le, inv_inv]
+  -- `(sⁿ)^(1/N) = s^(n/N)`.
+  have h₂ : (s ^ n) ^ N⁻¹ = s ^ ((n : ℝ) / N) := by
+    rw [← Real.rpow_natCast, ← Real.rpow_mul hs.le, div_eq_mul_inv]
+  rw [h₁, h₂]
+  field_simp
+
+/-- **The Rényi integrand satisfies the convexity half of McCann's condition.** For `0 < N` and
+`n ≤ N`, the function `φ(s) = sⁿ U(s⁻ⁿ) = -s^{n/N}` of `U(r) = -r · r^{-1/N}` is convex on
+`(0, ∞)`. -/
+theorem convexOn_pow_mul_neg_mul_rpow_neg (hN : 0 < N) (hn : (n : ℝ) ≤ N) :
+    ConvexOn ℝ (Ioi 0) fun s : ℝ => s ^ n * -((s ^ n)⁻¹ * ((s ^ n)⁻¹) ^ (-N⁻¹)) :=
+  (((Real.concaveOn_rpow (div_nonneg n.cast_nonneg hN.le) ((div_le_one hN).2 hn)).subset
+    Ioi_subset_Ici_self (convex_Ioi 0)).neg).congr fun _ hs => (pow_mul_neg_mul_rpow_neg_eq hs).symm
+
+/-- **The Rényi integrand satisfies the monotonicity half of McCann's condition.** For `0 < N`,
+the function `φ(s) = sⁿ U(s⁻ⁿ) = -s^{n/N}` of `U(r) = -r · r^{-1/N}` is nonincreasing on
+`(0, ∞)`. -/
+theorem antitoneOn_pow_mul_neg_mul_rpow_neg (hN : 0 < N) :
+    AntitoneOn (fun s : ℝ => s ^ n * -((s ^ n)⁻¹ * ((s ^ n)⁻¹) ^ (-N⁻¹))) (Ioi 0) := by
+  intro x hx y hy hxy
+  simp only [pow_mul_neg_mul_rpow_neg_eq hx, pow_mul_neg_mul_rpow_neg_eq hy, neg_le_neg_iff]
+  exact Real.rpow_le_rpow (le_of_lt hx) hxy (div_nonneg n.cast_nonneg hN.le)
+
+end Renyi
 
 end TauCeti

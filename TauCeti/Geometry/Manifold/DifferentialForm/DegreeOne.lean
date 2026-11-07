@@ -28,6 +28,8 @@ derivative applies.
 
 ## Main declarations
 
+* `TauCeti.mdifferentiableAt_ofSubsingleton_iff`: a family of linear maps is differentiable
+  at a point as a section of the linear-map bundle exactly when its degree-one form is.
 * `TauCeti.contMDiffAt_ofSubsingleton_iff`, `TauCeti.isSmoothBundleForm_ofSubsingleton_iff`: a
   family of linear maps has `C^n` graph in the linear-map bundle, at a point or everywhere, exactly
   when the corresponding degree-one form does.
@@ -59,6 +61,25 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
   [FiberBundle F V] [VectorBundle ℝ F V]
   [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+
+/-- A bundle-valued one-form is differentiable exactly when the corresponding section
+of the bundle of continuous linear maps is differentiable. -/
+theorem mdifferentiableAt_ofSubsingleton_iff
+    {α : (x : M) → TangentSpace I x →L[ℝ] V x} {x₀ : M} :
+    MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] F)) (fun x ↦
+        TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] F) x
+          (ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I x) (V x) (0 : Fin 1) (α x)))
+        x₀ ↔
+      MDifferentiableAt I (I.prod 𝓘(ℝ, E →L[ℝ] F))
+        (fun x ↦ TotalSpace.mk' (E →L[ℝ] F) x (α x)) x₀ := by
+  let L := (ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := E) (F := F)
+    (ι := Fin 1) 0).toContinuousLinearEquiv
+  rw [mdifferentiableAt_totalSpace, mdifferentiableAt_hom_bundle]
+  simp only [FiberBundle.trivializationAt_continuousAlternatingMap_apply,
+    ContinuousAlternatingMap.inCoordinates_ofSubsingleton]
+  refine and_congr Iff.rfl ⟨fun h ↦ ?_, fun h ↦ L.mdifferentiableAt.comp x₀ h⟩
+  exact (L.symm.mdifferentiableAt.comp x₀ h).congr_of_eventuallyEq
+    (Filter.Eventually.of_forall fun x ↦ by simp [L])
 
 /-- A family of fibrewise linear maps is `C^n` at `x₀` as a section of the bundle of linear maps
 `TangentSpace I x →L[ℝ] V x` exactly when the degree-one form it defines is `C^n` at `x₀`. -/
@@ -209,6 +230,12 @@ one-element family `![v]`. -/
 theorem degreeOneEquiv_apply_apply_vec (φ : SmoothForm I M F 1) (x : M) (v : TangentSpace I x) :
     degreeOneEquiv φ x v = φ.1 x ![v] := by
   rw [degreeOneEquiv_apply_apply, Matrix.vec_single_eq_const]
+
+/-- A smooth one-form sends the one-element family `![-v]` to minus its value on `![v]`. -/
+@[simp]
+theorem apply_neg_vec (φ : SmoothForm I M F 1) (x : M) (v : TangentSpace I x) :
+    φ.1 x ![-v] = -φ.1 x ![v] := by
+  rw [← degreeOneEquiv_apply_apply_vec, map_neg, degreeOneEquiv_apply_apply_vec]
 
 /-- The section of a smooth one-form, read as a linear map, evaluates a tangent vector `v` as the
 form evaluates the one-element family `![v]`. -/

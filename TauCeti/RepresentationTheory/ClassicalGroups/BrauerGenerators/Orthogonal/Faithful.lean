@@ -5,13 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.Roots
 public import Mathlib.LinearAlgebra.Matrix.DotProduct
+public import TauCeti.Algebra.BrauerAlgebra.Discriminant
 public import TauCeti.Algebra.Star.SelfAdjoint
 public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Orthogonal.Action
-public import TauCeti.RingTheory.Jacobson.FiniteOverArtinian
+import Mathlib.Algebra.Order.Star.Rat
+import Mathlib.RingTheory.Artinian.Ring
 
 /-!
-# The orthogonal Brauer action is faithful in large dimension, and `B_k(n)` is semisimple
+# The orthogonal Brauer action is faithful in large dimension; `B_k(δ)` is generically semisimple
 
 The Brauer algebra `B_k(n)` acts on the tensor power `(Rⁿ)^{⊗k}` through the standard symmetric
 form (`TauCeti.brauerActionOrth`), a diagram `D` acting by the matrix `M(D)` whose entry at a
@@ -34,9 +37,18 @@ hence `Aᴴ * A` is a nilpotent self-adjoint matrix, so it vanishes, so `A = 0`,
 faithfulness. The radical is zero, and a finite-dimensional algebra with zero radical is
 semisimple.
 
-The loop value here is the dimension `n` itself, at least the number `k` of strands. The Brauer
-algebra is also semisimple at generic loop values, and at the symplectic value `-2l` when `k` is
-small relative to `l`, which this argument does not reach.
+The loop value here is the dimension `n` itself, at least the number `k` of strands. A single
+such loop value is enough to reach the generic one. The Gram determinant of the regular trace form
+of `B_k(δ)` in the diagram basis is the value at `δ` of one integer polynomial, the discriminant
+`TauCeti.BrauerAlgebra.discr k`, and `B_k(δ)` is semisimple wherever it does not vanish. Over
+`ℚ`, a field of characteristic zero, the converse holds as well, so the discriminant does not
+vanish at `δ = k`, where `B_k(k)` is semisimple; it is a nonzero polynomial
+(`TauCeti.BrauerAlgebra.discr_ne_zero`). Hence `B_k(δ)` is semisimple at every loop
+value `δ` transcendental over `ℤ`, in any field
+(`TauCeti.BrauerAlgebra.isSemisimpleRing_of_transcendental`), and over a field of characteristic
+zero it fails to be semisimple at only finitely many loop values
+(`TauCeti.BrauerAlgebra.finite_setOfPred_not_isSemisimpleRing`). Which loop values these are, for
+instance whether the symplectic value `-2l` is among them, this argument does not decide.
 
 ## Main results
 
@@ -46,6 +58,12 @@ small relative to `l`, which this argument does not reach.
   `k ≤ n`.
 * `TauCeti.BrauerAlgebra.isSemisimpleRing_of_le`: **the Brauer algebra `B_k(n)` is semisimple**
   over a star-ordered field when `k ≤ n`.
+* `TauCeti.BrauerAlgebra.discr_ne_zero`: the discriminant of the Brauer algebra is a nonzero
+  polynomial in the loop value.
+* `TauCeti.BrauerAlgebra.isSemisimpleRing_of_transcendental`: **the Brauer algebra is semisimple at
+  a transcendental loop value.**
+* `TauCeti.BrauerAlgebra.finite_setOfPred_not_isSemisimpleRing`: **over a field of characteristic
+  zero, the Brauer algebra is semisimple at all but finitely many loop values.**
 
 ## References
 
@@ -114,8 +132,9 @@ theorem BrauerAlgebra.isSemisimpleRing_of_le {K : Type*} [Field K] [PartialOrder
     simp [Φ, LinearMap.toMatrixAlgEquiv_apply, LinearMap.toMatrix_apply]
   have hinj : Function.Injective Φ :=
     (LinearMap.toMatrixAlgEquiv _).injective.comp (brauerActionOrth_injective K n k hk)
-  rw [isSemisimpleRing_iff_jacobson_eq_bot (K := K)]
-  obtain ⟨m, hm⟩ := isNilpotent_jacobson (K := K) (A := BrauerAlgebra K (n : K) k)
+  have := IsArtinianRing.of_finite K (BrauerAlgebra K (n : K) k)
+  rw [IsArtinianRing.isSemisimpleRing_iff_jacobson]
+  obtain ⟨m, hm⟩ := IsArtinianRing.isNilpotent_jacobson (BrauerAlgebra K (n : K) k)
   refine eq_bot_iff.mpr fun x hx => ?_
   -- the reflected diagrams with conjugate coefficients act by the conjugate transpose of `Φ x`
   let y : BrauerAlgebra K (n : K) k :=
@@ -134,5 +153,38 @@ theorem BrauerAlgebra.isSemisimpleRing_of_le {K : Type*} [Field K] [PartialOrder
   have h0 := (IsSelfAdjoint.star_mul_self (Φ x)).eq_zero_of_isNilpotent hnil
   rw [star_mul_self_eq_zero, ← map_zero Φ] at h0
   exact (Submodule.mem_bot _).mpr (hinj h0)
+
+/-! ### Generic loop values -/
+
+namespace BrauerAlgebra
+
+variable (k) in
+/-- **The discriminant of the Brauer algebra is a nonzero polynomial.** -/
+theorem discr_ne_zero : discr k ≠ 0 := fun h =>
+  (isSemisimpleRing_iff_aeval_discr_ne_zero (K := ℚ) (δ := (k : ℚ))).mp
+    (isSemisimpleRing_of_le (n := k) le_rfl) (by rw [h, map_zero])
+
+/-- **The Brauer algebra is semisimple at a transcendental loop value**: over every field, if `δ`
+is a root of no nonzero integer polynomial then `B_k(δ)` is semisimple. In positive characteristic
+no element is transcendental over `ℤ`, so this is a statement about fields of characteristic
+zero. -/
+theorem isSemisimpleRing_of_transcendental {K : Type*} [Field K] {δ : K}
+    (hδ : Transcendental ℤ δ) : IsSemisimpleRing (BrauerAlgebra K δ k) :=
+  isSemisimpleRing_of_aeval_discr_ne_zero fun h => hδ ⟨discr k, discr_ne_zero k, h⟩
+
+variable (k) in
+/-- **The Brauer algebra is generically semisimple**: over a field of characteristic zero, `B_k(δ)`
+is semisimple for all but finitely many loop values `δ`, the exceptions being roots of the
+discriminant. -/
+theorem finite_setOfPred_not_isSemisimpleRing (K : Type*) [Field K] [CharZero K] :
+    {δ : K | ¬IsSemisimpleRing (BrauerAlgebra K δ k)}.Finite := by
+  have hp : (discr k).map (Int.castRingHom K) ≠ 0 :=
+    (Polynomial.map_ne_zero_iff Int.cast_injective).mpr (discr_ne_zero k)
+  refine (Polynomial.finite_setOfPred_isRoot hp).subset fun δ hδ => ?_
+  by_contra hroot
+  refine hδ (isSemisimpleRing_of_aeval_discr_ne_zero ?_)
+  simpa [Polynomial.aeval_def, Polynomial.eval_map] using hroot
+
+end BrauerAlgebra
 
 end TauCeti

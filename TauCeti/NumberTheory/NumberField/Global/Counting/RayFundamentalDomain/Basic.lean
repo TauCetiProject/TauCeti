@@ -286,7 +286,7 @@ theorem smul_mem_rayFundamentalDomain {𝔪 : Modulus K} {x : mixedSpace K}
     c • x ∈ rayFundamentalDomain 𝔪 := by
   obtain ⟨hpos, q, hq⟩ := mem_rayFundamentalDomain_iff.mp hx
   refine mem_rayFundamentalDomain_iff.mpr ⟨smul_mem_posRegion hpos hc, q, ?_⟩
-  rw [unitSMul_real_smul]
+  rw [smul_comm]
   exact fundamentalCone.smul_mem_of_mem hq hc.ne'
 
 /-- Multiplication by a positive real scalar preserves membership in the ray fundamental domain. -/
@@ -328,7 +328,7 @@ theorem torsion_smul_mem_rayFundamentalDomain_iff {𝔪 : Modulus K} {x : mixedS
       η • y ∈ rayFundamentalDomain 𝔪 := by
     obtain ⟨hpos, q, hq⟩ := mem_rayFundamentalDomain_iff.mp hy
     refine mem_rayFundamentalDomain_iff.mpr ⟨unitSMul_mem_posRegion hpos hη', q, ?_⟩
-    rw [unitSMul_comm]
+    rw [smul_comm]
     exact fundamentalCone.torsion_smul_mem_of_mem hq hη
   refine ⟨fun h ↦ ?_, fun h ↦ mem_of_mem h hζ hζ'⟩
   have h := mem_of_mem h ((NumberField.Units.torsion K).inv_mem hζ)

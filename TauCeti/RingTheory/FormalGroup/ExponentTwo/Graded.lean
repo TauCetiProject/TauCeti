@@ -11,7 +11,7 @@ public import TauCeti.RingTheory.FormalGroup.ExponentTwo.Basic
 -- normalised logarithms.
 import TauCeti.RingTheory.FormalGroup.Logarithm.InfiniteHeight
 import TauCeti.RingTheory.FormalGroup.NSMul.BaseChange
-import TauCeti.RingTheory.FormalGroup.Rescale
+import TauCeti.RingTheory.FormalGroup.Rescale.Basic
 
 /-!
 # The graded normalised logarithm of a formal group law of exponent two

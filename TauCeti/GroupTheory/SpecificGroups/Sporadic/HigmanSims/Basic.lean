@@ -8,6 +8,7 @@ module
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Presentation
 public import Mathlib.Algebra.Group.Subgroup.Pointwise
 public import Mathlib.Data.Fin.Tuple.Basic
+public import Mathlib.GroupTheory.SpecificGroups.Alternating
 
 /-!
 # The ATLAS permutation model of the Higman--Sims group
@@ -114,6 +115,11 @@ theorem a_mem : a ∈ HS := by
 theorem b_mem : b ∈ HS := by
   rw [HS_def]
   exact Subgroup.subset_closure (by simp)
+
+/-- Every element of the ATLAS Higman--Sims model is an even permutation. -/
+theorem le_alternatingGroup : HS ≤ alternatingGroup (Fin 100) := by
+  simp only [HS_def, Subgroup.closure_le, Set.insert_subset_iff, Set.singleton_subset_iff]
+  constructor <;> apply Equiv.Perm.mem_alternatingGroup.mpr <;> decide +kernel
 
 /-- The model is nontrivial: its first generator moves point zero. -/
 instance : Nontrivial HS := by

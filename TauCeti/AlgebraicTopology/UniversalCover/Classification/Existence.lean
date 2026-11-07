@@ -11,6 +11,7 @@ public import TauCeti.Topology.Covering.Quotient
 import TauCeti.Topology.Covering.Clopen
 import TauCeti.Topology.Homotopy.Monodromy.Functoriality
 import TauCeti.Topology.IsLocalHomeomorph
+import TauCeti.Topology.SeparatedMap
 
 /-!
 # The covering associated to a subgroup
@@ -36,6 +37,8 @@ itself a quotient covering map for any group.
 
 * `TauCeti.UniversalCover.isCoveringMap_subgroupQuotientProj`: the cover associated to
   `H ≤ π₁(X, x₀)` is a covering space of `X`.
+* `TauCeti.UniversalCover.instT2SpaceSubgroupQuotient`: a subgroup cover of a Hausdorff base
+  is Hausdorff.
 * `TauCeti.UniversalCover.subgroupCover`: the same cover, bundled as a connected covering space.
 * `TauCeti.UniversalCover.subgroupCoverBasepointFiber`: its distinguished fibre point.
 * `TauCeti.UniversalCover.subgroupQuotientTopHomeomorph`: the cover associated to the whole
@@ -93,6 +96,12 @@ theorem isCoveringMap_subgroupQuotientProj [LocallyPathConnectedSpace X]
     rfl
   rw [← hr_coe]
   exact hr_cov.subtypeVal_comp (IsClopen.pathComponent x₀)
+
+/-- A subgroup cover of a Hausdorff space is Hausdorff. -/
+instance instT2SpaceSubgroupQuotient [LocallyPathConnectedSpace X]
+    [SemilocallySimplyConnectedSpace X] [T2Space X] (x₀ : X)
+    (H : Subgroup (FundamentalGroup X x₀)) : T2Space (SubgroupQuotient x₀ H) :=
+  (isCoveringMap_subgroupQuotientProj x₀ H).t2Space
 
 /-- The quotient of the universal cover by a subgroup is locally path-connected, being the total
 space of a covering space of the locally path-connected base `X`. -/

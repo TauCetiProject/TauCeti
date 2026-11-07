@@ -340,6 +340,12 @@ theorem coeffEquiv_symm_apply (f : Fin n → K) : (((coeffEquiv K n).symm f : Sy
       (Polynomial.monicOfCoeff f).roots := by
   rw [← roots_toMonic ((coeffEquiv K n).symm f), toMonic_coeffEquiv_symm]
 
+/-- Applying the inverse coefficient chart to the lower coefficients of a monic polynomial
+recovers its roots, counted with multiplicity. -/
+theorem coeffEquiv_symm_coeff_of_monic {p : K[X]} (hp : p.Monic) (hdeg : p.natDegree = n) :
+    (((coeffEquiv K n).symm (fun i => p.coeff i) : Sym K n) : Multiset K) = p.roots := by
+  rw [coeffEquiv_symm_apply, Polynomial.monicOfCoeff_coeff hp hdeg]
+
 /-- **The tuples through a point satisfy an affine equation in the elementary symmetric chart.** A
 point `a` belongs to `s` exactly when the monic polynomial whose lower coefficients are the
 coordinates of `s` vanishes at `a`. For `0 < n`, the equation has coefficient `1` on the

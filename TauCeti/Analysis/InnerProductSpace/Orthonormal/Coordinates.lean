@@ -14,6 +14,9 @@ import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 This module describes coordinates adapted to a vector in a real inner product space and
 rotated coordinates in a complex inner product space.
 
+For an orthonormal basis `b`, the `i`-th coordinate functional of the underlying basis is the
+inner product with `b i`.
+
 In a finite-dimensional real inner product space, an orthonormal coordinate system can be
 chosen so that the inner product with a given vector is its norm times any prescribed coordinate.
 
@@ -34,6 +37,8 @@ every `v : E` has the complex coordinates `⟪b j, v⟫`:
 
 ## Main statements
 
+* `OrthonormalBasis.toBasis_coord`: the coordinate functional `b.toBasis.coord i` is
+  `innerₛₗ 𝕜 (b i)`.
 * `TauCeti.exists_linearIsometryEquiv_inner_eq_norm_mul_eval`: for a vector `v` and a prescribed
   coordinate `i`, there is a linear isometry equivalence `f` with
   `⟪v, x⟫ = ‖v‖ * f x i` for all `x`.
@@ -63,6 +68,27 @@ theorem exists_linearIsometryEquiv_inner_eq_norm_mul_eval {E : Type*} [NormedAdd
   simp [w, real_inner_smul_left, EuclideanSpace.inner_single_left]
 
 end TauCeti
+
+namespace OrthonormalBasis
+
+variable {𝕜 E ι : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [Fintype ι]
+
+/-- The `i`-th coordinate functional of an orthonormal basis is the inner product with its
+`i`-th vector. -/
+@[simp]
+theorem toBasis_coord (b : OrthonormalBasis ι 𝕜 E) (i : ι) :
+    b.toBasis.coord i = innerₛₗ 𝕜 (b i) :=
+  LinearMap.ext fun v ↦ (b.coe_toBasis_repr_apply v i).trans (b.repr_apply_apply v i)
+
+/-- The coordinate functional of a real orthonormal basis, expressed using the real bilinear
+inner product. -/
+theorem toBasis_coord_real {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    (b : OrthonormalBasis ι ℝ F) (i : ι) :
+    b.toBasis.coord i = innerₗ F (b i) := by
+  ext v
+  simp only [toBasis_coord, innerₛₗ_apply_apply, innerₗ_apply_apply]
+
+end OrthonormalBasis
 
 open Complex ComplexConjugate
 open scoped InnerProductSpace

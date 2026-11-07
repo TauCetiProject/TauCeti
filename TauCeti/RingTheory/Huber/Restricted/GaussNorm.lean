@@ -12,6 +12,8 @@ public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.UnitWeight
 public import TauCeti.RingTheory.MvPowerSeries.Rescale
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
 
+import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.UnitBall
+
 /-!
 # The Gauss norm topology on restricted multivariate series
 
@@ -33,7 +35,9 @@ Gauss-normed ring at the radii `c`, again with the same topology. Radii that are
 norms of multiplicative units of `R` are not reached by such singleton weights.
 
 Over a nontrivially normed field the Gauss-normed algebra is itself a Tate ring, at any positive
-polyradii: a constant of norm strictly between `0` and `1` is a pseudouniformiser.
+polyradii: a constant of norm strictly between `0` and `1` is a pseudouniformiser. At unit radius
+its Gauss unit ball is its power-bounded subring, so transporting across the topological ring
+comparison identifies the power-bounded subring of `K⟨X₁, …, Xₙ⟩` with `K°⟨X₁, …, Xₙ⟩`.
 For an ultrametric normed algebra `A` over such a field, the structure map `A → A⟨X⟩ ⧸ I` to a
 quotient of the unit-radius algebra is then adic for the quotient topology.
 
@@ -58,13 +62,15 @@ type or norm is introduced here.
   directions.
 * `TauCeti.Huber.IsTateRing.isRestricted_subring`: over a nontrivially normed field with an
   ultrametric norm, the Gauss-normed algebra of restricted series is a Tate ring.
+* `TauCeti.Huber.weightedSubring_powerBoundedSubring_eq`: over a nontrivially normed ultrametric
+  field `K`, the power-bounded subring of `K⟨X₁, …, Xₙ⟩` is `K°⟨X₁, …, Xₙ⟩`.
 * `TauCeti.MvPowerSeries.isAdicHom_algebraMap_isRestrictedSubring_quotient`: for an ultrametric
   normed algebra `A` over a nontrivially normed field, the structure map `A → A⟨X⟩ ⧸ I` is adic
   for the quotient topology.
 
 ## References
 
-* Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*, §5.1.1 and §5.2.1.
+* Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*, §5.1.1, §5.1.3, and §5.2.1.
 * T. Wedhorn, *Adic Spaces*, §5.6, for the restricted-series topology.
 -/
 
@@ -137,6 +143,14 @@ theorem restrictedMvPowerSeriesGaussEquiv_weightedX (i : Fin n) :
     restrictedMvPowerSeriesGaussEquiv (R := R)
       (weightedX _ isWeightFamily_one_weight i) =
         ⟨MvPowerSeries.X i, MvPowerSeries.isRestricted_X _ i⟩ :=
+  Subtype.ext (by simp)
+
+/-- The Gauss comparison sends the Huber inclusion of a polynomial to the Gauss-normed
+inclusion of the same polynomial. -/
+@[simp]
+theorem restrictedMvPowerSeriesGaussEquiv_weightedPolynomialHom (p : MvPolynomial (Fin n) R) :
+    restrictedMvPowerSeriesGaussEquiv (weightedPolynomialHom _ isWeightFamily_one_weight p) =
+      TauCeti.MvPowerSeries.polynomialToRestricted (fun _ : Fin n ↦ (1 : ℝ)) p :=
   Subtype.ext (by simp)
 
 /-- The identity Gauss comparison also respects the coefficient-algebra structure. -/
@@ -265,6 +279,31 @@ theorem continuous_restrictedMvPowerSeriesCompletionGaussEquiv_symm :
   uniformContinuous_restrictedMvPowerSeriesCompletionEquiv_symm.continuous.comp
     continuous_restrictedMvPowerSeriesGaussEquiv_symm
 
+/-- Under the completed Gauss comparison, the polynomials in the completed Huber algebra are the
+Gauss-normed polynomial inclusion. -/
+theorem restrictedMvPowerSeriesCompletionGaussEquiv_comp_weightedPolynomialHom :
+    (restrictedMvPowerSeriesCompletionGaussEquiv (n := n) (R := R)).toRingHom.comp
+        (UniformSpace.Completion.coeRingHom.comp
+          (weightedPolynomialHom _ isWeightFamily_one_weight)) =
+      (TauCeti.MvPowerSeries.polynomialToRestricted (R := R) fun _ : Fin n ↦ (1 : ℝ)).toRingHom :=
+  RingHom.ext fun p ↦ by simp [UniformSpace.Completion.coeRingHom]
+
+/-- The inverse completed Gauss comparison sends the Gauss-normed polynomial inclusion to the
+polynomials in the completed Huber algebra. -/
+theorem restrictedMvPowerSeriesCompletionGaussEquiv_symm_comp_polynomialToRestricted :
+    (restrictedMvPowerSeriesCompletionGaussEquiv (n := n) (R := R)).symm.toRingHom.comp
+        (TauCeti.MvPowerSeries.polynomialToRestricted (R := R)
+          fun _ : Fin n ↦ (1 : ℝ)).toRingHom =
+      UniformSpace.Completion.coeRingHom.comp
+        (weightedPolynomialHom (k := n) (A := R) _ isWeightFamily_one_weight) := by
+  rw [← restrictedMvPowerSeriesCompletionGaussEquiv_comp_weightedPolynomialHom,
+    ← RingHom.comp_assoc, RingEquiv.symm_toRingHom_comp_toRingHom, RingHom.id_comp]
+
+/-- The completed Tate algebra over a complete nonarchimedean normed domain is a domain. -/
+instance isDomain_restrictedMvPowerSeriesCompletion [IsDomain R] :
+    IsDomain (restrictedMvPowerSeriesCompletion n R) :=
+  restrictedMvPowerSeriesCompletionGaussEquiv.toMulEquiv.isDomain _
+
 end Complete
 
 section UnitWeight
@@ -390,6 +429,23 @@ instance IsTateRing.isRestricted_subring :
   refine IsTateRing.of_isUnit_norm_lt_one
     ((isUnit_iff_ne_zero.mpr (norm_pos_iff.mp h0)).map (algebraMap K _)) ?_
   rwa [norm_algebraMap']
+
+/-- Over a nontrivially normed ultrametric field `K`, the power-bounded subring of `K⟨X₁, …, Xₙ⟩`
+is the subring `K°⟨X₁, …, Xₙ⟩` of series with power-bounded coefficients. -/
+theorem weightedSubring_powerBoundedSubring_eq (n : ℕ) :
+    weightedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight
+        (powerBoundedSubring K) =
+      powerBoundedSubring
+        (weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight) := by
+  ext f
+  rw [mem_weightedSubring, mem_weightedNhd, mem_powerBoundedSubring,
+    ← isPowerBounded_ringEquiv_iff restrictedMvPowerSeriesGaussEquiv
+      continuous_restrictedMvPowerSeriesGaussEquiv
+      continuous_restrictedMvPowerSeriesGaussEquiv_symm,
+    ← mem_powerBoundedSubring, TauCeti.MvPowerSeries.powerBoundedSubring_eq_unitClosedBall,
+    TauCeti.MvPowerSeries.mem_unitClosedBall_iff]
+  simp only [weightMul_one_weight, Subring.mem_toAddSubgroup, mem_powerBoundedSubring,
+    isPowerBounded_iff_norm_le_one, coe_restrictedMvPowerSeriesGaussEquiv]
 
 end Tate
 

@@ -16,6 +16,11 @@ its differential range. Thus two immersed presentations with the same differenti
 the same image subgroup. This statement uses each source's intrinsic Lie-group topology and
 requires no closedness of either subgroup in the ambient group.
 
+## Main results
+
+* `le_of_range_lieMapToHom_le`: inclusion of differential ranges implies inclusion of images.
+* `eq_of_range_lieMapToHom_eq`: equal differential ranges give equal images.
+
 This is uniqueness of the image subgroup; it does not identify the two presenting manifolds.
 
 ## References
@@ -53,11 +58,20 @@ theorem eq_closure_lieExp_image (d : ImmersedLieSubgroupData I K) :
     d.range_eq] using
     d.toContMDiffMonoidMorphism.range_eq_closure_lieExp_image
 
+/-- Inclusion of differential ranges implies inclusion of connected immersed subgroup images.
+No closedness or subspace-topology hypothesis is required. -/
+theorem le_of_range_lieMapToHom_le (d : ImmersedLieSubgroupData I K)
+    (e : ImmersedLieSubgroupData I L) (h : d.lieMapToHom.range ≤ e.lieMapToHom.range) :
+    K ≤ L := by
+  rw [d.eq_closure_lieExp_image, e.eq_closure_lieExp_image]
+  exact Subgroup.closure_mono (Set.image_mono h)
+
 /-- Two connected immersed subgroup presentations with the same differential range have the
 same image subgroup, even if these images are not closed. -/
 theorem eq_of_range_lieMapToHom_eq (d : ImmersedLieSubgroupData I K)
     (e : ImmersedLieSubgroupData I L) (h : d.lieMapToHom.range = e.lieMapToHom.range) :
     K = L := by
-  rw [d.eq_closure_lieExp_image, e.eq_closure_lieExp_image, h]
+  exact le_antisymm (d.le_of_range_lieMapToHom_le e h.le)
+    (e.le_of_range_lieMapToHom_le d h.ge)
 
 end TauCeti.Lie.ImmersedLieSubgroupData

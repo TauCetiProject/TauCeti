@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.LeftExact
 public import TauCeti.Algebra.Module.Injective.Envelope.Basic
 public import TauCeti.Algebra.Module.Injective.Hom
+public import TauCeti.Algebra.Module.Torsion.QuotientLinearMap
 public import TauCeti.RingTheory.Length
 
 /-!
@@ -32,6 +33,10 @@ maximal ideal.
   of finite length or not.
 * `TauCeti.IsInjectiveEnvelope.bijective_applyₗ` and `TauCeti.IsInjectiveEnvelope.evalEquiv`:
   biduality for modules of finite length.
+* `TauCeti.annihilator_torsionBySet_of_injective`: if `E` is injective and contains a copy of
+  `κ`, then the annihilator of `E[J]` is `J`, for every ideal `J`.
+* `TauCeti.IsInjectiveEnvelope.exists_eq_smul_subtype`: for an ideal `J` with `R ⧸ J` of finite
+  length, every linear map `E[J] → E` is the inclusion multiplied by a scalar.
 
 ## References
 
@@ -115,6 +120,20 @@ theorem injective_applyₗ_of_injective [Module.Injective R E] (hι : Function.I
   have h1 : ι 1 = ι 0 := by simpa [hf] using LinearMap.congr_fun hm f
   exact one_ne_zero (hι h1)
 
+/-- If `E` is injective and contains a copy of the residue field, then the elements of `E`
+killed by an ideal `J` have annihilator exactly `J`. -/
+theorem annihilator_torsionBySet_of_injective [Module.Injective R E]
+    (hι : Function.Injective ι) (J : Ideal R) : (Submodule.torsionBySet R E J).annihilator = J := by
+  refine le_antisymm (fun r hr => ?_) fun r hr => Submodule.mem_annihilator.mpr fun x hx =>
+    (Submodule.mem_torsionBySet_iff _ _).mp hx ⟨r, hr⟩
+  -- `E` cogenerates `R ⧸ J`, so the class of `r` is detected by a map `R ⧸ J → E`; that map
+  -- sends `1` into `E[J]`, which `r` kills.
+  rw [← Ideal.Quotient.eq_zero_iff_mem]
+  refine (injective_iff_map_eq_zero _).mp
+    (injective_applyₗ_of_injective (M := R ⧸ J) hι) _ (LinearMap.ext fun f => ?_)
+  simpa [f.apply_quotient_mk_eq_smul_apply_one] using
+    Submodule.mem_annihilator.mp hr _ (J.quotientLinearMapEquivTorsionBySet E f).prop
+
 /-- The Matlis dual of a module of finite length has the same length. -/
 private theorem IsInjectiveEnvelope.length_linearMap_of_isFiniteLength
     (hι : IsInjectiveEnvelope ι) {M : Type w} [AddCommGroup M] [Module R M]
@@ -171,5 +190,19 @@ theorem IsInjectiveEnvelope.evalEquiv_apply_apply (hι : IsInjectiveEnvelope ι)
     [AddCommGroup M] [Module R M] (hM : IsFiniteLength R M) (m : M) (f : M →ₗ[R] E) :
     hι.evalEquiv hM m f = f m :=
   (rfl)
+
+/-- **Linear maps out of a layer of the hull are scalar.** Let `E` be an injective envelope of the
+residue field and `J` an ideal with `R ⧸ J` of finite length. Every linear map `E[J] → E` is the
+inclusion multiplied by a scalar. -/
+theorem IsInjectiveEnvelope.exists_eq_smul_subtype (hι : IsInjectiveEnvelope ι) {J : Ideal R}
+    (hJ : IsFiniteLength R (R ⧸ J)) (g : Submodule.torsionBySet R E J →ₗ[R] E) :
+    ∃ r : R, g = r • (Submodule.torsionBySet R E J).subtype := by
+  -- `E[J]` is the Matlis dual of `R ⧸ J` through evaluation at `1`, and the composite of `g` with
+  -- this identification is evaluation at some class `[r]`, by finite-length biduality.
+  obtain ⟨m, hm⟩ := (hι.bijective_applyₗ hJ).2
+    (g ∘ₗ (J.quotientLinearMapEquivTorsionBySet E).toLinearMap)
+  obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective m
+  refine ⟨r, LinearMap.ext fun x => ?_⟩
+  simpa using (LinearMap.congr_fun hm ((J.quotientLinearMapEquivTorsionBySet E).symm x)).symm
 
 end TauCeti

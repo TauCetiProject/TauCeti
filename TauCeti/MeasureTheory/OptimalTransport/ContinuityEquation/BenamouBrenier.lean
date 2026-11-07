@@ -7,10 +7,11 @@ module
 
 public import TauCeti.MeasureTheory.OptimalTransport.ContinuityEquation.PlanInterpolation
 public import TauCeti.MeasureTheory.OptimalTransport.ContinuityEquation.Subsolution
-import TauCeti.Analysis.PDE.HopfLax
+import TauCeti.Analysis.PDE.HopfLax.Integrable
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Map
 import TauCeti.MeasureTheory.OptimalTransport.Duality.LowerSemicontinuous
 import TauCeti.MeasureTheory.OptimalTransport.Existence.Basic
+import TauCeti.Topology.Order.Interval
 
 /-!
 # The Benamou–Brenier formula
@@ -139,34 +140,20 @@ private theorem ofReal_kantorovichDualValue_le
     simpa [g, abs_div, abs_of_pos hκ] using div_le_div_of_nonneg_right (φ.norm_coe_le_norm x)
       hκ.le
   have hgb : BddBelow (range g) := ⟨-(‖φ‖ / κ), forall_mem_range.2 fun x ↦ (abs_le.1 (hgC x)).1⟩
-  have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
-  -- At time `0` the Hopf–Lax value lies below `g`, at time `T` above `ψ / κ`.
-  have hHle {s : ℝ} (hs : 0 ≤ s) (x : E) : hopfLax (‖·‖ ^ p) g s x ≤ g x := by
-    simpa [Real.zero_rpow hp0] using hopfLax_le_add_mul hgb
-      ⟨0, forall_mem_range.2 fun w ↦ Real.rpow_nonneg (norm_nonneg w) p⟩ hs x
-  have hHT (y : E) : ψ y / κ ≤ hopfLax (‖·‖ ^ p) g (b - a) y := by
-    rw [hopfLax_norm_rpow g hT]
-    refine le_ciInf fun x ↦ ?_
-    calc ψ y / κ = (-φ x + (φ x + ψ y)) / κ := by ring
-      _ ≤ (-φ x + ‖y - x‖ ^ p) / κ := by
-          gcongr
-          rw [norm_sub_rev]
-          exact hφψ x y
-      _ = g x + ‖y - x‖ ^ p / (b - a) ^ (p - 1) := by simp only [g, κ]; ring
   have hHi (t s : ℝ) (hs : 0 < s) :
       Integrable (fun x ↦ hopfLax (‖·‖ ^ p) g s x) (ν t : Measure E) :=
-    .of_bound (((continuousOn_hopfLax_norm_rpow hp (by fun_prop) hgb).comp_continuous
-      (f := fun x : E ↦ (s, x)) (by fun_prop) fun _ ↦ hs).aestronglyMeasurable) (‖φ‖ / κ)
-      (ae_of_all _ fun x ↦ (abs_hopfLax_norm_rpow_le hp0 hgC hs.le x))
+    integrable_hopfLax_norm_rpow (zero_lt_one.trans_le hp) hgC hs _
   -- For `0 < δ < T`, the dual value with `ν (b - δ)` in place of `ν b` is bounded by the action.
   have hstep {δ : ℝ} (hδ : 0 < δ) (hδT : δ < b - a) :
       ENNReal.ofReal ((∫ y, ψ y ∂(ν (b - δ) : Measure E) + ∫ x, φ x ∂(ν a : Measure E)) / κ) ≤
         ∫⁻ t in Ioo a b, ∫⁻ x, ‖v t x‖ₑ ^ p ∂(ν t : Measure E) := by
     refine le_trans (ENNReal.ofReal_le_ofReal ?_)
       (ofReal_integral_hopfLax_sub_le h hν hp (by fun_prop) hgC hδ hδT)
-    have hψ := integral_mono ((ψ.integrable _).div_const κ) (hHi (b - δ) (b - a) hT) hHT
+    have hψ := integral_mono ((ψ.integrable _).div_const κ) (hHi (b - δ) (b - a) hT)
+      (le_hopfLax_norm_rpow_neg_div (φ := φ) hT hφψ)
     have hgi : Integrable g (ν a : Measure E) := (φ.integrable _).neg.div_const κ
-    have hφ := integral_mono (hHi a δ hδ) hgi (hHle hδ.le)
+    have hφ := integral_mono (hHi a δ hδ) hgi
+      (hopfLax_norm_rpow_le_self (zero_lt_one.trans_le hp).ne' hgb hδ.le)
     have hg : ∫ x, g x ∂(ν a : Measure E) = -((∫ x, φ x ∂(ν a : Measure E)) / κ) := by
       simp only [g, integral_div, integral_neg, neg_div]
     rw [integral_div] at hψ
@@ -174,14 +161,8 @@ private theorem ofReal_kantorovichDualValue_le
     rw [add_div]
     linarith
   -- Letting `δ → 0`, narrow continuity of `ν` at `b` recovers the dual value.
-  have hb' : Tendsto (fun δ : ℝ ↦ b - δ) (𝓝[>] 0) (𝓝[Icc a b] b) := by
-    refine tendsto_nhdsWithin_iff.2 ⟨?_, ?_⟩
-    · have : Tendsto (fun δ : ℝ ↦ b - δ) (𝓝 0) (𝓝 (b - 0)) := tendsto_const_nhds.sub tendsto_id
-      rw [sub_zero] at this
-      exact this.mono_left nhdsWithin_le_nhds
-    · filter_upwards [Ioo_mem_nhdsGT hT] with δ hδ using ⟨by linarith [hδ.2], by linarith [hδ.1]⟩
   have hψlim := FiniteMeasure.tendsto_iff_forall_integral_tendsto.1
-    ((hν b (right_mem_Icc.2 hab.le)).tendsto.comp hb') ψ
+    ((hν b (right_mem_Icc.2 hab.le)).tendsto.comp (tendsto_sub_nhdsGT_nhdsWithin_Icc hab)) ψ
   have hle := le_of_tendsto (ENNReal.tendsto_ofReal ((hψlim.add_const _).div_const κ))
     (by filter_upwards [Ioo_mem_nhdsGT hT] with δ hδ using hstep hδ.1 hδ.2)
   rw [kantorovichDualValue_def]

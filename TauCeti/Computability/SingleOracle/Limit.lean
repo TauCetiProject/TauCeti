@@ -46,6 +46,8 @@ consequences, for requirements that are not injured, are in
 * `TauCeti.Oracle.Single.Code.exists_eventually_evaln_setAnswers_eq_some_of_mem_eval`: a
   convergent computation relative to the limit of a monotone enumeration is eventually found by
   the stage computations against the finite stages.
+* `TauCeti.Oracle.Single.Code.mem_eval_of_eventually_evaln_eq_some`: a run with fixed output
+  and use that persists along converging answers is sound for the limit oracle.
 * `TauCeti.Oracle.Single.Code.evaln_setAnswers_eq_some_of_forall_notMem_fresh`,
   `TauCeti.Oracle.Single.Code.evaln_setAnswers_stageLimit_eq_some_of_forall_notMem_fresh`:
   **preservation**, a stage computation below whose use nothing enters persists at a later stage
@@ -95,6 +97,16 @@ theorem exists_eventually_evaln_eq_some_of_mem_eval {O : ℕ →. ℕ}
     ∃ d : Halt, d.output = y ∧ ∀ᶠ s in atTop, evaln (σs s) (t s) c n = some d := by
   obtain ⟨k, d, hd, rfl⟩ := exists_evaln_eq_some_of_mem_eval hO h
   exact ⟨d, rfl, eventually_evaln_eq_some_of_converges_of_tendsto hσ ht hd⟩
+
+/-- **Soundness of a persistent stage run.** If the answers converge and a run with a fixed
+output and use succeeds at all sufficiently large stages, its output belongs to the evaluation
+against the limit oracle. No monotonicity of the answers or of the simulation clock is needed. -/
+theorem mem_eval_of_eventually_evaln_eq_some {O : ℕ →. ℕ} {t : ℕ → ℕ}
+    (hO : ∀ z y, σ z = some y → y ∈ O z) (hσ : Converges σs σ)
+    (hd : ∀ᶠ s in atTop, evaln (σs s) (t s) c n = some d) :
+    d.output ∈ eval O c n := by
+  obtain ⟨s, hs, hσs⟩ := (hd.and (hσ.eventually_forall_mem (Finset.range d.use))).exists
+  exact evaln_sound hs fun z hz y hy => hO z y ((hσs z (Finset.mem_range.2 hz)).symm.trans hy)
 
 variable {A : ℕ → Finset ℕ}
 

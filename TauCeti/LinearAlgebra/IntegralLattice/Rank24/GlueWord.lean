@@ -38,7 +38,8 @@ Sums and shortest norms of glue words can be computed on their digit words: `glu
 two digit words label by label (`encodeGlueWord_add`), and `glueWordMinimum` sums the shortest
 norms of the printed labels, giving the shortest norm `μ(w)` of the coset named by the word
 (`glueWordMinimum_encodeGlueWord`). Finite checks on printed glue words therefore evaluate by
-`decide`.
+`decide`. Like digit lists, shortest norms are unchanged by passing to an equal family of
+components (`TauCeti.DynkinType.sum_glueMinimum_piGlueAlphabetCongr`).
 
 For a constant type-`A` family, `typeAGlueWordOfDigits` reads digits modulo the alphabet size.
 `encodeGlueWord_typeA_eq` gives the encoder's residue formula, and
@@ -96,6 +97,12 @@ theorem encodeGlueWord_def (w : ∀ i, (t i).glueAlphabet (ht i)) :
 @[simp] theorem getElem_encodeGlueWord (w : ∀ i, (t i).glueAlphabet (ht i)) (i : Fin n) :
     (encodeGlueWord t ht w)[i.val]'(by simp) =
       (((t i).glueLabelEquiv (ht i)).symm (w i)).val := by
+  simp [encodeGlueWord]
+
+/-- The glue word with prescribed labels encodes to the list of those labels. -/
+@[simp] theorem encodeGlueWord_glueLabelEquiv (d : ∀ i, Fin (t i).glueLabelCount) :
+    encodeGlueWord t ht (fun i ↦ (t i).glueLabelEquiv (ht i) (d i)) =
+      List.ofFn fun i ↦ (d i : ℕ) := by
   simp [encodeGlueWord]
 
 /-- The zero glue word has every label zero. -/
@@ -188,14 +195,7 @@ component. -/
 theorem decodeGlueWord_ofFn (d : Fin n → ℕ) (hd : ∀ i, d i < (t i).glueLabelCount) :
     decodeGlueWord t ht (List.ofFn d) =
       some fun i ↦ (t i).glueLabelEquiv (ht i) ⟨d i, hd i⟩ := by
-  rw [decodeGlueWord_eq_some_iff]
-  apply List.ext_getElem
-  · simp
-  · intro i hi _
-    have h := getElem_encodeGlueWord t ht (fun i ↦ (t i).glueLabelEquiv (ht i) ⟨d i, hd i⟩)
-      ⟨i, by simpa using hi⟩
-    simp only [Equiv.symm_apply_apply] at h
-    simpa using h.symm
+  rw [decodeGlueWord_eq_some_iff, encodeGlueWord_glueLabelEquiv]
 
 /-- **Decoding is natural under permutations of the components.** Reindexing the labels of a
 word along `σ : Fin m ≃ Fin n` and decoding against the reindexed components `k ↦ t (σ k)`

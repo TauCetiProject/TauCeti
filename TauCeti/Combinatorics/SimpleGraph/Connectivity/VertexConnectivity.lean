@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.EdgeConnectivity
+public import TauCeti.Combinatorics.SimpleGraph.Connectivity.CutVertex
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.Menger
 public import TauCeti.Data.ENat.Lattice
+import Mathlib.SetTheory.Cardinal.NatCard
 
 /-!
 # Vertex reachability and vertex connectivity of simple graphs
@@ -60,6 +62,8 @@ ed., Graduate Texts in Mathematics 173, Springer, 2017, Section 1.4.
 
 * `SimpleGraph.isVertexReachable_one`, `SimpleGraph.isVertexConnected_one`: the threshold `1` is
   reachability, respectively connectedness on at least two vertices.
+* `SimpleGraph.isVertexConnected_two_iff`: 2-vertex-connectivity is connectedness on at least
+  three vertices with no cut vertex.
 * `SimpleGraph.Iso.isVertexReachable_iff`, `SimpleGraph.Iso.isVertexConnected_iff`: vertex
   reachability and connectivity are invariant under graph isomorphism.
 * `SimpleGraph.isVertexConnected_iff`: `G` is `k`-vertex-connected exactly when it has at least
@@ -81,6 +85,11 @@ ed., Graduate Texts in Mathematics 173, Springer, 2017, Section 1.4.
 * `SimpleGraph.isVertexConnected_iff_forall_exists_paths`: the **global form of Menger's
   theorem**: on a finite vertex type with more than `k` vertices, `k`-vertex-connectivity is the
   existence of `k` distinct internally disjoint paths between every two distinct vertices.
+* `SimpleGraph.Walk.reachable_induce_coe_of_mem_support`,
+  `SimpleGraph.Walk.reachable_start_induce_coe`: lifting walks in `G` with `toSubgraph ≤ K` to
+  reachability in induced subgraphs of `K.coe`.
+* `SimpleGraph.Walk.IsCycle.isVertexConnected_two_toSubgraph`: the subgraph traced by a cycle is
+  `2`-vertex-connected, with no finiteness assumption.
 
 ## Implementation notes
 
@@ -228,6 +237,14 @@ theorem isVertexConnected_iff : G.IsVertexConnected k ↔
 theorem IsVertexConnected.add_one_le_card (h : G.IsVertexConnected k) : k + 1 ≤ ENat.card V :=
   h.1
 
+/-- A vertex-connected graph on a finite vertex type has more vertices than its finite
+connectivity threshold. -/
+theorem IsVertexConnected.add_one_le_natCard [Finite V] {n : ℕ}
+    (h : G.IsVertexConnected n) : n + 1 ≤ Nat.card V := by
+  have hcard := h.add_one_le_card
+  rw [ENat.card_eq_coe_natCard] at hcard
+  exact_mod_cast hcard
+
 theorem IsVertexConnected.isVertexReachable (h : G.IsVertexConnected k) (u v : V) :
     G.IsVertexReachable k u v :=
   h.2 u v
@@ -272,6 +289,38 @@ theorem isVertexConnected_one : G.IsVertexConnected 1 ↔ G.Connected ∧ Nontri
   simp only [isVertexReachable_one]
   exact ⟨fun ⟨_, h⟩ ↦ ⟨⟨h, inferInstance⟩, inferInstance⟩, fun ⟨⟨h, _⟩, _⟩ ↦ ⟨‹_›, h⟩⟩
 
+/-- A simple graph is 2-vertex-connected exactly when it has at least three vertices, is
+connected, and has no cut vertex. -/
+theorem isVertexConnected_two_iff : G.IsVertexConnected 2 ↔
+    3 ≤ ENat.card V ∧ G.Connected ∧ ∀ v, ¬G.IsCutVertex v := by
+  constructor
+  · intro h
+    have hcard := h.add_one_le_card
+    norm_num at hcard
+    refine ⟨hcard, (connected_iff G).2 ⟨fun u v ↦ (h.2 u v).reachable (by simp), h.nonempty⟩,
+      fun x hx ↦ ?_⟩
+    rw [isCutVertex_iff_exists_forall_walk_mem_support] at hx
+    obtain ⟨u, w, hux, hwx, -, hall⟩ := hx
+    obtain ⟨p, hp⟩ := isVertexReachable_iff_exists_walk.mp (h.isVertexReachable u w)
+      (s := {x}) (by simp) (by simpa) (by simpa)
+    exact hp x (hall p) (by simp)
+  · rintro ⟨hcard, hconn, hcut⟩
+    rw [isVertexConnected_iff]
+    refine ⟨by norm_num at hcard ⊢; exact hcard, fun {s} hs ↦ ?_⟩
+    have hsle : s.encard ≤ 1 := ENat.lt_two_iff.mp hs
+    have hsub : s.Subsingleton := Set.encard_le_one_iff_subsingleton.mp hsle
+    intro u v
+    by_cases hsempty : s = ∅
+    · obtain ⟨p⟩ := hconn.preconnected u.1 v.1
+      exact ⟨p.induce sᶜ fun _ _ ↦ by simp [hsempty]⟩
+    · obtain ⟨x, hxs⟩ := Set.nonempty_iff_ne_empty.mpr hsempty
+      have hu : u.1 ∉ s := u.2
+      have hv : v.1 ∉ s := v.2
+      obtain ⟨p, hp⟩ :=
+        (hconn.preconnected u.1 v.1).exists_walk_notMem_support_of_not_isCutVertex (hcut x)
+          (fun hux ↦ hu (hux ▸ hxs)) (fun hvx ↦ hv (hvx ▸ hxs))
+      exact ⟨p.induce sᶜ fun y hy hys ↦ hp (hsub hys hxs ▸ hy)⟩
+
 theorem IsVertexConnected.preconnected (hk : k ≠ 0) (h : G.IsVertexConnected k) :
     G.Preconnected :=
   fun u v ↦ (h.2 u v).reachable hk
@@ -287,6 +336,115 @@ theorem isVertexConnected_top_iff : (⊤ : SimpleGraph V).IsVertexConnected k �
   obtain rfl | huv := eq_or_ne u v
   · exact .rfl
   · exact ((top_adj u v).2 huv).isVertexReachable
+
+/-! ### Subgraph walks and cycle connectivity -/
+
+/-- Any two vertices in `s : Set K.verts` whose underlying vertices lie on a walk `r` in `G` with
+`r.toSubgraph ≤ K` whose support stays in `s` are mutually reachable in `K.coe.induce s`. -/
+theorem Walk.reachable_induce_coe_of_mem_support {K : G.Subgraph} {s : Set K.verts}
+    {a b : V} {r : G.Walk a b} (hrK : r.toSubgraph ≤ K)
+    (hrs : ∀ z : K.verts, z.1 ∈ r.support → z ∈ s)
+    {p q : s} (hp : p.1.1 ∈ r.support) (hq : q.1.1 ∈ r.support) :
+    (K.coe.induce s).Reachable p q := by
+  let rK := r.mapToSubgraph.map (Subgraph.inclusion hrK)
+  have hsupp : rK.support.map Subtype.val = r.support := calc
+    rK.support.map Subtype.val
+      = (r.mapToSubgraph.support.map (Subgraph.inclusion hrK)).map Subtype.val := by
+        rw [Walk.support_map]
+    _ = r.mapToSubgraph.support.map r.toSubgraph.hom := by rw [List.map_map]; rfl
+    _ = (r.mapToSubgraph.map r.toSubgraph.hom).support := (Walk.support_map _ _).symm
+    _ = r.support := congrArg Walk.support r.map_mapToSubgraph_hom
+  have hmem : ∀ {z : K.verts}, z.1 ∈ r.support ↔ z ∈ rK.support := by
+    intro z
+    rw [← hsupp]
+    exact List.mem_map_of_injective Subtype.val_injective
+  let r_ind := rK.induce s fun z hz ↦ hrs z (hmem.mpr hz)
+  refine r_ind.reachable_of_mem_support ?_ ?_
+  · rw [Walk.support_induce, List.mem_attachWith]
+    exact hmem.mp hp
+  · rw [Walk.support_induce, List.mem_attachWith]
+    exact hmem.mp hq
+
+/-- If a walk `r` in `G` has `r.toSubgraph ≤ K` and every vertex of `r` in `K.verts` belongs to
+`s`, then every vertex of `r` is reachable from `r`'s start in `K.coe.induce s`. -/
+theorem Walk.reachable_start_induce_coe {K : G.Subgraph} {s : Set K.verts}
+    {a b : V} (r : G.Walk a b) (hrK : r.toSubgraph ≤ K)
+    (hrs : ∀ z : K.verts, z.1 ∈ r.support → z ∈ s) {x : K.verts} (hx : x.1 ∈ r.support) :
+    (K.coe.induce s).Reachable
+      ⟨⟨a, hrK.1 r.start_mem_verts_toSubgraph⟩, hrs _ r.start_mem_support⟩
+      ⟨x, hrs x hx⟩ :=
+  r.reachable_induce_coe_of_mem_support hrK hrs r.start_mem_support hx
+
+/-- Deleting a nonempty set `s` of at most one vertex from the subgraph traced by a cycle leaves the
+remaining vertices pairwise reachable. -/
+private theorem Walk.IsCycle.reachable_induce_coe_compl_of_encard_le_one {c : G.Walk u u}
+    (hc : c.IsCycle) {s : Set c.toSubgraph.verts} {x₀ : c.toSubgraph.verts} (hx₀ : x₀ ∈ s)
+    (hs1 : s.encard ≤ 1) (p q' : ↑(sᶜ : Set c.toSubgraph.verts)) :
+    (c.toSubgraph.coe.induce sᶜ).Reachable p q' := by
+  classical
+  have hx₀_supp : x₀.1 ∈ c.support := c.mem_verts_toSubgraph.mp x₀.2
+  let c' := c.rotate x₀.1 hx₀_supp
+  have hc' : c'.IsCycle := hc.rotate hx₀_supp
+  have hc'sub : c'.toSubgraph = c.toSubgraph := c.toSubgraph_rotate hx₀_supp
+  cases hcons : c' with
+  | nil => exact (hc'.not_nil (hcons ▸ Walk.Nil.nil)).elim
+  | @cons _ y _ hxy q =>
+    have hq : q.IsPath := ((Walk.cons_isCycle_iff q hxy).mp (hcons ▸ hc')).1
+    cases hqr : q.reverse with
+    | nil => exact (hxy.ne rfl).elim
+    | @cons _ z _ hxz r =>
+      have hxr : x₀.1 ∉ r.support := by
+        have hp_cons : (Walk.cons hxz r).IsPath := hqr ▸ hq.reverse
+        exact ((Walk.cons_isPath_iff hxz r).mp hp_cons).2
+      have hr_sub : r.toSubgraph ≤ c.toSubgraph := by
+        have h1 : r.toSubgraph ≤ (Walk.cons hxz r).toSubgraph := le_sup_right
+        rw [← hqr, Walk.toSubgraph_reverse] at h1
+        have h2 : q.toSubgraph ≤ (Walk.cons hxy q).toSubgraph := le_sup_right
+        rw [← hcons, hc'sub] at h2
+        exact h1.trans h2
+      have hrs : ∀ x : c.toSubgraph.verts, x.1 ∈ r.support → x ∉ s := fun x hxr' hxs ↦
+        hxr (Set.encard_le_one_iff.mp hs1 x x₀ hxs hx₀ ▸ hxr')
+      have hmem_r : ∀ p : ↑(sᶜ : Set c.toSubgraph.verts), p.1.1 ∈ r.support := by
+        intro p
+        have hpx : p.1.1 ≠ x₀.1 := fun heq ↦ p.2 (Subtype.ext heq ▸ hx₀)
+        have hpc' : p.1.1 ∈ c'.support :=
+          c'.mem_verts_toSubgraph.mp (hc'sub.symm ▸ p.1.2)
+        rw [hcons, Walk.support_cons, List.mem_cons] at hpc'
+        have hpq : p.1.1 ∈ q.reverse.support := by
+          rw [Walk.support_reverse, List.mem_reverse]
+          exact hpc'.resolve_left hpx
+        rw [hqr, Walk.support_cons, List.mem_cons] at hpq
+        exact hpq.resolve_left hpx
+      exact r.reachable_induce_coe_of_mem_support hr_sub hrs (hmem_r p) (hmem_r q')
+
+/-- The subgraph traced by any cycle in a simple graph is `2`-vertex-connected, with no finiteness
+assumption. -/
+theorem Walk.IsCycle.isVertexConnected_two_toSubgraph {c : G.Walk u u} (hc : c.IsCycle) :
+    c.toSubgraph.coe.IsVertexConnected 2 := by
+  refine isVertexConnected_iff.mpr ⟨?_, fun s hs ↦ ?_⟩
+  · -- A cycle has length at least `3`, so its first three vertices `{u, y, z}` are distinct.
+    have hlen := hc.three_le_length
+    cases c with
+    | nil => simp at hlen
+    | @cons _ y _ huy rest =>
+      cases rest with
+      | nil => simp at hlen
+      | @cons _ z _ hyz rest' =>
+        have huz : u ≠ z := by
+          rintro rfl
+          exact ((Walk.cons_isCycle_iff _ huy).mp hc).2 (by simp [Sym2.eq_swap])
+        have hsub : ({u, y, z} : Set V) ⊆
+            (Walk.cons huy (Walk.cons hyz rest')).toSubgraph.verts := by
+          rintro x (rfl | rfl | rfl) <;> simp
+        have hnotMem : u ∉ ({y, z} : Set V) := by simp [huy.ne, huz]
+        rw [ENat.card_coe_set_eq, ← Set.encard_pair hyz.ne, ← Set.encard_insert_of_notMem hnotMem]
+        exact Set.encard_le_encard hsub
+  · -- Deleting at most one vertex leaves a spanning subwalk of the rotated cycle.
+    rcases s.eq_empty_or_nonempty with rfl | ⟨x₀, hx₀⟩
+    · intro p q
+      exact c.reachable_induce_coe_of_mem_support le_rfl (fun _ _ h ↦ h)
+        (c.mem_verts_toSubgraph.mp p.1.2) (c.mem_verts_toSubgraph.mp q.1.2)
+    · exact hc.reachable_induce_coe_compl_of_encard_le_one hx₀ (Order.le_of_lt_add_one hs)
 
 /-! ### The numerical invariant -/
 

@@ -101,7 +101,7 @@ theorem exists_hom_τ₃_eq (hS : S.IsAlmostSplit) (hS' : S'.IsAlmostSplit) (e :
     ∃ φ : S ⟶ S', φ.τ₃ = e.hom := by
   have hmono := hS'.shortExact.mono_f
   exact hS'.isRightAlmostSplit_g.exists_hom_τ₃_eq_of_not_isSplitEpi hS'.shortExact.exact e.hom
-    (hS.isRightAlmostSplit_g.comp_iso e).not_isSplitEpi
+    (hS.isRightAlmostSplit_g.comp_iso e.hom).not_isSplitEpi
 
 /-- **A morphism of almost-split sequences that is invertible at the right-hand end is
 invertible**, the sharp form of uniqueness. -/

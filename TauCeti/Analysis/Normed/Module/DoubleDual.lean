@@ -18,6 +18,12 @@ When the scalar field is proper, a norm-bounded set has weakly compact closure i
 weak-star closure of its bidual image lies in the range of the canonical map. This extends Mathlib's
 `NormedSpace.isCompact_closure_of_isBounded` to seminormed spaces, using the inducing property
 to transfer Banach–Alaoglu compactness back to the weak topology.
+In particular, in a reflexive seminormed space over a proper field, where the canonical map is
+surjective, every norm-bounded set has weakly compact closure
+(`TauCeti.isCompact_closure_toWeakSpace`).
+
+Finally, every linear map from a vector space into the bidual of a normed space lifts into the
+space on the subspace of vectors sent into the canonical image (`LinearMap.exists_lift_doubleDual`).
 -/
 
 public section
@@ -35,6 +41,15 @@ theorem isInducing_inclusionInDoubleDualWeak :
     IsInducing (inclusionInDoubleDualWeak 𝕜 E) where
   -- Both topologies are induced by evaluation against the continuous dual.
   eq_induced := Eq.symm induced_compose
+
+/-- An element of the bidual lies in the canonical image of `E` iff it does when viewed in the
+weak-star bidual. -/
+theorem toWeakDual_mem_range_inclusionInDoubleDualWeak_iff
+    (Φ : StrongDual 𝕜 (StrongDual 𝕜 E)) :
+    StrongDual.toWeakDual Φ ∈ range (inclusionInDoubleDualWeak 𝕜 E) ↔
+      Φ ∈ range (inclusionInDoubleDual 𝕜 E) := by
+  simp only [mem_range, inclusionInDoubleDualWeak_apply, EmbeddingLike.apply_eq_iff_eq,
+    (toWeakSpace 𝕜 E).symm.surjective.exists]
 
 variable [ProperSpace 𝕜]
 
@@ -59,3 +74,49 @@ theorem isCompact_closure_weakSpace_of_isBounded (s : Set (WeakSpace 𝕜 E))
   exact (double_dual_bound 𝕜 E _).trans (hr _ (by simpa using hx))
 
 end NormedSpace
+
+namespace TauCeti
+
+open NormedSpace
+
+variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [ProperSpace 𝕜]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- In a reflexive seminormed space over a proper nontrivially normed field, every norm-bounded
+set has weakly compact closure. -/
+theorem isCompact_closure_toWeakSpace
+    (hE : Function.Surjective (inclusionInDoubleDual 𝕜 E)) {s : Set E} (hs : IsBounded s) :
+    IsCompact (closure (toWeakSpace 𝕜 E '' s)) := by
+  apply NormedSpace.isCompact_closure_weakSpace_of_isBounded 𝕜 E
+  · simpa only [preimage_image_eq _ (toWeakSpace 𝕜 E).injective] using hs
+  · intro φ _
+    obtain ⟨x, hx⟩ := hE (WeakDual.toStrongDual φ)
+    refine ⟨toWeakSpace 𝕜 E x, ?_⟩
+    apply WeakDual.toStrongDual.injective
+    simpa only [inclusionInDoubleDualWeak_apply, LinearEquiv.symm_apply_apply,
+      StrongDual.toStrongDual_toWeakDual] using hx
+
+end TauCeti
+
+namespace LinearMap
+
+open NormedSpace
+
+variable {𝕜 E V : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [AddCommGroup V] [Module 𝕜 V]
+
+/-- A linear map `ι : V → E**` lifts into `E` on the subspace `F₀` of the vectors that it maps
+into the canonical image of `E`: there is a linear map `A : F₀ → E` whose canonical image is
+`ι`, and every `v` with `ι v` equal to the canonical image of `x` lies in `F₀`. -/
+theorem exists_lift_doubleDual (ι : V →ₗ[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E)) :
+    ∃ (F₀ : Submodule 𝕜 V) (A : F₀ →ₗ[𝕜] E),
+      (∀ φ : F₀, inclusionInDoubleDual 𝕜 E (A φ) = ι φ) ∧
+        ∀ v x, ι v = inclusionInDoubleDual 𝕜 E x → v ∈ F₀ := by
+  let J := inclusionInDoubleDual 𝕜 E
+  have hJ : Function.Injective J := (inclusionInDoubleDualLi 𝕜 (E := E)).injective
+  let F₀ : Submodule 𝕜 V := (LinearMap.range (J : E →ₗ[𝕜] _)).comap ι
+  exact ⟨F₀, LinearMap.codRestrictOfInjective (ι ∘ₗ F₀.subtype) J hJ fun φ ↦ φ.2,
+    fun φ ↦ LinearMap.codRestrictOfInjective_comp_apply (ι ∘ₗ F₀.subtype) (J : E →ₗ[𝕜] _)
+      hJ _ φ, fun v x hv ↦ ⟨x, hv.symm⟩⟩
+
+end LinearMap
