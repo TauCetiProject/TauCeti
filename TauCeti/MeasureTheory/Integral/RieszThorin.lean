@@ -319,6 +319,31 @@ private theorem norm_integral_mul_le_of_eLpNorm_le_one (T : SimpleFunc α ℂ �
       _ = M := by simp
   exact_mod_cast enorm_le_coe.1 h
 
+/-- The pairing of the image of a fibre indicator of `f` with a fibre indicator of `g` is
+integrable, when `f` and `g` have norm at most one in the interpolation spaces. -/
+private theorem integrable_mul_fiberInd (T : SimpleFunc α ℂ →ₗ[ℂ] (β →ₘ[ν] ℂ))
+    {p₀ p₁ p q₀ q₀' q₁' q' : ℝ≥0∞} [q₀.HolderConjugate q₀'] (hp₀ : p₀ ≠ 0) (hp₁ : p₁ ≠ 0)
+    {θ : ℝ} (hθ : θ ∈ Set.Ioo (0 : ℝ) 1)
+    (hp : p⁻¹ = ENNReal.ofReal (1 - θ) * p₀⁻¹ + ENNReal.ofReal θ * p₁⁻¹) (hq₀' : q₀' ≠ 0)
+    (hq₁' : q₁' ≠ 0)
+    (hq' : q'⁻¹ = ENNReal.ofReal (1 - θ) * q₀'⁻¹ + ENNReal.ofReal θ * q₁'⁻¹) {M₀ : ℝ≥0}
+    (h₀ : ∀ f, eLpNorm (T f) q₀ ν ≤ M₀ * eLpNorm f p₀ μ) {f : SimpleFunc α ℂ}
+    {g : SimpleFunc β ℂ} (hf : eLpNorm f p μ ≤ 1) (hg : eLpNorm g q' ν ≤ 1) :
+    ∀ c ∈ f.range, c ≠ 0 → ∀ d ∈ g.range, d ≠ 0 →
+      Integrable (fun y => T (fiberInd f c) y * fiberInd g d y) ν := by
+  intro c _ hc d _ hd
+  have hχ : MemLp (fiberInd f c) p₀ μ :=
+    memLp_fiberInd f (w := expo (p₀⁻¹).toReal (p₁⁻¹).toReal θ 0) hc <| memLp_iff.2 <|
+      (eLpNorm_map_powSign_expo_le_one_of_re_eq_zero f hp₀ hp₁ hθ hp hf (by simp)).trans_lt
+        ENNReal.one_lt_top
+  have hTχ : MemLp (T (fiberInd f c)) q₀ ν :=
+    memLp_iff.2 ((h₀ _).trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top hχ.eLpNorm_lt_top))
+  have hχ' : MemLp (fiberInd g d) q₀' ν :=
+    memLp_fiberInd g (w := expo (q₀'⁻¹).toReal (q₁'⁻¹).toReal θ 0) hd <| memLp_iff.2 <|
+      (eLpNorm_map_powSign_expo_le_one_of_re_eq_zero g hq₀' hq₁' hθ hq' hg (by simp)).trans_lt
+        ENNReal.one_lt_top
+  exact hTχ.integrable_mul hχ'
+
 /-- **The three-lines estimate.** For simple `f`, `g` of norm at most one in `Lᵖ` and in the dual
 exponent `L^{q'}`, the pairing `∫ T f · g` is at most `M₀ ^ (1 - θ) M₁ ^ θ`. -/
 private theorem norm_integral_mul_le_of_le_one (T : SimpleFunc α ℂ →ₗ[ℂ] (β →ₘ[ν] ℂ))
@@ -337,18 +362,7 @@ private theorem norm_integral_mul_le_of_le_one (T : SimpleFunc α ℂ →ₗ[ℂ
   set Q := expo (q₀'⁻¹).toReal (q₁'⁻¹).toReal θ with hQ
   -- The fibre indicators of `f` and `g` lie in the endpoint spaces, so the pairing of the two
   -- analytic families expands into a finite exponential sum `Φ`.
-  have hint : ∀ c ∈ f.range, c ≠ 0 → ∀ d ∈ g.range, d ≠ 0 →
-      Integrable (fun y => T (fiberInd f c) y * fiberInd g d y) ν := by
-    intro c _ hc d _ hd
-    have hχ : MemLp (fiberInd f c) p₀ μ := memLp_fiberInd f (w := P 0) hc <| memLp_iff.2 <|
-      (eLpNorm_map_powSign_expo_le_one_of_re_eq_zero f hp₀ hp₁ hθ hp hf (by simp)).trans_lt
-        ENNReal.one_lt_top
-    have hTχ : MemLp (T (fiberInd f c)) q₀ ν :=
-      memLp_iff.2 ((h₀ _).trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top hχ.eLpNorm_lt_top))
-    have hχ' : MemLp (fiberInd g d) q₀' ν := memLp_fiberInd g (w := Q 0) hd <| memLp_iff.2 <|
-      (eLpNorm_map_powSign_expo_le_one_of_re_eq_zero g hq₀' hq₁' hθ hq' hg (by simp)).trans_lt
-        ENNReal.one_lt_top
-    exact hTχ.integrable_mul hχ'
+  have hint := integrable_mul_fiberInd T hp₀ hp₁ hθ hp hq₀' hq₁' hq' h₀ hf hg
   set I : ℂ → ℂ → ℂ := fun c d => ∫ y, T (fiberInd f c) y * fiberInd g d y ∂ν
   set Φ : ℂ → ℂ := fun z =>
     ∑ c ∈ f.range, ∑ d ∈ g.range, powSign (P z) c * powSign (Q z) d * I c d with hΦ_def

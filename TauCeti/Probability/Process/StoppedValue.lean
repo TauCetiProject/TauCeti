@@ -38,6 +38,11 @@ namespace MeasureTheory
 variable {Ω ι β : Type*} [Nonempty ι] {m : MeasurableSpace Ω} {u : ι → Ω → β}
   {τ : Ω → WithTop ι}
 
+/-- On a finite-time slice, the stopped value is the value of the process at that time. -/
+theorem stoppedValue_of_eq {i : ι} {ω : Ω} (h : τ ω = i) :
+    stoppedValue u τ ω = u i ω := by
+  simp [stoppedValue, h]
+
 /-- The preimage of a set under a stopped value, decomposed along the values of the stopping
 time. -/
 theorem stoppedValue_preimage_eq (t : Set β) :
