@@ -567,14 +567,6 @@ theorem stair_defect_mul (t : ℕ) :
   have h := st_tri t
   nlinarith
 
-/-- The general formula agrees with the kernel-checked witnesses' sizes (`t = 1, 2, 3`). -/
-theorem stair_small : defect (stair 3) = 2 ∧ defect (stair 5) = 10 ∧ defect (stair 7) = 28 ∧
-    gaugeDist (stair 5) = 6 ∧ gaugeDist (stair 7) = 12 := by
-  have h1 : 3 * defect (stair 3) = 6 := stair_defect_mul 1
-  have h2 : 3 * defect (stair 5) = 30 := stair_defect_mul 2
-  have h3 : 3 * defect (stair 7) = 84 := stair_defect_mul 3
-  exact ⟨by omega, by omega, by omega, stair_gaugeDist 2, stair_gaugeDist 3⟩
-
 /-! ## Replication of any seed, and every `k ≥ 3` -/
 
 /-- **Any seed replicates.** If a cochain on `K_m` has gauge distance `D > 0` (attained by the

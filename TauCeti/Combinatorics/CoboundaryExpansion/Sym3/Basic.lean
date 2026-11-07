@@ -12,6 +12,7 @@ public import Mathlib.Data.List.GetD
 public import Mathlib.Tactic.Group
 public import Mathlib.Tactic.NormNum
 public import TauCeti.GroupTheory.Perm.MovedNorm
+import Mathlib.Algebra.Order.BigOperators.Group.List
 
 /-!
 # `Sym(3)`-valued cochains on `K_k`: counts, exhaustion, and the witness for `k = 4`
@@ -175,16 +176,8 @@ private theorem mem_edges {e : Fin k × Fin k} (h : e ∈ edges k) : e.1 < e.2 :
   obtain ⟨u, _, v, ⟨_, huv⟩, rfl⟩ := h
   exact huv
 
-private theorem sum_map_le {ι : Type*} (l : List ι) (f g : ι → ℕ) (h : ∀ i ∈ l, f i ≤ g i) :
-    (l.map f).sum ≤ (l.map g).sum := by
-  induction l with
-  | nil => simp
-  | cons a t ih =>
-    simp only [List.map_cons, List.sum_cons]
-    exact Nat.add_le_add (h a (by simp)) (ih fun i hi => h i (by simp [hi]))
-
 private theorem pcost_mono (l ext : List S3) : pcost α l ≤ pcost α (l ++ ext) := by
-  apply sum_map_le
+  apply List.sum_le_sum
   intro e he
   have h12 := mem_edges he
   split_ifs with h1 h2 h2
