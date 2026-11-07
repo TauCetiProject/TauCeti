@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.ImageSimplyConnected
 public import TauCeti.Analysis.Complex.Fuchsian.Elliptic.Basic
+import TauCeti.Analysis.Complex.Conformal.LocalDegree
 
 /-!
 # Local linearizing coordinates at a point of finite stabilizer
@@ -284,19 +285,11 @@ theorem LinearizingCoordinate.isOpen_target (ψ : Γ.LinearizingCoordinate z ε)
     ψ.toFun_injOn_ball
 
 /-- **The inverse reparametrization of a local linearizing coordinate has nonvanishing derivative**
-on the image of the reparametrization: composed with the reparametrization, which is holomorphic,
-it is the identity near every point of the open `target`. -/
+on the image of the reparametrization: it is holomorphic and injective on the open `target`
+(`TauCeti.deriv_ne_zero_of_injOn`). -/
 theorem LinearizingCoordinate.deriv_invFun_ne_zero (ψ : Γ.LinearizingCoordinate z ε)
-    {u : ℂ} (hu : u ∈ ψ.toEquiv.target) : deriv ψ.toEquiv.invFun u ≠ 0 := by
-  have hd : DifferentiableAt ℂ ψ.toEquiv.invFun u :=
-    ψ.differentiableOn_invFun.differentiableAt (ψ.isOpen_target.mem_nhds hu)
-  have hfd : DifferentiableAt ℂ ψ.toEquiv.toFun (ψ.toEquiv.invFun u) :=
-    ψ.differentiableOn.differentiableAt (Metric.isOpen_ball.mem_nhds (ψ.mem_ball_invFun hu))
-  have hid : ψ.toEquiv.toFun ∘ ψ.toEquiv.invFun =ᶠ[𝓝 u] id :=
-    Filter.mem_of_superset (ψ.isOpen_target.mem_nhds hu) fun v hv ↦ ψ.toEquiv.right_inv' hv
-  have h := (hfd.hasDerivAt.comp u hd.hasDerivAt).deriv
-  rw [hid.deriv_eq, deriv_id] at h
-  exact right_ne_zero_of_mul (h ▸ one_ne_zero)
+    {u : ℂ} (hu : u ∈ ψ.toEquiv.target) : deriv ψ.toEquiv.invFun u ≠ 0 :=
+  TauCeti.deriv_ne_zero_of_injOn ψ.differentiableOn_invFun ψ.isOpen_target ψ.toEquiv.symm.injOn hu
 
 /-- **The coordinate of a local linearizing coordinate is holomorphic on the invariant disc**:
 on the ambient upper half-plane, the invariant disc being the ball `Metric.ball z ε`
