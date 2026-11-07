@@ -58,6 +58,8 @@ theorem finite_ker_torusPointMap_of_finite_cokernel [IsDomain R]
     [Finite ((κ → ℤ) ⧸ LinearMap.range φ)] :
     Finite (torusPointMap (R := R) φ).ker := by
   let c := (LinearMap.range φ).toAddSubgroup.index
+  -- `Submodule.quotientRel` uses the underlying additive subgroup's relation, so the
+  -- submodule quotient and additive subgroup quotient are definitionally equal.
   have : Finite ((κ → ℤ) ⧸ (LinearMap.range φ).toAddSubgroup) :=
     ‹Finite ((κ → ℤ) ⧸ LinearMap.range φ)›
   have hc : c ≠ 0 := AddSubgroup.index_ne_zero_of_finite
