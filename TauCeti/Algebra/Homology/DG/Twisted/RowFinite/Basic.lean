@@ -48,9 +48,10 @@ is a cycle.
 * `linearCombination_rowFiniteTwistedDifferential` and
   `forall_linearCombination_rowFiniteTwistedDifferential_iff`: maps out of the free module
   commute with the differentials exactly when they do so on generators.
-* `rowFiniteSignedMap`: the signed extension of images of the generators, a map of odd degree
-  out of the free module, with `LinearMap.map_rowFiniteSignedMap` and
-  `rowFiniteSignedMap_mem_of_mem_rowFiniteTotalGrading`.
+* `rowFiniteSignedMap`: the Koszul-signed extension of images of the generators out of the
+  free module, with `rowFiniteSignedMap_congr`, `LinearMap.map_rowFiniteSignedMap` and
+  `rowFiniteSignedMap_mem_of_mem_rowFiniteTotalGrading`, which gives it degree `-1` when each
+  generator `x` is sent into degree `-ind x - 1`.
 * `linearCombination_eq_add_rowFiniteSignedMap` and
   `forall_linearCombination_eq_add_rowFiniteSignedMap_iff`: homotopies out of the free module
   are determined on generators.
@@ -190,10 +191,12 @@ section SignedMap
 
 variable {M : Type uM} [AddCommGroup M] [Module R M] [Module A M] [IsScalarTower R A M]
 
-/-- The signed extension of the images `h x` of the generators to a map of odd degree out of the
-free module. On a coefficient of degree `q`, it sends `single x a` to `(-1)^q • (a • h x)`. With
-values in a free module it supplies both twisting and homotopy terms; with values in a DG left
-module it is the homotopy out of the free module determined by the images of the generators. -/
+/-- The Koszul-signed extension of the images `h x` of the generators to an `R`-linear map out of
+the free module. On a coefficient of degree `q`, it sends `single x a` to `(-1)^q • (a • h x)`.
+With values in a free module it supplies the twisting terms. With values in a graded module and
+each `h x` of degree `-ind x - 1`, it is the map of degree `-1` determined by the images of the
+generators (`rowFiniteSignedMap_mem_of_mem_rowFiniteTotalGrading`), the form of a homotopy out of
+the free module. -/
 noncomputable def rowFiniteSignedMap (h : P → M) : (P →₀ A) →ₗ[R] M :=
   Finsupp.lsum R fun x ↦
     ((LinearMap.toSpanSingleton A M (h x)).restrictScalars R).comp
@@ -240,6 +243,14 @@ theorem rowFiniteSignedMap_smul (h : P → M) {q : ℤ} {a : A}
         rowFiniteSignedMap_single h x b.2]
       simp [Int.negOnePow_add, mul_smul, smul_comm a p.negOnePow]
     | add b c hb hc => simp only [Finsupp.single_add, smul_add, map_add, hb, hc]
+
+/-- The signed extension on a vector only depends on the images of the generators in its
+support. -/
+theorem rowFiniteSignedMap_congr {h h' : P → M} {f : P →₀ A}
+    (hh : ∀ x ∈ f.support, h x = h' x) :
+    rowFiniteSignedMap (𝒜 := 𝒜) h f = rowFiniteSignedMap (𝒜 := 𝒜) h' f := by
+  simp only [rowFiniteSignedMap_apply]
+  exact Finsupp.sum_congr fun x hx ↦ by rw [hh x hx]
 
 /-- An `A`-linear map commutes with the signed extension: applying it after the signed extension
 of `h` is the signed extension of its composite with `h`. -/

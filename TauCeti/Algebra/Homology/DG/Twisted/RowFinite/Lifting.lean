@@ -87,8 +87,7 @@ private theorem linearCombination_eq_and_rowFiniteSignedMap_eq {g g' : P → N} 
   refine ⟨?_, ?_⟩
   · simp only [linearCombination_apply]
     exact Finsupp.sum_congr fun y hy ↦ by rw [(h y hy).1]
-  · simp only [rowFiniteSignedMap_apply]
-    exact Finsupp.sum_congr fun y hy ↦ by rw [(h y hy).2]
+  · exact rowFiniteSignedMap_congr fun y hy ↦ (h y hy).2
 
 namespace RowFiniteTwistingCocycle
 
