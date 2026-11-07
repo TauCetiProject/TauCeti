@@ -9,9 +9,8 @@ public import TauCeti.Analysis.PDE.EnergyForm.Sobolev
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.Matrix.MeasurableSpace
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
-import Mathlib.MeasureTheory.Constructions.HaarToSphere
-import Mathlib.Analysis.SpecialFunctions.Pow.Integral
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
+import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.Sobolev.WeakDeriv.Removable
 import TauCeti.MeasureTheory.Integral.NormRpow
 
@@ -38,6 +37,11 @@ of the ellipticity ratio, and tends to `2` as the ratio tends to infinity.
 
 * `TauCeti.PDE.uniformlyEllipticOn_meyersCoefficient`: Meyers' coefficient is uniformly elliptic
   with constants `μ²` and `1`.
+* `TauCeti.PDE.gradient_meyersSolution`, `TauCeti.PDE.norm_gradient_meyersSolution_le`,
+  `TauCeti.PDE.mul_rpow_le_norm_gradient_meyersSolution`: away from the origin, the gradient of
+  Meyers' solution and the bounds `μ ‖x‖ ^ (μ - 1) ≤ ‖∇u(x)‖ ≤ 2 ‖x‖ ^ (μ - 1)`.
+* `TauCeti.PDE.gradient_ae_eq_gradient_meyersSolution`: the weak gradient of an element of
+  `W^{1,p}(Ω)` equal to Meyers' solution is its classical gradient.
 * `TauCeti.PDE.energyFormH1_meyersCoefficient_eq_zero`: an element of `H¹(Ω)` equal to Meyers'
   solution is a weak solution of `div(a ∇u) = 0` on `Ω`.
 * `TauCeti.PDE.exists_w1p_value_ae_eq_meyersSolution_iff`: on a bounded open set containing the
@@ -160,26 +164,10 @@ private theorem norm_rpow_sub_one {x : EuclideanSpace ℝ (Fin 2)} (hx : x ≠ 0
 
 private theorem hasFDerivAt_radialCoord {x : EuclideanSpace ℝ (Fin 2)} (hx : x ≠ 0) (i : Fin 2) :
     HasFDerivAt (radialCoord μ i) (innerSL ℝ (radialCoordGradient μ i x)) x := by
-  have hpos : 0 < ‖x‖ ^ 2 := by positivity
-  have h1 := ((hasStrictFDerivAt_norm_sq x).hasFDerivAt.rpow_const (p := (μ - 1) / 2)
-    (Or.inl hpos.ne')).mul (EuclideanSpace.proj (𝕜 := ℝ) i).hasFDerivAt
-  have hpow : ∀ y : EuclideanSpace ℝ (Fin 2), (‖y‖ ^ 2) ^ ((μ - 1) / 2) = ‖y‖ ^ (μ - 1) := by
-    intro y
-    rw [← Real.rpow_natCast, ← Real.rpow_mul (norm_nonneg y)]
-    norm_num
-    ring_nf
-  have hfun : ((fun y : EuclideanSpace ℝ (Fin 2) => (‖y‖ ^ 2) ^ ((μ - 1) / 2)) *
-      ⇑(EuclideanSpace.proj (𝕜 := ℝ) i)) = radialCoord μ i := by
-    funext y
-    simp [radialCoord, hpow]
-  rw [hfun] at h1
-  convert h1 using 1
+  refine ((hasFDerivAt_norm_rpow_of_ne (μ - 1) hx).mul
+    (EuclideanSpace.proj (𝕜 := ℝ) i).hasFDerivAt).congr_fderiv ?_
   ext v
-  have hpow' : (‖x‖ ^ 2) ^ ((μ - 1) / 2 - 1) = ‖x‖ ^ (μ - 3) := by
-    rw [← Real.rpow_natCast, ← Real.rpow_mul (norm_nonneg x)]
-    norm_num
-    ring_nf
-  simp [radialCoordGradient, EuclideanSpace.inner_single_left, hpow, hpow']
+  simp [radialCoordGradient, EuclideanSpace.inner_single_left, show μ - 1 - 2 = μ - 3 by ring]
   ring
 
 private theorem abs_radialCoord_le (i : Fin 2) (x : EuclideanSpace ℝ (Fin 2)) (hμ : 0 < μ) :
@@ -263,6 +251,24 @@ theorem meyersSolution_apply (x : EuclideanSpace ℝ (Fin 2)) :
   (rfl)
 
 private theorem meyersSolution_eq_radialCoord : meyersSolution μ = radialCoord μ 0 := (rfl)
+
+/-- Away from the origin, Meyers' solution has gradient
+`‖x‖ ^ (μ - 1) e₀ + (μ - 1) ‖x‖ ^ (μ - 3) x₀ x`. -/
+theorem hasGradientAt_meyersSolution {x : EuclideanSpace ℝ (Fin 2)} (hx : x ≠ 0) :
+    HasGradientAt (meyersSolution μ)
+      (‖x‖ ^ (μ - 1) • EuclideanSpace.single 0 1 + ((μ - 1) * ‖x‖ ^ (μ - 3) * x 0) • x) x := by
+  rw [hasGradientAt_iff_hasFDerivAt]
+  exact hasFDerivAt_radialCoord (μ := μ) hx 0
+
+/-- The gradient of Meyers' solution away from the origin. -/
+theorem gradient_meyersSolution {x : EuclideanSpace ℝ (Fin 2)} (hx : x ≠ 0) :
+    ∇ (meyersSolution μ) x =
+      ‖x‖ ^ (μ - 1) • EuclideanSpace.single 0 1 + ((μ - 1) * ‖x‖ ^ (μ - 3) * x 0) • x :=
+  (hasGradientAt_meyersSolution hx).gradient
+
+private theorem gradient_meyersSolution_eq_radialCoordGradient {x : EuclideanSpace ℝ (Fin 2)}
+    (hx : x ≠ 0) : ∇ (meyersSolution μ) x = radialCoordGradient μ 0 x :=
+  gradient_meyersSolution hx
 
 /-- The coordinates of the gradient of `TauCeti.PDE.radialCoord` away from the origin. -/
 private theorem radialCoordGradient_apply {x : EuclideanSpace ℝ (Fin 2)} (hx : x ≠ 0)
@@ -374,7 +380,8 @@ private theorem energyFormH1_meyersCoefficient_ofTestFunctionₗ_eq_zero (hμ0 :
 /-- **Meyers' solution is a weak solution.** For `0 < μ ≤ 1` and every open `Ω ⊆ ℝ²`, an element
 `u ∈ H¹(Ω)` equal to `‖x‖ ^ (μ - 1) x₀` almost everywhere on `Ω` is a weak solution of
 `div(a ∇u) = 0` for Meyers' coefficient `a`: `∫_Ω ⟨a ∇u, ∇v⟩ = 0` for every `v ∈ H¹₀(Ω)`. The
-equation also holds across the origin, where `a` is discontinuous and `∇u` is unbounded. -/
+equation also holds across the origin, where, for `μ < 1`, `a` is discontinuous and `∇u` is
+unbounded. -/
 theorem energyFormH1_meyersCoefficient_eq_zero (hμ0 : 0 < μ) (hμ1 : μ ≤ 1)
     {Ω : Opens (EuclideanSpace ℝ (Fin 2))} (u : W1p volume Ω 2)
     (hu : W1p.value u =ᵐ[volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin 2)))] meyersSolution μ)
@@ -413,6 +420,33 @@ private theorem mul_rpow_le_norm_radialCoordGradient (hμ0 : 0 < μ) (hμ1 : μ 
   have : 0 ≤ t ^ 2 * (x 0 ^ 2 + x 1 ^ 2) * (1 - μ ^ 2) * x 1 ^ 2 :=
     mul_nonneg (mul_nonneg (by positivity) hc) (sq_nonneg _)
   linarith
+
+/-- Away from the origin, the gradient of Meyers' solution has length at most
+`2 ‖x‖ ^ (μ - 1)`. -/
+theorem norm_gradient_meyersSolution_le (hμ0 : 0 < μ) (hμ1 : μ ≤ 1)
+    {x : EuclideanSpace ℝ (Fin 2)} (hx : x ≠ 0) :
+    ‖∇ (meyersSolution μ) x‖ ≤ 2 * ‖x‖ ^ (μ - 1) := by
+  rw [gradient_meyersSolution_eq_radialCoordGradient hx]
+  exact norm_radialCoordGradient_le hμ0 hμ1 0 hx
+
+/-- Away from the origin, the gradient of Meyers' solution has length at least
+`μ ‖x‖ ^ (μ - 1)`. -/
+theorem mul_rpow_le_norm_gradient_meyersSolution (hμ0 : 0 < μ) (hμ1 : μ ≤ 1)
+    {x : EuclideanSpace ℝ (Fin 2)} (hx : x ≠ 0) :
+    μ * ‖x‖ ^ (μ - 1) ≤ ‖∇ (meyersSolution μ) x‖ := by
+  rw [gradient_meyersSolution_eq_radialCoordGradient hx]
+  exact mul_rpow_le_norm_radialCoordGradient hμ0 hμ1 hx
+
+/-- The weak gradient of an element of `W^{1,p}(Ω)` equal to Meyers' solution is its classical
+gradient. -/
+theorem gradient_ae_eq_gradient_meyersSolution (hμ0 : 0 < μ) (hμ1 : μ ≤ 1)
+    {p : ℝ≥0∞} [Fact (1 ≤ p)] {Ω : Opens (EuclideanSpace ℝ (Fin 2))} (u : W1p volume Ω p)
+    (hu : W1p.value u =ᵐ[volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin 2)))] meyersSolution μ) :
+    W1p.gradient u =ᵐ[volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin 2)))]
+      ∇ (meyersSolution μ) := by
+  filter_upwards [gradient_ae_eq_radialCoordGradient hμ0 hμ1 u hu, ae_restrict_of_ae
+    (compl_mem_ae_iff.2 (measure_singleton (0 : EuclideanSpace ℝ (Fin 2))))] with x hx h0
+  rw [hx, gradient_meyersSolution_eq_radialCoordGradient h0]
 
 /-- If the gradient of Meyers' solution is `p`-integrable on an open set containing the origin,
 then `p (1 - μ) < 2`: near the origin it is bounded below by `μ ‖x‖ ^ (μ - 1)`. -/
