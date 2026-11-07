@@ -187,20 +187,6 @@ variable {E F : Type*} [NormedAddCommGroup E] [MeasurableSpace E] [BorelSpace E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   {mu : Measure E} [mu.IsAddHaarMeasure] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-/-- A real multiple of a finite `ℝ≥0∞` number can be made smaller than any positive bound by
-choosing the real factor small and positive. -/
-theorem _root_.ENNReal.exists_pos_ofReal_mul_le {W : ℝ≥0∞} (hW : W ≠ ∞) {ε : ℝ} (hε : 0 < ε) :
-    ∃ η : ℝ, 0 < η ∧ ENNReal.ofReal η * W ≤ ENNReal.ofReal ε := by
-  have hWnn : (0 : ℝ) ≤ W.toReal := ENNReal.toReal_nonneg
-  refine ⟨ε / (W.toReal + 1), by positivity, ?_⟩
-  have hkey : W.toReal * (ε / (W.toReal + 1)) ≤ ε := by
-    rw [mul_div_assoc', div_le_iff₀ (by positivity)]
-    nlinarith
-  calc ENNReal.ofReal (ε / (W.toReal + 1)) * W
-      = ENNReal.ofReal (W.toReal * (ε / (W.toReal + 1))) := by
-        rw [ENNReal.ofReal_mul hWnn, ENNReal.ofReal_toReal hW, mul_comm]
-    _ ≤ ENNReal.ofReal ε := ENNReal.ofReal_le_ofReal hkey
-
 omit [Fact (1 ≤ p)] in
 /-- The tail radius in the Fréchet--Kolmogorov argument: if the family has uniformly small
 smoothing error `hsmooth` at scale `r`, uniformly bounded ball averages `hgB`, and a set `s` of
@@ -325,7 +311,11 @@ theorem totallyBounded_of_comp_add_sub_of_unifTight (hp' : p ≠ ∞)
   -- The scale of the uniform approximation on `K`, calibrated by the measure of `K`.
   have hWt : mu K ^ (1 / p.toReal) ≠ ∞ :=
     (ENNReal.rpow_lt_top_of_nonneg (by positivity) measure_closedBall_lt_top.ne).ne
-  obtain ⟨η, hη, hWη⟩ := ENNReal.exists_pos_ofReal_mul_le hWt (by positivity : (0 : ℝ) < ε / 4)
+  obtain ⟨η, hη, hWη⟩ : ∃ η : ℝ, 0 < η ∧
+      ENNReal.ofReal η * mu K ^ (1 / p.toReal) ≤ ENNReal.ofReal (ε / 4) := by
+    obtain ⟨η, hη, hmul⟩ := ENNReal.exists_nnreal_pos_mul_lt hWt
+      (ENNReal.ofReal_pos.mpr (by positivity : (0 : ℝ) < ε / 4)).ne'
+    exact ⟨η, NNReal.coe_pos.mpr hη, by rw [ENNReal.ofReal_coe_nnreal]; exact hmul.le⟩
   -- Arzelà--Ascoli supplies a finite uniform net for the restricted ball averages.
   obtain ⟨t, htfin, ht⟩ :=
     (hequi.equicontinuous.equicontinuousOn K).exists_finite_approx_of_isCompact
