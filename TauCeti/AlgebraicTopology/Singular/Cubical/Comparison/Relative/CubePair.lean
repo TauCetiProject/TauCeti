@@ -252,12 +252,25 @@ private lemma exists_intCocycle (n : ℕ) :
   -- The relative cycles split off the relative chains; the cocycle is the one of
   -- `TauCeti.ChainComplex.kroneckerSection` for `τ`.
   refine ⟨retraction (K.iCycles (n + 2)) ≫ K.homologyπ (n + 2) ≫ ModuleCat.ofHom τ, ?_, ?_⟩
-  · rw [← K.toCycles_i, Category.assoc, IsSplitMono.id_assoc]
-    exact (K.toCycles_comp_homologyπ_assoc _ _ _).trans zero_comp
+  · exact (ChainComplex.d_comp_retraction_iCycles_comp_homologyπ_assoc _ _ _).trans zero_comp
   · rw [← iCycles_cubeBoundaryPairCycle, ← ConcreteCategory.comp_apply, IsSplitMono.id_assoc]
     exact hτ
 
 variable (k : Type) [CommRing k]
+
+/-- If a `k`-module `M` is isomorphic to `k` and a linear functional `Ψ` takes the value `1` on
+`x`, then `a ↦ a • x` is bijective: `e x` is a unit of `k`, with inverse `Ψ (e⁻¹ 1)`. -/
+private lemma bijective_smul_of_linearEquiv_of_apply_eq_one {M : Type*} [AddCommGroup M]
+    [Module k M] (e : M ≃ₗ[k] k) (Ψ : M →ₗ[k] k) {x : M} (hx : Ψ x = 1) :
+    Function.Bijective fun a : k ↦ a • x := by
+  -- `x = e x • e⁻¹ 1`, so `Ψ (e⁻¹ 1)` is an inverse of `e x`.
+  have hxe : x = e x • e.symm 1 := by simp [← map_smul]
+  have hu : IsUnit (e x) := IsUnit.of_mul_eq_one (Ψ (e.symm 1)) <| by
+    simpa [hx] using (congrArg Ψ hxe).symm
+  -- So `a ↦ a • x` is `a ↦ e⁻¹ (a * e x)`, a composite of bijections.
+  convert e.symm.bijective.comp (Units.mulRight hu.unit).bijective using 1
+  funext a
+  simp [← smul_eq_mul, map_smul]
 
 /-- A `k`-valued cocycle detecting the fundamental class of the cube pair: a morphism from the
 relative `(n + 2)`-chains with coefficients in `k` to `k` that vanishes on boundaries and takes the
@@ -330,17 +343,7 @@ private lemma bijective_smul_homologyπ_cubeBoundaryPairCycle_add_two (n : ℕ) 
   let e : K.homology (n + 2) ≃ₗ[k] k :=
     ((TopPair.singularCubicalHomologyIso k _ (n + 2)).symm ≪≫
       singularHomologyCubeBoundaryPairIso (ModuleCat.of k k) (n + 2)).toLinearEquiv
-  -- `e x` is a unit of `k`, with inverse `Ψ (e⁻¹ 1)`.
-  have hu : e x * Ψ (e.symm 1) = 1 := by
-    rw [← smul_eq_mul, ← map_smul, ← map_smul, smul_eq_mul, mul_one, LinearEquiv.symm_apply_apply,
-      hΨ]
-  let u : kˣ := ⟨e x, Ψ (e.symm 1), hu, by rw [mul_comm, hu]⟩
-  have hux : (u : k) = e x := rfl
-  -- So `a ↦ a • x` is `a ↦ e⁻¹ (a * u)`, a composite of bijections.
-  convert e.symm.bijective.comp (Units.mulRight u).bijective using 1
-  funext a
-  simp only [Function.comp_apply, Units.mulRight_apply, hux, ← smul_eq_mul, map_smul,
-    LinearEquiv.symm_apply_apply, x, K]
+  exact bijective_smul_of_linearEquiv_of_apply_eq_one k e Ψ.hom hΨ
 
 end CommRing
 
