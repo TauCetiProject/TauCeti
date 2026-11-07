@@ -91,13 +91,13 @@ noncomputable def affineToricSchemeActionMap
           (affineCoordinateRing hi' (⊥ : PointedCone ℝ V')))))
         (Spec.map (CommRingCat.ofHom (algebraMap ℂ (affineCoordinateRing hi' τ)))) :=
   pullback.map _ _ _ _
-    (affineToricSchemeMap hi hi' f g hfg (PointedCone.mapsTo_bot g))
+    (affineToricSchemeMap hi hi' f g hfg (g.mapsTo_bot_pointedCone))
     (affineToricSchemeMap hi hi' f g hfg hστ) (𝟙 _)
     (by
       rw [Category.comp_id, affineToricSchemeMap_def]
       exact (comp_over (Spec.map (CommRingCat.ofHom
         (affineCoordinateRingMap hi hi' f g hfg
-          (PointedCone.mapsTo_bot g)).toRingHom)) (Spec (.of ℂ))).symm)
+          (g.mapsTo_bot_pointedCone)).toRingHom)) (Spec (.of ℂ))).symm)
     (by
       rw [Category.comp_id, affineToricSchemeMap_def]
       exact (comp_over (Spec.map (CommRingCat.ofHom

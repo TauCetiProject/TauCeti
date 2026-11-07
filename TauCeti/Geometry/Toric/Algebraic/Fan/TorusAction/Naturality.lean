@@ -44,13 +44,13 @@ noncomputable def algebraicActionMap :
     Ψ.algebraicRealizationStructureMap :=
   pullback.map _ _ _ _
     (affineToricSchemeMap Φ.lattice Ψ.lattice f.latticeMap f.realMap f.map_lattice
-      (PointedCone.mapsTo_bot f.realMap))
+      (f.realMap.mapsTo_bot_pointedCone))
     f.algebraicMap (𝟙 _)
     (by
       rw [Category.comp_id, affineToricSchemeMap_def]
       exact (comp_over (Spec.map (CommRingCat.ofHom
         (affineCoordinateRingMap Φ.lattice Ψ.lattice f.latticeMap f.realMap f.map_lattice
-          (PointedCone.mapsTo_bot f.realMap)).toRingHom)) (Spec (.of ℂ))).symm)
+          (f.realMap.mapsTo_bot_pointedCone)).toRingHom)) (Spec (.of ℂ))).symm)
     (by rw [Category.comp_id, FanHom.algebraicMap_comp_algebraicRealizationStructureMap])
 
 /-- On the torus factor, the map of action domains is the affine toric map of the zero cones. -/

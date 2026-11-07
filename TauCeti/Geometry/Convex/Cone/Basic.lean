@@ -118,16 +118,16 @@ theorem finrank_span_coe_bot_prod (q : PointedCone R V') :
 
 end Prod
 
-section MapsTo
+end PointedCone
+
+namespace LinearMap
 
 variable {R V V' : Type*} [Semiring R] [PartialOrder R] [IsOrderedRing R]
   [AddCommMonoid V] [Module R V] [AddCommMonoid V'] [Module R V']
 
 /-- A linear map sends the zero cone to the zero cone. -/
-theorem mapsTo_bot (g : V →ₗ[R] V') :
+theorem mapsTo_bot_pointedCone (g : V →ₗ[R] V') :
     Set.MapsTo g (⊥ : PointedCone R V) (⊥ : PointedCone R V') := by
   simp [Set.MapsTo]
 
-end MapsTo
-
-end PointedCone
+end LinearMap
