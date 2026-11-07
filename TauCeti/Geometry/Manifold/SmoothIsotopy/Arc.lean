@@ -171,6 +171,66 @@ private theorem straightening_velocity_ne_zero {g' d e : V} {φ : V →L[ℝ] �
   · rw [mul_one, ← add_smul] at h
     exact hg' (by simpa using h)
 
+/-- For `0 < r` there is a radius `L > 0` exceeding `R` with `C ≤ L * r`. -/
+private theorem exists_radius_lt_and_le_mul {r : ℝ} (hr : 0 < r) (R C : ℝ) :
+    ∃ L : ℝ, 0 < L ∧ R < L ∧ C ≤ L * r := by
+  have h1 := le_max_left R 1
+  have h2 := le_max_right R 1
+  have h3 := le_max_left (max R 1) (C / r)
+  have h4 := le_max_right (max R 1) (C / r)
+  refine ⟨max (max R 1) (C / r) + 1, by linarith, by linarith, ?_⟩
+  exact (div_le_iff₀ hr).1 (by linarith)
+
+omit [FiniteDimensional ℝ V] in
+/-- Away from the compact set where `g` leaves the line, the hyperplane component of the
+straightening motion is `s • e`. -/
+private theorem hyperplane_component_of_line {g : ℝ → V} {p e : V} {R : ℝ}
+    (hline : ∀ s, R ≤ |s| → g s = p + s • e) (u s : ℝ) (hs : R ≤ |s|) :
+    (1 - u) • (g s - p) + (u * s) • e = s • e := by
+  rw [hline s hs, add_sub_cancel_left, smul_smul, ← add_smul]
+  congr 1
+  ring
+
+omit [FiniteDimensional ℝ V] in
+/-- The hyperplane component of the straightening motion at times `u ∈ [0, 1]` has norm at most
+`L * ‖e‖` for `|s| ≤ L`, when `‖g s - p‖ ≤ C ≤ L * ‖e‖` on the compact set `[-R, R]`. -/
+private theorem norm_hyperplane_component_le {g : ℝ → V} {p e : V} {R C L : ℝ}
+    (hline : ∀ s, R ≤ |s| → g s = p + s • e) (hC : ∀ s ∈ Icc (-R) R, ‖g s - p‖ ≤ C)
+    (hCL : C ≤ L * ‖e‖) {u : ℝ} (hu : u ∈ Icc (0 : ℝ) 1) {s : ℝ} (hs : |s| ≤ L) :
+    ‖(1 - u) • (g s - p) + (u * s) • e‖ ≤ L * ‖e‖ := by
+  by_cases hRs : R ≤ |s|
+  · rw [hyperplane_component_of_line hline u s hRs, norm_smul, Real.norm_eq_abs]
+    exact mul_le_mul_of_nonneg_right hs (norm_nonneg e)
+  · have hsR : s ∈ Icc (-R) R := abs_le.1 (not_le.1 hRs).le
+    have h1 : ‖(1 - u) • (g s - p)‖ ≤ (1 - u) * (L * ‖e‖) := by
+      rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg (by linarith [hu.2])]
+      exact mul_le_mul_of_nonneg_left ((hC s hsR).trans hCL) (by linarith [hu.2])
+    have h2 : ‖(u * s) • e‖ ≤ u * (L * ‖e‖) := by
+      rw [norm_smul, Real.norm_eq_abs, abs_mul, abs_of_nonneg hu.1, mul_assoc]
+      exact mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_right hs (norm_nonneg e)) hu.1
+    calc ‖(1 - u) • (g s - p) + (u * s) • e‖
+        ≤ ‖(1 - u) • (g s - p)‖ + ‖(u * s) • e‖ := norm_add_le _ _
+      _ ≤ (1 - u) * (L * ‖e‖) + u * (L * ‖e‖) := add_le_add h1 h2
+      _ = L * ‖e‖ := by ring
+
+omit [FiniteDimensional ℝ V] in
+/-- The hyperplane component of the straightening motion is injective at the times `u` where the
+coefficient `4 * u * (1 - u)` of the `d`-component vanishes. -/
+private theorem injective_hyperplane_component_of_eq_zero {g : ℝ → V} {p e : V} (he : e ≠ 0)
+    (hinj : Injective g) {u : ℝ} (hc : 4 * u * (1 - u) = 0) :
+    Injective fun s => (1 - u) • (g s - p) + (u * s) • e := by
+  rcases mul_eq_zero.1 hc with h2 | h2
+  · have hu0 : u = 0 := by linarith [mul_eq_zero.1 h2]
+    subst hu0
+    intro s s' h
+    simp only [sub_zero, one_smul, zero_mul, zero_smul, add_zero, sub_left_inj] at h
+    exact hinj h
+  · have hu1 : u = 1 := by linarith
+    subst hu1
+    intro s s' h
+    simp only [sub_self, zero_smul, one_mul, zero_add] at h
+    exact smul_left_injective ℝ he h
+
 /-- **Straightening an arc in a hyperplane.** Let `φ d = 1` and `φ e = 0`, and let `g` be an
 injective `C^n` immersion of the line into the hyperplane `p + ker φ` which is the line `ℓ` for
 `|s| ≥ R`. Then `g` is smoothly isotopic to `ℓ`, by
@@ -192,20 +252,7 @@ private theorem exists_smoothIsotopy_line_of_map_sub_eq_zero {n : ℕ∞ω} (hn�
   /- The constants: `‖g s - p‖ ≤ C` for `|s| ≤ R`, and `R < L` with `C ≤ L * ‖e‖`. -/
   obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn
     ((hgc.continuous.sub continuous_const).continuousOn (s := Icc (-R) R))
-  set L := max (max R 1) (C / ‖e‖) + 1 with hL
-  have hL0 : 0 < L := by
-    have := le_max_right R 1
-    have := le_max_left (max R 1) (C / ‖e‖)
-    linarith
-  have hRL : R < L := by
-    have := le_max_left R 1
-    have := le_max_left (max R 1) (C / ‖e‖)
-    linarith
-  have hCL : C ≤ L * ‖e‖ := by
-    have h1 : C / ‖e‖ ≤ L := by
-      have := le_max_right (max R 1) (C / ‖e‖)
-      linarith
-    exact (div_le_iff₀ (norm_pos_iff.2 he)).1 h1
+  obtain ⟨L, hL0, hRL, hCL⟩ := exists_radius_lt_and_le_mul (norm_pos_iff.2 he) R C
   obtain ⟨k, hk, hksmall, hkbig, hkd⟩ := exists_contDiff_cutoff_id hL0 (lt_add_one L)
   replace hk : ContDiff ℝ n k := hk.of_le hn
   /- The hyperplane component `H` of the motion. -/
@@ -213,27 +260,10 @@ private theorem exists_smoothIsotopy_line_of_map_sub_eq_zero {n : ℕ∞ω} (hn�
   have hφH : ∀ u s, φ (H u s) = 0 := by
     intro u s
     simp [H, hφg, hφe]
-  have hHbig : ∀ u s, R ≤ |s| → H u s = s • e := by
-    intro u s hs
-    simp only [H]
-    rw [hline s hs, add_sub_cancel_left, smul_smul, ← add_smul]
-    congr 1
-    ring
-  have hHsmall : ∀ u ∈ Icc (0 : ℝ) 1, ∀ s, |s| ≤ L → ‖H u s‖ ≤ L * ‖e‖ := by
-    intro u hu s hs
-    by_cases hRs : R ≤ |s|
-    · rw [hHbig u s hRs, norm_smul, Real.norm_eq_abs]
-      exact mul_le_mul_of_nonneg_right hs (norm_nonneg e)
-    · have hsR : s ∈ Icc (-R) R := abs_le.1 (not_le.1 hRs).le
-      have h1 : ‖(1 - u) • (g s - p)‖ ≤ (1 - u) * (L * ‖e‖) := by
-        rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg (by linarith [hu.2])]
-        exact mul_le_mul_of_nonneg_left ((hC s hsR).trans hCL) (by linarith [hu.2])
-      have h2 : ‖(u * s) • e‖ ≤ u * (L * ‖e‖) := by
-        rw [norm_smul, Real.norm_eq_abs, abs_mul, abs_of_nonneg hu.1, mul_assoc]
-        exact mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_right hs (norm_nonneg e)) hu.1
-      calc ‖H u s‖ ≤ ‖(1 - u) • (g s - p)‖ + ‖(u * s) • e‖ := norm_add_le _ _
-        _ ≤ (1 - u) * (L * ‖e‖) + u * (L * ‖e‖) := add_le_add h1 h2
-        _ = L * ‖e‖ := by ring
+  have hHbig : ∀ u s, R ≤ |s| → H u s = s • e := fun u s hs =>
+    hyperplane_component_of_line hline u s hs
+  have hHsmall : ∀ u ∈ Icc (0 : ℝ) 1, ∀ s, |s| ≤ L → ‖H u s‖ ≤ L * ‖e‖ := fun u hu s hs =>
+    norm_hyperplane_component_le hline hC hCL hu hs
   /- The motion `B`, with `φ`-coordinate `4 u (1 - u) k s`. -/
   let B : ℝ × ℝ → V := fun q => p + H q.1 q.2 + (4 * q.1 * (1 - q.1) * k q.2) • d
   have hB : ContDiff ℝ n B := by
@@ -257,18 +287,8 @@ private theorem exists_smoothIsotopy_line_of_map_sub_eq_zero {n : ℕ∞ω} (hn�
       (hBline u)
     · simp only [B]
       refine injective_add_add_smul hφd (hφH u) he hksmall
-        (fun s hs => hHbig u s (hRL.trans hs).le) (hHsmall u hu) fun hc => ?_
-      rcases mul_eq_zero.1 hc with h2 | h2
-      · have hu0 : u = 0 := by linarith [mul_eq_zero.1 h2]
-        subst hu0
-        intro s s' h
-        simp only [H, sub_zero, one_smul, zero_mul, zero_smul, add_zero, sub_left_inj] at h
-        exact hinj h
-      · have hu1 : u = 1 := by linarith
-        subst hu1
-        intro s s' h
-        simp only [H, sub_self, zero_smul, one_mul, zero_add] at h
-        exact smul_left_injective ℝ he h
+        (fun s hs => hHbig u s (hRL.trans hs).le) (hHsmall u hu)
+        (injective_hyperplane_component_of_eq_zero he hinj)
     · by_cases hs : R < |s|
       · exact Or.inr (hasDerivAt_of_eq_line hline hs).deriv
       · exact Or.inl (hkd s (by linarith [not_lt.1 hs])).deriv
