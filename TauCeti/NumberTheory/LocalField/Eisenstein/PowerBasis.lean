@@ -49,11 +49,14 @@ variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 
 namespace TauCeti
 
-private theorem eisenstein_adjoin_eq_top_data [Algebra K L] [ValuativeExtension K L]
-    (f : Polynomial 𝒪[K]) (hf : f.IsEisensteinAt 𝓂[K])
+/-- A generator of `L/K` that is a root of an Eisenstein polynomial `f` over `𝒪[K]` has degree
+`deg f`, and its norm is an irreducible element of `𝒪[K]`. -/
+private theorem finrank_and_norm_of_eisenstein_adjoin_eq_top [Algebra K L]
+    [ValuativeExtension K L] (f : Polynomial 𝒪[K]) (hf : f.IsEisensteinAt 𝓂[K])
     (ξ : 𝒪[L]) (hroot : (f.map (algebraMap 𝒪[K] 𝒪[L])).IsRoot ξ)
     (hgen : K⟮(ξ : L)⟯ = ⊤) :
-    Irreducible ξ ∧ inertiaDegree K L = 1 ∧ ramificationIndex K L = f.natDegree := by
+    Module.finrank K L = f.natDegree ∧
+      ∃ c : 𝒪[K], Irreducible c ∧ Algebra.norm K (ξ : L) = (c : K) := by
   have : Module.Finite K L := finite_of_valuativeExtension K L
   have hint : IsIntegral 𝒪[K] ξ := IsIntegral.of_finite 𝒪[K] ξ
   have hassoc : Associated (minpoly 𝒪[K] ξ) f := hf.associated_minpoly hf.isUnit_leadingCoeff hroot
@@ -75,14 +78,22 @@ private theorem eisenstein_adjoin_eq_top_data [Algebra K L] [ValuativeExtension 
   set c : 𝒪[K] := (-1) ^ f.natDegree * (minpoly 𝒪[K] ξ).coeff 0 with hc
   have hnormirr : Irreducible c := by
     simpa [c] using (irreducible_units_mul ((-1 : 𝒪[K]ˣ) ^ f.natDegree)).mpr hminc0
-  have hnorm : Algebra.norm K (ξ : L) = (c : K) := by
-    rw [← hpbgen, Algebra.PowerBasis.norm_gen_eq_coeff_zero_minpoly, hpbgen, hminpoly,
-      hpbdim, Polynomial.coeff_map, hc]
-    simp [Algebra.algebraMap_ofSubsemiring_apply]
+  refine ⟨(PowerBasis.finrank pb).trans hpbdim, c, hnormirr, ?_⟩
+  rw [← hpbgen, Algebra.PowerBasis.norm_gen_eq_coeff_zero_minpoly, hpbgen, hminpoly,
+    hpbdim, Polynomial.coeff_map, hc]
+  simp [Algebra.algebraMap_ofSubsemiring_apply]
+
+/-- An element of `𝒪[L]` whose norm to `K` is an irreducible element of `𝒪[K]` is a uniformizer
+of `𝒪[L]`, and `L/K` has inertia degree one. -/
+private theorem irreducible_and_inertiaDegree_eq_one_of_norm [Algebra K L]
+    [ValuativeExtension K L] (ξ : 𝒪[L]) (c : 𝒪[K]) (hnormirr : Irreducible c)
+    (hnorm : Algebra.norm K (ξ : L) = (c : K)) :
+    Irreducible ξ ∧ inertiaDegree K L = 1 := by
+  have : Module.Finite K L := finite_of_valuativeExtension K L
   have hξ0 : ξ ≠ 0 := by
     rintro rfl
-    apply hnormirr.ne_zero
-    simpa using hnorm.symm
+    have h0 : (c : K) = 0 := by rw [← hnorm]; simp
+    exact hnormirr.ne_zero (Subtype.ext h0)
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[L]
   obtain ⟨m, u, hξ⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible hξ0 hϖ
   have hξL : (ξ : L) ≠ 0 := fun h ↦ hξ0 (Subtype.ext h)
@@ -106,16 +117,23 @@ private theorem eisenstein_adjoin_eq_top_data [Algebra K L] [ValuativeExtension 
     have h := toAdd_normalizedValuation_norm (K := K) x
     rw [hnormval, hxval] at h
     exact_mod_cast h.symm
-  have hf_one : inertiaDegree K L = 1 := (mul_eq_one.mp hfm).1
   have hm_one : m = 1 := (mul_eq_one.mp hfm).2
-  have hξirr : Irreducible ξ := by
-    subst m
-    exact Associated.irreducible ⟨u, by simpa [mul_comm] using hξ.symm⟩ hϖ
-  have he_degree : ramificationIndex K L = f.natDegree := by
-    have hef := ramificationIndex_mul_inertiaDegree (K := K) (L := L)
-    rw [hf_one, mul_one, PowerBasis.finrank pb, hpbdim] at hef
-    exact hef
-  exact ⟨hξirr, hf_one, he_degree⟩
+  refine ⟨?_, (mul_eq_one.mp hfm).1⟩
+  subst m
+  exact Associated.irreducible ⟨u, by simpa [mul_comm] using hξ.symm⟩ hϖ
+
+private theorem eisenstein_adjoin_eq_top_data [Algebra K L] [ValuativeExtension K L]
+    (f : Polynomial 𝒪[K]) (hf : f.IsEisensteinAt 𝓂[K])
+    (ξ : 𝒪[L]) (hroot : (f.map (algebraMap 𝒪[K] 𝒪[L])).IsRoot ξ)
+    (hgen : K⟮(ξ : L)⟯ = ⊤) :
+    Irreducible ξ ∧ inertiaDegree K L = 1 ∧ ramificationIndex K L = f.natDegree := by
+  have : Module.Finite K L := finite_of_valuativeExtension K L
+  obtain ⟨hrank, c, hc, hnorm⟩ := finrank_and_norm_of_eisenstein_adjoin_eq_top f hf ξ hroot hgen
+  obtain ⟨hξirr, hf_one⟩ := irreducible_and_inertiaDegree_eq_one_of_norm ξ c hc hnorm
+  refine ⟨hξirr, hf_one, ?_⟩
+  have hef := ramificationIndex_mul_inertiaDegree (K := K) (L := L)
+  rw [hf_one, mul_one, hrank] at hef
+  exact hef
 
 /-- A generator of `L/K` that is a root of an Eisenstein polynomial over `𝒪[K]` is a uniformizer
 of `𝒪[L]`. -/
