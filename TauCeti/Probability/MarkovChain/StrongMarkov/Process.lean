@@ -142,11 +142,6 @@ theorem markovChainLaw_restrict_map_stoppedValue_processShift_natural
       markovChainLaw ((P.restrict (A ∩ {ω | τ ω ≠ ⊤})).map (stoppedValue X τ)) κ := by
   refine hX.markovChainLaw_restrict_map_stoppedValue_processShift
     (fun n => (hXm n).measurable) (fun n => ?_) hτ hA
-  rw [Filtration.natural_eq_comap]
-  -- The history indexed by `Iic n` is a measurable reindexing of the finite prefix.
-  rintro s ⟨B, hB, rfl⟩
-  let r : (Fin (n + 1) → α) → (Set.Iic n → α) :=
-    fun v j => v ⟨j.1, Nat.lt_succ_of_le j.2⟩
-  exact ⟨r ⁻¹' B, hB.preimage (by fun_prop), rfl⟩
+  exact (Filtration.natural_eq_comap_prefix X hXm n).le
 
 end ProbabilityTheory.HasLaw
