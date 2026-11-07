@@ -214,6 +214,24 @@ theorem coeff_tensorMultiplicitySeries (V X : FDRep k G) (n : ℕ) :
       (Module.finrank k (X ⟶ V.tensorPower n) : k) :=
   PowerSeries.coeff_mk _ _
 
+/-- The tensor-multiplicity series depends on `V` and `X` only up to isomorphism. -/
+theorem tensorMultiplicitySeries_congr {V V' X X' : FDRep k G} (e : V ≅ V') (f : X ≅ X') :
+    V.tensorMultiplicitySeries X = V'.tensorMultiplicitySeries X' := by
+  ext n
+  rw [coeff_tensorMultiplicitySeries, coeff_tensorMultiplicitySeries, tensorPower_def,
+    tensorPower_def]
+  have h (g : G) : (PiTensorProduct.congr fun _ : Fin n ↦ isoToLinearEquiv e).toLinearMap ∘ₗ
+      Representation.tensorPower V.ρ n g =
+        Representation.tensorPower V'.ρ n g ∘ₗ
+          (PiTensorProduct.congr fun _ ↦ isoToLinearEquiv e).toLinearMap := by
+    ext m
+    simp [Iso.conj_ρ e g, LinearEquiv.conj_apply]
+  let eₙ : FDRep.of (Representation.tensorPower V.ρ n) ≅
+      FDRep.of (Representation.tensorPower V'.ρ n) :=
+    (PiTensorProduct.congr fun _ ↦ isoToLinearEquiv e).toFDRepIso fun g ↦
+      LinearMap.congr_fun (h g)
+  rw [(Linear.homCongr k f eₙ).finrank_eq]
+
 end MultiplicitySeries
 
 section CharacterFractions
@@ -307,12 +325,6 @@ end CharacterFractions
 section FiniteFractions
 
 variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] [Invertible (Nat.card G : k)]
-
-/-- The tensor-multiplicity series depends on `V` and `X` only up to isomorphism. -/
-theorem tensorMultiplicitySeries_congr {V V' X X' : FDRep k G} (e : V ≅ V') (f : X ≅ X') :
-    V.tensorMultiplicitySeries X = V'.tensorMultiplicitySeries X' := by
-  let := Fintype.ofFinite G
-  simp only [tensorMultiplicitySeries_eq_characterFractions, char_iso e, char_iso f]
 
 /-- **The linear recurrence of tensor multiplicities.** If `∏_a (T - a) = ∑ⱼ cⱼ Tʲ`, the product
 running over the distinct character values of `V`, then `∑ⱼ cⱼ m_{n+j} = 0` for every `n`, where
