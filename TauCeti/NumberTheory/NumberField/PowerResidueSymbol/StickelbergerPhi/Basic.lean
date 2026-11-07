@@ -406,8 +406,8 @@ private theorem ringHomComp_inv_powerResidueSymbol_pow_eq_self (P : Ideal (𝓞 
   simpa only [pow_one] using (pow_eq_pow_of_modEq ((Nat.modEq_iff_dvd' hq).2 hmq) h1).symm
 
 /-- The image of the Gauss sum of the inverse power residue symbol of a maximal ideal `P`, in the
-residue field of a prime `I` of a domain `R` containing `𝓞 K` and the values of a primitive
-additive character of `𝓞 K ⧸ P`, is nonzero when `I` lies over a maximal ideal `P'` whose norm is
+quotient ring `R ⧸ I` of a domain `R` containing `𝓞 K` and the values of a primitive additive
+character of `𝓞 K ⧸ P`, is nonzero when the ideal `I` lies over a maximal ideal `P'` whose norm is
 prime to that of `P`. -/
 private theorem quotientMk_gaussSum_ne_zero (P P' : Ideal (𝓞 K)) [P.IsMaximal] [P'.IsMaximal]
     [Fintype (𝓞 K ⧸ P)]
