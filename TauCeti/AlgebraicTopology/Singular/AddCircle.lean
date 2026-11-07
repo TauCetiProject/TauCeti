@@ -53,6 +53,64 @@ theorem fundamentalClass_def :
     fundamentalClass p = H₁AddEquivHomology _
       (loopClass (X := TopCat.of (AddCircle p)) (zsmulLoop p 0 1)) := (rfl)
 
+/-- The straight path in `ℝ` from `x` to `y`. -/
+private def segmentPath (x y : ℝ) : Path x y where
+  toFun t := (1 - (t : ℝ)) * x + t * y
+  source' := by simp
+  target' := by simp
+  continuous_toFun := by fun_prop
+
+/-- Winding `a + b` times around a circle is homologous to winding `a` times and then `b` times:
+in the universal cover the two paths have the same endpoints. -/
+private theorem loopClass_zsmulLoop_add (a b : ℤ) :
+    loopClass (X := TopCat.of (AddCircle p)) (zsmulLoop p 0 (a + b)) =
+      loopClass (X := TopCat.of (AddCircle p)) (zsmulLoop p 0 a) +
+        loopClass (X := TopCat.of (AddCircle p)) (zsmulLoop p 0 b) := by
+  rw [← loopClass_trans, loopClass_eq_iff]
+  let y : ℝ := ((a + b : ℤ) : ℝ) * p
+  let L : Path (0 : ℝ) y := (segmentPath 0 ((a : ℝ) * p)).trans (segmentPath ((a : ℝ) * p) y)
+  let π : C(ℝ, AddCircle p) := ⟨(↑), by fun_prop⟩
+  have hhom : Path.Homotopic ((segmentPath 0 y).map π.continuous)
+      (L.map π.continuous) :=
+    (SimplyConnectedSpace.paths_homotopic (segmentPath 0 y) L).map π
+  have h1 : (zsmulLoop p 0 (a + b)).toContinuousMap =
+      ((segmentPath 0 y).map π.continuous).toContinuousMap := by
+    refine ContinuousMap.ext fun t ↦ ?_
+    change zsmulLoop p 0 (a + b) t = π (segmentPath 0 y t)
+    rw [zsmulLoop_apply]
+    simp only [π, segmentPath, y, ContinuousMap.coe_mk, Path.coe_mk_mk]
+    rw [← coe_zsmul, ← coe_add]
+    congr 1
+    simp only [zsmul_eq_mul]
+    push_cast
+    ring
+  have h2 : ((zsmulLoop p 0 a).trans (zsmulLoop p 0 b)).toContinuousMap =
+      (L.map π.continuous).toContinuousMap := by
+    refine ContinuousMap.ext fun t ↦ ?_
+    change ((zsmulLoop p 0 a).trans (zsmulLoop p 0 b)) t = π (L t)
+    simp only [Path.trans_apply, L]
+    have hap : ((a * p : ℝ) : AddCircle p) = 0 := by
+      rw [← zsmul_eq_mul, coe_zsmul, coe_period, smul_zero]
+    split_ifs with ht
+    · rw [zsmulLoop_apply]
+      simp only [π, segmentPath, ContinuousMap.coe_mk, Path.coe_mk_mk]
+      rw [← coe_zsmul, ← coe_add]
+      congr 1
+      simp only [zsmul_eq_mul]
+      ring
+    · rw [zsmulLoop_apply]
+      simp only [π, segmentPath, ContinuousMap.coe_mk, Path.coe_mk_mk]
+      rw [← coe_zsmul, ← coe_add]
+      have : (1 - (2 * (t : ℝ) - 1)) * ((a : ℝ) * p) + (2 * (t : ℝ) - 1) * y =
+          (a : ℝ) * p + (b • ((2 * (t : ℝ) - 1) * p) + 0) := by
+        simp only [y, zsmul_eq_mul]
+        push_cast
+        ring
+      rw [this]
+      simp [hap]
+  rw [h1, h2]
+  exact pathChain_sub_mem_boundaries₁_of_homotopy hhom.some
+
 /-- Winding `n` times around a positive-period circle multiplies its circuit class by `n`.
 Negative windings reverse orientation. -/
 @[simp]
@@ -77,11 +135,27 @@ theorem H₁AddEquivHomology_loopClass_zsmulLoop [Fact (0 < p)] (n : ℤ) :
     simpa [hurewicz₁_mk (X := TopCat.of (AddCircle p))] using h
   rw [hclass, map_zsmul, fundamentalClass_def]
 
+/-- Winding `n` times around a circle of any length multiplies the class of the loop winding once
+by `n`. -/
+private theorem loopClass_zsmulLoop (n : ℤ) :
+    loopClass (X := TopCat.of (AddCircle p)) (zsmulLoop p 0 n) =
+      n • loopClass (X := TopCat.of (AddCircle p)) (zsmulLoop p 0 1) := by
+  induction n using Int.induction_on with
+  | zero =>
+    rw [zero_zsmul, ← loopClass_refl (X := TopCat.of (AddCircle p)) ((0 : ℝ) : AddCircle p)]
+    exact loopClass_eq_of_apply_eq _ _ fun t ↦ by rw [zsmulLoop_apply]; simp
+  | succ i ih => rw [loopClass_zsmulLoop_add, ih, add_zsmul, one_zsmul]
+  | pred i ih =>
+    have := loopClass_zsmulLoop_add (p := p) (-(i : ℤ) - 1) 1
+    rw [sub_add_cancel, ih] at this
+    rw [sub_zsmul, one_zsmul]
+    exact (eq_sub_of_add_eq this.symm).trans (sub_eq_add_neg _ _)
+
 variable {p} {q : ℝ} (h : p ∈ AddSubgroup.zmultiples q)
 
 /-- A reduction map from a circle of length `p = k * q` to the positive-period circle of
 length `q` sends one circuit to `k` circuits. -/
-theorem singularHomologyMap_coverMap_fundamentalClass [Fact (0 < q)] (k : ℤ)
+theorem singularHomologyMap_coverMap_fundamentalClass (k : ℤ)
     (hp : p = k * q) :
     ContinuousMap.singularHomologyMap ℤ 1 ⟨coverMap h, continuous_coverMap h⟩
       (fundamentalClass p) = k • fundamentalClass q := by
@@ -97,7 +171,7 @@ theorem singularHomologyMap_coverMap_fundamentalClass [Fact (0 < q)] (k : ℤ)
       zsmul_eq_mul, hp]
     congr 1
     ring
-  rw [heq, H₁AddEquivHomology_loopClass_zsmulLoop]
+  rw [heq, loopClass_zsmulLoop, map_zsmul, fundamentalClass_def]
 
 /-- **Rotations act trivially on the singular homology of a circle**: the rotation `θ ↦ θ + a`
 is homotopic to the identity, since `AddCircle p` is path connected. -/
