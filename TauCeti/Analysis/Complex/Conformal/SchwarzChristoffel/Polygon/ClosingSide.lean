@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.Shor
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.UnboundedEdge
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.Boundary
 import TauCeti.Analysis.Complex.PlaneSeparation.Segment
+import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.ExponentSum
 
 /-!
 # Separation of Schwarz--Christoffel sides from the closing side
@@ -62,8 +63,7 @@ theorem schwarzChristoffelVertex_last_lt_vertexAtInfinity_lt_vertex_zero
     (hsum : ∑ k, e k = -2) :
     schwarzChristoffelVertex a e z₀ (Fin.last n) < schwarzChristoffelVertexAtInfinity a e z₀ ∧
       schwarzChristoffelVertexAtInfinity a e z₀ < schwarzChristoffelVertex a e z₀ 0 := by
-  have hfinite (k : Fin (n + 1)) : -1 < ∑ l with a l = a k, e l := by
-    simpa [ha.injective.eq_iff, Finset.filter_eq'] using he k
+  have hfinite := neg_one_lt_exponent_sum_at a e ha he
   have hr := schwarzChristoffelBoundary_lt_vertexAtInfinity a e z₀ (hfinite (Fin.last n))
     (fun l _ ↦ ha.monotone l.le_last) (by rw [hsum]; norm_num)
   have hl := schwarzChristoffelVertexAtInfinity_lt_boundary a e z₀
@@ -127,8 +127,7 @@ theorem im_schwarzChristoffelVertex_zero_lt (a e : Fin (n + 1) → ℝ) (z₀ : 
     (ha : StrictMono a) (he : ∀ k, e k ∈ Ioo (-1 : ℝ) 0) (hsum : ∑ k, e k = -2)
     {k : Fin (n + 1)} (hk₀ : k ≠ 0) (hkn : k ≠ Fin.last n) :
     (schwarzChristoffelVertex a e z₀ 0).im < (schwarzChristoffelVertex a e z₀ k).im := by
-  have hfinite (k : Fin (n + 1)) : -1 < ∑ l with a l = a k, e l := by
-    simpa [ha.injective.eq_iff, Finset.filter_eq'] using (he k).1
+  have hfinite := neg_one_lt_exponent_sum_at a e ha fun k ↦ (he k).1
   set θ : Fin (n + 1) → ℝ := fun l ↦ schwarzChristoffelEdgeAngle a e (a l)
   have hθmono : StrictMono θ :=
     schwarzChristoffelEdgeAngle_comp_strictMono a e ha fun l ↦ (he l).2
@@ -289,8 +288,7 @@ theorem im_schwarzChristoffelBoundary_first_lt (a e : Fin (n + 1) → ℝ)
     (hsum : ∑ k, e k = -2) {x : ℝ} (hx : x ∈ Ioo (a 0) (a (Fin.last n))) :
     (schwarzChristoffelBoundary a e z₀ (a 0)).im <
       (schwarzChristoffelBoundary a e z₀ x).im := by
-  have hfinite (k : Fin (n + 1)) : -1 < ∑ l with a l = a k, e l := by
-    simpa [ha.injective.eq_iff, Finset.filter_eq'] using (he k).1
+  have hfinite := neg_one_lt_exponent_sum_at a e ha fun k ↦ (he k).1
   have hn : 2 ≤ n := by
     by_contra! hn
     interval_cases n

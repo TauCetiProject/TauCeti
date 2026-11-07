@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Image
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.Boundary
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.ClosingSide
+import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.ExponentSum
 
 /-!
 # The Schwarz--Christoffel image and the closing side
@@ -124,8 +125,7 @@ theorem im_schwarzChristoffelVertex_zero_lt_primitive
     {z : ℂ} (hz : z ∈ upperHalfPlaneSet) :
     (schwarzChristoffelVertex a e z₀ 0).im <
       (schwarzChristoffelPrimitive a e z₀ z).im := by
-  have hfinite (k : Fin (n + 1)) : -1 < ∑ l with a l = a k, e l := by
-    simpa [ha.injective.eq_iff, Finset.filter_eq'] using (he k).1
+  have hfinite := neg_one_lt_exponent_sum_at a e ha fun k ↦ (he k).1
   have hinfty : ∑ k, e k < -1 := by rw [hsum]; norm_num
   apply im_schwarzChristoffelVertex_zero_lt_of_mem_interior_closedConvexHull_boundary
     a e z₀ ha he hsum
@@ -144,8 +144,7 @@ theorem disjoint_image_schwarzChristoffelPrimitive_closingSides
         (schwarzChristoffelPolygon a e z₀).edgeSet ℝ (Fin.last (n + 1))) := by
   apply (disjoint_interior_closedConvexHull_schwarzChristoffelPolygon_closingSides
     a e z₀ ha he hsum).mono_left
-  have hfinite (k : Fin (n + 1)) : -1 < ∑ l with a l = a k, e l := by
-    simpa [ha.injective.eq_iff, Finset.filter_eq'] using (he k).1
+  have hfinite := neg_one_lt_exponent_sum_at a e ha fun k ↦ (he k).1
   have hinfty : ∑ k, e k < -1 := by rw [hsum]; norm_num
   rw [← range_schwarzChristoffelCompactifiedBoundary a e z₀ ha.monotone hfinite hinfty]
   exact image_schwarzChristoffelPrimitive_subset_interior_closedConvexHull
