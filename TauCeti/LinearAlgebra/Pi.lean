@@ -53,6 +53,8 @@ weights.
 * `LinearMap.sum_finrank_add_finrank_ker_of_surjective`: rank–nullity for a surjection from a
   finite-dimensional space onto a finite dependent product, whose factors are then finite
   (`LinearMap.finite_of_surjective_pi`).
+* `LinearMap.finrank_ker_eq_sub_of_surjective`: the kernel of a surjection from a finite-dimensional
+  space has dimension the difference of the dimensions.
 * `TauCeti.exists_isRegular_single_sub_single_sub`: an ordered difference of standard coordinate
   vectors on two different coordinates and any other ordered difference differ regularly at some
   coordinate.
@@ -246,6 +248,16 @@ public theorem sum_finrank_add_finrank_ker_of_surjective {K M ι : Type*} [Divis
   have := finite_of_surjective_pi Φ hΦ
   rw [← Module.finrank_pi_fintype, ← finrank_top K, ← range_eq_top.2 hΦ]
   exact finrank_range_add_finrank_ker Φ
+
+/-- **Rank–nullity for a surjection**: the kernel of a surjective linear map from a
+finite-dimensional space has dimension the difference of the dimensions. -/
+public theorem finrank_ker_eq_sub_of_surjective {K M N : Type*} [DivisionRing K] [AddCommGroup M]
+    [Module K M] [FiniteDimensional K M] [AddCommGroup N] [Module K N] (f : M →ₗ[K] N)
+    (hf : Function.Surjective f) :
+    Module.finrank K (ker f) = Module.finrank K M - Module.finrank K N := by
+  have h := f.finrank_range_add_finrank_ker
+  rw [range_eq_top.2 hf, finrank_top] at h
+  omega
 
 end LinearMap
 
