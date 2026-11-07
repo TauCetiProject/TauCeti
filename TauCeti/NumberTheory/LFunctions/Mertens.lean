@@ -206,6 +206,37 @@ private theorem abs_idealSummatory_log_absNorm_sub_le {C : ℝ} (hC0 : 0 ≤ C)
   rw [sub_sub_cancel_left, abs_neg, abs_of_nonneg hI0]
   nlinarith [dedekindZeta_residue_pos K]
 
+/-- Abel summation against Chebyshev's bound `ψ_K(t) ≤ D t`: the prime powers weighted by
+`N(𝔭 ^ k) ^ (-θ)`, with `θ = 1 - 1 / [K : ℚ]`, sum to at most `D [K : ℚ] x ^ (1 - θ)`. -/
+private theorem primePowerSummatory_mul_rpow_neg_le {D θ : ℝ}
+    (hθ : θ = 1 - (Module.finrank ℚ K : ℝ)⁻¹) (hD0 : 0 ≤ D)
+    (hD : ∀ t, 1 ≤ t → primePsi K Set.univ t ≤ D * t) {x : ℝ} (hx : 1 ≤ x) :
+    primePowerSummatory K
+      (fun A ↦ primePowerWeight A * (Ideal.absNorm (A : Ideal (𝓞 K)) : ℝ) ^ (-θ)) x ≤
+        D * Module.finrank ℚ K * x ^ (1 - θ) := by
+  obtain ⟨hθ0, hθ1⟩ := one_sub_inv_finrank_mem_Ico K
+  rw [← hθ] at hθ0 hθ1
+  have hd : (0 : ℝ) < Module.finrank ℚ K := Nat.cast_pos.mpr Module.finrank_pos
+  have h1θ : 1 - θ = (Module.finrank ℚ K : ℝ)⁻¹ := by rw [hθ]; ring
+  have h := summatory_mul_rpow_neg_le
+    (fun A : IdealPrimePower K ↦ Ideal.absNorm (A : Ideal (𝓞 K)))
+    (fun A ↦ one_le_two.trans (two_le_absNorm_idealPrimePower_real A)) primePowerWeight
+    (C := D) (β := 1) hθ0 (by linarith) hx fun t ht ↦ by
+      have h := hD t ht.1
+      rw [primePsi_apply] at h
+      rw [Real.rpow_one, summatory_apply]
+      simpa using h
+  have hfrac : θ * D * ((x ^ (1 - θ) - 1) / (1 - θ)) ≤ θ * D * (x ^ (1 - θ) / (1 - θ)) :=
+    mul_le_mul_of_nonneg_left
+      (div_le_div_of_nonneg_right (sub_le_self _ zero_le_one) (by linarith))
+      (mul_nonneg hθ0 hD0)
+  calc _ ≤ D * x ^ (1 - θ) + θ * D * ((x ^ (1 - θ) - 1) / (1 - θ)) := h
+    _ ≤ D * x ^ (1 - θ) + θ * D * (x ^ (1 - θ) / (1 - θ)) := by linarith
+    _ = D * Module.finrank ℚ K * x ^ (1 - θ) := by
+      rw [h1θ, hθ]
+      field_simp
+      ring
+
 /-- **The main term of Chebyshev's identity.** Writing the ideal count as `ρ y + E(y)`, the right
 side of `TauCeti.LFunctions.idealSummatory_log_absNorm_eq` is
 `ρ x ∑_{N(𝔭 ^ k) ≤ x} log N𝔭 / N(𝔭 ^ k)` up to `∑ log N𝔭 · E(x / N(𝔭 ^ k))`. With
@@ -223,33 +254,9 @@ private theorem abs_primePowerSummatory_mul_card_sub_le {C D : ℝ} (hC0 : 0 ≤
       C * D * Module.finrank ℚ K * x := by
   set ρ := dedekindZeta_residue K
   set d : ℝ := (Module.finrank ℚ K : ℝ)
-  obtain ⟨hθ0, hθ1⟩ := one_sub_inv_finrank_mem_Ico K
   set θ := 1 - d⁻¹ with hθ
-  have hd : 0 < d := Nat.cast_pos.mpr Module.finrank_pos
-  have h1θ : 1 - θ = d⁻¹ := by rw [hθ]; ring
   have hx0 : 0 < x := zero_lt_one.trans_le hx
-  -- The prime powers weighted by `N(𝔭 ^ k) ^ (-θ)`: Abel summation against `ψ_K(t) ≤ D t`.
-  have hψ : primePowerSummatory K
-      (fun A ↦ primePowerWeight A * (Ideal.absNorm (A : Ideal (𝓞 K)) : ℝ) ^ (-θ)) x ≤
-        D * d * x ^ (1 - θ) := by
-    have h := summatory_mul_rpow_neg_le
-      (fun A : IdealPrimePower K ↦ Ideal.absNorm (A : Ideal (𝓞 K)))
-      (fun A ↦ one_le_two.trans (two_le_absNorm_idealPrimePower_real A)) primePowerWeight
-      (C := D) (β := 1) hθ0 (by linarith) hx fun t ht ↦ by
-        have h := hD t ht.1
-        rw [primePsi_apply] at h
-        rw [Real.rpow_one, summatory_apply]
-        simpa using h
-    have hfrac : θ * D * ((x ^ (1 - θ) - 1) / (1 - θ)) ≤ θ * D * (x ^ (1 - θ) / (1 - θ)) :=
-      mul_le_mul_of_nonneg_left
-        (div_le_div_of_nonneg_right (sub_le_self _ zero_le_one) (by linarith))
-        (mul_nonneg hθ0 hD0)
-    calc _ ≤ D * x ^ (1 - θ) + θ * D * ((x ^ (1 - θ) - 1) / (1 - θ)) := h
-      _ ≤ D * x ^ (1 - θ) + θ * D * (x ^ (1 - θ) / (1 - θ)) := by linarith
-      _ = D * d * x ^ (1 - θ) := by
-        rw [h1θ, hθ]
-        field_simp
-        ring
+  have hψ := primePowerSummatory_mul_rpow_neg_le K hθ hD0 hD hx
   rw [primePowerSummatory_apply, primePowerSummatory_apply, Finset.mul_sum,
     ← Finset.sum_sub_distrib]
   calc _ ≤ ∑ A ∈ primePowersLE K x, |primePowerWeight A *

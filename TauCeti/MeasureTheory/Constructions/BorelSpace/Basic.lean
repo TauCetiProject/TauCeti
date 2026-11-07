@@ -43,9 +43,8 @@ theorem Topology.IsInducing.measurable_comp_iff {α β γ : Type*} [TopologicalS
     [MeasurableSpace α] [BorelSpace α] [TopologicalSpace β] [MeasurableSpace β] [BorelSpace β]
     [MeasurableSpace γ] {f : α → β} (hf : IsInducing f) {g : γ → α} :
     Measurable (f ∘ g) ↔ Measurable g := by
-  have hα : ‹MeasurableSpace α› = MeasurableSpace.comap f ‹MeasurableSpace β› := by
-    rw [BorelSpace.measurable_eq (α := α), BorelSpace.measurable_eq (α := β), hf.comap_borel]
-  rw [measurable_iff_comap_le, measurable_iff_comap_le, hα, MeasurableSpace.comap_comp]
+  rw [measurable_iff_comap_le, measurable_iff_comap_le, ← MeasurableSpace.comap_comp,
+    BorelSpace.measurable_eq (α := α), BorelSpace.measurable_eq (α := β), hf.comap_borel]
 
 namespace MeasureTheory.Measure
 

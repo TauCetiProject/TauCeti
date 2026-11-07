@@ -223,13 +223,13 @@ theorem exists_deformation_of_preimage (hj : IsOpenEmbedding j) {S T V : Set X} 
     by_cases hxk : x ∈ range k
     · obtain ⟨y, rfl⟩ := hxk
       exact (hGk t y).trans (congrArg k (H.eq_snd t hx))
-    · exact hG t x hxk
+    · exact hG t x (hkS hxk)
   have hG₀ (x : S) : (G (0, x) : X) ∈ T := by
     by_cases hxk : x ∈ range k
     · obtain ⟨y, rfl⟩ := hxk
       rw [hGk, ContinuousMap.HomotopyWith.coe_toContinuousMap, H.apply_zero]
       exact (r y).2
-    · rw [hG 0 x hxk]
+    · rw [hG 0 x (hkS hxk)]
       exact hVT ⟨x.2, hkS hxk⟩
   refine ⟨⟨fun x ↦ ⟨G (0, x), hG₀ x⟩, by fun_prop⟩,
     fun x ↦ Subtype.ext congr(Subtype.val $(hGT 0 (ContinuousMap.inclusion hTS x) x.2)), ⟨
@@ -240,6 +240,6 @@ theorem exists_deformation_of_preimage (hj : IsOpenEmbedding j) {S T V : Set X} 
   by_cases hxk : x ∈ range k
   · obtain ⟨y, rfl⟩ := hxk
     exact (hGk 1 y).trans (congrArg k (H.apply_one y))
-  · exact hG 1 x hxk
+  · exact hG 1 x (hkS hxk)
 
 end Topology.IsOpenEmbedding
