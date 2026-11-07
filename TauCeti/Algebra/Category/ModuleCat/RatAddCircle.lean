@@ -43,7 +43,7 @@ abbrev ratAddCircleShortComplex : ShortComplex (ModuleCat.{0} ℤ) where
 theorem ratAddCircleShortComplex_shortExact : ratAddCircleShortComplex.ShortExact :=
   -- exactness at `ℚ`: `x : ℚ` vanishes modulo `1` iff it lies in `zmultiples 1`, the image of
   -- `Int.cast`
-  shortComplex_shortExact _ (fun _ ↦ by simp [AddSubgroup.mem_zmultiples_iff]) Int.cast_injective
-    (QuotientAddGroup.mk'_surjective _)
+  shortComplex_shortExact _ (fun _ ↦ by simp [AddSubgroup.mem_zmultiples_iff])
+    (by simpa using Int.cast_injective) (by simpa using QuotientAddGroup.mk_surjective)
 
 end ModuleCat
