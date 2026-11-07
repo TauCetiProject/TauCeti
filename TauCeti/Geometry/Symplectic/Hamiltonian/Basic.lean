@@ -255,6 +255,16 @@ theorem continuousOn_uncurry_hamiltonianVectorField {W : Type*} [NormedAddCommGr
   exact ω.continuousOn_hamiltonianVectorField_comp_of_contDiffOn (hU.prod isOpen_univ)
     continuousOn_snd hK'
 
+/-- For a jointly `C¹` family of Hamiltonians `K z`, the Hamiltonian vector field `X_{K z}(x)` is
+continuous jointly in the parameter `z` and the point `x`. -/
+theorem continuous_uncurry_hamiltonianVectorField {W : Type*} [NormedAddCommGroup W]
+    [NormedSpace ℝ W] (ω : SymplecticForm V) {K : W → V → ℝ}
+    (hK : ContDiff ℝ 1 (Function.uncurry K)) :
+    Continuous (Function.uncurry fun z ↦ ω.hamiltonianVectorField (K z)) := by
+  have h := ω.continuousOn_uncurry_hamiltonianVectorField isOpen_univ hK.contDiffOn
+  rw [Set.univ_prod_univ] at h
+  exact continuousOn_univ.1 h
+
 section PoissonBracket
 
 /-- The Poisson bracket `{F, G}(x) = ω(X_F x, X_G x)` of two Hamiltonians. -/
