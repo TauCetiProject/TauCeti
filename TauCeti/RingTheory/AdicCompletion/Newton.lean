@@ -125,29 +125,12 @@ private theorem exists_eq_zero_of_newton_iterates (A : (ι → R) → (ι → R)
     (u : ℕ → ι → R) (key : ∀ k, (∀ i, π ∣ u k i - u₀ i) ∧ ∀ i, π ^ (k + 1) ∣ A (u k) i)
     (hconsec : ∀ k i, π ^ (k + 1) ∣ u (k + 1) i - u k i) :
     ∃ L : ι → R, (∀ i, π ∣ L i - u₀ i) ∧ A L = 0 := by
-  have hcauchy : ∀ {m n : ℕ}, m ≤ n →
-      u m ≡ u n [SMOD ((Ideal.span {π}) ^ m • ⊤ : Submodule R (ι → R))] := by
-    intro m n hmn
-    rw [SModEq.sub_mem, mem_span_singleton_pow_smul_top_iff]
-    induction n, hmn using Nat.le_induction with
-    | base => simp
-    | succ n hmn ih =>
-      intro i
-      have h1 := (pow_dvd_pow π (by omega : m ≤ n + 1)).trans (hconsec n i)
-      simpa only [Pi.sub_apply, sub_sub_sub_cancel_right] using dvd_sub (ih i) h1
-  obtain ⟨L, hL⟩ := IsPrecomplete.prec inferInstance hcauchy
-  have hL' : ∀ k i, π ^ k ∣ L i - u k i := fun k i ↦ by
-    have := (mem_span_singleton_pow_smul_top_iff π _ k).1 (SModEq.sub_mem.1 (hL k)) i
-    rw [Pi.sub_apply] at this
-    exact (dvd_neg.2 this).trans (by rw [neg_sub])
+  obtain ⟨L, hL'⟩ := exists_forall_pow_dvd_sub π u hconsec
   have hLclass : ∀ i, π ∣ L i - u₀ i := fun i ↦ by
     have h1 : π ∣ L i - u 1 i := by simpa only [pow_one] using hL' 1 i
     simpa only [sub_add_sub_cancel] using dvd_add h1 ((key 1).1 i)
   -- `A L` vanishes modulo every power of `π`, hence vanishes.
-  have hAL : A L = 0 := by
-    refine IsHausdorff.haus (I := Ideal.span {π}) inferInstance _ fun k ↦ ?_
-    rw [SModEq.zero, mem_span_singleton_pow_smul_top_iff]
-    intro i
+  have hAL : A L = 0 := eq_zero_of_forall_pow_dvd π fun k i ↦ by
     rcases Nat.eq_zero_or_pos k with rfl | hk
     · simp
     have h1 := hA (u k) L (key k).1 hLclass k hk (hL' k) i
@@ -178,12 +161,7 @@ private theorem eq_of_eq_zero_of_isUnit_det (A : (ι → R) → (ι → R))
       simp only [hAL, hAv, Pi.zero_apply, sub_self, zero_sub, dvd_neg] at h1
       have h2 := dvd_mulVec_apply h1 M⁻¹
       rwa [Matrix.mulVec_mulVec, Matrix.nonsing_inv_mul _ hM, Matrix.one_mulVec] at h2
-  funext i
-  refine sub_eq_zero.1 (IsHausdorff.haus (I := Ideal.span {π}) inferInstance _ fun k ↦ ?_)
-  rw [SModEq.zero, Ideal.span_singleton_pow, Submodule.ideal_span_singleton_smul,
-    Submodule.mem_smul_pointwise_iff_exists]
-  obtain ⟨c, hc⟩ := hdiff k i
-  exact ⟨c, Submodule.mem_top, by rw [smul_eq_mul, hc]⟩
+  exact sub_eq_zero.mp (eq_zero_of_forall_pow_dvd π hdiff)
 
 /-- **Newton's method over a `π`-adically complete ring.** Let `A : (ι → R) → (ι → R)`, let `M` be
 a matrix with unit determinant, and let `u₀` satisfy `A u₀ ≡ 0 mod π`. If `M` linearises `A`
