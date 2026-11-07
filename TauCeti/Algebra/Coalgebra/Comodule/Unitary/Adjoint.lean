@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Coalgebra.Comodule.Unitary.Basic
+public import TauCeti.Algebra.Coalgebra.Comodule.Preadditive
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 
 /-!
@@ -111,7 +112,8 @@ theorem adjoint_comp (g : Hom 𝕜 A N P) (f : Hom 𝕜 A M N)
   simp [LinearMap.adjoint_comp]
 
 /-- The comodule adjoint preserves the identity. -/
--- Use `rw`: the categorical API simplifies `Hom.id` before this rule could match.
+-- Simplify before `ComoduleCat.ofHom_id` rewrites the identity in categorical form.
+@[simp↓]
 theorem adjoint_id (hM : IsUnitary 𝕜 A M) : (id 𝕜 A M).adjoint hM hM = id 𝕜 A M := by
   apply toLinearMap_injective
   simp
@@ -138,5 +140,18 @@ theorem adjoint_smul (r : 𝕜) (f : Hom 𝕜 A M N) (hM : IsUnitary 𝕜 A M)
     (r • f).adjoint hM hN = star r • f.adjoint hM hN := by
   apply toLinearMap_injective
   simp [map_smulₛₗ]
+
+/-- The comodule adjoint preserves negation. -/
+@[simp]
+theorem adjoint_neg (f : Hom 𝕜 A M N) (hM : IsUnitary 𝕜 A M)
+    (hN : IsUnitary 𝕜 A N) : (-f).adjoint hM hN = -f.adjoint hM hN := by
+  simpa only [star_neg, star_one, neg_one_smul] using adjoint_smul (-1 : 𝕜) f hM hN
+
+/-- The comodule adjoint preserves subtraction. -/
+@[simp]
+theorem adjoint_sub (f g : Hom 𝕜 A M N) (hM : IsUnitary 𝕜 A M)
+    (hN : IsUnitary 𝕜 A N) :
+    (f - g).adjoint hM hN = f.adjoint hM hN - g.adjoint hM hN := by
+  simp only [sub_eq_add_neg, adjoint_add, adjoint_neg]
 
 end TauCeti.Comodule.Hom
