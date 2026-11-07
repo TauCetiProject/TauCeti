@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.BigOperators.Finprod
 public import TauCeti.Analysis.Matrix.HermitianSignature.Continuity
 public import TauCeti.Analysis.Matrix.HermitianSignature.Crossing
+import TauCeti.Data.Finset.Basic
 
 /-!
 # The negative index along a path with regular crossings
@@ -101,23 +102,6 @@ private theorem sigNeg_toBilinForm_eq_of_forall_lt (hc : ContinuousOn V (Icc a b
   have hst : s < t := lt_of_le_of_ne ht.1 fun h ↦ hnt (h ▸ hns)
   exact (hno t htS hst).not_ge ht.2
 
-/-- If `c` is the first element of a finite set `S` after `s`, and no element of `S` lies in
-`(c, t₂]`, then the elements of `S` after `s` are `c` and the elements after `t₂`. -/
-private theorem filter_lt_eq_insert_of_forall_lt {S : Finset ℝ} {s c t₂ : ℝ} (hc : c ∈ S)
-    (hsc : s < c) (hcmin : ∀ t ∈ S, s < t → c ≤ t) (hct : c < t₂)
-    (hgap : ∀ t ∈ S, c < t → t₂ < t) :
-    {t ∈ S | s < t} = insert c {t ∈ S | t₂ < t} := by
-  ext t
-  simp only [Finset.mem_filter, Finset.mem_insert]
-  constructor
-  · rintro ⟨htS, hst⟩
-    rcases (hcmin t htS hst).eq_or_lt with h | h
-    · exact Or.inl h.symm
-    · exact Or.inr ⟨htS, hgap t htS h⟩
-  · rintro (rfl | ⟨htS, ht⟩)
-    · exact ⟨hc, hsc⟩
-    · exact ⟨htS, hsc.trans (hct.trans ht)⟩
-
 /-- Let `S` be the finite set of crossings in `[a, b]`. For every nondegenerate `s ∈ [a, b]`, the
 negative index drops from `s` to `b` by the sum of the signatures of the crossing forms at the
 crossings after `s`. -/
@@ -166,7 +150,7 @@ private theorem sigNeg_sub_sigNeg_eq_sum (hc : ContinuousOn V (Icc a b))
     have ht₂I : t₂ ∈ Icc a b := ⟨hc'.1.le.trans ht₂.1.le, (ht₂.2.trans_le (min_le_right _ _)).le⟩
     -- The crossings after `s` are `c` and the crossings after `t₂`.
     have hsplit : {t ∈ S | s < t} = insert c {t ∈ S | t₂ < t} :=
-      filter_lt_eq_insert_of_forall_lt hcmem.1 hsc hcmin ht₂.1 fun t htS h ↦
+      Finset.filter_lt_eq_insert_of_forall_lt hcmem.1 hsc hcmin ht₂.1 fun t htS h ↦
         lt_of_not_ge fun htt₂ ↦ ((hS t).1 htS).2
           (hu ⟨h, htt₂.trans_lt (ht₂.2.trans_le (min_le_left _ _))⟩)
     have hcnot : c ∉ {t ∈ S | t₂ < t} := fun h ↦ (Finset.mem_filter.1 h).2.not_gt ht₂.1
