@@ -69,6 +69,7 @@ theorem leastENatBound_eq_find [DecidablePred P] (h : ∃ n, P n) :
     (le_leastENatBound_iff.2 fun _ hn ↦ ENat.natCast_le_natCast.2 (Nat.find_min' h hn))
 
 /-- The least bound is at most `n` exactly when some `m ≤ n` satisfies the predicate. -/
+@[simp]
 theorem leastENatBound_le_iff {n : ℕ} : leastENatBound P ≤ n ↔ ∃ m ≤ n, P m := by
   classical
   refine ⟨fun hle ↦ ?_, fun ⟨m, hmn, hm⟩ ↦ (leastENatBound_le hm).trans (mod_cast hmn)⟩
