@@ -132,14 +132,11 @@ theorem exists_contMDiffOn_normalQuotientMap_rightInverse
     ⟨q.proj, (trivializationAt V (TangentSpace J) (f p.proj)).symm
       (f q.proj) (d.complement (e q).2)⟩
   -- Lift a normal coordinate using the fixed complementary ambient tangent vector.
-  let U : Set (TotalSpace P (fun x => f.NormalSpace x hn)) := {q | q.proj ∈ d.baseSet}
-  have hU : IsOpen U := d.isOpen_baseSet.preimage (FiberBundle.continuous_proj P _)
-  refine ⟨U, hU, d.mem_baseSet, s, ?_, ?_⟩
+  refine ⟨{q | q.proj ∈ d.baseSet},
+    d.isOpen_baseSet.preimage (FiberBundle.continuous_proj P _), d.mem_baseSet, s, ?_, ?_⟩
   · intro q hq
     apply ContMDiffAt.contMDiffWithinAt
-    have hqe : q ∈ e.source := by
-      rw [e.mem_source, d.baseSet_trivialization]
-      exact hq
+    have hqe : q ∈ e.source := by rw [e.mem_source, d.baseSet_trivialization]; exact hq
     apply (a.contMDiffAt_iff ?_).mpr
     · refine ⟨contMDiffAt_proj (fun x => f.NormalSpace x hn), ?_⟩
       have hc : ContMDiffAt (I.prod 𝓘(𝕜, P)) 𝓘(𝕜, V) m
@@ -148,11 +145,8 @@ theorem exists_contMDiffOn_normalQuotientMap_rightInverse
           ((e.contMDiffOn (IB := I) (n := m) |>.contMDiffAt
             (e.open_source.mem_nhds hqe)).snd)
       apply hc.congr_of_eventuallyEq
-      have hbase : ∀ᶠ y : TotalSpace P (fun x => f.NormalSpace x hn) in 𝓝 q,
-          y.proj ∈ d.baseSet :=
-        (FiberBundle.continuous_proj P _).continuousAt.preimage_mem_nhds
-          (d.isOpen_baseSet.mem_nhds hq)
-      filter_upwards [hbase] with y hy
+      filter_upwards [(FiberBundle.continuous_proj P _).continuousAt.preimage_mem_nhds
+        (d.isOpen_baseSet.mem_nhds hq)] with y hy
       simp only [a, Trivialization.pullback_apply, s, Pullback.lift_mk]
       rw [(trivializationAt V (TangentSpace J) (f p.proj)).apply_mk_symm
         (d.subset_charts hy).2]
