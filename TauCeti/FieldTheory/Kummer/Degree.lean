@@ -184,6 +184,13 @@ theorem mem_kummerField_of_pow_eq {x : E} {a : Kˣ} (ha : a ∈ Δ)
     (hx : x ^ n = algebraMap K E a) : x ∈ kummerField E n Δ :=
   subset_adjoin _ _ ⟨a, ha, hx⟩
 
+/-- If every element of `Δ` has an `n`-th root in `E`, then it has one in `K(Δ^{1/n})`. -/
+theorem exists_pow_eq_kummerField (hroots : ∀ a ∈ Δ, ∃ x : E, x ^ n = algebraMap K E a) :
+    ∀ a ∈ Δ, ∃ y : kummerField E n Δ, y ^ n = algebraMap K (kummerField E n Δ) a := by
+  intro a ha
+  obtain ⟨x, hx⟩ := hroots a ha
+  exact ⟨⟨x, mem_kummerField_of_pow_eq ha hx⟩, Subtype.ext (by simpa using hx)⟩
+
 /-- The Kummer field `K(Δ^{1/n})` is generated over `K` by the `n`-th roots of the elements of `Δ`
 that it contains, viewed as elements of `K(Δ^{1/n})` itself. -/
 theorem adjoin_pow_eq_algebraMap_kummerField_eq_top :
@@ -387,10 +394,7 @@ the image of `Δ` in `Kˣ ⧸ (Kˣ)ⁿ`, as soon as this index is finite. -/
 theorem finrank_kummerField [(powMonoidHom n : Kˣ →* Kˣ).range.IsFiniteRelIndex Δ]
     (hroots : ∀ a ∈ Δ, ∃ x : E, x ^ n = algebraMap K E a) :
     finrank K (kummerField E n Δ) = (powMonoidHom n : Kˣ →* Kˣ).range.relIndex Δ := by
-  have hr (a : Δ) : ∃ y : kummerField E n Δ, y ^ n = algebraMap K _ ((a : Kˣ) : K) := by
-    obtain ⟨x, hx⟩ := hroots a a.2
-    exact ⟨⟨x, mem_kummerField_of_pow_eq a.2 hx⟩, Subtype.ext (by simpa using hx)⟩
-  choose r hr using hr
+  choose r hr using fun a : Δ ↦ exists_pow_eq_kummerField hroots a a.2
   rw [← IsGalois.card_aut_eq_finrank]
   exact le_antisymm (natCard_algEquiv_kummerField_le hr)
     (relIndex_le_natCard_algEquiv_kummerField hr)
