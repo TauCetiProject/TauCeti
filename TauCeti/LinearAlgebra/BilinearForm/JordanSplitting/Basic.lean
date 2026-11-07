@@ -283,6 +283,35 @@ theorem IsModular.isJordanSplitting {π : R} {i : ℕ} (h : B.IsModular (π ^ i)
         infer_instance
       exact isModular_of_subsingleton
 
+/-- **Reversing a Jordan splitting.** Let `N` be an internal direct sum decomposition of `M` with
+`N i = ⊥` for `i > m`, and let `D` be a form for which the `N i` are orthogonal and `N (m - k)` is
+`π ^ k`-modular for `k ≤ m`. Then `k ↦ N (m - k)`, extended by `⊥`, is a Jordan splitting of `D`. -/
+theorem isJordanSplitting_reverse {N : ℕ → Submodule R M} {π : R} (hN : DirectSum.IsInternal N)
+    {D : BilinForm R M} {m : ℕ} (htop : ∀ i, m < i → N i = ⊥)
+    (horth : ∀ i k, i ≠ k → ∀ x ∈ N i, ∀ y ∈ N k, D x y = 0)
+    (hmod : ∀ k ≤ m, (D.restrict (N (m - k))).IsModular (π ^ k)) :
+    D.IsJordanSplitting π (fun k ↦ if k ≤ m then N (m - k) else ⊥) := by
+  -- Reversing the indices up to `m` is an involution of `ℕ`.
+  let τ (k : ℕ) : ℕ := if k ≤ m then m - k else k
+  have hτ : Function.Involutive τ := fun k ↦ by
+    simp only [τ]
+    split_ifs <;> omega
+  have hτN : (fun k ↦ if k ≤ m then N (m - k) else ⊥) = N ∘ τ := by
+    funext k
+    simp only [Function.comp_apply, τ]
+    split_ifs with hk
+    · rfl
+    · exact (htop k (by omega)).symm
+  refine hτN ▸ ⟨?_, fun k k' hkk' ↦ horth _ _ (hτ.injective.ne hkk'), fun k ↦ ?_⟩
+  · exact (DirectSum.isInternal_submodule_iff_iSupIndep_and_iSup_eq_top _).mpr
+      ⟨hN.submodule_iSupIndep.comp hτ.injective,
+        (hτ.surjective.iSup_comp N).trans hN.submodule_iSup_eq_top⟩
+  · by_cases hk : k ≤ m
+    · rw [Function.comp_apply, show τ k = m - k from ite_eq_left hk]
+      exact hmod k hk
+    · rw [Function.comp_apply, show τ k = k from ite_eq_right hk, htop k (by omega)]
+      exact isModular_of_subsingleton
+
 end Modular
 
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {B : BilinForm R M}
