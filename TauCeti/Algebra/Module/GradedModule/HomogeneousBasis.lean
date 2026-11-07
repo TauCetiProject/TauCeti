@@ -54,27 +54,6 @@ universe u
 variable {k : Type*} {M : Type u} [Field k] [AddCommGroup M] [Module k M] [Module k[X] M]
   [IsScalarTower k k[X] M] [Module.Finite k[X] M] {G : InternalGrading k M} {d : ℕ}
 
-omit [Module k[X] M] [IsScalarTower k k[X] M] [Module.Finite k[X] M] in
-/-- The components of an element in the `k`-span of a family `s p ⊆ C p` of homogeneous elements
-of degree `p` lie in the matching `C p`. -/
-private theorem decompose_mem_of_mem_span_sigma (C : ℤ → Submodule k M) (s : ℤ → Set M)
-    (hsC : ∀ p, s p ⊆ C p) (hCG : ∀ p, C p ≤ G.piece p) {z : M}
-    (hz : z ∈ Submodule.span k (Set.range fun i : (Σ p : ℤ, s p) ↦ (i.2 : M))) (p : ℤ) :
-    (DirectSum.decompose G.piece z p : M) ∈ C p := by
-  induction hz using Submodule.span_induction with
-  | mem x hx =>
-    obtain ⟨i, rfl⟩ := hx
-    by_cases hi : i.1 = p
-    · rw [DirectSum.decompose_of_mem_same _ (hi ▸ hCG _ (hsC _ i.2.2))]
-      exact hi ▸ hsC _ i.2.2
-    · rw [DirectSum.decompose_of_mem_ne _ (hCG _ (hsC _ i.2.2)) hi]
-      exact (C p).zero_mem
-  | zero => simp
-  | add x y _ _ hx hy => simpa using (C p).add_mem hx hy
-  | smul a x _ hx =>
-    rw [DirectSum.decompose_smul, DirectSum.smul_apply, Submodule.coe_smul]
-    exact (C p).smul_mem a hx
-
 omit [Module.Finite k[X] M] in
 /-- The union over all degrees `p` of `k`-bases `s p` of complements `C p` to `X` times the
 degree-`(p + d)` part of a homogeneous submodule `L` is `k[X]`-linearly independent: the `C p` are
@@ -106,7 +85,7 @@ private theorem linearIndependent_sigma_of_disjoint_torsion
   · -- Each component of `z` lies in both `C p` and `X` times the part of degree `p + d` of `L`.
     have hzero (p : ℤ) : (DirectSum.decompose G.piece z p : M) = 0 := by
       refine Submodule.disjoint_def.mp (hWC p) _ ?_
-        (decompose_mem_of_mem_span_sigma C s hsC hCG hz p)
+        (G.decompose_mem_of_mem_span_sigma C s hsC hCG hz p)
       rw [hzy, ← pow_one (X : k[X]), coe_decompose_X_pow_smul hX, Nat.cast_one, one_mul,
         pow_one]
       exact ⟨_, Submodule.mem_inf.mpr
