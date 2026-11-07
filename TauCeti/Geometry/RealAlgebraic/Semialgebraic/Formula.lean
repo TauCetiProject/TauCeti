@@ -100,7 +100,6 @@ theorem isSemialgebraic_iff_exists_isQF {s : Set (σ → R)} :
   constructor
   · intro hs
     refine IsSemialgebraic.induction (fun p => ?_) (fun p => ?_)
-      ⟨⊥, BoundedFormula.isQF_bot, by simp⟩
       (fun s _ ⟨φ, hφ, hs⟩ => ⟨φ.not, hφ.not, by ext; simp [hs]⟩)
       (fun s t _ _ ⟨φ, hφ, hs⟩ ⟨ψ, hψ, ht⟩ => ⟨φ ⊔ ψ, hφ.sup hψ, by ext; simp [hs, ht]⟩) hs
     · -- The zero set of `p` is defined by the equation `p = 0`.
