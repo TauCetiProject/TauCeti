@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.FGModuleCat.Basic
-public import Mathlib.RingTheory.AdicCompletion.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Tower.AdicSystem
 
 import TauCeti.RingTheory.AdicCompletion.Finite
@@ -373,21 +372,12 @@ theorem limMap_reductionMap_toLimReduction (u : M →ₗ[A] N) (x : M) :
   Subtype.ext <| funext fun n ↦ by simp
 
 /-- Reduction along `I` as a functor from `A`-modules to towers. -/
-@[expose]
+@[expose, simps]
 noncomputable def reductionFunctor : ModuleCat.{v} A ⥤ ModuleTower.{v} A where
   obj M := reduction I M
   map u := reductionMap I u.hom
   map_id _ := reductionMap_id I
   map_comp _ _ := reductionMap_comp I _ _
-
-@[simp]
-theorem reductionFunctor_obj (M : ModuleCat.{v} A) : (reductionFunctor I).obj M = reduction I M :=
-  (rfl)
-
-@[simp]
-theorem reductionFunctor_map {M N : ModuleCat.{v} A} (u : M ⟶ N) :
-    (reductionFunctor I).map u = reductionMap I u.hom :=
-  (rfl)
 
 instance : (reductionFunctor.{v} I).Additive where
   map_add {_ _ u v} := reductionMap_add I u.hom v.hom
@@ -445,9 +435,7 @@ noncomputable def reductionLimIso : reduction I F.lim ≅ F :=
 @[simp]
 theorem reductionLimIso_hom_app_reductionπ (n : ℕ) (x : F.lim) :
     (hF.reductionLimIso.hom.app (op n)).hom (reductionπ I F.lim n x) = F.limπ n x := by
-  simp only [reductionLimIso, NatIso.ofComponents_hom_app, LinearEquiv.toModuleIso_hom]
-  rw [ModuleCat.hom_ofHom]
-  exact hF.reductionLimEquiv_reductionπ n x
+  simp [reductionLimIso, reductionLimEquiv_reductionπ]
 
 end IsAdicSystem
 
@@ -469,21 +457,11 @@ theorem isFiniteAdicSystem_iff (F : ModuleTower.{v} A) :
 abbrev FiniteAdicSystem := (isFiniteAdicSystem.{v} I).FullSubcategory
 
 /-- Reduction of finite `A`-modules to `I`-adic systems with finite `M₀`. -/
-@[expose]
+@[expose, simps! obj_obj map_hom]
 noncomputable def finiteReduction : FGModuleCat.{v} A ⥤ FiniteAdicSystem.{v} I :=
   (isFiniteAdicSystem I).lift ((ModuleCat.isFG A).ι ⋙ reductionFunctor I) fun M ↦
     (isFiniteAdicSystem_iff I _).2
       ⟨isAdicSystem_reduction I M, .of_surjective _ (reductionπ_surjective I M 0)⟩
-
-@[simp]
-theorem finiteReduction_obj_obj (M : FGModuleCat.{v} A) :
-    ((finiteReduction I).obj M).obj = reduction I M :=
-  (rfl)
-
-@[simp]
-theorem finiteReduction_map_hom {M N : FGModuleCat.{v} A} (u : M ⟶ N) :
-    ((finiteReduction I).map u).hom = (reductionFunctor I).map u.hom :=
-  (rfl)
 
 instance [IsNoetherianRing A] [IsAdicComplete I A] : (finiteReduction I).Faithful where
   map_injective {M N} u v huv := by

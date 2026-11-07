@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Convex.Stiemke
+public import Mathlib.Basic.Real.Basic
+public import TauCeti.Algebra.Group.AddSubgroup.PositiveWeights
 public import TauCeti.LowDimTopology.Heegaard.Domain
 
 /-!
@@ -65,7 +66,7 @@ for which every periodic domain has signed area `∑ r, A r * P r` equal to zero
 theorem weaklyAdmissible_iff_exists_pos_forall_sum_mul_eq_zero [Fintype Region] :
     H.WeaklyAdmissible ↔
       ∃ A : Region → ℝ, (∀ r, 0 < A r) ∧ ∀ P ∈ H.periodicDomains, ∑ r, A r * P r = 0 := by
-  rw [weaklyAdmissible_iff, exists_pos_forall_sum_mul_intCast_eq_zero_iff]
+  rw [weaklyAdmissible_iff, H.periodicDomains.exists_pos_sum_mul_intCast_eq_zero_iff]
 
 /-- If an area form `A` vanishes on the periodic domains, then all domains connecting `x` to `y`
 with the same basepoint multiplicities have the same area. -/

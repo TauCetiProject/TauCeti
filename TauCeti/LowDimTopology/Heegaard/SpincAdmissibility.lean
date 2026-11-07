@@ -147,8 +147,8 @@ theorem weaklyAdmissibleAt_iff_exists_pos_forall_sum_mul_eq_zero :
     H.WeaklyAdmissibleAt χ x ↔
       ∃ A : Region → ℝ, (∀ r, 0 < A r) ∧
         ∀ P ∈ H.periodicDomains, H.maslovIndex χ x x P = 0 → ∑ r, A r * P r = 0 := by
-  have := exists_pos_forall_sum_mul_intCast_eq_zero_iff
-    (P := H.periodicDomains ⊓ (H.maslovIndex χ x x).ker)
+  have := (H.periodicDomains ⊓ (H.maslovIndex χ x x).ker).exists_pos_sum_mul_intCast_eq_zero_iff
+    (K := ℝ)
   simp only [AddSubgroup.mem_inf, AddMonoidHom.mem_ker, and_imp] at this
   rw [weaklyAdmissibleAt_iff, this]
 
