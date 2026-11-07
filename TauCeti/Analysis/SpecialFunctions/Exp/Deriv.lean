@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.Calculus.ContDiff.RestrictScalars
+import Mathlib.Analysis.Calculus.ContDiff.Basic
 
 /-!
 # Real iterated derivatives of the complex exponential
@@ -20,6 +21,8 @@ Faà di Bruno bound needs for compositions `Complex.exp ∘ f` with a real-diffe
 
 * `TauCeti.norm_iteratedFDeriv_real_cexp`: every real iterated derivative of `Complex.exp` at `z`
   has norm `‖exp z‖`.
+* `ContinuousLinearMap.norm_iteratedFDeriv_cexp_comp_le`: for a real-linear map `ℓ` to `ℂ`, the
+  `n`-th derivative of `x ↦ exp (ℓ x)` has norm at most `‖exp (ℓ x)‖ ‖ℓ‖ ^ n`.
 -/
 
 public section
@@ -35,3 +38,20 @@ theorem norm_iteratedFDeriv_real_cexp (n : ℕ) (z : ℂ) :
     norm_iteratedFDeriv_eq_norm_iteratedDeriv, iteratedDeriv_eq_iterate, Complex.iter_deriv_exp]
 
 end TauCeti
+
+namespace ContinuousLinearMap
+
+/-- For a real-linear map `ℓ : E →L[ℝ] ℂ`, the `n`-th derivative of `x ↦ exp (ℓ x)` has norm at
+most `‖exp (ℓ x)‖ ‖ℓ‖ ^ n`. For a purely imaginary `ℓ`, such as the phase `x ↦ 2πi ⟪x, w⟫` of a
+character, this is `‖ℓ‖ ^ n`. -/
+theorem norm_iteratedFDeriv_cexp_comp_le {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (ℓ : E →L[ℝ] ℂ) (n : ℕ) (x : E) :
+    ‖iteratedFDeriv ℝ n (fun y ↦ Complex.exp (ℓ y)) x‖ ≤ ‖Complex.exp (ℓ x)‖ * ‖ℓ‖ ^ n := by
+  have h := ℓ.iteratedFDeriv_comp_right ((Complex.contDiff_exp (𝕜 := ℂ)).restrict_scalars ℝ) x
+    (i := n) (mod_cast le_top)
+  rw [Function.comp_def] at h
+  rw [h, ← TauCeti.norm_iteratedFDeriv_real_cexp n (ℓ x)]
+  refine (ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _).trans_eq ?_
+  simp
+
+end ContinuousLinearMap
