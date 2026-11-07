@@ -189,6 +189,15 @@ theorem coe_sublevelInclusion_apply {X β : Type*} [TopologicalSpace X] [Preorde
     {a b : β} (hab : a ≤ b) (x : {x | f x ≤ a}) : (sublevelInclusion f a b hab x : X) = x :=
   (rfl)
 
+/-- Including `{f ≤ a}` into `{f ≤ b}` and then into `{f ≤ c}` is the inclusion of `{f ≤ a}` into
+`{f ≤ c}`. -/
+@[simp]
+theorem sublevelInclusion_sublevelInclusion {X β : Type*} [TopologicalSpace X] [Preorder β]
+    (f : X → β) {a b c : β} (hab : a ≤ b) (hbc : b ≤ c) (x : {x | f x ≤ a}) :
+    sublevelInclusion f b c hbc (sublevelInclusion f a b hab x) =
+      sublevelInclusion f a c (hab.trans hbc) x :=
+  Subtype.ext (rfl)
+
 /-- The inclusion `{f ≤ a} → {f ≤ b}` of sublevels is the inclusion of sets. -/
 theorem sublevelInclusion_eq_inclusion {X β : Type*} [TopologicalSpace X] [Preorder β]
     (f : X → β) {a b : β} (hab : a ≤ b) :
