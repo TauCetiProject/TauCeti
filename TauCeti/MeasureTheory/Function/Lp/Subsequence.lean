@@ -43,6 +43,47 @@ variable {X : Type*} [MeasurableSpace X] {μ : Measure X} {F : Type*} [Topologic
   [T2Space X] [LocallyCompactSpace X] [SecondCountableTopology X] [OpensMeasurableSpace X]
   [NormedAddCommGroup F] {p : ℝ≥0∞} [Fact (1 ≤ p)] {Ω : Set X} {u : ℕ → X → F}
 
+omit [MeasurableSpace X] [T2Space X] [OpensMeasurableSpace X] in
+/-- An open subset `Ω` of a second-countable locally compact space has a monotone sequence of
+compact subsets of `Ω` such that every compact subset of `Ω` lies in one of them. -/
+theorem exists_monotone_isCompact_subset_forall_isCompact_subset_exists_subset
+    (hΩ : IsOpen Ω) :
+    ∃ L : ℕ → Set X, (∀ m, IsCompact (L m)) ∧ (∀ m, L m ⊆ Ω) ∧ Monotone L ∧
+      ∀ K, IsCompact K → K ⊆ Ω → ∃ m, K ⊆ L m := by
+  have : LocallyCompactSpace Ω := hΩ.locallyCompactSpace
+  let Kx : CompactExhaustion Ω := CompactExhaustion.choice Ω
+  refine ⟨fun m => (↑) '' Kx m, fun m => (Kx.isCompact m).image continuous_subtype_val,
+    fun m => ?_, fun m m' h => image_mono (Kx.subset h), fun K hK hKΩ => ?_⟩
+  · rintro _ ⟨x, -, rfl⟩
+    exact x.2
+  · have hK' : IsCompact (((↑) : Ω → X) ⁻¹' K) :=
+      Topology.IsInducing.subtypeVal.isCompact_preimage' hK (by simpa using hKΩ)
+    obtain ⟨m, hm⟩ := Kx.exists_superset_of_isCompact hK'
+    exact ⟨m, fun x hx => ⟨⟨x, hKΩ hx⟩, hm hx, rfl⟩⟩
+
+omit [TopologicalSpace X] [T2Space X] [LocallyCompactSpace X] [SecondCountableTopology X]
+  [OpensMeasurableSpace X] in
+/-- If `w j` converges to `f` in `Lᵖ(A)` and to `g` in `Lᵖ(B)` along a nontrivial filter, where
+`A ⊆ B`, then `f = g` almost everywhere on `A`. -/
+theorem ae_eq_restrict_of_tendsto_eLpNorm_sub {ι : Type*} {l : Filter ι} [l.NeBot]
+    {A B : Set X} (hAB : A ⊆ B) {w : ι → X → F} {f g : X → F}
+    (hwf : Tendsto (fun j => eLpNorm (w j - f) p (μ.restrict A)) l (𝓝 0))
+    (hwg : Tendsto (fun j => eLpNorm (w j - g) p (μ.restrict B)) l (𝓝 0)) :
+    f =ᵐ[μ.restrict A] g := by
+  have hle (j : ι) : eLpNorm (f - g) p (μ.restrict A) ≤
+      eLpNorm (w j - f) p (μ.restrict A) + eLpNorm (w j - g) p (μ.restrict B) := by
+    calc eLpNorm (f - g) p (μ.restrict A)
+        = eLpNorm ((w j - g) - (w j - f)) p (μ.restrict A) := by rw [sub_sub_sub_cancel_left]
+      _ ≤ eLpNorm (w j - g) p (μ.restrict A) + eLpNorm (w j - f) p (μ.restrict A) :=
+          eLpNorm_sub_le Fact.out
+      _ ≤ _ := by
+          rw [add_comm]
+          gcongr
+  have h0 : eLpNorm (f - g) p (μ.restrict A) = 0 :=
+    le_antisymm (ge_of_tendsto' (by simpa using hwf.add hwg) hle) zero_le
+  filter_upwards [(eLpNorm_eq_zero_iff (zero_lt_one.trans_le Fact.out).ne').1 h0] with y hy
+  simpa [sub_eq_zero] using hy
+
 /-- **Sequential compactness in `Lᵖ_loc`.** Let `Ω` be open, and let `u n` be a sequence of
 functions in `Lᵖ(K)` for every compact `K ⊆ Ω` whose classes form a relatively compact subset of
 `Lᵖ(K)` for every such `K`. Then there are a function `v`, in `Lᵖ(K)` for every compact `K ⊆ Ω`,
@@ -54,21 +95,9 @@ theorem exists_subseq_tendsto_eLpNorm_sub_of_isCompact_closure (hΩ : IsOpen Ω)
     ∃ v : X → F, (∀ K, IsCompact K → K ⊆ Ω → MemLp v p (μ.restrict K)) ∧
       ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∀ K, IsCompact K → K ⊆ Ω →
         Tendsto (fun j => eLpNorm (u (φ j) - v) p (μ.restrict K)) atTop (𝓝 0) := by
-  -- A compact exhaustion `L` of `Ω`.
-  have : LocallyCompactSpace Ω := hΩ.locallyCompactSpace
-  let Kx : CompactExhaustion Ω := CompactExhaustion.choice Ω
-  let L : ℕ → Set X := fun m => (↑) '' Kx m
-  have hLc (m : ℕ) : IsCompact (L m) := (Kx.isCompact m).image continuous_subtype_val
+  obtain ⟨L, hLc, hLΩ, hLmono, hLsup⟩ :=
+    exists_monotone_isCompact_subset_forall_isCompact_subset_exists_subset hΩ
   have hLm (m : ℕ) : MeasurableSet (L m) := (hLc m).isClosed.measurableSet
-  have hLΩ (m : ℕ) : L m ⊆ Ω := by
-    rintro _ ⟨x, -, rfl⟩
-    exact x.2
-  have hLmono : Monotone L := fun m m' h => image_mono (Kx.subset h)
-  have hLsup (K : Set X) (hK : IsCompact K) (hKΩ : K ⊆ Ω) : ∃ m, K ⊆ L m := by
-    have hK' : IsCompact (((↑) : Ω → X) ⁻¹' K) :=
-      Topology.IsInducing.subtypeVal.isCompact_preimage' hK (by simpa using hKΩ)
-    obtain ⟨m, hm⟩ := Kx.exists_superset_of_isCompact hK'
-    exact ⟨m, fun x hx => ⟨⟨x, hKΩ hx⟩, hm hx, rfl⟩⟩
   -- A single subsequence converges in every `Lᵖ(L m)`, by sequential compactness of the
   -- product of the compact sets given by `hcpt`.
   let x : ℕ → ∀ m, Lp F p (μ.restrict (L m)) := fun n m =>
@@ -82,23 +111,8 @@ theorem exists_subseq_tendsto_eLpNorm_sub_of_isCompact_closure (hΩ : IsOpen Ω)
       (tendsto_pi_nhds.1 hlim m)).congr fun j =>
         eLpNorm_congr_ae ((MemLp.coeFn_toLp (hu (φ j) (L m) (hLc m) (hLΩ m))).sub .rfl)
   -- The limits are compatible: `a k = a m` almost everywhere on `L k` for `k ≤ m`.
-  have hcompat_le {k m : ℕ} (hkm : k ≤ m) : (a k : X → F) =ᵐ[μ.restrict (L k)] a m := by
-    have hle (j : ℕ) : eLpNorm (⇑(a k) - ⇑(a m)) p (μ.restrict (L k)) ≤
-        eLpNorm (u (φ j) - ⇑(a k)) p (μ.restrict (L k)) +
-          eLpNorm (u (φ j) - ⇑(a m)) p (μ.restrict (L m)) := by
-      calc eLpNorm (⇑(a k) - ⇑(a m)) p (μ.restrict (L k))
-          = eLpNorm ((u (φ j) - ⇑(a m)) - (u (φ j) - ⇑(a k))) p (μ.restrict (L k)) := by
-            rw [sub_sub_sub_cancel_left]
-        _ ≤ eLpNorm (u (φ j) - ⇑(a m)) p (μ.restrict (L k)) +
-              eLpNorm (u (φ j) - ⇑(a k)) p (μ.restrict (L k)) := eLpNorm_sub_le Fact.out
-        _ ≤ _ := by
-            rw [add_comm]
-            gcongr
-            exact hLmono hkm
-    have h0 : eLpNorm (⇑(a k) - ⇑(a m)) p (μ.restrict (L k)) = 0 :=
-      le_antisymm (ge_of_tendsto' (by simpa using (hconv k).add (hconv m)) hle) zero_le
-    filter_upwards [(eLpNorm_eq_zero_iff (zero_lt_one.trans_le Fact.out).ne').1 h0] with y hy
-    simpa [sub_eq_zero] using hy
+  have hcompat_le {k m : ℕ} (hkm : k ≤ m) : (a k : X → F) =ᵐ[μ.restrict (L k)] a m :=
+    ae_eq_restrict_of_tendsto_eLpNorm_sub (hLmono hkm) (hconv k) (hconv m)
   have hcompat (k m : ℕ) : (a k : X → F) =ᵐ[μ.restrict (L k ∩ L m)] a m := by
     rcases le_total k m with hkm | hmk
     · rw [inter_eq_left.2 (hLmono hkm)]
