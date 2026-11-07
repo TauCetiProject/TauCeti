@@ -129,7 +129,8 @@ theorem const_mem_relativeRepartitionSpace [Algebra.IsIntegral F F'] (hF : IsFun
     (Place.finite_setOf_not_isIntegral hF x (Algebra.IsIntegral.isIntegral x))
 
 open scoped Classical in
-/-- The fibre-constant relative repartition that is `z` over `P` and `0` elsewhere. -/
+/-- The family that is `z` at `P` and `0` elsewhere is a relative repartition: its entries are `0`,
+hence integral, at every place other than `P`. -/
 theorem single_mem_relativeRepartitionSpace (P : Place k F) (z : F') :
     Pi.single P z ∈ relativeRepartitionSpace k F F' :=
   mem_relativeRepartitionSpace_iff.mpr <| Filter.eventually_cofinite.mpr <|
