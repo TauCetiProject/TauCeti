@@ -61,7 +61,9 @@ also constructed relatively in `TauCeti.AlgebraicGeometry.Quotient.FiniteGroup.R
 * `TauCeti.InvariantQuotient.isPullback_projection_fromSpec`: over the chart of an invariant affine
   open `U`, the projection is the affine invariant quotient projection of `Γ(X, U)`.
 * `TauCeti.InvariantQuotient.projection_iff`: a property local on the target holds for the
-  projection exactly when it holds for all affine invariant quotient projections.
+  projection exactly when it holds for all affine invariant quotient projections, and
+  `TauCeti.InvariantQuotient.projection_of_forall_exists` deduces it from the affine invariant
+  quotient projections of a family of invariant affine opens covering `X`.
 * The projection is `G`-invariant (`TauCeti.InvariantQuotient.asIso_hom_projection`), surjective,
   integral, and an epimorphism.
 * `TauCeti.InvariantQuotient.existsUnique_projection_comp_eq`: the universal property of the
@@ -622,21 +624,52 @@ theorem isPullback_projection_fromSpec (hσ : HasInvariantAffineCover σ)
     exact ⟨AffineInvariantQuotient.projection Γ(X, U.1) G p,
       congr($(fromSpec_projection hσ U) p).symm⟩
 
+/-- The base change of the quotient projection along the chart of an invariant affine open `U`
+has a property respecting isomorphisms exactly when the affine invariant quotient projection of `U`
+has it, by the chart square. -/
+private lemma pullback_snd_chartι_iff (hσ : HasInvariantAffineCover σ) (U : InvariantAffineOpens σ)
+    {P : MorphismProperty Scheme.{u}} [P.RespectsIso] :
+    letI := Scheme.sectionsMulSemiringAction σ U.2.2
+    P (pullback.snd (projection σ hσ) (chartι σ U)) ↔
+      P (AffineInvariantQuotient.projection Γ(X, U.1) G) := by
+  let := Scheme.sectionsMulSemiringAction σ U.2.2
+  have h := (isPullback_projection_fromSpec hσ U).flip
+  calc _ ↔ P (h.isoPullback.hom ≫ pullback.snd _ _) := (P.cancel_left_of_respectsIso _ _).symm
+    _ ↔ _ := by rw [h.isoPullback_hom_snd]
+
 /-- A property of morphisms which is local on the target holds for the quotient projection exactly
 when it holds for the affine invariant quotient projections of all invariant affine opens. -/
 theorem projection_iff (hσ : HasInvariantAffineCover σ) {P : MorphismProperty Scheme.{u}}
     [IsZariskiLocalAtTarget P] :
     P (projection σ hσ) ↔ ∀ U : InvariantAffineOpens σ,
       letI := Scheme.sectionsMulSemiringAction σ U.2.2
-      P (AffineInvariantQuotient.projection Γ(X, U.1) G) := by
-  refine (IsZariskiLocalAtTarget.iff_of_openCover (P := P)
-    (Scheme.IsLocallyDirected.openCover (chartDiagram σ))).trans (forall_congr' fun U ↦ ?_)
+      P (AffineInvariantQuotient.projection Γ(X, U.1) G) :=
+  (IsZariskiLocalAtTarget.iff_of_openCover (P := P)
+    (Scheme.IsLocallyDirected.openCover (chartDiagram σ))).trans
+      (forall_congr' fun U ↦ pullback_snd_chartι_iff hσ U)
+
+/-- A property of morphisms which is local on the target holds for the quotient projection as soon
+as it holds for the affine invariant quotient projections of a family of invariant affine opens
+covering `X`. -/
+theorem projection_of_forall_exists (hσ : HasInvariantAffineCover σ)
+    {P : MorphismProperty Scheme.{u}} [IsZariskiLocalAtTarget P]
+    (h : ∀ x : X, ∃ U : InvariantAffineOpens σ, x ∈ U.1 ∧
+      letI := Scheme.sectionsMulSemiringAction σ U.2.2
+      P (AffineInvariantQuotient.projection Γ(X, U.1) G)) :
+    P (projection σ hσ) := by
+  let J := {U : InvariantAffineOpens σ // letI := Scheme.sectionsMulSemiringAction σ U.2.2
+    P (AffineInvariantQuotient.projection Γ(X, U.1) G)}
+  refine IsZariskiLocalAtTarget.of_iSup_eq_top (fun U : J ↦ (chartι σ U.1).opensRange) ?_
+    fun U ↦ (P.arrow_mk_iso_iff (morphismRestrictOpensRange _ _)).mpr
+      ((pullback_snd_chartι_iff hσ U.1).mpr U.2)
+  -- The charts of the opens of the family cover the quotient, since the projection is surjective.
+  refine top_unique fun z _ ↦ ?_
+  obtain ⟨x, rfl⟩ := (projection σ hσ).surjective z
+  obtain ⟨U, hxU, hU⟩ := h x
+  obtain ⟨p, rfl⟩ : x ∈ Set.range U.2.1.fromSpec := U.2.1.range_fromSpec.ge hxU
   let := Scheme.sectionsMulSemiringAction σ U.2.2
-  have h := (isPullback_projection_fromSpec hσ U).flip
-  -- The pullback of the projection along the chart is the affine projection, by the chart square.
-  calc _ ↔ P (pullback.snd (projection σ hσ) (chartι σ U)) := Iff.rfl
-    _ ↔ P (h.isoPullback.hom ≫ pullback.snd _ _) := (P.cancel_left_of_respectsIso _ _).symm
-    _ ↔ _ := by rw [h.isoPullback_hom_snd]
+  exact TopologicalSpace.Opens.mem_iSup.mpr ⟨⟨U, hU⟩,
+    AffineInvariantQuotient.projection Γ(X, U.1) G p, congr($(fromSpec_projection hσ U) p).symm⟩
 
 /-- The quotient projection is integral, since sections are integral over invariant sections for
 a finite group. -/
