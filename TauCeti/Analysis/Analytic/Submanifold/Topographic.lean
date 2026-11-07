@@ -127,24 +127,8 @@ private theorem exists_isAnalyticChart_image_tail (hψ : IsAnalyticSubmanifold d
   have hDφ : Function.Injective (fderiv 𝕜 φ u₀) :=
     hc.injective_fderiv_symm_firstCoords hvc hv hψ.le
   -- By the height inequality, so is its projection `p`.
-  have hDp : Function.Injective (fderiv 𝕜 p u₀) := by
-    have hp' : HasFDerivAt p (τ.comp (fderiv 𝕜 φ u₀)) u₀ := by
-      simpa only [p, Function.comp_def, hτ] using
-        τ.hasFDerivAt.comp u₀ hφ.differentiableAt.hasFDerivAt
-    rw [hp'.fderiv]
-    refine (injective_iff_map_eq_zero _).2 fun k hk ↦ hDφ ?_
-    rw [ContinuousLinearMap.comp_apply, hτ] at hk
-    -- Tangent vectors to `ψ` satisfy the height inequality as well.
-    have h0 : ‖fderiv 𝕜 φ u₀ k 0‖ ≤ A * ‖τ (fderiv 𝕜 φ u₀ k)‖ := by
-      refine hφ.differentiableAt.hasFDerivAt.norm_apply_le_mul_norm_apply
-        (L := ContinuousLinearMap.proj 0) ?_ k
-      filter_upwards [hφψ] with u hu
-      have := h _ hu.2 _ hφψ.self_of_nhds.2
-      rwa [dist_eq_norm, dist_eq_norm, ← hτ, ← hτ, ← map_sub] at this
-    rw [hτ, hk, norm_zero, mul_zero, norm_le_zero_iff] at h0
-    rw [map_zero]
-    funext i
-    exact Fin.cases h0 (fun j ↦ congrFun hk j) i
+  have hDp : Function.Injective (fderiv 𝕜 p u₀) :=
+    injective_fderiv_tail_comp hφ.differentiableAt hDφ h (hφψ.mono fun u hu ↦ hu.2)
   have hd : d ≤ n := by
     simpa using LinearMap.finrank_le_finrank_of_injective (f := (fderiv 𝕜 p u₀).toLinearMap) hDp
   -- Points of `Fin.tail '' ψ` near `Fin.tail v` lift to points of `ψ` near `v`, since the
