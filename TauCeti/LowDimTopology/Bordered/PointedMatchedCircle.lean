@@ -30,11 +30,11 @@ the one-vertex chord diagram studied in `TauCeti.Combinatorics.ChordDiagram`, wh
 point. A pointed matched circle is therefore a perfect matching whose boundary traversal has at
 most one orbit; with no points the surgery does nothing and the boundary is the circle itself.
 
-This counting condition forces `n` to be divisible by four (`PointedMatchedCircle.four_dvd`): the
-boundary traversal is a single cycle of length `n` and `finRotate n` is one too, so the matching is
-an even permutation, a product of `n / 2` disjoint transpositions. Writing `n = 4 * k`, the disc
-with its `2 * k` bands has Euler characteristic `1 - 2 * k` and one boundary circle, so `F(Z)` has
-genus `k`, as in the definition of Lipshitz, Ozsváth and Thurston.
+This counting condition forces `n` to be divisible by four (`PointedMatchedCircle.four_dvd`):
+when `n ≠ 0`, the boundary traversal is a single cycle of length `n` and `finRotate n` is one too,
+so the matching is an even permutation, a product of `n / 2` disjoint transpositions. Writing
+`n = 4 * k`, the disc with its `2 * k` bands has Euler characteristic `1 - 2 * k` and one boundary
+circle, so `F(Z)` has genus `k`, as in the definition of Lipshitz, Ozsváth and Thurston.
 
 Reversing the orientation of the circle keeps the basepoint and the pairs and reverses the order
 of the points (`PointedMatchedCircle.reverse`). Placing the points of a second pointed matched
@@ -103,6 +103,7 @@ theorem matching_matching (i : Fin n) : Z.matching (Z.matching i) = i :=
   Z.isPerfectMatching.apply_apply i
 
 /-- No point is paired with itself. -/
+@[simp]
 theorem matching_ne (i : Fin n) : Z.matching i ≠ i :=
   Z.isPerfectMatching.apply_ne i
 
@@ -115,13 +116,14 @@ theorem sameCycle_finRotate_mul (i j : Fin n) : (finRotate n * Z.matching).SameC
 theorem orbitCount_finRotate_mul [NeZero n] : orbitCount (finRotate n * Z.matching) = 1 :=
   orbitCount_eq_one_of_forall_sameCycle Z.sameCycle_finRotate_mul
 
-/-- **The number of matched points is a multiple of four.** The boundary traversal and `finRotate n`
-are both cycles of length `n`, so the matching, their quotient, is an even permutation; being a
-product of `n / 2` disjoint transpositions, it has `n / 2` even. -/
+/-- **The number of matched points is a multiple of four.** -/
 theorem four_dvd (Z : PointedMatchedCircle n) : 4 ∣ n := by
   rcases eq_or_ne n 0 with rfl | hn
   · exact dvd_zero 4
   have : NeZero n := ⟨hn⟩
+  -- The boundary traversal and `finRotate n` are both cycles of length `n`, so the matching, their
+  -- quotient, is an even permutation; being a product of `n / 2` disjoint transpositions, it has
+  -- `n / 2` even.
   have htrav := sign_eq_neg_one_pow_card_sub_orbitCount (finRotate n * Z.matching)
   rw [Z.orbitCount_finRotate_mul, sign_mul, sign_finRotate, Z.isPerfectMatching.sign_eq,
     Fintype.card_fin] at htrav
@@ -252,6 +254,7 @@ def genusOne : PointedMatchedCircle 4 where
   orbitCount_finRotate_mul_le_one := orbitCount_le_one_iff.mpr (by decide)
 
 /-- The partners in the genus-one pointed matched circle. -/
+@[simp]
 theorem genusOne_matching : genusOne.matching = swap 0 2 * swap 1 3 :=
   (rfl)
 
@@ -289,6 +292,7 @@ theorem split_succ (k : ℕ) : split (k + 1) = (split k).connectedSum genusOne :
 
 /-- The partners in the split pointed matched circle: a point `i` with `i % 4 < 2` is paired with
 `i + 2`, and any other point with `i - 2`. -/
+@[simp]
 theorem coe_split_matching_apply (k : ℕ) (i : Fin (4 * k)) :
     ((split k).matching i : ℕ) = if (i : ℕ) % 4 < 2 then (i : ℕ) + 2 else (i : ℕ) - 2 := by
   induction k with
@@ -338,6 +342,7 @@ def antipodal (k : ℕ) : PointedMatchedCircle (4 * k) where
 
 /-- The partner of a point `i` of the antipodal pointed matched circle is `i + 2 * k` modulo
 `4 * k`. -/
+@[simp]
 theorem coe_antipodal_matching_apply (k : ℕ) (i : Fin (4 * k)) :
     ((antipodal k).matching i : ℕ) = ((i : ℕ) + 2 * k) % (4 * k) :=
   Fin.coe_finRotate_pow _ i
