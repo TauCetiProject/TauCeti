@@ -54,6 +54,23 @@ end variationOnFromTo
 
 namespace LocallyBoundedVariationOn
 
+variable {α X : Type*} [LinearOrder α] [TopologicalSpace X] [WeakPseudoEMetricSpace X]
+  {f : α → X} {s : Set α}
+
+/-- The extended distance between two values at ordered points of `s` is at most the increase of
+the cumulative signed variation between them. -/
+theorem edist_le_ofReal_variationOnFromTo_sub (hf : LocallyBoundedVariationOn f s)
+    {a x y : α} (ha : a ∈ s) (hx : x ∈ s) (hy : y ∈ s) (hxy : x ≤ y) :
+    edist (f x) (f y) ≤
+      ENNReal.ofReal (variationOnFromTo f s a y - variationOnFromTo f s a x) := by
+  rw [variationOnFromTo.sub_right hf ha hy hx, variationOnFromTo.eq_of_le _ _ hxy,
+    ENNReal.ofReal_toReal (hf x y hx hy)]
+  exact eVariationOn.edist_le f ⟨hx, le_rfl, hxy⟩ ⟨hy, hxy, le_rfl⟩
+
+end LocallyBoundedVariationOn
+
+namespace LocallyBoundedVariationOn
+
 variable {α X : Type*} [LinearOrder α] [PseudoMetricSpace X]
   {f : α → X} {s : Set α}
 

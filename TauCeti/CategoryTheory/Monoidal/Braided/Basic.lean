@@ -20,8 +20,12 @@ which no rigidity is needed.
 This file also records naturality of the re-associated crossing
 `(α_ X Y Z).inv ≫ (β_ X Y).hom ▷ Z ≫ (α_ Y X Z).hom : X ⊗ (Y ⊗ Z) ⟶ Y ⊗ (X ⊗ Z)` of the first
 two factors of a right-bracketed triple with respect to whiskered and tensor-product morphisms,
-and two identities relating a morphism conjugated by unitors and whiskered by a morphism out of
-the unit to the tensor product of the two morphisms.
+and the unitor identity `(λ_ X).hom ▷ 𝟙_ C ≫ (ρ_ X).hom` expressed through the braiding
+`β_ X (𝟙_ C)` of `X` past the tensor unit, and two identities relating a morphism conjugated by
+unitors and whiskered by a morphism out of the unit to the tensor product of the two morphisms.
+
+It also records that the inverse tensorator `δ` of a braided functor commutes with the braiding
+(`CategoryTheory.Functor.δ_braiding`), the `δ`-form of `Functor.map_braiding`.
 -/
 
 public section
@@ -107,6 +111,27 @@ theorem whiskerLeft_tensorHom_comp_associator_inv_braiding_associator_hom (X : C
     associator_inv_naturality_right_assoc, whisker_exchange_assoc, associator_naturality_right,
     associator_inv_naturality_middle_assoc, ← comp_whiskerRight_assoc, braiding_naturality_right,
     comp_whiskerRight_assoc, associator_naturality_left_assoc]
+
+/-- **Unitors through the braiding with the unit.** The two ways of mapping
+`(𝟙_ C ⊗ X) ⊗ 𝟙_ C` to `X` agree: whiskering the left unitor and applying the right unitor, or
+reassociating, braiding `X` past the unit, reassociating back, and applying the unitors. -/
+@[reassoc]
+theorem leftUnitor_whiskerRight_comp_rightUnitor_eq (X : C) :
+    (λ_ X).hom ▷ 𝟙_ C ≫ (ρ_ X).hom =
+      (α_ (𝟙_ C) X (𝟙_ C)).hom ≫ 𝟙_ C ◁ (β_ X (𝟙_ C)).hom ≫
+        (α_ (𝟙_ C) (𝟙_ C) X).inv ≫ (λ_ (𝟙_ C)).hom ▷ X ≫ (λ_ X).hom := by
+  rw [braiding_tensorUnit_right]
+  monoidal
+
+/-- The inverse tensorator `δ` of a braided functor intertwines the braiding of the images with the
+image of the braiding. This is the `δ` counterpart of `Functor.map_braiding`. -/
+@[reassoc]
+theorem _root_.CategoryTheory.Functor.δ_braiding {D : Type*} [Category* D] [MonoidalCategory D]
+    [BraidedCategory D] (F : C ⥤ D) [F.Braided] (X Y : C) :
+    Functor.OplaxMonoidal.δ F X Y ≫ (β_ (F.obj X) (F.obj Y)).hom =
+      F.map (β_ X Y).hom ≫ Functor.OplaxMonoidal.δ F Y X := by
+  rw [← cancel_mono (Functor.LaxMonoidal.μ F Y X)]
+  simp
 
 /-- Precomposing `f` followed by the right unitor inverse and the whiskering by
 `g : 𝟙_ C ⟶ Z` with the left unitor gives the braiding of the unit past the source of `f`,

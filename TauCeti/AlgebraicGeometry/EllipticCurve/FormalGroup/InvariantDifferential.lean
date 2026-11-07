@@ -48,6 +48,8 @@ strict isomorphism `FormalGroup.logIso` from `Ê` to the additive formal group l
 
 ## Main results
 
+* `WeierstrassCurve.derivative_formalW_mul_formalInvariantDifferentialDenom`: the differentiated
+  `w`-equation identifies the tangent slope through the same denominator.
 * `WeierstrassCurve.inv_evalEval_polynomialY_smul_derivation_div`: for any derivation `D` on a
   field and any solution `(q, w)` of the `w`-equation, `(2y + a₁x + a₃)⁻¹ • D x` at the point
   `(x, y) = (q / w, -1 / w)` is `D q` scaled by the inverse of the denominator at `(q, w)`. This is
@@ -103,6 +105,20 @@ theorem formalInvariantDifferentialDenom_def :
       1 - W.a₁ • PowerSeries.X - W.a₂ • PowerSeries.X ^ 2 - (2 * W.a₃) • formalW W -
         (2 * W.a₄) • (PowerSeries.X * formalW W) - (3 * W.a₆) • formalW W ^ 2 :=
   (rfl)
+
+/-- The derivative of the `w`-expansion satisfies the differentiated Weierstrass equation,
+with the invariant-differential denominator as its coefficient. -/
+theorem derivative_formalW_mul_formalInvariantDifferentialDenom :
+    PowerSeries.derivative W.formalW * W.formalInvariantDifferentialDenom =
+    3 * PowerSeries.X ^ 2 + W.a₁ • W.formalW +
+      (2 * W.a₂) • (PowerSeries.X * W.formalW) + W.a₄ • W.formalW ^ 2 := by
+  have h := congrArg PowerSeries.derivative W.formalW_wEquation
+  rw [wEquationRHS_powerSeries] at h
+  simp only [map_add, Derivation.leibniz, PowerSeries.derivative_C,
+    PowerSeries.derivative_X, Derivation.leibniz_pow, smul_eq_mul, mul_one] at h
+  rw [formalInvariantDifferentialDenom_def]
+  simp only [PowerSeries.smul_eq_C_mul, map_mul, map_ofNat]
+  linear_combination h
 
 /-- The denominator read at a substitutable series `a`: the same expression in `a` and `w(a)`. -/
 theorem subst_formalInvariantDifferentialDenom {τ S : Type*} [CommRing S] [Algebra R S]
