@@ -57,6 +57,10 @@ at `y`.
   cone of every set the curve stays in.
 * `TauCeti.image_mtangentConeAt_eq_tangentConeAt`: read in another chart, the tangent cone is
   carried onto the tangent cone in that chart by the derivative of the transition map.
+* `TauCeti.tangentConeAt_preimage_symm_eq`: read in a chart that flattens a set onto a closed
+  subspace `L`, the tangent cone of the set is `L`.
+* `TauCeti.map_mtangentConeAt_eq_zero`: a linear map that vanishes on a set read in a chart kills
+  its tangent cone carried into that chart.
 * `TauCeti.IsSliceChart.finrank_span_mtangentConeAt`: the tangent space of a flattened set has the
   dimension of the model subspace.
 * `TauCeti.exists_isSliceChart_inter_of_span_mtangentConeAt_sup_eq_top`: a transverse intersection
@@ -197,6 +201,46 @@ theorem image_mtangentConeAt_eq_tangentConeAt (hy : y ∈ q.source) {A : E ≃L[
   rw [mtangentConeAt_eq_tangentConeAt_chartAt,
     image_tangentConeAt_eq_tangentConeAt_preimage_symm hy' hA, hey, ← tangentConeAt_inter_nhds ht,
     hs, tangentConeAt_inter_nhds ht]
+
+omit [ChartedSpace E M] [IsManifold 𝓘(𝕜, E) n M] in
+/-- If a chart `q` flattens `s` onto a closed subspace `L`, the tangent cone of `s` read in `q` at
+a point `y` of `s` is `L`. -/
+theorem tangentConeAt_preimage_symm_eq (hs : IsSliceChart q (L : Set E) s)
+    (hL : IsClosed (L : Set E)) (hy : y ∈ q.source) (hys : y ∈ s) :
+    tangentConeAt 𝕜 (q.symm ⁻¹' s) (q y) = L := by
+  have ht : q.target ∈ 𝓝 (q y) := q.open_target.mem_nhds (q.map_source hy)
+  have hset : q.symm ⁻¹' s ∩ q.target = (L : Set E) ∩ q.target := by
+    ext w
+    refine and_congr_left fun hw ↦ ?_
+    rw [mem_preimage, isSliceChart_iff.1 hs _ (q.map_target hw), q.right_inv hw, SetLike.mem_coe]
+  rw [← tangentConeAt_inter_nhds ht, hset, tangentConeAt_inter_nhds ht,
+    L.tangentConeAt_eq hL ((isSliceChart_iff.1 hs y hy).1 hys)]
+
+omit [IsManifold 𝓘(𝕜, E) n M] in
+/-- If `P ∘ q` vanishes on `s` near a point `y` of `s`, then `P` kills the tangent cone of `s`
+at `y`, carried into the chart `q` by the derivative `A` of the transition map. -/
+theorem map_mtangentConeAt_eq_zero {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+    {P : E →L[𝕜] G} {A : E ≃L[𝕜] E}
+    (hA : HasFDerivAt ((chartAt E y).symm.trans q) (A : E →L[𝕜] E) (chartAt E y y))
+    (hy : y ∈ q.source) (hys : y ∈ s) (hsP : ∀ᶠ w in 𝓝 y, w ∈ s → P (q w) = 0) {u : E}
+    (hu : u ∈ mtangentConeAt 𝓘(𝕜, E) s y) :
+    P (A u) = 0 := by
+  have hu' : A u ∈ tangentConeAt 𝕜 (q.symm ⁻¹' s) (q y) :=
+    image_mtangentConeAt_eq_tangentConeAt hy hA ▸ mem_image_of_mem _ hu
+  -- Near `q y`, the image of `s` in the chart lies in `ker P`.
+  have hN : {w | (q.symm w ∈ s → P (q (q.symm w)) = 0) ∧ w ∈ q.target} ∈ 𝓝 (q y) := by
+    have hlim : Tendsto q.symm (𝓝 (q y)) (𝓝 y) := by
+      have h := (q.continuousAt_symm (q.map_source hy)).tendsto
+      rwa [q.left_inv hy] at h
+    exact (hlim.eventually hsP).and (q.open_target.mem_nhds (q.map_source hy))
+  have hsub : q.symm ⁻¹' s ∩ {w | (q.symm w ∈ s → P (q (q.symm w)) = 0) ∧ w ∈ q.target} ⊆
+      (LinearMap.ker (P : E →ₗ[𝕜] G) : Set E) := by
+    rintro w ⟨hw, hw₁, hw₂⟩
+    simpa [q.right_inv hw₂] using hw₁ hw
+  have hqy : q y ∈ LinearMap.ker (P : E →ₗ[𝕜] G) := by simpa using hsP.self_of_nhds hys
+  rw [← tangentConeAt_inter_nhds hN] at hu'
+  have h := tangentConeAt_mono hsub hu'
+  rwa [Submodule.tangentConeAt_eq _ P.isClosed_ker hqy] at h
 
 omit [IsManifold 𝓘(𝕜, E) n M] in
 /-- A chart `q` of the maximal atlas that flattens `s` onto `L`, read in another chart `p` of the

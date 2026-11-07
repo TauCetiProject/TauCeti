@@ -29,6 +29,10 @@ A continuous function on a preconnected set that is locally constant near each p
 takes a given value `f z`, for some `z` in the set, is constant
 (`IsPreconnected.eqOn_const_of_eventually_eq`). This is how a strong maximum principle spreads
 from a neighbourhood of a maximum point to the whole domain.
+
+In a `T₁` space, the connected component `connectedComponentIn s x` of a point isolated in `s` is
+the point itself (`TauCeti.connectedComponentIn_eq_singleton`): the component is covered by the
+open sets `{x}ᶜ` and a neighbourhood of `x` meeting `s` only at `x`, whose intersection misses `s`.
 -/
 
 public section
@@ -69,6 +73,24 @@ theorem IsPreconnected.eqOn_const_of_eventually_eq {β : Type*} [TopologicalSpac
       ((hf x hxU).preimage_mem_nhds (isOpen_ne.mem_nhds hxz))
     exact hy hyO.self_of_nhds
   exact fun x hx ↦ (hsubset hx).self_of_nhds
+
+namespace TauCeti
+
+/-- In a `T₁` space, a point isolated in a set `s` is its own connected component in `s`. -/
+theorem connectedComponentIn_eq_singleton [T1Space α] {s : Set α} {x : α} (hx : x ∈ s)
+    (hiso : ∀ᶠ z in 𝓝 x, z ∈ s → z = x) : connectedComponentIn s x = {x} := by
+  obtain ⟨U, hUx, hU, hxU⟩ := eventually_nhds_iff.1 hiso
+  refine (subset_singleton_iff.2 fun z hz ↦ ?_).antisymm
+    (singleton_subset_iff.2 (mem_connectedComponentIn hx))
+  -- Otherwise the component meets both open sets `U ∋ x` and `{x}ᶜ ∋ z`, which cover it, so it
+  -- meets their intersection; but `U` meets `s` only at `x`.
+  by_contra hzx
+  obtain ⟨y, hy, hyU, hyx⟩ := isPreconnected_connectedComponentIn U {x}ᶜ hU isOpen_compl_singleton
+    (fun y _ ↦ (eq_or_ne y x).elim (fun hyx ↦ Or.inl (hyx ▸ hxU)) Or.inr)
+    ⟨x, mem_connectedComponentIn hx, hxU⟩ ⟨z, hz, hzx⟩
+  exact hyx (hUx y hyU (connectedComponentIn_subset _ _ hy))
+
+end TauCeti
 
 /-- A function tending to a finite subset `S` of a Hausdorff space along a nontrivial filter `l`
 tends to a single point of `S`, provided every set of `l` contains a set of `l` with preconnected
