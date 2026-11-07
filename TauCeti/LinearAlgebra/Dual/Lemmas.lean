@@ -186,12 +186,6 @@ theorem exists_dual_ker_eq_of_finrank_quotient_eq_one (W : Submodule K V)
   · ext v
     simp
 
-end Submodule
-
-namespace Submodule
-
-variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
-
 /-- If the line through `v` is not the whole space, some linear functional vanishes at `v` and
 takes the value `1` at some vector. -/
 theorem exists_dual_apply_eq_one_apply_eq_zero_of_span_singleton_ne_top {v : V}
@@ -202,7 +196,7 @@ theorem exists_dual_apply_eq_one_apply_eq_zero_of_span_singleton_ne_top {v : V}
     have hvmap : f v ∈ (K ∙ v).map f := ⟨v, mem_span_singleton_self v, rfl⟩
     rw [hfspan, mem_bot] at hvmap
     exact hvmap
-  exact ⟨(f z)⁻¹ • f, z, by simp [hfz], by simp [hfv]⟩
+  exact ⟨f, (f z)⁻¹ • z, by simp [hfz], hfv⟩
 
 end Submodule
 
