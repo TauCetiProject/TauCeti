@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Symplectic.Floer.Action
 public import TauCeti.Geometry.Symplectic.Floer.Energy
 public import Mathlib.Topology.UniformSpace.LocallyUniformConvergence
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
@@ -44,6 +45,13 @@ instance `E = [s₀, ∞) × [0, 1]` and `s_k → ∞`. Suppose that the transla
 * the limit is a stationary Floer cylinder: its perturbed derivative `dv - X_K(v)` vanishes on the
   open strip (`SymplecticForm.perturbedFDeriv_eq_zero_of_tendstoLocallyUniformlyOn_comp_add`).
 
+If the derivatives of the translates also converge locally uniformly on the strip, to the
+derivative of `v`, then the actions `A_H(u(s_k, ·))` of the end loops converge to the action of
+`x` (`SymplecticForm.tendsto_hamiltonianAction_of_tendstoLocallyUniformlyOn_comp_add`). This uses
+the continuity of the action for uniform `C¹` convergence of loops
+(`SymplecticForm.tendsto_hamiltonianAction`). So the limiting end actions, in terms of which the
+energy identity is stated, are actions of Hamiltonian orbits.
+
 The argument is the following. By finiteness of the energy, the energy over the translated
 windows tends to zero (`TauCeti.tendsto_setLIntegral_of_eventually_subset`). By the coercivity of
 the energy density under tameness
@@ -69,6 +77,8 @@ translates, or the exponential decay along the end.
   Hamiltonian orbit.
 * `SymplecticForm.perturbedFDeriv_eq_zero_of_tendstoLocallyUniformlyOn_comp_add`: the limit is a
   stationary Floer cylinder.
+* `SymplecticForm.tendsto_hamiltonianAction_of_tendstoLocallyUniformlyOn_comp_add`: the actions of
+  the end loops converge to the action of the limit loop.
 
 ## References
 
@@ -488,5 +498,60 @@ theorem perturbedFDeriv_eq_zero_of_tendstoLocallyUniformlyOn_comp_add
   simp
 
 end Limit
+
+section Action
+
+variable {s : ℕ → ℝ} {v : ℝ × ℝ → V}
+
+/-- **The end actions converge to the action of the limit loop.** Let `H` be a continuous
+time-dependent Hamiltonian and let `u` be `C¹` on an open set `U` that eventually contains the
+segments `{s_k} × [0, 1]`. If the translates `(s, t) ↦ u(s + s_k, t)` and their derivatives
+converge locally uniformly on the strip `ℝ × [0, 1]` to `v` and to the derivative of `v`, where `v`
+is differentiable along `{0} × [0, 1]`, then the actions of the loops `t ↦ u(s_k, t)` converge to
+the action of the loop `x(t) = v(0, t)`.
+
+Under the hypotheses of
+`TauCeti.SymplecticForm.hasDerivWithinAt_of_tendstoLocallyUniformlyOn_comp_add`, `x` is a
+Hamiltonian orbit, so the end actions converge to the action of an orbit. -/
+theorem tendsto_hamiltonianAction_of_tendstoLocallyUniformlyOn_comp_add
+    (hH : Continuous (uncurry H)) (hU : IsOpen U) (hu : ContDiffOn ℝ 1 u U)
+    (hsU : ∀ᶠ k in atTop, ∀ t ∈ Icc (0 : ℝ) 1, (s k, t) ∈ U)
+    (hv : ∀ t ∈ Icc (0 : ℝ) 1, DifferentiableAt ℝ v (0, t))
+    (hx : TendstoLocallyUniformlyOn (fun k z ↦ u (z + (s k, 0))) v atTop
+      ((univ : Set ℝ) ×ˢ Icc 0 1))
+    (hdx : TendstoLocallyUniformlyOn (fun k z ↦ fderiv ℝ u (z + (s k, 0))) (fderiv ℝ v) atTop
+      ((univ : Set ℝ) ×ˢ Icc 0 1)) :
+    Tendsto (fun k ↦ ω.hamiltonianAction H (fun t ↦ u (s k, t))) atTop
+      (𝓝 (ω.hamiltonianAction H (fun t ↦ v (0, t)))) := by
+  set γ : ℝ → ℝ × ℝ := fun t ↦ (0, t)
+  have hγ : Icc (0 : ℝ) 1 ⊆ γ ⁻¹' (γ '' Icc 0 1) := subset_preimage_image γ _
+  have hK : IsCompact (γ '' Icc 0 1) := isCompact_Icc.image (by fun_prop)
+  have hKs : γ '' Icc 0 1 ⊆ (univ : Set ℝ) ×ˢ Icc 0 1 := by
+    rintro _ ⟨t, ht, rfl⟩
+    exact ⟨mem_univ _, ht⟩
+  have hdiff : ∀ᶠ k in atTop, ∀ t ∈ Icc (0 : ℝ) 1, DifferentiableAt ℝ u (s k, t) :=
+    hsU.mono fun k hk t ht ↦
+      (hu.differentiableOn one_ne_zero _ (hk t ht)).differentiableAt (hU.mem_nhds (hk t ht))
+  have hline (k : ℕ) : Continuous fun t : ℝ ↦ (s k, t) := by fun_prop
+  -- The loops and their derivatives, which are the `∂_t` derivatives of the maps, converge
+  -- uniformly on `[0, 1]`.
+  refine ω.tendsto_hamiltonianAction hH
+    (hsU.mono fun k hk ↦ hu.continuousOn.comp (hline k).continuousOn fun t ht ↦ hk t ht)
+    ((hsU.and hdiff).mono fun k hk ↦
+      (((hu.continuousOn_fderiv_of_isOpen hU le_rfl).clm_apply continuousOn_const).comp
+        (hline k).continuousOn fun t ht ↦ hk.1 t ht).congr fun t ht ↦
+          (hasDerivAt_slice_right (hk.2 t ht)).deriv)
+    ?_ ?_
+  · simpa [comp_def, γ] using
+      (((tendstoLocallyUniformlyOn_iff_tendstoUniformlyOn_of_compact hK).1
+        (hx.mono hKs)).comp γ).mono hγ
+  · have h := (((ContinuousLinearMap.apply ℝ V ((0 : ℝ), (1 : ℝ))).uniformContinuous
+      |>.comp_tendstoUniformlyOn ((tendstoLocallyUniformlyOn_iff_tendstoUniformlyOn_of_compact
+        hK).1 (hdx.mono hKs))).comp γ).mono hγ
+    refine (h.congr (hdiff.mono fun k hk t ht ↦ ?_)).congr_right fun t ht ↦ ?_
+    · simp [γ, (hasDerivAt_slice_right (hk t ht)).deriv]
+    · simp [γ, (hasDerivAt_slice_right (hv t ht)).deriv]
+
+end Action
 
 end TauCeti.SymplecticForm

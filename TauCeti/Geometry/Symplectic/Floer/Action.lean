@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Symplectic.Area.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Energy
+import Mathlib.MeasureTheory.Integral.DominatedConvergence
+import Mathlib.Topology.Algebra.IsUniformGroup.Order
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
 
@@ -73,6 +75,8 @@ for a monotone homotopy (`SymplecticForm.hamiltonianAction_le_hamiltonianAction_
   solutions.
 * `SymplecticForm.lintegral_floerEnergyDensity_eq_of_tendsto_hamiltonianAction`: the energy of a
   Floer solution on the whole cylinder is the difference of its limiting actions.
+* `SymplecticForm.tendsto_hamiltonianAction`: the action is continuous for uniform `C¹`
+  convergence of loops.
 * `SymplecticForm.integral_floerEnergyDensity_eq_hamiltonianAction_sub_sub_integral`: the energy
   identity of a continuation cylinder over a rectangle.
 * `SymplecticForm.hamiltonianAction_le_hamiltonianAction_sub_integral`: the action estimate along
@@ -315,5 +319,65 @@ theorem lintegral_floerEnergyDensity_eq_of_tendsto_hamiltonianAction (ω : Sympl
       htop
 
 end Energy
+
+section Continuity
+
+variable [FiniteDimensional ℝ V] {ι : Type*} {l : Filter ι} [l.IsCountablyGenerated]
+  {H : ℝ → V → ℝ} {x : ι → ℝ → V} {x₀ : ℝ → V}
+
+/-- **The action is continuous for uniform `C¹` convergence of loops.** Let `H` be a continuous
+time-dependent Hamiltonian. If the loops `x i` and their derivatives are eventually continuous on
+`[0, 1]` and converge uniformly there to `x₀` and to the derivative of `x₀`, then the actions of the
+`x i` converge to the action of `x₀`. -/
+theorem tendsto_hamiltonianAction (ω : SymplecticForm V) (hH : Continuous (uncurry H))
+    (hx : ∀ᶠ i in l, ContinuousOn (x i) (Icc 0 1))
+    (hdx : ∀ᶠ i in l, ContinuousOn (deriv (x i)) (Icc 0 1))
+    (hlim : TendstoUniformlyOn x x₀ l (Icc 0 1))
+    (hdlim : TendstoUniformlyOn (fun i ↦ deriv (x i)) (deriv x₀) l (Icc 0 1)) :
+    Tendsto (fun i ↦ ω.hamiltonianAction H (x i)) l (𝓝 (ω.hamiltonianAction H x₀)) := by
+  have hI : uIoc (0 : ℝ) 1 ⊆ Icc 0 1 := by
+    rw [uIoc_of_le zero_le_one]
+    exact Ioc_subset_Icc_self
+  rcases l.eq_or_neBot with rfl | hl
+  · simp
+  -- Uniform limits of continuous functions are continuous, so the loops and their derivatives
+  -- are eventually bounded on `[0, 1]`.
+  have hbound {y : ι → ℝ → V} {y₀ : ℝ → V} (hy : ∀ᶠ i in l, ContinuousOn (y i) (Icc 0 1))
+      (hlim : TendstoUniformlyOn y y₀ l (Icc 0 1)) :
+      ∃ C, ∀ᶠ i in l, ∀ t ∈ Icc (0 : ℝ) 1, ‖y i t‖ ≤ C := by
+    obtain ⟨C, hC⟩ := isCompact_Icc.bddAbove_image (hlim.continuousOn hy.frequently).norm
+    exact ⟨C + 1, (uniformContinuous_norm.comp_tendstoUniformlyOn hlim).eventually_forall_le
+      (lt_add_one C) fun t ht ↦ hC (mem_image_of_mem _ ht)⟩
+  obtain ⟨C, hC⟩ := hbound hx hlim
+  obtain ⟨D, hD⟩ := hbound hdx hdlim
+  obtain ⟨M, hM⟩ := (isCompact_Icc.prod (isCompact_closedBall (0 : V) C))
+    |>.exists_bound_of_continuousOn hH.continuousOn
+  set B := ω.toBilinForm.toContinuousBilinearMap
+  simp only [hamiltonianAction_def, loopArea_def]
+  -- Both integrals converge by dominated convergence, with constant bounds.
+  refine (tendsto_const_nhds.mul ?_).add ?_
+  · refine intervalIntegral.tendsto_integral_filter_of_dominated_convergence (fun _ ↦ ‖B‖ * C * D)
+      ((hx.and hdx).mono fun i hi ↦ ((ω.continuousOn_apply_comp hi.1 hi.2).mono hI)
+        |>.aestronglyMeasurable measurableSet_uIoc)
+      ((hC.and hD).mono fun i hi ↦ ae_of_all _ fun t ht ↦ ?_) intervalIntegrable_const
+      (ae_of_all _ fun t ht ↦
+        ((ω.continuous_apply_comp continuous_fst continuous_snd).tendsto _).comp
+          ((hlim.tendsto_at (hI ht)).prodMk_nhds (hdlim.tendsto_at (hI ht))))
+    have h := B.le_opNorm₂ (x i t) (deriv (x i) t)
+    simp only [B, LinearMap.toContinuousBilinearMap_apply] at h
+    refine h.trans ?_
+    have hCt := hi.1 t (hI ht)
+    have hDt := hi.2 t (hI ht)
+    have hC0 : 0 ≤ C := (norm_nonneg _).trans hCt
+    gcongr
+  · refine intervalIntegral.tendsto_integral_filter_of_dominated_convergence (fun _ ↦ M)
+      (hx.mono fun i hi ↦ ((hH.comp_continuousOn (continuousOn_id.prodMk hi)).mono hI)
+        |>.aestronglyMeasurable measurableSet_uIoc)
+      (hC.mono fun i hi ↦ ae_of_all _ fun t ht ↦
+        hM (t, x i t) ⟨hI ht, mem_closedBall_zero_iff.2 (hi t (hI ht))⟩) intervalIntegrable_const
+      (ae_of_all _ fun t ht ↦ (hH.tendsto (t, x₀ t)).comp
+        (tendsto_const_nhds.prodMk_nhds (hlim.tendsto_at (hI ht))))
+
+end Continuity
 
 end TauCeti.SymplecticForm
