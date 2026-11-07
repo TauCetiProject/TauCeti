@@ -10,7 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.LinearlyReductive
 import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.LinearlyReductive.Basic
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.SmoothConnected
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Center
-import TauCeti.Algebra.AlgebraicGroup.Representation.Normal.Invariants
+import TauCeti.Algebra.AlgebraicGroup.Representation.Normal.LinearlyReductive
 import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive.Exact
 import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Projective
 
@@ -52,62 +52,6 @@ namespace TauCeti.GeneralLinear
 
 universe u
 
-section Normal
-
-variable {k : Type u} [Field k] [IsAlgClosed k] {H : CommHopfAlgCat.{u} k}
-  [Algebra.FiniteType k H] [IsReduced H] {I : HopfIdeal k H}
-variable {M : Type u} [AddCommGroup M] [Module k M] [Comodule k H M]
-  {N : Type u} [AddCommGroup N] [Module k N] [Comodule k H N]
-
-/-- A vector lies in the invariants of a normal Hopf ideal exactly when the coaction of the
-quotient Hopf algebra fixes it. -/
-private theorem mem_weightSpaceOneSubcomodule_iff_coact_corestrict (hI : I.IsNormal)
-    (V : Type u) [AddCommGroup V] [Module k V] [Comodule k H V] (v : V) :
-    v ∈ hI.weightSpaceOneSubcomodule V ↔
-      @Comodule.coact k (CommHopfAlgCat.quotient H I) V _ _ _ _ _ _
-        (Comodule.Corestrict (CommHopfAlgCat.mkQuotient H I).hom.toCoalgHom) v =
-          v ⊗ₜ[k] (1 : CommHopfAlgCat.quotient H I) := by
-  rw [hI.mem_weightSpaceOneSubcomodule, Comodule.corestrict_coact_apply]
-  have hq : (CommHopfAlgCat.mkQuotient H I).hom.toCoalgHom.toLinearMap =
-      (Ideal.Quotient.mkₐ k I.toIdeal).toLinearMap := by
-    ext x
-    exact (BialgHom.toCoalgHom_apply _ x).trans (CommHopfAlgCat.mkQuotient_apply H I x)
-  rw [hq]
-
-/-- Taking invariants of a normal Hopf ideal with linearly reductive quotient preserves
-surjections of comodules. -/
-private theorem exists_surjective_hom_weightSpaceOneSubcomodule (hI : I.IsNormal)
-    (hC : Coalgebra.IsLinearlyReductive.{u, u, u} k (CommHopfAlgCat.quotient H I))
-    (f : Comodule.Hom k H M N) (hf : Function.Surjective f) :
-    ∃ a : Comodule.Hom k H (hI.weightSpaceOneSubcomodule M) (hI.weightSpaceOneSubcomodule N),
-      Function.Surjective a ∧ ∀ m, (a m : N) = f m := by
-  let q := (CommHopfAlgCat.mkQuotient H I).hom
-  let fC := Comodule.corestrictHom q.toCoalgHom f
-  have hmap (m : hI.weightSpaceOneSubcomodule M) :
-      (f.comp (hI.weightSpaceOneSubcomodule M).subtype) m ∈ hI.weightSpaceOneSubcomodule N := by
-    let _ : Comodule k (CommHopfAlgCat.quotient H I) M := Comodule.Corestrict q.toCoalgHom
-    let _ : Comodule k (CommHopfAlgCat.quotient H I) N := Comodule.Corestrict q.toCoalgHom
-    rw [Comodule.Hom.comp_apply, Subcomodule.subtype_apply]
-    exact (mem_weightSpaceOneSubcomodule_iff_coact_corestrict hI N _).mpr <|
-      Comodule.mem_fixedSubcomodule.mp <| fC.mem_fixedSubcomodule
-        (Comodule.mem_fixedSubcomodule.mpr
-          ((mem_weightSpaceOneSubcomodule_iff_coact_corestrict hI M _).mp m.property))
-  refine ⟨(f.comp (hI.weightSpaceOneSubcomodule M).subtype).codRestrict _ hmap, ?_, fun m ↦ by
-    simp only [Comodule.Hom.codRestrict_apply, Comodule.Hom.comp_apply,
-      Subcomodule.subtype_apply]⟩
-  intro y
-  let _ : Comodule k (CommHopfAlgCat.quotient H I) M := Comodule.Corestrict q.toCoalgHom
-  let _ : Comodule k (CommHopfAlgCat.quotient H I) N := Comodule.Corestrict q.toCoalgHom
-  obtain ⟨m, hm, hmy⟩ := fC.exists_fixed_preimage_of_isLinearlyReductive hC
-    (Comodule.mem_fixedSubcomodule.mpr
-      ((mem_weightSpaceOneSubcomodule_iff_coact_corestrict hI N _).mp y.property)) (hf y)
-  exact ⟨⟨m, (mem_weightSpaceOneSubcomodule_iff_coact_corestrict hI M _).mpr
-      (Comodule.mem_fixedSubcomodule.mp hm)⟩,
-    Subtype.ext (by simpa only [Comodule.Hom.codRestrict_apply,
-      Comodule.Hom.comp_apply, Subcomodule.subtype_apply, fC,
-      Comodule.corestrictHom_apply] using hmy)⟩
-
-end Normal
 section AlgClosed
 
 variable {k : Type u} [Field k] [IsAlgClosed k] (n : ℕ)
@@ -220,10 +164,10 @@ private theorem fixedMap_surjective_of_pos (hn : 0 < n)
     exact (Coalgebra.isLinearlyReductive_iff_of_coalgEquiv k
       (_root_.CommHopfAlgCat.ofIso e).toCoalgEquiv).mpr
         (Coalgebra.isLinearlyReductive_monoidAlgebra k (Multiplicative ℤ))
-  obtain ⟨a, ha, hfa⟩ := exists_surjective_hom_weightSpaceOneSubcomodule hI hC f hf
+  obtain ⟨a, ha, hfa⟩ := hI.exists_surjective_hom_weightSpaceOneSubcomodule hC f hf
   intro y
   have hyF : (y : N) ∈ hI.weightSpaceOneSubcomodule N := by
-    apply (mem_weightSpaceOneSubcomodule_iff_coact_corestrict hI N _).mpr
+    apply (hI.mem_weightSpaceOneSubcomodule_iff_coact_corestrict N _).mpr
     rw [Comodule.corestrict_coact_apply, Comodule.mem_fixedSubcomodule.mp y.property]
     simp [BialgHom.toCoalgHom_apply]
   obtain ⟨m, hmy, hm⟩ := exists_specialLinear_fixed_preimage n a ha ⟨y, hyF⟩ y.property
@@ -233,7 +177,7 @@ private theorem fixedMap_surjective_of_pos (hn : 0 < n)
     obtain ⟨c, hc⟩ := hz
     let _ : Comodule k (CommHopfAlgCat.quotient H I) M := Comodule.Corestrict q.toCoalgHom
     have hfix := Comodule.basePointsRepresentation_eq_of_coact_eq_tmul_one
-      (m : M) ((mem_weightSpaceOneSubcomodule_iff_coact_corestrict hI M _).mp m.property) c
+      (m : M) ((hI.mem_weightSpaceOneSubcomodule_iff_coact_corestrict M _).mp m.property) c
     rw [Comodule.basePointsRepresentation_corestrict q] at hfix
     exact hc ▸ hfix
   · simpa only [Comodule.Hom.fixedMap_apply] using (hfa m).symm.trans (congrArg Subtype.val hmy)
