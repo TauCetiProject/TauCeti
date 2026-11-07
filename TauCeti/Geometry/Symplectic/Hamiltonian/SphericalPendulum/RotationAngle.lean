@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.SphericalPendulum
 public import TauCeti.Analysis.SpecialFunctions.Integrals.ArctanSqrt
+import Mathlib.Topology.Algebra.Group.Order
 
 /-!
 # The rotation angle of the spherical pendulum
@@ -336,25 +337,18 @@ theorem tendsto_sphericalPendulumRotationAngle_nhdsGT_of_one_lt {h : ℝ} (h₁ 
   rwa [show (2 : ℝ) + 4 * h * 1 - 6 * 1 ^ 2 = 4 * (h - 1) by ring, div_self (by linarith),
     mul_one, ← two_mul] at this
 
-/-- Negating the angular momentum maps `j → 0⁻` to `j → 0⁺`. -/
-private theorem tendsto_neg_nhdsLT_nhdsGT :
-    Tendsto (fun j : ℝ ↦ -j) (𝓝[<] 0) (𝓝[>] 0) :=
-  tendsto_nhdsWithin_iff.2
-    ⟨(by simpa using (continuous_neg.tendsto (0 : ℝ)).mono_left nhdsWithin_le_nhds),
-      eventually_nhdsWithin_of_forall fun _ hj ↦ neg_pos.2 hj⟩
-
 /-- For `-1 < h < 1`, the rotation angle tends to `-π` as `j → 0⁻`. -/
 theorem tendsto_sphericalPendulumRotationAngle_nhdsLT_of_lt_one {h : ℝ} (h₁ : -1 < h)
     (h₂ : h < 1) : Tendsto (sphericalPendulumRotationAngle h) (𝓝[<] 0) (𝓝 (-π)) := by
   have := ((tendsto_sphericalPendulumRotationAngle_nhdsGT_of_lt_one h₁ h₂).comp
-    tendsto_neg_nhdsLT_nhdsGT).neg
+    (by simpa using (tendsto_neg_nhdsLT (a := (0 : ℝ))))).neg
   simpa [Function.comp_def, sphericalPendulumRotationAngle_neg_right] using this
 
 /-- For `h > 1`, the rotation angle tends to `-2π` as `j → 0⁻`. -/
 theorem tendsto_sphericalPendulumRotationAngle_nhdsLT_of_one_lt {h : ℝ} (h₁ : 1 < h) :
     Tendsto (sphericalPendulumRotationAngle h) (𝓝[<] 0) (𝓝 (-(2 * π))) := by
   have := ((tendsto_sphericalPendulumRotationAngle_nhdsGT_of_one_lt h₁).comp
-    tendsto_neg_nhdsLT_nhdsGT).neg
+    (by simpa using (tendsto_neg_nhdsLT (a := (0 : ℝ))))).neg
   simpa [Function.comp_def, sphericalPendulumRotationAngle_neg_right] using this
 
 end TauCeti
