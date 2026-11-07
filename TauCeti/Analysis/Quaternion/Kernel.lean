@@ -109,6 +109,13 @@ theorem contDiffAt_cauchyFueterKernel {q q₀ : ℍ} (hq : q ≠ q₀) {n : With
   funext x
   simp [cauchyFueterKernel_eq, hC, ← pow_mul]
 
+/-- The kernel is continuous on every set that avoids its pole. -/
+theorem continuousOn_cauchyFueterKernel {s : Set ℍ} {q₀ : ℍ} (h : q₀ ∉ s) :
+    ContinuousOn (fun q ↦ cauchyFueterKernel q q₀) s := by
+  intro q hq
+  exact (contDiffAt_cauchyFueterKernel (ne_of_mem_of_not_mem hq h)
+    (n := 0)).continuousAt.continuousWithinAt
+
 /-- The real derivative of the kernel, evaluated in an arbitrary tangent direction. -/
 theorem fderiv_cauchyFueterKernel_apply {q q₀ : ℍ} (hq : q ≠ q₀) (h : ℍ) :
     fderiv ℝ (fun x ↦ cauchyFueterKernel x q₀) q h =
