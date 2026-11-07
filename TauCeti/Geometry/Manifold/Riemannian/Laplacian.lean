@@ -429,7 +429,7 @@ theorem hessian_smul (c : ℝ) {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
     hessian I (c • f) x v w = c * hessian I f x v w := by
   let : IsManifold I ((1 : ℕ∞ω) + 1) M := by
     simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
-  simp only [hessian, mgradient_smul c (hf.mdifferentiable (by simp)),
+  simp only [hessian, mgradient_smul,
     (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv.smul_const c
       (mdifferentiable_mgradient (I := I) hf x),
     smul_apply, real_inner_smul_left]
@@ -501,7 +501,7 @@ theorem laplaceBeltrami_smul (c : ℝ) {f : M → ℝ} (hf : ContMDiff I 𝓘(�
     laplaceBeltrami I (c • f) x = c * laplaceBeltrami I f x := by
   let : IsManifold I ((1 : ℕ∞ω) + 1) M := by
     simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
-  simp only [laplaceBeltrami, mgradient_smul c (hf.mdifferentiable (by simp))]
+  simp only [laplaceBeltrami, mgradient_smul]
   exact divergence_smul I c _ x
     (mdifferentiable_mgradient (I := I) hf x)
 
