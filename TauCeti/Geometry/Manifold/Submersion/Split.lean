@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.RegularValue
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Analysis.Calculus.ImplicitFunctionTheorem
 import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.LinearAlgebra.Pi
 
 /-!
 # Split differentials and submersion normal forms
@@ -101,28 +102,22 @@ variable {E F G H M N : Type*}
   {n : ℕ∞ω} [IsManifold I n M] [IsManifold J n N]
   {f : M → N} {x : M}
 
-/-- A map smooth on an open neighbourhood of a regular point has the submersion normal form,
-with the standard vector space of dimension `dim E - dim F` as complement. The source model is
-boundaryless; neither manifold needs to be Hausdorff or second-countable. -/
-theorem _root_.ContMDiffOn.isSubmersionAtOfComplement_of_surjective_mfderiv {U : Set M}
-    (hfU : ContMDiffOn I J n f U) (hU : IsOpen U) (hxU : x ∈ U) (hn : 1 ≤ n)
-    (hs : Surjective (mfderiv I J f x)) :
-    IsSubmersionAtOfComplement (Fin (Module.finrank ℝ E - Module.finrank ℝ F) → ℝ)
-      I J n f x := by
-  have hf := hfU.contMDiffAt (hU.mem_nhds hxU)
+omit [I.Boundaryless] in
+/-- The coordinate map `y ↦ L.symm (c (f y), P (e y))` built from the implicit coordinates of a
+split surjective derivative has the identity as derivative at the base point. -/
+private theorem mfderiv_implicitCoord_symm_eq_id (hf : ContMDiffAt I J n f x) (hn : 1 ≤ n)
+    (D : E →L[ℝ] F) (hDf : mfderiv I J f x = D) (hD : D.range = ⊤)
+    (hker : D.ker.ClosedComplemented) :
+    mfderiv I 𝓘(ℝ, E) (fun y ↦ (D.implicitCoordEquiv hD hker).symm
+      (extChartAt J (f x) (f y), Classical.choose hker (extChartAt I x y))) x =
+        ContinuousLinearMap.id ℝ E := by
   have hn0 : n ≠ 0 := ne_of_gt (zero_lt_one.trans_le hn)
   have : IsManifold I 1 M := .of_le hn
   have : IsManifold J 1 N := .of_le hn
-  -- Split the derivative into target and kernel coordinates.
-  let D : E →L[ℝ] F := mfderiv I J f x
-  have hD : D.range = ⊤ := LinearMap.range_eq_top.2 hs
-  have hker : D.ker.ClosedComplemented :=
-    D.ker_closedComplemented_of_finiteDimensional_range
   let L := D.implicitCoordEquiv hD hker
   let P := Classical.choose hker
   let c := extChartAt J (f x)
   let e := extChartAt I x
-  let g : M → E := fun y ↦ L.symm (c (f y), P (e y))
   have hc : ContMDiffAt J 𝓘(ℝ, F) n c (f x) := contMDiffAt_extChartAt
   have he : ContMDiffAt I 𝓘(ℝ, E) n e x := contMDiffAt_extChartAt
   let q : M → F × D.ker := fun y ↦ (c (f y), P (e y))
@@ -137,24 +132,64 @@ theorem _root_.ContMDiffOn.isSubmersionAtOfComplement_of_surjective_mfderiv {U :
       mfderiv_comp x (hc.mdifferentiableAt hn0) (hf.mdifferentiableAt hn0),
       mfderiv_comp x P.mdifferentiableAt (he.mdifferentiableAt hn0)]
     simp only [c, e, mfderiv_extChartAt_self, mfderiv_eq_fderiv, P.fderiv]
+    subst hDf
     rfl
   -- Undoing `L` makes the derivative the identity. The normed-space tangent identifications
   -- in `mfderiv_eq_fderiv` are identities on vectors, as used in the final extensionality step.
-  have hderiv : mfderiv I 𝓘(ℝ, E) g x = ContinuousLinearMap.id ℝ E := by
-    dsimp only [g]
-    erw [mfderiv_comp x L.symm.mdifferentiableAt (hq.mdifferentiableAt hn0)]
-    erw [hpair, mfderiv_eq_fderiv, L.symm.fderiv, ← D.coe_implicitCoordEquiv hD hker]
-    ext v
-    exact L.symm_apply_apply v
+  erw [mfderiv_comp x L.symm.mdifferentiableAt (hq.mdifferentiableAt hn0)]
+  erw [hpair, mfderiv_eq_fderiv, L.symm.fderiv, ← D.coe_implicitCoordEquiv hD hker]
+  ext v
+  exact L.symm_apply_apply v
+
+omit [FiniteDimensional ℝ F] [I.Boundaryless] in
+/-- The kernel of a surjective linear map between finite-dimensional spaces is isomorphic to the
+standard space of the complementary dimension. -/
+private theorem nonempty_continuousLinearEquiv_ker_fin (D : E →L[ℝ] F) (hD : D.range = ⊤) :
+    Nonempty (D.ker ≃L[ℝ] (Fin (Module.finrank ℝ E - Module.finrank ℝ F) → ℝ)) := by
+  have hd := D.toLinearMap.finrank_ker_eq_sub_of_surjective (LinearMap.range_eq_top.1 hD)
+  exact ⟨(LinearEquiv.ofFinrankEq _ _ (by simpa using hd)).toContinuousLinearEquiv⟩
+
+omit [I.Boundaryless] in
+/-- The coordinate map `y ↦ L.symm (c (f y), P (e y))` from the implicit coordinates of a split
+derivative is smooth on any set where `f` is smooth and both charts are defined. -/
+private theorem contMDiffOn_implicitCoord_symm {U W : Set M} (hfU : ContMDiffOn I J n f U)
+    (D : E →L[ℝ] F) (hD : D.range = ⊤) (hker : D.ker.ClosedComplemented)
+    (hWU : W ⊆ U) (hWf : W ⊆ f ⁻¹' (chartAt G (f x)).source) (hWe : W ⊆ (chartAt H x).source) :
+    ContMDiffOn I 𝓘(ℝ, E) n (fun y ↦ (D.implicitCoordEquiv hD hker).symm
+      (extChartAt J (f x) (f y), Classical.choose hker (extChartAt I x y))) W :=
+  (D.implicitCoordEquiv hD hker).symm.contDiff.contMDiff.comp_contMDiffOn <|
+    ((contMDiffOn_extChartAt (I := J)).comp (hfU.mono hWU) hWf).prodMk_space
+      ((Classical.choose hker).contMDiff.comp_contMDiffOn
+        (contMDiffOn_extChartAt.mono hWe))
+
+/-- A map smooth on an open neighbourhood of a regular point has the submersion normal form,
+with the standard vector space of dimension `dim E - dim F` as complement. The source model is
+boundaryless; neither manifold needs to be Hausdorff or second-countable. -/
+theorem _root_.ContMDiffOn.isSubmersionAtOfComplement_of_surjective_mfderiv {U : Set M}
+    (hfU : ContMDiffOn I J n f U) (hU : IsOpen U) (hxU : x ∈ U) (hn : 1 ≤ n)
+    (hs : Surjective (mfderiv I J f x)) :
+    IsSubmersionAtOfComplement (Fin (Module.finrank ℝ E - Module.finrank ℝ F) → ℝ)
+      I J n f x := by
+  have hf := hfU.contMDiffAt (hU.mem_nhds hxU)
+  -- Split the derivative into target and kernel coordinates.
+  let D : E →L[ℝ] F := mfderiv I J f x
+  have hD : D.range = ⊤ := LinearMap.range_eq_top.2 hs
+  have hker : D.ker.ClosedComplemented :=
+    D.ker_closedComplemented_of_finiteDimensional_range
+  let L := D.implicitCoordEquiv hD hker
+  let P := Classical.choose hker
+  let c := extChartAt J (f x)
+  let e := extChartAt I x
+  let g : M → E := fun y ↦ L.symm (c (f y), P (e y))
+  have hderiv : mfderiv I 𝓘(ℝ, E) g x = ContinuousLinearMap.id ℝ E :=
+    mfderiv_implicitCoord_symm_eq_id hf hn D rfl hD hker
   let W := (U ∩ f ⁻¹' (chartAt G (f x)).source) ∩ (chartAt H x).source
   have hW : IsOpen W := (hfU.continuousOn.isOpen_inter_preimage hU
     (chartAt G (f x)).open_source).inter (chartAt H x).open_source
   have hxW : x ∈ W := ⟨⟨hxU, mem_chart_source _ _⟩, mem_chart_source _ _⟩
   have hgW : ContMDiffOn I 𝓘(ℝ, E) n g W :=
-    L.symm.contDiff.contMDiff.comp_contMDiffOn <|
-      ((contMDiffOn_extChartAt (I := J)).comp (hfU.mono (fun y (h : y ∈ W) ↦ h.1.1))
-        (fun y (h : y ∈ W) ↦ h.1.2)).prodMk_space
-      (P.contMDiff.comp_contMDiffOn (contMDiffOn_extChartAt.mono (fun y (h : y ∈ W) ↦ h.2)))
+    contMDiffOn_implicitCoord_symm hfU D hD hker (fun y (h : y ∈ W) ↦ h.1.1)
+      (fun y (h : y ∈ W) ↦ h.1.2) (fun y (h : y ∈ W) ↦ h.2)
   -- The inverse function theorem supplies a smooth chart for `g`.
   -- The identity linear equivalence acts between the model copies of the tangent spaces.
   have hlocal : IsLocalDiffeomorphAt I 𝓘(ℝ, E) n g x :=
@@ -166,27 +201,20 @@ theorem _root_.ContMDiffOn.isSubmersionAtOfComplement_of_surjective_mfderiv {U :
     hf.continuousAt.preimage_mem_nhds (chart_source_mem_nhds G (f x))
   let φ₀ := Φ.toOpenPartialHomeomorph.restrOpen V hV
   let φ := φ₀.transHomeomorph I.toHomeomorph.symm
-  have hIsymm : ContMDiff 𝓘(ℝ, E) I n I.symm := by
-    rw [← contMDiffOn_univ, ← I.range_eq_univ]
-    exact I.contMDiffOn_symm
+  have hIsymm : ContMDiff 𝓘(ℝ, E) I n I.symm :=
+    contMDiffOn_univ.1 (I.range_eq_univ ▸ I.contMDiffOn_symm)
   have hφ : φ ∈ IsManifold.maximalAtlas I n M := by
     apply OpenPartialHomeomorph.mem_maximalAtlas_of_contMDiffOn
     · exact hIsymm.comp_contMDiffOn (Φ.contMDiffOn.mono inter_subset_left)
     · exact (Φ.symm.contMDiffOn.mono inter_subset_left).comp I.contMDiff.contMDiffOn
         (fun y hy ↦ hy)
   -- A fixed standard complement lets the pointwise constructions assemble globally.
-  have hdim : Module.finrank ℝ D.ker = Module.finrank ℝ E - Module.finrank ℝ F := by
-    have hd := D.toLinearMap.finrank_range_add_finrank_ker
-    rw [hD, finrank_top] at hd
-    omega
-  let K : D.ker ≃L[ℝ] (Fin (Module.finrank ℝ E - Module.finrank ℝ F) → ℝ) :=
-    (LinearEquiv.ofFinrankEq _ _ (by simpa using hdim)).toContinuousLinearEquiv
+  obtain ⟨K⟩ := nonempty_continuousLinearEquiv_ker_fin D hD
   apply (IsSubmersionAtOfComplement.congr_F K).mp
   refine IsSubmersionAtOfComplement.mk_of_charts L φ (chartAt G (f x))
     ?_ (mem_chart_source _ _) hφ (IsManifold.chart_mem_maximalAtlas _) ?_ ?_
   · exact ⟨hxΦ, hxV⟩
-  · intro y hy
-    exact hVc hy.2
+  · exact fun y hy ↦ hVc hy.2
   · intro v hv
     have hIv : I (I.symm v) = v := I.right_inv (I.range_eq_univ.symm ▸ mem_univ v)
     have hv₀ : v ∈ φ₀.target := by simpa [φ, hIv, I.range_eq_univ] using hv
