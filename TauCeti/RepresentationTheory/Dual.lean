@@ -150,6 +150,7 @@ theorem dual_apply_eq_one_iff : ρ.dual g = 1 ↔ ρ g = 1 := by
   exact forall_congr' fun φ ↦ eq_comm
 
 /-- A representation over a field and its dual have the same kernel. -/
+@[simp]
 theorem ker_dual : ρ.dual.ker = ρ.ker := by
   ext g
   simp only [MonoidHom.mem_ker, dual_apply_eq_one_iff]
