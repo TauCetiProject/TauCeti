@@ -24,7 +24,6 @@ with the manifold differential of `G_t` applied to the partial derivative `∂_s
 
 ## Main results
 
-* `TauCeti.Manifold.hasMFDerivAt_apply_fst`: the curve `s ↦ w (s, t)` has velocity `∂_s w`.
 * `TauCeti.Manifold.fderiv_apply_comp_apply`: the partial derivative in `s` of
   `(s, t) ↦ G t (w (s, t))` is `dG_t(∂_s w)`.
 * `TauCeti.Manifold.continuous_mvfderiv_apply_mfderiv`: this partial derivative is continuous
@@ -48,15 +47,6 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologic
 theorem contDiff_apply_comp {n : ℕ∞ω} (hG : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, F) n (uncurry G))
     (hw : ContMDiff 𝓘(ℝ, ℝ × ℝ) I n w) : ContDiff ℝ n fun z : ℝ × ℝ ↦ G z.2 (w z) :=
   contMDiff_iff_contDiff.mp (hG.comp (contDiff_snd.contMDiff.prodMk hw))
-
-/-- The curve `s ↦ w (s, t)` of a map of the plane has velocity `∂_s w (s, t)`. -/
-theorem hasMFDerivAt_apply_fst {s t : ℝ} (hw : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I w (s, t)) :
-    HasMFDerivAt 𝓘(ℝ, ℝ) I (fun s' ↦ w (s', t)) s
-      ((1 : ℝ →L[ℝ] ℝ).smulRight (mfderiv 𝓘(ℝ, ℝ × ℝ) I w (s, t) (1, 0))) := by
-  have hc : MDifferentiableAt 𝓘(ℝ, ℝ) I (fun s' ↦ w (s', t)) s :=
-    hw.comp s (((contDiff_id.prodMk contDiff_const).contMDiff s).mdifferentiableAt one_ne_zero)
-  have h := hasMFDerivAt_curveVelocity hc
-  rwa [curveVelocity_eq_mfderiv_fst (f := fun a b ↦ w (a, b)) hw] at h
 
 /-- For a jointly `C¹` time-dependent function `G` and a `C¹` map `w` of the plane, the partial
 derivative in `s` of `(s, t) ↦ G t (w (s, t))` is `dG_t(∂_s w)`. -/
