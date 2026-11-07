@@ -255,6 +255,25 @@ theorem realizationTopHomeomorphCoordinateSimplex_symm_castSucc (n : ℕ)
     ((realizationTopHomeomorphCoordinateSimplex n).symm y).1 i.castSucc = y.1 i :=
   coordinateSimplexToTop_castSucc n y i
 
+/-- Dropping the last barycentric coordinate is linear, and its affine inverse restores the
+missing mass on the coordinate simplex. -/
+theorem realizationTopHomeomorphCoordinateSimplex_exists_affine (n : ℕ) :
+    ∃ A : (Fin (n + 2) → ℝ) →L[ℝ] (Fin (n + 1) → ℝ),
+    ∃ B : (Fin (n + 1) → ℝ) →ᴬ[ℝ] (Fin (n + 2) → ℝ),
+      (∀ z i, A z i = z i.castSucc) ∧
+      ∀ y : coordinateSimplex (Fin (n + 1)),
+        B y.1 = ((realizationTopHomeomorphCoordinateSimplex (n + 1)).symm y).1 := by
+  let B₀ : (Fin (n + 1) → ℝ) →L[ℝ] (Fin (n + 2) → ℝ) :=
+    ContinuousLinearMap.pi (Fin.lastCases (-(∑ i, ContinuousLinearMap.proj i))
+      (fun i => ContinuousLinearMap.proj i))
+  refine ⟨ContinuousLinearMap.pi fun i => ContinuousLinearMap.proj i.castSucc,
+    B₀.toContinuousAffineMap + ContinuousAffineMap.const ℝ (Fin (n + 1) → ℝ)
+      (Pi.single (Fin.last (n + 1)) 1 : Fin (n + 2) → ℝ), fun z i => rfl, fun y => ?_⟩
+  funext i
+  refine Fin.lastCases ?_ (fun k => ?_) i
+  · simp [B₀, sub_eq_add_neg, add_comm]
+  · simp [B₀]
+
 /-- A simplex point maps to the geometric frontier exactly when its support is a proper
 face. This includes the empty boundary of the zero-simplex. -/
 @[simp 1100]

@@ -95,25 +95,6 @@ private theorem mem_openStarRealization_iff_interior
   · rintro ⟨hx, hsum⟩ i
     exact Fin.lastCases (by linarith) hx i
 
-/-- Dropping the last barycentric coordinate is linear, and its affine inverse restores the
-missing mass on the coordinate simplex. -/
-private theorem exists_dropLast_affine (n : ℕ) :
-    ∃ A : (Fin (n + 2) → ℝ) →L[ℝ] (Fin (n + 1) → ℝ),
-    ∃ B : (Fin (n + 1) → ℝ) →ᴬ[ℝ] (Fin (n + 2) → ℝ),
-      (∀ z i, A z i = z i.castSucc) ∧
-      ∀ y : coordinateSimplex (Fin (n + 1)),
-        B y.1 = ((realizationTopHomeomorphCoordinateSimplex (n + 1)).symm y).1 := by
-  let B₀ : (Fin (n + 1) → ℝ) →L[ℝ] (Fin (n + 2) → ℝ) :=
-    ContinuousLinearMap.pi (Fin.lastCases (-(∑ i, ContinuousLinearMap.proj i))
-      (fun i => ContinuousLinearMap.proj i))
-  refine ⟨ContinuousLinearMap.pi fun i => ContinuousLinearMap.proj i.castSucc,
-    B₀.toContinuousAffineMap + ContinuousAffineMap.const ℝ (Fin (n + 1) → ℝ)
-      (Pi.single (Fin.last (n + 1)) 1 : Fin (n + 2) → ℝ), fun z i => rfl, fun y => ?_⟩
-  funext i
-  refine Fin.lastCases ?_ (fun k => ?_) i
-  · simp [B₀, sub_eq_add_neg, add_comm]
-  · simp [B₀]
-
 /-- A spherical vertex link gives a PL chart on the entire open star, with target the
 interior of a full-dimensional simplex. The vertex maps to the barycentre. The ambient
 formulas agree with the chart on its source and with its inverse on its target, so
@@ -140,7 +121,7 @@ theorem IsCombinatorialSphere.exists_openPartialHomeomorph_openStar_isPL
   let toStar (x : openStarRealization K v) : closedStarRealization K {v} :=
     ⟨x.1, K.openStarRealization_subset_closedStarRealization v x.2⟩
   have hc' (x : openStarRealization K v) : c x.1 = (e₀ (toStar x)).1 := hc x
-  obtain ⟨A, B, hA, hB⟩ := exists_dropLast_affine n
+  obtain ⟨A, B, hA, hB⟩ := realizationTopHomeomorphCoordinateSimplex_exists_affine n
   -- Read the inverse on its target through the closed-star inverse formula.
   have hGB (y : c.target) : G (B y.1) = ((c.symm y.1).1 : ι → ℝ) := by
     have hx : c.symm y.1 ∈ openStarRealization K v := by
