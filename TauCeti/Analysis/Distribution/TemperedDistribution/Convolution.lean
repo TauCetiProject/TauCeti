@@ -166,7 +166,7 @@ theorem exists_fourierMultiplierCLM_toTemperedDistribution_eq (σ : 𝓢(E, ℂ)
   have hbound : eLpNorm h q volume ≤ eLpNorm K r volume * eLpNorm f p volume :=
     calc eLpNorm h q volume
         ≤ ‖lsmul ℂ ℂ (E := F)‖ₑ * eLpNorm K r volume * eLpNorm f p volume :=
-          eLpNorm_convolution_le _ hr hp.out (by rw [add_comm, hpqr])
+          eLpNorm_convolution_le_of_inv_add_inv_eq _ hr hp.out (by rw [add_comm, hpqr])
             K.continuous.aestronglyMeasurable (Lp.aestronglyMeasurable f)
       _ ≤ eLpNorm K r volume * eLpNorm f p volume := by
           rw [mul_assoc]

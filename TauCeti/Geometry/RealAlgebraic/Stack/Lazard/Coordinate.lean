@@ -218,6 +218,41 @@ private theorem nonempty_lazardDelineation_of_comp_of_forall_eq_zero
   · obtain ⟨j, hj⟩ := D.exists_multiplicity_pos i
     exact ⟨f j, (D.rootMultiplicity_root j i x₀).symm ▸ hj⟩
 
+/-- Adjoining the zero section to a delineation none of whose root functions vanish: the root
+multiplicities of every member of the family at the inserted zero root, and at the old roots, do
+not depend on the base point. -/
+private theorem rootMultiplicity_insertNth_zero_eq (D : LazardDelineation (F ∘ f) S)
+    (hcoord : ∀ k, k ∉ range f → ∃ a ≠ 0, F k = MvPolynomial.C a * X (Fin.last n))
+    {p : Fin (D.count + 1)} (hne : ∀ (i : Fin D.count) (x : S), D.root i x ≠ 0) (k : ι)
+    (l : Fin (D.count + 1)) (x x₀ : S) :
+    ((optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F k))).lazardEval
+        (Polynomial.C ∘ x.1)).rootMultiplicity
+        (Fin.insertNth (α := fun _ ↦ ℝ) p 0 (fun i ↦ D.root i x) l) =
+      ((optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F k))).lazardEval
+        (Polynomial.C ∘ x₀.1)).rootMultiplicity
+        (Fin.insertNth (α := fun _ ↦ ℝ) p 0 (fun i ↦ D.root i x₀) l) := by
+  -- No member of `F ∘ f` has the root `0`.
+  have hzmult (j : κ) (x : S) :
+      ((optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F (f j)))).lazardEval
+        (Polynomial.C ∘ x.1)).rootMultiplicity 0 = 0 := by
+    by_cases hF : F (f j) = 0
+    · simp [hF]
+    refine Polynomial.rootMultiplicity_eq_zero fun hroot ↦ ?_
+    obtain ⟨i, hi⟩ := D.exists_root_eq j x hF 0 hroot
+    exact hne i x hi
+  rcases Fin.eq_self_or_eq_succAbove p l with hl | ⟨i, rfl⟩ <;> by_cases hk : k ∈ range f
+  · obtain ⟨j, rfl⟩ := hk
+    rw [hl, Fin.insertNth_apply_same, Fin.insertNth_apply_same]
+    exact (hzmult j x).trans (hzmult j x₀).symm
+  · rw [hl, Fin.insertNth_apply_same, Fin.insertNth_apply_same]
+    exact rootMultiplicity_eq_of_eq_C_mul_lastCoordinate (hcoord k hk) x.1 x₀.1 Iff.rfl
+  · obtain ⟨j, rfl⟩ := hk
+    rw [Fin.insertNth_apply_succAbove, Fin.insertNth_apply_succAbove]
+    exact (D.rootMultiplicity_root j i x).trans (D.rootMultiplicity_root j i x₀).symm
+  · rw [Fin.insertNth_apply_succAbove, Fin.insertNth_apply_succAbove]
+    exact rootMultiplicity_eq_of_eq_C_mul_lastCoordinate (hcoord k hk) x.1 x₀.1
+      (iff_of_false (hne i x) (hne i x₀))
+
 /-- Adjoining coordinate members when `0` lies in the sector `p` of `D` over every base point:
 the zero section is inserted at position `p`. -/
 private theorem nonempty_lazardDelineation_of_comp_of_mem_sectorSet
@@ -231,13 +266,6 @@ private theorem nonempty_lazardDelineation_of_comp_of_mem_sectorSet
     (optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F k))).lazardEval (Polynomial.C ∘ x.1)
   have hne (i : Fin D.count) (x : S) : D.root i x ≠ 0 := fun hx ↦
     disjoint_left.1 (disjoint_sectionSet_sectorSet D.root i p) (mem_sectionSet.2 hx) (hp x)
-  -- No member of `F ∘ f` has the root `0`.
-  have hzmult (j : κ) (x : S) : (Q (f j) x).rootMultiplicity 0 = 0 := by
-    by_cases hF : F (f j) = 0
-    · simp [Q, hF]
-    refine Polynomial.rootMultiplicity_eq_zero fun hroot ↦ ?_
-    obtain ⟨i, hi⟩ := D.exists_root_eq j x hF 0 hroot
-    exact hne i x hi
   let root (l : Fin (D.count + 1)) (x : S) : ℝ :=
     Fin.insertNth (α := fun _ ↦ ℝ) p 0 (fun i ↦ D.root i x) l
   have hroot_p (x : S) : root p x = 0 := Fin.insertNth_apply_same _ _ _
@@ -247,42 +275,19 @@ private theorem nonempty_lazardDelineation_of_comp_of_mem_sectorSet
             count := D.count + 1
             root := root
             continuous_root := fun l ↦ ?_
-            strictMono_root := fun x l l' hll' ↦ ?_
+            strictMono_root := fun x ↦ (Fin.strictMono_insertNth_iff p 0 _).2
+              ⟨D.strictMono_root x, (mem_sectorSet.1 (hp x)).1, (mem_sectorSet.1 (hp x)).2⟩
             exponent := fun k ↦ (optionEquivRight ℝ (Fin n)
               (rename finSuccEquivLast (F k))).lazardExponent (Polynomial.C ∘ x₀.1)
             lazardExponent_eq := fun k x ↦ lazardExponent_eq_of_comp D hcoord k x x₀
             multiplicity := fun k l ↦ (Q k x₀).rootMultiplicity (root l x₀)
-            rootMultiplicity_root := fun k l x ↦ ?_
+            rootMultiplicity_root := fun k l x ↦
+              rootMultiplicity_insertNth_zero_eq D hcoord hne k l x x₀
             exists_root_eq := fun k x hk t ht ↦ ?_
             exists_multiplicity_pos := fun l ↦ ?_ }⟩
   · rcases Fin.eq_self_or_eq_succAbove p l with rfl | ⟨i, rfl⟩
     · exact (continuous_congr hroot_p).2 continuous_const
     · exact (continuous_congr (hroot_succAbove i)).2 (D.continuous_root i)
-  · -- The inserted zero lies above the sections below sector `p` and below the others.
-    dsimp only
-    rcases Fin.eq_self_or_eq_succAbove p l with hl | ⟨i, rfl⟩ <;>
-      rcases Fin.eq_self_or_eq_succAbove p l' with hl' | ⟨i', rfl⟩
-    · exact absurd (hl.trans hl'.symm) hll'.ne
-    · rw [hl] at hll' ⊢
-      rw [hroot_p, hroot_succAbove]
-      exact (mem_sectorSet.1 (hp x)).2 i' ((Fin.lt_succAbove_iff_le_castSucc p i').1 hll')
-    · rw [hl'] at hll' ⊢
-      rw [hroot_p, hroot_succAbove]
-      exact (mem_sectorSet.1 (hp x)).1 i ((Fin.succAbove_lt_iff_castSucc_lt p i).1 hll')
-    · rw [hroot_succAbove, hroot_succAbove]
-      exact D.strictMono_root x (Fin.succAbove_lt_succAbove_iff.1 hll')
-  · rcases Fin.eq_self_or_eq_succAbove p l with hl | ⟨i, rfl⟩ <;> by_cases hk : k ∈ range f
-    · obtain ⟨j, rfl⟩ := hk
-      rw [hl, hroot_p, hroot_p]
-      exact (hzmult j x).trans (hzmult j x₀).symm
-    · rw [hl, hroot_p, hroot_p]
-      exact rootMultiplicity_eq_of_eq_C_mul_lastCoordinate (hcoord k hk) x.1 x₀.1 Iff.rfl
-    · obtain ⟨j, rfl⟩ := hk
-      rw [hroot_succAbove, hroot_succAbove]
-      exact (D.rootMultiplicity_root j i x).trans (D.rootMultiplicity_root j i x₀).symm
-    · rw [hroot_succAbove, hroot_succAbove]
-      exact rootMultiplicity_eq_of_eq_C_mul_lastCoordinate (hcoord k hk) x.1 x₀.1
-        (iff_of_false (hne i x) (hne i x₀))
   · by_cases hk' : k ∈ range f
     · obtain ⟨j, rfl⟩ := hk'
       obtain ⟨i, hi⟩ := D.exists_root_eq j x hk t ht

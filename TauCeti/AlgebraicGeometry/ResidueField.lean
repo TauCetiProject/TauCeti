@@ -51,6 +51,8 @@ canonical morphism `Spec κ(x) ⟶ X` on the opens containing `x`.
   residue field `κ(x)` is determined by its values on global functions evaluated at `x`.
 * `AlgebraicGeometry.Scheme.toSpecΓ_apply_asIdeal`: the point of `Spec Γ(X, ⊤)` under `x` is the
   prime ideal of global functions vanishing at `x`.
+* `AlgebraicGeometry.Spec.map_algebraMap_residueField_closedPoint`: the closed point of
+  `Spec κ(p)` lies over the prime `p` of `R`.
 
 The residue field map `f.residueFieldMap x` has source `κ(f x)`. When `f x` is known to equal a
 point `y` only propositionally, for instance when `f` is an automorphism fixing `x`, it is
@@ -163,6 +165,17 @@ theorem Spec.residueField_hom_ext {R : CommRingCat.{u}} {p : Spec R} {K : CommRi
       (Spec R).Γevaluation p ((Scheme.ΓSpecIso R).inv a) :=
     congr($(Scheme.Spec.algebraMap_residueFieldIso_inv R p).hom a)
   simpa [e] using congr($(h').hom a)
+
+/-- The closed point of `Spec κ(p)` lies over `p` in `Spec R`. -/
+@[simp]
+theorem Spec.map_algebraMap_residueField_closedPoint {R : Type u} [CommRing R]
+    (p : PrimeSpectrum R) :
+    Spec.map (CommRingCat.ofHom (algebraMap R p.asIdeal.ResidueField))
+      (IsLocalRing.closedPoint p.asIdeal.ResidueField) = p :=
+  -- `p` is the only point of `Spec R` in the image of `Spec κ(p)`.
+  -- `Spec.map_apply` is applied as a term: `rw` cannot find it, since the closed point is typed
+  -- as a point of `PrimeSpectrum κ(p)` rather than of `Spec (.of κ(p))`.
+  (Spec.map_apply _ _).trans ((PrimeSpectrum.residueField_comap p).subset ⟨_, rfl⟩)
 
 /-- On a quasi-affine scheme, a ring map out of the residue field `κ(x)` is determined by its
 values on global functions evaluated at `x`. -/

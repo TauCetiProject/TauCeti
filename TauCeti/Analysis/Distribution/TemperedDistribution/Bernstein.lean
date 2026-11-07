@@ -125,7 +125,7 @@ private theorem eLpNorm_fourierInv_comp_inv_smul (g : E → ℂ) {R : ℝ} (hR :
   have h : (𝓕⁻ fun ξ ↦ g (R⁻¹ • ξ)) =
       (R ^ finrank ℝ E : ℝ) • fun x ↦ 𝓕⁻ g ((R⁻¹)⁻¹ • x) := by
     ext x
-    simp [fourierInv_comp_inv_smul g hR]
+    simp [fourierInv_comp_smul g (inv_ne_zero hR.ne'), abs_of_pos hR]
   rw [h, eLpNorm_const_smul, Measure.eLpNorm_comp_inv_smul volume _ (inv_pos.2 hR), ← mul_assoc,
     ← ofReal_norm, Real.norm_eq_abs, abs_of_pos (by positivity),
     ← ENNReal.ofReal_mul (by positivity), Real.inv_rpow hR.le, ← Real.rpow_natCast,
