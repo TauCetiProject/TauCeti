@@ -57,8 +57,6 @@ commutative ring `R` (`TauCeti.lsCupLength_add_one_le_totalCriticalCount`).
   critical points in `{f ≤ t}`.
 * `TauCeti.lsCategoryCount_univ_le_totalCriticalCount`: the Lusternik–Schnirelmann theorem on a
   compact manifold.
-* `TauCeti.normalizedLSCategory_add_one_le_totalCriticalCount`: the same theorem stated with the
-  normalized category `normalizedLSCategory M + 1`.
 * `TauCeti.lsCategoryCount_univ_le_encard_criticalPoints_inter`: the same bound for a compact open
   part of `M`, such as a connected component of a compact manifold.
 * `TauCeti.lsCategoryCount_univ_eq_totalCriticalCount_of_subsingleton`: equality in dimension
@@ -258,12 +256,5 @@ many, their count is `⊤`. -/
 theorem lsCupLength_add_one_le_totalCriticalCount [CompactSpace M] [Nonempty M] (R : Type _)
     [CommRing R] (hf : ContMDiff I 𝓘(ℝ) ∞ f) : lsCupLength M R + 1 ≤ totalCriticalCount I f :=
   lsCupLength_add_one_le_lsCategoryCount_univ.trans (lsCategoryCount_univ_le_totalCriticalCount hf)
-
-/-- **The Lusternik–Schnirelmann theorem, normalized.** On a nonempty compact boundaryless
-manifold `M`, every smooth function has at least `normalizedLSCategory M + 1` critical points. -/
-theorem normalizedLSCategory_add_one_le_totalCriticalCount [CompactSpace M] [Nonempty M]
-    (hf : ContMDiff I 𝓘(ℝ) ∞ f) : normalizedLSCategory M + 1 ≤ totalCriticalCount I f := by
-  rw [← lsCategoryCount_univ_eq_normalizedLSCategory_add_one]
-  exact lsCategoryCount_univ_le_totalCriticalCount hf
 
 end TauCeti
