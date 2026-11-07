@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Concentration.PoincareLogSobolev
+import TauCeti.Analysis.SpecialFunctions.Exp.Half
 public import Mathlib.Probability.Distributions.Gaussian.Real
 import Mathlib.Probability.Moments.SubGaussian
 
@@ -50,16 +51,11 @@ private theorem gaussian_x_exp_integrable (a : ℝ) :
     simp
   simpa using integrable_pow_mul_exp_of_mem_interior_integrableExpSet ha 1
 
-private theorem exp_half_sq (a x : ℝ) : exp (a * x / 2) ^ 2 = exp (a * x) := by
-  rw [pow_two, ← exp_add]
-  congr 1
-  ring
-
 /-- The entropy of the squared exponential test under the standard Gaussian. -/
 theorem entropy_exp_half_sq_gaussianReal (a : ℝ) :
     (gaussianReal 0 1).entropy (fun x => exp (a * x / 2) ^ 2) =
       (a ^ 2 / 2) * exp (a ^ 2 / 2) := by
-  simp_rw [exp_half_sq]
+  simp_rw [pow_two, Real.exp_half_mul_exp_half]
   rw [Measure.entropy_def, gaussian_exp_integral, Real.log_exp]
   have hint : (∫ x : ℝ, exp (a * x) * log (exp (a * x)) ∂gaussianReal 0 1) =
       a * ∫ x : ℝ, x * exp (a * x) ∂gaussianReal 0 1 := by
@@ -98,7 +94,8 @@ theorem integral_sq_norm_fderiv_exp_half_gaussianReal (a : ℝ) :
   have heq : (fun x : ℝ => ‖fderiv ℝ (fun y : ℝ => exp (a * y / 2)) x‖ ^ 2) =
       fun x => (a ^ 2 / 4) * exp (a * x) := by
     funext x
-    rw [norm_fderiv_exp_half, mul_pow, sq_abs, exp_half_sq]
+    rw [norm_fderiv_exp_half, mul_pow, sq_abs, pow_two (exp (a * x / 2)),
+      Real.exp_half_mul_exp_half]
     ring
   rw [heq, integral_const_mul, gaussian_exp_integral]
 
@@ -129,18 +126,14 @@ theorem one_le_of_logSobolevInequality_gaussianReal {C : ℝ}
     congr 2
     ring
   have hf2 : Integrable (fun x => f x ^ 2) (gaussianReal 0 1) := by
-    simp_rw [f, exp_half_sq]
+    simp_rw [f, pow_two, Real.exp_half_mul_exp_half]
     exact integrable_exp_mul_gaussianReal 1
   have hf2log : Integrable (fun x => f x ^ 2 * log (f x ^ 2)) (gaussianReal 0 1) := by
     have h := gaussian_x_exp_integrable 1
     convert h using 1
     funext x
-    have hsq : exp (x / 2) ^ 2 = exp x := by
-      rw [pow_two, ← exp_add]
-      congr 1
-      ring
     simp only [f, one_mul]
-    rw [hsq, log_exp]
+    rw [pow_two (exp (x / 2)), Real.exp_half_mul_exp_half, log_exp]
     ring
   have h := hC.apply f hf hdf hf2 hf2log
   dsimp [f] at h
