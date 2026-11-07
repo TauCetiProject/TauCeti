@@ -103,6 +103,7 @@ variable (F') (P : Place k F)
 
 attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
 
+omit [FiniteDimensional F F'] in
 /-- **A basis integral at `P` with unit discriminant makes the local model self-dual**: if some
 `F`-basis of `F'` has vectors integral over `𝒪_P` and discriminant a unit at `P`, then the trace
 dual of `𝒪'_P` is `𝒪'_P` itself. -/
@@ -111,6 +112,7 @@ theorem traceDual_one_eq_one_of_ord_discr_eq_zero {ι : Type*} [Fintype ι] [Dec
     (hd : P.ord (Algebra.discr F b) = 0) :
     Submodule.traceDual (P.integers) F (1 : Submodule (integralClosure (P.integers) F') F')
       = 1 := by
+  have : FiniteDimensional F F' := Module.Finite.of_basis b
   refine le_antisymm (fun x hx ↦ ?_) Submodule.one_le_traceDual_one
   have hd0 : Algebra.discr F b ≠ 0 := Algebra.discr_not_zero_of_basis F b
   have hminv : (Algebra.discr F b)⁻¹ ∈ P.integers :=
