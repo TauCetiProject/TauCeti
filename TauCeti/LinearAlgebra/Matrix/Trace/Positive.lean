@@ -19,7 +19,7 @@ public section
 
 namespace Matrix
 
-variable {R m n : Type*} [CommRing R] [PartialOrder R] [StarRing R] [IsOrderedRing R]
+variable {R m n : Type*} [Ring R] [PartialOrder R] [StarRing R] [IsOrderedRing R]
   [Fintype m] [Fintype n] [DecidableEq n]
 
 /-- A nonnegative diagonal weighting of the trace is nonnegative on positive-semidefinite

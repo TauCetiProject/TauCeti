@@ -120,8 +120,8 @@ theorem spinPositiveLinearMap_spinRep_mul_comm (hq : (q : 𝕜) < 0) {δ : 𝕜}
       spinPositiveLinearMap q hq (spinRep q hδ y * spinRep q hδ x) := by
   simp only [← map_mul, spinPositiveLinearMap_spinRep, markovTrace_mul_comm]
 
-/-- Every real loop parameter at least two has a negative real spin parameter. The formula
-also works at two, where the spin parameter is `-1`. -/
+/-- Every real loop parameter `δ ≥ 2`, including `δ = 2`, has a negative spin parameter `q`
+with `δ = -(q + q⁻¹)`. -/
 theorem exists_neg_spinParameter {δ : ℝ} (hδ : 2 ≤ δ) :
     ∃ q : 𝕜ˣ, (q : 𝕜) < 0 ∧ (δ : 𝕜) = -((q : 𝕜) + ((q⁻¹ : 𝕜ˣ) : 𝕜)) := by
   let r := δ / 2 + Real.sqrt ((δ / 2) ^ 2 - 1)
