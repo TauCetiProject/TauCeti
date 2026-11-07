@@ -285,8 +285,8 @@ private theorem IsMaximalIntegralCurveFlowPoint.add (n : ℕ)
 /-- A limit of regular times in a closed set `K` on which the maximal trajectory is continuous is
 regular: restart at a nearby regular time and use continuity of the fixed maximal trajectory to
 make the remaining time lie in the regular time-zero germ. -/
-private theorem isClosed_regular_times_inter [CompleteSpace E] [FiniteDimensional ℝ E] (n : ℕ)
-    [IsManifold I (n + 1 : ℕ) M]
+private theorem isClosed_setOf_isMaximalIntegralCurveFlowPoint_inter [CompleteSpace E]
+    [FiniteDimensional ℝ E] (n : ℕ) [IsManifold I (n + 1 : ℕ) M]
     (hv : CMDiff (n + 1 : ℕ) (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) (x : M) {K : Set ℝ}
     (hK : IsClosed K) (hcurve : ContinuousOn (maximalIntegralCurve v x) K) :
     IsClosed ({s : ℝ | IsMaximalIntegralCurveFlowPoint (I := I) n v (x, s)} ∩ K) := by
@@ -343,7 +343,7 @@ private theorem isMaximalIntegralCurveFlowPoint_of_mem [CompleteSpace E]
   have hcurve : ContinuousOn (maximalIntegralCurve v x) K :=
     (isMIntegralCurveOn_maximalIntegralCurve hvone).continuousOn.mono hKsub
   have hSKclosed : IsClosed (S ∩ K) :=
-    isClosed_regular_times_inter n hv x isClosed_Icc hcurve
+    isClosed_setOf_isMaximalIntegralCurveFlowPoint_inter n hv x isClosed_Icc hcurve
   have h0K : (0 : ℝ) ∈ K := by
     exact ⟨min_le_left _ _, le_max_left _ _⟩
   have htK : t ∈ K := by
