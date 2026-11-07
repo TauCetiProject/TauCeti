@@ -201,6 +201,43 @@ private lemma isIrreducibleBasis_nullificationExample :
   · rw [Finset.mem_singleton.1 hb]
     exact hirr.ne_zero
 
+/-- Every element of the McCallum projection of the nullification example has the same order at
+the points of the line `{X₁ = X₂ = 0}`: the content `1`, the two coefficients, each of order one
+along the line, and the discriminant `1`. -/
+private lemma orderAt_mcCallumProjection_nullificationExample
+    (polynomialGCD : NormalizedGCDMonoid (MvPolynomial (Fin 3) ℝ)) :
+    let := polynomialGCD
+    ∀ {B : Finset (MvPolynomial (Fin 3) ℝ)[X]},
+    ({Polynomial.C (X 1) * Polynomial.X + Polynomial.C (X 1 + X 2 * X 0)} :
+      Finset (MvPolynomial (Fin 3) ℝ)[X]).IsIrreducibleBasis B →
+    ∀ {q : MvPolynomial (Fin 3) ℝ},
+    q ∈ ({Polynomial.C (X 1) * Polynomial.X + Polynomial.C (X 1 + X 2 * X 0)} :
+      Finset (MvPolynomial (Fin 3) ℝ)[X]).mcCallumProjection B →
+    ∀ {x y : Fin 3 → ℝ}, x 1 = 0 ∧ x 2 = 0 → y 1 = 0 ∧ y 2 = 0 →
+    q.orderAt x = q.orderAt y := by
+  intro _ B hB q hq x y hx hy
+  set g : (MvPolynomial (Fin 3) ℝ)[X] :=
+    Polynomial.C (X 1) * Polynomial.X + Polynomial.C (X 1 + X 2 * X 0) with hg
+  have h₀ : ({g} : Finset _).IsIrreducibleBasis {g} := isIrreducibleBasis_nullificationExample
+  -- Every element of the projection is associated to one for the basis `{g}`.
+  obtain ⟨q', hq', hqq'⟩ := h₀.exists_associated_mem_mcCallumProjection hB hq
+  rw [orderAt_eq_of_associated hqq', orderAt_eq_of_associated hqq']
+  have hX₁ {z : Fin 3 → ℝ} (hz : z 1 = 0 ∧ z 2 = 0) :
+      (X 1 : MvPolynomial (Fin 3) ℝ).orderAt z = 1 := by
+    simpa [hz.1] using orderAt_X_sub_C (R := ℝ) z 1
+  have hcoeff {z : Fin 3 → ℝ} (hz : z 1 = 0 ∧ z 2 = 0) :
+      (X 1 + X 2 * X 0 : MvPolynomial (Fin 3) ℝ).orderAt z = 1 :=
+    orderAt_eq_one_of_eval_pderiv_ne_zero (by simp [hz.1, hz.2]) (i := 1) (by simp [pderiv_X])
+  rcases Finset.mem_mcCallumProjection.1 hq' with ⟨f, hf, rfl⟩ | ⟨b, hb, i, hi, rfl⟩ |
+    ⟨b, hb, rfl⟩ | ⟨b, hb, b', hb', hne, -⟩
+  · rw [(h₀.isPrimitive hf).content_eq_one, orderAt_one, orderAt_one]
+  · obtain rfl := Finset.mem_singleton.1 hb
+    rw [hg, natDegree_linear (X_ne_zero _)] at hi
+    interval_cases i <;> simp [hg, hX₁ hx, hX₁ hy, hcoeff hx, hcoeff hy]
+  · rw [Finset.mem_singleton.1 hb, discr_of_degree_eq_one (degree_linear (X_ne_zero _)),
+      orderAt_one, orderAt_one]
+  · exact (hne ((Finset.mem_singleton.1 hb).trans (Finset.mem_singleton.1 hb').symm)).elim
+
 /-- **McCallum lifting fails over positive-dimensional nullifying cells.** The hypothesis of
 `TauCeti.exists_isSemialgebraicStack_orderAt_eq_of_mcCallumProjection` that no basis member is
 nullified over a cell with more than one point cannot be dropped, even over a connected
@@ -247,25 +284,8 @@ theorem exists_nullified_mcCallumProjection_orderAt_ne
   rw [hF] at hB ⊢
   have h₀ : ({g} : Finset _).IsIrreducibleBasis {g} := isIrreducibleBasis_nullificationExample
   refine ⟨fun q hq x hx y hy ↦ ?_, fun b hb x hx ↦ ?_, fun k θ hθ ↦ ?_⟩
-  · -- Every element of the projection is associated to one for the basis `{g}`: the content `1`,
-    -- the two coefficients of `g`, each of order one along `C`, and the discriminant `1`.
-    obtain ⟨q', hq', hqq'⟩ := h₀.exists_associated_mem_mcCallumProjection hB hq
-    rw [orderAt_eq_of_associated hqq', orderAt_eq_of_associated hqq']
-    have hX₁ {z : Fin 3 → ℝ} (hz : z ∈ C) : (X 1 : MvPolynomial (Fin 3) ℝ).orderAt z = 1 := by
-      simpa [(hmem.1 hz).1] using orderAt_X_sub_C (R := ℝ) z 1
-    have hcoeff {z : Fin 3 → ℝ} (hz : z ∈ C) :
-        (X 1 + X 2 * X 0 : MvPolynomial (Fin 3) ℝ).orderAt z = 1 :=
-      orderAt_eq_one_of_eval_pderiv_ne_zero (by simp [(hmem.1 hz).1, (hmem.1 hz).2]) (i := 1)
-        (by simp [pderiv_X])
-    rcases Finset.mem_mcCallumProjection.1 hq' with ⟨f, hf, rfl⟩ | ⟨b, hb, i, hi, rfl⟩ |
-      ⟨b, hb, rfl⟩ | ⟨b, hb, b', hb', hne, -⟩
-    · rw [(h₀.isPrimitive hf).content_eq_one, orderAt_one, orderAt_one]
-    · obtain rfl := Finset.mem_singleton.1 hb
-      rw [hg, natDegree_linear (X_ne_zero _)] at hi
-      interval_cases i <;> simp [hg, hX₁ hx, hX₁ hy, hcoeff hx, hcoeff hy]
-    · rw [Finset.mem_singleton.1 hb, discr_of_degree_eq_one (degree_linear (X_ne_zero _)),
-        orderAt_one, orderAt_one]
-    · exact (hne ((Finset.mem_singleton.1 hb).trans (Finset.mem_singleton.1 hb').symm)).elim
+  · exact orderAt_mcCallumProjection_nullificationExample polynomialGCD hB hq (hmem.1 hx)
+      (hmem.1 hy)
   · obtain ⟨b', hb', r, -, rfl⟩ := hB.exists_eq_C_mul h₀ hb
     simp [Finset.mem_singleton.1 hb', hg, (hmem.1 hx).1, (hmem.1 hx).2]
   · -- The point `(-1, 0, 0, 0)` lies in a cell, which also contains a point over `(1, 0, 0)`.

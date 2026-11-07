@@ -28,7 +28,10 @@ assumption on the target fibres.
 
 The file also records that pulling back a fixed continuous bilinear form on the model fibre
 along a trivialization gives a `C^n` field of bilinear forms over its base set
-(`TauCeti.Manifold.contMDiffOn_trivializationAt_pullbackForm`), and that fibrewise inversion
+(`TauCeti.Manifold.contMDiffOn_trivializationAt_pullbackForm`), conversely that a field of
+bilinear forms which is `C^n` at a point reads in the trivialization at that point as a family of
+bilinear forms on the model fibre which is `C^n` there
+(`TauCeti.Manifold.exists_contMDiffAt_apply_eq_apply_symm`), and that fibrewise inversion
 preserves smoothness of a hom-bundle section at every point where the section is invertible
 (`ContMDiffWithinAt.clm_bundle_inverse` and its variants). The latter is the bundle form of the
 smoothness of inversion of continuous linear maps between Banach spaces. A constant bilinear
@@ -181,6 +184,23 @@ theorem contMDiffOn_trivializationAt_pullbackForm [ContMDiffVectorBundle n F E I
   refine (contMDiffOn_const (c := φ)).congr fun b hb ↦ ?_
   ext v w
   simp [hom_trivializationAt_apply, ContinuousLinearMap.inCoordinates, hb]
+
+/-- Conversely, a field `β` of bilinear forms which is `C^n` at `x`, read in the preferred
+trivialization `e` at `x` as `b ↦ β b (e.symm b ·) (e.symm b ·)`, is a family of bilinear forms on
+the model fibre which is `C^n` at `x`. -/
+theorem exists_contMDiffAt_apply_eq_apply_symm {β : (b : B) → E b →L[ℝ] E b →L[ℝ] ℝ} {x : B}
+    (hβ : ContMDiffAt IB (IB.prod 𝓘(ℝ, F →L[ℝ] F →L[ℝ] ℝ)) n
+      (fun b ↦ TotalSpace.mk' (F →L[ℝ] F →L[ℝ] ℝ) (E := fun b ↦ E b →L[ℝ] E b →L[ℝ] ℝ) b (β b))
+      x) :
+    ∃ φ : B → F →L[ℝ] F →L[ℝ] ℝ, ContMDiffAt IB 𝓘(ℝ, F →L[ℝ] F →L[ℝ] ℝ) n φ x ∧
+      ∀ b ∈ (trivializationAt F E x).baseSet, ∀ u v,
+        φ b u v = β b ((trivializationAt F E x).symm b u) ((trivializationAt F E x).symm b v) := by
+  refine ⟨fun b ↦ ContinuousLinearMap.inCoordinates F E (F →L[ℝ] ℝ)
+    (fun b ↦ E b →L[ℝ] Trivial B ℝ b) x b x b (β b),
+    ((contMDiffAt_hom_bundle _).1 hβ).2, fun b hb u v ↦ ?_⟩
+  rw [inCoordinates_apply_eq₂ (𝕜 := ℝ) (F₃ := ℝ) (E₃ := Trivial B ℝ) hb hb (Set.mem_univ _)]
+  simp only [Trivial.fiberBundle_trivializationAt', Trivial.linearMapAt_trivialization,
+    LinearMap.id_coe, id_eq]
 
 end PullbackForm
 

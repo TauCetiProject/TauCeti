@@ -10,7 +10,8 @@ public import TauCeti.Geometry.Manifold.Instances.Icc
 public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
-import TauCeti.Geometry.Manifold.MFDeriv.Chart
+import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # Tangent-bundle trivializations, coordinate changes on `T(TM)`, and open submanifolds
@@ -353,6 +354,60 @@ theorem contMDiffAt_tangentCoordChange {n : ℕ∞ω} [IsManifold I (n + 1) M] {
 
 /-! ### Coordinate changes on the tangent of the tangent bundle -/
 
+/-- A point of `TM` in the common domain of the tangent charts at `z` and `q` is sent by the
+change from the chart at `z` to the chart at `q` to the pair consisting of the base coordinate
+change and the fibre coordinate change. -/
+private theorem extChartAt_tangent_symm_trans_eq [IsManifold I 1 M] (z q : TangentBundle I M)
+    {a : E × E}
+    (ha : a ∈ ((extChartAt I.tangent z).symm ≫ extChartAt I.tangent q).source) :
+    extChartAt I.tangent q ((extChartAt I.tangent z).symm a) =
+      (extChartAt I q.proj ((extChartAt I z.proj).symm a.1),
+        tangentCoordChange I z.proj q.proj ((extChartAt I z.proj).symm a.1) a.2) := by
+  change a ∈ ((extChartAt I.tangent z).symm ≫ extChartAt I.tangent q).source at ha
+  let b := (extChartAt I.tangent z).symm a
+  have ha_target : a ∈ (extChartAt I.tangent z).target := ha.1
+  have hbzT : b ∈ (extChartAt I.tangent z).source :=
+    (extChartAt I.tangent z).map_target ha_target
+  have hbqT : b ∈ (extChartAt I.tangent q).source := ha.2
+  have hbz : b.proj ∈ (extChartAt I z.proj).source := by
+    rw [extChartAt_source] at hbzT ⊢
+    exact (TangentBundle.mem_chart_source_iff b z).1 hbzT
+  have hbq : b.proj ∈ (extChartAt I q.proj).source := by
+    rw [extChartAt_source] at hbqT ⊢
+    exact (TangentBundle.mem_chart_source_iff b q).1 hbqT
+  have hright : extChartAt I.tangent z b = a :=
+    (extChartAt I.tangent z).right_inv ha_target
+  -- A tangent-bundle chart is a product of the base chart and the fibre coordinate change.
+  -- Projecting `hright` exposes those two definitional components.
+  have hbase : extChartAt I z.proj b.proj = a.1 := by
+    have h := congrArg Prod.fst hright
+    change extChartAt I z.proj b.proj = a.1 at h
+    exact h
+  have hfiber : tangentCoordChange I b.proj z.proj b.proj b.2 = a.2 := by
+    have h := congrArg Prod.snd hright
+    change tangentCoordChange I b.proj z.proj b.proj b.2 = a.2 at h
+    exact h
+  have hy : (extChartAt I z.proj).symm a.1 = b.proj := by
+    rw [← hbase]
+    exact (extChartAt I z.proj).left_inv hbz
+  have hsecond : (extChartAt I.tangent q b).2 =
+      tangentCoordChange I z.proj q.proj b.proj a.2 := by
+    rw [← hfiber]
+    have hcomp := tangentCoordChange_comp (I := I) (w := b.proj) (x := z.proj)
+      (y := q.proj) (z := b.proj) (v := b.2)
+      ⟨⟨mem_extChartAt_source b.proj, hbz⟩, hbq⟩
+    -- The domain and codomain tangent spaces are modelled by `E`; expose that representation to
+    -- apply the coordinate-change composition theorem.
+    change tangentCoordChange I b.proj q.proj b.proj b.2 = _
+    exact hcomp.symm
+  -- Compare the two product coordinates separately.
+  apply Prod.ext
+  · change extChartAt I q.proj b.proj = extChartAt I q.proj ((extChartAt I z.proj).symm a.1)
+    rw [hy]
+  · change (extChartAt I.tangent q b).2 =
+      tangentCoordChange I z.proj q.proj ((extChartAt I z.proj).symm a.1) a.2
+    simpa only [hy] using hsecond
+
 private theorem tangentCoordChange_tangent_eventuallyEq [IsManifold I 1 M] {x x₀ : M}
     (hx₀ : x ∈ (extChartAt I x₀).source) (u : E) :
     ((extChartAt I.tangent (TotalSpace.mk' E x₀ 0) : TangentBundle I M → E × E) ∘
@@ -385,53 +440,7 @@ private theorem tangentCoordChange_tangent_eventuallyEq [IsManifold I 1 M] {x x�
   have hN := (I.tangent.extendCoordChange_source_mem_nhdsWithin'
     (e := chartAt (ModelProd H E) z) (e' := chartAt (ModelProd H E) q) hz hzq)
   filter_upwards [hN] with a ha
-  -- Membership in the extended coordinate-change source supplies membership in both tangent
-  -- charts; unfold that source once to name the corresponding total-space point `b`.
-  change a ∈ ((extChartAt I.tangent z).symm ≫ extChartAt I.tangent q).source at ha
-  let b := (extChartAt I.tangent z).symm a
-  have ha_target : a ∈ (extChartAt I.tangent z).target := ha.1
-  have hbzT : b ∈ (extChartAt I.tangent z).source :=
-    (extChartAt I.tangent z).map_target ha_target
-  have hbqT : b ∈ (extChartAt I.tangent q).source := ha.2
-  have hbz : b.proj ∈ (extChartAt I x).source := by
-    rw [extChartAt_source] at hbzT ⊢
-    exact (TangentBundle.mem_chart_source_iff b z).1 hbzT
-  have hbq : b.proj ∈ (extChartAt I x₀).source := by
-    rw [extChartAt_source] at hbqT ⊢
-    exact (TangentBundle.mem_chart_source_iff b q).1 hbqT
-  have hright : extChartAt I.tangent z b = a :=
-    (extChartAt I.tangent z).right_inv ha_target
-  -- A tangent-bundle chart is a product of the base chart and the fibre coordinate change.
-  -- Projecting `hright` exposes those two definitional components.
-  have hbase : extChartAt I x b.proj = a.1 := by
-    have h := congrArg Prod.fst hright
-    change extChartAt I x b.proj = a.1 at h
-    exact h
-  have hfiber : tangentCoordChange I b.proj x b.proj b.2 = a.2 := by
-    have h := congrArg Prod.snd hright
-    change tangentCoordChange I b.proj x b.proj b.2 = a.2 at h
-    exact h
-  have hy : (extChartAt I x).symm a.1 = b.proj := by
-    rw [← hbase]
-    exact (extChartAt I x).left_inv hbz
-  have hsecond : (extChartAt I.tangent q b).2 =
-      tangentCoordChange I x x₀ b.proj a.2 := by
-    rw [← hfiber]
-    have hcomp := tangentCoordChange_comp (I := I) (w := b.proj) (x := x)
-      (y := x₀) (z := b.proj) (v := b.2)
-      ⟨⟨mem_extChartAt_source b.proj, hbz⟩, hbq⟩
-    -- The domain and codomain tangent spaces are modelled by `E`; expose that representation to
-    -- apply the coordinate-change composition theorem.
-    change tangentCoordChange I b.proj x₀ b.proj b.2 = _
-    exact hcomp.symm
-  -- Unfold the local names and compare the two product coordinates separately.
-  change extChartAt I.tangent q b = T a
-  apply Prod.ext
-  · change extChartAt I x₀ b.proj = extChartAt I x₀ ((extChartAt I x).symm a.1)
-    rw [hy]
-  · change (extChartAt I.tangent q b).2 =
-      tangentCoordChange I x x₀ ((extChartAt I x).symm a.1) a.2
-    simpa only [hy] using hsecond
+  exact extChartAt_tangent_symm_trans_eq z q ha
 
 private theorem fderivWithin_tangentCoordChange_tangent_model [IsManifold I 2 M] {x x₀ : M}
     (hx₀ : x ∈ (extChartAt I x₀).source) (u w : E) :
@@ -471,45 +480,11 @@ private theorem fderivWithin_tangentCoordChange_tangent_model [IsManifold I 2 M]
     -- the ordinary differentiability statement can be reused below.
     change DifferentiableWithinAt 𝕜 C (range I) a₀ at h
     exact h
-  have hmaps : MapsTo (Prod.fst : E × E → E) (range I ×ˢ univ) (range I) :=
-    fun _ h ↦ h.1
   have huniqBase : UniqueDiffWithinAt 𝕜 (range I) a₀ := I.uniqueDiffWithinAt_image
-  have huniq : UniqueDiffWithinAt 𝕜 (range I ×ˢ univ) (a₀, u) :=
-    huniqBase.prod uniqueDiffWithinAt_univ
-  -- The calculus lemmas below are stated for explicit compositions with the two projections.
-  -- The `change` steps only eta-expand those compositions and their derivatives.
-  have hFp : DifferentiableWithinAt 𝕜 (fun a : E × E ↦ F a.1)
-      (range I ×ˢ univ) (a₀, u) := by
-    change DifferentiableWithinAt 𝕜 (F ∘ Prod.fst) (range I ×ˢ univ) (a₀, u)
-    exact hF.comp (a₀, u) differentiableWithinAt_fst hmaps
-  have hCp : DifferentiableWithinAt 𝕜 (fun a : E × E ↦ C a.1)
-      (range I ×ˢ univ) (a₀, u) := by
-    change DifferentiableWithinAt 𝕜 (C ∘ Prod.fst) (range I ×ˢ univ) (a₀, u)
-    exact hC.comp (a₀, u) differentiableWithinAt_fst hmaps
-  have hAp : DifferentiableWithinAt 𝕜 (fun a : E × E ↦ C a.1 a.2)
-      (range I ×ˢ univ) (a₀, u) :=
-    hCp.clm_apply differentiableWithinAt_snd
   change (fderivWithin 𝕜 (fun a : E × E ↦ (F a.1, C a.1 a.2))
     (range I ×ˢ univ) (a₀, u)) (u, w) = _
-  have hFp_eq := fderivWithin_comp (a₀, u) hF differentiableWithinAt_fst hmaps huniq
-  change fderivWithin 𝕜 (fun a : E × E ↦ F a.1) (range I ×ˢ univ) (a₀, u) = _ at hFp_eq
-  have hCp_eq := fderivWithin_comp (a₀, u) hC differentiableWithinAt_fst hmaps huniq
-  change fderivWithin 𝕜 (fun a : E × E ↦ C a.1) (range I ×ˢ univ) (a₀, u) = _ at hCp_eq
-  have hAp_eq := fderivWithin_clm_apply huniq hCp differentiableWithinAt_snd
-  change fderivWithin 𝕜 (fun a : E × E ↦ C a.1 a.2) (range I ×ˢ univ) (a₀, u) = _ at hAp_eq
-  have hfst_app : (fderivWithin 𝕜 (Prod.fst : E × E → E) (range I ×ˢ univ) (a₀, u))
-      (u, w) = u := by
-    rw [fderivWithin_fst huniq]
-    rfl
-  have hsnd_app : (fderivWithin 𝕜 (Prod.snd : E × E → E) (range I ×ˢ univ) (a₀, u))
-      (u, w) = w := by
-    rw [fderivWithin_snd huniq]
-    rfl
-  rw [hFp.fderivWithin_prodMk hAp huniq, ContinuousLinearMap.prod_apply, hFp_eq,
-    hAp_eq, hCp_eq]
-  simp only [ContinuousLinearMap.comp_apply, add_apply,
-    ContinuousLinearMap.flip_apply, C, F, a₀, extChartAt_to_inv]
-  rw [hfst_app, hsnd_app, add_comm]
+  rw [TauCeti.fderivWithin_prodMk_fst_clm_apply_snd hF hC huniqBase]
+  simp only [C, a₀, extChartAt_to_inv]
   have hFderiv : fderivWithin 𝕜 F (range I) a₀ = tangentCoordChange I x x₀ x := by
     rw [tangentCoordChange_def]
     rfl
