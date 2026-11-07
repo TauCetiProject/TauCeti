@@ -78,7 +78,7 @@ private theorem exists_bijOn_biUnion_roots_toFinset_of_matchings {P Q : ι → K
   -- a root of `Q k` near a point of `T` is the partner of that point under `e k`
   have huniq (k : ι) {z w : K} (hz : z ∈ T) (hw : w ∈ (Q k).roots) (hwz : ‖w - z‖ < ρ) :
       z ∈ (P k).roots ∧ e k z = w := by
-    have h := mem_and_apply_eq_of_bijOn_of_dist_lt (Finset.coe_subset.2 (hT k)) (he k)
+    have h := mem_and_apply_eq_of_surjOn_of_dist_lt (Finset.coe_subset.2 (hT k)) (he k).surjOn
       (fun z hz w hw => hsep z hz w hw) (fun z hz => by
         simpa [dist_eq_norm] using (hed k z (Multiset.mem_toFinset.1 hz)).1) hz
       (Finset.mem_coe.2 (Multiset.mem_toFinset.2 hw)) (by rwa [dist_eq_norm])

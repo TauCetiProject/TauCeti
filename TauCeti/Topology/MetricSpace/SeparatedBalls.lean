@@ -24,8 +24,9 @@ over the roots of a polynomial.
   every centre at once.
 * `TauCeti.eq_of_dist_lt_of_dist_lt`: two such centres within the radius of a common point
   coincide.
-* `TauCeti.mem_and_apply_eq_of_bijOn_of_dist_lt`: a bijection moving the points of a separated set
-  by less than the radius is determined by the points of the target near the source points.
+* `TauCeti.mem_and_apply_eq_of_surjOn_of_dist_lt`: a map moving the points of a separated set
+  by less than the radius and onto a target is determined by the points of the target near the
+  source points.
 -/
 
 public section
@@ -61,14 +62,15 @@ theorem eq_of_dist_lt_of_dist_lt {Y : Type*} [PseudoMetricSpace Y] {w w' y : Y} 
   by_contra hne
   linarith [hsep hne, dist_triangle_left w w' y]
 
-/-- A bijection `e` from `A` onto `B` that moves each point of `A` by less than `r`, with `A` inside
+omit [MetricSpace X] in
+/-- A map `e` from `A` onto `B` that moves each point of `A` by less than `r`, with `A` inside
 a set `T` whose distinct points are more than `2 * r` apart, matches a point `w` of `B` lying
 within `r` of a point `z` of `T` with `z`: then `z ∈ A` and `e z = w`. -/
-theorem mem_and_apply_eq_of_bijOn_of_dist_lt {A B T : Set X} {e : X → X} {r : ℝ} (hA : A ⊆ T)
-    (he : Set.BijOn e A B) (hsep : ∀ z ∈ T, ∀ w ∈ T, z ≠ w → 2 * r < dist z w)
+theorem mem_and_apply_eq_of_surjOn_of_dist_lt [PseudoMetricSpace X] {A B T : Set X} {e : X → X}
+    {r : ℝ} (hA : A ⊆ T) (he : Set.SurjOn e A B) (hsep : ∀ z ∈ T, ∀ w ∈ T, z ≠ w → 2 * r < dist z w)
     (hclose : ∀ z ∈ A, dist (e z) z < r) {z w : X} (hz : z ∈ T) (hw : w ∈ B) (hwz : dist w z < r) :
     z ∈ A ∧ e z = w := by
-  obtain ⟨z', hz', rfl⟩ := he.surjOn hw
+  obtain ⟨z', hz', rfl⟩ := he hw
   obtain rfl : z = z' :=
     eq_of_dist_lt_of_dist_lt (hsep z hz z' (hA hz')) hwz (hclose z' hz')
   exact ⟨hz', rfl⟩
