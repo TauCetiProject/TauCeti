@@ -659,53 +659,7 @@ private theorem exists_setIntegral_norm_gradient_sq_le_pow {κ θ C₂ : ℝ} (h
           field_simp
   linarith
 
-/-- `V (t / R)^{2α+n+1} = Q² t^{n+1} (t^α)²` for `V = (R^{(n+1)/2+α} Q)²`. -/
-private theorem sq_rpow_mul_mul_div_rpow_eq {R t Q a : ℝ} (hR : 0 < R) (ht : 0 < t) :
-    (R ^ (((n : ℝ) + 1) / 2 + a) * Q) ^ 2 * (t / R) ^ (2 * a + ((n : ℝ) + 1)) =
-      Q ^ 2 * (t ^ (n + 1) * (t ^ a) ^ 2) := by
-  have e1 : (((n : ℝ) + 1) / 2 + a) * ((2 : ℕ) : ℝ) = 2 * a + ((n : ℝ) + 1) := by
-    push_cast
-    ring
-  have e2 : t ^ (n + 1) * (t ^ a) ^ 2 = t ^ (2 * a + ((n : ℝ) + 1)) := by
-    rw [← Real.rpow_natCast t, ← Real.rpow_natCast (t ^ a), ← Real.rpow_mul ht.le,
-      ← Real.rpow_add ht]
-    congr 1
-    push_cast
-    ring
-  rw [mul_pow, ← Real.rpow_natCast (R ^ _), ← Real.rpow_mul hR.le, e1, e2,
-    Real.div_rpow ht.le hR.le]
-  field_simp
-
 end Iteration
-
-
-/-- The scaling of the final estimate. Let `Q = K_G + R^{-(n+1)/2-α} X` with `K_G, X ≥ 0`. Then
-`V = (R^{(n+1)/2+α} Q)²` equals `R^{n+1} (R^α Q)²` and bounds both `K_G² R^{n+1+2α}` and `X²`. -/
-private theorem sq_rpow_mul_eq_and_le {R KG X Q a : ℝ} (hR : 0 < R) (hKG : 0 ≤ KG) (hX : 0 ≤ X)
-    (hQ : Q = KG + R ^ (-(((n : ℝ) + 1) / 2 + a)) * X) :
-    (R ^ (((n : ℝ) + 1) / 2 + a) * Q) ^ 2 = R ^ (n + 1) * (R ^ a * Q) ^ 2 ∧
-      KG ^ 2 * R ^ ((n : ℝ) + 1 + 2 * a) ≤ (R ^ (((n : ℝ) + 1) / 2 + a) * Q) ^ 2 ∧
-      X ≤ R ^ (((n : ℝ) + 1) / 2 + a) * Q := by
-  have hVR : (R ^ (((n : ℝ) + 1) / 2 + a) * Q) ^ 2 = R ^ (n + 1) * (R ^ a * Q) ^ 2 := by
-    have h := sq_rpow_mul_mul_div_rpow_eq (n := n) (Q := Q) (a := a) hR hR
-    rw [div_self hR.ne', Real.one_rpow, mul_one] at h
-    rw [h]
-    ring
-  refine ⟨hVR, ?_, ?_⟩
-  · have hRe : R ^ ((n : ℝ) + 1 + 2 * a) = R ^ (n + 1) * (R ^ a) ^ 2 := by
-      rw [← Real.rpow_natCast R, ← Real.rpow_natCast (R ^ a), ← Real.rpow_mul hR.le,
-        ← Real.rpow_add hR]
-      push_cast
-      ring_nf
-    have hKQ : KG ≤ Q := hQ ▸ le_add_of_nonneg_right (by positivity)
-    rw [hVR, hRe]
-    calc KG ^ 2 * (R ^ (n + 1) * (R ^ a) ^ 2) ≤ Q ^ 2 * (R ^ (n + 1) * (R ^ a) ^ 2) := by gcongr
-      _ = _ := by ring
-  · have h1 : R ^ (-(((n : ℝ) + 1) / 2 + a)) * X ≤ Q := hQ ▸ le_add_of_nonneg_left hKG
-    have h2 : X = R ^ (((n : ℝ) + 1) / 2 + a) * (R ^ (-(((n : ℝ) + 1) / 2 + a)) * X) := by
-      rw [← mul_assoc, ← Real.rpow_add hR, add_neg_cancel, Real.rpow_zero, one_mul]
-    rw [h2]
-    gcongr
 
 /-- If `∫_{B_t} ‖∇u - (∇u)_{B_t}‖² ≤ C (R^{(n+1)/2+α} Q)² (t / R)^{n+1+2α}`, then the mean
 oscillation of `∇u` on `closedBall z t` is at most `√(C / ω) Q t^α`, where `ω` is the volume of
@@ -721,10 +675,8 @@ private theorem setAverage_closedBall_norm_gradient_sub_le_mul_rpow
   set ω := volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)
   have hω : 0 < ω := measureReal_ball_pos volume _ one_pos
   have hV : (R ^ (((n : ℝ) + 1) / 2 + a) * Q) ^ 2 = R ^ (n + 1) * (R ^ a * Q) ^ 2 := by
-    have h := sq_rpow_mul_mul_div_rpow_eq (n := n) (Q := Q) (a := a) hR hR
-    rw [div_self hR.ne', Real.one_rpow, mul_one] at h
-    rw [h]
-    ring
+    rw [Real.rpow_div_two_add_mul_sq Q hR]
+    norm_cast
   refine (setAverage_closedBall_norm_gradient_sub_le u hball ht hR (C := C) (κ := a)
     (V := (R ^ (((n : ℝ) + 1) / 2 + a) * Q) ^ 2) (hψ.trans_eq ?_)).trans_eq ?_
   · rw [← Real.rpow_natCast (t / R) (n + 1), ← Real.rpow_add (div_pos ht hR)]
@@ -815,14 +767,6 @@ private theorem exists_setIntegral_norm_gradient_sub_setAverage_sq_le_of_holderO
     push_cast
     ring_nf)
 
-/-- The constant of the final estimate:
-`c M Q + (R^α Q / √(ω θ^{n+1})) (θ R)^{-α} = (c M + θ^{-α} / √(ω θ^{n+1})) Q`. -/
-private theorem add_mul_div_sqrt_mul_rpow_eq {c M ω θ R Q a : ℝ} (hθ : 0 < θ) (hR : 0 < R) :
-    c * (M * Q) + R ^ a * Q / √(ω * θ ^ (n + 1)) * (θ * R) ^ (-a) =
-      (c * M + θ ^ (-a) / √(ω * θ ^ (n + 1))) * Q := by
-  rw [Real.mul_rpow hθ.le hR.le, Real.rpow_neg hR.le]
-  field_simp [(Real.rpow_pos_of_pos hR a).ne']
-
 /-- **Interior Schauder estimate for divergence-form equations with Hölder coefficients.** Let
 `0 < α < 1`. There is a constant `C`, depending only on `n`, `α`, `λ`, `Λ` and `M`, such that the
 following holds. Let `Ω ⊆ ℝ^{n+1}` be open and let `u ∈ H¹(Ω)` be a weak solution of
@@ -880,7 +824,14 @@ theorem exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWith_matri
   have hθR : θ * R ≤ R := mul_le_of_le_one_left hR.le hθ1
   have hball : ∀ z ∈ S, ball z R ⊆ Omega := fun z hz => (ball_subset_thickening hz R).trans hRS
   -- `V = (R^{(n+1)/2+α} Q)²` bounds both `K_G² R^{n+1+2α}` and `∫_{B_R} ‖∇u‖²`.
-  obtain ⟨hVR, hV1, hX⟩ := sq_rpow_mul_eq_and_le (n := n) hR KG.2 (norm_nonneg _) hQ
+  have hVR : (R ^ (((n : ℝ) + 1) / 2 + α) * Q) ^ 2 = R ^ (n + 1) * (R ^ (α : ℝ) * Q) ^ 2 := by
+    rw [Real.rpow_div_two_add_mul_sq Q hR]
+    norm_cast
+  have hV1 : (KG : ℝ) ^ 2 * R ^ ((n : ℝ) + 1 + 2 * α) ≤ (R ^ (((n : ℝ) + 1) / 2 + α) * Q) ^ 2 :=
+    Real.sq_mul_rpow_add_two_mul_le hR KG.2 (hQ ▸ le_add_of_nonneg_right (by positivity))
+  have hX : ‖W1p.gradient u‖ ≤ R ^ (((n : ℝ) + 1) / 2 + α) * Q := by
+    rw [hQ, mul_add, ← mul_assoc, ← Real.rpow_add hR, add_neg_cancel, Real.rpow_zero, one_mul]
+    exact le_add_of_nonneg_left (by positivity)
   have hV2 : ∀ z ∈ S, ∫ x in ball z R, ‖W1p.gradient u x‖ ^ 2 ≤
       (R ^ (((n : ℝ) + 1) / 2 + α) * Q) ^ 2 := fun z hz =>
     (Lp.setIntegral_norm_sq_le_norm_sq (W1p.gradient u) (hball z hz)).trans
@@ -902,7 +853,11 @@ theorem exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWith_matri
   have hH := TauCeti.MeasureTheory.holderOnWith_preciseRepresentative_of_setAverage_norm_sub_le hα
     (ρ := θ * R) (by positivity) (fun z hz => integrableOn_closedBall_gradient u (hball z hz) hθR)
     hosc havg
-  rwa [← hcdef, add_mul_div_sqrt_mul_rpow_eq hθ hR, ← mul_assoc] at hH
+  have hconst : c * (√(C₀ / ω) * Q) + R ^ (α : ℝ) * Q / √(ω * θ ^ (n + 1)) * (θ * R) ^ (-(α : ℝ)) =
+      (c * √(C₀ / ω) + θ ^ (-(α : ℝ)) / √(ω * θ ^ (n + 1))) * Q := by
+    rw [Real.mul_rpow hθ.le hR.le, Real.rpow_neg hR.le]
+    field_simp [(Real.rpow_pos_of_pos hR (α : ℝ)).ne']
+  rwa [← hcdef, hconst, ← mul_assoc] at hH
 
 end PDE
 
