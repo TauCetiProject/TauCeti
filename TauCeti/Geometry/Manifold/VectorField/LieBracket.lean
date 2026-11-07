@@ -68,32 +68,6 @@ variable [IsManifold I (minSmoothness 𝕜 2) M]
 
 namespace VectorField
 
-/-- Constant vector fields on a normed vector space have zero manifold Lie bracket. -/
-@[simp]
-theorem mlieBracket_const_model_space (a b x : F) :
-    VectorField.mlieBracket 𝓘(𝕜, F) (fun _ : F ↦ a) (fun _ : F ↦ b) x = 0 := by
-  let A : ∀ y : F, TangentSpace 𝓘(𝕜, F) y := fun _ ↦ a
-  let B : ∀ y : F, TangentSpace 𝓘(𝕜, F) y := fun _ ↦ b
-  -- The explicit dependent fields expose the model-space representatives needed by the
-  -- ordinary Fréchet derivative formula for the Lie bracket.
-  change VectorField.mlieBracket 𝓘(𝕜, F) A B x = 0
-  have h := congrFun (VectorField.mlieBracketWithin_eq_lieBracketWithin
-    (V := A) (W := B) (s := Set.univ)) x
-  rw [VectorField.mlieBracketWithin_univ] at h
-  rw [h]
-  have hA : fderivWithin 𝕜 A Set.univ x = 0 := by
-    -- On the model space, `A` is definitionally the ordinary constant map with value `a`.
-    change fderivWithin 𝕜 (fun _ : F ↦ a) Set.univ x = 0
-    exact fderivWithin_const_apply (𝕜 := 𝕜) (E := F) (s := Set.univ) (x := x) a
-  have hB : fderivWithin 𝕜 B Set.univ x = 0 := by
-    -- On the model space, `B` is definitionally the ordinary constant map with value `b`.
-    change fderivWithin 𝕜 (fun _ : F ↦ b) Set.univ x = 0
-    exact fderivWithin_const_apply (𝕜 := 𝕜) (E := F) (s := Set.univ) (x := x) b
-  rw [VectorField.lieBracketWithin, hA, hB]
-  -- The tangent space of the model manifold is definitionally its model vector space.
-  change (0 : F) - 0 = 0
-  simp
-
 /-- On a normed space, the manifold Lie bracket of two vector fields is their Lie bracket as maps
 of the space. -/
 theorem mlieBracket_eq_lieBracket {V W : ∀ y : F, TangentSpace 𝓘(𝕜, F) y} :
@@ -115,6 +89,12 @@ theorem mlieBracket_const_left_model_space (a : F) (W : ∀ y : F, TangentSpace 
   change fderiv 𝕜 W x a - fderiv 𝕜 (fun _ : F ↦ a) x (W x) = _
   simp only [fderiv_const_apply, sub_eq_self]
   rfl
+
+/-- Constant vector fields on a normed vector space have zero manifold Lie bracket. -/
+@[simp]
+theorem mlieBracket_const_model_space (a b x : F) :
+    VectorField.mlieBracket 𝓘(𝕜, F) (fun _ : F ↦ a) (fun _ : F ↦ b) x = 0 :=
+  (mlieBracket_const_left_model_space a _ x).trans (by simp; rfl)
 
 /-- The manifold Lie bracket of a vector field `V` with a constant vector field `b` on a normed
 space is minus the derivative of `V` in the direction `b`. -/
