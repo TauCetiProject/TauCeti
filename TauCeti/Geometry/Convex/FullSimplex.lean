@@ -63,6 +63,12 @@ theorem mem_fullSimplex_iff {p : ℕ} {x : EuclideanSpace ℝ (Fin p)} :
 theorem zero_mem_fullSimplex (p : ℕ) : 0 ∈ fullSimplex p := by
   simp
 
+/-- Each standard basis vector is a vertex of the full-dimensional simplex. -/
+theorem single_one_mem_fullSimplex {p : ℕ} (i : Fin p) :
+    EuclideanSpace.single i 1 ∈ fullSimplex p := by
+  simp only [mem_fullSimplex_iff, PiLp.single_apply]
+  refine ⟨fun j ↦ by split_ifs <;> norm_num, by simp⟩
+
 /-- The full-dimensional simplex is convex. -/
 theorem convex_fullSimplex (p : ℕ) : Convex ℝ (fullSimplex p) :=
   (convex_coordinateSimplex (Fin p)).linear_preimage (EuclideanSpace.equiv (Fin p) ℝ).toLinearMap
@@ -89,6 +95,24 @@ theorem nonempty_interior_fullSimplex (p : ℕ) : (interior (fullSimplex p)).Non
 the points of its faces and corners. -/
 theorem uniqueDiffOn_fullSimplex (p : ℕ) : UniqueDiffOn ℝ (fullSimplex p) :=
   uniqueDiffOn_convex (convex_fullSimplex p) (nonempty_interior_fullSimplex p)
+
+/-- The full-dimensional simplex is the closure of its interior. -/
+@[simp]
+theorem closure_interior_fullSimplex (p : ℕ) :
+    closure (interior (fullSimplex p)) = fullSimplex p :=
+  ((convex_fullSimplex p).closure_interior_eq_closure_of_nonempty_interior
+    (nonempty_interior_fullSimplex p)).trans (isClosed_fullSimplex p).closure_eq
+
+/-- In dimension zero, the full-dimensional simplex is the whole single-point ambient space. -/
+theorem fullSimplex_zero_eq_univ : fullSimplex 0 = Set.univ :=
+  Set.eq_univ_of_forall fun _ ↦ by simp
+
+/-- In dimension one, the full-dimensional simplex is the unit interval read through the unique
+coordinate. -/
+theorem fullSimplex_one_eq_preimage_proj_zero_Icc :
+    fullSimplex 1 = (EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin 1) 0) ⁻¹' Set.Icc 0 1 := by
+  ext x
+  simp
 
 /-- The point of `ℝᵖ⁺¹` obtained by inserting `t` as the `j`-th coordinate of `y` lies in the
 full-dimensional simplex exactly when `y` lies in the coordinate simplex and `t` lies between `0`
@@ -291,6 +315,30 @@ theorem simplexMapAmbient_succAbove_zero (y : EuclideanSpace ℝ (Fin p)) :
   ext m
   rw [simplexMapAmbient_apply_of_injective (Fin.succAbove_right_injective) _
     (Fin.succAbove_zero_apply m)]
+
+/-- The `0`-th face inclusion of `Δ¹` omits the origin and sends `Δ⁰` to the vertex `e₀`. -/
+@[simp]
+theorem simplexFace_zero_zero (x : fullSimplex 0) :
+    simplexFace 0 0 x = ⟨EuclideanSpace.single 0 1, single_one_mem_fullSimplex 0⟩ := by
+  apply Subtype.ext
+  rw [← simplexMapAmbient_succAbove_coe, simplexMapAmbient_succAbove_zero]
+  ext i
+  cases i using Fin.cases with
+  | zero => simp
+  | succ j => exact j.elim0
+
+/-- The `1`-st face inclusion of `Δ¹` omits `e₀` and sends `Δ⁰` to the origin. -/
+@[simp]
+theorem simplexFace_zero_one (x : fullSimplex 0) :
+    simplexFace 0 1 x = ⟨0, zero_mem_fullSimplex 1⟩ := by
+  apply Subtype.ext
+  rw [← simplexMapAmbient_succAbove_coe]
+  have h := simplexMapAmbient_succAbove_succ (0 : Fin 1) x.val
+  simpa only [Fin.succ_zero_eq_one] using h.trans (by
+    ext i
+    cases i using Fin.cases with
+    | zero => simp
+    | succ j => exact j.elim0)
 
 /-- The affine symmetry of `Δᵖ` cycling the vertices `0, …, j` reads the face of `Δᵖ⁺¹` opposite
 the origin in the coordinates obtained by deleting the `j`-th one. -/

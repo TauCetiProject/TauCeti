@@ -33,6 +33,7 @@ These are the scalar computations behind Stokes' theorem on the standard simplex
 
 ## Main results
 
+* `TauCeti.volume_real_fullSimplex_zero`: `Δ⁰` has real volume `1`.
 * `TauCeti.setIntegral_fullSimplex_eq_iterated`: the integral over `Δᵖ⁺¹` of a function integrable
   on it, as an iterated integral along the `j`-th coordinate and then over `Δᵖ`.
 * `ContDiffOn.integral_fderivWithin_fullSimplex`: the integral over `Δᵖ⁺¹` of the `j`-th partial
@@ -47,6 +48,12 @@ public section
 open MeasureTheory Set WithLp
 
 namespace TauCeti
+
+/-- The `0`-dimensional standard simplex is a single point of real volume `1`. -/
+@[simp]
+theorem volume_real_fullSimplex_zero : volume.real (fullSimplex 0) = 1 := by
+  rw [fullSimplex_zero_eq_univ, volume_euclideanSpace_eq_dirac]
+  simp
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
 
