@@ -37,7 +37,8 @@ It also records a perturbation bound for quotients, `|x / a - y / b| ≤ 2 (e + 
 `(1 - δ) b ≤ a ≤ b`, `δ ≤ 1 / 2` and `|x - y| ≤ e`, the comparison
 `2 t / (t² + ρ²) ≤ (2 t / r) (2 r / (r² + ρ²))` for `0 < t`, `0 < r ≤ ρ`, which compares the
 profiles `2 t / (t² + ρ²)` of two scales `t` and `r` outside the radius `r`, and the clearing
-bound `a * b ≤ 1` from `a ≤ (1 + b)⁻¹` for `0 ≤ b`.
+bound `a * b ≤ 1` from `a ≤ (1 + b)⁻¹` for `0 ≤ b`, and an error-budget bound: if `K` dominates
+`a + b + 1` then `ε / (2 K) * a + b * (ε / (2 K)) ≤ ε / 2`.
 
 Finally, it records a polynomial barrier bound: if `r ≤ M`, `0 < ε`, `1 ≤ c` and `n` is larger
 than `M / ε`, then the barrier `ε * (c * (1 + n ^ 2))` exceeds `r`.
@@ -59,6 +60,8 @@ than `M / ε`, then the barrier `ε * (c * (1 + n ^ 2))` exceeds `r`.
 * `TauCeti.mul_le_one_of_le_inv_one_add`: `a * b ≤ 1` for `0 ≤ b` and `a ≤ (1 + b)⁻¹`.
 * `TauCeti.sub_mul_mul_one_add_sq_neg_of_lt`: the strict inequality
   `r - ε * (c * (1 + n ^ 2)) < 0` for `r ≤ M`, `0 < ε`, `1 ≤ c` and `M / ε < n`.
+* `TauCeti.div_mul_add_mul_div_le_half`: `ε / (2 K) * a + b * (ε / (2 K)) ≤ ε / 2` when
+  `a + b + 1 ≤ K`.
 -/
 
 public section
@@ -184,6 +187,16 @@ theorem sub_mul_mul_one_add_sq_neg_of_lt {α : Type*} [Field α] [LinearOrder α
   have h4 : ε * (1 + n ^ 2) ≤ ε * (c * (1 + n ^ 2)) :=
     mul_le_mul_of_nonneg_left (le_mul_of_one_le_left (by positivity) hc) hε.le
   nlinarith [mul_le_mul_of_nonneg_left h3 hε.le]
+
+/-- The error budget: if `K` dominates `a + b + 1`, the two error terms `ε / (2 K) * a` and
+`b * (ε / (2 K))` sum to at most `ε / 2`. -/
+theorem div_mul_add_mul_div_le_half {α : Type*} [Field α] [LinearOrder α]
+    [IsStrictOrderedRing α] {a b K ε : α} (hε : 0 < ε) (hK0 : 0 < K) (hK : a + b + 1 ≤ K) :
+    ε / (2 * K) * a + b * (ε / (2 * K)) ≤ ε / 2 := by
+  calc _ = ε / (2 * K) * (a + b) := by ring
+    _ ≤ ε / (2 * K) * K :=
+        mul_le_mul_of_nonneg_left (by linarith) (by positivity)
+    _ = ε / 2 := by field_simp
 
 end TauCeti
 
