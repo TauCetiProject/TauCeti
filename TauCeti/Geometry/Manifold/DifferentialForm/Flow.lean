@@ -134,7 +134,8 @@ theorem hasDerivAt_mpullback_of_eq_id {ψ : ℝ → M → M} {V : (x : M) → Ta
     (by rw [hGt]; exact hvel'.self_of_nhds)
     hspatial
   refine (hflat.congr_of_eventuallyEq
-    (RoughForm.eventuallyEq_mpullback_compContinuousLinearMap α hid hsmooth)).congr_deriv ?_
+    (RoughForm.eventuallyEq_mpullback_compContinuousLinearMap α hid.self_of_nhds
+      (hsmooth.of_le (by norm_num)))).congr_deriv ?_
   rw [deriv_const, zero_add, hGt, hGt_nhds.fderiv_eq, fderiv_id, mlieDerivForm_def,
     ← hW, I.range_eq_univ]
   -- `W` takes values in the tangent spaces of the model, which are `E` only up to unfolding.

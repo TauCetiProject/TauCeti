@@ -120,12 +120,12 @@ theorem mpullback_eq_compContinuousLinearMap (ω : RoughForm I' M' F k) {f : M �
   -- The two sides differ only by unfolding `Function.comp`.
   rfl
 
-/-- Near time `t`, the pullback of a form at `y` along a family of maps `ψᵤ` which is the identity
-near `y` at time `t` and is jointly `C²` at `(t, y)` is the flat pullback of its chart expression
-along the family read in the chart at `y`. -/
-theorem eventuallyEq_mpullback_compContinuousLinearMap [I.Boundaryless] [IsManifold I 2 M]
-    (α : RoughForm I M F k) {ψ : ℝ → M → M} {t : ℝ} {y : M} (hid : ∀ᶠ x in 𝓝 y, ψ t x = x)
-    (hsmooth : ContMDiffAt (𝓘(ℝ, ℝ).prod I) I 2 (fun p : ℝ × M ↦ ψ p.1 p.2) (t, y)) :
+/-- Near time `t`, the pullback of a form at `y` along a family of maps `ψᵤ` which fixes `y` at
+time `t` and is jointly `C¹` at `(t, y)` is the flat pullback of its chart expression along the
+family read in the chart at `y`. -/
+theorem eventuallyEq_mpullback_compContinuousLinearMap [I.Boundaryless]
+    (α : RoughForm I M F k) {ψ : ℝ → M → M} {t : ℝ} {y : M} (hid : ψ t y = y)
+    (hsmooth : ContMDiffAt (𝓘(ℝ, ℝ).prod I) I 1 (fun p : ℝ × M ↦ ψ p.1 p.2) (t, y)) :
     (fun u ↦ mpullback I I (ψ u) α y) =ᶠ[𝓝 t] fun u ↦
       (α.inChartAt y (extChartAt I y (ψ u ((extChartAt I y).symm (extChartAt I y y))))
         ).compContinuousLinearMap
@@ -142,7 +142,7 @@ theorem eventuallyEq_mpullback_compContinuousLinearMap [I.Boundaryless] [IsManif
       (continuous_id.prodMk continuous_const).continuousAt
   have hsrc : ∀ᶠ u in 𝓝 t, ψ u y ∈ (extChartAt I y).source :=
     hcont.preimage_mem_nhds (by
-      rw [hid.self_of_nhds]
+      rw [hid]
       exact (isOpen_extChartAt_source y).mem_nhds (mem_extChartAt_source y))
   filter_upwards [hsrc, hψ] with u hu hψu
   rw [extChartAt_to_inv, RoughForm.mpullback_eq_compContinuousLinearMap α y hψu hu,
