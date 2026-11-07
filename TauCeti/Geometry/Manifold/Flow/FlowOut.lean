@@ -51,39 +51,39 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M]
   [BoundarylessManifold I M] {v : (x : M) → TangentSpace I x}
   {E' H' S : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
   {J : ModelWithCorners ℝ E' H'} [TopologicalSpace S] [ChartedSpace H' S]
-  (hc : IsCompleteVectorField v) (hv : ContMDiff I I.tangent ∞ (T% v))
+  (hc : IsCompleteVectorField v)
   {ι : S → M}
 
-/-- **The differential of the flow-out.** For a smooth complete vector field `v` with flow `ψ` and
+/-- **The differential of the flow-out.** For a complete `C¹` vector field `v` with flow `ψ` and
 a map `ι : S → M` differentiable at `s`, the map `(t, s) ↦ ψₜ (ι s)` has differential
 `(a, w) ↦ dψₜ (a v (ι s) + dι w)` at `(t, s)`. -/
-theorem mfderiv_globalFlow_comp_apply (p : ℝ × S) (hι : MDifferentiableAt J I ι p.2) (a : ℝ)
-    (w : TangentSpace J p.2) :
-    mfderiv (𝓘(ℝ).prod J) I (fun p : ℝ × S ↦ globalFlow v (hv.of_le (by simp)) hc p.1 (ι p.2))
+theorem mfderiv_globalFlow_comp_apply [IsManifold I 1 M] (hv : ContMDiff I I.tangent 1 (T% v))
+    (p : ℝ × S) (hι : MDifferentiableAt J I ι p.2) (a : ℝ) (w : TangentSpace J p.2) :
+    mfderiv (𝓘(ℝ).prod J) I (fun p : ℝ × S ↦ globalFlow v hv hc p.1 (ι p.2))
         p ((Manifold.tangentSpaceProdEquiv p).symm (a, w)) =
-      mfderiv I I (globalFlow v (hv.of_le (by simp)) hc p.1) (ι p.2)
-        (a • v (ι p.2) + mfderiv J I ι p.2 w) := by
+      mfderiv I I (globalFlow v hv hc p.1) (ι p.2) (a • v (ι p.2) + mfderiv J I ι p.2 w) := by
   have hΦ : MDifferentiableAt (𝓘(ℝ).prod J) I
-      (fun p : ℝ × S ↦ globalFlow v (hv.of_le (by simp)) hc p.1 (ι p.2)) p :=
-    ((contMDiff_globalFlow_uncurry hc le_top hv).mdifferentiableAt (by simp)).comp p
+      (fun p : ℝ × S ↦ globalFlow v hv hc p.1 (ι p.2)) p :=
+    ((contMDiff_globalFlow_uncurry hc le_rfl hv).mdifferentiableAt one_ne_zero).comp p
       (mdifferentiableAt_fst.prodMk (hι.comp p mdifferentiableAt_snd))
   rw [mfderiv_prod_eq_add_apply hΦ, map_add,
-    ContinuousLinearMap.map_smul, mfderiv_globalFlow_apply_self (hv.of_le (by simp)) hc,
+    ContinuousLinearMap.map_smul, mfderiv_globalFlow_apply_self hv hc,
     Manifold.tangentSpaceProdEquiv_symm_apply]
   dsimp only
   congr 1
   · -- The orbit of `ι s` has velocity `v`, so its differential sends `a` to `a • v`.
-    rw [(isMIntegralCurve_globalFlow (hv.of_le (by simp)) hc (ι p.2) p.1).mfderiv]
+    rw [(isMIntegralCurve_globalFlow hv hc (ι p.2) p.1).mfderiv]
     -- `smulRight 1 v` sends `a` to `a • v`, reading `TangentSpace 𝓘(ℝ) t` as `ℝ`.
     rfl
   · exact mfderiv_comp_apply (I' := I) p.2
-      ((contMDiff_globalFlow_apply hc le_top hv p.1).mdifferentiableAt (by simp)) hι w
+      ((contMDiff_globalFlow_apply hc le_rfl hv p.1).mdifferentiableAt one_ne_zero) hι w
 
-variable [IsManifold J ∞ S] [BoundarylessManifold J S]
+variable [IsManifold I ∞ M] (hv : ContMDiff I I.tangent ∞ (T% v))
+  [IsManifold J ∞ S] [BoundarylessManifold J S]
 
 /-- **The flow-out theorem.** Let `v` be a smooth complete vector field on a finite-dimensional
 boundaryless manifold `M`, with flow `ψ`, and let `ι : S → M` be a smooth immersion of a
@@ -118,7 +118,8 @@ theorem isLocalDiffeomorph_globalFlow_comp (hι : ContMDiff J I ∞ ι)
   have hinj : Injective L := by
     refine (injective_iff_map_eq_zero L).2 fun x hx ↦ ?_
     obtain ⟨a, w⟩ := x
-    have hL := mfderiv_globalFlow_comp_apply hc hv p (hι.mdifferentiableAt (by simp)) a w
+    have hL := mfderiv_globalFlow_comp_apply hc (hv.of_le (by simp)) p
+      (hι.mdifferentiableAt (by simp)) a w
     rw [Manifold.tangentSpaceProdEquiv_symm_apply] at hL
     have h0 : a • v (ι p.2) + mfderiv J I ι p.2 w = 0 :=
       hψinj (hL.symm.trans (hx.trans (map_zero _).symm))

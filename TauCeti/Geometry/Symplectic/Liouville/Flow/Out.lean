@@ -98,10 +98,8 @@ theorem IsLiouvilleCompletion.bijOn_flowOf_comp (h : IsLiouvilleCompletion ω α
     BijOn (fun p : ℝ × S ↦ flowOf Z p.1 (ι p.2)) (Ioi 0 ×ˢ univ) Wᶜ := by
   -- `(t, s) ↦ (t, ι s)` is a bijection onto `(0, ∞) × ∂W`; compose with the flow map.
   have hmap : BijOn (Prod.map id ι) (Ioi (0 : ℝ) ×ˢ (univ : Set S)) (Ioi 0 ×ˢ frontier W) := by
-    refine ⟨fun p hp ↦ ⟨hp.1, hιW ▸ mem_range_self _⟩,
-      (injective_id.prodMap hιinj).injOn, fun q hq ↦ ?_⟩
-    obtain ⟨s, hs⟩ : q.2 ∈ range ι := hιW ▸ hq.2
-    exact ⟨(q.1, s), ⟨hq.1, mem_univ _⟩, Prod.ext rfl hs⟩
+    have := (bijOn_id (Ioi (0 : ℝ))).prodMap (hιinj.bijOn_image (s := univ))
+    rwa [image_univ, hιW] at this
   exact (h.bijOn_flowOf_Ioi_prod_frontier hZ).comp hmap
 
 /-! ### Smoothness of the flow-out -/
