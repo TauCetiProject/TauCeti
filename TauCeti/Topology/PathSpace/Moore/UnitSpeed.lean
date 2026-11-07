@@ -9,7 +9,7 @@ public import Mathlib.Analysis.ConstantSpeed
 public import Mathlib.Analysis.Normed.Group.Quotient
 public import Mathlib.MeasureTheory.Integral.CircleIntegral
 public import Mathlib.NumberTheory.Zsqrtd.GaussianInt
-public import TauCeti.Topology.PathSpace.Moore.FreeLoop
+public import TauCeti.Topology.PathSpace.Moore.Comparison.FreeLoop
 import TauCeti.Analysis.Calculus.MetricVariation
 import TauCeti.Analysis.Normed.Group.Quotient
 import TauCeti.Topology.EMetricSpace.BoundedVariation
@@ -18,16 +18,18 @@ import TauCeti.Topology.EMetricSpace.BoundedVariation
 # Unit-speed Moore loops do not form a closed subspace
 
 The duration of a Moore loop is continuous on the free Moore loop space `𝓛X`, but the loops
-parametrized at unit speed, the ones whose duration is their geometric length, do not form a
-closed subspace of `𝓛X`, even in the flat torus. This file proves this with the loops
+parametrized at unit speed, the ones whose variation on every parameter subinterval `[x, y]` of
+`[0, duration]` is `y - x` (so that, in particular, their duration is their geometric length), do
+not form a closed subspace of `𝓛X`, even in the flat torus. This file proves this with the loops
 
 `γₙ(t) = i (1 - e^{2π i n t}) / (2π n) = (sin 2πnt, 1 - cos 2πnt) / (2πn)`
 
 of duration `1` (`TauCeti.unitSpeedCircle`): each runs `n` times, at unit speed, around a circle
 of radius `1 / (2πn)` through the origin. As `n → ∞` they converge uniformly to the constant loop
 at the origin of duration `1`, which is not parametrized at unit speed: its unit-speed
-representative is the constant loop of duration `0`. So statements about Moore loop spaces cannot
-use the subspace of unit-speed loops, nor filter by geometric length through it.
+representative is the constant loop of duration `0`. So a limit in `𝓛X` of unit-speed loops need
+not be parametrized at unit speed, and constructions that require the subspace of unit-speed loops
+to be closed in `𝓛X` are unavailable.
 
 The flat torus is modelled as a quotient `ℂ ⧸ S`, with the quotient metric, by an additive
 subgroup `S` whose nonzero elements all have norm at least some `δ > 0`; this covers the square
@@ -193,23 +195,21 @@ private theorem eventually_two_le_pi_mul_mul {δ : ℝ} (hδ : 0 < δ) :
 variable (S) in
 /-- The loop `γₙ(t) = i (1 - e^{2π i n t}) / (2π n)`, `t ∈ [0, 1]`, as a free Moore loop of
 duration `1` in `ℂ ⧸ S`. -/
-def unitSpeedCircleLoop (n : ℕ) : MooreFreeLoopSpace (ℂ ⧸ S) where
-  toMoorePath :=
-    { toFun t := (unitSpeedCircle n (min (t : ℝ) 1) : ℂ ⧸ S)
-      continuous_toFun := by fun_prop
-      length := 1
-      apply_of_length_le' t ht := by
-        rw [min_eq_right (by exact_mod_cast ht), NNReal.coe_one, min_self] }
-  target_eq_source := by simp [MoorePath.target_def, MoorePath.source_def]
+def unitSpeedCircleLoop (n : ℕ) : MooreFreeLoopSpace (ℂ ⧸ S) :=
+  MooreFreeLoopSpace.ofClosedUnitPath
+    ⟨⟨fun t : unitInterval ↦ (unitSpeedCircle n t : ℂ ⧸ S), by fun_prop⟩, by simp⟩
 
 @[simp]
 theorem unitSpeedCircleLoop_apply (n : ℕ) (t : ℝ≥0) :
-    (unitSpeedCircleLoop S n).toMoorePath t = (unitSpeedCircle n (min (t : ℝ) 1) : ℂ ⧸ S) :=
-  (rfl)
+    (unitSpeedCircleLoop S n).toMoorePath t = (unitSpeedCircle n (min (t : ℝ) 1) : ℂ ⧸ S) := by
+  rw [unitSpeedCircleLoop, MooreFreeLoopSpace.toMoorePath_ofClosedUnitPath,
+    MoorePath.ofUnitPath_apply, ContinuousMap.coe_mk, coe_projIcc, max_eq_right (by positivity),
+    min_comm]
 
 @[simp]
-theorem length_unitSpeedCircleLoop (n : ℕ) : (unitSpeedCircleLoop S n).length = 1 :=
-  (MooreFreeLoopSpace.length_toMoorePath _).symm
+theorem length_unitSpeedCircleLoop (n : ℕ) : (unitSpeedCircleLoop S n).length = 1 := by
+  rw [← MooreFreeLoopSpace.length_toMoorePath, unitSpeedCircleLoop,
+    MooreFreeLoopSpace.toMoorePath_ofClosedUnitPath, MoorePath.length_ofUnitPath]
 
 @[simp]
 theorem basepoint_unitSpeedCircleLoop (n : ℕ) : (unitSpeedCircleLoop S n).basepoint = 0 := by
@@ -243,7 +243,8 @@ theorem tendsto_unitSpeedCircleLoop :
     MoorePath.isEmbedding_length_toContinuousMap.tendsto_nhds_iff]
   refine Tendsto.prodMk_nhds ?_ (ContinuousMap.tendsto_of_tendstoLocallyUniformly
     (TendstoUniformly.tendstoLocallyUniformly ?_))
-  · simp only [Function.comp_apply, MoorePath.length_constOfLength]
+  · simp only [Function.comp_apply, MoorePath.length_constOfLength,
+      MooreFreeLoopSpace.length_toMoorePath, length_unitSpeedCircleLoop]
     exact tendsto_const_nhds
   rw [Metric.tendstoUniformly_iff]
   intro ε hε
