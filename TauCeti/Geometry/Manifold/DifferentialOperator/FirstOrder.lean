@@ -51,7 +51,7 @@ def firstOrderOperatorsEquivSmoothVectorFieldProd :
     firstOrderOperators ℝ C^∞⟮I, M; ℝ⟯ ≃ₗ[ℝ]
       Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯ × C^∞⟮I, M; ℝ⟯ :=
   ((firstOrderOperatorsEquivDerivationProd ℝ C^∞⟮I, M; ℝ⟯).restrictScalars ℝ).trans
-    (derivationEquivSmoothVectorField.prodCongr (LinearEquiv.refl ℝ _))
+    ((derivationEquivSmoothVectorField.restrictScalars ℝ).prodCongr (LinearEquiv.refl ℝ _))
 
 /-- The multiplication coefficient of a first-order scalar operator is its value on one. -/
 @[simp]
