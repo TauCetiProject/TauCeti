@@ -39,6 +39,9 @@ power.
 A natural power `b ^ n` with `1 ≤ b` and `n ≤ δ r` is at most `(b ^ δ) ^ r`, which turns a degree
 bound with a real factor `δ` into a bound by an `r`-th power.
 
+A power `x ^ y` of a nonnegative real with exponent `0 ≤ y ≤ 1` is at most `1 + x`, which bounds
+the fractional powers `T ^ (α / 2)` and `√T` of a time horizon uniformly by `1 + T`.
+
 A positive power `x ↦ x ^ a` maps the open unit interval onto itself, with inverse `y ↦ y ^ a⁻¹`.
 This is the image needed when a change of variables `y = x ^ a` is performed on `(0, 1)`.
 
@@ -75,7 +78,9 @@ with the corresponding integral of `q`-th powers.
 * `Real.rpow_one_sub_inv_natCast_pow`: `(x ^ (1 - 1/n)) ^ n = x ^ (n - 1)` for `0 ≤ x` and
   `n ≠ 0`.
 * `Real.pow_le_rpow_pow_of_le_mul`: `b ^ n ≤ (b ^ δ) ^ r` when `1 ≤ b` and `n ≤ δ r`.
+* `Real.rpow_le_one_add`: `x ^ y ≤ 1 + x` for `0 ≤ x` and `0 ≤ y ≤ 1`.
 * `Real.image_rpow_Ioo_zero_one`: a positive power maps the open unit interval onto itself.
+* `Real.tendsto_pow_div_mul_sub_pow_atTop`: `D ^ n / (n ω (D ^ n - ρ ^ n)) → (n ω)⁻¹` as `D → ∞`.
 * `Real.le_one_of_forall_pow_le_mul_rpow`: `r ≤ 1` when `r ^ n ≤ C * (1 + n) ^ s` for all `n`.
 * `TauCeti.exp_neg_mul_abs_isLittleO_abs_rpow_cocompact`: a positive-rate exponential beats every
   real power at both ends of the real line.
@@ -156,6 +161,13 @@ theorem pow_le_rpow_pow_of_le_mul {b δ : ℝ} (hb : 1 ≤ b) {n r : ℕ} (hn : 
   rw [← rpow_mul_natCast (by linarith), ← rpow_natCast]
   exact rpow_le_rpow_of_exponent_le hb hn
 
+/-- A power of a nonnegative real with exponent in `[0, 1]` is at most `1 + x`: `x ^ y ≤ 1` for
+`x ≤ 1` and `x ^ y ≤ x` for `1 ≤ x`. -/
+theorem rpow_le_one_add {x y : ℝ} (hx : 0 ≤ x) (hy₀ : 0 ≤ y) (hy₁ : y ≤ 1) : x ^ y ≤ 1 + x := by
+  rcases le_total x 1 with h | h
+  · linarith [rpow_le_one hx h hy₀]
+  · linarith [rpow_le_self_of_one_le h hy₁]
+
 /-- A positive power `x ↦ x ^ a` maps the open unit interval onto itself. -/
 theorem image_rpow_Ioo_zero_one {a : ℝ} (ha : 0 < a) :
     (fun x : ℝ ↦ x ^ a) '' Set.Ioo 0 1 = Set.Ioo 0 1 := by
@@ -202,6 +214,26 @@ lemma mul_rpow_div_mul_le_two_mul {α C₀ N R r X C : ℝ} (hC₀ : 0 ≤ C₀)
     C₀ * (r / R) ^ α * X ≤ 2 * (C * r ^ α) :=
   calc _ ≤ C₀ * (r / R) ^ α * N := by gcongr
     _ = 2 * (C * r ^ α) := by rw [hC, Real.div_rpow hr.le hR.le]; field_simp
+
+/-- The limit of the ratio `D ^ n / (n ω (D ^ n - ρ ^ n))` as `D → ∞` is `(n ω)⁻¹`, for every real
+`ρ` and `n ≠ 0`. -/
+theorem tendsto_pow_div_mul_sub_pow_atTop {n : ℕ} {ω : ℝ} (hn0 : n ≠ 0) (ρ : ℝ) :
+    Tendsto (fun D : ℝ => D ^ n / (n * ω * (D ^ n - ρ ^ n))) atTop (𝓝 ((n * ω)⁻¹)) := by
+  have h₁ : Tendsto (fun D : ℝ => (ρ / D) ^ n) atTop (𝓝 0) := by
+    have h := ((tendsto_const_nhds (x := ρ)).div_atTop tendsto_id).pow n
+    rwa [zero_pow hn0] at h
+  have h₂ := (tendsto_const_nhds (x := (n * ω)⁻¹)).mul
+    ((tendsto_const_nhds (x := (1 : ℝ)).sub h₁).inv₀ (by norm_num))
+  rw [sub_zero, inv_one, mul_one] at h₂
+  refine h₂.congr' ?_
+  filter_upwards [eventually_gt_atTop |ρ|] with D hD
+  have hD0 : 0 < D := (abs_nonneg ρ).trans_lt hD
+  have hDρ : D ^ n - ρ ^ n ≠ 0 := by
+    have : ρ ^ n < D ^ n :=
+      (le_abs_self _).trans_lt (by rw [abs_pow]; exact pow_lt_pow_left₀ hD (abs_nonneg ρ) hn0)
+    exact (sub_pos.2 this).ne'
+  rw [div_pow, one_sub_div (pow_pos hD0 n).ne', inv_div]
+  field_simp
 
 end Real
 
