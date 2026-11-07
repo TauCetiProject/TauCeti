@@ -155,7 +155,12 @@ theorem exists_refinement_energy_add_lt (P : Finpartition (univ : Finset V)) (h�
   set R := atomise univ (I.image X ∪ I.image Y)
   refine ⟨P ⊓ R, inf_le_left, ?_, ?_⟩
   · -- There are at most `2 * #P.parts ^ 2` witnesses to cut along.
-    exact P.card_parts_inf_atomise_le_of_card_le _ (S.card_image_union_irregularPairs_le P X Y)
+    calc #(P ⊓ R).parts ≤ #P.parts * 2 ^ #(I.image X ∪ I.image Y) :=
+          P.card_parts_inf_atomise_le _
+      _ ≤ #P.parts * 2 ^ (2 * #P.parts ^ 2) :=
+          Nat.mul_le_mul_left _
+            (Nat.pow_le_pow_right two_pos (S.card_image_union_irregularPairs_le P X Y))
+      _ = #P.parts * 4 ^ #P.parts ^ 2 := by rw [pow_mul]; norm_num
   · -- Every witness is a union of parts of the refinement.
     have hres {Z : Finset V} (hZ : Z ∈ I.image X ∪ I.image Y) :
         ∀ C ∈ (P ⊓ R).parts, C ⊆ Z ∨ Disjoint C Z :=
