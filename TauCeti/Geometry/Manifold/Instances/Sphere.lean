@@ -16,11 +16,14 @@ import Mathlib.Analysis.Calculus.Deriv.Linear
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Geometry.Manifold.Algebra.SMul
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
+import TauCeti.Geometry.Manifold.Immersion.Differential
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
 import Mathlib.Topology.MetricSpace.HausdorffDimension
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Analysis.Normed.Group.BallSphere
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
@@ -63,6 +66,12 @@ allowing the entire path or loop to be read in one stereographic chart.
   stereographic charts of its unit sphere take it.
 * `TauCeti.injective_fderiv_stereoInvFunAux_comp_coe`: the inverse of stereographic projection
   from `v`, as a map from `(ℝ ∙ v)ᗮ` to the ambient space, has injective derivative.
+* `TauCeti.fact_finrank_orthogonal_span_singleton_coe_sphere`: the orthogonal complement `v^⊥` of
+  a point `v` of `Sⁿ⁺¹` has dimension `n + 1`, so its unit sphere, the sphere of unit tangent
+  vectors at `v`, is an `n`-dimensional manifold.
+* `LinearIndependent.finCons_mvfderiv_coe_sphere`: a point `u` of the sphere followed by the image
+  in the ambient space of a linearly independent family of tangent vectors at `u` is linearly
+  independent.
 * `TauCeti.chartAt_sphere`: the preferred chart at `v` is `stereographic' n (-v)`.
 * `TauCeti.extChartAt_sphere_apply_self`: the preferred extended chart at `v` sends `v` to `0`.
 * `TauCeti.isSmoothEmbedding_stereographic'_symm`: the inverse of a stereographic chart is a
@@ -88,6 +97,11 @@ allowing the entire path or loop to be read in one stereographic chart.
 * `TauCeti.toSpanSingleton_deriv_comp_circleExp`,
   `TauCeti.toSpanSingleton_deriv_chart_comp_circleExp`: the chain rule for a map of the circle read
   along `Circle.exp`, into a normed space or, through a chart, into a manifold.
+* `TauCeti.contDiffOn_chart_comp_circleExp`: a `Cⁿ` map of the circle, read in a chart of the
+  maximal atlas along `Circle.exp` on an arc, is `Cⁿ`.
+* `TauCeti.deriv_chart_comp_circleExp_eq`, `TauCeti.deriv_chart_comp_circleExp_ne_zero`: two maps
+  of the circle agreeing to first order at `exp (t i)` have the same velocity at `t` when read in a
+  chart of the maximal atlas along `Circle.exp`, and that velocity is nonzero for an immersion.
 * `TauCeti.mfderiv_eq_of_deriv_comp_circleExp_eq`: two maps of the circle into a normed space
   with the same velocity at `t` along `Circle.exp` have the same derivative at `exp (t i)`.
 * `TauCeti.deriv_comp_circleExp_ne_zero_and_range_mfderiv`: lifting a `C¹` immersed circle
@@ -164,8 +178,34 @@ theorem injective_fderiv_stereoInvFunAux_comp_coe {v : E} (hv : ‖v‖ = 1) (w 
 
 end Stereographic
 
+section OrthogonalComplement
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
+  [Fact (finrank ℝ E = n + 1 + 1)]
+
+/-- The orthogonal complement of a point of the unit sphere of an `(n + 2)`-dimensional space has
+dimension `n + 1`, so its own unit sphere is an `n`-dimensional manifold. Through the derivative
+of the inclusion, it is the sphere of unit tangent vectors at the point
+(`range_mvfderiv_subtypeVal`). -/
+instance fact_finrank_orthogonal_span_singleton_coe_sphere (p : sphere (0 : E) 1) :
+    Fact (finrank ℝ (ℝ ∙ (p : E))ᗮ = n + 1) :=
+  ⟨Submodule.finrank_orthogonal_span_singleton (ne_zero_of_mem_unit_sphere p)⟩
+
+end OrthogonalComplement
+
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 1)]
+
+/-- A point of the sphere followed by the image of a linearly independent family of tangent
+vectors at it is linearly independent in `E`: the derivative of the inclusion is injective with
+range `u^⊥`, which does not contain `u`. -/
+theorem _root_.LinearIndependent.finCons_mvfderiv_coe_sphere (u : sphere (0 : E) 1)
+    {v : Fin n → TangentSpace (𝓡 n) u} (hv : LinearIndependent ℝ v) :
+    LinearIndependent ℝ
+      (Fin.cons (u : E) fun i ↦ mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) u (v i)) :=
+  LinearIndependent.finCons_orthogonal_span_singleton (ne_zero_of_mem_unit_sphere u)
+    (hv.map' _ (LinearMap.ker_eq_bot_of_injective (injective_mvfderiv_subtypeVal_sphere u)))
+    fun _ ↦ range_mvfderiv_subtypeVal (n := n) u ▸ LinearMap.mem_range_self _ _
 
 /-- The preferred chart of the sphere at `v` is the stereographic projection from `-v`. -/
 theorem chartAt_sphere (v : sphere (0 : E) 1) :
@@ -505,6 +545,58 @@ theorem toSpanSingleton_deriv_chart_comp_circleExp {M : Type*} [TopologicalSpace
   have h := toSpanSingleton_deriv_comp_circleExp (f := φ ∘ f) (t := t) (hφd.comp _ hf)
   rw [mfderiv_comp _ hφd hf] at h
   exact h
+
+section ChartAlongCircleExp
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {M : Type*} [TopologicalSpace M]
+  [ChartedSpace E M] {n : WithTop ℕ∞}
+
+/-- A `Cⁿ` map of the circle, read in a chart `φ` of the maximal atlas along `Circle.exp` on an arc
+mapped into `φ.source`, is `Cⁿ`. -/
+theorem contDiffOn_chart_comp_circleExp {f : Circle → M} {r : ℝ} {φ : OpenPartialHomeomorph M E}
+    (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) n M) (hf : ContMDiff (𝓡 1) 𝓘(ℝ, E) n f)
+    (hfφ : ∀ t, |t| < r → f (Circle.exp t) ∈ φ.source) :
+    ContDiffOn ℝ n (fun t => φ (f (Circle.exp t))) (Ioo (-r) r) :=
+  contMDiffOn_iff_contDiffOn.1 ((contMDiffOn_of_mem_maximalAtlas hφ).comp
+    (hf.comp contMDiff_circleExp).contMDiffOn fun t ht => hfφ t (abs_lt.2 ht))
+
+/-- If two maps `K` and `L` of the circle, differentiable at `Circle.exp t`, agree to first order
+there, then read in a chart `φ` of the maximal atlas around `K (Circle.exp t)` along `Circle.exp`
+they have the same velocity at `t`. -/
+theorem deriv_chart_comp_circleExp_eq (hn : n ≠ 0) {K L : Circle → M} {t : ℝ}
+    {φ : OpenPartialHomeomorph M E} (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) n M)
+    (hK₀ : K (Circle.exp t) ∈ φ.source) (hK : MDifferentiableAt (𝓡 1) 𝓘(ℝ, E) K (Circle.exp t))
+    (hL : MDifferentiableAt (𝓡 1) 𝓘(ℝ, E) L (Circle.exp t))
+    (h₀ : K (Circle.exp t) = L (Circle.exp t))
+    (h₁ : mfderiv (𝓡 1) 𝓘(ℝ, E) K (Circle.exp t) = mfderiv (𝓡 1) 𝓘(ℝ, E) L (Circle.exp t)) :
+    deriv (fun s => φ (K (Circle.exp s))) t = deriv (fun s => φ (L (Circle.exp s))) t := by
+  have hvK := toSpanSingleton_deriv_chart_comp_circleExp hn hK hφ hK₀
+  have hvL := toSpanSingleton_deriv_chart_comp_circleExp hn hL hφ (h₀ ▸ hK₀)
+  rw [← h₁, ← h₀] at hvL
+  simpa using congrArg (fun T => T 1) (hvK.trans hvL.symm)
+
+/-- A map of the circle which is an immersion at `Circle.exp t`, read in a chart `φ` of the maximal
+atlas around its value there along `Circle.exp`, has nonzero velocity at `t`. -/
+theorem deriv_chart_comp_circleExp_ne_zero (hn : n ≠ 0) {f : Circle → M} {t : ℝ}
+    {φ : OpenPartialHomeomorph M E} (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) n M)
+    (hft : f (Circle.exp t) ∈ φ.source) (hf : IsImmersionAt (𝓡 1) 𝓘(ℝ, E) n f (Circle.exp t)) :
+    deriv (fun s => φ (f (Circle.exp s))) t ≠ 0 := fun h0 => by
+  have hv := toSpanSingleton_deriv_chart_comp_circleExp hn
+    (hf.contMDiffAt.mdifferentiableAt hn) hφ hft
+  have h1 : mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ (f (Circle.exp t))
+      (mfderiv (𝓡 1) 𝓘(ℝ, E) f (Circle.exp t) (mfderiv 𝓘(ℝ, ℝ) (𝓡 1) Circle.exp t (1 : ℝ))) =
+        0 := by
+    have h := (congrArg (fun T => T 1) hv).symm
+    simp only [ContinuousLinearMap.toSpanSingleton_apply, one_smul] at h
+    exact h.trans h0
+  have hφi := (φ.isLocalDiffeomorphAt_of_mem_maximalAtlas hφ hft).isDiffImmersionAt
+    hn |>.mfderiv_injective
+  have hfi := hf.mfderiv_injective hn
+  exact one_ne_zero (α := ℝ) (injective_mfderiv_circleExp t
+    ((hfi ((hφi (h1.trans (map_zero _).symm)).trans (map_zero _).symm)).trans
+      (map_zero _).symm))
+
+end ChartAlongCircleExp
 
 /-- For a `C¹` immersion `f` of the circle, the derivative of `t ↦ f (exp (t i))` is nonzero and
 spans the range of the derivative of `f`. -/

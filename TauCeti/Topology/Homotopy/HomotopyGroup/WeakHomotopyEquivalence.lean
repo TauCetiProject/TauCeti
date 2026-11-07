@@ -124,14 +124,7 @@ theorem of_homotopic {f₀ f₁ : C(X, Y)} (hf : f₀.IsWeakHomotopyEquivalence)
     obtain ⟨x, hx⟩ := hf.exists_joined y
     exact ⟨x, (Joined.symm ⟨h.some.evalAt x⟩).trans hx⟩
   bijective n x := by
-    -- The two induced maps differ by transport along the trace of the homotopy at `x`.
-    have hfun : HomotopyGroup.map (N := Fin n) f₁ (rfl : f₁ x = f₁ x) =
-        TauCeti.homotopyGroupEquivOfPath ((h.some.evalAt x).cast rfl rfl) ∘
-          HomotopyGroup.map f₀ rfl := by
-      funext a
-      rw [Function.comp_apply, TauCeti.homotopyGroupEquivOfPath_apply]
-      exact (TauCeti.homotopyGroupTransport_map h.some rfl rfl a).symm
-    rw [hfun]
+    rw [HomotopyGroup.map_eq_homotopyGroupEquivOfPath_comp_of_homotopy h.some]
     exact (Equiv.bijective _).comp (hf.bijective n x)
 
 /-- The identity map is a weak homotopy equivalence. -/
