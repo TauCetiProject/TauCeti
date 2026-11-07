@@ -13,6 +13,7 @@ import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import Mathlib.Analysis.Complex.RemovableSingularity
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
+import TauCeti.Analysis.Complex.HasPrimitives
 
 /-!
 # Quadratic growth of Schwarz--Christoffel primitives and ends of opening `2π`
@@ -134,7 +135,8 @@ private theorem exists_differentiableOn_eq_schwarzChristoffelPrimitive_sub_comp_
       norm_num
       field_simp
       ring
-  obtain ⟨H, hH, heq⟩ := exists_hasDerivAt_eqOn_ball_inter_upperHalfPlane hD₃.neg hderiv
+  obtain ⟨H, hH, heq⟩ :=
+    hD₃.neg.exists_hasDerivAt_eqOn_ball_inter (convex_halfSpace_im_gt 0) hderiv
   refine ⟨H, r, hr, fun w hw => (hH w hw).differentiableAt.differentiableWithinAt, ?_⟩
   intro z hz hzr
   simpa using (heq ⟨by simpa [mem_ball_zero_iff] using hzr, im_neg_inv_pos.mpr hz⟩).symm

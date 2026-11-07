@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.AffineSpace.FiniteDimensional
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Primitive
 import Mathlib.Analysis.Complex.Convex
+import TauCeti.Analysis.Complex.HasPrimitives
 
 /-!
 # Straight boundary arcs of the Schwarz--Christoffel map
@@ -376,7 +377,7 @@ theorem exists_hasDerivAt_schwarzChristoffelPrimitive_continuation
       (hUre z hz)).differentiableAt
         ((isOpen_Ioo.preimage Complex.continuous_re).mem_nhds (hUre z hz))).const_mul C
         |>.differentiableWithinAt
-  apply exists_hasDerivAt_eqOn_ball_inter_upperHalfPlane hgdiff
+  apply hgdiff.exists_hasDerivAt_eqOn_ball_inter (convex_halfSpace_im_gt 0)
   intro z hz
   have h := hasDerivAt_schwarzChristoffelPrimitive a e z₀ hz.2
   rwa [schwarzChristoffelIntegrand_eq_exp_mul_continued a e p hz.2] at h
