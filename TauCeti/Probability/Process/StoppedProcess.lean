@@ -8,25 +8,35 @@ module
 public import Mathlib.Probability.Process.Stopping
 
 /-!
-# Continuity of stopped paths
+# Right continuity of stopped paths
 
-Stopping a continuous path preserves continuity, including when the stopping time is infinite.
-This pathwise fact requires no measurability or stopping-time hypothesis and lets continuous
-local-martingale arguments retain the path regularity of their native stopped stages.
+Stopping preserves right continuity at each time, including when the stopping time is infinite.
+This pathwise fact requires no measurability or stopping-time hypothesis and lets local-martingale
+arguments retain the right continuity of their native stopped stages.
 -/
 
 public section
 
-/-- Stopping preserves continuity of each path, without any measurability assumption on the
-random time. At an infinite stopping time the path is unchanged. -/
-theorem Continuous.stoppedProcess {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι]
+open Filter Set
+open scoped Topology
+
+/-- Stopping preserves right continuity of a path at a given time, without any measurability
+assumption on the random time. At an infinite stopping time the path is unchanged. -/
+theorem ContinuousWithinAt.stoppedProcess {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι]
     [TopologicalSpace ι] [OrderTopology ι] [TopologicalSpace E]
-    {X : ι → Ω → E} {τ : Ω → WithTop ι} {ω : Ω}
-    (hX : Continuous (X · ω)) :
-    Continuous (MeasureTheory.stoppedProcess X τ · ω) := by
+    {X : ι → Ω → E} {τ : Ω → WithTop ι} {ω : Ω} {t : ι}
+    (hX : ContinuousWithinAt (X · ω) (Ioi t) t) :
+    ContinuousWithinAt (MeasureTheory.stoppedProcess X τ · ω) (Ioi t) t := by
   cases hτ : τ ω with
   | top => simpa [MeasureTheory.stoppedProcess, hτ] using hX
-  | coe t =>
-    simpa only [MeasureTheory.stoppedProcess, hτ, ← WithTop.coe_min, WithTop.untopA,
-      WithTop.untopD_coe, Function.comp_def, id_eq] using
-      hX.comp (continuous_id.min (continuous_const (y := t)))
+  | coe u =>
+    by_cases htu : t < u
+    · refine hX.congr_of_eventuallyEq ?_ ?_
+      · filter_upwards [nhdsWithin_le_nhds (eventually_lt_nhds htu)] with s hs
+        exact MeasureTheory.stoppedProcess_eq_of_le (by simpa [hτ] using hs.le)
+      · exact MeasureTheory.stoppedProcess_eq_of_le (by simpa [hτ] using htu.le)
+    · have hut : u ≤ t := le_of_not_gt htu
+      refine (continuousWithinAt_const (b := X (τ ω).untopA ω)).congr
+        (fun s hs => ?_) ?_
+      · exact MeasureTheory.stoppedProcess_eq_of_ge (by simpa [hτ] using hut.trans hs.le)
+      · exact MeasureTheory.stoppedProcess_eq_of_ge (by simpa [hτ] using hut)

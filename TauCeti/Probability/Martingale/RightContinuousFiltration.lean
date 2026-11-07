@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Martingale.Basic
-public import Mathlib.Probability.Process.LocalProperty
+public import TauCeti.Probability.Process.LocalProperty
 import TauCeti.Probability.Process.StoppedProcess
 import TauCeti.Probability.Martingale.Convergence
 import Mathlib.Topology.Order.IsLUB
@@ -19,7 +19,7 @@ remains a martingale after replacing its filtration by its right-continuous hull
 completeness nor right continuity of the original filtration is required. The exceptional
 null set for path right continuity may depend on the time.
 
-The same result holds for native local martingales with almost surely continuous paths,
+The same result holds for native local martingales with almost surely right-continuous paths,
 using exactly the original localizing sequence and its initial-time indicators. It requires
 no literal adaptation or initial integrability of the original local process.
 
@@ -33,7 +33,8 @@ alone permits passing a conditional expectation through a limit.
 ## References
 
 * I. Karatzas, S. E. Shreve, *Brownian Motion and Stochastic Calculus*, Springer, 1991,
-  Chapter 1, §2.
+  Chapter 1, §1.3 (Continuous-Time Martingales); see §1.2 (Stopping Times) for the
+  right-continuous filtration hull.
 -/
 
 public section
@@ -56,9 +57,10 @@ theorem rightCont (hM : Martingale M ℱ μ)
     Martingale M ℱ.rightCont μ := by
   refine ⟨fun t => (hM.stronglyAdapted t).mono (ℱ.le_rightCont t), ?_⟩
   intro s t hst
+  have hself := condExp_of_stronglyMeasurable (ℱ.rightCont.le s)
+    ((hM.stronglyAdapted s).mono (ℱ.le_rightCont s)) (hM.integrable s)
   rcases hst.eq_or_lt with rfl | hst
-  · exact (condExp_of_stronglyMeasurable (ℱ.rightCont.le s)
-      ((hM.stronglyAdapted s).mono (ℱ.le_rightCont s)) (hM.integrable s)).eventuallyEq
+  · exact hself.eventuallyEq
   obtain ⟨u, hanti, hu, hlim⟩ := exists_seq_strictAnti_tendsto' hst
   have hle : ℱ.rightCont s ≤ ⨅ n, ℱ (u n) := by
     refine le_iInf fun n => ?_
@@ -76,9 +78,7 @@ theorem rightCont (hM : Martingale M ℱ μ)
     exact tendsto_nhds_unique (hseq.congr hversions) (hcont.tendsto.comp hu')
   have htower := condExp_condExp_of_le hle ((iInf_le _ 0).trans (ℱ.le (u 0)))
     (f := M t) (μ := μ)
-  exact htower.symm.trans ((condExp_congr_ae heq).trans
-    (condExp_of_stronglyMeasurable (ℱ.rightCont.le s)
-      ((hM.stronglyAdapted s).mono (ℱ.le_rightCont s)) (hM.integrable s)).eventuallyEq)
+  exact htower.symm.trans ((condExp_congr_ae heq).trans hself.eventuallyEq)
 
 end MeasureTheory.Martingale
 
@@ -86,7 +86,7 @@ namespace ProbabilityTheory.Locally
 
 open MeasureTheory
 
-/-- An almost surely continuous native local martingale remains local for the
+/-- An almost surely right-continuous native local martingale remains local for the
 right-continuous hull, with its original raw localizing sequence. Literal adaptation of the
 original process and integrability of its initial value are not required. -/
 theorem martingale_rightCont {ι Ω : Type*} [LinearOrder ι] [OrderBot ι]
@@ -94,21 +94,17 @@ theorem martingale_rightCont {ι Ω : Type*} [LinearOrder ι] [OrderBot ι]
     {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [IsFiniteMeasure μ]
     {ℱ : Filtration ι mΩ} {M : ι → Ω → ℝ}
     (hM : Locally (fun Y => Martingale Y ℱ μ) ℱ M μ)
-    (hcont : ∀ᵐ ω ∂μ, Continuous (M · ω)) :
+    (hcont : ∀ᵐ ω ∂μ, ∀ t, ContinuousWithinAt (M · ω) (Ioi t) t) :
     Locally (fun Y => Martingale Y ℱ.rightCont μ) ℱ.rightCont M μ := by
-  refine ⟨hM.localSeq, ?_, fun n => (hM.stoppedProcess_localSeq n).rightCont ?_⟩
-  · exact
-      { isStoppingTime := fun n t => ℱ.le_rightCont t _
-          ((hM.isLocalizingSequence_localSeq.isStoppingTime n).measurableSet_le t)
-        tendsto_top := hM.isLocalizingSequence_localSeq.tendsto_top
-        mono := hM.isLocalizingSequence_localSeq.mono }
-  · intro s
-    filter_upwards [hcont] with ω hω
-    have hpath : Continuous
-        (fun t => {ω | ⊥ < hM.localSeq n ω}.indicator (M t) ω) := by
-      by_cases hω' : ⊥ < hM.localSeq n ω
-      · simpa [hω'] using hω
-      · simpa [hω'] using (continuous_const (y := (0 : ℝ)))
-    exact hpath.stoppedProcess.continuousAt.continuousWithinAt
+  refine ⟨hM.localSeq, hM.isLocalizingSequence_localSeq.mono_filtration ℱ.le_rightCont,
+    fun n => (hM.stoppedProcess_localSeq n).rightCont ?_⟩
+  intro s
+  filter_upwards [hcont] with ω hω
+  have hpath : ContinuousWithinAt
+      (fun t => {ω | ⊥ < hM.localSeq n ω}.indicator (M t) ω) (Ioi s) s := by
+    by_cases hω' : ⊥ < hM.localSeq n ω
+    · simpa [hω'] using hω s
+    · simpa [hω'] using (continuousWithinAt_const (b := (0 : ℝ)))
+  exact hpath.stoppedProcess
 
 end ProbabilityTheory.Locally
