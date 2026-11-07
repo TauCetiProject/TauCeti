@@ -37,6 +37,50 @@ open scoped DirectSum
 
 variable {G : Type*} [AddCommGroup G]
 
+/-- If `G` is additively equivalent to a product of cyclic groups `ZMod (n i)` and `m • x = 0` for
+all `x : G`, then every `n i` divides `m`. -/
+private lemma dvd_of_addEquiv_pi_zmod {ι : Type*} {n : ι → ℕ}
+    (E : G ≃+ (∀ i : ι, ZMod (n i))) {m : ℕ} (hpow : ∀ x : G, m • x = 0) (i : ι) :
+    n i ∣ m := by
+  classical
+  let x : (j : ι) → ZMod (n j) := Function.update 0 i 1
+  have hx : m • x = 0 := by
+    simpa using congrArg E (hpow (E.symm x))
+  have hxi := congrFun hx i
+  have hxi' : ((m : ℕ) : ZMod (n i)) = 0 := by
+    simpa [x, nsmul_eq_mul] using hxi
+  exact (ZMod.natCast_eq_zero_iff m (n i)).mp hxi'
+
+/-- In a product of cyclic groups of orders `p ^ a i` with every `a i` positive, exactly
+`p ^ card ι` elements are killed by `p`. -/
+private lemma card_torsionBy_pi_zmod {p : ℕ} (hp : p.Prime) {ι : Type*} [Fintype ι]
+    {n : ι → ℕ} {a : ι → ℕ} (ha : ∀ i, n i = p ^ a i) (ha_pos : ∀ i, 0 < a i) :
+    Nat.card (AddSubgroup.torsionBy (∀ i : ι, ZMod (n i)) (p : ℤ)) = p ^ Fintype.card ι := by
+  rw [Nat.card_congr (TauCeti.AddSubgroup.torsionByPiEquiv (fun i ↦ ZMod (n i)) (p : ℤ)).toEquiv,
+    Nat.card_pi]
+  let : NeZero p := ⟨hp.ne_zero⟩
+  calc
+    ∏ i, Nat.card (AddSubgroup.torsionBy (ZMod (n i)) (p : ℤ)) = ∏ _i : ι, p := by
+      apply Finset.prod_congr rfl
+      intro i _hi
+      rw [ha i]
+      obtain ⟨j, hj⟩ := Nat.exists_eq_succ_of_ne_zero (ha_pos i).ne'
+      rw [hj]
+      simpa only [Nat.card_zmod] using
+        Nat.card_congr (TauCeti.zmodTorsionByEquiv p j).symm.toEquiv
+    _ = p ^ Fintype.card ι := by simp
+
+/-- If `a i ≤ k` for all `i` and `∑ i, a i = card ι * k`, then every `a i` equals `k`. -/
+private lemma eq_of_le_of_sum_eq {ι : Type*} [Fintype ι] {a : ι → ℕ} {k : ℕ}
+    (ha_le : ∀ i, a i ≤ k) (hsum : ∑ i, a i = Fintype.card ι * k) (i : ι) : a i = k := by
+  apply le_antisymm (ha_le i)
+  by_contra hki
+  have hai : a i < k := Nat.lt_of_not_ge hki
+  have hlt : ∑ j, a j < ∑ _j : ι, k :=
+    Finset.sum_lt_sum (fun j _ ↦ ha_le j) ⟨i, Finset.mem_univ i, hai⟩
+  simp only [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, Nat.cast_id] at hlt
+  omega
+
 /-- **Rank-`r` prime-power characterisation.** An abelian group killed by `p ^ k`, with
 order `p ^ (r * k)` and `p ^ r` elements killed by `p`, is additively equivalent to
 `Fin r → ZMod (p ^ k)`. -/
@@ -50,14 +94,7 @@ theorem nonempty_addEquiv_pi_zmod_primePow {p k r : ℕ} (hp : p.Prime)
   obtain ⟨ι, hι, n, hn, ⟨e⟩⟩ := AddCommGroup.equiv_directSum_zmod_of_finite' G
   let E : G ≃+ (∀ i : ι, ZMod (n i)) := e.trans (DirectSum.addEquivProd _)
   -- Each cyclic factor has order dividing the exponent of `G`.
-  have hn_dvd (i : ι) : n i ∣ p ^ k := by
-    let x : (j : ι) → ZMod (n j) := Function.update 0 i 1
-    have hx : p ^ k • x = 0 := by
-      simpa using congrArg E (hpow (E.symm x))
-    have hxi := congrFun hx i
-    have hxi' : ((p ^ k : ℕ) : ZMod (n i)) = 0 := by
-      simpa [x, nsmul_eq_mul] using hxi
-    exact (ZMod.natCast_eq_zero_iff (p ^ k) (n i)).mp hxi'
+  have hn_dvd (i : ι) : n i ∣ p ^ k := dvd_of_addEquiv_pi_zmod E hpow i
   choose a ha_le ha using fun i ↦ (Nat.dvd_prime_pow hp).mp (hn_dvd i)
   have ha_pos (i : ι) : 0 < a i := by
     rw [Nat.pos_iff_ne_zero]
@@ -67,21 +104,7 @@ theorem nonempty_addEquiv_pi_zmod_primePow {p k r : ℕ} (hp : p.Prime)
     rw [← hcard, Nat.card_congr E.toEquiv, Nat.card_pi]
     simp only [Nat.card_zmod]
   -- Every nontrivial cyclic factor contributes exactly `p` points to the first torsion layer.
-  have hcard_torsion_pi :
-      Nat.card (AddSubgroup.torsionBy (∀ i : ι, ZMod (n i)) (p : ℤ)) = p ^ Fintype.card ι := by
-    rw [Nat.card_congr (TauCeti.AddSubgroup.torsionByPiEquiv (fun i ↦ ZMod (n i)) (p : ℤ)).toEquiv,
-      Nat.card_pi]
-    let : NeZero p := ⟨hp.ne_zero⟩
-    calc
-      ∏ i, Nat.card (AddSubgroup.torsionBy (ZMod (n i)) (p : ℤ)) = ∏ _i : ι, p := by
-        apply Finset.prod_congr rfl
-        intro i _hi
-        rw [ha i]
-        obtain ⟨j, hj⟩ := Nat.exists_eq_succ_of_ne_zero (ha_pos i).ne'
-        rw [hj]
-        simpa only [Nat.card_zmod] using
-          Nat.card_congr (TauCeti.zmodTorsionByEquiv p j).symm.toEquiv
-      _ = p ^ Fintype.card ι := by simp
+  have hcard_torsion_pi := card_torsionBy_pi_zmod hp ha ha_pos
   have hιcard : Fintype.card ι = r := by
     have ht : p ^ Fintype.card ι = p ^ r := by
       rw [← hcard_torsion_pi, ← hcardp]
@@ -92,14 +115,7 @@ theorem nonempty_addEquiv_pi_zmod_primePow {p k r : ℕ} (hp : p.Prime)
     dsimp only
     rw [← Finset.prod_pow_eq_pow_sum Finset.univ a p]
     simp only [← ha, hcard_prod]
-  have ha_eq (i : ι) : a i = k := by
-    apply le_antisymm (ha_le i)
-    by_contra hki
-    have hai : a i < k := Nat.lt_of_not_ge hki
-    have hlt : ∑ j, a j < ∑ _j : ι, k :=
-      Finset.sum_lt_sum (fun j _ ↦ ha_le j) ⟨i, Finset.mem_univ i, hai⟩
-    simp only [Finset.sum_const, Finset.card_univ, hιcard, nsmul_eq_mul, Nat.cast_id] at hlt
-    omega
+  have ha_eq (i : ι) : a i = k := eq_of_le_of_sum_eq ha_le (by rw [hιcard]; exact hsum) i
   let e : ι ≃ Fin r := Fintype.equivFinOfCardEq hιcard
   refine ⟨E |>.trans (AddEquiv.piCongrRight fun i ↦
       (ZMod.ringEquivCongr (by rw [ha i, ha_eq i])).toAddEquiv) |>.trans
