@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.UpperTriangular.Basic
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic.TitsSystem
 import Mathlib.Data.Fintype.Fin
+import TauCeti.Data.Fin.Basic
 
 /-!
 # Standard block weights for general linear groups
@@ -48,6 +49,19 @@ theorem standardWeight_apply (J : Finset (Fin n)) (i : Fin (n + 1)) :
     standardWeight J i =
       -((Finset.univ.filter fun j : Fin n ↦ j.val < i.val ∧ j ∉ J).card : ℤ) :=
   (rfl)
+
+/-- Crossing an omitted adjacent pair decreases the normalized weight by one. -/
+theorem standardWeight_succ (J : Finset (Fin n)) (i : Fin n) :
+    standardWeight J i.succ = standardWeight J i.castSucc - if i ∈ J then 0 else 1 := by
+  have hfilter (a : Fin (n + 1)) :
+      (Finset.univ.filter fun j : Fin n ↦ j.val < a.val ∧ j ∉ J) =
+        (Finset.univ \ J).filter (fun j ↦ j.castSucc < a) := by
+    ext j
+    simp [and_comm, Fin.lt_def]
+  rw [standardWeight_apply, standardWeight_apply, hfilter, hfilter]
+  have h := Finset.card_filter_castSucc_lt_succ (Finset.univ \ J) i
+  rw [h]
+  by_cases hi : i ∈ J <;> simp [hi, sub_eq_add_neg, add_comm]
 
 /-- Standard block weights are decreasing. -/
 theorem standardWeight_antitone (J : Finset (Fin n)) : Antitone (standardWeight J) := by
