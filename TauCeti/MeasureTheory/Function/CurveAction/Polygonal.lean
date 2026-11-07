@@ -45,6 +45,8 @@ measures.
 * `TauCeti.polygonalInterpolation_apply_grid`: the interpolation passes through `x k` at time
   `a + k * h`.
 * `TauCeti.continuous_polygonalInterpolation`: joint continuity in the points and the time.
+* `TauCeti.exists_continuousMap_IccExtend_eqOn_polygonalInterpolation`: the polygonal paths
+  through sequences are the values of a continuous map into `C(Icc a b, E)`.
 * `TauCeti.isPolygonalOnInterval_of_eqOn_polygonalInterpolation`: the interpolation is polygonal
   on `[a, a + N * h]`, hence absolutely continuous in a normed space.
 * `TauCeti.curveAction_eq_sum_edist_rpow_mul_rpow_one_sub_of_eqOn_polygonalInterpolation`: its
@@ -232,6 +234,20 @@ theorem curveAction_eq_sum_edist_rpow_mul_rpow_one_sub_of_eqOn_polygonalInterpol
         rw [ENNReal.rpow_sub _ _ hc0 ENNReal.ofReal_ne_top, ENNReal.rpow_one, ENNReal.inv_rpow,
           ENNReal.div_eq_inv_mul]
         ac_rfl
+
+/-- The polygonal paths through sequences of points, defined on `[a, b]` where
+`a + N * h = b`, depend continuously on the sequence: they are the values of a continuous map
+`C(ℕ → E, C(Icc a b, E))`. -/
+theorem exists_continuousMap_IccExtend_eqOn_polygonalInterpolation {b : ℝ} (hab : a < b) (N : ℕ)
+    (hNh : a + N * h = b) :
+    ∃ Φ : C(ℕ → E, C(Icc a b, E)),
+      ∀ x : ℕ → E, EqOn (IccExtend hab.le (Φ x)) (polygonalInterpolation a h N x)
+        (Icc a (a + N * h)) := by
+  have hc : Continuous fun q : (ℕ → E) × Icc a b ↦ polygonalInterpolation a h N q.1 q.2 := by
+    fun_prop
+  refine ⟨ContinuousMap.curry ⟨_, hc⟩, fun x t ht ↦ ?_⟩
+  rw [hNh] at ht
+  rw [IccExtend_of_mem hab.le _ ht, ContinuousMap.curry_apply, ContinuousMap.coe_mk]
 
 end Seminormed
 

@@ -60,23 +60,6 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
   [SecondCountableTopology E] [CompleteSpace E] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-omit [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E]
-  [CompleteSpace E] in
-/-- The polygonal paths through sequences of points, defined on `[a, b]` where
-`a + N * h = b`, depend continuously on the sequence: they are the values of a continuous map
-`C(ℕ → E, C(Icc a b, E))`. -/
-private theorem exists_continuousMap_IccExtend_eqOn_polygonalInterpolation {a b h : ℝ} (hab : a < b)
-    (N : ℕ) (hNh : a + N * h = b) :
-    ∃ Φ : C(ℕ → E, C(Icc a b, E)),
-      ∀ x : ℕ → E, EqOn (IccExtend hab.le (Φ x)) (polygonalInterpolation a h N x)
-        (Icc a (a + N * h)) := by
-  refine ⟨ContinuousMap.curry
-    ⟨fun q : (ℕ → E) × Icc a b ↦ polygonalInterpolation a h N q.1 q.2,
-      (continuous_polygonalInterpolation a h N).comp
-        (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))⟩, fun x t ht ↦ ?_⟩
-  rw [hNh] at ht
-  rw [IccExtend_of_mem hab.le _ ht, ContinuousMap.curry_apply, ContinuousMap.coe_mk]
-
 omit [NormedSpace ℝ E] [Fact (1 ≤ p)] in
 /-- If `π k` are `Lᵖ`-optimal couplings of consecutive laws `ν k`, `ν (k + 1)`, then in the glued
 chain law the `p`-th moment of the `k`-th jump is the `p`-th power of the Wasserstein distance
