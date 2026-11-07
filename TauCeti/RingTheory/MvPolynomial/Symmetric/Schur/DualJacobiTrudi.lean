@@ -77,6 +77,68 @@ open TauCeti MvPolynomial Finset
 
 variable {R : Type*} [CommRing R] {σ : Type*} [Fintype σ] [DecidableEq σ]
 
+/-- The minor of the complete-symmetric Toeplitz matrix `H` on the first `m` rows and the shuffled
+first `m` columns is the Jacobi--Trudi matrix, reversed and transposed. Here `e` splits
+`Fin (m + n)` as `Fin n ⊕ Fin m`, so that the `Fin m` part is the first `m` indices. -/
+private theorem submatrix_hsymmToeplitz_boxShufflePerm (μ : YoungDiagram) {m n : ℕ}
+    (hm : μ.colLen 0 ≤ m) (hn : μ.rowLen 0 ≤ n) (e : Fin n ⊕ Fin m ≃ Fin (m + n))
+    (he : e = (Equiv.sumComm (Fin n) (Fin m)).trans finSumFinEquiv) :
+    (hsymmToeplitz σ R (m + n)).submatrix (⇑(1 : Equiv.Perm (Fin (m + n))) ∘ ⇑e ∘ Sum.inr)
+      (⇑(boxShufflePerm hm hn) ∘ ⇑e ∘ Sum.inr) = ((Matrix.of fun i j : Fin m =>
+        hsymmInt σ R ((μ.rowLen i : ℤ) - (i : ℕ) + (j : ℕ))).submatrix Fin.revPerm
+          Fin.revPerm).transpose := by
+  subst he
+  refine Matrix.ext fun p q ↦ ?_
+  simp only [Matrix.of_apply, Matrix.submatrix_apply, Matrix.transpose_apply,
+    Function.comp_apply, Equiv.trans_apply, Equiv.sumComm_apply, Sum.swap_inr,
+    finSumFinEquiv_apply_left, Equiv.Perm.coe_one, id_eq, hsymmToeplitz_apply,
+    boxShufflePerm_apply_val, Fin.val_castAdd, boxShuffle_def, q.isLt, ↓reduceIte,
+    Fin.revPerm_apply, Fin.val_rev]
+  congr 1
+  omega
+
+omit [DecidableEq σ] in
+/-- The complementary minor of the elementary-symmetric Toeplitz matrix `E`, stripped of its
+signs, is the dual Jacobi--Trudi matrix, and the row signs `(-1)^{m + j - μ'ⱼ}` and the column
+signs `(-1)^{m + j}` leave `(-1)^{∑ μ'ⱼ}`. -/
+private theorem complementary_minor_boxShufflePerm (μ : YoungDiagram) {m n : ℕ}
+    (hm : μ.colLen 0 ≤ m) (hn : μ.rowLen 0 ≤ n) (e : Fin n ⊕ Fin m ≃ Fin (m + n))
+    (he : e = (Equiv.sumComm (Fin n) (Fin m)).trans finSumFinEquiv) :
+    (Matrix.of fun j k : Fin n => esymmInt σ R
+      ((((e ∘ Sum.inl) k : Fin (m + n)) : ℤ) - ((boxShufflePerm hm hn ∘ e ∘ Sum.inl) j : ℕ))) =
+      Matrix.of (fun i j : Fin n => esymmInt σ R ((μ.colLen i : ℤ) - (i : ℕ) + (j : ℕ))) ∧
+    (∏ j : Fin n, (-1 : MvPolynomial σ R) ^ (((boxShufflePerm hm hn ∘ e ∘ Sum.inl) j :
+      Fin (m + n)) : ℕ)) * ∏ k : Fin n, (-1 : MvPolynomial σ R) ^ (((e ∘ Sum.inl) k :
+      Fin (m + n)) : ℕ) = (-1) ^ μ.card := by
+  have hcol : ∀ j, μ.colLen j ≤ m := fun j ↦ (μ.colLen_anti 0 j j.zero_le).trans hm
+  have hrow : ∀ j : Fin n, (((boxShufflePerm hm hn ∘ e ∘ Sum.inl) j : Fin (m + n)) : ℕ) =
+      m + j - μ.colLen j := by
+    intro j
+    simp only [he, Function.comp_apply, Equiv.trans_apply, Equiv.sumComm_apply, Sum.swap_inl,
+      finSumFinEquiv_apply_right, boxShufflePerm_apply_val, Fin.val_natAdd, boxShuffle_def,
+      show ¬(m + (j : ℕ) < m) by omega, ↓reduceIte, Nat.add_sub_cancel_left]
+  have hcolIdx : ∀ k : Fin n, (((e ∘ Sum.inl) k : Fin (m + n)) : ℕ) = m + k := by
+    intro k
+    simp [he]
+  refine ⟨Matrix.ext fun j k ↦ ?_, ?_⟩
+  · simp only [Matrix.of_apply]
+    rw [hrow, hcolIdx]
+    congr 1
+    have := hcol j
+    omega
+  have hcard : ∑ j : Fin n, μ.colLen j = μ.card := by
+    rw [Fin.sum_univ_eq_sum_range (fun j ↦ μ.colLen j), ← μ.card_transpose,
+      YoungDiagram.card_eq_sum_range_rowLen μ.transpose (N := n)
+        (by rw [YoungDiagram.colLen_transpose]; exact hn)]
+    simp only [YoungDiagram.rowLen_transpose]
+  rw [← hcard, ← prod_pow_eq_pow_sum, ← prod_mul_distrib]
+  refine prod_congr rfl fun j _ ↦ ?_
+  rw [hrow, hcolIdx, ← pow_add,
+    show m + j - μ.colLen j + (m + j) = μ.colLen j + 2 * (m + j - μ.colLen j) by
+      have := hcol j
+      omega,
+    neg_one_pow_add_two_mul]
+
 /-- **The `h`-determinant of the rows equals the `e`-determinant of the columns.**  For a Young
 diagram `μ` with at most `m` rows and at most `n` columns,
 `det (h_{μᵢ - i + j})_{i, j < m} = det (e_{μ'ᵢ - i + j})_{i, j < n}`, where `μᵢ` and `μ'ᵢ` are the
@@ -88,60 +150,13 @@ theorem det_hsymmInt_eq_det_esymmInt (μ : YoungDiagram) {m n : ℕ} (hm : μ.co
     (Matrix.of fun i j : Fin m => hsymmInt σ R ((μ.rowLen i : ℤ) - (i : ℕ) + (j : ℕ))).det =
       (Matrix.of fun i j : Fin n => esymmInt σ R ((μ.colLen i : ℤ) - (i : ℕ) + (j : ℕ))).det := by
   set τ := boxShufflePerm hm hn
-  have hcol : ∀ j, μ.colLen j ≤ m := fun j ↦ (μ.colLen_anti 0 j j.zero_le).trans hm
   -- Split `Fin (m + n)` as `Fin n ⊕ Fin m`, so that the `Fin m` part is the first `m` indices.
-  set e := (Equiv.sumComm (Fin n) (Fin m)).trans finSumFinEquiv
-  -- The minor of `H` on the first `m` rows and the shuffled first `m` columns is the
-  -- Jacobi--Trudi matrix, reversed and transposed.
-  have hH : (hsymmToeplitz σ R (m + n)).submatrix (⇑(1 : Equiv.Perm (Fin (m + n))) ∘ ⇑e ∘ Sum.inr)
-      (⇑τ ∘ ⇑e ∘ Sum.inr) = ((Matrix.of fun i j : Fin m =>
-        hsymmInt σ R ((μ.rowLen i : ℤ) - (i : ℕ) + (j : ℕ))).submatrix Fin.revPerm
-          Fin.revPerm).transpose := by
-    refine Matrix.ext fun p q ↦ ?_
-    simp only [e, Matrix.of_apply, Matrix.submatrix_apply, Matrix.transpose_apply,
-      Function.comp_apply, Equiv.trans_apply, Equiv.sumComm_apply, Sum.swap_inr,
-      finSumFinEquiv_apply_left, Equiv.Perm.coe_one, id_eq, hsymmToeplitz_apply,
-      boxShufflePerm_apply_val, τ, Fin.val_castAdd, boxShuffle_def, q.isLt, ↓reduceIte,
-      Fin.revPerm_apply, Fin.val_rev]
-    congr 1
-    omega
-  -- The complementary minor of `E`, stripped of its signs, is the dual Jacobi--Trudi matrix.
-  have hrow : ∀ j : Fin n, (((τ ∘ e ∘ Sum.inl) j : Fin (m + n)) : ℕ) = m + j - μ.colLen j := by
-    intro j
-    simp only [e, Function.comp_apply, Equiv.trans_apply, Equiv.sumComm_apply, Sum.swap_inl,
-      finSumFinEquiv_apply_right, boxShufflePerm_apply_val, τ, Fin.val_natAdd, boxShuffle_def,
-      show ¬(m + (j : ℕ) < m) by omega, ↓reduceIte, Nat.add_sub_cancel_left]
-  have hcolIdx : ∀ k : Fin n, (((e ∘ Sum.inl) k : Fin (m + n)) : ℕ) = m + k := by
-    intro k
-    simp [e]
-  have hE : (Matrix.of fun j k : Fin n =>
-      esymmInt σ R ((((e ∘ Sum.inl) k : Fin (m + n)) : ℤ) - ((τ ∘ e ∘ Sum.inl) j : ℕ))) =
-      Matrix.of fun i j : Fin n => esymmInt σ R ((μ.colLen i : ℤ) - (i : ℕ) + (j : ℕ)) := by
-    refine Matrix.ext fun j k ↦ ?_
-    simp only [Matrix.of_apply]
-    rw [hrow, hcolIdx]
-    congr 1
-    have := hcol j
-    omega
-  -- The row signs `(-1)^{m + j - μ'ⱼ}` and the column signs `(-1)^{m + j}` leave `(-1)^{∑ μ'ⱼ}`.
-  have hcard : ∑ j : Fin n, μ.colLen j = μ.card := by
-    rw [Fin.sum_univ_eq_sum_range (fun j ↦ μ.colLen j), ← μ.card_transpose,
-      YoungDiagram.card_eq_sum_range_rowLen μ.transpose (N := n)
-        (by rw [YoungDiagram.colLen_transpose]; exact hn)]
-    simp only [YoungDiagram.rowLen_transpose]
-  have hsigns : (∏ j : Fin n, (-1 : MvPolynomial σ R) ^ (((τ ∘ e ∘ Sum.inl) j : Fin _) : ℕ)) *
-      ∏ k : Fin n, (-1 : MvPolynomial σ R) ^ (((e ∘ Sum.inl) k : Fin _) : ℕ) =
-      (-1) ^ μ.card := by
-    rw [← hcard, ← prod_pow_eq_pow_sum, ← prod_mul_distrib]
-    refine prod_congr rfl fun j _ ↦ ?_
-    rw [hrow, hcolIdx, ← pow_add,
-      show m + j - μ.colLen j + (m + j) = μ.colLen j + 2 * (m + j - μ.colLen j) by
-        have := hcol j
-        omega,
-      neg_one_pow_add_two_mul]
+  set e := (Equiv.sumComm (Fin n) (Fin m)).trans finSumFinEquiv with he
+  obtain ⟨hE, hsigns⟩ := complementary_minor_boxShufflePerm (σ := σ) (R := R) μ hm hn e he
   -- Jacobi's complementary-minor identity for the two Toeplitz matrices relates the two minors.
   have key := det_submatrix_hsymmToeplitz σ R (m + n) e τ 1
-  rw [hH, det_submatrix_esymmToeplitz, Equiv.Perm.coe_one, Function.id_comp, hE,
+  rw [submatrix_hsymmToeplitz_boxShufflePerm μ hm hn e he, det_submatrix_esymmToeplitz,
+    Equiv.Perm.coe_one, Function.id_comp, hE,
     Matrix.det_transpose, Matrix.det_submatrix_equiv_self, sign_boxShufflePerm,
     Equiv.Perm.sign_one] at key
   rw [key, mul_right_comm _ (Matrix.det _), hsigns]

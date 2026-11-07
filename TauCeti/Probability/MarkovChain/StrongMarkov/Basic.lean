@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.MarkovChain.MarkovProperty
-public import TauCeti.Probability.Process.StoppedValue
+public import TauCeti.Probability.MarkovChain.StrongMarkov.Process
 public import TauCeti.MeasureTheory.Integral.Bind
 
 /-!
@@ -41,8 +40,10 @@ off that event never enter. This file proves the property in the following forms
   (`MeasureTheory.Measure.markovChainLaw_restrict_map_stoppedValue_shift_iterate_of_ae_ne_top` and
   `MeasureTheory.Measure.condExp_stoppedValue_shift_iterate_markovChainLaw_of_ae_ne_top`).
 
-The proof decomposes `{τ < ∞}` into the events `{τ = n}`. An event of `𝓕_τ` meets `{τ = n}` in an
-event of the history up to time `n`, on which the Markov property at the fixed time `n`
+The law specializes
+`ProbabilityTheory.HasLaw.markovChainLaw_restrict_map_stoppedValue_processShift` to the coordinate
+process. Its proof decomposes `{τ < ∞}` into the events `{τ = n}`. An event of `𝓕_τ` meets `{τ = n}`
+in an event of the history up to time `n`, on which the Markov property at the fixed time `n`
 (`MeasureTheory.Measure.markovChainLaw_restrict_map_shift_iterate`) identifies the law of the
 future path; the path law is additive in the initial measure, which reassembles the pieces.
 
@@ -73,41 +74,16 @@ theorem markovChainLaw_restrict_map_stoppedValue_shift_iterate
         (stoppedValue (fun n => (shift α)^[n]) τ) =
       markovChainLaw (((markovChainLaw ν κ).restrict (A ∩ {x | τ x ≠ ⊤})).map
         (stoppedValue (fun n x => x n) τ)) κ := by
-  set P := markovChainLaw ν κ
-  set θ := stoppedValue (fun n => (shift α)^[n]) τ
-  set Y := stoppedValue (fun n (x : ℕ → α) => x n) τ
-  have hτm : Measurable τ := hτ.measurable'
-  have hθ : Measurable θ :=
-    measurable_stoppedValue_of_countable (fun n => measurable_shift_iterate n) hτm
-  have hY : Measurable Y :=
-    (Filtration.adapted_piLE.measurable_stoppedValue hτ).mono hτ.measurableSpace_le le_rfl
-  set E : ℕ → Set (ℕ → α) := fun n => A ∩ {x | τ x = WithTop.some n}
-  have hEn : ∀ n, MeasurableSet[Filtration.piLE n] (E n) := fun n =>
-    (hτ.measurableSet_inter_eq_iff A n).1 (hA.inter (hτ.measurableSet_eq_of_countable' n))
-  have hE : ∀ n, MeasurableSet (E n) := fun n => Filtration.le _ n _ (hEn n)
-  have hU : A ∩ {x | τ x ≠ ⊤} = ⋃ n, E n := by
-    ext x
-    cases h : τ x <;> simp [E, h]
-  have hd : Pairwise (Function.onFun Disjoint E) := fun m n hmn =>
-    Set.disjoint_left.2 fun x hm hn => hmn (WithTop.coe_injective (hm.2.symm.trans hn.2))
-  rw [hU, Measure.restrict_iUnion hd hE, Measure.map_sum hθ.aemeasurable,
-    Measure.map_sum hY.aemeasurable, markovChainLaw_eq_comp, Measure.bind_sum _ _
-      κ.markovChainKernel.measurable.aemeasurable]
-  congr 1
-  funext n
-  -- On `{τ = n}` the stopped quantities are those at the fixed time `n`, and `A ∩ {τ = n}` is an
-  -- event of the history `X 0, …, X n`, where the Markov property at time `n` applies.
-  have hτn : ∀ᵐ x ∂P.restrict (E n), τ x = WithTop.some n :=
-    ae_restrict_of_forall_mem (hE n) fun x hx => hx.2
-  have hθn : (P.restrict (E n)).map θ = (P.restrict (E n)).map (shift α)^[n] :=
-    Measure.map_congr (hτn.mono fun x hx => by simp only [θ, stoppedValue, hx, WithTop.untopD_coe])
-  have hYn : (P.restrict (E n)).map Y = (P.restrict (E n)).map fun x => x n :=
-    Measure.map_congr (hτn.mono fun x hx => by simp only [Y, stoppedValue, hx, WithTop.untopD_coe])
-  have hEn' := hEn n
-  rw [Filtration.piLE_eq_comap_prefix] at hEn'
-  obtain ⟨B, hB, hBE⟩ := hEn'
-  rw [hθn, hYn, ← markovChainLaw_eq_comp, ← hBE]
-  exact markovChainLaw_restrict_map_shift_iterate ν κ n hB
+  have h := HasLaw.markovChainLaw_restrict_map_stoppedValue_processShift
+    (HasLaw.id (μ := markovChainLaw ν κ)) (X := fun n x => x n)
+    (fun n => measurable_pi_apply n)
+    (fun n => (Filtration.piLE_eq_comap_prefix n).le) hτ hA
+  -- For the coordinate process, shifting its future is exactly iterating the path shift.
+  have hshift : processShift (fun n (x : ℕ → α) => x n) = fun n => (shift α)^[n] := by
+    funext n
+    simpa only [Function.comp_def] using
+      processShift_eq_shift_iterate (fun n (x : ℕ → α) => x n) n
+  simpa only [hshift] using h
 
 /-- **The strong Markov property at a stopping time where the chain sits at a fixed state.** If
 `X τ = y` on `A ∩ {τ < ∞}`, as when `τ` is the entrance time of `{y}`, the future path on that

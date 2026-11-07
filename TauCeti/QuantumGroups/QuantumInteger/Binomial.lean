@@ -192,7 +192,7 @@ theorem quantumBinomial_succ_succ' (q : K) (n k : ℕ) :
   · rw [← sub_eq_zero.mp hq]
   have habs := congrArg ((q - q⁻¹) * ·) (quantumBinomial_succ_right_eq q n k)
   simp only [mul_left_comm (q - q⁻¹), ← Nat.cast_sub h, ← Nat.cast_add_one,
-    sub_inv_mul_quantumInteger_natCast hq] at habs
+    sub_inv_mul_quantumInteger_natCast] at habs
   linear_combination -habs
 
 /-- The quantum binomial coefficients are invariant under `q ↦ q⁻¹`. -/

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Instances.Matrix
+public import TauCeti.Geometry.RealAlgebraic.Nash.Basic
 public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Image
 public import TauCeti.LinearAlgebra.Projectivization.Projector
 public import TauCeti.Topology.Algebra.Projectivization
@@ -33,7 +34,9 @@ model, `A ↦ (A (i.succAbove k) i / A i i)_k`, is semialgebraic on it. Conseque
 any other ordered field with semialgebraic projections, a subset of projective space has
 semialgebraic image in the model exactly when it is semialgebraic in every standard affine
 chart. The analyticity of the same maps is in
-`TauCeti.Geometry.Manifold.Projectivization.Projector`.
+`TauCeti.Geometry.Manifold.Projectivization.Projector`. Over `ℝ`, the entries of the inverse chart
+at `i` followed by the projector map are the rational functions `w a * w b / (wᵀ w)` of
+`w = Fin.insertNth i 1 z`, whose denominator never vanishes, so they are Nash functions.
 
 ## Main results
 
@@ -50,6 +53,8 @@ chart. The analyticity of the same maps is in
   read in the projector model, are semialgebraic.
 * `TauCeti.isSemialgebraic_image_projector_iff`: a subset of projective space has semialgebraic
   image in the projector model if and only if it is semialgebraic in every standard affine chart.
+* `TauCeti.isNashAt_projector_affineChart_symm`: read in a standard affine chart of real projective
+  space, the entries of the projector are Nash functions.
 
 ## References
 
@@ -227,6 +232,21 @@ theorem isSemialgebraic_image_projector_iff [HasSemialgebraicProjections K]
       rw [(affineChart i).left_inv (by simpa using hi)]
       ext j k
       simp only [Matrix.of_apply, Function.curry_apply]
+
+/-- **The projector map is Nash in the affine charts.** The entries of the projector, read in the
+standard affine chart at `i` of real projective space, are Nash functions of the affine
+coordinates `z`. With `w = Fin.insertNth i 1 z`, the `(a, b)` entry is the rational function
+`w a * w b / (wᵀ w)`, whose denominator never vanishes. -/
+theorem isNashAt_projector_affineChart_symm (i a b : Fin (n + 1)) (z : Fin n → ℝ) :
+    IsNashAt (fun z ↦ projector ((affineChart i).symm z) a b) z := by
+  have hw (l : Fin (n + 1)) :
+      IsNashAt (fun z : Fin n → ℝ ↦ Fin.insertNth (α := fun _ ↦ ℝ) i 1 z l) z := by
+    induction l using i.succAboveCases with
+    | x => simpa using isNashAt_const 1
+    | p k => simpa using isNashAt_apply k
+  simp only [affineChart_symm_apply, projector_mk, rankOneProjector_apply]
+  exact ((hw a).fun_mul (hw b)).fun_div (Finset.fun_isNashAt_sum _ fun k _ ↦ (hw k).fun_mul (hw k))
+    (dotProduct_self_eq_zero.not.mpr (Fin.insertNth_one_ne_zero i z))
 
 end AffineChart
 
