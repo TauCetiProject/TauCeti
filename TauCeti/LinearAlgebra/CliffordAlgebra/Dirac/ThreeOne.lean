@@ -68,7 +68,7 @@ def timeFirstToNative : (Fin 4 → ℝ) ≃ₗ[ℝ] (Fin 4 → ℝ) where
   invFun v := ![v 3, v 2, -v 1, v 0]
   map_add' x y := by
     funext i
-    fin_cases i <;> simp; ring
+    fin_cases i <;> simp [add_comm]
   map_smul' r x := by
     funext i
     fin_cases i <;> simp
@@ -185,6 +185,8 @@ theorem diracClifford_ι_mul_ι (m n : Fin 4 → ℝ) :
           ((CliffordAlgebra.even.ι (realCliffordForm 3 1)).bilin m n)) 0 0
         (adjugate (realCliffordThreeOneEvenEquivComplexMatrix
           ((CliffordAlgebra.even.ι (realCliffordForm 3 1)).bilin m n)))ᴴ := by
+  rw [map_mul, diracClifford_ι, diracClifford_ι, smul_mul_smul_comm, diracVector_mul_diracVector,
+    realCliffordThreeOneEvenEquivComplexMatrix_ι_eq_neg_mul_adjugate]
   set X := (realCliffordThreeOneVectorEquivHermitian m : Matrix (Fin 2) (Fin 2) ℂ)
   set Y := (realCliffordThreeOneVectorEquivHermitian n : Matrix (Fin 2) (Fin 2) ℂ)
   have hX : Xᴴ = X :=
@@ -195,10 +197,8 @@ theorem diracClifford_ι_mul_ι (m n : Fin 4 → ℝ) :
     rw [← adjugateFinTwoLinearMap_apply, map_neg, adjugateFinTwoLinearMap_apply,
       adjugate_mul_distrib, adjugate_adjugate _ (by norm_num)]
     simp
-  rw [map_mul, diracClifford_ι, diracClifford_ι, smul_mul_smul_comm, diracVector_mul_diracVector,
-    realCliffordThreeOneEvenEquivComplexMatrix_ι_eq_neg_mul_adjugate, hneg, conjTranspose_neg,
-    conjTranspose_mul, adjugate_conjTranspose, hX, hY, neg_mul_neg, Complex.I_mul_I, neg_one_smul,
-    fromBlocks_neg, neg_zero]
+  simp only [hneg, neg_mul_neg, Complex.I_mul_I, neg_one_smul, fromBlocks_neg, neg_zero,
+    conjTranspose_neg, conjTranspose_mul, adjugate_conjTranspose, hX, hY]
 
 /-- On the even subalgebra, the Clifford representation is block diagonal:
 `x ↦ diag(M x, (adj M x)ᴴ)` for the native complex matrix model `M` of `Cl⁺(3,1)`. -/
@@ -295,10 +295,10 @@ theorem diracVector_mul_add_mul_swap (v w : Fin 4 → ℝ) :
       (-((QuadraticMap.polar (realCliffordForm 3 1) v w : ℝ) : ℂ)) • 1 := by
   have h := congrArg diracClifford
     (CliffordAlgebra.ι_mul_ι_add_swap (Q := realCliffordForm 3 1) v w)
-  rw [map_add, map_mul, map_mul, diracClifford_ι, diracClifford_ι, smul_mul_smul_comm,
-    smul_mul_smul_comm, ← smul_add, AlgHom.commutes, Algebra.algebraMap_eq_smul_one,
-    ← Complex.coe_smul, neg_mul_neg, Complex.I_mul_I, neg_one_smul, neg_eq_iff_eq_neg] at h
-  rw [h, neg_smul]
+  simp only [map_add, map_mul, diracClifford_ι, smul_mul_smul_comm, neg_mul_neg, Complex.I_mul_I,
+    neg_one_smul, AlgHom.commutes] at h
+  rw [neg_smul, Complex.coe_smul, ← Algebra.algebraMap_eq_smul_one, ← h]
+  abel
 
 /-- In time-first coordinates, `C(P x) C(P y) + C(P y) C(P x)` is the polar Minkowski form,
 that is, `2 g(x, y)`. -/
