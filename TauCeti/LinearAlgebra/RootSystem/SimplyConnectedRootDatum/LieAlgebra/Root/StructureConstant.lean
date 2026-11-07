@@ -42,6 +42,8 @@ to the Chevalley commutator formula for the root subgroups `x_α(u) = Σₙ uⁿ
 * `TauCeti.DynkinType.lie_chevalleySystem_eq_structureConstant_zsmul` and
   `TauCeti.DynkinType.eq_structureConstant_iff`: the defining bracket equation and its uniqueness.
 * `TauCeti.DynkinType.structureConstant_eq_natCast_or_eq_neg_natCast`: `N_{α,β} = ±(r + 1)`.
+* `TauCeti.DynkinType.structureConstant_eq_two_or_neg_two_of_pairingIn_eq_zero`:
+  `N_{α,β} = ±2` for orthogonal roots whose sum is a root.
 * `TauCeti.DynkinType.structureConstant_ne_zero` and `TauCeti.DynkinType.structureConstant_eq_zero`:
   the constant vanishes exactly when `α + β` is not a root.
 * `TauCeti.DynkinType.structureConstant_skew`: `N_{β,α} = -N_{α,β}`.

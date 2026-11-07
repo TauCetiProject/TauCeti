@@ -17,10 +17,10 @@ commutator is the subgroup of that sum with coefficient `N = ±2`. This file pro
 formula for the numbered pinned Chevalley system on any Kostant-stable lattice, over every
 commutative value ring. In characteristic two these root subgroups do commute.
 
-The root-string calculation discharges the vanishing-bracket hypotheses of the integral
-class-two exponential identity. The transport follows
-`TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupPoints_mul_of_lie_eq`, using the
-all-root divided-power integrality of `TauCeti.DynkinType.chevalleyRootSubgroup`.
+For `γ = α + β`, the orthogonal root-string facts give
+`⁅e_α, e_γ⁆ = 0` and `⁅e_β, e_γ⁆ = 0`, and the structure constant is `N_{α,β} = ±2`.
+The commutator formula is the orthogonal-sum case of
+`TauCeti.DynkinType.commutatorElement_chevalleyRootSubgroup_of_lie_eq`.
 See Steinberg, *Lectures on Chevalley Groups*, Chapter 3, Lemma 15, and Carter,
 *Simple Groups of Lie Type*, §4.2 and Theorem 5.2.2.
 -/
