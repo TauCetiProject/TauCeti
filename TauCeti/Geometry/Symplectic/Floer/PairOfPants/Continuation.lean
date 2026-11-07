@@ -26,12 +26,13 @@ is, in the coordinates `(s, t)` of the end `q` with signed longitudinal coordina
 
 is the continuation homotopy `TauCeti.Floer.continuationHomotopy` from `G_q` to `H_q` and `β` is
 the smooth transition from `0` on `(-∞, 0]` to `1` on `[1, ∞)`. So the datum is the pair-of-pants
-datum of `G` wherever `σ ≤ L_q` on every end, it is `H_q(t) dt` once `σ ≥ max 2 (L_q + 1)`, and on
-the neck `L_q ≤ σ ≤ L_q + 1` it is a continuation datum from `G_q` to `H_q`. As `L_q → ∞` it breaks
-into a pair of pants with end Hamiltonians `G` and continuation cylinders on its ends, while for
-`L_q ≤ 0` on every end it is the pair-of-pants datum of `H`. Moving the neck positions along a path
-gives one-parameter families of pairs of pants whose broken ends are the two compositions of
-continuation maps with pair-of-pants products compared by
+datum of `G` wherever `σ ≤ L_q` on every end, it is `H_q(t) dt` once `σ ≥ max 2 (L_q + 1)`, and,
+for `L_q ≥ 2`, on the neck `L_q ≤ σ ≤ L_q + 1` it is a continuation datum from `G_q` to `H_q`; for
+smaller `L_q` the collar cutoff `β(σ - 1)` also acts on the neck, giving a cutoff-modified
+continuation datum. As `L_q → ∞` it breaks into a pair of pants with end Hamiltonians `G` and
+continuation cylinders on its ends, while for `L_q ≤ 0` on every end it is the pair-of-pants datum
+of `H`. Moving the neck positions along a path gives one-parameter families of pairs of pants whose
+broken ends are the two compositions of continuation maps with pair-of-pants products compared by
 `TauCeti.NovikovModule.kernelMap_kernelProduct_sub_kernelProduct_kernelMap`.
 
 Compactness of such a family needs an energy bound that is uniform in the neck positions, although
@@ -63,8 +64,8 @@ its topological part plus that constant.
   perturbation of `H`.
 * `TauCeti.Floer.pairOfPantsContinuationPerturbation_cylindricalEndLift_of_pos`: its pullback to
   the end `q` is `β(σ - 1) C_q(σ - L_q, t) dt`;
-  `TauCeti.Floer.pairOfPantsContinuationPerturbation_eq_smul_endAngularForm`: beyond the neck it is
-  `H_q(t) dt`.
+  `TauCeti.Floer.pairOfPantsContinuationPerturbation_eq_smul_endAngularForm`: beyond the neck and
+  the collar, where `σ ≥ max 2 (L_q + 1)`, it is `H_q(t) dt`.
 * `SymplecticForm.lintegral_enorm_hamiltonianCurvature_pairOfPantsContinuationPerturbation_le`,
   `SymplecticForm.abs_setIntegral_hamiltonianCurvature_pairOfPantsContinuationPerturbation_le`:
   the integrated curvature is at most `∑ q, (B_q + D_q)`, uniformly in the neck positions.
@@ -182,9 +183,10 @@ theorem pairOfPantsContinuationPerturbation_cylindricalEndLift_of_pos {q : Punct
     simp [smoothTransition_endCoord_cylindricalEndLift_eq_zero hr hz]
   · simp
 
-/-- **The perturbation is `H_r(t_r) dt_r` beyond the neck.** At a point `w` of the end `r` whose
-signed longitudinal coordinate is at least `2` and at least `L_r + 1`, the perturbation is the
-angular form of `r` scaled by the outer Hamiltonian `H_r` at the angular coordinate of `w`. -/
+/-- **The perturbation is `H_r(t_r) dt_r` beyond the neck and the collar.** At a point `w` of the
+end `r` whose signed longitudinal coordinate is at least `2` and at least `L_r + 1`, the
+perturbation is the angular form of `r` scaled by the outer Hamiltonian `H_r` at the angular
+coordinate of `w`. -/
 theorem pairOfPantsContinuationPerturbation_eq_smul_endAngularForm {r : Puncture} {w : ℂ}
     (hw : 2 ≤ r.endSign * (r.endCoord w).re) (hwL : L r + 1 ≤ r.endSign * (r.endCoord w).re)
     (x : M) :
