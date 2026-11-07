@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Ball.Action
-public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Reflection
 public import TauCeti.Topology.Algebra.Group.Quotient.LocalSection
 public import TauCeti.Topology.Algebra.OrthogonalGroup
 public import TauCeti.Topology.Grassmannian.FrameQuotient
