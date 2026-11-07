@@ -16,8 +16,8 @@ trading dates. They can nevertheless be represented by one simple strategy: sort
 and add the active positions on each successive interval. Each new position is measurable at
 the left endpoint of its interval, since every position contributing to it was chosen earlier.
 
-`simpleHolding_eq_sum_Ioc` gives the representation on a supplied grid, and
-`exists_simpleHolding_sum_Ioc` constructs such a grid for any finite family. The latter starts
+`simpleHolding_eq_sum_indicator_Ioc` gives the representation on a supplied grid, and
+`exists_simpleHolding_eq_sum_indicator_Ioc` constructs such a grid for any finite family. It starts
 at the bottom time and has strictly increasing dates, including when some input intervals are
 empty or reversed. This bridges finite sums of predictable rectangles and finite-grid trading
 strategies, so that approximation by the former can be used with elementary trading formulas.
@@ -42,7 +42,7 @@ variable {Ω ι κ : Type*} [LinearOrder ι]
 /-- Refining finitely many intervals to a nondecreasing grid amounts to adding the
 positions whose endpoint indices cover each grid interval. The input intervals may overlap,
 be empty, or have their endpoints reversed. -/
-theorem simpleHolding_eq_sum_Ioc (s : Finset κ) {τ : ℕ → ι} {n : ℕ}
+theorem simpleHolding_eq_sum_indicator_Ioc (s : Finset κ) {τ : ℕ → ι} {n : ℕ}
     (hτ : MonotoneOn τ (Set.Iic n)) (l u : κ → ℕ)
     (hl : ∀ i ∈ s, l i ≤ n) (hu : ∀ i ∈ s, u i ≤ n)
     (a : κ → Ω → ℝ) (t : ι) (ω : Ω) :
@@ -75,7 +75,7 @@ theorem simpleHolding_eq_sum_Ioc (s : Finset κ) {τ : ℕ → ι} {n : ℕ}
 one strictly increasing trading grid starting at the bottom time. The resulting positions are
 known at the new left endpoints, and the holding processes agree at every time and sample.
 No order relation between the two endpoints of an input interval is required. -/
-theorem exists_simpleHolding_sum_Ioc [OrderBot ι] {mΩ : MeasurableSpace Ω}
+theorem exists_simpleHolding_eq_sum_indicator_Ioc [OrderBot ι] {mΩ : MeasurableSpace Ω}
     (ℱ : Filtration ι mΩ) (s : Finset κ) (l u : κ → ι) (a : κ → Ω → ℝ)
     (ha : ∀ i ∈ s, StronglyMeasurable[ℱ (l i)] (a i)) :
     ∃ (n : ℕ) (τ : ℕ → ι) (b : ℕ → Ω → ℝ),
@@ -116,7 +116,7 @@ theorem exists_simpleHolding_sum_Ioc [OrderBot ι] {mΩ : MeasurableSpace Ω}
     · simpa [hij] using (stronglyMeasurable_const (b := (0 : ℝ)) :
         StronglyMeasurable[ℱ (τ j)] (fun _ : Ω ↦ (0 : ℝ)))
   · intro t ω
-    rw [simpleHolding_eq_sum_Ioc s hτ.monotoneOn L U (fun i hi ↦ (hL i hi).1)
+    rw [simpleHolding_eq_sum_indicator_Ioc s hτ.monotoneOn L U (fun i hi ↦ (hL i hi).1)
       (fun i hi ↦ (hU i hi).1)]
     exact sum_congr rfl fun i hi ↦ by rw [(hL i hi).2, (hU i hi).2]
 
