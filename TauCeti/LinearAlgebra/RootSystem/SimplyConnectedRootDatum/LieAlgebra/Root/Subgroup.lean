@@ -59,6 +59,10 @@ nilpotently.
 * `TauCeti.DynkinType.isNilpotent_apply_ι_chevalleySystem` and
   `TauCeti.DynkinType.dividedPower_chevalleySystem_smul_mem`: every root vector acts nilpotently,
   with divided powers preserving the lattice.
+* `TauCeti.DynkinType.kostantForm_chevalleySystem_apply_mem_of_isNilpotent`: the all-root Kostant
+  form preserves the lattice.
+* `TauCeti.DynkinType.chevalleyRootSubgroup_eq_kostantRootSubgroupParam`: comparison with the
+  generic Kostant root subgroup for the all-root system.
 * `TauCeti.DynkinType.chevalleyRootSubgroup_simpleIndex` and
   `TauCeti.DynkinType.chevalleyRootSubgroup_reflectionPerm_simpleIndex`: at `±αᵢ` these are the
   simple root subgroups of the Kostant data.
@@ -137,6 +141,20 @@ theorem dividedPower_chevalleySystem_smul_mem (γ : Fin t.numRoots) (n : ℕ) :
       (isNilpotent_ad_rootGenerator_inl i) (isNilpotent_ad_rootGenerator_inr i)]
     exact dividedPower_weylAut_smul_mem _ _ ρ M hM (hnil (.inl i)) (hnil (.inr i)) _ _ _ n (hz n)
 
+include hM hnil in
+/-- Stability under the simple-generator Kostant form and nilpotence of the simple generators
+imply stability under the all-root Kostant form. -/
+theorem kostantForm_chevalleySystem_apply_mem_of_isNilpotent :
+    ∀ u ∈ kostantForm (t.chevalleySystem ht) (t.lieBasis ht).h, ∀ v ∈ M, ρ u v ∈ M := by
+  intro u hu v hv
+  apply kostantForm_apply_mem (t.chevalleySystem ht) (t.lieBasis ht).h ρ M.toIntSubmodule
+    _ _ u hu hv
+  · intro γ n w hw
+    rw [Associative.map_dividedPower]
+    exact dividedPower_chevalleySystem_smul_mem ρ M hM hnil γ n w hw
+  · intro i n w hw
+    exact hM _ (ringChoose_mem_kostantForm _ _ i n) w hw
+
 /-! ## The root subgroups -/
 
 -- Match tensor products to the `ℤ`-algebra instance stored by `CommAlgCat` objects.
@@ -164,6 +182,16 @@ theorem chevalleyRootSubgroup_val (γ : Fin t.numRoots) (A : CommAlgCat ℤ) (u 
   rw [chevalleyRootSubgroup, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     ← LinearMap.GeneralLinearGroup.generalLinearEquiv_to_linearMap, MulEquiv.apply_symm_apply,
     baseChangeExpHom_apply, baseChangeExpLinearEquiv_toLinearMap]
+
+/-- The native root subgroup is the generic Kostant root subgroup of the all-root system. -/
+theorem chevalleyRootSubgroup_eq_kostantRootSubgroupParam (γ : Fin t.numRoots)
+    (A : CommAlgCat ℤ) :
+    chevalleyRootSubgroup ρ M hM hnil γ A =
+      kostantRootSubgroupParam (t.chevalleySystem ht) (t.lieBasis ht).h ρ M
+        (kostantForm_chevalleySystem_apply_mem_of_isNilpotent ρ M hM hnil) γ
+        (isNilpotent_apply_ι_chevalleySystem ρ hnil γ) A := by
+  refine MonoidHom.ext fun u => Units.ext <| LinearMap.ext fun z => ?_
+  rw [chevalleyRootSubgroup_val, kostantRootSubgroupParam_val_apply]
 
 /-- A bracket `⁅e_α, e_β⁆ = c • e_γ` with `e_γ` commuting with both root vectors gives the
 one-factor Chevalley commutator formula over every commutative value ring. -/
