@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.CompactSupport
 public import TauCeti.Analysis.Calculus.FDeriv.Smul
+import TauCeti.Analysis.Calculus.FDeriv.Integrable
 import TauCeti.Geometry.Symplectic.CompatibleMetric
 
 /-!
@@ -115,17 +116,8 @@ theorem integral_norm_partialDeriv_sq_le_of_close_complexStructure
   linarith
 
 omit [FiniteDimensional ℝ V] in
-/-- The Leibniz rule for the directional derivative of a cutoff times a map. -/
-private lemma fderiv_cutoff_smul_apply {χ : ℝ × ℝ → ℝ}
-    (hu : ContDiff ℝ 2 u) (hχ : ContDiff ℝ 2 χ) (z e : ℝ × ℝ) :
-    fderiv ℝ (χ • u) z e = χ z • fderiv ℝ u z e + fderiv ℝ χ z e • u z := by
-  simpa only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, add_comm] using
-    congrArg (fun L : (ℝ × ℝ) →L[ℝ] V => L e)
-      (fderiv_smul (hχ.differentiable (by norm_num) z) (hu.differentiable (by norm_num) z))
-
-omit [FiniteDimensional ℝ V] in
-private lemma cutoff_defect_density_le {χ : ℝ × ℝ → ℝ}
-    (hu : ContDiff ℝ 2 u) (hχ : ContDiff ℝ 2 χ) (z : ℝ × ℝ)
+private lemma cutoff_defect_density_le {χ : ℝ × ℝ → ℝ} {z : ℝ × ℝ}
+    (hu : DifferentiableAt ℝ u z) (hχ : DifferentiableAt ℝ χ z)
     (hAnorm : ‖A z (u z)‖ ≤ 2 * ‖u z‖) :
     ‖fderiv ℝ (χ • u) z stdComplexLineReal +
       A z (fderiv ℝ (χ • u) z stdComplexLineImag)‖ ^ 2 ≤
@@ -143,8 +135,8 @@ private lemma cutoff_defect_density_le {χ : ℝ × ℝ → ℝ}
   let W := fun z => χ z ^ 2 * ‖s z + A z (t z)‖ ^ 2
   let G := fun z => (a z ^ 2 + b z ^ 2) * ‖u z‖ ^ 2
   let Dv := fun z => ‖vs z + A z (vt z)‖ ^ 2
-  have hderiv (z e : ℝ × ℝ) : fderiv ℝ v z e =
-      χ z • fderiv ℝ u z e + fderiv ℝ χ z e • u z := fderiv_cutoff_smul_apply hu hχ z e
+  have hderiv (e : ℝ × ℝ) : fderiv ℝ v z e =
+      χ z • fderiv ℝ u z e + fderiv ℝ χ z e • u z := fderiv_smul_apply hχ hu e
   have heq : vs z + A z (vt z) =
       χ z • (s z + A z (t z)) + (a z • u z + b z • A z (u z)) := by
     dsimp [vs, vt, s, t, a, b]
@@ -173,80 +165,10 @@ private lemma cutoff_defect_density_le {χ : ℝ × ℝ → ℝ}
   simpa only [mul_assoc] using hgoal
 
 omit [FiniteDimensional ℝ V] in
-/-- The cutoff-derivative error density of a `C²` cutoff is integrable. -/
-private lemma integrable_cutoff_fderiv_sq_mul_norm_sq {χ : ℝ × ℝ → ℝ}
-    (hu : ContDiff ℝ 2 u) (hχ : ContDiff ℝ 2 χ) (hc : HasCompactSupport χ) :
-    Integrable (fun z => (fderiv ℝ χ z stdComplexLineReal ^ 2 +
-      fderiv ℝ χ z stdComplexLineImag ^ 2) * ‖u z‖ ^ 2) volume := by
-  have hdχ : Continuous (fderiv ℝ χ) := hχ.continuous_fderiv (by norm_num)
-  have ha : Continuous fun z => fderiv ℝ χ z stdComplexLineReal := hdχ.clm_apply continuous_const
-  have hb : Continuous fun z => fderiv ℝ χ z stdComplexLineImag := hdχ.clm_apply continuous_const
-  have hac : HasCompactSupport fun z => fderiv ℝ χ z stdComplexLineReal := hc.fderiv_apply ℝ _
-  have hbc : HasCompactSupport fun z => fderiv ℝ χ z stdComplexLineImag := hc.fderiv_apply ℝ _
-  exact (show Continuous (fun z => (fderiv ℝ χ z stdComplexLineReal ^ 2 +
-      fderiv ℝ χ z stdComplexLineImag ^ 2) * ‖u z‖ ^ 2) from
-      ((ha.pow 2).add (hb.pow 2)).mul (hu.continuous.norm.pow 2))
-    |>.integrable_of_hasCompactSupport
-      (((hac.comp_left (g := fun r : ℝ => r ^ 2) (by simp)).add
-        (hbc.comp_left (g := fun r : ℝ => r ^ 2) (by simp))).mul_right)
-
-omit [FiniteDimensional ℝ V] in
-/-- The derivative energy of a compactly supported `C²` map is integrable, in the two coordinate
-directions. -/
-private lemma integrable_norm_fderiv_sq_add {w : ℝ × ℝ → V}
-    (hw : ContDiff ℝ 2 w) (hc : HasCompactSupport w) :
-    Integrable (fun z => ‖fderiv ℝ w z stdComplexLineReal‖ ^ 2 +
-      ‖fderiv ℝ w z stdComplexLineImag‖ ^ 2) volume := by
-  have hdw : Continuous (fderiv ℝ w) := hw.continuous_fderiv (by norm_num)
-  have hs : Continuous fun z => fderiv ℝ w z stdComplexLineReal := hdw.clm_apply continuous_const
-  have ht : Continuous fun z => fderiv ℝ w z stdComplexLineImag := hdw.clm_apply continuous_const
-  have hsc : HasCompactSupport fun z => fderiv ℝ w z stdComplexLineReal := hc.fderiv_apply ℝ _
-  have htc : HasCompactSupport fun z => fderiv ℝ w z stdComplexLineImag := hc.fderiv_apply ℝ _
-  exact ((show Continuous fun z => ‖fderiv ℝ w z stdComplexLineReal‖ ^ 2 from
-      hs.norm.pow 2).integrable_of_hasCompactSupport
-        (hsc.comp_left (g := fun x : V => ‖x‖ ^ 2) (by simp))).add
-    ((show Continuous fun z => ‖fderiv ℝ w z stdComplexLineImag‖ ^ 2 from
-      ht.norm.pow 2).integrable_of_hasCompactSupport
-        (htc.comp_left (g := fun x : V => ‖x‖ ^ 2) (by simp)))
-
-omit [FiniteDimensional ℝ V] in
-/-- A cutoff-weighted energy density is integrable when the weight has compact support. -/
-private lemma integrable_cutoff_sq_mul_norm_fderiv_sq {χ : ℝ × ℝ → ℝ}
-    (hu : ContDiff ℝ 2 u) (hχ : ContDiff ℝ 2 χ) (hc : HasCompactSupport χ) :
-    Integrable (fun z => χ z ^ 2 * (‖fderiv ℝ u z stdComplexLineReal‖ ^ 2 +
-      ‖fderiv ℝ u z stdComplexLineImag‖ ^ 2)) volume := by
-  have hdu : Continuous (fderiv ℝ u) := hu.continuous_fderiv (by norm_num)
-  have hs : Continuous fun z => fderiv ℝ u z stdComplexLineReal := hdu.clm_apply continuous_const
-  have ht : Continuous fun z => fderiv ℝ u z stdComplexLineImag := hdu.clm_apply continuous_const
-  have hχsq : HasCompactSupport (fun z => χ z ^ 2) :=
-    hc.comp_left (g := fun r : ℝ => r ^ 2) (by simp)
-  exact (show Continuous (fun z => χ z ^ 2 * (‖fderiv ℝ u z stdComplexLineReal‖ ^ 2 +
-      ‖fderiv ℝ u z stdComplexLineImag‖ ^ 2)) from
-      (hχ.continuous.pow 2).mul ((hs.norm.pow 2).add (ht.norm.pow 2)))
-    |>.integrable_of_hasCompactSupport hχsq.mul_right
-
-omit [FiniteDimensional ℝ V] in
-/-- A weighted squared Cauchy–Riemann defect is integrable once it vanishes off a compact set
-on which the coefficients are continuous. -/
-private lemma integrable_mul_norm_defect_sq {w : ℝ × ℝ → V} {c : ℝ × ℝ → ℝ} {S : Set (ℝ × ℝ)}
-    (hw : ContDiff ℝ 2 w) (hc : Continuous c) (hS : IsCompact S) (hA : ContinuousOn A S)
-    (hsub : Function.support (fun z => c z * ‖fderiv ℝ w z stdComplexLineReal +
-      A z (fderiv ℝ w z stdComplexLineImag)‖ ^ 2) ⊆ S) :
-    Integrable (fun z => c z * ‖fderiv ℝ w z stdComplexLineReal +
-      A z (fderiv ℝ w z stdComplexLineImag)‖ ^ 2) volume := by
-  have hdw : Continuous (fderiv ℝ w) := hw.continuous_fderiv (by norm_num)
-  have hs : Continuous fun z => fderiv ℝ w z stdComplexLineReal := hdw.clm_apply continuous_const
-  have ht : Continuous fun z => fderiv ℝ w z stdComplexLineImag := hdw.clm_apply continuous_const
-  exact (integrableOn_iff_integrable_of_support_subset hsub).mp <|
-    (show ContinuousOn _ S from hc.continuousOn.mul
-      ((hs.continuousOn.add (hA.clm_apply ht.continuousOn)).norm.pow 2))
-      |>.integrableOn_compact' hS hS.isClosed.measurableSet
-
-omit [FiniteDimensional ℝ V] in
 /-- The pointwise bound for the Cauchy–Riemann defect of a cutoff times a map. -/
 private lemma cutoff_defect_le_of_close {χ : ℝ × ℝ → ℝ} (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
-    (hu : ContDiff ℝ 2 u) (hχ : ContDiff ℝ 2 χ)
-    (hclose : ∀ z ∈ tsupport χ, ∀ v, ‖A z v - J v‖ ≤ (1 / 2 : ℝ) * ‖v‖) (z : ℝ × ℝ) :
+    (hclose : ∀ z ∈ tsupport χ, ∀ v, ‖A z v - J v‖ ≤ (1 / 2 : ℝ) * ‖v‖) {z : ℝ × ℝ}
+    (hu : DifferentiableAt ℝ u z) (hχ : DifferentiableAt ℝ χ z) :
     ‖fderiv ℝ (χ • u) z stdComplexLineReal +
       A z (fderiv ℝ (χ • u) z stdComplexLineImag)‖ ^ 2 ≤
       2 * (χ z ^ 2 * ‖fderiv ℝ u z stdComplexLineReal +
@@ -261,10 +183,10 @@ private lemma cutoff_defect_le_of_close {χ : ℝ × ℝ → ℝ} (hg : ∀ v w,
           add_le_add (hclose z hz _)
             (le_of_eq (ω.norm_apply_eq_norm_of_apply_apply_self_eq_inner (fun v => hg v v) _))
         _ ≤ _ := by nlinarith [norm_nonneg (u z)]
-    simpa only [mul_assoc] using cutoff_defect_density_le hu hχ z hAnorm
+    simpa only [mul_assoc] using cutoff_defect_density_le hu hχ hAnorm
   · have hχzero : χ z = 0 := image_eq_zero_of_notMem_tsupport hz
     have hdχzero : fderiv ℝ χ z = 0 := fderiv_of_notMem_tsupport ℝ hz
-    rw [fderiv_cutoff_smul_apply hu hχ, fderiv_cutoff_smul_apply hu hχ]
+    rw [fderiv_smul_apply hχ hu, fderiv_smul_apply hχ hu]
     simp [hχzero, hdχzero]
 
 /-- An interior `L²` derivative estimate with a compactly supported `C²` cutoff. The coefficient
@@ -297,26 +219,36 @@ theorem integral_cutoff_sq_mul_norm_partialDeriv_sq_le
     A z (fderiv ℝ v z stdComplexLineImag)‖ ^ 2
   have hv : ContDiff ℝ 2 v := hχ.smul hu
   have hvc : HasCompactSupport v := hc.smul_right
-  have hGi : Integrable G volume := integrable_cutoff_fderiv_sq_mul_norm_sq hu hχ hc
-  have hEi : Integrable E volume := integrable_cutoff_sq_mul_norm_fderiv_sq hu hχ hc
-  have hEvi : Integrable Ev volume := integrable_norm_fderiv_sq_add hv hvc
+  have hu₁ : ContDiff ℝ 1 u := hu.of_le (by norm_num)
+  have hv₁ : ContDiff ℝ 1 v := hv.of_le (by norm_num)
+  have hGi : Integrable G volume :=
+    integrable_cutoff_fderiv_sq_mul_norm_sq hu.continuous (hχ.of_le (by norm_num)) hc
+      stdComplexLineReal stdComplexLineImag
+  have hEi : Integrable E volume :=
+    integrable_cutoff_sq_mul_norm_fderiv_sq hu₁ hχ.continuous hc
+      stdComplexLineReal stdComplexLineImag
+  have hEvi : Integrable Ev volume :=
+    integrable_norm_fderiv_sq_add hv₁ hvc stdComplexLineReal stdComplexLineImag
   have hWi : Integrable W volume :=
-    integrable_mul_norm_defect_sq (c := fun z => χ z ^ 2) hu (hχ.continuous.pow 2) hc hA
-      fun z hz => by
+    integrable_mul_norm_defect_sq stdComplexLineReal stdComplexLineImag
+      (c := fun z => χ z ^ 2) hu₁ (hχ.continuous.pow 2) hc hA
+      (fun z hz => by
         contrapose hz
-        simp [Function.mem_support, image_eq_zero_of_notMem_tsupport hz]
+        simp [Function.mem_support, image_eq_zero_of_notMem_tsupport hz])
   have hDvi : Integrable Dv volume := by
-    simpa only [one_mul] using integrable_mul_norm_defect_sq (c := fun _ => (1 : ℝ)) hv
-      continuous_const hc hA fun z hz => by
+    simpa only [one_mul] using integrable_mul_norm_defect_sq stdComplexLineReal stdComplexLineImag
+      (c := fun _ => (1 : ℝ)) hv₁
+      continuous_const hc hA (fun z hz => by
         contrapose hz
         have hzv : z ∉ tsupport v := fun hzv => hz (tsupport_smul_subset_left χ u hzv)
-        simp [Function.mem_support, fderiv_of_notMem_tsupport ℝ hzv]
+        simp [Function.mem_support, fderiv_of_notMem_tsupport ℝ hzv])
   have henergy (z : ℝ × ℝ) : E z ≤ 2 * Ev z + 2 * G z := by
     simpa only [mul_assoc] using cutoff_sq_mul_norm_fderiv_sq_le
       (hu.differentiable (by norm_num) z) (hχ.differentiable (by norm_num) z)
       stdComplexLineReal stdComplexLineImag
   have hdefect (z : ℝ × ℝ) : Dv z ≤ 2 * W z + 16 * G z :=
-    cutoff_defect_le_of_close hg hu hχ hclose z
+    cutoff_defect_le_of_close hg hclose (hu.differentiable (by norm_num) z)
+      (hχ.differentiable (by norm_num) z)
   -- Integrate the pointwise cutoff bounds, then apply the homogeneous estimate to χ • u.
   have hcompact : (∫ z, Ev z) ≤ 4 * ∫ z, Dv z :=
     integral_norm_partialDeriv_sq_le_of_close_complexStructure hg
