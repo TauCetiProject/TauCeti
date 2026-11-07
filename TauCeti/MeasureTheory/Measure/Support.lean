@@ -8,16 +8,19 @@ module
 public import Mathlib.MeasureTheory.Measure.Support
 
 /-!
-# Topological support under scalar multiplication and continuous maps
+# Topological support under restriction, scalar multiplication, and continuous maps
 
-This file identifies the support of a nonzero scalar multiple of a measure and the support of a
-pushforward by a continuous map. It also shows that pushing a measure forward along a
+This file identifies the support of restriction to an open set for a measure positive on
+nonempty open sets, a nonzero scalar multiple of a measure, and a pushforward by a continuous
+map. It also shows that pushing a measure forward along a
 homeomorphism transports its topological support onto the image of the original support.
 
 ## Main result
 
 * `MeasureTheory.Measure.support_smul_measure` — multiplying a measure by a nonzero scalar
   preserves its support.
+* `MeasureTheory.Measure.support_restrict_of_isOpen` — restricting a measure positive on
+  nonempty open sets to an open set gives support equal to that set's closure.
 * `MeasureTheory.Measure.support_map_eq_closure_image` — a continuous pushforward has support
   equal to the closure of the image of the support, when the source support has full measure.
 * `MeasureTheory.Measure.support_map_eq_closure_range` — a continuous image of a full-support
@@ -43,6 +46,17 @@ theorem support_smul_measure {X : Type*} [TopologicalSpace X] [MeasurableSpace X
   constructor <;> intro h U hxU hU
   · exact (ENNReal.mul_pos_iff.mp (h U hxU hU)).2
   · exact ENNReal.mul_pos_iff.mpr ⟨pos_iff_ne_zero.mpr hc, h U hxU hU⟩
+
+/-- Restricting a measure positive on nonempty open sets to an open set gives support equal
+to the closure of that set. -/
+@[simp]
+theorem support_restrict_of_isOpen {X : Type*} [TopologicalSpace X] [MeasurableSpace X]
+    [OpensMeasurableSpace X] (μ : Measure X) [μ.IsOpenPosMeasure]
+    {s : Set X} (hs : IsOpen s) : (μ.restrict s).support = closure s := by
+  refine Set.Subset.antisymm (support_restrict_subset.trans inter_subset_left) ?_
+  apply closure_minimal _ isClosed_support
+  simpa only [hs.interior_eq, support_eq_univ, inter_univ] using
+    (interior_inter_support (μ := μ) (s := s))
 
 variable {X Y : Type*} [TopologicalSpace X] [MeasurableSpace X] [BorelSpace X]
   [TopologicalSpace Y] [MeasurableSpace Y] [BorelSpace Y]
