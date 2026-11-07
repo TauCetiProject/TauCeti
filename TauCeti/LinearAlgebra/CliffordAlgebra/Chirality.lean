@@ -228,11 +228,8 @@ omit hQ in
 even elements and anticommutes with odd ones. -/
 theorem chirality_mul (x : CliffordAlgebra Q) :
     chirality Q o * x = involute x * chirality Q o := by
-  induction x using CliffordAlgebra.induction with
-  | algebraMap r => rw [AlgHom.commutes, Algebra.commutes]
-  | ι v => rw [chirality_mul_ι o, involute_ι, neg_mul]
-  | mul a b ha hb => rw [← mul_assoc, ha, mul_assoc, hb, ← mul_assoc, map_mul]
-  | add a b ha hb => rw [mul_add, ha, hb, map_add, add_mul]
+  rw [chirality_eq_neg_volumeElement, neg_mul, mul_neg,
+    volumeElement_mul_eq_involute_mul o (by decide)]
 
 omit hQ in
 /-- **Even Clifford elements commute with the chirality element.** -/
