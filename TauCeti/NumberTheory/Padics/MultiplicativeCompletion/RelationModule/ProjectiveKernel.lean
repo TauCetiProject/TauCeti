@@ -77,9 +77,9 @@ theorem subsingleton_tateCohomology_res_succ_of_isPGroup {ℓ : ℕ} [Fact ℓ.P
     ((TateCohomology.isoGroupCohomology (n + 1)).app _).toLinearEquiv.toEquiv
     (groupCohomology.subsingleton_of_isUnit_natCard (res S.subtype B) hunit n)
 
-/-- The kernel of a `ℤ_p[G]`-linear map out of the relation module of a finite group is a free
+/-- The kernel of a `ℤ_p[G]`-linear map out of the relation module of a group is a free
 `ℤ_p`-module, as a submodule of `ℤ_p[G]^ι`. -/
-theorem free_ker_of_relationModule {G : Type} [Group G] [Finite G] {ι : Type} [Fintype ι]
+theorem free_ker_of_relationModule {G : Type} [Group G] {ι : Type} [Fintype ι]
     {g : ι → G} {N : Type*} [AddCommGroup N] [Module (MonoidAlgebra ℤ_[p] G) N]
     (β : MonoidAlgebra.relationModule ℤ_[p] G g →ₗ[MonoidAlgebra ℤ_[p] G] N) :
     Module.Free ℤ_[p] (LinearMap.ker β) :=
