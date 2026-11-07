@@ -315,7 +315,8 @@ private theorem addHaar_image_eq_zero_of_fderiv_eq_zero_of_finrank_le_add_two_au
     have hdiff : ∀ x ∈ s, DifferentiableAt ℝ f x := fun x hx ↦
       ((hf x hx).of_le (mod_cast show 1 ≤ k by omega)).differentiableAt_one
     rcases le_or_gt (finrank ℝ E) (finrank ℝ F) with hEF | hEF
-    · exact addHaar_image_eq_zero_of_finrank_le_finrank ν hEF hdiff hs
+    · exact addHaar_image_eq_zero_of_finrank_le_finrank ν hEF fun x hx ↦
+      ((hdiff x hx).hasFDerivAt.congr_fderiv (hs x hx)).hasFDerivWithinAt
     -- A larger source: stratify `s` down to the sharp depth `N`.
     set N := finrank ℝ E - finrank ℝ F + 1 with hNdef
     have hsub := subset_flatStratum_union_iUnion f s N hs
