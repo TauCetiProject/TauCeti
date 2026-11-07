@@ -325,13 +325,9 @@ theorem two_mul_two_pow_le_ncard_primesOver [Finite ι]
       rw [h, hres₀] at hi
       norm_num at hi
     have hcard : 2 ≤ Nat.card ι := Finite.one_lt_card_iff_nontrivial.mpr ⟨i, i₀, hne⟩
-    have h2 := ncard_primesOver_mul_two_eq_finrank hgen adjoin_gen_eq_top hodd
-      hcop ⟨i, hi⟩
-    have hsplit : 2 * (2 : ℕ) ^ (Nat.card ι - 2) * 2 = 2 ^ Nat.card ι := by
-      have harith : Nat.card ι - 2 + 1 + 1 = Nat.card ι := by omega
-      rw [mul_comm 2 ((2 : ℕ) ^ (Nat.card ι - 2)), ← pow_succ, ← pow_succ, harith]
-    rw [hfinrank, ← hsplit] at h2
-    omega
+    rw [ncard_primesOver_eq_two_pow_sub_one hgen adjoin_gen_eq_top hindep hodd hcop ⟨i, hi⟩,
+      show Nat.card ι - 1 = Nat.card ι - 2 + 1 by omega, pow_succ]
+    exact (mul_comm _ _).le
 
 /-! ### The decomposition law at `2`
 
