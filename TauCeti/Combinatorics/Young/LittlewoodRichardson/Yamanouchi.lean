@@ -177,6 +177,42 @@ private theorem rowLen_add_contentFromCol_le_of_lt {lam : YoungDiagram}
     exact mem_filter.mpr ⟨mem_range.mpr hc'k, hc'.1, by omega⟩
   omega
 
+/-- If some cell in a column at least `j` holds the letter `i + 1`, there is a lowest row `k`
+holding such a cell, and no row below `k` holds one. -/
+private theorem exists_lowestRow_of_exists {T : SemistandardYoungTableau μ} {j i : ℕ}
+    (hex : ∃ k c, c < μ.rowLen k ∧ j ≤ c ∧ T k c = i + 1) :
+    ∃ k c, c < μ.rowLen k ∧ j ≤ c ∧ T k c = i + 1 ∧
+      ∀ r, k < r → #{c ∈ range (μ.rowLen r) | j ≤ c ∧ T r c = i + 1} = 0 := by
+  classical
+  obtain ⟨k, hk⟩ : ∃ k, k = Nat.findGreatest
+      (fun k => ∃ c, c < μ.rowLen k ∧ j ≤ c ∧ T k c = i + 1) (μ.colLen 0) := ⟨_, rfl⟩
+  obtain ⟨k₀, c₀, hc₀, hjc₀, hT₀⟩ := hex
+  have hk₀ : k₀ ≤ μ.colLen 0 :=
+    (YoungDiagram.lt_colLen_zero_of_mem (YoungDiagram.mem_iff_lt_rowLen.mpr hc₀)).le
+  have hspec := Nat.findGreatest_spec
+    (P := fun k => ∃ c, c < μ.rowLen k ∧ j ≤ c ∧ T k c = i + 1) hk₀ ⟨c₀, hc₀, hjc₀, hT₀⟩
+  rw [← hk] at hspec
+  obtain ⟨c, hc, hjc, hTc⟩ := hspec
+  refine ⟨k, c, hc, hjc, hTc, fun r hr => ?_⟩
+  refine card_eq_zero.mpr (filter_eq_empty_iff.mpr fun c' hc' ⟨hjc', hTc'⟩ => ?_)
+  have hc' := mem_range.mp hc'
+  exact Nat.findGreatest_is_greatest
+    (P := fun k => ∃ c, c < μ.rowLen k ∧ j ≤ c ∧ T k c = i + 1) (hk ▸ hr)
+    (YoungDiagram.lt_colLen_zero_of_mem (YoungDiagram.mem_iff_lt_rowLen.mpr hc')).le
+    ⟨c', hc', hjc', hTc'⟩
+
+/-- The cells holding `i + 1` in a column at least `j` lie in the rows up to `k`, so their number
+is at most the total row count of the letter `i + 1` in those rows. -/
+private theorem contentFromCol_le_sum_rowCount (T : SemistandardYoungTableau μ) {j i k N : ℕ}
+    (hN : μ.colLen 0 ≤ N) (hkN : k + 1 ≤ N)
+    (hzero : ∀ r, k < r → #{c ∈ range (μ.rowLen r) | j ≤ c ∧ T r c = i + 1} = 0) :
+    T.contentFromCol j (i + 1) ≤ ∑ r ∈ range (k + 1), ((botEquiv μ).symm T).rowCount r (i + 1) := by
+  rw [contentFromCol_eq_sum T j (i + 1) hN, ← sum_range_ite_lt _ hkN]
+  refine sum_le_sum fun r _ => ?_
+  split_ifs with hr
+  · exact T.card_filter_le_rowCount_symm_botEquiv r j _
+  · exact (hzero r (by omega)).le
+
 /-- The row-count condition implies Stembridge's condition at every column `j` and letter `i`.
 Let `k` be the lowest row holding a letter `i + 1` in a column at least `j`. If every letter `i`
 in the rows above `k` lies in a column at least `j`, the row-count condition at `(i, k)` suffices.
@@ -199,33 +235,11 @@ private theorem isYamanouchi_of_rowLen_add_sum_rowCount_le {lam : YoungDiagram}
       exact ⟨c.1, c.2, YoungDiagram.mem_iff_lt_rowLen.mp ((YoungDiagram.mem_cells c).mp hc),
         h'⟩
     omega
-  -- The lowest row holding a letter `i + 1` in a column at least `j`.
-  obtain ⟨k, hk⟩ : ∃ k, k = Nat.findGreatest
-      (fun k => ∃ c, c < μ.rowLen k ∧ j ≤ c ∧ T k c = i + 1) (μ.colLen 0) := ⟨_, rfl⟩
-  obtain ⟨k₀, c₀, hc₀, hjc₀, hT₀⟩ := hex
-  have hk₀ : k₀ ≤ μ.colLen 0 :=
-    (YoungDiagram.lt_colLen_zero_of_mem (YoungDiagram.mem_iff_lt_rowLen.mpr hc₀)).le
-  have hspec := Nat.findGreatest_spec
-    (P := fun k => ∃ c, c < μ.rowLen k ∧ j ≤ c ∧ T k c = i + 1) hk₀ ⟨c₀, hc₀, hjc₀, hT₀⟩
-  rw [← hk] at hspec
-  obtain ⟨c, hc, hjc, hTc⟩ := hspec
-  -- No row below `k` holds a letter `i + 1` in a column at least `j`.
-  have hzero : ∀ r, k < r → #{c ∈ range (μ.rowLen r) | j ≤ c ∧ T r c = i + 1} = 0 := by
-    refine fun r hr => card_eq_zero.mpr (filter_eq_empty_iff.mpr fun c' hc' ⟨hjc', hTc'⟩ => ?_)
-    have hc' := mem_range.mp hc'
-    exact Nat.findGreatest_is_greatest
-      (P := fun k => ∃ c, c < μ.rowLen k ∧ j ≤ c ∧ T k c = i + 1) (hk ▸ hr)
-      (YoungDiagram.lt_colLen_zero_of_mem (YoungDiagram.mem_iff_lt_rowLen.mpr hc')).le
-      ⟨c', hc', hjc', hTc'⟩
+  obtain ⟨k, c, hc, hjc, hTc, hzero⟩ := T.exists_lowestRow_of_exists hex
   set N := μ.colLen 0 + k + 1
   have hN : μ.colLen 0 ≤ N := by omega
-  -- The cells holding `i + 1` in a column at least `j` lie in the rows up to `k`.
-  have hf : T.contentFromCol j (i + 1) ≤ ∑ r ∈ range (k + 1), T'.rowCount r (i + 1) := by
-    rw [contentFromCol_eq_sum T j (i + 1) hN, ← sum_range_ite_lt _ (by omega : k + 1 ≤ N)]
-    refine sum_le_sum fun r _ => ?_
-    split_ifs with hr
-    · exact T.card_filter_le_rowCount_symm_botEquiv r j _
-    · exact (hzero r (by omega)).le
+  have hf : T.contentFromCol j (i + 1) ≤ ∑ r ∈ range (k + 1), T'.rowCount r (i + 1) :=
+    T.contentFromCol_le_sum_rowCount hN (by omega) hzero
   rcases Nat.eq_zero_or_pos k with hk0 | hkpos
   · -- In the top row the condition is the row-count condition at `x = 0`.
     have := h i k
