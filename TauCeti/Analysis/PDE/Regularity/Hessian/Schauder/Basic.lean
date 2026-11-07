@@ -116,17 +116,6 @@ private theorem eqOn_preciseRepresentative_gradient {U : Set E} {V : Opens E} {u
   · exact ((InnerProductSpace.toDual ℝ E).symm.continuous.comp_continuousOn
       (hu1.continuousOn_fderiv_of_isOpen hU le_rfl)).mono hVU
 
-/-- The `L²` norm of `D²u` on the open `R`-thickening of a bounded set `S` is finite when `u` is
-`C²` on an open set containing the closed `R`-thickening. -/
-private theorem eLpNorm_iteratedFDeriv_two_thickening_ne_top {U S : Set E} {u : E → ℝ} {R : ℝ}
-    (hU : IsOpen U) (hu : ContDiffOn ℝ 2 u U) (hS : Bornology.IsBounded S)
-    (hSU : cthickening R S ⊆ U) :
-    eLpNorm (iteratedFDeriv ℝ 2 u) 2 (volume.restrict (thickening R S)) ≠ ∞ :=
-  (((ContinuousOn.continuousOn_iteratedFDeriv hu hU le_rfl).mono
-    ((closure_thickening_subset_cthickening R S).trans hSU)).memLp_restrict_of_subset_isCompact
-      hS.thickening.isCompact_closure isOpen_thickening.measurableSet subset_closure
-        2).eLpNorm_ne_top
-
 /-- If the weak gradient of `d` agrees a.e. on `V` with `∇ (∂ₑu)` for a unit vector `e`, and
 `fderiv u` is differentiable on a set `U ⊇ V`, then `‖∇d‖_{L²} ≤ ‖D²u‖_{L²(V)}`. -/
 private theorem norm_gradient_le_toReal_eLpNorm_iteratedFDeriv_two {U : Set E} {V : Opens E}
@@ -182,7 +171,7 @@ theorem exists_holderOnWith_iteratedFDeriv_two_of_laplacian {α : ℝ≥0} (hα 
   have hvV : W1p.value v =ᵐ[volume.restrict V] u :=
     ae_restrict_of_ae_restrict_of_subset (hVT ▸ subset_closure.trans hTW) hv
   -- The `L²` norm of `D²u` on `S_R` is finite.
-  have hfin := eLpNorm_iteratedFDeriv_two_thickening_ne_top hU hu hS hSU
+  have hfin := TauCeti.eLpNorm_iteratedFDeriv_two_thickening_ne_top hU hu hS hSU
   have hdiff : ∀ x ∈ U, DifferentiableAt ℝ (fderiv ℝ u) x := fun x hx =>
     ((hu.contDiffAt (hU.mem_nhds hx)).fderiv_right (m := 1) (by norm_num)).differentiableAt
       one_ne_zero
@@ -309,55 +298,6 @@ private theorem holderOnWith_laplacian_comp {A : Matrix (Fin (n + 1)) (Fin (n + 
         ← Real.rpow_mul hLam.le, NNReal.coe_mul, Real.coe_toNNReal _ (by positivity)]
       ring_nf
 
-/-- The `L²` norm of `D²(u ∘ e)` on the `R / √Λ`-thickening of `e ⁻¹' S` is at most
-`Λ λ^{-(n+1)/4}` times the `L²` norm of `D²u` on the `R`-thickening of `S`. -/
-private theorem toReal_eLpNorm_iteratedFDeriv_two_comp_le {e : E ≃L[ℝ] E} {lam Lam R : ℝ}
-    {U S : Set E} {u : E → ℝ} (hlam : 0 < lam) (hLam : 0 < Lam)
-    (he' : ∀ ξ, ‖e ξ‖ ≤ √Lam * ‖ξ‖) (hesn : ‖(e.symm : E →L[ℝ] E)‖ ≤ (√lam)⁻¹)
-    (hU : IsOpen U) (hu : ContDiffOn ℝ 2 u U) (hS : Bornology.IsBounded S)
-    (hSU : cthickening R S ⊆ U) (hthick : thickening (R / √Lam) (e ⁻¹' S) ⊆ e ⁻¹' thickening R S) :
-    (eLpNorm (iteratedFDeriv ℝ 2 (u ∘ e)) 2
-        (volume.restrict (thickening (R / √Lam) (e ⁻¹' S)))).toReal ≤
-      Lam * lam ^ (-(((n : ℝ) + 1) / 4)) *
-        (eLpNorm (iteratedFDeriv ℝ 2 u) 2 (volume.restrict (thickening R S))).toReal := by
-  -- `D²(u ∘ e) = D²u ∘ e (e, e)` and `|det e⁻¹| ≤ ‖e⁻¹‖^{n+1} ≤ λ^{-(n+1)/2}`.
-  have hU' : IsOpen (e ⁻¹' U) := hU.preimage e.continuous
-  have hv : ContDiffOn ℝ 2 (u ∘ e) (e ⁻¹' U) :=
-    hu.comp (e : E →L[ℝ] E).contDiff.contDiffOn (mapsTo_preimage _ _)
-  have hdet : |(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| ≤ lam ^ (-(((n : ℝ) + 1) / 2)) := by
-    have h2 := (e.symm : E →L[ℝ] E).abs_det_le_opNorm_pow
-    rw [e.det_coe_symm, finrank_euclideanSpace_fin] at h2
-    refine h2.trans ((pow_le_pow_left₀ (norm_nonneg _) hesn _).trans_eq ?_)
-    rw [Real.sqrt_eq_rpow, ← Real.rpow_neg hlam.le, ← Real.rpow_natCast, ← Real.rpow_mul hlam.le]
-    push_cast
-    ring_nf
-  have hT : MeasurableSet (thickening R S) := isOpen_thickening.measurableSet
-  have hL2 : eLpNorm (iteratedFDeriv ℝ 2 (u ∘ e)) 2
-        (volume.restrict (thickening (R / √Lam) (e ⁻¹' S))) ≤
-      ENNReal.ofReal (Lam * lam ^ (-(((n : ℝ) + 1) / 4))) *
-        eLpNorm (iteratedFDeriv ℝ 2 u) 2 (volume.restrict (thickening R S)) := by
-    have hcont : ContinuousOn (iteratedFDeriv ℝ 2 (u ∘ e)) (e ⁻¹' thickening R S) :=
-      (ContinuousOn.continuousOn_iteratedFDeriv hv hU' le_rfl).mono
-        (preimage_mono ((thickening_subset_cthickening R S).trans hSU))
-    refine (eLpNorm_mono_measure _ (Measure.restrict_mono hthick le_rfl)).trans
-      ((e.eLpNorm_iteratedFDeriv_comp_right_restrict_preimage_le volume u 2 2
-        (hcont.aestronglyMeasurable (hT.preimage e.continuous.measurable))).trans ?_)
-    rw [ENNReal.ofReal_mul hLam.le, mul_assoc]
-    gcongr
-    · calc ‖(e : E →L[ℝ] E)‖ ^ 2 ≤ √Lam ^ 2 := by
-            gcongr
-            exact ContinuousLinearMap.opNorm_le_bound _ (Real.sqrt_nonneg _) he'
-        _ = Lam := Real.sq_sqrt hLam.le
-    · rw [ENNReal.ofReal_rpow_of_nonneg (abs_nonneg _) (by simp)]
-      refine ENNReal.ofReal_le_ofReal ((Real.rpow_le_rpow (abs_nonneg _) hdet
-        (by simp)).trans_eq ?_)
-      rw [← Real.rpow_mul hlam.le]
-      norm_num
-      ring_nf
-  refine (ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top
-    (eLpNorm_iteratedFDeriv_two_thickening_ne_top hU hu hS hSU)) hL2).trans_eq ?_
-  rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity)]
-
 /-- **Interior Schauder estimate for constant-coefficient operators, classical form.** Let
 `0 < α < 1`. There is a constant `C`, depending only on `n` and `α`, such that the following
 holds. Let `A` be a matrix with `λ ‖ξ‖² ≤ ξᵀ A ξ ≤ Λ ‖ξ‖²` and `0 < λ`, let `u` be of class `C²`
@@ -415,7 +355,7 @@ theorem exists_holderOnWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv {α : �
         (volume.restrict (thickening R' (e ⁻¹' S)))).toReal ≤
       Lam * lam ^ (-(((n : ℝ) + 1) / 4)) *
         (eLpNorm (iteratedFDeriv ℝ 2 u) 2 (volume.restrict (thickening R S))).toReal :=
-    toReal_eLpNorm_iteratedFDeriv_two_comp_le hlam hLam he' hesn hU hu hS hSU hthick
+    TauCeti.toReal_eLpNorm_iteratedFDeriv_two_comp_le hlam hLam he' hesn hU hu hS hSU hthick
   -- Transfer the Hölder bound for `D²v` on `e⁻¹ S` back to `D²u` on `S`, at the cost of
   -- `‖e⁻¹‖^{2 + α} ≤ λ^{-1-α/2}`.
   refine (e.holderOnWith_iteratedFDeriv_of_comp_right hvhol).mono_const ?_
