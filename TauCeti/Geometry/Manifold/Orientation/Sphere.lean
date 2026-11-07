@@ -14,6 +14,7 @@ import Mathlib.Analysis.InnerProductSpace.TwoDim
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 import TauCeti.Geometry.Manifold.Instances.Sphere
+import TauCeti.Geometry.Sphere.Connected
 
 /-!
 # The outward-normal orientation of a unit sphere and the antipodal map
@@ -232,6 +233,7 @@ theorem _root_.Orientation.isOrientationReversingAt_neg_sphere
 
 /-- **The orientation sign of the antipodal map.** For `n ≥ 1` and every orientation of the
 connected sphere `Sⁿ`, the antipodal map has orientation sign `(-1)^(n+1)` at every point. -/
+@[simp]
 theorem Manifold.Orientation.orientationSign_neg_sphere [NeZero n]
     (o : Manifold.Orientation (𝓡 n) (sphere (0 : E) 1) (Fin n)) (u : sphere (0 : E) 1) :
     orientationSign o o (fun y ↦ -y) u = (-1) ^ (n + 1) := by
@@ -253,6 +255,7 @@ theorem Manifold.Orientation.orientationSign_neg_sphere [NeZero n]
 
 /-- **The degree of the antipodal map.** For `n ≥ 1` and every orientation of `Sⁿ`, the antipodal
 map has degree `(-1)^(n+1)` at every value: its only preimage is the antipodal point. -/
+@[simp]
 theorem Manifold.Orientation.degreeAtRegularValue_neg_sphere [NeZero n]
     (o : Manifold.Orientation (𝓡 n) (sphere (0 : E) 1) (Fin n)) (y : sphere (0 : E) 1) :
     degreeAtRegularValue o o (fun x ↦ -x) y = (-1) ^ (n + 1) := by

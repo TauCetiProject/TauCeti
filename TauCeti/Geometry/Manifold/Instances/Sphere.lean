@@ -14,7 +14,6 @@ public import TauCeti.Geometry.Sphere.LinearIsometry
 
 import Mathlib.Analysis.Calculus.Deriv.Linear
 import Mathlib.Analysis.InnerProductSpace.Calculus
-import Mathlib.Analysis.Normed.Module.Connected
 import Mathlib.Geometry.Manifold.Algebra.SMul
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
@@ -71,8 +70,6 @@ allowing the entire path or loop to be read in one stereographic chart.
 * `LinearIndependent.finCons_mvfderiv_coe_sphere`: a point `u` of the sphere followed by the image
   in the ambient space of a linearly independent family of tangent vectors at `u` is linearly
   independent.
-* `TauCeti.connectedSpace_sphere`: the unit sphere of a space of dimension `n + 1 ≥ 2` is
-  connected.
 * `TauCeti.chartAt_sphere`: the preferred chart at `v` is `stereographic' n (-v)`.
 * `TauCeti.extChartAt_sphere_apply_self`: the preferred extended chart at `v` sends `v` to `0`.
 * `TauCeti.isSmoothEmbedding_stereographic'_symm`: the inverse of a stereographic chart is a
@@ -202,14 +199,6 @@ theorem _root_.LinearIndependent.finCons_mvfderiv_coe_sphere (u : sphere (0 : E)
   LinearIndependent.finCons_orthogonal_span_singleton (ne_zero_of_mem_unit_sphere u)
     (hv.map' _ (LinearMap.ker_eq_bot_of_injective (injective_mvfderiv_subtypeVal_sphere u)))
     fun _ ↦ range_mvfderiv_subtypeVal (n := n) u ▸ LinearMap.mem_range_self _ _
-
-variable (n) in
-/-- The unit sphere of a real inner product space of dimension `n + 1`, with `n ≥ 1`, is
-connected. -/
-theorem connectedSpace_sphere [NeZero n] : ConnectedSpace (sphere (0 : E) 1) :=
-  Subtype.connectedSpace <| isConnected_sphere (one_lt_rank_of_one_lt_finrank <| by
-    rw [Fact.out (p := finrank ℝ E = n + 1)]
-    exact Nat.lt_add_of_pos_left (NeZero.pos n)) 0 zero_le_one
 
 /-- The preferred chart of the sphere at `v` is the stereographic projection from `-v`. -/
 theorem chartAt_sphere (v : sphere (0 : E) 1) :
