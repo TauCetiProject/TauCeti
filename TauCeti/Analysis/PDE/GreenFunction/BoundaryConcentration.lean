@@ -93,18 +93,7 @@ private lemma norm_setIntegral_ballPoissonKernel_mul_le
     exact mul_le_mul_of_nonneg_right
       (ballPoissonKernel_le_of_dist_le_half_of_le_dist hdelta hx.le hnearx hy)
       (norm_nonneg _)
-  have hmeas : AEStronglyMeasurable
-      (fun y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 =>
-        ballPoissonKernel n x y * f y) (nu.restrict s) :=
-    ((continuous_ballPoissonKernel_on_sphere x hx.ne).aestronglyMeasurable.mono_measure
-      Measure.restrict_le_self).mul hf.aestronglyMeasurable
-  have hweighted : Integrable
-      (fun y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 =>
-        ballPoissonKernel n x y * f y) (nu.restrict s) :=
-    Integrable.mono' hg hmeas hbound
-  have h := (norm_integral_le_integral_norm _).trans
-    (integral_mono_ae hweighted.norm hg hbound)
-  simpa only [integral_const_mul] using h
+  simpa only [integral_const_mul] using norm_integral_le_of_norm_le hg hbound
 
 /-- The contribution of integrable boundary data from a fixed positive distance away from `z`
 vanishes in the Poisson integral as the pole approaches `z` from inside the ball. -/
