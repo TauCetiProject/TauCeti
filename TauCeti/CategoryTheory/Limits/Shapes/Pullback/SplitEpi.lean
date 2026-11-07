@@ -106,7 +106,9 @@ lemma pullback_section_comp_mapSnd (h : SplitEpi f) {T T' : C} (g : T ⟶ S) (g'
     (k : T' ⟶ T) (hk : k ≫ g = g') [HasPullback f g] [HasPullback f g'] :
     (h.pullback g').section_ ≫ Limits.pullback.mapSnd f g g' k hk =
       k ≫ (h.pullback g).section_ := by
-  ext <;> simp [← hk]
+  subst hk
+  simpa only [pullback_section_def, Category.assoc] using
+    pullbackSection_comp_mapSnd f g _ k rfl (g ≫ h.section_) (by simp)
 
 end SplitEpi
 
