@@ -713,13 +713,13 @@ theorem ordConnected_setOf_cons_mem_of_mem_stackCells {E : Set (Fin (n + 1) → 
   · exact key (ordConnected_preimage_mk_sectorSet θ j)
 
 omit [LinearOrder α] in
-/-- A set whose projection is the base `C` is recovered from its preimage under the cylinder
+/-- A set whose projection lies in the base `C` is recovered from its preimage under the cylinder
 over `C`. -/
 theorem image_cylinder_preimage_eq {E : Set (Fin (n + 1) → α)}
-    (hEC : Fin.tail '' E = C) : cylinder C '' (cylinder C ⁻¹' E) = E := by
+    (hEC : Fin.tail '' E ⊆ C) : cylinder C '' (cylinder C ⁻¹' E) = E := by
   refine image_preimage_eq_of_subset fun y hy ↦ ?_
-  rw [range_cylinder, mem_ofPred_eq, ← hEC]
-  exact mem_image_of_mem _ hy
+  rw [range_cylinder, mem_ofPred_eq]
+  exact hEC (mem_image_of_mem _ hy)
 
 /-- If the preimages under the cylinder over `C` of the cells of `𝒞` lying over `C` are exactly the
 section and sector sets of a stack `θ`, then these cells are the cells of the stack. -/
@@ -732,7 +732,7 @@ theorem eq_stackCells_of_image_cylinder_preimage {𝒞 : Set (Set (Fin (n + 1) �
   · have hA : cylinder C ⁻¹' E ∈ (cylinder C ⁻¹' ·) '' {E ∈ 𝒞 | Fin.tail '' E = C} :=
       mem_image_of_mem _ hE
     rw [hθ𝒜] at hA
-    rw [← image_cylinder_preimage_eq hE.2]
+    rw [← image_cylinder_preimage_eq hE.2.subset]
     rcases hA with ⟨i, hi⟩ | ⟨j, hj⟩
     · exact hi ▸ image_cylinder_sectionSet_mem_stackCells i
     · exact hj ▸ image_cylinder_sectorSet_mem_stackCells j
@@ -741,7 +741,7 @@ theorem eq_stackCells_of_image_cylinder_preimage {𝒞 : Set (Set (Fin (n + 1) �
       · exact ⟨_, hθ𝒜 ▸ Or.inl (mem_range_self i), rfl⟩
       · exact ⟨_, hθ𝒜 ▸ Or.inr (mem_range_self j), rfl⟩
     obtain ⟨_, ⟨E', hE', rfl⟩, rfl⟩ := hA
-    rwa [image_cylinder_preimage_eq hE'.2]
+    rwa [image_cylinder_preimage_eq hE'.2.subset]
 
 end Order
 
