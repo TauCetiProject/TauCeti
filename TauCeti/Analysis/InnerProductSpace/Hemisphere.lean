@@ -367,6 +367,7 @@ private theorem nonempty_homeomorph_sphere_of_union_closedBall_orthogonal
   have : CompactSpace X := ⟨hAB ▸ hAc.union hBc⟩
   exact ⟨hg.homeoOfEquivCompactToT2 (f := Equiv.ofBijective g ⟨hinj, hsurj⟩)⟩
 
+omit [FiniteDimensional ℝ E] in
 /-- **Two discs glued along their boundary spheres form a sphere.** Let `X` be covered by two
 closed sets `A` and `B`, each homeomorphic to the closed unit ball of a real inner product space
 `F` of dimension `n`, such that `A ∩ B` corresponds to the unit sphere under both
@@ -382,6 +383,7 @@ theorem nonempty_homeomorph_sphere_of_union_closedBall {F : Type*} [NormedAddCom
     (hAe : ∀ x : A, (x : X) ∈ B ↔ ‖(eA x : F)‖ = 1)
     (hBe : ∀ x : B, (x : X) ∈ A ↔ ‖(eB x : F)‖ = 1) :
     Nonempty (X ≃ₜ sphere (0 : E) 1) := by
+  have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos (by omega)
   have : Fact (Module.finrank ℝ E = Module.finrank ℝ F + 1) := ⟨hF⟩
   have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ hF
   obtain ⟨p⟩ : Nonempty (sphere (0 : E) 1) :=

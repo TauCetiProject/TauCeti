@@ -41,7 +41,7 @@ If `D` has degree `e` and `E` has degree `d`, the residual has degree `e - d`. -
 @[expose]
 def subOfLe (D : EffectiveDivisorOfDegree X e) (E : EffectiveDivisorOfDegree X d)
     (hED : (E : WeilDivisor X) ≤ D) : EffectiveDivisorOfDegree X (e - d) :=
-  ⟨(D : WeilDivisor X) - E, le_iff_isEffective_sub.mp hED, by
+  ⟨(D : WeilDivisor X) - E, sub_nonneg.mpr hED, by
     have hde : d ≤ e := EffectiveDivisorOfDegree.degree_le_of_le hED
     rw [degree_sub, D.degree_eq, E.degree_eq]
     exact (Int.ofNat_sub hde).symm⟩
@@ -77,8 +77,8 @@ lemma multiplicityFinsupp_subOfLe (D : EffectiveDivisorOfDegree X e)
     Int.toNat_le_toNat hcoeff
   apply Nat.cast_injective (R := ℤ)
   rw [Int.toNat_sub_of_le hcoeff, Nat.cast_sub hnat]
-  rw [Int.toNat_of_nonneg ((isEffective_iff (D : WeilDivisor X)).mp D.isEffective x),
-    Int.toNat_of_nonneg ((isEffective_iff (E : WeilDivisor X)).mp E.isEffective x)]
+  rw [Int.toNat_of_nonneg (coeff_nonneg D.coe_nonneg x),
+    Int.toNat_of_nonneg (coeff_nonneg E.coe_nonneg x)]
 
 /-- The finitely supported multiplicity representation of a residual divisor is the
 truncated difference of the representations of the original divisors. -/
@@ -137,9 +137,7 @@ lemma subOfLe_add (D : EffectiveDivisorOfDegree X e) (E : EffectiveDivisorOfDegr
 identifying `d - 0` with `d`. -/
 @[simp]
 lemma subOfLe_zero (D : EffectiveDivisorOfDegree X d) :
-    subOfLe D (zero X) (by
-      rw [← WeilDivisor.isEffective_iff_zero_le]
-      exact D.isEffective) =
+    subOfLe D (zero X) D.coe_nonneg =
       EffectiveDivisorOfDegree.cast (Nat.sub_zero d).symm D := by
   ext
   simp
