@@ -117,35 +117,23 @@ theorem commutatorElement_chevalleyRootSubgroup_of_add_eq_of_add_eq
   have hiij : ⁅e α, ⁅e α, e β⁆⁆ = (2 * d) • e δ := by
     rw [lie_chevalleySystem_eq_structureConstant_zsmul hγ, lie_zsmul,
       lie_chevalleySystem_eq_structureConstant_zsmul hδ, smul_smul, hdiv]
-  -- The same lattice is stable under the all-root Kostant form.
-  have hM' : ∀ z ∈ kostantForm e (t.lieBasis ht).h, ∀ w ∈ M, ρ z w ∈ M := by
-    intro z hz w hw
-    refine kostantForm_apply_mem e (t.lieBasis ht).h ρ M.toIntSubmodule ?_ ?_ z hz hw
-    · intro η n w hw
-      rw [Associative.map_dividedPower]
-      exact dividedPower_chevalleySystem_smul_mem ρ M hM hnil η n w hw
-    · intro i n w hw
-      exact hM _ (ringChoose_mem_kostantForm _ _ i n) w hw
-  have heq (η : Fin t.numRoots) : chevalleyRootSubgroup ρ M hM hnil η A =
-      kostantRootSubgroupParam e (t.lieBasis ht).h ρ M hM' η
-        (isNilpotent_apply_ι_chevalleySystem ρ hnil η) A := by
-    refine MonoidHom.ext fun w => Units.ext <| LinearMap.ext fun z => ?_
-    rw [chevalleyRootSubgroup_val, kostantRootSubgroupParam_val_apply]
-  simp_rw [heq, kostantRootSubgroupParam_apply]
-  -- Normalize the stored integer algebra to match the generic Kostant relation.
-  obtain ⟨R, _, _⟩ := A
-  rename_i hR hA
-  cases Subsingleton.elim hA (Ring.toIntAlgebra R)
+  have hM' := kostantForm_chevalleySystem_apply_mem_of_isNilpotent ρ M hM hnil
+  simp_rw [chevalleyRootSubgroup_eq_kostantRootSubgroupParam, kostantRootSubgroupParam_apply]
+  -- Normalize the stored integer algebra without destructuring the bundled value ring.
+  rw [Subsingleton.elim (CommAlgCat.instAlgebraObjForgetAlgHomCarrier (A := A))
+    (Ring.toIntAlgebra A)]
   simpa only [MulEquiv.apply_symm_apply, toAdd_ofAdd] using
     commutatorElement_kostantRootSubgroupPoints_of_lie_lie_eq' e (t.lieBasis ht).h ρ M hM'
-      (A := R)
+      (A := A)
       (lie_chevalleySystem_eq_structureConstant_zsmul hγ) hiij hil hjk hjl
       (isNilpotent_apply_ι_chevalleySystem ρ hnil α)
       (isNilpotent_apply_ι_chevalleySystem ρ hnil β)
       (isNilpotent_apply_ι_chevalleySystem ρ hnil γ)
       (isNilpotent_apply_ι_chevalleySystem ρ hnil δ)
-      ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := R)).symm (Multiplicative.ofAdd u))
-      ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := R)).symm (Multiplicative.ofAdd v))
+      ((@AdditiveGroup.gaPointsMulEquiv ℤ _ A _ (Ring.toIntAlgebra A)).symm
+        (Multiplicative.ofAdd u))
+      ((@AdditiveGroup.gaPointsMulEquiv ℤ _ A _ (Ring.toIntAlgebra A)).symm
+        (Multiplicative.ofAdd v))
 
 end
 
