@@ -208,6 +208,25 @@ theorem filter_ne_product_of_disjoint {s t : Finset α} [DecidableEq α] (hst : 
   filter_true_of_mem fun _ hp =>
     hst.forall_ne_finset (mem_product.mp hp).1 (mem_product.mp hp).2
 
+/-- A rectangle `X ×ˢ Y` inside a block `A ×ˢ B` of disjoint sets, with sides carrying an
+`ε`-fraction of `A` and `B`, carries an `ε²`-fraction of the ordered distinct pairs of the block. -/
+theorem sq_mul_card_filter_ne_product_le {α R : Type*} [DecidableEq α] [CommRing R] [LinearOrder R]
+    [IsStrictOrderedRing R] {ε : R} {A B X Y : Finset α} (hε : 0 ≤ ε)
+    (hAB : Disjoint A B) (hX : X ⊆ A) (hY : Y ⊆ B) (hXc : ε * #A ≤ #X) (hYc : ε * #B ≤ #Y) :
+    ε ^ 2 * #((A ×ˢ B).filter fun p => p.1 ≠ p.2) ≤
+      (#((X ×ˢ Y).filter fun p => p.1 ≠ p.2) : R) := by
+  rw [filter_ne_product_of_disjoint hAB, filter_ne_product_of_disjoint (hAB.mono hX hY),
+    card_product, card_product]
+  push_cast
+  calc ε ^ 2 * (#A * #B : R) = (ε * #A) * (ε * #B) := by ring
+    _ ≤ #X * #Y := mul_le_mul hXc hYc (by positivity) (Nat.cast_nonneg _)
+
+/-- There are at most `n ^ 2` ordered pairs of distinct elements of a type with `n` elements. -/
+theorem card_offDiag_univ_le_sq (α : Type*) [Fintype α] :
+    #(univ : Finset α).offDiag ≤ Fintype.card α ^ 2 := by
+  rw [offDiag_card, card_univ, sq]
+  exact Nat.sub_le _ _
+
 /-- Counting the pairs with distinct coordinates in `s ×ˢ t` by their first coordinate: each
 `u ∈ s` is paired with the elements of `t` other than `u`. -/
 theorem card_filter_ne_product {α : Type*} [DecidableEq α] (s t : Finset α) :
