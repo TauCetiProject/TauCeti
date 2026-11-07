@@ -71,8 +71,8 @@ degree `p ^ h`: two laws of height `h` become laws whose `p`-series have the sam
   `[p]_F` is nonzero.
 * `FormalGroup.coeff_nsmulSeries_eq_zero_of_lt_height`: below the height `h`, the `p`-series has
   no term of degree `pᵏ`, `k < h`.
-* `FormalGroup.coeff_nsmulSeries_ne_zero`: at finite height `h`, the coefficient of `T ^ (p ^ h)`
-  in the `p`-series is nonzero.
+* `FormalGroup.coeff_nsmulSeries_ne_zero_of_height_eq`: at finite height `h`, the coefficient of
+  `T ^ (p ^ h)` in the `p`-series is nonzero.
 * `FormalGroup.height_map`: the height is invariant under extension of the base field.
 * `TauCeti.FormalGroupHom.order_nsmulSeries_eq`: over an integral domain, if there is a nonzero
   homomorphism from `F` to `G`, then `[n]_F` and `[n]_G` have the same order.
@@ -275,7 +275,7 @@ theorem coeff_nsmulSeries_eq_zero_of_lt_height [hp : Fact p.Prime] [CharP K p] [
   exact Nat.pow_lt_pow_right hp.out.one_lt hk
 
 /-- The coefficient of `T ^ (p ^ h)` in `[p]_F(T)` is nonzero when `F` has height `h`. -/
-theorem coeff_nsmulSeries_ne_zero [hp : Fact p.Prime] [CharP K p] [F.IsComm] {h : ℕ}
+theorem coeff_nsmulSeries_ne_zero_of_height_eq [hp : Fact p.Prime] [CharP K p] [F.IsComm] {h : ℕ}
     (hF : F.height p = h) : PowerSeries.coeff (p ^ h) (F.nsmulSeries p) ≠ 0 :=
   (PowerSeries.order_eq_nat.mp (F.height_eq_natCast_iff.mp hF)).1
 
@@ -410,7 +410,7 @@ theorem coeff_nsmulSeries_homothety_smul_eq_one {K : Type*} [Field K] {p : ℕ} 
     (hu : (u : K) ^ (p ^ h - 1) = PowerSeries.coeff (p ^ h) (F.nsmulSeries p)) :
     PowerSeries.coeff (p ^ h) ((TauCeti.FormalCoordinate.homothety u • F).nsmulSeries p) = 1 := by
   set a := PowerSeries.coeff (p ^ h) (F.nsmulSeries p)
-  have ha : a ≠ 0 := F.coeff_nsmulSeries_ne_zero hF
+  have ha : a ≠ 0 := F.coeff_nsmulSeries_ne_zero_of_height_eq hF
   have key := (smulIso (TauCeti.FormalCoordinate.homothety u) F).toHom
     |>.coeff_nsmulSeries_mul_coeff_one_pow hF
   simp only [smulIso_toHom_toPowerSeries, TauCeti.FormalCoordinate.toPowerSeries_homothety,

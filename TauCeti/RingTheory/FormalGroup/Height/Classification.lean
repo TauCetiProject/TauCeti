@@ -330,7 +330,7 @@ private theorem exists_le_order_homDefect_add [IsSepClosed K] (hF : F.height p =
       (PowerSeries.coeff (M * p ^ h) (pSeriesError F G p f))
       (by rw [Nat.cast_pow, hpK, zero_pow hh])
       (by have := Nat.one_lt_pow hh hp'.one_lt; omega)
-      (pow_ne_zero _ (F.coeff_nsmulSeries_ne_zero hF))
+      (pow_ne_zero _ (F.coeff_nsmulSeries_ne_zero_of_height_eq hF))
     refine ⟨c, hord c ?_, fun j hj ↦ ?_⟩
     · -- `(X + Y) ^ pᵏ = X ^ pᵏ + Y ^ pᵏ` in characteristic `p`
       rw [hΦ₀, _root_.add_zero, hk, add_pow_char_pow]
@@ -372,7 +372,8 @@ private theorem exists_pow_sub_one_eq_div [IsSepClosed K] (hF : F.height p = h)
   rintro rfl
   have h1 := Nat.one_lt_pow hh hp.out.one_lt
   rw [zero_pow (by omega)] at hc₁
-  exact div_ne_zero (F.coeff_nsmulSeries_ne_zero hF) (G.coeff_nsmulSeries_ne_zero hG) hc₁.symm
+  exact div_ne_zero (F.coeff_nsmulSeries_ne_zero_of_height_eq hF)
+    (G.coeff_nsmulSeries_ne_zero_of_height_eq hG) hc₁.symm
 
 /-- The first approximation `c₁ X`, where `c₁ ^ (p ^ h - 1) = u / v`, has homomorphism defect
 vanishing below degree `2` (it is a homomorphism up to degree `1`) and satisfies the
@@ -386,8 +387,8 @@ private theorem approx_zero_spec (hF : F.height p = h) (hG : G.height p = h) {c�
       ∀ j, p ^ j ≤ 1 → PowerSeries.coeff (p ^ j * p ^ h)
         (pSeriesError F G p (c₁ • PowerSeries.X ^ 1 : PowerSeries K)) = 0 := by
   have hp' := hp.out
-  have hu := F.coeff_nsmulSeries_ne_zero hF
-  have hv := G.coeff_nsmulSeries_ne_zero hG
+  have hu := F.coeff_nsmulSeries_ne_zero_of_height_eq hF
+  have hv := G.coeff_nsmulSeries_ne_zero_of_height_eq hG
   have h₀ : (c₁ • PowerSeries.X ^ 1 : PowerSeries K) = 0 + c₁ • PowerSeries.X ^ 1 := by
     rw [_root_.zero_add]
   refine ⟨by simp, by simp, ?_, fun j hj ↦ ?_⟩
