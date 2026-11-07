@@ -117,8 +117,9 @@ variable (hw : ∀ v, w v < 0)
   (hhom : ∀ i j, IsWeightedHomogeneous w (d (Finsupp.single i 1) j) (g i + r - g j))
 include hhom
 
-/-- The coefficients of a cycle `z` at the monomials of total degree `k` have primitives, which can
-be chosen supported on generators of degree at least `a - r`. -/
+/-- The coefficients of a cycle `z` at the monomials of total degree `k` have primitives `u' e`,
+which can be chosen so that each nonzero coefficient `u' e i` satisfies `a ≤ g i + r + weight w e`:
+the generator `i` has degree `g i`, shifted by `r` and by the weight of the monomial `e`. -/
 private theorem exists_primitive_constantCoeffReduction
     (hexact : ker d.constantCoeffReduction ≤ range d.constantCoeffReduction) {k : ℕ}
     {a : ℤ} {z : ι →₀ MvPolynomial σ R} (hz : d z = 0) (hza : DegreeGE w g a z)
