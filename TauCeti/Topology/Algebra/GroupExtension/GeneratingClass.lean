@@ -63,27 +63,8 @@ theorem exists_surjective_continuousMonoidHom_of_generating_classes
   have : Finite (H2 G (Additive N)) := Nat.finite_of_card_ne_zero <| by
     rw [hr]
     exact pow_ne_zero _ (Fact.out : p.Prime).ne_zero
-  -- The trivial cohomology group needs no correction; taking exponent one also avoids
-  -- inferring coprimality to `p` from coprimality to its zeroth power.
-  obtain ⟨n, hn, hclass⟩ : ∃ n : ℕ, p.Coprime n ∧
-      n • (X.map f hf).contCohomologyClass = Y.contCohomologyClass := by
-    by_cases hzero : r = 0
-    · have : Subsingleton (H2 G (Additive N)) := Nat.card_eq_one_iff_unique.mp
-        (by simpa [hzero] using hr) |>.1
-      exact ⟨1, Nat.coprime_one_right _, Subsingleton.elim _ _⟩
-    · obtain ⟨k, hk, heq⟩ := AddSubgroup.exists_coprime_zsmul_of_generators
-        (X.map f hf).contCohomologyClass Y.contCohomologyClass hx hy
-      let n := (k % (Nat.card (H2 G (Additive N)) : ℤ)).natAbs
-      have hn : (Nat.card (H2 G (Additive N))).Coprime n := by
-        apply Nat.Coprime.symm
-        simpa only [Int.gcd_def, Int.natAbs_natCast] using
-          (Int.gcd_emod k (Nat.card (H2 G (Additive N)))).trans hk
-      have heq' : n • (X.map f hf).contCohomologyClass = Y.contCohomologyClass := by
-        rw [heq, ← natCast_zsmul, Int.natAbs_of_nonneg
-          (Int.emod_nonneg _ (Int.natCast_ne_zero.mpr Nat.card_pos.ne')),
-          mod_natCard_zsmul]
-      rw [hr] at hn
-      exact ⟨n, (Nat.coprime_pow_left_iff (Nat.pos_of_ne_zero hzero) p n).mp hn, heq'⟩
+  obtain ⟨n, hn, hclass⟩ := AddSubgroup.exists_coprime_nsmul_of_generators_of_card_eq_pow
+    _ _ hx hy hr
   let q : N →*[G] N :=
     { powMonoidHom n with map_smul' := fun g z ↦ (smul_pow' g z n).symm }
   have hq_apply (z : N) : q z = z ^ n := (rfl)
