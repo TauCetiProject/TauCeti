@@ -1,7 +1,7 @@
 name: Queue Housekeeping
 
 # Tidies the PR queue so the autonomous worker can stay focused on producing work.
-# review.yml already auto-merges green PRs; this covers the other two janitorial jobs:
+# The queue service admits green PRs; this covers the other two janitorial jobs:
 #   abandon  Close any open PR the review engine labelled `review-budget-spent` (it used its full
 #            review budget without going green; the engine clears the label if a later round fixes it).
 #            The branch is kept; the comment says it is fine to open a fresh PR after another look.

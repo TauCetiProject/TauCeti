@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Dual.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Norm
+import Mathlib.Algebra.BigOperators.Field
 
 /-!
 # Gram-matrix lattices on the standard rational coordinate space
@@ -38,6 +39,11 @@ Cartan matrix computable from that matrix alone.
 * `TauCeti.IntegralLattice.mem_ofGramMatrix_basisFun_carrier_iff`: the carrier is `ℤⁿ`.
 * `TauCeti.IntegralLattice.mem_ofGramMatrix_basisFun_dualCarrier_iff`: the dual carrier consists of
   the vectors whose row combinations against `G` are integers.
+* `TauCeti.IntegralLattice.form_ofGramMatrix_basisFun_of_sum_eq_ite` and
+  `TauCeti.IntegralLattice.mem_ofGramMatrix_basisFun_dualCarrier_of_sum_eq_ite`: if the row
+  combinations of `G` against a rational vector `x` are `δ_{i, i₀}`, then `y` pairs with `x` to
+  `y i₀` for every `y`, and `x` is dual-integral. The hypothesis holds for `x = c / d` when
+  `G c = d • e_{i₀}` over `ℤ` (`Matrix.sum_mul_div_eq_ite`).
 
 ## References
 
@@ -45,6 +51,28 @@ Cartan matrix computable from that matrix alone.
 -/
 
 public section
+
+namespace Matrix
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι] (G : Matrix ι ι ℤ) (c : ι → ℤ) (d : ℤ)
+  (hd : d ≠ 0) (i₀ : ι)
+include hd
+
+/-- If `G c = d • e_{i₀}` over `ℤ`, the rational vector `c / d` has row combinations
+`δ_{i, i₀}` against `G`. -/
+theorem sum_mul_div_eq_ite (h : ∀ i, ∑ j, G i j * c j = if i = i₀ then d else 0) (i : ι) :
+    ∑ j, ((G i j : ℤ) : ℚ) * ((c j : ℚ) / d) = if i = i₀ then 1 else 0 := by
+  have hcast := congrArg (fun z : ℤ => (z : ℚ)) (h i)
+  simp only [Int.cast_sum, Int.cast_mul] at hcast
+  have hd' : (d : ℚ) ≠ 0 := by exact_mod_cast hd
+  have hsum : ∑ j, ((G i j : ℤ) : ℚ) * ((c j : ℚ) / d) =
+      (∑ j, ((G i j : ℤ) : ℚ) * (c j : ℚ)) / d := by
+    rw [Finset.sum_div]
+    exact Finset.sum_congr rfl fun j _ ↦ by ring
+  rw [hsum, hcast]
+  split_ifs <;> simp [hd']
+
+end Matrix
 
 namespace TauCeti
 
@@ -175,6 +203,31 @@ theorem mem_ofGramMatrix_basisFun_dualCarrier_iff (x : ι → ℚ) :
     | smul c a _ ha =>
         rw [map_zsmul]
         exact Submodule.smul_mem (1 : Submodule ℤ ℚ) c ha
+
+section Weight
+
+variable [DecidableEq ι] (x : ι → ℚ) (i₀ : ι)
+  (hx : ∀ i, ∑ j, ((G i j : ℤ) : ℚ) * x j = if i = i₀ then 1 else 0)
+include hx
+
+/-- If the row combinations of `G` against `x` are `δ_{i, i₀}`, then `x` is the dual vector of the
+`i₀`-th coordinate: `y` pairs with `x` to `y i₀`. -/
+theorem form_ofGramMatrix_basisFun_of_sum_eq_ite (y : ι → ℚ) :
+    (ofGramMatrix (Pi.basisFun ℚ ι) G hG).form y x = y i₀ := by
+  rw [form_ofGramMatrix_basisFun_apply]
+  simp_rw [hx]
+  simp
+
+/-- If the row combinations of `G` against `x` are `δ_{i, i₀}`, then `x` lies in the dual of the
+Gram-matrix lattice. -/
+theorem mem_ofGramMatrix_basisFun_dualCarrier_of_sum_eq_ite :
+    x ∈ (ofGramMatrix (Pi.basisFun ℚ ι) G hG).dualCarrier := by
+  rw [mem_ofGramMatrix_basisFun_dualCarrier_iff]
+  intro i
+  rw [hx i]
+  exact ⟨if i = i₀ then 1 else 0, by split_ifs <;> simp⟩
+
+end Weight
 
 end StandardCoordinates
 

@@ -188,7 +188,7 @@ theorem coeff_apply_of_mem_pow_idealOfVars
   rw [apply_apply_eq_finsuppSum_mul, apply_apply_eq_finsuppSum_mul,
     Finsupp.sum_mapRange_index (by simp), Finsupp.sum, Finsupp.sum, coeff_sum]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [coeff_mul_of_mem_pow_idealOfVars _ (hz i) _ he.le,
+  rw [RingHom.id_apply, RingHom.id_apply, coeff_mul_of_mem_pow_idealOfVars _ (hz i) _ he.le,
     constantCoeffReduction_single_apply, one_mul, lcoeff_apply]
 
 end Coefficients

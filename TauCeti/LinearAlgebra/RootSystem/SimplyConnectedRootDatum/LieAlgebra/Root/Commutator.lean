@@ -22,9 +22,9 @@ commute; this latter assertion holds in every type.
 The root-string conditions are consequences of the pinned datum, not additional Lie-bracket
 hypotheses on the representation. In a simply-laced type, a root sum has Cartan pairing `-1`,
 so neither `2α + β` nor `α + 2β` is a root or zero. The corresponding brackets vanish, and the
-Kostant relation `commutatorElement_kostantRootSubgroupParam_of_lie_eq`, based on the integral
-exponential identity `baseChangeExp_mul_baseChangeExp_of_commutator_eq`, gives the formula without
-inverting factorials in the value ring. No faithfulness or weight basis is
+native relation `DynkinType.commutatorElement_chevalleyRootSubgroup_of_lie_eq`, based on the
+integral exponential identity `baseChangeExp_mul_baseChangeExp_of_commutator_eq`, gives the formula
+without inverting factorials in the value ring. No faithfulness or weight basis is
 required of the representation beyond the hypotheses of the existing root-subgroup construction.
 
 The commutator convention is `⁅x, y⁆ = x * y * x⁻¹ * y⁻¹`.
@@ -88,13 +88,8 @@ theorem commutatorElement_chevalleyRootSubgroup_of_isSimplyLaced (hs : t.IsSimpl
   have hγ' := hγ.trans (add_comm _ _)
   have hβγ := lie_chevalleySystem_eq_zero
     (root_add_notMem_of_root_eq_add hs hγ') (root_add_ne_zero_of_root_eq_add hs hγ')
-  rw [chevalleyRootSubgroup_eq_kostantRootSubgroupParam,
-    chevalleyRootSubgroup_eq_kostantRootSubgroupParam,
-    chevalleyRootSubgroup_eq_kostantRootSubgroupParam]
-  simpa only [toAdd_ofAdd] using
-    commutatorElement_kostantRootSubgroupParam_of_lie_eq _ _ ρ M _ _ _ _
-      (lie_chevalleySystem_eq_structureConstant_zsmul hγ) hαγ hβγ A
-      (Multiplicative.ofAdd u) (Multiplicative.ofAdd v)
+  exact commutatorElement_chevalleyRootSubgroup_of_lie_eq ρ M hM hnil
+    (lie_chevalleySystem_eq_structureConstant_zsmul hγ) hαγ hβγ A u v
 
 end
 
