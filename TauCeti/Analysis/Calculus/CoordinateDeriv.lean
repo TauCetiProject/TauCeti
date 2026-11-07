@@ -346,6 +346,19 @@ theorem mixedDeriv_nil_comp_fst (f : CoordinateSpace n → A) (α : List (Fin n)
     mixedDeriv α [] (fun p => f p.1) x ξ = coordinateDeriv α f x := by
   simp only [mixedDeriv_def, coordinateDeriv_nil]
 
+/-- A position-independent function has no position derivatives. -/
+theorem mixedDeriv_comp_snd (f : CoordinateSpace n → A) {α : List (Fin n)} (hα : α ≠ [])
+    (β : List (Fin n)) (x ξ : CoordinateSpace n) :
+    mixedDeriv α β (fun p => f p.2) x ξ = 0 := by
+  simp only [mixedDeriv_def]
+  rw [coordinateDeriv_const _ hα, Pi.zero_apply]
+
+/-- The frequency derivatives of a position-independent function are those of its profile. -/
+theorem mixedDeriv_nil_comp_snd (f : CoordinateSpace n → A) (β : List (Fin n))
+    (x ξ : CoordinateSpace n) :
+    mixedDeriv [] β (fun p => f p.2) x ξ = coordinateDeriv β f ξ := by
+  simp only [mixedDeriv_def, coordinateDeriv_nil]
+
 section Linear
 
 variable {a b : CoordinateSpace n × CoordinateSpace n → A}
