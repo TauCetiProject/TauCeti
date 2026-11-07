@@ -226,4 +226,30 @@ theorem norm_inv_mul_add_two_mul_commonPrefixLength (g f : FreeGroup α) :
 
 end CommonPrefix
 
+section Induction
+
+variable [DecidableEq α]
+
+/-- Induction along reduced words: a property of `1` that passes from `g` to `g * mk [x]`
+whenever the reduced word of `g * mk [x]` is that of `g` followed by `x` holds for every element
+of the free group. -/
+@[elab_as_elim]
+theorem induction_on_reduced {motive : FreeGroup α → Prop} (g : FreeGroup α) (one : motive 1)
+    (mul_mk_singleton : ∀ g x, (g * mk [x]).toWord = g.toWord ++ [x] → motive g →
+      motive (g * mk [x])) :
+    motive g := by
+  suffices ∀ L : List (α × Bool), IsReduced L → motive (mk L) by
+    simpa only [mk_toWord] using this g.toWord isReduced_toWord
+  intro L
+  induction L using List.reverseRecOn with
+  | nil => exact fun _ => one_eq_mk (α := α) ▸ one
+  | append_singleton L x ih =>
+    intro hL
+    have hL' : IsReduced L := hL.infix (List.prefix_append L [x]).isInfix
+    rw [← mul_mk]
+    refine mul_mk_singleton _ _ ?_ (ih hL')
+    rw [mul_mk, toWord_mk, hL.reduce_eq, toWord_mk, hL'.reduce_eq]
+
+end Induction
+
 end FreeGroup
