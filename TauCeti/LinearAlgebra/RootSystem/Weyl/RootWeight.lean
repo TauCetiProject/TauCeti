@@ -39,6 +39,8 @@ matrix (`RootPairing.Base.exists_cartanMatrix_mul_diagonal_posDef`).
 
 * `RootPairing.pairingIn_reflectionPerm_left_eq_sub`: the action of a reflection on the pairings of
   a root.
+* `RootPairing.Base.cartanMatrix_row_eq_pairingIn`: the rows of the Cartan matrix are the weights
+  of the simple roots.
 * `RootPairing.Base.linearIndependent_cartanMatrix_row`: the rows of the Cartan matrix are linearly
   independent over `ℤ`.
 * `RootPairing.Base.induction_pairingIn_reflection`: the induction principle on weights.
@@ -74,6 +76,23 @@ theorem RootPairing.pairingIn_reflectionPerm_left_eq_sub (S : Type*) [CommRing S
 
 namespace RootPairing.Base
 
+/-- The `i`-th row of the Cartan matrix is the weight `k ↦ ⟨αᵢ, αₖ∨⟩` of the simple root `αᵢ`. -/
+theorem cartanMatrix_row_eq_pairingIn [P.IsCrystallographic] (b : P.Base) (i : b.support) :
+    b.cartanMatrix.row i = fun k : b.support ↦ P.pairingIn ℤ i k := by
+  funext k
+  simp [cartanMatrixIn_def]
+
+/-- If a property of integral weights is stable under the simple reflections, then so is the
+property of the negated weight. -/
+private theorem neg_reflection_stable [P.IsCrystallographic] (b : P.Base)
+    {Q : (b.support → ℤ) → Prop}
+    (hrefl : ∀ (χ : b.support → ℤ) (i : b.support), Q χ → Q (χ - χ i • b.cartanMatrix.row i))
+    (ψ : b.support → ℤ) (i : b.support) (hψ : Q (-ψ)) :
+    Q (-(ψ - ψ i • b.cartanMatrix.row i)) := by
+  have hsub : -(ψ - ψ i • b.cartanMatrix.row i) = -ψ - (-ψ) i • b.cartanMatrix.row i := by
+    rw [Pi.neg_apply, neg_smul, sub_neg_eq_add, neg_sub, sub_eq_neg_add]
+  exact hsub ▸ hrefl _ i hψ
+
 variable [P.IsCrystallographic] [CharZero R] [Finite ι] [IsDomain R]
 
 /-- The rows of the Cartan matrix of a base of a finite crystallographic root system are linearly
@@ -93,9 +112,8 @@ theorem induction_pairingIn_reflection [P.IsReduced] (b : P.Base) {Q : (b.suppor
     (hrefl : ∀ (χ : b.support → ℤ) (i : b.support), Q χ → Q (χ - χ i • b.cartanMatrix.row i))
     (j : ι) : Q fun k : b.support ↦ P.pairingIn ℤ j k := by
   let w (j : ι) : b.support → ℤ := fun k ↦ P.pairingIn ℤ j k
-  have hrow (i : b.support) : w i = b.cartanMatrix.row i := by
-    funext k
-    simp [w, cartanMatrixIn_def]
+  have hrow (i : b.support) : w i = b.cartanMatrix.row i :=
+    (b.cartanMatrix_row_eq_pairingIn i).symm
   have hreflect (i : b.support) (j : ι) :
       w (P.reflectionPerm i j) = w j - w j i • b.cartanMatrix.row i := by
     funext k
@@ -117,13 +135,7 @@ theorem induction_pairingIn_reflection [P.IsReduced] (b : P.Base) {Q : (b.suppor
     exact hrefl _ _ (hsimple _)
   · rintro i l ⟨h₁, h₂⟩ hl
     rw [hreflect ⟨l, hl⟩ i]
-    refine ⟨hrefl _ _ h₁, ?_⟩
-    have hsub : -(w i - w i ⟨l, hl⟩ • b.cartanMatrix.row ⟨l, hl⟩) =
-        -w i - (-w i) ⟨l, hl⟩ • b.cartanMatrix.row ⟨l, hl⟩ := by
-      funext k
-      simp only [Pi.neg_apply, Pi.sub_apply, Pi.smul_apply, smul_eq_mul]
-      ring
-    exact hsub ▸ hrefl _ _ h₂
+    exact ⟨hrefl _ _ h₁, b.neg_reflection_stable hrefl _ _ h₂⟩
 
 /-! ## Weights whose orbit is signed -/
 
@@ -153,6 +165,46 @@ theorem exists_pos_of_mem_closure_range_cartanMatrix_row [P.IsRootSystem] (b : P
   rw [Matrix.mulVec_diagonal, ← hcoord]
   nlinarith [hle k, mul_nonneg (hd k).le (hn k)]
 
+/-- A positive weight `χ` whose reflection at the simple root `αₖ` is negative is a positive
+multiple of the `k`-th row of the Cartan matrix. -/
+private theorem exists_eq_nsmul_cartanMatrix_row_of_neg_reflection [P.IsRootSystem] (b : P.Base)
+    {χ : b.support → ℤ} (k : b.support)
+    (hC : χ ∈ AddSubsemigroup.closure (Set.range b.cartanMatrix.row))
+    (hneg : -(χ - χ k • b.cartanMatrix.row k) ∈
+      AddSubsemigroup.closure (Set.range b.cartanMatrix.row)) :
+    ∃ m : ℕ, 0 < m ∧ χ = m • b.cartanMatrix.row k := by
+  classical
+  obtain ⟨n, hn, rfl⟩ :=
+    AddSubsemigroup.exists_nonneg_linearCombination_eq_of_mem_closure_range hC
+  set χ := Finsupp.linearCombination ℤ b.cartanMatrix.row n with hχ
+  obtain ⟨n', hn', hn'eq⟩ :=
+    AddSubsemigroup.exists_nonneg_linearCombination_eq_of_mem_closure_range hneg
+  have hlc : Finsupp.linearCombination ℤ b.cartanMatrix.row (n - Finsupp.single k (χ k)) =
+      χ - χ k • b.cartanMatrix.row k := by
+    rw [map_sub, Finsupp.linearCombination_single]
+  rw [← hlc, ← map_neg] at hn'eq
+  obtain rfl := b.linearIndependent_cartanMatrix_row.finsuppLinearCombination_injective hn'eq
+  -- Both `n` and `single k (χ k) - n` are nonnegative, so `n` is supported at `k`.
+  have hsingle : n = Finsupp.single k (n k) := by
+    ext j
+    by_cases hj : j = k
+    · simp [hj]
+    · have h1 := hn' j
+      have h2 := hn j
+      simp only [Finsupp.coe_neg, Finsupp.coe_sub, Pi.neg_apply, Pi.sub_apply,
+        Finsupp.single_apply, Ne.symm hj, ite_false, sub_zero] at h1 ⊢
+      omega
+  have hχk : χ = n k • b.cartanMatrix.row k := by
+    rw [hχ]
+    conv_lhs => rw [hsingle]
+    rw [Finsupp.linearCombination_single]
+  have hnk : 0 < n k := by
+    refine (hn k).lt_of_ne fun h ↦ ?_
+    rw [hχk, ← h, zero_smul] at hC
+    exact b.linearIndependent_cartanMatrix_row.zero_notMem_closure_range hC
+  obtain ⟨m, hm⟩ := Int.eq_ofNat_of_zero_le hnk.le
+  exact ⟨m, by omega, by rw [hχk, hm, natCast_zsmul]⟩
+
 /-- The positive case of `RootPairing.Base.exists_eq_nsmul_pairingIn_of_reflection`: writing the
 weight as `∑ⱼ nⱼ αⱼ` with `nⱼ ≥ 0`, by strong induction on its height `∑ⱼ nⱼ`. -/
 private theorem exists_eq_nsmul_pairingIn_of_mem_closure [P.IsRootSystem] (b : P.Base)
@@ -177,11 +229,8 @@ private theorem exists_eq_nsmul_pairingIn_of_mem_closure [P.IsRootSystem] (b : P
   induction N using Nat.strong_induction_on with
   | _ N ih =>
   intro n hn hN hQ hC
-  set χ := Finsupp.linearCombination ℤ b.cartanMatrix.row n with hχ
+  set χ := Finsupp.linearCombination ℤ b.cartanMatrix.row n
   have hinj := b.linearIndependent_cartanMatrix_row.finsuppLinearCombination_injective
-  have hrow (i : b.support) : b.cartanMatrix.row i = fun k : b.support ↦ P.pairingIn ℤ i k := by
-    funext k
-    simp [cartanMatrixIn_def]
   obtain ⟨k, hk⟩ := b.exists_pos_of_mem_closure_range_cartanMatrix_row hC
   have hlc : Finsupp.linearCombination ℤ b.cartanMatrix.row (n - Finsupp.single k (χ k)) =
       χ - χ k • b.cartanMatrix.row k := by
@@ -202,34 +251,13 @@ private theorem exists_eq_nsmul_pairingIn_of_mem_closure [P.IsRootSystem] (b : P
     refine ⟨P.reflectionPerm k j, m, hm, funext fun l ↦ ?_⟩
     have hl := congrFun hjm l
     have hk' := congrFun hjm k
-    simp only [Pi.sub_apply, Pi.smul_apply, smul_eq_mul, hrow, nsmul_eq_mul,
-      P.pairingIn_same] at hl hk' ⊢
+    simp only [Pi.sub_apply, Pi.smul_apply, smul_eq_mul, cartanMatrix_row_eq_pairingIn,
+      nsmul_eq_mul, P.pairingIn_same] at hl hk' ⊢
     rw [P.pairingIn_reflectionPerm_left_eq_sub ℤ]
     linear_combination hl - P.pairingIn ℤ (k : ι) (l : ι) * hk'
   · -- The reflected weight is negative, so `χ` is a multiple of the row of `αₖ`.
-    obtain ⟨n', hn', hn'eq⟩ :=
-      AddSubsemigroup.exists_nonneg_linearCombination_eq_of_mem_closure_range hneg
-    rw [← hlc, ← map_neg] at hn'eq
-    obtain rfl := hinj hn'eq
-    have hsingle : n = Finsupp.single k (n k) := by
-      ext j
-      by_cases hj : j = k
-      · simp [hj]
-      · have h1 := hn' j
-        have h2 := hn j
-        simp only [Finsupp.coe_neg, Finsupp.coe_sub, Pi.neg_apply, Pi.sub_apply,
-          Finsupp.single_apply, Ne.symm hj, ite_false, sub_zero] at h1 ⊢
-        omega
-    have hχk : χ = n k • b.cartanMatrix.row k := by
-      rw [hχ]
-      conv_lhs => rw [hsingle]
-      rw [Finsupp.linearCombination_single]
-    have hnk : 0 < n k := by
-      refine (hn k).lt_of_ne fun h ↦ ?_
-      rw [hχk, ← h, zero_smul] at hC
-      exact b.linearIndependent_cartanMatrix_row.zero_notMem_closure_range hC
-    obtain ⟨m, hm⟩ := Int.eq_ofNat_of_zero_le hnk.le
-    exact ⟨k, m, by omega, by rw [hχk, hm, natCast_zsmul, hrow]⟩
+    obtain ⟨m, hm, hχk⟩ := b.exists_eq_nsmul_cartanMatrix_row_of_neg_reflection k hC hneg
+    exact ⟨k, m, hm, by rw [hχk, cartanMatrix_row_eq_pairingIn]⟩
 
 /-- **The weights with a signed orbit are multiples of roots.** Let `Q` be a property of integral
 weights `χ : b.support → ℤ` that is stable under the simple reflections
@@ -247,10 +275,7 @@ theorem exists_eq_nsmul_pairingIn_of_reflection [P.IsRootSystem] (b : P.Base)
   · exact b.exists_eq_nsmul_pairingIn_of_mem_closure hrefl hsign hχ hC
   -- A negative weight is the negative of a positive one, for the negated property.
   obtain ⟨j, m, hm, hjm⟩ := b.exists_eq_nsmul_pairingIn_of_mem_closure (Q := fun ψ ↦ Q (-ψ))
-    (fun ψ i hψ ↦ by
-      have hsub : -(ψ - ψ i • b.cartanMatrix.row i) = -ψ - (-ψ) i • b.cartanMatrix.row i := by
-        rw [Pi.neg_apply, neg_smul, sub_neg_eq_add, neg_sub, sub_eq_neg_add]
-      exact hsub ▸ hrefl _ i hψ)
+    (b.neg_reflection_stable hrefl)
     (fun ψ hψ ↦ by simpa [or_comm] using hsign _ hψ) (by simpa using hχ) hC
   refine ⟨P.reflectionPerm j j, m, hm, ?_⟩
   rw [← neg_neg χ, hjm]
