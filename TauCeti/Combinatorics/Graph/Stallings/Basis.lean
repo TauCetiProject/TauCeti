@@ -15,7 +15,7 @@ public import Mathlib.GroupTheory.FreeGroup.IsFreeGroup
 Reading labels identifies the reduced path group of a folded labelled graph with its
 accepted subgroup. A spanning tree and an orientation therefore give a free basis of that
 subgroup, indexed by the positive non-tree darts. The basis word for a dart follows the tree
-from the base to its source, crosses the dart, and returns along the tree.
+from the chosen vertex to its source, crosses the dart, and returns along the tree.
 
 `StallingsGraph.basisEquiv` gives the explicit isomorphism from the free group on these
 darts to the accepted subgroup. Its inverse sends a closed path's reading to the same path
@@ -80,14 +80,8 @@ theorem IsFolded.pathGroupRead_injective (hS : S.IsFolded) (a : S.graph.V) :
 /-- Reduced closed paths in a folded graph are the elements of its accepted subgroup. -/
 def pathGroupEquivSubgroup (hS : S.IsFolded) (a : S.graph.V) :
     PathGroup S.graph a ≃* S.subgroup a :=
-  MulEquiv.ofBijective
-    ((S.pathGroupRead a).codRestrict (S.subgroup a) (fun p => by
-      rw [S.pathGroupRead_apply]
-      exact S.read_mem_subgroup p.toPath))
-    ⟨fun p q h => hS.pathGroupRead_injective S a (congrArg Subtype.val h), by
-      rintro ⟨g, hg⟩
-      obtain ⟨p, rfl⟩ := S.mem_subgroup_iff.mp hg
-      exact ⟨PathGroup.ofPath p, Subtype.ext (S.pathGroupRead_ofPath p)⟩⟩
+  (MonoidHom.ofInjective (hS.pathGroupRead_injective S a)).trans
+    (MulEquiv.subgroupCongr (S.range_pathGroupRead a))
 
 @[simp] theorem coe_pathGroupEquivSubgroup_apply (hS : S.IsFolded) {a : S.graph.V}
     (p : PathGroup S.graph a) :
@@ -101,95 +95,98 @@ def pathGroupEquivSubgroup (hS : S.IsFolded) (a : S.graph.V) :
       ⟨S.read p, S.read_mem_subgroup p⟩ :=
   Subtype.ext (S.pathGroupRead_ofPath p)
 
-variable (T : S.graph.SpanningTree) {O : Set S.graph.E}
+variable (T : S.graph.SpanningTree) (a : S.graph.V) {O : Set S.graph.E}
 
-/-- The group word read by the tree loop through a dart. These words give a basis when
-restricted to one dart from each reversal pair outside the tree. -/
-def basisWords (e : S.graph.E) : FreeGroup α :=
-  S.read (((T.path S.base (S.graph.src e)).cons (S.graph.dart e)).comp
-    (T.path (S.graph.tgt e) S.base))
+/-- The group word read by the tree loop at `a` through a dart. When the graph is folded,
+these words restricted to one dart from each reversal pair outside the tree form a free
+basis of the accepted subgroup (see `freeGroupBasis`). -/
+def treeLoopWord (e : S.graph.E) : FreeGroup α :=
+  S.read (((T.path a (S.graph.src e)).cons (S.graph.dart e)).comp
+    (T.path (S.graph.tgt e) a))
 
-/-- A basis word follows the tree to the dart, crosses it, and returns through the tree. -/
-theorem basisWords_eq (e : S.graph.E) :
-    S.basisWords T e = S.read (T.path S.base (S.graph.src e)) *
-      FreeGroup.mk [S.label e] * S.read (T.path (S.graph.tgt e) S.base) := by
-  simp [basisWords]
+/-- A tree-loop word follows the tree to the dart, crosses it, and returns through the tree. -/
+theorem treeLoopWord_eq (e : S.graph.E) :
+    S.treeLoopWord T a e = S.read (T.path a (S.graph.src e)) *
+      FreeGroup.mk [S.label e] * S.read (T.path (S.graph.tgt e) a) := by
+  simp [treeLoopWord]
 
 /-- The tree-loop words belong to the accepted subgroup. -/
-theorem basisWords_mem_subgroup (e : S.graph.E) :
-    S.basisWords T e ∈ S.subgroup S.base :=
+theorem treeLoopWord_mem_subgroup (e : S.graph.E) :
+    S.treeLoopWord T a e ∈ S.subgroup a :=
   S.read_mem_subgroup _
 
-/-- Reading the based tree loop through a dart gives its basis word. -/
+/-- Reading the based tree loop through a dart gives its tree-loop word. -/
 @[simp] theorem pathGroupRead_loop (e : S.graph.E) :
-    S.pathGroupRead S.base (T.loop S.base e) = S.basisWords T e := by
+    S.pathGroupRead a (T.loop a e) = S.treeLoopWord T a e := by
   rw [SerreGraph.SpanningTree.loop_def, S.pathGroupRead_ofPath]
   rfl
 
 /-- Reversing a dart inverts its tree-loop word. -/
-@[simp] theorem basisWords_rev (e : S.graph.E) :
-    S.basisWords T (S.graph.rev e) = (S.basisWords T e)⁻¹ := by
-  simp only [← S.pathGroupRead_loop T, SerreGraph.SpanningTree.loop_rev, map_inv]
+@[simp] theorem treeLoopWord_rev (e : S.graph.E) :
+    S.treeLoopWord T a (S.graph.rev e) = (S.treeLoopWord T a e)⁻¹ := by
+  simp only [← S.pathGroupRead_loop T a, SerreGraph.SpanningTree.loop_rev, map_inv]
 
 /-- Tree darts contribute the trivial word in the accepted subgroup. -/
-@[simp] theorem basisWords_eq_one {e : S.graph.E} (he : e ∈ T.darts) :
-    S.basisWords T e = 1 := by
-  rw [← S.pathGroupRead_loop T, T.loop_eq_one S.base he, map_one]
+@[simp] theorem treeLoopWord_eq_one {e : S.graph.E} (he : e ∈ T.darts) :
+    S.treeLoopWord T a e = 1 := by
+  rw [← S.pathGroupRead_loop T a, T.loop_eq_one a he, map_one]
 
 /-- The positive non-tree loops freely generate the accepted subgroup of a folded graph. -/
 def basisEquiv (hS : S.IsFolded) (hO : S.graph.IsOrientation O) :
-    FreeGroup ↥(O \ T.darts) ≃* S.subgroup S.base :=
-  (T.pathGroupEquivFreeGroup S.base hO).symm.trans
-    (S.pathGroupEquivSubgroup hS S.base)
+    FreeGroup ↥(O \ T.darts) ≃* S.subgroup a :=
+  (T.pathGroupEquivFreeGroup a hO).symm.trans
+    (S.pathGroupEquivSubgroup hS a)
 
 /-- Each free generator maps to the label of its tree loop. -/
 @[simp] theorem basisEquiv_of (hS : S.IsFolded) (hO : S.graph.IsOrientation O)
     (e : ↥(O \ T.darts)) :
-    S.basisEquiv T hS hO (FreeGroup.of e) =
-      ⟨S.basisWords T e.1, S.basisWords_mem_subgroup T e.1⟩ := by
-  simp [basisEquiv, SerreGraph.SpanningTree.loop_def, basisWords]
+    S.basisEquiv T a hS hO (FreeGroup.of e) =
+      ⟨S.treeLoopWord T a e.1, S.treeLoopWord_mem_subgroup T a e.1⟩ := by
+  apply Subtype.ext
+  change S.pathGroupRead a ((T.pathGroupEquivFreeGroup a hO).symm (FreeGroup.of e)) = _
+  rw [T.pathGroupEquivFreeGroup_symm_of, S.pathGroupRead_loop]
 
 /-- The inverse basis map reads a closed path in spanning-tree coordinates, recording its
 non-tree darts with their orientation signs. -/
 @[simp] theorem basisEquiv_symm_read (hS : S.IsFolded) (hO : S.graph.IsOrientation O)
-    (p : S.graph.Path S.base S.base) :
-    (S.basisEquiv T hS hO).symm ⟨S.read p, S.read_mem_subgroup p⟩ =
-      T.pathGroupEquivFreeGroup S.base hO (PathGroup.ofPath p) := by
-  apply (S.basisEquiv T hS hO).injective
+    (p : S.graph.Path a a) :
+    (S.basisEquiv T a hS hO).symm ⟨S.read p, S.read_mem_subgroup p⟩ =
+      T.pathGroupEquivFreeGroup a hO (PathGroup.ofPath p) := by
+  apply (S.basisEquiv T a hS hO).injective
   simp [basisEquiv]
 
 /-- The embedding into the ambient free group is the lift of the tree-loop words. -/
 theorem subtype_comp_basisEquiv (hS : S.IsFolded) (hO : S.graph.IsOrientation O) :
-    (S.subgroup S.base).subtype.comp (S.basisEquiv T hS hO).toMonoidHom =
-      FreeGroup.lift (fun e : ↥(O \ T.darts) => S.basisWords T e.1) := by
+    (S.subgroup a).subtype.comp (S.basisEquiv T a hS hO).toMonoidHom =
+      FreeGroup.lift (fun e : ↥(O \ T.darts) => S.treeLoopWord T a e.1) := by
   ext e
   simp
 
 /-- The tree-loop words freely generate a subgroup of the ambient free group. -/
-theorem injective_lift_basisWords (hS : S.IsFolded) (hO : S.graph.IsOrientation O) :
-    Function.Injective (FreeGroup.lift (fun e : ↥(O \ T.darts) => S.basisWords T e.1)) := by
-  rw [← S.subtype_comp_basisEquiv T hS hO]
-  exact Subtype.val_injective.comp (S.basisEquiv T hS hO).injective
+theorem lift_treeLoopWord_injective (hS : S.IsFolded) (hO : S.graph.IsOrientation O) :
+    Function.Injective (FreeGroup.lift (fun e : ↥(O \ T.darts) => S.treeLoopWord T a e.1)) := by
+  rw [← S.subtype_comp_basisEquiv T a hS hO]
+  exact Subtype.val_injective.comp (S.basisEquiv T a hS hO).injective
 
 /-- The image of the free group on the tree-loop words is exactly the accepted subgroup. -/
-@[simp] theorem range_lift_basisWords (hS : S.IsFolded) (hO : S.graph.IsOrientation O) :
-    (FreeGroup.lift (fun e : ↥(O \ T.darts) => S.basisWords T e.1)).range =
-      S.subgroup S.base := by
-  rw [← S.subtype_comp_basisEquiv T hS hO, MonoidHom.range_comp,
-    MonoidHom.range_eq_top.mpr (S.basisEquiv T hS hO).surjective,
+@[simp] theorem range_lift_treeLoopWord (hS : S.IsFolded) (hO : S.graph.IsOrientation O) :
+    (FreeGroup.lift (fun e : ↥(O \ T.darts) => S.treeLoopWord T a e.1)).range =
+      S.subgroup a := by
+  rw [← S.subtype_comp_basisEquiv T a hS hO, MonoidHom.range_comp,
+    MonoidHom.range_eq_top.mpr (S.basisEquiv T a hS hO).surjective,
     Subgroup.map_top, Subgroup.range_subtype]
 
 /-- A free group basis of the accepted subgroup, indexed by the positive non-tree darts. -/
 def freeGroupBasis (hS : S.IsFolded) (hO : S.graph.IsOrientation O) :
-    FreeGroupBasis ↥(O \ T.darts) (S.subgroup S.base) :=
-  .ofRepr (S.basisEquiv T hS hO).symm
+    FreeGroupBasis ↥(O \ T.darts) (S.subgroup a) :=
+  .ofRepr (S.basisEquiv T a hS hO).symm
 
 /-- The basis elements are precisely the tree-loop words. -/
 @[simp] theorem freeGroupBasis_apply (hS : S.IsFolded) (hO : S.graph.IsOrientation O)
     (e : ↥(O \ T.darts)) :
-    S.freeGroupBasis T hS hO e =
-      ⟨S.basisWords T e.1, S.basisWords_mem_subgroup T e.1⟩ := by
-  exact S.basisEquiv_of T hS hO e
+    S.freeGroupBasis T a hS hO e =
+      ⟨S.treeLoopWord T a e.1, S.treeLoopWord_mem_subgroup T a e.1⟩ := by
+  exact S.basisEquiv_of T a hS hO e
 
 end
 end TauCeti.StallingsGraph
