@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Chart
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
-import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
 
 /-!
@@ -88,34 +87,21 @@ private theorem inChartAt_mpullback_eq_at {f : M → M'} (x : M) {z : E}
     (hfx : ContMDiffAt I I' 2 f ((extChartAt I x).symm z)) (φ : RoughForm I' M' F k) :
     (mpullback I I' f φ).inChartAt x z =
       (φ.inChartAt (f x) (writtenInExtChartAt I I' x f z)).compContinuousLinearMap
-        (fderivWithin ℝ (writtenInExtChartAt I I' x f) (range I) z) := by
-  have hdiff : MDifferentiableAt I I' f ((extChartAt I x).symm z) :=
-    hfx.mdifferentiableAt (by norm_num)
-  have hzrange : z ∈ range I := extChartAt_target_subset_range x hz
-  rw [RoughForm.inChartAt_mpullback φ f x hz hdiff]
-  have hlhs : (φ (f ((extChartAt I x).symm z))).compContinuousLinearMap
-      (mfderivWithin 𝓘(ℝ, E) I' (f ∘ (extChartAt I x).symm) (range I) z) =
-        mpullbackWithin 𝓘(ℝ, E) I' (f ∘ (extChartAt I x).symm) (range I) φ z := by
-    ext v
-    rw [mpullbackWithin_apply]
-    -- the two sides differ only by unfolding `Function.comp`
-    rfl
-  have hcomp : MDifferentiableWithinAt 𝓘(ℝ, E) I' (f ∘ (extChartAt I x).symm) (range I) z :=
-    hdiff.comp_mdifferentiableWithinAt _ (mdifferentiableWithinAt_extChartAt_symm hz)
-  rw [hlhs, RoughForm.mpullbackWithin_eq_compContinuousLinearMap φ (f := f ∘ (extChartAt I x).symm)
-    (s := range I) (w := z) (f x) hzf hcomp
-    (I.uniqueDiffOn.uniqueDiffWithinAt hzrange)]
-  -- model-space tangent spaces are definitionally the model spaces, and the two sides agree up to
-  -- unfolding `writtenInExtChartAt`
-  rfl
+        (fderivWithin ℝ (writtenInExtChartAt I I' x f) (range I) z) :=
+  RoughForm.inChartAt_mpullback_eq_compContinuousLinearMap φ x (f x) hz
+    (hfx.mdifferentiableAt (by norm_num)) hzf
 
 private theorem inChartAt_mpullback_eventuallyEq {f : M → M'} (x : M)
     (hf : ContMDiffAt I I' 2 f x) (φ : RoughForm I' M' F k) :
     (mpullback I I' f φ).inChartAt x =ᶠ[𝓝[range I] extChartAt I x x]
       fun z ↦ (φ.inChartAt (f x) (writtenInExtChartAt I I' x f z)).compContinuousLinearMap
         (fderivWithin ℝ (writtenInExtChartAt I I' x f) (range I) z) := by
-  filter_upwards [eventually_target_and_contMDiffAt (by norm_num) x hf] with z hz
-  exact inChartAt_mpullback_eq_at x hz.1 hz.2.1 hz.2.2 φ
+  have hsrc : ∀ᶠ y in 𝓝 x, f y ∈ (extChartAt I' (f x)).source :=
+    hf.continuousAt.preimage_mem_nhds (extChartAt_source_mem_nhds (I := I') (f x))
+  have h := hsrc.and ((contMDiffAt_iff_contMDiffAt_nhds (by norm_num)).mp hf)
+  rw [← map_extChartAt_symm_nhdsWithin_range (I := I) x] at h
+  filter_upwards [extChartAt_target_mem_nhdsWithin x, h] with z hz hz'
+  exact inChartAt_mpullback_eq_at x hz hz'.1 hz'.2 φ
 
 /-- At a point, pullback commutes with the exterior derivative. -/
 theorem mpullback_mextDeriv_at {f : M → M'} (hf : ContMDiffAt I I' 2 f x)
