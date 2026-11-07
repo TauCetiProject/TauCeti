@@ -24,6 +24,8 @@ convergence estimates.
 * `Real.pow_le_pow_iff_div_le_logb_of_base_lt_one`: `x ^ n ≤ b ^ m ↔ m / n ≤ logb b x`.
 * `Real.pow_le_pow_iff_logb_le_div_of_base_lt_one`: `b ^ m ≤ x ^ n ↔ logb b x ≤ m / n`.
 * `Real.le_floor_logb_iff_zpow_le_of_base_lt_one`: `n ≤ ⌊logb b x⌋ ↔ x ≤ b ^ n` for `n : ℤ`.
+* `Real.pow_nat_floor_logb_bounds`: `b ^ ⌊logb b x⌋₊ ≤ x < b ^ (⌊logb b x⌋₊ + 1)`
+  for `1 < b` and `1 ≤ x`.
 -/
 
 public section

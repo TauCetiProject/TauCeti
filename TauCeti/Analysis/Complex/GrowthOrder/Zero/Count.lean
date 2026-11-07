@@ -119,7 +119,7 @@ theorem OrderLE.isBigO_sum_divisor (h : OrderLE f A) (hf : Differentiable ℂ f)
   filter_upwards [hC, eventually_ge_atTop (0 : ℝ)] with R hR hR0
   have hfa : AnalyticOnNhd ℂ f (closedBall 0 R) := fun z _ ↦ hf.analyticAt z
   have hn : 0 ≤ ((∑ᶠ z, MeromorphicOn.divisor f (closedBall 0 R) z : ℤ) : ℝ) :=
-    by exact_mod_cast hfa.sum_divisor_nonneg
+    by exact_mod_cast finsum_nonneg (MeromorphicOn.AnalyticOnNhd.divisor_nonneg hfa)
   simpa only [Real.norm_eq_abs, abs_of_nonneg hn,
     abs_of_nonneg (Real.rpow_nonneg hR0 B)] using hR
 

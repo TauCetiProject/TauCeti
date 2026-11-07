@@ -16,13 +16,18 @@ their support.
 
 At a point `z ∈ U`, Mathlib's `MeromorphicOn.divisor f U` evaluates to
 `(meromorphicOrderAt f z).untop₀`, while zero counts of analytic functions are stated in terms of
-`analyticOrderNatAt f z`. This file records the bridge between the two vocabularies at a point
-where `f` is analytic.
+`analyticOrderNatAt f z`. The comparison identifies the local multiplicity. Local finiteness
+also makes norm sublevels of whole-space divisor support finite and bounds sums over their
+subsets by the corresponding closed-ball count.
 
 ## Main results
 
 * `MeromorphicOn.divisor_eq_analyticOrderNatAt` — at a point where `f` is analytic, the divisor
   reads `analyticOrderNatAt f z`.
+* `MeromorphicOn.divisor_norm_sublevel_finite` — finitely many support points occur in each
+  norm sublevel over a proper normed field.
+* `AnalyticOnNhd.tsum_divisor_subtype_le_sum_closedBall` — a support-subset multiplicity sum
+  is bounded by the containing closed-ball count.
 -/
 
 public section
@@ -43,14 +48,6 @@ theorem MeromorphicOn.divisor_norm_sublevel_finite
   rintro z ⟨ρ, hρ, rfl⟩
   have hρ' : ‖(ρ : 𝕜)‖ ≤ R := hρ
   exact ⟨by simpa only [Metric.mem_closedBall, dist_zero_right] using hρ', ρ.property⟩
-
-/-- The sum of the divisor of an analytic function is nonnegative. This also applies to the
-default zero value of a finite sum with infinite support. -/
-theorem AnalyticOnNhd.sum_divisor_nonneg
-    {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-    {f : 𝕜 → E} {U : Set 𝕜} (hf : AnalyticOnNhd 𝕜 f U) :
-    0 ≤ (∑ᶠ z, MeromorphicOn.divisor f U z : ℤ) :=
-  finsum_nonneg (MeromorphicOn.AnalyticOnNhd.divisor_nonneg hf)
 
 /-- Summing divisor multiplicities over a bounded subset of whole-space support is bounded
 by the divisor count on the containing closed ball. -/

@@ -39,6 +39,8 @@ dyadic annuli and compares their contributions with a geometric series.
 * `TauCeti.tsum_nat_rpow_neg_le_two` — `∑' m : ℕ, m ^ (-t) ≤ 2` for `2 ≤ t`.
 * `TauCeti.hasSum_int_inv_sq` — `∑_{n ∈ ℤ} n⁻² = π ^ 2 / 3`.
 * `TauCeti.summable_one_add_abs_int_rpow` — `∑ n : ℤ, (1 + |n|) ^ r` converges for `r < -1`.
+* `TauCeti.summable_mul_rpow_of_count_growth` — weighted reciprocal powers are summable
+  when sublevel counts grow at a smaller exponent.
 -/
 
 public section

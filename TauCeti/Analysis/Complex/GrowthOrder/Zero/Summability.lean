@@ -38,7 +38,7 @@ namespace TauCeti
 
 /-- The reciprocal `p`th powers of the zeros of an entire function of order at most `A`
 are summable with their divisor multiplicities for every `p > A`, provided the function
-is nonzero at the origin. Nonpositive exponents reduce to the constant-function case. -/
+is nonzero at the origin. -/
 theorem OrderLE.summable_divisor_mul_norm_rpow {f : ℂ → ℂ} {A p : ℝ}
     (h : OrderLE f A) (hf : Differentiable ℂ f) (hf0 : f 0 ≠ 0) (hAp : A < p) :
     Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
