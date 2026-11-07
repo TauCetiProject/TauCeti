@@ -369,7 +369,7 @@ the integral of the pointwise remainder: if `F` and a candidate partial derivati
 continuous along `{x} × ι(α)` and `{x₀} × ι(α)`, then the integral of
 `g y • F (x, ι y)`, minus that of `g y • F (x₀, ι y)`, minus the integral of
 `g y • D (x₀, ι y)` applied to `x - x₀`, is the integral of the pointwise remainder. -/
-private theorem integral_smul_sub_sub_apply {P : Type*} [TopologicalSpace P] {ι : α → P}
+theorem integral_smul_sub_sub_apply {P : Type*} [TopologicalSpace P] {ι : α → P}
     {W : Set (E × P)} {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
     {F : E × P → G} {D : E × P → E →L[ℝ] G} (hg : Integrable g μ) (hι : Continuous ι)
     (hF : ContinuousOn F W) (hD : ContinuousOn D W) {x x₀ : E} (hx : ∀ y, (x, ι y) ∈ W)
