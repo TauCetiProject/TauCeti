@@ -181,7 +181,7 @@ private theorem IsJordanCurve.notMem_model_connectedComponentIn_of_locally_eq_li
     by_contra h
     have := mul_nonpos_of_nonpos_of_nonneg (le_of_not_gt h) (norm_nonneg v)
     linarith
-  obtain ⟨hleft, hright⟩ := mem_closure_inter_of_locally_eq_line hv hr hline
+  obtain ⟨hleft, hright⟩ := mem_closure_inter_of_line_subset hv hr fun z hz => (hline z hz).mpr
   have hstart : d * ((-s : ℝ) : ℂ) + p = p + I * s / v := by
     dsimp [d]
     push_cast

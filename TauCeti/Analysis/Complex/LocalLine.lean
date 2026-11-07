@@ -8,15 +8,18 @@ module
 public import Mathlib.Analysis.Complex.Basic
 
 /-!
-# A set which is locally a line accumulates on both sides
+# A set containing a local line accumulates on both rays of the line
 
-If a set `C ⊆ ℂ` agrees, in a ball around `p`, with the line `{z | (v * (z - p)).im = 0}` through
-`p`, then `p` lies in the closure of the part of `C` on each side of that line.
+If a set `C ⊆ ℂ` contains, in a ball around `p`, the points of the line
+`{z | (v * (z - p)).im = 0}` through `p`, then `p` lies in the closure of the part of `C` on each
+open side of the perpendicular line through `p`, that is, `p` is approached by points of `C` along
+both rays of the line issuing from `p`.
 
 ## Main results
 
-* `TauCeti.mem_closure_inter_of_locally_eq_line`: such a point `p` is in the closure of `C` on each
-  open side of the line, the sides being read off from the sign of `((q - p) / -(I / v)).im`.
+* `TauCeti.mem_closure_inter_of_line_subset`: such a point `p` is in the closure of `C` on each
+  open side of the perpendicular line through `p`, the sides being read off from the sign of
+  `((q - p) / -(I / v)).im`.
 -/
 
 public section
@@ -25,11 +28,12 @@ open Complex Filter Metric Set Topology
 
 namespace TauCeti
 
-/-- If a set `C` agrees with the line `{z | (v * (z - p)).im = 0}` in a ball around `p`, then `p`
-lies in the closure of `C` on each side of the line, the sides being measured in the coordinate
-`(q - p) / -(I / v)`. -/
-theorem mem_closure_inter_of_locally_eq_line {C : Set ℂ} {p v : ℂ} {r : ℝ}
-    (hv : v ≠ 0) (hr : 0 < r) (hline : ∀ z ∈ ball p r, z ∈ C ↔ (v * (z - p)).im = 0) :
+/-- If a set `C` contains the points of the line `{z | (v * (z - p)).im = 0}` lying in a ball
+around `p`, then `p` lies in the closure of `C` on each open side of the perpendicular line through
+`p`, the sides being measured in the coordinate `(q - p) / -(I / v)`; equivalently, `C`
+accumulates at `p` along both rays of the line from `p`. -/
+theorem mem_closure_inter_of_line_subset {C : Set ℂ} {p v : ℂ} {r : ℝ}
+    (hv : v ≠ 0) (hr : 0 < r) (hline : ∀ z ∈ ball p r, (v * (z - p)).im = 0 → z ∈ C) :
     p ∈ closure (C ∩ {q | 0 < ((q - p) / -(I / v)).im}) ∧
       p ∈ closure (C ∩ {q | ((q - p) / -(I / v)).im < 0}) := by
   let d : ℂ := -(I / v)
@@ -52,7 +56,7 @@ theorem mem_closure_inter_of_locally_eq_line {C : Set ℂ} {p v : ℂ} {r : ℝ}
     hφ0.eventually (ball_mem_nhds p hr)
   have hφC : ∀ᶠ t in 𝓝 (0 : ℝ), φ t ∈ C := by
     filter_upwards [hφball] with t ht
-    exact (hline _ ht).mpr (by rw [hφv]; simp)
+    exact hline _ ht (by rw [hφv]; simp)
   have hleft : p ∈ closure (C ∩ {q | 0 < ((q - p) / d).im}) := by
     apply mem_closure_of_tendsto (b := 𝓝[>] (0 : ℝ))
       (hφ0.mono_left nhdsWithin_le_nhds)
