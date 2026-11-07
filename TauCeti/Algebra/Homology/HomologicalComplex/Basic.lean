@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.HomologicalComplex
+public import Mathlib.CategoryTheory.ConcreteCategory.Basic
 public import Mathlib.Algebra.Homology.HomologicalComplexLimits
 public import Mathlib.Algebra.Homology.HomologySequence
 public import Mathlib.Algebra.Homology.QuasiIso
@@ -73,6 +74,14 @@ namespace HomologicalComplex
 
 variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] {ι : Type*}
   {c : ComplexShape ι} {K : HomologicalComplex C c} {s : K ⟶ K}
+
+/-- A chain map of complexes in a concrete category with zero morphisms commutes with the
+differentials, on elements. -/
+theorem Hom.comm_apply {FC : C → C → Type*} {CC : C → Type w}
+    [∀ X Y, FunLike (FC X Y) (CC X) (CC Y)] [ConcreteCategory.{w} C FC]
+    {K L : HomologicalComplex C c} (φ : K ⟶ L) (i j : ι) (x : ToType (K.X i)) :
+    L.d i j (φ.f i x) = φ.f j (K.d i j x) := by
+  rw [← ConcreteCategory.comp_apply, φ.comm, ConcreteCategory.comp_apply]
 
 /-- Degreewise recursion for the powers of a chain endomorphism. -/
 lemma pow_f_succ (m : ℕ) (i : ι) :
