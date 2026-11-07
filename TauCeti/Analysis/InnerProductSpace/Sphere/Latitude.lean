@@ -70,11 +70,9 @@ private lemma norm_sqrt_smul_add_smul (x : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) 
     rw [Submodule.norm_coe]
     exact norm_eq_of_mem_sphere x
   have ht2 : t ^ 2 ≤ 1 := by nlinarith [ht.1, ht.2]
-  rw [← pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero, norm_add_sq_real,
-    real_inner_smul_left, real_inner_smul_right, hxp, norm_smul, norm_smul, mul_pow, mul_pow,
-    Real.norm_eq_abs, Real.norm_eq_abs, sq_abs, sq_abs, Real.sq_sqrt (by linarith), hx,
-    norm_eq_of_mem_sphere p]
-  ring
+  rw [← pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero, norm_add_sq_real]
+  simp [real_inner_smul_left, real_inner_smul_right, hxp, norm_smul,
+    Real.sq_sqrt (show 0 ≤ 1 - t ^ 2 by linarith), hx]
 
 /-- **The latitude map** of the unit sphere relative to the pole `p`: a point `x` of the unit
 sphere of `(ℝ ∙ p)ᗮ` and a latitude `t ∈ [-1, 1]` give the point `√(1 - t²) • x + t • p` of the
@@ -85,38 +83,40 @@ def sphereLatitude :
     mem_sphere_zero_iff_norm.2 (norm_sqrt_smul_add_smul p z.1 z.2.2)⟩
   continuous_toFun := by fun_prop
 
-@[simp]
+/-- The coordinate formula for the latitude map. It is not a simp lemma, so that the simplifier
+uses the characteristic lemmas `TauCeti.inner_sphereLatitude_apply`,
+`TauCeti.sphereLatitude_apply_eq_iff_eq_one` and `TauCeti.sphereLatitude_apply_eq_neg_iff`
+instead of expanding the formula. -/
 theorem coe_sphereLatitude_apply (z : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × Icc (-1 : ℝ) 1) :
     (sphereLatitude p z : E) =
       √(1 - (z.2 : ℝ) ^ 2) • ((z.1 : (ℝ ∙ (p : E))ᗮ) : E) + (z.2 : ℝ) • (p : E) := (rfl)
 
 /-- The latitude of `sphereLatitude p (x, t)` is `t`: its inner product with the pole `p`. -/
+@[simp]
 theorem inner_sphereLatitude_apply (z : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × Icc (-1 : ℝ) 1) :
     ⟪(sphereLatitude p z : E), (p : E)⟫ = z.2 := by
   have hxp : ⟪((z.1 : (ℝ ∙ (p : E))ᗮ) : E), (p : E)⟫ = 0 := by
     rw [real_inner_comm]
     exact Submodule.mem_orthogonal_singleton_iff_inner_right.1 (z.1 : (ℝ ∙ (p : E))ᗮ).2
-  rw [coe_sphereLatitude_apply, inner_add_left, real_inner_smul_left, real_inner_smul_left, hxp,
-    real_inner_self_eq_norm_sq, norm_eq_of_mem_sphere p]
-  ring
+  simp [coe_sphereLatitude_apply, inner_add_left, real_inner_smul_left, hxp]
 
 /-- The latitude map sends a point to the pole `p` exactly on the slice `t = 1`. -/
+@[simp]
 theorem sphereLatitude_apply_eq_iff_eq_one
     {z : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × Icc (-1 : ℝ) 1} :
     sphereLatitude p z = p ↔ (z.2 : ℝ) = 1 := by
   refine ⟨fun h ↦ ?_, fun h ↦ Subtype.ext ?_⟩
-  · rw [← inner_sphereLatitude_apply p z, h, real_inner_self_eq_norm_sq, norm_eq_of_mem_sphere p,
-      one_pow]
-  · simp [h]
+  · simpa [h] using (inner_sphereLatitude_apply p z).symm
+  · simp [coe_sphereLatitude_apply, h]
 
 /-- The latitude map sends a point to the pole `-p` exactly on the slice `t = -1`. -/
+@[simp]
 theorem sphereLatitude_apply_eq_neg_iff
     {z : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × Icc (-1 : ℝ) 1} :
     sphereLatitude p z = -p ↔ (z.2 : ℝ) = -1 := by
   refine ⟨fun h ↦ ?_, fun h ↦ Subtype.ext ?_⟩
-  · rw [← inner_sphereLatitude_apply p z, h, coe_neg_sphere, inner_neg_left,
-      real_inner_self_eq_norm_sq, norm_eq_of_mem_sphere p, one_pow]
-  · simp [h]
+  · simpa [h] using (inner_sphereLatitude_apply p z).symm
+  · simp [coe_sphereLatitude_apply, h]
 
 /-- The latitude map is injective away from the two end slices `t = ±1`. -/
 theorem injOn_sphereLatitude :
@@ -148,12 +148,10 @@ theorem sphereLatitude_surjective [Nontrivial (ℝ ∙ (p : E))ᗮ] :
   set v : E := (q : E) - t • (p : E) with hv
   have hvp : v ∈ (ℝ ∙ (p : E))ᗮ := by
     refine Submodule.mem_orthogonal_singleton_iff_inner_right.2 ?_
-    rw [hv, inner_sub_right, real_inner_smul_right, real_inner_self_eq_norm_sq, hp, real_inner_comm,
-      ← ht]
-    ring
+    simp [hv, ht, inner_sub_right, real_inner_smul_right, hp, real_inner_comm]
   have hnorm : ‖v‖ = √(1 - t ^ 2) := by
-    rw [← Real.sqrt_sq (norm_nonneg v), hv, norm_sub_sq_real, real_inner_smul_right, ← ht,
-      norm_smul, Real.norm_eq_abs, mul_pow, sq_abs, hq, hp]
+    rw [← Real.sqrt_sq (norm_nonneg v), hv, norm_sub_sq_real]
+    simp [real_inner_smul_right, ← ht, norm_smul, hq, hp]
     ring_nf
   -- A unit vector `x` of the equator with `‖v‖ • x = v`.
   obtain ⟨x, hx⟩ : ∃ x : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1,
@@ -163,8 +161,7 @@ theorem sphereLatitude_surjective [Nontrivial (ℝ ∙ (p : E))ᗮ] :
         (NormedSpace.sphere_nonempty (x := (0 : (ℝ ∙ (p : E))ᗮ)) (r := 1)).2 zero_le_one
       exact ⟨⟨x, hx⟩, by simp [hv0]⟩
     · refine ⟨⟨‖v‖⁻¹ • ⟨v, hvp⟩, ?_⟩, ?_⟩
-      · rw [mem_sphere_zero_iff_norm, norm_smul, norm_inv, norm_norm, ← Submodule.norm_coe,
-          Submodule.coe_mk, inv_mul_cancel₀ (norm_ne_zero_iff.2 hv0)]
+      · simp [norm_smul, inv_mul_cancel₀ (norm_ne_zero_iff.2 hv0)]
       · simp [smul_smul, mul_inv_cancel₀ (norm_ne_zero_iff.2 hv0)]
   refine ⟨(x, ⟨t, htI⟩), Subtype.ext ?_⟩
   rw [coe_sphereLatitude_apply, ← hnorm, hx, hv, sub_add_cancel]

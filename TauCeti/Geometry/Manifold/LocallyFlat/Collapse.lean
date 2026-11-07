@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Order.ProjIcc
-public import TauCeti.Analysis.InnerProductSpace.SphereLatitude
+public import TauCeti.Analysis.InnerProductSpace.Sphere.Latitude
 public import TauCeti.Geometry.Manifold.LocallyFlat.Separation
 import Mathlib.Analysis.Normed.Module.Connected
 import TauCeti.AlgebraicTopology.Singular.JordanBrouwer
@@ -311,12 +311,12 @@ theorem diff_union_diff_union_image_Ioo_eq_univ (h : IsBicollar f b) (hcompl : (
     · exact Or.inl (Or.inr ⟨hmB, fun hm ↦ hmb (image_subset_range _ _ hm)⟩)
 
 /-- **The positive outer piece is a point preimage.** If `g` takes the value `ypos` exactly on the
-end `N × {1}` and the value `yneg` exactly on the end `N × {-1}`, with `ypos ≠ yneg`, the preimage
-of `ypos` under the collapsing map is `A \ b (N × (-∞, 1))`. -/
+end `N × {1}` and the value `yneg` on the end `N × {-1}`, with `ypos ≠ yneg`, the preimage of
+`ypos` under the collapsing map is `A \ b (N × (-∞, 1))`. -/
 theorem preimage_bicollarCollapse_left (h : IsBicollar f b) (hAB : Disjoint A B)
     (hcompl : (range f)ᶜ = A ∪ B) (hpos : MapsTo b (univ ×ˢ Ioi 0) A)
     (hneg : MapsTo b (univ ×ˢ Iio 0) B)
-    (hgpos : ∀ z, g z = ypos ↔ (z.2 : ℝ) = 1) (hgneg : ∀ z, g z = yneg ↔ (z.2 : ℝ) = -1)
+    (hgpos : ∀ z, g z = ypos ↔ (z.2 : ℝ) = 1) (hgneg : ∀ x, g (x, ⟨-1, by norm_num⟩) = yneg)
     (hy : ypos ≠ yneg) :
     bicollarCollapse b A g ypos yneg ⁻¹' {ypos} = A \ b '' (univ ×ˢ Iio 1) := by
   refine Subset.antisymm (fun m hm ↦ ?_) fun m hm ↦
@@ -324,27 +324,26 @@ theorem preimage_bicollarCollapse_left (h : IsBicollar f b) (hAB : Disjoint A B)
   have hcov := h.diff_union_diff_union_image_Ioo_eq_univ hcompl hpos hneg
   rcases (hcov ▸ mem_univ m : m ∈ _) with (hm' | hm') | ⟨⟨x, t⟩, ⟨-, ht⟩, rfl⟩
   · exact hm'
-  · exact (hy ((h.bicollarCollapse_of_mem_right g ypos yneg hAB (fun x ↦ (hgneg _).2 rfl)
-      hm').symm.trans hm).symm).elim
+  · exact (hy ((h.bicollarCollapse_of_mem_right g ypos yneg hAB hgneg hm').symm.trans
+      hm).symm).elim
   · have hgt := (hgpos _).1 ((h.bicollarCollapse_apply g ypos yneg x t).symm.trans hm)
     rw [projIcc_of_mem _ (Ioo_subset_Icc_self ht)] at hgt
     exact (ht.2.ne hgt).elim
 
-/-- **The negative outer piece is a point preimage.** If `g` takes the value `ypos` exactly on the
-end `N × {1}` and the value `yneg` exactly on the end `N × {-1}`, with `ypos ≠ yneg`, the preimage
-of `yneg` under the collapsing map is `B \ b (N × (-1, ∞))`. -/
+/-- **The negative outer piece is a point preimage.** If `g` takes the value `ypos` on the end
+`N × {1}` and the value `yneg` exactly on the end `N × {-1}`, with `ypos ≠ yneg`, the preimage of
+`yneg` under the collapsing map is `B \ b (N × (-1, ∞))`. -/
 theorem preimage_bicollarCollapse_right (h : IsBicollar f b) (hAB : Disjoint A B)
     (hcompl : (range f)ᶜ = A ∪ B) (hpos : MapsTo b (univ ×ˢ Ioi 0) A)
     (hneg : MapsTo b (univ ×ˢ Iio 0) B)
-    (hgpos : ∀ z, g z = ypos ↔ (z.2 : ℝ) = 1) (hgneg : ∀ z, g z = yneg ↔ (z.2 : ℝ) = -1)
+    (hgpos : ∀ x, g (x, ⟨1, by norm_num⟩) = ypos) (hgneg : ∀ z, g z = yneg ↔ (z.2 : ℝ) = -1)
     (hy : ypos ≠ yneg) :
     bicollarCollapse b A g ypos yneg ⁻¹' {yneg} = B \ b '' (univ ×ˢ Ioi (-1)) := by
   refine Subset.antisymm (fun m hm ↦ ?_) fun m hm ↦
     h.bicollarCollapse_of_mem_right g ypos yneg hAB (fun x ↦ (hgneg _).2 rfl) hm
   have hcov := h.diff_union_diff_union_image_Ioo_eq_univ hcompl hpos hneg
   rcases (hcov ▸ mem_univ m : m ∈ _) with (hm' | hm') | ⟨⟨x, t⟩, ⟨-, ht⟩, rfl⟩
-  · exact (hy ((h.bicollarCollapse_of_mem_left g ypos yneg (fun x ↦ (hgpos _).2 rfl)
-      hm').symm.trans hm)).elim
+  · exact (hy ((h.bicollarCollapse_of_mem_left g ypos yneg hgpos hm').symm.trans hm)).elim
   · exact hm'
   · have hgt := (hgneg _).1 ((h.bicollarCollapse_apply g ypos yneg x t).symm.trans hm)
     rw [projIcc_of_mem _ (Ioo_subset_Icc_self ht)] at hgt
@@ -434,6 +433,8 @@ theorem IsBicollar.exists_collapse_sphere (h : IsBicollar f b) (hE : 0 < finrank
     ((e.continuous.comp continuous_fst).prodMk continuous_snd)
   have hgpos : ∀ z, g z = P ↔ (z.2 : ℝ) = 1 := fun z ↦ sphereLatitude_apply_eq_iff_eq_one P
   have hgneg : ∀ z, g z = -P ↔ (z.2 : ℝ) = -1 := fun z ↦ sphereLatitude_apply_eq_neg_iff P
+  have hg1 : ∀ x, g (x, ⟨1, by norm_num⟩) = P := fun x ↦ (hgpos _).2 rfl
+  have hgm1 : ∀ x, g (x, ⟨-1, by norm_num⟩) = -P := fun x ↦ (hgneg _).2 rfl
   have hginj : InjOn g {z | (z.2 : ℝ) ∈ Ioo (-1 : ℝ) 1} := by
     intro z hz z' hz' he
     have := injOn_sphereLatitude P (x₁ := (e z.1, z.2)) hz (x₂ := (e z'.1, z'.2)) hz' he
@@ -452,12 +453,12 @@ theorem IsBicollar.exists_collapse_sphere (h : IsBicollar f b) (hE : 0 < finrank
       exact neg_add_cancel p
     exact hp0 ((smul_eq_zero.1 h2).resolve_left two_ne_zero)
   refine ⟨⟨bicollarCollapse b A g P (-P), h.continuous_bicollarCollapse g P (-P) hA hB hAB
-    hcompl hpos hneg hg (fun x ↦ (hgpos _).2 rfl) (fun x ↦ (hgneg _).2 rfl)⟩, P,
+    hcompl hpos hneg hg hg1 hgm1⟩, P,
     h.surjective_bicollarCollapse g P (-P) hgs,
-    h.preimage_bicollarCollapse_left g P (-P) hAB hcompl hpos hneg hgpos hgneg hy,
-    h.preimage_bicollarCollapse_right g P (-P) hAB hcompl hpos hneg hgpos hgneg hy,
+    h.preimage_bicollarCollapse_left g P (-P) hAB hcompl hpos hneg hgpos hgm1 hy,
+    h.preimage_bicollarCollapse_right g P (-P) hAB hcompl hpos hneg hg1 hgneg hy,
     fun y hypos hyneg ↦ h.subsingleton_preimage_bicollarCollapse g P (-P) hAB hcompl hpos hneg
-      (fun x ↦ (hgpos _).2 rfl) (fun x ↦ (hgneg _).2 rfl) hginj hypos hyneg⟩
+      hg1 hgm1 hginj hypos hyneg⟩
 
 end CollapseSphere
 
