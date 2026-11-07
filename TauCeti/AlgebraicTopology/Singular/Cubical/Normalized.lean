@@ -126,10 +126,7 @@ theorem lmapDomain_mem_degenerate {n m : ℕ} {φ : SingularCube X n → Singula
     (hφ : ∀ c, IsDegenerate c → IsDegenerate (φ c)) {g : CubicalChain X R n}
     (hg : g ∈ degenerate X R n) : lmapDomain R R φ g ∈ degenerate Y R m := by
   rw [degenerate_eq_supported] at hg ⊢
-  have hmap := Submodule.mem_map_of_mem (f := lmapDomain R R φ) hg
-  rw [lmapDomain_supported] at hmap
-  refine supported_mono ?_ hmap
-  exact Set.image_subset_iff.2 hφ
+  exact lmapDomain_mem_supported R hφ hg
 
 /-- The push-forward of a degenerate chain is degenerate. -/
 theorem map_mem_degenerate (f : C(X, Y)) {n : ℕ} {g : CubicalChain X R n}
@@ -181,13 +178,8 @@ theorem boundary_single_mem_degenerate {n : ℕ} {c : SingularCube X (n + 1)}
 /-- The degenerate chains form a subcomplex. -/
 theorem boundary_mem_degenerate {n : ℕ} {f : CubicalChain X R (n + 1)}
     (hf : f ∈ degenerate X R (n + 1)) : boundary X R n f ∈ degenerate X R n := by
-  induction hf using Submodule.span_induction with
-  | mem f hf =>
-    obtain ⟨c, hc, rfl⟩ := hf
-    exact boundary_single_mem_degenerate R hc
-  | zero => simp
-  | add f g _ _ hf hg => rw [map_add]; exact Submodule.add_mem _ hf hg
-  | smul a f _ hf => rw [map_smul]; exact Submodule.smul_mem _ a hf
+  rw [degenerate_eq_supported] at hf
+  exact boundary_mem_of_mem_supported R (fun _ hc ↦ boundary_single_mem_degenerate R hc) hf
 
 private theorem degenerate_le_comap_boundary (n : ℕ) :
     degenerate X R (n + 1) ≤ (degenerate X R n).comap (boundary X R n) :=

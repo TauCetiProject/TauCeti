@@ -82,8 +82,9 @@ variable {p : E → B} {s t : ℤ} {n : ℕ}
 /-- The Serre weight bound is monotone in the bound. -/
 theorem IsSerreWeightLE.mono {c : SingularCube E n} (h : c.IsSerreWeightLE p s) (hst : s ≤ t) :
     c.IsSerreWeightLE p t :=
-  ⟨h.nonneg.trans hst, h.dependsOn.mono fun i (hi : i ∈ {i : Fin n | (i : ℤ) < s}) ↦
-    show (i : ℤ) < t from hi.trans_le hst⟩
+  ⟨h.nonneg.trans hst, h.dependsOn.mono fun i (hi : i ∈ {i : Fin n | (i : ℤ) < s}) ↦ by
+    rw [Set.mem_ofPred_eq] at hi ⊢
+    exact hi.trans_le hst⟩
 
 /-- No cube has negative Serre weight. -/
 theorem not_isSerreWeightLE_of_neg (c : SingularCube E n) (hs : s < 0) : ¬ c.IsSerreWeightLE p s :=
@@ -176,16 +177,11 @@ variable {R : Type*} [Ring R] {p : E → B}
 /-- The boundary preserves the Serre filtration. -/
 theorem boundary_mem_serreFiltration {s : ℤ} {n : ℕ} {f : CubicalChain E R (n + 1)}
     (hf : f ∈ serreFiltration R p s (n + 1)) : boundary E R n f ∈ serreFiltration R p s n := by
-  rw [serreFiltration, Finsupp.supported_eq_span_single] at hf
-  induction hf using Submodule.span_induction with
-  | mem f hf =>
-    obtain ⟨c, hc, rfl⟩ := hf
-    rw [boundary_single]
-    exact Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (Submodule.sub_mem _
-      (single_mem_serreFiltration (hc.face i 0) 1) (single_mem_serreFiltration (hc.face i 1) 1))
-  | zero => simp
-  | add f g _ _ hf hg => rw [map_add]; exact Submodule.add_mem _ hf hg
-  | smul a f _ hf => rw [map_smul]; exact Submodule.smul_mem _ a hf
+  refine boundary_mem_of_mem_supported R (fun (c : SingularCube E (n + 1))
+    (hc : c.IsSerreWeightLE p s) ↦ ?_) hf
+  rw [boundary_single]
+  exact Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (Submodule.sub_mem _
+    (single_mem_serreFiltration (hc.face i 0) 1) (single_mem_serreFiltration (hc.face i 1) 1))
 
 end Ring
 
