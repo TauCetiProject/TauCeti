@@ -12,6 +12,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Distribution.TestFunction
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
 # The du Bois-Reymond lemma on an interval
@@ -57,7 +58,7 @@ public section
 
 namespace TauCeti
 
-open MeasureTheory Set Filter Topology intervalIntegral
+open MeasureTheory Set Filter Topology _root_.intervalIntegral
 open scoped ContDiff
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
@@ -88,16 +89,8 @@ theorem _root_.ContDiff.exists_contDiff_deriv_eq_of_integral_eq_zero {a b : ℝ}
     (notMem_tsupport_iff_eventuallyEq.mp fun h ↦ (hφs h).1.ne rfl)
   obtain ⟨εb, hεb, hφb⟩ := Metric.eventually_nhds_iff.mp
     (notMem_tsupport_iff_eventuallyEq.mp fun h ↦ (hφs h).2.ne rfl)
-  have hleft : ∀ t, t < a + εa → ψ t = 0 := by
-    intro t ht
-    simp only [hψ_def]
-    refine (integral_congr (g := fun _ ↦ (0 : ℝ)) fun s hs ↦ ?_).trans integral_zero
-    rcases le_or_gt s a with hsa | hsa
-    · exact hφ0 s fun h ↦ h.1.not_ge hsa
-    · have h1 : s < a + εa := lt_of_le_of_lt hs.2 (max_lt (by linarith) ht)
-      refine hφa ?_
-      rw [Real.dist_eq, abs_of_pos (sub_pos.mpr hsa)]
-      linarith
+  have hleft : ∀ t, t < a + εa → ψ t = 0 := fun t ht ↦
+    integral_eq_zero_of_lt_add (fun x hx ↦ hφ0 x fun h ↦ h.1.not_ge hx) hφa ht
   have hright : ∀ t, b - εb < t → ψ t = 0 := by
     intro t ht
     simp only [hψ_def]
@@ -196,7 +189,7 @@ end MeasureTheory.LocallyIntegrableOn
 
 namespace TauCeti
 
-open MeasureTheory Set Filter Topology intervalIntegral
+open MeasureTheory Set Filter Topology _root_.intervalIntegral
 open scoped ContDiff
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
