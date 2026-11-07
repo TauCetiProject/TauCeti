@@ -103,11 +103,8 @@ theorem integralTopForm_prod_eq_setIntegral
   have hd (z : ℝ × ℝ) : HasMFDerivAt 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ).prod 𝓘(ℝ))
       (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q)) z
       ((ContinuousLinearEquiv.refl ℝ (ℝ × ℝ)).toContinuousLinearMap.comp
-        (NormedSpace.fromTangentSpace z).toContinuousLinearMap) := by
-    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
-    have h := (hasMFDerivAt_coe p z.1).prodMap (hasMFDerivAt_coe q z.2)
-    rw [mfderiv_coe, mfderiv_coe] at h
-    exact h.congr_mfderiv (ContinuousLinearMap.ext fun _ ↦ rfl)
+        (NormedSpace.fromTangentSpace z).toContinuousLinearMap) :=
+    (hasMFDerivAt_prodMap_coe p q z).congr_mfderiv (ContinuousLinearMap.ext fun _ ↦ rfl)
   have h := integralTopForm_eq_oriented_parametrization l (Module.Basis.finTwoProd ℝ) φ hφ
     (Q := Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q))
     (D := Ico a (a + p) ×ˢ Ico b (b + q))
