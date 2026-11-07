@@ -79,6 +79,14 @@ variable {n : ℕ} {k K A : Type u} [Field k] [Field K] [Algebra k K] [CommRing 
 
 attribute [local instance] MvPolynomial.algebraMvPolynomial
 
+/-- The kernel of the base change of a presentation to `K` is the extension of its kernel. -/
+theorem _root_.Algebra.Presentation.ker_baseChange_eq_map {ι σ : Type}
+    (P : Algebra.Presentation k A ι σ) (K : Type u) [CommRing K] [Algebra k K] :
+    (P.baseChange K).ker = P.ker.map (algebraMap P.Ring (P.baseChange K).Ring) := by
+  rw [← P.span_range_relation_eq_ker, Ideal.map_span, ← Set.range_comp]
+  exact (P.baseChange K).ker_eq_ker_aeval_val.trans
+    (P.span_range_relation_eq_ker_baseChange K).symm
+
 /-- Let `P` present `A` over `k` with generators indexed by `ι`, and let `q` be a prime of `A`. If
 `K ⊗[k] A` is locally standard syntomic of relative dimension `n`, then at some field-valued point
 `F` of `k[ι]` lying over `q`, the fibre of the kernel of `P` has dimension at most `#ι - n`. -/
@@ -131,17 +139,12 @@ private theorem exists_finrank_tensor_ker_add_le {ι σ : Type} [Finite ι] [Fin
     exact hr
   · obtain ⟨ι', σ', _, _, P', hP'⟩ := hT.exists_presentation
     -- The kernel of `K[ι] → K ⊗[k] A` is the extension of the kernel of `k[ι] → A`.
-    have hker : PK.ker = P.ker.map (algebraMap P.Ring PK.Ring) := by
-      rw [← P.span_range_relation_eq_ker, Ideal.map_span, ← Set.range_comp]
-      exact PK.ker_eq_ker_aeval_val.trans (P.span_range_relation_eq_ker_baseChange K).symm
+    have hker := P.ker_baseChange_eq_map K
     have : Module.Flat P.Ring PK.Ring :=
       Module.Flat.isBaseChange (R := k) (M := K) _ _ (Algebra.IsPushout.out (R := k) (S := P.Ring)
         (R' := K) (S' := PK.Ring))
-    have hfg : PK.ker.FG := by
-      rw [← PK.span_range_relation_eq_ker]
-      exact Submodule.fg_span (Set.finite_range _)
     have : Module.Finite (K ⊗[k] A) PK.toExtension.Cotangent :=
-      Algebra.Extension.Cotangent.finite hfg
+      Algebra.Extension.Cotangent.finite PK.fg_ker
     have h1 := ((Algebra.Generators.localizationAway T t).comp
       PK.toGenerators).finrank_tensor_cotangent_add_card_le F P'
     rw [Algebra.Generators.finrank_tensor_cotangent_comp_localizationAway,
