@@ -48,7 +48,8 @@ transform of a distribution converges on the open unit disc. Conversely, a power
 open unit disc has coefficients defining a compatible family of bounded functionals on the
 stages, hence a distribution. This proves **Amice's theorem** for distributions: the Amice
 transform is injective (`amiceTransform_injective`) and its range consists exactly of the power
-series converging on the open unit disc (`mem_range_amiceTransform_iff`).
+series converging on the open unit disc (`mem_range_amiceTransform_iff`). Its inverse is
+`ofOnOpenDisc` (`amiceTransform_ofOnOpenDisc`, `ofOnOpenDisc_amiceTransform`).
 
 ## Main definitions
 
@@ -56,6 +57,8 @@ series converging on the open unit disc (`mem_range_amiceTransform_iff`).
   `x ↦ (x choose n) • e`.
 * `TauCeti.LocallyAnalyticDistribution.amiceTransform`: the power series of the moments
   `μ(x ↦ (x choose n))`.
+* `TauCeti.LocallyAnalyticDistribution.ofOnOpenDisc`: the distribution whose moments are the
+  coefficients of a power series on the open unit disc, inverse to the Amice transform.
 
 ## Main results
 
@@ -108,8 +111,9 @@ private theorem exists_ofStage_amiceTerm_eq {h k : ℕ} (hhk : h ≤ k) (n : ℕ
 
 variable (p) in
 /-- The locally analytic Mahler term `x ↦ (x choose n) • e`: the class of Amice's vector
-`e_{n,n} • e` of level `n`, whose factor `⌊n / pⁿ⌋!` is `1`. By `ofStage_amiceTerm` it is also
-represented at every other level. -/
+`e_{n,n} • e` of level `n`, whose factor `⌊n / pⁿ⌋!` is `1`. At another level `h`,
+`ofStage_amiceTerm` identifies Amice's vector `e_{h,n} • e` with the factorial-weighted term
+`mahlerTerm p S ((n / p ^ h)! • e) n`. -/
 noncomputable def mahlerTerm (e : E) (n : ℕ) : LocallyAnalytic p S E :=
   ofStage S n (amiceTerm p n n e)
 
@@ -316,19 +320,28 @@ private theorem stageOfOnOpenDisc_comp_transition (h : ℕ) :
   ext c
   simpa using DFunLike.congr_fun hcomp ((amiceEquiv p h K (E := K)).symm c)
 
-/-- The distribution whose moments are the coefficients of a power series on the open unit disc.
+/-- The distribution whose moments are the coefficients of a power series on the open unit disc:
+the inverse of the Amice transform (`amiceTransform_ofOnOpenDisc`, `ofOnOpenDisc_amiceTransform`).
 -/
-private noncomputable def ofOnOpenDisc : LocallyAnalyticDistribution p K :=
+noncomputable def ofOnOpenDisc : LocallyAnalyticDistribution p K :=
   stagesEquiv.symm ⟨fun h ↦ stageOfOnOpenDisc p hF h,
     mem_compatibleStageFunctionals_iff.mpr (stageOfOnOpenDisc_comp_transition p hF)⟩
 
-private theorem amiceTransform_ofOnOpenDisc : amiceTransform (ofOnOpenDisc p hF) = F := by
+/-- The moments of `ofOnOpenDisc p hF` are the coefficients of `F`. -/
+@[simp]
+theorem amiceTransform_ofOnOpenDisc : amiceTransform (ofOnOpenDisc p hF) = F := by
   ext n
   rw [coeff_amiceTransform, mahlerTerm_def, ← stage_apply, ofOnOpenDisc, stage_stagesEquiv_symm,
     stageOfOnOpenDisc_amiceTerm, Nat.div_eq_of_lt (Nat.lt_pow_self hp.out.one_lt),
     factorial_zero, Nat.cast_one, one_mul, one_mul]
 
 end OfOnOpenDisc
+
+/-- A distribution is recovered from its Amice transform by `ofOnOpenDisc`. -/
+@[simp]
+theorem ofOnOpenDisc_amiceTransform (μ : LocallyAnalyticDistribution p K) :
+    ofOnOpenDisc p (onOpenDisc_amiceTransform μ) = μ :=
+  amiceTransform_injective (amiceTransform_ofOnOpenDisc p _)
 
 /-- **Amice's theorem for distributions.** When the complete field `K` is a normed
 `ℚ_p`-algebra, a power series over `K` is the Amice transform of a locally analytic distribution
