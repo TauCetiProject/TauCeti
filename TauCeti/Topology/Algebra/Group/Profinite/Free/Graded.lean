@@ -400,6 +400,23 @@ theorem span_gradedMkZero_image_range_of_eq_top :
     ((isTopologicallyFinitelyGenerated_freeProP p X).isOpen_pLowerCentralSeries Fact.out 1)
     (topologicalClosure_closure_range_of_eq_top p X)
 
+variable {p X} in
+omit [LinearOrder X] in
+/-- A bracket `[τ, y]` with a class `y ∈ gr_0(F)` of the free pro-`p` group lies in a subspace
+as soon as the brackets `[τ, ξ_j]` with the generator classes do, by bilinearity. -/
+theorem gradedBracket_mem_of_forall_gradedMkZero_of {m : ℕ} {τ : gradedPiece p (freeProP p X) m}
+    {W : Submodule (ZMod p) (gradedPiece p (freeProP p X) (m + 0 + 1))}
+    (hW : ∀ j : X, gradedBracket p (freeProP p X) m 0 τ (gradedMkZero p (freeProP p X) (of j)) ∈ W)
+    (y : gradedPiece p (freeProP p X) 0) : gradedBracket p (freeProP p X) m 0 τ y ∈ W := by
+  have hle : span (ZMod p) (gradedMkZero p (freeProP p X) '' Set.range of) ≤
+      W.comap (gradedBracketLinear p (freeProP p X) m 0 τ) := by
+    rw [span_le]
+    rintro _ ⟨_, ⟨j, rfl⟩, rfl⟩
+    rw [SetLike.mem_coe, Submodule.mem_comap, gradedBracketLinear_apply]
+    exact hW j
+  have h := hle (by rw [span_gradedMkZero_image_range_of_eq_top]; exact mem_top : y ∈ _)
+  rwa [Submodule.mem_comap, gradedBracketLinear_apply] at h
+
 omit [LinearOrder X] in
 /-- **The basis of `gr_0` of a free pro-`p` group of finite rank** formed by the classes
 `x'_i = ⟦x_i⟧` of the generators: the basis `TauCeti.freeProP.frattiniQuotientBasis` of the
