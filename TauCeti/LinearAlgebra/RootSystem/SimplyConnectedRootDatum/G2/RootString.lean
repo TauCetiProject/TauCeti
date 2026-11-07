@@ -18,13 +18,17 @@ and for the long–short Chevalley straightening relation. For the pinned datum
 * a long root pairs by a multiple of three with every short coroot;
 * whenever a long root plus a short root is a root, the resulting root is short;
 * whenever two short roots add to a long root, their root string has bottom coefficient two;
+* whenever two short roots add to a short root, their root string has bottom coefficient one;
 * a short root and a long root whose sum is a root have descending string coefficient zero
   and ascending coefficient three.
 
-The coefficient-two statement means that the corresponding Chevalley bracket coefficient is
-`±(2 + 1) = ±3`, the sign depending on the choice of Chevalley basis.  The first three results are
-the integral root-datum input for proving that the span of the short root spaces, together with
+The long-sum statement means that the corresponding Chevalley bracket coefficient is
+`±(2 + 1) = ±3`, the sign depending on the choice of Chevalley basis. Thus the first three results
+are the integral root-datum input for proving that the span of the short root spaces, together with
 the short coroot directions, is an ideal after base change to characteristic three.
+The short-sum statement gives coefficient `±2`, the first coefficient of the three-factor
+short-pair Chevalley commutator relation. Constructing that Lie ideal and identifying the induced
+exceptional isogeny are later steps.
 The four-term long–short string gives the exact factors two and three that occur in the
 successive divided brackets used by straightening.
 
@@ -36,6 +40,8 @@ successive divided brackets used by straightening.
   and a short root is short.
 * `TauCeti.DynkinType.g2_chainBotCoeff_eq_two_of_short_add_short_eq_long`: two short roots whose sum
   is long have bottom root-string coefficient two.
+* `TauCeti.DynkinType.g2_chainBotCoeff_eq_one_of_short_add_short_eq_short`: two short roots whose
+  sum is short have bottom root-string coefficient one.
 * `TauCeti.DynkinType.g2_chainBotCoeff_eq_zero_and_chainTopCoeff_eq_three_of_short_long`:
   the four-term string starting at a long root in a short-root direction.
 
@@ -123,6 +129,30 @@ theorem g2_chainBotCoeff_eq_two_of_short_add_short_eq_long (i j k : Fin 12)
     simpa using (P.algebraMap_pairingIn ℤ j i).trans hpair
   have hstring := P.chainBotCoeff_sub_chainTopCoeff hli
   rw [hpairIn] at hstring
+  omega
+
+/-- Two short roots whose sum is short have bottom root-string coefficient one. Thus their
+Chevalley bracket has coefficient `±2`. -/
+theorem g2_chainBotCoeff_eq_one_of_short_add_short_eq_short (i j k : Fin 12)
+    (hi : g2Length i = 1) (hj : g2Length j = 1) (hk : g2Length k = 1)
+    (hadd : g2SimplyConnectedRootDatum.root k =
+      g2SimplyConnectedRootDatum.root i + g2SimplyConnectedRootDatum.root j) :
+    g2SimplyConnectedRootDatum.chainBotCoeff i j = 1 := by
+  have hli := g2SimplyConnectedRootDatum.linearIndependent_of_add_mem_range_root' ⟨k, hadd⟩
+  obtain ⟨hsub, htwo⟩ :
+      g2SimplyConnectedRootDatum.root j - g2SimplyConnectedRootDatum.root i ∈
+        Set.range g2SimplyConnectedRootDatum.root ∧
+      g2SimplyConnectedRootDatum.root j - 2 • g2SimplyConnectedRootDatum.root i ∉
+        Set.range g2SimplyConnectedRootDatum.root := by
+    clear hli
+    simp only [Set.mem_range, g2SimplyConnectedRootDatum_root, g2Root_apply] at hadd ⊢
+    simp only [g2Length_apply] at hi hj hk
+    revert i j k
+    decide +kernel
+  have hone := (g2SimplyConnectedRootDatum.root_sub_nsmul_mem_range_iff_le_chainBotCoeff hli
+    (n := 1)).1 (by simpa using hsub)
+  have hnot := mt (g2SimplyConnectedRootDatum.root_sub_nsmul_mem_range_iff_le_chainBotCoeff hli
+    (n := 2)).2 htwo
   omega
 
 /-- A short root and a long root whose sum is a root start a four-term root string:

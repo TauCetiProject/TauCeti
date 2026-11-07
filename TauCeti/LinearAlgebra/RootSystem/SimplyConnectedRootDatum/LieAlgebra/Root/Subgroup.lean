@@ -10,8 +10,7 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Weyl.
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Weyl.Elementary
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Weyl
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Basic
-import TauCeti.Algebra.Lie.UniversalEnveloping.Basic
-import TauCeti.RingTheory.Nilpotent.ChevalleyCommutator
+import TauCeti.Algebra.Lie.UniversalEnveloping.Commutator.Basic
 
 /-!
 # Root subgroups of the pinned Chevalley system at every root
@@ -165,6 +164,19 @@ theorem chevalleyRootSubgroup_val (γ : Fin t.numRoots) (A : CommAlgCat ℤ) (u 
     ← LinearMap.GeneralLinearGroup.generalLinearEquiv_to_linearMap, MulEquiv.apply_symm_apply,
     baseChangeExpHom_apply, baseChangeExpLinearEquiv_toLinearMap]
 
+/-- Root subgroups of Lie-commuting Chevalley vectors commute over every value ring. -/
+theorem commute_chevalleyRootSubgroup {i j : Fin t.numRoots}
+    (hij : ⁅t.chevalleySystem ht i, t.chevalleySystem ht j⁆ = 0)
+    (A : CommAlgCat ℤ) (u v : Multiplicative A) :
+    Commute (chevalleyRootSubgroup ρ M hM hnil i A u)
+      (chevalleyRootSubgroup ρ M hM hnil j A v) := by
+  apply Units.ext
+  simpa only [Units.val_mul, chevalleyRootSubgroup_val] using
+    (commute_baseChangeExp_of_lie_eq_zero ρ M hij
+      (dividedPower_chevalleySystem_smul_mem ρ M hM hnil i)
+      (dividedPower_chevalleySystem_smul_mem ρ M hM hnil j)
+      (Multiplicative.toAdd u) (Multiplicative.toAdd v)).eq
+
 /-- A bracket `⁅e_α, e_β⁆ = c • e_γ` with `e_γ` commuting with both root vectors gives the
 one-factor Chevalley commutator formula over every commutative value ring. -/
 theorem commutatorElement_chevalleyRootSubgroup_of_lie_eq {α β γ : Fin t.numRoots} {c : ℤ}
@@ -176,17 +188,7 @@ theorem commutatorElement_chevalleyRootSubgroup_of_lie_eq {α β γ : Fin t.numR
       chevalleyRootSubgroup ρ M hM hnil β A (Multiplicative.ofAdd v)⁆ =
       chevalleyRootSubgroup ρ M hM hnil γ A
         (Multiplicative.ofAdd ((c : A) * (u * v))) := by
-  -- Transport the integral class-two exponential identity, as in
-  -- UniversalEnvelopingAlgebra.kostantRootSubgroupPoints_mul_of_lie_eq.
-  have hxy := mul_eq_mul_add_zsmul_of_lie_eq ρ hαβ
-  have hxz := commute_of_lie_eq_zero ρ hαγ
-  have hyz := commute_of_lie_eq_zero ρ hβγ
   have hdp := dividedPower_chevalleySystem_smul_mem ρ M hM hnil
-  have hscaled (n : ℕ) (z : V) (hz : z ∈ M) :
-      Associative.dividedPower n
-        (c • ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (t.chevalleySystem ht γ))) • z ∈ M := by
-    rw [Associative.dividedPower_zsmul, smul_assoc]
-    exact M.zsmul_mem (hdp γ n z hz) _
   have hprod :
       chevalleyRootSubgroup ρ M hM hnil α A (Multiplicative.ofAdd u) *
         chevalleyRootSubgroup ρ M hM hnil β A (Multiplicative.ofAdd v) =
@@ -196,18 +198,14 @@ theorem commutatorElement_chevalleyRootSubgroup_of_lie_eq {α β γ : Fin t.numR
         chevalleyRootSubgroup ρ M hM hnil α A (Multiplicative.ofAdd u) := by
     apply Units.ext
     simp only [Units.val_mul, chevalleyRootSubgroup_val, toAdd_ofAdd]
-    rw [← baseChangeExp_zsmul c M (hdp γ) hscaled
-      (isNilpotent_apply_ι_chevalleySystem ρ hnil γ)]
-    exact baseChangeExp_mul_baseChangeExp_of_commutator_eq M hxy
-      (hxz.smul_right c) (hyz.smul_right c)
+    exact baseChangeExp_mul_baseChangeExp_of_lie_eq ρ M hαβ hαγ hβγ
       (isNilpotent_apply_ι_chevalleySystem ρ hnil α)
-      (isNilpotent_apply_ι_chevalleySystem ρ hnil β) (hdp α) (hdp β) hscaled u v
+      (isNilpotent_apply_ι_chevalleySystem ρ hnil β)
+      (isNilpotent_apply_ι_chevalleySystem ρ hnil γ) (hdp α) (hdp β) (hdp γ) u v
   have hcomm (w : A) : Commute
       (chevalleyRootSubgroup ρ M hM hnil β A (Multiplicative.ofAdd v))
-      (chevalleyRootSubgroup ρ M hM hnil γ A (Multiplicative.ofAdd w)) := by
-    apply Units.ext
-    simpa only [Units.val_mul, chevalleyRootSubgroup_val, toAdd_ofAdd] using
-      (commute_baseChangeExp M hyz (hdp β) (hdp γ) v w).eq
+      (chevalleyRootSubgroup ρ M hM hnil γ A (Multiplicative.ofAdd w)) :=
+    commute_chevalleyRootSubgroup ρ M hM hnil hβγ A _ _
   rw [commutatorElement_def, hprod, mul_inv_cancel_right, (hcomm _).eq]
   simp
 
