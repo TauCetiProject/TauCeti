@@ -169,33 +169,24 @@ corresponding linear combination of a family `p` is the convex hull of `p`. -/
 theorem range_linearCombination_standardSimplex (p : σ → E) :
     Set.range (fun y : StandardSimplex σ => Fintype.linearCombination ℝ p fun a => y.1 a) =
       convexHull ℝ (Set.range p) := by
-  refine Set.Subset.antisymm ?_ fun z hz => ?_
-  · rintro _ ⟨y, rfl⟩
-    simp only [Fintype.linearCombination_apply]
-    exact (convex_convexHull ℝ _).sum_mem (fun a _ => StandardSimplex.nonneg y a)
-      (sum_standardSimplex_eq_one y) fun a _ => subset_convexHull ℝ _ (Set.mem_range_self a)
-  -- A point of the convex hull is a convex combination, extended by zero to all of `σ`.
-  obtain ⟨t, u, hu0, hu1, rfl⟩ := (convexHull_range_eq_exists_affineCombination (R := ℝ) p ▸ hz :
-    ∃ (t : Finset σ) (u : σ → ℝ), _)
   classical
-  let w : Convexity.StdSimplex ℝ σ :=
-    ⟨Finsupp.equivFunOnFinite.symm fun a => if a ∈ t then u a else 0,
-      fun a => by
-        by_cases h : a ∈ t
-        · simpa [h] using hu0 a h
-        · simp [h],
-      by
-        rw [Finsupp.sum_fintype _ _ fun _ => rfl]
-        simp only [Finsupp.equivFunOnFinite_symm_apply_apply, Finset.sum_ite_mem,
-          Finset.univ_inter]
-        exact hu1⟩
-  refine ⟨(standardSimplexHomeomorph σ).symm w, ?_⟩
-  have hw : ∀ a : σ, ((standardSimplexHomeomorph σ).symm w).1 a = if a ∈ t then u a else 0 :=
-    fun a => by
-      rw [← standardSimplexHomeomorph_weights, Homeomorph.apply_symm_apply]
-      exact Finsupp.equivFunOnFinite_symm_apply_apply _ _
-  simp only [Fintype.linearCombination_apply, hw, ite_smul, zero_smul, Finset.sum_ite_mem,
-    Finset.univ_inter, Finset.affineCombination_eq_linear_combination _ _ _ hu1]
+  let : Convexity.ConvexSpace ℝ E := .ofModule
+  rw [Set.range_comp' (Fintype.linearCombination ℝ p), range_standardSimplex_coordinates,
+    ← Set.range_comp']
+  simp_rw [Fintype.linearCombination_apply,
+    ← Convexity.StdSimplex.affineMapMk_apply_eq_sum_of_fintype]
+  rw [Set.convexHull_eq_range_iConvexComb]
+  -- Reindex Mathlib's convex combinations between the family and its range.
+  let s : Set.range p → σ := fun x => x.2.choose
+  have hs (x : Set.range p) : p (s x) = x := x.2.choose_spec
+  apply Set.Subset.antisymm
+  · rintro _ ⟨w, rfl⟩
+    refine ⟨w.map (Set.rangeFactorization p), ?_⟩
+    simp only [Convexity.StdSimplex.affineMapMk_apply, Convexity.iConvexComb_map,
+      Set.rangeFactorization]
+  · rintro _ ⟨w, rfl⟩
+    refine ⟨w.map s, ?_⟩
+    simp only [Convexity.StdSimplex.affineMapMk_apply, Convexity.iConvexComb_map, hs]
 
 end LinearCombination
 
