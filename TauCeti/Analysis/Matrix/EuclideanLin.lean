@@ -56,6 +56,8 @@ diagonal matrix `diag(w)` the quadratic form is `x ↦ ∑ᵢ |xᵢ|² wᵢ`.
   continuous linear map;
 * `Matrix.mem_unitaryGroup_iff_inner_toEuclideanCLM` — a matrix is unitary exactly when its
   Euclidean operator preserves the inner product;
+* `Matrix.adjoint_toEuclideanCLM`, `Matrix.det_toEuclideanCLM`: the adjoint and the determinant
+  of the induced continuous linear map are those of the conjugate transpose and of the matrix;
 * `Matrix.toEuclideanCLM_apply_apply` — the coordinate formula for the continuous linear map of
   a matrix, which depends continuously on the matrix (`Matrix.continuous_toEuclideanCLM`) and
   conversely (`Matrix.continuous_toEuclideanCLM_symm`);
@@ -189,12 +191,22 @@ theorem mem_unitaryGroup_iff_inner_toEuclideanCLM {M : Matrix ι ι 𝕜} :
   rw [map_mul, map_star, map_one, ContinuousLinearMap.star_eq_adjoint]
   exact (ContinuousLinearMap.inner_map_map_iff_adjoint_comp_self _).mp h
 
-/-- The determinant of a diagonal continuous linear map is the product of its diagonal entries. -/
+/-- The adjoint of the continuous linear map of a square matrix is the map of its conjugate
+transpose. -/
+theorem adjoint_toEuclideanCLM (A : Matrix ι ι 𝕜) :
+    (toEuclideanCLM (𝕜 := 𝕜) A).adjoint = toEuclideanCLM (𝕜 := 𝕜) Aᴴ := by
+  rw [← ContinuousLinearMap.star_eq_adjoint, ← map_star, star_eq_conjTranspose]
+
+/-- The determinant of the continuous linear map of a square matrix is the determinant of the
+matrix. -/
 @[simp]
+theorem det_toEuclideanCLM (A : Matrix ι ι 𝕜) : (toEuclideanCLM (𝕜 := 𝕜) A).det = A.det := by
+  rw [ContinuousLinearMap.det, coe_toEuclideanCLM_eq_toEuclideanLin, LinearMap.det_toLpLin]
+
+/-- The determinant of a diagonal continuous linear map is the product of its diagonal entries. -/
 theorem det_toEuclideanCLM_diagonal (d : ι → 𝕜) :
     (toEuclideanCLM (𝕜 := 𝕜) (diagonal d)).det = ∏ i, d i := by
-  rw [ContinuousLinearMap.det, coe_toEuclideanCLM_eq_toEuclideanLin,
-    LinearMap.det_toLpLin, det_diagonal]
+  rw [det_toEuclideanCLM, det_diagonal]
 
 section Invertible
 
@@ -204,8 +216,7 @@ variables along it substitutes `A⁻¹`. -/
 noncomputable def toEuclideanCLE (A : Matrix ι ι 𝕜) (hA : A.det ≠ 0) :
     EuclideanSpace 𝕜 ι ≃L[𝕜] EuclideanSpace 𝕜 ι :=
   (toEuclideanCLM (𝕜 := 𝕜) A).toContinuousLinearEquivOfDetNeZero <| by
-    rw [ContinuousLinearMap.det, coe_toEuclideanCLM_eq_toEuclideanLin, LinearMap.det_toLpLin]
-    exact hA
+    rwa [det_toEuclideanCLM]
 
 /-- The equivalence acts as the matrix does. -/
 @[simp]
