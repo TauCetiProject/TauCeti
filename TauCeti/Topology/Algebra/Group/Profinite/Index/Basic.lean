@@ -261,6 +261,30 @@ theorem _root_.Subgroup.not_dvd_profiniteIndex_iff_forall_not_dvd_index (H : Sub
     simpa only [Nat.padicValNat_def, Nat.cast_eq_zero] using
       multiplicity_eq_zero_of_not_dvd (h N)
 
+omit [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G] in
+/-- The `ℓ`-adic valuation of the index of a subgroup is at most that of any subgroup it contains,
+provided the smaller subgroup has nonzero index. -/
+theorem _root_.Subgroup.padicValNat_index_le_of_le {A B : Subgroup G} (h : A ≤ B)
+    (hA : A.index ≠ 0) (ℓ : ℕ) [Fact ℓ.Prime] :
+    (padicValNat ℓ B.index : ℕ∞) ≤ padicValNat ℓ A.index := by
+  have hdvd := Subgroup.index_dvd_of_le h
+  simp only [Nat.padicValNat_def]
+  rw [multiplicity_eq_emultiplicity (ne_zero_of_dvd_ne_zero hA hdvd),
+    multiplicity_eq_emultiplicity hA]
+  exact emultiplicity_le_emultiplicity_of_dvd_right hdvd
+
+/-- The `ℓ`-adic valuation of the index of the image of a subgroup `X` in the finite quotient
+`G / N` increases when `N` shrinks to a smaller open normal subgroup `M`. -/
+theorem _root_.Subgroup.padicValNat_index_map_mk'_mono (X : Subgroup G) (ℓ : ℕ) [Fact ℓ.Prime]
+    {N M : OpenNormalSubgroup G} (h : M ≤ N) :
+    (padicValNat ℓ (X.map (QuotientGroup.mk' N.toSubgroup)).index : ℕ∞) ≤
+      padicValNat ℓ (X.map (QuotientGroup.mk' M.toSubgroup)).index := by
+  rw [X.index_map_mk'_eq_index_sup N.toSubgroup, X.index_map_mk'_eq_index_sup M.toSubgroup]
+  refine Subgroup.padicValNat_index_le_of_le
+    (sup_le_sup_left (show M.toSubgroup ≤ N.toSubgroup from h) X) ?_ ℓ
+  rw [← X.index_map_mk'_eq_index_sup M.toSubgroup]
+  exact Subgroup.index_ne_zero_of_finite
+
 omit [CompactSpace G] in
 /-- Taking the topological closure of a subgroup does not change its supernatural index. -/
 @[simp]

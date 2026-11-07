@@ -100,15 +100,10 @@ theorem _root_.Subgroup.profiniteIndex_subgroupOf_apply_eq_iSup_relIndex
       (padicValNat ell
         ((H.map (QuotientGroup.mk' N.toSubgroup)).relIndex
           (K.map (QuotientGroup.mk' N.toSubgroup))) : ℕ∞)) N)
-    have hVne : ((H.subgroupOf K) ⊔ V.toSubgroup).index ≠ 0 := by
-      exact (Subgroup.finiteIndex_of_le le_sup_right).index_ne_zero
-    simp only [Nat.padicValNat_def]
     rw [Subgroup.index_map_mk'_eq_index_sup,
-      relIndex_map_quotient_eq_index_sup_comap H K hHK N,
-      multiplicity_eq_emultiplicity hVne,
-      multiplicity_eq_emultiplicity (index_subgroupOf_sup_comap_ne_zero H K N)]
-    apply emultiplicity_le_emultiplicity_of_dvd_right
-    exact Subgroup.index_dvd_of_le (sup_le_sup_left hNV (H.subgroupOf K))
+      relIndex_map_quotient_eq_index_sup_comap H K hHK N]
+    exact Subgroup.padicValNat_index_le_of_le (sup_le_sup_left hNV (H.subgroupOf K))
+      (index_subgroupOf_sup_comap_ne_zero H K N) ell
   · refine iSup_le fun N ↦ ?_
     refine le_iSup_of_le (OpenNormalSubgroup.comap N K.subtype continuous_subtype_val) ?_
     have hV : (OpenNormalSubgroup.comap N K.subtype continuous_subtype_val).toSubgroup =
@@ -139,21 +134,12 @@ private lemma iSup_padicValNat_relIndex_add_iSup_padicValNat_index [CompactSpace
   intro N M
   let P : OpenNormalSubgroup G := N ⊓ M
   refine ⟨P, add_le_add ?_ ?_⟩
-  · simp only [Nat.padicValNat_def]
-    rw [relIndex_map_quotient_eq_index_sup_comap H K hHK N,
-      relIndex_map_quotient_eq_index_sup_comap H K hHK P,
-      multiplicity_eq_emultiplicity (index_subgroupOf_sup_comap_ne_zero H K N),
-      multiplicity_eq_emultiplicity (index_subgroupOf_sup_comap_ne_zero H K P)]
-    apply emultiplicity_le_emultiplicity_of_dvd_right
-    apply Subgroup.index_dvd_of_le
-    exact sup_le_sup_left (Subgroup.comap_mono inf_le_left) (H.subgroupOf K)
-  simp only [Nat.padicValNat_def]
-  · rw [multiplicity_eq_emultiplicity Subgroup.index_ne_zero_of_finite,
-      multiplicity_eq_emultiplicity Subgroup.index_ne_zero_of_finite]
-    apply emultiplicity_le_emultiplicity_of_dvd_right
-    rw [K.index_map_mk'_eq_index_sup M.toSubgroup,
-      K.index_map_mk'_eq_index_sup P.toSubgroup]
-    exact Subgroup.index_dvd_of_le (sup_le_sup_left inf_le_right K)
+  · rw [relIndex_map_quotient_eq_index_sup_comap H K hHK N,
+      relIndex_map_quotient_eq_index_sup_comap H K hHK P]
+    exact Subgroup.padicValNat_index_le_of_le
+      (sup_le_sup_left (Subgroup.comap_mono inf_le_left) (H.subgroupOf K))
+      (index_subgroupOf_sup_comap_ne_zero H K P) ell
+  · exact K.padicValNat_index_map_mk'_mono ell inf_le_right
 
 omit [TotallyDisconnectedSpace G] in
 /-- Multiplicativity of the relative index, at the level of `ℓ`-adic valuations of the finite
@@ -189,26 +175,8 @@ theorem _root_.Subgroup.profiniteIndex_subgroupOf_add_profiniteIndex
   have : Fact (ell : ℕ).Prime := ⟨ell.prop⟩
   rw [H.profiniteIndex_subgroupOf_apply_eq_iSup_relIndex K hHK hK,
     Subgroup.profiniteIndex_apply, Subgroup.profiniteIndex_apply]
-  calc
-    (⨆ N : OpenNormalSubgroup G,
-        (padicValNat ell
-          ((H.map (QuotientGroup.mk' N.toSubgroup)).relIndex
-            (K.map (QuotientGroup.mk' N.toSubgroup))) : ℕ∞)) +
-        ⨆ N : OpenNormalSubgroup G,
-          (padicValNat ell
-            (K.map (QuotientGroup.mk' N.toSubgroup)).index : ℕ∞) =
-      ⨆ N : OpenNormalSubgroup G,
-        (padicValNat ell
-          ((H.map (QuotientGroup.mk' N.toSubgroup)).relIndex
-            (K.map (QuotientGroup.mk' N.toSubgroup))) : ℕ∞) +
-          (padicValNat ell
-            (K.map (QuotientGroup.mk' N.toSubgroup)).index : ℕ∞) := by
-      exact iSup_padicValNat_relIndex_add_iSup_padicValNat_index H K hHK ell
-    _ = ⨆ N : OpenNormalSubgroup G,
-        (padicValNat ell (H.map (QuotientGroup.mk' N.toSubgroup)).index : ℕ∞) := by
-      congr 1
-      funext N
-      exact padicValNat_relIndex_add_padicValNat_index H K hHK ell N
+  rw [iSup_padicValNat_relIndex_add_iSup_padicValNat_index H K hHK ell]
+  exact iSup_congr (padicValNat_relIndex_add_padicValNat_index H K hHK ell)
 
 omit [TotallyDisconnectedSpace G] in
 /-- **A closed subgroup of prime-power relative index.** If `H ∩ K` is closed in `K` and the
