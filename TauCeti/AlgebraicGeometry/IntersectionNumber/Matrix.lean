@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.IntersectionNumber.SpecialFiber
-public import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
-public import TauCeti.AlgebraicGeometry.SpecialFiber.Components
+public import TauCeti.AlgebraicGeometry.SpecialFiber.Dimension
 public import TauCeti.LinearAlgebra.Matrix.NegSemidef
 
 /-!
@@ -33,8 +32,9 @@ the properties of [Stacks, Tag 0C5X](https://stacks.math.columbia.edu/tag/0C5X):
 
 * it kills the vector `m = (mᵢ)` of multiplicities of the components, `Σⱼ aᵢⱼ mⱼ = 0`, because the
   special fibre `Σⱼ mⱼ Cⱼ` is linearly equivalent to zero;
-* it is symmetric, `(Cⱼ · Cᵢ) = (Cᵢ · Cⱼ)`, both being the length over `κ` of the scheme-theoretic
-  intersection `Cᵢ ∩ Cⱼ` of two prime divisors meeting properly;
+* it is symmetric, `(Cⱼ · Cᵢ) = (Cᵢ · Cⱼ)`: for distinct components both are the length over `κ`
+  of the scheme-theoretic intersection `Cᵢ ∩ Cⱼ` of two prime divisors meeting properly, and on the
+  diagonal there is nothing to prove;
 * its off-diagonal entries are nonnegative.
 
 Since the multiplicities are positive, the intersection form `x ↦ xᵀ A x` is therefore negative
@@ -43,7 +43,8 @@ semidefinite over every linearly ordered field.
 ## Main declarations
 
 * `AlgebraicGeometry.Scheme.Hom.specialFiberIntersectionMatrix`: the intersection matrix of the
-  components of the special fibre.
+  components of the special fibre, with entries given by
+  `AlgebraicGeometry.Scheme.Hom.specialFiberIntersectionMatrix_apply`.
 * `AlgebraicGeometry.Scheme.Hom.specialFiberIntersectionMatrix_mulVec_specialFiberMultiplicity`:
   `A m = 0`.
 * `AlgebraicGeometry.Scheme.Hom.specialFiberIntersectionMatrix_isSymm`: `A` is symmetric.
@@ -75,31 +76,6 @@ universe u
 
 namespace AlgebraicGeometry.Scheme.Hom
 
-section Components
-
-variable {R : Type u} [CommRing R] [IsLocalRing R] {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R))
-
-/-- **The components of the special fibre are curves.** If all points of `X` have codimension at
-most `d + 1`, then the closure of a point of the special fibre which is not a generic point of an
-irreducible component of `X`, with its reduced structure, has relative dimension at most `d` over
-the residue field. For a regular model of a curve, the components of the special fibre are
-codimension-one points and `d = 1`. -/
-theorem relativeDimensionLE_subscheme_vanishingIdeal_closure_singleton {d : ℕ}
-    (hX : ∀ x : X, coheight x ≤ d + 1) {η : X} (hmax : ¬IsMax η)
-    (hη : toBase η = closedPoint R) :
-    letI := subschemeOverResidueField
-      (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hη)
-    TauCeti.AlgebraicGeometry.RelativeDimensionLE d
-      ((vanishingIdeal ⟨closure {η}, isClosed_closure⟩).subscheme ↘
-        Spec (.of (ResidueField R))) := by
-  rw [relativeDimensionLE_iff_of_field,
-    ← topologicalKrullDim_range_of_isPreimmersion
-      (vanishingIdeal ⟨closure {η}, isClosed_closure⟩).subschemeι,
-    IdealSheafData.range_subschemeι, IdealSheafData.coe_support_vanishingIdeal]
-  exact topologicalKrullDim_closure_singleton_le_of_not_isMax hX hmax
-
-end Components
-
 section Matrix
 
 variable {R : Type u} [CommRing R] [IsLocalRing R] [Ring.DimensionLEOne R]
@@ -125,6 +101,21 @@ def specialFiberIntersectionMatrix (hX : ∀ x : X, coheight x ≤ 2)
       (vanishingIdeal ⟨closure {((i : CodimensionOnePoint X) : X)}, isClosed_closure⟩).subschemeι
       (LineBundleClass.mk (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular hX
         (j : CodimensionOnePoint X).2).toInvertibleSheaf)⁻¹
+
+/-- The entry of the intersection matrix of the special fibre at a pair of components `Cᵢ`, `Cⱼ`
+is the intersection number `(Cⱼ · Cᵢ) = deg 𝒪_X(Cⱼ)|_{Cᵢ}` over the residue field of `R`. -/
+@[simp]
+theorem specialFiberIntersectionMatrix_apply (hX : ∀ x : X, coheight x ≤ 2)
+    (hη : toBase (genericPoint X) ≠ closedPoint R) (i j) :
+    toBase.specialFiberIntersectionMatrix hX hη i j =
+      letI := subschemeOverResidueField
+        (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
+          ((Set.Finite.mem_toFinset _).mp i.2))
+      LineBundleClass.intersectionNumber (ResidueField R)
+        (vanishingIdeal ⟨closure {((i : CodimensionOnePoint X) : X)}, isClosed_closure⟩).subschemeι
+        (LineBundleClass.mk (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular hX
+          (j : CodimensionOnePoint X).2).toInvertibleSheaf)⁻¹ := by
+  rw [specialFiberIntersectionMatrix]
 
 variable [IsProper toBase]
 
@@ -183,13 +174,14 @@ theorem specialFiberIntersectionMatrix_mulVec_specialFiberMultiplicity [Flat toB
     (vanishingIdeal ⟨closure {((i : CodimensionOnePoint X) : X)}, isClosed_closure⟩).subschemeι
     hX hη hπ hreg
   rw [← Finset.sum_coe_sort] at h
-  simpa [Matrix.mulVec, dotProduct, specialFiberIntersectionMatrix, mul_comm] using h
+  simpa [Matrix.mulVec, dotProduct, mul_comm] using h
 
 /-- **The intersection matrix is symmetric.** Under the hypotheses of
 `AlgebraicGeometry.Scheme.Hom.specialFiberIntersectionMatrix_mulVec_specialFiberMultiplicity`
 (flatness is not needed), `(Cⱼ · Cᵢ) = (Cᵢ · Cⱼ)` for any two components `Cᵢ`, `Cⱼ` of the
-special fibre: both are the dimension over the residue field of the ring of functions on the
-scheme-theoretic intersection `Cᵢ ∩ Cⱼ`. -/
+special fibre. For distinct components, which meet properly, both are the dimension over the
+residue field of the ring of functions on the scheme-theoretic intersection `Cᵢ ∩ Cⱼ`; for
+`Cᵢ = Cⱼ` the statement is tautological. -/
 theorem specialFiberIntersectionMatrix_isSymm :
     (toBase.specialFiberIntersectionMatrix hX hη).IsSymm := by
   refine Matrix.IsSymm.ext fun i j ↦ ?_
