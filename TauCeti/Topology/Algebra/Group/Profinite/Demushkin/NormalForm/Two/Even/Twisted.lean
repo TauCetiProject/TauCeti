@@ -10,6 +10,7 @@ public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Character.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Equiv
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Character
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Prescription.CharacterImage
+import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Labute.RelatorCharacter
 
 /-!
 # Labute's normal form for the dyadic Demushkin groups of even rank with twisted image
@@ -283,25 +284,16 @@ theorem exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_range_eq
   -- `χ₁` is its canonical character read on `F`.
   have hG₁ : IsDemushkin 2 (presentedProP 2 (Fin n) {e₁ r}) :=
     IsDemushkin.of_equiv 2 hG (presentedProP.congrSingleton e₁ rfl)
-  have hA₁ : (demushkinCharacter hG₁).toMonoidHom.range = (zpowers w).topologicalClosure := by
-    rw [range_demushkinCharacter_of_equiv hG hG₁ (presentedProP.congrSingleton e₁ rfl), hA]
-  set χ₁ : freeProP 2 (Fin n) →ₜ* ℤ_[2]ˣ :=
-    (demushkinCharacter hG₁).comp (presentedProP.mk 2 {e₁ r}) with hχ₁
-  have hχ₁A : ∀ g, χ₁ g ∈ (zpowers w).topologicalClosure := fun g ↦ hA₁ ▸ ⟨_, rfl⟩
-  have hχ₁r : χ₁ (e₁ r) = 1 := by
-    rw [hχ₁, ContinuousMonoidHom.coe_comp, Function.comp_apply,
-      presentedProP.mk_relator _ (Set.mem_singleton _), map_one]
+  set χ₁ := demushkinRelatorCharacter hG₁
+  have hA₁ : χ₁.toMonoidHom.range = (zpowers w).topologicalClosure := by
+    rw [range_demushkinRelatorCharacter, range_demushkinCharacter_of_equiv hG hG₁
+      (presentedProP.congrSingleton e₁ rfl), hA]
+  have hχ₁A : ∀ g, χ₁ g ∈ (zpowers w).topologicalClosure := fun g ↦ hA₁ ▸ ⟨g, rfl⟩
+  have hχ₁r : χ₁ (e₁ r) = 1 := demushkinRelatorCharacter_mem_ker hG₁
   have hkill : ∀ D : freeProP 2 (Fin n) → ℤ_[2], Continuous D → IsCrossedHom χ₁ D →
-      D (e₁ r) = 0 := fun D hDc hD ↦
-    (presentedProP.hasPrescriptionProperty_iff_forall_isCrossedHom_eq_zero
-      (Set.singleton_subset_iff.2
-        ((pLowerCentralSeries_one_eq_proPFrattini Fact.out).le hr₁₁)) _).1
-      (hasPrescriptionProperty_demushkinCharacter hG₁) D hDc hD _ rfl
-  have hwχ : w ∈ χ₁.toMonoidHom.range := by
-    obtain ⟨y, hy⟩ : w ∈ (demushkinCharacter hG₁).toMonoidHom.range :=
-      hA₁ ▸ le_topologicalClosure _ (mem_zpowers w)
-    obtain ⟨g, rfl⟩ := presentedProP.mk_surjective 2 {e₁ r} y
-    exact ⟨g, hy⟩
+      D (e₁ r) = 0 := fun D hDc hD ↦ demushkinRelatorCharacter_isCrossedHom_eq_zero hG₁
+        ((pLowerCentralSeries_one_eq_proPFrattini Fact.out).le hr₁₁) hDc hD
+  have hwχ : w ∈ χ₁.toMonoidHom.range := hA₁ ▸ le_topologicalClosure _ (mem_zpowers w)
   obtain ⟨hU2, hu2⟩ := apply_mem_and_notMem_unitsPrincipal_two_of_crossedHom_eq_zero hn hn1 hq
     hr₁₁ hclass χ₁ hkill hw2 hwχ
   -- The target value `v = -(1 + 2^f)⁻¹` of `χ` at `x₂`, a generator of `U^[f]`.

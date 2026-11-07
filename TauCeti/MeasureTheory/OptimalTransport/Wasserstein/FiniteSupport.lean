@@ -26,8 +26,8 @@ turns an estimate on the displacement into an estimate on the distance. The map 
 to `u i`, for the least index `i` of a dense sequence `u` with `dist x (u i) < δ` when that index
 is smaller than a cutoff `n`, and to `u 0` otherwise. The displacement is then at most `δ` off the
 tail set of points whose least index is at least `n`, and those tail sets decrease to the empty
-set, so the finite `p`-moment about `u 0` makes their contribution vanish by dominated
-convergence.
+set, so, the finite `p`-moment about `u 0` making `μ.withDensity (edist (u 0) · ^ p)` a finite
+measure, their contribution vanishes by continuity of measure from above.
 
 This file also provides the finite-support transport estimate and the approximation of a finitely
 supported law by one whose weights have a common natural denominator, the rounding of the weights
@@ -191,20 +191,13 @@ theorem exists_nat_weights_wassersteinEDist_le
         ((∑ x ∈ s, (m x : ℝ≥0∞))⁻¹ • ∑ x ∈ s, (m x : ℝ≥0∞) • Measure.dirac x) ≤ ε := by
   classical
   have ht : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
-  obtain ⟨x₀, hx₀⟩ : s.Nonempty := by
-    rw [Finset.nonempty_iff_ne_empty]
-    rintro rfl
-    simp only [Finset.coe_empty, compl_empty] at hν
-    exact absurd hν (by simp)
+  obtain ⟨x₀, hx₀⟩ : s.Nonempty := Finset.nonempty_iff_ne_empty.2 (by rintro rfl; simp at hν)
   set a : X → ℝ≥0∞ := fun x ↦ ν {x}
   have hν_eq : ν = ∑ x ∈ s, a x • Measure.dirac x :=
     Measure.ae_mem_finset_iff.1 (mem_ae_iff.2 hν)
-  have ha_sum : ∑ x ∈ s, a x = 1 := by
-    have h : (∑ x ∈ s, a x • Measure.dirac x) univ = 1 := by rw [← hν_eq]; simp
-    simpa using h
-  have ha_fin : ∀ x, a x ≠ ∞ := fun x ↦ measure_ne_top ν _
+  have ha_sum : ∑ x ∈ s, a x = 1 := by simpa using (congrArg (· univ) hν_eq).symm
   -- the total `p`-th power of the distances to the base point of the carrier
-  set C : ℝ≥0∞ := ∑ y ∈ s, edist y x₀ ^ p.toReal with hC_def
+  set C : ℝ≥0∞ := ∑ y ∈ s, edist y x₀ ^ p.toReal
   have hC : C ≠ ∞ :=
     ENNReal.sum_ne_top.2 fun y _ ↦ ENNReal.rpow_ne_top_of_nonneg ht.le (edist_ne_top y x₀)
   rcases eq_or_ne ε ∞ with rfl | hεtop
@@ -213,66 +206,41 @@ theorem exists_nat_weights_wassersteinEDist_le
   have hεt : ε ^ p.toReal ≠ 0 := (ENNReal.rpow_pos (pos_iff_ne_zero.2 hε) hεtop).ne'
   obtain ⟨M, hM⟩ : ∃ M : ℕ, C / ε ^ p.toReal < M :=
     ENNReal.exists_nat_gt (by simp [ENNReal.div_eq_top, hC, hεt])
-  have hMpos : 0 < M := by
-    rcases Nat.eq_zero_or_pos M with rfl | h
-    · simp at hM
-    · exact h
+  have hMpos : 0 < M := Nat.pos_of_ne_zero (by rintro rfl; simp at hM)
   have hM0 : (M : ℝ≥0∞) ≠ 0 := Nat.cast_ne_zero.2 hMpos.ne'
   have hMtop : (M : ℝ≥0∞) ≠ ∞ := ENNReal.natCast_ne_top M
-  have hCM : C ≤ M * ε ^ p.toReal := by
-    rw [← ENNReal.div_le_iff hεt (by simp [hεtop])]
-    exact hM.le
   -- the rounded multiplicities, and their comparison with the original weights
   obtain ⟨m, hm_sum, hfloor_le, hlt_floor⟩ :=
     exists_nat_weights_of_sum_eq_one hx₀ ha_sum hMpos
   refine ⟨m, by rw [hm_sum]; exact hMpos, ?_⟩
-  -- the rounded weights, and the comparison with the original ones
   set b : X → ℝ≥0∞ := fun x ↦ (M : ℝ≥0∞)⁻¹ * m x with hb_def
+  have hsm : ∑ x ∈ s, ((m x : ℕ) : ℝ≥0∞) = (M : ℝ≥0∞) := by rw [← Nat.cast_sum, hm_sum]
   have hb_sum : ∑ x ∈ s, b x = 1 := by
-    have hcast : ∑ x ∈ s, ((m x : ℕ) : ℝ≥0∞) = (M : ℝ≥0∞) := by rw [← Nat.cast_sum, hm_sum]
-    rw [hb_def, ← Finset.mul_sum, hcast, ENNReal.inv_mul_cancel hM0 hMtop]
-  have hab : ∀ y ∈ s, y ≠ x₀ → b y ≤ a y := by
-    intro y hys hy
-    have hmy := hfloor_le y hys hy
-    calc b y = (M : ℝ≥0∞)⁻¹ * m y := rfl
-      _ ≤ (M : ℝ≥0∞)⁻¹ * ((M : ℝ≥0∞) * a y) := by gcongr
-      _ = a y := by rw [← mul_assoc, ENNReal.inv_mul_cancel hM0 hMtop, one_mul]
-  have hexc : ∀ y ∈ s, y ≠ x₀ → a y - b y ≤ (M : ℝ≥0∞)⁻¹ := by
-    intro y hys hy
-    rw [tsub_le_iff_left]
-    have h := hlt_floor y hys hy
-    calc a y = (M : ℝ≥0∞)⁻¹ * ((M : ℝ≥0∞) * a y) := by
-          rw [← mul_assoc, ENNReal.inv_mul_cancel hM0 hMtop, one_mul]
-      _ ≤ (M : ℝ≥0∞)⁻¹ * ((m y : ℕ) + 1) := by gcongr
-      _ = b y + (M : ℝ≥0∞)⁻¹ := by rw [mul_add, mul_one]
+    rw [hb_def, ← Finset.mul_sum, hsm, ENNReal.inv_mul_cancel hM0 hMtop]
+  have hab : ∀ y ∈ s, y ≠ x₀ → b y ≤ a y := fun y hys hy ↦
+    (ENNReal.inv_mul_le_iff hM0 hMtop).2 (hfloor_le y hys hy)
   -- the target measure, rewritten with the normalised weights
   have htarget : (∑ x ∈ s, (m x : ℝ≥0∞))⁻¹ • ∑ x ∈ s, (m x : ℝ≥0∞) • Measure.dirac x
       = ∑ x ∈ s, b x • Measure.dirac x := by
-    have hsm : ∑ x ∈ s, ((m x : ℕ) : ℝ≥0∞) = (M : ℝ≥0∞) := by rw [← Nat.cast_sum, hm_sum]
     rw [hsm, Finset.smul_sum]
     exact Finset.sum_congr rfl fun x _ ↦ (smul_smul _ _ _)
   rw [hν_eq, htarget]
-  refine (wassersteinEDist_sum_smul_dirac_le hd p hx₀ hab (fun y _ _ ↦ ha_fin y)
-    (hb_sum.trans ha_sum.symm)).trans ?_
+  refine (wassersteinEDist_sum_smul_dirac_le hd p hx₀ hab (fun y _ _ ↦ measure_ne_top ν _)
+    (hb_sum.trans ha_sum.symm)).trans ((ENNReal.rpow_le_rpow_iff ht).1 ?_)
   -- the excess mass is at most `1 / M` at each atom, so its `L^p` seminorm is below `ε`
-  refine (ENNReal.rpow_le_rpow_iff ht).1 ?_
-  have hanchor : Measurable fun x : X ↦ edist x x₀ :=
-    hd.comp (measurable_id.prodMk measurable_const)
-  rw [eLpNorm_rpow_eq_lintegral hp0 hp hanchor.aemeasurable]
-  have hint : ∫⁻ x, edist x x₀ ^ p.toReal ∂(∑ y ∈ s, (a y - b y) • Measure.dirac y)
-      = ∑ y ∈ s, (a y - b y) * edist y x₀ ^ p.toReal := by
-    simp [lintegral_smul_measure]
-  rw [hint]
+  rw [eLpNorm_rpow_eq_lintegral hp0 hp (f := fun x ↦ edist x x₀)
+    (hd.comp (measurable_id.prodMk measurable_const)).aemeasurable, lintegral_finsetSum_measure]
+  simp only [lintegral_smul_measure, lintegral_dirac, smul_eq_mul]
   calc ∑ y ∈ s, (a y - b y) * edist y x₀ ^ p.toReal
-      ≤ ∑ y ∈ s, (M : ℝ≥0∞)⁻¹ * edist y x₀ ^ p.toReal := by
-        refine Finset.sum_le_sum fun y hy ↦ ?_
+      ≤ ∑ y ∈ s, (M : ℝ≥0∞)⁻¹ * edist y x₀ ^ p.toReal := Finset.sum_le_sum fun y hy ↦ by
         rcases eq_or_ne y x₀ with rfl | hyx
         · simp [ENNReal.zero_rpow_of_pos ht]
         · gcongr
-          exact hexc y hy hyx
-    _ = (M : ℝ≥0∞)⁻¹ * C := by rw [hC_def, Finset.mul_sum]
-    _ ≤ (M : ℝ≥0∞)⁻¹ * ((M : ℝ≥0∞) * ε ^ p.toReal) := by gcongr
-    _ = ε ^ p.toReal := by rw [← mul_assoc, ENNReal.inv_mul_cancel hM0 hMtop, one_mul]
+          rw [tsub_le_iff_left, hb_def, ← mul_add_one]
+          exact (ENNReal.mul_le_iff_le_inv hM0 hMtop).1 (hlt_floor y hy hyx)
+    _ ≤ ε ^ p.toReal := by
+        rw [← Finset.mul_sum, ENNReal.inv_mul_le_iff hM0 hMtop]
+        exact (ENNReal.div_le_iff hεt (by simp [hεtop])).1 hM.le
 
 end NatWeights
 
@@ -325,90 +293,56 @@ theorem exists_eLpNorm_edist_le (hp : 1 ≤ p) (hp_top : p ≠ ∞) [IsProbabili
   have ht : 0 < p.toReal := ENNReal.toReal_pos hp0 hp_top
   classical
   have : Nonempty X := ⟨(hasFiniteMoment_def.1 hμ).choose⟩
-  -- the accuracy, halved and truncated to a finite nonzero value
-  set c : ℝ≥0∞ := min ε 1 / 2 with hc_def
-  have hmin_pos : 0 < min ε 1 := lt_min (pos_iff_ne_zero.2 hε) one_pos
-  have hc_ne_top : c ≠ ∞ :=
-    (ENNReal.div_lt_top (ne_top_of_le_ne_top ENNReal.one_ne_top (min_le_right _ _)) two_ne_zero).ne
-  have hc_ne_zero : c ≠ 0 := by
-    simp only [hc_def, ne_eq, ENNReal.div_eq_zero_iff, not_or]
-    exact ⟨hmin_pos.ne', ENNReal.ofNat_ne_top⟩
-  set δ : ℝ := c.toReal with _
-  have hδ : 0 < δ := ENNReal.toReal_pos hc_ne_zero hc_ne_top
-  have hδc : ENNReal.ofReal δ = c := ENNReal.ofReal_toReal hc_ne_top
+  -- a radius `δ > 0` with `2 δ ≤ ε`
+  obtain ⟨δ, -, hδ0, hδε⟩ := ENNReal.lt_iff_exists_real_btwn.1 (ENNReal.half_pos hε)
+  have hδ : 0 < δ := ENNReal.ofReal_pos.1 hδ0
   -- the least index of a dense sequence within `δ` of a point
-  set u : ℕ → X := TopologicalSpace.denseSeq X with _
-  have hu : DenseRange u := TopologicalSpace.denseRange_denseSeq X
-  have hidx : ∀ x : X, ∃ i, dist x (u i) < δ := fun x ↦ Metric.denseRange_iff.1 hu x δ hδ
-  set idx : X → ℕ := fun x ↦ Nat.find (hidx x) with _
-  have hidx_spec : ∀ x, dist x (u (idx x)) < δ := fun x ↦ Nat.find_spec (hidx x)
+  set u : ℕ → X := TopologicalSpace.denseSeq X
+  have hidx : ∀ x : X, ∃ i, dist x (u i) < δ := fun x ↦
+    Metric.denseRange_iff.1 (TopologicalSpace.denseRange_denseSeq X) x δ hδ
+  set idx : X → ℕ := fun x ↦ Nat.find (hidx x)
   have hidx_meas : Measurable idx := measurable_find hidx fun k ↦ measurableSet_ball
-  -- the ground distance to the basepoint `u 0`, and its `p`-th moment
+  -- the ground distance to the basepoint `u 0`, and the tail sets of the least index
   set f : X → ℝ≥0∞ := fun y ↦ edist (u 0) y with hf_def
   have hf_meas : Measurable f := measurable_edist.comp (measurable_const.prodMk measurable_id)
-  have hfin : ∫⁻ y, f y ^ p.toReal ∂μ ≠ ∞ :=
-    (hasFiniteMoment_iff_lintegral_edist_rpow_ne_top hp0 hp_top (u 0) μ).1 hμ
-  -- the tail sets decrease to the empty set, so their contribution vanishes
   set A : ℕ → Set X := fun n ↦ {x | n ≤ idx x} with hA_def
   have hA_meas : ∀ n, MeasurableSet (A n) := fun n ↦
     hidx_meas (t := {k | n ≤ k}) MeasurableSet.of_discrete
-  have hA_tendsto : Tendsto (fun n ↦ ∫⁻ y, (A n).indicator (fun z ↦ f z ^ p.toReal) y ∂μ)
-      atTop (𝓝 0) := by
-    have hlim : ∀ᵐ y ∂μ,
-        Tendsto (fun n ↦ (A n).indicator (fun z ↦ f z ^ p.toReal) y) atTop (𝓝 0) := by
-      refine .of_forall fun y ↦ Filter.Tendsto.congr' ?_ tendsto_const_nhds
-      filter_upwards [eventually_gt_atTop (idx y)] with n hn
-      exact (Set.indicator_of_notMem (by simpa [hA_def] using not_le.2 hn) _).symm
-    have key := tendsto_lintegral_of_dominated_convergence (μ := μ)
-      (F := fun n y ↦ (A n).indicator (fun z ↦ f z ^ p.toReal) y) (f := fun _ ↦ (0 : ℝ≥0∞))
-      (bound := fun z ↦ f z ^ p.toReal)
-      (fun n ↦ (ENNReal.continuous_rpow_const.measurable.comp hf_meas).indicator (hA_meas n))
-      (fun n ↦ .of_forall fun y ↦ Set.indicator_le_self _ _ y) hfin hlim
-    simpa using key
-  obtain ⟨n, hn⟩ : ∃ n, ∫⁻ y, (A n).indicator (fun z ↦ f z ^ p.toReal) y ∂μ ≤ c ^ p.toReal := by
-    obtain ⟨N, hN⟩ := ENNReal.tendsto_atTop_zero.1 hA_tendsto _
-      (ENNReal.rpow_pos (pos_iff_ne_zero.2 hc_ne_zero) hc_ne_top)
-    exact ⟨N, hN N le_rfl⟩
+  -- the tail sets decrease to the empty set, so their `p`-moment, a finite measure, vanishes
+  set ν : Measure X := μ.withDensity fun y ↦ f y ^ p.toReal
+  have : IsFiniteMeasure ν := isFiniteMeasure_withDensity
+    ((hasFiniteMoment_iff_lintegral_edist_rpow_ne_top hp0 hp_top (u 0) μ).1 hμ)
+  obtain ⟨n, hn⟩ : ∃ n, ν (A n) ≤ ENNReal.ofReal δ ^ p.toReal := by
+    have h := tendsto_measure_iInter_atTop (μ := ν) (fun n ↦ (hA_meas n).nullMeasurableSet)
+      (fun m n hmn x hx ↦ hmn.trans hx) ⟨0, measure_ne_top _ _⟩
+    rw [iInter_eq_empty_iff.2 fun x ↦ ⟨idx x + 1, by simp [hA_def]⟩, measure_empty] at h
+    exact (h.eventually (ge_mem_nhds (ENNReal.rpow_pos hδ0 ENNReal.ofReal_ne_top))).exists
   -- the quantizer: the nearest listed point of index below the cutoff, and `u 0` beyond it
-  set T : X → X := fun x ↦ if idx x < n then u (idx x) else u 0 with hT_def
-  have hT_meas : Measurable T :=
-    (Measurable.of_discrete (f := fun i : ℕ ↦ if i < n then u i else u 0)).comp hidx_meas
-  refine ⟨(Finset.range (n + 1)).image u, T, hT_meas, fun x ↦ ?_, ?_⟩
-  · simp only [Finset.mem_image, Finset.mem_range, hT_def]
-    by_cases h : idx x < n
-    · exact ⟨idx x, by omega, by simp [h]⟩
-    · exact ⟨0, by omega, by simp [h]⟩
+  set T : X → X := (fun i ↦ u (if i < n then i else 0)) ∘ idx with hT_def
+  have hT_meas : Measurable T := Measurable.of_discrete.comp hidx_meas
+  refine ⟨(Finset.range (n + 1)).image u, T, hT_meas, fun x ↦ Finset.mem_image.2
+    ⟨if idx x < n then idx x else 0, Finset.mem_range.2 (by split_ifs <;> omega), rfl⟩, ?_⟩
   -- the displacement is at most `δ` off the tail set, and at most the tail distance on it
-  have hbound : ∀ x, edist x (T x) ≤ ENNReal.ofReal δ + (A n).indicator f x := by
-    intro x
+  have hbound : ∀ x, edist x (T x) ≤ ENNReal.ofReal δ + (A n).indicator f x := fun x ↦ by
     by_cases h : idx x < n
-    · refine le_trans ?_ (self_le_add_right _ _)
-      have hTx : T x = u (idx x) := by simp [hT_def, h]
-      rw [hTx, edist_dist]
-      exact ENNReal.ofReal_le_ofReal (hidx_spec x).le
-    · have hx : x ∈ A n := by simpa [hA_def] using not_lt.1 h
-      have hTx : T x = u 0 := by simp [hT_def, h]
-      rw [hTx, Set.indicator_of_mem hx, hf_def, edist_comm]
-      exact self_le_add_left _ _
-  have hind : eLpNorm ((A n).indicator f) p μ ≤ c := by
-    refine (ENNReal.rpow_le_rpow_iff ht).1 ?_
-    rw [eLpNorm_rpow_eq_lintegral hp0 hp_top (hf_meas.indicator (hA_meas n)).aemeasurable]
-    refine le_trans (le_of_eq (lintegral_congr fun y ↦ ?_)) hn
-    by_cases hy : y ∈ A n
-    · simp [Set.indicator_of_mem hy]
-    · simp [Set.indicator_of_notMem hy, ENNReal.zero_rpow_of_pos ht]
+    · simpa [hT_def, h, edist_dist] using
+        le_add_right (ENNReal.ofReal_le_ofReal (Nat.find_spec (hidx x)).le)
+    · rw [Set.indicator_of_mem (by simpa [hA_def] using not_lt.1 h)]
+      simpa [hT_def, h, hf_def] using le_add_left (edist_comm x (u 0)).le
+  have hind : eLpNorm ((A n).indicator f) p μ ≤ ENNReal.ofReal δ := by
+    refine (ENNReal.rpow_le_rpow_iff ht).1 (le_trans (le_of_eq ?_) hn)
+    rw [eLpNorm_indicator_eq_eLpNorm_restrict (hA_meas n).nullMeasurableSet,
+      eLpNorm_rpow_eq_lintegral hp0 hp_top hf_meas.aemeasurable, withDensity_apply _ (hA_meas n)]
   calc eLpNorm (fun x ↦ edist x (T x)) p μ
       ≤ eLpNorm ((fun _ : X ↦ ENNReal.ofReal δ) + (A n).indicator f) p μ :=
         eLpNorm_mono_enorm
           (measurable_edist.comp (measurable_id.prodMk hT_meas)).aestronglyMeasurable
           fun x ↦ by simpa using hbound x
-    _ ≤ eLpNorm (fun _ : X ↦ ENNReal.ofReal δ) p μ + eLpNorm ((A n).indicator f) p μ :=
-        eLpNorm_add_le hp
-    _ ≤ c + c := by
-        refine add_le_add (le_of_eq ?_) hind
+    _ ≤ ENNReal.ofReal δ + ENNReal.ofReal δ := by
+        refine (eLpNorm_add_le hp).trans (add_le_add (le_of_eq ?_) hind)
         rw [eLpNorm_const _ hp0 (IsProbabilityMeasure.ne_zero μ)]
-        simp [hδc]
-    _ ≤ ε := by rw [hc_def, ENNReal.add_halves]; exact min_le_left _ _
+        simp
+    _ ≤ ε := (add_le_add hδε.le hδε.le).trans (ENNReal.add_halves ε).le
 
 /-- **Approximation by a quantizer.** On a separable ground space, a probability measure with
 finite `p`-moment and a finite exponent `1 ≤ p < ∞` is pushed to within any prescribed accuracy

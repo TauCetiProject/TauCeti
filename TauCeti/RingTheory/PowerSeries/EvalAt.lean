@@ -66,9 +66,10 @@ coefficient rings here may have nilpotents.
 * `PowerSeries.commute_evalAt`: the values of a series at `b` commute with `b`.
 * `PowerSeries.norm_evalAt_le_gaussNorm`: the Gauss-norm bound in an ultrametric algebra.
 * `PowerSeries.norm_evalAt_le_mul_gaussNorm`: a Gauss-norm bound in any normed algebra.
-* `PowerSeries.evalAt_add_of_summable_norm` and `PowerSeries.evalAt_mul_of_summable_norm`: in a
-  complete normed algebra, evaluation is additive and multiplicative on series whose terms at the
-  point are absolutely summable.
+* `PowerSeries.evalAt_add_of_summable_norm`, `PowerSeries.evalAt_sum_of_summable_norm` and
+  `PowerSeries.evalAt_mul_of_summable_norm`: in a complete normed algebra, evaluation preserves
+  addition, finite sums and multiplication on series whose terms at the point are absolutely
+  summable.
 * `PowerSeries.IsRestricted.hasSum_evalAt`, `PowerSeries.IsRestricted.evalAt_add` and
   `PowerSeries.IsRestricted.evalAt_mul`: a series restricted at `c` converges at every `b` with
   `‖b‖ ≤ c` in a complete ultrametric algebra, additively and multiplicatively in the series;
@@ -396,6 +397,13 @@ theorem evalAt_add_of_summable_norm (hf : Summable fun n ↦ ‖coeff n f • b 
   rw [evalAt_def]
   exact HasSum.tsum_eq (by simpa [add_smul] using
     (hasSum_evalAt_of_summable_norm hf).add (hasSum_evalAt_of_summable_norm hg))
+
+/-- Evaluation commutes with finite sums of series whose terms at `b` are absolutely summable. -/
+theorem evalAt_sum_of_summable_norm {ι : Type*} (s : Finset ι) {f : ι → R⟦X⟧}
+    (hf : ∀ i ∈ s, Summable fun n ↦ ‖coeff n (f i) • b ^ n‖) :
+    (∑ i ∈ s, f i).evalAt b = ∑ i ∈ s, (f i).evalAt b := by
+  have h := hasSum_sum (fun i hi ↦ hasSum_evalAt_of_summable_norm (hf i hi))
+  simpa only [evalAt_def, map_sum, Finset.sum_smul] using h.tsum_eq
 
 /-- Evaluation at `b` is multiplicative on series whose terms at `b` are absolutely summable: this
 is the Cauchy product formula for absolutely convergent series. -/
