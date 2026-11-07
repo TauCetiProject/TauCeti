@@ -5,9 +5,9 @@ name: Infrastructure tests
 on:
   push:
     branches: [main]
-    paths: ['scripts/**', '.github/**']
+    paths: ['scripts/**', '.github/**', 'lean-toolchain']
   pull_request:
-    paths: ['scripts/**', '.github/**']
+    paths: ['scripts/**', '.github/**', 'lean-toolchain']
 
 permissions:
   contents: read

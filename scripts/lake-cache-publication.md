@@ -51,6 +51,7 @@ run to exercise an updated workflow.
 Run regression checks with:
 
 ```bash
+python3 scripts/test_bulk_unpack_cache.py --integration
 python3 scripts/test_lake_cache_publish.py --integration
 python3 scripts/test_lake_cache_reuse.py --integration
 python3 scripts/test_lake_cache_probe.py

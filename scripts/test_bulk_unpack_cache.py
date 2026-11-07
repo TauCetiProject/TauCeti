@@ -348,6 +348,9 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(steps[prepare]["env"]["LAKE_NO_CACHE"], "true")
         self.assertFalse(any("test_bulk_unpack_cache.py --integration" in text for text in commands))
         infrastructure = yaml.safe_load((ROOT / ".github/workflows/infrastructure-tests.yml").read_text())
+        triggers = infrastructure.get("on", infrastructure.get(True))
+        for event in ("push", "pull_request"):
+            self.assertIn("lean-toolchain", triggers[event]["paths"])
         fixtures = infrastructure["jobs"]["lean-fixtures"]["steps"]
         self.assertTrue(any("test_bulk_unpack_cache.py --integration" in step.get("run", "")
                             for step in fixtures))
