@@ -105,6 +105,80 @@ namespace PDE
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure] {lam Lam : ℝ}
 
+omit [DecidableEq ι] in
+/-- Scaling by the radius: `(R ^ (-n/2)) ^ 2 |B(x₀, R)| = |B(0, 1)|`. -/
+private lemma sq_rpow_neg_card_div_two_mul_real_ball {x₀ : EuclideanSpace ℝ ι} {R : ℝ}
+    (hR : 0 < R) :
+    (R ^ (-(Fintype.card ι : ℝ) / 2)) ^ 2 * mu.real (ball x₀ R) =
+      mu.real (ball (0 : EuclideanSpace ℝ ι) 1) := by
+  have hP : (R ^ (-(Fintype.card ι : ℝ) / 2)) ^ 2 = (R ^ Fintype.card ι)⁻¹ := by
+    rw [← Real.rpow_natCast, ← Real.rpow_mul hR.le, ← Real.rpow_natCast R,
+      ← Real.rpow_neg hR.le]
+    ring_nf
+  rw [hP, mu.addHaar_real_ball_of_pos x₀ hR, finrank_euclideanSpace,
+    inv_mul_cancel_left₀ (pow_pos hR _).ne']
+
+/-- Arithmetic of the choice of the number of steps: if `s * A ≤ C * V`, `P ^ 2 * V = ω` and
+`4 D² C ω ≤ s`, then `D P √A ≤ 1 / 2`. -/
+private lemma mul_sqrt_le_half {D P A V C ω s : ℝ} (hD : 0 ≤ D) (hP : 0 ≤ P) (hs : 0 < s)
+    (hA₀ : 0 ≤ A) (hPV : P ^ 2 * V = ω) (hA : s * A ≤ C * V) (hj : 4 * D ^ 2 * C * ω ≤ s) :
+    D * P * √A ≤ 1 / 2 := by
+  have hsq : (D * P * √A) ^ 2 ≤ (1 / 2) ^ 2 := by
+    rw [mul_pow, Real.sq_sqrt hA₀]
+    refine le_of_mul_le_mul_left ?_ hs
+    calc s * ((D * P) ^ 2 * A) = D ^ 2 * P ^ 2 * (s * A) := by ring
+      _ ≤ D ^ 2 * P ^ 2 * (C * V) := by gcongr
+      _ = D ^ 2 * C * ω := by rw [← hPV]; ring
+      _ ≤ s * (1 / 2) ^ 2 := by linarith
+  exact (pow_le_pow_iff_left₀ (by positivity) (by norm_num) two_ne_zero).1 hsq
+
+/-- Every real number is bounded by the square root of a natural number. -/
+private lemma exists_nat_le_sqrt (x : ℝ) : ∃ j : ℕ, x ≤ √j := by
+  rcases le_or_gt x 0 with hx | hx
+  · exact ⟨0, hx.trans (by simp)⟩
+  · exact ⟨⌈x ^ 2⌉₊, (Real.le_sqrt hx.le (Nat.cast_nonneg _)).2 (Nat.le_ceil _)⟩
+
+/-- A bound on `β R / λ` bounds its square. -/
+private lemma sq_div_le_sq {x r s t : ℝ} (hx : 0 ≤ x) (hr : 0 < r) (hs : 0 < s)
+    (h : x * r ≤ t * s) : (x * r / s) ^ 2 ≤ t ^ 2 :=
+  pow_le_pow_left₀ (div_nonneg (mul_nonneg hx hr.le) hs.le) ((div_le_iff₀ hs).2 h) 2
+
+/-- The level `M - (M - k) / 2 ^ j` lies above `k`. -/
+private lemma le_sub_sub_div_two_pow {k M : ℝ} (hkM : k ≤ M) (j : ℕ) :
+    k ≤ M - (M - k) / 2 ^ j := by
+  rw [le_sub_comm]
+  exact div_le_self (sub_nonneg.2 hkM) (one_le_pow₀ one_le_two)
+
+/-- Halving the gap to `M` from the level `M - (M - k) / 2 ^ j` gives the level
+`M - (M - k) / 2 ^ (j + 1)`. -/
+private lemma add_half_sub_div_two_pow (k M : ℝ) (j : ℕ) :
+    M - (M - k) / 2 ^ j + (M - (M - (M - k) / 2 ^ j)) / 2 = M - 1 / 2 ^ (j + 1) * (M - k) := by
+  rw [pow_succ]
+  field_simp
+  ring
+
+omit [DecidableEq ι] in
+/-- The `L²` mass of `(u - l)⁺` on a ball, for `u ≤ M` there, is at most `(M - l) ^ 2` times the
+measure of the upper level set `{u ≥ l}`. -/
+private lemma integral_max_sub_sq_le_ball {Omega : Opens (EuclideanSpace ℝ ι)}
+    {u : W1p mu Omega 2} {x₀ : EuclideanSpace ℝ ι} {R l M : ℝ}
+    (hM : ∀ᵐ x ∂mu.restrict (ball x₀ R), W1p.value u x ≤ M) :
+    ∫ x in ball x₀ R, max (W1p.value u x - l) 0 ^ 2 ∂mu ≤
+      (M - l) ^ 2 * (mu.restrict (ball x₀ R)).real {x | l ≤ W1p.value u x} := by
+  have : IsFiniteMeasure (mu.restrict (ball x₀ R)) :=
+    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
+  exact MeasureTheory.integral_max_sub_sq_le_mul_measureReal (Lp.stronglyMeasurable _).measurable hM
+
+/-- If `I ≤ g ^ 2 * A` with `g ≥ 0` and `D P √A ≤ 1 / 2`, then `D P √I ≤ g / 2`. -/
+private lemma mul_sqrt_le_half_sub {D P A I g : ℝ} (hD : 0 ≤ D) (hP : 0 ≤ P) (hg : 0 ≤ g)
+    (hI : I ≤ g ^ 2 * A) (hDPA : D * P * √A ≤ 1 / 2) : D * P * √I ≤ g / 2 :=
+  calc D * P * √I ≤ D * P * √(g ^ 2 * A) := by gcongr
+    _ = g * (D * P * √A) := by
+      rw [Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq hg]
+      ring
+    _ ≤ g * (1 / 2) := mul_le_mul_of_nonneg_left hDPA hg
+    _ = g / 2 := by ring
+
 /-- **Reduction of the supremum with lower-order terms (De Giorgi).** Let `n ≥ 1` be the
 dimension, and fix a proportion `θ > 0` and a bound `σ` for `βR/λ`. There is `δ ∈ (0, 1)`,
 depending only on `λ`, `Λ`, `θ`, `σ`, the dimension and the normalization of the additive Haar
@@ -154,34 +228,22 @@ theorem exists_ae_value_le_sub_mul_sub_lowerOrder [Nonempty ι] {θ : ℝ} (hθ 
   have hω : 0 < ω :=
     ENNReal.toReal_pos (measure_ball_pos mu 0 one_pos).ne' measure_ball_lt_top.ne
   -- After `j` steps of the level-set decay, local boundedness halves the remaining gap.
-  set j : ℕ := ⌈(4 * D ^ 2 * C * ω) ^ 2⌉₊
-  have hj : 4 * D ^ 2 * C * ω ≤ √j :=
-    (Real.le_sqrt (by positivity) (Nat.cast_nonneg _)).2 (Nat.le_ceil _)
+  obtain ⟨j, hj⟩ := exists_nat_le_sqrt (4 * D ^ 2 * C * ω)
   have hjpos : 0 < √(j : ℝ) := lt_of_lt_of_le (by positivity) hj
-  refine ⟨1 / 2 ^ (j + 1), by positivity, ?_, ?_⟩
-  · rw [div_lt_one (by positivity)]
-    exact one_lt_pow₀ one_lt_two (Nat.succ_ne_zero j)
+  refine ⟨1 / 2 ^ (j + 1), by positivity,
+    (div_lt_one (by positivity)).2 (one_lt_pow₀ one_lt_two (Nat.succ_ne_zero j)), ?_⟩
   intro Omega a b c beta gamma u x₀ R k M h ha hb hc hb_bound hc_bound hc_nonneg hu hR hball
     hβR hk hkM hM hθk
-  have hhalf : ball x₀ (R / 2) ⊆ ball x₀ (2 * R) := ball_subset_ball (by linarith)
   rcases hkM.eq_or_lt with rfl | hkM
   · -- Equal levels: the bound is the hypothesis `u ≤ k`.
-    filter_upwards [ae_restrict_of_ae_restrict_of_subset hhalf hM] with x hx
+    filter_upwards [ae_restrict_of_ae_restrict_of_subset
+      (ball_subset_ball (by linarith)) hM] with x hx
     simpa using hx
   -- `(βR/λ)² ≤ σ²`, since `0 ≤ βR/λ ≤ σ`.
-  have hy : (beta * R / lam) ^ 2 ≤ σ ^ 2 :=
-    have hbeta : 0 ≤ beta :=
-      (norm_nonneg _).trans (hb_bound x₀ (hball (mem_ball_self (by positivity))))
-    pow_le_pow_left₀ (div_nonneg (mul_nonneg hbeta hR.le) h.pos.le)
-      ((div_le_iff₀ h.pos).2 hβR) 2
+  have hy := sq_div_le_sq ((norm_nonneg _).trans
+    (hb_bound x₀ (hball (mem_ball_self (by positivity))))) hR h.pos hβR
   set l := M - (M - k) / 2 ^ j
   have hlM : l ≤ M := sub_le_self _ (by positivity)
-  have hkl : k ≤ l := by
-    simp only [l]
-    rw [le_sub_comm]
-    exact div_le_self (sub_nonneg.2 hkM.le) (one_le_pow₀ one_le_two)
-  have hballR : ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) :=
-    (ball_subset_ball (by linarith)).trans hball
   -- The upper level set `{u ≥ l}` is small, by the decay estimate.
   set V := mu.real (ball x₀ R)
   set A := (mu.restrict (ball x₀ R)).real {x | l ≤ W1p.value u x}
@@ -191,49 +253,25 @@ theorem exists_ae_value_le_sub_mul_sub_lowerOrder [Nonempty ι] {θ : ℝ} (hθ 
     gcongr
   -- Hence so is the `L²` mass of `(u - l)⁺` on `B(x₀, R)`.
   set I := ∫ x in ball x₀ R, max (W1p.value u x - l) 0 ^ 2 ∂mu
-  have : IsFiniteMeasure (mu.restrict (ball x₀ R)) :=
-    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-  have hI : I ≤ (M - l) ^ 2 * A :=
-    MeasureTheory.integral_max_sub_sq_le_mul_measureReal (Lp.stronglyMeasurable _).measurable
-      (ae_restrict_of_ae_restrict_of_subset (ball_subset_ball (by linarith)) hM)
+  have hI : I ≤ (M - l) ^ 2 * A := integral_max_sub_sq_le_ball
+    (ae_restrict_of_ae_restrict_of_subset (ball_subset_ball (by linarith)) hM)
   -- The scale factor of local boundedness cancels the volume of the ball.
   set P := R ^ (-(Fintype.card ι : ℝ) / 2)
-  have hPV : P ^ 2 * V = ω := by
-    have hP : P ^ 2 = (R ^ Fintype.card ι)⁻¹ := by
-      rw [← Real.rpow_natCast P, ← Real.rpow_mul hR.le, ← Real.rpow_natCast R,
-        ← Real.rpow_neg hR.le]
-      ring_nf
-    have hV : V = R ^ finrank ℝ (EuclideanSpace ℝ ι) * ω := mu.addHaar_real_ball_of_pos x₀ hR
-    rw [hP, hV, finrank_euclideanSpace,
-      inv_mul_cancel_left₀ (pow_pos hR _).ne']
-  have hDPA : D * P * √A ≤ 1 / 2 := by
-    have hsq : (D * P * √A) ^ 2 ≤ (1 / 2) ^ 2 := by
-      rw [mul_pow, Real.sq_sqrt measureReal_nonneg]
-      refine le_of_mul_le_mul_left ?_ hjpos
-      calc √j * ((D * P) ^ 2 * A) = D ^ 2 * P ^ 2 * (√j * A) := by ring
-        _ ≤ D ^ 2 * P ^ 2 * (C * V) := by gcongr
-        _ = D ^ 2 * C * ω := by rw [← hPV]; ring
-        _ ≤ √j * (1 / 2) ^ 2 := by linarith
-    exact (pow_le_pow_iff_left₀ (by positivity) (by norm_num) two_ne_zero).1 hsq
+  have hPV : P ^ 2 * V = ω := sq_rpow_neg_card_div_two_mul_real_ball hR
+  have hDPA : D * P * √A ≤ 1 / 2 :=
+    mul_sqrt_le_half (by positivity) (by positivity) hjpos measureReal_nonneg hPV hA hj
   have hgap : D * P * √I ≤ (M - l) / 2 :=
-    calc D * P * √I ≤ D * P * √((M - l) ^ 2 * A) := by gcongr
-      _ = (M - l) * (D * P * √A) := by
-        rw [Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq (sub_nonneg.2 hlM)]
-        ring
-      _ ≤ (M - l) * (1 / 2) := mul_le_mul_of_nonneg_left hDPA (sub_nonneg.2 hlM)
-      _ = (M - l) / 2 := by ring
+    mul_sqrt_le_half_sub (by positivity) (by positivity) (sub_nonneg.2 hlM) hI hDPA
   -- Local boundedness above the level `l ≥ 0`, whose constant is at most `D`.
   have hDy : D₀ * (1 + (beta * R / lam) ^ 2) ^ Fintype.card ι * P * √I ≤ D * P * √I := by
     simp only [D]
     gcongr
-  filter_upwards [hbound (k := l) h ha hb hc hb_bound hc_bound hc_nonneg hu (hk.trans hkl) hR
-    hballR] with x hx
+  filter_upwards [hbound (k := l) h ha hb hc hb_bound hc_bound hc_nonneg hu
+    (hk.trans (le_sub_sub_div_two_pow hkM.le j)) hR
+    ((ball_subset_ball (by linarith)).trans hball)] with x hx
   calc W1p.value u x ≤ l + D * P * √I := hx.trans (by linarith)
     _ ≤ l + (M - l) / 2 := by linarith
-    _ = M - 1 / 2 ^ (j + 1) * (M - k) := by
-        simp only [l, pow_succ]
-        field_simp
-        ring
+    _ = M - 1 / 2 ^ (j + 1) * (M - k) := add_half_sub_div_two_pow k M j
 
 /-- **Reduction of the supremum with a drift (De Giorgi).** Let `n ≥ 1` be the dimension, and fix
 a proportion `θ > 0` and a bound `σ` for `βR/λ`. There is `δ ∈ (0, 1)`, depending only on `λ`,
@@ -328,6 +366,35 @@ theorem exists_ae_value_le_sub_mul_sub [Nonempty ι] {θ : ℝ} (hθ : 0 < θ) :
     hred (beta := 0) h ha aestronglyMeasurable_const (fun _ _ => by simp) hu hR hball (by simp)
       hkM hM hθk⟩
 
+omit [DecidableEq ι] in
+/-- If the sublevel set `{u ≤ k}` fills less than half of a ball, then `{-u ≤ -k}` fills at least
+half of it. -/
+private lemma half_le_real_setOf_neg_le_neg {Omega : Opens (EuclideanSpace ℝ ι)}
+    {u : W1p mu Omega 2} {x₀ : EuclideanSpace ℝ ι} {R k : ℝ}
+    (hballR : ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)))
+    (hθ : ¬1 / 2 * mu.real (ball x₀ R) ≤
+      (mu.restrict (ball x₀ R)).real {x | W1p.value u x ≤ k}) :
+    1 / 2 * mu.real (ball x₀ R) ≤
+      (mu.restrict (ball x₀ R)).real {x | W1p.value (-u) x ≤ -k} := by
+  have : IsFiniteMeasure (mu.restrict (ball x₀ R)) :=
+    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
+  have hneg := W1p.value_neg_ae u
+  have hm : Measurable (W1p.value u : EuclideanSpace ℝ ι → ℝ) :=
+    (Lp.stronglyMeasurable _).measurable
+  have hS : MeasurableSet {x | W1p.value u x ≤ k} := measurableSet_le hm measurable_const
+  have hcompl := measureReal_add_measureReal_compl (μ := mu.restrict (ball x₀ R)) hS
+  rw [measureReal_restrict_apply_univ] at hcompl
+  have hset : {x | W1p.value (-u) x ≤ -k} =ᵐ[mu.restrict (ball x₀ R)]
+      {x | k ≤ W1p.value u x} := by
+    rw [Filter.eventuallyEqSet_iff]
+    filter_upwards [ae_restrict_of_ae_restrict_of_subset hballR hneg] with x hxn
+    simp only [hxn, Pi.neg_apply, neg_le_neg_iff]
+  have hsub : (mu.restrict (ball x₀ R)).real {x | W1p.value u x ≤ k}ᶜ ≤
+      (mu.restrict (ball x₀ R)).real {x | W1p.value (-u) x ≤ -k} := by
+    rw [measureReal_congr hset]
+    exact measureReal_mono fun x (hx : ¬W1p.value u x ≤ k) => (not_le.1 hx).le
+  linarith
+
 /-- **Oscillation decay for weak solutions with a drift (De Giorgi).** Let `n ≥ 1` be the
 dimension, and fix a bound `σ` for `βR/λ`. There is `δ ∈ (0, 1)`, depending only on `λ`, `Λ`,
 `σ`, the dimension and the normalization of the additive Haar measure `mu`, such that the
@@ -369,10 +436,6 @@ theorem exists_ae_value_le_sub_mul_sub_or_add_mul_sub_le_drift [Nonempty ι] (σ
   have hkM : k ≤ M := by simp only [k]; linarith
   have hballR : ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) :=
     (ball_subset_ball (by linarith)).trans hball
-  have : IsFiniteMeasure (mu.restrict (ball x₀ R)) :=
-    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-  have hm : Measurable (W1p.value u : EuclideanSpace ℝ ι → ℝ) :=
-    (Lp.stronglyMeasurable _).measurable
   by_cases hθ : 1 / 2 * mu.real (ball x₀ R) ≤
       (mu.restrict (ball x₀ R)).real {x | W1p.value u x ≤ k}
   · -- `{u ≤ k}` fills half of the ball: the supremum drops.
@@ -393,21 +456,7 @@ theorem exists_ae_value_le_sub_mul_sub_or_add_mul_sub_le_drift [Nonempty ι] (σ
       filter_upwards [hmM', ae_restrict_of_ae_restrict_of_subset hball hneg] with x hx hxn
       rw [hxn, Pi.neg_apply, neg_le_neg_iff]
       exact hx.1
-    have hθ' : 1 / 2 * mu.real (ball x₀ R) ≤
-        (mu.restrict (ball x₀ R)).real {x | W1p.value (-u) x ≤ -k} := by
-      have hS : MeasurableSet {x | W1p.value u x ≤ k} := measurableSet_le hm measurable_const
-      have hcompl := measureReal_add_measureReal_compl (μ := mu.restrict (ball x₀ R)) hS
-      rw [measureReal_restrict_apply_univ] at hcompl
-      have hset : {x | W1p.value (-u) x ≤ -k} =ᵐ[mu.restrict (ball x₀ R)]
-          {x | k ≤ W1p.value u x} := by
-        rw [Filter.eventuallyEqSet_iff]
-        filter_upwards [ae_restrict_of_ae_restrict_of_subset hballR hneg] with x hxn
-        simp only [hxn, Pi.neg_apply, neg_le_neg_iff]
-      have hsub : (mu.restrict (ball x₀ R)).real {x | W1p.value u x ≤ k}ᶜ ≤
-          (mu.restrict (ball x₀ R)).real {x | W1p.value (-u) x ≤ -k} := by
-        rw [measureReal_congr hset]
-        exact measureReal_mono fun x (hx : ¬W1p.value u x ≤ k) => (not_le.1 hx).le
-      linarith
+    have hθ' := half_le_real_setOf_neg_le_neg hballR hθ
     filter_upwards [hred h ha hb hb_bound hu' hR hball hβR (neg_le_neg hmk) hM' hθ',
       ae_restrict_of_ae_restrict_of_subset ((ball_subset_ball (by linarith)).trans hball) hneg]
       with x hx hxn
