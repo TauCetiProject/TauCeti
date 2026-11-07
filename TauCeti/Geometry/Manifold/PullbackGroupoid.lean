@@ -6,6 +6,7 @@ Authors: Ryan Shin, The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Diffeomorph
+public import Mathlib.Geometry.Manifold.Algebra.LieGroup
 public import TauCeti.Topology.OpenPartialHomeomorph.Composition
 
 /-!
@@ -51,6 +52,8 @@ charts belong to the maximal atlas of `N`, so the two structures are compatible.
   that the original structure satisfies.
 * `Homeomorph.pullback_isManifold`: the pulled-back structure of a `C^n` manifold is a `C^n`
   manifold.
+* `Homeomorph.pullback_lieGroup`, `Homeomorph.pullback_lieAddGroup`: a homeomorphic group
+  isomorphism pulls back a Lie-group structure.
 * `Homeomorph.pullbackChartedSpace_refl`, `Homeomorph.pullbackChartedSpace_trans` and
   `Homeomorph.pullbackChartedSpace_symm_pullbackChartedSpace`: the identity, composition and
   inverse laws of the transport.
@@ -67,6 +70,8 @@ adds `Mathlib.Geometry.Manifold.PullbackGroupoid`.
 
 * Shoshichi Kobayashi and Katsumi Nomizu, *Foundations of Differential Geometry*, Volume I,
   Chapter I, Section 1, for atlases compatible with a pseudogroup.
+* J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Springer GTM 218 (2013),
+  Chapter 7 (Lie Groups), Basic Definitions, for smooth group operations.
 -/
 
 public section
@@ -232,6 +237,27 @@ theorem pullbackDiffeomorph_toHomeomorph (e : N ≃ₜ M) :
     letI := e.pullbackChartedSpace (H := H)
     (e.pullbackDiffeomorph I n).toHomeomorph = e :=
   (rfl)
+
+/-- A homeomorphic group isomorphism pulls back a `C^n` Lie-group structure. -/
+@[to_additive /-- A homeomorphic additive-group isomorphism pulls back a `C^n` additive
+Lie-group structure. -/]
+theorem pullback_lieGroup (e : N ≃ₜ M) [Group N] [Group M] [LieGroup I n M]
+    (he : ∀ x y : N, e (x * y) = e x * e y) :
+    letI := e.pullbackChartedSpace (H := H)
+    LieGroup I n N := by
+  let _ := e.pullbackChartedSpace (H := H)
+  let φ := e.pullbackDiffeomorph I n
+  let em : N ≃* M := { e.toEquiv with map_mul' := he }
+  have hmul : ContMDiff (I.prod I) I n (fun p : N × N ↦ p.1 * p.2) := by
+    apply (φ.contMDiff_diffeomorph_comp_iff le_rfl).mp
+    exact ((φ.contMDiff.comp contMDiff_fst).mul (φ.contMDiff.comp contMDiff_snd)).congr
+      fun p ↦ he p.1 p.2
+  refine
+    { toIsManifold := e.pullback_isManifold I n
+      contMDiff_mul := hmul
+      contMDiff_inv := ?_ }
+  apply (φ.contMDiff_diffeomorph_comp_iff le_rfl).mp
+  exact φ.contMDiff.inv.congr fun x ↦ em.map_inv x
 
 end Manifold
 
