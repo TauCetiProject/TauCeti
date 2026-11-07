@@ -72,6 +72,8 @@ The local invariants of the model are explicit:
 * `TauCeti.hasDerivAt_weightRotation_hamiltonianVectorField`: `t ↦ (t ξ) • z` is the integral
   curve of the Hamiltonian vector field of `μ^ξ` through `z`.
 * `TauCeti.range_weightMomentMap`: the image of `μ` is the cone spanned by the `-α_i`.
+* `Module.Basis.range_weightMomentMap_neg`: when the negated weights form a basis `b` of `𝔱*`,
+  the image of `μ` is the cone of covectors with nonnegative coordinates in `b`.
 * `TauCeti.weightRotation_apply_eq_self_iff`, `TauCeti.weightGenerator_apply_eq_zero_iff`: the
   stabilizer and the infinitesimal stabilizer of a point.
 * `TauCeti.mem_ker_weightGenerator_iff`, `TauCeti.finrank_ker_weightGenerator`: the kernel of the
@@ -199,6 +201,18 @@ theorem weightMomentMap_apply (α : ι → StrongDual ℝ 𝔱)
 theorem weightMomentMap_zero (α : ι → StrongDual ℝ 𝔱) : weightMomentMap α 0 = 0 := by
   simp [weightMomentMap]
 
+/-- The moment map of the weight model is the linear map `a ↦ Σ_i a_i (-α_i)` applied to the
+half squared radii `(q_i² + p_i²) / 2`. -/
+theorem weightMomentMap_eq_linearCombination (α : ι → StrongDual ℝ 𝔱)
+    (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
+    weightMomentMap α x =
+      Fintype.linearCombination ℝ (-α) fun i ↦ (x.1 i ^ 2 + x.2 i ^ 2) / 2 := by
+  rw [weightMomentMap_def, Fintype.linearCombination_apply]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [Pi.neg_apply, smul_neg, ← neg_smul]
+  congr 1
+  ring
+
 /-- The moment map is invariant under every rotation. -/
 @[simp]
 theorem weightMomentMap_weightRotation (α : ι → StrongDual ℝ 𝔱) (θ : ι → ℝ)
@@ -293,6 +307,22 @@ theorem range_weightMomentMap (α : ι → StrongDual ℝ 𝔱) :
     congr 1
     simp only [PiLp.zero_apply, h]
     ring
+
+/-- **The image of the weight model with a basis of negated weights.** If `b` is a basis of `𝔱*`,
+the moment map `μ = ½ Σ_i (q_i² + p_i²) b_i` has image the cone of covectors whose coordinates in
+`b` are nonnegative. -/
+theorem _root_.Module.Basis.range_weightMomentMap_neg (b : Module.Basis ι ℝ (StrongDual ℝ 𝔱)) :
+    Set.range (weightMomentMap (-⇑b)) = {ν | ∀ i, 0 ≤ b.repr ν i} := by
+  rw [range_weightMomentMap, neg_neg]
+  ext ν
+  rw [SetLike.mem_coe, PointedCone.hull, Submodule.mem_span_range_iff_exists_fun,
+    Set.mem_ofPred_eq]
+  constructor
+  · rintro ⟨c, rfl⟩ i
+    simp only [← Nonneg.coe_smul, b.repr_sum_self]
+    exact (c i).2
+  · intro h
+    exact ⟨fun i ↦ ⟨b.repr ν i, h i⟩, by simp [Nonneg.mk_smul]⟩
 
 /-- **Stabilizers in the weight model.** The rotation by `θ` fixes `z` exactly when `θ_i ∈ 2πℤ`
 for every coordinate `z_i = q_i + i p_i` that is nonzero. -/

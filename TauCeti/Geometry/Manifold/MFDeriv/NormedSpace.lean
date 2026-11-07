@@ -33,6 +33,8 @@ with `F`, so one vanishes exactly when the other does.
 * `TauCeti.mvfderiv_const_smul_field`: the same for a scalar in the base field, without a
   differentiability hypothesis.
 * `Filter.EventuallyEq.mvfderiv_eq`: `mvfderiv` depends only on the germ of the function.
+* `TauCeti.mvfderiv_apply_of_eventuallyEq_extChartAt`: a map with the germ of the extended chart
+  at `x` has the identity as derivative at `x`.
 * `TauCeti.mvfderiv_eq_zero_iff`: `mvfderiv I g x = 0 ↔ mfderiv I 𝓘(𝕜, F) g x = 0`.
 * `TauCeti.injective_mvfderiv_iff`:
   `Function.Injective (mvfderiv I g x) ↔ Function.Injective (mfderiv I 𝓘(𝕜, F) g x)`.
@@ -80,6 +82,15 @@ theorem _root_.Filter.EventuallyEq.mvfderiv_eq {f₁ f : M → F} {x : M} (hf : 
   ext v
   rw [mvfderiv_apply_eq_mfderiv_apply, mvfderiv_apply_eq_mfderiv_apply, hf.mfderiv_eq]
   -- `tangentSpaceCast` identifies two tangent spaces of `F`, both of which are `F` itself.
+  rfl
+
+/-- A map into the model space with the germ of the extended chart at `x` has the identity as
+derivative at `x`, a tangent vector at `x` being read as a vector of the model space. -/
+theorem mvfderiv_apply_of_eventuallyEq_extChartAt [IsManifold I 1 M] {f : M → E} {x : M}
+    (hf : f =ᶠ[𝓝 x] extChartAt I x) (v : TangentSpace I x) : mvfderiv I f x v = v := by
+  rw [hf.mvfderiv_eq]
+  simp only [mvfderiv, mfderiv_extChartAt_self]
+  -- Both tangent identifications are the identity of `E` across type synonyms.
   rfl
 
 /-- The chain rule for a vector-valued function on a manifold followed by a map between normed
