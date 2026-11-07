@@ -127,7 +127,7 @@ theorem Scheme.Hom.exists_elementaryEtale_finite_of_isolated {X S : Scheme.{u}} 
       hsnd ▸ hκu
     exact Scheme.Pullback.isIso_residueFieldMap_fst (g v)
   · -- Uniqueness: a point `g z` of `W₁` over `u` has `z` over `P` with `e ∉ z`, so `z = P'`.
-    exact Scheme.Hom.eq_of_pullback_snd_eq_of_forall_liesOver_eq f hU R g hgsnd e u v huniq
+    exact Scheme.Hom.eq_of_comp_eq_of_forall_liesOver_eq (pullback.snd f _) g hgsnd e u v huniq
       ⟨v, heP', rfl⟩
 
 end AlgebraicGeometry
