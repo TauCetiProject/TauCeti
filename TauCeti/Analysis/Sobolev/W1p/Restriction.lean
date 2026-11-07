@@ -206,19 +206,11 @@ theorem W1p.value_restrictL_ofTestFunctionₗ_ae (hU : U ≤ Omega) (φ : 𝓓(O
     (ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 hU)
       (W1p.value_ofTestFunctionₗ_ae φ))
 
-/-- A whole-space Sobolev function whose value is the zero-extension of the value of `u` restricts
-to `u` on `Ω`. -/
-theorem W1p.restrictL_eq_of_value_ae_eq_indicator {u : W1p mu Omega p} {w : W1p mu (⊤ : Opens E) p}
-    (hvalw : ⇑(W1p.value w) =ᵐ[mu.restrict ((⊤ : Opens E) : Set E)]
-      (Omega : Set E).indicator (W1p.value u : E → ℝ)) :
-    W1p.restrictL le_top w = u := by
-  have hmeas : MeasurableSet (Omega : Set E) := Omega.isOpen.measurableSet
-  have hsub : (Omega : Set E) ⊆ ((⊤ : Opens E) : Set E) := by simp
-  refine W1p.ext_value (Lp.ext ?_)
-  filter_upwards [W1p.value_restrictL_ae le_top w,
-    hvalw.filter_mono (ae_mono (Measure.restrict_mono hsub le_rfl)), ae_restrict_mem hmeas]
-    with x h1 h2 hx
-  rw [h1, h2, indicator_of_mem hx]
+/-- A Sobolev function on `Omega` whose value agrees almost everywhere on the smaller open set `U`
+with the value of `u` restricts to `u` on `U`. -/
+theorem W1p.restrictL_eq_of_value_ae_eq (hU : U ≤ Omega) {u : W1p mu U p} {w : W1p mu Omega p}
+    (hvalw : W1p.value w =ᵐ[mu.restrict U] W1p.value u) : W1p.restrictL hU w = u :=
+  W1p.ext_value (Lp.ext ((W1p.value_restrictL_ae hU w).trans hvalw))
 
 /-- Restriction keeps the same weak-gradient representative on the smaller open set. -/
 theorem W1p.gradient_restrictL_ae (hU : U ≤ Omega) (u : W1p mu Omega p) :

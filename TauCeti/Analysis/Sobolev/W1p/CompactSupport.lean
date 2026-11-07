@@ -200,7 +200,10 @@ theorem W1p.mem_w1p0Submodule_of_isCompact (hp : p ≠ (∞ : ℝ≥0∞)) {u : 
       rw [hzero, smul_zero]
   -- so the extension is a cutoff product, whose restriction to `Ω` is `u`
   have hmem := W1p.restrictL_contDiffSMul_mem_w1p0Submodule hp hchi hM0 hchiM hchigradM hchi_ts w
-  have hwu : W1p.restrictL le_top w = u := W1p.restrictL_eq_of_value_ae_eq_indicator hvalw
+  have hwu : W1p.restrictL le_top w = u := W1p.restrictL_eq_of_value_ae_eq le_top (by
+    filter_upwards [hvalw.filter_mono (ae_mono (Measure.restrict_mono hsub le_rfl)),
+      ae_restrict_mem hmeas] with x h2 hx
+    rw [h2, indicator_of_mem hx])
   rwa [hLw, hwu] at hmem
 
 /-! ### Multiplication by a compactly supported cutoff -/
