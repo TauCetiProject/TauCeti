@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex
 import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.GaussBonnet
 import TauCeti.Analysis.Complex.UpperHalfPlane.Triangle
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 import TauCeti.Topology.Circle.Metric
 
 /-!
@@ -25,7 +26,7 @@ The triangle is written down explicitly in one of two normal forms.
   unit semicircle at the points of argument `π - α` and `β` (at the ideal points `-1`, `1` when
   these angles vanish). Their angles are computed by `vertexAngle_infty_of_re_lt` and
   `vertexAngle_infty_of_lt_re`.
-* If all three angles are positive and `α, β ≤ π / 2`, the vertices are `I`, a point `C` to the
+* If all three angles are positive and `β ≤ π / 2`, the vertices are `I`, a point `C` to the
   right of the imaginary axis, and `i e^d` with `cosh d = (cos α cos β + cos γ) / (sin α sin β)`,
   which exceeds `1` exactly because `α + β + γ < π`: this is the hyperbolic law of cosines for
   the side opposite `C`. The sides through `C` lie on the semicircles of centres `cot α` and
@@ -143,44 +144,22 @@ private theorem exists_convexPolygon_three_vertex_two_eq_infty {α β : ℝ} (h�
 
 /-! ### A triangle with three finite vertices -/
 
-/-- The parameters of the hyperbolic law of cosines: `K` with `K sin α sin β = cos α cos β + cos γ`
-and `t > 1` with `t + t⁻¹ = 2 K`, the exponential of the length of the side opposite `C`.
-That `K > 1` is the angle condition `γ < π - α - β`. -/
-private theorem exists_cosine_rule_parameter {α β γ : ℝ} (hα : 0 < α) (hβ : 0 < β) (hγ : 0 < γ)
-    (h : α + β + γ < π) :
-    ∃ K t : ℝ, K * (Real.sin α * Real.sin β) = Real.cos α * Real.cos β + Real.cos γ ∧ 1 < t ∧
-      t ^ 2 + 1 = 2 * K * t := by
-  have hsα : 0 < Real.sin α := Real.sin_pos_of_pos_of_lt_pi hα (by linarith)
-  have hsβ : 0 < Real.sin β := Real.sin_pos_of_pos_of_lt_pi hβ (by linarith)
-  obtain ⟨K, hKs, hK₁⟩ : ∃ K : ℝ,
-      K * (Real.sin α * Real.sin β) = Real.cos α * Real.cos β + Real.cos γ ∧ 1 < K := by
-    refine ⟨(Real.cos α * Real.cos β + Real.cos γ) / (Real.sin α * Real.sin β),
-      div_mul_cancel₀ _ (by positivity), ?_⟩
-    have hc := Real.cos_lt_cos_of_nonneg_of_le_pi hγ.le (by linarith : π - (α + β) ≤ π)
-      (by linarith : γ < π - (α + β))
-    rw [Real.cos_pi_sub, Real.cos_add] at hc
-    rw [one_lt_div (by positivity)]
-    linarith
-  refine ⟨K, K + √(K ^ 2 - 1), hKs, by linarith [Real.sqrt_nonneg (K ^ 2 - 1)], ?_⟩
-  linear_combination Real.sq_sqrt (by nlinarith : (0 : ℝ) ≤ K ^ 2 - 1)
-
-/-- The data of the two semicircles through the third vertex `C`: for `α, β ∈ (0, π / 2]` and
-`γ > 0` with `α + β + γ < π`, there are `t > 1`, centres `c₁ > c₂` and radii `ρ₁, ρ₂ > 0` with
+/-- The data of the two semicircles through the third vertex `C`: for `α > 0`, `β ∈ (0, π / 2]`
+and `γ > 0` with `α + β + γ < π`, there are `t > 1`, centres `c₁ > c₂` and radii `ρ₁, ρ₂ > 0` with
 `ρ₁² = c₁² + 1` (the semicircle through `I`) and `ρ₂² = c₂² + t²` (the one through `i t`), such
 that the radius vectors at an intersection point make the angle `γ`
 (`(c₁ - c₂)² = ρ₁² + ρ₂² - 2 ρ₁ ρ₂ cos γ`), with `c₁ / ρ₁ = cos α` and `c₂ / ρ₂ = -cos β`. -/
-private theorem exists_circles_of_angles {α β γ : ℝ} (hα : 0 < α) (hα' : α ≤ π / 2) (hβ : 0 < β)
+private theorem exists_circles_of_angles {α β γ : ℝ} (hα : 0 < α) (hβ : 0 < β)
     (hβ' : β ≤ π / 2) (hγ : 0 < γ) (h : α + β + γ < π) :
     ∃ t c₁ c₂ ρ₁ ρ₂ : ℝ, 1 < t ∧ 0 < ρ₁ ∧ 0 < ρ₂ ∧ ρ₁ ^ 2 = c₁ ^ 2 + 1 ∧ ρ₂ ^ 2 = c₂ ^ 2 + t ^ 2 ∧
       0 < c₁ - c₂ ∧ (c₁ - c₂) ^ 2 = ρ₁ ^ 2 + ρ₂ ^ 2 - 2 * ρ₁ * ρ₂ * Real.cos γ ∧
       c₁ / ρ₁ = Real.cos α ∧ c₂ / ρ₂ = -Real.cos β := by
   have hsα : 0 < Real.sin α := Real.sin_pos_of_pos_of_lt_pi hα (by linarith)
   have hsβ : 0 < Real.sin β := Real.sin_pos_of_pos_of_lt_pi hβ (by linarith)
-  have hcα : 0 ≤ Real.cos α := Real.cos_nonneg_of_mem_Icc ⟨by linarith, hα'⟩
   have hcβ : 0 ≤ Real.cos β := Real.cos_nonneg_of_mem_Icc ⟨by linarith, hβ'⟩
   have hα₂ := Real.sin_sq_add_cos_sq α
   have hβ₂ := Real.sin_sq_add_cos_sq β
-  obtain ⟨K, t, hKs, ht₁, htK⟩ := exists_cosine_rule_parameter hα hβ hγ h
+  obtain ⟨K, t, hKs, ht₁, htK⟩ := exists_cosine_rule_parameter hα hβ hγ.le h
   refine ⟨t, Real.cos α / Real.sin α, -(t * Real.cos β / Real.sin β), (Real.sin α)⁻¹,
     t / Real.sin β, ht₁, inv_pos.2 hsα, div_pos (by linarith) hsβ, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · field_simp
@@ -225,73 +204,14 @@ private theorem exists_third_vertex {c₁ c₂ ρ₁ ρ₂ t γ : ℝ} (ht : 1 <
     simp only [Complex.sub_re, Complex.sub_im, Complex.ofReal_re, Complex.ofReal_im]
     linear_combination h₂
 
-/-- The point `i t` of the imaginary axis, as `geodesicLine 1 (log t)`, for `t > 0`. -/
-private theorem coe_geodesicLine_one_log {t : ℝ} (ht : 0 < t) :
-    (geodesicLine 1 (Real.log t) : ℂ) = ⟨0, t⟩ := by
-  rw [geodesicLine_one_apply, UpperHalfPlane.coe_mk, Real.exp_log ht]
-
-/-- A point `B = i s` of the imaginary axis and a point `C` to its right, both on the circle of
-centre `c` and radius `ρ`, where `ρ² = c² + s²`: the circle through `B` and `C` has centre `c`. -/
-private theorem circleCenter_eq_of_re_eq_zero {B C : ℍ} {s c ρ : ℝ} (hB : (B : ℂ) = ⟨0, s⟩)
-    (hC : 0 < C.re) (hρ : ρ ^ 2 = c ^ 2 + s ^ 2) (hCc : Complex.normSq ((C : ℂ) - c) = ρ ^ 2) :
-    Complex.normSq ((B : ℂ) - c) = ρ ^ 2 ∧ circleCenter B C = c := by
-  have hBc : Complex.normSq ((B : ℂ) - c) = ρ ^ 2 := by
-    rw [hB, Complex.normSq_apply, hρ]
-    simp only [Complex.sub_re, Complex.sub_im, Complex.ofReal_re, Complex.ofReal_im]
-    ring
-  refine ⟨hBc, circleCenter_eq_of_normSq_eq ?_ (hBc.trans hCc.symm)⟩
-  rw [← UpperHalfPlane.coe_re, hB]
-  exact hC.ne
-
-/-- The vertices `I`, `C`, `i t` of the triangle in normal form run counterclockwise: each lies
-to the left of the oriented side through the other two. -/
-private theorem leftHalfPlane_normal_form {C : ℍ} {t c₁ c₂ ρ₁ ρ₂ : ℝ} (ht : 1 < t) (hC : 0 < C.re)
-    (hρc₁ : ρ₁ ^ 2 = c₁ ^ 2 + 1) (hρc₂ : ρ₂ ^ 2 = c₂ ^ 2 + t ^ 2)
-    (hIc₁ : Complex.normSq ((UpperHalfPlane.I : ℂ) - c₁) = ρ₁ ^ 2)
-    (hCc₂ : Complex.normSq ((C : ℂ) - c₂) = ρ₂ ^ 2)
-    (hcc₁ : circleCenter UpperHalfPlane.I C = c₁)
-    (hcc₂ : circleCenter (geodesicLine 1 (Real.log t)) C = c₂) :
-    geodesicLine 1 (Real.log t) ∈ leftHalfPlane (geodesicBetween UpperHalfPlane.I C) ∧
-      UpperHalfPlane.I ∈ leftHalfPlane (geodesicBetween C (geodesicLine 1 (Real.log t))) ∧
-      C ∈ leftHalfPlane (geodesicBetween (geodesicLine 1 (Real.log t)) UpperHalfPlane.I) := by
-  have hBc := coe_geodesicLine_one_log (by linarith : 0 < t)
-  have hBre : (geodesicLine 1 (Real.log t)).re = 0 := by
-    rw [← UpperHalfPlane.coe_re, hBc]
-  have hIC : UpperHalfPlane.I.re ≠ C.re := by
-    rw [UpperHalfPlane.I_re]
-    exact hC.ne
-  have hBC : (geodesicLine 1 (Real.log t)).re ≠ C.re := by
-    rw [hBre]
-    exact hC.ne
-  -- `0 < C.re * (t ^ 2 - 1)` decides the sides of the two semicircles through `C`
-  have ht₁t : 0 < C.re * (t ^ 2 - 1) := mul_pos hC (sub_pos.2 (one_lt_pow₀ ht two_ne_zero))
-  refine ⟨?_, ?_, ?_⟩
-  · rw [mem_leftHalfPlane_geodesicBetween_iff_of_re_ne hIC, hcc₁, hIc₁, UpperHalfPlane.I_re,
-      Complex.normSq_apply, hBc, hρc₁]
-    simp only [Complex.sub_re, Complex.sub_im, Complex.ofReal_re, Complex.ofReal_im]
-    linear_combination (exp := 1) ht₁t
-  · rw [mem_leftHalfPlane_geodesicBetween_iff_of_re_ne hBC.symm, circleCenter_comm, hcc₂, hCc₂,
-      UpperHalfPlane.coe_I, Complex.normSq_apply, hρc₂, hBre]
-    simp only [Complex.sub_re, Complex.sub_im, Complex.I_re, Complex.I_im, Complex.ofReal_re,
-      Complex.ofReal_im]
-    linear_combination (exp := 1) ht₁t
-  · have hIB : UpperHalfPlane.I ≠ geodesicLine 1 (Real.log t) := fun h ↦ by
-      have him := congrArg (fun z : ℍ ↦ (z : ℂ).im) h
-      simp only [UpperHalfPlane.coe_I, Complex.I_im, hBc] at him
-      linarith
-    rw [geodesicBetween_swap hIB, geodesicBetween_I_geodesicLine_one (Real.log_pos ht),
-      leftHalfPlane_mul_pslS, rightHalfPlane_mul_dilation, mem_rightHalfPlane_iff, inv_one,
-      one_smul]
-    exact hC
-
-/-- For `α, β ∈ (0, π / 2]` and `γ > 0` with `α + β + γ < π` there is a compact convex triangle
-with angles `α`, `γ` and `β` at its three vertices. -/
-private theorem exists_compactConvexPolygon_three {α β γ : ℝ} (hα : 0 < α) (hα' : α ≤ π / 2)
+/-- For `α > 0`, `β ∈ (0, π / 2]` and `γ > 0` with `α + β + γ < π` there is a compact convex
+triangle with angles `α`, `γ` and `β` at its three vertices. -/
+private theorem exists_compactConvexPolygon_three {α β γ : ℝ} (hα : 0 < α)
     (hβ : 0 < β) (hβ' : β ≤ π / 2) (hγ : 0 < γ) (h : α + β + γ < π) :
     ∃ P : CompactConvexPolygon 3,
       P.interiorAngle 0 = α ∧ P.interiorAngle 1 = γ ∧ P.interiorAngle 2 = β := by
   obtain ⟨t, c₁, c₂, ρ₁, ρ₂, ht, hρ₁, hρ₂, hρc₁, hρc₂, hD, hkey, hr₁, hr₂⟩ :=
-    exists_circles_of_angles hα hα' hβ hβ' hγ h
+    exists_circles_of_angles hα hβ hβ' hγ h
   obtain ⟨C, hCre, hCc₁, hCc₂, hγ'⟩ :=
     exists_third_vertex ht hρ₁ hρ₂ hγ (by linarith) hρc₁ hρc₂ hD hkey
   have hd : 0 < Real.log t := Real.log_pos ht
@@ -299,7 +219,7 @@ private theorem exists_compactConvexPolygon_three {α β γ : ℝ} (hα : 0 < α
     (by rw [UpperHalfPlane.coe_I]; apply Complex.ext <;> simp) hCre (by rw [hρc₁]; ring) hCc₁
   obtain ⟨hBc₂, hcc₂⟩ := circleCenter_eq_of_re_eq_zero (coe_geodesicLine_one_log (by linarith))
     hCre hρc₂ hCc₂
-  obtain ⟨hv₀, hv₁, hv₂⟩ := leftHalfPlane_normal_form ht hCre hρc₁ hρc₂ hIc₁ hCc₂ hcc₁ hcc₂
+  obtain ⟨hv₀, hv₁, hv₂⟩ := leftHalfPlane_normal_form ht hCre
   refine ⟨⟨![UpperHalfPlane.I, C, geodesicLine 1 (Real.log t)], le_rfl, fun i j hji hji' ↦ ?_⟩,
     ?_, ?_, ?_⟩
   · -- the vertex opposite each edge is on its left; the other six pairs are excluded by `hji`
@@ -369,21 +289,19 @@ theorem exists_interiorAngle_eq_iff {α β γ : ℝ} :
   rcases hβ.eq_or_lt with rfl | hβ
   · exact exists_interiorAngle_eq_rotate
       (exists_convexPolygon_three_vertex_two_eq_infty hγ.le hα.le (by linarith))
-  -- a compact triangle, with an angle exceeding `π / 2`, if any, at its vertex `1`
-  have hcompact {a b c : ℝ} (ha : 0 < a) (ha' : a ≤ π / 2) (hb : 0 < b) (hc : 0 < c)
-      (hc' : c ≤ π / 2) (h : a + b + c < π) : ∃ P : ConvexPolygon 3,
+  -- a compact triangle with an angle at most `π / 2` at its vertex `2`
+  have hcompact {a b c : ℝ} (ha : 0 < a) (hb : 0 < b) (hc : 0 < c) (hc' : c ≤ π / 2)
+      (h : a + b + c < π) : ∃ P : ConvexPolygon 3,
         P.interiorAngle 0 = a ∧ P.interiorAngle 1 = b ∧ P.interiorAngle 2 = c := by
-    obtain ⟨Q, h₀, h₁, h₂⟩ := exists_compactConvexPolygon_three ha ha' hc hc' hb (by linarith)
+    obtain ⟨Q, h₀, h₁, h₂⟩ := exists_compactConvexPolygon_three ha hc hc' hb (by linarith)
     exact ⟨Q.toConvexPolygon, by rw [CompactConvexPolygon.interiorAngle_toConvexPolygon, h₀],
       by rw [CompactConvexPolygon.interiorAngle_toConvexPolygon, h₁],
       by rw [CompactConvexPolygon.interiorAngle_toConvexPolygon, h₂]⟩
-  by_cases hα' : π / 2 < α
-  · exact exists_interiorAngle_eq_rotate
-      (hcompact hγ (by linarith) hα hβ (by linarith) (by linarith))
-  by_cases hγ' : π / 2 < γ
-  · exact exists_interiorAngle_eq_rotate (exists_interiorAngle_eq_rotate
-      (hcompact hβ (by linarith) hγ hα (by linarith) (by linarith)))
-  exact hcompact hα (not_lt.1 hα') hβ hγ (not_lt.1 hγ') h
+  by_cases hγ' : γ ≤ π / 2
+  · exact hcompact hα hβ hγ hγ' h
+  -- otherwise `β < π / 2`, and a rotation puts `β` last
+  exact exists_interiorAngle_eq_rotate
+    (hcompact hγ hα hβ (by linarith [not_le.1 hγ']) (by linarith))
 
 end ConvexPolygon
 

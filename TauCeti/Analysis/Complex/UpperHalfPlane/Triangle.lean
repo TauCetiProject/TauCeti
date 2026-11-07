@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Complex.UpperHalfPlane.Measure
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.InteriorAngle
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Semicircle
 import TauCeti.Analysis.Complex.NormSq
+import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Orientation
 import TauCeti.Analysis.Complex.UpperHalfPlane.IdealRegion
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 
@@ -683,5 +684,31 @@ theorem interiorAngle_add_add_le_pi {A B C : ℍ} (hAB : A ≠ B)
       interiorAngle_comm UpperHalfPlane.I (geodesicLine 1 d) (h • C),
       interiorAngle_comm (h • C) UpperHalfPlane.I (geodesicLine 1 d)]
     linarith [interiorAngle_add_add_le_pi_of_normal_form hd hCre]
+
+/-- The vertices `I`, `C`, `i t` of the triangle in normal form run counterclockwise: each lies
+to the left of the oriented side through the other two. -/
+theorem leftHalfPlane_normal_form {C : ℍ} {t : ℝ} (ht : 1 < t) (hC : 0 < C.re) :
+    geodesicLine 1 (Real.log t) ∈ leftHalfPlane (geodesicBetween UpperHalfPlane.I C) ∧
+      UpperHalfPlane.I ∈ leftHalfPlane (geodesicBetween C (geodesicLine 1 (Real.log t))) ∧
+      C ∈ leftHalfPlane (geodesicBetween (geodesicLine 1 (Real.log t)) UpperHalfPlane.I) := by
+  have hBc := coe_geodesicLine_one_log (by linarith : 0 < t)
+  have hIB : UpperHalfPlane.I ≠ geodesicLine 1 (Real.log t) := fun h ↦ by
+    have him := congrArg (fun z : ℍ ↦ (z : ℂ).im) h
+    simp only [UpperHalfPlane.coe_I, Complex.I_im, hBc] at him
+    linarith
+  have hIC : UpperHalfPlane.I ≠ C := fun h ↦ by
+    have hre := congrArg UpperHalfPlane.re h
+    rw [UpperHalfPlane.I_re] at hre
+    exact hC.ne hre
+  -- The third orientation is the only one that is computed; the others follow by cyclic
+  -- invariance.
+  have h₃ : C ∈ leftHalfPlane (geodesicBetween (geodesicLine 1 (Real.log t))
+      UpperHalfPlane.I) := by
+    rw [geodesicBetween_swap hIB, geodesicBetween_I_geodesicLine_one (Real.log_pos ht),
+      leftHalfPlane_mul_pslS, rightHalfPlane_mul_dilation, mem_rightHalfPlane_iff, inv_one,
+      one_smul]
+    exact hC
+  have h₁ := mem_leftHalfPlane_geodesicBetween_of_mem_leftHalfPlane hIB.symm h₃
+  exact ⟨h₁, mem_leftHalfPlane_geodesicBetween_of_mem_leftHalfPlane hIC h₁, h₃⟩
 
 end TauCeti.UpperHalfPlane
