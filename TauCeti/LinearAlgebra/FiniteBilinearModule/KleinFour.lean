@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AddCircle
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic
 
 /-!
@@ -42,6 +43,8 @@ value of its generator.
 * `TauCeti.FiniteQuadraticModule.kleinFour`: the resulting finite quadratic module.
 * `TauCeti.FiniteQuadraticModule.kleinFourIsometryOfGenerators`: an additive equivalence matching
   the three generator values is an isometry.
+* `TauCeti.FiniteBilinearModule.pairing_eq_half_of_addEquiv`: in a nondegenerate alternating
+  module identified with `(ℤ/2)²`, the two generators pair to `1/2`.
 
 ## References
 
@@ -56,6 +59,57 @@ This is part of Layer 3 of `TauCetiRoadmap/IntegralLattices/README.md`.
 public section
 
 namespace TauCeti
+
+namespace FiniteBilinearModule
+
+/-! ## Alternating pairings on the Klein four-group -/
+
+/-- In a nondegenerate alternating Klein four module, the two generators of an additive
+identification pair nontrivially. -/
+theorem pairing_ne_zero_of_addEquiv (A : FiniteBilinearModule) (hA : A.IsNondegenerate)
+    (hAlt : ∀ x, A.pairing x x = 0) (e : ZMod 2 × ZMod 2 ≃+ A) :
+    A.pairing (e (1, 0)) (e (0, 1)) ≠ 0 := by
+  have he11 : e (1, 1) = e (1, 0) + e (0, 1) := by
+    simpa using e.map_add (1, 0) (0, 1)
+  have hxne : e (1, 0) ≠ 0 := by
+    rw [Ne, ← map_zero e, e.injective.eq_iff]
+    decide
+  intro hxy
+  -- If the cross term vanished, `x` would pair trivially with all four elements.
+  have hxpair : A.pairing (e (1, 0)) = 0 := by
+    apply AddMonoidHom.ext
+    intro a
+    obtain ⟨⟨c, d⟩, rfl⟩ := e.surjective a
+    -- Expose evaluation at the four coordinate vectors of the Klein four-group.
+    change A.pairing (e (1, 0)) (e (c, d)) =
+      (0 : AddCircle (1 : ℚ))
+    rcases (by decide : ∀ t : ZMod 2, t = 0 ∨ t = 1) c with rfl | rfl <;>
+      rcases (by decide : ∀ t : ZMod 2, t = 0 ∨ t = 1) d with rfl | rfl
+    · rw [show e (0, 0) = 0 by simp, map_zero]
+    · exact hxy
+    · exact hAlt _
+    · rw [he11, A.pairing_add_right, hAlt, hxy, add_zero]
+  exact hxne (FiniteBilinearModule.IsNondegenerate.injective _ hA
+    (hxpair.trans (map_zero _).symm))
+
+/-- In a nondegenerate alternating Klein four module, the two generators of an additive
+identification pair to `1/2`. -/
+theorem pairing_eq_half_of_addEquiv (A : FiniteBilinearModule)
+    (hA : A.IsNondegenerate)
+    (hAlt : ∀ x, A.pairing x x = 0) (e : ZMod 2 × ZMod 2 ≃+ A) :
+    A.pairing (e (1, 0)) (e (0, 1)) =
+      ((1 / 2 : ℚ) : AddCircle (1 : ℚ)) := by
+  have htwoPair : (2 : ℤ) • A.pairing (e (1, 0)) (e (0, 1)) = 0 := by
+    rw [← map_zsmul]
+    have hy2 : (2 : ℤ) • e (0, 1) = 0 := by
+      rw [← map_zsmul]
+      convert map_zero e
+      decide
+    rw [hy2, map_zero]
+  exact (AddCircle.eq_zero_or_eq_coe_period_div_two (1 : ℚ) two_ne_zero htwoPair).resolve_left
+    (pairing_ne_zero_of_addEquiv A hA hAlt e)
+
+end FiniteBilinearModule
 
 namespace FiniteQuadraticModule
 
