@@ -153,10 +153,9 @@ theorem factorial_smul_ncoeff_field_apply_vacuum (a : V) (k : ℕ) :
   | zero => simp
   | succ k ih =>
     have h := A.translation_ncoeff_apply_vacuum a (-k - 1)
-    rw [show -(k : ℤ) - 1 - 1 = -((k + 1 : ℕ) : ℤ) - 1 by push_cast; ring,
-      show -(-(k : ℤ) - 1) = ((k + 1 : ℕ) : ℤ) by push_cast; ring, natCast_zsmul] at h
-    rw [pow_succ', mul_apply_eq_comp, ← ih, map_nsmul, h, Nat.factorial_succ, mul_nsmul,
-      smul_comm]
+    rw [neg_sub', neg_neg, sub_neg_eq_add, ← Nat.cast_succ, natCast_zsmul] at h
+    rw [Nat.cast_succ, neg_add', pow_succ', mul_apply_eq_comp, ← ih, map_nsmul, h,
+      Nat.factorial_succ, mul_nsmul, smul_comm]
 
 /-- The creation identity `Y(a,z)|0⟩ = e^{zT} a`, in modes: `a₍₋ₖ₋₁₎|0⟩ = Tᵏ a / k!`. -/
 theorem ncoeff_field_apply_vacuum_neg [Module ℚ V] (a : V) (k : ℕ) :

@@ -75,27 +75,27 @@ private theorem expCoeff_smul (r : R) (a : V) (m : ℤ) :
 private theorem expCoeff_of_neg (a : V) {m : ℤ} (hm : m < 0) : D.expCoeff a m = 0 := by
   simp [expCoeff, hm.not_ge]
 
-omit [Algebra ℚ V] in
-private theorem pow_apply_derivation (a : V) (k : ℕ) :
-    ((D : Module.End R V) ^ k) (D a) = ((D : Module.End R V) ^ (k + 1)) a := by
-  rw [pow_succ, mul_apply_eq_comp, coeFn_coe]
-
 /-- `D` commutes with taking the coefficients of `e^{zD} a`. -/
 private theorem map_expCoeff (a : V) (m : ℤ) : D (D.expCoeff a m) = D.expCoeff (D a) m := by
   unfold expCoeff
   split_ifs
-  · rw [map_rat_smul, D.pow_apply_derivation, pow_succ', mul_apply_eq_comp, coeFn_coe]
+  · rw [map_rat_smul, ← coeFn_coe, ← mul_apply_eq_comp, ← mul_apply_eq_comp, pow_mul_comm']
   · exact D.map_zero
 
-/-- `Dᵏ (D a) / k! = (k + 1) Dᵏ⁺¹ a / (k + 1)!`. -/
-private theorem expCoeff_derivation (a : V) (k : ℕ) :
-    D.expCoeff (D a) k = ((k + 1 : ℕ) : ℤ) • D.expCoeff a ((k + 1 : ℕ) : ℤ) := by
-  simp only [expCoeff, Nat.cast_nonneg, ite_true, Int.toNat_natCast]
-  rw [D.pow_apply_derivation, natCast_zsmul, ← Nat.cast_smul_eq_nsmul ℚ, smul_smul,
-    Nat.factorial_succ]
-  congr 1
-  push_cast
-  field_simp
+/-- `Dᵐ (D a) / m! = (m + 1) Dᵐ⁺¹ a / (m + 1)!`; both sides vanish for `m < 0`. -/
+private theorem expCoeff_derivation (a : V) (m : ℤ) :
+    D.expCoeff (D a) m = (m + 1) • D.expCoeff a (m + 1) := by
+  rcases lt_or_ge m 0 with hm | hm
+  · rcases (Int.add_one_le_iff.2 hm).eq_or_lt with hm' | hm'
+    · simp [D.expCoeff_of_neg _ hm, hm']
+    · rw [D.expCoeff_of_neg _ hm, D.expCoeff_of_neg _ hm', smul_zero]
+  · lift m to ℕ using hm
+    simp only [expCoeff, ← Nat.cast_succ, Nat.cast_nonneg, ite_true, Int.toNat_natCast]
+    rw [pow_succ, mul_apply_eq_comp, coeFn_coe, natCast_zsmul, ← Nat.cast_smul_eq_nsmul ℚ,
+      smul_smul, Nat.factorial_succ]
+    congr 1
+    push_cast
+    field_simp
 
 /-- The coefficients `Dᵏ a / k!` vanish on `1` for `k ≥ 1`, since `D 1 = 0`. -/
 private theorem expCoeff_one (m : ℤ) : D.expCoeff 1 m = if m = 0 then 1 else 0 := by
@@ -117,22 +117,21 @@ private theorem ncoeff_expField (a : V) (n : ℤ) :
     (D.expField a)[[n]] = LinearMap.mulLeft R (D.expCoeff a (-n - 1)) :=
   ncoeff_of_coeff _ _ n
 
+private theorem ncoeff_expField_neg (a : V) (k : ℕ) :
+    (D.expField a)[[-k - 1]] = LinearMap.mulLeft R (D.expCoeff a k) := by
+  rw [ncoeff_expField, neg_sub, sub_neg_eq_add, add_sub_cancel_left]
+
+private theorem ncoeff_expField_of_nonneg (a : V) {n : ℤ} (hn : 0 ≤ n) :
+    (D.expField a)[[n]] = 0 := by
+  rw [ncoeff_expField, D.expCoeff_of_neg a (by omega), LinearMap.mulLeft_zero_eq_zero]
+
 /-- The state-derivative identity `Y(D a, z) = ∂_z Y(a, z)`. -/
 private theorem expField_derivation (a : V) : D.expField (D a) = derivative (D.expField a) := by
   refine ext_ncoeff fun n ↦ ?_
-  rw [ncoeff_expField, ncoeff_derivative, ncoeff_expField]
-  rcases lt_or_ge n 0 with hn | hn
-  · obtain ⟨k, rfl⟩ : ∃ k : ℕ, n = -k - 1 := ⟨(-n - 1).toNat, by omega⟩
-    rw [show -(-(k : ℤ) - 1) - 1 = (k : ℤ) by ring,
-      show -(-(k : ℤ) - 1 - 1) - 1 = ((k + 1 : ℕ) : ℤ) by push_cast; ring,
-      D.expCoeff_derivation, show -(-(k : ℤ) - 1) = ((k + 1 : ℕ) : ℤ) by push_cast; ring]
-    ext v
-    simp only [LinearMap.mulLeft_apply, LinearMap.smul_apply, smul_mul_assoc]
-  · rw [D.expCoeff_of_neg _ (by omega), LinearMap.mulLeft_zero_eq_zero]
-    rcases hn.eq_or_lt with rfl | hn
-    · simp
-    · rw [D.expCoeff_of_neg a (show -(n - 1) - 1 < 0 by omega)]
-      simp
+  rw [ncoeff_expField, ncoeff_derivative, ncoeff_expField, D.expCoeff_derivation, sub_add_cancel,
+    neg_sub, sub_sub_cancel_left]
+  ext v
+  simp only [LinearMap.mulLeft_apply, LinearMap.smul_apply, smul_mul_assoc]
 
 /-- The commutative formal vertex algebra of a differential algebra: `V` with vacuum `1`,
 translation `D` and fields `Y(a,z) b = (e^{zD} a) · b`. -/
@@ -150,11 +149,11 @@ def formalVertexAxioms : TauCeti.FormalVertexAxioms R V where
   translation_vacuum := D.map_one_eq_zero
   ncoeff_field_vacuum n := by
     ext v
-    simp only [LinearMap.coe_mk, AddHom.coe_mk, ncoeff_expField, expCoeff_one,
-      show -n - 1 = 0 ↔ n = -1 by omega]
+    simp only [LinearMap.coe_mk, AddHom.coe_mk, ncoeff_expField, expCoeff_one, sub_eq_zero,
+      neg_eq_iff_eq_neg]
     split_ifs <;> simp
   ncoeff_field_apply_vacuum_of_nonneg a n hn := by
-    simp [ncoeff_expField, D.expCoeff_of_neg a (show -n - 1 < 0 by omega)]
+    simp [D.ncoeff_expField_of_nonneg a hn]
   ncoeff_neg_one_field_apply_vacuum a := by
     simp [ncoeff_expField, expCoeff]
   field_translation := D.expField_derivation
@@ -181,15 +180,14 @@ theorem formalVertexAxioms_translation : D.formalVertexAxioms.translation = D :=
 theorem ncoeff_formalVertexAxioms_field_neg (a : V) (k : ℕ) :
     (D.formalVertexAxioms.field a)[[-k - 1]] =
       LinearMap.mulLeft R ((k.factorial : ℚ)⁻¹ • ((D : Module.End R V) ^ k) a) := by
-  rw [formalVertexAxioms_field, ncoeff_expField, show -(-(k : ℤ) - 1) - 1 = k by ring]
+  rw [formalVertexAxioms_field, ncoeff_expField_neg]
   simp [expCoeff]
 
 /-- All nonnegative modes vanish: the fields are power series in `z`. -/
 @[simp]
 theorem ncoeff_formalVertexAxioms_field_of_nonneg (a : V) {n : ℤ} (hn : 0 ≤ n) :
     (D.formalVertexAxioms.field a)[[n]] = 0 := by
-  rw [formalVertexAxioms_field, ncoeff_expField, D.expCoeff_of_neg a (by omega),
-    LinearMap.mulLeft_zero_eq_zero]
+  rw [formalVertexAxioms_field, D.ncoeff_expField_of_nonneg a hn]
 
 /-- The product of `V` is the `(-1)`-product: `a₍₋₁₎ b = a b`. -/
 @[simp]
