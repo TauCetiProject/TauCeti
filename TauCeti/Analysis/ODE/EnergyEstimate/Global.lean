@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.LyapunovForm
 public import TauCeti.Analysis.ODE.EnergyEstimate.Basic
+import TauCeti.Analysis.InnerProductSpace.Coercive
+import TauCeti.Analysis.InnerProductSpace.Symmetric.Interpolation
 
 /-!
 # Global estimates for a first-order operator on the line
@@ -23,8 +26,19 @@ interval in Peetre's Fredholm criterion.
 We obtain the tail positivity from uniformly bounded-below limits of `A` and
 vanishing limits of `A'`. The target need not be finite dimensional or complete.
 The support-restricted coercivity estimate follows by making the interior error vanish.
-These are estimates on classical test paths; extension to Sobolev paths and the
-Fredholm conclusion require further arguments.
+
+Without symmetry or a derivative of `A`, the same kind of estimate holds when `A` is continuous
+and its limits `A±` at `±∞` have Lyapunov forms (`ContinuousLinearMap.HasLyapunovForm`):
+
+`∫ ‖u'‖² + ∫ ‖u‖² ≤ C ∫ ‖u' + A u‖² + C ∫_{[-R,R]} ‖u‖²`
+
+(`exists_pos_nonneg_forall_integral_norm_deriv_sq_add_integral_norm_sq_le_of_hasLyapunovForm`).
+Its proof integrates the quadratic form of a `C¹` family of symmetric operators interpolating
+between Lyapunov forms of `A-` and `A+` (`TauCeti.half_mul_integral_norm_sq_le`).
+
+These are estimates on classical test paths. Their extension to Sobolev paths and the Fredholm
+conclusion are in `TauCeti.Analysis.ODE.EnergyEstimate.Sobolev` and
+`TauCeti.Analysis.ODE.EnergyEstimate.Lyapunov`.
 
 ## References
 
@@ -187,5 +201,88 @@ theorem exists_pos_forall_integral_norm_deriv_sq_add_mul_integral_norm_sq_le
       exact (not_le_of_gt (abs_lt.mpr hs')) (hs h)
     simp [hu0]
   simpa only [hzero, mul_zero, add_zero] using hest u hu hc
+
+/-! ### Hyperbolic limits -/
+
+/-- **The trajectory estimate for hyperbolic limits on test paths.** Let `A` be a continuous
+family of operators whose limits `A±` at `±∞` have Lyapunov forms. Then there are `R > 0` and
+`C ≥ 0` with
+
+`∫ ‖u'‖² + ∫ ‖u‖² ≤ C ∫ ‖u' + A u‖² + C ∫_{[-R, R]} ‖u‖²`
+
+for every compactly supported `C¹` path `u`. -/
+theorem exists_pos_nonneg_forall_integral_norm_deriv_sq_add_integral_norm_sq_le_of_hasLyapunovForm
+    (hA : Continuous A) {Aminus Aplus : E →L[ℝ] E}
+    (hminus : Aminus.HasLyapunovForm) (hplus : Aplus.HasLyapunovForm)
+    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus)) :
+    ∃ R > 0, ∃ C ≥ 0, ∀ u : ℝ → E, ContDiff ℝ 1 u → HasCompactSupport u →
+      (∫ s, ‖deriv u s‖ ^ 2) + (∫ s, ‖u s‖ ^ 2) ≤
+        C * (∫ s, ‖deriv u s + A s (u s)‖ ^ 2) + C * ∫ s in Icc (-R) R, ‖u s‖ ^ 2 := by
+  obtain ⟨Sm, hSm, cm, hcm, hm⟩ := hminus.exists_eventually_nhds
+  obtain ⟨Sp, hSp, cp, hcp, hp⟩ := hplus.exists_eventually_nhds
+  -- Outside `[-R, R]`, `A s` satisfies the Lyapunov inequality of the nearby limit and has
+  -- bounded norm.
+  obtain ⟨a, ha⟩ := eventually_atBot.mp ((hbot.eventually hm).and
+    (hbot.norm.eventually (Iic_mem_nhds (lt_add_one ‖Aminus‖))))
+  obtain ⟨b, hb⟩ := eventually_atTop.mp ((htop.eventually hp).and
+    (htop.norm.eventually (Iic_mem_nhds (lt_add_one ‖Aplus‖))))
+  set R := max (max (-a) b) 1
+  have hRa : -R ≤ a := by linarith [le_max_left (-a) b, le_max_left (max (-a) b) 1]
+  have hRb : b ≤ R := by linarith [le_max_right (-a) b, le_max_left (max (-a) b) 1]
+  have hR : 0 < R := by linarith [le_max_right (max (-a) b) 1]
+  -- The family of quadratic forms passes from `Sm` to `Sp` across `[-R, R]`.
+  obtain ⟨S, hS, hsym, hSbot, hStop, hdS, hM⟩ :=
+    exists_contDiff_isSymmetric_interpolation hSm hSp hR
+  -- On `[-R, R]` the error term `⟪S A v, v⟫ - ½ ⟪S' v, v⟫` is bounded below by `-K ‖v‖²`.
+  obtain ⟨K, hK⟩ := (isCompact_Icc (a := -R) (b := R)).exists_bound_of_continuousOn
+    (f := fun s ↦ ‖S s‖ * ‖A s‖ + ‖deriv S s‖ / 2)
+    ((hS.continuous.norm.mul hA.norm).add (hS.continuous_deriv_one.norm.div_const 2)).continuousOn
+  have hK' (s : ℝ) (hs : s ∈ Icc (-R) R) : ‖S s‖ * ‖A s‖ + ‖deriv S s‖ / 2 ≤ K :=
+    (Real.le_norm_self _).trans (hK s hs)
+  have hK₀ : 0 ≤ K := (by positivity : (0 : ℝ) ≤ ‖S 0‖ * ‖A 0‖ + ‖deriv S 0‖ / 2).trans
+    (hK' 0 ⟨by linarith, by linarith⟩)
+  -- A uniform bound on `A`.
+  obtain ⟨KA, hKA⟩ := (isCompact_Icc (a := -R) (b := R)).exists_bound_of_continuousOn
+    hA.continuousOn
+  set MA := max KA (max (‖Aminus‖ + 1) (‖Aplus‖ + 1))
+  have hMA (s : ℝ) : ‖A s‖ ≤ MA := by
+    rcases lt_or_ge s (-R) with hs | hs
+    · exact (mem_Iic.mp (ha s (by linarith)).2).trans (le_max_of_le_right (le_max_left _ _))
+    rcases le_or_gt s R with hs' | hs'
+    · exact (hKA s ⟨hs, hs'⟩).trans (le_max_left _ _)
+    · exact (mem_Iic.mp (hb s (by linarith)).2).trans (le_max_of_le_right (le_max_right _ _))
+  set c := min cm cp
+  have hc : 0 < c := lt_min hcm hcp
+  refine ⟨R, hR, 2 + (2 * MA ^ 2 + 1) * (2 / c) * ((‖Sm‖ + ‖Sp - Sm‖) ^ 2 / (2 * c) + (K + c)),
+    by positivity, fun u hu hcu ↦ ?_⟩
+  have hY := half_mul_integral_norm_sq_le hS hsym hA hu hcu measurableSet_Icc hc hM
+    (I := Icc (-R) R) (K := K) (fun s hs v ↦ by
+      rw [hdS s hs, zero_apply, inner_zero_left, zero_div, sub_zero]
+      rcases lt_or_ge s (-R) with h₁ | h₁
+      · rw [hSbot s h₁.le]
+        exact (mul_le_mul_of_nonneg_right (min_le_left _ _) (sq_nonneg _)).trans
+          ((ha s (by linarith)).1 v)
+      · have h₂ : R < s := lt_of_not_ge fun h ↦ hs ⟨h₁, h⟩
+        rw [hStop s h₂.le]
+        exact (mul_le_mul_of_nonneg_right (min_le_right _ _) (sq_nonneg _)).trans
+          ((hb s (by linarith)).1 v))
+    (fun s hs v ↦ by
+      have := mul_le_mul_of_nonneg_right (hK' s hs) (sq_nonneg ‖v‖)
+      linarith [(S s).neg_mul_norm_sq_le_inner_sub (A s) (deriv S s) v])
+  have hX := integral_norm_deriv_sq_le hA hu hcu hMA
+  have hZ : 0 ≤ ∫ s, ‖deriv u s + A s (u s)‖ ^ 2 := integral_nonneg fun _ ↦ by positivity
+  have hW : 0 ≤ ∫ s in Icc (-R) R, ‖u s‖ ^ 2 :=
+    setIntegral_nonneg measurableSet_Icc fun _ _ ↦ by positivity
+  -- Solve `hY` for `∫ ‖u‖²` and substitute the result into `hX`.
+  set a := (‖Sm‖ + ‖Sp - Sm‖) ^ 2 / (2 * c)
+  set b := K + c
+  have hY' : (∫ s, ‖u s‖ ^ 2) ≤ 2 / c * (a * (∫ s, ‖deriv u s + A s (u s)‖ ^ 2) +
+      b * ∫ s in Icc (-R) R, ‖u s‖ ^ 2) := by
+    rw [div_mul_eq_mul_div, le_div_iff₀ hc]
+    linarith
+  have hk : 0 ≤ (2 * MA ^ 2 + 1) * (2 / c) := by positivity
+  nlinarith [mul_le_mul_of_nonneg_left hY' (by positivity : (0 : ℝ) ≤ 2 * MA ^ 2 + 1),
+    mul_nonneg (mul_nonneg hk (by positivity : (0 : ℝ) ≤ b)) hZ,
+    mul_nonneg (mul_nonneg hk (by positivity : (0 : ℝ) ≤ a)) hW]
 
 end TauCeti
