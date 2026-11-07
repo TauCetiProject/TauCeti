@@ -142,13 +142,11 @@ theorem target_resolve (φ : StrandDiagram α) (p : α × α) : (φ.resolve p).t
 /-- The crossings of a resolution are the inversions of the end-point map of `φ` composed with the
 transposition of the two resolved strands. -/
 theorem inversions_resolve (h : p ∈ φ.inversions) :
-    (φ.resolve p).inversions =
-      φ.source.inversions ((fun i ↦ (φ i).getD i) ∘ Equiv.swap p.1 p.2) := by
+    (φ.resolve p).inversions = φ.source.inversions (φ.endpoint ∘ Equiv.swap p.1 p.2) := by
   rw [inversions_def, source_resolve]
   refine Finset.inversions_congr fun x hx ↦ ?_
   obtain ⟨c, hc⟩ := mem_source.1 ((swap_mem_source_iff h).2 hx)
-  rw [Option.mem_def] at hc
-  simp [resolve_apply h, hc]
+  rw [Function.comp_apply, endpoint_eq_of_mem hc, endpoint_eq_of_mem (by rwa [resolve_apply h])]
 
 /-- **Resolving a crossing lowers the number of crossings.** -/
 theorem inversionCount_resolve_lt (h : p ∈ φ.inversions) :

@@ -383,35 +383,26 @@ private theorem sum_resolvableInversions_eq {M : Type*} [AddCommMonoid M] (σ : 
   exact ⟨⟨fst_mem_source_of_mem_inversions hp', snd_mem_source_of_mem_inversions hp'⟩,
     (mem_inversions.1 hp').1⟩
 
-/-- When `φ` ends where `ψ` starts, the end points `g x ∈ φ x` of the strands of `φ` identify the
-increasing pairs of starting points of `φ` with those of `ψ`, after sorting. -/
+/-- When `φ` ends where `ψ` starts, the end points of the strands of `φ` identify the increasing
+pairs of starting points of `φ` with those of `ψ`, after sorting. -/
 private theorem sum_filter_lt_source_eq_of_target_eq {M : Type*} [AddCommMonoid M]
-    {φ ψ : StrandDiagram α} (hT : φ.target = ψ.source) {g : α → α}
-    (hg : ∀ x ∈ φ.source, g x ∈ φ x) (f : α × α → M) :
+    {φ ψ : StrandDiagram α} (hT : φ.target = ψ.source) (f : α × α → M) :
     ∑ q ∈ (ψ.source ×ˢ ψ.source).filter (fun q : α × α ↦ q.1 < q.2), f q =
       ∑ p ∈ (φ.source ×ˢ φ.source).filter (fun p : α × α ↦ p.1 < p.2),
-        f (min (g p.1) (g p.2), max (g p.1) (g p.2)) := by
-  -- The starting point `g' t` of the strand of `φ` ending at `t`.
-  set g' : α → α := fun t ↦ (φ.toPEquiv.symm t).getD t with hg'_def
-  have hg' {t : α} (ht : t ∈ ψ.source) : g' t ∈ φ.source ∧ t ∈ φ (g' t) := by
-    rw [← hT] at ht
-    obtain ⟨x, hx⟩ := mem_target.1 ht
-    have hs : φ.toPEquiv.symm t = some x := (PEquiv.eq_some_iff _).2 hx
-    simp only [hg'_def, hs, Option.getD_some]
-    exact ⟨mem_source.2 ⟨t, hx⟩, hx⟩
-  have hgT {x : α} (hx : x ∈ φ.source) : g x ∈ ψ.source := hT ▸ mem_target.2 ⟨x, hg x hx⟩
-  have hg'g {x : α} (hx : x ∈ φ.source) : g' (g x) = x := by
-    have hs : φ.toPEquiv.symm (g x) = some x := (PEquiv.eq_some_iff _).2 (hg x hx)
-    simp only [hg'_def, hs, Option.getD_some]
-  have hgg' {t : α} (ht : t ∈ ψ.source) : g (g' t) = t :=
-    Option.mem_unique (hg _ (hg' ht).1) (hg' ht).2
+        f (min (φ.endpoint p.1) (φ.endpoint p.2), max (φ.endpoint p.1) (φ.endpoint p.2)) := by
+  set g := φ.endpoint
+  set g' := φ.startpoint
+  have hgT {x : α} (hx : x ∈ φ.source) : g x ∈ ψ.source := hT ▸ endpoint_mem_target hx
+  have hg'S {t : α} (ht : t ∈ ψ.source) : g' t ∈ φ.source := startpoint_mem_source (hT ▸ ht)
+  have hg'g {x : α} (hx : x ∈ φ.source) : g' (g x) = x := startpoint_endpoint hx
+  have hgg' {t : α} (ht : t ∈ ψ.source) : g (g' t) = t := endpoint_startpoint (hT ▸ ht)
   symm
   refine sum_nbij' (fun p ↦ (min (g p.1) (g p.2), max (g p.1) (g p.2)))
     (fun q ↦ (min (g' q.1) (g' q.2), max (g' q.1) (g' q.2))) ?_ ?_ ?_ ?_ fun _ _ ↦ rfl
   · rintro ⟨x, y⟩ hp
     simp only [mem_filter, mem_product] at hp ⊢
     obtain ⟨⟨hx, hy⟩, hxy⟩ := hp
-    refine ⟨⟨?_, ?_⟩, min_lt_max.2 (φ.ne_of_mem_of_mem_of_ne (hg x hx) (hg y hy) hxy.ne)⟩
+    refine ⟨⟨?_, ?_⟩, min_lt_max.2 fun h ↦ hxy.ne (φ.endpoint_injOn hx hy h)⟩
     · rcases min_choice (g x) (g y) with h | h <;> rw [h]
       exacts [hgT hx, hgT hy]
     · rcases max_choice (g x) (g y) with h | h <;> rw [h]
@@ -421,9 +412,9 @@ private theorem sum_filter_lt_source_eq_of_target_eq {M : Type*} [AddCommMonoid 
     obtain ⟨⟨ht, ht'⟩, htt'⟩ := hq
     refine ⟨⟨?_, ?_⟩, min_lt_max.2 fun h ↦ htt'.ne ?_⟩
     · rcases min_choice (g' t) (g' t') with h | h <;> rw [h]
-      exacts [(hg' ht).1, (hg' ht').1]
+      exacts [hg'S ht, hg'S ht']
     · rcases max_choice (g' t) (g' t') with h | h <;> rw [h]
-      exacts [(hg' ht).1, (hg' ht').1]
+      exacts [hg'S ht, hg'S ht']
     · rw [← hgg' ht, ← hgg' ht', h]
   · rintro ⟨x, y⟩ hp
     simp only [mem_filter, mem_product] at hp
@@ -453,11 +444,8 @@ theorem differential_of_mul_of [CharP R 2] (φ ψ : StrandDiagram α) :
       differential_of, sum_mul, mul_sum]
     simp [h₁, h₂]
   -- The end point `g x` of the strand from `x`.
-  set g : α → α := fun x ↦ (φ x).getD x with hg_def
-  have hg {x : α} (hx : x ∈ φ.source) : g x ∈ φ x := by
-    obtain ⟨a, ha⟩ := mem_source.1 hx
-    rw [Option.mem_def] at ha ⊢
-    simp [hg_def, ha]
+  set g := φ.endpoint with hg_def
+  have hg {x : α} (hx : x ∈ φ.source) : g x ∈ φ x := endpoint_mem hx
   -- Write the three terms as sums over the increasing pairs of starting points of `φ`.
   have hL : differential R α (of φ * of ψ) =
       ∑ p ∈ (φ.source ×ˢ φ.source).filter (fun p : α × α ↦ p.1 < p.2),
@@ -480,8 +468,8 @@ theorem differential_of_mul_of [CharP R 2] (φ ψ : StrandDiagram α) :
           φ.Composable (ψ.resolve (min (g p.1) (g p.2), max (g p.1) (g p.2))) then
           of (φ.trans (ψ.resolve (min (g p.1) (g p.2), max (g p.1) (g p.2)))) else 0 := by
     rw [differential_of, mul_sum, sum_resolvableInversions_eq,
-      sum_filter_lt_source_eq_of_target_eq hT fun _ ↦ hg]
-    simp only [of_mul_of, ite_and]
+      sum_filter_lt_source_eq_of_target_eq hT]
+    simp only [of_mul_of, ite_and, hg_def]
   rw [hL, h₁, h₂, ← sum_add_distrib]
   refine sum_congr rfl fun p hp ↦ ?_
   obtain ⟨i, j⟩ := p
