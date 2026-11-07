@@ -37,7 +37,8 @@ at most `|x - Re e| ^ s`.
 
 ## Main declarations
 
-* `TauCeti.integrableOn_norm_rpow_ball`: integrability on a centred ball.
+* `TauCeti.integrableOn_norm_rpow_ball`: integrability on a centred ball, and
+  `TauCeti.integrableOn_norm_rpow_ball_iff`: its converse on a nontrivial space.
 * `TauCeti.integral_norm_rpow_ball`: the exact radial integral.
 * `TauCeti.integrableOn_norm_sub_rpow_ball`: integrability after translation.
 * `TauCeti.integral_norm_sub_rpow_ball`: the exact integral with any centre.
@@ -81,6 +82,20 @@ theorem integrableOn_norm_rpow_ball {s : ℝ} (hs : -(Module.finrank ℝ E : ℝ
   · filter_upwards with x
     rw [neg_neg, one_mul, Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg x) _)]
   · exact (by fun_prop : Measurable fun x : E => ‖x‖ ^ s).aestronglyMeasurable
+
+/-- On a nontrivial space, the kernel `x ↦ ‖x‖ ^ s` is integrable on a ball of positive radius
+centred at the origin exactly when `-dim E < s`. -/
+theorem integrableOn_norm_rpow_ball_iff [Nontrivial E] {s R : ℝ} (hR : 0 < R) :
+    IntegrableOn (fun x : E => ‖x‖ ^ s) (ball 0 R) mu ↔ -(Module.finrank ℝ E : ℝ) < s := by
+  have hd : 1 ≤ Module.finrank ℝ E := Module.finrank_pos
+  have hcongr : IntegrableOn (fun y : ℝ => y ^ (Module.finrank ℝ E - 1) • y ^ s) (Ioo 0 R) ↔
+      IntegrableOn (fun y : ℝ => y ^ ((Module.finrank ℝ E : ℝ) - 1 + s)) (Ioo 0 R) :=
+    integrableOn_congr_fun (fun y hy => by
+      rw [smul_eq_mul, Real.rpow_add hy.1, ← Real.rpow_natCast, Nat.cast_sub hd, Nat.cast_one])
+      measurableSet_Ioo
+  rw [integrableOn_fun_norm_addHaar mu (f := fun r : ℝ => r ^ s), hcongr,
+    intervalIntegral.integrableOn_Ioo_rpow_iff hR]
+  constructor <;> intro h <;> linarith
 
 /-- A norm power is integrable outside a positive-radius closed ball exactly below the
 negative dimension. This includes divergence at the logarithmic borderline. -/
@@ -201,6 +216,21 @@ theorem integral_norm_sub_rpow_ball {s : ℝ} (hs : -(Module.finrank ℝ E : ℝ
     funext z
     simp [norm_neg]
   rw [hfun, integral_norm_rpow_ball hs hR]
+
+/-- The integral of `‖x - x₀‖ ^ 2` over the ball of radius `R` about `x₀` in dimension `n` is
+`n / (n + 2) * R ^ 2` times the measure of the ball. -/
+theorem integral_norm_sub_sq_ball {R : ℝ} (x₀ : E) :
+    ∫ x in ball x₀ R, ‖x - x₀‖ ^ 2 ∂mu =
+      Module.finrank ℝ E / (Module.finrank ℝ E + 2) * R ^ 2 * mu.real (ball x₀ R) := by
+  rcases le_or_gt R 0 with hR | hR
+  · simp [Metric.ball_eq_empty.2 hR]
+  have h := integral_norm_sub_rpow_ball (mu := mu) (s := 2) (by linarith) hR.le x₀
+  simp_rw [norm_sub_rev x₀, Real.rpow_two] at h
+  have hball : mu.real (ball x₀ R) = R ^ Module.finrank ℝ E * mu.real (ball (0 : E) 1) := by
+    rw [measureReal_def, Measure.addHaar_ball_of_pos mu _ hR, ENNReal.toReal_mul,
+      ENNReal.toReal_ofReal (by positivity), measureReal_def]
+  rw [h, hball, Real.rpow_add hR, Real.rpow_two, Real.rpow_natCast]
+  field_simp
 
 /-- If `x` lies in `closedBall z R`, then the integral over `ball z R` of the kernel with pole
 `x` is bounded by the exact integral on `ball 0 (2R)`. -/

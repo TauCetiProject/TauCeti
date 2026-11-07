@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.RamificationInertia.HilbertTheory
 public import TauCeti.NumberTheory.RamificationInertia.SeparableDegree
+import TauCeti.NumberTheory.RamificationInertia.Galois
 
 /-!
 # Hilbert theory over arbitrary residue fields

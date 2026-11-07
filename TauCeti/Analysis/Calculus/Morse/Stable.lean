@@ -47,6 +47,8 @@ embedded submanifold (`TauCeti.Analysis.Calculus.Morse.GlobalChart`).
   strict for distinct endpoints.
 * `Flow.IsNegativeGradient.eq_of_mem_unstableSet_inter_stableSet`: there are no
   nonconstant homoclinic trajectories.
+* `Flow.IsNegativeGradient.mem_unstableSet_inter_stableSet_self_iff`: the unstable and stable sets
+  of a rest point meet only in that point.
 * `Flow.IsNegativeGradient.reverse`: the reversed flow is a negative gradient flow of `-f`.
 * `Flow.IsNegativeGradient.dist_le_of_mem_stableSet` and
   `Flow.IsNegativeGradient.dist_le_of_mem_unstableSet`: the energy barrier confining stable and
@@ -169,6 +171,15 @@ theorem IsNegativeGradient.eq_of_mem_unstableSet_inter_stableSet
     (hx : x ∈ unstableSet φ p ∩ stableSet φ p) :
     x = p :=
   (hφ.eq_of_mem_unstableSet_inter_stableSet_of_value_eq hf hfp hfp hx rfl).1
+
+/-- The unstable and stable sets of a rest point of a negative gradient flow meet exactly in that
+point. -/
+theorem IsNegativeGradient.mem_unstableSet_inter_stableSet_self_iff (hφ : IsNegativeGradient φ f)
+    (hf : Differentiable ℝ f) (hp : ∀ t, φ t p = p) :
+    x ∈ unstableSet φ p ∩ stableSet φ p ↔ x = p := by
+  refine ⟨hφ.eq_of_mem_unstableSet_inter_stableSet (fun _ ↦ hf _) (hf p).continuousAt, ?_⟩
+  rintro rfl
+  exact ⟨self_mem_unstableSet_iff.2 hp, self_mem_stableSet_iff.2 hp⟩
 
 variable {z : E}
 
