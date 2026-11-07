@@ -103,6 +103,23 @@ theorem ContDiff.exists_testFunction_fderiv_apply_eq_neg_norm {w : E → ℝ} (h
 
 variable [MeasurableSpace E] [BorelSpace E]
 
+/-- The clamped function `max 0 (min w η)` agrees with `η 1_{w > 0}` off the shell `{0 < w < η}`,
+and differs from it by at most `η` on the shell; so against any `d` the error is at most
+`η |d|` on the shell and zero off it. -/
+private theorem norm_mul_sub_clamp_le_indicator {X : Type*} {w : X → ℝ} {η : ℝ} (hη : 0 < η)
+    (d : ℝ) (x : X) :
+    ‖d * (η * {x | 0 < w x}.indicator 1 x - max 0 (min (w x) η))‖ ≤
+      η * (w ⁻¹' Ioo 0 η).indicator (fun _ => |d|) x := by
+  have hcl := abs_mul_indicator_sub_max_min_le (w := w) hη.le x
+  rw [norm_mul, Real.norm_eq_abs, Real.norm_eq_abs]
+  by_cases hxS : x ∈ w ⁻¹' Ioo 0 η
+  · rw [indicator_of_mem (s := w ⁻¹' Ioo 0 η) hxS] at hcl
+    rw [indicator_of_mem hxS, mul_comm η |d|]
+    exact mul_le_mul_of_nonneg_left hcl (abs_nonneg _)
+  · rw [indicator_of_notMem (s := w ⁻¹' Ioo 0 η) hxS] at hcl
+    rw [indicator_of_notMem hxS, mul_zero]
+    exact mul_nonpos_of_nonneg_of_nonpos (abs_nonneg _) hcl
+
 /-- **The calibration estimate.** If a test vector field `ψ` satisfies `Dw (ψ) = -‖Dw‖` on the
 shell `S = {0 < w < η}`, as `-∇w / ‖∇w‖` does, then
 `∫_S ‖Dw‖ ≤ η (∫_{w > 0} div ψ + ∫_S |div ψ|)`. -/
@@ -133,17 +150,7 @@ theorem ContDiff.setIntegral_norm_fderiv_le {w : E → ℝ} (hw : ContDiff ℝ 1
     · rw [indicator_of_mem (s := w ⁻¹' Ioo 0 η) hx, indicator_of_mem hx, hψ x hx, neg_neg]
     · rw [indicator_of_notMem (s := w ⁻¹' Ioo 0 η) hx, indicator_of_notMem hx]
       simp
-  -- The clamped function agrees with `η 1_F` off `S`, and differs from it by at most `η` on `S`.
-  have hpt (x : E) : ‖D x * (η * F.indicator 1 x - v x)‖ ≤ η * S.indicator (fun x => |D x|) x := by
-    have hcl := abs_mul_indicator_sub_max_min_le (w := w) hη.le x
-    rw [norm_mul, Real.norm_eq_abs, Real.norm_eq_abs]
-    by_cases hxS : x ∈ S
-    · rw [indicator_of_mem (s := w ⁻¹' Ioo 0 η) hxS] at hcl
-      rw [indicator_of_mem hxS, mul_comm η (|D x|)]
-      exact mul_le_mul_of_nonneg_left hcl (abs_nonneg _)
-    · rw [indicator_of_notMem (s := w ⁻¹' Ioo 0 η) hxS] at hcl
-      rw [indicator_of_notMem hxS, mul_zero]
-      exact (mul_nonpos_of_nonneg_of_nonpos (abs_nonneg _) hcl)
+  have hpt (x : E) := norm_mul_sub_clamp_le_indicator (w := w) hη (D x) x
   have hbdd (f : E → ℝ) (hf : Measurable f) (c : ℝ) (hfc : ∀ x, ‖f x‖ ≤ c) :
       Integrable fun x => D x * f x :=
     hD.mul_bdd hf.aestronglyMeasurable (.of_forall hfc)
