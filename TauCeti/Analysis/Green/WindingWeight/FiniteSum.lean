@@ -82,17 +82,18 @@ theorem tsupport_sum_windingWeight_subset
 /-- Outside a domain containing every trace, and where the total index vanishes, the total winding
 weight kills any field. -/
 theorem sum_windingWeight_mul_eq_zero_of_notMem
-    (hγ : ∀ i ∈ s, AbsolutelyContinuousOnInterval (γ i) (a i) (b i))
-    (hclosed : ∀ i ∈ s, γ i (a i) = γ i (b i))
     (htrace : ∀ i ∈ s, γ i '' uIcc (a i) (b i) ⊆ U)
     (hindex : ∀ z ∉ U, ∑ i ∈ s, (w i : ℂ) * Contour.windingNumber (γ i) (a i) (b i) z = 0)
     (f : ℂ → ℝ) {z : ℂ} (hz : z ∉ U) :
     (∑ i ∈ s, (w i : ℝ) * windingWeight (γ i) (a i) (b i) z) * f z = 0 := by
-  have hzW : (∑ i ∈ s, (w i : ℝ) * windingWeight (γ i) (a i) (b i) z) = 0 := by
-    by_contra hne
-    exact hz (tsupport_sum_windingWeight_subset hγ hclosed htrace hindex
-      (subset_tsupport (fun z ↦ ∑ i ∈ s, (w i : ℝ) * windingWeight (γ i) (a i) (b i) z) hne))
-  rw [hzW, zero_mul]
+  have h := congrArg Complex.re (hindex z hz)
+  simp only [Complex.re_sum, Complex.mul_re, Complex.intCast_re, Complex.intCast_im,
+    zero_mul, sub_zero, Complex.zero_re] at h
+  have hsum : ∑ i ∈ s, (w i : ℝ) * windingWeight (γ i) (a i) (b i) z = 0 := by
+    convert h using 1
+    refine Finset.sum_congr rfl fun i hi ↦ ?_
+    rw [windingWeight_eq_of_notMem fun hm ↦ hz (htrace i hi hm)]
+  rw [hsum, zero_mul]
 
 /-- Finitely many closed AC traces and their total weighted winding support have compact union. -/
 theorem isCompact_traces_union_tsupport_sum_windingWeight

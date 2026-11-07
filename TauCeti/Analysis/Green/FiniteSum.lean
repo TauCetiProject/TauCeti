@@ -72,13 +72,13 @@ private theorem green_ac_winding_sum_of_hasCompactSupport {ι : Type*} {s : Fins
     (ContDiff.continuous_curl hP hQ).aestronglyMeasurable
     (by simpa only [Real.norm_eq_abs] using Eventually.of_forall hC) hwconv
   have hzero (z) (hz : z ∉ U) : W z * curl P Q z = 0 :=
-    sum_windingWeight_mul_eq_zero_of_notMem hγ hclosed htrace hindex _ hz
+    sum_windingWeight_mul_eq_zero_of_notMem htrace hindex _ hz
   refine ⟨hint, ?_⟩
   have heq : (∑ i ∈ s, (w i : ℝ) * ∫ t in a i..b i, circulationFun P Q (γ i) t) =
       ∫ z in U, W z * curl P Q z := by
     have hzero_n : ∀ᶠ n in atTop, ∀ z ∉ U, Wn n z * curl P Q z = 0 := by
       filter_upwards [hdomain] with n hdom z hz
-      exact sum_windingWeight_mul_eq_zero_of_notMem (hAC n) (hcl n) hdom.1 hdom.2 _ hz
+      exact sum_windingWeight_mul_eq_zero_of_notMem hdom.1 hdom.2 _ hz
     have harea_n : ∀ᶠ n in atTop, (∫ z : ℂ, Wn n z * curl P Q z) =
         ∫ z in U, Wn n z * curl P Q z := hzero_n.mono (fun _ hz ↦
       (setIntegral_eq_integral_of_forall_compl_eq_zero hz).symm)
