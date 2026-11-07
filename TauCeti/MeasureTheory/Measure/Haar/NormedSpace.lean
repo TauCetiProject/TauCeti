@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 import Mathlib.Analysis.Calculus.Deriv.Mul
@@ -69,6 +70,8 @@ to `ℝ` gives the same bound for `‖det f‖` over `ℂ`, or any `RCLike` fiel
   unit ball.
 * `MeasureTheory.Measure.map_addHaar_homothety`: a homothety of nonzero ratio `r` pushes an
   additive Haar measure to its multiple by `|r ^ n|⁻¹`.
+* `MeasureTheory.Measure.eLpNorm_ball_le_mul_rpow`: Hölder's inequality on a ball, with the volume
+  of the ball written through that of the unit ball.
 * `ContinuousLinearMap.abs_det_le_opNorm_pow`: `|det f| ≤ ‖f‖ ^ n` in dimension `n`.
 * `ContinuousLinearMap.norm_det_le_opNorm_pow`: `‖det f‖ ≤ ‖f‖ ^ n` in dimension `n` over an
   `RCLike` field.
@@ -89,6 +92,28 @@ theorem _root_.MeasureTheory.Measure.addHaar_real_ball_of_pos
     mu.real (ball x r) = r ^ finrank ℝ E * mu.real (ball 0 1) := by
   rw [measureReal_def, mu.addHaar_ball_of_pos x hr, ENNReal.toReal_mul,
     ENNReal.toReal_ofReal (by positivity), ← measureReal_def]
+
+/-- Hölder's inequality on a ball: for `p₀ ≤ p`, the `L^{p₀}` norm on `B(x₀, R)` is at most the
+`L^p` norm times `|B(x₀, R)|^{1/p₀ - 1/p} = (Rⁿ |B(0, 1)|)^{1/p₀ - 1/p}`, where `n` is the
+dimension. -/
+theorem _root_.MeasureTheory.Measure.eLpNorm_ball_le_mul_rpow
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    {F : Type*} [NormedAddCommGroup F] {f : E → F} {p₀ p R : ℝ} {x₀ : E} (hR : 0 < R)
+    (hp₀0 : 0 < p₀) (hp₀p : p₀ ≤ p) (hf : AEStronglyMeasurable f (mu.restrict (ball x₀ R))) :
+    eLpNorm f (ENNReal.ofReal p₀) (mu.restrict (ball x₀ R)) ≤
+      eLpNorm f (ENNReal.ofReal p) (mu.restrict (ball x₀ R)) *
+        ENNReal.ofReal ((R ^ finrank ℝ E * mu.real (ball (0 : E) 1)) ^ (1 / p₀ - 1 / p)) := by
+  have he : 0 ≤ 1 / p₀ - 1 / p := sub_nonneg.2 (one_div_le_one_div_of_le hp₀0 hp₀p)
+  have hV : mu (ball (0 : E) 1) = ENNReal.ofReal (mu.real (ball (0 : E) 1)) :=
+    (ENNReal.ofReal_toReal measure_ball_lt_top.ne).symm
+  have hvol : mu.restrict (ball x₀ R) Set.univ =
+      ENNReal.ofReal (R ^ finrank ℝ E * mu.real (ball (0 : E) 1)) := by
+    rw [Measure.restrict_apply_univ, Measure.addHaar_ball_of_pos mu x₀ hR, hV,
+      ← ENNReal.ofReal_mul (by positivity), ← Real.rpow_natCast]
+  have h := eLpNorm_le_eLpNorm_mul_rpow_measure_univ (ENNReal.ofReal_le_ofReal hp₀p) hf
+  rwa [hvol, ENNReal.toReal_ofReal hp₀0.le, ENNReal.toReal_ofReal (hp₀0.le.trans hp₀p),
+    ENNReal.ofReal_rpow_of_nonneg (by positivity) he] at h
 
 /-- For a ball of radius `r > 0` in dimension `n`, `n / r` times its real measure is
 `n rⁿ⁻¹` times the real measure of the unit ball, the derivative in `r` of its measure. -/

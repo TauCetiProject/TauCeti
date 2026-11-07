@@ -11,7 +11,6 @@ import TauCeti.Algebra.Order.Archimedean.Basic
 import TauCeti.Analysis.Sobolev.FiniteMeasure
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import TauCeti.MeasureTheory.Integral.Average
-import TauCeti.MeasureTheory.Measure.Haar.EuclideanSpace
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.OpenPos
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
@@ -189,7 +188,7 @@ theorem exists_eLpNorm_rpow_le_mul_eLpNorm_rpow :
   have hrρ' : r < ρ' := by simp only [ρ']; linarith
   have hρ'ρ : ρ' < ρ := by simp only [ρ']; linarith
   obtain ⟨ψ, hψ, hψr, hψ1, hψts, hψg, -⟩ := hcut x₀ hr.le hrρ'
-  set G := c / (ρ' - r)
+  set G := c / (ρ' - r) with hG_def
   have hρ'B : Metric.closedBall x₀ ρ' ⊆ Metric.ball x₀ ρ :=
     Metric.closedBall_subset_ball hρ'ρ
   have hts : tsupport ψ ⊆ (Omega : Set (EuclideanSpace ℝ ι)) := (hψts.trans hρ'B).trans hball
@@ -222,7 +221,7 @@ theorem exists_eLpNorm_rpow_le_mul_eLpNorm_rpow :
     le_mul_sqrt_of_sq_le (G := G) (norm_nonneg _) hK hc0 hrρ hI0
       (by
         have hmid : ρ' - r = (ρ - r) / 2 := by simp only [ρ']; ring
-        rw [show G = c / (ρ' - r) from rfl, hmid, div_div_eq_mul_div]
+        rw [hG_def, hmid, div_div_eq_mul_div]
         ring) (by
       have hleib := W1p.norm_gradient_contDiffSMul_sq_le hψ hM hψM' hgradM' w
       nlinarith)
@@ -555,10 +554,11 @@ theorem exists_eLpNorm_le_mul_rpow_mul_eLpNorm [Nonempty ι] {p s : ℝ} (hp : 0
     field_simp
     ring
   rw [hrM, hpkM, show pk 0 = p₀ by simp [pk]] at hfinal
-  have hholder := EuclideanSpace.eLpNorm_ball_le_mul_rpow (mu := mu) hR
+  have hholder := Measure.eLpNorm_ball_le_mul_rpow mu hR
     (div_pos hs (pow_pos hχ0 M)) hp₀p
     ((Lp.aestronglyMeasurable (W1p.value u)).mono_measure
       (Measure.restrict_mono hball le_rfl))
+  rw [finrank_euclideanSpace, ← Real.rpow_natCast R (Fintype.card ι)] at hholder
   calc eLpNorm (W1p.value u) (ENNReal.ofReal s) (mu.restrict (Metric.ball x₀ (R / 2)))
       ≤ ENNReal.ofReal ((∏ j ∈ Finset.range M, B j ^ (2 / pk j)) * R ^ (n / s - n / p₀)) *
           (eLpNorm (W1p.value u) (ENNReal.ofReal p) (mu.restrict (Metric.ball x₀ R)) *
@@ -764,9 +764,7 @@ theorem exists_setAverage_rpow_rpow_inv_le_mul_setAverage_rpow_rpow_inv [Nonempt
   have hmemp : MemLp (W1p.value u) (ENNReal.ofReal p) (mu.restrict (Metric.ball x₀ R)) :=
     hmemR.mono_exponent ((ENNReal.ofReal_le_ofReal hp2).trans_eq (ENNReal.ofReal_ofNat 2))
   have hlim := tendsto_average_add_rpow (μ := mu.restrict (Metric.ball x₀ R)) hp hmemp
-    hu0R (fun k => by positivity)
-    (fun k => (div_le_one (by positivity)).2 (by linarith [(Nat.cast_nonneg k : (0 : ℝ) ≤ k)]))
-    tendsto_one_div_add_atTop_nhds_zero_nat
+    hu0R (fun k => by positivity) tendsto_one_div_add_atTop_nhds_zero_nat
   exact ⟨(hδ 0).1, ge_of_tendsto'
     (((Real.continuousAt_rpow_const _ _ (Or.inr (inv_nonneg.2 hp.le))).tendsto.comp hlim).const_mul
       D) fun k => (hδ k).2⟩
