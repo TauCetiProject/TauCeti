@@ -86,7 +86,7 @@ theorem schwarzChristoffelBoundary_injective_of_polygon_edge_intersections
         ha.monotone hfinite
         (x := y) ⟨(lt_of_not_ge hy₀).le, (lt_of_not_ge hyn).le⟩
       have hyL := hleft i (B y) hi
-        (heq ▸ schwarzChristoffelBoundary_mem_edgeSet_last_of_le a e z₀ ha.monotone hfinite hS
+        (heq ▸ schwarzChristoffelBoundary_mem_edgeSet_last_of_le a e z₀ ha.monotone (hfinite 0) hS
           hx₀)
       have hya : y = a 0 := hbounded
         ⟨(lt_of_not_ge hy₀).le, (lt_of_not_ge hyn).le⟩
@@ -99,7 +99,7 @@ theorem schwarzChristoffelBoundary_injective_of_polygon_edge_intersections
         (x := x) ⟨(lt_of_not_ge hx₀).le, (lt_of_not_ge hxn).le⟩
       have hxR := hright i (B x) hi
         (heq ▸ schwarzChristoffelBoundary_mem_edgeSet_last_prevertex_of_ge a e z₀ ha.monotone
-          hfinite hS hyn)
+          (hfinite _) hS hyn)
       have hxa : x = a (Fin.last (n + 1)) := hbounded
         ⟨(lt_of_not_ge hx₀).le, (lt_of_not_ge hxn).le⟩
         ⟨ha.monotone (Fin.zero_le _), le_rfl⟩

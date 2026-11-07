@@ -164,14 +164,14 @@ theorem exists_mem_edgeSet_schwarzChristoffelBoundary_of_mem_Icc
 /-- Parameters left of the first prevertex are sent to the closing side at infinity. -/
 theorem schwarzChristoffelBoundary_mem_edgeSet_last_of_le
     (a e : Fin (n + 2) → ℝ) (z₀ : UpperHalfPlane) (ha : Monotone a)
-    (hfinite : ∀ k, -1 < ∑ l with a l = a k, e l) (hS : ∑ k, e k < -1) {x : ℝ}
+    (h0 : -1 < ∑ l with a l = a 0, e l) (hS : ∑ k, e k < -1) {x : ℝ}
     (hx : x ≤ a 0) :
     schwarzChristoffelBoundary a e z₀ x ∈
       (schwarzChristoffelPolygon a e z₀).edgeSet ℝ (Fin.last (n + 2)) := by
   rw [schwarzChristoffelPolygon_edgeSet_last]
   have hm : schwarzChristoffelBoundary a e z₀ x ∈
       schwarzChristoffelBoundary a e z₀ '' Iic (a 0) := ⟨x, hx, rfl⟩
-  rw [schwarzChristoffelBoundary_image_Iic_prevertex a e z₀ 0 (hfinite 0)
+  rw [schwarzChristoffelBoundary_image_Iic_prevertex a e z₀ 0 h0
     (fun k _ ↦ ha k.zero_le) hS] at hm
   rw [segment_symm]
   exact hm.1
@@ -179,14 +179,14 @@ theorem schwarzChristoffelBoundary_mem_edgeSet_last_of_le
 /-- Parameters right of the last prevertex are sent to the closing side at the last vertex. -/
 theorem schwarzChristoffelBoundary_mem_edgeSet_last_prevertex_of_ge
     (a e : Fin (n + 2) → ℝ) (z₀ : UpperHalfPlane) (ha : Monotone a)
-    (hfinite : ∀ k, -1 < ∑ l with a l = a k, e l) (hS : ∑ k, e k < -1) {x : ℝ}
+    (hlast : -1 < ∑ l with a l = a (Fin.last (n + 1)), e l) (hS : ∑ k, e k < -1) {x : ℝ}
     (hx : a (Fin.last (n + 1)) ≤ x) :
     schwarzChristoffelBoundary a e z₀ x ∈
       (schwarzChristoffelPolygon a e z₀).edgeSet ℝ (Fin.last (n + 1)).castSucc := by
   rw [schwarzChristoffelPolygon_edgeSet_last_prevertex]
   have hm : schwarzChristoffelBoundary a e z₀ x ∈
       schwarzChristoffelBoundary a e z₀ '' Ici (a (Fin.last (n + 1))) := ⟨x, hx, rfl⟩
-  rw [schwarzChristoffelBoundary_image_Ici_prevertex a e z₀ (Fin.last (n + 1)) (hfinite _)
+  rw [schwarzChristoffelBoundary_image_Ici_prevertex a e z₀ (Fin.last (n + 1)) hlast
     (fun k _ ↦ ha k.le_last) hS] at hm
   exact hm.1
 
