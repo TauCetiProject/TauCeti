@@ -53,7 +53,7 @@ basis, so its sign depends on the orientation of that basis.
 * `TauCeti.homotopyGroupSphereAddEquiv`: `πₙ(Sⁿ, x) ≅ ℤ` for `n ≥ 2`, given an orthonormal basis.
 * `TauCeti.MooreLoopSpace.doubleFirstHomologySphereAddEquiv`: `H₁(ΩᴹΩᴹS³; ℤ) ≅ ℤ`.
 * `TauCeti.MooreLoopSpace.doubleHomologySphereAddEquiv`: `Hₘ₋₂(ΩᴹΩᴹSᵐ; ℤ) ≅ ℤ` for `m ≥ 4`.
-* `TauCeti.MooreLoopSpace.doubleReducedHomology₀SphereIso`: `H̃₀(ΩᴹΩᴹS²; R) ≅ ∐_{k ≠ 0} R`.
+* `TauCeti.MooreLoopSpace.doubleReducedHomology₀SphereIso`: `H~₀(ΩᴹΩᴹS²; R) ≅ ∐_{k ≠ 0} R`.
 
 ## References
 
@@ -210,7 +210,7 @@ private theorem MooreLoopSpace.zerothHomotopyDoubleSphereEquiv_mk_one
 
 /-- **Reduced zeroth homology of the double loop space of `S²`.** For the unit sphere `S²` of a
 real inner product space with an orthonormal basis `b` indexed by `Fin 3`, the reduced zeroth
-homology `H̃₀(ΩᴹΩᴹS²; R)` is the coproduct of copies of `R` indexed by the nonzero integers: the
+homology `H~₀(ΩᴹΩᴹS²; R)` is the coproduct of copies of `R` indexed by the nonzero integers: the
 path components of `ΩᴹΩᴹS²` are the elements of `π₂(S²) ≅ ℤ`
 (`TauCeti.homotopyGroupSphereAddEquiv`). -/
 def MooreLoopSpace.doubleReducedHomology₀SphereIso {C : Type*} [Category C]

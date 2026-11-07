@@ -12,14 +12,14 @@ public import TauCeti.Topology.PathSpace.Moore.Comparison.HomotopyGroup
 /-!
 # Reduced homology of double loop spaces and the first nonvanishing higher homotopy group
 
-The reduced homology `H̃_*(Ω²X)` of a double loop space is the kernel of the map
+The reduced homology `H~_*(Ω²X)` of a double loop space is the kernel of the map
 `H_*(Ω²X) → H_*(pt)` induced by the map to a point. This file shows that it detects the first
 nontrivial higher homotopy group `π_k(X, x)`, `k ≥ 2`, of a pointed space:
 
 * **Degree zero.** The path components of `Ω²X` are the elements of `π₂(X, x)`, so the reduced
-  zeroth homology `H̃₀(Ω²X; R)` is the coproduct of copies of `R` indexed by the nontrivial
+  zeroth homology `H~₀(Ω²X; R)` is the coproduct of copies of `R` indexed by the nontrivial
   elements of `π₂(X, x)`, the generator at `a` being `[γ] - [1]` for a double loop `γ` of
-  class `a`. If `π₂(X, x)` is nontrivial, `H̃₀(Ω²X; ℤ)` therefore contains an infinite cyclic
+  class `a`. If `π₂(X, x)` is nontrivial, `H~₀(Ω²X; ℤ)` therefore contains an infinite cyclic
   subgroup.
 * **Positive degrees.** In positive degrees reduced and ordinary homology agree
   (`TauCeti.reducedSingularHomologySuccIso`). If `π_j(X, x)` vanishes for `2 ≤ j < k` and `k ≥ 3`,
@@ -31,7 +31,7 @@ nontrivial higher homotopy group `π_k(X, x)`, `k ≥ 2`, of a pointed space:
 These are the homological facts behind the first part of Proposition 5.11 of
 Barraud--Damian--Humilière--Oancea. There the map `i_{Q*} : H_*(Q; i_Q^*𝓕) → H_*(𝓛₀Q; 𝓕)`, for
 the DG local system `𝓕 = C_*(Ω𝓛₀Q)`, is identified with the map `H_*(Ω²Q) → H_*(pt)`, whose
-kernel is `H̃_*(Ω²Q)`, and the two items above show that `ker i_{Q*}` contains an infinite cyclic
+kernel is `H~_*(Ω²Q)`, and the two items above show that `ker i_{Q*}` contains an infinite cyclic
 subgroup if `π₂(Q) ≠ 0` and a copy of `π_k(Q)` otherwise. The case of the sphere `S²` is
 `TauCeti.MooreLoopSpace.doubleReducedHomology₀SphereIso`, with the homotopy groups of spheres.
 
@@ -45,7 +45,7 @@ the universe of the space.
 * `TauCeti.zerothHomotopyDoubleLoopSpaceEquiv`, `TauCeti.MooreLoopSpace.zerothHomotopyDoubleEquiv`:
   the path components of `Ω²X` and `ΩᴹΩᴹX` are the elements of `π₂(X, x)`.
 * `TauCeti.doubleLoopSpaceReducedHomology₀Iso`, `TauCeti.MooreLoopSpace.doubleReducedHomology₀Iso`:
-  `H̃₀(Ω²X; R) ≅ ∐_{a ∈ π₂(X, x), a ≠ 1} R`.
+  `H~₀(Ω²X; R) ≅ ∐_{a ∈ π₂(X, x), a ≠ 1} R`.
 
 ## Main results
 
@@ -138,7 +138,7 @@ section DegreeZero
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C]
   [CategoryWithHomology C] [HasKernels C] (R : C) {X : Type w} [TopologicalSpace X]
 
-/-- **Reduced zeroth homology of the double loop space.** `H̃₀(Ω²X; R)` is the coproduct of
+/-- **Reduced zeroth homology of the double loop space.** `H~₀(Ω²X; R)` is the coproduct of
 copies of `R` indexed by the nontrivial elements of `π₂(X, x)`. -/
 def doubleLoopSpaceReducedHomology₀Iso (x : X) :
     (reducedSingularHomologyFunctor R 0).obj (TopCat.of (Ω (Ω X x) (Path.refl x))) ≅
@@ -164,7 +164,7 @@ theorem ι_doubleLoopSpaceReducedHomology₀Iso_inv_ι (x : X) (γ : Ω (Ω X x)
 
 namespace MooreLoopSpace
 
-/-- **Reduced zeroth homology of the double Moore loop space.** `H̃₀(ΩᴹΩᴹX; R)` is the coproduct of
+/-- **Reduced zeroth homology of the double Moore loop space.** `H~₀(ΩᴹΩᴹX; R)` is the coproduct of
 copies of `R` indexed by the nontrivial elements of `π₂(X, x)`. -/
 def doubleReducedHomology₀Iso (x : X) :
     (reducedSingularHomologyFunctor R 0).obj
