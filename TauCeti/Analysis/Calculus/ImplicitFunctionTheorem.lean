@@ -77,6 +77,8 @@ and `h` is as smooth as `f` and `g`.
 * `HasStrictFDerivAt.exists_isSliceChart_preimage_zero`: near a point where a `C^n` map has
   surjective derivative with complemented kernel, a `C^n` ambient chart flattens its zero set onto
   that kernel.
+* `TauCeti.exists_parametrization_of_hasStrictFDerivAt`: the regular level set `g = 0` of a `C^r`
+  function with surjective strict derivative is locally parametrized by a `C^r` map from `ker g'`.
 * `ContDiffAt.exists_eventuallyEq_comp_of_ker_fderiv_le`: near such a point, a `C^n` function
   whose derivative vanishes on the kernel of the derivative of `f` is `h ∘ f` for a function `h`
   which is `C^n` at `f a`.
@@ -542,5 +544,72 @@ theorem exists_eventuallyEq_comp_of_ker_fderiv_le (hf : ContDiffAt 𝕜 n f a)
       _ = g (Φ.symm (f x, 0)) := hslice _ hxb.1 _ hxb.2
 
 end ContDiffAt
+
+namespace TauCeti
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+  {a : E} {r : ℕ∞ω}
+
+/-- **Parametrizing a regular level set.** Let `g` be `C^r` at `a` with strict derivative `g'` of
+full range, and `g a = 0`. Then there is a `C^r` map `θ` from `ker g'` with `θ 0 = a`, taking values
+in the level set `g = 0` near the origin, and such that, locally at `a`, every zero of `g` lies in
+the image under `θ` of any prescribed neighbourhood of the origin. -/
+theorem exists_parametrization_of_hasStrictFDerivAt {g : E → 𝕜} {g' : E →L[𝕜] 𝕜}
+    (hg : ContDiffAt 𝕜 r g a) (hstrict : HasStrictFDerivAt g g' a) (hsurj : g'.range = ⊤)
+    (hr : r ≠ 0) (ha : g a = 0) :
+    ∃ θ : ↥g'.ker → E, θ 0 = a ∧ ContDiffAt 𝕜 r θ 0 ∧ (∀ᶠ z in 𝓝 0, g (θ z) = 0) ∧
+      ∀ V ∈ 𝓝 (0 : ↥g'.ker), ∀ᶠ x in 𝓝 a, g x = 0 → x ∈ θ '' V := by
+  -- The implicit function theorem for `g`, with kernel coordinate `x ↦ π (x - a)` for a
+  -- projection `π` onto `ker g'`; `θ` parametrizes the level set `g = 0` near `a`. This is the
+  -- data of `HasStrictFDerivAt.implicitFunctionDataOfComplemented`, spelled out because that
+  -- definition does not expose its fields, which the smoothness of `θ` needs.
+  have hker : g'.ker.ClosedComplemented := g'.ker_closedComplemented_of_finiteDimensional_range
+  let π : E →L[𝕜] ↥g'.ker := Classical.choose hker
+  let φ : ImplicitFunctionData 𝕜 E 𝕜 ↥g'.ker :=
+    { leftFun := g
+      leftDeriv := g'
+      rightFun x := π (x - a)
+      rightDeriv := π
+      pt := a
+      hasStrictFDerivAt_leftFun := hstrict
+      hasStrictFDerivAt_rightFun :=
+        π.hasStrictFDerivAt.comp a ((hasStrictFDerivAt_id a).sub_const a)
+      range_leftDeriv := hsurj
+      range_rightDeriv := LinearMap.range_eq_of_proj (Classical.choose_spec hker)
+      isCompl_ker := LinearMap.isCompl_of_proj (Classical.choose_spec hker) }
+  let θ : ↥g'.ker → E := φ.implicitFunction 0
+  -- The implicit-function API is stated for `φ.leftFun`; record that this field is `g`.
+  have hleft : φ.leftFun = g := by simp only [φ]
+  have hright : φ.rightFun φ.pt = 0 := by simp [φ]
+  have hpt : φ.prodFun φ.pt = (0, 0) := by simp [φ, ha]
+  have hθa : θ 0 = a := by
+    have h := φ.implicitFunction_apply_image.self_of_nhds
+    rwa [hright, hleft, ha] at h
+  have hθ : ContDiffAt 𝕜 r θ 0 := by
+    have hrightφ : ContDiffAt 𝕜 r φ.rightFun φ.pt := by
+      simp only [φ]
+      fun_prop
+    have himplicit := φ.contDiffAt_implicitFunction hg hrightφ hr
+    rw [hpt] at himplicit
+    simpa only [Function.comp_def, Function.uncurry_apply_pair] using
+      himplicit.comp 0 (contDiffAt_const.prodMk contDiffAt_id)
+  have hθg : ∀ᶠ z in 𝓝 0, g (θ z) = 0 := by
+    have h : Tendsto (fun z : ↥g'.ker ↦ ((0 : 𝕜), z)) (𝓝 0) (𝓝 (φ.prodFun φ.pt)) := by
+      rw [hpt]
+      exact tendsto_const_nhds.prodMk_nhds tendsto_id
+    exact h.eventually φ.leftFun_implicitFunction
+  have hcover : ∀ V ∈ 𝓝 (0 : ↥g'.ker),
+      ∀ᶠ x in 𝓝 a, g x = 0 → x ∈ θ '' V := by
+    intro V hV
+    -- Near `a`, each `x` is `φ.implicitFunction (g x) (φ.rightFun x)`, and the kernel
+    -- coordinate `φ.rightFun x` tends to `0` as `x` tends to `a`.
+    have htend : Tendsto φ.rightFun (𝓝 a) (𝓝 0) :=
+      hright ▸ φ.hasStrictFDerivAt_rightFun.continuousAt.tendsto
+    filter_upwards [φ.implicitFunction_apply_image, htend hV] with x hx hxV hxi
+    rw [hleft, hxi] at hx
+    exact ⟨φ.rightFun x, hxV, hx⟩
+  exact ⟨θ, hθa, hθ, hθg, hcover⟩
+
+end TauCeti
 
 end
