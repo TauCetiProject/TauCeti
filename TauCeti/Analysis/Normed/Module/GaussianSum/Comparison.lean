@@ -9,8 +9,7 @@ public import TauCeti.Analysis.Normed.Module.GaussianSum.Basic
 
 import TauCeti.Analysis.Normed.Module.GaussianSum.WeakTwo
 
-import TauCeti.Analysis.InnerProductSpace.Positive
-import TauCeti.Analysis.InnerProductSpace.ContinuousFunctionalCalculus
+import TauCeti.Probability.Distributions.Gaussian.Defect
 import Mathlib.Analysis.Convex.Integral
 import Mathlib.Analysis.Convex.Mul
 import Mathlib.Analysis.Normed.Module.Convex
@@ -47,44 +46,6 @@ variable {E F Y : Type*}
   [MeasurableSpace F] [BorelSpace F]
   [NormedAddCommGroup Y] [NormedSpace ℝ Y]
 
-private theorem map_add_defect_stdGaussian (D : F →L[ℝ] E) (hD : ‖D‖ ≤ 1) :
-    ((stdGaussian F).prod (stdGaussian E)).map
-      (D.comp (.fst ℝ F E) + (CFC.sqrt (1 - D ∘L D.adjoint)).comp (.snd ℝ F E)) =
-      stdGaussian E := by
-  have hdefect : 0 ≤ (1 : E →L[ℝ] E) - D ∘L D.adjoint :=
-    sub_nonneg.mpr (D.self_comp_adjoint_le_one hD)
-  let S : E →L[ℝ] E := CFC.sqrt (1 - D ∘L D.adjoint)
-  have hS : IsSelfAdjoint S :=
-    (nonneg_iff_isPositive.mp (CFC.sqrt_nonneg (1 - D ∘L D.adjoint))).isSelfAdjoint
-  have hSq (z : E) : ‖D.adjoint z‖ ^ 2 + ‖S z‖ ^ 2 = ‖z‖ ^ 2 := by
-    rw [← real_inner_self_eq_norm_sq (S z),
-      inner_sqrt_apply_sqrt_apply_eq_inner hdefect]
-    simp only [sub_apply, one_apply_eq_self, inner_sub_left, comp_apply,
-      ← D.adjoint_inner_right, real_inner_self_eq_norm_sq]
-    ring
-  apply Measure.ext_of_charFun
-  funext z
-  rw [charFun_eq_charFunDual_toDualMap, charFunDual_map, charFunDual_prod,
-    charFun_eq_charFunDual_toDualMap]
-  have hinl : ((InnerProductSpace.toDualMap ℝ E z).comp
-      (D.comp (.fst ℝ F E) + S.comp (.snd ℝ F E))).comp (.inl ℝ F E) =
-      innerSL ℝ (D.adjoint z) := by
-    ext w
-    simp [InnerProductSpace.toDualMap_apply_apply, adjoint_inner_left]
-  have hinr : ((InnerProductSpace.toDualMap ℝ E z).comp
-      (D.comp (.fst ℝ F E) + S.comp (.snd ℝ F E))).comp (.inr ℝ F E) =
-      innerSL ℝ (S z) := by
-    ext w
-    simp only [comp_apply, add_apply, inr_apply, map_zero, zero_add,
-      InnerProductSpace.toDualMap_apply_apply, innerSL_apply_apply, coe_snd', coe_fst']
-    exact (hS.isSymmetric z w).symm
-  rw [hinl, hinr, charFunDual_stdGaussian, charFunDual_stdGaussian,
-    charFunDual_stdGaussian, ← Complex.exp_add]
-  simp only [innerSL_apply_norm, LinearIsometry.norm_map]
-  congr 1
-  norm_cast
-  linarith [hSq z]
-
 /-- A contraction of a finite-dimensional standard Gaussian coefficient vector decreases
 the expected squared norm after applying any continuous linear map into a real normed space. -/
 theorem integral_norm_sq_comp_le_stdGaussian (U : E →L[ℝ] Y) (D : F →L[ℝ] E)
@@ -94,7 +55,7 @@ theorem integral_norm_sq_comp_le_stdGaussian (U : E →L[ℝ] Y) (D : F →L[ℝ
   let S : E →L[ℝ] E := CFC.sqrt (1 - D ∘L D.adjoint)
   let T : F × E →L[ℝ] E := D.comp (.fst ℝ F E) + S.comp (.snd ℝ F E)
   have hT : ((stdGaussian F).prod (stdGaussian E)).map T = stdGaussian E :=
-    map_add_defect_stdGaussian D hD
+    D.map_add_defect_stdGaussian hD
   have hi : Integrable (fun p : F × E ↦ ‖U (T p)‖ ^ 2)
       ((stdGaussian F).prod (stdGaussian E)) := by
     exact ((U.comp T).comp_memLp'
