@@ -16,8 +16,9 @@ public import Mathlib.MeasureTheory.Measure.OpenPos
 A top-degree form `φ` on a `k`-dimensional manifold `M` determines a measure `|φ|` on `M`
 (`TauCeti.RoughForm.measure`): on the source of each preferred chart it is coordinate Lebesgue
 measure weighted by the absolute value of the coefficient `φ(∂₁, …, ∂ₖ)` of `φ` in that chart.
-The coordinate measure is the Haar measure of the model space normalized by the same basis, so
-that the cube spanned by `∂₁, …, ∂ₖ` gets measure `|φ(∂₁, …, ∂ₖ)|`. This is the manifold version of
+The coordinate measure is the Haar measure of the model space normalized by the same basis, which
+gives the cube spanned by `∂₁, …, ∂ₖ` measure `1`, and `|φ|` of a subset of the chart source is the
+integral of `|φ(∂₁, …, ∂ₖ)|` over its coordinate image. This is the manifold version of
 Mathlib's `AlternatingMap.measure`, and it follows the same convention: the dimension is supplied
 by a `Fact (finrank ℝ E = k)` instance, and the basis is `Module.finBasisOfFinrankEq`.
 

@@ -22,9 +22,9 @@ manifold, uses no orientation and no Riemannian metric, and allows boundary and 
 
 The Liouville measure is locally finite, so it is a finite measure on a compact manifold. When `σ`
 is nondegenerate, the volume form vanishes nowhere and every nonempty open set has positive
-Liouville measure. A differentiable homeomorphism pulling one two-form back to another carries the
-Liouville measure of the first to that of the second; in particular symplectomorphisms preserve
-the Liouville measure. Since Hamiltonian flows preserve a symplectic form, this gives
+Liouville measure. If a differentiable homeomorphism `Φ` satisfies `Φ^* τ = σ`, then `Φ` carries
+the Liouville measure of `σ` to that of `τ`; in particular symplectomorphisms preserve the
+Liouville measure. Since Hamiltonian flows preserve a symplectic form, this gives
 **Liouville's theorem**: the time-`t` maps of a complete Hamiltonian flow preserve the Liouville
 measure
 (`TauCeti.SmoothTwoForm.IsSymplectic.measurePreserving_globalFlowDiffeomorph_liouvilleMeasure`).
@@ -138,11 +138,13 @@ Hamiltonian vector field, every time-`t` map of the Hamiltonian flow of `f` pres
 measure. -/
 theorem measurePreserving_globalFlowDiffeomorph_liouvilleMeasure (hσ : σ.IsSymplectic)
     (hf : ContMDiff I 𝓘(ℝ) ∞ f)
-    (hc : IsCompleteVectorField (σ.hamiltonianVectorField f))
-    (hv : ContMDiff I I.tangent (⊤ : ℕ∞)
-      (fun y ↦ (⟨y, σ.hamiltonianVectorField f y⟩ : TangentBundle I M))) (t : ℝ) :
-    MeasurePreserving (globalFlowDiffeomorph hc le_top hv t) (σ.liouvilleMeasure n)
-      (σ.liouvilleMeasure n) := by
+    (hc : IsCompleteVectorField (σ.hamiltonianVectorField f)) (t : ℝ) :
+    MeasurePreserving (globalFlowDiffeomorph hc le_top
+      (hσ.isNondegenerate.contMDiff_hamiltonianVectorField le_rfl (by simpa using hf)) t)
+      (σ.liouvilleMeasure n) (σ.liouvilleMeasure n) := by
+  have hv : ContMDiff I I.tangent (⊤ : ℕ∞)
+      (fun y ↦ (⟨y, σ.hamiltonianVectorField f y⟩ : TangentBundle I M)) :=
+    hσ.isNondegenerate.contMDiff_hamiltonianVectorField le_rfl (by simpa using hf)
   set ψ := globalFlowDiffeomorph hc le_top hv t
   refine ψ.toHomeomorph.measurePreserving_liouvilleMeasure (ψ.mdifferentiable (by simp)) ?_
   have h := congrArg Subtype.val (hσ.mpullback_globalFlowDiffeomorph hf hc hv t)
