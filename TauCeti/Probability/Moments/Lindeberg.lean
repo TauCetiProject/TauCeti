@@ -45,6 +45,54 @@ namespace TauCeti.Probability
 
 open MeasureTheory
 
+/-- A finite measure on `ℝ` with a finite absolute moment of order `n` has finite moments of every
+order `k ≤ n`. -/
+theorem integrable_pow_of_integrable_abs_pow {ρ : Measure ℝ} [IsFiniteMeasure ρ] {n k : ℕ}
+    (hk : k ≤ n) (h : Integrable (fun t : ℝ ↦ |t| ^ n) ρ) : Integrable (fun t : ℝ ↦ t ^ k) ρ := by
+  have hpow : Integrable (fun t : ℝ ↦ ‖t‖ ^ n) ρ := by simpa [Real.norm_eq_abs] using h
+  have hlow : Integrable (fun t : ℝ ↦ ‖t‖ ^ k) ρ :=
+    integrable_norm_pow_of_le aestronglyMeasurable_id hk hpow
+  refine (integrable_norm_iff (by fun_prop : AEStronglyMeasurable (fun t : ℝ ↦ t ^ k) ρ)).1 ?_
+  simpa only [norm_pow] using hlow
+
+/-- Each term of the degree-`r` Taylor polynomial at `0` is integrable against a finite measure
+with a finite absolute moment of order `r + 1`. -/
+theorem integrable_taylor_term {ρ : Measure ℝ} [IsFiniteMeasure ρ] (g : ℝ → ℝ) {r k : ℕ}
+    (hk : k ∈ range (r + 1)) (h : Integrable (fun t : ℝ ↦ |t| ^ (r + 1)) ρ) :
+    Integrable (fun t : ℝ ↦ ((k ! : ℝ)⁻¹ * (t - 0) ^ k) • iteratedDeriv k g 0) ρ := by
+  have hpoly := integrable_pow_of_integrable_abs_pow
+    ((Nat.le_of_lt_succ (Finset.mem_range.mp hk)).trans (Nat.le_succ r)) h
+  have hterm := (hpoly.const_mul (iteratedDeriv k g 0)).div_const (k !)
+  simpa [smul_eq_mul, sub_zero, div_eq_mul_inv, mul_comm, mul_left_comm, mul_assoc] using hterm
+
+/-- The degree-`r` Taylor polynomial at `0` is integrable against a finite measure with a finite
+absolute moment of order `r + 1`. -/
+theorem integrable_taylorWithinEval_univ_zero {ρ : Measure ℝ} [IsFiniteMeasure ρ] (g : ℝ → ℝ)
+    {r : ℕ} (h : Integrable (fun t : ℝ ↦ |t| ^ (r + 1)) ρ) :
+    Integrable (fun t ↦ taylorWithinEval g r Set.univ 0 t) ρ := by
+  simp only [taylor_within_apply, iteratedDerivWithin_univ]
+  exact integrable_finsetSum _ fun k hk ↦ integrable_taylor_term g hk h
+
+/-- Two finite measures on `ℝ` with the same moments up to order `r` and finite absolute moments of
+order `r + 1` integrate the degree-`r` Taylor polynomial at `0` of any function to the same
+value. -/
+theorem integral_taylorWithinEval_univ_zero_eq {μ ν : Measure ℝ} [IsFiniteMeasure μ]
+    [IsFiniteMeasure ν] (g : ℝ → ℝ) {r : ℕ} (hμ : Integrable (fun t : ℝ ↦ |t| ^ (r + 1)) μ)
+    (hν : Integrable (fun t : ℝ ↦ |t| ^ (r + 1)) ν)
+    (hmom : ∀ k ≤ r, ∫ t, t ^ k ∂μ = ∫ t, t ^ k ∂ν) :
+    ∫ t, taylorWithinEval g r Set.univ 0 t ∂μ = ∫ t, taylorWithinEval g r Set.univ 0 t ∂ν := by
+  simp only [taylor_within_apply, iteratedDerivWithin_univ]
+  rw [integral_finsetSum _ fun k hk ↦ integrable_taylor_term g hk hμ,
+    integral_finsetSum _ fun k hk ↦ integrable_taylor_term g hk hν]
+  refine Finset.sum_congr rfl fun k hk ↦ ?_
+  have hterm : (fun t : ℝ ↦ ((k ! : ℝ)⁻¹ * (t - 0) ^ k) • iteratedDeriv k g 0) =
+      fun t ↦ (k ! : ℝ)⁻¹ * iteratedDeriv k g 0 * t ^ k := by
+    funext t
+    simp only [smul_eq_mul, sub_zero]
+    ring
+  rw [hterm, integral_const_mul, integral_const_mul,
+    hmom k (by have := Finset.mem_range.mp hk; omega)]
+
 /-- Two finite measures on `ℝ` with the same moments up to order `r` and a finite absolute
 moment of order `r + 1` give expectations of a `C^(r+1)` function that differ by at most the
 `(r+1)`st derivative bound times the two absolute moments over `(r+1)!`. -/
@@ -64,47 +112,13 @@ theorem abs_integral_sub_integral_le {μ ν : Measure ℝ} [IsFiniteMeasure μ]
   have hRb : ∀ t, ‖g t - T t‖ ≤ M / (r + 1)! * |t| ^ (r + 1) := fun t ↦ by
     rw [Real.norm_eq_abs, div_mul_eq_mul_div]
     simpa [T, sub_zero] using abs_sub_taylorWithinEval_le hg hM 0 t
-  have hPterm : ∀ (ρ : Measure ℝ) [IsFiniteMeasure ρ],
-      Integrable (fun t : ℝ ↦ |t| ^ (r + 1)) ρ →
-      ∀ k ∈ range (r + 1),
-        Integrable
-          (fun t : ℝ ↦ ((k ! : ℝ)⁻¹ * (t - 0) ^ k) • iteratedDeriv k g 0) ρ := by
-    intro ρ _ h k hk
-    have hklt : k < r + 1 := Finset.mem_range.mp hk
-    have hkle : k ≤ r + 1 := (Nat.le_of_lt_succ hklt).trans (Nat.le_succ r)
-    have hpow : Integrable (fun t : ℝ ↦ ‖t‖ ^ (r + 1)) ρ := by
-      simpa [Real.norm_eq_abs] using h
-    have hlow : Integrable (fun t : ℝ ↦ ‖t‖ ^ k) ρ :=
-      integrable_norm_pow_of_le aestronglyMeasurable_id hkle hpow
-    have hpoly : Integrable (fun t : ℝ ↦ t ^ k) ρ := by
-      apply (integrable_norm_iff
-        (by fun_prop : AEStronglyMeasurable (fun t : ℝ ↦ t ^ k) ρ)).1
-      simpa only [norm_pow] using hlow
-    have hterm := (hpoly.const_mul (iteratedDeriv k g 0)).div_const (k !)
-    simpa [smul_eq_mul, sub_zero, div_eq_mul_inv, mul_comm, mul_left_comm, mul_assoc] using hterm
   have hPint : ∀ (ρ : Measure ℝ) [IsFiniteMeasure ρ],
-      Integrable (fun t : ℝ ↦ |t| ^ (r + 1)) ρ → Integrable T ρ := by
-    intro ρ _ h
-    dsimp [T]
-    simp only [taylor_within_apply, iteratedDerivWithin_univ]
-    exact integrable_finsetSum _ fun k hk ↦ hPterm ρ h k hk
+      Integrable (fun t : ℝ ↦ |t| ^ (r + 1)) ρ → Integrable T ρ := fun ρ _ h ↦
+    integrable_taylorWithinEval_univ_zero g h
   have hRint : ∀ (ρ : Measure ℝ), Integrable (fun t : ℝ ↦ |t| ^ (r + 1)) ρ →
       Integrable (fun t ↦ g t - T t) ρ := fun ρ h ↦
     Integrable.mono' (h.const_mul _) hRc.aestronglyMeasurable (Filter.Eventually.of_forall hRb)
-  have hPeq : ∫ t, T t ∂μ = ∫ t, T t ∂ν := by
-    dsimp only [T]
-    simp only [taylor_within_apply, iteratedDerivWithin_univ]
-    rw [integral_finsetSum _ fun k hk ↦ hPterm μ hμ k hk,
-      integral_finsetSum _ fun k hk ↦ hPterm ν hν k hk]
-    refine Finset.sum_congr rfl fun k hk ↦ ?_
-    have hterm :
-        (fun t : ℝ ↦ ((k ! : ℝ)⁻¹ * (t - 0) ^ k) • iteratedDeriv k g 0) =
-          fun t ↦ (k ! : ℝ)⁻¹ * iteratedDeriv k g 0 * t ^ k := by
-      funext t
-      simp only [smul_eq_mul, sub_zero]
-      ring
-    rw [hterm, integral_const_mul, integral_const_mul,
-      hmom k (by have := Finset.mem_range.mp hk; omega)]
+  have hPeq : ∫ t, T t ∂μ = ∫ t, T t ∂ν := integral_taylorWithinEval_univ_zero_eq g hμ hν hmom
   have hgμ : Integrable g μ :=
     ((hRint μ hμ).add (hPint μ hμ)).congr (Filter.Eventually.of_forall fun t ↦ by simp)
   have hgν : Integrable g ν :=
