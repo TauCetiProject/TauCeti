@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.Index
 public import Mathlib.Topology.Algebra.OpenSubgroup
+public import Mathlib.Topology.Compactness.SigmaCompact
 public import TauCeti.GroupTheory.QuotientGroup.Map
 public import TauCeti.Topology.Algebra.Group.OpenNormalSubgroup
 public import TauCeti.Topology.Discrete
@@ -18,8 +19,8 @@ public import TauCeti.Topology.Discrete
 
 Generic facts about quotients of groups equipped with a topology. The image of an open subgroup,
 its restricted quotient map, and the isomorphism for an open normal subgroup restricted to a
-subgroup need only `[SeparatelyContinuousMul G]`. The open normal subgroup correspondence
-holds for an arbitrary topology on `G`.
+subgroup need only `[SeparatelyContinuousMul G]`. The open normal subgroup correspondence and the
+σ-compactness of quotients of σ-compact groups hold for an arbitrary topology on `G`.
 Multiplication on a normal quotient needs `[ContinuousMul G]`. The third isomorphism theorem
 holds for arbitrary quotient topologies, without continuity assumptions on the group operations.
 The inverse-translation results additionally require `[DiscreteTopology (G ⧸ U)]`.
@@ -39,6 +40,8 @@ Neither compactness nor total disconnectedness is needed.
 
 * `QuotientGroup.instContinuousMul`: jointly continuous multiplication descends to a normal
   quotient without requiring continuous inversion, with an additive counterpart.
+* `QuotientGroup.instSigmaCompactSpace`: any quotient of a σ-compact group by a subgroup is
+  σ-compact, with an additive counterpart.
 * `Subgroup.continuous_smul_const`: translation of a fixed coset is continuous.
 * `Subgroup.continuous_inv_smul_const`: inverse translation of a fixed coset is
   continuous when the quotient is discrete.
@@ -72,6 +75,14 @@ instance instContinuousMul {G : Type*} [Group G] [TopologicalSpace G] [Continuou
   continuous_mul := by
     rw [← (isOpenQuotientMap_mk.prodMap isOpenQuotientMap_mk).continuous_comp_iff]
     exact continuous_mk.comp continuous_mul
+
+/-- Any quotient of a σ-compact group by a subgroup is σ-compact. -/
+@[to_additive /-- Any quotient of a σ-compact additive group by an additive subgroup is
+σ-compact. -/]
+instance instSigmaCompactSpace {G : Type*} [Group G] [TopologicalSpace G]
+    [SigmaCompactSpace G] (N : Subgroup G) : SigmaCompactSpace (G ⧸ N) := by
+  rw [← isSigmaCompact_univ_iff, ← (mk_surjective (s := N)).range_eq]
+  exact isSigmaCompact_range continuous_mk
 
 end QuotientGroup
 
