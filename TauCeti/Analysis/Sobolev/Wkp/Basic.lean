@@ -477,6 +477,20 @@ theorem norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ (k : ℕ
   exact WeakDerivStep.norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq
     (sobolevStage (mu := mu) (Omega := Omega) (p := p) k).iteratedGradientL u
 
+/-- The Sobolev norm is bounded by the sum of the preceding component norm and the highest
+weak-derivative norm, for every exponent and positive order. -/
+theorem norm_le_norm_lowerOrder_add_norm_iteratedGradient (k : ℕ)
+    (u : Wkp mu Omega p (k + 1)) :
+    ‖u‖ ≤ ‖lowerOrder k u‖ + ‖iteratedGradient k u‖ := by
+  cases k with
+  | zero =>
+      rw [lowerOrder_zero, iteratedGradient_zero]
+      exact W1p.norm_le_norm_value_add_norm_gradient u
+  | succ k =>
+      have h := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k u
+      nlinarith [norm_nonneg u, norm_nonneg (lowerOrder (k + 1) u),
+        norm_nonneg (iteratedGradient (k + 1) u)]
+
 /-- At exponent two, the squared graph norm at every positive order is the sum of the squared
 norm of the lower-order component and the squared norm of the highest weak derivative.  The
 exponent matters only at order one, where the norm is that of `TauCeti.W1p`; from order two on the
