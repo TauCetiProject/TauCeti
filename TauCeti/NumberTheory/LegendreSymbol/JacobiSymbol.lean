@@ -28,8 +28,8 @@ part.
 
 ## Main statements
 
-* `TauCeti.jacobiSym_eq_sign_mul_of_dvd_add`: `J(a | b') = sign a * J(a | b)` when `b`, `b'` are
-  odd and `4 |a| ∣ b + b'`.
+* `TauCeti.jacobiSym_eq_sign_mul_of_dvd_add`: `J(a | b') = sign a * J(a | b)` when `b` is odd and
+  `4 |a| ∣ b + b'`.
 * `TauCeti.jacobiSym_eq_sign_mul_of_emod_four_eq_zero`,
   `TauCeti.jacobiSym_mod_natAbs_of_emod_four_eq_zero`: for `a ≡ 0 (mod 4)` the modulus `4 |a|` in
   both statements can be lowered to `|a|`.
@@ -82,12 +82,16 @@ private theorem jacobiSym_natCast_eq_of_dvd_add (a : ℕ) {b b' : ℕ} (hb : Odd
     exact hdvd.neg_right
   rw [h₈, hqr, hJ, mul_mul_mul_comm (χ₄ a' : ℤ), χ₄_natCast_mul_self ha₁, one_mul]
 
-/-- **Reflection of the denominator of the Jacobi symbol.** If `b` and `b'` are odd and `4 |a|`
+/-- **Reflection of the denominator of the Jacobi symbol.** If `b` is odd and `4 |a|`
 divides `b + b'`, so that `b' ≡ -b (mod 4 |a|)`, then `J(a | b') = sign a * J(a | b)`. Together
 with `jacobiSym.mod_right`, this says that `J(a | ·)` is an odd or even function on the odd
 residues modulo `4 |a|` according to the sign of `a`. -/
-theorem jacobiSym_eq_sign_mul_of_dvd_add (a : ℤ) {b b' : ℕ} (hb : Odd b) (hb' : Odd b')
+theorem jacobiSym_eq_sign_mul_of_dvd_add (a : ℤ) {b b' : ℕ} (hb : Odd b)
     (h : 4 * a.natAbs ∣ b + b') : jacobiSym a b' = a.sign * jacobiSym a b := by
+  have hb' : Odd b' := by
+    have h4 : 4 ∣ b + b' := dvd_trans (dvd_mul_right 4 _) h
+    rw [Nat.odd_iff] at hb ⊢
+    omega
   rcases lt_trichotomy a 0 with ha | rfl | ha
   · obtain ⟨n, rfl⟩ : ∃ n : ℕ, a = -n := ⟨a.natAbs, by omega⟩
     rw [Int.natAbs_neg, Int.natAbs_natCast] at h
@@ -139,7 +143,7 @@ theorem jacobiSym_eq_sign_mul_of_emod_four_eq_zero {a : ℤ} (ha : a % 4 = 0) {b
   rw [← jacobiSym.div_four_left ha (Nat.odd_iff.mp hb),
     ← jacobiSym.div_four_left ha (Nat.odd_iff.mp hb'), Int.mul_ediv_cancel_left _ four_ne_zero,
     Int.sign_mul, Int.sign_eq_one_of_pos four_pos, one_mul]
-  exact jacobiSym_eq_sign_mul_of_dvd_add c hb hb' (by rwa [Int.natAbs_mul] at h)
+  exact jacobiSym_eq_sign_mul_of_dvd_add c hb (by rwa [Int.natAbs_mul] at h)
 
 /-- A square factor prime to the denominator does not change the Jacobi symbol:
 `J(x² y | b) = J(y | b)` when `x` is prime to `b`. -/
