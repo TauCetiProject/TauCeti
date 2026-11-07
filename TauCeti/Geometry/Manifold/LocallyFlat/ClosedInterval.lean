@@ -42,7 +42,7 @@ namespace TauCeti
 variable {N M : Type*}
 
 /-- Reparametrize the open part of a closed-interval collar by `ℝ`. The depth is
-`(1 + |t|²)⁻¹ᐟ² t`, so zero and the two signs of the depth are preserved. -/
+`t / sqrt (1 + |t|²)`, so zero and the two signs of the depth are preserved. -/
 def bicollarOfClosedInterval (β : N × Icc (-1 : ℝ) 1 → M) : N × ℝ → M :=
   fun p ↦ β (p.1, ⟨Homeomorph.unitBall p.2, by
     exact Ioo_subset_Icc_self (by
