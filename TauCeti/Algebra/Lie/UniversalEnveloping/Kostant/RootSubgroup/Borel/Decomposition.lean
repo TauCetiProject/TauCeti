@@ -121,7 +121,8 @@ theorem kostantTorusSubsystemQuotientEquiv_symm_apply
     e h ρ M hM hnil b wt hwt α S hα (CommAlgCat.of ℤ A)
   rw [kostantTorusSubsystemQuotientEquiv, MulEquiv.symm_trans_apply,
     Subgroup.IsComplement'.QuotientMulEquiv_symm_apply]
-  -- The inverse complement map takes the quotient class of the included torus element.
+  -- The complement formula applies the torus subgroup's `Subgroup.subtype` homomorphism.
+  -- Unfold its coercion to a function to expose `.val` for quotient and subtype congruence.
   change QuotientGroup.mk ((Subgroup.subgroupOfEquivOfLe
     (range_kostantTorusPoints_le_kostantTorusSubsystemSubgroup
       e h ρ M hM hnil b wt S _)).symm t).val = _
@@ -164,9 +165,8 @@ theorem kostantTorusSubsystemQuotientEquiv_mk_mul
   let t' : kostantTorusSubsystemSubgroup e h ρ M hM hnil b wt S (CommAlgCat.of ℤ A) :=
     ⟨t.val, range_kostantTorusPoints_le_kostantTorusSubsystemSubgroup
       e h ρ M hM hnil b wt S _ t.property⟩
-  change kostantTorusSubsystemQuotientEquiv e h ρ M hM hnil b wt hwt α S hα hpos A
-    (QuotientGroup.mk (u' * t')) = t
-  rw [QuotientGroup.mk_mul, (QuotientGroup.eq_one_iff u').mpr hu, one_mul]
+  rw [← MulMemClass.mk_mul_mk _ _ _ u'.property t'.property, QuotientGroup.mk_mul,
+    (QuotientGroup.eq_one_iff u').mpr hu, one_mul]
   exact kostantTorusSubsystemQuotientEquiv_apply_mk e h ρ M hM hnil b wt hwt α S hα hpos A t
 
 end TauCeti.UniversalEnvelopingAlgebra
