@@ -29,6 +29,7 @@ of scalars is measurable even at zero.
 * `TauCeti.matrixVecMeasurableEquiv` — vectorization as a measurable equivalence.
 * `TauCeti.measurable_matrix_mul` — matrix multiplication is measurable, and the
   `MeasurableMul₂` instance it supplies for square matrices.
+* `TauCeti.measurable_matrix_mul_conjTranspose` — the Gram matrix `X * Xᴴ` is measurable.
 * `TauCeti.measurable_matrix_blockSucc` — the upper-left block extension `Matrix.blockSucc` is
   measurable.
 * `TauCeti.measurable_matrix_inv` — matrix inversion is measurable, and the `MeasurableInv`
@@ -83,6 +84,16 @@ theorem measurable_matrix_mul {l m n R : Type*} [Fintype m] [MeasurableSpace R]
   simp only [Matrix.mul_apply]
   exact Finset.measurable_sum _ fun k _ =>
     measurable_fst.eval_matrix.mul measurable_snd.eval_matrix
+
+/-- The Gram matrix `X * Xᴴ` is measurable in `X`. -/
+@[fun_prop]
+theorem measurable_matrix_mul_conjTranspose {𝕜 : Type*} [RCLike 𝕜] [MeasurableSpace 𝕜]
+    [BorelSpace 𝕜] [MeasurableMul₂ 𝕜] [MeasurableAdd₂ 𝕜] {m n : Type*} [Fintype n] :
+    Measurable fun X : Matrix m n 𝕜 ↦ X * X.conjTranspose := by
+  refine Measurable.of_eval_matrix _ fun i j ↦ ?_
+  simp only [Matrix.mul_apply, Matrix.conjTranspose_apply]
+  exact Finset.measurable_sum _ fun k _ ↦
+    measurable_id.eval_matrix.mul (continuous_star.measurable.comp measurable_id.eval_matrix)
 
 /-- Square matrices inherit `MeasurableMul₂` from the measurability of matrix multiplication, which
 makes the generic `Measurable.mul` dot notation available for matrix-valued maps. -/

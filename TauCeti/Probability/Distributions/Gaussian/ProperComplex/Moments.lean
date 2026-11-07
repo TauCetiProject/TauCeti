@@ -184,4 +184,23 @@ theorem integral_norm_sq_sub_eval_properComplexGaussianMeasure (m : ι → ℂ)
     (integral_re (integrable_mul_conj_sub_properComplexGaussianMeasure m C i i)).trans
       (congrArg RCLike.re (integral_mul_conj_sub_properComplexGaussianMeasure m hC i i))
 
+/-- The squared modulus of a standard scalar proper complex Gaussian is integrable. -/
+theorem integrable_norm_sq_properComplexGaussianScalar :
+    Integrable (fun z : ℂ ↦ ‖z‖ ^ 2) properComplexGaussianScalar := by
+  rw [properComplexGaussianScalar_def]
+  have hcont : Continuous (fun z : ℂ ↦ ‖z‖ ^ 2) := by fun_prop
+  apply (integrable_map_measure (f := fun z : Unit → ℂ ↦ z ())
+    (g := fun z : ℂ ↦ ‖z‖ ^ 2) hcont.aestronglyMeasurable
+    (measurable_pi_apply ()).aemeasurable).2
+  simpa [Function.comp_def] using integrable_norm_sq_sub_eval_properComplexGaussianMeasure
+    (fun _ : Unit ↦ (0 : ℂ)) 1 ()
+
+/-- The expected squared modulus of a standard scalar proper complex Gaussian is `1`. -/
+theorem integral_norm_sq_properComplexGaussianScalar :
+    ∫ z : ℂ, ‖z‖ ^ 2 ∂properComplexGaussianScalar = 1 := by
+  rw [properComplexGaussianScalar_def,
+    integral_map (measurable_pi_apply ()).aemeasurable (by fun_prop)]
+  simpa using integral_norm_sq_sub_eval_properComplexGaussianMeasure
+    (fun _ : Unit ↦ (0 : ℂ)) Matrix.PosSemidef.one ()
+
 end TauCeti.Probability
