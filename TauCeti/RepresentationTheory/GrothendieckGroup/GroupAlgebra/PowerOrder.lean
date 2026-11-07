@@ -63,8 +63,8 @@ theorem nonempty_linearEquiv_trivial_of_forall_pow_eq_one
     ext x
     exact hn x
   have : FiniteDimensional k M := ρ.asModuleEquiv.finiteDimensional
-  have htriv := hρ.eq_trivial_of_forall_pow_expChar_pow_eq_one p hpow
-  have hdim := hρ.finrank_eq_one_of_forall_pow_expChar_pow_eq_one p hpow
+  have htriv := hρ.eq_trivial_of_forall_pow_expChar_pow_eq_one hpow
+  have hdim := hρ.finrank_eq_one_of_forall_pow_expChar_pow_eq_one hpow
   let e := LinearEquiv.ofFinrankEq M k (hdim.trans (Module.finrank_self k).symm)
   have he : ρ.Equiv (Representation.trivial k G k) := Representation.Equiv.mk e (by
     intro g
