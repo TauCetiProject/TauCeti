@@ -17,8 +17,8 @@ of its discriminant group in these coordinates:
 
 ```text
 Aₙ^∨ = {y | ∑ yⱼ = 0, yᵢ - yⱼ ∈ ℤ for all i, j},
-y + Aₙ = k ω₁ + Aₙ   ⟺   yⱼ ∈ ℤ - k / (n + 1) for all j,
-y + Aₙ ∈ ⟨e ω₁⟩      ⟺   d yⱼ ∈ ℤ for all j          (e d = n + 1).
+y + Aₙ = k ω₁ + Aₙ   ↔   yⱼ ∈ ℤ - k / (n + 1) for all j,
+y + Aₙ ∈ ⟨e ω₁⟩      ↔   d yⱼ ∈ ℤ for all j          (e d = n + 1).
 ```
 
 Together with the description of an isotropic gluing as the inverse image of a subgroup of
