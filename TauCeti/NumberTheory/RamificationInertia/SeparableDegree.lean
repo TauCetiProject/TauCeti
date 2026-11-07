@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.PurelyInseparable.Basic
 public import Mathlib.NumberTheory.RamificationInertia.Galois
 import Mathlib.RingTheory.Finiteness.Quotient
+import TauCeti.NumberTheory.RamificationInertia.Galois
 
 /-!
 # Separable and inseparable residue degrees in Hilbert theory
@@ -28,10 +29,6 @@ specialize to the familiar identities `|I| = e` and `|D| = e * f`.
   equal to the separable residue degree.
 * `Ideal.card_stabilizer_eq_card_inertia_mul_finSepDegree`: the decomposition group has order
   `|I| * fₛ`.
-* `Ideal.card_stabilizer_eq_ramificationIdxIn_mul_inertiaDegIn`: the decomposition group of any
-  prime has order `e * f` without a residue-separability hypothesis.
-* `Ideal.card_stabilizer_eq_ramificationIdx_mul_inertiaDeg`: the same formula in terms of the
-  ramification index and inertia degree of the upstairs ideal.
 * `Ideal.card_inertia_eq_ramificationIdxIn_mul_finInsepDegree`: the inertia group has order
   `e * fᵢ`.
 * `Ideal.card_inertia_eq_ramificationIdx_mul_finInsepDegree`: the same formula in terms of the
@@ -97,25 +94,6 @@ theorem card_stabilizer_eq_card_inertia_mul_finSepDegree (p : Ideal R) [p.IsMaxi
     AddSubgroup.subgroupOf_inertia]
 
 variable [IsDomain R] [IsDomain S] [Module.Finite R S] [Module.Flat R S]
-
-/-- The order of the decomposition group is `e * f`, without a separability hypothesis on the
-residue extension and for an arbitrary prime `P`. -/
-theorem card_stabilizer_eq_ramificationIdxIn_mul_inertiaDegIn (p : Ideal R) [p.IsPrime]
-    (P : Ideal S) [P.LiesOver p] [P.IsPrime] :
-    Nat.card (stabilizer G P) = p.ramificationIdxIn S * p.inertiaDegIn S := by
-  have horbit : (p.primesOver S).ncard * Nat.card (stabilizer G P) = Nat.card G := by
-    rw [← IsInvariant.orbit_eq_primesOver R S G p P, ← index_stabilizer,
-      Subgroup.index_mul_card]
-  exact mul_left_cancel₀ (left_ne_zero_of_mul (horbit.trans_ne Nat.card_pos.ne'))
-    (horbit.trans (ncard_primesOver_mul_ramificationIdxIn_mul_inertiaDegIn p S G).symm)
-
-/-- The order of the decomposition group is the product of the ramification index and inertia
-degree of the upstairs ideal. -/
-theorem card_stabilizer_eq_ramificationIdx_mul_inertiaDeg (P : Ideal S) [P.IsPrime] :
-    Nat.card (stabilizer G P) = P.ramificationIdx R * P.inertiaDeg R := by
-  rw [← ramificationIdxIn_eq_ramificationIdx (P.under R) P G,
-    ← inertiaDegIn_eq_inertiaDeg (P.under R) P G]
-  exact card_stabilizer_eq_ramificationIdxIn_mul_inertiaDegIn (G := G) (P.under R) P
 
 /-- Over an imperfect residue field, the inertia group has order `e * fᵢ`, where `fᵢ` is the
 inseparable residue degree. -/
