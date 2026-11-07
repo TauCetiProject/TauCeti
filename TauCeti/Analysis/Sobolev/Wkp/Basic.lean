@@ -263,23 +263,29 @@ theorem value_finsetSum_ae {κ : Type*} (k : ℕ) (s : Finset κ) (u : κ → Wk
   filter_upwards [Lp.coeFn_fun_finsetSum s fun j => value k (u j)] with x hx
   rw [h, hx]
 
-/-- Almost everywhere, the value of `Fe + ∑ᵢⱼ (M₁ᵢⱼ + M₂ᵢⱼ)` is the value of `Fe` plus the sum
-of the values of the `M₁ᵢⱼ` and `M₂ᵢⱼ`, which are given almost everywhere by `c₁` and `c₂`. -/
-theorem ae_value_add_sum_eq {κ : Type*} [Fintype κ] {k : ℕ} (Fe : Wkp mu Omega p k)
-    (M₁ M₂ : κ → κ → Wkp mu Omega p k) {c₁ c₂ : κ → κ → E → ℝ}
-    (h₁ : ∀ᵐ x ∂mu.restrict Omega, ∀ i j, Wkp.value k (M₁ i j) x = c₁ i j x)
-    (h₂ : ∀ᵐ x ∂mu.restrict Omega, ∀ i j, Wkp.value k (M₂ i j) x = c₂ i j x) :
-    ∀ᵐ x ∂mu.restrict Omega, Wkp.value k (Fe + ∑ i, ∑ j, (M₁ i j + M₂ i j)) x =
-      Wkp.value k Fe x + ∑ i, ∑ j, (c₁ i j x + c₂ i j x) := by
+/-- Almost everywhere, the value of `Fe + ∑ᵢⱼ (M₁ᵢⱼ + M₂ᵢⱼ)`, summed over finite sets `s` and `t`,
+is the value of `Fe` plus the sum of the values of the `M₁ᵢⱼ` and `M₂ᵢⱼ`, which are given almost
+everywhere by `c₁` and `c₂`. -/
+theorem ae_value_add_sum_eq {ι κ : Type*} {k : ℕ} (Fe : Wkp mu Omega p k) (s : Finset ι)
+    (t : Finset κ) (M₁ M₂ : ι → κ → Wkp mu Omega p k) {c₁ c₂ : ι → κ → E → ℝ}
+    (h₁ : ∀ᵐ x ∂mu.restrict Omega, ∀ i ∈ s, ∀ j ∈ t, Wkp.value k (M₁ i j) x = c₁ i j x)
+    (h₂ : ∀ᵐ x ∂mu.restrict Omega, ∀ i ∈ s, ∀ j ∈ t, Wkp.value k (M₂ i j) x = c₂ i j x) :
+    ∀ᵐ x ∂mu.restrict Omega,
+      Wkp.value k (Fe + ∑ i ∈ s, ∑ j ∈ t, (M₁ i j + M₂ i j)) x =
+        Wkp.value k Fe x + ∑ i ∈ s, ∑ j ∈ t, (c₁ i j x + c₂ i j x) := by
   rw [Wkp.value_add]
   filter_upwards [Lp.coeFn_add (Wkp.value k Fe) _,
-    Wkp.value_finsetSum_ae k Finset.univ fun i => ∑ j, (M₁ i j + M₂ i j),
-    Filter.eventually_all.2 fun i => Wkp.value_finsetSum_ae k Finset.univ fun j => M₁ i j + M₂ i j,
-    Filter.eventually_all.2 fun i => Filter.eventually_all.2 fun j =>
+    Wkp.value_finsetSum_ae k s fun i => ∑ j ∈ t, (M₁ i j + M₂ i j),
+    (Filter.eventually_all_finset s).2 fun i _ =>
+      Wkp.value_finsetSum_ae k t fun j => M₁ i j + M₂ i j,
+    (Filter.eventually_all_finset s).2 fun i _ => (Filter.eventually_all_finset t).2 fun j _ =>
       Lp.coeFn_add (Wkp.value k (M₁ i j)) (Wkp.value k (M₂ i j)), h₁, h₂]
     with x h₃ h₄ h₅ h₆ h₇ h₈
   rw [h₃, Pi.add_apply, h₄]
-  simp only [h₅, Wkp.value_add, h₆, Pi.add_apply, h₇, h₈]
+  refine congrArg _ (Finset.sum_congr rfl fun i hi => ?_)
+  rw [h₅ i hi]
+  refine Finset.sum_congr rfl fun j hj => ?_
+  rw [Wkp.value_add, h₆ i hi j hj, Pi.add_apply, h₇ i hi j hj, h₈ i hi j hj]
 
 /-- At order zero, the value component of a Sobolev function is the function itself. -/
 @[simp]
