@@ -27,8 +27,8 @@ which is what makes their smoothness and their endpoint values immediate.
 * `JoinedIn.exists_contDiff_mapsTo` — two points joined by a path in an open set are joined by a
   smooth curve that stays in the set.
 
-This is the regularization step that lets the merely continuous intermediate paths of a path
-homotopy be compared with the piecewise-`C¹` winding number.
+These results regularize merely continuous paths, for instance the intermediate paths of a path
+homotopy, so that arguments needing differentiable curves apply to them.
 
 ## Provenance
 

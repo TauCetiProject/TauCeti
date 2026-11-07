@@ -11,7 +11,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.Topology.Connected.LocallyPathConnected
 import Mathlib.Topology.MetricSpace.Thickening
-import TauCeti.Analysis.Contour.Curve.Approximation
+import TauCeti.Analysis.Calculus.ContDiff.Approximation
 import TauCeti.Analysis.Contour.Winding.LocallyConstant
 
 /-!

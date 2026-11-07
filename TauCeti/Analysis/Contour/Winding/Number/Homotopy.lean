@@ -10,8 +10,8 @@ public import TauCeti.Analysis.Contour.Winding.Number.Basic
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Path
 public import Mathlib.MeasureTheory.Integral.CurveIntegral.Basic
 public import Mathlib.Topology.Homotopy.Path
+import TauCeti.Analysis.Calculus.ContDiff.Approximation
 import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
-import TauCeti.Analysis.Contour.Curve.Approximation
 import TauCeti.Analysis.Contour.NullHomologous
 import TauCeti.Analysis.Contour.Winding.Proximity
 import Mathlib.Analysis.SpecialFunctions.Bernstein
