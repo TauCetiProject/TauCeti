@@ -5,34 +5,30 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.ContDiff.Operations
-public import Mathlib.Topology.ContinuousMap.Algebra
+public import Mathlib.Topology.Algebra.ConstMulAction
+public import Mathlib.Topology.Instances.Real.Lemmas
+import Mathlib.Topology.Algebra.Group.ContinuousDiv
 
 /-!
-# Twisted periodic functions
+# Twisted extension of a function from one period
 
-For real numbers `d` and `c`, a function `x : ℝ → V` is *`c`-twisted periodic* with period `d`
-when `x (t + d) = c • x t`. For `c = 1` these are the periodic functions, and for `c = -1` the
-antiperiodic ones. For `c ≠ 0` they are the `V`-valued sections of the flat real line bundle over
-the circle `ℝ / dℤ` with holonomy `c`.
+For `d > 0` and `c ≠ 0`, a function continuous on `[0, d]` with `f d = c • f 0` extends to a
+continuous function `g` on `ℝ` twisted by `c` along `d`, that is, with `g (t + d) = c • g t`:
+on `[k d, k d + d]` the extension is `t ↦ c ^ k • f (t - k d)`. For `c = 1` this is the periodic
+extension, for `c = -1` the antiperiodic one.
 
-## Main declarations
+## Main results
 
-* `TauCeti.exists_continuous_add_eq_smul_eqOn`: for `d > 0` and `c ≠ 0`, a function continuous
-  on `[0, d]` with `f d = c • f 0` extends to a continuous `c`-twisted periodic function on `ℝ`.
-* `TauCeti.twistedPeriodicContinuous`: the submodule of continuous `c`-twisted periodic functions.
-* `TauCeti.twistedPeriodicContDiff`: the submodule of `C¹` `c`-twisted periodic functions.
+* `TauCeti.exists_continuous_add_eq_smul_eqOn`: the twisted extension.
 -/
 
 public section
-
-noncomputable section
 
 open Set
 
 namespace TauCeti
 
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+variable {V : Type*} [TopologicalSpace V] [MulAction ℝ V] [ContinuousConstSMul ℝ V]
 
 /-- A function continuous on `[0, d]` with `f d = c • f 0`, where `d > 0` and `c ≠ 0`, agrees on
 `[0, d]` with a continuous function `g` on `ℝ` satisfying `g (t + d) = c • g t`. -/
@@ -78,31 +74,5 @@ theorem exists_continuous_add_eq_smul_eqOn {d c : ℝ} (hd : 0 < d) (hc : c ≠ 
     congr 3
     ring
   · simpa using hpiece 0 (by simpa using ht)
-
-variable (V) in
-/-- The continuous functions `g : ℝ → V` with `g (t + d) = c • g t`. -/
-def twistedPeriodicContinuous (d c : ℝ) : Submodule ℝ C(ℝ, V) where
-  carrier := {g | ∀ t, g (t + d) = c • g t}
-  add_mem' {f g} hf hg t := by simp [hf t, hg t, smul_add]
-  zero_mem' t := by simp
-  smul_mem' a g hg t := by simp [hg t, smul_comm a c]
-
-@[simp]
-theorem mem_twistedPeriodicContinuous {d c : ℝ} {g : C(ℝ, V)} :
-    g ∈ twistedPeriodicContinuous V d c ↔ ∀ t, g (t + d) = c • g t :=
-  Iff.rfl
-
-variable (V) in
-/-- The continuously differentiable functions `x : ℝ → V` with `x (t + d) = c • x t`. -/
-def twistedPeriodicContDiff (d c : ℝ) : Submodule ℝ (ℝ → V) where
-  carrier := {x | ContDiff ℝ 1 x ∧ ∀ t, x (t + d) = c • x t}
-  add_mem' {x y} hx hy := ⟨hx.1.add hy.1, fun t => by simp [hx.2 t, hy.2 t, smul_add]⟩
-  zero_mem' := ⟨contDiff_const, fun t => by simp⟩
-  smul_mem' a x hx := ⟨hx.1.const_smul a, fun t => by simp [hx.2 t, smul_comm a c]⟩
-
-@[simp]
-theorem mem_twistedPeriodicContDiff {d c : ℝ} {x : ℝ → V} :
-    x ∈ twistedPeriodicContDiff V d c ↔ ContDiff ℝ 1 x ∧ ∀ t, x (t + d) = c • x t :=
-  Iff.rfl
 
 end TauCeti

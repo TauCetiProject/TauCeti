@@ -37,8 +37,8 @@ protected so that opening `Function.Periodic` does not shadow `deriv` and `logDe
   periodic.
 * `Function.Periodic.logDeriv`: the logarithmic derivative of a periodic
   function is periodic.
-* `TauCeti.fderiv_add_eq_smul`, `TauCeti.deriv_add_eq_smul`: a scalar twist
-  `f (x + c) = a • f x` under translation passes to the Fréchet derivative and to the derivative.
+* `TauCeti.fderiv_add_eq_smul`: a scalar twist `f (x + c) = a • f x` under translation passes to
+  the Fréchet derivative.
 -/
 
 public section
@@ -92,13 +92,6 @@ theorem fderiv_add_eq_smul {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [No
     simp [hf]
   · let _ := invertibleOfNonzero ha
     rw [← fderiv_comp_add_right, hfun, fderiv_const_smul_of_invertible]
-
-/-- A scalar twist under translation, `f (x + c) = a • f x`, passes to the derivative. For
-`a = 1` this is `Function.Periodic.deriv`. -/
-theorem deriv_add_eq_smul {𝕜 F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup F]
-    [NormedSpace 𝕜 F] {f : 𝕜 → F} {c a : 𝕜} (h : ∀ x, f (x + c) = a • f x) (x : 𝕜) :
-    deriv f (x + c) = a • deriv f x := by
-  rw [← deriv_comp_add_const, funext h, deriv_fun_const_smul_field]
 
 end TauCeti
 
