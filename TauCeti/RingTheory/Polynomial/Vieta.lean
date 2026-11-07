@@ -128,7 +128,7 @@ theorem prod_map_sub_erase_eq_sum_esymm (hs : card s = m) (hv : v ∈ s) :
     Polynomial.eval_pow, Polynomial.eval_neg, Polynomial.eval_one, Polynomial.eval_C,
     Polynomial.eval_X, Polynomial.eval_zero]
   rw [Finset.sum_range_succ', sum_Icc_one_eq_sum_range]
-  simp only [esymm, powersetCard_zero_left, map_singleton, prod_zero, sum_singleton]
+  rw [esymm_zero]
   rw [add_comm]
   congr 1
   · simp
@@ -172,7 +172,7 @@ theorem sum_mul_esymm_eq_mul_prod_map_sub_erase (hs : card s = m) (hv : v ∈ s)
     · have hjm : j = m := le_antisymm hj.2 hjm
       subst hjm
       rw [Nat.sub_self, hsign]
-      simp
+      simp only [Nat.cast_zero, zero_mul, mul_zero, pow_zero]
       ring
   rw [Finset.sum_congr rfl hterm, Finset.sum_sub_distrib, ← Finset.mul_sum, ← Finset.sum_mul]
   have hm : (m : R) * v ^ (m - 1) * v = m * v ^ m := by

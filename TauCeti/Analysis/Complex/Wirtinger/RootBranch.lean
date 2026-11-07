@@ -41,13 +41,13 @@ union of graphs of solutions of `D_C`, that is, of pseudoholomorphic sections of
     ∑_{j=1}^{m} (-1)^(j-1) v(x)^(m-j) r_j`.
 
   The factor on the left is `P_x'(v(x))`, which is nonzero exactly when `v(x)` is a simple root.
-* `TauCeti.conjWirtingerDeriv_add_add_eq_zero_of_root`: consequently a root branch through a simple
-  root solves `D_C` at every point where the remainders vanish.
+* `TauCeti.conjWirtingerDeriv_add_add_eq_zero_of_root`: consequently, at a point `x` where `v(x)` is
+  a simple root of `P_x` and the remainders `r_j(x)` vanish, `D_C v(x) = 0`.
 * `TauCeti.exists_contDiffAt_root_branch`: if the `b_j` are `Cⁿ` at `x`, `n ≠ 0`, then near a simple
   root `v₀` of `P_x` the zero set `{(y, w) : P_y(w) = 0}` is the graph of a `Cⁿ` function `v` with
   `v(x) = v₀` (implicit function theorem).
-* `TauCeti.exists_root_branch_conjWirtingerDeriv_add_add_eq_zero`: if the `b_j` are `C¹` and the
-  equation holds with zero remainder near `x`, this branch solves `D_C v = 0` near `x`.
+* `TauCeti.exists_root_branch_conjWirtingerDeriv_add_add_eq_zero`: if the `b_j` are `Cⁿ`, `n ≠ 0`,
+  and the equation holds with zero remainder near `x`, this branch solves `D_C v = 0` near `x`.
 
 The collisions of roots, where `P'` vanishes and the branches must be normalized, are not treated
 here.
@@ -70,6 +70,17 @@ private theorem pow_add_sum_eq_prod {S : Multiset ℂ} {m : ℕ} (hS : Multiset.
     (hc : ∀ j ∈ Icc 1 m, c j = S.esymm j) (w : ℂ) :
     w ^ m + ∑ j ∈ Icc 1 m, (-1) ^ j * c j * w ^ (m - j) = (S.map fun u ↦ w - u).prod := by
   rw [Multiset.prod_map_sub_eq_pow_add_sum_esymm hS]
+  exact congrArg _ (sum_congr rfl fun j hj ↦ by rw [hc j hj])
+
+/-- If `c_j = e_j(S)` for `1 ≤ j ≤ m` and `v ∈ S`, the derivative
+`m v^(m-1) + ∑_{j=1}^{m} (-1)ʲ (m - j) c_j v^(m-j-1)` of `Wᵐ + ∑_{j=1}^{m} (-1)ʲ c_j W^(m-j)` at
+`W = v` is `∏_{w ∈ S ∖ v} (v - w)`. -/
+private theorem mul_pow_add_sum_eq_prod_erase {S : Multiset ℂ} {m : ℕ}
+    (hS : Multiset.card S = m) {c : ℕ → ℂ} (hc : ∀ j ∈ Icc 1 m, c j = S.esymm j) {v : ℂ}
+    (hv : v ∈ S) :
+    m * v ^ (m - 1) + ∑ j ∈ Icc 1 m, (-1) ^ j * c j * ((m - j : ℕ) * v ^ (m - j - 1)) =
+      ((S.erase v).map fun w ↦ v - w).prod := by
+  rw [Multiset.prod_map_sub_erase_eq_sum_esymm hS hv]
   exact congrArg _ (sum_congr rfl fun j hj ↦ by rw [hc j hj])
 
 /-- A root of `Wᵐ + ∑_{j=1}^{m} (-1)ʲ c_j W^(m-j)`, with `c_j = e_j(S)`, lies in `S`. -/
@@ -139,9 +150,8 @@ theorem prod_map_sub_smul_conjWirtingerDeriv_add_add_eq_sum {m : ℕ} {b : ℕ �
   -- The coefficient of `\bar∂ v` is `P_x'(v(x)) = ∏_{w ∈ R ∖ v(x)} (v(x) - w)`.
   have hP' : (m * v x ^ (m - 1) +
       ∑ j ∈ Icc 1 m, (-1) ^ j * b j x * ((m - j : ℕ) * v x ^ (m - j - 1))) =
-        ((R.erase (v x)).map fun w ↦ v x - w).prod := by
-    rw [Multiset.prod_map_sub_erase_eq_sum_esymm hR hvR]
-    exact congrArg _ (sum_congr rfl fun j hj ↦ by rw [hbR j hj])
+        ((R.erase (v x)).map fun w ↦ v x - w).prod :=
+    mul_pow_add_sum_eq_prod_erase hR hbR hvR
   -- The coefficients of `ν` and `μ` are `v(x) P_x'(v(x))` and `\bar v(x) P_x'(v(x))`.
   have hν : ∑ j ∈ Icc 1 m, (-1) ^ (j - 1) * v x ^ (m - j) * (j * b j x) =
       v x * ((R.erase (v x)).map fun w ↦ v x - w).prod := by
@@ -222,28 +232,29 @@ theorem exists_contDiffAt_root_branch [CompleteSpace V] {n : WithTop ℕ∞} (hn
     hFc.contDiffAt_implicitFunction hn hinv, ?_⟩
   simpa only [hF0] using hFc.eventually_apply_eq_iff_implicitFunction hn hinv
 
-/-- **Simple root branches solve `D_C`.** Let `V` be complete, let `b₁, …, b_m : V → ℂ` be `C¹` at
-`x`, and for `y` near `x` let `R(y)` be the multiset of the `m` roots of
+/-- **Simple root branches solve `D_C`.** Let `V` be complete, let `b₁, …, b_m : V → ℂ` be `Cⁿ` at
+`x`, `n ≠ 0`, and for `y` near `x` let `R(y)` be the multiset of the `m` roots of
 `P_y(W) = Wᵐ + ∑_{j=1}^{m} (-1)ʲ b_j(y) W^(m-j)`, that is `b_j(y) = e_j(R(y))`. Suppose that near
 `x` the `b_j` satisfy the equation of the elementary symmetric functions of `m` solutions of
 `D_C = \bar∂ + ν W + μ \bar W`,
 
 `\bar∂ b_j + j ν b_j + (∑_{w ∈ R} \bar w e_{j-1}(R ∖ w)) μ = 0`,  `1 ≤ j ≤ m`.
 
-Then through a simple root `v₀` of `P_x` there is a branch `v`, `C¹` at `x` with `v(x) = v₀`, whose
+Then through a simple root `v₀` of `P_x` there is a branch `v`, `Cⁿ` at `x` with `v(x) = v₀`, whose
 graph is the zero set of `P` near `(x, v₀)`, and `\bar∂ v + v ν + \bar v μ = 0` near `x`. -/
-theorem exists_root_branch_conjWirtingerDeriv_add_add_eq_zero [CompleteSpace V] {m : ℕ}
-    {b : ℕ → V → ℂ} {x : V} (hb : ∀ j ∈ Icc 1 m, ContDiffAt ℝ 1 (b j) x) {R : V → Multiset ℂ}
+theorem exists_root_branch_conjWirtingerDeriv_add_add_eq_zero [CompleteSpace V]
+    {n : WithTop ℕ∞} (hn : n ≠ 0) {m : ℕ} {b : ℕ → V → ℂ} {x : V}
+    (hb : ∀ j ∈ Icc 1 m, ContDiffAt ℝ n (b j) x) {R : V → Multiset ℂ}
     (hR : ∀ᶠ y in 𝓝 x, Multiset.card (R y) = m ∧ ∀ j ∈ Icc 1 m, b j y = (R y).esymm j)
     {v₀ : ℂ} (hv₀ : (R x).count v₀ = 1) (ν μ : V → V →L⋆[ℂ] ℂ)
     (heq : ∀ᶠ y in 𝓝 x, ∀ j ∈ Icc 1 m, conjWirtingerDeriv (b j) y + (j * b j y) • ν y +
       ((R y).map fun w ↦ conj w * ((R y).erase w).esymm (j - 1)).sum • μ y = 0) :
-    ∃ v : V → ℂ, v x = v₀ ∧ ContDiffAt ℝ 1 v x ∧
+    ∃ v : V → ℂ, v x = v₀ ∧ ContDiffAt ℝ n v x ∧
       (∀ᶠ p in 𝓝 (x, v₀),
         p.2 ^ m + ∑ j ∈ Icc 1 m, (-1) ^ j * b j p.1 * p.2 ^ (m - j) = 0 ↔ v p.1 = p.2) ∧
       ∀ᶠ y in 𝓝 x, conjWirtingerDeriv v y + v y • ν y + conj (v y) • μ y = 0 := by
   obtain ⟨v, hvx, hvc, hgraph⟩ :=
-    exists_contDiffAt_root_branch one_ne_zero hb hR.self_of_nhds.1 hR.self_of_nhds.2 hv₀
+    exists_contDiffAt_root_branch hn hb hR.self_of_nhds.1 hR.self_of_nhds.2 hv₀
   refine ⟨v, hvx, hvc, hgraph, ?_⟩
   -- The graph of `v` lies in the zero set of `P` near `x`.
   have hgraph' : Tendsto (fun y ↦ (y, v y)) (𝓝 x) (𝓝 (x, v₀)) :=
@@ -252,25 +263,25 @@ theorem exists_root_branch_conjWirtingerDeriv_add_add_eq_zero [CompleteSpace V] 
     (hgraph'.eventually hgraph).mono fun y hy ↦ hy.2 rfl
   -- The derivative `P_y'(v(y))` is continuous in `y` and nonzero at `x`, hence near `x`.
   set G : V → ℂ := fun y ↦ m * v y ^ (m - 1) +
-    ∑ j ∈ Icc 1 m, (-1) ^ j * b j y * ((m - j : ℕ) * v y ^ (m - j - 1)) with hG
+    ∑ j ∈ Icc 1 m, (-1) ^ j * b j y * ((m - j : ℕ) * v y ^ (m - j - 1))
   have hGc : ContinuousAt G x := by
     refine ((contDiffAt_const.mul (hvc.pow _)).add (ContDiffAt.sum fun j hj ↦ ?_)).continuousAt
     exact (contDiffAt_const.mul (hb j hj)).mul (contDiffAt_const.mul (hvc.pow _))
   -- At a root `v(y) ∈ R(y)`, `G(y)` is `∏_{w ∈ R(y) ∖ v(y)} (v(y) - w)`.
   have hGprod : ∀ y, Multiset.card (R y) = m → (∀ j ∈ Icc 1 m, b j y = (R y).esymm j) →
-      v y ∈ R y → G y = (((R y).erase (v y)).map fun w ↦ v y - w).prod := by
-    intro y hcard hbR hmem
-    rw [Multiset.prod_map_sub_erase_eq_sum_esymm hcard hmem, hG]
-    exact congrArg _ (sum_congr rfl fun j hj ↦ by rw [hbR j hj])
+      v y ∈ R y → G y = (((R y).erase (v y)).map fun w ↦ v y - w).prod :=
+    fun y hcard hbR hmem ↦ mul_pow_add_sum_eq_prod_erase hcard hbR hmem
   have hGx : G x ≠ 0 := by
     have hmem : v x ∈ R x := hvx ▸ Multiset.count_pos.1 (by omega)
     rw [hGprod x hR.self_of_nhds.1 hR.self_of_nhds.2 hmem, hvx]
     exact Multiset.prod_map_sub_erase_ne_zero hv₀
+  -- Differentiability near `x` comes from the `C¹` regularity, which `Cⁿ` implies.
+  have h1 : (1 : WithTop ℕ∞) ≤ n := ENat.one_le_iff_ne_zero_withTop.2 hn
   have hbd : ∀ᶠ y in 𝓝 x, ∀ j ∈ Icc 1 m, DifferentiableAt ℝ (b j) y :=
     (eventually_all_finset _).2 fun j hj ↦
-      ((hb j hj).eventually (by simp)).mono fun y hy ↦ hy.differentiableAt one_ne_zero
+      (((hb j hj).of_le h1).eventually (by simp)).mono fun y hy ↦ hy.differentiableAt one_ne_zero
   have hvd : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ v y :=
-    (hvc.eventually (by simp)).mono fun y hy ↦ hy.differentiableAt one_ne_zero
+    ((hvc.of_le h1).eventually (by simp)).mono fun y hy ↦ hy.differentiableAt one_ne_zero
   filter_upwards [hR, heq, hroot, hroot.eventually_nhds, hGc.eventually_ne hGx, hbd, hvd] with
     y ⟨hcard, hbR⟩ hy hry hry' hGy hby hvy
   -- At `y`, `P_y'(v(y)) • D_C v(y)` is a combination of the vanishing remainders.
