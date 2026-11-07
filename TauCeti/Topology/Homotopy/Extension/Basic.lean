@@ -30,7 +30,9 @@ with that property to one that extends homotopies with values in a space in any 
   domain of the initial data of a homotopy extension problem.
 * `TauCeti.HasHomotopyExtensionProperty`: the homotopy extension property of a subset, together
   with `TauCeti.hasHomotopyExtensionProperty_iff` and
-  `TauCeti.HasHomotopyExtensionProperty.exists_extension` restating it.
+  `TauCeti.HasHomotopyExtensionProperty.exists_extension` restating it, and
+  `TauCeti.HasHomotopyExtensionProperty.exists_extension_of_isEmbedding` reading it along an
+  embedding onto the subset.
 * `TauCeti.hasHomotopyExtensionProperty_iff_exists_retraction`: **a closed subset has the
   homotopy extension property exactly when `{0} × X ∪ I × A` is a retract of `I × X`.**
 * `TauCeti.HasHomotopyExtensionProperty.exists_extension_of_isClosed` and
@@ -124,6 +126,21 @@ theorem HasHomotopyExtensionProperty.exists_extension (h : HasHomotopyExtensionP
     (hH : ∀ a : A, H (0, a) = f a) :
     ∃ G : C(I × X, Y), (∀ x, G (0, x) = f x) ∧ ∀ (t : I) (a : A), G (t, a) = H (t, a) :=
   h f H hH
+
+/-- The homotopy extension property of the image of an embedding `m : B → X`, read along `m`: a
+homotopy out of `B` starting at `f ∘ m` is the restriction along `m` of a homotopy out of `X`
+starting at `f`. -/
+theorem HasHomotopyExtensionProperty.exists_extension_of_isEmbedding {B : Type*}
+    [TopologicalSpace B] {m : B → X} (hm : Topology.IsEmbedding m)
+    (h : HasHomotopyExtensionProperty (range m)) {Y : Type u} [TopologicalSpace Y] (f : C(X, Y))
+    (H : C(I × B, Y)) (hH : ∀ b, H (0, b) = f (m b)) :
+    ∃ G : C(I × X, Y), (∀ x, G (0, x) = f x) ∧ ∀ (t : I) (b : B), G (t, m b) = H (t, b) := by
+  let e := hm.toHomeomorph
+  obtain ⟨G, hG₀, hG⟩ := h.exists_extension f
+    (H.comp ((ContinuousMap.id I).prodMap (e.symm : C(range m, B)))) fun y ↦ by
+      obtain ⟨_, b, rfl⟩ := y
+      simp [e, hH]
+  exact ⟨G, hG₀, fun t b ↦ by simpa [e] using hG t ⟨m b, b, rfl⟩⟩
 
 section Glue
 
