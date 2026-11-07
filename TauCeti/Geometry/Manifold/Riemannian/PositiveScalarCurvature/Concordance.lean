@@ -187,7 +187,7 @@ def reparamTime (hφ : ContDiff ℝ ∞ φ) (hφ' : ∀ t, deriv φ t ≠ 0) :
     ContMDiffRiemannianMetric (I.prod 𝓘(ℝ)) ∞ (E × ℝ)
       (fun p : M × ℝ ↦ TangentSpace (I.prod 𝓘(ℝ)) p) :=
   G.pullback (Prod.map id φ) (contMDiff_id.prodMap (hφ.contMDiff.of_le (by simp))) fun p ↦
-    (isInvertible_mfderiv_prodMap_id (hφ.differentiable (by simp) p.2) (hφ' p.2)).injective
+    (isInvertible_mfderiv_prodMap_id (hφ' p.2)).injective
 
 variable {G}
 
@@ -218,7 +218,7 @@ theorem scalarCurvature_reparamTime [T2Space M] (hφ : ContDiff ℝ ∞ φ) (hφ
     (G.reparamTime hφ hφ').scalarCurvature p = G.scalarCurvature (p.1, φ p.2) :=
   scalarCurvature_pullback_of_isInvertible G
     (contMDiff_id.prodMap (hφ.contMDiff.of_le (by simp)))
-    (fun p ↦ isInvertible_mfderiv_prodMap_id (hφ.differentiable (by simp) p.2) (hφ' p.2)) p
+    (fun p ↦ isInvertible_mfderiv_prodMap_id (hφ' p.2)) p
 
 /-- Reparametrising the `ℝ`-coordinate preserves positive scalar curvature. -/
 theorem HasPositiveScalarCurvature.reparamTime [T2Space M] (h : G.HasPositiveScalarCurvature)
@@ -606,7 +606,6 @@ private theorem isInvertible_mfderiv_prodMap_id_collarTimeIcc (hδ : 0 < δ) (h�
   -- The composite with the invertible differential of the inclusion is the differential of
   -- `(x, t) ↦ (x, collarTime δ t)`, invertible since `collarTime δ` has nonzero derivative.
   have h := isInvertible_mfderiv_prodMap_id (I := I)
-    ((contDiff_collarTime (δ := δ)).differentiable (by simp) p.2)
     (deriv_collarTime_ne_zero hδ p.2)
   obtain ⟨e, he⟩ := isInvertible_mfderiv_prodMap_id_subtypeVal_Icc (I := I)
     (Prod.map id (collarTimeIcc hδ hδ₁) p)

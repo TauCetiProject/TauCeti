@@ -90,7 +90,7 @@ theorem chartMetric_sumTangentSpace_inr
     simpa [ChartedSpace.sum_chartAt_inr] using hy
   simp only [← Trivialization.symmL_apply (R := ℝ) _ hbase',
     ← Trivialization.symmL_apply (R := ℝ) _ hbase,
-    TauCeti.Manifold.symmL_trivializationAt_sumInr hy]
+    TauCeti.Manifold.symmL_trivializationAt_sumInr]
   exact sumTangentSpace_inner_inr g h _ _ _
 
 variable [I.Boundaryless]
