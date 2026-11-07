@@ -10,10 +10,12 @@ public import TauCeti.LinearAlgebra.Projectivization.HermitianProjector
 public import TauCeti.RepresentationTheory.SU2.Adjoint
 public import TauCeti.Topology.Compactification.OnePoint.Antipode
 import Mathlib.LinearAlgebra.Matrix.Action
-import TauCeti.Algebra.Star.Unitary
+import TauCeti.Algebra.Ring.Idempotent
+import TauCeti.Algebra.Star.SelfAdjoint
 import TauCeti.Analysis.InnerProductSpace.PiL2
 import TauCeti.Geometry.Manifold.Instances.OnePoint.Projectivization
 import TauCeti.Geometry.RealAlgebraic.HermitianProjectorEmbedding
+import TauCeti.LinearAlgebra.Matrix.Trace.Basic
 
 /-!
 # The Riemann sphere as the round sphere of `ℝ³`
@@ -103,17 +105,18 @@ line `x`. -/
 theorem pauli_sphereCoords (x : OnePoint ℂ) :
     pauli (sphereCoords x) = 2 * hermitianProjector (equivProjectivization ℂ x) - 1 := by
   have hP := hermitianProjector_mem_hermitianProjectorLocus (equivProjectivization ℂ x)
-  have h2 := trace_two_mul_sub_one_of_mem_hermitianProjectorLocus hP
-  rw [Fintype.card_fin, Nat.cast_ofNat, sub_self] at h2
+  have h2 := trace_two_mul_sub_one (hermitianProjector (equivProjectivization ℂ x))
+  rw [(mem_hermitianProjectorLocus.mp hP).2, Fintype.card_fin, mul_one, Nat.cast_ofNat,
+    sub_self] at h2
   exact pauli_pauliCoord (isHermitian_iff_isSelfAdjoint.mpr
-    (mem_hermitianProjectorLocus.mp hP).1.isSelfAdjoint_two_mul_sub_one) h2
+    (mem_hermitianProjectorLocus.mp hP).1.isSelfAdjoint.two_mul_sub_one) h2
 
 /-- `sphereCoords x` is a unit vector. -/
 @[simp]
 theorem dotProduct_sphereCoords_self (x : OnePoint ℂ) :
     sphereCoords x ⬝ᵥ sphereCoords x = 1 := by
   have hP := hermitianProjector_mem_hermitianProjectorLocus (equivProjectivization ℂ x)
-  have h3 := (mem_hermitianProjectorLocus.mp hP).1.two_mul_sub_one_mul_self
+  have h3 := (mem_hermitianProjectorLocus.mp hP).1.isIdempotentElem.two_mul_sub_one_mul_self
   have h := trace_pauli_mul_pauli (sphereCoords x) (sphereCoords x)
   rw [pauli_sphereCoords, h3, trace_one, Fintype.card_fin] at h
   exact_mod_cast (mul_left_cancel₀ two_ne_zero (h.symm.trans (mul_one 2).symm) :)

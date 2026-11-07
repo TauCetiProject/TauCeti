@@ -53,8 +53,6 @@ imaginary parts of the entries. Its topological and semialgebraic properties are
 
 * `TauCeti.rankOneHermitianProjector_mem_hermitianProjectorLocus`: the Hermitian projector of a
   vector with `x* x ≠ 0` lies in the locus.
-* `TauCeti.trace_two_mul_sub_one_of_mem_hermitianProjectorLocus`: for `P` in the locus, `2 P - 1`
-  has trace `2 - n`, so it is traceless in dimension two.
 * `TauCeti.rankOneHermitianProjector_col_eq_self`: a matrix in the locus is the Hermitian
   projector of each of its columns with nonzero diagonal entry.
 * `TauCeti.rankOneHermitianProjector_unitary_mulVec` and
@@ -197,14 +195,6 @@ theorem hermitianProjectorLocus_eq_projectorLocus [TrivialStar K] :
 theorem rankOneHermitianProjector_mem_hermitianProjectorLocus {x : ι → K} (hx : star x ⬝ᵥ x ≠ 0) :
     rankOneHermitianProjector x ∈ hermitianProjectorLocus ι K :=
   ⟨isStarProjection_rankOneHermitianProjector x, trace_rankOneHermitianProjector hx⟩
-
-/-- For a matrix `P` of the Hermitian projector locus, `2 P - 1` has trace `2 - n`, where `n` is
-the dimension. In particular it is traceless in dimension two. -/
-theorem trace_two_mul_sub_one_of_mem_hermitianProjectorLocus [DecidableEq ι] {P : Matrix ι ι K}
-    (hP : P ∈ hermitianProjectorLocus ι K) :
-    (2 * P - 1).trace = 2 - (Fintype.card ι : K) := by
-  rw [two_mul, trace_sub, trace_add, (mem_hermitianProjectorLocus.mp hP).2, trace_one,
-    one_add_one_eq_two]
 
 variable [CharZero K]
 

@@ -18,13 +18,15 @@ what rules out nonzero nilpotent ideals in an algebra of matrices closed under c
 transposition.
 
 In a star ring, taking adjoints shows that an element anticommuting with a self-adjoint `γ` has an
-adjoint anticommuting with `γ`, as needed for gradings.
+adjoint anticommuting with `γ`, as needed for gradings. For a self-adjoint `p`, the element
+`2 p - 1` is again self-adjoint.
 
 ## Main results
 
 * `IsSelfAdjoint.eq_zero_of_isNilpotent`: a nilpotent self-adjoint element is zero.
 * `IsSelfAdjoint.mul_star_eq_neg_star_mul`: if `γ * x = -(x * γ)` for a self-adjoint `γ`, then
   `γ * star x = -(star x * γ)`.
+* `IsSelfAdjoint.two_mul_sub_one`: `2 p - 1` is self-adjoint for a self-adjoint `p`.
 -/
 
 public section
@@ -57,3 +59,9 @@ theorem IsSelfAdjoint.mul_star_eq_neg_star_mul {R : Type*} [NonUnitalNonAssocRin
   have h' := congrArg star h
   rw [star_mul, star_neg, star_mul, hγ.star_eq] at h'
   rw [h', neg_neg]
+
+/-- For a self-adjoint `p`, `2 p - 1` is self-adjoint. -/
+theorem IsSelfAdjoint.two_mul_sub_one {R : Type*} [Ring R] [StarRing R] {p : R}
+    (hp : IsSelfAdjoint p) : IsSelfAdjoint (2 * p - 1) := by
+  rw [two_mul]
+  exact (hp.add hp).sub (.one _)

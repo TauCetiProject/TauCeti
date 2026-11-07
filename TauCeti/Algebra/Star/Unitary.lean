@@ -13,8 +13,7 @@ public import Mathlib.Algebra.Star.Unitary
 
 The unitary elements of a product of star monoids are the pairs of unitary elements. This file
 packages that identification as a multiplicative equivalence. It also records that a unit is
-unitary exactly when its adjoint is its inverse, and that the unitary `2 p - 1` attached to a star
-projection `p` is a self-adjoint involution.
+unitary exactly when its adjoint is its inverse.
 
 ## Main definitions and results
 
@@ -22,9 +21,6 @@ projection `p` is a self-adjoint involution.
   `unitary A × unitary B`.
 * `Units.mem_unitary_iff_star_eq_inv`: a unit `u` is unitary if and only if `star u = u⁻¹`
   in `R`.
-* `IsStarProjection.isSelfAdjoint_two_mul_sub_one` and
-  `IsStarProjection.two_mul_sub_one_mul_self`: for a star projection `p`, the unitary `2 p - 1`
-  is self-adjoint, hence an involution.
 -/
 
 public section
@@ -77,21 +73,5 @@ theorem star_sub_inv_of_mem_unitary {R : Type*} [Ring R] [StarRing R] {u : Rˣ}
   rw [star_sub, mem_unitary_iff_star_eq_inv.1 h, star_inv_eq_of_mem_unitary h]
 
 end Units
-
-namespace IsStarProjection
-
-variable {R : Type*} [Ring R] [StarRing R] {p : R}
-
-/-- For a star projection `p`, `2 p - 1` is self-adjoint. -/
-theorem isSelfAdjoint_two_mul_sub_one (hp : IsStarProjection p) : IsSelfAdjoint (2 * p - 1) := by
-  rw [two_mul]
-  exact (hp.isSelfAdjoint.add hp.isSelfAdjoint).sub (.one _)
-
-/-- For a star projection `p`, the self-adjoint unitary `2 p - 1` squares to `1`. -/
-theorem two_mul_sub_one_mul_self (hp : IsStarProjection p) : (2 * p - 1) * (2 * p - 1) = 1 := by
-  simpa only [hp.isSelfAdjoint_two_mul_sub_one.star_eq] using
-    Unitary.star_mul_self_of_mem hp.two_mul_sub_one_mem_unitary
-
-end IsStarProjection
 
 end
