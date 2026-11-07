@@ -184,6 +184,15 @@ theorem IsManifoldNondegenerateCriticalPoint.isInvertible_criticalHessian
     (h : IsManifoldNondegenerateCriticalPoint I f x) : (criticalHessian I f x).IsInvertible :=
   ((isManifoldNondegenerateCriticalPoint_iff I).mp h).isInvertible
 
+/-- On a nonzero model space, the critical Hessian at a nondegenerate critical point is nonzero:
+a critical point with vanishing Hessian is degenerate. -/
+theorem IsManifoldNondegenerateCriticalPoint.criticalHessian_ne_zero [Nontrivial E]
+    (h : IsManifoldNondegenerateCriticalPoint I f x) : criticalHessian I f x ≠ 0 := fun h0 ↦ by
+  have hinv := h.isInvertible_criticalHessian
+  rw [h0, ContinuousLinearMap.isInvertible_zero_iff] at hinv
+  -- `TangentSpace I x` is by definition the model space `E`.
+  exact not_subsingleton E hinv.1
+
 /-- On a finite-dimensional model space, an injective critical Hessian is invertible as a map to
 the dual of the tangent space. -/
 theorem criticalHessian_isInvertible_of_injective [FiniteDimensional ℝ E]
