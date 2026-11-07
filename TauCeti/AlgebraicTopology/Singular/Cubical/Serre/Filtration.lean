@@ -22,7 +22,7 @@ their images in the normalized cubical chains.  This increasing filtration is
 * zero for `s < 0`, while `F_0` is spanned by the cubes whose composite with `p` is constant,
   each lying in some fiber;
 * everything in degrees `n ≤ s`, so it is finite in each degree;
-* natural in maps over `B`.
+* natural in maps from `p` to another map `p' : E' → B'`, covering any map of bases.
 
 Serre normalizes cubical chains by the cubes independent of their last coordinate, while the
 normalized chains of `TauCeti.AlgebraicTopology.Singular.Cubical.Normalized` divide out the cubes
@@ -47,7 +47,7 @@ filtration of the normalized cubical chain complex.
   `TauCeti.NormalizedCubicalChain.serreFiltration_eq_bot`,
   `TauCeti.NormalizedCubicalChain.serreFiltration_eq_top`: the filtration is increasing, zero
   below `0`, and everything in degrees at most `s`.
-* `TauCeti.NormalizedCubicalChain.map_mem_serreFiltration`: naturality in maps over `B`.
+* `TauCeti.NormalizedCubicalChain.map_mem_serreFiltration`: naturality in maps of maps.
 
 ## References
 
@@ -65,7 +65,7 @@ open unitInterval
 
 namespace TauCeti
 
-variable {E B E' : Type*} [TopologicalSpace E] [TopologicalSpace E']
+variable {E B E' B' : Type*} [TopologicalSpace E] [TopologicalSpace E']
 
 namespace SingularCube
 
@@ -108,10 +108,13 @@ theorem IsSerreWeightLE.face {c : SingularCube E (n + 1)} (h : c.IsSerreWeightLE
     refine hxy k (lt_of_le_of_lt ?_ hj)
     exact_mod_cast Fin.le_iff_val_le_val.1 (Fin.castSucc_le_succAbove i k)
 
-/-- A map `f` over `B` preserves the Serre weight. -/
+/-- A map from `p` to `p'`, that is `f` and `b` with `p' ∘ f = b ∘ p`, preserves the Serre
+weight. -/
 theorem IsSerreWeightLE.comp {c : SingularCube E n} (h : c.IsSerreWeightLE p s) (f : C(E, E'))
-    {p' : E' → B} (hf : p' ∘ f = p) : IsSerreWeightLE p' s (f.comp c) :=
-  ⟨h.nonneg, by rw [ContinuousMap.coe_comp, ← Function.comp_assoc, hf]; exact h.dependsOn⟩
+    {p' : E' → B'} {b : B → B'} (hf : p' ∘ f = b ∘ p) : IsSerreWeightLE p' s (f.comp c) := by
+  refine ⟨h.nonneg, fun x y hxy ↦ ?_⟩
+  rw [ContinuousMap.coe_comp, ← Function.comp_assoc, hf, Function.comp_assoc]
+  exact congrArg b (h.dependsOn hxy)
 
 end SingularCube
 
@@ -146,9 +149,10 @@ theorem serreFiltration_mono {s t : ℤ} (hst : s ≤ t) (n : ℕ) :
     serreFiltration R p s n ≤ serreFiltration R p t n :=
   Finsupp.supported_mono fun _ hc ↦ SingularCube.IsSerreWeightLE.mono hc hst
 
-/-- A map over `B` preserves the Serre filtration. -/
-theorem map_mem_serreFiltration {s : ℤ} {n : ℕ} (f : C(E, E')) {p' : E' → B}
-    (hf : p' ∘ f = p) {g : CubicalChain E R n} (hg : g ∈ serreFiltration R p s n) :
+/-- A map from `p` to `p'`, that is `f` and `b` with `p' ∘ f = b ∘ p`, preserves the Serre
+filtration. -/
+theorem map_mem_serreFiltration {s : ℤ} {n : ℕ} (f : C(E, E')) {p' : E' → B'} {b : B → B'}
+    (hf : p' ∘ f = b ∘ p) {g : CubicalChain E R n} (hg : g ∈ serreFiltration R p s n) :
     map R f n g ∈ serreFiltration R p' s n := by
   exact map_mem_supported R f (fun (c : SingularCube E n) (hc : c.IsSerreWeightLE p s) ↦
     hc.comp f hf) hg
@@ -226,9 +230,10 @@ theorem boundary_mem_serreFiltration {s : ℤ} {n : ℕ} {f : NormalizedCubicalC
   obtain ⟨g, hg, rfl⟩ := hf
   exact ⟨_, CubicalChain.boundary_mem_serreFiltration hg, (boundary_mk R g).symm⟩
 
-/-- A map over `B` preserves the Serre filtration. -/
-theorem map_mem_serreFiltration {s : ℤ} {n : ℕ} (f : C(E, E')) {p' : E' → B}
-    (hf : p' ∘ f = p) {g : NormalizedCubicalChain E R n} (hg : g ∈ serreFiltration R p s n) :
+/-- A map from `p` to `p'`, that is `f` and `b` with `p' ∘ f = b ∘ p`, preserves the Serre
+filtration. -/
+theorem map_mem_serreFiltration {s : ℤ} {n : ℕ} (f : C(E, E')) {p' : E' → B'} {b : B → B'}
+    (hf : p' ∘ f = b ∘ p) {g : NormalizedCubicalChain E R n} (hg : g ∈ serreFiltration R p s n) :
     map R f n g ∈ serreFiltration R p' s n := by
   obtain ⟨g, hg, rfl⟩ := hg
   exact ⟨_, CubicalChain.map_mem_serreFiltration f hf hg, (map_mk R f g).symm⟩
