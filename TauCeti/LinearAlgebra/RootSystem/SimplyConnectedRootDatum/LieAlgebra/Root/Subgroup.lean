@@ -59,8 +59,6 @@ nilpotently.
 * `TauCeti.DynkinType.isNilpotent_apply_ι_chevalleySystem` and
   `TauCeti.DynkinType.dividedPower_chevalleySystem_smul_mem`: every root vector acts nilpotently,
   with divided powers preserving the lattice.
-* `TauCeti.DynkinType.dividedPower_zsmul_chevalleySystem_smul_mem`: integral multiples of every
-  root operator also have divided powers preserving the lattice.
 * `TauCeti.DynkinType.chevalleyRootSubgroup_simpleIndex` and
   `TauCeti.DynkinType.chevalleyRootSubgroup_reflectionPerm_simpleIndex`: at `±αᵢ` these are the
   simple root subgroups of the Kostant data.
@@ -138,17 +136,6 @@ theorem dividedPower_chevalleySystem_smul_mem (γ : Fin t.numRoots) (n : ℕ) :
   · rw [weylAut_simpleIndex_eq i ((t.lieBasis ht).isSl2Triple_rootGenerator i)
       (isNilpotent_ad_rootGenerator_inl i) (isNilpotent_ad_rootGenerator_inr i)]
     exact dividedPower_weylAut_smul_mem _ _ ρ M hM (hnil (.inl i)) (hnil (.inr i)) _ _ _ n (hz n)
-
-include hM hnil in
-/-- The divided powers of an integer multiple of any root operator preserve the Kostant-stable
-lattice. -/
-theorem dividedPower_zsmul_chevalleySystem_smul_mem (c : ℤ) (γ : Fin t.numRoots) (n : ℕ) :
-    ∀ v ∈ M, Associative.dividedPower n
-      (c • ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (t.chevalleySystem ht γ))) • v ∈ M := by
-  -- All-root divided-power stability comes from Weyl transport of the simple generators.
-  intro v hv
-  rw [Associative.dividedPower_zsmul, smul_assoc]
-  exact M.zsmul_mem (dividedPower_chevalleySystem_smul_mem ρ M hM hnil γ n v hv) _
 
 /-! ## The root subgroups -/
 

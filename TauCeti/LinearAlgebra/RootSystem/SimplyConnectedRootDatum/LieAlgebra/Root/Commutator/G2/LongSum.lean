@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.StructureConstant.G2
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Commutator.ClassTwo
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Subgroup
 
 /-!
 # Chevalley commutators with a long sum in type `G₂`
@@ -19,7 +19,7 @@ subgroup; no weight basis or faithfulness is required.
 
 For two short summands the coefficient is `±3`, so the subgroups commute in characteristic
 three. The proof specializes the type-independent native class-two commutator formula
-`TauCeti.DynkinType.commutatorElement_chevalleyRootSubgroup_of_lie_eq_zero` using the long-sum
+`TauCeti.DynkinType.commutatorElement_chevalleyRootSubgroup_of_lie_eq` using the long-sum
 root geometry.
 
 ## References
@@ -61,7 +61,8 @@ theorem commutatorElement_chevalleyRootSubgroup_G2_of_long_sum {α β γ : Fin G
         chevalleyRootSubgroup ρ M hM hnil β A (Multiplicative.ofAdd v)⁆ =
       chevalleyRootSubgroup ρ M hM hnil γ A
         (Multiplicative.ofAdd ((G2.structureConstant ht α β : A) * (u * v))) := by
-  apply commutatorElement_chevalleyRootSubgroup_of_lie_eq_zero ρ M hM hnil hadd
+  apply commutatorElement_chevalleyRootSubgroup_of_lie_eq ρ M hM hnil
+    (lie_chevalleySystem_eq_structureConstant_zsmul hadd)
   · apply lie_chevalleySystem_eq_zero_of_add_eq hadd
     simpa +instances only [numRoots_G2, rank_G2, simplyConnectedRootDatum_G2] using
       g2_root_add_not_mem_range_of_add_eq_long α β γ hγ
