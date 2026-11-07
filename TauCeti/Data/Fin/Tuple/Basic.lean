@@ -53,6 +53,9 @@ A tuple of length three is determined by its three entries.
   is deleting entry `j + 1` and then overwriting entry `j` by the contraction.
 * `Fin.update_removeNth_succ_eq_removeNth_castSucc`: deleting entry `j + 1` and then overwriting
   entry `j` by the deleted entry is deleting entry `j`.
+* `Fin.contractNth_castSucc_const`: contracting two adjacent entries of a constant tuple.
+* `Fin.insertNth_apply_zero_of_ne_zero`, `Fin.insertNth_apply_last_of_ne_last`: inserting away
+  from the first (last) position keeps the first (last) entry.
 * `Fin.removeNth_succ_cons`: deleting an entry of `Fin.cons x a` other than the first deletes
   the corresponding entry of `a`.
 * `Fin.insertNth_one_ne_zero`: inserting the entry `1` gives a nonzero tuple.
@@ -237,6 +240,16 @@ theorem contractNth_castSucc_eq_update_removeNth_succ (j : Fin (n + 1)) (a : Fin
   · rw [Function.update_of_ne hkj.ne', contractNth_apply_of_gt _ _ _ _ hkj, removeNth_apply,
       succAbove_of_lt_succ _ _ (by simpa using hkj)]
 
+/-- Contracting two adjacent entries of a constant tuple overwrites one entry of the shorter
+constant tuple by the contraction. -/
+theorem contractNth_castSucc_const (j : Fin n) (x : α) :
+    contractNth j.castSucc op (fun _ => x) = Function.update (fun _ => x) j (op x x) := by
+  funext k
+  rcases lt_trichotomy k j with hkj | rfl | hkj
+  · rw [Function.update_of_ne hkj.ne, contractNth_apply_of_lt _ _ _ _ hkj]
+  · rw [Function.update_self, contractNth_apply_of_eq _ _ _ _ rfl]
+  · rw [Function.update_of_ne hkj.ne', contractNth_apply_of_gt _ _ _ _ hkj]
+
 end ContractNth
 
 /-- Deleting entry `j + 1` and then overwriting entry `j` by the deleted entry is deleting
@@ -253,6 +266,17 @@ theorem update_removeNth_succ_eq_removeNth_castSucc {n : ℕ} (j : Fin (n + 1))
   · rw [Function.update_of_ne hkj.ne', removeNth_apply, removeNth_apply,
       succAbove_of_lt_succ _ _ (by simpa using hkj),
       succAbove_of_le_castSucc _ _ (by simpa using hkj.le)]
+
+/-- Inserting at a position other than the first keeps the first entry. -/
+theorem insertNth_apply_zero_of_ne_zero {β : Type*} {n : ℕ} {p : Fin (n + 2)} (hp : p ≠ 0)
+    (v : β) (x : Fin (n + 1) → β) : insertNth (α := fun _ => β) p v x 0 = x 0 := by
+  rw [← succAbove_ne_zero_zero hp, insertNth_apply_succAbove]
+
+/-- Inserting at a position other than the last keeps the last entry. -/
+theorem insertNth_apply_last_of_ne_last {β : Type*} {n : ℕ} {p : Fin (n + 2)}
+    (hp : p ≠ last (n + 1)) (v : β) (x : Fin (n + 1) → β) :
+    insertNth (α := fun _ => β) p v x (last (n + 1)) = x (last n) := by
+  rw [← succAbove_ne_last_last hp, insertNth_apply_succAbove]
 
 /-- Deleting an entry of `Fin.cons x a` other than the first deletes the corresponding entry
 of `a`. -/
