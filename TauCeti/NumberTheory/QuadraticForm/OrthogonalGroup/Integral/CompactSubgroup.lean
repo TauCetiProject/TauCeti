@@ -41,7 +41,7 @@ variable {p : ℕ} [Fact p.Prime] {V ι : Type*}
 omit [Fintype ι] [DecidableEq ι] in
 /-- The coordinates of the image of a basis vector under an orthogonal transformation depend
 continuously on the transformation. -/
-theorem continuous_equivFun_orthogonalGroup_apply_basis [Finite ι] [FiniteDimensional ℚ_[p] V]
+theorem continuous_equivFun_orthogonalGroup_apply_basis [Finite ι]
     (i : ι) :
     Continuous (fun g : orthogonalGroup Q ↦ b.equivFun ((g : V ≃ₗ[ℚ_[p]] V) (b i))) := by
   classical
@@ -60,7 +60,7 @@ omit [DecidableEq ι] in
 /-- If the coordinates of the images of the basis vectors under the elements of a subgroup `H`
 containing the coordinate reflections are bounded by `C`, with `C i` attained at `a i`, then
 the `(i, j)` matrix entries of any `g ∈ H` satisfy `‖g_{ij}‖ * C i ≤ C j`. -/
-private theorem norm_repr_apply_mul_le [FiniteDimensional ℚ_[p] V]
+private theorem norm_repr_apply_mul_le
     [∀ i, Invertible (Q (b i))] (hb : ∀ i j, i ≠ j → Q.IsOrtho (b i) (b j))
     (htwo : ‖(2 : ℚ_[p])‖ = 1) (H : Subgroup (orthogonalGroup Q))
     (hrefl : ∀ i, reflectionOrthogonal Q (b i) ∈ H) {a : ι → orthogonalGroup Q}
@@ -94,7 +94,7 @@ private theorem norm_repr_apply_mul_le [FiniteDimensional ℚ_[p] V]
 /-- If the matrix entries of every element of a subgroup `H` satisfy `‖g_{ij}‖ * C i ≤ C j` for
 positive `C`, and orthogonality gives `‖g_{ij}‖ = ‖(g⁻¹)_{ji}‖`, then all entries of elements of
 `H` have norm at most `1`. -/
-private theorem norm_toMatrix_le_one [FiniteDimensional ℚ_[p] V]
+private theorem norm_toMatrix_le_one
     (hb : ∀ i j, i ≠ j → Q.IsOrtho (b i) (b j)) (hunit : ∀ i, ‖Q (b i)‖ = 1)
     (htwo : ‖(2 : ℚ_[p])‖ = 1) (H : Subgroup (orthogonalGroup Q)) {C : ι → ℝ}
     (hpos : ∀ i, 0 < C i)
@@ -126,7 +126,6 @@ theorem le_integralOrthogonalSubgroup_of_isCompact_of_reflection_mem
       @reflectionOrthogonal _ _ _ _ _ Q (b i) hi ∈ H) :
     H ≤ integralOrthogonalSubgroup Q b := by
   classical
-  let : FiniteDimensional ℚ_[p] V := Module.Finite.of_basis b
   let (i : ι) : Invertible (Q (b i)) := invertibleOfNonzero (by
     intro hzero
     simpa [hzero] using hunit i)
