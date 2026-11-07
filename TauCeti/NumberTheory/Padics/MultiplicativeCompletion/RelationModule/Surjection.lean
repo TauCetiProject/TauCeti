@@ -107,17 +107,6 @@ private abbrev IsRelationModuleMapOfPresentation
             MonoidHom.mem_ker, hφ]
           exact MonoidHom.mem_ker.mp r.2⟩
 
-omit hg [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L] [CharZero L]
-  [ValuativeExtension ℚ_[p] L] [Fintype ι] [DecidableEq ι] in
-/-- The kernel of the presentation map lies in the preimage of the Galois subgroup. -/
-private lemma ker_lift_le_comap_galoisSubgroup :
-    (freeProfiniteGroup.lift g : freeProfiniteGroup ι →* L ≃ₐ[K] L).ker ≤
-      (galoisSubgroup K L j).toSubgroup.comap φ.toMonoidHom := by
-  intro r hr
-  change φ r ∈ (galoisSubgroup K L j).toSubgroup
-  rw [galoisSubgroup_toSubgroup, ← j.ker_restrictNormalHom, MonoidHom.mem_ker]
-  simpa using (hφ r).trans (MonoidHom.mem_ker.mp hr)
-
 /-- On the relation module, the equivariant map induced by `β` is the map of abelianizations
 induced by `φ`. -/
 private lemma relationModuleToAbelianizationProPEquivariant_toMonoidHom
@@ -157,7 +146,7 @@ private theorem explicitCoeff2_contCohomologyClass_of_presentation
         (continuous_relationModuleToAbelianizationProPEquivariant p K L hg β j)))
         (freeProfiniteGroup.presentationProfiniteExtension p hd).contCohomologyClass =
       (galoisClassModuleExtension p K L j).contCohomologyClass := by
-  have hRV := ker_lift_le_comap_galoisSubgroup K L j φ hφ
+  have hRV := presentation_ker_le_comap K L j φ hφ
   let _ := freeProfiniteGroup.presentationClassModuleAction p hd
   have := freeProfiniteGroup.continuousSMul_presentationClassModuleAction p hd
   let _ := galoisClassModuleAction p K L j
