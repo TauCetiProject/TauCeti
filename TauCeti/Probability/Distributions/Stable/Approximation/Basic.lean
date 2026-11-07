@@ -86,11 +86,9 @@ theorem map_neg_stableCompensatedPoissonMeasure (α β ε : ℝ) :
     rw [← map_neg_stableLevyMeasure,
       setIntegral_map hA (by fun_prop) measurable_neg.aemeasurable, hpre]
     simp only [sin_neg, integral_neg, ν]
-  have hcp : (compoundPoissonMeasure (ν A).toNNReal (cond ν A)).map (fun x : ℝ ↦ -x) =
-      compoundPoissonMeasure (ν A).toNNReal ((cond ν A).map (fun x : ℝ ↦ -x)) :=
-    map_compoundPoissonMeasure (ν A).toNNReal (cond ν A) (-AddMonoidHom.id ℝ) measurable_neg
   rw [stableCompensatedPoissonMeasure_def, stableCompensatedPoissonMeasure_def,
-    ← hmass, hsin, ← hcond, ← hcp, Measure.map_map (by fun_prop) measurable_neg,
+    ← hmass, hsin, ← hcond, ← map_neg_compoundPoissonMeasure,
+    Measure.map_map (by fun_prop) measurable_neg,
     Measure.map_map measurable_neg (by fun_prop)]
   congr 1
   ext x
