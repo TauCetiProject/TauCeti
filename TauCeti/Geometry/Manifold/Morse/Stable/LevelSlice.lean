@@ -107,11 +107,10 @@ private theorem surjective_fderiv_comp_chartAt_symm (hd : MDifferentiableAt 𝓘
 `a` to a different critical point `b` meets no critical point, so `f` is strictly antitone along
 it. -/
 theorem strictAnti_flow_of_mem_unstableSet_inter_stableSet
-    (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
     (hab : a ≠ b) (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) :
     StrictAnti fun t ↦ f (hX.flow t y) :=
-  hX.strictAnti_comp (fun _ ↦ hf _)
-    (hX.isMIntegralCurve_flow y) fun t ↦ hX.mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet
+  hX.strictAnti_comp (hX.isMIntegralCurve_flow y)
+    fun t ↦ hX.mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet
       hab (hX.flow.isInvariant_unstableSet_inter_stableSet a b t hy)
 
 /-- **Connecting trajectories lie strictly between the critical values of their ends.** A point
@@ -121,7 +120,7 @@ theorem mem_Ioo_of_mem_unstableSet_inter_stableSet
     (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
     (hab : a ≠ b) (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) :
     f y ∈ Ioo (f b) (f a) := by
-  have hanti := hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hf hab hy
+  have hanti := hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hab hy
   -- Compare `y` with its images at times `1` and `-1`, which lie on the same trajectory.
   have hb : f b ≤ f (hX.flow 1 y) := Flow.le_of_mem_stableSet_of_antitone
     ((Flow.apply_mem_stableSet_iff _ 1).2 hy.2) hf.continuous.continuousAt
@@ -146,7 +145,7 @@ theorem existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet
   Flow.existsUnique_apply_flow_eq_of_mem_unstableSet_inter_stableSet
     (hf.continuous.comp (hX.flow.continuous continuous_id continuous_const))
     hf.continuous.continuousAt hf.continuous.continuousAt
-    (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hf hab hy) hy ⟨hbc, hca⟩
+    (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hab hy) hy ⟨hbc, hca⟩
 
 /-- **A trajectory crosses the middle level exactly once.** Along a trajectory from a critical
 point `a` to a different critical point `b`, the function `f` takes the value `(f a + f b) / 2`
@@ -169,7 +168,7 @@ theorem tendsto_zero_of_flow_eq_of_mem_unstableSet_inter_stableSet {ι : Type*} 
     {σ : ι → ℝ} (hσ : ∀ i, f (hX.flow (σ i) (w i)) = f y) : Tendsto σ l (𝓝 0) := by
   have hfw : ∀ t, Tendsto (fun i ↦ f (hX.flow t (w i))) l (𝓝 (f (hX.flow t y))) := fun t ↦
     ((hf.continuous.comp (hX.contMDiff_flow_apply t).continuous).tendsto y).comp hw
-  have hanti := hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hf hab hy
+  have hanti := hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hab hy
   -- For `t ≠ 0`, the orbit of `w i` is eventually on the same side of the level at time `t` as
   -- the orbit of `y`; since `f` decreases along orbits, it crosses the level between `0` and `t`.
   refine tendsto_order.2 ⟨fun t ht ↦ ?_, fun t ht ↦ ?_⟩
