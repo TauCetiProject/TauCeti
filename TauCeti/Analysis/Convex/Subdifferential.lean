@@ -318,18 +318,24 @@ theorem le_toReal_add_toReal_fenchelConjugate (hbot : f x ≠ ⊥) (hx : f x ≠
   rwa [← EReal.coe_toReal hx hbot, ← EReal.coe_toReal hy (fenchelConjugate_ne_bot B hx y),
     ← EReal.coe_add, EReal.coe_le_coe_iff] at h
 
-/-- On the subdifferential graph, `f x` and `f⋆ y` are finite and the Fenchel–Young equality holds
-between their real representatives: `(f x).toReal + (f⋆ y).toReal = B x y`. -/
+/-- On the subdifferential graph, `f⋆ y` is finite. -/
+theorem fenchelConjugate_ne_top_of_mem_subdifferential (h : y ∈ subdifferential B f x) :
+    fenchelConjugate B f y ≠ ⊤ := by
+  rw [fenchelConjugate_eq_of_mem_subdifferential B h,
+    ← EReal.coe_toReal (ne_top_of_mem_subdifferential B h) (ne_bot_of_mem_subdifferential B h),
+    ← EReal.coe_sub]
+  exact EReal.coe_ne_top _
+
+/-- On the subdifferential graph, the Fenchel–Young equality holds between the real
+representatives of `f x` and `f⋆ y`: `(f x).toReal + (f⋆ y).toReal = B x y`. -/
 theorem toReal_add_toReal_fenchelConjugate_eq_of_mem_subdifferential
     (h : y ∈ subdifferential B f x) :
-    f x ≠ ⊤ ∧ fenchelConjugate B f y ≠ ⊤ ∧
-      (f x).toReal + (fenchelConjugate B f y).toReal = B x y := by
-  have hx := ne_top_of_mem_subdifferential B h
-  have hbot := ne_bot_of_mem_subdifferential B h
+    (f x).toReal + (fenchelConjugate B f y).toReal = B x y := by
   have hF := fenchelConjugate_eq_of_mem_subdifferential B h
-  rw [← EReal.coe_toReal hx hbot, ← EReal.coe_sub] at hF
-  rw [hF]
-  exact ⟨hx, EReal.coe_ne_top _, by rw [EReal.toReal_coe]; ring⟩
+  rw [← EReal.coe_toReal (ne_top_of_mem_subdifferential B h) (ne_bot_of_mem_subdifferential B h),
+    ← EReal.coe_sub] at hF
+  rw [hF, EReal.toReal_coe]
+  ring
 
 /-! ### Convexity and closedness -/
 
