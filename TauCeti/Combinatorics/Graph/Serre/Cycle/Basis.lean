@@ -36,26 +36,6 @@ namespace TauCeti.SerreGraph
 
 variable {Γ : SerreGraph} {O F : Set Γ.E} {R : Type*} [Ring R]
 
-/-- The difference of two vertex unit chains is a boundary whenever the vertices are
-connected in the support graph. No acyclicity hypothesis is needed. -/
-theorem single_sub_single_mem_range_incidenceBoundary {a b : Γ.V}
-    (h : (Γ.supportGraph F).Reachable a b) :
-    Finsupp.single b (1 : R) - Finsupp.single a 1 ∈
-      LinearMap.range (Γ.incidenceBoundary F R) := by
-  obtain ⟨p⟩ := h
-  induction p with
-  | nil => simp
-  | @cons a b c hab p ih =>
-    have hedge : Finsupp.single b (1 : R) - Finsupp.single a 1 ∈
-        LinearMap.range (Γ.incidenceBoundary F R) := by
-      rcases (Γ.supportGraph_adj F a b).mp hab with ⟨-, h | h⟩
-      · obtain ⟨e, he, rfl, rfl⟩ := h
-        exact ⟨Finsupp.single ⟨e, he⟩ 1, by simp⟩
-      · obtain ⟨e, he, rfl, rfl⟩ := h
-        exact ⟨-Finsupp.single ⟨e, he⟩ 1, by simp [neg_sub]⟩
-    convert (LinearMap.range (Γ.incidenceBoundary F R)).add_mem ih hedge using 1
-    exact (sub_add_sub_cancel _ _ _).symm
-
 /-- Chord coordinates of a cycle, as a finitely supported function on the actual non-forest
 darts. This map does not require that `F` be a forest. -/
 noncomputable def cycleChordCoordinates (Γ : SerreGraph) (O F : Set Γ.E) (R : Type*) [Ring R] :
