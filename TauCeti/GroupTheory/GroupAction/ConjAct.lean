@@ -33,6 +33,7 @@ by conjugation on every transitive normal subgroup.
 * `MonoidHom.map_conjNormal_val`: a homomorphism from a normal subgroup to a commutative monoid is
   unchanged by conjugation by an element of that subgroup.
 * `Subgroup.inv_mul_mul_mem_conjAct_smul_iff`: conjugation preserves subgroup membership.
+* `Subgroup.mem_conjAct_smul_iff`: membership in a conjugate `g H g⁻¹`.
 * `Subgroup.mem_conjAct_smul_of_mem_center`: a central element of a subgroup lies in each of its
   conjugates.
 * `Subgroup.inclusion_conj_smul`: the inclusion of a normal subgroup into a larger normal
@@ -74,6 +75,12 @@ theorem inv_mul_mul_mem_conjAct_smul_iff {G : Type*} [Group G] (g x : G) (H : Su
     g⁻¹ * x * g ∈ (ConjAct.toConjAct g)⁻¹ • H ↔ x ∈ H := by
   simpa only [← ConjAct.toConjAct_inv, ConjAct.toConjAct_smul, inv_inv] using
     (smul_mem_pointwise_smul_iff (a := (ConjAct.toConjAct g)⁻¹) (S := H) (x := x))
+
+/-- An element lies in the conjugate `g H g⁻¹` iff conjugating it back by `g` lands in `H`. -/
+theorem mem_conjAct_smul_iff {G : Type*} [Group G] {H : Subgroup G} {g x : G} :
+    x ∈ ConjAct.toConjAct g • H ↔ g⁻¹ * x * g ∈ H := by
+  rw [mem_pointwise_smul_iff_inv_smul_mem, ← ConjAct.toConjAct_inv, ConjAct.toConjAct_smul,
+    inv_inv]
 
 /-- **A central element of a subgroup lies in each of its conjugates**, since conjugation fixes
 it. -/

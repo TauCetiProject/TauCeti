@@ -29,6 +29,7 @@ permutes the root functionals, and permutes the coroots compatibly, preserving t
   determined by its permutation of the roots.
 * `RootPairing.Equiv.indexHom_injective_of_corootSpan_eq_top` gives the same faithfulness
   when the coroots span, in particular for simply connected integral root data.
+* `RootPairing.reflectionPerm_reflectionPerm_self` says negating a root index twice gives it back.
 * `RootPairing.coroot'_reflection_self` says a reflection reverses the sign of its own
   coroot functional.
 * `RootPairing.coroot'_smul` and `RootPairing.coroot'_weylGroupToPerm_smul` say an
@@ -124,6 +125,13 @@ theorem Equiv.indexHom_injective [P.IsRootSystem] :
 end
 
 section
+
+/-- Negating a root index twice gives it back: the root of index `P.reflectionPerm j j` for
+`j = P.reflectionPerm i i` is `-(-P.root i) = P.root i`. -/
+@[simp]
+theorem reflectionPerm_reflectionPerm_self (i : ι) :
+    P.reflectionPerm (P.reflectionPerm i i) (P.reflectionPerm i i) = i :=
+  P.indexNeg.neg_neg i
 
 /-- Reflecting a root in itself negates its coroot functional. -/
 @[simp]
