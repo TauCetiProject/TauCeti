@@ -96,6 +96,20 @@ private theorem laplacian_log_normSq_sub_comp_add_right
       hq.contDiffAt (right_ne_zero_of_mul hwh.ne') (Eventually.of_forall hsol)]
   ring
 
+/-- The difference quotient of `exp / 4` between `log b` and `log a` is at least `c ^ 2` when
+`4 c ^ 2 ≤ a, b`: for `log a ≠ log b`, `c ^ 2 ≤ ((a - b) / 4) / (log a - log b)`. -/
+private theorem sq_le_sub_div_four_div_log_sub_log {a b c : ℝ} (ha : 0 < a) (hb : 0 < b)
+    (hca : 4 * c ^ 2 ≤ a) (hcb : 4 * c ^ 2 ≤ b) (h₀ : Real.log a - Real.log b ≠ 0) :
+    c ^ 2 ≤ (a - b) / 4 / (Real.log a - Real.log b) := by
+  have hmono := Real.mul_sq_log_sub_log_le_sub_mul_log_sub_log ha hb hca hcb
+  have hD2 : 0 < (Real.log a - Real.log b) ^ 2 :=
+    lt_of_le_of_ne (sq_nonneg _) (pow_ne_zero 2 h₀).symm
+  have hquot : (a - b) / 4 / (Real.log a - Real.log b) =
+      (a - b) * (Real.log a - Real.log b) / (4 * (Real.log a - Real.log b) ^ 2) := by
+    field_simp
+  rw [hquot, le_div_iff₀ (by positivity)]
+  linarith
+
 /-- **Exterior decay of the translation differences of `ℓ = log |α|²`.** Suppose that
 `|α|² > 0` and `|α|² ≥ 4 c²` on `R - 1 ≤ |w|`, and that `|ℓ (z + h) - ℓ z| ≤ L |h|` on the circle
 `|z| = R`. Then `|ℓ z - ℓ (z + h)| ≤ L |h| exp (-c (|z| - R))` for `|z| ≥ R`. The difference
@@ -143,15 +157,9 @@ private theorem abs_log_normSq_sub_log_normSq_add_le_mul_exp
     by_cases h₀ : D w = 0
     · simp [hV, h₀]
     · simp only [hV, h₀, ↓reduceIte]
-      have hmono : 4 * c ^ 2 * D w ^ 2 ≤ (s w - s (w + h)) * D w :=
-        Real.mul_sq_log_sub_log_le_sub_mul_log_sub_log (hpos w (hw₁ w hw.le))
-          (hpos (w + h) (hwh w hw.le)) (hc4 w (hw₁ w hw.le)) (hc4 (w + h) (hwh w hw.le))
-      have hD2 : 0 < D w ^ 2 := lt_of_le_of_ne (sq_nonneg _) (pow_ne_zero 2 h₀).symm
-      have hquot : Δ D w / D w = (s w - s (w + h)) * D w / (4 * D w ^ 2) := by
-        rw [hΔD w hw.le]
-        field_simp
-      rw [hquot, le_div_iff₀ (by positivity)]
-      linarith
+      rw [hΔD w hw.le]
+      exact sq_le_sub_div_four_div_log_sub_log (hpos w (hw₁ w hw.le))
+        (hpos (w + h) (hwh w hw.le)) (hc4 w (hw₁ w hw.le)) (hc4 (w + h) (hwh w hw.le)) h₀
   -- Both `D` and `-D` tend to zero at infinity and are bounded by `L |h|` on the circle.
   have hcont : ContinuousOn D {w | R ≤ ‖w‖} := fun w hw ↦
     (hDcd w hw).continuousAt.continuousWithinAt
