@@ -76,6 +76,8 @@ on the open unit disc (`PowerSeries.onOpenDisc_log`).
 * `PowerSeries.OnOpenDisc.hasseDeriv`, `PowerSeries.OnOpenDisc.derivative` and
   `PowerSeries.OnOpenDisc.map`: the condition is preserved by Hasse derivatives and bounded
   coefficient maps.
+* `PowerSeries.OnOpenDisc.rescale`: if `f(X)` lies on the open disc of radius `‖a‖ * R₀`, then
+  `f(aX)` lies on the open disc of radius `R₀`.
 * `PowerSeries.onOpenDisc_log`: over a normed field of characteristic zero, `log (1 + X)` lies on
   the open unit disc.
 
@@ -342,6 +344,18 @@ variable {R : Type*} [NormedCommRing R] {R₀ : ℝ} {f : R⟦X⟧}
 theorem OnOpenDisc.derivative (hf : f.OnOpenDisc R₀) : (d⁄dX f).OnOpenDisc R₀ := by
   rw [← hasseDeriv_one_apply]
   exact hf.hasseDeriv 1
+
+/-- **Rescaling changes the radius of the disc.** If `f(X)` lies on the open disc of radius
+`‖a‖ * R₀`, then `f(aX)` lies on the open disc of radius `R₀`. For `a = 0` the series `f(0 · X)`
+is the constant `f(0)`, which lies on every open disc. -/
+theorem OnOpenDisc.rescale {a : R} (hf : f.OnOpenDisc (‖a‖ * R₀)) :
+    (rescale a f).OnOpenDisc R₀ := by
+  intro r hr hrR
+  rcases (norm_nonneg a).eq_or_lt with ha | ha
+  · obtain rfl : a = 0 := norm_eq_zero.mp ha.symm
+    rw [rescale_zero_apply]
+    exact onOpenDisc_C _ r hr hrR
+  · exact (hf.isRestricted (by rw [abs_of_pos (by positivity)]; gcongr)).rescale
 
 end NormedCommRing
 

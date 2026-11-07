@@ -19,6 +19,10 @@ Its coefficients are the values at `a` of the Hasse derivatives, using the same
 smaller-radius Gauss norms, composes by addition, and has inverse translation by `-a`.
 Evaluation of the translate at `b` is evaluation of the original series at `b + a`.
 
+Combined with rescaling (`PowerSeries.OnOpenDisc.rescale`), translation gives the affine changes
+of coordinates `X ↦ a + uX`: if `‖a‖ < R₀` and `‖u‖ S₀ ≤ R₀`, then `f(a + uX)` lies on the open
+disc of radius `S₀`, and its value at `b` is `f(ub + a)`.
+
 Translation preserves restrictedness on every closed disc containing `a`, by
 `PowerSeries.IsRestricted.taylor`. Applying this at a slightly larger radius inside the open
 disc proves open-disc restrictedness. No radius needs to be realized by a scalar and no
@@ -35,6 +39,14 @@ radius `r` with `‖a‖ ≤ r < R₀`.
 ## Main results
 
 * `PowerSeries.OnOpenDisc.taylor`: translation preserves the open-disc radius condition.
+* `PowerSeries.OnOpenDisc.taylor_smul` and `PowerSeries.OnOpenDisc.hasseDeriv_taylor`:
+  translation commutes with scalar multiplication and with Hasse derivatives.
+* `PowerSeries.OnOpenDisc.evalAt_taylor` and `PowerSeries.OnOpenDisc.hasSum_taylor`: the Taylor
+  identity `(taylor a f)(b) = f(b + a)` at points of the base ring and the convergent Taylor
+  expansion `f(b + a) = ∑ₖ (Δᵏ f)(a) bᵏ` on the open disc.
+* `PowerSeries.OnOpenDisc.rescale_taylor` and `PowerSeries.OnOpenDisc.evalAt_rescale_taylor`: the
+  affine change of coordinates `X ↦ a + uX` carries the open disc of radius `R₀` to the open disc
+  of radius `S₀` when `‖a‖ < R₀` and `‖u‖ S₀ ≤ R₀`, and evaluates as `f(ub + a)`.
 * `TauCeti.PowerSeries.OnOpenDisc.continuous_taylorHom`: translation is continuous.
 * `TauCeti.PowerSeries.OnOpenDisc.taylorHom_taylorHom`: translations compose by addition.
 * `TauCeti.PowerSeries.OnOpenDisc.taylorHom_polynomialHom`: translation agrees with polynomial
@@ -47,6 +59,7 @@ radius `r` with `‖a‖ ≤ r < R₀`.
 ## References
 
 * P. Colmez, *Fonctions d'une variable p-adique*, Astérisque 330 (2010), §I.4.
+* S. Bosch, U. Güntzer and R. Remmert, *Non-Archimedean Analysis*, Grundlehren 261, §5.1.
 * The coefficient construction is `PowerSeries.taylor` in
   `TauCeti.RingTheory.PowerSeries.Taylor`.
 -/
@@ -72,6 +85,26 @@ theorem OnOpenDisc.taylor (hf : f.OnOpenDisc R₀) (ha : ‖a‖ < R₀) :
       (le_max_right r ‖a‖ |>.trans hs.le))).onOpenDisc.isRestricted
         (by rw [abs_of_pos hr]; exact (le_max_left _ _).trans_lt hs)
 
+omit [IsUltrametricDist R] in
+/-- A series on the open disc of radius `R₀` is restricted at the larger of a nonnegative radius
+`s < R₀` and a radius `t < R₀`. -/
+private theorem OnOpenDisc.isRestricted_max (hf : f.OnOpenDisc R₀) {s t : ℝ} (hs : 0 ≤ s)
+    (hsR : s < R₀) (htR : t < R₀) : f.IsRestricted (max s t) :=
+  hf.isRestricted (by rw [abs_of_nonneg (le_max_of_le_left hs)]; exact max_lt hsR htR)
+
+omit [IsUltrametricDist R] in
+/-- A series on the open disc of radius `R₀` is restricted at the norm of a point of that disc. -/
+private theorem OnOpenDisc.isRestricted_norm (hf : f.OnOpenDisc R₀) (ha : ‖a‖ < R₀) :
+    f.IsRestricted ‖a‖ :=
+  hf.isRestricted (by rwa [abs_norm])
+
+/-- **Affine changes of coordinates.** If `f` lies on the open disc of radius `R₀`, `‖a‖ < R₀` and
+`‖u‖ S₀ ≤ R₀`, then `f(a + uX)`, the rescaling by `u` of the translate of `f` by `a`, lies on the
+open disc of radius `S₀`. -/
+theorem OnOpenDisc.rescale_taylor (hf : f.OnOpenDisc R₀) (ha : ‖a‖ < R₀) {u : R} {S₀ : ℝ}
+    (hu : ‖u‖ * S₀ ≤ R₀) : (PowerSeries.rescale u (PowerSeries.taylor a f)).OnOpenDisc S₀ :=
+  ((hf.taylor ha).mono hu).rescale
+
 variable [CompleteSpace R]
 
 omit [IsUltrametricDist R] in
@@ -89,6 +122,39 @@ theorem OnOpenDisc.taylor_mul (hf : f.OnOpenDisc R₀) (hg : g.OnOpenDisc R₀)
     PowerSeries.taylor a (f * g) = PowerSeries.taylor a f * PowerSeries.taylor a g :=
   taylor_mul_of_summable_norm (fun n ↦ (hf.hasseDeriv n).summable_norm_smul_pow ha)
     (fun n ↦ (hg.hasseDeriv n).summable_norm_smul_pow ha)
+
+/-- Translation by a point of the open disc commutes with scalar multiplication. -/
+theorem OnOpenDisc.taylor_smul (hf : f.OnOpenDisc R₀) (c : R) (ha : ‖a‖ < R₀) :
+    PowerSeries.taylor a (c • f) = c • PowerSeries.taylor a f :=
+  (hf.isRestricted_norm ha).taylor_smul c le_rfl
+
+/-- **Hasse derivatives commute with translation** of series on an open disc. -/
+theorem OnOpenDisc.hasseDeriv_taylor (hf : f.OnOpenDisc R₀) (ha : ‖a‖ < R₀) (k : ℕ) :
+    PowerSeries.hasseDeriv k (PowerSeries.taylor a f) =
+      PowerSeries.taylor a (PowerSeries.hasseDeriv k f) :=
+  (hf.isRestricted_norm ha).hasseDeriv_taylor le_rfl k
+
+/-- **The Taylor identity on an open disc** at a point of the base ring: if `f` lies on the open
+disc of radius `R₀` and `‖a‖ < R₀`, `‖b‖ < R₀`, then the expansion of `f` at `a` evaluated at `b`
+is `f(b + a)`. Unlike `TauCeti.PowerSeries.OnOpenDisc.evalAt_taylorHom`, this needs no
+`NormOneClass` hypothesis. -/
+theorem OnOpenDisc.evalAt_taylor {b : R} (hf : f.OnOpenDisc R₀) (ha : ‖a‖ < R₀)
+    (hb : ‖b‖ < R₀) : (PowerSeries.taylor a f).evalAt b = f.evalAt (b + a) :=
+  (hf.isRestricted_max (norm_nonneg a) ha hb).evalAt_taylor (le_max_left _ _) (le_max_right _ _)
+
+/-- **The Taylor expansion on an open disc.** If `f` lies on the open disc of radius `R₀` and
+`‖a‖ < R₀`, `‖b‖ < R₀`, then `f(b + a) = ∑ₖ (Δᵏ f)(a) bᵏ`. -/
+theorem OnOpenDisc.hasSum_taylor {b : R} (hf : f.OnOpenDisc R₀) (ha : ‖a‖ < R₀)
+    (hb : ‖b‖ < R₀) :
+    HasSum (fun k ↦ (PowerSeries.hasseDeriv k f).evalAt a * b ^ k) (f.evalAt (b + a)) :=
+  (hf.isRestricted_max (norm_nonneg a) ha hb).hasSum_taylor (le_max_left _ _) (le_max_right _ _)
+
+/-- **Evaluation after an affine change of coordinates.** If `f` lies on the open disc of radius
+`R₀`, `‖a‖ < R₀` and `‖u‖ ‖b‖ < R₀`, then `f(a + uX)` takes the value `f(ub + a)` at `b`. -/
+theorem OnOpenDisc.evalAt_rescale_taylor {b : R} (hf : f.OnOpenDisc R₀) (ha : ‖a‖ < R₀) {u : R}
+    (hub : ‖u‖ * ‖b‖ < R₀) :
+    (PowerSeries.rescale u (PowerSeries.taylor a f)).evalAt b = f.evalAt (u * b + a) := by
+  rw [evalAt_rescale, smul_eq_mul, hf.evalAt_taylor ha ((norm_mul_le u b).trans_lt hub)]
 
 end PowerSeries
 
