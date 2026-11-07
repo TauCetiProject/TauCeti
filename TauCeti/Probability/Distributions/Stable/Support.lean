@@ -328,16 +328,10 @@ private theorem stablePDFReal_pos_iff_mem_interior_add_support (hα : α ∈ Ioc
   have hsupp : tsupport (stablePDFReal α β r c) = (stableMeasure α β r c).support := by
     rw [← Measure.support_withDensity_ofReal (μ := volume) hf hf0,
       ← funext (stablePDF_eq_ofReal α β r c), ← stableMeasure_eq_withDensity α β hr c]
-  have hfinite : ConvolutionExists (stablePDFReal α β r c) (stablePDFReal α β r c)
-      (mul ℝ ℝ) volume :=
-    convolutionExists_of_integrable_of_ae_norm_le (mul ℝ ℝ)
-      (integrable_stablePDFReal α β r c) hf.aestronglyMeasurable
-      (.of_forall fun y ↦ by
-        rw [Real.norm_eq_abs, abs_of_nonneg (hf0 y)]
-        exact stablePDFReal_le hα hβ hr c y)
   rw [← congrFun hconv x, ← hsupp]
   exact convolution_pos_iff_mem_interior_add_tsupport hf hf hf0 hf0
-    (hsupp ▸ hconvex) (hsupp ▸ hconvex) (hfinite x)
+    (hsupp ▸ hconvex) (hsupp ▸ hconvex)
+    (convolutionExists_stablePDFReal hα hβ hr c c x)
 
 /-- A positive-scale stable density with full support is strictly positive everywhere. -/
 private theorem stablePDFReal_pos_of_support_eq_univ (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 1)
