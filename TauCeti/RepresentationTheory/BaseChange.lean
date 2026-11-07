@@ -769,8 +769,8 @@ theorem baseChangeComapEquiv_tmul_single (a : A) (x : X) (r : R) :
     baseChangeComapEquiv R A G X (a ⊗ₜ[R] Finsupp.single x r)
       = MonoidAlgebra.single x (r • a) := by
   simp only [baseChangeComapEquiv, _root_.Representation.Equiv.trans_apply,
-    _root_.Representation.Equiv.baseChange_tmul, ofDistribMulActionComapEquiv_single,
-    baseChangeOfMulActionEquiv_tmul_single]
+    _root_.Representation.Equiv.baseChange_tmul, ofDistribMulActionComapEquiv_apply,
+    MonoidAlgebra.ofCoeff_single, baseChangeOfMulActionEquiv_tmul_single]
 
 /-- `TauCeti.baseChangeComapEquiv` carries the element of `A[X]` supported at `x` with coefficient
 `a` back to the pure tensor `a ⊗ₜ single x 1`. -/

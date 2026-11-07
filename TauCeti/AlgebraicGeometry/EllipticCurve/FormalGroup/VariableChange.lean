@@ -351,7 +351,7 @@ theorem formalInvariantDifferentialDenom_mul_derivative_formalCoordinate :
   have hDd : C.formalDenom W * invOfUnit (C.formalDenom W) (C.u ^ 3) = 1 :=
     mul_invOfUnit _ _ (C.constantCoeff_formalDenom W)
   have hD := C.formalDenom_def W
-  simp only [smul_eq_C_mul, map_mul, map_pow, map_ofNat, algebraMap_eq] at hG hw hD ⊢
+  simp only [smul_eq_C_mul, map_mul, map_pow, map_ofNat, algebraMap_eq] at hG hw hw' hD ⊢
   set w := formalW (C • W)
   set D := C.formalDenom W
   set d := invOfUnit D (C.u ^ 3)

@@ -425,6 +425,23 @@ theorem InternalGrading.sum_decompose_toFinset (G : InternalGrading R M ι)
   · rw [DFinsupp.notMem_support_iff.mp hp]
     simp
 
+/-- A nonzero finitely generated internally graded module over a linearly ordered index has a top
+degree `p`: all pieces above `p` vanish and the piece at `p` does not. -/
+theorem InternalGrading.exists_top_piece [LinearOrder ι] (G : InternalGrading R M ι)
+    [Module.Finite R M] [Nontrivial M] :
+    ∃ p, (∀ q, p < q → G.piece q = ⊥) ∧ G.piece p ≠ ⊥ := by
+  have hfin := G.finite_piece_ne_bot
+  -- A nonzero element has a nonzero homogeneous component, so some piece is nonzero.
+  obtain ⟨x, hx⟩ := exists_ne (0 : M)
+  have hne : hfin.toFinset.Nonempty := by
+    by_contra h
+    apply hx
+    rw [← G.sum_decompose_toFinset hfin x, Finset.not_nonempty_iff_eq_empty.1 h,
+      Finset.sum_empty]
+  refine ⟨hfin.toFinset.max' hne, fun q hq => ?_, hfin.mem_toFinset.1 (hfin.toFinset.max'_mem hne)⟩
+  by_contra h
+  exact (hfin.toFinset.le_max' q (hfin.mem_toFinset.2 h)).not_gt hq
+
 end FiniteSupport
 
 section KoszulTwist
