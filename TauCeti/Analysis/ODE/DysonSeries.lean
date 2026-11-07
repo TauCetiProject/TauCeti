@@ -54,6 +54,8 @@ one-parameter automorphism groups of C⋆-algebras.
   `Γ (t + d) = Γ t * Γ d` for a path of period `d` (`TauCeti.dysonSeriesLeft_add_of_periodic`).
 * `TauCeti.eq_dysonSeriesLeft_apply`: for a path of bounded operators, every solution of the
   time-dependent linear equation `w' t = M t (w t)` is `w t = dysonSeriesLeft M t (w 0)`.
+* `TauCeti.periodic_dysonSeriesLeft_apply_iff`: for a periodic path of bounded operators, such a
+  solution is periodic exactly when its initial value is fixed by the propagator over one period.
 * `TauCeti.contDiff_dysonSeriesLeft`: the left series of a `Cⁿ` path is `Cⁿ⁺¹`.
 * `TauCeti.dysonSeries_neg_mul_dysonSeriesLeft`, `TauCeti.dysonSeriesLeft_mul_dysonSeries_neg`:
   the Dyson series of `-p` is the inverse of the left Dyson series of `p`.
@@ -428,6 +430,14 @@ theorem hasDerivAt_dysonSeriesLeft_apply {M : ℝ → X →L[ℝ] X} (hM : Conti
     (t : ℝ) :
     HasDerivAt (fun t => dysonSeriesLeft M t x) (M t (dysonSeriesLeft M t x)) t := by
   simpa using (hasDerivAt_dysonSeriesLeft hM t).clm_apply (hasDerivAt_const t x)
+
+/-- For a continuous path `M` of period `d`, the solution `t ↦ dysonSeriesLeft M t x` of
+`w' t = M t (w t)` has period `d` exactly when `x` is fixed by the propagator over one period. -/
+theorem periodic_dysonSeriesLeft_apply_iff {M : ℝ → X →L[ℝ] X} (hM : Continuous M) {d : ℝ}
+    (hper : Function.Periodic M d) (x : X) :
+    Function.Periodic (fun t => dysonSeriesLeft M t x) d ↔ dysonSeriesLeft M d x = x := by
+  refine ⟨fun h => by simpa [dysonSeriesLeft_zero] using h 0, fun h t => ?_⟩
+  simp only [dysonSeriesLeft_add_of_periodic hM hper t, mul_apply_eq_comp, h]
 
 /-- **Variation of constants.** For continuous `M` and `f`, the map
 `w t = Ψ t (x + ∫₀ᵗ Ψ(s)⁻¹ (f s) ds)`, where `Ψ = dysonSeriesLeft M` and
