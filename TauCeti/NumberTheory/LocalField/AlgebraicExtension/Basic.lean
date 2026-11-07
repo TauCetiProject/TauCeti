@@ -516,3 +516,20 @@ theorem residueFieldHom_id : (AlgHom.id K L).residueFieldHom = AlgHom.id 𝓀[K]
   exact congrArg _ (Subtype.ext (by simp))
 
 end AlgHom
+
+namespace TauCeti
+
+variable {K L M : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [Algebra K L] [ValuativeExtension K L]
+  [Field M] [ValuativeRel M] [Algebra K M] [ValuativeExtension K M]
+
+/-- The image under a residue embedding `φ` of the residue of `z ∈ 𝒪[L]` is a root of the reduction
+of the minimal polynomial of `z` over `𝒪[K]`. -/
+theorem aeval_residue_minpoly_eq_zero (φ : 𝓀[L] →ₐ[𝓀[K]] 𝓀[M]) (z : 𝒪[L]) :
+    Polynomial.aeval (φ (IsLocalRing.residue 𝒪[L] z)) (minpoly 𝒪[K] (z : L)) = 0 := by
+  rw [show (z : L) = algebraMap 𝒪[L] L z from rfl,
+    minpoly.algebraMap_eq (FaithfulSMul.algebraMap_injective 𝒪[L] L) z]
+  exact minpoly.aeval_algHom (A := 𝒪[K])
+    ((φ.restrictScalars 𝒪[K]).comp (IsScalarTower.toAlgHom 𝒪[K] 𝒪[L] 𝓀[L])) z
+
+end TauCeti
