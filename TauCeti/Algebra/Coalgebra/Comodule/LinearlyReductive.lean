@@ -80,8 +80,9 @@ arbitrary field.
   linearly reductive coalgebra is completely reducible**, in every carrier universe and with no
   finiteness assumption, and `TauCeti.Coalgebra.IsLinearlyReductive.sSup_atoms_eq_top`: it is
   the sum of its simple subcomodules.
-* `TauCeti.Comodule.isCompletelyReducible_corestrict_iff_of_coalgEquiv`: complete reducibility
-  is invariant under a coalgebra equivalence.
+* `TauCeti.Comodule.isCompletelyReducible_corestrict_iff_of_split`: complete reducibility is
+  unchanged by corestriction along a coalgebra morphism with a linear retraction, in particular
+  along a coalgebra equivalence.
 * `TauCeti.Coalgebra.isLinearlyReductive_iff_of_coalgEquiv`: linear reductivity is invariant
   under a coalgebra equivalence.
 * `TauCeti.Comodule.isCompletelyReducible_of_sSup_eq_top`: over a commutative ring and a flat
@@ -303,32 +304,30 @@ theorem isCompletelyReducible_transport_iff (e : V ≃ₗ[k] W) :
 
 end Transport
 
-section Equiv
+section Split
 
-variable (k : Type u) [CommSemiring k]
+variable {k : Type u} [CommSemiring k]
 variable {C : Type v} {D : Type*}
 variable [AddCommMonoid C] [Module k C] [Coalgebra k C]
 variable [AddCommMonoid D] [Module k D] [Coalgebra k D]
+variable {V : Type w} [AddCommMonoid V] [Module k V] [Comodule k C V]
 
-/-- Complete reducibility is unchanged by corestricting a comodule along a coalgebra
-equivalence. -/
-theorem isCompletelyReducible_corestrict_iff_of_coalgEquiv (e : C ≃ₗc[k] D)
-    {V : Type w} [AddCommMonoid V] [Module k V] [Comodule k D V] :
-    (letI : Comodule k C V := Comodule.Corestrict e.symm.toCoalgHom;
-      Comodule.IsCompletelyReducible k C V) ↔
-      Comodule.IsCompletelyReducible k D V := by
-  let _ : Comodule k C V := Comodule.Corestrict e.symm.toCoalgHom
-  let subcomoduleEquiv : Subcomodule k D V ≃o Subcomodule k C V :=
-    Subcomodule.corestrictOrderIso e.symm
+/-- Complete reducibility is unchanged by corestriction along a coalgebra morphism
+with a linear retraction, in particular along a coalgebra equivalence. -/
+theorem isCompletelyReducible_corestrict_iff_of_split (f : C →ₗc[k] D)
+    (r : D →ₗ[k] C) (hr : r.comp f.toLinearMap = LinearMap.id) :
+    (letI : Comodule k D V := Comodule.Corestrict f;
+      IsCompletelyReducible k D V) ↔ IsCompletelyReducible k C V := by
+  let _ : Comodule k D V := Comodule.Corestrict f
   constructor
-  · exact isCompletelyReducible_of_orderIso k subcomoduleEquiv.symm (OrderIso.refl _)
-      (fun A ↦ by simp [subcomoduleEquiv])
-  · exact isCompletelyReducible_of_orderIso k subcomoduleEquiv (OrderIso.refl _)
-      (fun A ↦ by
-        simpa [subcomoduleEquiv] using
-          Subcomodule.corestrict_toSubmodule e.symm.toCoalgHom A)
+  · exact isCompletelyReducible_of_orderIso k
+      (Subcomodule.corestrictOrderIsoOfSplit f r hr).symm (OrderIso.refl _)
+      (fun A ↦ by simp)
+  · exact isCompletelyReducible_of_orderIso k
+      (Subcomodule.corestrictOrderIsoOfSplit f r hr) (OrderIso.refl _)
+      (fun A ↦ by simp)
 
-end Equiv
+end Split
 
 end Comodule
 
@@ -381,10 +380,12 @@ theorem isLinearlyReductive_iff_of_coalgEquiv (e : C ≃ₗc[k] D) :
   constructor
   · intro h V _ _ _ _
     let _ : Comodule k C V := Comodule.Corestrict e.symm.toCoalgHom
-    exact (Comodule.isCompletelyReducible_corestrict_iff_of_coalgEquiv k e).mp (h V)
+    exact (Comodule.isCompletelyReducible_corestrict_iff_of_split e.symm.toCoalgHom
+      e.toLinearMap (by ext; simp)).mp (h V)
   · intro h V _ _ _ _
     let _ : Comodule k D V := Comodule.Corestrict e.toCoalgHom
-    exact (Comodule.isCompletelyReducible_corestrict_iff_of_coalgEquiv k e.symm).mp (h V)
+    exact (Comodule.isCompletelyReducible_corestrict_iff_of_split e.toCoalgHom
+      e.symm.toLinearMap (by ext; simp)).mp (h V)
 
 end Coalgebra
 

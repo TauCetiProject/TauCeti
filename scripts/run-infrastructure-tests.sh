@@ -22,6 +22,7 @@ python3 scripts/pr_status/test_zulip.py
 python3 scripts/pr_status/test_conflicts.py
 python3 scripts/test_structure_nudge.py
 python3 scripts/test_workflow_pins.py
+python3 scripts/test_pages_data_refresh.py
 python3 scripts/test_control_batch_workflows.py
 python3 scripts/test_control_batch_budget.py
 python3 scripts/test_queue_release.py
@@ -31,6 +32,7 @@ python3 scripts/test_bwrap_pin.py
 python3 scripts/test_bump_manifest.py
 python3 scripts/test_bump_latest.py
 python3 scripts/test_lint_scope.py
+python3 scripts/test_ci_preflight_policy.py
 python3 scripts/test_bors_scope_approval.py
 python3 scripts/test_bors_staging_identity.py
 python3 scripts/test_bors_train_identity.py

@@ -69,6 +69,9 @@ curvature. Curvature bounds therefore turn into energy bounds. For a cylindrical
   `SymplecticForm.setLIntegral_norm_sq_add_norm_sq_perturbedFDeriv_le`: the energy controls the
   perturbed derivative, pointwise and in `L²`.
 * `SymplecticForm.integral_floerEnergyDensity`: the energy identity on a rectangle.
+* `SymplecticForm.integral_floerEnergyDensity_sub_add_eq_of_eventuallyEq_zero`: the energy minus
+  the symplectic area plus the integrated curvature does not change when a compact domain is shrunk
+  to a measurable part outside which the perturbation vanishes locally.
 * `SymplecticForm.floerEnergyDensity_add_hamiltonianCurvature_eq`: for a `C²` map, the energy
   density plus the curvature is the exterior derivative of the one-form `K(u) + λ(u)`, where
   `λₓ(v) = ½ ω(x, v)` is the primitive of `ω`; this globalizes the energy identity to domains
@@ -100,6 +103,29 @@ curvature. Curvature bounds therefore turn into energy bounds. For a cylindrical
 public section
 
 open Filter Function MeasureTheory Set Topology
+
+namespace TauCeti
+
+/-- The `∂_s` derivative of a product `β(s) h(t)` is `β'(s) h(t)`. This is the domain part of the
+curvature of a continuation perturbation `K = β(s) H_t dt`, for any target. -/
+theorem fderiv_mul_apply_stdComplexLineReal {β h : ℝ → ℝ} {z : ℝ × ℝ}
+    (hβ : DifferentiableAt ℝ β z.1) (hh : DifferentiableAt ℝ h z.2) :
+    fderiv ℝ (fun w : ℝ × ℝ ↦ β w.1 * h w.2) z stdComplexLineReal = deriv β z.1 * h z.2 := by
+  have hβ' : HasFDerivAt (fun w : ℝ × ℝ ↦ β w.1)
+      ((fderiv ℝ β z.1).comp (ContinuousLinearMap.fst ℝ ℝ ℝ)) z :=
+    hβ.hasFDerivAt.comp z hasFDerivAt_fst
+  have hh' : HasFDerivAt (fun w : ℝ × ℝ ↦ h w.2)
+      ((fderiv ℝ h z.2).comp (ContinuousLinearMap.snd ℝ ℝ ℝ)) z :=
+    hh.hasFDerivAt.comp z hasFDerivAt_snd
+  have hmul : HasFDerivAt (fun w : ℝ × ℝ ↦ β w.1 * h w.2)
+      (β z.1 • (fderiv ℝ h z.2).comp (ContinuousLinearMap.snd ℝ ℝ ℝ) +
+        h z.2 • (fderiv ℝ β z.1).comp (ContinuousLinearMap.fst ℝ ℝ ℝ)) z :=
+    hβ'.mul hh'
+  rw [hmul.fderiv]
+  simp [stdComplexLineReal]
+  ring
+
+end TauCeti
 
 namespace TauCeti.SymplecticForm
 
@@ -141,8 +167,8 @@ theorem hamiltonianCurvature_continuation (ω : SymplecticForm V) {β : ℝ → 
     (hH : DifferentiableAt ℝ (fun t ↦ H t x) z.2) :
     ω.hamiltonianCurvature (fun _ _ ↦ 0) (fun w y ↦ β w.1 * H w.2 y) z x =
       deriv β z.1 * H z.2 x := by
-  rw [hamiltonianCurvature_zero_left, stdComplexLineReal_eq]
-  exact fderiv_mul_apply_one_zero (h := fun t ↦ H t x) hβ hH
+  rw [hamiltonianCurvature_zero_left]
+  exact fderiv_mul_apply_stdComplexLineReal (h := fun t ↦ H t x) hβ hH
 
 omit [FiniteDimensional ℝ V] in
 /-- The cylindrical perturbation `K = H_t dt` of a `Cⁿ` time-dependent Hamiltonian is `Cⁿ`. -/
@@ -578,6 +604,51 @@ theorem integral_floerEnergyDensity (ω : SymplecticForm V) {U : Set (ℝ × ℝ
       (hKdiff hKs (habU hz)) (hKdiff hKt (habU hz)),
     integral_sub hsum hcurv, integral_add harea hderiv, stdComplexLineReal_eq,
     stdComplexLineImag_eq, integral_fderiv_sub_fderiv_Icc hU hg hf hab habU]
+
+/-- **Shrinking to where the datum lives.** Let the perturbation data be `C¹` over an open set
+`P` of the domain, let `u` be `C¹` on `P`, and let `T ⊆ D ⊆ P` with `T` measurable and `D`
+compact. If `K_s` and `K_t` vanish near every point of `D \ T`, then the Floer energy minus the
+symplectic area plus the integrated curvature is the same over `D` as over `T`. -/
+theorem integral_floerEnergyDensity_sub_add_eq_of_eventuallyEq_zero (ω : SymplecticForm V)
+    {P D T : Set (ℝ × ℝ)} (hP : IsOpen P) (hu : ContDiffOn ℝ 1 u P)
+    (hKs : ContDiffOn ℝ 1 (uncurry Ks) (P ×ˢ univ)) (hKt : ContDiffOn ℝ 1 (uncurry Kt) (P ×ˢ univ))
+    (hD : IsCompact D) (hDP : D ⊆ P) (hT : MeasurableSet T) (hTD : T ⊆ D)
+    (hKsD : ∀ z ∈ D \ T, Ks =ᶠ[𝓝 z] 0) (hKtD : ∀ z ∈ D \ T, Kt =ᶠ[𝓝 z] 0) :
+    (∫ z in D, ω.floerEnergyDensity Ks Kt u z) -
+      (∫ z in D, ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag)) +
+      (∫ z in D, ω.hamiltonianCurvature Ks Kt z (u z)) =
+    (∫ z in T, ω.floerEnergyDensity Ks Kt u z) -
+      (∫ z in T, ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag)) +
+      ∫ z in T, ω.hamiltonianCurvature Ks Kt z (u z) := by
+  have hDTm : MeasurableSet (D \ T) := hD.isClosed.measurableSet.diff hT
+  -- The three integrands are continuous on `P`, hence integrable on the compact set `D`.
+  have hint (f : ℝ × ℝ → ℝ) (hf : ContinuousOn f P) : IntegrableOn f D :=
+    (hf.mono hDP).integrableOn_compact hD
+  have hdu := hu.continuousOn_fderiv_of_isOpen hP le_rfl
+  have hE := hint _ (ω.continuousOn_floerEnergyDensity hP hu hKs hKt)
+  have harea := hint (fun z ↦ ω (fderiv ℝ u z stdComplexLineReal)
+    (fderiv ℝ u z stdComplexLineImag)) (ω.continuousOn_apply_comp
+      (hdu.clm_apply continuousOn_const) (hdu.clm_apply continuousOn_const))
+  have hcurv := hint _ (ω.continuousOn_hamiltonianCurvature_comp hP hu.continuousOn hKs hKt)
+  have hsplit (f : ℝ × ℝ → ℝ) (hf : IntegrableOn f D) :
+      ∫ z in D, f z = (∫ z in T, f z) + ∫ z in D \ T, f z := by
+    rw [← integral_inter_add_sdiff hT hf, inter_eq_right.2 hTD]
+  -- Off `T` the datum vanishes, so the energy is the area and the curvature vanishes.
+  have hKsD' (z : ℝ × ℝ) (hz : z ∈ D \ T) : Ks =ᶠ[𝓝 z] fun _ _ ↦ 0 := hKsD z hz
+  have hKtD' (z : ℝ × ℝ) (hz : z ∈ D \ T) : Kt =ᶠ[𝓝 z] fun _ _ ↦ 0 := hKtD z hz
+  have hED : ∫ z in D \ T, ω.floerEnergyDensity Ks Kt u z =
+      ∫ z in D \ T, ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) := by
+    refine setIntegral_congr_fun hDTm fun z hz => ?_
+    simp [floerEnergyDensity_def, perturbedFDeriv_apply_stdComplexLineReal,
+      perturbedFDeriv_apply_stdComplexLineImag, (hKsD' z hz).self_of_nhds,
+      (hKtD' z hz).self_of_nhds]
+  have hRD : ∫ z in D \ T, ω.hamiltonianCurvature Ks Kt z (u z) = 0 := by
+    refine setIntegral_eq_zero_of_forall_eq_zero fun z hz => ?_
+    rw [ω.hamiltonianCurvature_congr_of_eventuallyEq (hKsD' z hz) (hKtD' z hz),
+      hamiltonianCurvature_zero_left]
+    simp
+  rw [hsplit _ hE, hsplit _ harea, hsplit _ hcurv, hED, hRD]
+  ring
 
 /-- **The energy controls the perturbed derivative in `L²`.** Let `u` solve the Floer equation on
 a measurable set `U` for domain-dependent almost complex structures `J z` satisfying
