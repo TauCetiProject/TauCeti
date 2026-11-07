@@ -25,7 +25,7 @@ The grading and corner membership of the terminal word come from
 Products use later-factor-first order.
 
 As in the existing type-`D` word API, signless quotient carriers use
-`forkNeighborSetFintype`; imported callers can select this local instance when
+`SimpleGraph.neighborSetFintypeOfFinite`; imported callers can select this local instance when
 writing representatives. No restriction is placed on the characteristic.
 
 ## Main results
@@ -47,7 +47,7 @@ namespace TauCeti
 
 open _root_.Quiver PathAlgebra DoubledQuiver
 
-attribute [local instance] forkNeighborSetFintype
+attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite
 
 section Field
 

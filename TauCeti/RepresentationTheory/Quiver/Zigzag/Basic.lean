@@ -211,6 +211,16 @@ def starEquivNeighborSet (v : V) :
     ext
     rfl
 
+/-- The neighbour sets of a graph on a finite vertex type are finite, from finiteness alone. This
+is not an instance: Mathlib's `SimpleGraph.neighborSetFintype` enumerates the neighbours through
+decidable adjacency, and the two structures are not definitionally equal. Files that write
+signless quotient carriers select it as a local instance; it is exposed so that carriers written in
+different files agree definitionally. -/
+@[instance_reducible, expose]
+noncomputable def _root_.SimpleGraph.neighborSetFintypeOfFinite [Finite V] (v : V) :
+    Fintype (G.neighborSet v) :=
+  Fintype.ofFinite _
+
 /-- The star at a doubled-quiver vertex is finite whenever its neighbor set is finite. -/
 noncomputable instance instFintypeStarVertex (v : V) [Fintype (G.neighborSet v)] :
     Fintype (Quiver.Star (vertex G v)) :=
