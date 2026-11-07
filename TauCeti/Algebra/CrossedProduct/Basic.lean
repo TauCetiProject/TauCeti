@@ -569,6 +569,15 @@ end Lift
 instance [Nontrivial L] : Nontrivial (CrossedProduct c) :=
   nontrivial_of_ne _ _ ((basis c).ne_zero 1)
 
+/-- The crossed product is a free left `L`-module, with basis the `u_σ`. -/
+instance : Module.Free L (CrossedProduct c) :=
+  .of_basis (basis c)
+
+/-- The crossed product is a finite left `L`-module when `L` has finitely many
+`K`-automorphisms. -/
+instance [Finite (L ≃ₐ[K] L)] : Module.Finite L (CrossedProduct c) :=
+  .of_basis (basis c)
+
 variable (c) in
 /-- The crossed product of a `K`-free algebra `L` satisfies the natural-number identity
 `Module.finrank K (CrossedProduct c) = Module.finrank K L * Nat.card (Aut_K(L))`.
@@ -578,12 +587,10 @@ theorem finrank_eq_finrank_mul_card [StrongRankCondition K] [Module.Free K L] :
   rcases subsingleton_or_nontrivial L with _ | _
   · have : Subsingleton (CrossedProduct c) := (equivFinsupp c).toEquiv.subsingleton
     simp [Module.finrank_zero_of_subsingleton]
-  have : Module.Free L (CrossedProduct c) := .of_basis (basis c)
   rw [← Module.finrank_mul_finrank K L, Module.finrank_eq_nat_card_basis (basis c)]
 
 /-- The crossed product of a finite algebra with finitely many automorphisms is finite. -/
 instance [Module.Finite K L] [Finite (L ≃ₐ[K] L)] : Module.Finite K (CrossedProduct c) :=
-  have : Module.Finite L (CrossedProduct c) := .of_basis (basis c)
   .trans L (CrossedProduct c)
 
 section Field
