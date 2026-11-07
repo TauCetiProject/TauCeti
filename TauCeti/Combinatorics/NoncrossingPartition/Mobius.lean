@@ -11,6 +11,7 @@ public import TauCeti.Combinatorics.NoncrossingPartition.Interval
 public import TauCeti.Combinatorics.NoncrossingPartition.Kreweras
 import Mathlib.Algebra.BigOperators.Fin
 import TauCeti.Algebra.BigOperators.Finset.Range
+import TauCeti.Data.Finset.Basic
 
 /-!
 # The Möbius function of the lattice of noncrossing partitions
@@ -140,42 +141,6 @@ private theorem filter_le_max'_eq_part :
     ((x.1.mem_part_iff_part_eq_part hys hm₂s).1 hyC).symm h₁₂ h₂z hzy')
 
 omit hm₁ hm₂ hx hne hmin₁ hmin₂ in
-/-- A noncrossing partition other than the partition into one part, whose join with the part
-`{m₁, m₂}` is the partition into one part, has distinct parts through `m₁` and `m₂` that cover
-`s`. -/
-private theorem part_union_eq_of_sup_pairPartition_eq_top (hpair : {m₁, m₂} ⊆ s) (hle : m₁ ≤ m₂)
-    (hadj : ∀ z ∈ s, z ≤ m₁ ∨ m₂ ≤ z) {x : NoncrossingPartition s} (hxtop : x ≠ ⊤)
-    (hx : x ⊔ ⟨pairPartition s m₁ m₂ hpair, isNoncrossing_pairPartition hpair⟩ = ⊤) :
-    x.1.part m₁ ∪ x.1.part m₂ = s ∧ x.1.part m₁ ≠ x.1.part m₂ := by
-  have hu := (sup_pairPartition_eq_top_iff hpair hle hadj x).1 hx
-  refine ⟨hu, fun h => hxtop (Subtype.ext (Finpartition.eq_top_of_mem_parts ?_))⟩
-  rw [← h, union_self] at hu
-  have hpart := x.1.part_mem.2 (hpair (mem_insert_self _ _))
-  rwa [hu] at hpart
-
-omit hm₁ hm₂ hx hne hmin₁ hmin₂ in
-/-- Splitting off a nonempty set `T` of positions containing `m₂` but not `m₁` gives a
-noncrossing partition other than the partition into one part, whose join with the part
-`{m₁, m₂}` is the partition into one part. -/
-private theorem splitPartition_mem_erase_top_sup_pairPartition (hpair : {m₁, m₂} ⊆ s)
-    (hle : m₁ ≤ m₂) (hadj : ∀ z ∈ s, z ≤ m₁ ∨ m₂ ≤ z) {T : Finset α} (hT : T.Nonempty)
-    (hTs : T ⊆ s) (hconv : ∀ a ∈ T, ∀ c ∈ T, ∀ b ∈ s, a < b → b < c → b ∈ T) (hm₂T : m₂ ∈ T)
-    (hm₁T : m₁ ∉ T) :
-    (⟨splitPartition s T hT hTs, isNoncrossing_splitPartition hconv⟩ : NoncrossingPartition s) ∈
-      ({x | x ⊔ ⟨pairPartition s m₁ m₂ hpair, isNoncrossing_pairPartition hpair⟩ = ⊤} :
-        Finset (NoncrossingPartition s)).erase ⊤ := by
-  have hm₁ : m₁ ∈ s := hpair (mem_insert_self _ _)
-  rw [mem_erase, mem_filter, sup_pairPartition_eq_top_iff hpair hle hadj]
-  dsimp only
-  rw [part_splitPartition_of_mem hm₂T, part_splitPartition_of_notMem hm₁ hm₁T]
-  refine ⟨fun h => ?_, mem_univ _, sdiff_union_of_subset hTs⟩
-  have h₁ := congrArg (fun P : NoncrossingPartition s => P.1.part m₁) h
-  dsimp only at h₁
-  rw [part_splitPartition_of_notMem hm₁ hm₁T, coe_top, Finpartition.part_top hm₁] at h₁
-  obtain ⟨t, ht⟩ := hT
-  exact (mem_sdiff.1 (h₁.symm ▸ hTs ht : t ∈ s \ T)).2 ht
-
-omit hm₁ hm₂ hx hne hmin₁ hmin₂ in
 /-- The Möbius function at the partition of `s` into the nonempty part `T` and the nonempty rest
 `s \ T` is the product of the values on the two lattices of noncrossing partitions. -/
 private theorem mu_bot_splitPartition {T : Finset α} (hT : T.Nonempty) (hTs : T ⊆ s)
@@ -187,16 +152,6 @@ private theorem mu_bot_splitPartition {T : Finset α} (hT : T.Nonempty) (hTs : T
     prod_pair fun h : T = s \ T => ?_]
   obtain ⟨t, ht⟩ := hT
   exact (mem_sdiff.1 (h ▸ ht : t ∈ s \ T)).2 ht
-
-omit hm₁ hm₂ hx hne hmin₂ in
-/-- The positions of `s` other than the least one `m₁`, up to a position `y`, contain every
-position of `s` between two of them. -/
-private theorem convex_filter_erase_le (y : α) :
-    ∀ a ∈ {z ∈ s.erase m₁ | z ≤ y}, ∀ c ∈ {z ∈ s.erase m₁ | z ≤ y}, ∀ b ∈ s,
-      a < b → b < c → b ∈ {z ∈ s.erase m₁ | z ≤ y} := by
-  intro a ha c hc b hb hab hbc
-  simp only [mem_filter, mem_erase] at ha hc ⊢
-  exact ⟨⟨((hmin₁ a ha.1.2).trans_lt hab).ne', hb⟩, hbc.le.trans hc.2⟩
 
 omit hm₁ hm₂ hx hne hmin₁ hmin₂ in
 /-- Let `m₁ < m₂` be the two first positions of `s`. Removing the partition into one part, the
@@ -232,12 +187,12 @@ private theorem sum_erase_top_mu_bot (hpair : {m₁, m₂} ⊆ s) (hmin₁ : ∀
   symm
   refine sum_bij'
     (fun y hy => ⟨splitPartition s _ (nonempty_of_ne_empty (ne_empty_of_mem (hC hy))) (hCs y),
-      isNoncrossing_splitPartition (convex_filter_erase_le hmin₁ y)⟩)
+      isNoncrossing_splitPartition (Finset.convex_filter_erase_le hmin₁ y)⟩)
     (fun x _ => (x.1.part m₂).max' ⟨m₂, x.1.mem_part_self.2 hm₂s⟩)
     (fun y hy => ?_) (fun x hx => ?_) (fun y hy => ?_) (fun x hx => ?_) (fun y hy => ?_)
   · -- The split partition joins with the atom to the top, and is not the top itself.
     exact splitPartition_mem_erase_top_sup_pairPartition hpair hle hadj _ (hCs y)
-      (convex_filter_erase_le hmin₁ y) (hm₂C hy) (hm₁C y)
+      (Finset.convex_filter_erase_le hmin₁ y) (hm₂C hy) (hm₁C y)
   · -- The last position of the part through `m₂` is not `m₁`.
     obtain ⟨hu, hne⟩ := hX x hx
     have hmax := max'_mem (x.1.part m₂) ⟨m₂, x.1.mem_part_self.2 hm₂s⟩
@@ -260,7 +215,7 @@ private theorem sum_erase_top_mu_bot (hpair : {m₁, m₂} ⊆ s) (hmin₁ : ∀
         (x.1.mem_part_iff_part_eq_part hz hm₁).1
           ((mem_union.1 (hu.symm ▸ hz)).resolve_right hzC)]
   · -- The Möbius function at the split partition is a product over its two parts.
-    exact (mu_bot_splitPartition _ (hCs y) (convex_filter_erase_le hmin₁ y)
+    exact (mu_bot_splitPartition _ (hCs y) (Finset.convex_filter_erase_le hmin₁ y)
       (nonempty_of_ne_empty (ne_empty_of_mem (mem_sdiff.2 ⟨hm₁, hm₁C y⟩)))).symm
 
 end Recurrence
