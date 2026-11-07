@@ -54,18 +54,10 @@ theorem ringKrullDim_holomorphicStalk (e : E ≃L[ℂ] F) (a : E) :
         ringKrullDim ((holomorphicStructureSheaf 𝓘(ℂ, W) W).presheaf.stalk (e v)) := by
     intro V W _ _ _ _ e v
     apply ringKrullDim_le_of_surjective (stalkPrecomp 𝓘(ℂ, V) V e e.contDiff.contMDiff v)
-    intro s
-    obtain ⟨f, hf, hfs⟩ := exists_toFilterGerm_eq v s
-    have hnear : ∀ᶠ w in 𝓝 (e v), ContMDiffAt 𝓘(ℂ, W) 𝓘(ℂ) ω (f ∘ e.symm) w := by
-      filter_upwards [(e.symm.continuousAt.tendsto.eventually (by
-        simpa only [e.symm_apply_apply] using hf))] with w hw
-      exact hw.comp w e.symm.contDiff.contMDiff.contMDiffAt
-    obtain ⟨t, ht⟩ := exists_toFilterGerm_eq_of_eventually_contMDiffAt hnear
-    refine ⟨t, toFilterGerm_nhds_injective v ?_⟩
-    rw [toFilterGerm_stalkPrecomp, ht, Germ.coe_compTendsto, hfs]
-    congr 1
-    ext z
-    simp
+    rw [← stalkPullback_eq_stalkPrecomp]
+    exact stalkPullback_surjective_of_eventually_leftInverse _
+      (Eventually.of_forall fun _ ↦ e.symm.contDiff.contMDiff.contMDiffAt)
+      (Eventually.of_forall e.symm_apply_apply)
   refine le_antisymm (hle E F e a) ?_
   -- Transport the base point explicitly through the stalk's colimit carrier.
   exact (hle F E e.symm (e a)).trans_eq
@@ -128,23 +120,16 @@ theorem finrank_le_ringKrullDim_stalk (x : X) :
     filter_upwards [extChartAt_target_mem_nhds (I := I) x] with z hz
     exact (contMDiffOn_extChartAt_symm x z hz).contMDiffAt
       ((isOpen_extChartAt_target x).mem_nhds hz)
+  have hx : e.symm (e x) = x := extChartAt_to_inv x
   -- Restriction to the inverse chart is onto: extend a model germ using the chart.
   have hsurj : Function.Surjective (stalkPullback he) := by
-    intro s
-    obtain ⟨f, hf, hfs⟩ := exists_toFilterGerm_eq (e x) s
-    have hnear : ∀ᶠ y in 𝓝 x, ContMDiffAt I 𝓘(ℂ) ω (f ∘ e) y := by
-      filter_upwards [(contMDiffAt_extChartAt (I := I) (n := ω) (x := x)).continuousAt.tendsto
-        |>.eventually hf, (chartAt H x).open_source.mem_nhds (mem_chart_source H x)] with y hy hy'
-      exact hy.comp y (contMDiffAt_extChartAt' hy')
-    have hx : e.symm (e x) = x := extChartAt_to_inv x
-    obtain ⟨t, ht⟩ := exists_toFilterGerm_eq_of_eventually_contMDiffAt
-      (hx.symm ▸ hnear)
-    refine ⟨t, toFilterGerm_nhds_injective (e x) ?_⟩
-    rw [toFilterGerm_stalkPullback, ht, Germ.coe_compTendsto, hfs, Germ.coe_eq]
-    filter_upwards [extChartAt_target_mem_nhds (I := I) x] with z hz
-    simp only [Function.comp_apply, e.right_inv hz]
+    apply stalkPullback_surjective_of_eventually_leftInverse he (g := e)
+    · rw [hx]
+      filter_upwards [(chartAt H x).open_source.mem_nhds (mem_chart_source H x)] with y hy
+      exact contMDiffAt_extChartAt' hy
+    · filter_upwards [extChartAt_target_mem_nhds (I := I) x] with z hz
+      exact e.right_inv hz
   have hdim := ringKrullDim_le_of_surjective (stalkPullback he) hsurj
-  have hx : e.symm (e x) = x := extChartAt_to_inv x
   exact (finrank_le_ringKrullDim_stalk_modelSpace (e x)).trans <|
     hdim.trans_eq (congrArg (fun y ↦ ringKrullDim
       ((holomorphicStructureSheaf I X).presheaf.stalk y)) hx)
