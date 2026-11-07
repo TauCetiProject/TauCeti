@@ -46,6 +46,8 @@ to prove that `D_A` is Fredholm when the limits of `A` at `±∞` are hyperbolic
   of `D_{-A†}` are exactly the orthogonal complement of the range of `D_A`.
 * `TauCeti.WeakDerivStep.index_trajectoryOperator_of_isClosed_range`: whenever the range of `D_A`
   is closed, its index is `dim ker D_A - dim ker D_{-A†}`.
+* `TauCeti.WeakDerivStep.surjective_trajectoryOperator_iff_ker_neg_eq_bot`: when the range of
+  `D_A` is closed, `D_A` is onto exactly when the kernel of `D_{-A†}` vanishes.
 * `TauCeti.WeakDerivStep.exists_ae_eq_adjoint`: the pointwise adjoint of an essentially bounded
   family has an `L∞` class.
 
@@ -243,6 +245,29 @@ theorem index_trajectoryOperator_of_isClosed_range [FiniteDimensional ℝ E]
       (LinearEquiv.ofEq _ _ (orthogonal_range_trajectoryOperator_eq_map_ker hadj))).trans
       (Submodule.equivMapOfInjective _ hinj _).symm).finrank_eq
   rw [ContinuousLinearMap.index_eq_finrank_sub, hcoker]
+
+/-- **A trajectory operator with closed range is onto exactly when its formal adjoint is
+injective.** Let `B` be almost everywhere the pointwise adjoint of the coefficient of
+`D_A u = u' + A u`, let `E` be finite dimensional and let the range of `D_A` be closed. Then `D_A`
+is surjective if and only if the only solution of `v' - B v = 0` in `W^{1,2}(ℝ, E)` is zero, that
+is, the kernel of `D_{-B}` vanishes. -/
+theorem surjective_trajectoryOperator_iff_ker_neg_eq_bot [FiniteDimensional ℝ E]
+    {AL BL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
+    (hadj : ∀ᵐ s ∂volume.restrict ((⊤ : Opens ℝ) : Set ℝ),
+      BL s = ContinuousLinearMap.adjoint (AL s))
+    (hclosed : IsClosed ((trajectoryOperator (p := 2) AL).range :
+      Set (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
+    Function.Surjective (trajectoryOperator (p := 2) AL) ↔
+      (trajectoryOperator (p := 2) (-BL)).ker = ⊥ := by
+  have := hclosed.completeSpace_coe
+  have hinj : Function.Injective
+      (prevL (ContinuousLinearMap.id ℝ (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :=
+    fun u w h ↦ ext (by simpa using h)
+  refine (LinearMap.range_eq_top
+    (f := (trajectoryOperator (p := 2) AL).toLinearMap)).symm.trans ?_
+  rw [← Submodule.orthogonal_eq_bot_iff, orthogonal_range_trajectoryOperator_eq_map_ker hadj]
+  exact ⟨fun h ↦ Submodule.map_injective_of_injective hinj (by rw [h, Submodule.map_bot]),
+    fun h ↦ by rw [h, Submodule.map_bot]⟩
 
 variable {A : ℝ → E →L[ℝ] E}
 
