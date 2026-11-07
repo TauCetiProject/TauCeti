@@ -54,6 +54,20 @@ variable {K X Y : Type*} [Field K] [NumberField K]
   [AddCommGroup X] [Module K X] [FiniteDimensional K X]
   [AddCommGroup Y] [Module K Y] [FiniteDimensional K Y]
 
+/-- Over a field, a regular quadratic form `Q` represents `-c` as soon as, if `Q` is anisotropic,
+`c` lies in the square class of some nonzero `c₀` that is the negative of a value of `Q`. -/
+private theorem represents_neg_of_forall_anisotropic {F V : Type*} [Field F] [AddCommGroup V]
+    [Module F V] (Q : QuadraticForm F V) (hQ : Q.Nondegenerate) (c : F)
+    (h : Q.Anisotropic → ∃ c₀ y, c₀ ≠ 0 ∧ c₀ = -Q y ∧ IsSquare (c / c₀)) :
+    Represents Q (-c) := by
+  by_cases han : Q.Anisotropic
+  · obtain ⟨c₀, y, hc₀, hxy, hsq⟩ := h han
+    have hrep : Represents Q (-c₀) :=
+      (represents_iff _ _).mpr ⟨y, (neg_eq_iff_eq_neg.mpr hxy).symm⟩
+    refine hrep.of_isSquare_div (neg_ne_zero.mpr hc₀) ?_
+    simpa [neg_div_neg_eq] using hsq
+  · exact represents_of_nondegenerate_of_not_anisotropic _ hQ han _
+
 omit [FiniteDimensional K X] in
 /-- If `W` is regular, then `-U x` is represented at a finite place `v` as soon as, where `W_v` is
 anisotropic, the value `U_v (1 ⊗ x)` lies in the square class of a local value of `U_v` that is
@@ -65,14 +79,11 @@ private theorem represents_atFinitePlace_neg_apply
       ∃ x₀ y, U.atFinitePlace v x₀ ≠ 0 ∧ U.atFinitePlace v x₀ = -W.atFinitePlace v y ∧
         IsSquare (U.atFinitePlace v ((1 : v.adicCompletion K) ⊗ₜ[K] x) / U.atFinitePlace v x₀)) :
     Represents (W.atFinitePlace v) (algebraMap K (v.adicCompletion K) (-U x)) := by
-  by_cases han : (W.atFinitePlace v).Anisotropic
-  · obtain ⟨x₀, y, hx₀, hxy, hsq⟩ := h han
-    have hrep : Represents (W.atFinitePlace v) (-U.atFinitePlace v x₀) :=
-      (represents_iff _ _).mpr ⟨y, (neg_eq_iff_eq_neg.mpr hxy).symm⟩
-    refine hrep.of_isSquare_div (neg_ne_zero.mpr hx₀) ?_
-    simpa [neg_div_neg_eq] using hsq
-  · exact represents_of_nondegenerate_of_not_anisotropic _
-      (QuadraticForm.Nondegenerate.atFinitePlace hW v) han _
+  simpa using represents_neg_of_forall_anisotropic _
+    (QuadraticForm.Nondegenerate.atFinitePlace hW v)
+    (U.atFinitePlace v ((1 : v.adicCompletion K) ⊗ₜ[K] x)) fun han => by
+      obtain ⟨x₀, y, hx₀, hxy, hsq⟩ := h han
+      exact ⟨_, y, hx₀, hxy, hsq⟩
 
 omit [FiniteDimensional K X] in
 /-- If `W` is regular, then `-U x` is represented at a real place `w` as soon as, where `W_w` is
@@ -87,14 +98,11 @@ private theorem represents_atRealPlace_neg_apply
         IsSquare (U.atRealPlace w ((1 : ℝ) ⊗ₜ[K] x : RealScalarExtension w) / U.atRealPlace w x₀)) :
     Represents (W.atRealPlace w) (embedding_of_isReal w.2 (-U x)) := by
   let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  by_cases han : (W.atRealPlace w).Anisotropic
-  · obtain ⟨x₀, y, hx₀, hxy, hsq⟩ := h han
-    have hrep : Represents (W.atRealPlace w) (-U.atRealPlace w x₀) :=
-      (represents_iff _ _).mpr ⟨y, (neg_eq_iff_eq_neg.mpr hxy).symm⟩
-    refine hrep.of_isSquare_div (neg_ne_zero.mpr hx₀) ?_
-    simpa [neg_div_neg_eq] using hsq
-  · exact represents_of_nondegenerate_of_not_anisotropic _
-      (QuadraticForm.Nondegenerate.atRealPlace hW w) han _
+  simpa using represents_neg_of_forall_anisotropic _
+    (QuadraticForm.Nondegenerate.atRealPlace hW w)
+    (U.atRealPlace w ((1 : ℝ) ⊗ₜ[K] x : RealScalarExtension w)) fun han => by
+      obtain ⟨x₀, y, hx₀, hxy, hsq⟩ := h han
+      exact ⟨_, y, hx₀, hxy, hsq⟩
 
 /-- Let `W` be a regular quadratic form over a number field that is anisotropic at only finitely
 many finite places. If at every finite or real place where `W` is anisotropic some nonzero local
