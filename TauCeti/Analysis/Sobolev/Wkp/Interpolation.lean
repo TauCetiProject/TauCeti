@@ -364,7 +364,7 @@ theorem Wkp.lpNorm_gradient_le_of_cutoff (hp_top : p ≠ ⊤) {u : Wkp mu Omega 
     hts (subset_tsupport η (by simp [hη1 hy]))
   obtain ⟨w, hw0, hwv⟩ := Wkp.exists_mem_wkp0Submodule_value_ae_eq_mul hp_top hη hcpt hts 2 u
   have hint := Wkp.norm_iteratedGradient_lowerOrder_le_of_mem_wkp0Submodule hw0 hε
-  -- On `B_s` the cutoff is one, so `∇w = ∇u` there.
+  -- On `S` the cutoff is one, so `∇w = ∇u` there.
   have hwg := Wkp.iteratedGradient_zero_ae_eq_of_value_ae_eq_mul (u := Wkp.lowerOrder 1 u)
     (w := Wkp.lowerOrder 1 w) hη (by simpa only [Wkp.value_succ] using hwv)
   have hgs : (Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) : E → E) =ᵐ[mu.restrict S]
