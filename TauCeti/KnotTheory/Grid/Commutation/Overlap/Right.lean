@@ -742,7 +742,7 @@ theorem OMonomial_mul_OMonomial_recutRightEqRightSecond
 /-- A rectangle between states whose columns end at a column `m` strictly inside the cyclic
 interval from `l` to the rotation of `a` covers only columns of `cIco l (finRotate n a)` and
 avoids both `a` and its rotation. -/
-private lemma coveredColumns_initial_piece_subset_not_mem
+private lemma coveredColumns_initial_piece_subset_notMem
     {u v : GridState n} (E : GridRectangleBetween u v) {l : Fin n}
     (hEleft : E.left = l) (hcol : E.right ∈ Grid.cIoo l (finRotate n a)) :
     E.toGridRectangle.coveredColumns ⊆ Grid.cIco l (finRotate n a) ∧
@@ -773,7 +773,7 @@ private lemma coveredColumns_initial_piece_rectangle
   have hcol' : D.pentagon.left ∈ Grid.cIoo D.rectangle.left (finRotate n a) := by
     simpa only [hcommon, D.pentagon.right_eq] using hcol
   obtain ⟨hsub, haNot, hbNot⟩ :=
-    coveredColumns_initial_piece_subset_not_mem (a := a) E hEleft (hEright ▸ hcol')
+    coveredColumns_initial_piece_subset_notMem (a := a) E hEleft (hEright ▸ hcol')
   refine ⟨fun c hc => ?_, haNot, ?_, hbNot⟩
   · rw [GridRectangleBetween.mem_coveredColumns, hcommon, D.pentagon.right_eq]
     exact hsub hc
@@ -794,7 +794,7 @@ private lemma coveredColumns_initial_piece_pentagon
     a ∉ E.toGridRectangle.coveredColumns ∧
     finRotate n a ∉ E.toGridRectangle.coveredColumns := by
   obtain ⟨hsub, haNot, hbNot⟩ :=
-    coveredColumns_initial_piece_subset_not_mem (a := a) E hEleft (hEright ▸ hcol')
+    coveredColumns_initial_piece_subset_notMem (a := a) E hEleft (hEright ▸ hcol')
   refine ⟨fun c hc => ?_, haNot, hbNot⟩
   rw [GridRectangleBetween.mem_coveredColumns, D.pentagon.right_eq]
   exact hsub hc
