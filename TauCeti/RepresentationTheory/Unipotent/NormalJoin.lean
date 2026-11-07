@@ -115,6 +115,51 @@ theorem _root_.Representation.exists_common_fixed_vector_of_le_normalizer_isUnip
   · exact hxU (⟨⟨u, (le_sup_right : U ≤ W ⊔ U) u.2⟩, u.2⟩ : U')
   · exact hxW (⟨⟨w, (le_sup_left : W ≤ W ⊔ U) w.2⟩, w.2⟩ : W')
 
+/-- A submodule fixed pointwise by every group element is invariant. -/
+private theorem _root_.Representation.le_comap_of_fixed (rho : Representation K G V)
+    (p : Submodule K V) (hfix : ∀ z : G, ∀ y ∈ p, rho z y = y) (z : G) :
+    p ≤ p.comap (rho z) :=
+  fun y hy ↦ by rw [Submodule.mem_comap, hfix z y hy]; exact hy
+
+/-- If `rho z` fixes a submodule `p` pointwise, then `p` is invariant under `rho z - 1`. -/
+private theorem _root_.Representation.le_comap_sub_one_of_fixed (rho : Representation K G V)
+    (p : Submodule K V) (z : G) (hfix : ∀ y ∈ p, rho z y = y) : p ≤ p.comap (rho z - 1) :=
+  fun y hy ↦ by simp [Submodule.mem_comap, hfix y hy]
+
+/-- On the quotient by a pointwise fixed submodule, `q z - 1` is induced by `rho z - 1`. -/
+private theorem _root_.Representation.quotient_sub_one_eq_mapQ (rho : Representation K G V)
+    (p : Submodule K V) (hfix : ∀ z : G, ∀ y ∈ p, rho z y = y) (z : G) :
+    rho.quotient p (rho.le_comap_of_fixed p hfix) z - 1 =
+      p.mapQ p (rho z - 1) (rho.le_comap_sub_one_of_fixed p z (hfix z)) := by
+  ext y
+  simp
+
+/-- Passing to the quotient by a pointwise fixed submodule preserves unipotence of an element. -/
+private theorem _root_.Representation.isNilpotent_quotient_sub_one_of_fixed
+    (rho : Representation K G V) (p : Submodule K V) (hfix : ∀ z : G, ∀ y ∈ p, rho z y = y)
+    {z : G} (hz : IsNilpotent (rho z - 1)) :
+    IsNilpotent (rho.quotient p (rho.le_comap_of_fixed p hfix) z - 1) := by
+  rw [rho.quotient_sub_one_eq_mapQ p hfix z]
+  exact Module.End.IsNilpotent.mapQ _ hz
+
+/-- If an element acts unipotently on the quotient by a pointwise fixed submodule, then it acts
+unipotently on the whole space. -/
+private theorem _root_.Representation.isNilpotent_sub_one_of_quotient
+    (rho : Representation K G V) (p : Submodule K V) (hfix : ∀ z : G, ∀ y ∈ p, rho z y = y)
+    {g : G} (hn : IsNilpotent (rho.quotient p (rho.le_comap_of_fixed p hfix) g - 1)) :
+    IsNilpotent (rho g - 1) := by
+  obtain ⟨n, hn⟩ := hn
+  rw [rho.quotient_sub_one_eq_mapQ p hfix g] at hn
+  refine ⟨n + 1, ?_⟩
+  ext y
+  rw [pow_succ', mul_apply_eq_comp]
+  have hymem : ((rho g - 1) ^ n) y ∈ p := by
+    apply (Submodule.Quotient.mk_eq_zero p).mp
+    have hz := LinearMap.congr_fun hn (p.mkQ y)
+    rw [← p.mapQ_pow (rho.le_comap_sub_one_of_fixed p g (hfix g)) n] at hz
+    simpa only [Submodule.mkQ_apply, Submodule.mapQ_apply, LinearMap.zero_apply] using hz
+  rw [LinearMap.sub_apply, one_apply_eq_self, hfix g _ hymem, sub_self, LinearMap.zero_apply]
+
 /-- If one subgroup is normalized by a second subgroup, they generate the ambient group, and each
 acts unipotently, then the whole group acts unipotently. -/
 private theorem _root_.Representation.isNilpotent_sub_one_of_normal_isUnipotent
@@ -136,52 +181,17 @@ private theorem _root_.Representation.isNilpotent_sub_one_of_normal_isUnipotent
           have hz : z ∈ U ⊔ W := by rw [hUW]; exact Subgroup.mem_top z
           obtain ⟨u, hu, w, hw, rfl⟩ := (Subgroup.mem_sup_of_right_le_normalizer_left hWU).mp hz
           rw [map_mul, mul_apply_eq_comp, hxW ⟨w, hw⟩, hxU ⟨u, hu⟩]
-        let p : Submodule K V := K ∙ x
-        have hpdim : finrank K p = 1 := finrank_span_singleton hx
-        have hp_fixed (z : G) (y : p) : rho z (y : V) = y := by
-          obtain ⟨a, ha⟩ := Submodule.mem_span_singleton.mp y.2
-          rw [← ha, map_smul, hfixed]
-        have hp (z : G) : p ≤ p.comap (rho z) := by
-          intro y hy
-          rw [Submodule.mem_comap, hp_fixed z ⟨y, hy⟩]
-          exact hy
-        let q : Representation K G (V ⧸ p) := rho.quotient p hp
-        have quotient_sub_one_eq_mapQ (z : G)
-            (hsub : p ≤ p.comap (rho z - 1)) :
-            q z - 1 = p.mapQ p (rho z - 1) hsub := by
-          ext y
-          simp only [Representation.quotient_apply, LinearMap.coe_comp, Function.comp_apply,
-            Submodule.mkQ_apply, LinearMap.sub_apply, Submodule.mapQ_apply, one_apply_eq_self,
-            Submodule.Quotient.mk_sub, q]
-        have hq (z : G) (hz : IsNilpotent (rho z - 1)) : IsNilpotent (q z - 1) := by
-          have hsub : p ≤ p.comap (rho z - 1) := by
-            intro y hy
-            rw [Submodule.mem_comap]
-            simpa only [LinearMap.sub_apply, one_apply_eq_self] using p.sub_mem (hp z hy) hy
-          rw [quotient_sub_one_eq_mapQ z hsub]
-          exact Module.End.IsNilpotent.mapQ hsub hz
-        have hqdim : finrank K (V ⧸ p) < d := by
-          have hsum := Module.finrank_quotient_add_finrank_le p
-          rw [hpdim, hdim] at hsum
+        have hfix (z : G) (y : V) (hy : y ∈ K ∙ x) : rho z y = y := by
+          obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp hy
+          rw [map_smul, hfixed]
+        have hqdim : finrank K (V ⧸ K ∙ x) < d := by
+          have hsum := Module.finrank_quotient_add_finrank_le (K ∙ x)
+          rw [finrank_span_singleton hx, hdim] at hsum
           omega
-        obtain ⟨n, hn⟩ := ih (finrank K (V ⧸ p)) hqdim q
-          (fun u ↦ hq u (hU u)) (fun w ↦ hq w (hW w)) rfl
-        have hsub : p ≤ p.comap (rho g - 1) := by
-          intro y hy
-          rw [Submodule.mem_comap]
-          simpa only [LinearMap.sub_apply, one_apply_eq_self] using p.sub_mem (hp g hy) hy
-        rw [quotient_sub_one_eq_mapQ g hsub] at hn
-        let f : Module.End K V := rho g - 1
-        refine ⟨n + 1, ?_⟩
-        ext y
-        rw [pow_succ', mul_apply_eq_comp]
-        have hymem : (f ^ n) y ∈ p := by
-          apply (Submodule.Quotient.mk_eq_zero p).mp
-          have hz := LinearMap.congr_fun hn (p.mkQ y)
-          rw [← p.mapQ_pow hsub n] at hz
-          simpa only [Submodule.mkQ_apply, Submodule.mapQ_apply, LinearMap.zero_apply] using hz
-        rw [LinearMap.sub_apply, one_apply_eq_self, hp_fixed g ⟨(f ^ n) y, hymem⟩, sub_self,
-          LinearMap.zero_apply]
+        exact rho.isNilpotent_sub_one_of_quotient (K ∙ x) hfix <|
+          ih _ hqdim (rho.quotient (K ∙ x) (rho.le_comap_of_fixed _ hfix))
+            (fun u ↦ rho.isNilpotent_quotient_sub_one_of_fixed _ hfix (hU u))
+            (fun w ↦ rho.isNilpotent_quotient_sub_one_of_fixed _ hfix (hW w)) rfl
       · let _ : Subsingleton V := not_nontrivial_iff_subsingleton.mp hV
         exact ⟨1, Subsingleton.elim _ _⟩
 
