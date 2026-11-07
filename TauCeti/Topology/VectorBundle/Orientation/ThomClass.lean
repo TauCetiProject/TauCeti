@@ -519,46 +519,41 @@ theorem singularCohomologyMap_pullbackThomPairMap_thomClass {B' : Type w} [Topol
   rw [Trivialization.mapOrientation_apply, Trivialization.mapOrientation_apply, pullback_apply]
   exact Orientation.singularCohomologyMap_localCohomologyClass_map_eq (o (f b')) _ _ hF
 
-/-- **Fibrewise negation in odd rank reverses the Thom class.** For an oriented bundle of odd rank
-`n + 1`, pulling the Thom class back along `v ↦ -v` gives the Thom class of the opposite
-orientation. -/
-theorem singularCohomologyMap_negThomPairMap_thomClass (hn : Even n) :
-    TopPair.singularCohomologyMap (negThomPairMap F E) (n + 1) (o.thomClass hF) =
-      (-o).thomClass hF := by
-  refine ((eq_thomClass_iff (-o) hF _).2 fun e _ b hb ↦ ?_)
-  let t := e.continuousLinearEquivAt ℝ b hb
-  -- On the fibre over `b`, negation is `t⁻¹ ∘ (x ↦ -x) ∘ t`.
-  have hφ : fiberThomPairMap F E b ≫ negThomPairMap F E =
+/-- **Fibrewise negation is conjugate to negation of `F`.** On the fibre over `b`, read through a
+continuous linear equivalence `t : E b ≃L[ℝ] F`, the map `negThomPairMap` is
+`t⁻¹ ∘ (x ↦ -x) ∘ t`. -/
+theorem fiberThomPairMap_comp_negThomPairMap (b : B) (t : E b ≃L[ℝ] F) :
+    fiberThomPairMap F E b ≫ negThomPairMap F E =
       t.complZeroPairIso.hom ≫ (ContinuousLinearEquiv.neg ℝ : F ≃L[ℝ] F).complZeroPairIso.hom ≫
         t.complZeroPairIso.inv ≫ fiberThomPairMap F E b := by
-    refine TopPair.hom_ext_of_fst _ (TopCat.ext fun (x : E b) ↦ ?_)
-    have h₁ : TopPair.Hom.fst t.complZeroPairIso.inv
-        (TopPair.Hom.fst (ContinuousLinearEquiv.neg ℝ : F ≃L[ℝ] F).complZeroPairIso.hom
-          (TopPair.Hom.fst t.complZeroPairIso.hom x)) = (-1 : ℝ) • x := by
-      have h : t.symm (-t x) = (-1 : ℝ) • x := by
-        simpa using t.symm_apply_apply ((-1 : ℝ) • x)
-      simp only [ContinuousLinearEquiv.complZeroPairIso_hom_fst_apply,
-        ContinuousLinearEquiv.complZeroPairIso_inv_fst_apply, ContinuousLinearEquiv.neg_apply]
-      exact h
-    -- The ambient map of a composite of maps of pairs is the composite of the ambient maps. After
-    -- `TopPair.Hom.fst_comp`, `ConcreteCategory.comp_apply` and `ContinuousMap.comp_apply` do not
-    -- fire: the intermediate objects are `TopPair.ofSubset` carriers that agree with the types of
-    -- the composed maps only after unfolding. So `change` states the iterated applications.
-    change TopPair.Hom.fst (negThomPairMap F E) (TopPair.Hom.fst (fiberThomPairMap F E b) x) =
-      TopPair.Hom.fst (fiberThomPairMap F E b) (TopPair.Hom.fst t.complZeroPairIso.inv
-        (TopPair.Hom.fst (ContinuousLinearEquiv.neg ℝ : F ≃L[ℝ] F).complZeroPairIso.hom
-          (TopPair.Hom.fst t.complZeroPairIso.hom x)))
-    rw [h₁]
-    exact (congrArg _ (fiberThomPairMap_fst_apply F E b x)).trans
-      ((negThomPairMap_fst_apply F E _).trans (fiberThomPairMap_fst_apply F E b _).symm)
-  rw [← TopPair.singularCohomologyMap_comp_apply, hφ]
-  simp only [TopPair.singularCohomologyMap_comp_apply]
-  -- Restriction: on the fibre over `b`, the Thom class is the generator selected through `t`.
-  rw [o.singularCohomologyMap_fiberThomPairMap_thomClass hF e hb]
-  -- The inverse of `t` cancels against `t`.
-  rw [← TopPair.singularCohomologyMap_comp_apply t.complZeroPairIso.inv, Iso.inv_hom_id,
-    TopPair.singularCohomologyMap_id, ModuleCat.id_apply]
-  -- Antipodal action: `x ↦ -x` acts by the sign of `det (-1) = (-1) ^ (n + 1) = -1`.
+  refine TopPair.hom_ext_of_fst _ (TopCat.ext fun (x : E b) ↦ ?_)
+  have h₁ : TopPair.Hom.fst t.complZeroPairIso.inv
+      (TopPair.Hom.fst (ContinuousLinearEquiv.neg ℝ : F ≃L[ℝ] F).complZeroPairIso.hom
+        (TopPair.Hom.fst t.complZeroPairIso.hom x)) = (-1 : ℝ) • x := by
+    have h : t.symm (-t x) = (-1 : ℝ) • x := by
+      simpa using t.symm_apply_apply ((-1 : ℝ) • x)
+    simp only [ContinuousLinearEquiv.complZeroPairIso_hom_fst_apply,
+      ContinuousLinearEquiv.complZeroPairIso_inv_fst_apply, ContinuousLinearEquiv.neg_apply]
+    exact h
+  -- The ambient map of a composite of maps of pairs is the composite of the ambient maps. After
+  -- `TopPair.Hom.fst_comp`, `ConcreteCategory.comp_apply` and `ContinuousMap.comp_apply` do not
+  -- fire: the intermediate objects are `TopPair.ofSubset` carriers that agree with the types of
+  -- the composed maps only after unfolding. So `change` states the iterated applications.
+  change TopPair.Hom.fst (negThomPairMap F E) (TopPair.Hom.fst (fiberThomPairMap F E b) x) =
+    TopPair.Hom.fst (fiberThomPairMap F E b) (TopPair.Hom.fst t.complZeroPairIso.inv
+      (TopPair.Hom.fst (ContinuousLinearEquiv.neg ℝ : F ≃L[ℝ] F).complZeroPairIso.hom
+        (TopPair.Hom.fst t.complZeroPairIso.hom x)))
+  rw [h₁]
+  exact (congrArg _ (fiberThomPairMap_fst_apply F E b x)).trans
+    ((negThomPairMap_fst_apply F E _).trans (fiberThomPairMap_fst_apply F E b _).symm)
+
+/-- **The antipodal map acts by `-1` on the cohomology of the punctured space in odd rank.** For
+`finrank ℝ F = n + 1` with `n` even, `x ↦ -x` acts as `-1` on `Hⁿ⁺¹(F, F ∖ {0}; ℤ)`.
+It acts by the sign of `det (-1) = (-1) ^ (n + 1) = -1`. -/
+theorem singularCohomologyMap_neg_complZeroPairIso_hom (hn : Even n) (hF : finrank ℝ F = n + 1) :
+    TopPair.singularCohomologyMap (R := ModuleCat.of ℤ (ULift.{w} ℤ)) (k := ℤ)
+      (M := ModuleCat.of ℤ (ULift.{w} ℤ))
+      (ContinuousLinearEquiv.neg ℝ : F ≃L[ℝ] F).complZeroPairIso.hom (n + 1) = -𝟙 _ := by
   have hdet : ((ContinuousLinearEquiv.neg ℝ : F ≃L[ℝ] F) : F →L[ℝ] F).det = -1 := by
     have hneg : (((ContinuousLinearEquiv.neg ℝ : F ≃L[ℝ] F) : F →L[ℝ] F) : F →ₗ[ℝ] F) =
         (-1 : ℝ) • LinearMap.id := by
@@ -585,6 +580,23 @@ theorem singularCohomologyMap_negThomPairMap_thomClass (hn : Even n) :
     -- The two sides differ only in the `ℤ`-linear structure on the hom groups used to negate.
     rfl
   rw [hneg, hact]
+
+/-- **Fibrewise negation in odd rank reverses the Thom class.** For an oriented bundle of odd rank
+`n + 1`, pulling the Thom class back along `v ↦ -v` gives the Thom class of the opposite
+orientation. -/
+theorem singularCohomologyMap_negThomPairMap_thomClass (hn : Even n) :
+    TopPair.singularCohomologyMap (negThomPairMap F E) (n + 1) (o.thomClass hF) =
+      (-o).thomClass hF := by
+  refine ((eq_thomClass_iff (-o) hF _).2 fun e _ b hb ↦ ?_)
+  let t := e.continuousLinearEquivAt ℝ b hb
+  rw [← TopPair.singularCohomologyMap_comp_apply, fiberThomPairMap_comp_negThomPairMap b t]
+  simp only [TopPair.singularCohomologyMap_comp_apply]
+  -- Restriction: on the fibre over `b`, the Thom class is the generator selected through `t`.
+  rw [o.singularCohomologyMap_fiberThomPairMap_thomClass hF e hb]
+  -- The inverse of `t` cancels against `t`.
+  rw [← TopPair.singularCohomologyMap_comp_apply t.complZeroPairIso.inv, Iso.inv_hom_id,
+    TopPair.singularCohomologyMap_id, ModuleCat.id_apply]
+  rw [singularCohomologyMap_neg_complZeroPairIso_hom hn hF]
   -- Sign cleanup: the generator selected by the opposite orientation is the negative one.
   simp [t, Trivialization.mapOrientation_neg, Orientation.localCohomologyClass_neg]
 
