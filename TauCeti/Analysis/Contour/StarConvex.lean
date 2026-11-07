@@ -305,11 +305,11 @@ Cauchy principal value of the cycle integral is the winding-weighted residue sum
 condition (A′) and condition (B) are all discharged. -/
 theorem hungerbuhlerWasem_residueTheorem_of_simple_poles_starConvex {S : Finset ℂ}
     (hstar : StarConvex ℝ x Ω) (hopen : IsOpen Ω)
-    (hf : DifferentiableOn ℂ f (Ω \ (S : Set ℂ))) (hmero : ∀ s ∈ S, MeromorphicAt f s)
+    (hf : DifferentiableOn ℂ f (Ω \ (S : Set ℂ))) (hmero : ∀ s ∈ S, s ∈ Ω → MeromorphicAt f s)
     (hCΩ : IsIn C Ω)
     (h_imm : ∀ δ ∈ FreeAbelianGroup.support C, IsPwC1ImmersionOn (⇑δ) δ.a δ.b)
     (hbase : ∀ δ ∈ FreeAbelianGroup.support C, δ δ.a ∉ (S : Set ℂ))
-    (h_simple : ∀ s ∈ S, ((-1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f s) :
+    (h_simple : ∀ s ∈ S, s ∈ Ω → ((-1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f s) :
     HasCauchyPV C f
       (2 * (Real.pi : ℂ) * Complex.I * ∑ s ∈ S, windingNumber s C * residue f s) :=
   hungerbuhlerWasem_residueTheorem_of_simple_poles hopen S hf hmero hCΩ h_imm hbase

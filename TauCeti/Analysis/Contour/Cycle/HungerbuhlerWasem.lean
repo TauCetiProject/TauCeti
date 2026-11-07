@@ -156,15 +156,15 @@ conditions (A′) and (B) hold automatically along each curve of the cycle
 (`TauCeti.Contour.conditionAprime_of_simple_poles`,
 `TauCeti.Contour.conditionB_of_simple_poles`), leaving no regularity hypotheses beyond the
 immersions. This is the form the argument principle consumes, a logarithmic derivative having
-only simple poles. No singularity is required to lie in `U`: those outside `U` carry winding
-number zero by null-homology and drop out of the sum. -/
+only simple poles. No singularity is required to lie in `U`, and no hypothesis is imposed on `f`
+at those outside `U`: they carry winding number zero by null-homology and drop out of the sum. -/
 theorem hungerbuhlerWasem_residueTheorem_of_simple_poles (hU : IsOpen U) (S : Finset ℂ)
     (hf : DifferentiableOn ℂ f (U \ (S : Set ℂ)))
-    (hmero : ∀ s ∈ S, MeromorphicAt f s) (hCU : IsIn C U)
+    (hmero : ∀ s ∈ S, s ∈ U → MeromorphicAt f s) (hCU : IsIn C U)
     (h_imm : ∀ γ ∈ FreeAbelianGroup.support C, IsPwC1ImmersionOn (⇑γ) γ.a γ.b)
     (hbase : ∀ γ ∈ FreeAbelianGroup.support C, γ γ.a ∉ (S : Set ℂ))
     (hnull : IsNullHomologous C U)
-    (h_simple : ∀ s ∈ S, ((-1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f s) :
+    (h_simple : ∀ s ∈ S, s ∈ U → ((-1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f s) :
     HasCauchyPV C f
       (2 * (Real.pi : ℂ) * Complex.I * ∑ s ∈ S, windingNumber s C * residue f s) := by
   classical
@@ -177,10 +177,10 @@ theorem hungerbuhlerWasem_residueTheorem_of_simple_poles (hU : IsOpen U) (S : Fi
   have hbase' : ∀ γ ∈ FreeAbelianGroup.support C, γ γ.a ∉ ((S.filter (· ∈ U) : Finset ℂ) : Set ℂ) :=
     fun γ hγ h ↦ hbase γ hγ (hsub h)
   have hsimple' : ∀ s ∈ S.filter (· ∈ U), ((-1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f s :=
-    fun s hs ↦ h_simple s (hsub hs)
+    fun s hs ↦ h_simple s (hsub hs) (Finset.mem_filter.mp hs).2
   have key := hungerbuhlerWasem_residueTheorem hU (S.filter (· ∈ U))
-    (fun s hs ↦ (Finset.mem_filter.mp hs).2) hf' (fun s hs ↦ hmero s (hsub hs)) hCU h_imm
-    hbase' hnull
+    (fun s hs ↦ (Finset.mem_filter.mp hs).2) hf'
+    (fun s hs ↦ hmero s (hsub hs) (Finset.mem_filter.mp hs).2) hCU h_imm hbase' hnull
     (fun γ hγ ↦ conditionAprime_of_simple_poles hU (h_imm γ hγ) (by
       rcases le_total γ.a γ.b with h | h
       · rw [min_eq_left h]; exact hbase' γ hγ
