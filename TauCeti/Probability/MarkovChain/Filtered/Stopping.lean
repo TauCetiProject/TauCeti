@@ -65,9 +65,6 @@ theorem condExp_stoppedValue_add (h : IsMarkovChain ℱ X κ μ) (hτ : IsStoppi
   have hslice (n : ℕ) :
       μ[A.indicator Z | hτ.measurableSpace] =ᵐ[μ.restrict {ω | τ ω = n}]
         A.indicator (fun ω => ∫ y, f y ∂(κ ^ k) (stoppedValue X τ ω)) := by
-    have hn : (n : WithTop ℕ).untopA = n := by
-      simp only [← WithTop.coe_natCast, Nat.cast_id,
-        WithTop.untopA_eq_untop WithTop.coe_ne_top, WithTop.untop_coe]
     have hs := hτ.measurableSet_eq n
     have hsΩ := ℱ.le n _ hs
     have hin : Integrable (fun ω => f (X (n + k) ω)) μ := by
@@ -76,14 +73,14 @@ theorem condExp_stoppedValue_add (h : IsMarkovChain ℱ X κ μ) (hτ : IsStoppi
     have heq : A.indicator Z =ᵐ[μ.restrict {ω | τ ω = n}]
         fun ω => f (X (n + k) ω) := by
       filter_upwards [ae_restrict_mem hsΩ] with ω hω
-      simp [A, Z, stoppedValue, hω, hn]
+      simp [A, Z, stoppedValue_of_eq hω, hω]
     have hc := (condExp_restrict_ae_eq_restrict (ℱ.le n) hs hiA).symm.trans
       ((condExp_congr_ae heq).trans
         (condExp_restrict_ae_eq_restrict (ℱ.le n) hs hin))
     filter_upwards [condExp_stopping_time_ae_eq_restrict_eq (f := A.indicator Z) hτ n, hc,
       (h.condExp_add n k hf ⟨C, hC⟩).filter_mono (ae_mono Measure.restrict_le_self),
       ae_restrict_mem hsΩ] with ω hstop hcong hstep hω
-    simpa [A, stoppedValue, hω, hn] using
+    simpa [A, stoppedValue_of_eq hω, hω] using
       hstop.trans (hcong.trans hstep)
   -- On the infinite slice the tested random variable vanishes, so does its conditional mean.
   have htop : μ[A.indicator Z | hτ.measurableSpace] =ᵐ[μ.restrict Aᶜ] 0 :=
