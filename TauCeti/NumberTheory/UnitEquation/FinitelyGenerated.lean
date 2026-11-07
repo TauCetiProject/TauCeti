@@ -7,8 +7,8 @@ module
 
 public import Mathlib.NumberTheory.NumberField.House
 public import TauCeti.NumberTheory.NumberField.Global.Places.Height
-import TauCeti.Analysis.AbsoluteValue.FiniteOrder
 import TauCeti.Analysis.SpecialFunctions.Log.AddMulLog
+import TauCeti.NumberTheory.NumberField.SUnits.Height
 
 /-!
 # An explicit exponent bound for unit equations in finitely generated groups
@@ -77,18 +77,19 @@ theorem log_le_add_log_adicAbv_of_add_mul_eq_one {x δ q : K} (hx0 : x ≠ 0) (h
   exact Real.log_le_log he key
 
 /-- If `q + δ x = 1` and `‖σ q - 1‖ ≥ e > 0` for an embedding `σ` of the infinite place `w`, where
-`‖σ δ‖ ≤ M`, then `log e ≤ log M + log (w x)`, because `‖σ q - 1‖ = ‖σ δ‖ w(x) ≤ M w(x)`. -/
+`w δ ≤ M`, then `log e ≤ log M + log (w x)`, because `‖σ q - 1‖ = w(δ) w(x) ≤ M w(x)`. -/
 theorem log_le_add_log_infinitePlace_of_add_mul_eq_one {x δ q : K} (hx0 : x ≠ 0) (hδ : δ ≠ 0)
-    (w : InfinitePlace K) {M e : ℝ} (hδM : house δ ≤ M) (he : 0 < e) (hq1 : q - 1 = -(δ * x))
+    (w : InfinitePlace K) {M e : ℝ} (hδw : w δ ≤ M) (he : 0 < e) (hq1 : q - 1 = -(δ * x))
     (hqe : e ≤ ‖w.embedding q - 1‖) : Real.log e ≤ Real.log M + Real.log (w x) := by
   have hxw : 0 < w x := (InfinitePlace.pos_iff).mpr hx0
-  have hδσ : 0 < ‖w.embedding δ‖ := norm_pos_iff.mpr ((map_ne_zero _).mpr hδ)
-  have hM : 0 < M := hδσ.trans_le ((norm_embedding_le_house δ w.embedding).trans hδM)
+  have hδ0 : 0 < w δ := (InfinitePlace.pos_iff).mpr hδ
+  have hM : 0 < M := hδ0.trans_le hδw
   have key : e ≤ M * w x := by
     refine hqe.trans ?_
     rw [← map_one w.embedding, ← map_sub, hq1, map_neg, norm_neg, map_mul, norm_mul,
       InfinitePlace.norm_embedding_eq w x]
-    exact mul_le_mul_of_nonneg_right ((norm_embedding_le_house δ w.embedding).trans hδM) hxw.le
+    rw [InfinitePlace.norm_embedding_eq]
+    exact mul_le_mul_of_nonneg_right hδw hxw.le
   rw [← Real.log_mul hM.ne' hxw.ne']
   exact Real.log_le_log he key
 
@@ -143,7 +144,9 @@ private theorem logHeight₁_le_of_add_mul_eq_one {S : Finset (HeightOneSpectrum
     linarith
   · -- At an infinite place `w`: `|σ q - 1| = |σ δ| w(x) ≤ M w(x)` for `σ` an embedding of `w`.
     rw [GlobalNumberFields.normalizedAbsValue_inr, Real.log_pow] at hv
-    have hlog := log_le_add_log_infinitePlace_of_add_mul_eq_one hx0 hδ w hδM (by positivity)
+    have hlog := log_le_add_log_infinitePlace_of_add_mul_eq_one (M := M) hx0 hδ w
+      (by rw [← InfinitePlace.norm_embedding_eq w δ]
+          exact (norm_embedding_le_house δ w.embedding).trans hδM) (by positivity)
       hq1 (hinf w.embedding hq)
     rw [hlogE] at hlog
     -- The multiplicity of `w` is `1` or `2`, so `2 log w(x) ≤ -logHeight₁ x / s`.
@@ -153,18 +156,6 @@ private theorem logHeight₁_le_of_add_mul_eq_one {S : Finset (HeightOneSpectrum
       split_ifs <;> norm_num
     have : 0 ≤ logHeight₁ x / s := by positivity
     nlinarith
-
-/-- A root of unity times a product of integer powers of nonzero elements `γ i` that have absolute
-value `1` at every finite place outside `S` is nonzero and has absolute value `1` at every finite
-place outside `S`. -/
-theorem mul_prod_zpow_ne_zero_and_adicAbv_eq_one {ι : Type*} [Fintype ι]
-    {S : Finset (HeightOneSpectrum (𝓞 K))} {γ : ι → K} (hγ0 : ∀ j, γ j ≠ 0)
-    (hγS : ∀ j, ∀ v ∉ S, HeightOneSpectrum.adicAbv K v (γ j) = 1) {ζ : K}
-    (hζ : IsOfFinOrder ζ) (z : ι → ℤ) :
-    ζ * ∏ i, γ i ^ z i ≠ 0 ∧ ∀ v ∉ S, HeightOneSpectrum.adicAbv K v (ζ * ∏ i, γ i ^ z i) = 1 := by
-  refine ⟨mul_ne_zero hζ.isUnit.ne_zero
-    (prod_ne_zero_iff.mpr fun i _ ↦ zpow_ne_zero _ (hγ0 i)), fun v hv ↦ ?_⟩
-  simp [map_zpow₀, hγS _ v hv, AbsoluteValue.map_eq_one_of_isOfFinOrder _ hζ]
 
 /-- The lower bounds of `max_abs_le_of_mul_add_mul_eq_one`, with `max 1 (maxⱼ |z j|)` enlarged to
 `max 1 Bn` whenever the exponents are at most `Bn`. -/
