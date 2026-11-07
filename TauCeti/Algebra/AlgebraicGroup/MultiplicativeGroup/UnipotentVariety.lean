@@ -7,9 +7,8 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Representation.UnipotentPoint.Variety
-public import TauCeti.Algebra.DualNumber.Basic
+public import TauCeti.Algebra.DualNumber.Log
 public import TauCeti.Algebra.Coalgebra.Comodule.GroupLike
-public import TauCeti.RingTheory.Nilpotent.Log
 import TauCeti.Algebra.AlgebraicGroup.Representation.UnipotentPoint.Character
 
 /-!
@@ -162,23 +161,6 @@ theorem unipotenceIdeal_paired :
 
 end Comodules
 
-/-- The infinitesimal point `1 + ε` of the multiplicative group. -/
-def dualNumberUnit (R : Type u) [CommRing R] : (DualNumber R)ˣ where
-  val := 1 + DualNumber.eps
-  inv := 1 - DualNumber.eps
-  val_inv := by simp [mul_sub, add_mul, DualNumber.eps_mul_eps]
-  inv_val := by simp [sub_mul, mul_add, DualNumber.eps_mul_eps]
-
-/-- The coordinate of the infinitesimal point is `1 + ε`. -/
-@[simp]
-theorem coe_dualNumberUnit (R : Type*) [CommRing R] :
-    (dualNumberUnit R : DualNumber R) = 1 + DualNumber.eps := (rfl)
-
-/-- The inverse coordinate of the infinitesimal point is `1 - ε`. -/
-@[simp]
-theorem coe_dualNumberUnit_inv (R : Type*) [CommRing R] :
-    (((dualNumberUnit R)⁻¹ : (DualNumber R)ˣ) : DualNumber R) = 1 - DualNumber.eps := (rfl)
-
 /-- The infinitesimal point satisfies the unsaturated equations of the paired representation. -/
 theorem contentIdeal_charpoly_paired_le_ker_laurentEval_dualNumberUnit
     {R : Type*} [CommRing R] :
@@ -195,24 +177,5 @@ theorem not_unipotentVarietyIdeal_le_ker_dualNumberUnit :
   simp only [map_sub, map_one, laurentEval_T, zpow_one, coe_dualNumberUnit,
     add_sub_cancel_left]
   exact DualNumber.eps_ne_zero
-
-section Log
-
-variable {R : Type*} [CommRing R] [Algebra ℚ R]
-
-/-- The scalar logarithm of the infinitesimal point is `ε`, the central Lie coordinate
-of the multiplicative group. -/
-theorem log_dualNumberUnit :
-    IsNilpotent.log (dualNumberUnit R : DualNumber R) = DualNumber.eps := by
-  rw [IsNilpotent.log_eq_sum (n := 2) (by simp [DualNumber.eps_pow_two])]
-  simp [Finset.sum_range_succ]
-
-/-- The logarithm of the infinitesimal point has nonzero central coordinate. -/
-theorem log_dualNumberUnit_ne_zero [Nontrivial R] :
-    IsNilpotent.log (dualNumberUnit R : DualNumber R) ≠ 0 := by
-  rw [log_dualNumberUnit]
-  exact DualNumber.eps_ne_zero
-
-end Log
 
 end TauCeti.MultiplicativeGroup
