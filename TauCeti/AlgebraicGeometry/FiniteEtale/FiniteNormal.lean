@@ -64,11 +64,13 @@ finite normal `A`-algebras implies purity for `A`.
   `Spec B` to the punctured spectrum.
 * `TauCeti.IsLocalRing.sectionsAlg`: the ring of sections of a finite étale cover of the
   punctured spectrum, as a finite normal punctured-étale algebra.
+* `TauCeti.IsLocalRing.sectionsAlgMap`: restriction of sections along a morphism of finite étale
+  covers of the punctured spectrum.
 * `TauCeti.IsLocalRing.restrictPuncturedSpecSectionsAlgIso`: a finite étale cover of the
   punctured spectrum is the restriction of the spectrum of its ring of sections.
 * `TauCeti.IsLocalRing.finiteNormalEquiv`: the inverse equivalence of `restrictPuncturedSpec`,
   from finite étale covers of the punctured spectrum to finite normal punctured-étale algebras,
-  sending a cover to its ring of sections.
+  sending a cover to its ring of sections and a morphism to restriction of sections.
 
 ## Main results
 
@@ -305,7 +307,7 @@ theorem finiteNormalPuncturedEtale_sections (hdim : 2 ≤ ringKrullDim A)
 /-- The ring of sections `Γ(V, 𝒪_V)` of a finite étale cover `V` of the punctured spectrum, an
 `A`-algebra through `V ⟶ U ⟶ Spec A`, as a finite normal punctured-étale `A`-algebra
 (`finiteNormalPuncturedEtale_sections`). -/
-def sectionsAlg (hdim : 2 ≤ ringKrullDim A)
+@[expose] def sectionsAlg (hdim : 2 ≤ ringKrullDim A)
     (V : FiniteEtaleScheme (puncturedSpectrum A).toScheme) : FiniteNormalPuncturedEtaleAlg A :=
   letI := (((Scheme.ΓSpecIso (.of A)).inv ≫
     (V.obj.hom ≫ (puncturedSpectrum A).ι).appTop).hom).toAlgebra
@@ -321,6 +323,28 @@ theorem sectionsAlg_obj (hdim : 2 ≤ ringKrullDim A)
       CommAlgCat.of A Γ(V.obj.left, ⊤) :=
   (rfl)
 
+/-- The `A`-algebra homomorphism `Γ(W, 𝒪_W) ⟶ Γ(V, 𝒪_V)` of rings of sections induced by a
+morphism `f : V ⟶ W` of finite étale covers of the punctured spectrum. -/
+def sectionsAlgMap (hdim : 2 ≤ ringKrullDim A)
+    {V W : FiniteEtaleScheme (puncturedSpectrum A).toScheme} (f : V ⟶ W) :
+    sectionsAlg hdim W ⟶ sectionsAlg hdim V :=
+  ObjectProperty.homMk <| CommAlgCat.ofHom (X := (sectionsAlg hdim W).obj)
+    (Y := (sectionsAlg hdim V).obj)
+    { f.hom.left.appTop.hom with
+      commutes' a := by
+        have h : (Scheme.ΓSpecIso (.of A)).inv ≫ (W.obj.hom ≫ (puncturedSpectrum A).ι).appTop ≫
+            f.hom.left.appTop =
+              (Scheme.ΓSpecIso (.of A)).inv ≫ (V.obj.hom ≫ (puncturedSpectrum A).ι).appTop := by
+          rw [← Scheme.Hom.comp_appTop, Over.w_assoc]
+        exact congr($h a) }
+
+/-- `sectionsAlgMap hdim f` is restriction of sections along `f`. -/
+@[simp]
+theorem sectionsAlgMap_hom_apply (hdim : 2 ≤ ringKrullDim A)
+    {V W : FiniteEtaleScheme (puncturedSpectrum A).toScheme} (f : V ⟶ W) (x : Γ(W.obj.left, ⊤)) :
+    (sectionsAlgMap hdim f).hom.hom x = f.hom.left.appTop.hom x :=
+  (rfl)
+
 /-- A finite étale cover `V` of the punctured spectrum is the restriction of the spectrum of its
 ring of sections `sectionsAlg hdim V`. -/
 def restrictPuncturedSpecSectionsAlgIso (hdim : 2 ≤ ringKrullDim A)
@@ -329,6 +353,54 @@ def restrictPuncturedSpecSectionsAlgIso (hdim : 2 ≤ ringKrullDim A)
   let h := (isPullback_puncturedSpectrum_toSpecΓ A (two_le_depth_of_isIntegrallyClosed hdim)
     V.obj.hom).flip
   ObjectProperty.isoMk _ (Over.isoMk h.isoPullback.symm h.isoPullback_inv_snd)
+
+/-- The first component of `V ⟶ Spec Γ(V, 𝒪_V) ×_{Spec A} U`, the inverse of
+`restrictPuncturedSpecSectionsAlgIso`, is the canonical morphism `V ⟶ Spec Γ(V, 𝒪_V)`. -/
+@[simp]
+theorem restrictPuncturedSpecSectionsAlgIso_inv_hom_left_fst (hdim : 2 ≤ ringKrullDim A)
+    (V : FiniteEtaleScheme (puncturedSpectrum A).toScheme) :
+    (restrictPuncturedSpecSectionsAlgIso hdim V).inv.hom.left ≫
+        pullback.fst (Spec.map (CommRingCat.ofHom (algebraMap A (sectionsAlg hdim V).obj)))
+          (puncturedSpectrum A).ι =
+      V.obj.left.toSpecΓ :=
+  IsPullback.isoPullback_hom_fst _
+
+/-- The second component of `V ⟶ Spec Γ(V, 𝒪_V) ×_{Spec A} U`, the inverse of
+`restrictPuncturedSpecSectionsAlgIso`, is the structure morphism `V ⟶ U`. -/
+@[simp]
+theorem restrictPuncturedSpecSectionsAlgIso_inv_hom_left_snd (hdim : 2 ≤ ringKrullDim A)
+    (V : FiniteEtaleScheme (puncturedSpectrum A).toScheme) :
+    (restrictPuncturedSpecSectionsAlgIso hdim V).inv.hom.left ≫
+        pullback.snd (Spec.map (CommRingCat.ofHom (algebraMap A (sectionsAlg hdim V).obj)))
+          (puncturedSpectrum A).ι =
+      V.obj.hom :=
+  IsPullback.isoPullback_hom_snd _
+
+/-- The isomorphisms `restrictPuncturedSpecSectionsAlgIso` are natural in the cover. -/
+@[reassoc]
+theorem restrictPuncturedSpecSectionsAlgIso_hom_naturality (hdim : 2 ≤ ringKrullDim A)
+    {V W : FiniteEtaleScheme (puncturedSpectrum A).toScheme} (f : V ⟶ W) :
+    (restrictPuncturedSpec A).map (sectionsAlgMap hdim f).op ≫
+        (restrictPuncturedSpecSectionsAlgIso hdim W).hom =
+      (restrictPuncturedSpecSectionsAlgIso hdim V).hom ≫ f := by
+  rw [← Iso.inv_comp_eq, ← Category.assoc, ← Iso.eq_comp_inv]
+  ext : 2
+  have hV₁ := restrictPuncturedSpecSectionsAlgIso_inv_hom_left_fst hdim V
+  have hV₂ := restrictPuncturedSpecSectionsAlgIso_inv_hom_left_snd hdim V
+  have hW₁ := restrictPuncturedSpecSectionsAlgIso_inv_hom_left_fst hdim W
+  have hW₂ := restrictPuncturedSpecSectionsAlgIso_inv_hom_left_snd hdim W
+  dsimp only [ObjectProperty.FullSubcategory.comp_hom, restrictPuncturedSpec_map_hom,
+    Over.comp_left, Over.pullback_map_left]
+  -- The objects of `restrictPuncturedSpec A` are pullbacks only after unfolding the functor, so
+  -- the composites are reassociated with `erw` and explicit `Eq.trans` chains.
+  refine pullback.hom_ext ?_ ?_
+  · erw [Category.assoc, pullback.lift_fst]
+    refine (Category.assoc _ _ _).symm.trans <| (congrArg (· ≫ _) hV₁).trans <|
+      .trans ?_ (Category.assoc _ _ _).symm
+    exact (Scheme.toSpecΓ_naturality f.hom.left).symm.trans (congrArg (f.hom.left ≫ ·) hW₁).symm
+  · erw [Category.assoc, pullback.lift_snd]
+    exact hV₂.trans <| (Over.w f.hom).symm.trans <|
+      (congrArg (f.hom.left ≫ ·) hW₂).symm.trans (Category.assoc _ _ _).symm
 
 /-- Over a Noetherian integrally closed local domain of dimension at least two, every finite étale
 cover of the punctured spectrum is the restriction of `Spec B` for a finite normal torsion-free
@@ -351,16 +423,25 @@ theorem restrictPuncturedSpec_isEquivalence (hdim : 2 ≤ ringKrullDim A) :
 Noetherian integrally closed local domain `A` of dimension at least two, the category of finite
 étale covers of the punctured spectrum is anti-equivalent to the category of finite normal
 torsion-free `A`-algebras étale at every prime not lying over the maximal ideal. The functor
-sends a cover `V` to its ring of sections `sectionsAlg hdim V` (`finiteNormalEquiv_functor_obj`),
-and the inverse is `restrictPuncturedSpec`, restriction of `Spec B` to the punctured spectrum. -/
-@[stacks 0BM9 "with `B` torsion free"]
+sends a cover `V` to its ring of sections `sectionsAlg hdim V` (`finiteNormalEquiv_functor_obj`)
+and a morphism to restriction of sections (`finiteNormalEquiv_functor_map`), and the inverse is
+`restrictPuncturedSpec`, restriction of `Spec B` to the punctured spectrum. -/
+@[stacks 0BM9 "with `B` torsion free", expose]
 def finiteNormalEquiv (hdim : 2 ≤ ringKrullDim A) :
     FiniteEtaleScheme (puncturedSpectrum A).toScheme ≌ (FiniteNormalPuncturedEtaleAlg A)ᵒᵖ :=
   haveI := restrictPuncturedSpec_isEquivalence hdim
   let e := (restrictPuncturedSpec A).asEquivalence.symm
-  -- Replace the objects of the forward functor by the rings of sections, using the counit.
-  e.changeFunctor <| e.functor.isoCopyObj (fun V ↦ .op (sectionsAlg hdim V)) fun V ↦
-    e.functor.mapIso (restrictPuncturedSpecSectionsAlgIso hdim V).symm ≪≫ e.counitIso.app _
+  -- The rings of sections functor, a right inverse of `e.inverse = restrictPuncturedSpec A`.
+  let F : FiniteEtaleScheme (puncturedSpectrum A).toScheme ⥤ (FiniteNormalPuncturedEtaleAlg A)ᵒᵖ :=
+    { obj V := .op (sectionsAlg hdim V)
+      map f := (sectionsAlgMap hdim f).op
+      map_id V := Quiver.Hom.unop_inj <| by ext; rfl
+      map_comp f g := Quiver.Hom.unop_inj <| by ext; rfl }
+  let η : F ⋙ e.inverse ≅ 𝟭 _ := NatIso.ofComponents (restrictPuncturedSpecSectionsAlgIso hdim)
+    fun f ↦ restrictPuncturedSpecSectionsAlgIso_hom_naturality hdim f
+  -- Replace the forward functor by `F ≅ F ⋙ e.inverse ⋙ e.functor ≅ e.functor`.
+  e.changeFunctor <| (Functor.leftUnitor _).symm ≪≫ Functor.isoWhiskerRight η.symm _ ≪≫
+    Functor.associator _ _ _ ≪≫ Functor.isoWhiskerLeft _ e.counitIso ≪≫ Functor.rightUnitor _
 
 /-- The functor of `finiteNormalEquiv` sends a finite étale cover of the punctured spectrum to its
 ring of sections. -/
@@ -368,6 +449,14 @@ ring of sections. -/
 theorem finiteNormalEquiv_functor_obj (hdim : 2 ≤ ringKrullDim A)
     (V : FiniteEtaleScheme (puncturedSpectrum A).toScheme) :
     (finiteNormalEquiv hdim).functor.obj V = .op (sectionsAlg hdim V) :=
+  (rfl)
+
+/-- The functor of `finiteNormalEquiv` sends a morphism `f : V ⟶ W` of finite étale covers of the
+punctured spectrum to restriction of sections along `f`. -/
+@[simp]
+theorem finiteNormalEquiv_functor_map (hdim : 2 ≤ ringKrullDim A)
+    {V W : FiniteEtaleScheme (puncturedSpectrum A).toScheme} (f : V ⟶ W) :
+    (finiteNormalEquiv hdim).functor.map f = (sectionsAlgMap hdim f).op :=
   (rfl)
 
 /-- The inverse of `finiteNormalEquiv` is restriction to the punctured spectrum. -/
