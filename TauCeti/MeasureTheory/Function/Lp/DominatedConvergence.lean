@@ -34,8 +34,10 @@ open scoped NNReal ENNReal Topology
 every point and `‖f n - g‖ₑ` is eventually dominated by a fixed nonnegative multiple of the enorm
 of a `MemLp` function, then `f n → g` in the `Lᵖ` seminorm.
 The dominating function may take values in any topological space with an extended norm.
-Both the measurability of `f n` and the domination are only needed eventually along `l`; the
-limit `g` is then automatically a.e. strongly measurable. -/
+Both the measurability of `f n` and the domination are only needed eventually along `l`, and `g`
+is not assumed to be measurable: if `l ≠ ⊥`, it is the a.e. limit of a sequence `f (u k)` of
+a.e. strongly measurable terms, hence a.e. strongly measurable itself, while for `l = ⊥` the
+conclusion holds trivially. -/
 theorem tendsto_eLpNorm_sub_of_ae_tendsto {α ι F G : Type*} [MeasurableSpace α]
     {m : Measure α} [SeminormedAddGroup F] [IsTopologicalAddGroup F]
     [TopologicalSpace G] [ENorm G]
