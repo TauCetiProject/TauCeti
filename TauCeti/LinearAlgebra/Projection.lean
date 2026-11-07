@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.LinearAlgebra.Projection
+public import Mathlib.RingTheory.SimpleModule.Basic
 public import TauCeti.Order.SupIndep
 
 /-!
@@ -49,6 +50,8 @@ remains injective.
   its values on a basis of a complement of `F₀`.
 * `TauCeti.injective_sub_smul`: `x ↦ f x - a x • d` is injective when no secant of `f` is a
   multiple of `d`.
+* `LinearMap.exists_isIdempotentElem_comp_eq_disjoint_ker`: a linear map out of a semisimple module
+  is unchanged by an idempotent endomorphism whose range meets the kernel trivially.
 
 ## Implementation notes
 
@@ -194,3 +197,21 @@ theorem apply_eq_sum_repr_projectionOnto {ι : Type*} [Fintype ι] {F₀ F₁ : 
   simp only [coe_sum, coe_smul, map_sum, map_smul]
 
 end Submodule
+
+namespace LinearMap
+
+/-- **A semisimple module has an idempotent endomorphism cutting out a complement of a kernel.**
+For a linear map `q` out of a semisimple module `V`, there is an idempotent `e` with `q ∘ e = q`
+whose range meets `ker q` only in `0`: the projection onto a complement of `ker q`. -/
+theorem exists_isIdempotentElem_comp_eq_disjoint_ker {R V W : Type*} [Ring R] [AddCommGroup V]
+    [Module R V] [AddCommGroup W] [Module R W] [IsSemisimpleModule R V] (q : V →ₗ[R] W) :
+    ∃ e : Module.End R V, IsIdempotentElem e ∧ q ∘ₗ e = q ∧
+      Disjoint (LinearMap.range e) (LinearMap.ker q) := by
+  obtain ⟨C, hC⟩ := exists_isCompl (LinearMap.ker q)
+  refine ⟨C.projection (LinearMap.ker q) hC.symm, Submodule.isIdempotentElem_projection _,
+    LinearMap.ext fun x ↦ ?_, by rw [Submodule.range_projection]; exact hC.symm.disjoint⟩
+  have hker := LinearMap.mem_ker.mp (Submodule.sub_projection_mem hC.symm x)
+  rw [map_sub, sub_eq_zero] at hker
+  exact hker.symm
+
+end LinearMap
