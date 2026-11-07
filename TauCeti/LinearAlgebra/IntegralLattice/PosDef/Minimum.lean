@@ -184,6 +184,14 @@ theorem IsPosDef.two_le_minimum (hL : L.IsPosDef) (he : L.IsEven) [Nontrivial L]
     omega
   exact_mod_cast h2
 
+/-- Every nonzero vector of an even positive definite lattice has norm at least `2`. -/
+theorem IsPosDef.two_le_norm_of_ne_zero (hL : L.IsPosDef) (he : L.IsEven) {x : L}
+    (hx : x ≠ 0) : 2 ≤ L.norm x := by
+  have := nontrivial_of_ne x 0 hx
+  have hmin : (2 : ℤ) ≤ L.minimum := Nat.cast_le.mpr (hL.two_le_minimum he)
+  rw [← L.integralNorm_cast x]
+  exact_mod_cast hmin.trans (hL.isPosSemidef.minimum_le_integralNorm hx)
+
 /-- **An even positive definite lattice with a root has minimum `2`.** A root is a lattice vector
 of norm `2`. -/
 theorem IsPosDef.minimum_eq_two (hL : L.IsPosDef) (he : L.IsEven) {x : L}
