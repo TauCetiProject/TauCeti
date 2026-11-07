@@ -21,20 +21,20 @@ only the two terms at that fibre.
 
 ## Main statements
 
-* `TauCeti.eq_of_sum_rightInverse_eq`: a function whose sums over the representatives chosen by
+* `Function.RightInverse.eq_of_sum_eq`: a function whose sums over the representatives chosen by
   the right inverses of `π` all agree is constant on the fibres of `π`.
 -/
 
 public section
 
-namespace TauCeti
+namespace Function.RightInverse
 
 open Finset
 
 /-- **A function is constant on fibres if its sums over representatives are**: if the sum over
 a finite type `β` of the values of `T` at the representatives `r b` chosen by a right inverse `r`
 of `π : α → β` does not depend on `r`, then `T a = T a'` whenever `π a = π a'`. -/
-theorem eq_of_sum_rightInverse_eq {α β A : Type*} [Fintype β] [AddCancelCommMonoid A]
+theorem eq_of_sum_eq {α β A : Type*} [Fintype β] [AddCancelCommMonoid A]
     {π : α → β} {r₀ : β → α} (hr₀ : Function.RightInverse r₀ π) (T : α → A)
     (hT : ∀ r : β → α, Function.RightInverse r π → ∑ b, T (r b) = ∑ b, T (r₀ b))
     {a a' : α} (h : π a = π a') : T a = T a' := by
@@ -50,4 +50,4 @@ theorem eq_of_sum_rightInverse_eq {α β A : Type*} [Fintype β] [AddCancelCommM
       rw [Function.update_of_ne (by simpa using hb)])
   exact add_right_cancel ((key a rfl).trans (key a' h.symm).symm)
 
-end TauCeti
+end Function.RightInverse
