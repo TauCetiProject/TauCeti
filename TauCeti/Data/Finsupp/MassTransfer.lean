@@ -13,7 +13,7 @@ public import Mathlib.Tactic.Linarith
 # Transferring the least mass of a finite set to a new coordinate
 
 Given a probability vector `x : ι →₀ ℝ`, a finite set `σ` of coordinates and a coordinate
-`v ∉ σ` of mass zero, move the mass `x a` of a least coordinate `a ∈ σ` off `σ` by subtracting it
+`v ∉ σ`, move the mass `x a` of a least coordinate `a ∈ σ` off `σ` by subtracting it
 from every coordinate of `σ` and adding `σ.card` times it to `v`. The result is nonnegative, has
 total mass one, and vanishes at `a`.
 
@@ -32,7 +32,7 @@ variable {ι : Type*} [DecidableEq ι] {σ : Finset ι} {v : ι}
 /-- Moving the mass `x a` of a least coordinate `a` on the starred face `σ` to the new vertex `v`
 gives a nonnegative vector of total mass one whose coordinate at `a` is zero. -/
 theorem exists_transfer_vector (hvσ : v ∉ σ) {x : ι →₀ ℝ} (hxpos : ∀ i, 0 ≤ x i)
-    (hxsum : x.sum (fun _ r => r) = 1) (hxv : x v = 0) {a : ι} (haσ : a ∈ σ)
+    (hxsum : x.sum (fun _ r => r) = 1) {a : ι} (haσ : a ∈ σ)
     (hmin : ∀ i ∈ σ, x a ≤ x i) :
     ∃ y : ι →₀ ℝ, y = x + x a • ((σ.card : ℝ) • Finsupp.single v 1 -
         ∑ i ∈ σ, Finsupp.single i 1) ∧
@@ -51,8 +51,8 @@ theorem exists_transfer_vector (hvσ : v ∉ σ) {x : ι →₀ ℝ} (hxpos : �
     rw [hycoord]
     by_cases hiv : i = v
     · subst i
-      simp only [hxv, ite_true, hvσ, ite_false, sub_zero, zero_add]
-      exact mul_nonneg (hxpos a) (Nat.cast_nonneg _)
+      simp only [ite_true, hvσ, ite_false, sub_zero]
+      exact add_nonneg (hxpos v) (mul_nonneg (hxpos a) (Nat.cast_nonneg _))
     · by_cases his : i ∈ σ
       · simp only [hiv, ite_false, his, ite_true, zero_sub, mul_neg_one]
         linarith [hmin i his]
