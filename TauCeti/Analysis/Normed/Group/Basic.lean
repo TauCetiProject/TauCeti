@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Group.Basic
+public import Mathlib.Analysis.Normed.Group.Uniform
 import Mathlib.Topology.MetricSpace.Bounded
 
 /-!
@@ -30,6 +31,8 @@ values there.
 * `TauCeti.not_isBounded_inter_lt_norm_sub` -- the part of an unbounded set outside a closed ball
   is unbounded.
 * `Set.Nontrivial.pos_of_forall_norm_le` -- a bound on the norms of a nontrivial set is positive.
+* `TauCeti.exists_enorm_sub_le_mul_of_reflTransGen` -- constants joined by a chain of related
+  indices are uniformly close if constants at related indices are.
 * `TauCeti.mapsTo_closedBall_of_forall_norm_le` -- a map bounded by `M` on `s` sends `s` into the
   closed ball of radius `2 * M` around any of its values on `s`.
 -/
@@ -37,6 +40,7 @@ values there.
 public section
 
 open Bornology Metric
+open scoped ENNReal NNReal
 
 namespace TauCeti
 
@@ -70,5 +74,24 @@ theorem mapsTo_closedBall_of_forall_norm_le {α F : Type*} [SeminormedAddCommGro
     Set.MapsTo f s (closedBall (f c) (2 * M)) := fun y hy => by
   rw [mem_closedBall]
   linarith [dist_le_norm_add_norm (f y) (f c), hM y hy, hM c hc]
+
+/-- Constants joined by a chain of related indices are uniformly close, if constants at related
+indices are. -/
+theorem exists_enorm_sub_le_mul_of_reflTransGen {X F ι : Type*} [NormedAddCommGroup F]
+    {R : ι → ι → Prop} {i₀ : ι}
+    (P : (X → F) → (ι → F) → ℝ≥0∞ → Prop)
+    (hadj : ∀ i j, R i j → ∃ D : ℝ≥0, ∀ f a G, P f a G → ‖a j - a i‖ₑ ≤ D * G) {j : ι}
+    (hj : Relation.ReflTransGen R i₀ j) :
+    ∃ D : ℝ≥0, ∀ f a G, P f a G → ‖a j - a i₀‖ₑ ≤ D * G := by
+  induction hj with
+  | refl => exact ⟨0, fun _ _ _ _ ↦ by simp⟩
+  | @tail j k _ hjk ih =>
+    obtain ⟨D₁, hD₁⟩ := ih
+    obtain ⟨D₂, hD₂⟩ := hadj j k hjk
+    refine ⟨D₂ + D₁, fun f a G hP ↦ ?_⟩
+    calc ‖a k - a i₀‖ₑ = ‖(a k - a j) + (a j - a i₀)‖ₑ := by rw [sub_add_sub_cancel]
+      _ ≤ ‖a k - a j‖ₑ + ‖a j - a i₀‖ₑ := enorm_add_le _ _
+      _ ≤ D₂ * G + D₁ * G := add_le_add (hD₂ f a G hP) (hD₁ f a G hP)
+      _ = ↑(D₂ + D₁) * G := by push_cast; ring
 
 end TauCeti
