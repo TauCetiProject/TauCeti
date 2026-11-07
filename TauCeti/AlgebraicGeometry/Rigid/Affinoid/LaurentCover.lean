@@ -43,17 +43,27 @@ local notation "X₁" => (Subtype.mk (X 1) (isRestricted_X _ 1) : T(2))
 
 private theorem leIdeal_eq (f : A) :
     laurentFractionIdeal (fun _ : Fin 1 ↦ f) (Fin.elim0 : Fin 0 → A) =
-      (laurentCoverLeIdeal A f).map (restrictedMvPowerSeriesGaussAlgEquiv (n := 1) (R := A)) := by
-  simp [laurentFractionIdeal_def, laurentCoverLeIdeal_def, Ideal.map_span,
-    coe_restrictedMvPowerSeriesGaussAlgEquiv, Set.range_unique, Fin.default_eq_zero]
+      (laurentCoverLeIdeal A f).map
+        (restrictedMvPowerSeriesGaussAlgEquiv (n := 1) (R := A) : W(1) →+* T(1)) := by
+  simp only [Nat.add_zero, laurentFractionIdeal_def, Fin.castAdd_zero, Fin.cast_eq_self,
+    Set.range_unique, Fin.default_eq_zero, Fin.isValue, Matrix.range_empty, Submodule.span_empty,
+    bot_le, sup_of_le_left, laurentCoverLeIdeal_def, Ideal.map_span,
+    RingHom.coe_coe, coe_restrictedMvPowerSeriesGaussAlgEquiv,
+    Set.image_singleton, map_sub, restrictedMvPowerSeriesGaussEquiv_weightedC,
+    restrictedMvPowerSeriesGaussEquiv_weightedX]
   simpa only [neg_sub] using (Ideal.span_singleton_neg
     (algebraMap A T(1) f - ⟨X 0, isRestricted_X _ 0⟩))
 
 private theorem geIdeal_eq (f : A) :
     laurentFractionIdeal (Fin.elim0 : Fin 0 → A) (fun _ : Fin 1 ↦ f) =
-      (laurentCoverGeIdeal A f).map (restrictedMvPowerSeriesGaussAlgEquiv (n := 1) (R := A)) := by
-  simp [laurentFractionIdeal_def, laurentCoverGeIdeal_def, Ideal.map_span,
-    coe_restrictedMvPowerSeriesGaussAlgEquiv, Set.range_unique, Fin.default_eq_zero]
+      (laurentCoverGeIdeal A f).map
+        (restrictedMvPowerSeriesGaussAlgEquiv (n := 1) (R := A) : W(1) →+* T(1)) := by
+  simp only [Nat.reduceAdd, laurentFractionIdeal_def, Matrix.range_empty, Submodule.span_empty,
+    Fin.natAdd_zero, Fin.cast_eq_self, Set.range_unique, Fin.default_eq_zero, Fin.isValue,
+    bot_le, sup_of_le_right, laurentCoverGeIdeal_def, Ideal.map_span,
+    RingHom.coe_coe, coe_restrictedMvPowerSeriesGaussAlgEquiv,
+    Set.image_singleton, map_sub, map_one, map_mul, restrictedMvPowerSeriesGaussEquiv_weightedC,
+    restrictedMvPowerSeriesGaussEquiv_weightedX]
   simpa only [neg_sub] using (Ideal.span_singleton_neg
     (1 - algebraMap A T(1) f * ⟨X 0, isRestricted_X _ 0⟩))
 
@@ -98,20 +108,19 @@ private noncomputable def overlapRelation (f : A) : Ideal (W(2)) :=
 
 private theorem overlapRelation_eq_map (f : A) :
     laurentCoverOverlapIdeal A f =
-      (overlapRelation f).map (Ideal.Quotient.mk (laurentIdeal A)) := by
+      (overlapRelation f).map (Ideal.Quotient.mkₐ A (laurentIdeal A)) := by
   simp [overlapRelation, laurentCoverOverlapIdeal_def, Ideal.map_span,
     ← algebraMap_weightedRestrictedSubring, Ideal.Quotient.mk_algebraMap]
 
 private theorem map_overlapIdeal (f : A) :
     laurentFractionIdeal (fun _ : Fin 1 ↦ f) (fun _ : Fin 1 ↦ f) =
       (laurentIdeal A ⊔ overlapRelation f).map
-        (restrictedMvPowerSeriesGaussAlgEquiv (n := 2) (R := A)) := by
+        (restrictedMvPowerSeriesGaussAlgEquiv (n := 2) (R := A) : W(2) →+* T(2)) := by
   have hI : laurentIdeal A = Ideal.span
       {1 - weightedX _ isWeightFamily_one_weight (0 : Fin 2) *
         weightedX _ isWeightFamily_one_weight 1} := by
     ext x
-    rw [mem_laurentIdeal, Ideal.mem_span_singleton]
-    rfl
+    simp only [mem_laurentIdeal, Ideal.mem_span_singleton, dvd_def]
   rw [overlapIdeal_eq, Ideal.map_sup, hI, overlapRelation, Ideal.map_span, Ideal.map_span]
   simp [coe_restrictedMvPowerSeriesGaussAlgEquiv, ← Ideal.span_insert]
 
@@ -150,12 +159,15 @@ theorem huberOverlapAlgEquiv_mk_mk (f : A) (g : W(2)) :
       (Ideal.Quotient.mk (laurentIdeal A) g)) =
       Ideal.Quotient.mk (laurentFractionIdeal (fun _ : Fin 1 ↦ f) (fun _ : Fin 1 ↦ f))
         (restrictedMvPowerSeriesGaussEquiv g) := by
-  rw [← coe_restrictedMvPowerSeriesGaussAlgEquiv]
-  simp only [huberOverlapAlgEquiv]
-  exact
-    (Ideal.quotientEquivAlg _ _ (restrictedMvPowerSeriesGaussAlgEquiv (n := 2) (R := A))
-      (map_overlapIdeal f)).toRingEquiv.congr_arg
-      (DoubleQuot.quotQuotEquivQuotSup_quotQuotMk (laurentIdeal A) (overlapRelation f) g)
+  have hdouble :
+      (DoubleQuot.quotQuotEquivQuotSupₐ A (laurentIdeal A) (overlapRelation f))
+        (Ideal.Quotient.mk ((overlapRelation f).map (Ideal.Quotient.mkₐ A (laurentIdeal A)))
+          (Ideal.Quotient.mk (laurentIdeal A) g)) =
+        Ideal.Quotient.mk (laurentIdeal A ⊔ overlapRelation f) g :=
+    DoubleQuot.quotQuotEquivQuotSup_quotQuotMk (laurentIdeal A) (overlapRelation f) g
+  rw [← coe_restrictedMvPowerSeriesGaussAlgEquiv, huberOverlapAlgEquiv,
+    AlgEquiv.trans_apply, Ideal.quotientEquivAlgOfEq_mk, AlgEquiv.trans_apply,
+    hdouble, Ideal.quotientEquivAlg_mk]
 
 local notation "L(" f ")" => LaurentFraction (fun _ : Fin 1 ↦ f) (Fin.elim0 : Fin 0 → A)
 local notation "G(" f ")" => LaurentFraction (Fin.elim0 : Fin 0 → A) (fun _ : Fin 1 ↦ f)
@@ -174,18 +186,60 @@ noncomputable def geToOverlap (f : A) : G(f) →ₐ[A] O(f) :=
     ((laurentCoverGeToOverlap A f).comp (huberGeAlgEquiv f).symm.toAlgHom)
 
 /-- The lower-piece restriction commutes with the Huber quotient comparisons. -/
-@[simp]
+@[simp↓]
 theorem leToOverlap_huberLeAlgEquiv (f : A) (u : laurentCoverLe A f) :
     leToOverlap f (huberLeAlgEquiv f u) =
       huberOverlapAlgEquiv f (laurentCoverLeToOverlap A f u) := by
   simp [leToOverlap]
 
 /-- The upper-piece restriction commutes with the Huber quotient comparisons. -/
-@[simp]
+@[simp↓]
 theorem geToOverlap_huberGeAlgEquiv (f : A) (v : laurentCoverGe A f) :
     geToOverlap f (huberGeAlgEquiv f v) =
       huberOverlapAlgEquiv f (laurentCoverGeToOverlap A f v) := by
   simp [geToOverlap]
+
+/-- The lower-piece restriction renames every native series representative into the overlap. -/
+@[simp]
+theorem leToOverlap_mk (f : A) (g : T(1)) :
+    leToOverlap f
+      (Ideal.Quotient.mk (laurentFractionIdeal (fun _ : Fin 1 ↦ f) (Fin.elim0 : Fin 0 → A)) g) =
+      Ideal.Quotient.mk (laurentFractionIdeal (fun _ : Fin 1 ↦ f) (fun _ : Fin 1 ↦ f))
+        ⟨rename Fin.castSuccEmb (g : MvPowerSeries (Fin 1) A),
+          by
+            simpa only [coe_restrictedMvPowerSeriesGaussEquiv, coe_weightedRename,
+              coe_restrictedMvPowerSeriesGaussEquiv_symm] using
+              (restrictedMvPowerSeriesGaussEquiv
+                (weightedRename Fin.castSuccEmb isWeightFamily_one_weight isWeightFamily_one_weight
+                  (fun _ ↦ subset_rfl)
+                  (restrictedMvPowerSeriesGaussEquiv.symm g))).property⟩ := by
+  obtain ⟨g, rfl⟩ := (restrictedMvPowerSeriesGaussEquiv (n := 1) (R := A)).surjective g
+  rw [← huberLeAlgEquiv_mk, leToOverlap_huberLeAlgEquiv,
+    laurentCoverLeToOverlap_mk, huberOverlapAlgEquiv_mk_mk]
+  congr 1
+  apply Subtype.ext
+  simp only [coe_restrictedMvPowerSeriesGaussEquiv, coe_weightedRename]
+
+/-- The upper-piece restriction renames every native series representative into the overlap. -/
+@[simp]
+theorem geToOverlap_mk (f : A) (g : T(1)) :
+    geToOverlap f
+      (Ideal.Quotient.mk (laurentFractionIdeal (Fin.elim0 : Fin 0 → A) (fun _ : Fin 1 ↦ f)) g) =
+      Ideal.Quotient.mk (laurentFractionIdeal (fun _ : Fin 1 ↦ f) (fun _ : Fin 1 ↦ f))
+        ⟨rename (Fin.succEmb 1) (g : MvPowerSeries (Fin 1) A),
+          by
+            simpa only [coe_restrictedMvPowerSeriesGaussEquiv, coe_weightedRename,
+              coe_restrictedMvPowerSeriesGaussEquiv_symm] using
+              (restrictedMvPowerSeriesGaussEquiv
+                (weightedRename (Fin.succEmb 1) isWeightFamily_one_weight isWeightFamily_one_weight
+                  (fun _ ↦ subset_rfl)
+                  (restrictedMvPowerSeriesGaussEquiv.symm g))).property⟩ := by
+  obtain ⟨g, rfl⟩ := (restrictedMvPowerSeriesGaussEquiv (n := 1) (R := A)).surjective g
+  rw [← huberGeAlgEquiv_mk, geToOverlap_huberGeAlgEquiv,
+    laurentCoverGeToOverlap_mk, huberOverlapAlgEquiv_mk_mk]
+  congr 1
+  apply Subtype.ext
+  simp only [coe_restrictedMvPowerSeriesGaussEquiv, coe_weightedRename]
 
 /-- The differential for the classical two-piece Laurent cover, with sign second
 restriction minus first restriction. -/
@@ -199,7 +253,8 @@ theorem diff_apply (f : A) (u : L(f)) (v : G(f)) :
 
 /-- The quotient comparisons intertwine the classical differential with the negative of
 the Huber differential, whose convention is first minus second. -/
-theorem diff_comparison (f : A) (u : laurentCoverLe A f) (v : laurentCoverGe A f) :
+theorem diff_huberLeAlgEquiv_huberGeAlgEquiv (f : A)
+    (u : laurentCoverLe A f) (v : laurentCoverGe A f) :
     diff f (huberLeAlgEquiv f u, huberGeAlgEquiv f v) =
       -huberOverlapAlgEquiv f (laurentCoverDiff A f (u, v)) := by
   simp [laurentCoverDiff_apply, neg_sub]
@@ -214,7 +269,7 @@ theorem diff_surjective (f : A) : Function.Surjective (diff f) := by
   obtain ⟨⟨u, v⟩, huv⟩ :=
     laurentCoverDiff_surjective A f ((huberOverlapAlgEquiv f).symm (-w))
   refine ⟨(huberLeAlgEquiv f u, huberGeAlgEquiv f v), ?_⟩
-  rw [diff_comparison, huv, AlgEquiv.apply_symm_apply, neg_neg]
+  rw [diff_huberLeAlgEquiv_huberGeAlgEquiv, huv, AlgEquiv.apply_symm_apply, neg_neg]
 
 /-- **Exactness in the classical Laurent sequence.** Sections on the two pieces with
 equal restrictions to the overlap are precisely the restrictions of one element of `A`.
@@ -224,7 +279,7 @@ theorem exact_algebraMap_diff (f : A) :
   rintro ⟨u, v⟩
   obtain ⟨u, rfl⟩ := (huberLeAlgEquiv f).surjective u
   obtain ⟨v, rfl⟩ := (huberGeAlgEquiv f).surjective v
-  rw [diff_comparison, neg_eq_zero, EmbeddingLike.map_eq_zero_iff]
+  rw [diff_huberLeAlgEquiv_huberGeAlgEquiv, neg_eq_zero, EmbeddingLike.map_eq_zero_iff]
   constructor
   · intro h
     obtain ⟨a, ha⟩ := (exact_algebraMap_laurentCoverDiff A f (u, v)).mp h
@@ -245,33 +300,15 @@ variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [Complete
 include hA in
 /-- **Injectivity in the classical Laurent sequence.** The restrictions to `|f| ≤ 1`
 and `|f| ≥ 1` jointly detect every element, including nilpotents. -/
-theorem injective_algebraMap (f : A) :
+theorem algebraMap_injective (f : A) :
     Function.Injective (algebraMap A (L(f) × G(f))) := by
-  let B : Bool → Type _ := fun b ↦ if b then G(f) else L(f)
-  let : (b : Bool) → CommRing (B b) := fun b ↦ by cases b <;> dsimp [B] <;> infer_instance
-  let : (b : Bool) → Algebra K (B b) := fun b ↦ by cases b <;> dsimp [B] <;> infer_instance
-  let φ : (b : Bool) → A →ₐ[K] B b := fun b ↦ by
-    cases b
-    · exact IsScalarTower.toAlgHom K A (L(f))
-    · exact IsScalarTower.toAlgHom K A (G(f))
-  let U : Bool → Set (MaximalSpectrum A) := fun b ↦ if b then
-    laurentDomain K (Fin.elim0 : Fin 0 → A) (fun _ : Fin 1 ↦ f) else
-    laurentDomain K (fun _ : Fin 1 ↦ f) (Fin.elim0 : Fin 0 → A)
-  have hφ : ∀ b, IsAffinoidSubdomainMap (φ b) (U b) := by
-    intro b
-    cases b <;> exact LaurentFraction.isAffinoidSubdomainMap hA
-  have hcover : ∀ x : MaximalSpectrum A, ∃ b, x ∈ U b := by
-    intro x
-    rcases le_total (pointNorm K x f) 1 with hx | hx
-    · exact ⟨false, by simpa [U, mem_laurentDomain] using hx⟩
-    · exact ⟨true, by simpa [U, mem_laurentDomain] using hx⟩
-  have hinj := (IsAffinoidSubdomainMap.faithfullyFlat_pi hφ hA hcover).injective
-  intro a b hab
-  apply hinj
-  funext i
-  cases i
-  · exact congrArg Prod.fst hab
-  · exact congrArg Prod.snd hab
+  apply IsAffinoidSubdomainMap.prod_injective
+    (LaurentFraction.isAffinoidSubdomainMap hA)
+    (LaurentFraction.isAffinoidSubdomainMap hA) hA
+  intro x
+  rcases le_total (pointNorm K x f) 1 with hx | hx
+  · exact Or.inl (by simpa [mem_laurentDomain] using hx)
+  · exact Or.inr (by simpa [mem_laurentDomain] using hx)
 
 include hA in
 /-- **Gluing on the classical two-piece Laurent cover.** A compatible pair of sections
@@ -282,7 +319,7 @@ theorem existsUnique_gluing (f : A) (u : L(f)) (v : G(f))
   obtain ⟨a, ha⟩ := (exact_algebraMap_diff f (u, v)).mp (by simp [diff_apply, h])
   refine ⟨a, ⟨congrArg Prod.fst ha, congrArg Prod.snd ha⟩, ?_⟩
   intro b hb
-  exact injective_algebraMap hA f (Prod.ext (hb.1.trans (congrArg Prod.fst ha).symm)
+  exact algebraMap_injective hA f (Prod.ext (hb.1.trans (congrArg Prod.fst ha).symm)
     (hb.2.trans (congrArg Prod.snd ha).symm))
 
 end Affinoid
