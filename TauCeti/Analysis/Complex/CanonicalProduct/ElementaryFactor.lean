@@ -140,9 +140,21 @@ theorem analyticOrderAt_weierstrassFactorOne_mul {c z : ℂ} (h : c * z = 1) :
   rw [heq, analyticOrderAt_comp_of_deriv_ne_zero hg (by rwa [hd.deriv]), h]
   exact analyticOrderAt_weierstrassFactorOne_one
 
+/-- The rational logarithmic derivative of the genus-one factor with slope `a`,
+using total division at its pole. -/
+@[expose]
+noncomputable def logDerivWeierstrassFactorOneMul (a z : ℂ) : ℂ :=
+  -a ^ 2 * z / (1 - a * z)
+
+/-- The defining rational expression for the slope-dependent logarithmic derivative. -/
+@[simp]
+theorem logDerivWeierstrassFactorOneMul_def (a z : ℂ) :
+    logDerivWeierstrassFactorOneMul a z = -a ^ 2 * z / (1 - a * z) := rfl
+
 /-- The paired rational logarithmic derivative of an elementary factor with a complex slope. -/
 theorem logDeriv_weierstrassFactorOne_mul (a z : ℂ) :
-    logDeriv (fun w ↦ weierstrassFactorOne (a * w)) z = -a ^ 2 * z / (1 - a * z) := by
+    logDeriv (fun w ↦ weierstrassFactorOne (a * w)) z = logDerivWeierstrassFactorOneMul a z := by
+  rw [logDerivWeierstrassFactorOneMul_def]
   have hd : HasDerivAt (fun w : ℂ ↦ a * w) a z := by
     simpa using (hasDerivAt_id z).const_mul a
   rw [logDeriv_fun_comp (differentiable_weierstrassFactorOne _) hd.differentiableAt,

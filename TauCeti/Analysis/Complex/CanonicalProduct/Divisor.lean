@@ -163,7 +163,7 @@ theorem divisor_divisorProductOne :
       intro r t h
       apply Subtype.ext
       exact inv_inj.mp h
-    have ho := analyticOrderAt_tprod_weierstrassFactorOne_pow
+    have ho := analyticOrderAt_tprod_weierstrassFactorOne_pow_of_injective
       (fun r : (MeromorphicOn.divisor f Set.univ).support ↦ (r : ℂ)⁻¹)
       (fun r ↦ (MeromorphicOn.divisor f Set.univ r).toNat) hsum (z := z) (i := ρ)
       hinj (inv_mul_cancel₀ hρ0)
@@ -194,35 +194,28 @@ end TauCeti
 
 namespace TauCeti
 
-private theorem pairedTerm_inv {ρ z : ℂ} (hρ : ρ ≠ 0) (hz : z ≠ ρ) :
-    -(ρ⁻¹) ^ 2 * z / (1 - ρ⁻¹ * z) = 1 / (z - ρ) + 1 / ρ := by
-  have hd : 1 - ρ⁻¹ * z ≠ 0 := sub_ne_zero.mpr (by
-    intro h
-    exact hz ((inv_mul_eq_one₀ hρ).mp h.symm).symm)
-  field_simp [hρ, hd, sub_ne_zero.mpr hz]
-  ring
-
-variable {f : ℂ → ℂ} (hf : Differentiable ℂ f) (hf0 : f 0 ≠ 0)
+variable {f : ℂ → ℂ} (h0 : (0 : ℂ) ∉ (MeromorphicOn.divisor f Set.univ).support)
   (hsum : Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
     ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℝ) * ‖(ρ : ℂ)⁻¹‖ ^ 2))
 
-include hf hf0 hsum
+include h0 hsum
 
 /-- The classical paired divisor series is absolutely convergent off the divisor support. -/
-theorem summable_norm_divisor_pairedTerm {z : ℂ}
+theorem summable_norm_logDeriv_divisorProductOne {z : ℂ}
     (hz : z ∉ (MeromorphicOn.divisor f Set.univ).support) :
     Summable (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦
       ‖((MeromorphicOn.divisor f Set.univ ρ).toNat : ℂ) * (1 / (z - ρ) + 1 / ρ)‖) := by
-  have hs := summable_norm_weierstrassFactorOne_pairedTerm_pow
+  have hs := summable_norm_natCast_mul_logDerivWeierstrassFactorOneMul
     (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦ (ρ : ℂ)⁻¹)
     (fun ρ ↦ (MeromorphicOn.divisor f Set.univ ρ).toNat) hsum z
   apply hs.congr
   intro ρ
-  rw [pairedTerm_inv (divisor_support_ne_zero hf hf0 ρ)
+  rw [logDerivWeierstrassFactorOneMul_def,
+    neg_inv_sq_mul_div_one_sub_inv_mul (fun heq ↦ h0 (heq ▸ ρ.property))
     (by intro h; exact hz (h ▸ ρ.property))]
 
 /-- The classical paired divisor series converges locally uniformly off the divisor support. -/
-theorem hasSumLocallyUniformlyOn_divisor_pairedTerm :
+theorem hasSumLocallyUniformlyOn_logDeriv_divisorProductOne :
     HasSumLocallyUniformlyOn
       (fun (ρ : (MeromorphicOn.divisor f Set.univ).support) z ↦
         ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℂ) * (1 / (z - ρ) + 1 / ρ))
@@ -232,7 +225,7 @@ theorem hasSumLocallyUniformlyOn_divisor_pairedTerm :
   apply hasSumLocallyUniformlyOn_of_forall_compact
     ((MeromorphicOn.divisor f Set.univ).closedSupport isClosed_univ).isOpen_compl
   intro K hKS hK
-  have h0 := hasSumUniformlyOn_weierstrassFactorOne_pairedTerm_pow
+  have hseries := hasSumUniformlyOn_natCast_mul_logDerivWeierstrassFactorOneMul
     (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦ (ρ : ℂ)⁻¹)
     (fun ρ ↦ (MeromorphicOn.divisor f Set.univ ρ).toNat) hsum hK
   have hpair : HasSumUniformlyOn
@@ -240,13 +233,14 @@ theorem hasSumLocallyUniformlyOn_divisor_pairedTerm :
         ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℂ) * (1 / (z - ρ) + 1 / ρ))
       (fun z ↦ ∑' ρ : (MeromorphicOn.divisor f Set.univ).support,
         ((MeromorphicOn.divisor f Set.univ ρ).toNat : ℂ) *
-          (-(ρ : ℂ)⁻¹ ^ 2 * z / (1 - (ρ : ℂ)⁻¹ * z))) K := by
-    apply h0.congr
+          logDerivWeierstrassFactorOneMul ((ρ : ℂ)⁻¹) z) K := by
+    apply hseries.congr
     apply Eventually.of_forall
     intro s z hz
     apply Finset.sum_congr rfl
     intro ρ _
-    rw [pairedTerm_inv (divisor_support_ne_zero hf hf0 ρ)
+    rw [logDerivWeierstrassFactorOneMul_def,
+      neg_inv_sq_mul_div_one_sub_inv_mul (fun heq ↦ h0 (heq ▸ ρ.property))
       (by intro heq; exact hKS hz (heq ▸ ρ.property))]
   exact hpair.congr_right (fun z hz ↦ (hpair.tsum_eqOn hz).symm)
 
@@ -259,7 +253,7 @@ theorem logDeriv_divisorProductOne {z : ℂ}
   have hroot (ρ : (MeromorphicOn.divisor f Set.univ).support)
       (_ : (MeromorphicOn.divisor f Set.univ ρ).toNat ≠ 0) : (ρ : ℂ)⁻¹ * z ≠ 1 := by
     intro heq
-    have hρz := (inv_mul_eq_one₀ (divisor_support_ne_zero hf hf0 ρ)).mp heq
+    have hρz := (inv_mul_eq_one₀ (fun heq ↦ h0 (heq ▸ ρ.property))).mp heq
     exact hz (hρz ▸ ρ.property)
   have ht := logDeriv_tprod_weierstrassFactorOne_pow
     (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦ (ρ : ℂ)⁻¹)
@@ -272,7 +266,8 @@ theorem logDeriv_divisorProductOne {z : ℂ}
   rw [ht]
   apply tsum_congr
   intro ρ
-  rw [pairedTerm_inv (divisor_support_ne_zero hf hf0 ρ)
+  rw [logDerivWeierstrassFactorOneMul_def,
+    neg_inv_sq_mul_div_one_sub_inv_mul (fun heq ↦ h0 (heq ▸ ρ.property))
     (by intro h; exact hz (h ▸ ρ.property))]
 
 end TauCeti

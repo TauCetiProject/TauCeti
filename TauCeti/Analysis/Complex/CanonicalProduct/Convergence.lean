@@ -10,7 +10,7 @@ public import TauCeti.Topology.Algebra.InfiniteSum.Real
 public import Mathlib.Analysis.Normed.Module.MultipliableUniformlyOn
 public import Mathlib.Analysis.SpecialFunctions.Log.Summable
 public import Mathlib.Analysis.Complex.LocallyUniformLimit
-public import Mathlib.Analysis.Analytic.Order
+public import TauCeti.Analysis.Analytic.Order
 
 /-!
 # Convergence and multiplicities of genus-one canonical products
@@ -22,7 +22,8 @@ order counts the factors vanishing there. No enumeration or countability assumpt
 index type is needed.
 
 Natural multiplicities are allowed under the weighted condition `∑ i, m i * ‖a i‖² < ∞`.
-For injective slopes, the analytic order at each root is exactly its prescribed multiplicity.
+The analytic order counts the repeated vanishing factors; for injective slopes this is exactly
+the prescribed multiplicity.
 These are the convergence and divisor ingredients of Hadamard factorization at order one.
 
 ## References
@@ -144,22 +145,13 @@ omit ha in
 private theorem analyticOrderAt_finsetProd_weierstrassFactorOne {z : ℂ}
     (s : Finset ι) (hs : ∀ i ∈ s, a i * z = 1) :
     analyticOrderAt (fun w ↦ ∏ i ∈ s, weierstrassFactorOne (a i * w)) z = s.card := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp [analyticOrderAt_eq_zero]
-  | @insert i s hi ih =>
-    have heq : (fun w ↦ ∏ j ∈ insert i s, weierstrassFactorOne (a j * w)) =
-        (fun w ↦ weierstrassFactorOne (a i * w)) *
-        (fun w ↦ ∏ j ∈ s, weierstrassFactorOne (a j * w)) := by
-      funext w
-      simp [Finset.prod_insert hi]
-    have h1 : AnalyticAt ℂ (fun w ↦ weierstrassFactorOne (a i * w)) z := by fun_prop
-    have h2 : AnalyticAt ℂ (fun w ↦ ∏ j ∈ s, weierstrassFactorOne (a j * w)) z := by
-      fun_prop
-    rw [heq, analyticOrderAt_mul h1 h2,
-      analyticOrderAt_weierstrassFactorOne_mul (hs i (Finset.mem_insert_self _ _)),
-      ih (fun j hj ↦ hs j (Finset.mem_insert_of_mem hj)), Finset.card_insert_of_notMem hi]
-    simp [add_comm]
+  have heq : (fun w ↦ ∏ i ∈ s, weierstrassFactorOne (a i * w)) =
+      ∏ i ∈ s, (fun w ↦ weierstrassFactorOne (a i * w)) := by ext w; simp
+  rw [heq, TauCeti.analyticOrderAt_prod (fun _ _ ↦ by fun_prop)]
+  calc
+    _ = ∑ _i ∈ s, (1 : ℕ∞) := Finset.sum_congr rfl fun i hi ↦
+      analyticOrderAt_weierstrassFactorOne_mul (hs i hi)
+    _ = _ := by simp
 
 /-- The product order is the cardinality of any finite set containing exactly its vanishing
 factors. -/
@@ -214,7 +206,7 @@ include hm
 
 private theorem summable_sigma_norm_sq_weierstrass :
     Summable (fun p : Σ i, Fin (m i) ↦ ‖a p.1‖ ^ 2) :=
-  (summable_sigma_fin_iff (fun i ↦ sq_nonneg ‖a i‖) m).mpr hm
+  (TauCeti.summable_sigma_fin_iff (fun i ↦ sq_nonneg ‖a i‖) m).mpr hm
 
 private theorem tprod_weierstrassFactorOne_pow_eq_sigma (z : ℂ) :
     (∏' i, weierstrassFactorOne (a i * z) ^ m i) =
@@ -236,9 +228,21 @@ theorem differentiable_tprod_weierstrassFactorOne_pow :
   exact differentiable_tprod_weierstrassFactorOne _
     (summable_sigma_norm_sq_weierstrass a m hm)
 
+/-- With arbitrary repeated slopes, the order counts the vanishing factors with their
+natural multiplicities, represented by the finite fibers of the multiplicity family. -/
+theorem analyticOrderAt_tprod_weierstrassFactorOne_pow (z : ℂ) :
+    analyticOrderAt (fun w ↦ ∏' j, weierstrassFactorOne (a j * w) ^ m j) z =
+      ({p : Σ j, Fin (m j) | a p.1 * z = 1}.ncard : ℕ∞) := by
+  have heq : (fun w ↦ ∏' j, weierstrassFactorOne (a j * w) ^ m j) =
+      (fun w ↦ ∏' p : Σ j, Fin (m j), weierstrassFactorOne (a p.1 * w)) :=
+    funext (tprod_weierstrassFactorOne_pow_eq_sigma a m hm)
+  rw [heq]
+  exact analyticOrderAt_tprod_weierstrassFactorOne _
+    (summable_sigma_norm_sq_weierstrass a m hm) z
+
 /-- For distinct slopes, the prescribed multiplicity is the exact order at the corresponding
 root. -/
-theorem analyticOrderAt_tprod_weierstrassFactorOne_pow {z : ℂ} {i : ι}
+theorem analyticOrderAt_tprod_weierstrassFactorOne_pow_of_injective {z : ℂ} {i : ι}
     (ha : Function.Injective a) (hi : a i * z = 1) :
     analyticOrderAt (fun w ↦ ∏' j, weierstrassFactorOne (a j * w) ^ m j) z = m i := by
   classical
@@ -256,11 +260,11 @@ theorem analyticOrderAt_tprod_weierstrassFactorOne_pow {z : ℂ} {i : ι}
     · rintro ⟨l, heq⟩
       cases heq
       exact hi
-  have heq : (fun w ↦ ∏' j, weierstrassFactorOne (a j * w) ^ m j) =
-      (fun w ↦ ∏' p : Σ j, Fin (m j), weierstrassFactorOne (a p.1 * w)) :=
-    funext (tprod_weierstrassFactorOne_pow_eq_sigma a m hm)
-  rw [heq, analyticOrderAt_tprod_weierstrassFactorOne_of_finset _
-    (summable_sigma_norm_sq_weierstrass a m hm) s hs]
+  rw [analyticOrderAt_tprod_weierstrassFactorOne_pow a m hm z]
+  have hset : {p : Σ j, Fin (m j) | a p.1 * z = 1} = (s : Set (Σ j, Fin (m j))) := by
+    ext p
+    exact hs p
+  rw [hset, Set.ncard_coe_finset]
   simp [s]
 
 /-- Products with natural multiplicities converge uniformly on every compact set. -/

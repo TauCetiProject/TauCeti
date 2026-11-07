@@ -98,6 +98,8 @@ theorem Summable.exists_tendsto_atTop_summable_mul {a : ℕ → ℝ} (ha : Summa
     simp only [hd_def, hb_def]
     split_ifs <;> simp
 
+namespace TauCeti
+
 /-- Repeating each nonnegative real term a finite natural number of times preserves
 summability exactly when the multiplicity-weighted family is summable. -/
 theorem summable_sigma_fin_iff {ι : Type*} {a : ι → ℝ} (ha : ∀ i, 0 ≤ a i) (m : ι → ℕ) :
@@ -110,3 +112,5 @@ theorem summable_sigma_fin_iff {ι : Type*} {a : ι → ℝ} (ha : ∀ i, 0 ≤ 
   · intro h
     refine ⟨fun _ ↦ Summable.of_finite, ?_⟩
     simpa using h
+
+end TauCeti
