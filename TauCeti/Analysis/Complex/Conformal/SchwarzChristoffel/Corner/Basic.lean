@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Asymptotic
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Boundary
+import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 
 /-!
 # Corner asymptotics of the Schwarz--Christoffel map
@@ -233,17 +234,8 @@ private theorem norm_schwarzChristoffelCornerRemainder_sub_le (a e : ι → ℝ)
     exact (continuousOn_const.mul continuousOn_const).mul htcont
   have hmain := norm_sub_le_integral_of_norm_deriv_le_of_le hδ.2.le hcont hdiff
     (.of_forall fun t ht => hderiv_le t (Ioo_subset_Icc_self ht)) hBi
-  have hBint : (∫ t in δ..1, B t) ≤ ε / (T + 1) * ‖z - q‖ ^ (T + 1) := by
-    simp only [B]
-    rw [intervalIntegral.integral_const_mul,
-      integral_rpow (Or.inl (by simpa [T] using he)), Real.one_rpow]
-    have hδpow : 0 ≤ δ ^ (T + 1) := Real.rpow_nonneg hδ.1.le _
-    calc
-      ε * ‖z - q‖ ^ (T + 1) * ((1 - δ ^ (T + 1)) / (T + 1))
-          ≤ ε * ‖z - q‖ ^ (T + 1) * (1 / (T + 1)) := by
-            gcongr
-            linarith
-      _ = ε / (T + 1) * ‖z - q‖ ^ (T + 1) := by ring
+  have hBint : (∫ t in δ..1, B t) ≤ ε / (T + 1) * ‖z - q‖ ^ (T + 1) :=
+    integral_const_mul_rpow_le (by simpa [T] using he) hδ.1 hε (Real.rpow_nonneg hnorm.le _)
   simpa [γ, R, q, T] using hmain.trans hBint
 
 /-- The corner remainder is bounded by an arbitrarily small multiple of the leading power. -/

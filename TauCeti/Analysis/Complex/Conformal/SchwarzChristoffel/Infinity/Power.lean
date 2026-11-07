@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Log
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Boundary
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
+import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 
 /-!
 # Power growth of Schwarz--Christoffel primitives at infinity
@@ -81,7 +82,7 @@ private theorem hasDerivAt_schwarzChristoffelPowerRemainder (a e : ι → ℝ)
     rw [hcast]
 
 /-- On the part of the circle of radius `R` in the closed upper half-plane, the primitive extends
-continuously, provided the circle misses every finite prevertex. -/
+continuously, provided every finite prevertex lies strictly inside the circle (`|a i| < R`). -/
 private theorem continuousOn_extendFrom_schwarzChristoffelPrimitive_sphere
     (a e : ι → ℝ) (z₀ : UpperHalfPlane)
     {R : ℝ} (haR : ∀ i, |a i| < R) :
@@ -126,9 +127,6 @@ private theorem exists_bound_schwarzChristoffelPowerRemainder_on_semicircle
   classical
   let K : Set ℂ := sphere 0 R ∩ closure upperHalfPlaneSet
   let F : ℂ → ℂ := schwarzChristoffelPrimitive a e z₀
-  classical
-  let K : Set ℂ := sphere 0 R ∩ closure upperHalfPlaneSet
-  let F : ℂ → ℂ := schwarzChristoffelPrimitive a e z₀
   have hcont : ContinuousOn (extendFrom upperHalfPlaneSet F) K :=
     continuousOn_extendFrom_schwarzChristoffelPrimitive_sphere a e z₀ haR
   have hK : IsCompact K :=
@@ -155,20 +153,6 @@ private theorem exists_bound_schwarzChristoffelPowerRemainder_on_semicircle
               abs_of_pos (by linarith : 0 < (∑ i, e i) + 1)]
           rw [norm_div, Complex.norm_cpow_real, hzR, hden]
     _ ≤ M := le_max_right _ _
-
-
-/-- The integral of `η K t ^ S` over `[δ, 1]` is at most `η / (S + 1) * K`. -/
-private theorem integral_const_mul_rpow_le {S δ η K : ℝ} (hsum : -1 < S) (hδ0 : 0 < δ)
-    (hη : 0 ≤ η) (hK : 0 ≤ K) :
-    (∫ t in δ..1, η * K * t ^ S) ≤ η / (S + 1) * K := by
-  rw [intervalIntegral.integral_const_mul, integral_rpow (Or.inl hsum), Real.one_rpow]
-  have hS1 : 0 < S + 1 := by linarith
-  have hδpow : 0 ≤ δ ^ (S + 1) := Real.rpow_nonneg hδ0.le _
-  calc
-    η * K * ((1 - δ ^ (S + 1)) / (S + 1)) ≤ η * K * (1 / (S + 1)) := by
-          gcongr
-          linarith
-    _ = η / (S + 1) * K := by ring
 
 /-- The pointwise bound on the radial derivative of the power remainder. -/
 private theorem norm_mul_schwarzChristoffelIntegrand_sub_cpow_le (a e : ι → ℝ) {R η t : ℝ}
@@ -277,8 +261,9 @@ private theorem exists_radius_norm_schwarzChristoffelIntegrand_sub_le (a e : ι 
     exact mul_le_mul_of_nonneg_right
       (hR₀ (le_max_left R₀ A |>.trans hyR) hy).le (Real.rpow_nonneg (norm_nonneg y) _)
 
-/-- Away from the semicircle of radius `R`, the power remainder is bounded by its maximum `M`
-on that semicircle plus the radial error estimate. -/
+/-- For `z` in the upper half-plane with `R ≤ ‖z‖`, the power remainder `Q` satisfies
+`‖Q z‖ / ‖z‖ ^ (S + 1) ≤ M / ‖z‖ ^ (S + 1) + η / (S + 1)`, where `S = ∑ i, e i`, `M` bounds `Q`
+on the semicircle of radius `R`, and `η` is the constant of the radial error estimate. -/
 private theorem norm_schwarzChristoffelPowerRemainder_div_le (a e : ι → ℝ)
     (z₀ : UpperHalfPlane) (hsum : -1 < ∑ i, e i) {R η M : ℝ} (hR : 0 < R) (hη : 0 ≤ η)
     (herror : ∀ y ∈ upperHalfPlaneSet, R ≤ ‖y‖ →
