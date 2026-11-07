@@ -63,6 +63,20 @@ theorem eq_one_of_pow_eq_one_of_range_sub_one_le (f : Module.End K V) (W : Submo
   rw [pow_two, Module.End.mul_eq_comp, ← LinearMap.range_le_ker_iff]
   exact hrange.trans hfixed
 
+/-- A finite-order endomorphism `f` with `q ∘ f = q` that fixes `ker q` pointwise is the identity,
+when its order is nonzero in the coefficient division ring. -/
+theorem eq_one_of_pow_eq_one_of_comp_ker_subtype_eq {W : Type*} [AddCommGroup W] [Module K W]
+    (f : Module.End K V) (q : V →ₗ[K] W) {n : ℕ} (hn : (n : K) ≠ 0) (hpow : f ^ n = 1)
+    (hnormal : q ∘ₗ f = q) (hface : f ∘ₗ (LinearMap.ker q).subtype = (LinearMap.ker q).subtype) :
+    f = 1 := by
+  refine f.eq_one_of_pow_eq_one_of_range_sub_one_le (LinearMap.ker q) hn hpow ?_ ?_
+  · intro v hv
+    have h := LinearMap.congr_fun hface ⟨v, hv⟩
+    simpa using sub_eq_zero.mpr h
+  · rintro v ⟨w, rfl⟩
+    have h := LinearMap.congr_fun hnormal w
+    simpa using sub_eq_zero.mpr h
+
 /-- On a two-dimensional space, an endomorphism `f` with `f * f = 0` has a basis `v, u` with
 `f u = 0` and `f v` a multiple of `u`. -/
 theorem exists_linearIndependent_of_mul_self_eq_zero (f : Module.End K V)
