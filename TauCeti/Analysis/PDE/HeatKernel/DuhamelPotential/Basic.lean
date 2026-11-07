@@ -452,7 +452,7 @@ theorem exists_norm_fderiv_heatDuhamelPotential_le :
   have hae := hC hf hfM ht
   rw [uIoc_of_le ht.le] at hae
   rw [← norm_iteratedFDeriv_one, iteratedFDeriv_heatDuhamelPotential hf hfM ht le_rfl]
-  refine (intervalIntegral.norm_integral_le_of_norm_le_mul_rpow_sub_left (K := C * M)
+  refine (intervalIntegral.norm_integral_le_of_norm_le_mul_sub_rpow_left (K := C * M)
     (by norm_num) ht.le (hae.mono fun s hs => hs x)).trans_eq ?_
   rw [sqrt_eq_rpow]
   norm_num
@@ -479,7 +479,7 @@ private theorem exists_norm_integral_iteratedFDeriv_two_heatKernel_convolution_l
   have ht : 0 < t := ha.trans_lt hat
   have hae := hC hf hfM hH ht
   rw [uIoc_of_le ht.le] at hae
-  refine (intervalIntegral.norm_integral_le_of_norm_le_mul_rpow_sub_left (K := C * H)
+  refine (intervalIntegral.norm_integral_le_of_norm_le_mul_sub_rpow_left (K := C * H)
     (by linarith) hat.le (ae_restrict_of_ae_restrict_of_subset (Ioc_subset_Ioc ha le_rfl)
       (hae.mono fun s hs => hs x))).trans_eq ?_
   have h : ((α : ℝ) - 2) / 2 + 1 = α / 2 := by ring

@@ -23,7 +23,7 @@ distance to `p` is at least the length of the segment times the distance of the 
 fixed parameter `c`, namely the foot of the perpendicular from `p` clamped to `[0, 1]`; the
 Cauchy--Schwarz inequality is what makes the comparison work.  Both pieces of the parameter
 interval then compare with a power of the distance to `c`, through the one-sided estimates
-`intervalIntegral.norm_integral_le_of_norm_le_mul_rpow_sub_right` and `..._left` of
+`intervalIntegral.norm_integral_le_of_norm_le_mul_sub_rpow_right` and `..._left` of
 `TauCeti.MeasureTheory.Integral.IntervalIntegral.PowerBounds`, and the singularity contributes
 only the finite constant `2 / (u + 1)`.
 
@@ -122,11 +122,11 @@ theorem integral_dist_rpow_segment_le {p : ℂ} {u : ℝ} (hu : -1 < u) (hu0 : u
     have hb := hbnd s ⟨hc.1.trans hs.1.le, hs.2⟩ hs.1.ne'
     rw [Real.norm_of_nonneg (hnn s)]
     rwa [abs_of_pos (sub_pos.mpr hs.1)] at hb
-  have hi2 := intervalIntegral.intervalIntegrable_of_norm_le_mul_rpow_sub_right
+  have hi2 := intervalIntegral.intervalIntegrable_of_norm_le_mul_sub_rpow_right
     (f := fun s : ℝ => dist (w + s • (z - w)) p ^ u) (a := c) (b := 1) (K := ‖z - w‖ ^ u) hu
     hc.2 hmeas.restrict hbr
   have hb2 := (Real.le_norm_self _).trans
-    (intervalIntegral.norm_integral_le_of_norm_le_mul_rpow_sub_right
+    (intervalIntegral.norm_integral_le_of_norm_le_mul_sub_rpow_right
       (f := fun s : ℝ => dist (w + s • (z - w)) p ^ u) (a := c) (b := 1) (K := ‖z - w‖ ^ u) hu
       hc.2 hbr)
   -- the piece to the left of the foot of the perpendicular
@@ -137,11 +137,11 @@ theorem integral_dist_rpow_segment_le {p : ℂ} {u : ℝ} (hu : -1 < u) (hu0 : u
     have hb := hbnd s ⟨hs.1.le, hs.2.trans hc.2⟩ hsne
     rw [Real.norm_of_nonneg (hnn s)]
     rwa [abs_of_neg (sub_neg.mpr (lt_of_le_of_ne hs.2 hsne)), neg_sub] at hb
-  have hi1 := intervalIntegral.intervalIntegrable_of_norm_le_mul_rpow_sub_left
+  have hi1 := intervalIntegral.intervalIntegrable_of_norm_le_mul_sub_rpow_left
     (f := fun s : ℝ => dist (w + s • (z - w)) p ^ u) (a := 0) (b := c) (K := ‖z - w‖ ^ u) hu
     hc.1 hmeas.restrict hbl
   have hb1 := (Real.le_norm_self _).trans
-    (intervalIntegral.norm_integral_le_of_norm_le_mul_rpow_sub_left
+    (intervalIntegral.norm_integral_le_of_norm_le_mul_sub_rpow_left
       (f := fun s : ℝ => dist (w + s • (z - w)) p ^ u) (a := 0) (b := c) (K := ‖z - w‖ ^ u) hu
       hc.1 hbl)
   rw [sub_zero] at hb1
