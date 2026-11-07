@@ -71,9 +71,9 @@ theorem mackeyHomSelfLinearEquiv_apply (hs : s ∈ H) (A B : Rep.{u} k H)
       Rep.res (mackeyToH s H H) B) (a : A) :
     (mackeyHomSelfLinearEquiv hs A B f).hom a = B.ρ ⟨s, hs⟩ (f.hom a) := by
   let := Rep.full_res (k := k) _ (mackeySubgroup_subgroupOf_subtype_surjective hs)
-  have h := Functor.map_homLinearEquiv_symm_apply k
-    (Rep.resFunctor ((mackeySubgroup s H H).subgroupOf H).subtype)
-    (f ≫ (mackeySelfTwistIso hs B).hom)
+  have h := ((Rep.resFunctor ((mackeySubgroup s H H).subgroupOf H).subtype).homLinearEquiv
+    k A B).apply_symm_apply (f ≫ (mackeySelfTwistIso hs B).hom)
+  rw [Functor.homLinearEquiv_apply] at h
   calc
     _ = (mackeySelfTwistIso hs B).hom.hom (f.hom a) := by
       simpa only [mackeyHomSelfLinearEquiv, LinearEquiv.trans_apply, Linear.homCongr_apply,

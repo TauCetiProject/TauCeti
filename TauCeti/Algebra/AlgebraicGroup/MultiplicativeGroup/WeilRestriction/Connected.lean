@@ -188,7 +188,8 @@ private theorem rightTranslationAlgHom_eq_self {K : Type u} [Field K] [Algebra k
   let p := minpoly K v
   have hρ1 : IsUnit ((pathPolynomial p).eval 1) := by
     rw [eval_one_pathPolynomial, isUnit_iff_ne_zero]
-    exact minpoly.coeff_zero_ne_zero_of_isUnit hv (u.isUnit.map (Algebra.TensorProduct.comm k B K))
+    exact minpoly.coeff_zero_ne_zero_of_mem_nonZeroDivisors hv
+      (u.isUnit.map (Algebra.TensorProduct.comm k B K)).mem_nonZeroDivisors
   have hρ0 : IsUnit ((pathPolynomial p).eval 0) := by
     rw [eval_zero_pathPolynomial, isUnit_iff_ne_zero]
     exact mul_ne_zero (pow_ne_zero _ (neg_ne_zero.mpr one_ne_zero))

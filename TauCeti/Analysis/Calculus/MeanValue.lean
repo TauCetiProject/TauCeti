@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.MeanValue
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Calculus.Deriv.AffineMap
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Convex.Basic
@@ -42,6 +43,10 @@ value theorem on the part of the segment where the function crosses the band.
 The file also records the one-variable form of Mathlib's
 `Convex.norm_image_sub_le_of_norm_hasFDerivWithin_le'`, bounding the increment of a function
 against a fixed derivative `φ` (`Convex.norm_image_sub_le_of_norm_hasDerivWithin_le'`).
+
+For a function on the real line with derivative of norm at most `D r ^ (β - 1)` at every `r > 0`,
+where `0 ≤ β ≤ 1`, the increments satisfy `‖u b - u a‖ ≤ 2 D |b - a| a ^ (β - 1)` for `a > 0` and
+`a / 2 ≤ b` (`TauCeti.norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivAt`).
 
 ## Comparing maps with nearby derivatives
 
@@ -169,6 +174,31 @@ theorem norm_sub_le_of_norm_fderiv_sub_id_le {c : E} {h : E → E} {r δ : ℝ} 
     (mem_closedBall_self (by positivity)) hx
   rw [hhc, sub_self, sub_zero] at this
   exact this.trans (mul_le_mul_of_nonneg_left (mem_closedBall_iff_norm.1 hx) hδ0)
+
+open Real in
+/-- Mean value bound near `a > 0`: if `u` has derivative `f' r` of norm at most `D r^(β - 1)` at
+every `r > 0` (`0 ≤ β ≤ 1`), then `‖u b - u a‖ ≤ 2 D |b - a| a^(β - 1)` for `a / 2 ≤ b`. -/
+theorem norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivAt {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {u f' : ℝ → F} {β D : ℝ} (hβ₀ : 0 ≤ β) (hβ₁ : β - 1 ≤ 0)
+    (hD : 0 ≤ D)
+    (hderiv : ∀ r, 0 < r → HasDerivAt u (f' r) r) (hbound : ∀ r, 0 < r → ‖f' r‖ ≤ D * r ^ (β - 1))
+    {a b : ℝ} (ha : 0 < a) (hb : a / 2 ≤ b) : ‖u b - u a‖ ≤ 2 * D * (|b - a| * a ^ (β - 1)) := by
+  have ha2 : 0 < a / 2 := half_pos ha
+  have hmv := Convex.norm_image_sub_le_of_norm_hasDerivWithin_le (f := u) (s := Ici (a / 2))
+    (f' := f') (C := D * (a / 2) ^ (β - 1))
+    (fun r hr => (hderiv r (ha2.trans_le hr)).hasDerivWithinAt)
+    (fun r hr => (hbound r (ha2.trans_le hr)).trans
+      (mul_le_mul_of_nonneg_left (rpow_le_rpow_of_nonpos ha2 hr hβ₁) hD))
+    (convex_Ici _) (x := a) (y := b) (mem_Ici.2 (by linarith)) (mem_Ici.2 hb)
+  have hhalf : (a / 2) ^ (β - 1) ≤ 2 * a ^ (β - 1) := by
+    rw [div_rpow ha.le zero_le_two, div_eq_mul_inv, ← rpow_neg zero_le_two, neg_sub, mul_comm]
+    gcongr
+    calc (2 : ℝ) ^ (1 - β) ≤ 2 ^ (1 : ℝ) := rpow_le_rpow_of_exponent_le one_le_two (by linarith)
+      _ = 2 := rpow_one 2
+  rw [Real.norm_eq_abs] at hmv
+  calc ‖u b - u a‖ ≤ D * (a / 2) ^ (β - 1) * |b - a| := hmv
+    _ ≤ D * (2 * a ^ (β - 1)) * |b - a| := by gcongr
+    _ = _ := by ring
 
 end TauCeti
 

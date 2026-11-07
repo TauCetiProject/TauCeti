@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Two
 public import TauCeti.Analysis.Holder.Bilinear
+public import TauCeti.Analysis.Holder.CompLinear
+public import TauCeti.Analysis.PDE.Parabolic.Holder.Trace
 
 /-!
 # Linear changes of spatial variables on order-two parabolic Hölder spaces
@@ -170,6 +172,14 @@ private theorem compSpatialL_eq_compSpatial (e : E →L[ℝ] E')
 theorem compSpatialL_apply (e : E →L[ℝ] E') (u : ParabolicC2HolderSpace α E' F hab)
     (p : slab (E := E) a b) : compSpatialL α F hab e u p = u (slabSpaceMap e p) := by
   rw [compSpatialL_eq_compSpatial, compSpatial_apply]
+
+/-- Taking a spatial trace commutes with a linear change of spatial variables. -/
+@[simp]
+theorem spatialTrace_compSpatialL (e : E →L[ℝ] E') (u : ParabolicC2HolderSpace α E' F hab)
+    (t : Icc a b) :
+    (compSpatialL α F hab e u).spatialTrace t = CkHolderSpace.compLinearL e (u.spatialTrace t) := by
+  ext x
+  simp
 
 /-- The spatial gradient of `u ∘ (e × id)` is the gradient of `u`, pulled back by `e`. -/
 @[simp]
