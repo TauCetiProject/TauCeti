@@ -267,30 +267,14 @@ theorem truncatedExpansion_uniformizer (hP : P.degree = 1) (ht : P.ord t = 1) (n
     | zero => simpa [Fin.sum_univ_succ, ht] using P.mem_filtration_ord t
     | succ n => simp [Fin.sum_univ_succ]
 
-/-- A finite sum of terms `c d * t ^ d` with every `d` at least `n` lies in the `n`-th
-filtration step when `t` is a uniformizer. -/
-private theorem sum_algebraMap_mul_pow_mem_filtration (ht : P.ord t = 1) {n : ℕ} (c : ℕ → k)
-    (S : Finset ℕ) (hS : ∀ d ∈ S, n ≤ d) :
-    ∑ d ∈ S, algebraMap k F (c d) * t ^ d ∈ P.filtration n := by
-  apply Submodule.sum_mem
-  intro d hd
-  have hpow := P.mem_filtration_ord (t ^ d)
-  simp only [P.ord_pow, ht, mul_one] at hpow
-  apply P.filtration_antitone (show (n : ℤ) ≤ d by exact_mod_cast hS d hd)
-  have hm := P.mul_mem_filtration
-    (P.mem_filtration_zero_iff.mpr (P.algebraMap_mem_integers (c d))) hpow
-  simpa only [zero_add] using hm
-
 /-- The value at a uniformizer `t` of a polynomial over the coefficient field is integral. -/
 private theorem eval₂_ofFn_mem_filtration_zero [DecidableEq k] (ht : P.ord t = 1) {n : ℕ}
     (c : Fin n → k) :
     (Polynomial.ofFn n c).eval₂ (algebraMap k F) t ∈ P.filtration 0 := by
-  rw [Polynomial.eval₂_ofFn]
-  apply Submodule.sum_mem
-  intro j _
-  exact P.mem_filtration_zero_iff.mpr
-    (mul_mem (P.algebraMap_mem_integers _) (pow_mem
-      (P.mem_integers_iff_ord_nonneg.mpr (by omega : 0 ≤ P.ord t)) _))
+  have htint : t ∈ P.integers := P.mem_integers_iff_ord_nonneg.mpr (by omega)
+  have h := (Polynomial.aeval (⟨t, htint⟩ : P.integers) (Polynomial.ofFn n c)).property
+  rw [P.coe_aeval_integers] at h
+  exact P.mem_filtration_zero_iff.mpr (by simpa [Polynomial.aeval_def] using h)
 
 /-- The coefficient of a product is the convolution of the coefficients of its factors.
 The sum ranges over bounded pairs of indices whose degrees add to the requested degree;
