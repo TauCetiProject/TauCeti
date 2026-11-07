@@ -76,16 +76,8 @@ theorem memLp_two_id_stableMeasure_iff (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 1)
     simp only [stableMeasure_two hβ, or_true, iff_true]
     exact memLp_id_gaussianReal' 2 (by norm_num)
   have hspos : 0 < (s : ℝ) := NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hs)
-  have hnorm : ‖(s : ℝ)‖₊ = s := by
-    ext
-    simp
-  have hmap : (stableMeasure α β 1 0).map (fun x : ℝ ↦ m + s * x) =
-      stableMeasure α β s m := by
-    simpa only [Real.sign_of_pos hspos, one_mul, mul_zero, add_zero, mul_one,
-      hnorm] using
-      (stableMeasure_map_affine (α := α) (β := β) (s := 1) (m := 0)
-        (a := m) (b := (s : ℝ)) (Or.inl hspos.ne'))
-  rw [← hmap, memLp_id_map_affine_iff hspos.ne']
+  rw [← stableMeasure_one_zero_map_affine (NNReal.coe_pos.mp hspos),
+    memLp_id_map_affine_iff hspos.ne']
   simp only [hs, htwo, or_self, iff_false]
   exact not_memLp_two_id_stableMeasure_one_zero ⟨hα.1, lt_of_le_of_ne hα.2 htwo⟩ hβ
 
@@ -104,7 +96,7 @@ namespace ProbabilityTheory.HasLaw
 
 /-- A real random variable with a valid stable law has an integrable square exactly when
 the law is a Dirac mass or Gaussian. -/
-theorem integrable_sq_iff_stableMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+theorem integrable_sq_stableMeasure_iff {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     {X : Ω → ℝ} {α β : ℝ} {s : ℝ≥0} {m : ℝ}
     (hX : HasLaw X (TauCeti.Probability.stableMeasure α β s m) P)
     (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 1) :
