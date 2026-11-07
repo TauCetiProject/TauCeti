@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Boundary.Charts
-public import TauCeti.Geometry.Manifold.Boundary.HalfSpaceChart
+public import TauCeti.Geometry.Manifold.Boundary.RegularDomain
 public import TauCeti.Geometry.Manifold.ExtChartAt
 public import TauCeti.Geometry.Manifold.RegularValue.Scalar.Submersion
 
@@ -66,6 +66,7 @@ as above.
   `TauCeti.mem_scalarRegularSublevelChartAt_target_iff_of_eq` and
   `TauCeti.coe_scalarRegularSublevelChartAt_symm_apply_of_eq`.
 * `TauCeti.isManifold_scalarRegularSublevel`: the sublevel is a `C^m` manifold with boundary.
+* `TauCeti.isSmoothEmbedding_subtypeVal_scalarRegularSublevel`: its inclusion is a smooth embedding.
 * `TauCeti.boundary_scalarRegularSublevel` and `TauCeti.interior_scalarRegularSublevel`: its
   manifold boundary is the level `f⁻¹(a)`, and its manifold interior is `{x | f x < a}`.
 * `TauCeti.scalarRegularBandChartAt` and `TauCeti.scalarRegularBandChartedSpace`: the preferred
@@ -75,6 +76,7 @@ as above.
   `TauCeti.scalarRegularBandChartAt_apply_zero_of_eq_right` and their tangential, source, target
   and inverse companions.
 * `TauCeti.isManifold_scalarRegularBand`: the band is a `C^m` manifold with boundary.
+* `TauCeti.isSmoothEmbedding_subtypeVal_scalarRegularBand`: its inclusion is a smooth embedding.
 * `TauCeti.boundary_scalarRegularBand` and `TauCeti.interior_scalarRegularBand`: its manifold
   boundary is `f⁻¹(a) ∪ f⁻¹(b)`, and its manifold interior is `f⁻¹((a, b))`.
 
@@ -646,6 +648,18 @@ theorem isManifold_scalarRegularSublevel {m : ℕ∞ω} [IsManifold I m M] (hm :
   obtain ⟨x, rfl⟩ := he
   exact exists_scalarRegularSublevelChartAt_eq_halfSpaceChart hreg hn hm hfm x
 
+/-- The inclusion of a regular sublevel, with its half-space atlas, is a `C^m` smooth embedding
+into the ambient manifold. This includes points on its boundary, not only its open interior. -/
+theorem isSmoothEmbedding_subtypeVal_scalarRegularSublevel {m : ℕ∞ω} [IsManifold I m M]
+    (hm : 1 ≤ m) (hfm : ContMDiff I 𝓘(ℝ) m f) :
+    letI := scalarRegularSublevelChartedSpace (hfm.of_le hm) hreg hn
+    Manifold.IsSmoothEmbedding (𝓡∂ (n + 1)) I m (Subtype.val : {x | f x ≤ a} → M) := by
+  let := scalarRegularSublevelChartedSpace (hfm.of_le hm) hreg hn
+  have := isManifold_scalarRegularSublevel hreg hn hm hfm
+  refine isSmoothEmbedding_subtypeVal_of_forall_chartAt_eq_halfSpaceChart hn fun x ↦ ?_
+  rw [scalarRegularSublevelChartedSpace_chartAt]
+  exact exists_scalarRegularSublevelChartAt_eq_halfSpaceChart hreg hn hm hfm x
+
 /-- **The boundary of a sublevel at a regular value is the level.** If `f` is `C^m`, `m ≥ 1`, and
 `a` is a regular value of `f`, then the manifold boundary of the sublevel `{x | f x ≤ a}`, for its
 preferred atlas, is the level `f⁻¹(a)`. -/
@@ -1117,6 +1131,18 @@ theorem isManifold_scalarRegularBand {m : ℕ∞ω} [IsManifold I m M] (hm : 1 �
   refine isManifold_of_forall_mem_atlas_halfSpaceChart (I := I) fun e he ↦ ?_
   rw [scalarRegularBandChartedSpace_atlas] at he
   obtain ⟨x, rfl⟩ := he
+  exact exists_scalarRegularBandChartAt_eq_halfSpaceChart hn ha hb hm hfm hab x
+
+/-- The inclusion of a band between regular values, with its half-space atlas, is a `C^m`
+smooth embedding into the ambient manifold, including both boundary faces. -/
+theorem isSmoothEmbedding_subtypeVal_scalarRegularBand {m : ℕ∞ω} [IsManifold I m M]
+    (hm : 1 ≤ m) (hfm : ContMDiff I 𝓘(ℝ) m f) (hab : a < b) :
+    letI := scalarRegularBandChartedSpace (hfm.of_le hm) hn ha hb hab
+    Manifold.IsSmoothEmbedding (𝓡∂ (n + 1)) I m (Subtype.val : (f ⁻¹' Icc a b) → M) := by
+  let := scalarRegularBandChartedSpace (hfm.of_le hm) hn ha hb hab
+  have := isManifold_scalarRegularBand hn ha hb hm hfm hab
+  refine isSmoothEmbedding_subtypeVal_of_forall_chartAt_eq_halfSpaceChart hn fun x ↦ ?_
+  rw [scalarRegularBandChartedSpace_chartAt]
   exact exists_scalarRegularBandChartAt_eq_halfSpaceChart hn ha hb hm hfm hab x
 
 /-- **The boundary of a band between regular values is the union of its two levels.** If `f` is
