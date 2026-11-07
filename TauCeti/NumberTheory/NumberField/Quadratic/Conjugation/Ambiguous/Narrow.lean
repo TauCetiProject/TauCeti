@@ -111,8 +111,8 @@ theorem mk0_map_ringOfIntegersQuadraticConj_eq_inv (hmin : minpoly ℤ θ = X ^ 
 
 /-- **Cancelling the conjugate ideal.** If `(x) σJ = (y) J` for a nonzero ideal `J` and `x y` with
 `x * y` totally positive, then `x * σx = y * σy`: conjugating the identity and multiplying the two
-gives `(x σx) σJ = (y σy) σJ`, so `(x σx) = (y σy)` and the two generators agree because they are
-totally positive of the same norm. -/
+gives `(x σx) σJ = (y σy) σJ`, so `(x σx) = (y σy)` as ideals. The two rational norm generators
+therefore agree up to sign, and the sign is `+` because the norm of `x * y` is positive. -/
 private theorem mul_ringOfIntegersQuadraticConj_eq_of_span_mul_map_eq
     (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
     {J : Ideal (𝓞 K)} (hJm0 : Ideal.map (ringOfIntegersQuadraticConj hmin hgen) J ≠ 0)
@@ -147,7 +147,7 @@ positive, then `ε / σε = y / x` is totally positive, so `±ε` is totally pos
 is trivial in the narrow class group. -/
 private theorem mk0_span_eq_one_of_mul_eq_mul_ringOfIntegersQuadraticConj
     (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
-    {x y ε : 𝓞 K} (hε0 : ε ≠ 0) (hxK : (x : K) ≠ 0) (hyK : (y : K) ≠ 0)
+    {x y ε : 𝓞 K} (hε0 : ε ≠ 0) (hxK : (x : K) ≠ 0)
     (hpos : IsTotallyPositive ((x : K) * (y : K)))
     (hε : x * ε = y * ringOfIntegersQuadraticConj hmin hgen ε)
     (h : Ideal.span ({ε} : Set (𝓞 K)) ∈ (Ideal (𝓞 K))⁰) :
@@ -216,7 +216,7 @@ theorem exists_map_ringOfIntegersQuadraticConj_eq_self_of_sq_eq_one
         ⟨Ideal.span {ε}, mem_nonZeroDivisors_iff_ne_zero.mpr hspanε⟩ * J := rfl
     have hone : mk0 (⟨Ideal.span {ε}, mem_nonZeroDivisors_iff_ne_zero.mpr hspanε⟩ :
         (Ideal (𝓞 K))⁰) = 1 :=
-      mk0_span_eq_one_of_mul_eq_mul_ringOfIntegersQuadraticConj hmin hgen hε0 hxK hyK hpos hε
+      mk0_span_eq_one_of_mul_eq_mul_ringOfIntegersQuadraticConj hmin hgen hε0 hxK hpos hε
         (mem_nonZeroDivisors_iff_ne_zero.mpr hspanε)
     rw [hprod, map_mul, hone, one_mul]
   refine ⟨⟨Ideal.span {ε} * (J : Ideal (𝓞 K)), mem_nonZeroDivisors_iff_ne_zero.mpr hI0⟩,
