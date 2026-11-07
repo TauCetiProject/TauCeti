@@ -16,8 +16,8 @@ import TauCeti.Geometry.Manifold.Complex.Analytic
 
 Finite triangulations supply finite CW models for compact Riemann surfaces and for their
 complements of finite sets. Consequently the topological branched-cover formula holds for
-triangulable compact connected Riemann surfaces without separate finite-CW hypotheses for
-the surfaces or for the complement of the branch values.
+triangulable compact Riemann surfaces with connected target, without separate finite-CW
+hypotheses for the surfaces or for the complement of the branch values.
 
 This applies the fibre-counting and covering calculation in `Branch.EulerCharacteristic`;
 it neither constructs surface triangulations nor defines genus.
@@ -39,10 +39,10 @@ namespace TauCeti.RiemannSurface.FiniteHolomorphicMap
 variable {X Y : Type u} [TopologicalSpace X] [ChartedSpace ℂ X]
   [TopologicalSpace Y] [ChartedSpace ℂ Y]
   [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
-  [CompactSpace X] [T2Space X] [T2Space Y] [PreconnectedSpace X] [PreconnectedSpace Y]
+  [CompactSpace X] [T2Space X] [T2Space Y] [PreconnectedSpace Y]
 
-/-- The topological branched-cover formula for triangulable compact connected Riemann
-surfaces: `χ(X) = degree(f) * χ(Y) - ramificationDegree(f)`. Finite CW type of the
+/-- The topological branched-cover formula for triangulable compact Riemann surfaces with
+connected target: `χ(X) = degree(f) * χ(Y) - ramificationDegree(f)`. Finite CW type of the
 surfaces and of the punctured target is derived from their triangulations. Compactness of the
 target follows from surjectivity of the finite holomorphic map. -/
 theorem eulerChar_eq_degree_mul_eulerChar_sub_ramificationDegree_of_isTriangulable
@@ -52,7 +52,6 @@ theorem eulerChar_eq_degree_mul_eulerChar_sub_ramificationDegree_of_isTriangulab
     haveI := hY.finiteCWType
     eulerChar X = degree f * eulerChar Y - ramificationDegree f := by
   obtain ⟨x, _, _⟩ := f.nonconstant
-  have : ConnectedSpace X := ⟨⟨x⟩⟩
   have : ConnectedSpace Y := ⟨⟨f x⟩⟩
   have : CompactSpace Y := f.surjective.compactSpace f.holomorphic.continuous
   have : IsManifold 𝓘(ℝ, ℂ) 2 Y :=
