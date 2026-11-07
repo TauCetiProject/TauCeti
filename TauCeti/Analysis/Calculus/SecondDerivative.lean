@@ -17,6 +17,7 @@ public import TauCeti.Analysis.Calculus.FDeriv.Prod
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import TauCeti.Analysis.Calculus.Deriv.Second
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
+import TauCeti.Analysis.Calculus.FDeriv.Pi
 
 /-!
 # The second derivative as a derivative
@@ -39,7 +40,9 @@ function vanishes the first-order term drops out, so the second derivative of a 
 second derivative of the outer function evaluated on the images of the differential of the inner
 one, i.e. the second derivative transforms as a bilinear form. The second derivative of a
 separated sum `φ ∘ Prod.fst + ψ ∘ Prod.snd` on a product is the block-diagonal map built from the
-second derivatives of the summands. Finally, the second derivative of a directional derivative
+second derivatives of the summands, and the second derivative of a separated sum
+`z ↦ ∑ i, φ i (z i)` of functions of one variable on `ι → 𝕜` is diagonal. Finally, the
+second derivative of a directional derivative
 `y ↦ Dg(y) v` is the third derivative of `g` evaluated at `v`, and differentiating the symmetry
 of the second derivative shows that the third derivative is symmetric in its last two
 directions. The file also gives the second-order product rule for scalar-valued maps, together
@@ -68,6 +71,8 @@ Morse-theoretic definitions that use them.
   second derivative along the differential of the inner function.
 * `TauCeti.fderiv_fderiv_comp_fst_add_comp_snd`: the second derivative of a separated sum on a
   product is block diagonal.
+* `TauCeti.fderiv_fderiv_sum_comp_eval_apply`: the second derivative of a separated sum of
+  functions of one variable is diagonal.
 * `TauCeti.fderiv_fderiv_fderiv_apply`: the second derivative of a directional derivative of a
   `C³` map is its third derivative.
 * `TauCeti.fderiv_fderiv_fderiv_apply_comm`: the third derivative of a sufficiently smooth map is
@@ -204,6 +209,33 @@ theorem fderiv_fderiv_comp_fst_add_comp_snd {φ : E → G} {ψ : F → G} {a : E
   rw [hev.fderiv_eq]
   exact ((ContinuousLinearMap.coprodEquivL 𝕜 :
     ((E →L[𝕜] G) × (F →L[𝕜] G)) ≃L[𝕜] (E × F →L[𝕜] G)).hasFDerivAt.comp (a, b) hD).fderiv
+
+section SumCompEval
+
+variable {ι : Type*} [Fintype ι] {φ : ι → 𝕜 → 𝕜} {y : ι → 𝕜}
+
+open ContinuousLinearMap in
+/-- **The second derivative of a separated sum is diagonal**: at a point at which every summand is
+twice continuously differentiable, it sends `v` and `w` to `∑ i, φ i'' (y i) * v i * w i`. -/
+theorem fderiv_fderiv_sum_comp_eval_apply (hφ : ∀ i, ContDiffAt 𝕜 2 (φ i) (y i))
+    (v w : ι → 𝕜) :
+    fderiv 𝕜 (fderiv 𝕜 (fun z : ι → 𝕜 ↦ ∑ i, φ i (z i))) y v w =
+      ∑ i, deriv (deriv (φ i)) (y i) * v i * w i := by
+  have hd : HasFDerivAt (fun z : ι → 𝕜 ↦ ∑ i, deriv (φ i) (z i) • (proj i : (ι → 𝕜) →L[𝕜] 𝕜))
+      (∑ i, (deriv (deriv (φ i)) (y i) • (proj i : (ι → 𝕜) →L[𝕜] 𝕜)).smulRight
+        (proj i : (ι → 𝕜) →L[𝕜] 𝕜)) y := by
+    refine HasFDerivAt.fun_sum fun i _ ↦ ?_
+    have h := ((hφ i).derivWithin (m := 1) (by norm_num)).differentiableAt one_ne_zero
+    have h' : HasFDerivAt (fun z : ι → 𝕜 ↦ deriv (φ i) (z i))
+        (deriv (deriv (φ i)) (y i) • (proj i : (ι → 𝕜) →L[𝕜] 𝕜)) y :=
+      -- The inner function is named, since unification cannot split the composite itself.
+      HasDerivAt.comp_hasFDerivAt (f := fun z : ι → 𝕜 ↦ z i) y h.hasDerivAt
+        (hasFDerivAt_apply i y)
+    exact h'.smul_const (proj i : (ι → 𝕜) →L[𝕜] 𝕜)
+  rw [(fderiv_sum_comp_eval_eventuallyEq fun i ↦ (hφ i).of_le one_le_two).fderiv_eq, hd.fderiv]
+  simp [mul_comm, mul_left_comm]
+
+end SumCompEval
 
 /-- The second derivative of the directional derivative `y ↦ Dg(y) v` of a `C³` map `g` is the
 third derivative of `g`, evaluated at `v`. -/

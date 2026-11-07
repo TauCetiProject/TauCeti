@@ -368,13 +368,13 @@ theorem dual_orthogonalSumIntermediateCarrier (L : IntegralLattice V) (M : Integ
   constructor
   · refine fun hp ↦ ⟨fun x hx ↦ ?_, fun y hy ↦ ?_⟩
     · have h := hp (x, 0) ⟨hx, zero_mem _⟩
-      simpa only [orthogonalSum_form, orthogonalSumForm_apply, map_zero, LinearMap.zero_apply,
-        add_zero] using h
+      simpa only [orthogonalSum_form, LinearMap.BilinForm.prod_apply, map_zero,
+        LinearMap.zero_apply, add_zero] using h
     · have h := hp (0, y) ⟨zero_mem _, hy⟩
-      simpa only [orthogonalSum_form, orthogonalSumForm_apply, map_zero, LinearMap.zero_apply,
-        zero_add] using h
+      simpa only [orthogonalSum_form, LinearMap.BilinForm.prod_apply, map_zero,
+        LinearMap.zero_apply, zero_add] using h
   · rintro ⟨hp₁, hp₂⟩ q hq
-    rw [orthogonalSum_form, orthogonalSumForm_apply]
+    rw [orthogonalSum_form, LinearMap.BilinForm.prod_apply]
     exact add_mem (hp₁ q.1 hq.1) (hp₂ q.2 hq.2)
 
 section OrthogonalSum
