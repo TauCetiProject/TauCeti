@@ -68,6 +68,25 @@ theorem exists_coe_smul_eq_mul_add_of_smul_infty {g : PSL(2, ℝ)}
   push_cast
   linear_combination -(A 0 0 * (z : ℂ) + A 0 1) * hdetC
 
+/-- **Powers of an affine element.** If `h ∈ PSL(2, ℝ)` acts on `ℍ` as `z ↦ μ * z + c` with
+`μ ≠ 1`, then `h ^ k` acts as `z ↦ x₀ + μ ^ k * (z - x₀)`, where `x₀ = c / (1 - μ)` is the fixed
+point of `z ↦ μ * z + c` on `ℝ`. -/
+theorem coe_pow_smul_eq_of_coe_smul_eq {h : PSL(2, ℝ)} {μ c : ℝ} (hμ : μ ≠ 1)
+    (hz : ∀ z : ℍ, ((h • z : ℍ) : ℂ) = μ * z + c) (k : ℕ) (z : ℍ) :
+    ((h ^ k • z : ℍ) : ℂ) =
+      ((c / (1 - μ) : ℝ) : ℂ) + ((μ ^ k : ℝ) : ℂ) * (z - ((c / (1 - μ) : ℝ) : ℂ)) := by
+  have hx₀ : μ * (c / (1 - μ)) + c = c / (1 - μ) := by
+    field_simp [sub_ne_zero.2 hμ.symm]
+    ring
+  generalize c / (1 - μ) = x₀ at hx₀ ⊢
+  have hx₀' : (μ : ℂ) * x₀ + c = x₀ := by exact_mod_cast hx₀
+  induction k generalizing z with
+  | zero => simp
+  | succ k ih =>
+    rw [pow_succ', mul_smul, hz, ih]
+    push_cast
+    linear_combination hx₀'
+
 end TauCeti.UpperHalfPlane
 
 namespace UpperHalfPlane

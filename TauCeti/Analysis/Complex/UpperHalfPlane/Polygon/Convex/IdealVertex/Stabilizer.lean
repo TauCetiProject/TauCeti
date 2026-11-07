@@ -52,25 +52,6 @@ namespace TauCeti.UpperHalfPlane.ConvexPolygon
 
 variable {n : ℕ} [NeZero n] {P : ConvexPolygon n}
 
-/-- If `g S g⁻¹` acts as `z ↦ μ * z + c` with `μ < 1`, then its `k`-th power contracts towards
-the fixed point `c / (1 - μ)` by the factor `μ ^ k`. -/
-private theorem coe_conj_pow_smul_eq {g S : PSL(2, ℝ)} {μ c : ℝ} (hμ₁ : μ < 1)
-    (hSz : ∀ z : ℍ, (((g * S * g⁻¹) • z : ℍ) : ℂ) = μ * z + c) (k : ℕ) (z : ℍ) :
-    (((g * S ^ k * g⁻¹) • z : ℍ) : ℂ) =
-      ((c / (1 - μ) : ℝ) : ℂ) + ((μ ^ k : ℝ) : ℂ) * (z - ((c / (1 - μ) : ℝ) : ℂ)) := by
-  have hx₀ : μ * (c / (1 - μ)) + c = c / (1 - μ) := by
-    field_simp [(sub_pos.2 hμ₁).ne']
-    ring
-  generalize c / (1 - μ) = x₀ at hx₀ ⊢
-  have hx₀' : (μ : ℂ) * x₀ + c = x₀ := by exact_mod_cast hx₀
-  induction k generalizing z with
-  | zero => simp
-  | succ k ih =>
-    rw [show g * S ^ (k + 1) * g⁻¹ = g * S * g⁻¹ * (g * S ^ k * g⁻¹) by group, mul_smul, hSz,
-      ih]
-    push_cast
-    linear_combination hx₀'
-
 /-- If `g S g⁻¹` acts as `z ↦ μ * z + c` with `0 < μ < 1`, then the images of points at real part
 `u` and height `μ⁻¹ ^ k` under `g S ^ k g⁻¹` tend to the point at height `1` over the fixed
 point `c / (1 - μ)`. -/
@@ -87,7 +68,7 @@ private theorem tendsto_conj_pow_smul_inv_pow {g S : PSL(2, ℝ)} {μ c : ℝ} (
     (((Complex.continuous_ofReal.tendsto 0).comp
       (tendsto_pow_atTop_nhds_zero_of_lt_one hμ₀.le hμ₁)).mul_const _ |>.const_add _).add_const _
   convert hμk using 2 with k
-  · rw [coe_conj_pow_smul_eq hμ₁ hSz, hw]
+  · rw [← conj_pow, coe_pow_smul_eq_of_coe_smul_eq hμ₁.ne hSz, hw]
     have : (μ : ℂ) ^ k * ((μ⁻¹ ^ k : ℝ) : ℂ) = 1 := by
       have : μ ^ k * μ⁻¹ ^ k = 1 := by rw [← mul_pow, mul_inv_cancel₀ hμ₀.ne', one_pow]
       exact_mod_cast this
@@ -106,7 +87,10 @@ private theorem not_locallyFinite_of_coe_conj_smul_eq {j : Fin n} {ξ : OnePoint
     ¬ LocallyFinite fun δ : Γ ↦ (δ : PSL(2, ℝ)) • P.carrier := by
   intro hlf
   -- the powers of `g S g⁻¹` contract towards the fixed point `x₀ = c / (1 - μ)`
-  have hpow := coe_conj_pow_smul_eq hμ₁ hSz
+  have hpow (k : ℕ) (z : ℍ) : (((g * S ^ k * g⁻¹) • z : ℍ) : ℂ) =
+      ((c / (1 - μ) : ℝ) : ℂ) + ((μ ^ k : ℝ) : ℂ) * (z - ((c / (1 - μ) : ℝ) : ℂ)) := by
+    rw [← conj_pow]
+    exact coe_pow_smul_eq_of_coe_smul_eq hμ₁.ne hSz k z
   set x₀ : ℝ := c / (1 - μ)
   -- above some height, `g • P` is the vertical strip of its vertex at `∞`
   have hQ : (g • P).vertex j = .inr ∞ := by rw [vertex_smul, hj, Sum.smul_inr, hg]
