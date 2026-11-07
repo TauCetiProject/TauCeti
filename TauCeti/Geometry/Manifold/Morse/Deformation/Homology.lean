@@ -32,12 +32,22 @@ regular level: the flow lowering `f` at unit speed through it retracts the colla
 and `{f ≤ a'}` onto `{f ≤ a}`, so both subspaces may be enlarged by the collar, and then excision
 of `{f < a}` from `({f ≤ b}, {f ≤ a'})` leaves `(f⁻¹[a, b], f⁻¹[a, a'])`.
 
+Consequently, regular collars can be cut off a band. If `a ≤ s ≤ t ≤ b` and the bands
+`f⁻¹[a, s]` and `f⁻¹[t, b]` are compact and free of critical points, the long exact sequences of
+the triples `{f ≤ a} ⊆ {f ≤ t} ⊆ {f ≤ b}` and `{f ≤ a} ⊆ {f ≤ s} ⊆ {f ≤ t}` identify the relative
+homology of `({f ≤ b}, {f ≤ a})` with that of `({f ≤ t}, {f ≤ s})`, for coefficients in an
+abelian category with coproducts (`TauCeti.singularHomologySublevelPairIsoOfCollars`). Both
+identifications are induced by inclusions of pairs
+(`TauCeti.singularHomologyMap_innerToTotal_comp_singularHomologySublevelPairIsoOfCollars_hom`).
+
 ## Main results
 
 * `TauCeti.isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero`: a compact band without
   critical points carries no relative homology.
 * `TauCeti.isIso_singularHomologyMap_bandPairInclusion`: above a regular value, a compact band
   relative to its lower level has the relative homology of the sublevel pair.
+* `TauCeti.singularHomologySublevelPairIsoOfCollars`: cutting regular collars off a band does not
+  change the relative homology of the sublevel pair.
 
 ## References
 
@@ -223,5 +233,46 @@ theorem isIso_singularHomologyMap_bandPairInclusion (hf : ContMDiff I 𝓘(ℝ) 
     rw [← TopPair.singularHomologyMap_comp, hsq, TopPair.singularHomologyMap_comp]
     exact IsIso.comp_isIso' h₂ h₃
   exact IsIso.of_isIso_comp_right _ (TopPair.singularHomologyMap ψ₁ R n)
+
+/-- **Removing regular collars from a band.** If the bands `f⁻¹[a, s]` and `f⁻¹[t, b]` are
+compact and contain no critical points, then the relative homology of `({f ≤ b}, {f ≤ a})` is that
+of `({f ≤ t}, {f ≤ s})`: both are identified with the relative homology of `({f ≤ t}, {f ≤ a})` by
+the long exact sequences of the triples `{f ≤ a} ⊆ {f ≤ t} ⊆ {f ≤ b}` and
+`{f ≤ a} ⊆ {f ≤ s} ⊆ {f ≤ t}`. -/
+def singularHomologySublevelPairIsoOfCollars (hf : ContMDiff I 𝓘(ℝ) ∞ f) {s t : ℝ}
+    (has : a ≤ s) (hst : s ≤ t) (htb : t ≤ b) (hcompact₁ : IsCompact (f ⁻¹' Icc a s))
+    (hcompact₂ : IsCompact (f ⁻¹' Icc t b))
+    (hreg₁ : ∀ x, a ≤ f x → f x ≤ s → mfderiv I 𝓘(ℝ) f x ≠ 0)
+    (hreg₂ : ∀ x, t ≤ f x → f x ≤ b → mfderiv I 𝓘(ℝ) f x ≠ 0)
+    (R : A) (n : ℕ) :
+    (sublevelPair f (has.trans (hst.trans htb))).singularHomology R n ≅
+      (sublevelPair f hst).singularHomology R n :=
+  have h₁ := isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero hf has hcompact₁ hreg₁ R
+  have h₂ := isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero hf htb hcompact₂ hreg₂ R
+  (@asIso _ _ _ _ _ ((TopTriple.ofInclusions (X := TopCat.of M) (sublevel_mono f (has.trans hst))
+      (sublevel_mono f htb)).isIso_singularHomologyMap_innerToTotal_of_isZero R n (h₂ n)
+        (h₂ (n + 1)))).symm ≪≫
+    @asIso _ _ _ _ _ ((TopTriple.ofInclusions (X := TopCat.of M) (sublevel_mono f has)
+      (sublevel_mono f hst)).isIso_singularHomologyMap_totalToOuter_of_isZero R n (h₁ n)
+        fun m _ ↦ h₁ m)
+
+/-- The identification `TauCeti.singularHomologySublevelPairIsoOfCollars` of
+`Hₙ({f ≤ b}, {f ≤ a})` with `Hₙ({f ≤ t}, {f ≤ s})` is induced by inclusions of pairs: precomposed
+with the map induced by `({f ≤ t}, {f ≤ a}) ⟶ ({f ≤ b}, {f ≤ a})`, it is the map induced by
+`({f ≤ t}, {f ≤ a}) ⟶ ({f ≤ t}, {f ≤ s})`. -/
+@[reassoc]
+lemma singularHomologyMap_innerToTotal_comp_singularHomologySublevelPairIsoOfCollars_hom
+    (hf : ContMDiff I 𝓘(ℝ) ∞ f) {s t : ℝ} (has : a ≤ s) (hst : s ≤ t) (htb : t ≤ b)
+    (hcompact₁ : IsCompact (f ⁻¹' Icc a s)) (hcompact₂ : IsCompact (f ⁻¹' Icc t b))
+    (hreg₁ : ∀ x, a ≤ f x → f x ≤ s → mfderiv I 𝓘(ℝ) f x ≠ 0)
+    (hreg₂ : ∀ x, t ≤ f x → f x ≤ b → mfderiv I 𝓘(ℝ) f x ≠ 0)
+    (R : A) (n : ℕ) :
+    TopPair.singularHomologyMap (TopTriple.innerToTotal.app (TopTriple.ofInclusions
+        (X := TopCat.of M) (sublevel_mono f (has.trans hst)) (sublevel_mono f htb))) R n ≫
+      (singularHomologySublevelPairIsoOfCollars hf has hst htb hcompact₁ hcompact₂ hreg₁ hreg₂
+        R n).hom =
+      TopPair.singularHomologyMap (TopTriple.totalToOuter.app (TopTriple.ofInclusions
+        (X := TopCat.of M) (sublevel_mono f has) (sublevel_mono f hst))) R n := by
+  simp [singularHomologySublevelPairIsoOfCollars]
 
 end TauCeti
