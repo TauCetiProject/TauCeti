@@ -22,7 +22,7 @@ show that the relative spin^c structures of `x` and `y` differ by `(n_z(φ) - n_
 
 The hat knot Floer differential counts disks with `n_w = n_z = 0`, so it preserves `A`; the hat
 differential of the singly pointed diagram `(Σ, α, β, w)` of `Y` counts disks with `n_w = 0`,
-and lowers `A` by `n_z ≥ 0`, so `A` is a filtration of `ĈF(Y)`.
+and lowers `A` by `n_z ≥ 0`, so `A` is a filtration of `CF̂(Y)`.
 
 This file defines this grading for the abstract region incidence data
 `TauCeti.HeegaardRegionSystem`, in which two basepoints `w` and `z` are singled out among the
