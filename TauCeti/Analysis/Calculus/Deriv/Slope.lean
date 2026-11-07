@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.LinearAlgebra.AffineSpace.Slope
+import Mathlib.Analysis.Calculus.Deriv.Shift
+import Mathlib.Analysis.Calculus.DerivativeTest
 import Mathlib.Analysis.SpecificLimits.Basic
 
 /-!
@@ -27,6 +29,8 @@ Trotter product formula.
 
 * `HasDerivAtFilter.tendsto_slope`: slopes converge to the derivative away from the base point.
 * `HasDerivAt.tendsto_nsmul_sub_add_div`: `n • (f (x + t / n) - f x)` tends to `t • f'`.
+* `HasDerivAt.eventually_pos_nhdsGT_and_eventually_neg_nhdsLT`: a real function with positive
+  derivative at a zero is positive just to the right of it and negative just to its left.
 -/
 
 public section
@@ -65,3 +69,21 @@ theorem HasDerivAt.tendsto_nsmul_sub_add_div {𝕜 E : Type*} [NontriviallyNorme
   refine (((HasDerivAtFilter.tendsto_slope hf).comp hlim).const_smul t).congr' ?_
   filter_upwards [eventually_ne_atTop 0] with n hn
   simp [slope_def_module, smul_smul, mul_div_cancel₀ _ ht, Nat.cast_smul_eq_nsmul]
+
+/-- **Sign of a function with positive derivative at a zero.** If `χ θ₀ = 0` and `χ` has positive
+derivative `d` at `θ₀`, then `χ` is positive just to the right of `θ₀` and negative just to its
+left. -/
+theorem HasDerivAt.eventually_pos_nhdsGT_and_eventually_neg_nhdsLT {χ : ℝ → ℝ} {θ₀ d : ℝ}
+    (hχ : HasDerivAt χ d θ₀) (hd : 0 < d) (hχ0 : χ θ₀ = 0) :
+    (∀ᶠ t in 𝓝[>] (0 : ℝ), 0 < χ (θ₀ + t)) ∧ ∀ᶠ t in 𝓝[<] (0 : ℝ), χ (θ₀ + t) < 0 := by
+  have hg : HasDerivAt (fun t => χ (θ₀ + t)) d 0 := by
+    exact HasDerivAt.comp_const_add θ₀ 0 (by rwa [add_zero])
+  have hsign := eventually_nhdsWithin_sign_eq_of_deriv_pos (f := fun t => χ (θ₀ + t))
+    (x₀ := 0) (by rw [hg.deriv]; exact hd) (by simpa using hχ0)
+  constructor
+  · filter_upwards [hsign.filter_mono nhdsWithin_le_nhds, self_mem_nhdsWithin] with t ht
+      (ht0 : 0 < t)
+    rwa [sub_zero, sign_pos ht0, sign_eq_one_iff] at ht
+  · filter_upwards [hsign.filter_mono nhdsWithin_le_nhds, self_mem_nhdsWithin] with t ht
+      (ht0 : t < 0)
+    rwa [sub_zero, sign_neg ht0, sign_eq_neg_one_iff] at ht
