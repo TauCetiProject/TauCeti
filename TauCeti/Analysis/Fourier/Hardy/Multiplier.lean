@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fourier.Hardy.BrownHalmos
-public import TauCeti.Analysis.Fourier.Hardy.Hankel
+public import TauCeti.Analysis.Fourier.Hardy.Hankel.Basic
 
 /-!
 # Bounded analytic multipliers of boundary Hardy space
