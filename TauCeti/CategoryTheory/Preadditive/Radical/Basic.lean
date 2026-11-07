@@ -7,6 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.IrreducibleMorphism
 public import TauCeti.CategoryTheory.Preadditive.MorphismIdeal.Mul
+public import TauCeti.CategoryTheory.Preadditive.MorphismIdeal.Biproduct
 public import Mathlib.Algebra.Group.Subgroup.Lattice
 public import Mathlib.CategoryTheory.Linear.Basic
 -- The binary biproduct through which a sum of two composites of radical morphisms factors.
@@ -237,30 +238,16 @@ open CategoryTheory.Limits in
 is radical. -/
 theorem mem_jacobsonRadical_biproduct_left_iff {J : Type*} [Finite J]
     (P : J → C) [HasBiproduct P] {Y : C} {f : ⨁ P ⟶ Y} :
-    f ∈ jacobsonRadical (⨁ P) Y ↔ ∀ j, biproduct.ι P j ≫ f ∈ jacobsonRadical (P j) Y := by
-  classical
-  let := Fintype.ofFinite J
-  refine ⟨fun hf j ↦ comp_mem_jacobsonRadical_left _ hf, fun hf ↦ ?_⟩
-  have heq : f = ∑ j, biproduct.π P j ≫ biproduct.ι P j ≫ f := by
-    simp [← Category.assoc, ← Preadditive.sum_comp, biproduct.total]
-  rw [heq]
-  exact (jacobsonRadical (⨁ P) Y).sum_mem fun j _ ↦
-    comp_mem_jacobsonRadical_left _ (hf j)
+    f ∈ jacobsonRadical (⨁ P) Y ↔ ∀ j, biproduct.ι P j ≫ f ∈ jacobsonRadical (P j) Y :=
+  (jacobsonRadicalIdeal C).mem_biproduct_left_iff P
 
 open CategoryTheory.Limits in
 /-- A morphism into a finite biproduct is radical exactly when each projection to a summand
 is radical. -/
 theorem mem_jacobsonRadical_biproduct_right_iff {J : Type*} [Finite J]
     (P : J → C) [HasBiproduct P] {Y : C} {f : Y ⟶ ⨁ P} :
-    f ∈ jacobsonRadical Y (⨁ P) ↔ ∀ j, f ≫ biproduct.π P j ∈ jacobsonRadical Y (P j) := by
-  classical
-  let := Fintype.ofFinite J
-  refine ⟨fun hf j ↦ comp_mem_jacobsonRadical_right hf _, fun hf ↦ ?_⟩
-  have heq : f = ∑ j, (f ≫ biproduct.π P j) ≫ biproduct.ι P j := by
-    simp [Category.assoc, ← Preadditive.comp_sum, biproduct.total]
-  rw [heq]
-  exact (jacobsonRadical Y (⨁ P)).sum_mem fun j _ ↦
-    comp_mem_jacobsonRadical_right (hf j) _
+    f ∈ jacobsonRadical Y (⨁ P) ↔ ∀ j, f ≫ biproduct.π P j ∈ jacobsonRadical Y (P j) :=
+  (jacobsonRadicalIdeal C).mem_biproduct_right_iff P
 
 /-! ### On a single object: the Jacobson radical of the endomorphism ring -/
 
@@ -415,19 +402,19 @@ end Local
 
 open Limits in
 /-- **The matrix description of the radical**: between two finite biproducts of objects with local
-endomorphism rings, a morphism is radical exactly when none of its components is an isomorphism. -/
+endomorphism rings, a morphism is radical exactly when none of its components is an isomorphism.
+This combines the matrix criterion for any ideal, `TauCeti.MorphismIdeal.mem_biproduct_iff`, with
+`TauCeti.mem_jacobsonRadical_iff_not_isIso`. -/
 theorem mem_jacobsonRadical_biproduct_iff {I J : Type*} [Finite I] [Finite J] (P : I → C)
     (Q : J → C) [HasBiproduct P] [HasBiproduct Q] (hP : ∀ i, IsLocalRing (End (P i)))
     (hQ : ∀ j, IsLocalRing (End (Q j))) {f : ⨁ P ⟶ ⨁ Q} :
     f ∈ jacobsonRadical (⨁ P) (⨁ Q) ↔
       ∀ i j, ¬ IsIso (biproduct.ι P i ≫ f ≫ biproduct.π Q j) := by
-  rw [mem_jacobsonRadical_biproduct_left_iff]
-  refine forall_congr' fun i ↦ ?_
-  rw [mem_jacobsonRadical_biproduct_right_iff]
-  refine forall_congr' fun j ↦ ?_
+  rw [← jacobsonRadicalIdeal_hom, (jacobsonRadicalIdeal C).mem_biproduct_iff P Q]
+  refine forall_congr' fun i ↦ forall_congr' fun j ↦ ?_
   have := hP i
   have := hQ j
-  rw [Category.assoc, mem_jacobsonRadical_iff_not_isIso]
+  rw [jacobsonRadicalIdeal_hom, mem_jacobsonRadical_iff_not_isIso]
 
 open Limits in
 /-- **The matrix description of the radical, along decompositions**: for decompositions

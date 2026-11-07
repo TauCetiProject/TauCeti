@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Preadditive.MorphismIdeal.Basic
+public import TauCeti.CategoryTheory.Preadditive.MorphismIdeal.Mul
 
 /-!
 # Functoriality of quotients by morphism ideals
@@ -30,6 +31,9 @@ a functor between stable categories.
 
 * `TauCeti.MorphismIdeal.comap_eq_of_iso`: naturally isomorphic functors pull back an ideal to the
   same ideal.
+* `TauCeti.MorphismIdeal.mul_comap_le_comap_mul` and
+  `TauCeti.MorphismIdeal.comap_mul_of_equivalence`: pullback is compatible with products of ideals,
+  with equality along an equivalence.
 * `TauCeti.MorphismIdeal.map_id` and `TauCeti.MorphismIdeal.map_comp`: quotient functors preserve
   identities and composition.
 * `TauCeti.MorphismIdeal.kerIdeal_comp_quotientFunctor` and
@@ -289,6 +293,39 @@ theorem mapNatIso_inv (I : MorphismIdeal C) (J : MorphismIdeal D) {F G : C ⥤ D
     [F.Additive] [G.Additive] (hF : I ≤ J.comap F) (hG : I ≤ J.comap G) (α : F ≅ G) :
     (I.mapNatIso J hF hG α).inv = I.mapNatTrans J hG hF α.inv :=
   (rfl)
+
+/-- Pulling back along an additive functor is compatible with products of ideals in one
+direction: a composite of pulled-back morphisms maps to a composite in the target. -/
+theorem mul_comap_le_comap_mul (F : C ⥤ D) [F.Additive] (I J : MorphismIdeal D) :
+    I.comap F * J.comap F ≤ (I * J).comap F := by
+  rw [mul_le_iff]
+  intro X Z Y g f hg hf
+  rw [mem_comap_hom] at hg hf ⊢
+  rw [Functor.map_comp]
+  exact comp_mem_mul hg hf
+
+/-- **Pullback along an equivalence commutes with products of ideals.** The middle object of a
+composite in the target is replaced by an isomorphic object in the image of the functor. -/
+theorem comap_mul_of_equivalence [Limits.HasBinaryBiproducts D] (e : C ≌ D)
+    [e.functor.Additive] (I J : MorphismIdeal D) :
+    (I * J).comap e.functor = I.comap e.functor * J.comap e.functor := by
+  apply le_antisymm
+  · rw [le_def]
+    intro X Y h hh
+    rw [mem_comap_hom, mem_mul_iff_exists_comp] at hh
+    obtain ⟨Z, g, f, hg, hf, hgf⟩ := hh
+    -- Replace `Z` by `e.functor.obj (e.inverse.obj Z)`.
+    let ε := e.counitIso.app Z
+    obtain ⟨g', hg'⟩ := e.functor.map_surjective (g ≫ ε.inv)
+    obtain ⟨f', hf'⟩ := e.functor.map_surjective (ε.hom ≫ f)
+    have h' : h = g' ≫ f' := e.functor.map_injective (by simp [hg', hf', hgf])
+    rw [h']
+    refine comp_mem_mul ?_ ?_
+    · rw [mem_comap_hom, hg']
+      exact J.comp_mem_right _ hg
+    · rw [mem_comap_hom, hf']
+      exact I.comp_mem_left _ hf
+  · exact mul_comap_le_comap_mul e.functor I J
 
 end MorphismIdeal
 
