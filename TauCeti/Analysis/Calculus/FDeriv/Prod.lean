@@ -13,6 +13,7 @@ import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.Analysis.Calculus.TangentCone.Prod
 import Mathlib.Analysis.Normed.Operator.Prod
 
 /-!
@@ -299,6 +300,55 @@ theorem norm_fderiv_mul_fst_le {E : Type*} [NormedAddCommGroup E] [NormedSpace �
       (norm_nonneg _) hM
     rw [← norm_deriv_eq_norm_fderiv]
     exact hA' _
+
+section FstClmApplySnd
+
+open Set
+
+variable {X Y V W : Type*} [NormedAddCommGroup X] [NormedSpace 𝕜 X] [NormedAddCommGroup Y]
+  [NormedSpace 𝕜 Y] [NormedAddCommGroup V] [NormedSpace 𝕜 V] [NormedAddCommGroup W]
+  [NormedSpace 𝕜 W]
+
+/-- The derivative within `s ×ˢ univ` of `a ↦ (F a.1, C a.1 a.2)` at `(a₀, v)`, evaluated at
+`(h, w)`, for `F : X → Y` and `C : X → V →L[𝕜] W` differentiable within `s` at `a₀`, is
+`(DF h, DC h v + C a₀ w)`. -/
+theorem fderivWithin_prodMk_fst_clm_apply_snd {s : Set X} {a₀ : X} {F : X → Y}
+    {C : X → V →L[𝕜] W} (hF : DifferentiableWithinAt 𝕜 F s a₀)
+    (hC : DifferentiableWithinAt 𝕜 C s a₀) (hs : UniqueDiffWithinAt 𝕜 s a₀) {v : V} (h : X)
+    (w : V) :
+    (fderivWithin 𝕜 (fun a : X × V ↦ (F a.1, C a.1 a.2)) (s ×ˢ univ) (a₀, v)) (h, w) =
+      (fderivWithin 𝕜 F s a₀ h, fderivWithin 𝕜 C s a₀ h v + C a₀ w) := by
+  have hmaps : MapsTo (Prod.fst : X × V → X) (s ×ˢ univ) s := fun _ hx ↦ hx.1
+  have huniq : UniqueDiffWithinAt 𝕜 (s ×ˢ univ) (a₀, v) :=
+    hs.prod uniqueDiffWithinAt_univ
+  -- The calculus lemmas below are stated for explicit compositions with the two projections.
+  -- The `change` steps only eta-expand those compositions and their derivatives.
+  have hFp : DifferentiableWithinAt 𝕜 (fun a : X × V ↦ F a.1) (s ×ˢ univ) (a₀, v) := by
+    change DifferentiableWithinAt 𝕜 (F ∘ Prod.fst) (s ×ˢ univ) (a₀, v)
+    exact hF.comp (a₀, v) differentiableWithinAt_fst hmaps
+  have hCp : DifferentiableWithinAt 𝕜 (fun a : X × V ↦ C a.1) (s ×ˢ univ) (a₀, v) := by
+    change DifferentiableWithinAt 𝕜 (C ∘ Prod.fst) (s ×ˢ univ) (a₀, v)
+    exact hC.comp (a₀, v) differentiableWithinAt_fst hmaps
+  have hAp : DifferentiableWithinAt 𝕜 (fun a : X × V ↦ C a.1 a.2) (s ×ˢ univ) (a₀, v) :=
+    hCp.clm_apply differentiableWithinAt_snd
+  have hFp_eq := fderivWithin_comp (a₀, v) hF differentiableWithinAt_fst hmaps huniq
+  change fderivWithin 𝕜 (fun a : X × V ↦ F a.1) (s ×ˢ univ) (a₀, v) = _ at hFp_eq
+  have hCp_eq := fderivWithin_comp (a₀, v) hC differentiableWithinAt_fst hmaps huniq
+  change fderivWithin 𝕜 (fun a : X × V ↦ C a.1) (s ×ˢ univ) (a₀, v) = _ at hCp_eq
+  have hAp_eq := fderivWithin_clm_apply huniq hCp differentiableWithinAt_snd
+  change fderivWithin 𝕜 (fun a : X × V ↦ C a.1 a.2) (s ×ˢ univ) (a₀, v) = _ at hAp_eq
+  have hfst_app : (fderivWithin 𝕜 (Prod.fst : X × V → X) (s ×ˢ univ) (a₀, v)) (h, w) = h := by
+    rw [fderivWithin_fst huniq]
+    rfl
+  have hsnd_app : (fderivWithin 𝕜 (Prod.snd : X × V → V) (s ×ˢ univ) (a₀, v)) (h, w) = w := by
+    rw [fderivWithin_snd huniq]
+    rfl
+  rw [hFp.fderivWithin_prodMk hAp huniq, ContinuousLinearMap.prod_apply, hFp_eq,
+    hAp_eq, hCp_eq]
+  simp only [ContinuousLinearMap.comp_apply, add_apply, ContinuousLinearMap.flip_apply]
+  rw [hfst_app, hsnd_app, add_comm]
+
+end FstClmApplySnd
 
 end TauCeti
 

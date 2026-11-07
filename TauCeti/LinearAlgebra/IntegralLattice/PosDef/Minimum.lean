@@ -50,9 +50,11 @@ as it has a root, a vector of norm `2`. Minimum and kissing number are isometry 
   below the minimum is represented.
 * `TauCeti.IntegralLattice.IsPosSemidef.minimum_ne_of_vectorsOfNorm_eq_empty`: the minimum of a
   nontrivial lattice is not a number whose shell is empty.
-* `TauCeti.IntegralLattice.IsPosDef.two_le_minimum` and
+* `TauCeti.IntegralLattice.IsPosDef.two_le_minimum`,
+  `TauCeti.IntegralLattice.IsPosDef.two_le_integralNorm` and
   `TauCeti.IntegralLattice.IsPosDef.minimum_eq_two`: the minimum of an even positive definite
-  lattice is at least `2`, and equals `2` when the lattice has a root.
+  lattice is at least `2`, so is the norm of every nonzero vector, and the minimum equals `2` when
+  the lattice has a root.
 * `TauCeti.IntegralLattice.kissingNumber`: the number of nonzero minimal vectors, with
   `TauCeti.IntegralLattice.kissingNumber_eq_representationNumber`,
   `TauCeti.IntegralLattice.kissingNumber_eq_zero_of_subsingleton` and
@@ -183,6 +185,14 @@ theorem IsPosDef.two_le_minimum (hL : L.IsPosDef) (he : L.IsEven) [Nontrivial L]
     rw [← hmin]
     omega
   exact_mod_cast h2
+
+/-- Every nonzero vector of an even positive definite lattice has norm at least `2`. -/
+theorem IsPosDef.two_le_integralNorm (hL : L.IsPosDef) (he : L.IsEven) {x : L} (hx : x ≠ 0) :
+    2 ≤ L.integralNorm x := by
+  have : Nontrivial L := nontrivial_of_ne x 0 hx
+  have := hL.two_le_minimum he
+  have := hL.isPosSemidef.minimum_le_integralNorm hx
+  omega
 
 /-- **An even positive definite lattice with a root has minimum `2`.** A root is a lattice vector
 of norm `2`. -/

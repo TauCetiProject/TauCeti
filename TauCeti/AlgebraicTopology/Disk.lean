@@ -167,6 +167,14 @@ def diskBoundaryHomeomorph (n : ℕ) :
     (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ (Equiv.ulift.{u}.symm : Fin n ≃ ULift.{u} (Fin n)))
       |>.toHomeomorph.subtype fun x ↦ by simp
 
+/-- The point of the unit sphere of `EuclideanSpace ℝ (ULift (Fin n))` corresponding to a point of
+the boundary sphere under `TauCeti.diskBoundaryHomeomorph` has the same coordinates, reindexed. -/
+lemma coe_diskBoundaryHomeomorph_apply {n : ℕ} (x : TopCat.diskBoundary.{u} n) :
+    (diskBoundaryHomeomorph n x : EuclideanSpace ℝ (ULift.{u} (Fin n))) =
+      LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ (Equiv.ulift.{u}.symm : Fin n ≃ ULift.{u} (Fin n))
+        x.down :=
+  (rfl)
+
 /-- The coordinates of the point of the boundary sphere corresponding to a point of the unit sphere
 of `EuclideanSpace ℝ (ULift (Fin n))` under `TauCeti.diskBoundaryHomeomorph`. -/
 lemma diskBoundaryHomeomorph_symm_apply_down_apply {n : ℕ}

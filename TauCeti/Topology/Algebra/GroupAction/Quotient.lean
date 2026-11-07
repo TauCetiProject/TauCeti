@@ -136,7 +136,7 @@ theorem MulAction.compactSpace_orbitRelQuotient_iff_exists_isCompact [Continuous
   refine ⟨fun _ ↦ ?_, fun ⟨K, hK, hKG⟩ ↦ compactSpace_orbitRelQuotient_of_isCompact hK hKG⟩
   -- The orbit projection is open, so the compact orbit space is the image of a compact set.
   obtain ⟨K, hK, hsub⟩ := (MulAction.isOpenQuotientMap_quotientMk (Γ := G) (T := X)).isOpenMap
-    |>.exists_isCompact_subset_image Quotient.mk_surjective isCompact_univ
+    |>.exists_isCompact_subset_image isCompact_univ Quotient.mk_surjective.range_eq.ge
   refine ⟨K, hK, fun x ↦ ?_⟩
   obtain ⟨y, hy, hyx⟩ := hsub (mem_univ (Quotient.mk (MulAction.orbitRel G X) x))
   obtain ⟨g, rfl⟩ := MulAction.orbitRel_apply.1 (Quotient.exact hyx)
