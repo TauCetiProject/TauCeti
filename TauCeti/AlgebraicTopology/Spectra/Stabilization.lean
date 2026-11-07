@@ -97,10 +97,10 @@ lemma freeEvaluationAdjunction_homEquiv_stabilization (n : ℕ) {K : PointedSSet
     (freeEvaluationAdjunction (1 + n)).homEquiv _ E (freeStabilizationMap n K ≫ f) =
       PointedSSet.circle ◁ ((freeEvaluationAdjunction n).homEquiv K E f) ≫
         E.smashPowStructureMap n := by
-  simp only [Adjunction.homEquiv_unit, freeEvaluationAdjunction_unit_app]
-  rw [Mod.comp_hom', DayFunctor.comp_natTrans, NatTrans.comp_app,
-    ← Category.assoc, freeι_stabilizationMap, Category.assoc,
-    Mod.smashPowStructureMap_hom, ← whiskerLeft_comp_assoc]
+  rw [Adjunction.homEquiv_unit, Adjunction.homEquiv_unit,
+    (evaluation (1 + n)).map_comp, freeEvaluationAdjunction_unit_app,
+    freeEvaluationAdjunction_unit_app, freeι_stabilizationMap_assoc]
+  simp [Mod.smashPowStructureMap_hom, whiskerLeft_comp]
 
 /-- Under free/evaluation and suspension/loop, restriction along stabilization is
 postcomposition with the adjoint structure map. -/
