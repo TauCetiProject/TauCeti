@@ -25,7 +25,9 @@ distance from the base point: `dist p (exp_p v) ≤ ‖v‖`.
 
 * `TauCeti.Manifold.lipschitzOnWith_maximalGeodesic`: consequently it is `‖v‖`-Lipschitz there.
 * `TauCeti.Manifold.edist_riemannianExp_le` and `TauCeti.Manifold.dist_riemannianExp_le`: the
-  distance from `p` to `exp_p v` is at most `‖v‖`.
+  distance from `p` to `exp_p v` is at most `‖v‖`; hence a vector with
+  `‖v‖ ≤ dist p (exp_p v)` lies in the domain of `exp_p`
+  (`TauCeti.Manifold.mem_expDomain_of_norm_le_dist`).
 * `TauCeti.Manifold.isGeodesicallyCompleteAt_of_completeSpace`: a complete Riemannian manifold is
   geodesically complete at every point, with
   `TauCeti.Manifold.isGeodesicCurveOnFrom_maximalGeodesic_univ` the resulting all-time geodesic
@@ -113,6 +115,15 @@ theorem dist_riemannianExp_le (p : M) (v : TangentSpace I p) :
     dist p (riemannianExp I M p v) ≤ ‖v‖ := by
   have h := edist_riemannianExp_le (I := I) (M := M) p v
   rwa [← ofReal_norm, edist_le_ofReal (norm_nonneg v)] at h
+
+omit [IsRiemannianManifold I M] in
+/-- A tangent vector `v` with `‖v‖ ≤ dist p (exp_p v)` lies in the domain of `exp_p`: off the
+domain `exp_p v` is the junk value `p`, which forces `v = 0`. -/
+theorem mem_expDomain_of_norm_le_dist {p : M} {v : TangentSpace I p}
+    (hmin : ‖v‖ ≤ dist p (riemannianExp I M p v)) : v ∈ expDomain I M p := by
+  by_contra hv
+  rw [riemannianExp_of_notMem_expDomain hv, dist_self, norm_le_zero_iff] at hmin
+  exact hv (hmin ▸ zero_mem_expDomain p)
 
 end Metric
 
