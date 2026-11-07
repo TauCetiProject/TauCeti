@@ -20,8 +20,9 @@ No additivity is needed, and `r` need not be an equivalence relation or stable u
 the quotient category is formed by the congruence that `r` generates.
 
 With this structure the quotient functor `C ⥤ Quotient r` is strong monoidal with identity
-structure morphisms, the factorization `CategoryTheory.Quotient.lift` of a strong monoidal functor
-is strong monoidal with the structure morphisms of that functor, and monoidal natural
+structure morphisms, the factorization `CategoryTheory.Quotient.lift` of a lax, oplax or strong
+monoidal functor is lax, oplax or strong monoidal with the structure morphisms of that functor,
+and monoidal natural
 transformations descend along the quotient functor.
 
 An arbitrary relation `r` generates a least monoidal relation, `HomRel.MonoidalClosure r`, and a
@@ -43,10 +44,11 @@ monoidal preadditive category by a tensor ideal (`TauCeti.MonoidalQuotient`) is 
   unitors;
 * the instance `(CategoryTheory.Quotient.functor r).Monoidal`, with identity structure morphisms
   (`CategoryTheory.Quotient.functor_μ` and its companions);
-* the instance `(CategoryTheory.Quotient.lift r F H).Monoidal` for a strong monoidal functor `F`,
-  whose structure morphisms are those of `F` (`CategoryTheory.Quotient.lift_μ` and its
-  companions), together with the instance saying that `CategoryTheory.Quotient.lift.isLift` is a
-  monoidal natural isomorphism;
+* the instances `(CategoryTheory.Quotient.lift r F H).LaxMonoidal`, `.OplaxMonoidal` and
+  `.Monoidal` for a lax, oplax or strong monoidal functor `F`, whose structure morphisms are those
+  of `F` (`CategoryTheory.Quotient.lift_μ` and its companions), together with the instance saying
+  that `CategoryTheory.Quotient.lift.isLift` is a monoidal natural isomorphism for lax monoidal
+  `F`;
 * the instance saying that `CategoryTheory.Quotient.natTransLift r τ` is monoidal when `τ` is.
 -/
 
@@ -300,53 +302,80 @@ theorem functor_δ (X Y : C) : Functor.OplaxMonoidal.δ (functor r) X Y = 𝟙 _
 
 section lift
 
-variable {D : Type u'} [Category.{v'} D] [MonoidalCategory D] (F : C ⥤ D) [F.Monoidal]
+variable {D : Type u'} [Category.{v'} D] [MonoidalCategory D] (F : C ⥤ D)
   (H : ∀ (X Y : C) (f₁ f₂ : X ⟶ Y), r f₁ f₂ → F.map f₁ = F.map f₂)
+
+/-- The factorization `CategoryTheory.Quotient.lift` through the quotient by a monoidal relation
+of a lax monoidal functor is lax monoidal, with the unit morphism and tensorator of that
+functor. -/
+instance liftLaxMonoidal [F.LaxMonoidal] : (lift r F H).LaxMonoidal where
+  ε := Functor.LaxMonoidal.ε F
+  μ X Y := Functor.LaxMonoidal.μ F X.as Y.as
+  μ_natural_left f Z := by
+    obtain ⟨f, rfl⟩ := (functor r).map_surjective f
+    exact Functor.LaxMonoidal.μ_natural_left F f Z.as
+  μ_natural_right Z f := by
+    obtain ⟨f, rfl⟩ := (functor r).map_surjective f
+    exact Functor.LaxMonoidal.μ_natural_right F Z.as f
+  associativity X Y Z := Functor.LaxMonoidal.associativity F X.as Y.as Z.as
+  left_unitality X := Functor.LaxMonoidal.left_unitality F X.as
+  right_unitality X := Functor.LaxMonoidal.right_unitality F X.as
+
+/-- The factorization `CategoryTheory.Quotient.lift` through the quotient by a monoidal relation
+of an oplax monoidal functor is oplax monoidal, with the counit morphism and inverse tensorator
+of that functor. -/
+instance liftOplaxMonoidal [F.OplaxMonoidal] : (lift r F H).OplaxMonoidal where
+  η := Functor.OplaxMonoidal.η F
+  δ X Y := Functor.OplaxMonoidal.δ F X.as Y.as
+  δ_natural_left f Z := by
+    obtain ⟨f, rfl⟩ := (functor r).map_surjective f
+    exact Functor.OplaxMonoidal.δ_natural_left F f Z.as
+  δ_natural_right Z f := by
+    obtain ⟨f, rfl⟩ := (functor r).map_surjective f
+    exact Functor.OplaxMonoidal.δ_natural_right F Z.as f
+  oplax_associativity X Y Z := Functor.OplaxMonoidal.associativity F X.as Y.as Z.as
+  oplax_left_unitality X := Functor.OplaxMonoidal.left_unitality F X.as
+  oplax_right_unitality X := Functor.OplaxMonoidal.right_unitality F X.as
 
 /-- The factorization `CategoryTheory.Quotient.lift` through the quotient by a monoidal relation
 of a strong monoidal functor is strong monoidal, with the structure isomorphisms of that
 functor. -/
-instance liftMonoidal : (lift r F H).Monoidal :=
-  Functor.CoreMonoidal.toMonoidal
-    { εIso := Functor.Monoidal.εIso F
-      μIso X Y := Functor.Monoidal.μIso F X.as Y.as
-      μIso_hom_natural_left f Z := by
-        obtain ⟨f, rfl⟩ := (functor r).map_surjective f
-        exact Functor.LaxMonoidal.μ_natural_left F f Z.as
-      μIso_hom_natural_right Z f := by
-        obtain ⟨f, rfl⟩ := (functor r).map_surjective f
-        exact Functor.LaxMonoidal.μ_natural_right F Z.as f
-      associativity X Y Z := Functor.LaxMonoidal.associativity F X.as Y.as Z.as
-      left_unitality X := Functor.LaxMonoidal.left_unitality F X.as
-      right_unitality X := Functor.LaxMonoidal.right_unitality F X.as }
+instance liftMonoidal [F.Monoidal] : (lift r F H).Monoidal where
+  toLaxMonoidal := liftLaxMonoidal F H
+  toOplaxMonoidal := liftOplaxMonoidal F H
+  ε_η := Functor.Monoidal.ε_η F
+  η_ε := Functor.Monoidal.η_ε F
+  μ_δ X Y := Functor.Monoidal.μ_δ F X.as Y.as
+  δ_μ X Y := Functor.Monoidal.δ_μ F X.as Y.as
 
 /-- The unit morphism of the factorization of `F` is that of `F`. -/
 @[simp]
-theorem lift_ε : Functor.LaxMonoidal.ε (lift r F H) = Functor.LaxMonoidal.ε F :=
+theorem lift_ε [F.LaxMonoidal] : Functor.LaxMonoidal.ε (lift r F H) = Functor.LaxMonoidal.ε F :=
   (rfl)
 
 /-- The counit morphism of the factorization of `F` is that of `F`. -/
 @[simp]
-theorem lift_η : Functor.OplaxMonoidal.η (lift r F H) = Functor.OplaxMonoidal.η F :=
+theorem lift_η [F.OplaxMonoidal] :
+    Functor.OplaxMonoidal.η (lift r F H) = Functor.OplaxMonoidal.η F :=
   (rfl)
 
 /-- On classes, the tensorator of the factorization of `F` is that of `F`. -/
 @[simp]
-theorem lift_μ (X Y : C) :
+theorem lift_μ [F.LaxMonoidal] (X Y : C) :
     Functor.LaxMonoidal.μ (lift r F H) ((functor r).obj X) ((functor r).obj Y) =
       Functor.LaxMonoidal.μ F X Y :=
   (rfl)
 
 /-- On classes, the inverse tensorator of the factorization of `F` is that of `F`. -/
 @[simp]
-theorem lift_δ (X Y : C) :
+theorem lift_δ [F.OplaxMonoidal] (X Y : C) :
     Functor.OplaxMonoidal.δ (lift r F H) ((functor r).obj X) ((functor r).obj Y) =
       Functor.OplaxMonoidal.δ F X Y :=
   (rfl)
 
 /-- The identification `CategoryTheory.Quotient.lift.isLift` of the quotient functor followed by
 the factorization of `F` with `F` is a monoidal natural isomorphism. -/
-instance : (lift.isLift r F H).hom.IsMonoidal where
+instance [F.LaxMonoidal] : (lift.isLift r F H).hom.IsMonoidal where
   unit := by
     simp only [Functor.comp_obj, Functor.LaxMonoidal.comp_ε, lift_ε, functor_ε,
       CategoryTheory.Functor.map_id, Category.comp_id, lift.isLift_hom]
