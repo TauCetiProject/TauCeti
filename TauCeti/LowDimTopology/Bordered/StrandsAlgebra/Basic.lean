@@ -46,6 +46,8 @@ comes from the subadditivity of inversion counts
   orthogonal idempotents summing to `1`.
 * `TauCeti.StrandsAlgebra.idem_mul_of`, `TauCeti.StrandsAlgebra.of_mul_idem`: `I(s) φ` is `φ` when
   `s` is the source of `φ` and zero otherwise, and `φ I(t)` is `φ` when `t` is its target.
+* `TauCeti.StrandsAlgebra.map_mul_of_basis`: a linear map out of the strands algebra is
+  multiplicative once it is multiplicative on basis elements.
 
 ## References
 
@@ -249,6 +251,21 @@ instance {R : Type*} [CommRing R] : Ring (StrandsAlgebra R α) where
 
 theorem isIdempotentElem_idem (s : Finset α) : IsIdempotentElem (idem s : StrandsAlgebra R α) := by
   simp [IsIdempotentElem, idem_mul_idem]
+
+/-- **Multiplicativity is a basis-level condition.** An `R`-linear map out of the strands
+algebra that is multiplicative on pairs of basis elements is multiplicative. -/
+theorem map_mul_of_basis {A : Type*} [NonUnitalNonAssocSemiring A] [Module R A]
+    [IsScalarTower R A A] [SMulCommClass R A A] (f : StrandsAlgebra R α →ₗ[R] A)
+    (h : ∀ φ ψ, f (of φ * of ψ) = f (of φ) * f (of ψ)) (x y : StrandsAlgebra R α) :
+    f (x * y) = f x * f y := by
+  induction x using induction_on with
+  | zero => simp only [zero_mul, map_zero]
+  | add x x' hx hx' => simp only [add_mul, map_add, hx, hx']
+  | smul_of r φ =>
+    induction y using induction_on with
+    | zero => simp only [mul_zero, map_zero]
+    | add y y' hy hy' => simp only [mul_add, map_add, hy, hy']
+    | smul_of s ψ => simp only [smul_mul_assoc, mul_smul_comm, map_smul, h]
 
 end StrandsAlgebra
 

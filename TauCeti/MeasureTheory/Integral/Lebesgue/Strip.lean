@@ -11,6 +11,7 @@ import Mathlib.Algebra.Order.ToIntervalMod
 import Mathlib.MeasureTheory.Group.MeasurableEquiv
 import Mathlib.MeasureTheory.Measure.WithDensity
 import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
+import TauCeti.MeasureTheory.Integral.Lebesgue.Exhaustion
 
 /-!
 # Lebesgue integrals over a strip by exhaustion
@@ -22,10 +23,14 @@ integral of an `ℝ≥0∞`-valued function over `[-n, n] × T` is `ENNReal.ofRe
 real function `F` with limits `A₁` at `-∞` and `A₂` at `∞`, then its integral over the whole strip
 is `ENNReal.ofReal (A₂ - A₁)` (`TauCeti.setLIntegral_univ_prod_eq_ofReal_of_tendsto`). Since
 `ENNReal.ofReal` truncates at zero, this is `A₂ - A₁` when `A₁ ≤ A₂` and `0` otherwise.
+Likewise the half-strip `[b, ∞) × T` is exhausted by the rectangles `[b, b + n] × T`: if the
+integral over `[b, b + n] × T` is `ENNReal.ofReal (F(b + n) - F(b))` and `F` tends to `L` at `∞`,
+then the integral over the half-strip is `ENNReal.ofReal (L - F(b))`
+(`TauCeti.setLIntegral_Ici_prod_eq_ofReal_of_tendsto`).
 
 This is the passage from the energy identity on finite rectangles to the energy of a
 holomorphic strip or a Floer cylinder, whose energy is the difference of the limiting actions at
-its two ends.
+its two ends, and of a Floer half-cylinder.
 
 The strip is also the union of the disjoint translates of a period rectangle
 `(a, a + c] × T`. A function on the strip that is periodic in the first variable has the same
@@ -68,10 +73,8 @@ theorem tendsto_setLIntegral_Icc_neg_prod {β : Type*} [MeasurableSpace β]
     (μ : Measure (ℝ × β)) (T : Set β) (f : ℝ × β → ℝ≥0∞) :
     Tendsto (fun n : ℕ ↦ ∫⁻ z in Icc (-(n : ℝ)) n ×ˢ T, f z ∂μ) atTop
       (𝓝 (∫⁻ z in (univ : Set ℝ) ×ˢ T, f z ∂μ)) := by
-  rw [← iUnion_Icc_neg_prod, setLIntegral_iUnion_of_directed _
-    (monotone_Icc_neg_prod T).directed_le]
-  exact tendsto_atTop_iSup fun _ _ hmn ↦
-    lintegral_mono' (Measure.restrict_mono (monotone_Icc_neg_prod T hmn) le_rfl) le_rfl
+  rw [← iUnion_Icc_neg_prod]
+  exact tendsto_setLIntegral_of_monotone (monotone_Icc_neg_prod T)
 
 /-- **Integrals over a strip by exhaustion.** If the integral of `f` over each rectangle
 `[-n, n] × T` is `ENNReal.ofReal (F(n) - F(-n))`, where `F` tends to `A₁` at `-∞` and to `A₂` at
@@ -87,6 +90,30 @@ theorem setLIntegral_univ_prod_eq_ofReal_of_tendsto {β : Type*} [MeasurableSpac
   exact (ENNReal.continuous_ofReal.tendsto _).comp
     ((htop.comp tendsto_natCast_atTop_atTop).sub
       (hbot.comp (tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop)))
+
+/-- **Integrals over a half-strip by exhaustion.** If the integral of `f` over each rectangle
+`[b, b + n] × T` is `ENNReal.ofReal (F(b + n) - F(b))`, where `F` tends to `L` at `∞`, then the
+integral of `f` over the half-strip `[b, ∞) × T` is `ENNReal.ofReal (L - F(b))`, that is
+`L - F(b)` truncated at zero. -/
+theorem setLIntegral_Ici_prod_eq_ofReal_of_tendsto {β : Type*} [MeasurableSpace β]
+    {μ : Measure (ℝ × β)} {T : Set β} {f : ℝ × β → ℝ≥0∞} {F : ℝ → ℝ} {b L : ℝ}
+    (hE : ∀ n : ℕ, ∫⁻ z in Icc b (b + n) ×ˢ T, f z ∂μ = ENNReal.ofReal (F (b + n) - F b))
+    (htop : Tendsto F atTop (𝓝 L)) :
+    ∫⁻ z in Ici b ×ˢ T, f z ∂μ = ENNReal.ofReal (L - F b) := by
+  set R : ℕ → Set (ℝ × β) := fun n ↦ Icc b (b + n) ×ˢ T
+  have hmono : Monotone R := fun m n hmn ↦
+    prod_mono (Icc_subset_Icc le_rfl (by simpa using hmn)) le_rfl
+  have hunion : ⋃ n, R n = Ici b ×ˢ T := by
+    refine (iUnion_subset fun n ↦ Set.prod_mono Icc_subset_Ici_self le_rfl).antisymm fun z hz ↦ ?_
+    obtain ⟨n, hn⟩ := exists_nat_ge (z.1 - b)
+    exact mem_iUnion.2 ⟨n, ⟨hz.1, by linarith⟩, hz.2⟩
+  -- The integrals over the rectangles increase to the integral over the half-strip.
+  have hlim := tendsto_setLIntegral_of_monotone (μ := μ) (f := f) hmono
+  rw [hunion] at hlim
+  refine tendsto_nhds_unique hlim ?_
+  simp only [R, hE]
+  exact (ENNReal.continuous_ofReal.tendsto _).comp
+    ((htop.comp (tendsto_atTop_add_const_left _ b tendsto_natCast_atTop_atTop)).sub_const _)
 
 /-- A function on the strip `ℝ × T`, periodic in the first variable with period `c` and with
 finite integral over the strip, has zero integral over each period rectangle `(a, a + c] × T`:
