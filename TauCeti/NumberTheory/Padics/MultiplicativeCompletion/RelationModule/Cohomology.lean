@@ -118,7 +118,7 @@ theorem explicitH2EquivPadicCompletionUnits_explicitCoeff2_relationModule :
     -- Inverse reciprocity intertwines the action after reading its carrier additively.
     change ofMul (eR.symm (t • x.toMul)) =
       MonoidAlgebra.single t (1 : ℤ_[p]) • ofMul (eR.symm x.toMul)
-    exact ofMul_symm_galois_smul_eq_single_smul p K L j t x
+    exact ofMul_padicCompletionUnitsEquivAbelianizationProP_symm_galois_smul p K L j t x
   let f := relationModuleToAbelianizationProPEquivariant p K L hg β j
   let hf := f.continuous_toAdditive
     (continuous_relationModuleToAbelianizationProPEquivariant p K L hg β j)
