@@ -101,7 +101,7 @@ theorem logDeriv_eulerFactor_eq_neg_log_mul_tsum_coeff_localLogDerivSeries
   let b : ℕ → ℂ := fun e ↦ PowerSeries.coeff e (D.localLogDerivSeries P)
   let a : ℕ → ℂ := fun e ↦ D (P.primeIdealPow e)
   have hlocal := summable_idealTerm_primeIdealPow D.toIdealArithmeticFunction P
-    (by rwa [← D.localArithmeticFactor_eq])
+    (LSeriesSummable_of_abscissaOfAbsConv_lt_re (by rwa [← D.localArithmeticFactor_eq]))
   have ha : Summable fun e : ℕ ↦ a e * x ^ e :=
     hlocal.congr fun e ↦
       idealTerm_primeIdealPow_eq_mul_cpow_neg D.toIdealArithmeticFunction P s e

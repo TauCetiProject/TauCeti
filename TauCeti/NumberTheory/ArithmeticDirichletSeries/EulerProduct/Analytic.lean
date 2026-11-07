@@ -217,11 +217,10 @@ theorem idealTerm_primeIdealPow_eq_mul_cpow_neg (f : IdealArithmeticFunction K)
 makes the series over the prime powers of `P` summable. -/
 theorem summable_idealTerm_primeIdealPow (f : IdealArithmeticFunction K)
     (P : HeightOneSpectrum (𝓞 K)) {s : ℂ}
-    (hs : LSeries.abscissaOfAbsConv (localArithmeticFactor f P) < s.re) :
+    (hs : LSeriesSummable (localArithmeticFactor f P) s) :
     Summable fun e : ℕ ↦ idealTerm K f s (P.primeIdealPow e) := by
-  have hsum := LSeriesSummable_of_abscissaOfAbsConv_lt_re hs
-  rw [LSeriesSummable] at hsum
-  have hsum' := hsum.comp_injective <|
+  rw [LSeriesSummable] at hs
+  have hsum' := hs.comp_injective <|
     Nat.pow_right_injective (NumberField.HeightOneSpectrum.one_lt_absNorm P)
   refine hsum'.congr fun e ↦ ?_
   simp only [Function.comp_apply]
