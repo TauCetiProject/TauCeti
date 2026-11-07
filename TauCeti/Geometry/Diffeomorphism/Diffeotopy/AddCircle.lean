@@ -102,7 +102,7 @@ include hL hn hper hpos in
 positive derivative, hence a bijection of `ℝ`. -/
 private theorem bijective_plane : Bijective fun p : ℝ × ℝ ↦ (p.1, L p) := by
   have hd (s x : ℝ) : DifferentiableAt ℝ (fun y ↦ L (s, y)) x :=
-    ((hL.differentiable hn) (s, x)).hasDerivAt_slice_snd.differentiableAt
+    (TauCeti.hasDerivAt_slice_right ((hL.differentiable hn) (s, x))).differentiableAt
   have h (s : ℝ) := exists_lift_inverse (fun x ↦ (hd s x).hasDerivAt) (hper s) (hpos s)
   refine ⟨fun ⟨s, x⟩ ⟨s', x'⟩ hpq ↦ ?_, fun ⟨s, y⟩ ↦ ?_⟩
   · obtain ⟨rfl, hx⟩ := Prod.ext_iff.1 hpq
@@ -121,7 +121,7 @@ private theorem injective_planeDeriv (p : ℝ × ℝ) : Injective (planeDeriv (L
   obtain ⟨rfl, h⟩ : u = 0 ∧ fderiv ℝ L p (u, v) = 0 := by simpa [planeDeriv] using h
   -- The second component is `v` times the positive partial derivative in the second variable.
   have hd : 0 < fderiv ℝ L p (0, 1) :=
-    ((hL.differentiable hn) p).hasDerivAt_slice_snd.deriv ▸ hpos p.1 p.2
+    (TauCeti.hasDerivAt_slice_right ((hL.differentiable hn) p)).deriv ▸ hpos p.1 p.2
   have hv : fderiv ℝ L p (0, v) = v * fderiv ℝ L p (0, 1) := by
     simpa using map_smul (fderiv ℝ L p) v ((0 : ℝ), (1 : ℝ))
   rw [hv, mul_eq_zero] at h

@@ -108,7 +108,7 @@ theorem hasDerivAt_slice_add_sliceDefect (hu : DifferentiableOn ℝ u (Ioi a ×�
     HasDerivAt (fun t ↦ u (s, t)) (X t (u (s, t)) + sliceDefect X u (s, t)) t := by
   rw [sliceDefect_def, add_sub_cancel]
   have hmem : (s, t) ∈ Ioi a ×ˢ (univ : Set ℝ) := ⟨hs, mem_univ t⟩
-  exact (hu.differentiableAt ((isOpen_Ioi.prod isOpen_univ).mem_nhds hmem)).hasDerivAt_slice_snd
+  exact hasDerivAt_slice_right (hu.differentiableAt ((isOpen_Ioi.prod isOpen_univ).mem_nhds hmem))
 
 /-- **The loops solve the integral equation up to the defect.** Along the loop at `s > a` of a
 `C¹` map, `u(s, t₂) - u(s, t₁) = ∫_{t₁}^{t₂} X(t, u(s, t)) dt + ∫_{t₁}^{t₂} (∂_t u - X(t, u))`. -/

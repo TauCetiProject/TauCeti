@@ -154,9 +154,9 @@ theorem coeff_ramificationDivisor (f : FiniteHolomorphicMap X Y) (x : X) :
   (rfl)
 
 /-- The ramification divisor is effective. -/
-theorem isEffective_ramificationDivisor (f : FiniteHolomorphicMap X Y) :
-    WeilDivisor.IsEffective (ramificationDivisor f) := by
-  rw [WeilDivisor.isEffective_iff]
+theorem ramificationDivisor_nonneg (f : FiniteHolomorphicMap X Y) :
+    0 ≤ ramificationDivisor f := by
+  rw [WeilDivisor.nonneg_iff]
   intro x
   rw [coeff_ramificationDivisor, sub_nonneg, Nat.one_le_cast]
   exact localMultiplicity_pos f x

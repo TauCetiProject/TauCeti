@@ -282,24 +282,21 @@ change maps `Φ` and `Ψ`, it is meant to be the homotopy between `Ψ ∘ Φ` an
 variable; only its bidegree is proved here. -/
 noncomputable def crossingChangeHomotopy (C : ColumnTurn n) (t : Fin n) :
     GridChainMinus R n →ₗ[MvPolynomial (Fin n) R] GridChainMinus R n :=
-  Finsupp.linearCombination (MvPolynomial (Fin n) R) fun x =>
-    Finsupp.equivFunOnFinite.symm fun y => G.crossingChangeHexagonCoefficient R C t x y
+  GridChain.matrixMap R (G.crossingChangeHexagonCoefficient R C t)
 
 /-- The matrix coefficients of the crossing change homotopy. -/
 theorem crossingChangeHomotopy_single_apply (C : ColumnTurn n) (t : Fin n) (x y : GridState n) :
     G.crossingChangeHomotopy R C t (Finsupp.single x 1) y =
       G.crossingChangeHexagonCoefficient R C t x y := by
-  rw [crossingChangeHomotopy, Finsupp.linearCombination_single, one_smul,
-    Finsupp.equivFunOnFinite_symm_apply_apply]
+  rw [crossingChangeHomotopy, GridChain.matrixMap_single_apply, one_mul]
 
 /-- The coefficient formula for the crossing change homotopy on an arbitrary chain. -/
 @[simp]
 theorem crossingChangeHomotopy_apply_apply (C : ColumnTurn n) (t : Fin n)
     (c : GridChainMinus R n) (y : GridState n) :
     G.crossingChangeHomotopy R C t c y =
-      c.sum fun x p => p * G.crossingChangeHexagonCoefficient R C t x y := by
-  rw [crossingChangeHomotopy, Finsupp.linearCombination_apply]
-  simp [Finsupp.sum_apply]
+      c.sum fun x p => p * G.crossingChangeHexagonCoefficient R C t x y :=
+  GridChain.matrixMap_apply_apply R _ c y
 
 /-! ### The markings of the rectangle under a hexagon -/
 

@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Integral.Lebesgue.Map
 import Mathlib.Algebra.Order.Interval.Set.Group
 import Mathlib.Algebra.Order.ToIntervalMod
 import Mathlib.MeasureTheory.Group.MeasurableEquiv
+import Mathlib.MeasureTheory.Measure.WithDensity
 import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
 
 /-!
@@ -37,6 +38,13 @@ each period rectangle vanishes, and hence so does its integral over the whole st
 (`TauCeti.setLIntegral_univ_prod_eq_zero_of_periodic`). For the energy density of a Floer cylinder
 this says that a finite-energy cylinder invariant under a nontrivial translation has zero
 energy.
+
+Finally, a function with finite integral over a set `E` has small integral over the parts of `E`
+far out along the strip: its integrals over sets that eventually lie in `E` and outside every band
+`|z.1| < R` tend to zero (`TauCeti.tendsto_setLIntegral_of_eventually_subset`). Applied to
+windows `[a + s_k, b + s_k] × T` with `|s_k| → ∞`, this says that a half-cylinder of finite energy
+carries less and less energy over its translated windows, since such windows eventually lie
+outside every band (`TauCeti.eventually_Icc_add_prod_subset_inter`).
 -/
 
 public section
@@ -176,5 +184,63 @@ theorem setLIntegral_univ_prod_eq_zero_of_periodic {β : Type*} [MeasurableSpace
   rw [hunion]
   refine (lintegral_iUnion_le _ _).trans (le_of_eq ?_)
   simp [setLIntegral_Ioc_prod_eq_zero_of_periodic hT hμ hf hfin]
+
+/-- If `|s_i| → ∞` and the translated window `[a + s_i, b + s_i] × T` eventually lies in `E`, then
+it eventually lies in `E` and outside the band `|z.1| < R`, for every `R`. These windows are thus
+sets to which `TauCeti.tendsto_setLIntegral_of_eventually_subset` applies. -/
+theorem eventually_Icc_add_prod_subset_inter {ι β : Type*} {l : Filter ι} {s : ι → ℝ}
+    {T : Set β} {E : Set (ℝ × β)} {a b : ℝ} (hs : Tendsto s l (cocompact ℝ))
+    (hW : ∀ᶠ i in l, Icc (a + s i) (b + s i) ×ˢ T ⊆ E) (R : ℝ) :
+    ∀ᶠ i in l, Icc (a + s i) (b + s i) ×ˢ T ⊆ E ∩ {z | R ≤ |z.1|} := by
+  filter_upwards [hW,
+    hs.eventually (isCompact_closedBall (0 : ℝ) (R + |a| + |b|)).compl_mem_cocompact]
+    with i hi hsi z hz
+  refine ⟨hi hz, ?_⟩
+  have hsi' : R + |a| + |b| < |s i| := by
+    simpa [Metric.mem_closedBall, Real.dist_eq] using hsi
+  have h₁ : |z.1 - s i| ≤ |a| + |b| := by
+    obtain ⟨⟨h₁, h₂⟩, -⟩ := hz
+    refine abs_le.2 ⟨?_, ?_⟩ <;>
+      linarith [neg_abs_le a, le_abs_self b, abs_nonneg a, abs_nonneg b]
+  have h₂ : |s i| ≤ |z.1| + |z.1 - s i| := by
+    simpa using abs_sub z.1 (z.1 - s i)
+  exact (by linarith : R ≤ |z.1|)
+
+/-- **Integrals over sets escaping along the strip.** If `f` has finite integral over `E`, then its
+integrals over sets `A i` that eventually lie in `E` and outside every band `|z.1| < R` tend to
+zero. For the energy density of a half-cylinder of finite energy, this says that the energy over
+a window translated towards the end tends to zero. No measurability of `f`, `E` or `A i` is
+assumed. -/
+theorem tendsto_setLIntegral_of_eventually_subset {ι β : Type*} [MeasurableSpace β]
+    {μ : Measure (ℝ × β)} {E : Set (ℝ × β)} {f : ℝ × β → ℝ≥0∞}
+    (hE : ∫⁻ z in E, f z ∂μ ≠ ∞) {l : Filter ι} {A : ι → Set (ℝ × β)}
+    (hA : ∀ R : ℝ, ∀ᶠ i in l, A i ⊆ E ∩ {z | R ≤ |z.1|}) :
+    Tendsto (fun i ↦ ∫⁻ z in A i, f z ∂μ) l (𝓝 0) := by
+  set ν := (μ.restrict E).withDensity f
+  set C : ℕ → Set (ℝ × β) := fun n ↦ {z | (n : ℝ) ≤ |z.1|}
+  have hC (n : ℕ) : MeasurableSet (C n) :=
+    measurableSet_le measurable_const (continuous_abs.measurable.comp measurable_fst)
+  have hν (n : ℕ) : ν (C n) = ∫⁻ z in C n ∩ E, f z ∂μ := by
+    rw [withDensity_apply _ (hC n), Measure.restrict_restrict (hC n)]
+  -- The integrals over `E` outside the bands `|z.1| < n` decrease to zero.
+  have hlim : Tendsto (fun n ↦ ν (C n)) atTop (𝓝 0) := by
+    have hanti : Antitone C := fun m n hmn z (hz : (n : ℝ) ≤ |z.1|) ↦
+      show (m : ℝ) ≤ |z.1| from le_trans (by exact_mod_cast hmn) hz
+    have hfin : ν (C 0) ≠ ∞ := by
+      rw [hν]
+      exact ne_top_of_le_ne_top hE (lintegral_mono_set inter_subset_right)
+    have hempty : ⋂ n, C n = ∅ := by
+      refine eq_empty_of_forall_notMem fun z hz ↦ ?_
+      obtain ⟨n, hn⟩ := exists_nat_gt |z.1|
+      exact (mem_iInter.1 hz n).not_gt hn
+    have h := tendsto_measure_iInter_atTop (fun n ↦ (hC n).nullMeasurableSet) hanti ⟨0, hfin⟩
+    rwa [hempty, measure_empty] at h
+  refine ENNReal.tendsto_nhds_zero.2 fun ε hε ↦ ?_
+  obtain ⟨n, hn⟩ := eventually_atTop.1 (ENNReal.tendsto_nhds_zero.1 hlim ε hε)
+  filter_upwards [hA n] with i hi
+  calc ∫⁻ z in A i, f z ∂μ ≤ ∫⁻ z in C n ∩ E, f z ∂μ :=
+        lintegral_mono_set fun z hz ↦ ⟨(hi hz).2, (hi hz).1⟩
+    _ = ν (C n) := (hν n).symm
+    _ ≤ ε := hn n le_rfl
 
 end TauCeti
