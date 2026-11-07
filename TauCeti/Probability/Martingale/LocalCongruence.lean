@@ -14,7 +14,7 @@ public import Mathlib.Probability.Process.Indistinguishable
 
 A strongly progressive process is a native local martingale whenever its native stopped
 stages have martingale versions. Progressivity supplies literal adaptation at arbitrary-range
-stopping times, even on a raw filtration. The same localizing sequence can therefore be kept.
+stopping times, even on a raw filtration.
 
 Consequently, replacing a native local martingale by an indistinguishable strongly progressive
 process preserves native locality. The original process need not be adapted or progressive.
@@ -43,8 +43,7 @@ variable {ι Ω E : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
   {ℱ : Filtration ι mΩ} {X Y : ι → Ω → E}
 
 /-- A strongly progressive process is a native local martingale if every native stopped stage
-has a martingale version. The supplied localizing sequence is retained, including its
-initial-time indicators. Since the stopped stages themselves are literally adapted, equality
+has a martingale version. Since the stopped stages themselves are literally adapted, equality
 with their martingale versions is needed only almost surely at each fixed time. -/
 theorem locally_martingale_of_ae_stopped_eq (hX : IsStronglyProgressive ℱ X)
     {τ : ℕ → Ω → WithTop ι} (hτ : IsLocalizingSequence ℱ τ μ)
@@ -59,9 +58,9 @@ theorem locally_martingale_of_ae_stopped_eq (hX : IsStronglyProgressive ℱ X)
     (ℱ.mono bot_le _ ((hτ.isStoppingTime n).measurableSet_gt ⊥))
 
 /-- An indistinguishable strongly progressive replacement of a native local martingale is a
-native local martingale, with the same localizing sequence. No adaptation assumption is
-imposed on the original process. The equality must hold simultaneously in time almost surely,
-so it can be evaluated at the random stopped times. -/
+native local martingale. No adaptation assumption is imposed on the original process.
+The equality must hold simultaneously in time almost surely, so it can be evaluated at the
+random stopped times. -/
 theorem locally_martingale_of_indist (hY : IsStronglyProgressive ℱ Y)
     (hX : Locally (fun U ↦ Martingale U ℱ μ) ℱ X μ)
     (heq : X ≡ᵐ[μ] Y) :
