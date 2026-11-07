@@ -13,10 +13,11 @@ public import TauCeti.Analysis.ODE.EnergyEstimate.Index
 # The index of the trajectory operator is the spectral flow
 
 Let `A : ℝ → End(E)` be a differentiable family of symmetric operators on a finite-dimensional
-real inner product space `E`, with invertible limits `A±` at `±∞`, so that the trajectory operator `D_A u = u' + A u : W^{1,2}(ℝ, E) → L²(ℝ, E)` is Fredholm. A
-*crossing* of `A` is a time `t` at which `A t` is not invertible, and its *crossing form* is the
-quadratic form `v ↦ ⟪A' t v, v⟫` on the kernel of `A t`. The crossing is *regular* when its crossing
-form is nondegenerate.
+real inner product space `E`, with invertible limits `A±` at `±∞`, so that the trajectory
+operator `D_A u = u' + A u : W^{1,2}(ℝ, E) → L²(ℝ, E)` is Fredholm. A *crossing* of `A` is a
+time `t` at which `A t` is not invertible, and its *crossing form* is the quadratic form
+`v ↦ ⟪A' t v, v⟫` on the kernel of `A t`. The crossing is *regular* when its crossing form is
+nondegenerate.
 
 This file proves the formula of Robbin and Salamon for the index of `D_A` in this setting: if all
 crossings of `A` are regular, then there are finitely many of them, and the index of `D_A` is the
