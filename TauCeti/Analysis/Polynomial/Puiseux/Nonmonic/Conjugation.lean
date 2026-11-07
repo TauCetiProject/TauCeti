@@ -47,6 +47,29 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimension
   {U : Set E} [SimplyConnectedSpace U] {F : E × ℂ → ℂ[X]} {u : E × ℂ → ℂ}
   {d n a : ℕ} {R R' : ℝ} {τ : E → E}
 
+omit [FiniteDimensional ℂ E] [SimplyConnectedSpace U] in
+/-- Conjugation compatibility of the pole-removed analytic extensions: if the punctured
+branches satisfy it, then so do the extensions on the full product, by continuity through the
+exceptional hyperplane. The removed pole is a real monomial, so scaling commutes with
+conjugation. -/
+private lemma eqOn_conj_extension {g r : Fin d → E × ℂ → ℂ} {σ : Equiv.Perm (Fin d)}
+    (hga : ∀ i, AnalyticOnNhd ℂ (g i) (U ×ˢ ball 0 R') ∧
+      EqOn (g i) (fun b ↦ b.2 ^ (n * a) * r i b) (U ×ˢ (ball 0 R' \ {0})))
+    (hσ : ∀ i b, b ∈ U ×ˢ (ball 0 R' \ {0}) →
+      r (σ i) b = conj (r i (τ b.1, conj b.2)))
+    (hκ : ContinuousOn (fun b : E × ℂ ↦ (τ b.1, conj b.2)) (U ×ˢ ball 0 R'))
+    (hκT : MapsTo (fun b : E × ℂ ↦ (τ b.1, conj b.2)) (U ×ˢ ball 0 R') (U ×ˢ ball 0 R'))
+    (hκS : MapsTo (fun b : E × ℂ ↦ (τ b.1, conj b.2)) (U ×ˢ (ball 0 R' \ {0}))
+      (U ×ˢ (ball 0 R' \ {0}))) (i : Fin d) :
+    EqOn (g (σ i)) (fun b ↦ conj (g i (τ b.1, conj b.2))) (U ×ˢ ball 0 R') := by
+  have hgconj : EqOn (g (σ i)) (fun b ↦ conj (g i (τ b.1, conj b.2)))
+      (U ×ˢ (ball 0 R' \ {0})) := by
+    intro b hb
+    simp only [(hga (σ i)).2 hb, (hga i).2 (hκS hb), hσ i b hb, map_mul, map_pow,
+      Complex.conj_conj]
+  exact TauCeti.eqOn_prod_of_eqOn_prod_diff_singleton isOpen_ball (hga (σ i)).1.continuousOn
+    (Complex.continuous_conj.comp_continuousOn ((hga i).1.continuousOn.comp hκ hκT)) hgconj
+
 /-- Construct nonmonic Puiseux branches and their pole-removed analytic extensions together
 with the unique involutive conjugation permutation. Coefficient symmetry is needed only off
 the distinguished hyperplane. The same labels act on the full-disc extensions, where roots
@@ -119,16 +142,7 @@ theorem exists_analyticOnNhd_nonmonic_powerSubstitution_conj
   obtain ⟨σ, ⟨hσσ, hσ⟩, huniq⟩ := TauCeti.existsUnique_root_conj_perm_of_subset_closure
     hSc subset_rfl subset_closure (fun i ↦ (hra i).continuousOn)
     (fun b hb ↦ (hfac b hb).1) hroot (hκ.mono hST) hκS hκS hκκ hsymm b₀
-  -- The removed pole is a real monomial, so scaling commutes with conjugation.
-  -- Continuity then carries the identity through the exceptional hyperplane.
-  have hgconj (i : Fin d) : EqOn (g (σ i)) (fun b ↦ conj (g i (κ b))) S := by
-    intro b hb
-    simp only [(hga (σ i)).2 hb, (hga i).2 (hκS hb), hσ i b hb,
-      κ, map_mul, map_pow, Complex.conj_conj]
-  have hgfull (i : Fin d) : EqOn (g (σ i)) (fun b ↦ conj (g i (κ b))) T :=
-    TauCeti.eqOn_prod_of_eqOn_prod_diff_singleton isOpen_ball (hga (σ i)).1.continuousOn
-      (Complex.continuous_conj.comp_continuousOn ((hga i).1.continuousOn.comp hκ hκT))
-      (hgconj i)
+  have hgfull := fun i ↦ eqOn_conj_extension hga hσ hκ hκT hκS i
   refine ⟨r, g, hra, hga, hfac, σ, ⟨hσσ, hσ, hgfull⟩, ?_⟩
   intro σ' hσ'
   exact huniq σ' ⟨hσ'.1, hσ'.2.1⟩
