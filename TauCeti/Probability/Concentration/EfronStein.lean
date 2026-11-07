@@ -45,22 +45,77 @@ namespace TauCeti.Probability
 
 universe u
 
+/-- The Efron–Stein inequality on `Measure.pi` over `Fin 0`. -/
+private theorem efronStein_zero {α : Fin 0 → Type u} [∀ i, MeasurableSpace (α i)]
+    (μ : ∀ i, Measure (α i)) [∀ i, IsProbabilityMeasure (μ i)] {f : (∀ i, α i) → ℝ} :
+    evariance f (Measure.pi μ) ≤
+      ∑ i, ∫⁻ x, evariance (fun y => f (Function.update x i y)) (μ i) ∂Measure.pi μ := by
+  have hc : ∀ ω, ∫ x, f x ∂Measure.pi μ = f ω := fun ω => by
+    have hconst : f = fun _ => f ω := funext fun x => by rw [Subsingleton.elim x ω]
+    rw [hconst]
+    simp
+  have h0 : ∀ ω, ‖f ω - f default‖ₑ ^ 2 = 0 := fun ω => by
+    rw [Subsingleton.elim ω default]
+    simp
+  rw [evariance, hc default]
+  simp [h0]
+
+/-- Freezing the `succAbove 0 j`-th coordinate after splitting off coordinate `0` agrees with
+freezing it in the original product. -/
+private theorem evariance_comp_piFinSuccAbove_symm_update_succAbove {n : ℕ}
+    {α : Fin (n + 1) → Type u} [∀ i, MeasurableSpace (α i)] (μ : ∀ i, Measure (α i))
+    (f : (∀ i, α i) → ℝ) (j : Fin n) (a : α 0) (w : ∀ j, α (Fin.succAbove 0 j)) :
+    evariance (fun y => f ((MeasurableEquiv.piFinSuccAbove α 0).symm
+        (a, Function.update w j y))) (μ (Fin.succAbove 0 j)) =
+      evariance (fun y => f (Function.update
+        ((MeasurableEquiv.piFinSuccAbove α 0).symm (a, w)) (Fin.succAbove 0 j) y))
+        (μ (Fin.succAbove 0 j)) := by
+  simp only [MeasurableEquiv.piFinSuccAbove_symm_apply, Fin.insertNthEquiv_apply,
+    Fin.insertNth_update]
+
+/-- Freezing all coordinates except `0` after splitting off coordinate `0` agrees with freezing
+them in the original product. -/
+private theorem evariance_comp_piFinSuccAbove_symm_update_zero {n : ℕ}
+    {α : Fin (n + 1) → Type u} [∀ i, MeasurableSpace (α i)] (μ : ∀ i, Measure (α i))
+    (f : (∀ i, α i) → ℝ) (a : α 0) (w : ∀ j, α (Fin.succAbove 0 j)) :
+    evariance (fun a' => f ((MeasurableEquiv.piFinSuccAbove α 0).symm (a', w))) (μ 0) =
+      evariance (fun y => f (Function.update
+        ((MeasurableEquiv.piFinSuccAbove α 0).symm (a, w)) 0 y)) (μ 0) := by
+  simp only [MeasurableEquiv.piFinSuccAbove_symm_apply, Fin.insertNthEquiv_apply,
+    Fin.update_insertNth]
+
+/-- Transport of a lower integral along the splitting of coordinate `0` off a finite product. -/
+private theorem lintegral_comp_piFinSuccAbove_symm {n : ℕ} {α : Fin (n + 1) → Type u}
+    [∀ i, MeasurableSpace (α i)] (μ : ∀ i, Measure (α i)) [∀ i, SigmaFinite (μ i)]
+    (g : (∀ i, α i) → ℝ≥0∞) :
+    ∫⁻ p, g ((MeasurableEquiv.piFinSuccAbove α 0).symm p)
+        ∂((μ 0).prod (Measure.pi fun j => μ (Fin.succAbove 0 j))) =
+      ∫⁻ x, g x ∂Measure.pi μ :=
+  ((measurePreserving_piFinSuccAbove μ 0).symm _).lintegral_comp_emb
+    (MeasurableEquiv.piFinSuccAbove α 0).symm.measurableEmbedding g
+
+/-- The average, over the remaining coordinates, of the variance in coordinate `0` is the `i = 0`
+term of the Efron–Stein sum. -/
+private theorem lintegral_evariance_piFinSuccAbove_symm_zero {n : ℕ} {α : Fin (n + 1) → Type u}
+    [∀ i, MeasurableSpace (α i)] (μ : ∀ i, Measure (α i)) [∀ i, IsProbabilityMeasure (μ i)]
+    {f : (∀ i, α i) → ℝ} (hf : Measurable f) :
+    ∫⁻ w, evariance (fun a => f ((MeasurableEquiv.piFinSuccAbove α 0).symm (a, w))) (μ 0)
+        ∂(Measure.pi fun j => μ (Fin.succAbove 0 j)) =
+      ∫⁻ x, evariance (fun y => f (Function.update x 0 y)) (μ 0) ∂Measure.pi μ := by
+  have hGp : Measurable fun p => evariance (fun y => f (Function.update
+      ((MeasurableEquiv.piFinSuccAbove α 0).symm p) 0 y)) (μ 0) :=
+    (measurable_evariance_update μ 0 hf).comp (MeasurableEquiv.piFinSuccAbove α 0).symm.measurable
+  rw [← lintegral_comp_piFinSuccAbove_symm μ, lintegral_prod _ hGp.aemeasurable]
+  simp_rw [← evariance_comp_piFinSuccAbove_symm_update_zero μ f]
+  rw [lintegral_const, measure_univ, mul_one]
+
 /-- The Efron–Stein inequality on `Measure.pi` over `Fin n`. -/
 private theorem efronStein_fin : ∀ {n : ℕ} {α : Fin n → Type u} [∀ i, MeasurableSpace (α i)]
     (μ : ∀ i, Measure (α i)) [∀ i, IsProbabilityMeasure (μ i)] {f : (∀ i, α i) → ℝ},
     Measurable f → MemLp f 2 (Measure.pi μ) →
     evariance f (Measure.pi μ) ≤
       ∑ i, ∫⁻ x, evariance (fun y => f (Function.update x i y)) (μ i) ∂Measure.pi μ
-  | 0, α, _, μ, _, f, _, _ => by
-    have hc : ∀ ω, ∫ x, f x ∂Measure.pi μ = f ω := fun ω => by
-      have hconst : f = fun _ => f ω := funext fun x => by rw [Subsingleton.elim x ω]
-      rw [hconst]
-      simp
-    have h0 : ∀ ω, ‖f ω - f default‖ₑ ^ 2 = 0 := fun ω => by
-      rw [Subsingleton.elim ω default]
-      simp
-    rw [evariance, hc default]
-    simp [h0]
+  | 0, _, _, μ, _, _, _, _ => efronStein_zero μ
   | n + 1, α, _, μ, _, f, hf, hL => by
     -- Split off coordinate `0`: `e` identifies `∀ i, α i` with
     -- `α 0 × ∀ j, α (succAbove 0 j)`.
@@ -76,25 +131,13 @@ private theorem efronStein_fin : ∀ {n : ℕ} {α : Fin n → Type u} [∀ i, M
     set G : Fin (n + 1) → (∀ i, α i) → ℝ≥0∞ :=
       fun i x => evariance (fun y => f (Function.update x i y)) (μ i) with hGdef
     have hGm : ∀ i, Measurable (G i) := fun i => measurable_evariance_update μ i hf
-    have hT : ∀ g : (∀ i, α i) → ℝ≥0∞,
-        ∫⁻ p, g (e.symm p) ∂((μ 0).prod (Measure.pi fun j => μ (Fin.succAbove 0 j))) =
-          ∫⁻ x, g x ∂Measure.pi μ := fun g =>
-      mps.lintegral_comp_emb e.symm.measurableEmbedding g
     have hEv : evariance f (Measure.pi μ) =
         evariance F ((μ 0).prod (Measure.pi fun j => μ (Fin.succAbove 0 j))) :=
       (mps.evariance_fun_comp e.symm.measurableEmbedding f).symm
     have hG : ∀ (j : Fin n) (a : α 0) (w : ∀ j, α (Fin.succAbove 0 j)),
         evariance (fun y => F (a, Function.update w j y)) (μ (Fin.succAbove 0 j)) =
-          G (Fin.succAbove 0 j) (e.symm (a, w)) := by
-      intro j a w
-      simp only [hGdef, hFdef, he, MeasurableEquiv.piFinSuccAbove_symm_apply,
-        Fin.insertNthEquiv_apply, Fin.insertNth_update]
-    have hG0 : ∀ (a : α 0) (w : ∀ j, α (Fin.succAbove 0 j)),
-        G 0 (e.symm (a, w)) = evariance (fun a' => F (a', w)) (μ 0) := by
-      intro a w
-      simp only [hGdef, hFdef, he, MeasurableEquiv.piFinSuccAbove_symm_apply,
-        Fin.insertNthEquiv_apply, Fin.update_insertNth]
-    -- Step 1: `evariance_prod_le` splits off the first coordinate from the rest.
+          G (Fin.succAbove 0 j) (e.symm (a, w)) := fun j a w =>
+      evariance_comp_piFinSuccAbove_symm_update_succAbove μ f j a w
     have hslice := hFL.ae_memLp_prod_right
     have hGp : ∀ j, Measurable fun p => G j (e.symm p) := fun j =>
       (hGm j).comp e.symm.measurable
@@ -114,13 +157,9 @@ private theorem efronStein_fin : ∀ {n : ℕ} {α : Fin n → Type u} [∀ i, M
             lintegral_finsetSum' _ fun j _ =>
               (Measurable.lintegral_prod_right' (hGp _)).aemeasurable
         _ = _ := Finset.sum_congr rfl fun j _ => by
-            rw [← hT, lintegral_prod _ (hGp _).aemeasurable]
+            rw [← lintegral_comp_piFinSuccAbove_symm μ, lintegral_prod _ (hGp _).aemeasurable]
     -- Step 3: the first-coordinate term is the `i = 0` summand.
-    have h2 : ∫⁻ w, evariance (fun a => F (a, w)) (μ 0)
-        ∂(Measure.pi fun j => μ (Fin.succAbove 0 j)) = ∫⁻ x, G 0 x ∂Measure.pi μ := by
-      rw [← hT, lintegral_prod _ (hGp 0).aemeasurable]
-      simp_rw [hG0]
-      rw [lintegral_const, measure_univ, mul_one]
+    have h2 := lintegral_evariance_piFinSuccAbove_symm_zero μ hf
     calc evariance f (Measure.pi μ) = evariance F _ := hEv
       _ ≤ _ := evariance_prod_le hFm hFL
       _ ≤ (∑ j : Fin n, ∫⁻ x, G (Fin.succAbove 0 j) x ∂Measure.pi μ) +
