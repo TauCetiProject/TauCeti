@@ -106,7 +106,7 @@ private theorem coneCell_normalize {n : ℕ} {a : Fin n → E →ᴬ[ℝ] ℝ}
 /-- A finite piecewise-affine map extends piecewise affinely over the whole geometric cone,
 including the apex. No boundedness, closedness or polyhedral assumption on the base is needed. -/
 theorem IsPiecewiseAffineOn.coneMap (hf : IsPiecewiseAffineOn f s) :
-    IsPiecewiseAffineOn (coneMap f) s.cone := by
+    IsPiecewiseAffineOn (coneMap ℝ f) (s.cone ℝ) := by
   classical
   obtain ⟨n, C, A, hC, hcover, heq⟩ := isPiecewiseAffineOn_iff.mp hf
   -- Height-zero recession directions lie outside the cone, so cells need no coordinate bounds.
@@ -166,7 +166,7 @@ theorem coneToJoin_apply (b : F) (p : F × ℝ) : coneToJoin b p = p.1 - p.2 •
 /-- A PL map on a compact base extends to a PL map of geometric cones, including at the apex.
 The target may be any real topological vector space. -/
 theorem IsPLOn.coneMap (hf : IsPLOn f s) (hs : IsCompact s) :
-    IsPLOn (coneMap f) s.cone := by
+    IsPLOn (coneMap ℝ f) (s.cone ℝ) := by
   exact (hf.isPiecewiseAffineOn_of_isCompact hs).coneMap.isPLOn
 
 end TauCeti

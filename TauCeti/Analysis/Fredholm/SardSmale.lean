@@ -171,7 +171,7 @@ private theorem surjective_fderiv_iff_slice (pkg : ContinuousLinearMap.FredholmP
   have hslice : HasFDerivAt (pkg.obstructionSlice hT y.1)
       ((fderiv ℝ q y).comp (ContinuousLinearMap.inr ℝ pkg.decCodom.X₁ pkg.decDom.X₀)) y.2 := by
     rw [hqdef]
-    exact pkg.hasFDerivAt_obstructionSlice hT hq
+    exact pkg.hasFDerivAt_obstructionSlice hT hq.hasFDerivAt
   rw [hstep₁, hufun, hslice.fderiv]
   -- Identify the codomain with its algebraic splitting, then apply the triangular-map criterion.
   let D := (fderiv ℝ q y).toLinearMap.toAddMonoidHom
@@ -273,7 +273,8 @@ private theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_of_
       fderiv ℝ (pkg.obstructionSlice hT y.1) y.2 = (fderiv ℝ q y).comp ι := by
     intro y hy
     rw [hqdef, hιdef]
-    exact (pkg.hasFDerivAt_obstructionSlice hT ((hVP y hy).2.1.differentiableAt hk0)).fderiv
+    exact (pkg.hasFDerivAt_obstructionSlice hT
+      ((hVP y hy).2.1.differentiableAt hk0).hasFDerivAt).fderiv
   -- Regularity of `f` on `N` is regularity of the finite-dimensional obstruction slice.
   have hcrit : ∀ x ∈ N, (Surjective (fderiv ℝ f x) ↔
       Surjective (fderiv ℝ (pkg.obstructionSlice hT (Φ x).1) (Φ x).2)) := by

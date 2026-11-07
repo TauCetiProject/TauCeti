@@ -7,12 +7,14 @@ module
 
 public import Mathlib.Algebra.Module.Submodule.Map
 public import Mathlib.Algebra.Module.Equiv.Basic
+public import Mathlib.RingTheory.Ideal.Maps
 
 /-!
 # Elementary linear-equivalence transport
 
 Transport of submodule stability through an intertwining semilinear equivalence.
 Symmetry of a linear automorphism agrees with inversion in its group structure.
+A ring isomorphism over a common target carries the kernel of one map to the kernel of the other.
 -/
 
 public section
@@ -38,3 +40,20 @@ theorem mem_of_preserves_map
   simpa [← hcomm] using hstable (Submodule.mem_map_of_mem hx)
 
 end LinearEquiv
+
+namespace RingEquiv
+
+/-- A ring isomorphism over a common target carries the kernel of one map to the kernel of the
+other, as a semilinear image. -/
+theorem map_ker_toSemilinearEquiv {A B S : Type*} [Semiring A] [Semiring B] [Semiring S]
+    (Φ : A ≃+* B) (g : A →+* S) (h : B →+* S)
+    (hΦ : ∀ x, h (Φ x) = g x) :
+    Submodule.map (Φ.toSemilinearEquiv : A →ₛₗ[(Φ : A →+* B)] B) (RingHom.ker g) =
+      RingHom.ker h := by
+  have : RingHomInvPair (Φ : A →+* B) (Φ.symm : B →+* A) := .of_ringEquiv Φ
+  have : RingHomInvPair (Φ.symm : B →+* A) (Φ : A →+* B) := .of_ringEquiv_symm Φ
+  ext y
+  rw [Submodule.mem_map_equiv, RingHom.mem_ker, RingHom.mem_ker, ← hΦ]
+  exact Iff.of_eq (congrArg (· = 0) (congrArg _ (Φ.apply_symm_apply y)))
+
+end RingEquiv
