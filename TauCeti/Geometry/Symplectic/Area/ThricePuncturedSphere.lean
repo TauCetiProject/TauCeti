@@ -157,15 +157,6 @@ private theorem isCompact_annulus (c : ℂ) (a b : ℝ) :
 private theorem ae_notMem_sphere : ∀ᵐ z ∂(volume : Measure ℂ), z ∉ sphere (1 : ℂ) (3 / 4) :=
   measure_eq_zero_iff_ae_notMem.1 (Measure.addHaar_sphere (μ := volume) (1 : ℂ) (3 / 4))
 
-/-- The area density of a map which is `C²` near a compact set is integrable on it. -/
-theorem integrableOn_fderiv_apply_of_contDiffAt (ω : SymplecticForm V) {v : ℂ → V} {K : Set ℂ}
-    (hK : IsCompact K) (hv : ∀ z ∈ K, ContDiffAt ℝ 2 v z) :
-    IntegrableOn (fun z ↦ ω (fderiv ℝ v z 1) (fderiv ℝ v z I)) K := by
-  have hcont : ContinuousOn (fderiv ℝ v) K := fun z hz ↦
-    ((hv z hz).fderiv_right (m := 1) (by norm_num)).continuousAt.continuousWithinAt
-  exact (ω.continuousOn_apply_comp (hcont.clm_apply continuousOn_const)
-    (hcont.clm_apply continuousOn_const)).integrableOn_compact hK
-
 omit [FiniteDimensional ℝ V] in
 /-- A map which is `C²` on `ℂ ∖ {0, 1}` can be cut off near `1`: there is a map `uc` which equals
 `u` away from `1`, vanishes near `1`, and is `C²` on `ℂ ∖ {0}`. -/
@@ -235,10 +226,10 @@ private theorem integral_cutoff_sdiff (ω : SymplecticForm V) {u uc : ℂ → V}
     conv_lhs => rw [← sdiff_union_of_subset hballA₀]
     exact setIntegral_union disjoint_sdiff_left measurableSet_ball
       (integrableOn_fderiv_apply_of_contDiffAt ω hA fun z hz ↦
-        huc (ne_zero_of_mem_annulus hr₀ hz.1))
+        (huc (ne_zero_of_mem_annulus hr₀ hz.1)).of_le (by norm_num))
       ((integrableOn_fderiv_apply_of_contDiffAt ω (isCompact_closedBall 1 (3 / 4))
-        fun z hz ↦ huc (ne_zero_of_norm_sub_one_lt
-          (by rw [mem_closedBall, dist_eq_norm] at hz; linarith))).mono_set
+        fun z hz ↦ (huc (ne_zero_of_norm_sub_one_lt
+          (by rw [mem_closedBall, dist_eq_norm] at hz; linarith))).of_le (by norm_num)).mono_set
         ball_subset_closedBall)
   rw [← hAu, ← hI₀, hAsplit]
 
@@ -304,13 +295,14 @@ private theorem integral_truncation_eq (ω : SymplecticForm V) {u : ℂ → V} {
       (hzB : z ∈ B ∩ ball (1 : ℂ) (3 / 4)) ↦ hzA.2 hzB.2)
       (hB.measurableSet.inter measurableSet_ball)
       (integrableOn_fderiv_apply_of_contDiffAt ω hA fun z hz ↦
-        hu z (ne_zero_of_mem_annulus hr₀ hz.1) fun h ↦ by
+        (hu z (ne_zero_of_mem_annulus hr₀ hz.1) fun h ↦ by
           subst h
           have := hAfar hz
-          norm_num at this)
+          norm_num at this).of_le (by norm_num))
       ((integrableOn_fderiv_apply_of_contDiffAt ω hB fun z hz ↦
-        hu z (ne_zero_ne_one_of_mem_annulus hr₀ hz).1
-          (ne_zero_ne_one_of_mem_annulus hr₀ hz).2).mono_set inter_subset_left),
+        (hu z (ne_zero_ne_one_of_mem_annulus hr₀ hz).1
+          (ne_zero_ne_one_of_mem_annulus hr₀ hz).2).of_le (by norm_num)).mono_set
+        inter_subset_left),
     setIntegral_eq_of_subset_of_ae_sdiff_eq_zero hB.measurableSet.nullMeasurableSet
       inter_subset_left ?_]
   filter_upwards [ae_notMem_sphere] with z hz hz'
