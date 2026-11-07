@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Order.BigOperators.Indicator
 public import TauCeti.Probability.DeFinetti.ViaKoopman.Decoupling
 
 /-!
@@ -71,16 +72,6 @@ namespace Probability
 
 variable {α : Type*} [MeasurableSpace α]
 
-/-- A finite product of `{0, 1}`-valued indicators of coordinates has absolute value at most
-one. -/
-theorem abs_prod_indicator_le_one {ι β : Type*} (s : Finset ι) (f : ι → β) (B : ι → Set β) :
-    |∏ i ∈ s, (B i).indicator (fun _ => (1 : ℝ)) (f i)| ≤ 1 := by
-  have h0 : (0 : ℝ) ≤ ∏ i ∈ s, (B i).indicator (fun _ => (1 : ℝ)) (f i) :=
-    Finset.prod_nonneg fun i _ => Set.indicator_apply_nonneg fun _ => zero_le_one
-  rw [abs_of_nonneg h0]
-  exact Finset.prod_le_one₀ (fun i _ => Set.indicator_apply_nonneg fun _ => zero_le_one)
-    fun i _ => Set.indicator_apply_le' (fun _ => le_rfl) fun _ => zero_le_one
-
 /-- Multiplying an almost surely bounded weight by the conditional expectation of a coordinate
 indicator keeps the bound `1`. -/
 private theorem ae_abs_mul_condExp_indicator_le_one {ρ : Measure (ℕ → α)}
@@ -127,7 +118,7 @@ theorem setIntegral_weight_mul_blockIndicatorProd_prefix_eq_prod_condExp
     have hg_meas : Measurable g :=
       Finset.measurable_prod _ fun i _ =>
         (measurable_const.indicator (hB _)).comp (measurable_pi_apply i)
-    have hg_bdd : ∀ y, |g y| ≤ 1 := fun y => abs_prod_indicator_le_one _ _ _
+    have hg_bdd : ∀ y, |g y| ≤ 1 := fun y => Finset.abs_prod_indicator_le_one _ _ _
     -- The weight for the inductive step: the peeled factor joins it.
     have hwE : Measurable[MeasurableSpace.invariants (shift α)] fun x => w x * E x :=
       hw.mul (stronglyMeasurable_condExp).measurable
