@@ -97,30 +97,6 @@ theorem _root_.IsCompact.exists_contDiff_cutoff [NormedSpace ℝ E] [FiniteDimen
     exact hf_range x
   exact ⟨ψ, hψ_smooth, hψ_range, hψ_eq_one_nhds, hψ_compact, hψ_tsupp⟩
 
-/-- A compact set contained in an open set admits a smooth cutoff whose value and gradient are
-bounded by a common nonnegative constant. -/
-theorem _root_.IsCompact.exists_contDiff_cutoff_with_bounds [InnerProductSpace ℝ E]
-    [FiniteDimensional ℝ E]
-    {K U : Set E} (hK : IsCompact K) (hU : IsOpen U) (hKU : K ⊆ U) :
-    ∃ ψ : E → ℝ, ∃ M : ℝ,
-      ContDiff ℝ ∞ ψ ∧ range ψ ⊆ Icc 0 1 ∧
-        K ⊆ interior (ψ ⁻¹' {1}) ∧ HasCompactSupport ψ ∧ tsupport ψ ⊆ U ∧
-          0 ≤ M ∧ (∀ x, |ψ x| ≤ M) ∧ ∀ x, ‖∇ ψ x‖ ≤ M := by
-  obtain ⟨ψ, hψ, hψ_range, hψ_one_nhds, hψ_cpt, hψ_ts⟩ :=
-    hK.exists_contDiff_cutoff hU hKU
-  have hψ_mem : ∀ x, ψ x ∈ Icc (0 : ℝ) 1 := fun x => hψ_range (mem_range_self x)
-  obtain ⟨C, hC⟩ := (hψ.continuous_fderiv (by simp)).norm.bddAbove_range_of_hasCompactSupport
-    ((hψ_cpt.fderiv ℝ).norm)
-  let M : ℝ := max 1 C
-  have hM0 : (0 : ℝ) ≤ M := zero_le_one.trans (le_max_left _ _)
-  have hψM : ∀ x, |ψ x| ≤ M := fun x => by
-    rw [abs_of_nonneg (hψ_mem x).1]
-    exact (hψ_mem x).2.trans (le_max_left _ _)
-  have hgradψM : ∀ x, ‖∇ ψ x‖ ≤ M := fun x => by
-    rw [_root_.gradient, LinearIsometryEquiv.norm_map]
-    exact (hC ⟨x, rfl⟩).trans (le_max_right _ _)
-  exact ⟨ψ, M, hψ, hψ_range, hψ_one_nhds, hψ_cpt, hψ_ts, hM0, hψM, hgradψM⟩
-
 /-- A compactly supported `C¹` function and its gradient are bounded by a common nonnegative
 constant. -/
 theorem _root_.ContDiff.exists_abs_le_and_norm_gradient_le [InnerProductSpace ℝ E]
@@ -134,6 +110,19 @@ theorem _root_.ContDiff.exists_abs_le_and_norm_gradient_le [InnerProductSpace �
     exact (hC ⟨x, rfl⟩).trans ((le_max_left _ _).trans (le_max_right _ _))
   · rw [_root_.gradient, LinearIsometryEquiv.norm_map]
     exact (hD ⟨x, rfl⟩).trans ((le_max_right _ _).trans (le_max_right _ _))
+
+/-- A compact set contained in an open set admits a smooth cutoff whose value and gradient are
+bounded by a common nonnegative constant. -/
+theorem _root_.IsCompact.exists_contDiff_cutoff_with_bounds [InnerProductSpace ℝ E]
+    [FiniteDimensional ℝ E]
+    {K U : Set E} (hK : IsCompact K) (hU : IsOpen U) (hKU : K ⊆ U) :
+    ∃ ψ : E → ℝ, ∃ M : ℝ,
+      ContDiff ℝ ∞ ψ ∧ range ψ ⊆ Icc 0 1 ∧
+        K ⊆ interior (ψ ⁻¹' {1}) ∧ HasCompactSupport ψ ∧ tsupport ψ ⊆ U ∧
+          0 ≤ M ∧ (∀ x, |ψ x| ≤ M) ∧ ∀ x, ‖∇ ψ x‖ ≤ M := by
+  obtain ⟨ψ, hψ, hr, h1, hc, hs⟩ := hK.exists_contDiff_cutoff hU hKU
+  obtain ⟨M, hM, hψM, hg⟩ := (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hc
+  exact ⟨ψ, M, hψ, hr, h1, hc, hs, hM, hψM, hg⟩
 
 /-- A bilinear product is globally `C^k` when both factors are locally `C^k` on an open set
 containing the topological support of the second factor. The first factor is unrestricted
