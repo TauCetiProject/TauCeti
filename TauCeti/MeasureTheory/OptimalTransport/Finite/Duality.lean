@@ -134,6 +134,12 @@ theorem finiteDualValue_mono {φ φ' : ι → ℝ} {ψ ψ' : κ → ℝ} (hφ : 
   · exact mul_le_mul_of_nonneg_left (hφ i) ENNReal.toReal_nonneg
   · exact mul_le_mul_of_nonneg_left (hψ j) ENNReal.toReal_nonneg
 
+/-- The dual value is monotone up to the opposite additive shifts of the two potentials. -/
+theorem finiteDualValue_le_of_le_add_const {φ φ' : ι → ℝ} {ψ ψ' : κ → ℝ} (a : ℝ)
+    (hφ : ∀ i, φ i ≤ φ' i + a) (hψ : ∀ j, ψ j ≤ ψ' j - a) :
+    finiteDualValue μ ν φ ψ ≤ finiteDualValue μ ν φ' ψ' :=
+  (finiteDualValue_mono hφ hψ).trans_eq (finiteDualValue_add_const_sub_const μ ν φ' ψ' a)
+
 /-! ### The standard-simplex picture
 
 Convexity and compactness arguments are run on real-valued plans, which form a closed subset of
@@ -345,21 +351,14 @@ private theorem exists_bounded_of_feasible [Nonempty ι] [Nonempty κ] {M : ℝ}
   -- Package feasibility and the two uniform bounds, then compare the dual values.
   refine ⟨φ₂, ψ₃, fun i j ↦ by linarith [hψ₃le i j], fun i ↦ ?_, fun j ↦ ?_, ?_⟩
   · exact abs_le.2 ⟨hφ₂lb i, hφ₂ub i⟩
-  · refine abs_le.2 ⟨?_, ?_⟩
-    · obtain ⟨i₁, hi₁⟩ := exists_eq_ciInf_of_finite (f := fun i ↦ c (i, j) - φ₂ i)
-      have := hlb (i₁, j)
-      have := hφ₂ub i₁
-      rw [hψ₃ j, ← hi₁]; linarith
-    · have := hψ₃le i₀ j
-      rw [hφ₂i₀, sub_zero] at this
-      linarith [hub (i₀, j), this]
-  · refine (finiteDualValue_mono hmonoφ hmonoψ).trans ?_
-    have hshift : finiteDualValue μ ν φ₂ ψ₂ = finiteDualValue μ ν φ₁ ψ₁ := by
-      have : (fun i ↦ φ₁ i + -φ₁ i₀) = φ₂ := funext fun i ↦ (hφ₂ i).symm
-      have h' : (fun j ↦ ψ₁ j - -φ₁ i₀) = ψ₂ := funext fun j ↦ (hψ₂ j).symm
-      rw [← this, ← h', finiteDualValue_add_const_sub_const]
-    rw [← hshift]
-    exact finiteDualValue_mono (fun i ↦ le_rfl) hmonoψ₃
+  · rw [hψ₃ j]
+    refine abs_le.2 ⟨le_ciInf fun i ↦ by linarith [hlb (i, j), hφ₂ub i],
+      (ciInf_le (Finite.bddBelow_range _) i₀).trans ?_⟩
+    rw [hφ₂i₀, sub_zero]
+    linarith [hub (i₀, j), hM0]
+  · refine finiteDualValue_le_of_le_add_const (φ₁ i₀) (fun i ↦ ?_) (fun j ↦ ?_)
+    · linarith [hmonoφ i, hφ₂ i]
+    · linarith [hmonoψ j, hψ₂ j, hmonoψ₃ j]
 
 /-- **Dual attainment**: on finite spaces the dual problem has a maximiser. -/
 theorem exists_forall_finiteDualValue_le (c : ι × κ → ℝ) (μ : PMF ι) (ν : PMF κ) :
