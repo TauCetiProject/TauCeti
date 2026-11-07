@@ -335,16 +335,6 @@ private theorem exists_laurentPath_of_pathData [Fintype n] {v w : n → K}
       reflectionMatrix (pathVector v w X Y) E).map (φ : K[T;T⁻¹] →+* K) = _
     rw [map_reflectionMatrix_mul, reflectionMatrix_comp_pathVector_right φ hX hY]
 
-/-- An algebra homomorphism from the Laurent polynomials sends a constant to itself. -/
-@[simp]
-private theorem algHom_apply_C (φ : K[T;T⁻¹] →ₐ[K] K) (x : K) : φ (C x) = x := by
-  rw [C_eq_algebraMap, AlgHom.commutes, Algebra.algebraMap_self_apply]
-
-/-- An algebra homomorphism sending `T 1` to a unit `u` sends `T (-1)` to `u⁻¹`. -/
-private theorem apply_T_neg_one {φ : K[T;T⁻¹] →ₐ[K] K} {u : Kˣ} (h : φ (T 1) = u) :
-    φ (T (-1)) = (u : K)⁻¹ := by
-  rw [laurentEval_unique u φ h, laurentEval_T, zpow_neg, zpow_one, Units.val_inv_eq_inv_val]
-
 /-- **The degenerate case.** If `(v ⬝ᵥ w)² = (v ⬝ᵥ v)(w ⬝ᵥ w)`, there is a one-parameter family in
 `SO(n, K[T;T⁻¹])` from `1` to the product of the reflections in `v` and `w`. -/
 private theorem exists_laurentPath_reflectionMatrix_mul_of_degenerate [Fintype n]
@@ -438,7 +428,7 @@ private theorem eval_nondegenerate_of_eq_neg_one [NeZero (2 : K)] {a b s : K} (h
       φ (-C b + C s + T 1 * (-C b - C s)) * φ (-C b + C s + T 1 * (-C b - C s)) *
         φ (C (-(2 * a * (s * s))⁻¹) * T (-1)) = 2 / a := by
   have hφ2 : φ (T (-1)) = -1 := by
-    rw [apply_T_neg_one (u := -1) (by rw [hφ, Units.val_neg, Units.val_one]), Units.val_neg,
+    rw [algHom_apply_T_neg_one (u := -1) (by rw [hφ, Units.val_neg, Units.val_one]), Units.val_neg,
       Units.val_one]
     norm_num
   have hX : φ (-C b + C s + T 1 * (-C b - C s)) = 2 * s := by
@@ -465,7 +455,7 @@ private theorem eval_nondegenerate_of_eq_div [NeZero (2 : K)] {a b s q : K} (ha 
         2 / q := by
   have hφ1 : φ (T 1) = -((b - s) / (b + s)) := by rw [hφ, hu]
   have hφ2 : φ (T (-1)) = -((b + s) / (b - s)) := by
-    rw [apply_T_neg_one hφ, hu, ← neg_inv, inv_div]
+    rw [algHom_apply_T_neg_one hφ, hu, ← neg_inv, inv_div]
   have hX : φ (-C b + C s + T 1 * (-C b - C s)) = 0 := by
     simp only [map_add, map_neg, map_mul, map_sub, algHom_apply_C, hφ1]
     field_simp
