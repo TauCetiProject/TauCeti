@@ -11,6 +11,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Separated
 public import Mathlib.AlgebraicGeometry.Stalk
 public import TauCeti.Topology.NoetherianSpace.ClosedPoints
 
+import TauCeti.RingTheory.Spectrum.Prime.Topology
 import TauCeti.Topology.KrullDimension.Basic
 
 /-!
@@ -285,10 +286,8 @@ theorem _root_.AlgebraicGeometry.Scheme.fromSpecStalk_eq_specMap_comp_fromSpecSt
     X.SpecMap_stalkSpecializes_fromSpecStalk ((genericPoint_spec X).specializes trivial)
   set ι := Spec.map (CommRingCat.ofHom (algebraMap (X.presheaf.stalk x) X.functionField))
   have hdom : IsDominant ι :=
-    ⟨(PrimeSpectrum.denseRange_comap_iff_ker_le_nilRadical _).mpr (by
-      rw [CommRingCat.hom_ofHom, (RingHom.injective_iff_ker_eq_bot _).mp
-        (IsFractionRing.injective (X.presheaf.stalk x) X.functionField)]
-      exact bot_le)⟩
+    ⟨RingHom.denseRange_comap_of_injective _
+      (IsFractionRing.injective (X.presheaf.stalk x) X.functionField)⟩
   refine ext_of_isDominant (f := X.fromSpecStalk x)
     (g := Spec.map (CommRingCat.ofHom e) ≫ X.fromSpecStalk y) ι ?_
   have hr : CommRingCat.ofHom e ≫
