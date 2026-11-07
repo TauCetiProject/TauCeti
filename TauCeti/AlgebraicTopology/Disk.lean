@@ -167,6 +167,14 @@ def diskBoundaryHomeomorph (n : ℕ) :
     (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ (Equiv.ulift.{u}.symm : Fin n ≃ ULift.{u} (Fin n)))
       |>.toHomeomorph.subtype fun x ↦ by simp
 
+/-- The point of the unit sphere of `EuclideanSpace ℝ (ULift (Fin n))` corresponding to a point of
+the boundary sphere under `TauCeti.diskBoundaryHomeomorph` has the same coordinates, reindexed. -/
+lemma coe_diskBoundaryHomeomorph_apply {n : ℕ} (x : TopCat.diskBoundary.{u} n) :
+    (diskBoundaryHomeomorph n x : EuclideanSpace ℝ (ULift.{u} (Fin n))) =
+      LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ (Equiv.ulift.{u}.symm : Fin n ≃ ULift.{u} (Fin n))
+        x.down :=
+  (rfl)
+
 /-- The coordinates of the point of the boundary sphere corresponding to a point of the unit sphere
 of `EuclideanSpace ℝ (ULift (Fin n))` under `TauCeti.diskBoundaryHomeomorph`. -/
 lemma diskBoundaryHomeomorph_symm_apply_down_apply {n : ℕ}
@@ -268,10 +276,6 @@ lemma finrank_euclideanSpace_ulift_fin (n : ℕ) :
 instance t2Space_diskBoundary (n : ℕ) : T2Space (TopCat.diskBoundary.{u} n) :=
   -- Expose the carrier once here, so consumers need not unfold the `TopCat` wrapper.
   inferInstanceAs (T2Space (ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1)))
-
-/-- A disk boundary is compact, as the lifted Euclidean unit sphere. -/
-instance compactSpace_diskBoundary (n : ℕ) : CompactSpace (TopCat.diskBoundary.{u} n) :=
-  inferInstanceAs (CompactSpace (ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1)))
 
 /-- The boundary of the `0`-disk is empty. -/
 instance isEmpty_diskBoundary_zero : IsEmpty (TopCat.diskBoundary.{u} 0) :=
