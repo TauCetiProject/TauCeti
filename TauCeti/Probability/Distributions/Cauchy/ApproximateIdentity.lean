@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Probability.Distributions.Cauchy
 public import Mathlib.Topology.ContinuousMap.Bounded.Normed
+import TauCeti.Analysis.Normed.Module.ModulusOfContinuity
 import TauCeti.Probability.Distributions.Cauchy.Basic
 import TauCeti.Probability.Distributions.Cauchy.Continuity
 
@@ -25,7 +26,8 @@ changing the limit.
 The concentration of the kernel itself is the weak convergence of Cauchy laws to the Dirac law,
 `TauCeti.Probability.tendsto_cauchyMeasure_nhds_zero_dirac`. Away from the origin `g` changes by
 at most its modulus of continuity, and the rest is controlled by integrating a bounded continuous
-weight vanishing at the origin against `P_γ`.
+weight vanishing at the origin against `P_γ`; the pointwise split is
+`TauCeti.norm_smul_sub_le_add_mul_min_dist_div`.
 
 ## Main declarations
 
@@ -58,38 +60,6 @@ private theorem tendsto_integral_cauchyPDFReal_mul (f : BoundedContinuousFunctio
   refine (h.mono_left nhdsWithin_le_nhds).congr' ?_
   filter_upwards [self_mem_nhdsWithin] with γ hγ
   simp only [integral_cauchyMeasure_eq 0 hγ, smul_eq_mul]
-
-/-- The pointwise error `h(s) g(t - s) - g(t)` is at most `H η` plus a weight which is
-continuous in `s` and vanishes at `s = 0`, when `g` moves by less than `η` over distances `δ`. -/
-private theorem norm_smul_sub_le {g : ℝ → E} {M : ℝ} (hgM : ∀ t, ‖g t‖ ≤ M) {h : ℝ → ℝ} {H : ℝ}
-    (hhH : ∀ s, |h s| ≤ H) {δ η : ℝ} (hδ : 0 < δ)
-    (hgδ : ∀ ⦃a b : ℝ⦄, dist a b < δ → dist (g a) (g b) < η) (t s : ℝ) :
-    ‖h s • g (t - s) - g t‖ ≤ H * η + (2 * H * M * min 1 (|s| / δ) + M * |h s - 1|) := by
-  have hH : 0 ≤ H := (abs_nonneg _).trans (hhH s)
-  have hgs : ‖g (t - s) - g t‖ ≤ η + 2 * M * min 1 (|s| / δ) := by
-    by_cases hs : |s| < δ
-    · have hts : dist (t - s) t < δ := by simpa [Real.dist_eq] using hs
-      have := hgδ hts
-      rw [dist_eq_norm] at this
-      have hM : 0 ≤ M := (norm_nonneg _).trans (hgM 0)
-      have : 0 ≤ min 1 (|s| / δ) := le_min zero_le_one (by positivity)
-      nlinarith
-    · rw [min_eq_left ((one_le_div hδ).2 (not_lt.1 hs))]
-      -- `η` is positive, as `g` moves by less than `η` from `t` to itself.
-      have hη : 0 < η := by simpa using hgδ (a := t) (b := t) (by simpa using hδ)
-      linarith [norm_sub_le (g (t - s)) (g t), hgM (t - s), hgM t]
-  have hsplit : h s • g (t - s) - g t = h s • (g (t - s) - g t) + (h s - 1) • g t := by
-    rw [smul_sub, sub_smul, one_smul]
-    abel
-  rw [hsplit]
-  refine (norm_add_le _ _).trans ?_
-  rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs]
-  have h1 : |h s| * ‖g (t - s) - g t‖ ≤ H * (η + 2 * M * min 1 (|s| / δ)) :=
-    mul_le_mul (hhH s) hgs (norm_nonneg _) hH
-  have h2 : |h s - 1| * ‖g t‖ ≤ M * |h s - 1| := by
-    rw [mul_comm]
-    exact mul_le_mul_of_nonneg_right (hgM t) (abs_nonneg _)
-  nlinarith
 
 /-- If `‖h(s) g(t - s) - g(t)‖ ≤ c + v(s)` for a bounded continuous `v`, then the weighted
 Poisson integral of `g` at `t` differs from `g t` by at most `c + ∫ P_γ v`. -/
@@ -175,7 +145,8 @@ theorem tendstoUniformly_integral_mul_cauchyPDFReal_smul [CompleteSpace E] {g : 
   rw [dist_eq_norm']
   refine (norm_integral_mul_cauchyPDFReal_smul_sub_le hγ
     (hh.smul (hg.continuous.comp (continuous_const.sub continuous_id))) hv hvb
-    (norm_smul_sub_le hgM hhH hδ hgδ t)).trans_lt ?_
+    fun s ↦ by simpa [Real.dist_eq] using
+      norm_smul_sub_le_add_mul_min_dist_div hgM hδ hgδ (hhH s) (t - s) t).trans_lt ?_
   linarith [Set.mem_Iio.1 hγε]
 
 end TauCeti.Probability
