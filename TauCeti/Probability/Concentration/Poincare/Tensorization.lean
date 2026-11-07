@@ -7,10 +7,10 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
-public import TauCeti.Probability.Concentration.PoincareLogSobolev
+public import TauCeti.Probability.Concentration.Poincare.LogSobolev
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
-import Mathlib.MeasureTheory.Integral.Marginal
-import TauCeti.Analysis.Calculus.FDeriv.PiLp
+import TauCeti.MeasureTheory.Integral.Pi
+import TauCeti.Analysis.Calculus.FDeriv.Pi.Lp
 import TauCeti.Probability.Concentration.EfronStein
 
 /-!
@@ -39,39 +39,6 @@ open scoped ENNReal NNReal ContDiff
 
 namespace MeasureTheory.Measure
 
-section Measure
-variable {ι : Type*} [Fintype ι] [DecidableEq ι] {E : ι → Type*}
-  [∀ i, MeasurableSpace (E i)]
-private lemma lintegral_resample (μ : ∀ i, Measure (E i)) [∀ i, IsProbabilityMeasure (μ i)]
-    {g : (∀ i, E i) → ℝ≥0∞} (hg : Measurable g) (i : ι) :
-    (∫⁻ x, ∫⁻ y, g (Function.update x i y) ∂μ i ∂Measure.pi μ) =
-      ∫⁻ x, g x ∂Measure.pi μ := by
-  have hm : Measurable (fun q : (∀ j, E j) × E i ↦ g (Function.update q.1 i q.2)) :=
-    hg.comp measurable_update'
-  apply lintegral_eq_of_lmarginal_eq (μ := μ) {i} hm.lintegral_prod_right hg
-  simp only [lmarginal_singleton]
-  funext x
-  simp only [Function.update_idem]
-  simp
-
-private lemma ae_memLp_resample (μ : ∀ i, Measure (E i)) [∀ i, IsProbabilityMeasure (μ i)]
-    {g : (∀ i, E i) → ℝ} (hg : Measurable g) (hL : MemLp g 2 (Measure.pi μ)) (i : ι) :
-    ∀ᵐ x ∂Measure.pi μ, MemLp (fun y ↦ g (Function.update x i y)) 2 (μ i) := by
-  have hm : Measurable (fun q : (∀ j, E j) × E i ↦ g (Function.update q.1 i q.2)) :=
-    hg.comp measurable_update'
-  have hupdate : MemLp (fun q : (∀ j, E j) × E i ↦ g (Function.update q.1 i q.2))
-      2 ((Measure.pi μ).prod (μ i)) := by
-    apply (eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top (p := 2) (by norm_num) (by norm_num)
-      hm.aestronglyMeasurable).mpr
-    change (∫⁻ q : (∀ j, E j) × E i, ‖g (Function.update q.1 i q.2)‖ₑ ^ (2 : ℝ)
-      ∂(Measure.pi μ).prod (μ i)) < ⊤
-    rw [lintegral_prod _ (hm.enorm.pow_const (2 : ℝ)).aemeasurable,
-      lintegral_resample μ (hg.enorm.pow_const (2 : ℝ)) i]
-    exact (eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top (p := 2) (by norm_num) (by norm_num)
-      hg.aestronglyMeasurable).mp hL
-  exact hupdate.ae_memLp_prod_right
-
-end Measure
 
 variable {ι : Type*} [Fintype ι] {E : ι → Type*}
   [∀ i, NormedAddCommGroup (E i)] [∀ i, InnerProductSpace ℝ (E i)]
@@ -109,8 +76,8 @@ theorem PoincareInequality.piLp (μ : ∀ i, Measure (E i)) [∀ i, IsProbabilit
     have hsec : ∀ᵐ x ∂Measure.pi μ,
         evariance (fun y ↦ F (Function.update x i y)) (μ i) ≤
           (C : ℝ≥0∞) * ∫⁻ y, (ENNReal.ofReal ‖G (Function.update x i y) i‖) ^ 2 ∂μ i := by
-      filter_upwards [ae_memLp_resample μ hFm hFL i,
-        ae_memLp_resample μ (hGim i) (hGiL i) i]
+      filter_upwards [TauCeti.ae_memLp_two_pi_update μ hFm hFL i,
+        TauCeti.ae_memLp_two_pi_update μ (hGim i) (hGiL i) i]
         with x hxF hxG
       have hs : ContDiff ℝ ∞ (fun y ↦ F (Function.update x i y)) :=
         hf.comp (PiLp.contDiff_toLp.comp (contDiff_update ∞ x i))
@@ -136,7 +103,7 @@ theorem PoincareInequality.piLp (μ : ∀ i, Measure (E i)) [∀ i, IsProbabilit
             ∂Measure.pi μ := lintegral_mono_ae hsec
       _ = _ := by
         rw [lintegral_const_mul' _ _ ENNReal.coe_ne_top,
-          lintegral_resample μ ((hGim i).ennreal_ofReal.pow_const 2) i]
+          TauCeti.lintegral_pi_update μ ((hGim i).ennreal_ofReal.pow_const 2) i]
   have hsum : (∑ i, (C : ℝ≥0∞) *
       ∫⁻ x, (ENNReal.ofReal ‖G x i‖) ^ 2 ∂Measure.pi μ) =
         (C : ℝ≥0∞) * ∫⁻ x, (ENNReal.ofReal ‖G x‖) ^ 2 ∂Measure.pi μ := by

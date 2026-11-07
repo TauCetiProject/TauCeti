@@ -40,9 +40,9 @@ theorem norm_fderiv_update (f : PiLp 2 E → ℝ) (x : ∀ i, E i) (i : ι) (y :
   have hcomp := hf.hasFDerivAt.comp y
     ((PiLp.hasFDerivAt_toLp (𝕜 := ℝ) 2 (Function.update x i y)).comp y
       (hasFDerivAt_update (𝕜 := ℝ) x y))
+  simp only [Function.comp_def] at hcomp
   have heq : fderiv ℝ (fun z ↦ f (WithLp.toLp 2 (Function.update x i z))) y =
       toDual ℝ (E i) (gradient f (WithLp.toLp 2 (Function.update x i y)) i) := by
-    change fderiv ℝ (f ∘ WithLp.toLp 2 ∘ Function.update x i) y = _
     rw [hcomp.fderiv]
     ext v
     simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
@@ -54,9 +54,7 @@ theorem norm_fderiv_update (f : PiLp 2 E → ℝ) (x : ∀ i, E i) (i : ι) (y :
       by_cases hj : j = i
       · subst j; simp
       · simp [ContinuousLinearMap.pi_apply, Pi.single_eq_of_ne hj]
-    rw [hsingle]
-    change fderiv ℝ f (WithLp.toLp 2 (Function.update x i y)) (PiLp.single 2 i v) = _
-    rw [← inner_gradient_left]
+    rw [hsingle, PiLp.toLp_single, ← inner_gradient_left]
     rw [PiLp.inner_apply, Finset.sum_eq_single i]
     · simp
     · intro j _ hj
