@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.PowerBounds
+
 /-!
 # Negative powers of the distance to a point, integrated along a segment
 
@@ -20,8 +22,10 @@ The geometric input is that on the segment from `w` to `z`, parametrized by `[0,
 distance to `p` is at least the length of the segment times the distance of the parameter to a
 fixed parameter `c`, namely the foot of the perpendicular from `p` clamped to `[0, 1]`; the
 Cauchy--Schwarz inequality is what makes the comparison work.  Both pieces of the parameter
-interval then compare with a power of the distance to `c`, whose integral Mathlib computes, and
-the singularity contributes only the finite constant `2 / (u + 1)`.
+interval then compare with a power of the distance to `c`, through the one-sided estimates
+`intervalIntegral.integral_le_of_le_mul_rpow_sub_right` and `..._left` of
+`TauCeti.MeasureTheory.Integral.IntervalIntegral.PowerBounds`, and the singularity contributes
+only the finite constant `2 / (u + 1)`.
 
 ## Main results
 
@@ -86,63 +90,6 @@ theorem exists_mem_Icc_mul_abs_sub_le_dist (p z w : ℂ) :
     _ ≤ ‖A + s • B‖ := key s
     _ = dist (w + s • B) p := by rw [dist_eq_norm, hseg]
 
-end Complex
-
-namespace intervalIntegral
-
-/-- A nonnegative function bounded on `[a, b]` (away from `a`) by `K * (s - a) ^ u` with
-`-1 < u` is interval integrable on `[a, b]`, and its integral is at most
-`K * ((b - a) ^ (u + 1) / (u + 1))`. -/
-theorem intervalIntegrable_and_integral_le_of_le_mul_rpow_sub_right {f : ℝ → ℝ} {a b K u : ℝ}
-    (hu : -1 < u) (hab : a ≤ b) (hf0 : ∀ s, 0 ≤ f s) (hmeas : AEStronglyMeasurable f volume)
-    (hbound : ∀ s ∈ Icc a b, s ≠ a → f s ≤ K * (s - a) ^ u) :
-    IntervalIntegrable f volume a b ∧
-      ∫ s in a..b, f s ≤ K * ((b - a) ^ (u + 1) / (u + 1)) := by
-  have hu1 : (0 : ℝ) < u + 1 := by linarith
-  have hint : IntervalIntegrable (fun s : ℝ => K * (s - a) ^ u) volume a b := by
-    have h := (intervalIntegrable_rpow' (a := 0) (b := b - a) hu).comp_sub_right a
-    simpa using h.const_mul K
-  have hi : IntervalIntegrable f volume a b := by
-    refine hint.mono_fun' hmeas.restrict ?_
-    filter_upwards [Measure.ae_ne (volume.restrict (uIoc a b)) a,
-      self_mem_ae_restrict measurableSet_uIoc] with s hsne hsmem
-    rw [uIoc_of_le hab] at hsmem
-    rw [Real.norm_of_nonneg (hf0 s)]
-    exact hbound s (Ioc_subset_Icc_self hsmem) hsne
-  refine ⟨hi, (integral_mono_ae_restrict hab hi hint ?_).trans_eq ?_⟩
-  · filter_upwards [Measure.ae_ne (volume.restrict (Icc a b)) a,
-      self_mem_ae_restrict (measurableSet_Icc (a := a) (b := b))] with s hsne hsmem
-    exact hbound s hsmem hsne
-  · rw [integral_const_mul, integral_comp_sub_right (fun x : ℝ => x ^ u) a, sub_self,
-      integral_rpow (Or.inl hu), Real.zero_rpow hu1.ne']
-    ring
-
-/-- The mirror image of
-`intervalIntegral.intervalIntegrable_and_integral_le_of_le_mul_rpow_sub_right`: the singularity
-is at the right endpoint `b`. -/
-theorem intervalIntegrable_and_integral_le_of_le_mul_rpow_sub_left {f : ℝ → ℝ} {a b K u : ℝ}
-    (hu : -1 < u) (hab : a ≤ b) (hf0 : ∀ s, 0 ≤ f s) (hmeas : AEStronglyMeasurable f volume)
-    (hbound : ∀ s ∈ Icc a b, s ≠ b → f s ≤ K * (b - s) ^ u) :
-    IntervalIntegrable f volume a b ∧
-      ∫ s in a..b, f s ≤ K * ((b - a) ^ (u + 1) / (u + 1)) := by
-  obtain ⟨hi, hle⟩ :=
-    intervalIntegrable_and_integral_le_of_le_mul_rpow_sub_right (f := fun s => f (a + b - s))
-      (K := K) hu hab (fun s => hf0 _)
-      (hmeas.comp_quasiMeasurePreserving
-        (quasiMeasurePreserving_sub_left_of_right_invariant volume (a + b)))
-      (fun s hs hsa => by
-        have := hbound (a + b - s) ⟨by linarith [hs.2], by linarith [hs.1]⟩
-          (fun h => hsa (by linarith))
-        rwa [show b - (a + b - s) = s - a by ring] at this)
-  refine ⟨?_, ?_⟩
-  · simpa using (hi.comp_sub_left (a + b)).symm
-  · rwa [integral_comp_sub_left f (a + b), show a + b - b = a by ring,
-      show a + b - a = b by ring] at hle
-
-end intervalIntegral
-
-namespace Complex
-
 /-- The arclength integral of a nonpositive power of the distance to `p` along the segment from
 `w` to `z`: the parameter integral over `[0, 1]` is multiplied by the length `‖z - w‖` of the
 segment.  For `-1 < u ≤ 0`, the bound `2 / (u + 1) * ‖z - w‖ ^ (u + 1)` is uniform in the
@@ -168,16 +115,31 @@ theorem integral_dist_rpow_segment_le {p : ℂ} {u : ℝ} (hu : -1 < u) (hu0 : u
     calc dist (w + s • (z - w)) p ^ u ≤ (‖z - w‖ * |s - c|) ^ u :=
           Real.rpow_le_rpow_of_nonpos hpos (hclamp s hs) hu0
       _ = ‖z - w‖ ^ u * |s - c| ^ u := Real.mul_rpow (norm_nonneg _) (abs_nonneg _)
+  have hmeasc : AEStronglyMeasurable (fun s : ℝ => dist (w + s • (z - w)) p ^ u)
+      (volume.restrict (Icc (0 : ℝ) 1)) := hmeas.restrict
+  have hnn' : ∀ s ∈ Icc (0 : ℝ) 1, 0 ≤ dist (w + s • (z - w)) p ^ u := fun s _ => hnn s
   -- the piece to the right of the foot of the perpendicular
-  obtain ⟨hi2, hb2⟩ := intervalIntegral.intervalIntegrable_and_integral_le_of_le_mul_rpow_sub_right
-    (a := c) (b := 1) (K := ‖z - w‖ ^ u) hu hc.2 hnn hmeas fun s hs hsne => by
-      have hb := hbnd s ⟨hc.1.trans hs.1, hs.2⟩ hsne
-      rwa [abs_of_pos (sub_pos.mpr (lt_of_le_of_ne hs.1 hsne.symm))] at hb
+  have hbr : ∀ s ∈ Icc c 1, s ≠ c →
+      dist (w + s • (z - w)) p ^ u ≤ ‖z - w‖ ^ u * (s - c) ^ u := fun s hs hsne => by
+    have hb := hbnd s ⟨hc.1.trans hs.1, hs.2⟩ hsne
+    rwa [abs_of_pos (sub_pos.mpr (lt_of_le_of_ne hs.1 hsne.symm))] at hb
+  have hi2 := intervalIntegral.intervalIntegrable_of_le_mul_rpow_sub_right
+    (a := c) (b := 1) (K := ‖z - w‖ ^ u) hu hc.2 (fun s hs => hnn' s ⟨hc.1.trans hs.1, hs.2⟩)
+    (hmeasc.mono_measure (Measure.restrict_mono (Icc_subset_Icc hc.1 le_rfl) le_rfl)) hbr
+  have hb2 := intervalIntegral.integral_le_of_le_mul_rpow_sub_right
+    (a := c) (b := 1) (K := ‖z - w‖ ^ u) hu hc.2 (fun s hs => hnn' s ⟨hc.1.trans hs.1, hs.2⟩)
+    (hmeasc.mono_measure (Measure.restrict_mono (Icc_subset_Icc hc.1 le_rfl) le_rfl)) hbr
   -- the piece to the left of the foot of the perpendicular
-  obtain ⟨hi1, hb1⟩ := intervalIntegral.intervalIntegrable_and_integral_le_of_le_mul_rpow_sub_left
-    (a := 0) (b := c) (K := ‖z - w‖ ^ u) hu hc.1 hnn hmeas fun s hs hsne => by
-      have hb := hbnd s ⟨hs.1, hs.2.trans hc.2⟩ hsne
-      rwa [abs_of_neg (sub_neg.mpr (lt_of_le_of_ne hs.2 hsne)), neg_sub] at hb
+  have hbl : ∀ s ∈ Icc 0 c, s ≠ c →
+      dist (w + s • (z - w)) p ^ u ≤ ‖z - w‖ ^ u * (c - s) ^ u := fun s hs hsne => by
+    have hb := hbnd s ⟨hs.1, hs.2.trans hc.2⟩ hsne
+    rwa [abs_of_neg (sub_neg.mpr (lt_of_le_of_ne hs.2 hsne)), neg_sub] at hb
+  have hi1 := intervalIntegral.intervalIntegrable_of_le_mul_rpow_sub_left
+    (a := 0) (b := c) (K := ‖z - w‖ ^ u) hu hc.1 (fun s hs => hnn' s ⟨hs.1, hs.2.trans hc.2⟩)
+    (hmeasc.mono_measure (Measure.restrict_mono (Icc_subset_Icc le_rfl hc.2) le_rfl)) hbl
+  have hb1 := intervalIntegral.integral_le_of_le_mul_rpow_sub_left
+    (a := 0) (b := c) (K := ‖z - w‖ ^ u) hu hc.1 (fun s hs => hnn' s ⟨hs.1, hs.2.trans hc.2⟩)
+    (hmeasc.mono_measure (Measure.restrict_mono (Icc_subset_Icc le_rfl hc.2) le_rfl)) hbl
   rw [sub_zero] at hb1
   have hsplit : (∫ s in (0 : ℝ)..1, dist (w + s • (z - w)) p ^ u)
       = (∫ s in (0 : ℝ)..c, dist (w + s • (z - w)) p ^ u)
