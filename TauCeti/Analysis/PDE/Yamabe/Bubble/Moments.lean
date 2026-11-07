@@ -369,7 +369,9 @@ theorem abs_setIntegral_ball_norm_sub_sq_mul_bubble_sq_sub_mul_log_le_of_finrank
   have h := abs_setIntegral_ball_norm_sub_rpow_mul_bubble_sq_sub_mul_log_le μ
     (by omega) ht hR b
   norm_num only [hn, Nat.cast_ofNat, Nat.reduceSub, Real.rpow_two, Nat.reducePow] at h
-  ring_nf at h ⊢
-  exact h
+  have hcoeff (y : ℝ) :
+      6 * μ.real (ball (0 : E) 1) * (8 * t ^ 4 * y) =
+        48 * μ.real (ball (0 : E) 1) * t ^ 4 * y := by ring
+  simpa only [hcoeff] using h
 
 end TauCeti.Yamabe
