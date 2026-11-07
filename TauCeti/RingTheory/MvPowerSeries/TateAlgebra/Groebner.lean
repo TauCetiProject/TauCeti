@@ -337,7 +337,7 @@ private theorem exists_reduction_step (m : MonomialOrder σ) (deg : R → ℕ)
   have hcoeff (t : σ →₀ ℕ) : coeff t ((y - a * x : IsRestricted.subring (R := R) c) :
       MvPowerSeries σ R) = coeff t (y : MvPowerSeries σ R) -
         if K ≤ t then z * coeff (t - K) (x : MvPowerSeries σ R) else 0 := by
-    rw [ha_def, AddSubgroupClass.coe_sub, map_sub, coeff_monomial_mul_subring]
+    rw [ha_def, AddSubgroupClass.coe_sub, map_sub, Subring.coe_mul, coeff_monomial_mul]
   -- The size `‖z * cx‖ wJ = ‖a‖ ‖x‖` of the subtracted multiple.
   have hax : ‖a‖ * ‖x‖ = ‖z * cx‖ * J.prod (c · ^ ·) := by
     rw [hna, ← hI₁, norm_mul, ← hKI, prod_pow_add]

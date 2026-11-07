@@ -332,16 +332,6 @@ theorem norm_monomial (t : σ →₀ ℕ) (a : R) :
       (⟨monomial t a, isRestricted_monomial _ t a⟩ :
         IsRestricted.subring (R := R) c) t
 
-omit [∀ i, Fact (0 < c i)] in
-/-- The coefficients of the product of a restricted monomial with a restricted series. -/
-theorem coeff_monomial_mul_subring (K : σ →₀ ℕ) (z : R) (x : IsRestricted.subring (R := R) c)
-    (t : σ →₀ ℕ) :
-    coeff t ((⟨monomial K z, isRestricted_monomial c K z⟩ * x :
-        IsRestricted.subring (R := R) c) : MvPowerSeries σ R) =
-      if K ≤ t then z * coeff (t - K) (x : MvPowerSeries σ R) else 0 := by
-  rw [Subring.coe_mul]
-  exact coeff_monomial_mul ..
-
 /-- Constants retain their coefficient norm. -/
 @[simp]
 theorem norm_C (a : R) :
