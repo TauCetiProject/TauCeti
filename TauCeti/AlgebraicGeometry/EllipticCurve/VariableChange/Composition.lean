@@ -45,10 +45,31 @@ def first : ComposablePairs ⟶ Spec (.of ArrowRing) :=
 def second : ComposablePairs ⟶ Spec (.of ArrowRing) :=
   Spec.map (CommRingCat.ofHom (ChangeRing.map rightUnit))
 
+/-- The first projection is induced by the inclusion of the first coefficient ring. -/
+theorem first_def : first =
+    Spec.map (CommRingCat.ofHom (algebraMap ArrowRing (ChangeRing ArrowRing))) := (rfl)
+
+/-- The second projection is induced by coefficient extension of the right unit. -/
+theorem second_def : second =
+    Spec.map (CommRingCat.ofHom (ChangeRing.map rightUnit)) := (rfl)
+
 /-- The composable-pair scheme is the fibre product of target and source. -/
 theorem isPullback_first_second : IsPullback first second target source := by
-  simpa only [first, second, target_def, source_def] using
+  simpa only [first_def, second_def, target_def, source_def] using
     isPullback_SpecMap_of_isPushout _ _ _ _ (ChangeRing.isPushout rightUnit)
+
+/-- A ring map out of the composable-pair ring induces the pullback lift of its two
+restrictions. -/
+theorem lift_specMap {R : Type} [CommRing R] (k : ChangeRing ArrowRing →+* R) :
+    isPullback_first_second.lift
+      (Spec.map (CommRingCat.ofHom (k.comp (algebraMap ArrowRing _))))
+      (Spec.map (CommRingCat.ofHom (k.comp (ChangeRing.map rightUnit))))
+      (by simp only [target_def, source_def, ← Spec.map_comp, ← CommRingCat.ofHom_comp,
+        RingHom.comp_assoc, map_comp_algebraMap]) =
+      Spec.map (CommRingCat.ofHom k) := by
+  apply isPullback_first_second.hom_ext
+  · simp [first_def, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
+  · simp [second_def, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
 
 /-- The target of the first arrow equals the source of the second. -/
 @[reassoc (attr := simp)]
@@ -59,16 +80,19 @@ theorem first_target : first ≫ target = second ≫ source :=
 def composition : ComposablePairs ⟶ Spec (.of ArrowRing) :=
   Spec.map (CommRingCat.ofHom coproduct)
 
+/-- Composition is induced by the Hopf-algebroid coproduct. -/
+theorem composition_def : composition = Spec.map (CommRingCat.ofHom coproduct) := (rfl)
+
 /-- Composition has the source of the first arrow. -/
 @[reassoc (attr := simp)]
 theorem composition_source : composition ≫ source = first ≫ source := by
-  simp only [composition, first, source_def, ← Spec.map_comp, ← CommRingCat.ofHom_comp,
+  simp only [composition_def, first_def, source_def, ← Spec.map_comp, ← CommRingCat.ofHom_comp,
     coproduct_comp_algebraMap]
 
 /-- Composition has the target of the second arrow. -/
 @[reassoc (attr := simp)]
 theorem composition_target : composition ≫ target = second ≫ target := by
-  simp only [composition, second, target_def, ← Spec.map_comp, ← CommRingCat.ofHom_comp,
+  simp only [composition_def, second_def, target_def, ← Spec.map_comp, ← CommRingCat.ofHom_comp,
     coproduct_comp_rightUnit]
 
 /-- Pair an identity arrow with the arrow following it. -/
@@ -106,12 +130,9 @@ theorem identityFirst_composition : identityFirst ≫ composition = 𝟙 _ := by
     ⟨((algebraMap (MvPolynomial WeierstrassCurve.Coeff ℤ) ArrowRing).comp counit,
       RingHom.id ArrowRing), by simp [RingHom.comp_assoc]⟩
   have hk : identityFirst = Spec.map (CommRingCat.ofHom k) := by
-    apply isPullback_first_second.hom_ext
-    · rw [identityFirst_first]
-      simp [first, k, source_def, identity_def, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
-    · rw [identityFirst_second]
-      simp [second, k, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
-  rw [hk, composition, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
+    simpa [identityFirst, k, source_def, identity_def, ← Spec.map_comp,
+      ← CommRingCat.ofHom_comp] using lift_specMap k
+  rw [hk, composition_def, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
   simpa only [k, CommRingCat.ofHom_id, Spec.map_id] using
     congrArg (fun f ↦ Spec.map (CommRingCat.ofHom f)) pushoutLift_counit_id_comp_coproduct
 
@@ -121,12 +142,9 @@ theorem identitySecond_composition : identitySecond ≫ composition = 𝟙 _ := 
   let k := pushoutLift rightUnit
     ⟨(RingHom.id ArrowRing, rightUnit.comp counit), by simp [RingHom.comp_assoc]⟩
   have hk : identitySecond = Spec.map (CommRingCat.ofHom k) := by
-    apply isPullback_first_second.hom_ext
-    · rw [identitySecond_first]
-      simp [first, k, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
-    · rw [identitySecond_second]
-      simp [second, k, target_def, identity_def, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
-  rw [hk, composition, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
+    simpa [identitySecond, k, target_def, identity_def, ← Spec.map_comp,
+      ← CommRingCat.ofHom_comp] using lift_specMap k
+  rw [hk, composition_def, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
   simpa only [k, CommRingCat.ofHom_id, Spec.map_id] using
     congrArg (fun f ↦ Spec.map (CommRingCat.ofHom f)) pushoutLift_id_counit_comp_coproduct
 
@@ -164,12 +182,8 @@ theorem arrowInverse_composition : arrowInverse ≫ composition = source ≫ ide
   let k := pushoutLift rightUnit
     ⟨(RingHom.id ArrowRing, conjugation), by simp⟩
   have hk : arrowInverse = Spec.map (CommRingCat.ofHom k) := by
-    apply isPullback_first_second.hom_ext
-    · rw [arrowInverse_first]
-      simp [first, k, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
-    · rw [arrowInverse_second]
-      simp [second, k, inversion_hom, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
-  rw [hk, composition, source_def, identity_def, ← Spec.map_comp, ← Spec.map_comp,
+    simpa [arrowInverse, k, inversion_hom] using lift_specMap k
+  rw [hk, composition_def, source_def, identity_def, ← Spec.map_comp, ← Spec.map_comp,
     ← CommRingCat.ofHom_comp, ← CommRingCat.ofHom_comp]
   exact congrArg (fun f ↦ Spec.map (CommRingCat.ofHom f))
     pushoutLift_id_conjugation_comp_coproduct
@@ -180,12 +194,8 @@ theorem inverseArrow_composition : inverseArrow ≫ composition = target ≫ ide
   let k := pushoutLift rightUnit
     ⟨(conjugation, RingHom.id ArrowRing), by simp⟩
   have hk : inverseArrow = Spec.map (CommRingCat.ofHom k) := by
-    apply isPullback_first_second.hom_ext
-    · rw [inverseArrow_first]
-      simp [first, k, inversion_hom, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
-    · rw [inverseArrow_second]
-      simp [second, k, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
-  rw [hk, composition, target_def, identity_def, ← Spec.map_comp, ← Spec.map_comp,
+    simpa [inverseArrow, k, inversion_hom] using lift_specMap k
+  rw [hk, composition_def, target_def, identity_def, ← Spec.map_comp, ← Spec.map_comp,
     ← CommRingCat.ofHom_comp, ← CommRingCat.ofHom_comp]
   exact congrArg (fun f ↦ Spec.map (CommRingCat.ofHom f))
     pushoutLift_conjugation_id_comp_coproduct
@@ -201,31 +211,49 @@ def initialPair : ComposableTriples ⟶ ComposablePairs :=
 def last : ComposableTriples ⟶ Spec (.of ArrowRing) :=
   Spec.map (CommRingCat.ofHom (ChangeRing.map ((ChangeRing.map rightUnit).comp rightUnit)))
 
+/-- The initial pair is induced by inclusion into the triple coefficient ring. -/
+theorem initialPair_def : initialPair =
+    Spec.map (CommRingCat.ofHom (algebraMap (ChangeRing ArrowRing) _)) := (rfl)
+
+/-- The last arrow is induced by coefficient extension along the target of the initial pair. -/
+theorem last_def : last =
+    Spec.map (CommRingCat.ofHom (ChangeRing.map ((ChangeRing.map rightUnit).comp rightUnit))) :=
+  (rfl)
+
 /-- The triple scheme is the fibre product adjoining a third composable arrow. -/
 theorem isPullback_initialPair_last : IsPullback initialPair last (second ≫ target) source := by
-  simpa only [initialPair, last, source_def, second, target_def,
+  simpa only [initialPair_def, last_def, source_def, second_def, target_def,
     ← Spec.map_comp, ← CommRingCat.ofHom_comp] using
     isPullback_SpecMap_of_isPushout _ _ _ _
       (ChangeRing.isPushout ((ChangeRing.map rightUnit).comp rightUnit))
+
+/-- The second arrow of the initial pair ends at the source of the last arrow. -/
+@[reassoc (attr := simp)]
+theorem initialPair_second_target : initialPair ≫ second ≫ target = last ≫ source := by
+  simpa only [Category.assoc] using isPullback_initialPair_last.w
 
 /-- The second and third arrows of a composable triple. -/
 def suffix : ComposableTriples ⟶ ComposablePairs :=
   Spec.map (CommRingCat.ofHom (ChangeRing.map (ChangeRing.map rightUnit)))
 
+/-- The suffix is induced by coefficient extension of the second-factor inclusion. -/
+theorem suffix_def : suffix =
+    Spec.map (CommRingCat.ofHom (ChangeRing.map (ChangeRing.map rightUnit))) := (rfl)
+
 /-- The first arrow in the suffix is the second arrow in the prefix. -/
 @[reassoc (attr := simp)]
 theorem suffix_first : suffix ≫ first = initialPair ≫ second := by
-  simp [suffix, first, initialPair, second, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
+  simp [suffix_def, first_def, initialPair_def, second_def, ← Spec.map_comp,
+    ← CommRingCat.ofHom_comp]
 
 /-- The last arrow in the suffix is the final arrow of the triple. -/
 @[reassoc (attr := simp)]
 theorem suffix_second : suffix ≫ second = last := by
-  simp [suffix, second, last, ← Spec.map_comp, ← CommRingCat.ofHom_comp, map_comp]
+  simp [suffix_def, second_def, last_def, ← Spec.map_comp, ← CommRingCat.ofHom_comp, map_comp]
 
 /-- Compose the first two arrows, leaving the third unchanged. -/
 def composePrefix : ComposableTriples ⟶ ComposablePairs :=
-  isPullback_first_second.lift (initialPair ≫ composition) last (by
-    simpa using isPullback_initialPair_last.w)
+  isPullback_first_second.lift (initialPair ≫ composition) last (by simp)
 
 /-- Leave the first arrow unchanged and compose the final two. -/
 def composeSuffix : ComposableTriples ⟶ ComposablePairs :=
@@ -252,29 +280,19 @@ theorem composeSuffix_second : composeSuffix ≫ second = suffix ≫ composition
   isPullback_first_second.lift_snd _ _ _
 
 /-- Composition of Weierstrass arrows is associative on the scheme of composable triples. -/
+@[reassoc]
 theorem composition_assoc : composePrefix ≫ composition = composeSuffix ≫ composition := by
-  let k₁ := pushoutLift rightUnit
-    ⟨((algebraMap (ChangeRing ArrowRing) _).comp coproduct,
-      ChangeRing.map ((ChangeRing.map rightUnit).comp rightUnit)), by
-      dsimp only
-      rw [RingHom.comp_assoc, coproduct_comp_rightUnit, map_comp_algebraMap]⟩
   let k₂ := pushoutLift rightUnit
     ⟨((algebraMap (ChangeRing ArrowRing) _).comp (algebraMap ArrowRing _),
       (ChangeRing.map (ChangeRing.map rightUnit)).comp coproduct), by
       exact RingHom.ext fun x ↦ by simp⟩
-  have h₁ : composePrefix = Spec.map (CommRingCat.ofHom k₁) := by
-    apply isPullback_first_second.hom_ext
-    · rw [composePrefix_first]
-      simp [first, initialPair, composition, k₁, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
-    · rw [composePrefix_second]
-      simp [second, last, k₁, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
+  have h₁ : composePrefix = Spec.map (CommRingCat.ofHom coproductLeft) := by
+    simpa [composePrefix, initialPair_def, composition_def, last_def, ← Spec.map_comp,
+      ← CommRingCat.ofHom_comp] using lift_specMap coproductLeft
   have h₂ : composeSuffix = Spec.map (CommRingCat.ofHom k₂) := by
-    apply isPullback_first_second.hom_ext
-    · rw [composeSuffix_first]
-      simp [first, initialPair, k₂, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
-    · rw [composeSuffix_second]
-      simp [second, suffix, composition, k₂, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
-  rw [h₁, h₂, composition, ← Spec.map_comp, ← Spec.map_comp,
+    simpa [composeSuffix, initialPair_def, first_def, suffix_def, composition_def, k₂,
+      ← Spec.map_comp, ← CommRingCat.ofHom_comp] using lift_specMap k₂
+  rw [h₁, h₂, composition_def, ← Spec.map_comp, ← Spec.map_comp,
     ← CommRingCat.ofHom_comp, ← CommRingCat.ofHom_comp]
   exact congrArg (fun f ↦ Spec.map (CommRingCat.ofHom f)) coproduct_coassoc
 
