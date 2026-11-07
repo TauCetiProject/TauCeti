@@ -128,13 +128,6 @@ theorem coordinateMap_def :
         (definingHopfIdeal R n) :=
   GeneralLinear.weightParabolicCoordinateMap_def R (weights n)
 
-/-- The upper-triangular coordinate morphism sends an ambient coordinate to its quotient
-class. -/
-theorem coordinateMap_apply (h : GeneralLinear.coordinateHopfAlgebra R n) :
-    (coordinateMap R n).hom h =
-      Ideal.Quotient.mkₐ R (definingHopfIdeal R n).toIdeal h :=
-  GeneralLinear.weightParabolicCoordinateMap_apply R (weights n) h
-
 /-- The upper-triangular affine group scheme. -/
 noncomputable abbrev groupScheme :=
   GeneralLinear.weightParabolicGroupScheme R (weights n)
@@ -446,7 +439,8 @@ theorem pointsMulEquiv_rootSubgroupCoordinateMap (hij : i < j)
   ext a b
   rw [GeneralLinear.pointToGeneralLinear_apply, CommHopfAlgCat.quotientPointsHom_apply_apply]
   simp only [AlgHom.comp_apply, BialgHom.coe_toAlgHom]
-  rw [← coordinateMap_apply, ← CommHopfAlgCat.comp_apply,
+  rw [← GeneralLinear.weightParabolicCoordinateMap_apply R (weights n),
+    ← CommHopfAlgCat.comp_apply,
     coordinateMap_comp_rootSubgroupCoordinateMap, GeneralLinear.rootSubgroupCoordinateMap_apply_X]
   simp [Matrix.transvection, Matrix.one_apply, Matrix.single_apply, apply_ite f.ofConv]
 
