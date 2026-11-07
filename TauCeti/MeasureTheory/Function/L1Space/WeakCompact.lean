@@ -111,6 +111,61 @@ theorem isCompact_closure_toWeakSpace_of_uniformIntegrable {A : Set (Lp 𝕜 1 �
       rw [Lp.norm_def, eLpNorm_congr_ae hae]
       exact ENNReal.toReal_le_of_le_ofReal hε.le (hC ⟨f, hf⟩)
 
+omit [IsFiniteMeasure μ] in
+/-- The measurable hulls of sets of measure at most `(n + 1)⁻¹` have measure tending to zero. -/
+theorem tendsto_measure_toMeasurable_of_le_inv {t : ℕ → Set α}
+    (ht : ∀ n : ℕ, μ (t n) ≤ ((n : ℝ≥0∞) + 1)⁻¹) :
+    Tendsto (fun n ↦ μ (toMeasurable μ (t n))) atTop (𝓝 0) := by
+  have hinv : Tendsto (fun n : ℕ ↦ ((n : ℝ≥0∞) + 1)⁻¹) atTop (𝓝 0) := by
+    refine (ENNReal.tendsto_inv_nat_nhds_zero.comp (tendsto_add_atTop_nat 1)).congr fun n ↦ ?_
+    simp
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hinv (fun _ ↦ zero_le)
+    fun n ↦ ?_
+  simpa only [measure_toMeasurable] using ht n
+
+/-- If `u n` tends weakly to `f` in `L¹`, the integrals of `u n - f` over every set tend to
+zero. -/
+theorem tendsto_setIntegral_sub_of_tendsto_toWeakSpace {ι : Type*} {l : Filter ι}
+    {u : ι → Lp 𝕜 1 μ} {f : Lp 𝕜 1 μ}
+    (hlim : Tendsto (fun n ↦ toWeakSpace 𝕜 (Lp 𝕜 1 μ) (u n)) l
+      (𝓝 (toWeakSpace 𝕜 (Lp 𝕜 1 μ) f)))
+    (S : Set α) :
+    Tendsto (fun k ↦ ∫ x in S, ((u k : α → 𝕜) x - (f : α → 𝕜) x) ∂μ) l (𝓝 0) := by
+  have hS' := TauCeti.tendsto_toWeakSpace_iff_forall_eval_tendsto.1 hlim
+    (Set.setIntegralLp (𝕜 := 𝕜) S (measure_lt_top μ S))
+  simp only [Set.setIntegralLp_apply] at hS'
+  refine (tendsto_sub_nhds_zero_iff.2 hS').congr fun k ↦ ?_
+  exact (integral_sub (L1.integrable_coeFn _).integrableOn
+    (L1.integrable_coeFn f).integrableOn).symm
+
+omit [IsFiniteMeasure μ] in
+/-- If `g` has `L¹` mass more than `ε` on a set `S` and `f` has mass at most `ε / 2` there, then
+`g - f` has mass more than `ε / 2` on `S`. -/
+theorem half_lt_lintegral_enorm_sub {f g : α → 𝕜} (hf : AEStronglyMeasurable f μ) {S : Set α}
+    {ε : ℝ≥0∞} (hg : ε < ∫⁻ x in S, ‖g x‖ₑ ∂μ) (hfS : ∫⁻ x in S, ‖f x‖ₑ ∂μ ≤ ε / 2) :
+    ε / 2 < ∫⁻ x in S, ‖g x - f x‖ₑ ∂μ := by
+  by_contra! hle
+  have hsplit : ∫⁻ x in S, ‖g x‖ₑ ∂μ ≤
+      ∫⁻ x in S, ‖g x - f x‖ₑ ∂μ + ∫⁻ x in S, ‖f x‖ₑ ∂μ := by
+    rw [← lintegral_add_right' _ hf.enorm.restrict]
+    refine lintegral_mono fun x ↦ ?_
+    calc ‖g x‖ₑ = ‖(g x - f x) + f x‖ₑ := by simp
+      _ ≤ ‖g x - f x‖ₑ + ‖f x‖ₑ := enorm_add_le _ _
+  have := hg.trans_le (hsplit.trans (add_le_add hle hfS))
+  rw [ENNReal.add_halves] at this
+  exact lt_irrefl _ this
+
+omit [IsFiniteMeasure μ] in
+/-- If the integrals of `‖f j‖` over the sets `B j` tend to zero, so do the lower Lebesgue
+integrals of `‖f j‖ₑ`. -/
+theorem tendsto_lintegral_enorm_of_tendsto_integral_norm {ι : Type*} {l : Filter ι}
+    {f : ι → α → 𝕜} {B : ι → Set α} (hf : ∀ j, Integrable (f j) μ)
+    (h : Tendsto (fun j ↦ ∫ x in B j, ‖f j x‖ ∂μ) l (𝓝 0)) :
+    Tendsto (fun j ↦ ∫⁻ x in B j, ‖f j x‖ₑ ∂μ) l (𝓝 0) := by
+  refine (ENNReal.tendsto_ofReal h).congr' (.of_forall fun j ↦ ?_) |>.trans ?_
+  · exact ofReal_integral_norm_eq_lintegral_enorm (hf j).integrableOn
+  · rw [ENNReal.ofReal_zero]
+
 /-- **Dunford–Pettis theorem**, necessity: for a finite measure, a subset of scalar `L¹` with
 weakly compact closure is bounded and uniformly integrable. -/
 theorem uniformIntegrable_of_isCompact_closure_toWeakSpace {A : Set (Lp 𝕜 1 μ)}
@@ -132,13 +187,8 @@ theorem uniformIntegrable_of_isCompact_closure_toWeakSpace {A : Set (Lp 𝕜 1 �
   -- Replace the sets by measurable supersets of the same measure.
   set s : ℕ → Set α := fun n ↦ toMeasurable μ (t n)
   have hsm (n : ℕ) : MeasurableSet (s n) := measurableSet_toMeasurable _ _
-  have hμs : Tendsto (fun n ↦ μ (s n)) atTop (𝓝 0) := by
-    have hinv : Tendsto (fun n : ℕ ↦ ((n : ℝ≥0∞) + 1)⁻¹) atTop (𝓝 0) := by
-      refine (ENNReal.tendsto_inv_nat_nhds_zero.comp (tendsto_add_atTop_nat 1)).congr fun n ↦ ?_
-      simp
-    refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hinv (fun _ ↦ zero_le)
-      fun n ↦ ?_
-    simpa only [s, measure_toMeasurable] using ht n
+  have hμs : Tendsto (fun n ↦ μ (s n)) atTop (𝓝 0) :=
+    tendsto_measure_toMeasurable_of_le_inv ht
   have hbig (n : ℕ) : ε < ∫⁻ x in s n, ‖(i n : α → 𝕜) x‖ₑ ∂μ := by
     rw [← eLpNorm_one_eq_lintegral_enorm (Lp.aestronglyMeasurable _).restrict]
     exact (hit n).trans_le
@@ -148,30 +198,16 @@ theorem uniformIntegrable_of_isCompact_closure_toWeakSpace {A : Set (Lp 𝕜 1 �
     (u := fun n ↦ (i n : Lp 𝕜 1 μ)) fun n ↦ (i n).2
   set h : ℕ → α → 𝕜 := fun k x ↦ (i (τ k) : α → 𝕜) x - (f : α → 𝕜) x
   have hh (k : ℕ) : Integrable (h k) μ := (L1.integrable_coeFn _).sub (L1.integrable_coeFn f)
-  have hset (S : Set α) (hS : MeasurableSet S) :
-      Tendsto (fun k ↦ ∫ x in S, h k x ∂μ) atTop (𝓝 0) := by
-    have hS' := TauCeti.tendsto_toWeakSpace_iff_forall_eval_tendsto.1 hlim
-      (Set.setIntegralLp (𝕜 := 𝕜) S (measure_lt_top μ S))
-    simp only [Set.setIntegralLp_apply] at hS'
-    refine (tendsto_sub_nhds_zero_iff.2 hS').congr fun k ↦ ?_
-    exact (integral_sub (L1.integrable_coeFn _).integrableOn
-      (L1.integrable_coeFn f).integrableOn).symm
+  have hset (S : Set α) (_ : MeasurableSet S) :
+      Tendsto (fun k ↦ ∫ x in S, h k x ∂μ) atTop (𝓝 0) :=
+    tendsto_setIntegral_sub_of_tendsto_toWeakSpace (u := fun k ↦ (i (τ k) : Lp 𝕜 1 μ)) hlim S
   -- Along the subsequence, the integrals of `‖h k‖` over the small sets stay above `ε / 2`.
   have hμsτ : Tendsto (fun k ↦ μ (s (τ k))) atTop (𝓝 0) := hμs.comp hτ.tendsto_atTop
   obtain ⟨K, hK⟩ := eventually_atTop.1 (ENNReal.tendsto_nhds_zero.1
     (tendsto_setLIntegral_zero (L1.integrable_coeFn f).2.ne hμsτ) (ε / 2)
       (ENNReal.half_pos hε.ne'))
-  have hbig' (k : ℕ) (hk : K ≤ k) : ε / 2 < ∫⁻ x in s (τ k), ‖h k x‖ₑ ∂μ := by
-    by_contra! hle
-    have hsplit : ∫⁻ x in s (τ k), ‖(i (τ k) : α → 𝕜) x‖ₑ ∂μ ≤
-        ∫⁻ x in s (τ k), ‖h k x‖ₑ ∂μ + ∫⁻ x in s (τ k), ‖(f : α → 𝕜) x‖ₑ ∂μ := by
-      rw [← lintegral_add_right' _ (L1.integrable_coeFn f).1.enorm.restrict]
-      refine lintegral_mono fun x ↦ ?_
-      calc ‖(i (τ k) : α → 𝕜) x‖ₑ = ‖h k x + (f : α → 𝕜) x‖ₑ := by simp [h]
-        _ ≤ ‖h k x‖ₑ + ‖(f : α → 𝕜) x‖ₑ := enorm_add_le _ _
-    have := (hbig (τ k)).trans_le (hsplit.trans (add_le_add hle (hK k hk)))
-    rw [ENNReal.add_halves] at this
-    exact lt_irrefl _ this
+  have hbig' (k : ℕ) (hk : K ≤ k) : ε / 2 < ∫⁻ x in s (τ k), ‖h k x‖ₑ ∂μ :=
+    half_lt_lintegral_enorm_sub (L1.integrable_coeFn f).1 (hbig (τ k)) (hK k hk)
   -- Shrink the small sets to disjoint ones and apply the gliding hump lemma.
   obtain ⟨σ, hσ, B, hBm, hB, -, hσB⟩ := exists_strictMono_pairwise_disjoint_lintegral_le
     (f := fun j x ↦ ‖h (j + K) x‖ₑ) (s := fun j ↦ s (τ (j + K)))
@@ -184,10 +220,7 @@ theorem uniformIntegrable_of_isCompact_closure_toWeakSpace {A : Set (Lp 𝕜 1 �
     exact lt_irrefl _ this
   have hzero := tendsto_setIntegral_norm_of_pairwise_disjoint (fun j ↦ hh (σ j + K))
     (fun S hS ↦ (hset S hS).comp ((tendsto_add_atTop_nat K).comp hσ.tendsto_atTop)) hBm hB
-  have hzero' : Tendsto (fun j ↦ ∫⁻ x in B j, ‖h (σ j + K) x‖ₑ ∂μ) atTop (𝓝 0) := by
-    refine (ENNReal.tendsto_ofReal hzero).congr' (.of_forall fun j ↦ ?_) |>.trans ?_
-    · exact ofReal_integral_norm_eq_lintegral_enorm (hh _).integrableOn
-    · rw [ENNReal.ofReal_zero]
+  have hzero' := tendsto_lintegral_enorm_of_tendsto_integral_norm (fun j ↦ hh (σ j + K)) hzero
   obtain ⟨j, hj⟩ := (ENNReal.tendsto_nhds_zero.1 hzero' (ε / 2 / 2)
     (ENNReal.half_pos (ENNReal.half_pos hε.ne').ne')).exists
   exact (hlow j).not_ge hj
