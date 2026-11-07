@@ -203,7 +203,7 @@ theorem tendsto_sub_nhdsGT_nhdsWithin_Icc {G : Type*} [AddCommGroup G] [LinearOr
 two endpoints. -/
 theorem _root_.ContinuousOn.apply_ne_apply_of_injOn_Ico {α δ : Type*}
     [ConditionallyCompleteLinearOrder α] [TopologicalSpace α] [OrderTopology α] [DenselyOrdered α]
-    [LinearOrder δ] [TopologicalSpace δ] [OrderClosedTopology δ] [DenselyOrdered δ] {f : α → δ}
+    [LinearOrder δ] [TopologicalSpace δ] [OrderClosedTopology δ] {f : α → δ}
     {a b : α} (hf : ContinuousOn f (Icc a b)) (hab : a < b) (hinj : InjOn f (Ico a b)) :
     f a ≠ f b := by
   have ha : a ∈ Ico a b := ⟨le_rfl, hab⟩
@@ -212,10 +212,28 @@ theorem _root_.ContinuousOn.apply_ne_apply_of_injOn_Ico {α δ : Type*}
   have hfm : f m ≠ f a := fun h ↦ hm.1.ne' (hinj ⟨hm.1.le, hm.2⟩ ha h)
   -- A value strictly between `f a` and `f m` would be attained on both `[a, m]` and `[m, b]`.
   obtain ⟨v, hv, hva, hvm⟩ : ∃ v ∈ uIcc (f a) (f m), v ≠ f a ∧ v ≠ f m := by
+    have hconn : IsPreconnected (f '' Icc a m) :=
+      isPreconnected_Icc.image f (hf.mono (Icc_subset_Icc le_rfl hm.2.le))
+    have hfa : f a ∈ f '' Icc a m := ⟨a, ⟨le_rfl, hm.1.le⟩, rfl⟩
+    have hfm' : f m ∈ f '' Icc a m := ⟨m, ⟨hm.1.le, le_rfl⟩, rfl⟩
+    -- If nothing lies strictly between `x < y`, then `Iio y` and `Ioi x` split `δ` into two
+    -- disjoint open sets, so the preconnected image cannot meet both `x` and `y`.
+    have key : ∀ x y : δ, x < y → x ∈ f '' Icc a m → y ∈ f '' Icc a m →
+        ∃ v, x < v ∧ v < y := fun x y hxy hx hy ↦ by
+      by_contra! hno
+      have hdisj : Disjoint (Iio y) (Ioi x) :=
+        Set.disjoint_left.2 fun z hz hz' ↦ (hno z hz').not_gt hz
+      have hcover : f '' Icc a m ⊆ Iio y ∪ Ioi x := fun z _ ↦ by
+        rcases lt_or_ge z y with h | h
+        · exact Or.inl h
+        · exact Or.inr (hxy.trans_le h)
+      rcases hconn.subset_or_subset isOpen_Iio isOpen_Ioi hdisj hcover with h | h
+      · exact lt_irrefl y (h hy)
+      · exact lt_irrefl x (h hx)
     rcases lt_or_gt_of_ne hfm with h | h
-    · obtain ⟨v, hv⟩ := exists_between h
+    · obtain ⟨v, hv⟩ := key _ _ h hfm' hfa
       exact ⟨v, mem_uIcc.2 (Or.inr ⟨hv.1.le, hv.2.le⟩), hv.2.ne, hv.1.ne'⟩
-    · obtain ⟨v, hv⟩ := exists_between h
+    · obtain ⟨v, hv⟩ := key _ _ h hfa hfm'
       exact ⟨v, mem_uIcc.2 (Or.inl ⟨hv.1.le, hv.2.le⟩), hv.1.ne', hv.2.ne⟩
   obtain ⟨s, hs, hsv⟩ := intermediate_value_uIcc
     (hf.mono (by rw [uIcc_of_le hm.1.le]; exact Icc_subset_Icc le_rfl hm.2.le)) hv
