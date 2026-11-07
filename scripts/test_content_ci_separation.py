@@ -17,13 +17,14 @@ def workflow(name):
 
 
 class ContentCISeparationTests(unittest.TestCase):
-    def test_infrastructure_runs_only_for_infrastructure_changes(self):
+    def test_infrastructure_runs_for_tooling_and_toolchain_changes(self):
         infra = workflow('infrastructure-tests.yml')
         events = infra.get('on', infra.get(True))
         self.assertEqual(set(events), {'push', 'pull_request'})
         self.assertEqual(events['push']['branches'], ['main'])
         for event in events.values():
-            self.assertEqual(set(event['paths']), {'scripts/**', '.github/**'})
+            # Native cache-layout fixtures must run for every toolchain pin change.
+            self.assertEqual(set(event['paths']), {'scripts/**', '.github/**', 'lean-toolchain'})
         self.assertEqual(infra['permissions'], {'contents': 'read'})
         self.assertNotIn('secrets.', (WORKFLOWS / 'infrastructure-tests.yml').read_text())
         for job in infra['jobs'].values():
