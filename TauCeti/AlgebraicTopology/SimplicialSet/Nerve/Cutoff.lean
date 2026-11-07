@@ -124,9 +124,10 @@ def cutoffPrepend (n : ℕ) (φ : ComposableArrows C (n + 1) → M) (σ : Compos
   ∑ᶠ b : Quiver.Costar σ.left, c b.1 • φ (σ.precomp b.2)
 
 /-- The cutoff average of a function on objects, viewed as strings of no arrows: the value at `x`
-is the sum, over the arrows `b : y ⟶ x`, of `c y` times the value at `y`. -/
-def cutoffAverage (φ : ComposableArrows C 0 → M) (σ : ComposableArrows C 0) : M :=
-  ∑ᶠ b : Quiver.Costar σ.left, c b.1 • φ (ComposableArrows.mk₀ b.1)
+is the sum, over the arrows `b : y ⟶ x`, of `c y` times the value at `y`. It prepends an arrow
+weighted by `c` to the function on single arrows given by the value at their source. -/
+def cutoffAverage (φ : ComposableArrows C 0 → M) : ComposableArrows C 0 → M :=
+  cutoffPrepend c 0 (φ ∘ fun τ ↦ ComposableArrows.mk₀ τ.left)
 
 variable {c}
 
@@ -147,22 +148,6 @@ theorem cutoffPrepend_smul (n : ℕ) (a : k) (φ : ComposableArrows C (n + 1) �
   funext σ
   have hfin : Function.HasFiniteSupport _ := hasFiniteSupport_of_finsum_eq_one (hc σ.left)
   simp only [cutoffPrepend, Pi.smul_apply, smul_comm _ a]
-  exact (smul_finsum' a (hfin.fun_smul_left _)).symm
-
-/-- The cutoff average is additive. -/
-theorem cutoffAverage_add (φ ψ : ComposableArrows C 0 → M) :
-    cutoffAverage c (φ + ψ) = cutoffAverage c φ + cutoffAverage c ψ := by
-  funext σ
-  have hfin : Function.HasFiniteSupport _ := hasFiniteSupport_of_finsum_eq_one (hc σ.left)
-  simp only [cutoffAverage, Pi.add_apply, smul_add]
-  exact finsum_add_distrib (hfin.fun_smul_left _) (hfin.fun_smul_left _)
-
-/-- The cutoff average commutes with scalar multiplication. -/
-theorem cutoffAverage_smul (a : k) (φ : ComposableArrows C 0 → M) :
-    cutoffAverage c (a • φ) = a • cutoffAverage c φ := by
-  funext σ
-  have hfin : Function.HasFiniteSupport _ := hasFiniteSupport_of_finsum_eq_one (hc σ.left)
-  simp only [cutoffAverage, Pi.smul_apply, smul_comm _ a]
   exact (smul_finsum' a (hfin.fun_smul_left _)).symm
 
 variable (M) in
@@ -188,8 +173,8 @@ variable (M) in
 def cutoffAverageHom : (nerveCochainComplex C k M).X 0 ⟶ (nerveCochainComplex C k M).X 0 :=
   ModuleCat.ofHom <| (valuesEquiv 0).symm.toLinearMap ∘ₗ
     { toFun := cutoffAverage c
-      map_add' := cutoffAverage_add hc
-      map_smul' := cutoffAverage_smul hc } ∘ₗ (valuesEquiv 0).toLinearMap
+      map_add' _ _ := cutoffPrepend_add hc 0 _ _
+      map_smul' a _ := cutoffPrepend_smul hc 0 a _ } ∘ₗ (valuesEquiv 0).toLinearMap
 
 /-- In values, `TauCeti.nerveCochainComplex.cutoffAverageHom` is
 `TauCeti.nerveCochainComplex.cutoffAverage`. -/
@@ -206,14 +191,15 @@ theorem cutoffPrepend_d_zero (φ : (nerveCochainComplex C k M).X 0) (σ : Compos
       valuesEquiv 0 φ σ - cutoffAverage c (valuesEquiv 0 φ) σ := by
   have hfin : Function.HasFiniteSupport _ := hasFiniteSupport_of_finsum_eq_one (hc σ.left)
   have h₁ (b : Quiver.Costar σ.left) :
-      (nerve C).δ (Fin.succ 0) (σ.precomp b.2) = ComposableArrows.mk₀ b.1 :=
+      (nerve C).δ (Fin.succ 0) (σ.precomp b.2) =
+        ComposableArrows.mk₀ (σ.precomp b.2).left :=
     ComposableArrows.ext₀ rfl
-  unfold cutoffPrepend cutoffAverage
+  unfold cutoffAverage cutoffPrepend
   rw [finsum_smul_eq_sum hfin, finsum_smul_eq_sum hfin]
   simp only [valuesEquiv_d, Fin.sum_univ_succ, Fin.sum_univ_zero, Fin.val_zero, Fin.val_succ,
     pow_zero, zero_add, pow_one, one_smul, neg_smul, add_zero, nerve.δ₀_eq,
-    ComposableArrows.precomp_δ₀, h₁, smul_add, smul_neg, Finset.sum_add_distrib,
-    Finset.sum_neg_distrib]
+    ComposableArrows.precomp_δ₀, h₁, Function.comp_apply, smul_add, smul_neg,
+    Finset.sum_add_distrib, Finset.sum_neg_distrib]
   rw [← Finset.sum_smul, ← finsum_eq_sum _ hfin, hc, one_smul, sub_eq_add_neg]
 
 variable [IsGroupoid C]
