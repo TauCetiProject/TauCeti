@@ -199,9 +199,8 @@ theorem iteratedFDeriv_heatKernel_convolution_eq_smul_integral (ht : 0 < t)
       rw [inv_sqrt_pow_eq_rpow ht.le]
       push_cast
       ring_nf
-    have hinv : t ^ (-1 / 2 : ℝ) = (√t)⁻¹ := by
-      simpa using (inv_sqrt_pow_eq_rpow ht.le 1).symm
-    rw [iteratedFDeriv_heatKernel_eq_rpow_smul ht, hpow, hinv, hφ_def]
+    rw [iteratedFDeriv_heatKernel_eq_rpow_smul ht, hpow, ← inv_sqrt_eq_rpow_neg_one_div_two,
+      hφ_def]
     ext v
     simp [smul_inv_smul₀ hst.ne', mul_smul]
   have hscalar : √t ^ finrank ℝ E * (√t)⁻¹ ^ (finrank ℝ E + m) = (√t)⁻¹ ^ m := by

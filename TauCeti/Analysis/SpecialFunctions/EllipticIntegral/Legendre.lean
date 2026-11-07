@@ -140,8 +140,7 @@ theorem legendreF_integrand_le {k : ℝ} (hk : k ^ 2 < 1) (θ : ℝ) :
 /-- The integrand of the first kind is the inverse square root of `1 - k² sin² θ`. -/
 theorem legendreF_integrand_eq_inv_sqrt (k θ : ℝ) :
     (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ) = (√(1 - k ^ 2 * sin θ ^ 2))⁻¹ := by
-  rw [inv_sqrt_eq_rpow]
-  norm_num
+  rw [inv_sqrt_eq_rpow_neg_one_div_two]
 
 theorem intervalIntegrable_legendreF_integrand {k : ℝ} (hk : k ^ 2 < 1) (a b : ℝ) :
     IntervalIntegrable (fun θ ↦ (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ)) volume a b :=
@@ -272,8 +271,7 @@ theorem legendreF_le_div_sqrt {φ k : ℝ} (hk : k ^ 2 < 1) (hφ : 0 ≤ φ) :
     (intervalIntegrable_legendreF_integrand hk 0 φ) intervalIntegrable_const
     (fun θ _ ↦ legendreF_integrand_le hk θ)
   have hr : (1 - k ^ 2) ^ (-1 / 2 : ℝ) = (√(1 - k ^ 2))⁻¹ := by
-    rw [inv_sqrt_eq_rpow]
-    norm_num
+    rw [inv_sqrt_eq_rpow_neg_one_div_two]
   rw [hr] at h
   simpa [legendreF_def, div_eq_mul_inv] using h
 
