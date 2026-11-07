@@ -71,7 +71,7 @@ namespace Functor
 /-- If multiplication by a scalar `r` is invertible on `X`, then it is invertible on the image of
 `X` under any `R`-linear functor. -/
 lemma isIso_smul_id_obj {D : Type*} [Category D] [Preadditive D] [CategoryTheory.Linear R D]
-    (F : C ⥤ D) [F.Additive] [F.Linear R] (r : R) (X : C) [IsIso (r • 𝟙 X)] :
+    (F : C ⥤ D) [F.Linear R] (r : R) (X : C) [IsIso (r • 𝟙 X)] :
     IsIso (r • 𝟙 (F.obj X)) := by
   rw [← F.map_id, ← F.map_smul]
   infer_instance
