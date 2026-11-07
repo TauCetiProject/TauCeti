@@ -298,15 +298,8 @@ theorem exists_pos_le_of_isBounded_normOneSurface {D : Set (realSpace K)}
     (hD : IsBounded D) (hS : D ⊆ normOneSurface K) :
     ∃ b > 0, ∀ x ∈ D, ∀ w, b ≤ x w := by
   obtain ⟨M, _, hbound⟩ := hD.exists_pos_norm_le
-  let C := max 1 M
-  have hC : 1 ≤ C := le_max_left _ _
-  have hCp : 0 < C ^ Module.finrank ℚ K := pow_pos (lt_of_lt_of_le zero_lt_one hC) _
-  refine ⟨(C ^ Module.finrank ℚ K)⁻¹, inv_pos.mpr hCp, fun x hx w ↦ ?_⟩
-  have hxpos := (hS hx).1 w
-  have hi := inv_le_pow_finrank_of_mem_normOneSurface (hS hx) hC
-    (fun v ↦ (le_abs_self (x v)).trans <|
-      (norm_le_pi_norm x v).trans ((hbound x hx).trans (le_max_right _ _))) w
-  exact (inv_le_comm₀ hCp hxpos).mpr hi
+  exact ⟨(max M 1 ^ Module.finrank ℚ K)⁻¹, by positivity, fun x hx w ↦
+    (mem_Icc_of_mem_normOneSurface_of_norm_le (hS hx) (hbound x hx) w).1⟩
 
 /-! ### Unit fundamental domains -/
 

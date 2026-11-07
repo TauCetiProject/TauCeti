@@ -123,8 +123,9 @@ theorem continuousOn_mellinKernel {D : Set (realSpace K)} (hD : IsBounded D)
       ContinuousAt (fun u ↦ latticeTheta L (surfaceScale (x : realSpace K) (u / V ^ 2))) u₀ :=
     ContinuousAt.comp (g := latticeTheta L)
       (f := fun u ↦ surfaceScale (x : realSpace K) (u / V ^ 2))
-      ((continuousOn_latticeTheta L).continuousAt ((isOpen_setOf_forall_lt 0).mem_nhds
-        (surfaceScale_pos (mem_normOneSurface.mp x.2).1 (by positivity))))
+      ((continuousOn_latticeTheta L).continuousAt (Filter.eventually_all.2 fun w ↦
+        continuousAt_const.eventually_lt (continuous_apply w).continuousAt
+          (surfaceScale_pos (mem_normOneSurface.mp x.2).1 (by positivity) w)))
       (continuous_surfaceScale.comp
         (continuous_const.prodMk (continuous_id.div_const _))).continuousAt
   have hnhds : ∀ᶠ u in 𝓝 u₀, u₀ / 2 < u := Ioi_mem_nhds (half_lt_self hu₀)
