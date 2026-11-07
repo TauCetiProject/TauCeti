@@ -523,8 +523,8 @@ private theorem idealImage_subset_image_span_pow (P : PairOfDefinition A) {B : S
 
 omit [IsHuberRing A] in
 /-- **The boundedness step of Wedhorn Lemma 6.2.** If `B` is bounded and `S ⊆ B` has images in
-`Iᵏ⁺¹`, then every power of the ideal `J = (S)` of `B` is eventually inside any neighbourhood of
-`0` in `B`: `Jᵐ` lies in `Iᵐ · B`, which is eventually inside a neighbourhood of `0` of `A`. -/
+`Iᵏ⁺¹`, then some power `Jᵐ` of the ideal `J = (S)` of `B` lies in any given neighbourhood of `0`
+in `B`: `Jᵐ` lies in `Iᵐ · B`, which is inside a neighbourhood of `0` of `A` for `m` large. -/
 private theorem exists_span_pow_subset_of_isBounded (P : PairOfDefinition A) {B : Subring A}
     (hbdd : IsBounded (B : Set A)) {S : Set B} {k₀ : ℕ}
     (hSk : ∀ y ∈ S, (y : A) ∈ P.idealImage (k₀ + 1)) {s : Set B} (hs : s ∈ 𝓝 (0 : B)) :
