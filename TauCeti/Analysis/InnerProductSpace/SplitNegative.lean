@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
+public import Mathlib.Analysis.Normed.Module.Connected
 public import TauCeti.Analysis.InnerProductSpace.Indefinite
 public import TauCeti.LinearAlgebra.Orientation.Basic
 
@@ -32,8 +33,9 @@ continuous linear maps `T : E → F` with `‖T‖ < 1`
 (`Submodule.maximal_isSplitNegative_iff_exists_eq_graph`), and `T ↦ graph T` is a bijection from
 the open unit ball of `E →L[ℝ] F` onto the set of maximal split-negative subspaces
 (`TauCeti.splitNegativeGraphEquiv`). These are the graph coordinates on the space of maximal
-negative subspaces of `Q`; in them that space is the open unit ball, a convex set, hence
-contractible (`Convex.contractibleSpace`).
+negative subspaces of `Q`. Topologized through them (`TauCeti.splitNegativeGraphTopology`), that
+space is homeomorphic to the open unit ball (`TauCeti.splitNegativeGraphHomeomorph`), a convex
+set, hence contractible (`TauCeti.contractibleSpace_maximal_isSplitNegative`).
 
 In graph coordinates every maximal split-negative subspace `W` is identified with `E` by the
 projection to the first factor (`Submodule.splitNegativeFstEquiv`), whose inverse is
@@ -46,9 +48,9 @@ The negative column `u ↦ (A u, B u)` of the derivative of a transition between
 pulls `Q` back to `-‖u‖²` (`ContinuousLinearMap.norm_le_norm_fst_of_norm_sq_sub` and its
 neighbours). Its range is a maximal split-negative subspace
 (`ContinuousLinearMap.maximal_isSplitNegative_range_of_norm_sq_sub`), the graph of `B ∘ A⁻¹`
-(`ContinuousLinearMap.range_eq_graph_of_norm_sq_sub`). So the two charts induce the same
-orientation on their common negative subspace, compared through graph coordinates, exactly when
-the negative block `A` of the transition has positive determinant
+when `A` is invertible (`LinearMap.range_eq_graph_of_fst_eq_equiv`). So the two charts induce
+the same orientation on their common negative subspace, compared through graph coordinates,
+exactly when the negative block `A` of the transition has positive determinant
 (`ContinuousLinearMap.orientation_map_ofInjective_eq_iff_det_pos`). The polar part
 `h = A (AᵀA)^(-1/2)` of `A`, the orthogonal map comparing the characteristic discs of the two
 charts, differs from `A` by a positive definite factor, so the criterion is equivalently
@@ -310,6 +312,35 @@ theorem coe_splitNegativeGraphEquiv_apply (T : Metric.ball (0 : E →L[ℝ] F) 1
       LinearMap.graph ((T : E →L[ℝ] F) : E →ₗ[ℝ] F) := by
   simp [splitNegativeGraphEquiv]
 
+variable (E F)
+
+/-- The graph-coordinate topology on the maximal split-negative subspaces of `E × F`: the
+topology induced from the open unit ball of `E →L[ℝ] F` by the inverse of
+`TauCeti.splitNegativeGraphEquiv`. -/
+noncomputable instance splitNegativeGraphTopology :
+    TopologicalSpace {W : Submodule ℝ (E × F) // Maximal IsSplitNegative W} :=
+  TopologicalSpace.induced (splitNegativeGraphEquiv E F).symm inferInstance
+
+/-- Graph coordinates as a homeomorphism from the open unit ball of `E →L[ℝ] F` onto the maximal
+split-negative subspaces of `E × F`, with the graph-coordinate topology. -/
+noncomputable def splitNegativeGraphHomeomorph :
+    Metric.ball (0 : E →L[ℝ] F) 1 ≃ₜ {W : Submodule ℝ (E × F) // Maximal IsSplitNegative W} :=
+  ((splitNegativeGraphEquiv E F).symm.toHomeomorphOfIsInducing ⟨rfl⟩).symm
+
+@[simp]
+theorem coe_splitNegativeGraphHomeomorph :
+    ⇑(splitNegativeGraphHomeomorph E F) = splitNegativeGraphEquiv E F := by
+  ext
+  simp [splitNegativeGraphHomeomorph]
+
+/-- **Contractibility of the space of maximal negative subspaces.** In graph coordinates, the
+space of maximal split-negative subspaces of `E × F` is contractible: it is homeomorphic to the
+open unit ball of `E →L[ℝ] F`, a convex set. -/
+instance contractibleSpace_maximal_isSplitNegative :
+    ContractibleSpace {W : Submodule ℝ (E × F) // Maximal IsSplitNegative W} :=
+  haveI := Metric.contractibleSpace_ball (x := (0 : E →L[ℝ] F)) one_pos
+  (splitNegativeGraphHomeomorph E F).symm.contractibleSpace
+
 end TauCeti
 
 namespace ContinuousLinearMap
@@ -325,23 +356,6 @@ theorem isSplitNegative_range_of_norm_sq_sub
     (LinearMap.range (L : E →ₗ[ℝ] E × F)).IsSplitNegative := by
   rintro _ ⟨u, rfl⟩ hu
   exact L.norm_snd_lt_norm_fst_of_norm_sq_sub hL fun h ↦ hu (by simp [h])
-
-/-- The range of an isometric negative column `u ↦ (A u, B u)` with invertible negative block `A`
-is the graph of `B ∘ A⁻¹`. -/
-theorem range_eq_graph_of_norm_sq_sub (e : E ≃L[ℝ] E) (he : ∀ u, e u = (L u).1) :
-    LinearMap.range (L : E →ₗ[ℝ] E × F) =
-      LinearMap.graph (((snd ℝ E F).comp (L.comp (e.symm : E →L[ℝ] E)) : E →L[ℝ] F) :
-        E →ₗ[ℝ] F) := by
-  ext ⟨x, y⟩
-  simp only [LinearMap.mem_range, coe_coe, LinearMap.mem_graph_iff, coe_comp,
-    Function.comp_apply, ContinuousLinearEquiv.coe_coe, coe_snd']
-  constructor
-  · rintro ⟨u, hu⟩
-    have hx : e u = x := by rw [he, hu]
-    rw [← hx, e.symm_apply_apply, hu]
-  · rintro rfl
-    refine ⟨e.symm x, Prod.ext ?_ rfl⟩
-    rw [← he, e.apply_symm_apply]
 
 end Normed
 
