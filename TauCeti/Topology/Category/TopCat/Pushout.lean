@@ -65,9 +65,7 @@ compact, it is the uncurried map out of `P` glued from the curried maps into `C(
 form in which homotopies are glued on `P`. -/
 def cylinderDesc (h : IsPushout i a j k) (F : C(I × Y, W)) (G : C(I × Z, W))
     (hFG : ∀ t b, F (t, i b) = G (t, a b)) : C(I × P, W) :=
-  ⟨fun p ↦ h.cylinderCurry F G hFG p.2 p.1,
-    continuous_eval.comp
-      (((h.cylinderCurry F G hFG).hom.continuous.comp continuous_snd).prodMk continuous_fst)⟩
+  (h.cylinderCurry F G hFG).hom.uncurry.comp ContinuousMap.prodSwap
 
 variable (h : IsPushout i a j k) (F : C(I × Y, W)) (G : C(I × Z, W))
   (hFG : ∀ t b, F (t, i b) = G (t, a b))

@@ -247,12 +247,9 @@ private theorem morseCellAttachmentCellsDesc_ι (t : I) (i : ι) (w : TopCat.dis
 def morseCellAttachmentProdDesc : C(I × morseCellAttachment φ k hk hε hball hf, Y) :=
   (isPushout_morseCellAttachment φ k hk hball hf hε).cylinderDesc L
     (morseCellAttachmentCellsDesc k C) fun t b ↦ by
-      obtain ⟨⟨i, s⟩, rfl⟩ : ∃ s, (TopCat.sigmaIsoSigma _).inv s = b :=
-        ⟨(TopCat.sigmaIsoSigma _).hom b, by
-          rw [← ConcreteCategory.comp_apply, Iso.hom_inv_id, ConcreteCategory.id_apply]⟩
-      rw [TopCat.sigmaIsoSigma_inv_apply, ← ConcreteCategory.comp_apply, Sigma.ι_comp_desc,
-        ← ConcreteCategory.comp_apply, Sigma.ι_map, ConcreteCategory.comp_apply,
-        morseCellAttachmentCellsDesc_ι, hC]
+      obtain ⟨i, s, rfl⟩ : ∃ i s, Sigma.ι (fun i ↦ TopCat.diskBoundary.{u} (k i)) i s = b :=
+        let ⟨⟨i⟩, s, hs⟩ := Concrete.colimit_exists_rep _ b; ⟨i, s, hs⟩
+      simpa [Sigma.ι_map_apply, morseCellAttachmentCellsDesc_ι] using (hC i t s).symm
 
 /-- On the lower sublevel, the map glued by `TauCeti.morseCellAttachmentProdDesc` is `L`. -/
 @[simp]
