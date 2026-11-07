@@ -611,10 +611,6 @@ end IsTreeWalk
 private def stepsOf (l : List DyckStep) (j : ℕ) : Bool :=
   decide (l[j]? = some DyckStep.U)
 
-private theorem ups_congr {s s' : ℕ → Bool} {n : ℕ} (h : ∀ j < n, s j = s' j) :
-    ups s n = ups s' n :=
-  congrArg card (filter_congr fun j hj => by simp [h j (mem_range.mp hj)])
-
 private theorem count_take_U (l : List DyckStep) (n : ℕ) :
     (l.take n).count DyckStep.U = ups (stepsOf l) n := by
   induction n with
@@ -650,11 +646,22 @@ private theorem stepsOf_ofFn {k : ℕ} {s : ℕ → Bool} (hs : IsDyckPattern k 
 private theorem count_U_ofFn {k : ℕ} {s : ℕ → Bool} {n : ℕ} (hn : n ≤ 2 * k) :
     ((List.ofFn (fun i : Fin (2 * k) => if s i then DyckStep.U else DyckStep.D)).take n).count
       DyckStep.U = ups s n := by
-  rw [count_take_U]
-  apply ups_congr
-  intro j hj
-  have hj' : j < 2 * k := hj.trans_le hn
-  cases hsj : s j <;> simp [stepsOf, hj', hsj]
+  rw [List.count_take_ofFn]
+  unfold ups
+  apply Finset.card_bij (fun i _ => i.val)
+  · intro i hi
+    simp only [mem_filter, mem_univ, true_and] at hi
+    simp only [mem_filter, mem_range]
+    refine ⟨hi.1, ?_⟩
+    simpa using hi.2
+  · intro i hi j hj hij
+    exact Fin.ext hij
+  · intro j hj
+    simp only [mem_filter, mem_range] at hj
+    let i : Fin (2 * k) := ⟨j, hj.1.trans_le hn⟩
+    refine ⟨i, ?_, rfl⟩
+    simp only [mem_filter, mem_univ, true_and]
+    exact ⟨hj.1, by simpa [i] using hj.2⟩
 
 /-- The Dyck word whose `U` steps are the up steps of a Dyck pattern. -/
 private def dyckWordOf {k : ℕ} {s : ℕ → Bool} (hs : IsDyckPattern k s) : DyckWord where
