@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.CommutingFlow
 import TauCeti.Geometry.Manifold.MFDeriv.LocalInjectivity
 import TauCeti.Geometry.Manifold.RegularValue.Section
 import TauCeti.Geometry.Symplectic.Hamiltonian.Involutive
+import TauCeti.LinearAlgebra.LinearIndependent.Coprod
 
 /-!
 # The Hamiltonian flow action on a regular level: the topological Liouville–Arnold theorem
@@ -132,9 +133,6 @@ theorem isLocalDiffeomorphAt_hamiltonianFlowAction_section
     rw [mfderiv_comp_apply_of_eq (F x) hFd hsd (hsx.trans hx'x.symm) b, mfderiv_id] at this
     exact this
   let X : ι → E := fun i ↦ σ.hamiltonianVectorField (F · i) x'
-  -- `dF` kills the Hamiltonian vectors of the Poisson-commuting `Fᵢ`.
-  have hdFX (i : ι) : dF (X i) = 0 :=
-    (hσ.isNondegenerate.hamiltonianVectorField_mem_ker_mfderiv_iff hFd i).2 fun j ↦ hcomm j i x'
   -- The derivative of the sweep, read as a map between the model spaces. It is injective: `dF`
   -- kills the `X_{Fᵢ}` and inverts `ds`, and the `X_{Fᵢ}(x)` are independent at the regular
   -- point `x`.
@@ -149,19 +147,19 @@ theorem isLocalDiffeomorphAt_hamiltonianFlowAction_section
         (funext fun z ↦ hσ.hamiltonianFlowAction_zero_apply hF hcomm hc (s z))
     rw [← hA, ← hB]
     exact mfderiv_prod_eq_add_apply (v := ((a, b) : (ι → ℝ) × (ι → ℝ))) hPd
-  -- `L` is injective: `dF` recovers `b` from `L (a, b)`, and then `a = 0` by independence.
+  -- `L` is injective: `dF` recovers `b` from `L (a, b)`, kills the Hamiltonian vectors of the
+  -- Poisson-commuting `Fᵢ`, and then `a = 0` by independence.
   have hinj : Injective L := by
-    refine (injective_iff_map_eq_zero L).2 fun ⟨a, b⟩ h ↦ ?_
-    rw [hL] at h
-    have hb : b = 0 := by
-      have := congrArg dF h
-      simpa only [map_add, map_sum, map_smul, hdFX, smul_zero, Finset.sum_const_zero, zero_add,
-        hdFs, map_zero] using this
-    subst hb
-    rw [map_zero, add_zero] at h
-    have ha := Fintype.linearIndependent_iff.1
-      (hσ.isNondegenerate.linearIndependent_hamiltonianVectorField hreg) a h
-    exact Prod.ext (funext ha) rfl
+    have hLeq : L.toLinearMap = (Fintype.linearCombination ℝ X).coprod S.toLinearMap :=
+      LinearMap.ext fun ⟨a, b⟩ ↦ by
+        simp only [ContinuousLinearMap.coe_coe, hL, LinearMap.coprod_apply,
+          Fintype.linearCombination_apply]
+    have := LinearMap.injective_coprod_linearCombination
+      (hσ.isNondegenerate.linearIndependent_hamiltonianVectorField hreg) dF.toLinearMap
+      (fun i ↦ (hσ.isNondegenerate.hamiltonianVectorField_mem_ker_mfderiv_iff hFd i).2
+        fun j ↦ hcomm j i x') hdFs (S := S.toLinearMap)
+    have h2 : Injective L.toLinearMap := by rw [hLeq]; exact this
+    exact h2
   have hfin : finrank ℝ ((ι → ℝ) × (ι → ℝ)) = finrank ℝ E := by
     rw [Module.finrank_prod, Module.finrank_fintype_fun_eq_card, ← hdim, two_mul]
   exact isLocalDiffeomorphAt_of_mfderiv_eq hPs hopen hmem
