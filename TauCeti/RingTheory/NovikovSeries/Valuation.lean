@@ -127,6 +127,16 @@ theorem periodValuation_eq_of_sub_mem_periodFiltration {a b : NovikovSeries R H 
   rw [periodValuation_apply_of_ne_zero N ha, WithZero.coe_lt_coe]
   exact neg_lt_neg hC
 
+/-- A perturbation above the least period of a nonzero series remains nonzero. -/
+theorem ne_zero_of_sub_mem_periodFiltration {a b : NovikovSeries R H N}
+    (ha : a ≠ 0) {C : ℝ} (hC : a.order < C)
+    (hab : b - a ∈ periodFiltration R N C) : b ≠ 0 := by
+  have heq := periodValuation_eq_of_sub_mem_periodFiltration N ha hC hab
+  intro hb
+  apply ha
+  apply (periodValuation_eq_zero_iff N).1
+  rw [← heq, hb, map_zero]
+
 end Ring
 
 section Fractions
@@ -139,7 +149,7 @@ private theorem nonZeroDivisors_le_primeCompl_periodValuation :
   intro a ha
   exact fun h => (nonZeroDivisors.ne_zero ha) ((periodValuation_eq_zero_iff N).1 h)
 
-variable (F : Type*) [CommRing F] [Algebra (NovikovSeries R H N) F]
+variable (R) (F : Type*) [CommRing F] [Algebra (NovikovSeries R H N) F]
   [IsFractionRing (NovikovSeries R H N) F]
 
 /-- The period valuation extended to a fraction ring of the Novikov ring.
@@ -151,7 +161,7 @@ def fractionValuation : Valuation F (WithZero (Multiplicative ℝ)) :=
 /-- Extension to fractions preserves the value of each Novikov series. -/
 @[simp]
 theorem fractionValuation_algebraMap (a : NovikovSeries R H N) :
-    fractionValuation (R := R) N F (algebraMap (NovikovSeries R H N) F a) =
+    fractionValuation R N F (algebraMap (NovikovSeries R H N) F a) =
       periodValuation N a :=
   Valuation.extendToLocalization_apply_map_apply _ _ _ _
 
@@ -164,10 +174,12 @@ variable {R H : Type*} [CommRing R] [Nontrivial R] [AddCommMonoid H]
   (F : Type*) [Field F] [Algebra (NovikovSeries R H N) F]
   [IsFractionRing (NovikovSeries R H N) F]
 
+variable (R)
+
 /-- The value of a fraction of two nonzero series is the difference of their
 least periods, with the multiplicative valuation sign convention. -/
 theorem fractionValuation_div {a b : NovikovSeries R H N} (ha : a ≠ 0) (hb : b ≠ 0) :
-    fractionValuation (R := R) N F
+    fractionValuation R N F
         (algebraMap (NovikovSeries R H N) F a / algebraMap (NovikovSeries R H N) F b) =
       ↑(Multiplicative.ofAdd (b.order - a.order)) := by
   rw [map_div₀, fractionValuation_algebraMap, fractionValuation_algebraMap,
@@ -178,16 +190,15 @@ theorem fractionValuation_div {a b : NovikovSeries R H N} (ha : a ≠ 0) (hb : b
 /-- Inverting a perturbation above the least period loses twice that period in
 the cutoff: if `b - a` vanishes below `C > order a`, then the difference of the
 inverses in the fraction field has valuation at most `ofAdd (2 * order a - C)`.
-In particular the perturbed denominator is necessarily nonzero. -/
+The perturbed denominator is nonzero by `ne_zero_of_sub_mem_periodFiltration`. -/
 theorem fractionValuation_inv_sub_inv_le {a b : NovikovSeries R H N} (ha : a ≠ 0)
     {C : ℝ} (hC : a.order < C) (hab : b - a ∈ periodFiltration R N C) :
-    fractionValuation (R := R) N F
+    fractionValuation R N F
         ((algebraMap (NovikovSeries R H N) F b)⁻¹ -
           (algebraMap (NovikovSeries R H N) F a)⁻¹) ≤
       ↑(Multiplicative.ofAdd (2 * a.order - C)) := by
   have heq := periodValuation_eq_of_sub_mem_periodFiltration N ha hC hab
-  have hb : b ≠ 0 := fun hb => ha <| (periodValuation_eq_zero_iff N).1 <| by
-    rw [← heq, hb, map_zero]
+  have hb := ne_zero_of_sub_mem_periodFiltration N ha hC hab
   have hinj := IsFractionRing.injective (NovikovSeries R H N) F
   rw [inv_sub_inv ((map_ne_zero_iff _ hinj).2 hb)
     ((map_ne_zero_iff _ hinj).2 ha), ← map_sub]
