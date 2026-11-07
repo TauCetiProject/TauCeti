@@ -200,13 +200,14 @@ theorem f4IntegralCoroot_eq_sum_simple (β : Fin 48) :
       f4Coroot β (Fin.cast rank_F4 i) • f4IntegralSimpleCoroot i := by
   -- Compare in the rational Lie algebra, where integral scalars act through `ℤ → ℚ`.
   apply Subtype.ext
-  have h := congrArg (fun y : F4.cartanSubalgebra valid_F4 => (y : F4.lieAlgebra valid_F4))
-    (f4KillingCoroot_eq_sum_simple β)
-  simp only [rootSystem_coroot_apply, AddSubmonoidClass.coe_finsetSum, coroot_rationalRootSystem,
-    simplyConnectedRootDatum_F4, f4SimplyConnectedRootDatum_coroot, Int.cast_smul_eq_zsmul] at h
+  have h := F4.coroot_rootEquiv_eq_sum valid_F4 (f4RootIndex β)
+  simp only [rootEquiv_eq_indexEquiv, simplyConnectedRootDatum_F4,
+    f4SimplyConnectedRootDatum_coroot] at h
   simp only [coe_f4IntegralCoroot, AddSubmonoidClass.coe_finsetSum, SetLike.val_smul,
-    coe_f4IntegralSimpleCoroot]
-  exact h
+    coe_f4IntegralSimpleCoroot, (F4.lieBasis valid_F4).coroot_eq_h',
+    ← (F4.lieBasis valid_F4).cartanBasis_apply, LieAlgebra.Basis.coe_cartanBasis]
+  convert h using 1
+  congr 1
 
 /-- Reduction modulo two preserves the pinned simple-coroot coordinate expansion. -/
 theorem f4ModularCoroot_eq_sum_simple (β : Fin 48) :

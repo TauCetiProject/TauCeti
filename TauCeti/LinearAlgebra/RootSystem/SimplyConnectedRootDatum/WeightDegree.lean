@@ -73,9 +73,6 @@ theorem intCast_geckWeight_inr (k : Fin t.numRoots) :
     (fun i ↦ (t.geckWeight ht (Sum.inr k) i : ℚ)) =
       (t.rationalRootSystem ht).root k := by
   ext i
-  have hcoroot : (t.rationalRootSystem ht).coroot (t.simpleIndex ht i) = Pi.single i 1 := by
-    ext j
-    by_cases hij : i = j <;> simp [hij]
   calc
     (t.geckWeight ht (Sum.inr k) i : ℚ) =
         (t.rationalRootSystem ht).pairing k (t.simpleIndex ht i) := by
@@ -83,7 +80,7 @@ theorem intCast_geckWeight_inr (k : Fin t.numRoots) :
         (t.rationalRootSystem ht).algebraMap_pairingIn ℤ k (t.simpleSupportEquiv ht i)
     _ = (t.rationalRootSystem ht).root k i := by
       simp only [← RootPairing.root_coroot_eq_pairing, toLinearMap_rationalRootSystem,
-        hcoroot, dotProduct_single, mul_one]
+        coroot_rationalRootSystem_simpleIndex, dotProduct_single, mul_one]
 
 /-- The degree of a root coordinate in Geck's defining representation is the height of that root
 relative to the pinned base. -/

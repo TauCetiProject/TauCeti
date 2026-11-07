@@ -116,6 +116,13 @@ theorem root_rationalRootSystem_eq_add_zsmul_iff (α β γ : Fin t.numRoots) (n 
   rw [rationalRootSystem, coroot_rootPairingBaseChange, piAlgebraMap_apply]
   simp
 
+/-- The rational simple coroots are the standard coordinate vectors. -/
+@[simp] theorem coroot_rationalRootSystem_simpleIndex (i : Fin t.rank) :
+    (t.rationalRootSystem ht).coroot (t.simpleIndex ht i) = Pi.single i 1 := by
+  ext j
+  simp only [coroot_rationalRootSystem, coroot_simpleIndex]
+  by_cases hij : i = j <;> simp [hij]
+
 @[simp] theorem reflectionPerm_rationalRootSystem :
     (t.rationalRootSystem ht).reflectionPerm = (t.simplyConnectedRootDatum ht).reflectionPerm :=
   reflectionPerm_rootPairingBaseChange ..

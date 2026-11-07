@@ -132,22 +132,52 @@ of the correspondingly numbered Lie-algebra generator. -/
         (t.rationalRootSystemEquiv ht).toHom
     _ = _ := congrArg _ (t.rootEquiv_simpleIndex ht i)
 
-/-- On a Bourbaki-numbered simple coroot, the covariant inverse coweight equivalence lands at the
+/-- On a standard coordinate vector, the covariant inverse coweight equivalence lands at the
 simple Killing coroot of the correspondingly numbered Lie-algebra generator. -/
-@[simp] theorem rationalRootSystemEquiv_coweightEquiv_symm_coroot_simpleIndex (i : Fin t.rank) :
-    (t.rationalRootSystemEquiv ht).coweightEquiv.symm
-        ((t.rationalRootSystem ht).coroot (t.simpleIndex ht i)) =
+@[simp] theorem rationalRootSystemEquiv_coweightEquiv_symm_single (i : Fin t.rank) :
+    (t.rationalRootSystemEquiv ht).coweightEquiv.symm (Pi.single i 1) =
       (rootSystem (t.cartanSubalgebra ht)).coroot
         ((t.lieBasis ht).baseSupportEquiv i) := by
-  simpa only [rationalRootSystemEquiv, rationalLieBaseSupportEquiv, Equiv.trans_apply,
-    Equiv.symm_apply_apply, coe_simpleSupportEquiv] using
-    equivOfCartanMatrixEq_coweightEquiv_symm_apply_coroot (t.rationalBase ht) (t.lieBasis ht).base
-      (t.rationalLieBaseSupportEquiv ht) (t.cartanMatrix_rationalLieBaseSupportEquiv ht)
-      (t.simpleSupportEquiv ht i)
+  have h : (t.rationalRootSystemEquiv ht).coweightEquiv.symm
+      ((t.rationalRootSystem ht).coroot (t.simpleIndex ht i)) =
+      (rootSystem (t.cartanSubalgebra ht)).coroot
+        ((t.lieBasis ht).baseSupportEquiv i) := by
+    simpa only [rationalRootSystemEquiv, rationalLieBaseSupportEquiv, Equiv.trans_apply,
+      Equiv.symm_apply_apply, coe_simpleSupportEquiv] using
+      equivOfCartanMatrixEq_coweightEquiv_symm_apply_coroot (t.rationalBase ht) (t.lieBasis ht).base
+        (t.rationalLieBaseSupportEquiv ht) (t.cartanMatrix_rationalLieBaseSupportEquiv ht)
+        (t.simpleSupportEquiv ht i)
+  simpa only [coroot_rationalRootSystem_simpleIndex] using h
 
 /-- The `i`-th vector of the Cartan basis is the `i`-th coroot generator of the numbered basis. -/
 private theorem cartanBasis_eq_h' (i : Fin t.rank) : t.cartanBasis ht i = (t.lieBasis ht).h' i :=
   Subtype.ext (t.coe_cartanBasis ht i)
+
+/-- Every Killing coroot has the simple-coroot coordinates of the pinned integral datum.
+This generalizes the original type-F₄ coordinate calculation formerly in
+`TauCeti/Algebra/Lie/F4/ChevalleyAction.lean`. -/
+theorem coroot_rootEquiv_eq_sum (α : Fin t.numRoots) :
+    ((coroot (t.rootEquiv ht α : Weight ℚ (t.cartanSubalgebra ht)
+        (t.lieAlgebra ht)) : t.cartanSubalgebra ht) : t.lieAlgebra ht) =
+      ∑ i, (t.simplyConnectedRootDatum ht).coroot α i • (t.lieBasis ht).h i := by
+  let E := t.rationalRootSystemEquiv ht
+  have hcoroot : E.coweightEquiv.symm ((t.rationalRootSystem ht).coroot α) =
+      (rootSystem (t.cartanSubalgebra ht)).coroot (t.rootEquiv ht α) := by
+    apply E.coweightEquiv.injective
+    rw [LinearEquiv.apply_symm_apply, RootPairing.Equiv.coweightEquiv_apply]
+    simpa only [rootEquiv_eq_indexEquiv, Equiv.symm_apply_apply] using
+      (RootPairing.Hom.coroot_coweightMap_apply _ _ (E.indexEquiv α) E.toHom).symm
+  have hsimple (i : Fin t.rank) :
+      E.coweightEquiv.symm (Pi.single i 1) = t.cartanBasis ht i := by
+    rw [rationalRootSystemEquiv_coweightEquiv_symm_single, rootSystem_coroot_apply,
+      (t.lieBasis ht).coroot_eq_h', cartanBasis_eq_h']
+  have hexp := congrArg E.coweightEquiv.symm
+    (pi_eq_sum_univ' ((t.rationalRootSystem ht).coroot α))
+  rw [map_sum] at hexp
+  simp only [map_smul, hsimple, coroot_rationalRootSystem] at hexp
+  rw [hcoroot] at hexp
+  simpa [rootSystem_coroot_apply, coe_cartanBasis, Int.cast_smul_eq_zsmul ℚ] using
+    congrArg Subtype.val hexp
 
 /-- **The enumerated roots are the roots of the pinned root datum.** Root number `α` takes the
 value `⟨α, αᵢ^∨⟩` on the `i`-th Cartan generator `hᵢ = αᵢ^∨`, which is the `i`-th coordinate of

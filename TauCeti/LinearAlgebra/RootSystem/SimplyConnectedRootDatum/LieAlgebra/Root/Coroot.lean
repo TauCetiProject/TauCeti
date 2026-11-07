@@ -18,7 +18,7 @@ vectors specified by the simply connected root datum. Consequently its binomial 
 belong to the simple-generator Kostant form. These are the Cartan inputs for the rank-one
 root-word identities at nonsimple roots.
 
-`TauCeti.DynkinType.chevalleyRootSubgroup_mul_mul_eq_torus_mul` identifies
+`TauCeti.DynkinType.chevalleyRootSubgroup_mul_mul_eq_kostantTorusPoints_mul` identifies
 `x_α(s) x_{-α}(-s⁻¹) x_α(s)` with the coroot value times the same word at `s = 1`,
 for every root on a Kostant-stable weight lattice over every commutative value ring.
 It requires that the coroot act nontrivially on the rational representation, as holds for a
@@ -26,8 +26,9 @@ faithful Chevalley datum. The torus used here is the full-weight parametrization
 identifies its coroot values and does not assert that this parametrization reaches the entire
 torus of an arbitrary datum.
 
-The coordinate transport follows the existing type-F₄ calculation
-`TauCeti.DynkinType.f4KillingCoroot_eq_sum_simple`. The root-word identity applies the generic
+The coordinate transport uses `TauCeti.DynkinType.coroot_rootEquiv_eq_sum`, which generalizes
+the original type-F₄ calculation in `TauCeti/Algebra/Lie/F4/ChevalleyAction.lean`.
+The root-word identity applies the generic
 `kostantRootSubgroupParam_mul_mul_eq_kostantCoordinateCocharacter_mul_kostantWeylGL`
 from `TauCeti.UniversalEnvelopingAlgebra` to the single Cartan vector of the chosen coroot;
 the integral-coordinate calculation supplies its admissibility and weight equations.
@@ -47,37 +48,6 @@ open LieAlgebra LieAlgebra.IsKilling
 variable (t : DynkinType) (ht : t.Valid)
 
 attribute [local instance] TauCeti.moduleNNRat
-
-/-- Every Killing coroot has the simple-coroot coordinates of the pinned integral datum. -/
-theorem coroot_rootEquiv_eq_sum (α : Fin t.numRoots) :
-    ((coroot (t.rootEquiv ht α : LieModule.Weight ℚ (t.cartanSubalgebra ht)
-        (t.lieAlgebra ht)) : t.cartanSubalgebra ht) : t.lieAlgebra ht) =
-      ∑ i, (t.simplyConnectedRootDatum ht).coroot α i • (t.lieBasis ht).h i := by
-  let E := t.rationalRootSystemEquiv ht
-  have hcoroot : E.coweightEquiv.symm ((t.rationalRootSystem ht).coroot α) =
-      (rootSystem (t.cartanSubalgebra ht)).coroot (t.rootEquiv ht α) := by
-    apply E.coweightEquiv.injective
-    rw [LinearEquiv.apply_symm_apply, RootPairing.Equiv.coweightEquiv_apply]
-    simpa only [rootEquiv_eq_indexEquiv, Equiv.symm_apply_apply] using
-      (RootPairing.Hom.coroot_coweightMap_apply _ _ (E.indexEquiv α) E.toHom).symm
-  have hsimple (i : Fin t.rank) :
-      E.coweightEquiv.symm (Pi.single i 1) = t.cartanBasis ht i := by
-    have hs : (t.rationalRootSystem ht).coroot (t.simpleIndex ht i) = Pi.single i 1 := by
-      ext j
-      simp only [coroot_rationalRootSystem, coroot_simpleIndex]
-      by_cases hij : i = j <;> simp [hij]
-    rw [← hs, rationalRootSystemEquiv_coweightEquiv_symm_coroot_simpleIndex]
-    -- The Cartan basis and the simple Killing coroot have the same underlying Lie vector.
-    apply Subtype.ext
-    rw [rootSystem_coroot_apply, (t.lieBasis ht).coroot_eq_h', coe_cartanBasis]
-    rfl
-  have hexp := congrArg E.coweightEquiv.symm
-    (pi_eq_sum_univ' ((t.rationalRootSystem ht).coroot α))
-  rw [map_sum] at hexp
-  simp only [map_smul, hsimple, coroot_rationalRootSystem] at hexp
-  rw [hcoroot] at hexp
-  simpa [rootSystem_coroot_apply, coe_cartanBasis, Int.cast_smul_eq_zsmul ℚ] using
-    congrArg Subtype.val hexp
 
 /-- The binomial coefficients of every numbered Killing coroot belong to the Kostant form
 presented using only the simple root and Cartan generators. -/
@@ -155,7 +125,7 @@ include hwt in
 coroot, including at nonsimple roots. The only nondegeneracy assumption is that this coroot acts
 nontrivially on the rational representation; in particular a faithful Chevalley datum qualifies.
 The coefficient ring may have arbitrary characteristic and may be nonreduced. -/
-theorem chevalleyRootSubgroup_mul_mul_eq_torus_mul (α : Fin t.numRoots)
+theorem chevalleyRootSubgroup_mul_mul_eq_kostantTorusPoints_mul (α : Fin t.numRoots)
     (hH : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ
       ((coroot (t.rootEquiv ht α : LieModule.Weight ℚ (t.cartanSubalgebra ht)
         (t.lieAlgebra ht)) : t.cartanSubalgebra ht) : t.lieAlgebra ht)) ≠ 0)

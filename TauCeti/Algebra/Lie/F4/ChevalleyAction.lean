@@ -161,65 +161,6 @@ theorem f4_chainCoeffs_eq (α β : Fin 48)
   exact ⟨h.1.symm.trans (f4KillingRootSystem_chainTopCoeff α β),
     h.2.symm.trans (f4KillingRootSystem_chainBotCoeff α β)⟩
 
-/-- Every Killing coroot expands in the simple Killing coroots with the coordinates of the
-corresponding pinned integral F₄ coroot. -/
-theorem f4KillingCoroot_eq_sum_simple (β : Fin 48) :
-    (rootSystem (F4.cartanSubalgebra valid_F4)).coroot (f4KillingRootLabel β) =
-      ∑ i : Fin F4.rank,
-        ((F4.rationalRootSystem valid_F4).coroot (f4RootIndex β) i) •
-          (rootSystem (F4.cartanSubalgebra valid_F4)).coroot
-            ((F4.lieBasis valid_F4).baseSupportEquiv i) := by
-  -- Expand in the rational simple-coroot basis, then transport through the coweight equivalence.
-  let E := F4.rationalRootSystemEquiv valid_F4
-  let k := f4RootIndex β
-  have hsimple (i : Fin F4.rank) :
-      (F4.rationalRootSystem valid_F4).coroot (F4.simpleSupportEquiv valid_F4 i) =
-        Pi.single i 1 := by
-    ext j
-    simp only [coroot_rationalRootSystem, coe_simpleSupportEquiv, coroot_simpleIndex]
-    by_cases hij : i = j
-    · subst j
-      rw [Pi.single_eq_same, Pi.single_eq_same]
-      norm_num
-    · rw [Pi.single_eq_of_ne (Ne.symm hij), Pi.single_eq_of_ne (Ne.symm hij)]
-      norm_num
-  have hsource : (F4.rationalRootSystem valid_F4).coroot k =
-      ∑ i : Fin F4.rank, ((F4.rationalRootSystem valid_F4).coroot k i) •
-        (F4.rationalRootSystem valid_F4).coroot
-          (F4.simpleSupportEquiv valid_F4 i) := by
-    calc
-      _ = ∑ i, ((F4.rationalRootSystem valid_F4).coroot k i) • Pi.single i 1 :=
-        pi_eq_sum_univ' ((F4.rationalRootSystem valid_F4).coroot k)
-      _ = _ := by
-        apply Finset.sum_congr rfl
-        intro i _
-        exact congrArg (((F4.rationalRootSystem valid_F4).coroot k i) • ·)
-          (hsimple i).symm
-  calc
-    _ = E.coweightEquiv.symm ((F4.rationalRootSystem valid_F4).coroot k) :=
-      by
-      apply E.coweightEquiv.injective
-      rw [LinearEquiv.apply_symm_apply, RootPairing.Equiv.coweightEquiv_apply]
-      simpa only [f4KillingRootLabel, E, k, Equiv.symm_apply_apply] using
-        RootPairing.Hom.coroot_coweightMap_apply _ _ (E.indexEquiv k) E.toHom
-    _ = E.coweightEquiv.symm (∑ i : Fin F4.rank,
-        ((F4.rationalRootSystem valid_F4).coroot k i) •
-          (F4.rationalRootSystem valid_F4).coroot
-            (F4.simpleSupportEquiv valid_F4 i)) := congrArg E.coweightEquiv.symm hsource
-    _ = ∑ i : Fin F4.rank, ((F4.rationalRootSystem valid_F4).coroot k i) •
-        E.coweightEquiv.symm ((F4.rationalRootSystem valid_F4).coroot
-          (F4.simpleSupportEquiv valid_F4 i)) := by
-      rw [map_sum]
-      apply Finset.sum_congr rfl
-      intro i _
-      rw [map_smul]
-    _ = _ := by
-      apply Finset.sum_congr rfl
-      intro i _
-      apply congrArg (((F4.rationalRootSystem valid_F4).coroot k i) • ·)
-      simpa only [coe_simpleSupportEquiv] using
-        F4.rationalRootSystemEquiv_coweightEquiv_symm_coroot_simpleIndex valid_F4 i
-
 /-- The Cartan integer of a pinned Killing root against a simple Killing coroot is the
 corresponding integral pairing in the pinned F₄ datum. -/
 theorem f4RootCartanWeight_simple (α : Fin 48) (i : Fin F4.rank) :
