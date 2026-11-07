@@ -21,6 +21,9 @@ nonempty finite regular forest.
   forest has degree at most one.
 * `SimpleGraph.IsAcyclic.not_adj_getVert_of_add_one_lt`: nonconsecutive vertices of a path
   in an acyclic graph are not adjacent.
+* `SimpleGraph.IsAcyclic.not_adj_getVert_of_adj_start`, `…_of_adj_end`: an off-path neighbour of an
+  end of a path is not adjacent to the other path vertices; `adj_getVert_iff_eq_zero`,
+  `adj_getVert_iff_eq_length` restate this as an adjacency characterization.
 * `SimpleGraph.IsAcyclic.ne_of_adj_start_of_adj_end`: an off-path neighbour of a path's start
   differs from every neighbour of its end.
 * `SimpleGraph.IsAcyclic.not_adj_of_adj_start_of_adj_end`: when both lie off the path, such a
@@ -72,6 +75,60 @@ theorem _root_.SimpleGraph.IsAcyclic.not_adj_of_adj_start_of_adj_end {V : Type*}
   have hmem := hG.mem_support_of_ne_mem_support_of_adj_of_isPath (hq.cons ha' (h := ha.symm))
     hadj.isPath_toWalk hb (by simp [hb.ne, ne_of_mem_of_not_mem q.end_mem_support ha'])
   simp [hadj.ne', hb'] at hmem
+
+/-- In an acyclic graph, an off-path neighbour `x` of the start of a path is not adjacent to any
+later vertex of the path. -/
+theorem _root_.SimpleGraph.IsAcyclic.not_adj_getVert_of_adj_start {V : Type*} {G : SimpleGraph V}
+    {u v x : V} {p : G.Walk u v} (hG : G.IsAcyclic) (hp : p.IsPath) (hux : G.Adj u x)
+    (hx : x ≠ p.snd) {i : ℕ} (hi0 : 0 < i) (hi : i ≤ p.length) :
+    ¬G.Adj x (p.getVert i) := by
+  have hx_support : x ∉ p.support := fun hxmem ↦ hx (hG.eq_snd_of_adj_start hp hux hxmem)
+  intro hxy
+  let q : G.Walk u (p.getVert i) := p.take i
+  have hq : q.IsPath := hp.take i
+  have hxq : x ∉ q.support := by
+    simp only [q, SimpleGraph.Walk.support_take]
+    exact fun hxmem ↦ hx_support (List.take_subset _ _ hxmem)
+  let q' : G.Walk x (p.getVert i) := q.cons hux.symm
+  have hq' : q'.IsPath := hq.cons hxq
+  have heq := hG.subsingleton_path x (p.getVert i) |>.elim
+    (⟨q', hq'⟩ : G.Path x (p.getVert i)) (SimpleGraph.Path.singleton hxy)
+  have hlen := congrArg (fun r : G.Path x (p.getVert i) ↦ r.val.length) heq
+  simp only [q', SimpleGraph.Walk.length_cons, q, SimpleGraph.Walk.take_length,
+    Nat.min_eq_left hi, SimpleGraph.Path.singleton_coe, hxy.length_toWalk] at hlen
+  omega
+
+/-- In an acyclic graph, an off-path neighbour `x` of the end of a path is not adjacent to any
+earlier vertex of the path. -/
+theorem _root_.SimpleGraph.IsAcyclic.not_adj_getVert_of_adj_end {V : Type*} {G : SimpleGraph V}
+    {u v x : V} {p : G.Walk u v} (hG : G.IsAcyclic) (hp : p.IsPath) (hvx : G.Adj v x)
+    (hx : x ≠ p.penultimate) {i : ℕ} (hi : i < p.length) :
+    ¬G.Adj x (p.getVert i) := by
+  have hget : p.reverse.getVert (p.length - i) = p.getVert i := by
+    rw [p.getVert_reverse, Nat.sub_sub_self hi.le]
+  rw [← hget]
+  exact hG.not_adj_getVert_of_adj_start hp.reverse hvx
+    (by simpa using hx) (Nat.sub_pos_of_lt hi) (by simp)
+
+/-- In an acyclic graph, an off-path neighbour `x` of the start of a path (other than the path's
+second vertex) is adjacent to the vertex `j` of the path exactly when `j = 0`. -/
+theorem _root_.SimpleGraph.IsAcyclic.adj_getVert_iff_eq_zero {V : Type*} {G : SimpleGraph V}
+    {u v x : V} {p : G.Walk u v} (hG : G.IsAcyclic) (hp : p.IsPath) (hux : G.Adj u x)
+    (hx : x ≠ p.snd) {j : ℕ} (hj : j ≤ p.length) : G.Adj x (p.getVert j) ↔ j = 0 := by
+  rcases Nat.eq_zero_or_pos j with rfl | hj0
+  · simpa using hux.symm
+  · exact iff_of_false (hG.not_adj_getVert_of_adj_start hp hux hx hj0 hj) hj0.ne'
+
+/-- In an acyclic graph, an off-path neighbour `x` of the end of a path (other than the path's
+penultimate vertex) is adjacent to the vertex `j` of the path exactly when `j` is the last
+index. -/
+theorem _root_.SimpleGraph.IsAcyclic.adj_getVert_iff_eq_length {V : Type*} {G : SimpleGraph V}
+    {u v x : V} {p : G.Walk u v} (hG : G.IsAcyclic) (hp : p.IsPath) (hvx : G.Adj v x)
+    (hx : x ≠ p.penultimate) {j : ℕ} (hj : j ≤ p.length) :
+    G.Adj x (p.getVert j) ↔ j = p.length := by
+  rcases hj.eq_or_lt with rfl | hlt
+  · simpa using hvx.symm
+  · exact iff_of_false (hG.not_adj_getVert_of_adj_end hp hvx hx hlt) hlt.ne
 
 /-- A nonempty finite regular forest has degree at most one. -/
 theorem _root_.SimpleGraph.IsAcyclic.degree_le_one_of_isRegularOfDegree
