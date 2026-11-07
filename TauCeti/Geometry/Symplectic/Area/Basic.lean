@@ -13,6 +13,7 @@ import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
+import TauCeti.Geometry.Symplectic.Duality
 import TauCeti.MeasureTheory.Integral.DivergenceTheorem
 
 /-!
@@ -81,6 +82,15 @@ theorem integrableOn_fderiv_apply_of_integrableOn_norm_fderiv_sq
     _ ≤ ‖B‖ * ‖fderiv ℝ u z‖ ^ 2 := by
       rw [pow_two, ← mul_assoc]
       gcongr
+
+/-- The area density of a map which is `C¹` near a compact set is integrable on it. -/
+theorem integrableOn_fderiv_apply_of_contDiffAt [FiniteDimensional ℝ V] (ω : SymplecticForm V)
+    {v : ℂ → V} {K : Set ℂ} (hK : IsCompact K) (hv : ∀ z ∈ K, ContDiffAt ℝ 1 v z) :
+    IntegrableOn (fun z ↦ ω (fderiv ℝ v z 1) (fderiv ℝ v z I)) K := by
+  have hcont : ContinuousOn (fderiv ℝ v) K := fun z hz ↦
+    ((hv z hz).continuousAt_fderiv one_ne_zero).continuousWithinAt
+  exact (ω.continuousOn_apply_comp (hcont.clm_apply continuousOn_const)
+    (hcont.clm_apply continuousOn_const)).integrableOn_compact hK
 
 /-- **Stokes' formula for symplectic area on a rectangle.** If `u` is `C²` at every point of the
 rectangle `Icc a b ⊆ ℝ × ℝ`, its symplectic area over the rectangle is the integral of the
