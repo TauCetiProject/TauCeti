@@ -42,6 +42,44 @@ namespace TauCeti
 
 variable {ι : Type*} [Fintype ι]
 
+/-- On the closed upper half plane in the Riemann sphere, the only point mapped by the
+Schwarz--Christoffel sphere extension to a finite boundary value with a unique spherical
+boundary parameter, and not attained in the interior, is that parameter. -/
+private lemma eq_coe_of_schwarzChristoffelSphereExtension_eq_boundary
+    (a e : ι → ℝ) (z₀ : UpperHalfPlane) (x : ℝ)
+    (hnot : schwarzChristoffelBoundary a e z₀ x ∉
+      schwarzChristoffelPrimitive a e z₀ '' upperHalfPlaneSet)
+    (hunique : ∀ t : OnePoint ℝ, schwarzChristoffelSphereBoundary a e z₀ t =
+      schwarzChristoffelSphereBoundary a e z₀ (x : OnePoint ℝ) → t = (x : OnePoint ℝ))
+    (hBx : schwarzChristoffelSphereBoundary a e z₀ (x : OnePoint ℝ) =
+      schwarzChristoffelBoundary a e z₀ x) (v : OnePoint ℂ)
+    (hvC : v ∈ closure (((↑) : ℂ → OnePoint ℂ) '' upperHalfPlaneSet))
+    (hv : schwarzChristoffelSphereExtension a e z₀ v = schwarzChristoffelBoundary a e z₀ x) :
+    v = ((x : ℂ) : OnePoint ℂ) := by
+  induction v using OnePoint.rec with
+  | infty =>
+    have hB : schwarzChristoffelSphereBoundary a e z₀ ∞ =
+        schwarzChristoffelBoundary a e z₀ x := by
+      simpa only [schwarzChristoffelSphereBoundary_apply, OnePoint.map_infty] using hv
+    exact False.elim (OnePoint.infty_ne_coe x (hunique ∞ (hB.trans hBx.symm)))
+  | coe z =>
+    have hz : 0 ≤ z.im := by
+      simpa [closure_coe_image_upperHalfPlaneSet] using hvC
+    rcases lt_or_eq_of_le hz with hz | hz
+    · have hF : schwarzChristoffelPrimitive a e z₀ z =
+          schwarzChristoffelBoundary a e z₀ x := by
+        apply OnePoint.coe_injective
+        simpa only [schwarzChristoffelSphereExtension_coe_of_im_pos a e z₀ hz] using hv
+      exact False.elim (hnot ⟨z, hz, hF⟩)
+    · have hre : (z.re : ℂ) = z := by
+        exact Complex.ext (by simp) (by simp [← hz])
+      have hB : schwarzChristoffelSphereBoundary a e z₀ (z.re : OnePoint ℝ) =
+          schwarzChristoffelBoundary a e z₀ x := by
+        simpa only [schwarzChristoffelSphereBoundary_apply, OnePoint.map_some, hre] using hv
+      have heq := OnePoint.coe_injective
+        (hunique (z.re : OnePoint ℝ) (hB.trans hBx.symm))
+      exact congrArg ((↑) : ℂ → OnePoint ℂ) ((congrArg ofReal heq).symm.trans hre).symm
+
 /-- Near a finite boundary value with a unique spherical boundary parameter, all interior
 preimages lie in any prescribed neighborhood of that parameter. The chosen boundary value
 must not be attained in the interior; other boundary values may be attained there. -/
@@ -67,32 +105,8 @@ theorem exists_ball_preimage_schwarzChristoffelPrimitive_subset_of_unique_bounda
     schwarzChristoffelSphereBoundary_coe_of_exponent_sum_gt_neg_one a e z₀ x hx
   -- Interior points are excluded by `hnot`; boundary points are determined by `hunique`.
   have hfiber (v : C) (hv : C.domRestrict E v = b) :
-      (v : OnePoint ℂ) = ((x : ℂ) : OnePoint ℂ) := by
-    rcases v with ⟨v, hvC⟩
-    induction v using OnePoint.rec with
-    | infty =>
-      have hB : schwarzChristoffelSphereBoundary a e z₀ ∞ = b := by
-        simpa only [domRestrict_apply, E, schwarzChristoffelSphereBoundary_apply,
-          OnePoint.map_infty] using hv
-      exact False.elim (OnePoint.infty_ne_coe x (hunique ∞ (hB.trans hBx.symm)))
-    | coe z =>
-      have hz : 0 ≤ z.im := by
-        simpa [C, closure_coe_image_upperHalfPlaneSet] using hvC
-      rcases lt_or_eq_of_le hz with hz | hz
-      · have hF : schwarzChristoffelPrimitive a e z₀ z =
-            schwarzChristoffelBoundary a e z₀ x := by
-          apply OnePoint.coe_injective
-          simpa only [domRestrict_apply, E, b,
-            schwarzChristoffelSphereExtension_coe_of_im_pos a e z₀ hz] using hv
-        exact False.elim (hnot ⟨z, hz, hF⟩)
-      · have hre : (z.re : ℂ) = z := by
-          exact Complex.ext (by simp) (by simp [← hz])
-        have hB : schwarzChristoffelSphereBoundary a e z₀ (z.re : OnePoint ℝ) = b := by
-          simpa only [domRestrict_apply, E, schwarzChristoffelSphereBoundary_apply,
-            OnePoint.map_some, hre] using hv
-        have heq := OnePoint.coe_injective
-          (hunique (z.re : OnePoint ℝ) (hB.trans hBx.symm))
-        exact congrArg ((↑) : ℂ → OnePoint ℂ) ((congrArg ofReal heq).symm.trans hre).symm
+      (v : OnePoint ℂ) = ((x : ℂ) : OnePoint ℂ) :=
+    eq_coe_of_schwarzChristoffelSphereExtension_eq_boundary a e z₀ x hnot hunique hBx v v.2 hv
   -- Compactness makes the extension a closed map. Its unique fiber controls all nearby fibers.
   have hnear : ∀ᶠ w in 𝓝 b, ∀ v : C, C.domRestrict E v = w →
       (v : OnePoint ℂ) ∈ ((↑) : ℂ → OnePoint ℂ) '' U := by
