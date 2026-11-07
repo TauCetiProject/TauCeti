@@ -11,15 +11,14 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 /-!
 # First moment of sample covariance matrices
 
-The normalized trace of a sample covariance matrix is the mean squared norm of its entries.
-Consequently, its expectation is one when each entry has second moment one. Neither independence
-nor identical distribution is needed.
+Building on `Matrix.re_trace_sampleCovariance`, the expected normalized trace is the mean of the
+entrywise second moments. When both dimensions are nonempty and each entry has second moment one,
+the expectation is one. Neither independence nor identical distribution is needed.
 
 ## Main declarations
 
-* `Matrix.re_trace_sampleCovariance`: the deterministic trace identity.
-* `TauCeti.Probability.integral_normalizedTrace_sampleCovariance`: the expectation identity.
-* `TauCeti.Probability.integral_normalizedTrace_sampleCovariance_eq_one`: the unit-second-moment
+* `TauCeti.Probability.integral_one_div_card_mul_re_trace_sampleCovariance`: the expectation identity.
+* `TauCeti.Probability.integral_one_div_card_mul_re_trace_sampleCovariance_eq_one`: the unit-moment
   specialization.
 -/
 
@@ -34,7 +33,7 @@ variable {Ω 𝕜 p n : Type*} [MeasurableSpace Ω] [RCLike 𝕜] [Fintype p] [F
 
 /-- The expected normalized trace of a sample covariance matrix is the average of the entrywise
 second moments. The formula also holds when either index type is empty. -/
-theorem integral_normalizedTrace_sampleCovariance
+theorem integral_one_div_card_mul_re_trace_sampleCovariance
     (hX : ∀ i j, Integrable (fun ω ↦ ‖X ω i j‖ ^ 2) μ) :
     ∫ ω, (1 / (Fintype.card p : ℝ)) * RCLike.re (Matrix.sampleCovariance (X ω)).trace ∂μ =
       (1 / ((Fintype.card p : ℝ) * (Fintype.card n : ℝ))) *
@@ -47,12 +46,13 @@ theorem integral_normalizedTrace_sampleCovariance
 
 /-- If both dimensions are nonempty and every entry has second moment one, the expected
 normalized trace is one. -/
-theorem integral_normalizedTrace_sampleCovariance_eq_one [Nonempty p] [Nonempty n]
-    (hX : ∀ i j, Integrable (fun ω ↦ ‖X ω i j‖ ^ 2) μ)
+theorem integral_one_div_card_mul_re_trace_sampleCovariance_eq_one [Nonempty p] [Nonempty n]
     (hsecond : ∀ i j, ∫ ω, ‖X ω i j‖ ^ 2 ∂μ = 1) :
     ∫ ω, (1 / (Fintype.card p : ℝ)) * RCLike.re (Matrix.sampleCovariance (X ω)).trace ∂μ =
       1 := by
-  rw [integral_normalizedTrace_sampleCovariance X hX]
+  have hX : ∀ i j, Integrable (fun ω ↦ ‖X ω i j‖ ^ 2) μ :=
+    fun i j ↦ Integrable.of_integral_ne_zero (by rw [hsecond i j]; exact one_ne_zero)
+  rw [integral_one_div_card_mul_re_trace_sampleCovariance X hX]
   simp only [hsecond, Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
   have hp : (Fintype.card p : ℝ) ≠ 0 := by exact_mod_cast Fintype.card_ne_zero
   have hn : (Fintype.card n : ℝ) ≠ 0 := by exact_mod_cast Fintype.card_ne_zero
