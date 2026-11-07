@@ -38,23 +38,13 @@ private theorem eval₂_coeRingHom_eq_zero (P : (MvPolynomial σ ℂ)[X]) {f : (
     (hrel : ∀ᶠ y in l, (P.map (MvPolynomial.eval fun i ↦ (y i : ℂ))).eval (f y) = 0) :
     P.eval₂ ((Germ.coeRingHom l).comp
       (RingHom.pi fun y : σ → ℝ ↦ MvPolynomial.eval fun i ↦ (y i : ℂ))) (f : Germ l ℂ) = 0 := by
-  let u : MvPolynomial σ ℂ →+* ((σ → ℝ) → ℂ) :=
-    RingHom.pi fun y ↦ MvPolynomial.eval fun i ↦ (y i : ℂ)
-  have heval : P.eval₂ u f =
-      (fun y ↦ (P.map (MvPolynomial.eval fun i ↦ (y i : ℂ))).eval (f y)) := by
-    funext y
-    have hu : (Pi.evalRingHom (fun _ : σ → ℝ ↦ ℂ) y).comp u =
-        MvPolynomial.eval (fun i ↦ (y i : ℂ)) := by
-      ext <;> rfl
-    simpa only [hu, eval_map, Pi.evalRingHom_apply] using
-      (hom_eval₂ P u (Pi.evalRingHom (fun _ : σ → ℝ ↦ ℂ) y) f)
-  calc
-    P.eval₂ ((Germ.coeRingHom l).comp u) (f : Germ l ℂ)
-        = Germ.coeRingHom l (P.eval₂ u f) :=
-      (hom_eval₂ P u (Germ.coeRingHom l) f).symm
-    _ = 0 := by
-      rw [heval, Germ.coe_coeRingHom, ← Germ.coe_zero, Germ.coe_eq]
-      exact hrel
+  have hu (y : σ → ℝ) : (Pi.evalRingHom (fun _ : σ → ℝ ↦ ℂ) y).comp
+      (RingHom.pi fun y : σ → ℝ ↦ MvPolynomial.eval fun i ↦ (y i : ℂ)) =
+      MvPolynomial.eval (fun i ↦ (y i : ℂ)) := by
+    ext <;> rfl
+  rw [Germ.eval₂_coeRingHom_comp_coe, ← Germ.coe_zero, Germ.coe_eq]
+  simp only [hu]
+  exact hrel
 
 /-- Real germs embed into complex germs as an injective algebra map over the coordinate
 polynomials. -/
@@ -65,15 +55,13 @@ private theorem exists_injective_algHom_germ_ofReal
     (hB : ∀ p : MvPolynomial σ ℝ, algebraMap _ (Germ l ℂ) p =
       ((fun y ↦ (MvPolynomial.eval y p : ℂ) : (σ → ℝ) → ℂ) : Germ l ℂ)) :
     ∃ g : Germ l ℝ →ₐ[MvPolynomial σ ℝ] Germ l ℂ, Function.Injective g ∧
-      ∀ u : (σ → ℝ) → ℝ, g (u : Germ l ℝ) = ((fun y ↦ (u y : ℂ) : (σ → ℝ) → ℂ) : Germ l ℂ) :=
-  ⟨{ (algebraMap ℝ ℂ).mapGerm l with
-      commutes' := fun p ↦ by
-        -- Present the inherited ring-homomorphism field explicitly.
-        change (algebraMap ℝ ℂ).mapGerm l (algebraMap _ (Germ l ℝ) p) = _
-        rw [hA, hB, RingHom.mapGerm_coe]
-        rfl },
-    (algebraMap ℝ ℂ).mapGerm_injective l Complex.ofReal_injective,
-    fun _ ↦ RingHom.mapGerm_coe _ _ _⟩
+      ∀ u : (σ → ℝ) → ℝ, g (u : Germ l ℝ) = ((fun y ↦ (u y : ℂ) : (σ → ℝ) → ℂ) : Germ l ℂ) := by
+  obtain ⟨g, hg⟩ := RingHom.exists_algHom_mapGerm (A := MvPolynomial σ ℝ) (algebraMap ℝ ℂ)
+    (l := l) fun p ↦ by
+      rw [hA, hB, RingHom.mapGerm_coe]
+      rfl
+  exact ⟨g, fun a b hab ↦ (algebraMap ℝ ℂ).mapGerm_injective l Complex.ofReal_injective
+      (by rwa [hg, hg] at hab), fun u ↦ by rw [hg]; exact RingHom.mapGerm_coe _ _ _⟩
 
 /-- Complex conjugation of germs is an algebra automorphism over the real coordinate
 polynomials. -/
@@ -82,20 +70,19 @@ private theorem exists_algHom_germ_star [Algebra (MvPolynomial σ ℝ) (Germ l �
       ((fun y ↦ (MvPolynomial.eval y p : ℂ) : (σ → ℝ) → ℂ) : Germ l ℂ)) :
     ∃ j : Germ l ℂ →ₐ[MvPolynomial σ ℝ] Germ l ℂ,
       ∀ u : (σ → ℝ) → ℂ,
-        j (u : Germ l ℂ) = ((fun y ↦ star (u y) : (σ → ℝ) → ℂ) : Germ l ℂ) :=
-  ⟨{ (starRingEnd ℂ).mapGerm l with
-      commutes' := fun p ↦ by
-        -- Present the inherited ring-homomorphism field explicitly.
-        change (starRingEnd ℂ).mapGerm l (algebraMap _ (Germ l ℂ) p) = _
-        rw [hB, RingHom.mapGerm_coe]
-        congr 1
-        funext y
-        exact Complex.conj_ofReal _ },
-    fun _ ↦ RingHom.mapGerm_coe _ _ _⟩
+        j (u : Germ l ℂ) = ((fun y ↦ star (u y) : (σ → ℝ) → ℂ) : Germ l ℂ) := by
+  obtain ⟨j, hj⟩ := RingHom.exists_algHom_mapGerm (A := MvPolynomial σ ℝ) (starRingEnd ℂ)
+    (l := l) fun p ↦ by
+      rw [hB, RingHom.mapGerm_coe]
+      congr 1
+      funext y
+      exact Complex.conj_ofReal _
+  exact ⟨j, fun u ↦ by rw [hj]; exact RingHom.mapGerm_coe _ _ _⟩
 
-/-- Algebraicity is closed under sums and products: the real and imaginary parts of an algebraic
-complex germ are algebraic once its conjugate and the constants are. -/
-private theorem isAlgebraic_re_im_germ {R : Type*} [CommRing R] [NoZeroDivisors R]
+/-- The real and imaginary parts of a complex germ are algebraic over `R` once the germ, its
+conjugate and all constant germs are: `re f = (f + conj f) / 2` and `im f = (f - conj f) / (2 i)`
+are built from them by sums and products. -/
+theorem isAlgebraic_re_im_germ {R : Type*} [CommRing R] [NoZeroDivisors R]
     [Algebra R (Germ l ℂ)] {f : (σ → ℝ) → ℂ} (hf : IsAlgebraic R (f : Germ l ℂ))
     (hconj : IsAlgebraic R ((fun y ↦ star (f y) : (σ → ℝ) → ℂ) : Germ l ℂ))
     (hc : ∀ z : ℂ, IsAlgebraic R ((fun _ : σ → ℝ ↦ z : (σ → ℝ) → ℂ) : Germ l ℂ)) :
@@ -146,7 +133,7 @@ theorem exists_real_polynomial_relations {σ : Type*} {l : Filter (σ → ℝ)}
     congr 1
   have hB (p : R) :
       algebraMap R B p = ((fun y : σ → ℝ ↦ (MvPolynomial.eval y p : ℂ)) : B) := by
-    rw [show algebraMap R B p = s (algebraMap R S p) from rfl, hs]
+    rw [RingHom.algebraMap_toAlgebra, RingHom.comp_apply, hs]
     congr 1
     funext y
     rw [MvPolynomial.algebraMap_def]
