@@ -30,12 +30,15 @@ nonzero differential into it, the identification of the homology with the cycles
 `Zᵢ ⟶ Kᵢ ⟶ Zⱼ` of cycles is exact when `j = c.next i`
 (`HomologicalComplex.cyclesShortComplex_exact`). For adjacent degrees `i` and `j`, the cycles of a
 complex exact in degree `j` fit into a short exact sequence `0 ⟶ Zᵢ ⟶ Kᵢ ⟶ Zⱼ ⟶ 0`
-(`HomologicalComplex.cyclesShortComplex_shortExact`), which stays short exact when its outer terms
+(`HomologicalComplex.cyclesShortComplex_shortExact`, written out as
+`HomologicalComplex.shortExact_mk_iCycles_toCycles`), which stays short exact when its outer terms
 are replaced by isomorphic objects
 (`HomologicalComplex.cyclesShortComplex_shortExact_of_iso`), and whose second map `Kᵢ ⟶ Zⱼ` is an
 isomorphism when `Zᵢ` vanishes (`HomologicalComplex.isIso_toCycles_of_isZero_cycles`); in
 particular `K⁰ ⟶ Z¹` is an isomorphism for a cochain complex exact in degrees `0` and `1`
-(`CochainComplex.isIso_toCycles_zero_of_exactAt`). Likewise a
+(`CochainComplex.isIso_toCycles_zero_of_exactAt`). A monomorphism of nonnegative cochain
+complexes that is an isomorphism on zero cochains induces an isomorphism on zero cohomology
+(`CochainComplex.isIso_homologyMap_zero_of_mono`). Likewise a
 monomorphism onto the kernel of the differential `Kᵢ ⟶ Kⱼ` gives a short exact sequence
 `0 ⟶ A ⟶ Kᵢ ⟶ Zⱼ ⟶ 0` (`HomologicalComplex.shortExact_toCycles`). A morphism of complexes
 vanishing in some degree induces zero on homology there
@@ -244,6 +247,15 @@ lemma cyclesShortComplex_shortExact (i j : ι) [K.HasHomology i] [K.HasHomology 
   exact ShortComplex.ShortExact.mk' hE
     inferInstance (epi_toCycles_of_exactAt hK (c.prev_eq' hij))
 
+/-- `HomologicalComplex.cyclesShortComplex_shortExact` with the short complex written out as
+`ShortComplex.mk (K.iCycles i) (K.toCycles i j) _`, so that its terms are the cycles and the term
+of `K` themselves. -/
+lemma shortExact_mk_iCycles_toCycles (i j : ι) [K.HasHomology i] [K.HasHomology j]
+    [(K.cyclesShortComplex i j).HasHomology] (hij : c.Rel i j) (hK : K.ExactAt j) :
+    (ShortComplex.mk (K.iCycles i) (K.toCycles i j) (K.iCycles_toCycles i j)).ShortExact := by
+  have := K.cyclesShortComplex_shortExact i j hij hK
+  rwa [cyclesShortComplex_def] at this
+
 /-- The map `Kᵢ ⟶ Zⱼ(K)` onto the cycles is an isomorphism when `i` and `j` are adjacent, `K` is
 exact in degree `j` and the cycles of `K` in degree `i` vanish. -/
 lemma isIso_toCycles_of_isZero_cycles [Balanced C] {i j : ι} [K.HasHomology i] [K.HasHomology j]
@@ -284,6 +296,28 @@ lemma isIso_toCycles_zero_of_exactAt (h₀ : K.ExactAt 0) (h₁ : K.ExactAt 1) :
     IsIso (K.toCycles 0 1) :=
   K.isIso_toCycles_of_isZero_cycles (by simp) h₁
     (((K.exactAt_iff_isZero_homology 0).1 h₀).of_iso K.isoHomologyπ₀)
+
+/-- A monomorphism of nonnegative cochain complexes that is an isomorphism in degree zero
+induces an isomorphism on zeroth cohomology. -/
+lemma isIso_homologyMap_zero_of_mono {D : Type*} [Category* D] [Abelian D]
+    {K L : CochainComplex D ℕ} (f : K ⟶ L) [Mono f] [IsIso (f.f 0)] :
+    IsIso (HomologicalComplex.homologyMap f 0) := by
+  -- Complex homology is defined as homology of the three-term short complex at this degree.
+  change IsIso (ShortComplex.homologyMap
+    ((HomologicalComplex.shortComplexFunctor _ _ 0).map f))
+  apply ShortComplex.isIso_homologyMap_of_epi_of_isIso_of_mono'
+  · -- The first component is evaluated at `prev 0`, which is zero for the nonnegative shape.
+    change Epi (f.f ((ComplexShape.up ℕ).prev 0))
+    have hp : (ComplexShape.up ℕ).prev 0 = 0 :=
+      (ComplexShape.up ℕ).prev_eq_self' 0 (by simp)
+    rw [hp]
+    infer_instance
+  · -- The middle short-complex component is the map on zero cochains by definition.
+    change IsIso (f.f 0)
+    infer_instance
+  · -- The last component is evaluation in the next degree; evaluation preserves monomorphisms.
+    change Mono (f.f ((ComplexShape.up ℕ).next 0))
+    infer_instance
 
 end CochainComplex
 

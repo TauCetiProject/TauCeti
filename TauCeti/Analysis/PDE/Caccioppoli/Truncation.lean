@@ -60,6 +60,54 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpac
   [mu.IsAddHaarMeasure] {Omega : Opens (EuclideanSpace ℝ ι)}
   {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
 
+/-- On the active set `{u > k}` the truncation gradient is `∇u`; off it, the test jet vanishes.
+This is the pointwise energy estimate behind the Caccioppoli inequality for `(u - k)⁺`. -/
+private theorem UniformlyEllipticOn.ae_pointwise_energy_posPartAbove_le
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    {u : W1p mu Omega 2} {k : ℝ}
+    (hwLp : MemLp (fun x => max (W1p.value u x - k) 0) 2 (mu.restrict Omega))
+    {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) {M : ℝ} (hM : 0 ≤ M)
+    (hψM' : ∀ x ∈ Omega, |ψ x| ≤ M) (hgradM' : ∀ x ∈ Omega, ‖∇ ψ x‖ ≤ M) :
+    let w := W1p.posPartAboveOfMemLp (by norm_num) k u hwLp
+    let z := W1p.contDiffSMul ψ hψ hM hψM' hgradM' w
+    let v := W1p.contDiffSMul ψ hψ hM hψM' hgradM' z
+    ∀ᵐ x ∂mu.restrict Omega,
+      lam * (ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2) ≤
+        energyIntegrand (a x) ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x)
+            ((0 : EuclideanSpace ℝ ι → ℝ) x) (jetField u x) (jetField v x)
+          + lam / 2 * (ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2)
+          + 2 * Lam ^ 2 / lam * (‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2) := by
+  intro w z v
+  have hlam := h.pos
+  have hmem : ∀ᵐ x ∂mu.restrict Omega, x ∈ (Omega : Set (EuclideanSpace ℝ ι)) :=
+    ae_restrict_mem Omega.isOpen.measurableSet
+  filter_upwards [hmem, W1p.gradient_posPartAboveOfMemLp_ae (by norm_num) k u hwLp,
+    W1p.value_posPartAboveOfMemLp_ae (by norm_num) k u hwLp,
+    W1p.gradient_contDiffSMul_ae hψ hM hψM' hgradM' z,
+    W1p.gradient_contDiffSMul_ae hψ hM hψM' hgradM' w,
+    W1p.value_contDiffSMul_ae hψ hM hψM' hgradM' w] with
+      x hx hwg hwv hgv hgz hzv
+  by_cases hxu : k < W1p.value u x
+  · have hwg_active : W1p.gradient w x = W1p.gradient u x := by
+      rw [hwg]
+      have hxmem : x ∈ {y : EuclideanSpace ℝ ι | k < W1p.value u y} := hxu
+      exact Set.indicator_of_mem hxmem (⇑(W1p.gradient u))
+    have hkey := mul_sq_mul_norm_sq_le_matrixBilinearForm_add hlam (ψ x)
+      (W1p.value w x) (W1p.gradient u x) (∇ ψ x)
+      (h.lower_bound hx (W1p.gradient u x))
+      (h.upper_bound hx (∇ ψ x) (W1p.gradient u x))
+    rw [energyIntegrand_apply, jetField_apply, jetField_apply, hgv, hgz, hzv, hwg_active]
+    simpa [driftForm_apply, massForm_apply, smul_eq_mul] using hkey
+  · have hwg_zero : W1p.gradient w x = 0 := by
+      rw [hwg]
+      have hxmem : x ∉ {y : EuclideanSpace ℝ ι | k < W1p.value u y} := hxu
+      exact Set.indicator_of_notMem hxmem (⇑(W1p.gradient u))
+    have hwv_zero : W1p.value w x = 0 := by
+      rw [hwv, max_eq_right (sub_nonpos.mpr (le_of_not_gt hxu))]
+    rw [energyIntegrand_apply, jetField_apply, jetField_apply, hgv, hgz, hzv, hwg_zero,
+      hwv_zero]
+    simp [driftForm_apply, massForm_apply]
+
 /-- **The Caccioppoli inequality for a positive truncation of a weak subsolution.**
 Let `a` be measurable and uniformly elliptic on `Ω` with constants `0 < λ ≤ Λ`, and let
 `u ∈ H¹(Ω)` satisfy
@@ -109,44 +157,10 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_
     exact mul_nonneg (mul_self_nonneg _) (le_max_right _ _)
   have hsub := hu ⟨v, hv⟩ hnonneg
   simp only at hsub
-  have hmem : ∀ᵐ x ∂mu.restrict Omega, x ∈ (Omega : Set (EuclideanSpace ℝ ι)) :=
-    ae_restrict_mem Omega.isOpen.measurableSet
   have hE := h.integrable_energyIntegrand_jetField (b := 0) (c := 0) (beta := 0) (gamma := 0)
     ha aestronglyMeasurable_const aestronglyMeasurable_const (fun _ _ => by simp)
     (fun _ _ => by simp) u v
-  -- On the active set the truncation gradient is `∇u`; off it, the test jet vanishes.
-  have hpt : ∀ᵐ x ∂mu.restrict Omega,
-      lam * (ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2) ≤
-        energyIntegrand (a x) ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x)
-            ((0 : EuclideanSpace ℝ ι → ℝ) x) (jetField u x) (jetField v x)
-          + lam / 2 * (ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2)
-          + 2 * Lam ^ 2 / lam * (‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2) := by
-    filter_upwards [hmem, W1p.gradient_posPartAboveOfMemLp_ae (by norm_num) k u hwLp,
-      W1p.value_posPartAboveOfMemLp_ae (by norm_num) k u hwLp,
-      W1p.gradient_contDiffSMul_ae hψ hM hψM' hgradM' z,
-      W1p.gradient_contDiffSMul_ae hψ hM hψM' hgradM' w,
-      W1p.value_contDiffSMul_ae hψ hM hψM' hgradM' w] with
-        x hx hwg hwv hgv hgz hzv
-    by_cases hxu : k < W1p.value u x
-    · have hwg_active : W1p.gradient w x = W1p.gradient u x := by
-        rw [hwg]
-        have hxmem : x ∈ {y : EuclideanSpace ℝ ι | k < W1p.value u y} := hxu
-        exact Set.indicator_of_mem hxmem (⇑(W1p.gradient u))
-      have hkey := mul_sq_mul_norm_sq_le_matrixBilinearForm_add hlam (ψ x)
-        (W1p.value w x) (W1p.gradient u x) (∇ ψ x)
-        (h.lower_bound hx (W1p.gradient u x))
-        (h.upper_bound hx (∇ ψ x) (W1p.gradient u x))
-      rw [energyIntegrand_apply, jetField_apply, jetField_apply, hgv, hgz, hzv, hwg_active]
-      simpa [driftForm_apply, massForm_apply, smul_eq_mul] using hkey
-    · have hwg_zero : W1p.gradient w x = 0 := by
-        rw [hwg]
-        have hxmem : x ∉ {y : EuclideanSpace ℝ ι | k < W1p.value u y} := hxu
-        exact Set.indicator_of_notMem hxmem (⇑(W1p.gradient u))
-      have hwv_zero : W1p.value w x = 0 := by
-        rw [hwv, max_eq_right (sub_nonpos.mpr (le_of_not_gt hxu))]
-      rw [energyIntegrand_apply, jetField_apply, jetField_apply, hgv, hgz, hzv, hwg_zero,
-        hwv_zero]
-      simp [driftForm_apply, massForm_apply]
+  have hpt := h.ae_pointwise_energy_posPartAbove_le hwLp hψ hM hψM' hgradM'
   -- Apply the weak subsolution inequality to the nonnegative test function.
   have hforce : ∫ x in Omega,
         energyIntegrand (a x) ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x)
