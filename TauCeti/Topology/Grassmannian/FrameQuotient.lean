@@ -42,10 +42,7 @@ and the orbit map of the standard frame is a homeomorphism `U(N) ≃ₜ V_N(𝕜
 (`TauCeti.finiteOrthonormalFrame.unitaryHomeomorph`). The determinant classifies the orbits of
 the special unitary group: two frames `A • f` and `A' • f` lie in the same `SU(N)`-orbit exactly
 when `det A = det A'` (`TauCeti.finiteOrthonormalFrame.exists_specialUnitary_unitaryMap_eq_iff`).
-Over `ℝ`, where `SU(N) = SO(N)` and `det A = ±1`, combining this with the existence, for
-`N ≥ 1`, of an orthogonal matrix `ρ` of determinant `-1` such as `diag(1, …, 1, -1)` shows that
-the full frames form two `SO(N)`-orbits, `O(N) = SO(N) ⊔ ρ SO(N)`. For `N = 2` these are the
-ordered orthonormal two-frames of the plane.
+Over `ℝ` the special unitary group is, by definition, the special orthogonal group `SO(N)`.
 
 The action `TauCeti.finiteOrthonormalFrame.unitaryMulAction` and the standard frame
 `TauCeti.finiteOrthonormalFrame.standard` are defined with the orthonormal frames in
@@ -311,11 +308,8 @@ theorem coe_unitaryHomeomorph_symm_apply (f : finiteOrthonormalFrame 𝕜 N N) (
 
 /-- **The determinant classifies the `SU(N)`-orbits of orthonormal `N`-frames of `𝕜^N`**: the
 frames `A • f` and `A' • f` lie in the same `SU(N)`-orbit exactly when the unitary matrices `A`
-and `A'` have the same determinant. Over `ℝ`, where `SU(N) = SO(N)` and the determinant is `±1`,
-this theorem together with an orthogonal matrix `ρ` of determinant `-1`, which exists for
-`N ≥ 1`, gives two `SO(N)`-orbits; with `unitaryHomeomorph` this is the decomposition
-`O(N) = SO(N) ⊔ ρ SO(N)` of the frames, and for `N = 2` it describes the ordered orthonormal
-two-frames of the plane. -/
+and `A'` have the same determinant. Over `ℝ` the special unitary group is, by definition,
+`SO(N)`. -/
 theorem exists_specialUnitary_unitaryMap_eq_iff (f : finiteOrthonormalFrame 𝕜 N N)
     (A A' : unitaryGroup (Fin N) 𝕜) :
     (∃ S : specialUnitaryGroup (Fin N) 𝕜,

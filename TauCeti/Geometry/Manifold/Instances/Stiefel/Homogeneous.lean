@@ -29,12 +29,11 @@ theory, read in the coordinates of `Fin N → ℝ`. The two carriers are homeomo
 orthogonal matrix through its linear isometry to its action
 `TauCeti.finiteOrthonormalFrame.unitaryMap` on frames
 (`TauCeti.stiefel.finiteOrthonormalFrameHomeomorph_smul`), and it sends the frame of the first
-`r` standard basis vectors to the standard frame. Composing with
+`r` standard basis vectors to the standard frame. So the quotient descriptions
 `TauCeti.finiteOrthonormalFrame.unitaryQuotientHomeomorph` and
-`TauCeti.finiteOrthonormalFrame.specialOrthogonalQuotientHomeomorph` presents the Stiefel manifold
-`V_r(ℝ^(r + m))` as `O(r + m) / O(m)`, and as `SO(r + m) / SO(m)` for `m ≥ 1`; in particular the
-ordered orthonormal two-frames of `ℝⁿ`, the unit tangent bundle of `Sⁿ⁻¹`, are `SO(n) / SO(n - 2)`
-for `n ≥ 3`.
+`TauCeti.finiteOrthonormalFrame.specialOrthogonalQuotientHomeomorph` of the orthonormal frames,
+by the stabilizers of the standard frame, transfer to the Stiefel manifold by composing with this
+homeomorphism; the composites are not provided as separate declarations.
 
 ## Main declarations
 
