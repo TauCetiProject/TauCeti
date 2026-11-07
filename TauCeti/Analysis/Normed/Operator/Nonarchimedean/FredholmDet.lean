@@ -133,15 +133,9 @@ theorem tendsto_fredholmDet_of_tendsto {α : Type*} {l : Filter α}
   rcases l.eq_or_neBot with rfl | hl
   · simp
   -- the entries of the limit are bounded by `r` as well
-  have hw₀ : ∀ i j, ‖w₀.matrixCoeff i j‖ ≤ r i := fun i j ↦ by
-    have hlim : Tendsto (fun a ↦ r i + ‖w a - w₀‖) l (𝓝 (r i)) := by
-      simpa using (tendsto_const_nhds (x := r i)).add h
-    refine ge_of_tendsto' hlim fun a ↦ ?_
-    calc ‖w₀.matrixCoeff i j‖
-        = ‖(w a).matrixCoeff i j - (w a - w₀).matrixCoeff i j‖ := by
-          rw [matrixCoeff_sub, Matrix.sub_apply, sub_sub_cancel]
-      _ ≤ r i + ‖w a - w₀‖ := (norm_sub_le _ _).trans
-          (add_le_add (hw a i j) ((w a - w₀).norm_matrixCoeff_le i j))
+  have hw₀ : ∀ i j, ‖w₀.matrixCoeff i j‖ ≤ r i := fun i j ↦
+    le_of_tendsto' (((tendstoUniformly_matrixCoeff_of_tendsto h).tendsto_at (i, j)).norm)
+      (fun a ↦ hw a i j)
   have hG :=
     TauCeti.tendsto_gaussNorm_charPowerSeries_sub_charPowerSeries_of_tendsto_ringOpNorm_of_le
       hr hw hw₀ h one_pos
