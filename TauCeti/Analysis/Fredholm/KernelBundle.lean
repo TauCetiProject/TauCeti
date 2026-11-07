@@ -81,13 +81,15 @@ variable {EX HX : Type*} [NormedAddCommGroup EX] [NormedSpace 𝕜 EX]
   [TopologicalSpace HX] {I : ModelWithCorners 𝕜 EX HX}
   [ChartedSpace HX X] {n : ℕ∞ω}
 
-/-- A `C^n` family Fredholm at one point has a finite target stabilizer on an
-open neighbourhood, with a `C^n` finite-rank kernel bundle and `C^n` inclusion
+/-- A `C^n` family Fredholm at one point has a finite target stabilizer inside any
+prescribed dense subspace `D`, on an open neighbourhood, with a `C^n` finite-rank
+kernel bundle and `C^n` inclusion
 into the ambient product. The topology and charts are the native split-kernel
 ones. No constant-rank hypothesis on the unstabilized kernels is required. -/
 theorem IsFredholm.exists_stabilization_kernel_contMDiffVectorBundle
-    (hT₀ : IsFredholm (T x₀)) (hT : ContMDiff I 𝓘(𝕜, E →L[𝕜] F) n T) :
-    ∃ S : Submodule 𝕜 F, ∃ hS : FiniteDimensional 𝕜 S,
+    (hT₀ : IsFredholm (T x₀)) (hT : ContMDiff I 𝓘(𝕜, E →L[𝕜] F) n T)
+    {D : Submodule 𝕜 F} (hD : Dense (D : Set F)) :
+    ∃ S : Submodule 𝕜 F, S ≤ D ∧ ∃ hS : FiniteDimensional 𝕜 S,
       letI := hS
       letI := FiniteDimensional.complete 𝕜 S
       ∃ _ : FiniteDimensional 𝕜 ((T x₀).coprod S.subtypeL).ker,
@@ -105,16 +107,15 @@ theorem IsFredholm.exists_stabilization_kernel_contMDiffVectorBundle
                     (fun p : TotalSpace ((T x₀).coprod S.subtypeL).ker
                       (fun x : U ↦ ((T x).coprod S.subtypeL).ker) ↦
                         (p.proj, (p.2 : E × S))) := by
-  obtain ⟨S, -, -, hS, q, U, hU, hx₀, hinv⟩ :=
-    hT₀.exists_stabilization_kernel_coordinates hT.continuous.continuousAt
-      (D := ⊤) (by simp)
+  obtain ⟨S, hSD, -, hS, q, U, hU, hx₀, hinv⟩ :=
+    hT₀.exists_stabilization_kernel_coordinates hT.continuous.continuousAt hD
   let := hS
   let := FiniteDimensional.complete 𝕜 S
   let V : TopologicalSpace.Opens X := ⟨U, hU⟩
   have hA : ContMDiff I 𝓘(𝕜, (E × S) →L[𝕜] F) n
       (fun x : V ↦ (T x).coprod S.subtypeL) :=
     (hT.comp contMDiff_subtype_val).clm_coprod contMDiff_const
-  exact ⟨S, hS, (hT₀.coprod_of_finiteDimensional S.subtypeL).finite_ker,
+  exact ⟨S, hSD, hS, (hT₀.coprod_of_finiteDimensional S.subtypeL).finite_ker,
     q, V, hx₀, fun x ↦ hinv x x.property, hA,
     TauCeti.kernelContMDiffVectorBundle hA.continuous _,
     TauCeti.contMDiff_kernel_inclusion hA _⟩
