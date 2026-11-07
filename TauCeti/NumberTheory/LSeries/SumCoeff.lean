@@ -7,10 +7,11 @@ module
 
 public import Mathlib.Analysis.MellinTransform
 public import Mathlib.NumberTheory.LSeries.SumCoeff
-import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
 import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 import Mathlib.NumberTheory.LSeries.Dirichlet
 import Mathlib.NumberTheory.LSeries.Linearity
+import TauCeti.Analysis.Asymptotics.Lemmas
+import TauCeti.NumberTheory.AbelSummation
 
 /-!
 # Analytic continuation of an L-series from a bound on its partial sums
@@ -55,11 +56,6 @@ open scoped Topology
 
 namespace TauCeti.LSeries
 
-/-- The step function `t ↦ ∑_{k=1}^{⌊t⌋₊} f k` vanishes below `1`. -/
-private theorem sum_Icc_one_natFloor_eq_zero (f : ℕ → ℂ) {t : ℝ} (ht : t < 1) :
-    ∑ k ∈ Icc 1 ⌊t⌋₊, f k = 0 := by
-  simp [Nat.floor_eq_zero.mpr ht]
-
 /-- The integral in `LSeries_eq_mul_integral` is a Mellin transform of the partial-sum step
 function, evaluated at `-s`. -/
 private theorem integral_Ioi_one_eq_mellin (f : ℕ → ℂ) (s : ℂ) :
@@ -78,35 +74,6 @@ private theorem integral_Ioi_one_eq_mellin (f : ℕ → ℂ) (s : ℂ) :
     setIntegral_indicator measurableSet_Ici,
     Set.inter_eq_right.mpr (Set.Ici_subset_Ioi.mpr zero_lt_one), integral_Ici_eq_integral_Ioi]
 
-/-- The partial-sum step function `t ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, f k` is locally integrable on
-`(0, ∞)`. -/
-private theorem locallyIntegrableOn_sum_Icc_natFloor (f : ℕ → ℂ) :
-    LocallyIntegrableOn (fun t : ℝ ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, f k) (Set.Ioi 0) := by
-  simpa using (locallyIntegrableOn_mul_sum_Icc f le_rfl (m := 1)
-    (g := fun _ ↦ (1 : ℂ)) (locallyIntegrableOn_const 1)).mono_set Set.Ioi_subset_Ici_self
-
-/-- A bound `O(n ^ r)` on the partial sums transfers to the step function
-`t ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, f k` as `O(t ^ r)`. -/
-private theorem isBigO_sum_Icc_natFloor (f : ℕ → ℂ) {r : ℝ}
-    (hO : (fun n ↦ ∑ k ∈ Icc 1 n, f k) =O[atTop] fun n ↦ (n : ℝ) ^ r) :
-    (fun t : ℝ ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, f k) =O[atTop] (· ^ r) := by
-  have hmax : (fun t : ℝ ↦ max t 0) =ᶠ[atTop] fun t ↦ t := by
-    filter_upwards [eventually_ge_atTop (0 : ℝ)] with t ht
-    exact max_eq_left ht
-  have hequiv : (fun t : ℝ ↦ (⌊t⌋₊ : ℝ)) ~[atTop] fun t ↦ max t 0 :=
-    isEquivalent_nat_floor.congr_right hmax.symm
-  exact (hO.comp_tendsto tendsto_nat_floor_atTop).trans <|
-    (hequiv.rpow fun _ ↦ le_max_right _ _).isBigO.congr' EventuallyEq.rfl
-      (hmax.fun_comp fun t ↦ t ^ r)
-
-/-- The step function `t ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, f k` vanishes near `0`, so it is `O(g)` there for
-every `g`. -/
-private theorem isBigO_sum_Icc_natFloor_nhdsGT_zero (f : ℕ → ℂ) (g : ℝ → ℝ) :
-    (fun t : ℝ ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, f k) =O[𝓝[>] 0] g := by
-  refine (isBigO_zero _ _).congr' ?_ EventuallyEq.rfl
-  filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with t ht
-  exact (sum_Icc_one_natFloor_eq_zero f ht.2).symm
-
 /-- **Holomorphy of the partial-summation integral.** If the partial sums
 `∑ k ∈ Icc 1 n, f k` are `O(n ^ r)`, then
 `s ↦ s * ∫ t in Set.Ioi 1, (∑ k ∈ Icc 1 ⌊t⌋₊, f k) * t ^ (-(s + 1))` is complex-differentiable
@@ -122,8 +89,9 @@ theorem differentiableOn_mul_integral_of_isBigO (f : ℕ → ℂ) {r : ℝ}
   intro s hs
   have hmellin : DifferentiableAt ℂ
       (fun z : ℂ ↦ mellin (fun t : ℝ ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, f k) (-z)) s :=
-    (mellin_differentiableAt_of_isBigO_rpow (a := -r) (locallyIntegrableOn_sum_Icc_natFloor f)
-      (by rw [neg_neg]; exact isBigO_sum_Icc_natFloor f hO) (by simpa using hs)
+    (mellin_differentiableAt_of_isBigO_rpow (a := -r)
+      ((locallyIntegrableOn_sum_Icc_natFloor f 1).mono_set Set.Ioi_subset_Ici_self)
+      (by rw [neg_neg]; exact hO.comp_natFloor_rpow) (by simpa using hs)
       (isBigO_sum_Icc_natFloor_nhdsGT_zero f _) (sub_one_lt (-s).re)).comp s
       differentiableAt_id.neg
   simp_rw [integral_Ioi_one_eq_mellin]
@@ -136,8 +104,9 @@ theorem integrableOn_sum_mul_cpow_of_isBigO (f : ℕ → ℂ) {r : ℝ}
     IntegrableOn (fun t : ℝ ↦ (∑ k ∈ Icc 1 ⌊t⌋₊, f k) * (t : ℂ) ^ (-(s + 1)))
       (Set.Ioi 1) := by
   have hconv : MellinConvergent (fun t : ℝ ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, f k) (-s) :=
-    mellinConvergent_of_isBigO_rpow (a := -r) (locallyIntegrableOn_sum_Icc_natFloor f)
-      (by rw [neg_neg]; exact isBigO_sum_Icc_natFloor f hO) (by simpa using hs)
+    mellinConvergent_of_isBigO_rpow (a := -r)
+      ((locallyIntegrableOn_sum_Icc_natFloor f 1).mono_set Set.Ioi_subset_Ici_self)
+      (by rw [neg_neg]; exact hO.comp_natFloor_rpow) (by simpa using hs)
       (isBigO_sum_Icc_natFloor_nhdsGT_zero f _) (sub_one_lt (-s).re)
   refine (hconv.mono_set (Set.Ioi_subset_Ioi zero_le_one)).congr_fun (fun t _ ↦ ?_)
     measurableSet_Ioi
