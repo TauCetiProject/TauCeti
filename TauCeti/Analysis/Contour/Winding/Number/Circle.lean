@@ -9,6 +9,9 @@ public import TauCeti.Analysis.Contour.Curve.Circle.Basic
 public import TauCeti.Analysis.Contour.Curve.Reparam
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
 public import Mathlib.Analysis.Complex.CauchyIntegral
+import TauCeti.Analysis.Complex.SlitPlane
+import TauCeti.Analysis.Contour.LogDerivFTC
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-!
 # The generalized winding number of a circle: `1` at the centre, `0` outside
@@ -56,6 +59,10 @@ across the whole disc, so its circle integral vanishes.
   `TauCeti.Contour.windingNumber_circleMap_center_eq_half` (`n_c(semicircle) = ½`, over `[0, π]`).
 * `TauCeti.Contour.windingNumber_circleMap_eq_zero_of_lt_dist` — `n_w(circle) = 0` for `w` outside
   the disc.
+* `TauCeti.Contour.integral_circleMap_index_arcs_eq` and
+  `TauCeti.Contour.integral_circleMap_index_lower_arc` — about a point inside the circle, the index
+  integrals over `[0, π]` and `[π, 2π]` add up to `2πi`, and the one over the lower semicircle,
+  about a point above the real axis, is `log (R - s) - log (-R - s)`.
 
 ## Provenance
 
@@ -74,7 +81,9 @@ public section
 
 noncomputable section
 
-open Complex Metric
+open Complex Metric MeasureTheory Set
+
+open scoped Interval
 
 namespace TauCeti.Contour
 
@@ -279,6 +288,58 @@ theorem windingNumber_circleMap_eq_zero_of_lt_dist {c w : ℂ} {R : ℝ} (hR : 0
       (fun h => absurd (mem_closedBall.mp h) (not_le.mpr hw))
   rw [windingNumber_circleMap_eq_circleIntegral havoid,
     circleIntegral_sub_inv_eq_zero_of_lt_dist hR hw, mul_zero]
+
+section InteriorArcs
+
+variable {R : ℝ}
+
+/-- **The two half-arcs of a circle carry the full index integral.** About a point `s` strictly
+inside the circle of radius `R`, the index integrals over `[0, π]` and `[π, 2π]` of the circle
+parametrisation add up to `2πi`: this is the winding number `1` of the full circle, split at `π`. -/
+theorem integral_circleMap_index_arcs_eq {s : ℂ} (hs : ‖s‖ < R) :
+    (∫ θ in (0 : ℝ)..Real.pi, (circleMap 0 R θ - s)⁻¹ * deriv (circleMap 0 R) θ) +
+      (∫ θ in Real.pi..(2 * Real.pi), (circleMap 0 R θ - s)⁻¹ * deriv (circleMap 0 R) θ)
+      = 2 * (Real.pi : ℂ) * Complex.I := by
+  have hR : 0 < R := (norm_nonneg s).trans_lt hs
+  have hpi := Real.pi_pos
+  have havoidC : ∀ θ : ℝ, circleMap 0 R θ ≠ s := by
+    intro θ h
+    exact hs.ne (by rw [← h, norm_circleMap_zero, abs_of_nonneg hR.le])
+  have hintC : IntervalIntegrable
+      (fun θ => (circleMap 0 R θ - s)⁻¹ * deriv (circleMap 0 R) θ) volume 0 (2 * Real.pi) :=
+    intervalIntegrable_inv_sub_mul_deriv (continuous_circleMap 0 R).continuousOn
+      (fun t _ => havoidC t) ((Complex.continuous_deriv_circleMap 0 R).intervalIntegrable _ _)
+  have hsubC₁ : uIcc (0 : ℝ) Real.pi ⊆ uIcc (0 : ℝ) (2 * Real.pi) := by
+    rw [uIcc_of_le hpi.le, uIcc_of_le (by linarith)]
+    exact Icc_subset_Icc le_rfl (by linarith)
+  have hsubC₂ : uIcc Real.pi (2 * Real.pi) ⊆ uIcc (0 : ℝ) (2 * Real.pi) := by
+    rw [uIcc_of_le (by linarith), uIcc_of_le (by linarith)]
+    exact Icc_subset_Icc hpi.le le_rfl
+  rw [intervalIntegral.integral_add_adjacent_intervals (hintC.mono_set hsubC₁)
+    (hintC.mono_set hsubC₂)]
+  have h := circleIntegral.integral_sub_inv_of_mem_ball (c := 0) (w := s) (R := R)
+    (by simpa using hs)
+  simpa [circleIntegral, smul_eq_mul, mul_comm] using h
+
+/-- The index integral over the lower semicircle about a point strictly above the real axis is
+`log (R - s) - log (-R - s)`. -/
+theorem integral_circleMap_index_lower_arc {s : ℂ} (hR : 0 ≤ R) (him : 0 < s.im) :
+    (∫ θ in Real.pi..(2 * Real.pi), (circleMap 0 R θ - s)⁻¹ * deriv (circleMap 0 R) θ)
+      = Complex.log ((R : ℂ) - s) - Complex.log (-(R : ℂ) - s) := by
+  have hpi := Real.pi_pos
+  have hRC : circleMap 0 R (2 * Real.pi) = (R : ℂ) := by
+    simp [circleMap, Complex.ofReal_mul, Complex.exp_two_pi_mul_I]
+  have hnRC : circleMap 0 R Real.pi = -(R : ℂ) := by
+    simp [circleMap, Complex.exp_pi_mul_I]
+  rw [integral_index_eq_log_sub_log (h := circleMap 0 R) (by linarith)
+    (continuous_circleMap 0 R).continuousOn
+    (fun t _ => (differentiable_circleMap 0 R) t)
+    (Complex.continuous_deriv_circleMap 0 R).continuousOn
+    (fun θ hθ => sub_mem_slitPlane_of_im_le_zero him ?_) (fun _ _ => rfl) rfl rfl, hRC, hnRC]
+  rw [circleMap_zero_im]
+  exact mul_nonpos_of_nonneg_of_nonpos hR (sin_nonpos_of_pi_le_of_le_two_pi hθ.1 hθ.2)
+
+end InteriorArcs
 
 end TauCeti.Contour
 

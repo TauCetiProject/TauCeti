@@ -10,7 +10,6 @@ import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.Contour.LogDerivFTC
 import TauCeti.Analysis.Contour.Winding.Number.Circle
 import TauCeti.Analysis.Contour.Winding.UnboundedComponent
-import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-!
 # The winding numbers of the half-disc contour
@@ -69,76 +68,7 @@ namespace TauCeti.Contour
 
 variable {R : ℝ}
 
-/-! ### A logarithmic evaluation of an index integral -/
-
-/-- **Slit-plane evaluation of an index integral.** If `γ` agrees on the open interval and at both
-endpoints with a comparison curve `h` whose difference `h · - s` stays in `Complex.slitPlane`, the
-index integral of `γ` about `s` telescopes through the principal branch of the logarithm.
-
-The comparison shape is what makes this usable at a corner: the half-disc contour is not
-differentiable at its junction, but it agrees with a smooth piece on each side of it. -/
-private theorem integral_index_eq_log_sub_log {γ h : ℝ → ℂ} {a b : ℝ} {s : ℂ} (hab : a ≤ b)
-    (hcont : ContinuousOn h (Icc a b)) (hdiff : ∀ t ∈ Ioo a b, DifferentiableAt ℝ h t)
-    (hderiv : ContinuousOn (deriv h) (Icc a b))
-    (hslit : ∀ t ∈ Icc a b, h t - s ∈ slitPlane)
-    (heq : EqOn γ h (Ioo a b)) (ha : γ a = h a) (hb : γ b = h b) :
-    (∫ t in a..b, (γ t - s)⁻¹ * deriv γ t)
-      = Complex.log (γ b - s) - Complex.log (γ a - s) := by
-  have hd : (deriv fun t => h t - s) = deriv h := funext fun t => deriv_sub_const s
-  have hkey :=
-    intervalIntegrable_deriv_div_and_integral_deriv_div_eq_log_sub_log_of_mem_slitPlane_of_le
-      (g := fun t => γ t - s) (h := fun t => h t - s) hab (hcont.sub continuousOn_const)
-      (fun t ht => (hdiff t ht).sub_const s) (by rw [hd]; exact hderiv) hslit
-      (fun t ht => by simp only [heq ht]) (by simp only [ha]) (by simp only [hb])
-  simpa only [deriv_sub_const, div_eq_inv_mul] using hkey.2
-
 /-! ### The interior value -/
-
-/-- **The two half-arcs of a circle carry the full index integral.** About a point `s` strictly
-inside the circle of radius `R`, the index integrals over `[0, π]` and `[π, 2π]` of the circle
-parametrisation add up to `2πi`: this is the winding number `1` of the full circle, split at `π`. -/
-private theorem integral_circleMap_index_arcs_eq {s : ℂ} (hs : ‖s‖ < R) :
-    (∫ θ in (0 : ℝ)..Real.pi, (circleMap 0 R θ - s)⁻¹ * deriv (circleMap 0 R) θ) +
-      (∫ θ in Real.pi..(2 * Real.pi), (circleMap 0 R θ - s)⁻¹ * deriv (circleMap 0 R) θ)
-      = 2 * (Real.pi : ℂ) * Complex.I := by
-  have hR : 0 < R := (norm_nonneg s).trans_lt hs
-  have hpi := Real.pi_pos
-  have havoidC : ∀ θ : ℝ, circleMap 0 R θ ≠ s := by
-    intro θ h
-    exact hs.ne (by rw [← h, norm_circleMap_zero, abs_of_nonneg hR.le])
-  have hintC : IntervalIntegrable
-      (fun θ => (circleMap 0 R θ - s)⁻¹ * deriv (circleMap 0 R) θ) volume 0 (2 * Real.pi) :=
-    intervalIntegrable_inv_sub_mul_deriv (continuous_circleMap 0 R).continuousOn
-      (fun t _ => havoidC t) ((Complex.continuous_deriv_circleMap 0 R).intervalIntegrable _ _)
-  have hsubC₁ : uIcc (0 : ℝ) Real.pi ⊆ uIcc (0 : ℝ) (2 * Real.pi) := by
-    rw [uIcc_of_le hpi.le, uIcc_of_le (by linarith)]
-    exact Icc_subset_Icc le_rfl (by linarith)
-  have hsubC₂ : uIcc Real.pi (2 * Real.pi) ⊆ uIcc (0 : ℝ) (2 * Real.pi) := by
-    rw [uIcc_of_le (by linarith), uIcc_of_le (by linarith)]
-    exact Icc_subset_Icc hpi.le le_rfl
-  rw [intervalIntegral.integral_add_adjacent_intervals (hintC.mono_set hsubC₁)
-    (hintC.mono_set hsubC₂)]
-  have h := circleIntegral.integral_sub_inv_of_mem_ball (c := 0) (w := s) (R := R)
-    (by simpa using hs)
-  simpa [circleIntegral, smul_eq_mul, mul_comm] using h
-
-/-- The index integral over the lower semicircle about a point strictly above the real axis is
-`log (R - s) - log (-R - s)`. -/
-private theorem integral_circleMap_index_lower_arc {s : ℂ} (hR : 0 ≤ R) (him : 0 < s.im) :
-    (∫ θ in Real.pi..(2 * Real.pi), (circleMap 0 R θ - s)⁻¹ * deriv (circleMap 0 R) θ)
-      = Complex.log ((R : ℂ) - s) - Complex.log (-(R : ℂ) - s) := by
-  have hpi := Real.pi_pos
-  have hRC : circleMap 0 R (2 * Real.pi) = (R : ℂ) := by
-    simp [circleMap, Complex.ofReal_mul, Complex.exp_two_pi_mul_I]
-  have hnRC : circleMap 0 R Real.pi = -(R : ℂ) := by
-    simp [circleMap, Complex.exp_pi_mul_I]
-  rw [integral_index_eq_log_sub_log (h := circleMap 0 R) (by linarith)
-    (continuous_circleMap 0 R).continuousOn
-    (fun t _ => (differentiable_circleMap 0 R) t)
-    (Complex.continuous_deriv_circleMap 0 R).continuousOn
-    (fun θ hθ => sub_mem_slitPlane_of_im_le_zero him ?_) (fun _ _ => rfl) rfl rfl, hRC, hnRC]
-  rw [circleMap_zero_im]
-  exact mul_nonpos_of_nonneg_of_nonpos hR (sin_nonpos_of_pi_le_of_le_two_pi hθ.1 hθ.2)
 
 /-- The index integral over the diameter of the half-disc contour about a point strictly above the
 real axis is `log (R - s) - log (-R - s)`. -/
