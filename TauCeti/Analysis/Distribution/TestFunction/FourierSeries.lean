@@ -47,6 +47,8 @@ the resulting double series converge.
 
 * `ContDiffMapSupportedIn.modulate`: the modulation `x ↦ exp (2πi ⟪x, w⟫) • χ x` of a function
   `χ` supported in `K` by the character of frequency `w`.
+* `ContDiffMapSupportedIn.modulateCLM`: modulation by a fixed frequency, as a continuous linear
+  map.
 
 ## Main results
 
@@ -108,7 +110,7 @@ private theorem contDiff_exp_phase (w : E) : ContDiff ℝ ∞ fun x ↦ cexp (ph
 `(2π ‖w‖) ^ k`. -/
 private theorem norm_iteratedFDeriv_exp_phase_le (w x : E) (k : ℕ) :
     ‖iteratedFDeriv ℝ k (fun y ↦ cexp (phase w y)) x‖ ≤ (2 * π * ‖w‖) ^ k := by
-  refine (TauCeti.norm_iteratedFDeriv_cexp_comp_le (phase w) k x).trans ?_
+  refine ((phase w).norm_iteratedFDeriv_cexp_comp_le k x).trans ?_
   rw [norm_exp_phase, one_mul]
   gcongr
   exact norm_phase_le w
@@ -122,16 +124,44 @@ private theorem one_add_two_pi_mul_pow_le {a : ℝ} (ha : 0 ≤ a) (k : ℕ) :
 
 /-! ### Modulated cutoffs -/
 
+/-- Modulation `χ ↦ (x ↦ exp (2πi ⟪x, w⟫) • χ x)` by the character of frequency `w`, as a
+continuous `ℂ`-linear map on `𝓓^{n}_{K}(E, F)`. -/
+def modulateCLM (w : E) : 𝓓^{n}_{K}(E, F) →L[ℂ] 𝓓^{n}_{K}(E, F) :=
+  bilinLeftCLM (ContinuousLinearMap.lsmul ℂ ℂ).flip
+    ((contDiff_exp_phase w).of_le (mod_cast le_top))
+
 /-- The modulation `x ↦ exp (2πi ⟪x, w⟫) • χ x` of `χ` by the character of frequency `w`. It is
 supported in the same compact set as `χ` and has the same regularity. -/
 def modulate (χ : 𝓓^{n}_{K}(E, F)) (w : E) : 𝓓^{n}_{K}(E, F) :=
-  bilinLeftCLM (ContinuousLinearMap.lsmul ℂ ℂ).flip
-    ((contDiff_exp_phase w).of_le (mod_cast le_top)) χ
+  modulateCLM w χ
+
+@[simp]
+theorem modulateCLM_apply (χ : 𝓓^{n}_{K}(E, F)) (w : E) : modulateCLM w χ = χ.modulate w := by
+  rw [modulate]
 
 @[simp]
 theorem modulate_apply (χ : 𝓓^{n}_{K}(E, F)) (w x : E) :
     χ.modulate w x = cexp (2 * π * I * ⟪x, w⟫) • χ x := by
-  simp [modulate, bilinLeftCLM_apply, phase_apply]
+  simp [modulate, modulateCLM, bilinLeftCLM_apply, phase_apply]
+
+@[simp]
+theorem zero_modulate (w : E) : (0 : 𝓓^{n}_{K}(E, F)).modulate w = 0 :=
+  map_zero (modulateCLM w)
+
+@[simp]
+theorem add_modulate (χ ψ : 𝓓^{n}_{K}(E, F)) (w : E) :
+    (χ + ψ).modulate w = χ.modulate w + ψ.modulate w :=
+  map_add (modulateCLM w) χ ψ
+
+@[simp]
+theorem smul_modulate (c : ℂ) (χ : 𝓓^{n}_{K}(E, F)) (w : E) :
+    (c • χ).modulate w = c • χ.modulate w :=
+  map_smul (modulateCLM w) c χ
+
+@[simp]
+theorem sum_modulate {ι : Type*} (s : Finset ι) (χ : ι → 𝓓^{n}_{K}(E, F)) (w : E) :
+    (∑ i ∈ s, χ i).modulate w = ∑ i ∈ s, (χ i).modulate w :=
+  map_sum (modulateCLM w) χ s
 
 @[simp]
 theorem modulate_zero (χ : 𝓓^{n}_{K}(E, F)) : χ.modulate 0 = χ := by

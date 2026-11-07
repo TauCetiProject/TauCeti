@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Module.ZLattice.Summable
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
 public import TauCeti.Algebra.Module.ZLattice.Dual
+import TauCeti.Algebra.Module.ZLattice.Summable
 
 /-!
 # Summing Schwartz functions over a lattice
@@ -34,8 +35,6 @@ the plain form for a complete codomain, so that each side can be manipulated on 
 
 * `ZLattice.summable_norm_poisson_left`, `ZLattice.summable_poisson_left`: the translates of a
   Schwartz function are (absolutely) summable over a discrete subgroup `L`.
-* `ZLattice.summable_one_add_norm_pow_inv`: `(1 + ‖ℓ‖) ^ (-r)` is summable over `L` once `r`
-  exceeds the rank of `L`.
 * `ZLattice.summable_one_add_norm_pow_mul_norm`: on `L`, a Schwartz function stays summable after
   multiplication by any power of `1 + ‖ℓ‖`.
 * `ZLattice.exists_summable_forall_norm_poisson_left_le`: these translates are dominated by one
@@ -80,18 +79,6 @@ summable over a discrete subgroup `L` of a finite-dimensional real normed space.
 theorem summable_poisson_left [CompleteSpace F] (f : 𝓢(E, F)) (v : E) :
     Summable fun ℓ : L ↦ f (v + ℓ) :=
   (summable_norm_poisson_left L f v).of_norm
-
-/-- On a discrete subgroup `L` of a finite-dimensional real normed space, `(1 + ‖ℓ‖) ^ (-r)` is
-summable as soon as `r` exceeds the rank of `L`. -/
-theorem summable_one_add_norm_pow_inv {r : ℕ} (hr : finrank ℤ L < r) :
-    Summable fun ℓ : L ↦ ((1 + ‖(ℓ : E)‖) ^ r)⁻¹ := by
-  refine Summable.of_norm_bounded_eventually (summable_norm_pow_inv L r hr) ?_
-  -- Away from `0`, `(1 + ‖ℓ‖) ^ (-r) ≤ ‖ℓ‖ ^ (-r)`.
-  filter_upwards [Set.Finite.compl_mem_cofinite (Set.finite_singleton (0 : L))] with ℓ hℓ
-  have hℓ : 0 < ‖(ℓ : E)‖ := by simpa using hℓ
-  rw [norm_inv, norm_pow, Real.norm_of_nonneg (by positivity), ← inv_pow]
-  gcongr
-  simp
 
 /-- On a discrete subgroup `L` of a finite-dimensional real normed space, a Schwartz function
 decays faster than every power of `1 + ‖ℓ‖`: the family `ℓ ↦ (1 + ‖ℓ‖) ^ k * ‖f ℓ‖` is summable
