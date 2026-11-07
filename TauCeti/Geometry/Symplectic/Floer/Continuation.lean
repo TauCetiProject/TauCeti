@@ -147,10 +147,10 @@ theorem fderiv_linearHomotopy_stdComplexLineReal {β : ℝ → ℝ} {z : ℝ × 
     (hH₁ : DifferentiableAt ℝ (fun t ↦ H₁ t x) z.2) :
     fderiv ℝ (fun w : ℝ × ℝ ↦ H₀ w.2 x + β w.1 * (H₁ w.2 x - H₀ w.2 x)) z stdComplexLineReal =
       deriv β z.1 * (H₁ z.2 x - H₀ z.2 x) := by
-  rw [stdComplexLineReal_eq, fderiv_apply_mk_one_zero
+  rw [stdComplexLineReal_eq, ← (hasDerivAt_slice_left (s := z.1) (b := z.2)
     (u := fun w : ℝ × ℝ ↦ H₀ w.2 x + β w.1 * (H₁ w.2 x - H₀ w.2 x))
     ((hH₀.comp z differentiableAt_snd).add ((hβ.comp z differentiableAt_fst).mul
-      ((hH₁.comp z differentiableAt_snd).sub (hH₀.comp z differentiableAt_snd))))]
+      ((hH₁.comp z differentiableAt_snd).sub (hH₀.comp z differentiableAt_snd))))).deriv]
   dsimp only
   rw [deriv_const_add, deriv_mul_const hβ]
 

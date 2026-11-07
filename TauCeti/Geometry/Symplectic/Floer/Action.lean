@@ -183,9 +183,10 @@ theorem hamiltonianAction_le_hamiltonianAction_of_monotone (ω : SymplecticForm 
   -- `∂_s H` is the derivative of the monotone functions `s ↦ H_{(s, t)}(x)`.
   have hnonneg : 0 ≤ ∫ z in Icc a b ×ˢ Icc 0 1, fderiv ℝ (fun w ↦ H w (u z)) z stdComplexLineReal :=
     setIntegral_nonneg (measurableSet_Icc.prod measurableSet_Icc) fun z _ ↦ by
-      rw [stdComplexLineReal_eq, fderiv_apply_mk_one_zero (u := fun w ↦ H w (u z))
-        ((hH.differentiable one_ne_zero (z, u z)).comp (f := fun w : ℝ × ℝ ↦ (w, u z)) z
-          (differentiableAt_id.prodMk (differentiableAt_const _)))]
+      rw [stdComplexLineReal_eq, ← (hasDerivAt_slice_left (s := z.1) (b := z.2)
+        (u := fun w ↦ H w (u z)) ((hH.differentiable one_ne_zero (z, u z)).comp
+          (f := fun w : ℝ × ℝ ↦ (w, u z)) z
+          (differentiableAt_id.prodMk (differentiableAt_const _)))).deriv]
       exact (hmono z.2 (u z)).deriv_nonneg
   linarith
 

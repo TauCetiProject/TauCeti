@@ -169,7 +169,7 @@ theorem hamiltonianCurvature_homotopy (ω : SymplecticForm V) {H : ℝ × ℝ �
     {x : V} (hH : DifferentiableAt ℝ (fun w ↦ H w x) z) :
     ω.hamiltonianCurvature (fun _ _ ↦ 0) H z x = deriv (fun s ↦ H (s, z.2) x) z.1 := by
   rw [hamiltonianCurvature_zero_left, stdComplexLineReal_eq]
-  exact fderiv_apply_mk_one_zero hH
+  exact (hasDerivAt_slice_left (s := z.1) (b := z.2) hH).deriv.symm
 
 /-- A continuation perturbation `K = β(s) H_t dt` has curvature `β'(s) H_t`. -/
 theorem hamiltonianCurvature_continuation (ω : SymplecticForm V) {β : ℝ → ℝ} {H : ℝ → V → ℝ}
