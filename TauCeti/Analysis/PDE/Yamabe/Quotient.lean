@@ -48,7 +48,7 @@ that `u ^ (4 / (n - 2)) g` has constant scalar curvature `λ`
 (`TauCeti.Yamabe.scalarCurvature_rescale_eq_iff_conformalLaplacian_eq`).
 
 The quotient is defined for every function, through the Riemannian gradient and Bochner integrals;
-its classical meaning, and every result here, concern differentiable functions. The metric is the
+its classical meaning and variational results concern differentiable functions. The metric is the
 `RiemannianBundle` instance of the tangent bundle and the volume is `TauCeti.riemannianVolume`, as
 for `TauCeti.Yamabe.conformalLaplacian`.
 
@@ -57,6 +57,8 @@ for `TauCeti.Yamabe.conformalLaplacian`.
 All in the namespace `TauCeti.Yamabe`.
 
 * `yamabeQuotient`: the Yamabe quotient `Q_g(u)`.
+* `yamabeQuotient_nonneg_of_scalarCurvature_nonneg`: nonnegative scalar curvature gives
+  nonnegative quotients, without regularity assumptions on `u`.
 * `yamabeQuotient_smul`: `Q_g(c u) = Q_g(u)` for `c ≠ 0`.
 * `hasDerivAt_yamabeQuotient_add_smul`: the first variation of `Q_g`.
 * `forall_hasDerivAt_yamabeQuotient_add_smul_iff_exists_conformalLaplacian_eq`: the Euler–Lagrange
@@ -112,6 +114,17 @@ theorem yamabeQuotient_def (u : M → ℝ) :
   (rfl)
 
 variable {I}
+
+/-- Nonnegative scalar curvature makes the total Yamabe quotient nonnegative in dimension
+`n > 2`, even without regularity or integrability assumptions on the function. -/
+theorem yamabeQuotient_nonneg_of_scalarCurvature_nonneg (hn : 2 < finrank ℝ E) (u : M → ℝ)
+    (hS : ∀ x, 0 ≤ (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x) :
+    0 ≤ yamabeQuotient I u := by
+  rw [yamabeQuotient_def]
+  exact div_nonneg (integral_nonneg fun x ↦ add_nonneg
+    (mul_nonneg (conformalCoefficient_pos hn).le (sq_nonneg _))
+    (mul_nonneg (hS x) (sq_nonneg _)))
+    (Real.rpow_nonneg (integral_nonneg fun x ↦ Real.rpow_nonneg (abs_nonneg _) _) _)
 
 /-- **Scale invariance of the Yamabe quotient.** In dimension `n > 2`, multiplying a
 differentiable function by a nonzero constant does not change its Yamabe quotient. -/

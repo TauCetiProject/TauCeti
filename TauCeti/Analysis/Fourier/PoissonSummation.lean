@@ -11,6 +11,8 @@ public import TauCeti.Algebra.Module.ZLattice.ChangeOfVariables
 public import TauCeti.Analysis.Distribution.SchwartzSpace.ZLattice
 public import TauCeti.Analysis.Fourier.ChangeOfVariables
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+import TauCeti.Analysis.Fourier.Monomial
+import TauCeti.Topology.Instances.AddCircle.UnitAddTorus
 
 /-!
 # Poisson summation over a lattice
@@ -102,7 +104,7 @@ private theorem toTorus_add (x : E) (ℓ : span ℤ (range o.toBasis)) :
 
 /-- The torus is the quotient of `E` by the lattice spanned by `o`. -/
 private theorem isQuotientMap_toTorus : Topology.IsQuotientMap o.toTorus :=
-  (IsOpenQuotientMap.piMap fun _ ↦ QuotientAddGroup.isOpenQuotientMap_mk).isQuotientMap.comp
+  TauCeti.UnitAddTorus.isOpenQuotientMap_coe.isQuotientMap.comp
     ((EuclideanSpace.equiv ι ℝ).toHomeomorph.isQuotientMap.comp o.repr.toHomeomorph.isQuotientMap)
 
 /-- The lattice vector with coordinates `n` in the basis `o`. -/
@@ -121,13 +123,11 @@ private theorem mFourier_toTorus (n : ι → ℤ) (x : E) :
   have h : ⟪x, (o.latticeEquiv n : E)⟫ = ∑ i, o.repr x i * n i := by
     rw [← o.sum_inner_mul_inner]
     simp only [real_inner_comm _ x, ← o.repr_apply_apply, repr_latticeEquiv]
-  rw [h, mFourier]
-  simp only [ContinuousMap.coe_mk, toTorus, fourier_coe_apply, Real.fourierChar_apply,
-    ← Complex.exp_sum]
+  rw [h, toTorus_def, TauCeti.UnitAddTorus.mFourier_coe_apply, Real.fourierChar_apply]
   congr 1
   push_cast
-  rw [Finset.mul_sum, Finset.sum_mul]
-  congr 1 with i
+  simp only [Finset.mul_sum, Finset.sum_mul]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
   ring
 
 private theorem mFourier_neg_toTorus (n : ι → ℤ) (x : E) :

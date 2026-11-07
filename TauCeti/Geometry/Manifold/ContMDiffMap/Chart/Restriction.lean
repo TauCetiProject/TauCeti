@@ -186,7 +186,7 @@ theorem tendsto_iteratedFDerivWithin_of_restrict [IsManifold I n M] [LocallyComp
           (extChartAt I x).target q.2 := by
     filter_upwards [hU, hS, tendsto_snd.eventually self_mem_nhdsWithin] with q hU hS hq
     exact (iteratedFDerivWithin_eq_restrict_taylorComp (g q.1) U x y hq hU hS m hm).symm
-  have h := (Filter.Tendsto.taylorComp hjg hjp).congr' hfdb
+  have h := (Filter.Tendsto.taylorComp hjg (fun k _ hk ↦ hjp k hk)).congr' hfdb
   rw [← iteratedFDerivWithin_eq_restrict_taylorComp g₀ U x y hz hy hys m hm] at h
   exact h
 
