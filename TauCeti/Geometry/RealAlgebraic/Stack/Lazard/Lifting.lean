@@ -85,13 +85,14 @@ private theorem nonempty_lazardDelineation_of_coeff_zero_ne_zero
       (eventually_lazardValuation_eq hdiscr hφS hdiscr_eq x)
   -- Pull the coordinate neighborhood back through the chart, retaining an ambient open set
   -- as required by local-to-global gluing.
-  obtain ⟨hU, hψ⟩ := e.firstCoords_preimage_isOpen_and_continuous (S := S) hV
-  let U : Set (Fin n → ℝ) := e.source ∩
-    (fun y ↦ TauCeti.firstCoords ℝ n d (e y)) ⁻¹' V
+  let c := TauCeti.firstCoords ℝ n d
+  let U : Set (Fin n → ℝ) := e.source ∩ (fun y ↦ c (e y)) ⁻¹' V
+  have hU : IsOpen U := e.isOpen_inter_preimage (hV.preimage c.continuous)
   let T : Set (Fin n → ℝ) := S ∩ U
-  let ψ : T → V := fun y ↦ ⟨TauCeti.firstCoords ℝ n d (e y), y.2.2.2⟩
-  have hφψ (y : T) : φ (ψ y) = y :=
-    he.symm_firstCoords_firstCoords_apply y.2.2.1 y.2.1
+  let ψ : T → V := fun y ↦ ⟨c (e y), y.2.2.2⟩
+  have hψ : Continuous ψ := Continuous.subtype_mk (c.continuous.comp
+    (e.continuousOn.comp_continuous continuous_subtype_val fun y ↦ y.2.2.1)) _
+  have hφψ (y : T) : φ (ψ y) = y := he.symm_firstCoords_firstCoords_apply y.2.2.1 y.2.1
   -- The ordered chart roots and their common exponent and multiplicity data are exactly the
   -- fields of a local Lazard delineation.
   let D : TauCeti.LazardDelineation (fun _ : Unit ↦ F) T :=

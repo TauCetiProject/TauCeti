@@ -516,21 +516,3 @@ theorem _root_.AnalyticOnNhd.comp_analyticOnSubmanifold {g : E → F} {t : Set E
   rw [he.symm_firstCoords_firstCoords_apply hxe hx]
 
 end TauCeti
-
-namespace OpenPartialHomeomorph
-
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {n d : ℕ}
-
-/-- The pullback of an open set of coordinates under the first coordinates of a chart is open,
-and the coordinates give a continuous map from the part of any set `S` inside it to the open set. -/
-theorem firstCoords_preimage_isOpen_and_continuous {S : Set (Fin n → 𝕜)}
-    (e : OpenPartialHomeomorph (Fin n → 𝕜) (Fin n → 𝕜)) {V : Set (Fin d → 𝕜)} (hV : IsOpen V) :
-    IsOpen (e.source ∩ (fun y ↦ TauCeti.firstCoords 𝕜 n d (e y)) ⁻¹' V) ∧
-      Continuous (fun y : ↥(S ∩ (e.source ∩ (fun y ↦ TauCeti.firstCoords 𝕜 n d (e y)) ⁻¹' V)) ↦
-        (⟨TauCeti.firstCoords 𝕜 n d (e y), y.2.2.2⟩ : V)) := by
-  refine ⟨((TauCeti.firstCoords 𝕜 n d).continuous.comp_continuousOn
-    e.continuousOn).isOpen_inter_preimage e.open_source hV, ?_⟩
-  exact Continuous.subtype_mk ((TauCeti.firstCoords 𝕜 n d).continuous.comp
-    (e.continuousOn.comp_continuous continuous_subtype_val fun y ↦ y.2.2.1)) _
-
-end OpenPartialHomeomorph
