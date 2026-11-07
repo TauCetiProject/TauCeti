@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Probability.Distributions.StudentT.ChiSquared
+import TauCeti.MeasureTheory.Measure.Prod
 
 /-!
 # Ratios of standard Gaussian variables
@@ -41,56 +42,6 @@ namespace TauCeti
 
 namespace Probability
 
-/-- Reflecting the second coordinate according to the sign of the first preserves the product of
-a reflection-invariant measure with itself, because every fibre transformation preserves the
-measure. -/
-theorem measurePreserving_prod_skew_neg {μ : Measure ℝ} [SFinite μ]
-    (hμ : μ.map (fun x : ℝ ↦ -x) = μ) :
-    MeasurePreserving (fun z : ℝ × ℝ ↦ (z.1, if z.1 < 0 then -z.2 else z.2))
-      (μ.prod μ) (μ.prod μ) := by
-  refine (MeasurePreserving.id μ).skew_product
-    (g := fun y x : ℝ ↦ if y < 0 then -x else x) ?_ ?_
-  · exact Measurable.ite (measurableSet_lt measurable_fst measurable_const)
-      measurable_snd.neg measurable_snd
-  · refine ae_of_all _ fun y ↦ ?_
-    by_cases hy : y < 0
-    · simpa only [hy, ↓reduceIte] using hμ
-    · simpa only [hy, ↓reduceIte] using (Measure.map_id' (μ := μ))
-
-/-- The quotient of independent coordinates with a reflection-invariant law has the same law as
-the quotient by the absolute value of the denominator. -/
-theorem map_div_prod_eq_map_div_abs {μ : Measure ℝ} [SFinite μ]
-    (hμ : μ.map (fun x : ℝ ↦ -x) = μ) :
-    ((μ.prod μ).map fun z : ℝ × ℝ ↦ z.1 / z.2) =
-      (μ.prod μ).map fun z : ℝ × ℝ ↦ z.1 / |z.2| := by
-  let skew : ℝ × ℝ → ℝ × ℝ := fun z ↦ (z.1, if z.1 < 0 then -z.2 else z.2)
-  let twist : ℝ × ℝ → ℝ × ℝ := fun z ↦ (if z.2 < 0 then -z.1 else z.1, z.2)
-  have hskew : MeasurePreserving skew (μ.prod μ) (μ.prod μ) :=
-    measurePreserving_prod_skew_neg hμ
-  -- Conjugating the skew map by coordinate swaps reflects the numerator exactly when the
-  -- denominator is negative.
-  have htwist : MeasurePreserving twist (μ.prod μ) (μ.prod μ) := by
-    have hswap : MeasurePreserving (Prod.swap : ℝ × ℝ → ℝ × ℝ) (μ.prod μ) (μ.prod μ) :=
-      Measure.measurePreserving_swap
-    have htwist_eq : twist = (Prod.swap : ℝ × ℝ → ℝ × ℝ) ∘ skew ∘ Prod.swap := by
-      funext z
-      rfl
-    rw [htwist_eq]
-    exact hswap.comp (hskew.comp hswap)
-  calc
-    (μ.prod μ).map (fun z : ℝ × ℝ ↦ z.1 / z.2)
-        = ((μ.prod μ).map twist).map (fun z : ℝ × ℝ ↦ z.1 / z.2) := by rw [htwist.map_eq]
-    _ = (μ.prod μ).map ((fun z : ℝ × ℝ ↦ z.1 / z.2) ∘ twist) := by
-      rw [Measure.map_map (by fun_prop) htwist.measurable]
-    _ = (μ.prod μ).map fun z : ℝ × ℝ ↦ z.1 / |z.2| := by
-      apply Measure.map_congr
-      refine ae_of_all _ fun z ↦ ?_
-      by_cases hz : z.2 < 0
-      · simp only [twist, hz, ↓reduceIte, Function.comp_apply, abs_of_neg hz]
-        ring
-      · simp only [twist, hz, ↓reduceIte, Function.comp_apply,
-          abs_of_nonneg (le_of_not_gt hz)]
-
 /-- Mapping the product of two standard Gaussian measures under division gives the standard
 Cauchy measure. -/
 @[simp]
@@ -103,7 +54,7 @@ theorem map_div_prod_gaussianReal :
   let studentRatio : ℝ × ℝ → ℝ := fun z ↦ z.1 / √(z.2 / 1)
   have hγneg : γ.map (fun x : ℝ ↦ -x) = γ := by
     simpa only [neg_zero] using gaussianReal_map_neg (μ := 0) (v := 1)
-  have hquotient := map_div_prod_eq_map_div_abs hγneg
+  have hquotient := Measure.map_div_prod_eq_map_div_abs (ν := γ) hγneg
   -- Squaring the denominator turns its Gaussian law into `chiSquaredMeasure 1`, putting the
   -- absolute-value quotient in the exact form of the existing Student t ratio theorem.
   have hsquareSnd : ρ.map squareSnd = γ.prod (chiSquaredMeasure 1) := by
