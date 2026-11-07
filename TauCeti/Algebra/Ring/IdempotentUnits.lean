@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Group.Units.Equiv
 public import Mathlib.Algebra.Ring.Idempotent
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
+import TauCeti.Algebra.Ring.Idempotent
 
 /-!
 # Inverting one component of a unit
@@ -21,7 +22,7 @@ first component and keeping the second is the automorphism
 
 of the unit group `Rˣ`, written here without reference to the product decomposition: since
 `e² = e` and `e (1 - e) = 0`, products of elements of the form `e x + (1 - e) y` are computed
-componentwise.
+componentwise (`IsIdempotentElem.mul_add_one_sub_mul`).
 
 The automorphism is an involution. At `e = 0` it is the identity and at `e = 1` it is inversion.
 For the idempotent of `ZMod N` attached to an exact divisor `Q` of `N` it is the automorphism of
@@ -34,9 +35,9 @@ the Atkin–Lehner operator `W_Q` shifts the nebentypus of a modular form.
 
 ## Main results
 
-* `IsIdempotentElem.mul_unitsInvPart`, `IsIdempotentElem.one_sub_mul_unitsInvPart`: its two
-  components are `e u⁻¹` and `(1 - e) u`.
-* `IsIdempotentElem.unitsInvPart_symm`: it is an involution.
+* `IsIdempotentElem.mul_unitsInvPart`, `IsIdempotentElem.one_sub_mul_unitsInvPart`: the two
+  components of `unitsInvPart u` are `e u⁻¹` and `(1 - e) u`.
+* `IsIdempotentElem.unitsInvPart_symm`: `unitsInvPart` is an involution.
 * `IsIdempotentElem.unitsInvPart_zero`, `IsIdempotentElem.unitsInvPart_one`: at `e = 0` and
   `e = 1` it is the identity and inversion.
 -/
@@ -46,11 +47,6 @@ public section
 namespace IsIdempotentElem
 
 variable {R : Type*} [CommRing R] {e : R}
-
-/-- Elements of the form `e x + (1 - e) y` multiply componentwise. -/
-private theorem mul_add_one_sub_mul (he : IsIdempotentElem e) (x y x' y' : R) :
-    (e * x + (1 - e) * y) * (e * x' + (1 - e) * y') = e * (x * x') + (1 - e) * (y * y') := by
-  linear_combination (x * x' - x * y' - y * x' + y * y') * he.eq
 
 /-- **Inverting the `e`-component of a unit**: for an idempotent `e` of a commutative ring `R`,
 the automorphism `u ↦ e u⁻¹ + (1 - e) u` of `Rˣ`. Under `R ≅ e R × (1 - e) R` it inverts the first
