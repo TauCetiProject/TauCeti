@@ -48,33 +48,15 @@ namespace TauCeti.GlobalNumberFields
 
 variable (K : Type*) [Field K] [NumberField K]
 
-/-- There is a compact set of representatives for the additive adele quotient: every adele can be
-translated by a diagonal element of `K` into this set. -/
-theorem exists_isCompact_forall_exists_sub_algebraMap_mem :
-    ∃ D : Set 𝔸[K], IsCompact D ∧
-      ∀ a : 𝔸[K], ∃ x : K, a - algebraMap K 𝔸[K] x ∈ D := by
+/-- Every infinite adele can be translated by the image of an algebraic integer into the closed
+fundamental parallelepiped of the Minkowski lattice. -/
+private theorem exists_sub_algebraMap_integer_mem_parallelepiped (z : K∞) :
+    ∃ y : 𝓞 K, InfiniteAdeleRing.ringEquiv_mixedSpace K
+      (z - algebraMap K K∞ (algebraMap (𝓞 K) K y))
+      ∈ parallelepiped (mixedEmbedding.latticeBasis K) := by
   classical
-  -- The compact representative set is the product of the closed Minkowski parallelepiped with
-  -- the integral finite adeles.
   let b := mixedEmbedding.latticeBasis K
-  let P : Set (mixedEmbedding.mixedSpace K) := b.parallelepiped
   let e := InfiniteAdeleRing.ringEquiv_mixedSpace K
-  let D : Set 𝔸[K] := (e.symm '' P) ×ˢ (FiniteAdeleRing.integralAdeles (𝓞 K) K : Set 𝔸ᶠ[K])
-  have he : Continuous e.symm :=
-    InfiniteAdeleRing.continuous_ringEquiv_mixedSpace_symm K
-  have hD : IsCompact D :=
-    (b.parallelepiped.isCompact.image he).prod FiniteAdeleRing.isCompact_integralAdeles
-  refine ⟨D, hD, ?_⟩
-  intro a
-  -- Expose the product representation of the adele ring for the componentwise construction.
-  let a' : K∞ × 𝔸ᶠ[K] := a
-  -- Strong approximation makes the finite component integral after subtracting `x`.
-  obtain ⟨x, hx⟩ :=
-    FiniteAdeleRing.exists_forall_sub_algebraMap_mem_adicCompletionIntegers a'.2
-  let z : K∞ := a'.1 - algebraMap K K∞ x
-  let p : mixedEmbedding.mixedSpace K := ZSpan.fract b (e z)
-  have hp : p ∈ P := ZSpan.fundamentalDomain_subset_parallelepiped b
-    (ZSpan.fract_mem_fundamentalDomain b (e z))
   -- The lattice correction is the Minkowski embedding of an algebraic integer `y`.
   have hfloor : ((ZSpan.floor b (e z) :
       Submodule.span ℤ (Set.range b)) : mixedEmbedding.mixedSpace K) ∈
@@ -86,44 +68,58 @@ theorem exists_isCompact_forall_exists_sub_algebraMap_mem :
       ((ZSpan.floor b (e z) : Submodule.span ℤ (Set.range b)) :
         mixedEmbedding.mixedSpace K) := by
     simpa using hy
-  let u : ∀ v : HeightOneSpectrum (𝓞 K), v.adicCompletionIntegers K := fun v ↦
-    ⟨a'.2 v - algebraMap K (v.adicCompletion K) (x + algebraMap (𝓞 K) K y), by
-      rw [map_add, ← IsScalarTower.algebraMap_apply (𝓞 K) K (v.adicCompletion K),
-        sub_add_eq_sub_sub]
-      exact sub_mem (hx v) (v.coe_mem_adicCompletionIntegers y)⟩
-  let d : 𝔸[K] :=
-    (e.symm p, FiniteAdeleRing.integralEmbedding (R := 𝓞 K) (K := K) u)
-  have hd : d ∈ D :=
-    ⟨⟨p, hp, rfl⟩, FiniteAdeleRing.mem_integralAdeles.mpr fun v ↦ by simp [d]⟩
-  -- Thus `d` is obtained from `a` by subtracting the principal adele of `x + y`.
-  have hd_eq : d = a - algebraMap K 𝔸[K] (x + algebraMap (𝓞 K) K y) := by
-    -- `AdeleRing` is a type synonym for this product; exposing it lets the two components be
-    -- compared through their canonical APIs.
-    have hex : e (algebraMap K K∞ x) = mixedEmbedding K x :=
-      (InfiniteAdeleRing.mixedEmbedding_eq_algebraMap_comp (K := K) (x := x)).symm
-    have hey : e (algebraMap K K∞ (algebraMap (𝓞 K) K y)) =
-        ((ZSpan.floor b (e z) : Submodule.span ℤ (Set.range b)) :
-          mixedEmbedding.mixedSpace K) :=
-      (InfiniteAdeleRing.mixedEmbedding_eq_algebraMap_comp
-        (K := K) (x := algebraMap (𝓞 K) K y)).symm.trans hy'
-    have hfst : e.symm p =
-        a'.1 - algebraMap K K∞ (x + algebraMap (𝓞 K) K y) := by
-      apply e.injective
-      rw [e.apply_symm_apply]
-      simp only [map_sub, map_add, p, z, ZSpan.fract_apply, hex, hey]
-      abel
-    have hsnd : FiniteAdeleRing.integralEmbedding (R := 𝓞 K) (K := K) u =
-        a'.2 - algebraMap K 𝔸ᶠ[K] (x + algebraMap (𝓞 K) K y) := by
-      ext v
-      simp only [FiniteAdeleRing.integralEmbedding_apply, FiniteAdeleRing.sub_apply,
-          FiniteAdeleRing.algebraMap_apply, u]
-      rfl
-    change (e.symm p, FiniteAdeleRing.integralEmbedding (R := 𝓞 K) (K := K) u) =
-      (a'.1 - algebraMap K K∞ (x + algebraMap (𝓞 K) K y),
-        a'.2 - algebraMap K 𝔸ᶠ[K] (x + algebraMap (𝓞 K) K y))
-    exact Prod.ext hfst hsnd
-  exact ⟨x + algebraMap (𝓞 K) K y, hd_eq ▸ hd⟩
+  have hey : e (algebraMap K K∞ (algebraMap (𝓞 K) K y)) =
+      ((ZSpan.floor b (e z) : Submodule.span ℤ (Set.range b)) :
+        mixedEmbedding.mixedSpace K) :=
+    (InfiniteAdeleRing.mixedEmbedding_eq_algebraMap_comp
+      (K := K) (x := algebraMap (𝓞 K) K y)).symm.trans hy'
+  refine ⟨y, ?_⟩
+  rw [map_sub, hey, ← ZSpan.fract_apply]
+  exact ZSpan.fundamentalDomain_subset_parallelepiped b
+    (ZSpan.fract_mem_fundamentalDomain b (e z))
 
+/-- Subtracting the diagonal image of `x + y` from a finite adele that is integral after
+subtracting `x` keeps it integral, for every algebraic integer `y`. -/
+private theorem sub_algebraMap_add_integer_mem_integralAdeles (f : 𝔸ᶠ[K]) (x : K)
+    (hx : ∀ v : HeightOneSpectrum (𝓞 K), f v - algebraMap K (v.adicCompletion K) x ∈
+      v.adicCompletionIntegers K) (y : 𝓞 K) :
+    f - algebraMap K 𝔸ᶠ[K] (x + algebraMap (𝓞 K) K y) ∈
+      FiniteAdeleRing.integralAdeles (𝓞 K) K :=
+  FiniteAdeleRing.mem_integralAdeles.mpr fun v ↦ by
+    rw [FiniteAdeleRing.sub_apply, FiniteAdeleRing.algebraMap_apply]
+    change f v - algebraMap K (v.adicCompletion K) (x + algebraMap (𝓞 K) K y) ∈ _
+    rw [map_add, ← IsScalarTower.algebraMap_apply (𝓞 K) K (v.adicCompletion K), sub_add_eq_sub_sub]
+    exact sub_mem (hx v) (v.coe_mem_adicCompletionIntegers y)
+
+/-- There is a compact set of representatives for the additive adele quotient: every adele can be
+translated by a diagonal element of `K` into this set. -/
+theorem exists_isCompact_forall_exists_sub_algebraMap_mem :
+    ∃ D : Set 𝔸[K], IsCompact D ∧
+      ∀ a : 𝔸[K], ∃ x : K, a - algebraMap K 𝔸[K] x ∈ D := by
+  classical
+  -- The compact representative set is the product of the closed Minkowski parallelepiped with
+  -- the integral finite adeles.
+  let b := mixedEmbedding.latticeBasis K
+  let e := InfiniteAdeleRing.ringEquiv_mixedSpace K
+  let D : Set 𝔸[K] := (e.symm '' parallelepiped b) ×ˢ
+    (FiniteAdeleRing.integralAdeles (𝓞 K) K : Set 𝔸ᶠ[K])
+  have he : Continuous e.symm :=
+    InfiniteAdeleRing.continuous_ringEquiv_mixedSpace_symm K
+  refine ⟨D, (b.parallelepiped.isCompact.image he).prod FiniteAdeleRing.isCompact_integralAdeles,
+    fun a ↦ ?_⟩
+  -- Expose the product representation of the adele ring for the componentwise construction.
+  let a' : K∞ × 𝔸ᶠ[K] := a
+  -- Strong approximation makes the finite component integral after subtracting `x`.
+  obtain ⟨x, hx⟩ :=
+    FiniteAdeleRing.exists_forall_sub_algebraMap_mem_adicCompletionIntegers a'.2
+  obtain ⟨y, hy⟩ := exists_sub_algebraMap_integer_mem_parallelepiped K (a'.1 - algebraMap K K∞ x)
+  refine ⟨x + algebraMap (𝓞 K) K y, Set.mem_prod.mpr ⟨⟨_, hy, ?_⟩, ?_⟩⟩
+  · -- `AdeleRing` is a type synonym for this product; exposing it lets the two components be
+    -- compared through their canonical APIs.
+    change e.symm _ = a'.1 - algebraMap K K∞ (x + algebraMap (𝓞 K) K y)
+    rw [e.symm_apply_apply, map_add]
+    abel
+  · exact sub_algebraMap_add_integer_mem_integralAdeles K a'.2 x hx y
 /-- **The additive adele class group is compact.** The quotient of the adele ring by the diagonal
 copy of the number field is compact. -/
 noncomputable instance compactSpace_quotient_principalSubgroup :
