@@ -78,6 +78,8 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   manifolds read in arbitrary preferred charts of the source and the target.
 * `HasMFDerivAt.hasFDerivAt_extChartAt_comp`: read the coordinate derivative of a map from
   a normed source by composing its manifold derivative with the tangent chart.
+* `MDifferentiableAt.fderiv_extChartAt_comp_apply`: the same, with the manifold derivative of the
+  chart in place of the tangent chart.
 * `MDifferentiableAt.differentiableAt_chartAt_comp`: a differentiable map from a normed space
   into a manifold modelled on a normed space is differentiable in the preferred chart at its
   image.
@@ -566,6 +568,18 @@ theorem _root_.HasMFDerivAt.hasFDerivAt_extChartAt_comp {Q : F → M} {z : F} {�
     rw [← Bundle.Trivialization.coe_continuousLinearEquivAt_eq' _
       (by simpa only [TangentBundle.trivializationAt_baseSet] using hx)]
   exact he ▸ hd
+
+/-- Read in a preferred chart, the derivative of a map from a normed space is its manifold
+derivative followed by the manifold derivative of the chart. -/
+theorem _root_.MDifferentiableAt.fderiv_extChartAt_comp_apply {Q : F → M} {z : F} {α : M}
+    (hQ : MDifferentiableAt 𝓘(𝕜, F) I Q z) (hz : Q z ∈ (extChartAt I α).source) (v : F) :
+    fderiv 𝕜 (extChartAt I α ∘ Q) z v =
+      mfderiv I 𝓘(𝕜, E) (extChartAt I α) (Q z) (mfderiv 𝓘(𝕜, F) I Q z v) := by
+  have hz' : Q z ∈ (chartAt H α).source := by rwa [← extChartAt_source I]
+  have h := congr($(mfderiv_comp z (mdifferentiableAt_extChartAt hz') hQ) v)
+  rw [mfderiv_eq_fderiv] at h
+  -- `mfderiv_eq_fderiv` only inserts the identifications of tangent spaces of `F` and `E`.
+  exact h
 
 end NormedFieldCharts
 

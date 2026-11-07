@@ -57,24 +57,17 @@ theorem linearMapLeftRight_of_projective [Module.Finite R M] [Module.Projective 
   let ΦF := LinearMap.liftBaseChange S (linearMapLeftRightHom jF β)
   have hΦF : Function.Bijective ΦF := by
     convert (jF.linearMapLeftRight k).equiv.bijective using 1
-    funext x
-    induction x with
-    | tmul s y => simp [ΦF, IsBaseChange.equiv_tmul]
-    | add x y hx hy => simp only [map_add, hx, hy]
+    exact congr_arg DFunLike.coe (AlgebraTensorModule.ext fun s y ↦ by simp [ΦF])
   -- The comparison maps commute with composition with the retraction and the section.
   have hp (x : M →ₗ[R] N) : linearMapLeftRightHom jF β (x ∘ₗ p) =
       linearMapLeftRightHom j β x ∘ₗ pS := by
-    apply jF.algHom_ext
-    intro v
+    refine jF.algHom_ext _ _ fun v ↦ ?_
     rw [linearMapLeftRightHom_comp_apply]
-    simp [pS, linearMapLeftRightHom_comp_apply]
+    simp [pS]
   have hi (y : F →ₗ[R] N) : linearMapLeftRightHom j β (y ∘ₗ i) =
       linearMapLeftRightHom jF β y ∘ₗ iS := by
-    apply j.algHom_ext
-    intro m
-    rw [linearMapLeftRightHom_comp_apply]
-    simp only [LinearMap.comp_apply, iS, j.lift_eq]
-    exact (linearMapLeftRightHom_comp_apply jF β y (i m)).symm
+    refine j.algHom_ext _ _ fun m ↦ ?_
+    simp [iS, j.lift_eq, -mk_apply]
   have ha (z : S ⊗[R] (M →ₗ[R] N)) :
       ΦF ((LinearMap.lcomp R N p).baseChange S z) = ΦM z ∘ₗ pS := by
     induction z with
