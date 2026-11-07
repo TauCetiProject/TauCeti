@@ -17,14 +17,14 @@ including the left exactness of `Hom` over a noncommutative ring
 (`Function.Exact.lcomp_of_surjective`), the horseshoe step `TauCeti.exists_surjective_ker_exact`,
 the short exact sequence of kernels `TauCeti.exact_ker_comp` attached to a surjection and a
 further map, the exact sequence `G ⊓ P → G → G ⧸ (G ⊓ P)` for submodules `G` and `P`
-(`Submodule.exists_exact_codRestrict_mkQ`), the isomorphisms on kernels and cokernels induced by
-a map of two-term complexes whose cone `K₀ → C₀ × K₁ → C₁` is short exact
-
-further map, the short exact sequence `0 → ker f → M → range f → 0` of a linear map
-(`LinearMap.exact_subtype_rangeRestrict`), the isomorphisms on kernels and cokernels induced by a
-map of two-term complexes whose cone `K₀ → C₀ × K₁ → C₁` is short exact
+(`Submodule.exists_exact_codRestrict_mkQ`), the short exact sequence `0 → ker f → M → range f → 0`
+of a linear map (`LinearMap.exact_subtype_rangeRestrict`), the isomorphisms on kernels and
+cokernels induced by a map of two-term complexes whose cone `K₀ → C₀ × K₁ → C₁` is short exact
 (`Function.Exact.bijective_restrict_ker_of_prod_coprod`,
-`Function.Exact.bijective_mapQ_range_of_prod_coprod`), the dimension of the homology of a
+`Function.Exact.bijective_mapQ_range_of_prod_coprod`), the exact sequence
+`0 → ker f → ker (g ∘ f) → ker g → coker f → coker (g ∘ f) → coker g → 0` of a composition, with
+middle maps `LinearMap.kerCompToKer`, `LinearMap.kerToCoker` and `LinearMap.cokerToCokerComp`
+(`LinearMap.exact_kerCompToKer_kerToCoker` and its neighbours), the dimension of the homology of a
 complex of finite-dimensional vector spaces in terms of the two cokernels
 (`LinearMap.finrank_map_mkQ_ker_add_finrank`), and the vanishing of the alternating sum of
 dimensions along a long exact sequence of finite-dimensional vector spaces of the shape produced
@@ -319,6 +319,73 @@ theorem _root_.Function.Exact.bijective_mapQ_range_of_prod_coprod
     simp [← hck]
 
 end TwoTermComplex
+
+section KerCokerComp
+
+open LinearMap
+
+variable {R : Type*} [Ring R] {M N P : Type*} [AddCommGroup M] [Module R M] [AddCommGroup N]
+  [Module R N] [AddCommGroup P] [Module R P] (f : M →ₗ[R] N) (g : N →ₗ[R] P)
+
+/-- The map `ker (g ∘ f) → ker g` given by `f`. It is the second map of the exact sequence
+`0 → ker f → ker (g ∘ f) → ker g → coker f → coker (g ∘ f) → coker g → 0`
+of a composition, whose first map is the inclusion `Submodule.inclusion (ker_le_ker_comp f g)`. -/
+def _root_.LinearMap.kerCompToKer : ker (g ∘ₗ f) →ₗ[R] ker g :=
+  f.restrict fun _ hx ↦ by simpa using hx
+
+@[simp]
+theorem _root_.LinearMap.coe_kerCompToKer_apply (x : ker (g ∘ₗ f)) :
+    (f.kerCompToKer g x : N) = f x :=
+  (rfl)
+
+/-- The map `ker g → N ⧸ range f` sending `y` to its class modulo the range of `f`. It is the
+connecting map of the exact sequence
+`0 → ker f → ker (g ∘ f) → ker g → coker f → coker (g ∘ f) → coker g → 0` of a composition. -/
+def _root_.LinearMap.kerToCoker : ker g →ₗ[R] N ⧸ range f :=
+  (range f).mkQ ∘ₗ (ker g).subtype
+
+@[simp]
+theorem _root_.LinearMap.kerToCoker_apply (y : ker g) :
+    f.kerToCoker g y = Submodule.Quotient.mk (y : N) :=
+  (rfl)
+
+/-- The map `N ⧸ range f → P ⧸ range (g ∘ f)` induced by `g`. It is the fourth map of the exact
+sequence `0 → ker f → ker (g ∘ f) → ker g → coker f → coker (g ∘ f) → coker g → 0` of a
+composition, whose last map is `Submodule.factor (range_comp_le_range f g)`. Exactness at
+`P ⧸ range (g ∘ f)` is `LinearMap.exact_mapQ_range_factor`, which applies to this map by
+unfolding; it is exposed for that reason. -/
+@[expose] def _root_.LinearMap.cokerToCokerComp : N ⧸ range f →ₗ[R] P ⧸ range (g ∘ₗ f) :=
+  (range f).mapQ _ g (by rw [← Submodule.map_le_iff_le_comap, ← range_comp])
+
+@[simp]
+theorem _root_.LinearMap.cokerToCokerComp_mk (y : N) :
+    f.cokerToCokerComp g (Submodule.Quotient.mk y) = Submodule.Quotient.mk (g y) :=
+  (rfl)
+
+/-- The kernel–cokernel sequence of a composition is exact at `ker (g ∘ f)`. -/
+theorem _root_.LinearMap.exact_inclusion_kerCompToKer :
+    Function.Exact (Submodule.inclusion (ker_le_ker_comp f g)) (f.kerCompToKer g) := by
+  rw [exact_iff]
+  simp [kerCompToKer, ker_restrict, Submodule.range_inclusion]
+
+/-- The kernel–cokernel sequence of a composition is exact at `ker g`. -/
+theorem _root_.LinearMap.exact_kerCompToKer_kerToCoker :
+    Function.Exact (f.kerCompToKer g) (f.kerToCoker g) := by
+  rintro ⟨y, hy⟩
+  simp only [kerToCoker_apply, Submodule.Quotient.mk_eq_zero, mem_range]
+  constructor
+  · rintro ⟨x, rfl⟩
+    exact ⟨⟨x, by simpa using hy⟩, rfl⟩
+  · rintro ⟨x, hx⟩
+    exact ⟨x, congrArg Subtype.val hx⟩
+
+/-- The kernel–cokernel sequence of a composition is exact at `N ⧸ range f`. -/
+theorem _root_.LinearMap.exact_kerToCoker_cokerToCokerComp :
+    Function.Exact (f.kerToCoker g) (f.cokerToCokerComp g) := by
+  rw [exact_iff]
+  simp [kerToCoker, cokerToCokerComp, range_comp, Submodule.ker_mapQ, Submodule.comap_map_eq]
+
+end KerCokerComp
 
 section Homology
 
