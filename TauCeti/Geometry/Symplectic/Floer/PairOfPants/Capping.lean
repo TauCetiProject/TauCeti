@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Plumbing.Basic
+import TauCeti.Analysis.Complex.ThricePuncturedSphere.Exchange
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature
 
 /-!
@@ -44,6 +45,10 @@ where `q'` is the other input.
 
 ## Main results
 
+* `TauCeti.Floer.pairOfPantsPerturbation_eq_update_inf_add_negativePlanePerturbation`: the
+  pair-of-pants datum is its input part plus the plane datum of its output Hamiltonian.
+* `TauCeti.Floer.negativePlanePerturbation_neg`: the half turn `w ↦ -w` pulls the plane datum of
+  the half-period rotation of `H` back to the plane datum of `H`.
 * `TauCeti.Floer.negativePlanePerturbation_eq_zero_of_norm_le`: the plane datum vanishes on the
   pole disc `‖w‖ ≤ 2 exp (2π)`.
 * `TauCeti.Floer.negativePlanePerturbation_cylindricalEndLift`: far out on the end it is
@@ -105,6 +110,36 @@ theorem pairOfPantsPerturbation_single_inf (H : ℝ → M → ℝ) :
   rw [pairOfPantsPerturbation_def, Fintype.sum_eq_single inf fun q hq => by
     simp [Pi.single_eq_of_ne hq]]
   simp [negativePlanePerturbation_def]
+
+/-- **The pair-of-pants datum splits into its input part and a plane datum.** The pair-of-pants
+datum of `H` is the datum of its input Hamiltonians, with the output Hamiltonian replaced by zero,
+plus the negative plane datum of the output Hamiltonian `H_∞`. -/
+theorem pairOfPantsPerturbation_eq_update_inf_add_negativePlanePerturbation
+    (H : Puncture → ℝ → M → ℝ) (w : ℂ) (x : M) :
+    pairOfPantsPerturbation H w x =
+      pairOfPantsPerturbation (update H inf 0) w x + negativePlanePerturbation (H inf) w x := by
+  simp [pairOfPantsPerturbation_def, negativePlanePerturbation_def, Puncture.sum_univ]
+
+/-- **The half turn of the negative plane.** The half turn `ρ(w) = -w` rotates the end at `∞` by
+half a period, so it pulls the negative plane datum of the rotated Hamiltonian
+`t ↦ H(t + 1/2)` back to the negative plane datum of `H`: since `dρ = -1`, this is the identity
+`K_{H(· + 1/2)}(-w) = -K_H(w)`. -/
+theorem negativePlanePerturbation_neg (hH : Periodic H 1) (w : ℂ) (x : M) :
+    negativePlanePerturbation (fun t => H (t + 1 / 2)) (-w) x =
+      -negativePlanePerturbation H w x := by
+  rcases eq_or_ne w 0 with rfl | hw
+  · -- At the pole both sides vanish.
+    have h : (inf.endCoord 0).re = 0 := by simpa using re_endCoord_endCenter inf
+    simp [negativePlanePerturbation_def, h, smoothTransition.zero_of_nonpos]
+  · obtain ⟨k, hk⟩ := exists_endCoord_inf_neg hw
+    have hcast : (1 / 2 + k : ℂ) = ((1 / 2 + k : ℝ) : ℂ) := by push_cast; ring
+    have him : (inf.endCoord (-w)).im + 1 / 2 = (inf.endCoord w).im + (k + 1) := by
+      rw [hk, Complex.add_im, Complex.mul_I_im, hcast, Complex.ofReal_re]
+      ring
+    have hp : H ((inf.endCoord w).im + (k + 1)) = H (inf.endCoord w).im := by
+      simpa using hH.int_mul (k + 1) (inf.endCoord w).im
+    simp only [negativePlanePerturbation_def, re_endCoord_inf_neg, endAngularForm_inf_neg, him, hp,
+      smul_neg]
 
 /-- Families indexed by the ends that are `H` at `∞` and zero at the inputs inherit any property
 shared by `H` and `0`. -/
