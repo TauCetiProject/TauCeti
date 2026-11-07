@@ -19,7 +19,6 @@ at zero.
 
 ## Main results
 
-* `geometricMeasure_one` identifies the success-probability-one boundary law.
 * `support_geometricMeasure` gives the exact support on `ℕ`.
 * `support_map_cast_geometricMeasure` gives the exact support after casting to `ℝ`.
 -/
@@ -29,14 +28,6 @@ public section
 open MeasureTheory ProbabilityTheory Set
 
 namespace TauCeti.Probability
-
-/-- At success probability one, the geometric law is concentrated at zero. -/
-@[simp]
-theorem geometricMeasure_one : geometricMeasure (1 : unitInterval) = Measure.dirac 0 := by
-  apply Measure.ext_of_singleton
-  intro n
-  rw [geometricMeasure_singleton (by norm_num), Measure.dirac_apply]
-  cases n <;> simp
 
 /-- The exact topological support of a geometric law on its native natural-number carrier.
 The zero parameter is Mathlib's totalized Dirac law, while success probability one is the usual
