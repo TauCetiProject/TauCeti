@@ -207,8 +207,8 @@ noncomputable def attachInclusion : RowFiniteContinuationCocycle m (m.attach a h
       simpa using SetLike.one_mem_graded 𝒜
     · simp [single_eq_of_ne (Ne.symm hxy)]
   continuation x := by
-    rw [(m.attach a ha hca).differential_single_one hA, attach_m_inl,
-      linearCombination_single_one_eq_mapDomain]
+    rw [(m.attach a ha hca).differential_single_one hA, attach_m_inl]
+    simp [linearCombination_apply, mapDomain]
 
 @[simp]
 theorem attachInclusion_ν (x : P) :
@@ -218,8 +218,8 @@ theorem attachInclusion_ν (x : P) :
 /-- The inclusion of the old free module is `Finsupp.mapDomain Sum.inl`. -/
 @[simp]
 theorem linearCombination_attachInclusion (v : P →₀ A) :
-    linearCombination A (m.attachInclusion ha hca hA).ν v = mapDomain Sum.inl v :=
-  linearCombination_single_one_eq_mapDomain Sum.inl v
+    linearCombination A (m.attachInclusion ha hca hA).ν v = mapDomain Sum.inl v := by
+  simp [linearCombination_apply, mapDomain]
 
 /-- The inclusion of the old free module is `Finsupp.mapDomain Sum.inl`, as a function. -/
 theorem coe_linearCombination_attachInclusion :
