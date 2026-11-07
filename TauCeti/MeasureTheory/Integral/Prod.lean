@@ -28,6 +28,9 @@ Small pieces of product-measure theory with no `L²` or inner-product content.
   conditional laws by any bound the integrand satisfies on the rectangle conditioned on. Use it to
   estimate an integral against two independently conditioned coordinates when the integrand is
   controlled only on the pair of sets being conditioned on.
+* `TauCeti.abs_integral_prod_sub_integral_prod_le_of_ae`: if the integrals over the second factor
+  differ by at most `C` for almost every point of a probability first factor, the integrals over
+  the product measures differ by at most `C`.
 * `TauCeti.setIntegral_eq_zero_of_forall_prod` is the binary-product specialization of the Dynkin
   (π-λ) step for Bochner integrals: a function whose integral vanishes on every measurable rectangle
   has vanishing integral on every measurable set. Rectangles are a π-system generating the product
@@ -188,6 +191,19 @@ theorem setIntegral_eq_zero_of_forall_prod {ρ : Measure (α × β)} {f : α × 
     rwa [Set.univ_prod_univ, setIntegral_univ] at h
   exact setIntegral_eq_zero_of_isPiSystem le_rfl generateFrom_prod.symm isPiSystem_prod hf huniv
     fun _ ⟨s, hs, t, ht, h⟩ => h ▸ hrect s hs t ht
+
+/-- If two integrals over the second factor of a product measure with a probability first factor
+differ by at most `C` for almost every point of the first factor, then the two integrals over the
+product measures differ by at most `C`. -/
+theorem abs_integral_prod_sub_integral_prod_le_of_ae {ρ : Measure α} [IsProbabilityMeasure ρ]
+    {κ₁ κ₂ : Measure β} [SFinite κ₁] [SFinite κ₂] {F : α × β → ℝ} {C : ℝ}
+    (h₁ : Integrable F (ρ.prod κ₁)) (h₂ : Integrable F (ρ.prod κ₂))
+    (h : ∀ᵐ t ∂ρ, |∫ w, F (t, w) ∂κ₁ - ∫ w, F (t, w) ∂κ₂| ≤ C) :
+    |∫ p, F p ∂(ρ.prod κ₁) - ∫ p, F p ∂(ρ.prod κ₂)| ≤ C := by
+  rw [integral_prod _ h₁, integral_prod _ h₂,
+    ← integral_sub h₁.integral_prod_left h₂.integral_prod_left, ← Real.norm_eq_abs]
+  exact le_trans (norm_integral_le_of_norm_le_const (C := C)
+    (by simpa only [Real.norm_eq_abs] using h)) (by simp)
 
 /-- The weighted upper truncated integral of `f ^ q` is measurable in the height. -/
 theorem measurable_rpow_mul_setLIntegral_lt {f : α → ℝ≥0∞} {c : ℝ} [SFinite μ]
