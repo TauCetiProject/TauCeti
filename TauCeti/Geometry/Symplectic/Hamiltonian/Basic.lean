@@ -57,6 +57,12 @@ theorem hamiltonianVectorField_def (ω : SymplecticForm V) (H : V → ℝ) (x : 
       ω.toBilinForm.toContinuousBilinearMap.inverse (fderiv ℝ H x) :=
   (rfl)
 
+/-- The Hamiltonian vector field at `x` depends only on the germ of the Hamiltonian at `x`. -/
+theorem hamiltonianVectorField_congr_of_eventuallyEq (ω : SymplecticForm V) {H H' : V → ℝ}
+    {x : V} (h : H =ᶠ[nhds x] H') :
+    ω.hamiltonianVectorField H x = ω.hamiltonianVectorField H' x := by
+  rw [hamiltonianVectorField_def, hamiltonianVectorField_def, h.fderiv_eq]
+
 /-- Contraction of the Hamiltonian field is the derivative of the Hamiltonian. -/
 @[simp]
 theorem apply_hamiltonianVectorField (ω : SymplecticForm V) (H : V → ℝ) (x v : V) :
@@ -159,6 +165,17 @@ theorem hamiltonianVectorField_const (ω : SymplecticForm V) (c : ℝ) :
   funext x
   rw [Pi.zero_apply, eq_comm, eq_hamiltonianVectorField_iff]
   simp
+
+/-- The Hamiltonian vector field of the linear function `ω(a, ·)` is the constant `a`. -/
+@[simp]
+theorem hamiltonianVectorField_apply_left (ω : SymplecticForm V) (a x : V) :
+    ω.hamiltonianVectorField (fun y ↦ ω a y) x = a := by
+  -- The function `ω(a, ·)` is the continuous linear map `ω.toBilinForm.toContinuousBilinearMap a`.
+  have h : HasFDerivAt (fun y ↦ ω a y) (ω.toBilinForm.toContinuousBilinearMap a) x :=
+    (ω.toBilinForm.toContinuousBilinearMap a).hasFDerivAt
+  rw [eq_comm, eq_hamiltonianVectorField_iff, h.fderiv]
+  intro v
+  exact (LinearMap.toContinuousBilinearMap_apply _ a v).symm
 
 /-- The Hamiltonian vector field is linear in Hamiltonians differentiable at the point:
 `X_{aF + bG} = a X_F + b X_G`. -/
