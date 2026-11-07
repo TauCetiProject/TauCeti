@@ -8,7 +8,6 @@ module
 public import TauCeti.RingTheory.Huber.ModuleTopology.Pair
 import TauCeti.Topology.Algebra.Module.ModuleTopology
 import Mathlib.Topology.Algebra.Algebra
-import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 
 /-!
 # Cancellation for finite étale morphisms of Huber pairs
