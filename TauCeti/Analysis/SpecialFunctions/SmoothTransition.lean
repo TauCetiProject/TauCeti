@@ -323,6 +323,28 @@ theorem tendsto_integral_mul_deriv_mul_sub_smul {E : Type*} [NormedAddCommGroup 
     calc c * |deriv smoothTransition (c * (y - a))| ≤ c * C := by gcongr; exact hC _
       _ = 2 * C / (2 * c⁻¹) := by field_simp
 
+/-- The pointwise limit of `d + ψ ((n + 1) t) e + ψ' ((n + 1) t) ((n + 1) k)` for the smooth
+transition `ψ`: the sequence tends to `d` for `t ≤ 0` and to `d + e` for `0 < t`. At `t = 0` the
+last term vanishes because `ψ' 0 = 0`, whatever `k` is. -/
+theorem tendsto_add_mul_add_deriv_mul {t d e k : ℝ} :
+    Tendsto (fun n : ℕ => d + smoothTransition ((n + 1) * t) * e +
+      deriv smoothTransition ((n + 1) * t) * ((n + 1) * k)) atTop
+      (𝓝 (if t ≤ 0 then d else d + e)) := by
+  rcases lt_trichotomy t 0 with ht | ht | ht
+  · have ht' (n : ℕ) : ((n : ℝ) + 1) * t < 0 := mul_neg_of_pos_of_neg (by positivity) ht
+    simp [zero_of_nonpos (ht' _).le, deriv_of_neg (ht' _), ht.le]
+  · -- `smoothTransition` is nonnegative and vanishes at `0`, so `0` is a local minimum.
+    have hmin : IsLocalMin smoothTransition 0 :=
+      Eventually.of_forall fun x => by simpa using nonneg x
+    have hd : deriv smoothTransition 0 = 0 := hmin.deriv_eq_zero
+    simp [ht, hd]
+  · have hev : ∀ᶠ n : ℕ in atTop, 1 < ((n : ℝ) + 1) * t :=
+      (Tendsto.atTop_mul_const ht (tendsto_natCast_atTop_atTop.atTop_add
+        tendsto_const_nhds)).eventually_gt_atTop 1
+    refine tendsto_const_nhds.congr' ?_
+    filter_upwards [hev] with n hn
+    simp [one_of_one_le hn.le, deriv_of_one_lt hn, not_le.2 ht]
+
 end Real.smoothTransition
 
 /-- The chain rule for the smooth transition function `ψ`: if `f` has derivative `f'` at `x`,

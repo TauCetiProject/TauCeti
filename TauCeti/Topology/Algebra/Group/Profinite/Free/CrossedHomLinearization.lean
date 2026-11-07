@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.DegreeOneForm
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Prescription
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.RelatorFunctional
@@ -35,10 +36,12 @@ Frattini subgroup, as a function of the values of the character on the generator
 degree-one form of that element as its derivative modulo `p`. It is the linearisation that
 Newton's method uses to find the canonical character of a Demushkin group.
 
-## Main result
+## Main results
 
 * `TauCeti.IsCrossedHom.pow_succ_dvd_sub_sub_sum_degreeOneForm`: the first-order expansion above,
   modulo `p ^ (k + 1)`, on the Frattini subgroup.
+* `TauCeti.pow_succ_dvd_crossedHom_single_sub_sub_mulVec`: the same expansion for the Kronecker
+  crossed homomorphisms, in terms of the lifted matrix of the degree-one form.
 
 ## References
 
@@ -172,5 +175,29 @@ theorem IsCrossedHom.pow_succ_dvd_sub_sub_sum_degreeOneForm [Fintype X]
   rw [map_sum]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   rw [_root_.map_mul, _root_.map_mul, ZMod.ringHom_map_cast, hff']
+
+
+open Matrix in
+/-- **The linearisation of the Kronecker values on a relator.** For continuous characters `χ, χ'`
+of the free pro-`p` group on a finite type, congruent modulo `p ^ k` on the generators, the values
+at `n ∈ λ_1(F)` of the Kronecker crossed homomorphisms differ, modulo `p ^ (k + 1)`, by the lifted
+matrix of the degree-one form of `n` applied to the difference of the generator values. -/
+theorem pow_succ_dvd_crossedHom_single_sub_sub_mulVec [Fintype X] [DecidableEq X]
+    {χ χ' : freeProP p X →ₜ* ℤ_[p]ˣ} {k : ℕ}
+    (hχ : ∀ i, (p : ℤ_[p]) ^ k ∣ (χ' (of i) : ℤ_[p]) - χ (of i))
+    (n : pLowerCentralSeries p (freeProP p X) 1) (j : X) :
+    (p : ℤ_[p]) ^ (k + 1) ∣ crossedHom χ' (Pi.single j 1) n - crossedHom χ (Pi.single j 1) n -
+      (((LinearMap.BilinForm.toMatrix (dualBasis p X)
+        (degreeOneForm (gradedMk p (freeProP p X) 1 n))).map
+          (ZMod.cast : ZMod p → ℤ_[p]))ᵀ *ᵥ (fun i ↦ (χ' (of i) : ℤ_[p]) - χ (of i))) j := by
+  have h := IsCrossedHom.pow_succ_dvd_sub_sub_sum_degreeOneForm hχ
+    (isCrossedHom_crossedHom _ (Pi.single j 1)) (isCrossedHom_crossedHom _ (Pi.single j 1))
+    (continuous_crossedHom _ _) (continuous_crossedHom _ _)
+    (fun x ↦ by rw [crossedHom_of, crossedHom_of]) n
+  convert h using 2
+  simp only [Matrix.mulVec, dotProduct, Matrix.transpose_apply, Matrix.map_apply,
+    LinearMap.BilinForm.toMatrix_apply, crossedHom_of, Pi.single_apply, mul_ite, mul_one,
+    mul_zero, ite_mul, zero_mul, Finset.sum_ite_eq', Finset.mem_univ, ite_true]
+  exact Finset.sum_congr rfl fun i _ ↦ by ring
 
 end TauCeti
