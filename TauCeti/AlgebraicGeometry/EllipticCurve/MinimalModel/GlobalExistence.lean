@@ -222,7 +222,7 @@ private theorem exists_valuation_sub_le_exp_neg_obstructionExponentAt_pow
     exact ⟨b, hb.le⟩
   choose b hb using hloc
   obtain ⟨a, ha⟩ := TauCeti.DedekindDomain.exists_eq_mod_localized_prime_pow
-    (fun v : S ↦ v.1) Subtype.val_injective
+    (fun v : S ↦ v.1.asIdeal) (HeightOneSpectrum.asIdeal_injective.comp Subtype.val_injective)
     (fun v ↦ m * (obstructionExponentAt O v.1 W).toNat)
     (fun v ↦ Ideal.Quotient.mk _
       (algebraMap O (Localization.AtPrime v.1.asIdeal) (b v)))

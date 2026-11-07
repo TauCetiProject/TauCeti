@@ -27,7 +27,8 @@ corresponding quotient after localization.
 ## Main results
 
 * `TauCeti.DedekindDomain.exists_eq_mod_localized_prime_pow`: simultaneous approximation of
-  finitely many classes in localized prime-power quotients.
+  finitely many classes in localized prime-power quotients at distinct maximal ideals of any
+  commutative ring.
 * `TauCeti.DedekindDomain.exists_forall_sub_mem_map_localizationAtPrime`: one element of `R`
   agrees with a prescribed element of every localization `R_v` modulo a fixed nonzero ideal.
   Only the finitely many primes containing the ideal impose a condition.
@@ -45,34 +46,34 @@ namespace TauCeti.DedekindDomain
 open Function
 open IsDedekindDomain
 
-variable {R ι : Type*} [CommRing R] [IsDedekindDomain R] [Finite ι]
+variable {R : Type*} [CommRing R]
 
-/-- **Finite approximation at height-one primes.**
+/-- **Finite approximation at maximal ideals.**
 
-For pairwise distinct height-one primes `v i`, arbitrary residue classes modulo the indicated
-powers of the maximal ideals of `R_{v i}` are simultaneously represented by a single element
-of `R`.
+For pairwise distinct maximal ideals `p i`, arbitrary residue classes modulo the indicated
+powers of the maximal ideals of `R_{p i}` are simultaneously represented by a single element
+of `R`. In a Dedekind domain this applies to the ideals of finitely many distinct height-one
+primes.
 
 Allowing exponent zero is harmless: the corresponding quotient is the zero ring, so that
 component imposes no condition. -/
-theorem exists_eq_mod_localized_prime_pow
-    (v : ι → HeightOneSpectrum R) (hv : Function.Injective v) (n : ι → ℕ)
+theorem exists_eq_mod_localized_prime_pow {ι : Type*} [Finite ι]
+    (p : ι → Ideal R) [∀ i, (p i).IsMaximal] (hp : Injective p) (n : ι → ℕ)
     (x : (i : ι) →
-      Localization.AtPrime (v i).asIdeal ⧸
-        IsLocalRing.maximalIdeal (Localization.AtPrime (v i).asIdeal) ^ n i) :
-    ∃ a : R, ∀ i,
-      Ideal.Quotient.mk _ (algebraMap R (Localization.AtPrime (v i).asIdeal) a) = x i := by
-  let y : (i : ι) → R ⧸ (v i).asIdeal ^ n i := fun i ↦
-    (IsLocalization.AtPrime.equivQuotMaximalIdealPow (v i).asIdeal
-      (Localization.AtPrime (v i).asIdeal) (n i)).symm (x i)
-  have hcoprime : Pairwise (IsCoprime on fun i ↦ (v i).asIdeal ^ n i) := by
-    intro i j hij
-    exact (v i).isCoprime_pow_of_ne (v j) (fun h ↦ hij (hv h)) (n i) (n j)
+      Localization.AtPrime (p i) ⧸ IsLocalRing.maximalIdeal (Localization.AtPrime (p i)) ^ n i) :
+    ∃ a : R, ∀ i, Ideal.Quotient.mk _ (algebraMap R (Localization.AtPrime (p i)) a) = x i := by
+  let y : (i : ι) → R ⧸ p i ^ n i := fun i ↦
+    (IsLocalization.AtPrime.equivQuotMaximalIdealPow (p i) (Localization.AtPrime (p i))
+      (n i)).symm (x i)
+  have hcoprime : Pairwise (IsCoprime on fun i ↦ p i ^ n i) := fun i j hij ↦
+    (Ideal.isCoprime_of_isMaximal (hp.ne hij)).pow
   obtain ⟨a, ha⟩ := Ideal.pi_quotient_surjective hcoprime y
   refine ⟨a, fun i ↦ ?_⟩
-  rw [← IsLocalization.AtPrime.equivQuotMaximalIdealPow_apply_mk (v i).asIdeal
-    (Localization.AtPrime (v i).asIdeal) (n i) a, ha i]
+  rw [← IsLocalization.AtPrime.equivQuotMaximalIdealPow_apply_mk (p i)
+    (Localization.AtPrime (p i)) (n i) a, ha i]
   exact Equiv.apply_symm_apply _ (x i)
+
+variable [IsDedekindDomain R]
 
 /-- **Approximation modulo a nonzero ideal at every height-one prime.**
 
@@ -94,13 +95,13 @@ theorem exists_forall_sub_mem_map_localizationAtPrime {I : Ideal R} (hI : I ≠ 
     have := IsLocalization.AtPrime.isDiscreteValuationRing_of_dedekind_domain R v.ne_bot
       (Localization.AtPrime v.asIdeal)
     obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible (Localization.AtPrime v.asIdeal)
-    have hI' : I.map (algebraMap R (Localization.AtPrime v.asIdeal)) ≠ ⊥ :=
-      Ideal.map_ne_bot_of_ne_bot hI
-    obtain ⟨n, hn⟩ := IsDiscreteValuationRing.ideal_eq_span_pow_irreducible hI' hϖ
+    obtain ⟨n, hn⟩ :=
+      IsDiscreteValuationRing.ideal_eq_span_pow_irreducible (Ideal.map_ne_bot_of_ne_bot hI) hϖ
     exact ⟨n, by rw [hϖ.maximalIdeal_eq, Ideal.span_singleton_pow, hn]⟩
   choose n hn using hpow
-  obtain ⟨a, ha⟩ := exists_eq_mod_localized_prime_pow (fun v : T ↦ v.1) Subtype.val_injective
-    (fun v ↦ n v) (fun v ↦ Ideal.Quotient.mk _ (x v))
+  obtain ⟨a, ha⟩ := exists_eq_mod_localized_prime_pow (fun v : T ↦ v.1.asIdeal)
+    (HeightOneSpectrum.asIdeal_injective.comp Subtype.val_injective) (fun v ↦ n v)
+    (fun v ↦ Ideal.Quotient.mk _ (x v))
   refine ⟨a, fun v ↦ ?_⟩
   by_cases hv : v ∈ T
   · exact hn v (Ideal.Quotient.eq.1 (ha ⟨v, hv⟩))
