@@ -5,11 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import Mathlib.Topology.MetricSpace.Bounded
+import Mathlib.Analysis.Calculus.Deriv.Add
+import Mathlib.Analysis.Calculus.Deriv.Comp
+import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.MeasureTheory.Integral.CircleIntegral
+import Mathlib.Tactic.FieldSimp
 
 /-!
 # Images of circles under differentiable maps
@@ -26,6 +31,8 @@ circles about `z₀` shrink to points as their radius tends to `0`.
 * `TauCeti.tendsto_diam_image_sphere_nhdsGT_zero_of_tendsto`: if `u` is differentiable near
   `z₀` (except possibly at `z₀`) and `|z - z₀| ‖du(z)‖ → 0` as `z → z₀`, then the diameter of
   the image of the circle of radius `ρ` about `z₀` tends to `0` as `ρ → 0`.
+* `HasDerivAt.im_div_comp_circleMap`: along the circle through `z₀`, the imaginary coordinate of
+  the normalised increment of a map with derivative `f' ≠ 0` has unit speed.
 -/
 
 public section
@@ -101,3 +108,26 @@ theorem tendsto_diam_image_sphere_nhdsGT_zero_of_tendsto
     _ < η := by nlinarith [Real.pi_le_four]
 
 end TauCeti
+
+open Complex in
+/-- **The imaginary coordinate of an image of a circle has unit speed.** If `f` has derivative
+`f' ≠ 0` at the point `z₀ = circleMap ζ ρ θ₀` of the circle, then
+`θ ↦ Im ((f (circleMap ζ ρ θ) - f z₀) / (f' * (z₀ - ζ)))` has derivative `1` at `θ₀`. -/
+theorem HasDerivAt.im_div_comp_circleMap {f : ℂ → ℂ} {f' z₀ ζ : ℂ} {ρ : ℝ}
+    (hfz : HasDerivAt f f' z₀) (hd0 : f' ≠ 0) (hzζ : z₀ - ζ ≠ 0) {θ₀ : ℝ}
+    (hθ₀ : circleMap ζ ρ θ₀ = z₀) :
+    HasDerivAt (fun θ => ((f (circleMap ζ ρ θ) - f z₀) / (f' * (z₀ - ζ))).im) 1 θ₀ := by
+  have h1 : HasDerivAt (circleMap ζ ρ) (circleMap 0 ρ θ₀ * I) θ₀ :=
+    hasDerivAt_circleMap ζ ρ θ₀
+  have h2 : HasDerivAt f f' (circleMap ζ ρ θ₀) := by rw [hθ₀]; exact hfz
+  have h3 := HasDerivAt.scomp θ₀ h2 h1
+  have h4 : HasDerivAt (fun θ => (f (circleMap ζ ρ θ) - f z₀) / (f' * (z₀ - ζ)))
+      ((circleMap 0 ρ θ₀ * I) * f' / (f' * (z₀ - ζ))) θ₀ := by
+    simpa [Function.comp_def, smul_eq_mul] using (h3.sub_const (f z₀)).div_const (f' * (z₀ - ζ))
+  have h5 : HasDerivAt (fun θ => ((f (circleMap ζ ρ θ) - f z₀) / (f' * (z₀ - ζ))).im)
+      (((circleMap 0 ρ θ₀ * I) * f' / (f' * (z₀ - ζ))).im) θ₀ :=
+    Complex.imCLM.hasFDerivAt.comp_hasDerivAt θ₀ h4
+  have hcm : circleMap 0 ρ θ₀ = z₀ - ζ := by rw [← circleMap_sub_center, hθ₀]
+  have h6 : (z₀ - ζ) * I * f' / (f' * (z₀ - ζ)) = I := by field_simp
+  rw [hcm, h6, Complex.I_im] at h5
+  exact h5

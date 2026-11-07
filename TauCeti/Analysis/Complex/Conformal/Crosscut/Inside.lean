@@ -7,8 +7,10 @@ module
 
 public import TauCeti.Analysis.Normed.Module.FilledHull
 import Mathlib.Analysis.Calculus.Deriv.Slope
-import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.MeasureTheory.Integral.CircleIntegral
+import TauCeti.Analysis.Calculus.Deriv.NormSq
+import TauCeti.Analysis.Calculus.Deriv.Slope
+import TauCeti.Analysis.Calculus.FDeriv.CircleMap
 import TauCeti.Analysis.Complex.Conformal.Crosscut.Basic
 public import TauCeti.Analysis.Complex.Conformal.Crosscut.Image
 import TauCeti.Analysis.Complex.Conformal.Inverse.Function
@@ -72,55 +74,6 @@ namespace TauCeti
 
 variable {f : ℂ → ℂ} {c ζ z₀ : ℂ} {r ρ : ℝ}
 
-/-- **Second-order control of the squared distance along a path.** If a path `φ` through `z₀` has
-velocity `z₀ - ζ` at `0`, where `‖z₀ - ζ‖ = ρ > 0`, then near `0` the squared distance
-`‖φ t - ζ‖ ^ 2` stays within `ρ ^ 2 * |t|` of its tangent line `ρ ^ 2 + t * (2 * ρ ^ 2)`. -/
-theorem eventually_abs_norm_sub_sq_sub_sub_mul_le {φ : ℝ → ℂ} (hφ : HasDerivAt φ (z₀ - ζ) 0)
-    (hφ0 : φ 0 = z₀) (hρ : 0 < ρ) (hnorm : ‖z₀ - ζ‖ = ρ) :
-    ∀ᶠ t : ℝ in 𝓝 0, |‖φ t - ζ‖ ^ 2 - ρ ^ 2 - t * (2 * ρ ^ 2)| ≤ ρ ^ 2 * |t| := by
-  have hψ : HasDerivAt (fun t => ‖φ t - ζ‖ ^ 2) (2 * ρ ^ 2) 0 := by
-    have h1 := (hφ.sub_const ζ).norm_sq
-    rw [hφ0, real_inner_self_eq_norm_sq, hnorm] at h1
-    exact h1
-  have := (hasDerivAt_iff_isLittleO.mp hψ).def (sq_pos_of_pos hρ)
-  simpa [hφ0, hnorm] using this
-
-/-- **The imaginary coordinate of an image crosscut has unit speed.** If `f` has derivative `f' ≠ 0`
-at the point `z₀ = circleMap ζ ρ θ₀` of the circle, then
-`θ ↦ Im ((f (circleMap ζ ρ θ) - f z₀) / (f' * (z₀ - ζ)))` has derivative `1` at `θ₀`. -/
-theorem hasDerivAt_im_div_comp_circleMap {f' : ℂ} (hfz : HasDerivAt f f' z₀) (hd0 : f' ≠ 0)
-    (hzζ : z₀ - ζ ≠ 0) {θ₀ : ℝ} (hθ₀ : circleMap ζ ρ θ₀ = z₀) :
-    HasDerivAt (fun θ => ((f (circleMap ζ ρ θ) - f z₀) / (f' * (z₀ - ζ))).im) 1 θ₀ := by
-  have h1 : HasDerivAt (circleMap ζ ρ) (circleMap 0 ρ θ₀ * I) θ₀ :=
-    hasDerivAt_circleMap ζ ρ θ₀
-  have h2 : HasDerivAt f f' (circleMap ζ ρ θ₀) := by rw [hθ₀]; exact hfz
-  have h3 := HasDerivAt.scomp θ₀ h2 h1
-  have h4 : HasDerivAt (fun θ => (f (circleMap ζ ρ θ) - f z₀) / (f' * (z₀ - ζ)))
-      ((circleMap 0 ρ θ₀ * I) * f' / (f' * (z₀ - ζ))) θ₀ := by
-    simpa [Function.comp_def, smul_eq_mul] using (h3.sub_const (f z₀)).div_const (f' * (z₀ - ζ))
-  have h5 : HasDerivAt (fun θ => ((f (circleMap ζ ρ θ) - f z₀) / (f' * (z₀ - ζ))).im)
-      (((circleMap 0 ρ θ₀ * I) * f' / (f' * (z₀ - ζ))).im) θ₀ :=
-    Complex.imCLM.hasFDerivAt.comp_hasDerivAt θ₀ h4
-  have hcm : circleMap 0 ρ θ₀ = z₀ - ζ := by rw [← circleMap_sub_center, hθ₀]
-  have h6 : (z₀ - ζ) * I * f' / (f' * (z₀ - ζ)) = I := by field_simp
-  rw [hcm, h6, Complex.I_im] at h5
-  exact h5
-
-/-- **Sign of a function with unit derivative at a zero.** If `χ θ₀ = 0` and `χ` has derivative `1`
-at `θ₀`, then `χ` is positive just to the right of `θ₀` and negative just to its left. -/
-theorem eventually_pos_nhdsGT_and_eventually_neg_nhdsLT_of_hasDerivAt {χ : ℝ → ℝ} {θ₀ : ℝ}
-    (hχ : HasDerivAt χ 1 θ₀) (hχ0 : χ θ₀ = 0) :
-    (∀ᶠ t in 𝓝[>] (0 : ℝ), 0 < χ (θ₀ + t)) ∧ ∀ᶠ t in 𝓝[<] (0 : ℝ), χ (θ₀ + t) < 0 := by
-  constructor
-  · filter_upwards [hχ.tendsto_slope_zero_right.eventually (lt_mem_nhds zero_lt_one),
-      self_mem_nhdsWithin] with t ht ht0
-    rw [hχ0, sub_zero, smul_eq_mul] at ht
-    exact (pos_iff_pos_of_mul_pos ht).mp (inv_pos.mpr ht0)
-  · filter_upwards [hχ.tendsto_slope_zero_left.eventually (lt_mem_nhds zero_lt_one),
-      self_mem_nhdsWithin] with t ht ht0
-    rw [hχ0, sub_zero, smul_eq_mul] at ht
-    exact (neg_iff_neg_of_mul_pos ht).mp (inv_lt_zero.mpr ht0)
-
 /-- **The transversal segment through a point of the image crosscut.** For small negative `t` the
 segment lies in the image of the near side, and for small positive `t` in the far side. -/
 theorem exists_pos_forall_mem_image_inter_ball_and_image_sdiff_closedBall {U : Set ℂ}
@@ -147,7 +100,7 @@ theorem exists_pos_forall_mem_image_inter_ball_and_image_sdiff_closedBall {U : S
   have hψ0 : ψ 0 = ρ ^ 2 := by simp [ψ, hgf z₀ hz₀b, hnorm]
   have hρsq : (0 : ℝ) < ρ ^ 2 := sq_pos_of_pos hρ
   have hev : ∀ᶠ t : ℝ in 𝓝 0, |ψ t - ρ ^ 2 - t * (2 * ρ ^ 2)| ≤ ρ ^ 2 * |t| :=
-    eventually_abs_norm_sub_sq_sub_sub_mul_le hφ hφ0 hρ hnorm
+    hφ.eventually_abs_norm_sub_sq_sub_sub_mul_le hφ0 hρ hnorm
   have hΩev : ∀ᶠ t : ℝ in 𝓝 0, v * t + f z₀ ∈ f '' U := by
     have hcont : Continuous fun t : ℝ => v * (t : ℂ) + f z₀ := by fun_prop
     have h0 : (fun t : ℝ => v * (t : ℂ) + f z₀) 0 ∈ f '' U := by simpa using mem_image_of_mem f hz₀b
@@ -203,10 +156,10 @@ theorem mem_closure_image_inter_sphere_inter_setOf_im_pos_and_mem_closure_inter_
   rw [zero_add] at hθ₀
   -- the imaginary coordinate of the crosscut, as a function of the angle
   set χ : ℝ → ℝ := fun θ => ((f (circleMap ζ ρ θ) - f z₀) / v).im
-  have hχ : HasDerivAt χ 1 θ₀ := hasDerivAt_im_div_comp_circleMap hfz hd0 hzζ hθ₀
+  have hχ : HasDerivAt χ 1 θ₀ := hfz.im_div_comp_circleMap hd0 hzζ hθ₀
   have hχ0 : χ θ₀ = 0 := by
     simp [χ, hθ₀]
-  obtain ⟨hpos, hneg⟩ := eventually_pos_nhdsGT_and_eventually_neg_nhdsLT_of_hasDerivAt hχ hχ0
+  obtain ⟨hpos, hneg⟩ := hχ.eventually_pos_nhdsGT_and_eventually_neg_nhdsLT zero_lt_one hχ0
   -- nearby crosscut points lie in the disc, and their images are close to `f z₀`
   have hcirc : Continuous fun t : ℝ => circleMap ζ ρ (θ₀ + t) :=
     (continuous_circleMap ζ ρ).comp (continuous_const.add continuous_id)
