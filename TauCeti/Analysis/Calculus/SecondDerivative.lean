@@ -78,6 +78,8 @@ Morse-theoretic definitions that use them.
 * `TauCeti.fderiv_fderiv_fderiv_apply_comm`: the third derivative of a sufficiently smooth map is
   symmetric in its last two directions.
 * `TauCeti.fderiv_fderiv_const_smul`: the second derivative of a constant multiple.
+* `TauCeti.fderiv_fderiv_sub_clm`: subtracting a continuous linear map does not change the second
+  derivative.
 * `TauCeti.fderiv_fderiv_mul_apply`: the second-order product rule.
 * `TauCeti.fderiv_fderiv_mul_apply_of_tsupport_subset`: the second-order product rule with a
   cutoff, at every point.
@@ -284,6 +286,15 @@ theorem fderiv_fderiv_fderiv_apply_comm {n : WithTop ℕ∞} {g : E → F} {x : 
 theorem fderiv_fderiv_const_smul (c : 𝕜) (g : E → F) (x : E) :
     fderiv 𝕜 (fderiv 𝕜 (c • g)) x = c • fderiv 𝕜 (fderiv 𝕜 g) x := by
   rw [fderiv_const_smul_field, fderiv_const_smul_field (𝕜 := 𝕜) (f := fderiv 𝕜 g), Pi.smul_apply]
+
+/-- Subtracting a continuous linear map does not change the second derivative, at a point near
+which `g` is differentiable. -/
+theorem fderiv_fderiv_sub_clm {g : E → F} {x : E} (hg : ∀ᶠ y in 𝓝 x, DifferentiableAt 𝕜 g y)
+    (L : E →L[𝕜] F) :
+    fderiv 𝕜 (fderiv 𝕜 fun y => g y - L y) x = fderiv 𝕜 (fderiv 𝕜 g) x := by
+  have h : (fderiv 𝕜 fun y => g y - L y) =ᶠ[𝓝 x] fun y => fderiv 𝕜 g y - L :=
+    hg.mono fun y hy => by rw [fderiv_fun_sub hy L.differentiableAt, L.fderiv]
+  rw [h.fderiv_eq, fderiv_sub_const]
 
 /-- **The second-order product rule.** For scalar-valued maps `f` and `g` which are `C²` at `x`,
 `D²(f g)(v, w) = f D²g(v, w) + g D²f(v, w) + Df(v) Dg(w) + Dg(v) Df(w)`. -/
