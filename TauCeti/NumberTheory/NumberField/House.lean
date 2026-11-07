@@ -33,22 +33,22 @@ open Polynomial
 degree `d ≤ n`, and `max 1 ‖σ g‖ ≤ R` for every conjugate, then the house of `γ` is at most
 `s ^ n * ((n + 1) * R ^ n) * H(P)`. -/
 theorem house_le_of_norm_embedding_eq {F : Type*} [Field F] [NumberField F] {g γ : F}
-    {R : ℝ} (hR : ∀ σ : F →+* ℂ, max 1 ‖σ g‖ ≤ R) {s : ℤ} (hs1 : (1 : ℝ) ≤ s) {n : ℕ}
+    {R : ℝ} (hR : ∀ σ : F →+* ℂ, max 1 ‖σ g‖ ≤ R) {s : ℝ} (hs1 : 1 ≤ s) {n : ℕ}
     {P : ℤ[X]} (hP : P.natDegree ≤ n)
-    (hγ : ∀ σ : F →+* ℂ, ‖σ γ‖ = (s : ℝ) ^ P.natDegree * ‖aeval (σ g) P‖) :
-    house γ ≤ (s : ℝ) ^ n * ((n + 1) * R ^ n) * P.supNorm := by
+    (hγ : ∀ σ : F →+* ℂ, ‖σ γ‖ = s ^ P.natDegree * ‖aeval (σ g) P‖) :
+    house γ ≤ s ^ n * ((n + 1) * R ^ n) * P.supNorm := by
   have hH := P.supNorm_nonneg
   obtain ⟨σ, -, hσ⟩ :=
     Finset.exists_mem_eq_sup' Finset.univ_nonempty fun φ : F →+* ℂ ↦ ‖φ γ‖₊
   rw [house_eq_sup', hσ, coe_nnnorm, hγ]
-  calc (s : ℝ) ^ P.natDegree * ‖aeval (σ g) P‖
-      ≤ (s : ℝ) ^ n * ((n + 1) * P.supNorm * max 1 ‖σ g‖ ^ n) := by
+  calc s ^ P.natDegree * ‖aeval (σ g) P‖
+      ≤ s ^ n * ((n + 1) * P.supNorm * max 1 ‖σ g‖ ^ n) := by
         gcongr
         rw [aeval_def, algebraMap_int_eq, ← eval_map, ← P.supNorm_map (Int.castRingHom ℂ)]
         exact norm_eval_le_add_one_mul_supNorm_mul (natDegree_map_le.trans hP) _
-    _ ≤ (s : ℝ) ^ n * ((n + 1) * P.supNorm * R ^ n) := by
+    _ ≤ s ^ n * ((n + 1) * P.supNorm * R ^ n) := by
         gcongr
         exact hR σ
-    _ = (s : ℝ) ^ n * ((n + 1) * R ^ n) * P.supNorm := by ring
+    _ = s ^ n * ((n + 1) * R ^ n) * P.supNorm := by ring
 
 end NumberField
