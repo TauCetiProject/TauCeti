@@ -13,7 +13,9 @@ public import TauCeti.Probability.Kernel.ClosedClass
 
 A state of a Markov kernel is recurrent if the chain started there returns at a positive
 time almost surely, and transient otherwise. Recurrence is equivalent to divergence of
-the diagonal Green function, and is constant on communicating classes.
+the diagonal Green function, and is constant on communicating classes. The mean return
+time is the extended nonnegative expectation of the first return time; it is at least one,
+and infinite at a transient state.
 
 Every state reachable from a recurrent state is recurrent and hits the original state
 almost surely. Consequently a recurrent communicating class is closed. In an irreducible
@@ -70,7 +72,47 @@ theorem isTransient_iff_return_probability_lt_one : κ.IsTransient x ↔
   rw [isTransient_iff, isRecurrent_iff]
   exact ⟨fun h => lt_of_le_of_ne prob_le_one h, fun h => h.ne⟩
 
+/-- The mean return time `m_x = 𝔼_x[T_x⁺]` of a state: the expected first return time at a
+positive time of the chain started at `x`, as an extended nonnegative integral. A missing return
+counts as infinity, so `m_x = ∞` as soon as the chain fails to return with positive
+probability. -/
+noncomputable def meanReturnTime (κ : Kernel S S) [IsMarkovKernel κ] (x : S) : ℝ≥0∞ :=
+  ∫⁻ ω, ENat.toENNReal (hittingAfter (fun n ω => ω n) {x} 1 ω)
+    ∂markovChainLaw (Measure.dirac x) κ
+
+/-- The mean return time is the integral of the first return time, which starts at time one. -/
+theorem meanReturnTime_def : κ.meanReturnTime x =
+    ∫⁻ ω, ENat.toENNReal (hittingAfter (fun n ω => ω n) {x} 1 ω)
+      ∂markovChainLaw (Measure.dirac x) κ := (rfl)
+
+/-- A return takes at least one step, so the mean return time is at least one. -/
+theorem one_le_meanReturnTime : 1 ≤ κ.meanReturnTime x := by
+  calc (1 : ℝ≥0∞) = ∫⁻ _, 1 ∂markovChainLaw (Measure.dirac x) κ := by simp
+    _ ≤ κ.meanReturnTime x := lintegral_mono fun ω => by
+      have h := le_hittingAfter (u := fun n (ω : ℕ → S) => ω n) (s := {x}) (n := 1) ω
+      exact_mod_cast ENat.natCast_le_toENNReal.2 h
+
 variable [MeasurableSingletonClass S]
+
+/-- **A transient state has infinite mean return time.** The chain started there fails to return
+with positive probability, and the first return time is infinite on that event. -/
+theorem IsTransient.meanReturnTime_eq_top (hx : κ.IsTransient x) : κ.meanReturnTime x = ∞ := by
+  have hT : Measurable (hittingAfter (fun n (ω : ℕ → S) => ω n) {x} 1) :=
+    (Filtration.adapted_piLE.isStoppingTime_hittingAfter
+      (f := Filtration.piLE (X := fun _ : ℕ => S)) (measurableSet_singleton x)).measurable'
+  have hE : MeasurableSet {ω : ℕ → S | hittingAfter (fun n ω => ω n) {x} 1 ω ≠ ⊤} :=
+    (measurableSet_singleton ⊤).preimage hT |>.compl
+  refine lintegral_eq_top_of_measure_eq_top_ne_zero
+    (Measurable.of_discrete.comp hT).aemeasurable ?_
+  -- The integrand takes the value `∞` exactly where the first return is missing.
+  have hset : {ω | ENat.toENNReal (hittingAfter (fun n ω => ω n) {x} 1 ω) = ∞} =
+      {ω : ℕ → S | hittingAfter (fun n ω => ω n) {x} 1 ω ≠ ⊤}ᶜ :=
+    Set.ext fun ω => by
+      simp only [Set.mem_ofPred_eq, Set.mem_compl_iff, not_not]
+      exact ENat.toENNReal_eq_top
+  rw [hset, prob_compl_eq_one_sub hE]
+  have hlt := isTransient_iff_return_probability_lt_one.mp hx
+  exact (tsub_pos_of_lt hlt).ne'
 
 /-- A state is recurrent exactly when its diagonal Green function is infinite. -/
 theorem isRecurrent_iff_tsum_eq_top :
