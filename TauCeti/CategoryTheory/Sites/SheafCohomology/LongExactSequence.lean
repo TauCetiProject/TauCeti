@@ -53,23 +53,23 @@ public section
 
 open CategoryTheory Abelian
 
-universe w v u
+universe w' w v u
 
 namespace CategoryTheory
 
 namespace Sheaf
 
-variable {C : Type u} [Category.{v} C] {J : GrothendieckTopology C}
-  [HasSheafify J AddCommGrpCat.{v}] [HasExt.{w} (Sheaf J AddCommGrpCat.{v})]
-  {S : ShortComplex (Sheaf J AddCommGrpCat.{v})} (hS : S.ShortExact)
-
 namespace H
 
+variable {C : Type u} [Category.{v} C] {J : GrothendieckTopology C}
+  [HasSheafify J AddCommGrpCat.{w}] [HasExt.{w'} (Sheaf J AddCommGrpCat.{w})]
+  {S : ShortComplex (Sheaf J AddCommGrpCat.{w})} (hS : S.ShortExact)
+
 /-- A monomorphism of abelian sheaves is injective on cohomology in degree zero. -/
-theorem map_injective {F G : Sheaf J AddCommGrpCat.{v}} (f : F ⟶ G) [Mono f] :
+theorem map_injective {F G : Sheaf J AddCommGrpCat.{w}} (f : F ⟶ G) [Mono f] :
     Function.Injective (map f 0) := by
   intro x y hxy
-  apply (Ext.addEquiv₀ (C := Sheaf J AddCommGrpCat.{v})).injective
+  apply (Ext.addEquiv₀ (C := Sheaf J AddCommGrpCat.{w})).injective
   rw [← cancel_mono f, ← addEquiv₀_map, ← addEquiv₀_map, hxy]
 
 include hS
@@ -135,6 +135,10 @@ end H
 namespace H'
 
 open Opposite TauCeti.CategoryTheory
+
+variable {C : Type u} [Category.{v} C] {J : GrothendieckTopology C}
+  [HasSheafify J AddCommGrpCat.{v}] [HasExt.{w'} (Sheaf J AddCommGrpCat.{v})]
+  {S : ShortComplex (Sheaf J AddCommGrpCat.{v})} (hS : S.ShortExact)
 
 include hS
 
