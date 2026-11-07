@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Convex.Subdifferential
-public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Topology.MetricSpace.Lipschitz
 public import Mathlib.MeasureTheory.Measure.Basic
-import Mathlib.Topology.Instances.Rat
 
 /-!
 # Lipschitz graphs covering multivalued subgradients
