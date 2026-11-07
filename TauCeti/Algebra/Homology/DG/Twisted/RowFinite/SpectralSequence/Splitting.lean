@@ -209,9 +209,8 @@ noncomputable def isColimitRowFiniteIndexGradedPieceHomologyCofan (n : ℤ) :
       fun x : {x // ind x = p} ↦
         HomologicalComplex.homologyMap (rowFiniteIndexGradedPieceSingle hM ind x) n) :=
   haveI : AB4OfSize.{uP} (ModuleCat.{max uP uM} R) := AB4OfSize_shrink.{uP, uM} _
-  isColimitMapCoconeCofanMkEquiv (HomologicalComplex.homologyFunctor _ _ n) _ _
-    (isColimitOfPreserves (HomologicalComplex.homologyFunctor _ _ n)
-      (isColimitRowFiniteIndexGradedPieceCofan hM ind))
+  isColimitCofanMkObjOfIsColimit (HomologicalComplex.homologyFunctor _ _ n) _ _
+    (isColimitRowFiniteIndexGradedPieceCofan hM ind)
 
 /-- **The cohomology of a graded piece of the row-finite index filtration**: the cohomology of
 the complex of finite-support families of coefficients on the generators of index `p`, in degree
@@ -260,14 +259,6 @@ noncomputable def indexSpectralSequenceFirstPageXIsoSigma (pq : ℤ × ℤ) :
       ∐ fun _ : {x // ind x = pq.2 + 1} ↦
         (shiftedModuleComplex.{uR, uA, uM, uP} hM (pq.2 + 1)).homology (pq.1 + pq.2) :=
   m.indexSpectralSequenceFirstPageXIso hM hm pq ≪≫ rowFiniteIndexGradedPieceHomologyIso hM ind _
-
-/-- `indexSpectralSequenceFirstPageXIsoSigma` is the identification of the first page with the
-cohomology of the graded piece, followed by its splitting over the generators. -/
-theorem indexSpectralSequenceFirstPageXIsoSigma_eq (pq : ℤ × ℤ) :
-    m.indexSpectralSequenceFirstPageXIsoSigma hM hm pq =
-      m.indexSpectralSequenceFirstPageXIso hM hm pq ≪≫
-        rowFiniteIndexGradedPieceHomologyIso hM ind _ :=
-  (rfl)
 
 end RowFiniteTwistingCocycle
 
