@@ -194,6 +194,47 @@ theorem fundamentalGroupMulAut_apply [Nonempty N] [DecidableEq N] (γ : Fundamen
 
 /-! ### The action in dimension one -/
 
+/-- In dimension one, transporting a loop `f` along a path `p` gives a loop `r` with
+`f * p` homotopic to `p * r`, rel endpoints. -/
+private theorem genLoopEquivOfUnique_trans_homotopic_transport {x : X} (p : Path x x)
+    (f : Ω^ (Fin 1) X x) :
+    ((_root_.genLoopEquivOfUnique (Fin 1) f).trans p).Homotopic
+      (p.trans (_root_.genLoopEquivOfUnique (Fin 1) (GenLoop.transport p f))) := by
+  let q : Path x x := _root_.genLoopEquivOfUnique (Fin 1) f
+  let r : Path x x :=
+    _root_.genLoopEquivOfUnique (Fin 1) (GenLoop.transport p f)
+  let H := GenLoop.collarHomotopyAlong p f
+  let K : (q : C(I, X)).Homotopy (r : C(I, X)) :=
+    { toFun := fun ts => H.toHomotopy (ts.1, fun _ => ts.2)
+      continuous_toFun := H.toHomotopy.continuous.comp (by fun_prop)
+      map_zero_left := fun s => by
+        simp [q, genLoopEquivOfUnique]
+      map_one_left := fun s => by
+        simp [r, genLoopEquivOfUnique] }
+  have hK := Path.Homotopic.map_trans_evalAt K Path.id
+  let p₀ : Path x x := (K.evalAt 0).cast q.source.symm r.source.symm
+  let p₁ : Path x x := (K.evalAt 1).cast q.target.symm r.target.symm
+  have hp₀ : p₀ = p := by
+    ext t
+    exact H.map_boundary t (fun _ => 0) ⟨0, Or.inl rfl⟩
+  have hp₁ : p₁ = p := by
+    ext t
+    exact H.map_boundary t (fun _ => 1) ⟨0, Or.inr rfl⟩
+  change (q.trans p).Homotopic (p.trans r)
+  have hKcast := hK.pathCast q.source.symm r.target.symm
+  have hq : (Path.id.map q.continuous).cast q.source.symm q.target.symm = q := by
+    ext t
+    rfl
+  have hr : (Path.id.map r.continuous).cast r.source.symm r.target.symm = r := by
+    ext t
+    rfl
+  rw [Path.cast_trans (Path.id.map q.continuous) (K.evalAt 1)
+    q.source.symm q.target.symm r.target.symm] at hKcast
+  rw [Path.cast_trans (K.evalAt 0) (Path.id.map r.continuous)
+    q.source.symm r.source.symm r.target.symm] at hKcast
+  rw [hq, hr] at hKcast
+  simpa only [p₀, p₁, hp₀, hp₁] using hKcast
+
 /-- **Under the canonical identification of the first homotopy group with the fundamental
 group, the fundamental-group action is conjugation.**
 
@@ -213,37 +254,7 @@ theorem pi1MulEquivFundamentalGroup_smul {γ : FundamentalGroup X x} {a : π_ 1 
     let q : Path x x := _root_.genLoopEquivOfUnique (Fin 1) f
     let r : Path x x :=
       _root_.genLoopEquivOfUnique (Fin 1) (GenLoop.transport p f)
-    let H := GenLoop.collarHomotopyAlong p f
-    let K : (q : C(I, X)).Homotopy (r : C(I, X)) :=
-      { toFun := fun ts => H.toHomotopy (ts.1, fun _ => ts.2)
-        continuous_toFun := H.toHomotopy.continuous.comp (by fun_prop)
-        map_zero_left := fun s => by
-          simp [q, genLoopEquivOfUnique]
-        map_one_left := fun s => by
-          simp [r, genLoopEquivOfUnique] }
-    have hK := Path.Homotopic.map_trans_evalAt K Path.id
-    let p₀ : Path x x := (K.evalAt 0).cast q.source.symm r.source.symm
-    let p₁ : Path x x := (K.evalAt 1).cast q.target.symm r.target.symm
-    have hp₀ : p₀ = p := by
-      ext t
-      exact H.map_boundary t (fun _ => 0) ⟨0, Or.inl rfl⟩
-    have hp₁ : p₁ = p := by
-      ext t
-      exact H.map_boundary t (fun _ => 1) ⟨0, Or.inr rfl⟩
-    have hqr : (q.trans p).Homotopic (p.trans r) := by
-      have hKcast := hK.pathCast q.source.symm r.target.symm
-      have hq : (Path.id.map q.continuous).cast q.source.symm q.target.symm = q := by
-        ext t
-        rfl
-      have hr : (Path.id.map r.continuous).cast r.source.symm r.target.symm = r := by
-        ext t
-        rfl
-      rw [Path.cast_trans (Path.id.map q.continuous) (K.evalAt 1)
-        q.source.symm q.target.symm r.target.symm] at hKcast
-      rw [Path.cast_trans (K.evalAt 0) (Path.id.map r.continuous)
-        q.source.symm r.source.symm r.target.symm] at hKcast
-      rw [hq, hr] at hKcast
-      simpa only [p₀, p₁, hp₀, hp₁] using hKcast
+    have hqr := genLoopEquivOfUnique_trans_homotopic_transport p f
     -- Mathlib defines `pi1MulEquivFundamentalGroup` as a `Quotient.congr` along
     -- `genLoopEquivOfUnique` and supplies no lemma computing it on a class, so isolate that one
     -- definitional step here; `FundamentalGroup.fromPath` is an `abbrev` for `End.of` on
