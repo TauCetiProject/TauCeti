@@ -37,10 +37,6 @@ every place.
   the levels `2 ^ (n + 3)`.
 * `TauCeti.NumberField.exists_isTotallyComplex_isCyclic_subextension_prime_pow`: the subextension
   at every prime-power level `ℓ ^ r > 2`.
-* `TauCeti.NumberField.isCyclic_range_comp_toMultiplicativeRight`: the image of a character with
-  finite image in `ℚ/ℤ` composed with a group homomorphism is cyclic.
-* `TauCeti.NumberField.isTotallyComplex_fixedField_of_complexConjugationAt_notMem`: a fixed field
-  avoiding all complex conjugations is totally complex.
 
 ## Reference
 
@@ -59,49 +55,6 @@ namespace TauCeti.NumberField
 
 variable (K L : Type*) [Field K] [NumberField K] [Field L]
   [Algebra K L]
-
-/-- The image of a group under a composite of a homomorphism into a group `B` with a
-character of `B` with finite image in `ℚ/ℤ` is cyclic. -/
-theorem isCyclic_range_comp_toMultiplicativeRight {G B : Type*} [Group G] [Group B]
-    (χ : Additive B →+ AddCircle (1 : ℚ)) [Finite χ.range] (g : G →* B) :
-    IsCyclic (χ.toMultiplicativeRight.comp g).range := by
-  set f := χ.toMultiplicativeRight.comp g
-  -- A finite subgroup of ℚ/ℤ is cyclic, and `f.range` embeds in it.
-  obtain ⟨d, hd, hχrange⟩ := AddCircle.exists_eq_torsionBy (1 : ℚ) (H := χ.range)
-  have : IsAddCyclic χ.range := by
-    rw [hχrange]
-    exact AddCircle.isAddCyclic_torsionBy (1 : ℚ) (Nat.cast_ne_zero.mpr hd.ne')
-  let j : f.range →* Multiplicative χ.range := {
-    toFun := fun y ↦ Multiplicative.ofAdd ⟨y.val.toAdd, by
-      obtain ⟨σ, hσ⟩ := y.property
-      exact ⟨Additive.ofMul (g σ), by simpa [f] using congrArg Multiplicative.toAdd hσ⟩⟩
-    map_one' := rfl
-    map_mul' := fun _ _ ↦ rfl }
-  refine isCyclic_of_injective j fun y z h ↦ Subtype.ext ?_
-  have he : y.val.toAdd = z.val.toAdd :=
-    congrArg (fun t : Multiplicative χ.range ↦ (t.toAdd : AddCircle (1 : ℚ))) h
-  exact Multiplicative.toAdd.injective he
-
-/-- The fixed field of a normal subgroup of the Galois group of a totally complex number field `L`
-over `K` is totally complex as soon as the subgroup contains no complex conjugation of a place of
-`L` ramified over `K`. -/
-theorem isTotallyComplex_fixedField_of_complexConjugationAt_notMem [NumberField L]
-    [IsGalois K L] [IsTotallyComplex L] (H : Subgroup (L ≃ₐ[K] L)) [H.Normal]
-    (hH : ∀ (w : InfinitePlace L) (hw : w.IsRamified K), complexConjugationAt K w hw ∉ H) :
-    IsTotallyComplex (IntermediateField.fixedField H) := ⟨fun v ↦ by
-  rw [← not_isReal_iff_isComplex]
-  intro hv
-  obtain ⟨w, hw⟩ := InfinitePlace.comap_surjective (K := L) v
-  have hwreal : (w.comap (algebraMap (IntermediateField.fixedField H) L)).IsReal := by
-    simpa only [hw] using hv
-  have hbase : (w.comap (algebraMap K L)).IsReal := by
-    simpa only [InfinitePlace.comap_comp, IsScalarTower.algebraMap_eq K
-      (IntermediateField.fixedField H) L] using hwreal.comap (algebraMap K _)
-  have hram : w.IsRamified K := isRamified_iff.mpr ⟨IsTotallyComplex.isComplex w, hbase⟩
-  refine hH w hram ?_
-  rw [← IntermediateField.fixingSubgroup_fixedField H, ← IntermediateField.restrictNormalHom_ker,
-    MonoidHom.mem_ker]
-  exact complexConjugationAt_restrictNormal_eq_one_of_isReal K w hram hwreal⟩
 
 /-- A `2^(n+3)`-cyclotomic extension of a number field contains a totally complex cyclic
 extension of the base whose relative index in the full extension is at most two. No
@@ -132,7 +85,15 @@ theorem exists_isTotallyComplex_isCyclic_subextension_two_pow (n : ℕ)
     rw [IntermediateField.finrank_fixedField_eq_card]
     exact (Nat.card_le_card_of_injective i hi).trans hχker
   -- The image of `f` is cyclic; the first isomorphism theorem transfers this to E/K.
-  have : IsCyclic f.range := isCyclic_range_comp_toMultiplicativeRight χ (hζ.autToPow K)
+  have : Finite f.range := Finite.of_injective
+    (fun y : f.range ↦ (⟨y.val.toAdd, by
+      obtain ⟨σ, hσ⟩ := y.property
+      exact ⟨Additive.ofMul (hζ.autToPow K σ), by
+        simpa [f] using congrArg Multiplicative.toAdd hσ⟩⟩ : χ.range))
+    fun y z h ↦ Subtype.ext (Multiplicative.toAdd.injective
+      (congrArg (fun t : χ.range ↦ (t : AddCircle (1 : ℚ))) h))
+  have : IsCyclic f.range :=
+    AddMonoidHom.isCyclic_range_comp_toMultiplicativeRight χ (hζ.autToPow K)
   have : IsCyclic ((Gal(L/K)) ⧸ f.ker) :=
     isCyclic_of_injective (QuotientGroup.quotientKerEquivRange f).toMonoidHom
       (QuotientGroup.quotientKerEquivRange f).injective
@@ -145,7 +106,7 @@ theorem exists_isTotallyComplex_isCyclic_subextension_two_pow (n : ℕ)
       have : 2 ^ 3 ≤ 2 ^ (n + 3) := Nat.pow_le_pow_right (by decide) (by omega)
       omega))
   have hcomplex : IsTotallyComplex E :=
-    isTotallyComplex_fixedField_of_complexConjugationAt_notMem K L f.ker fun w hram hc ↦ by
+    isTotallyComplex_fixedField_of_complexConjugationAt_notMem K f.ker fun w hram hc ↦ by
       have hzero : χ (Additive.ofMul (hζ.autToPow K (complexConjugationAt K w hram))) = 0 := by
         have he : f (complexConjugationAt K w hram) = 1 := MonoidHom.mem_ker.mp hc
         simpa only [f, MonoidHom.comp_apply, AddMonoidHom.toMultiplicativeRight_apply_apply,
