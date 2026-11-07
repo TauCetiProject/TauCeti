@@ -57,6 +57,7 @@ hyperplane sections in the Kneser–Süss equality argument for Brunn–Minkowsk
 * `ENNReal.Lp_add_le_tsum`: Minkowski's inequality for unconditional sums in `ℝ≥0∞`.
 * `ENNReal.inner_le_Lp_mul_Lq_tsum`: Hölder's inequality for unconditional sums in `ℝ≥0∞`.
 * `ENNReal.Lq_le_Lp_tsum`: the `ℓᵖ` norm of an `ℝ≥0∞`-valued family is antitone in `p`.
+* `Real.Lq_le_Lp_of_nonneg`: the same for finite sums of nonnegative reals.
 
 ## References
 
@@ -192,3 +193,28 @@ theorem Lq_le_Lp_tsum {ι : Type*} (f : ι → ℝ≥0∞) {p q : ℝ} (hp : 0 <
         rw [ENNReal.tsum_mul_right, ← hSp, ← rpow_add_of_nonneg _ _ hp.le hpq', add_sub_cancel]
 
 end ENNReal
+
+namespace Real
+
+/-- The `ℓᵖ` norms of a finite nonnegative real family decrease as the exponent grows: for
+`0 < p ≤ q`, `(∑ i ∈ s, f i ^ q) ^ (1 / q) ≤ (∑ i ∈ s, f i ^ p) ^ (1 / p)`. -/
+theorem Lq_le_Lp_of_nonneg {ι : Type*} (s : Finset ι) {f : ι → ℝ} (hf : ∀ i ∈ s, 0 ≤ f i)
+    {p q : ℝ} (hp : 0 < p) (hpq : p ≤ q) :
+    (∑ i ∈ s, f i ^ q) ^ (1 / q) ≤ (∑ i ∈ s, f i ^ p) ^ (1 / p) := by
+  have hq : 0 < q := hp.trans_le hpq
+  -- Transport the unconditional `ℝ≥0∞` inequality along `ENNReal.ofReal`.
+  have hofReal {r : ℝ} (hr : 0 < r) :
+      ENNReal.ofReal ((∑ i ∈ s, f i ^ r) ^ (1 / r)) =
+        (∑' i : s, ENNReal.ofReal (f i) ^ r) ^ (1 / r) := by
+    rw [← ENNReal.ofReal_rpow_of_nonneg (Finset.sum_nonneg fun i hi ↦
+        rpow_nonneg (hf i hi) r) (one_div_nonneg.2 hr.le), tsum_fintype,
+      ENNReal.ofReal_sum_of_nonneg fun i hi ↦ rpow_nonneg (hf i hi) r]
+    congr 1
+    rw [← Finset.sum_coe_sort s]
+    exact Finset.sum_congr rfl fun i _ ↦ (ENNReal.ofReal_rpow_of_nonneg (hf i i.2) hr.le).symm
+  have h := ENNReal.Lq_le_Lp_tsum (fun i : s ↦ ENNReal.ofReal (f i)) hp hpq
+  rw [← hofReal hq, ← hofReal hp] at h
+  exact (ENNReal.ofReal_le_ofReal_iff (rpow_nonneg (Finset.sum_nonneg fun i hi ↦
+    rpow_nonneg (hf i hi) p) _)).1 h
+
+end Real
