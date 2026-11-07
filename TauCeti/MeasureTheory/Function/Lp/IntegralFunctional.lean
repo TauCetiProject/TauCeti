@@ -32,6 +32,13 @@ namespace TauCeti
 variable {α F : Type*} [MeasurableSpace α] [NormedAddCommGroup F]
   {μ ν : Measure α} {p : ℝ≥0∞} {Φ : F → ℝ}
 
+/-- The positive part of a continuous integrand composed with an `Lp` representative is
+almost everywhere measurable for any absolutely continuous measure. -/
+theorem aemeasurable_ofReal_comp_Lp (hν : ν ≪ μ) (hΦ : Continuous Φ) (u : Lp F p μ) :
+    AEMeasurable (fun x ↦ ENNReal.ofReal (Φ (u x))) ν :=
+  ((ENNReal.continuous_ofReal.comp hΦ).comp_aestronglyMeasurable
+    ((Lp.aestronglyMeasurable u).mono_ac hν)).aemeasurable
+
 /-- The extended integral of the positive part of a continuous integrand is norm lower
 semicontinuous on `Lp`. Absolute continuity makes the integral independent of representatives. -/
 theorem lowerSemicontinuous_lintegral_ofReal_comp_Lp [Fact (1 ≤ p)]
@@ -44,8 +51,7 @@ theorem lowerSemicontinuous_lintegral_ofReal_comp_Lp [Fact (1 ≤ p)]
   obtain ⟨s, -, hs⟩ := (tendstoInMeasure_of_tendsto_Lp huv).exists_seq_tendsto_ae
   have hsν := hν.ae_le hs
   have hmeas (n : ℕ) : AEMeasurable (fun x ↦ ENNReal.ofReal (Φ (u (s n) x))) ν :=
-    ((ENNReal.continuous_ofReal.comp hΦ).comp_aestronglyMeasurable
-      ((Lp.aestronglyMeasurable (u (s n))).mono_ac hν)).aemeasurable
+    aemeasurable_ofReal_comp_Lp hν hΦ (u (s n))
   calc
     ∫⁻ x, ENNReal.ofReal (Φ (v x)) ∂ν =
         ∫⁻ x, liminf (fun n ↦ ENNReal.ofReal (Φ (u (s n) x))) atTop ∂ν := by
@@ -65,8 +71,7 @@ theorem convex_setOf_lintegral_ofReal_comp_Lp_le
     Convex ℝ {u : Lp F p μ | ∫⁻ x, ENNReal.ofReal (Φ (u x)) ∂ν ≤ c} := by
   intro u hu v hv a b ha hb hab
   have hmeas (w : Lp F p μ) : AEMeasurable (fun x ↦ ENNReal.ofReal (Φ (w x))) ν :=
-    ((ENNReal.continuous_ofReal.comp hcont).comp_aestronglyMeasurable
-      ((Lp.aestronglyMeasurable w).mono_ac hν)).aemeasurable
+    aemeasurable_ofReal_comp_Lp hν hcont w
   have hpoint : ∀ᵐ x ∂ν,
       ENNReal.ofReal (Φ ((a • u + b • v) x)) ≤
         ENNReal.ofReal a * ENNReal.ofReal (Φ (u x)) +

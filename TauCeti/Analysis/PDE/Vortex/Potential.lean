@@ -42,7 +42,7 @@ namespace TauCeti.Vortex
 /-- The nonlinear potential of the background-subtracted vortex equation is weakly lower
 semicontinuous on real `L²(ℂ)`. No monicity, degree, or integrability assumption on the
 polynomial or on the potential is needed. -/
-theorem lowerSemicontinuous_lintegral_reducedPotential (P : Polynomial ℂ) :
+theorem lowerSemicontinuous_lintegral_ofReal_mul_exp_sub_one_sub (P : Polynomial ℂ) :
     LowerSemicontinuous (fun u : WeakSpace ℝ (Lp ℝ 2 (volume : Measure ℂ)) ↦
       ∫⁻ z, ENNReal.ofReal (‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
         (Real.exp (2 * ((toWeakSpace ℝ (Lp ℝ 2 (volume : Measure ℂ))).symm u z)) - 1 -
@@ -59,8 +59,7 @@ theorem lowerSemicontinuous_lintegral_reducedPotential (P : Polynomial ℂ) :
       (∫⁻ z, ENNReal.ofReal (Φ (u z)) ∂(volume.withDensity (fun z ↦ ENNReal.ofReal (h z)))) =
         ∫⁻ z, ENNReal.ofReal (h z * Φ (u z)) := by
     have hmeas : AEMeasurable (fun z ↦ ENNReal.ofReal (Φ (u z))) volume :=
-      ((ENNReal.continuous_ofReal.comp hΦ).comp_aestronglyMeasurable
-        (Lp.aestronglyMeasurable u)).aemeasurable
+      aemeasurable_ofReal_comp_Lp Measure.AbsolutelyContinuous.rfl hΦ u
     rw [lintegral_withDensity_eq_lintegral_mul₀ hh.aemeasurable.ennreal_ofReal hmeas]
     apply lintegral_congr
     intro z
@@ -71,7 +70,7 @@ theorem lowerSemicontinuous_lintegral_reducedPotential (P : Polynomial ℂ) :
 
 /-- Continuous compactly supported corrections have finite nonlinear vortex potential.
 This supplies a finite-potential domain for the extended functional. -/
-theorem integrable_reducedPotential (P : Polynomial ℂ) {w : ℂ → ℝ}
+theorem integrable_mul_exp_sub_one_sub (P : Polynomial ℂ) {w : ℂ → ℝ}
     (hw : Continuous w) (hc : HasCompactSupport w) :
     Integrable (fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
       (Real.exp (2 * w z) - 1 - 2 * w z)) := by
