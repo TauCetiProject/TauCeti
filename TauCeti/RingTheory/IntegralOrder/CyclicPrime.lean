@@ -61,7 +61,7 @@ variable {K : Type*} [Field K] [CharZero K] [IsCyclotomicExtension {p} ℚ K] {�
 /-- **The integral closure of `ℤ` in `ℚ[G]` corresponds to `ℤ × 𝓞_K`.** An element of `ℚ[G]` is
 integral over `ℤ` exactly when its augmentation is an integer and its image under `χ` is an
 algebraic integer of `K`. -/
-theorem mem_integralClosure_iff_groupAlgebraEquivProd_mem [Finite G] {x : MonoidAlgebra ℚ G} :
+theorem mem_integralClosure_iff_groupAlgebraEquivProd_mem {x : MonoidAlgebra ℚ G} :
     x ∈ integralClosure ℤ (MonoidAlgebra ℚ G) ↔
       groupAlgebraEquivProd K hG hχ x ∈ (⊥ : Subalgebra ℤ ℚ).prod (integralClosure ℤ K) := by
   rw [mem_integralClosure_iff,
@@ -202,7 +202,7 @@ variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {p} ℚ K]
 include hG in
 /-- The components of an element of `ℤ[G]` under `ℚ[G] ≃ ℚ × K` are congruent modulo `ζ - 1`:
 this holds for a group element `h ↦ (1, ζ ^ i)`, and is preserved by `ℤ`-linear combinations. -/
-private theorem exists_dvd_sub_of_mem_groupRingSubalgebra [Finite G] {y : MonoidAlgebra ℚ G}
+private theorem exists_dvd_sub_of_mem_groupRingSubalgebra {y : MonoidAlgebra ℚ G}
     (hy : y ∈ groupRingSubalgebra ℤ ℚ G) :
     ∃ (a : ℤ) (b : 𝓞 K), groupAlgebraEquivProd K hG hχ y = ((a : ℚ), (b : K)) ∧
       hζ.toInteger - 1 ∣ (a : 𝓞 K) - b := by
