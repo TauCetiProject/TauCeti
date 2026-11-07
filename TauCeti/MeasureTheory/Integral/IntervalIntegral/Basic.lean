@@ -130,6 +130,26 @@ theorem norm_sub_sub_integral_le {E : Type*} [NormedAddCommGroup E] [NormedSpace
 
 end intervalIntegral
 
+/-- The primitive of a step velocity corrected by its average defect reaches the prescribed
+endpoint. -/
+theorem add_integral_add_inv_smul_eq {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [CompleteSpace E] {a b : ℝ} (hab : a < b) {s : ℝ → E} (hsi : IntervalIntegrable s volume a b)
+    (x y : E) :
+    x + ∫ t in a..b, (s t + (b - a)⁻¹ • (y - x - ∫ t in a..b, s t)) = y := by
+  rw [_root_.intervalIntegral.integral_add hsi (intervalIntegrable_const),
+    _root_.intervalIntegral.integral_const, smul_smul, mul_inv_cancel₀ (sub_pos.mpr hab).ne',
+    one_smul]
+  abel
+
+/-- The `L¹` norm over `(a, b]` of the constant `(b - a)⁻¹ • D` is `‖D‖`. -/
+theorem setIntegral_norm_inv_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {a b : ℝ} (hab : a < b) (D : E) :
+    (∫ _ in Ioc a b, ‖(b - a)⁻¹ • D‖) = ‖D‖ := by
+  rw [setIntegral_const, measureReal_def, Real.volume_Ioc,
+    ENNReal.toReal_ofReal (sub_nonneg.mpr hab.le)]
+  simp only [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos (sub_pos.mpr hab), smul_eq_mul]
+  rw [← mul_assoc, mul_inv_cancel₀ (sub_pos.mpr hab).ne', one_mul]
+
 end TauCeti
 
 /-- A function integrable on `(a, b)` for a measure without mass at points is interval integrable
