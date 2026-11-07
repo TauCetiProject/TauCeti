@@ -231,16 +231,6 @@ private theorem crossMap_coordinates_eq_zero {W : Matrix (Fin 7) (Fin 7) R}
     at e0 e1 e2 e3 e4 e5 e6
   exact ⟨e0, e1, e2, e3, e4, e5, e6⟩
 
-/-- The combination of the `isogenySource` and `crossBivector` parts of a matrix is alternating. -/
-private theorem transpose_sum_isogenySource_add_sum_crossBivector (W : Matrix (Fin 7) (Fin 7) R) :
-    ((∑ k, isogenyProjection k W • (isogenySource k).map (Int.cast : ℤ → R)) +
-      ∑ a, isogenyKernelCoeff a W • (crossBivector a).map (Int.cast : ℤ → R))ᵀ =
-      -((∑ k, isogenyProjection k W • (isogenySource k).map (Int.cast : ℤ → R)) +
-        ∑ a, isogenyKernelCoeff a W • (crossBivector a).map (Int.cast : ℤ → R)) := by
-  simp only [Matrix.transpose_add, Matrix.transpose_sum, Matrix.transpose_smul,
-    transpose_isogenySource_map, transpose_crossBivector_map, smul_neg,
-    Finset.sum_neg_distrib, neg_add]
-
 /-- **The splitting of the Lie algebra in characteristic three.** An alternating matrix killed by
 the cross-product contraction is the sum of its `isogenySource` part, read by the functionals
 `isogenyProjection`, and its short-root part, read by the coordinates `isogenyKernelCoeff`. So in
@@ -258,7 +248,13 @@ private theorem eq_sum_isogenySource_add_sum_crossBivector [CharP R 3]
     rw [h]
     ring
   obtain ⟨e0, e1, e2, e3, e4, e5, e6⟩ := crossMap_coordinates_eq_zero hc
-  have hsum := transpose_sum_isogenySource_add_sum_crossBivector W
+  have hsum : ((∑ k, isogenyProjection k W • (isogenySource k).map (Int.cast : ℤ → R)) +
+      ∑ a, isogenyKernelCoeff a W • (crossBivector a).map (Int.cast : ℤ → R))ᵀ =
+      -((∑ k, isogenyProjection k W • (isogenySource k).map (Int.cast : ℤ → R)) +
+        ∑ a, isogenyKernelCoeff a W • (crossBivector a).map (Int.cast : ℤ → R)) := by
+    simp only [Matrix.transpose_add, Matrix.transpose_sum, Matrix.transpose_smul,
+      transpose_isogenySource_map, transpose_crossBivector_map, smul_neg,
+      Finset.sum_neg_distrib, neg_add]
   have hodd : Odd 3 := by decide
   refine Matrix.ext_of_lt_of_transpose_eq_neg hW hsum
     (Matrix.diag_eq_zero_of_transpose_eq_neg_of_charP 3 hodd hW)
