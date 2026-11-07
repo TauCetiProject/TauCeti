@@ -46,6 +46,11 @@ be injective. This is the local reason why an affine blowup changes nothing away
 * `AlgebraicGeometry.IsAffineOpen.fromSpec_comp_eq_SpecMap`: on an affine open `U` of `X`, a
   morphism `X ⟶ Spec R` restricted along `Spec Γ(X, U) ⟶ X` is the spectrum of the ring map
   `R → Γ(X, U)` it induces.
+* `AlgebraicGeometry.IsAffineOpen.isOpenImmersion_SpecMap_presheaf_map`: for affine opens
+  `V ≤ U`, restriction induces an open immersion `Spec Γ(X, V) ⟶ Spec Γ(X, U)`.
+* `AlgebraicGeometry.IsAffineOpen.exists_SpecMap_comp_fromSpec_eq`: a morphism `Spec R ⟶ X` with
+  image in an affine open `U` is the spectrum of a ring map `Γ(X, U) ⟶ R` followed by
+  `Spec Γ(X, U) ⟶ X`.
 * `AlgebraicGeometry.Scheme.Opens.ΓSpecIso_inv_comp_toSpecΓ_appLE`: on an open `U` of `X`, the
   morphism `U ⟶ Spec Γ(X, U)` induces restriction of functions on the sections over opens of `U`.
 * `AlgebraicGeometry.Scheme.Hom.isBasis_range_affineOpens_le_preimage`: for `g : S' ⟶ S`, the
@@ -94,6 +99,35 @@ theorem IsAffineOpen.fromSpec_comp_eq_SpecMap {X : Scheme.{u}} {R : CommRingCat.
     hU.fromSpec ≫ f = Spec.map ((Scheme.ΓSpecIso R).inv ≫ f.appLE ⊤ U le_top) := by
   rw [← IsAffineOpen.SpecMap_appLE_fromSpec f (isAffineOpen_top _) hU le_top,
     IsAffineOpen.fromSpec_top, Scheme.isoSpec_Spec_inv, ← Spec.map_comp]
+
+/-- Pointwise form of `AlgebraicGeometry.IsAffineOpen.map_fromSpec`: for affine opens `V ≤ U`,
+the point of `Spec Γ(X, U)` induced by restriction from a point `p` of `Spec Γ(X, V)` is the
+same point of `X` as `p`. -/
+theorem IsAffineOpen.map_fromSpec_apply {X : Scheme.{u}} {U V : X.Opens} (hU : IsAffineOpen U)
+    (hV : IsAffineOpen V) (f : Opposite.op U ⟶ Opposite.op V) (p : Spec Γ(X, V)) :
+    hU.fromSpec (Spec.map (X.presheaf.map f) p) = hV.fromSpec p := by
+  rw [← Scheme.Hom.comp_apply, IsAffineOpen.map_fromSpec]
+
+/-- For affine opens `V ≤ U`, restriction of sections induces an open immersion
+`Spec Γ(X, V) ⟶ Spec Γ(X, U)`. -/
+theorem IsAffineOpen.isOpenImmersion_SpecMap_presheaf_map {X : Scheme.{u}} {U V : X.Opens}
+    (hU : IsAffineOpen U) (hV : IsAffineOpen V) (f : Opposite.op U ⟶ Opposite.op V) :
+    IsOpenImmersion (Spec.map (X.presheaf.map f)) := by
+  have : IsOpenImmersion (Spec.map (X.presheaf.map f) ≫ hU.fromSpec) := by
+    rw [IsAffineOpen.map_fromSpec _ hV]
+    infer_instance
+  exact IsOpenImmersion.of_comp _ hU.fromSpec
+
+/-- A morphism `f : Spec R ⟶ X` whose image lies in an affine open `U` of `X` is the spectrum of a
+ring map `Γ(X, U) ⟶ R` followed by `Spec Γ(X, U) ⟶ X`. -/
+theorem IsAffineOpen.exists_SpecMap_comp_fromSpec_eq {X : Scheme.{u}} {R : CommRingCat.{u}}
+    (f : Spec R ⟶ X) {U : X.Opens} (hU : IsAffineOpen U) (hf : Set.range f ⊆ U) :
+    ∃ φ : Γ(X, U) ⟶ R, Spec.map φ ≫ hU.fromSpec = f := by
+  have hle : (⊤ : (Spec R).Opens) ≤ f ⁻¹ᵁ U := fun x _ ↦ hf ⟨x, rfl⟩
+  refine ⟨f.appLE U ⊤ hle ≫ (Scheme.ΓSpecIso R).hom, ?_⟩
+  rw [Spec.map_comp_assoc, IsAffineOpen.SpecMap_appLE_fromSpec f hU (isAffineOpen_top _) hle,
+    IsAffineOpen.fromSpec_top, Scheme.isoSpec_Spec_inv, ← Spec.map_comp_assoc, Iso.inv_hom_id,
+    Spec.map_id, Category.id_comp]
 
 /-- For an open `U` of `X`, the map `Γ(X, U) ≅ Γ(Spec Γ(X, U), ⊤) ⟶ Γ(U, T)` induced on the
 sections over an open `T` of `U` by the canonical morphism `U ⟶ Spec Γ(X, U)` is restriction of

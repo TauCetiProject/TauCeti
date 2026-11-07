@@ -137,7 +137,7 @@ variable {K : Type*} [Field K] [NumberField K]
 
 /-- **Liouville's lower bound for Gelfond's values** (Karatarakis–Wiedijk, §3). Let `K` be a
 number field of degree `h`, `α, β, γ ∈ K`, `m ∈ ℕ` and `c ∈ ℝ`. There is `c₂ ≥ 1` with the
-following property. Let `n ≥ 1`, `q ^ 2 = 2 m n`, `r ≥ n` and `t₀ ≤ m`, and let
+following property. Let `q ^ 2 = 2 m n`, `r ≥ n` and `t₀ ≤ m`, and let
 `η_{ab} ∈ 𝓞 K`, `a, b < q`, have house at most `c ^ n n ^ ((n + 1) / 2)`, as for Gelfond's
 auxiliary function. If
 `ρ = ∑_{a, b} η_{ab} ((a + 1) + (b + 1) β) ^ r α ^ ((a + 1) t₀) γ ^ ((b + 1) t₀)` is nonzero, then
@@ -145,7 +145,7 @@ auxiliary function. If
 `|σ ρ| ≥ c₂ ^ (-r) r ^ (-(h - 1) (r + 1))`. -/
 theorem exists_one_le_pow_mul_norm_gelfond_value (α β γ : K) (m : ℕ) (c : ℝ) :
     ∃ c₂ : ℝ, 1 ≤ c₂ ∧ ∀ (σ : K →+* ℂ) (n q r t₀ : ℕ) (η : Fin q → Fin q → 𝓞 K),
-      1 ≤ n → q ^ 2 = 2 * m * n → n ≤ r → t₀ ≤ m →
+      q ^ 2 = 2 * m * n → n ≤ r → t₀ ≤ m →
       (∀ a b, NumberField.house (η a b : K) ≤ c ^ n * (n : ℝ) ^ (((n : ℝ) + 1) / 2)) →
       ∑ a, ∑ b, (η a b : K) * (((a + 1 : ℕ) : K) + (b + 1 : ℕ) * β) ^ r *
           (α ^ ((a + 1 : ℕ) * t₀) * γ ^ ((b + 1 : ℕ) * t₀)) ≠ 0 →
@@ -158,12 +158,13 @@ theorem exists_one_le_pow_mul_norm_gelfond_value (α β γ : K) (m : ℕ) (c : �
   have hH' : 1 ≤ H' := one_le_pow₀ hH
   refine ⟨H' * max 1 X ^ (finrank ℚ K - 1),
     one_le_mul_of_one_le_of_one_le hH' (one_le_pow₀ (le_max_left _ _)),
-    fun σ n q r t₀ η hn hq hnr ht₀ hη hρ ↦ ?_⟩
+    fun σ n q r t₀ η hq hnr ht₀ hη hρ ↦ ?_⟩
   set ρ := ∑ a, ∑ b, (η a b : K) * (((a + 1 : ℕ) : K) + (b + 1 : ℕ) * β) ^ r *
     (α ^ ((a + 1 : ℕ) * t₀) * γ ^ ((b + 1 : ℕ) * t₀))
   rw [sq] at hq
   have hq₀ : 1 ≤ q := Nat.pos_of_ne_zero fun h ↦ by subst h; simp [ρ] at hρ
   have hm : 1 ≤ m := Nat.pos_of_ne_zero fun h ↦ by subst h; nlinarith
+  have hn : 1 ≤ n := Nat.pos_of_ne_zero fun h ↦ by subst h; nlinarith
   -- `x = c₀ ^ N ρ` is a nonzero algebraic integer, each of whose terms is `η_{ab}` times an
   -- algebraic integer of house at most `q ^ r H ^ N`.
   set N := r + 2 * q * m
