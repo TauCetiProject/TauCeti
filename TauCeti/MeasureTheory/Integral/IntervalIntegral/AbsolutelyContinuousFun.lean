@@ -146,8 +146,10 @@ theorem integrableOn_deriv_Ioc [FiniteDimensional ℝ F]
     IntegrableOn (deriv γ) (Ioc a b) :=
   hγ.intervalIntegrable_deriv_of_finiteDimensional.1
 
-/-- Correcting a step approximation `s` of the velocity of `γ` by the average defect `D` costs at
-most the `L¹` approximation error. -/
+/-- If an interval-integrable function `s` approximates the velocity of `γ` in `L¹` on `(a, b]`
+to within `ε`, then the endpoint defect `γ b - γ a - ∫ s` has norm at most `ε`. For `a < b`, this
+says that the average correction `(γ b - γ a - ∫ s) / (b - a)` to `s` has norm at most
+`ε / (b - a)`. -/
 theorem norm_sub_integral_le [FiniteDimensional ℝ F]
     (hγ : AbsolutelyContinuousOnInterval γ a b) (hab : a ≤ b) {s : ℝ → F}
     (hsi : IntervalIntegrable s volume a b) {ε : ℝ}
