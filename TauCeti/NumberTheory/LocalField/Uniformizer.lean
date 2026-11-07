@@ -146,8 +146,8 @@ theorem forall_valuation_le_iff_notMem_maximalIdeal_sq {c : 𝒪[K]} :
 scaled copy `ϖ ^ k • 𝒪[K]`. -/
 theorem image_maximalIdeal_pow_eq_smul {ϖ : 𝒪[K]} (hϖ : Irreducible ϖ) (k : ℕ) :
     ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ k) = (ϖ : K) ^ k • (𝒪[K] : Set K) := by
-  rw [hϖ.maximalIdeal_eq, Subring.coe_span_singleton_pow _ ϖ.2, image_preimage_eq_inter_range,
-    Subtype.range_coe, inter_eq_left]
+  rw [hϖ.maximalIdeal_eq, SubsemiringClass.coe_span_singleton_pow _ ϖ.2,
+    image_preimage_eq_inter_range, Subtype.range_coe, inter_eq_left]
   rintro _ ⟨y, hy, rfl⟩
   exact mul_mem (pow_mem ϖ.2 k) hy
 

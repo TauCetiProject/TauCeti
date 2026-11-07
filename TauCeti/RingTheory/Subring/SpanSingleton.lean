@@ -9,45 +9,41 @@ public import Mathlib.Algebra.Ring.Subring.Pointwise
 public import Mathlib.RingTheory.Ideal.Operations
 
 /-!
-# Principal ideals of a subring
+# Principal ideals of a subsemiring
 
-For a subring `S` of a commutative ring `A` and an element `a ∈ S`, the principal ideal `a S` of
-`S` consists of the elements of `S` that are `a` times an element of `S`. Read inside `A`, its
-`n`-th power is cut out of `S` by the scaled copy `aⁿ • S`.
+For a subsemiring `s` of a commutative semiring `A` (for instance a subring or a subalgebra) and
+an element `a ∈ s`, the principal ideal `a s` of `s` consists of the elements of `s` that are `a`
+times an element of `s`. Read inside `A`, its `n`-th power is cut out of `s` by the scaled copy
+`aⁿ • s`.
 
 ## Main results
 
-* `Subring.mem_span_singleton_iff`: `x ∈ a S` exactly when `x = a * y` for some `y ∈ S`.
-* `Subring.coe_span_singleton_pow`: `(a S)ⁿ` is the preimage in `S` of `aⁿ • S ⊆ A`.
+* `SubsemiringClass.mem_span_singleton_iff`: `x ∈ a s` exactly when `x = a * y` for some
+  `y ∈ s`.
+* `SubsemiringClass.coe_span_singleton_pow`: `(a s)ⁿ` is the preimage in `s` of
+  `aⁿ • s ⊆ A`.
 -/
 
 public section
 
 open scoped Pointwise
 
-namespace Subring
+namespace SubsemiringClass
 
-variable {A : Type*} [CommRing A] (S : Subring A) {a : A}
+variable {A S : Type*} [CommSemiring A] [SetLike S A] [SubsemiringClass S A] (s : S) {a : A}
 
-/-- Membership in the principal ideal `a S` of a subring `S ∋ a`: an element of `S` lies in it
-exactly when it is `a` times an element of `S`. -/
-theorem mem_span_singleton_iff (ha : a ∈ S) {x : S} :
-    x ∈ Ideal.span {(⟨a, ha⟩ : S)} ↔ ∃ y ∈ S, a * y = x := by
-  rw [Ideal.mem_span_singleton']
-  constructor
-  · rintro ⟨y, rfl⟩
-    exact ⟨y, y.2, by simp [mul_comm]⟩
-  · rintro ⟨y, hy, hxy⟩
-    exact ⟨⟨y, hy⟩, Subtype.ext (by simp [← hxy, mul_comm])⟩
+/-- Membership in the principal ideal `a s` of a subsemiring `s ∋ a`: an element of `s` lies in
+it exactly when it is `a` times an element of `s`. -/
+theorem mem_span_singleton_iff (ha : a ∈ s) {x : s} :
+    x ∈ Ideal.span {(⟨a, ha⟩ : s)} ↔ ∃ y ∈ s, a * y = x := by
+  simp [Ideal.mem_span_singleton', Subtype.ext_iff, mul_comm]
 
-/-- The `n`-th power of the principal ideal `a S` of a subring `S ∋ a` is cut out of `S` by the
-scaled copy `aⁿ • S`. -/
-theorem coe_span_singleton_pow (ha : a ∈ S) (n : ℕ) :
-    ((Ideal.span {(⟨a, ha⟩ : S)} ^ n : Ideal S) : Set S) =
-      Subtype.val ⁻¹' ((a ^ n) • (S : Set A)) := by
+/-- The `n`-th power of the principal ideal `a s` of a subsemiring `s ∋ a` is cut out of `s` by
+the scaled copy `aⁿ • s`. -/
+theorem coe_span_singleton_pow (ha : a ∈ s) (n : ℕ) :
+    ((Ideal.span {(⟨a, ha⟩ : s)} ^ n : Ideal s) : Set s) =
+      Subtype.val ⁻¹' ((a ^ n) • (s : Set A)) := by
   ext x
-  rw [Ideal.span_singleton_pow, SetLike.mem_coe, SubmonoidClass.mk_pow,
-    mem_span_singleton_iff S (pow_mem ha n), Set.mem_preimage, Set.mem_smul_set]
-  simp only [smul_eq_mul, SetLike.mem_coe]
+  simp [Ideal.span_singleton_pow, mem_span_singleton_iff s (pow_mem ha n), Set.mem_smul_set]
 
-end Subring
+end SubsemiringClass

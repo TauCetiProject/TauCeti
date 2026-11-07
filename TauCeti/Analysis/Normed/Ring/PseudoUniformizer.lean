@@ -342,8 +342,8 @@ theorem mem_span_toUnitClosedBall_pow_iff (n : ℕ) {x : Subring.unitClosedBall 
     x ∈ Ideal.span {ϖ.toUnitClosedBall} ^ n ↔ ‖(x : R)‖ ≤ ‖(ϖ.unit : R)‖ ^ n := by
   have hpow (k : ℤ) (y : R) : ‖((ϖ.unit ^ k : Rˣ) : R) * y‖ = ‖(ϖ.unit : R)‖ ^ k * ‖y‖ :=
     ϖ.norm_zpow_smul k y
-  rw [← SetLike.mem_coe, toUnitClosedBall, Subring.coe_span_singleton_pow, Set.mem_preimage,
-    Set.mem_smul_set]
+  rw [← SetLike.mem_coe, toUnitClosedBall, SubsemiringClass.coe_span_singleton_pow,
+    Set.mem_preimage, Set.mem_smul_set]
   constructor
   · rintro ⟨y, hy, hxy⟩
     have h := hpow n y
