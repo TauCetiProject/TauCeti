@@ -7,7 +7,6 @@ module
 
 public import TauCeti.MeasureTheory.Integral.LayerCake
 public import Mathlib.MeasureTheory.Measure.WithDensity
-import Mathlib.MeasureTheory.Group.Integral
 
 /-!
 # The equilibrium excess-life distribution
