@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Basic
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.Analysis.Real.QuadraticLocalBound
 import TauCeti.MeasureTheory.Integral.NormRpow
 
 /-!
@@ -111,7 +112,7 @@ theorem mul_le_setIntegral_ball_add_of_neg_le_laplacian {w : E → ℝ} {x₀ : 
     linarith [hΔ x hx]
   have hsub := mul_le_setIntegral_ball_of_laplacian_nonneg (μ := μ) hv hvc hΔv
   -- The integral of the correction over the ball.
-  have hqint := integral_norm_sub_sq_ball (mu := μ) hR x₀
+  have hqint := integral_norm_sub_sq_ball (mu := μ) (R := R) x₀
   have hwint : IntegrableOn w (ball x₀ R) μ :=
     (hwc.integrableOn_compact (isCompact_closedBall _ _)).mono_set ball_subset_closedBall
   have hqint' : IntegrableOn (fun x : E ↦ ‖x - x₀‖ ^ 2) (ball x₀ R) μ :=
@@ -175,35 +176,6 @@ private lemma local_estimate (hE : Module.finrank ℝ E = 2) {w : E → ℝ} {z 
     ENNReal.toReal_ofReal (by positivity), hE, ← measureReal_def] at hK
   calc δ ^ 2 * μ.real (ball (0 : E) 1) * w z ≤ _ := hK
     _ = _ := by push_cast; ring
-
-/-- **The kernel of the contradiction.** If `δ ^ 2 V c ≤ I + 2 A c ^ 2 δ ^ 2 (δ ^ 2 V)` for all
-`0 < δ ≤ ε`, with `c, ε > 0` and `A ≥ 0`, then `4 A c ε ^ 2 > 1` is incompatible with
-`8 A I < V`. -/
-private lemma false_of_local_bound {V I A c ε : ℝ} (hA : 0 ≤ A) (hc : 0 < c)
-    (hε : 0 < ε)
-    (hloc : ∀ δ, 0 < δ → δ ≤ ε → δ ^ 2 * V * c ≤ I + 2 * A * c ^ 2 * δ ^ 2 * (δ ^ 2 * V))
-    (hcase : 1 < 4 * A * c * ε ^ 2) (hsmall : 8 * A * I < V) : False := by
-  have hApos : 0 < A := by
-    by_contra h
-    rw [le_antisymm (not_lt.mp h) hA] at hcase
-    linarith
-  set δ := Real.sqrt (1 / (4 * A * c))
-  have hδ2 : δ ^ 2 = 1 / (4 * A * c) := Real.sq_sqrt (by positivity)
-  have hδ : 0 < δ := Real.sqrt_pos.mpr (by positivity)
-  have hδε : δ ≤ ε := by
-    refine (pow_le_pow_iff_left₀ hδ.le hε.le two_ne_zero).mp ?_
-    rw [hδ2, div_le_iff₀ (by positivity), mul_comm (ε ^ 2)]
-    exact hcase.le
-  have hAcδ : 4 * A * c * δ ^ 2 = 1 := by
-    rw [hδ2]; field_simp
-  have h := hloc δ hδ hδε
-  have hhalf : 2 * A * c ^ 2 * δ ^ 2 * (δ ^ 2 * V) = δ ^ 2 * V * c / 2 := by
-    linear_combination (δ ^ 2 * V * c / 2) * hAcδ
-  have _ : δ ^ 2 * V * c ≤ 2 * I := by linarith
-  have h3 : V ≤ 8 * A * I := by
-    have : δ ^ 2 * V * c * (4 * A) = V := by linear_combination V * hAcδ
-    nlinarith
-  linarith
 
 /-- **The local bound on small balls around the centre.** In the situation of
 `exists_center`, with `w ≥ 0` and `Δ w ≥ -A w²` on `ball x₀ r`, every `ball z δ` with
@@ -288,6 +260,6 @@ theorem mul_le_eight_mul_setIntegral_ball_of_neg_mul_sq_le_laplacian
       ENNReal.toReal_ofReal (by positivity), hE, ← measureReal_def]
     nlinarith
   · -- Otherwise `δ ^ 2 = 1 / (4 A' c) < ε ^ 2` gives `V ≤ 8 A' I`, contradicting smallness.
-    exact (false_of_local_bound hA' hc hε hloc hcase hsmall').elim
+    exact (false_of_quadratic_local_bound hA' hc hε hloc hcase hsmall').elim
 
 end TauCeti
