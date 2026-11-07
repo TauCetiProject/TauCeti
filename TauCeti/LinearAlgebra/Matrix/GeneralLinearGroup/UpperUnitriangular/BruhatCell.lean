@@ -191,6 +191,32 @@ theorem unitriangularInversionGroup_inf_unitriangularStabilizerGroup (w : Equiv.
 
 /-! ### The factorization `U = U_w U'_w` -/
 
+omit [Fintype ι] in
+/-- Replacing the column `a` of a matrix of `U'_w`-shape by a column that is `1` at `a` and
+supported on the rows `l < a` with `w⁻¹ l < w⁻¹ a`, together with `a`, keeps the shape. -/
+private theorem updateCol_shape (w : Equiv.Perm ι) {H : Matrix ι ι R}
+    (hH : H.IsUpperUnitriangular) (hHw : ∀ i j, i < j → w.symm j < w.symm i → H i j = 0) (a : ι)
+    (y : ι → R) (S : Finset ι) (hS : ∀ l ∈ S, l < a ∧ w.symm l < w.symm a)
+    (hya : y a = 1) (hy : ∀ l, l ∉ S → l ≠ a → y l = 0) :
+    (H.updateCol a y).IsUpperUnitriangular ∧
+      ∀ i j, i < j → w.symm j < w.symm i → H.updateCol a y i j = 0 := by
+  refine ⟨(isUpperUnitriangular_def _).mpr ⟨fun i j hji ↦ ?_, fun i ↦ ?_⟩, fun i j hij hw ↦ ?_⟩
+  · have hji : j < i := hji
+    rw [updateCol_apply]
+    split_ifs with hja
+    · subst hja
+      exact hy _ (fun h ↦ (hS _ h).1.asymm hji) hji.ne'
+    · exact hH.isUpperTriangular hji
+  · rw [updateCol_apply]
+    split_ifs with hia
+    · rw [hia, hya]
+    · exact hH.apply_diag i
+  · rw [updateCol_apply]
+    split_ifs with hja
+    · subst hja
+      exact hy _ (fun h ↦ (hS _ h).2.asymm hw) hij.ne
+    · exact hHw i j hij hw
+
 /-- **The column step of the factorization.** Given factors `J` of `U_w`-shape and `H` of
 `U'_w`-shape, the column `a` of both can be replaced so that the shapes are kept and the column
 `a` of the product becomes the column `a` of any upper-unitriangular `u`. -/
@@ -209,47 +235,22 @@ private theorem exists_updateCol_mul_updateCol (w : Equiv.Perm ι) {u J H : Matr
   -- `S` is the set of rows where the new column of `H` may be nonzero above the diagonal.
   let S : Finset ι := {l | l < a ∧ w.symm l < w.symm a}
   have hS {l : ι} : l ∈ S ↔ l < a ∧ w.symm l < w.symm a := by simp [S]
-  -- On those rows the new column of `H` solves a unitriangular system, a principal submatrix
-  -- of `J`.
-  let M : Matrix S S R := J.submatrix (↑) (↑)
-  have hM : M.IsUpperUnitriangular := hJ.submatrix (Subtype.strictMono_coe _)
-  let z : S → R := M⁻¹ *ᵥ fun t : S ↦ u t a
-  -- The two `DecidableEq` instances on `S`, from `ι` and from the order of `S`, agree.
-  have hdet : IsUnit M.det := by convert hM.isUnit_det
-  have hz : M *ᵥ z = fun t : S ↦ u t a := by
-    simp only [z, mulVec_mulVec, mul_nonsing_inv _ hdet, one_mulVec]
-  let y : ι → R := fun l ↦ if h : l ∈ S then z ⟨l, h⟩ else if l = a then 1 else 0
+  have haS : a ∉ S := fun h ↦ (hS.mp h).1.false
+  obtain ⟨y, hya, hy', hyS⟩ :=
+    Matrix.exists_sum_mul_eq_of_isUpperUnitriangular hJ (fun i ↦ u i a) a S haS
   let σ : ι → R := fun i ↦ ∑ l ∈ S, J i l * y l
   -- The new column of `J` is then read off.
   let x : ι → R := fun i ↦ if i = a then 1 else if i ∈ S then 0 else u i a - σ i
-  have haS : a ∉ S := fun h ↦ (hS.mp h).1.false
-  have hya : y a = 1 := by simp [y, haS]
-  have hy {l : ι} (hl : l ∉ S) (hla : l ≠ a) : y l = 0 := by simp [y, hl, hla]
+  have hy {l : ι} (hl : l ∉ S) (hla : l ≠ a) : y l = 0 := hy' l hl hla
   have hσ {i : ι} (hai : a ≤ i) : σ i = 0 :=
     Finset.sum_eq_zero fun l hl ↦ by
       rw [hJ.isUpperTriangular ((hS.mp hl).1.trans_le hai), zero_mul]
-  have hσS {i : ι} (hi : i ∈ S) : σ i = u i a := by
-    have := congrFun hz ⟨i, hi⟩
-    simp only [M, mulVec, dotProduct, submatrix_apply] at this
-    simp only [σ]
-    rw [← this, ← Finset.sum_coe_sort S]
-    exact Finset.sum_congr rfl fun t _ ↦ by simp [y, t.2]
-  have hprod (i : ι) : (J.updateCol a x * H.updateCol a y) i a = x i + σ i := by
-    simp only [Matrix.mul_apply, updateCol_self, updateCol_apply]
-    have hterm (l : ι) : (if l = a then x i else J i l) * y l =
-        (if l = a then x i else 0) + if l ∈ S then J i l * y l else 0 := by
-      by_cases hla : l = a
-      · subst hla
-        simp [hya, haS]
-      · by_cases hl : l ∈ S
-        · simp [hla, hl]
-        · simp [hla, hl, hy hl hla]
-    rw [Finset.sum_congr rfl fun l _ ↦ hterm l, Finset.sum_add_distrib, Finset.sum_ite_eq',
-      ← Finset.sum_filter, Finset.filter_mem_eq_inter, Finset.univ_inter]
-    simp [σ]
+  have hσS {i : ι} (hi : i ∈ S) : σ i = u i a := hyS i hi
+  have hprod (i : ι) : (J.updateCol a x * H.updateCol a y) i a = x i + σ i :=
+    Matrix.updateCol_mul_updateCol_apply_self a x y S haS hya hy' i
+  obtain ⟨hH', hHw'⟩ := updateCol_shape w hH hHw a y S (fun l hl ↦ hS.mp hl) hya hy'
   refine ⟨x, y, (isUpperUnitriangular_def _).mpr ⟨fun i j hji ↦ ?_, fun i ↦ ?_⟩,
-    fun i j hij hw ↦ ?_, (isUpperUnitriangular_def _).mpr ⟨fun i j hji ↦ ?_, fun i ↦ ?_⟩,
-    fun i j hij hw ↦ ?_, fun i ↦ ?_⟩
+    fun i j hij hw ↦ ?_, hH', hHw', fun i ↦ ?_⟩
   · -- `J.updateCol a x` is upper triangular.
     have hji : j < i := hji
     rw [updateCol_apply]
@@ -267,22 +268,6 @@ private theorem exists_updateCol_mul_updateCol (w : Equiv.Perm ι) {u J H : Matr
     · subst hja
       simp [x, hij.ne, hS.mpr ⟨hij, hw⟩]
     · exact hJw i j hij hw
-  · -- `H.updateCol a y` is upper triangular.
-    have hji : j < i := hji
-    rw [updateCol_apply]
-    split_ifs with hja
-    · subst hja
-      exact hy (fun h ↦ (hS.mp h).1.asymm hji) hji.ne'
-    · exact hH.isUpperTriangular hji
-  · rw [updateCol_apply]
-    split_ifs with hia
-    · rw [hia, hya]
-    · exact hH.apply_diag i
-  · rw [updateCol_apply]
-    split_ifs with hja
-    · subst hja
-      exact hy (fun h ↦ (hS.mp h).2.asymm hw) hij.ne
-    · exact hHw i j hij hw
   · -- The column `a` of the product is the column `a` of `u`.
     rw [hprod]
     by_cases hia : i = a
