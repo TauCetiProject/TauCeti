@@ -74,6 +74,45 @@ theorem subsingleton_h1_abelianizationProP_of_le (hp : p.Prime)
 
 end Step
 
+/-- A nontrivial finite `p`-group quotient `G ⧸ V` by an open normal subgroup has an open normal
+overgroup `W > V` with `W ⧸ V` of order `p` and `G ⧸ W` a `p`-group: `W` is the preimage of a
+central subgroup of order `p`. -/
+private theorem exists_isOpen_normal_lt_card_quotient_eq_prime {p : ℕ} (hp : p.Prime) {G : Type u}
+    [Group G] [TopologicalSpace G] [IsTopologicalGroup G] {V : Subgroup G} [V.Normal]
+    (hV : IsOpen (V : Set G)) [Finite (G ⧸ V)] [Nontrivial (G ⧸ V)]
+    (hpV : IsPGroup p (G ⧸ V)) :
+    ∃ (W : Subgroup G) (_ : W.Normal), V < W ∧ IsOpen (W : Set G) ∧
+      Nat.card (W ⧸ V.subgroupOf W) = p ∧ IsPGroup p (G ⧸ W) := by
+  let _ : Fact p.Prime := ⟨hp⟩
+  obtain ⟨z, hzc, hz⟩ := hpV.exists_mem_center_orderOf_eq_prime
+  let Z : Subgroup (G ⧸ V) := Subgroup.zpowers z
+  have hZcenter : Z ≤ Subgroup.center (G ⧸ V) := Subgroup.zpowers_le.2 hzc
+  let _ : Z.Normal := Subgroup.normal_of_le_center hZcenter
+  set W : Subgroup G := Z.comap (QuotientGroup.mk' V) with hWdef
+  let _ : W.Normal := inferInstance
+  have hVW : V ≤ W :=
+    (QuotientGroup.ker_mk' V).ge.trans (MonoidHom.ker_le_comap _ Z)
+  have hWmap : W.map (QuotientGroup.mk' V) = Z := by
+    rw [hWdef]
+    exact Subgroup.map_comap_eq_self_of_surjective (QuotientGroup.mk'_surjective V) Z
+  have hz1 : z ≠ 1 := fun h ↦ hp.one_lt.ne (by rw [← hz, h, orderOf_one])
+  have hVWne : V ≠ W := by
+    intro heq
+    have hzmem : z ∈ W.map (QuotientGroup.mk' V) := by
+      rw [hWmap]
+      exact Subgroup.mem_zpowers z
+    rw [← heq] at hzmem
+    rcases hzmem with ⟨g, hg, hgz⟩
+    exact hz1 (hgz ▸ ((QuotientGroup.eq_one_iff g).2 hg))
+  refine ⟨W, inferInstance, lt_of_le_of_ne hVW hVWne, Subgroup.isOpen_mono hVW hV, ?_, ?_⟩
+  · calc
+      Nat.card (W ⧸ V.subgroupOf W) = Nat.card (W.map (QuotientGroup.mk' V)) :=
+        Nat.card_congr (quotientSubgroupOfEquivMap V W hV).toEquiv
+      _ = Nat.card Z := by rw [hWmap]
+      _ = p := by rw [Nat.card_zpowers, hz]
+  · refine (hpV.to_quotient (W.map (QuotientGroup.mk' V))).of_equiv ?_
+    exact (quotientQuotientContinuousMulEquiv V W hVW).toMulEquiv
+
 private theorem subsingleton_h1_abelianizationProP_of_isPGroup_aux (p m : ℕ)
     (hp : p.Prime) :
     ∀ (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
@@ -89,36 +128,12 @@ private theorem subsingleton_h1_abelianizationProP_of_isPGroup_aux (p m : ℕ)
       · let _ := htrivial
         infer_instance
       · let _ := hnontrivial
-        let _ : Fact p.Prime := ⟨hp⟩
-        obtain ⟨z, hzc, hz⟩ := hpV.exists_mem_center_orderOf_eq_prime
-        let Z : Subgroup (G ⧸ V) := Subgroup.zpowers z
-        have hZcenter : Z ≤ Subgroup.center (G ⧸ V) := Subgroup.zpowers_le.2 hzc
-        let _ : Z.Normal := Subgroup.normal_of_le_center hZcenter
-        set W : Subgroup G := Z.comap (QuotientGroup.mk' V) with hWdef
-        let _ : W.Normal := inferInstance
-        have hVW : V ≤ W :=
-          (QuotientGroup.ker_mk' V).ge.trans (MonoidHom.ker_le_comap _ Z)
-        have hWmap : W.map (QuotientGroup.mk' V) = Z := by
-          rw [hWdef]
-          exact Subgroup.map_comap_eq_self_of_surjective (QuotientGroup.mk'_surjective V) Z
-        have hW : IsOpen (W : Set G) := Subgroup.isOpen_mono hVW hV
+        obtain ⟨W, _, hVW, hW, hcard, hpGW⟩ :=
+          exists_isOpen_normal_lt_card_quotient_eq_prime hp hV hpV
         have : V.FiniteIndex := Subgroup.finiteIndex_of_finite_quotient
-        have hz1 : z ≠ 1 := fun h ↦
-          hp.one_lt.ne (by rw [← hz, h, orderOf_one])
-        have hVWne : V ≠ W := by
-          intro heq
-          have hzmem : z ∈ W.map (QuotientGroup.mk' V) := by
-            rw [hWmap]
-            exact Subgroup.mem_zpowers z
-          rw [← heq] at hzmem
-          rcases hzmem with ⟨g, hg, hgz⟩
-          exact hz1 (hgz ▸ ((QuotientGroup.eq_one_iff g).2 hg))
         have hindex : W.index < m := by
           rw [← hm]
-          exact Subgroup.index_strictAnti (lt_of_le_of_ne hVW hVWne)
-        have hpGW : IsPGroup p (G ⧸ W) := by
-          refine (hpV.to_quotient (W.map (QuotientGroup.mk' V))).of_equiv ?_
-          exact (quotientQuotientContinuousMulEquiv V W hVW).toMulEquiv
+          exact Subgroup.index_strictAnti hVW
         have hsource : Subsingleton
             (H1 (G ⧸ W) (Additive (abelianizationProP p G W))) :=
           ih W.index hindex G W rfl hG hW hpGW
@@ -126,13 +141,6 @@ private theorem subsingleton_h1_abelianizationProP_of_isPGroup_aux (p m : ℕ)
           isCompact_iff_compactSpace.mp (W.isClosed_of_isOpen hW).isCompact
         have hWdim : strictCohomologicalDimensionAt.{u} p W ≤ 2 :=
           (strictCohomologicalDimensionAt_le_of_isClosed (W.isClosed_of_isOpen hW)).trans hG
-        have hcard : Nat.card (W ⧸ V.subgroupOf W) = p := by
-          calc
-            Nat.card (W ⧸ V.subgroupOf W) =
-                Nat.card (W.map (QuotientGroup.mk' V)) :=
-              Nat.card_congr (quotientSubgroupOfEquivMap V W hV).toEquiv
-            _ = Nat.card Z := by rw [hWmap]
-            _ = p := by rw [Nat.card_zpowers, hz]
         have hrestricted : Subsingleton
             (H1 (W ⧸ V.subgroupOf W)
               (Additive (abelianizationProP p W (V.subgroupOf W)))) :=
@@ -140,7 +148,7 @@ private theorem subsingleton_h1_abelianizationProP_of_isPGroup_aux (p m : ℕ)
             (W.subgroupOf_isOpen V hV) hcard
         let _ := hsource
         let _ := hrestricted
-        exact subsingleton_h1_abelianizationProP_of_le hp hG hVW hV
+        exact subsingleton_h1_abelianizationProP_of_le hp hG hVW.le hV
 
 /-- **The class module of a finite `p`-group quotient has trivial `H¹`.** For a profinite group
 `G` with `scd_p G ≤ 2` and an open normal subgroup `V` whose quotient is a `p`-group,
