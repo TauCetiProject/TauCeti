@@ -191,7 +191,8 @@ theorem ncard_ramifiedPrimes_eq_card (hmin : minpoly ℤ θ = X ^ 2 - C d)
   classical
   rw [ramifiedPrimes_eq_image hmin hgen hsf hs hprod, Set.ncard_coe_finset,
     Finset.card_image_of_injOn (injOn_primeDiscriminantPrime hs fun _ hP _ hQ ↦
-      eq_of_isEvenPrimeDiscriminant_of_prod_eq_fundamentalDiscriminant hsf hprod hP hQ)]
+      eq_of_isEvenPrimeDiscriminant_of_prod_eq (isFundamentalDiscr_fundamentalDiscriminant hsf)
+        hprod hP hQ)]
 
 /-- **The ramified primes of `ℚ(√d)`, counted by a prime-discriminant factorization of the
 discriminant.** Packages `ncard_ramifiedPrimes_eq_card` with the existence of the factorization, so

@@ -20,6 +20,7 @@ prime-discriminant theory.
 
 * `Int.decidablePredIsFundamentalDiscr`: being a fundamental discriminant is decidable, through
   congruences mod `4` and squarefreeness of natural numbers, so the kernel can check it.
+* `Int.IsFundamentalDiscr.not_sixteen_dvd`: a fundamental discriminant is not divisible by `16`.
 * `Int.IsFundamentalDiscr.mul`: coprime fundamental discriminants have fundamental product.
 * `Int.IsFundamentalDiscr.not_isSquare_rat`: a fundamental discriminant other than `1` is not a
   rational square, so `ℚ(√D)` is a genuine quadratic field.
@@ -40,6 +41,12 @@ instance decidablePredIsFundamentalDiscr : DecidablePred IsFundamentalDiscr := f
 theorem IsFundamentalDiscr.neZero_natAbs {D : ℤ} (hD : IsFundamentalDiscr D) :
     NeZero D.natAbs :=
   ⟨Int.natAbs_ne_zero.mpr hD.ne_zero⟩
+
+/-- A fundamental discriminant is not divisible by `16`: it is odd, or `4 * x` with `4 ∤ x`. -/
+theorem IsFundamentalDiscr.not_sixteen_dvd {D : ℤ} (hD : IsFundamentalDiscr D) :
+    ¬ (16 : ℤ) ∣ D := by
+  rintro ⟨k, hk⟩
+  exact (hD.2.1 (4 * k) (by omega)).1 ⟨k, rfl⟩
 
 /-- A product of coprime fundamental discriminants is a fundamental discriminant. -/
 theorem IsFundamentalDiscr.mul {D E : ℤ} (hD : IsFundamentalDiscr D)
