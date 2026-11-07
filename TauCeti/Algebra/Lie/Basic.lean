@@ -42,6 +42,8 @@ This file supplies general constructions for Lie modules that are missing from M
   of the Lie action on `v`.
 * `TauCeti.lieAnnihilator_eq_top_iff` and `TauCeti.lieAnnihilator_eq_top`: the annihilator of
   `v` is all of `L` exactly when every element annihilates `v`, in particular in a trivial module.
+* `TauCeti.apply_lie_eq_zero_of_lieAnnihilator_eq_top`: a coadjoint-fixed functional vanishes on
+  brackets.
 * `TauCeti.instIsTrivialDual`: the dual of a trivial Lie module is trivial, so for an abelian
   Lie algebra the annihilator of every element of the dual is the whole algebra.
 * `LieAlgebra.ad_eq_toEnd`: the adjoint action is the action `toEnd R L L` of `L` on itself.
@@ -339,6 +341,14 @@ theorem lieAnnihilator_eq_top_iff {v : M} :
 @[simp]
 theorem lieAnnihilator_eq_top [LieModule.IsTrivial L M] (v : M) : lieAnnihilator R L v = ⊤ :=
   (lieAnnihilator_eq_top_iff R L).2 fun x ↦ trivial_lie_zero L M x v
+
+variable {R L} in
+/-- **A coadjoint-fixed functional vanishes on brackets.** If every element of `L` annihilates
+`ν` in the coadjoint module `Module.Dual R L`, then `ν ⁅x, y⁆ = 0`. -/
+theorem apply_lie_eq_zero_of_lieAnnihilator_eq_top {ν : Module.Dual R L}
+    (hν : lieAnnihilator R L ν = ⊤) (x y : L) : ν ⁅x, y⁆ = 0 := by
+  have := LinearMap.congr_fun ((lieAnnihilator_eq_top_iff R L).1 hν x) y
+  rwa [Module.Dual.lie_apply, LinearMap.zero_apply, neg_eq_zero] at this
 
 /-- **A vector annihilated by a set of Lie elements is annihilated by the Lie subalgebra that set
 generates.** The annihilator is a Lie subalgebra, so the universal property of `lieSpan` promotes

@@ -41,12 +41,18 @@ value, and the stabilizer `G_c` acting freely and properly on the level.
   `TauCeti.SmoothTwoForm.IsMomentMap.isIsotropic_orbitTangent_iff`). A level over a value that
   is not coadjoint-fixed is not coisotropic. For an abelian Lie algebra every value is fixed, so
   the orbits are isotropic, and a locally free action of an abelian `𝔤` has
-  `2 dim 𝔤 ≤ dim M` (`TauCeti.SmoothTwoForm.IsMomentMap.two_mul_finrank_le`).
+  `2 dim 𝔤 ≤ dim M` (`TauCeti.SmoothTwoForm.IsMomentMap.two_mul_finrank_le`). In general an
+  isotropic orbit tangent space has `2 dim (𝔤 · x) ≤ dim M`
+  (`TauCeti.SmoothTwoForm.IsMomentMap.two_mul_finrank_orbitTangent_le`).
 * At a point where the action is locally free, `dim ker dμ_x = dim M - dim 𝔤` and the null
   directions have dimension `dim 𝔤_c`, so the linear quotient of the level tangent space by them
   has dimension `dim M - dim 𝔤 - dim 𝔤_c`; under the hypotheses of the reduction theorem this
   is the dimension of the reduced space
   (`TauCeti.SmoothTwoForm.IsMomentMap.finrank_ker_differential_sub_finrank_inf_orthogonal`).
+  If moreover `c` is coadjoint-fixed, then `ker dμ_x` is Lagrangian exactly when
+  `2 dim 𝔤 = dim M`, in which case it is the orbit tangent space
+  (`TauCeti.SmoothTwoForm.IsMomentMap.isLagrangian_ker_differential_iff` and
+  `TauCeti.SmoothTwoForm.IsMomentMap.ker_differential_eq_orbitTangent`).
 * For a smooth map `g : N → M` whose tangent images are the kernels of `dμ`, such as the inclusion
   of a regular level, the kernel of the pulled-back form `g^* σ` at `p` is the preimage under
   `dg_p` of `𝔤_c · g(p)` (`TauCeti.SmoothTwoForm.IsMomentMap.ker_bilinFormAt_mpullback`). This is
@@ -136,6 +142,19 @@ theorem ker_differential_inf_orthogonal [FiniteDimensional ℝ E]
 
 variable (hσ : σ.IsNondegenerate)
 
+/-- For a nondegenerate form, the symplectic complement of `ker dμ_x` with respect to the
+symplectic form `σ_x` is the orbit tangent space `𝔤 · x`. -/
+theorem symplecticFormAt_orthogonal_ker_differential [FiniteDimensional ℝ E] :
+    (hσ.symplecticFormAt x).orthogonal (LinearMap.ker (h.differential x)) = a.orbitTangent x := by
+  rw [SymplecticForm.orthogonal_def, hσ.toBilinForm_symplecticFormAt,
+    h.orthogonal_ker_differential (hσ.nondegenerate_bilinFormAt x)]
+
+/-- For a nondegenerate form, the symplectic complement of the orbit tangent space `𝔤 · x` with
+respect to the symplectic form `σ_x` is `ker dμ_x`. -/
+theorem symplecticFormAt_orthogonal_orbitTangent :
+    (hσ.symplecticFormAt x).orthogonal (a.orbitTangent x) = LinearMap.ker (h.differential x) := by
+  rw [SymplecticForm.orthogonal_def, hσ.toBilinForm_symplecticFormAt, ← h.ker_differential]
+
 /-- **Levels over coadjoint-fixed values are coisotropic, and only those.** For a nondegenerate
 form, where the cocycle of a moment map vanishes, `ker dμ_x` is coisotropic exactly when `μ(x)` is
 fixed by the coadjoint action of `𝔤`. -/
@@ -143,8 +162,7 @@ theorem isCoisotropic_ker_differential_iff [FiniteDimensional ℝ E]
     (hc : σ.momentCocycle a μ x = 0) :
     (hσ.symplecticFormAt x).IsCoisotropic (LinearMap.ker (h.differential x)) ↔
       lieAnnihilator ℝ 𝔤 (μ x) = ⊤ := by
-  rw [SymplecticForm.isCoisotropic_iff_le, SymplecticForm.orthogonal_def,
-    hσ.toBilinForm_symplecticFormAt, h.orthogonal_ker_differential (hσ.nondegenerate_bilinFormAt x),
+  rw [SymplecticForm.isCoisotropic_iff_le, h.symplecticFormAt_orthogonal_ker_differential hσ,
     h.orbitTangent_le_ker_differential_iff hc]
 
 /-- **Orbits in levels over coadjoint-fixed values are isotropic, and only those.** For a
@@ -152,8 +170,7 @@ nondegenerate form, where the cocycle of a moment map vanishes, the orbit tangen
 isotropic exactly when `μ(x)` is fixed by the coadjoint action of `𝔤`. -/
 theorem isIsotropic_orbitTangent_iff (hc : σ.momentCocycle a μ x = 0) :
     (hσ.symplecticFormAt x).IsIsotropic (a.orbitTangent x) ↔ lieAnnihilator ℝ 𝔤 (μ x) = ⊤ := by
-  rw [SymplecticForm.isIsotropic_iff_le, SymplecticForm.orthogonal_def,
-    hσ.toBilinForm_symplecticFormAt, ← h.ker_differential,
+  rw [SymplecticForm.isIsotropic_iff_le, h.symplecticFormAt_orthogonal_orbitTangent hσ,
     h.orbitTangent_le_ker_differential_iff hc]
 
 /-- **The orbits of an abelian Lie algebra are isotropic.** For a nondegenerate form, where the
@@ -213,6 +230,50 @@ theorem finrank_ker_differential_sub_finrank_inf_orthogonal [FiniteDimensional �
   have h₁ := h.finrank_ker_differential_add_finrank hσx hfree
   rw [h.finrank_ker_differential_inf_orthogonal hσx hc hfree]
   omega
+
+/-! ### Isotropic orbits and Lagrangian levels -/
+
+/-- **The dimension bound for isotropic orbits.** At a point where the form is nondegenerate, the
+cocycle of a moment map vanishes and `μ(x)` is coadjoint-fixed, the orbit tangent space has at
+most half the dimension of `M`. -/
+theorem two_mul_finrank_orbitTangent_le [FiniteDimensional ℝ E]
+    (hσx : (σ.bilinFormAt x).Nondegenerate) (hc : σ.momentCocycle a μ x = 0)
+    (hμ : lieAnnihilator ℝ 𝔤 (μ x) = ⊤) : 2 * finrank ℝ (a.orbitTangent x) ≤ finrank ℝ E := by
+  have hle := Submodule.finrank_mono ((h.orbitTangent_le_ker_differential_iff hc).2 hμ)
+  have hsum := h.finrank_ker_differential_add_finrank_orbitTangent hσx
+  rw [finrank_tangentSpace] at hsum
+  omega
+
+/-- **The Lagrangian criterion for `ker dμ_x`.** For a nondegenerate form, if the action is locally
+free at a point where the cocycle of a moment map vanishes and `μ(x)` is coadjoint-fixed, then
+`ker dμ_x` is Lagrangian exactly when `𝔤` has half the dimension of `M`. -/
+theorem isLagrangian_ker_differential_iff [FiniteDimensional ℝ E]
+    (hc : σ.momentCocycle a μ x = 0) (hμ : lieAnnihilator ℝ 𝔤 (μ x) = ⊤)
+    (hfree : a.isotropy x = ⊥) :
+    (hσ.symplecticFormAt x).IsLagrangian (LinearMap.ker (h.differential x)) ↔
+      2 * finrank ℝ 𝔤 = finrank ℝ E := by
+  have hker := h.finrank_ker_differential_add_finrank (hσ.nondegenerate_bilinFormAt x) hfree
+  refine ⟨fun hL ↦ ?_, fun hdim ↦
+    ((h.isCoisotropic_ker_differential_iff hσ hc).2 hμ).isLagrangian_of_finrank ?_⟩
+  · have := hL.two_mul_finrank
+    rw [finrank_tangentSpace] at this
+    omega
+  · rw [finrank_tangentSpace]
+    omega
+
+/-- **The Lagrangian kernel is the orbit tangent space.** At a point where the form is
+nondegenerate, the cocycle of a moment map vanishes, `μ(x)` is coadjoint-fixed, and the orbit
+tangent space `𝔤 · x` has half the dimension of `M`, we have `ker dμ_x = 𝔤 · x`. At a locally free
+point the dimension condition reads `2 dim 𝔤 = dim M`. -/
+theorem ker_differential_eq_orbitTangent [FiniteDimensional ℝ E]
+    (hσx : (σ.bilinFormAt x).Nondegenerate) (hc : σ.momentCocycle a μ x = 0)
+    (hμ : lieAnnihilator ℝ 𝔤 (μ x) = ⊤)
+    (hdim : 2 * finrank ℝ (a.orbitTangent x) = finrank ℝ E) :
+    LinearMap.ker (h.differential x) = a.orbitTangent x := by
+  have hsum := h.finrank_ker_differential_add_finrank_orbitTangent hσx
+  rw [finrank_tangentSpace] at hsum
+  exact (Submodule.eq_of_le_of_finrank_eq ((h.orbitTangent_le_ker_differential_iff hc).2 hμ)
+    (by omega)).symm
 
 /-! ### The pulled-back form on a parametrized level -/
 
