@@ -49,7 +49,7 @@ theorem exists_uniform_quadratic_bounds {ι X : Type*} [Fintype ι] [DecidableEq
   have hB : Continuous B := PDE.continuous_matrixBilinearForm.comp hA
   have hpositive (x : X) (_ : x ∈ (univ : Set X)) (ξ : EuclideanSpace ℝ ι) (hξ : ξ ≠ 0) :
       0 < B x ξ ξ := by
-    change 0 < PDE.matrixBilinearForm (A x) ξ ξ
+    dsimp only [B]
     rw [PDE.matrixBilinearForm_self, Matrix.toQuadraticForm'_apply]
     apply (hpos x).dotProduct_mulVec_pos
     intro hz
