@@ -24,6 +24,8 @@ for set and probability integrals.
 
 * `AddMonoidHom.integral_comp_comm` commutes integration with a continuous additive map
   between real Banach spaces.
+* `MeasureTheory.integral_comp_comm_of_addMonoidHomClass` is the same statement for a bundled
+  continuous additive homomorphism of any class.
 
 ## Counting measures of multisets
 
@@ -144,6 +146,17 @@ theorem AddMonoidHom.integral_comp_comm {X E F : Type*} [MeasurableSpace X]
     ∫ x, T (f x) ∂μ = T (∫ x, f x ∂μ) := by
   simpa only [AddMonoidHom.coe_toRealLinearMap] using
     (T.toRealLinearMap hT).integral_comp_comm hf
+
+/-- Integration commutes with a continuous additive map between real Banach spaces, for any bundled
+homomorphism class: this is `AddMonoidHom.integral_comp_comm` without the coercion to a bare
+additive homomorphism and the separate continuity argument. -/
+theorem MeasureTheory.integral_comp_comm_of_addMonoidHomClass {G X E F : Type*} [MeasurableSpace X]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+    [FunLike G E F] [AddMonoidHomClass G E F] [ContinuousMapClass G E F]
+    {μ : Measure X} (T : G) {f : X → E} (hf : Integrable f μ) :
+    ∫ x, T (f x) ∂μ = T (∫ x, f x ∂μ) :=
+  AddMonoidHom.integral_comp_comm (T : E →+ F) (map_continuous T) hf
 
 namespace Multiset
 
