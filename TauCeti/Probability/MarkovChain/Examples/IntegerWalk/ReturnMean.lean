@@ -112,7 +112,7 @@ theorem lintegral_integerWalk_hittingAfter_eq_top (p : unitInterval) (hp : (p : 
   have hpos : 0 < ((integerWalk p).meanReturnTime x)⁻¹.toReal :=
     ENNReal.toReal_pos (ENNReal.inv_ne_zero.mpr hfinite)
       (ENNReal.inv_ne_top.mpr (ne_zero_of_lt
-        (lt_of_lt_of_le zero_lt_one ((integerWalk p).one_le_meanReturnTime x))))
+        (lt_of_lt_of_le zero_lt_one (Kernel.one_le_meanReturnTime (κ := integerWalk p) (x := x)))))
   have hLLN := (HasLaw.id (μ := P)).tendsto_integral_visitCount_succ_div
   exact hpos.ne' (tendsto_nhds_unique hLLN (tendsto_integerWalk_integral_visitCount_div p hp x))
 

@@ -309,6 +309,29 @@ theorem isContactHamiltonianVectorField_iff_eq :
   rw [hα.contactFlat_contactHamiltonianVectorField,
     hα.isContactHamiltonianVectorField_iff_contactFlat.1 hX x]
 
+/-- A contact Hamiltonian vector field is characterized by its value under `α` and its
+contraction equation tested only on the contact hyperplanes. -/
+theorem isContactHamiltonianVectorField_iff_kerDistribution :
+    α.IsContactHamiltonianVectorField f X ↔ ∀ x, α.1 x ![X x] = f x ∧
+      ∀ v ∈ α.kerDistribution x, mextDeriv α.1 x ![X x, v] = -mvfderiv I f x v := by
+  constructor
+  · intro hX x
+    refine ⟨hX.apply_eq x, fun v hv ↦ ?_⟩
+    rw [hX.mextDeriv_apply_eq, mem_kerDistribution.1 hv, mul_zero, zero_sub]
+  · intro hX x
+    refine ⟨(hX x).1, fun v ↦ ?_⟩
+    -- Subtract the Reeb component to test the equation on a vector in the contact plane.
+    have hv : v - α.1 x ![v] • α.reebVectorField x ∈ α.kerDistribution x := by
+      rw [mem_kerDistribution, ← degreeOneEquiv_apply_apply_vec, map_sub, map_smul]
+      simp only [degreeOneEquiv_apply_apply_vec, hα.apply_reebVectorField,
+        smul_eq_mul, mul_one, sub_self]
+    have h := (hX x).2 _ hv
+    have hR := hα.mextDeriv_reebVectorField_right x (X x)
+    rw [mextDeriv_eq_bilinFormAt] at hR
+    simp only [mextDeriv_eq_bilinFormAt, map_sub, map_smul, hR,
+      smul_eq_mul] at h ⊢
+    linarith
+
 /-- The contact Hamiltonian vector field of a constant `c` is `c R_α`. -/
 @[simp]
 theorem contactHamiltonianVectorField_const (c : ℝ) :

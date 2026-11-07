@@ -7,16 +7,14 @@ module
 
 public import TauCeti.Probability.MarkovChain.Recurrence
 public import TauCeti.Probability.MarkovChain.ReturnGaps
-public import Mathlib.MeasureTheory.Integral.Lebesgue.Markov
 
 /-!
-# Extended mean first-return times
+# Extended means of return gaps
 
-The mean positive return time is an extended nonnegative integral. In particular,
-a positive probability of never returning forces infinite mean; it is not lost
-by converting an infinite hitting time to a natural or real number. At a recurrent
-state this mean agrees with the extended mean of every return gap, so renewal
-laws of large numbers apply even when the mean return time is infinite.
+At a recurrent state the extended mean positive return time agrees with the
+extended mean of every return gap, so renewal laws of large numbers apply even
+when the mean return time is infinite. The mean return time itself is defined in
+`TauCeti.Probability.MarkovChain.Recurrence` and retains infinity on nonreturn.
 
 ## References
 
@@ -32,49 +30,14 @@ open scoped ENNReal NNReal
 
 namespace ProbabilityTheory.Kernel
 
-variable {S : Type*} [MeasurableSpace S] (κ : Kernel S S) [IsMarkovKernel κ]
-
-/-- The extended mean of the first return starting at time one. Nonreturn is infinity. -/
-def meanReturnTime (x : S) : ℝ≥0∞ :=
-  ∫⁻ ω, ENat.toENNReal (hittingAfter (fun n ω => ω n) {x} 1 ω)
-    ∂markovChainLaw (Measure.dirac x) κ
-
-/-- Evaluation of the extended mean positive return time. -/
-theorem meanReturnTime_def (x : S) : κ.meanReturnTime x =
-    ∫⁻ ω, ENat.toENNReal (hittingAfter (fun n ω => ω n) {x} 1 ω)
-      ∂markovChainLaw (Measure.dirac x) κ := (rfl)
-
-/-- The positive first-return mean is at least one, including for a transient state. -/
-theorem one_le_meanReturnTime (x : S) : 1 ≤ κ.meanReturnTime x := by
-  calc
-    1 = ∫⁻ _ω, (1 : ℝ≥0∞) ∂markovChainLaw (Measure.dirac x) κ := by simp
-    _ ≤ κ.meanReturnTime x := lintegral_mono fun ω => by
-      have hτ : (1 : ℕ∞) ≤ hittingAfter (fun n (ω : ℕ → S) => ω n) {x} 1 ω :=
-        le_hittingAfter ω
-      simpa only [ENat.toENNReal_one] using ENat.toENNReal_mono hτ
-
-variable [MeasurableSingletonClass S] {κ} {x : S}
+variable {S : Type*} [MeasurableSpace S] [MeasurableSingletonClass S]
+  {κ : Kernel S S} [IsMarkovKernel κ] {x : S}
 
 /-- Finite extended mean return time implies almost-sure return. -/
 theorem isRecurrent_of_meanReturnTime_ne_top (h : κ.meanReturnTime x ≠ ∞) :
     κ.IsRecurrent x := by
-  have hm := (Filtration.adapted_piLE.isStoppingTime_hittingAfter
-    (f := Filtration.piLE (X := fun _ : ℕ => S))
-    (s := {x}) (n := 1) (measurableSet_singleton x)).measurable'
-  have hfinite := ae_lt_top ((measurable_of_countable
-    (fun t : WithTop ℕ => ENat.toENNReal t)).comp hm) h
-  have hE : MeasurableSet {ω : ℕ → S | hittingAfter (fun n ω => ω n) {x} 1 ω ≠ ⊤} :=
-    ((measurableSet_singleton ⊤).preimage hm).compl
-  apply isRecurrent_iff.mpr
-  apply (mem_ae_iff_prob_eq_one hE).mp
-  filter_upwards [hfinite] with ω hω
-  exact fun ht => hω.ne ((congrArg ENat.toENNReal ht).trans ENat.toENNReal_top)
-
-/-- At a transient state the positive return time has infinite extended mean. -/
-theorem IsTransient.meanReturnTime_eq_top (hx : κ.IsTransient x) :
-    κ.meanReturnTime x = ∞ := by
-  by_contra h
-  exact (isTransient_iff.mp hx) (isRecurrent_of_meanReturnTime_ne_top h)
+  by_contra hx
+  exact h ((isTransient_iff.mpr hx).meanReturnTime_eq_top)
 
 variable [Countable S]
 

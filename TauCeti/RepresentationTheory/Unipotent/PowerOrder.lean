@@ -88,7 +88,7 @@ order is a representation by unipotent operators.** This is
 the hypothesis Kolchin's theorem consumes. -/
 theorem forall_isNilpotent_sub_one_of_forall_pow_expChar_pow_eq_one (ρ : Representation k H V)
     (hρ : ∀ g : H, ∃ n : ℕ, ρ g ^ p ^ n = 1) : ∀ g : H, IsNilpotent (ρ g - 1) := fun g =>
-  (hρ g).elim fun n hn => Module.End.isNilpotent_sub_one_of_pow_expChar_pow_eq_one p n hn
+  (hρ g).elim fun _ => Module.End.isNilpotent_sub_one_of_pow_expChar_pow_eq_one
 
 /-- **A nonzero finite-dimensional representation in which every element acts with `p`-power order,
 over a field of exponential characteristic `p`, fixes a nonzero vector.** It is a representation by
