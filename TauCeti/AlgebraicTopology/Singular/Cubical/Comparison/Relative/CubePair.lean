@@ -118,6 +118,15 @@ def cubeBoundaryPairCycle (m : ℕ) :
     ((cubeBoundaryPair.{u} (m + 1)).cubicalChainComplex k).cycles (m + 1) :=
   TopPair.cubicalCycleOfCube k _ (mapsTo_upCube_boundary (m + 1))
 
+/-- The underlying relative chain of the fundamental cycle of the cube pair is the identity cube. -/
+@[simp]
+theorem iCycles_cubeBoundaryPairCycle (m : ℕ) :
+    ((cubeBoundaryPair.{u} (m + 1)).cubicalChainComplex k).iCycles (m + 1)
+        (cubeBoundaryPairCycle k m) =
+      TopPair.cubicalChainOfCube k
+        (upCube.{u} (m + 1) : SingularCube (cubeBoundaryPair.{u} (m + 1)).fst (m + 1)) :=
+  TopPair.iCycles_cubicalCycleOfCube ..
+
 /-- The map of pairs `c : (Iᵐ⁺¹, ∂Iᵐ⁺¹) ⟶ P` given by a cube `c` sends the class of the fundamental
 cycle of the cube pair to the class of `c` in relative cubical homology. -/
 theorem homologyMap_cubeBoundaryPairHom_cubeBoundaryPairCycle {P : TopPair.{u}} {m : ℕ}
@@ -245,8 +254,7 @@ private lemma exists_intCocycle (n : ℕ) :
   refine ⟨retraction (K.iCycles (n + 2)) ≫ K.homologyπ (n + 2) ≫ ModuleCat.ofHom τ, ?_, ?_⟩
   · rw [← K.toCycles_i, Category.assoc, IsSplitMono.id_assoc]
     exact (K.toCycles_comp_homologyπ_assoc _ _ _).trans zero_comp
-  · rw [← TopPair.iCycles_cubicalCycleOfCube ℤ _ (mapsTo_upCube_boundary (n + 2)),
-      ← ConcreteCategory.comp_apply, IsSplitMono.id_assoc]
+  · rw [← iCycles_cubeBoundaryPairCycle, ← ConcreteCategory.comp_apply, IsSplitMono.id_assoc]
     exact hτ
 
 variable (k : Type) [CommRing k]
@@ -315,11 +323,8 @@ private lemma bijective_smul_homologyπ_cubeBoundaryPairCycle_add_two (n : ℕ) 
       (ChainComplex.homologyπ_kronecker_homologyClassOfComp (k := k) ψ hψd'
         (𝟙 (ModuleCat.of k k)))
       (cubeBoundaryPairCycle k (n + 1))
-    have hc : K.iCycles (n + 2) (cubeBoundaryPairCycle k (n + 1)) =
-        TopPair.cubicalChainOfCube k
-          (upCube.{0} (n + 2) : SingularCube (cubeBoundaryPair.{0} (n + 2)).fst (n + 2)) :=
-      TopPair.iCycles_cubicalCycleOfCube k _ _
-    rw [Category.comp_id, ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, hc, hψ] at h
+    rw [Category.comp_id, ConcreteCategory.comp_apply, ConcreteCategory.comp_apply,
+      iCycles_cubeBoundaryPairCycle, hψ] at h
     exact h
   -- `Hₙ₊₂(Iⁿ⁺², ∂Iⁿ⁺²; k) ≅ k` through relative singular homology.
   let e : K.homology (n + 2) ≃ₗ[k] k :=
@@ -489,14 +494,18 @@ def cubicalHomologyCubeBoundaryPairEquiv (m : ℕ) :
     (((cubeBoundaryPair.{0} (m + 1)).cubicalChainComplex k).homology (m + 1))
     (((cubeBoundaryPair.{0} (m + 1)).cubicalChainComplex k).homologyπ (m + 1)
       (cubeBoundaryPairCycle k m)))
-    (bijective_smul_homologyπ_cubeBoundaryPairCycle k m)
+    (by
+      convert bijective_smul_homologyπ_cubeBoundaryPairCycle k m using 1
+      funext a
+      exact LinearMap.toSpanSingleton_apply ..)
 
 @[simp]
 theorem cubicalHomologyCubeBoundaryPairEquiv_apply (m : ℕ) (a : k) :
     cubicalHomologyCubeBoundaryPairEquiv k m a =
       a • ((cubeBoundaryPair.{0} (m + 1)).cubicalChainComplex k).homologyπ (m + 1)
         (cubeBoundaryPairCycle k m) := by
-  exact LinearEquiv.ofBijective_apply _ _
+  rw [cubicalHomologyCubeBoundaryPairEquiv, LinearEquiv.ofBijective_apply,
+    LinearMap.toSpanSingleton_apply]
 
 /-! ### The fundamental cycle of the boundary generates -/
 
@@ -527,14 +536,18 @@ def cubicalHomologyCubeBoundaryEquiv (n : ℕ) :
   LinearEquiv.ofBijective (LinearMap.toSpanSingleton k _
     (((normalizedCubicalChainComplex k).obj (cubeBoundaryPair.{0} (n + 2)).snd).homologyπ (n + 1)
       (cubeBoundaryCycle k (n + 1))))
-    (bijective_smul_homologyπ_cubeBoundaryCycle k n)
+    (by
+      convert bijective_smul_homologyπ_cubeBoundaryCycle k n using 1
+      funext a
+      exact LinearMap.toSpanSingleton_apply ..)
 
 @[simp]
 theorem cubicalHomologyCubeBoundaryEquiv_apply (n : ℕ) (a : k) :
     cubicalHomologyCubeBoundaryEquiv k n a =
       a • ((normalizedCubicalChainComplex k).obj (cubeBoundaryPair.{0} (n + 2)).snd).homologyπ
         (n + 1) (cubeBoundaryCycle k (n + 1)) := by
-  exact LinearEquiv.ofBijective_apply _ _
+  rw [cubicalHomologyCubeBoundaryEquiv, LinearEquiv.ofBijective_apply,
+    LinearMap.toSpanSingleton_apply]
 
 end CommRing
 
