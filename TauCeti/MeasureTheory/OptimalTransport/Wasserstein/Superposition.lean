@@ -82,25 +82,6 @@ section Superposition
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
   [SecondCountableTopology E] [CompleteSpace E] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-omit [NormedSpace ℝ E] in
-/-- If the images of probability measures `η n` under a map `f` are eventually equal to a
-probability measure `ν`, then the family of images is tight. -/
-private theorem isTightMeasureSet_image_map_of_eventually_eq {Y : Type*} [MeasurableSpace Y]
-    (η : ℕ → Measure Y) [∀ n, IsProbabilityMeasure (η n)] (f : Y → E)
-    (ν : ProbabilityMeasure E) (m : ℕ) (h : ∀ n ≥ m, (η n).map f = (ν : Measure E)) :
-    IsTightMeasureSet ((fun P : Measure Y ↦ P.map f) '' range η) := by
-  refine (isTightMeasureSet_of_finite (((finite_Iio m).image fun n ↦ (η n).map f).insert
-    (ν : Measure E)) ?_).subset ?_
-  · rintro ρ (rfl | ⟨n, -, rfl⟩)
-    · infer_instance
-    · infer_instance
-  · rintro _ ⟨_, ⟨n, rfl⟩, rfl⟩
-    rcases lt_or_ge n m with hn | hn
-    · exact mem_insert_of_mem _ ⟨n, hn, rfl⟩
-    · dsimp only
-      rw [h n hn]
-      exact mem_insert _ _
-
 /-- The limit step of the superposition principle in a separable Banach space: a curve `μ`
 in `P_p(E)`, absolutely continuous on `[a, b]` with finite `p`-action, has a probability measure
 `ηlim` on `C([a, b], E)`, concentrated on absolutely continuous paths, of expected `p`-action at
@@ -142,7 +123,7 @@ private theorem exists_dense_eqOn_map_eval_lintegral_curveAction_le (hp1 : 1 < p
         (by rintro _ ⟨n, rfl⟩; exact hηA n)
     obtain ⟨m, hm⟩ := hD t ht
     exact isTightMeasureSet_image_map_of_eventually_eq η (fun γ : C(Icc a b, E) ↦ γ t)
-      (μ t : ProbabilityMeasure E) m hm
+      ((μ t : ProbabilityMeasure E) : Measure E) m hm
   -- By Prokhorov's theorem, a subsequence converges to a law `ηlim`.
   have hcpt : IsCompact (closure (range ηs)) := by
     refine isCompact_closure_of_isTightMeasureSet ?_
