@@ -38,38 +38,7 @@ public section
 
 namespace TauCeti.DynkinType
 
-open LieModule _root_.TauCeti.UniversalEnvelopingAlgebra
-
 variable (t : DynkinType) (ht : t.Valid)
-
-/-- The raising operator sends the first lowering of the fundamental highest weight vector
-back to that vector, with coefficient one. -/
-@[simp]
-theorem lie_lieBasis_e_lie_lieBasis_f_fundamentalModuleGenerator (i : Fin t.rank) :
-    ⁅(t.lieBasis ht).e i, ⁅(t.lieBasis ht).f i, t.fundamentalModuleGenerator ht i⁆⁆ =
-      t.fundamentalModuleGenerator ht i := by
-  have h := leibniz_lie ((t.lieBasis ht).e i) ((t.lieBasis ht).f i)
-    (t.fundamentalModuleGenerator ht i)
-  simpa only [(t.lieBasis ht).sl2 i |>.lie_e_f,
-    t.lie_lieBasis_e_fundamentalModuleGenerator ht, lie_zero, add_zero,
-    t.lie_lieBasis_h_fundamentalModuleGenerator_self ht] using h
-
-/-- Each simple raising or lowering operator preserves the fundamental lattice. -/
-theorem lie_rootGenerator_mem_fundamentalLattice (i : Fin t.rank)
-    (j : Fin t.rank ⊕ Fin t.rank) {x : t.fundamentalModule ht i}
-    (hx : x ∈ t.fundamentalLattice ht i) :
-    ⁅(t.lieBasis ht).rootGenerator j, x⁆ ∈ t.fundamentalLattice ht i := by
-  have hj := t.dividedPower_mem_kostantForm ht j 1
-  rw [Associative.dividedPower_one] at hj
-  simpa only [representation_ι_apply] using
-    t.representation_mem_fundamentalLattice ht hj hx
-
-/-- The first lowering of the highest weight vector belongs to the fundamental lattice. -/
-theorem lie_lieBasis_f_fundamentalModuleGenerator_mem_fundamentalLattice (i : Fin t.rank) :
-    ⁅(t.lieBasis ht).f i, t.fundamentalModuleGenerator ht i⁆ ∈ t.fundamentalLattice ht i := by
-  simpa only [LieAlgebra.Basis.rootGenerator_inr] using
-    t.lie_rootGenerator_mem_fundamentalLattice ht i (.inr i)
-      (t.fundamentalModuleGenerator_mem_fundamentalLattice ht i)
 
 /-- A rational linear combination of the two vectors in the fundamental rank-one string lies
 in the fundamental lattice exactly when both coefficients are integers. -/
@@ -81,17 +50,13 @@ theorem smul_add_smul_lie_fundamentalModuleGenerator_mem_fundamentalLattice_iff
     (∃ a : ℤ, (a : ℚ) = q) ∧ ∃ b : ℤ, (b : ℚ) = r := by
   constructor
   · intro hx
-    have he := t.lie_rootGenerator_mem_fundamentalLattice ht i (.inl i) hx
-    simp only [LieAlgebra.Basis.rootGenerator_inl, lie_add, lie_smul,
-      t.lie_lieBasis_e_fundamentalModuleGenerator ht,
-      t.lie_lieBasis_e_lie_lieBasis_f_fundamentalModuleGenerator ht,
-      smul_zero, zero_add] at he
-    have hf := t.lie_rootGenerator_mem_fundamentalLattice ht i (.inr i) hx
-    simp only [LieAlgebra.Basis.rootGenerator_inr, lie_add, lie_smul,
-      t.lie_lieBasis_f_lie_lieBasis_f_fundamentalModuleGenerator ht, smul_zero, add_zero] at hf
-    have hef := t.lie_rootGenerator_mem_fundamentalLattice ht i (.inl i) hf
-    simp only [LieAlgebra.Basis.rootGenerator_inl, lie_smul,
-      t.lie_lieBasis_e_lie_lieBasis_f_fundamentalModuleGenerator ht] at hef
+    have he : r • t.fundamentalModuleGenerator ht i ∈ t.fundamentalLattice ht i := by
+      simpa using t.lie_rootGenerator_mem_fundamentalLattice ht i (.inl i) hx
+    have hf : q • ⁅(t.lieBasis ht).f i, t.fundamentalModuleGenerator ht i⁆ ∈
+        t.fundamentalLattice ht i := by
+      simpa using t.lie_rootGenerator_mem_fundamentalLattice ht i (.inr i) hx
+    have hef : q • t.fundamentalModuleGenerator ht i ∈ t.fundamentalLattice ht i := by
+      simpa using t.lie_rootGenerator_mem_fundamentalLattice ht i (.inl i) hf
     exact ⟨(t.smul_fundamentalModuleGenerator_mem_fundamentalLattice_iff ht i q).mp hef,
       (t.smul_fundamentalModuleGenerator_mem_fundamentalLattice_iff ht i r).mp he⟩
   · rintro ⟨⟨a, rfl⟩, b, rfl⟩
@@ -124,15 +89,12 @@ theorem coe_fundamentalRankOneEmbedding (i : Fin t.rank) (a b : ℤ) :
 /-- The two integral string coefficients are independent. -/
 theorem fundamentalRankOneEmbedding_injective (i : Fin t.rank) :
     Function.Injective (t.fundamentalRankOneEmbedding ht i) := by
-  have : Module.IsTorsionFree ℤ (t.fundamentalModule ht i) := Module.IsTorsionFree.trans ℚ
   rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
   rintro ⟨a, b⟩ hx
   have hval := congrArg (fun x : t.fundamentalLattice ht i => (x : t.fundamentalModule ht i)) hx
   simp only [coe_fundamentalRankOneEmbedding, ZeroMemClass.coe_zero] at hval
-  have he := congrArg (fun x => ⁅(t.lieBasis ht).e i, x⁆) hval
-  simp only [lie_add, lie_smul, t.lie_lieBasis_e_fundamentalModuleGenerator ht,
-    t.lie_lieBasis_e_lie_lieBasis_f_fundamentalModuleGenerator ht,
-    smul_zero, zero_add, lie_zero] at he
+  have he : b • t.fundamentalModuleGenerator ht i = 0 := by
+    simpa using congrArg (fun x => ⁅(t.lieBasis ht).e i, x⁆) hval
   have hb : b = 0 := (smul_eq_zero.mp he).resolve_right
     (t.fundamentalModuleGenerator_ne_zero ht i)
   subst b
@@ -174,10 +136,6 @@ lattice. The complement is not asserted to be stable under the Lie algebra. -/
 theorem exists_isCompl_range_fundamentalRankOneEmbedding (i : Fin t.rank) :
     ∃ N : Submodule ℤ (t.fundamentalLattice ht i),
       IsCompl (t.fundamentalRankOneEmbedding ht i).range N := by
-  have : Module.IsTorsionFree ℤ (t.fundamentalModule ht i) := Module.IsTorsionFree.trans ℚ
-  have : Module.IsTorsionFree ℤ (t.fundamentalLattice ht i) :=
-    (t.fundamentalLattice ht i).subtype_injective.moduleIsTorsionFree
-      (t.fundamentalLattice ht i).subtype (fun _ _ => map_smul _ _ _)
   exact (Submodule.exists_isCompl_iff_isTorsionFree_quotient _).mpr
     ((t.fundamentalRankOneEmbedding ht i).range.isTorsionFree_quotient_of_smul_mem
       (t.mem_range_fundamentalRankOneEmbedding_of_smul_mem ht i))
