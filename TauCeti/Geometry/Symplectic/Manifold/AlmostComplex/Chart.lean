@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Trivialization
+public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.MFDeriv.Chart
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import TauCeti.Topology.VectorBundle.Coordinates
 
@@ -34,6 +36,12 @@ part of the equivalence; native tangent-frame transitions give coordinate conjug
 * `ContMDiffAlmostComplexStructure.inChart_extChartAt_eq_conj`: derivative conjugation on overlaps.
 
 * `TauCeti.SmoothAlmostComplexStructure.inChart`: the almost complex structure read in a chart.
+* `TauCeti.SmoothAlmostComplexStructure.inChart_apply_eq_mfderiv`,
+  `TauCeti.SmoothAlmostComplexStructure.inChart_extChartAt_apply_eq_mfderiv`: it is `J`
+  conjugated by the derivatives of the chart and of its inverse.
+* `TauCeti.SmoothAlmostComplexStructure.fderiv_extChartAt_comp_apply_eq_inChart`,
+  `TauCeti.SmoothAlmostComplexStructure.fderiv_comp_extChartAt_symm_inChart_apply`: relations
+  between derivatives of maps into and out of `M` involving `J` read in the chart.
 * `TauCeti.SmoothAlmostComplexStructure.inChart_inChart`: it squares to `-1` on the chart target.
 * `TauCeti.SmoothAlmostComplexStructure.inChart_extChartAt_self`: it is `J x` at the chart point.
 * `TauCeti.SmoothAlmostComplexStructure.fderivWithin_inChart_apply_apply`: its derivative at the
@@ -295,6 +303,70 @@ theorem inChart_extChartAt_apply {y : M} (hy : y ∈ (extChartAt I x).source) (u
   rw [(extChartAt I x).left_inv hy,
     Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) _ hy',
     Trivialization.symmL_apply _ hy']
+
+/-- On the chart target, the almost complex structure read in the chart is `J` at the
+corresponding point, conjugated by the derivatives of the chart and of its inverse. -/
+theorem inChart_apply_eq_mfderiv {z : E} (hz : z ∈ (extChartAt I x).target) (w : E) :
+    J.inChart x z w =
+      mfderiv I 𝓘(ℝ, E) (extChartAt I x) ((extChartAt I x).symm z)
+        (J ((extChartAt I x).symm z)
+          (mfderivWithin 𝓘(ℝ, E) I (extChartAt I x).symm (Set.range I) z w)) := by
+  have hz' : (extChartAt I x).symm z ∈ (chartAt H x).source := by
+    rw [← extChartAt_source I]
+    exact (extChartAt I x).map_target hz
+  rw [inChart_def, ContinuousLinearMap.inCoordinates,
+    TangentBundle.continuousLinearMapAt_trivializationAt hz',
+    TangentBundle.symmL_trivializationAt hz', (extChartAt I x).right_inv hz]
+  rfl
+
+/-- At the image of a point `y` of the chart at `x`, the almost complex structure read in the chart
+is `J y`, conjugated by the derivatives of the chart at `y` and of its inverse. -/
+theorem inChart_extChartAt_apply_eq_mfderiv {y : M} (hy : y ∈ (extChartAt I x).source) (w : E) :
+    J.inChart x (extChartAt I x y) w =
+      mfderiv I 𝓘(ℝ, E) (extChartAt I x) y
+        (J y (mfderivWithin 𝓘(ℝ, E) I (extChartAt I x).symm (Set.range I)
+          (extChartAt I x y) w)) := by
+  have hy' : y ∈ (chartAt H x).source := by rwa [← extChartAt_source I]
+  rw [inChart_def, (extChartAt I x).left_inv hy, ContinuousLinearMap.inCoordinates,
+    TangentBundle.continuousLinearMapAt_trivializationAt hy',
+    TangentBundle.symmL_trivializationAt hy']
+  rfl
+
+/-- Read in the extended chart `φ` at `x`, a relation `du(a) = J du(b)` between derivatives at `w`
+of a map `u` from a normed space becomes `d(φ ∘ u)(a) = J_φ d(φ ∘ u)(b)`, for the structure
+`J_φ = J.inChart x` read in the chart. -/
+theorem fderiv_extChartAt_comp_apply_eq_inChart {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {u : F → M} {w : F} (hu : MDifferentiableAt 𝓘(ℝ, F) I u w)
+    (hw : u w ∈ (extChartAt I x).source) {a b : F}
+    (h : mfderiv 𝓘(ℝ, F) I u w a = J (u w) (mfderiv 𝓘(ℝ, F) I u w b)) :
+    fderiv ℝ (extChartAt I x ∘ u) w a =
+      J.inChart x ((extChartAt I x ∘ u) w) (fderiv ℝ (extChartAt I x ∘ u) w b) := by
+  have hinv := congr($(mfderivWithin_extChartAt_symm_comp_mfderiv_extChartAt' hw)
+    (mfderiv 𝓘(ℝ, F) I u w b))
+  rw [hu.fderiv_extChartAt_comp_apply hw, hu.fderiv_extChartAt_comp_apply hw,
+    Function.comp_apply, h]
+  exact (congrArg _ (congrArg _ hinv)).symm.trans
+    (J.inChart_extChartAt_apply_eq_mfderiv x hw _).symm
+
+/-- On the chart target, the derivative of the coordinate expression `f ∘ φ⁻¹` of a map `f` into a
+normed space, applied after the structure `J.inChart x` read in the chart `φ` at `x`, is the
+derivative of `f` applied after `J`. -/
+theorem fderiv_comp_extChartAt_symm_inChart_apply {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {f : M → F} {z : E} (hz : z ∈ (extChartAt I x).target)
+    (hf : DifferentiableAt ℝ (f ∘ (extChartAt I x).symm) z) (w : E) :
+    fderiv ℝ (f ∘ (extChartAt I x).symm) z (J.inChart x z w) =
+      mvfderiv I f ((extChartAt I x).symm z)
+        (J ((extChartAt I x).symm z)
+          (mfderivWithin 𝓘(ℝ, E) I (extChartAt I x).symm (Set.range I) z w)) := by
+  have hy := (extChartAt I x).map_target hz
+  have h := congr($(mfderiv_eq_fderiv_comp_mfderiv_extChartAt (f := f) hy
+    (by rwa [(extChartAt I x).right_inv hz]))
+    (J ((extChartAt I x).symm z)
+      (mfderivWithin 𝓘(ℝ, E) I (extChartAt I x).symm (Set.range I) z w)))
+  rw [(extChartAt I x).right_inv hz] at h
+  rw [J.inChart_apply_eq_mfderiv x hz]
+  -- `h` is the chain rule, up to the identifications of tangent spaces of `E` and `F`.
+  exact h.symm
 
 /-- In the chart, the almost complex structure still squares to `-1`. -/
 theorem inChart_inChart {z : E} (hz : z ∈ (extChartAt I x).target) (w : E) :

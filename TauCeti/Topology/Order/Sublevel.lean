@@ -45,8 +45,12 @@ homotopy fixing `{f ≤ a}` pointwise (`TauCeti.exists_sublevelDeformation_of_ap
 of the deformation of sublevels across a band without critical points, where the motion is the
 flow of a vector field `X` with `df(X) = -1` on the band. The sublevels form the topological pair
 `TauCeti.sublevelPair f : ({f ≤ b}, {f ≤ a})`, whose relative homology measures the change in
-topology across the band. All sublevels together form the functor `TauCeti.sublevelFunctor f` from
-the levels to spaces, with the cocone `TauCeti.sublevelCocone f` of their inclusions into `X`.
+topology across the band. The band itself, relative to its lower level, is the pair
+`TauCeti.bandPair f : (f⁻¹[a, b], f⁻¹(a))`, which includes into the sublevel pair by
+`TauCeti.bandPairInclusion`; when `f⁻¹[a, b]` is a cobordism between regular levels, this is the
+cobordism relative to its incoming boundary. All sublevels together form the functor
+`TauCeti.sublevelFunctor f` from the levels to spaces, with the cocone `TauCeti.sublevelCocone f`
+of their inclusions into `X`.
 
 If the motion is a flow along whose lines `f` never increases, then its time-`(b - a)` map carries
 `{f ≤ b}` exactly onto `{f ≤ a}` (`Flow.apply_le_iff_of_apply_eq_sub`), and, when `f`
@@ -218,6 +222,30 @@ abbrev sublevelPair {X : Type*} [TopologicalSpace X] {β : Type*} [Preorder β] 
     {a b : β} (hab : a ≤ b) : TopPair :=
   TopPair.ofInclusion (X := TopCat.of X) (sublevel_mono f hab)
 
+/-- The band pair `(f⁻¹[a, b], f⁻¹(a))` of a function `f` for `a ≤ b`: the band of values between
+`a` and `b`, relative to its lower level. -/
+abbrev bandPair {X : Type*} [TopologicalSpace X] {β : Type*} [Preorder β] (f : X → β) {a b : β}
+    (hab : a ≤ b) : TopPair :=
+  TopPair.ofInclusion (X := TopCat.of X) (preimage_mono (singleton_subset_iff.2 ⟨le_rfl, hab⟩) :
+    f ⁻¹' {a} ⊆ f ⁻¹' Icc a b)
+
+/-- The inclusion `(f⁻¹[a, b], f⁻¹(a)) ⟶ ({f ≤ b}, {f ≤ a})` of the band pair into the sublevel
+pair. -/
+def bandPairInclusion {X : Type*} [TopologicalSpace X] {β : Type*} [Preorder β] (f : X → β)
+    {a b : β} (hab : a ≤ b) : bandPair f hab ⟶ sublevelPair f hab :=
+  TopPair.ofInclusionMap _ _ (ContinuousMap.inclusion fun _ hx ↦ (hx : f _ ∈ Icc a b).2)
+    fun _ hx ↦ (hx : f _ = a).le
+
+/-- On ambient spaces, the inclusion of the band pair into the sublevel pair is the inclusion of
+the band `f⁻¹[a, b]` into the sublevel `{f ≤ b}`. -/
+@[simp]
+theorem bandPairInclusion_fst {X : Type*} [TopologicalSpace X] {β : Type*} [Preorder β]
+    (f : X → β) {a b : β} (hab : a ≤ b) :
+    TopPair.Hom.fst (bandPairInclusion f hab) =
+      TopCat.ofHom (ContinuousMap.inclusion fun _ hx ↦ (hx : f _ ∈ Icc a b).2) := by
+  ext x
+  exact TopPair.ofInclusionMap_fst_apply _ _ x
+
 section Functor
 
 open CategoryTheory Limits
@@ -243,14 +271,15 @@ end Functor
 /-- **Deformation of sublevels along a unit-speed descent.** Let `φ t` be a continuous motion of
 `X`, with `φ 0` the identity, which lowers `f` at unit speed through the band `a ≤ f ≤ b`: if
 `f x ≤ b` and `f x - t ≥ a` with `t ≥ 0`, then `f (φ t x) = f x - t`. Moving each point of
-`{f ≤ b}` until it reaches the level `a` is a retraction `r` of `{f ≤ b}` onto `{f ≤ a}`, and moving
-it only part of the way is a homotopy from the inclusion of `r` to the identity fixing `{f ≤ a}`
-pointwise. -/
+`{f ≤ b}` for the time `max (f x - a) 0`, which brings it to the level `a` if `a ≤ f x` and leaves
+it fixed if `f x ≤ a`, is a retraction `r` of `{f ≤ b}` onto `{f ≤ a}`, and moving it only part of
+the way is a homotopy from the inclusion of `r` to the identity fixing `{f ≤ a}` pointwise. -/
 theorem exists_sublevelDeformation_of_apply_eq_sub {X : Type*} [TopologicalSpace X] {f : X → ℝ}
     (hf : Continuous f) {a b : ℝ} (hab : a ≤ b) (φ : ℝ → X → X)
     (hφ : Continuous (Function.uncurry φ)) (hφ0 : ∀ x, φ 0 x = x)
     (hφf : ∀ x t, 0 ≤ t → a ≤ f x - t → f x ≤ b → f (φ t x) = f x - t) :
     ∃ r : C({x | f x ≤ b}, {x | f x ≤ a}),
+      (∀ x, (r x : X) = φ (max (f x - a) 0) x) ∧
       (∀ x, r (sublevelInclusion f a b hab x) = x) ∧
       Nonempty (ContinuousMap.HomotopyRel
         ((sublevelInclusion f a b hab).comp r)
@@ -276,7 +305,7 @@ theorem exists_sublevelDeformation_of_apply_eq_sub {X : Type*} [TopologicalSpace
     ⟨⟨fun x ↦ ⟨φ (τ x.1) x.1, hra x⟩,
       (hφ.comp ((hτ.comp continuous_subtype_val).prodMk continuous_subtype_val)).subtype_mk _⟩,
       fun _ ↦ rfl⟩
-  refine ⟨r, fun x ↦ Subtype.ext ?_, ⟨?_⟩⟩
+  refine ⟨r, hr, fun x ↦ Subtype.ext ?_, ⟨?_⟩⟩
   · simp [hr, hτ0 x.1 x.2, hφ0]
   have hHb : ∀ p : unitInterval × {x | f x ≤ b},
       φ ((1 - (p.1 : ℝ)) * τ p.2.1) p.2.1 ∈ {x | f x ≤ b} := fun p ↦ by
