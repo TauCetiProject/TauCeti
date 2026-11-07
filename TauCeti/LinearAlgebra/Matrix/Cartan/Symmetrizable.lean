@@ -136,8 +136,7 @@ theorem cartan_map_eq_diagonal_inv_mul [Fintype I] [DecidableEq I] {R : Type*}
     A.cartan.map (Int.cast : ℤ → R) =
       diagonal (fun i => ((A.symmetrizer i : R))⁻¹) * A.symmetrizedMatrix.map Int.cast := by
   ext i j
-  have hd : (A.symmetrizer i : R) ≠ 0 := Nat.cast_ne_zero.mpr (A.symmetrizer_ne_zero i)
-  simp [hd]
+  simp
 
 /-! ### Restriction, reindexing and direct sums -/
 
@@ -274,8 +273,7 @@ theorem mul_symmetrizer_eq_mul_symmetrizer_of_isIndecomposable [Finite I] {R : T
   | refl => rfl
   | @tail k l _ hkl ih =>
     have hkl' := A.mul_symmetrizer_eq_of_cartan_ne_zero hx hkl
-    have hk : (A.symmetrizer k : R) ≠ 0 := Nat.cast_ne_zero.mpr (A.symmetrizer_ne_zero k)
-    apply mul_left_cancel₀ hk
+    apply mul_left_cancel₀ (by simp : (A.symmetrizer k : R) ≠ 0)
     linear_combination (A.symmetrizer l : R) * ih + (A.symmetrizer i : R) * hkl'
 
 /-- Two symmetrizers of an indecomposable generalized Cartan matrix differ by a positive
@@ -300,10 +298,14 @@ theorem exists_pos_symmetrizer_eq_mul_of_isIndecomposable [Finite I]
 
 variable [Fintype I]
 
+/-- The greatest common divisor of the entries of the symmetrizer divides each entry. -/
+theorem gcd_symmetrizer_dvd (i : I) : Finset.univ.gcd A.symmetrizer ∣ A.symmetrizer i :=
+  Finset.gcd_dvd (Finset.mem_univ i)
+
 /-- The greatest common divisor of the entries of the symmetrizer is positive. -/
 theorem gcd_symmetrizer_pos [Nonempty I] : 0 < Finset.univ.gcd A.symmetrizer :=
   have ⟨i⟩ := ‹Nonempty I›
-  Nat.pos_of_dvd_of_pos (Finset.gcd_dvd (Finset.mem_univ i)) (A.symmetrizer_pos i)
+  Nat.pos_of_dvd_of_pos (A.gcd_symmetrizer_dvd i) (A.symmetrizer_pos i)
 
 /-- The datum with the same generalized Cartan matrix and the symmetrizer divided by the
 greatest common divisor of its entries. -/
@@ -315,16 +317,16 @@ def normalizeSymmetrizer : SymmetrizableDatum I where
   symmetrizer i := A.symmetrizer i / Finset.univ.gcd A.symmetrizer
   symmetrizer_pos i :=
     have : Nonempty I := ⟨i⟩
-    Nat.div_pos (Nat.le_of_dvd (A.symmetrizer_pos i) (Finset.gcd_dvd (Finset.mem_univ i)))
+    Nat.div_pos (Nat.le_of_dvd (A.symmetrizer_pos i) (A.gcd_symmetrizer_dvd i))
       A.gcd_symmetrizer_pos
   symmetrizes i j := by
     have : Nonempty I := ⟨i⟩
-    -- Multiply both sides by the gcd `g` and use `g * (d i / g) = d i`.
+    -- Multiply both sides by the gcd `g` and use `d k = g * (d k / g)` for `k = i, j`.
+    have hd (k : I) : (A.symmetrizer k : ℤ) =
+        Finset.univ.gcd A.symmetrizer * (A.symmetrizer k / Finset.univ.gcd A.symmetrizer : ℕ) := by
+      exact_mod_cast (Nat.mul_div_cancel' (A.gcd_symmetrizer_dvd k)).symm
     apply mul_left_cancel₀ (Int.natCast_ne_zero.mpr A.gcd_symmetrizer_pos.ne')
-    rw [← mul_assoc, ← mul_assoc, ← Nat.cast_mul, ← Nat.cast_mul,
-      Nat.mul_div_cancel' (Finset.gcd_dvd (Finset.mem_univ i)),
-      Nat.mul_div_cancel' (Finset.gcd_dvd (Finset.mem_univ j))]
-    exact A.symmetrizes i j
+    linear_combination A.symmetrizes i j - A.cartan i j * hd i + A.cartan j i * hd j
 
 @[simp]
 theorem normalizeSymmetrizer_cartan : A.normalizeSymmetrizer.cartan = A.cartan :=
@@ -339,9 +341,10 @@ theorem normalizeSymmetrizer_symmetrizer (i : I) :
 symmetrizer. -/
 theorem symmetrizer_eq_gcd_mul_normalizeSymmetrizer (i : I) :
     A.symmetrizer i = Finset.univ.gcd A.symmetrizer * A.normalizeSymmetrizer.symmetrizer i :=
-  (Nat.mul_div_cancel' (Finset.gcd_dvd (Finset.mem_univ i))).symm
+  (Nat.mul_div_cancel' (A.gcd_symmetrizer_dvd i)).symm
 
 /-- The entries of the normalized symmetrizer are coprime. -/
+@[simp]
 theorem gcd_normalizeSymmetrizer_symmetrizer [Nonempty I] :
     Finset.univ.gcd A.normalizeSymmetrizer.symmetrizer = 1 := by
   obtain ⟨i₀⟩ := ‹Nonempty I›
@@ -361,12 +364,10 @@ theorem normalizeSymmetrizer_eq_of_isIndecomposable (hA : A.cartan.IsIndecomposa
   set p' := A'.normalizeSymmetrizer.symmetrizer
   have hx : ∀ i j, (p' i : ℤ) * A.normalizeSymmetrizer.cartan i j =
       p' j * A.normalizeSymmetrizer.cartan j i := by
-    intro i j
-    rw [normalizeSymmetrizer_cartan, ← h, ← normalizeSymmetrizer_cartan]
-    exact A'.normalizeSymmetrizer.symmetrizes i j
+    simpa only [normalizeSymmetrizer_cartan, h] using A'.normalizeSymmetrizer.symmetrizes
   have key (i j : I) : p' i * p j = p' j * p i := by
     exact_mod_cast A.normalizeSymmetrizer.mul_symmetrizer_eq_mul_symmetrizer_of_isIndecomposable
-      hA hx i j
+      (by rwa [normalizeSymmetrizer_cartan]) hx i j
   ext j : 2
   · simp [h]
   -- Take the greatest common divisor over `i` of both sides of `p' i * p j = p' j * p i`.
@@ -404,15 +405,19 @@ theorem toSymmetrizableDatum_cartan (hM : M.IsFiniteCartan) :
     hM.toSymmetrizableDatum.cartan = M :=
   (rfl)
 
+/-- The symmetrizer of `hM.toSymmetrizableDatum`, cast to `ℤ`, is the positive family chosen
+from the field `exists_posDef` of `hM`. -/
+@[simp]
+theorem natCast_toSymmetrizableDatum_symmetrizer (hM : M.IsFiniteCartan) (i : ι) :
+    (hM.toSymmetrizableDatum.symmetrizer i : ℤ) = hM.exists_posDef.choose i :=
+  Int.toNat_of_nonneg (hM.exists_posDef.choose_spec.1 i).le
+
 /-- The symmetrized matrix of `hM.toSymmetrizableDatum` is positive definite. -/
 theorem posDef_symmetrizedMatrix_toSymmetrizableDatum (hM : M.IsFiniteCartan) :
     hM.toSymmetrizableDatum.symmetrizedMatrix.PosDef := by
-  obtain ⟨hpos, hdef⟩ := hM.exists_posDef.choose_spec
-  rw [TauCeti.SymmetrizableDatum.symmetrizedMatrix_eq_diagonal_mul]
-  convert hdef using 3
-  · funext i
-    exact Int.toNat_of_nonneg (hpos i).le
-  · rfl
+  simpa only [TauCeti.SymmetrizableDatum.symmetrizedMatrix_eq_diagonal_mul,
+    natCast_toSymmetrizableDatum_symmetrizer, toSymmetrizableDatum_cartan]
+    using hM.exists_posDef.choose_spec.2
 
 end Matrix.IsFiniteCartan
 
