@@ -128,30 +128,7 @@ theorem exists_hypersurface_presentation_of_formallyUnramified (b : Basis ι Q �
   obtain ⟨s₀, hloc, y, b', hQy, hy', hb', hf2, φ, hφ⟩ := this
   -- The differentials of the relations `g s` with `s ≠ s₀` and of the `yⱼ` form a basis of
   -- `Ω[Q⁄K]`, so `P` is formally smooth by the Jacobian criterion.
-  have hsmooth : Algebra.FormallySmooth K (Q ⧸ Ideal.span (g '' {s₀}ᶜ)) := by
-    classical
-    set T : Set σ := {s₀}ᶜ
-    set δ : ι → Derivation K Q Q := fun i ↦ (b₀.coord i).compDer (D K Q)
-    have hD (i j : ι) : δ i (x j) = if i = j then 1 else 0 := by
-      simp [δ, ← hb₀, Finsupp.single_apply, eq_comm]
-    set w : T ⊕ Fin 2 → Q := Sum.elim (fun t ↦ g t) y
-    have hw : ∀ k, w k ∈ maximalIdeal Q := by
-      rw [hQy]
-      exact Sum.forall.2 ⟨fun t ↦ Ideal.mem_sup_left (Ideal.subset_span ⟨t, t.2, rfl⟩),
-        fun j ↦ Ideal.mem_sup_right (Ideal.subset_span ⟨j, rfl⟩)⟩
-    have hspan := span_residue_apply_eq_top_of_le_span_sup_sq
-      (fun i ↦ hx ▸ Ideal.subset_span ⟨i, rfl⟩) hD hw (by
-        rw [Set.Sum.elim_range, Ideal.span_union, ← Set.image_eq_range, ← hQy]
-        exact le_sup_left)
-    have hcard : Fintype.card (T ⊕ Fin 2) = Fintype.card ι := by
-      rw [Fintype.card_sum, Fintype.card_fin, Fintype.card_compl_set, Set.card_singleton]
-      have := Fintype.card_pos_iff.2 ⟨s₀⟩
-      omega
-    obtain ⟨b₂, hb₂⟩ := IsLocalRing.exists_basis_of_linearIndependent_residue_coord b₀ hcard
-      (v := fun k ↦ D K Q (w k)) (linearIndependent_of_top_le_span_of_card_eq_finrank hspan.ge
-        (by rw [Module.finrank_fintype_fun_eq_card, hcard]))
-    rw [Set.image_eq_range] at hloc ⊢
-    exact formallySmooth_quotient_of_basis_kaehlerDifferential b₂ fun t ↦ hb₂ (.inl t)
+  have hsmooth := formallySmooth_quotient_compl_of_coordinates b₀ hx hb₀ hσ s₀ y hQy hloc
   -- `φ` is a `K`-algebra isomorphism, so it carries the singular locus of `A` to that of `P ⧸ (f)`,
   -- which is therefore unramified and contains the closed point.
   let φ' : ((Q ⧸ Ideal.span (g '' {s₀}ᶜ)) ⧸
