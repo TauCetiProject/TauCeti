@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Compactness.LocallyCompact
+public import Mathlib.Topology.Sets.Opens
+import Mathlib.Topology.Separation.Regular
 
 /-!
 # Local compactness from an open cover, and lifting compact sets along open maps
@@ -15,6 +17,10 @@ Local compactness follows from an open cover whose members are locally compact.
 Along an open surjection out of a weakly locally compact space, every compact subset of the
 codomain lies in the image of a compact set. This is how a compactness statement about a quotient,
 such as a group modulo a kernel, is pulled back to the group.
+
+A continuous injection out of a locally compact space into a Hausdorff space is a
+topological embedding on an open neighbourhood of any compact set
+(`Continuous.exists_opens_isEmbedding_restrict`).
 -/
 
 public section
@@ -50,3 +56,18 @@ theorem IsOpenMap.exists_isCompact_subset_image {X Y : Type*} [TopologicalSpace 
     simpa only [hg] using hf.image_mem_nhds (hmem (g y))
   refine ⟨⋃ y ∈ I, s (g y), I.isCompact_biUnion fun _ _ ↦ hc _, ?_⟩
   rwa [image_iUnion₂]
+
+/-- A continuous injection from a locally compact space into a Hausdorff space restricts
+to a topological embedding on some open neighbourhood of any compact set. -/
+theorem Continuous.exists_opens_isEmbedding_restrict {X Y : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] [LocallyCompactSpace X] [T2Space Y] {f : X → Y}
+    (hf : Continuous f) (hinj : Function.Injective f) {K : Set X} (hK : IsCompact K) :
+    ∃ W : TopologicalSpace.Opens X, K ⊆ W ∧ IsEmbedding fun q : W => f q := by
+  have := T2Space.of_injective_continuous hinj hf
+  obtain ⟨W, hW, hKW, -, hcW⟩ :=
+    exists_open_between_and_isCompact_closure hK isOpen_univ (subset_univ _)
+  have : CompactSpace (closure W) := isCompact_iff_compactSpace.mp hcW
+  have h : IsEmbedding fun q : closure W => f q :=
+    ((hf.comp continuous_subtype_val).isClosedEmbedding
+      (hinj.comp Subtype.val_injective)).isEmbedding
+  exact ⟨⟨W, hW⟩, hKW, h.comp (IsEmbedding.inclusion (subset_closure : W ⊆ closure W))⟩

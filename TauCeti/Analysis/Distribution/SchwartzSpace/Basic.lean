@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
+import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
+import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
 
 /-!
 # Weighted bounds and integrability of Schwartz functions
@@ -25,8 +27,12 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
 * `SchwartzMap.integrable_inner`: `⟪f x, g x⟫` is integrable.
 * `SchwartzMap.integrable_one_add_norm_sq_rpow_mul_norm`: `(1 + ‖x‖ ^ 2) ^ r ‖f x‖` is integrable
   for every real `r`.
+* `SchwartzMap.integrable_one_add_norm_smul_sq_rpow_mul_norm`: `⟨c x⟩ ^ m ‖f x‖` is integrable
+  against any measure of temperate growth.
 * `SchwartzMap.integral_norm_sq_eq_zero_iff`: a Schwartz function vanishes exactly when the
   integral of its squared norm does, for a measure charging every nonempty open set.
+* `TauCeti.eq_zero_of_forall_integral_apply_eq_zero`: a continuous operator-valued function that
+  integrates to zero against every Schwartz function vanishes.
 -/
 
 public section
@@ -131,4 +137,43 @@ theorem integrable_one_add_norm_sq_rpow_mul_norm {V : Type*} [NormedAddCommGroup
   dsimp only
   rw [smulLeftCLM_apply_apply hg, norm_smul, Real.norm_of_nonneg (by positivity)]
 
+omit [SecondCountableTopology E] in
+/-- For a Schwartz function `f` and real `c`, `m`, the function
+`⟨c x⟩ ^ m ‖f x‖ = (1 + ‖c x‖ ^ 2) ^ (m / 2) ‖f x‖` is integrable. -/
+theorem integrable_one_add_norm_smul_sq_rpow_mul_norm (c m : ℝ) (f : 𝓢(E, F)) :
+    Integrable (fun x ↦ (1 + ‖c • x‖ ^ 2) ^ (m / 2) * ‖f x‖) μ :=
+  ((Measure.integrable_pow_neg_integrablePower μ).const_mul _).mono'
+    ((((continuous_const.add ((continuous_const_smul _).norm.pow 2)).rpow_const
+      fun x ↦ Or.inl (by positivity : (1 : ℝ) + ‖c • x‖ ^ 2 ≠ 0)).mul
+        f.continuous.norm).aestronglyMeasurable)
+    (.of_forall fun x ↦ by
+      rw [Real.norm_of_nonneg (by positivity)]
+      exact f.one_add_norm_smul_sq_rpow_mul_norm_le (𝕜 := ℝ) c m μ.integrablePower x)
+
 end SchwartzMap
+
+namespace TauCeti
+
+open scoped SchwartzMap
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [IsLocallyFiniteMeasure μ]
+  [μ.IsOpenPosMeasure]
+  {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W]
+  [CompleteSpace W]
+
+/-- A continuous function `g : E → V →L[ℂ] W` such that `∫ g ζ (f ζ) ∂μ = 0` for every Schwartz
+function `f`, against a locally finite measure charging every nonempty open set, vanishes. -/
+theorem eq_zero_of_forall_integral_apply_eq_zero {g : E → V →L[ℂ] W} (hg : Continuous g)
+    (h : ∀ f : 𝓢(E, V), ∫ ζ, g ζ (f ζ) ∂μ = 0) (ζ : E) : g ζ = 0 := by
+  ext v
+  -- Test against `f = φ • v` with `φ` real, smooth and compactly supported.
+  have hgv : Continuous fun ζ ↦ g ζ v := hg.clm_apply continuous_const
+  have hae : ∀ᵐ η ∂μ, g η v = 0 := by
+    refine ae_eq_zero_of_integral_contDiff_smul_eq_zero hgv.locallyIntegrable fun φ hφ hφc ↦ ?_
+    have hf : HasCompactSupport fun η ↦ φ η • v := hφc.smul_right
+    simpa [ContinuousLinearMap.map_smul_of_tower] using
+      h (hf.toSchwartzMap (hφ.smul contDiff_const))
+  exact congrFun ((hgv.ae_eq_iff_eq μ continuous_zero).1 hae) ζ
+
+end TauCeti
