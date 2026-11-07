@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.MaximumPrinciple.Parabolic.NonDivergence
 
-import TauCeti.Algebra.Order.Field.PolynomialBarrier
+import TauCeti.Algebra.Order.Field.Basic
 
 /-!
 # The comparison principle for parabolic equations on the whole space
