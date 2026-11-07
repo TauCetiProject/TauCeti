@@ -7,8 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.Sard.FlatStratum
 public import TauCeti.Analysis.Calculus.Sard.IntermediateStratum
-import TauCeti.Analysis.Calculus.Sard.EqualDimension
-import TauCeti.Analysis.Calculus.Sard.LowDimension
+import TauCeti.Analysis.Calculus.Sard.LowEqualDimension
 import TauCeti.MeasureTheory.Measure.Haar.Hausdorff
 import TauCeti.MeasureTheory.Measure.LocallyNull
 
@@ -297,22 +296,6 @@ theorem addHaar_image_eq_zero_of_iteratedFDeriv_ne_zero {i : ℕ} (hi : 1 ≤ i)
   refine himg.trans_lt ((ENNReal.div_le_div_right hdimt _).trans_lt ?_)
   rw [ENNReal.div_lt_iff (Or.inl (by simp)) (Or.inl (by simp)), mul_comm]
   exact_mod_cast (by omega : finrank ℝ ↥g'.ker < (i + 1) * finrank ℝ F)
-
-/-- A map whose derivative vanishes along `s` sends `s` to a null set when the source has
-dimension at most that of the target: below it the whole image is null, and at equal dimension
-every point of `s` is critical. -/
-private theorem addHaar_image_eq_zero_of_finrank_le_finrank (hEF : finrank ℝ E ≤ finrank ℝ F)
-    (hdiff : ∀ x ∈ s, DifferentiableAt ℝ f x) (hs : ∀ x ∈ s, fderiv ℝ f x = 0) :
-    ν (f '' s) = 0 := by
-  rcases hEF.lt_or_eq with hEF | hEF
-  · exact DifferentiableOn.addHaar_image_eq_zero_of_finrank_lt_finrank ν
-      (fun x hx ↦ (hdiff x hx).differentiableWithinAt) hEF
-  · borelize E
-    refine addHaar_image_eq_zero_of_not_surjective_fderivWithin ν hEF
-      (fun x hx ↦ (hdiff x hx).hasFDerivAt.hasFDerivWithinAt) fun x hx hsurj ↦ ?_
-    obtain ⟨y, hy⟩ := exists_ne (0 : F)
-    obtain ⟨v, hv⟩ := hsurj y
-    exact hy (by rw [← hv, hs x hx, zero_apply])
 
 /-- The induction behind `TauCeti.addHaar_image_eq_zero_of_fderiv_eq_zero_of_finrank_le_add_two`,
 on the dimension `m` of the source, at the sharp regularity `finrank ℝ E - finrank ℝ F + 1`. -/
