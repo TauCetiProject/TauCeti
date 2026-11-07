@@ -330,18 +330,6 @@ private theorem symmetricAlgebraMapIso_hom_single_notMem_range (i : Fin 2) :
   · simpa using (Pi.basisFun k (Fin 2)).toDual_apply 1 0
   · simpa using (Pi.basisFun k (Fin 2)).toDual_apply 0 1
 
-/-- Under the identification of the projective line with the projective spectrum of the symmetric
-algebra, the orbit map of `[1 : 1]` is the chart `D₊(X₁)` composed with the open immersion
-`k[T] → k[T;T⁻¹]`. -/
-private theorem symmetricAlgebraMapIso_hom_projectiveOrbitMap_one
-    (y : Spec (.of k[T;T⁻¹])) :
-    (Proj.symmetricAlgebraMapIso k (Pi.basisFun k (Fin 2)).toDualEquiv).hom
-        (projectiveOrbitMap (H := k[T;T⁻¹]) (1 : Fin 2 → k) (isUnimodular_one k) y) =
-      AlgebraicGeometry.projectiveLine.polynomialChartι k 1
-        (Spec.map (CommRingCat.ofHom (Polynomial.toLaurent : Polynomial k →+* k[T;T⁻¹])) y) := by
-  rw [← Scheme.Hom.comp_apply, projectiveOrbitMap_one_comp_symmetricAlgebraMapIso_hom,
-    Scheme.Hom.comp_apply]
-
 /-- The orbit of `[1 : 1]` consists of all points of the projective line except the two fixed
 points `[1 : 0]` and `[0 : 1]`, nonclosed points included. -/
 theorem range_projectiveOrbitMap_one :
@@ -394,8 +382,9 @@ theorem range_projectiveOrbitMap_one :
       (algebraMap (Polynomial k) k[T;T⁻¹])) := by
     rw [PrimeSpectrum.localization_away_comap_range k[T;T⁻¹] Polynomial.X]
     exact hX
-  exact ⟨p, he ((symmetricAlgebraMapIso_hom_projectiveOrbitMap_one k p).trans
-    ((congrArg _ hp).trans hq))⟩
+  exact ⟨p, he ((congrArg (fun f ↦ f p)
+    (projectiveOrbitMap_one_comp_symmetricAlgebraMapIso_hom k)).trans
+      ((congrArg _ hp).trans hq))⟩
 
 /-- The boundary of the orbit of `[1 : 1]` consists exactly of the two fixed points `[1 : 0]`
 and `[0 : 1]`. -/
