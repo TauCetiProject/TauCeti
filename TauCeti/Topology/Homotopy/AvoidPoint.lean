@@ -22,11 +22,11 @@ of `φ⁻¹(B)`.
 This is the key lemma behind cellular approximation, where `D` is a cube or a disk, `Y` is a
 complex `Z ∪ eⁿ` with a cell attached, and `φ` is the inverse of the characteristic map on the
 open cell. Hatcher's proof approximates `f` by a map that is linear on the simplices of a fine
-subdivision. Here the approximation is smooth instead:
+subdivision. Here the approximation is differentiable instead:
 
 * by the Tietze extension theorem, `φ ∘ f` restricted to the closed set of points sent into
   `φ⁻¹(closedBall c (r / 2))` extends to a continuous map `E → F`, which Mathlib approximates
-  uniformly within `r / 8` by a smooth map `G : E → F`
+  uniformly within `r / 8` by a differentiable map `G : E → F`
   (`Continuous.exists_contDiff_approx`);
 * since `dim E < dim F`, the complement of the range of `G` is dense
   (`Differentiable.dense_compl_range_of_finrank_lt_finrank`), so some point `p` of
@@ -135,8 +135,8 @@ variable {E F Y : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   [TopologicalSpace Y] [T2Space Y]
 
-/-- A smooth map `G : E → F` approximating `φ ∘ f` within `r / 8` on the points sent into the
-chart `closedBall c (r / 2)`, together with a point `p` of `ball c (r / 8)` that `G` misses. -/
+/-- A differentiable map `G : E → F` approximating `φ ∘ f` within `r / 8` on the points sent into
+the chart `closedBall c (r / 2)`, together with a point `p` of `ball c (r / 8)` that `G` misses. -/
 private lemma exists_differentiable_approx_notMem_range {D : Set E} (f : C(D, Y))
     (hD : IsClosed D) (hEF : finrank ℝ E < finrank ℝ F) (φ : OpenPartialHomeomorph Y F) {c : F}
     {r : ℝ} (hr : 0 < r) (hφ : ball c r ⊆ φ.target) :
