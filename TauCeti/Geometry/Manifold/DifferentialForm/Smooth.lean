@@ -356,7 +356,7 @@ theorem contMDiff_eval₂ {n : WithTop ℕ∞} [ENat.LEInfty n]
   have hb : ContMDiff I' I n b := fun y ↦ by
     have hy := hU y
     rw [← contMDiffWithinAt_univ] at hy ⊢
-    exact (contMDiffWithinAt_totalSpace.mp hy).1
+    exact (contMDiffWithinAt_totalSpace_iff.mp hy).1
   have hφ := (φ.toContMDiffSection.contMDiff.of_le ENat.LEInfty.out).comp hb
   have hφ' : ContMDiff I' (I.prod 𝓘(ℝ, E [⋀^Fin 2]→L[ℝ] F)) n
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin 2]→L[ℝ] F)
@@ -462,7 +462,8 @@ theorem isSmoothForm_iff_forall_contMDiffAt_trivializationAt_apply [IsManifold I
       (fun y ↦ φ y ((trivializationAt E (TangentSpace I) x).symmL ℝ y ∘ v)) x := by
   rw [isSmoothForm_def]
   refine forall_congr' fun x ↦ ?_
-  simp only [contMDiffAt_section, FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd,
+  simp only [contMDiffAt_section_iff,
+    FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd,
     contMDiffAt_continuousAlternatingMap_apply,
     ContinuousAlternatingMap.compContinuousLinearMap_apply]
 
@@ -740,7 +741,7 @@ lemma contMDiff_apply {n : WithTop ℕ∞} [ENat.LEInfty n]
   have h := SmoothBundleForm.contMDiff_eval₂ form hV hW
   intro y₀
   have hy := h y₀
-  have hy' := (Bundle.contMDiffAt_totalSpace (IM := I') (IB := I) (n := n)).mp hy
+  have hy' := (Bundle.contMDiffAt_totalSpace_iff (IM := I') (IB := I) (n := n)).mp hy
   simpa [Bundle.Trivial.eq_trivialization, SmoothBundleForm.eval₂] using hy'.2
 
 end Evaluation

@@ -184,7 +184,7 @@ theorem contMDiffAt_totalSpace_subbundle {X : ι → Π x, E x} {U : Set B}
   have hproj : ContMDiffAt (IB.prod 𝓘(𝕜, ι → 𝕜')) IB n
       (fun q : TotalSpace (ι → 𝕜') (fun x ↦ V x) ↦ q.proj) p :=
     (Bundle.contMDiff_proj (fun x ↦ V x)).contMDiffAt
-  rw [Bundle.contMDiffAt_totalSpace]
+  rw [Bundle.contMDiffAt_totalSpace_iff]
   refine ⟨hproj, ?_⟩
   have hpE := FiberBundle.mem_baseSet_trivializationAt' (F := F) (E := E) p.proj
   have hA := (contMDiffAt_trivOperator (𝕜 := 𝕜) (𝕜' := 𝕜') (y₀ := p.proj)

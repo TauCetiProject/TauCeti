@@ -324,7 +324,7 @@ theorem exists_sum_coeff_mul_pow_ne_zero [CommRing k] [IsDomain k]
   have hs₀S : s₀ ∈ φ.support.filter fun s ↦ s 0 + s 1 = n := Finset.mem_filter.2 ⟨hs₀, hs₀n⟩
   have hg : g ≠ 0 := by
     intro h0
-    have := congrArg (Polynomial.coeff · (s₀ 0)) h0
+    have := congrArg (fun p : k[X] ↦ p.coeff (s₀ 0)) h0
     simp only [g, Polynomial.finsetSum_coeff, Polynomial.coeff_C_mul_X_pow,
       Polynomial.coeff_zero] at this
     rw [Finset.sum_eq_single s₀ (fun s hs hne ↦ ite_eq_right_iff.mpr fun h ↦ (hne ?_).elim)

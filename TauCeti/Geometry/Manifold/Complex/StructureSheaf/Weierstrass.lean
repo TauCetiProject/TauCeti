@@ -1011,8 +1011,8 @@ theorem eventuallyEq_of_weierstrassDivision {x₀ : E} {w₀ : ℂ} {d : ℕ} {c
   refine ⟨Germ.coe_eq.1 ?_, fun i ↦ Germ.coe_eq.1 ?_⟩
   · rw [← hv _ le_rfl, ← hv' _ le_rfl, hvv']
   · have hai : a i = a' i := by
-      simpa [Polynomial.finsetSum_coeff, Polynomial.coeff_monomial, Fin.val_eq_val] using
-        congrArg (fun P ↦ P.coeff (i : ℕ)) haa'
+      simpa [Polynomial.finsetSum_coeff, Polynomial.coeff_monomial, Finsupp.single_apply,
+        Fin.val_eq_val] using congrArg (fun P ↦ P.coeff (i : ℕ)) haa'
     rw [← ha i _ le_rfl, ← ha' i _ le_rfl, hai]
 
 end TauCeti

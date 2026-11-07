@@ -882,9 +882,9 @@ theorem contMDiffAt_restrictOpenTangentSpaceBilinear [IsManifold I 1 M] {n : ℕ
       x := by
   -- Pull ambient `C^n` regularity back along the inclusion and compare the inherited and ambient
   -- tangent-bundle coordinates on a common neighbourhood of `x`.
-  rw [contMDiffAt_section]
+  rw [contMDiffAt_section_iff]
   have h := hb.comp x (contMDiff_subtype_val (I := I) (U := U)).contMDiffAt
-  rw [contMDiffAt_totalSpace] at h
+  rw [contMDiffAt_totalSpace_iff] at h
   apply h.2.congr_of_eventuallyEq
   filter_upwards [
     (trivializationAt E (TangentSpace I : U → Type _) x).open_baseSet.mem_nhds

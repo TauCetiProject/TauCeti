@@ -204,7 +204,7 @@ smooth because `δ` takes values in smooth functions. -/
 theorem contMDiff_vectorField (δ : Derivation ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯) :
     ContMDiff I I.tangent ∞ (T% δ.vectorField) := by
   intro x₀
-  rw [contMDiffAt_section]
+  rw [contMDiffAt_section_iff]
   -- A globally smooth map with the germ of the extended chart at `x₀`.
   obtain ⟨F, hF⟩ := exists_contMDiffMap_eventuallyEq_extChartAt (I := I) x₀
   -- Composing with the coordinates of a basis gives smooth scalar coordinate functions.

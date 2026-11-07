@@ -39,8 +39,8 @@ theorem Bundle.contMDiffAt_totalSpace_prod_iff {f : M → TotalSpace (F₁ × F�
         (fun y ↦ (⟨(f y).proj, (f y).2.1⟩ : TotalSpace F₁ E₁)) x ∧
       ContMDiffAt J (I.prod 𝓘(𝕜, F₂)) n
         (fun y ↦ (⟨(f y).proj, (f y).2.2⟩ : TotalSpace F₂ E₂)) x := by
-  rw [Bundle.contMDiffAt_totalSpace, Bundle.contMDiffAt_totalSpace,
-    Bundle.contMDiffAt_totalSpace]
+  rw [Bundle.contMDiffAt_totalSpace_iff, Bundle.contMDiffAt_totalSpace_iff,
+    Bundle.contMDiffAt_totalSpace_iff]
   simp only [FiberBundle.prod_trivializationAt',
     contMDiffAt_prod_module_iff]
   constructor

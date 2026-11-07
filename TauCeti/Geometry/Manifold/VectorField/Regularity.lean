@@ -109,7 +109,7 @@ theorem contMDiff_tangentBundle_mk_constBase {v : N → E}
     ContMDiff J I.tangent n
       (fun p => TotalSpace.mk' E x (v p) : N → TangentBundle I M) := by
   intro p
-  rw [Bundle.contMDiffAt_totalSpace]
+  rw [Bundle.contMDiffAt_totalSpace_iff]
   constructor
   · exact contMDiffAt_const
   · have hx : x ∈ (extChartAt I x).source := mem_extChartAt_source _

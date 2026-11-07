@@ -297,8 +297,8 @@ theorem ncard_le_natDegree_of_eval₂_eq_zero {p : (MeromorphicFunction (OnePoin
   set r : ℂ[X] := ∑ i ∈ q.support, monomial i ((q.coeff i).finitePart y₀)
   have hr : r ≠ 0 := by
     refine fun h ↦ one_ne_zero (α := ℂ) ?_
-    have := congrArg (coeff · j) h
-    simp [r, finsetSum_coeff, coeff_monomial, hqj] at this
+    have := congrArg (fun p : ℂ[X] ↦ p.coeff j) h
+    simp [r, Finsupp.single_apply, hqj] at this
   have hrdeg : r.natDegree ≤ p.natDegree :=
     natDegree_sum_le_of_forall_le _ _ fun i hi ↦ (natDegree_monomial_le _).trans
       ((le_natDegree_of_mem_supp i hi).trans (natDegree_C_mul_le _ _))

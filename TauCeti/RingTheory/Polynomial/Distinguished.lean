@@ -67,7 +67,7 @@ theorem natDegree_one_add_X_pow_sub_one [Nontrivial R] (n : ℕ) :
 theorem monic_one_add_X_pow_sub_one {n : ℕ} (hn : n ≠ 0) : ((1 + X) ^ n - 1 : R[X]).Monic := by
   nontriviality R
   rw [Monic, leadingCoeff, natDegree_one_add_X_pow_sub_one]
-  simp [coeff_sub, coeff_one_add_X_pow, coeff_one, hn]
+  simp [coeff_one_add_X_pow, coeff_one, hn]
 
 end Ring
 

@@ -53,7 +53,7 @@ coefficient of the minimal polynomial `X² - d`, times the sign `(-1)^{[K:ℚ]} 
       minpoly_rat_quadratic hmin, natDegree_X_pow_sub_C]
   rw [← hgen', Algebra.PowerBasis.norm_gen_eq_coeff_zero_minpoly, hdim, hgen',
     minpoly_rat_quadratic hmin]
-  simp [coeff_sub, coeff_X_pow]
+  simp [coeff_X_pow]
 
 /-- **The norm in the basis `1, θ`:** `N(b + aθ) = b² - d·a²`. This is the generic quadratic norm
 formula with `Tr(θ) = 0` and `N(θ) = -d`. The left-hand side uses the rat-cast normal form

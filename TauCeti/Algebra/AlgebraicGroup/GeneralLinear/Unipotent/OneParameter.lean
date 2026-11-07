@@ -73,7 +73,8 @@ theorem Matrix.coeff_exp_X_smul_C_mapMatrix
   rw [IsNilpotent.exp_eq_sum hk', Matrix.sum_apply, Polynomial.finsetSum_coeff,
     Finset.sum_eq_single_of_mem m (Finset.mem_range.mpr (by omega)) fun l _ hl ↦ ?_] <;>
     rw [smul_pow, ← map_pow, Matrix.smul_apply, Matrix.smul_apply, RingHom.mapMatrix_apply,
-      Matrix.map_apply, smul_eq_mul, Polynomial.coeff_smul, Polynomial.coeff_X_pow_mul']
+      Matrix.map_apply, smul_eq_mul, AddMonoidAlgebra.coeff_smul_apply,
+      Polynomial.coeff_X_pow_mul']
   · simp
   · split_ifs with h
     · rw [Polynomial.coeff_C_of_ne_zero (by omega), smul_zero]

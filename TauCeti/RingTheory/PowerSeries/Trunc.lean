@@ -57,8 +57,8 @@ variable {R : Type*} [Semiring R]
 order at least `m`. -/
 theorem trunc_eq_zero_iff_le_order {m : ℕ} {φ : R⟦X⟧} : trunc m φ = 0 ↔ (m : ℕ∞) ≤ φ.order := by
   rw [nat_le_order_iff]
-  refine ⟨fun h i hi ↦ ?_, fun h ↦ Polynomial.ext fun i ↦ ?_⟩
-  · simpa [coeff_trunc, hi] using congrArg (Polynomial.coeff · i) h
+  refine ⟨fun h i hi ↦ ?_, fun h ↦ AddMonoidAlgebra.ext <| Finsupp.ext fun i ↦ ?_⟩
+  · simpa [coeff_trunc, hi] using congrArg (fun p : Polynomial R ↦ p.coeff i) h
   · rw [coeff_trunc, Polynomial.coeff_zero]
     split_ifs with hi
     exacts [h i hi, rfl]
@@ -67,14 +67,15 @@ theorem trunc_eq_zero_iff_le_order {m : ℕ} {φ : R⟦X⟧} : trunc m φ = 0 �
 `n < m`. -/
 theorem coeff_eq_of_trunc_eq {n m : ℕ} {φ ψ : R⟦X⟧} (h : trunc m φ = trunc m ψ) (hn : n < m) :
     coeff n φ = coeff n ψ := by
-  have hc := congrArg (Polynomial.coeff · n) h
+  have hc := congrArg (fun p : Polynomial R ↦ p.coeff n) h
   rwa [coeff_trunc, coeff_trunc, ite_eq_left hn, ite_eq_left hn] at hc
 
 /-- Two power series have the same `m`-truncation if and only if their coefficients agree in all
 degrees `< m`. -/
 theorem trunc_eq_trunc_iff {m : ℕ} {φ ψ : R⟦X⟧} :
     trunc m φ = trunc m ψ ↔ ∀ n < m, coeff n φ = coeff n ψ := by
-  refine ⟨fun h n hn ↦ coeff_eq_of_trunc_eq h hn, fun h ↦ Polynomial.ext fun n ↦ ?_⟩
+  refine ⟨fun h n hn ↦ coeff_eq_of_trunc_eq h hn,
+    fun h ↦ AddMonoidAlgebra.ext <| Finsupp.ext fun n ↦ ?_⟩
   rw [coeff_trunc, coeff_trunc]
   split_ifs with hn
   exacts [h n hn, rfl]

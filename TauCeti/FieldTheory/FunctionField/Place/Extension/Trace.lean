@@ -538,7 +538,7 @@ theorem trace_sub_sum_mem_filtration (hF' : IsFunctionField k F') (hP : P.degree
     have hzero := (hfilt _).mp hr
     rw [htrunc_sum] at hzero
     have hτ0 (i : Fin m) (j) : τ j i = 0 := by
-      have hi := congrArg (Polynomial.coeff · (i : ℕ)) hzero
+      have hi := congrArg (AddMonoidAlgebra.coeff · (i : ℕ)) hzero
       simp only [PowerSeries.coeff_trunc, PowerSeries.coeff_sum_C_mul_X_pow, i.2, ↓reduceIte,
         ↓reduceDIte, Polynomial.coeff_zero] at hi
       exact Fintype.linearIndependent_iff.mp β.linearIndependent (fun j ↦ τ j i) hi j

@@ -432,7 +432,8 @@ theorem coeff_colemanDBounded_congr (hB0 : B.coeff 0 = 0) {P' : R[X]} {k : ℕ}
   rw [colemanDBounded_def, colemanDBounded_def, resultant, resultant, Matrix.det_apply,
     Matrix.det_apply, finsetSum_coeff, finsetSum_coeff]
   refine Finset.sum_congr rfl fun σ _ ↦ ?_
-  rw [coeff_smul, coeff_smul, coeff_prod_sylvester_colemanDBounded hB0,
+  rw [AddMonoidAlgebra.coeff_smul_apply, AddMonoidAlgebra.coeff_smul_apply,
+    coeff_prod_sylvester_colemanDBounded hB0,
     coeff_prod_sylvester_colemanDBounded hB0]
   congr 1
   split_ifs with hk

@@ -250,7 +250,7 @@ theorem _root_.Polynomial.coeff_coeff_weightReesHom (f : (MvPolynomial σ R)[X])
   classical
   induction f using Polynomial.induction_on' with
   | add f g hf hg =>
-    simp only [map_add, Polynomial.coeff_add, AddMonoidAlgebra.coeff_add, Finsupp.add_apply, hf,
+    simp only [map_add, AddMonoidAlgebra.coeff_add, Finsupp.add_apply, hf,
       hg]
     split_ifs <;> simp
   | monomial k p =>
@@ -280,7 +280,7 @@ theorem weightReesHom_monomial_monomial (k : ℕ) (v : σ →₀ ℕ) (r : R) :
   classical
   ext n u
   rw [Polynomial.coeff_coeff_weightReesHom]
-  simp only [Polynomial.coeff_monomial, coeff_monomial,
+  simp only [Polynomial.coeff_monomial_apply, coeff_monomial,
     apply_ite (fun q : MvPolynomial σ R ↦ q.coeff u), AddMonoidAlgebra.coeff_zero,
     Finsupp.coe_zero, Pi.zero_apply]
   split_ifs <;> first | rfl | (subst_vars; omega)
@@ -395,7 +395,7 @@ theorem weightReesSymbol_monomial {n : ℕ} {b : MvPolynomial σ R}
       weightedHomogeneousComponent w n b := by
   classical
   ext v
-  rw [coeff_weightReesSymbol, TauCeti.coeffSubalgebra.coe_monomial, Polynomial.coeff_monomial,
+  rw [coeff_weightReesSymbol, TauCeti.coeffSubalgebra.coe_monomial, Polynomial.coeff_monomial_apply,
     coeff_weightedHomogeneousComponent]
   split_ifs <;> first | rfl | (subst_vars; contradiction)
 

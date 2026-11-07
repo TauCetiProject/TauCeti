@@ -128,9 +128,11 @@ theorem coeff_adjugate_one_sub_X_smul_apply (A : Matrix ι ι R) (m : ℕ) (i j 
       matPolyEquiv_smul_one, ← charpolyRev] at h
   have hsum : P.coeff m = ∑ k ∈ Finset.range (m + 1), A.charpolyRev.coeff k • A ^ (m - k) := by
     induction m with
-    | zero => simpa [sub_mul, mul_assoc, coeff_C_mul, coeff_map] using congrArg (coeff · 0) hP
+    | zero =>
+      simpa [sub_mul, mul_assoc, coeff_C_mul, coeff_map] using
+        congrArg (fun p : (Matrix ι ι R)[X] ↦ p.coeff 0) hP
     | succ n ih =>
-      have h := congrArg (coeff · (n + 1)) hP
+      have h := congrArg (fun p : (Matrix ι ι R)[X] ↦ p.coeff (n + 1)) hP
       simp only [sub_mul, one_mul, mul_assoc, coeff_sub, coeff_X_mul, coeff_C_mul, coeff_map,
         Algebra.algebraMap_eq_smul_one, sub_eq_iff_eq_add] at h
       rw [h, ih, TauCeti.sum_range_succ_smul_pow_sub]

@@ -127,7 +127,7 @@ lemma subsingleton_iff_exists_associated_pow :
       let y : (0 : K[X]).Factors :=
         ⟨X - C 1, irreducible_X_sub_C 1, monic_X_sub_C 1, dvd_zero (X - C 1)⟩
       have hxy : (x : K[X]) = y := congrArg Subtype.val (h.elim x y)
-      have := congrArg (coeff · 0) hxy
+      have := congrArg (fun q : K[X] ↦ q.coeff 0) hxy
       simp [x, y] at this
     · rintro ⟨q, hq, n, hq0⟩
       exact ((pow_ne_zero n hq.ne_zero) (hq0.eq_zero_iff.mpr rfl)).elim
