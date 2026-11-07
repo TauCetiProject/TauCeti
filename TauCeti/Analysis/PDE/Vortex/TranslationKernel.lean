@@ -176,7 +176,7 @@ private theorem curvature_eventuallyEq (hsol : ∀ᶠ w in 𝓝 z, equation x w 
     ring
 
 /-- **The gauge-fixing row.** At a point where the vortex equation holds nearby, the covariant
-translations are `L²`-orthogonal to the gauge orbit: `d₀* y_v = 0`. -/
+translations satisfy the pointwise gauge-fixing condition `d₀* y_v = 0` there. -/
 theorem gaugeAdjoint_covariantTranslation_of_equation_eq_zero
     (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z)
     (hsol : ∀ᶠ w in 𝓝 z, equation x w = 0) (v : ℂ) :
@@ -422,9 +422,8 @@ theorem covariantTranslation_eq_zero_iff (hp : Differentiable ℝ (fun w ↦ x w
     filter_upwards [eventually_ge_atTop 0] with t ht
     rw [dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_of_nonneg ht, id]
   have hlim' := hlim.comp hline
-  have : Tendsto g atTop (𝓝 0) := by
-    rw [show g = fun _ ↦ 0 from funext fun t ↦ (hconst t).trans hg0]
-    exact tendsto_const_nhds
+  have : Tendsto g atTop (𝓝 0) :=
+    tendsto_const_nhds.congr fun t ↦ ((hconst t).trans hg0).symm
   exact one_ne_zero (tendsto_nhds_unique hlim' this)
 
 /-- If the section of `x` has a zero and unit modulus at infinity, then `v ↦ y_v` is
