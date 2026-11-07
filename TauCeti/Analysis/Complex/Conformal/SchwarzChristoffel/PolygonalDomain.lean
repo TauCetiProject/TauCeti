@@ -213,6 +213,47 @@ private theorem tendsto_mul_logDeriv_deriv_of_tendsto_of_side {ι : Type*} {a : 
   exact tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_neg_inv hr hgf hgcont
     (differentiableOn_of_eqOn_neg_inv hf hgf) hgreal hgupper hginj
 
+/-- Inverting `f (-w⁻¹) - c` about `c` and filling in `0` at the origin is continuous on the part
+of the closed upper half-plane near `0`, when `f` tends to infinity at infinity. -/
+private theorem continuousOn_update_div_sub_neg_inv {r : ℝ} {c b : ℂ}
+    (hfc : ContinuousOn f {z : ℂ | 0 ≤ z.im})
+    (hp : Tendsto f (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) (cobounded ℂ))
+    (hne : ∀ w ∈ ball (0 : ℂ) r, 0 ≤ w.im → w ≠ 0 → f (-w⁻¹) - c ≠ 0) :
+    ContinuousOn (update (fun w => b / (f (-w⁻¹) - c)) 0 0)
+      (ball (0 : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}) := by
+  have hT := tendsto_comp_neg_inv_cobounded hp
+  refine continuousOn_update_iff.mpr ⟨fun w hw => ?_, fun _ => ?_⟩
+  · have hinv : ContinuousWithinAt (fun w : ℂ => -w⁻¹) ((ball 0 r ∩ {z | 0 ≤ z.im}) \ {0}) w :=
+      (continuousAt_inv₀ hw.2).neg.continuousWithinAt
+    exact continuousWithinAt_const.div (((hfc _ (im_neg_inv_nonneg.mpr hw.1.2)).comp
+      (f := fun w : ℂ => -w⁻¹) hinv fun y (hy : y ∈ (ball 0 r ∩ {z : ℂ | 0 ≤ z.im}) \ {0}) =>
+        im_neg_inv_nonneg.mpr hy.1.2).sub_const c) (hne w hw.1.1 hw.1.2 hw.2)
+  · have hlim := (tendsto_inv₀_cobounded.comp ((tendsto_sub_const_cobounded c).comp
+      (hT.mono_left (nhdsWithin_mono _
+        (sdiff_subset_sdiff_left (inter_subset_right (s := ball (0 : ℂ) r))))))).const_mul b
+    simpa only [mul_zero, Function.comp_def, div_eq_mul_inv] using hlim
+
+/-- Inverting `f (-w⁻¹) - c` about `c` and filling in `0` at the origin is injective on the part
+of the closed upper half-plane near `0`, when `f` is injective on it. -/
+private theorem injOn_update_div_sub_neg_inv {r : ℝ} {c b : ℂ} (hb : b ≠ 0)
+    (hfi : InjOn f {z : ℂ | 0 ≤ z.im})
+    (hne : ∀ w ∈ ball (0 : ℂ) r, 0 ≤ w.im → w ≠ 0 → f (-w⁻¹) - c ≠ 0) :
+    InjOn (update (fun w => b / (f (-w⁻¹) - c)) 0 0) (ball (0 : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}) := by
+  set g : ℂ → ℂ := update (fun w => b / (f (-w⁻¹) - c)) 0 0
+  have hg0 : g 0 = 0 := update_self _ _ _
+  have hgv : ∀ w, w ≠ 0 → g w = b / (f (-w⁻¹) - c) := fun w hw => update_of_ne hw _ _
+  intro w₁ hw₁ w₂ hw₂ h
+  by_cases h₁ : w₁ = 0 <;> by_cases h₂ : w₂ = 0
+  · rw [h₁, h₂]
+  · rw [h₁, hg0, hgv w₂ h₂] at h
+    exact absurd h.symm (div_ne_zero hb (hne w₂ hw₂.1 hw₂.2 h₂))
+  · rw [h₂, hg0, hgv w₁ h₁] at h
+    exact absurd h (div_ne_zero hb (hne w₁ hw₁.1 hw₁.2 h₁))
+  · rw [hgv w₁ h₁, hgv w₂ h₂] at h
+    have h' := congrArg (·⁻¹) h
+    simp only [inv_div, div_left_inj' hb, sub_left_inj] at h'
+    simpa using hfi (im_neg_inv_nonneg.mpr hw₁.2) (im_neg_inv_nonneg.mpr hw₂.2) h'
+
 /-- **Condition at a vertex at infinity.**  If `f` tends to infinity at infinity, and far from `c`
 the domain `U` coincides with the open sector `{|arg ((z - c) / b)| < β * π / 2}` of opening
 `β * π`, where `0 < β < 2`, then `z * f''(z) / f'(z) → β - 1` as `z` tends to infinity in the
@@ -250,27 +291,8 @@ private theorem tendsto_mul_logDeriv_deriv_of_tendsto_cobounded {β ρ : ℝ} {c
   refine tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_div_neg_inv (g := g) hr hb hβ hf hfn
     (fun w hw => hgv w (hH w hw.2)) hg0 ?_ ?_ (fun w hw hwim => ?_)
     (fun w hw hwim hgw => ?_)
-  · refine continuousOn_update_iff.mpr ⟨fun w hw => ?_, fun _ => ?_⟩
-    · have hinv : ContinuousWithinAt (fun w : ℂ => -w⁻¹) ((ball 0 r ∩ {z | 0 ≤ z.im}) \ {0}) w :=
-        (continuousAt_inv₀ hw.2).neg.continuousWithinAt
-      exact continuousWithinAt_const.div (((hfc _ (im_neg_inv_nonneg.mpr hw.1.2)).comp
-        (f := fun w : ℂ => -w⁻¹) hinv fun y (hy : y ∈ (ball 0 r ∩ {z : ℂ | 0 ≤ z.im}) \ {0}) =>
-          im_neg_inv_nonneg.mpr hy.1.2).sub_const c) (hne w hw.1.1 hw.1.2 hw.2)
-    · have hlim := (tendsto_inv₀_cobounded.comp ((tendsto_sub_const_cobounded c).comp
-        (hT.mono_left (nhdsWithin_mono _
-          (sdiff_subset_sdiff_left (inter_subset_right (s := ball (0 : ℂ) r))))))).const_mul b
-      simpa only [mul_zero, Function.comp_def, div_eq_mul_inv] using hlim
-  · intro w₁ hw₁ w₂ hw₂ h
-    by_cases h₁ : w₁ = 0 <;> by_cases h₂ : w₂ = 0
-    · rw [h₁, h₂]
-    · rw [h₁, hg0, hgv w₂ h₂] at h
-      exact absurd h.symm (div_ne_zero hb (hne w₂ hw₂.1 hw₂.2 h₂))
-    · rw [h₂, hg0, hgv w₁ h₁] at h
-      exact absurd h (div_ne_zero hb (hne w₁ hw₁.1 hw₁.2 h₁))
-    · rw [hgv w₁ h₁, hgv w₂ h₂] at h
-      have h' := congrArg (·⁻¹) h
-      simp only [inv_div, div_left_inj' hb, sub_left_inj] at h'
-      simpa using hfi (im_neg_inv_nonneg.mpr hw₁.2) (im_neg_inv_nonneg.mpr hw₂.2) h'
+  · exact continuousOn_update_div_sub_neg_inv hfc hp hne
+  · exact injOn_update_div_sub_neg_inv hb hfi hne
   · -- the far part of the upper half-plane goes into the sector
     have hw0 : w ≠ 0 := hH w hwim
     rw [harg w hw0]
@@ -319,6 +341,57 @@ private theorem exists_ball_mem_halfStrip_of_tendsto_cobounded {ρ : ℝ} {c b :
       (hfU ▸ mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero
         (hfc _ him.ge) him (not_mem_image_upperHalfPlaneSet_of_im_eq_zero hfi him))
 
+/-- The map `w ↦ exp (π * I - (f (-w⁻¹) - c) / b)`, filled in with `0` at the origin, is continuous
+on the part of the closed upper half-plane near `0` where `(f (-w⁻¹) - c) / b` lies in the closed
+half-strip, when `f` tends to infinity at infinity. -/
+private theorem continuousOn_update_exp_pi_mul_I_sub {r : ℝ} {c b : ℂ} (hb : b ≠ 0)
+    (hfc : ContinuousOn f {z : ℂ | 0 ≤ z.im})
+    (hp : Tendsto f (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) (cobounded ℂ))
+    (hζ : ∀ w ∈ ball (0 : ℂ) r, 0 ≤ w.im → w ≠ 0 →
+      0 ≤ ((f (-w⁻¹) - c) / b).re ∧ ((f (-w⁻¹) - c) / b).im ∈ Icc 0 Real.pi) :
+    ContinuousOn (update (fun w => exp (Real.pi * Complex.I - (f (-w⁻¹) - c) / b)) 0 0)
+      (ball (0 : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}) := by
+  refine continuousOn_update_iff.mpr ⟨fun w hw => ?_, fun _ => ?_⟩
+  · -- continuity away from `0` by continuity of `f` up to the axis
+    have hinv : ContinuousWithinAt (fun w : ℂ => -w⁻¹) ((ball 0 r ∩ {z | 0 ≤ z.im}) \ {0}) w :=
+      (continuousAt_inv₀ hw.2).neg.continuousWithinAt
+    exact (continuousWithinAt_const.sub ((((hfc _ (im_neg_inv_nonneg.mpr hw.1.2)).comp
+      (f := fun w : ℂ => -w⁻¹) hinv fun y (hy : y ∈ (ball 0 r ∩ {z : ℂ | 0 ≤ z.im}) \ {0}) =>
+        im_neg_inv_nonneg.mpr hy.1.2).sub_const c).div_const b)).cexp
+  · -- in the closed half-strip `exp (π * I - ζ)` tends to `0` as `ζ` tends to infinity
+    refine tendsto_exp_pi_mul_I_sub_of_tendsto_cobounded ?_
+      (eventually_nhdsWithin_of_forall fun w hw => hζ w hw.1.1 hw.1.2 hw.2)
+    exact tendsto_sub_div_of_tendsto_cobounded hb ((tendsto_comp_neg_inv_cobounded hp).mono_left
+      (nhdsWithin_mono _ (sdiff_subset_sdiff_left (inter_subset_right (s := ball (0 : ℂ) r)))))
+
+/-- The map `w ↦ exp (π * I - (f (-w⁻¹) - c) / b)`, filled in with `0` at the origin, is injective
+on the part of the closed upper half-plane near `0` where `(f (-w⁻¹) - c) / b` lies in the closed
+half-strip, when `f` is injective on it. -/
+private theorem injOn_update_exp_pi_mul_I_sub {r : ℝ} {c b : ℂ} (hb : b ≠ 0)
+    (hfi : InjOn f {z : ℂ | 0 ≤ z.im})
+    (hζ : ∀ w ∈ ball (0 : ℂ) r, 0 ≤ w.im → w ≠ 0 →
+      0 ≤ ((f (-w⁻¹) - c) / b).re ∧ ((f (-w⁻¹) - c) / b).im ∈ Icc 0 Real.pi) :
+    InjOn (update (fun w => exp (Real.pi * Complex.I - (f (-w⁻¹) - c) / b)) 0 0)
+      (ball (0 : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}) := by
+  set ζ : ℂ → ℂ := fun w => (f (-w⁻¹) - c) / b
+  set g : ℂ → ℂ := update (fun w => exp (Real.pi * Complex.I - ζ w)) 0 0
+  have hg0 : g 0 = 0 := update_self _ _ _
+  have hgv : ∀ w, w ≠ 0 → g w = exp (Real.pi * Complex.I - ζ w) := fun w hw =>
+    update_of_ne hw _ _
+  have hne : ∀ w, w ≠ 0 → g w ≠ 0 := fun w hw => by rw [hgv w hw]; exact exp_ne_zero _
+  intro w₁ hw₁ w₂ hw₂ h
+  by_cases h₁ : w₁ = 0 <;> by_cases h₂ : w₂ = 0
+  · rw [h₁, h₂]
+  · rw [h₁, hg0] at h
+    exact absurd h.symm (hne w₂ h₂)
+  · rw [h₂, hg0] at h
+    exact absurd h (hne w₁ h₁)
+  · rw [hgv w₁ h₁, hgv w₂ h₂] at h
+    have hζeq : ζ w₁ = ζ w₂ :=
+      injOn_exp_pi_mul_I_sub (hζ w₁ hw₁.1 hw₁.2 h₁).2 (hζ w₂ hw₂.1 hw₂.2 h₂).2 h
+    simp only [ζ, div_left_inj' hb, sub_left_inj] at hζeq
+    simpa using hfi (im_neg_inv_nonneg.mpr hw₁.2) (im_neg_inv_nonneg.mpr hw₂.2) hζeq
+
 /-- **Condition at a parallel-sided end at infinity.**  If `f` tends to infinity at infinity, and
 far from `c` the domain `U` coincides with the open half-strip
 `{0 < re ((z - c) / b), 0 < im ((z - c) / b) < π}`, then `z * f''(z) / f'(z) → -1` as `z` tends to
@@ -353,21 +426,10 @@ private theorem tendsto_mul_logDeriv_deriv_of_tendsto_cobounded_of_halfStrip {ρ
     rw [hgv w hw, im_exp_pi_mul_I_sub]
   refine tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_exp_neg_inv (g := g)
     (c := c + Real.pi * Complex.I * b) hr (neg_ne_zero.mpr hb) hf hfn (fun w hw => ?_) hg0
-    (continuousOn_update_iff.mpr ⟨fun w hw => ?_, fun _ => ?_⟩) (fun w hw hwim => ?_)
+    (continuousOn_update_exp_pi_mul_I_sub hb hfc hp hζ) (fun w hw hwim => ?_)
     (fun w hw => ?_) ?_
   · rw [hgv w (hH w hw.2)]
     exact exp_pi_mul_I_sub_div hb
-  · -- `g` is continuous away from `0` by continuity of `f` up to the axis
-    have hinv : ContinuousWithinAt (fun w : ℂ => -w⁻¹) ((ball 0 r ∩ {z | 0 ≤ z.im}) \ {0}) w :=
-      (continuousAt_inv₀ hw.2).neg.continuousWithinAt
-    exact (continuousWithinAt_const.sub ((((hfc _ (im_neg_inv_nonneg.mpr hw.1.2)).comp
-      (f := fun w : ℂ => -w⁻¹) hinv fun y (hy : y ∈ (ball 0 r ∩ {z : ℂ | 0 ≤ z.im}) \ {0}) =>
-        im_neg_inv_nonneg.mpr hy.1.2).sub_const c).div_const b)).cexp
-  · -- in the closed half-strip `exp (π * I - ζ)` tends to `0` as `ζ` tends to infinity
-    refine tendsto_exp_pi_mul_I_sub_of_tendsto_cobounded ?_
-      (eventually_nhdsWithin_of_forall fun w hw => hζ w hw.1.1 hw.1.2 hw.2)
-    exact tendsto_sub_div_of_tendsto_cobounded hb ((tendsto_comp_neg_inv_cobounded hp).mono_left
-      (nhdsWithin_mono _ (sdiff_subset_sdiff_left (inter_subset_right (s := ball (0 : ℂ) r)))))
   · -- the far parts of the real axis go to the two bounding rays, where `g` is real
     by_cases hw0 : w = 0
     · rw [hw0, hg0, zero_im]
@@ -377,20 +439,7 @@ private theorem tendsto_mul_logDeriv_deriv_of_tendsto_cobounded_of_halfStrip {ρ
     rw [Set.mem_ofPred_eq, hgim w (hH w hw.2)]
     obtain ⟨-, him₀, himπ⟩ := hζU w hw.1 hw.2
     exact mul_pos (Real.exp_pos _) (Real.sin_pos_of_pos_of_lt_pi him₀ himπ)
-  · -- `exp` is injective on the closed strip `0 ≤ im ≤ π`, and `f` is injective
-    intro w₁ hw₁ w₂ hw₂ h
-    have hne : ∀ w, w ≠ 0 → g w ≠ 0 := fun w hw => by rw [hgv w hw]; exact exp_ne_zero _
-    by_cases h₁ : w₁ = 0 <;> by_cases h₂ : w₂ = 0
-    · rw [h₁, h₂]
-    · rw [h₁, hg0] at h
-      exact absurd h.symm (hne w₂ h₂)
-    · rw [h₂, hg0] at h
-      exact absurd h (hne w₁ h₁)
-    · rw [hgv w₁ h₁, hgv w₂ h₂] at h
-      have hζeq : ζ w₁ = ζ w₂ :=
-        injOn_exp_pi_mul_I_sub (hζ w₁ hw₁.1 hw₁.2 h₁).2 (hζ w₂ hw₂.1 hw₂.2 h₂).2 h
-      simp only [ζ, div_left_inj' hb, sub_left_inj] at hζeq
-      simpa using hfi (im_neg_inv_nonneg.mpr hw₁.2) (im_neg_inv_nonneg.mpr hw₂.2) hζeq
+  · exact injOn_update_exp_pi_mul_I_sub hb hfi hζ
 
 /-! ### The Schwarz--Christoffel formula -/
 
