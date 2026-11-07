@@ -103,6 +103,10 @@ theorem rootEvaluation_corootMap (c : I → K) :
 /-- The span of the simple coroots, as an embedded coordinate space. -/
 def corootSpan : Submodule K H := Submodule.span K (Set.range R.coroot)
 
+omit [Fintype I] in
+/-- The coroot span is the linear span of the simple coroots. -/
+theorem corootSpan_def : R.corootSpan = Submodule.span K (Set.range R.coroot) := (rfl)
+
 /-- The coroot embedding has image the coroot span. -/
 theorem range_corootMap : LinearMap.range R.corootMap = R.corootSpan :=
   Fintype.range_linearCombination K R.coroot
@@ -128,6 +132,10 @@ in the coroot span. -/
 def cartanCenter : Submodule K H := LinearMap.ker R.rootEvaluation
 
 omit [Fintype I] in
+/-- The full Cartan center is the kernel of simultaneous root evaluation. -/
+theorem cartanCenter_def : R.cartanCenter = LinearMap.ker R.rootEvaluation := (rfl)
+
+omit [Fintype I] in
 @[simp]
 theorem mem_cartanCenter_iff (h : H) : h ∈ R.cartanCenter ↔ ∀ i, R.root i h = 0 := by
   simp [cartanCenter, LinearMap.mem_ker, funext_iff]
@@ -145,6 +153,16 @@ theorem cartanCenter_inf_corootSpan :
     LinearMap.ext R.rootEvaluation_corootMap
   rw [← hcomp, LinearMap.ker_comp, Submodule.map_comap_eq, R.range_corootMap,
     inf_comm, cartanCenter]
+
+/-- The central part of the coroot span has dimension equal to the matrix corank. -/
+theorem finrank_cartanCenter_inf_corootSpan_add_rank :
+    finrank K ↥(R.cartanCenter ⊓ R.corootSpan) + A.rank = Fintype.card I := by
+  rw [R.cartanCenter_inf_corootSpan,
+    ← (Submodule.equivMapOfInjective R.corootMap R.corootMap_injective
+      (LinearMap.ker A.transpose.mulVecLin)).finrank_eq]
+  have h := A.transpose.mulVecLin.finrank_range_add_finrank_ker
+  rw [← Matrix.rank, Matrix.rank_transpose, Module.finrank_fintype_fun_eq_card] at h
+  omega
 
 omit [Fintype I] in
 private theorem linearIndependent_root_coordinates {J : Type*} [Finite J]
