@@ -104,24 +104,6 @@ theorem memLp_fderiv_bubble (hn : 2 < finrank ℝ E) {t : ℝ} (ht : 0 < t) (b :
   (memLp_two_iff_integrable_sq_norm ((contDiff_bubble (m := 1) ht.ne' b).continuous_fderiv
     one_ne_zero).aestronglyMeasurable).mpr (integrable_norm_fderiv_bubble_sq μ hn ht b)
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The squared norm of the differential of a bubble is a radial profile about its centre. -/
-private theorem funext_norm_fderiv_bubble_sq {t : ℝ} (ht : 0 < t) (b : E) :
-    (fun x ↦ ‖fderiv ℝ (bubble t b) x‖ ^ 2) = fun x ↦
-      (((finrank ℝ E : ℝ) - 2) / (2 * t)) ^ 2 *
-        (‖x - b‖ ^ 2 * (2 * t / (t ^ 2 + ‖x - b‖ ^ 2)) ^ finrank ℝ E) := by
-  funext x
-  rw [norm_fderiv_bubble_sq ht]
-  ring
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The critical power of a bubble is a radial profile about its centre. -/
-private theorem funext_bubble_rpow_criticalExponent (hn : finrank ℝ E ≠ 2) {t : ℝ} (ht : 0 < t)
-    (b : E) :
-    (fun x ↦ bubble t b x ^ criticalExponent (finrank ℝ E)) = fun x ↦
-      (2 * t / (t ^ 2 + ‖x - b‖ ^ 2)) ^ finrank ℝ E :=
-  funext fun x ↦ bubble_rpow_criticalExponent hn ht b x
-
 include μ in
 /-- The radial identity relating the two radial integrals of the energy identity of a bubble. -/
 private theorem sub_two_mul_integral_radial_bubble (hn : 2 < finrank ℝ E) {t : ℝ} (ht : 0 < t) :
@@ -139,12 +121,12 @@ private theorem sub_two_mul_integral_radial_bubble (hn : 2 < finrank ℝ E) {t :
     positivity
   have h₁ : IntegrableOn (fun r : ℝ ↦ r ^ (n - 1) * ψ r) (Ioi 0) := by
     have h := integrable_bubble_rpow_criticalExponent μ (by omega) hn.ne' ht 0
-    rw [funext_bubble_rpow_criticalExponent hn.ne' ht 0] at h
+    simp_rw [bubble_rpow_criticalExponent hn.ne' ht] at h
     simp only [sub_zero] at h
     simpa using (integrable_fun_norm_addHaar μ (f := ψ)).mp h
   have h₂ : IntegrableOn (fun r : ℝ ↦ r ^ (n - 1) * (r ^ 2 * ψ r)) (Ioi 0) := by
     have h := integrable_norm_fderiv_bubble_sq μ hn ht 0
-    rw [funext_norm_fderiv_bubble_sq ht 0] at h
+    simp_rw [norm_fderiv_bubble_sq ht, mul_assoc] at h
     simp only [sub_zero] at h
     refine IntegrableOn.congr_fun (((integrable_fun_norm_addHaar μ (f := φ)).mp h).const_mul C⁻¹)
       (fun r _ ↦ ?_) measurableSet_Ioi
@@ -170,9 +152,9 @@ theorem conformalCoefficient_mul_integral_norm_fderiv_bubble_sq (hn : 2 < finran
       n * t ^ 2 * ∫ r in Ioi 0, r ^ (n - 1) * ψ r :=
     sub_two_mul_integral_radial_bubble μ hn ht
   have hgrad (b : E) : (fun x ↦ ‖fderiv ℝ (bubble t b) x‖ ^ 2) = fun x ↦ φ ‖x - b‖ :=
-    funext_norm_fderiv_bubble_sq ht b
+    funext fun x ↦ by rw [norm_fderiv_bubble_sq ht, mul_assoc]
   have hpow (b : E) : (fun x ↦ bubble t b x ^ criticalExponent n) = fun x ↦ ψ ‖x - b‖ :=
-    funext_bubble_rpow_criticalExponent hn.ne' ht b
+    funext fun x ↦ bubble_rpow_criticalExponent hn.ne' ht b x
   have hI₂ : ∫ r in Ioi (0 : ℝ), r ^ (n - 1) • φ r =
       C * ∫ r in Ioi (0 : ℝ), r ^ (n - 1) * (r ^ 2 * ψ r) := by
     rw [← integral_const_mul]
