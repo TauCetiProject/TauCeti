@@ -57,6 +57,25 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M] [CompactSpace M]
   {f : M → ℝ}
 
+/-- Two positive radii and a positive gap admit a common smaller positive radius whose double
+square fits in the gap. -/
+theorem exists_pos_lt_lt_two_mul_sq_lt {R₀ R₁ d : ℝ} (hR₀ : 0 < R₀) (hR₁ : 0 < R₁) (hd : 0 < d) :
+    ∃ r, (r < R₀ ∧ r < R₁ ∧ 2 * r ^ 2 < d) ∧ 0 < r :=
+  (((gt_mem_nhds hR₀).and ((gt_mem_nhds hR₁).and
+    ((by fun_prop : Continuous fun r : ℝ ↦ 2 * r ^ 2).tendsto 0 |>.eventually_lt_const
+      (by simpa using hd)))).filter_mono nhdsWithin_le_nhds |>.and
+    self_mem_nhdsWithin).exists (f := 𝓝[>] (0 : ℝ))
+
+/-- The closed ball of radius `r > 0` is homeomorphic to the unit closed ball by a rescaling that
+carries the boundary sphere onto the boundary sphere. -/
+theorem exists_homeomorph_closedBall_one_norm_eq {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℝ V] {r : ℝ} (hr : 0 < r) :
+    ∃ S : closedBall (0 : V) r ≃ₜ closedBall (0 : V) 1,
+      ∀ v : closedBall (0 : V) r, ‖(S v : V)‖ = 1 ↔ ‖(v : V)‖ = r := by
+  refine ⟨(Homeomorph.smulOfNeZero r⁻¹ (inv_ne_zero hr.ne')).subtype fun v ↦ by
+    simp [norm_smul, abs_of_pos hr, inv_mul_le_iff₀ hr], fun v ↦ ?_⟩
+  simp [norm_smul, abs_of_pos hr, inv_mul_eq_one₀ hr.ne', eq_comm]
+
 /-- Reeb's theorem when the minimum and the maximum differ: `M` is the union of a small disc
 around the maximum and the sublevel below it, which the descending flow identifies with a small
 disc around the minimum. -/
@@ -66,12 +85,9 @@ private theorem IsMorse.nonempty_homeomorph_sphere_of_lt (hf : IsMorse I f) {x�
     Nonempty (M ≃ₜ sphere (0 : EuclideanSpace ℝ (Fin (finrank ℝ E + 1))) 1) := by
   have hfc : Continuous f := hf.contMDiff.continuous
   have hsmooth : ∀ᶠ y in 𝓝 x₀, ContMDiffAt I 𝓘(ℝ) ∞ f y := .of_forall fun y ↦ hf.contMDiff y
-  have hsmooth' : ∀ᶠ y in 𝓝 x₁, ContMDiffAt I 𝓘(ℝ) ∞ (-f) y :=
-    .of_forall fun y ↦ contDiff_neg.contMDiff.contMDiffAt.comp y (hf.contMDiff y)
   -- The minimum and the maximum are the only points with their values.
   have hmin (y : M) (hy : f y ≤ f x₀) : y = x₀ := hx₀.eq_of_le_of_two_criticalPoints hlt hcrit hy
-  have hmax (y : M) (hy : (-f) y ≤ (-f) x₁) : y = x₁ :=
-    hx₁.eq_of_le_of_two_criticalPoints hlt hcrit (neg_le_neg_iff.1 hy)
+  have hmax (y : M) (hy : f x₁ ≤ f y) : y = x₁ := hx₁.eq_of_le_of_two_criticalPoints hlt hcrit hy
   -- Small sublevels at the minimum and small superlevels at the maximum are discs.
   obtain ⟨R₀, hR₀, he₀⟩ :=
     (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
@@ -79,15 +95,11 @@ private theorem IsMorse.nonempty_homeomorph_sphere_of_lt (hf : IsMorse I f) {x�
       hsmooth (isClosed_le hfc continuous_const).isCompact hfc.continuousOn hlt hmin
   obtain ⟨R₁, hR₁, he₁⟩ :=
     (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
-      ((hx₁.isLocalMax univ_mem).mem_criticalPoints)).neg.exists_sublevel_homeomorph_closedBall
-      hsmooth' (isClosed_le hfc.neg continuous_const).isCompact hfc.neg.continuousOn
-      (a := -f x₀) (by simpa using hlt) hmax
-  -- Choose a common radius `r` with `f x₀ + r² < f x₁ - r²`.
-  obtain ⟨r, ⟨hrR₀, hrR₁, hr2⟩, hr⟩ : ∃ r, (r < R₀ ∧ r < R₁ ∧ 2 * r ^ 2 < f x₁ - f x₀) ∧ 0 < r :=
-    (((gt_mem_nhds hR₀).and ((gt_mem_nhds hR₁).and
-      ((by fun_prop : Continuous fun r : ℝ ↦ 2 * r ^ 2).tendsto 0 |>.eventually_lt_const
-        (by simpa using sub_pos.2 hlt)))).filter_mono nhdsWithin_le_nhds |>.and
-      self_mem_nhdsWithin).exists (f := 𝓝[>] (0 : ℝ))
+      ((hx₁.isLocalMax univ_mem).mem_criticalPoints)).exists_superlevel_homeomorph_closedBall
+      (.of_forall fun y ↦ hf.contMDiff y) (isClosed_le continuous_const hfc).isCompact
+      hfc.continuousOn (a := f x₀) hlt hmax
+  obtain ⟨r, ⟨hrR₀, hrR₁, hr2⟩, hr⟩ :=
+    exists_pos_lt_lt_two_mul_sq_lt hR₀ hR₁ (sub_pos.2 hlt)
   have hr2' : 0 < r ^ 2 := by positivity
   -- The band between the two discs contains no critical point.
   have hreg (x : M) (ha : f x₀ + r ^ 2 ≤ f x) (hb : f x ≤ f x₁ - r ^ 2) :
@@ -98,26 +110,19 @@ private theorem IsMorse.nonempty_homeomorph_sphere_of_lt (hf : IsMorse I f) {x�
   obtain ⟨e₀, he₀⟩ := he₀ r hr.le hrR₀
   obtain ⟨e₁, he₁⟩ := he₁ r hr.le hrR₁
   -- Rescale the discs of radius `r` to unit discs; the boundary values are those at radius `r`.
-  let S : closedBall (0 : EuclideanSpace ℝ (Fin (finrank ℝ E))) r ≃ₜ
-      closedBall (0 : EuclideanSpace ℝ (Fin (finrank ℝ E))) 1 :=
-    (Homeomorph.smulOfNeZero r⁻¹ (inv_ne_zero hr.ne')).subtype fun v ↦ by
-      simp [norm_smul, abs_of_pos hr, inv_mul_le_iff₀ hr]
+  obtain ⟨S, hS'⟩ := exists_homeomorph_closedBall_one_norm_eq
+    (V := EuclideanSpace ℝ (Fin (finrank ℝ E))) hr
   have hS (c : ℝ) (v : closedBall (0 : EuclideanSpace ℝ (Fin (finrank ℝ E))) r) :
       c + ‖(v : EuclideanSpace ℝ (Fin (finrank ℝ E)))‖ ^ 2 = c + r ^ 2 ↔
         ‖(S v : EuclideanSpace ℝ (Fin (finrank ℝ E)))‖ = 1 := by
     rw [add_right_inj, sq_eq_sq₀ (norm_nonneg _) hr.le]
-    simp [S, norm_smul, abs_of_pos hr, inv_mul_eq_one₀ hr.ne', eq_comm]
+    exact (hS' v).symm
   -- `M` is covered by the sublevel `A` and the superlevel `B` at `f x₁ - r²`.
   let A : Set M := {x | f x ≤ f x₁ - r ^ 2}
   let B : Set M := {x | f x₁ - r ^ 2 ≤ f x}
   let eA : A ≃ₜ closedBall (0 : EuclideanSpace ℝ (Fin (finrank ℝ E))) 1 :=
     (e.trans e₀).trans S
-  let eB₀ : B ≃ₜ {y // (-f) y ≤ (-f) x₁ + r ^ 2} :=
-    (Homeomorph.refl M).subtype fun x ↦ by
-      simp only [B, mem_ofPred_eq, Homeomorph.refl_apply, id_eq, Pi.neg_apply]
-      constructor <;> intro <;> linarith
-  let eB : B ≃ₜ closedBall (0 : EuclideanSpace ℝ (Fin (finrank ℝ E))) 1 :=
-    (eB₀.trans e₁).trans S
+  let eB : B ≃ₜ closedBall (0 : EuclideanSpace ℝ (Fin (finrank ℝ E))) 1 := e₁.trans S
   refine nonempty_homeomorph_sphere_of_union_closedBall (by simp)
     (isClosed_le hfc continuous_const) (isClosed_le continuous_const hfc)
     (eq_univ_of_forall fun x ↦ le_total (f x) (f x₁ - r ^ 2)) eA eB (fun x ↦ ?_) (fun x ↦ ?_)
@@ -125,14 +130,12 @@ private theorem IsMorse.nonempty_homeomorph_sphere_of_lt (hf : IsMorse I f) {x�
     rw [hx, ← he x, he₀ (e x)]
     simpa only [eA, Homeomorph.trans_apply] using hS _ _
   · have hx : (x : M) ∈ A ↔ f x = f x₁ - r ^ 2 := ⟨fun h ↦ le_antisymm h x.2, fun h ↦ h.le⟩
-    have h₁ := he₁ (eB₀ x)
-    have hx₀ : ((eB₀ x : {y // (-f) y ≤ (-f) x₁ + r ^ 2}) : M) = x := by simp [eB₀]
-    rw [hx₀] at h₁
-    simp only [Pi.neg_apply] at h₁
-    have hneg : f x = f x₁ - r ^ 2 ↔ -f x = -f x₁ + r ^ 2 := by
+    have h₁ := he₁ x
+    have hneg : f x = f x₁ - r ^ 2 ↔ ‖(e₁ x : EuclideanSpace ℝ (Fin (finrank ℝ E)))‖ = r := by
+      rw [h₁, ← sq_eq_sq₀ (norm_nonneg _) hr.le]
       constructor <;> intro <;> linarith
-    rw [hx, hneg, h₁]
-    simpa only [eB, Homeomorph.trans_apply] using hS _ _
+    rw [hx, hneg]
+    simpa only [eB, Homeomorph.trans_apply] using (hS' (e₁ x)).symm
 
 /-- **Reeb's theorem** (Milnor, *Morse Theory*, Theorem 4.1). A compact boundaryless manifold
 modelled on a real vector space of dimension `n` which carries a Morse function with exactly two
