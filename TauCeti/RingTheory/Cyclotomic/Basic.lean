@@ -509,6 +509,23 @@ theorem reduce_eq_sum (p : ℕ) (r : ZMod p) (x : Cyclotomic e) :
     reduce p r x = ∑ j : Fin e.totient, ((x.coeff j : ℤ) : ZMod p) * r ^ (j : ℕ) :=
   evalCoeffs_eq_sum _ _ _
 
+/-- Reduction of `0` is `0`, for every residue. -/
+@[simp]
+theorem reduce_zero (p : ℕ) (r : ZMod p) : reduce p r (0 : Cyclotomic e) = 0 := by
+  simp [reduce_eq_sum]
+
+/-- Reduction is additive, for every residue: it is additive in the coordinates. -/
+@[simp]
+theorem reduce_add (p : ℕ) (r : ZMod p) (x y : Cyclotomic e) :
+    reduce p r (x + y) = reduce p r x + reduce p r y := by
+  simp [reduce_eq_sum, coeff_add, Finset.sum_add_distrib, add_mul]
+
+/-- Reduction commutes with negation, for every residue. -/
+@[simp]
+theorem reduce_neg (p : ℕ) (r : ZMod p) (x : Cyclotomic e) :
+    reduce p r (-x) = -reduce p r x := by
+  simp [reduce_eq_sum, coeff_neg]
+
 /-- Reduction at an `e`-th primitive root in a prime field is a ring homomorphism. -/
 noncomputable def reduceRingHom (p : ℕ) [Fact p.Prime] [NeZero e]
     (r : ZMod p) (hr : IsPrimitiveRoot r e) : Cyclotomic e →+* ZMod p :=

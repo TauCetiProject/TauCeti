@@ -314,7 +314,7 @@ private theorem mem_range_specMap_infinityChartRestriction (hF : IsFunctionField
   have he : sectionRingAwayGeneratorEquiv hF z (Away.isLocalizationElem
       (monomialDegreeOne_mem_sectionRingGrade (mem_riemannRochSpace_poles hF z))
       (monomialDegreeOne_mem_sectionRingGrade
-        (one_mem_riemannRochSpace_iff.mpr (isEffective_poles hF z).zero_le))) =
+        (one_mem_riemannRochSpace_iff.mpr (poles_nonneg hF z)))) =
         ⟨(z : F)⁻¹, hz⟩ := by
     have h1 : polesSectionOne hF z ^ 1 ∈ sectionRingGrade (poles hF z) 1 := by
       rw [pow_one]

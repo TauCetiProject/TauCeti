@@ -712,6 +712,21 @@ theorem preprojectiveMk_preprojectiveRelator :
 
 variable {Q}
 
+/-- An element of the preprojective algebra that is killed on the right by every vertex idempotent
+vanishes, since the vertex idempotents sum to `1`. -/
+theorem eq_zero_of_forall_mul_preprojectiveMk_vertexIdempotent_eq_zero
+    {y : preprojectiveAlgebra k Q}
+    (h : ∀ u : Symmetrify Q, y * preprojectiveMk k Q (vertexIdempotent k u) = 0) : y = 0 := by
+  rw [← mul_one y, ← map_one (preprojectiveMk k Q), one_def, map_sum, Finset.mul_sum]
+  exact Finset.sum_eq_zero fun u _ => h u
+
+/-- A nonzero element of the preprojective algebra does not vanish on the right at some vertex
+idempotent. -/
+theorem exists_mul_preprojectiveMk_vertexIdempotent_ne_zero {y : preprojectiveAlgebra k Q}
+    (hy : y ≠ 0) : ∃ u : Symmetrify Q, y * preprojectiveMk k Q (vertexIdempotent k u) ≠ 0 := by
+  by_contra! h
+  exact hy (eq_zero_of_forall_mul_preprojectiveMk_vertexIdempotent_eq_zero k h)
+
 @[simp]
 theorem preprojectiveMk_localPreprojectiveRelator (v : Q) :
     preprojectiveMk k Q (localPreprojectiveRelator k v) = 0 :=
