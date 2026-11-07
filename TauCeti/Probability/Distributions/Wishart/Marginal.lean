@@ -163,27 +163,6 @@ private theorem map_submatrix_one_nonsingularWishartMeasure_one (hqp : q ≤ p)
 
 /-! ### Congruence by a matrix of full row rank -/
 
-/-- A matrix `A` with `Tm * Tmᵀ = A * Aᵀ` for an invertible `Tm` factors as `Tm` times the first
-`q` rows of an orthogonal matrix. -/
-private theorem exists_orthogonal_mul_eq_mul_submatrix_one (hqp : q ≤ p)
-    (A : Matrix (Fin q) (Fin p) ℝ) (Tm : Matrix (Fin q) (Fin q) ℝ) (hTm : Tm.det ≠ 0)
-    (hA : Tm * Tmᵀ = A * Aᵀ) :
-    ∃ Q : Matrix (Fin p) (Fin p) ℝ, Q * Qᵀ = 1 ∧ Q.det ≠ 0 ∧
-      A = Tm * ((1 : Matrix (Fin p) (Fin p) ℝ).submatrix (Fin.castLE hqp) id * Q) := by
-  obtain ⟨Q, hQ, hQfac⟩ := Matrix.exists_mul_conjTranspose_eq_one_and_eq_mul_submatrix A
-    (Fin.castLE_injective hqp) hTm (by simpa using hA)
-  rw [Matrix.conjTranspose_eq_transpose_of_trivial] at hQ
-  refine ⟨Q, hQ, ?_, ?_⟩
-  · have hdet : Q.det * Q.det = 1 := by
-      simpa [Matrix.det_transpose] using congrArg Matrix.det hQ
-    intro h
-    rw [h, mul_zero] at hdet
-    exact zero_ne_one hdet
-  · have hsel : (1 : Matrix (Fin p) (Fin p) ℝ).submatrix (Fin.castLE hqp) id * Q =
-        Q.submatrix (Fin.castLE hqp) id := by
-      simpa using Matrix.one_submatrix_mul (Fin.castLE hqp) (Equiv.refl (Fin p)) Q
-    rw [hsel, hQfac]
-
 /-- **Congruence by a matrix of full row rank carries the nonsingular Wishart law of scale `S` to
 the one of scale `M * S * Mᵀ`.** Full row rank keeps the new scale positive definite, so the
 image stays inside the density family. -/
@@ -208,8 +187,8 @@ theorem map_symmetricCongruenceLinearMap_nonsingularWishartMeasure
       _ = M * Rm * (M * Rm)ᵀ := by
           rw [Matrix.transpose_mul]
           simp only [Matrix.mul_assoc]
-  obtain ⟨Q, hQ, hQdet, hMR'⟩ := exists_orthogonal_mul_eq_mul_submatrix_one hqp (M * Rm) Tm
-    (Matrix.GeneralLinearGroup.det_ne_zero T) hMRT
+  obtain ⟨Q, hQ, hQdet, hMR'⟩ := Matrix.exists_orthogonal_mul_eq_mul_submatrix_one
+    (Fin.castLE_injective hqp) (M * Rm) Tm (Matrix.GeneralLinearGroup.det_ne_zero T) hMRT
   have hMR : M * Rm = Tm * (E * Q) := hMR'
   -- The four congruences: by `Rm`, which builds the scale `S`; by the orthogonal `Q`, which fixes
   -- the standard law; by `E`, which selects coordinates; and by `Tm`, which builds the new scale.
