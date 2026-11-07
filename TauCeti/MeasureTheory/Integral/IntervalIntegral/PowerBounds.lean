@@ -46,7 +46,7 @@ theorem intervalIntegrable_of_norm_le_mul_sub_rpow_right {f : ℝ → E} {a b K 
     (hbound : ∀ᵐ s ∂volume.restrict (Ioc a b), ‖f s‖ ≤ K * (s - a) ^ u) :
     IntervalIntegrable f volume a b := by
   rw [← uIoc_of_le hab] at hmeas hbound
-  exact ((TauCeti.intervalIntegrable_sub_const_rpow hu a b).const_mul K).mono_fun' hmeas hbound
+  exact ((TauCeti.intervalIntegrable_sub_const_rpow hu a a b).const_mul K).mono_fun' hmeas hbound
 
 /-- A function whose norm is bounded almost everywhere on `(a, b]` by `K * (s - a) ^ u` with
 `-1 < u` has integral over `[a, b]` of norm at most `K * ((b - a) ^ (u + 1) / (u + 1))`. -/
@@ -55,7 +55,7 @@ theorem norm_integral_le_of_norm_le_mul_sub_rpow_right {f : ℝ → E} {a b K u 
     (hbound : ∀ᵐ s ∂volume.restrict (Ioc a b), ‖f s‖ ≤ K * (s - a) ^ u) :
     ‖∫ s in a..b, f s‖ ≤ K * ((b - a) ^ (u + 1) / (u + 1)) := by
   refine (norm_integral_le_of_norm_le hab ((ae_restrict_iff' measurableSet_Ioc).mp hbound)
-    ((TauCeti.intervalIntegrable_sub_const_rpow hu a b).const_mul K)).trans_eq ?_
+    ((TauCeti.intervalIntegrable_sub_const_rpow hu a a b).const_mul K)).trans_eq ?_
   rw [integral_const_mul, TauCeti.integral_sub_const_rpow hu]
 
 omit [NormedSpace ℝ E] in
