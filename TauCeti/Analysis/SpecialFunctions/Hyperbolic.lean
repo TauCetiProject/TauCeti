@@ -53,8 +53,6 @@ in terms of the exponentials `exp (± r / 2)`, and the Gaussian bound
   exponentially small below its centre.
 * `Real.one_sub_exp_neg_div_le_exp` — `(1 - exp (-l)) / l ≤ exp (-(l / 2) + l ^ 2 / 24)`: the
   resulting bound on that exponential moment, for every real `l`.
-* `Real.eventually_pos_le_cosh_lt` — for `c > 0` and small `τ > 0` one has `τ ≤ c / 2`,
-  `4 (cosh τ * cosh τ - 1) < 1 / 2` and `4 (cosh τ - 1) < sinh (c / 4) ^ 2`.
 
 The formula `Real.tanh_add` is the quotient of the other two, both sides carrying the factor
 `cosh a * cosh b`, which is nonzero because `Real.cosh` is positive.
@@ -317,23 +315,5 @@ theorem _root_.Real.tendsto_cosh_sub_div_cosh_add_atTop (a : ℝ) :
     field_simp
   rw [heq, ← hg0]
   exact hg.tendsto.comp Real.tendsto_exp_neg_atTop_nhds_zero
-
-open Filter Topology in
-/-- For small `τ > 0`, the constants in the thin-part argument at an elliptic point are bounded:
-`τ ≤ c / 2`, `4 (cosh τ * cosh τ - 1) < 1 / 2` and `4 (cosh τ - 1) < sinh (c / 4) ^ 2`. -/
-theorem _root_.Real.eventually_pos_le_cosh_lt {c : ℝ} (hc : 0 < c) :
-    ∀ᶠ τ in 𝓝[>] (0 : ℝ), 0 < τ ∧ τ ≤ c / 2 ∧
-      4 * (Real.cosh τ * Real.cosh τ - 1) < 1 / 2 ∧
-      4 * (Real.cosh τ - 1) < Real.sinh (c / 4) ^ 2 := by
-  have hs : 0 < Real.sinh (c / 4) ^ 2 := pow_pos (Real.sinh_pos_iff.2 (by positivity)) 2
-  have h₁ : Tendsto (fun τ ↦ 4 * (Real.cosh τ * Real.cosh τ - 1)) (𝓝 0) (𝓝 0) := by
-    simpa using (continuous_const.mul ((Real.continuous_cosh.mul Real.continuous_cosh).sub
-      continuous_const)).tendsto (0 : ℝ) (f := fun τ ↦ 4 * (Real.cosh τ * Real.cosh τ - 1))
-  have h₂ : Tendsto (fun τ ↦ 4 * (Real.cosh τ - 1)) (𝓝 0) (𝓝 0) := by
-    simpa using (continuous_const.mul (Real.continuous_cosh.sub continuous_const)).tendsto
-      (0 : ℝ) (f := fun τ ↦ 4 * (Real.cosh τ - 1))
-  exact eventually_mem_nhdsWithin.and <| ((eventually_le_nhds (half_pos hc)).and
-    ((h₁.eventually (gt_mem_nhds (by norm_num))).and
-      (h₂.eventually (gt_mem_nhds hs)))).filter_mono nhdsWithin_le_nhds
 
 end TauCeti
