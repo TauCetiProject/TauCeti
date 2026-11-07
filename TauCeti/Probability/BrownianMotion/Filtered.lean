@@ -58,6 +58,21 @@ structure IsFilteredPreBrownianReal (ℱ : Filtration ℝ≥0 mΩ) (W : ℝ≥0 
   /-- The increment `W t - W s` is independent of `ℱ s`. -/
   indep_sub ⦃s t : ℝ≥0⦄ : s ≤ t → Indep (.comap (W t - W s) inferInstance) (ℱ s) P
 
+namespace IsFilteredPreBrownianReal
+
+/-- A Brownian value is independent of every random variable known at time zero. -/
+theorem indepFun_eval_of_measurable_zero {P : Measure Ω} {ℱ : Filtration ℝ≥0 mΩ}
+    {W : ℝ≥0 → Ω → ℝ} (hW : IsFilteredPreBrownianReal ℱ W P)
+    {E : Type*} [MeasurableSpace E] {ξ : Ω → E} (hξ : Measurable[ℱ 0] ξ) (t : ℝ≥0) :
+    IndepFun (W t) ξ P := by
+  have h : IndepFun (W t - W 0) ξ P :=
+    indep_of_indep_of_le_right (hW.indep_sub (zero_le (a := t))) hξ.comap_le
+  refine h.congr ?_ Filter.EventuallyEq.rfl
+  filter_upwards [hW.eval_zero_ae_eq_zero] with ω hω
+  simp [hω]
+
+end IsFilteredPreBrownianReal
+
 end TauCeti.Probability
 
 namespace ProbabilityTheory.IsPreBrownianReal
