@@ -117,9 +117,11 @@ theorem analyticAt_holomorphicSection_extend_comp_symm (hx : x ∈ e.source)
     analyticAt_chart_comp_comp_symm he (chart_mem_maximalAtlas (F x)) hx
       (mem_chart_source ℂ (F x)) hFa
 
-/-- The division step: if the difference quotient of a section `s` (extended by zero and written in
-the chart `e`) at the center `e x` is analytic on a neighborhood `V` of `x` inside the domain `U`
-of `s` and the chart source, then the germ of `s` is divisible by the centered coordinate germ. -/
+/-- The division step: let `s` be a section over `U` that vanishes at the center, `s ⟨x, hxU⟩ = 0`.
+If the difference quotient of `s` (extended by zero and written in the chart `e`) at the center
+`e x` is analytic on a neighborhood `V` of `x` inside `U` and the chart source, then the germ of
+`s` is divisible by the centered coordinate germ. The vanishing `hs0` is what makes the difference
+quotient a quotient of `s` by the coordinate. -/
 private theorem holomorphicCoordinateGerm_dvd_germ_of_dslope (hx : x ∈ e.source)
     (U : Opens X) (hxU : x ∈ U)
     (s : (holomorphicStructureSheaf 𝓘(ℂ) X).obj.obj (op U)) (hs0 : s ⟨x, hxU⟩ = 0)
