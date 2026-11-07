@@ -54,6 +54,48 @@ variable {K X Y : Type*} [Field K] [NumberField K]
   [AddCommGroup X] [Module K X] [FiniteDimensional K X]
   [AddCommGroup Y] [Module K Y] [FiniteDimensional K Y]
 
+omit [FiniteDimensional K X] in
+/-- If `W` is regular, then `-U x` is represented at a finite place `v` as soon as, where `W_v` is
+anisotropic, the value `U_v (1 ⊗ x)` lies in the square class of a local value of `U_v` that is
+the negative of a local value of `W_v`. -/
+private theorem represents_atFinitePlace_neg_apply
+    (U : QuadraticForm K X) (W : QuadraticForm K Y) (hW : W.Nondegenerate)
+    (v : HeightOneSpectrum (𝓞 K)) (x : X)
+    (h : (W.atFinitePlace v).Anisotropic →
+      ∃ x₀ y, U.atFinitePlace v x₀ ≠ 0 ∧ U.atFinitePlace v x₀ = -W.atFinitePlace v y ∧
+        IsSquare (U.atFinitePlace v ((1 : v.adicCompletion K) ⊗ₜ[K] x) / U.atFinitePlace v x₀)) :
+    Represents (W.atFinitePlace v) (algebraMap K (v.adicCompletion K) (-U x)) := by
+  by_cases han : (W.atFinitePlace v).Anisotropic
+  · obtain ⟨x₀, y, hx₀, hxy, hsq⟩ := h han
+    have hrep : Represents (W.atFinitePlace v) (-U.atFinitePlace v x₀) :=
+      (represents_iff _ _).mpr ⟨y, (neg_eq_iff_eq_neg.mpr hxy).symm⟩
+    refine hrep.of_isSquare_div (neg_ne_zero.mpr hx₀) ?_
+    simpa [neg_div_neg_eq] using hsq
+  · exact represents_of_nondegenerate_of_not_anisotropic _
+      (QuadraticForm.Nondegenerate.atFinitePlace hW v) han _
+
+omit [FiniteDimensional K X] in
+/-- If `W` is regular, then `-U x` is represented at a real place `w` as soon as, where `W_w` is
+anisotropic, the value `U_w (1 ⊗ x)` lies in the square class of a local value of `U_w` that is
+the negative of a local value of `W_w`. -/
+private theorem represents_atRealPlace_neg_apply
+    (U : QuadraticForm K X) (W : QuadraticForm K Y) (hW : W.Nondegenerate)
+    (w : {w : InfinitePlace K // w.IsReal}) (x : X)
+    (h : (W.atRealPlace w).Anisotropic →
+      ∃ x₀ y, U.atRealPlace w x₀ ≠ 0 ∧ U.atRealPlace w x₀ = -W.atRealPlace w y ∧
+        letI : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+        IsSquare (U.atRealPlace w ((1 : ℝ) ⊗ₜ[K] x : RealScalarExtension w) / U.atRealPlace w x₀)) :
+    Represents (W.atRealPlace w) (embedding_of_isReal w.2 (-U x)) := by
+  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+  by_cases han : (W.atRealPlace w).Anisotropic
+  · obtain ⟨x₀, y, hx₀, hxy, hsq⟩ := h han
+    have hrep : Represents (W.atRealPlace w) (-U.atRealPlace w x₀) :=
+      (represents_iff _ _).mpr ⟨y, (neg_eq_iff_eq_neg.mpr hxy).symm⟩
+    refine hrep.of_isSquare_div (neg_ne_zero.mpr hx₀) ?_
+    simpa [neg_div_neg_eq] using hsq
+  · exact represents_of_nondegenerate_of_not_anisotropic _
+      (QuadraticForm.Nondegenerate.atRealPlace hW w) han _
+
 /-- Let `W` be a regular quadratic form over a number field that is anisotropic at only finitely
 many finite places. If at every finite or real place where `W` is anisotropic some nonzero local
 value of `U` is the negative of a local value of `W`, then there is a global vector `x` with
@@ -95,25 +137,14 @@ theorem _root_.QuadraticForm.exists_apply_ne_zero_locallyRepresentsScalar_neg
         ((1 : ℝ) ⊗ₜ[K] x : RealScalarExtension w.1) ∈ M w) :
       W.LocallyRepresentsScalar (-U x) := by
     refine (QuadraticForm.locallyRepresentsScalar_iff _ _).mpr ⟨fun v => ?_, fun w => ?_⟩
-    · by_cases hvS : v ∈ S
-      · obtain ⟨-, hsq⟩ := hN ⟨v, hvS⟩ _ (hxS' ⟨v, hvS⟩)
-        have hrep : Represents (W.atFinitePlace v) (-U.atFinitePlace v (xS ⟨v, hvS⟩)) :=
-          (represents_iff _ _).mpr ⟨yS ⟨v, hvS⟩, (neg_eq_iff_eq_neg.mpr (hxyS ⟨v, hvS⟩)).symm⟩
-        refine hrep.of_isSquare_div (neg_ne_zero.mpr (hxS ⟨v, hvS⟩)) ?_
-        simpa [neg_div_neg_eq] using hsq
-      · refine represents_of_nondegenerate_of_not_anisotropic _
-          (QuadraticForm.Nondegenerate.atFinitePlace hW v) ?_ _
-        simpa [S] using hvS
-    · let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-      by_cases hwT : w ∈ T
-      · obtain ⟨-, hsq⟩ := hM ⟨w, hwT⟩ _ (hxT' ⟨w, hwT⟩)
-        have hrep : Represents (W.atRealPlace w) (-U.atRealPlace w (xT ⟨w, hwT⟩)) :=
-          (represents_iff _ _).mpr ⟨yT ⟨w, hwT⟩, (neg_eq_iff_eq_neg.mpr (hxyT ⟨w, hwT⟩)).symm⟩
-        refine hrep.of_isSquare_div (neg_ne_zero.mpr (hxT ⟨w, hwT⟩)) ?_
-        simpa [neg_div_neg_eq] using hsq
-      · refine represents_of_nondegenerate_of_not_anisotropic _
-          (QuadraticForm.Nondegenerate.atRealPlace hW w) ?_ _
-        simpa [T] using hwT
+    · refine represents_atFinitePlace_neg_apply U W hW v x fun han => ?_
+      have hvS : v ∈ S := by simpa [S] using han
+      exact ⟨xS ⟨v, hvS⟩, yS ⟨v, hvS⟩, hxS ⟨v, hvS⟩, hxyS ⟨v, hvS⟩,
+        (hN ⟨v, hvS⟩ _ (hxS' ⟨v, hvS⟩)).2⟩
+    · refine represents_atRealPlace_neg_apply U W hW w x fun han => ?_
+      have hwT : w ∈ T := by simpa [T] using han
+      exact ⟨xT ⟨w, hwT⟩, yT ⟨w, hwT⟩, hxT ⟨w, hwT⟩, hxyT ⟨w, hwT⟩,
+        (hM ⟨w, hwT⟩ _ (hxT' ⟨w, hwT⟩)).2⟩
   by_cases hST : S.Nonempty ∨ T.Nonempty
   · -- Some place is exceptional: weak approximation gives `x`, and `U x ≠ 0` is read off there.
     obtain ⟨x, hxS', hxT'⟩ := NumberField.exists_one_tmul_mem_of_mem_nhds S T
@@ -121,18 +152,14 @@ theorem _root_.QuadraticForm.exists_apply_ne_zero_locallyRepresentsScalar_neg
     refine ⟨x, ?_, hgood x hxS' hxT'⟩
     intro hx
     rcases hST with ⟨v, hv⟩ | ⟨w, hw⟩
-    · refine (hN ⟨v, hv⟩ _ (hxS' ⟨v, hv⟩)).1 ?_
-      simp [hx]
-    · refine (hM ⟨w, hw⟩ _ (hxT' ⟨w, hw⟩)).1 ?_
-      simp [hx]
+    · exact (hN ⟨v, hv⟩ _ (hxS' ⟨v, hv⟩)).1 (by simp [hx])
+    · exact (hM ⟨w, hw⟩ _ (hxT' ⟨w, hw⟩)).1 (by simp [hx])
   · -- No place is exceptional: any vector with nonzero value works.
     rw [not_or, Finset.not_nonempty_iff_eq_empty, Finset.not_nonempty_iff_eq_empty] at hST
     obtain ⟨x, hx⟩ : ∃ x, U x ≠ 0 := by
-      by_contra! h
-      exact hU (QuadraticMap.ext h)
-    refine ⟨x, hx, hgood x (fun v => ?_) (fun w => ?_)⟩
-    · exact absurd v.2 (by simp [hST.1])
-    · exact absurd w.2 (by simp [hST.2])
+      by_contra! h; exact hU (QuadraticMap.ext h)
+    exact ⟨x, hx, hgood x (fun v => absurd v.2 (by simp [hST.1]))
+      (fun w => absurd w.2 (by simp [hST.2]))⟩
 
 /-- Let `W` be a regular quadratic form over a number field that is anisotropic at only finitely
 many finite places, and suppose that at every finite or real place where `W` is anisotropic some
