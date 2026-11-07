@@ -38,6 +38,8 @@ are the degrees of the group.
 
 ## Main results
 
+* `TauCeti.GradedAlgebra.aeval_weightedHomogeneousComponent`: evaluation at homogeneous elements
+  carries weighted homogeneous components to homogeneous components.
 * `TauCeti.GradedAlgebra.map_aeval_weightedHomogeneousSubmodule`: the weighted homogeneous
   polynomials of weight `n` map onto `𝒜 n` under a surjective evaluation at homogeneous elements.
 * `TauCeti.GradedAlgebra.finrank_eq_natCard_weight`: for a polynomial presentation,
@@ -67,20 +69,17 @@ namespace TauCeti.GradedAlgebra
 variable {R A ι : Type*} [CommRing R] [CommRing A] [Algebra R A] (𝒜 : ℕ → Submodule R A)
   [GradedAlgebra 𝒜] {f : ι → A} {d : ι → ℕ}
 
-/-- If evaluation at homogeneous elements `f i ∈ 𝒜 (d i)` is surjective, it maps the polynomials
-that are weighted homogeneous of weight `n` for the weights `d` onto `𝒜 n`. -/
-theorem map_aeval_weightedHomogeneousSubmodule (hf : ∀ i, f i ∈ 𝒜 (d i))
-    (hsurj : Function.Surjective (aeval (R := R) f)) (n : ℕ) :
-    (weightedHomogeneousSubmodule R d n).map (aeval f).toLinearMap = 𝒜 n := by
+/-- **Evaluation at homogeneous elements is graded.** If `f i ∈ 𝒜 (d i)`, then evaluating at `f`
+the weighted homogeneous component of weight `n` of a polynomial `φ`, for the weights `d`, gives
+the degree-`n` component of the evaluation of `φ`. -/
+theorem aeval_weightedHomogeneousComponent (hf : ∀ i, f i ∈ 𝒜 (d i)) (φ : MvPolynomial ι R)
+    (n : ℕ) :
+    aeval f (weightedHomogeneousComponent d n φ) = DirectSum.decompose 𝒜 (aeval f φ) n := by
   classical
-  refine le_antisymm (Submodule.map_le_iff_le_comap.2 fun φ hφ ↦ hφ.aeval_mem hf) fun x hx ↦ ?_
-  -- Evaluation is a homomorphism of graded algebras for the weighted grading, so it carries the
-  -- weight-`n` component of a preimage of `x` to the degree-`n` component of `x`, which is `x`.
+  -- Evaluation is a homomorphism of graded algebras for the weighted grading.
   let := weightedGradedAlgebra R d
   let F : weightedHomogeneousSubmodule R d →ₐᵍ[R] 𝒜 :=
     ⟨aeval f, fun hφ ↦ (mem_weightedHomogeneousSubmodule ..).1 hφ |>.aeval_mem hf⟩
-  obtain ⟨φ, rfl⟩ := hsurj x
-  refine ⟨weightedHomogeneousComponent d n φ, weightedHomogeneousComponent_mem d φ n, ?_⟩
   calc aeval f (weightedHomogeneousComponent d n φ)
       = F (DirectSum.decompose (weightedHomogeneousSubmodule R d) φ n) := by
         -- `DirectSum.decompose` unfolds to the `decompose'` field of `weightedDecomposition`.
@@ -88,7 +87,17 @@ theorem map_aeval_weightedHomogeneousSubmodule (hf : ∀ i, f i ∈ 𝒜 (d i))
         rfl
     _ = DirectSum.decompose 𝒜 (F φ) n :=
       map_directSumDecompose (weightedHomogeneousSubmodule R d) 𝒜 F
-    _ = aeval f φ := DirectSum.decompose_of_mem_same 𝒜 hx
+
+/-- If evaluation at homogeneous elements `f i ∈ 𝒜 (d i)` is surjective, it maps the polynomials
+that are weighted homogeneous of weight `n` for the weights `d` onto `𝒜 n`. -/
+theorem map_aeval_weightedHomogeneousSubmodule (hf : ∀ i, f i ∈ 𝒜 (d i))
+    (hsurj : Function.Surjective (aeval (R := R) f)) (n : ℕ) :
+    (weightedHomogeneousSubmodule R d n).map (aeval f).toLinearMap = 𝒜 n := by
+  refine le_antisymm (Submodule.map_le_iff_le_comap.2 fun φ hφ ↦ hφ.aeval_mem hf) fun x hx ↦ ?_
+  -- The weight-`n` component of a preimage of `x` maps to the degree-`n` component of `x`.
+  obtain ⟨φ, rfl⟩ := hsurj x
+  exact ⟨weightedHomogeneousComponent d n φ, weightedHomogeneousComponent_mem d φ n,
+    (aeval_weightedHomogeneousComponent 𝒜 hf φ n).trans (DirectSum.decompose_of_mem_same 𝒜 hx)⟩
 
 /-- **Dimensions of a graded polynomial algebra.** If evaluation at homogeneous elements
 `f i ∈ 𝒜 (d i)` is bijective, then `Module.finrank (𝒜 n)` equals `Nat.card` of the exponent

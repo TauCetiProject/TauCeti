@@ -70,8 +70,8 @@ subgroups and intertwining the Steinberg endomorphism with entrywise Frobenius, 
   Bourbaki-numbered node, with
   `TauCeti.TypeCLieIndex.rootGeneratorWeight_carrierNode_eq_root_simpleIndex` identifying the
   character of that subgroup with the corresponding simple root of the type-`C` root datum.
-* `TauCeti.TypeCLieIndex.weightTorus`: the full-weight torus in the index's own
-  fundamental-weight coordinates.
+* `TauCeti.TypeCLieIndex.weightTorus`, with `TauCeti.TypeCLieIndex.weightTorus_apply`: the split
+  weight torus in Bourbaki-numbered fundamental-weight coordinates.
 * `TauCeti.TypeCLieIndex.frobenius`: the carrier's `q`-power Frobenius, with
   `TauCeti.TypeCLieIndex.frobenius_simpleRootSubgroup` and
   `TauCeti.TypeCLieIndex.frobenius_weightTorusPoints` recording its action on the numbered
@@ -163,20 +163,6 @@ to it; its identification with the points of the symplectic group scheme over `�
 `TauCeti.TypeCLieIndex.carrierEquivPinned`. -/
 abbrev AmbientGroup : Type := SpStd.points d.carrierRank d.1.Closure
 
-/-- The full-weight torus of the standard symplectic carrier, parametrized in the index's own
-fundamental-weight coordinates. The rank identification preserves the numbering of all nodes. -/
-def weightTorus : (Fin d.1.rank → d.1.Closureˣ) →* d.AmbientGroup :=
-  (SpStd.weightTorusPoints d.carrierRank d.1.Closure).comp
-    (MonoidHom.pi fun i =>
-      Pi.evalMonoidHom (fun _ : Fin d.1.rank => d.1.Closureˣ)
-        (Fin.cast d.carrierRank_add_one i))
-
-/-- The indexed torus is the carrier's weight torus after the rank identification. -/
-theorem weightTorus_apply (s : Fin d.1.rank → d.1.Closureˣ) :
-    d.weightTorus s = SpStd.weightTorusPoints d.carrierRank d.1.Closure
-      (fun i => s (Fin.cast d.carrierRank_add_one i)) :=
-  (rfl)
-
 /-- The positive simple-root subgroup at the Bourbaki-numbered node `i` of the type-`C` diagram. It
 is the carrier's numbered raising subgroup at the node that `carrierNode` names. -/
 def simpleRootSubgroup (i : Fin d.1.rank) :
@@ -190,6 +176,20 @@ carrier node. -/
 theorem simpleRootSubgroup_def (i : Fin d.1.rank) :
     d.simpleRootSubgroup i =
       SpStd.rootSubgroupPoints d.carrierRank (.inl (d.carrierNode i)) d.1.Closure :=
+  (rfl)
+
+/-- The weight torus of the standard symplectic carrier, parametrized by the index's
+Bourbaki-numbered fundamental-weight coordinates. The rank identification changes no node. -/
+def weightTorus : (Fin d.1.rank → d.1.Closureˣ) →* d.AmbientGroup :=
+  (SpStd.weightTorusPoints d.carrierRank d.1.Closure).comp
+    (MonoidHom.pi fun i : Fin (d.carrierRank + 1) =>
+      Pi.evalMonoidHom (fun _ : Fin d.1.rank => d.1.Closureˣ)
+        (Fin.cast d.carrierRank_add_one i))
+
+/-- The indexed torus is the carrier's weight torus with the same coordinate values. -/
+theorem weightTorus_apply (s : Fin d.1.rank → d.1.Closureˣ) :
+    d.weightTorus s = SpStd.weightTorusPoints d.carrierRank d.1.Closure
+      (fun i => s (Fin.cast d.carrierRank_add_one i)) :=
   (rfl)
 
 /-- **The simple-root subgroups sit at the simple roots of the type-`C` root datum.** The character
@@ -320,7 +320,7 @@ theorem frobenius_weightTorusPoints
   rw [frobenius_def, SpStd.frobenius_weightTorusPoints,
     ValidLieTypeIndex.fieldOrder_eq_characteristic_pow]
 
-/-- Frobenius raises every indexed fundamental-weight torus coordinate to the field order. -/
+/-- The represented Frobenius raises every indexed fundamental-weight torus coordinate to `q`. -/
 @[simp]
 theorem frobenius_weightTorus (s : Fin d.1.rank → d.1.Closureˣ) :
     d.frobenius (d.weightTorus s) = d.weightTorus (s ^ d.1.fieldOrder) := by
@@ -370,6 +370,12 @@ theorem steinberg_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.
         (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
   rw [steinberg_def]
   exact d.frobenius_simpleRootSubgroup i u
+
+/-- The represented Steinberg map raises every indexed torus coordinate to the field order. -/
+@[simp]
+theorem steinberg_weightTorus (s : Fin d.1.rank → d.1.Closureˣ) :
+    d.steinberg (d.weightTorus s) = d.weightTorus (s ^ d.1.fieldOrder) := by
+  rw [steinberg_def, frobenius_weightTorus]
 
 /-- **A point of the ambient group is fixed by the Steinberg map exactly when all of its matrix
 entries lie in the field of definition**, so the fixed group `H_d` of the family is the group of
