@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.PowerSeries.Coefficient
 public import TauCeti.MeasureTheory.Integral.Torus.ContinuousMap
 public import Mathlib.Analysis.Analytic.Basic
+import TauCeti.Analysis.Analytic.ContinuousMap
 
 /-!
 # Identifying multivariate Cauchy coefficients of native series
@@ -23,7 +24,8 @@ strictly inside the ball of representation. It includes the constant coefficient
 zero.
 
 The proof combines `ContinuousMultilinearMap.torusIntegral_cauchyCoeff`, homogeneous-degree
-orthogonality, uniform convergence of native partial sums, and `TauCeti.torusIntegralCLM`.
+orthogonality, uniform convergence of native partial sums on a compact family of points, and
+`TauCeti.torusIntegralCLM`.
 
 ## References
 
@@ -52,33 +54,6 @@ private theorem torusIntegral_cauchyCoeff_translate (p : FormalMultilinearSeries
   -- Translation preserves the parametrized torus differential as well as the integrand.
   simp only [torusIntegral, ← Pi.sub_apply, torusMap_sub_center,
     Finset.prod_inv_distrib, inv_pow]
-
-/-- The Cauchy weight is continuous on the boundary torus, since every radius is positive. -/
-private theorem continuous_inv_prod_sub_pow (hR : ∀ i, 0 < R i) (m : Fin n → ℕ) :
-    Continuous (fun z : (i : Fin n) → sphere (c i) |R i| ↦
-      (∏ i, ((z i : ℂ) - c i) ^ (m i + 1))⁻¹) := by
-  apply Continuous.inv₀ (by fun_prop)
-  intro z
-  apply Finset.prod_ne_zero_iff.mpr
-  intro i _
-  apply pow_ne_zero
-  exact sub_ne_zero.mpr (ne_of_mem_sphere (z i).2 (abs_ne_zero.mpr (hR i).ne'))
-
-omit [CompleteSpace F] in
-/-- The partial sums of a power series converge uniformly along any family of points whose
-distance from the center is bounded by a radius strictly inside the ball of representation. -/
-theorem HasFPowerSeriesOnBall.tendstoUniformly_comp_partialSum
-    (hf : HasFPowerSeriesOnBall f p c r) {s : ℝ≥0} (hs : (s : ℝ≥0∞) < r) {α : Type*}
-    (v : α → Fin n → ℂ) (hbound : ∀ z, ‖v z - c‖ ≤ s) :
-    TendstoUniformly (fun N z ↦ ∑ k ∈ Finset.range N, p k (fun _ ↦ v z - c))
-      (fun z ↦ f (v z)) atTop := by
-  obtain ⟨t, hst, htr⟩ := ENNReal.lt_iff_exists_nnreal_btwn.mp hs
-  have hvt (z : α) : v z ∈ ball c t := by
-    rw [mem_ball, dist_eq_norm]
-    exact (hbound z).trans_lt (by exact_mod_cast hst)
-  have h := (hf.tendstoUniformlyOn' htr).comp v
-  rw [← tendstoUniformlyOn_univ]
-  exact h.mono (fun z _ ↦ hvt z)
 
 /-- A multivariate Cauchy coefficient of an analytic function is the finite sum of basis
 values of the native multilinear term of the corresponding total degree. No symmetry of
@@ -111,14 +86,10 @@ theorem HasFPowerSeriesOnBall.torusIntegral_cauchyCoeff
     exact lt_of_le_of_lt (by exact_mod_cast hbound z) hs
   let G : C(K, F) := ⟨fun z ↦ f (v z), hf.continuousOn.comp_continuous hv hmem⟩
   let P : ℕ → C(K, F) := fun k ↦ ⟨fun z ↦ p k (fun _ ↦ v z - c), by fun_prop⟩
-  have hconv : Tendsto (fun N ↦ ∑ k ∈ Finset.range N, P k) atTop (𝓝 G) := by
-    apply ContinuousMap.tendsto_iff_forall_isCompact_tendstoUniformlyOn.mpr
-    intro S _
-    simpa only [P, G, ContinuousMap.coe_sum, ContinuousMap.coe_mk, Finset.sum_apply,
-      FormalMultilinearSeries.partialSum] using
-      (hf.tendstoUniformly_comp_partialSum hs v hbound).tendstoUniformlyOn (s := S)
+  have hconv : Tendsto (fun N ↦ ∑ k ∈ Finset.range N, P k) atTop (𝓝 G) :=
+    (hf.hasSum_compact ⟨v, hv⟩ hs hbound).tendsto_sum_nat
   -- The Cauchy weight is continuous on the boundary, since every radius is positive.
-  let W : C(K, ℂ) := ⟨_, continuous_inv_prod_sub_pow (c := c) hR m⟩
+  let W : C(K, ℂ) := ⟨_, TauCeti.continuous_inv_prod_sub_pow (c := c) hR m⟩
   have hW : Continuous (fun u : C(K, F) ↦ W • u) := by
     exact ContinuousMap.continuous_of_continuous_uncurry _
       ((W.continuous.comp continuous_snd).smul continuous_eval)
