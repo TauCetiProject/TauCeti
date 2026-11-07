@@ -374,7 +374,7 @@ section AnnihilatorOfMaximalOrder
 
 variable {k M : Type*} [Field k] [AddCommMonoid M] [Module k[X] M]
 
-namespace Polynomial
+namespace TauCeti.Polynomial
 
 /-- If `X ^ m` kills `t` but `X ^ (m - 1)` does not, the annihilator of `t` is `(X ^ m)`. -/
 theorem torsionOf_eq_span_X_pow {m : ℕ} {t : M} (hm : (X ^ m : k[X]) • t = 0)
@@ -390,6 +390,6 @@ theorem torsionOf_eq_span_X_pow {m : ℕ} {t : M} (hm : (X ^ m : k[X]) • t = 0
     exact hgi.dvd.trans (pow_dvd_pow X (by omega))
   rw [hg, Ideal.submodule_span_eq, Ideal.span_singleton_eq_span_singleton.mpr hgi, him']
 
-end Polynomial
+end TauCeti.Polynomial
 
 end AnnihilatorOfMaximalOrder

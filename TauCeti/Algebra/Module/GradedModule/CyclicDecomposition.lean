@@ -208,7 +208,7 @@ private theorem exists_supIndep_sup_eq_of_isCompl [Module.Finite k[X] M] (hd : d
     have hCK : k[X] ∙ t ≤ K := hCK'K ▸ le_sup_left
     have hCS : Disjoint (k[X] ∙ t) S := (hSK.mono_right hCK).symm
     have htor : Ideal.torsionOf k[X] M t = Ideal.span {X ^ m} :=
-      torsionOf_eq_span_X_pow (hKm t htK) hr
+      TauCeti.Polynomial.torsionOf_eq_span_X_pow (hKm t htK) hr
     refine ih (S ⊔ k[X] ∙ t) (lt_of_le_of_ne le_sup_left fun h ↦ ht0 ?_) (insert t s) K'
       ⟨?_, hs.2.insert ?_⟩ ?_ hK' ?_ ?_
     · exact (Submodule.disjoint_def.mp hCS) t (Submodule.mem_span_singleton_self t)
