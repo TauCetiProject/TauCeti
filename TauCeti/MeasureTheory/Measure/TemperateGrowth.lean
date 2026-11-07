@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Distribution.TemperateGrowth
 public import Mathlib.Analysis.PSeries
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.Algebra.Order.ToIntervalMod
+import TauCeti.Analysis.PSeries
 
 /-!
 # Temperate growth from uniformly bounded interval masses
@@ -58,17 +59,6 @@ theorem one_add_norm_rpow_le_two_rpow_mul_of_mem_Icc_intCast {p : ℝ} (hp : p �
       rw [Real.div_rpow (by positivity) (by positivity), Real.rpow_neg (by positivity)]
       ring
 
-/-- The inverse powers `(1 + ‖n‖) ^ p`, `p < -1`, are summable over the integers. -/
-theorem summable_one_add_norm_intCast_rpow {p : ℝ} (hp : p < -1) :
-    Summable (fun n : ℤ => (1 + ‖(n : ℝ)‖) ^ p) := by
-  have hsNat : Summable (fun n : ℕ => (1 + (n : ℝ)) ^ p) := by
-    have hs := (Real.summable_one_div_nat_add_rpow 1 (-p)).2 (by linarith)
-    convert hs using 1
-    ext n
-    rw [abs_of_pos (by positivity), Real.rpow_neg (by positivity)]
-    simp [add_comm]
-  simpa [summable_int_iff_summable_nat_and_neg] using And.intro hsNat hsNat
-
 end MeasureTheory
 
 namespace MeasureTheory.Measure
@@ -94,7 +84,8 @@ theorem integrable_one_add_norm_rpow_of_measure_Icc_int_le (μ : Measure ℝ)
       ⟨by simpa using hm⟩
     exact ⟨hf.aestronglyMeasurable, .of_bounded
       (ae_restrict_of_forall_mem measurableSet_Icc fun x hx => hb n hx)⟩
-  have hs := summable_one_add_norm_intCast_rpow hp
+  have hs : Summable (fun n : ℤ => (1 + ‖(n : ℝ)‖) ^ p) := by
+    simpa only [Real.norm_eq_abs] using TauCeti.summable_one_add_abs_int_rpow hp
   -- Sum the interval integrals using the uniform mass bound; overlaps at atoms cause no problem.
   have hsum : Summable fun n : ℤ => ∫ x in Icc (n : ℝ) (n + 1), ‖f x‖ ∂μ := by
     refine (hs.mul_left ((2 : ℝ) ^ (-p) * C)).of_nonneg_of_le
