@@ -95,6 +95,7 @@ def matchedChoices (h : Finset β) : Finset (Finset α) :=
 variable {M}
 
 omit [LinearOrder α] in
+@[simp]
 theorem mem_matchedChoices {h : Finset β} {U : Finset α} :
     U ∈ matchedChoices M h ↔ U.image M = h ∧ Set.InjOn M U := by
   simp only [matchedChoices, mem_filter, mem_univ, true_and]
@@ -109,16 +110,21 @@ other inputs, the strands of `ρ` starting or ending at a chosen point are dropp
 def horizontalCompletion (ρ : StrandDiagram α) (h : Finset β) : StrandsAlgebra R α :=
   ∑ U ∈ matchedChoices M h, of (ρ.addHorizontal U)
 
+theorem horizontalCompletion_def (ρ : StrandDiagram α) (h : Finset β) :
+    (horizontalCompletion M ρ h : StrandsAlgebra R α) =
+      ∑ U ∈ matchedChoices M h, of (ρ.addHorizontal U) :=
+  (rfl)
+
 /-- With no pairs to add horizontal strands along, `a(ρ, ∅)` is the diagram `ρ` itself. -/
 @[simp]
 theorem horizontalCompletion_empty (ρ : StrandDiagram α) :
     (horizontalCompletion M ρ ∅ : StrandsAlgebra R α) = of ρ := by
-  simp [horizontalCompletion, matchedChoices, image_eq_empty, filter_eq']
+  simp [horizontalCompletion_def, matchedChoices, image_eq_empty, filter_eq']
 
 /-- `a(ρ, h)` is zero unless `h` consists of pairs of `M`. -/
-private theorem horizontalCompletion_eq_zero_of_not_subset (ρ : StrandDiagram α) {h : Finset β}
+theorem horizontalCompletion_eq_zero_of_not_subset (ρ : StrandDiagram α) {h : Finset β}
     (hh : ¬h ⊆ univ.image M) : (horizontalCompletion M ρ h : StrandsAlgebra R α) = 0 :=
-  sum_eq_zero fun U hU ↦
+  (horizontalCompletion_def ρ h).trans <| sum_eq_zero fun U hU ↦
     absurd ((mem_matchedChoices.1 hU).1 ▸ image_subset_image (subset_univ U)) hh
 
 namespace IsMatchedGenerator
@@ -328,10 +334,10 @@ theorem horizontalCompletion_mul_horizontalCompletion (hρ : IsMatchedGenerator 
   have hLHS : (horizontalCompletion M ρ h * horizontalCompletion M σ k : StrandsAlgebra R α) =
       ∑ p ∈ matchedChoices M h ×ˢ matchedChoices M k,
         of (ρ.addHorizontal p.1) * of (σ.addHorizontal p.2) := by
-    rw [horizontalCompletion, horizontalCompletion, sum_mul_sum, sum_product]
+    rw [horizontalCompletion_def, horizontalCompletion_def, sum_mul_sum, sum_product]
   rw [hLHS]
   split_ifs with hC
-  · rw [sum_mul_eq_sum_matchedChoices_inter hρ hσ hC.1, horizontalCompletion]
+  · rw [sum_mul_eq_sum_matchedChoices_inter hρ hσ hC.1, horizontalCompletion_def]
     refine sum_congr rfl fun W hW ↦ ?_
     obtain ⟨hcomp, htrans⟩ :=
       composable_and_trans_of_image_subset_inter hρ hσ (mem_matchedChoices.1 hW).1.le
@@ -464,7 +470,7 @@ theorem matchedIdem_def (s : Finset β) :
 
 theorem matchedIdem_eq_sum (s : Finset β) :
     (matchedIdem M s : StrandsAlgebra R α) = ∑ U ∈ matchedChoices M s, idem U := by
-  simp [matchedIdem, horizontalCompletion, StrandDiagram.idOn_addHorizontal, idem_def]
+  simp [matchedIdem_def, horizontalCompletion_def, StrandDiagram.idOn_addHorizontal, idem_def]
 
 theorem matchedIdem_mem_matchedAlgebra (s : Finset β) :
     (matchedIdem M s : StrandsAlgebra R α) ∈ matchedAlgebra R M :=
@@ -530,6 +536,10 @@ pairs, the subsets of the image of `M`. -/
 def matchedOne : StrandsAlgebra R α :=
   ∑ s ∈ (univ.image M).powerset, matchedIdem M s
 
+theorem matchedOne_def :
+    (matchedOne M : StrandsAlgebra R α) = ∑ s ∈ (univ.image M).powerset, matchedIdem M s :=
+  (rfl)
+
 theorem matchedOne_mem_matchedAlgebra : (matchedOne M : StrandsAlgebra R α) ∈ matchedAlgebra R M :=
   sum_mem fun s _ ↦ matchedIdem_mem_matchedAlgebra M s
 
@@ -539,7 +549,7 @@ theorem matchedOne_mul {x : StrandsAlgebra R α} (hx : x ∈ matchedAlgebra R M)
     matchedOne M * x = x := by
   induction hx using matchedAlgebra_induction with
   | generator ρ h hρ =>
-    simp only [matchedOne, sum_mul, matchedIdem_mul_horizontalCompletion _ hρ, sum_ite_eq',
+    simp only [matchedOne_def, sum_mul, matchedIdem_mul_horizontalCompletion _ hρ, sum_ite_eq',
       mem_powerset]
     split_ifs with hS
     · rfl
@@ -555,7 +565,7 @@ theorem mul_matchedOne {x : StrandsAlgebra R α} (hx : x ∈ matchedAlgebra R M)
     x * matchedOne M = x := by
   induction hx using matchedAlgebra_induction with
   | generator ρ h hρ =>
-    simp only [matchedOne, mul_sum, horizontalCompletion_mul_matchedIdem hρ, sum_ite_eq,
+    simp only [matchedOne_def, mul_sum, horizontalCompletion_mul_matchedIdem hρ, sum_ite_eq,
       mem_powerset]
     split_ifs with hS
     · rfl
