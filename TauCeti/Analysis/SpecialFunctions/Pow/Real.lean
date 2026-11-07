@@ -87,6 +87,8 @@ with the corresponding integral of `q`-th powers.
 * `Real.rpow_le_exp_neg_mul`: `A ^ c ≤ e^{-c t}` when `0 ≤ A ≤ e^{-t}` and `0 ≤ c`.
 * `Real.le_mul_rpow_one_div_iff`: `a ≤ C * I ^ (1 / q) ↔ a ^ q ≤ C ^ q * I` for nonnegative
   `a`, `C`, `I` and `0 < q`.
+* `Real.exists_le_mul_rpow_lt_of_neg`: for `0 < ε` and `p < 0`, arbitrarily large `R'` satisfy
+  `M * R' ^ p < ε`.
 * `Function.HasFiniteSupport.hasFiniteMulSupport_fun_rpow`: real powers with finitely supported
   exponents have finite multiplicative support.
 * `Real.rpow_finsum_of_pos`: `a ^ (∑ᶠ i, f i) = ∏ᶠ i, a ^ f i` for `0 < a` and finitely supported
@@ -206,6 +208,14 @@ theorem le_mul_rpow_one_div_iff {a C I q : ℝ} (ha : 0 ≤ a) (hC : 0 ≤ C) (h
     (hq : 0 < q) : a ≤ C * I ^ (1 / q) ↔ a ^ q ≤ C ^ q * I := by
   rw [← rpow_le_rpow_iff ha (by positivity) hq, mul_rpow hC (by positivity), one_div,
     rpow_inv_rpow hI hq.ne']
+
+/-- For `0 < ε` and `p < 0`, arbitrarily large `R'` satisfy `M * R' ^ p < ε`. -/
+theorem exists_le_mul_rpow_lt_of_neg {M ε p : ℝ} (R : ℝ) (hε : 0 < ε) (hp : p < 0) :
+    ∃ R', R ≤ R' ∧ M * R' ^ p < ε := by
+  have h := (tendsto_rpow_neg_atTop (neg_pos.2 hp)).const_mul M
+  rw [mul_zero] at h
+  simp only [neg_neg] at h
+  exact ((Filter.eventually_ge_atTop R).and (h.eventually_lt_const hε)).exists
 
 /-- The limit of the ratio `D ^ n / (n ω (D ^ n - ρ ^ n))` as `D → ∞` is `(n ω)⁻¹`, for every real
 `ρ` and `n ≠ 0`. -/

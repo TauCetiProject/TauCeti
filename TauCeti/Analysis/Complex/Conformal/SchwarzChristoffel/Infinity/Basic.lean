@@ -8,6 +8,9 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Edge
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
+import TauCeti.Analysis.Complex.NormSq
+import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # The Schwarz--Christoffel vertex at infinity
@@ -143,43 +146,21 @@ private theorem norm_schwarzChristoffelPrimitive_sub_le_vertical (a e : ι → �
   have hβ0 : 0 ≤ β := sub_nonneg.mpr hT
   set K : ℝ := C * 2 ^ (-S) with hKdef
   have hK : 0 < K := by positivity
-  -- every point of the ray is far from the origin
-  have him : ∀ s : ℝ, (z + (s : ℂ) * Complex.I).im = z.im + s := by
-    intro s
-    simp only [Complex.add_im, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im,
-      Complex.I_re, Complex.I_im]
-    ring
-  have hnorm : ∀ s : ℝ, 0 ≤ s → ‖z‖ ≤ ‖z + (s : ℂ) * Complex.I‖ := by
-    intro s hs
-    have hsq : ‖z‖ ^ 2 ≤ ‖z + (s : ℂ) * Complex.I‖ ^ 2 := by
-      simp only [← Complex.normSq_eq_norm_sq, Complex.normSq_apply, Complex.add_re,
-        Complex.add_im, Complex.mul_re, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im,
-        Complex.I_re, Complex.I_im]
-      nlinarith [hzim.le]
-    have h := Real.sqrt_le_sqrt hsq
-    rwa [Real.sqrt_sq (norm_nonneg _), Real.sqrt_sq (norm_nonneg _)] at h
-  have hray : ∀ s ∈ Icc (0 : ℝ) β, (‖z‖ + s) / 2 ≤ ‖z + (s : ℂ) * Complex.I‖ := by
-    intro s hs
-    have h1 := hnorm s hs.1
-    have h2 : s ≤ ‖z + (s : ℂ) * Complex.I‖ := by
-      refine le_trans ?_ (le_trans (le_abs_self _) (abs_im_le_norm (z + (s : ℂ) * Complex.I)))
-      rw [him s]
-      linarith [hs.1, hzim.le]
-    linarith
   have hmem : ∀ s ∈ Icc (0 : ℝ) β, z + (s : ℂ) * Complex.I ∈ upperHalfPlaneSet := by
     intro s hs
-    simp only [upperHalfPlaneSet, Set.mem_ofPred_eq]
-    rw [him s]
+    simp only [upperHalfPlaneSet, Set.mem_ofPred_eq, Complex.add_im, Complex.mul_im,
+      Complex.ofReal_re, Complex.ofReal_im, Complex.I_re, Complex.I_im]
     linarith [hs.1]
   have hB : ∀ s ∈ Icc (0 : ℝ) β, ‖Complex.I‖ *
       ‖schwarzChristoffelIntegrand a e (z + (s : ℂ) * Complex.I)‖ ≤ K * (‖z‖ + s) ^ S := by
     intro s hs
     have hpos : (0 : ℝ) < (‖z‖ + s) / 2 := by linarith [hs.1]
-    have hfar := hray s hs
     have h1 : ‖schwarzChristoffelIntegrand a e (z + (s : ℂ) * Complex.I)‖
-        ≤ C * ‖z + (s : ℂ) * Complex.I‖ ^ S := hbd _ (hzR.trans (hnorm s hs.1))
+        ≤ C * ‖z + (s : ℂ) * Complex.I‖ ^ S :=
+      hbd _ (hzR.trans (Complex.norm_le_norm_add_ofReal_mul_I hzim.le hs.1))
     have h2 : ‖z + (s : ℂ) * Complex.I‖ ^ S ≤ ((‖z‖ + s) / 2) ^ S :=
-      Real.rpow_le_rpow_of_nonpos hpos hfar (by linarith)
+      Real.rpow_le_rpow_of_nonpos hpos (Complex.half_norm_add_le_norm_add_ofReal_mul_I hzim.le hs.1)
+        (by linarith)
     have h3 : ((‖z‖ + s) / 2) ^ S = 2 ^ (-S) * (‖z‖ + s) ^ S := by
       rw [Real.div_rpow (by linarith [hs.1]) (by norm_num), Real.rpow_neg (by norm_num)]
       field_simp
@@ -201,26 +182,12 @@ private theorem norm_schwarzChristoffelPrimitive_sub_le_vertical (a e : ι → �
   have hstart : z + ((0 : ℝ) : ℂ) * Complex.I = z := by simp
   have hmain := norm_schwarzChristoffelPrimitive_sub_le_integral a e z₀ hβ0 hmem hB hBi
   rw [hend, hstart] at hmain
-  refine hmain.trans ?_
-  -- evaluate the dominating integral
-  have hnotmem : (0 : ℝ) ∉ Set.uIcc (‖z‖ + 0) (‖z‖ + β) := by
-    rw [Set.uIcc_of_le (by linarith)]
-    exact fun hmem => absurd hmem.1 (not_le.mpr (by linarith))
-  have hint : (∫ s in (0 : ℝ)..β, K * (‖z‖ + s) ^ S)
-      = K * (((‖z‖ + β) ^ (S + 1) - (‖z‖ + 0) ^ (S + 1)) / (S + 1)) := by
-    rw [intervalIntegral.integral_const_mul,
-      intervalIntegral.integral_comp_add_left (fun x : ℝ => x ^ S) ‖z‖,
-      integral_rpow (Or.inr ⟨by linarith, hnotmem⟩)]
-  rw [hint]
-  have hp : 0 ≤ (‖z‖ + β) ^ (S + 1) := Real.rpow_nonneg (by linarith) _
-  have hdiv : (‖z‖ + β) ^ (S + 1) / (S + 1) ≤ 0 := div_nonpos_iff.mpr (Or.inl ⟨hp, hS1.le⟩)
-  have hstep : ((‖z‖ + β) ^ (S + 1) - (‖z‖ + 0) ^ (S + 1)) / (S + 1)
-      ≤ ‖z‖ ^ (S + 1) / (-(S + 1)) := by
-    rw [sub_div, div_neg, add_zero]
-    linarith
-  calc K * (((‖z‖ + β) ^ (S + 1) - (‖z‖ + 0) ^ (S + 1)) / (S + 1))
-      ≤ K * (‖z‖ ^ (S + 1) / (-(S + 1))) := mul_le_mul_of_nonneg_left hstep hK.le
-    _ = C * 2 ^ (-S) / (-(S + 1)) * ‖z‖ ^ (S + 1) := by rw [hKdef]; ring
+  have hint := mul_le_mul_of_nonneg_left
+    (TauCeti.integral_add_rpow_le_of_lt_neg_one hz0 hβ0 (by linarith : S < -1)) hK.le
+  rw [← intervalIntegral.integral_const_mul] at hint
+  refine hmain.trans (hint.trans (le_of_eq ?_))
+  rw [hKdef]
+  ring
 
 /-- Crossing the upper half-plane along a horizontal segment at height `T` moves the
 Schwarz--Christoffel primitive by at most `C * T ^ (∑ i, e i)` times the length of the segment:
@@ -271,6 +238,14 @@ private theorem norm_schwarzChristoffelPrimitive_sub_le_horizontal (a e : ι →
 
 /-! ### The limit at infinity -/
 
+/-- For `0 < R' ≤ T`, `x ≤ T` and `S + 1 ≤ 0`, one has `T ^ S * x ≤ R' ^ (S + 1)`. -/
+private theorem rpow_mul_le_rpow_add_one {T S R' x : ℝ} (hR' : 0 < R') (hTR' : R' ≤ T)
+    (hS1 : S + 1 ≤ 0) (hx : x ≤ T) : T ^ S * x ≤ R' ^ (S + 1) :=
+  have hT : 0 < T := hR'.trans_le hTR'
+  calc T ^ S * x ≤ T ^ S * T := mul_le_mul_of_nonneg_left hx (by positivity)
+    _ = T ^ (S + 1) := (Real.rpow_add_one hT.ne' S).symm
+    _ ≤ R' ^ (S + 1) := Real.rpow_le_rpow_of_nonpos hR' hTR' hS1
+
 /-- **The Schwarz--Christoffel primitive converges at infinity** when the total turning exponent
 is less than `-1`.  The estimate runs from `z` up a vertical ray, across at the height
 `‖z‖ + ‖w‖`, and down to `w`. -/
@@ -282,85 +257,46 @@ private theorem exists_tendsto_schwarzChristoffelPrimitive_atInfinity (a e : ι 
   set S : ℝ := ∑ i, e i
   have hS1 : S + 1 < 0 := by linarith
   set D : ℝ := C * 2 ^ (-S) / (-(S + 1)) with hDdef
-  have hD : 0 < D := by
-    rw [hDdef]
-    exact div_pos (by positivity) (by linarith)
+  have hD : 0 < D := div_pos (by positivity) (by linarith)
   set M : ℝ := 2 * D + C with hMdef
-  have hM : 0 < M := by rw [hMdef]; linarith
   refine CompleteSpace.complete (f := map (schwarzChristoffelPrimitive a e z₀)
     (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet)) ?_
   rw [Metric.cauchy_iff]
   refine ⟨map_neBot, fun ε hε => ?_⟩
-  obtain ⟨R', hR'pos, hR'R, hR'ε⟩ : ∃ R', 0 < R' ∧ R ≤ R' ∧ M * R' ^ (S + 1) < ε := by
-    set τ : ℝ := (ε / (2 * M)) ^ (S + 1)⁻¹ with hτdef
-    have hτ : 0 < τ := Real.rpow_pos_of_pos (by positivity) _
-    refine ⟨max R τ, lt_of_lt_of_le hR (le_max_left _ _), le_max_left _ _, ?_⟩
-    have h1 : (max R τ) ^ (S + 1) ≤ τ ^ (S + 1) :=
-      Real.rpow_le_rpow_of_nonpos hτ (le_max_right _ _) hS1.le
-    have h2 : τ ^ (S + 1) = ε / (2 * M) := by
-      rw [hτdef, Real.rpow_inv_rpow (by positivity) hS1.ne]
-    calc M * (max R τ) ^ (S + 1) ≤ M * (ε / (2 * M)) := by
-          rw [← h2]; exact mul_le_mul_of_nonneg_left h1 hM.le
-      _ = ε / 2 := by field_simp
-      _ < ε := half_lt_self hε
+  obtain ⟨R', hR'R, hR'ε⟩ := Real.exists_le_mul_rpow_lt_of_neg (M := M) (p := S + 1) R hε hS1
+  have hR'pos : 0 < R' := hR.trans_le hR'R
   refine ⟨schwarzChristoffelPrimitive a e z₀ '' ({z : ℂ | R' ≤ ‖z‖} ∩ upperHalfPlaneSet), ?_, ?_⟩
   · refine mem_map.mpr (mem_of_superset ?_ (subset_preimage_image _ _))
     exact inter_mem (mem_inf_of_left (eventually_cobounded_le_norm R'))
       (mem_inf_of_right (mem_principal_self _))
-  rintro - ⟨z, hz, rfl⟩ - ⟨w, hw, rfl⟩
+  rintro - ⟨z, ⟨hzR', hzU⟩, rfl⟩ - ⟨w, ⟨hwR', hwU⟩, rfl⟩
   set T : ℝ := ‖z‖ + ‖w‖ with hTdef
-  have hzR' : R' ≤ ‖z‖ := hz.1
-  have hwR' : R' ≤ ‖w‖ := hw.1
-  have hT0 : 0 < T := by rw [hTdef]; linarith
-  have hTR' : R' ≤ T := by rw [hTdef]; linarith
-  have hzT : z.im ≤ T := by
-    have := (le_abs_self z.im).trans (abs_im_le_norm z)
-    rw [hTdef]; linarith
-  have hwT : w.im ≤ T := by
-    have := (le_abs_self w.im).trans (abs_im_le_norm w)
-    rw [hTdef]; linarith
+  have hTR' : R' ≤ T := hzR'.trans (le_add_of_nonneg_right (norm_nonneg w))
+  have hT0 : 0 < T := hR'pos.trans_le hTR'
+  have hzT : z.im ≤ T := (Complex.im_le_norm z).trans (by linarith [norm_nonneg w])
+  have hwT : w.im ≤ T := (Complex.im_le_norm w).trans (by linarith [norm_nonneg z])
   -- the three legs of the path
-  have hleg1 := norm_schwarzChristoffelPrimitive_sub_le_vertical a e z₀ hC hbd hS hz.2
+  have hleg1 := norm_schwarzChristoffelPrimitive_sub_le_vertical a e z₀ hC hbd hS hzU
     (hR'R.trans hzR') hzT
-  have hleg3 := norm_schwarzChristoffelPrimitive_sub_le_vertical a e z₀ hC hbd hS hw.2
+  have hleg3 := norm_schwarzChristoffelPrimitive_sub_le_vertical a e z₀ hC hbd hS hwU
     (hR'R.trans hwR') hwT
   have hleg2 := norm_schwarzChristoffelPrimitive_sub_le_horizontal a e z₀ hC hbd hS hT0
     (hR'R.trans hTR') z.re w.re
   -- each leg is `O (R' ^ (S + 1))`
   have hdecay : ∀ r : ℝ, R' ≤ r → r ^ (S + 1) ≤ R' ^ (S + 1) :=
     fun r hr => Real.rpow_le_rpow_of_nonpos hR'pos hr hS1.le
-  have hb1 : ‖schwarzChristoffelPrimitive a e z₀ ((z.re : ℂ) + (T : ℂ) * Complex.I) -
-      schwarzChristoffelPrimitive a e z₀ z‖ ≤ D * R' ^ (S + 1) :=
-    hleg1.trans (mul_le_mul_of_nonneg_left (hdecay _ hzR') hD.le)
-  have hb3 : ‖schwarzChristoffelPrimitive a e z₀ ((w.re : ℂ) + (T : ℂ) * Complex.I) -
-      schwarzChristoffelPrimitive a e z₀ w‖ ≤ D * R' ^ (S + 1) :=
-    hleg3.trans (mul_le_mul_of_nonneg_left (hdecay _ hwR') hD.le)
-  have hb2 : ‖schwarzChristoffelPrimitive a e z₀ ((w.re : ℂ) + (T : ℂ) * Complex.I) -
-      schwarzChristoffelPrimitive a e z₀ ((z.re : ℂ) + (T : ℂ) * Complex.I)‖
-      ≤ C * R' ^ (S + 1) := by
-    refine hleg2.trans ?_
-    have hlen : |w.re - z.re| ≤ T := by
-      have h1 := abs_le.mp (abs_re_le_norm z)
-      have h2 := abs_le.mp (abs_re_le_norm w)
-      rw [hTdef, abs_le]
-      constructor <;> linarith [h1.1, h1.2, h2.1, h2.2]
-    have hTS : C * T ^ S * |w.re - z.re| ≤ C * T ^ S * T :=
-      mul_le_mul_of_nonneg_left hlen (by positivity)
-    have hTeq : T ^ S * T = T ^ (S + 1) := by
-      rw [Real.rpow_add_one hT0.ne' S]
-    calc C * T ^ S * |w.re - z.re| ≤ C * T ^ S * T := hTS
-      _ = C * T ^ (S + 1) := by rw [mul_assoc, hTeq]
-      _ ≤ C * R' ^ (S + 1) := mul_le_mul_of_nonneg_left (hdecay _ hTR') hC.le
+  have hb1 := hleg1.trans (mul_le_mul_of_nonneg_left (hdecay _ hzR') hD.le)
+  have hb3 := hleg3.trans (mul_le_mul_of_nonneg_left (hdecay _ hwR') hD.le)
+  have hlen : |w.re - z.re| ≤ T :=
+    (abs_sub _ _).trans (by rw [hTdef]; linarith [abs_re_le_norm z, abs_re_le_norm w])
+  have hb2 := hleg2.trans ((mul_assoc _ _ _).le.trans (mul_le_mul_of_nonneg_left
+    (rpow_mul_le_rpow_add_one hR'pos hTR' hS1.le hlen) hC.le))
   calc dist (schwarzChristoffelPrimitive a e z₀ z) (schwarzChristoffelPrimitive a e z₀ w)
-      ≤ dist (schwarzChristoffelPrimitive a e z₀ z)
-          (schwarzChristoffelPrimitive a e z₀ ((z.re : ℂ) + (T : ℂ) * Complex.I)) +
-        dist (schwarzChristoffelPrimitive a e z₀ ((z.re : ℂ) + (T : ℂ) * Complex.I))
-          (schwarzChristoffelPrimitive a e z₀ ((w.re : ℂ) + (T : ℂ) * Complex.I)) +
-        dist (schwarzChristoffelPrimitive a e z₀ ((w.re : ℂ) + (T : ℂ) * Complex.I))
-          (schwarzChristoffelPrimitive a e z₀ w) := dist_triangle4 _ _ _ _
-    _ ≤ D * R' ^ (S + 1) + C * R' ^ (S + 1) + D * R' ^ (S + 1) := by
-        rw [dist_eq_norm', dist_eq_norm', dist_eq_norm]
-        exact add_le_add (add_le_add hb1 hb2) hb3
+      ≤ D * R' ^ (S + 1) + C * R' ^ (S + 1) + D * R' ^ (S + 1) :=
+        (dist_triangle4 _ (schwarzChristoffelPrimitive a e z₀ ((z.re : ℂ) + (T : ℂ) * Complex.I))
+          (schwarzChristoffelPrimitive a e z₀ ((w.re : ℂ) + (T : ℂ) * Complex.I)) _).trans
+          (by rw [dist_eq_norm', dist_eq_norm', dist_eq_norm]
+              exact add_le_add (add_le_add hb1 hb2) hb3)
     _ = M * R' ^ (S + 1) := by rw [hMdef]; ring
     _ < ε := hR'ε
 
