@@ -488,10 +488,10 @@ section RealPoint
 
 open Topology
 
-/-- The bound behind `tendsto_nhdsNE_of_tendsto_nhdsWithin_im_pos`: near the real point `x` the
-function is bounded by `‖c‖ + 1` on the punctured disc.  Above the axis this is the hypothesis,
-below it follows from conjugation symmetry, and on the axis from continuity along a vertical
-approach from above. -/
+/-- Local boundedness at a real point of a function that is holomorphic on a punctured disc around
+`x`, commutes with complex conjugation there, and tends to `c` as `z → x` from the open upper
+half-plane: some punctured neighbourhood of `x` on which `‖g z‖ ≤ ‖c‖ + 1`.  This bound is what
+`tendsto_nhdsNE_of_tendsto_nhdsWithin_im_pos` uses to remove the singularity at `x`. -/
 private theorem exists_norm_le_of_tendsto_nhdsWithin_im_pos
     {g : ℂ → ℂ} {x : ℝ} {c : ℂ} {r : ℝ}
     (hr : 0 < r) (hg : DifferentiableOn ℂ g (Metric.ball (x : ℂ) r \ {(x : ℂ)}))
