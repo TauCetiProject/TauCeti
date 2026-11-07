@@ -7,6 +7,7 @@ module
 
 public import TauCeti.QuantumGroups.QuantumInteger.Basic
 public import Mathlib.Algebra.Algebra.Defs
+public import Mathlib.Algebra.Polynomial.Coeff
 
 import TauCeti.Algebra.BigOperators.Finset.Range
 import Mathlib.Tactic
@@ -50,6 +51,8 @@ comparisons of quantum divided-power relations at opposite parameters.
 * `TauCeti.quantumBinomial_one`: the classical specialization `[n choose k]_1 = n.choose k`.
 * `TauCeti.add_pow_of_mul_eq_smul_mul`: the `q`-binomial theorem for `y x = q² x y` with
   `q ≠ 0`.
+* `TauCeti.coeff_prod_range_one_add_C_mul_X`: Cauchy's binomial theorem in coefficient form, the
+  coefficient of `X ^ k` in `∏_{j < n} (1 + q^(2j) X)` is `q^(k(n-1)) [n choose k]_q`.
 
 ## References
 
@@ -59,6 +62,8 @@ comparisons of quantum divided-power relations at opposite parameters.
   the symmetric normalization.
 * G. Lusztig, *Introduction to Quantum Groups*, Sections 1.3 and 33.2, for the symmetric
   normalization and sign comparisons.
+* V. Kac and P. Cheung, *Quantum Calculus*, Universitext, Chapter 5, for Gauss's (Cauchy's)
+  binomial formula.
 -/
 
 public section
@@ -133,6 +138,49 @@ binomial coefficients. -/
     cases k with
     | zero => simp
     | succ k => simp [quantumBinomial_succ_succ, ih, Nat.choose_succ_succ]
+
+/-- The defining Pascal rule of `quantumBinomial` with integer exponents,
+`[n+1 choose k+1]_q = q^(n-k) [n choose k]_q + q^(-(k+1)) [n choose k+1]_q`; for `n < k` both
+sides vanish. -/
+private theorem quantumBinomial_succ_succ_zpow (q : K) (n k : ℕ) :
+    quantumBinomial q (n + 1) (k + 1) =
+      q ^ ((n : ℤ) - k) * quantumBinomial q n k +
+        q ^ (-((k : ℤ) + 1)) * quantumBinomial q n (k + 1) := by
+  rcases le_or_gt k n with hk | hk
+  · rw [quantumBinomial_succ_succ, ← Nat.cast_sub hk, zpow_natCast, ← Nat.cast_add_one,
+      zpow_neg, zpow_natCast, inv_pow]
+  · simp [quantumBinomial_eq_zero_of_lt q hk,
+      quantumBinomial_eq_zero_of_lt q (hk.trans k.lt_succ_self),
+      quantumBinomial_eq_zero_of_lt q (Nat.succ_lt_succ hk)]
+
+open Polynomial in
+/-- **Cauchy's binomial theorem**, in coefficient form: for `q ≠ 0`, the coefficient of `X ^ k`
+in `∏_{j < n} (1 + q^(2j) X)` is `q^(k(n-1)) [n choose k]_q`. -/
+theorem coeff_prod_range_one_add_C_mul_X {q : K} (hq : q ≠ 0) (n k : ℕ) :
+    (∏ j ∈ range n, (1 + C ((q ^ 2) ^ j) * X)).coeff k =
+      q ^ ((k : ℤ) * (n - 1)) * quantumBinomial q n k := by
+  induction n generalizing k with
+  | zero => cases k <;> simp [coeff_one]
+  | succ n ih =>
+    rw [prod_range_succ, mul_one_add, coeff_add, mul_left_comm, coeff_C_mul]
+    cases k with
+    | zero => rw [coeff_mul_X_zero, ih]; simp
+    | succ k =>
+      have h₁ : q ^ (((k + 1 : ℕ) : ℤ) * ((n + 1 : ℕ) - 1)) * q ^ ((n : ℤ) - k) =
+          (q ^ 2) ^ n * q ^ ((k : ℤ) * (n - 1)) := by
+        rw [← pow_mul, ← zpow_natCast, ← zpow_add₀ hq, ← zpow_add₀ hq]
+        congr 1
+        push_cast
+        ring
+      have h₂ : q ^ (((k + 1 : ℕ) : ℤ) * ((n + 1 : ℕ) - 1)) * q ^ (-((k : ℤ) + 1)) =
+          q ^ (((k + 1 : ℕ) : ℤ) * (n - 1)) := by
+        rw [← zpow_add₀ hq]
+        congr 1
+        push_cast
+        ring
+      rw [coeff_mul_X, ih, ih, quantumBinomial_succ_succ_zpow]
+      simp only [mul_add, ← mul_assoc, h₁, h₂]
+      exact add_comm _ _
 
 end
 
