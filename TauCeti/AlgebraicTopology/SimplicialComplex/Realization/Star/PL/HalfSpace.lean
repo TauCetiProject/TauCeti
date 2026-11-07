@@ -92,39 +92,6 @@ private theorem exists_chart_of_closedStar
     rw [ht]
     simp [b, e]
 
-omit [DecidableEq ι] in
-/-- The inverse of the simplex half-space chart, followed by the coordinate lift and a PL map `G`
-on the standard simplex, is PL on the model coordinates of any set `T` of chart targets. -/
-private theorem isPLOn_comp_simplexHalfSpace_symm
-    {T : Set {q : (Fin n → ℝ) × ℝ | 0 ≤ q.2}} {G : (Fin (n + 2) → ℝ) → (ι → ℝ)}
-    (hG : IsPLOn G (range fun y : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 2))) =>
-      (y.1 : Fin (n + 2) → ℝ)))
-    (hT : T = (simplexHalfSpacePLChart n none).target) :
-    IsPLOn (G ∘ simplexBoundaryCoordinateLift n ∘
-        (coordinateSimplexHalfSpaceMap (ι := Fin n) none).symm)
-      ((modelWithCornersHalfSpace (Fin n → ℝ)).symm ⁻¹' T ∩
-        range (modelWithCornersHalfSpace (Fin n → ℝ))) := by
-  let a := simplexHalfSpacePLChart n none
-  let R := simplexBoundaryCoordinateLift n
-  let A := coordinateSimplexHalfSpaceMap (ι := Fin n) none
-  let s := (modelWithCornersHalfSpace (Fin n → ℝ)).symm ⁻¹' T ∩
-    range (modelWithCornersHalfSpace (Fin n → ℝ))
-  have hmap : MapsTo (R ∘ A.symm) s
-      (range fun y : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 2))) =>
-        (y.1 : Fin (n + 2) → ℝ)) := by
-    intro z hz
-    have hnonneg : 0 ≤ z.2 := by simpa using hz.2
-    let y := (modelWithCornersHalfSpace (Fin n → ℝ)).symm z
-    have hy : y ∈ a.target := hT ▸ hz.1
-    refine ⟨a.symm y, ?_⟩
-    simpa only [a, R, A, y, Function.comp_apply,
-      coe_modelWithCornersHalfSpace_symm_apply _ hnonneg] using
-        coe_simplexHalfSpacePLChart_symm_apply n none hy
-  exact hG.comp
-    (((isPLOn_continuousAffineMap R univ).comp
-      (isPiecewiseAffineOn_coordinateSimplexHalfSpaceMap_symm none).isPLOn
-      (mapsTo_univ _ _)).mono (subset_univ _)) hmap
-
 /-- A combinatorial-ball vertex link supplies a PL half-space chart on the entire open
 vertex star. Its forward formula is PL on the closed star, and its inverse formula is PL
 on the model coordinates of the chart target. The vertex lies at zero in the half-space. -/
