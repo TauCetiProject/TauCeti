@@ -79,7 +79,9 @@ theorem prod_inv_mk_toInvertibleSheaf_vanishingIdeal_pow_eq_one
   rw [LineBundleClass.mk_toInvertibleSheaf_congr _
       (isEffectiveCartier_prod fun η _ ↦ isEffectiveCartier_pow (hC η) _)
       (toBase.ker_specialFiberι_eq_prod_vanishingIdeal hX hη hπ),
-    LineBundleClass.mk_toInvertibleSheaf_prod _ fun η ↦ isEffectiveCartier_pow (hC η) _,
+    LineBundleClass.mk_toInvertibleSheaf_prod _ fun η _ ↦ isEffectiveCartier_pow (hC η) _,
+    Finset.prod_attach _ fun η ↦
+      LineBundleClass.mk (isEffectiveCartier_pow (hC η) _).toInvertibleSheaf,
     Finset.prod_congr rfl fun η _ ↦ LineBundleClass.mk_toInvertibleSheaf_pow (hC η) _] at h
   simp only [inv_pow, Finset.prod_inv_distrib, h, inv_one]
 

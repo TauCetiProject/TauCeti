@@ -258,14 +258,21 @@ theorem mk_toInvertibleSheaf_pow (hI : I.IsEffectiveCartier) (n : ℕ) :
 /-- The line-bundle class of the ideal sheaf of a finite sum `∑ᵢ Dᵢ` of effective Cartier divisors
 is the product of the classes of the ideal sheaves of the `Dᵢ`. -/
 theorem mk_toInvertibleSheaf_prod {ι : Type*} (s : Finset ι) {I : ι → X.IdealSheafData}
-    (hI : ∀ i, (I i).IsEffectiveCartier) :
-    mk (TauCeti.isEffectiveCartier_prod fun i (_ : i ∈ s) ↦ hI i).toInvertibleSheaf =
-      ∏ i ∈ s, mk (hI i).toInvertibleSheaf := by
+    (hI : ∀ i ∈ s, (I i).IsEffectiveCartier) :
+    mk (TauCeti.isEffectiveCartier_prod hI).toInvertibleSheaf =
+      ∏ i ∈ s.attach, mk (hI i i.2).toInvertibleSheaf := by
   classical
   induction s using Finset.induction_on with
-  | empty => simp only [Finset.prod_empty, one_eq_top, mk_toInvertibleSheaf_top]
+  | empty => simp only [Finset.prod_empty, Finset.attach_empty, one_eq_top,
+      mk_toInvertibleSheaf_top]
   | @insert i s hi ih =>
-    simp only [Finset.prod_insert hi]
-    rw [mk_toInvertibleSheaf_mul (hI i) (TauCeti.isEffectiveCartier_prod fun j _ ↦ hI j), ih]
+    have hs : ∀ j ∈ s, (I j).IsEffectiveCartier := fun j hj ↦ hI j (Finset.mem_insert_of_mem hj)
+    rw [mk_toInvertibleSheaf_congr _ (TauCeti.isEffectiveCartier_mul
+        (hI i (Finset.mem_insert_self i s)) (TauCeti.isEffectiveCartier_prod hs))
+        (Finset.prod_insert hi),
+      mk_toInvertibleSheaf_mul _ (TauCeti.isEffectiveCartier_prod hs), ih hs, Finset.attach_insert,
+      Finset.prod_insert, Finset.prod_image]
+    · exact fun x _ y _ h ↦ Subtype.ext (congrArg Subtype.val h :)
+    · simpa using hi
 
 end TauCeti.AlgebraicGeometry.LineBundleClass
