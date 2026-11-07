@@ -40,6 +40,8 @@ hyperbolic discs about `z` are precisely the preimages of the Euclidean discs ab
 * `UpperHalfPlane.mdifferentiable_discCoordinate` and
   `UpperHalfPlane.analyticOnNhd_discCoordinateHomeomorph_symm`: the coordinate and its explicit
   inverse are holomorphic.
+* `UpperHalfPlane.hasDerivAt_discCoordinateHomeomorph_symm`: the derivative of the explicit
+  inverse.
 * `UpperHalfPlane.discCoordinateHomeomorph`: the disc coordinate as a homeomorphism `ℍ ≃ₜ 𝔻`,
   with explicit inverse, and `UpperHalfPlane.range_discCoordinate`: its range is the open unit
   disc.
@@ -156,6 +158,16 @@ theorem analyticOnNhd_discCoordinateHomeomorph_symm (z : ℍ) :
       ((differentiableAt_const (conj (z : ℂ))).mul differentiableAt_id)).div
     ((differentiableAt_const (1 : ℂ)).sub differentiableAt_id)
       (sub_ne_zero.mpr hw1.symm)).differentiableWithinAt
+
+/-- The explicit inverse `w ↦ (z - conj z * w) / (1 - w)` of the disc coordinate has derivative
+`(z - conj z) / (1 - w) ^ 2` at every `w ≠ 1`. -/
+theorem hasDerivAt_discCoordinateHomeomorph_symm (z : ℍ) {w : ℂ} (hw : w ≠ 1) :
+    HasDerivAt (fun w : ℂ ↦ ((z : ℂ) - conj (z : ℂ) * w) / (1 - w))
+      (((z : ℂ) - conj (z : ℂ)) / (1 - w) ^ 2) w := by
+  have h := (((hasDerivAt_id' w).const_mul (conj (z : ℂ))).const_sub (z : ℂ)).div
+    ((hasDerivAt_id' w).const_sub 1) (sub_ne_zero.mpr hw.symm)
+  convert h using 1
+  ring
 
 /-- The disc coordinate centred at `z` as a homeomorphism between the upper half-plane and the
 open unit disc `𝔻`, with inverse `w ↦ (z - conj z * w) / (1 - w)`. Both directions are

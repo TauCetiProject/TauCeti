@@ -94,10 +94,10 @@ theorem IsTotallyReal.of_isUnramifiedAtInfinitePlaces {k : Type*} [Field k] [Alg
     · exact ((not_isReal_iff_isComplex.mpr hw) (IsTotallyReal.isReal _)).elim
 
 /-- **A totally real extension is unramified at every infinite place.** Every infinite place of
-the extension is real, which is the first alternative in `InfinitePlace.isUnramified_iff`. -/
+the extension is real, and real places are unramified (`InfinitePlace.IsReal.isUnramified`). -/
 theorem IsTotallyReal.isUnramifiedAtInfinitePlaces {k : Type*} [Field k] [Algebra k K]
     [IsTotallyReal K] : IsUnramifiedAtInfinitePlaces k K where
-  isUnramified w := InfinitePlace.isUnramified_iff.mpr (Or.inl (IsTotallyReal.isReal w))
+  isUnramified w := (IsTotallyReal.isReal w).isUnramified k
 
 /-- Over a totally real base, an extension is unramified at every infinite place exactly
 when it is totally real. -/

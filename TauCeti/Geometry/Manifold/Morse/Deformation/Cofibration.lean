@@ -22,8 +22,8 @@ deformation never raises `f`, so the same holds inside every larger sublevel `M_
 `M_a → M_c` is a closed cofibration
 (`TauCeti.hasHomotopyExtensionProperty_range_sublevelInclusion`).
 
-A compact band above a regular value `a` contains a thinner band without critical points
-(`TauCeti.exists_mem_Ioc_criticalPoints_inter_preimage_Icc_eq_empty`), so both statements hold
+A compact band above a regular value `a` begins with a collar without critical points
+(`TauCeti.exists_mem_Ioc_forall_notMem_criticalPoints`), so both statements hold
 at every regular value `a` with a compact band above it
 (`TauCeti.hasHomotopyExtensionProperty_sublevel_of_isRegularValue` and
 `TauCeti.hasHomotopyExtensionProperty_range_sublevelInclusion_of_isRegularValue`). For a proper
@@ -91,12 +91,11 @@ private theorem exists_regular_band_of_isRegularValue (hf : ContMDiff I 𝓘(ℝ
     (hcompact : IsCompact (f ⁻¹' Icc a b)) (ha : IsRegularValue I 𝓘(ℝ) f a) :
     ∃ b', a < b' ∧ IsCompact (f ⁻¹' Icc a b') ∧
       ∀ x, a ≤ f x → f x ≤ b' → mfderiv I 𝓘(ℝ) f x ≠ 0 := by
-  obtain ⟨b', ⟨hab', hb'⟩, hempty⟩ :=
-    exists_mem_Ioc_criticalPoints_inter_preimage_Icc_eq_empty (hf.of_le (by simp)) hab hcompact ha
-  refine ⟨b', hab', hcompact.of_isClosed_subset (isClosed_Icc.preimage hf.continuous)
-    (preimage_mono (Icc_subset_Icc le_rfl hb')), fun x hxa hxb h0 ↦ ?_⟩
-  exact (eq_empty_iff_forall_notMem.1 hempty) x
-    ⟨mem_criticalPoints_iff_mfderiv_eq_zero.2 h0, hxa, hxb⟩
+  obtain ⟨b', ⟨hab', hb'⟩, h⟩ :=
+    exists_mem_Ioc_forall_notMem_criticalPoints (hf.of_le (by simp)) hab hcompact ha
+  exact ⟨b', hab', hcompact.of_isClosed_subset (isClosed_Icc.preimage hf.continuous)
+    (preimage_mono (Icc_subset_Icc le_rfl hb')), fun x hxa hxb h0 ↦
+      h x (mem_criticalPoints_iff_mfderiv_eq_zero.2 h0) ⟨hxa, hxb⟩⟩
 
 /-- **A sublevel at a regular value is a closed cofibration.** If `a` is a regular value of a
 smooth function `f` and the band `f⁻¹[a, b]`, where `a < b`, is compact, then the sublevel
