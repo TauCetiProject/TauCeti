@@ -124,6 +124,12 @@ theorem occupy_of_not_indep (I : State G) (v : V)
     simp [erase_val]
   · simp
 
+/-- Either single-site outcome preserves the configuration away from the selected vertex. -/
+theorem erase_eq_of_single_site_eq (I J : State G) (v : V)
+    (h : occupy G I v = J ∨ erase G I v = J) : erase G I v = erase G J v := by
+  rcases h with h | h <;>
+    simpa using congrArg (fun K => erase G K v) h
+
 /-- Resampling a vertex already present can retain the state. -/
 @[simp] theorem occupy_of_mem (I : State G) {v : V} (hv : v ∈ I.val) : occupy G I v = I := by
   have h : insert v I.val = I.val := Finset.insert_eq_of_mem hv

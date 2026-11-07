@@ -45,9 +45,8 @@ variable {V : Type*} [Fintype V] [DecidableEq V] (G : SimpleGraph V)
 private theorem delete_insert_balance (a : ℝ≥0) (I : State G) (v : V) (hi : v ∈ I.val) :
     G.hardCorePMF a I * ENNReal.ofReal (1 - activityProbability a) =
       G.hardCorePMF a (erase G I v) * ENNReal.ofReal (activityProbability a) := by
-  have he : I.val.erase v = (erase G I v).val.erase v := by simp [erase_val]
   have hw := G.hardCorePMF_single_site_balance a I (erase G I v) v
-    (by ext w; simp_all)
+    (by ext w; simp)
   simp only [erase_val, Finset.notMem_erase, hi, ite_false, ite_true, mul_one] at hw
   have hp : ENNReal.ofReal (activityProbability a) = (a : ℝ≥0∞) / (1 + a) := by
     rw [coe_activityProbability, ENNReal.ofReal_div_of_pos (by positivity)]
@@ -92,18 +91,14 @@ private theorem single_site_balance (a : ℝ≥0) (I J : State G) (v : V) :
         ((delete_insert_balance G a J v hj).trans (by rw [hdel])).symm
     · exact (hIJ (by simpa only [erase_of_notMem G I hi, erase_of_notMem G J hj]
         using he)).elim
-  · have hoIJ : occupy G I v ≠ J := by
-      intro h
-      exact he (by simpa using congrArg (fun K => erase G K v) h)
-    have hdIJ : erase G I v ≠ J := by
-      intro h
-      exact he (by simpa using congrArg (fun K => erase G K v) h)
-    have hoJI : occupy G J v ≠ I := by
-      intro h
-      exact he (by simpa using (congrArg (fun K => erase G K v) h).symm)
-    have hdJI : erase G J v ≠ I := by
-      intro h
-      exact he (by simpa using (congrArg (fun K => erase G K v) h).symm)
+  · have hoIJ : occupy G I v ≠ J := fun h =>
+      he (erase_eq_of_single_site_eq G I J v (Or.inl h))
+    have hdIJ : erase G I v ≠ J := fun h =>
+      he (erase_eq_of_single_site_eq G I J v (Or.inr h))
+    have hoJI : occupy G J v ≠ I := fun h =>
+      he (erase_eq_of_single_site_eq G J I v (Or.inl h)).symm
+    have hdJI : erase G J v ≠ I := fun h =>
+      he (erase_eq_of_single_site_eq G J I v (Or.inr h)).symm
     simp [hoIJ, hdIJ, hoJI, hdJI]
 
 variable [Nonempty V]
@@ -149,13 +144,7 @@ theorem tendsto_tvDist (a : ℝ≥0) (ha : 0 < a) (ν : Measure (State G))
   let := isIrreducible G (activityProbability a) hp hq
   let := (isAperiodic G (activityProbability a) hp hq).isIrreducible_parallelComp
     (isAperiodic G (activityProbability a) hp hq)
-  have hstat (n : ℕ) :
-      (((kernel G (activityProbability a)) ^ n : Kernel (State G) (State G)) ∘ₘ
-        (G.hardCorePMF a).toMeasure) = (G.hardCorePMF a).toMeasure := by
-    induction n with
-    | zero => exact Measure.id_comp
-    | succ n ih => rw [Kernel.pow_add, pow_one, ← Measure.comp_assoc, invariant G a, ih]
-  simpa only [hstat] using
+  simpa only [((invariant G a).pow _).def] using
     (kernel G (activityProbability a)).tendsto_tvDist_pow_comp_of_parallelComp_isRecurrent
       (Kernel.isRecurrent_of_finite (κ := kernel G (activityProbability a) ∥ₖ
         kernel G (activityProbability a)) (empty G, empty G)) ν (G.hardCorePMF a).toMeasure
