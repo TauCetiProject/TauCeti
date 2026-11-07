@@ -13,12 +13,15 @@ public import Mathlib.LinearAlgebra.Eigenspace.Basic
 Let `f` be an endomorphism of a vector space and `μ ≠ 0`. A generalized eigenvector `w` for `μ`
 satisfies `μ • w = f w - (f - μ) w`, so by induction on the exponent it lies in every submodule
 containing the range of `f`. Thus the generalized eigenspaces of `f` for nonzero eigenvalues only
-see the range of `f`.
+see the range of `f`, and `f` has the same nonzero eigenvalues as its restriction to any such
+submodule.
 
 ## Main results
 
 * `Module.End.genEigenspace_le_of_range_le`: for `μ ≠ 0`, every generalized eigenspace of `f` for
   `μ` lies in every submodule containing the range of `f`.
+* `Module.End.hasEigenvalue_restrict_iff_of_range_le`: the restriction of `f` to a submodule
+  containing its range has the same nonzero eigenvalues as `f`.
 -/
 
 public section
@@ -45,5 +48,16 @@ theorem genEigenspace_le_of_range_le {f : End K V} {S : Submodule K V}
     have h := S.sub_mem (hf (LinearMap.mem_range_self f w)) (ih _ hw)
     rw [LinearMap.sub_apply, sub_sub_cancel, LinearMap.smul_apply, one_apply_eq_self] at h
     exact (S.smul_mem_iff hμ).1 h
+
+/-- The restriction of an endomorphism `f` to a submodule containing its range has the same nonzero
+eigenvalues as `f`. -/
+theorem hasEigenvalue_restrict_iff_of_range_le {f : End K V} {S : Submodule K V}
+    (hf : LinearMap.range f ≤ S) {μ : K} (hμ : μ ≠ 0) :
+    HasEigenvalue (f.restrict fun w _ ↦ hf (LinearMap.mem_range_self f w)) μ ↔
+      f.HasEigenvalue μ := by
+  rw [hasEigenvalue_iff, hasEigenvalue_iff,
+    ← (Submodule.map_injective_of_injective S.injective_subtype).ne_iff, Submodule.map_bot,
+    ← Submodule.inf_genEigenspace,
+    inf_eq_right.2 (genEigenspace_le_of_range_le hf hμ 1)]
 
 end Module.End

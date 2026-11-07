@@ -32,17 +32,20 @@ the derivative of the reverse transition is its left inverse
 `dh ∘ dP_p = dP_q ∘ dh` for the transition `h` from a section through `p` to one through `q`
 (`TauCeti.mfderiv_flowTransition_apply_mfderiv_flowTransition`).
 
-Since `dP_p` maps `T_pM` into `ker dg_p`, its generalized eigenvectors for a nonzero eigenvalue lie
-in `ker dg_p` (`TauCeti.genEigenspace_returnDerivative_le_ker`), so its nonzero eigenvalues are
-those of the normal return derivative, the restriction of `dP_p` to the tangent space of the
-section. On these generalized eigenspaces `dh` is an isomorphism, with inverse the derivative of
-the reverse transition (`TauCeti.exists_linearEquiv_genEigenspace_returnDerivative`). Hence the
-nonzero eigenvalues of the linearized return map, with their geometric and algebraic
-multiplicities, and in particular the test whether `1` is an eigenvalue, do not depend on the
-section or on the base point along the orbit (`TauCeti.finrank_genEigenspace_returnDerivative_eq`,
-`TauCeti.hasEigenvalue_returnDerivative_iff`, `TauCeti.hasEigenvalue_one_returnDerivative_iff`).
-The linearized return map at time `k * T₀` is the `k`-th power of the one at time `T₀`
-(`TauCeti.returnDerivative_natCast_mul`), so the same holds for every positive iterate.
+Since `dP_p` maps `T_pM` into `ker dg_p` (`TauCeti.range_returnDerivative_le_ker`), its generalized
+eigenvectors for a nonzero eigenvalue lie in `ker dg_p`
+(`TauCeti.genEigenspace_returnDerivative_le_ker`), so its nonzero eigenvalues are those of the
+normal return derivative `TauCeti.normalReturnDerivative`, the restriction of `dP_p` to the tangent
+space of the section (`TauCeti.hasEigenvalue_normalReturnDerivative_iff`). On these generalized
+eigenspaces `dh` is an isomorphism, with inverse the derivative of the reverse transition
+(`TauCeti.exists_linearEquiv_genEigenspace_returnDerivative`). Hence the nonzero eigenvalues of the
+linearized return map, with their geometric and algebraic multiplicities, and in particular the
+test whether `1` is an eigenvalue, do not depend on the section or on the base point along the
+orbit (`TauCeti.finrank_genEigenspace_returnDerivative_eq`,
+`TauCeti.hasEigenvalue_returnDerivative_iff`, `TauCeti.hasEigenvalue_one_returnDerivative_iff`,
+`TauCeti.hasEigenvalue_one_normalReturnDerivative_iff`). The linearized return map at time
+`k * T₀` is the `k`-th power of the one at time `T₀` (`TauCeti.returnDerivative_natCast_mul`), so
+the same holds for every positive iterate.
 
 As in `TauCeti.Geometry.Manifold.Flow.Transition`, `T₀` need not be the least period and the
 return branch need not be the first return to the section.
@@ -51,13 +54,18 @@ return branch need not be the first return to the section.
 
 * `TauCeti.returnDerivative v g T₀ p`: the linearized return map, the derivative at `p` of the
   return branch at time `T₀` of the section `{g = g p}`.
+* `TauCeti.normalReturnDerivative v g T₀ p h`: the normal return derivative, the restriction of
+  the linearized return map to the tangent space `ker dg_p` of the section.
 
 ## Main results
 
 * `TauCeti.mfderiv_flowTransition_zero_apply`: the derivative of the time-`0` transition is the
   projection onto the tangent space of the section along the field.
 * `TauCeti.mvfderiv_mfderiv_flowTransition_eq_zero`: the derivative of a transition takes values
-  in the tangent space of the target section.
+  in the tangent space of the target section; `TauCeti.range_returnDerivative_le_ker` is the same
+  for the linearized return map.
+* `TauCeti.hasEigenvalue_normalReturnDerivative_iff`: the normal return derivative and the
+  linearized return map have the same nonzero eigenvalues.
 * `TauCeti.mfderiv_flowTransition_neg_apply_mfderiv_flowTransition`: on the tangent space of the
   source section, the derivative of the reverse transition is a left inverse.
 * `TauCeti.mfderiv_flowTransition_apply_mfderiv_flowTransition`: transitions conjugate the
@@ -70,6 +78,8 @@ return branch need not be the first return to the section.
 * `TauCeti.exists_linearEquiv_eigenspace_returnDerivative`,
   `TauCeti.finrank_eigenspace_returnDerivative_eq`, `TauCeti.hasEigenvalue_returnDerivative_iff`,
   `TauCeti.hasEigenvalue_one_returnDerivative_iff`: the same for eigenspaces and eigenvalues.
+* `TauCeti.hasEigenvalue_one_normalReturnDerivative_iff`: the eigenvalue-one test for the normal
+  return derivative does not depend on the section or the base point.
 * `TauCeti.returnDerivative_natCast_mul`: the linearized return map of an iterate.
 
 ## References
@@ -97,9 +107,9 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
 /-- The derivative at `p` of the return branch `flowTransition v g T₀ p` at time `T₀` of the
 section `{g = g p}`, as an endomorphism of `T_pM`: the linearized return map. When `p` returns to
 itself at time `T₀` and the section is transverse to `v`, it takes values in the tangent space
-`ker dg_p` of the section (`TauCeti.mvfderiv_mfderiv_flowTransition_eq_zero`), and its nonzero
-eigenvalues are those of its restriction to that tangent space
-(`TauCeti.eigenspace_returnDerivative_le_ker`). -/
+`ker dg_p` of the section (`TauCeti.range_returnDerivative_le_ker`), and its nonzero eigenvalues
+are those of its restriction `TauCeti.normalReturnDerivative` to that tangent space
+(`TauCeti.hasEigenvalue_normalReturnDerivative_iff`). -/
 def returnDerivative (v : (x : M) → TangentSpace I x) (g : M → ℝ) (T₀ : ℝ) (p : M) :
     Module.End ℝ (TangentSpace I p) :=
   -- All tangent spaces of `M` are the model space `E`, so the derivative, which lands in the
@@ -111,6 +121,32 @@ def returnDerivative (v : (x : M) → TangentSpace I x) (g : M → ℝ) (T₀ : 
 theorem returnDerivative_apply (w : TangentSpace I p) :
     returnDerivative v g T₀ p w = mfderiv I I (flowTransition v g T₀ p) p w :=
   (rfl)
+
+/-- The normal return derivative: the restriction of the linearized return map
+`TauCeti.returnDerivative v g T₀ p` to the tangent space `ker dg_p` of the section `{g = g p}`,
+given that the linearized return map takes values there. When `p` returns to itself at time `T₀`
+and the section is transverse to `v`, this holds by `TauCeti.range_returnDerivative_le_ker`. -/
+def normalReturnDerivative (v : (x : M) → TangentSpace I x) (g : M → ℝ) (T₀ : ℝ) (p : M)
+    (h : LinearMap.range (returnDerivative v g T₀ p) ≤
+      LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ)) :
+    Module.End ℝ (LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ)) :=
+  (returnDerivative v g T₀ p).restrict fun w _ ↦ h (LinearMap.mem_range_self _ w)
+
+@[simp]
+theorem coe_normalReturnDerivative_apply
+    {h : LinearMap.range (returnDerivative v g T₀ p) ≤
+      LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ)}
+    (w : LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ)) :
+    (normalReturnDerivative v g T₀ p h w : TangentSpace I p) = returnDerivative v g T₀ p w :=
+  (rfl)
+
+/-- **The normal return derivative has the nonzero eigenvalues of the linearized return map.** -/
+theorem hasEigenvalue_normalReturnDerivative_iff
+    {h : LinearMap.range (returnDerivative v g T₀ p) ≤
+      LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ)} {μ : ℝ} (hμ : μ ≠ 0) :
+    (normalReturnDerivative v g T₀ p h).HasEigenvalue μ ↔
+      (returnDerivative v g T₀ p).HasEigenvalue μ :=
+  Module.End.hasEigenvalue_restrict_iff_of_range_le h hμ
 
 variable (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
 include hv
@@ -218,6 +254,14 @@ theorem mfderiv_flowTransition_injOn :
 
 end Inverse
 
+/-- If `p` returns to itself at time `T₀`, the linearized return map of a transverse section
+through `p` takes values in the tangent space `ker dg_p` of the section. -/
+theorem range_returnDerivative_le_ker (hP : (T₀, p) ∈ flowDomain v) (hp : flowOf v T₀ p = p)
+    (hg : ContMDiffAt I 𝓘(ℝ) 1 g p) (hgv : mvfderiv I g p (v p) ≠ 0) :
+    LinearMap.range (returnDerivative v g T₀ p) ≤
+      LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ) :=
+  fun _ ⟨w, hw⟩ ↦ hw ▸ mvfderiv_mfderiv_flowTransition_eq_zero hv hP hp hg hgv w
+
 /-- The generalized eigenvectors of the linearized return map for a nonzero eigenvalue lie in the
 tangent space `ker dg_p` of the section. -/
 theorem genEigenspace_returnDerivative_le_ker (hP : (T₀, p) ∈ flowDomain v)
@@ -225,8 +269,7 @@ theorem genEigenspace_returnDerivative_le_ker (hP : (T₀, p) ∈ flowDomain v)
     {μ : ℝ} (hμ : μ ≠ 0) (k : ℕ∞) :
     (returnDerivative v g T₀ p).genEigenspace μ k ≤
       LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ) :=
-  Module.End.genEigenspace_le_of_range_le (fun _ ⟨w, hw⟩ ↦ hw ▸
-    mvfderiv_mfderiv_flowTransition_eq_zero hv hP hp hg hgv w) hμ k
+  Module.End.genEigenspace_le_of_range_le (range_returnDerivative_le_ker hv hP hp hg hgv) hμ k
 
 /-- The eigenvectors of the linearized return map for a nonzero eigenvalue lie in the tangent space
 `ker dg_p` of the section. -/
@@ -383,6 +426,21 @@ a transverse section through any point `q` of the orbit does. -/
 theorem hasEigenvalue_one_returnDerivative_iff :
     (returnDerivative v g T₀ p).HasEigenvalue 1 ↔ (returnDerivative v g' T₀ q).HasEigenvalue 1 :=
   hasEigenvalue_returnDerivative_iff hv hT hq hP hp hg hgv hg' hg'v one_ne_zero
+
+/-- **The eigenvalue-one test for the normal return derivative does not depend on the section or
+the base point.** The normal return derivative at time `T₀` of a transverse section through `p`
+has eigenvalue `1` exactly when that of a transverse section through any point `q` of the orbit
+does. -/
+theorem hasEigenvalue_one_normalReturnDerivative_iff
+    {h : LinearMap.range (returnDerivative v g T₀ p) ≤
+      LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ)}
+    {h' : LinearMap.range (returnDerivative v g' T₀ q) ≤
+      LinearMap.ker (mvfderiv I g' q : TangentSpace I q →ₗ[ℝ] ℝ)} :
+    (normalReturnDerivative v g T₀ p h).HasEigenvalue 1 ↔
+      (normalReturnDerivative v g' T₀ q h').HasEigenvalue 1 := by
+  rw [hasEigenvalue_normalReturnDerivative_iff one_ne_zero,
+    hasEigenvalue_normalReturnDerivative_iff one_ne_zero]
+  exact hasEigenvalue_one_returnDerivative_iff hv hT hq hP hp hg hgv hg' hg'v
 
 end Return
 
