@@ -256,6 +256,31 @@ theorem range_fromBlocksOne_eq_specialOrthogonalStabilizer (m : ℕ) :
     Subtype.ext_iff, funext_iff, coe_unitaryMap, coe_standard]
   rfl
 
+/-- The block embedding `B ↦ diag(1_r, B)` of `SO(m)` in `SO(r + m)` is continuous. -/
+theorem continuous_fromBlocksOne (m : ℕ) :
+    Continuous (SpecialOrthogonalGroup.fromBlocksOne ℝ r m) := by
+  refine continuous_induced_rng.2 ?_
+  simp only [Function.comp_def, SpecialOrthogonalGroup.coe_fromBlocksOne]
+  exact (continuous_const.matrix_fromBlocks continuous_const continuous_const
+    continuous_subtype_val).matrix_reindex _ _
+
+variable (r) in
+/-- The block embedding `B ↦ diag(1_r, B)` is a homeomorphism of `SO(m)` onto the stabilizer of
+the standard real `r`-frame in `SO(r + m)`. -/
+def specialOrthogonalStabilizerHomeomorph (m : ℕ) :
+    specialOrthogonalGroup (Fin m) ℝ ≃ₜ specialOrthogonalStabilizer (Nat.le_add_right r m) :=
+  ((continuous_fromBlocksOne m).rangeFactorization.homeoOfEquivCompactToT2
+    (f := Equiv.ofInjective _ (SpecialOrthogonalGroup.fromBlocksOne_injective ℝ r))).trans
+    (Homeomorph.setCongr <| by
+      rw [← range_fromBlocksOne_eq_specialOrthogonalStabilizer, MonoidHom.coe_range])
+
+@[simp]
+theorem coe_specialOrthogonalStabilizerHomeomorph_apply (m : ℕ)
+    (B : specialOrthogonalGroup (Fin m) ℝ) :
+    (specialOrthogonalStabilizerHomeomorph r m B : specialOrthogonalGroup (Fin (r + m)) ℝ) =
+      SpecialOrthogonalGroup.fromBlocksOne ℝ r m B :=
+  (rfl)
+
 end finiteOrthonormalFrame
 
 end TauCeti
