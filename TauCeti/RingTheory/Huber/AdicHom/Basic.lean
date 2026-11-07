@@ -9,7 +9,7 @@ public import TauCeti.RingTheory.Huber.Basic
 
 import TauCeti.RingTheory.Huber.OpenIdeal
 import TauCeti.RingTheory.Huber.RingOfDefinition
-import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
+import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 
 /-!
 # Adic homomorphisms of Huber rings

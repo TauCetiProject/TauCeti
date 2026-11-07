@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Chart
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 public import TauCeti.Geometry.Manifold.DifferentialForm.MapCoeff
 public import TauCeti.Geometry.Symplectic.Complex.Complexification
-public import TauCeti.Topology.Algebra.Module.Alternating.BaseChange
+public import TauCeti.Topology.Algebra.Module.Alternating.BaseChange.Basic
 public import Mathlib.Analysis.Normed.Module.Alternating.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
@@ -412,6 +412,13 @@ theorem IsOfType.sum_typeProjection_eq {G : Type*} [AddCommMonoid G]
     rw [h.typeProjection_of_ne hne, hf]
   · intro hpq
     exact absurd (by simpa using h.add_eq) hpq
+
+/-- Transporting a form across an equality of total degrees preserves its type. -/
+theorem IsOfType.cast {l : ℕ} {φ : SmoothForm I M F k} {p q : ℕ}
+    (hφ : φ.IsOfType J p q) (h : k = l) :
+    (LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm I M F n) h φ).IsOfType J p q := by
+  subst l
+  exact hφ
 
 end SmoothForm
 

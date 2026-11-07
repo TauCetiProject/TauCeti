@@ -94,7 +94,7 @@ theorem hasDerivAt_mpullback_eulerianField {α : RoughForm I M F k} (t : ℝ) (x
     (hφ'.curry_right (f := fun u y ↦ (φ u).symm y) (x := t)).mdifferentiable two_ne_zero
   -- Since `φ_u = (φ_u ∘ φ_t⁻¹) ∘ φ_t`, the derivative at `t` is read at the base time.
   exact hasDerivAt_mpullback_of_eq_comp (χ := fun u z ↦ φ u ((φ t).symm z))
-    (Eventually.of_forall fun u ↦ funext fun z ↦ by simp) (hφu t x)
+    (Eventually.of_forall fun u ↦ Eventually.of_forall fun z ↦ by simp) (hφu t x)
     (Eventually.of_forall fun u ↦ ((hφu u).comp hφt) _)
     (hasDerivAt_mpullback_eulerianField_self hφ hφ' t _ hα)
 

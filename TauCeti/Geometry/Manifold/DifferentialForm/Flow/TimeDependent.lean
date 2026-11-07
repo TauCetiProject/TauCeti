@@ -119,7 +119,8 @@ theorem hasDerivAt_mpullback_timeDependentFlowOf (s t : ℝ) (x : M)
   -- By the composition law, `φ_{s,u} = φ_{t,u} ∘ φ_{s,t}`, so the derivative at `t` is read at
   -- the base time of the flow from `t`.
   exact hasDerivAt_mpullback_of_eq_comp (χ := timeDependentFlowOf X t)
-    (Eventually.of_forall fun u ↦ funext fun z ↦ (timeDependentFlowOf_trans hc hX₁ s t u z).symm)
+    (Eventually.of_forall fun u ↦ Eventually.of_forall fun z ↦
+      (timeDependentFlowOf_trans hc hX₁ s t u z).symm)
     (hsmooth s t x) (Eventually.of_forall fun u ↦ hsmooth t u _)
     (hasDerivAt_mpullback_timeDependentFlowOf_self hX t _ hα)
 
