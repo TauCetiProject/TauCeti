@@ -25,6 +25,12 @@ coefficientwise action of `R`, and also for the convolution action of the Hahn s
 `HahnSeries Γ R`, so `HahnModule Γ R L` is a Lie algebra over both. On monomials,
 `⁅single a x, single b y⁆ = single (a + b) ⁅x, y⁆`.
 
+The construction is functorial in `L`: a morphism `f : L → L'` of Lie algebras over `R`, applied
+to every coefficient, is a morphism of Lie algebras `HahnModule Γ R L → HahnModule Γ R L'` over
+`HahnSeries Γ R`, and isomorphisms of Lie algebras induce isomorphisms. This rests on the
+naturality of the coefficientwise extension of biadditive maps
+(`HahnModule.convolutionAddMonoidHom_map_map`, `HahnModule.map_convolutionAddMonoidHom`).
+
 ## Main definitions and results
 
 * `HahnModule.instBracket`: the coefficient convolution bracket, the coefficientwise extension
@@ -38,6 +44,12 @@ coefficientwise action of `R`, and also for the convolution action of the Hahn s
 * `HahnModule.instLieAlgebra`, `HahnModule.instLieAlgebraHahnSeries`: the Lie algebra structures
   over `R` and over `HahnSeries Γ R`.
 * `HahnModule.single_lie_single`: the bracket of two monomials.
+* `LieHom.hahnModuleMap Γ f`: the morphism of Lie algebras of Hahn series induced by `f`, with
+  coefficients `LieHom.coeff_hahnModuleMap`, compatible with identities and composition
+  (`LieHom.hahnModuleMap_id`, `LieHom.hahnModuleMap_comp`) and injective when `f` is
+  (`LieHom.hahnModuleMap_injective`).
+* `LieEquiv.hahnModuleCongr Γ e`: the isomorphism of Lie algebras of Hahn series induced by an
+  isomorphism `e`.
 
 ## References
 
@@ -213,3 +225,142 @@ instance instLieAlgebraHahnSeries : LieAlgebra (HahnSeries Γ R) (HahnModule Γ 
 end LieAlgebra
 
 end HahnModule
+
+/-! ### Functoriality in the coefficient Lie algebra -/
+
+namespace LieHom
+
+open HahnModule
+
+variable {Γ R L L' L'' : Type*} [AddCommMonoid Γ] [PartialOrder Γ] [IsOrderedCancelAddMonoid Γ]
+  [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L'] [LieRing L'']
+  [LieAlgebra R L'']
+
+variable (Γ) in
+/-- A morphism `f : L → L'` of Lie algebras over `R` induces, coefficient by coefficient, a
+morphism of Lie algebras `HahnModule Γ R L → HahnModule Γ R L'` over `HahnSeries Γ R`, sending
+`∑ xₐ tᵃ` to `∑ f (xₐ) tᵃ`. For `Γ = ℤ` this is the functoriality of the formal loop algebra
+`L((t))` in `L`. -/
+def hahnModuleMap (f : L →ₗ⁅R⁆ L') : HahnModule Γ R L →ₗ⁅HahnSeries Γ R⁆ HahnModule Γ R L' where
+  toFun x := of R (((of R).symm x).map f)
+  map_add' x y := by
+    ext a
+    simp
+  map_smul' c x := by
+    have hs : ((of R).symm (of R (((of R).symm x).map f))).support ⊆ ((of R).symm x).support := by
+      rw [Equiv.symm_apply_apply]
+      exact Function.support_comp_subset (map_zero f) _
+    ext a
+    rw [RingHom.id_apply, coeff_smul_right ((of R).symm x).isPWO_support hs]
+    simp [coeff_smul, map_sum]
+  map_lie' {x y} := by
+    apply (of R).symm.injective
+    simp only [Equiv.symm_apply_apply, of_symm_lie, map_convolutionAddMonoidHom,
+      convolutionAddMonoidHom_map_map]
+    -- Both sides extend the biadditive map `(u, v) ↦ f ⁅u, v⁆ = ⁅f u, f v⁆`.
+    refine congrArg (fun Φ ↦ convolutionAddMonoidHom Γ R Φ x y) ?_
+    ext u v
+    simp
+
+/-- Reading `f.hahnModuleMap Γ x` through `HahnModule.of` applies `f` to every coefficient. -/
+@[simp]
+theorem of_symm_hahnModuleMap (f : L →ₗ⁅R⁆ L') (x : HahnModule Γ R L) :
+    (of R).symm (f.hahnModuleMap Γ x) = ((of R).symm x).map f :=
+  (rfl)
+
+/-- The coefficients of `f.hahnModuleMap Γ x` are the images under `f` of those of `x`. -/
+theorem coeff_hahnModuleMap (f : L →ₗ⁅R⁆ L') (x : HahnModule Γ R L) (a : Γ) :
+    ((of R).symm (f.hahnModuleMap Γ x)).coeff a = f (((of R).symm x).coeff a) :=
+  (rfl)
+
+/-- On the series attached to `x`, the induced map applies `f` to every coefficient. -/
+theorem hahnModuleMap_of (f : L →ₗ⁅R⁆ L') (x : HahnSeries Γ L) :
+    f.hahnModuleMap Γ (of R x) = of R (x.map f) :=
+  (rfl)
+
+/-- The monomial `x tᵃ` goes to the monomial `f (x) tᵃ`. -/
+@[simp]
+theorem hahnModuleMap_single (f : L →ₗ⁅R⁆ L') (a : Γ) (x : L) :
+    f.hahnModuleMap Γ (of R (HahnSeries.single a x)) = of R (HahnSeries.single a (f x)) := by
+  ext b
+  by_cases h : b = a <;> simp [h]
+
+variable (Γ R L) in
+/-- The identity of `L` induces the identity of `HahnModule Γ R L`. -/
+@[simp]
+theorem hahnModuleMap_id :
+    (LieHom.id : L →ₗ⁅R⁆ L).hahnModuleMap Γ = LieHom.id := by
+  ext x a
+  simp
+
+/-- The construction is compatible with composition of morphisms. -/
+@[simp]
+theorem hahnModuleMap_comp (g : L' →ₗ⁅R⁆ L'') (f : L →ₗ⁅R⁆ L') :
+    (g.comp f).hahnModuleMap Γ = (g.hahnModuleMap Γ).comp (f.hahnModuleMap Γ) := by
+  ext x a
+  simp
+
+/-- An injective morphism of Lie algebras induces an injective morphism of Hahn series. -/
+theorem hahnModuleMap_injective {f : L →ₗ⁅R⁆ L'} (hf : Function.Injective f) :
+    Function.Injective (f.hahnModuleMap Γ) := fun x y h ↦ by
+  ext a
+  exact hf (by rw [← coeff_hahnModuleMap, ← coeff_hahnModuleMap, h])
+
+end LieHom
+
+namespace LieEquiv
+
+open HahnModule
+
+variable {Γ R L L' L'' : Type*} [AddCommMonoid Γ] [PartialOrder Γ] [IsOrderedCancelAddMonoid Γ]
+  [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L'] [LieRing L'']
+  [LieAlgebra R L'']
+
+variable (Γ) in
+/-- An isomorphism `e : L ≃ L'` of Lie algebras over `R` induces, coefficient by coefficient, an
+isomorphism of Lie algebras `HahnModule Γ R L ≃ HahnModule Γ R L'` over `HahnSeries Γ R`. -/
+def hahnModuleCongr (e : L ≃ₗ⁅R⁆ L') :
+    HahnModule Γ R L ≃ₗ⁅HahnSeries Γ R⁆ HahnModule Γ R L' where
+  __ := (e : L →ₗ⁅R⁆ L').hahnModuleMap Γ
+  invFun := (e.symm : L' →ₗ⁅R⁆ L).hahnModuleMap Γ
+  left_inv x := by
+    ext a
+    simp
+  right_inv x := by
+    ext a
+    simp
+
+/-- The isomorphism of Hahn series is the morphism induced by the underlying morphism. -/
+@[simp]
+theorem coe_hahnModuleCongr (e : L ≃ₗ⁅R⁆ L') :
+    (e.hahnModuleCongr Γ : HahnModule Γ R L →ₗ⁅HahnSeries Γ R⁆ HahnModule Γ R L') =
+      (e : L →ₗ⁅R⁆ L').hahnModuleMap Γ :=
+  (rfl)
+
+/-- Reading `e.hahnModuleCongr Γ x` through `HahnModule.of` applies `e` to every coefficient. -/
+@[simp]
+theorem of_symm_hahnModuleCongr (e : L ≃ₗ⁅R⁆ L') (x : HahnModule Γ R L) :
+    (of R).symm (e.hahnModuleCongr Γ x) = ((of R).symm x).map e :=
+  (rfl)
+
+/-- The inverse of the induced isomorphism is induced by the inverse isomorphism. -/
+@[simp]
+theorem hahnModuleCongr_symm (e : L ≃ₗ⁅R⁆ L') :
+    (e.hahnModuleCongr Γ).symm = e.symm.hahnModuleCongr Γ :=
+  (rfl)
+
+variable (Γ R L) in
+/-- The identity isomorphism of `L` induces the identity isomorphism of `HahnModule Γ R L`. -/
+@[simp]
+theorem hahnModuleCongr_refl : (LieEquiv.refl : L ≃ₗ⁅R⁆ L).hahnModuleCongr Γ = LieEquiv.refl := by
+  ext x a
+  simp
+
+/-- The construction is compatible with composition of isomorphisms. -/
+@[simp]
+theorem hahnModuleCongr_trans (e : L ≃ₗ⁅R⁆ L') (e' : L' ≃ₗ⁅R⁆ L'') :
+    (e.trans e').hahnModuleCongr Γ = (e.hahnModuleCongr Γ).trans (e'.hahnModuleCongr Γ) := by
+  ext x a
+  simp
+
+end LieEquiv

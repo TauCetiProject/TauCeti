@@ -55,6 +55,8 @@ For biadditive maps `Φ : V → W → M`, extended coefficientwise by
   `D Φ(x, y) = Φ(D x, y) + Φ(x, D y)` for the coefficientwise extension of a biadditive map `Φ`.
 * `HahnModule.derivative_convolution`: the same Leibniz rule for the extension of a bilinear map.
 * `HahnModule.residuePairing_single_single`: the residue pairing on monomials.
+* `HahnModule.residuePairing_hahnModuleMap`: the residue pairing is natural in the coefficient
+  module.
 
 ## References
 
@@ -274,6 +276,21 @@ theorem residuePairing_single_single (Φ : LinearMap.BilinForm R V) (m n : ℤ) 
   rw [residuePairing_apply, derivative_single, convolution_single_single, coeff_single,
     map_zsmul]
   split_ifs with h₁ h₂ h₂ <;> first | rfl | omega
+
+/-- The residue pairing is natural in the coefficient module: pairing the images of `x` and `y`
+under the coefficientwise extension of `u : V → W` by `Φ` is pairing `x` and `y` by the
+pulled-back form `(v, w) ↦ Φ (u v) (u w)`. -/
+theorem residuePairing_hahnModuleMap {W : Type*} [AddCommGroup W] [Module R W]
+    (Φ : LinearMap.BilinForm R W) (u : V →ₗ[R] W) (x y : HahnModule ℤ R V) :
+    residuePairing R Φ (u.hahnModuleMap x) (u.hahnModuleMap y) =
+      residuePairing R (Φ.comp u u) x y := by
+  rw [residuePairing_apply, residuePairing_apply, LinearMap.hahnModuleMap_apply,
+    LinearMap.hahnModuleMap_apply, derivative_map, convolution_apply, convolution_apply,
+    convolutionAddMonoidHom_map_map]
+  -- Both sides extend the biadditive map `(v, w) ↦ Φ (u v) (u w)`.
+  refine congrArg (fun Ψ ↦ (convolutionAddMonoidHom ℤ R Ψ x (derivative R y)).coeff (-1)) ?_
+  ext v w
+  simp
 
 end CommRing
 
