@@ -46,12 +46,20 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [BoundarylessManifold I M]
 
 /-- A first-order scalar operator splits into a smooth vector field and multiplication by a
-smooth function. The second coordinate is its value on one. -/
+smooth function, linearly over smooth functions. The second coordinate is its value on one. -/
 def firstOrderOperatorsEquivSmoothVectorFieldProd :
-    firstOrderOperators ℝ C^∞⟮I, M; ℝ⟯ ≃ₗ[ℝ]
+    firstOrderOperators ℝ C^∞⟮I, M; ℝ⟯ ≃ₗ[C^∞⟮I, M; ℝ⟯]
       Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯ × C^∞⟮I, M; ℝ⟯ :=
-  ((firstOrderOperatorsEquivDerivationProd ℝ C^∞⟮I, M; ℝ⟯).restrictScalars ℝ).trans
-    ((derivationEquivSmoothVectorField.restrictScalars ℝ).prodCongr (LinearEquiv.refl ℝ _))
+  (firstOrderOperatorsEquivDerivationProd ℝ C^∞⟮I, M; ℝ⟯).trans
+    (derivationEquivSmoothVectorField.prodCongr (LinearEquiv.refl _ _))
+
+/-- The vector-field coordinate is the field of the derivation coordinate. -/
+@[simp]
+theorem firstOrderOperatorsEquivSmoothVectorFieldProd_fst_apply
+    (D : firstOrderOperators ℝ C^∞⟮I, M; ℝ⟯) (x : M) :
+    (firstOrderOperatorsEquivSmoothVectorFieldProd D).1 x =
+      (firstOrderOperatorsEquivDerivationProd ℝ C^∞⟮I, M; ℝ⟯ D).1.vectorField x := by
+  simp [firstOrderOperatorsEquivSmoothVectorFieldProd]
 
 /-- The multiplication coefficient of a first-order scalar operator is its value on one. -/
 @[simp]
@@ -70,15 +78,19 @@ theorem firstOrderOperatorsEquivSmoothVectorFieldProd_symm_apply
   simp [firstOrderOperatorsEquivSmoothVectorFieldProd]
 
 /-- The geometric splitting acts by `D f = df(X) + cf`. -/
-theorem firstOrderOperatorsEquivSmoothVectorFieldProd_apply
+theorem firstOrderOperators.apply_eq_mvfderiv_add_mul
     (D : firstOrderOperators ℝ C^∞⟮I, M; ℝ⟯) (f : C^∞⟮I, M; ℝ⟯) (x : M) :
     D.val f x =
       mvfderiv I f x ((firstOrderOperatorsEquivSmoothVectorFieldProd D).1 x) +
         f x * D.val 1 x := by
-  have h := congrArg (fun T : Module.End ℝ C^∞⟮I, M; ℝ⟯ ↦ T f x)
-    (firstOrderOperatorsEquivSmoothVectorFieldProd_symm_apply
-      (firstOrderOperatorsEquivSmoothVectorFieldProd D))
-  simpa [mul_comm] using h
+  simp [mul_comm]
+
+/-- Differentiating along the vector-field coordinate subtracts the multiplication part. -/
+theorem mvfderiv_firstOrderOperatorsEquivSmoothVectorFieldProd_fst
+    (D : firstOrderOperators ℝ C^∞⟮I, M; ℝ⟯) (f : C^∞⟮I, M; ℝ⟯) (x : M) :
+    mvfderiv I f x ((firstOrderOperatorsEquivSmoothVectorFieldProd D).1 x) =
+      D.val f x - f x * D.val 1 x :=
+  eq_sub_iff_add_eq.mpr (firstOrderOperators.apply_eq_mvfderiv_add_mul D f x).symm
 
 /-- Vanishing double commutators characterize the unique expression of a scalar operator as
 a smooth vector field plus multiplication. -/
@@ -115,23 +127,25 @@ theorem _root_.LinearMap.mem_firstOrderOperators_iff_existsUnique_vectorField_mu
 namespace firstOrderOperators
 
 /-- A first-order scalar operator depends only on the value and differential of its input. -/
-theorem apply_eq_of_value_differential_eq
+theorem apply_eq_of_apply_eq_of_mvfderiv_eq
     (D : firstOrderOperators ℝ C^∞⟮I, M; ℝ⟯) {f g : C^∞⟮I, M; ℝ⟯} {x : M}
     (hvalue : f x = g x) (hdifferential : mvfderiv I f x = mvfderiv I g x) :
     D.val f x = D.val g x := by
-  rw [firstOrderOperatorsEquivSmoothVectorFieldProd_apply D f,
-    firstOrderOperatorsEquivSmoothVectorFieldProd_apply D g, hvalue, hdifferential]
+  rw [apply_eq_mvfderiv_add_mul D f,
+    apply_eq_mvfderiv_add_mul D g, hvalue, hdifferential]
 
 /-- First-order scalar operators are local: inputs with the same germ have the same output
 at the point. -/
 theorem apply_eq_of_eventuallyEq
     (D : firstOrderOperators ℝ C^∞⟮I, M; ℝ⟯) {f g : C^∞⟮I, M; ℝ⟯} {x : M}
     (h : (f : M → ℝ) =ᶠ[𝓝 x] g) : D.val f x = D.val g x :=
-  apply_eq_of_value_differential_eq D h.eq_of_nhds h.mvfderiv_eq
+  apply_eq_of_apply_eq_of_mvfderiv_eq D h.eq_of_nhds h.mvfderiv_eq
+
+end firstOrderOperators
 
 /-- A first-order scalar operator is multiplication precisely when its vector-field part
 vanishes. -/
-theorem fst_eq_zero_iff
+theorem firstOrderOperatorsEquivSmoothVectorFieldProd_fst_eq_zero_iff
     (D : firstOrderOperators ℝ C^∞⟮I, M; ℝ⟯) :
     (firstOrderOperatorsEquivSmoothVectorFieldProd D).1 = 0 ↔
       D.val = LinearMap.mulLeft ℝ (D.val 1) := by
@@ -146,7 +160,5 @@ theorem fst_eq_zero_iff
       apply Subtype.ext
       simpa using h
     rw [heq, LinearEquiv.apply_symm_apply]
-
-end firstOrderOperators
 
 end TauCeti
