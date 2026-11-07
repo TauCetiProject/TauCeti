@@ -66,9 +66,7 @@ private lemma apply_level_succ_le {φ : ℝ → ℝ} {k₀ M α β d : ℝ} (hM 
   rw [hgap] at h
   have hdiv : M / (d / 2 / 2 ^ j) = 2 * M / d * 2 ^ j := by field_simp
   have hsplit : (M / (d / 2 / 2 ^ j)) ^ α = (2 * M / d) ^ α * (2 ^ α) ^ j := by
-    rw [hdiv, Real.mul_rpow (by positivity) (by positivity), ← Real.rpow_natCast,
-      ← Real.rpow_natCast, ← Real.rpow_mul zero_le_two, ← Real.rpow_mul zero_le_two,
-      mul_comm α]
+    rw [hdiv, Real.mul_rpow (by positivity) (by positivity), ← Real.rpow_pow_comm zero_le_two]
   simpa only [hsplit, add_sub_cancel] using h
 
 /-- The starting value is small enough for geometric decay: with `d = M * P ^ ((β - 1) / α) *
