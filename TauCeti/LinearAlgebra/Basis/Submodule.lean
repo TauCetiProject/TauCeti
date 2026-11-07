@@ -87,10 +87,9 @@ theorem exists_linearIndependent_span_inf_sup (U W : Submodule k V)
   let bY := Module.finBasis k Y
   let bZ := Module.finBasis k Z
   have hbas (P : Submodule k V) [Module.Finite k P] :
-      span k (Set.range fun i ↦ (Module.finBasis k P i : V)) = P := by
-    have heq : (fun i ↦ (Module.finBasis k P i : V)) = P.subtype ∘ Module.finBasis k P := rfl
-    rw [heq, Set.range_comp, ← Submodule.map_span,
-      (Module.finBasis k P).span_eq, Submodule.map_top, Submodule.range_subtype]
+      span k (Set.range fun i ↦ (Module.finBasis k P i : V)) = P :=
+    (Submodule.span_range_subtype_eq_top_iff P fun i ↦ (Module.finBasis k P i).2).1
+      (Module.finBasis k P).span_eq
   refine ⟨_, _, _, (fun i ↦ (bX i : V)), (fun i ↦ (bY i : V)), (fun i ↦ (bZ i : V)),
     ?_, hbas _, ?_, ?_, ?_⟩
   · have hxy := linearIndependent_fin_append.mpr
