@@ -140,8 +140,8 @@ theorem exists_mem_inertia_apply_eq_neg_of_mod_four_eq_two_or_three [IsGalois �
   have : Q.LiesOver (span {((2 : ℕ) : ℤ)}) := by rwa [Nat.cast_ofNat]
   obtain ⟨τ, hτ, hτx⟩ :=
     TauCeti.NumberField.exists_mem_inertia_apply_eq_neg (c := s) (by rw [hx']; simp) h2 Q
-  exact ⟨τ, hτ, AlgEquiv.apply_eq_neg_of_apply_div_eq_neg τ he'
-    (map_intCast τ e) hτx⟩
+  exact ⟨τ, hτ, (AlgEquiv.apply_div_eq_neg_iff τ he'
+    (map_intCast τ e)).mp hτx⟩
 
 /-! ### Inertia elements fixing products of roots -/
 
@@ -233,16 +233,16 @@ private theorem card_inertia_le_four_of_mod_four_eq_three {b c : ι} (hb : d b %
   have hτb : τ (r b) = r b := hfix 0
   have hτc : τ (r c) = r c := hfix 1
   refine eq_one_of_mem_inertia hr htop Q hτ (fun i hi => ?_) fun i hi => ?_
-  · exact AlgEquiv.apply_eq_self_of_apply_mul_eq_mul τ
-      (IsRegular.of_ne_zero (root_ne_zero hr hd b)).left hτb
+  · exact (AlgEquiv.apply_mul_eq_mul_iff τ
+      (IsRegular.of_ne_zero (root_ne_zero hr hd b)).left hτb).mp
       (apply_mul_eq_mul_of_mod_four_eq_three hr Q hτ hb hi)
   · by_cases hci : d c % 8 = d i % 8
-    · exact AlgEquiv.apply_eq_self_of_apply_mul_eq_mul τ
-        (IsRegular.of_ne_zero (root_ne_zero hr hd c)).left hτc
+    · exact (AlgEquiv.apply_mul_eq_mul_iff τ
+        (IsRegular.of_ne_zero (root_ne_zero hr hd c)).left hτc).mp
         (apply_mul_eq_mul_of_mod_eight_eq hr hd Q hτ hc hi hci)
-    · exact AlgEquiv.apply_eq_self_of_apply_mul_eq_mul τ
+    · exact (AlgEquiv.apply_mul_eq_mul_iff τ
         (IsRegular.of_ne_zero (mul_ne_zero (root_ne_zero hr hd b) (root_ne_zero hr hd c))).left
-        (by rw [map_mul, hτb, hτc])
+        (by rw [map_mul, hτb, hτc])).mp
         (apply_mul_mul_eq_mul_mul hr hd Q hτ hb hc hi hci)
 
 omit [Q.IsPrime] in
@@ -260,16 +260,16 @@ private theorem card_inertia_le_four_of_mod_eight {c₂ c₆ : ι} (h₂ : d c�
   refine eq_one_of_mem_inertia hr htop Q hτ (fun i hi => ?_) fun i hi => ?_
   · have h := apply_mul_mul_eq_mul_mul hr hd Q hτ hi hd₂ hd₆ (by omega)
     rw [show r i * r c₂ * r c₆ = r c₂ * r c₆ * r i by ring] at h
-    exact AlgEquiv.apply_eq_self_of_apply_mul_eq_mul τ
+    exact (AlgEquiv.apply_mul_eq_mul_iff τ
       (IsRegular.of_ne_zero (mul_ne_zero (root_ne_zero hr hd c₂) (root_ne_zero hr hd c₆))).left
-      (by rw [map_mul, hτ₂, hτ₆]) h
+      (by rw [map_mul, hτ₂, hτ₆])).mp h
   · have h4 := hd i
     by_cases hi₂ : d i % 8 = 2
-    · exact AlgEquiv.apply_eq_self_of_apply_mul_eq_mul τ
-        (IsRegular.of_ne_zero (root_ne_zero hr hd c₂)).left hτ₂
+    · exact (AlgEquiv.apply_mul_eq_mul_iff τ
+        (IsRegular.of_ne_zero (root_ne_zero hr hd c₂)).left hτ₂).mp
         (apply_mul_eq_mul_of_mod_eight_eq hr hd Q hτ hd₂ hi (by omega))
-    · exact AlgEquiv.apply_eq_self_of_apply_mul_eq_mul τ
-        (IsRegular.of_ne_zero (root_ne_zero hr hd c₆)).left hτ₆
+    · exact (AlgEquiv.apply_mul_eq_mul_iff τ
+        (IsRegular.of_ne_zero (root_ne_zero hr hd c₆)).left hτ₆).mp
         (apply_mul_eq_mul_of_mod_eight_eq hr hd Q hτ hd₆ hi (by omega))
 
 omit [Q.IsPrime] in
@@ -284,8 +284,8 @@ private theorem card_inertia_le_two
       (fun k => by fin_cases k; simp [hr]) fun τ hτ hfix => ?_).trans (by norm_num)
     have hτb : τ (r b) = r b := hfix 0
     exact eq_one_of_mem_inertia hr htop Q hτ
-      (fun i hi => AlgEquiv.apply_eq_self_of_apply_mul_eq_mul τ
-        (IsRegular.of_ne_zero (root_ne_zero hr hd b)).left hτb
+      (fun i hi => (AlgEquiv.apply_mul_eq_mul_iff τ
+        (IsRegular.of_ne_zero (root_ne_zero hr hd b)).left hτb).mp
         (apply_mul_eq_mul_of_mod_four_eq_three hr Q hτ hb hi))
       fun i hi => absurd (Or.inl ⟨b, i, hb, hi⟩) hcond
   by_cases hC : ∃ c, 2 ∣ d c
@@ -294,8 +294,8 @@ private theorem card_inertia_le_two
       (fun k => by fin_cases k; simp [hr]) fun τ hτ hfix => ?_).trans (by norm_num)
     have hτc : τ (r c) = r c := hfix 0
     refine eq_one_of_mem_inertia hr htop Q hτ (fun i hi => absurd ⟨i, hi⟩ hB) fun i hi => ?_
-    refine AlgEquiv.apply_eq_self_of_apply_mul_eq_mul τ
-      (IsRegular.of_ne_zero (root_ne_zero hr hd c)).left hτc
+    refine (AlgEquiv.apply_mul_eq_mul_iff τ
+      (IsRegular.of_ne_zero (root_ne_zero hr hd c)).left hτc).mp
       (apply_mul_eq_mul_of_mod_eight_eq hr hd Q hτ hc hi ?_)
     have hc4 := hd c
     have hi4 := hd i
@@ -349,8 +349,8 @@ private theorem card_inertia_eq_four [Finite ι]
       (Or.inr (by
         rw [Int.mul_emod, (by omega : d c₂ / 2 % 4 = 1), (by omega : d c₆ / 2 % 4 = 3)]
         norm_num)) Q
-    exact ⟨τ, hτ, AlgEquiv.apply_eq_neg_of_apply_div_eq_neg τ two_ne_zero
-      (map_ofNat τ 2) hτx⟩
+    exact ⟨τ, hτ, (AlgEquiv.apply_div_eq_neg_iff τ two_ne_zero
+      (map_ofNat τ 2)).mp hτx⟩
 
 omit [Q.IsPrime] in
 /-- **The inertia group above `2` has at most four elements.** Let `K` be generated over `ℚ` by
