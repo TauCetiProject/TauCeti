@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Graded
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Pow.Basic
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
+import TauCeti.Analysis.SpecialFunctions.Log.MaxOne
 
 /-!
 # The valuation of `x ^ n - 1` in a local field
@@ -178,10 +179,6 @@ private theorem bddAbove_range_log_normalizedValuationWithZero_zpow_sub_one {α 
   rintro _ ⟨b, rfl⟩
   exact ⟨_, Subgroup.zpow_mem_zpowers _ b, by simp⟩
 
-/-- A nonnegativity fact used to absorb constants in the one-factor estimate. -/
-private theorem log_max_one_abs_nonneg (b : ℤ) : 0 ≤ Real.log (max 1 |(b : ℝ)|) :=
-  Real.log_nonneg (le_max_left _ _)
-
 /-- **The one-factor estimate for a non-torsion unit.** If a power `a ^ M ≠ 1` of a unit `a` lies in
 `U(K, e + 1)`, where `e = v_K(p)`, then `v_K(a ^ b - 1)` is bounded as in the one-factor estimate,
 with the explicit constant `v_K(a ^ M - 1) + e / log p`. -/
@@ -216,7 +213,7 @@ private theorem exists_log_normalizedValuationWithZero_zpow_sub_one_le_of_pow_me
       d + natCastValuation K b.natAbs hbK := by
     rw [ha] at h
     exact_mod_cast h
-  nlinarith [log_max_one_abs_nonneg b]
+  nlinarith [Real.log_max_one_nonneg |(b : ℝ)|]
 
 /-- **The one-factor estimate.** Let `K` be a nonarchimedean local field of characteristic zero,
 that is, a finite extension of `ℚ_[p]`. For every fixed `α ∈ K` there is a constant `C`,
@@ -261,7 +258,7 @@ theorem exists_log_normalizedValuationWithZero_zpow_sub_one_le [CharZero K] (α 
         ≤ ((max C₀ 0 : ℤ) : ℝ) := by exact_mod_cast (hC₀ ⟨b, rfl⟩).trans (le_max_left _ _)
       _ ≤ ((max C₀ 0 : ℤ) : ℝ) * (1 + Real.log (max 1 |(b : ℝ)|)) :=
         le_mul_of_one_le_right (by exact_mod_cast le_max_right _ _)
-          (by linarith [log_max_one_abs_nonneg b])
+          (by linarith [Real.log_max_one_nonneg |(b : ℝ)|])
   exact exists_log_normalizedValuationWithZero_zpow_sub_one_le_of_pow_mem ha hpK hM hM1
 
 end TauCeti
