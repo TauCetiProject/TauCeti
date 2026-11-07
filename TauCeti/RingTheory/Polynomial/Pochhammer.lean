@@ -5,17 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.ForwardDiff
 public import Mathlib.Algebra.Polynomial.Monic
 public import Mathlib.Algebra.Polynomial.Smeval
 public import Mathlib.Data.Int.Interval
+public import Mathlib.Combinatorics.Enumerative.Stirling
 public import Mathlib.RingTheory.Polynomial.Pochhammer
+import Mathlib.Algebra.Polynomial.Roots
 import Mathlib.RingTheory.Binomial
 
 /-!
 # Descending Pochhammer polynomials
 
 This module provides basic lemmas for descending Pochhammer polynomials `descPochhammer R n`
-over general rings, together with their sums over integer intervals.
+over general rings, together with their sums over integer intervals and their forward
+differences.
 
 The monicity result holds over any ring, and the degree results require only a nontrivial ring.
 The summation identity also holds over arbitrary rings; no division by `m + 1` is needed.
@@ -48,6 +52,14 @@ The summation identity also holds over arbitrary rings; no division by `m + 1` i
   of the falling factorials of degree `2k + 1` at `x + k + 1` and at `x + k`.
 * `TauCeti.factorial_dvd_two_mul_add_one_mul_prod_sub_mul_add_add_one`: the values of the weighted
   polynomial at the integers are divisible by `(2k + 1)!`.
+* `TauCeti.fwdDiff_descPochhammer_succ_eval`: the forward difference of the falling factorial of
+  degree `n + 1` is `n + 1` times the one of degree `n`.
+* `TauCeti.fwdDiff_iter_descPochhammer_eval`: the `k`-th forward difference of the falling
+  factorial of degree `j` is `j (j - 1) ⋯ (j - k + 1)` times the falling factorial of degree
+  `j - k`.
+* `TauCeti.pow_eq_sum_stirlingSecond_mul_descPochhammer_eval`: in any ring, `x ^ m` is
+  the sum of the falling factorials of degree `j` at `x` weighted by the Stirling numbers of the
+  second kind `S(m, j)`.
 -/
 
 public section
@@ -245,5 +257,60 @@ theorem factorial_dvd_two_mul_add_one_mul_prod_sub_mul_add_add_one (k : ℕ) (x 
       ∣ (2 * x + 1) * ∏ m ∈ Finset.range k, (x - m) * (x + m + 1) := by
   rw [two_mul_add_one_mul_prod_sub_mul_add_add_one_eq]
   exact dvd_add (factorial_dvd_descPochhammer_eval _ _) (factorial_dvd_descPochhammer_eval _ _)
+
+/-! ### Forward differences -/
+
+open scoped fwdDiff
+
+/-- **One forward difference of a falling factorial.** The forward difference of the falling
+factorial of degree `n + 1` is `n + 1` times the falling factorial of degree `n`. -/
+theorem fwdDiff_descPochhammer_succ_eval {R : Type*} [Ring R] (n : ℕ) :
+    Δ_[1] (fun x : R ↦ (descPochhammer R (n + 1)).eval x) =
+      fun x ↦ ((n + 1 : ℕ) : R) * (descPochhammer R n).eval x := by
+  funext x
+  -- the falling factorial at `x` commutes with `x`, as it is an integral polynomial in `x`
+  have hx : Commute ((descPochhammer R n).eval x) x := by
+    rw [← descPochhammer_map (Int.castRingHom R), eval_map, ← algebraMap_int_eq, ← aeval_def]
+    simpa using (commute_X (descPochhammer ℤ n)).symm.map (aeval x)
+  rw [fwdDiff, descPochhammer_succ_eval_add_one, descPochhammer_succ_eval,
+    (hx.sub_right (Nat.cast_commute n _).symm).eq, ← sub_mul, add_sub_sub_cancel,
+    Nat.cast_add_one, add_comm (1 : R)]
+
+/-- **Forward differences of falling factorials.** The `k`-th forward difference of the falling
+factorial `x (x - 1) ⋯ (x - j + 1)` of degree `j` is `j (j - 1) ⋯ (j - k + 1)` times the falling
+factorial of degree `j - k`. In particular it vanishes for `k > j`. -/
+theorem fwdDiff_iter_descPochhammer_eval {R : Type*} [Ring R] (j k : ℕ) :
+    Δ_[1]^[k] (fun x : R ↦ (descPochhammer R j).eval x) =
+      fun x ↦ (j.descFactorial k : R) * (descPochhammer R (j - k)).eval x := by
+  induction k generalizing j with
+  | zero => simp
+  | succ k ih =>
+    rw [Function.iterate_succ_apply]
+    cases j with
+    | zero => simp [Function.iterate_fixed]
+    | succ i =>
+      simp_rw [fwdDiff_descPochhammer_succ_eval, ← smul_eq_mul, ← Pi.smul_def]
+      rw [fwdDiff_iter_const_smul, ih, Nat.succ_descFactorial_succ, Nat.add_sub_add_right]
+      funext x
+      simp [mul_assoc]
+
+/-- **Powers in the falling-factorial basis.** In any ring, `x ^ m` is the sum of the
+falling factorials of degree `j ≤ m` at `x`, weighted by the Stirling numbers of the second kind
+`S(m, j)`. This is the ring version of `Nat.pow_eq_sum_stirlingSecond_mul_descFactorial`. -/
+theorem pow_eq_sum_stirlingSecond_mul_descPochhammer_eval {R : Type*} [Ring R] (m : ℕ)
+    (x : R) :
+    x ^ m = ∑ j ∈ Finset.range (m + 1),
+      (m.stirlingSecond j : R) * (descPochhammer R j).eval x := by
+  -- the identity holds in `ℤ[X]`, since both sides agree at every natural number
+  have hP : (X ^ m : ℤ[X]) =
+      ∑ j ∈ Finset.range (m + 1), (m.stirlingSecond j : ℤ[X]) * descPochhammer ℤ j := by
+    refine eq_of_infinite_eval_eq _ _ (Set.infinite_of_injective_forall_mem
+      (f := (Nat.cast : ℕ → ℤ)) Nat.cast_injective fun n ↦ ?_)
+    simp only [Set.mem_ofPred_eq, eval_pow, eval_X, eval_finsetSum, eval_mul, eval_natCast,
+      descPochhammer_eval_eq_descFactorial]
+    exact_mod_cast Nat.pow_eq_sum_stirlingSecond_mul_descFactorial n m
+  have hD (j : ℕ) : aeval x (descPochhammer ℤ j) = (descPochhammer R j).eval x := by
+    rw [aeval_def, algebraMap_int_eq, eval₂_eq_eval_map, descPochhammer_map]
+  simpa [hD] using congrArg (aeval x) hP
 
 end TauCeti
