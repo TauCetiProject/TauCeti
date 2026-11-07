@@ -25,8 +25,9 @@ Eilenberg--MacLane space `K(A, 1) = B(Multiplicative A)` has the `k`-homology of
 (`TauCeti.subsingleton_classifyingSpace_singularHomology_of_bijective_zsmul`). For `m = 2` and
 `k = 𝔽₂`: the space `K(A, 1)` of a uniquely two-divisible group `A` has the mod-two homology of a
 point (`TauCeti.IsUniquelyTwoDivisible.subsingleton_classifyingSpace_singularHomology_zmod_two`).
-This is the case `n = 1` of the vanishing of `H̃_*(K(A, n); 𝔽₂)` for uniquely two-divisible `A`,
-on which the mod-two vanishing theorem for simply connected spaces is built.
+This is the case `n = 1` of the vanishing of the reduced homology `H_*(K(A, n); 𝔽₂)` for
+uniquely two-divisible `A`, on which the mod-two vanishing theorem for simply connected spaces is
+built.
 
 The proof works with the group homology of `A`, through the identification
 `Hₙ(BG; k) ≅ Hₙ(G, k)`. Multiplication by `m` being bijective, `A` is a module over
