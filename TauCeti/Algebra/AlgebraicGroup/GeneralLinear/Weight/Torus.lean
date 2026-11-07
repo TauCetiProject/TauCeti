@@ -524,7 +524,7 @@ theorem weightTorusBaseChangeCoordinateMap_baseChange
   rw [weightTorusBaseChangeCoordinateMap_def, weightTorusBaseChangeCoordinateMap_def]
   exact coordinateHopfAlgebraBaseChangeIso_inv_comp_baseChangeMap_tower R A B N _ _ _ _
     fun y ↦
-      TauCeti.MonoidAlgebra.scalarTensorBialgEquiv_tmul_scalarTensorBialgEquiv_one_tmul A B 1 y
+      MonoidAlgebra.scalarTensorBialgEquiv_tmul_scalarTensorBialgEquiv_one_tmul A B 1 y
 
 end BaseChange
 
