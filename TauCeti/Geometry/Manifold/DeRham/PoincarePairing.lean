@@ -37,8 +37,10 @@ representative formula pairs it with the class of the constant function `1` to g
   manifold, the exterior derivative of a compactly supported form integrates to zero.
 * `TauCeti.compactlySupportedDeRhamCohomology.integral`: integration `H^n_c(M) → ℝ`, computed on
   classes by `TauCeti.compactlySupportedDeRhamCohomology.integral_mk`.
-* `TauCeti.compactlySupportedDeRhamCohomology.integral_extendByZero`: integration commutes with
-  extension by zero `H^n_c(U) → H^n_c(W)` along open subsets `U ≤ W`.
+* `TauCeti.compactlySupportedDeRhamCohomology.integral_extendByZero` and
+  `TauCeti.compactlySupportedDeRhamCohomology.integral_extendByZeroTop`: integration commutes with
+  extension by zero `H^n_c(U) → H^n_c(W)` along open subsets `U ≤ W`, and with extension by zero
+  `H^n_c(U) → H^n_c(M)` into the whole manifold.
 * `TauCeti.compactlySupportedDeRhamCohomology.integral_map_diffeomorph`: integration is
   preserved by orientation-preserving diffeomorphisms.
 * `TauCeti.poincarePairing`: the pairing `H^k_dR(M) → H^l_c(M) → ℝ`, the wedge product followed
@@ -137,6 +139,25 @@ theorem integral_extendByZero (o : Manifold.Orientation I M (Fin n)) {U W : Open
   rw [extendByZero_mk, integral_mk, integral_mk, compactlySupportedClosedForms.coe_extendByZero]
   exact integralTopForm_extendByZero o h ((mem_compactlySupportedForms I).mp
     ((mem_compactlySupportedClosedForms I).mp φ.2).1)
+
+/-- Integration on compactly supported cohomology commutes with extension by zero from an open
+subset `U` into `M`: `∫_M ext x = ∫_U x` for the orientation restricted to `U`. -/
+@[simp]
+theorem integral_extendByZeroTop (o : Manifold.Orientation I M (Fin n)) (U : Opens M)
+    [SigmaCompactSpace U] (x : compactlySupportedDeRhamCohomology I U n) :
+    integral o (extendByZeroTop U n x) = integral (o.restrict U) x := by
+  let Φ : (⊤ : Opens M) ≃ₘ⟮I, I⟯ M := Diffeomorph.ofTop ⊤ rfl
+  have hΦ : ⇑Φ = Subtype.val := funext Diffeomorph.ofTop_apply
+  have : SigmaCompactSpace (⊤ : Opens M) := Φ.toHomeomorph.isClosedEmbedding.sigmaCompactSpace
+  rw [← integral_extendByZero o (le_top : U ≤ ⊤), ← equivOfDiffeomorph_extendByZeroTop]
+  obtain ⟨φ, hφ⟩ := mk_surjective I n (extendByZeroTop U n x)
+  have h : integralTopForm (o.restrict ⊤) (mpullback I I Φ φ.1.1) = integralTopForm o φ.1.1 := by
+    rw [hΦ]
+    exact integralTopForm_mpullback_subtypeVal o ⊤ (by simp)
+  rw [← hφ, equivOfDiffeomorph_mk, integral_mk, integral_mk, ← h]
+  exact congrArg _ ((congrArg Subtype.val
+    (compactlySupportedClosedForms.coe_mpullback _ _ _ n φ)).trans
+      (SmoothForm.coe_mpullback _ _ _)).symm
 
 /-- An orientation-preserving diffeomorphism preserves integration on compactly supported
 cohomology. No integrability hypothesis is needed: representatives are smooth and compactly

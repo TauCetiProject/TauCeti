@@ -668,6 +668,15 @@ theorem equivOfDiffeomorph_symm_apply (Φ : M ≃ₘ⟮I, I'⟯ M') (k : ℕ)
       map Φ.symm Φ.symm.contMDiff Φ.symm.toHomeomorph.isProperMap k c :=
   (rfl)
 
+/-- The equivalence induced by a diffeomorphism sends the class of a compactly supported closed
+form to the class of its pullback. -/
+theorem equivOfDiffeomorph_mk (Φ : M ≃ₘ⟮I, I'⟯ M') (k : ℕ)
+    (φ : compactlySupportedClosedForms I' M' k) :
+    equivOfDiffeomorph Φ k (mk I' k φ) =
+      mk I k
+        (compactlySupportedClosedForms.mpullback Φ Φ.contMDiff Φ.toHomeomorph.isProperMap k φ) :=
+  map_mk _ _ _ k φ
+
 end compactlySupportedDeRhamCohomology
 
 end Pullback
