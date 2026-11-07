@@ -183,17 +183,12 @@ pullback of its deflation along `u`, with the inflation induced by that of `e` a
 characteristic property is the pullback square `TauCeti.ExactStructure.Extension.isPullback`. -/
 noncomputable def pullback (e : E.Extension Z X) (u : Z' ⟶ Z) : E.Extension Z' X where
   obj := Limits.pullback e.g u
-  f := Limits.pullback.lift e.f 0 (by simp)
+  f := baseChangeι e.shortComplex (IsPullback.of_hasPullback e.g u)
   g := Limits.pullback.snd e.g u
-  zero := by simp
+  zero := baseChangeι_snd _ _
   conflation := by
-    have sq := IsPullback.of_hasPullback e.g u
-    have h := E.conflation_baseChange e.conflation sq
-    rw [baseChange_def] at h
-    convert h using 2
-    apply Limits.pullback.hom_ext
-    · rw [baseChangeι_fst e.shortComplex sq, Limits.pullback.lift_fst]
-    · rw [baseChangeι_snd e.shortComplex sq, Limits.pullback.lift_snd]
+    have h := E.conflation_baseChange e.conflation (IsPullback.of_hasPullback e.g u)
+    rwa [baseChange_def] at h
 
 /-- The projection from the middle term of the base change `u^* e` to the middle term of `e`. -/
 noncomputable def pullbackFst (e : E.Extension Z X) (u : Z' ⟶ Z) :
@@ -215,7 +210,7 @@ theorem pullbackFst_g (e : E.Extension Z X) (u : Z' ⟶ Z) :
 @[reassoc (attr := simp)]
 theorem pullback_f_pullbackFst (e : E.Extension Z X) (u : Z' ⟶ Z) :
     (e.pullback u).f ≫ e.pullbackFst u = e.f :=
-  Limits.pullback.lift_fst _ _ _
+  baseChangeι_fst e.shortComplex (e.isPullback u)
 
 /-- **The universal property of base change.** A morphism `h` of middle terms from `e'` to `e`
 which is the identity on the first terms and covers `u` on the third terms exhibits `e'` as
@@ -245,16 +240,11 @@ characteristic property is the pushout square `TauCeti.ExactStructure.Extension.
 noncomputable def pushout (e : E.Extension Z X) (v : X ⟶ X') : E.Extension Z X' where
   obj := Limits.pushout e.f v
   f := Limits.pushout.inr e.f v
-  g := Limits.pushout.desc e.g 0 (by simp)
-  zero := by simp
+  g := cobaseChangeπ e.shortComplex (IsPushout.of_hasPushout e.f v)
+  zero := inr_cobaseChangeπ _ _
   conflation := by
-    have sq := IsPushout.of_hasPushout e.f v
-    have h := E.conflation_cobaseChange e.conflation sq
-    rw [cobaseChange_def] at h
-    convert h using 2
-    apply Limits.pushout.hom_ext
-    · rw [inl_cobaseChangeπ e.shortComplex sq, Limits.pushout.inl_desc]
-    · rw [inr_cobaseChangeπ e.shortComplex sq, Limits.pushout.inr_desc]
+    have h := E.conflation_cobaseChange e.conflation (IsPushout.of_hasPushout e.f v)
+    rwa [cobaseChange_def] at h
 
 /-- The inclusion of the middle term of `e` into the middle term of the cobase change `v_* e`. -/
 noncomputable def pushoutInl (e : E.Extension Z X) (v : X ⟶ X') :
@@ -277,7 +267,7 @@ theorem f_pushoutInl (e : E.Extension Z X) (v : X ⟶ X') :
 @[reassoc (attr := simp)]
 theorem pushoutInl_pushout_g (e : E.Extension Z X) (v : X ⟶ X') :
     e.pushoutInl v ≫ (e.pushout v).g = e.g :=
-  Limits.pushout.inl_desc _ _ _
+  inl_cobaseChangeπ e.shortComplex (e.isPushout v)
 
 /-- **The universal property of cobase change.** A morphism `h` of middle terms from `e` to `e'`
 which covers `v` on the first terms and is the identity on the third terms exhibits the cobase
@@ -349,9 +339,25 @@ theorem mk_surjective : Function.Surjective (mk : E.Extension Z X → E.Ext1 Z X
 
 /-- Induction on classes: a property of all classes of extensions holds for every class. -/
 @[elab_as_elim]
-theorem ind {motive : E.Ext1 Z X → Prop} (h : ∀ e, motive (mk e)) (ξ : E.Ext1 Z X) :
+theorem induction {motive : E.Ext1 Z X → Prop} (h : ∀ e, motive (mk e)) (ξ : E.Ext1 Z X) :
     motive ξ :=
   Quotient.ind h ξ
+
+/-- A function on extensions that is constant on Yoneda equivalence classes descends to
+`Ext¹_E(Z, X)`. -/
+def lift {α : Sort*} (φ : E.Extension Z X → α) (hφ : ∀ e e', e.Rel e' → φ e = φ e') :
+    E.Ext1 Z X → α :=
+  Quotient.lift φ hφ
+
+@[simp]
+theorem lift_mk {α : Sort*} (φ : E.Extension Z X → α) (hφ : ∀ e e', e.Rel e' → φ e = φ e')
+    (e : E.Extension Z X) : lift φ hφ (mk e) = φ e := (rfl)
+
+/-- `TauCeti.ExactStructure.Ext1.lift φ hφ` is the unique function on classes that agrees with `φ`
+on the class of every extension. -/
+theorem lift_unique {α : Sort*} (φ : E.Extension Z X → α) (hφ : ∀ e e', e.Rel e' → φ e = φ e')
+    (ψ : E.Ext1 Z X → α) (hψ : ∀ e, ψ (mk e) = φ e) : ψ = lift φ hφ :=
+  funext fun ξ ↦ Quotient.inductionOn ξ hψ
 
 /-- The **contravariant action** of `u : Z' ⟶ Z` on `Ext¹_E(-, X)`, by base change. -/
 noncomputable def pullback (ξ : E.Ext1 Z X) (u : Z' ⟶ Z) : E.Ext1 Z' X :=
@@ -372,7 +378,7 @@ theorem pushout_mk (e : E.Extension Z X) (v : X ⟶ X') :
 /-- Base change along an identity is the identity. -/
 @[simp]
 theorem pullback_id (ξ : E.Ext1 Z X) : ξ.pullback (𝟙 Z) = ξ := by
-  induction ξ using ind with
+  induction ξ using induction with
   | h e =>
     rw [pullback_mk, mk_eq_mk_iff]
     exact (Extension.rel_pullback (𝟙 _) (by simp) (by simp)).symm
@@ -381,7 +387,7 @@ theorem pullback_id (ξ : E.Ext1 Z X) : ξ.pullback (𝟙 Z) = ξ := by
 @[simp]
 theorem pullback_pullback (ξ : E.Ext1 Z X) (u : Z' ⟶ Z) (u' : Z'' ⟶ Z') :
     (ξ.pullback u).pullback u' = ξ.pullback (u' ≫ u) := by
-  induction ξ using ind with
+  induction ξ using induction with
   | h e =>
     simp only [pullback_mk, mk_eq_mk_iff]
     exact Extension.rel_pullback ((e.pullback u).pullbackFst u' ≫ e.pullbackFst u) (by simp)
@@ -390,7 +396,7 @@ theorem pullback_pullback (ξ : E.Ext1 Z X) (u : Z' ⟶ Z) (u' : Z'' ⟶ Z') :
 /-- Cobase change along an identity is the identity. -/
 @[simp]
 theorem pushout_id (ξ : E.Ext1 Z X) : ξ.pushout (𝟙 X) = ξ := by
-  induction ξ using ind with
+  induction ξ using induction with
   | h e =>
     rw [pushout_mk, mk_eq_mk_iff]
     exact Extension.pushout_rel (𝟙 _) (by simp) (by simp)
@@ -399,7 +405,7 @@ theorem pushout_id (ξ : E.Ext1 Z X) : ξ.pushout (𝟙 X) = ξ := by
 @[simp]
 theorem pushout_pushout (ξ : E.Ext1 Z X) (v : X ⟶ X') (v' : X' ⟶ X'') :
     (ξ.pushout v).pushout v' = ξ.pushout (v ≫ v') := by
-  induction ξ using ind with
+  induction ξ using induction with
   | h e =>
     simp only [pushout_mk, mk_eq_mk_iff]
     exact (Extension.pushout_rel (e.pushoutInl v ≫ (e.pushout v).pushoutInl v')
@@ -409,7 +415,7 @@ theorem pushout_pushout (ξ : E.Ext1 Z X) (v : X ⟶ X') (v' : X' ⟶ X'') :
 /-- **Base change and cobase change commute**: `u^* (v_* ξ) = v_* (u^* ξ)`. -/
 theorem pushout_pullback (ξ : E.Ext1 Z X) (v : X ⟶ X') (u : Z' ⟶ Z) :
     (ξ.pushout v).pullback u = (ξ.pullback u).pushout v := by
-  induction ξ using ind with
+  induction ξ using induction with
   | h e =>
     simp only [pullback_mk, pushout_mk, mk_eq_mk_iff]
     refine (Extension.pushout_rel (((e.pushout v).isPullback u).lift
@@ -466,13 +472,13 @@ theorem zero_pushout (v : X ⟶ X') : (0 : E.Ext1 Z X).pushout v = 0 :=
 /-- Base change along the zero morphism is the base point. -/
 @[simp]
 theorem pullback_zero (ξ : E.Ext1 Z X) : ξ.pullback (0 : Z' ⟶ Z) = 0 := by
-  induction ξ using ind with
+  induction ξ using induction with
   | h e => exact (mk_pullback_eq_zero_iff e 0).mpr ⟨0, by simp⟩
 
 /-- Cobase change along the zero morphism is the base point. -/
 @[simp]
 theorem pushout_zero (ξ : E.Ext1 Z X) : ξ.pushout (0 : X ⟶ X') = 0 := by
-  induction ξ using ind with
+  induction ξ using induction with
   | h e => exact (mk_pushout_eq_zero_iff e 0).mpr ⟨0, by simp⟩
 
 /-- **Exactness at `Ext¹_E(W, X)`.** For a conflation `e : X ⟶ Y ⟶ Z`, a class
@@ -481,7 +487,7 @@ inflation of `e` vanishes. -/
 theorem pushout_f_eq_zero_iff (e : E.Extension Z X) (ξ : E.Ext1 W X) :
     ξ.pushout e.f = 0 ↔ ∃ u : W ⟶ Z, (mk e).pullback u = ξ := by
   refine ⟨fun h ↦ ?_, fun ⟨u, hu⟩ ↦ hu ▸ ?_⟩
-  · induction ξ using ind with
+  · induction ξ using induction with
     | h e₀ =>
       obtain ⟨t, ht⟩ := (mk_pushout_eq_zero_iff e₀ e.f).mp h
       have hk : e₀.f ≫ t ≫ e.g = 0 := by rw [reassoc_of% ht, Extension.zero]
@@ -496,7 +502,7 @@ deflation of `e` vanishes. -/
 theorem pullback_g_eq_zero_iff (e : E.Extension Z X) (ξ : E.Ext1 Z W) :
     ξ.pullback e.g = 0 ↔ ∃ v : X ⟶ W, (mk e).pushout v = ξ := by
   refine ⟨fun h ↦ ?_, fun ⟨v, hv⟩ ↦ hv ▸ ?_⟩
-  · induction ξ using ind with
+  · induction ξ using induction with
     | h e₀ =>
       obtain ⟨t, ht⟩ := (mk_pullback_eq_zero_iff e₀ e.g).mp h
       have hk : (e.f ≫ t) ≫ e₀.g = 0 := by rw [Category.assoc, ht, Extension.zero]
@@ -513,7 +519,7 @@ instance (Z X : C) : Subsingleton ((ExactStructure.split C).Ext1 Z X) where
   allEq ξ ξ' := by
     suffices h : ∀ ξ : (ExactStructure.split C).Ext1 Z X, ξ = 0 by rw [h ξ, h ξ']
     intro ξ
-    induction ξ using Ext1.ind with
+    induction ξ using Ext1.induction with
     | h e =>
       obtain ⟨s⟩ := (split_conflation _).mp e.conflation
       exact (Ext1.mk_eq_zero_iff_isSplitEpi e).mpr s.isSplitEpi_g
