@@ -195,40 +195,6 @@ end SignCell
 
 /-! ### Subdividing along the arrangement -/
 
-/-- Let finitely many convex cells `P p`, each inside a simplex `σ p` of `K`, cover `K`, and let
-a complex `M` with space the union of the cells have finitely many faces on each cell, each face
-inside a cell. Then `M` is a finite subdivision of `K`, and a function `f i` of constant weak sign
-on each cell has constant weak sign on each face of `M`. -/
-private theorem isSubdivision_of_cells {J : Type*} [Finite J] {K : SimplicialComplex ℝ E}
-    {P : J → Set E} {σ : J → Finset E} {f : ι → E → ℝ} {M : SimplicialComplex ℝ E}
-    (hσ : ∀ p, σ p ∈ K.faces) (hPσ : ∀ p, P p ⊆ convexHull ℝ (σ p : Set E))
-    (hPv : ∀ p, Convex ℝ (P p)) (hcov : ∀ x ∈ K.space, ∃ q, x ∈ P q)
-    (hf : ∀ p i, (∀ y ∈ P p, 0 ≤ f i y) ∨ ∀ y ∈ P p, f i y ≤ 0)
-    (hMs : M.space = ⋃ p, P p) (hMP : ∀ p, (M.restrict (P p)).faces.Finite)
-    (hMface : ∀ s ∈ M.faces, ∃ p, (s : Set E) ⊆ P p) :
-    M.IsSubdivision K ∧ M.faces.Finite ∧ ∀ s ∈ M.faces, ∀ i,
-      (∀ y ∈ convexHull ℝ (s : Set E), 0 ≤ f i y) ∨ ∀ y ∈ convexHull ℝ (s : Set E), f i y ≤ 0 := by
-  have hconv : ∀ s ∈ M.faces, ∃ p, convexHull ℝ (s : Set E) ⊆ P p := fun s hs => by
-    obtain ⟨p, hsp⟩ := hMface s hs
-    exact ⟨p, convexHull_min hsp (hPv p)⟩
-  refine ⟨⟨?_, fun s hs => ?_⟩, ?_, fun s hs i => ?_⟩
-  · rw [hMs]
-    ext x
-    refine ⟨fun hx => ?_, fun hx => ?_⟩
-    · obtain ⟨p, hxp⟩ := mem_iUnion.1 hx
-      exact mem_space_iff.2 ⟨_, hσ p, hPσ p hxp⟩
-    · obtain ⟨q, hxq⟩ := hcov x hx
-      exact mem_iUnion.2 ⟨q, hxq⟩
-  · obtain ⟨p, hp⟩ := hconv s hs
-    exact ⟨_, hσ p, hp.trans (hPσ p)⟩
-  · refine (Set.finite_iUnion hMP).subset fun s hs => ?_
-    obtain ⟨p, hsp⟩ := hMface s hs
-    exact mem_iUnion.2 ⟨p, mem_restrict_faces.2 ⟨hs, hsp⟩⟩
-  · obtain ⟨p, hp⟩ := hconv s hs
-    rcases hf p i with h | h
-    · exact .inl fun y hy => h y (hp hy)
-    · exact .inr fun y hy => h y (hp hy)
-
 variable [FiniteDimensional ℝ E] {K : SimplicialComplex ℝ E}
 
 /-- **Subdividing a triangulation along finitely many hyperplanes.** A finite geometric simplicial
@@ -287,12 +253,16 @@ theorem exists_isSubdivision_forall_nonneg_or_forall_nonpos [Finite ι] (hK : K.
   obtain ⟨M, hMs, hMP, hMface, -⟩ := exists_subdivision P hPc hPv
     (fun q => ((hPne q).intrinsicInterior (hPv q)).some)
     (fun q => ((hPne q).intrinsicInterior (hPv q)).some_mem) (locallyFinite_of_finite P) hdisj hfr
-  refine ⟨M, isSubdivision_of_cells (fun p => p.1.1.2) (fun p => inter_subset_left)
-    hPv (fun x hx => ?_) (fun p i => nonneg_or_nonpos_of_subset_signCell inter_subset_right i) hMs
-    (fun p => (hMP p).2) fun s hs => (hMface s hs).imp fun _ h => h.2⟩
-  obtain ⟨σ, hσ, hxσ⟩ := mem_space_iff.1 hx
-  obtain ⟨q, hxq, -⟩ := hcell hσ hxσ (openSignCell_subset_signCell (mem_openSignCell_sign g x))
-  exact ⟨q, intrinsicInterior_subset hxq⟩
+  have hcov : ∀ x ∈ K.space, ∃ q, x ∈ P q := fun x hx => by
+    obtain ⟨σ, hσ, hxσ⟩ := mem_space_iff.1 hx
+    obtain ⟨q, hxq, -⟩ := hcell hσ hxσ (openSignCell_subset_signCell (mem_openSignCell_sign g x))
+    exact ⟨q, intrinsicInterior_subset hxq⟩
+  obtain ⟨hM, hMfin, hconv⟩ := isSubdivision_of_cells (fun p => p.1.1.2)
+    (fun p => inter_subset_left) hPv hcov hMs (fun p => (hMP p).2)
+    fun s hs => (hMface s hs).imp fun _ h => h.2
+  refine ⟨M, hM, hMfin, fun s hs i => ?_⟩
+  obtain ⟨p, hp⟩ := hconv s hs
+  exact nonneg_or_nonpos_of_subset_signCell (hp.trans inter_subset_right) i
 
 /-- **Subdividing a triangulation along finitely many convex polyhedra.** A finite geometric
 simplicial complex `K` in a finite-dimensional real normed space has a finite subdivision each of
