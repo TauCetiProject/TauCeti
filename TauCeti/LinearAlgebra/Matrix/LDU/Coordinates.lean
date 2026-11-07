@@ -69,6 +69,7 @@ theorem leadingBlockMinorProduct_map (b : m → α) (M : Matrix m m R) (f : R �
 
 /-- Substituting a matrix into the generic leading-minor product recovers its leading-minor
 product. -/
+@[simp]
 theorem leadingBlockMinorProduct_mvPolynomialX_eval₂ (b : m → α) (M : Matrix m m R) :
     MvPolynomial.eval₂ (Int.castRingHom R) (fun p : m × m => M p.1 p.2)
       (leadingBlockMinorProduct b (mvPolynomialX m m ℤ)) = leadingBlockMinorProduct b M := by
