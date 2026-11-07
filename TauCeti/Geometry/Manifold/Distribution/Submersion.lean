@@ -126,7 +126,7 @@ theorem isDistributionFrameOn_ker_mfderiv [CompleteSpace E] [IsManifold I 1 M] {
     ext v
     rw [hspan, Submodule.mem_map_equiv, LinearMap.mem_ker, ContinuousLinearMap.coe_coe,
       h.mfderiv_eq_zero_iff hn hy, ← he]
-    exact SetLike.ext_iff.1 (b.span_range_symm_inr_eq_ker h.equiv.toLinearEquiv) (e v)
+    exact SetLike.ext_iff.1 (h.equiv.toLinearEquiv.span_range_symm_inr_eq_ker b.span_eq) (e v)
 
 end IsSubmersionAtOfComplement
 
