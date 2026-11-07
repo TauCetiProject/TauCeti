@@ -452,3 +452,81 @@ theorem continuous_hom_bundle_of_inCoordinates_eq_const
 end ConstantCoordinates
 
 end TauCeti
+
+section OfInCoordinates
+
+/-! ### Fibre maps between moving base points
+
+A family of fibre maps `ϕ m : V (b₁ m) →L[𝕜] W (b₂ m)` over two base maps is read through the
+preferred trivializations centred at `b₁ m₀` and `b₂ m₀`, as in Mathlib's
+`ContinuousAt.clm_apply_of_inCoordinates`. Continuity of this coordinate expression at `m₀` is
+preserved by composition and inversion, and makes invertibility an open condition at `m₀`. -/
+
+open ContinuousLinearMap
+
+variable {𝕜 M B B' B'' F F' F'' : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace M]
+  [TopologicalSpace B] [TopologicalSpace B'] [TopologicalSpace B'']
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
+  [NormedAddCommGroup F''] [NormedSpace 𝕜 F'']
+  {V : B → Type*} [∀ x, AddCommMonoid (V x)] [∀ x, Module 𝕜 (V x)]
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [VectorBundle 𝕜 F V]
+  {W : B' → Type*} [∀ x, AddCommMonoid (W x)] [∀ x, Module 𝕜 (W x)]
+  [∀ x, TopologicalSpace (W x)] [TopologicalSpace (TotalSpace F' W)]
+  [FiberBundle F' W] [VectorBundle 𝕜 F' W]
+  {U : B'' → Type*} [∀ x, AddCommMonoid (U x)] [∀ x, Module 𝕜 (U x)]
+  [∀ x, TopologicalSpace (U x)] [TopologicalSpace (TotalSpace F'' U)]
+  [FiberBundle F'' U] [VectorBundle 𝕜 F'' U]
+  {b₁ : M → B} {b₂ : M → B'} {b₃ : M → B''} {m₀ : M}
+
+/-- If two families of fibre maps are continuous at `m₀` in coordinates, so is their composite,
+provided the intermediate base map is continuous at `m₀`. -/
+theorem ContinuousAt.inCoordinates_clm_comp {ψ : ∀ m, W (b₂ m) →L[𝕜] U (b₃ m)}
+    {ϕ : ∀ m, V (b₁ m) →L[𝕜] W (b₂ m)}
+    (hψ : ContinuousAt
+      (fun m ↦ inCoordinates F' W F'' U (b₂ m₀) (b₂ m) (b₃ m₀) (b₃ m) (ψ m)) m₀)
+    (hϕ : ContinuousAt (fun m ↦ inCoordinates F V F' W (b₁ m₀) (b₁ m) (b₂ m₀) (b₂ m) (ϕ m)) m₀)
+    (hb₂ : ContinuousAt b₂ m₀) :
+    ContinuousAt (fun m ↦
+      inCoordinates F V F'' U (b₁ m₀) (b₁ m) (b₃ m₀) (b₃ m) ((ψ m).comp (ϕ m))) m₀ := by
+  have h₂ := mem_baseSet_trivializationAt F' W (b₂ m₀)
+  refine (hψ.clm_comp hϕ).congr ?_
+  filter_upwards [hb₂.preimage_mem_nhds
+    ((trivializationAt F' W (b₂ m₀)).open_baseSet.mem_nhds h₂)] with m hm
+  exact (inCoordinates_comp _ _ hm).symm
+
+variable [CompleteSpace F] {ϕ : ∀ m, V (b₁ m) →L[𝕜] W (b₂ m)}
+
+/-- Along a family of fibre maps continuous at `m₀` in coordinates and invertible at `m₀`, the
+fibre maps at nearby points are invertible, provided both base maps are continuous at `m₀`. -/
+theorem ContinuousAt.eventually_isInvertible_of_inCoordinates
+    (hϕ : ContinuousAt (fun m ↦ inCoordinates F V F' W (b₁ m₀) (b₁ m) (b₂ m₀) (b₂ m) (ϕ m)) m₀)
+    (hb₁ : ContinuousAt b₁ m₀) (hb₂ : ContinuousAt b₂ m₀) (hm₀ : (ϕ m₀).IsInvertible) :
+    ∀ᶠ m in 𝓝 m₀, (ϕ m).IsInvertible := by
+  have h₁ := mem_baseSet_trivializationAt F V (b₁ m₀)
+  have h₂ := mem_baseSet_trivializationAt F' W (b₂ m₀)
+  have hinv := ((isInvertible_inCoordinates_iff h₁ h₂).2 hm₀).eventually_nhds
+  filter_upwards [hϕ.eventually hinv,
+    hb₁.preimage_mem_nhds ((trivializationAt F V (b₁ m₀)).open_baseSet.mem_nhds h₁),
+    hb₂.preimage_mem_nhds ((trivializationAt F' W (b₂ m₀)).open_baseSet.mem_nhds h₂)]
+    with m hm hm₁ hm₂
+  exact (isInvertible_inCoordinates_iff hm₁ hm₂).1 hm
+
+/-- Inversion preserves continuity at `m₀` in coordinates of a family of fibre maps invertible at
+`m₀`, provided both base maps are continuous at `m₀`. Only the model source must be complete. -/
+theorem ContinuousAt.inCoordinates_clm_inverse
+    (hϕ : ContinuousAt (fun m ↦ inCoordinates F V F' W (b₁ m₀) (b₁ m) (b₂ m₀) (b₂ m) (ϕ m)) m₀)
+    (hb₁ : ContinuousAt b₁ m₀) (hb₂ : ContinuousAt b₂ m₀) (hm₀ : (ϕ m₀).IsInvertible) :
+    ContinuousAt
+      (fun m ↦ inCoordinates F' W F V (b₂ m₀) (b₂ m) (b₁ m₀) (b₁ m) (ϕ m).inverse) m₀ := by
+  have h₁ := mem_baseSet_trivializationAt F V (b₁ m₀)
+  have h₂ := mem_baseSet_trivializationAt F' W (b₂ m₀)
+  have hinv := (isInvertible_inCoordinates_iff h₁ h₂).2 hm₀
+  refine ((hinv.contDiffAt_map_inverse (n := 0)).continuousAt.comp
+    (f := fun m ↦ inCoordinates F V F' W (b₁ m₀) (b₁ m) (b₂ m₀) (b₂ m) (ϕ m)) hϕ).congr ?_
+  filter_upwards [hb₁.preimage_mem_nhds ((trivializationAt F V (b₁ m₀)).open_baseSet.mem_nhds h₁),
+    hb₂.preimage_mem_nhds ((trivializationAt F' W (b₂ m₀)).open_baseSet.mem_nhds h₂)]
+    with m hm₁ hm₂
+  exact (ContinuousLinearMap.inCoordinates_inverse (ϕ m) hm₁ hm₂).symm
+
+end OfInCoordinates
