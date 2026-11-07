@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Borel
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Borel.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Weyl.Elementary
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Weyl.Torus
 -- Non-public: the square root of a parameter is adjoined only inside a proof.
