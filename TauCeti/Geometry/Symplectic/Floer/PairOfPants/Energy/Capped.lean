@@ -69,22 +69,6 @@ private theorem cappedPerturbation_apply_eq_zero_of_notMem_preimage_truncation {
     (fun x ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) x v) = 0 :=
   funext fun x ↦ by simp [cappedPerturbation_eq_zero_of_notMem_truncation hz x]
 
-variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
-  {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
-
-/-- The components `K_s(z) = K(z)(1)` and `K_t(z) = K(z)(i)` of the capped perturbation, and more
-generally its value `K(z)(v)` on any fixed tangent vector `v`, are `C^n` jointly in the real
-coordinates `z = (s, t)` of `ℂ` and the target point. -/
-theorem contMDiff_uncurry_cappedPerturbation_apply {n : ℕ∞} (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (H q))) (a L : ℝ) (v : ℂ) :
-    ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ, ℝ) n
-      (uncurry fun z x ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) x v) := by
-  have hι : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) (𝓘(ℝ, ℂ).prod (𝓘(ℝ, ℝ × ℝ).prod I)) n
-      fun p : (ℝ × ℝ) × M ↦ (Complex.equivRealProdCLM.symm p.1, ((a, L), p.2)) :=
-    (Complex.equivRealProdCLM.symm.contDiff.contMDiff.comp contMDiff_fst).prodMk
-      (contMDiff_const.prodMk contMDiff_snd)
-  exact ((contMDiff_cappedPerturbation hH hHs).comp hι).clm_apply contMDiff_const
-
 end TauCeti.Floer
 
 namespace TauCeti.SmoothTwoForm
@@ -143,20 +127,6 @@ open Floer
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {H : Puncture → ℝ → V → ℝ} {u : ℝ × ℝ → V}
-
-omit [FiniteDimensional ℝ V] in
-/-- The components of the capped perturbation are `C^n` jointly in the real coordinates of `ℂ`
-and the target point, for `C^n` Hamiltonians on a vector space. -/
-private theorem contDiff_uncurry_cappedPerturbation_apply {n : ℕ∞} (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContDiff ℝ n (uncurry (H q))) (a L : ℝ) (v : ℂ) :
-    ContDiff ℝ n
-      (uncurry fun z x ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) x v) := by
-  have hHs' (q : Puncture) : ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ, ℝ) n (uncurry (H q)) := by
-    have h := (hHs q).contMDiff
-    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod] at h
-    exact h
-  rw [← contMDiff_iff_contDiff, modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
-  exact contMDiff_uncurry_cappedPerturbation_apply hH hHs' a L v
 
 /-- **The energy identity on the capped pair of pants.** Let `K` be the capped perturbation with
 scaling factor `a` and neck length `L`, built from period-one `C¹` Hamiltonians `H_q` on a

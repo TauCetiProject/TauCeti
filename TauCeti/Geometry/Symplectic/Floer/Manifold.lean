@@ -506,45 +506,6 @@ theorem IsNondegenerate.integral_floerEnergyDensity [FiniteDimensional ℝ E]
 
 open Filter Topology
 
-omit [TopologicalSpace M] [ChartedSpace H M] [IsManifold I (⊤ : ℕ∞) M] in
-/-- Data vanishing outside a closed set `C` vanish near every point off `C`. -/
-private theorem eventuallyEq_zero_of_forall_notMem_eq_zero {C : Set (ℝ × ℝ)} (hC : IsClosed C)
-    {K : ℝ × ℝ → M → ℝ} (hK : ∀ z ∉ C, K z = 0) {z : ℝ × ℝ} (hz : z ∉ C) :
-    K =ᶠ[𝓝 z] fun _ _ ↦ 0 :=
-  Filter.eventually_of_mem (hC.isOpen_compl.mem_nhds hz) fun w hw ↦ hK w hw
-
-omit [TopologicalSpace M] [ChartedSpace H M] [IsManifold I (⊤ : ℕ∞) M] in
-/-- If `K` vanishes outside a closed set `C`, then the pulled-back component `K(u)` has zero
-derivative at every point off `C`. -/
-private theorem fderiv_comp_eq_zero_of_forall_notMem_eq_zero {C : Set (ℝ × ℝ)} (hC : IsClosed C)
-    {K : ℝ × ℝ → M → ℝ} (hK : ∀ z ∉ C, K z = 0) {z : ℝ × ℝ} (hz : z ∉ C) :
-    fderiv ℝ (fun w ↦ K w (u w)) z = 0 := by
-  have h : (fun w ↦ K w (u w)) =ᶠ[𝓝 z] fun _ ↦ (0 : ℝ) :=
-    (eventuallyEq_zero_of_forall_notMem_eq_zero hC hK hz).mono fun w hw ↦ by simp [hw]
-  rw [h.fderiv_eq, fderiv_const_apply]
-
-omit [IsManifold I (⊤ : ℕ∞) M] in
-/-- If `K` vanishes outside a compact set `C` and `u` and `K` are `C¹` over an open neighbourhood
-of `C`, then the pulled-back component `K(u)` is `C¹` on the whole domain, with compact support.
--/
-private theorem contDiff_and_hasCompactSupport_comp_of_forall_notMem_eq_zero {U C : Set (ℝ × ℝ)}
-    (hU : IsOpen U) (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u U) {K : ℝ × ℝ → M → ℝ}
-    (hK : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry K) (U ×ˢ univ)) (hC : IsCompact C)
-    (hCU : C ⊆ U) (hKC : ∀ z ∉ C, K z = 0) :
-    ContDiff ℝ 1 (fun w ↦ K w (u w)) ∧ HasCompactSupport (fun w ↦ K w (u w)) := by
-  have hKU : ContDiffOn ℝ 1 (fun w ↦ K w (u w)) U :=
-    contMDiffOn_iff_contDiffOn.mp (hK.comp (contMDiffOn_id.prodMk hu)
-      fun _ hz ↦ ⟨hz, mem_univ _⟩)
-  refine ⟨contDiff_iff_contDiffAt.2 fun z ↦ ?_,
-    HasCompactSupport.of_support_subset_isCompact hC fun z hz ↦ ?_⟩
-  · by_cases hz : z ∈ U
-    · exact hKU.contDiffAt (hU.mem_nhds hz)
-    · exact (contDiffAt_const (c := (0 : ℝ))).congr_of_eventuallyEq
-        ((eventuallyEq_zero_of_forall_notMem_eq_zero hC.isClosed hKC fun h ↦ hz (hCU h)).mono
-          fun w hw ↦ by simp [hw])
-  · by_contra h
-    exact hz (by simp [hKC z h])
-
 /-- The pointwise energy identity `E = u^* ω + d(K(u)) - R_K(u)` holds at every point of the
 domain, if the data vanish outside a closed set `C` and `u` and `K` are `C¹` over an open
 neighbourhood of `C`: off `C` every perturbation term vanishes. -/
@@ -568,11 +529,16 @@ private theorem IsNondegenerate.floerEnergyDensity_eq_of_forall_notMem_eq_zero
       ((hu.contMDiffAt (hU.mem_nhds hzU)).mdifferentiableAt one_ne_zero)
       ((hKs.contMDiffAt ((hU.prod isOpen_univ).mem_nhds hzU')).mdifferentiableAt one_ne_zero)
       ((hKt.contMDiffAt ((hU.prod isOpen_univ).mem_nhds hzU')).mdifferentiableAt one_ne_zero)
-  · rw [ω.hamiltonianCurvature_congr_of_eventuallyEq
-        (eventuallyEq_zero_of_forall_notMem_eq_zero hC hKsC hz)
-        (eventuallyEq_zero_of_forall_notMem_eq_zero hC hKtC hz),
-      hamiltonianCurvature_zero, fderiv_comp_eq_zero_of_forall_notMem_eq_zero hC hKsC hz,
-      fderiv_comp_eq_zero_of_forall_notMem_eq_zero hC hKtC hz]
+  · -- Off `C`, the data and their pullbacks along `u` vanish near `z`.
+    have hev {K : ℝ × ℝ → M → ℝ} (hK : ∀ z ∉ C, K z = 0) : K =ᶠ[𝓝 z] fun _ _ ↦ 0 :=
+      notMem_tsupport_iff_eventuallyEq.1 fun h ↦
+        hz (closure_minimal (support_subset_iff'.2 hK) hC h)
+    have hd {K : ℝ × ℝ → M → ℝ} (hK : ∀ z ∉ C, K z = 0) :
+        fderiv ℝ (fun w ↦ K w (u w)) z = 0 :=
+      fderiv_of_notMem_tsupport ℝ fun h ↦ hz
+        (closure_minimal (support_subset_iff'.2 fun w hw ↦ by simp [hK w hw]) hC h)
+    rw [ω.hamiltonianCurvature_congr_of_eventuallyEq (hev hKsC) (hev hKtC),
+      hamiltonianCurvature_zero, hd hKsC, hd hKtC]
     simp [floerEnergyDensity_def, hKsC z hz, hKtC z hz, Pi.zero_def, hamiltonianVectorField_const]
 
 /-- **The energy identity for compactly supported perturbation data, for a manifold target.**
@@ -597,10 +563,25 @@ theorem IsNondegenerate.integral_floerEnergyDensity_of_forall_notMem_eq_zero
           (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) -
         ∫ z in D, ω.hamiltonianCurvature Ks Kt z (u z) := by
   have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
-  obtain ⟨hs, hsc⟩ :=
-    contDiff_and_hasCompactSupport_comp_of_forall_notMem_eq_zero hU hu hKs hC hCU hKsC
-  obtain ⟨ht, htc⟩ :=
-    contDiff_and_hasCompactSupport_comp_of_forall_notMem_eq_zero hU hu hKt hC hCU hKtC
+  -- Each pulled-back component `K(u)` is `C¹` on the whole domain, with support in `C`.
+  have hcomp {K : ℝ × ℝ → M → ℝ}
+      (hK : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry K) (U ×ˢ univ))
+      (hKC : ∀ z ∉ C, K z = 0) :
+      ContDiff ℝ 1 (fun w ↦ K w (u w)) ∧ HasCompactSupport (fun w ↦ K w (u w)) ∧
+        tsupport (fun w ↦ K w (u w)) ⊆ C := by
+    have hsupp : tsupport (fun w ↦ K w (u w)) ⊆ C :=
+      closure_minimal (support_subset_iff'.2 fun w hw ↦ by simp [hKC w hw]) hC.isClosed
+    have hKU : ContDiffOn ℝ 1 (fun w ↦ K w (u w)) U :=
+      contMDiffOn_iff_contDiffOn.mp (hK.comp (contMDiffOn_id.prodMk hu)
+        fun _ hz ↦ ⟨hz, mem_univ _⟩)
+    refine ⟨contDiff_iff_contDiffAt.2 fun z ↦ ?_,
+      HasCompactSupport.intro hC fun w hw ↦ by simp [hKC w hw], hsupp⟩
+    by_cases hz : z ∈ U
+    · exact hKU.contDiffAt (hU.mem_nhds hz)
+    · exact (contDiffAt_const (c := (0 : ℝ))).congr_of_eventuallyEq
+        (notMem_tsupport_iff_eventuallyEq.1 fun h ↦ hz (hCU (hsupp h)))
+  obtain ⟨hs, hsc, hss⟩ := hcomp hKs hKsC
+  obtain ⟨ht, htc, hts⟩ := hcomp hKt hKtC
   have hpt := hω.floerEnergyDensity_eq_of_forall_notMem_eq_zero hU hu hKs hKt hC.isClosed hCU
     hKsC hKtC
   -- The exterior derivative `d(K(u))` is integrable, vanishes off `C`, and has integral zero.
@@ -617,9 +598,8 @@ theorem IsNondegenerate.integral_floerEnergyDensity_of_forall_notMem_eq_zero
       integral_fderiv_apply_eq_zero_of_hasCompactSupport ht htc,
       integral_fderiv_apply_eq_zero_of_hasCompactSupport hs hsc, sub_zero]
     have hzC : z ∉ C := fun h ↦ hz (hCD h)
-    simp only [hd, fderiv_comp_eq_zero_of_forall_notMem_eq_zero (u := u) hC.isClosed hKsC hzC,
-      fderiv_comp_eq_zero_of_forall_notMem_eq_zero (u := u) hC.isClosed hKtC hzC,
-      zero_apply, sub_zero]
+    simp only [hd, fderiv_of_notMem_tsupport ℝ fun h ↦ hzC (hss h),
+      fderiv_of_notMem_tsupport ℝ fun h ↦ hzC (hts h), zero_apply, sub_zero]
   -- The area density is integrable, as a combination of integrable functions.
   have harea : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
       (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
