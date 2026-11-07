@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.TaylorIntegral
 public import TauCeti.Analysis.Calculus.ParametricIntegral
+import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.MeasureTheory.Constructions.UnitInterval
 
 /-!
@@ -150,6 +151,17 @@ open scoped Nat in
 noncomputable def taylorRemainderFactor (n : ℕ) (f : E → F) (x y : E) :
     ContinuousMultilinearMap ℝ (fun _ : Fin (n + 1) ↦ E) F :=
   (n ! : ℝ)⁻¹ • segmentAverage (fun t ↦ (1 - t) ^ n) (iteratedFDeriv ℝ (n + 1) f) x (y - x)
+
+open scoped Nat in
+/-- At the basepoint, the Taylor remainder factor of order `n` is the leading Taylor coefficient
+`iteratedFDeriv ℝ (n + 1) f x / (n + 1)!`. -/
+@[simp]
+theorem taylorRemainderFactor_self [CompleteSpace F] (n : ℕ) (f : E → F) (x : E) :
+    taylorRemainderFactor n f x x = ((n + 1)! : ℝ)⁻¹ • iteratedFDeriv ℝ (n + 1) f x := by
+  have hint : ∫ t in (0 : ℝ)..1, (1 - t) ^ n = ((n : ℝ) + 1)⁻¹ := by
+    simp [intervalIntegral.integral_comp_sub_left fun t : ℝ ↦ t ^ n, integral_pow]
+  rw [taylorRemainderFactor, sub_self, segmentAverage_zero, hint, smul_smul, Nat.factorial_succ,
+    Nat.cast_mul, Nat.cast_succ, mul_inv, mul_comm]
 
 end TauCeti
 
