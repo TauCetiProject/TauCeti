@@ -620,7 +620,8 @@ theorem parts_singletonPartEquiv_symm_apply {i : α} (hi : i ∈ s)
   simp [singletonPartEquiv]
 
 open Finpartition in
-/-- A noncrossing partition other than the partition into one part, whose join with the part
+/-- For positions `m₁ ≤ m₂` adjacent in `s` (every position of `s` is `≤ m₁` or `≥ m₂`), a
+noncrossing partition other than the partition into one part, whose join with the part
 `{m₁, m₂}` is the partition into one part, has distinct parts through `m₁` and `m₂` that cover
 `s`. -/
 theorem part_union_eq_of_sup_pairPartition_eq_top {m₁ m₂ : α} (hpair : {m₁, m₂} ⊆ s)
