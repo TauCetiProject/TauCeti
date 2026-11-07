@@ -675,43 +675,37 @@ turn on their terminal side, linear over the polynomial ring: a generator `x` go
 the counted hexagons from `x` of their weights times their targets. -/
 noncomputable def hexagonMap (C : ColumnCommutationData G) :
     GridChainMinus R n →ₗ[MvPolynomial (Fin n) R] GridChainMinus R n :=
-  Finsupp.linearCombination (MvPolynomial (Fin n) R) fun x =>
-    Finsupp.equivFunOnFinite.symm fun y => G.hexagonCoefficient R C x y
+  GridChain.matrixMap R (G.hexagonCoefficient R C)
 
 /-- The matrix coefficients of the hexagon map. -/
 theorem hexagonMap_single_apply (C : ColumnCommutationData G) (x y : GridState n) :
     G.hexagonMap R C (Finsupp.single x 1) y = G.hexagonCoefficient R C x y := by
-  rw [hexagonMap, Finsupp.linearCombination_single, one_smul,
-    Finsupp.equivFunOnFinite_symm_apply_apply]
+  rw [hexagonMap, GridChain.matrixMap_single_apply, one_mul]
 
 /-- The coefficient formula for the hexagon map on an arbitrary chain. -/
 @[simp]
 theorem hexagonMap_apply_apply (C : ColumnCommutationData G) (c : GridChainMinus R n)
     (y : GridState n) :
-    G.hexagonMap R C c y = c.sum fun x p => p * G.hexagonCoefficient R C x y := by
-  rw [hexagonMap, Finsupp.linearCombination_apply]
-  simp [Finsupp.sum_apply]
+    G.hexagonMap R C c y = c.sum fun x p => p * G.hexagonCoefficient R C x y :=
+  GridChain.matrixMap_apply_apply R _ c y
 
 /-- The map `GC⁻(G) → GC⁻(G)` of the validated column commutation `C` counting the hexagons that
 turn on their initial side, linear over the polynomial ring. -/
 noncomputable def initialHexagonMap (C : ColumnCommutationData G) :
     GridChainMinus R n →ₗ[MvPolynomial (Fin n) R] GridChainMinus R n :=
-  Finsupp.linearCombination (MvPolynomial (Fin n) R) fun x =>
-    Finsupp.equivFunOnFinite.symm fun y => G.initialHexagonCoefficient R C x y
+  GridChain.matrixMap R (G.initialHexagonCoefficient R C)
 
 /-- The matrix coefficients of the initial-side hexagon map. -/
 theorem initialHexagonMap_single_apply (C : ColumnCommutationData G) (x y : GridState n) :
     G.initialHexagonMap R C (Finsupp.single x 1) y = G.initialHexagonCoefficient R C x y := by
-  rw [initialHexagonMap, Finsupp.linearCombination_single, one_smul,
-    Finsupp.equivFunOnFinite_symm_apply_apply]
+  rw [initialHexagonMap, GridChain.matrixMap_single_apply, one_mul]
 
 /-- The coefficient formula for the initial-side hexagon map on an arbitrary chain. -/
 @[simp]
 theorem initialHexagonMap_apply_apply (C : ColumnCommutationData G) (c : GridChainMinus R n)
     (y : GridState n) :
-    G.initialHexagonMap R C c y = c.sum fun x p => p * G.initialHexagonCoefficient R C x y := by
-  rw [initialHexagonMap, Finsupp.linearCombination_apply]
-  simp [Finsupp.sum_apply]
+    G.initialHexagonMap R C c y = c.sum fun x p => p * G.initialHexagonCoefficient R C x y :=
+  GridChain.matrixMap_apply_apply R _ c y
 
 /-- The commutation homotopy `H : GC⁻(G) → GC⁻(G)` of the validated column commutation `C`: it
 counts the empty hexagons carrying no `X`-marking with corners at both intersection points, both

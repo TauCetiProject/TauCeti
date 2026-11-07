@@ -106,6 +106,21 @@ theorem continuousLinearEquivAt_pullback (e : Trivialization F (π F V)) [e.IsLi
   rfl
 
 end Bundle.Trivialization
+
+namespace Bundle.Trivialization
+
+variable {B B' F : Type*} {V : B → Type*} [TopologicalSpace B] [TopologicalSpace B']
+  [TopologicalSpace F] [TopologicalSpace (TotalSpace F V)]
+  [∀ x, TopologicalSpace (V x)] [∀ x, Nonempty (V x)] [FiberBundle F V]
+
+/-- Pulling back an atlas trivialization gives an atlas trivialization of the native pullback
+bundle. -/
+instance memTrivializationAtlas_pullback (e : Trivialization F (π F V))
+    [MemTrivializationAtlas e] (f : C(B', B)) : MemTrivializationAtlas (e.pullback f) :=
+  ⟨e, inferInstance, rfl⟩
+
+end Bundle.Trivialization
+
 namespace ContinuousLinearMap
 
 variable {𝕜 B C X F G K L : Type*} [NontriviallyNormedField 𝕜]
