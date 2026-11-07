@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Ray
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.BoundedArcInjective
+public import TauCeti.Order.Interval.Set.Injective
 
 /-!
 # Simplicity of unbounded Schwarz--Christoffel boundaries
@@ -35,37 +36,6 @@ open Complex Set UpperHalfPlane
 namespace TauCeti
 
 variable {n : ℕ}
-
-/-- **Injectivity from three injective pieces.** Let `f` be injective on each of `Iic a`, `Icc a b`
-and `Ici b`, with `a ≤ b`. If `f` maps `Iic a` into `S` and `Ici b` into `T` with `S` and `T`
-disjoint, and a point of `Icc a b` mapped into `S` (respectively `T`) has the value `f a`
-(respectively `f b`), then `f` is injective. -/
-theorem injective_of_injOn_Iic_Icc_Ici {ι X : Type*} [LinearOrder ι] {f : ι → X} {a b : ι}
-    {S T : Set X} (hab : a ≤ b) (hl : InjOn f (Iic a)) (hm : InjOn f (Icc a b))
-    (hr : InjOn f (Ici b)) (hS : ∀ x ≤ a, f x ∈ S) (hT : ∀ x, b ≤ x → f x ∈ T)
-    (hST : Disjoint S T) (hSa : ∀ y ∈ Icc a b, f y ∈ S → f y = f a)
-    (hTb : ∀ y ∈ Icc a b, f y ∈ T → f y = f b) : Function.Injective f := by
-  suffices h : ∀ x y, x < y → f x ≠ f y from fun x y hxy ↦ by
-    rcases lt_trichotomy x y with hlt | rfl | hgt
-    · exact (h x y hlt hxy).elim
-    · rfl
-    · exact (h y x hgt hxy.symm).elim
-  intro x y hxy heq
-  by_cases hy₀ : y ≤ a
-  · exact hxy.ne (hl (hxy.le.trans hy₀) hy₀ heq)
-  by_cases hxn : b ≤ x
-  · exact hxy.ne (hr hxn (hxn.trans hxy.le) heq)
-  have hya := lt_of_not_ge hy₀
-  have hxb := lt_of_not_ge hxn
-  by_cases hx₀ : x ≤ a
-  · by_cases hyn : b ≤ y
-    · exact Set.disjoint_left.mp hST (hS x hx₀) (heq ▸ hT y hyn)
-    · have hy := hSa y ⟨hya.le, (lt_of_not_ge hyn).le⟩ (heq ▸ hS x hx₀)
-      exact hya.ne' (hm ⟨hya.le, (lt_of_not_ge hyn).le⟩ ⟨le_rfl, hab⟩ hy)
-  · by_cases hyn : b ≤ y
-    · have hx := hTb x ⟨(lt_of_not_ge hx₀).le, hxb.le⟩ (heq ▸ hT y hyn)
-      exact hxb.ne (hm ⟨(lt_of_not_ge hx₀).le, hxb.le⟩ ⟨hab, le_rfl⟩ hx)
-    · exact hxy.ne (hm ⟨(lt_of_not_ge hx₀).le, hxb.le⟩ ⟨hya.le, (lt_of_not_ge hyn).le⟩ heq)
 
 /-- If the bounded sides of an unbounded Schwarz--Christoffel boundary meet only at consecutive
 vertices, each outer ray meets the bounded sides only at its finite endpoint, and the two outer
