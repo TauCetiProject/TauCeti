@@ -70,18 +70,6 @@ variable {K L M : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [Field M] [ValuativeRel M] [TopologicalSpace M] [IsNonarchimedeanLocalField M] [Algebra K M]
   [ValuativeExtension K M] [IsUnramified K L]
 
-omit [IsUnramified K L] [Module.Finite K L] in
-/-- The image under a residue embedding `φ` of the residue of `z ∈ 𝒪[L]` is a root of the reduction
-of the minimal polynomial of `z` over `𝒪[K]`. -/
-private theorem aeval_residue_minpoly_eq_zero (φ : 𝓀[L] →ₐ[𝓀[K]] 𝓀[M]) (z : 𝒪[L]) :
-    aeval (φ (residue 𝒪[L] z)) (minpoly 𝒪[K] (z : L)) = 0 := by
-  have hgz : aeval z (minpoly 𝒪[K] (z : L)) = 0 := FaithfulSMul.algebraMap_injective 𝒪[L] L (by
-    rw [← aeval_algebraMap_apply, Algebra.algebraMap_ofSubsemiring_apply, map_zero]
-    exact minpoly.aeval 𝒪[K] (z : L))
-  have h1 := aeval_algHom_apply (φ.restrictScalars 𝒪[K]) (residue 𝒪[L] z) (minpoly 𝒪[K] (z : L))
-  rw [AlgHom.restrictScalars_apply, AlgHom.restrictScalars_apply] at h1
-  rw [h1, ← ResidueField.algebraMap_eq, aeval_algebraMap_apply, hgz, map_zero, map_zero]
-
 /-- **Embeddings of an unramified extension are determined by their residue maps, and every
 residue map lifts.** For `L/K` unramified, reduction is a bijection from the `K`-embeddings
 `L → M` to the `𝓀[K]`-embeddings `𝓀[L] → 𝓀[M]`. -/
