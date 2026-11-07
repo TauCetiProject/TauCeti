@@ -841,3 +841,27 @@ theorem exists_eq_mul_transvection_of_col_zero_eq {M N : SpecialLinearGroup (Fin
 end Column
 
 end Matrix.SpecialLinearGroup
+
+namespace MonoidHom
+
+open scoped MatrixGroups
+
+/-- Over a field, a homomorphism from `SL₂` lands in a subgroup if both its upper and lower
+transvection families do. -/
+theorem mem_of_sl2_upper_lower_mem {K G : Type*} [Field K] [Group G]
+    (φ : SL(2, K) →* G) {H : Subgroup G}
+    (hupper : ∀ t : K, φ
+      (Matrix.SpecialLinearGroup.transvection (by decide : (0 : Fin 2) ≠ 1) t) ∈ H)
+    (hlower : ∀ t : K, φ
+      (Matrix.SpecialLinearGroup.transvection (by decide : (1 : Fin 2) ≠ 0) t) ∈ H)
+    (g : SL(2, K)) : φ g ∈ H := by
+  induction g using Matrix.SL2.transvection_induction with
+  | htransvec a b hab t =>
+    fin_cases a <;> fin_cases b
+    · exact (hab rfl).elim
+    · exact hupper t
+    · exact hlower t
+    · exact (hab rfl).elim
+  | hmul g h hg hh => simpa only [map_mul] using H.mul_mem hg hh
+
+end MonoidHom

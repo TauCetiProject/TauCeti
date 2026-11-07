@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ClosedImmersion
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.SquareZeroCoroot
+public import TauCeti.LinearAlgebra.Matrix.Diagonal
 
 /-!
 # Integral matrices of type-B spin generators
@@ -221,5 +223,79 @@ theorem lie_rootIntMatrix_inl_inr (i : Fin (n + 1)) :
   · subst b
     simp only [↓reduceIte, mul_one]
   · simp only [h, Ne.symm h, ↓reduceIte, mul_zero]
+
+private noncomputable abbrev rootOp (j : Fin (n + 1) ⊕ Fin (n + 1)) :=
+  kostantRootOperator
+    (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
+    (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
+    (rep_kostantForm_mem_lattice n) j
+
+-- Compute the endpoint identities over ℚ, then restrict to the invariant lattice before
+-- reducing coefficients. In particular no division by two occurs in the value ring.
+private theorem rootIntMatrix_mul_mul_of_rep_eq (j k : Fin (n + 1) ⊕ Fin (n + 1))
+    (hjk : rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.typeBSimpleRootGeneratorFamily j)) *
+      rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.typeBSimpleRootGeneratorFamily k)) *
+      rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.typeBSimpleRootGeneratorFamily j)) =
+      rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.typeBSimpleRootGeneratorFamily j))) :
+    rootIntMatrix n j * rootIntMatrix n k * rootIntMatrix n j = rootIntMatrix n j := by
+  simpa only [rootIntMatrix_eq_toMatrix, LinearMap.toMatrix_mul] using
+    congrArg (LinearMap.toMatrix (latticeBasis n) (latticeBasis n))
+      (kostantRootOperator_mul_mul_eq _ _ (rep n) _ (rep_kostantForm_mem_lattice n) hjk)
+
+/-- The integral raising and lowering matrices satisfy `EFE = E` at every numbered node. -/
+theorem rootIntMatrix_inl_mul_inr_mul_inl (i : Fin (n + 1)) :
+    rootIntMatrix n (.inl i) * rootIntMatrix n (.inr i) * rootIntMatrix n (.inl i) =
+      rootIntMatrix n (.inl i) :=
+  rootIntMatrix_mul_mul_of_rep_eq n _ _
+    (rootOperator_endpoint_relations_of_sq_eq_zero _ _ (rep n)
+      (isSl2Triple_rep_rootGenerator n i)
+      (pow_two_rep_rootGenerator_eq_zero n (.inl i))
+      (pow_two_rep_rootGenerator_eq_zero n (.inr i))).1
+
+/-- The integral lowering and raising matrices satisfy `FEF = F` at every numbered node. -/
+theorem rootIntMatrix_inr_mul_inl_mul_inr (i : Fin (n + 1)) :
+    rootIntMatrix n (.inr i) * rootIntMatrix n (.inl i) * rootIntMatrix n (.inr i) =
+      rootIntMatrix n (.inr i) :=
+  rootIntMatrix_mul_mul_of_rep_eq n _ _
+    (rootOperator_endpoint_relations_of_sq_eq_zero _ _ (rep n)
+      (isSl2Triple_rep_rootGenerator n i)
+      (pow_two_rep_rootGenerator_eq_zero n (.inl i))
+      (pow_two_rep_rootGenerator_eq_zero n (.inr i))).2
+
+private theorem rootOp_endpoint_projections_apply (i : Fin (n + 1))
+    (a : Fin (dimension n)) :
+    (rootOp n (.inl i) * rootOp n (.inr i)) (latticeBasis n a) =
+        (if basisWeight n a i = 1 then latticeBasis n a else 0) ∧
+      (rootOp n (.inr i) * rootOp n (.inl i)) (latticeBasis n a) =
+        (if basisWeight n a i = -1 then latticeBasis n a else 0) :=
+  kostantRootOperator_endpoint_projections_apply _ _ (rep n) _
+    (rep_kostantForm_mem_lattice n) (isCartanWeightVector_latticeBasis n a)
+    (isSl2Triple_rep_rootGenerator n i)
+    (pow_two_rep_rootGenerator_eq_zero n (.inl i))
+    (pow_two_rep_rootGenerator_eq_zero n (.inr i))
+
+/-- The integral product `EF` projects onto the basis vectors of simple-coroot weight `1`. -/
+theorem rootIntMatrix_inl_mul_inr (i : Fin (n + 1)) :
+    rootIntMatrix n (.inl i) * rootIntMatrix n (.inr i) =
+      Matrix.diagonal (fun a ↦ if basisWeight n a i = 1 then 1 else 0) := by
+  simp only [rootIntMatrix_eq_toMatrix, ← LinearMap.toMatrix_mul]
+  apply (Module.Basis.toMatrix_eq_diagonal_iff _ _ _ _).2
+  intro a
+  simpa only [ite_smul, one_smul, zero_smul] using
+    (rootOp_endpoint_projections_apply n i a).1
+
+/-- The integral product `FE` projects onto the basis vectors of simple-coroot weight `-1`. -/
+theorem rootIntMatrix_inr_mul_inl (i : Fin (n + 1)) :
+    rootIntMatrix n (.inr i) * rootIntMatrix n (.inl i) =
+      Matrix.diagonal (fun a ↦ if basisWeight n a i = -1 then 1 else 0) := by
+  simp only [rootIntMatrix_eq_toMatrix, ← LinearMap.toMatrix_mul]
+  apply (Module.Basis.toMatrix_eq_diagonal_iff _ _ _ _).2
+  intro a
+  simpa only [ite_smul, one_smul, zero_smul] using
+    (rootOp_endpoint_projections_apply n i a).2
 
 end TauCeti.TypeBSpinCarrier
