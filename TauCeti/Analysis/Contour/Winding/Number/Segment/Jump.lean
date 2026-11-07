@@ -8,10 +8,14 @@ module
 public import TauCeti.Analysis.Contour.Winding.Number.Segment.Formula
 public import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On
 import Mathlib.Analysis.SpecialFunctions.Complex.Log
+import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
+import TauCeti.Analysis.Complex.Basic
+import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Continuity
 import TauCeti.Analysis.Contour.Winding.Continuity
 import TauCeti.Analysis.Contour.Winding.Integer
 import TauCeti.Analysis.Contour.Winding.LocallyConstant
 import TauCeti.Analysis.Contour.Winding.Number.Concat
+import TauCeti.Topology.Order.LeftRight
 
 /-!
 # The winding number differs by one across a straight segment
@@ -163,6 +167,76 @@ private theorem convex_ball_inter_halfSpace_gt (p v : ℂ) (r σ : ℝ) :
   rw [heq]
   exact (convex_ball p r).inter ((convex_halfSpace_gt hlin _).translate_preimage_right _)
 
+private theorem exists_ball_forall_not_mem_image_of_eqOn_segment {Γ : ℝ → ℂ}
+    (hΓ : IsPiecewiseC1On Γ a c) (hbc : b ≤ c)
+    (hseg : EqOn Γ (fun t : ℝ ↦ v * (t : ℂ) + z₀) (Icc a b)) (hv : v ≠ 0) (hs : s ∈ Ioo a b)
+    (hp : v * s + z₀ ∉ Γ '' Icc b c) :
+    ∃ r > 0, ∀ w ∈ ball (v * s + z₀) r,
+      ((w - (v * s + z₀)) / v).im ≠ 0 → w ∉ Γ '' uIcc a c := by
+  have hab : a < b := hs.1.trans hs.2
+  have hIcc_bc : Icc b c ⊆ uIcc a c := (Icc_subset_Icc hab.le le_rfl).trans Icc_subset_uIcc
+  have hK : IsCompact (Γ '' Icc b c) :=
+    isCompact_Icc.image_of_continuousOn (hΓ.continuousOn.mono hIcc_bc)
+  obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.mp hK.isClosed.isOpen_compl _ hp
+  refine ⟨r, hr, ?_⟩
+  have h_curve : Γ '' uIcc a c ⊆ (fun t : ℝ ↦ v * (t : ℂ) + z₀) '' Icc a b ∪ Γ '' Icc b c := by
+    rw [uIcc_of_le (hab.le.trans hbc)]
+    rintro _ ⟨t, ht, rfl⟩
+    rcases le_or_gt t b with htb | htb
+    · exact Or.inl ⟨t, ⟨ht.1, htb⟩, (hseg ⟨ht.1, htb⟩).symm⟩
+    · exact Or.inr ⟨t, ⟨htb.le, ht.2⟩, rfl⟩
+  intro w hw him hmem
+  rcases h_curve hmem with ⟨t, _, rfl⟩ | hmem'
+  · apply him
+    have : (v * (t : ℂ) + z₀ - (v * s + z₀)) / v = (t : ℂ) - s := by
+      field_simp
+      ring
+    rw [this]
+    simp only [sub_im, ofReal_im, sub_self]
+  · exact hball hw hmem'
+
+private theorem windingNumber_eq_of_mem_ball_of_im_pos {Γ : ℝ → ℂ} {p : ℂ} {r : ℝ}
+    (hΓ : IsPiecewiseC1On Γ a c) (hclosed : Γ a = Γ c)
+    (hoff : ∀ w ∈ ball p r, ((w - p) / v).im ≠ 0 → w ∉ Γ '' uIcc a c) (σ : ℝ) :
+    ∀ w₁ ∈ ball p r, ∀ w₂ ∈ ball p r,
+      0 < σ * ((w₁ - p) / v).im → 0 < σ * ((w₂ - p) / v).im →
+        windingNumber Γ a c w₁ = windingNumber Γ a c w₂ := by
+  intro w₁ hw₁ w₂ hw₂ h₁ h₂
+  have hDsub : ball p r ∩ {w : ℂ | 0 < σ * ((w - p) / v).im} ⊆ (Γ '' uIcc a c)ᶜ := by
+    intro w hw
+    have hw2 : 0 < σ * ((w - p) / v).im := hw.2
+    exact hoff w hw.1 fun h0 ↦ hw2.ne' (by rw [h0, mul_zero])
+  exact hΓ.windingNumber_eq_of_mem_connectedComponentIn hclosed
+    ((convex_ball_inter_halfSpace_gt p v r σ).isPreconnected.subset_connectedComponentIn
+      ⟨hw₂, h₂⟩ hDsub ⟨hw₁, h₁⟩)
+
+/-- The winding number of a curve which is a straight segment on `[a, b]` is the sum of the
+winding number of that segment and of the rest of the curve, about a point off the whole curve. -/
+private theorem windingNumber_eq_segment_add_of_not_mem {Γ : ℝ → ℂ} {w : ℂ}
+    (hΓ : IsPiecewiseC1On Γ a c) (hab : a ≤ b) (hbc : b ≤ c)
+    (hseg : EqOn Γ (fun t : ℝ ↦ v * (t : ℂ) + z₀) (Icc a b)) (hw : w ∉ Γ '' uIcc a c) :
+    windingNumber Γ a c w
+      = windingNumber (fun t : ℝ ↦ v * (t : ℂ) + z₀) a b w + windingNumber Γ b c w := by
+  have hIcc_ab : Icc a b ⊆ uIcc a c := (Icc_subset_Icc le_rfl hbc).trans Icc_subset_uIcc
+  have hIcc_bc : Icc b c ⊆ uIcc a c := (Icc_subset_Icc hab le_rfl).trans Icc_subset_uIcc
+  have hΓbc : IsPiecewiseC1On Γ b c := hΓ.mono (by rwa [uIcc_of_le hbc])
+  have hΓab : IsPiecewiseC1On Γ a b := hΓ.mono (by rwa [uIcc_of_le hab])
+  have h_avoid_ab : ∀ t ∈ uIcc a b, Γ t ≠ w := fun t ht heq ↦
+    hw ⟨t, by rw [uIcc_of_le hab] at ht; exact hIcc_ab ht, heq⟩
+  have h_avoid_bc : ∀ t ∈ uIcc b c, Γ t ≠ w := fun t ht heq ↦
+    hw ⟨t, by rw [uIcc_of_le hbc] at ht; exact hIcc_bc ht, heq⟩
+  rw [windingNumber_concat
+    (cauchyPVExistsAt_of_avoidance hΓab.continuousOn h_avoid_ab
+      (intervalIntegrable_inv_sub_mul_deriv hΓab.continuousOn h_avoid_ab
+        hΓab.intervalIntegrable_deriv))
+    (cauchyPVExistsAt_of_avoidance hΓbc.continuousOn h_avoid_bc
+      (intervalIntegrable_inv_sub_mul_deriv hΓbc.continuousOn h_avoid_bc
+        hΓbc.intervalIntegrable_deriv))]
+  congr 1
+  refine windingNumber_congr_curve fun t ht ↦ hseg ?_
+  rw [uIoo_of_le hab] at ht
+  exact Ioo_subset_Icc_self ht
+
 /-- **A closed curve jumps by one across a straight piece.** Let `Γ` be a closed piecewise-`C¹`
 curve on `[a, c]` which on `[a, b]` is the straight segment `t ↦ v · t + z₀`, and let
 `p = v · s + z₀` with `s ∈ (a, b)` be a point of that segment not visited by the rest of the curve.
@@ -175,134 +249,21 @@ theorem exists_forall_windingNumber_eq_add_one_of_eqOn_segment {Γ : ℝ → ℂ
     ∃ r > 0, ∀ w₁ ∈ ball (v * s + z₀) r, ∀ w₂ ∈ ball (v * s + z₀) r,
       0 < ((w₁ - (v * s + z₀)) / v).im → ((w₂ - (v * s + z₀)) / v).im < 0 →
         windingNumber Γ a c w₁ = windingNumber Γ a c w₂ + 1 := by
-  set p : ℂ := v * s + z₀ with hp_def
   have hab : a < b := hs.1.trans hs.2
-  have hac : a ≤ c := hab.le.trans hbc
-  -- Stage 1: half-disc constancy — winding number is constant on each side near p
-  have hΓcont : ContinuousOn Γ (uIcc a c) := hΓ.continuousOn
-  have hIcc_ab : Icc a b ⊆ uIcc a c := (Icc_subset_Icc le_rfl hbc).trans Icc_subset_uIcc
-  have hIcc_bc : Icc b c ⊆ uIcc a c := (Icc_subset_Icc hab.le le_rfl).trans Icc_subset_uIcc
-  have hK : IsCompact (Γ '' Icc b c) := isCompact_Icc.image_of_continuousOn (hΓcont.mono hIcc_bc)
-  obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.mp hK.isClosed.isOpen_compl p hp
+  obtain ⟨r, hr, hoff⟩ :=
+    exists_ball_forall_not_mem_image_of_eqOn_segment hΓ hbc hseg hv hs hp
   refine ⟨r, hr, ?_⟩
-  have h_curve : Γ '' uIcc a c ⊆ (fun t : ℝ ↦ v * (t : ℂ) + z₀) '' Icc a b ∪ Γ '' Icc b c := by
-    rw [uIcc_of_le hac]
-    rintro _ ⟨t, ht, rfl⟩
-    rcases le_or_gt t b with htb | htb
-    · exact Or.inl ⟨t, ⟨ht.1, htb⟩, (hseg ⟨ht.1, htb⟩).symm⟩
-    · exact Or.inr ⟨t, ⟨htb.le, ht.2⟩, rfl⟩
-  have h_off : ∀ w ∈ ball p r, ((w - p) / v).im ≠ 0 → w ∉ Γ '' uIcc a c := by
-    intro w hw him hmem
-    rcases h_curve hmem with ⟨t, _, rfl⟩ | hmem'
-    · apply him
-      have : (v * (t : ℂ) + z₀ - p) / v = (t : ℂ) - s := by
-        rw [hp_def]
-        field_simp
-        ring
-      rw [this]
-      simp only [sub_im, ofReal_im, sub_self]
-    · exact hball hw hmem'
-  have h_const : ∀ σ : ℝ, ∀ w₁ ∈ ball p r, ∀ w₂ ∈ ball p r,
-      0 < σ * ((w₁ - p) / v).im → 0 < σ * ((w₂ - p) / v).im →
-        windingNumber Γ a c w₁ = windingNumber Γ a c w₂ := by
-    intro σ w₁ hw₁ w₂ hw₂ h₁ h₂
-    have hDsub : ball p r ∩ {w : ℂ | 0 < σ * ((w - p) / v).im} ⊆ (Γ '' uIcc a c)ᶜ := by
-      intro w hw
-      have hw2 : 0 < σ * ((w - p) / v).im := hw.2
-      exact h_off w hw.1 fun h0 ↦ hw2.ne' (by rw [h0, mul_zero])
-    exact hΓ.windingNumber_eq_of_mem_connectedComponentIn hclosed
-      ((convex_ball_inter_halfSpace_gt p v r σ).isPreconnected.subset_connectedComponentIn
-        ⟨hw₂, h₂⟩ hDsub ⟨hw₁, h₁⟩)
-  -- Stage 2: coordinate identities for test points v·(s ± h·i) + z₀
-  have h_im_add : ∀ h : ℝ, ((v * (s + h * I) + z₀ - p) / v).im = h := by
-    intro h
-    have : (v * (s + h * I) + z₀ - p) / v = h * I := by
-      rw [hp_def]
-      field_simp
-      ring
-    rw [this]
-    simp only [mul_im, ofReal_re, I_re, mul_zero, ofReal_im, I_im, mul_one, add_zero]
-  have h_im_sub : ∀ h : ℝ, ((v * (s - h * I) + z₀ - p) / v).im = -h := by
-    intro h
-    have key : (v * (s - h * I) + z₀ - p) / v = -(h * I) := by
-      rw [hp_def]
-      field_simp
-      ring
-    simp only [key, neg_im, mul_im, ofReal_re, I_re, mul_zero,
-      ofReal_im, I_im, mul_one, add_zero]
-  have h_dist_add : ∀ h : ℝ, dist (v * (s + h * I) + z₀) p = ‖v‖ * |h| := by
-    intro h
-    rw [dist_eq_norm, hp_def]
-    have : v * (s + h * I) + z₀ - (v * s + z₀) = v * (h * I) := by ring
-    rw [this, norm_mul, norm_mul, Complex.norm_I, mul_one, Complex.norm_real,
-      Real.norm_eq_abs]
-  have h_dist_sub : ∀ h : ℝ, dist (v * (s - h * I) + z₀) p = ‖v‖ * |h| := by
-    intro h
-    rw [dist_eq_norm, hp_def]
-    have : v * (s - h * I) + z₀ - (v * s + z₀) = -(v * (h * I)) := by ring
-    rw [this, norm_neg, norm_mul, norm_mul, Complex.norm_I, mul_one,
-      Complex.norm_real, Real.norm_eq_abs]
-  have h_small : ∀ᶠ h : ℝ in 𝓝[>] 0, 0 < h ∧ ‖v‖ * |h| < r := by
-    have hlt : ∀ᶠ h : ℝ in 𝓝 (0 : ℝ), ‖v‖ * |h| < r := by
-      have : Continuous fun h : ℝ ↦ ‖v‖ * |h| := by fun_prop
-      exact this.continuousAt.eventually_lt continuousAt_const (by simpa using hr)
-    exact (eventually_mem_nhdsWithin.and (hlt.filter_mono nhdsWithin_le_nhds)).mono fun h hh ↦
-      ⟨hh.1, hh.2⟩
-  -- Stage 3: decompose Γ = segment [a,b] ∪ rest [b,c]; rest is continuous at p
-  have h_avoid_bc : ∀ t ∈ uIcc b c, Γ t ≠ p := by
-    intro t ht heq
-    exact hp ⟨t, by rwa [uIcc_of_le hbc] at ht, heq⟩
-  have hΓbc : IsPiecewiseC1On Γ b c := hΓ.mono (by rwa [uIcc_of_le hbc])
-  have hΓab : IsPiecewiseC1On Γ a b := hΓ.mono (by rwa [uIcc_of_le hab.le])
-  have h_contAt : ContinuousAt (fun w ↦ windingNumber Γ b c w) p :=
-    continuousAt_windingNumber_of_avoidance hΓbc.continuousOn h_avoid_bc
-      (intervalIntegrable_inv_sub_mul_deriv hΓbc.continuousOn h_avoid_bc
-        hΓbc.intervalIntegrable_deriv)
-  have h_decomp : ∀ w ∉ Γ '' uIcc a c,
-      windingNumber Γ a c w
-        = windingNumber (fun t : ℝ ↦ v * (t : ℂ) + z₀) a b w + windingNumber Γ b c w := by
-    intro w hw
-    have h_avoid_ab : ∀ t ∈ uIcc a b, Γ t ≠ w := fun t ht heq ↦
-      hw ⟨t, by rw [uIcc_of_le hab.le] at ht; exact hIcc_ab ht, heq⟩
-    have h_avoid_bc' : ∀ t ∈ uIcc b c, Γ t ≠ w := fun t ht heq ↦
-      hw ⟨t, by rw [uIcc_of_le hbc] at ht; exact hIcc_bc ht, heq⟩
-    rw [windingNumber_concat
-      (cauchyPVExistsAt_of_avoidance hΓab.continuousOn h_avoid_ab
-        (intervalIntegrable_inv_sub_mul_deriv hΓab.continuousOn h_avoid_ab
-          hΓab.intervalIntegrable_deriv))
-      (cauchyPVExistsAt_of_avoidance hΓbc.continuousOn h_avoid_bc'
-        (intervalIntegrable_inv_sub_mul_deriv hΓbc.continuousOn h_avoid_bc'
-          hΓbc.intervalIntegrable_deriv))]
-    congr 1
-    refine windingNumber_congr_curve fun t ht ↦ hseg ?_
-    rw [uIoo_of_le hab.le] at ht
-    exact Ioo_subset_Icc_self ht
-  have h_tend_add : Tendsto (fun h : ℝ ↦ v * (s + h * I) + z₀) (𝓝[>] 0) (𝓝 p) := by
-    have : Tendsto (fun h : ℝ ↦ v * (s + h * I) + z₀) (𝓝 0) (𝓝 (v * (s + (0 : ℝ) * I) + z₀)) := by
-      apply Continuous.tendsto
-      fun_prop
-    simpa [hp_def] using this.mono_left nhdsWithin_le_nhds
-  have h_tend_sub : Tendsto (fun h : ℝ ↦ v * (s - h * I) + z₀) (𝓝[>] 0) (𝓝 p) := by
-    have : Tendsto (fun h : ℝ ↦ v * (s - h * I) + z₀) (𝓝 0) (𝓝 (v * (s - (0 : ℝ) * I) + z₀)) := by
-      apply Continuous.tendsto
-      fun_prop
-    simpa [hp_def] using this.mono_left nhdsWithin_le_nhds
-  have h_rest : Tendsto (fun h : ℝ ↦
-      windingNumber Γ b c (v * (s + h * I) + z₀) - windingNumber Γ b c (v * (s - h * I) + z₀))
-      (𝓝[>] 0) (𝓝 0) := by
-    have := (h_contAt.tendsto.comp h_tend_add).sub (h_contAt.tendsto.comp h_tend_sub)
-    simpa [Function.comp_def] using this
+  have h_small := eventually_nhdsGT_pos_and_mul_abs_lt ‖v‖ hr
   have h_off_add : ∀ h : ℝ, 0 < h → ‖v‖ * |h| < r → v * (s + h * I) + z₀ ∉ Γ '' uIcc a c := by
     intro h hh hlt
-    refine h_off _ (by rwa [Metric.mem_ball, h_dist_add]) ?_
-    rw [h_im_add]
+    refine hoff _ (by rwa [Metric.mem_ball, TauCeti.dist_add_mul_I]) ?_
+    rw [TauCeti.im_div_add_mul_I_sub hv]
     exact hh.ne'
   have h_off_sub : ∀ h : ℝ, 0 < h → ‖v‖ * |h| < r → v * (s - h * I) + z₀ ∉ Γ '' uIcc a c := by
     intro h hh hlt
-    refine h_off _ (by rwa [Metric.mem_ball, h_dist_sub]) ?_
-    rw [h_im_sub]
+    refine hoff _ (by rwa [Metric.mem_ball, TauCeti.dist_sub_mul_I]) ?_
+    rw [TauCeti.im_div_sub_mul_I_sub hv]
     exact (neg_lt_zero.mpr hh).ne
-  -- Stage 4: the segment part tends to 1, the rest tends to 0, so the total tends to 1
   have h_tend : Tendsto (fun h : ℝ ↦
       windingNumber Γ a c (v * (s + h * I) + z₀) - windingNumber Γ a c (v * (s - h * I) + z₀))
       (𝓝[>] 0) (𝓝 1) := by
@@ -314,44 +275,40 @@ theorem exists_forall_windingNumber_eq_add_one_of_eqOn_segment {Γ : ℝ → ℂ
           windingNumber Γ a c (v * (s + h * I) + z₀) -
             windingNumber Γ a c (v * (s - h * I) + z₀) := by
       filter_upwards [h_small] with h hh
-      rw [h_decomp _ (h_off_add h hh.1 hh.2), h_decomp _ (h_off_sub h hh.1 hh.2)]
+      rw [windingNumber_eq_segment_add_of_not_mem hΓ hab.le hbc hseg (h_off_add h hh.1 hh.2),
+        windingNumber_eq_segment_add_of_not_mem hΓ hab.le hbc hseg (h_off_sub h hh.1 hh.2)]
       ring
     refine Tendsto.congr' h_eq ?_
-    simpa using
-      (tendsto_windingNumber_segment_sub (z₀ := z₀) hv hs).add h_rest
-  -- Stage 5: integrality forces the limit to be exactly 1, propagate to the half-discs
+    have hΓbc : IsPiecewiseC1On Γ b c := hΓ.mono (by
+      rw [uIcc_of_le hbc, uIcc_of_le (hab.le.trans hbc)]
+      exact Icc_subset_Icc hab.le le_rfl)
+    have hrest := (hΓbc.absolutelyContinuousOnInterval.tendsto_windingNumber_add_smul_sub
+      (z := v * s + z₀) (by rwa [uIcc_of_le hbc]) (v * I)).mono_left
+      (nhdsWithin_le_nhds (s := Ioi (0 : ℝ)))
+    have hpos (h : ℝ) : v * (s + h * I) + z₀ = v * s + z₀ + h • (v * I) := by
+      rw [Complex.real_smul]
+      ring
+    have hneg (h : ℝ) : v * (s - h * I) + z₀ = v * s + z₀ - h • (v * I) := by
+      rw [Complex.real_smul]
+      ring
+    simp only [← hpos, ← hneg] at hrest
+    simpa using (tendsto_windingNumber_segment_sub (z₀ := z₀) hv hs).add hrest
   have h_near : ∀ᶠ h : ℝ in 𝓝[>] 0,
       dist (windingNumber Γ a c (v * (s + h * I) + z₀) - windingNumber Γ a c (v * (s - h * I) + z₀))
         (1 : ℂ) < 1 / 2 :=
     h_tend (Metric.ball_mem_nhds (1 : ℂ) one_half_pos)
   obtain ⟨h, hh_near, hh_pos, hh_lt⟩ := (h_near.and h_small).exists
-  have hmem_add : v * (s + h * I) + z₀ ∈ ball p r := by rwa [Metric.mem_ball, h_dist_add]
-  have hmem_sub : v * (s - h * I) + z₀ ∈ ball p r := by rwa [Metric.mem_ball, h_dist_sub]
-  obtain ⟨m, hm⟩ := hΓ.exists_int_windingNumber hclosed fun t ht heq ↦
-    h_off_add h hh_pos hh_lt ⟨t, ht, heq⟩
-  obtain ⟨n, hn⟩ := hΓ.exists_int_windingNumber hclosed fun t ht heq ↦
-    h_off_sub h hh_pos hh_lt ⟨t, ht, heq⟩
-  have hcast : ((n + 1 : ℤ) : ℂ) = (n : ℂ) + 1 := by
-    push_cast
-    ring
-  have hmn : m = n + 1 :=
-    eq_of_dist_intCast_lt_one (n := n + 1) (by
-      rw [hm, hn] at hh_near
-      rw [hcast]
-      have : dist ((m : ℂ) - (n : ℂ)) 1 = dist (m : ℂ) ((n : ℂ) + 1) := by
-        simp only [dist_eq_norm]
-        ring_nf
-      linarith)
-  have h_jump : windingNumber Γ a c (v * (s + h * I) + z₀)
-      = windingNumber Γ a c (v * (s - h * I) + z₀) + 1 := by
-    rw [hm, hn, hmn]
-    push_cast
-    ring
+  have h_jump := windingNumber_eq_add_one_of_dist_lt hΓ hclosed
+    (h_off_add h hh_pos hh_lt) (h_off_sub h hh_pos hh_lt) hh_near
   intro w₁ hw₁ w₂ hw₂ h₁ h₂
-  have e₁ : windingNumber Γ a c w₁ = windingNumber Γ a c (v * (s + h * I) + z₀) :=
-    h_const 1 w₁ hw₁ _ hmem_add (by simpa using h₁) (by rw [h_im_add]; simpa using hh_pos)
-  have e₂ : windingNumber Γ a c w₂ = windingNumber Γ a c (v * (s - h * I) + z₀) :=
-    h_const (-1) w₂ hw₂ _ hmem_sub (by simpa using h₂) (by rw [h_im_sub]; simpa using hh_pos)
+  have hmem_add : v * (s + h * I) + z₀ ∈ ball (v * s + z₀) r := by
+    rwa [Metric.mem_ball, TauCeti.dist_add_mul_I]
+  have hmem_sub : v * (s - h * I) + z₀ ∈ ball (v * s + z₀) r := by
+    rwa [Metric.mem_ball, TauCeti.dist_sub_mul_I]
+  have e₁ := windingNumber_eq_of_mem_ball_of_im_pos hΓ hclosed hoff 1 w₁ hw₁ _ hmem_add
+    (by simpa using h₁) (by rw [TauCeti.im_div_add_mul_I_sub hv]; simpa using hh_pos)
+  have e₂ := windingNumber_eq_of_mem_ball_of_im_pos hΓ hclosed hoff (-1) w₂ hw₂ _ hmem_sub
+    (by simpa using h₂) (by rw [TauCeti.im_div_sub_mul_I_sub hv]; simpa using hh_pos)
   rw [e₁, e₂, h_jump]
 
 end TauCeti.Contour
