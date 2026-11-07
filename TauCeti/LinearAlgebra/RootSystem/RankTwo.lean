@@ -10,6 +10,8 @@ public import TauCeti.LinearAlgebra.RootSystem.Classification
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Basic
 
+import TauCeti.LinearAlgebra.Matrix.Reindex
+
 /-!
 # The Cartan-Killing classification in rank at most two
 
@@ -116,23 +118,6 @@ end DynkinType
 
 /-! ### The classification of matrices on at most two indices -/
 
-/-- **Entrywise agreement with a two-node matrix is four equations, and two of them are automatic.**
-The two diagonal equations follow from the two matrices having constant diagonal `2`, so only the
-two off-diagonal entries have to be matched by hand. Like
-`TauCeti.existsUnique_dynkinType_of_card_eq_one`, this takes the diagonal equation itself rather
-than `TauCeti.IsFiniteType`, which is what the root-system-level callers have available. -/
-private theorem forall_eq_of_apply_offDiag {B : Type*} {A : Matrix B B ℤ}
-    {C : Matrix (Fin 2) (Fin 2) ℤ} (hA : ∀ i, A i i = 2) (e : B ≃ Fin 2) (hC : ∀ i, C i i = 2)
-    (h01 : A (e.symm 0) (e.symm 1) = C 0 1) (h10 : A (e.symm 1) (e.symm 0) = C 1 0) (i j : B) :
-    A i j = C (e i) (e j) := by
-  suffices key : ∀ i j : Fin 2, A (e.symm i) (e.symm j) = C i j by simpa using key (e i) (e j)
-  intro i j
-  fin_cases i <;> fin_cases j
-  · simpa using (hA _).trans (hC 0).symm
-  · simpa using h01
-  · simpa using h10
-  · simpa using (hA _).trans (hC 1).symm
-
 private theorem exists_equiv_fin_two_apply_eq {B : Type*} [Fintype B]
     (hcard : Fintype.card B = 2) {x y : B} (hxy : x ≠ y) :
     ∃ e : B ≃ Fin 2, e x = 0 ∧ e y = 1 := by
@@ -176,20 +161,10 @@ private theorem zero_le_mul_add_add_add {a c : ℤ} (ha : a ≤ -1) (hc : c ≤ 
   nlinarith [hmul]
 
 omit [Fintype B] in
-/-- **Entrywise agreement with a standard two-node Cartan matrix.** Given a relabelling
-`e : B ≃ Fin 2` and the two off-diagonal entries `a`, `b` of `A` at the nodes `e.symm 0`,
-`e.symm 1`, the matrix `A` agrees with `!![2, a; b, 2]` through `e`. -/
-private theorem forall_eq_of_apply_offDiag_two (hA : ∀ i, A i i = 2) (e : B ≃ Fin 2) {a b : ℤ}
-    (h01 : A (e.symm 0) (e.symm 1) = a) (h10 : A (e.symm 1) (e.symm 0) = b) (i j : B) :
-    A i j = !![2, a; b, 2] (e i) (e j) :=
-  forall_eq_of_apply_offDiag hA e (fun i ↦ by fin_cases i <;> rfl) (by simpa using h01)
-    (by simpa using h10) i j
-
-omit [Fintype B] in
 /-- **A finite-type matrix on two indices with Cartan product `1` is `A₂`.** The two off-diagonal
 entries at the two nodes `e₀.symm 0`, `e₀.symm 1` are both `-1`, so `e₀` matches `A` with the
 standard matrix. -/
-private theorem exists_equiv_A_two_of_apply_mul_apply_eq_one (h : IsFiniteType A)
+private theorem exists_equiv_A_two_of_apply_mul_apply_eq_one (hdiag : ∀ i, A i i = 2)
     (e₀ : B ≃ Fin 2) (hxy0 : A (e₀.symm 0) (e₀.symm 1) ≤ -1)
     (hyx0 : A (e₀.symm 1) (e₀.symm 0) ≤ -1)
     (hp : A (e₀.symm 0) (e₀.symm 1) * A (e₀.symm 1) (e₀.symm 0) = 1) :
@@ -199,13 +174,13 @@ private theorem exists_equiv_A_two_of_apply_mul_apply_eq_one (h : IsFiniteType A
   rw [hp] at hsum
   refine ⟨e₀, ?_⟩
   rw [DynkinType.cartanMatrix_A_two_eq]
-  exact forall_eq_of_apply_offDiag_two h.apply_self e₀ (by omega) (by omega)
+  exact Matrix.forall_eq_of_apply_offDiag_two hdiag e₀ (by omega) (by omega)
 
 omit [Fintype B] in
 /-- **A finite-type matrix on two indices with Cartan product `2` is `B₂`.** The two off-diagonal
 entries at the nodes `e₀.symm 0`, `e₀.symm 1` are `-1` and `-2` in some order; when the short root
 is at the first node, the relabelling has to reverse the two nodes. -/
-private theorem exists_equiv_B_two_of_apply_mul_apply_eq_two (h : IsFiniteType A)
+private theorem exists_equiv_B_two_of_apply_mul_apply_eq_two (hdiag : ∀ i, A i i = 2)
     (e₀ : B ≃ Fin 2) (hxy0 : A (e₀.symm 0) (e₀.symm 1) ≤ -1)
     (hyx0 : A (e₀.symm 1) (e₀.symm 0) ≤ -1)
     (hp : A (e₀.symm 0) (e₀.symm 1) * A (e₀.symm 1) (e₀.symm 0) = 2) :
@@ -218,16 +193,16 @@ private theorem exists_equiv_B_two_of_apply_mul_apply_eq_two (h : IsFiniteType A
   rcases hchoice with hc | hc
   · have h10 : A (e₀.symm 1) (e₀.symm 0) = -2 := by rw [hc] at hp; omega
     refine ⟨e₀.trans (Equiv.swap 0 1), ?_⟩
-    exact forall_eq_of_apply_offDiag_two h.apply_self _ (by simpa using h10) (by simpa using hc)
+    exact Matrix.forall_eq_of_apply_offDiag_two hdiag _ (by simpa using h10) (by simpa using hc)
   · have h10 : A (e₀.symm 1) (e₀.symm 0) = -1 := by rw [hc] at hp; omega
-    exact ⟨e₀, forall_eq_of_apply_offDiag_two h.apply_self e₀ hc h10⟩
+    exact ⟨e₀, Matrix.forall_eq_of_apply_offDiag_two hdiag e₀ hc h10⟩
 
 omit [Fintype B] in
 /-- **A finite-type matrix on two indices with Cartan product `3` is `G₂`.** The two off-diagonal
 entries at the nodes `e₀.symm 0`, `e₀.symm 1` are `-1` and `-3` in some order (`-2` is excluded by
 the product); when the short root is at the second node, the relabelling has to reverse the two
 nodes. -/
-private theorem exists_equiv_G2_of_apply_mul_apply_eq_three (h : IsFiniteType A)
+private theorem exists_equiv_G2_of_apply_mul_apply_eq_three (hdiag : ∀ i, A i i = 2)
     (e₀ : B ≃ Fin 2) (hxy0 : A (e₀.symm 0) (e₀.symm 1) ≤ -1)
     (hyx0 : A (e₀.symm 1) (e₀.symm 0) ≤ -1)
     (hp : A (e₀.symm 0) (e₀.symm 1) * A (e₀.symm 1) (e₀.symm 0) = 3) :
@@ -240,11 +215,11 @@ private theorem exists_equiv_G2_of_apply_mul_apply_eq_three (h : IsFiniteType A)
   rw [DynkinType.cartanMatrix_G2_eq]
   rcases hchoice with hc | hc | hc
   · have h10 : A (e₀.symm 1) (e₀.symm 0) = -3 := by rw [hc] at hp; omega
-    exact ⟨e₀, forall_eq_of_apply_offDiag_two h.apply_self e₀ hc h10⟩
+    exact ⟨e₀, Matrix.forall_eq_of_apply_offDiag_two hdiag e₀ hc h10⟩
   · exact absurd hp (by rw [hc]; omega)
   · have h10 : A (e₀.symm 1) (e₀.symm 0) = -1 := by rw [hc] at hp; omega
     refine ⟨e₀.trans (Equiv.swap 0 1), ?_⟩
-    exact forall_eq_of_apply_offDiag_two h.apply_self _ (by simpa using h10) (by simpa using hc)
+    exact Matrix.forall_eq_of_apply_offDiag_two hdiag _ (by simpa using h10) (by simpa using hc)
 
 /-- **The rank-two classification of finite-type matrices.** A finite-type matrix on two indices
 whose off-diagonal entries are nonzero — that is, whose diagram is connected — has exactly one
@@ -276,11 +251,11 @@ theorem existsUnique_dynkinType_of_card_eq_two (h : IsFiniteType A) (hcard : Fin
     have hcases : A x y * A y x = 1 ∨ A x y * A y x = 2 ∨ A x y * A y x = 3 := by omega
     rcases hcases with hp | hp | hp
     · exact ⟨.A 2, Or.inl rfl,
-        exists_equiv_A_two_of_apply_mul_apply_eq_one h e₀ hxy0 hyx0 hp⟩
+        exists_equiv_A_two_of_apply_mul_apply_eq_one h.apply_self e₀ hxy0 hyx0 hp⟩
     · exact ⟨.B 2, Or.inr (Or.inl rfl),
-        exists_equiv_B_two_of_apply_mul_apply_eq_two h e₀ hxy0 hyx0 hp⟩
+        exists_equiv_B_two_of_apply_mul_apply_eq_two h.apply_self e₀ hxy0 hyx0 hp⟩
     · exact ⟨.G2, Or.inr (Or.inr rfl),
-        exists_equiv_G2_of_apply_mul_apply_eq_three h e₀ hxy0 hyx0 hp⟩
+        exists_equiv_G2_of_apply_mul_apply_eq_three h.apply_self e₀ hxy0 hyx0 hp⟩
   -- Uniqueness is the general fact that a matrix has at most one valid Dynkin type.
   obtain ⟨t, ht, et, het⟩ := hex
   have htv : t.Valid := by rcases ht with rfl | rfl | rfl <;> simp
@@ -453,7 +428,7 @@ theorem hasCartanType_G2_of_isG2 [Finite ι] [CharZero R] [IsDomain R]
   rw [hasCartanType_iff]
   refine ⟨e, fun i j ↦ ?_⟩
   rw [DynkinType.cartanMatrix_G2_eq]
-  refine forall_eq_of_apply_offDiag b.cartanMatrix_apply_same e (by decide) ?_ ?_ i j
+  refine Matrix.forall_eq_of_apply_offDiag b.cartanMatrix_apply_same e (by decide) ?_ ?_ i j
   · -- Expose the Cartan entry as `pairingIn`, the form in which `hqp` is stated.
     rw [hsymm0, hsymm1]
     calc
