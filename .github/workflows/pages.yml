@@ -15,9 +15,10 @@ name: Pages
 #
 # Scheduled and workflow_dispatch runs regenerate the Statistics page's "lines of code by date"
 # charts straight from git history (see scripts/loc_graph.py). Push-triggered deploys reuse the
-# cached generated data instead, preserving its embedded timestamps and coverage. The charts are not committed
-# state. The per-roadmap chart (scripts/loc_roadmap_graph.py) is regenerated the same
-# way, but from the PR labels rather than git, since roadmap attribution lives in the
+# cached generated data instead, preserving its embedded timestamps and coverage. Generated
+# updates are not committed back; the repository carries fallback SVGs for cache misses and local
+# builds. During refreshes, the per-roadmap chart (scripts/loc_roadmap_graph.py) is regenerated
+# from PR labels rather than git, since roadmap attribution lives in the
 # `roadmap/<Area>` labels; it reuses the bors-aware PR snapshot below. The
 # participation snapshot likewise reads GitHub through gh, but deduplicates the current
 # human actors instead of reconstructing a historical series. Pull-request queue, review-cycle,
