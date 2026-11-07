@@ -57,9 +57,15 @@ variable {R S M N α : Type*} [Semiring R] [Semiring S]
 the span is taken over a larger scalar ring. -/
 theorem span_image (b : Basis α R U) (f : M →ₗ[R] N) :
     Submodule.span S (f '' (U : Set M)) = Submodule.span S (Set.range fun i ↦ f (b i)) := by
-  conv_lhs => rw [← U.range_subtype, LinearMap.range_eq_map, ← b.span_eq, Submodule.map_span,
-    ← Submodule.map_coe, Submodule.map_span, Submodule.span_span_of_tower, ← Set.range_comp,
-    ← Set.range_comp]
-  rfl
+  -- The basis vectors, viewed in `M`, span `U` over `R`.
+  have hU : Submodule.span R (Set.range (U.subtype ∘ b)) = U := by
+    rw [Set.range_comp, Submodule.span_image, b.span_eq, Submodule.map_top,
+      Submodule.range_subtype]
+  -- Hence their images under `f` span the image of `U` over `R`.
+  have hfU : Submodule.span R (Set.range (f ∘ U.subtype ∘ b)) = U.map f := by
+    rw [Set.range_comp, Submodule.span_image, hU]
+  -- Taking `S`-spans of both sides gives the claim.
+  rw [← Submodule.map_coe, ← hfU, Submodule.span_span_of_tower]
+  simp only [Function.comp_def, Submodule.subtype_apply]
 
 end Module.Basis
