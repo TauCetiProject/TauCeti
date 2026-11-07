@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.ApproximateUnit
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 public import Mathlib.Analysis.Normed.Operator.Completeness
-public import TauCeti.Analysis.CStarAlgebra.Multiplier
+public import TauCeti.Analysis.CStarAlgebra.Multiplier.Basic
 
 /-!
 # Nondegenerate representations and their extension to multipliers
