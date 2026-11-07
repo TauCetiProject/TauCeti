@@ -93,9 +93,9 @@ theorem differentialSymbol_zero (s : Finset ι) (v : ∀ i, Fin (k i) → E) :
 
 @[simp]
 theorem differentialSymbol_add (s : Finset ι) (v : ∀ i, Fin (k i) → E)
-    (b c : ι → E → V →L[ℂ] W) :
-    differentialSymbol s v (b + c) = differentialSymbol s v b + differentialSymbol s v c := by
-  funext p
+    (b c : ι → E → V →L[ℂ] W) (p : E × E) :
+    differentialSymbol s v (b + c) p =
+      differentialSymbol s v b p + differentialSymbol s v c p := by
   simp [differentialSymbol, smul_add, Finset.sum_add_distrib]
 
 @[simp]
