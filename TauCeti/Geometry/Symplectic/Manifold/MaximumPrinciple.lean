@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Chart
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.Defs
-import TauCeti.Geometry.Manifold.MFDeriv.Chart
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # The maximum principle for `J`-holomorphic curves in an almost complex manifold

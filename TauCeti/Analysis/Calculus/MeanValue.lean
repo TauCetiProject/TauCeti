@@ -159,6 +159,22 @@ theorem lt_apply_add_of_norm_fderiv_le {w : E → ℝ} (hw : Differentiable ℝ 
     nlinarith [mul_nonneg hL (norm_nonneg z), hs₀I.1, hs₁I.2]
   linarith
 
+open Metric in
+/-- The mean value inequality: if `h` fixes `c` and `h - id` has derivative of norm at most `δ` on
+the closed ball of radius `2 r` about `c`, then `h - id` moves points of this ball by at most
+`δ * (2 * r)`. -/
+theorem norm_sub_le_of_norm_fderiv_sub_id_le {c : E} {h : E → E} {r δ : ℝ} (hr : 0 < r)
+    (hδ0 : 0 ≤ δ) (hhc : h c = c)
+    (hhd : ∀ x ∈ closedBall c (2 * r),
+      HasFDerivAt (fun y ↦ h y - y) (fderiv ℝ h x - ContinuousLinearMap.id ℝ E) x)
+    (hδ : ∀ x ∈ closedBall c (2 * r), ‖fderiv ℝ h x - ContinuousLinearMap.id ℝ E‖ ≤ δ)
+    {x : E} (hx : x ∈ closedBall c (2 * r)) : ‖h x - x‖ ≤ δ * (2 * r) := by
+  have := Convex.norm_image_sub_le_of_norm_fderiv_le (fun y hy ↦ (hhd y hy).differentiableAt)
+    (fun y hy ↦ (hhd y hy).fderiv ▸ hδ y hy) (convex_closedBall c (2 * r))
+    (mem_closedBall_self (by positivity)) hx
+  rw [hhc, sub_self, sub_zero] at this
+  exact this.trans (mul_le_mul_of_nonneg_left (mem_closedBall_iff_norm.1 hx) hδ0)
+
 open Real in
 /-- Mean value bound near `a > 0`: if `u` has derivative `f' r` of norm at most `D r^(β - 1)` at
 every `r > 0` (`0 ≤ β ≤ 1`), then `‖u b - u a‖ ≤ 2 D |b - a| a^(β - 1)` for `a / 2 ≤ b`. -/
