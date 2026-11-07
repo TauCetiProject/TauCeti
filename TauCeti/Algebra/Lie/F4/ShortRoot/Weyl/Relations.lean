@@ -63,10 +63,86 @@ private theorem weylMatrix_certificate : ∀ i : Fin 4,
     positiveMatrix i * negativeMatrix i * positiveMatrix i = weylMatrix i := by
   decide +kernel
 
+-- Multiplication by a Weyl matrix needs only its nonzero column entries, rather than
+-- a dense sum at every stage of a four-letter braid word.
+private theorem mul_weylMatrix_apply (M : Matrix (Fin 26) (Fin 26) ℤ)
+    (i : Fin 4) (a b : Fin 26) :
+    (M * weylMatrix i) a b = M a (weylTarget i b) * weylCoeff i b +
+      (if i = 2 ∧ b = 13 then M a 13 else 0) +
+      (if i = 3 ∧ b = 12 then -M a 13 else 0) := by
+  by_cases hi : i = 2 <;> by_cases hj : i = 3 <;>
+    simp_all [Matrix.mul_apply, weylMatrix, mul_add, Finset.sum_add_distrib, ite_and,
+      mul_ite]
+
+private theorem braid_zero_one :
+    ([0, 1, 0].map weylMatrix).prod = ([1, 0, 1].map weylMatrix).prod := by
+  simp only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one, ← mul_assoc]
+  ext a b
+  simp only [mul_weylMatrix_apply]
+  revert a b
+  decide +kernel
+
+private theorem braid_zero_two :
+    ([0, 2].map weylMatrix).prod = ([2, 0].map weylMatrix).prod := by
+  simp only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one]
+  ext a b
+  simp only [mul_weylMatrix_apply]
+  revert a b
+  decide +kernel
+
+private theorem braid_zero_three :
+    ([0, 3].map weylMatrix).prod = ([3, 0].map weylMatrix).prod := by
+  simp only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one]
+  ext a b
+  simp only [mul_weylMatrix_apply]
+  revert a b
+  decide +kernel
+
+private theorem braid_one_two :
+    ([1, 2, 1, 2].map weylMatrix).prod = ([2, 1, 2, 1].map weylMatrix).prod := by
+  simp only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one, ← mul_assoc]
+  ext a b
+  simp only [mul_weylMatrix_apply]
+  revert a b
+  decide +kernel
+
+private theorem braid_one_three :
+    ([1, 3].map weylMatrix).prod = ([3, 1].map weylMatrix).prod := by
+  simp only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one]
+  ext a b
+  simp only [mul_weylMatrix_apply]
+  revert a b
+  decide +kernel
+
+private theorem braid_two_three :
+    ([2, 3, 2].map weylMatrix).prod = ([3, 2, 3].map weylMatrix).prod := by
+  simp only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one, ← mul_assoc]
+  ext a b
+  simp only [mul_weylMatrix_apply]
+  revert a b
+  decide +kernel
+
 private theorem braid_certificate : ∀ i j : Fin 4,
     ((CoxeterSystem.braidWord CoxeterMatrix.F₄ i j).map weylMatrix).prod =
       ((CoxeterSystem.braidWord CoxeterMatrix.F₄ j i).map weylMatrix).prod := by
-  decide +kernel
+  intro i j
+  fin_cases i <;> fin_cases j
+  · rfl
+  · exact braid_zero_one.symm
+  · exact braid_zero_two
+  · exact braid_zero_three
+  · exact braid_zero_one
+  · rfl
+  · exact braid_one_two
+  · exact braid_one_three
+  · exact braid_zero_two.symm
+  · exact braid_one_two.symm
+  · rfl
+  · exact braid_two_three.symm
+  · exact braid_zero_three.symm
+  · exact braid_one_three.symm
+  · exact braid_two_three
+  · rfl
 
 private theorem coe_simpleWeylPoint_int (i : Fin 4) :
     ((simpleWeylPoint i ℤ : Matrix.GeneralLinearGroup (Fin 26) ℤ) :
