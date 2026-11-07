@@ -225,7 +225,8 @@ theorem isLittleO_of_forall_mem_subdifferential_norm_sub_le {x y : E} {A : E →
     push_cast
     ring
   have hbound := TauCeti.abs_sub_sub_sum_range_le_of_forall_lt (G := fun k => F (p k)) hstep
-  rw [Finset.sum_range_add_mul_add_div_two hna, nsmul_eq_mul] at hbound
+  rw [Finset.sum_range_add_mul_add_div_two, nsmul_eq_mul] at hbound
+  simp only [hna, one_pow, one_mul] at hbound
   have hpn : F (p n) - F (p 0) = F x' - F x := by
     simp only [p, Nat.cast_zero, zero_mul, zero_smul, add_zero, hna, one_smul, h, add_sub_cancel]
   have : (n : ℝ) * (‖A‖ * ‖h‖ ^ 2 * a ^ 2 / 2 + c / 2 * ‖h‖ ^ 2 * a) =

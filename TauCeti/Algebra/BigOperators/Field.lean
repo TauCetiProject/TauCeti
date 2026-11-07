@@ -26,7 +26,7 @@ values `∏ (1 - q^{-k})` of local densities.
 
 * `Finset.prod_pow_sub_one`: factoring `q ^ (∑ i ∈ s, f i)` out of `∏ i ∈ s, (q ^ f i - 1)`.
 * `Finset.sum_range_add_mul_add_div_two`: the increments of a quadratic along a uniform grid sum to
-  the increment of the quadratic.
+  the increment of the quadratic from `0` to the end of the grid.
 -/
 
 public section
@@ -43,17 +43,13 @@ theorem prod_pow_sub_one {K ι : Type*} [Field K] {q : K} (hq : q ≠ 0) (s : Fi
   rw [mul_sub, mul_one, mul_inv_cancel₀ (pow_ne_zero _ hq)]
 
 /-- The expected increments `a * u + (k * a + a / 2) * a * X` of the quadratic
-`t ↦ t * u + t ^ 2 * X / 2` along the grid `k * a` sum, over `k < n` with `n * a = 1`, to the value
-`u + X / 2` of the quadratic at `1`. -/
-theorem sum_range_add_mul_add_div_two {K : Type*} [Field K] [CharZero K] {a u X : K} {n : ℕ}
-    (hna : (n : K) * a = 1) :
-    ∑ k ∈ Finset.range n, (a * u + (k * a + a / 2) * a * X) = u + X / 2 := by
-  have hsum : ∀ m : ℕ, ∑ k ∈ Finset.range m, (a * u + (k * a + a / 2) * a * X) =
-      m * a * u + (m * a) ^ 2 * X / 2 := fun m => by
-    induction m with
-    | zero => simp
-    | succ m ih => rw [Finset.sum_range_succ, ih]; push_cast; ring
-  rw [hsum, hna]
-  ring
+`t ↦ t * u + t ^ 2 * X / 2` along the grid `k * a` sum, over `k < n`, to the increment
+`n * a * u + (n * a) ^ 2 * X / 2` of the quadratic from `0` to `n * a`. -/
+theorem sum_range_add_mul_add_div_two {K : Type*} [Field K] [CharZero K] (a u X : K) (n : ℕ) :
+    ∑ k ∈ Finset.range n, (a * u + (k * a + a / 2) * a * X) =
+      n * a * u + (n * a) ^ 2 * X / 2 := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [Finset.sum_range_succ, ih]; push_cast; ring
 
 end Finset
