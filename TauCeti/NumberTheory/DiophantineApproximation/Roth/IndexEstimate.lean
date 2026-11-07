@@ -155,6 +155,30 @@ private theorem indexBound_zero : IndexBound K 0 := by
   rw [inv_mul_le_iff₀ hθ]
   nlinarith [hβ 0, mul_nonneg (mul_nonneg hD hr0) (sub_nonneg.2 hlog)]
 
+/-- A row `ν` of degree at most `r (n + 1)` that does not differentiate in the last variable,
+where `r` is antitone with `r (n + 1) ≤ σ r n`, has weight at most `σ` for the weights
+`1 / rⱼ`. -/
+private theorem weight_le_ofReal_of_ratio {n : ℕ} {r : Fin (n + 1 + 1) → ℕ}
+    (hr : 0 < r (Fin.last n).castSucc) (hanti : Antitone r) {σ : ℝ}
+    (hratio : (r (Fin.last (n + 1)) : ℝ) ≤ σ * r (Fin.last n).castSucc)
+    {ν : Fin (n + 1 + 1) →₀ ℕ} (hν : ν.degree ≤ r (Fin.last (n + 1)))
+    (hνl : ν (Fin.last (n + 1)) = 0) :
+    ν.weight (fun j ↦ (r j : ℝ≥0∞)⁻¹) ≤ ENNReal.ofReal σ := by
+  set c := (Fin.last n).castSucc
+  have hc : (0 : ℝ) < r c := by exact_mod_cast hr
+  refine (ν.weight_le_degree_nsmul_of_monotone
+    (fun a b h ↦ ENNReal.inv_le_inv.2 (by exact_mod_cast hanti h)) (i := c) fun j hj ↦
+      Fin.le_castSucc_iff.2 (Fin.lt_last_iff_ne_last.2 fun h ↦
+        Finsupp.mem_support_iff.1 hj (h ▸ hνl))).trans ?_
+  rw [nsmul_eq_mul]
+  calc (ν.degree : ℝ≥0∞) * (r c : ℝ≥0∞)⁻¹ ≤
+        (r (Fin.last (n + 1)) : ℝ≥0∞) * (r c : ℝ≥0∞)⁻¹ := by
+        gcongr
+    _ = ENNReal.ofReal (r (Fin.last (n + 1)) / r c) := by
+        rw [ENNReal.ofReal_div_of_pos hc, ENNReal.ofReal_natCast, ENNReal.ofReal_natCast,
+          div_eq_mul_inv]
+    _ ≤ ENNReal.ofReal σ := ENNReal.ofReal_le_ofReal ((div_le_iff₀ hc).2 hratio)
+
 omit [NumberField K] in
 /-- If `θ ≥ 1 / 2`, the index is at most the number of variables, as each partial degree is at
 most the weight. -/
@@ -346,7 +370,7 @@ private theorem indexBound_succ {n : ℕ} (ih : IndexBound K n) : IndexBound K (
   -- Lower bound: the indices of the two Wronskians add up to at least `m min (δ / 2) (δ² / 2)`,
   -- where `δ = t - σ`.
   have hwt (k : Fin m) : (μ k).weight (fun j ↦ (r j : ℝ≥0∞)⁻¹) ≤ ENNReal.ofReal σ :=
-    Finsupp.weight_le_ofReal_of_ratio hr hanti (by simpa using hratio (Fin.last n))
+    weight_le_ofReal_of_ratio (hr _) hanti (by simpa using hratio (Fin.last n))
       ((hμ k).trans (by have := k.isLt; omega)) (hμl k)
   have hlow := ofReal_mul_min_le_weightedIndex_genWronskian_add hm' hμl hfv g hσ0.le
     (t := t) (by rw [← hPfg, hPt]) hwt
