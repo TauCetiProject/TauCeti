@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.Completion.InfinitePlace
-public import Mathlib.NumberTheory.Ostrowski
 public import TauCeti.Analysis.Normed.Ring.WithAbs
 
 /-!
@@ -87,12 +86,6 @@ theorem Completion.denseRange_algebraMap (v : InfinitePlace K) :
   simp only [Completion.algebraMap_apply]
   exact (Completion.denseRange_coe (v := v)).comp (WithAbs.toAbs_surjective v.1).denseRange
     (Completion.continuous_coe (v := v))
-
-/-- An infinite place restricts on `ℚ` to the real absolute value. -/
-theorem apply_ratCast_eq_real (w : InfinitePlace K) (r : ℚ) :
-    w (r : K) = Rat.AbsoluteValue.real r := by
-  rw [InfinitePlace.map_ratCast, Rat.AbsoluteValue.real_eq_abs, Rat.cast_abs,
-    ← Real.norm_eq_abs, Rat.norm_cast_real]
 
 /-- Two continuous maps out of an archimedean completion `K_w` into a Hausdorff space agree once
 they agree on `K`. -/

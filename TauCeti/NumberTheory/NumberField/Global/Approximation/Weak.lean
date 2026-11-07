@@ -308,33 +308,13 @@ private theorem exists_finset_isStandard_restrict (p : ℕ) [Fact p.Prime] {L : 
   · simp only [Si, Finset.mem_union, Finset.mem_image, Finset.mem_univ, true_and]
     exact Or.inr ⟨w, rfl⟩
 
-/-- The `p`-adic absolute value of `p` is less than `1`. -/
-private theorem padic_natCast_lt_one (p : ℕ) [Fact p.Prime] : Rat.AbsoluteValue.padic p p < 1 := by
-  rw [Rat.AbsoluteValue.padic_eq_padicNorm]
-  exact_mod_cast padicNorm.padicNorm_p_lt_one_of_prime (p := p)
-
 omit [NumberField K] in
 /-- An absolute value restricting to the `p`-adic one at `p` differs from every absolute value
 sending `p` to `1`. -/
 private theorem ne_of_apply_natCast_eq_one {p : ℕ} [Fact p.Prime] {v₀ v : AbsoluteValue K ℝ}
     (hv₀p : v₀ (p : ℚ) = Rat.AbsoluteValue.padic p p) (hv : v (p : ℚ) = 1) : v ≠ v₀ := by
   rintro rfl
-  exact (padic_natCast_lt_one p).ne (hv₀p.symm.trans hv)
-
-omit [NumberField K] in
-/-- An absolute value restricting to the `p`-adic one at `p` is not an infinite place. -/
-private theorem infinitePlace_ne_of_apply_natCast {p : ℕ} [Fact p.Prime] {v₀ : AbsoluteValue K ℝ}
-    (hv₀p : v₀ (p : ℚ) = Rat.AbsoluteValue.padic p p) (w : InfinitePlace K) : w.1 ≠ v₀ := by
-  intro hw
-  -- The infinite place sends `p` to `|p| ≥ 1`, while `v₀` sends it below `1`.
-  have h1 : (1 : ℝ) ≤ Rat.AbsoluteValue.real p := by
-    rw [Rat.AbsoluteValue.real_eq_abs]
-    push_cast
-    rw [abs_of_nonneg (Nat.cast_nonneg _)]
-    exact_mod_cast (Fact.out : p.Prime).one_le
-  have hwp : w.1 (p : ℚ) = Rat.AbsoluteValue.real p := InfinitePlace.apply_ratCast_eq_real w p
-  rw [hw, hv₀p] at hwp
-  exact (padic_natCast_lt_one p).not_ge (hwp ▸ h1)
+  exact (Rat.AbsoluteValue.padic_natCast_lt_one p).ne (hv₀p.symm.trans hv)
 
 /-- **Approximation at Galois `p`-adic embeddings.** Let
 `K ⊆ AlgebraicClosure ℚ_[p]` be a number field Galois over `ℚ`, let `y₀ ∈ K`, and let `L` be a
@@ -386,7 +366,9 @@ theorem exists_galois_padic_approximation (p : ℕ) [Fact p.Prime]
         padicNorm.padicNorm_of_prime_of_ne (fun h : ℓ = p ↦ hpL (h ▸ hℓ)), Rat.cast_one]))] at h
     simpa using h
   · refine (hY _ (hSi w)).trans_eq' (congrArg _ ?_)
-    rw [ite_eq_right (infinitePlace_ne_of_apply_natCast hv₀p w)]
+    have hw : w.1 ≠ v₀ := fun h ↦
+      w.apply_ratCast_ne_padic p (by rw [h, hv₀p])
+    rw [ite_eq_right hw]
 
 /-- **Weak approximation at finite and real places.** The diagonal image of a number field is
 dense in the product of its completions at finitely many finite places and of `ℝ` at finitely
