@@ -244,39 +244,6 @@ theorem IsOfType.typeProjection_alternatizeUncurryFin_eq_zero
     (by linear_combination (norm := module) e3) (by linear_combination (norm := module) e4)
     (by linear_combination (norm := module) e5) (by linear_combination (norm := module) e6)
 
-/-- The alternation of `D ∘ N`, for `D` the derivative of `ω` and `N` the Nijenhuis-type tensor
-`N v w = A (J v) w + A v (J w) - A (J w) v - A w (J v)`, is twice the alternation of `D ∘ S`
-for `S v = A (J v) + A v ∘ J`; this involves only `D ∘ A ∘ J` and `D ∘ J ∘ A`. -/
-private theorem alternatizeUncurryFin_fderivCompContinuousLinearMap_comp_eq
-    {J : E →L[ℝ] E} (ω : E [⋀^Fin k]→L[ℝ] F) {A N : E →L[ℝ] E →L[ℝ] E}
-    (hN : ∀ v w, N v w = A (J v) w + A v (J w) - A (J w) v - A w (J v)) :
-    alternatizeUncurryFin (ω.fderivCompContinuousLinearMap (.id ℝ E) ∘L N) =
-      alternatizeUncurryFin ((ω.fderivCompContinuousLinearMap (.id ℝ E) ∘L A) ∘L J) +
-        alternatizeUncurryFin (ω.fderivCompContinuousLinearMap (.id ℝ E) ∘L
-          ((compL ℝ E E E).flip J ∘L A)) +
-      (alternatizeUncurryFin ((ω.fderivCompContinuousLinearMap (.id ℝ E) ∘L A) ∘L J) +
-        alternatizeUncurryFin (ω.fderivCompContinuousLinearMap (.id ℝ E) ∘L
-          ((compL ℝ E E E).flip J ∘L A))) := by
-  set D := ω.fderivCompContinuousLinearMap (.id ℝ E)
-  set S := A ∘L J + (compL ℝ E E E).flip J ∘L A
-  -- The alternation of `D ∘ h` vanishes for the symmetric bilinear map `h v w = S v w + S w v`.
-  have hsymm : alternatizeUncurryFin (D ∘L (S + S.flip)) = 0 :=
-    alternatizeUncurryFin_fderivCompContinuousLinearMap_eq_zero ω _ fun v w ↦ by
-      simp only [_root_.add_apply, flip_apply, add_comm]
-  have hNS : N = S - S.flip := by
-    ext v w
-    simp [S, hN, sub_sub]
-  have hS : alternatizeUncurryFin (D ∘L S) =
-      alternatizeUncurryFin ((D ∘L A) ∘L J) +
-        alternatizeUncurryFin (D ∘L ((compL ℝ E E E).flip J ∘L A)) := by
-    rw [← alternatizeUncurryFin_add]
-    congr 1
-    ext v
-    simp [S]
-  rw [comp_add, alternatizeUncurryFin_add] at hsymm
-  rw [hNS, comp_sub, alternatizeUncurryFin_sub, eq_neg_of_add_eq_zero_right hsymm, sub_neg_eq_add,
-    hS]
-
 /-- **The outer bidegrees.** Let `ω` be a form of type `(p,q)` for `J` with `J² = -1`, let
 `(η, A)` be a first-order variation of the pair `(ω, J)` preserving this, as in
 `IsOfType.typeProjection_alternatizeUncurryFin_eq_zero`, and let

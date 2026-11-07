@@ -120,4 +120,38 @@ theorem alternatizeUncurryFin_apply_eq_inv_factorial_smul_sum [CharZero 𝕜]
   rw [← factorial_smul_alternatizeUncurryFin_apply, ← Nat.cast_smul_eq_nsmul 𝕜, smul_smul,
     inv_mul_cancel₀ (Nat.cast_ne_zero.mpr n.factorial_ne_zero), one_smul]
 
+open ContinuousLinearMap in
+/-- The alternation of `D ∘ N`, for `D` the derivative of `ω` and `N` the Nijenhuis-type tensor
+`N v w = A (J v) w + A v (J w) - A (J w) v - A w (J v)`, is twice the alternation of `D ∘ S`
+for `S v = A (J v) + A v ∘ J`; this involves only `D ∘ A ∘ J` and `D ∘ J ∘ A`. -/
+theorem alternatizeUncurryFin_fderivCompContinuousLinearMap_comp_eq
+    {J : E →L[𝕜] E} (ω : E [⋀^Fin n]→L[𝕜] F) {A N : E →L[𝕜] E →L[𝕜] E}
+    (hN : ∀ v w, N v w = A (J v) w + A v (J w) - A (J w) v - A w (J v)) :
+    alternatizeUncurryFin (ω.fderivCompContinuousLinearMap (.id 𝕜 E) ∘L N) =
+      alternatizeUncurryFin ((ω.fderivCompContinuousLinearMap (.id 𝕜 E) ∘L A) ∘L J) +
+        alternatizeUncurryFin (ω.fderivCompContinuousLinearMap (.id 𝕜 E) ∘L
+          ((compL 𝕜 E E E).flip J ∘L A)) +
+      (alternatizeUncurryFin ((ω.fderivCompContinuousLinearMap (.id 𝕜 E) ∘L A) ∘L J) +
+        alternatizeUncurryFin (ω.fderivCompContinuousLinearMap (.id 𝕜 E) ∘L
+          ((compL 𝕜 E E E).flip J ∘L A))) := by
+  set D := ω.fderivCompContinuousLinearMap (.id 𝕜 E)
+  set S := A ∘L J + (compL 𝕜 E E E).flip J ∘L A
+  -- The alternation of `D ∘ h` vanishes for the symmetric bilinear map `h v w = S v w + S w v`.
+  have hsymm : alternatizeUncurryFin (D ∘L (S + S.flip)) = 0 :=
+    alternatizeUncurryFin_fderivCompContinuousLinearMap_eq_zero ω _ fun v w ↦ by
+      simp only [_root_.add_apply, flip_apply, add_comm]
+  have hNS : N = S - S.flip := by
+    ext v w
+    simp [S, hN, sub_sub]
+  have hS : alternatizeUncurryFin (D ∘L S) =
+      alternatizeUncurryFin ((D ∘L A) ∘L J) +
+        alternatizeUncurryFin (D ∘L ((compL 𝕜 E E E).flip J ∘L A)) := by
+    rw [← alternatizeUncurryFin_add]
+    congr 1
+    ext v
+    simp [S]
+  rw [comp_add, alternatizeUncurryFin_add] at hsymm
+  rw [hNS, comp_sub, alternatizeUncurryFin_sub, eq_neg_of_add_eq_zero_right hsymm, sub_neg_eq_add,
+    hS]
+
 end ContinuousAlternatingMap
