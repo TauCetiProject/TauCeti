@@ -211,7 +211,6 @@ private theorem isZero_res_splittingModule_of_tateHypotheses {L K : Type} [Field
 `0 → A(L) → Y → I_G → 0` of `ℤ_p[Gal(L/K)]`-modules: the inclusion `ι` is injective, the projection
 `π` to the augmentation ideal is surjective, and the sequence is exact. -/
 private theorem exists_exact_splittingModule {L K : Type} [Field L] [Field K] [Algebra K L]
-    [Finite (L ≃ₐ[K] L)]
     (u : groupCohomology (Rep.of (padicCompletionUnitsRepresentation p L K)) 2) :
     ∃ (ι : Additive ↑(padicCompletionUnits p L) →ₗ[MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)]
         (Rep.splittingModule (Rep.of (padicCompletionUnitsRepresentation p L K)) u).ρ.asModule)
@@ -323,11 +322,12 @@ private theorem smul_toMul_mapDomainRingEquiv {p : ℕ} [Fact p.Prime] {L K : Ty
 /-- A ring isomorphism over a common target carries the kernel of one map to the kernel of the
 other, as a semilinear image. -/
 private theorem map_ker_toSemilinearEquiv {A B S : Type*} [Semiring A] [Semiring B] [Semiring S]
-    (Φ : A ≃+* B) [RingHomInvPair (Φ : A →+* B) (Φ.symm : B →+* A)]
-    [RingHomInvPair (Φ.symm : B →+* A) (Φ : A →+* B)] (g : A →+* S) (h : B →+* S)
+    (Φ : A ≃+* B) (g : A →+* S) (h : B →+* S)
     (hΦ : ∀ x, h (Φ x) = g x) :
     Submodule.map (Φ.toSemilinearEquiv : A →ₛₗ[(Φ : A →+* B)] B) (RingHom.ker g) =
       RingHom.ker h := by
+  have : RingHomInvPair (Φ : A →+* B) (Φ.symm : B →+* A) := .of_ringEquiv Φ
+  have : RingHomInvPair (Φ.symm : B →+* A) (Φ : A →+* B) := .of_ringEquiv_symm Φ
   ext y
   rw [Submodule.mem_map_equiv, RingHom.mem_ker, RingHom.mem_ker, ← hΦ]
   exact Iff.of_eq (congrArg (· = 0) (congrArg _ (Φ.apply_symm_apply y)))
