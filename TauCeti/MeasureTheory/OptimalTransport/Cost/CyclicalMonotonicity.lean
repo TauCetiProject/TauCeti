@@ -269,7 +269,7 @@ private theorem exists_isCoupling_lintegral_lt [IsFiniteMeasure π] (hc : Contin
   have ht0 : t ≠ 0 := ENNReal.div_ne_zero.2 ⟨hW0 j, ENNReal.natCast_ne_top n⟩
   have httop : t ≠ ∞ := ENNReal.div_ne_top (measure_ne_top π _) (Nat.cast_ne_zero.2 hn)
   let κ := t • Measure.sum ρ
-  have hκ : κ ≤ π := Measure.smul_sum_inv_smul_restrict_le hW0 hj
+  have hκ : κ ≤ π := Measure.smul_sum_inv_smul_restrict_le hj
   have : IsFiniteMeasure κ := isFiniteMeasure_of_le π hκ
   have hκ' : IsCoupling κ κ.fst κ.snd := ⟨rfl, rfl⟩
   have hρ' : IsCoupling κ (t • (Measure.sum ρ).fst) (t • (Measure.sum ρ).snd) :=

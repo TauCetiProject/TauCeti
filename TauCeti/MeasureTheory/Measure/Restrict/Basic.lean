@@ -21,9 +21,9 @@ sets of positive mass, scaled by the smallest mass over their number, sum to at 
 ## Main results
 
 * `MeasureTheory.Measure.smul_restrict_univ`: `(s • μ.restrict A) univ = s * μ A`.
-* `MeasureTheory.Measure.smul_sum_inv_smul_restrict_le`: the normalized restrictions of a finite
-  measure to sets of positive mass, scaled by the smallest mass over their number, sum to at
-  most the measure.
+* `MeasureTheory.Measure.smul_sum_inv_smul_restrict_le`: the normalized restrictions of a measure
+  to finitely many sets, scaled by the smallest mass over their number, sum to at most the
+  measure.
 * `MeasureTheory.ae_restrict_compl_eq_zero_of_tsupport_subset`: if `tsupport f ⊆ s`, then
   `f =ᵐ[μ.restrict sᶜ] 0`.
 -/
@@ -51,11 +51,10 @@ theorem smul_restrict_univ {α : Type*} [MeasurableSpace α] (s : ℝ≥0∞) (�
   simp only [_root_.smul_apply, Measure.restrict_apply MeasurableSet.univ, univ_inter, smul_eq_mul]
 
 
-/-- Scaling the normalized restrictions `(π (W i))⁻¹ • π.restrict (W i)` of a finite measure `π` by
+/-- Scaling the normalized restrictions `(π (W i))⁻¹ • π.restrict (W i)` of a measure `π` by
 `π (W j) / n`, where `W j` has minimal mass, and summing over `i : Fin n` stays below `π`. -/
 theorem smul_sum_inv_smul_restrict_le {α : Type*} [MeasurableSpace α] {π : Measure α}
-    [IsFiniteMeasure π] {n : ℕ} {W : Fin n → Set α} (hW0 : ∀ i, π (W i) ≠ 0) {j : Fin n}
-    (hj : ∀ i, π (W j) ≤ π (W i)) :
+    {n : ℕ} {W : Fin n → Set α} {j : Fin n} (hj : ∀ i, π (W j) ≤ π (W i)) :
     (π (W j) / n) • Measure.sum (fun i ↦ (π (W i))⁻¹ • π.restrict (W i)) ≤ π := by
   have hn : n ≠ 0 := by
     rintro rfl
@@ -66,9 +65,9 @@ theorem smul_sum_inv_smul_restrict_le {α : Type*} [MeasurableSpace α] {π : Me
     have hti : π (W j) / n * (π (W i))⁻¹ ≤ (n : ℝ≥0∞)⁻¹ := by
       calc π (W j) / n * (π (W i))⁻¹ ≤ π (W i) / n * (π (W i))⁻¹ :=
             mul_le_mul_left (ENNReal.div_le_div_right (hj i) _) _
-        _ = (n : ℝ≥0∞)⁻¹ := by
-            rw [div_eq_mul_inv, mul_right_comm, ENNReal.mul_inv_cancel (hW0 i)
-              (measure_ne_top π _), one_mul]
+        _ ≤ (n : ℝ≥0∞)⁻¹ := by
+            rw [div_eq_mul_inv, mul_right_comm]
+            exact mul_le_of_le_one_left' (ENNReal.mul_inv_le_one _)
     calc π (W j) / n * ((π (W i))⁻¹ • π.restrict (W i)) s
         = π (W j) / n * (π (W i))⁻¹ * π (s ∩ W i) := by
           simp [Measure.restrict_apply hs, mul_assoc]
