@@ -76,15 +76,6 @@ theorem _root_.TauCeti.continuousAt_fderiv_comp_inr {G : P × E → E →L[ℝ] 
     (f := fun q ↦ (q, ψ q)) (continuousAt_id.prodMk hψ.continuousAt) rfl).clm_comp
     continuousAt_const
 
-omit [CompleteSpace P] [FiniteDimensional ℝ E] in
-/-- The vertical part of the derivative of the spatial differential is the Hessian of the slice. -/
-private theorem fderiv_comp_inr_eq_hessian {G : P × E → E →L[ℝ] ℝ} {q : P}
-    (hGF : G = fun q ↦ fderiv ℝ (fun y ↦ F (q.1, y)) q.2) (hG : DifferentiableAt ℝ G (q, x)) :
-    (fderiv ℝ G (q, x)).comp (ContinuousLinearMap.inr ℝ P E) =
-      fderiv ℝ (fderiv ℝ (fun y ↦ F (q, y))) x := by
-  subst hGF
-  exact (fderiv_slice_right hG).symm
-
 omit [CompleteSpace P] in
 /-- Near the base point, the continued critical points are nondegenerate. -/
 private theorem eventually_isNondegenerateCriticalPoint_graph
@@ -94,15 +85,15 @@ private theorem eventually_isNondegenerateCriticalPoint_graph
     (hinv : ((fderiv ℝ G (p, ψ p)).comp (ContinuousLinearMap.inr ℝ P E)).IsInvertible)
     (hcrit : ∀ᶠ q in 𝓝 p, G (q, ψ q) = 0) :
     ∀ᶠ q in 𝓝 p, IsNondegenerateCriticalPoint (fun y ↦ F (q, y)) (ψ q) := by
-  have hG : ContDiffAt ℝ 2 G (p, ψ p) := by
-    rw [hGF]
-    exact contDiffAt_fderiv_slice hF (by norm_num)
+  subst hGF
+  have hG : ContDiffAt ℝ 2 (fun q : P × E ↦ fderiv ℝ (fun y ↦ F (q.1, y)) q.2) (p, ψ p) :=
+    contDiffAt_fderiv_slice hF (by norm_num)
   filter_upwards [hcrit, (continuousAt_fderiv_comp_inr hG hψ).eventually hinv.eventually_nhds,
     eventually_contDiffAt_graph hF hψ.continuousAt,
     eventually_contDiffAt_graph hG hψ.continuousAt] with q hqcrit hqinv hFq hGq
-  refine ⟨?_, by simpa only [hGF] using hqcrit, ?_⟩
+  refine ⟨?_, hqcrit, ?_⟩
   · exact hFq.comp (ψ q) (contDiffAt_const.prodMk contDiffAt_id) |>.of_le (by norm_num)
-  · rw [← fderiv_comp_inr_eq_hessian hGF (hGq.differentiableAt (by norm_num))]
+  · rw [← fderiv_slice_right (hGq.differentiableAt (by norm_num))] at hqinv
     exact hqinv
 
 omit [CompleteSpace P] in
@@ -116,6 +107,13 @@ private theorem eventually_morseIndex_graph {G : P × E → E →L[ℝ] ℝ} {ψ
   have hG : ContDiffAt ℝ 2 G (p, ψ p) := by
     rw [hGF]
     exact contDiffAt_fderiv_slice hF (by norm_num)
+  have hGhess (q : P) (hd : DifferentiableAt ℝ G (q, ψ q)) :
+      (fderiv ℝ G (q, ψ q)).comp (ContinuousLinearMap.inr ℝ P E) =
+        fderiv ℝ (fderiv ℝ (fun y ↦ F (q, y))) (ψ q) := by
+    rw [← fderiv_slice_right hd]
+    congr 1
+    funext y
+    rw [hGF]
   have hGAlong := eventually_contDiffAt_graph hG hψ.continuousAt
   have hsymm : ∀ᶠ q in 𝓝 p,
       ((fderiv ℝ G (q, ψ q)).comp (ContinuousLinearMap.inr ℝ P E)).toBilinForm.IsSymm := by
@@ -124,23 +122,18 @@ private theorem eventually_morseIndex_graph {G : P × E → E →L[ℝ] ℝ} {ψ
       hFq.comp (ψ q) (contDiffAt_const.prodMk contDiffAt_id) |>.of_le (by norm_num)
     refine ⟨fun u v ↦ ?_⟩
     simp only [ContinuousLinearMap.toBilinForm_apply,
-      fderiv_comp_inr_eq_hessian hGF (hGq.differentiableAt (by norm_num))]
+      hGhess q (hGq.differentiableAt (by norm_num))]
     exact hslice.isSymmSndFDerivAt (by norm_num) u v
   have hnd :
       ((fderiv ℝ G (p, ψ p)).comp (ContinuousLinearMap.inr ℝ P E)).toBilinForm.Nondegenerate := by
     apply LinearMap.BilinForm.Nondegenerate.ofSeparatingLeft
-    rw [fderiv_comp_inr_eq_hessian hGF (hG.differentiableAt (by norm_num)), hψp]
+    rw [hGhess p (hG.differentiableAt (by norm_num)), hψp]
     exact h.separatingLeft
   have hmorseIndex (q : P) (hGq : ContDiffAt ℝ 2 G (q, ψ q)) :
       morseIndex (fun y ↦ F (q, y)) (ψ q) =
         sigNeg ((fderiv ℝ G (q, ψ q)).comp
           (ContinuousLinearMap.inr ℝ P E)).toBilinForm.toQuadraticMap := by
-    rw [morseIndex_def]
-    congr 1
-    ext v
-    rw [LinearMap.BilinMap.toQuadraticMap_apply, hessianQuadraticForm_apply,
-      ContinuousLinearMap.toBilinForm_apply,
-      fderiv_comp_inr_eq_hessian hGF (hGq.differentiableAt (by norm_num))]
+    rw [morseIndex_def, hessianQuadraticForm_def, hGhess q (hGq.differentiableAt (by norm_num))]
   filter_upwards [ContinuousLinearMap.eventually_sigNeg_toBilinForm_eq_of_continuousAt hsymm
     (continuousAt_fderiv_comp_inr hG hψ) hnd, hGAlong] with q hq hGq
   rw [hmorseIndex q hGq, hq, ← hmorseIndex p hG, hψp]
@@ -173,7 +166,7 @@ theorem exists_contDiffAt_criticalPoint_continuation
     simpa only [G] using h.fderiv_eq_zero
   have hinv :
       ((fderiv ℝ G (p, x)).comp (ContinuousLinearMap.inr ℝ P E)).IsInvertible := by
-    rw [fderiv_comp_inr_eq_hessian rfl (hG.differentiableAt (by norm_num))]
+    rw [← fderiv_slice_right (hG.differentiableAt (by norm_num))]
     exact h.isInvertible
   let ψ : P → E := hG.implicitFunction (by norm_num) hinv
   have hψp : ψ p = x := hG.implicitFunction_apply_self (by norm_num) hinv
