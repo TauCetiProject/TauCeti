@@ -555,11 +555,11 @@ the elements `X` and `z X` of degree one generate the irrelevant ideal up to rad
 theorem irrelevant_le_radical_span_monomialDegreeOne_poles (hF : IsFunctionField k F) (z : Fˣ) :
     (HomogeneousIdeal.irrelevant (sectionRingGrade (poles hF z))).toIdeal ≤
       (Ideal.span {monomialDegreeOne (one_mem_riemannRochSpace_iff.mpr
-          (isEffective_poles hF z).zero_le),
+          (poles_nonneg hF z)),
         monomialDegreeOne (mem_riemannRochSpace_poles hF z)}).radical := by
   have hs : ∀ i, ![1, (z : F)] i ∈ riemannRochSpace (poles hF z) := by
     simp only [Fin.forall_fin_two, Matrix.cons_val_zero, Matrix.cons_val_one]
-    exact ⟨one_mem_riemannRochSpace_iff.mpr (isEffective_poles hF z).zero_le,
+    exact ⟨one_mem_riemannRochSpace_iff.mpr (poles_nonneg hF z),
       mem_riemannRochSpace_poles hF z⟩
   have hbase (P : Place k F) :
       ∃ i, P.valuation (![1, (z : F)] i) = WithZero.exp ((poles hF z).coeff P) := by
@@ -577,7 +577,7 @@ theorem irrelevant_le_radical_span_monomialDegreeOne_poles (hF : IsFunctionField
 /-- The degree-one section `X` in the section ring of the pole divisor of `z`. -/
 noncomputable abbrev polesSectionOne (hF : IsFunctionField k F) (z : Fˣ) :
     sectionRing (poles hF z) :=
-  monomialDegreeOne (one_mem_riemannRochSpace_iff.mpr (isEffective_poles hF z).zero_le)
+  monomialDegreeOne (one_mem_riemannRochSpace_iff.mpr (poles_nonneg hF z))
 
 /-- The degree-one section `z X` in the section ring of the pole divisor of `z`. -/
 noncomputable abbrev polesSectionGenerator (hF : IsFunctionField k F) (z : Fˣ) :
@@ -590,7 +590,7 @@ noncomputable def sectionRingAwayOneEquiv (hF : IsFunctionField k F) (z : Fˣ) :
     Away (sectionRingGrade (poles hF z)) (polesSectionOne hF z) ≃ₐ[k]
       holomorphyRing {P : Place k F | (z : F) ∈ P.integers} := by
   let hOne : (1 : F) ∈ riemannRochSpace (poles hF z) :=
-    one_mem_riemannRochSpace_iff.mpr (isEffective_poles hF z).zero_le
+    one_mem_riemannRochSpace_iff.mpr (poles_nonneg hF z)
   let e := sectionRingAwayEquiv hF (monomialDegreeOne_mem_sectionRingGrade hOne)
     (by
       intro h
@@ -611,7 +611,7 @@ theorem sectionRingAwayOneEquiv_mk (hF : IsFunctionField k F) (z : Fˣ) (r : ℕ
     (g : sectionRing (poles hF z)) (hg : g ∈ sectionRingGrade (poles hF z) r) :
     (sectionRingAwayOneEquiv hF z
       (Away.mk _ (monomialDegreeOne_mem_sectionRingGrade
-        (one_mem_riemannRochSpace_iff.mpr (isEffective_poles hF z).zero_le)) r g
+        (one_mem_riemannRochSpace_iff.mpr (poles_nonneg hF z))) r g
         (by simpa using hg)) : F) =
       (g : F[X]).coeff r := by
   simp [sectionRingAwayOneEquiv, sectionRingAwayEquiv_mk]

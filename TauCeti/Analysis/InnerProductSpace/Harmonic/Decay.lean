@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Basic
 import Mathlib.Analysis.Convex.Integral
+import Mathlib.Analysis.Calculus.FDeriv.Basic
 import Mathlib.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Average
@@ -295,6 +296,36 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.norm_sub_le_of_norm_le {y z : E} 
   rw [le_div_iff₀ hs] at this
   push_cast
   linarith
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- The actual Fréchet derivative of a harmonic function bounded by `M` on `ball x (2 * ρ)`
+has norm at most `2ⁿ n M / ρ`, where `n` is the domain dimension. -/
+theorem _root_.InnerProductSpace.HarmonicOnNhd.norm_fderiv_le_of_norm_le {x : E} {ρ M : ℝ}
+    (hu : HarmonicOnNhd u (ball x (2 * ρ)))
+    (hM : ∀ y ∈ ball x (2 * ρ), ‖u y‖ ≤ M) (hρ : 0 < ρ) :
+    ‖fderiv ℝ u x‖ ≤ 2 ^ finrank ℝ E * finrank ℝ E / ρ * M := by
+  have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM x (mem_ball_self (by positivity)))
+  let A : ℝ := 2 ^ finrank ℝ E * finrank ℝ E / ρ * M
+  have hA : 0 ≤ A := by positivity
+  have hball {y : E} (hy : y ∈ ball x (ρ / 2)) : closedBall y ρ ⊆ ball x (2 * ρ) := by
+    intro w hw
+    rw [mem_ball] at hy ⊢
+    linarith [mem_closedBall.mp hw, dist_triangle w y x]
+  have hlip : LipschitzOnWith A.toNNReal u (ball x (ρ / 2)) := by
+    rw [lipschitzOnWith_iff_dist_le_mul]
+    intro y hy z hz
+    have hyz : dist y z ≤ ρ := by
+      linarith [mem_ball.mp hy, mem_ball.mp hz, dist_triangle_right y z x]
+    have hN : ∀ w ∈ ball y ρ ∪ ball z ρ, ‖u w‖ ≤ M := by
+      intro w hw
+      exact hM w (hw.elim (fun h ↦ hball hy (ball_subset_closedBall h))
+        (fun h ↦ hball hz (ball_subset_closedBall h)))
+    have h := (hu.mono (hball hy)).norm_sub_le_of_norm_le
+      (hu.mono (hball hz)) hN hρ hyz
+    rw [dist_eq_norm, Real.coe_toNNReal _ hA]
+    exact h.trans_eq (by dsimp only [A]; ring)
+  have h := norm_fderiv_le_of_lipschitzOn ℝ (ball_mem_nhds x (half_pos hρ)) hlip
+  simpa only [Real.coe_toNNReal _ hA] using h
 
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- On `ball x₀ ρ` with `8 ρ ≤ R`, a function harmonic on `ball x₀ R` with `‖u - c‖ ≤ M` on
