@@ -61,9 +61,9 @@ incompatible, so no relation exists.
 As in `TauCeti.FieldTheory.FunctionField.Place.Degree`, the relation is taken over the
 polynomial subalgebra `k[x] = Algebra.adjoin k {x}` and upgraded by
 `LinearIndependent.iff_fractionRing`; the common power of `x` is cleared by
-`TauCeti.Polynomial.exists_common_X_pow_factor`. Orders are compared in the multiplicative form
-`P.valuation`, which is free of the junk value `ord_P 0 = 0`, so no term of a sum has to be
-proved nonzero.
+`TauCeti.Polynomial.exists_polynomial_relation_of_sum_smul_eq_zero`. Orders are compared in the
+multiplicative form `P.valuation`, which is free of the junk value `ord_P 0 = 0`, so no term of a
+sum has to be proved nonzero.
 
 ## Provenance
 
@@ -99,11 +99,10 @@ variable {P : Place k F}
 
 /-! ### The order of a two-parameter polynomial combination at a single place
 
-The two main local computations of Stichtenoth's Proposition 1.3.3 are
-`valuation_sum_eq_exp_neg` and `valuation_sum_le`: the value of `P` on
-`∑ a, ∑ j, p_{a,j}(x) · u_j · t ^ a` when `P` is the place the family belongs to, and when it is
-one of the others. The remaining lemmas are auxiliary bounds on a single block
-`∑ j, c_j(x) · u_j`. -/
+The local computation of Stichtenoth's Proposition 1.3.3 is `valuation_sum_eq_exp_neg`: the
+value of `P` on `∑ a, ∑ j, p_{a,j}(x) · u_j · t ^ a` when `P` is the place the family belongs to.
+The lemma `valuation_sum_le` gives a general bound on this combination. The auxiliary lemmas
+compute the value of `t ^ a` and bound the value of a single block `∑ j, c_j(x) · u_j`. -/
 
 /-- A crude bound: if `x` and `t` are integral at `P` and every `u j` has value at most `γ`,
 then so does any polynomial combination `∑ a, ∑ j, p_{a,j}(x) · u_j · t ^ a`. -/
@@ -171,8 +170,7 @@ private theorem valuation_sum_aeval_mul_eq_one {x : F} (hx : 0 < P.ord x) {N : �
   have hYcoe : (Y : F) = ∑ j : Fin N, aeval x (c j) * u j := by
     rw [hY]
     push_cast
-    -- The coercion `𝒪_P → F` of `aeval ⟨x, _⟩ p` is `aeval x p` by unfolding the subring structure.
-    rfl
+    simp
   have hres0 : IsLocalRing.residue P.integers (⟨x, hxmem⟩ : P.integers) = 0 :=
     (P.residue_eq_zero_iff_ord_pos hx0).mpr hx
   have hresY : IsLocalRing.residue P.integers Y
