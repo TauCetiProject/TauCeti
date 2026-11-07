@@ -51,8 +51,9 @@ to the sphere in the class `A`, the bound reads `∫ R_K(u) ≤ ω(A)`.
 
 For a symplectic vector space target the integrated curvature of `K_R`, `R ≥ 0`, is at most
 `2 (B₀ + B₁ + B_∞)` for bounds `|H_q| ≤ B_q` of the end Hamiltonians
-(`SymplecticForm.abs_setIntegral_hamiltonianCurvature_cappedComparisonPerturbation_le`). So the
-energy differs from the symplectic area by at most `2 (B₀ + B₁ + B_∞)`, uniformly over the family
+(`SmoothTwoForm.abs_setIntegral_hamiltonianCurvature_cappedComparisonPerturbation_le` for the
+constant form `SymplecticForm.constSmooth`). So the energy differs from the symplectic area by at
+most `2 (B₀ + B₁ + B_∞)`, uniformly over the family
 (`SymplecticForm.abs_integral_floerEnergyDensity_cappedComparisonPerturbation_sub_le`). This is
 the energy bound, uniform in `R` for a fixed area, under which compactness of the comparison
 family is to be proved.
@@ -335,9 +336,16 @@ theorem abs_integral_floerEnergyDensity_cappedComparisonPerturbation_sub_le
         u z) -
       ∫ z, ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag)| ≤
         2 * ∑ q, B q := by
+  have hHs' (q : Puncture) : ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ, ℝ) 1 (uncurry (H q)) := by
+    have h := (hHs q).contMDiff
+    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod] at h
+    exact h
+  have hbound :=
+    ω.constSmooth.abs_setIntegral_hamiltonianCurvature_cappedComparisonPerturbation_le hH hHs' hB
+      hR₀ u univ
+  simp only [Measure.restrict_univ, hamiltonianCurvature_constSmooth] at hbound
   rw [ω.integral_floerEnergyDensity_cappedComparisonPerturbation hH hHs R hu hE,
     sub_sub_cancel_left, abs_neg]
-  simpa only [Measure.restrict_univ] using
-    ω.abs_setIntegral_hamiltonianCurvature_cappedComparisonPerturbation_le hH hHs hB hR₀ u univ
+  exact hbound
 
 end TauCeti.SymplecticForm
