@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Weight.Basis
 public import TauCeti.LinearAlgebra.Basis.RangeSpan
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.KostantForm
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.WeightLattice
+import TauCeti.Algebra.Lie.Sl2.Basic
 
 /-!
 # Chevalley data and their group schemes
@@ -232,6 +233,27 @@ theorem isNilpotent_representation_rootGenerator (i : Fin t.rank ⊕ Fin t.rank)
   UniversalEnvelopingAlgebra.isNilpotent_of_isCartanWeightVector (t.lieBasis ht).h
     D.representation D.isCartanWeightVector_basis D.span_range_basis_eq_top
     (t.lie_lieBasis_h_rootGenerator ht i) (t.rootGeneratorWeight_ne_zero ht i)
+
+section
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+attribute [local instance high] Algebra.toModule
+
+/-- The images of the Cartan element and the positive and negative simple root generators
+at a node form an `sl₂` triple in the representation of a Chevalley datum. -/
+theorem isSl2Triple_representation_rootGenerator (i : Fin t.rank) :
+    IsSl2Triple
+      (D.representation (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).h i)))
+      (D.representation
+        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator (.inl i))))
+      (D.representation
+        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator (.inr i)))) := by
+  exact ((t.lieBasis ht).isSl2Triple_rootGenerator i).map
+    (D.representation.toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ))
+    (fun hzero => ((t.lieBasis ht).isSl2Triple_rootGenerator i).h_ne_zero
+      (D.injective_representation_ι (by simpa using hzero)))
+
+end
 
 /-! ## The group scheme -/
 
