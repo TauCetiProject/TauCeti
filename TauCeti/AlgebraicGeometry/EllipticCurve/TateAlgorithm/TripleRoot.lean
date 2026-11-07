@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Additive
-import TauCeti.Algebra.Polynomial.Cubic.TripleRoot
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
+import TauCeti.RingTheory.DiscreteValuationRing.Basic
 import TauCeti.RingTheory.LocalRing.QuadraticDoubleRoot
 
 /-!
@@ -66,59 +66,9 @@ public section
 
 namespace WeierstrassCurve
 
-open IsLocalRing Polynomial TauCeti.Polynomial
+open IsLocalRing
 
 variable {R : Type*} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R] {ϖ : R}
-
-/-- The residue cubic step of Step 8. Let `a₂ = ϖ A₂`, `a₄ = ϖ² A₄` and `a₆ = ϖ³ A₆` satisfy the
-triple-root conditions `ϖ³ ∣ a₂² − 3 a₄`, `ϖ⁵ ∣ a₄² − 3 a₂ a₆` and `ϖ⁴ ∣ a₂ a₄ − 9 a₆`. Over a
-perfect residue field the cubic `T³ + A₂ T² + A₄ T + A₆` is then a cube modulo `ϖ`, so some
-`ρ ∈ R` lifts its triple root `-ρ`: `ϖ` divides the coefficients `A₂ + 3 ρ`,
-`A₄ + 2 ρ A₂ + 3 ρ²` and `A₆ + ρ A₄ + ρ² A₂ + ρ³` of the shifted cubic `P(T + ρ)`. -/
-private theorem exists_dvd_of_residue_cubic_eq_pow_three [PerfectField (ResidueField R)]
-    (hϖ : Irreducible ϖ) {a₂ a₄ a₆ A₂ A₄ A₆ : R} (hA₂ : a₂ = ϖ * A₂) (hA₄ : a₄ = ϖ ^ 2 * A₄)
-    (hA₆ : a₆ = ϖ ^ 3 * A₆) (hb : ϖ ^ 3 ∣ a₂ ^ 2 - 3 * a₄) (hc : ϖ ^ 5 ∣ a₄ ^ 2 - 3 * a₂ * a₆)
-    (hd : ϖ ^ 4 ∣ a₂ * a₄ - 9 * a₆) :
-    ∃ ρ : R, ϖ ∣ A₂ + 3 * ρ ∧ ϖ ∣ A₄ + 2 * ρ * A₂ + 3 * ρ ^ 2 ∧
-      ϖ ∣ A₆ + ρ * A₄ + ρ ^ 2 * A₂ + ρ ^ 3 := by
-  have hϖ₀ : ϖ ≠ 0 := hϖ.prime.ne_zero
-  have key (x : R) : residue R x = 0 ↔ ϖ ∣ x := by
-    rw [residue_eq_zero_iff, hϖ.maximalIdeal_eq, Ideal.mem_span_singleton]
-  -- The three conditions say that the residue cubic `T³ + A₂ T² + A₄ T + A₆` is a cube.
-  have hcancel {n : ℕ} {x : R} (h : ϖ ^ n * ϖ ∣ ϖ ^ n * x) : residue R x = 0 :=
-    (key x).2 ((mul_dvd_mul_iff_left (pow_ne_zero n hϖ₀)).1 h)
-  have hb' : residue R A₂ ^ 2 = 3 * residue R A₄ := by
-    rw [← sub_eq_zero, ← map_pow, ← map_ofNat (residue R) 3, ← map_mul, ← map_sub]
-    refine hcancel (n := 2) ?_
-    rw [← pow_succ]
-    convert hb using 1
-    rw [hA₂, hA₄]
-    ring
-  have hc' : residue R A₄ ^ 2 = 3 * residue R A₂ * residue R A₆ := by
-    rw [← sub_eq_zero, ← map_pow, ← map_ofNat (residue R) 3, ← map_mul, ← map_mul, ← map_sub]
-    refine hcancel (n := 4) ?_
-    rw [← pow_succ]
-    convert hc using 1
-    rw [hA₂, hA₄, hA₆]
-    ring
-  have hd' : residue R A₂ * residue R A₄ = 9 * residue R A₆ := by
-    rw [← sub_eq_zero, ← map_mul, ← map_ofNat (residue R) 9, ← map_mul, ← map_sub]
-    refine hcancel (n := 3) ?_
-    rw [← pow_succ]
-    convert hd using 1
-    rw [hA₂, hA₄, hA₆]
-    ring
-  obtain ⟨ρ', hρ'⟩ := exists_cubic_eq_X_sub_C_pow_three_iff.2 ⟨hb', hc', hd'⟩
-  obtain ⟨ρ, rfl⟩ := residue_surjective ρ'
-  obtain ⟨hρ₂, hρ₄, hρ₆⟩ := cubic_eq_X_sub_C_pow_three_iff.1 hρ'
-  -- Lift the triple root to `ρ ∈ R`; then `x ↦ x + ϖ ρ` moves it to `0`.
-  have e₂ : ϖ ∣ A₂ + 3 * ρ := (key _).1 (by
-    simp only [map_add, map_mul, map_ofNat, hρ₂]; ring)
-  have e₄ : ϖ ∣ A₄ + 2 * ρ * A₂ + 3 * ρ ^ 2 := (key _).1 (by
-    simp only [map_add, map_mul, map_pow, map_ofNat, hρ₂, hρ₄]; ring)
-  have e₆ : ϖ ∣ A₆ + ρ * A₄ + ρ ^ 2 * A₂ + ρ ^ 3 := (key _).1 (by
-    simp only [map_add, map_mul, map_pow, hρ₂, hρ₄, hρ₆]; ring)
-  exact ⟨ρ, e₂, e₄, e₆⟩
 
 /-- **Tate's algorithm, Step 8.** Over a discrete valuation ring with uniformiser `ϖ` and perfect
 residue field, let `W` be an equation in the normal form of Step 6, `ϖ ∣ a₁`, `ϖ² ∣ a₃, a₄`,
@@ -144,7 +94,8 @@ theorem exists_variableChange_pow_dvd_a₂_a₄_a₆ [PerfectField (ResidueField
     rw [this]
     exact dvd_add ((dvd_pow_self ϖ three_ne_zero).trans hb)
       (by rw [hA₄]; exact ⟨3 * ϖ * A₄, by ring⟩)
-  obtain ⟨ρ, e₂, e₄, e₆⟩ := exists_dvd_of_residue_cubic_eq_pow_three hϖ hA₂ hA₄ hA₆ hb hc hd
+  obtain ⟨ρ, e₂, e₄, e₆⟩ :=
+    TauCeti.IsDiscreteValuationRing.exists_dvd_of_residue_cubic_eq_pow_three hϖ hA₂ hA₄ hA₆ hb hc hd
   refine ⟨ϖ * ρ, ?_, ?_, ?_, ?_, ?_⟩
   · simpa [variableChange_a₁] using h₁
   · have : (VariableChange.mk 1 (ϖ * ρ) 0 0 • W).a₂ = ϖ * (A₂ + 3 * ρ) := by
