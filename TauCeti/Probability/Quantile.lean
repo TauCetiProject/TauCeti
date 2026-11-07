@@ -461,8 +461,11 @@ and the upper quantile are the left and right ends of the set of points whose cu
 is `t` when the cumulative distribution function has a plateau at that level, and they coincide
 otherwise. Quantiles of a law pushed forward along a decreasing map are expressed through the
 upper quantile.
-At levels `t < 0` and `1 ≤ t` the defining infimum ranges over all of `ℝ` or over the empty set,
-and the value is the junk value `0` (`upperQuantile_of_neg`, `upperQuantile_of_one_le`). -/
+At a level `t < 0` the defining infimum ranges over all of `ℝ`, and at `1 ≤ t` over the empty set,
+so the value is the junk value `0` (`upperQuantile_of_neg`, `upperQuantile_of_one_le`). At `t = 0`
+the set is all of `ℝ` exactly when the cumulative distribution function is everywhere positive, and
+the value is then the junk value `0` too; otherwise it is the infimum of the points of positive
+cumulative mass. -/
 def upperQuantile (μ : Measure ℝ) (t : ℝ) : ℝ := sInf {x : ℝ | t < cdf μ x}
 
 /-- The upper quantile function is the infimum of the points at which the cumulative distribution
@@ -1159,11 +1162,13 @@ def realMod0MeasureIso (ν : Measure ℝ) [IsProbabilityMeasure ν]
   left_inv_ae := quantile_cdf_ae ν
   right_inv_ae := cdf_quantile_ae ν
 
+/-- The forward map of `realMod0MeasureIso` is the cumulative distribution function. -/
 @[simp]
 theorem realMod0MeasureIso_toFun (ν : Measure ℝ) [IsProbabilityMeasure ν]
     [NullSingletonClass ν] : (realMod0MeasureIso ν).toFun = cdf ν :=
   (rfl)
 
+/-- The inverse map of `realMod0MeasureIso` is the quantile function. -/
 @[simp]
 theorem realMod0MeasureIso_invFun (ν : Measure ℝ) [IsProbabilityMeasure ν]
     [NullSingletonClass ν] : (realMod0MeasureIso ν).invFun = ν.quantile :=
