@@ -56,8 +56,8 @@ is the limit at infinity of antiderivatives built from such ratios, for example 
 evaluations of elliptic integrals.
 
 A finite limit of `x ^ α * f x` at infinity is preserved by a fixed translation of `f`.
-Positive dilations multiply the limit by the inverse power of the dilation. For a positive
-exponent, a finite power-law limit also implies that the original function tends to zero.
+For a positive exponent, a finite power-law limit also implies that the original function
+tends to zero.
 These facts transfer power-law tail constants through deterministic shifts and rescalings.
 
 ## Main results
@@ -215,18 +215,6 @@ theorem tendsto_add_div_add_atTop {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜]
   ring
 
 end TauCeti
-
-/-- A positive dilation of a real function multiplies its finite power-law constant at infinity
-by the inverse power of the dilation, for any real exponent. -/
-theorem Filter.Tendsto.rpow_mul_comp_const_mul {f : ℝ → ℝ} {α C a : ℝ}
-    (h : Tendsto (fun x : ℝ ↦ x ^ α * f x) atTop (𝓝 C)) (ha : 0 < a) :
-    Tendsto (fun x : ℝ ↦ x ^ α * f (a * x)) atTop (𝓝 (a ^ (-α) * C)) := by
-  have hlim := (h.comp (tendsto_id.const_mul_atTop ha)).const_mul (a ^ (-α))
-  apply hlim.congr'
-  filter_upwards [eventually_gt_atTop 0] with x hx
-  simp only [Function.comp_apply, id_eq]
-  rw [Real.mul_rpow ha.le hx.le, Real.rpow_neg ha.le]
-  field_simp [(Real.rpow_pos_of_pos ha α).ne']
 
 /-- A real function with a finite power-law limit of positive exponent tends to zero. -/
 theorem Filter.Tendsto.of_rpow_mul {f : ℝ → ℝ} {α C : ℝ}

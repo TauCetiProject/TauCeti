@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Group.Convolution.Power
 public import TauCeti.Analysis.Asymptotics.Lemmas
+public import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 public import TauCeti.MeasureTheory.Measure.Interval
 import TauCeti.MeasureTheory.Integral.Bind
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
@@ -121,7 +122,9 @@ theorem tendsto_rpow_mul_real_conv_Ioi {α C D : ℝ} (hα : 0 < α)
     convert ((hμ.rpow_mul_comp_const_mul (by linarith : 0 < 1 + δ)).mul
       (ν.tendsto_measureReal_Icc_neg_mul_atTop hδ)).add
       ((μ.tendsto_measureReal_Icc_neg_mul_atTop hδ).mul
-        (hν.rpow_mul_comp_const_mul (by linarith : 0 < 1 + δ))) using 2; ring
+        (hν.rpow_mul_comp_const_mul (by linarith : 0 < 1 + δ))) using 2
+    rw [Real.rpow_neg (by linarith : 0 ≤ 1 + δ)]
+    ring
   -- The simultaneous moderate-jump term vanishes after multiplication by the tail power.
   have upper {δ : ℝ} (hδ : 0 < δ) (hδ' : δ < 1 / 2) :
       Tendsto (fun x : ℝ ↦
@@ -132,7 +135,9 @@ theorem tendsto_rpow_mul_real_conv_Ioi {α C D : ℝ} (hα : 0 < α)
     have htail := (hν.rpow_mul_comp_const_mul hδ).of_rpow_mul hα
     convert (((hμ.rpow_mul_comp_const_mul (by linarith : 0 < 1 - δ)).mul_const (ν.real univ)).add
       ((hν.rpow_mul_comp_const_mul (by linarith : 0 < 1 - δ)).const_mul (μ.real univ))).add
-      ((hμ.rpow_mul_comp_const_mul hδ).mul htail) using 2; ring
+      ((hμ.rpow_mul_comp_const_mul hδ).mul htail) using 2
+    rw [Real.rpow_neg (by linarith : 0 ≤ 1 - δ)]
+    ring
   -- Finally shrink the relative window to squeeze the upper and lower constants together.
   have near (sgn : ℝ) : Tendsto
       (fun δ : ℝ ↦ (1 + sgn * δ) ^ (-α) * (C * ν.real univ + μ.real univ * D))
