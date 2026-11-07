@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Analytic.ConvergenceRadius
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
 
 /-!
@@ -84,9 +85,7 @@ public lemma cuspFunction_isBigO_pow_iff_qExpansion_coeff_eq_zero
         =O[𝓝 (0 : ℂ)] fun q : ℂ ↦ ‖q‖ ^ (n + 1) := by
     refine (hON.sub (by simpa only [zero_add] using hp.isBigO_sub_partialSum_pow (n + 1)))
       |>.congr_left fun q ↦ ?_
-    rw [sub_sub_cancel, FormalMultilinearSeries.partialSum, Finset.sum_range_succ,
-      ← FormalMultilinearSeries.partialSum, hps fun m hm ↦ ih m hm (hm.trans hn), Pi.zero_apply,
-      zero_add]
+    simp [FormalMultilinearSeries.partialSum_succ, hps fun m hm ↦ ih m hm (hm.trans hn)]
   simpa [FormalMultilinearSeries.ofScalars_apply_eq] using
     hterm.continuousMultilinearMap_apply_eq_zero 1
 
