@@ -135,6 +135,46 @@ theorem exact_torsionByMap {f : M →ₗ[R] N} {g : N →ₗ[R] P} (hfg : Exact 
 
 end Map
 
+section Lift
+
+variable (n : ℕ) {G H : Type*} [AddCommGroup G] [AddCommGroup H]
+
+/-- A surjective additive homomorphism whose kernel is uniquely divisible by `n` lifts every
+`n`-torsion point uniquely to an `n`-torsion point. -/
+theorem existsUnique_torsion_lift_of_bijective_ker_nsmul (f : G →+ H)
+    (hf : Surjective f) (hn : Bijective fun x : f.ker ↦ n • x)
+    (y : H) (hy : n • y = 0) : ∃! x : G, n • x = 0 ∧ f x = y := by
+  obtain ⟨x, hx⟩ := hf y
+  have hnx : n • x ∈ f.ker := by simp [AddMonoidHom.mem_ker, hx, hy]
+  obtain ⟨z, hz⟩ := hn.2 ⟨n • x, hnx⟩
+  have hnz : n • (z : G) = n • x := congrArg Subtype.val hz
+  have hfz : f z = 0 := z.2
+  refine ⟨x - z, ⟨by rw [nsmul_sub, hnz, sub_self], by rw [map_sub, hfz, sub_zero, hx]⟩,
+    fun w hw ↦ ?_⟩
+  have hker : w - (x - z) ∈ f.ker := by
+    simp [AddMonoidHom.mem_ker, hw.2, hx, hfz]
+  have hzero : n • (⟨w - (x - z), hker⟩ : f.ker) = 0 := by
+    apply Subtype.ext
+    simp [nsmul_sub, hw.1, hnz]
+  exact sub_eq_zero.mp (congrArg Subtype.val (hn.1 (hzero.trans (nsmul_zero n).symm)))
+
+/-- A surjective additive homomorphism induces a bijection on `n`-torsion when multiplication
+by `n` is bijective on its kernel. -/
+theorem bijective_torsionByMap_of_bijective_ker_nsmul (f : G →+ H)
+    (hf : Surjective f) (hn : Bijective fun x : f.ker ↦ n • x) :
+    Bijective (torsionByMap (n : ℤ) f.toIntLinearMap) := by
+  rw [Function.bijective_iff_existsUnique]
+  intro y
+  obtain ⟨x, hx, huniq⟩ := existsUnique_torsion_lift_of_bijective_ker_nsmul n f hf hn y
+    (by simpa only [natCast_zsmul] using (mem_torsionBy_iff _ _).mp y.2)
+  refine ⟨⟨x, (mem_torsionBy_iff _ _).mpr (by simpa only [natCast_zsmul] using hx.1)⟩,
+    Subtype.ext hx.2, fun z hz ↦ ?_⟩
+  exact Subtype.ext (huniq z ⟨by
+    simpa only [natCast_zsmul] using (mem_torsionBy_iff _ _).mp z.2,
+    congrArg Subtype.val hz⟩)
+
+end Lift
+
 section Snake
 
 variable {R : Type*} [CommRing R] (r : R) {M₁ M₂ M₃ : Type*} [AddCommGroup M₁] [Module R M₁]

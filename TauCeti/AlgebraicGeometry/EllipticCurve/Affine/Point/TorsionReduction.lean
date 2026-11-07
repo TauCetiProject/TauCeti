@@ -307,6 +307,39 @@ theorem mem_kerReduction_iff_nonsingularReductionHom_eq_zero
       (C.baseChange F_u).toAffine.nonsingularReductionHom Valued.v P = 0 := by
   rw [mem_kerReduction_iff, nonsingularReductionHom_eq_zero_iff, reduction_eq_zero_iff]
 
+private theorem nsmul_nonsingularReductionHom_ker_bijective {n : ℕ}
+    (hn : (n : A) ∉ u.asIdeal) :
+    Function.Bijective
+      (fun P : ((C.baseChange F_u).toAffine.nonsingularReductionHom Valued.v).ker ↦ n • P) := by
+  -- The formal-kernel API fixes classical equality decisions on the completed field.
+  cases Subsingleton.elim (inferInstance : DecidableEq F_u)
+    (fun a b ↦ Classical.propDecidable (a = b))
+  classical
+  let ρ := (C.baseChange F_u).toAffine.nonsingularReductionHom Valued.v
+  have hns (P : C.kerReduction u) :
+      (P : (C.baseChange F_u).toAffine.Point) ∈
+        (C.baseChange F_u).toAffine.nonsingularReduction Valued.v := by
+    rw [mem_nonsingularReduction_iff, (mem_kerReduction_iff u C).1 P.2,
+      Projective.nonsingularLift_iff]
+    exact Projective.nonsingular_zero
+  let e : ρ.ker ≃+ C.kerReduction u :=
+    { toFun := fun P ↦ ⟨P.val.val,
+        (mem_kerReduction_iff_nonsingularReductionHom_eq_zero u C P.val).2 P.2⟩
+      invFun := fun P ↦ ⟨⟨P, hns P⟩,
+        (mem_kerReduction_iff_nonsingularReductionHom_eq_zero u C ⟨P, hns P⟩).1 P.2⟩
+      left_inv := fun _ ↦ rfl
+      right_inv := fun _ ↦ rfl
+      map_add' := fun _ _ ↦ rfl }
+  have hd := C.nsmul_kerReduction_bijective u hn
+  constructor
+  · intro P Q h
+    apply e.injective
+    apply hd.1
+    simpa only [map_nsmul] using congrArg e h
+  · intro P
+    obtain ⟨Q, hQ⟩ := hd.2 (e P)
+    exact ⟨e.symm Q, e.injective (by simpa only [map_nsmul, e.apply_symm_apply] using hQ)⟩
+
 /-- **Prime-to-residue-characteristic torsion with nonsingular reduction lifts uniquely.** Over a
 completed discretely valued field, with good or bad reduction, every nonsingular point of the
 reduced curve killed by an integer `n` prime to the residue characteristic is the reduction of
@@ -316,34 +349,10 @@ theorem existsUnique_nonsingularReduction_torsion_lift {n : ℕ} (hn : (n : A) �
     (hQ : n • Q = 0) :
     ∃! P : (C.baseChange F_u).toAffine.nonsingularReduction Valued.v,
       n • P = 0 ∧ (C.baseChange F_u).toAffine.nonsingularReductionHom Valued.v P = Q := by
-  -- The existing formal-kernel presentation fixes classical equality decisions. Equality
-  -- decisions are unique, so transport that presentation to the caller's point-group data.
-  cases Subsingleton.elim (inferInstance : DecidableEq F_u)
-    (fun a b ↦ Classical.propDecidable (a = b))
-  classical
-  set ρ := (C.baseChange F_u).toAffine.nonsingularReductionHom Valued.v
-  -- correct an arbitrary lift `P` by the `n`-th part `R` of `n • P` in the kernel of reduction
-  obtain ⟨P, hP⟩ := nonsingularReductionHom_surjective Valued.v Q
-  have hnP := (mem_kerReduction_iff_nonsingularReductionHom_eq_zero u C (n • P)).2 <| by
-    rw [map_nsmul, hP, hQ]
-  obtain ⟨R, hR⟩ := (C.nsmul_kerReduction_bijective u hn).2 ⟨_, hnP⟩
-  have hR₀ : (R : (C.baseChange F_u).toAffine.Point) ∈
-      (C.baseChange F_u).toAffine.nonsingularReduction Valued.v := by
-    rw [mem_nonsingularReduction_iff, (mem_kerReduction_iff u C).1 R.2,
-      Projective.nonsingularLift_iff]
-    exact Projective.nonsingular_zero
-  set R₀ : (C.baseChange F_u).toAffine.nonsingularReduction Valued.v := ⟨R, hR₀⟩
-  have hnR : n • R₀ = n • P := Subtype.ext <| by
-    simpa only [AddSubgroup.coe_nsmul] using congrArg Subtype.val hR
-  have hρR : ρ R₀ = 0 := (mem_kerReduction_iff_nonsingularReductionHom_eq_zero u C R₀).1 R.2
-  refine ⟨P - R₀, ⟨by rw [nsmul_sub, hnR, sub_self], by rw [map_sub, hρR, sub_zero, hP]⟩,
-    fun S hS ↦ sub_eq_zero.mp (Subtype.ext ?_)⟩
-  -- two lifts differ by an `n`-torsion point of the kernel of reduction, which is zero
-  refine C.eq_zero_of_mem_kerReduction_of_nsmul_eq_zero u hn
-    ((mem_kerReduction_iff_nonsingularReductionHom_eq_zero u C _).2 ?_) ?_
-  · rw [map_sub, map_sub, hS.2, hP, hρR, sub_zero, sub_self]
-  · rw [← AddSubgroup.coe_nsmul, nsmul_sub, nsmul_sub, hS.1, hnR, sub_self, sub_self,
-      ZeroMemClass.coe_zero]
+  exact TauCeti.existsUnique_torsion_lift_of_bijective_ker_nsmul n
+    ((C.baseChange F_u).toAffine.nonsingularReductionHom Valued.v)
+    (nonsingularReductionHom_surjective Valued.v)
+    (nsmul_nonsingularReductionHom_ker_bijective u C hn) Q hQ
 
 /-- **Specialization identifies the prime-to-residue-characteristic torsion with nonsingular
 reduction.** Over the completed field, with good or bad reduction, reduction is an isomorphism from
@@ -355,21 +364,10 @@ noncomputable def _root_.WeierstrassCurve.torsionNonsingularReductionAddEquiv
       Submodule.torsionBy ℤ
         ((integralModel R_u (C.baseChange F_u)).map (residue R_u)).toAffine.Point (n : ℤ) := by
   let ρ := (C.baseChange F_u).toAffine.nonsingularReductionHom Valued.v
-  refine AddEquiv.ofBijective (TauCeti.torsionByMap (n : ℤ) ρ.toIntLinearMap).toAddMonoidHom
-    ⟨fun P Q h ↦ ?_, fun Q ↦ ?_⟩
-  · have hPn : n • (P : (C.baseChange F_u).toAffine.nonsingularReduction Valued.v) = 0 := by
-      simpa only [natCast_zsmul] using (Submodule.mem_torsionBy_iff _ _).mp P.property
-    have hQn : n • (Q : (C.baseChange F_u).toAffine.nonsingularReduction Valued.v) = 0 := by
-      simpa only [natCast_zsmul] using (Submodule.mem_torsionBy_iff _ _).mp Q.property
-    obtain ⟨T, -, hT⟩ := existsUnique_nonsingularReduction_torsion_lift u C hn (ρ P) (by
-      rw [← map_nsmul, hPn, _root_.map_zero])
-    have hPQ : ρ P = ρ Q := by
-      simpa [TauCeti.coe_torsionByMap_apply] using congrArg Subtype.val h
-    exact Subtype.ext ((hT P ⟨hPn, rfl⟩).trans (hT Q ⟨hQn, hPQ.symm⟩).symm)
-  · obtain ⟨P, hP, -⟩ := existsUnique_nonsingularReduction_torsion_lift u C hn Q
-      (by simpa only [natCast_zsmul] using (Submodule.mem_torsionBy_iff _ _).mp Q.property)
-    refine ⟨⟨P, (Submodule.mem_torsionBy_iff _ _).mpr (by simpa using hP.1)⟩, Subtype.ext ?_⟩
-    simpa [TauCeti.coe_torsionByMap_apply] using hP.2
+  exact AddEquiv.ofBijective (TauCeti.torsionByMap (n : ℤ) ρ.toIntLinearMap).toAddMonoidHom
+    (TauCeti.bijective_torsionByMap_of_bijective_ker_nsmul n ρ
+      (nonsingularReductionHom_surjective Valued.v)
+      (nsmul_nonsingularReductionHom_ker_bijective u C hn))
 
 /-- The torsion specialization equivalence with nonsingular reduction sends a point to its
 reduction. -/

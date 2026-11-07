@@ -37,7 +37,10 @@ namespace WeierstrassCurve.Affine
 
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [DecidableEq K]
-  (W : Affine K) [IsIntegral 𝒪[K] W] [W.IsElliptic]
+
+section Division
+
+variable (W : Affine K) [IsIntegral 𝒪[K] W] [W.IsElliptic]
 
 /-- Division by a residue-field unit preserves the points reducing to infinity. -/
 private theorem exists_nsmul_eq_of_pole {n : ℕ} (hn : (n : 𝓀[K]) ≠ 0)
@@ -85,9 +88,12 @@ private theorem exists_nsmul_eq_of_pole {n : ℕ} (hn : (n : 𝓀[K]) ≠ 0)
       exact (TauCeti.isEquiv_valuation_maximalPrime K).one_lt_iff_one_lt.mp h)
   · rw [map_nsmul, hnS]
 
-local instance : IsIntegral (valuation K).valuationSubring W :=
-  inferInstanceAs (IsIntegral 𝒪[K] W)
+end Division
 
+variable (W : Affine K) [IsIntegral (valuation K).valuationSubring W] [W.IsElliptic]
+
+-- The integer subring 𝒪[K] and the valuation subring have definitionally equal carriers;
+-- only their bundled subring structures differ.
 local instance : HenselianLocalRing (valuation K).valuationSubring :=
   inferInstanceAs (HenselianLocalRing 𝒪[K])
 
@@ -124,6 +130,9 @@ theorem nsmul_ker_nonsingularReductionHom_bijective {n : ℕ} (hn : (n : 𝓀[K]
     · simpa only [AddSubgroup.coe_nsmul, AddSubgroup.coe_sub,
         ZeroMemClass.coe_zero, nsmul_sub] using congrArg Subtype.val (sub_eq_zero.mpr h)
   · intro P
+    -- Use the same carrier identification as for the Henselian instance above.
+    let : IsIntegral 𝒪[K] W :=
+      inferInstanceAs (IsIntegral (valuation K).valuationSubring W)
     obtain ⟨Q, hQ, hnQ⟩ := exists_nsmul_eq_of_pole W hn
       ((nonsingularReductionHom_eq_zero_iff (valuation K) P.val).mp P.2)
     have hQ₀ : Q ∈ W.toAffine.nonsingularReduction (valuation K) := hQ.elim
@@ -141,26 +150,10 @@ theorem existsUnique_nonsingularReduction_torsion_lift_of_localField {n : ℕ}
       (residue (valuation K).valuationSubring)).toAffine.Point) (hQ : n • Q = 0) :
     ∃! P : W.toAffine.nonsingularReduction (valuation K),
       n • P = 0 ∧ W.toAffine.nonsingularReductionHom (valuation K) P = Q := by
-  classical
-  let ρ := W.toAffine.nonsingularReductionHom (valuation K)
-  have hsurj : Function.Surjective ρ := nonsingularReductionHom_surjective (valuation K)
-  obtain ⟨P, hP⟩ := hsurj Q
-  have hnP : n • P ∈ ρ.ker := by rw [AddMonoidHom.mem_ker, map_nsmul, hP, hQ]
-  obtain ⟨R, hR⟩ := (nsmul_ker_nonsingularReductionHom_bijective W hn).2 ⟨n • P, hnP⟩
-  have hnR : n • (R : W.toAffine.nonsingularReduction (valuation K)) = n • P :=
-    congrArg Subtype.val hR
-  have hρR : ρ R = 0 := R.2
-  refine ⟨P - R, ⟨by rw [nsmul_sub, hnR, sub_self], ?_⟩, fun S hS ↦ ?_⟩
-  · exact (ρ.map_sub P R).trans (by rw [hρR, sub_zero, hP])
-  · have hρS : ρ S = Q := hS.2
-    have hker : S - (P - R) ∈ ρ.ker := by
-      rw [AddMonoidHom.mem_ker, map_sub, map_sub, hρS, hP, hρR, sub_zero, sub_self]
-    have hnker : n • (⟨S - (P - R), hker⟩ : ρ.ker) = 0 := by
-      apply Subtype.ext
-      simp only [AddSubgroup.coe_nsmul, ZeroMemClass.coe_zero, nsmul_sub, hS.1, hnR, sub_self]
-    have h := (nsmul_ker_nonsingularReductionHom_bijective W hn).1
-      (hnker.trans (nsmul_zero n).symm)
-    exact sub_eq_zero.mp (congrArg Subtype.val h)
+  exact TauCeti.existsUnique_torsion_lift_of_bijective_ker_nsmul n
+    (W.toAffine.nonsingularReductionHom (valuation K))
+    (nonsingularReductionHom_surjective (valuation K))
+    (nsmul_ker_nonsingularReductionHom_bijective W hn) Q hQ
 
 /-- Reduction identifies the prime-to-residue-characteristic torsion of the subgroup with
 nonsingular reduction over a local field with the torsion of its reduced nonsingular locus. -/
@@ -171,17 +164,10 @@ noncomputable def torsionNonsingularReductionAddEquivOfLocalField {n : ℕ}
         ((integralModel (valuation K).valuationSubring W.toAffine).map
           (residue (valuation K).valuationSubring)).toAffine.Point (n : ℤ) := by
   let ρ := W.toAffine.nonsingularReductionHom (valuation K)
-  let f := (TauCeti.torsionByMap (n : ℤ) ρ.toIntLinearMap).toAddMonoidHom
-  apply AddEquiv.ofBijective f
-  rw [Function.bijective_iff_existsUnique]
-  intro Q
-  obtain ⟨P, hP, huniq⟩ := existsUnique_nonsingularReduction_torsion_lift_of_localField W hn Q
-    (by simpa only [natCast_zsmul] using (Submodule.mem_torsionBy_iff _ _).mp Q.2)
-  refine ⟨⟨P, (Submodule.mem_torsionBy_iff _ _).mpr (by simpa using hP.1)⟩,
-    Subtype.ext (by simpa [f, TauCeti.coe_torsionByMap_apply] using hP.2),
-    fun S hS ↦ Subtype.ext (huniq S ⟨?_, ?_⟩)⟩
-  · simpa only [natCast_zsmul] using (Submodule.mem_torsionBy_iff _ _).mp S.2
-  · simpa [f, TauCeti.coe_torsionByMap_apply] using congrArg Subtype.val hS
+  exact AddEquiv.ofBijective (TauCeti.torsionByMap (n : ℤ) ρ.toIntLinearMap).toAddMonoidHom
+    (TauCeti.bijective_torsionByMap_of_bijective_ker_nsmul n ρ
+      (nonsingularReductionHom_surjective (valuation K))
+      (nsmul_ker_nonsingularReductionHom_bijective W hn))
 
 /-- The local-field torsion equivalence sends a point to its reduction. -/
 @[simp]
