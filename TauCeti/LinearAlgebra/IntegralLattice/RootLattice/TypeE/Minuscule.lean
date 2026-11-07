@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeE.CosetMinimum
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.E6.MinusculeWeight
-import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Reflection
+public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Reflection
 
 /-!
 # The 27 minuscule weights as dual vectors of the E₆ lattice
@@ -15,8 +15,8 @@ import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Reflection
 The minuscule weight table of the pinned E₆ root datum uses fundamental-weight coordinates,
 whereas the integral root lattice uses simple-root coordinates. Pairing with the simple roots
 identifies the literal dual carrier with the weight lattice. This identification realizes the
-27 weights as distinct vectors of norm `4/3` in the class of `ϖ₁`; their negatives give 27
-shortest representatives in the other nonzero discriminant class.
+27 weights as distinct vectors of norm `4/3` in the class of `ϖ₁`. Representatives in the
+other nonzero discriminant class can then be obtained by negation.
 
 The realization intertwines the table's simple reflections with lattice root reflections.
 Thus the norm and discriminant class are transported along the already checked reflection
@@ -39,30 +39,18 @@ namespace TauCeti.IntegralLattice
 
 open Module DynkinType
 
-private noncomputable def e6Basis : Basis (Fin 6) ℤ typeE₆RootLattice :=
-  (ofGramMatrix.basis (Pi.basisFun ℚ (Fin 6)) (CartanMatrix.E 6)
-    (CartanMatrix.E_isSymm 6)).map
-      (LinearEquiv.ofEq _ _ (by
-        ext x
-        rw [mem_typeE₆RootLattice_carrier_iff, mem_ofGramMatrix_basisFun_carrier_iff]))
-
-private theorem coe_e6Basis (i : Fin 6) : (e6Basis i : Fin 6 → ℚ) = typeE₆SimpleRoot i := by
-  simp only [e6Basis, Basis.map_apply, LinearEquiv.coe_ofEq_apply, ofGramMatrix.coe_basis]
-  ext j
-  simp [typeE₆SimpleRoot_apply, Pi.basisFun_apply, Pi.single_apply]
-
 /-- Pairing with the six simple roots identifies the dual E₆ lattice with the weight lattice
 in fundamental-weight coordinates. -/
 noncomputable def typeE₆DualWeightEquiv : typeE₆RootLattice.dualCarrier ≃ₗ[ℤ] (Fin 6 → ℤ) :=
-  typeE₆RootLattice.dualPairingEquiv.trans e6Basis.dualBasis.equivFun
+  (typeE₆RootLattice.dualCarrierBasis typeE₆SimpleRootBasis).equivFun
 
 /-- The fundamental-weight coordinates of a dual vector are its simple-root pairings. -/
 @[simp]
 theorem typeE₆DualWeightEquiv_apply (x : typeE₆RootLattice.dualCarrier) (i : Fin 6) :
     (typeE₆DualWeightEquiv x i : ℚ) =
       typeE₆RootLattice.form x (typeE₆SimpleRoot i) := by
-  simp only [typeE₆DualWeightEquiv, LinearEquiv.trans_apply, Basis.dualBasis_equivFun,
-    dualPairingEquiv_cast, coe_e6Basis]
+  simp only [typeE₆DualWeightEquiv, Basis.equivFun_apply, dualCarrierBasis_repr,
+    Basis.dualBasis_repr, dualPairingEquiv_cast, coe_typeE₆SimpleRootBasis_apply]
 
 /-- The minuscule weight table of the E₆ root datum, realized in the literal dual lattice. -/
 noncomputable def typeE₆MinusculeDual (a : Fin 27) : typeE₆RootLattice.dualCarrier :=
@@ -70,22 +58,22 @@ noncomputable def typeE₆MinusculeDual (a : Fin 27) : typeE₆RootLattice.dualC
 
 /-- The realized weight has exactly the fundamental coordinates of the pinned weight table. -/
 @[simp]
-theorem typeE₆DualWeightEquiv_minusculeDual (a : Fin 27) :
+theorem typeE₆DualWeightEquiv_typeE₆MinusculeDual (a : Fin 27) :
     typeE₆DualWeightEquiv (typeE₆MinusculeDual a) = e6MinusculeWeight a :=
   typeE₆DualWeightEquiv.apply_symm_apply _
 
 /-- Pairing a realized minuscule weight with a simple root reads its table entry. -/
 @[simp]
-theorem form_typeE₆MinusculeDual_simpleRoot (a : Fin 27) (i : Fin 6) :
+theorem form_typeE₆MinusculeDual_typeE₆SimpleRoot (a : Fin 27) (i : Fin 6) :
     typeE₆RootLattice.form (typeE₆MinusculeDual a) (typeE₆SimpleRoot i) =
       (e6MinusculeWeight a i : ℚ) := by
-  rw [← typeE₆DualWeightEquiv_apply, typeE₆DualWeightEquiv_minusculeDual]
+  rw [← typeE₆DualWeightEquiv_apply, typeE₆DualWeightEquiv_typeE₆MinusculeDual]
 
 /-- Distinct table weights give distinct vectors in the literal dual carrier. -/
 theorem typeE₆MinusculeDual_injective : Function.Injective typeE₆MinusculeDual := by
   intro a b h
   apply e6MinusculeWeight_injective
-  simpa only [typeE₆DualWeightEquiv_minusculeDual] using congrArg typeE₆DualWeightEquiv h
+  simpa only [typeE₆DualWeightEquiv_typeE₆MinusculeDual] using congrArg typeE₆DualWeightEquiv h
 
 /-- The highest table weight realizes the previously chosen discriminant generator `ϖ₁`. -/
 @[simp]
@@ -93,27 +81,29 @@ theorem typeE₆MinusculeDual_zero : typeE₆MinusculeDual 0 = typeE₆Minuscule
   apply typeE₆DualWeightEquiv.injective
   ext i
   apply Int.cast_injective (α := ℚ)
-  rw [typeE₆DualWeightEquiv_minusculeDual, typeE₆DualWeightEquiv_apply,
+  rw [typeE₆DualWeightEquiv_typeE₆MinusculeDual, typeE₆DualWeightEquiv_apply,
     coe_typeE₆MinusculeWeightDual, form_typeE₆MinusculeWeight_typeE₆SimpleRoot,
     e6MinusculeWeight_zero]
   simp [Pi.single_apply]
 
 private noncomputable def e6SimpleDual (i : Fin 6) : typeE₆RootLattice.dualCarrier :=
-  ⟨e6Basis i, typeE₆RootLattice.le_dualCarrier (e6Basis i).property⟩
+  ⟨typeE₆SimpleRootBasis i,
+    typeE₆RootLattice.le_dualCarrier (typeE₆SimpleRootBasis i).property⟩
 
 private theorem weight_e6SimpleDual (i : Fin 6) :
     typeE₆DualWeightEquiv (e6SimpleDual i) = CartanMatrix.E 6 i := by
   ext j
   apply Int.cast_injective (α := ℚ)
   rw [typeE₆DualWeightEquiv_apply]
-  exact (congrArg (fun x ↦ typeE₆RootLattice.form x (typeE₆SimpleRoot j)) (coe_e6Basis i)).trans
+  exact (congrArg (fun x ↦ typeE₆RootLattice.form x (typeE₆SimpleRoot j))
+    (coe_typeE₆SimpleRootBasis_apply i)).trans
     (form_typeE₆SimpleRoot_typeE₆SimpleRoot i j)
 
 private theorem minusculeDual_reflection (i : Fin 6) (a : Fin 27) :
     typeE₆MinusculeDual (e6MinusculeReflection i a) =
       typeE₆MinusculeDual a - e6MinusculeWeight a i • e6SimpleDual i := by
   apply typeE₆DualWeightEquiv.injective
-  simp only [typeE₆DualWeightEquiv_minusculeDual, map_sub, map_zsmul, weight_e6SimpleDual]
+  simp only [typeE₆DualWeightEquiv_typeE₆MinusculeDual, map_sub, map_zsmul, weight_e6SimpleDual]
   exact (e6MinusculeWeight_reflection i a).trans
     (by rw [root_e6SimpleIndex])
 
@@ -124,25 +114,22 @@ theorem typeE₆MinusculeDual_reflection (i : Fin 6) (a : Fin 27) :
       (typeE₆MinusculeDual a : Fin 6 → ℚ) -
         (e6MinusculeWeight a i : ℚ) • typeE₆SimpleRoot i := by
   rw [minusculeDual_reflection]
-  simp only [Submodule.coe_sub, SetLike.val_smul, e6SimpleDual, coe_e6Basis,
-    Int.cast_smul_eq_zsmul]
+  simp only [Submodule.coe_sub, SetLike.val_smul, e6SimpleDual,
+    coe_typeE₆SimpleRootBasis_apply, Int.cast_smul_eq_zsmul]
 
-private theorem e6Simple_norm (i : Fin 6) : typeE₆RootLattice.integralNorm (e6Basis i) = 2 := by
-  apply Int.cast_injective (α := ℚ)
-  rw [integralNorm_cast, norm_apply, coe_e6Basis, form_typeE₆SimpleRoot_typeE₆SimpleRoot]
-  have h : (CartanMatrix.E 6) i i = 2 := by revert i; decide
-  rw [h]
+/-- Lattice root reflections act on the realized weights by the pinned table reflections. -/
+theorem rootReflection_typeE₆MinusculeDual (i : Fin 6) (a : Fin 27) :
+    (typeE₆RootLattice.rootReflection (typeE₆SimpleRootBasis i)
+      (integralNorm_typeE₆SimpleRootBasis i)) (typeE₆MinusculeDual a) =
+        typeE₆MinusculeDual (e6MinusculeReflection i a) := by
+  rw [rootReflection_apply, coe_typeE₆SimpleRootBasis_apply, typeE₆RootLattice.isSymm.eq,
+    form_typeE₆MinusculeDual_typeE₆SimpleRoot, typeE₆MinusculeDual_reflection]
 
 private theorem norm_minusculeDual_reflection (i : Fin 6) (a : Fin 27) :
     typeE₆RootLattice.form (typeE₆MinusculeDual (e6MinusculeReflection i a))
         (typeE₆MinusculeDual (e6MinusculeReflection i a)) =
       typeE₆RootLattice.form (typeE₆MinusculeDual a) (typeE₆MinusculeDual a) := by
-  have h (a : Fin 27) :
-      (typeE₆RootLattice.rootReflection (e6Basis i) (e6Simple_norm i))
-          (typeE₆MinusculeDual a) = typeE₆MinusculeDual (e6MinusculeReflection i a) := by
-    rw [rootReflection_apply, coe_e6Basis, typeE₆RootLattice.isSymm.eq,
-      form_typeE₆MinusculeDual_simpleRoot, typeE₆MinusculeDual_reflection]
-  rw [← h]
+  rw [← rootReflection_typeE₆MinusculeDual]
   exact Isometry.map_app _ _ _
 
 private theorem mk_minusculeDual_reflection (i : Fin 6) (a : Fin 27) :
@@ -150,7 +137,7 @@ private theorem mk_minusculeDual_reflection (i : Fin 6) (a : Fin 27) :
         typeE₆RootLattice.DiscriminantGroup) =
       Submodule.Quotient.mk (typeE₆MinusculeDual a) := by
   have hi : (Submodule.Quotient.mk (e6SimpleDual i) : typeE₆RootLattice.DiscriminantGroup) = 0 :=
-    (typeE₆RootLattice.discriminantGroup_mk_eq_zero_iff _).mpr (e6Basis i).property
+    (typeE₆RootLattice.discriminantGroup_mk_eq_zero_iff _).mpr (typeE₆SimpleRootBasis i).property
   simp [minusculeDual_reflection, Submodule.Quotient.mk_sub, Submodule.Quotient.mk_smul, hi]
 
 private theorem minusculeDual_norm_and_class (a : Fin 27) :
@@ -178,7 +165,7 @@ theorem mk_typeE₆MinusculeDual (a : Fin 27) :
   (minusculeDual_norm_and_class a).2
 
 /-- Every realized weight is a shortest representative of its discriminant class. -/
-theorem form_typeE₆MinusculeDual_le (a : Fin 27) (y : typeE₆RootLattice.dualCarrier)
+theorem form_typeE₆MinusculeDual_self_le (a : Fin 27) (y : typeE₆RootLattice.dualCarrier)
     (hy : (Submodule.Quotient.mk y : typeE₆RootLattice.DiscriminantGroup) =
       Submodule.Quotient.mk (typeE₆MinusculeDual a)) :
     typeE₆RootLattice.form (typeE₆MinusculeDual a) (typeE₆MinusculeDual a) ≤
@@ -186,7 +173,7 @@ theorem form_typeE₆MinusculeDual_le (a : Fin 27) (y : typeE₆RootLattice.dual
   rw [form_typeE₆MinusculeDual_self]
   exact isLeast_form_self_typeE₆MinusculeWeightClass.2 ⟨y, hy.trans (mk_typeE₆MinusculeDual a), rfl⟩
 
-/-- There are 27 distinct shortest representatives supplied by the minuscule table. -/
+/-- The minuscule table realizes 27 distinct dual vectors. -/
 theorem ncard_range_typeE₆MinusculeDual : (Set.range typeE₆MinusculeDual).ncard = 27 := by
   simpa using Set.ncard_range_of_injective typeE₆MinusculeDual_injective
 
