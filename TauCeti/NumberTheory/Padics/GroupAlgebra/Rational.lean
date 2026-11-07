@@ -153,8 +153,10 @@ theorem nonempty_linearEquiv_of_projective_of_tensorRat_of_not_dvd (hG : ¬p ∣
   refine (Ring.jacobson A).nonempty_linearEquiv_of_quotient_smul_top M N le_rfl
     (IsSemisimpleModule.nonempty_linearEquiv_of_natCard_linearMap_mul_eq _ _ ?_)
   -- Maps out of a radical quotient are maps out of the module itself.
-  simp only [Nat.card_congr (linearMapQuotientJacobsonEquiv M _).toEquiv,
-    Nat.card_congr (linearMapQuotientJacobsonEquiv N _).toEquiv]
+  simp only [Nat.card_congr
+      (linearMapQuotientSMulTopEquiv M (IsSemisimpleModule.jacobson_le_annihilator A _)).toEquiv,
+    Nat.card_congr
+      (linearMapQuotientSMulTopEquiv N (IsSemisimpleModule.jacobson_le_annihilator A _)).toEquiv]
   rw [hJ, natCard_linearMap_quotient_eq_of_tensorRat M M N h,
     natCard_linearMap_quotient_eq_of_tensorRat N M N h, mul_comm]
 

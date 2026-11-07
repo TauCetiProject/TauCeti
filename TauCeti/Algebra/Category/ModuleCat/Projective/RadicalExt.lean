@@ -29,7 +29,7 @@ The pushout formulas also compute pushforward along maps of semisimple coefficie
 by simplification.
 
 The comparisons use `TauCeti.homCokernelEquivExt` and
-`TauCeti.linearMapQuotientJacobsonEquiv`.
+`TauCeti.linearMapQuotientSMulTopEquiv`.
 
 ## References
 
@@ -93,7 +93,8 @@ noncomputable def radicalLayerHomEquivExt (K : Submodule A P)
       Ext (ModuleCat.of A (P ⧸ K)) N 1 := by
   let e : ((K ⧸ Ring.jacobson A • (⊤ : Submodule A K)) →ₗ[A] N) ≃ₗ[k]
       (K →ₗ[A] N) :=
-    (linearMapQuotientJacobsonEquiv K N).toLinearEquiv fun c f ↦ by
+    (linearMapQuotientSMulTopEquiv K
+      (IsSemisimpleModule.jacobson_le_annihilator A N)).toLinearEquiv fun c f ↦ by
       ext x
       simp
   exact e.trans ((ModuleCat.homLinearEquiv
@@ -116,7 +117,7 @@ theorem radicalLayerHomEquivExt_apply (K : Submodule A P)
   congr 2
   apply ModuleCat.hom_ext
   ext x
-  exact linearMapQuotientJacobsonEquiv_apply K N f x
+  exact linearMapQuotientSMulTopEquiv_apply K (IsSemisimpleModule.jacobson_le_annihilator A N) f x
 
 /-- The inverse radical-layer comparison recovers a map from its pushout class. -/
 @[simp]
