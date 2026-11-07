@@ -15,8 +15,9 @@ the Hodge Laplacian `Δ = d*d + dd*`, and the coexact `k`-forms are the image of
 codifferential `d*` of `(k + 1)`-forms (zero in the top degree).
 
 This file proves the orthogonality half of the Hodge decomposition, which uses only that `d*` is
-the formal adjoint of `d`. On a boundaryless manifold closed forms are `L²`-orthogonal to coexact
-forms, and coclosed forms to exact forms, for the pairing `∫_M ⟨α, β⟩ vol`. On a compact
+the formal adjoint of `d`. On a boundaryless manifold a closed form `α` is `L²`-orthogonal to a
+coexact form `d*β`, and a coclosed form `β` to an exact form `dα`, for the pairing
+`∫_M ⟨α, β⟩ vol`, provided `α` or `β` is compactly supported. On a compact
 boundaryless manifold, where harmonic forms are exactly the closed and coclosed forms,
 definiteness of the pairing gives:
 
@@ -41,7 +42,8 @@ map from harmonic forms to de Rham cohomology is also surjective.
 
 * `TauCeti.SmoothForm.integralTopForm_inner_codifferential_eq_zero_of_mextDeriv_eq_zero`,
   `TauCeti.SmoothForm.integralTopForm_inner_mextDeriv_eq_zero_of_codifferential_eq_zero`: closed
-  forms are orthogonal to coexact forms, and exact forms to coclosed forms.
+  forms are orthogonal to coexact forms, and exact forms to coclosed forms, when one of the forms
+  or the chosen primitive is compactly supported.
 * `TauCeti.mem_harmonicForms_add_one_iff`: on a compact boundaryless manifold a form is harmonic
   exactly when it is closed and coclosed.
 * `TauCeti.disjoint_closedForms_coexactForms`, `TauCeti.disjoint_harmonicForms_exactForms`,
