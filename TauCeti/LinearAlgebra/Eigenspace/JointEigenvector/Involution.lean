@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Exists
 
-import TauCeti.LinearAlgebra.Eigenspace.Involution
+import TauCeti.LinearAlgebra.Eigenspace.Separation
 
 /-!
 # Joint eigenvectors of commuting involutions
@@ -40,9 +40,10 @@ theorem exists_jointEigenvector_of_pairwise_commute_of_involutive [FiniteDimensi
     [Nontrivial V] (hcomm : Pairwise fun i j ↦ Commute (f i) (f j))
     (hinv : ∀ i, Function.Involutive (f i)) :
     ∃ v : V, v ≠ 0 ∧ ∀ i, f i v = v ∨ f i v = -v := by
-  obtain ⟨χ, v, hv, hmem⟩ := exists_jointEigenvector_of_pairwise_commute f hcomm fun i ↦
-    top_unique <| (Module.End.iSup_eigenspace_eq_top_of_involutive (hinv i)).ge.trans <|
-      iSup_mono fun _ ↦ Module.End.eigenspace_le_maxGenEigenspace
+  obtain ⟨χ, v, hv, hmem⟩ := exists_jointEigenvector_of_pairwise_commute f hcomm fun i ↦ by
+    rw [eq_top_iff, ← (isCompl_eigenspace_one_neg_one (isUnit_of_invertible 2) (hinv i)).sup_eq_top]
+    exact sup_le (Module.End.eigenspace_le_maxGenEigenspace.trans (le_iSup _ 1))
+      (Module.End.eigenspace_le_maxGenEigenspace.trans (le_iSup _ (-1)))
   refine ⟨v, hv, fun i ↦ ?_⟩
   have heig : f i v = χ i • v := Module.End.mem_eigenspace_iff.1 (hmem i)
   -- The eigenvalue squares to `1`, because `f i` does.

@@ -30,7 +30,6 @@ identity.
 * `Module.End.eigenProjOfInvolutive_apply_of_mem_neg`: it kills the `ν`-eigenspace for `μ ν = -1`.
 * `Module.End.eigenProjOfInvolutive_add_eigenProjOfInvolutive_neg`: the projections for `μ` and
   `-μ` add up to the identity.
-* `Module.End.iSup_eigenspace_eq_top_of_involutive`: an involution is diagonalizable.
 -/
 
 public section
@@ -85,15 +84,5 @@ theorem eigenProjOfInvolutive_add_eigenProjOfInvolutive_neg (hg : Function.Invol
   have h := halfOneAdd_add_halfOneAdd_neg k (μ • g)
   rw [← neg_smul] at h
   exact LinearMap.congr_fun h y
-
-/-- An involution is diagonalizable when `2` is invertible: every vector is the sum of its
-components in the eigenspaces for `1` and `-1`. -/
-theorem iSup_eigenspace_eq_top_of_involutive (hg : Function.Involutive g) :
-    ⨆ μ, g.eigenspace μ = ⊤ := by
-  refine eq_top_iff.2 fun y _ ↦ ?_
-  rw [← eigenProjOfInvolutive_add_eigenProjOfInvolutive_neg hg (one_mul (1 : k))
-    (by rw [neg_mul_neg, one_mul]) y]
-  exact add_mem (Submodule.mem_iSup_of_mem _ (Subtype.coe_prop _))
-    (Submodule.mem_iSup_of_mem _ (Subtype.coe_prop _))
 
 end Module.End
