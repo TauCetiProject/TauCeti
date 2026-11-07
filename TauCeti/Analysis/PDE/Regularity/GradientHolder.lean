@@ -230,6 +230,11 @@ private theorem memLp_gradient (h : FrozenData Omega u a G lam Lam κ α Ka KG x
       (volume.restrict (ball x r)) :=
   (Lp.memLp (W1p.gradient u)).mono_measure (Measure.restrict_mono h.subset le_rfl)
 
+/-- `‖∇u‖²` is integrable on `B_r`. -/
+private theorem integrableOn_norm_gradient_sq (h : FrozenData Omega u a G lam Lam κ α Ka KG x r) :
+    IntegrableOn (fun y => ‖W1p.gradient u y‖ ^ 2) (ball x r) :=
+  h.memLp_gradient.integrable_norm_pow two_ne_zero
+
 /-- The frozen matrix `a(x)` is elliptic with constants `λ` and `Λ`. -/
 private theorem frozen_bounds (h : FrozenData Omega u a G lam Lam κ α Ka KG x r) :
     (∀ ξ : EuclideanSpace ℝ (Fin (n + 1)), lam * ‖ξ‖ ^ 2 ≤ (a x).toQuadraticForm' ξ) ∧
@@ -453,9 +458,7 @@ private theorem exists_setIntegral_norm_sq_le (hα : 0 < α) (κ : ℝ) :
   have hφ0 : ∀ t, 0 ≤ φ t := fun t => setIntegral_nonneg measurableSet_ball fun _ _ => by
     positivity
   have hmono : MonotoneOn φ (Ioc 0 R) := fun s hs t ht hst =>
-    setIntegral_mono_set ((Lp.memLp (W1p.gradient u)).integrableOn_norm_sub_sq_of_subset
-      ((ball_subset_ball ht.2).trans h.subset) measure_ball_lt_top.ne 0 |>.congr_fun
-        (fun _ _ => by simp) measurableSet_ball)
+    setIntegral_mono_set (h.mono ht.2).integrableOn_norm_gradient_sq
       (ae_of_all _ fun _ => by positivity) (ball_subset_ball hst).eventuallyLE
   -- The comparison estimate in the form of the iteration lemma, with `ε = 2 δ² = ε₀`.
   have hstep : ∀ s t, 0 < s → s ≤ t → t ≤ R →
@@ -526,6 +529,51 @@ private theorem div_sq_mul_rpow_sq_le {δ : ℝ} (hlam : 0 < lam) (hR : 0 < R)
   rw [div_pow, div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
   nlinarith
 
+/-- **Campanato decay from a bound on the energy error.** Let `β < n + 3`. There is `C`, depending
+only on `n`, `κ` and `β`, such that the following holds. Under the hypotheses of the comparison
+estimates on `B_R = ball x R`, if the energy error
+`2 (t^α)² λ^{-2} (K_a² ∫_{B_t} ‖∇u‖² + K_G² |B_t|)` is at most `B t^β` for `0 < t ≤ R`, with
+`B ≥ 0`, and `‖∇u‖_{L²(Ω)} ≤ M R^{(n+1)/2+α}`, then
+`∫_{B_ρ} ‖∇u - (∇u)_{B_ρ}‖² ≤ C (M² R^{n+1+2α-β} ρ^β + B ρ^β)` for `0 < ρ ≤ R`. -/
+private theorem exists_setIntegral_norm_sub_setAverage_sq_le_of_energy_le {β : ℝ}
+    (hβ : β < n + 3) (κ : ℝ) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
+      {u : W1p volume Omega 2}
+      {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
+      {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))} {lam Lam : ℝ}
+      {Ka KG : ℝ≥0} {x : EuclideanSpace ℝ (Fin (n + 1))} {R M B : ℝ},
+      FrozenData Omega u a G lam Lam κ α Ka KG x R → 0 ≤ B →
+      (∀ t, 0 < t → t ≤ R →
+        2 * (t ^ (α : ℝ)) ^ 2 / lam ^ 2 *
+          (Ka ^ 2 * (∫ y in ball x t, ‖W1p.gradient u y‖ ^ 2) + KG ^ 2 * volume.real (ball x t)) ≤
+          B * t ^ β) →
+      ‖W1p.gradient u‖ ≤ M * R ^ (((n : ℝ) + 1) / 2 + α) →
+      ∀ ρ, 0 < ρ → ρ ≤ R →
+        ∫ y in ball x ρ, ‖W1p.gradient u y - ⨍ z in ball x ρ, W1p.gradient u z‖ ^ 2 ≤
+          C * (M ^ 2 * R ^ ((n : ℝ) + 1 + 2 * α - β) * ρ ^ β + B * ρ ^ β) := by
+  have hA := oscConst_nonneg n κ
+  obtain ⟨C₄, hC₄, hit⟩ := exists_setIntegral_norm_gradient_sub_setAverage_sq_le (n := n) hA hβ
+  refine ⟨C₄ * (1 + oscConst n κ), by positivity, ?_⟩
+  intro Omega u a G lam Lam Ka KG x R M B h hB hF hM1 ρ hρ hρR
+  have hR : 0 < R := hρ.trans_le hρR
+  have hdec := hit (mul_nonneg hA hB) h.subset (fun s t hs hst htR => by
+    refine ((h.mono htR).setIntegral_norm_sub_setAverage_sq_le hs hst).trans ?_
+    rw [mul_add, ← mul_assoc]
+    exact add_le_add le_rfl ((mul_le_mul_of_nonneg_left (hF t (hs.trans_le hst) htR) hA).trans_eq
+      (mul_assoc _ _ _).symm)) ρ hρ hρR
+  have hX : 0 ≤ M ^ 2 * R ^ ((n : ℝ) + 1 + 2 * α - β) * ρ ^ β := by positivity
+  have hY : 0 ≤ B * ρ ^ β := by positivity
+  refine hdec.trans ?_
+  calc C₄ * ((ρ / R) ^ β * ‖W1p.gradient u‖ ^ 2 + oscConst n κ * B * ρ ^ β)
+      ≤ C₄ * (M ^ 2 * ((ρ / R) ^ β * R ^ ((n : ℝ) + 1 + 2 * α)) + oscConst n κ * B * ρ ^ β) := by
+        rw [mul_left_comm (M ^ 2)]
+        gcongr
+        exact sq_le_mul_rpow_of_le hR (norm_nonneg _) hM1
+    _ = C₄ * (M ^ 2 * R ^ ((n : ℝ) + 1 + 2 * α - β) * ρ ^ β + oscConst n κ * (B * ρ ^ β)) := by
+        rw [div_rpow_mul_rpow_eq hρ.le hR]
+        ring
+    _ ≤ _ := by nlinarith [mul_nonneg hC₄ (mul_nonneg hA hX), mul_nonneg hC₄ hY]
+
 /-- **A first Campanato estimate.** Let `0 < α < 1`. There are `δ > 0` and `C`, depending only on
 `n`, `α` and `κ`, such that the following holds. Under the hypotheses of the comparison
 estimates on `B_R = ball x R`, if `K_a R^α ≤ δ λ`, `‖∇u‖_{L²(Ω)} ≤ M R^{(n+1)/2+α}` and
@@ -545,30 +593,25 @@ private theorem exists_setIntegral_norm_sub_setAverage_sq_le_of_small (hα : 0 <
   have hα' : (0 : ℝ) < α := hα
   have hα1' : (α : ℝ) < 1 := hα1
   obtain ⟨δ, C₁, hδ, hC₁, hmorrey⟩ := exists_setIntegral_norm_sq_le hα κ (n := n)
-  obtain ⟨C₄, hC₄, hit⟩ := exists_setIntegral_norm_gradient_sub_setAverage_sq_le (n := n)
-    (oscConst_nonneg n κ) (β := (n : ℝ) + 1 + α) (by linarith)
+  obtain ⟨C₄, hC₄, hcamp⟩ := exists_setIntegral_norm_sub_setAverage_sq_le_of_energy_le (n := n)
+    (α := α) (β := (n : ℝ) + 1 + α) (by linarith) κ
   obtain ⟨ω, hω⟩ : ∃ ω, ω = volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :=
     ⟨_, rfl⟩
   have hω0 : 0 ≤ ω := hω ▸ measureReal_nonneg
-  have hA := oscConst_nonneg n κ
-  refine ⟨δ, C₄ * (1 + oscConst n κ * 2 * (δ ^ 2 * C₁ + ω)), hδ, by positivity, ?_⟩
+  refine ⟨δ, C₄ * (1 + 2 * (δ ^ 2 * C₁ + ω)), hδ, by positivity, ?_⟩
   intro Omega u a G lam Lam Ka KG x R M h hsmall hM1 hM2 ρ hρ hρR
   have hR : 0 < R := hρ.trans_le hρR
   have hlam : 0 < lam := h.elliptic.pos
   have hM : 0 ≤ M := (div_nonneg KG.2 hlam.le).trans hM2
   have hKG : ((KG : ℝ) / lam) ^ 2 ≤ M ^ 2 := pow_le_pow_left₀ (by positivity) hM2 2
   have hKa := div_sq_mul_rpow_sq_le hlam hR hsmall
-  have hstep : ∀ s t, 0 < s → s ≤ t → t ≤ R →
-      ∫ y in ball x s, ‖W1p.gradient u y - ⨍ z in ball x s, W1p.gradient u z‖ ^ 2 ≤
-        oscConst n κ * (s / t) ^ (n + 3) *
-            (∫ y in ball x t, ‖W1p.gradient u y - ⨍ z in ball x t, W1p.gradient u z‖ ^ 2) +
-          oscConst n κ * 2 * (δ ^ 2 * C₁ + ω) * M ^ 2 * R ^ (α : ℝ) *
-            t ^ ((n : ℝ) + 1 + α) := by
-    intro s t hs hst htR
-    have ht : 0 < t := hs.trans_le hst
-    have hc := (h.mono htR).setIntegral_norm_sub_setAverage_sq_le hs hst
+  -- Both parts of the energy error are `O(R^α t^{n+1+α})`.
+  have hF : ∀ t, 0 < t → t ≤ R →
+      2 * (t ^ (α : ℝ)) ^ 2 / lam ^ 2 *
+          (Ka ^ 2 * (∫ y in ball x t, ‖W1p.gradient u y‖ ^ 2) + KG ^ 2 * volume.real (ball x t)) ≤
+        2 * (δ ^ 2 * C₁ + ω) * M ^ 2 * R ^ (α : ℝ) * t ^ ((n : ℝ) + 1 + α) := by
+    intro t ht htR
     have hφ := hmorrey h hsmall hM1 hM2 t ht htR
-    -- Both parts of the energy error are `O(R^α t^{n+1+α})`.
     have hR3 : R ^ (3 * (α : ℝ)) = (R ^ (α : ℝ)) ^ 2 * R ^ (α : ℝ) := by
       rw [← Real.rpow_natCast, ← Real.rpow_mul hR.le, ← Real.rpow_add hR]
       ring_nf
@@ -603,30 +646,11 @@ private theorem exists_setIntegral_norm_sub_setAverage_sq_le_of_small (hα : 0 <
             rw [two_mul_rpow_sq_div_mul_measureReal_ball_eq x ht, ← hω]
         _ ≤ 2 * ω * M ^ 2 * (R ^ (α : ℝ) * t ^ ((n : ℝ) + 1 + α)) := by gcongr
         _ = _ := by ring
-    refine hc.trans ?_
-    rw [mul_add, ← mul_assoc]
-    refine add_le_add le_rfl ?_
-    calc oscConst n κ * (2 * (t ^ (α : ℝ)) ^ 2 / lam ^ 2 *
-          (Ka ^ 2 * (∫ y in ball x t, ‖W1p.gradient u y‖ ^ 2) + KG ^ 2 * volume.real (ball x t)))
-        = oscConst n κ * (2 * (t ^ (α : ℝ)) ^ 2 / lam ^ 2 *
-            (Ka ^ 2 * ∫ y in ball x t, ‖W1p.gradient u y‖ ^ 2) +
-          2 * (t ^ (α : ℝ)) ^ 2 / lam ^ 2 * (KG ^ 2 * volume.real (ball x t))) := by ring
-      _ ≤ oscConst n κ * (2 * δ ^ 2 * C₁ * M ^ 2 * R ^ (α : ℝ) * t ^ ((n : ℝ) + 1 + α) +
-          2 * ω * M ^ 2 * R ^ (α : ℝ) * t ^ ((n : ℝ) + 1 + α)) := by gcongr
-      _ = _ := by ring
-  have hdec := hit (by positivity) h.subset hstep ρ hρ hρR
-  have hρR' : (ρ / R) ^ ((n : ℝ) + 1 + α) * (M ^ 2 * R ^ ((n : ℝ) + 1 + 2 * α)) =
-      M ^ 2 * R ^ (α : ℝ) * ρ ^ ((n : ℝ) + 1 + α) := by
-    rw [mul_left_comm, div_rpow_mul_rpow_eq hρ.le hR,
-      show (n : ℝ) + 1 + 2 * α - ((n : ℝ) + 1 + α) = α by ring, mul_assoc]
-  refine hdec.trans ?_
-  calc C₄ * ((ρ / R) ^ ((n : ℝ) + 1 + α) * ‖W1p.gradient u‖ ^ 2 +
-        oscConst n κ * 2 * (δ ^ 2 * C₁ + ω) * M ^ 2 * R ^ (α : ℝ) * ρ ^ ((n : ℝ) + 1 + α))
-      ≤ C₄ * ((ρ / R) ^ ((n : ℝ) + 1 + α) * (M ^ 2 * R ^ ((n : ℝ) + 1 + 2 * α)) +
-        oscConst n κ * 2 * (δ ^ 2 * C₁ + ω) * M ^ 2 * R ^ (α : ℝ) * ρ ^ ((n : ℝ) + 1 + α)) := by
-        gcongr
-        exact sq_le_mul_rpow_of_le hR (norm_nonneg _) hM1
-    _ = _ := by rw [hρR']; ring
+    rw [mul_add]
+    exact (add_le_add hcoef hdata).trans_eq (by ring)
+  refine (hcamp h (by positivity) hF hM1 ρ hρ hρR).trans_eq ?_
+  rw [show (n : ℝ) + 1 + 2 * α - ((n : ℝ) + 1 + α) = α by ring]
+  ring
 
 /-- **The gradient is bounded.** Let `0 < α < 1`. There are `δ > 0` and `c`, depending only on
 `n`, `α` and `κ`, such that the following holds. Under the hypotheses of the comparison estimates
@@ -708,83 +732,83 @@ private theorem exists_setIntegral_norm_sub_setAverage_sq_le_of_bounded (hα1 : 
         ∫ y in ball x ρ, ‖W1p.gradient u y - ⨍ z in ball x ρ, W1p.gradient u z‖ ^ 2 ≤
           C * M ^ 2 * ρ ^ ((n : ℝ) + 1 + 2 * α) := by
   have hα1' : (α : ℝ) < 1 := hα1
-  obtain ⟨C₄, hC₄, hit⟩ := exists_setIntegral_norm_gradient_sub_setAverage_sq_le (n := n)
-    (oscConst_nonneg n κ) (β := (n : ℝ) + 1 + 2 * α) (by linarith)
+  obtain ⟨C₄, hC₄, hcamp⟩ := exists_setIntegral_norm_sub_setAverage_sq_le_of_energy_le (n := n)
+    (α := α) (β := (n : ℝ) + 1 + 2 * α) (by linarith) κ
   obtain ⟨ω, hω⟩ : ∃ ω, ω = volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :=
     ⟨_, rfl⟩
   have hω0 : 0 ≤ ω := hω ▸ measureReal_nonneg
-  have hA := oscConst_nonneg n κ
-  refine ⟨C₄ * (1 + oscConst n κ * 2 * ω * (δ ^ 2 * c ^ 2 + 1)), by positivity, ?_⟩
+  refine ⟨C₄ * (1 + 2 * ω * (δ ^ 2 * c ^ 2 + 1)), by positivity, ?_⟩
   intro Omega u a G lam Lam Ka KG x R M h hsmall hM1 hM2 hbd ρ hρ hρR
   have hR : 0 < R := hρ.trans_le hρR
   have hlam : 0 < lam := h.elliptic.pos
   have hM : 0 ≤ M := (div_nonneg KG.2 hlam.le).trans hM2
   have hKG : ((KG : ℝ) / lam) ^ 2 ≤ M ^ 2 := pow_le_pow_left₀ (by positivity) hM2 2
   have hKa := div_sq_mul_rpow_sq_le hlam hR hsmall
-  have hstep : ∀ s t, 0 < s → s ≤ t → t ≤ R →
-      ∫ y in ball x s, ‖W1p.gradient u y - ⨍ z in ball x s, W1p.gradient u z‖ ^ 2 ≤
-        oscConst n κ * (s / t) ^ (n + 3) *
-            (∫ y in ball x t, ‖W1p.gradient u y - ⨍ z in ball x t, W1p.gradient u z‖ ^ 2) +
-          oscConst n κ * 2 * ω * (δ ^ 2 * c ^ 2 + 1) * M ^ 2 * t ^ ((n : ℝ) + 1 + 2 * α) := by
-    intro s t hs hst htR
-    have ht : 0 < t := hs.trans_le hst
-    have hc := (h.mono htR).setIntegral_norm_sub_setAverage_sq_le hs hst
-    -- For bounded `∇u`, `∫_{B_t} ‖∇u‖² ≤ (c M R^α)² |B_t|`.
+  -- For bounded `∇u`, the energy error is `O(t^{n+1+2α})`.
+  have hF : ∀ t, 0 < t → t ≤ R →
+      2 * (t ^ (α : ℝ)) ^ 2 / lam ^ 2 *
+          (Ka ^ 2 * (∫ y in ball x t, ‖W1p.gradient u y‖ ^ 2) + KG ^ 2 * volume.real (ball x t)) ≤
+        2 * ω * (δ ^ 2 * c ^ 2 + 1) * M ^ 2 * t ^ ((n : ℝ) + 1 + 2 * α) := by
+    intro t ht htR
+    -- `∫_{B_t} ‖∇u‖² ≤ (c M R^α)² |B_t|`.
     have hφ : ∫ y in ball x t, ‖W1p.gradient u y‖ ^ 2 ≤
         (c * M * R ^ (α : ℝ)) ^ 2 * volume.real (ball x t) := by
       have hbdt := ae_restrict_of_ae_restrict_of_subset (ball_subset_ball htR) hbd
       calc ∫ y in ball x t, ‖W1p.gradient u y‖ ^ 2
           ≤ ∫ _ in ball x t, (c * M * R ^ (α : ℝ)) ^ 2 :=
-            setIntegral_mono_ae_restrict
-              ((Lp.memLp (W1p.gradient u)).integrableOn_norm_sub_sq_of_subset
-                ((ball_subset_ball htR).trans h.subset) measure_ball_lt_top.ne 0 |>.congr_fun
-                  (fun _ _ => by simp) measurableSet_ball)
+            setIntegral_mono_ae_restrict (h.mono htR).integrableOn_norm_gradient_sq
               (integrableOn_const measure_ball_lt_top.ne)
               (hbdt.mono fun y hy => pow_le_pow_left₀ (norm_nonneg _) hy 2)
         _ = _ := by rw [setIntegral_const, smul_eq_mul, mul_comm]
-    have hF : 2 * (t ^ (α : ℝ)) ^ 2 / lam ^ 2 *
-        (Ka ^ 2 * (∫ y in ball x t, ‖W1p.gradient u y‖ ^ 2) + KG ^ 2 * volume.real (ball x t)) ≤
-        2 * ω * (δ ^ 2 * c ^ 2 + 1) * M ^ 2 * t ^ ((n : ℝ) + 1 + 2 * α) := by
-      have hKaM : ((Ka : ℝ) * (c * M * R ^ (α : ℝ)) / lam) ^ 2 ≤ (δ * c * M) ^ 2 :=
-        calc ((Ka : ℝ) * (c * M * R ^ (α : ℝ)) / lam) ^ 2
-            = ((Ka : ℝ) / lam) ^ 2 * (R ^ (α : ℝ)) ^ 2 * (c * M) ^ 2 := by ring
-          _ ≤ δ ^ 2 * (c * M) ^ 2 := by gcongr
-          _ = _ := by ring
-      calc 2 * (t ^ (α : ℝ)) ^ 2 / lam ^ 2 *
-            (Ka ^ 2 * (∫ y in ball x t, ‖W1p.gradient u y‖ ^ 2) + KG ^ 2 * volume.real (ball x t))
-          ≤ 2 * (t ^ (α : ℝ)) ^ 2 / lam ^ 2 *
-            (Ka ^ 2 * ((c * M * R ^ (α : ℝ)) ^ 2 * volume.real (ball x t)) +
-              KG ^ 2 * volume.real (ball x t)) := by gcongr
-        _ = 2 * (t ^ (α : ℝ)) ^ 2 / lam ^ 2 *
-              ((Ka * (c * M * R ^ (α : ℝ))) ^ 2 * volume.real (ball x t)) +
-            2 * (t ^ (α : ℝ)) ^ 2 / lam ^ 2 * (KG ^ 2 * volume.real (ball x t)) := by ring
-        _ = 2 * ω * (((Ka : ℝ) * (c * M * R ^ (α : ℝ)) / lam) ^ 2 + ((KG : ℝ) / lam) ^ 2) *
-              t ^ ((n : ℝ) + 1 + 2 * α) := by
-            rw [two_mul_rpow_sq_div_mul_measureReal_ball_eq x ht,
-              two_mul_rpow_sq_div_mul_measureReal_ball_eq x ht, ← hω]
-            ring
-        _ ≤ 2 * ω * ((δ * c * M) ^ 2 + M ^ 2) * t ^ ((n : ℝ) + 1 + 2 * α) := by gcongr
+    have hKaM : ((Ka : ℝ) * (c * M * R ^ (α : ℝ)) / lam) ^ 2 ≤ (δ * c * M) ^ 2 :=
+      calc ((Ka : ℝ) * (c * M * R ^ (α : ℝ)) / lam) ^ 2
+          = ((Ka : ℝ) / lam) ^ 2 * (R ^ (α : ℝ)) ^ 2 * (c * M) ^ 2 := by ring
+        _ ≤ δ ^ 2 * (c * M) ^ 2 := by gcongr
         _ = _ := by ring
-    refine hc.trans ?_
-    rw [mul_add, ← mul_assoc]
-    refine add_le_add le_rfl ?_
-    calc oscConst n κ * (2 * (t ^ (α : ℝ)) ^ 2 / lam ^ 2 *
-          (Ka ^ 2 * (∫ y in ball x t, ‖W1p.gradient u y‖ ^ 2) + KG ^ 2 * volume.real (ball x t)))
-        ≤ oscConst n κ * (2 * ω * (δ ^ 2 * c ^ 2 + 1) * M ^ 2 *
-          t ^ ((n : ℝ) + 1 + 2 * α)) := by gcongr
+    calc 2 * (t ^ (α : ℝ)) ^ 2 / lam ^ 2 *
+          (Ka ^ 2 * (∫ y in ball x t, ‖W1p.gradient u y‖ ^ 2) + KG ^ 2 * volume.real (ball x t))
+        ≤ 2 * (t ^ (α : ℝ)) ^ 2 / lam ^ 2 *
+          (Ka ^ 2 * ((c * M * R ^ (α : ℝ)) ^ 2 * volume.real (ball x t)) +
+            KG ^ 2 * volume.real (ball x t)) := by gcongr
+      _ = 2 * (t ^ (α : ℝ)) ^ 2 / lam ^ 2 *
+            ((Ka * (c * M * R ^ (α : ℝ))) ^ 2 * volume.real (ball x t)) +
+          2 * (t ^ (α : ℝ)) ^ 2 / lam ^ 2 * (KG ^ 2 * volume.real (ball x t)) := by ring
+      _ = 2 * ω * (((Ka : ℝ) * (c * M * R ^ (α : ℝ)) / lam) ^ 2 + ((KG : ℝ) / lam) ^ 2) *
+            t ^ ((n : ℝ) + 1 + 2 * α) := by
+          rw [two_mul_rpow_sq_div_mul_measureReal_ball_eq x ht,
+            two_mul_rpow_sq_div_mul_measureReal_ball_eq x ht, ← hω]
+          ring
+      _ ≤ 2 * ω * ((δ * c * M) ^ 2 + M ^ 2) * t ^ ((n : ℝ) + 1 + 2 * α) := by gcongr
       _ = _ := by ring
-  have hdec := hit (by positivity) h.subset hstep ρ hρ hρR
-  have hρR' : (ρ / R) ^ ((n : ℝ) + 1 + 2 * α) * (M ^ 2 * R ^ ((n : ℝ) + 1 + 2 * α)) =
-      M ^ 2 * ρ ^ ((n : ℝ) + 1 + 2 * α) := by
-    rw [mul_left_comm, div_rpow_mul_rpow_eq hρ.le hR, sub_self, Real.rpow_zero, one_mul]
-  refine hdec.trans ?_
-  calc C₄ * ((ρ / R) ^ ((n : ℝ) + 1 + 2 * α) * ‖W1p.gradient u‖ ^ 2 +
-        oscConst n κ * 2 * ω * (δ ^ 2 * c ^ 2 + 1) * M ^ 2 * ρ ^ ((n : ℝ) + 1 + 2 * α))
-      ≤ C₄ * ((ρ / R) ^ ((n : ℝ) + 1 + 2 * α) * (M ^ 2 * R ^ ((n : ℝ) + 1 + 2 * α)) +
-        oscConst n κ * 2 * ω * (δ ^ 2 * c ^ 2 + 1) * M ^ 2 * ρ ^ ((n : ℝ) + 1 + 2 * α)) := by
-        gcongr
-        exact sq_le_mul_rpow_of_le hR (norm_nonneg _) hM1
-    _ = _ := by rw [hρR']; ring
+  refine (hcamp h (by positivity) hF hM1 ρ hρ hρR).trans_eq ?_
+  rw [sub_self, Real.rpow_zero]
+  ring
+
+/-- The hypotheses of the comparison estimates hold on `ball z R` for every `z` in the
+`R`-thickening of `S` if they hold on the `2R`-thickening. -/
+private theorem FrozenData.of_mem_thickening {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
+    {u : W1p volume Omega 2}
+    {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
+    {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))} {lam Lam κ : ℝ}
+    {α Ka KG : ℝ≥0} {S : Set (EuclideanSpace ℝ (Fin (n + 1)))} {R : ℝ}
+    {z : EuclideanSpace ℝ (Fin (n + 1))}
+    (hell : UniformlyEllipticOn (thickening (2 * R) S) a lam Lam) (hκ : Lam ≤ κ * lam)
+    (hα : 0 < α)
+    (haK : HolderOnWith Ka α (fun y => matrixBilinearForm (a y)) (thickening (2 * R) S))
+    (hGK : HolderOnWith KG α G (thickening (2 * R) S))
+    (hu : ∀ φ : 𝓓(Omega, ℝ), energyFormH1 a 0 0 u (W1p.ofTestFunctionₗ volume Omega 2 φ) =
+      ∫ y in Omega, ⟪G y, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) y⟫_ℝ)
+    (hR : 0 ≤ R) (hsub : thickening (2 * R) S ⊆ Omega) (hz : z ∈ thickening R S) :
+    FrozenData Omega u a G lam Lam κ α Ka KG z R :=
+  have hball : ball z R ⊆ thickening (2 * R) S :=
+    (ball_subset_thickening hz R).trans (by rw [two_mul]; exact thickening_thickening_subset R R S)
+  { elliptic := hell.mono_set (singleton_subset_iff.2 (thickening_mono (by linarith) S hz))
+    ratio := hκ
+    pos := hα
+    holder_coeff := haK.mono hball
+    holder_data := hGK.mono hball
+    eq := hu
+    subset := hball.trans hsub }
 
 /-- **The interior estimate for coefficients of small oscillation.** Let `0 < α < 1`. There are
 `δ > 0` and `C`, depending only on `n`, `α` and `κ`, such that the following holds. Let
@@ -826,17 +850,8 @@ private theorem exists_dist_preciseRepresentative_gradient_le_of_small (hα : 0 
   intro Omega u a G lam Lam Ka KG S R M hell hκ haK hGK hu hR hsub hsmall hM1 hM2 x hx y hy
   have hlam : 0 < lam := hell.pos
   have hM : 0 ≤ M := (div_nonneg KG.2 hlam.le).trans hM2
-  -- The hypotheses of the comparison estimates hold on `ball z R` for `z` in the `R`-thickening.
-  have hball : ∀ z ∈ thickening R S, ball z R ⊆ thickening (2 * R) S := fun z hz =>
-    (ball_subset_thickening hz R).trans (by rw [two_mul]; exact thickening_thickening_subset R R S)
   have hFD : ∀ z ∈ thickening R S, FrozenData Omega u a G lam Lam κ α Ka KG z R := fun z hz =>
-    { elliptic := hell.mono_set (singleton_subset_iff.2 (thickening_mono (by linarith) S hz))
-      ratio := hκ
-      pos := hα
-      holder_coeff := haK.mono (hball z hz)
-      holder_data := hGK.mono (hball z hz)
-      eq := hu
-      subset := (hball z hz).trans hsub }
+    FrozenData.of_mem_thickening hell hκ hα haK hGK hu hR.le hsub hz
   have hS : ∀ z ∈ S, z ∈ thickening R S := fun z hz => self_subset_thickening hR S hz
   -- `∇u` is bounded by `c M R^α` almost everywhere on `ball z R` for `z ∈ S`.
   have hae := ae_eq_restrict_preciseRepresentative Omega.isOpen
