@@ -217,22 +217,13 @@ theorem charWeight_vecMul_inv [NeZero N] (huv : u * v ∣ N) {γ : SL(2, ℤ)} (
     simpa [Gamma0_mem, ZMod.intCast_zmod_eq_zero_iff_dvd] using hγ
   obtain ⟨n, rfl⟩ := huv
   have hv0 : (v : ℤ) ≠ 0 := by
-    rintro hv0
-    have hv0' : v = 0 := by exact_mod_cast hv0
-    exact NeZero.ne (u * v * n) (by simp [hv0'])
-  have hdet : γ 0 0 * γ 1 1 - γ 0 1 * γ 1 0 = 1 := by
-    have := γ.det_coe
-    rwa [Matrix.det_fin_two] at this
+    exact_mod_cast right_ne_zero_of_mul (left_ne_zero_of_mul (NeZero.ne (u * v * n)))
+  have hdet : γ 0 0 * γ 1 1 - γ 0 1 * γ 1 0 = 1 := γ.fin_two_mul_sub_mul_eq_one
   set a := γ 0 0
   set b := γ 0 1
   set c := γ 1 0
   set d := γ 1 1
-  have hx0 : (x ᵥ* ((γ⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ)) 0 = x 0 * d - x 1 * c := by
-    simp [vecMul, dotProduct, Matrix.adjugate_fin_two, c, d]
-    ring
-  have hx1 : (x ᵥ* ((γ⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ)) 1 = -(x 0 * b) + x 1 * a := by
-    simp [vecMul, dotProduct, Matrix.adjugate_fin_two, a, b]
-  rw [hx0, hx1]
+  rw [vecMul_inv_apply_zero, vecMul_inv_apply_one]
   -- `d` is a unit modulo `v`, so divisibility of the first entry does not change
   have hcop : IsCoprime (v : ℤ) d :=
     ⟨-(u * n * t) * b, a, by rw [← hdet, ht]; push_cast; ring⟩
