@@ -104,12 +104,15 @@ variable {N p : ℕ}
 only at matrices of `Γ₀(N)` with the same lower-right entry modulo `N` as `γ`, which is all the
 factorisation ever produces; the scalar `u` is left free so that the two corollaries below —
 `Γ₁(N)`-invariance and nebentypus transport — are both instances. -/
-theorem heckeSlashUpperTri_slash_mapGL_of_mem_Gamma0 (k : ℤ) [NeZero p] (hpN : p ∣ N)
+theorem heckeSlashUpperTri_slash_mapGL_of_mem_Gamma0 (k : ℤ) (hpN : p ∣ N)
     {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) {f : ℍ → ℂ} {u : ℂ}
     (hf : ∀ δ ∈ Gamma0 N, ((δ 1 1 : ℤ) : ZMod N) = ((γ 1 1 : ℤ) : ZMod N) →
       f ∣[k] (mapGL ℚ δ : GL (Fin 2) ℚ) = u • f) :
     heckeSlashUpperTri k p f ∣[k] (mapGL ℚ γ : GL (Fin 2) ℚ)
       = u • heckeSlashUpperTri k p f := by
+  rcases eq_or_ne p 0 with rfl | hp
+  · simp [heckeSlashUpperTri_def]
+  have : NeZero p := ⟨hp⟩
   rw [heckeSlashUpperTri_def, SlashAction.sum_slash, Finset.smul_sum]
   have key : ∀ j : Fin p,
       (f ∣[k] (upperTriRep p j : GL (Fin 2) ℚ)) ∣[k] (mapGL ℚ γ : GL (Fin 2) ℚ)
@@ -125,7 +128,7 @@ theorem heckeSlashUpperTri_slash_mapGL_of_mem_Gamma0 (k : ℤ) [NeZero p] (hpN :
 
 /-- **The upper-triangular sum preserves `Γ₁(N)`-invariance at `p ∣ N`** — the invariance that
 turns it into an operator on `M_k(Γ₁(N))`. -/
-theorem heckeSlashUpperTri_slash_mapGL_of_mem_Gamma1 (k : ℤ) [NeZero p] (hpN : p ∣ N)
+theorem heckeSlashUpperTri_slash_mapGL_of_mem_Gamma1 (k : ℤ) (hpN : p ∣ N)
     {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma1 N) {f : ℍ → ℂ}
     (hf : ∀ δ ∈ Gamma1 N, f ∣[k] (mapGL ℚ δ : GL (Fin 2) ℚ) = f) :
     heckeSlashUpperTri k p f ∣[k] (mapGL ℚ γ : GL (Fin 2) ℚ) = heckeSlashUpperTri k p f := by
@@ -138,7 +141,7 @@ theorem heckeSlashUpperTri_slash_mapGL_of_mem_Gamma1 (k : ℤ) [NeZero p] (hpN :
 /-- **The upper-triangular sum preserves the nebentypus at `p ∣ N`**: if `f` transforms under
 `Γ₀(N)` by the character `χ`, so does `heckeSlashUpperTri k p f`. This is the function-level
 statement behind the fact that the operator preserves `M_k(N, χ)`. -/
-theorem heckeSlashUpperTri_slash_mapGL_of_nebentypus (k : ℤ) [NeZero p] (hpN : p ∣ N)
+theorem heckeSlashUpperTri_slash_mapGL_of_nebentypus (k : ℤ) (hpN : p ∣ N)
     (χ : (ZMod N)ˣ →* ℂˣ) (γ : ↥(Gamma0 N)) {f : ℍ → ℂ}
     (hf : ∀ δ : ↥(Gamma0 N), f ∣[k] (mapGL ℚ (δ : SL(2, ℤ)) : GL (Fin 2) ℚ)
       = (↑(χ ((Gamma0Map N).toHomUnits δ)) : ℂ) • f) :
@@ -156,7 +159,7 @@ The divisor case above does not apply directly at `n = q ^ 2`, since `Γ₀(N)` 
 `Γ₀(q ^ 2)`. Instead the index is peeled apart one prime at a time, and the composition law for
 upper-triangular sums reduces to the divisor case. -/
 theorem heckeSlashUpperTri_slash_mapGL_of_nebentypus_of_primeFactors_subset (k : ℤ)
-    (χ : (ZMod N)ˣ →* ℂˣ) (n : ℕ) (hn0 : n ≠ 0)
+    (χ : (ZMod N)ˣ →* ℂˣ) (n : ℕ)
     (hn : n.primeFactors ⊆ N.primeFactors) (γ : ↥(Gamma0 N)) {f : ℍ → ℂ}
     (hf : ∀ δ : ↥(Gamma0 N), f ∣[k] (mapGL ℚ (δ : SL(2, ℤ)) : GL (Fin 2) ℚ)
       = (↑(χ ((Gamma0Map N).toHomUnits δ)) : ℂ) • f) :
@@ -164,6 +167,8 @@ theorem heckeSlashUpperTri_slash_mapGL_of_nebentypus_of_primeFactors_subset (k :
       = (↑(χ ((Gamma0Map N).toHomUnits γ)) : ℂ) • heckeSlashUpperTri k n f := by
   induction n using Nat.strong_induction_on generalizing γ with
   | _ n ih =>
+    rcases eq_or_ne n 0 with rfl | hn0
+    · simp [heckeSlashUpperTri_def]
     rcases eq_or_ne n 1 with rfl | hn1
     · rw [heckeSlashUpperTri_one]
       exact hf γ
@@ -171,19 +176,16 @@ theorem heckeSlashUpperTri_slash_mapGL_of_nebentypus_of_primeFactors_subset (k :
       have hqn : n.minFac ∣ n := Nat.minFac_dvd n
       have hqN : n.minFac ∣ N :=
         (Nat.mem_primeFactors.mp (hn (Nat.mem_primeFactors.mpr ⟨hq, hqn, hn0⟩))).2.1
-      have hm0 : n / n.minFac ≠ 0 :=
-        (Nat.div_pos (Nat.le_of_dvd (Nat.pos_of_ne_zero hn0) hqn) hq.pos).ne'
       have hmlt : n / n.minFac < n := Nat.div_lt_self (Nat.pos_of_ne_zero hn0) hq.one_lt
       have hmn : (n / n.minFac).primeFactors ⊆ N.primeFactors :=
         (Nat.primeFactors_mono (Nat.div_dvd_of_dvd hqn) hn0).trans hn
-      have _ : NeZero n.minFac := ⟨hq.ne_zero⟩
       have key : heckeSlashUpperTri k n f
           = heckeSlashUpperTri k n.minFac (heckeSlashUpperTri k (n / n.minFac) f) := by
         rw [heckeSlashUpperTri_heckeSlashUpperTri k n.minFac (n / n.minFac) f,
           Nat.div_mul_cancel hqn]
       rw [key]
       exact heckeSlashUpperTri_slash_mapGL_of_nebentypus k hqN χ γ
-        fun δ ↦ ih _ hmlt hm0 hmn δ
+        fun δ ↦ ih _ hmlt hmn δ
 
 end HeckeRing.GL2
 
