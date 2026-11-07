@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.ContinuousLog.Circle
 import TauCeti.Topology.ConnectedComponents
 import TauCeti.Topology.Connected.LocallyPathConnected
+import Mathlib.Analysis.Complex.BranchLogRoot
 import Mathlib.Analysis.Complex.Tietze
 import Mathlib.Analysis.Convex.Contractible
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
@@ -175,22 +176,20 @@ private theorem not_hasContinuousLogOn_of_isBounded_connectedComponentIn (hK : I
       exact mul_ne_zero (Complex.exp_ne_zero _)
         (sub_ne_zero.mpr fun hzeq => hbcl (hzeq ▸ hz))
     · rw [hΦdef, piecewise_eq_of_notMem _ _ _ hz]
-      refine sub_ne_zero.mpr fun hzeq => hz ?_
-      rw [hzeq]
-      exact subset_closure haV
+      exact sub_ne_zero.mpr fun hzeq => hz (hzeq ▸ subset_closure haV)
   -- a large circle about `a` misses `closure V`, and there `Φ` is the map to the centre
   obtain ⟨R, hR, hRsub⟩ := hVb.closure.subset_ball_lt 0 a
   have hsphere : EqOn Φ (fun z => z - a) (sphere a R) := by
     intro z hz
-    have hzcl : z ∉ closure V := fun hmem => by
-      have h₁ : dist z a < R := mem_ball.mp (hRsub hmem)
-      have h₂ : dist z a = R := mem_sphere.mp hz
-      exact absurd h₂ h₁.ne
+    have hzcl : z ∉ closure V := fun hmem => (mem_ball.mp (hRsub hmem)).ne (mem_sphere.mp hz)
     rw [hΦdef, piecewise_eq_of_notMem _ _ _ hzcl]
   have hUc : IsSimplyConnected (univ : Set ℂ) :=
     (Homeomorph.Set.univ ℂ).toHomotopyEquiv.simplyConnectedSpace
-  have hΦlog := hasContinuousLogOn_of_isSimplyConnected hUc isOpen_univ hΦc.continuousOn
-    fun z _ ↦ hΦ0 z
+  obtain ⟨L, hLc, hLeq⟩ := Complex.exists_continuousOn_eqOn_exp_comp hUc isOpen_univ
+    hΦc.continuousOn (by rintro ⟨z, _, hz⟩; exact hΦ0 z hz)
+  have hΦlog : HasContinuousLogOn Φ univ :=
+    hasContinuousLogOn_iff.mpr
+      ⟨L, hLc, fun z hz ↦ by simpa only [Function.comp_apply] using hLeq hz⟩
   exact not_hasContinuousLogOn_sub_sphere hR.le a
     ((hΦlog.mono (subset_univ _)).congr hsphere)
 
