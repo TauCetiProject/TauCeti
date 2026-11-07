@@ -146,19 +146,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
   {n : ℕ∞ω}
 
-/-- In the chosen trivializations, a symmetric bilinear map has the same coordinates in the
-symmetric bundle and in the bundle of all bilinear maps. -/
-theorem coe_trivializationAt_symmetricBilinearMaps_snd {x₀ x : B}
-    (hx : x ∈ (trivializationAt F V x₀).baseSet) (b : symmetricBilinearMaps 𝕜 (V x) G) :
-    ((trivializationAt (symmetricBilinearMaps 𝕜 F G)
-        (fun x ↦ symmetricBilinearMaps 𝕜 (V x) G) x₀ ⟨x, b⟩).2 :
-        F →L[𝕜] F →L[𝕜] G) =
-      (trivializationAt (F →L[𝕜] F →L[𝕜] G) (fun x ↦ V x →L[𝕜] V x →L[𝕜] G) x₀
-        ⟨x, (b : V x →L[𝕜] V x →L[𝕜] G)⟩).2 := by
-  ext v w
-  rw [hom_trivializationAt_apply, inCoordinates_apply_eq₂ hx hx (by simp)]
-  simp [trivializationAt_symmetricBilinearMaps_apply, Trivialization.symmL_apply _ hx]
-
 variable [NeZero (2 : 𝕜)]
 
 /-- A field of symmetric bilinear maps is `C^n` as a section of the symmetric bundle exactly when
