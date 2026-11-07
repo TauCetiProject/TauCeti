@@ -31,6 +31,8 @@ interval indexed by `⌊x / δ⌋`, and an interval meeting `[-R, R]` has its in
 * `TauCeti.mem_Icc_mul_floor_div`: `x ∈ [δ ⌊x / δ⌋, δ (⌊x / δ⌋ + 1)]`.
 * `TauCeti.mem_Icc_ceil_floor_of_mem_Icc`: if `x ∈ [δ m, δ (m + 1)]` and `|x| ≤ R`, then
   `m ∈ [⌈-R / δ⌉ - 1, ⌊R / δ⌋]`.
+* `TauCeti.abs_sub_lt_two_thirds_of_natFloor_eq`: elements whose shifts have equal floors of
+  `x * (3 / 2)` differ by less than `2 / 3`.
 -/
 
 public section
@@ -77,5 +79,17 @@ theorem mem_Icc_ceil_floor_of_mem_Icc (hδ : 0 < δ) {R x : K} {m : ℤ}
   · refine Int.le_floor.2 ?_
     rw [le_div_iff₀ hδ]
     linarith [hx.1]
+
+/-- Two elements of an ordered field whose images under `x ↦ ⌊x * (3 / 2)⌋₊` agree after a common
+shift `m` differ by less than `2 / 3`: the cells of the pigeonhole grid have side `2 / 3`. -/
+theorem abs_sub_lt_two_thirds_of_natFloor_eq {u v m : K} (hu : 0 ≤ u + m) (hv : 0 ≤ v + m)
+    (h : ⌊(u + m) * (3 / 2)⌋₊ = ⌊(v + m) * (3 / 2)⌋₊) : |u - v| < 2 / 3 := by
+  have hcell := Int.abs_sub_lt_one_of_floor_eq_floor
+    (a := (u + m) * (3 / 2)) (b := (v + m) * (3 / 2)) <| by
+    rw [← Int.natCast_floor_eq_floor (by positivity), ← Int.natCast_floor_eq_floor (by positivity),
+      h]
+  rw [← sub_mul, add_sub_add_right_eq_sub, abs_mul, abs_of_pos (by norm_num : (0 : K) < 3 / 2)]
+    at hcell
+  linarith
 
 end TauCeti
