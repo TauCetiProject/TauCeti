@@ -76,6 +76,21 @@ theorem ae_tsum_edist_lt_top_of_eLpNorm_le (hp : 1 ≤ p) {f : ℕ → α → Z}
     exact (eLpNorm_sum_le hp).trans ((Finset.sum_le_sum fun k _ ↦ hjump k).trans (sum_le_tsum _))
   exact ae_lt_top_of_eLpNorm_ne_top hp0 (ne_top_of_le_ne_top hb htsum_le)
 
+/-- **Finite displacement estimate.** For `1 ≤ p`, the `Lᵖ` norm of the distance from `f n` to
+`f (n + N)` is bounded by the sum of the bounds `b (n + k)` on the consecutive `Lᵖ` jumps. -/
+theorem eLpNorm_edist_le_sum_of_eLpNorm_le (hp : 1 ≤ p) {f : ℕ → α → Z}
+    (hf : ∀ n, AEStronglyMeasurable (f n) μ) {b : ℕ → ℝ≥0∞}
+    (hjump : ∀ n, eLpNorm (fun x ↦ edist (f n x) (f (n + 1) x)) p μ ≤ b n) (n N : ℕ) :
+    eLpNorm (fun x ↦ edist (f n x) (f (n + N) x)) p μ ≤ ∑ k ∈ Finset.range N, b (n + k) :=
+  calc eLpNorm (fun x ↦ edist (f n x) (f (n + N) x)) p μ
+      ≤ eLpNorm (∑ k ∈ Finset.range N, fun x ↦ edist (f (n + k) x) (f (n + k + 1) x)) p μ :=
+        eLpNorm_mono_enorm (((hf n).edist (hf (n + N))).aestronglyMeasurable) fun x ↦ by
+          simpa [Finset.sum_apply, ← Nat.add_assoc] using
+            edist_le_range_sum_edist (fun k ↦ f (n + k) x) N
+    _ ≤ ∑ k ∈ Finset.range N, eLpNorm (fun x ↦ edist (f (n + k) x) (f (n + k + 1) x)) p μ :=
+        eLpNorm_sum_le hp
+    _ ≤ ∑ k ∈ Finset.range N, b (n + k) := Finset.sum_le_sum fun k _ ↦ hjump (n + k)
+
 /-- **Metric-valued `Lᵖ` chain completeness.** For `1 ≤ p` (including `p = ∞`) and a complete
 pseudo-extended-metric target `Z` (with no global separability assumption), if consecutive `Lᵖ`
 discrepancies of a sequence `f` of a.e. strongly measurable functions are bounded by a summable
@@ -98,15 +113,7 @@ theorem exists_eLpNorm_edist_le_tsum [CompleteSpace Z] (hp : 1 ≤ p) {f : ℕ �
   · filter_upwards [hlim] with x hx
     exact tendsto_const_nhds.edist
       (hx.comp (tendsto_atTop_mono (fun N ↦ Nat.le_add_left N n) tendsto_id))
-  · calc eLpNorm (fun x ↦ edist (f n x) (f (n + N) x)) p μ
-        ≤ eLpNorm (∑ k ∈ Finset.range N, fun x ↦ edist (f (n + k) x) (f (n + k + 1) x)) p μ :=
-          eLpNorm_mono_enorm (((hf n).edist (hf (n + N))).aestronglyMeasurable) fun x ↦ by
-            simpa [Finset.sum_apply, ← Nat.add_assoc] using
-              edist_le_range_sum_edist (fun k ↦ f (n + k) x) N
-      _ ≤ ∑ k ∈ Finset.range N, eLpNorm (fun x ↦ edist (f (n + k) x) (f (n + k + 1) x)) p μ :=
-          eLpNorm_sum_le hp
-      _ ≤ ∑ k ∈ Finset.range N, b (n + k) := Finset.sum_le_sum fun k _ ↦ hjump (n + k)
-      _ ≤ ∑' k, b (n + k) := sum_le_tsum _
+  · exact (eLpNorm_edist_le_sum_of_eLpNorm_le hp hf hjump n N).trans (sum_le_tsum _)
 
 /-- **Completeness of metric `Lᵖ` discrepancies under a vanishing Cauchy modulus.** For `1 ≤ p` and
 a complete pseudo-extended-metric target `Z`, a sequence of a.e. strongly measurable functions
