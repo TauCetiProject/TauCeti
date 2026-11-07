@@ -107,10 +107,9 @@ theorem map_comp_starProjection_sub_starProjection_comp_le
 theorem mul_map_sub_starProjection_le_map_comp_sub_comp [FiniteDimensional K E]
     (N : UnitarilyInvariantSeminorm K E E)
     {A B : E →L[K] E}
-    (hA : (A : E →ₗ[K] E).IsSymmetric)
-    (hB : (B : E →ₗ[K] E).IsSymmetric)
+    (hAB : ((A - B : E →L[K] E) : E →ₗ[K] E).IsSymmetric)
     {U V : Submodule K E} [U.HasOrthogonalProjection]
-    [V.HasOrthogonalProjection] {delta : ℝ} (hdelta : 0 < delta)
+    [V.HasOrthogonalProjection] {delta : ℝ} (hdelta : 0 ≤ delta)
     (hkyUV : ∀ k : Nat,
       (((delta : ℝ) : K) • (Vᗮ.orthogonalProjectionOnto.toLinearMap ∘ₗ U.subtype)).kyFanSum k ≤
         (Vᗮ.orthogonalProjectionOnto.toLinearMap ∘ₗ
@@ -155,7 +154,7 @@ theorem mul_map_sub_starProjection_le_map_comp_sub_comp [FiniteDimensional K E]
   have hblock : delta * NB Xblock ≤ NB Cblock := by
     have h := NB.map_prodMap_withLpMap_le hkyUV hkyVU
     rw [← hsmul, map_smul_eq_mul, RCLike.norm_ofReal,
-      abs_of_nonneg hdelta.le] at h
+      abs_of_nonneg hdelta] at h
     exact h
   -- Lift the block estimate back to the ambient space through the isometries.
   have hNB_apply (T : WithLp 2 (U × Uᗮ) →ₗ[K] WithLp 2 (Vᗮ × V)) :
@@ -163,7 +162,7 @@ theorem mul_map_sub_starProjection_le_map_comp_sub_comp [FiniteDimensional K E]
         (EU : E →ₗ[K] WithLp 2 (U × Uᗮ))) := by
     simp only [NB, UnitarilyInvariantSeminorm.arrowCongr_apply]
   rw [hNB_apply, hNB_apply, Submodule.lift_crossBlocks_eq_starProjection_sub,
-    Submodule.lift_residualBlocks_eq_comp_sub _ hA hB] at hblock
+    Submodule.lift_residualBlocks_eq_comp_sub _ hAB] at hblock
   simpa only [ContinuousLinearMap.toLinearMap_sub] using hblock
 
 end TauCeti.UnitarilyInvariantSeminorm

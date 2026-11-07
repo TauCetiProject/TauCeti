@@ -406,7 +406,7 @@ theorem lift_crossBlocks_eq_starProjection_sub [FiniteDimensional 𝕜 E]
 `(P_{Uᗮ} (A - B) |_V)ᴴ` through the orthogonal decompositions is the checkerboard residual
 `(B - A) P_U - P_V (B - A)`. -/
 theorem lift_residualBlocks_eq_comp_sub [FiniteDimensional 𝕜 E]
-    {A B : E →L[𝕜] E} (hA : (A : E →ₗ[𝕜] E).IsSymmetric) (hB : (B : E →ₗ[𝕜] E).IsSymmetric)
+    {A B : E →L[𝕜] E} (hAB : ((A - B : E →L[𝕜] E) : E →ₗ[𝕜] E).IsSymmetric)
     (V : Submodule 𝕜 E) [V.HasOrthogonalProjection] :
     ((V.orthogonalDecomposition.trans (LinearIsometryEquiv.withLpProdComm 2 𝕜 V Vᗮ)).symm :
         WithLp 2 (Vᗮ × V) →ₗ[𝕜] E) ∘ₗ
@@ -417,8 +417,6 @@ theorem lift_residualBlocks_eq_comp_sub [FiniteDimensional 𝕜 E]
       (U.orthogonalDecomposition : E →ₗ[𝕜] WithLp 2 (U × Uᗮ)) =
       (((B - A : E →L[𝕜] E) : E →ₗ[𝕜] E) ∘ₗ (U.starProjection : E →ₗ[𝕜] E)) -
         ((V.starProjection : E →ₗ[𝕜] E) ∘ₗ ((B - A : E →L[𝕜] E) : E →ₗ[𝕜] E)) := by
-  have hAB : (((A - B : E →L[𝕜] E) : E →ₗ[𝕜] E)).IsSymmetric := by
-    simpa using hA.sub hB
   simp only [LinearMap.adjoint_comp, Submodule.adjoint_subtype,
     Submodule.adjoint_orthogonalProjectionOnto_toLinearMap, hAB.adjoint_eq, LinearMap.comp_assoc]
   ext x

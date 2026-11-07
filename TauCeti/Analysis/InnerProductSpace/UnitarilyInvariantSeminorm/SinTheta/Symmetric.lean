@@ -197,7 +197,8 @@ theorem mul_map_sub_starProjection_le_map_sub
       abs_of_nonneg hdelta.le, LinearMap.kyFanSum_neg,
       LinearMap.kyFanSum_adjoint, LinearMap.kyFanSum_adjoint]
     exact kyFanSum_cross_block_le hB hA hV hUperp hgapVU k
-  exact (N.mul_map_sub_starProjection_le_map_comp_sub_comp hA hB hdelta hkyUV hkyVU).trans
+  exact (N.mul_map_sub_starProjection_le_map_comp_sub_comp
+    (by simpa using hA.sub hB) hdelta.le hkyUV hkyVU).trans
     (N.map_comp_starProjection_sub_starProjection_comp_le U V
       ((B - A : E →L[K] E) : E →ₗ[K] E))
 
