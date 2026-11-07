@@ -315,8 +315,9 @@ theorem exists_mem_nhds_norm_ofReal_add_cpow_le_mul_one_add_rpow {z : ℂ} (hz :
     rw [add_comm (t : ℂ) w]
     exact hlow w hw_ball ⟨t, ht⟩
   -- Upper bound `‖(t : ℂ) + w‖ ≤ M * (1 + t)` from the triangle inequality on `ball z c`.
-  have hupper : ‖(t : ℂ) + w‖ ≤ M * (1 + t) :=
-    norm_ofReal_add_le_mul_one_add_of_mem_closedBall (Metric.ball_subset_closedBall hw_ball) ht
+  have hupper : ‖(t : ℂ) + w‖ ≤ M * (1 + t) := by
+    have h := norm_ofReal_add_le_mul_one_add (norm_lt_of_mem_ball hw_ball).le ht
+    rwa [← add_assoc] at h
   -- Bound the radial factor `‖(t : ℂ) + w‖ ^ s.re` according to the sign of `s.re`.
   have hrpow : ‖(t : ℂ) + w‖ ^ s.re ≤ max (c ^ s.re) (M ^ s.re) * (1 + t) ^ s.re := by
     rcases le_or_gt s.re 0 with hs | hs

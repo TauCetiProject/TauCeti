@@ -39,7 +39,7 @@ is a principal logarithm.
 * `TauCeti.ofReal_add_mem_slitPlane`, `TauCeti.ofReal_add_mem_slitPlane_of_mem_union`
 * `TauCeti.ofReal_mem_slitPlane_union_zero`, `TauCeti.mem_slitPlane_union_zero_iff`
 * `TauCeti.exists_pos_forall_mem_ball_mul_one_add_le_norm_add`
-* `TauCeti.norm_ofReal_add_le_mul_one_add_of_mem_closedBall` -- the matching upper bound
+* `TauCeti.norm_ofReal_add_le_mul_one_add` -- the matching upper bound
 * `TauCeti.exists_pos_mul_one_add_le_norm_ofReal_add`
 * `TauCeti.exists_norm_div_ofReal_add_mul_le`, `TauCeti.continuousOn_div_ofReal_add`
 * `TauCeti.exists_norm_inv_ofReal_add_le` -- `(t + p)⁻¹ = O((1 + t)⁻¹)` for `p ∈ slitPlane`
@@ -178,18 +178,15 @@ theorem exists_pos_forall_mem_ball_mul_one_add_le_norm_add {z : ℂ} (hz : z ∈
       _ ≤ ‖w + ((x : ℝ) : ℂ)‖ + ‖z - w‖ := norm_add_le _ _
   nlinarith [hzc x x.coe_nonneg, x.coe_nonneg]
 
-/-- The norm of `(t : ℂ) + w` for `w` in the closed ball of radius `c` around `z` and `t ≥ 0` is at
-most `(1 + ‖z‖ + c) * (1 + t)`. -/
-theorem norm_ofReal_add_le_mul_one_add_of_mem_closedBall {z w : ℂ} {c : ℝ}
-    (hw : w ∈ Metric.closedBall z c) {t : ℝ} (ht : 0 ≤ t) :
-    ‖(t : ℂ) + w‖ ≤ (1 + ‖z‖ + c) * (1 + t) := by
-  have hc : 0 ≤ c := dist_nonneg.trans (Metric.mem_closedBall.mp hw)
-  have hw_norm : ‖w‖ ≤ ‖z‖ + c := norm_le_of_mem_closedBall hw
+/-- If `‖w‖ ≤ R` and `t ≥ 0`, then the norm of `(t : ℂ) + w` is at most `(1 + R) * (1 + t)`. -/
+theorem norm_ofReal_add_le_mul_one_add {w : ℂ} {R : ℝ} (hw : ‖w‖ ≤ R) {t : ℝ} (ht : 0 ≤ t) :
+    ‖(t : ℂ) + w‖ ≤ (1 + R) * (1 + t) := by
+  have hR : 0 ≤ R := (norm_nonneg w).trans hw
   calc ‖(t : ℂ) + w‖ ≤ ‖(t : ℂ)‖ + ‖w‖ := norm_add_le _ _
     _ = t + ‖w‖ := by rw [Complex.norm_real, Real.norm_of_nonneg ht]
-    _ ≤ t + (‖z‖ + c) := by linarith
-    _ ≤ (1 + ‖z‖ + c) * (1 + t) := by
-      have : 0 ≤ (‖z‖ + c) * t := mul_nonneg (by positivity) ht
+    _ ≤ t + R := by linarith
+    _ ≤ (1 + R) * (1 + t) := by
+      have : 0 ≤ R * t := mul_nonneg hR ht
       linarith
 
 /-- For `x ∈ slitPlane`, `‖t + x‖` grows at least linearly: `c (1 + t) ≤ ‖t + x‖` for `t ≥ 0`. -/
