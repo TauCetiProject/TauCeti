@@ -265,20 +265,6 @@ private theorem exists_graphon_tendsto_cutNorm_limitStep (V : ℕ → Graphon Ω
   filter_upwards [hUae] with z hz
   simp only [SymmKernel.coe_sub, Pi.sub_apply, Graphon.coe_toSymmKernel, hA, hz]
 
-/-- The block averages of a graphon converge to it in cut norm. -/
-private theorem tendsto_cutNorm_sub_countableStepGraphonAvg (W : Graphon Ω μ) :
-    Tendsto (fun n ↦ cutNorm μ (W.toSymmKernel -
-      (countableStepGraphonAvg W n).toSymmKernel)) atTop (𝓝 0) := by
-  have h := (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp
-    (tendsto_eLpNorm_countableStepGraphonAvg W)
-  simp only [Function.comp_def, ENNReal.toReal_zero] at h
-  refine squeeze_zero (fun _ ↦ cutNorm_nonneg μ _) (fun n ↦ ?_) h
-  refine (cutNorm_le_toReal_eLpNorm μ _).trans (le_of_eq ?_)
-  rw [← eLpNorm_neg]
-  congr 2
-  funext z
-  simp only [SymmKernel.coe_sub, Pi.sub_apply, Pi.neg_apply, Graphon.coe_toSymmKernel, neg_sub]
-
 /-- A cut-norm Cauchy sequence converges in cut norm to any graphon to which its limiting step
 graphons converge. -/
 private theorem tendsto_cutNorm_of_tendsto_limitStep (V : ℕ → Graphon Ω μ)
