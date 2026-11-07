@@ -348,11 +348,13 @@ theorem integral_trace_re_gaussianGramComplex (m n : ℕ) :
   simp_rw [integral_finsetSum _ fun j _ ↦ hint _ j, hval]
   simp
 
-private theorem isClosed_posSemidef {𝕜 : Type*} [RCLike 𝕜] {m : Type*}
-    [Fintype m] [DecidableEq m] : IsClosed {A : Matrix m m 𝕜 | A.PosSemidef} := by
+private theorem isClosed_posSemidef {𝕜 : Type*} [RCLike 𝕜] {m : ℕ} :
+    IsClosed {A : Matrix (Fin m) (Fin m) 𝕜 | A.PosSemidef} := by
   open scoped MatrixOrder in
     simpa only [Matrix.nonneg_iff_posSemidef, id_eq] using
-      (isClosed_le (continuous_const : Continuous (fun _ : Matrix m m 𝕜 ↦ (0 : Matrix m m 𝕜)))
+      (isClosed_le
+        (continuous_const :
+          Continuous (fun _ : Matrix (Fin m) (Fin m) 𝕜 ↦ (0 : Matrix (Fin m) (Fin m) 𝕜)))
         continuous_id)
 
 /-- The real Gaussian Gram law is supported on positive semidefinite matrices. -/
