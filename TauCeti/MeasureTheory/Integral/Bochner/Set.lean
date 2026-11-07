@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import TauCeti.MeasureTheory.Measure.Typeclasses.NullSingletonClass
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 
 /-!
@@ -28,6 +29,9 @@ on nonempty open sets.
 * `TauCeti.integrable_indicator_Ico_one`: the indicator function of `[a, b)` is integrable.
 * `TauCeti.setIntegral_abs_eq_sub`: the integral of `|f|` over `s` is the integral of `f` over the
   part of `s` where `f ≥ 0` minus its integral over the rest of `s`.
+* `TauCeti.integrableOn_sin_of_measure_ne_top`,
+  `TauCeti.integrableOn_exp_ofReal_mul_I_of_measure_ne_top`: the sine and the unit-circle
+  exponential `exp (t x I)` are integrable on a set of finite measure.
 * `Continuous.eq_zero_of_integral_conj_mul_self_eq_zero`: a continuous square-integrable function
   `h` with `∫ conj (h x) * h x = 0` vanishes.
 -/
@@ -35,6 +39,7 @@ on nonempty open sets.
 public section
 
 open MeasureTheory Function Set
+open scoped ENNReal
 
 namespace TauCeti
 
@@ -119,6 +124,21 @@ theorem mul_integral_image_eq_sum_pieces {E M ι : Type*} [MeasurableSpace E] [F
   rw [setIntegral_congr_set (hZ.image_sdiff_ae_eq g s μ), ← hcover,
     integral_iUnion_fintype hT hpair (fun i ↦ hC.mono_set (hsub i)), Finset.mul_sum]
   exact Finset.sum_congr rfl fun i _ ↦ hpiece i
+
+/-- The sine is integrable on a set of finite measure. -/
+theorem integrableOn_sin_of_measure_ne_top {ν : Measure ℝ} {s : Set ℝ} (hs : ν s ≠ ∞) :
+    IntegrableOn (fun x : ℝ ↦ Real.sin x) s ν := by
+  have : IsFiniteMeasure (ν.restrict s) := isFiniteMeasure_restrict.mpr hs
+  exact Integrable.of_bound (by fun_prop) 1
+    (ae_of_all _ fun x ↦ by simpa using Real.abs_sin_le_one x)
+
+/-- The unit-circle exponential `x ↦ exp (t x I)` is integrable on a set of finite measure. -/
+theorem integrableOn_exp_ofReal_mul_I_of_measure_ne_top {ν : Measure ℝ} {s : Set ℝ} (t : ℝ)
+    (hs : ν s ≠ ∞) :
+    IntegrableOn (fun x : ℝ ↦ Complex.exp ((t * x : ℝ) * Complex.I)) s ν := by
+  have : IsFiniteMeasure (ν.restrict s) := isFiniteMeasure_restrict.mpr hs
+  exact Integrable.of_bound (by fun_prop) 1 (ae_of_all _ fun x ↦ by
+    simpa using (Complex.norm_exp_ofReal_mul_I (t * x)).le)
 
 end TauCeti
 
