@@ -10,7 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 /-!
 # Polynomially weighted Gaussian integrability
 
-Gaussian decay dominates nonnegative powers of `1 + |x|` on the real line.
+Gaussian decay dominates real powers of `1 + |x|` on the real line.
 -/
 
 public section
@@ -51,9 +51,9 @@ theorem one_add_abs_pow_le_two_pow_mul (x : ℝ) (k : ℕ) :
     _ ≤ 2 ^ k * (1 + x ^ (2 * k : ℕ)) := by
       gcongr
 
-/-- Gaussian decay makes every nonnegative power of `1 + |x|` integrable. -/
+/-- Gaussian decay makes every real power of `1 + |x|` integrable. -/
 theorem integrable_one_add_abs_rpow_mul_exp_neg_sq {p a : ℝ}
-    (hp : 0 ≤ p) (ha : 0 < a) :
+    (ha : 0 < a) :
     Integrable (fun x : ℝ => (1 + |x|) ^ p * exp (-a * x ^ 2)) volume := by
   let k := ⌈p⌉₊
   have hpk : p ≤ (k : ℝ) := Nat.le_ceil p
@@ -87,7 +87,12 @@ theorem integrable_one_add_abs_rpow_mul_exp_neg_sq {p a : ℝ}
         gcongr
       _ = 2 ^ k * (exp (-a * x ^ 2) +
           x ^ (2 * k : ℕ) * exp (-a * x ^ 2)) := by ring
-  apply Integrable.mono' hmajor (by fun_prop)
+  have hbase : Continuous (fun x : ℝ => 1 + |x|) := by fun_prop
+  have hcont : Continuous (fun x : ℝ => (1 + |x|) ^ p) :=
+    hbase.rpow_const (fun x => Or.inl (by positivity))
+  have hproduct : Continuous (fun x : ℝ => (1 + |x|) ^ p * exp (-a * x ^ 2)) :=
+    hcont.mul (by fun_prop)
+  apply Integrable.mono' hmajor hproduct.aestronglyMeasurable
   · filter_upwards with x
     simpa only [Real.norm_eq_abs, abs_of_nonneg (by positivity : 0 ≤
       (1 + |x|) ^ p * exp (-a * x ^ 2))] using hbound x

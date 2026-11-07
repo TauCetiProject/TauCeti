@@ -15,7 +15,7 @@ import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 # Normalizability of the Gaussian beta gas
 
 For every finite number of particles and every positive inverse temperature, the Gaussian beta-gas
-density has a finite, strictly positive integral. Dividing by that integral gives a probability
+weight has a finite, strictly positive integral. Dividing by that integral gives a probability
 measure on the particle configurations.
 -/
 
@@ -87,8 +87,9 @@ private lemma gaussianBetaGasWeight_le_prod (n : ℕ) {β : ℝ} (hβ : 0 < β)
         rw [hp_def]
   have hexp : exp (-(β * (n : ℝ) / 4) * ∑ i : Fin n, x i ^ 2) =
       ∏ i : Fin n, exp (-a * x i ^ 2) := by
-    rw [show -(β * (n : ℝ) / 4) * ∑ i : Fin n, x i ^ 2 =
-      ∑ i : Fin n, (-a * x i ^ 2) by simp [a, Finset.mul_sum]]
+    have hdistrib : -(β * (n : ℝ) / 4) * ∑ i : Fin n, x i ^ 2 =
+        ∑ i : Fin n, (-a * x i ^ 2) := by simp [a, Finset.mul_sum]
+    rw [hdistrib]
     exact Real.exp_sum _ _
   have hqpowprod : q ^ p = ∏ i : Fin n, (1 + |x i|) ^ p := by
     exact (Real.finsetProd_rpow (Finset.univ : Finset (Fin n))
@@ -96,6 +97,7 @@ private lemma gaussianBetaGasWeight_le_prod (n : ℕ) {β : ℝ} (hβ : 0 < β)
   have hpoint : gaussianBetaGasWeight n β x ≤
       ∏ i : Fin n, ((1 + |x i|) ^ p * exp (-a * x i ^ 2)) := by
     rw [gaussianBetaGasWeight_def]
+    -- The local `pairs` abbreviation is the set used in the definition of the weight.
     change exp (-(β * (n : ℝ) / 4) * ∑ i, x i ^ 2) *
       (∏ z ∈ pairs, |x z.1 - x z.2| ^ β) ≤ _
     rw [hexp]
@@ -123,15 +125,12 @@ theorem integrable_gaussianBetaGasWeight (n : ℕ) {β : ℝ} (hβ : 0 < β) :
     have ha : 0 < a := by
       dsimp [a]
       positivity
-    have hp : 0 ≤ p := by
-      dsimp [p]
-      positivity
     have hmajor : Integrable
         (fun x : Fin n → ℝ =>
           ∏ i, ((1 + |x i|) ^ p * exp (-a * x i ^ 2)))
         (Measure.pi fun _ : Fin n => (volume : Measure ℝ)) :=
       Integrable.fintype_prod fun _ =>
-        integrable_one_add_abs_rpow_mul_exp_neg_sq hp ha
+        integrable_one_add_abs_rpow_mul_exp_neg_sq ha
     apply Integrable.mono' hmajor
       ((continuous_gaussianBetaGasWeight n hβ.le).aestronglyMeasurable)
     filter_upwards with x
@@ -168,6 +167,7 @@ theorem integrable_gaussianBetaGasDensity (n : ℕ) {β : ℝ} (hβ : 0 < β) :
   exact gaussianBetaGasDensity_def n β x
 
 /-- The Gaussian beta-gas density integrates to one for positive inverse temperature. -/
+@[simp]
 theorem integral_gaussianBetaGasDensity (n : ℕ) {β : ℝ} (hβ : 0 < β) :
     (∫ x, gaussianBetaGasDensity n β x
       ∂Measure.pi fun _ : Fin n => (volume : Measure ℝ)) = 1 := by

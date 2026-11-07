@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Order.BigOperators.Ring.Finset
-import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Ring
 
 /-!
 # Finite sums and products
@@ -19,7 +19,7 @@ public section
 namespace TauCeti
 
 /-- A sum of nonnegative terms plus one is bounded by the product of those terms plus one. -/
-theorem one_add_sum_le_prod {ι R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
+theorem one_add_sum_le_prod {ι R : Type*} [CommSemiring R] [PartialOrder R] [IsOrderedRing R]
     (s : Finset ι) (f : ι → R)
     (hf : ∀ i ∈ s, 0 ≤ f i) :
     1 + ∑ i ∈ s, f i ≤ ∏ i ∈ s, (1 + f i) := by
@@ -32,8 +32,13 @@ theorem one_add_sum_le_prod {ι R : Type*} [CommRing R] [LinearOrder R] [IsStric
     have hi0 : 0 ≤ f i := hf i (Finset.mem_insert_self i s)
     have ih' := ih hf'
     rw [Finset.sum_insert hi, Finset.prod_insert hi]
-    have hgap : 0 ≤ (∏ j ∈ s, (1 + f j)) - (1 + ∑ j ∈ s, f j) :=
-      sub_nonneg.mpr ih'
-    nlinarith [mul_nonneg hi0 hs, mul_nonneg hi0 hgap]
+    calc
+      _ ≤ (1 + f i) * (1 + ∑ j ∈ s, f j) := by
+        have h : 1 + (f i + ∑ j ∈ s, f j) ≤
+            1 + (f i + ∑ j ∈ s, f j) + f i * (∑ j ∈ s, f j) :=
+          le_add_of_nonneg_right (mul_nonneg hi0 hs)
+        convert h using 1; ring
+      _ ≤ (1 + f i) * ∏ j ∈ s, (1 + f j) :=
+        mul_le_mul_of_nonneg_left ih' (add_nonneg zero_le_one hi0)
 
 end TauCeti
