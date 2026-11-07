@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.ArithmeticGeometricMean
 public import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
-import Mathlib.Analysis.SpecialFunctions.Sqrt
 import TauCeti.Analysis.SpecialFunctions.Sqrt
 import Mathlib.MeasureTheory.Function.JacobianOneDim
 
