@@ -8,7 +8,9 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Deriv
 public import Mathlib.Analysis.Calculus.ContDiff.RCLike
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
+public import TauCeti.Algebra.Order.Floor.UniformMesh
 public import TauCeti.Analysis.Calculus.Deriv.ChordGraph
+public import TauCeti.Analysis.Calculus.MeanValue
 public import TauCeti.Analysis.Convex.CurveChord
 public import TauCeti.Geometry.Polygon.DeltaMove
 public import TauCeti.Geometry.Polygon.Subdivision
@@ -1061,59 +1063,6 @@ end Isotopy
 
 section AmbientIsotopy
 
-/-- Distinct steps `j ≠ k` of a uniform mesh `h = T / n` stay distinct modulo the period `n h`: the
-interval `[j h + m n h, j h + m n h + h]` and `[k h, k h + h]` overlap at most at an endpoint. -/
-private theorem add_mul_add_h_le_or_le_of_ne {n j k : ℕ} (hj : j < n) (hk : k < n) (hjk : j ≠ k)
-    {h : ℝ} (hh : 0 < h) (m : ℤ) :
-    j * h + m * (n * h) + h ≤ k * h ∨ k * h + h ≤ j * h + m * (n * h) := by
-  have hne : (j : ℤ) + m * n ≠ k := fun he ↦ hjk <| by
-    have h0 := Int.eq_zero_of_abs_lt_dvd (m := n) (x := k - j) ⟨m, by rw [← he]; ring⟩
-      (abs_sub_lt_iff.2 ⟨by omega, by omega⟩)
-    omega
-  rcases hne.lt_or_gt with hlt | hlt
-  · left
-    have : ((j : ℝ) + m * n + 1) * h ≤ k * h :=
-      mul_le_mul_of_nonneg_right (by exact_mod_cast hlt) hh.le
-    linarith
-  · right
-    have : ((k : ℝ) + 1) * h ≤ (j + m * n) * h :=
-      mul_le_mul_of_nonneg_right (by exact_mod_cast hlt) hh.le
-    linarith
-
-/-- A piece of a curve over `[c, c + h]`, or its chord, lying in the window `[k h - 2 δ, k h + 2 δ]`
-on which `φ ∘ γ` is strictly increasing and entirely on one side of `[k h, k h + h]`, does not meet
-the region where `φ` is strictly between its values at `γ (k h)` and `γ (k h + h)`. -/
-private theorem notMem_between_of_le_or_le {φ : StrongDual ℝ E} {k : ℕ} {h δ c : ℝ}
-    (hφ : StrictMonoOn (fun t ↦ φ (γ t)) (Icc (k * h - 2 * δ) (k * h + 2 * δ))) (hh : 0 < h)
-    (hhδ : h ≤ δ) (hc : k * h - 2 * δ ≤ c) (hnear : c ≤ k * h + δ)
-    (hle : c + h ≤ k * h ∨ k * h + h ≤ c) {x : E}
-    (hx : x ∈ γ '' Icc c (c + h) ∪ segment ℝ (γ c) (γ (c + h))) :
-    ¬ (φ (γ (k * h)) < φ x ∧ φ x < φ (γ (k * h + h))) := by
-  rintro ⟨h₁, h₂⟩
-  have hW : Icc c (c + h) ⊆ Icc (k * h - 2 * δ) (k * h + 2 * δ) :=
-    Icc_subset_Icc hc (by linarith)
-  have hk₀ : k * h ∈ Icc (k * h - 2 * δ) (k * h + 2 * δ) := ⟨by linarith, by linarith⟩
-  have hk₁ : k * h + h ∈ Icc (k * h - 2 * δ) (k * h + 2 * δ) := ⟨by linarith, by linarith⟩
-  have hc₀ : c ∈ Icc c (c + h) := left_mem_Icc.2 (by linarith)
-  have hc₁ : c + h ∈ Icc c (c + h) := right_mem_Icc.2 (by linarith)
-  rcases hle with hle | hle
-  · have hbelow : ∀ s ∈ Icc c (c + h), φ (γ s) ≤ φ (γ (k * h)) := fun s hs ↦
-      hφ.monotoneOn (hW hs) hk₀ (by linarith [hs.2])
-    have : φ x ≤ φ (γ (k * h)) := by
-      rcases hx with ⟨s, hs, rfl⟩ | hx
-      · exact hbelow s hs
-      · exact (convex_halfSpace_le φ.toLinearMap.isLinear _).segment_subset
-          (hbelow c hc₀) (hbelow (c + h) hc₁) hx
-    linarith
-  · have habove : ∀ s ∈ Icc c (c + h), φ (γ (k * h + h)) ≤ φ (γ s) := fun s hs ↦
-      hφ.monotoneOn hk₁ (hW hs) (by linarith [hs.1])
-    have : φ (γ (k * h + h)) ≤ φ x := by
-      rcases hx with ⟨s, hs, rfl⟩ | hx
-      · exact habove s hs
-      · exact (convex_halfSpace_ge φ.toLinearMap.isLinear _).segment_subset
-          (habove c hc₀) (habove (c + h) hc₁) hx
-    linarith
-
 /-- While the arc of `γ` over `[k h, k h + h]` is straightened, the other pieces stay put: for a
 uniform mesh `h = T / n` of a `T`-periodic curve, fine compared with the window `4 δ` on which
 `φ ∘ γ` is strictly increasing and with the separation constant `η` of `γ`, no point of the arc
@@ -1154,8 +1103,8 @@ private theorem notMem_straightenRegion {n j k : ℕ} (hj : j < n) (hk : k < n) 
   · -- The piece lies in the window, entirely on one side of the arc being straightened.
     -- Distinct steps `j ≠ k < n` stay distinct modulo `n`, so the shifted parameter interval
     -- `[c, c + h]` and `[k h, k h + h]` overlap at most at an endpoint.
-    exact notMem_between_of_le_or_le hφ hh hhδ hc_mem.1 hnear
-      (add_mul_add_h_le_or_le_of_ne hj hk hjk hh m) hx' ⟨h₁, h₂⟩
+    exact hφ.notMem_between_of_le_or_le hh hhδ hc_mem.1 hnear
+      (TauCeti.add_mul_add_h_le_or_le_of_ne hj hk hjk hh m) hx' ⟨h₁, h₂⟩
   · -- The piece is far from the arc being straightened.
     have hfar' : ∀ s ∈ Icc c (c + h), η ≤ ‖γ s - γ (k * h)‖ := fun s hs ↦ by
       have := hsep (k * h) ⟨by positivity, by linarith⟩ (s - k * h)

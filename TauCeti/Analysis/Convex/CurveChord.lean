@@ -28,6 +28,9 @@ windows (`ContDiff.exists_strictMonoOn_dual_comp`).
   `φ (γ a)` for some `a ≥ b'`, is the corresponding end of the chord.
 * `MonotoneOn.le_of_mem_convexHull`, `MonotoneOn.ge_of_mem_convexHull`: `φ` is bounded on the
   triangle `γ c, γ u, γ c'`, `c ≤ u ≤ c'`, by its values at `γ c` and `γ c'`.
+* `StrictMonoOn.notMem_between_of_le_or_le`: a piece of the curve over `[c, c + h]`, or its chord,
+  lying on one side of the step `[k h, k h + h]` does not meet the region where `φ` is strictly
+  between its values at the ends of that step.
 -/
 
 public section
@@ -88,3 +91,37 @@ theorem MonotoneOn.ge_of_mem_convexHull {c c' u : ℝ} {y : E}
   · exact le_rfl
   · exact hφ ⟨le_rfl, hcu.trans huc⟩ ⟨hcu, huc⟩ hcu
   · exact hφ ⟨le_rfl, hcu.trans huc⟩ ⟨hcu.trans huc, le_rfl⟩ (hcu.trans huc)
+
+/-- A piece of a curve over `[c, c + h]`, or its chord, lying in the window `[k h - 2 δ, k h + 2 δ]`
+on which `φ ∘ γ` is strictly increasing and entirely on one side of `[k h, k h + h]`, does not meet
+the region where `φ` is strictly between its values at `γ (k h)` and `γ (k h + h)`. -/
+theorem StrictMonoOn.notMem_between_of_le_or_le {k : ℕ} {h δ c : ℝ}
+    (hφ : StrictMonoOn (fun t ↦ φ (γ t)) (Icc (k * h - 2 * δ) (k * h + 2 * δ))) (hh : 0 < h)
+    (hhδ : h ≤ δ) (hc : k * h - 2 * δ ≤ c) (hnear : c ≤ k * h + δ)
+    (hle : c + h ≤ k * h ∨ k * h + h ≤ c) {x : E}
+    (hx : x ∈ γ '' Icc c (c + h) ∪ segment ℝ (γ c) (γ (c + h))) :
+    ¬ (φ (γ (k * h)) < φ x ∧ φ x < φ (γ (k * h + h))) := by
+  rintro ⟨h₁, h₂⟩
+  have hW : Icc c (c + h) ⊆ Icc (k * h - 2 * δ) (k * h + 2 * δ) :=
+    Icc_subset_Icc hc (by linarith)
+  have hk₀ : k * h ∈ Icc (k * h - 2 * δ) (k * h + 2 * δ) := ⟨by linarith, by linarith⟩
+  have hk₁ : k * h + h ∈ Icc (k * h - 2 * δ) (k * h + 2 * δ) := ⟨by linarith, by linarith⟩
+  have hc₀ : c ∈ Icc c (c + h) := left_mem_Icc.2 (by linarith)
+  have hc₁ : c + h ∈ Icc c (c + h) := right_mem_Icc.2 (by linarith)
+  rcases hle with hle | hle
+  · have hbelow : ∀ s ∈ Icc c (c + h), φ (γ s) ≤ φ (γ (k * h)) := fun s hs ↦
+      hφ.monotoneOn (hW hs) hk₀ (by linarith [hs.2])
+    have : φ x ≤ φ (γ (k * h)) := by
+      rcases hx with ⟨s, hs, rfl⟩ | hx
+      · exact hbelow s hs
+      · exact (convex_halfSpace_le (φ : E →ₗ[ℝ] ℝ).isLinear _).segment_subset
+          (hbelow c hc₀) (hbelow (c + h) hc₁) hx
+    linarith
+  · have habove : ∀ s ∈ Icc c (c + h), φ (γ (k * h + h)) ≤ φ (γ s) := fun s hs ↦
+      hφ.monotoneOn hk₁ (hW hs) (by linarith [hs.1])
+    have : φ (γ (k * h + h)) ≤ φ x := by
+      rcases hx with ⟨s, hs, rfl⟩ | hx
+      · exact habove s hs
+      · exact (convex_halfSpace_ge (φ : E →ₗ[ℝ] ℝ).isLinear _).segment_subset
+          (habove c hc₀) (habove (c + h) hc₁) hx
+    linarith
