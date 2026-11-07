@@ -250,17 +250,9 @@ theorem _root_.ContDiffOn.enorm_integral_lineDeriv_smul_le {u : E → F}
     (hD.clm_apply continuousOn_const).aestronglyMeasurable Omega.isOpen.measurableSet
   have hnorm : eLpNorm (fun x => fderiv ℝ u x v) p (mu.restrict Omega) ≤
       ‖v‖ₑ * eLpNorm (fderiv ℝ u) p (mu.restrict Omega) := by
-    calc eLpNorm (fun x => fderiv ℝ u x v) p (mu.restrict Omega) ≤
-        eLpNorm (fun x => ‖v‖ * ‖fderiv ℝ u x‖) p (mu.restrict Omega) :=
-          eLpNorm_mono_ae_real hmeas (ae_of_all _ fun x => by
-            simpa only [mul_comm] using (fderiv ℝ u x).le_opNorm v)
-      _ = eLpNorm (‖v‖ • fun x => ‖fderiv ℝ u x‖) p (mu.restrict Omega) := by
-          exact congrArg (fun g : E → ℝ => eLpNorm g p (mu.restrict Omega))
-            (funext fun x => ((Pi.smul_apply ‖v‖ (fun y : E => ‖fderiv ℝ u y‖) x).trans
-              (smul_eq_mul ‖v‖ ‖fderiv ℝ u x‖)).symm)
-      _ = ‖v‖ₑ * eLpNorm (fderiv ℝ u) p (mu.restrict Omega) := by
-          rw [eLpNorm_const_smul,
-            eLpNorm_norm _ (hD.aestronglyMeasurable Omega.isOpen.measurableSet), enorm_norm]
+    have h := eLpNorm_le_mul_eLpNorm_of_ae_le_mul (c := ‖v‖) hmeas
+      (ae_of_all _ fun x => by simpa only [mul_comm] using (fderiv ℝ u x).le_opNorm v) p
+    rwa [ofReal_norm] at h
   calc ‖∫ x in Omega, (phi : E → ℝ) x • fderiv ℝ u x v ∂mu‖ₑ ≤
       eLpNorm (phi : E → ℝ) q (mu.restrict Omega) *
         eLpNorm (fun x => fderiv ℝ u x v) p (mu.restrict Omega) := enorm_integral_smul_le
