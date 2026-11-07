@@ -75,31 +75,15 @@ private theorem mul_coeff_charpolyRev_eq_neg_sum_of_splits (hA : A.charpoly.Spli
   have hsum : ∑ a ∈ antidiagonal r with a.1 < r, (-1) ^ a.1 * s.esymm a.1 * (s.map (· ^ a.2)).sum =
       ∑ j ∈ range r, (-1) ^ (r - (j + 1)) * s.esymm (r - (j + 1)) *
         (s.map (· ^ (j + 1))).sum := by
-    refine sum_nbij' (fun a ↦ a.2 - 1) (fun j ↦ (r - (j + 1), j + 1)) ?_ ?_ ?_ ?_ ?_
-    · intro a ha
-      simp only [mem_filter, mem_antidiagonal] at ha
-      simp only [mem_range]
-      omega
-    · intro j hj
-      simp only [mem_range] at hj
-      simp only [mem_filter, mem_antidiagonal]
-      omega
-    · intro a ha
-      simp only [mem_filter, mem_antidiagonal] at ha
-      ext <;> simp <;> omega
-    · intro j hj
-      simp
-    · intro a ha
-      simp only [mem_filter, mem_antidiagonal] at ha
-      have h₁ : a.2 - 1 + 1 = a.2 := by omega
-      have h₂ : r - a.2 = a.1 := by omega
-      simp only [h₁, h₂]
-  have h := s.mul_esymm_eq_sum r
-  rw [hsum] at h
-  calc (r : K) * ((-1) ^ r * s.esymm r) = (-1) ^ r * (r * s.esymm r) := by ring
-    _ = _ := by
-      rw [h, ← mul_assoc, ← pow_add, show r + (r + 1) = 2 * r + 1 by ring, pow_succ, pow_mul]
-      simp [s]
+    rcases r with _ | k
+    · simp
+    simp_rw [Nat.lt_succ_iff, Nat.antidiagonal_filter_fst_le_of_le k.le_succ, sum_map]
+    rw [← Nat.sum_antidiagonal_swap, Nat.sum_antidiagonal_eq_sum_range_succ_mk]
+    simp
+  have hsign : (-1 : K) ^ r * (-1) ^ (r + 1) = -1 := by
+    rw [← pow_add]
+    exact Odd.neg_one_pow ⟨r, by ring⟩
+  rw [mul_left_comm, s.mul_esymm_eq_sum r, hsum, ← mul_assoc, hsign, neg_one_mul]
 
 end Splits
 

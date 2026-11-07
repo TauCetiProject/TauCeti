@@ -166,13 +166,14 @@ theorem charpolyRev_eq_prod_roots_charpoly_of_splits (hA : A.charpoly.Splits) :
 of the characteristic roots of `A`, counted with algebraic multiplicity. -/
 theorem coeff_charpolyRev_eq_esymm_roots_charpoly_of_splits (hA : A.charpoly.Splits) (r : ℕ) :
     A.charpolyRev.coeff r = (-1) ^ r * A.charpoly.roots.esymm r := by
-  have hprod := hA.eq_prod_roots_of_monic A.charpoly_monic
   have hcard : Multiset.card A.charpoly.roots = Fintype.card n := by
-    rw [← charpoly_natDegree_eq_dim A, hprod, natDegree_multiset_prod_X_sub_C_eq_card,
-      ← hprod]
+    rw [← hA.natDegree_eq_card_roots, charpoly_natDegree_eq_dim]
   rcases le_or_gt r (Fintype.card n) with hr | hr
-  · rw [charpolyRev_eq_reflect, coeff_reflect, revAt_le hr, hprod,
-      Multiset.prod_X_sub_C_coeff _ (by omega), ← hprod, hcard, Nat.sub_sub_self hr]
+  · -- Vieta's formula for the coefficient of `X ^ (d - r)` in the monic `χ_A` of degree `d`.
+    have hvieta := coeff_eq_esymm_roots_of_card (hcard.trans (charpoly_natDegree_eq_dim A).symm)
+      (k := Fintype.card n - r) (by rw [charpoly_natDegree_eq_dim]; omega)
+    rw [charpolyRev_eq_reflect, coeff_reflect, revAt_le hr, hvieta]
+    simp [charpoly_natDegree_eq_dim, Nat.sub_sub_self hr, A.charpoly_monic.leadingCoeff]
   · rw [coeff_charpolyRev_eq_zero A hr, Multiset.esymm_of_card_lt (hcard ▸ hr), mul_zero]
 
 end Splits
