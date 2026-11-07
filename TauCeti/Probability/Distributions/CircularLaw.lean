@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Isometry
-public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 public import TauCeti.Analysis.Complex.Circle
 public import TauCeti.MeasureTheory.Integral.NormRpow

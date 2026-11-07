@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.Complex.Basic
-public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Algebra.Star.Unitary
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.ContinuousMap.Star
