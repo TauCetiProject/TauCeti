@@ -294,7 +294,7 @@ theorem contDiffOn_evenReflection {U : Set ℂ} (hU : IsOpen U) (hUc : ∀ z ∈
   set S := {z : ℂ | 0 ≤ z.im} ∩ U
   set D₁ := fderivWithin ℝ w S
   set D₂ := fderivWithin ℝ D₁ S
-  have hS : UniqueDiffOn ℝ S := (uniqueDiffOn_setOf_le_im 0).inter hU
+  have hS : UniqueDiffOn ℝ S := (uniqueDiffOn_setOfPred_le_im 0).inter hU
   have hD₁ : ContDiffOn ℝ 1 D₁ S := hw.fderivWithin hS (by norm_num)
   have hD₂ : ContinuousOn D₂ S := hD₁.continuousOn_fderivWithin hS le_rfl
   have hwS : ∀ z ∈ S, HasFDerivWithinAt w (D₁ z) S z := fun z hz ↦

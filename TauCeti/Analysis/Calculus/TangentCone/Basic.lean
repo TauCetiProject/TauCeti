@@ -25,8 +25,8 @@ which lets chart transitions of a manifold with corners compare the corners of t
 * `Submodule.tangentConeAt_eq`: the tangent cone of a closed subspace at one of its points is the
   subspace itself.
 * `TauCeti.uniqueDiffOn_pi_halfSpace`: a coordinate half-space is a set of unique differentiability.
-* `TauCeti.uniqueDiffOn_setOf_le_im`: a closed half-plane `{z : ℂ | a ≤ z.im}` is a set of unique
-  differentiability.
+* `TauCeti.uniqueDiffOn_setOfPred_le_im`: a closed half-plane `{z : ℂ | a ≤ z.im}` is a set of
+  unique differentiability.
 * `HasDerivAt.mem_tangentConeAt`: the velocity of a curve lying in a set is tangent to the set.
 * `HasFDerivWithinAt.mapsTo_posTangentConeAt`: a differential carries positive tangent cones into
   positive tangent cones.
@@ -91,7 +91,7 @@ theorem TauCeti.uniqueDiffOn_pi_halfSpace {ι : Type*} (i : ι) (a : ℝ) :
     fun x hx ↦ hx.le
 
 /-- A closed half-plane `{z : ℂ | a ≤ z.im}` has unique derivatives, including on its boundary. -/
-theorem TauCeti.uniqueDiffOn_setOf_le_im (a : ℝ) : UniqueDiffOn ℝ {z : ℂ | a ≤ z.im} :=
+theorem TauCeti.uniqueDiffOn_setOfPred_le_im (a : ℝ) : UniqueDiffOn ℝ {z : ℂ | a ≤ z.im} :=
   uniqueDiffOn_convex (convex_halfSpace_im_ge a)
     ⟨Complex.I * (a + 1), by rw [Complex.interior_setOfPred_le_im]; simp⟩
 
