@@ -19,8 +19,9 @@ On a smaller ball its values and actual derivative are bounded by the outer `L¹
 its restriction is represented in the native `W1p` space with the corresponding norm bound.
 This supplies the harmonic-remainder step of local divergence-form Laplace regularity.
 
-The classical estimates allow Banach coefficients. The weak representative and bundled `W1p`
-statements here are real valued, as are the native Weyl representative and Sobolev carrier.
+The classical estimates allow Banach coefficients. For the weak representative and bundled `W1p`
+statements here, the existing finite-dimensional Weyl theorem is specialized to real coefficients
+to match the real-valued native Sobolev carrier.
 
 ## References
 
