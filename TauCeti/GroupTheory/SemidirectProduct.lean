@@ -59,6 +59,7 @@ theorem range_monoidHomSubgroup (hLE : K ≤ Subgroup.normalizer (H : Set G)) :
 
 /-- The kernel of the projection of a semidirect product to the acting group, together with the
 image of the acting group, generates the semidirect product. -/
+@[simp]
 theorem ker_rightHom_sup_range_inr {N Q : Type*} [Group N] [Group Q] {φ : Q →* MulAut N} :
     (rightHom : N ⋊[φ] Q →* Q).ker ⊔ (inr : Q →* N ⋊[φ] Q).range = ⊤ := by
   refine top_unique fun x _ ↦ ?_
