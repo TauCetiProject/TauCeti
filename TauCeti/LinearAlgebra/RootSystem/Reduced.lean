@@ -24,6 +24,8 @@ symmetric form of a simply-laced Cartan matrix.
 ## Main result
 
 * `RootPairing.isReduced_of_pairing_comm`: a root pairing with symmetric pairings is reduced.
+* `RootPairing.root_ne_and_root_ne_neg_of_root_eq_add`: in a reduced root pairing, a summand of a
+  root that is a sum of two roots is neither that root nor its negative.
 -/
 
 public section
@@ -49,5 +51,23 @@ theorem isReduced_of_pairing_comm
   · exact .inl (smul_right_injective M two_ne_zero (htwo ▸ hi))
   · rw [hnegTwo, neg_smul, neg_eq_iff_eq_neg, ← smul_neg] at hi
     exact .inr (smul_right_injective M two_ne_zero hi)
+
+section Sum
+
+variable [P.IsReduced]
+
+omit [Module.IsTorsionFree R M] in
+/-- If a root is the sum of two roots, then each summand is neither that root nor its negative. -/
+theorem root_ne_and_root_ne_neg_of_root_eq_add [CharZero R] {i j k : ι}
+    (hk : P.root k = P.root i + P.root j) :
+    P.root i ≠ P.root k ∧ P.root i ≠ -P.root k := by
+  have hadd : P.root i + P.root j ∈ Set.range P.root := ⟨k, hk⟩
+  have hlin := P.linearIndependent_of_add_mem_range_root' hadd
+  refine ⟨fun h ↦ P.ne_zero j (by simpa [hk] using h), fun h ↦ ?_⟩
+  have hrel : (2 : R) • P.root i + (1 : R) • P.root j = 0 := by
+    rw [one_smul, two_smul, add_assoc, ← hk, h, neg_add_cancel]
+  exact one_ne_zero (hlin.eq_zero_of_pair hrel).2
+
+end Sum
 
 end RootPairing

@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.RootSystem.Chain
+public import TauCeti.LinearAlgebra.RootSystem.InvariantForm.Basic
+public import TauCeti.LinearAlgebra.RootSystem.Reduced
 
 /-!
 # Invariant forms along root strings
@@ -362,6 +364,34 @@ theorem chainBotCoeff_comm_of_root_add_mem {i j : I}
   rcases hpair with h | h | h | h | h | h | h | h | h | h | h | h | h <;>
     rcases h with ⟨h, h'⟩ <;> omega
 
+/-- The possible root-string coefficients of two roots whose sum is a root: either the top
+coefficient is one more than the bottom one, or one of four explicit exceptional configurations
+occurs. -/
+theorem chainCoeff_cases_of_root_add_mem {i j : I}
+    (hadd : P.root i + P.root j ∈ range P.root) :
+    P.chainTopCoeff i j = P.chainBotCoeff i j + 1 ∨
+      (P.chainBotCoeff i j = 0 ∧ P.chainTopCoeff i j = 2 ∧ P.chainTopCoeff j i = 1) ∨
+      (P.chainBotCoeff i j = 0 ∧ P.chainTopCoeff i j = 3 ∧ P.chainTopCoeff j i = 1) ∨
+      (P.chainBotCoeff i j = 1 ∧ P.chainTopCoeff i j = 1 ∧ P.chainTopCoeff j i = 1) ∨
+      (P.chainBotCoeff i j = 2 ∧ P.chainTopCoeff i j = 1 ∧ P.chainTopCoeff j i = 1) := by
+  have hij := P.linearIndependent_of_add_mem_range_root' hadd
+  have hji := P.linearIndependent_of_add_mem_range_root' (i := j) (j := i)
+    (by simpa [add_comm] using hadd)
+  have hbot := P.chainBotCoeff_comm_of_root_add_mem hadd
+  have htop := P.one_le_chainTopCoeff_of_root_add_mem hadd
+  have htop' := P.one_le_chainTopCoeff_of_root_add_mem (i := j) (j := i)
+    (by simpa [add_comm] using hadd)
+  have hlen := P.chainBotCoeff_add_chainTopCoeff_le_three (i := i) (j := j)
+  have hlen' := P.chainBotCoeff_add_chainTopCoeff_le_three (i := j) (j := i)
+  have hpq := P.chainBotCoeff_sub_chainTopCoeff hij
+  have hpq' := P.chainBotCoeff_sub_chainTopCoeff hji
+  obtain ⟨hne, hne'⟩ := (IsReduced.linearIndependent_iff (P := P)).mp hij
+  have hpair := P.pairingIn_pairingIn_mem_set_of_isCrystal_of_isRed' i j
+    (fun h ↦ hne (P.root.injective h)) hne'
+  simp only [mem_insert_iff, mem_singleton_iff, Prod.mk.injEq] at hpair
+  rcases hpair with h | h | h | h | h | h | h | h | h | h | h <;>
+    rcases h with ⟨h, h'⟩ <;> omega
+
 /-- Two orthogonal roots whose sum is a root have the same squared length in every invariant
 form. -/
 theorem InvariantForm.apply_root_self_eq_of_root_add_of_pairing_eq_zero
@@ -369,8 +399,6 @@ theorem InvariantForm.apply_root_self_eq_of_root_add_of_pairing_eq_zero
     (hk : P.root k = P.root i + P.root j) (hij₀ : P.pairing i j = 0) :
     B.form (P.root i) (P.root i) = B.form (P.root j) (P.root j) := by
   -- Step 1: Establish orthogonality and compute pairings with the sum root k.
-  have hadd : P.root i + P.root j ∈ range P.root := ⟨k, hk⟩
-  have hlin := P.linearIndependent_of_add_mem_range_root' hadd
   have hji₀ : P.pairing j i = 0 := (P.pairing_eq_zero_iff' (i := i) (j := j)).mp hij₀
   have hki : P.pairing k i = 2 := by
     rw [← P.root_coroot'_eq_pairing, hk, map_add, P.root_coroot'_eq_pairing,
@@ -379,32 +407,9 @@ theorem InvariantForm.apply_root_self_eq_of_root_add_of_pairing_eq_zero
     rw [← P.root_coroot'_eq_pairing, hk, map_add, P.root_coroot'_eq_pairing,
       P.root_coroot'_eq_pairing, hij₀, P.pairing_same, zero_add]
   -- Step 2: Verify that i and j are distinct from ±k to apply the pairing classification.
-  have hik : P.root i ≠ P.root k := by
-    intro h
-    have hj₀ : P.root j = 0 := by
-      calc
-        P.root j = (P.root i + P.root j) - P.root i := by abel
-        _ = P.root k - P.root i := by rw [hk]
-        _ = 0 := sub_eq_zero.mpr h.symm
-    exact P.ne_zero j hj₀
-  have hjk : P.root j ≠ P.root k := by
-    intro h
-    have hi₀ : P.root i = 0 := by
-      calc
-        P.root i = (P.root i + P.root j) - P.root j := by abel
-        _ = P.root k - P.root j := by rw [hk]
-        _ = 0 := sub_eq_zero.mpr h.symm
-    exact P.ne_zero i hi₀
-  have hik' : P.root i ≠ -P.root k := by
-    intro h
-    have hrel : (2 : R) • P.root i + (1 : R) • P.root j = 0 := by
-      rw [one_smul, two_smul, add_assoc, ← hk, h, neg_add_cancel]
-    exact one_ne_zero (hlin.eq_zero_of_pair hrel).2
-  have hjk' : P.root j ≠ -P.root k := by
-    intro h
-    have hrel : (1 : R) • P.root i + (2 : R) • P.root j = 0 := by
-      rw [one_smul, two_smul, ← add_assoc, ← hk, h, add_neg_cancel]
-    exact one_ne_zero (hlin.eq_zero_of_pair hrel).1
+  obtain ⟨hik, hik'⟩ := P.root_ne_and_root_ne_neg_of_root_eq_add hk
+  obtain ⟨hjk, hjk'⟩ := P.root_ne_and_root_ne_neg_of_root_eq_add (i := j) (j := i) (k := k)
+    (by rw [hk, add_comm])
   -- Step 3: Classify integer pairings `⟨i, k⟩` and `⟨j, k⟩` using `P.pairingIn_pairingIn_mem_set`.
   have hkiℤ : P.pairingIn ℤ k i = 2 := by
     apply FaithfulSMul.algebraMap_injective ℤ R
@@ -453,39 +458,9 @@ theorem InvariantForm.chainTopCoeff_mul_apply_root_self_eq
   have hji := P.linearIndependent_of_add_mem_range_root' (i := j) (j := i)
     (by simpa [add_comm] using hadd)
   have hbot := P.chainBotCoeff_comm_of_root_add_mem hadd
-  have htop := P.one_le_chainTopCoeff_of_root_add_mem hadd
-  have htop' := P.one_le_chainTopCoeff_of_root_add_mem (i := j) (j := i)
-    (by simpa [add_comm] using hadd)
-  have hlen := P.chainBotCoeff_add_chainTopCoeff_le_three (i := i) (j := j)
-  have hlen' := P.chainBotCoeff_add_chainTopCoeff_le_three (i := j) (j := i)
   have hpq := P.chainBotCoeff_sub_chainTopCoeff hij
   have hpq' := P.chainBotCoeff_sub_chainTopCoeff hji
-  -- Step 2: Distinctness of roots `i` and `±j` from linear independence.
-  have hne : i ≠ j := by
-    intro h
-    subst j
-    exact one_ne_zero (hij.eq_zero_of_pair' (s := 1) (t := 1) rfl).1
-  have hne' : P.root i ≠ -P.root j := by
-    intro h
-    exact one_ne_zero (hij.eq_zero_of_pair' (s := 1) (t := -1) (by simpa using h)).1
-  have hpair := P.pairingIn_pairingIn_mem_set_of_isCrystal_of_isRed' i j
-    (fun h ↦ hne (P.root.injective h)) hne'
-  -- Step 3: Bilinear expansion of `B(k, k) = B(i + j, i + j)` and invariant-form swap relation.
-  have hsym : B.form (P.root j) (P.root i) = B.form (P.root i) (P.root j) := by
-    simpa only [RingHom.id_apply] using B.symm.eq (P.root j) (P.root i)
-  have hform :
-      B.form (P.root k) (P.root k) =
-        B.form (P.root i) (P.root i) + 2 * B.form (P.root i) (P.root j) +
-          B.form (P.root j) (P.root j) := by
-    rw [hk]
-    simp only [map_add, LinearMap.add_apply]
-    rw [hsym]
-    ring
-  have hcross :
-      2 * B.form (P.root i) (P.root j) =
-        P.pairing j i * B.form (P.root i) (P.root i) := by
-    rw [← hsym]
-    exact B.two_mul_apply_root_root j i
+  -- Step 2: Bilinear expansion of `B(k, k) = B(i + j, i + j)` and invariant-form swap relation.
   have hpqR : P.pairing j i =
       (P.chainBotCoeff i j : R) - P.chainTopCoeff i j := by
     rw [← P.algebraMap_pairingIn ℤ, ← hpq]
@@ -498,22 +473,9 @@ theorem InvariantForm.chainTopCoeff_mul_apply_root_self_eq
     rfl
   have hlength := B.pairing_mul_eq_pairing_mul_swap i j
   rw [hpqR, hpqR', ← hbot] at hlength
-  rw [hform, hcross, hpqR]
-  simp only [mem_insert_iff, mem_singleton_iff, Prod.mk.injEq] at hpair
-  -- Step 4: Case analysis on the root-pairing possibilities from the rank-2 classification.
-  have hcases :
-      P.chainTopCoeff i j = P.chainBotCoeff i j + 1 ∨
-      (P.chainBotCoeff i j = 0 ∧ P.chainTopCoeff i j = 2 ∧
-        P.chainTopCoeff j i = 1) ∨
-      (P.chainBotCoeff i j = 0 ∧ P.chainTopCoeff i j = 3 ∧
-        P.chainTopCoeff j i = 1) ∨
-      (P.chainBotCoeff i j = 1 ∧ P.chainTopCoeff i j = 1 ∧
-        P.chainTopCoeff j i = 1) ∨
-      (P.chainBotCoeff i j = 2 ∧ P.chainTopCoeff i j = 1 ∧
-        P.chainTopCoeff j i = 1) := by
-    rcases hpair with h | h | h | h | h | h | h | h | h | h | h <;>
-      rcases h with ⟨h, h'⟩ <;> omega
-  rcases hcases with h | ⟨hp, hq, hq'⟩ | ⟨hp, hq, hq'⟩ |
+  rw [hk, B.form_root_add_root_self i j, hpqR]
+  -- Step 3: Case analysis on the root-pairing possibilities from the rank-2 classification.
+  rcases P.chainCoeff_cases_of_root_add_mem hadd with h | ⟨hp, hq, hq'⟩ | ⟨hp, hq, hq'⟩ |
       ⟨hp, hq, hq'⟩ | ⟨hp, hq, hq'⟩
   · rw [h]
     push_cast
