@@ -76,6 +76,8 @@ continuation cylinders are not treated here.
 
 ## Main results
 
+* `TauCeti.Floer.linearHomotopy_of_eq_zero`, `TauCeti.Floer.linearHomotopy_of_eq_one`: the
+  linear homotopy is `H₀` where `β = 0` and `H₁` where `β = 1`.
 * `TauCeti.Floer.fderiv_linearHomotopy_stdComplexLineReal`: the `s`-derivative of the linear
   homotopy with profile `β` is `β'(s) (H₁ - H₀)`.
 * `SymplecticForm.integral_floerEnergyDensity_linearHomotopy_le`,
@@ -120,6 +122,18 @@ theorem linearHomotopy_def (β : ℝ → ℝ) (z : ℝ × ℝ) (x : V) :
     linearHomotopy β H₀ H₁ z x = H₀ z.2 x + β z.1 * (H₁ z.2 x - H₀ z.2 x) :=
   (rfl)
 
+/-- The linear homotopy is `H₀` where the profile vanishes. -/
+@[simp]
+theorem linearHomotopy_of_eq_zero {β : ℝ → ℝ} {z : ℝ × ℝ} (h : β z.1 = 0) (x : V) :
+    linearHomotopy β H₀ H₁ z x = H₀ z.2 x := by
+  simp [linearHomotopy_def, h]
+
+/-- The linear homotopy is `H₁` where the profile equals `1`. -/
+@[simp]
+theorem linearHomotopy_of_eq_one {β : ℝ → ℝ} {z : ℝ × ℝ} (h : β z.1 = 1) (x : V) :
+    linearHomotopy β H₀ H₁ z x = H₁ z.2 x := by
+  simp [linearHomotopy_def, h]
+
 /-- The linear homotopy of two `Cⁿ` time-dependent Hamiltonians with a `Cⁿ` profile is `Cⁿ`. -/
 theorem contDiff_uncurry_linearHomotopy [NormedAddCommGroup V] [NormedSpace ℝ V] {n : ℕ∞}
     {β : ℝ → ℝ} (hβ : ContDiff ℝ n β) (hH₀ : ContDiff ℝ n (uncurry H₀))
@@ -162,14 +176,14 @@ theorem continuationHomotopy_def (z : ℝ × ℝ) (x : V) :
 /-- The continuation homotopy is `H₀` for `s ≤ 0`. -/
 @[simp]
 theorem continuationHomotopy_of_nonpos {z : ℝ × ℝ} (hz : z.1 ≤ 0) (x : V) :
-    continuationHomotopy H₀ H₁ z x = H₀ z.2 x := by
-  simp [continuationHomotopy_def, smoothTransition.zero_of_nonpos hz]
+    continuationHomotopy H₀ H₁ z x = H₀ z.2 x :=
+  linearHomotopy_of_eq_zero (smoothTransition.zero_of_nonpos hz) x
 
 /-- The continuation homotopy is `H₁` for `s ≥ 1`. -/
 @[simp]
 theorem continuationHomotopy_of_one_le {z : ℝ × ℝ} (hz : 1 ≤ z.1) (x : V) :
-    continuationHomotopy H₀ H₁ z x = H₁ z.2 x := by
-  simp [continuationHomotopy_def, smoothTransition.one_of_one_le hz]
+    continuationHomotopy H₀ H₁ z x = H₁ z.2 x :=
+  linearHomotopy_of_eq_one (smoothTransition.one_of_one_le hz) x
 
 /-- The continuation homotopy of two `Cⁿ` time-dependent Hamiltonians is `Cⁿ`. -/
 theorem contDiff_uncurry_continuationHomotopy [NormedAddCommGroup V] [NormedSpace ℝ V] {n : ℕ∞}
