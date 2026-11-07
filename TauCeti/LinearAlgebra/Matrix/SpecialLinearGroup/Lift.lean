@@ -81,10 +81,11 @@ theorem map_surjective (φ : R →+* S) [IsLocalHom φ] (hφ : Function.Surjecti
 
 /-- Along a surjective ring homomorphism that reflects units, every upper-triangular
 determinant-one matrix lifts to an upper-triangular determinant-one matrix. -/
-theorem exists_isUpperTriangular_map_eq [LinearOrder n] (φ : R →+* S) [IsLocalHom φ]
+theorem exists_isUpperTriangular_map_eq [LT n] (φ : R →+* S) [IsLocalHom φ]
     (hφ : Function.Surjective φ) (A : SpecialLinearGroup n S)
     (hA : (A : Matrix n n S).IsUpperTriangular) :
     ∃ N : SpecialLinearGroup n R, (N : Matrix n n R).IsUpperTriangular ∧ map φ N = A := by
+  classical
   choose m hm using fun i j ↦ hφ (A i j)
   let M : Matrix n n R := of fun i j ↦ if j < i then 0 else m i j
   have hM : M.map φ = A := by
