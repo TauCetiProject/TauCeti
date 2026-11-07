@@ -112,20 +112,20 @@ lemma bigSectionsRestrict_bigSectionsBaseChange_tmul {T₀ T T' : Over S} (g : T
     (((bigSectionsRestrict F g).map_smulₛₗ a _).trans
       (congrArg (_ • ·) (bigSectionsRestrict_comp F g f s).symm))
 
-/-- **Faithfully flat descent of sections along a map of affine schemes.** For a quasi-coherent
-`𝒪_S`-module `F` and a flat surjective morphism `f : T' ⟶ T` of `S`-schemes with `T` and `T'`
-affine, the presheaf `(T, h) ↦ Γ(T, h^* F)` underlying `bigPresheaf F` satisfies the sheaf
-condition for the single morphism `f`. -/
-theorem isSheafFor_bigPresheaf_singleton_of_flat_of_surjective {T T' : Over S} (f : T' ⟶ T)
-    [IsAffine T.left] [IsAffine T'.left] [Flat f.left] [Surjective f.left] :
-    Presieve.IsSheafFor (F.bigPresheaf.presheaf ⋙ CategoryTheory.forget AddCommGrpCat)
-      (.singleton f) := by
-  have hφ : f.left.appTop.hom.FaithfullyFlat :=
-    (Flat.flat_and_surjective_iff_faithfullyFlat_of_isAffine f.left).mp ⟨‹_›, ‹_›⟩
+/-- For a morphism `f : T' ⟶ T` of affine `S`-schemes, the scheme `Spec (Γ(T', 𝒪) ⊗[Γ(T, 𝒪)]
+Γ(T', 𝒪))` is an affine `S`-scheme with two maps `g₁`, `g₂` to `T'` that agree after composing
+with `f`. Under the identification `κ` of its global sections with the tensor product, they induce
+the two inclusions of the factors. -/
+private theorem exists_affine_pair_comp_eq {T T' : Over S} (f : T' ⟶ T) [IsAffine T.left]
+    [IsAffine T'.left] :
+    letI := f.left.appTop.hom.toAlgebra
+    ∃ (Z : Over S) (_ : IsAffine Z.left) (g₁ g₂ : Z ⟶ T')
+      (κ : Γ(Z.left, ⊤) →+* Γ(T'.left, ⊤) ⊗[Γ(T.left, ⊤)] Γ(T'.left, ⊤)),
+      g₁ ≫ f = g₂ ≫ f ∧ (∀ a, κ (g₁.left.appTop a) = a ⊗ₜ 1) ∧
+        ∀ a, κ (g₂.left.appTop a) = 1 ⊗ₜ a := by
   algebraize [f.left.appTop.hom]
   let A := Γ(T.left, ⊤)
   let A' := Γ(T'.left, ⊤)
-  let M := Γ((pullback T.hom).obj F, ⊤)
   -- The test scheme `Z = Spec (A' ⊗[A] A')` over `S`, with the two maps `g₁`, `g₂ : Z ⟶ T'`
   -- induced by the inclusions `χ₁`, `χ₂` of the two factors.
   let B := CommRingCat.of (A' ⊗[A] A')
@@ -150,25 +150,48 @@ theorem isSheafFor_bigPresheaf_singleton_of_flat_of_surjective {T T' : Over S} (
   let g₂ : Z ⟶ T' := Over.homMk (ι χ₂) (by
     dsimp only [Z, Over.mk_hom]
     rw [← Over.w f, reassoc_of% hι])
-  have hg : g₁ ≫ f = g₂ ≫ f := by
-    ext : 1
-    exact hι
+  exact ⟨Z, this, g₁, g₂, κ, Over.OverMorphism.ext hι, hκ χ₁, hκ χ₂⟩
+
+/-- Faithfully flat descent of sections: if two maps `g₁`, `g₂ : Z ⟶ T'` of affine `S`-schemes
+agree after composing with `f : T' ⟶ T`, and the global sections of `Z` are identified by `κ`
+with `Γ(T', 𝒪) ⊗[Γ(T, 𝒪)] Γ(T', 𝒪)` so that `g₁`, `g₂` induce the two inclusions, then sections
+`y` of `Γ(T', 𝒪) ⊗[Γ(T, 𝒪)] Γ(T, h^* F)` with equal restrictions along `g₁` and `g₂` lie in
+the kernel of the Amitsur differential. -/
+private theorem lTensor_mk_one_sub_mk_one_eq_zero_of_bigSectionsRestrict_eq {T T' Z : Over S}
+    (f : T' ⟶ T) [IsAffine T.left] [IsAffine T'.left] [IsAffine Z.left] (g₁ g₂ : Z ⟶ T')
+    (hg : g₁ ≫ f = g₂ ≫ f) :
+    letI := f.left.appTop.hom.toAlgebra
+    ∀ (κ : Γ(Z.left, ⊤) →+* Γ(T'.left, ⊤) ⊗[Γ(T.left, ⊤)] Γ(T'.left, ⊤)),
+      (∀ a, κ (g₁.left.appTop a) = a ⊗ₜ 1) → (∀ a, κ (g₂.left.appTop a) = 1 ⊗ₜ a) →
+      ∀ y : (ModuleCat.extendScalars f.left.appTop.hom).obj
+          (.of Γ(T.left, ⊤) Γ((pullback T.hom).obj F, ⊤)),
+        bigSectionsRestrict F g₁ (bigSectionsBaseChange F f y) =
+          bigSectionsRestrict F g₂ (bigSectionsBaseChange F f y) →
+        ((TensorProduct.mk Γ(T.left, ⊤) Γ(T'.left, ⊤) Γ((pullback T.hom).obj F, ⊤) 1).lTensor
+            Γ(T'.left, ⊤) - TensorProduct.mk Γ(T.left, ⊤) Γ(T'.left, ⊤)
+            (Γ(T'.left, ⊤) ⊗[Γ(T.left, ⊤)] Γ((pullback T.hom).obj F, ⊤)) 1)
+          (y : Γ(T'.left, ⊤) ⊗[Γ(T.left, ⊤)] Γ((pullback T.hom).obj F, ⊤)) = 0 := by
+  algebraize [f.left.appTop.hom]
+  intro κ hκ₁ hκ₂ y₀ hy₀
+  let A := Γ(T.left, ⊤)
+  let A' := Γ(T'.left, ⊤)
+  let M := Γ((pullback T.hom).obj F, ⊤)
   -- Sections over `T'` and over `Z` are scalar extensions of `M`. The map `J` reads sections over
   -- `Z`, that is `Γ(Z, 𝒪) ⊗_A M`, in the last term `A' ⊗_A (A' ⊗_A M)` of the Amitsur sequence.
   let e := bigSectionsBaseChange F f
   let eZ := bigSectionsBaseChange F (g₁ ≫ f)
-  let J₀ : Γ(Spec B, ⊤) →+ M →+ A' ⊗[A] (A' ⊗[A] M) :=
+  let J₀ : Γ(Z.left, ⊤) →+ M →+ A' ⊗[A] (A' ⊗[A] M) :=
     AddMonoidHom.mk' (fun c ↦ ((TensorProduct.assoc A A' A' M).toLinearMap ∘ₗ
       TensorProduct.mk A (A' ⊗[A] A') M (κ c)).toAddMonoidHom) fun c c' ↦ by
         ext m
         simp
-  have hJ₀ (c : Γ(Spec B, ⊤)) (m : M) : J₀ c m = TensorProduct.assoc A A' A' M (κ c ⊗ₜ m) :=
+  have hJ₀ (c : Γ(Z.left, ⊤)) (m : M) : J₀ c m = TensorProduct.assoc A A' A' M (κ c ⊗ₜ m) :=
     rfl
   let J : (ModuleCat.extendScalars (g₁ ≫ f).left.appTop.hom).obj (.of A M) →+
       A' ⊗[A] (A' ⊗[A] M) :=
     TensorProduct.liftAddHom J₀ fun r (c : Γ(Z.left, ⊤)) m ↦ by
       have hr : κ ((g₁ ≫ f).left.appTop r) = algebraMap A (A' ⊗[A] A') r :=
-        (hκ χ₁ (f.left.appTop r)).trans
+        (hκ₁ (f.left.appTop r)).trans
           (Algebra.TensorProduct.algebraMap_apply (R := A) (A := A') (B := A') r).symm
       -- `r` acts on the scalar extension through `(g₁ ≫ f)^♯`, by definition of
       -- `ModuleCat.restrictScalars`.
@@ -195,20 +218,39 @@ theorem isSheafFor_bigPresheaf_singleton_of_flat_of_surjective {T T' : Over S} (
         ?_).trans (L.map_add y y').symm
       rw [map_add, map_add, map_add, hy, hy']
   have key₁ := key g₁ rfl ((TensorProduct.mk A A' M 1).lTensor A') fun a m ↦
-    (congrArg (fun c ↦ TensorProduct.assoc A A' A' M (c ⊗ₜ m)) (hκ χ₁ a)).trans
+    (congrArg (fun c ↦ TensorProduct.assoc A A' A' M (c ⊗ₜ m)) (hκ₁ a)).trans
       (TensorProduct.assoc_tmul a 1 m)
   have key₂ := key g₂ hg.symm (TensorProduct.mk A A' (A' ⊗[A] M) 1) fun a m ↦
-    (congrArg (fun c ↦ TensorProduct.assoc A A' A' M (c ⊗ₜ m)) (hκ χ₂ a)).trans
+    (congrArg (fun c ↦ TensorProduct.assoc A A' A' M (c ⊗ₜ m)) (hκ₂ a)).trans
       (TensorProduct.assoc_tmul 1 a m)
+  let y' : A' ⊗[A] M := y₀
+  exact (LinearMap.sub_apply _ _ y').trans (sub_eq_zero.mpr ((key₁ y₀).symm.trans
+      ((congrArg (fun x ↦ J (eZ.symm x)) hy₀).trans (key₂ y₀))))
+
+/-- **Faithfully flat descent of sections along a map of affine schemes.** For a quasi-coherent
+`𝒪_S`-module `F` and a flat surjective morphism `f : T' ⟶ T` of `S`-schemes with `T` and `T'`
+affine, the presheaf `(T, h) ↦ Γ(T, h^* F)` underlying `bigPresheaf F` satisfies the sheaf
+condition for the single morphism `f`. -/
+theorem isSheafFor_bigPresheaf_singleton_of_flat_of_surjective {T T' : Over S} (f : T' ⟶ T)
+    [IsAffine T.left] [IsAffine T'.left] [Flat f.left] [Surjective f.left] :
+    Presieve.IsSheafFor (F.bigPresheaf.presheaf ⋙ CategoryTheory.forget AddCommGrpCat)
+      (.singleton f) := by
+  have hφ : f.left.appTop.hom.FaithfullyFlat :=
+    (Flat.flat_and_surjective_iff_faithfullyFlat_of_isAffine f.left).mp ⟨‹_›, ‹_›⟩
+  algebraize [f.left.appTop.hom]
+  let A := Γ(T.left, ⊤)
+  let A' := Γ(T'.left, ⊤)
+  let M := Γ((pullback T.hom).obj F, ⊤)
+  obtain ⟨Z, _, g₁, g₂, κ, hg, hκ₁, hκ₂⟩ := exists_affine_pair_comp_eq f
+  have hamitsur := lTensor_mk_one_sub_mk_one_eq_zero_of_bigSectionsRestrict_eq F f g₁ g₂ hg κ
+    hκ₁ hκ₂
+  let e := bigSectionsBaseChange F f
   rw [Presieve.isSheafFor_singleton]
   intro x hx
   obtain ⟨y, rfl⟩ := e.surjective x
   -- Compatibility on `Z` places `y` in the kernel of the Amitsur differential, so `y = 1 ⊗ m`.
   let y' : A' ⊗[A] M := y
-  have hy : ((TensorProduct.mk A A' M 1).lTensor A' - TensorProduct.mk A A' (A' ⊗[A] M) 1) y' =
-      0 :=
-    (LinearMap.sub_apply _ _ y').trans (sub_eq_zero.mpr ((key₁ y).symm.trans
-      ((congrArg (fun x ↦ J (eZ.symm x)) (hx g₁ g₂ hg)).trans (key₂ y))))
+  have hy := hamitsur y (hx g₁ g₂ hg)
   obtain ⟨m, hm⟩ := (Module.FaithfullyFlat.exact_mk_one_lTensor_sub_mk_one A' M y').mp hy
   have hxm : bigSectionsRestrict F f m = e y :=
     (bigSectionsBaseChange_one_tmul F f m).symm.trans (congrArg e hm)
