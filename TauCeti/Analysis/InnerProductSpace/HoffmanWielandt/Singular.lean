@@ -68,7 +68,7 @@ theorem sum_sq_singularValues_sub_le_sq_frobenius_apply_sub_of_finrank_le
       ∑ i : Fin (finrank 𝕜 E), ‖B (v i)‖ ^ 2 =
         ∑ i : Fin (finrank 𝕜 E), B.singularValues i ^ 2 := by
     rw [← TauCeti.UnitarilyInvariantSeminorm.sq_frobenius_apply v B,
-      TauCeti.UnitarilyInvariantSeminorm.sq_frobenius_apply_eq_sum_sq_singularValues]
+      B.sq_frobenius_apply_eq_sum_sq_singularValues]
   have hexp (i : Fin (finrank 𝕜 E)) :
       ‖(A - B) (v i)‖ ^ 2 =
         A.singularValues i ^ 2 -

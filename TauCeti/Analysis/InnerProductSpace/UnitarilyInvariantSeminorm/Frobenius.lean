@@ -195,12 +195,21 @@ theorem frobenius_apply_eq_sqrt_sum_sq_singularValues (A : E →ₗ[𝕜] F) :
   exact_mod_cast (A.trace_adjoint_comp_self_eq_sum_norm_apply_sq _).symm.trans
     A.trace_adjoint_comp_self_eq_sum_sq_singularValues
 
+end TauCeti.UnitarilyInvariantSeminorm
+
+namespace LinearMap
+
 /-- The squared Frobenius seminorm is the sum of the squared singular values. -/
 theorem sq_frobenius_apply_eq_sum_sq_singularValues (A : E →ₗ[𝕜] F) :
-    frobenius 𝕜 E F A ^ 2 = ∑ i : Fin (finrank 𝕜 E), A.singularValues i ^ 2 := by
-  rw [frobenius_apply_eq_sqrt_sum_sq_singularValues,
+    TauCeti.UnitarilyInvariantSeminorm.frobenius 𝕜 E F A ^ 2 =
+      ∑ i : Fin (finrank 𝕜 E), A.singularValues i ^ 2 := by
+  rw [TauCeti.UnitarilyInvariantSeminorm.frobenius_apply_eq_sqrt_sum_sq_singularValues,
     ← A.sum_fin_singularValues (· ^ 2) (by simp)]
   exact Real.sq_sqrt (Finset.sum_nonneg fun i _ ↦ sq_nonneg (A.singularValues i))
+
+end LinearMap
+
+namespace TauCeti.UnitarilyInvariantSeminorm
 
 /-- **Rank-sharp comparison of the nuclear and Frobenius seminorms**:
 `‖A‖₁ ≤ √(rank A) ‖A‖_F`. -/
