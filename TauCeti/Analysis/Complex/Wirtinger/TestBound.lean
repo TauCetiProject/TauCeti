@@ -19,8 +19,8 @@ For `1 < p < ∞`, an `Lᵖ` solution of the normalized distributional equation
 `barpartial u = f`, with `f ∈ Lᵖ`, has directional distributional derivatives bounded on
 smaller domains by the conjugate `Lᵠ` test norm. The equation is imposed as an integral
 identity, and no weak derivative of the solution is assumed. Coefficients may lie in any
-complex Hilbert space. On a finite-measure outer domain the solution remainder may instead
-be measured in any larger exponent, including infinity.
+complex Hilbert space. The solution remainder may instead be measured in any larger exponent,
+including infinity, even on an unbounded outer domain.
 
 The proof mollifies zero extensions inside the original domain, uses the classical interior
 Cauchy–Riemann estimate and the normalized-bump contraction, and passes to the limit in the
@@ -204,12 +204,12 @@ theorem exists_enorm_integral_lineDeriv_smul_le_of_integral_conjWirtingerDeriv_e
       simp
   rwa [heq] at hfinal
 
-/-- On a finite-measure outer domain, the solution remainder may be measured in any larger
-`Lʳ` exponent. In particular this gives the `Lʳ` remainder on relatively compact planar domains;
+/-- On any outer domain, the solution remainder may be measured in any larger `Lʳ` exponent.
+Exponent embedding is used only on a relatively compact neighborhood of the compact set;
 the source still needs only `Lᵖ` integrability. -/
 theorem exists_enorm_integral_lineDeriv_smul_le_of_integral_conjWirtingerDeriv_eq_of_le
     (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) {r : ℝ≥0∞} (hpr : p ≤ r)
-    {U : Opens ℂ} [IsFiniteMeasure (volume.restrict (U : Set ℂ))] {K : Set ℂ}
+    {U : Opens ℂ} {K : Set ℂ}
     (hK : IsCompact K) (hKU : K ⊆ U) :
     ∃ V : Opens ℂ, K ⊆ V ∧ IsCompact (closure (V : Set ℂ)) ∧
       closure (V : Set ℂ) ⊆ U ∧ ∃ C : ℝ≥0,
@@ -222,32 +222,53 @@ theorem exists_enorm_integral_lineDeriv_smul_le_of_integral_conjWirtingerDeriv_e
         ‖∫ z, lineDeriv ℝ (φ : ℂ → ℝ) z v • u z‖ₑ ≤
           C * ‖v‖ₑ * (eLpNorm f p (volume.restrict U) + eLpNorm u r (volume.restrict U)) *
             eLpNorm (φ : ℂ → ℝ) q volume := by
+  obtain ⟨R, hR, hRU⟩ := hK.exists_cthickening_subset_open U.isOpen hKU
+  let W : Opens ℂ := ⟨thickening R K, isOpen_thickening⟩
+  have hKW : K ⊆ W := self_subset_thickening hR K
+  have hWU : (W : Set ℂ) ⊆ U := (thickening_subset_cthickening R K).trans hRU
+  have : IsFiniteMeasure (volume.restrict (W : Set ℂ)) :=
+    isFiniteMeasure_restrict.mpr
+      ((measure_mono (thickening_subset_cthickening R K)).trans_lt
+        hK.cthickening.measure_lt_top).ne
   have hp0 : p ≠ 0 := (zero_lt_one.trans hp).ne'
   have hexp : 0 ≤ 1 / p.toReal - 1 / r.toReal := by
     simp only [one_div, ← ENNReal.toReal_inv]
     exact sub_nonneg.2 (ENNReal.toReal_mono (by simpa using hp0)
       (ENNReal.inv_le_inv.mpr hpr))
-  have hfinite : (volume.restrict (U : Set ℂ)) univ ^ (1 / p.toReal - 1 / r.toReal) ≠ ⊤ :=
+  have hfinite : (volume.restrict (W : Set ℂ)) univ ^ (1 / p.toReal - 1 / r.toReal) ≠ ⊤ :=
     ENNReal.rpow_ne_top_of_nonneg hexp (measure_ne_top _ _)
-  let A := ((volume.restrict (U : Set ℂ)) univ ^ (1 / p.toReal - 1 / r.toReal)).toNNReal
+  let A := ((volume.restrict (W : Set ℂ)) univ ^ (1 / p.toReal - 1 / r.toReal)).toNNReal
   let B := max 1 A
   have hB1 : (1 : ℝ≥0∞) ≤ B := by exact_mod_cast (le_max_left (1 : ℝ≥0) A)
   have hBA : (A : ℝ≥0∞) ≤ B := by exact_mod_cast (le_max_right (1 : ℝ≥0) A)
-  obtain ⟨V, hKV, hVc, hVU, C, hC⟩ :=
+  obtain ⟨V, hKV, hVc, hVW, C, hC⟩ :=
     exists_enorm_integral_lineDeriv_smul_le_of_integral_conjWirtingerDeriv_eq
-      (F := F) (q := q) hp hp_top hK hKU
-  refine ⟨V, hKV, hVc, hVU, C * B, fun u f hu hf h φ v => ?_⟩
-  have hemb : eLpNorm u p (volume.restrict U) ≤ A * eLpNorm u r (volume.restrict U) := by
-    calc eLpNorm u p (volume.restrict U) ≤ eLpNorm u r (volume.restrict U) *
-        (volume.restrict (U : Set ℂ)) univ ^ (1 / p.toReal - 1 / r.toReal) :=
-          eLpNorm_le_eLpNorm_mul_rpow_measure_univ hpr hu.aestronglyMeasurable
+      (F := F) (q := q) hp hp_top hK hKW
+  refine ⟨V, hKV, hVc, hVW.trans hWU, C * B, fun u f hu hf h φ v => ?_⟩
+  have hWU' : W ≤ U := hWU
+  have huW := hu.mono_measure (Measure.restrict_mono hWU le_rfl)
+  have hfW := hf.mono_measure (Measure.restrict_mono hWU le_rfl)
+  have hW (ψ : 𝓓(W, ℝ)) :
+      (∫ z, lineDeriv ℝ (ψ : ℂ → ℝ) z 1 • u z) +
+        I • (∫ z, lineDeriv ℝ (ψ : ℂ → ℝ) z I • u z) =
+          -(2 : ℝ) • (∫ z, (ψ : ℂ → ℝ) z • f z) := by
+    have hψ : ((TestFunction.monoCLM ℝ ψ : 𝓓(U, ℝ)) : ℂ → ℝ) = ψ := by
+      rw [TestFunction.monoCLM_apply, ite_eq_left ⟨le_rfl, hWU'⟩]
+    simpa only [hψ] using h (TestFunction.monoCLM ℝ ψ)
+  have hemb : eLpNorm u p (volume.restrict W) ≤ A * eLpNorm u r (volume.restrict U) := by
+    calc eLpNorm u p (volume.restrict W) ≤ eLpNorm u r (volume.restrict W) *
+        (volume.restrict (W : Set ℂ)) univ ^ (1 / p.toReal - 1 / r.toReal) :=
+          eLpNorm_le_eLpNorm_mul_rpow_measure_univ hpr huW.aestronglyMeasurable
+      _ ≤ eLpNorm u r (volume.restrict U) *
+          (volume.restrict (W : Set ℂ)) univ ^ (1 / p.toReal - 1 / r.toReal) := by
+        gcongr
       _ = A * eLpNorm u r (volume.restrict U) := by
         rw [ENNReal.coe_toNNReal hfinite]
         exact mul_comm _ _
-  have hsum : eLpNorm f p (volume.restrict U) + eLpNorm u p (volume.restrict U) ≤
+  have hsum : eLpNorm f p (volume.restrict W) + eLpNorm u p (volume.restrict W) ≤
       B * (eLpNorm f p (volume.restrict U) + eLpNorm u r (volume.restrict U)) := by
     calc _ ≤ eLpNorm f p (volume.restrict U) + A * eLpNorm u r (volume.restrict U) :=
-        add_le_add le_rfl hemb
+        add_le_add (eLpNorm_mono_measure _ (Measure.restrict_mono hWU le_rfl)) hemb
       _ ≤ B * eLpNorm f p (volume.restrict U) + B * eLpNorm u r (volume.restrict U) := by
         apply add_le_add
         · simpa only [one_mul] using
@@ -255,8 +276,8 @@ theorem exists_enorm_integral_lineDeriv_smul_le_of_integral_conjWirtingerDeriv_e
         · exact mul_le_mul' hBA le_rfl
       _ = _ := (mul_add ..).symm
   calc ‖∫ z, lineDeriv ℝ (φ : ℂ → ℝ) z v • u z‖ₑ ≤
-      C * ‖v‖ₑ * (eLpNorm f p (volume.restrict U) + eLpNorm u p (volume.restrict U)) *
-        eLpNorm (φ : ℂ → ℝ) q volume := hC u f (hu.mono_exponent hpr) hf h φ v
+      C * ‖v‖ₑ * (eLpNorm f p (volume.restrict W) + eLpNorm u p (volume.restrict W)) *
+        eLpNorm (φ : ℂ → ℝ) q volume := hC u f (huW.mono_exponent hpr) hfW hW φ v
     _ ≤ C * ‖v‖ₑ *
         (B * (eLpNorm f p (volume.restrict U) + eLpNorm u r (volume.restrict U))) *
           eLpNorm (φ : ℂ → ℝ) q volume :=
