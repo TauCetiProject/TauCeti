@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import TauCeti.MeasureTheory.Function.LocallyIntegrable
+public import TauCeti.Topology.Sets.Opens
 
 /-!
 # Local vector-valued Sobolev classes on planar domains
@@ -155,6 +156,11 @@ theorem memWkpLoc_succ_iff : MemWkpLoc p U (k + 1) f ↔ MemLpLoc p U f ∧
     ∃ D : ℂ → ℂ →L[ℝ] F, HasWeakFDerivOn volume (Opens.interior U) f D ∧
       MemWkpLoc p U k D := Iff.rfl
 
+/-- On an open domain, the successor-order weak derivative is tested on the domain itself. -/
+theorem memWkpLoc_succ_iff_of_isOpen : MemWkpLoc p Ω (k + 1) f ↔ MemLpLoc p Ω f ∧
+    ∃ D : ℂ → ℂ →L[ℝ] F, HasWeakFDerivOn volume Ω f D ∧ MemWkpLoc p Ω k D := by
+  simp only [memWkpLoc_succ_iff, Opens.interior_coe]
+
 /-- Every local Sobolev function is locally `Lᵖ`. -/
 theorem MemWkpLoc.memLpLoc (hf : MemWkpLoc p U k f) : MemLpLoc p U f := by
   cases k with
@@ -165,6 +171,11 @@ theorem MemWkpLoc.memLpLoc (hf : MemWkpLoc p U k f) : MemLpLoc p U f := by
 theorem MemWkpLoc.exists_weakFDeriv (hf : MemWkpLoc p U (k + 1) f) :
     ∃ D : ℂ → ℂ →L[ℝ] F, HasWeakFDerivOn volume (Opens.interior U) f D ∧
       MemWkpLoc p U k D := hf.2
+
+/-- On an open domain, positive-order membership gives a weak derivative on that domain. -/
+theorem MemWkpLoc.exists_weakFDeriv_of_isOpen (hf : MemWkpLoc p Ω (k + 1) f) :
+    ∃ D : ℂ → ℂ →L[ℝ] F, HasWeakFDerivOn volume Ω f D ∧ MemWkpLoc p Ω k D :=
+  (memWkpLoc_succ_iff_of_isOpen.mp hf).2
 
 /-- Positive-order membership retains the completeness required by weak derivatives. -/
 theorem MemWkpLoc.completeSpace (hf : MemWkpLoc p U (k + 1) f) : CompleteSpace F := by
