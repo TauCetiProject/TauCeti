@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Distributions.Beta
+public import Mathlib.Topology.ContinuousMap.Bounded.Basic
+import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import TauCeti.Analysis.Calculus.RealCharts
@@ -39,6 +41,10 @@ and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its densi
 
 ## Main results
 
+* `TauCeti.continuous_integral_rpow_mul_one_sub_rpow_mul` — the beta kernel integral against a
+  bounded continuous function is continuous in the two positive shapes;
+* `ProbabilityTheory.continuous_one_div_beta` — `1 / Β(a, b)` is continuous in the two positive
+  shapes;
 * `TauCeti.intervalIntegrable_rpow_mul_one_sub_rpow` — interval integrability of the beta
   integrand between any two points of `[0, 1]`;
 * `TauCeti.integrableOn_rpow_mul_one_sub_rpow_iff` — the sharp integrability criterion at both
@@ -957,6 +963,54 @@ theorem integral_mul_inv_add_sub_inv_add_div_one_add_sq {a : ℝ} (ha : 0 < a) :
 
 end SecondIntegral
 
+open scoped BoundedContinuousFunction Topology in
+/-- Halving the shapes gives a locally uniform integrable bound at both endpoints, so the
+unnormalized beta kernel integral against a bounded continuous function is continuous in the
+shape parameters. -/
+theorem continuous_integral_rpow_mul_one_sub_rpow_mul (f : ℝ →ᵇ ℝ) :
+    Continuous fun p : Ioi (0 : ℝ) × Ioi (0 : ℝ) ↦
+      ∫ x in Ioo (0 : ℝ) 1, x ^ ((p.1 : ℝ) - 1) * (1 - x) ^ ((p.2 : ℝ) - 1) * f x := by
+  have ha : Continuous fun p : Ioi (0 : ℝ) × Ioi (0 : ℝ) ↦ (p.1 : ℝ) :=
+    continuous_subtype_val.comp continuous_fst
+  have hb : Continuous fun p : Ioi (0 : ℝ) × Ioi (0 : ℝ) ↦ (p.2 : ℝ) :=
+    continuous_subtype_val.comp continuous_snd
+  refine continuous_iff_continuousAt.2 fun p ↦ ?_
+  let bound : ℝ → ℝ := fun x ↦
+    ‖f‖ * (x ^ ((p.1 : ℝ) / 2 - 1) * (1 - x) ^ ((p.2 : ℝ) / 2 - 1))
+  have hbound : Integrable bound (volume.restrict (Ioo (0 : ℝ) 1)) :=
+    (TauCeti.integrableOn_rpow_mul_one_sub_rpow_iff.2
+      ⟨half_pos p.1.2, half_pos p.2.2⟩).const_mul ‖f‖
+  apply continuousAt_of_dominated (bound := bound)
+  · exact .of_forall fun q ↦
+      (((by fun_prop : Measurable fun x : ℝ ↦
+        x ^ ((q.1 : ℝ) - 1) * (1 - x) ^ ((q.2 : ℝ) - 1))).mul
+        f.continuous.measurable).aestronglyMeasurable
+  · have hpa : ∀ᶠ q in 𝓝 p, (p.1 : ℝ) / 2 < (q.1 : ℝ) :=
+      ha.continuousAt (lt_mem_nhds (half_lt_self p.1.2))
+    have hpb : ∀ᶠ q in 𝓝 p, (p.2 : ℝ) / 2 < (q.2 : ℝ) :=
+      hb.continuousAt (lt_mem_nhds (half_lt_self p.2.2))
+    filter_upwards [hpa, hpb] with q hqa hqb
+    filter_upwards [ae_restrict_mem measurableSet_Ioo] with x hx
+    have hxa := Real.rpow_le_rpow_of_exponent_ge hx.1 hx.2.le
+      (sub_le_sub_right hqa.le 1)
+    have hxb := Real.rpow_le_rpow_of_exponent_ge (sub_pos.mpr hx.2)
+      (sub_le_self 1 hx.1.le) (sub_le_sub_right hqb.le 1)
+    have hnonneg : 0 ≤ x ^ ((q.1 : ℝ) - 1) * (1 - x) ^ ((q.2 : ℝ) - 1) :=
+      mul_nonneg (Real.rpow_nonneg hx.1.le _)
+        (Real.rpow_nonneg (sub_nonneg.mpr hx.2.le) _)
+    calc
+      _ = ‖f x‖ *
+          (x ^ ((q.1 : ℝ) - 1) * (1 - x) ^ ((q.2 : ℝ) - 1)) := by
+        rw [norm_mul, Real.norm_of_nonneg hnonneg, mul_comm]
+      _ ≤ bound x := mul_le_mul (f.norm_coe_le_norm x)
+        (mul_le_mul hxa hxb (Real.rpow_nonneg (sub_nonneg.mpr hx.2.le) _)
+          (Real.rpow_nonneg hx.1.le _)) hnonneg (norm_nonneg _)
+  · exact hbound
+  · filter_upwards [ae_restrict_mem measurableSet_Ioo] with x hx
+    exact ((((Real.continuous_const_rpow hx.1.ne').comp (ha.sub continuous_const)).mul
+      ((Real.continuous_const_rpow (sub_pos.mpr hx.2).ne').comp
+        (hb.sub continuous_const))).mul continuous_const).continuousAt
+
 end TauCeti
 
 namespace ProbabilityTheory
@@ -1067,5 +1121,15 @@ theorem tendsto_natCast_mul_beta_atTop {s : ℝ} (hs : 1 < s) :
   filter_upwards [eventually_ne_atTop 0] with n hn
   rw [beta, Real.Gamma_add_one (Nat.cast_ne_zero.mpr hn)]
   ring
+
+/-- The reciprocal of the beta function is continuous in the two positive shape parameters. -/
+theorem continuous_one_div_beta :
+    Continuous fun p : Set.Ioi (0 : ℝ) × Set.Ioi (0 : ℝ) ↦ (1 / beta p.1 p.2) := by
+  have h := (TauCeti.continuous_Gamma_sum_div_prod (ι := Fin 2)).comp
+    (continuous_pi (Fin.forall_fin_two.2 ⟨continuous_fst, continuous_snd⟩) :
+      Continuous fun p : Set.Ioi (0 : ℝ) × Set.Ioi (0 : ℝ) ↦ ![p.1, p.2])
+  convert h using 1
+  ext p
+  simp [beta, Fin.sum_univ_two, Fin.prod_univ_two]
 
 end ProbabilityTheory
