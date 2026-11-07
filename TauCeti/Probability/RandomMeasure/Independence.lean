@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Measure.GiryMonad
 public import Mathlib.Probability.Independence.Process.Basic
+public import TauCeti.Probability.RandomMeasure.Law
 
 /-!
 # Independence of random measures from evaluations
@@ -60,12 +60,9 @@ theorem iIndepFun_measure_iff (hN : ∀ i, AEMeasurable (N i) P) :
         (fun i A ↦ (Measure.measurable_coe A.property).comp_aemeasurable (hN i)) h
     apply iIndep_of_iIndep_of_le he.iIndep
     intro i
-    -- The identity on measures is measurable for the sigma-algebra of all evaluations;
-    -- this gives the comap inclusion without selecting a topology or an inverse encoding.
-    exact (Measure.measurable_of_measurable_coe (N i) fun A hA ↦
-      (measurable_pi_apply (⟨A, hA⟩ : {A : Set (X i) // MeasurableSet A})).comp
-        (comap_measurable (fun ω (A : {A : Set (X i) // MeasurableSet A}) ↦
-          N i ω A.val))).comap_le
+    dsimp only
+    rw [Measure.measurableSpace_eq_comap_eval (X := X i), MeasurableSpace.comap_comp]
+    exact le_rfl
 
 variable {S T : Type*} [MeasurableSpace S] [MeasurableSpace T]
   {M : Ω → Measure S} {L : Ω → Measure T}
@@ -92,13 +89,9 @@ theorem indepFun_measure_iff [IsZeroOrProbabilityMeasure P]
         (fun A ↦ (Measure.measurable_coe A.property).comp_aemeasurable hM)
         (fun B ↦ (Measure.measurable_coe B.property).comp_aemeasurable hL) h
     apply indep_of_indep_of_le he
-    · exact (Measure.measurable_of_measurable_coe M fun A hA ↦
-        (measurable_pi_apply (⟨A, hA⟩ : {A : Set S // MeasurableSet A})).comp
-          (comap_measurable (fun ω (A : {A : Set S // MeasurableSet A}) ↦
-            M ω A.val))).comap_le
-    · exact (Measure.measurable_of_measurable_coe L fun B hB ↦
-        (measurable_pi_apply (⟨B, hB⟩ : {B : Set T // MeasurableSet B})).comp
-          (comap_measurable (fun ω (B : {B : Set T // MeasurableSet B}) ↦
-            L ω B.val))).comap_le
+    · rw [Measure.measurableSpace_eq_comap_eval (X := S), MeasurableSpace.comap_comp]
+      exact le_rfl
+    · rw [Measure.measurableSpace_eq_comap_eval (X := T), MeasurableSpace.comap_comp]
+      exact le_rfl
 
 end ProbabilityTheory

@@ -41,6 +41,23 @@ namespace MeasureTheory.Measure
 
 variable {X : Type*} [MeasurableSpace X]
 
+/-- The measurable space on measures is induced by the joint evaluation map on all
+measurable sets. -/
+theorem measurableSpace_eq_comap_eval :
+    (Measure.instMeasurableSpace : MeasurableSpace (Measure X)) =
+      MeasurableSpace.comap
+        (fun (μ : Measure X) (A : {A : Set X // MeasurableSet A}) ↦ μ A.val)
+        MeasurableSpace.pi := by
+  let e : Measure X → ({A : Set X // MeasurableSet A} → ℝ≥0∞) := fun μ A ↦ μ A.val
+  apply le_antisymm
+  · have hid : Measurable[MeasurableSpace.comap e inferInstance]
+        (id : Measure X → Measure X) :=
+      measurable_of_measurable_coe _ fun A hA ↦
+        (measurable_pi_apply (⟨A, hA⟩ : {A : Set X // MeasurableSet A})).comp
+          (comap_measurable e)
+    simpa only [MeasurableSpace.comap_id] using hid.comap_le
+  · exact (Measurable.of_eval fun A ↦ measurable_coe A.property).comap_le
+
 /-- Finite laws on the space of measures are determined by their finite-dimensional
 measurable-set evaluations. The empty family records the total mass of the law. -/
 theorem ext_of_forall_finset_map_eval_eq {Q Q' : Measure (Measure X)}
@@ -60,15 +77,7 @@ theorem ext_of_forall_finset_map_eval_eq {Q Q' : Measure (Measure X)}
       rw [map_map (Finset.measurable_restrict I) he]
       exact (h I).symm
   have hgen : (inferInstance : MeasurableSpace (Measure X)) =
-      MeasurableSpace.comap e inferInstance := by
-    apply le_antisymm
-    · have hid : Measurable[MeasurableSpace.comap e inferInstance]
-          (id : Measure X → Measure X) :=
-        measurable_of_measurable_coe _ fun A hA ↦
-          (measurable_pi_apply (⟨A, hA⟩ : {A : Set X // MeasurableSet A})).comp
-            (comap_measurable e)
-      simpa only [MeasurableSpace.comap_id] using hid.comap_le
-    · exact he.comap_le
+      MeasurableSpace.comap e inferInstance := measurableSpace_eq_comap_eval
   ext B hB
   have hB' : MeasurableSet[MeasurableSpace.comap e inferInstance] B := hgen ▸ hB
   obtain ⟨C, hC, rfl⟩ := hB'
