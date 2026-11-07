@@ -279,7 +279,7 @@ theorem padicCompletionUnitsEquivAbelianizationProP_symm_galois_smul
 
 /-- Inverse reciprocity intertwines the Galois action on the pro-`p` class module with the
 group-algebra action on the completed units, after reading the latter additively. -/
-theorem ofMul_symm_galois_smul_eq_single_smul
+theorem ofMul_padicCompletionUnitsEquivAbelianizationProP_symm_galois_smul
     (j : L →ₐ[K] SeparableClosure K) (t : L ≃ₐ[K] L)
     (x : Additive (abelianizationProP p (AbsoluteGaloisGroup K)
       (galoisSubgroup K L j).toSubgroup))
@@ -324,7 +324,7 @@ def explicitH2EquivPadicCompletionUnits
       -- equivalence leaves the additive carrier unchanged.
       change Additive.ofMul (e.symm (t • x.toMul)) =
         MonoidAlgebra.single t (1 : ℤ_[p]) • Additive.ofMul (e.symm x.toMul)
-      exact ofMul_symm_galois_smul_eq_single_smul p K L j t x)
+      exact ofMul_padicCompletionUnitsEquivAbelianizationProP_symm_galois_smul p K L j t x)
 
 open Additive CategoryTheory ContCohomology _root_.Rep in
 /-- The arithmetic comparison is the generic comparison in any equal inverse-reciprocity
