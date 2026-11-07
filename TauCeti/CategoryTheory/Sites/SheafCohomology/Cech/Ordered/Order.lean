@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Ordered.HomotopyEquiv
-import TauCeti.Data.Fin.Tuple.Sort
-import TauCeti.Data.Finset.Inversions
 import Mathlib.Tactic.LinearCombination
 
 /-!
