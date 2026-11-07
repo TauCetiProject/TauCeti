@@ -136,11 +136,8 @@ theorem exists_isOpenEmbedding_isLocalDiffeomorph (x : N) :
       OpenPartialHomeomorph.contDiff_univBall.contDiffOn
       (by rw [OpenPartialHomeomorph.univBall_target _ hr]
           exact OpenPartialHomeomorph.contDiffOn_univBall_symm)
-    have hΦ : Φ.toPartialEquiv = b.toPartialEquiv :=
-      PartialDiffeomorph.ofOpenPartialHomeomorph_toPartialEquiv _ _ _
     have hbv : IsLocalDiffeomorphAt 𝓘(ℝ, F) 𝓘(ℝ, F) n b v :=
-      isLocalDiffeomorphAt_of_eqOn (Φ := Φ) (by simp [hΦ, b]) fun y _ ↦ by
-        rw [hΦ, OpenPartialHomeomorph.coe_toPartialEquiv]
+      isLocalDiffeomorphAt_of_eqOn (Φ := Φ) (by simp [Φ, b]) fun y _ ↦ by simp [Φ]
     exact hbv.comp (hg := c.isLocalDiffeomorphAt_symm_of_mem_maximalAtlas
       (IsManifold.chart_mem_maximalAtlas x) (hb v))
 
