@@ -37,7 +37,17 @@ The local classes are compared with the class `TauCeti.Symbol n V W m` of symbol
 
 A smooth coefficient on `U × ℝⁿ` need not extend smoothly to `ℝⁿ × ℝⁿ` (for instance `1 / x₁` on
 the half-space `x₁ > 0`), so for `U ≠ ℝⁿ` a local symbol is in general not the restriction of a
-global one.
+global one. It does extend after multiplication by a cutoff:
+
+* `TauCeti.LocalSymbol.extend`: after multiplication by a smooth cutoff `ψ(x)` whose support is a
+  closed subset of `ℝⁿ` contained in `U`, a symbol on `U` extends by zero to a symbol on `ℝⁿ`.
+  For a compactly supported cutoff the extension has compact spatial support
+  (`TauCeti.LocalSymbol.hasCompactSpatialSupport_extend`), so it satisfies its estimates uniformly
+  in the position (`TauCeti.Symbol.HasCompactSpatialSupport.isUniform`). Restricting the extension
+  to an open set on which `ψ = 1` recovers the restriction of the original symbol
+  (`TauCeti.LocalSymbol.restrict_extend_of_eqOn_one`).
+
+The order inclusions `TauCeti.LocalSymbol.inclusion` commute with restriction and extension.
 
 ## References
 
@@ -51,7 +61,7 @@ public section
 noncomputable section
 
 open scoped ContDiff Topology
-open Set
+open Set Filter
 
 namespace TauCeti
 
@@ -236,6 +246,12 @@ theorem coefficient_restrict_of_mem (h : U' ≤ U) (a : LocalSymbol U V W m)
   indicator_of_mem (mk_mem_prod hx (mem_univ ξ)) _
 
 @[simp]
+theorem coefficient_restrict_of_notMem (h : U' ≤ U) (a : LocalSymbol U V W m)
+    {x : CoordinateSpace n} (hx : x ∉ U') (ξ : CoordinateSpace n) :
+    (restrict h a).coefficient (x, ξ) = 0 :=
+  (restrict h a).coefficient_of_notMem x hx ξ
+
+@[simp]
 theorem restrict_self (a : LocalSymbol U V W m) : restrict le_rfl a = a :=
   ext_of_mem fun _ hx ξ => coefficient_restrict_of_mem le_rfl a hx ξ
 
@@ -247,6 +263,37 @@ theorem restrict_restrict (h : U' ≤ U) (h' : U'' ≤ U') (a : LocalSymbol U V 
       coefficient_restrict_of_mem _ _ hx]
 
 end Restrict
+
+section Inclusion
+
+variable {m' : ℝ}
+
+/-- A symbol of order `m` on `U` is a symbol of every order `m' ≥ m` on `U`, since `⟨ξ⟩ ≥ 1`. -/
+def inclusion (h : m ≤ m') : LocalSymbol U V W m →ₗ[ℂ] LocalSymbol U V W m' where
+  toFun a :=
+    { coefficient := a.coefficient
+      contDiffOn_coefficient := a.contDiffOn_coefficient
+      coefficient_of_notMem := a.coefficient_of_notMem
+      exists_bound := fun K hKU hK α β => by
+        obtain ⟨C, hC, ha⟩ := a.exists_bound K hKU hK α β
+        refine ⟨C, hC, fun x hx ξ => (ha x hx ξ).trans (mul_le_mul_of_nonneg_left ?_ hC)⟩
+        exact Real.rpow_le_rpow_of_exponent_le (by nlinarith [sq_nonneg ‖ξ‖]) (by linarith) }
+  map_add' _ _ := (rfl)
+  map_smul' _ _ := (rfl)
+
+@[simp]
+theorem coefficient_inclusion (h : m ≤ m') (a : LocalSymbol U V W m) :
+    (inclusion h a).coefficient = a.coefficient := (rfl)
+
+theorem inclusion_injective (h : m ≤ m') :
+    Function.Injective (inclusion (U := U) (V := V) (W := W) h) :=
+  fun _ _ hab => LocalSymbol.ext (by simpa using congrArg LocalSymbol.coefficient hab)
+
+theorem restrict_inclusion (h : m ≤ m') (hU : U' ≤ U) (a : LocalSymbol U V W m) :
+    restrict hU (inclusion h a) = inclusion h (restrict hU a) :=
+  ext_of_mem fun x hx ξ => by simp [hx]
+
+end Inclusion
 
 end LocalSymbol
 
@@ -300,6 +347,11 @@ theorem coefficient_restrict_of_mem (a : Symbol n V W m) {x : CoordinateSpace n}
   LocalSymbol.coefficient_restrict_of_mem le_top (restrictTopEquiv a) hx ξ
 
 @[simp]
+theorem coefficient_restrict_of_notMem (a : Symbol n V W m) {x : CoordinateSpace n} (hx : x ∉ U)
+    (ξ : CoordinateSpace n) : (a.restrict U).coefficient (x, ξ) = 0 :=
+  (a.restrict U).coefficient_of_notMem x hx ξ
+
+@[simp]
 theorem restrict_restrict (h : U' ≤ U) (a : Symbol n V W m) :
     LocalSymbol.restrict h (a.restrict U) = a.restrict U' :=
   LocalSymbol.restrict_restrict le_top h (restrictTopEquiv a)
@@ -309,6 +361,135 @@ theorem restrict_restrict (h : U' ≤ U) (a : Symbol n V W m) :
 theorem restrict_top (a : Symbol n V W m) : a.restrict ⊤ = restrictTopEquiv a :=
   LocalSymbol.restrict_self (restrictTopEquiv a)
 
+theorem restrict_inclusion {m' : ℝ} (h : m ≤ m') (a : Symbol n V W m) :
+    (inclusion h a).restrict U = LocalSymbol.inclusion h (a.restrict U) :=
+  LocalSymbol.ext_of_mem fun x hx ξ => by simp [hx]
+
 end Symbol
+
+namespace LocalSymbol
+
+variable {U U' : TopologicalSpace.Opens (CoordinateSpace n)} {V W : Type*}
+  [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W] {m m' : ℝ}
+
+section Extend
+
+variable {ψ : CoordinateSpace n → ℝ}
+
+/-- The cut-off coefficient `ψ(x) a(x, ξ)`, for a smooth cutoff `ψ` whose support is a closed
+subset of `ℝⁿ` contained in `U`, is smooth on all of `ℝⁿ × ℝⁿ`. -/
+private theorem contDiff_cutoff_smul (a : LocalSymbol U V W m) (hψ : ContDiff ℝ ∞ ψ)
+    (hψU : tsupport ψ ⊆ U) : ContDiff ℝ ∞ fun p => ψ p.1 • a.coefficient p := by
+  refine a.contDiffOn_coefficient.contDiff_smul_of_tsupport_subset (U.isOpen.prod isOpen_univ)
+    (hψ.comp contDiff_fst).contDiffOn ?_
+  refine (tsupport_comp_subset_preimage ψ continuous_fst).trans ?_
+  rw [← prod_univ]
+  exact prod_mono hψU subset_rfl
+
+/-- The cut-off coefficient `ψ(x) a(x, ξ)` satisfies the symbol estimates on every compact set of
+positions. -/
+private theorem exists_bound_extend (a : LocalSymbol U V W m) (hψ : ContDiff ℝ ∞ ψ)
+    (hψU : tsupport ψ ⊆ U) {K : Set (CoordinateSpace n)} (hK : IsCompact K)
+    (α β : List (Fin n)) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖mixedDeriv α β (fun p => ψ p.1 • a.coefficient p) x ξ‖ ≤
+      C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
+  -- Near the compact set `L = K ∩ tsupport ψ ⊆ U`, replace `a` by a smooth function `b`.
+  set L := K ∩ tsupport ψ
+  have hL : IsCompact L := hK.inter_right (isClosed_tsupport ψ)
+  have hLU : L ⊆ U := inter_subset_right.trans hψU
+  obtain ⟨b, hb, hab⟩ :=
+    a.contDiffOn_coefficient.exists_contDiff_eventually_eq_prod_univ hL U.isOpen hLU
+  -- Bounds for the derivatives of `ψ` and the mixed derivatives of `a` on `L`.
+  choose B hB using fun i : ℕ => hL.exists_bound_of_continuousOn
+    (hψ.continuous_iteratedFDeriv (WithTop.coe_le_coe.2 le_top) (m := i)).continuousOn
+  choose C hC0 hC using fun γ : List (Fin n) => a.exists_bound L hLU hL γ β
+  refine ⟨∑ i ∈ Finset.range (α.length + 1), (α.length.choose i : ℝ) * max (B i) 0 *
+      ∑ w : Fin (α.length - i) → Fin n, C (List.ofFn w), Finset.sum_nonneg fun i _ =>
+        mul_nonneg (by positivity) (Finset.sum_nonneg fun w _ => hC0 _), fun x hx ξ => ?_⟩
+  by_cases hxψ : x ∈ tsupport ψ
+  · have hxL : x ∈ L := ⟨hx, hxψ⟩
+    have hψb : mixedDeriv α β (fun p => ψ p.1 • a.coefficient p) x ξ =
+        coordinateDeriv α (fun y => ψ y • coordinateDeriv β (fun η => b (y, η)) ξ) x := by
+      rw [mixedDeriv_congr_of_eventually (b := fun p => ψ p.1 • b p)
+        (by filter_upwards [hab x hxL] with y hy η using by rw [hy]), mixedDeriv_def]
+      congr 1
+      funext y
+      exact congrFun (coordinateDeriv_const_smul β
+        (contDiff_infty.1 (hb.comp (contDiff_prodMk_right y)) _) (ψ y)) ξ
+    rw [hψb]
+    refine (norm_coordinateDeriv_smul_le hψ (contDiff_coordinateDeriv_slice hb β ξ) α x).trans ?_
+    rw [Finset.sum_mul]
+    refine Finset.sum_le_sum fun i _ => ?_
+    have hψi : ‖iteratedFDeriv ℝ i ψ x‖ ≤ max (B i) 0 := (hB i x hxL).trans (le_max_left _ _)
+    have hbi : ∑ w : Fin (α.length - i) → Fin n,
+        ‖coordinateDeriv (List.ofFn w) (fun y => coordinateDeriv β (fun η => b (y, η)) ξ) x‖ ≤
+          ∑ w : Fin (α.length - i) → Fin n,
+            C (List.ofFn w) * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) :=
+      Finset.sum_le_sum fun w _ => by
+        rw [← mixedDeriv_def, mixedDeriv_congr_of_eventually (hab x hxL)]
+        exact hC _ x hxL ξ
+    calc _ ≤ (α.length.choose i : ℝ) * max (B i) 0 * ∑ w : Fin (α.length - i) → Fin n,
+          C (List.ofFn w) * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by gcongr
+      _ = _ := by simp only [Finset.sum_mul, mul_assoc]
+  · rw [mixedDeriv_eq_zero_of_eventually ?_ α β ξ, norm_zero]
+    · exact mul_nonneg (Finset.sum_nonneg fun i _ => mul_nonneg (by positivity)
+        (Finset.sum_nonneg fun w _ => hC0 _)) (Real.rpow_pos_of_pos (by positivity) _).le
+    filter_upwards [notMem_tsupport_iff_eventuallyEq.1 hxψ] with y hy η
+    simp [hy]
+
+/-- The extension by zero of the cut-off symbol `ψ(x) a(x, ξ)`, for a smooth cutoff `ψ` whose
+support is a closed subset of `ℝⁿ` contained in `U`: a symbol on `ℝⁿ`. -/
+def extend (ψ : CoordinateSpace n → ℝ) (hψ : ContDiff ℝ ∞ ψ) (hψU : tsupport ψ ⊆ U) :
+    LocalSymbol U V W m →ₗ[ℂ] Symbol n V W m where
+  toFun a :=
+    { coefficient := fun p => ψ p.1 • a.coefficient p
+      contDiff_coefficient := a.contDiff_cutoff_smul hψ hψU
+      exists_bound := fun _ hK α β => a.exists_bound_extend hψ hψU hK α β }
+  map_add' a b := by
+    ext1
+    funext p
+    simp [smul_add]
+  map_smul' c a := by
+    ext1
+    funext p
+    simp [smul_comm (ψ p.1) c]
+
+variable (hψ : ContDiff ℝ ∞ ψ) (hψU : tsupport ψ ⊆ U)
+
+@[simp]
+theorem coefficient_extend (a : LocalSymbol U V W m) (p : CoordinateSpace n × CoordinateSpace n) :
+    (extend ψ hψ hψU a).coefficient p = ψ p.1 • a.coefficient p := (rfl)
+
+/-- The cut-off extension of the restriction of a symbol on `ℝⁿ` is its product with the
+cutoff. -/
+theorem coefficient_extend_restrict (a : Symbol n V W m)
+    (p : CoordinateSpace n × CoordinateSpace n) :
+    (extend ψ hψ hψU (a.restrict U)).coefficient p = ψ p.1 • a.coefficient p := by
+  obtain ⟨x, ξ⟩ := p
+  by_cases hx : x ∈ U
+  · simp [hx]
+  · simp [hx, image_eq_zero_of_notMem_tsupport fun h => hx (hψU h)]
+
+theorem inclusion_extend (h : m ≤ m') (a : LocalSymbol U V W m) :
+    Symbol.inclusion h (extend ψ hψ hψU a) = extend ψ hψ hψU (inclusion h a) :=
+  Symbol.ext (funext fun p => by simp)
+
+/-- For a compactly supported cutoff, the extension has compact spatial support. In particular it
+satisfies the symbol estimates uniformly in the position
+(`TauCeti.Symbol.HasCompactSpatialSupport.isUniform`). -/
+theorem hasCompactSpatialSupport_extend (hψc : HasCompactSupport ψ) (a : LocalSymbol U V W m) :
+    (extend ψ hψ hψU a).HasCompactSpatialSupport :=
+  Symbol.hasCompactSpatialSupport_iff.2
+    ⟨tsupport ψ, hψc, fun x hx ξ => by simp [image_eq_zero_of_notMem_tsupport hx]⟩
+
+/-- On an open set `U' ⊆ U` on which the cutoff equals `1`, the extension restricts to the
+restriction of the original symbol. -/
+theorem restrict_extend_of_eqOn_one (h : U' ≤ U) (hψ1 : EqOn ψ 1 U')
+    (a : LocalSymbol U V W m) : (extend ψ hψ hψU a).restrict U' = restrict h a :=
+  ext_of_mem fun x hx ξ => by simp [hx, show ψ x = 1 from hψ1 hx]
+
+end Extend
+
+end LocalSymbol
 
 end TauCeti
