@@ -13,7 +13,6 @@ public import Mathlib.Topology.MetricSpace.Contracting
 -- Private: the exponential integrals, the splitting of exponentials, and the product rule are used
 -- only inside the proofs below.
 import Mathlib.Analysis.Calculus.Deriv.Mul
-import Mathlib.Analysis.ODE.ExistUnique
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.Analysis.Normed.Operator.Exponential
 import TauCeti.Topology.ContinuousMap.Bounded.Normed
@@ -679,16 +678,9 @@ theorem eqOn_lyapunovPerronSolution_of_isIntegralCurveOn (hP : IsIdempotentElem 
     simp only [z, g, hγ t ht, map_sub]
     abel
   -- By uniqueness for the linear equation, `z t = exp (t A) (z 0)`.
-  have hz_exp (t : ℝ) (ht : 0 ≤ t) : z t = exp (t • A) (z 0) := by
-    have hw_cont : Continuous w := continuous_iff_continuousAt.2 fun t ↦ (hw t).continuousAt
-    refine ODE_solution_unique_of_mem_Icc_right (v := fun _ x ↦ A x) (s := fun _ ↦ univ)
-      (K := ‖A‖₊) (fun _ _ ↦ A.lipschitzWith.lipschitzOnWith)
-      ((hy_cont.sub hw_cont.continuousOn).mono Icc_subset_Ici_self)
-      (fun t ht ↦ hz t ht.1) (fun _ _ ↦ mem_univ _)
-      (((differentiable_exp_smul_const ℝ A).continuous.clm_apply continuous_const).continuousOn)
-      (fun t _ ↦ ((hasDerivAt_exp_smul_const' A t).clm_apply
-        (hasDerivAt_const t (z 0))).hasDerivWithinAt.congr_deriv (by simp [mul_apply_eq_comp]))
-      (fun _ _ ↦ mem_univ _) (by simp [z]) ⟨ht, le_rfl⟩
+  have hz_exp (t : ℝ) (ht : 0 ≤ t) : z t = exp (t • A) (z 0) :=
+    eq_exp_smul_apply_of_hasDerivWithinAt
+      (hy_cont.sub (continuous_iff_continuousAt.2 fun t ↦ (hw t).continuousAt).continuousOn) hz ht
   -- `z 0` has vanishing `P`-component and a bounded forward orbit, so it is zero.
   have hz0 : z 0 = 0 := by
     refine eq_zero_of_norm_exp_smul_apply_le hu hα hAP ?_ (C := B + (K * ‖y 0‖ +

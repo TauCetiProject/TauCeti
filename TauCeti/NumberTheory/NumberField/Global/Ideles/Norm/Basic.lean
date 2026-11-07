@@ -214,6 +214,51 @@ theorem IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord_ofCompletion
     rw [HeightOneSpectrum.coe_ideleFiniteCoord]
     rfl
 
+/-- The infinite coordinates of a product of ideles, one concentrated at each place of a finite set
+`T` of infinite places: the prescribed unit at a place of `T`, and `1` elsewhere. -/
+theorem NumberField.InfinitePlace.ideleInfiniteCoord_prod_ofCompletion
+    [DecidableEq (InfinitePlace K)] (w' : InfinitePlace K)
+    (T : Finset (InfinitePlace K)) (u : ∀ w : InfinitePlace K, w.Completionˣ) :
+    w'.ideleInfiniteCoord (∏ w ∈ T, IdeleGroup.ofCompletion R K w (u w)) =
+      if w' ∈ T then u w' else 1 := by
+  rw [map_prod]
+  split_ifs with hw'
+  · rw [Finset.prod_eq_single_of_mem w' hw' fun w _ hw ↦
+      w'.ideleInfiniteCoord_ofCompletion_of_ne hw.symm (u w)]
+    exact w'.ideleInfiniteCoord_ofCompletion_self (u w')
+  · exact Finset.prod_eq_one fun w hw ↦
+      w'.ideleInfiniteCoord_ofCompletion_of_ne (ne_of_mem_of_not_mem hw hw').symm (u w)
+
+/-- **Splitting an idele coordinatewise**: for a finite set `S` of finite places and a finite set
+`T` of infinite places, an idele `x` is a product `z * y` where `y` has the coordinates of `x` at
+the places in `S` and `T` and is trivial elsewhere, while `z` is trivial at those places and has
+the coordinates of `x` elsewhere. -/
+theorem NumberField.IdeleGroup.exists_mul_eq_coord_ite
+    [DecidableEq (HeightOneSpectrum R)] [DecidableEq (InfinitePlace K)] (x : IdeleGroup R K)
+    (S : Finset (HeightOneSpectrum R)) (T : Finset (InfinitePlace K)) :
+    ∃ y z : IdeleGroup R K, z * y = x ∧
+      (∀ v, v.ideleFiniteCoord y = if v ∈ S then v.ideleFiniteCoord x else 1) ∧
+      (∀ v, v.ideleFiniteCoord z = if v ∈ S then 1 else v.ideleFiniteCoord x) ∧
+      (∀ w, w.ideleInfiniteCoord y = if w ∈ T then w.ideleInfiniteCoord x else 1) ∧
+      (∀ w, w.ideleInfiniteCoord z = if w ∈ T then 1 else w.ideleInfiniteCoord x) := by
+  set y : IdeleGroup R K :=
+    (∏ v ∈ S, IdeleGroup.ofAdicCompletion R K v (v.ideleFiniteCoord x)) *
+      ∏ w ∈ T, IdeleGroup.ofCompletion R K w (w.ideleInfiniteCoord x) with hy
+  have hyf (v : HeightOneSpectrum R) :
+      v.ideleFiniteCoord y = if v ∈ S then v.ideleFiniteCoord x else 1 := by
+    rw [hy, map_mul, v.ideleFiniteCoord_prod_ofAdicCompletion, map_prod]
+    simp [HeightOneSpectrum.ideleFiniteCoord_ofCompletion]
+  have hyi (w : InfinitePlace K) :
+      w.ideleInfiniteCoord y = if w ∈ T then w.ideleInfiniteCoord x else 1 := by
+    rw [hy, map_mul, w.ideleInfiniteCoord_prod_ofCompletion, map_prod]
+    simp
+  refine ⟨y, y⁻¹ * x, (mul_comm _ _).trans (mul_inv_cancel_left y x), hyf, fun v ↦ ?_, hyi,
+    fun w ↦ ?_⟩
+  · rw [map_mul, map_inv, hyf]
+    split_ifs <;> simp
+  · rw [map_mul, map_inv, hyi]
+    split_ifs <;> simp
+
 /-- **An idele is the product of its archimedean components and its finite component**: the
 ideles concentrated at the infinite places, carrying the infinite coordinates of `x`, times the
 idele with the finite component of `x` and trivial infinite components. -/

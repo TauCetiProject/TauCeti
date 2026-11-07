@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.Free
+public import TauCeti.Algebra.Category.ModuleCat.Colimits
 public import TauCeti.AlgebraicTopology.Cellular.TopHomology
 public import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient
 public import TauCeti.AlgebraicTopology.Singular.Triple.Free
@@ -27,20 +27,20 @@ zero divisors; for instance `H_d(M_b, M_a; ℤ)` is free abelian
 The same holds for a compact regular sublevel `M_b`, which is such a band over the empty sublevel
 (`TauCeti.IsMorse.free_singularHomology_sublevel_of_manifoldMorseIndex_le`), and on a compact
 manifold, which is itself one
-(`TauCeti.IsMorse.free_singularHomology_of_compactSpace_of_manifoldMorseIndex_le`).
-If `f` is proper and bounded below and all its critical points have index at most `d`, then
-`H_d(M; V)` is free with no compactness assumption on `M`
-(`TauCeti.IsMorse.free_singularHomology_of_manifoldMorseIndex_le`). Along an exhaustion of `M` by
-regular sublevels `M_{a₀} ⊆ M_{a₁} ⊆ ⋯`, the homology `H_d(M; V)` is the colimit of the
-`H_d(M_{aⱼ}; V)`. Since `H_{d+1}(M_{aⱼ₊₁}, M_{aⱼ}; V)` vanishes, the long exact sequence of the pair
-makes each map `H_d(M_{aⱼ}; V) ⟶ H_d(M_{aⱼ₊₁}; V)` injective with cokernel embedded in the free
-module `H_d(M_{aⱼ₊₁}, M_{aⱼ}; V)`, and such a sequential colimit is free
-(`ModuleCat.free_of_isColimit_of_exact`). The rank may be infinite.
+(`TauCeti.IsMorse.free_singularHomology_of_compactSpace_of_manifoldMorseIndex_le`). It also holds
+for a proper Morse function bounded below on a possibly noncompact `M`, all of whose critical
+points have index at most `d` (`TauCeti.IsMorse.free_singularHomology_of_manifoldMorseIndex_le`).
+Then `H_d(M; V)` is the colimit of the homology of a regular sublevel exhaustion
+`M_{a₀} ⊆ M_{a₁} ⊆ ⋯`; the vanishing of `H_{d+1}(M_{a_{j+1}}, M_{a_j})` makes the maps
+`H_d(M_{a_j}) → H_d(M_{a_{j+1}})` injective, with cokernels embedded in the free modules
+`H_d(M_{a_{j+1}}, M_{a_j})`, and such a colimit is free (`ModuleCat.free_of_isColimit`).
 
 Together with the vanishing of homology above `d`, the universal coefficient theorem over the
 hereditary ring `k` then shows that cohomology vanishes above degree `d`: for every `k`-module
-`N`, `Hⁿ(M_b, M_a; V, N) = 0` and, on a compact manifold, `Hⁿ(M; V, N) = 0` for `n > d`
-(`TauCeti.IsMorse.isZero_singularCohomology_sublevelPair_of_manifoldMorseIndex_le` and
+`N`, `Hⁿ(M_b, M_a; V, N) = 0` and, for a proper Morse function bounded below or on a compact
+manifold, `Hⁿ(M; V, N) = 0` for `n > d`
+(`TauCeti.IsMorse.isZero_singularCohomology_sublevelPair_of_manifoldMorseIndex_le`,
+`TauCeti.IsMorse.isZero_singularCohomology_of_manifoldMorseIndex_le` and
 `TauCeti.IsMorse.isZero_singularCohomology_of_compactSpace_of_manifoldMorseIndex_le`). In degree
 `d + 1` this uses the freeness of `H_d`, which kills the term `Ext¹(H_d, N)`. None of these
 statements says that the degree-`d` integral cohomology is torsion-free: it contains
@@ -60,15 +60,15 @@ freeness (`TauCeti.TopTriple.free_singularHomology_totalPair`).
 ## Main results
 
 * `TauCeti.IsMorse.free_singularHomology_sublevelPair_of_manifoldMorseIndex_le`,
-  `TauCeti.IsMorse.free_singularHomology_sublevel_of_manifoldMorseIndex_le` and
-  `TauCeti.IsMorse.free_singularHomology_of_compactSpace_of_manifoldMorseIndex_le`: freeness of
-  homology in the degree of the largest index, for compact bands, compact regular sublevels and
-  compact manifolds.
-* `TauCeti.IsMorse.free_singularHomology_of_manifoldMorseIndex_le`: the same for a manifold with a
-  proper Morse function bounded below.
-* `TauCeti.IsMorse.isZero_singularCohomology_sublevelPair_of_manifoldMorseIndex_le` and
-  `TauCeti.IsMorse.isZero_singularCohomology_of_compactSpace_of_manifoldMorseIndex_le`: vanishing
-  of cohomology above the largest index.
+  `TauCeti.IsMorse.free_singularHomology_sublevel_of_manifoldMorseIndex_le`,
+  `TauCeti.IsMorse.free_singularHomology_of_compactSpace_of_manifoldMorseIndex_le` and
+  `TauCeti.IsMorse.free_singularHomology_of_manifoldMorseIndex_le`: freeness of homology in the
+  degree of the largest index, for compact bands, compact regular sublevels, compact manifolds and
+  manifolds with a proper Morse function bounded below.
+* `TauCeti.IsMorse.isZero_singularCohomology_sublevelPair_of_manifoldMorseIndex_le`,
+  `TauCeti.IsMorse.isZero_singularCohomology_of_compactSpace_of_manifoldMorseIndex_le` and
+  `TauCeti.IsMorse.isZero_singularCohomology_of_manifoldMorseIndex_le`: vanishing of cohomology
+  above the largest index.
 
 ## References
 
@@ -82,7 +82,7 @@ public section
 
 noncomputable section
 
-open CategoryTheory Limits Module Set Topology Topology.RelCWComplex
+open AlgebraicTopology CategoryTheory Limits Module Set Topology Topology.RelCWComplex
 open scoped ContDiff Manifold
 
 universe u
@@ -148,7 +148,7 @@ theorem IsMorse.free_singularHomology_sublevel_of_manifoldMorseIndex_le (hf : Is
     (hd : ∀ p ∈ criticalPoints I f, f p ≤ b → manifoldMorseIndex I f p ≤ d)
     {k : Type u} [CommRing k] [NoZeroDivisors k] [IsPrincipalIdealRing k] (V : ModuleCat.{u} k)
     [Module.Free k V] :
-    Module.Free k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) d).obj V).obj
+    Module.Free k (((singularHomologyFunctor (ModuleCat.{u} k) d).obj V).obj
       (TopCat.of {x | f x ≤ b})) := by
   obtain ⟨a, hab, _, hband, ha⟩ :=
     exists_isEmpty_sublevelPair_of_isCompact_sublevel (I := I) hf.contMDiff.continuous hcompact
@@ -165,7 +165,7 @@ theorem IsMorse.free_singularHomology_of_compactSpace_of_manifoldMorseIndex_le [
     (hf : IsMorse I f) {d : ℕ} (hd : ∀ x ∈ criticalPoints I f, manifoldMorseIndex I f x ≤ d)
     {k : Type u} [CommRing k] [NoZeroDivisors k] [IsPrincipalIdealRing k] (V : ModuleCat.{u} k)
     [Module.Free k V] :
-    Module.Free k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) d).obj V).obj
+    Module.Free k (((singularHomologyFunctor (ModuleCat.{u} k) d).obj V).obj
       (TopCat.of M)) := by
   obtain ⟨a, b, hab, hcompact, ha, hb, hf'⟩ :=
     exists_isRegularValue_forall_mem_Ioc (I := I) hf.contMDiff.continuous
@@ -174,44 +174,43 @@ theorem IsMorse.free_singularHomology_of_compactSpace_of_manifoldMorseIndex_le [
   exact .of_equiv (singularHomologyIsoSublevelPair hab (fun x ↦ (hf' x).1)
     (fun x ↦ (hf' x).2) V d).symm.toLinearEquiv
 
-/-- **Homology is free in the degree of the largest index.** Let `f` be a proper Morse function,
-bounded below, all of whose critical points have index at most `d`. Then `H_d(M; V)` is free for
-every free module `V` over a principal ideal ring without zero divisors; in particular
-`H_d(M; ℤ)` is free abelian. The manifold need not be compact, and `H_d(M; V)` may have infinite
-rank. -/
+/-- **Homology of a manifold with a proper Morse function is free in the degree of the largest
+index.** Let `f` be a proper Morse function, bounded below, all of whose critical points have index
+at most `d`. Then `H_d(M; V)` is free for every free module `V` over a principal ideal ring without
+zero divisors. With integral coefficients it is free abelian. `M` need not be compact, and the
+homology need not be finitely generated. -/
 theorem IsMorse.free_singularHomology_of_manifoldMorseIndex_le (hf : IsMorse I f)
     (hp : IsProperMap f) (hbdd : BddBelow (range f)) {d : ℕ}
     (hd : ∀ x ∈ criticalPoints I f, manifoldMorseIndex I f x ≤ d)
     {k : Type u} [CommRing k] [NoZeroDivisors k] [IsPrincipalIdealRing k] (V : ModuleCat.{u} k)
     [Module.Free k V] :
-    Module.Free k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) d).obj V).obj
-      (TopCat.of M)) := by
-  have hcont : Continuous f := hf.contMDiff.continuous
+    Module.Free k (((singularHomologyFunctor (ModuleCat.{u} k) d).obj V).obj (TopCat.of M)) := by
   -- `H_d(M)` is the colimit of the homology of the regular sublevels `{f ≤ a j}`.
   obtain ⟨a, ha, hreg, hcompact, hc⟩ :=
     hf.exists_regular_sublevel_isColimit_singularHomology hp hbdd
+  have hstep (j : ℕ) := ha (Nat.le_succ j)
   -- Each step `({f ≤ a (j + 1)}, {f ≤ a j})` is a compact band between regular values.
   have hband (j : ℕ) : IsCompact (f ⁻¹' Icc (a j) (a (j + 1))) :=
-    (hcompact (j + 1)).of_isClosed_subset (isClosed_Icc.preimage hcont) fun x hx ↦ hx.2
-  have hstep (j : ℕ) := ha (Nat.le_succ j)
-  have hfree (j : ℕ) := hf.free_singularHomology_sublevelPair_of_manifoldMorseIndex_le (hstep j)
-    (hband j) (hreg j) (hreg (j + 1)) (fun x hx ↦ hd x hx.1) V
-  have hzero (j : ℕ) := hf.isZero_singularHomology_sublevelPair_of_manifoldMorseIndex_le (hstep j)
-    (hband j) (hreg j) (hreg (j + 1)) (fun x hx ↦ hd x hx.1) V (lt_add_one d)
-  have : Module.Free k (((ha.functor ⋙ sublevelFunctor f) ⋙
-      (AlgebraicTopology.singularHomologyFunctor _ d).obj V).obj 0) :=
-    hf.free_singularHomology_sublevel_of_manifoldMorseIndex_le (hcompact 0) (hreg 0)
-      (fun x hx _ ↦ hd x hx) V
-  -- In the long exact sequence of the pair `({f ≤ a (j + 1)}, {f ≤ a j})`, the map
-  -- `H_d({f ≤ a j}) ⟶ H_d({f ≤ a (j + 1)})`, induced by the embedding
-  -- `(sublevelFunctor f).map _ = (sublevelPair f _).map`, is injective since `H_{d+1}` of the pair
-  -- vanishes, and is followed by the map into the free module `H_d({f ≤ a (j + 1)}, {f ≤ a j})`.
-  exact ModuleCat.free_of_isColimit_of_exact (hc V d).some
-    (fun j ↦ (ModuleCat.mono_iff_injective _).1
-      ((sublevelPair f (hstep j)).mono_homologyMap_map_of_isZero V (hzero j)))
-    (fun j ↦ ((sublevelPair f (hstep j)).singularHomologyπ V d).hom) fun j ↦
-      (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
-        ((sublevelPair f (hstep j)).singularHomology_exact_space V d)
+    (hcompact (j + 1)).of_isClosed_subset (isClosed_Icc.preimage hf.contMDiff.continuous)
+      fun x hx ↦ hx.2
+  refine ModuleCat.free_of_isColimit _ (hc V d).some
+    (hf.free_singularHomology_sublevel_of_manifoldMorseIndex_le (hcompact 0) (hreg 0)
+      (fun x hx _ ↦ hd x hx) V) (fun j ↦ ?_) fun j ↦ ?_
+  · -- `H_{d+1}` of the band between consecutive sublevels vanishes, so the map
+    -- `H_d({f ≤ a j}) ⟶ H_d({f ≤ a (j + 1)})` induced by the embedding is injective.
+    have := (sublevelPair f (hstep j)).mono_homologyMap_map_of_isZero V
+      (hf.isZero_singularHomology_sublevelPair_of_manifoldMorseIndex_le (hstep j) (hband j)
+        (hreg j) (hreg (j + 1)) (fun x hx ↦ hd x hx.1) V d.lt_succ_self)
+    exact (ModuleCat.mono_iff_injective _).1 this
+  · -- The cokernel embeds in the free module `H_d` of the band between consecutive sublevels.
+    have hex := ((sublevelPair f (hstep j)).singularHomology_exact_space V d).moduleCat_range_eq_ker
+    have := hf.free_singularHomology_sublevelPair_of_manifoldMorseIndex_le (hstep j) (hband j)
+      (hreg j) (hreg (j + 1)) (fun x hx ↦ hd x hx.1) V
+    let e := (Submodule.quotEquivOfEq _ _ hex).trans (LinearMap.quotKerEquivRange _)
+    have : Module.Free k (LinearMap.range (ShortComplex.mk _ _
+        ((sublevelPair f (hstep j)).homologyMap_comp_singularHomologyπ V d)).g.hom) :=
+      Submodule.free_of_isPrincipalIdealRing _
+    exact .of_equiv e.symm
 
 /-- **Cohomology of a compact band vanishes above the largest index.** Let `f` be a Morse function,
 `a ≤ b` regular values with compact band `f⁻¹[a, b]`, and suppose that every critical point in the
@@ -236,6 +235,28 @@ theorem IsMorse.isZero_singularCohomology_sublevelPair_of_manifoldMorseIndex_le 
   exact TopPair.isZero_singularCohomology_succ_of_projective_homology _ V N m
     (hf.isZero_singularHomology_sublevelPair_of_manifoldMorseIndex_le hab hcompact ha hb hd V hn)
 
+/-- **Cohomology of a manifold with a proper Morse function vanishes above the largest index.** Let
+`f` be a proper Morse function, bounded below, all of whose critical points have index at most `d`.
+Then the singular cohomology `Hⁿ(M; V, N)` vanishes for every `n > d`, every free module `V` over a
+principal ideal ring `k` without zero divisors and every `k`-module `N`; for instance
+`Hⁿ(M; ℤ) = 0` for `n > d`. -/
+theorem IsMorse.isZero_singularCohomology_of_manifoldMorseIndex_le (hf : IsMorse I f)
+    (hp : IsProperMap f) (hbdd : BddBelow (range f)) {d : ℕ}
+    (hd : ∀ x ∈ criticalPoints I f, manifoldMorseIndex I f x ≤ d)
+    {k : Type u} [CommRing k] [NoZeroDivisors k] [IsPrincipalIdealRing k] (V N : ModuleCat.{u} k)
+    [Module.Free k V] {n : ℕ} (hn : d < n) :
+    IsZero ((TopCat.of M).singularCohomology V k N n) := by
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by lia⟩
+  have hzero {j : ℕ} (hj : d < j) :=
+    hf.isZero_singularHomology_of_manifoldMorseIndex_le hp hbdd hd V hj
+  -- `Hₘ` is free for `m = d` and zero for `m > d`, hence projective, and `Hₘ₊₁` is zero.
+  have : Projective (((singularHomologyFunctor (ModuleCat.{u} k) m).obj V).obj (TopCat.of M)) := by
+    rcases (show d ≤ m by lia).eq_or_lt with rfl | hlt
+    · have := hf.free_singularHomology_of_manifoldMorseIndex_le hp hbdd hd V
+      infer_instance
+    · exact (hzero hlt).projective
+  exact TopCat.isZero_singularCohomology_succ_of_projective_homology _ V N m (hzero hn)
+
 /-- **Cohomology of a compact manifold vanishes above the largest index.** If every critical point
 of a Morse function on a compact boundaryless manifold `M` has index at most `d`, then
 `Hⁿ(M; V, N) = 0` for every `n > d`, every free module `V` over a principal ideal ring `k` without
@@ -245,17 +266,8 @@ theorem IsMorse.isZero_singularCohomology_of_compactSpace_of_manifoldMorseIndex_
     (hf : IsMorse I f) {d : ℕ} (hd : ∀ x ∈ criticalPoints I f, manifoldMorseIndex I f x ≤ d)
     {k : Type u} [CommRing k] [NoZeroDivisors k] [IsPrincipalIdealRing k] (V N : ModuleCat.{u} k)
     [Module.Free k V] {n : ℕ} (hn : d < n) :
-    IsZero ((TopCat.of M).singularCohomology V k N n) := by
-  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by lia⟩
-  -- `Hₘ(M)` is free if `m = d` and zero if `m > d`, so projective either way.
-  have : Projective (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) m).obj V).obj
-      (TopCat.of M)) := by
-    rcases (Nat.lt_succ_iff.1 hn).eq_or_lt with rfl | hdm
-    · have := hf.free_singularHomology_of_compactSpace_of_manifoldMorseIndex_le hd V
-      infer_instance
-    · exact (hf.isZero_singularHomology_of_compactSpace_of_manifoldMorseIndex_le hd V
-        hdm).projective
-  exact TopCat.isZero_singularCohomology_succ_of_projective_homology _ V N m
-    (hf.isZero_singularHomology_of_compactSpace_of_manifoldMorseIndex_le hd V hn)
+    IsZero ((TopCat.of M).singularCohomology V k N n) :=
+  hf.isZero_singularCohomology_of_manifoldMorseIndex_le hf.contMDiff.continuous.isProperMap
+    (isCompact_range hf.contMDiff.continuous).bddBelow hd V N hn
 
 end TauCeti
