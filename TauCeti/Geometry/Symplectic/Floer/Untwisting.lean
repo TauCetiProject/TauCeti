@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Flow.Periodic
 public import TauCeti.Geometry.Symplectic.Floer.Manifold
 public import TauCeti.Geometry.Symplectic.Hamiltonian.CommutingFlow
-public import TauCeti.Geometry.Symplectic.SymplecticTransport
 
 /-!
 # Untwisting Floer cylinders by the Hamiltonian flow
@@ -118,8 +117,8 @@ theorem isComplexLinearMap_perturbedMFDeriv_timeDependentFlowOf_iff (s : ℝ) {v
         (J.transport (timeDependentFlowMFDerivEquiv hc le_rfl hX s z.2 (v z)).toLinearEquiv.symm)
         (mfderiv 𝓘(ℝ, ℝ × ℝ) I v z : ℝ × ℝ →L[ℝ] TangentSpace I (v z)).toLinearMap := by
   refine (Iff.of_eq (congrArg (IsComplexLinearMap _ J) (LinearMap.ext fun a ↦ ?_))).trans
-    (isComplexLinearMap_transport_symm_iff
-      (timeDependentFlowMFDerivEquiv hc le_rfl hX s z.2 (v z)).toLinearEquiv).symm
+    (timeDependentFlowMFDerivEquiv hc le_rfl hX s z.2
+      (v z)).toLinearEquiv.isComplexLinearMap_transport_symm_iff.symm
   -- Both sides apply `dφ_t` to `dv a`, once as a continuous linear map and once through the
   -- linear equivalence underlying it.
   exact (DFunLike.congr_fun (perturbedMFDeriv_timeDependentFlowOf hX hc s hv) a).trans
@@ -149,50 +148,6 @@ variable [I.Boundaryless] (hσ : σ.IsSymplectic) (hH : ∀ t, ContMDiff I 𝓘(
   (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 2
     (fun p : ℝ × M ↦ (⟨p.2, σ.hamiltonianVectorField (H p.1) p.2⟩ : TangentBundle I M)))
 include hσ hH hc hX
-
-/-- **The linearized Hamiltonian flow is symplectic.** For a symplectic form `σ` and a jointly
-`C²` field of Hamiltonian vector fields with complete suspension, every differential
-`dφ_{s, t}(x) : T_x M → T_{φ_{s, t} x} M` of the time-dependent flow is a linear
-symplectomorphism. -/
-theorem isSymplectomorphism_timeDependentFlowMFDerivEquiv (s t : ℝ) (x : M) :
-    SymplecticForm.IsSymplectomorphism (hσ.isNondegenerate.symplecticFormAt x)
-      (hσ.isNondegenerate.symplecticFormAt
-        (timeDependentFlowOf (fun t ↦ σ.hamiltonianVectorField (H t)) s t x))
-      (timeDependentFlowMFDerivEquiv hc le_rfl (hX.of_le one_le_two) s t x).toLinearEquiv := by
-  refine SymplecticForm.isSymplectomorphism_iff.2 fun a b ↦ ?_
-  have h := congrArg (fun α ↦ α x ![a, b])
-    (mpullback_timeDependentFlowOf_of_isHamiltonianVectorField
-      (fun t ↦ hσ.isNondegenerate.isHamiltonianVectorField_hamiltonianVectorField (H t))
-      hσ.isClosed hH hc hX s t)
-  simp only [mpullback_apply] at h
-  simp only [IsNondegenerate.symplecticFormAt_apply, SmoothBundleForm.eval₂_apply]
-  convert h using 2
-  ext i
-  fin_cases i <;> simp
-
-/-- **Twisted structures stay tame.** For a symplectic form `σ`, if `σ` tames a structure `J` at
-`φ_{s, t} x`, it tames the structure `J' = (dφ_{s, t})⁻¹ J dφ_{s, t}` carried back to `x` along the
-linearized flow. -/
-theorem tames_transport_timeDependentFlowMFDerivEquiv_symm (s t : ℝ) (x : M)
-    {J : AlmostComplexStructure (TangentSpace I
-      (timeDependentFlowOf (fun t ↦ σ.hamiltonianVectorField (H t)) s t x))}
-    (hJ : (hσ.isNondegenerate.symplecticFormAt _).Tames J) :
-    (hσ.isNondegenerate.symplecticFormAt x).Tames (J.transport
-      (timeDependentFlowMFDerivEquiv hc le_rfl (hX.of_le one_le_two) s t x).toLinearEquiv.symm) :=
-  SymplecticForm.isSymplectomorphism_iff_transport_eq.1
-    (hσ.isSymplectomorphism_timeDependentFlowMFDerivEquiv hH hc hX s t x).symm ▸ hJ.transport _
-
-/-- **Twisted structures stay compatible.** For a symplectic form `σ`, if `J` is compatible with
-`σ` at `φ_{s, t} x`, so is the structure `J' = (dφ_{s, t})⁻¹ J dφ_{s, t}` carried back to `x` along
-the linearized flow. -/
-theorem compatible_transport_timeDependentFlowMFDerivEquiv_symm (s t : ℝ) (x : M)
-    {J : AlmostComplexStructure (TangentSpace I
-      (timeDependentFlowOf (fun t ↦ σ.hamiltonianVectorField (H t)) s t x))}
-    (hJ : (hσ.isNondegenerate.symplecticFormAt _).Compatible J) :
-    (hσ.isNondegenerate.symplecticFormAt x).Compatible (J.transport
-      (timeDependentFlowMFDerivEquiv hc le_rfl (hX.of_le one_le_two) s t x).toLinearEquiv.symm) :=
-  SymplecticForm.isSymplectomorphism_iff_transport_eq.1
-    (hσ.isSymplectomorphism_timeDependentFlowMFDerivEquiv hH hc hX s t x).symm ▸ hJ.transport _
 
 /-- **Energy of an untwisted cylinder.** For a symplectic form `σ` and `w(s', t) = φ_t (v(s', t))`
 as in `TauCeti.SmoothTwoForm.perturbedMFDeriv_timeDependentFlowOf`, the Floer energy density of

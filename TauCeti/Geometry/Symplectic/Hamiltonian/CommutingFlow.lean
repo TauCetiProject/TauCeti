@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Diffeomorphism.Action
 public import TauCeti.Geometry.Manifold.DifferentialForm.Flow
 public import TauCeti.Geometry.Manifold.DifferentialForm.Flow.TimeDependent
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Complete
+public import TauCeti.Geometry.Symplectic.SymplecticTransport
 import TauCeti.Geometry.Manifold.DifferentialForm.Squared
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 
@@ -25,7 +26,12 @@ If `σ` is closed, the flow `ψ` of a complete `C²` vector field `X` with close
 Hamiltonian flows are symplectic, since `d(ι_{X_f} σ) = d(df) = 0`
 (`TauCeti.SmoothTwoForm.IsHamiltonianVectorField.mpullback_globalFlow`). The same holds for the
 time-dependent flow of a family of Hamiltonian vector fields
-(`TauCeti.SmoothTwoForm.mpullback_timeDependentFlowOf_of_isHamiltonianVectorField`).
+(`TauCeti.SmoothTwoForm.mpullback_timeDependentFlowOf_of_isHamiltonianVectorField`). For symplectic
+`σ`, every differential of this flow is therefore a linear symplectomorphism
+(`TauCeti.SmoothTwoForm.IsSymplectic.isSymplectomorphism_timeDependentFlowMFDerivEquiv`), so an
+almost complex structure carried back along it stays tamed by, or compatible with, `σ`
+(`TauCeti.SmoothTwoForm.IsSymplectic.tames_transport_timeDependentFlowMFDerivEquiv_symm` and
+`TauCeti.SmoothTwoForm.IsSymplectic.compatible_transport_timeDependentFlowMFDerivEquiv_symm`).
 
 For a nondegenerate `σ`, a smooth map `φ` that pulls `σ` back to itself and preserves a function
 `g` carries Hamiltonian vector fields of `g` to themselves, hence
@@ -55,6 +61,8 @@ identifies a compact connected regular fibre with a torus.
 
 * `TauCeti.SmoothTwoForm.IsHamiltonianVectorField.mpullback_globalFlow`: for closed `σ`, the
   flow of a complete Hamiltonian vector field satisfies `ψₜ^* σ = σ`.
+* `TauCeti.SmoothTwoForm.IsSymplectic.isSymplectomorphism_timeDependentFlowMFDerivEquiv`: for
+  symplectic `σ`, the linearized time-dependent Hamiltonian flow is a linear symplectomorphism.
 * `TauCeti.SmoothTwoForm.IsFirstIntegral.apply_globalFlow`: complete Hamiltonian flows preserve
   first integrals.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.apply_globalFlow_hamiltonianVectorField`: symplectic maps
@@ -174,6 +182,77 @@ theorem mpullback_timeDependentFlowOf_of_isHamiltonianVectorField {H : ℝ → M
     (fun u ↦ by
       rw [isHamiltonianVectorField_iff_interior_eq.1 (hX u), mextDeriv_mextDeriv_ofFunction (hH u)])
     s t
+
+/-! ### The linearized time-dependent Hamiltonian flow is symplectic -/
+
+namespace IsSymplectic
+
+variable (hσ : σ.IsSymplectic)
+include hσ
+
+/-- **The linearized Hamiltonian flow is symplectic.** For a symplectic form `σ` and a jointly
+`C²` field of Hamiltonian vector fields with complete suspension, every differential
+`dφ_{s, t}(x) : T_x M → T_{φ_{s, t} x} M` of the time-dependent flow is a linear
+symplectomorphism. -/
+theorem isSymplectomorphism_timeDependentFlowMFDerivEquiv {H : ℝ → M → ℝ}
+    (hH : ∀ t, ContMDiff I 𝓘(ℝ) 2 (H t))
+    (hc : IsCompleteVectorField
+      (timeDependentSuspensionField fun t ↦ σ.hamiltonianVectorField (H t)))
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 2
+      (fun p : ℝ × M ↦ (⟨p.2, σ.hamiltonianVectorField (H p.1) p.2⟩ : TangentBundle I M)))
+    (s t : ℝ) (x : M) :
+    SymplecticForm.IsSymplectomorphism (hσ.isNondegenerate.symplecticFormAt x)
+      (hσ.isNondegenerate.symplecticFormAt
+        (timeDependentFlowOf (fun t ↦ σ.hamiltonianVectorField (H t)) s t x))
+      (timeDependentFlowMFDerivEquiv hc le_rfl (hX.of_le one_le_two) s t x).toLinearEquiv := by
+  refine SymplecticForm.isSymplectomorphism_iff.2 fun a b ↦ ?_
+  have h := congrArg (fun α ↦ α x ![a, b])
+    (mpullback_timeDependentFlowOf_of_isHamiltonianVectorField
+      (fun t ↦ hσ.isNondegenerate.isHamiltonianVectorField_hamiltonianVectorField (H t))
+      hσ.isClosed hH hc hX s t)
+  simp only [mpullback_apply] at h
+  simp only [IsNondegenerate.symplecticFormAt_apply, SmoothBundleForm.eval₂_apply]
+  convert h using 2
+  ext i
+  fin_cases i <;> simp
+
+/-- **Twisted structures stay tame.** For a symplectic form `σ`, if `σ` tames a structure `J` at
+`φ_{s, t} x`, it tames the structure `J' = (dφ_{s, t})⁻¹ J dφ_{s, t}` carried back to `x` along the
+linearized flow. -/
+theorem tames_transport_timeDependentFlowMFDerivEquiv_symm {H : ℝ → M → ℝ}
+    (hH : ∀ t, ContMDiff I 𝓘(ℝ) 2 (H t))
+    (hc : IsCompleteVectorField
+      (timeDependentSuspensionField fun t ↦ σ.hamiltonianVectorField (H t)))
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 2
+      (fun p : ℝ × M ↦ (⟨p.2, σ.hamiltonianVectorField (H p.1) p.2⟩ : TangentBundle I M)))
+    (s t : ℝ) (x : M)
+    {J : AlmostComplexStructure (TangentSpace I
+      (timeDependentFlowOf (fun t ↦ σ.hamiltonianVectorField (H t)) s t x))}
+    (hJ : (hσ.isNondegenerate.symplecticFormAt _).Tames J) :
+    (hσ.isNondegenerate.symplecticFormAt x).Tames (J.transport
+      (timeDependentFlowMFDerivEquiv hc le_rfl (hX.of_le one_le_two) s t x).toLinearEquiv.symm) :=
+  SymplecticForm.isSymplectomorphism_iff_transport_eq.1
+    (hσ.isSymplectomorphism_timeDependentFlowMFDerivEquiv hH hc hX s t x).symm ▸ hJ.transport _
+
+/-- **Twisted structures stay compatible.** For a symplectic form `σ`, if `J` is compatible with
+`σ` at `φ_{s, t} x`, so is the structure `J' = (dφ_{s, t})⁻¹ J dφ_{s, t}` carried back to `x` along
+the linearized flow. -/
+theorem compatible_transport_timeDependentFlowMFDerivEquiv_symm {H : ℝ → M → ℝ}
+    (hH : ∀ t, ContMDiff I 𝓘(ℝ) 2 (H t))
+    (hc : IsCompleteVectorField
+      (timeDependentSuspensionField fun t ↦ σ.hamiltonianVectorField (H t)))
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 2
+      (fun p : ℝ × M ↦ (⟨p.2, σ.hamiltonianVectorField (H p.1) p.2⟩ : TangentBundle I M)))
+    (s t : ℝ) (x : M)
+    {J : AlmostComplexStructure (TangentSpace I
+      (timeDependentFlowOf (fun t ↦ σ.hamiltonianVectorField (H t)) s t x))}
+    (hJ : (hσ.isNondegenerate.symplecticFormAt _).Compatible J) :
+    (hσ.isNondegenerate.symplecticFormAt x).Compatible (J.transport
+      (timeDependentFlowMFDerivEquiv hc le_rfl (hX.of_le one_le_two) s t x).toLinearEquiv.symm) :=
+  SymplecticForm.isSymplectomorphism_iff_transport_eq.1
+    (hσ.isSymplectomorphism_timeDependentFlowMFDerivEquiv hH hc hX s t x).symm ▸ hJ.transport _
+
+end IsSymplectic
 
 /-! ### Poisson-commuting Hamiltonian flows commute -/
 

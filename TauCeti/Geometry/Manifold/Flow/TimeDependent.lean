@@ -544,6 +544,45 @@ theorem timeDependentFlowMFDerivEquiv_apply (s t : ℝ) (x : M) (v : TangentSpac
   -- A continuous linear equivalence and its underlying continuous linear map agree pointwise.
   rfl
 
+/-- The inverse of the linearized time-dependent flow from `s` to `t` at `x` is the differential
+of the flow from `t` to `s` at the flowed point `φ_{s,t} x`. -/
+@[simp]
+theorem coe_timeDependentFlowMFDerivEquiv_symm (s t : ℝ) (x : M) :
+    ((timeDependentFlowMFDerivEquiv hcomplete hn hX s t x).symm :
+        TangentSpace I (timeDependentFlowOf X s t x) →L[ℝ] TangentSpace I x) =
+      mfderiv I I (timeDependentFlowOf X t s) (timeDependentFlowOf X s t x) := by
+  have hn₀ : (n : WithTop ℕ∞) ≠ 0 := by exact_mod_cast (zero_lt_one.trans_le hn).ne'
+  set e := timeDependentFlowMFDerivEquiv hcomplete hn hX s t x
+  -- The flow from `t` back to `s` undoes the flow from `s` to `t`, so by the chain rule its
+  -- differential at `φ_{s,t} x` is a left inverse of `e`.
+  have hcomp : mfderiv I I (timeDependentFlowOf X t s) (timeDependentFlowOf X s t x) ∘L
+      (e : TangentSpace I x →L[ℝ] TangentSpace I (timeDependentFlowOf X s t x)) =
+      ContinuousLinearMap.id ℝ (TangentSpace I x) := by
+    have hψ : MDifferentiableAt I I (timeDependentFlowOf X t s) (timeDependentFlowOf X s t x) :=
+      (timeDependentFlowDiffeomorph hcomplete hn hX t s).mdifferentiable hn₀ _
+    have hφ : MDifferentiableAt I I (timeDependentFlowOf X s t) x :=
+      (timeDependentFlowDiffeomorph hcomplete hn hX s t).mdifferentiable hn₀ _
+    rw [coe_timeDependentFlowMFDerivEquiv]
+    exact (hψ.hasMFDerivAt.comp x hφ.hasMFDerivAt).mfderiv.symm.trans
+      ((hasMFDerivAt_id x).congr_of_eventuallyEq_abuse (Filter.Eventually.of_forall
+        (timeDependentFlowDiffeomorph hcomplete hn hX s t).symm_apply_apply)).mfderiv
+  refine ContinuousLinearMap.ext fun v ↦ ?_
+  have h := DFunLike.congr_fun hcomp (e.symm v)
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    ContinuousLinearEquiv.apply_symm_apply] at h
+  exact h.symm
+
+/-- The inverse of the linearized time-dependent flow applies the differential of the reverse time
+map at the flowed point. -/
+@[simp]
+theorem timeDependentFlowMFDerivEquiv_symm_apply (s t : ℝ) (x : M)
+    (v : TangentSpace I (timeDependentFlowOf X s t x)) :
+    (timeDependentFlowMFDerivEquiv hcomplete hn hX s t x).symm v =
+      mfderiv I I (timeDependentFlowOf X t s) (timeDependentFlowOf X s t x) v := by
+  rw [← coe_timeDependentFlowMFDerivEquiv_symm hcomplete hn hX]
+  -- A continuous linear equivalence and its underlying continuous linear map agree pointwise.
+  rfl
+
 /-- **Derivative of a map moved by the time-dependent flow.** Let `τ : N → ℝ` and `v : N → M` have
 derivatives `τ'` and `v'` at `z`, and let `X` be jointly `C^n`, `1 ≤ n`, with complete suspension.
 The map `y ↦ φ_{s, τ y} (v y)`, with `φ_{s, t} = timeDependentFlowOf X s t`, has derivative
