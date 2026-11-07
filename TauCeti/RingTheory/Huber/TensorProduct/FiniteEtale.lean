@@ -66,27 +66,22 @@ private theorem isFiniteEtale_inl_finiteAlgebra [Module.Finite A B] [Algebra.Eta
       { e.toLinearEquiv with
         continuous_toFun := he.continuous
         continuous_invFun := e.toEquiv.continuous_symm_iff.mpr he.isOpenMap }
-  refine ⟨?_, ?_, ?_, ?_⟩
-  · rw [completedTensor.toRingHom_inl, ← RingHom.algebraMap_toAlgebra (CompletedTensor.inl A C B)]
-    exact RingHom.finite_algebraMap.mpr inferInstance
-  · rw [completedTensor.toRingHom_inl, ← RingHom.algebraMap_toAlgebra (CompletedTensor.inl A C B)]
-    exact RingHom.etale_algebraMap.mpr inferInstance
-  · rw [completedTensor.toRingHom_inl]
-    exact htop
-  · rw [completedTensor.toRingHom_inl,
-      ← RingHom.algebraMap_toAlgebra (CompletedTensor.inl A C B), ← finiteAlgebra_plus,
-      ← finiteAlgebra.map_plus_baseChangeEquiv S T f hf]
+  refine ⟨?_, ?_, ?_, ?_⟩ <;>
+    rw [completedTensor.toRingHom_inl, ← RingHom.algebraMap_toAlgebra (CompletedTensor.inl A C B)]
+  · exact RingHom.finite_algebraMap.mpr inferInstance
+  · exact RingHom.etale_algebraMap.mpr inferInstance
+  · simpa only [_root_.toAlgebra_algebraMap] using htop
+  · rw [← finiteAlgebra_plus]
     apply le_antisymm
-    · rintro _ ⟨x, hx, rfl⟩
+    · rw [← finiteAlgebra.map_plus_baseChangeEquiv S T f hf]
+      rintro _ ⟨x, hx, rfl⟩
       simpa [e] using (finiteAlgebra.lift
         (finiteAlgebra.algebraHom T (CompletedTensor A C B)) (by simp)
         e.toAlgHom).map_mem_plus x hx
-    · rw [finiteAlgebra.map_plus_baseChangeEquiv S T f hf]
-      intro x hx
+    · intro x hx
       have hmem := (finiteAlgebra.lift (completedTensor.inl A T (S.finiteAlgebra B))
         (by simp [RingHom.algebraMap_toAlgebra]) (AlgHom.id C _)).map_mem_plus x hx
-      rw [finiteAlgebra.lift_toRingHom] at hmem
-      exact hmem
+      rwa [finiteAlgebra.lift_toRingHom] at hmem
 
 /-- **Finite étale morphisms of Huber pairs are stable under completed base change.**
 The new base `C` is complete Hausdorff, and both structure maps are adic. The algebras
