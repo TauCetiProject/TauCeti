@@ -143,16 +143,19 @@ theorem heightIdeal_smul (φ : TauCeti.FormalCoordinate R) (F : FormalGroup R) (
 
 /-- The height ideals of the multiplicative formal group law `X + Y + XY` from `I₂` on are the unit
 ideal: the coefficient of `Xᵖ` in its `p`-series `(1 + X)ᵖ - 1` is `1`. -/
+@[simp]
 theorem heightIdeal_𝔾ₘ_eq_top (hp : 1 < p) {n : ℕ} (hn : 2 ≤ n) :
     (𝔾ₘ : FormalGroup R).heightIdeal p n = ⊤ := by
+  have hn' : 1 < n := by omega
   rw [Ideal.eq_top_iff_one]
   convert coeff_nsmulSeries_mem_heightIdeal (F := (𝔾ₘ : FormalGroup R)) (k := p)
-    (by simpa using Nat.pow_lt_pow_right hp (show 1 < n by omega))
+    (by simpa using Nat.pow_lt_pow_right hp hn')
   rw [nsmulSeries_𝔾ₘ, map_sub, add_comm, add_pow]
   simp [PowerSeries.coeff_X_pow, PowerSeries.coeff_one, (zero_lt_one.trans hp).ne']
 
 /-- The height ideals `I_n` of the additive formal group law `X + Y` with `n ≥ 1` are all `(p)`:
 its `p`-series `p X` has no coefficient beyond the linear one. -/
+@[simp]
 theorem heightIdeal_𝔾ₐ (hp : 1 < p) {n : ℕ} (hn : n ≠ 0) :
     (𝔾ₐ : FormalGroup R).heightIdeal p n = Ideal.span {(p : R)} := by
   refine le_antisymm (heightIdeal_le_iff.mpr fun k _ ↦ ?_) ?_

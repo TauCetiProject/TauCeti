@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.Regular.RegularSequence
 import Mathlib.Algebra.Field.ZMod
-public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height
+public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.FormalGroup
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Universal
 public import TauCeti.RingTheory.FormalGroup.Height.Ideal
@@ -130,9 +130,9 @@ open WeierstrassCurve
 
 variable {R : Type*} [CommRing R] {p : ℕ}
 
-/-- **The Tate curve has height one everywhere.** For every specialization of the Tate curve, the
-height ideals `I_n` of its formal group with `n ≥ 2` are the unit ideal, since that formal group
-is isomorphic to the multiplicative one. -/
+/-- **The Tate curve has height at most one everywhere.** For every specialization of the Tate
+curve, the height ideals `I_n` of its formal group with `n ≥ 2` are the unit ideal, since that
+formal group is isomorphic to the multiplicative one. -/
 theorem heightIdeal_formalGroup_map_tateCurve_eq_top (hp : 1 < p) {n : ℕ} (hn : 2 ≤ n)
     (f : PowerSeries ℤ →+* R) : (formalGroup (tateCurve.map f)).heightIdeal p n = ⊤ := by
   rw [formalGroup_map_tateCurve, FormalGroup.heightIdeal_smul,
