@@ -11,10 +11,10 @@ public import Mathlib.LinearAlgebra.Basis.VectorSpace
 /-!
 # Bases adapted to a subspace
 
-A subspace of a finite-dimensional vector space is spanned by a subset of a finite basis
-of the ambient space. The cardinality of that subset is the dimension of the subspace.
-This is useful when constructions on coordinate summands must be applied to arbitrary subspaces.
-The construction uses Mathlib's `Module.Basis.sumQuot`.
+A subspace of a finite-dimensional vector space over a division ring is spanned by a subset of
+a finite basis of the ambient space. The cardinality of that subset is the dimension of the
+subspace. This is useful when constructions on coordinate summands must be applied to arbitrary
+subspaces. The basis is assembled from bases of the subspace and of a complement.
 
 The image of a subspace under a linear map has the same span as the images of any of its
 bases, including when that span is taken over a larger scalar ring.
@@ -26,7 +26,7 @@ open Submodule
 
 namespace Submodule
 
-variable {k V : Type*} [Field k] [AddCommGroup V] [Module k V] [Module.Finite k V]
+variable {k V : Type*} [DivisionRing k] [AddCommGroup V] [Module k V] [Module.Finite k V]
 
 /-- A subspace of a finite-dimensional vector space is a coordinate summand for a finite basis. -/
 theorem exists_basis_span_image_eq (W : Submodule k V) :
@@ -34,24 +34,16 @@ theorem exists_basis_span_image_eq (W : Submodule k V) :
       (s : Finset (Fin (Module.finrank k V))),
       span k (b '' (s : Set (Fin (Module.finrank k V)))) = W ∧
         s.card = Module.finrank k W := by
-  classical
+  obtain ⟨W', hW'⟩ := W.exists_isCompl
   let bW := Module.finBasis k W
-  let bQ := Module.finBasis k (V ⧸ W)
-  let c := bW.sumQuot bQ
-  let e : (Fin (Module.finrank k W) ⊕ Fin (Module.finrank k (V ⧸ W))) ≃
-      Fin (Module.finrank k V) := Fintype.equivFinOfCardEq
-    (Module.finrank_eq_card_basis c).symm
-  let b := c.reindex e
-  let s := Finset.univ.image (e ∘ Sum.inl)
-  have hspan : span k (b '' (s : Set _)) = W := by
-    have himage : b '' (s : Set _) = W.subtype '' Set.range bW := by
-      ext x
-      simp [b, s, c, Module.Basis.sumQuot_inl]
-    rw [himage, ← Submodule.map_span, bW.span_eq, Submodule.map_top,
-      Submodule.range_subtype]
-  refine ⟨b, s, hspan, ?_⟩
-  rw [Finset.card_image_of_injective _ (e.injective.comp Sum.inl_injective)]
-  simp
+  let c := (bW.prod (Module.finBasis k W')).map (W.prodEquivOfIsCompl W' hW')
+  let e := Fintype.equivFinOfCardEq (Module.finrank_eq_card_basis c).symm
+  let s := Finset.univ.map (Function.Embedding.inl.trans e.toEmbedding)
+  refine ⟨c.reindex e, s, ?_, by simp [s]⟩
+  have himage : c.reindex e '' (s : Set _) = W.subtype '' Set.range bW := by
+    ext x
+    simp [s, c, Module.Basis.prod_apply]
+  rw [himage, ← Submodule.map_span, bW.span_eq, Submodule.map_top, Submodule.range_subtype]
 
 end Submodule
 
@@ -65,16 +57,9 @@ variable {R S M N α : Type*} [Semiring R] [Semiring S]
 the span is taken over a larger scalar ring. -/
 theorem span_image (b : Basis α R U) (f : M →ₗ[R] N) :
     Submodule.span S (f '' (U : Set M)) = Submodule.span S (Set.range fun i ↦ f (b i)) := by
-  have hb : Submodule.span R (Set.range (U.subtype ∘ b)) = U := by
-    rw [Set.range_comp, Submodule.span_image, b.span_eq, Submodule.map_top,
-      Submodule.range_subtype]
-  calc
-    Submodule.span S (f '' (U : Set M)) =
-        Submodule.span S (f '' (Submodule.span R (Set.range (U.subtype ∘ b)) : Set M)) :=
-      congrArg (fun P : Submodule R M ↦ Submodule.span S (f '' (P : Set M))) hb.symm
-    _ = Submodule.span S (Set.range fun i ↦ f (b i)) := by
-      rw [← Submodule.map_coe, Submodule.map_span, Submodule.span_span_of_tower,
-        ← Set.range_comp]
-      rfl
+  conv_lhs => rw [← U.range_subtype, LinearMap.range_eq_map, ← b.span_eq, Submodule.map_span,
+    ← Submodule.map_coe, Submodule.map_span, Submodule.span_span_of_tower, ← Set.range_comp,
+    ← Set.range_comp]
+  rfl
 
 end Module.Basis
