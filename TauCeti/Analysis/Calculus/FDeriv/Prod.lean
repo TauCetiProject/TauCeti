@@ -30,8 +30,9 @@ result is the canonical linear graph shear.
 
 For a function of a scalar first variable, the partial derivatives along the coordinate lines
 `s ↦ (s, b)` and `t ↦ (a, t)` are its derivative applied to `(1, 0)` and `(0, 1)`. The same holds
-one order higher for the first derivative, and a function whose partial derivative in the first
-variable vanishes everywhere is constant along every horizontal line.
+one order higher for the first derivative, and more generally along any line `r ↦ p + r • q`.
+A function whose partial derivative in the first variable vanishes everywhere is constant along
+every horizontal line.
 
 ## Main declarations
 
@@ -41,6 +42,7 @@ variable vanishes everywhere is constant along every horizontal line.
   through a point have velocities `(1, 0)` and `(0, 1)`.
 * `TauCeti.hasDerivAt_fderiv_apply_fst`, `TauCeti.hasDerivAt_fderiv_apply_snd`: the partial
   derivatives of a first partial derivative.
+* `TauCeti.hasDerivAt_fderiv_apply_line`: the derivative of a first derivative along a line.
 * `TauCeti.apply_eq_apply_zero_of_fderiv_fst_eq_zero`: a function with vanishing partial
   derivative in its real first variable is constant along horizontal lines.
 * `TauCeti.fderiv_comp_fst_add_comp_snd`: the same for the totalized derivative.
@@ -250,6 +252,16 @@ theorem hasDerivAt_fderiv_apply_snd {u : E × 𝕜 → G} {a : E} {t : 𝕜}
   simpa [Function.comp_def] using
     (hu.hasFDerivAt.clm_apply (hasFDerivAt_const v _)).comp_hasDerivAt t
       (hasDerivAt_prodMk_right a t)
+
+/-- The derivative along the line `r ↦ p + r • q` of a first derivative `fderiv 𝕜 u · v` is the
+second derivative of `u` in the direction `q`. -/
+theorem hasDerivAt_fderiv_apply_line {u : E → G} {p q : E} {s : 𝕜}
+    (hu : DifferentiableAt 𝕜 (fderiv 𝕜 u) (p + s • q)) (v : E) :
+    HasDerivAt (fun r ↦ fderiv 𝕜 u (p + r • q) v) (fderiv 𝕜 (fderiv 𝕜 u) (p + s • q) q v) s := by
+  have hline : HasDerivAt (fun r : 𝕜 ↦ p + r • q) q s := by
+    simpa only [id_eq, one_smul] using ((hasDerivAt_id s).smul_const q).const_add p
+  simpa [Function.comp_def] using
+    (hu.hasFDerivAt.clm_apply (hasFDerivAt_const v _)).comp_hasDerivAt s hline
 
 /-- A differentiable function on `ℝ × F` whose partial derivative in the first variable vanishes
 everywhere is constant along every horizontal line. -/
