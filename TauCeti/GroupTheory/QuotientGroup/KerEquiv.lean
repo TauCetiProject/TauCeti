@@ -60,7 +60,7 @@ theorem quotientKerEquivOfSurjective_apply_mk (g : G) :
   /-- The inverse of the additive first isomorphism theorem sends `φ g` to the class of `g`. -/]
 theorem quotientKerEquivOfSurjective_symm_apply (g : G) :
     (QuotientGroup.quotientKerEquivOfSurjective φ hφ).symm (φ g) = (g : G ⧸ φ.ker) :=
-  (MulEquiv.symm_apply_eq _).2 rfl
+  (MulEquiv.symm_apply_eq _).2 (quotientKerEquivOfSurjective_apply_mk φ hφ g).symm
 
 /-- The first isomorphism theorem onto the range sends the class of `g` to `φ g`. -/
 @[to_additive (attr := simp) TauCeti.QuotientAddGroup.quotientKerEquivRange_apply_mk
