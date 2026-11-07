@@ -24,9 +24,10 @@ equivalence `V ≃. V`.
 This is the combinatorial shape of the valued Auslander-Reiten quiver of an Artin algebra: its
 vertices are the isomorphism classes of indecomposable modules, an arrow `M ⟶ N` records a
 nonzero space of irreducible morphisms with its two dimensions over the residue division rings of
-`M` and `N` as valuation, and the translation is the Auslander-Reiten translate. The swap of the
-two entries is what keeps the valuations along an almost-split sequence consistent when the
-residue division rings of its end terms differ.
+`M` and `N` as valuation, and the translation is the Auslander-Reiten translate. The end terms
+`τ C` and `C` of an almost-split sequence `0 ⟶ τ C ⟶ B ⟶ C ⟶ 0` have isomorphic residue division
+rings, so an arrow `τ C ⟶ B` carries the valuation of `B ⟶ C` with its two entries exchanged; the
+swap is visible when the residue division ring of the middle term `B` differs from theirs.
 
 The file proves that the notion is transported along prefunctors which are surjective on vertices
 and on arrows and respect the valuations and the translations
@@ -126,10 +127,8 @@ exchanged, is a valued translation quiver for the inverse translation. -/
 theorem op (h : IsValuedTranslationQuiver v τ) : IsValuedTranslationQuiver v.op τ.symm.op where
   nonempty_hom_iff {z x} hx w := by
     rw [PEquiv.op_eq_some, PEquiv.eq_some_iff] at hx
-    have hop (a b : Vᵒᵖ) : Nonempty (a ⟶ b) ↔ Nonempty (unop b ⟶ unop a) :=
-      ⟨fun ⟨f⟩ ↦ ⟨f.unop⟩, fun ⟨f⟩ ↦ ⟨f.op⟩⟩
-    rw [hop, hop]
-    exact (h.nonempty_hom_iff hx (unop w)).symm
+    exact Quiver.Hom.opEquiv.nonempty_congr.symm.trans
+      ((h.nonempty_hom_iff hx (unop w)).symm.trans Quiver.Hom.opEquiv.nonempty_congr)
   valuation_eq {z x} hx w f g := by
     rw [PEquiv.op_eq_some, PEquiv.eq_some_iff] at hx
     simp [h.valuation_eq hx g.unop f.unop]
@@ -141,17 +140,13 @@ translation, is a valued translation quiver exactly when the quiver is. -/
 @[simp]
 theorem isValuedTranslationQuiver_op_iff {v : QuiverValuation V} {τ : V ≃. V} :
     IsValuedTranslationQuiver v.op τ.symm.op ↔ IsValuedTranslationQuiver v τ := by
+  have hop {z x : V} (hx : τ z = some x) : τ.symm.op (op x) = some (op z) :=
+    (PEquiv.op_eq_some _).2 ((PEquiv.eq_some_iff _).2 hx)
   refine ⟨fun h ↦ ⟨fun {z x} hx w ↦ ?_, fun {z x} hx w f g ↦ ?_⟩, fun h ↦ h.op⟩
-  · have hx' : τ.symm.op (op x) = some (op z) := by
-      rw [PEquiv.op_eq_some, PEquiv.eq_some_iff]
-      exact hx
-    rw [(Quiver.Hom.opEquiv (X := x) (Y := w)).nonempty_congr,
+  · rw [(Quiver.Hom.opEquiv (X := x) (Y := w)).nonempty_congr,
       (Quiver.Hom.opEquiv (X := w) (Y := z)).nonempty_congr]
-    exact (h.nonempty_hom_iff hx' (op w)).symm
-  · have hx' : τ.symm.op (op x) = some (op z) := by
-      rw [PEquiv.op_eq_some, PEquiv.eq_some_iff]
-      exact hx
-    have := h.valuation_eq hx' g.op f.op
+    exact (h.nonempty_hom_iff (hop hx) (op w)).symm
+  · have := h.valuation_eq (hop hx) g.op f.op
     rw [QuiverValuation.op_apply_op, QuiverValuation.op_apply_op, Prod.swap_swap] at this
     exact this.symm
 
@@ -276,6 +271,20 @@ theorem isValuedTranslationQuiver_iff {τ : ValuedQuiver val ≃. ValuedQuiver v
       rw [H hx, eq_some_valuation f, Option.map_some, Option.some_inj] at this
       exact this.symm
 
+open PEquiv in
+/-- The condition of a valued translation quiver for the translation which sends only `a` to `b`:
+the row of `b` is the column of `a` with the two entries of every valuation exchanged. -/
+theorem isValuedTranslationQuiver_single_iff [DecidableEq V] {a b : V} :
+    IsValuedTranslationQuiver (valuation val) (single (of a) (of b)) ↔
+      ∀ w : V, val b w = (val w a).map Prod.swap := by
+  rw [isValuedTranslationQuiver_iff]
+  constructor
+  · exact fun h w ↦ h (single_apply (of a) (of b)) (of w)
+  · rintro h z x hx ⟨w⟩
+    rw [← Option.mem_def, mem_single_iff] at hx
+    obtain ⟨rfl, rfl⟩ := hx
+    exact h w
+
 /-! ### Examples -/
 
 open PEquiv
@@ -285,25 +294,18 @@ translated to itself: the shape of the Auslander-Reiten quiver of `ℤ ⧸ p²�
 example :
     IsValuedTranslationQuiver (valuation (V := Fin 2) ![![none, some (1, 1)], ![some (1, 1), none]])
       (single (of 0) (of 0)) := by
-  rw [isValuedTranslationQuiver_iff]
-  rintro ⟨z⟩ ⟨x⟩ h ⟨w⟩
-  rw [← Option.mem_def, mem_single_iff, of.injEq, of.injEq] at h
-  obtain ⟨rfl, rfl⟩ := h
-  revert w
+  rw [isValuedTranslationQuiver_single_iff]
   decide
 
 /-- A path `0 ⟶ 1 ⟶ 2` with valuations `(1, 2)` and `(2, 1)`, and `2` translated to `0`: the
-shape of an almost-split sequence whose end terms have different residue division rings. -/
+shape of an almost-split sequence whose middle term has a residue division ring different from
+that of its end terms. -/
 example :
     IsValuedTranslationQuiver
       (valuation (V := Fin 3)
         ![![none, some (1, 2), none], ![none, none, some (2, 1)], ![none, none, none]])
       (single (of 2) (of 0)) := by
-  rw [isValuedTranslationQuiver_iff]
-  rintro ⟨z⟩ ⟨x⟩ h ⟨w⟩
-  rw [← Option.mem_def, mem_single_iff, of.injEq, of.injEq] at h
-  obtain ⟨rfl, rfl⟩ := h
-  revert w
+  rw [isValuedTranslationQuiver_single_iff]
   decide
 
 /-- The opposite of the previous example, with valuations `(2, 1)` on `op 1 ⟶ op 0` and `(1, 2)`
@@ -313,11 +315,7 @@ example :
       (valuation (V := Fin 3)
         ![![none, some (1, 2), none], ![none, none, some (2, 1)], ![none, none, none]]).op
       (single (of 2) (of 0)).symm.op := by
-  rw [isValuedTranslationQuiver_op_iff, isValuedTranslationQuiver_iff]
-  rintro ⟨z⟩ ⟨x⟩ h ⟨w⟩
-  rw [← Option.mem_def, mem_single_iff, of.injEq, of.injEq] at h
-  obtain ⟨rfl, rfl⟩ := h
-  revert w
+  rw [isValuedTranslationQuiver_op_iff, isValuedTranslationQuiver_single_iff]
   decide
 
 /-- Giving the translated arrow `0 ⟶ 1` the same valuation `(1, 2)` as the arrow `1 ⟶ 2`, instead
@@ -327,9 +325,8 @@ example :
       (valuation (V := Fin 3)
         ![![none, some (1, 2), none], ![none, none, some (1, 2)], ![none, none, none]])
       (single (of 2) (of 0)) := by
-  rw [isValuedTranslationQuiver_iff]
-  intro h
-  exact absurd (h (single_apply (of (2 : Fin 3)) (of 0)) (of 1)) (by decide)
+  rw [isValuedTranslationQuiver_single_iff]
+  decide
 
 end ValuedQuiver
 
