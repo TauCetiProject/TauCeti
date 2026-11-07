@@ -21,6 +21,8 @@ Interval integrals of elementary functions in closed form or as series, continui
 
 * `TauCeti.intervalIntegrable_sub_rpow`, `TauCeti.integral_sub_rpow`:
   `∫ x in a..b, (b - x)^r = (b - a)^(r + 1) / (r + 1)` for `r > -1`.
+* `TauCeti.integral_const_mul_rpow_le`: `∫ t in δ..1, η * K * t ^ S ≤ η / (S + 1) * K` for
+  `S > -1`, `0 < δ`, `0 ≤ η` and `0 ≤ K`.
 * `TauCeti.integral_sub_rpow_le_of_lt_neg_one`: `∫ x in a..b - c, (b - x)^r ≤ c^(r + 1) / -(r + 1)`
   for `r < -1`.
 * `TauCeti.norm_integral_le_of_ae_norm_le_mul_sub_rpow`: an integral over `[0, t' - h]` of a
@@ -80,6 +82,19 @@ theorem integral_sub_rpow_le_of_lt_neg_one {r a b c : ℝ} (hr : r < -1) (hc : 0
   rw [hval]
   gcongr
   exact sub_le_self _ (Real.rpow_nonneg (hc.le.trans hcb) _)
+
+/-- The integral of `η * K * t ^ S` over `[δ, 1]` is at most `η / (S + 1) * K`, for `S > -1`. -/
+theorem integral_const_mul_rpow_le {S δ η K : ℝ} (hsum : -1 < S) (hδ0 : 0 < δ)
+    (hη : 0 ≤ η) (hK : 0 ≤ K) :
+    (∫ t in δ..1, η * K * t ^ S) ≤ η / (S + 1) * K := by
+  rw [intervalIntegral.integral_const_mul, integral_rpow (Or.inl hsum), Real.one_rpow]
+  have hS1 : 0 < S + 1 := by linarith
+  have hδpow : 0 ≤ δ ^ (S + 1) := Real.rpow_nonneg hδ0.le _
+  calc
+    η * K * ((1 - δ ^ (S + 1)) / (S + 1)) ≤ η * K * (1 / (S + 1)) := by
+          gcongr
+          linarith
+    _ = η / (S + 1) * K := by ring
 
 open MeasureTheory Real Set in
 open scoped Interval in
