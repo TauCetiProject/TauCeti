@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.Algebra.Polynomial.Degree.Operations
 public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.Algebra.Polynomial.Monic
@@ -34,6 +35,8 @@ a *free* tuple rather than as the data of a polynomial subtype.
 * `TauCeti.Polynomial.coeff_monicOfCoeff` and `TauCeti.Polynomial.monicOfCoeff_coeff`: the
   coefficients are read back off, and every monic polynomial of degree `n` arises this way, so the
   two constructions are mutually inverse.
+* `TauCeti.Polynomial.eq_X_pow_three_add_of_monic`, `TauCeti.Polynomial.aeval_eq_of_monic`: the
+  normal form `X ^ 3 + a * X ^ 2 + b * X + c` of a monic cubic, and its evaluation in an algebra.
 * `TauCeti.Polynomial.monicOfCoeff_add_single_zero`: moving the constant coefficient by `t` adds
   the constant `t`.
 
@@ -151,6 +154,23 @@ theorem monicOfCoeff_coeff {p : R[X]} (hp : p.Monic) (hdeg : p.natDegree = n) :
   · rw [hk, coeff_monicOfCoeff_self, ← hdeg, hp.coeff_natDegree]
   · rw [coeff_eq_zero_of_natDegree_lt (by rwa [natDegree_monicOfCoeff]),
       coeff_eq_zero_of_natDegree_lt (by rwa [hdeg])]
+
+/-- A monic polynomial of degree three is `X ^ 3 + C a * X ^ 2 + C b * X + C c` for its own
+coefficients `a`, `b`, `c`. -/
+theorem eq_X_pow_three_add_of_monic {g : R[X]} (hmonic : g.Monic) (hdeg : g.natDegree = 3) :
+    g = X ^ 3 + C (g.coeff 2) * X ^ 2 + C (g.coeff 1) * X + C (g.coeff 0) := by
+  conv_lhs => rw [← monicOfCoeff_coeff hmonic hdeg]
+  simp [monicOfCoeff, Fin.sum_univ_three, ← C_mul_X_pow_eq_monomial]
+  ring
+
+/-- The evaluation in an algebra `A` of a monic polynomial of degree three in terms of its
+coefficients. -/
+theorem aeval_eq_of_monic {A : Type*} [CommSemiring A] [Algebra R A] {g : R[X]}
+    (hmonic : g.Monic) (hdeg : g.natDegree = 3) (x : A) :
+    aeval x g = x ^ 3 + algebraMap R A (g.coeff 2) * x ^ 2 + algebraMap R A (g.coeff 1) * x +
+      algebraMap R A (g.coeff 0) := by
+  conv_lhs => rw [eq_X_pow_three_add_of_monic hmonic hdeg]
+  simp
 
 end OfCoeff
 

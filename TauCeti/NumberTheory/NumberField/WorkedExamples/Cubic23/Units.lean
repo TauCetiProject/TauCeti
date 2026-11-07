@@ -163,6 +163,32 @@ theorem unit_value_pow_three_sub_self_sub_one
   rw [hval]
   exact hc
 
+/-- **The root equation squeezes `a*x + b` into `(-8/3, -2)`.** For a root `x` of
+`X³ + aX² + bX + 1` strictly between `1` and `4/3`, the linear form `a*x + b` lies strictly
+between `-8/3` and `-2`. -/
+private theorem mul_add_mem_Ioo_of_root_const_one (a b : ℤ) {x : ℝ}
+    (hx1 : 1 < x) (hx4 : x < 4 / 3) (hroot : x ^ 3 + a * x ^ 2 + b * x + 1 = 0) :
+    (a : ℝ) * x + b ∈ Set.Ioo (-8 / 3) (-2) := by
+  have hx0 : 0 < x := zero_lt_one.trans hx1
+  have h1 := mul_pos (sub_pos.mpr hx1) (sub_pos.mpr hx1)
+  have hx_add_one_pos : 0 < x + 1 := by linarith
+  have h6 := mul_pos h1 hx_add_one_pos
+  have hupper : x ^ 3 - 8 / 3 * x + 1 < 0 := by
+    have hq : 0 < x ^ 2 + 4 / 3 * x - 8 / 9 := by nlinarith [sq_nonneg (x - 1)]
+    have hp := mul_pos (sub_pos.mpr hx4) hq
+    nlinarith
+  refine ⟨?_, ?_⟩
+  · by_contra h
+    have hs : (a : ℝ) * x + b ≤ -8 / 3 := le_of_not_gt h
+    have hp := mul_le_mul_of_nonneg_left hs hx0.le
+    nlinarith
+  · by_contra h
+    have hs : -2 ≤ (a : ℝ) * x + b := le_of_not_gt h
+    have hp := mul_le_mul_of_nonneg_left hs hx0.le
+    have hquadratic_pos : 0 < x ^ 2 + x - 1 := by nlinarith
+    have _ := mul_pos (sub_pos.mpr hx1) hquadratic_pos
+    nlinarith
+
 private theorem no_cubic_candidate_const_one_root (a b : ℤ)
     (haL : -4 < a) (haU : a < 4) (hbL : -4 < b) (hbU : b < 4)
     {B x : ℝ} (hB : B < 4 / 3)
@@ -171,26 +197,8 @@ private theorem no_cubic_candidate_const_one_root (a b : ℤ)
   have hx4 : x < 4 / 3 := hxB.trans hB
   have hx0 : 0 < x := zero_lt_one.trans hx1
   have h1 := mul_pos (sub_pos.mpr hx1) (sub_pos.mpr hx1)
-  have hx_add_one_pos : 0 < x + 1 := by linarith
-  have h6 := mul_pos h1 hx_add_one_pos
-  -- The root equation squeezes `a*x + b` into `(-8/3, -2)`.  For each of the seven
-  -- possible integral values of `a`, this leaves at most one value of `b`.
-  have hupper : x ^ 3 - 8 / 3 * x + 1 < 0 := by
-    have hq : 0 < x ^ 2 + 4 / 3 * x - 8 / 9 := by nlinarith [sq_nonneg (x - 1)]
-    have hp := mul_pos (sub_pos.mpr hx4) hq
-    nlinarith
-  have hshi : (a : ℝ) * x + b < -2 := by
-    by_contra h
-    have hs : -2 ≤ (a : ℝ) * x + b := le_of_not_gt h
-    have hp := mul_le_mul_of_nonneg_left hs hx0.le
-    have hquadratic_pos : 0 < x ^ 2 + x - 1 := by nlinarith
-    have _ := mul_pos (sub_pos.mpr hx1) hquadratic_pos
-    nlinarith
-  have hslo : -8 / 3 < (a : ℝ) * x + b := by
-    by_contra h
-    have hs : (a : ℝ) * x + b ≤ -8 / 3 := le_of_not_gt h
-    have hp := mul_le_mul_of_nonneg_left hs hx0.le
-    nlinarith
+  -- For each of the seven possible integral values of `a`, this leaves at most one value of `b`.
+  obtain ⟨hslo, hshi⟩ := mul_add_mem_Ioo_of_root_const_one a b hx1 hx4 hroot
   interval_cases a <;> norm_num at hshi hslo
   · have hbl : (0 : ℝ) < b := by linarith only [hslo, hx1]
     have hbu : (b : ℝ) < 2 := by linarith only [hshi, hx4]
@@ -237,6 +245,28 @@ private theorem no_cubic_candidate_const_one_root (a b : ℤ)
     have hbu' : b < (-5 : ℤ) := by exact_mod_cast hbu
     omega
 
+/-- **The root equation squeezes `a*x + b` into `(-1, 0)`.** Let `B` be a root of `X³ - X - 1`. For
+a root `x` of `X³ + aX² + bX - 1` strictly between `1` and `B`, the linear form `a*x + b` lies
+strictly between `-1` and `0`. -/
+private theorem mul_add_mem_Ioo_of_root_const_neg_one (a b : ℤ) {B x : ℝ}
+    (hBcubic : B ^ 3 - B - 1 = 0) (hx1 : 1 < x) (hxB : x < B)
+    (hroot : x ^ 3 + a * x ^ 2 + b * x - 1 = 0) :
+    (a : ℝ) * x + b ∈ Set.Ioo (-1) 0 := by
+  have hx0 : 0 < x := zero_lt_one.trans hx1
+  have hmono : 0 < (B - x) * (B ^ 2 + B * x + x ^ 2 - 1) := by
+    apply mul_pos (sub_pos.mpr hxB)
+    nlinarith [sq_nonneg (B - x)]
+  have _ : x ^ 3 - x - 1 < 0 := by nlinarith
+  refine ⟨?_, ?_⟩
+  · by_contra h
+    have hr : (a : ℝ) * x + b ≤ -1 := le_of_not_gt h
+    have hp := mul_le_mul_of_nonneg_left hr hx0.le
+    nlinarith
+  · by_contra h
+    have hr : 0 ≤ (a : ℝ) * x + b := le_of_not_gt h
+    have hp := mul_nonneg hx0.le hr
+    nlinarith [one_lt_pow₀ hx1 (by norm_num : (3 : ℕ) ≠ 0)]
+
 private theorem cubic_candidate_coefficients_const_neg_one_of_root (a b : ℤ)
     (haL : -4 < a) (haU : a < 4) (hbL : -4 < b) (hbU : b < 4)
     {B x : ℝ} (hBcubic : B ^ 3 - B - 1 = 0) (hB : B < 4 / 3)
@@ -246,22 +276,8 @@ private theorem cubic_candidate_coefficients_const_neg_one_of_root (a b : ℤ)
   have hx4 : x < 4 / 3 := hxB.trans hB
   have hx0 : 0 < x := zero_lt_one.trans hx1
   have h1 := mul_pos (sub_pos.mpr hx1) (sub_pos.mpr hx1)
-  have hmono : 0 < (B - x) * (B ^ 2 + B * x + x ^ 2 - 1) := by
-    apply mul_pos (sub_pos.mpr hxB)
-    nlinarith [sq_nonneg (B - x)]
-  have _ : x ^ 3 - x - 1 < 0 := by nlinarith
-  -- Since `x` lies strictly below the root `B` of `X³ - X - 1`, the root equation squeezes
-  -- `a*x + b` into `(-1, 0)`.  Integral coefficients leave the two advertised survivors.
-  have hrhi : (a : ℝ) * x + b < 0 := by
-    by_contra h
-    have hr : 0 ≤ (a : ℝ) * x + b := le_of_not_gt h
-    have hp := mul_nonneg hx0.le hr
-    nlinarith [one_lt_pow₀ hx1 (by norm_num : (3 : ℕ) ≠ 0)]
-  have hrlo : -1 < (a : ℝ) * x + b := by
-    by_contra h
-    have hr : (a : ℝ) * x + b ≤ -1 := le_of_not_gt h
-    have hp := mul_le_mul_of_nonneg_left hr hx0.le
-    nlinarith
+  -- Integral coefficients leave the two advertised survivors.
+  obtain ⟨hrlo, hrhi⟩ := mul_add_mem_Ioo_of_root_const_neg_one a b hBcubic hx1 hxB hroot
   interval_cases a <;> norm_num at hrhi hrlo ⊢
   · have hbl : (2 : ℝ) < b := by linarith only [hrlo, hx1]
     have hbu : (b : ℝ) < 4 := by linarith only [hrhi, hx4]
@@ -343,6 +359,15 @@ theorem discr_X_pow_three_add_two_mul_X_sq_sub_three_mul_X_sub_one :
   rw [Polynomial.discr_of_degree_eq_three (by compute_degree <;> norm_num)]
   norm_num [coeff_add, coeff_sub, coeff_X_pow, coeff_one, coeff_X, coeff_C_mul]
 
+/-- A polynomial of discriminant `49` or `257` is excluded by the index--discriminant formula in a
+field of discriminant `-23`: its discriminant is never a positive square times `-23`. -/
+private theorem discr_ne_sq_mul_of_discr_eq {g : ℤ[X]} (hK : NumberField.discr K = -23)
+    (hg : g.discr = 49 ∨ g.discr = 257) :
+    ∀ n : ℕ, 0 < n → g.discr ≠ (n : ℤ) ^ 2 * NumberField.discr K := by
+  intro n _ heq
+  rw [hK] at heq
+  rcases hg with h | h <;> rw [h] at heq <;> nlinarith [sq_nonneg (n : ℤ)]
+
 /-- **The 98-candidate elimination certificate.** Every monic cubic with constant coefficient
 `±1` and the coefficient bounds forced by a unit below `θ² - θ` is excluded either by having no
 root in the relevant real interval or by the index--discriminant obstruction. -/
@@ -373,19 +398,8 @@ theorem cubicUnitEliminationCertificate (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 +
     constructor
     · exact_mod_cast hb_lower_real
     · exact_mod_cast hb_upper_real
-  have heval (x : ℝ) : aeval x g = x ^ 3 + g.coeff 2 * x ^ 2 + g.coeff 1 * x + g.coeff 0 := by
-    conv_lhs => rw [← Polynomial.monicOfCoeff_coeff hmonic hdeg]
-    rw [← eval_map_algebraMap, Polynomial.map_monicOfCoeff, Polynomial.eval_monicOfCoeff]
-    simp only [Fin.sum_univ_three, Fin.val_zero, Fin.val_one, Fin.val_two, pow_zero, pow_one,
-      mul_one, eq_intCast]
-    ring
-  have hpoly : g = X ^ 3 + C (g.coeff 2) * X ^ 2 + C (g.coeff 1) * X +
-      C (g.coeff 0) := by
-    conv_lhs => rw [← Polynomial.monicOfCoeff_coeff hmonic hdeg]
-    apply Polynomial.funext
-    intro x
-    simp [Polynomial.eval_monicOfCoeff, Fin.sum_univ_three]
-    ring
+  have heval := Polynomial.aeval_eq_of_monic (A := ℝ) hmonic hdeg
+  have hpoly := Polynomial.eq_X_pow_three_add_of_monic hmonic hdeg
   obtain ⟨haL, haU⟩ := ha4
   obtain ⟨hbL, hbU⟩ := hb4
   by_cases hroot : ∃ x ∈ Set.Ioo (1 : ℝ) (w u), aeval x g = 0
@@ -396,26 +410,18 @@ theorem cubicUnitEliminationCertificate (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 +
       haL haU hbL hbU h0
       (unit_value_pow_three_sub_self_sub_one hmin hw hu) hx1 hxB hxroot with
       hc | hc
-    · intro n _
-      have hg : g = X ^ 3 + X ^ 2 - 2 * X - 1 := by
+    · have hg : g = X ^ 3 + X ^ 2 - 2 * X - 1 := by
         rw [hpoly, hc.1, hc.2.1, hc.2.2]
         norm_num
         ring
-      rw [hg, discr_X_pow_three_add_X_sq_sub_two_mul_X_sub_one]
-      norm_num
-      intro heq
-      rw [discr_eq_neg_twenty_three hmin hgen] at heq
-      nlinarith [sq_nonneg (n : ℤ)]
-    · intro n _
-      have hg : g = X ^ 3 + 2 * X ^ 2 - 3 * X - 1 := by
+      exact discr_ne_sq_mul_of_discr_eq (discr_eq_neg_twenty_three hmin hgen)
+        (Or.inl (hg ▸ discr_X_pow_three_add_X_sq_sub_two_mul_X_sub_one))
+    · have hg : g = X ^ 3 + 2 * X ^ 2 - 3 * X - 1 := by
         rw [hpoly, hc.1, hc.2.1, hc.2.2]
         norm_num
         ring
-      rw [hg, discr_X_pow_three_add_two_mul_X_sq_sub_three_mul_X_sub_one]
-      norm_num
-      intro heq
-      rw [discr_eq_neg_twenty_three hmin hgen] at heq
-      nlinarith [sq_nonneg (n : ℤ)]
+      exact discr_ne_sq_mul_of_discr_eq (discr_eq_neg_twenty_three hmin hgen)
+        (Or.inr (hg ▸ discr_X_pow_three_add_two_mul_X_sq_sub_three_mul_X_sub_one))
   · left
     simpa only [not_exists, not_and] using hroot
 
