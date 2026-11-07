@@ -67,6 +67,8 @@ endomorphisms of groups of Lie type use:
   map on points.
 * `TauCeti.torusPointMap_surjective_of_injective`: if the units of `R` are divisible, the dual of
   an injective lattice map is surjective on points.
+* `TauCeti.torusCharacter_surjective`: under the same hypothesis, every nonzero character is
+  surjective on points, even when it is not primitive.
 * `TauCeti.IsCharacterMap.comp` and `TauCeti.IsCharacterMap.unique`: composition and uniqueness of
   character maps.
 * `TauCeti.IsCharacterMap.map_range_eq`: an injective character map makes the endomorphism map
@@ -77,8 +79,8 @@ endomorphisms of groups of Lie type use:
 ## References
 
 * R. Steinberg, *Endomorphisms of linear algebraic groups*, Mem. Amer. Math. Soc. **80** (1968),
-  Theorem 10.1 (the Lang–Steinberg theorem).
-* R. W. Carter, *Finite Groups of Lie Type: Conjugacy Classes and Complex Characters*, §1.17.
+  Theorem 10.1 (the Lang–Steinberg theorem) and §11 (root-subgroup equivariance).
+* R. W. Carter, *Finite Groups of Lie Type: Conjugacy Classes and Complex Characters*, §§1.15, 1.17.
 -/
 
 public section
@@ -216,6 +218,19 @@ theorem torusPointMap_surjective_of_injective [Finite ι] [RootableBy Rˣ ℕ]
   simpa [g] using hi
 
 end TorusPointMap
+
+/-- A nonzero character of a split torus is surjective on points when the coefficient ring
+has divisible units. In particular, this applies over an algebraically closed field and
+does not require the character to be primitive. -/
+theorem torusCharacter_surjective [Fintype ι] [RootableBy Rˣ ℕ]
+    {α : ι → ℤ} (hα : α ≠ 0) :
+    Function.Surjective (fun s : ι → Rˣ => torusCharacter s α) := by
+  classical
+  obtain ⟨i, hi⟩ : ∃ i, α i ≠ 0 := Function.ne_iff.mp hα
+  let : RootableBy Rˣ ℤ := Group.rootableByIntOfRootableByNat Rˣ
+  intro u
+  obtain ⟨v, hv⟩ := RootableBy.surjective_pow Rˣ ℤ hi u
+  exact ⟨Pi.mulSingle i v, by simpa using hv⟩
 
 /-! ## Character maps of endomorphisms of a parametrized torus -/
 
