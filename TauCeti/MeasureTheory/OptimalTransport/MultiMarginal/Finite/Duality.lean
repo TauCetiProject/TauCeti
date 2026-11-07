@@ -82,6 +82,14 @@ theorem finiteMultiDualValue_mono {φ ψ : ∀ i, X i → ℝ} (h : ∀ i x, φ 
   refine Finset.sum_le_sum fun i _ ↦ Finset.sum_le_sum fun x _ ↦ ?_
   exact mul_le_mul_of_nonneg_left (h i x) ENNReal.toReal_nonneg
 
+/-- The finite multi-marginal dual value is continuous in the potentials. -/
+@[fun_prop]
+theorem continuous_finiteMultiDualValue (μ : ∀ i, PMF (X i)) :
+    Continuous fun φ : ∀ i, X i → ℝ ↦ finiteMultiDualValue μ φ := by
+  simp only [finiteMultiDualValue_def]
+  exact continuous_finsetSum _ fun i _ ↦ continuous_finsetSum _ fun x _ ↦
+    continuous_const.mul ((continuous_apply x).comp (continuous_apply i))
+
 end DualValue
 
 section DualFeasible
@@ -379,6 +387,72 @@ private theorem exists_normalized_of_feasible {c : (∀ i, X i) → ℝ} {M : �
     exact (hψfeas z).trans ((le_abs_self _).trans (hM z))
   · exact (hψ_nonbase i hi x).trans hM0
 
+omit [∀ i, Fintype (X i)] in
+/-- A bound `B` dominating `(card ι + 2) * M` for `M ≥ 0` also dominates `M`. -/
+private theorem le_of_card_add_two_mul_le {M B : ℝ} (hM0 : 0 ≤ M)
+    (hD : (Fintype.card ι + 2 : ℝ) * M ≤ B) : M ≤ B := by
+  have hcard : (1 : ℝ) ≤ (Fintype.card ι : ℝ) :=
+    Nat.one_le_cast.2 (Fintype.card_pos_iff.2 ‹Nonempty ι›)
+  nlinarith
+
+omit [∀ i, Fintype (X i)] [Nonempty ι] in
+/-- If every term of a finite sum over `ι` is at most `M ≥ 0`, the sum is at most the `i`-th term
+plus `card ι * M`. -/
+private theorem sum_le_apply_add_card_mul {f : ι → ℝ} {M : ℝ} (hM0 : 0 ≤ M)
+    (hf : ∀ j, f j ≤ M) (i : ι) :
+    ∑ j, f j ≤ f i + (Fintype.card ι : ℝ) * M := by
+  have hrest : ∑ j ∈ Finset.univ.erase i, f j ≤ (Fintype.card ι : ℝ) * M :=
+    (Finset.sum_le_card_nsmul _ _ M fun j _ ↦ hf j).trans
+      (by rw [nsmul_eq_mul]; gcongr; exact_mod_cast Finset.card_erase_le.trans_eq Finset.card_univ)
+  linarith [Finset.add_sum_erase Finset.univ f (Finset.mem_univ i)]
+
+omit [Nonempty ι] in
+/-- Each marginal contributes at most `M` to the dual value, so, when the dual value is at least
+`-M`, it contributes at least `-(card ι * M + M)`. -/
+private theorem neg_le_sum_toReal_mul {M : ℝ} (hM0 : 0 ≤ M) {ψ : ∀ i, X i → ℝ}
+    (hψ_le : ∀ i x, ψ i x ≤ M) (hval : -M ≤ finiteMultiDualValue μ ψ) (i : ι) :
+    -((Fintype.card ι : ℝ) * M + M) ≤ ∑ x, ((μ i) x).toReal * ψ i x := by
+  have hle := sum_le_apply_add_card_mul (f := fun j ↦ ∑ x, ((μ j) x).toReal * ψ j x) hM0
+    (fun j ↦ PMF.sum_toReal_mul_le (μ j) Finset.univ hM0 (hψ_le j)) i
+  beta_reduce at hle
+  rw [finiteMultiDualValue_def] at hval
+  linarith
+
+omit [Nonempty ι] in
+/-- At a point of positive weight, that weight converts a lower bound for the marginal's
+contribution to the dual value into a lower bound for the potential. -/
+private theorem neg_le_of_toReal_ne_zero {M B : ℝ} (hM0 : 0 ≤ M) {ψ : ∀ i, X i → ℝ}
+    (hψ_le : ∀ i x, ψ i x ≤ M) {i : ι} {x : X i}
+    (hE : -((Fintype.card ι : ℝ) * M + M) ≤ ∑ y, ((μ i) y).toReal * ψ i y)
+    (hx : ((μ i) x).toReal ≠ 0) (hquot : (Fintype.card ι + 2 : ℝ) * M / ((μ i) x).toReal ≤ B) :
+    -B ≤ ψ i x := by
+  have hw : 0 < ((μ i) x).toReal := lt_of_le_of_ne ENNReal.toReal_nonneg (Ne.symm hx)
+  have hothers := PMF.sum_toReal_mul_le (μ i) (Finset.univ.erase x) hM0 (hψ_le i)
+  rw [← Finset.add_sum_erase _ _ (Finset.mem_univ x)] at hE
+  have hprod : -((Fintype.card ι + 2 : ℝ) * M) ≤ ((μ i) x).toReal * ψ i x := by linarith
+  have := (div_le_iff₀ hw).1 hquot
+  nlinarith
+
+omit [Nonempty ι] [∀ i, Fintype (X i)] in
+/-- For a cost bounded in absolute value by `M`, dual feasibility survives replacing a feasible
+family `ψ` by a family `χ` bounded above by `M` that agrees with `ψ` at the points of positive
+weight and equals `-B` at those of zero weight, once `(card ι + 1) * M ≤ B`. -/
+private theorem finiteMultiDualFeasible_of_replace {c : (∀ i, X i) → ℝ} {M B : ℝ}
+    (hM : ∀ z, |c z| ≤ M) (hM0 : 0 ≤ M) (hB : ((Fintype.card ι : ℝ) + 1) * M ≤ B)
+    {ψ χ : ∀ i, X i → ℝ} (hψfeas : FiniteMultiDualFeasible c ψ) (hχ_le : ∀ i x, χ i x ≤ M)
+    (hzero : ∀ i x, ((μ i) x).toReal = 0 → χ i x = -B)
+    (hpos : ∀ i x, ((μ i) x).toReal ≠ 0 → χ i x = ψ i x) : FiniteMultiDualFeasible c χ := by
+  intro z
+  by_cases hz : ∃ i, ((μ i) (z i)).toReal = 0
+  · obtain ⟨i, hi⟩ := hz
+    have hle := sum_le_apply_add_card_mul hM0 (fun j ↦ hχ_le j (z j)) i
+    beta_reduce at hle
+    rw [hzero i (z i) hi] at hle
+    have hc : -M ≤ c z := neg_le_of_abs_le (hM z)
+    linarith
+  · have hχψ : ∀ i, χ i (z i) = ψ i (z i) := fun i ↦ hpos i (z i) fun hi ↦ hz ⟨i, hi⟩
+    simpa only [hχψ] using hψfeas z
+
 /-- **Confining a normalised family to a box.** A dual-feasible family bounded above by a cost
 bound `M` and of dual value at least `-M` agrees in value with one confined to the box of radius
 `B`, provided `B` dominates `(card ι + 2) * M` and its quotients by the positive marginal
@@ -393,38 +467,9 @@ private theorem exists_bounded_of_normalized {c : (∀ i, X i) → ℝ} {M B : �
       finiteMultiDualValue μ χ = finiteMultiDualValue μ ψ ∧ ∀ i x, |χ i x| ≤ B := by
   have hX : ∀ i, Nonempty (X i) := fun i ↦ ⟨(μ i).support_nonempty.some⟩
   have hM0 : 0 ≤ M := (abs_nonneg _).trans (hM fun i ↦ Classical.choice (hX i))
-  have hcard : (1 : ℝ) ≤ (Fintype.card ι : ℝ) :=
-    Nat.one_le_cast.2 (Fintype.card_pos_iff.2 ‹Nonempty ι›)
-  have hcard1 : (0 : ℝ) ≤ ((Fintype.card ι : ℝ) + 1) * M := mul_nonneg (by linarith) hM0
-  have hMB : M ≤ B := by nlinarith
+  have hMB : M ≤ B := le_of_card_add_two_mul_le hM0 hD
   have _ : 0 ≤ B := hM0.trans hMB
-  -- Each marginal contributes at most `M` to the dual value, so it contributes at least
-  -- `-((card ι) * M + M)` as well.
-  let E : ι → ℝ := fun i ↦ ∑ x, ((μ i) x).toReal * ψ i x
-  have hE_le : ∀ i, E i ≤ M := by
-    intro i
-    calc E i ≤ ∑ x, ((μ i) x).toReal * M :=
-          Finset.sum_le_sum fun x _ ↦ mul_le_mul_of_nonneg_left (hψ_le i x)
-            ENNReal.toReal_nonneg
-      _ = M := by rw [← Finset.sum_mul, PMF.sum_toReal_eq_one, one_mul]
-  have hEsum : ∑ i, E i = finiteMultiDualValue μ ψ := by
-    simp only [E, finiteMultiDualValue_def]
-  have hE_lower : ∀ i, -((Fintype.card ι : ℝ) * M + M) ≤ E i := by
-    intro i
-    have hrest : ∑ j ∈ Finset.univ.erase i, E j ≤ (Fintype.card ι : ℝ) * M := calc
-      ∑ j ∈ Finset.univ.erase i, E j ≤ ∑ _ ∈ Finset.univ.erase i, M :=
-        Finset.sum_le_sum fun j _ ↦ hE_le j
-      _ ≤ ∑ _j : ι, M := by
-        gcongr
-        exact Finset.erase_subset _ _
-      _ = (Fintype.card ι : ℝ) * M := by simp
-    have hsplit : finiteMultiDualValue μ ψ = E i + ∑ j ∈ Finset.univ.erase i, E j := by
-      rw [← hEsum]
-      calc
-        ∑ j, E j = ∑ j ∈ Finset.univ.erase i, E j + E i :=
-          (Finset.sum_erase_add Finset.univ E (Finset.mem_univ i)).symm
-        _ = E i + ∑ j ∈ Finset.univ.erase i, E j := add_comm _ _
-    linarith
+  have hE := neg_le_sum_toReal_mul (μ := μ) hM0 hψ_le hval
   let χ : ∀ i, X i → ℝ := fun i x ↦
     if ((μ i) x).toReal = 0 then -B else ψ i x
   have hχvalue : finiteMultiDualValue μ χ = finiteMultiDualValue μ ψ := by
@@ -440,60 +485,86 @@ private theorem exists_bounded_of_normalized {c : (∀ i, X i) → ℝ} {M B : �
     · simp [χ, hx]
       linarith
     · simpa only [χ, hx, ↓reduceIte] using hψ_le i x
-  -- At a point of positive weight, that weight converts the bound on `E i` into a bound on `ψ`.
   have hχ_lower : ∀ i x, -B ≤ χ i x := by
     intro i x
     by_cases hx : ((μ i) x).toReal = 0
     · simp [χ, hx]
-    · simp only [χ, hx, ↓reduceIte]
-      have hw : 0 < ((μ i) x).toReal := lt_of_le_of_ne ENNReal.toReal_nonneg (Ne.symm hx)
-      have hothers : ∑ y ∈ Finset.univ.erase x, ((μ i) y).toReal * ψ i y ≤ M := calc
-        ∑ y ∈ Finset.univ.erase x, ((μ i) y).toReal * ψ i y
-            ≤ ∑ y ∈ Finset.univ.erase x, ((μ i) y).toReal * M :=
-              Finset.sum_le_sum fun y _ ↦ mul_le_mul_of_nonneg_left (hψ_le i y)
-                ENNReal.toReal_nonneg
-        _ ≤ ∑ y, ((μ i) y).toReal * M := by
-              gcongr
-              exact Finset.erase_subset _ _
-        _ = M := by rw [← Finset.sum_mul, PMF.sum_toReal_eq_one, one_mul]
-      have hsplit : E i = ((μ i) x).toReal * ψ i x +
-          ∑ y ∈ Finset.univ.erase x, ((μ i) y).toReal * ψ i y := by
-        dsimp only [E]
-        calc
-          ∑ y, ((μ i) y).toReal * ψ i y =
-              ∑ y ∈ Finset.univ.erase x, ((μ i) y).toReal * ψ i y +
-                ((μ i) x).toReal * ψ i x :=
-            (Finset.sum_erase_add Finset.univ _ (Finset.mem_univ x)).symm
-          _ = ((μ i) x).toReal * ψ i x +
-              ∑ y ∈ Finset.univ.erase x, ((μ i) y).toReal * ψ i y := add_comm _ _
-      have hprod : -((Fintype.card ι + 2 : ℝ) * M) ≤ ((μ i) x).toReal * ψ i x := by
-        linarith [hE_lower i]
-      have := (div_le_iff₀ hw).1 (hquot i x hx)
-      nlinarith
-  -- Feasibility survives the replacement: a configuration meeting a zero-weight point has one
-  -- coordinate lowered to `-B`, which the bound `hD` more than pays for.
-  have hχfeas : FiniteMultiDualFeasible c χ := by
-    intro z
-    by_cases hz : ∃ i, ((μ i) (z i)).toReal = 0
-    · obtain ⟨i, hi⟩ := hz
-      have hrest : ∑ j ∈ Finset.univ.erase i, χ j (z j) ≤ (Fintype.card ι : ℝ) * M := calc
-        ∑ j ∈ Finset.univ.erase i, χ j (z j) ≤ ∑ _ ∈ Finset.univ.erase i, M :=
-          Finset.sum_le_sum fun j _ ↦ hχ_le j (z j)
-        _ ≤ ∑ _j : ι, M := by
-          gcongr
-          exact Finset.erase_subset _ _
-        _ = (Fintype.card ι : ℝ) * M := by simp
-      calc
-        ∑ j, χ j (z j) = χ i (z i) + ∑ j ∈ Finset.univ.erase i, χ j (z j) := by
-          rw [add_comm]
-          exact (Finset.sum_erase_add Finset.univ _ (Finset.mem_univ i)).symm
-        _ = -B + ∑ j ∈ Finset.univ.erase i, χ j (z j) := by simp [χ, hi]
-        _ ≤ c z := by
-          have hc : -M ≤ c z := neg_le_of_abs_le (hM z)
-          linarith
-    · have hz' : ∀ i, ((μ i) (z i)).toReal ≠ 0 := fun i hi ↦ hz ⟨i, hi⟩
-      simpa only [χ, hz', ↓reduceIte] using hψfeas z
+    · simpa only [χ, hx, ↓reduceIte] using
+        neg_le_of_toReal_ne_zero hM0 hψ_le (hE i) hx (hquot i x hx)
+  have hB : ((Fintype.card ι : ℝ) + 1) * M ≤ B := by linarith
+  have hχfeas : FiniteMultiDualFeasible c χ :=
+    finiteMultiDualFeasible_of_replace (μ := μ) hM hM0 hB hψfeas hχ_le
+      (fun i x hx ↦ by simp [χ, hx]) (fun i x hx ↦ by simp [χ, hx])
   exact ⟨χ, hχfeas, hχvalue, fun i x ↦ abs_le.2 ⟨hχ_lower i x, (hχ_le i x).trans hMB⟩⟩
+
+omit [∀ i, Fintype (X i)] in
+/-- A box radius dominating `(card ι + 2) * M` and its quotients by the positive weights. -/
+private theorem exists_box_radius [∀ i, Finite (X i)] (μ : ∀ i, PMF (X i)) (M : ℝ) :
+    ∃ B : ℝ, (Fintype.card ι + 2 : ℝ) * M ≤ B ∧ ∀ i x, ((μ i) x).toReal ≠ 0 →
+      (Fintype.card ι + 2 : ℝ) * M / ((μ i) x).toReal ≤ B := by
+  obtain ⟨i₀⟩ := ‹Nonempty ι›
+  have hX : ∀ i, Nonempty (X i) := fun i ↦ ⟨(μ i).support_nonempty.some⟩
+  let boundTerm : (Σ i, X i) → ℝ := fun q ↦
+    max ((Fintype.card ι + 2 : ℝ) * M)
+      (if ((μ q.1) q.2).toReal = 0 then 0
+        else (Fintype.card ι + 2 : ℝ) * M / ((μ q.1) q.2).toReal)
+  have : Nonempty (Σ i, X i) := ⟨⟨i₀, Classical.choice (hX i₀)⟩⟩
+  obtain ⟨q₀, hq₀⟩ := Finite.exists_max boundTerm
+  refine ⟨boundTerm q₀, ?_, fun i x hx ↦ ?_⟩
+  · obtain ⟨x⟩ := hX i₀
+    exact (le_max_left _ _).trans (hq₀ ⟨i₀, x⟩)
+  · have hbq := hq₀ ⟨i, x⟩
+    simp only [boundTerm, hx, ↓reduceIte] at hbq
+    exact (le_max_right _ _).trans hbq
+
+omit [Nonempty ι] in
+/-- The dual-feasible families of value at least `-M` in the box of radius `B` form a compact
+set. -/
+private theorem isCompact_dualFeasible_box (c : (∀ i, X i) → ℝ) (μ : ∀ i, PMF (X i))
+    (M B : ℝ) :
+    IsCompact {φ : ∀ i, X i → ℝ | FiniteMultiDualFeasible c φ ∧
+      -M ≤ finiteMultiDualValue μ φ ∧ ∀ i x, |φ i x| ≤ B} := by
+  have hfeas : IsClosed {φ : ∀ i, X i → ℝ | FiniteMultiDualFeasible c φ} := by
+    simp only [FiniteMultiDualFeasible, Set.ofPred_forall]
+    exact isClosed_iInter fun z ↦ isClosed_le
+      (continuous_finsetSum _ fun i _ ↦ (continuous_apply (z i)).comp (continuous_apply i))
+      continuous_const
+  have hvalue : IsClosed {φ : ∀ i, X i → ℝ | -M ≤ finiteMultiDualValue μ φ} :=
+    isClosed_le continuous_const (continuous_finiteMultiDualValue μ)
+  have hbox : IsClosed {φ : ∀ i, X i → ℝ | ∀ i x, |φ i x| ≤ B} := by
+    simp only [Set.ofPred_forall]
+    exact isClosed_iInter fun i ↦ isClosed_iInter fun x ↦
+      isClosed_le (((continuous_apply x).comp (continuous_apply i)).abs) continuous_const
+  refine IsCompact.of_isClosed_subset
+    (isCompact_univ_pi fun i ↦ isCompact_univ_pi fun _ ↦ isCompact_Icc (a := -B) (b := B))
+    (hfeas.inter (hvalue.inter hbox)) ?_
+  intro φ hφ i _ x _
+  exact abs_le.1 (hφ.2.2 i x)
+
+/-- For a cost bounded in absolute value by `M`, there is a dual-feasible family with dual value
+`-M` lying in the box of radius `B`, once `M ≤ B` (for example `-M` at one index and `0` at the
+others). -/
+private theorem exists_dualFeasible_value_eq_neg {c : (∀ i, X i) → ℝ} {M B : ℝ}
+    (hM : ∀ z, |c z| ≤ M) (hM0 : 0 ≤ M) (hMB : M ≤ B) :
+    ∃ base : ∀ i, X i → ℝ, FiniteMultiDualFeasible c base ∧
+      finiteMultiDualValue μ base = -M ∧ ∀ i x, |base i x| ≤ B := by
+  obtain ⟨i₀⟩ := ‹Nonempty ι›
+  refine ⟨fun i _ ↦ if i = i₀ then -M else 0, ?_, ?_, ?_⟩
+  · intro z
+    have hc : -M ≤ c z := neg_le_of_abs_le (hM z)
+    simpa using hc
+  · simp only [finiteMultiDualValue_def]
+    rw [Finset.sum_eq_single i₀]
+    · simp [← Finset.sum_mul]
+    · intro i _ hi
+      simp [hi]
+    · exact fun hi ↦ (hi (Finset.mem_univ i₀)).elim
+  · intro i x
+    by_cases hi : i = i₀
+    · subst i
+      simp only [↓reduceIte, abs_neg, abs_of_nonneg hM0]
+      exact hMB
+    · simp [hi, hM0.trans hMB]
 
 /-- **Finite multi-marginal dual attainment.** Every real cost on a nonempty finite family of
 finite spaces has a maximizing feasible family of marginal potentials. -/
@@ -503,90 +574,21 @@ theorem exists_forall_finiteMultiDualValue_le (c : (∀ i, X i) → ℝ)
       ∀ ψ, FiniteMultiDualFeasible c ψ →
         finiteMultiDualValue μ ψ ≤ finiteMultiDualValue μ φ := by
   have hX : ∀ i, Nonempty (X i) := fun i ↦ ⟨(μ i).support_nonempty.some⟩
-  obtain ⟨i₀⟩ := ‹Nonempty ι›
   have : Nonempty (∀ i, X i) := ⟨fun i ↦ Classical.choice (hX i)⟩
   obtain ⟨z₀, hz₀⟩ := Finite.exists_max fun z : ∀ i, X i ↦ |c z|
   set M := |c z₀|
   have hM : ∀ z, |c z| ≤ M := hz₀
   have hM0 : 0 ≤ M := abs_nonneg _
-  -- A box radius dominating `(card ι + 2) * M` and its quotients by the positive weights.
-  let boundTerm : (Σ i, X i) → ℝ := fun q ↦
-    max ((Fintype.card ι + 2 : ℝ) * M)
-      (if ((μ q.1) q.2).toReal = 0 then 0
-        else (Fintype.card ι + 2 : ℝ) * M / ((μ q.1) q.2).toReal)
-  have : Nonempty (Σ i, X i) := ⟨⟨i₀, Classical.choice (hX i₀)⟩⟩
-  obtain ⟨q₀, hq₀⟩ := Finite.exists_max boundTerm
-  set B := boundTerm q₀
-  have hB : ∀ q, boundTerm q ≤ B := hq₀
-  have hD : (Fintype.card ι + 2 : ℝ) * M ≤ B := by
-    obtain ⟨x⟩ := hX i₀
-    exact (le_max_left _ _).trans (hB ⟨i₀, x⟩)
-  have hquot : ∀ i x, ((μ i) x).toReal ≠ 0 →
-      (Fintype.card ι + 2 : ℝ) * M / ((μ i) x).toReal ≤ B := by
-    intro i x hx
-    have hbq := hB ⟨i, x⟩
-    simp only [boundTerm, hx, ↓reduceIte] at hbq
-    exact (le_max_right _ _).trans hbq
-  have hcard : (1 : ℝ) ≤ (Fintype.card ι : ℝ) :=
-    Nat.one_le_cast.2 (Fintype.card_pos_iff.2 ‹Nonempty ι›)
-  have hcard1 : (0 : ℝ) ≤ ((Fintype.card ι : ℝ) + 1) * M := mul_nonneg (by linarith) hM0
-  have hMB : M ≤ B := by nlinarith
-  have hB0 : 0 ≤ B := hM0.trans hMB
-  -- The normalised feasible families of value at least `-M` form a compact set.
-  set K : Set (∀ i, X i → ℝ) :=
-    {φ | FiniteMultiDualFeasible c φ ∧ -M ≤ finiteMultiDualValue μ φ ∧
-      ∀ i x, |φ i x| ≤ B}
-  have hKclosed : IsClosed K := by
-    have hfeas : IsClosed {φ : ∀ i, X i → ℝ | FiniteMultiDualFeasible c φ} := by
-      simp only [FiniteMultiDualFeasible, Set.ofPred_forall]
-      exact isClosed_iInter fun z ↦ isClosed_le
-        (continuous_finsetSum _ fun i _ ↦ (continuous_apply (z i)).comp (continuous_apply i))
-        continuous_const
-    have hvalue : IsClosed {φ : ∀ i, X i → ℝ | -M ≤ finiteMultiDualValue μ φ} := by
-      apply isClosed_le continuous_const
-      have hcont : Continuous fun φ : ∀ i, X i → ℝ ↦
-          ∑ i, ∑ x, ((μ i) x).toReal * φ i x :=
-        continuous_finsetSum _ fun i _ ↦ continuous_finsetSum _ fun x _ ↦
-        continuous_const.mul ((continuous_apply x).comp (continuous_apply i))
-      exact hcont
-    have hbox : IsClosed {φ : ∀ i, X i → ℝ | ∀ i x, |φ i x| ≤ B} := by
-      simp only [Set.ofPred_forall]
-      exact isClosed_iInter fun i ↦ isClosed_iInter fun x ↦
-        isClosed_le (((continuous_apply x).comp (continuous_apply i)).abs) continuous_const
-    exact hfeas.inter (hvalue.inter hbox)
-  have hKsub : K ⊆ Set.univ.pi fun i ↦ Set.univ.pi fun _ : X i ↦ Set.Icc (-B) B := by
-    intro φ hφ i _ x _
-    exact abs_le.1 (hφ.2.2 i x)
-  have hKcompact : IsCompact K :=
-    IsCompact.of_isClosed_subset
-      (isCompact_univ_pi fun i ↦ isCompact_univ_pi fun _ ↦ isCompact_Icc)
-      hKclosed hKsub
-  -- The constant family of total value `-M` is the baseline element of `K`.
-  let base : ∀ i, X i → ℝ := fun i _ ↦ if i = i₀ then -M else 0
-  have hbasefeas : FiniteMultiDualFeasible c base := by
-    intro z
-    have hc : -M ≤ c z := neg_le_of_abs_le (hM z)
-    simpa [base] using hc
-  have hbasevalue : finiteMultiDualValue μ base = -M := by
-    simp only [finiteMultiDualValue_def, base]
-    rw [Finset.sum_eq_single i₀]
-    · simp [← Finset.sum_mul]
-    · intro i _ hi
-      simp [hi]
-    · exact fun hi ↦ (hi (Finset.mem_univ i₀)).elim
-  have hbasebox : ∀ i x, |base i x| ≤ B := by
-    intro i x
-    by_cases hi : i = i₀
-    · subst i
-      simp only [base, ↓reduceIte, abs_neg, abs_of_nonneg hM0]
-      exact hMB
-    · simp [base, hi, hB0]
-  have hKne : K.Nonempty := ⟨base, hbasefeas, hbasevalue.ge, hbasebox⟩
-  have hcont : Continuous fun φ : ∀ i, X i → ℝ ↦ finiteMultiDualValue μ φ := by
-    simp only [finiteMultiDualValue_def]
-    exact continuous_finsetSum _ fun i _ ↦ continuous_finsetSum _ fun x _ ↦
-      continuous_const.mul ((continuous_apply x).comp (continuous_apply i))
-  obtain ⟨φmax, hφmax, hmax⟩ := hKcompact.exists_isMaxOn hKne hcont.continuousOn
+  obtain ⟨B, hD, hquot⟩ := exists_box_radius μ M
+  have hMB : M ≤ B := le_of_card_add_two_mul_le hM0 hD
+  obtain ⟨base, hbasefeas, hbasevalue, hbasebox⟩ :=
+    exists_dualFeasible_value_eq_neg (μ := μ) hM hM0 hMB
+  set K : Set (∀ i, X i → ℝ) := {φ | FiniteMultiDualFeasible c φ ∧
+    -M ≤ finiteMultiDualValue μ φ ∧ ∀ i x, |φ i x| ≤ B}
+  have hKcompact : IsCompact K := isCompact_dualFeasible_box c μ M B
+  obtain ⟨φmax, hφmax, hmax⟩ := hKcompact.exists_isMaxOn
+    ⟨base, hbasefeas, hbasevalue.ge, hbasebox⟩
+    (continuous_finiteMultiDualValue μ).continuousOn
   refine ⟨φmax, hφmax.1, fun φ hφ ↦ ?_⟩
   by_cases hlow : finiteMultiDualValue μ φ < -M
   · exact hlow.le.trans (hbasevalue ▸ isMaxOn_iff.1 hmax base ⟨hbasefeas, hbasevalue.ge, hbasebox⟩)
@@ -748,6 +750,32 @@ private theorem iInf_multiLagrangian (c : (∀ i, X i) → ℝ) (μ : ∀ i, PMF
         Finset.sum_le_sum fun z _ ↦ mul_le_mul_of_nonneg_right (hz₀ z) (hf.1 z)
     linarith
 
+/-- **Minimax for the Lagrangian.** The infimum over the standard simplex and the supremum over
+all potentials of the Lagrangian commute (Sion's minimax theorem). -/
+private theorem iInf_iSup_multiLagrangian_eq (c : (∀ i, X i) → ℝ) (μ : ∀ i, PMF (X i)) :
+    (⨅ f ∈ multiStdSimplexSet, ⨆ ψ ∈ (Set.univ : Set (∀ i, X i → ℝ)),
+        ((multiLagrangian c μ f ψ : ℝ) : EReal)) =
+      ⨆ ψ ∈ (Set.univ : Set (∀ i, X i → ℝ)), ⨅ f ∈ multiStdSimplexSet,
+        ((multiLagrangian c μ f ψ : ℝ) : EReal) := by
+  refine Sion.minimax'
+    (ne_X := (multiRealPlans_nonempty (μ := μ)).mono
+      (multiRealPlans_subset_multiStdSimplexSet (μ := μ)))
+    (cX := convex_multiStdSimplexSet) (kX := isCompact_multiStdSimplexSet)
+    (cY := convex_univ) (hfy := fun ψ _ ↦ ?_) (hfy' := fun ψ _ ↦ ?_)
+    (hfx := fun f _ ↦ ?_) (hfx' := fun f _ ↦ ?_)
+  · exact (continuous_coe_real_ereal.comp
+      (continuous_multiLagrangian_left c μ ψ)).lowerSemicontinuous.lowerSemicontinuousOn _
+  · exact ((Convex.convexOn_and_concaveOn_iff (f := fun f ↦ multiLagrangian c μ f ψ)
+      convex_multiStdSimplexSet).2 fun f _ g _ a b _ _ hab ↦
+        multiLagrangian_affine_left c μ f g ψ a b hab).1.quasiconvexOn.monotone_comp
+      (g := Real.toEReal) EReal.coe_strictMono.monotone
+  · exact (continuous_coe_real_ereal.comp
+      (continuous_multiLagrangian_right c μ f)).upperSemicontinuous.upperSemicontinuousOn _
+  · exact ((Convex.convexOn_and_concaveOn_iff (f := fun ψ ↦ multiLagrangian c μ f ψ)
+      convex_univ).2 fun φ _ ψ _ a b _ _ hab ↦
+        multiLagrangian_affine_right c μ f φ ψ a b hab).2.quasiconcaveOn.monotone_comp
+      (g := Real.toEReal) EReal.coe_strictMono.monotone
+
 /-- **Finite multi-marginal Kantorovich duality.** For a nonempty finite family of finite
 spaces, the primal and dual problems have the same value and both attain it. -/
 theorem exists_cost_eq_finiteMultiDualValue (c : (∀ i, X i) → ℝ)
@@ -761,28 +789,7 @@ theorem exists_cost_eq_finiteMultiDualValue (c : (∀ i, X i) → ℝ)
   obtain ⟨π, hπ⟩ := FiniteMultiCoupling.exists_forall_cost_le c μ
   obtain ⟨φ, hφ, hφmax⟩ := exists_forall_finiteMultiDualValue_le c μ
   refine ⟨π, φ, hπ, hφ, le_antisymm ?_ (π.finiteMultiDualValue_le_cost hφ)⟩
-  have key : (⨅ f ∈ multiStdSimplexSet, ⨆ ψ ∈ (Set.univ : Set (∀ i, X i → ℝ)),
-        ((multiLagrangian c μ f ψ : ℝ) : EReal)) =
-      ⨆ ψ ∈ (Set.univ : Set (∀ i, X i → ℝ)), ⨅ f ∈ multiStdSimplexSet,
-        ((multiLagrangian c μ f ψ : ℝ) : EReal) := by
-    refine Sion.minimax'
-      (ne_X := (multiRealPlans_nonempty (μ := μ)).mono
-        (multiRealPlans_subset_multiStdSimplexSet (μ := μ)))
-      (cX := convex_multiStdSimplexSet) (kX := isCompact_multiStdSimplexSet)
-      (cY := convex_univ) (hfy := fun ψ _ ↦ ?_) (hfy' := fun ψ _ ↦ ?_)
-      (hfx := fun f _ ↦ ?_) (hfx' := fun f _ ↦ ?_)
-    · exact (continuous_coe_real_ereal.comp
-        (continuous_multiLagrangian_left c μ ψ)).lowerSemicontinuous.lowerSemicontinuousOn _
-    · exact ((Convex.convexOn_and_concaveOn_iff (f := fun f ↦ multiLagrangian c μ f ψ)
-        convex_multiStdSimplexSet).2 fun f _ g _ a b _ _ hab ↦
-          multiLagrangian_affine_left c μ f g ψ a b hab).1.quasiconvexOn.monotone_comp
-        (g := Real.toEReal) EReal.coe_strictMono.monotone
-    · exact (continuous_coe_real_ereal.comp
-        (continuous_multiLagrangian_right c μ f)).upperSemicontinuous.upperSemicontinuousOn _
-    · exact ((Convex.convexOn_and_concaveOn_iff (f := fun ψ ↦ multiLagrangian c μ f ψ)
-        convex_univ).2 fun φ _ ψ _ a b _ _ hab ↦
-          multiLagrangian_affine_right c μ f φ ψ a b hab).2.quasiconcaveOn.monotone_comp
-        (g := Real.toEReal) EReal.coe_strictMono.monotone
+  have key := iInf_iSup_multiLagrangian_eq c μ
   simp only [iSup_univ] at key
   have h1 : ((π.cost c : ℝ) : EReal) ≤ ⨅ f ∈ multiStdSimplexSet,
       ⨆ ψ : ∀ i, X i → ℝ, ((multiLagrangian c μ f ψ : ℝ) : EReal) := by
