@@ -8,9 +8,11 @@ module
 public import Mathlib.Analysis.Normed.Lp.ProdLp
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Integral.Average
+import TauCeti.Analysis.SpecialFunctions.Sqrt
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import Mathlib.Analysis.Convex.Integral
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 
@@ -528,6 +530,35 @@ theorem setIntegral_norm_sub_setAverage_sq_le (hs : μ s ≠ ⊤) (hf : Integrab
     _ ≤ 4 * J := by linarith
 
 end Subset
+
+section Ball
+
+/-- If `|u - g| ≤ W` almost everywhere on a ball `B` of radius `R` for a Haar measure, then
+`‖g‖_{L²(B)} ≤ √2 ‖u‖_{L²(B)} + √2 W |B|^(1/2)`, where `|B|^(1/2) = R^(n/2) |B(0, 1)|^(1/2)`
+and `n` is the dimension. -/
+theorem _root_.MeasureTheory.sqrt_setIntegral_sq_le_of_ae_abs_sub_le
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    (x₀ : E) {R W : ℝ} {u g : E → ℝ} (hR : 0 < R) (hW : 0 ≤ W)
+    (hu : Integrable (fun x => u x ^ 2) (mu.restrict (Metric.ball x₀ R)))
+    (h : ∀ᵐ x ∂mu.restrict (Metric.ball x₀ R), |u x - g x| ≤ W) :
+    √(∫ x in Metric.ball x₀ R, g x ^ 2 ∂mu) ≤
+      √2 * √(∫ x in Metric.ball x₀ R, u x ^ 2 ∂mu) +
+      √2 * W * √(mu.real (Metric.ball (0 : E) 1)) * R ^ ((Module.finrank ℝ E : ℝ) / 2) := by
+  have : IsFiniteMeasure (mu.restrict (Metric.ball x₀ R)) :=
+    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
+  have hg2 := TauCeti.MeasureTheory.integral_sq_le_two_mul_integral_sq_add hu h
+  rw [measureReal_restrict_apply_univ] at hg2
+  calc √(∫ x in Metric.ball x₀ R, g x ^ 2 ∂mu)
+      ≤ √(2 * ∫ x in Metric.ball x₀ R, u x ^ 2 ∂mu +
+          2 * W ^ 2 * mu.real (Metric.ball x₀ R)) := Real.sqrt_le_sqrt hg2
+    _ ≤ √2 * √(∫ x in Metric.ball x₀ R, u x ^ 2 ∂mu) +
+          √2 * W * √(mu.real (Metric.ball x₀ R)) :=
+        Real.sqrt_two_mul_add_two_mul_sq_mul_le (integral_nonneg fun _ => sq_nonneg _)
+          measureReal_nonneg hW
+    _ = _ := by rw [Measure.sqrt_addHaar_real_ball mu x₀ hR]; ring
+
+end Ball
 
 section InnerProduct
 

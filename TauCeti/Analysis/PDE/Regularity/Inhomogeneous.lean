@@ -11,6 +11,7 @@ public import TauCeti.Analysis.PDE.Regularity.HolderContinuity
 import TauCeti.Analysis.SpecificLimits.DecayIteration
 import TauCeti.MeasureTheory.Function.EssSup
 import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
+import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.OpenPos
 
@@ -158,67 +159,6 @@ theorem exists_forall_energyFormH1_eq_zero_ae_abs_sub_le [Nonempty ι] {r : ℝ�
 
 /-! ### Local boundedness -/
 
-/-- If `|u - g| ≤ W` almost everywhere for a finite measure `ν`, then
-`∫ g² ≤ 2 ∫ u² + 2 W² ν(univ)`, since `g² ≤ 2 u² + 2 (u - g)²`. -/
-theorem integral_sq_le_two_mul_integral_sq_add {α : Type*} [MeasurableSpace α] {ν : Measure α}
-    [IsFiniteMeasure ν] {u g : α → ℝ} {W : ℝ} (hu : Integrable (fun x => u x ^ 2) ν)
-    (h : ∀ᵐ x ∂ν, |u x - g x| ≤ W) :
-    ∫ x, g x ^ 2 ∂ν ≤ 2 * ∫ x, u x ^ 2 ∂ν + 2 * W ^ 2 * ν.real Set.univ := by
-  have hrhs : ∫ x, (2 * u x ^ 2 + 2 * W ^ 2) ∂ν =
-      2 * ∫ x, u x ^ 2 ∂ν + 2 * W ^ 2 * ν.real Set.univ := by
-    rw [integral_add (hu.const_mul 2) (integrable_const _), integral_const_mul, integral_const,
-      smul_eq_mul]
-    ring
-  rw [← hrhs]
-  refine integral_mono_of_nonneg (Eventually.of_forall fun _ => sq_nonneg _)
-    ((hu.const_mul 2).add (integrable_const _)) ?_
-  filter_upwards [h] with x hx
-  have habs : |u x - g x| ^ 2 ≤ W ^ 2 := pow_le_pow_left₀ (abs_nonneg _) hx 2
-  rw [sq_abs] at habs
-  nlinarith [sq_nonneg (u x + (u x - g x))]
-
-/-- `√(2 A + 2 W² m) ≤ √2 √A + √2 W √m` for nonnegative `A`, `m`, `W`. -/
-theorem sqrt_two_mul_add_two_mul_sq_mul_le {A W m : ℝ} (hA : 0 ≤ A) (hm : 0 ≤ m) (hW : 0 ≤ W) :
-    √(2 * A + 2 * W ^ 2 * m) ≤ √2 * √A + √2 * W * √m := by
-  have h := Real.rpow_add_le_add_rpow (p := 1 / 2) (a := 2 * A) (b := 2 * W ^ 2 * m)
-    (by positivity) (by positivity) (by norm_num) (by norm_num)
-  simp only [← Real.sqrt_eq_rpow] at h
-  refine h.trans_eq ?_
-  rw [Real.sqrt_mul zero_le_two, Real.sqrt_mul (by positivity), Real.sqrt_mul zero_le_two,
-    Real.sqrt_sq hW]
-
-omit [DecidableEq ι] in
-/-- The square root of the measure of a ball of radius `R` is `R ^ (n / 2)` times that of the unit
-ball. -/
-theorem _root_.EuclideanSpace.sqrt_measureReal_ball_eq (x : EuclideanSpace ℝ ι) {R : ℝ}
-    (hR : 0 < R) :
-    √(mu.real (ball x R)) =
-      R ^ ((Fintype.card ι : ℝ) / 2) * √(mu.real (ball (0 : EuclideanSpace ℝ ι) 1)) := by
-  rw [Measure.addHaar_real_ball_of_pos _ _ hR, finrank_euclideanSpace, ← Real.rpow_natCast,
-    Real.sqrt_mul (by positivity), Real.sqrt_eq_rpow, ← Real.rpow_mul hR.le]
-  ring_nf
-
-omit [DecidableEq ι] in
-/-- If `|u - g| ≤ W` almost everywhere on a ball `B` of radius `R`, then
-`‖g‖_{L²(B)} ≤ √2 ‖u‖_{L²(B)} + √2 W |B|^(1/2)`, where `|B|^(1/2) = R^(n/2) |B(0, 1)|^(1/2)`. -/
-theorem _root_.EuclideanSpace.sqrt_setIntegral_sq_le_of_ae_abs_sub_le
-    (x₀ : EuclideanSpace ℝ ι) {R W : ℝ} {u g : EuclideanSpace ℝ ι → ℝ} (hR : 0 < R) (hW : 0 ≤ W)
-    (hu : Integrable (fun x => u x ^ 2) (mu.restrict (ball x₀ R)))
-    (h : ∀ᵐ x ∂mu.restrict (ball x₀ R), |u x - g x| ≤ W) :
-    √(∫ x in ball x₀ R, g x ^ 2 ∂mu) ≤ √2 * √(∫ x in ball x₀ R, u x ^ 2 ∂mu) +
-      √2 * W * √(mu.real (ball (0 : EuclideanSpace ℝ ι) 1)) * R ^ ((Fintype.card ι : ℝ) / 2) := by
-  have : IsFiniteMeasure (mu.restrict (ball x₀ R)) :=
-    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-  have hg2 := integral_sq_le_two_mul_integral_sq_add hu h
-  rw [measureReal_restrict_apply_univ] at hg2
-  calc √(∫ x in ball x₀ R, g x ^ 2 ∂mu)
-      ≤ √(2 * ∫ x in ball x₀ R, u x ^ 2 ∂mu + 2 * W ^ 2 * mu.real (ball x₀ R)) :=
-        Real.sqrt_le_sqrt hg2
-    _ ≤ √2 * √(∫ x in ball x₀ R, u x ^ 2 ∂mu) + √2 * W * √(mu.real (ball x₀ R)) :=
-        sqrt_two_mul_add_two_mul_sq_mul_le (integral_nonneg fun _ => sq_nonneg _)
-          measureReal_nonneg hW
-    _ = _ := by rw [EuclideanSpace.sqrt_measureReal_ball_eq (mu := mu) x₀ hR]; ring
-
 /-- **Local boundedness of weak solutions with a right-hand side.** Let `n ≥ 1` be the dimension
 and let `r > 1` with `r > n/2`. There is `D > 0`, depending only on `λ`, `Λ`, `n`, `r` and the
 normalization of `mu`, such that the following holds. Let `a` be measurable and uniformly
@@ -261,9 +201,10 @@ theorem exists_ae_abs_value_le_mul_add_of_memLp [Nonempty ι] {lam Lam : ℝ} {r
   have hgbound := hbound (Omega := B) (h.mono_set hball)
     (ha.mono_measure (Measure.restrict_mono hball le_rfl)) hg hR (subset_refl _)
   -- `‖g‖_{L²(B)} ≤ √2 ‖u‖_{L²(B)} + √2 W |B|^(1/2)`.
-  have hsqrt := EuclideanSpace.sqrt_setIntegral_sq_le_of_ae_abs_sub_le (mu := mu) x₀ hR hW
+  have hsqrt := MeasureTheory.sqrt_setIntegral_sq_le_of_ae_abs_sub_le mu x₀ hR hW
     (((Lp.memLp (W1p.value u)).integrable_sq).mono_measure (Measure.restrict_mono hball le_rfl))
     (hug.mono fun x hx => hx)
+  rw [finrank_euclideanSpace] at hsqrt
   -- Combine: `|u| ≤ |g| + W`.
   have hR' : R ^ (-n / 2) * R ^ (n / 2) = 1 := by
     rw [← Real.rpow_add hR, neg_div, neg_add_cancel, Real.rpow_zero]
@@ -365,35 +306,6 @@ theorem exists_essSup_sub_essInf_le_mul_rpow_mul_add_of_memLp [Nonempty ι] {lam
     _ ≤ C₀ * (s / ρ) ^ α₀ * (m₁ - m) + (2 * C₀ + 2) * W := by gcongr
     _ = _ := by rw [hWdef]; ring
 
-omit [DecidableEq ι] in
-/-- The essential oscillation `φ ρ` of a function `v` on `B(x₀, ρ)` is nonnegative and monotone in
-`ρ ∈ (0, R₁]`, and at most `2 M` at `R₁`, if `|v| ≤ M` almost everywhere on `B(x₀, R₁)`. -/
-theorem _root_.EuclideanSpace.essSup_sub_essInf_nonneg_monotoneOn
-    (x₀ : EuclideanSpace ℝ ι) {R₁ M : ℝ}
-    {v : EuclideanSpace ℝ ι → ℝ} {φ : ℝ → ℝ}
-    (hφ : ∀ ρ, φ ρ = essSup v (mu.restrict (ball x₀ ρ)) - essInf v (mu.restrict (ball x₀ ρ)))
-    (hR₁ : 0 < R₁) (hM : ∀ᵐ x ∂mu.restrict (ball x₀ R₁), |v x| ≤ M) :
-    (∀ ρ ∈ Ioc 0 R₁, 0 ≤ φ ρ) ∧ MonotoneOn φ (Ioc 0 R₁) ∧ φ R₁ ≤ 2 * M := by
-  have hbdd : ∀ ρ ≤ R₁, _ ∧ _ := fun ρ hρ =>
-    isBoundedUnder_le_abs.mp (isBoundedUnder_of_eventually_le
-      (ae_restrict_of_ae_restrict_of_subset (ball_subset_ball hρ) hM))
-  have hne : ∀ ρ, 0 < ρ → (ae (mu.restrict (ball x₀ ρ))).NeBot := fun ρ hρ =>
-    ae_restrict_neBot.2 (measure_ball_pos mu x₀ hρ).ne'
-  refine ⟨fun ρ hρ => ?_, fun ρ hρ ρ' hρ' hρρ' => ?_, ?_⟩
-  · have := hne ρ hρ.1
-    rw [hφ]
-    exact sub_nonneg.2 (liminf_le_limsup (hbdd ρ hρ.2).1 (hbdd ρ hρ.2).2)
-  · have := hne ρ hρ.1
-    rw [hφ, hφ]
-    exact essSup_sub_essInf_mono_measure (Measure.absolutelyContinuous_of_le
-      (Measure.restrict_mono (ball_subset_ball hρρ') le_rfl)) (hbdd ρ' hρ'.2).1 (hbdd ρ' hρ'.2).2
-  · have := hne R₁ hR₁
-    rw [hφ]
-    refine essSup_sub_essInf_le (m := -M) ?_
-    filter_upwards [hM] with x hx
-    rw [abs_le] at hx
-    exact ⟨hx.1, by linarith only [hx.2]⟩
-
 /-- **De Giorgi's interior oscillation estimate with a right-hand side.** Let `n ≥ 1` be the
 dimension and let `r > 1` with `r > n/2`. There are `α ∈ (0, 1]` and `C > 0`, depending only on
 `λ`, `Λ`, `n`, `r` and the normalization of `mu`, such that the following holds. Let `a` be
@@ -451,7 +363,7 @@ theorem exists_ae_value_mem_Icc_add_mul_rpow_mul_add_of_memLp [Nonempty ι] {lam
         (mu.restrict (ball x₀ ρ)) := ⟨_, rfl⟩
   have hMρ : ∀ ρ, ρ ≤ R / 2 → ∀ᵐ x ∂mu.restrict (ball x₀ ρ), |W1p.value u x| ≤ M₀ :=
     fun ρ hρ => ae_restrict_of_ae_restrict_of_subset (ball_subset_ball hρ) hM
-  obtain ⟨hφ0, hmono, hφR₁⟩ := EuclideanSpace.essSup_sub_essInf_nonneg_monotoneOn (mu := mu) x₀
+  obtain ⟨hφ0, hmono, hφR₁⟩ := essSup_sub_essInf_nonneg_monotoneOn_ball (mu := mu) x₀
     (φ := φ)
     (fun ρ => by rw [hφdef]) (half_pos hR) hM
   -- One comparison step: `φ s ≤ C₀ (s/ρ)^α₀ φ ρ + K ρ^γ F` for `s ≤ ρ ≤ R / 2`.
@@ -480,13 +392,6 @@ theorem exists_ae_value_mem_Icc_add_mul_rpow_mul_add_of_memLp [Nonempty ι] {lam
   exact ⟨hx₂, by linarith only [hφs, hx₁]⟩
 
 /-! ### Hölder continuity -/
-
-/-- If `y ∈ [m, m + L]` and `L ≤ 2 c`, then `y` lies in the closed ball of radius `c` about
-`m + c`. -/
-theorem mem_closedBall_of_mem_Icc_of_le {y m L c : ℝ} (hy : y ∈ Icc m (m + L)) (hL : L ≤ 2 * c) :
-    y ∈ closedBall (m + c) c := by
-  rw [mem_closedBall, Real.dist_eq, abs_le]
-  constructor <;> linarith [hy.1, hy.2]
 
 /-- Scaling the oscillation bound: if `X ≤ N` and `C = C₀ N / R^α / 2`, then
 `C₀ (s / R)^α X ≤ 2 (C s^α)`. -/
@@ -596,7 +501,8 @@ theorem exists_holderOnWith_preciseRepresentative_of_memLp [Nonempty ι] {lam La
     have hL := mul_div_rpow_mul_le_two_mul_aux hs hR hC₀ (hN x hx) hC
     refine ⟨m' + C * s ^ (α : ℝ), ?_⟩
     filter_upwards [hm'] with y hy
-    exact mem_closedBall_of_mem_Icc_of_le hy hL
+    rw [Real.closedBall_eq_Icc]
+    exact ⟨by linarith [hy.1], by linarith [hy.2]⟩
   · -- Boundedness: `|u| ≤ D N` on `B(x, R/2)`, by local boundedness.
     rw [hρ]
     filter_upwards [hbound h ha (hfx x hx) hu hR (hball x hx)] with y hy
