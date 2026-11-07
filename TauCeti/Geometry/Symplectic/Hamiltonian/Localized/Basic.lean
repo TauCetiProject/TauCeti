@@ -103,9 +103,12 @@ theorem exists_contDiff_hamiltonianVectorField_comp_eq_smul (ω : SymplecticForm
         ((continuous_const.prodMk continuous_id).tendsto (u z)).eventually
           (mem_interior_iff_mem_nhds.mp (hχ1 hmem))
       have heq : (fun x ↦ ρ z * (χ (z, x) * ℓ x)) =ᶠ[𝓝 (u z)] fun x ↦ ρ z * ω v x :=
-        hev.mono fun x hx ↦ by simp [hx, ℓ]
-      rw [hamiltonianVectorField_def, heq.fderiv_eq, ← hamiltonianVectorField_def,
-        hamiltonianVectorField_const_mul, hamiltonianVectorField_contraction]
+        hev.mono fun x hx ↦ by simp only [hx, one_mul, ℓ, LinearMap.coe_toContinuousLinearMap']
+      -- The Hamiltonian vector field depends only on the germ, by the locality lemma for the
+      -- constant smooth two-form of `ω`.
+      rw [← hamiltonianVectorField_constSmooth, heq.hamiltonianVectorField_eq,
+        hamiltonianVectorField_constSmooth, hamiltonianVectorField_const_mul,
+        hamiltonianVectorField_contraction]
     · simp [image_eq_zero_of_notMem_tsupport hz]
 
 end TauCeti.SymplecticForm
