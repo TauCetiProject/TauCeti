@@ -336,6 +336,12 @@ theorem ker_symmetricAlgebra : ρ.symmetricAlgebra.ker = ρ.ker := by
   · ext p
     simp [symmetricAlgebra_apply, h, Module.End.one_eq_id]
 
+/-- The kernel of a representation acts trivially on its entire symmetric algebra. -/
+theorem symmetricAlgebra_apply_of_mem_ker {g : G} (hg : g ∈ ρ.ker)
+    (p : SymmetricAlgebra R M) : ρ.symmetricAlgebra g p = p := by
+  have hg' : g ∈ ρ.symmetricAlgebra.ker := by rwa [ker_symmetricAlgebra]
+  exact LinearMap.congr_fun (MonoidHom.mem_ker.mp hg') p
+
 /-- For a group, `Sym M` is an invariant extension of the invariant subalgebra under the bundled
 action, so Mathlib's `Algebra.IsInvariant` API applies to it. This is Mathlib's instance for
 `FixedPoints.subalgebra`, transported along `symmetricAlgebraInvariants_eq_fixedPoints`. -/

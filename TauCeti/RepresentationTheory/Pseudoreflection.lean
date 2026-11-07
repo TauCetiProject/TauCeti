@@ -156,12 +156,10 @@ the kernel generate the original group. No finiteness hypothesis is needed. -/
 theorem pseudoreflectionSubgroup_ofQuotient_ker_eq_top_iff :
     (ρ.ofQuotient ρ.ker).pseudoreflectionSubgroup = ⊤ ↔
       ρ.pseudoreflectionSubgroup ⊔ ρ.ker = ⊤ := by
-  have hcomp : (ρ.ofQuotient ρ.ker).comp (QuotientGroup.mk' ρ.ker) = ρ := by
-    ext g v
-    simp
   rw [← Subgroup.comap_injective (f := QuotientGroup.mk' ρ.ker)
     (QuotientGroup.mk'_surjective ρ.ker) |>.eq_iff, comap_pseudoreflectionSubgroup _ _
-      (QuotientGroup.mk'_surjective ρ.ker), hcomp, QuotientGroup.ker_mk', Subgroup.comap_top]
+      (QuotientGroup.mk'_surjective ρ.ker), ρ.ofQuotient_comp_mk', QuotientGroup.ker_mk',
+    Subgroup.comap_top]
 
 /-- The pseudoreflection subgroup is normal, since a conjugate of a pseudoreflection is a
 pseudoreflection. -/

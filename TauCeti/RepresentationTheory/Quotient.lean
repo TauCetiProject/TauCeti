@@ -24,14 +24,23 @@ variable {R G M : Type*} [Semiring R] [Group G] [AddCommMonoid M] [Module R M]
 
 /-- Restriction to the kernel is a trivial representation. -/
 instance isTrivial_comp_ker : IsTrivial (ρ.comp ρ.ker.subtype) where
-  out g := g.2
+  out g := MonoidHom.mem_ker.mp g.2
+
+/-- Restricting a quotient representation along the quotient map recovers the original
+representation, on the same module with the caller's scalar and additive structures. -/
+@[simp]
+theorem ofQuotient_comp_mk' (S : Subgroup G) [S.Normal]
+    [IsTrivial (ρ.comp S.subtype)] :
+    (ρ.ofQuotient S).comp (QuotientGroup.mk' S) = ρ :=
+  MonoidHom.ext fun g ↦ LinearMap.ext fun v ↦ ρ.ofQuotient_coe_apply S g v
 
 /-- A quotient representation is faithful exactly when the subgroup removed is the entire
 kernel. -/
 theorem injective_ofQuotient_iff (S : Subgroup G) [S.Normal]
     [IsTrivial (ρ.comp S.subtype)] :
     Function.Injective (ρ.ofQuotient S) ↔ S = ρ.ker := by
-  have hS : S ≤ ρ.ker := fun g hg ↦ isTrivial_def (ρ.comp S.subtype) ⟨g, hg⟩
+  have hS : S ≤ ρ.ker := fun g hg ↦
+    MonoidHom.mem_ker.mpr (isTrivial_def (ρ.comp S.subtype) ⟨g, hg⟩)
   have h : ρ.ofQuotient S = QuotientGroup.lift S ρ hS := by
     ext q x
     simp

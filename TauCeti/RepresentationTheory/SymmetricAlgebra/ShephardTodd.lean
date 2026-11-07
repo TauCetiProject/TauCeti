@@ -92,8 +92,9 @@ polynomial invariants `Sym(V*)` but no pseudoreflections.
 * `pseudoreflectionSubgroup_eq_top_iff_exists_bijective_aeval_symmetricAlgebraInvariants_dual`, in
   the namespace `Representation`: the two directions together.
 
-The finite-faithful-image variant below gives the same conclusion when only that image is
-finite with invertible order, and pseudoreflections together with the kernel generate the group.
+* exists_bijective_aeval_symmetricAlgebraInvariants_dual_of_pseudoreflectionSubgroup_sup_ker_eq_top
+  in the namespace `Representation`: the finite-faithful-image variant, when only that image is
+  finite with invertible order and pseudoreflections together with the kernel generate the group.
 
 ## References
 
@@ -188,7 +189,8 @@ theorem
   classical
   let := Fintype.ofFinite (G ⧸ ρ.ker)
   let : Invertible (Fintype.card (G ⧸ ρ.ker) : K) :=
-    (Nat.card_eq_fintype_card (α := G ⧸ ρ.ker)) ▸ inferInstance
+    Invertible.copy (inferInstance : Invertible (Nat.card (G ⧸ ρ.ker) : K)) _
+      (by rw [Nat.card_eq_fintype_card])
   rw [← ρ.symmetricAlgebraInvariants_dual_ofQuotient ρ.ker]
   exact exists_bijective_aeval_symmetricAlgebraInvariants_dual_of_pseudoreflectionSubgroup_eq_top
     (ρ.ofQuotient ρ.ker)
