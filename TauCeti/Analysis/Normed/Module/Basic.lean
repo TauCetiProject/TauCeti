@@ -16,6 +16,7 @@ This file collects elementary norm facts for scalar actions on seminormed additi
   `‖1‖ = 1`, such as `ℝ` or `ℂ`, `Int.castRingHom R` preserves norms, making lemmas stated for a
   `RingHomIsometric` ring homomorphism (such as `Polynomial.supNorm_map`) apply to integer
   polynomials.
+* `TauCeti.norm_sub_norm_le_norm_add_smul`: for `‖t‖ ≤ 1`, `‖b + t • d‖ ≥ ‖b‖ - ‖d‖`.
 * `TauCeti.norm_sum_smul_le_sum_div_mul`: when scalar coefficients satisfy `‖a i‖ * r i ≤ b`
   against positive weights `r i`, the combination `∑ i ∈ s, a i • u i` has norm at most
   `(∑ i ∈ s, ‖u i‖ / r i) * b`; in particular, strict-generator representations yield uniformly
@@ -32,14 +33,12 @@ instance RingHomIsometric.intCastRingHom {R : Type*} [SeminormedRing R]
 
 namespace TauCeti
 
-/-- Every point of the segment from `b` to `b + d` has norm at least `‖b‖ / 2` when
-`2 ‖d‖ ≤ ‖b‖`. -/
-theorem half_norm_le_norm_add_smul {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
-    {b d : E} (hd : 2 * ‖d‖ ≤ ‖b‖) {t : ℝ}
-    (ht : t ∈ Set.Icc (0 : ℝ) 1) : ‖b‖ / 2 ≤ ‖b + t • d‖ := by
+/-- For `‖t‖ ≤ 1`, the norm of `b + t • d` is at least `‖b‖ - ‖d‖`. -/
+theorem norm_sub_norm_le_norm_add_smul {𝕜 E : Type*} [NormedField 𝕜] [SeminormedAddCommGroup E]
+    [NormedSpace 𝕜 E] {b d : E} {t : 𝕜} (ht : ‖t‖ ≤ 1) : ‖b‖ - ‖d‖ ≤ ‖b + t • d‖ := by
   have htd : ‖t • d‖ ≤ ‖d‖ := by
-    rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg ht.1]
-    exact mul_le_of_le_one_left (norm_nonneg _) ht.2
+    rw [norm_smul]
+    exact mul_le_of_le_one_left (norm_nonneg _) ht
   have := norm_sub_norm_le b (-(t • d))
   rw [sub_neg_eq_add, norm_neg] at this
   linarith

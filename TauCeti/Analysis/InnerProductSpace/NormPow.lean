@@ -8,11 +8,11 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 public import Mathlib.Analysis.InnerProductSpace.NormPow
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
-public import TauCeti.Analysis.Normed.Module.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Analysis.Normed.Module.Basic
 
 /-!
 # Real powers of the norm away from the origin
@@ -277,14 +277,13 @@ private theorem exists_hasDerivAt_norm_rpow_hessian_line (p : ℝ) (b d v w : E)
       rw [h6, h4]
       ring
 
-/-- For `p ≤ 3`, `‖z‖ ^ (p - 3)` is at most `2 ^ (3 - p) ‖b‖ ^ (p - 3)` along the segment from `b`
-to `b + d` when `2 ‖d‖ ≤ ‖b‖`. -/
-private theorem norm_add_smul_rpow_le {p : ℝ} (hp : p ≤ 3) {b d : E} (hbN : 0 < ‖b‖)
-    (hd : 2 * ‖d‖ ≤ ‖b‖) {t : ℝ} (ht : t ∈ Set.Icc (0 : ℝ) 1) :
-    ‖b + t • d‖ ^ (p - 3) ≤ 2 ^ (3 - p) * ‖b‖ ^ (p - 3) := by
-  calc ‖b + t • d‖ ^ (p - 3) ≤ (‖b‖ / 2) ^ (p - 3) :=
-        Real.rpow_le_rpow_of_nonpos (by positivity) (half_norm_le_norm_add_smul hd ht)
-          (by linarith)
+omit [InnerProductSpace ℝ E] in
+/-- For `p ≤ 3`, if `‖b‖ / 2 ≤ ‖z‖` then `‖z‖ ^ (p - 3)` is at most
+`2 ^ (3 - p) ‖b‖ ^ (p - 3)`. -/
+private theorem rpow_le_of_half_norm_le {p : ℝ} (hp : p ≤ 3) {b : E} (hbN : 0 < ‖b‖) {z : E}
+    (hz : ‖b‖ / 2 ≤ ‖z‖) : ‖z‖ ^ (p - 3) ≤ 2 ^ (3 - p) * ‖b‖ ^ (p - 3) := by
+  calc ‖z‖ ^ (p - 3) ≤ (‖b‖ / 2) ^ (p - 3) :=
+        Real.rpow_le_rpow_of_nonpos (by positivity) hz (by linarith)
     _ = 2 ^ (3 - p) * ‖b‖ ^ (p - 3) := by
         rw [Real.div_rpow hbN.le zero_le_two, div_eq_mul_inv, ← Real.rpow_neg zero_le_two]
         ring_nf
@@ -310,8 +309,13 @@ theorem norm_iteratedFDeriv_two_norm_rpow_sub_le {p : ℝ} (hp : p ≤ 3) {a b :
     simp
   set d := a - b with hd
   have hbN : 0 < ‖b‖ := norm_pos_iff.mpr hb
-  have hseg (t : ℝ) (ht : t ∈ Set.Icc (0 : ℝ) 1) := half_norm_le_norm_add_smul hab ht
-  have hpow (t : ℝ) (ht : t ∈ Set.Icc (0 : ℝ) 1) := norm_add_smul_rpow_le hp hbN hab ht
+  -- Every point of the segment from `b` to `a` has norm at least `‖b‖ / 2`.
+  have hseg (t : ℝ) (ht : t ∈ Set.Icc (0 : ℝ) 1) : ‖b‖ / 2 ≤ ‖b + t • d‖ := by
+    have := norm_sub_norm_le_norm_add_smul (𝕜 := ℝ) (b := b) (d := d) (t := t)
+      (by rw [Real.norm_eq_abs, abs_of_nonneg ht.1]; exact ht.2)
+    linarith
+  have hpow (t : ℝ) (ht : t ∈ Set.Icc (0 : ℝ) 1) :=
+    rpow_le_of_half_norm_le hp hbN (hseg t ht)
   have ha : a ≠ 0 := by
     have := hseg 1 ⟨zero_le_one, le_rfl⟩
     rw [one_smul, hd, add_sub_cancel] at this
