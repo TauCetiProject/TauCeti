@@ -166,13 +166,13 @@ theorem existsUnique_flow_eq_midpoint_of_mem_unstableSet_inter_stableSet
 /-- **A point of a trajectory is determined by its orbit and its level.** Two points that lie on a
 common orbit and a common level coincide, if one of them is on a trajectory between distinct
 points. -/
-theorem eq_of_flow_eq_of_value_eq (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {y' : M}
+theorem eq_of_flow_eq_of_value_eq {y' : M}
     (hab : a ≠ b) (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) {t t' : ℝ}
     (h : hX.flow t y = hX.flow t' y') (hv : f y = f y') : y = y' := by
   have hy' : y' = hX.flow (t - t') y := by
     rw [show t - t' = -t' + t by ring, Flow.map_add, h, ← Flow.map_add, neg_add_cancel,
       Flow.map_zero_apply]
-  have h0 := (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hf hab hy).injective
+  have h0 := (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hab hy).injective
     (show f (hX.flow (t - t') y) = f (hX.flow 0 y) by rw [← hy', Flow.map_zero_apply, hv])
   rw [hy', h0, Flow.map_zero_apply]
 

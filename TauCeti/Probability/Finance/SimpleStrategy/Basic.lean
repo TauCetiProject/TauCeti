@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.Probability.Process.Predictable
 public import TauCeti.Probability.Martingale.Basic
-import Mathlib.Order.SuccPred.IntervalSucc
+public import TauCeti.Order.Interval.Set.Subdivision
 
 /-!
 # Simple trading strategies and the self-financing formula
@@ -529,17 +529,7 @@ theorem isSelfFinancing_iff_forall_mem_Ioc (hτ : StrictMonoOn τ (Set.Iic n)) :
   rw [isSelfFinancing_iff_forall_mem_Icc hτ.monotoneOn]
   constructor
   · intro h ω t ht
-    obtain ⟨j, hj, ht⟩ : ∃ j < n, t ∈ Set.Ioc (τ j) (τ (j + 1)) := by
-      -- Frozen after `n`, the partition is monotone and its intervals cover `(τ 0, τ n]`.
-      have hcover :=
-        (Set.monotoneOn_iff_monotone.1 hτ.monotoneOn).IicExtend.biUnion_Ico_Ioc_map_succ 0 n
-      simp only [Set.IicExtend_apply, Nat.min_zero, min_self, Order.succ_eq_add_one,
-        Set.mem_Ico, Nat.zero_le, true_and] at hcover
-      rw [← hcover] at ht
-      simp only [Set.mem_iUnion, exists_prop] at ht
-      obtain ⟨j, hj, ht⟩ := ht
-      rw [min_eq_right hj.le, min_eq_right (Nat.add_one_le_of_lt hj)] at ht
-      exact ⟨j, hj, ht⟩
+    obtain ⟨j, hj, ht⟩ := exists_lt_mem_Ioc_of_mem_Ioc ht
     rw [simpleHolding_of_mem_Ioc hτ.monotoneOn hj ht, simpleHolding_of_mem_Ioc hτ.monotoneOn hj ht]
     exact h j hj ω t (Set.Ioc_subset_Icc_self ht)
   · intro h j hj ω t ht
