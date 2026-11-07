@@ -133,6 +133,58 @@ theorem _root_.HasFDerivAt.exists_small_disk_derivativeRescale
     simpa only [Metric.mem_closedBall, dist_zero_right] using
       hbound.trans (mul_le_mul_of_nonneg_left hynorm hL.le)
 
+/-- **The linear stages of the negative disk comparison.** If `C : E →L[ℝ] E × F` pulls
+`‖u‖² - ‖v‖²` back to `‖u‖²`, then `C` is homotopic to `u ↦ (h u, 0)`, where `h` is the polar
+factor of the negative block `fst ∘ C`. First the positive component of `C u` is contracted to
+zero, then the negative block `h P` is deformed to `h` through `h P^(1-t)`. Along the homotopy the
+point over `u` has norm at most `‖C u‖` and satisfies `-‖u'‖² + ‖v'‖² ≤ -‖u‖²`. -/
+theorem _root_.ContinuousLinearMap.exists_homotopy_polarFactor_of_norm_sq_sub
+    {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+    [NormedAddCommGroup F] [InnerProductSpace ℝ F] (C : E →L[ℝ] E × F)
+    (hC : ∀ u, ‖(C u).1‖ ^ 2 - ‖(C u).2‖ ^ 2 = ‖u‖ ^ 2) :
+    ∃ H : C(unitInterval × E, E × F),
+      (∀ u, H (0, u) = C u) ∧
+      (∀ u, H (1, u) = (((ContinuousLinearMap.fst ℝ E F).comp C).polarFactor u, 0)) ∧
+      ∀ p, ‖H p‖ ≤ ‖C p.2‖ ∧ -‖(H p).1‖ ^ 2 + ‖(H p).2‖ ^ 2 ≤ -‖p.2‖ ^ 2 := by
+  set B := (ContinuousLinearMap.fst ℝ E F).comp C
+  -- Since `C` pulls `Q` back to `-‖u‖²`, its negative block expands norms.
+  have hexp : ∀ u, ‖u‖ ≤ ‖B u‖ := C.norm_le_norm_fst_of_norm_sq_sub hC
+  have hσ (t : unitInterval) : |(unitInterval.symm t : ℝ)| ≤ 1 :=
+    abs_le.2 ⟨by linarith [(unitInterval.symm t).2.1], (unitInterval.symm t).2.2⟩
+  let P : C(E, E × F) → Prop := fun g ↦
+    ∀ u, ‖g u‖ ≤ ‖C u‖ ∧ -‖(g u).1‖ ^ 2 + ‖(g u).2‖ ^ 2 ≤ -‖u‖ ^ 2
+  let g₁ : C(E, E × F) := ⟨fun u ↦ C u, by fun_prop⟩
+  let g₂ : C(E, E × F) := ⟨fun u ↦ (B u, 0), by fun_prop⟩
+  let g₃ : C(E, E × F) := ⟨fun u ↦ (B.polarFactor u, 0), by fun_prop⟩
+  -- Contract the positive component.
+  let F₂ : g₁.HomotopyWith g₂ P :=
+    { toFun := fun p : unitInterval × E ↦ ((C p.2).1, (unitInterval.symm p.1 : ℝ) • (C p.2).2)
+      continuous_toFun := by fun_prop
+      map_zero_left := fun u ↦ by simp [g₁]
+      map_one_left := fun u ↦ by simp [g₂, B]
+      prop' := fun t u ↦ by
+        simp only [ContinuousMap.coe_mk]
+        refine ⟨?_, C.neg_norm_fst_sq_add_norm_smul_snd_sq_le_of_norm_sq_sub hC (hσ t) u⟩
+        rw [Prod.norm_def, Prod.norm_def, norm_smul, Real.norm_eq_abs]
+        exact max_le_max le_rfl (mul_le_of_le_one_left (norm_nonneg _) (hσ t)) }
+  -- Deform the negative block to its polar factor.
+  let F₃ : g₂.HomotopyWith g₃ P :=
+    { toFun := fun p : unitInterval × E ↦ (B.polarDeformation p.1 p.2, 0)
+      continuous_toFun := by
+        have := B.continuous_polarDeformation (B.isStrictlyPositive_modulus_of_forall_norm_le hexp)
+        fun_prop
+      map_zero_left := fun u ↦ by simp [g₂]
+      map_one_left := fun u ↦ by simp [g₃]
+      prop' := fun t u ↦ by
+        obtain ⟨hlo, hhi⟩ := B.norm_le_norm_polarDeformation_apply_le hexp t.2 u
+        simp only [ContinuousMap.coe_mk]
+        refine ⟨?_, ?_⟩
+        · simpa [Prod.norm_def] using hhi.trans (norm_fst_le (C u))
+        · simpa using pow_le_pow_left₀ (norm_nonneg _) hlo 2 }
+  let K := F₂.trans F₃
+  exact ⟨K.toHomotopy.toContinuousMap, fun u ↦ K.apply_zero u, fun u ↦ K.apply_one u,
+    fun p ↦ K.prop p.1 p.2⟩
+
 /-- **The small negative disks of two Morse coordinate systems are homotopic.** Let `T`, fixing
 the origin and differentiable there with derivative `A`, preserve `Q(u,v) = -‖u‖² + ‖v‖²` near
 the origin, and let `h` be the polar factor of the negative block `A_uu` of `A`. For small `δ`
@@ -160,34 +212,27 @@ theorem _root_.HasFDerivAt.exists_negative_disk_homotopy_polarFactor
     fun z hz ↦ by linarith [(hWsub hz).2.2]
   obtain ⟨L, hL, hA, δ, hδ, hδW, hδV, hcont, hbd⟩ :=
     hT.exists_small_disk_derivativeRescale hT0 hWo hW0 hWc hWQ hV
-  -- The negative column of `A` pulls `Q` back to `-‖u‖²`, so its negative block expands norms.
+  -- The negative column of `A` pulls `Q` back to `-‖u‖²`.
   set C := A.comp (ContinuousLinearMap.inl ℝ E F)
-  set B := (ContinuousLinearMap.fst ℝ E F).comp C
   have hcol (u : E) : ‖(C u).1‖ ^ 2 - ‖(C u).2‖ ^ 2 = ‖u‖ ^ 2 := by
     simpa [C, hT.fderiv] using hT.differentiableAt.norm_sq_sub_fderiv hT0 hQ (u, 0)
-  have hexp : ∀ u, ‖u‖ ≤ ‖B u‖ := C.norm_le_norm_fst_of_norm_sq_sub hcol
+  obtain ⟨K, hK₀, hK₁, hK⟩ := C.exists_homotopy_polarFactor_of_norm_sq_sub hcol
   -- Points of the small disk and their images under `A` stay in the controlled balls.
   have hmem (u : Metric.closedBall (0 : E) δ) :
-      ((u : E), (0 : F)) ∈ Metric.closedBall (0 : E × F) δ := by
-    have hu := mem_closedBall_zero_iff.1 u.2
-    rw [mem_closedBall_zero_iff]
-    simpa using hu
+      ((u : E), (0 : F)) ∈ Metric.closedBall (0 : E × F) δ :=
+    (closedBall_prod_same (0 : E) (0 : F) δ).subset ⟨u.2, Metric.mem_closedBall_self hδ.le⟩
   have hCV (u : Metric.closedBall (0 : E) δ) {z : E × F} (hz : ‖z‖ ≤ ‖C u‖) : z ∈ V := by
     refine hδV (mem_closedBall_zero_iff.2 (hz.trans ?_))
     calc ‖C u‖ ≤ ‖A‖ * ‖((u : E), (0 : F))‖ := A.le_opNorm _
       _ ≤ L * δ := mul_le_mul hA (mem_closedBall_zero_iff.1 (hmem u)) (norm_nonneg _) hL.le
-  have hσ (t : unitInterval) : |(unitInterval.symm t : ℝ)| ≤ 1 :=
-    abs_le.2 ⟨by linarith [(unitInterval.symm t).2.1], (unitInterval.symm t).2.2⟩
-  -- The three stages, each keeping `Q` at or below `-‖u‖²` inside `V`.
+  -- The two stages, each keeping `Q` at or below `-‖u‖²` inside `V`.
   let P : C(Metric.closedBall (0 : E) δ, E × F) → Prop := fun g ↦
     ∀ u, g u ∈ V ∧ -‖(g u).1‖ ^ 2 + ‖(g u).2‖ ^ 2 ≤ -‖(u : E)‖ ^ 2
   let g₀ : C(Metric.closedBall (0 : E) δ, E × F) :=
     ⟨fun u ↦ T ((u : E), 0), hWc.comp_continuous (by fun_prop) fun u ↦ hδW (hmem u)⟩
   let g₁ : C(Metric.closedBall (0 : E) δ, E × F) := ⟨fun u ↦ C u, by fun_prop⟩
   let g₂ : C(Metric.closedBall (0 : E) δ, E × F) :=
-    ⟨fun u ↦ (B u, 0), by fun_prop⟩
-  let g₃ : C(Metric.closedBall (0 : E) δ, E × F) :=
-    ⟨fun u ↦ (B.polarFactor u, 0), by fun_prop⟩
+    ⟨fun u ↦ (((ContinuousLinearMap.fst ℝ E F).comp C).polarFactor u, 0), by fun_prop⟩
   -- Rescale the transition to its derivative.
   let F₁ : g₀.HomotopyWith g₁ P :=
     { toFun := fun p : unitInterval × Metric.closedBall (0 : E) δ ↦
@@ -204,35 +249,14 @@ theorem _root_.HasFDerivAt.exists_negative_disk_homotopy_polarFactor
         refine ⟨hV', le_of_eq ?_⟩
         rw [hQ']
         simp }
-  -- Contract the positive component of the linearized disk.
+  -- Deform the linearized disk to the polar factor of its negative block.
   let F₂ : g₁.HomotopyWith g₂ P :=
-    { toFun := fun p : unitInterval × Metric.closedBall (0 : E) δ ↦
-        ((C p.2).1, (unitInterval.symm p.1 : ℝ) • (C p.2).2)
-      continuous_toFun := by fun_prop
-      map_zero_left := fun u ↦ by simp [g₁]
-      map_one_left := fun u ↦ by simp [g₂, B]
-      prop' := fun t u ↦ by
-        simp only [ContinuousMap.coe_mk]
-        refine ⟨hCV u ?_, C.neg_norm_fst_sq_add_norm_smul_snd_sq_le_of_norm_sq_sub hcol
-          (hσ t) u⟩
-        rw [Prod.norm_def, Prod.norm_def, norm_smul, Real.norm_eq_abs]
-        exact max_le_max le_rfl (mul_le_of_le_one_left (norm_nonneg _) (hσ t)) }
-  -- Deform the negative block to its polar factor.
-  let F₃ : g₂.HomotopyWith g₃ P :=
-    { toFun := fun p : unitInterval × Metric.closedBall (0 : E) δ ↦
-        (B.polarDeformation p.1 p.2, 0)
-      continuous_toFun := by
-        have := B.continuous_polarDeformation (B.isStrictlyPositive_modulus_of_forall_norm_le hexp)
-        fun_prop
-      map_zero_left := fun u ↦ by simp [g₂]
-      map_one_left := fun u ↦ by simp [g₃]
-      prop' := fun t u ↦ by
-        obtain ⟨hlo, hhi⟩ := B.norm_le_norm_polarDeformation_apply_le hexp t.2 u
-        simp only [ContinuousMap.coe_mk]
-        refine ⟨hCV u ?_, ?_⟩
-        · simpa [Prod.norm_def] using hhi.trans (norm_fst_le (C u))
-        · simpa using pow_le_pow_left₀ (norm_nonneg _) hlo 2 }
-  let F := (F₁.trans F₂).trans F₃
+    { toFun := fun p : unitInterval × Metric.closedBall (0 : E) δ ↦ K (p.1, p.2)
+      continuous_toFun := K.continuous.comp (by fun_prop)
+      map_zero_left := fun u ↦ by simp [g₁, hK₀]
+      map_one_left := fun u ↦ by simp [g₂, hK₁]
+      prop' := fun t u ↦ ⟨hCV u (hK (t, u)).1, (hK (t, u)).2⟩ }
+  let F := F₁.trans F₂
   refine ⟨δ, hδ, hδW.trans fun z hz ↦ (hWsub hz).1, F.toHomotopy.toContinuousMap,
     fun u ↦ F.apply_zero u, fun u ↦ F.apply_one u, fun p ↦ ?_⟩
   simpa using F.prop p.1 p.2
