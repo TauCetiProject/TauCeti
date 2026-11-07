@@ -193,13 +193,8 @@ theorem swap_trans_eq_trans_swap {a b : α} (ha : a ∈ φ p.1) (hb : b ∈ φ p
   cases hx : φ x with
   | none => simp
   | some c =>
-    have hca : c ≠ a := by
-      rintro rfl
-      exact h₁ (φ.toPEquiv.inj hx ha)
-    have hcb : c ≠ b := by
-      rintro rfl
-      exact h₂ (φ.toPEquiv.inj hx hb)
-    simp [Equiv.swap_apply_of_ne_of_ne hca hcb]
+    simp [Equiv.swap_apply_of_ne_of_ne (φ.ne_of_mem_of_mem_of_ne hx ha h₁)
+      (φ.ne_of_mem_of_mem_of_ne hx hb h₂)]
 
 section Trans
 

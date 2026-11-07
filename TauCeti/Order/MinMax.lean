@@ -12,11 +12,15 @@ import Mathlib.Tactic.Order
 # Sorted pairs and relative orders of triples
 
 An unordered pair of distinct points `x`, `y` of a linear order is recorded as the sorted pair
-`(min x y, max x y)`. This file collects facts about how two such pairs can overlap, and a
-comparison of the relative orders of two triples of distinct points.
+`(min x y, max x y)`. This file collects facts about sorted pairs, their images under a function
+and how two of them can overlap, and a comparison of the relative orders of two triples of distinct
+points.
 
 ## Main results
 
+* `TauCeti.min_max_comm`: the sorted pair of `x` and `y` does not depend on their order.
+* `TauCeti.min_apply_min_max`, `TauCeti.max_apply_min_max`: applying a function to the sorted
+  pair of `a` and `b` and sorting again gives the sorted pair of `f a` and `f b`.
 * `TauCeti.min_max_share_coord`: two sorted pairs with a common point share a coordinate.
 * `TauCeti.exists_min_max_of_share_coord`: two distinct increasing pairs sharing a coordinate are
   the sorted pairs `(min s u, max s u)` and `(min s w, max s w)` of three distinct points.
@@ -30,6 +34,26 @@ public section
 namespace TauCeti
 
 variable {α β : Type*} [LinearOrder α] [LinearOrder β]
+
+/-- The sorted pair of `x` and `y` does not depend on their order. -/
+theorem min_max_comm (x y : α) : (min x y, max x y) = (min y x, max y x) := by
+  rw [min_comm, max_comm]
+
+/-- The smaller of the values of `f` at the smaller and the larger of `a` and `b` is the smaller of
+`f a` and `f b`. -/
+theorem min_apply_min_max (f : α → β) (a b : α) :
+    min (f (min a b)) (f (max a b)) = min (f a) (f b) := by
+  rcases le_total a b with h | h
+  · rw [min_eq_left h, max_eq_right h]
+  · rw [min_eq_right h, max_eq_left h, min_comm]
+
+/-- The larger of the values of `f` at the smaller and the larger of `a` and `b` is the larger of
+`f a` and `f b`. -/
+theorem max_apply_min_max (f : α → β) (a b : α) :
+    max (f (min a b)) (f (max a b)) = max (f a) (f b) := by
+  rcases le_total a b with h | h
+  · rw [min_eq_left h, max_eq_right h]
+  · rw [min_eq_right h, max_eq_left h, max_comm]
 
 /-- Two sorted pairs with the common point `z` share a coordinate: some coordinate of
 `(min y z, max y z)` is a coordinate of `(min x z, max x z)`. -/

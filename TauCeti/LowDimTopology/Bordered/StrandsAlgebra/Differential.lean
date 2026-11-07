@@ -100,12 +100,8 @@ private theorem composable_and_mem_resolvableInversions_trans_iff (hT : φ.targe
           φ.Composable (ψ.resolve (min a b, max a b))) := by
   obtain ⟨c, hc⟩ := mem_source.1 (hT ▸ mem_target.2 ⟨i, ha⟩ : a ∈ ψ.source)
   obtain ⟨d, hd⟩ := mem_source.1 (hT ▸ mem_target.2 ⟨j, hb⟩ : b ∈ ψ.source)
-  have hab : a ≠ b := by
-    rintro rfl
-    exact hij.ne (φ.toPEquiv.inj ha hb)
-  have hcd : c ≠ d := by
-    rintro rfl
-    exact hab (ψ.toPEquiv.inj hc hd)
+  have hab : a ≠ b := φ.ne_of_mem_of_mem_of_ne ha hb hij.ne
+  have hcd : c ≠ d := ψ.ne_of_mem_of_mem_of_ne hc hd hab
   have hX : (i, j) ∈ φ.inversions ↔ b < a := by simp [mem_inversions_iff_of_mem ha hb, hij]
   have hZ : (i, j) ∈ (φ.trans ψ).inversions ↔ d < c := by
     simp [mem_inversions_iff_of_mem (mem_trans.2 ⟨a, ha, hc⟩) (mem_trans.2 ⟨b, hb, hd⟩), hij]
@@ -213,13 +209,9 @@ private theorem chains_three_cycle {s u w : α} (hsu : s ≠ u) (hsw : s ≠ w) 
       (h₄ : (min s u, max s u) ∈ (φ.resolve (min u w, max u w)).inversions) :
       (φ.resolve (min u w, max u w)).resolve (min s u, max s u) =
         (φ.resolve (min s u, max s u)).resolve (min s w, max s w) := by
-    have h₁' : (min u s, max u s) ∈ φ.inversions := by rwa [min_comm u s, max_comm u s]
-    have h₂' : (min w s, max w s) ∈ (φ.resolve (min u s, max u s)).inversions := by
-      rwa [min_comm w, max_comm w, min_comm u, max_comm u]
-    have h₄' : (min u s, max u s) ∈ (φ.resolve (min u w, max u w)).inversions := by
-      rwa [min_comm u s, max_comm u s]
-    have := resolve_resolve_eq_resolve_resolve h₃ h₄' h₁' h₂'
-    rwa [min_comm u s, max_comm u s, min_comm w s, max_comm w s] at this
+    rw [min_max_comm s u] at h₁ h₂ h₄ ⊢
+    rw [min_max_comm s w] at h₂ ⊢
+    exact resolve_resolve_eq_resolve_resolve h₃ h₄ h₁ h₂
   refine ⟨?_, fun h ↦ hqr (mem_chains_iff.1 h).1 (mem_chains_iff.1 h).2.1,
     fun h ↦ hrp (mem_chains_iff.1 h).1 (mem_chains_iff.1 h).2.1⟩
   have hA : (⟨(min s w, max s w), (min u w, max u w)⟩ : (_ : α × α) × (α × α)) ∈ φ.chains ↔
@@ -239,9 +231,6 @@ private theorem chains_three_cycle {s u w : α} (hsu : s ≠ u) (hsw : s ≠ w) 
   obtain ⟨S, hS⟩ := mem_source.1 hsuS.1
   obtain ⟨U, hU⟩ := mem_source.1 hsuS.2
   obtain ⟨W, hW⟩ := mem_source.1 hswS.2
-  have hne {x y X Y : α} (hxy : x ≠ y) (hX : X ∈ φ x) (hY : Y ∈ φ y) : X ≠ Y := by
-    rintro rfl
-    exact hxy (φ.toPEquiv.inj hX hY)
   have h₃ : (min s w, max s w) ∈ φ.inversions ↔ (s < w ↔ W < S) :=
     min_max_mem_inversions_iff hsw hS hW
   have h₅ : (min u w, max u w) ∈ φ.inversions ↔ (u < w ↔ W < U) :=
@@ -268,7 +257,9 @@ private theorem chains_three_cycle {s u w : α} (hsu : s ≠ u) (hsw : s ≠ w) 
       exact hS
     · rw [resolve_min_max_apply h, Equiv.swap_apply_left]
       exact hW
-  have key := xor_of_lt_iff hsu hsw huw (hne hsu hS hU) (hne hsw hS hW) (hne huw hU hW) h₁' h₂'
+  have key := xor_of_lt_iff hsu hsw huw
+    (φ.ne_of_mem_of_mem_of_ne hS hU hsu) (φ.ne_of_mem_of_mem_of_ne hS hW hsw)
+    (φ.ne_of_mem_of_mem_of_ne hU hW huw) h₁' h₂'
   have hA' : (⟨(min s w, max s w), (min u w, max u w)⟩ : (_ : α × α) × (α × α)) ∈ φ.chains ↔
       (s < w ↔ W < S) ∧ (u < w ↔ S < U) :=
     hA.trans ⟨fun ⟨h, h'⟩ ↦ ⟨h₃.1 h, (h₄ h).1 h'⟩, fun ⟨h, h'⟩ ↦ ⟨h₃.2 h, (h₄ (h₃.2 h)).2 h'⟩⟩
@@ -331,8 +322,7 @@ private theorem chainPartner_spec {x : (_ : α × α) × (α × α)} (hx : x ∈
       fun h₂ ↦ by simp [h₁, h₂] at hxor
     -- `(q, r)` shares `w`, and its third pair is `p`.
     have ht' : third (min s w, max s w) (min u w, max u w) = (min s u, max s u) := by
-      rw [min_comm s w, max_comm s w, min_comm u w, max_comm u w,
-        third_min_max hsw.symm huw.symm hsu]
+      rw [min_max_comm s w, min_max_comm u w, third_min_max hsw.symm huw.symm hsu]
     rw [hpart]
     refine ⟨h₁, fun h ↦ hpq (Sigma.mk.inj_iff.1 h).1.symm, ?_, hqr h₁⟩
     rw [chainPartner, ite_eq_right (min_max_share_coord s u w), ht', ite_eq_right h₂]
@@ -343,8 +333,7 @@ private theorem chainPartner_spec {x : (_ : α × α) × (α × α)} (hx : x ∈
       rw [chainPartner, ite_eq_right hd, ht, ite_eq_right h₁]
     -- `(r, p)` shares `u`, and its third pair is `q`.
     have ht' : third (min u w, max u w) (min s u, max s u) = (min s w, max s w) := by
-      rw [min_comm s u, max_comm s u, third_min_max huw hsu.symm hsw.symm, min_comm w s,
-        max_comm w s]
+      rw [min_max_comm s u, third_min_max huw hsu.symm hsw.symm, min_max_comm w s]
     have hnd := min_max_share_coord w s u
     rw [min_comm w u, max_comm w u] at hnd
     rw [hpart]
@@ -394,6 +383,61 @@ private theorem sum_resolvableInversions_eq {M : Type*} [AddCommMonoid M] (σ : 
   exact ⟨⟨fst_mem_source_of_mem_inversions hp', snd_mem_source_of_mem_inversions hp'⟩,
     (mem_inversions.1 hp').1⟩
 
+/-- When `φ` ends where `ψ` starts, the end points `g x ∈ φ x` of the strands of `φ` identify the
+increasing pairs of starting points of `φ` with those of `ψ`, after sorting. -/
+private theorem sum_filter_lt_source_eq_of_target_eq {M : Type*} [AddCommMonoid M]
+    {φ ψ : StrandDiagram α} (hT : φ.target = ψ.source) {g : α → α}
+    (hg : ∀ x ∈ φ.source, g x ∈ φ x) (f : α × α → M) :
+    ∑ q ∈ (ψ.source ×ˢ ψ.source).filter (fun q : α × α ↦ q.1 < q.2), f q =
+      ∑ p ∈ (φ.source ×ˢ φ.source).filter (fun p : α × α ↦ p.1 < p.2),
+        f (min (g p.1) (g p.2), max (g p.1) (g p.2)) := by
+  -- The starting point `g' t` of the strand of `φ` ending at `t`.
+  set g' : α → α := fun t ↦ (φ.toPEquiv.symm t).getD t with hg'_def
+  have hg' {t : α} (ht : t ∈ ψ.source) : g' t ∈ φ.source ∧ t ∈ φ (g' t) := by
+    rw [← hT] at ht
+    obtain ⟨x, hx⟩ := mem_target.1 ht
+    have hs : φ.toPEquiv.symm t = some x := (PEquiv.eq_some_iff _).2 hx
+    simp only [hg'_def, hs, Option.getD_some]
+    exact ⟨mem_source.2 ⟨t, hx⟩, hx⟩
+  have hgT {x : α} (hx : x ∈ φ.source) : g x ∈ ψ.source := hT ▸ mem_target.2 ⟨x, hg x hx⟩
+  have hg'g {x : α} (hx : x ∈ φ.source) : g' (g x) = x := by
+    have hs : φ.toPEquiv.symm (g x) = some x := (PEquiv.eq_some_iff _).2 (hg x hx)
+    simp only [hg'_def, hs, Option.getD_some]
+  have hgg' {t : α} (ht : t ∈ ψ.source) : g (g' t) = t :=
+    Option.mem_unique (hg _ (hg' ht).1) (hg' ht).2
+  symm
+  refine sum_nbij' (fun p ↦ (min (g p.1) (g p.2), max (g p.1) (g p.2)))
+    (fun q ↦ (min (g' q.1) (g' q.2), max (g' q.1) (g' q.2))) ?_ ?_ ?_ ?_ fun _ _ ↦ rfl
+  · rintro ⟨x, y⟩ hp
+    simp only [mem_filter, mem_product] at hp ⊢
+    obtain ⟨⟨hx, hy⟩, hxy⟩ := hp
+    refine ⟨⟨?_, ?_⟩, min_lt_max.2 (φ.ne_of_mem_of_mem_of_ne (hg x hx) (hg y hy) hxy.ne)⟩
+    · rcases min_choice (g x) (g y) with h | h <;> rw [h]
+      exacts [hgT hx, hgT hy]
+    · rcases max_choice (g x) (g y) with h | h <;> rw [h]
+      exacts [hgT hx, hgT hy]
+  · rintro ⟨t, t'⟩ hq
+    simp only [mem_filter, mem_product] at hq ⊢
+    obtain ⟨⟨ht, ht'⟩, htt'⟩ := hq
+    refine ⟨⟨?_, ?_⟩, min_lt_max.2 fun h ↦ htt'.ne ?_⟩
+    · rcases min_choice (g' t) (g' t') with h | h <;> rw [h]
+      exacts [(hg' ht).1, (hg' ht').1]
+    · rcases max_choice (g' t) (g' t') with h | h <;> rw [h]
+      exacts [(hg' ht).1, (hg' ht').1]
+    · rw [← hgg' ht, ← hgg' ht', h]
+  · rintro ⟨x, y⟩ hp
+    simp only [mem_filter, mem_product] at hp
+    obtain ⟨⟨hx, hy⟩, hxy⟩ := hp
+    dsimp only
+    rw [min_apply_min_max, max_apply_min_max, hg'g hx, hg'g hy, min_eq_left hxy.le,
+      max_eq_right hxy.le]
+  · rintro ⟨t, t'⟩ hq
+    simp only [mem_filter, mem_product] at hq
+    obtain ⟨⟨ht, ht'⟩, htt'⟩ := hq
+    dsimp only
+    rw [min_apply_min_max, max_apply_min_max, hgg' ht, hgg' ht', min_eq_left htt'.le,
+      max_eq_right htt'.le]
+
 /-- **The Leibniz rule for basis elements.** -/
 theorem differential_of_mul_of [CharP R 2] (φ ψ : StrandDiagram α) :
     differential R α (of φ * of ψ) =
@@ -408,33 +452,12 @@ theorem differential_of_mul_of [CharP R 2] (φ ψ : StrandDiagram α) :
     rw [of_mul_of_of_not_composable fun h ↦ hT h.target_eq, map_zero, differential_of,
       differential_of, sum_mul, mul_sum]
     simp [h₁, h₂]
-  -- The end point `g x` of the strand from `x`, and the starting point `g' t` of the strand to `t`.
+  -- The end point `g x` of the strand from `x`.
   set g : α → α := fun x ↦ (φ x).getD x with hg_def
-  set g' : α → α := fun t ↦ (φ.toPEquiv.symm t).getD t with hg'_def
   have hg {x : α} (hx : x ∈ φ.source) : g x ∈ φ x := by
     obtain ⟨a, ha⟩ := mem_source.1 hx
     rw [Option.mem_def] at ha ⊢
     simp [hg_def, ha]
-  have hg' {t : α} (ht : t ∈ ψ.source) : g' t ∈ φ.source ∧ t ∈ φ (g' t) := by
-    rw [← hT] at ht
-    obtain ⟨x, hx⟩ := mem_target.1 ht
-    have hs : φ.toPEquiv.symm t = some x := (PEquiv.eq_some_iff _).2 hx
-    simp only [hg'_def, hs, Option.getD_some]
-    exact ⟨mem_source.2 ⟨t, hx⟩, hx⟩
-  have hgT {x : α} (hx : x ∈ φ.source) : g x ∈ ψ.source := hT ▸ mem_target.2 ⟨x, hg hx⟩
-  have hg'g {x : α} (hx : x ∈ φ.source) : g' (g x) = x := by
-    have hs : φ.toPEquiv.symm (g x) = some x := (PEquiv.eq_some_iff _).2 (hg hx)
-    simp only [hg'_def, hs, Option.getD_some]
-  have hgg' {t : α} (ht : t ∈ ψ.source) : g (g' t) = t :=
-    Option.mem_unique (hg (hg' ht).1) (hg' ht).2
-  have hginj {x y : α} (hx : x ∈ φ.source) (hy : y ∈ φ.source) (h : g x = g y) : x = y :=
-    φ.toPEquiv.inj (hg hx) (h ▸ hg hy)
-  have hminmax (f : α → α) (a b : α) :
-      (min (f (min a b)) (f (max a b)), max (f (min a b)) (f (max a b))) =
-        (min (f a) (f b), max (f a) (f b)) := by
-    rcases le_total a b with h | h
-    · rw [min_eq_left h, max_eq_right h]
-    · rw [min_eq_right h, max_eq_left h, min_comm, max_comm]
   -- Write the three terms as sums over the increasing pairs of starting points of `φ`.
   have hL : differential R α (of φ * of ψ) =
       ∑ p ∈ (φ.source ×ˢ φ.source).filter (fun p : α × α ↦ p.1 < p.2),
@@ -456,39 +479,9 @@ theorem differential_of_mul_of [CharP R 2] (φ ψ : StrandDiagram α) :
         if (min (g p.1) (g p.2), max (g p.1) (g p.2)) ∈ ψ.resolvableInversions ∧
           φ.Composable (ψ.resolve (min (g p.1) (g p.2), max (g p.1) (g p.2))) then
           of (φ.trans (ψ.resolve (min (g p.1) (g p.2), max (g p.1) (g p.2)))) else 0 := by
-    rw [differential_of, mul_sum, sum_resolvableInversions_eq]
+    rw [differential_of, mul_sum, sum_resolvableInversions_eq,
+      sum_filter_lt_source_eq_of_target_eq hT fun _ ↦ hg]
     simp only [of_mul_of, ite_and]
-    -- Reindex along the bijection between increasing pairs of starting points and of end points.
-    symm
-    refine sum_nbij' (fun p ↦ (min (g p.1) (g p.2), max (g p.1) (g p.2)))
-      (fun q ↦ (min (g' q.1) (g' q.2), max (g' q.1) (g' q.2))) ?_ ?_ ?_ ?_ fun _ _ ↦ rfl
-    · rintro ⟨x, y⟩ hp
-      simp only [mem_filter, mem_product] at hp ⊢
-      obtain ⟨⟨hx, hy⟩, hxy⟩ := hp
-      refine ⟨⟨?_, ?_⟩, min_lt_max.2 fun h ↦ hxy.ne (hginj hx hy h)⟩
-      · rcases min_choice (g x) (g y) with h | h <;> rw [h]
-        exacts [hgT hx, hgT hy]
-      · rcases max_choice (g x) (g y) with h | h <;> rw [h]
-        exacts [hgT hx, hgT hy]
-    · rintro ⟨t, t'⟩ hq
-      simp only [mem_filter, mem_product] at hq ⊢
-      obtain ⟨⟨ht, ht'⟩, htt'⟩ := hq
-      refine ⟨⟨?_, ?_⟩, min_lt_max.2 fun h ↦ htt'.ne ?_⟩
-      · rcases min_choice (g' t) (g' t') with h | h <;> rw [h]
-        exacts [(hg' ht).1, (hg' ht').1]
-      · rcases max_choice (g' t) (g' t') with h | h <;> rw [h]
-        exacts [(hg' ht).1, (hg' ht').1]
-      · rw [← hgg' ht, ← hgg' ht', h]
-    · rintro ⟨x, y⟩ hp
-      simp only [mem_filter, mem_product] at hp
-      obtain ⟨⟨hx, hy⟩, hxy⟩ := hp
-      dsimp only
-      rw [hminmax g', hg'g hx, hg'g hy, min_eq_left hxy.le, max_eq_right hxy.le]
-    · rintro ⟨t, t'⟩ hq
-      simp only [mem_filter, mem_product] at hq
-      obtain ⟨⟨ht, ht'⟩, htt'⟩ := hq
-      dsimp only
-      rw [hminmax g, hgg' ht, hgg' ht', min_eq_left htt'.le, max_eq_right htt'.le]
   rw [hL, h₁, h₂, ← sum_add_distrib]
   refine sum_congr rfl fun p hp ↦ ?_
   obtain ⟨i, j⟩ := p

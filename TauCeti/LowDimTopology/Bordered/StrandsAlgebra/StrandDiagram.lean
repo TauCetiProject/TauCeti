@@ -96,6 +96,17 @@ theorem toPEquiv_injective : Function.Injective (toPEquiv : StrandDiagram α →
 theorem le_of_mem (φ : StrandDiagram α) {i j : α} (h : j ∈ φ i) : i ≤ j :=
   φ.le_of_mem' h
 
+/-- Two strands of a diagram with the same end point start at the same point. -/
+theorem eq_of_mem_of_mem (φ : StrandDiagram α) {x y a : α} (hx : a ∈ φ x) (hy : a ∈ φ y) :
+    x = y :=
+  φ.toPEquiv.inj hx hy
+
+/-- Strands of a diagram starting at distinct points end at distinct points. -/
+theorem ne_of_mem_of_mem_of_ne (φ : StrandDiagram α) {x y a b : α} (ha : a ∈ φ x)
+    (hb : b ∈ φ y) (h : x ≠ y) : a ≠ b := by
+  rintro rfl
+  exact h (φ.eq_of_mem_of_mem ha hb)
+
 /-- The composite of two strand diagrams: first `φ`, then `ψ`. In the strands algebra it is the
 concatenation of the diagram of `φ` on the left with that of `ψ` on the right. -/
 protected def trans (φ ψ : StrandDiagram α) : StrandDiagram α where
@@ -250,9 +261,7 @@ theorem mem_inversions_iff_of_mem {φ : StrandDiagram α} {x y a b : α} (ha : a
 strands from `x` and `y` reverse their order. -/
 theorem min_max_mem_inversions_iff {φ : StrandDiagram α} {x y a b : α} (hxy : x ≠ y)
     (ha : a ∈ φ x) (hb : b ∈ φ y) : (min x y, max x y) ∈ φ.inversions ↔ (x < y ↔ b < a) := by
-  have hab : a ≠ b := by
-    rintro rfl
-    exact hxy (φ.toPEquiv.inj ha hb)
+  have hab : a ≠ b := φ.ne_of_mem_of_mem_of_ne ha hb hxy
   rcases lt_or_gt_of_ne hxy with h | h
   · simp [min_eq_left h.le, max_eq_right h.le, mem_inversions_iff_of_mem ha hb, h]
   · simp only [min_eq_right h.le, max_eq_left h.le, mem_inversions_iff_of_mem hb ha, h,
