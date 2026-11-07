@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Complex.BranchLogRoot
 public import Mathlib.Analysis.SpecialFunctions.Complex.Log
 public import TauCeti.Analysis.Normed.Module.FilledHull
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
@@ -100,6 +101,8 @@ source of the enclosure hypothesis `Conformal/Crosscut/Inside.lean` consumes.
   and its closure properties `TauCeti.HasContinuousLogOn.mul`, `.inv`, `.div`, `.mono`, `.congr`.
 * `TauCeti.hasContinuousLogOn_of_mapsTo_slitPlane` — a function landing in the slit plane has the
   principal logarithm.
+* `TauCeti.hasContinuousLogOn_of_isSimplyConnected` — a continuous zero-free function on an open
+  simply connected set has a continuous logarithm there.
 * `TauCeti.eq_of_isPreconnected_of_forall_exp_eq_one` — a preconnected set of logarithms of `1` is
   a single point.
 * `TauCeti.HasContinuousLogOn.union` — **gluing**: logarithms on two closed sets with preconnected
@@ -327,6 +330,17 @@ theorem HasContinuousLogOn.union_of_isOpen (hS : IsOpen S) (hT : IsOpen T)
     HasContinuousLogOn g (S ∪ T) := by
   obtain ⟨L, hLS, hLT, hL⟩ := h.exists_continuousOn_continuousOn hST h'
   exact hasContinuousLogOn_iff.mpr ⟨L, hLS.union_of_isOpen hLT hS hT, hL⟩
+
+/-- **A continuous nowhere-vanishing function on an open simply connected set has a continuous
+logarithm there.** This is Mathlib's `Complex.exists_continuousOn_eqOn_exp_comp` in the form of
+the predicate `HasContinuousLogOn`. -/
+theorem hasContinuousLogOn_of_isSimplyConnected [LocallyPathConnectedSpace X] {U : Set X}
+    (hUc : IsSimplyConnected U) (hUo : IsOpen U) {Φ : X → ℂ} (hΦc : ContinuousOn Φ U)
+    (hΦ0 : ∀ x ∈ U, Φ x ≠ 0) : HasContinuousLogOn Φ U := by
+  obtain ⟨h, hcont, heq⟩ := Complex.exists_continuousOn_eqOn_exp_comp hUc hUo hΦc
+    (by rintro ⟨z, hz, hz0⟩; exact hΦ0 z hz hz0)
+  exact hasContinuousLogOn_iff.mpr
+    ⟨h, hcont, fun z hz => by simpa only [Function.comp_apply] using heq hz⟩
 
 /-! ## The Borsuk map of a pair of points -/
 

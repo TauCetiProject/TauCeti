@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Complex.ContinuousLog.Circle
 import TauCeti.Topology.ConnectedComponents
 import TauCeti.Topology.Connected.LocallyPathConnected
-import Mathlib.Analysis.Complex.BranchLogRoot
 import Mathlib.Analysis.Complex.Tietze
 import Mathlib.Analysis.Convex.Contractible
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
@@ -133,17 +132,6 @@ variable {K : Set ℂ} {a b : ℂ}
 
 /-! ## Borsuk's separation theorem -/
 
-/-- A continuous nowhere-vanishing function on the plane has a continuous logarithm, since the plane
-is simply connected. -/
-theorem hasContinuousLogOn_univ_of_continuous {Φ : ℂ → ℂ} (hΦc : Continuous Φ)
-    (hΦ0 : ∀ z, Φ z ≠ 0) : HasContinuousLogOn Φ univ := by
-  have hUc : IsSimplyConnected (univ : Set ℂ) :=
-    (Homeomorph.Set.univ ℂ).toHomotopyEquiv.simplyConnectedSpace
-  obtain ⟨h, hcont, heq⟩ := Complex.exists_continuousOn_eqOn_exp_comp hUc isOpen_univ
-    hΦc.continuousOn (by rintro ⟨z, -, hz⟩; exact hΦ0 z hz)
-  exact hasContinuousLogOn_iff.mpr
-    ⟨h, hcont, fun z hz => by simpa only [Function.comp_apply] using heq hz⟩
-
 /-- The heart of `TauCeti.mem_connectedComponentIn_of_hasContinuousLogOn`, in the case where the
 component of the *first* point is bounded. The two points are then exchanged, and the Borsuk map
 inverted, to cover the other case. -/
@@ -199,7 +187,10 @@ private theorem not_hasContinuousLogOn_of_isBounded_connectedComponentIn (hK : I
       have h₂ : dist z a = R := mem_sphere.mp hz
       exact absurd h₂ h₁.ne
     rw [hΦdef, piecewise_eq_of_notMem _ _ _ hzcl]
-  have hΦlog := hasContinuousLogOn_univ_of_continuous hΦc hΦ0
+  have hUc : IsSimplyConnected (univ : Set ℂ) :=
+    (Homeomorph.Set.univ ℂ).toHomotopyEquiv.simplyConnectedSpace
+  have hΦlog := hasContinuousLogOn_of_isSimplyConnected hUc isOpen_univ hΦc.continuousOn
+    fun z _ ↦ hΦ0 z
   exact not_hasContinuousLogOn_sub_sphere hR.le a
     ((hΦlog.mono (subset_univ _)).congr hsphere)
 
