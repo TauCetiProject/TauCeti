@@ -52,7 +52,7 @@ theorem IsContactForm.exists_pos_period_le (hα : α.IsContactForm) :
   have hmove (x : M) : ∃ t, ϕ t x ≠ x := by
     by_contra h
     have hfix : ∀ t, ϕ t x = x := by simpa only [not_exists, not_not] using h
-    exact hα.reebVectorField_ne_zero x ((globalFlow_eq_self_iff hv hc x).mp hfix)
+    exact hα.reebVectorField_ne_zero x ((forall_globalFlow_eq_self_iff hv hc x).mp hfix)
   obtain ⟨ε, hε, hbound⟩ := ϕ.exists_pos_period_le_of_isCompact isCompact_univ
     (fun x _ ↦ hmove x)
   refine ⟨ε, hε, fun γ hγ T hT hperiod ↦ hbound (γ 0) (mem_univ _) T hT ?_⟩

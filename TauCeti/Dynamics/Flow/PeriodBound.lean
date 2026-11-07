@@ -68,12 +68,9 @@ theorem exists_pos_period_le_of_isCompact {K : Set X} (hK : IsCompact K)
   -- A finite family of positive local bounds admits a common positive lower bound.
   have hsmall : ∀ᶠ r : ℝ in 𝓝 0, ∀ x ∈ c, r < ε x :=
     c.eventually_all.mpr fun x _ ↦ eventually_lt_nhds (hε x)
-  obtain ⟨δ, hδ, hδsmall⟩ := Metric.mem_nhds_iff.mp hsmall
-  have hhalf : ∀ x ∈ c, δ / 2 < ε x :=
-    hδsmall (by simpa [Metric.mem_ball, Real.dist_eq, abs_of_pos (half_pos hδ)] using
-      half_lt_self hδ)
-  refine ⟨δ / 2, half_pos hδ, fun x hx T hT hfix ↦ ?_⟩
+  obtain ⟨δ, hδ, hδsmall⟩ := hsmall.exists_gt
+  refine ⟨δ, hδ, fun x hx T hT hfix ↦ ?_⟩
   obtain ⟨y, hy, hxy⟩ := mem_iUnion₂.mp (hc hx)
-  exact (hhalf y hy).le.trans (hbound y x hxy T hT hfix)
+  exact (hδsmall y hy).le.trans (hbound y x hxy T hT hfix)
 
 end Flow

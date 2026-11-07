@@ -35,6 +35,8 @@ boundaryless manifold is complete (`isCompleteVectorField_of_compactSpace`).
   (`TauCeti.isRegularValue_of_apply_globalFlow_eq_add`) the values it is translated through are
   regular.
 * `TauCeti.globalFlow_eq_of_isMIntegralCurve`: every integral curve is an orbit.
+* `TauCeti.forall_globalFlow_eq_self_iff`: a point is fixed at all times exactly when the field
+  vanishes there.
 * `TauCeti.contMDiff_globalFlow_uncurry`: for a complete `C^n` field, the flow is jointly `C^n` in
   time and space.
 * `TauCeti.mfderiv_globalFlow_apply_self`: the differential of the time-`t` map preserves the
@@ -195,7 +197,7 @@ theorem globalFlow_eq_of_isMIntegralCurve {γ : ℝ → M} (hγ : IsMIntegralCur
 
 This is not a simp lemma: `globalFlow_apply` already rewrites flow evaluations to the maximal
 integral curve. -/
-theorem globalFlow_eq_self_iff (x : M) :
+theorem forall_globalFlow_eq_self_iff (x : M) :
     (∀ t, globalFlow v hv hcomplete t x = x) ↔ v x = 0 := by
   constructor
   · intro h
