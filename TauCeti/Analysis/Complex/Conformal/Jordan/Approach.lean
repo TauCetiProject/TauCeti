@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.Conformal.Jordan.Domain
 import TauCeti.Analysis.Complex.Conformal.Caratheodory
 import TauCeti.Analysis.Complex.PlaneSeparation.Basic
 import TauCeti.Topology.JordanCurve.SmallArc
+import TauCeti.Topology.Frontier
 import TauCeti.Topology.Homeomorph.SetCongr
 
 /-!
@@ -67,20 +68,14 @@ variable {U : Set ℂ} {a : ℂ}
 
 /-- The connected component, in the complement of a set `F` containing the frontier of
 `U` and the sphere `sphere a r`, of a point of `U ∩ ball a r` outside `F` stays inside
-`U ∩ ball a r`: a preconnected set meeting a set and its complement meets its frontier. -/
+`U ∩ ball a r`. -/
 private theorem connectedComponentIn_compl_subset_inter_ball {x₀ : ℂ} {r : ℝ}
     (hr : 0 < r) {F : Set ℂ} (hF : frontier U ∪ sphere a r ⊆ F)
     (hx₀U : x₀ ∈ U) (hx₀r : x₀ ∈ ball a r) (hx₀F : x₀ ∈ Fᶜ) :
-    connectedComponentIn Fᶜ x₀ ⊆ U ∩ ball a r := by
-  have hCpre : IsPreconnected (connectedComponentIn Fᶜ x₀) := isPreconnected_connectedComponentIn
-  have hx₀C := mem_connectedComponentIn hx₀F
-  have key (s : Set ℂ) (hs : x₀ ∈ s) (hfr : frontier s ⊆ F) : connectedComponentIn Fᶜ x₀ ⊆ s := by
-    by_contra h
-    obtain ⟨p, hpC, hpf⟩ := hCpre.inter_frontier_nonempty ⟨x₀, hx₀C, hs⟩
-      (Set.not_subset.mp h)
-    exact connectedComponentIn_subset _ _ hpC (hfr hpf)
-  exact subset_inter (key U hx₀U fun z hz => hF (Or.inl hz))
-    (key _ hx₀r fun z hz => hF (Or.inr (by rwa [frontier_ball _ hr.ne'] at hz)))
+    connectedComponentIn Fᶜ x₀ ⊆ U ∩ ball a r :=
+  subset_inter (connectedComponentIn_subset_of_frontier_subset hx₀F hx₀U fun z hz => hF (Or.inl hz))
+    (connectedComponentIn_subset_of_frontier_subset hx₀F hx₀r fun z hz =>
+      hF (Or.inr (by rwa [frontier_ball _ hr.ne'] at hz)))
 
 /-- **Janiszewski step.**  Given an open arc `W` of the boundary through `a`,
 inside `ball a r`, with closed preconnected complement, the trace `U ∩ ball a δ`
