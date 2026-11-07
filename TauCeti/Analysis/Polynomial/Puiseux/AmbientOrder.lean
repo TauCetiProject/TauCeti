@@ -65,31 +65,7 @@ namespace TauCeti
 
 variable {n : ℕ} {ι : Type*} [Fintype ι]
 
-/-- Complexifying the real plane slice of `f` in direction `v` through a real point commutes with
-taking the plane order at a real point. -/
-private theorem orderAt_planeSlice_complexify {f : MvPolynomial (Fin (n + 1)) ℝ} {v : Fin n → ℝ}
-    {z : Fin n → ℂ} {y : Fin n → ℝ} (hz : z = fun i ↦ (y i : ℂ)) (t : ℝ) :
-    (MvPolynomial.aeval (Fin.cons (MvPolynomial.X 1)
-      (fun j ↦ MvPolynomial.C (z j) + MvPolynomial.C (v j : ℂ) * MvPolynomial.X 0) :
-        Fin (n + 1) → MvPolynomial (Fin 2) ℂ) (MvPolynomial.map Complex.ofRealHom f)).orderAt
-        ![0, (t : ℂ)] =
-      (MvPolynomial.aeval (Fin.cons (MvPolynomial.X 1)
-        (fun j ↦ MvPolynomial.C (y j) + MvPolynomial.C (v j) * MvPolynomial.X 0) :
-          Fin (n + 1) → MvPolynomial (Fin 2) ℝ) f).orderAt ![0, t] := by
-  have hPx : MvPolynomial.aeval (Fin.cons (MvPolynomial.X 1)
-      (fun j ↦ MvPolynomial.C (z j) + MvPolynomial.C (v j : ℂ) * MvPolynomial.X 0) :
-        Fin (n + 1) → MvPolynomial (Fin 2) ℂ) (MvPolynomial.map Complex.ofRealHom f) =
-      MvPolynomial.map Complex.ofRealHom
-        (MvPolynomial.aeval (Fin.cons (MvPolynomial.X 1)
-          (fun j ↦ MvPolynomial.C (y j) + MvPolynomial.C (v j) * MvPolynomial.X 0) :
-            Fin (n + 1) → MvPolynomial (Fin 2) ℝ) f) := by
-    rw [MvPolynomial.map_aeval_finCons_C_add_C_mul_X]
-    simp only [hz, Complex.ofRealHom_eq_coe]
-  have hpt : ![0, (t : ℂ)] = fun i ↦ Complex.ofRealHom (![0, t] i) := by
-    ext i
-    fin_cases i <;> simp
-  rw [hPx, hpt, MvPolynomial.orderAt_map Complex.ofRealHom.injective]
-
+omit [Fintype ι] in
 /-- Near `a`, a real root `θ` of the fibers of `p` is the value of a complex branch `r i` on the
 base, and only branches through the central value `θ a` are met. -/
 private theorem eventually_branch_of_root
@@ -99,7 +75,7 @@ private theorem eventually_branch_of_root
     (hθ : ContinuousAt θ a)
     (hroot : ∀ᶠ x in 𝓝 a, (p.map (MvPolynomial.eval (φ x))).IsRoot (θ x))
     (hreal : ∀ᶠ x in 𝓝 a, Φ (fun j ↦ (x j : ℂ)) = fun i ↦ (φ x i : ℂ))
-    (hr : ∀ i, AnalyticAt ℂ (r i) ((fun j ↦ (a j : ℂ)), 0))
+    (hr : ∀ i, ContinuousAt (r i) ((fun j ↦ (a j : ℂ)), 0))
     (hsplit : ∀ᶠ z in 𝓝 ((fun j ↦ (a j : ℂ)), (0 : ℂ)),
       p.map (MvPolynomial.eval₂Hom Complex.ofRealHom
         (Φ z.1 + z.2 ^ p.natDegree.factorial • (fun i ↦ (v i : ℂ)))) =
@@ -130,7 +106,7 @@ private theorem eventually_branch_of_root
     · exact .of_forall fun _ _ ↦ hi
     have hcont : Tendsto (fun x ↦ r i ((fun j ↦ (x j : ℂ)), 0) - (θ x : ℂ)) (𝓝 a)
         (𝓝 (r i ((fun j ↦ (a j : ℂ)), 0) - (θ a : ℂ))) :=
-      ((hr i).continuousAt.tendsto.comp hψ0).sub
+      ((hr i).tendsto.comp hψ0).sub
         (Complex.continuous_ofReal.continuousAt.tendsto.comp hθ)
     filter_upwards [hcont.eventually_ne (sub_ne_zero.2 hi)] with x hx hix
     exact absurd (sub_eq_zero.2 hix) hx
@@ -181,8 +157,13 @@ private theorem _root_.Polynomial.Monic.eventually_orderAt_root_eq_of_orderAt_di
         (fun j ↦ MvPolynomial.C (φ x j) + MvPolynomial.C (v j) * MvPolynomial.X 0) :
           Fin (n + 1) → MvPolynomial (Fin 2) ℝ) f).orderAt ![0, t] := by
     filter_upwards [hreal] with x hx t
-    exact orderAt_planeSlice_complexify hx t
-  obtain ⟨hbranch, hnear⟩ := eventually_branch_of_root hθ hroot hreal hr
+    have h := MvPolynomial.orderAt_map_aeval_finCons_C_add_C_mul_X Complex.ofRealHom.injective
+      f (φ x) v t
+    simp only [Complex.ofRealHom_eq_coe] at h
+    have hx' : Φ (ψ x) = fun i ↦ (φ x i : ℂ) := hx
+    simp only [P, hx']
+    exact h
+  obtain ⟨hbranch, hnear⟩ := eventually_branch_of_root hθ hroot hreal (fun i ↦ (hr i).continuousAt)
     (hsplit.mono fun z hz ↦ hz.1)
   obtain ⟨i₀, hi₀⟩ := hbranch.self_of_nhds
   filter_upwards [hPreal, hψ.eventually horder, hbranch, hnear] with x hx hox hbx hnx
