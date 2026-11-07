@@ -14,7 +14,7 @@ import Mathlib.Tactic.Positivity
 # A polynomial barrier dominates a bounded function
 
 If `r ≤ M` and `n` is larger than `M / ε`, then the barrier `ε * (c * (1 + n ^ 2))` with
-`c ≥ 1` exceeds `r`.
+`c ≥ 1` and `ε > 0` exceeds `r`.
 
 ## Main results
 

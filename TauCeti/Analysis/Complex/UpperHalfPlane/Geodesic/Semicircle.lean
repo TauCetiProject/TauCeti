@@ -158,6 +158,19 @@ theorem circleCenter_eq_of_normSq_eq {P Q : ℍ} {m : ℝ} (hPQ : P.re ≠ Q.re)
     Complex.ofReal_im, sub_zero, UpperHalfPlane.coe_re, UpperHalfPlane.coe_im] at h ⊢
   linear_combination -h
 
+/-- A point `B = i s` of the imaginary axis and a point `C` off that axis, both on the circle of
+centre `c` and radius `ρ`, where `ρ² = c² + s²`: the circle through `B` and `C` has centre `c`. -/
+theorem circleCenter_eq_of_re_eq_zero {B C : ℍ} {s c ρ : ℝ} (hB : (B : ℂ) = ⟨0, s⟩)
+    (hC : C.re ≠ 0) (hρ : ρ ^ 2 = c ^ 2 + s ^ 2) (hCc : Complex.normSq ((C : ℂ) - c) = ρ ^ 2) :
+    Complex.normSq ((B : ℂ) - c) = ρ ^ 2 ∧ circleCenter B C = c := by
+  have hBc : Complex.normSq ((B : ℂ) - c) = ρ ^ 2 := by
+    rw [hB, Complex.normSq_apply, hρ]
+    simp only [Complex.sub_re, Complex.sub_im, Complex.ofReal_re, Complex.ofReal_im]
+    ring
+  refine ⟨hBc, circleCenter_eq_of_normSq_eq ?_ (hBc.trans hCc.symm)⟩
+  rw [← UpperHalfPlane.coe_re, hB]
+  exact hC.symm
+
 end UpperHalfPlane
 
 namespace TauCeti.UpperHalfPlane

@@ -286,21 +286,36 @@ theorem gromovProkhorovEDist_triangle (μ : Measure X) (ν : Measure Y) (ρ : Me
 
 end Triangle
 
+/-- **Pushing forward along an isometry does not increase the distance.** This holds for the
+Gromov–Prokhorov distance to any measure, and no `OpensMeasurableSpace` assumption is needed on
+either space. -/
+theorem gromovProkhorovEDist_map_le {T : X → X'} (hT : Isometry T) (hTm : AEMeasurable T μ)
+    (ν : Measure Y) : gromovProkhorovEDist (μ.map T) ν ≤ gromovProkhorovEDist μ ν := by
+  refine le_of_forall_gt_imp_ge_of_dense fun δ hδ ↦ ?_
+  obtain ⟨f, hf, h₁, h₂⟩ := exists_isMetricCoupling_of_gromovProkhorovEDist_lt hδ
+  refine gromovProkhorovEDist_le_of_isMetricCoupling
+    ((IsMetricCoupling.of_isometry isometry_id hT).comp hf) (fun A' hA' ↦ ?_) fun C hC ↦ ?_
+  · obtain ⟨M, hMsub, hM, hMeq⟩ := (hTm.nullMeasurable hA').exists_measurable_subset_ae_eq
+    rw [Measure.map_apply_of_aemeasurable hTm hA', ← measure_congr hMeq]
+    refine (h₁ M hM).trans (add_le_add_left (measure_mono ?_) _)
+    rintro y ⟨x, hx, hxy⟩
+    exact ⟨T x, hMsub hx, (iInf_le _ x).trans_lt (by simpa using hxy)⟩
+  · refine (h₂ C hC).trans (add_le_add_left ((measure_mono ?_).trans
+      (Measure.le_map_apply hTm _)) _)
+    rintro x ⟨y, hy, hxy⟩
+    exact ⟨y, hy, (iInf_le _ x).trans_lt (by simpa using hxy)⟩
+
 /-- **Invariance under isometries.** Replacing a measure by its pushforward along an isometry does
 not change its Gromov–Prokhorov distance to any measure. -/
-theorem gromovProkhorovEDist_map_left [OpensMeasurableSpace X] [OpensMeasurableSpace X']
+theorem gromovProkhorovEDist_map_left [OpensMeasurableSpace X']
     {T : X → X'} (hT : Isometry T) (hTm : AEMeasurable T μ) (ν : Measure Y) :
     gromovProkhorovEDist (μ.map T) ν = gromovProkhorovEDist μ ν := by
-  have h₀ := gromovProkhorovEDist_map_eq_zero hT hTm
-  refine le_antisymm ?_ ?_
-  · calc gromovProkhorovEDist (μ.map T) ν
-        ≤ gromovProkhorovEDist (μ.map T) μ + gromovProkhorovEDist μ ν :=
-          gromovProkhorovEDist_triangle _ _ _
-      _ = gromovProkhorovEDist μ ν := by rw [gromovProkhorovEDist_comm, h₀, zero_add]
-  · calc gromovProkhorovEDist μ ν
-        ≤ gromovProkhorovEDist μ (μ.map T) + gromovProkhorovEDist (μ.map T) ν :=
-          gromovProkhorovEDist_triangle _ _ _
-      _ = gromovProkhorovEDist (μ.map T) ν := by rw [h₀, zero_add]
+  refine (gromovProkhorovEDist_map_le hT hTm ν).antisymm ?_
+  calc gromovProkhorovEDist μ ν
+      ≤ gromovProkhorovEDist μ (μ.map T) + gromovProkhorovEDist (μ.map T) ν :=
+        gromovProkhorovEDist_triangle _ _ _
+    _ = gromovProkhorovEDist (μ.map T) ν := by
+        rw [gromovProkhorovEDist_map_eq_zero hT hTm, zero_add]
 
 section Coupling
 
