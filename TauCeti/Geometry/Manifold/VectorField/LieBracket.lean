@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorField.LieBracket
+import Mathlib.Analysis.Calculus.Deriv.Inv
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
@@ -30,6 +31,8 @@ prerequisite for Deliverable A, Layer 1 of the Lie-groups roadmap.
   vector fields `y ↦ A y` and `y ↦ B y` is `x ↦ B (A x) - A (B x)`.
 * `mvfderiv_mlieBracket`: a differential sends the manifold bracket to the commutator of
   directional derivatives.
+* `mvfderiv_div_commutator_eq_zero`: the second derivatives of a scalar function `f` cancel in
+  the commutator of the differentials `df(U) / f`.
 * `TauCeti.eq_mlieBracket_of_mvfderiv_extChartAt`: tested against the extended chart at a point,
   this identity characterises the manifold bracket at that point.
 * `VectorField.lieBracketWithin_mpullbackWithin_extChartAt_symm`: at the chart centre, the flat
@@ -210,6 +213,42 @@ theorem mvfderiv_mlieBracket {f : M → F} {V W : ∀ x : M, TangentSpace I x} {
     (Set.mem_range_self (f := I) _) hWcoord hVcoord]
   rw [hcoordW, hcoordV]
   exact congrArg₂ (· - ·) houterW houterV
+
+/-- The second derivatives of a scalar function `f` cancel in the commutator of the logarithmic
+differentials: with `a U = df(U) / f`, the identity
+`a Y · a X + X (a Y) - (a X · a Y + Y (a X)) - a [X, Y] = 0` holds at a point `p` where `f` is
+`C²` and nonzero and the vector fields `X`, `Y` are differentiable. -/
+theorem mvfderiv_div_commutator_eq_zero [IsRCLikeNormedField 𝕜] {f : M → 𝕜}
+    (a : (Π x : M, TangentSpace I x) → M → 𝕜)
+    (ha : ∀ U, a U = fun x ↦ mvfderiv I f x (U x) / f x)
+    {X Y : Π x : M, TangentSpace I x} {p : M} (hf : CMDiffAt 2 f p)
+    (hX : MDiffAt (T% X) p) (hY : MDiffAt (T% Y) p)
+    (hdX : MDiffAt (fun x ↦ mvfderiv I f x (X x)) p)
+    (hdY : MDiffAt (fun x ↦ mvfderiv I f x (Y x)) p) (hp : f p ≠ 0) :
+    a Y p * a X p + mvfderiv I (a Y) p (X p) -
+      (a X p * a Y p + mvfderiv I (a X) p (Y p)) - a (mlieBracket I X Y) p = 0 := by
+  have hfd := hf.mdifferentiableAt (by simp)
+  -- The derivative of `a U` along `Z`, by the quotient rule.
+  have hda {U Z : Π x : M, TangentSpace I x}
+      (hdU : MDiffAt (fun x ↦ mvfderiv I f x (U x)) p) :
+      mvfderiv I (a U) p (Z p) =
+        (1 / f p) * mvfderiv I (fun x ↦ mvfderiv I f x (U x)) p (Z p) -
+          (mvfderiv I f p (U p) / f p ^ 2) * mvfderiv I f p (Z p) := by
+    have hinv : mvfderiv I (fun x ↦ (f x)⁻¹) p (Z p) =
+        -(f p ^ 2)⁻¹ * mvfderiv I f p (Z p) := by
+      have hd := TauCeti.mvfderiv_comp_apply_of_differentiableAt
+        (hasDerivAt_inv hp).differentiableAt hfd (Z p)
+      rw [(hasDerivAt_inv hp).hasFDerivAt.fderiv] at hd
+      simpa only [Function.comp_def, ContinuousLinearMap.toSpanSingleton_apply,
+        smul_eq_mul, mul_comm] using hd
+    simp only [ha, div_eq_mul_inv]
+    rw [mvfderiv_fun_mul (g := fun x ↦ (f x)⁻¹) hdU (hfd.inv hp)]
+    simp only [add_apply, smul_apply, smul_eq_mul, hinv]
+    ring
+  have hcomm := mvfderiv_mlieBracket hf (by simp) hX hY
+  rw [hda hdY, hda hdX]
+  simp only [ha, hcomm]
+  ring
 
 namespace TauCeti
 

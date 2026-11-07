@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Tensor
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.WarpedProd
-import Mathlib.Analysis.Calculus.Deriv.Inv
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
@@ -130,42 +129,6 @@ private theorem IsWarpedProduct.curvatureOperator_vertical_vertical_horizontal
     map_zero, Prod.smul_mk, Prod.mk_sub_mk, smul_sub, mlieBracket_self]
   simp only [a, sub_self, Prod.mk_zero_zero]
 
-omit [IsManifold I ∞ M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] in
-/-- The scalar commutator for the horizontal curvature: with `a U = df(U) / f`, the second
-derivatives of `f` cancel in `a Y · a X + X (a Y) - (a X · a Y + Y (a X)) - a [X, Y]`. -/
-private theorem scalar_commutator_eq_zero [IsManifold I (minSmoothness ℝ 2) M]
-    (hf : ContMDiff I 𝓘(ℝ) 2 f) (a : (Π x : M, TangentSpace I x) → M → ℝ)
-    (ha : ∀ U, a U = fun x ↦ mvfderiv I f x (U x) / f x)
-    {X Y : Π x : M, TangentSpace I x} (hX : CMDiff ∞ (T% X)) (hY : CMDiff ∞ (T% Y)) {p : M}
-    (hdX : MDiffAt (fun x ↦ mvfderiv I f x (X x)) p)
-    (hdY : MDiffAt (fun x ↦ mvfderiv I f x (Y x)) p) (hp : f p ≠ 0) :
-    a Y p * a X p + mvfderiv I (a Y) p (X p) -
-      (a X p * a Y p + mvfderiv I (a X) p (Y p)) - a (mlieBracket I X Y) p = 0 := by
-  have hfd := hf.mdifferentiable (by simp)
-  -- The derivative of `a U` along `Z`, by the quotient rule.
-  have hda {U Z : Π x : M, TangentSpace I x}
-      (hdU : MDiffAt (fun x ↦ mvfderiv I f x (U x)) p) :
-      mvfderiv I (a U) p (Z p) =
-        (1 / f p) * mvfderiv I (fun x ↦ mvfderiv I f x (U x)) p (Z p) -
-          (mvfderiv I f p (U p) / f p ^ 2) * mvfderiv I f p (Z p) := by
-    have hinv : mvfderiv I (fun x ↦ (f x)⁻¹) p (Z p) =
-        -(f p ^ 2)⁻¹ * mvfderiv I f p (Z p) := by
-      have hd := mvfderiv_comp_apply_of_differentiableAt
-        (hasDerivAt_inv hp).differentiableAt (hfd p) (Z p)
-      rw [(hasDerivAt_inv hp).hasFDerivAt.fderiv] at hd
-      simpa only [Function.comp_def, ContinuousLinearMap.toSpanSingleton_apply,
-        smul_eq_mul, mul_comm] using hd
-    simp only [ha, div_eq_mul_inv]
-    rw [mvfderiv_fun_mul (g := fun x ↦ (f x)⁻¹) hdU ((hfd p).inv hp)]
-    simp only [add_apply, smul_apply, smul_eq_mul, hinv]
-    ring
-  have hcomm := mvfderiv_mlieBracket (hf p) (by simp)
-    (hX.mdifferentiableAt (by simp)) (hY.mdifferentiableAt (by simp))
-  rw [hda hdY, hda hdX]
-  simp only [ha, hcomm]
-  ring
-
 private theorem IsWarpedProduct.curvatureOperator_horizontal_horizontal_vertical
     (h : IsWarpedProduct I J N f) (hf : ContMDiff I 𝓘(ℝ) 2 f)
     {X Y : Π x : M, TangentSpace I x} {V : Π y : N, TangentSpace J y}
@@ -206,7 +169,8 @@ private theorem IsWarpedProduct.curvatureOperator_horizontal_horizontal_vertical
     simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply,
       mvfderiv_comp_fst_apply, prodVectorField_fst, Function.comp_apply, hfirst,
       smul_smul, add_smul]
-  have hc := scalar_commutator_eq_zero hf a (fun _ ↦ rfl) hX hY (hdU hX) (hdU hY) hp
+  have hc := mvfderiv_div_commutator_eq_zero a (fun _ ↦ rfl) (hf p.1)
+    (hX.mdifferentiableAt (by simp)) (hY.mdifferentiableAt (by simp)) (hdU hX) (hdU hY) hp
   have hfirst' (U : Π x : M, TangentSpace I x) :
       (fun q ↦ leviCivitaConnection (I.prod J) (M × N) (prodVectorField (I := I) 0 V) q
         (prodVectorField (J := J) U 0 q)) =
