@@ -12,7 +12,7 @@ public import TauCeti.FieldTheory.RatFunc.Automorphism
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.CenterFinTwo
 -- Non-public: finiteness and order of `PGL₂` over a finite field, read through
 -- `RatFunc.pglEquivAlgEquiv` in the proofs only.
-import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ProjGenLinGroup
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ProjGenLinGroup.Card
 
 /-!
 # Linear fractional transformations of the rational function field

@@ -16,6 +16,9 @@ The total-letter-degree pieces of the coaugmented tensor coalgebra form an inter
 sum. Thus every tensor word has a unique finite decomposition by cohomological degree,
 independently of its decomposition by tensor length. The empty word has degree zero.
 
+Concatenation adds total degrees, so the pieces make the tensor words a graded monoid for their
+concatenation product.
+
 `TensorWords.grading` uses the existing `TensorWords.gradedPiece` submodules. Its Koszul
 twist is the letterwise extension of the twist of the generating module. This identifies
 the sign in the coalgebra coderivation equation with the sign of the total grading, and
@@ -128,6 +131,31 @@ theorem one_mem_gradedPiece (G : InternalGrading R M) :
   rw [one_eq_of_zero]
   simpa using mem_gradedPiece_of_tprod G (fun i : Fin 0 ↦ i.elim0)
     (fun i : Fin 0 ↦ i.elim0) (fun i ↦ i.elim0)
+
+/-- Concatenation of tensor words adds total letter degrees. -/
+theorem mul_mem_gradedPiece (G : InternalGrading R M) {p q : ℤ} {u v : TensorWords R M}
+    (hu : u ∈ gradedPiece G p) (hv : v ∈ gradedPiece G q) : u * v ∈ gradedPiece G (p + q) := by
+  refine gradedPiece_induction (motive := fun u ↦ u * v ∈ gradedPiece G (p + q)) hu ?_
+    (by simp) (fun a b _ _ ha hb ↦ by simpa only [add_mul] using add_mem ha hb)
+    (fun r a _ ha ↦ by simpa only [smul_mul_assoc] using Submodule.smul_mem _ r ha)
+  intro l d x hx hd
+  refine gradedPiece_induction
+    (motive := fun v ↦ of R M l (PiTensorProduct.tprod R x) * v ∈ gradedPiece G (p + q)) hv ?_
+    (by simp) (fun a b _ _ ha hb ↦ by simpa only [mul_add] using add_mem ha hb)
+    (fun r a _ ha ↦ by simpa only [mul_smul_comm] using Submodule.smul_mem _ r ha)
+  intro n e y hy he
+  have hsum : ∑ i, Fin.append d e i = p + q := by
+    simp [Fin.sum_univ_add, hd, he]
+  rw [of_tprod_mul_of_tprod, ← hsum]
+  refine mem_gradedPiece_of_tprod G _ _ fun i ↦ ?_
+  refine Fin.addCases (fun i ↦ ?_) (fun i ↦ ?_) i
+  · simpa only [Fin.append_left] using hx i
+  · simpa only [Fin.append_right] using hy i
+
+/-- The concatenation product of tensor words is graded by total letter degree. -/
+instance (G : InternalGrading R M) : SetLike.GradedMonoid (gradedPiece G) where
+  one_mem := one_mem_gradedPiece G
+  mul_mem _ _ _ _ := mul_mem_gradedPiece G
 
 /-- The counit is supported in total cohomological degree zero. -/
 theorem counit_eq_zero_of_mem_gradedPiece (G : InternalGrading R M) {p : ℤ}
