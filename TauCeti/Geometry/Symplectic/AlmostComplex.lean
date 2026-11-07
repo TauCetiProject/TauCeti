@@ -47,6 +47,8 @@ on tangent fibers rather than restating the linear algebra.
   `TauCeti.AlmostComplexStructure.bilinForm_apply_apply_self_eq_zero`: a bilinear form preserved
   by `J` satisfies `g (J v, w) = -g (v, J w)`, and `g (v, J v) = 0` when it is symmetric.
 * `TauCeti.AlmostComplexStructure.restrict`: the restriction of `J` to a `J`-invariant subspace.
+* `TauCeti.IsComplexLinearMap.restrict`: a complex-linear map preserving a `J`-invariant subspace
+  restricts to a complex-linear map of the restricted structure.
 * `TauCeti.IsComplexLinearMap.apply_apply_eq_of_apply_eq`: a complex-linear map acting on `v` by
   `a + b i` acts on `J v` by the same number.
 * `TauCeti.SymplecticForm.sq_add_sq_eq_one_of_apply_eq`: complex-linear symplectic maps rotate
@@ -510,6 +512,15 @@ lemma IsComplexLinearMap.comp {J : AlmostComplexStructure V} {J' : AlmostComplex
     (hG : IsComplexLinearMap J' J'' G) (hF : IsComplexLinearMap J J' F) :
     IsComplexLinearMap J J'' (G.comp F) :=
   IsComplexLinear.comp hG hF
+
+/-- A complex-linear map preserving a `J`-invariant submodule restricts to a complex-linear map of
+the restricted complex structure. -/
+lemma IsComplexLinearMap.restrict {J : AlmostComplexStructure V} {f : V →ₗ[ℝ] V}
+    (hfJ : IsComplexLinearMap J J f) {p : Submodule ℝ V} (hJp : ∀ x ∈ p, J x ∈ p)
+    (hfp : ∀ x ∈ p, f x ∈ p) :
+    IsComplexLinearMap (J.restrict p hJp) (J.restrict p hJp) (f.restrict hfp) :=
+  (isComplexLinearMap_iff_apply _ _ _).2 fun x ↦
+    Subtype.ext (by simp [(isComplexLinearMap_iff_apply _ _ _).1 hfJ])
 
 /-- An almost complex structure is complex-linear as a map from its module to itself. -/
 @[simp]
