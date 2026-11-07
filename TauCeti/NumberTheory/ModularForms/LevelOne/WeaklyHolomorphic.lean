@@ -41,9 +41,9 @@ constant term stay in the image of `R` because those of `jᴺ` are integers.
 
 ## Main results
 
-* `TauCeti.ModularForm.laurentQExpansion_aeval_j`: the Laurent `q`-expansion of `P(j)` is `P`
+* `Polynomial.laurentQExpansion_aeval_j`: the Laurent `q`-expansion of `P(j)` is `P`
   evaluated at the Laurent `q`-expansion of `j`.
-* `TauCeti.ModularForm.laurentQExpansion_aeval_j_coeff_mem`: the Laurent `q`-coefficients of
+* `Polynomial.laurentQExpansion_aeval_j_coeff_mem`: the Laurent `q`-coefficients of
   `P(j)` lie in the image of `R`.
 * `TauCeti.ModularForm.exists_natDegree_le_and_aeval_j_eq`: a weakly holomorphic modular function
   with a pole of order at most `N` at `i∞` and principal part and constant term in the image of
@@ -68,17 +68,11 @@ public section
 open Polynomial UpperHalfPlane Filter Topology
 open scoped Manifold MatrixGroups
 
-namespace TauCeti.ModularForm
-
 local notation "𝕢" => Function.Periodic.qParam
 
 variable {R : Type*} [CommRing R] [Algebra R ℂ]
 
-/-! ### Polynomials in `j` -/
-
-/-- A polynomial in `j` is holomorphic on the upper half-plane. -/
-theorem mdifferentiable_aeval_j (P : R[X]) : MDiff fun τ : ℍ ↦ aeval (j τ) P :=
-  P.differentiable_aeval.mdifferentiable.comp j_mdifferentiable
+namespace TauCeti.ModularForm
 
 private theorem aeval_j_add (p q : R[X]) :
     (fun τ : ℍ ↦ aeval (j τ) (p + q)) = (fun τ ↦ aeval (j τ) p) + fun τ ↦ aeval (j τ) q := by
@@ -89,6 +83,36 @@ private theorem aeval_j_monomial (n : ℕ) (a : R) :
     (fun τ : ℍ ↦ aeval (j τ) (monomial n a)) = (fun _ ↦ algebraMap R ℂ a) * j ^ n := by
   ext τ
   simp [aeval_monomial]
+
+/-- Evaluating `C a * Xᵏ` at a Laurent series `L`, with `a` mapped to a constant Laurent series,
+gives the coefficients of `Lᵏ` scaled by `a`. -/
+private theorem coeff_eval₂_C_mul_X_pow (L : LaurentSeries ℂ) (a : R) (k : ℕ) (n : ℤ) :
+    (eval₂ (HahnSeries.C.comp (algebraMap R ℂ)) L (C a * X ^ k)).coeff n =
+      algebraMap R ℂ a * (L ^ k).coeff n := by
+  simp [Algebra.smul_def]
+
+/-- The Laurent `q`-coefficients of the powers of `j` are integers. -/
+private theorem exists_laurentQExpansion_j_pow_coeff_eq_intCast (k : ℕ) (n : ℤ) :
+    ∃ m : ℤ, (UpperHalfPlane.laurentQExpansion 1 j ^ k).coeff n = m := by
+  have hj : UpperHalfPlane.laurentQExpansion 1 j ∈
+      (HahnSeries.mapRingHom (Int.castRingHom ℂ) : LaurentSeries ℤ →+* LaurentSeries ℂ).rangeS :=
+    HahnSeries.mem_map_rangeS.mpr fun g ↦ by
+      obtain ⟨m, hm⟩ := exists_laurentQExpansion_j_coeff_eq_intCast g
+      exact ⟨m, hm.symm⟩
+  obtain ⟨m, hm⟩ := HahnSeries.mem_map_rangeS.mp (pow_mem hj k) n
+  exact ⟨m, hm.symm⟩
+
+end TauCeti.ModularForm
+
+/-! ### Polynomials in `j` -/
+
+namespace Polynomial
+
+open TauCeti TauCeti.ModularForm
+
+/-- A polynomial in `j` is holomorphic on the upper half-plane. -/
+theorem mdifferentiable_aeval_j (P : R[X]) : MDiff fun τ : ℍ ↦ aeval (j τ) P :=
+  P.differentiable_aeval.mdifferentiable.comp j_mdifferentiable
 
 /-- The cusp function of a polynomial in `j` is meromorphic at `q = 0`. -/
 theorem meromorphicAt_cuspFunction_aeval_j (P : R[X]) :
@@ -111,25 +135,14 @@ theorem laurentQExpansion_aeval_j (P : R[X]) :
   induction P using Polynomial.induction_on' with
   | add p q hp hq =>
     rw [aeval_j_add, UpperHalfPlane.laurentQExpansion_add one_pos
-      (meromorphicAt_cuspFunction_aeval_j p) (meromorphicAt_cuspFunction_aeval_j q), hp, hq,
-      eval₂_add]
+      (meromorphicAt_cuspFunction_aeval_j p) (meromorphicAt_cuspFunction_aeval_j q)]
+    simp [hp, hq]
   | monomial n a =>
     rw [aeval_j_monomial, UpperHalfPlane.laurentQExpansion_mul one_pos
       (UpperHalfPlane.meromorphicAt_cuspFunction_const _)
       (UpperHalfPlane.meromorphicAt_cuspFunction_pow meromorphicAt_cuspFunction_j n),
-      UpperHalfPlane.laurentQExpansion_pow one_pos meromorphicAt_cuspFunction_j,
-      UpperHalfPlane.laurentQExpansion_const, eval₂_monomial, RingHom.comp_apply]
-
-/-- The Laurent `q`-coefficients of the powers of `j` are integers. -/
-private theorem exists_laurentQExpansion_j_pow_coeff_eq_intCast (k : ℕ) (n : ℤ) :
-    ∃ m : ℤ, (UpperHalfPlane.laurentQExpansion 1 j ^ k).coeff n = m := by
-  have hj : UpperHalfPlane.laurentQExpansion 1 j ∈
-      (HahnSeries.mapRingHom (Int.castRingHom ℂ) : LaurentSeries ℤ →+* LaurentSeries ℂ).rangeS :=
-    HahnSeries.mem_map_rangeS.mpr fun g ↦ by
-      obtain ⟨m, hm⟩ := exists_laurentQExpansion_j_coeff_eq_intCast g
-      exact ⟨m, hm.symm⟩
-  obtain ⟨m, hm⟩ := HahnSeries.mem_map_rangeS.mp (pow_mem hj k) n
-  exact ⟨m, hm.symm⟩
+      UpperHalfPlane.laurentQExpansion_pow one_pos meromorphicAt_cuspFunction_j]
+    simp [UpperHalfPlane.laurentQExpansion_const]
 
 /-- **The Laurent `q`-coefficients of a polynomial in `j` over `R` lie in the image of `R`**, as
 those of `j` are integers. -/
@@ -143,9 +156,12 @@ theorem laurentQExpansion_aeval_j_coeff_mem (P : R[X]) (n : ℤ) :
     exact add_mem hp hq
   | monomial k a =>
     obtain ⟨m, hm⟩ := exists_laurentQExpansion_j_pow_coeff_eq_intCast k n
-    rw [eval₂_monomial, RingHom.comp_apply, HahnSeries.C_mul_eq_smul, HahnSeries.coeff_smul, hm,
-      smul_eq_mul]
+    rw [← C_mul_X_pow_eq_monomial, coeff_eval₂_C_mul_X_pow, hm]
     exact mul_mem ⟨a, rfl⟩ ⟨m, map_intCast _ m⟩
+
+end Polynomial
+
+namespace TauCeti.ModularForm
 
 /-! ### The leading term of `jᴺ` -/
 
@@ -154,9 +170,8 @@ private theorem laurentQExpansion_j_pow_coeff (N : ℕ) (n : ℤ) :
     (UpperHalfPlane.laurentQExpansion 1 j ^ N).coeff n =
       if n + N < 0 then 0
       else ((qExpansion 1 fun τ : ℍ ↦ 𝕢 1 τ * j τ) ^ N).coeff (n + N).natAbs := by
-  rw [laurentQExpansion_j, mul_pow, HahnSeries.single_pow, one_pow, ← map_pow,
-    HahnSeries.coeff_single_mul, one_mul, PowerSeries.coeff_coe]
-  simp [sub_eq_add_neg]
+  simp [laurentQExpansion_j, mul_pow, HahnSeries.single_pow, HahnSeries.coeff_single_mul,
+    ← map_pow, PowerSeries.coeff_coe, sub_eq_add_neg]
 
 /-- The Laurent `q`-expansion of `jᴺ` vanishes below `q⁻ᴺ`. -/
 private theorem laurentQExpansion_j_pow_coeff_of_lt (N : ℕ) {n : ℤ} (hn : n < -N) :
@@ -166,10 +181,9 @@ private theorem laurentQExpansion_j_pow_coeff_of_lt (N : ℕ) {n : ℤ} (hn : n 
 /-- The leading Laurent `q`-coefficient of `jᴺ` is `1`, the coefficient of `q⁻ᴺ`. -/
 private theorem laurentQExpansion_j_pow_coeff_neg (N : ℕ) :
     (UpperHalfPlane.laurentQExpansion 1 j ^ N).coeff (-N) = 1 := by
-  rw [laurentQExpansion_j_pow_coeff, neg_add_cancel]
-  simp only [lt_self_iff_false, ↓reduceIte, Int.natAbs_zero]
-  rw [PowerSeries.coeff_zero_eq_constantCoeff_apply, map_pow,
-    ← PowerSeries.coeff_zero_eq_constantCoeff_apply, qExpansion_qParam_mul_j_coeff_zero, one_pow]
+  have h := qExpansion_qParam_mul_j_coeff_zero
+  rw [PowerSeries.coeff_zero_eq_constantCoeff_apply] at h
+  simp [laurentQExpansion_j_pow_coeff, PowerSeries.coeff_zero_eq_constantCoeff_apply, h]
 
 /-! ### Weakly holomorphic modular functions -/
 
@@ -218,9 +232,7 @@ theorem exists_natDegree_le_and_aeval_j_eq {f : ℍ → ℂ} (hf : MDiff f)
         (UpperHalfPlane.laurentQExpansion 1 f).coeff n -
           algebraMap R ℂ c * (UpperHalfPlane.laurentQExpansion 1 j ^ (N + 1)).coeff n := by
       rw [UpperHalfPlane.laurentQExpansion_sub one_pos hmer (meromorphicAt_cuspFunction_aeval_j Q),
-        laurentQExpansion_aeval_j, HahnSeries.coeff_sub]
-      simp only [Q, eval₂_mul, eval₂_C, eval₂_X_pow, RingHom.comp_apply, HahnSeries.C_mul_eq_smul,
-        HahnSeries.coeff_smul, smul_eq_mul]
+        laurentQExpansion_aeval_j, HahnSeries.coeff_sub, coeff_eval₂_C_mul_X_pow]
     have hfN := (HahnSeries.le_orderTop_iff_forall.mp
       ((UpperHalfPlane.orderTop_laurentQExpansion one_pos hmer).symm ▸ hN))
     have hgN : ((-N : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt (cuspFunction 1 g) 0 := by
