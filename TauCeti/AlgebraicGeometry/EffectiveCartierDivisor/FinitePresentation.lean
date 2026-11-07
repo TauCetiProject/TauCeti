@@ -39,11 +39,11 @@ variable {X S : Scheme.{u}} {I : X.IdealSheafData}
 an arbitrary ambient scheme. -/
 theorem locallyOfFinitePresentation_subschemeι_of_isEffectiveCartier (hI : I.IsEffectiveCartier) :
     LocallyOfFinitePresentation I.subschemeι := by
-  apply locallyOfFinitePresentation_subschemeι_iff_exists_fg.mpr
+  apply IsClosedImmersion.locallyOfFinitePresentation_iff_exists_fg.mpr
   intro x
   obtain ⟨U, hx, a, -, hUa⟩ := (Scheme.IdealSheafData.isEffectiveCartier_iff I).mp hI x
   refine ⟨U, hx, ?_⟩
-  rw [hUa]
+  rw [I.ker_subschemeι, hUa]
   exact Submodule.fg_span_singleton a
 
 /-- An effective Cartier divisor on a scheme locally of finite presentation over `S` is
