@@ -24,8 +24,10 @@ the Floer energy of `u` for `K` is
 `E(u) = ∫ u^* ω - ∫ R_K(u)`
 
 (`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_cappedPerturbation`), for a map into
-a manifold with a nondegenerate two-form. Here `∫ u^* ω` is the symplectic area of the sphere,
-the topological energy `ω(A)` of its class `A`, and `R_K` is the curvature of the perturbation.
+a manifold with a nondegenerate two-form. Here `∫ u^* ω` is the symplectic area of the map `u`,
+and `R_K` is the curvature of the perturbation. When `ω` is closed and `u` extends to the sphere,
+the area is the topological energy `ω(A)` of the class `A` of the extension; the results below
+assume neither.
 Unlike the energy identity on the pair of pants
 (`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Action`), no end actions appear: the domain is
 closed. The identity holds along the whole comparison family
@@ -36,8 +38,9 @@ unperturbed problem on the three-pole sphere
 
 For a solution of the Floer equation `(du - X_K)^{0,1} = 0` with tame almost complex structures
 the energy is nonnegative, so `∫ R_K(u) ≤ ∫ u^* ω`
-(`SmoothTwoForm.IsNondegenerate.integral_hamiltonianCurvature_cappedPerturbation_le`): a class `A`
-whose area is below the integrated curvature carries no solution.
+(`SmoothTwoForm.IsNondegenerate.integral_hamiltonianCurvature_cappedPerturbation_le`): a map whose
+area is below its integrated curvature is not a solution. For closed `ω` and a solution extending
+to the sphere in the class `A`, the bound reads `∫ R_K(u) ≤ ω(A)`.
 
 For a symplectic vector space target the integrated curvature of `K_R`, `R ≥ 0`, is at most
 `2 (B₀ + B₁ + B_∞)` for bounds `|H_q| ≤ B_q` of the end Hamiltonians
@@ -150,7 +153,7 @@ theorem floerEnergyDensity_cappedComparisonPerturbation_zero (ω : SmoothTwoForm
         u z =
       SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
         (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) := by
-  simp [floerEnergyDensity_def]
+  simp
 
 /-- **The area of a solution bounds its integrated curvature.** If `u` solves the Floer equation
 `(du - X_K)^{0,1} = 0` for the capped perturbation, with almost complex structures `J z` tamed by

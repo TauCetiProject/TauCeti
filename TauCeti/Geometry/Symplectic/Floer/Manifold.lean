@@ -197,6 +197,15 @@ theorem floerEnergyDensity_def (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → 
         (ω.perturbedMFDeriv Ks Kt u z stdComplexLineImag) :=
   (rfl)
 
+/-- For the zero perturbation the Floer energy density is the symplectic area density
+`ω(∂_s u, ∂_t u)`. -/
+@[simp]
+theorem floerEnergyDensity_zero (ω : SmoothTwoForm I M) (u : ℝ × ℝ → M) (z : ℝ × ℝ) :
+    ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ _ ↦ 0) u z =
+      SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) := by
+  simp [floerEnergyDensity_def]
+
 variable {ω : SmoothTwoForm I M} {Ks Kt : ℝ × ℝ → M → ℝ}
   {u : ℝ × ℝ → M} {z : ℝ × ℝ}
 
