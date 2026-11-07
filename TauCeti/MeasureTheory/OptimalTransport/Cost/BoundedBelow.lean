@@ -324,17 +324,15 @@ private theorem lintegral_residual_add_lintegral_eq
         (∫⁻ y, ENNReal.ofReal (h.snd y - k.snd y) ∂ν) =
       (∫⁻ z, k.residual z ∂π) + (∫⁻ x, ENNReal.ofReal (-(h.fst x - k.fst x)) ∂μ) +
         (∫⁻ y, ENNReal.ofReal (-(h.snd y - k.snd y)) ∂ν) := by
-  let fx : X → ℝ := fun x ↦ h.fst x - k.fst x
-  let fy : Y → ℝ := fun y ↦ h.snd y - k.snd y
-  have hfx : Integrable fx μ := h.integrable_fst.sub k.integrable_fst
-  have hfy : Integrable fy ν := h.integrable_snd.sub k.integrable_snd
-  have hfxm : AEMeasurable (fun x ↦ ENNReal.ofReal (fx x)) μ :=
+  have hfx : Integrable (fun x ↦ h.fst x - k.fst x) μ := h.integrable_fst.sub k.integrable_fst
+  have hfy : Integrable (fun y ↦ h.snd y - k.snd y) ν := h.integrable_snd.sub k.integrable_snd
+  have hfxm : AEMeasurable (fun x ↦ ENNReal.ofReal (h.fst x - k.fst x)) μ :=
     hfx.aestronglyMeasurable.aemeasurable.ennreal_ofReal
-  have hfym : AEMeasurable (fun y ↦ ENNReal.ofReal (fy y)) ν :=
+  have hfym : AEMeasurable (fun y ↦ ENNReal.ofReal (h.snd y - k.snd y)) ν :=
     hfy.aestronglyMeasurable.aemeasurable.ennreal_ofReal
-  have hnfxm : AEMeasurable (fun x ↦ ENNReal.ofReal (-fx x)) μ :=
+  have hnfxm : AEMeasurable (fun x ↦ ENNReal.ofReal (-(h.fst x - k.fst x))) μ :=
     hfx.neg.aestronglyMeasurable.aemeasurable.ennreal_ofReal
-  have hnfym : AEMeasurable (fun y ↦ ENNReal.ofReal (-fy y)) ν :=
+  have hnfym : AEMeasurable (fun y ↦ ENNReal.ofReal (-(h.snd y - k.snd y))) ν :=
     hfy.neg.aestronglyMeasurable.aemeasurable.ennreal_ofReal
   -- Pull all four parts back to the coupling through its two fixed marginals.
   have hpxmap := hπ.lintegral_comp_fst hfxm
@@ -343,53 +341,22 @@ private theorem lintegral_residual_add_lintegral_eq
   have hnymap := hπ.lintegral_comp_snd hnfym
   let mpfst : MeasurePreserving Prod.fst π μ := ⟨measurable_fst, hπ.fst_eq⟩
   let mpsnd : MeasurePreserving Prod.snd π ν := ⟨measurable_snd, hπ.snd_eq⟩
-  have hfxmp : AEMeasurable (fun z : X × Y ↦ ENNReal.ofReal (fx z.1)) π :=
+  have hfxmp : AEMeasurable (fun z : X × Y ↦ ENNReal.ofReal (h.fst z.1 - k.fst z.1)) π :=
     hfxm.comp_quasiMeasurePreserving mpfst.quasiMeasurePreserving
-  have hfymp : AEMeasurable (fun z : X × Y ↦ ENNReal.ofReal (fy z.2)) π :=
+  have hfymp : AEMeasurable (fun z : X × Y ↦ ENNReal.ofReal (h.snd z.2 - k.snd z.2)) π :=
     hfym.comp_quasiMeasurePreserving mpsnd.quasiMeasurePreserving
-  have hnfxmp : AEMeasurable (fun z : X × Y ↦ ENNReal.ofReal (-fx z.1)) π :=
+  have hnfxmp : AEMeasurable (fun z : X × Y ↦ ENNReal.ofReal (-(h.fst z.1 - k.fst z.1))) π :=
     hnfxm.comp_quasiMeasurePreserving mpfst.quasiMeasurePreserving
-  have hnfymp : AEMeasurable (fun z : X × Y ↦ ENNReal.ofReal (-fy z.2)) π :=
+  have hnfymp : AEMeasurable (fun z : X × Y ↦ ENNReal.ofReal (-(h.snd z.2 - k.snd z.2))) π :=
     hnfym.comp_quasiMeasurePreserving mpsnd.quasiMeasurePreserving
-  -- Integrate the pointwise residual balance after adjoining those four parts. The goal states
-  -- the marginal integrals with `h.fst x - k.fst x`; `change` folds them into the `let`-bound
-  -- `fx`/`fy` (definitionally equal), which is the form `hpxmap`, ..., `hnymap` use.
-  change (∫⁻ z, h.residual z ∂π) + (∫⁻ x, ENNReal.ofReal (fx x) ∂μ) +
-      (∫⁻ y, ENNReal.ofReal (fy y) ∂ν) = (∫⁻ z, k.residual z ∂π) +
-      (∫⁻ x, ENNReal.ofReal (-fx x) ∂μ) + (∫⁻ y, ENNReal.ofReal (-fy y) ∂ν)
+  -- Integrate the pointwise residual balance after adjoining those four parts.
   rw [← hpxmap, ← hpymap, ← hnxmap, ← hnymap,
     ← lintegral_add_right' _ hfxmp, ← lintegral_add_right' _ hfymp,
     ← lintegral_add_right' _ hnfxmp, ← lintegral_add_right' _ hnfymp]
   apply lintegral_congr
   intro z
-  simpa [fx, fy, sub_eq_add_neg, add_assoc, add_left_comm, add_comm] using
+  simpa [sub_eq_add_neg, add_assoc, add_left_comm, add_comm] using
     residual_add_lowerBoundParts h k z
-
-/-- Recombining the positive and negative parts of the change of normalization with the finite
-marginal integrals, in `EReal`. -/
-private theorem coe_add_add_eq_of_add_add_eq {A B px nx py ny : ℝ≥0∞}
-    (hpx : px ≠ ⊤) (hnx : nx ≠ ⊤) (hpy : py ≠ ⊤) (hny : ny ≠ ⊤)
-    (hres : A + px + py = B + nx + ny) {a b a' b' : ℝ}
-    (hdiff : px.toReal - nx.toReal + (py.toReal - ny.toReal) = a + b - (a' + b')) :
-    (A : EReal) + (a : EReal) + (b : EReal) = (B : EReal) + (a' : EReal) + (b' : EReal) := by
-  have hres' : (A : EReal) + ((px.toReal + py.toReal : ℝ) : EReal) =
-      (B : EReal) + ((nx.toReal + ny.toReal : ℝ) : EReal) := by
-    simpa [EReal.coe_ennreal_add, EReal.coe_add, EReal.coe_ennreal_toReal, hpx, hnx, hpy, hny,
-      add_assoc] using congrArg (fun t : ℝ≥0∞ ↦ (t : EReal)) hres
-  calc
-    (A : EReal) + (a : EReal) + (b : EReal) =
-        ((A : EReal) + ((px.toReal + py.toReal : ℝ) : EReal)) +
-          ((a + b - (px.toReal + py.toReal) : ℝ) : EReal) := by
-      simp only [← EReal.coe_add, add_assoc]
-      ring_nf
-    _ = ((B : EReal) + ((nx.toReal + ny.toReal : ℝ) : EReal)) +
-          ((a + b - (px.toReal + py.toReal) : ℝ) : EReal) := by
-      rw [hres']
-    _ = (B : EReal) + (a' : EReal) + (b' : EReal) := by
-      simp only [← EReal.coe_add, add_assoc]
-      congr 1
-      norm_cast
-      linarith
 
 /-- On a coupling, the signed plan cost is independent of the chosen split lower bound. -/
 theorem planCostBddBelow_congr_lowerBound
@@ -401,7 +368,7 @@ theorem planCostBddBelow_congr_lowerBound
     h.integrable_fst.sub k.integrable_fst
   have hfy : Integrable (fun y ↦ h.snd y - k.snd y) ν :=
     h.integrable_snd.sub k.integrable_snd
-  refine coe_add_add_eq_of_add_add_eq hfx.lintegral_lt_top.ne hfx.neg.lintegral_lt_top.ne
+  refine EReal.coe_add_add_eq_of_add_add_eq hfx.lintegral_lt_top.ne hfx.neg.lintegral_lt_top.ne
     hfy.lintegral_lt_top.ne hfy.neg.lintegral_lt_top.ne (lintegral_residual_add_lintegral_eq h k hπ)
     ?_
   simp only [Pi.neg_apply]
