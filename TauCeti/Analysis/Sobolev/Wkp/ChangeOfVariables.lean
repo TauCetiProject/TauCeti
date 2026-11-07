@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
 public import TauCeti.MeasureTheory.Function.Lp.Precomposition
+public import Mathlib.Analysis.CStarAlgebra.Matrix
 import TauCeti.Analysis.Calculus.ContDiff.FaaDiBruno
 import Mathlib.Analysis.Normed.Operator.Extend
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
@@ -368,6 +369,68 @@ theorem continuousLinearEquiv (A : E ≃L[ℝ] E) (hA : MapsTo A U V) :
   pos := abs_pos.2 (LinearEquiv.isUnit_det' A.toLinearEquiv).ne_zero
   le_abs_det x _ := by rw [A.fderiv]
 
+/-- A change of variables `Φ` from `U` into `V` with a right inverse `Ψ` sending `V` into `U` maps
+`U` onto `V`. -/
+theorem image_eq_of_rightInvOn (h : IsChangeOfVariables k U V Φ L c) {Ψ : E → E}
+    (hΨ : MapsTo Ψ V U) (hΦΨ : RightInvOn Ψ Φ V) : Φ '' U = V :=
+  h.mapsTo.image_subset.antisymm (hΦΨ.surjOn hΨ)
+
+/-- **The derivative of the inverse.** If `Φ` is a change of variables from `U` into `V` and `Ψ`,
+differentiable on `V`, is inverse to `Φ` (`Φ ∘ Ψ = id` on `V`, `Ψ ∘ Φ = id` on `U`), then
+`DΦ(y) ∘ DΨ(Φ y) = id` at every `y ∈ U`. -/
+theorem fderiv_comp_fderiv_eq_id (h : IsChangeOfVariables k U V Φ L c) {Ψ : E → E}
+    (hΨ : DifferentiableOn ℝ Ψ V) (hΦΨ : RightInvOn Ψ Φ V) (hΨΦ : LeftInvOn Ψ Φ U) {y : E}
+    (hy : y ∈ (U : Set E)) :
+    fderiv ℝ Φ y ∘L fderiv ℝ Ψ (Φ y) = ContinuousLinearMap.id ℝ E := by
+  have hx : Φ y ∈ (V : Set E) := h.mapsTo hy
+  have hcomp : HasFDerivAt (Φ ∘ Ψ) (fderiv ℝ Φ y ∘L fderiv ℝ Ψ (Φ y)) (Φ y) := by
+    have hΦd := ((h.differentiableOn y hy).differentiableAt (U.isOpen.mem_nhds hy)).hasFDerivAt
+    rw [← hΨΦ hy] at hΦd
+    have := hΦd.comp (Φ y) ((hΨ _ hx).differentiableAt (V.isOpen.mem_nhds hx)).hasFDerivAt
+    rwa [hΨΦ hy] at this
+  have hid : Φ ∘ Ψ =ᶠ[𝓝 (Φ y)] id :=
+    Filter.eventually_of_mem (V.isOpen.mem_nhds hx) fun x hxV => hΦΨ hxV
+  exact (hcomp.congr_of_eventuallyEq hid.symm).unique (hasFDerivAt_id (Φ y))
+
+/-- The Jacobians of a change of variables `Φ` and of its inverse `Ψ` are reciprocal:
+`|det DΦ(y)| |det DΨ(Φ y)| = 1` at every `y ∈ U`. -/
+theorem abs_det_mul_abs_det (h : IsChangeOfVariables k U V Φ L c) {Ψ : E → E}
+    (hΨ : DifferentiableOn ℝ Ψ V) (hΦΨ : RightInvOn Ψ Φ V) (hΨΦ : LeftInvOn Ψ Φ U) {y : E}
+    (hy : y ∈ (U : Set E)) :
+    |(fderiv ℝ Φ y).det| * |(fderiv ℝ Ψ (Φ y)).det| = 1 := by
+  have hdet : (fderiv ℝ Φ y ∘L fderiv ℝ Ψ (Φ y)).det =
+      (fderiv ℝ Φ y).det * (fderiv ℝ Ψ (Φ y)).det :=
+    LinearMap.det_comp _ _
+  rw [h.fderiv_comp_fderiv_eq_id hΨ hΦΨ hΨΦ hy] at hdet
+  rw [← abs_mul, ← hdet, ContinuousLinearMap.det, ContinuousLinearMap.coe_id, LinearMap.det_id,
+    abs_one]
+
+/-- The Jacobian of a change of variables `Φ` whose inverse `Ψ` is a change of variables with
+Jacobian bound `c'` is at most `c'⁻¹`. -/
+theorem abs_det_le_inv (h : IsChangeOfVariables k U V Φ L c) {Ψ : E → E} {k' : ℕ} {L' c' : ℝ}
+    (hΨ : IsChangeOfVariables k' V U Ψ L' c') (hΦΨ : RightInvOn Ψ Φ V) (hΨΦ : LeftInvOn Ψ Φ U)
+    {y : E} (hy : y ∈ (U : Set E)) :
+    |(fderiv ℝ Φ y).det| ≤ c'⁻¹ := by
+  have hmul := h.abs_det_mul_abs_det hΨ.differentiableOn hΦΨ hΨΦ hy
+  rw [le_inv_comm₀ (abs_pos.2 fun h0 => by simp [h0] at hmul) hΨ.pos]
+  calc c' ≤ |(fderiv ℝ Ψ (Φ y)).det| := hΨ.le_abs_det _ (h.mapsTo hy)
+    _ = |(fderiv ℝ Φ y).det|⁻¹ := eq_inv_of_mul_eq_one_right hmul
+
+/-- For a change of variables `Φ` of Euclidean space from `U` into `V`, with inverse `Ψ`
+differentiable on `V`, the operator of the inverse Jacobian matrix of `Φ` at `y ∈ U` is
+`DΨ(Φ y)`. -/
+theorem toEuclideanCLM_inv_fderiv {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {U V : Opens (EuclideanSpace ℝ ι)} {Φ Ψ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    (h : IsChangeOfVariables k U V Φ L c) (hΨ : DifferentiableOn ℝ Ψ V)
+    (hΦΨ : RightInvOn Ψ Φ V) (hΨΦ : LeftInvOn Ψ Φ U) {y : EuclideanSpace ℝ ι}
+    (hy : y ∈ (U : Set (EuclideanSpace ℝ ι))) :
+    Matrix.toEuclideanCLM (𝕜 := ℝ) ((Matrix.toEuclideanCLM (𝕜 := ℝ)).symm (fderiv ℝ Φ y))⁻¹ =
+      fderiv ℝ Ψ (Φ y) := by
+  rw [Matrix.inv_eq_right_inv (B := (Matrix.toEuclideanCLM (𝕜 := ℝ)).symm (fderiv ℝ Ψ (Φ y))),
+    StarAlgEquiv.apply_symm_apply]
+  rw [← map_mul, ContinuousLinearMap.mul_def, h.fderiv_comp_fderiv_eq_id hΨ hΦΨ hΨΦ hy,
+    ← ContinuousLinearMap.one_def, map_one]
+
 variable [MeasurableSpace E] [BorelSpace E] {mu : Measure E}
 
 /-- A change of variables is almost everywhere measurable on `U`. -/
@@ -390,6 +453,23 @@ theorem ae_comp [mu.IsAddHaarMeasure] (h : IsChangeOfVariables k U V Φ L c) {P 
     (hP : ∀ᵐ y ∂mu.restrict V, P y) : ∀ᵐ x ∂mu.restrict U, P (Φ x) :=
   ae_comp_of_map_absolutelyContinuous h.aemeasurable
     (Measure.absolutelyContinuous_of_le_smul (h.map_restrict_le mu)) hP
+
+/-- Precomposition with a change of variables preserves `Lᵖ`: if `g ∈ Lᵖ(V)`, then
+`g ∘ Φ ∈ Lᵖ(U)`. -/
+theorem memLp_comp [mu.IsAddHaarMeasure] {F : Type*} [NormedAddCommGroup F] {p : ℝ≥0∞}
+    (h : IsChangeOfVariables k U V Φ L c) {g : E → F} (hg : MemLp g p (mu.restrict V)) :
+    MemLp (g ∘ Φ) p (mu.restrict U) :=
+  (hg.of_measure_le_smul (ENNReal.inv_ne_top.2 (ENNReal.ofReal_pos.2 h.pos).ne')
+    (h.map_restrict_le mu)).comp_of_map h.aemeasurable
+
+/-- **The change of variables formula.** If a change of variables `Φ` maps `U` onto `V`, then
+`∫_V g = ∫_U |det DΦ| • (g ∘ Φ)`. -/
+theorem setIntegral_eq [mu.IsAddHaarMeasure] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (h : IsChangeOfVariables k U V Φ L c) (hUV : Φ '' U = V) (g : E → F) :
+    ∫ x in V, g x ∂mu = ∫ y in U, |(fderiv ℝ Φ y).det| • g (Φ y) ∂mu := by
+  rw [← hUV, integral_image_eq_integral_abs_det_fderiv_smul mu U.isOpen.measurableSet
+    (fun y hy => ((h.differentiableOn y hy).differentiableAt
+      (U.isOpen.mem_nhds hy)).hasFDerivAt.hasFDerivWithinAt) h.injOn]
 
 end IsChangeOfVariables
 

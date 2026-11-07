@@ -292,6 +292,29 @@ lemma norm_matrixBilinearForm_le_sum_abs (A : Matrix n n ℝ) :
   exact mul_le_mul_of_nonneg_left (mul_le_mul hη hξ (abs_nonneg _) (norm_nonneg _))
     (abs_nonneg _)
 
+/-- The matrix bilinear form is the inner product against the Euclidean operator of the matrix:
+`ηᵀ A ξ = ⟪η, A ξ⟫`. -/
+lemma matrixBilinearForm_eq_inner [DecidableEq n] (A : Matrix n n ℝ) (η ξ : EuclideanSpace ℝ n) :
+    matrixBilinearForm A η ξ = inner ℝ η (toEuclideanCLM (n := n) (𝕜 := ℝ) A ξ) := by
+  rw [matrixBilinearForm_apply, inner_toEuclideanCLM]
+
+/-- **Congruence of the matrix bilinear form.** The bilinear form of `M A Mᵀ` is the bilinear form
+of `A` evaluated at the images under the adjoint of the operator of `M`: `ηᵀ M A Mᵀ ξ =
+(Mᵀ η)ᵀ A (Mᵀ ξ)`. This is how the coefficients of a divergence-form operator change under a
+linear change of variables. -/
+lemma matrixBilinearForm_mul_mul_transpose [DecidableEq n] (M A : Matrix n n ℝ)
+    (η ξ : EuclideanSpace ℝ n) :
+    matrixBilinearForm (M * A * Mᵀ) η ξ =
+      matrixBilinearForm A (ContinuousLinearMap.adjoint (toEuclideanCLM (n := n) (𝕜 := ℝ) M) η)
+        (ContinuousLinearMap.adjoint (toEuclideanCLM (n := n) (𝕜 := ℝ) M) ξ) := by
+  -- Over `ℝ` the transpose is the star, whose operator is the adjoint.
+  have hMt : toEuclideanCLM (n := n) (𝕜 := ℝ) Mᵀ =
+      ContinuousLinearMap.adjoint (toEuclideanCLM (n := n) (𝕜 := ℝ) M) := by
+    rw [← conjTranspose_eq_transpose_of_trivial, ← star_eq_conjTranspose, map_star,
+      ContinuousLinearMap.star_eq_adjoint]
+  simp only [matrixBilinearForm_eq_inner, map_mul, hMt, mul_apply_eq_comp,
+    ContinuousLinearMap.adjoint_inner_left]
+
 /-- The action of a matrix on Euclidean space is bounded by the operator norm of its bilinear
 form: `‖A ξ‖² = (A ξ)ᵀ A ξ ≤ ‖A‖ ‖A ξ‖ ‖ξ‖`. -/
 lemma norm_toEuclideanCLM_apply_le [DecidableEq n] (A : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
