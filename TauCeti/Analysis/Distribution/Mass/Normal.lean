@@ -374,22 +374,20 @@ theorem isNormal_comp_evalCLM_comp_toBoundedContinuousFunctionCLM
 
 end Point
 
-end Distribution
+variable (F V)
 
-namespace TauCeti
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-/-- Normal currents form a real submodule of the continuous-linear dual of test forms. -/
+/-- Normal currents form a real submodule of the continuous linear maps on test forms. -/
 def normalCurrentSubmodule (Ω : Opens E) (k : ℕ) :
-    Submodule ℝ (𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] ℝ) where
-  carrier := {T | Distribution.IsNormal T}
-  zero_mem' := Distribution.isNormal_zero
-  add_mem' := Distribution.IsNormal.add
+    Submodule ℝ (𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V) where
+  carrier := {T | IsNormal T}
+  zero_mem' := isNormal_zero
+  add_mem' := IsNormal.add
   smul_mem' a _ h := h.smul a
 
-@[simp] theorem mem_normalCurrentSubmodule {Ω : Opens E} {k : ℕ}
-    {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] ℝ} :
-    T ∈ normalCurrentSubmodule Ω k ↔ Distribution.IsNormal T := Iff.rfl
+variable {F V}
 
-end TauCeti
+@[simp] theorem mem_normalCurrentSubmodule {Ω : Opens E} {k : ℕ}
+    {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V} :
+    T ∈ normalCurrentSubmodule F V Ω k ↔ IsNormal T := Iff.rfl
+
+end Distribution

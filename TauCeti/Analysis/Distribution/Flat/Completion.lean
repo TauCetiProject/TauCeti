@@ -39,19 +39,19 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {Ω : Opens E} {
 
 /-- A real normal current equipped below with flat norm, not the distribution topology.
 There is no compact-support condition. -/
-def FlatNormedCurrent (Ω : Opens E) (k : ℕ) : Type _ := ↥(normalCurrentSubmodule Ω k)
+def FlatNormedCurrent (Ω : Opens E) (k : ℕ) : Type _ := ↥(normalCurrentSubmodule ℝ ℝ Ω k)
 
 namespace FlatNormedCurrent
 
 instance : AddCommGroup (FlatNormedCurrent Ω k) :=
-  inferInstanceAs (AddCommGroup (normalCurrentSubmodule Ω k))
+  inferInstanceAs (AddCommGroup (normalCurrentSubmodule ℝ ℝ Ω k))
 
 instance : Module ℝ (FlatNormedCurrent Ω k) :=
-  inferInstanceAs (Module ℝ (normalCurrentSubmodule Ω k))
+  inferInstanceAs (Module ℝ (normalCurrentSubmodule ℝ ℝ Ω k))
 
 /-- The underlying current, forgetting only its normality proof. -/
 def toCurrent : FlatNormedCurrent Ω k →ₗ[ℝ] (𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] ℝ) :=
-  (normalCurrentSubmodule Ω k).subtype
+  (normalCurrentSubmodule ℝ ℝ Ω k).subtype
 
 /-- Bundle a normal current for the flat norm. -/
 def ofCurrent (T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] ℝ) (hT : IsNormal T) :
@@ -248,11 +248,14 @@ theorem continuous_evalCLM_left (T : RealFlatChain Ω k) : Continuous fun ω => 
 
 /-- A completed real flat chain acts continuously on the original LF space of smooth tests.
 This comparison does not assert that the completed chain has finite mass. -/
-def toCurrent (T : RealFlatChain Ω k) : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] ℝ where
-  toFun ω := evalCLM ω T
-  map_add' ω η := evalCLM_add ω η T
-  map_smul' a ω := evalCLM_smul a ω T
-  cont := continuous_evalCLM_left T
+def toCurrent : RealFlatChain Ω k →ₗ[ℝ] (𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] ℝ) where
+  toFun T :=
+    { toFun ω := evalCLM ω T
+      map_add' ω η := evalCLM_add ω η T
+      map_smul' a ω := evalCLM_smul a ω T
+      cont := continuous_evalCLM_left T }
+  map_add' T S := by ext ω; exact (evalCLM ω).map_add T S
+  map_smul' a T := by ext ω; exact (evalCLM ω).map_smul a T
 
 @[simp]
 theorem toCurrent_apply (T : RealFlatChain Ω k) (ω : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ)) :
@@ -263,16 +266,6 @@ theorem toCurrent_coe (T : FlatNormedCurrent Ω k) :
     toCurrent (T : RealFlatChain Ω k) = T.toCurrent := by
   ext ω
   simp
-
-/-- The comparison from the real flat completion to currents is real-linear. -/
-def toCurrentLinearMap : RealFlatChain Ω k →ₗ[ℝ] (𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] ℝ) where
-  toFun := toCurrent
-  map_add' _ _ := by ext ω; simp
-  map_smul' _ _ := by ext ω; simp
-
-@[simp]
-theorem toCurrentLinearMap_apply (T : RealFlatChain Ω k) :
-    toCurrentLinearMap T = toCurrent T := (rfl)
 
 /-- The current comparison intertwines completed boundary with the original current boundary. -/
 @[simp]
