@@ -31,7 +31,8 @@ and resolvent methods:
   `m × m` corner of `Hₙ` is `√(m/n) Hₘ` (`submatrix_castLE_wignerMatrix`);
 * measurability in the sample point;
 * when the entries are independent, the minor `Hₙ` is independent of the off-diagonal entries of
-  the row and column removed from `Hₙ₊₁` (`indepFun_wignerMatrix_column`), and the law of `Hₙ`
+  the row and column removed from `Hₙ₊₁` (`indepFun_wignerMatrix_column`); the same holds for
+  the actual principal submatrix of `Hₙ₊₁` (`indepFun_wignerMatrix_minor`), and the law of `Hₙ`
   depends only on the laws of the entries (`identDistrib_wignerMatrix`);
 * centred entries give centred matrix entries (`integral_wignerMatrix_apply_eq_zero`), `Lᵖ` entries
   give `Lᵖ` matrix entries (`memLp_wignerMatrix_apply`), and a product of `k` matrix entries is
@@ -254,6 +255,26 @@ theorem indepFun_wignerMatrix_column (hξ : ∀ ij, AEMeasurable (ξ ij) P)
     rfl
   · rw [Function.extend_val_apply (inr_mem_cornerIndices hi)]
     simp
+
+/-- The principal minor of a Wigner matrix obtained by deleting the last row and column is
+independent of the off-diagonal entries removed from that row and column. -/
+theorem indepFun_wignerMatrix_minor (hξ : ∀ ij, AEMeasurable (ξ ij) P)
+    (hη : ∀ i, AEMeasurable (η i) P)
+    (hindep : iIndepFun (fun k : StrictUpper ⊕ ℕ ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) k) P)
+    (n : ℕ) :
+    IndepFun
+      (fun ω ↦ (wignerMatrix ξ η (n + 1) ω).submatrix Fin.castSucc Fin.castSucc)
+      (fun ω (i : Fin n) ↦ ξ ⟨(i.val, n), i.2⟩ ω) P := by
+  have h := (indepFun_wignerMatrix_column hξ hη hindep n).comp
+    (measurable_const_smul (((Real.sqrt n / Real.sqrt (n + 1) : ℝ) : ℂ))) measurable_id
+  convert h using 1
+  · funext ω
+    have hcast : Fin.castLE (Nat.le_succ n) = Fin.castSucc := by
+      funext i
+      exact Fin.ext rfl
+    simpa only [hcast, Function.comp_apply, Nat.cast_add, Nat.cast_one, Nat.cast_succ] using
+      (submatrix_castLE_wignerMatrix (ξ := ξ) (η := η) ω (Nat.le_succ n))
+  · rfl
 
 /-- The law of a Wigner matrix with independent entries depends only on the laws of the
 entries: two arrays of independent entries with identically distributed coordinates give
