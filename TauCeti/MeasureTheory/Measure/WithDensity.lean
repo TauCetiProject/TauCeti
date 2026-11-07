@@ -49,6 +49,8 @@ measure finite.
 * `MeasureTheory.Measure.map_affine_withDensity`: the image of a weighted Haar measure under an
   invertible affine map is that Haar measure weighted by the substituted density, rescaled by the
   constant Jacobian factor.
+* `MeasureTheory.Measure.map_affine_addHaar_eq_smul`: the image of an additive Haar measure under
+  an invertible affine map is the measure scaled by the reciprocal absolute determinant.
 * `MeasureTheory.Measure.rnDeriv_map_affine`: the Radon–Nikodym derivative of an affine image is
   obtained by the same substitution and Jacobian factor.
 * `MeasureTheory.Measure.support_withDensity_eq`: weighting a measure by an almost-everywhere
@@ -248,6 +250,14 @@ theorem map_affine_withDensity (μ : Measure E) [μ.IsAddHaarMeasure] (A : E ≃
         simp only [MeasurableEquiv.coe_addLeft, MeasurableEquiv.symm_addLeft,
           map_add_left_eq_self, neg_add_eq_sub]
 
+/-- **Image of an additive Haar measure under an invertible affine map.** The image of `μ` under
+`x ↦ c + A x` is `μ` scaled by the reciprocal absolute determinant `|det A|⁻¹`. -/
+theorem map_affine_addHaar_eq_smul (μ : Measure E) [μ.IsAddHaarMeasure] (A : E ≃L[ℝ] E) (c : E) :
+    μ.map (fun x => c + A x) =
+      ENNReal.ofReal |(LinearMap.det (A : E →ₗ[ℝ] E))⁻¹| • μ := by
+  simpa only [mul_one, withDensity_const, one_smul, withDensity_one] using
+    map_affine_withDensity μ A c (fun _ ↦ 1)
+
 /-- **Radon–Nikodym derivative under an invertible affine map.** The derivative of the image of
 an s-finite measure under `x ↦ c + A x`, relative to an additive Haar measure, is obtained by
 substituting the inverse affine map and multiplying by the reciprocal absolute determinant. -/
@@ -266,16 +276,7 @@ theorem rnDeriv_map_affine (μ : Measure E) [μ.IsAddHaarMeasure] (A : E ≃L[�
   let r : ℝ≥0∞ := ENNReal.ofReal |(LinearMap.det (A : E →ₗ[ℝ] E))⁻¹|
   have hdet : LinearMap.det (A : E →ₗ[ℝ] E) ≠ 0 := ((A : E ≃ₗ[ℝ] E).isUnit_det').ne_zero
   have hr : r ≠ 0 := by simp [r, hdet]
-  have hmapμ : μ.map (fun x ↦ c + A x) = r • μ := by
-    have hmapA : μ.map A = r • μ := by
-      simpa [r] using Measure.map_linearMap_addHaar_eq_smul_addHaar μ hdet
-    calc
-      μ.map (fun x ↦ c + A x) = (μ.map A).map (fun y : E ↦ c + y) :=
-        (Measure.map_map (by fun_prop) (by fun_prop)).symm
-      _ = (r • μ).map (fun y : E ↦ c + y) := by rw [hmapA]
-      _ = r • μ := by
-        rw [Measure.map_smul r
-          ((by fun_prop : Measurable fun y : E ↦ c + y).aemeasurable), map_add_left_eq_self]
+  have hmapμ : μ.map (fun x ↦ c + A x) = r • μ := map_affine_addHaar_eq_smul μ A c
   have hsing : (ν.singularPart μ).map (fun x ↦ c + A x) ⟂ₘ μ := by
     have h := hemb.mutuallySingular_map (Measure.mutuallySingular_singularPart ν μ)
     rw [hmapμ] at h
