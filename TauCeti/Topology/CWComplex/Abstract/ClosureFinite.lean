@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.CWComplex.Abstract.OpenCell
-public import Mathlib.Topology.DiscreteSubset
+public import TauCeti.Topology.Compactness.Compact
 
 /-!
 # Closure finiteness for categorical relative CW complexes
@@ -33,15 +33,6 @@ open CategoryTheory Limits Topology
 open HomotopicalAlgebra.RelativeCellComplex
 
 universe u
-
-/-- A compact set contains no infinite subset all of whose subsets are closed: such a subset would
-be closed, hence compact, and discrete. -/
-theorem IsCompact.finite_of_forall_isClosed {X : Type*} [TopologicalSpace X] {K S : Set X}
-    (hK : IsCompact K) (hSK : S ⊆ K) (hS : ∀ T ⊆ S, IsClosed T) : S.Finite := by
-  have hd : IsDiscrete S :=
-    isDiscrete_iff_forall_mem_exists_isClosed.2 fun T hT ↦
-      ⟨T, hS T hT, Set.inter_eq_left.2 hT⟩
-  exact (hK.of_isClosed_subset (hS S subset_rfl) hSK).finite hd
 
 namespace TopCat.RelativeCWComplex
 
