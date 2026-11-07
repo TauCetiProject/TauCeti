@@ -390,11 +390,8 @@ theorem conjWirtingerDeriv_eq_zero_iff_apply_one_eq_zero {f : ℂ → W} {x : �
 /-- A conjugate Wirtinger derivative of a `C^{m+1}` map on an open set is `C^m` there. -/
 theorem _root_.ContDiffOn.conjWirtingerDeriv_apply_of_isOpen {g : V → W} {s : Set V}
     {m n : WithTop ℕ∞} (hg : ContDiffOn ℝ n g s) (hs : IsOpen s) (hmn : m + 1 ≤ n) (v : V) :
-    ContDiffOn ℝ m (fun y ↦ conjWirtingerDeriv g y v) s := by
-  have hD := hg.fderiv_of_isOpen hs hmn
-  exact (((hD.clm_apply contDiffOn_const).add
-    ((hD.clm_apply contDiffOn_const).const_smul I)).const_smul (2 : ℂ)⁻¹).congr
-      fun y _ ↦ TauCeti.conjWirtingerDeriv_apply g y v
+    ContDiffOn ℝ m (fun y ↦ conjWirtingerDeriv g y v) s :=
+  fun _ hy ↦ ((hg.contDiffAt (hs.mem_nhds hy)).conjWirtingerDeriv_apply hmn v).contDiffWithinAt
 
 /-- For a `C²` map, the conjugate Wirtinger derivative `y ↦ \bar∂g(y) u` in a fixed direction `u`
 is differentiable, with derivative built from the second derivative of `g`. -/
