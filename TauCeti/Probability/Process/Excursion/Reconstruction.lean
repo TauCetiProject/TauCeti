@@ -55,8 +55,9 @@ namespace Probability
 variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
   {μ : Measure Ω} {X : ℕ → Ω → α} {a₀ : α}
 
-/-- **Finite concatenations of excursions are measurable coordinatewise.** For finitely many
-excursions, split at the measurable length of the first word and recurse on the tail. -/
+/-- **Finite concatenations of excursions are measurable coordinatewise.** For every fixed
+coordinate `i`, the map sending `n` list-valued inputs to the `i`-th point of the path obtained
+by concatenating them from `a₀` is measurable, with no discreteness assumption on `α`. -/
 theorem measurable_loopPathAt_ofFn (a₀ : α) (n i : ℕ) :
     Measurable fun v : Fin n → List α => loopPathAt a₀ (List.ofFn v) i := by
   classical
