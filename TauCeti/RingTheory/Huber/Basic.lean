@@ -12,7 +12,7 @@ public import Mathlib.Topology.Algebra.Ring.Ideal
 public import TauCeti.RingTheory.Huber.PowerBounded
 import Mathlib.Topology.Algebra.IsUniformGroup.Basic
 import TauCeti.Algebra.Group.Pow
-import TauCeti.RingTheory.Subring.SpanSingleton
+import TauCeti.RingTheory.Subsemiring.SpanSingleton
 public import TauCeti.Topology.Algebra.Group.FirstCountable
 public import TauCeti.Topology.Algebra.TopologicallyNilpotent.Basic
 

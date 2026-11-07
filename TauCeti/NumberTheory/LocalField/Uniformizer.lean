@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.NormalizedValuation
-import TauCeti.RingTheory.Subring.SpanSingleton
+import TauCeti.RingTheory.Subsemiring.SpanSingleton
 
 /-!
 # Uniformizers of a nonarchimedean local field

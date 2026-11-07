@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Ring.Subring.Pointwise
 public import Mathlib.RingTheory.Ideal.Operations
 
 /-!

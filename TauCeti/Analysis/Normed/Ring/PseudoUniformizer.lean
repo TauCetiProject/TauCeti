@@ -9,7 +9,7 @@ public import TauCeti.RingTheory.Huber.Normed
 public import TauCeti.RingTheory.Huber.ZeroSequenceOfUnits
 public import TauCeti.Analysis.Normed.Monoid.MulUnit
 public import TauCeti.Analysis.Normed.Group.Rounding
-import TauCeti.RingTheory.Subring.SpanSingleton
+import TauCeti.RingTheory.Subsemiring.SpanSingleton
 
 /-!
 # Multiplicative pseudo-uniformisers of seminormed rings
