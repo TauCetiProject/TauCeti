@@ -127,17 +127,19 @@ theorem _root_.LinearMap.finrank_eq_finrank_range_add_finrank_range_of_exact
 
 /-- For four consecutive maps in an exact chain, the alternating dimension difference of
 its first three spaces is minus the sum of the two endpoint kernel dimensions.
-Only the first three spaces need to be finite-dimensional. -/
+Only the outer two of the first three spaces need to be finite-dimensional, since the middle
+one is then finite-dimensional by exactness. -/
 theorem _root_.LinearMap.finrank_sub_finrank_sub_finrank_of_exact
     {A B C D E : Type*} [AddCommGroup A] [Module k A] [AddCommGroup B] [Module k B]
     [AddCommGroup C] [Module k C] [AddCommGroup D] [Module k D]
     [AddCommGroup E] [Module k E]
-    [FiniteDimensional k A] [FiniteDimensional k B] [FiniteDimensional k C]
+    [FiniteDimensional k A] [FiniteDimensional k C]
     (f : A →ₗ[k] B) (g : B →ₗ[k] C) (δ : C →ₗ[k] D) (f' : D →ₗ[k] E)
     (hfg : Function.Exact f g) (hgδ : Function.Exact g δ)
     (hδf : Function.Exact δ f') :
     (Module.finrank k B : ℤ) - Module.finrank k A - Module.finrank k C =
       -(Module.finrank k f.ker : ℤ) - Module.finrank k f'.ker := by
+  have := finiteDimensional_of_exact hfg
   have hB := f.finrank_eq_finrank_range_add_finrank_range_of_exact g hfg
   have hC := g.finrank_eq_finrank_range_add_finrank_range_of_exact δ hgδ
   have hA := f.finrank_range_add_finrank_ker
