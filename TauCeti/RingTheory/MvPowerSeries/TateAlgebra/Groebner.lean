@@ -331,14 +331,20 @@ private theorem exists_reduction_step (m : MonomialOrder σ) (deg : R → ℕ)
   have hKI : K + I = J := tsub_add_cancel_of_le hIJ
   have hKJ : K ≤ J := tsub_le_self
   have hJK : J - K = I := tsub_tsub_cancel_of_le hIJ
-  obtain ⟨a, ha, hna⟩ := exists_subring_eq_monomial (c := c) K z
-  have hcoeff := coeff_sub_mul_of_eq_monomial ha x y
+  set a : IsRestricted.subring (R := R) c := ⟨monomial K z, isRestricted_monomial c K z⟩
+    with ha_def
+  have hna : ‖a‖ = ‖z‖ * K.prod (c · ^ ·) := norm_monomial K z
+  have hcoeff (t : σ →₀ ℕ) : coeff t ((y - a * x : IsRestricted.subring (R := R) c) :
+      MvPowerSeries σ R) = coeff t (y : MvPowerSeries σ R) -
+        if K ≤ t then z * coeff (t - K) (x : MvPowerSeries σ R) else 0 := by
+    rw [ha_def, AddSubgroupClass.coe_sub, map_sub, coeff_monomial_mul_subring]
   -- The size `‖z * cx‖ wJ = ‖a‖ ‖x‖` of the subtracted multiple.
   have hax : ‖a‖ * ‖x‖ = ‖z * cx‖ * J.prod (c · ^ ·) := by
     rw [hna, ← hI₁, norm_mul, ← hKI, prod_pow_add]
     ring
-  have hzc : ‖z * cx‖ ≤ ‖coeff J (y : MvPowerSeries σ R)‖ :=
-    IsUltrametricDist.norm_le_of_eq_add_of_norm_le hzw hwle
+  have hzc : ‖z * cx‖ ≤ ‖coeff J (y : MvPowerSeries σ R)‖ := by
+    rw [eq_sub_of_add_eq hzw.symm]
+    exact (IsUltrametricDist.norm_sub_le_max _ _).trans (max_le le_rfl hwle)
   have haxM : ‖a‖ * ‖x‖ ≤ M := by
     rw [hax]
     exact (mul_le_mul_of_nonneg_right hzc (prod_pow_pos J).le).trans (hJ.1.le.trans hyM)

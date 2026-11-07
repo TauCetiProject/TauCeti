@@ -332,22 +332,15 @@ theorem norm_monomial (t : σ →₀ ℕ) (a : R) :
       (⟨monomial t a, isRestricted_monomial _ t a⟩ :
         IsRestricted.subring (R := R) c) t
 
-/-- A monomial `monomial K z` is a restricted series, of norm `‖z‖ * K.prod (c · ^ ·)`. -/
-theorem exists_subring_eq_monomial (K : σ →₀ ℕ) (z : R) :
-    ∃ a : IsRestricted.subring (R := R) c, (a : MvPowerSeries σ R) = monomial K z ∧
-      ‖a‖ = ‖z‖ * K.prod (c · ^ ·) := by
-  refine ⟨⟨_, isRestricted_monomial c K z⟩, rfl, ?_⟩
-  rw [← norm_monomial K z (c := c)]
-
 omit [∀ i, Fact (0 < c i)] in
-/-- The coefficients of `y - a * x` for a monomial `a = monomial K z`. -/
-theorem coeff_sub_mul_of_eq_monomial {a : IsRestricted.subring (R := R) c} {K : σ →₀ ℕ}
-    {z : R} (ha : (a : MvPowerSeries σ R) = monomial K z)
-    (x y : IsRestricted.subring (R := R) c) (t : σ →₀ ℕ) :
-    coeff t ((y - a * x : IsRestricted.subring (R := R) c) : MvPowerSeries σ R) =
-      coeff t (y : MvPowerSeries σ R) -
-        if K ≤ t then z * coeff (t - K) (x : MvPowerSeries σ R) else 0 := by
-  rw [AddSubgroupClass.coe_sub, Subring.coe_mul, ha, map_sub, coeff_monomial_mul]
+/-- The coefficients of the product of a restricted monomial with a restricted series. -/
+theorem coeff_monomial_mul_subring (K : σ →₀ ℕ) (z : R) (x : IsRestricted.subring (R := R) c)
+    (t : σ →₀ ℕ) :
+    coeff t ((⟨monomial K z, isRestricted_monomial c K z⟩ * x :
+        IsRestricted.subring (R := R) c) : MvPowerSeries σ R) =
+      if K ≤ t then z * coeff (t - K) (x : MvPowerSeries σ R) else 0 := by
+  rw [Subring.coe_mul]
+  exact coeff_monomial_mul ..
 
 /-- Constants retain their coefficient norm. -/
 @[simp]
