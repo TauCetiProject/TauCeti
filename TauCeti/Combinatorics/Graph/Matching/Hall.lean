@@ -32,10 +32,6 @@ bipartition `Graph.IsBipartition.symm` gives the versions saturating `R`. At `b 
 capacitated matching is an ordinary matching, and these become the Kőnig–Ore deficiency formula
 `|M| + |S| = |L| + |N(S)|` and Hall's marriage theorem.
 
-## Main definitions
-
-* `Graph.neighborsIn G S T`: the vertices of `T` joined by an edge to a vertex of `S`.
-
 ## Main results
 
 * `Graph.IsCapacitatedMatching.sum_add_sum_le`: the capacitated Kőnig–Ore inequality.
@@ -75,55 +71,11 @@ namespace Graph
 
 variable {α : Type u} {β : Type v} {G : Graph α β}
 
-/-! ### Neighbours within a set of vertices -/
-
-section neighborsIn
-
-variable {S S' T : Finset V(G)} {y : V(G)}
-
-variable (G) in
-/-- The actual vertices of `T` joined by an edge to some vertex of `S`. A vertex joined to `S` by
-several parallel edges occurs once. -/
-noncomputable def neighborsIn (S T : Finset V(G)) : Finset V(G) := by
-  classical
-  exact T.filter fun y ↦ ∃ x ∈ S, G.Adj x y
-
-@[simp]
-theorem mem_neighborsIn : y ∈ G.neighborsIn S T ↔ y ∈ T ∧ ∃ x ∈ S, G.Adj x y := by
-  classical
-  simp [neighborsIn]
-
-theorem neighborsIn_subset : G.neighborsIn S T ⊆ T :=
-  fun _ hy ↦ (mem_neighborsIn.1 hy).1
-
-@[gcongr]
-theorem neighborsIn_mono (hS : S ⊆ S') : G.neighborsIn S T ⊆ G.neighborsIn S' T := by
-  intro y hy
-  obtain ⟨hyT, x, hx, hxy⟩ := mem_neighborsIn.1 hy
-  exact mem_neighborsIn.2 ⟨hyT, x, hS hx, hxy⟩
-
-@[simp]
-theorem neighborsIn_empty_left : G.neighborsIn ∅ T = ∅ := by
-  ext; simp
-
-@[simp]
-theorem neighborsIn_empty_right : G.neighborsIn S ∅ = ∅ := by
-  ext; simp
-
-end neighborsIn
-
 /-! ### The capacitated Kőnig–Ore formula -/
 
 variable [Fintype E(G)] {L R : Finset V(G)} {b : V(G) → ℕ} {x : E(G) → ℕ}
 
 namespace IsCapacitatedMatching
-
-/-- A multiset capacitated matching in a bipartite multigraph has size `b(L)` exactly when it
-saturates every vertex of `L`. -/
-theorem sum_eq_sum_left_iff (hx : G.IsCapacitatedMatching b x) (hLR : G.IsBipartition L R) :
-    ∑ e, x e = ∑ v ∈ L, b v ↔ ∀ v ∈ L, ∑ e ∈ G.incidentEdges {v}, x e = b v := by
-  rw [← hLR.sum_sum_incidentEdges_left x]
-  exact sum_eq_sum_iff_of_le fun v _ ↦ isCapacitatedMatching_def.1 hx v
 
 /-- **The capacitated Kőnig–Ore inequality.** In a bipartite multigraph with sides `L` and `R`,
 every multiset capacitated matching `x` and every `S ⊆ L` satisfy
