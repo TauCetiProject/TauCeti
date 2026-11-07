@@ -202,13 +202,10 @@ private theorem exists_time_of_tendsto
     exact (hγ t hta.le).hasDerivAt (Ici_mem_nhds hta)
   have hdiff : ∀ t ∈ Ici T, DifferentiableAt ℝ f (γ t) := fun t ht ↦
     ((hT t ht).1.2).differentiableAt (by simp)
-  have hgradfun : (∇ f : E → E) = fun y ↦ (toDual ℝ E).symm (fderiv ℝ f y) := by
-    funext y
-    exact (toDual ℝ E).eq_symm_apply.2 toDual_gradient
   have hcont : ContinuousOn (fun s ↦ ∇ f (γ s)) (Ici T) := by
     intro s hs
     have hgs : ContinuousAt (∇ f) (γ s) := by
-      rw [hgradfun]
+      rw [gradient_eq_toDual_symm_comp_fderiv]
       exact ((toDual ℝ E).symm.continuous.continuousAt).comp
         (((hT s hs).1.2).continuousAt_fderiv (by simp))
     exact (hgs.comp (hderiv s hs).continuousAt).continuousWithinAt

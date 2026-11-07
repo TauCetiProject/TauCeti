@@ -38,6 +38,7 @@ theorem about `‖Dφ‖`.
 * `TauCeti.norm_gradient_eq_norm_fderiv`: `‖∇ f x‖ = ‖fderiv 𝕜 f x‖`.
 * `TauCeti.gradient_add`: additivity of the gradient at a point of differentiability.
 * `TauCeti.gradient_const_smul`: `∇ (c • f) x = conj c • ∇ f x`.
+* `TauCeti.gradient_eq_toDual_symm_comp_fderiv`: `∇ f = (toDual 𝕜 F).symm ∘ fderiv 𝕜 f`.
 * `TauCeti.gradient_of_notMem_tsupport`: the gradient vanishes off the topological support.
 * `HasCompactSupport.gradient`: the gradient of a compactly supported function is compactly
   supported.
@@ -95,6 +96,10 @@ theorem gradient_const_smul (c : 𝕜) :
   simp only [toDual_gradient, map_smulₛₗ, RingHomCompTriple.comp_apply, RingHom.id_apply,
     fderiv_const_smul_field, Pi.smul_apply]
 
+/-- The gradient of a function is its Fréchet derivative composed with the inverse Riesz
+isomorphism. -/
+theorem gradient_eq_toDual_symm_comp_fderiv : ∇ f = (toDual 𝕜 F).symm ∘ fderiv 𝕜 f := rfl
+
 /-- The gradient vanishes off the topological support of the function, as the Fréchet derivative
 does. -/
 @[simp]
@@ -111,10 +116,7 @@ theorem _root_.HasCompactSupport.gradient (hf : HasCompactSupport f) : HasCompac
 differentiable. -/
 @[fun_prop]
 theorem measurable_gradient [MeasurableSpace F] [BorelSpace F] (f : F → 𝕜) : Measurable (∇ f) := by
-  have h : ∇ f = (toDual 𝕜 F).symm ∘ fderiv 𝕜 f := by
-    ext1 x
-    rw [Function.comp_apply, ← toDual_gradient, LinearIsometryEquiv.symm_apply_apply]
-  rw [h]
+  rw [gradient_eq_toDual_symm_comp_fderiv]
   exact (toDual 𝕜 F).symm.continuous.measurable.comp (measurable_fderiv 𝕜 f)
 
 /-- Over `ℝ` the Riesz isomorphism is a linear isometry, so the gradient of a `C^{m+1}` function

@@ -288,13 +288,10 @@ theorem exists_tendsto_atTop_of_hasNondegenerateCriticalPointsOn
     (hmaps : MapsTo γ (Ici 0) K) (hdiff : ∀ y ∈ K, DifferentiableAt ℝ f y)
     (hfderiv : ContinuousOn (fderiv ℝ f) K) (hM : HasNondegenerateCriticalPointsOn f K) :
     ∃ p ∈ K, ∇ f p = 0 ∧ Tendsto γ atTop (𝓝 p) := by
-  have hgradeq : ∇ f = fun y ↦ (toDual ℝ E).symm (fderiv ℝ f y) := by
-    funext y
-    rw [← toDual_gradient (𝕜 := ℝ) (f := f) (x := y), LinearIsometryEquiv.symm_apply_apply]
   have hzero : ∀ y : E, ∇ f y = 0 ↔ fderiv ℝ f y = 0 := fun y ↦ by
     rw [← toDual_gradient (𝕜 := ℝ) (f := f) (x := y), map_eq_zero_iff _ (toDual ℝ E).injective]
   refine exists_tendsto_atTop hγ hK hmaps hdiff ?_ ?_
-  · rw [hgradeq]
+  · rw [gradient_eq_toDual_symm_comp_fderiv]
     exact (toDual ℝ E).symm.continuous.comp_continuousOn hfderiv
   · exact (hM.finite_setOfPred_fderiv_eq_zero hK hfderiv).subset
       fun y hy ↦ ⟨hy.1, (hzero y).mp hy.2⟩

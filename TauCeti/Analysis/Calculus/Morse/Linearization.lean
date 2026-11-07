@@ -211,11 +211,9 @@ theorem hasFDerivAt_gradient (hf : ContDiffAt ℝ 2 f x) :
     HasFDerivAt (∇ f) (hessianOperator f x) x := by
   have h := (InnerProductSpace.toDual ℝ E).symm.toContinuousLinearEquiv.hasFDerivAt.comp x
     (hf.hasFDerivAt_fderiv le_rfl)
-  -- The composed function is the gradient, by the defining property `toDual_gradient` of `∇ f`.
-  have hfun : ⇑(InnerProductSpace.toDual ℝ E).symm.toContinuousLinearEquiv ∘ fderiv ℝ f = ∇ f := by
-    funext y
-    simp only [Function.comp_apply, LinearIsometryEquiv.coe_toContinuousLinearEquiv]
-    exact ((InnerProductSpace.toDual ℝ E).eq_symm_apply.2 toDual_gradient).symm
+  -- The composed function is the gradient.
+  have hfun : ⇑(InnerProductSpace.toDual ℝ E).symm.toContinuousLinearEquiv ∘ fderiv ℝ f = ∇ f :=
+    gradient_eq_toDual_symm_comp_fderiv.symm
   rw [hfun] at h
   -- The derivative of the gradient is the Hessian operator by `fderiv_gradient`.
   rw [← fderiv_gradient]
