@@ -180,9 +180,11 @@ section Manifold
 variable {E G N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace N] [ChartedSpace G N]
 
+omit [FiniteDimensional ℝ V] in
 /-- The Cayley formula `-(1 + A B)(1 - A B)⁻¹` of two families of endomorphisms on a manifold
 which are `C^n` at a point `p` is `C^n` at `p` when `1 - A p * B p` is a unit. -/
-theorem contMDiffAt_cayleyFormula_of_isUnit {A B : N → V →L[ℝ] V} {n : WithTop ℕ∞} {p : N}
+theorem contMDiffAt_cayleyFormula_of_isUnit [CompleteSpace V] {A B : N → V →L[ℝ] V}
+    {n : WithTop ℕ∞} {p : N}
     (hA : ContMDiffAt I 𝓘(ℝ, V →L[ℝ] V) n A p) (hB : ContMDiffAt I 𝓘(ℝ, V →L[ℝ] V) n B p)
     (hu : IsUnit (1 - A p * B p)) :
     ContMDiffAt I 𝓘(ℝ, V →L[ℝ] V) n (fun y => cayleyFormula (A y) (B y)) p := by
@@ -194,9 +196,11 @@ theorem contMDiffAt_cayleyFormula_of_isUnit {A B : N → V →L[ℝ] V} {n : Wit
   simp only [cayleyFormula_def]
   exact (((contMDiffAt_const.add (hA.clm_comp hB)).clm_comp hi).neg)
 
+omit [FiniteDimensional ℝ V] in
 /-- The inverse Cayley expression `A (1 + C)(1 - C)⁻¹` of two families of endomorphisms on a
 manifold which are `C^n` at a point `p` is `C^n` at `p` when `1 - C p` is a unit. -/
-theorem contMDiffAt_mul_one_add_ringInverse {A C : N → V →L[ℝ] V} {n : WithTop ℕ∞} {p : N}
+theorem contMDiffAt_mul_one_add_ringInverse [CompleteSpace V] {A C : N → V →L[ℝ] V}
+    {n : WithTop ℕ∞} {p : N}
     (hA : ContMDiffAt I 𝓘(ℝ, V →L[ℝ] V) n A p) (hC : ContMDiffAt I 𝓘(ℝ, V →L[ℝ] V) n C p)
     (hu : IsUnit (1 - C p)) :
     ContMDiffAt I 𝓘(ℝ, V →L[ℝ] V) n (fun y => A y * (1 + C y) * Ring.inverse (1 - C y)) p := by
