@@ -380,12 +380,14 @@ private theorem torusWeightSeries_true_two_eq :
     torusWeightSeries true 2 =
       torusWeightSeries true 3 * expand 2 two_ne_zero (torusWeightSeries true 0) := by
   refine (isUnit_iff_constantCoeff.2 (by simp) : IsUnit (1 + X ^ 2 : ℤ⟦X⟧)).mul_right_cancel ?_
-  rw [torusWeightSeries_true_two_mul, mul_right_comm, torusWeightSeries_true_three_mul, mul_assoc,
-    mul_comm (1 - X ^ 2), expand_two_torusWeightSeries_true_zero_mul, mul_one]
+  rw [torusWeightSeries_true_two_mul]
+  linear_combination -(1 + X) * expand_two_torusWeightSeries_true_zero_mul -
+    expand 2 two_ne_zero (torusWeightSeries true 0) * torusWeightSeries_true_three_mul
 
-/-- **Period-doubling identity** of the local series: for `i ∈ {0, 1, 2}`,
-`f_(σ, i)(t) = f_(σ, i + 1)(t) f_(σ, i % 2)(t ^ 2)`. A torus of label `(σ, i)` contributes as
-much as a torus of label `(σ, i + 1)` together with a torus of label `(σ, i % 2)` in twice its
+/-- **Period-doubling identity** of the local series: for `j ∈ {0, 1, 2}`,
+`f_(σ, j)(t) = f_(σ, j + 1)(t) f_(σ, j % 2)(t ^ 2)`, the indices `j`, `j + 1` and `j % 2` being
+`j.castSucc`, `j.succ` and `(j % 2).castSucc` in `Fin 4`. A torus of label `(σ, j)` contributes
+as much as a torus of label `(σ, j + 1)` together with a torus of label `(σ, j % 2)` in twice its
 class. -/
 theorem torusWeightSeries_castSucc (σ : Bool) (j : Fin 3) :
     torusWeightSeries σ j.castSucc =
@@ -405,10 +407,11 @@ theorem torusWeightSeries_castSucc (σ : Bool) (j : Fin 3) :
       _ = 1 := by simp [torusWeightSeries_true_mul_false]
   · exact htrue
 
-/-- **Period-doubling identity**, read in the other direction: for `i ∈ {0, 1, 2}`,
-`f_(σ, i + 1)(t) = f_(σ, i)(t) f_(!σ, i % 2)(t ^ 2)`. A torus of label `(σ, i + 1)` contributes as
-much as a torus of label `(σ, i)` together with a torus of the opposite determinant sign and
-index `i % 2` in twice its class. -/
+/-- **Period-doubling identity**, read in the other direction: for `j ∈ {0, 1, 2}`,
+`f_(σ, j + 1)(t) = f_(σ, j)(t) f_(!σ, j % 2)(t ^ 2)`, the indices `j + 1`, `j` and `j % 2` being
+`j.succ`, `j.castSucc` and `(j % 2).castSucc` in `Fin 4`. A torus of label `(σ, j + 1)`
+contributes as much as a torus of label `(σ, j)` together with a torus of the opposite
+determinant sign and index `j % 2` in twice its class. -/
 theorem torusWeightSeries_succ (σ : Bool) (j : Fin 3) :
     torusWeightSeries σ j.succ =
       torusWeightSeries σ j.castSucc *
@@ -467,6 +470,7 @@ theorem coeff_rayTorusWeightSeries_of_subset {s t : Finset ι} (hst : s ⊆ t) {
   coeff_prod_expand_of_subset hst h fun c _ _ ↦ constantCoeff_torusWeightSeries (σ c) (i c)
 
 /-- Adjoining a torus `c ∉ s` multiplies the ray series by its factor `f_(σ c, i c)(t ^ m c)`. -/
+@[simp]
 theorem rayTorusWeightSeries_insert [DecidableEq ι] {s : Finset ι} {c : ι} (hc : c ∉ s)
     (m : ι → ℕ+) (σ : ι → Bool) (i : ι → Fin 4) :
     rayTorusWeightSeries (insert c s) m σ i =
@@ -496,15 +500,19 @@ private theorem rayTorusWeightSeries_insert_eq_update [DecidableEq ι] {s : Fins
       expand (m c) (m c).ne_zero (expand 2 two_ne_zero (torusWeightSeries (σ d) (i d))) := by
     rw [← expand_mul]
     simp [hm, mul_comm]
+  have herase : ∏ x ∈ s.erase c, expand (m x) (m x).ne_zero
+      (torusWeightSeries (σ x) (Function.update i c k x)) =
+      ∏ x ∈ s.erase c, expand (m x) (m x).ne_zero (torusWeightSeries (σ x) (i x)) :=
+    Finset.prod_congr rfl fun x hx ↦ by rw [Function.update_of_ne (Finset.ne_of_mem_erase hx)]
   rw [rayTorusWeightSeries_insert hd, rayTorusWeightSeries_def, rayTorusWeightSeries_def,
-    ← Finset.mul_prod_erase s _ hc, ← Finset.mul_prod_erase s _ hc, Function.update_self, ← h,
-    map_mul, hexp, ← mul_assoc, mul_comm (expand _ _ _)]
-  congr 1
-  exact Finset.prod_congr rfl fun x hx ↦ by rw [Function.update_of_ne (Finset.ne_of_mem_erase hx)]
+    ← Finset.mul_prod_erase s _ hc, ← Finset.mul_prod_erase s _ hc, herase, Function.update_self,
+    ← h, map_mul, hexp]
+  ring
 
-/-- **Period doubling** on the ray: let `c ∈ s` have index `i + 1`, and adjoin a torus `d ∉ s` of
-twice the class of `c`, with the determinant sign of `c` and index `i % 2`. The ray series is
-that of `s` with `c` relabelled with index `i`. -/
+/-- **Period doubling** on the ray: let `c ∈ s` have index `j + 1` (`i c = j.succ`), and adjoin
+a torus `d ∉ s` of twice the class of `c`, with the determinant sign of `c` and index `j % 2`
+(`i d = (j % 2).castSucc`). The ray series is that of `s` with `c` relabelled with index `j`
+(`j.castSucc`). -/
 theorem rayTorusWeightSeries_insert_eq_update_castSucc [DecidableEq ι] {s : Finset ι}
     {c d : ι} (hc : c ∈ s) (hd : d ∉ s) {m : ι → ℕ+} (hm : m d = 2 * m c) {σ : ι → Bool}
     (hσ : σ d = σ c) {i : ι → Fin 4} {j : Fin 3} (hic : i c = j.succ)
@@ -514,9 +522,10 @@ theorem rayTorusWeightSeries_insert_eq_update_castSucc [DecidableEq ι] {s : Fin
   rayTorusWeightSeries_insert_eq_update hc hd hm <| by
     rw [hσ, hic, hid, ← torusWeightSeries_castSucc]
 
-/-- **Period doubling** on the ray, in the other direction: let `c ∈ s` have index `i`, and
-adjoin a torus `d ∉ s` of twice the class of `c`, with the opposite determinant sign and index
-`i % 2`. The ray series is that of `s` with `c` relabelled with index `i + 1`. -/
+/-- **Period doubling** on the ray, in the other direction: let `c ∈ s` have index `j`
+(`i c = j.castSucc`), and adjoin a torus `d ∉ s` of twice the class of `c`, with the opposite
+determinant sign and index `j % 2` (`i d = (j % 2).castSucc`). The ray series is that of `s`
+with `c` relabelled with index `j + 1` (`j.succ`). -/
 theorem rayTorusWeightSeries_insert_eq_update_succ [DecidableEq ι] {s : Finset ι} {c d : ι}
     (hc : c ∈ s) (hd : d ∉ s) {m : ι → ℕ+} (hm : m d = 2 * m c) {σ : ι → Bool}
     (hσ : σ d = !σ c) {i : ι → Fin 4} {j : Fin 3} (hic : i c = j.castSucc)
