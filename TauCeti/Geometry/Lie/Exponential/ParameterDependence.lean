@@ -369,7 +369,8 @@ theorem exists_lipschitzOn_local_mulInvariantCoordinateFlow
     intro t ht
     have hfst := fun s (hs : s ∈ Set.Icc (-δ) δ) =>
       (ContinuousLinearMap.fst ℝ E E).apply_eq_apply_left_of_hasDerivWithinAt (hα' x hx').2
-        (fun _ _ => rfl) hs
+        (fun _ _ => by simp) hs
+    simp only [ContinuousLinearMap.coe_fst'] at hfst
     exact (hfst t ht).trans (hfst 0 ⟨by linarith, hδ.le⟩).symm |>.trans
       (congrArg Prod.fst (hα' x hx').1)
 
@@ -463,7 +464,8 @@ private theorem isMIntegralCurveOn_extChartAt_symm_of_coordinate_solution
       have hsnd : HasDerivAt f
           (mulInvariantCoordinateVectorField (I := I) (G := G)
             (α (((v, extChartAt I (1 : G) (1 : G)), s)))) s := by
-        exact (ContinuousLinearMap.snd ℝ E E).hasFDerivAt.comp_hasDerivAt s (hlocal s hs).1
+        simpa only [f, Function.comp_def, ContinuousLinearMap.coe_snd'] using
+          (ContinuousLinearMap.snd ℝ E E).hasFDerivAt.comp_hasDerivAt s (hlocal s hs).1
       have hpair : α (((v, extChartAt I (1 : G) (1 : G)), s)) = (v, f s) := by
         apply Prod.ext
         · exact (hlocal s hs).2.1
