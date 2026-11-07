@@ -131,38 +131,6 @@ variable (hJp : ∀ q, Function.Periodic (J q) 1)
       (E := fun x : M => TangentSpace I x →L[ℝ] TangentSpace I x)
       p.2 ((J q p.1).toEndomorphism p.2)))
 
-omit [IsManifold I (⊤ : ℕ∞) M] in
-/-- The Cayley formula of two smooth families of endomorphisms is smooth at a point where
-`1 - A * B` is a unit. -/
-private theorem contMDiffAt_cayleyFormula_of_isUnit {A B : ℂ × M → E →L[ℝ] E} {p : ℂ × M}
-    (hA : ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, E →L[ℝ] E) (⊤ : ℕ∞) A p)
-    (hB : ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, E →L[ℝ] E) (⊤ : ℕ∞) B p)
-    (hu : IsUnit (1 - A p * B p)) :
-    ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, E →L[ℝ] E) (⊤ : ℕ∞)
-      (fun p => cayleyFormula (A p) (B p)) p := by
-  obtain ⟨u, hu⟩ := hu
-  have hinv := contDiffAt_ringInverse (n := (⊤ : ℕ∞)) ℝ u
-  rw [hu] at hinv
-  have hi := hinv.comp_contMDiffAt (f := fun p => 1 - A p * B p)
-    (contMDiffAt_const.sub (hA.clm_comp hB))
-  simp only [cayleyFormula_def]
-  exact (((contMDiffAt_const.add (hA.clm_comp hB)).clm_comp hi).neg)
-
-omit [IsManifold I (⊤ : ℕ∞) M] in
-/-- The inverse Cayley expression `A * (1 + C) * (1 - C)⁻¹` of two smooth families of
-endomorphisms is smooth at a point where `1 - C` is a unit. -/
-private theorem contMDiffAt_mul_one_add_ringInverse {A C : ℂ × M → E →L[ℝ] E} {p : ℂ × M}
-    (hA : ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, E →L[ℝ] E) (⊤ : ℕ∞) A p)
-    (hC : ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, E →L[ℝ] E) (⊤ : ℕ∞) C p)
-    (hu : IsUnit (1 - C p)) :
-    ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, E →L[ℝ] E) (⊤ : ℕ∞)
-      (fun p => A p * (1 + C p) * Ring.inverse (1 - C p)) p := by
-  obtain ⟨u, hu⟩ := hu
-  have hinv := contDiffAt_ringInverse (n := (⊤ : ℕ∞)) ℝ u
-  rw [hu] at hinv
-  have hi := hinv.comp_contMDiffAt (f := fun p => 1 - C p) (contMDiffAt_const.sub hC)
-  exact (hA.clm_comp ((contMDiffAt_const (c := (1 : E →L[ℝ] E))).add hC)).clm_comp hi
-
 include hJp hJs in
 omit [FiniteDimensional ℝ E] in
 /-- In a fixed tangent trivialization at `x`, an end family is smooth at the base point. -/
@@ -217,7 +185,7 @@ private theorem contMDiffAt_pantsEnd (w : ThricePuncturedSphere) (x : M) :
         (J₀.almostComplexStructureAt_toLinearMap x).symm
         ((J q _).almostComplexStructureAt_toLinearMap x).symm).map _
     exact (Floer.contMDiffAt_smoothTransition_endCoord q (ne_endCenter w.2 q) x).smul
-      (contMDiffAt_cayleyFormula_of_isUnit hA (hB q) hu)
+      (SymplecticForm.contMDiffAt_cayleyFormula_of_isUnit hA (hB q) hu)
   have hcoordC {p : ℂ × M} (hp : p.2 ∈ e.baseSet) :
       coord p.2 (pantsCayley J J₀ p.1 p.2) = C p := by
     simp only [pantsCayley, hconj hp, map_sum, map_smul, map_cayleyFormula, C, A, B]
@@ -225,7 +193,7 @@ private theorem contMDiffAt_pantsEnd (w : ThricePuncturedSphere) (x : M) :
     rw [← hcoordC hx, hconj hx,
       ← map_one (e.continuousLinearEquivAt ℝ x hx).conjContinuousAlgEquiv, ← map_sub]
     exact (isUnit_one_sub_pantsCayley h₀ J hJ w x).map _
-  have hresult := contMDiffAt_mul_one_add_ringInverse hA hC hu
+  have hresult := SymplecticForm.contMDiffAt_mul_one_add_ringInverse hA hC hu
   -- Conjugation commutes with the inverse Cayley expression on a neighborhood of `x`.
   refine hresult.congr_of_eventuallyEq ?_
   filter_upwards [(e.open_baseSet.preimage continuous_snd).mem_nhds hx] with p hp

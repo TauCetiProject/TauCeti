@@ -12,6 +12,7 @@ public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 import Mathlib.Analysis.Normed.Operator.Banach
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
+import Mathlib.Geometry.Manifold.Algebra.LieGroup
 
 /-!
 # Smooth compatible Cayley interpolation
@@ -178,6 +179,33 @@ section Manifold
 
 variable {E G N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace N] [ChartedSpace G N]
+
+/-- The Cayley formula `-(1 + A B)(1 - A B)⁻¹` of two families of endomorphisms on a manifold
+which are `C^n` at a point `p` is `C^n` at `p` when `1 - A p * B p` is a unit. -/
+theorem contMDiffAt_cayleyFormula_of_isUnit {A B : N → V →L[ℝ] V} {n : WithTop ℕ∞} {p : N}
+    (hA : ContMDiffAt I 𝓘(ℝ, V →L[ℝ] V) n A p) (hB : ContMDiffAt I 𝓘(ℝ, V →L[ℝ] V) n B p)
+    (hu : IsUnit (1 - A p * B p)) :
+    ContMDiffAt I 𝓘(ℝ, V →L[ℝ] V) n (fun y => cayleyFormula (A y) (B y)) p := by
+  obtain ⟨u, hu⟩ := hu
+  have hinv := contDiffAt_ringInverse (n := n) ℝ u
+  rw [hu] at hinv
+  have hi := hinv.comp_contMDiffAt (f := fun y => 1 - A y * B y)
+    (contMDiffAt_const.sub (hA.clm_comp hB))
+  simp only [cayleyFormula_def]
+  exact (((contMDiffAt_const.add (hA.clm_comp hB)).clm_comp hi).neg)
+
+/-- The inverse Cayley expression `A (1 + C)(1 - C)⁻¹` of two families of endomorphisms on a
+manifold which are `C^n` at a point `p` is `C^n` at `p` when `1 - C p` is a unit. -/
+theorem contMDiffAt_mul_one_add_ringInverse {A C : N → V →L[ℝ] V} {n : WithTop ℕ∞} {p : N}
+    (hA : ContMDiffAt I 𝓘(ℝ, V →L[ℝ] V) n A p) (hC : ContMDiffAt I 𝓘(ℝ, V →L[ℝ] V) n C p)
+    (hu : IsUnit (1 - C p)) :
+    ContMDiffAt I 𝓘(ℝ, V →L[ℝ] V) n (fun y => A y * (1 + C y) * Ring.inverse (1 - C y)) p := by
+  obtain ⟨u, hu⟩ := hu
+  have hinv := contDiffAt_ringInverse (n := n) ℝ u
+  rw [hu] at hinv
+  have hi := hinv.comp_contMDiffAt (f := fun y => 1 - C y)
+    (contMDiffAt_const.sub hC)
+  exact (hA.clm_comp ((contMDiffAt_const (c := (1 : V →L[ℝ] V))).add hC)).clm_comp hi
 
 /-- The forward Cayley chart `J ↦ -(1 + J₀ J)(1 - J₀ J)⁻¹` relative to an `ω`-tame `J₀` sends a
 family of structures on a manifold which is `C^n` at a point `p`, where it is `ω`-tame, to a
