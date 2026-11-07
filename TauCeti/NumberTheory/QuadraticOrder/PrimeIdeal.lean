@@ -176,7 +176,7 @@ theorem isMaximal_span_natCast_omega_sub (hr : (p : ℤ) ∣ r ^ 2 - b * r - a) 
   exact RingHom.ker_isMaximal_of_surjective _ (evalRoot_surjective hr)
 
 omit [Fact p.Prime] in
-/-- The product of the two primes `(p, ω - r)` and `(p, ω - (b - r))` is contained in `(p)`: the
+/-- The product of the two ideals `(p, ω - r)` and `(p, ω - (b - r))` is contained in `(p)`: the
 only product of generators not visibly a multiple of `p` is `(ω - r)(ω - (b - r)) = -p m`. -/
 private theorem span_mul_span_le_span_natCast {m : ℤ} (hm : r ^ 2 - b * r - a = p * m) :
     Ideal.span {(p : QuadraticAlgebra ℤ a b), ω - (r : QuadraticAlgebra ℤ a b)} *
