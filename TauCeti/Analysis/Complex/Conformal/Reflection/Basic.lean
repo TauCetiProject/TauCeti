@@ -488,16 +488,17 @@ section RealPoint
 
 open Topology
 
-/-- **A conjugation-symmetric holomorphic function has a two-sided limit at a real point as soon
-as it has one from above.**  If `g` is holomorphic on a punctured disc about a real point `x`,
-commutes with conjugation, and tends to `c` along the open upper half-plane, then it tends to `c`
-along the whole punctured neighbourhood of `x`.  In particular `c` is then real. -/
-theorem tendsto_nhdsNE_of_tendsto_nhdsWithin_im_pos {g : ℂ → ℂ} {x : ℝ} {c : ℂ} {r : ℝ}
+/-- The bound behind `tendsto_nhdsNE_of_tendsto_nhdsWithin_im_pos`: near the real point `x` the
+function is bounded by `‖c‖ + 1` on the punctured disc.  Above the axis this is the hypothesis,
+below it follows from conjugation symmetry, and on the axis from continuity along a vertical
+approach from above. -/
+private theorem exists_norm_le_of_tendsto_nhdsWithin_im_pos
+    {g : ℂ → ℂ} {x : ℝ} {c : ℂ} {r : ℝ}
     (hr : 0 < r) (hg : DifferentiableOn ℂ g (Metric.ball (x : ℂ) r \ {(x : ℂ)}))
     (hconj : ∀ z ∈ Metric.ball (x : ℂ) r \ {(x : ℂ)},
       g ((starRingEnd ℂ) z) = (starRingEnd ℂ) (g z))
     (hlim : Tendsto g (𝓝[{z : ℂ | 0 < z.im}] (x : ℂ)) (𝓝 c)) :
-    Tendsto g (𝓝[≠] (x : ℂ)) (𝓝 c) := by
+    ∃ δ > 0, ∀ z : ℂ, dist z (x : ℂ) < δ → z ≠ (x : ℂ) → ‖g z‖ ≤ ‖c‖ + 1 := by
   have hopen : IsOpen (Metric.ball (x : ℂ) r \ {(x : ℂ)}) :=
     Metric.isOpen_ball.sdiff isClosed_singleton
   obtain ⟨δ₀, hδ₀, hδ⟩ := Metric.tendsto_nhdsWithin_nhds.mp hlim 1 one_pos
@@ -537,6 +538,21 @@ theorem tendsto_nhdsNE_of_tendsto_nhdsWithin_im_pos {g : ℂ → ℂ} {x : ℝ} 
           ≤ dist (z + (t : ℂ) * Complex.I) z + dist z (x : ℂ) := dist_triangle _ _ _
         _ < δ := by rw [hstep, abs_of_pos ht]; linarith [Set.mem_Iio.mp ht2]
     · exact hup z hz him
+  exact ⟨δ, hδpos, hbound⟩
+
+/-- **A conjugation-symmetric holomorphic function has a two-sided limit at a real point as soon
+as it has one from above.**  If `g` is holomorphic on a punctured disc about a real point `x`,
+commutes with conjugation, and tends to `c` along the open upper half-plane, then it tends to `c`
+along the whole punctured neighbourhood of `x`.  In particular `c` is then real. -/
+theorem tendsto_nhdsNE_of_tendsto_nhdsWithin_im_pos {g : ℂ → ℂ} {x : ℝ} {c : ℂ} {r : ℝ}
+    (hr : 0 < r) (hg : DifferentiableOn ℂ g (Metric.ball (x : ℂ) r \ {(x : ℂ)}))
+    (hconj : ∀ z ∈ Metric.ball (x : ℂ) r \ {(x : ℂ)},
+      g ((starRingEnd ℂ) z) = (starRingEnd ℂ) (g z))
+    (hlim : Tendsto g (𝓝[{z : ℂ | 0 < z.im}] (x : ℂ)) (𝓝 c)) :
+    Tendsto g (𝓝[≠] (x : ℂ)) (𝓝 c) := by
+  have hopen : IsOpen (Metric.ball (x : ℂ) r \ {(x : ℂ)}) :=
+    Metric.isOpen_ball.sdiff isClosed_singleton
+  obtain ⟨δ, hδpos, hbound⟩ := exists_norm_le_of_tendsto_nhdsWithin_im_pos hr hg hconj hlim
   have hdiff : ∀ᶠ z in 𝓝[≠] (x : ℂ), DifferentiableAt ℂ g z := by
     filter_upwards [mem_nhdsWithin_of_mem_nhds (Metric.ball_mem_nhds (x : ℂ) hr),
       self_mem_nhdsWithin] with z hz hzx
