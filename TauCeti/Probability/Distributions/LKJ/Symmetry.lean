@@ -16,10 +16,10 @@ import TauCeti.Analysis.Matrix.PosSemidef.Basic
 # Sign symmetry of partial-correlation Gram laws
 
 Independent symmetric partial correlations give a Gram law invariant under conjugation by
-any diagonal sign matrix. This holds for arbitrary symmetric marginal laws; for centered
-symmetric Beta marginals, entries have all finite moments, the mean is the identity, and
-distinct strictly lower entries have covariance zero. Zero covariance does not assert
-independence of correlation entries.
+any diagonal sign matrix. Off-diagonal integrals and covariances of distinct strictly lower
+entries vanish for arbitrary sigma-finite symmetric marginals, using totalized integrals.
+For centered symmetric Beta marginals, entries have all finite moments and the mean is the
+identity. Zero covariance does not assert independence of correlation entries.
 
 The proofs use `partialCorrelationGram_signChange`, the coordinatewise product pushforward,
 and reflection symmetry of Beta laws. These results apply to the independent-Beta construction
@@ -74,6 +74,73 @@ theorem map_signChange_map_partialCorrelationGram_pi
     ← Measure.map_map (g := partialCorrelationGram (p := p))
       continuous_partialCorrelationGram.measurable (by fun_prop), hpi]
 
+/-- Off-diagonal entries of a Gram law with independent negation-invariant marginals have
+zero integral. The marginals need only be sigma-finite; nonintegrable integrals are totalized
+to zero. -/
+@[simp]
+theorem integral_apply_map_partialCorrelationGram_pi_of_ne
+    (μ : strictLowerTriangle p → Measure ℝ) [∀ ij, SigmaFinite (μ ij)]
+    [∀ ij, (μ ij).IsNegInvariant] {i j : Fin p} (hij : i ≠ j) :
+    ∫ R : Matrix (Fin p) (Fin p) ℝ, R i j ∂((Measure.pi μ).map partialCorrelationGram) = 0 := by
+  let s : Fin p → ℝ := fun k ↦ if k = i then -1 else 1
+  have hs : ∀ k, |s k| = 1 := by intro k; simp [s]; split_ifs <;> norm_num
+  have h := congrArg (fun ν : Measure (Matrix (Fin p) (Fin p) ℝ) ↦ ∫ R, R i j ∂ν)
+    (map_signChange_map_partialCorrelationGram_pi μ hs)
+  rw [integral_map
+    (by fun_prop : Measurable (fun R : Matrix (Fin p) (Fin p) ℝ ↦
+      Matrix.of fun i j ↦ s i * R i j * s j)).aemeasurable
+    Matrix.measurable_apply.aestronglyMeasurable] at h
+  simp only [Matrix.of_apply] at h
+  simp only [s, ite_true, ite_eq_right (Ne.symm hij), neg_one_mul, mul_one, integral_neg] at h
+  linarith
+
+/-- Distinct strictly lower entries of a Gram law with independent negation-invariant
+marginals have zero covariance. The marginals need only be sigma-finite; the integrals in
+covariance are totalized, so this does not assert integrability or independence. -/
+@[simp]
+theorem covariance_apply_map_partialCorrelationGram_pi
+    (μ : strictLowerTriangle p → Measure ℝ) [∀ ij, SigmaFinite (μ ij)]
+    [∀ ij, (μ ij).IsNegInvariant]
+    {ij kl : strictLowerTriangle p} (hne : ij ≠ kl) :
+    cov[fun R : Matrix (Fin p) (Fin p) ℝ ↦ R ij.1.1 ij.1.2,
+        fun R : Matrix (Fin p) (Fin p) ℝ ↦ R kl.1.1 kl.1.2;
+      (Measure.pi μ).map partialCorrelationGram] = 0 := by
+  have hp : ij.1 ≠ kl.1 := Subtype.coe_injective.ne hne
+  have hij := ij.2
+  have hkl := kl.2
+  obtain ⟨v, hv, hvk, hvl⟩ : ∃ v : Fin p,
+      (v = ij.1.1 ∨ v = ij.1.2) ∧ v ≠ kl.1.1 ∧ v ≠ kl.1.2 := by
+    by_cases h : ij.1.1 = kl.1.1 ∨ ij.1.1 = kl.1.2
+    · refine ⟨ij.1.2, Or.inr rfl, ?_, ?_⟩
+      all_goals rcases h with h | h
+      all_goals intro h'
+      all_goals first | exact hp (Prod.ext h h') | omega
+    · exact ⟨ij.1.1, Or.inl rfl, fun h' ↦ h (Or.inl h'), fun h' ↦ h (Or.inr h')⟩
+  let s : Fin p → ℝ := fun k ↦ if k = v then -1 else 1
+  have hs : ∀ k, |s k| = 1 := by intro k; simp [s]; split_ifs <;> norm_num
+  have hsign : s ij.1.1 * s ij.1.2 = -1 := by
+    rcases hv with rfl | rfl <;> simp [s, hij.ne, hij.ne']
+  have h := congrArg (fun ν : Measure (Matrix (Fin p) (Fin p) ℝ) ↦
+      ∫ R, R ij.1.1 ij.1.2 * R kl.1.1 kl.1.2 ∂ν)
+    (map_signChange_map_partialCorrelationGram_pi μ hs)
+  rw [integral_map (f := fun R : Matrix (Fin p) (Fin p) ℝ ↦
+      R ij.1.1 ij.1.2 * R kl.1.1 kl.1.2)
+    (by fun_prop : Measurable (fun R : Matrix (Fin p) (Fin p) ℝ ↦
+      Matrix.of fun i j ↦ s i * R i j * s j)).aemeasurable
+    (Matrix.measurable_apply.mul Matrix.measurable_apply).aestronglyMeasurable] at h
+  simp only [Matrix.of_apply] at h
+  have he : ∀ R : Matrix (Fin p) (Fin p) ℝ,
+      (s ij.1.1 * R ij.1.1 ij.1.2 * s ij.1.2) *
+        (s kl.1.1 * R kl.1.1 kl.1.2 * s kl.1.2) =
+          -(R ij.1.1 ij.1.2 * R kl.1.1 kl.1.2) := by
+    intro R
+    rw [mul_right_comm (s ij.1.1), hsign]
+    simp [s, Ne.symm hvk, Ne.symm hvl]
+  simp_rw [he, integral_neg] at h
+  simp only [covariance, integral_apply_map_partialCorrelationGram_pi_of_ne μ hij.ne',
+    integral_apply_map_partialCorrelationGram_pi_of_ne μ hkl.ne', sub_zero]
+  linarith
+
 /-- Every entry of the independent-Beta Gram construction belongs to every `Lᵠ`, including
 `L∞`. This supplies absolute integrability for its moment and covariance formulas. -/
 theorem memLp_apply_map_partialCorrelationGram_pi_betaMeasure
@@ -111,19 +178,8 @@ theorem integral_apply_map_partialCorrelationGram_pi_betaMeasure
         (ae_abs_le_one_pi_centered_betaMeasure ha).mono fun z hz ↦
           partialCorrelationGram_apply_self hz i
       _ = 1 := by simp
-  · let s : Fin p → ℝ := fun k ↦ if k = i then -1 else 1
-    have hs : ∀ k, |s k| = 1 := by intro k; simp [s]; split_ifs <;> norm_num
-    have h := congrArg (fun ν : Measure (Matrix (Fin p) (Fin p) ℝ) ↦ ∫ R, R i j ∂ν)
-      (map_signChange_map_partialCorrelationGram_pi
-        (fun ij ↦ (betaMeasure (a ij) (a ij)).map (fun x ↦ -1 + 2 * x)) hs)
-    rw [integral_map
-      (by fun_prop : Measurable (fun R : Matrix (Fin p) (Fin p) ℝ ↦
-        Matrix.of fun i j ↦ s i * R i j * s j)).aemeasurable
-      Matrix.measurable_apply.aestronglyMeasurable] at h
-    simp only [Matrix.of_apply] at h
-    simp only [s, ite_true, ite_eq_right (Ne.symm hij), neg_one_mul, mul_one, integral_neg] at h
-    rw [ite_eq_right hij]
-    linarith
+  · rw [ite_eq_right hij]
+    exact integral_apply_map_partialCorrelationGram_pi_of_ne _ hij
 
 /-- Distinct strictly lower entries of the independent-Beta Gram law have covariance zero.
 Their squares are integrable; the conclusion does not assert independence. -/
@@ -137,41 +193,6 @@ theorem covariance_apply_map_partialCorrelationGram_pi_betaMeasure
         (fun x ↦ -1 + 2 * x)).map partialCorrelationGram] = 0 := by
   have (ij : strictLowerTriangle p) : IsProbabilityMeasure (betaMeasure (a ij) (a ij)) :=
     isProbabilityMeasureBeta (ha ij) (ha ij)
-  have hp : ij.1 ≠ kl.1 := Subtype.coe_injective.ne hne
-  have hij := ij.2
-  have hkl := kl.2
-  obtain ⟨v, hv, hvk, hvl⟩ : ∃ v : Fin p,
-      (v = ij.1.1 ∨ v = ij.1.2) ∧ v ≠ kl.1.1 ∧ v ≠ kl.1.2 := by
-    by_cases h : ij.1.1 = kl.1.1 ∨ ij.1.1 = kl.1.2
-    · refine ⟨ij.1.2, Or.inr rfl, ?_, ?_⟩
-      all_goals rcases h with h | h
-      all_goals intro h'
-      all_goals first | exact hp (Prod.ext h h') | omega
-    · exact ⟨ij.1.1, Or.inl rfl, fun h' ↦ h (Or.inl h'), fun h' ↦ h (Or.inr h')⟩
-  let s : Fin p → ℝ := fun k ↦ if k = v then -1 else 1
-  have hs : ∀ k, |s k| = 1 := by intro k; simp [s]; split_ifs <;> norm_num
-  have hsign : s ij.1.1 * s ij.1.2 = -1 := by
-    rcases hv with rfl | rfl <;> simp [s, hij.ne, hij.ne']
-  have h := congrArg (fun ν : Measure (Matrix (Fin p) (Fin p) ℝ) ↦
-      ∫ R, R ij.1.1 ij.1.2 * R kl.1.1 kl.1.2 ∂ν)
-    (map_signChange_map_partialCorrelationGram_pi
-      (fun ij ↦ (betaMeasure (a ij) (a ij)).map (fun x ↦ -1 + 2 * x)) hs)
-  rw [integral_map (f := fun R : Matrix (Fin p) (Fin p) ℝ ↦
-      R ij.1.1 ij.1.2 * R kl.1.1 kl.1.2)
-    (by fun_prop : Measurable (fun R : Matrix (Fin p) (Fin p) ℝ ↦
-      Matrix.of fun i j ↦ s i * R i j * s j)).aemeasurable
-    (Matrix.measurable_apply.mul Matrix.measurable_apply).aestronglyMeasurable] at h
-  simp only [Matrix.of_apply] at h
-  have he : ∀ R : Matrix (Fin p) (Fin p) ℝ,
-      (s ij.1.1 * R ij.1.1 ij.1.2 * s ij.1.2) *
-        (s kl.1.1 * R kl.1.1 kl.1.2 * s kl.1.2) =
-          -(R ij.1.1 ij.1.2 * R kl.1.1 kl.1.2) := by
-    intro R
-    rw [mul_right_comm (s ij.1.1), hsign]
-    simp [s, Ne.symm hvk, Ne.symm hvl]
-  simp_rw [he, integral_neg] at h
-  simp only [covariance, integral_apply_map_partialCorrelationGram_pi_betaMeasure ha,
-    ite_eq_right hij.ne', ite_eq_right hkl.ne', sub_zero]
-  linarith
+  exact covariance_apply_map_partialCorrelationGram_pi _ hne
 
 end TauCeti.Probability
