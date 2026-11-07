@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Coxeter.ExchangeCondition
+public import TauCeti.GroupTheory.Perm.Inversion
 public import TauCeti.GroupTheory.SpecificGroups.Braid.Basic
 
 /-!
@@ -42,6 +43,8 @@ Iwahori–Hecke algebra is defined.
   descents are the reversed adjacent pairs of `σ` and of `σ⁻¹`.
 * `TauCeti.permCoxeterSystem_length_eq_card_inversion`: the Coxeter length is the number of
   inversions.
+* `Equiv.Perm.permCoxeterSystem_length_decomposeFin'Symm`: inserting `i` at the first position
+  adds `i` to the Coxeter length.
 * `TauCeti.BraidGroup.permHom_eq_toCoxeterGroup`: the strand permutation of a braid is the
   canonical map from the Artin group of type `A` onto its Coxeter group.
 
@@ -315,6 +318,21 @@ theorem permCoxeterSystem_length_eq_card_inversion (σ : Equiv.Perm (Fin n)) :
     rw [hcard, ← ih _ hlen]
 
 end TauCeti
+
+namespace Equiv.Perm
+
+/-- The length of the permutation obtained by inserting `i` at the first position is
+`i` plus the length of the original permutation. -/
+-- The explicit Coxeter index keeps the characteristic rule in simp normal form.
+@[simp]
+theorem permCoxeterSystem_length_decomposeFin'Symm {n : ℕ}
+    (σ : Equiv.Perm (Fin (n + 1))) (i : Fin (n + 2)) :
+    (permCoxeterSystem (n + 2)).length (B := Fin (n + 1)) (Equiv.Perm.decomposeFin'Symm i σ) =
+      i.val + (permCoxeterSystem (n + 1)).length σ := by
+  rw [permCoxeterSystem_length_eq_card_inversion, permCoxeterSystem_length_eq_card_inversion,
+    Equiv.Perm.card_inversion_decomposeFin'Symm]
+
+end Equiv.Perm
 
 namespace TauCeti.BraidGroup
 

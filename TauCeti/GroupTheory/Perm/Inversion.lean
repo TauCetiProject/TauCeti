@@ -15,11 +15,14 @@ An *inversion* of `σ : Equiv.Perm (Fin n)` is a pair of indices `i < j` with `�
 sign of `σ` is `(-1)` raised to the number of inversions. Mathlib exposes the sign as the product
 `Equiv.Perm.sign_eq_prod_prod_Ioi`; this file turns that product into the cardinality of the
 finite set of inversions, which is the form met by combinatorial permutation counts. It also
-records the sign of a shuffle of two ordered blocks. Finally, it uses the sign of a block swap to
+counts the inversions created by inserting a value at the first position and records the sign of a
+shuffle of two ordered blocks. Finally, it uses the sign of a block swap to
 reindex signed sums over permutations when rotating index blocks.
 
 ## Main results
 
+* `Equiv.Perm.card_inversion_decomposeFin'Symm`: inserting `i` at the first position adds `i`
+  inversions.
 * `TauCeti.sign_eq_neg_one_pow_card_inversion`: the sign of a permutation `σ` of `Fin n` is
   `(-1)` to the number of its inversions `Finset.univ.inversions σ`.
 * `Fin.sign_revPerm`: reversing `Fin n` has sign `(-1) ^ n.choose 2`.
@@ -35,9 +38,49 @@ reindex signed sums over permutations when rotating index blocks.
 
 The sign of the block swap was first proved on the earlier Tau Ceti split branch at commit
 `05c2722248` and is adapted here to current `main`.
+
+## References
+
+* A. Björner and F. Brenti, *Combinatorics of Coxeter Groups*, Springer GTM 231 (2005),
+  Sections 1.3 and 1.5.
 -/
 
 public section
+
+namespace Equiv.Perm
+
+open _root_.Finset
+
+/-- Inserting `i` at the first position creates exactly `i` additional inversions. -/
+@[simp]
+theorem card_inversion_decomposeFin'Symm {n : ℕ} (σ : Perm (Fin (n + 1)))
+    (i : Fin (n + 2)) :
+    (univ.filter fun p : Fin (n + 2) × Fin (n + 2) =>
+      p.1 < p.2 ∧ decomposeFin'Symm i σ p.2 < decomposeFin'Symm i σ p.1).card =
+      i.val + (univ.filter fun p : Fin (n + 1) × Fin (n + 1) =>
+        p.1 < p.2 ∧ σ p.2 < σ p.1).card := by
+  have hcount : (univ.filter fun j : Fin (n + 1) => j.castSucc < i).card = i.val := by
+    simp only [Fin.lt_def, Fin.val_castSucc]
+    rw [Fin.card_filter_val_lt, Nat.min_eq_right (by omega)]
+  have hfirst : (∑ j : Fin (n + 1), if i.succAbove (σ j) < i then 1 else 0) = i.val := by
+    simp only [Fin.succAbove_lt_iff]
+    rw [Equiv.sum_comp σ (fun j => if j.castSucc < i then (1 : ℕ) else 0), sum_boole]
+    exact hcount
+  have hzero : (∑ y : Fin (n + 2), if (0 : Fin (n + 2)) < y ∧
+      decomposeFin'Symm i σ y < decomposeFin'Symm i σ 0 then 1 else 0) = i.val := by
+    rw [Fin.sum_univ_succ]
+    simpa using hfirst
+  have hsucc (x : Fin (n + 1)) :
+      (∑ y : Fin (n + 2), if x.succ < y ∧
+        decomposeFin'Symm i σ y < decomposeFin'Symm i σ x.succ then 1 else 0) =
+      ∑ y : Fin (n + 1), if x < y ∧ σ y < σ x then 1 else 0 := by
+    rw [Fin.sum_univ_succ]
+    simp
+  simp only [card_filter, Fintype.sum_prod_type]
+  rw [Fin.sum_univ_succ, hzero]
+  simp_rw [hsucc]
+
+end Equiv.Perm
 
 namespace TauCeti
 
