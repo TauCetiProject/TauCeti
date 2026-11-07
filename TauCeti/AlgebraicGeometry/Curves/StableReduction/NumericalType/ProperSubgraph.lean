@@ -933,12 +933,14 @@ theorem exists_weight_intersection_fork_five_eq (hcard : 5 < Fintype.card T.Comp
 
 /-! ### Six components -/
 
-/-- Two components of self-intersection `-2w` with positive intersection are distinct. -/
-private theorem ne_of_intersection_pos {g h : T.Component}
-    (hg : T.intersection g g = -(2 * (T.weight g : ℤ))) (egh : 0 < T.intersection g h) :
-    g ≠ h := by
+/-- A component of self-intersection `-2w` has a nonnegative intersection number only with
+other components. -/
+theorem ne_of_intersection_nonneg {i j : T.Component}
+    (hi : T.intersection i i = -(2 * (T.weight i : ℤ))) (h : 0 ≤ T.intersection i j) :
+    i ≠ j := by
   rintro rfl
-  linarith
+  have := (T.weight i).pos
+  omega
 
 /-- Six components of self-intersection `-2w` forming a chain in a numerical type with more than
 six components have no additional intersections. This is the graph-shape part of the
@@ -961,11 +963,11 @@ theorem intersection_eq_zero_of_chain_six (hcard : 6 < Fintype.card T.Component)
       T.intersection g l = 0 ∧ T.intersection h j = 0 ∧ T.intersection h k = 0 ∧
       T.intersection h l = 0 ∧ T.intersection i k = 0 ∧ T.intersection i l = 0 ∧
       T.intersection j l = 0 := by
-  have hgh := T.ne_of_intersection_pos hg egh
-  have hhi := T.ne_of_intersection_pos hh ehi
-  have hij := T.ne_of_intersection_pos hi eij
-  have hjk := T.ne_of_intersection_pos hj ejk
-  have hkl := T.ne_of_intersection_pos hk ekl
+  have hgh := T.ne_of_intersection_nonneg hg egh.le
+  have hhi := T.ne_of_intersection_nonneg hh ehi.le
+  have hij := T.ne_of_intersection_nonneg hi eij.le
+  have hjk := T.ne_of_intersection_nonneg hj ejk.le
+  have hkl := T.ne_of_intersection_nonneg hk ekl.le
   obtain ⟨zgi, zgj, zgk, zhj, zhk, zik⟩ :=
     T.intersection_eq_zero_of_chain_five (by omega) hg hh hi hj hk hgi hgj hgk hhj hhk hik
       egh ehi eij ejk
@@ -1021,11 +1023,11 @@ private theorem chain_six_form_neg (hcard : 6 < Fintype.card T.Component)
           T.intersection i j * y₃ * y₄ + T.intersection j k * y₄ * y₅ +
           T.intersection k l * y₅ * y₆) < 0 := by
   intro y₁ y₂ y₃ y₄ y₅ y₆ hy
-  have hgh := T.ne_of_intersection_pos hg egh
-  have hhi := T.ne_of_intersection_pos hh ehi
-  have hij := T.ne_of_intersection_pos hi eij
-  have hjk := T.ne_of_intersection_pos hj ejk
-  have hkl := T.ne_of_intersection_pos hk ekl
+  have hgh := T.ne_of_intersection_nonneg hg egh.le
+  have hhi := T.ne_of_intersection_nonneg hh ehi.le
+  have hij := T.ne_of_intersection_nonneg hi eij.le
+  have hjk := T.ne_of_intersection_nonneg hj ejk.le
+  have hkl := T.ne_of_intersection_nonneg hk ekl.le
   have hneg := T.intersection_six_neg hcard hgh hgi hgj hgk hgl hhi hhj hhk hhl hij hik
     hil hjk hjl hkl hy
   rw [zgi, zgj, zgk, zgl, zhj, zhk, zhl, zik, zil, zjl] at hneg
