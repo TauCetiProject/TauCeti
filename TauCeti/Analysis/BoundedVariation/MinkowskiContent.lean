@@ -279,6 +279,28 @@ section Smooth
 open TauCeti TestFunction
 open scoped ContDiff Distributions
 
+/-- **The outer shell of a thickening of a superlevel set lies in a level band.** Let `w` be
+differentiable with `|‖Dw‖ - 1| < ε` wherever `|w| ≤ (1 + ε) r`. Then the part of the open
+`r`-neighbourhood of `{w ≥ 0}` outside `{w ≥ 0}` lies in `{-(1 + ε) r < w < 0}`, since
+`‖Dw‖ ≤ 1 + ε` near the zero level. -/
+theorem thickening_sdiff_subset_preimage_Ioo_of_abs_le {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {w : E → ℝ} (hw : Differentiable ℝ w)
+    {ε r : ℝ} (hε : 0 < ε)
+    (hgrad : ∀ x, |w x| ≤ (1 + ε) * r → |‖fderiv ℝ w x‖ - 1| < ε) :
+    thickening r {x | 0 ≤ w x} \ {x | 0 ≤ w x} ⊆ w ⁻¹' Ioo (-((1 + ε) * r)) 0 := by
+  rintro x ⟨hx, hxs⟩
+  obtain ⟨p, hp, hpx⟩ := mem_thickening_iff.1 hx
+  refine ⟨?_, lt_of_not_ge hxs⟩
+  have := lt_apply_add_of_norm_fderiv_le hw (L := 1 + ε)
+    (a := -((1 + ε) * r)) (b := 0) (by nlinarith) (fun y hy1 hy2 => ?_) (hp : 0 ≤ w p)
+    (z := x - p) ?_
+  · simpa using this
+  · have := (abs_lt.1 (hgrad y (abs_le.2 ⟨by linarith, by linarith⟩))).2
+    linarith
+  · rw [← dist_eq_norm]
+    simp only [sub_neg_eq_add, zero_add]
+    exact mul_lt_mul_of_pos_left hpx (by linarith)
+
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
 
@@ -382,19 +404,9 @@ private theorem eventually_volume_thickening_sdiff_le {w : E → ℝ} (hw : Cont
   have hband {x : E} (hx : x ∈ S) : |w x| ≤ η := abs_le.2 ⟨hx.1.le, by linarith [hx.2]⟩
   have hSK : S ⊆ {x | -δ ≤ w x} := fun x hx =>
     (neg_le_neg (hη₁'.trans hη₁δ)).trans hx.1.le
-  -- The `r`-neighbourhood of `s` lies in `s ∪ S`, since `‖Dw‖ ≤ 1 + ε` near the zero level.
-  have hsub : thickening r s \ s ⊆ S := by
-    rintro x ⟨hx, hxs⟩
-    obtain ⟨p, hp, hpx⟩ := mem_thickening_iff.1 hx
-    refine ⟨?_, lt_of_not_ge hxs⟩
-    have := lt_apply_add_of_norm_fderiv_le (hw.differentiable (by simp)) (L := 1 + ε)
-      (a := -η) (b := 0) (by linarith) (fun y hy1 hy2 => ?_) (hp : 0 ≤ w p) (z := x - p) ?_
-    · simpa using this
-    · have := (abs_lt.1 (hgrad (abs_le.2 ⟨by linarith, by linarith⟩))).2
-      linarith
-    · rw [← dist_eq_norm]
-      simp only [η, sub_neg_eq_add, zero_add]
-      exact mul_lt_mul_of_pos_left hpx (by linarith)
+  have hsub : thickening r s \ s ⊆ S :=
+    thickening_sdiff_subset_preimage_Ioo_of_abs_le (hw.differentiable (by simp)) hε
+      fun x hx => hgrad (hx.trans hη₁')
   calc volume (thickening r s \ s) ≤ volume S := measure_mono hsub
     _ ≤ ENNReal.ofReal (η / (1 - 2 * ε)) * perimeter volume ⊤ s :=
         volume_preimage_Ioo_neg_le (hw.of_le (by simp)) hη hε2 ψ hψ1 hC hηC
