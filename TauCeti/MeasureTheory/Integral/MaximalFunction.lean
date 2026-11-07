@@ -90,7 +90,8 @@ Here `c = d = 2⁻¹`, so the low part is bounded by `t / 2`, its maximal functi
 * `TauCeti.ae_maximalFunction_lt_top`: the maximal function of an `L¹` function is finite almost
   everywhere.
 * `TauCeti.lintegral_rpow_maximalFunction_le`, `TauCeti.eLpNorm_maximalFunction_le`: the
-  **strong type `(p, p)` maximal inequality** for `1 < p < ∞`, with an explicit constant.
+  **strong type `(p, p)` maximal inequality** for `1 < p < ∞`, with an explicit constant, and
+  `TauCeti.exists_eLpNorm_maximalFunction_le`, the same bound with an unspecified constant.
 * `TauCeti.eLpNorm_maximalFunction_lt_top`,
   `TauCeti.ae_maximalFunction_lt_top_of_eLpNorm_ne_top`: a function with finite `Lᵖ` seminorm
   has a maximal function with finite `Lᵖ` seminorm for `1 < p ≤ ∞`, and the maximal function
@@ -111,7 +112,7 @@ public section
 namespace TauCeti
 
 open Filter MeasureTheory Metric Module Set
-open scoped ENNReal Topology
+open scoped ENNReal NNReal Topology
 
 section PseudoMetricSpace
 
@@ -135,6 +136,14 @@ theorem setLAverage_le_maximalFunction (μ : Measure X) (f : X → F) (x : X) (h
     ⨍⁻ y in ball x r, ‖f y‖ₑ ∂μ ≤ maximalFunction μ f x := by
   rw [maximalFunction_def]
   exact le_iSup₂ (f := fun r (_ : 0 < r) => ⨍⁻ y in ball x r, ‖f y‖ₑ ∂μ) r hr
+
+/-- The integral of `‖f‖ₑ` over a ball of finite measure is at most the measure of the ball times
+the maximal function at its centre. -/
+theorem setLIntegral_ball_le_measure_mul_maximalFunction (hr : 0 < r) (hμ : μ (ball x r) ≠ ∞) :
+    ∫⁻ y in ball x r, ‖f y‖ₑ ∂μ ≤ μ (ball x r) * maximalFunction μ f x := by
+  rw [← measure_mul_setLAverage _ hμ]
+  gcongr
+  exact setLAverage_le_maximalFunction μ f x hr
 
 /-- A bound holding for every ball average bounds the maximal function: the elimination rule. -/
 theorem maximalFunction_le (h : ∀ r > 0, ⨍⁻ y in ball x r, ‖f y‖ₑ ∂μ ≤ a) :
@@ -496,6 +505,19 @@ theorem eLpNorm_maximalFunction_le [TopologicalSpace F] (μ : Measure E) [μ.IsA
           4 ^ finrank ℝ E) ^ (1 / p.toReal) * (∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ) ^ (1 / p.toReal) :=
         ENNReal.mul_rpow_of_nonneg _ _ (by positivity)
     _ ≤ _ := by gcongr
+
+/-- **The Hardy–Littlewood maximal inequality** for `1 < p < ∞` with an unspecified constant:
+`‖M f‖_p ≤ C ‖f‖_p`, with `C` depending only on `μ` and `p`. The explicit constant is
+`TauCeti.eLpNorm_maximalFunction_le`. -/
+theorem exists_eLpNorm_maximalFunction_le [TopologicalSpace F] (μ : Measure E)
+    [μ.IsAddHaarMeasure] {p : ℝ≥0∞} (hp : 1 < p) (hp_top : p ≠ ∞) :
+    ∃ C : ℝ≥0, ∀ f : E → F, AEMeasurable (fun x => ‖f x‖ₑ) μ →
+      eLpNorm (maximalFunction μ f) p μ ≤ C * eLpNorm f p μ := by
+  refine ⟨((ENNReal.ofReal (2 * p.toReal * 2 ^ (p.toReal - 1) / (p.toReal - 1)) *
+    4 ^ finrank ℝ E) ^ (1 / p.toReal)).toNNReal, fun f hf => ?_⟩
+  rw [ENNReal.coe_toNNReal (ENNReal.rpow_ne_top_of_nonneg (by positivity)
+    (ENNReal.mul_ne_top ENNReal.ofReal_ne_top (ENNReal.pow_ne_top ENNReal.ofNat_ne_top)))]
+  exact eLpNorm_maximalFunction_le μ hf hp hp_top
 
 end StrongType
 
