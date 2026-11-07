@@ -170,7 +170,7 @@ private lemma integral_zpow_fejerMeasure (hφ : IsPositiveDefiniteSub φ) (N : �
     simp only [smul_eq_mul, sub_zero] at h h0
     rw [h, h0, mul_ite, mul_one, mul_zero]
   rw [integral_circleDensityMeasure
-    ((continuous_fejerDensity N).continuousOn.circleIntegrable zero_le_one)
+    ((continuous_fejerDensity N).comp (continuous_circleMap 0 1)).aestronglyMeasurable
     (fun ζ _ ↦ fejerDensity_nonneg hφ N ζ) fun ζ ↦ ζ ^ m]
   have hsphere : EqOn (fun ζ : ℂ ↦ fejerDensity φ N ζ • ζ ^ m)
       (fun ζ ↦ ∑ p ∈ range N ×ˢ range N, ((N : ℂ)⁻¹ * φ (p.1 - p.2)) * ζ ^ (m + p.2 - p.1))

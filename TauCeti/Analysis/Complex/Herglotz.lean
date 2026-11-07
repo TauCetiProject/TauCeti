@@ -249,7 +249,7 @@ private lemma exists_isFiniteMeasure_comp_mul_eq_integral_add_div_sub
   have h := hcl.circleAverage_herglotzRieszKernel_smul_re_add hw
   rw [mul_zero] at h
   rw [Measure.herglotzTransform_def, ← h,
-    integral_circleDensityMeasure hφi hφ₀ fun ζ ↦ (ζ + w) / (ζ - w)]
+    integral_circleDensityMeasure hφi.1.aestronglyMeasurable hφ₀ fun ζ ↦ (ζ + w) / (ζ - w)]
   congr 2
   ext ζ
   simp [herglotzRieszKernel_def, Complex.real_smul, mul_comm]
