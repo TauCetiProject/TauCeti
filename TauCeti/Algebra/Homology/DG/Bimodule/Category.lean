@@ -164,11 +164,11 @@ instance : (forgetToRightModuleCat.{uR, uA, uB, uM} (hA := hA) (hB := hB)).Linea
 /-- Build an isomorphism of DG bimodules from a right-linear equivalence preserving the
 homogeneous pieces, differential and left action. -/
 noncomputable def isoMk (e : M ≃ₗ[Bᵐᵒᵖ] N)
-    (hg : ∀ p x, e x ∈ N.grading p ↔ x ∈ M.grading p)
+    (hg : ∀ p x, x ∈ M.grading p ↔ e x ∈ N.grading p)
     (hd : ∀ x, N.differential (e x) = e (M.differential x))
     (hl : ∀ (a : A) (x : M), e (a • x) = a • e x) : M ≅ N := by
   let i := DGRightModuleCat.isoMk (M := M.toDGRightModuleCat) (N := N.toDGRightModuleCat)
-    e (fun p x ↦ (hg p x).symm) hd
+    e hg hd
   refine
     { hom := ⟨i.hom, ?_⟩
       inv := ⟨i.inv, ?_⟩
@@ -196,7 +196,7 @@ noncomputable def isoMk (e : M ≃ₗ[Bᵐᵒᵖ] N)
 /-- The isomorphism `isoMk e hg hd hl` acts by `e`. -/
 @[simp]
 theorem isoMk_hom_apply (e : M ≃ₗ[Bᵐᵒᵖ] N)
-    (hg : ∀ p x, e x ∈ N.grading p ↔ x ∈ M.grading p)
+    (hg : ∀ p x, x ∈ M.grading p ↔ e x ∈ N.grading p)
     (hd : ∀ x, N.differential (e x) = e (M.differential x))
     (hl : ∀ (a : A) (x : M), e (a • x) = a • e x) (x : M) :
     (isoMk e hg hd hl).hom x = e x := by
@@ -205,7 +205,7 @@ theorem isoMk_hom_apply (e : M ≃ₗ[Bᵐᵒᵖ] N)
 /-- The inverse of `isoMk e hg hd hl` acts by `e.symm`. -/
 @[simp]
 theorem isoMk_inv_apply (e : M ≃ₗ[Bᵐᵒᵖ] N)
-    (hg : ∀ p x, e x ∈ N.grading p ↔ x ∈ M.grading p)
+    (hg : ∀ p x, x ∈ M.grading p ↔ e x ∈ N.grading p)
     (hd : ∀ x, N.differential (e x) = e (M.differential x))
     (hl : ∀ (a : A) (x : M), e (a • x) = a • e x) (x : N) :
     (isoMk e hg hd hl).inv x = e.symm x := by
