@@ -54,11 +54,9 @@ def tensor (A D : FiniteRankBundleCore 𝕜 B) : FiniteRankBundleCore 𝕜 B whe
           ContinuousLinearMap.id_kronecker_id, ContinuousLinearMap.id_apply]
       continuousOn_coordChange := fun i j =>
         ((A.core.continuousOn_coordChange i j).mono
-          (fun _ (h : _ ∈ (A.core.baseSet i ∩ D.core.baseSet i) ∩
-            (A.core.baseSet j ∩ D.core.baseSet j)) => ⟨h.1.1, h.2.1⟩)).clm_kronecker
+          (inter_subset_inter inter_subset_left inter_subset_left)).clm_kronecker
           ((D.core.continuousOn_coordChange i j).mono
-            (fun _ (h : _ ∈ (A.core.baseSet i ∩ D.core.baseSet i) ∩
-              (A.core.baseSet j ∩ D.core.baseSet j)) => ⟨h.1.2, h.2.2⟩))
+            (inter_subset_inter inter_subset_right inter_subset_right))
       coordChange_comp := fun i j k x hx v => by
         rw [← ContinuousLinearMap.comp_apply, ContinuousLinearMap.kronecker_comp_kronecker,
           A.core.coordChange_linear_comp i j k x ⟨⟨hx.1.1.1, hx.1.2.1⟩, hx.2.1⟩,
@@ -81,13 +79,14 @@ variable {A A' A'' D D' D'' : FiniteRankBundleCore 𝕜 B}
 /-- Changing frames in a tensor product acts separately on the two operator factors.
 The formula holds even outside the chart domains, using the core transition operators there. -/
 @[simp]
-theorem inChartCoordinates_kronecker (A A' D D' : FiniteRankBundleCore 𝕜 B)
+theorem inChartCoordinates_tensor_kronecker (A A' D D' : FiniteRankBundleCore 𝕜 B)
     (f : (Fin A.rank → 𝕜) →L[𝕜] (Fin A'.rank → 𝕜))
     (g : (Fin D.rank → 𝕜) →L[𝕜] (Fin D'.rank → 𝕜)) (i j x : B) :
     (tensor A D).core.inChartCoordinates (tensor A' D').core i j x (f.kronecker g) =
       (A.core.inChartCoordinates A'.core i j x f).kronecker
         (D.core.inChartCoordinates D'.core i j x g) := by
-  -- Normalize the tensor ranks and core projections before comparing frame changes.
+  -- Normalize the dependent coordinate spaces; the tensor core has indexAt = id and
+  -- coordChange = the Kronecker product, which identifies the first frame-change expression.
   dsimp +instances only [tensor]
   calc
     _ = ((A'.core.coordChange x j x).kronecker (D'.core.coordChange x j x)).comp

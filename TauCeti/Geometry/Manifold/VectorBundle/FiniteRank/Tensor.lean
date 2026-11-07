@@ -46,13 +46,11 @@ instance isContMDiff_tensor (A D : FiniteRankBundleCore 𝕜 B)
     [A.core.IsContMDiff I n] [D.core.IsContMDiff I n] :
     (tensor A D).core.IsContMDiff I n where
   contMDiffOn_coordChange i j := by
-    -- The tensor core uses intersections of chart domains and product coordinate spaces.
-    dsimp +instances only [tensor]
+    simp only [VectorBundleCore.baseSet_at, localTriv_baseSet_tensor]
     exact ((A.core.contMDiffOn_coordChange (n := n) I i j).mono
-      (fun _ (hx : _ ∈ (A.core.baseSet i ∩ D.core.baseSet i) ∩
-          (A.core.baseSet j ∩ D.core.baseSet j)) ↦ ⟨hx.1.1, hx.2.1⟩)).clm_kronecker
+      (inter_subset_inter inter_subset_left inter_subset_left)).clm_kronecker
         ((D.core.contMDiffOn_coordChange (n := n) I i j).mono
-          (fun _ hx ↦ ⟨hx.1.2, hx.2.2⟩))
+          (inter_subset_inter inter_subset_right inter_subset_right))
 
 variable {A A' D D' : FiniteRankBundleCore 𝕜 B}
 
@@ -69,10 +67,10 @@ theorem contMDiffOn_inChartCoordinates_tensorHom (f : A ⟶ A') (g : D ⟶ D')
       (fun x ↦ (tensor A D).core.inChartCoordinates (tensor A' D').core i j x
         ((tensorHom f g).fiberMap x))
       ((tensor A D).core.baseSet i ∩ (tensor A' D').core.baseSet j) := by
-  simp only [fiberMap_tensorHom, inChartCoordinates_kronecker]
-  exact ((hf i j).mono (fun _ (hx : _ ∈ (A.core.baseSet i ∩ D.core.baseSet i) ∩
-      (A'.core.baseSet j ∩ D'.core.baseSet j)) ↦ ⟨hx.1.1, hx.2.1⟩)).clm_kronecker
-    ((hg i j).mono (fun _ hx ↦ ⟨hx.1.2, hx.2.2⟩))
+  simp only [fiberMap_tensorHom, inChartCoordinates_tensor_kronecker,
+    VectorBundleCore.baseSet_at, localTriv_baseSet_tensor]
+  exact ((hf i j).mono (inter_subset_inter inter_subset_left inter_subset_left)).clm_kronecker
+    ((hg i j).mono (inter_subset_inter inter_subset_right inter_subset_right))
 
 /-- Tensor products of `C^n` bundle maps between finite-rank `C^n` cores are `C^n` on total
 spaces. In particular, tensor products of holomorphic bundle maps are holomorphic. -/
