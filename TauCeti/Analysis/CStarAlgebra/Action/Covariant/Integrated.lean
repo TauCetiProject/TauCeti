@@ -7,8 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Translate
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Basic
-public import TauCeti.RepresentationTheory.Continuous.Integrated.Basic
-public import Mathlib.MeasureTheory.Integral.CompactlySupported
+public import TauCeti.RepresentationTheory.Continuous.Integrated.CompactlySupported
 
 /-!
 # Vector-valued integrated forms of covariant pairs
@@ -250,3 +249,20 @@ theorem integratedOperator_eq_coefficient_mul_integratedOperatorL1
 end ScalarComparison
 
 end TauCeti.CStarAction.CovariantRepresentation
+
+namespace ContRepresentation.IsUnitary
+
+/-- Integrating `hU.toTrivialCovariant hcont` against `f : C_c(G, ℂ)` recovers the scalar
+integrated operator `hU.integratedOperator hcont μ f`. -/
+@[simp]
+theorem integratedOperator_toTrivialCovariant {G H : Type*} [Group G] [TopologicalSpace G]
+    [MeasurableSpace G] [OpensMeasurableSpace G]
+    [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+    {U : ContRepresentation ℂ G H} (hU : U.IsUnitary) (hcont : ∀ v, Continuous fun g => U g v)
+    (μ : Measure G) [IsFiniteMeasureOnCompacts μ] (f : C_c(G, ℂ)) :
+    (hU.toTrivialCovariant hcont).integratedOperator μ f = hU.integratedOperator hcont μ f := by
+  ext v
+  simp [TauCeti.CStarAction.CovariantRepresentation.integratedOperator_apply,
+    integratedOperator_apply]
+
+end ContRepresentation.IsUnitary
