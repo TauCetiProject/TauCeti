@@ -167,6 +167,19 @@ theorem rootGeneratorWeight_eq_root_simpleIndex (i : Fin d.1.rank) :
   rw [E6.rootGeneratorWeight_inl_eq_e6Root_e6SimpleIndex, root_e6SimpleIndex, h,
     cartanMatrix_E6]
 
+/-- The represented full-weight torus, in the fundamental-weight coordinates of the index. -/
+def weightTorus : (Fin d.1.rank → d.1.Closureˣ) →* d.AmbientGroup :=
+  (E6DoubledMinuscule.weightTorusPoints d.1.Closure).comp
+    (MonoidHom.pi fun i => Pi.evalMonoidHom _ (finCongr d.rank_eq_six.symm i))
+
+/-- The indexed torus is the doubled carrier's torus after the rank identification.
+This equation is not a simp rule, so torus-action lemmas retain the indexed torus. -/
+theorem weightTorus_apply (s : Fin d.1.rank → d.1.Closureˣ) :
+    d.weightTorus s =
+      E6DoubledMinuscule.weightTorusPoints d.1.Closure
+        (fun i => s (finCongr d.rank_eq_six.symm i)) :=
+  (rfl)
+
 /-! ## The diagram symmetry on the carrier's coordinates -/
 
 /-- **The coordinate involution of the doubled index set realizes the diagram permutation that the
