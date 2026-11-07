@@ -677,10 +677,9 @@ theorem fst_fderiv_perturbedFlow_apply_eq_neg_integral (hfs : ContDiff ℝ 2 f)
   calc u T = M T (N T (u T)) := (hMN T _).symm
     _ = -M T (∫ σ in (0 : ℝ)..T, N σ (b σ)) := by rw [← hFTC, map_neg]
 
-/-- **The parameter derivative only sees the functions of the family.** If every member of a
-family `h'` is a member of the family `h`, then at the parameter `0` the parameter directions of
-`h'` move the perturbed flow in no more directions than those of `h`: by Duhamel's formula the
-derivative in a parameter direction `e` depends on `e` only through `∑ᵢ eᵢ ∇hᵢ`. -/
+/-- **The parameter derivative only sees the functions of the family.** If `h' k = h (e k)` for
+every `k`, then at the parameter `0` the range of the parameter derivative of the perturbed flow
+for `h'` is contained in that for `h`. -/
 theorem range_fst_fderiv_perturbedFlow_inr_le {κ : Type*} [Fintype κ] {h' : κ → E → ℝ}
     (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f)) (hh : ∀ i, ContDiff ℝ 2 (h i))
     (hc : ∀ i, HasCompactSupport (h i)) (hh' : ∀ k, ContDiff ℝ 2 (h' k))
@@ -695,15 +694,16 @@ theorem range_fst_fderiv_perturbedFlow_inr_le {κ : Type*} [Fintype κ] {h' : κ
   classical
   rintro _ ⟨d, rfl⟩
   set c : EuclideanSpace ℝ ι := WithLp.toLp 2 fun i ↦ ∑ k with e k = i, d k
+  have hci : ∀ i, c i = ∑ k with e k = i, d k := fun i ↦ by simp [c]
+  -- The direction `c` collects the coefficients of `d` on the members of `h'` equal to `h i`.
   have hsum : ∀ y, ∑ i, c i • ∇ (h i) y = ∑ k, d k • ∇ (h' k) y := fun y ↦ by
-    change ∑ i, (∑ k with e k = i, d k) • ∇ (h i) y = ∑ k, d k • ∇ (h' k) y
-    simp_rw [Finset.sum_smul, he]
+    simp_rw [hci, Finset.sum_smul, he]
     rw [← Finset.sum_fiberwise Finset.univ e]
     exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun k hk ↦ by
       rw [(Finset.mem_filter.1 hk).2]
   refine ⟨c, ?_⟩
-  change (fderiv ℝ (perturbedFlow f h hf hh hc T) (x, 0) (0, c)).1 =
-    (fderiv ℝ (perturbedFlow f h' hf hh' hc' T) (x, 0) (0, d)).1
+  simp only [ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_comp, Function.comp_apply,
+    ContinuousLinearMap.inr_apply, ContinuousLinearMap.coe_fst']
   rw [fst_fderiv_perturbedFlow_apply_eq_neg_integral hfs hf hh hc,
     fst_fderiv_perturbedFlow_apply_eq_neg_integral hfs hf hh' hc']
   simp only [hsum]

@@ -360,11 +360,9 @@ theorem isOpen_setOf_range_fderiv_perturbedFlow_sup_span_eq_top {ι : Type*} [Fi
             EuclideanSpace ℝ ι →ₗ[ℝ] E) ⊔ (ℝ ∙ v q) = ⊤} =
       A ⁻¹' {B | Function.Surjective B} := by
     ext q
-    change _ ↔ Function.Surjective (A q : EuclideanSpace ℝ ι × ℝ →ₗ[ℝ] E)
-    rw [← LinearMap.range_eq_top]
-    simp only [A, ContinuousLinearMap.range_coprod,
+    rw [Set.mem_preimage, Set.mem_ofPred_eq, Set.mem_ofPred_eq, ← ContinuousLinearMap.coe_coe,
+      ← LinearMap.range_eq_top, ContinuousLinearMap.range_coprod,
       ContinuousLinearMap.toLinearMap_toSpanSingleton, LinearMap.range_toSpanSingleton]
-    rfl
   rw [hset]
   exact isOpen_setOf_surjective.preimage hA
 
@@ -409,19 +407,31 @@ theorem exists_admissible_forall_mem_range_fderiv_perturbedFlow_sup_span_eq_top 
           EuclideanSpace ℝ (Fin (n x)) →ₗ[ℝ] E) ⊔
       (ℝ ∙ ∇ f (negativeGradientFlow f hf T y)) = ⊤}
   have hU : ∀ x, IsOpen (U x) := fun x ↦ by
-    have := (isOpen_setOf_range_fderiv_perturbedFlow_sup_span_eq_top hfs hf
+    -- `U x` is the slice at time `T` and parameter `0` of the open set of spanning triples.
+    have hslice : U x = (fun y ↦ (T, y, (0 : EuclideanSpace ℝ (Fin (n x))))) ⁻¹'
+        {q | LinearMap.range (((ContinuousLinearMap.fst ℝ E (EuclideanSpace ℝ (Fin (n x)))).comp
+          ((fderiv ℝ (perturbedFlow f (h x) hf (fun i ↦ (hh x i).contDiff)
+            (fun i ↦ (hh x i).hasCompactSupport) q.1) q.2).comp
+            (ContinuousLinearMap.inr ℝ E (EuclideanSpace ℝ (Fin (n x)))))) :
+            EuclideanSpace ℝ (Fin (n x)) →ₗ[ℝ] E) ⊔
+          (ℝ ∙ ∇ (perturb f (h x) q.2.2)
+            (perturbedFlow f (h x) hf (fun i ↦ (hh x i).contDiff)
+              (fun i ↦ (hh x i).hasCompactSupport) q.1 q.2).1) = ⊤} := by
+      ext y
+      simp [U, perturbedFlow_apply_zero]
+    rw [hslice]
+    exact (isOpen_setOf_range_fderiv_perturbedFlow_sup_span_eq_top hfs hf
       (fun i ↦ (hh x i).contDiff) (fun i ↦ (hh x i).hasCompactSupport)).preimage
       ((Continuous.prodMk_right T).comp
         (Continuous.prodMk_left (0 : EuclideanSpace ℝ (Fin (n x)))))
-    simpa only [U, preimage_ofPred_eq, Function.comp_apply, perturb_zero,
-      perturbedFlow_apply_zero] using this
   obtain ⟨t, ht⟩ := hC.elim_finite_subcover U hU fun x hx ↦ mem_iUnion.2 ⟨⟨x, hx⟩, hspan ⟨x, hx⟩⟩
   -- The union of the finitely many families that cover `C`.
   set eqv := Fintype.equivFin (Σ x : t, Fin (n x))
   refine ⟨_, fun j ↦ h (eqv.symm j).1 (eqv.symm j).2, fun j ↦ hh _ _, fun j ↦ hhr _ _,
     fun j ↦ hhW _ _, fun y hy ↦ ?_⟩
   obtain ⟨x, hxt, hyx⟩ := mem_iUnion₂.1 (ht hy)
-  refine top_unique ((le_of_eq (hyx : _ = ⊤).symm).trans (sup_le_sup_right ?_ _))
+  rw [Set.mem_ofPred_eq] at hyx
+  refine top_unique ((le_of_eq hyx.symm).trans (sup_le_sup_right ?_ _))
   exact range_fst_fderiv_perturbedFlow_inr_le hfs hf _ _ _ _ (fun k ↦ eqv ⟨⟨x, hxt⟩, k⟩)
     (fun k ↦ by rw [Equiv.symm_apply_apply]) y T
 
