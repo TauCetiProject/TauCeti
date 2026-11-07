@@ -10,9 +10,9 @@ public import TauCeti.Probability.ProbabilityMassFunction.Marginal
 /-!
 # Finite sums for probability mass functions
 
-This file records the summation identities for probability mass functions that need a finiteness
-hypothesis: the total mass on a finite type, and the finite-sum specializations of the marginal
-formulas of `TauCeti.Probability.ProbabilityMassFunction.Marginal`.
+This file records summation identities for probability mass functions: the total mass on a finite
+type, a bound on weighted partial sums over any type, and the finite-sum specializations of the
+marginal formulas of `TauCeti.Probability.ProbabilityMassFunction.Marginal`.
 
 ## Main results
 
@@ -44,16 +44,17 @@ theorem sum_toReal_eq_one [Fintype ι] (μ : PMF ι) : ∑ i, (μ i).toReal = 1 
   rw [← ENNReal.toReal_sum fun i _ ↦ μ.apply_ne_top i, h, ENNReal.toReal_one]
 
 /-- A `p`-weighted partial sum of a function bounded above by `M ≥ 0` is at most `M`. -/
-theorem sum_toReal_mul_le [Finite ι] (p : PMF ι) (s : Finset ι) {ψ : ι → ℝ} {M : ℝ}
+theorem sum_toReal_mul_le (p : PMF ι) (s : Finset ι) {ψ : ι → ℝ} {M : ℝ}
     (hM0 : 0 ≤ M) (hψ : ∀ y, ψ y ≤ M) : ∑ y ∈ s, (p y).toReal * ψ y ≤ M := by
-  have := Fintype.ofFinite ι
+  have hs : ∑ y ∈ s, (p y).toReal ≤ 1 := by
+    rw [← ENNReal.toReal_sum fun y _ ↦ p.apply_ne_top y, ← ENNReal.toReal_one]
+    exact ENNReal.toReal_mono ENNReal.one_ne_top (p.tsum_coe ▸ sum_le_tsum s)
   calc
     ∑ y ∈ s, (p y).toReal * ψ y ≤ ∑ y ∈ s, (p y).toReal * M :=
       Finset.sum_le_sum fun y _ ↦ mul_le_mul_of_nonneg_left (hψ y) ENNReal.toReal_nonneg
-    _ ≤ ∑ y, (p y).toReal * M :=
-      Finset.sum_le_sum_of_subset_of_nonneg (Finset.subset_univ s) fun y _ _ ↦
-        mul_nonneg ENNReal.toReal_nonneg hM0
-    _ = M := by rw [← Finset.sum_mul, sum_toReal_eq_one, one_mul]
+    _ = (∑ y ∈ s, (p y).toReal) * M := by rw [Finset.sum_mul]
+    _ ≤ 1 * M := mul_le_mul_of_nonneg_right hs hM0
+    _ = M := one_mul M
 
 variable (π : PMF (ι × κ))
 
