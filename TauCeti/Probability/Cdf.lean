@@ -160,12 +160,18 @@ theorem nonempty_setOf_le_cdf (μ : Measure ℝ) {t : ℝ} (ht : t < 1) :
     {x : ℝ | t ≤ cdf μ x}.Nonempty :=
   ((tendsto_cdf_atTop μ).eventually (eventually_gt_nhds ht)).exists.imp fun _ h ↦ h.le
 
+/-- The upper tail of a probability measure on the reals is one minus its cumulative distribution
+function. -/
+theorem measureReal_Ioi_eq_one_sub_cdf (ν : Measure ℝ) [IsProbabilityMeasure ν] (x : ℝ) :
+    ν.real (Ioi x) = 1 - cdf ν x := by
+  rw [← compl_Iic, probReal_compl_eq_one_sub measurableSet_Iic, cdf_eq_real]
+
 /-- For a symmetric real law, the mass below `-x` is the mass above `x`, which is
 `1 - cdf μ x`. -/
 theorem measureReal_Iio_neg (μ : Measure ℝ) [IsProbabilityMeasure μ] [μ.IsNegInvariant]
     (x : ℝ) : μ.real (Iio (-x)) = 1 - cdf μ x := by
-  rw [← Set.neg_Ioi, measureReal_def, Measure.measure_neg, ← measureReal_def, ← compl_Iic,
-    measureReal_compl measurableSet_Iic, probReal_univ, cdf_eq_real]
+  rw [← Set.neg_Ioi, measureReal_def, Measure.measure_neg, ← measureReal_def,
+    measureReal_Ioi_eq_one_sub_cdf]
 
 /-- **The cumulative distribution function of the reflected law.** If `μ` has no atom at `-x`,
 the law of `-X` puts mass `1 - cdf μ (-x)` on `Iic x`. -/
@@ -379,8 +385,7 @@ theorem cdf_lt_one_of_mem_support_of_lt (μ : Measure ℝ) [IsProbabilityMeasure
     apply ENNReal.toReal_pos
     · exact ((mem_support_iff_forall y).mp hy (Ioi x) (Ioi_mem_nhds hxy)).ne'
     · finiteness
-  rw [← compl_Iic, probReal_compl_eq_one_sub measurableSet_Iic] at htail
-  rw [cdf_eq_real]
+  rw [measureReal_Ioi_eq_one_sub_cdf] at htail
   linarith
 
 /-- A law carried by an open interval with full closed-interval support has positive cdf
