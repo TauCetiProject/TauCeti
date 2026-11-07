@@ -36,29 +36,20 @@ theorem locallyIntegrable_log_norm {E : Type*} [NormedAddCommGroup E] [NormedSpa
     [μ.IsAddHaarMeasure] :
     LocallyIntegrable (fun x : E ↦ Real.log ‖x‖) μ := by
   rcases subsingleton_or_nontrivial E with hE | hE
-  · have h : (fun x : E ↦ Real.log ‖x‖) = fun _ ↦ 0 := by
-      funext x
-      rw [Subsingleton.elim x 0, norm_zero, Real.log_zero]
-    rw [h]
-    exact locallyIntegrable_const 0
+  · simpa [norm_of_subsingleton] using locallyIntegrable_const (μ := μ) (0 : ℝ)
   -- Dominate `|log ‖x‖|` by `2 ‖x‖ ^ (-1 / 2) + ‖x‖`.
-  have hpow : LocallyIntegrable (fun x : E ↦ 2 * ‖x‖ ^ (-(1 / 2 : ℝ))) μ := by
-    refine locallyIntegrable_of_norm_le_rpow Module.finrank_pos (C := 2) (α := 1 / 2) ?_
-      (Filter.Eventually.of_forall fun x ↦ ?_)
-      ((measurable_norm.pow_const _).const_mul 2).aestronglyMeasurable
-    · have : (1 : ℝ) ≤ Module.finrank ℝ E := by exact_mod_cast Module.finrank_pos (R := ℝ) (M := E)
-      linarith
-    · rw [Real.norm_of_nonneg (by positivity)]
+  have hpow : LocallyIntegrable (fun x : E ↦ 2 * ‖x‖ ^ (-(1 / 2 : ℝ))) μ :=
+    locallyIntegrable_of_norm_le_rpow (C := 2) (α := 1 / 2) Module.finrank_pos
+      (by linarith [(Nat.one_le_cast (α := ℝ)).2 (Module.finrank_pos (R := ℝ) (M := E))])
+      (.of_forall fun x ↦ by rw [Real.norm_of_nonneg (by positivity)])
+      (by fun_prop : Measurable _).aestronglyMeasurable
   refine (hpow.add continuous_norm.locallyIntegrable).mono
-    (Real.measurable_log.comp measurable_norm).aestronglyMeasurable
-    (Filter.Eventually.of_forall fun x ↦ ?_)
-  rw [Real.norm_eq_abs, Pi.add_apply, Real.norm_of_nonneg (by positivity)]
+    (by fun_prop : Measurable fun x : E ↦ Real.log ‖x‖).aestronglyMeasurable
+    (.of_forall fun x ↦ ?_)
+  rw [Real.norm_eq_abs, Pi.add_apply, Real.norm_of_nonneg (by positivity), abs_le]
   -- `-2 ‖x‖ ^ (-1 / 2) ≤ log ‖x‖ ≤ ‖x‖`.
   have hlow := Real.neg_rpow_div_le_log (norm_nonneg x) (ε := 1 / 2) (by norm_num)
-  have hup := Real.log_le_rpow_div (norm_nonneg x) (ε := 1) one_pos
-  rw [Real.rpow_one, div_one] at hup
-  have hpow : 0 ≤ ‖x‖ ^ (-(1 / 2 : ℝ)) := Real.rpow_nonneg (norm_nonneg x) _
-  rw [abs_le]
-  constructor <;> linarith [norm_nonneg x]
+  constructor <;> linarith [Real.log_le_self (norm_nonneg x), norm_nonneg x,
+    Real.rpow_nonneg (norm_nonneg x) (-(1 / 2))]
 
 end TauCeti
