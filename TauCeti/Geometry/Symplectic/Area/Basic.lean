@@ -38,6 +38,9 @@ period of a `2π`-periodic curve backwards as a loop on `[0, 1]` negates its are
 (`TauCeti.SymplecticForm.loopArea_comp_sub_mul`).
 
 A square-integrable differential also gives an integrable symplectic area density, on any domain.
+Pairing bounded loops with functions whose norms have vanishing mean over `[0, 1]` gives
+integrals of the symplectic form that tend to zero
+(`TauCeti.SymplecticForm.tendsto_integral_apply_of_tendsto_integral_norm`).
 
 ## References
 
@@ -81,6 +84,29 @@ theorem integrableOn_fderiv_apply_of_integrableOn_norm_fderiv_sq
     _ ≤ ‖B‖ * ‖fderiv ℝ u z‖ ^ 2 := by
       rw [pow_two, ← mul_assoc]
       gcongr
+
+/-- **Pairing with functions of vanishing mean norm.** If the loops `y_i` are bounded by `R` and the
+integrals over `[0, 1]` of the norms of the continuous `d_i` tend to `0`, then so do the integrals
+`∫₀¹ ω(y_i(t), d_i(t)) dt`. -/
+theorem tendsto_integral_apply_of_tendsto_integral_norm [FiniteDimensional ℝ V]
+    {ω : SymplecticForm V} {ι : Type*} {l : Filter ι}
+    {y d : ι → ℝ → V} {R : ℝ} (hy : ∀ i t, ‖y i t‖ ≤ R) (hd : ∀ i, Continuous (d i))
+    (hdl : Tendsto (fun i ↦ ∫ t in (0 : ℝ)..1, ‖d i t‖) l (𝓝 0)) :
+    Tendsto (fun i ↦ ∫ t in (0 : ℝ)..1, ω (y i t) (d i t)) l (𝓝 0) := by
+  set Bω := ω.toBilinForm.toContinuousBilinearMap
+  have hω : ∀ v w, |ω v w| ≤ ‖Bω‖ * ‖v‖ * ‖w‖ := fun v w ↦ by
+    simpa only [Bω, LinearMap.toContinuousBilinearMap_apply, Real.norm_eq_abs] using
+      Bω.le_opNorm₂ v w
+  have hlim := hdl.const_mul (‖Bω‖ * R)
+  rw [mul_zero] at hlim
+  refine squeeze_zero_norm (fun i ↦ ?_) hlim
+  rw [← intervalIntegral.integral_const_mul]
+  refine intervalIntegral.norm_integral_le_of_norm_le zero_le_one
+    (Eventually.of_forall fun t _ ↦ ?_) ((continuous_const.mul (hd i).norm).intervalIntegrable _ _)
+  rw [Real.norm_eq_abs]
+  refine (hω _ _).trans ?_
+  gcongr
+  exact hy i t
 
 /-- **Stokes' formula for symplectic area on a rectangle.** If `u` is `C²` at every point of the
 rectangle `Icc a b ⊆ ℝ × ℝ`, its symplectic area over the rectangle is the integral of the
