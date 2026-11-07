@@ -384,33 +384,6 @@ theorem isIso_simpleRepHom {i : Q} {M : QuiverRep k Q} (x : M.obj ((Paths.of Q).
     rw [hs.eq_of_src ((simpleRepHom x hx).app ((Paths.of Q).obj a)) (hs.iso ht).hom]
     infer_instance
 
-/-- **A nonzero vector of a simple representation generates it**: the subrepresentation attached to
-a nonzero vector `x ∈ Mᵢ` by the paths of length at least `0` is everything. -/
-theorem QuiverSubrep.toSubmodule_pathSpan_zero_eq_top_of_simple {M : QuiverRep k Q} [Simple M]
-    {i : Q} {x : M.obj ((Paths.of Q).obj i)} (hx : x ≠ 0) (a : Q) :
-    (QuiverSubrep.pathSpan (i := i) x 0).toSubmodule a = ⊤ := by
-  rcases (QuiverSubrep.pathSpan (i := i) x 0).eq_bot_or_eq_top with h | h
-  · refine absurd ?_ hx
-    have hmem := QuiverSubrep.mem_pathSpan_zero (i := i) x
-    rw [h, QuiverSubrep.toSubmodule_bot] at hmem
-    exact (Submodule.mem_bot k).1 hmem
-  · rw [h, QuiverSubrep.toSubmodule_top]
-
-/-- In a simple representation, if no path of positive length out of `i` acts nontrivially on `x`
-at `i` itself (as over an acyclic quiver), the paths of positive length out of `i` span nothing. -/
-private theorem toSubmodule_pathSpan_one_eq_bot_of_simple {M : QuiverRep k Q} [Simple M]
-    {i : Q} {x : M.obj ((Paths.of Q).obj i)} (hx : x ≠ 0)
-    (hxi : ∀ p : Quiver.Path i i, p.length ≠ 0 → M.map p x = 0) (a : Q) :
-    (QuiverSubrep.pathSpan (i := i) x 1).toSubmodule a = ⊥ := by
-  rcases (QuiverSubrep.pathSpan (i := i) x 1).eq_bot_or_eq_top with h | h
-  · rw [h, QuiverSubrep.toSubmodule_bot]
-  · refine absurd ?_ hx
-    have hmem : x ∈ (QuiverSubrep.pathSpan (i := i) x 1).toSubmodule i := by
-      rw [h, QuiverSubrep.toSubmodule_top]
-      trivial
-    rw [QuiverSubrep.pathSpan_one_self_of_forall_map_eq_zero (i := i) x hxi] at hmem
-    exact (Submodule.mem_bot k).1 hmem
-
 /-- Over an acyclic quiver, a simple representation with a nonzero vector at `i` vanishes away
 from `i`. -/
 private theorem isZero_obj_of_simple_of_ne (hQ : Quiver.IsAcyclic Q) (M : QuiverRep k Q) [Simple M]
@@ -423,7 +396,7 @@ private theorem isZero_obj_of_simple_of_ne (hQ : Quiver.IsAcyclic Q) (M : Quiver
     rw [QuiverSubrep.toSubmodule_pathSpan_zero_eq_top_of_simple hx a]
     trivial
   rw [QuiverSubrep.pathSpan_zero_eq_pathSpan_one_of_ne (i := i) x ha,
-    toSubmodule_pathSpan_one_eq_bot_of_simple hx hxi a] at hy
+    QuiverSubrep.toSubmodule_pathSpan_one_eq_bot_of_simple hx hxi a] at hy
   exact (Submodule.mem_bot k).1 hy
 
 /-- Over an acyclic quiver, a nonzero vector `x` at `i` of a simple representation spans `Mᵢ`. -/
