@@ -130,10 +130,10 @@ concentrated on `[-R, R]` is at most `3δ`, when `p` approximates the bounded fu
 on `[-M, M]` for some `M > R`. -/
 private theorem exists_dominating_polynomial {μ : Measure ℝ} [IsProbabilityMeasure μ]
     {f : ℝ →ᵇ ℝ} {p : ℝ[X]} {R M δ : ℝ} (hR : 0 ≤ R) (hRM : R < M) (hδ : 0 < δ)
-    (hae : ∀ᵐ x ∂μ, |x| ≤ R) (hμ : ∀ n, Integrable (fun x : ℝ => x ^ n) μ)
-    (hp : ∀ x ∈ Icc (-M) M, |p.eval x - f x| < δ) :
+    (hae : ∀ᵐ x ∂μ, |x| ≤ R) (hp : ∀ x ∈ Icc (-M) M, |p.eval x - f x| < δ) :
     ∃ q : ℝ[X], (∀ x, |f x - p.eval x| ≤ q.eval x) ∧ ∫ x, q.eval x ∂μ ≤ 3 * δ := by
   have hM : 0 < M := hR.trans_lt hRM
+  have hμ := integrable_pow_of_ae_abs_le hae
   set C := ‖f‖
   have hfC (x : ℝ) : |f x| ≤ C := by simpa [Real.norm_eq_abs] using f.norm_coe_le_norm x
   set t := δ / ((C + δ) ^ 2 + 1)
@@ -159,20 +159,6 @@ private theorem exists_dominating_polynomial {μ : Measure ℝ} [IsProbabilityMe
   calc ∫ x, q.eval x ∂μ ≤ ∫ _, 3 * δ ∂μ :=
         integral_mono_ae (integrable_eval_of_forall_integrable_pow hμ q) (integrable_const _) hb
     _ = 3 * δ := by simp
-
-/-- If `|f - p| < δ` on `[-M, M]` and `μ` is a probability measure concentrated on `[-R, R]` with
-`R ≤ M`, then `|∫ p dμ - ∫ f dμ| ≤ δ`. -/
-private theorem abs_integral_eval_sub_le {μ : Measure ℝ} [IsProbabilityMeasure μ]
-    {f : ℝ →ᵇ ℝ} {p : ℝ[X]} {R M δ : ℝ} (hRM : R ≤ M) (hae : ∀ᵐ x ∂μ, |x| ≤ R)
-    (hμ : ∀ n, Integrable (fun x : ℝ => x ^ n) μ)
-    (hp : ∀ x ∈ Icc (-M) M, |p.eval x - f x| < δ) :
-    |∫ x, p.eval x ∂μ - ∫ x, f x ∂μ| ≤ δ := by
-  rw [← integral_sub (integrable_eval_of_forall_integrable_pow hμ p) (f.integrable _)]
-  have hb : ∀ᵐ x ∂μ, ‖p.eval x - f x‖ ≤ δ := by
-    filter_upwards [hae] with x hx
-    exact (Real.norm_eq_abs _).trans_le (hp x (abs_le.1 (hx.trans hRM))).le
-  have := norm_integral_le_of_norm_le_const hb
-  rwa [Real.norm_eq_abs, probReal_univ, mul_one] at this
 
 end TauCeti
 
@@ -212,8 +198,8 @@ theorem tendsto_of_tendsto_integral_pow {μs : ι → ProbabilityMeasure ℝ}
   set δ := ε / 6 with hδε
   have hδ : 0 < δ := by positivity
   obtain ⟨p, hp⟩ := exists_polynomial_near_of_continuousOn (-M) M f f.continuous.continuousOn δ hδ
-  obtain ⟨q, hfpq, hqμ⟩ := exists_dominating_polynomial hR (lt_add_one R) hδ hae hμ hp
-  have hfpμ := abs_integral_eval_sub_le (lt_add_one R).le hae hμ hp
+  obtain ⟨q, hfpq, hqμ⟩ := exists_dominating_polynomial hR (lt_add_one R) hδ hae hp
+  have hfpμ := abs_integral_eval_sub_le (lt_add_one R).le hae hp
   -- Eventually `∫ q dμᵢ < 4δ` and `|∫ p dμᵢ - ∫ p dμ| < δ`. Since `|f - p| ≤ q`, the triangle
   -- inequality bounds `|∫ f dμᵢ - ∫ f dμ|` by
   -- `|∫ f dμᵢ - ∫ p dμᵢ| + |∫ p dμᵢ - ∫ p dμ| + |∫ p dμ - ∫ f dμ| < 4δ + δ + δ = ε`.
