@@ -234,7 +234,8 @@ theorem eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_boundary
     refine tendsto_zero_cobounded_of_tendsto_mul_upperHalfPlaneSet hinfty ?_
       (Eventually.of_forall hφconj) hφf
     filter_upwards [isBounded_def.mp hfin.isBounded] with z hz _
-    exact ((hφd z hz).differentiableAt (hfin.isClosed.isOpen_compl.mem_nhds hz)).continuousAt
+    exact ((hφd z hz).differentiableAt
+      (hfin.isClosed.isOpen_compl.mem_nhds hz)).continuousAt.continuousWithinAt
   -- Partial fractions and integration then recover `f` itself.
   exact eqOn_const_mul_schwarzChristoffelPrimitive_add_of_tendsto a e ha z₀ hf hfn hφd hφf hpole
     hdecay
