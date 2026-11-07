@@ -19,7 +19,8 @@ hence on stalks. Thus these are actual quotient thickenings of the formal spectr
 
 The construction works for any ideal of definition, without a noetherianity or finite
 generation assumption on `J`. It supplies the quotient morphisms used to recover formal
-schemes from their infinitesimal thickenings.
+schemes from their infinitesimal thickenings. The inclusion is an isomorphism exactly when
+`J = 0`; this identifies the zero-ideal thickening with the whole formal spectrum.
 
 ## References
 
@@ -168,5 +169,47 @@ instance fromSpecQuotient_mono (hJ : IsAdic J) : Mono (fromSpecQuotient hJ) := b
       (fromSpecQuotient_isHomeomorph hJ).injective fun q ↦
         ConcreteCategory.epi_of_surjective _ (fromSpecQuotient_stalk_surjective hJ q)
   exact LocallyRingedSpace.forgetToSheafedSpace.mono_of_mono_map this
+
+/-- The zero-ideal quotient inclusion is an isomorphism whenever zero defines the topology. -/
+instance fromSpecQuotient_bot_isIso (h0 : IsAdic (⊥ : Ideal A)) :
+    IsIso (fromSpecQuotient h0) := by
+  have : IsIso (fromSpecQuotient h0).base :=
+    (TopCat.isIso_iff_isHomeomorph _).mpr (fromSpecQuotient_isHomeomorph h0)
+  have : IsIso (fromSpecQuotient h0).c := by
+    -- The sheaf component has the same map, with the bundled spectrum's presheaf as target.
+    convert (sheafToPresheaf _ _).map_isIso
+      (toQuotientSheaf (IsAdicRing.ideal_spec A).2.1 h0) using 1; rfl
+  have : IsIso (C := PresheafedSpace CommRingCat) (fromSpecQuotient h0).toHom :=
+    PresheafedSpace.isIso_of_components _
+  -- The composite forgetful functor's map is the underlying presheafed-space morphism.
+  have : IsIso ((LocallyRingedSpace.forgetToSheafedSpace ⋙
+      SheafedSpace.forgetToPresheafedSpace).map (fromSpecQuotient h0)) := ‹_›
+  exact isIso_of_reflects_iso _
+    (LocallyRingedSpace.forgetToSheafedSpace ⋙ SheafedSpace.forgetToPresheafedSpace)
+
+/-- An ideal-of-definition thickening is the whole formal spectrum exactly when its ideal is
+zero. Being a homeomorphism on points is not sufficient. -/
+@[simp]
+theorem fromSpecQuotient_isIso_iff (hJ : IsAdic J) :
+    IsIso (fromSpecQuotient hJ) ↔ J = ⊥ := by
+  constructor
+  · intro h
+    have hsections : IsIso ((fromSpecQuotient hJ).c.app (op ⊤)) :=
+      LocallyRingedSpace.Γ.map_isIso (fromSpecQuotient hJ).op
+    have := (IsAdicRing.ideal_spec A).2.2
+    have : IsIso (CommRingCat.ofHom (Ideal.Quotient.mk J)) := by
+      have heq := fromSpecQuotient_globalSections hJ
+      have hglobal := (globalSectionsIso (IsAdicRing.ideal_spec A).2.1).isIso_inv
+      have hquotient := (quotientSheafGlobalSectionsIso hJ).isIso_hom
+      have hi := IsIso.comp_isIso' hglobal hsections
+      have hi' := IsIso.comp_isIso' hi hquotient
+      -- The intermediate objects are the bundled and unbundled rings of global sections.
+      erw [Category.assoc, heq] at hi'
+      exact hi'
+    have hinj := (ConcreteCategory.bijective_of_isIso
+      (CommRingCat.ofHom (Ideal.Quotient.mk J))).injective
+    simpa using (RingHom.injective_iff_ker_eq_bot (Ideal.Quotient.mk J)).mp hinj
+  · rintro rfl
+    infer_instance
 
 end TauCeti.FormalScheme.Spf
