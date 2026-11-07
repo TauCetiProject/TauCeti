@@ -224,14 +224,13 @@ theorem mem_niemeierA24_carrier_iff
     let c : RootfulNiemeierType.a24.rootLattice.DiscriminantGroup := Submodule.Quotient.mk ⟨x, hx⟩
     have hE : a24DiscriminantGroupEquiv c = Submodule.Quotient.mk ⟨_, hdual.mp hx⟩ :=
       (a24DiscriminantGroupEquiv_mk _).trans (congrArg _ (Subtype.ext (by simp)))
-    rw [glueSubgroup_a24]
-    -- Compare the multiples `k • [5]` and `k • 5 ω₁` through the two equivalences.
-    refine AddSubgroup.mem_zmultiples_iff.trans ((exists_congr fun k ↦ ?_).trans
-      AddSubgroup.mem_zmultiples_iff.symm)
-    refine e.eq_symm_apply.trans ((Iff.of_eq (congrArg (· = c) (map_zsmul e k _))).trans ?_)
-    refine a24DiscriminantGroupEquiv.injective.eq_iff.symm.trans (Iff.of_eq ?_)
-    exact congrArg₂ (· = ·) ((map_zsmul a24DiscriminantGroupEquiv k _).trans
-      (congrArg (k • ·) a24DiscriminantGroupEquiv_glueWordIsometry)) hE
+    -- Transport the cyclic subgroup `⟨[5]⟩` along the composite equivalence.
+    let φ := e.trans a24DiscriminantGroupEquiv.toAddEquiv
+    rw [glueSubgroup_a24, ← AddSubgroup.mem_map_iff_mem (f := φ.toAddMonoidHom) φ.injective,
+      AddMonoidHom.map_zmultiples]
+    exact Iff.of_eq (congrArg₂ (· ∈ AddSubgroup.zmultiples ·)
+      ((congrArg a24DiscriminantGroupEquiv (e.apply_symm_apply c)).trans hE)
+      a24DiscriminantGroupEquiv_glueWordIsometry)
   rw [RootfulNiemeierType.mem_lattice_carrier_iff]
   constructor
   · rintro ⟨hx, hw⟩
