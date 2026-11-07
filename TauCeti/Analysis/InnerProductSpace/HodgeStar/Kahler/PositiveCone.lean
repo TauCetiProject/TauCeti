@@ -135,8 +135,8 @@ theorem inner_kahlerForm_nonneg_of_mem_positiveCone {J : AlmostComplexStructure 
 
 /-- Every two-vector `F` splits into the anti-self-dual part `μ = (F - ⋆F) / 2` and the
 self-dual part `F - μ = (F + ⋆F) / 2`. -/
-private theorem exists_hodgeStar_eq_neg_and_hodgeStar_sub_eq (o : Orientation ℝ V (Fin 4))
-    (hkl : 2 + 2 = finrank ℝ V) (F : ⋀[ℝ]^2 V) :
+private theorem exists_hodgeStar_eq_neg_and_hodgeStar_sub_eq [Fact (finrank ℝ V = 4)]
+    (o : Orientation ℝ V (Fin 4)) (hkl : 2 + 2 = finrank ℝ V) (F : ⋀[ℝ]^2 V) :
     ∃ μ : ⋀[ℝ]^2 V, o.hodgeStar hkl μ = -μ ∧ o.hodgeStar hkl (F - μ) = F - μ := by
   refine ⟨_, o.hodgeStar_smul_sub_hodgeStar even_two hkl F, ?_⟩
   rw [show F - (2⁻¹ : ℝ) • (F - o.hodgeStar hkl F) = (2⁻¹ : ℝ) • (F + o.hodgeStar hkl F) by
