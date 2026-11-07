@@ -33,6 +33,20 @@ open ComplexConjugate
 
 namespace Polynomial
 
+/-- The real quadratic `X² - 2 Re z · X + ‖z‖²` has exactly the complex roots `conj z` and `z`. -/
+private lemma aroots_quadratic_factor (z : ℂ) :
+    (X ^ 2 - C (2 * z.re) * X + C (‖z‖ ^ 2) : ℝ[X]).aroots ℂ = {conj z, z} := by
+  have hQ : (X ^ 2 - C (2 * z.re) * X + C (‖z‖ ^ 2) : ℝ[X]).map (algebraMap ℝ ℂ) =
+      (X - C (conj z)) * (X - C z) := by
+    have : (X ^ 2 - C (2 * z.re) * X + C (‖z‖ ^ 2) : ℝ[X]).map (algebraMap ℝ ℂ) =
+        X ^ 2 - C (↑(2 * z.re) : ℂ) * X + C (‖z‖ ^ 2 : ℂ) := by
+      simp
+    rw [this, ← Complex.add_conj, map_add, ← Complex.mul_conj', map_mul]
+    ring
+  rw [aroots_def, hQ, roots_mul (mul_ne_zero (X_sub_C_ne_zero _) (X_sub_C_ne_zero _)),
+    roots_X_sub_C, roots_X_sub_C]
+  rfl
+
 /-- The product of a real polynomial `f` over the complex roots of a real polynomial `p` is a
 nonnegative real multiple of its product over the real roots of `p`, all roots counted with
 multiplicity. The nonnegative factor is the contribution `|f(z)|²` of the conjugate pairs of
@@ -69,15 +83,7 @@ theorem exists_prod_aroots_eq_mul_prod_roots (p f : ℝ[X]) :
       simpa using hz
     obtain ⟨q, rfl⟩ := quadratic_dvd_of_aeval_eq_zero_im_ne_zero p hz him
     set Q : ℝ[X] := X ^ 2 - C (2 * z.re) * X + C (‖z‖ ^ 2)
-    have hQ : Q.map (algebraMap ℝ ℂ) = (X - C (conj z)) * (X - C z) := by
-      have : Q.map (algebraMap ℝ ℂ) = X ^ 2 - C (↑(2 * z.re) : ℂ) * X + C (‖z‖ ^ 2 : ℂ) := by
-        simp [Q]
-      rw [this, ← Complex.add_conj, map_add, ← Complex.mul_conj', map_mul]
-      ring
-    have hQroots : Q.aroots ℂ = {conj z, z} := by
-      rw [aroots_def, hQ, roots_mul (mul_ne_zero (X_sub_C_ne_zero _) (X_sub_C_ne_zero _)),
-        roots_X_sub_C, roots_X_sub_C]
-      rfl
+    have hQroots : Q.aroots ℂ = {conj z, z} := aroots_quadratic_factor z
     -- A real root of `Q` would be a real root of `p = Q q`.
     have hQreal : Q.roots = 0 := Multiset.eq_zero_of_forall_notMem fun x hx ↦
       hr ⟨x, by simp [(isRoot_of_mem_roots hx).eq_zero]⟩
