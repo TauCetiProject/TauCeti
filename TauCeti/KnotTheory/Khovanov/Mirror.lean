@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.Cube.DualComplex
+public import TauCeti.Algebra.Homology.Cube.Dual.Complex
 public import TauCeti.Algebra.Homology.LinearHomComplex.Basic
 public import TauCeti.KnotTheory.Khovanov.Complex
 public import TauCeti.KnotTheory.Khovanov.Resolution.Mirror

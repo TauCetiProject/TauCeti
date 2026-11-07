@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.Algebra.Homology.HomotopyCategory.HomComplexSingle
 public import TauCeti.Algebra.Homology.Cube.Basic
-public import TauCeti.Algebra.Homology.Cube.Dual
+public import TauCeti.Algebra.Homology.Cube.Dual.Basic
 
 /-!
 # The totalization of a dual cube is a dual complex
@@ -112,12 +112,6 @@ private lemma cubeComplex_d_π' {r r' : ℤ} (h : r + 1 = r') (T : {T : Finset �
   subst h
   exact F.cubeComplex_d_π T
 
-/-- The indices below `c` are those of `S` and those of `Sᶜ \ {c}`. -/
-private lemma card_filter_lt_eq (S : Finset ι) (c : ι) :
-    #{y | y < c} = #{y ∈ S | y < c} + #{y ∈ Sᶜ.erase c | y < c} := by
-  rw [filter_erase, erase_eq_of_notMem (by simp), ← card_union_of_disjoint
-    (disjoint_filter_filter disjoint_compl_right), ← filter_union, union_compl]
-
 variable {a b : ℤ} (hab : a + b = Fintype.card ι)
 
 include hab in
@@ -138,7 +132,8 @@ private def homVertex (i : ℤ) (S : {S : Finset ι // (#S : ℤ) = i + b}) :
           (F.cubeComplexπ ⟨S.1ᶜ, card_compl_eq hab S.2⟩ ≫ ModuleCat.ofHom φ) (neg_add_cancel i)
       map_add' φ ψ := by simp
       map_smul' r φ := by
-        rw [RingHom.id_apply, show ModuleCat.ofHom (r • φ) = r • ModuleCat.ofHom φ from rfl,
+        rw [RingHom.id_apply, show ModuleCat.ofHom (r • φ) = r • ModuleCat.ofHom φ from
+          ModuleCat.hom_ext (by rw [ModuleCat.hom_smul, ModuleCat.hom_ofHom, ModuleCat.hom_ofHom]),
           Linear.comp_smul, Cochain.toSingleMk_smul]
         exact smul_comm _ _ _ }
 
@@ -249,7 +244,10 @@ private lemma dualCubeSign_edge {i : ℤ} {S : Finset ι} (hS : (#S : ℤ) = i +
   rw [Finset.dualCubeSign_insert hc]
   simp only [Finset.dualCubeSign, ← Int.negOnePow_add]
   rw [Int.negOnePow_eq_iff, Int.even_iff]
-  have := card_filter_lt_eq S c
+  -- The indices below `c` are those of `S` and those of `Sᶜ \ {c}`.
+  have : #{y | y < c} = #{y ∈ S | y < c} + #{y ∈ Sᶜ.erase c | y < c} := by
+    rw [filter_erase, erase_eq_of_notMem (by simp), ← card_union_of_disjoint
+      (disjoint_filter_filter disjoint_compl_right), ← filter_union, union_compl]
   omega
 
 private lemma dualCubeComplexXIso_comm (i : ℤ) :
