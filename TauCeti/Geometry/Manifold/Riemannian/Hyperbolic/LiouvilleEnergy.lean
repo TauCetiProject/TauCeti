@@ -7,14 +7,16 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
-import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.Convex.Integral
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.MeasureTheory.Function.L2Space
+import TauCeti.Analysis.SpecialFunctions.Exp.QuadraticBound
 import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem
 import TauCeti.Geometry.Manifold.Riemannian.Poincare
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
+import TauCeti.MeasureTheory.Integral.ContinuousMap
+import TauCeti.MeasureTheory.Integral.ExpAddMul
 
 /-!
 # The Liouville energy of the curvature equation
@@ -114,18 +116,6 @@ variable [IsManifold I 1 M] [CompactSpace M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
 
-/-- A continuous function on a compact Riemannian manifold is integrable. -/
-private theorem integrable_of_continuous {f : M → ℝ} (hf : Continuous f) :
-    Integrable f (riemannianVolume I M) :=
-  hf.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace f)
-
-/-- The product of an integrable function with a continuous function on a compact Riemannian
-manifold is integrable. -/
-private theorem integrable_mul_of_continuous {K f : M → ℝ}
-    (hK : Integrable K (riemannianVolume I M)) (hf : Continuous f) :
-    Integrable (fun x ↦ K x * f x) (riemannianVolume I M) :=
-  hK.mul_of_top_left (hf.memLp_top_of_hasCompactSupport (HasCompactSupport.of_compactSpace f) _)
-
 /-- On a compact manifold, the Liouville energy of a `C¹` function `u` is
 `(∫ |∇u|² dV) / 2 + ∫ K u dV + (∫ e^(2u) dV) / 2`, for an integrable `K`. -/
 theorem liouvilleEnergy_eq_add {K u : M → ℝ} (hK : Integrable K (riemannianVolume I M))
@@ -137,44 +127,11 @@ theorem liouvilleEnergy_eq_add {K u : M → ℝ} (hK : Integrable K (riemannianV
   have hexp : Continuous fun x ↦ Real.exp (2 * u x) :=
     Real.continuous_exp.comp (continuous_const.mul hu.continuous)
   have hG : Integrable (fun x ↦ ‖mgradient I u x‖ ^ 2 / 2) (riemannianVolume I M) :=
-    (integrable_of_continuous (continuous_norm_sq_mgradient hu)).div_const 2
+    (continuous_norm_sq_mgradient hu).integrable_of_compactSpace.div_const 2
   rw [liouvilleEnergy_def, integral_add (f := fun x ↦ ‖mgradient I u x‖ ^ 2 / 2 + K x * u x)
-      (hG.add (integrable_mul_of_continuous hK hu.continuous))
-      ((integrable_of_continuous hexp).div_const 2),
-    integral_add hG (integrable_mul_of_continuous hK hu.continuous), integral_div, integral_div]
-
-/-- The derivative of `t ↦ ∫ e^(2 (u + t v)) dV` at `t = 0` is `∫ 2 v e^(2u) dV`, for continuous
-`u` and `v` on a compact manifold. -/
-private theorem hasDerivAt_integral_exp_add_mul {u v : M → ℝ} (hu : Continuous u)
-    (hv : Continuous v) :
-    HasDerivAt (fun t : ℝ ↦ ∫ x, Real.exp (2 * (u x + t * v x)) ∂riemannianVolume I M)
-      (∫ x, 2 * v x * Real.exp (2 * u x) ∂riemannianVolume I M) 0 := by
-  have hF (t : ℝ) : Continuous fun x ↦ Real.exp (2 * (u x + t * v x)) := by fun_prop
-  -- On `|t| < 1` the `t`-derivative `2 v e^(2 (u + t v))` is at most `2 |v| e^(2 (|u| + |v|))`.
-  have hbound (x : M) (t : ℝ) (ht : t ∈ Metric.ball (0 : ℝ) 1) :
-      ‖2 * v x * Real.exp (2 * (u x + t * v x))‖ ≤
-        2 * |v x| * Real.exp (2 * (|u x| + |v x|)) := by
-    have ht' : |t| ≤ 1 := (mem_ball_zero_iff.1 ht).le
-    rw [Real.norm_eq_abs, abs_mul, abs_mul, abs_two, Real.abs_exp]
-    gcongr
-    · exact le_abs_self _
-    · calc t * v x ≤ |t| * |v x| := by rw [← abs_mul]; exact le_abs_self _
-        _ ≤ |v x| := mul_le_of_le_one_left (abs_nonneg _) ht'
-  have hderiv (x : M) (t : ℝ) :
-      HasDerivAt (fun t ↦ Real.exp (2 * (u x + t * v x)))
-        (2 * v x * Real.exp (2 * (u x + t * v x))) t := by
-    have := (((hasDerivAt_id' t).mul_const (v x)).const_add (u x)).const_mul 2 |>.exp
-    convert this using 1
-    ring
-  have h := hasDerivAt_integral_of_dominated_loc_of_deriv_le (μ := riemannianVolume I M)
-    (F' := fun t x ↦ 2 * v x * Real.exp (2 * (u x + t * v x)))
-    (bound := fun x ↦ 2 * |v x| * Real.exp (2 * (|u x| + |v x|)))
-    (Metric.ball_mem_nhds 0 one_pos)
-    (Filter.Eventually.of_forall fun t ↦ (hF t).aestronglyMeasurable)
-    (integrable_of_continuous (hF 0)) (Continuous.aestronglyMeasurable (by fun_prop))
-    (ae_of_all _ fun x t ht ↦ hbound x t ht) (integrable_of_continuous (by fun_prop))
-    (ae_of_all _ fun x t _ ↦ hderiv x t)
-  simpa only [zero_mul, add_zero] using h.2
+      (hG.add (hK.mul_continuous_of_compactSpace hu.continuous))
+      (hexp.integrable_of_compactSpace.div_const 2),
+    integral_add hG (hK.mul_continuous_of_compactSpace hu.continuous), integral_div, integral_div]
 
 /-- Along the line `u + t v`, the Dirichlet and linear parts of the Liouville energy are polynomials
 in `t`. -/
@@ -188,9 +145,11 @@ private theorem liouvilleEnergy_add_smul_eq {K u v : M → ℝ}
         ((∫ x, K x * u x ∂riemannianVolume I M) + t * ∫ x, K x * v x ∂riemannianVolume I M) +
         (∫ x, Real.exp (2 * (u x + t * v x)) ∂riemannianVolume I M) / 2 := by
   have hB : Integrable (fun x ↦ inner ℝ (mgradient I v x) (mgradient I u x))
-      (riemannianVolume I M) := integrable_of_continuous (continuous_inner_mgradient hv hu)
-  have hGu := integrable_of_continuous (I := I) (continuous_norm_sq_mgradient hu)
-  have hGv := integrable_of_continuous (I := I) (continuous_norm_sq_mgradient hv)
+      (riemannianVolume I M) := (continuous_inner_mgradient hv hu).integrable_of_compactSpace
+  have hGu : Integrable (fun x ↦ ‖mgradient I u x‖ ^ 2) (riemannianVolume I M) :=
+    (continuous_norm_sq_mgradient hu).integrable_of_compactSpace
+  have hGv : Integrable (fun x ↦ ‖mgradient I v x‖ ^ 2) (riemannianVolume I M) :=
+    (continuous_norm_sq_mgradient hv).integrable_of_compactSpace
   have hpt := norm_sq_mgradient_add_smul (hu.mdifferentiable one_ne_zero)
     (hv.mdifferentiable one_ne_zero) t
   have hK' (x : M) : K x * (u x + t * v x) = K x * u x + t * (K x * v x) := by ring
@@ -201,8 +160,8 @@ private theorem liouvilleEnergy_add_smul_eq {K u v : M → ℝ}
       2 * t * inner ℝ (mgradient I v x) (mgradient I u x)) (hGu.add (hB.const_mul _))
       (hGv.const_mul _), integral_add hGu (hB.const_mul _), integral_const_mul,
     integral_const_mul, integral_add (f := fun x ↦ K x * u x)
-      (integrable_mul_of_continuous hK hu.continuous)
-      ((integrable_mul_of_continuous hK hv.continuous).const_mul _), integral_const_mul]
+      (hK.mul_continuous_of_compactSpace hu.continuous)
+      ((hK.mul_continuous_of_compactSpace hv.continuous).const_mul _), integral_const_mul]
 
 /-- **The first variation of the Liouville energy.** On a compact manifold with a continuous metric,
 let `K` be integrable and `u`, `v` be `C¹`. Then `t ↦ J(u + t v)` has derivative
@@ -217,44 +176,35 @@ theorem hasDerivAt_liouvilleEnergy_add_smul {K u v : M → ℝ}
   set μ := riemannianVolume I M
   set B := ∫ x, inner ℝ (mgradient I v x) (mgradient I u x) ∂μ
   -- Differentiate the quadratic polynomial, the linear term and the exponential term separately.
+  have hexp : HasDerivAt (fun t : ℝ ↦ ∫ x, Real.exp (2 * (u x + t * v x)) ∂μ)
+      (∫ x, 2 * v x * Real.exp (2 * u x) ∂μ) 0 := by
+    have h2u : Continuous fun x ↦ 2 * u x := continuous_const.mul hu.continuous
+    have h2v : Continuous fun x ↦ 2 * v x := continuous_const.mul hv.continuous
+    convert hasDerivAt_integral_exp_add_mul (μ := μ) h2u h2v 0 using 1
+    · funext t
+      exact integral_congr_ae (ae_of_all _ fun x ↦ by ring_nf)
+    · simp only [zero_mul, add_zero]
   have h := ((((hasDerivAt_id (0 : ℝ)).const_mul (2 * B)).const_add
       (∫ x, ‖mgradient I u x‖ ^ 2 ∂μ)).add
     ((hasDerivAt_pow 2 (0 : ℝ)).const_mul (∫ x, ‖mgradient I v x‖ ^ 2 ∂μ))).div_const 2 |>.add
     (((hasDerivAt_id (0 : ℝ)).const_mul (∫ x, K x * v x ∂μ)).const_add (∫ x, K x * u x ∂μ))
-    |>.add ((hasDerivAt_integral_exp_add_mul (I := I) hu.continuous hv.continuous).div_const 2)
+    |>.add (hexp.div_const 2)
   convert h using 1
   · funext t
     simp only [Pi.add_apply, id]
     ring
   · have hB : Integrable (fun x ↦ inner ℝ (mgradient I v x) (mgradient I u x)) μ :=
-      integrable_of_continuous (continuous_inner_mgradient hv hu)
+      (continuous_inner_mgradient hv hu).integrable_of_compactSpace
     have hev : Integrable (fun x ↦ Real.exp (2 * u x) * v x) μ := by
       have := hu.continuous; have := hv.continuous
-      exact integrable_of_continuous (by fun_prop)
+      exact Continuous.integrable_of_compactSpace (by fun_prop)
     rw [integral_add (f := fun x ↦ inner ℝ (mgradient I v x) (mgradient I u x) + K x * v x)
-      (hB.add (integrable_mul_of_continuous hK hv.continuous)) hev,
-      integral_add hB (integrable_mul_of_continuous hK hv.continuous)]
+      (hB.add (hK.mul_continuous_of_compactSpace hv.continuous)) hev,
+      integral_add hB (hK.mul_continuous_of_compactSpace hv.continuous)]
     simp only [mul_one, Nat.cast_ofNat]
     rw [show (fun x ↦ 2 * v x * Real.exp (2 * u x)) = fun x ↦ 2 * (Real.exp (2 * u x) * v x) by
       funext x; ring, integral_const_mul]
     ring
-
-/-- Real numbers `S`, `t` and `V > 0` satisfy `t S + V e^(2t) / 2 ≥ -S |t| - S² / V`. This bounds
-the part of the Liouville energy carried by the mean `t` of a function. -/
-private theorem neg_mul_abs_sub_le_mul_add_exp {S V t : ℝ} (hV : 0 < V) :
-    -S * |t| - S ^ 2 / V ≤ t * S + V * Real.exp (2 * t) / 2 := by
-  have hq : 0 ≤ S ^ 2 / V := by positivity
-  have hVq : V * (S ^ 2 / V) = S ^ 2 := mul_div_cancel₀ _ hV.ne'
-  rcases le_total t 0 with ht | ht
-  · rw [abs_of_nonpos ht]
-    nlinarith [Real.exp_pos (2 * t)]
-  · rw [abs_of_nonneg ht]
-    have hexp := Real.quadratic_le_exp_of_nonneg (by positivity : 0 ≤ 2 * t)
-    -- `V t² + 2 t S + S² / V = (V t + S)² / V ≥ 0`.
-    have hsq : 0 ≤ V * (V * t ^ 2 + 2 * t * S + S ^ 2 / V) := by
-      nlinarith [sq_nonneg (V * t + S)]
-    have := (mul_nonneg_iff_of_pos_left hV).1 hsq
-    nlinarith [mul_le_mul_of_nonneg_left hexp hV.le]
 
 variable [PreconnectedSpace M]
 
@@ -288,9 +238,9 @@ theorem exists_le_liouvilleEnergy_add [I.Boundaryless] {K : M → ℝ}
   set ū := ⨍ x, u x ∂μ
   set G := ∫ x, ‖mgradient I u x‖ ^ 2 ∂μ
   have hw : Continuous fun x ↦ u x - ū := hu.continuous.sub continuous_const
-  have hW : Integrable (fun x ↦ (u x - ū) ^ 2) μ := integrable_of_continuous (hw.pow 2)
+  have hW : Integrable (fun x ↦ (u x - ū) ^ 2) μ := (hw.pow 2).integrable_of_compactSpace
   have hK2 : Integrable (fun x ↦ K x ^ 2) μ := hK.integrable_sq
-  have hKw := integrable_mul_of_continuous hK1 hw
+  have hKw := hK1.mul_continuous_of_compactSpace hw
   -- The linear term: `∫ K u = ∫ K w + ū S` and `∫ K w ≥ -(∫ w²) / (4 Q) - Q ∫ K²`.
   have hlin : ∫ x, K x * u x ∂μ =
       ∫ x, K x * (u x - ū) ∂μ + ū * S := by
@@ -315,13 +265,13 @@ theorem exists_le_liouvilleEnergy_add [I.Boundaryless] {K : M → ℝ}
     have : NeZero μ := ⟨hμ⟩
     have h2u : Continuous fun x ↦ 2 * u x := continuous_const.mul hu.continuous
     have hJ := convexOn_exp.map_average_le (μ := μ) Real.continuous_exp.continuousOn isClosed_univ
-      (ae_of_all _ fun _ ↦ mem_univ _) (integrable_of_continuous h2u)
-      (integrable_of_continuous (Real.continuous_exp.comp h2u))
+      (ae_of_all _ fun _ ↦ mem_univ _) h2u.integrable_of_compactSpace
+      (Real.continuous_exp.comp h2u).integrable_of_compactSpace
     have hav : ⨍ x, 2 * u x ∂μ = 2 * ū := by
       simp only [ū, average_eq, smul_eq_mul, integral_const_mul]
       ring
     rwa [hav, average_eq, smul_eq_mul, le_inv_mul_iff₀ hV] at hJ
-  have hmeanS := neg_mul_abs_sub_le_mul_add_exp (S := S) (t := ū) hV
+  have hmeanS := Real.neg_mul_abs_sub_sq_div_le_mul_add_mul_exp_div (S := S) (t := ū) hV
   have hG : 0 ≤ G := integral_nonneg fun x ↦ by positivity
   have hdiv : (∫ x, (u x - ū) ^ 2 ∂μ) / (4 * Q) ≤ G / 4 := by
     rw [div_le_iff₀ (by positivity)]
@@ -367,21 +317,21 @@ private theorem integral_mul_neg_laplaceBeltrami_add_add_exp {K u v : M → ℝ}
   have hΔ : Continuous (laplaceBeltrami I u) := continuous_laplaceBeltrami hu
   have hexp : Continuous fun x ↦ Real.exp (2 * u x) * v x := by
     have := hu.continuous; have := hv.continuous; fun_prop
-  have hKv := integrable_mul_of_continuous hK hv.continuous
+  have hKv := hK.mul_continuous_of_compactSpace hv.continuous
   have hpt (x : M) : v x * (-laplaceBeltrami I u x + K x + Real.exp (2 * u x)) =
       -(v x * laplaceBeltrami I u x) + K x * v x + Real.exp (2 * u x) * v x := by ring
   have hB : Continuous fun x ↦ inner ℝ (mgradient I v x) (mgradient I u x) :=
     continuous_inner_mgradient hv (hu.of_le one_le_two)
   have hvΔ : Integrable (fun x ↦ -(v x * laplaceBeltrami I u x)) (riemannianVolume I M) :=
-    (integrable_of_continuous (hv.continuous.mul hΔ)).neg
+    (hv.continuous.mul hΔ).integrable_of_compactSpace.neg
   have hB' : Integrable (fun x ↦ inner ℝ (mgradient I v x) (mgradient I u x))
-      (riemannianVolume I M) := integrable_of_continuous hB
+      (riemannianVolume I M) := hB.integrable_of_compactSpace
   simp only [hpt]
   rw [integral_add (f := fun x ↦ -(v x * laplaceBeltrami I u x) + K x * v x) (hvΔ.add hKv)
-      (integrable_of_continuous hexp), integral_add hvΔ hKv, integral_neg,
+      hexp.integrable_of_compactSpace, integral_add hvΔ hKv, integral_neg,
     integral_mul_laplaceBeltrami hv (HasCompactSupport.of_compactSpace v) hu, neg_neg,
     integral_add (f := fun x ↦ inner ℝ (mgradient I v x) (mgradient I u x) + K x * v x)
-      (hB'.add hKv) (integrable_of_continuous hexp), integral_add hB' hKv]
+      (hB'.add hKv) hexp.integrable_of_compactSpace, integral_add hB' hKv]
 
 /-- **The first variation of the Liouville energy on a closed manifold.** For integrable `K`, a
 `C²` function `u` and a `C¹` function `v`, `t ↦ J(u + t v)` has derivative
@@ -403,7 +353,7 @@ theorem forall_hasDerivAt_liouvilleEnergy_add_smul_iff {K u : M → ℝ} (hK : C
     (∀ v : M → ℝ, ContMDiff I 𝓘(ℝ) ∞ v →
         HasDerivAt (fun t : ℝ ↦ liouvilleEnergy I K (u + t • v)) 0 0) ↔
       ∀ x, -laplaceBeltrami I u x + K x + Real.exp (2 * u x) = 0 := by
-  have hK1 : Integrable K (riemannianVolume I M) := integrable_of_continuous hK
+  have hK1 : Integrable K (riemannianVolume I M) := hK.integrable_of_compactSpace
   constructor
   · intro hcrit
     have hcont : Continuous fun x ↦ -laplaceBeltrami I u x + K x + Real.exp (2 * u x) :=
@@ -433,14 +383,15 @@ theorem liouvilleEnergy_add_integral_mul_le {K u v : M → ℝ}
   have hu1 : ContMDiff I 𝓘(ℝ) 1 u := hu.of_le one_le_two
   have hint {w : M → ℝ} (hw : ContMDiff I 𝓘(ℝ) 1 w) : Integrable (fun x ↦
       ‖mgradient I w x‖ ^ 2 / 2 + K x * w x + Real.exp (2 * w x) / 2) (riemannianVolume I M) :=
-    ((integrable_of_continuous (continuous_norm_sq_mgradient hw)).div_const 2 |>.add
-      (integrable_mul_of_continuous hK hw.continuous)).add
-      (integrable_of_continuous (by have := hw.continuous; fun_prop))
+    ((continuous_norm_sq_mgradient hw).integrable_of_compactSpace.div_const 2 |>.add
+      (hK.mul_continuous_of_compactSpace hw.continuous)).add
+      (Continuous.integrable_of_compactSpace (by have := hw.continuous; fun_prop))
   have hvar : Integrable (fun x ↦ inner ℝ (mgradient I v x) (mgradient I u x) + K x * v x +
       Real.exp (2 * u x) * v x) (riemannianVolume I M) :=
-    ((integrable_of_continuous (continuous_inner_mgradient hv hu1)).add
-      (integrable_mul_of_continuous hK hv.continuous)).add
-      (integrable_of_continuous (by have := hu.continuous; have := hv.continuous; fun_prop))
+    ((continuous_inner_mgradient hv hu1).integrable_of_compactSpace.add
+      (hK.mul_continuous_of_compactSpace hv.continuous)).add
+      (Continuous.integrable_of_compactSpace
+        (by have := hu.continuous; have := hv.continuous; fun_prop))
   rw [integral_mul_neg_laplaceBeltrami_add_add_exp hK hu hv, liouvilleEnergy_def,
     liouvilleEnergy_def, ← integral_add (hint hu1) hvar]
   refine integral_mono ((hint hu1).add hvar) (hint (hu1.add hv)) fun x ↦ ?_
@@ -472,7 +423,7 @@ theorem liouvilleEnergy_le_of_neg_laplaceBeltrami_add_add_exp_eq_zero {K u w : M
     exact (continuous_laplaceBeltrami hu).sub
       (Real.continuous_exp.comp (continuous_const.mul hu.continuous))
   have hle := liouvilleEnergy_add_integral_mul_le (v := w - u)
-    (integrable_of_continuous hK) hu (hw.sub (hu.of_le one_le_two))
+    hK.integrable_of_compactSpace hu (hw.sub (hu.of_le one_le_two))
   simpa [h] using hle
 
 /-- **The minimizers of the Liouville energy.** On a closed manifold, let `K` be continuous. A `C²`
@@ -487,7 +438,7 @@ theorem forall_liouvilleEnergy_le_iff {K u : M → ℝ} (hK : Continuous K)
       (hw.of_le one_le_two)⟩
   -- `t ↦ J(u + t v)` has a minimum at `t = 0`, so its derivative there vanishes.
   have hd := hasDerivAt_liouvilleEnergy_add_smul_eq_integral
-    (integrable_of_continuous hK : Integrable K (riemannianVolume I M)) hu (hv.of_le (by simp))
+    (hK.integrable_of_compactSpace : Integrable K (riemannianVolume I M)) hu (hv.of_le (by simp))
   have hloc : IsLocalMin (fun t : ℝ ↦ liouvilleEnergy I K (u + t • v)) 0 :=
     Filter.Eventually.of_forall fun t ↦ by
       simpa using hmin (u + t • v)
