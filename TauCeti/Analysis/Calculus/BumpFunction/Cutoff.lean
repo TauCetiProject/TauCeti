@@ -357,7 +357,7 @@ theorem contDiffAt_tsum_of_eventually_eq_zero {𝕜 ι F : Type*} [NontriviallyN
 /-- The radial profile `Real.smoothTransition ((R ^ 2 - ‖x - x₀‖ ^ 2) / (R ^ 2 - r ^ 2))` is a
 smooth function with values in `[0, 1]`, equal to one on `closedBall x₀ r` and with topological
 support in `closedBall x₀ R`. -/
-theorem smoothTransition_radial_cutoff [InnerProductSpace ℝ E] {r R : ℝ} (hr : 0 ≤ r)
+private theorem smoothTransition_radial_cutoff [InnerProductSpace ℝ E] {r R : ℝ} (hr : 0 ≤ r)
     (hrR : r < R) (x₀ : E) :
     ContDiff ℝ ∞ (fun x : E => Real.smoothTransition ((R ^ 2 - ‖x - x₀‖ ^ 2) / (R ^ 2 - r ^ 2))) ∧
       range (fun x : E => Real.smoothTransition ((R ^ 2 - ‖x - x₀‖ ^ 2) / (R ^ 2 - r ^ 2))) ⊆
@@ -400,12 +400,18 @@ theorem exists_forall_contDiff_cutoff_closedBall [InnerProductSpace ℝ E] [Comp
   set S := Real.smoothTransition
   have hS : ContDiff ℝ ∞ S := Real.smoothTransition.contDiff
   have hS1 : ContDiff ℝ ∞ (deriv S) := hS.iterate_deriv 1
-  obtain ⟨L₁, L₂, hL₁0, hL₂0, hL₁, hL₂, hS1neg, hS2neg⟩ := exists_norm_deriv_smoothTransition_le
+  obtain ⟨L₁, hL₁⟩ := Real.smoothTransition.exists_forall_norm_deriv_le
+  obtain ⟨L₂, hL₂⟩ := Real.smoothTransition.exists_forall_norm_deriv_deriv_le
+  have hL₁0 : 0 ≤ L₁ := (norm_nonneg _).trans (hL₁ 0)
+  have hL₂0 : 0 ≤ L₂ := (norm_nonneg _).trans (hL₂ 0)
+  have hS1neg : ∀ τ < 0, deriv S τ = 0 := fun τ hτ => Real.smoothTransition.deriv_of_neg hτ
+  have hS2neg : ∀ τ < 0, deriv (deriv S) τ = 0 := fun τ hτ =>
+    Real.smoothTransition.deriv_deriv_of_neg hτ
   refine ⟨2 * L₁ + 4 * L₂, by positivity, fun x₀ r R hr hrR => ?_⟩
   have hD0 := sq_sub_sq_pos_of_lt hr hrR
   have hD' := sub_sq_le_sq_sub_sq hr hrR
   have hRD := div_sq_sub_sq_le_one_div_sub hr hrR
-  have hRD2 := sq_div_sq_sub_sq_sq_le_one_div_sq hr hrR
+  have hRD2 := sq_div_sq_sub_sq_sq_le_one_div_sub_sq hr hrR
   have hRr : 0 < R - r := sub_pos.2 hrR
   have hR : 0 < R := hr.trans_lt hrR
   obtain ⟨hψ1, hψ2, hψ3, hψ4⟩ := smoothTransition_radial_cutoff hr hrR x₀
@@ -414,18 +420,39 @@ theorem exists_forall_contDiff_cutoff_closedBall [InnerProductSpace ℝ E] [Comp
   set c : ℝ → ℝ := fun τ => -(2 / D) * deriv S ((R ^ 2 - τ) / D) with hc
   set c' : ℝ → ℝ := fun τ => 2 / D ^ 2 * deriv (deriv S) ((R ^ 2 - τ) / D) with hc'
   have hcd : ∀ τ, HasDerivAt c (c' τ) τ := fun τ =>
-    (((hS1.differentiable (by simp)) _).hasDerivAt_mul_comp_sub_div _ _ _ τ).congr_deriv
-      (by simp only [c']; field_simp)
+    ((((hS1.differentiable (by simp)) _).hasDerivAt_comp_sub_div (R ^ 2) D τ).const_mul
+      (-(2 / D))).congr_deriv (by simp only [c']; field_simp)
   have hgrad : ∇ (fun y : E => Real.smoothTransition ((R ^ 2 - ‖y - x₀‖ ^ 2) / D)) =
-      fun y => c (‖y - x₀‖ ^ 2) • (y - x₀) :=
-    funext fun x => ((hS.differentiable (by simp)) _).gradient_comp_sub_norm_sq x₀ _ _ x
-  obtain ⟨hcb, hc0⟩ := abs_mul_comp_sub_div_le hL₁ hS1neg hD0 (-(2 / D)) (R ^ 2)
-  obtain ⟨hc'b, hc'0⟩ := abs_mul_comp_sub_div_le hL₂ hS2neg hD0 (2 / D ^ 2) (R ^ 2)
-  rw [abs_neg, abs_of_pos (by positivity)] at hcb
-  rw [abs_of_pos (by positivity)] at hc'b
+      fun y => c (‖y - x₀‖ ^ 2) • (y - x₀) := by
+    funext x
+    have hd := ((hS.differentiable (by simp)) ((R ^ 2 - ‖x - x₀‖ ^ 2) / D)).hasDerivAt_comp_sub_div
+      (R ^ 2) D (‖x - x₀‖ ^ 2)
+    refine (HasDerivAt.comp_hasGradientAt (g := fun y : E => ‖y - x₀‖ ^ 2) hd
+      (hasGradientAt_norm_sq_sub x₀ x)).gradient.trans ?_
+    rw [smul_smul]
+    congr 1
+    simp only [c]
+    ring
+  have hbound : ∀ (k : ℝ) {φ : ℝ → ℝ} {L : ℝ}, (∀ τ, ‖φ τ‖ ≤ L) →
+      ∀ τ, |k * φ ((R ^ 2 - τ) / D)| ≤ |k| * L := fun k φ L h τ => by
+    rw [abs_mul]
+    gcongr
+    simpa using h _
+  have hD1 : 0 < 2 / D := div_pos two_pos hD0
+  have hD2 : 0 < 2 / D ^ 2 := div_pos two_pos (pow_pos hD0 2)
+  have hcb : ∀ τ, |c τ| ≤ 2 / D * L₁ := fun τ =>
+    calc |c τ| ≤ |-(2 / D)| * L₁ := hbound (-(2 / D)) hL₁ τ
+      _ = 2 / D * L₁ := by rw [abs_neg, abs_of_pos hD1]
+  have hc'b : ∀ τ, |c' τ| ≤ 2 / D ^ 2 * L₂ := fun τ =>
+    calc |c' τ| ≤ |2 / D ^ 2| * L₂ := hbound (2 / D ^ 2) hL₂ τ
+      _ = 2 / D ^ 2 * L₂ := by rw [abs_of_pos hD2]
+  have hc0 : ∀ τ, R ^ 2 < τ → c τ = 0 := fun τ hτ => by
+    simp only [c, comp_sub_div_eq_zero_of_lt hS1neg hD0 hτ, mul_zero]
+  have hc'0 : ∀ τ, R ^ 2 < τ → c' τ = 0 := fun τ hτ => by
+    simp only [c', comp_sub_div_eq_zero_of_lt hS2neg hD0 hτ, mul_zero]
   refine ⟨_, hψ1, hψ2, hψ3, hψ4, fun x => ?_, fun x => ?_⟩
   · rw [hgrad]
-    refine (norm_smul_sub_le hcb hc0 hR.le x₀ x).trans ?_
+    refine (norm_smul_sub_le_of_eq_zero_of_sq_lt hcb hc0 hR.le x₀ x).trans ?_
     calc 2 / D * L₁ * R = 2 * L₁ * (R / D) := by ring
       _ ≤ 2 * L₁ * (1 / (R - r)) := by gcongr
       _ ≤ (2 * L₁ + 4 * L₂) / (R - r) := by
@@ -433,7 +460,7 @@ theorem exists_forall_contDiff_cutoff_closedBall [InnerProductSpace ℝ E] [Comp
           gcongr
           linarith
   · rw [hgrad, ((hcd _).hasFDerivAt_smul_sub_norm_sq x₀ x).fderiv]
-    refine (norm_smul_id_add_smulRight_le hcb hc'b hc0 hc'0 hR.le x₀ x).trans ?_
+    refine (norm_smul_id_add_smulRight_le_of_eq_zero_of_sq_lt hcb hc'b hc0 hc'0 hR.le x₀ x).trans ?_
     calc 2 / D * L₁ + 2 * (2 / D ^ 2 * L₂) * R ^ 2
         = 2 * L₁ * (1 / D) + 4 * L₂ * (R ^ 2 / D ^ 2) := by ring
       _ ≤ 2 * L₁ * (1 / (R - r) ^ 2) + 4 * L₂ * (1 / (R - r) ^ 2) := by gcongr
