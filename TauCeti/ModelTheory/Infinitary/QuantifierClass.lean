@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.ModelTheory.Infinitary.LanguageMap
 public import TauCeti.ModelTheory.Infinitary.SubstBounds
-public import TauCeti.ModelTheory.Infinitary.Substitution
 
 /-!
 # Universal and existential infinitary formulas
