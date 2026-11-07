@@ -10,19 +10,29 @@ public import Mathlib.RingTheory.Spectrum.Prime.FreeLocus
 public import TauCeti.LinearAlgebra.Dual.BaseChange
 
 /-!
-# Local rank of the dual of a finite projective module
+# Rank of the dual of a finite module
 
-The linear dual of a finite projective module has the same rank at every prime of the base
-ring. This is the module-theoretic rank identity underlying preservation of rank by Cartier
-duality, including over disconnected and nonreduced bases.
+The linear dual of a finite free module has the same rank as the module, and the linear dual of a
+finite projective module has the same rank at every prime of the base ring. The second is the
+module-theoretic rank identity underlying preservation of rank by Cartier duality, including over
+disconnected and nonreduced bases.
 
-The argument uses the scalar-extension evaluation equivalence from
+The argument for the second uses the scalar-extension evaluation equivalence from
 `TauCeti.LinearAlgebra.Dual.BaseChange` and Mathlib's dimension formula for linear duals.
 -/
 
 public section
 
 namespace TauCeti.Module
+
+/-- A finite free module and its linear dual have the same rank. Over a field this is
+`Subspace.dual_finrank_eq`. -/
+@[simp]
+theorem dual_finrank_eq (R M : Type*) [CommRing R] [AddCommGroup M] [Module R M]
+    [Module.Free R M] [Module.Finite R M] :
+    Module.finrank R (Module.Dual R M) = Module.finrank R M := by
+  classical
+  exact (Module.Free.chooseBasis R M).toDualEquiv.finrank_eq.symm
 
 /-- A finite projective module and its linear dual have the same rank at every prime. -/
 @[simp]

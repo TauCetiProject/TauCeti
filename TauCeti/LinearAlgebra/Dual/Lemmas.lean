@@ -32,6 +32,8 @@ and so separate points.
   `Module.Dual.finrank_ker_add_one_of_ne_zero`.
 * `Module.Dual.finrank_quotient_ker_eq_one_of_ne_zero`: the kernel of a nonzero functional has
   codimension one.
+* `Module.Dual.apply_smul_eq_apply_smul_of_finrank_eq_one`: any two functionals on a line are
+  proportional, `c w • ψ = ψ w • c`.
 * `Module.Dual.linearIndependent_sub_div_smul` and `Module.Dual.span_sub_div_smul_eq_ker`: if
   `X` is a basis and `f (X j) ≠ 0`, the vectors `X i - (f (X i) / f (X j)) • X j`, `i ≠ j`, form a
   basis of `ker f`.
@@ -159,6 +161,16 @@ theorem finrank_span_restrict_add_finrank_inf_iInf_ker (L : ι → Dual K V)
   rw [hA, (Submodule.comapSubtypeEquivOfLe
     (inf_le_left : U ⊓ ⨅ i ∈ s, LinearMap.ker (L i) ≤ U)).finrank_eq] at h
   exact h
+
+/-- Any two functionals on a line are proportional: `c w • ψ = ψ w • c` for every vector `w`. -/
+theorem apply_smul_eq_apply_smul_of_finrank_eq_one (hV : finrank K V = 1) (c ψ : Dual K V)
+    (w : V) : c w • ψ = ψ w • c := by
+  obtain ⟨e, -, he⟩ := finrank_eq_one_iff'.mp hV
+  ext z
+  obtain ⟨s, rfl⟩ := he w
+  obtain ⟨t, rfl⟩ := he z
+  simp only [LinearMap.smul_apply, map_smul, smul_eq_mul]
+  ring
 
 end Field
 
