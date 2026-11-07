@@ -86,7 +86,8 @@ and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its densi
 * `ProbabilityTheory.beta_comm` — symmetry of `Β`;
 * `ProbabilityTheory.beta_one_half_left_eq_two_rpow_mul_beta_self` — Legendre's duplication
   formula as a relation between `Β(1/2, a)` and `Β(a, a)`;
-* `ProbabilityTheory.beta_one_right` — the value `Β(a, 1) = 1 / a`;
+* `ProbabilityTheory.beta_one_right`, `ProbabilityTheory.beta_one_left` — the values
+  `Β(a, 1) = Β(1, a) = 1 / a`;
 * `ProbabilityTheory.beta_add_one_left` — the unit step `Β(a + 1, b) = a / (a + b) * Β(a, b)`;
 * `ProbabilityTheory.beta_three_halves_three_halves` — the value `Β(3/2, 3/2) = π / 8`.
 * `ProbabilityTheory.tendsto_natCast_mul_beta_atTop` — `n Β(n, s) → 0` along the natural numbers
@@ -993,6 +994,10 @@ theorem beta_one_half_left_eq_two_rpow_mul_beta_self (ha : 0 < a) :
 theorem beta_one_right (ha : 0 < a) : beta a 1 = 1 / a := by
   rw [ProbabilityTheory.beta, Real.Gamma_one, mul_one, Real.Gamma_add_one ha.ne']
   field_simp
+
+/-- Euler's beta function at first parameter `1`. -/
+theorem beta_one_left (ha : 0 < a) : beta 1 a = 1 / a := by
+  rw [beta_comm, beta_one_right ha]
 
 /-- The unit step of Euler's beta function in its first parameter. -/
 theorem beta_add_one_left (ha : a ≠ 0) (hab : a + b ≠ 0) :
