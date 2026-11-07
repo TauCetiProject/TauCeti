@@ -53,6 +53,24 @@ theorem exists_forall_null_frontier_thickening (μ : Measure Ω) [SFinite μ] {�
   by_contra hk
   exact hr' (mem_iUnion.2 ⟨k, pos_iff_ne_zero.2 hk⟩)
 
+/-- For a dense sequence `u` and a radius `ρ > 0`, the complement of the union of the first `N`
+balls of radius `ρ` around the points `u k` has measure tending to `0` as `N → ∞`. -/
+theorem tendsto_measure_compl_biUnion_lt_ball {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X]
+    [OpensMeasurableSpace X] (μ : Measure X) [IsFiniteMeasure μ] {u : ℕ → X} (hu : DenseRange u)
+    {ρ : ℝ} (hρ0 : 0 < ρ) :
+    Tendsto (fun N ↦ μ (⋃ k < N, Metric.ball (u k) ρ)ᶜ) atTop (𝓝 0) := by
+  have hlim := tendsto_measure_iInter_atTop (μ := μ) (s := fun N ↦ (⋃ k < N, Metric.ball (u k) ρ)ᶜ)
+    (fun N ↦ (MeasurableSet.iUnion fun _ ↦ MeasurableSet.iUnion fun _ ↦
+      measurableSet_ball).compl.nullMeasurableSet)
+    (fun M N hMN ↦ compl_subset_compl.2 <| iUnion_mono fun _ ↦
+      iUnion_subset_iUnion_const fun hk ↦ lt_of_lt_of_le hk hMN) ⟨0, measure_ne_top _ _⟩
+  have hempty : ⋂ N, (⋃ k < N, Metric.ball (u k) ρ)ᶜ = ∅ := by
+    rw [← compl_iUnion, compl_empty_iff, eq_univ_iff_forall]
+    intro x
+    obtain ⟨k, hk⟩ := (Metric.denseRange_iff.1 hu) x ρ hρ0
+    exact mem_iUnion.2 ⟨k + 1, mem_iUnion₂.2 ⟨k, Nat.lt_succ_self k, Metric.mem_ball.2 hk⟩⟩
+  simpa only [Function.comp_def, hempty, measure_empty] using hlim
+
 variable {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
   [TopologicalSpace.SeparableSpace X]
 
@@ -75,18 +93,8 @@ theorem exists_partition_null_frontier_small_last (μ : Measure X) [IsFiniteMeas
   simp only [Metric.thickening_singleton] at hρ
   -- The union of the first `N` balls exhausts the space, so its complement becomes small.
   set G : ℕ → Set X := fun N ↦ ⋃ k < N, Metric.ball (u k) ρ
-  have hG : Tendsto (fun N ↦ μ (G N)ᶜ) atTop (𝓝 0) := by
-    have hlim := tendsto_measure_iInter_atTop (μ := μ) (s := fun N ↦ (G N)ᶜ)
-      (fun N ↦ (MeasurableSet.iUnion fun _ ↦ MeasurableSet.iUnion fun _ ↦
-        measurableSet_ball).compl.nullMeasurableSet)
-      (fun M N hMN ↦ compl_subset_compl.2 <| iUnion_mono fun _ ↦
-        iUnion_subset_iUnion_const fun hk ↦ lt_of_lt_of_le hk hMN) ⟨0, measure_ne_top _ _⟩
-    have hempty : ⋂ N, (G N)ᶜ = ∅ := by
-      rw [← compl_iUnion, compl_empty_iff, eq_univ_iff_forall]
-      intro x
-      obtain ⟨k, hk⟩ := (Metric.denseRange_iff.1 hu) x ρ hρ0
-      exact mem_iUnion.2 ⟨k + 1, mem_iUnion₂.2 ⟨k, Nat.lt_succ_self k, Metric.mem_ball.2 hk⟩⟩
-    simpa only [Function.comp_def, hempty, measure_empty] using hlim
+  have hG : Tendsto (fun N ↦ μ (G N)ᶜ) atTop (𝓝 0) :=
+    tendsto_measure_compl_biUnion_lt_ball μ hu hρ0
   obtain ⟨N, hN⟩ := (hG.eventually (ge_mem_nhds hε)).exists
   -- The cells: the first `N` balls made disjoint, followed by the rest of the space.
   set f : Fin (N + 1) → Set X := fun i ↦
