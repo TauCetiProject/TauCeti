@@ -23,7 +23,7 @@ The underlying equivalence is `TauCeti.SymmetricAlgebra.scalarTensorBialgEquiv`;
 on its source is Mathlib's `GradedAlgebra.baseChange`.
 
 The image computation follows the image-of-powers argument in
-`TauCeti.exteriorAlgebraEquivBaseChange_map_exteriorPower`, and the tensor-product comparison
+`TauCeti.ExteriorAlgebra.baseChangeEquiv_symm_map_exteriorPower`, and the tensor-product comparison
 follows `TauCeti.exteriorPower.equivBaseChange`, using
 `Submodule.baseChange_map` and `Submodule.baseChange_pow` over commutative semirings.
 
