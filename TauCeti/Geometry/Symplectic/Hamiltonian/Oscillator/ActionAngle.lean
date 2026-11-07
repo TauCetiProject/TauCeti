@@ -199,8 +199,8 @@ theorem isLocalDiffeomorphAt_oscillatorActionAngle (hm : 0 < m) (hν : 0 < ν)
   refine isLocalDiffeomorphAt_of_mfderiv_eq
     contDiffOn_oscillatorActionAngle.contMDiffOn (isOpen_lt continuous_const continuous_snd)
     hy BoundarylessManifold.isInteriorPoint (by simp)
-    (e := (NormedSpace.fromTangentSpace y).trans
-      (e.trans (NormedSpace.fromTangentSpace (oscillatorActionAngle m ν y)).symm)) ?_
+    ⟨(NormedSpace.fromTangentSpace y).trans
+      (e.trans (NormedSpace.fromTangentSpace (oscillatorActionAngle m ν y)).symm), ?_⟩
   rw [mfderiv_eq_fderiv]
   -- The self-model tangent equivalences act as identities; `ofBijective` retains L's map.
   rfl

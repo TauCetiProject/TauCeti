@@ -38,9 +38,9 @@ theorem isLocalDiffeomorphAt_pow {𝕂 : Type*} [RCLike 𝕂] {n : ℕ∞ω} (hn
     (hk : k ≠ 0) {z : 𝕂} (hz : z ≠ 0) : IsLocalDiffeomorphAt 𝓘(𝕂) 𝓘(𝕂) n (· ^ k) z := by
   have hc : (k * z ^ (k - 1) : 𝕂) ≠ 0 := mul_ne_zero (Nat.cast_ne_zero.2 hk) (pow_ne_zero _ hz)
   refine isLocalDiffeomorphAt_of_mfderiv_eq (s := univ)
-    (e := ContinuousLinearEquiv.unitsEquivAut 𝕂 (Units.mk0 _ hc))
     (contDiff_id.pow k).contMDiff.contMDiffOn isOpen_univ (mem_univ z)
-    BoundarylessManifold.isInteriorPoint hn ?_
+    BoundarylessManifold.isInteriorPoint hn
+    ⟨ContinuousLinearEquiv.unitsEquivAut 𝕂 (Units.mk0 _ hc), ?_⟩
   -- The derivative of `w ↦ w ^ k` at `z` is multiplication by the unit `k z ^ (k - 1)`.
   have h : ((ContinuousLinearEquiv.unitsEquivAut 𝕂 (Units.mk0 _ hc) : 𝕂 ≃L[𝕂] 𝕂) : 𝕂 →L[𝕂] 𝕂) =
       ContinuousLinearMap.toSpanSingleton 𝕂 (k * z ^ (k - 1)) := by

@@ -86,7 +86,7 @@ private theorem exists_stack_of_records [CompactSpace M] [T2Space M] [T2Space N]
   -- orientation sign is constant.
   have key (x : s) : ∃ e : OpenPartialHomeomorph M N, (x : M) ∈ e.source ∧ EqOn f e e.source ∧
       e.source ⊆ U x ∧ ∀ z ∈ e.source, orientationSign o o' f z = orientationSign o o' f x := by
-    obtain ⟨D, hD⟩ := (isRegularPoint_iff_isInvertible_mfderiv rfl).mp
+    have hD := (isRegularPoint_iff_isInvertible_mfderiv rfl).mp
       (hy.isRegularPoint ((hs x).mp x.2))
     have hld : IsLocalDiffeomorphAt I J 1 f x := isLocalDiffeomorphAt_of_mfderiv_eq
       hf.contMDiffOn isOpen_univ (mem_univ _) BoundarylessManifold.isInteriorPoint le_rfl hD
@@ -96,7 +96,7 @@ private theorem exists_stack_of_records [CompactSpace M] [T2Space M] [T2Space N]
     obtain ⟨Φ, hxΦ, hfΦ⟩ := hlh x rfl
     obtain ⟨W, hWsub, hWo, hxW⟩ := mem_nhds_iff.mp
       (inter_mem ((hU x).2.mem_nhds (hU x).1)
-        (eventually_orientationSign_eq (o := o) (o' := o') hf.contMDiffAt ⟨D, hD⟩))
+        (eventually_orientationSign_eq (o := o) (o' := o') hf.contMDiffAt hD))
     refine ⟨Φ.restrOpen W hWo, ⟨hxΦ, hxW⟩, fun z _ ↦ congrFun hfΦ z,
       fun z hz ↦ (hWsub hz.2).1, fun z hz ↦ (hWsub hz.2).2⟩
   choose e hxe hfe hU' hsgn using key

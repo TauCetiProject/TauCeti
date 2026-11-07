@@ -382,7 +382,7 @@ theorem isLocalDiffeomorphAt_riemannianExp_zero [T2Space M] (p : M) :
   isLocalDiffeomorphAt_of_mfderiv_eq (contMDiffOn_riemannianExp (I := I) p)
     (isOpen_expDomain (I := I) p) (zero_mem_expDomain (I := I) p)
     BoundarylessManifold.isInteriorPoint (by simp)
-    (mfderiv_riemannianExp_zero (I := I) p).symm
+    ⟨_, (mfderiv_riemannianExp_zero (I := I) p).symm⟩
 
 /-! ### Radial variations
 

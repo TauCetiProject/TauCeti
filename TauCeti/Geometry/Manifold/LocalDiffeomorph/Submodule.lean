@@ -95,7 +95,7 @@ theorem ContMDiffOn.exists_plaque_chart [FiniteDimensional 𝕜 W]
   have hder : HasMFDerivAt J 𝓘(𝕜, W) g x (p.comp df) := p.hasMFDerivAt.comp x hsub
   have hAg : (A : F →L[𝕜] W) = mfderiv J 𝓘(𝕜, W) g x := hA.trans hder.mfderiv.symm
   obtain ⟨e, hxe, he⟩ :=
-    TauCeti.isLocalDiffeomorphAt_of_mfderiv_eq hg hs hxs hx hn hAg
+    TauCeti.isLocalDiffeomorphAt_of_mfderiv_eq hg hs hxs hx hn ⟨A, hAg⟩
   obtain ⟨U, hUsub, hUopen, hxU⟩ := mem_nhds_iff.mp hplaque
   let e' := e.restrOpen (s ∩ U) (hs.inter hUopen)
   have hsource : e'.source = e.source ∩ (s ∩ U) := e.restrOpen_source (hs.inter hUopen)

@@ -365,7 +365,7 @@ theorem isNormalDomain_model_space (p : F) {U : Set (TangentSpace 𝓘(ℝ, F) p
     rw [expDomain_model_space] at hsmooth
     exact isLocalDiffeomorphAt_of_mfderiv_eq hsmooth isOpen_univ (mem_univ _)
       BoundarylessManifold.isInteriorPoint (by simp)
-      (hasMFDerivAt_riemannianExp_model_space p v.1).mfderiv.symm
+      ⟨_, (hasMFDerivAt_riemannianExp_model_space p v.1).mfderiv.symm⟩
 
 /-- In a finite-dimensional inner-product space, every tangent ball of positive radius is a
 normal domain; its normal neighbourhood is the ball of the same radius about the base point

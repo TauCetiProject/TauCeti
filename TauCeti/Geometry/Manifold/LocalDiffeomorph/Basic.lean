@@ -56,7 +56,7 @@ serve as partial diffeomorphisms in constructions of local submanifolds.
 * `TauCeti.PartialDiffeomorph.ofOpenPartialHomeomorph`: an open partial homeomorphism between
   model spaces which is `C^n` in both directions, as a partial diffeomorphism.
 * `TauCeti.isLocalDiffeomorphAt_of_mfderiv_eq`: the inverse function theorem for manifolds.
-* `TauCeti.isLocalDiffeomorphAt_iff_exists_mfderiv_eq`: the resulting characterisation of
+* `TauCeti.isLocalDiffeomorphAt_iff_isInvertible_mfderiv`: the resulting characterisation of
   `IsLocalDiffeomorphAt` at an interior point, for a map which is `C^n` on an open set.
 * `TauCeti.isLocalDiffeomorphAt_of_eqOn`: a map agreeing with a partial diffeomorphism on its
   source is a local diffeomorphism there.
@@ -504,9 +504,9 @@ continuous linear equivalence, then `f` is a `C^n` local diffeomorphism at `x`.
 Mathlib's `Mathlib/Geometry/Manifold/LocalDiffeomorph.lean` lists this implication as a TODO. -/
 theorem isLocalDiffeomorphAt_of_mfderiv_eq (hf : ContMDiffOn I J n f s) (hs : IsOpen s)
     (hx : x ∈ s) (hIx : I.IsInteriorPoint x) (hn : 1 ≤ n)
-    {e : TangentSpace I x ≃L[𝕂] TangentSpace J (f x)}
-    (he : (e : TangentSpace I x →L[𝕂] TangentSpace J (f x)) = mfderiv I J f x) :
+    (he : (mfderiv I J f x).IsInvertible) :
     IsLocalDiffeomorphAt I J n f x := by
+  obtain ⟨e, he⟩ := he
   have hn0 : n ≠ 0 := by rintro rfl; exact absurd hn (by simp)
   set φ := extChartAt I x with hφ
   set ψ := extChartAt J (f x) with hψ
@@ -588,15 +588,11 @@ theorem isLocalDiffeomorphAt_of_mfderiv_eq (hf : ContMDiffOn I J n f s) (hs : Is
 
 /-- For a map which is `C^n` on an open set, with `1 ≤ n`, being a `C^n` local diffeomorphism at an
 interior point is exactly invertibility of the differential there. -/
-theorem isLocalDiffeomorphAt_iff_exists_mfderiv_eq (hf : ContMDiffOn I J n f s) (hs : IsOpen s)
+theorem isLocalDiffeomorphAt_iff_isInvertible_mfderiv (hf : ContMDiffOn I J n f s) (hs : IsOpen s)
     (hx : x ∈ s) (hIx : I.IsInteriorPoint x) (hn : 1 ≤ n) :
-    IsLocalDiffeomorphAt I J n f x ↔
-      ∃ e : TangentSpace I x ≃L[𝕂] TangentSpace J (f x),
-        (e : TangentSpace I x →L[𝕂] TangentSpace J (f x)) = mfderiv I J f x := by
-  have hn0 : n ≠ 0 := by rintro rfl; exact absurd hn (by simp)
-  refine ⟨fun h => ⟨h.mfderivToContinuousLinearEquiv hn0, rfl⟩, ?_⟩
-  rintro ⟨e, he⟩
-  exact isLocalDiffeomorphAt_of_mfderiv_eq hf hs hx hIx hn he
+    IsLocalDiffeomorphAt I J n f x ↔ (mfderiv I J f x).IsInvertible :=
+  ⟨fun h => h.isInvertible_mfderiv (by rintro rfl; exact absurd hn (by simp)),
+    isLocalDiffeomorphAt_of_mfderiv_eq hf hs hx hIx hn⟩
 
 variable [BoundarylessManifold I M]
 
@@ -604,12 +600,10 @@ variable [BoundarylessManifold I M]
 boundaryless source manifold, all of whose differentials are continuous linear equivalences, is a
 `C^n` local diffeomorphism. -/
 theorem isLocalDiffeomorph_of_mfderiv_eq (hf : ContMDiff I J n f) (hn : 1 ≤ n)
-    (he : ∀ y : M, ∃ e : TangentSpace I y ≃L[𝕂] TangentSpace J (f y),
-      (e : TangentSpace I y →L[𝕂] TangentSpace J (f y)) = mfderiv I J f y) :
-    IsLocalDiffeomorph I J n f := fun y => by
-  obtain ⟨e, hey⟩ := he y
-  exact isLocalDiffeomorphAt_of_mfderiv_eq (s := univ) hf.contMDiffOn isOpen_univ (mem_univ y)
-    BoundarylessManifold.isInteriorPoint hn hey
+    (he : ∀ y : M, (mfderiv I J f y).IsInvertible) :
+    IsLocalDiffeomorph I J n f := fun y =>
+  isLocalDiffeomorphAt_of_mfderiv_eq (s := univ) hf.contMDiffOn isOpen_univ (mem_univ y)
+    BoundarylessManifold.isInteriorPoint hn (he y)
 
 end InverseFunctionTheorem
 

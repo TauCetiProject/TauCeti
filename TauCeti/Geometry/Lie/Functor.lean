@@ -316,10 +316,9 @@ theorem isLocalDiffeomorphAt_of_lieMap_bijective
   let T : TangentSpace I (1 : G) ≃ₗ[ℝ] TangentSpace I' (φ 1) := by
     rw [map_one]
     exact e.symm.toLinearEquiv.trans (L.toLinearEquiv.trans e'.toLinearEquiv)
-  apply TauCeti.isLocalDiffeomorphAt_of_mfderiv_eq
-      (s := Set.univ) (e := T.toContinuousLinearEquiv)
-      φ.contMDiff_toFun.contMDiffOn isOpen_univ (Set.mem_univ 1)
-      BoundarylessManifold.isInteriorPoint (by simp)
+  refine TauCeti.isLocalDiffeomorphAt_of_mfderiv_eq
+      (s := Set.univ) φ.contMDiff_toFun.contMDiffOn isOpen_univ (Set.mem_univ 1)
+      BoundarylessManifold.isInteriorPoint (by simp) ⟨T.toContinuousLinearEquiv, ?_⟩
   apply ContinuousLinearMap.ext
   intro X
   let D := e.symm X

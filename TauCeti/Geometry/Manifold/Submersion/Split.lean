@@ -159,7 +159,7 @@ theorem _root_.ContMDiffOn.isSubmersionAtOfComplement_of_surjective_mfderiv {U :
   -- The identity linear equivalence acts between the model copies of the tangent spaces.
   have hlocal : IsLocalDiffeomorphAt I 𝓘(ℝ, E) n g x :=
     isLocalDiffeomorphAt_of_mfderiv_eq hgW hW hxW BoundarylessManifold.isInteriorPoint hn
-      (e := ContinuousLinearEquiv.refl ℝ E) (by rw [hderiv]; rfl)
+      ⟨ContinuousLinearEquiv.refl ℝ E, by rw [hderiv]; rfl⟩
   let Φ := hlocal.localInverse.symm
   have hxΦ : x ∈ Φ.source := hlocal.localInverse_mem_target
   obtain ⟨V, hVc, hV, hxV⟩ := mem_nhds_iff.1 <|

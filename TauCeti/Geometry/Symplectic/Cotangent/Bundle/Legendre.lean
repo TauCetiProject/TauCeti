@@ -448,7 +448,7 @@ theorem isLocalDiffeomorphAt_legendreMap_iff (hL : ContMDiff I.tangent 𝓘(𝕜
     gcongr
   have hn : 2 ≤ n := h2m.trans hmn
   rw [← isInvertible_mfderiv_legendreMap_iff hL hn v]
-  exact isLocalDiffeomorphAt_iff_exists_mfderiv_eq (contMDiff_legendreMap hL hmn).contMDiffOn
+  exact isLocalDiffeomorphAt_iff_isInvertible_mfderiv (contMDiff_legendreMap hL hmn).contMDiffOn
     isOpen_univ (mem_univ v) hv hm
 
 /-- **The Legendre map is a local diffeomorphism exactly for regular Lagrangians.** On a

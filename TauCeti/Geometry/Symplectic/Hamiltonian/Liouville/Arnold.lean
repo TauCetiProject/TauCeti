@@ -169,8 +169,8 @@ theorem isLocalDiffeomorphAt_hamiltonianFlowAction_section
     rw [Module.finrank_prod, Module.finrank_fintype_fun_eq_card, ← hdim, two_mul]
   exact isLocalDiffeomorphAt_of_mfderiv_eq hPs hopen hmem
     BoundarylessManifold.isInteriorPoint (by simp)
-    (e := (LinearMap.linearEquivOfInjective L.toLinearMap hinj hfin).toContinuousLinearEquiv)
-    (ContinuousLinearMap.ext fun w ↦ LinearMap.linearEquivOfInjective_apply hinj hfin w)
+    ⟨(LinearMap.linearEquivOfInjective L.toLinearMap hinj hfin).toContinuousLinearEquiv,
+      ContinuousLinearMap.ext fun w ↦ LinearMap.linearEquivOfInjective_apply hinj hfin w⟩
 
 /-- **Small elements of the Hamiltonian flow action reach every nearby point of a regular level.**
 Let `x` be a regular point of `F` on a manifold of dimension `2 · |ι|`. For every neighbourhood

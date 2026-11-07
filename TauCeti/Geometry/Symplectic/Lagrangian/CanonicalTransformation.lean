@@ -175,10 +175,9 @@ theorem isLocalDiffeomorphAt_of_isIsotropic [IsManifold K ∞ L] [FiniteDimensio
   obtain ⟨ea, hea⟩ := ha.isInvertible_mfderiv (by simp)
   have : FiniteDimensional ℝ EL := ea.symm.toLinearEquiv.finiteDimensional
   have : CompleteSpace EL := FiniteDimensional.complete ℝ EL
-  obtain ⟨eb, heb⟩ := isInvertible_mfderiv_of_isIsotropic hσ hτ hEF
-    (ha.mdifferentiableAt (by simp))
-    ((hb.contMDiffAt (hs.mem_nhds hxs)).mdifferentiableAt (by simp)) h ⟨ea, hea⟩
-  exact isLocalDiffeomorphAt_of_mfderiv_eq hb hs hxs hx (by simp) heb
+  exact isLocalDiffeomorphAt_of_mfderiv_eq hb hs hxs hx (by simp)
+    (isInvertible_mfderiv_of_isIsotropic hσ hτ hEF (ha.mdifferentiableAt (by simp))
+      ((hb.contMDiffAt (hs.mem_nhds hxs)).mdifferentiableAt (by simp)) h ⟨ea, hea⟩)
 
 end Pointwise
 

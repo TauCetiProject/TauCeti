@@ -302,7 +302,7 @@ theorem exists_isLocalDiffeomorphAt_action_of_isCompact (hdim : 2 * Fintype.card
     exact hM (smul_right_injective _ (by positivity) h)
   set e := (LinearEquiv.ofInjectiveEndo (L : (ι → ℝ) →ₗ[ℝ] (ι → ℝ)) hinj).toContinuousLinearEquiv
   refine isLocalDiffeomorphAt_of_mfderiv_eq (contMDiffOn_iff_contDiffOn.2 hBs) Metric.isOpen_ball
-    (Metric.mem_ball_self hε) BoundarylessManifold.isInteriorPoint (by simp) (e := e) ?_
+    (Metric.mem_ball_self hε) BoundarylessManifold.isInteriorPoint (by simp) ⟨e, ?_⟩
   rw [mfderiv_eq_fderiv, (hB _ (Metric.mem_ball_self hε)).fderiv]
   rfl
 

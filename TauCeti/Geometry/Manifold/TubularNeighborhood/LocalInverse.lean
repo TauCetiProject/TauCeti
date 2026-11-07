@@ -183,9 +183,8 @@ theorem isLocalDiffeomorphAt_normalBundle_add_zeroSection
   have hinj := (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hEF).mpr hsurj
   let e := (LinearEquiv.ofBijective
     (mfderiv (I.prod 𝓘(ℝ, F)) 𝓘(ℝ, V) A z).toLinearMap ⟨hinj, hsurj⟩).toContinuousLinearEquiv
-  apply isLocalDiffeomorphAt_of_mfderiv_eq hA.contMDiffOn isOpen_univ (mem_univ z)
-    (BoundarylessManifold.isInteriorPoint (I := I.prod 𝓘(ℝ, F))) hn (e := e)
   -- This equivalence is constructed from the differential itself.
-  rfl
+  exact isLocalDiffeomorphAt_of_mfderiv_eq hA.contMDiffOn isOpen_univ (mem_univ z)
+    (BoundarylessManifold.isInteriorPoint (I := I.prod 𝓘(ℝ, F))) hn ⟨e, rfl⟩
 
 end TauCeti

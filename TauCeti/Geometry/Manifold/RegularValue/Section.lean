@@ -107,7 +107,7 @@ private theorem IsRegularPoint.exists_contMDiffOn_section_normedSpace
   -- identity equivalence is matched with the identity derivative by `rfl`, not by `coe_refl`.
   have hL : IsLocalDiffeomorphAt 𝓘(ℝ, V) 𝓘(ℝ, V) n (f ∘ γ) 0 :=
     isLocalDiffeomorphAt_of_mfderiv_eq hgs hs₀open hs₀0 (BoundarylessManifold.isInteriorPoint) hn
-      (e := ContinuousLinearEquiv.refl ℝ V) (by rw [hdg]; rfl)
+      ⟨ContinuousLinearEquiv.refl ℝ V, by rw [hdg]; rfl⟩
   set h := hL.localInverse with hh
   have hfγ0 : (f ∘ γ) 0 = f x := by simp [hγ0]
   have hh0 : h (f x) = 0 := by

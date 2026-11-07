@@ -101,7 +101,7 @@ theorem isLocalDiffeomorphAt_riemannianExp_of_sectionalCurvature_nonpos
     |>.linearEquivOfInjective hinj (by simp [TauCeti.finrank_tangentSpace])
   exact isLocalDiffeomorphAt_of_mfderiv_eq (contMDiffOn_riemannianExp (I := I) p)
     (isOpen_expDomain (I := I) p) hv BoundarylessManifold.isInteriorPoint (by simp)
-    (e := e.toContinuousLinearEquiv) (by ext; simp [e])
+    ⟨e.toContinuousLinearEquiv, by ext; simp [e]⟩
 
 /-- On a manifold of nonpositive sectional curvature, the exponential map is a smooth local
 diffeomorphism on its natural domain. -/

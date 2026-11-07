@@ -347,13 +347,13 @@ theorem isLocalDiffeomorphAt_lieExpMulLieExp_zero_of_isCompl
   let _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
     finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
   dsimp only
-  apply TauCeti.isLocalDiffeomorphAt_of_mfderiv_eq
-      (s := Set.univ) (e := lieExpMulLieExpMFDerivEquiv (I := I) (G := G) p q h)
+  refine TauCeti.isLocalDiffeomorphAt_of_mfderiv_eq
+      (s := Set.univ)
       (contMDiff_lieExpMulLieExp (I := I) (G := G) p q).contMDiffOn
       isOpen_univ (Set.mem_univ 0)
       (BoundarylessManifold.isInteriorPoint :
         (modelWithCornersSelf ℝ (p × q)).IsInteriorPoint (0 : p × q))
-      (by simp)
+      (by simp) ⟨lieExpMulLieExpMFDerivEquiv (I := I) (G := G) p q h, ?_⟩
   have hderiv := hasMFDerivAt_lieExpMulLieExp_zero_of_isCompl
     (I := I) (G := G) p q h
   dsimp only at hderiv

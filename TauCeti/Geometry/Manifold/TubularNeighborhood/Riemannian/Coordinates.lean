@@ -76,11 +76,10 @@ theorem isLocalDiffeomorphAt_normalExp_zeroSection
   let := f.normalSpaceVectorBundle hn hdim
   let := f.normalSpaceContMDiffVectorBundle hn hm hdim
   have : IsManifold I m M := .of_le (n := m + 1) le_self_add
-  obtain ⟨e, he⟩ := f.isInvertible_mfderiv_normalExp_zeroSection hn
-    (h2m.trans hm) hdim x
   exact isLocalDiffeomorphAt_of_mfderiv_eq (f.contMDiffOn_normalExp hn hm hdim)
     (f.isOpen_normalExpDomain hn hdim) (f.zeroSection_mem_normalExpDomain hn x)
-    BoundarylessManifold.isInteriorPoint hm1 he
+    BoundarylessManifold.isInteriorPoint hm1
+    (f.isInvertible_mfderiv_normalExp_zeroSection hn (h2m.trans hm) hdim x)
 
 /-- Normal exponential coordinates around an entire embedded submanifold have a single `C^m`
 inverse. Their source lies in the natural exponential domain, contains the whole zero section,
