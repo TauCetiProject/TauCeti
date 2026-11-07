@@ -34,6 +34,17 @@ open Finset
 
 variable {K : Type*} [Semifield K] {q : K}
 
+private lemma quantumBinomial_succ_succ_zpow (q : K) (n k : ℕ) :
+    quantumBinomial q (n + 1) (k + 1) =
+      q ^ ((n : ℤ) - k) * quantumBinomial q n k +
+        q ^ (-((k : ℤ) + 1)) * quantumBinomial q n (k + 1) := by
+  rw [quantumBinomial_succ_succ]
+  congr 1
+  · by_cases hk : k ≤ n
+    · rw [← Nat.cast_sub hk, zpow_natCast]
+    · simp [quantumBinomial_eq_zero_of_lt q (by omega : n < k)]
+  · rw [zpow_neg, ← Nat.cast_add_one, zpow_natCast, inv_pow]
+
 private lemma vandermonde_step (hq : q ≠ 0) (m n a b : ℕ) {r : ℕ}
     (hab : a + b = r) :
     q ^ ((n : ℤ) * (a + 1) - (m + 1) * b) *
@@ -45,20 +56,10 @@ private lemma vandermonde_step (hq : q ≠ 0) (m n a b : ℕ) {r : ℕ}
           (q ^ ((n : ℤ) * (a + 1) - m * b) *
             quantumBinomial q m (a + 1) * quantumBinomial q n b) := by
   subst r
+  rw [quantumBinomial_succ_succ_zpow]
   push_cast
-  by_cases ha : a ≤ m
-  · rw [quantumBinomial_succ_succ]
-    have hp : q ^ (m - a) = q ^ ((m : ℤ) - a) := by
-      rw [← Nat.cast_sub ha, zpow_natCast]
-    have hi : q⁻¹ ^ (a + 1) = q ^ (-((a : ℤ) + 1)) := by
-      rw [zpow_neg, ← Nat.cast_add_one, zpow_natCast, inv_pow]
-    rw [hp, hi]
-    simp only [mul_add, add_mul, ← mul_assoc, ← zpow_add₀ hq]
-    congr 4 <;> ring
-  · have hm : m < a := by omega
-    simp [quantumBinomial_eq_zero_of_lt q hm,
-      quantumBinomial_eq_zero_of_lt q (by omega : m < a + 1),
-      quantumBinomial_eq_zero_of_lt q (by omega : m + 1 < a + 1)]
+  simp only [mul_add, add_mul, ← mul_assoc, ← zpow_add₀ hq]
+  congr 4 <;> ring
 
 /-- **Quantum Vandermonde convolution**, in the symmetric normalization. The exponent is
 `n*a-m*b`, and the formula remains valid at roots of unity because it involves no division
@@ -79,16 +80,8 @@ theorem quantumBinomial_add (hq : q ≠ 0) (m n r : ℕ) :
     cases r with
     | zero => simp
     | succ r =>
-      have hpascal : quantumBinomial q (m + 1 + n) (r + 1) =
-          q ^ ((m : ℤ) + n - r) * quantumBinomial q (m + n) r +
-            q ^ (-((r : ℤ) + 1)) * quantumBinomial q (m + n) (r + 1) := by
-        rw [Nat.succ_add, quantumBinomial_succ_succ]
-        congr 1
-        · by_cases hr : r ≤ m + n
-          · rw [← zpow_natCast q (m + n - r), Nat.cast_sub hr, Nat.cast_add]
-          · simp [quantumBinomial_eq_zero_of_lt q (by omega : m + n < r)]
-        · rw [zpow_neg, ← Nat.cast_add_one, zpow_natCast, inv_pow]
-      rw [hpascal, ih, ih, Nat.sum_antidiagonal_succ, Nat.sum_antidiagonal_succ]
+      rw [Nat.succ_add, quantumBinomial_succ_succ_zpow, ih, ih,
+        Nat.sum_antidiagonal_succ, Nat.sum_antidiagonal_succ]
       simp only [Nat.cast_add, Nat.cast_one]
       rw [sum_congr rfl (fun p hp => vandermonde_step hq m n p.1 p.2
         (mem_antidiagonal.mp hp)), sum_add_distrib, ← mul_sum, ← mul_sum]
