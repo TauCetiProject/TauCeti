@@ -613,6 +613,45 @@ theorem circleMap_mem_puncturedClosedDisc (ζ : ℂ) {r b : ℝ} (hr : 0 < r) (h
   simpa only [mem_ofPred_eq, circleMap_sub_center, norm_circleMap_zero, abs_of_pos hr]
     using And.intro hr hrb
 
+/-- **Exhaustion of the punctured closed disc by closed annuli.** If `f` is integrable on the
+punctured closed disc of radius `b > 0` and its integral over every closed annulus
+`{a ≤ ‖z - ζ‖ ≤ b}` with `0 < a ≤ b` is at most `M`, then so is its integral over the whole
+punctured disc. -/
+theorem setIntegral_puncturedClosedDisc_le_of_forall_annulus {f : ℂ → ℝ} (ζ : ℂ) {b M : ℝ}
+    (hb : 0 < b) (hf : IntegrableOn f {z : ℂ | 0 < ‖z - ζ‖ ∧ ‖z - ζ‖ ≤ b})
+    (h : ∀ a, 0 < a → a ≤ b →
+      (∫ z in {z : ℂ | a ≤ ‖z - ζ‖ ∧ ‖z - ζ‖ ≤ b}, f z) ≤ M) :
+    (∫ z in {z : ℂ | 0 < ‖z - ζ‖ ∧ ‖z - ζ‖ ≤ b}, f z) ≤ M := by
+  let A (a : ℝ) := {z : ℂ | a ≤ ‖z - ζ‖ ∧ ‖z - ζ‖ ≤ b}
+  have hAmeas (a : ℝ) : MeasurableSet (A a) :=
+    (isClosed_le continuous_const (continuous_id.sub continuous_const).norm).measurableSet.inter
+      (isClosed_le (continuous_id.sub continuous_const).norm continuous_const).measurableSet
+  let a (n : ℕ) : ℝ := b / ((n : ℝ) + 1)
+  have ha (n : ℕ) : 0 < a n := div_pos hb (by positivity)
+  have hab (n : ℕ) : a n ≤ b := by
+    dsimp only [a]
+    rw [div_le_iff₀ (by positivity : 0 < (n : ℝ) + 1)]
+    nlinarith [Nat.cast_nonneg (α := ℝ) n]
+  have hmono : Monotone (fun n ↦ A (a n)) := by
+    intro m n hmn z hz
+    refine ⟨le_trans ?_ hz.1, hz.2⟩
+    dsimp only [a]
+    gcongr
+  have hUnion : (⋃ n, A (a n)) = {z : ℂ | 0 < ‖z - ζ‖ ∧ ‖z - ζ‖ ≤ b} := by
+    apply subset_antisymm
+    · exact iUnion_subset fun n z hz ↦ ⟨(ha n).trans_le hz.1, hz.2⟩
+    · intro z hz
+      obtain ⟨n, hn⟩ := exists_nat_gt (b / ‖z - ζ‖)
+      refine mem_iUnion.mpr ⟨n, ?_, hz.2⟩
+      dsimp only [a]
+      rw [div_le_iff₀ (by positivity : 0 < (n : ℝ) + 1)]
+      have h := (div_lt_iff₀ hz.1).mp hn
+      nlinarith
+  have hlimit := tendsto_setIntegral_of_monotone (fun n ↦ hAmeas (a n)) hmono
+    (hUnion.symm ▸ hf)
+  rw [hUnion] at hlimit
+  exact le_of_tendsto hlimit (Filter.Eventually.of_forall fun n ↦ h (a n) (ha n) (hab n))
+
 /-- Finite square-integral of the differential on a punctured disc gives arbitrarily small
 angular energies on shrinking circles. No extension over the puncture is assumed. -/
 theorem exists_integral_norm_deriv_comp_circleMap_sq_lt {V : Type*}
