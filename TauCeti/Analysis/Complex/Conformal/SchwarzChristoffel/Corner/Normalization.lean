@@ -118,15 +118,12 @@ private theorem mapsTo_cpow_inv_sub_of_sector
       Complex.arg (f z - w) ∈ Ioo 0 (β * Real.pi)) :
     MapsTo (fun z => (f z - w) ^ ((β⁻¹ : ℝ) : ℂ)) (Ω ∩ {z : ℂ | 0 < z.im})
       {z : ℂ | 0 < z.im} := by
-  have hβinv : 0 < β⁻¹ := inv_pos.mpr hβ
   intro z hz
   have hangpi : Complex.arg (f z - w) * β⁻¹ < Real.pi := calc
-    _ < (β * Real.pi) * β⁻¹ := mul_lt_mul_of_pos_right (hinterior z hz).2 hβinv
+    _ < (β * Real.pi) * β⁻¹ := mul_lt_mul_of_pos_right (hinterior z hz).2 (inv_pos.mpr hβ)
     _ = Real.pi := by field_simp
-  simp only [mem_ofPred_eq]
-  rw [Complex.cpow_ofReal_im]
-  exact mul_pos (Real.rpow_pos_of_pos (norm_pos_iff.mpr (sub_ne_zero_of_arg_mem_Ioo hinterior hz))
-    _) <| Real.sin_pos_of_pos_of_lt_pi (mul_pos (hinterior z hz).1 hβinv) hangpi
+  exact Complex.im_cpow_ofReal_pos (inv_pos.mpr hβ) (sub_ne_zero_of_arg_mem_Ioo hinterior hz)
+    (hinterior z hz).1 hangpi
 
 /-- The principal power `(f - w) ^ (1 / β)` is real on the real axis. -/
 private theorem im_cpow_inv_sub_eq_zero_of_edges
@@ -135,11 +132,11 @@ private theorem im_cpow_inv_sub_eq_zero_of_edges
       Complex.arg (f z - w) = 0 ∨ Complex.arg (f z - w) = β * Real.pi) :
     ∀ z ∈ Ω, z.im = 0 → ((f z - w) ^ ((β⁻¹ : ℝ) : ℂ)).im = 0 := by
   intro z hz hzim
-  rw [Complex.cpow_ofReal_im]
+  refine Complex.im_cpow_ofReal_eq_zero ?_
   rcases hedges z hz hzim with h | h
-  · rw [h, zero_mul, Real.sin_zero, mul_zero]
-  · have : β * Real.pi * β⁻¹ = Real.pi := by field_simp
-    rw [h, this, Real.sin_pi, mul_zero]
+  · rw [h, zero_mul]
+    exact Or.inl rfl
+  · exact Or.inr (by rw [h]; field_simp)
 
 /-- The `β`-th power inverts the principal power `(f - w) ^ (1 / β)` on the closed upper part. -/
 private theorem cpow_inv_sub_cpow_of_sector
