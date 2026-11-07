@@ -13,6 +13,7 @@ public import TauCeti.Analysis.Normed.Group.BallSphere
 public import Mathlib.Analysis.InnerProductSpace.Orientation
 public import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 public import TauCeti.AlgebraicTopology.Disk
+public import TauCeti.AlgebraicTopology.Disk.LinearIsometry
 public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 public import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 public import TauCeti.Analysis.InnerProductSpace.OrthogonalLast
@@ -111,7 +112,9 @@ Coefficients are an object `R` of an abelian category with coproducts.
   `TauCeti.reducedSingularHomologyTopCatSphereIso` and
   `TauCeti.reducedSingularHomologyFunctor_map_diskBoundaryNeg`: the same for Mathlib's
   `TopCat.sphere n`, with the standard generator determined by the standard basis, and the action
-  of its antipodal map `TauCeti.diskBoundaryNeg`.
+  of its antipodal map `TauCeti.diskBoundaryNeg`, and
+  `TauCeti.reducedSingularHomologyFunctor_map_diskBoundaryMap`: an orthogonal map acts on the
+  homology of `TopCat.sphere n` by the sign of its determinant.
 * `ModuleCat.finrank_singularHomology_sphere`: with coefficients in a free module `M` of finite
   rank, `H_q(Sᵈ; M)` is free of rank `rank M` for `q = 0` and for `q = d` (of rank `2 rank M`
   when `d = q = 0`), and vanishes otherwise.
@@ -818,6 +821,38 @@ theorem reducedSingularHomologyFunctor_map_diskBoundaryNeg (n : ℕ) :
     Functor.map_comp,
     reducedSingularHomologyFunctor_map_sphere_neg R (finrank_euclideanSpace_ulift_fin (n + 1)),
     Preadditive.comp_zsmul, Preadditive.zsmul_comp, Category.comp_id, Category.id_comp]
+
+/-- **An orthogonal map acts on the homology of `TopCat.sphere n` by the sign of its
+determinant.** For a linear isometry `g` of `ℝⁿ⁺¹`, its restriction
+`LinearIsometryEquiv.diskBoundaryMap g` to the boundary of the `(n + 1)`-disk induces
+multiplication by `sign (det g) = ±1` on `H_redₙ`. -/
+theorem reducedSingularHomologyFunctor_map_diskBoundaryMap {n : ℕ}
+    (g : EuclideanSpace ℝ (Fin (n + 1)) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (n + 1))) :
+    (reducedSingularHomologyFunctor R n).map (LinearIsometryEquiv.diskBoundaryMap.{w} g) =
+      (SignType.sign (LinearMap.det g.toLinearMap) : ℤ) • 𝟙 _ := by
+  -- Transport `TauCeti.reducedSingularHomologyFunctor_map_unitSphereMap` along the homeomorphism
+  -- `TauCeti.diskBoundaryHomeomorph`, the restriction of the linear isometry `L` reindexing the
+  -- coordinates, which conjugates `g` to `f`.
+  set L := LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ
+    (Equiv.ulift.{w}.symm : Fin (n + 1) ≃ ULift.{w} (Fin (n + 1))) with hL
+  set f := (L.symm.trans (g.trans L)).toLinearIsometry with hfL
+  have hdet : LinearMap.det f.toLinearMap = LinearMap.det g.toLinearMap :=
+    LinearMap.det_conj g.toLinearMap L.toLinearEquiv
+  have hf (x : TopCat.diskBoundary.{w} (n + 1)) :
+      diskBoundaryHomeomorph (n + 1) (g.diskBoundaryMap x) =
+        f.unitSphereMap (diskBoundaryHomeomorph (n + 1) x) := by
+    refine Subtype.ext ?_
+    simp [hfL, coe_diskBoundaryHomeomorph_apply, ← hL]
+  let e := TopCat.isoOfHomeo (X := TopCat.diskBoundary.{w} (n + 1))
+    (Y := TopCat.of (sphere (0 : EuclideanSpace ℝ (ULift.{w} (Fin (n + 1)))) 1))
+    (diskBoundaryHomeomorph (n + 1))
+  have hcomm : g.diskBoundaryMap ≫ e.hom =
+      e.hom ≫ TopCat.ofHom ⟨f.unitSphereMap, f.continuous_unitSphereMap⟩ :=
+    TopCat.ext fun x ↦ hf x
+  rw [← cancel_mono ((reducedSingularHomologyFunctor R n).map e.hom), ← Functor.map_comp, hcomm,
+    Functor.map_comp,
+    reducedSingularHomologyFunctor_map_unitSphereMap R (finrank_euclideanSpace_ulift_fin (n + 1)),
+    hdet, Preadditive.comp_zsmul, Preadditive.zsmul_comp, Category.comp_id, Category.id_comp]
 
 end TopCatSphere
 

@@ -75,7 +75,7 @@ private theorem permanencesMinusVariations_signedPsc_eq_add {p q : K[X]} (hq : q
   have hsn : s n = (-1) ^ (m - n).choose 2 * q.leadingCoeff ^ (m - n) := by simp [s, hn, hqm]
   have hsn0 : s n ≠ 0 := by simp [hsn, hq']
   rw [List.map_reverse_range_succ,
-    List.map_reverse_range_eq_replicate_append s (a := n + 1) (b := m) h fun j hj hjm => by
+    List.map_reverse_range_eq_replicate_append s 0 (a := n + 1) (b := m) h fun j hj hjm => by
       have hmin : min m n < j := by omega
       have hjn : j ≠ n := by omega
       simp [s, signedPsc_of_lt p q hmin, hjm.ne, hjn],
@@ -135,10 +135,10 @@ private theorem permanencesMinusVariations_signedPsc_neg_mod {p q : K[X]}
   have htρ : t ρ = (-1) ^ (n - ρ).choose 2 * (-(p % q)).coeff ρ ^ (n - ρ) := by
     simp [t, hρ.le]
   rw [List.map_reverse_range_succ s n,
-    List.map_reverse_range_eq_replicate_append s (a := ρ + 1) (b := n) hρ fun j hj hjn =>
+    List.map_reverse_range_eq_replicate_append s 0 (a := ρ + 1) (b := n) hρ fun j hj hjn =>
       signedPsc_eq_zero_of_natDegree_mod_lt le_rfl (by omega) hjn (by omega), hst,
     List.map_reverse_range_succ t n,
-    List.map_reverse_range_eq_replicate_append t (a := ρ + 1) (b := n) hρ fun j hj hjn => by
+    List.map_reverse_range_eq_replicate_append t 0 (a := ρ + 1) (b := n) hρ fun j hj hjn => by
       have hmin : min n ρ < j := by omega
       have hjρ : j ≠ ρ := by omega
       simp [t, signedPsc_of_lt q _ hmin, hjn.ne, hjρ],
@@ -199,7 +199,7 @@ theorem _root_.Polynomial.cauchyIndex_univ_eq_permanencesMinusVariations_signedP
   · -- Only the leading entry `p.leadingCoeff` is nonzero.
     subst hq
     rw [cauchyIndex_zero_right, List.map_reverse_range_succ,
-      List.map_reverse_range_eq_replicate_append _ (Nat.zero_le _) fun j _ hj => ?_]
+      List.map_reverse_range_eq_replicate_append _ 0 (Nat.zero_le _) fun j _ hj => ?_]
     · simp
     · rcases eq_or_ne j 0 with rfl | hj0
       · exact signedPsc_zero_right p (by simp) (by simpa using h)

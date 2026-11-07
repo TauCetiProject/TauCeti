@@ -25,6 +25,8 @@ spaces.
 * `LinearMap.BilinForm.IsPosSemidef.apply_sum_sum_le_card_mul_sum`: the value of a
   positive-semidefinite form on a sum of vectors is at most the number of summands times the sum
   of their values.
+* `LinearMap.BilinForm.apply_sq_le_mul_of_apply_le_apply`: Cauchy-Schwarz against a majorant, for
+  a symmetric form with nonnegative diagonal.
 -/
 
 public section
@@ -66,6 +68,23 @@ theorem IsPosSemidef.apply_sum_sum_le_card_mul_sum {B : LinearMap.BilinForm R M}
           simp only [Finset.sum_add_distrib, Finset.sum_const, nsmul_eq_mul, ← Finset.mul_sum]
           ring
   exact le_of_mul_le_mul_left hsum two_pos
+
+/-- **Cauchy-Schwarz against a majorant.** If `F` is a symmetric positive semidefinite bilinear
+form and `F x x ≤ F x z`, then `F x v ^ 2 ≤ F z z * F v v` for every `v`. -/
+theorem apply_sq_le_mul_of_apply_le_apply {K V : Type*} [CommRing K] [LinearOrder K]
+    [IsStrictOrderedRing K] [AddCommGroup V] [Module K V]
+    (F : LinearMap.BilinForm K V) (hnonneg : ∀ x, 0 ≤ F x x) (hsymm : LinearMap.IsSymm F)
+    {x z : V} (hle : F x x ≤ F x z) (v : V) : F x v ^ 2 ≤ F z z * F v v := by
+  -- The hypothesis first bounds `F x x` by `F z z`, and then Cauchy-Schwarz bounds `F x v`.
+  have hbound : F x x ≤ F z z := by
+    rcases eq_or_lt_of_le (hnonneg x) with h0 | h0
+    · exact h0 ▸ hnonneg z
+    · refine le_of_mul_le_mul_left ?_ h0
+      refine (mul_self_le_mul_self h0.le hle).trans ?_
+      rw [← pow_two]
+      exact F.apply_sq_le_of_symm hnonneg hsymm _ z
+  exact (F.apply_sq_le_of_symm hnonneg hsymm x v).trans
+    (mul_le_mul_of_nonneg_right hbound (hnonneg v))
 
 end OrderedRing
 

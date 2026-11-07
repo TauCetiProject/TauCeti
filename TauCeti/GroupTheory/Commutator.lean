@@ -101,6 +101,14 @@ theorem commutatorElement_mul_mul_eq_mul_of_commute {a b c d : G}
   simpa only [mul_one, one_mul, mul_inv_cancel, mul_inv_rev, mul_assoc] using
     congrArg (⁅a, c⁆ * ·) hcabd.mul_inv_cancel
 
+/-- If `⁅a, b⁆ = e` and `e`, `b`, `c` commute pairwise, then conjugating `b` by `a` and multiplying
+by `c` gives `c * b * e`. -/
+theorem mul_mul_inv_mul_eq_of_commutatorElement_eq {a b c e : G} (h : ⁅a, b⁆ = e)
+    (heb : Commute e b) (hec : Commute e c) (hbc : Commute b c) :
+    a * b * a⁻¹ * c = c * b * e := by
+  rw [← MulAut.conj_apply, conj_eq_commutatorElement_mul, h, heb.eq, mul_assoc, hec.eq,
+    ← mul_assoc, hbc.eq]
+
 /-- Multiplying the two entries of a commutator on the right by central elements does not change
 it. -/
 theorem commutatorElement_mul_mul_of_mem_center {a b c d : G} (hb : b ∈ center G)

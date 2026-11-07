@@ -38,6 +38,9 @@ This file records general-purpose facts about open subsets of schemes.
   open.
 * `AlgebraicGeometry.Scheme.existsUnique_gluing_affineOpens`: sections over the affine opens,
   compatible with restriction, glue to a unique global section.
+* `AlgebraicGeometry.Scheme.eq_of_forall_affineOpens_map_eq`: global sections are determined by
+  their restrictions to the affine opens, and
+  `AlgebraicGeometry.Scheme.presheaf_map_homOfLE_comp` composes restriction homomorphisms.
 * `AlgebraicGeometry.Scheme.exists_finite_affineOpens_cover`: a quasi-compact open is covered by
   finitely many affine opens contained in it, in the form used by sheaf gluing.
 * `AlgebraicGeometry.IsAffineOpen.fromSpec_appLE_self` and
@@ -46,6 +49,8 @@ This file records general-purpose facts about open subsets of schemes.
 * `AlgebraicGeometry.IsAffineOpen.span_restrict_basicOpen_le_eq_top`: for affine opens `V ≤ U`,
   the restrictions of the functions on `U` whose basic open lies in `V` generate the unit ideal of
   `Γ(X, V)`.
+* `AlgebraicGeometry.IsAffineOpen.exists_finset_sup_basicOpen_eq`: a quasi-compact open inside an
+  affine open `U` is a finite union of basic opens of `U` contained in it.
 * `AlgebraicGeometry.Scheme.inf_mem_range_basicOpen` and
   `AlgebraicGeometry.IsAffineOpen.exists_mem_range_basicOpen_le_sup`: the basic opens of `U` are
   closed under intersections, and for `U` affine, a basic open covered by a basic open `A` and
@@ -183,6 +188,26 @@ theorem _root_.AlgebraicGeometry.Scheme.existsUnique_gluing_affineOpens (X : Sch
     exact hs U' W.1 (W.2.trans inf_le_right)
   exact h₁.trans h₂.symm
 
+/-- Restriction of sections from `W` to `U` followed by restriction to `V ≤ U` is restriction from
+`W` to `V`, as a composite of ring homomorphisms. -/
+theorem _root_.AlgebraicGeometry.Scheme.presheaf_map_homOfLE_comp {V U W : X.Opens} (hVU : V ≤ U)
+    (hUW : U ≤ W) :
+    (X.presheaf.map (homOfLE hVU).op).hom.comp (X.presheaf.map (homOfLE hUW).op).hom =
+      (X.presheaf.map (homOfLE (hVU.trans hUW)).op).hom := by
+  rw [← CommRingCat.hom_comp, ← Functor.map_comp]
+  rfl
+
+/-- **Global sections are determined by their restrictions to the affine opens.** -/
+theorem _root_.AlgebraicGeometry.Scheme.eq_of_forall_affineOpens_map_eq (X : Scheme.{u})
+    {x y : Γ(X, ⊤)}
+    (h : ∀ U : X.affineOpens, X.presheaf.map (homOfLE (le_top : U.1 ≤ ⊤)).op x =
+      X.presheaf.map (homOfLE (le_top : U.1 ≤ ⊤)).op y) :
+    x = y :=
+  (X.existsUnique_gluing_affineOpens (fun U ↦ X.presheaf.map (homOfLE (le_top : U.1 ≤ ⊤)).op y)
+    fun _ _ hVU ↦ congrArg (· y)
+      (congrArg DFunLike.coe (Scheme.presheaf_map_homOfLE_comp (X := X) hVU le_top))).unique h
+    fun _ ↦ rfl
+
 /-- A quasi-compact open `U` is covered by finitely many affine opens contained in it. This is
 `AlgebraicGeometry.isCompact_iff_finite_and_eq_biUnion_affineOpens` stated as a family of opens
 below `U` whose supremum contains `U`, the form taken by the sheaf gluing lemmas
@@ -230,6 +255,20 @@ theorem _root_.AlgebraicGeometry.IsAffineOpen.span_restrict_basicOpen_le_eq_top 
   refine Opens.mem_iSup.mpr ⟨⟨_, f, hfV, rfl⟩, ?_⟩
   rw [Scheme.basicOpen_res]
   exact ⟨hx, hxf⟩
+
+/-- A quasi-compact open `W` contained in an affine open `U` is the union of finitely many basic
+opens of `U` contained in `W`. -/
+theorem _root_.AlgebraicGeometry.IsAffineOpen.exists_finset_sup_basicOpen_eq (hU : IsAffineOpen U)
+    {W : X.Opens} (hW : IsCompact (W : Set X)) (hWU : W ≤ U) :
+    ∃ s : Finset {f : Γ(X, U) // X.basicOpen f ≤ W}, s.sup (fun i ↦ X.basicOpen i.1) = W := by
+  obtain ⟨s, hs⟩ := hW.elim_finite_subcover
+    (fun i : {f : Γ(X, U) // X.basicOpen f ≤ W} ↦ (X.basicOpen i.1 : Set X))
+    (fun i ↦ (X.basicOpen i.1).isOpen) fun x hx ↦ by
+      obtain ⟨f, hf, hxf⟩ := hU.exists_basicOpen_le ⟨x, hx⟩ (hWU hx)
+      exact Set.mem_iUnion.mpr ⟨⟨f, hf⟩, hxf⟩
+  refine ⟨s, le_antisymm (Finset.sup_le fun i _ ↦ i.2) fun x hx ↦ ?_⟩
+  obtain ⟨i, hi, hxi⟩ := Set.mem_iUnion₂.mp (hs hx)
+  exact (Finset.le_sup (f := fun i : {f : Γ(X, U) // X.basicOpen f ≤ W} ↦ X.basicOpen i.1) hi) hxi
 
 /-- The basic opens `X.basicOpen f` of sections `f` over an open `U` are closed under binary
 intersections. -/
