@@ -159,14 +159,6 @@ private theorem integral_smul_apply_fourier_prod_inner {r : ℕ} (v : Fin r → 
         smul_apply_fourier_eq_apply_fourier_iteratedLineDerivOp]
     _ = _ := quantizeSchwartzValue_comp_fst (fun _ ↦ B) (∂^{v} u) x
 
-/-- Quantization of a differential monomial is exactly the indicated iterated derivative
-followed by the coefficient map; the coefficient is evaluated at the output position. -/
-theorem quantizeSchwartzValue_differentialSymbol_singleton (i : ι)
-    (v : ∀ i, Fin (k i) → E) (b : ι → E → V →L[ℂ] W) (u : 𝓢(E, V)) (x : E) :
-    quantizeSchwartzValue (differentialSymbol {i} v b) u x = b i x (∂^{v i} u x) := by
-  simp only [quantizeSchwartzValue_def, differentialSymbol_singleton]
-  exact integral_smul_apply_fourier_prod_inner (v i) (b i x) u x
-
 /-- **Exact differential-operator comparison.** The left quantization of the polynomial
 Fourier symbol of a finite differential expression equals that expression on Schwartz input.
 There are no derivatives of the coefficients in left quantization. -/
