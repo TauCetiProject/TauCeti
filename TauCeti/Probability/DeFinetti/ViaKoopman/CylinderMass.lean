@@ -63,6 +63,32 @@ namespace Probability
 
 variable {α : Type*} [MeasurableSpace α]
 
+/-- A finite product of values of a probability measure has norm at most one. -/
+theorem norm_prod_measureReal_le_one {ι : Type*} (s : Finset ι) (μ : Measure α)
+    [IsProbabilityMeasure μ] (B : ι → Set α) : ‖∏ i ∈ s, μ.real (B i)‖ ≤ 1 := by
+  rw [Real.norm_eq_abs, abs_of_nonneg (Finset.prod_nonneg fun i _ => measureReal_nonneg)]
+  exact Finset.prod_le_one₀ (fun i _ => measureReal_nonneg) fun i _ => measureReal_le_one
+
+/-- The mass of the intersection of a set with a prefix block cylinder, as the integral of the
+product of the coordinate indicators over the set. -/
+private theorem toReal_measure_inter_blockCylinder_prefix_eq_setIntegral
+    {ρ : Measure (ℕ → α)} {r : ℕ} {A : Set (ℕ → α)} {B : Fin r → Set α}
+    (hB : ∀ i, MeasurableSet (B i)) :
+    (ρ (A ∩ blockCylinder (fun j (x : ℕ → α) => x j) (fun i : Fin r => (i : ℕ)) B)).toReal
+      = ∫ x in A, ∏ i : Fin r, (B i).indicator (fun _ => (1 : ℝ)) (x (i : ℕ)) ∂ρ := by
+  set C : Set (ℕ → α) :=
+    blockCylinder (fun j (x : ℕ → α) => x j) (fun i : Fin r => (i : ℕ)) B with hCdef
+  have hcyl : MeasurableSet C :=
+    measurableSet_blockCylinder (fun i => measurable_pi_apply _) hB
+  have hrw : ∀ x : ℕ → α,
+      ∏ i : Fin r, (B i).indicator (fun _ => (1 : ℝ)) (x (i : ℕ))
+        = C.indicator (fun _ => (1 : ℝ)) x := by
+    intro x
+    rw [hCdef, ← blockIndicatorProd_eq_indicator (fun j (y : ℕ → α) => y j)
+      (fun i : Fin r => (i : ℕ)) B, blockIndicatorProd_apply]
+  simp only [hrw]
+  rw [setIntegral_indicator hcyl, setIntegral_const, smul_eq_mul, mul_one, measureReal_def]
+
 namespace ContractableLaw
 
 /-- **The block-cylinder mass over an invariant event.** Over any shift-invariant event, the mass
@@ -94,16 +120,7 @@ theorem measure_inter_blockCylinder_eq_setLIntegral_of_measurableSet_invariants
     simp only [hPdef, hQdef]
     exact Finset.prod_congr rfl fun i _ => hx i
   -- `Q` is bounded by one, pointwise: each factor is a probability of a set.
-  have hQ_bdd : ∀ x, ‖Q x‖ ≤ 1 := by
-    intro x
-    have h0 : ∀ i : Fin r, (0 : ℝ) ≤
-        ((invariantConditionalProbabilityMeasure ρ x : Measure α)).real (B i) :=
-      fun i => measureReal_nonneg
-    have h1 : ∀ i : Fin r,
-        ((invariantConditionalProbabilityMeasure ρ x : Measure α)).real (B i) ≤ 1 :=
-      fun i => measureReal_le_one
-    rw [Real.norm_eq_abs, hQdef, abs_of_nonneg (Finset.prod_nonneg fun i _ => h0 i)]
-    exact Finset.prod_le_one₀ (fun i _ => h0 i) fun i _ => h1 i
+  have hQ_bdd : ∀ x, ‖Q x‖ ≤ 1 := fun x => norm_prod_measureReal_le_one _ _ _
   have hP_meas : Measurable P := by
     refine Finset.measurable_prod _ fun i _ => ?_
     exact (stronglyMeasurable_condExp.measurable).mono
@@ -116,22 +133,9 @@ theorem measure_inter_blockCylinder_eq_setLIntegral_of_measurableSet_invariants
     hk hB hA_inv]
   set C : Set (ℕ → α) :=
     blockCylinder (fun j (x : ℕ → α) => x j) (fun i : Fin r => (i : ℕ)) B with hCdef
-  have hcyl : MeasurableSet C :=
-    measurableSet_blockCylinder (fun i => measurable_pi_apply _) hB
-  -- The prefix cylinder's mass, as a real integral of the indicator product.
-  have hstep3 : (ρ (A ∩ C)).toReal
-      = ∫ x in A, ∏ i : Fin r, (B i).indicator (fun _ => (1 : ℝ)) (x (i : ℕ)) ∂ρ := by
-    have hrw : ∀ x : ℕ → α,
-        ∏ i : Fin r, (B i).indicator (fun _ => (1 : ℝ)) (x (i : ℕ))
-          = C.indicator (fun _ => (1 : ℝ)) x := by
-      intro x
-      rw [hCdef, ← blockIndicatorProd_eq_indicator (fun j (y : ℕ → α) => y j)
-        (fun i : Fin r => (i : ℕ)) B, blockIndicatorProd_apply]
-    simp only [hrw]
-    rw [setIntegral_indicator hcyl, setIntegral_const, smul_eq_mul, mul_one, measureReal_def]
   -- The block factorization, already specialised to weight one and named as the witness.
   have hmass : (ρ (A ∩ C)).toReal = ∫ x in A, Q x ∂ρ :=
-    hstep3.trans
+    (toReal_measure_inter_blockCylinder_prefix_eq_setIntegral hB).trans
       (hρ.setIntegral_blockIndicatorProd_prefix_eq_prod_invariantConditionalProbabilityMeasure
         hA_inv r B hB)
   -- Cross to `ℝ≥0∞`, once.
