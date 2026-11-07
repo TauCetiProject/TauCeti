@@ -8,6 +8,9 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Generation
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.ReflectionPair
 public import TauCeti.Topology.Algebra.QuadraticForm.Complex
+-- Non-public: dimension one and contractibility of a point are used only in proofs.
+import Mathlib.Topology.Homotopy.Contractible
+import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.One
 
 /-!
 # Path-connectedness of Spin groups
@@ -20,8 +23,10 @@ component. Indeed a path from `v` to `w` in the unit level gives a path from `1 
 
 Both hypotheses hold for the positive-definite real form in dimension at least two, whose unit
 level is the Euclidean sphere, and for every nondegenerate complex form in dimension at least two,
-where every scalar is a square and the unit level is a complex quadric. In dimension one both
-Spin groups are `{±1}`, so the dimension bounds are sharp.
+where every scalar is a square and the unit level is a complex quadric. In dimension one the Spin
+group of a nondegenerate form over any Hausdorff topological field in which `2` is invertible is
+`{±1}`, which is not path-connected, so the dimension bounds are sharp. In dimension zero the Spin
+group is trivial, so a complex Spin group is path-connected exactly when its dimension is not one.
 
 ## Main results
 
@@ -32,6 +37,10 @@ Spin groups are `{±1}`, so the dimension bounds are sharp.
   group of dimension at least two is path-connected.
 * `CliffordAlgebra.pathConnectedSpace_spinGroup_of_two_le_finrank`: the Spin group of a
   nondegenerate complex quadratic space of dimension at least two is path-connected.
+* `CliffordAlgebra.not_pathConnectedSpace_spinGroup_of_finrank_eq_one`: the one-dimensional Spin
+  group is not path-connected.
+* `CliffordAlgebra.pathConnectedSpace_spinGroup_iff`: a complex Spin group is path-connected
+  exactly when the dimension is not one.
 
 ## References
 
@@ -125,5 +134,34 @@ theorem pathConnectedSpace_spinGroup_of_two_le_finrank {V : Type v} [AddCommGrou
   exact pathConnectedSpace_spinGroup_of_isPathConnected hQ
     (fun v _ ↦ IsAlgClosed.isSquare (Q v))
     (QuadraticForm.isPathConnected_setOf_apply_eq hQ hV 1)
+
+/-! ### Low dimensions -/
+
+/-- **The one-dimensional Spin group is not path-connected**: over a Hausdorff topological field
+in which `2` is invertible, the Spin group of a nondegenerate form on a line consists of the two
+points `1` and `-1`. -/
+theorem not_pathConnectedSpace_spinGroup_of_finrank_eq_one {K V : Type*} [Field K]
+    [Invertible (2 : K)] [TopologicalSpace K] [IsTopologicalRing K] [T2Space K] [AddCommGroup V]
+    [Module K V] {Q : QuadraticForm K V} (hQ : Q.Nondegenerate) (hV : finrank K V = 1) :
+    ¬ PathConnectedSpace (spinGroup Q) := fun _ ↦ by
+  let e := zmodTwoMulEquivSpinGroupOfFinrankEqOne Q hQ hV
+  have : Finite (spinGroup Q) := .of_equiv _ e.toEquiv
+  have : DiscreteTopology (spinGroup Q) := Finite.instDiscreteTopology
+  -- A connected discrete space has at most one point, but `e` is injective on two points.
+  have h := PreconnectedSpace.constant inferInstance (continuous_id (X := spinGroup Q))
+    (x := e 1) (y := e (Multiplicative.ofAdd 1))
+  exact absurd (e.injective h) (by decide)
+
+/-- **Path-connectedness of complex Spin groups**: the Spin group of a nondegenerate quadratic
+form on a finite-dimensional complex space is path-connected exactly when the dimension is not
+one. -/
+theorem pathConnectedSpace_spinGroup_iff {V : Type*} [AddCommGroup V] [Module ℂ V]
+    [FiniteDimensional ℂ V] {Q : QuadraticForm ℂ V} (hQ : Q.Nondegenerate) :
+    PathConnectedSpace (spinGroup Q) ↔ finrank ℂ V ≠ 1 := by
+  refine ⟨fun h hV ↦ not_pathConnectedSpace_spinGroup_of_finrank_eq_one hQ hV h, fun hV ↦ ?_⟩
+  rcases Nat.lt_or_ge (finrank ℂ V) 2 with h | h
+  · have : Subsingleton V := finrank_zero_iff (R := ℂ) |>.mp (by omega)
+    infer_instance
+  · exact pathConnectedSpace_spinGroup_of_two_le_finrank hQ h
 
 end CliffordAlgebra
