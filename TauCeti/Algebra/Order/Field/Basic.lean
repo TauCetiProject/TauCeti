@@ -39,6 +39,9 @@ It also records a perturbation bound for quotients, `|x / a - y / b| ≤ 2 (e + 
 profiles `2 t / (t² + ρ²)` of two scales `t` and `r` outside the radius `r`, and the clearing
 bound `a * b ≤ 1` from `a ≤ (1 + b)⁻¹` for `0 ≤ b`.
 
+Finally, it records a polynomial barrier bound: if `r ≤ M`, `0 < ε`, `1 ≤ c` and `n` is larger
+than `M / ε`, then the barrier `ε * (c * (1 + n ^ 2))` exceeds `r`.
+
 ## Main results
 
 * `BddAbove.le_of_forall_pos_exists_add_mul_le`: transfer a bound at maximizers of
@@ -54,6 +57,8 @@ bound `a * b ≤ 1` from `a ≤ (1 + b)⁻¹` for `0 ≤ b`.
 * `TauCeti.two_mul_div_add_sq_le_mul`: `2 t / (t² + ρ²) ≤ (2 t / r) (2 r / (r² + ρ²))` for
   `0 < t` and `0 < r ≤ ρ`.
 * `TauCeti.mul_le_one_of_le_inv_one_add`: `a * b ≤ 1` for `0 ≤ b` and `a ≤ (1 + b)⁻¹`.
+* `TauCeti.sub_mul_mul_one_add_sq_neg_of_lt`: the strict inequality
+  `r - ε * (c * (1 + n ^ 2)) < 0` for `r ≤ M`, `0 < ε`, `1 ≤ c` and `M / ε < n`.
 -/
 
 public section
@@ -164,6 +169,21 @@ theorem mul_le_one_of_le_inv_one_add {α : Type*} [Semifield α] [LinearOrder α
   refine (mul_le_mul_of_nonneg_right ha hb).trans ?_
   rw [inv_mul_eq_div, div_le_one (add_pos_of_pos_of_nonneg zero_lt_one hb)]
   exact le_add_of_nonneg_left zero_le_one
+
+/-- The barrier `ε * (c * (1 + n ^ 2))` dominates an upper bound `r ≤ M` once the radius `n`
+exceeds `M / ε`, for `c ≥ 1` and `ε > 0`. -/
+theorem sub_mul_mul_one_add_sq_neg_of_lt {α : Type*} [Field α] [LinearOrder α]
+    [IsStrictOrderedRing α] {c ε M r n : α} (hc : 1 ≤ c) (hε : 0 < ε)
+    (hr : r ≤ M) (hn : M / ε < n) :
+    r - ε * (c * (1 + n ^ 2)) < 0 := by
+  have h2 : M < ε * n := by
+    rw [← div_lt_iff₀' hε]
+    linarith
+  have h3 : n ≤ 1 + n ^ 2 := by
+    nlinarith [sq_nonneg (n - 1)]
+  have h4 : ε * (1 + n ^ 2) ≤ ε * (c * (1 + n ^ 2)) :=
+    mul_le_mul_of_nonneg_left (le_mul_of_one_le_left (by positivity) hc) hε.le
+  nlinarith [mul_le_mul_of_nonneg_left h3 hε.le]
 
 end TauCeti
 
