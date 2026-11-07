@@ -127,7 +127,7 @@ theorem covolume_mixedImage_of_pseudoBasis [DecidableEq ι] {Λ : Submodule (�
     rw [← Pi.basisFun_det_apply]
     exact ((Pi.basisFun K ι).isUnit_det b).ne_zero
   have hdet : |LinearMap.det φ| = |(Algebra.norm ℚ (Matrix.of ⇑b).det : ℝ)| :=
-    mixedEmbedding.abs_det_changeOfVariables b
+    mixedEmbedding.abs_det_changeOfVariables ⇑b
   have hdet0 : IsUnit (LinearMap.det φ) := by
     rw [isUnit_iff_ne_zero, ← abs_ne_zero, hdet, abs_ne_zero, Rat.cast_ne_zero]
     exact (Algebra.norm_ne_zero_iff).mpr hdetb
