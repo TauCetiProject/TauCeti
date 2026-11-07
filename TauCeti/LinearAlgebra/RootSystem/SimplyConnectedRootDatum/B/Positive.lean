@@ -49,55 +49,34 @@ theorem typeBSpinRaisingStep_iff (s t : Finset (Fin n)) :
     TypeBSpinRaisingStep s t ↔
       ∃ i : Fin n, μ s i = -1 ∧ typeBSpinReflection i s = t := Iff.rfl
 
+private theorem typeBSimpleIndex_bijOn :
+    Set.BijOn (typeBSimpleIndex n) Set.univ (typeBSimplyConnectedBase n).support :=
+  ⟨fun i _ ↦ by simp, typeBSimpleIndex_injective.injOn,
+    fun j hj ↦ ⟨⟨j, mem_typeBSimplyConnectedBase_support.mp hj⟩, trivial, Fin.ext (by simp)⟩⟩
+
 /-- The positive root cone in Bourbaki-numbered simple-root coordinates. -/
 theorem mem_typeB_posRootCone_iff {x : Fin n → ℤ} :
     x ∈ posRootCone P (typeBSimplyConnectedBase n) ↔
-      ∃ c : Fin n → ℕ, x = ∑ i, c i • (P).root (typeBSimpleIndex n i) := by
-  apply mem_posRootCone_iff_exists_nat_of_bijOn
-  exact ⟨fun i _ ↦ by simp, typeBSimpleIndex_injective.injOn,
-    fun j hj ↦ ⟨⟨j, mem_typeBSimplyConnectedBase_support.mp hj⟩, trivial,
-      Fin.ext (by simp)⟩⟩
+      ∃ c : Fin n → ℕ, x = ∑ i, c i • (P).root (typeBSimpleIndex n i) :=
+  mem_posRootCone_iff_exists_nat_of_bijOn P (typeBSimplyConnectedBase n) typeBSimpleIndex_bijOn
+
+private theorem coroot'_typeBSimpleIndex_typeBSpinWeight (i : Fin n) (s : Finset (Fin n)) :
+    (P).coroot' (typeBSimpleIndex n i) (μ s) = μ s i := by
+  simp
 
 /-- **Raising paths are exactly the positive integral differences of spin weights.**
 The reflexive path accounts for equal weights, including the sole weight in rank zero. -/
 theorem typeBSpin_raisingPath_iff_mem_posRootCone (s t : Finset (Fin n)) :
     Relation.ReflTransGen TypeBSpinRaisingStep s t ↔
-      μ t - μ s ∈ posRootCone P (typeBSimplyConnectedBase n) := by
-  constructor
-  · intro h
-    induction h with
-    | refl => simp
-    | @tail t u h htu ih =>
-      obtain ⟨i, hi, rfl⟩ := (typeBSpinRaisingStep_iff _ _).mp htu
-      have hroot : (P).root (typeBSimpleIndex n i) ∈
-          posRootCone P (typeBSimplyConnectedBase n) :=
-        root_mem_posRootCone_of_mem_posRoots P (typeBSimplyConnectedBase n)
-          (support_subset_posRoots P (typeBSimplyConnectedBase n) (by simp))
-      have heq : μ (typeBSpinReflection i t) - μ s =
-          (μ t - μ s) + (P).root (typeBSimpleIndex n i) := by
-        rw [← typeBSimplyConnectedRootDatum_reflection_typeBSpinWeight,
-          RootPairing.reflection_apply]
-        have hpair : (P).coroot' (typeBSimpleIndex n i) (μ t) = μ t i := by simp
-        rw [hpair, hi]
-        simp only [neg_smul, one_smul, sub_neg_eq_add]
-        abel
-      rw [heq]
-      exact (posRootCone P (typeBSimplyConnectedBase n)).add_mem ih hroot
-  · intro h
-    obtain ⟨c, hc⟩ := mem_typeB_posRootCone_iff.mp h
-    refine (P).toInvariantForm.reflTransGen_of_sub_eq_sum
-      (fun _ hv hne ↦ (P).rootForm_pos_of_ne_zero hv hne) typeBSpinWeight_injective
-      ((P).toInvariantForm.apply_self_eq_of_forall_exists_foldl
-        typeBSimplyConnectedRootDatum_reflection_typeBSpinWeight
-        exists_typeBSpinReflections_eq)
-      (f := typeBSimpleIndex n) (fun s i hi ↦ ?_) hc
-    have hpair : (P).coroot' (typeBSimpleIndex n i) (μ s) = μ s i := by simp
-    rw [hpair] at hi
-    have hsi : μ s i = -1 := by
-      rcases typeBSpinWeight_apply_eq_neg_one_or_eq_zero_or_eq_one s i with h | h | h <;> omega
-    refine ⟨typeBSpinReflection i s, ⟨i, hsi, rfl⟩, ?_⟩
-    rw [← typeBSimplyConnectedRootDatum_reflection_typeBSpinWeight,
-      RootPairing.reflection_apply, hpair, hsi]
-    simp
+      μ t - μ s ∈ posRootCone P (typeBSimplyConnectedBase n) :=
+  (P).toInvariantForm.reflTransGen_iff_sub_mem_posRootCone
+    (fun _ hv hne ↦ (P).rootForm_pos_of_ne_zero hv hne) typeBSpinWeight_injective
+    ((P).toInvariantForm.apply_self_eq_of_forall_exists_foldl
+      typeBSimplyConnectedRootDatum_reflection_typeBSpinWeight exists_typeBSpinReflections_eq)
+    typeBSimpleIndex_bijOn typeBSimplyConnectedRootDatum_reflection_typeBSpinWeight
+    (fun x i hi ↦ by
+      rw [coroot'_typeBSimpleIndex_typeBSpinWeight] at hi ⊢
+      rcases typeBSpinWeight_apply_eq_neg_one_or_eq_zero_or_eq_one x i with h | h | h <;> omega)
+    fun _ _ ↦ by simp only [coroot'_typeBSimpleIndex_typeBSpinWeight, TypeBSpinRaisingStep]
 
 end TauCeti.DynkinType

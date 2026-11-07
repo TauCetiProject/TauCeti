@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.RootSystem.RootPositive
+public import TauCeti.LinearAlgebra.RootSystem.Positive
 
 /-!
 # The normalisation of an invariant form against the coroots
@@ -38,6 +39,9 @@ step towards a higher weight.
 * `RootPairing.InvariantForm.reflTransGen_of_sub_eq_sum`: iterating such raising steps joins two
   vectors of an injective family of equal length whose difference is a natural combination of
   roots.
+* `RootPairing.InvariantForm.reflTransGen_iff_sub_mem_posRootCone`: for such a family indexed by the
+  simple roots of a base, raising paths join `a` to `b` exactly when `μ b - μ a` lies in the
+  positive root cone.
 -/
 
 public section
@@ -141,5 +145,44 @@ theorem reflTransGen_of_sub_eq_sum [LinearOrder R] [IsStrictOrderedRing R]
       ← Finset.add_sum_erase _ _ (Finset.mem_univ j)]
     rw [add_right_comm, ← succ_nsmul, Nat.sub_add_cancel hcj]
   rw [hμa', sub_add_eq_sub_sub, h, hsum, add_sub_cancel_right]
+
+/-- **Raising paths are the positive root cone differences.** Let `μ` be an injective family of
+vectors of equal length for an invariant form that is positive on the nonzero vectors of the root
+span, and let `σ i` lift the reflection in the simple root `α_{f i}` to the indices of `μ`, where
+`f` runs bijectively over the support of a base `b`. Suppose that a negative coroot value of a
+simple root on `μ a` is `-1`. A relation `r` that steps from `a` to `σ i a` when the coroot value
+of `α_{f i}` on `μ a` is `-1` joins `a` to `b` exactly when `μ b - μ a` lies in the positive
+root cone of `b`. -/
+theorem reflTransGen_iff_sub_mem_posRootCone [LinearOrder R] [IsStrictOrderedRing R] [CharZero R]
+    {b : P.Base} (hpos : ∀ v ∈ P.rootSpan R, v ≠ 0 → 0 < B.form v v)
+    {X : Type*} {μ : X → M} (hμ : Function.Injective μ)
+    (hlen : ∀ a b, B.form (μ a) (μ a) = B.form (μ b) (μ b))
+    {κ : Type*} [Finite κ] {f : κ → ι} (hf : Set.BijOn f Set.univ b.support) {σ : κ → X → X}
+    (hσ : ∀ i a, P.reflection (f i) (μ a) = μ (σ i a))
+    (hneg : ∀ a i, P.coroot' (f i) (μ a) < 0 → P.coroot' (f i) (μ a) = -1)
+    {r : X → X → Prop} (hr : ∀ a a', r a a' ↔ ∃ i, P.coroot' (f i) (μ a) = -1 ∧ σ i a = a')
+    {a b' : X} :
+    Relation.ReflTransGen r a b' ↔ μ b' - μ a ∈ TauCeti.posRootCone P b := by
+  constructor
+  · intro h
+    induction h with
+    | refl => simp
+    | @tail c d _ hcd ih =>
+      obtain ⟨i, hi, rfl⟩ := (hr _ _).mp hcd
+      have heq : μ (σ i c) - μ a = (μ c - μ a) + P.root (f i) := by
+        rw [← hσ, reflection_apply, hi]
+        simp only [neg_smul, one_smul, sub_neg_eq_add]
+        abel
+      rw [heq]
+      exact (TauCeti.posRootCone P b).add_mem ih
+        (TauCeti.root_mem_posRootCone_of_mem_posRoots P b
+          (TauCeti.support_subset_posRoots P b (hf.mapsTo trivial)))
+  · intro h
+    have := Fintype.ofFinite κ
+    obtain ⟨c, hc⟩ := (TauCeti.mem_posRootCone_iff_exists_nat_of_bijOn P b hf).mp h
+    refine B.reflTransGen_of_sub_eq_sum hpos hμ hlen (f := f) (fun a' j hj ↦ ?_) hc
+    refine ⟨σ j a', (hr _ _).mpr ⟨j, hneg a' j hj, rfl⟩, ?_⟩
+    rw [← hσ, reflection_apply, hneg a' j hj]
+    simp only [neg_smul, one_smul, sub_neg_eq_add]
 
 end RootPairing.InvariantForm

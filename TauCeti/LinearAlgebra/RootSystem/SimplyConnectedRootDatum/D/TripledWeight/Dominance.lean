@@ -57,36 +57,22 @@ private theorem rootForm_eq (a b : Fin 24) :
     toLinearMap_typeDSimplyConnectedRootDatum, coroot_typeDSimplyConnectedRootDatum]
   decide +kernel
 
+private theorem reflection_d4TripledWeight (i : Fin 4) (a : Fin 24) :
+    (P).reflection (typeDSimpleIndex 4 le_rfl i) (μ a) = μ (d4TripledReflection i a) := by
+  rw [RootPairing.reflection_apply, coroot'_typeDSimpleIndex_apply le_rfl,
+    root_typeDSimpleIndex, d4TripledWeight_reflection]
+
 /-- Positive simple-root paths are exactly positive integral differences of tripled D₄ weights.
 Membership in the cone already forces the endpoints to lie in the same minuscule summand. -/
 theorem d4Tripled_raisingPath_iff_mem_posRootCone (a b : Fin 24) :
     Relation.ReflTransGen D4TripledRaisingStep a b ↔
-      μ b - μ a ∈ posRootCone P (typeDSimplyConnectedBase 4 le_rfl) := by
-  constructor
-  · intro h
-    induction h with
-    | refl => simp
-    | @tail b c h hbc ih =>
-      obtain ⟨i, hi, rfl⟩ := (d4TripledRaisingStep_iff _ _).mp hbc
-      have heq : μ (d4TripledReflection i b) - μ a =
-          (μ b - μ a) + (P).root (typeDSimpleIndex 4 le_rfl i) := by
-        rw [d4TripledWeight_reflection, hi, root_typeDSimpleIndex]
-        simp only [neg_smul, one_smul, sub_neg_eq_add]
-        abel
-      rw [heq]
-      exact (posRootCone P (typeDSimplyConnectedBase 4 le_rfl)).add_mem ih
-        (root_typeDSimpleIndex_mem_posRootCone le_rfl i)
-  · intro h
-    obtain ⟨c, hc⟩ := (mem_typeD_posRootCone_iff le_rfl).mp h
-    refine (P).toInvariantForm.reflTransGen_of_sub_eq_sum
-      (fun _ hv hne ↦ (P).rootForm_pos_of_ne_zero hv hne)
-      d4TripledWeight_injective rootForm_eq
-      (f := typeDSimpleIndex 4 le_rfl) (fun a i hi ↦ ?_) hc
-    have hai : μ a i = -1 := by
-      rw [coroot'_typeDSimpleIndex_apply le_rfl] at hi
-      rcases d4TripledWeight_apply_eq_neg_one_or_eq_zero_or_eq_one a i with h | h | h <;> omega
-    refine ⟨d4TripledReflection i a, (d4TripledRaisingStep_iff _ _).mpr ⟨i, hai, rfl⟩, ?_⟩
-    rw [d4TripledWeight_reflection, hai, root_typeDSimpleIndex]
-    simp
+      μ b - μ a ∈ posRootCone P (typeDSimplyConnectedBase 4 le_rfl) :=
+  (P).toInvariantForm.reflTransGen_iff_sub_mem_posRootCone
+    (fun _ hv hne ↦ (P).rootForm_pos_of_ne_zero hv hne) d4TripledWeight_injective rootForm_eq
+    (typeDSimpleIndex_bijOn le_rfl) reflection_d4TripledWeight
+    (fun x i hi ↦ by
+      rw [coroot'_typeDSimpleIndex_apply le_rfl] at hi ⊢
+      rcases d4TripledWeight_apply_eq_neg_one_or_eq_zero_or_eq_one x i with h | h | h <;> omega)
+    fun _ _ ↦ by simp only [coroot'_typeDSimpleIndex_apply le_rfl, D4TripledRaisingStep]
 
 end TauCeti.DynkinType

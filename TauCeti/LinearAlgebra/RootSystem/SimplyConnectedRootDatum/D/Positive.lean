@@ -53,16 +53,20 @@ theorem typeDSpinRaisingStep_iff (s t : Finset (Fin n)) :
     TypeDSpinRaisingStep s t ↔
       ∃ i : Fin n, μ s i = -1 ∧ typeDSpinReflection i s = t := Iff.rfl
 
+/-- The numbered type-D simple roots are a bijection onto the support of the simply connected
+base. -/
+theorem typeDSimpleIndex_bijOn :
+    Set.BijOn (typeDSimpleIndex n hn) Set.univ (typeDSimplyConnectedBase n hn).support :=
+  ⟨fun i _ ↦ by simp, (typeDSimpleIndex_injective hn).injOn, fun j hj ↦ by
+    refine ⟨⟨j, (mem_typeDSimplyConnectedBase_support hn).mp hj⟩, trivial, ?_⟩
+    exact Fin.ext (by simp [typeDSimpleIndex_val])⟩
+
 /-- The positive root cone in the numbered simple-root coordinates of type D. -/
 theorem mem_typeD_posRootCone_iff {x : Fin n → ℤ} :
     x ∈ posRootCone P (typeDSimplyConnectedBase n hn) ↔
-      ∃ c : Fin n → ℕ, x = ∑ i, c i • (P).root (typeDSimpleIndex n hn i) := by
-  have he : Set.BijOn (typeDSimpleIndex n hn) Set.univ
-      (typeDSimplyConnectedBase n hn).support :=
-    ⟨fun i _ ↦ by simp, (typeDSimpleIndex_injective hn).injOn, fun j hj ↦ by
-      refine ⟨⟨j, (mem_typeDSimplyConnectedBase_support hn).mp hj⟩, trivial, ?_⟩
-      exact Fin.ext (by simp [typeDSimpleIndex_val])⟩
-  exact mem_posRootCone_iff_exists_nat_of_bijOn P (typeDSimplyConnectedBase n hn) he
+      ∃ c : Fin n → ℕ, x = ∑ i, c i • (P).root (typeDSimpleIndex n hn i) :=
+  mem_posRootCone_iff_exists_nat_of_bijOn P (typeDSimplyConnectedBase n hn)
+    (typeDSimpleIndex_bijOn hn)
 
 /-- A numbered type-D simple root belongs to the integral positive root cone. -/
 theorem root_typeDSimpleIndex_mem_posRootCone (i : Fin n) :
@@ -112,32 +116,14 @@ theorem rootForm_typeDSpinWeight_eq (s t : Finset (Fin n)) :
 No parity assumption is needed: membership in the cone already forces the appropriate orbit. -/
 theorem typeDSpin_raisingPath_iff_mem_posRootCone (s t : Finset (Fin n)) :
     Relation.ReflTransGen TypeDSpinRaisingStep s t ↔
-      μ t - μ s ∈ posRootCone P (typeDSimplyConnectedBase n hn) := by
-  constructor
-  · intro h
-    induction h with
-    | refl => simp
-    | @tail t u h htu ih =>
-      obtain ⟨i, hi, rfl⟩ := (typeDSpinRaisingStep_iff _ _).mp htu
-      have heq : μ (typeDSpinReflection i t) - μ s =
-          (μ t - μ s) + (P).root (typeDSimpleIndex n hn i) := by
-        rw [typeDSpinWeight_typeDSpinReflection hn, hi, root_typeDSimpleIndex hn]
-        simp only [neg_smul, one_smul, sub_neg_eq_add]
-        abel
-      rw [heq]
-      exact (posRootCone P (typeDSimplyConnectedBase n hn)).add_mem ih
-        (root_typeDSimpleIndex_mem_posRootCone hn i)
-  · intro h
-    obtain ⟨c, hc⟩ := (mem_typeD_posRootCone_iff hn).mp h
-    refine (P).toInvariantForm.reflTransGen_of_sub_eq_sum
-      (fun _ hv hne ↦ (P).rootForm_pos_of_ne_zero hv hne)
-      typeDSpinWeight_injective (rootForm_typeDSpinWeight_eq hn)
-      (f := typeDSimpleIndex n hn) (fun s i hi ↦ ?_) hc
-    have hai : μ s i = -1 := by
-      rw [coroot'_typeDSimpleIndex_apply hn] at hi
-      rcases typeDSpinWeight_apply_eq_neg_one_or_eq_zero_or_eq_one s i with h | h | h <;> omega
-    refine ⟨typeDSpinReflection i s, ⟨i, hai, rfl⟩, ?_⟩
-    rw [typeDSpinWeight_typeDSpinReflection hn, hai, root_typeDSimpleIndex hn]
-    simp
+      μ t - μ s ∈ posRootCone P (typeDSimplyConnectedBase n hn) :=
+  (P).toInvariantForm.reflTransGen_iff_sub_mem_posRootCone
+    (fun _ hv hne ↦ (P).rootForm_pos_of_ne_zero hv hne) typeDSpinWeight_injective
+    (rootForm_typeDSpinWeight_eq hn) (typeDSimpleIndex_bijOn hn)
+    (typeDSimplyConnectedRootDatum_reflection_typeDSpinWeight hn)
+    (fun x i hi ↦ by
+      rw [coroot'_typeDSimpleIndex_apply hn] at hi ⊢
+      rcases typeDSpinWeight_apply_eq_neg_one_or_eq_zero_or_eq_one x i with h | h | h <;> omega)
+    fun _ _ ↦ by simp only [coroot'_typeDSimpleIndex_apply hn, TypeDSpinRaisingStep]
 
 end TauCeti.DynkinType

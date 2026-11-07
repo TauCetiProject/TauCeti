@@ -43,56 +43,36 @@ theorem e7MinusculeRaisingStep_iff (a b : Fin 56) :
     E7MinusculeRaisingStep a b ↔
       ∃ i : Fin 7, μ a i = -1 ∧ e7MinusculeReflection i a = b := Iff.rfl
 
+private theorem e7SimpleIndex_bijOn :
+    Set.BijOn e7SimpleIndex Set.univ e7SimplyConnectedBase.support :=
+  ⟨fun i _ ↦ mem_support_e7SimplyConnectedBase.mpr (by simp), e7SimpleIndex_injective.injOn,
+    fun j hj ↦ ⟨⟨j, mem_support_e7SimplyConnectedBase.mp hj⟩, trivial, Fin.ext (by simp)⟩⟩
+
 /-- The integral positive root cone in the seven numbered simple-root coordinates. -/
 theorem mem_e7_posRootCone_iff {x : Fin 7 → ℤ} :
     x ∈ posRootCone P e7SimplyConnectedBase ↔
       ∃ c : Fin 7 → ℕ, x = ∑ i, c i • α i := by
-  have he : Set.BijOn e7SimpleIndex Set.univ e7SimplyConnectedBase.support :=
-    ⟨fun i _ ↦ mem_support_e7SimplyConnectedBase.mpr (by simp), e7SimpleIndex_injective.injOn,
-      fun j hj ↦ ⟨⟨j, mem_support_e7SimplyConnectedBase.mp hj⟩, trivial, Fin.ext (by simp)⟩⟩
   simpa only [e7SimplyConnectedRootDatum_root] using
-    mem_posRootCone_iff_exists_nat_of_bijOn P e7SimplyConnectedBase he
+    mem_posRootCone_iff_exists_nat_of_bijOn P e7SimplyConnectedBase e7SimpleIndex_bijOn
+
+private theorem coroot'_e7SimpleIndex_e7MinusculeWeight (i : Fin 7) (a : Fin 56) :
+    e7SimplyConnectedRootDatum.coroot' (e7SimpleIndex i) (μ a) = μ a i := by
+  simp
 
 /-- Raising paths are exactly the positive integral differences of minuscule weights. -/
 theorem e7Minuscule_raisingPath_iff_mem_posRootCone (a b : Fin 56) :
     Relation.ReflTransGen E7MinusculeRaisingStep a b ↔
-      μ b - μ a ∈ posRootCone P e7SimplyConnectedBase := by
-  constructor
-  · intro h
-    induction h with
-    | refl => simp
-    | @tail b c h hbc ih =>
-      obtain ⟨i, hi, rfl⟩ := (e7MinusculeRaisingStep_iff _ _).mp hbc
-      have hroot : α i ∈ posRootCone P e7SimplyConnectedBase := by
-        simpa only [e7SimplyConnectedRootDatum_root] using
-          root_mem_posRootCone_of_mem_posRoots P e7SimplyConnectedBase
-            (i := e7SimpleIndex i)
-            (support_subset_posRoots P e7SimplyConnectedBase (by simp))
-      have heq : μ (e7MinusculeReflection i b) - μ a = (μ b - μ a) + α i := by
-        rw [e7MinusculeWeight_reflection, hi]
-        simp only [neg_smul, one_smul, sub_neg_eq_add]
-        abel
-      rw [heq]
-      exact (posRootCone P e7SimplyConnectedBase).add_mem ih hroot
-  · intro h
-    obtain ⟨c, hc⟩ := mem_e7_posRootCone_iff.mp h
-    refine e7SimplyConnectedRootDatum.toInvariantForm.reflTransGen_of_sub_eq_sum
-      (fun _ hv hne ↦ e7SimplyConnectedRootDatum.rootForm_pos_of_ne_zero hv hne)
-      e7MinusculeWeight_injective
-      (e7SimplyConnectedRootDatum.toInvariantForm.apply_self_eq_of_forall_exists_foldl
-        e7SimplyConnectedRootDatum_reflection_e7MinusculeWeight
-        exists_e7MinusculeReflections_eq)
-      (f := e7SimpleIndex)
-      (fun x i hi ↦ ?_) (by simpa only [e7SimplyConnectedRootDatum_root] using hc)
-    -- A negative coroot value on a minuscule weight is `-1`, where the simple reflection raises.
-    have hpair : e7SimplyConnectedRootDatum.coroot' (e7SimpleIndex i) (μ x) = μ x i := by
-      simp
-    have hai : μ x i = -1 := by
-      rw [hpair] at hi
-      rcases e7MinusculeWeight_apply_eq_neg_one_or_eq_zero_or_eq_one x i with h | h | h <;> omega
-    refine ⟨e7MinusculeReflection i x, (e7MinusculeRaisingStep_iff _ _).mpr ⟨i, hai, rfl⟩, ?_⟩
-    rw [e7MinusculeWeight_reflection, hai]
-    simp
+      μ b - μ a ∈ posRootCone P e7SimplyConnectedBase :=
+  e7SimplyConnectedRootDatum.toInvariantForm.reflTransGen_iff_sub_mem_posRootCone
+    (fun _ hv hne ↦ e7SimplyConnectedRootDatum.rootForm_pos_of_ne_zero hv hne)
+    e7MinusculeWeight_injective
+    (e7SimplyConnectedRootDatum.toInvariantForm.apply_self_eq_of_forall_exists_foldl
+      e7SimplyConnectedRootDatum_reflection_e7MinusculeWeight exists_e7MinusculeReflections_eq)
+    e7SimpleIndex_bijOn e7SimplyConnectedRootDatum_reflection_e7MinusculeWeight
+    (fun x i hi ↦ by
+      rw [coroot'_e7SimpleIndex_e7MinusculeWeight] at hi ⊢
+      rcases e7MinusculeWeight_apply_eq_neg_one_or_eq_zero_or_eq_one x i with h | h | h <;> omega)
+    fun _ _ ↦ by simp only [coroot'_e7SimpleIndex_e7MinusculeWeight, E7MinusculeRaisingStep]
 
 /-- The raising-path criterion in the numbered seven-simple-root coordinates. -/
 theorem e7Minuscule_raisingPath_iff_exists_nat_coefficients (a b : Fin 56) :
