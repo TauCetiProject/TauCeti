@@ -59,54 +59,20 @@ namespace PDE
 variable {ι : Type*} [Fintype ι] {Omega : Opens (EuclideanSpace ℝ ι)}
   {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
 
-/-- **A field that is Lipschitz on a set extends to a Lipschitz field on the whole space.** If
-`x ↦ a x` is Lipschitz on `S` in the operator norm of its bilinear forms, then `a` agrees on `S`
-with a field on the whole space with the same property. Extend the entries by McShane's extension
-(`LipschitzOnWith.extend_real`). -/
-theorem exists_lipschitzWith_matrixBilinearForm_eqOn {K : ℝ≥0}
-    {S : Set (EuclideanSpace ℝ ι)} (hK : LipschitzOnWith K (fun x => matrixBilinearForm (a x)) S) :
-    ∃ (abar : EuclideanSpace ℝ ι → Matrix ι ι ℝ) (K' : ℝ≥0), EqOn abar a S ∧
-      LipschitzWith K' (fun x => matrixBilinearForm (abar x)) := by
-  classical
-  -- Extend the entries of `a` from `S` to Lipschitz functions on the whole space.
-  have hent : ∀ i j, LipschitzOnWith (K * ‖EuclideanSpace.single i (1 : ℝ)‖₊ *
-      ‖EuclideanSpace.single j (1 : ℝ)‖₊) (fun x => a x i j) S := fun i j => by
-    simpa [matrixBilinearForm_apply] using lipschitzOnWith_matrixBilinearForm_apply_apply hK
-      (EuclideanSpace.single i (1 : ℝ)) (EuclideanSpace.single j 1)
-  choose g hgL hgS using fun i j => (hent i j).extend_real
-  have habar : EqOn (fun x => Matrix.of fun i j => g i j x) a S := fun x hx => by
-    ext i j
-    exact (hgS i j hx).symm
-  -- The bilinear forms of `ā` are Lipschitz, with the sum of the entrywise constants.
-  have hLbar : LipschitzWith (∑ i : ι, ∑ j : ι, K * ‖EuclideanSpace.single i (1 : ℝ)‖₊ *
-      ‖EuclideanSpace.single j (1 : ℝ)‖₊)
-      (fun x => matrixBilinearForm (Matrix.of fun i j => g i j x)) := by
-    refine LipschitzWith.of_dist_le_mul fun y z => ?_
-    rw [dist_eq_norm, ← matrixBilinearForm_sub]
-    refine (norm_matrixBilinearForm_le_sum_abs _).trans ?_
-    push_cast
-    rw [Finset.sum_mul]
-    refine Finset.sum_le_sum fun i _ => ?_
-    rw [Finset.sum_mul]
-    refine Finset.sum_le_sum fun j _ => ?_
-    rw [Matrix.sub_apply, ← Real.dist_eq]
-    exact (hgL i j).dist_le_mul y z
-  exact ⟨_, _, habar, hLbar⟩
-
 /-- **Blending a Lipschitz field with a constant one by a smooth cutoff is bounded and Lipschitz.**
 If `x ↦ matrixBilinearForm (abar x)` is Lipschitz and `χ` is a `C¹` compactly supported weight with
-values in `[0, 1]`, then the bilinear forms of `χ abar + (1 - χ) λ I` are Lipschitz and bounded. -/
-theorem exists_lipschitzWith_bound_smul_add_one_sub_smul [DecidableEq ι] {L : ℝ≥0}
-    {abar : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+values in `[0, 1]`, then the bilinear forms of `χ abar + (1 - χ) c` are Lipschitz and bounded, for
+every constant matrix `c`. -/
+private theorem exists_lipschitzWith_and_norm_le_matrixBilinearForm_smul_add_one_sub_smul
+    {L : ℝ≥0} {abar : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
     (hLbar : LipschitzWith L (fun x => matrixBilinearForm (abar x)))
     {χ : EuclideanSpace ℝ ι → ℝ} (hχ : ContDiff ℝ 1 χ) (hχc : HasCompactSupport χ)
-    (hχI : ∀ x, χ x ∈ Icc (0 : ℝ) 1) (lam : ℝ) :
+    (hχI : ∀ x, χ x ∈ Icc (0 : ℝ) 1) (c : Matrix ι ι ℝ) :
     ∃ (K' : ℝ≥0) (M : ℝ),
-      LipschitzWith K'
-          (fun x => matrixBilinearForm (χ x • abar x + (1 - χ x) • (lam • (1 : Matrix ι ι ℝ)))) ∧
-        ∀ x, ‖matrixBilinearForm (χ x • abar x + (1 - χ x) • (lam • (1 : Matrix ι ι ℝ)))‖ ≤ M := by
+      LipschitzWith K' (fun x => matrixBilinearForm (χ x • abar x + (1 - χ x) • c)) ∧
+        ∀ x, ‖matrixBilinearForm (χ x • abar x + (1 - χ x) • c)‖ ≤ M := by
   have hχ0 : ∀ x ∉ tsupport χ, χ x = 0 := fun x hx => image_eq_zero_of_notMem_tsupport hx
-  obtain ⟨C0, hC0⟩ : ∃ C0, matrixBilinearForm (lam • (1 : Matrix ι ι ℝ)) = C0 := ⟨_, rfl⟩
+  obtain ⟨C0, hC0⟩ : ∃ C0, matrixBilinearForm c = C0 := ⟨_, rfl⟩
   -- On the compact set `tsupport χ`, `F = B(ā) - C0` is Lipschitz and bounded.
   set F := fun x => matrixBilinearForm (abar x) + -C0
   have hF : LipschitzWith (_ + 0) F := hLbar.add (LipschitzWith.const (-C0))
@@ -120,17 +86,17 @@ theorem exists_lipschitzWith_bound_smul_add_one_sub_smul [DecidableEq ι] {L : �
       rw [Real.norm_eq_abs, abs_of_nonneg (hχI x).1, NNReal.coe_one]
       exact (hχI x).2) hFb hχ0
   -- The bilinear forms of `χ ā + (1 - χ) λ I` are `C0 + χ F`.
-  have hBform : (fun x => matrixBilinearForm (χ x • abar x + (1 - χ x) • (lam • 1))) =
+  have hBform : (fun x => matrixBilinearForm (χ x • abar x + (1 - χ x) • c)) =
       fun x => C0 + χ x • F x := by
     ext x η ξ
     simp only [F, ← hC0, matrixBilinearForm_add_apply, matrixBilinearForm_smul_apply, add_apply,
       FunLike.coe_smul, FunLike.coe_neg, Pi.smul_apply, Pi.neg_apply, smul_eq_mul]
     ring
   obtain ⟨K', hK'⟩ : ∃ K', LipschitzWith K' fun x =>
-      matrixBilinearForm (χ x • abar x + (1 - χ x) • (lam • (1 : Matrix ι ι ℝ))) :=
+      matrixBilinearForm (χ x • abar x + (1 - χ x) • c) :=
     ⟨_, by rw [hBform]; exact (LipschitzWith.const C0).add (holderWith_one.1 hχF)⟩
   refine ⟨K', ‖C0‖ + B.toNNReal, hK', fun x => ?_⟩
-  rw [show matrixBilinearForm (χ x • abar x + (1 - χ x) • (lam • 1)) = C0 + χ x • F x from
+  rw [show matrixBilinearForm (χ x • abar x + (1 - χ x) • c) = C0 + χ x • F x from
     congrFun hBform x]
   have hχFx : ‖χ x • F x‖ ≤ B.toNNReal := by
     refine (ContinuousLinearMap.opNorm_smul_le (χ x) (F x)).trans ?_
@@ -167,8 +133,9 @@ theorem UniformlyEllipticOn.exists_lipschitzWith_eqOn_inter [DecidableEq ι] {la
   obtain ⟨χ, hχ, hχr, hχ1, hχc, hχs⟩ := hC.exists_contDiff_cutoff U.isOpen hCU
   have hχI : ∀ x, χ x ∈ Icc (0 : ℝ) 1 := fun x => hχr (mem_range_self x)
   have hχ0 : ∀ x ∉ tsupport χ, χ x = 0 := fun x hx => image_eq_zero_of_notMem_tsupport hx
-  obtain ⟨K', M, hK', hM⟩ := exists_lipschitzWith_bound_smul_add_one_sub_smul hLbar
-    (hχ.of_le (by simp)) hχc hχI lam
+  obtain ⟨K', M, hK', hM⟩ :=
+    exists_lipschitzWith_and_norm_le_matrixBilinearForm_smul_add_one_sub_smul hLbar
+    (hχ.of_le (by simp)) hχc hχI (lam • 1)
   refine ⟨fun x => χ x • abar x + (1 - χ x) • (lam • 1), K', M,
     ⟨interior (χ ⁻¹' {1}), isOpen_interior⟩, hχ1, fun x hx => ?_, ?_, hK', fun x => ?_,
     fun x hx => ?_⟩
