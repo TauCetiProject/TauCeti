@@ -40,6 +40,8 @@ product of linear factors `X - C Ψ` with homogeneous `Ψ` of degree `m` are hom
 homogeneous of degree `n`. Conversely, `MvPolynomial.homogeneousComponent_one_eq_sum` writes the
 degree-one component of a polynomial in finitely many variables as the linear form
 `∑ i, c i • X i` whose coefficients `c i` are the coefficients of the variables `X i`.
+The top component of a nonzero polynomial is nonzero
+(`MvPolynomial.homogeneousComponent_totalDegree_ne_zero`).
 Finally, `MvPolynomial.eval_eq_sum_homogeneousComponent_of_eval_smul` averages over the `n`-th
 roots of unity: if scaling the point by every `n`-th root of unity `ζ ^ j` scales the value by
 `(ζ ^ j) ^ a`, only the homogeneous components of degree congruent to `a` modulo `n` contribute.
@@ -250,6 +252,17 @@ variable {σ R : Type*}
 section CommSemiring
 
 variable [CommSemiring R]
+
+/-- The homogeneous component in the total degree of a nonzero polynomial is nonzero. -/
+theorem homogeneousComponent_totalDegree_ne_zero (p : MvPolynomial σ R) (hp : p ≠ 0) :
+    homogeneousComponent p.totalDegree p ≠ 0 := by
+  classical
+  obtain ⟨d, hd, heq⟩ := p.support.exists_mem_eq_sup (support_nonempty.mpr hp)
+    (fun d ↦ d.degree)
+  intro hzero
+  have hc := congrArg (fun q : MvPolynomial σ R ↦ q.coeff d) hzero
+  have hdeg : d.degree = p.totalDegree := heq.symm
+  simp [coeff_homogeneousComponent, hdeg, mem_support_iff.mp hd] at hc
 
 /-- The degree-one component of a polynomial in finitely many variables is the linear form whose
 coefficient of `X i` is the coefficient of `X i` in the polynomial. -/
