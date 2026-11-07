@@ -69,20 +69,6 @@ private lemma tsum_sampleGraph_homDensityFin_tail_ne_top_of_isEmpty {V : Type*} 
   simp_rw [hevent, measure_empty]
   simp
 
-/-- For a positive tolerance, the concentration side condition `2 q² ≤ ε (n + 1)` holds for all
-sufficiently large `n`. -/
-private lemma eventually_two_mul_sq_le_mul_add_one (q : ℝ) {ε : ℝ} (hε : 0 < ε) :
-    ∀ᶠ n : ℕ in atTop, 2 * q ^ 2 ≤ ε * ((n : ℝ) + 1) := by
-  obtain ⟨N, hN⟩ := exists_nat_ge (2 * q ^ 2 / ε)
-  filter_upwards [eventually_ge_atTop N] with n hn
-  have hNn : (N : ℝ) ≤ ((n + 1 : ℕ) : ℝ) := by
-    exact_mod_cast hn.trans (Nat.le_add_right n 1)
-  calc
-    2 * q ^ 2 = ε * (2 * q ^ 2 / ε) := by field_simp
-    _ ≤ ε * (N : ℝ) := mul_le_mul_of_nonneg_left hN hε.le
-    _ ≤ ε * ((n : ℝ) + 1) := by
-      simpa only [Nat.cast_add, Nat.cast_one] using mul_le_mul_of_nonneg_left hNn hε.le
-
 /-- For a nonempty pattern, the exponential concentration bound eventually dominates the
 deviation probabilities, and its geometric series is summable. -/
 private lemma tsum_sampleGraph_homDensityFin_tail_ne_top_of_card_pos {V : Type*} [Fintype V]
@@ -105,7 +91,9 @@ private lemma tsum_sampleGraph_homDensityFin_tail_ne_top_of_card_pos {V : Type*}
   have hb : Summable b := by
     simpa only [b] using (summable_nat_add_iff 1).2 hgeometric
   have hab : ∀ᶠ n : ℕ in atTop, a n ≤ b n := by
-    filter_upwards [eventually_two_mul_sq_le_mul_add_one (q : ℝ) hε] with n hn
+    -- the side condition `2 q² ≤ ε (n + 1)` holds for large `n`
+    filter_upwards [((tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds).const_mul_atTop
+      hε).eventually_ge_atTop (2 * (q : ℝ) ^ 2)] with n hn
     have hn' : 2 * (Fintype.card V : ℝ) ^ 2 ≤ ε * ((n + 1 : ℕ) : ℝ) := by
       simpa only [q, Nat.cast_add, Nat.cast_one] using hn
     dsimp only [a, b]
@@ -113,12 +101,9 @@ private lemma tsum_sampleGraph_homDensityFin_tail_ne_top_of_card_pos {V : Type*}
     dsimp only [c, q]
     push_cast
     ring_nf
-  let d : ℕ → ℝ := fun n => max (a n) (b n)
-  have hd_eventually : d =ᶠ[atTop] b := hab.mono fun n hn => max_eq_right hn
-  have hd : Summable d := hb.congr_atTop hd_eventually.symm
-  have ha : Summable a := hd.of_nonneg_of_le
-    (fun n => ENNReal.toReal_nonneg)
-    (fun n => le_max_left (a n) (b n))
+  have ha : Summable a := hb.of_norm_bounded_eventually_nat
+    (hab.mono fun n hn => by
+      simpa only [a, Real.norm_eq_abs, abs_of_nonneg ENNReal.toReal_nonneg] using hn)
   have hnn : Summable fun n => ((sampleGraph W (n + 1))
       {G | ε ≤ |homDensityFin F G - homDensity F W|}).toNNReal := by
     simpa only [a, ENNReal.toNNReal_toReal_eq] using ha.toNNReal
