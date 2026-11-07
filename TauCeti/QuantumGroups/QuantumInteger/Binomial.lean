@@ -128,6 +128,19 @@ section
 
 variable [Semifield K]
 
+/-- The defining Pascal rule with integer exponents. This form holds for all indices,
+including `k > n`, because the corresponding quantum binomial coefficients vanish. -/
+theorem quantumBinomial_succ_succ_zpow (q : K) (n k : ℕ) :
+    quantumBinomial q (n + 1) (k + 1) =
+      q ^ ((n : ℤ) - k) * quantumBinomial q n k +
+        q ^ (-((k : ℤ) + 1)) * quantumBinomial q n (k + 1) := by
+  rw [quantumBinomial_succ_succ]
+  congr 1
+  · by_cases hk : k ≤ n
+    · rw [← Nat.cast_sub hk, zpow_natCast]
+    · simp [quantumBinomial_eq_zero_of_lt q (by omega : n < k)]
+  · rw [zpow_neg, ← Nat.cast_add_one, zpow_natCast, inv_pow]
+
 /-- Over a semifield, the quantum binomial coefficients at `q = 1` are the ordinary
 binomial coefficients. -/
 @[simp] theorem quantumBinomial_one (n k : ℕ) :
@@ -138,20 +151,6 @@ binomial coefficients. -/
     cases k with
     | zero => simp
     | succ k => simp [quantumBinomial_succ_succ, ih, Nat.choose_succ_succ]
-
-/-- The defining Pascal rule of `quantumBinomial` with integer exponents,
-`[n+1 choose k+1]_q = q^(n-k) [n choose k]_q + q^(-(k+1)) [n choose k+1]_q`; for `n < k` both
-sides vanish. -/
-private theorem quantumBinomial_succ_succ_zpow (q : K) (n k : ℕ) :
-    quantumBinomial q (n + 1) (k + 1) =
-      q ^ ((n : ℤ) - k) * quantumBinomial q n k +
-        q ^ (-((k : ℤ) + 1)) * quantumBinomial q n (k + 1) := by
-  rcases le_or_gt k n with hk | hk
-  · rw [quantumBinomial_succ_succ, ← Nat.cast_sub hk, zpow_natCast, ← Nat.cast_add_one,
-      zpow_neg, zpow_natCast, inv_pow]
-  · simp [quantumBinomial_eq_zero_of_lt q hk,
-      quantumBinomial_eq_zero_of_lt q (hk.trans k.lt_succ_self),
-      quantumBinomial_eq_zero_of_lt q (Nat.succ_lt_succ hk)]
 
 open Polynomial in
 /-- **Cauchy's binomial theorem**, in coefficient form: for `q ≠ 0`, the coefficient of `X ^ k`
@@ -224,12 +223,7 @@ theorem quantumBinomial_succ_right_eq (q : K) (n k : ℕ) :
       have h₂ := quantumInteger_add q ((n : ℤ) - (k + 1)) ((k : ℤ) + 1 + 1)
       rw [show (n : ℤ) - k + (k + 1) = n + 1 by ring] at h₁
       rw [show (n : ℤ) - (k + 1) + (k + 1 + 1) = n + 1 by ring] at h₂
-      have p₁ : q ^ (n - k) = q ^ ((n : ℤ) - k) := by rw [← Nat.cast_sub hk.le, zpow_natCast]
-      have p₂ : q ^ (n - (k + 1)) = q ^ ((n : ℤ) - (k + 1)) := by
-        rw [← zpow_natCast, Nat.cast_sub hk, Nat.cast_add_one]
-      have p₃ : ∀ m : ℕ, q⁻¹ ^ m = q ^ (-(m : ℤ)) := fun m => by
-        rw [zpow_neg, zpow_natCast, inv_pow]
-      rw [quantumBinomial_succ_succ, quantumBinomial_succ_succ, p₁, p₂, p₃, p₃]
+      rw [quantumBinomial_succ_succ_zpow, quantumBinomial_succ_succ_zpow]
       push_cast at ih₁ ⊢
       rw [show (n : ℤ) + 1 - (k + 1) = n - k by ring]
       linear_combination q ^ ((n : ℤ) - k) * ih₀ + q ^ (-((k : ℤ) + 1 + 1)) * ih₁ -
