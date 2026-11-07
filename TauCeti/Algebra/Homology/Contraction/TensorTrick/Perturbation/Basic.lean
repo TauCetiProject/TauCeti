@@ -158,17 +158,6 @@ private theorem reducedTensorWords_perturb_incl_add :
   abel
 
 include hsq hU in
-/-- The perturbed inclusion is `i' = i - H X i`, where `X` is the perturbation series. -/
-private theorem reducedTensorWords_perturb_incl_eq :
-    ((c.reducedTensorWords G H hdM hh hincl hproj).perturb δ hsq hU).incl =
-      ReducedTensorWords.map (R := R) c.incl - c.reducedTensorWordsHomotopy G ∘ₗ
-        (c.reducedTensorWords G H hdM hh hincl hproj).perturbationSeries δ ∘ₗ
-          ReducedTensorWords.map (R := R) c.incl := by
-  rw [← c.reducedTensorWords_incl G H hdM hh hincl hproj,
-    ← c.reducedTensorWords_homotopy G H hdM hh hincl hproj]
-  exact (c.reducedTensorWords G H hdM hh hincl hproj).perturb_incl δ hsq hU
-
-include hsq hU in
 /-- The homotopy `h` kills the perturbed inclusion `i'`. -/
 private theorem reducedTensorWordsHomotopy_comp_perturb_incl :
     c.reducedTensorWordsHomotopy G ∘ₗ
@@ -178,8 +167,9 @@ private theorem reducedTensorWordsHomotopy_comp_perturb_incl :
   have h2 := T.homotopy_comp_homotopy_assoc (T.perturbationSeries δ ∘ₗ T.incl)
   have hTi := c.reducedTensorWords_incl G H hdM hh hincl hproj
   have hTh := c.reducedTensorWords_homotopy G H hdM hh hincl hproj
-  simp only [T, hTi, hTh] at h1 h2
-  rw [c.reducedTensorWords_perturb_incl_eq hdM hh hincl hproj hsq hU, LinearMap.comp_sub, h1, h2]
+  have hpi := T.perturb_incl δ hsq hU
+  simp only [T, hTi, hTh] at h1 h2 hpi
+  rw [hpi, LinearMap.comp_sub, h1, h2]
   abel
 
 include hsq hU in
@@ -194,11 +184,12 @@ private theorem map_incl_comp_proj_comp_perturb_incl :
   have hTi := c.reducedTensorWords_incl G H hdM hh hincl hproj
   have hTp := c.reducedTensorWords_proj G H hdM hh hincl hproj
   have hTh := c.reducedTensorWords_homotopy G H hdM hh hincl hproj
-  simp only [T, hTi, hTp, hTh] at h1 h2
+  have hpi := T.perturb_incl δ hsq hU
+  simp only [T, hTi, hTp, hTh] at h1 h2 hpi
   rw [show ReducedTensorWords.map (R := R) (c.incl ∘ₗ c.proj) =
       ReducedTensorWords.map (R := R) c.incl ∘ₗ ReducedTensorWords.map (R := R) c.proj by
     simp only [ReducedTensorWords.map_comp],
-    c.reducedTensorWords_perturb_incl_eq hdM hh hincl hproj hsq hU, LinearMap.comp_sub,
+    hpi, LinearMap.comp_sub,
     LinearMap.comp_assoc, h1, LinearMap.comp_assoc, h2, LinearMap.comp_zero, LinearMap.comp_id]
   abel
 
@@ -322,18 +313,6 @@ theorem isCoalgHom_reducedTensorWords_perturb_incl (hδ : IsGradedCoderivation G
   simp only [LinearMap.add_apply, one_apply_eq_self, LinearMap.comp_apply, e1, e2]
 
 include hsq hU in
-/-- The perturbed projection is the fixed point `p' + p' δ h = p`. -/
-private theorem reducedTensorWords_perturb_proj_add :
-    ((c.reducedTensorWords G H hdM hh hincl hproj).perturb δ hsq hU).proj +
-        ((c.reducedTensorWords G H hdM hh hincl hproj).perturb δ hsq hU).proj ∘ₗ δ ∘ₗ
-          c.reducedTensorWordsHomotopy G =
-      ReducedTensorWords.map (R := R) c.proj := by
-  have e := (c.reducedTensorWords G H hdM hh hincl hproj).perturb_proj_comp_one_add_mul δ hsq hU
-  rwa [c.reducedTensorWords_proj G H hdM hh hincl hproj,
-    c.reducedTensorWords_homotopy G H hdM hh hincl hproj, Module.End.mul_eq_comp,
-    LinearMap.comp_add, Module.End.one_eq_id, LinearMap.comp_id] at e
-
-include hsq hU in
 /-- Both sides of the coalgebra identity for the perturbed projection become `(p ⊗ p) Δ` after
 precomposition with `1 + δ h`: this is the equation for `(p' ⊗ p') Δ`. -/
 private theorem map_perturb_proj_comp_deconcatenation_add_eq
@@ -352,8 +331,11 @@ private theorem map_perturb_proj_comp_deconcatenation_add_eq
   set τ := ReducedTensorWords.map (R := R) (G.koszulTwist 1)
   set π := ReducedTensorWords.map (R := R) (c.incl ∘ₗ c.proj)
   set p' := (T.perturb δ hsq hU).proj
-  have hfix : p' + p' ∘ₗ δ ∘ₗ h = p :=
-    c.reducedTensorWords_perturb_proj_add hdM hh hincl hproj hsq hU
+  have hfix : p' + p' ∘ₗ δ ∘ₗ h = p := by
+    have e := T.perturb_proj_comp_one_add_mul δ hsq hU
+    simpa [T, p', p, h, c.reducedTensorWords_proj G H hdM hh hincl hproj,
+      c.reducedTensorWords_homotopy G H hdM hh hincl hproj, Module.End.mul_eq_comp,
+      LinearMap.comp_add, Module.End.one_eq_id, LinearMap.comp_id] using e
   have hTh : T.homotopy = h := c.reducedTensorWords_homotopy G H hdM hh hincl hproj
   have hp'h : p' ∘ₗ h = 0 := by
     have e := T.perturb_proj_comp_homotopy δ hsq hU
@@ -401,8 +383,11 @@ theorem isCoalgHom_reducedTensorWords_perturb_proj (hδ : IsGradedCoderivation G
   set p := ReducedTensorWords.map (R := R) c.proj
   set h := c.reducedTensorWordsHomotopy G
   set p' := (T.perturb δ hsq hU).proj
-  have hfix : p' + p' ∘ₗ δ ∘ₗ h = p :=
-    c.reducedTensorWords_perturb_proj_add hdM hh hincl hproj hsq hU
+  have hfix : p' + p' ∘ₗ δ ∘ₗ h = p := by
+    have e := T.perturb_proj_comp_one_add_mul δ hsq hU
+    simpa [T, p', p, h, c.reducedTensorWords_proj G H hdM hh hincl hproj,
+      c.reducedTensorWords_homotopy G H hdM hh hincl hproj, Module.End.mul_eq_comp,
+      LinearMap.comp_add, Module.End.one_eq_id, LinearMap.comp_id] using e
   have hΔp : deconcatenation R N ∘ₗ p = TensorProduct.map p p ∘ₗ deconcatenation R M :=
     isCoalgHom_iff.mp (isCoalgHom_map c.proj)
   -- `Δ p'` composed with `1 + δ h` is `(p ⊗ p) Δ`.
