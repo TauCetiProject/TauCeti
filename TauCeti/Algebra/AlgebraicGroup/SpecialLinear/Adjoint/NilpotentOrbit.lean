@@ -78,6 +78,17 @@ theorem ringKrullDim_quotient_centralizerHopfIdeal_zero [CharZero k]
   rw [ringKrullDim_quotient_centralizerHopfIdeal_eq_finrank_ker_ad_sl]
   simp [Module.finrank_eq_zero_of_subsingleton]
 
+private theorem jordanPartition_cotangentDualLieEquivSl_zero
+    (x : Module.Dual k (Bialgebra.CotangentSpace k (coordinateHopfAlgebra k 0)))
+    (hx : IsNilpotent (toLinAlgEquiv'
+      (cotangentDualLieEquivSl 0 x : Matrix (Fin 0) (Fin 0) k))) :
+    End.jordanPartition (toLinAlgEquiv'
+      (cotangentDualLieEquivSl 0 x : Matrix (Fin 0) (Fin 0) k)) hx =
+        Nat.Partition.indiscrete _ := by
+  have : Subsingleton (Nat.Partition (finrank k (Fin 0 → k))) := by
+    simpa using (inferInstance : Subsingleton (Nat.Partition 0))
+  exact Subsingleton.elim _ _
+
 section Orbit
 
 attribute [local instance] Derivation.adjointComodule Comodule.prodTrivial
@@ -114,8 +125,9 @@ theorem topologicalKrullDim_range_projectiveOrbitMap_add_sum_sq_conjugate_parts
   norm_cast
   by_cases hn : n = 0
   · subst n
-    rw [← Matrix.finrank_centralizer_eq_sum_sq_conjugate_jordanPartition]
-    simp [Module.finrank_eq_zero_of_subsingleton]
+    have hparts := (Nat.Partition.sum_sq_conjugate_parts_eq_self_iff _).mpr
+      (jordanPartition_cotangentDualLieEquivSl_zero x hx)
+    simpa [Module.finrank_eq_zero_of_subsingleton] using hparts
   · simpa only [Fintype.card_fin] using finrank_range_ad_sl_add_sum_sq_conjugate_parts
       (by simpa using hn) (cotangentDualLieEquivSl n x) hx
 
@@ -152,9 +164,7 @@ theorem topologicalKrullDim_range_projectiveOrbitMap_add_eq_iff
   norm_cast
   by_cases hn : n = 0
   · subst n
-    rw [← Nat.Partition.sum_sq_conjugate_parts_eq_self_iff,
-      ← Matrix.finrank_centralizer_eq_sum_sq_conjugate_jordanPartition]
-    simp [Module.finrank_eq_zero_of_subsingleton]
+    simp [Module.finrank_eq_zero_of_subsingleton, jordanPartition_cotangentDualLieEquivSl_zero x hx]
   · simpa only [Fintype.card_fin] using finrank_range_ad_sl_add_card_eq_iff
       (by simpa using hn) (cotangentDualLieEquivSl n x) hx
 
@@ -175,11 +185,7 @@ theorem topologicalKrullDim_range_projectiveOrbitMap_add_add_two_le
   norm_cast
   by_cases hn : n = 0
   · subst n
-    exfalso
-    apply hreg
-    rw [← Nat.Partition.sum_sq_conjugate_parts_eq_self_iff,
-      ← Matrix.finrank_centralizer_eq_sum_sq_conjugate_jordanPartition]
-    simp [Module.finrank_eq_zero_of_subsingleton]
+    exact (hreg (jordanPartition_cotangentDualLieEquivSl_zero x hx)).elim
   · simpa only [Fintype.card_fin] using finrank_range_ad_sl_add_card_add_two_le
       (by simpa using hn) (cotangentDualLieEquivSl n x) hx hreg
 
@@ -199,15 +205,8 @@ theorem topologicalKrullDim_range_projectiveOrbitMap_add_add_two_eq_iff
   norm_cast
   by_cases hn : n = 0
   · subst n
-    suffices (End.jordanPartition (toLinAlgEquiv'
-        (cotangentDualLieEquivSl 0 x : Matrix (Fin 0) (Fin 0) k)) hx).parts ≠ {0, 1} by
-      simpa [Module.finrank_eq_zero_of_subsingleton] using this
-    intro hparts
-    have hmem : 0 ∈ (End.jordanPartition (toLinAlgEquiv'
-        (cotangentDualLieEquivSl 0 x : Matrix (Fin 0) (Fin 0) k)) hx).parts := by
-      rw [hparts]
-      simp
-    exact (Nat.lt_irrefl 0) ((End.jordanPartition _ hx).parts_pos hmem)
+    simp [Module.finrank_eq_zero_of_subsingleton, jordanPartition_cotangentDualLieEquivSl_zero x hx,
+      Nat.Partition.indiscrete, Multiset.filter_singleton]
   · simpa only [Fintype.card_fin] using finrank_range_ad_sl_add_card_add_two_eq_iff
       (by simpa using hn) (cotangentDualLieEquivSl n x) hx
 
