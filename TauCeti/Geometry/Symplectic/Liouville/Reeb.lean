@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Reeb
 public import TauCeti.Geometry.Symplectic.Liouville.RadialHamiltonian
-import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Geometry.Contact.Flat
 import TauCeti.Geometry.Manifold.Flow.Complete
 import TauCeti.Geometry.Symplectic.Liouville.Scaling
@@ -267,55 +266,6 @@ theorem isMIntegralCurve_flowOf_comp_reebVectorField [FiniteDimensional ℝ E']
       rw [Pi.smul_apply, map_smul, h.mfderiv_flowOf_comp_reebVectorField hZ hι hιW hιs hdim ht,
         neg_one_smul, neg_neg, comp_apply])
   simpa [comp_def] using hmap
-
-/-- Two integral curves of the radial field `X_r` on a level `c > 1` of the radial coordinate
-which agree at time `0` agree everywhere. The field `X_r` is smooth only on the cylindrical end,
-so both curves are compared as integral curves of the Hamiltonian field of a smooth function
-equal to `r` near the level. -/
-private theorem eq_of_isMIntegralCurve_hamiltonianVectorField_liouvilleRadialCoordinate
-    (h : IsLiouvilleCompletion ω α W) (hZ : RoughForm.interior Z ω.1 = α.1) {c : ℝ} (hc : 1 < c)
-    {δ δ' : ℝ → M}
-    (hδ : IsMIntegralCurve δ (ω.hamiltonianVectorField (liouvilleRadialCoordinate Z W)))
-    (hδ' : IsMIntegralCurve δ' (ω.hamiltonianVectorField (liouvilleRadialCoordinate Z W)))
-    (hδc : ∀ τ, liouvilleRadialCoordinate Z W (δ τ) = c)
-    (hδ'c : ∀ τ, liouvilleRadialCoordinate Z W (δ' τ) = c) (h0 : δ 0 = δ' 0) : δ = δ' := by
-  have hr : Continuous (liouvilleRadialCoordinate Z W) := h.continuous_liouvilleRadialCoordinate hZ
-  obtain ⟨ε, hε, hεc⟩ : ∃ ε : ℝ, 0 < ε ∧ 1 + 2 * ε < c :=
-    ⟨(c - 1) / 4, div_pos (sub_pos.2 hc) four_pos, by linarith⟩
-  -- A smooth `φ` with `φ(u) = 0` for `u ≤ 1 + ε` and `φ(u) = u` for `u ≥ 1 + 2ε`.
-  obtain ⟨φ, hφ, hφ0, hφ1⟩ : ∃ φ : ℝ → ℝ, ContDiff ℝ (⊤ : ℕ∞) φ ∧ (∀ u ≤ 1 + ε, φ u = 0) ∧
-      ∀ u, 1 + 2 * ε ≤ u → φ u = u := by
-    refine ⟨fun u ↦ Real.smoothTransition ((u - (1 + ε)) / ε) * u,
-      (Real.smoothTransition.contDiff.comp ((contDiff_id.sub contDiff_const).div_const ε)).mul
-        contDiff_id, fun u hu ↦ ?_, fun u hu ↦ ?_⟩
-    · dsimp only
-      rw [Real.smoothTransition.zero_of_nonpos
-        (div_nonpos_of_nonpos_of_nonneg (by linarith) hε.le), zero_mul]
-    · dsimp only
-      rw [Real.smoothTransition.one_of_one_le (by rw [le_div_iff₀ hε]; linarith), one_mul]
-  -- `G = φ ∘ r` is smooth: it vanishes near the Liouville domain, where `r = 1`.
-  have hG : ContMDiff I 𝓘(ℝ) (⊤ : ℕ∞) (φ ∘ liouvilleRadialCoordinate Z W) := fun x ↦ by
-    by_cases hx : x ∈ W
-    · have hrx : liouvilleRadialCoordinate Z W x < 1 + ε := by
-        rw [(h.liouvilleRadialCoordinate_eq_one_iff hZ).2 hx]
-        linarith
-      refine contMDiffAt_const (c := (0 : ℝ)).congr_of_eventuallyEq ?_
-      filter_upwards [(isOpen_lt hr continuous_const).mem_nhds hrx] with y hy
-      exact hφ0 _ hy.le
-    · exact hφ.contDiffAt.comp_contMDiffAt (h.contMDiffAt_liouvilleRadialCoordinate hZ hx)
-  -- Near the level `c`, `G = r`, so the two Hamiltonian fields agree there.
-  have hXG : ∀ y, liouvilleRadialCoordinate Z W y = c →
-      ω.hamiltonianVectorField (liouvilleRadialCoordinate Z W) y =
-        ω.hamiltonianVectorField (φ ∘ liouvilleRadialCoordinate Z W) y :=
-    fun y hy ↦ Filter.EventuallyEq.hamiltonianVectorField_eq ω <| by
-      filter_upwards [(isOpen_lt continuous_const hr).mem_nhds (hy ▸ hεc)] with z hz
-      exact (hφ1 _ hz.le).symm
-  have hv : ContMDiff I I.tangent 1
-      (T% (ω.hamiltonianVectorField (φ ∘ liouvilleRadialCoordinate Z W))) :=
-    h.isNondegenerate.contMDiff_hamiltonianVectorField (by simp) (hG.of_le (by simp))
-  exact isMIntegralCurve_eq_of_contMDiff (fun _ ↦ BoundarylessManifold.isInteriorPoint) hv
-    ((isMIntegralCurve_congr_vectorField fun τ ↦ hXG _ (hδc τ)).1 hδ)
-    ((isMIntegralCurve_congr_vectorField fun τ ↦ hXG _ (hδ'c τ)).1 hδ') h0
 
 /-- **The periods of the radial field are the Reeb periods of the boundary.** Let `ι : S → M` be
 an injective smooth map with injective differentials from a compact boundaryless manifold of one
