@@ -30,7 +30,7 @@ namespace TauCeti.ComoduleAlgebra
 
 section Finite
 
-variable {R H A B : Type*} [CommSemiring R] [CommRing H] [Bialgebra R H] [CommRing A]
+variable {R H A B : Type*} [CommSemiring R] [Semiring H] [Bialgebra R H] [CommRing A]
   [Algebra R A] [ComoduleAlgebra R H A] [CommRing B] [Algebra R B] [Algebra B A]
   [IsScalarTower R B A] [Module.FaithfullyFlat B A]
 

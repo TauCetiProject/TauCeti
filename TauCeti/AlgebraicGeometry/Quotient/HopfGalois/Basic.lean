@@ -33,6 +33,8 @@ the kernel pair.
 
 ## Main results
 
+* `TauCeti.ComoduleAlgebra.isPullback_SpecMap_of_bijective_galoisMap`: a bijective Galois map
+  identifies the action and projection with the kernel pair, without faithful flatness.
 * `TauCeti.ComoduleAlgebra.existsUnique_SpecMap_comp_eq`: an invariant morphism from `Spec A` to
   any scheme factors uniquely through `Spec A ⟶ Spec B`.
 
@@ -56,6 +58,24 @@ universe u
 variable {R : Type*} {H A B : Type u} [CommSemiring R] [CommRing H] [Bialgebra R H] [CommRing A]
   [Algebra R A] [ComoduleAlgebra R H A] [CommRing B] [Algebra R B] [Algebra B A]
   [IsScalarTower R B A]
+
+/-- A bijective Galois map identifies the action and projection with the kernel pair of
+`Spec A ⟶ Spec B`. Faithful flatness is not needed for this square. -/
+theorem isPullback_SpecMap_of_bijective_galoisMap
+    (hB : ∀ b : B, algebraMap B A b ∈ coinvariants R H A)
+    (hbij : Function.Bijective (galoisMap B hB)) :
+    IsPullback
+      (Spec.map (CommRingCat.ofHom
+        (Algebra.TensorProduct.includeLeftRingHom : A →+* A ⊗[R] H)))
+      (Spec.map (CommRingCat.ofHom (coactAlgHom R H A).toRingHom))
+      (Spec.map (CommRingCat.ofHom (algebraMap B A)))
+      (Spec.map (CommRingCat.ofHom (algebraMap B A))) := by
+  apply isPullback_SpecMap_of_isPushout
+  exact (CommRingCat.isPushout_tensorProduct B A A).of_iso
+    (Iso.refl _) (Iso.refl _) (Iso.refl _)
+    (AlgEquiv.ofBijective (galoisMap B hB) hbij).toRingEquiv.toCommRingCatIso
+    (by simp) (by simp) (by ext; simp)
+    (by ext; simp [← Algebra.TensorProduct.one_def])
 
 /-- On the kernel pair `Spec (A ⊗[B] A)` of `Spec A ⟶ Spec B`, the two projections agree after
 an invariant morphism, once the Galois map is bijective. -/
