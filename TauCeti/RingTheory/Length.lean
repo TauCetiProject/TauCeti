@@ -25,9 +25,9 @@ proves that it is additive in short exact sequences. This file adds the facts ab
 length-counting argument needs but Mathlib does not yet have: monotonicity in the submodule
 quotiented by, additivity along a filtration, the length of an image, the fact that finitely
 generated submodules already see the whole length, the ascent of finite length along a scalar
-tower, the length of `I ⧸ aI` for an ideal `I`, the length of `R ⧸ 𝔪` for a local ring, the
-finite length of a quotient of a noetherian local ring by a maximal-primary ideal, and the
-infinite length of a ring of positive Krull dimension over itself.
+tower, the length of `R ⧸ 𝔪` for a local ring, the finite length of a quotient of a noetherian
+local ring by a maximal-primary ideal, and the infinite length of a ring of positive Krull
+dimension over itself.
 
 The finite-generation reduction is the load-bearing one. `Module.length` is a supremum over
 strictly increasing chains, and any *finite* chain — in particular any one witnessing a finite
@@ -47,6 +47,9 @@ applies to the quotients appearing here without any further appeal to defeq.
 * `TauCeti.length_quotient_anti`: `M ⧸ Q` is no longer than `M ⧸ P` when `P ≤ Q`.
 * `TauCeti.length_quotient_eq_length_map_add_length_quotient_sup`: additivity along a filtration.
 * `TauCeti.length_map_mkQ`: the length of the image of `N` in `M ⧸ P`.
+* `TauCeti.length_quotient_eq_length_quotient_comap_subtype_add`: for `P ≤ N`, `M ⧸ P` is filtered
+  by `N ⧸ P` and `M ⧸ N`.
+* `TauCeti.length_quotient_comap_subtype_range_map`: an injective `φ` gives `φ(M) ⧸ φ(N) ≃ M ⧸ N`.
 * `TauCeti.length_le_of_forall_fg`: a bound on all finitely generated submodules bounds the
   length.
 * `TauCeti.isFiniteLength_of_tower`: finite length over `R` gives finite length over any `A`
@@ -63,8 +66,6 @@ applies to the quotients appearing here without any further appeal to defeq.
   contains a non-zero-divisor.
 * `TauCeti.isFiniteLength_of_nonZeroDivisor_mem_annihilator`: over a noetherian ring of dimension
   at most one, a finitely generated module killed by a non-zero-divisor has finite length.
-* `TauCeti.length_quotient_lsmul_ideal_eq_ord`: `length (I ⧸ aI) = Ring.ord A a` for an ideal `I`
-  with `A ⧸ I` of finite length.
 * `TauCeti.length_quotient_maximalIdeal_eq_one`: `length (A ⧸ 𝔪) = 1` for a local ring `A`.
 * `TauCeti.length_residueField_eq_one`: the residue field of a local ring `A` has length one
   over `A`.
@@ -120,6 +121,22 @@ theorem length_map_mkQ (N P : Submodule A M) :
     rw [LinearMap.range_comp, Submodule.range_subtype]
   rw [← hran, ← hker]
   exact ((LinearMap.quotKerEquivRange (P.mkQ ∘ₗ N.subtype)).length_eq).symm
+
+/-- For submodules `P ≤ N`, the quotient `M ⧸ P` is filtered by `N ⧸ P` and `M ⧸ N`. -/
+theorem length_quotient_eq_length_quotient_comap_subtype_add {P N : Submodule A M} (h : P ≤ N) :
+    Module.length A (M ⧸ P) =
+      Module.length A (↥N ⧸ P.comap N.subtype) + Module.length A (M ⧸ N) := by
+  rw [length_quotient_eq_length_map_add_length_quotient_sup N P, length_map_mkQ, sup_eq_right.2 h]
+
+/-- An injective linear map `φ` induces `φ(M) ⧸ φ(N) ≃ M ⧸ N`, so these have the same length. -/
+theorem length_quotient_comap_subtype_range_map {M' : Type*} [AddCommGroup M'] [Module A M']
+    {φ : M →ₗ[A] M'} (hφ : Function.Injective φ) (N : Submodule A M) :
+    Module.length A (↥(LinearMap.range φ) ⧸ (N.map φ).comap (LinearMap.range φ).subtype) =
+      Module.length A (M ⧸ N) := by
+  refine (Submodule.Quotient.equiv N _ (LinearEquiv.ofInjective φ hφ) ?_).length_eq.symm
+  ext ⟨x, hx⟩
+  simp only [Submodule.mem_map, Submodule.mem_comap, Submodule.subtype_apply,
+    LinearEquiv.coe_coe, Subtype.ext_iff, LinearEquiv.ofInjective_apply]
 
 /-- **Length is detected by finitely generated submodules.** -/
 theorem length_le_of_forall_fg {c : ℕ∞} (h : ∀ N : Submodule A M, N.FG → Module.length A N ≤ c) :
@@ -287,38 +304,6 @@ theorem isFiniteLength_of_nonZeroDivisor_mem_annihilator [IsNoetherianRing A]
     isArtinian_of_surjective_algebraMap (R := A ⧸ Module.annihilator A M)
       Ideal.Quotient.mk_surjective
   exact isFiniteLength_iff_isNoetherian_isArtinian.mpr ⟨inferInstance, this⟩
-
-/-- **The length of `I ⧸ aI` for an ideal `I`.** For an ideal `I` with `A ⧸ I` of finite length
-and a non-zero-divisor `a`, `length (I ⧸ aI)` is the order of vanishing `Ring.ord A a`, which is
-by definition `length (A ⧸ aA)`.
-
-Both sides are read off `length (A ⧸ aI)`, which splits in two ways. Mathlib's exact sequence
-`A ⧸ I ↪ A ⧸ aI ↠ A ⧸ aA` — multiplication by `a`, then quotienting further, from
-`Ideal.exact_mulQuot_quotOfMul` — splits it as `length (A ⧸ I) + length (A ⧸ aA)`, while the
-filtration `aI ≤ I ≤ A` splits it as `length (I ⧸ aI) + length (A ⧸ I)`. Cancelling the common
-term, finite by hypothesis, leaves the claim. -/
-theorem length_quotient_lsmul_ideal_eq_ord (I : Ideal A) (hI : IsFiniteLength A (A ⧸ I)) (a : A)
-    (ha : a ∈ nonZeroDivisors A) :
-    Module.length A (↥I ⧸ LinearMap.range (LinearMap.lsmul A ↥I a)) = Ring.ord A a := by
-  have hord : Ring.ord A a = Module.length A (A ⧸ Ideal.span {a}) := rfl
-  have hfin : Module.length A (A ⧸ I) ≠ ⊤ := Module.length_ne_top_iff.mpr hI
-  have hexact : Module.length A (A ⧸ Submodule.map (LinearMap.lsmul A A a) I)
-      = Module.length A (A ⧸ I) + Module.length A (A ⧸ Ideal.span {a}) := by
-    rw [map_lsmul_eq_smul]
-    exact Module.length_eq_add_of_exact (Ideal.mulQuot a I) (Ideal.quotOfMul a I)
-      (Ideal.mulQuot_injective I ha) (Ideal.quotOfMul_surjective I)
-      (Ideal.exact_mulQuot_quotOfMul I)
-  -- The filtration `aI ≤ I ≤ A` splits the same length the other way.
-  have hleI : Submodule.map (LinearMap.lsmul A A a) I ⊔ I = I := by
-    refine sup_eq_right.mpr ?_
-    rw [Submodule.map_le_iff_le_comap]
-    intro x hx
-    simpa [LinearMap.lsmul_apply] using I.smul_mem a hx
-  have hfilt := length_quotient_eq_length_map_add_length_quotient_sup I
-    (Submodule.map (LinearMap.lsmul A A a) I)
-  rw [hleI, length_map_mkQ, comap_subtype_map_lsmul, hexact] at hfilt
-  rw [hord]
-  exact (WithTop.add_left_cancel hfin (hfilt.trans (add_comm _ _))).symm
 
 end CommRing
 
