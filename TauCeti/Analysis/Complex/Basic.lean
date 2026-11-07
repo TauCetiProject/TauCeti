@@ -8,15 +8,35 @@ module
 public import Mathlib.Analysis.Complex.Basic
 
 /-!
-# Conjugation-invariant discs
+# Complex conjugation and unit-norm quotients
 
 Complex conjugation is an isometry fixing the real axis (Mathlib's `Complex.dist_conj_conj`), so
 it maps every open or closed disc centred on the real axis to itself. Such discs are the natural
 domains for reflection across the real axis, for instance the even reflection
 `TauCeti.evenReflection`.
+
+The scalar Cayley expression `1 + (z - conj z) / (r - z)` has unit norm for real `r`.
+When `z ≠ r`, it is the quotient `(r - conj z) / (r - z)` of a complex number's conjugate
+by itself; at `z = r`, Lean's totalized inverse gives value one.
 -/
 
 public section
+
+open scoped ComplexConjugate
+
+/-- The scalar Cayley expression has unit norm at real `r`, including when `z = r`
+under the totalized inverse convention. -/
+theorem Complex.norm_one_add_sub_conj_mul_inv_ofReal_sub (z : ℂ) (r : ℝ) :
+    ‖1 + (z - conj z) * ((r : ℂ) - z)⁻¹‖ = 1 := by
+  by_cases hne : (r : ℂ) - z = 0
+  · simp [hne]
+  have heq : 1 + (z - conj z) * ((r : ℂ) - z)⁻¹ =
+      ((r : ℂ) - conj z) / ((r : ℂ) - z) := by
+    field_simp
+    ring
+  have hnorm : ‖(r : ℂ) - conj z‖ = ‖(r : ℂ) - z‖ := by
+    simpa using Complex.norm_conj ((r : ℂ) - z)
+  rw [heq, norm_div, hnorm, div_self (norm_ne_zero_iff.mpr hne)]
 
 namespace TauCeti
 

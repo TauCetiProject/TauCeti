@@ -18,12 +18,12 @@ endomorphism is bounded by the dimension times its operator norm:
 `‖tr T‖ ≤ dim V * ‖T‖` (`ContinuousLinearMap.norm_traceCLM_le`). Expanding the trace in an
 orthonormal basis `(bᵢ)` gives `tr T = ∑ᵢ ⟪bᵢ, T bᵢ⟫`, and each term is at most `‖T‖`.
 
+This is the bound that controls a non-divergence-form operator `tr (A ∘ D²u)` by the operator
+norms of its coefficient field `A` and of the Hessian `D²u`.
+
 Restricting to the range gives the sharper estimate
 `‖tr T‖ ≤ rank T * ‖T‖` (`ContinuousLinearMap.norm_traceCLM_le_finrank_range_mul`).
 It applies without self-adjointness or normality and controls traces of low-rank perturbations.
-
-This is the bound that controls a non-divergence-form operator `tr (A ∘ D²u)` by the operator
-norms of its coefficient field `A` and of the Hessian `D²u`.
 -/
 
 public section
