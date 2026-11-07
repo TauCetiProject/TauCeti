@@ -10,9 +10,10 @@ public import Mathlib.Algebra.Category.FGModuleCat.Basic
 /-!
 # Zero finitely generated modules
 
-A finitely generated module with subsingleton carrier is a zero object of the category of
-finitely generated modules. This criterion supplies the zero components of finite-projective
-matrix factorizations.
+A finitely generated module is a zero object of the category of finitely generated modules
+exactly when its carrier is subsingleton. The zero module is finitely generated, so the
+finitely generated modules contain a zero object of `ModuleCat`; Mathlib then provides the zero
+object of `FGModuleCat`.
 -/
 
 public section
@@ -23,15 +24,17 @@ open CategoryTheory CategoryTheory.Limits
 
 universe v u
 
-/-- A finitely generated module with subsingleton carrier is a zero object. -/
-theorem _root_.FGModuleCat.isZero_of_subsingleton {R : Type u} [Ring R] (M : FGModuleCat.{v} R)
-    (hM : Subsingleton M) : IsZero M := by
-  apply IsZero.of_full_of_faithful_of_isZero (ObjectProperty.ι _)
-  exact ModuleCat.isZero_iff_subsingleton.mpr hM
+/-- A finitely generated module is a zero object exactly when its carrier is subsingleton. -/
+theorem _root_.FGModuleCat.isZero_iff_subsingleton {R : Type u} [Ring R]
+    {M : FGModuleCat.{v} R} : IsZero M ↔ Subsingleton M := by
+  rw [← ModuleCat.isZero_iff_subsingleton]
+  exact ⟨(ObjectProperty.ι _).map_isZero, .of_full_of_faithful_of_isZero (ObjectProperty.ι _) _⟩
 
-/-- The zero module gives a zero object among finitely generated modules over any ring. -/
-instance _root_.FGModuleCat.hasZeroObject {R : Type u} [Ring R] :
-    HasZeroObject (FGModuleCat.{v} R) :=
-  (FGModuleCat.isZero_of_subsingleton (FGModuleCat.of R PUnit) inferInstance).hasZeroObject
+/-- The finitely generated modules contain the zero module, so `FGModuleCat` has a zero
+object. -/
+instance _root_.ModuleCat.isFG_containsZero {R : Type u} [Ring R] :
+    (ModuleCat.isFG.{v} R).ContainsZero where
+  exists_zero := ⟨ModuleCat.of R PUnit, ModuleCat.isZero_of_subsingleton _,
+    (ModuleCat.isFG_iff _).2 inferInstance⟩
 
 end TauCeti
