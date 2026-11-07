@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Regularity.HarmonicReplacement
 public import TauCeti.Analysis.Sobolev.W1p.Restriction
 public import TauCeti.Topology.MetricSpace.Holder
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
@@ -64,6 +65,10 @@ the norm of that field.
 * `TauCeti.PDE.UniformlyEllipticOn.exists_sub_mem_w1p0Submodule_mul_norm_gradient_sub_le`: on an
   open set inside a ball `B(x₀, r)`, the replacement frozen at `x₀` exists and its error is
   `O(r^α)` for `α`-Hölder coefficients and data.
+* `TauCeti.PDE.UniformlyEllipticOn.exists_frozen_setIntegral_norm_gradient_sub_sq_le`: the squared
+  form of this estimate on a ball `B(x₀, r)`,
+  `∫_{B_r} ‖∇u - ∇w‖² ≤ 2 (1 + ω) r^{2α} ([a]_α² ∫_{B_r} ‖∇u‖² + [G]_α² r^{n+1}) / λ²`, where `ω`
+  is the volume of the unit ball.
 
 ## References
 
@@ -248,6 +253,78 @@ theorem UniformlyEllipticOn.exists_sub_mem_w1p0Submodule_mul_norm_gradient_sub_l
         gcongr
     _ = r ^ (α : ℝ) * (Ka * ‖W1p.gradient (W1p.restrictL hB u)‖ +
           KG * √(volume.real (B : Set (EuclideanSpace ℝ (Fin (n + 1)))))) := by ring
+
+/-- Squaring the energy estimate `λ E ≤ t (K_a X + K_G Y)` of a frozen replacement, with
+`X² = Φ` and `Y² = ω V`. -/
+private theorem sq_le_of_mul_le_mul_add_mul {lam t E X Y Ka KG ω V Φ : ℝ} (hlam : 0 < lam)
+    (hE : 0 ≤ E) (hω : 0 ≤ ω) (hV : 0 ≤ V) (hest : lam * E ≤ t * (Ka * X + KG * Y))
+    (hXΦ : X ^ 2 = Φ) (hYV : Y ^ 2 = ω * V) :
+    E ^ 2 ≤ 2 * (1 + ω) * (t ^ 2 * (Ka ^ 2 * Φ + KG ^ 2 * V) / lam ^ 2) := by
+  have h1 : (lam * E) ^ 2 ≤ (t * (Ka * X + KG * Y)) ^ 2 := pow_le_pow_left₀ (by positivity) hest 2
+  have h2 : (t * (Ka * X + KG * Y)) ^ 2 ≤ 2 * t ^ 2 * (Ka ^ 2 * X ^ 2 + KG ^ 2 * Y ^ 2) := by
+    nlinarith [sq_nonneg (Ka * X - KG * Y), sq_nonneg t]
+  have h3 : Ka ^ 2 * X ^ 2 + KG ^ 2 * Y ^ 2 ≤ (1 + ω) * (Ka ^ 2 * Φ + KG ^ 2 * V) := by
+    rw [hXΦ, hYV]
+    have : 0 ≤ Ka ^ 2 * X ^ 2 * ω := by positivity
+    have : 0 ≤ KG ^ 2 * V := by positivity
+    rw [← hXΦ]
+    linarith
+  have h4 := mul_le_mul_of_nonneg_left h3 (by positivity : (0 : ℝ) ≤ 2 * t ^ 2)
+  rw [mul_div_assoc', le_div_iff₀ (by positivity), mul_comm, ← mul_pow]
+  linarith
+
+/-- **The frozen replacement on a ball, squared.** Let `u ∈ H¹(Ω)` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G`
+weakly on `Ω ⊆ ℝ^{n+1}`, let `ball x₀ r ⊆ Ω`, let `a(x₀)` be uniformly elliptic with lower
+constant `λ`, and let `a` and `G` be `α`-Hölder on `ball x₀ r` with constants `K_a` and `K_G`. The
+solution `w` of the problem frozen at `x₀` with the boundary values of `u` satisfies
+`∫_{B_r} ‖∇u - ∇w‖² ≤ 2 (1 + ω) r^{2α} (K_a² ∫_{B_r} ‖∇u‖² + K_G² r^{n+1}) / λ²`, where `ω` is the
+volume of the unit ball. -/
+theorem UniformlyEllipticOn.exists_frozen_setIntegral_norm_gradient_sub_sq_le {n : ℕ}
+    {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))} {u : W1p volume Omega 2}
+    {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
+    {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
+    {s : Set (EuclideanSpace ℝ (Fin (n + 1)))} {x₀ : EuclideanSpace ℝ (Fin (n + 1))} {r : ℝ}
+    {α Ka KG : ℝ≥0} {lam Lam : ℝ} (h : UniformlyEllipticOn s a lam Lam) (hx₀ : x₀ ∈ s)
+    (hα : 0 < α) (haK : HolderOnWith Ka α (fun x => matrixBilinearForm (a x)) (ball x₀ r))
+    (hGK : HolderOnWith KG α G (ball x₀ r))
+    (hu : ∀ φ : 𝓓(Omega, ℝ), energyFormH1 a 0 0 u (W1p.ofTestFunctionₗ volume Omega 2 φ) =
+      ∫ x in Omega, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ)
+    (hball : ball x₀ r ⊆ Omega) (hr : 0 < r) :
+    ∃ w : W1p volume (⟨ball x₀ r, isOpen_ball⟩ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) 2,
+      (∀ v : W1p0 volume (⟨ball x₀ r, isOpen_ball⟩ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) 2,
+        energyFormH1 (fun _ => a x₀) 0 0 w (v : W1p volume _ 2) = 0) ∧
+      ∫ x in ball x₀ r, ‖W1p.gradient u x - W1p.gradient w x‖ ^ 2 ≤
+        2 * (1 + volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)) *
+          (r ^ (2 * (α : ℝ)) * ((Ka : ℝ) ^ 2 * (∫ x in ball x₀ r, ‖W1p.gradient u x‖ ^ 2) +
+            (KG : ℝ) ^ 2 * r ^ ((n : ℝ) + 1)) / lam ^ 2) := by
+  set ω := volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)
+  have hω : 0 ≤ ω := measureReal_nonneg
+  have hlam : 0 < lam := h.pos
+  have hB : (⟨ball x₀ r, isOpen_ball⟩ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) ≤ Omega := hball
+  obtain ⟨w, -, hw0, hest⟩ := h.exists_sub_mem_w1p0Submodule_mul_norm_gradient_sub_le hx₀ hα
+    haK hGK hB subset_rfl hu
+  refine ⟨w, hw0, ?_⟩
+  have hE := W1p.setIntegral_norm_gradient_sub_sq_eq hB u w
+  simp only [Opens.coe_mk] at hE
+  rw [hE]
+  -- The squared norm of the gradient of `u|_{B_r}` is the `L²(B_r)` mass of `∇u`.
+  have hX : ‖W1p.gradient (W1p.restrictL hB u)‖ ^ 2 = ∫ x in ball x₀ r, ‖W1p.gradient u x‖ ^ 2 := by
+    rw [← Lp.integral_norm_sq_eq_norm_sq]
+    refine integral_congr_ae ?_
+    filter_upwards [W1p.gradient_restrictL_ae hB u] with x hx
+    rw [hx]
+  simp only [Opens.coe_mk] at hest
+  have hY : √(volume.real (ball x₀ r)) ^ 2 = ω * r ^ ((n : ℝ) + 1) := by
+    rw [Real.sq_sqrt measureReal_nonneg]
+    rw [(volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))).addHaar_real_ball_of_pos x₀ hr,
+      finrank_euclideanSpace_fin, mul_comm, ← Real.rpow_natCast]
+    push_cast
+    rfl
+  have hr2 : (r ^ (α : ℝ)) ^ 2 = r ^ (2 * (α : ℝ)) := by
+    rw [← Real.rpow_natCast, ← Real.rpow_mul hr.le]
+    ring_nf
+  rw [← hr2]
+  exact sq_le_of_mul_le_mul_add_mul h.pos (norm_nonneg _) hω (by positivity) hest hX hY
 
 end PDE
 

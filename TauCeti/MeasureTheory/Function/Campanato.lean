@@ -332,8 +332,8 @@ theorem dist_preciseRepresentative_le_of_setAverage_norm_sub_le {y : E}
 
 /-- **Campanato's theorem on a set, below a fixed scale.** Let `α > 0` and `ρ > 0`. Suppose that
 for every `x ∈ S`, `f` is integrable on `closedBall x ρ`, has mean oscillation at most `M r^α` on
-`closedBall x r` for `0 < r ≤ ρ`, and has average of norm at most `B` over `closedBall x ρ`. Then
-the precise representative of `f` is `α`-Hölder continuous on `S`, with constant
+`closedBall x r` for `0 < r ≤ ρ`, and the norm of its average over `closedBall x ρ` is at most
+`B`. Then the precise representative of `f` is `α`-Hölder continuous on `S`, with constant
 `2 · 2^α · (2ⁿ / (1 - 2^(-α)) · M + B ρ^(-α))`, where `n` is the dimension. -/
 theorem holderOnWith_preciseRepresentative_of_setAverage_norm_sub_le {α : ℝ≥0} {S : Set E}
     {B : ℝ} (hα : 0 < α) (hρ : 0 < ρ) (hf : ∀ x ∈ S, IntegrableOn f (closedBall x ρ) μ)
