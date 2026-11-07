@@ -54,6 +54,8 @@ kernel is assumed.
 * `TauCeti.enorm_sub_setAverage_le_of_starConvex`: the bound on the deviation from the mean over
   any subset of positive measure.
 * `TauCeti.enorm_sub_setAverage_le_of_convex`: the form for convex sets with `D = diam Ω`.
+* `TauCeti.enorm_sub_setAverage_eq_zero_of_subsingleton`: the deviation from the mean vanishes on a
+  subsingleton domain.
 * `TauCeti.enorm_le_lintegral_enorm_fderiv_mul_enorm_sub_rpow`: the pointwise potential bound for
   compactly supported functions.
 
@@ -245,6 +247,15 @@ theorem enorm_sub_setAverage_le_of_starConvex [CompleteSpace F] (hΩ : IsOpen Ω
       exact congrArg (laverage _) (funext fun y => enorm_sub_rev _ _)
     _ ≤ (μ S)⁻¹ * ∫⁻ y in Ω, ‖u x - u y‖ₑ ∂μ := by gcongr
     _ ≤ _ := by gcongr
+
+omit [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E]
+  [μ.IsAddHaarMeasure] in
+/-- On a subsingleton domain a function is constant, so its deviation from its mean over any set
+`S` of finite positive measure vanishes. -/
+theorem enorm_sub_setAverage_eq_zero_of_subsingleton [CompleteSpace F] [Subsingleton E] (x : E)
+    (hS₀ : μ S ≠ 0) (hS_top : μ S ≠ ∞) : ‖u x - ⨍ y in S, u y ∂μ‖ₑ = 0 := by
+  have hu : u = fun _ => u x := funext fun y => congrArg u (Subsingleton.elim y x)
+  rw [hu, setAverage_const hS₀ hS_top, sub_self, enorm_zero]
 
 /-- **Gilbarg–Trudinger, Lemma 7.16.** If `u` is `C¹` on a bounded convex open set `Ω` and
 `x ∈ Ω`, then for every `S ⊆ Ω` of positive measure the deviation of `u x` from the mean of `u`

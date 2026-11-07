@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Poincare.Potential
+import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Integral.NormRpow
 import TauCeti.MeasureTheory.Integral.RieszPotential
 import TauCeti.MeasureTheory.Integral.SchurTest
+import TauCeti.MeasureTheory.Measure.MeasurableHull
 
 /-!
 # The Poincaré–Wirtinger inequality for `C¹` functions on a convex domain
@@ -72,82 +74,6 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
   {μ : Measure E} [μ.IsAddHaarMeasure] {u : E → F} {Ω S : Set E}
 
-/-- In a subsingleton space the pointwise potential estimate forces the deviation of `u` from its
-mean over `S` to vanish on `Ω`, because the Riesz kernel is zero. -/
-theorem enorm_sub_setAverage_eq_zero_of_subsingleton [Subsingleton E] {x : E} (hΩ : IsOpen Ω)
-    (hΩc : Convex ℝ Ω) (hb : Bornology.IsBounded Ω) (hu : ContDiffOn ℝ 1 u Ω) (hx : x ∈ Ω)
-    (hS : S ⊆ Ω) (hS₀ : μ S ≠ 0) : ‖u x - ⨍ y in S, u y ∂μ‖ₑ = 0 := by
-  have h := enorm_sub_setAverage_le_of_convex hΩ hΩc hb hu hx hS hS₀
-  simpa [Subsingleton.elim _ x, finrank_zero_of_subsingleton] using h
-
-/-- On a bounded set `Ω` containing `x`, the Riesz kernel `‖x - y‖ ^ (1 - n)` has integral over
-`Ω` at most `n μ(B(0, 1)) diam Ω`, since `Ω` lies in the closed ball of radius `diam Ω` about
-`x`. -/
-theorem lintegral_enorm_sub_rpow_le_of_mem [Nontrivial E] {x : E} (hb : Bornology.IsBounded Ω)
-    (hx : x ∈ Ω) :
-    ∫⁻ y in Ω, ‖x - y‖ₑ ^ (1 - (finrank ℝ E : ℝ)) ∂μ ≤
-      ENNReal.ofReal (finrank ℝ E * μ.real (ball 0 1) * diam Ω) := by
-  have hn : 0 < (finrank ℝ E : ℝ) := Nat.cast_pos.2 finrank_pos
-  calc
-    _ ≤ ∫⁻ y in closedBall x (diam Ω), ‖x - y‖ₑ ^ (1 - (finrank ℝ E : ℝ)) ∂μ :=
-      lintegral_mono_set fun _ hy => mem_closedBall.2 (dist_le_diam_of_mem hb hy hx)
-    _ = _ := by
-      rw [setLIntegral_closedBall_enorm_sub_rpow (by linarith) diam_nonneg, add_sub_cancel,
-        Real.rpow_one, div_one]
-
-omit [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E]
-  [μ.IsAddHaarMeasure] in
-/-- The constant of the pointwise potential estimate times the Schur bound `n ω d` is
-`ω d ^ (n + 1) / μ(S)`. -/
-theorem ofReal_pow_div_natCast_div_mul_ofReal {n : ℕ} {d ω : ℝ} (hn : 0 < n) (hd : 0 ≤ d)
-    (hS₀ : μ S ≠ 0) (hS_top : μ S ≠ ∞) :
-    ENNReal.ofReal (d ^ n / n) / μ S * ENNReal.ofReal (n * ω * d) =
-      ENNReal.ofReal (ω * d ^ (n + 1) / μ.real S) := by
-  have hSpos : 0 < μ.real S := ENNReal.toReal_pos hS₀ hS_top
-  have hn' : (0 : ℝ) < n := Nat.cast_pos.2 hn
-  rw [← ofReal_measureReal hS_top, ← ENNReal.ofReal_div_of_pos hSpos,
-    ← ENNReal.ofReal_mul (by positivity)]
-  congr 1
-  field_simp
-  ring
-
-omit [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E]
-  [μ.IsAddHaarMeasure] in
-/-- A subset `A` of a measurable set `Ω` lies in a measurable subset of `Ω` of the same measure. -/
-theorem exists_measurableSet_subset_measure_eq {A : Set E} (hΩ : MeasurableSet Ω) (hA : A ⊆ Ω) :
-    ∃ A', A ⊆ A' ∧ A' ⊆ Ω ∧ MeasurableSet A' ∧ μ A' = μ A :=
-  ⟨toMeasurable μ A ∩ Ω, subset_inter (subset_toMeasurable μ A) hA, inter_subset_right,
-    (measurableSet_toMeasurable μ A).inter hΩ,
-    le_antisymm ((measure_mono inter_subset_left).trans_eq (measure_toMeasurable A))
-      (measure_mono (subset_inter (subset_toMeasurable μ A) hA))⟩
-
-omit [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E]
-  [μ.IsAddHaarMeasure] in
-/-- The constant of the pointwise potential estimate times the kernel bound `n a` is
-`a (diam Ω) ^ n / μ(S)`. -/
-theorem ofReal_pow_div_natCast_div_mul_ofReal_natCast_mul {n : ℕ} {d a : ℝ} (hn : 0 < n)
-    (hd : 0 ≤ d) (hS₀ : μ S ≠ 0) (hS_top : μ S ≠ ∞) :
-    ENNReal.ofReal (d ^ n / n) / μ S * ENNReal.ofReal (n * a) =
-      ENNReal.ofReal (a * d ^ n / μ.real S) := by
-  have hSpos : 0 < μ.real S := ENNReal.toReal_pos hS₀ hS_top
-  have hn' : (0 : ℝ) < n := Nat.cast_pos.2 hn
-  rw [← ofReal_measureReal hS_top, ← ENNReal.ofReal_div_of_pos hSpos,
-    ← ENNReal.ofReal_mul (by positivity)]
-  congr 1
-  field_simp
-
-/-- For `0 < n`, the integral of the Riesz kernel `‖y - x‖ ^ (1 - n)` in `x` over a measurable set
-`A` is at most `n μ(B(0, 1)) ^ (1 - 1/n) μ(A) ^ (1/n)`, where `n` is the dimension. -/
-theorem setLIntegral_enorm_sub_rpow_le_finrank [Nontrivial E] {A : Set E} (hA : MeasurableSet A)
-    (y : E) :
-    ∫⁻ x in A, ‖y - x‖ₑ ^ (1 - (finrank ℝ E : ℝ)) ∂μ ≤
-      ENNReal.ofReal (finrank ℝ E * μ.real (ball 0 1) ^ (1 - (finrank ℝ E : ℝ)⁻¹)) *
-        μ A ^ (finrank ℝ E : ℝ)⁻¹ := by
-  have hn : (0 : ℝ) < finrank ℝ E := Nat.cast_pos.2 finrank_pos
-  have h := setLIntegral_enorm_sub_rpow_le (μ := μ) (inv_pos.2 hn)
-    (inv_le_one_of_one_le₀ (Nat.one_le_cast.2 finrank_pos)) hA y
-  rwa [inv_inv, mul_sub, mul_inv_cancel₀ hn.ne', mul_one] at h
-
 /-- **The Poincaré–Wirtinger inequality on a convex domain**, in `∫⁻` form. If `u` is `C¹` on a
 bounded convex open set `Ω` and `S ⊆ Ω` has positive measure, then for `1 ≤ p` the `p`-th power
 of the deviation of `u` from its mean over `S` has integral over `Ω` at most `C ^ p` times the
@@ -174,7 +100,7 @@ theorem lintegral_enorm_sub_setAverage_rpow_le_of_convex (hΩ : IsOpen Ω) (hΩc
   rcases subsingleton_or_nontrivial E with hE | hE
   · -- In dimension zero the left-hand side vanishes.
     rw [setLIntegral_congr_fun hΩ.measurableSet fun x hx => by
-      rw [enorm_sub_setAverage_eq_zero_of_subsingleton hΩ hΩc hb hu hx hS hS₀,
+      rw [enorm_sub_setAverage_eq_zero_of_subsingleton x hS₀ hS_top,
         ENNReal.zero_rpow_of_pos (zero_lt_one.trans_le hp)], lintegral_zero]
     exact bot_le
   have hn : 0 < (n : ℝ) := Nat.cast_pos.2 finrank_pos
@@ -194,8 +120,12 @@ theorem lintegral_enorm_sub_setAverage_rpow_le_of_convex (hΩ : IsOpen Ω) (hΩc
         simpa only [k, enorm_sub_rev y] using hmarg y hy))
   -- Assemble the constant.
   have hcK : c * ENNReal.ofReal K =
-      ENNReal.ofReal (μ.real (ball 0 1) * d ^ (n + 1) / μ.real S) :=
-    ofReal_pow_div_natCast_div_mul_ofReal finrank_pos hd hS₀ hS_top
+      ENNReal.ofReal (μ.real (ball 0 1) * d ^ (n + 1) / μ.real S) := by
+    rw [show K = n * (μ.real (ball 0 1) * d) by ring,
+      ENNReal.ofReal_pow_div_natCast_div_mul_ofReal_natCast_mul finrank_pos hd hS₀ hS_top]
+    congr 1
+    simp only [Measure.real]
+    ring
   have hKp : ENNReal.ofReal K ^ (p - 1) * ENNReal.ofReal K = ENNReal.ofReal K ^ p := by
     rw [ENNReal.ofReal_rpow_of_nonneg hK (by linarith), ← ENNReal.ofReal_mul (by positivity),
       ENNReal.ofReal_rpow_of_nonneg hK hp0, ← Real.rpow_add_one' hK (by linarith), sub_add_cancel]
@@ -242,7 +172,7 @@ theorem setLIntegral_enorm_sub_setAverage_le_mul_measure_rpow_mul_of_convex (hΩ
   rcases subsingleton_or_nontrivial E with hE | hE
   · -- In dimension zero the left-hand side vanishes.
     have hzero : ∀ x ∈ A', ‖u x - ⨍ y in S, u y ∂μ‖ₑ = 0 := fun x hx =>
-      enorm_sub_setAverage_eq_zero_of_subsingleton hΩ hΩc hb hu (hA'Ω hx) hS hS₀
+      enorm_sub_setAverage_eq_zero_of_subsingleton x hS₀ hS_top
     rw [setLIntegral_congr_fun hA'm hzero, lintegral_zero]
     exact bot_le
   -- The kernel bound `∫_{A'} ‖x - y‖ ^ (1 - n) dx ≤ n ω ^ (1 - 1/n) μ(A') ^ (1/n)`.
@@ -255,7 +185,7 @@ theorem setLIntegral_enorm_sub_setAverage_le_mul_measure_rpow_mul_of_convex (hΩ
       hΩ.measurableSet).comp_snd.mul (by fun_prop)
   have hc : c * ENNReal.ofReal K =
       ENNReal.ofReal (μ.real (ball 0 1) ^ (1 - (n : ℝ)⁻¹) * d ^ n / μ.real S) :=
-    ofReal_pow_div_natCast_div_mul_ofReal_natCast_mul finrank_pos diam_nonneg hS₀ hS_top
+    ENNReal.ofReal_pow_div_natCast_div_mul_ofReal_natCast_mul finrank_pos diam_nonneg hS₀ hS_top
   calc ∫⁻ x in A', ‖u x - ⨍ y in S, u y ∂μ‖ₑ ∂μ
       ≤ ∫⁻ x in A', c * ∫⁻ y in Ω, ‖fderiv ℝ u y‖ₑ * k x y ∂μ ∂μ :=
         setLIntegral_mono' hA'm fun x hx => hpoint x (hA'Ω hx)
