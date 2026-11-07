@@ -27,7 +27,9 @@ In dimension four, for the complex orientation, the two-forms split as
 * an anti-self-dual `η` is `J`-invariant (`AlmostComplexStructure.lieMap_of_hodgeStar_eq_neg`), so
   its contraction `A u = u ⌟ η` commutes with `J`, and `B(v, w) = ⟪A v, J w⟫ = -⟪J A v, w⟫`.
   Since `(J A)² = -A² = ‖η‖² / 2`, the values of `B(v, v)` on the unit sphere range over
-  `[-‖η‖ / √2, ‖η‖ / √2]`.
+  `[-‖η‖ / √2, ‖η‖ / √2]`. The bound `|B(v, v)| ≤ (‖η‖ / √2) ‖v‖²` holds more generally for
+  every `η` orthogonal to `ω` (`abs_hermitianForm_apply_self_le_of_inner_kahlerForm_eq_zero`),
+  by pairing `η` with `2 v ∧ J v - ‖v‖² ω`.
 
 Write `c = ⟪ω, F⟫ / 2` and `F⁻ = (F - ⋆F) / 2`. Then `B(v, w) = c ⟪v, w⟫ + F⁻(v, J w)`
 (`hermitianForm_apply_eq`), and the smallest and largest values of `B(v, v)` on the unit sphere
@@ -58,6 +60,9 @@ In the namespace `TauCeti.AlmostComplexStructure`:
 * `twoVectorContraction_apply_apply_of_lieMap_eq_zero`, `hermitianForm_apply_of_lieMap_eq_zero`:
   for an orthogonal `J` and a `J`-invariant `η`, the contraction by `η` commutes with `J` and
   `B(v, w) = η(v, J w)`.
+* `abs_hermitianForm_apply_self_le_of_inner_kahlerForm_eq_zero`: `|B(v, v)| ≤ (‖η‖ / √2) ‖v‖²`
+  for `η` orthogonal to `ω`.
+* `inner_kahlerForm_eq_zero_of_hodgeStar_eq_neg`: `ω` is orthogonal to every anti-self-dual form.
 * `hermitianForm_apply_of_hodgeStar_eq_self`: `B = (⟪ω, η⟫ / 2) g` for self-dual `η`.
 * `twoVectorContraction_apply_apply_of_hodgeStar_eq_neg`: the contraction by an anti-self-dual
   two-vector commutes with `J`.
@@ -65,6 +70,8 @@ In the namespace `TauCeti.AlmostComplexStructure`:
 * `abs_hermitianForm_apply_self_sub_le`: `|B(v, v) - c ‖v‖²| ≤ (‖F⁻‖ / √2) ‖v‖²`.
 * `isLeast_hermitianForm_apply_self`, `isGreatest_hermitianForm_apply_self`: the extreme values
   `c ∓ ‖F⁻‖ / √2` of `B` on the unit sphere are attained.
+* `norm_smul_sub_hodgeStar_le_of_forall_le_hermitianForm_apply_self`,
+  `forall_le_hermitianForm_apply_self_iff`: `B ≥ -C g` holds exactly when `‖F⁻‖ ≤ √2 (c + C)`.
 
 ## References
 
@@ -150,6 +157,52 @@ theorem hermitianForm_apply_of_lieMap_eq_zero {J : AlmostComplexStructure V}
       inner_apply_left hJ, neg_neg]
   rw [hermitianForm_apply, h, add_self_div_two]
 
+/-- `‖v ∧ J v‖² = ‖v‖⁴` for an orthogonal `J`, since `J v` is orthogonal to `v` and has the same
+norm. -/
+private theorem norm_ιMulti_sq {J : AlmostComplexStructure V} (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫)
+    (v : V) : ‖ιMulti ℝ 2 ![v, J v]‖ ^ 2 = ‖v‖ ^ 4 := by
+  have h0 : ⟪v, J v⟫ = 0 := by
+    have := inner_apply_left hJ v v
+    rw [real_inner_comm] at this
+    linarith
+  rw [← real_inner_self_eq_norm_sq, inner_ιMulti_two, hJ, h0, real_inner_self_eq_norm_sq]
+  ring
+
+/-- **The Hermitian part of a form orthogonal to `ω` is bounded by `‖μ‖ / √2`** in dimension
+four: if `⟪ω, μ⟫ = 0`, then `|B(v, v)| ≤ (‖μ‖ / √2) ‖v‖²`. This applies to every anti-self-dual
+`μ` (`inner_kahlerForm_eq_zero_of_hodgeStar_eq_neg`), for which the bound is sharp
+(`isLeast_hermitianForm_apply_self`). -/
+theorem abs_hermitianForm_apply_self_le_of_inner_kahlerForm_eq_zero [Fact (finrank ℝ V = 4)]
+    {J : AlmostComplexStructure V} (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) {μ : ⋀[ℝ]^2 V}
+    (hμ : ⟪J.kahlerForm, μ⟫ = 0) (v : V) : |J.hermitianForm μ v v| ≤ ‖μ‖ / √2 * ‖v‖ ^ 2 := by
+  rw [hermitianForm_apply_self]
+  -- Pair `μ` with `y = 2 (v ∧ J v) - ‖v‖² ω`, which has the same pairing as `2 (v ∧ J v)` and
+  -- norm `√2 ‖v‖²`.
+  set x := ιMulti ℝ 2 ![v, J v]
+  set y := (2 : ℝ) • x - ‖v‖ ^ 2 • J.kahlerForm
+  have hxω : ⟪x, J.kahlerForm⟫ = ‖v‖ ^ 2 := by
+    rw [real_inner_comm, inner_kahlerForm_ιMulti hJ, hJ, real_inner_self_eq_norm_sq]
+  have hω : ‖J.kahlerForm‖ ^ 2 = 2 := by
+    rw [norm_kahlerForm_sq hJ, (Fact.out : finrank ℝ V = 4)]
+    norm_num
+  have hx : ‖x‖ ^ 2 = ‖v‖ ^ 4 := norm_ιMulti_sq hJ v
+  have hy : ‖y‖ ^ 2 = (√2 * ‖v‖ ^ 2) ^ 2 := by
+    simp only [y, norm_sub_sq_real, norm_smul, real_inner_smul_left, real_inner_smul_right,
+      Real.norm_eq_abs, abs_two, abs_pow, sq_abs, mul_pow, hxω, hx, hω, Real.sq_sqrt zero_le_two]
+    ring
+  have hy' : ‖y‖ = √2 * ‖v‖ ^ 2 :=
+    (pow_left_inj₀ (norm_nonneg y) (by positivity) two_ne_zero).1 hy
+  have hμy : ⟪μ, y⟫ = 2 * ⟪μ, x⟫ := by
+    have hμω : ⟪μ, J.kahlerForm⟫ = 0 := by rw [real_inner_comm]; exact hμ
+    rw [inner_sub_right, real_inner_smul_right, real_inner_smul_right, hμω]
+    ring
+  have hle := abs_real_inner_le_norm μ y
+  rw [hμy, hy', abs_mul, abs_two] at hle
+  have h2 : (0 : ℝ) < √2 := by positivity
+  rw [div_mul_eq_mul_div, le_div_iff₀ h2]
+  have hs : √2 * √2 = 2 := Real.mul_self_sqrt zero_le_two
+  nlinarith [abs_nonneg ⟪μ, x⟫, norm_nonneg μ, sq_nonneg ‖v‖]
+
 /-! ### Dimension four -/
 
 section Four
@@ -159,6 +212,14 @@ variable {e : OrthonormalBasis (Fin 4) ℝ V} {J : AlmostComplexStructure V}
   [Fact (finrank ℝ V = 4)] {o : Orientation ℝ V (Fin 4)} (hkl : 2 + 2 = finrank ℝ V)
   (he : e.toBasis.orientation = o)
 include h₀ h₂ he
+
+/-- **The Kähler form is orthogonal to the anti-self-dual forms**: `⟪ω, μ⟫ = 0` when `⋆μ = -μ`,
+since `ω` is self-dual for the complex orientation. -/
+theorem inner_kahlerForm_eq_zero_of_hodgeStar_eq_neg {μ : ⋀[ℝ]^2 V}
+    (hμ : o.hodgeStar hkl μ = -μ) : ⟪J.kahlerForm, μ⟫ = 0 := by
+  have h := o.inner_hodgeStar_right_of_hodgeStar_eq_neg even_two hkl hμ J.kahlerForm
+  rw [hodgeStar_kahlerForm h₀ h₂ hkl he, real_inner_comm] at h
+  linarith
 
 /-- **The Hermitian part of a self-dual two-form is a multiple of the metric**: for `⋆η = η`,
 `B(v, w) = (⟪ω, η⟫ / 2) ⟪v, w⟫`. -/
@@ -221,20 +282,13 @@ theorem hermitianForm_apply_eq (F : ⋀[ℝ]^2 V) (v w : V) :
     real_inner_smul_right, inner_add_right, hω]
   ring
 
-omit he in
-/-- For anti-self-dual `η`, Cauchy–Schwarz and the conformality `‖u ⌟ η‖ = (‖η‖ / √2) ‖u‖` of the
-contraction bound `|η(v, J v)| ≤ (‖η‖ / √2) ‖v‖²`. -/
+/-- For anti-self-dual `η`, `|η(v, J v)| ≤ (‖η‖ / √2) ‖v‖²`, since `η` is orthogonal to `ω`. -/
 private theorem abs_inner_ιMulti_apply_le {η : ⋀[ℝ]^2 V} (hη : o.hodgeStar hkl η = -η) (v : V) :
     |⟪η, ιMulti ℝ 2 ![v, J v]⟫| ≤ ‖η‖ / √2 * ‖v‖ ^ 2 := by
-  have hJ := inner_apply_apply_of_orthonormalBasis h₀ h₂
-  have hA : ‖twoVectorContraction η v‖ = ‖η‖ / √2 * ‖v‖ := by
-    have h := norm_twoVectorContraction_apply_sq o hkl (Or.inr hη) v
-    rw [← sq_eq_sq₀ (norm_nonneg _) (by positivity), h, mul_pow, div_pow,
-      Real.sq_sqrt zero_le_two]
-  rw [← inner_twoVectorContraction_apply]
-  calc |⟪twoVectorContraction η v, J v⟫| ≤ ‖twoVectorContraction η v‖ * ‖J v‖ :=
-        abs_real_inner_le_norm _ _
-    _ = ‖η‖ / √2 * ‖v‖ ^ 2 := by rw [hA, norm_apply hJ]; ring
+  rw [← hermitianForm_apply_self]
+  exact abs_hermitianForm_apply_self_le_of_inner_kahlerForm_eq_zero
+    (inner_apply_apply_of_orthonormalBasis h₀ h₂)
+    (inner_kahlerForm_eq_zero_of_hodgeStar_eq_neg h₀ h₂ hkl he hη) v
 
 /-- For anti-self-dual `η`, the bound `η(v, J v) ≥ -(‖η‖ / √2) ‖v‖²` is attained on the unit
 sphere: an eigenvector of the self-adjoint `J A`, `A u = u ⌟ η`, for its eigenvalue `‖η‖ / √2`. -/
@@ -289,7 +343,7 @@ theorem abs_hermitianForm_apply_self_sub_le (F : ⋀[ℝ]^2 V) (v : V) :
     |J.hermitianForm F v v - ⟪J.kahlerForm, F⟫ / 2 * ‖v‖ ^ 2| ≤
       ‖(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)‖ / √2 * ‖v‖ ^ 2 := by
   rw [hermitianForm_apply_eq h₀ h₂ hkl he, real_inner_self_eq_norm_sq, add_sub_cancel_left]
-  exact abs_inner_ιMulti_apply_le h₀ h₂ hkl (o.hodgeStar_smul_sub_hodgeStar even_two hkl F) v
+  exact abs_inner_ιMulti_apply_le h₀ h₂ hkl he (o.hodgeStar_smul_sub_hodgeStar even_two hkl F) v
 
 /-- **The smallest eigenvalue of the Hermitian part**: on the unit sphere, the minimum of
 `B(v, v)` is `c - ‖F⁻‖ / √2`, where `c = ⟪ω, F⟫ / 2` and `F⁻ = (F - ⋆F) / 2`. -/
@@ -339,6 +393,20 @@ theorem norm_smul_sub_hodgeStar_le_of_forall_le_hermitianForm_apply_self (F : �
   rw [mem_sphere_zero_iff_norm.1 hv, one_pow, mul_one, hBv] at h
   rw [mul_comm, ← div_le_iff₀ (by positivity)]
   linarith
+
+/-- **Lower bounds on the Hermitian part are bounds on the anti-self-dual part**: `B ≥ -C g`
+holds exactly when `‖F⁻‖ ≤ √2 (c + C)`, where `c = ⟪ω, F⟫ / 2` and `F⁻ = (F - ⋆F) / 2`. -/
+theorem forall_le_hermitianForm_apply_self_iff (F : ⋀[ℝ]^2 V) {C : ℝ} :
+    (∀ v, -C * ‖v‖ ^ 2 ≤ J.hermitianForm F v v) ↔
+      ‖(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)‖ ≤ √2 * (⟪J.kahlerForm, F⟫ / 2 + C) := by
+  refine ⟨norm_smul_sub_hodgeStar_le_of_forall_le_hermitianForm_apply_self h₀ h₂ hkl he F,
+    fun hC v ↦ ?_⟩
+  have h := abs_hermitianForm_apply_self_sub_le h₀ h₂ hkl he F v
+  have hle : ‖(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)‖ / √2 ≤ ⟪J.kahlerForm, F⟫ / 2 + C := by
+    rw [div_le_iff₀ (by positivity), mul_comm]
+    exact hC
+  have hv := sq_nonneg ‖v‖
+  nlinarith [neg_abs_le (J.hermitianForm F v v - ⟪J.kahlerForm, F⟫ / 2 * ‖v‖ ^ 2)]
 
 end Four
 
