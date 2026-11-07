@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Data.Nat.Choose.Basic
-public import TauCeti.FieldTheory.SquareClassGroup.Basic
+public import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
 public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Hyperbolic
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.TensorProduct
@@ -460,3 +460,31 @@ theorem RegularFormClass.signedDiscr_nsmul_hyperbolicClass_add (m : ℕ) (x : Re
     rw [succ_nsmul, add_right_comm, RegularFormClass.signedDiscr_add_hyperbolicClass, ih]
 
 end TauCeti
+
+namespace RingHom
+
+variable {K L : Type*} [Field K] [Field L] [Invertible (2 : L)]
+
+/-- A regular form over an extension `L` of `K`, whose discriminant is induced by the square class
+of a unit `d` of `K`, is equivalent to a diagonal form whose coefficient product differs from the
+image of `d` by a square. -/
+theorem exists_equivalent_weightedSumSquares_isSquare_div_prod {n : ℕ} (φ : K →+* L) (d : Kˣ)
+    (Q : _root_.QuadraticForm L (Fin n → L)) (hQ : Q.Nondegenerate)
+    (hd : TauCeti.RegularFormClass.discr (TauCeti.formClass Q hQ) =
+      φ.squareClassMap (TauCeti.squareClass d)) :
+    ∃ a : Fin n → Lˣ, Q.Equivalent (weightedSumSquares L a) ∧
+      IsSquare (Units.map φ.toMonoidHom d / ∏ i, a i) := by
+  classical
+  obtain ⟨a, ha⟩ := by
+    have h := Q.equivalent_weightedSumSquares_units_of_nondegenerate'
+      (QuadraticMap.nondegenerate_associated_iff.mpr hQ).1
+    rw [Module.finrank_fin_fun] at h
+    exact h
+  refine ⟨a, ha, ?_⟩
+  have h := TauCeti.discr_formClass Q hQ ⟨n, a⟩
+    (by simpa only [TauCeti.presentedForm_eq_weightedSumSquares] using ha)
+  rw [hd, RingHom.squareClassMap_apply] at h
+  have hs := (TauCeti.squareClass_eq_iff_isSquare_mul _ _).mp h
+  simpa only [pow_two, mul_div_mul_right_eq_div] using hs.div (IsSquare.sq (∏ i, a i))
+
+end RingHom

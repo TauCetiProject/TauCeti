@@ -377,6 +377,7 @@ theorem indecomposableMultiplicity_eq_add_of_isCompl {T T' : Submodule A M} (h :
     indecomposableMultiplicity_eq_of_linearEquiv (M' := M) (N := N)
       (Submodule.prodEquivOfIsCompl T T' h)]
 
+omit [IsNoetherian A M] in
 /-- **Multiplicity is additive on a split short exact sequence** `0 → M₁ → M → M₃ → 0`, the
 splitting being given by a right inverse `σ` of the surjection. -/
 theorem indecomposableMultiplicity_eq_add_of_exact_of_rightInverse
@@ -387,6 +388,7 @@ theorem indecomposableMultiplicity_eq_add_of_exact_of_rightInverse
     indecomposableMultiplicity A M N =
       indecomposableMultiplicity A M₁ N + indecomposableMultiplicity A M₃ N := by
   have hσinj : Function.Injective σ := hσ.injective
+  have : IsNoetherian A M := isNoetherian_of_range_eq_ker f g hfg.linearMap_ker_eq.symm
   set pr : M →ₗ[A] LinearMap.range σ :=
     LinearMap.codRestrict (LinearMap.range σ) (σ ∘ₗ g) (fun x ↦ ⟨g x, rfl⟩) with hpr
   have hproj : ∀ x : LinearMap.range σ, pr x = x := by

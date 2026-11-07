@@ -32,7 +32,9 @@ A linear map into `K.X n` whose values are cycles induces a class map into the h
 `HomologicalComplex.moduleCatHomologyClass`; it is surjective when every cycle is a value, its
 kernel consists of the elements sent to boundaries, and chain maps act on it compatibly.
 Consequently, when `K` is the union of subcomplexes `L i`, every homology class of `K` comes from
-some `L i` (`HomologicalComplex.exists_homologyMap_eq_of_injective`).  Two cycles whose difference
+some `L i` (`HomologicalComplex.exists_homologyMap_eq_of_injective`), and a class of `L i` that
+vanishes in `K` already vanishes in a larger subcomplex containing every boundary it needs
+(`HomologicalComplex.exists_homologyMap_eq_zero_of_injective`).  Two cycles whose difference
 is a boundary have the same homology class
 (`HomologicalComplex.moduleCat_homologyπ_eq_of_iCycles_sub_eq_d`); conversely, cycles with the same
 class differ by the boundary of an element of degree `c.prev n`
@@ -85,6 +87,16 @@ theorem Hom.comm_apply {R : Type*} [Ring R] {ι : Type*} {c : ComplexShape ι}
     {K L : HomologicalComplex (ModuleCat R) c} (φ : K ⟶ L) (i j : ι) (x : K.X i) :
     L.d i j (φ.f i x) = φ.f j (K.d i j x) := by
   rw [← ModuleCat.comp_apply, φ.comm, ModuleCat.comp_apply]
+
+/-- Homology maps commute with the class map from cycles, on elements of complexes of modules.
+
+Not `@[simp]`: it would make the existing simp lemmas
+`ChainComplex.homologyMap_linearYonedaObjMap_homologyπ_apply` and
+`TopCat.singularCohomologyMap_homologyπ_constSingularCocycle` fail `simpNF`. -/
+theorem moduleCat_homologyMap_homologyπ {R : Type*} [Ring R] {ι : Type*} {c : ComplexShape ι}
+    {K L : HomologicalComplex (ModuleCat R) c} (φ : K ⟶ L) (i : ι) (x : K.cycles i) :
+    homologyMap φ i (K.homologyπ i x) = L.homologyπ i (cyclesMap φ i x) := by
+  rw [← ConcreteCategory.comp_apply, homologyπ_naturality, ConcreteCategory.comp_apply]
 
 /-- A chain map of complexes of modules sends cycles to cycles, on elements. -/
 theorem Hom.d_apply_eq_zero_of_d_apply_eq_zero {R : Type*} [Ring R] {ι : Type*}
@@ -526,6 +538,44 @@ theorem exists_homologyMap_eq_of_injective {κ : Type*}
   congr 1
   apply K.moduleCat_iCycles_injective
   rw [← ModuleCat.comp_apply, cyclesMap_i, ModuleCat.comp_apply, iCycles_moduleCatCyclesMk, hy]
+
+variable {K} in
+/-- **Vanishing of homology classes in a union of subcomplexes.** Let `φ j : L j ⟶ K` be chain maps
+of complexes of modules that are injective in degree `n`, and let `ψ j : L i ⟶ L j` be chain maps
+compatible with them, defined for the indices `j` satisfying `P j`. Suppose every element of the
+term of degree `c.prev n` of `K` comes from some `L j` with `P j`. Then a degree-`n` homology class
+of `L i` that vanishes in `K` already vanishes in some `L j` with `P j`. -/
+theorem exists_homologyMap_eq_zero_of_injective {κ : Type*}
+    {L : κ → HomologicalComplex (ModuleCat R) c} (φ : ∀ j, L j ⟶ K)
+    (hφ : ∀ j, Function.Injective ((φ j).f n)) {m : ι} (hm : c.prev n = m) {i : κ}
+    {P : κ → Prop} (ψ : ∀ j, P j → (L i ⟶ L j)) (hψ : ∀ j hj, ψ j hj ≫ φ j = φ i)
+    (h : ∀ x : K.X m, ∃ j, ∃ _ : P j, ∃ y, (φ j).f m y = x) (y : (L i).homology n)
+    (hy : homologyMap (φ i) n y = 0) : ∃ j, ∃ hj : P j, homologyMap (ψ j hj) n y = 0 := by
+  obtain ⟨z, rfl⟩ := (L i).moduleCat_homologyπ_surjective n y
+  -- the image of the cycle `z` in `K` is the boundary of some `w`
+  rw [← ModuleCat.comp_apply, homologyπ_naturality, ModuleCat.comp_apply,
+    K.moduleCat_homologyπ_eq_zero_iff hm] at hy
+  obtain ⟨w, hw⟩ := hy
+  -- `w` comes from some `L j`, where its lift bounds the image of `z`
+  obtain ⟨j, hj, w', rfl⟩ := h w
+  refine ⟨j, hj, ?_⟩
+  rw [← ModuleCat.comp_apply, homologyπ_naturality, ModuleCat.comp_apply,
+    (L j).moduleCat_homologyπ_eq_zero_iff hm]
+  refine ⟨w', (L j).moduleCat_iCycles_injective n (hφ j ?_)⟩
+  have hi : ∀ {M M' : HomologicalComplex (ModuleCat R) c} (f : M ⟶ M') (x : M.cycles n),
+      M'.iCycles n (cyclesMap f n x) = f.f n (M.iCycles n x) := fun f x ↦ by
+    rw [← ModuleCat.comp_apply, cyclesMap_i, ModuleCat.comp_apply]
+  have hd : ∀ (M : HomologicalComplex (ModuleCat R) c) (x : M.X m),
+      M.iCycles n (M.toCycles m n x) = M.d m n x := fun M x ↦ by
+    rw [← ModuleCat.comp_apply, toCycles_i]
+  -- push both cycles into `K`: naturality of the differential, then `hw` and compatibility `hψ`
+  calc (φ j).f n ((L j).iCycles n ((L j).toCycles m n w'))
+      = (φ j).f n ((L j).d m n w') := by rw [hd]
+    _ = K.d m n ((φ j).f m w') := (Hom.comm_apply _ _ _ _).symm
+    _ = K.iCycles n (K.toCycles m n ((φ j).f m w')) := (hd K _).symm
+    _ = (φ i).f n ((L i).iCycles n z) := by rw [hw, hi]
+    _ = (φ j).f n ((L j).iCycles n (cyclesMap (ψ j hj) n z)) := by
+      rw [hi, ← ModuleCat.comp_apply ((ψ j hj).f n), ← comp_f, hψ]
 
 variable {K} in
 /-- A chain map of complexes of modules sends the class of a cycle to the class of its image. -/

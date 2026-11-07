@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Weights.InvariantForm
+public import TauCeti.Algebra.Lie.Weights.Killing
 public import TauCeti.Algebra.Lie.Weights.Sl2System
 public import TauCeti.LinearAlgebra.RootSystem.InvariantForm.RootString
 
@@ -252,31 +253,9 @@ theorem rootSystem_chainCoeffs_eq {a b : Weight K H L}
   let ib : H.root := ⟨b, by simpa [LieSubalgebra.root] using hb⟩
   have hlin : LinearIndependent K ![P.root ia, P.root ib] := by
     simpa only [P, rootSystem_root_apply, ia, ib] using hab
-  -- Step 1: Equivalence between range membership in `P.root` and Lie weight space non-triviality.
   have hmem (n : ℤ) :
-      P.root ib + n • P.root ia ∈ Set.range P.root ↔ rootSpace H (n • a + b) ≠ ⊥ := by
-    constructor
-    · rintro ⟨c, hc⟩
-      have hc' : (c.1 : H → K) = n • (a : H → K) + b := by
-        ext z
-        simpa only [P, rootSystem_root_apply, ia, ib, Weight.toLinear_apply,
-          LinearMap.add_apply, LinearMap.smul_apply, Pi.add_apply, Pi.smul_apply,
-          smul_eq_mul, add_comm] using DFunLike.congr_fun hc z
-      simpa only [hc'] using c.1.genWeightSpace_ne_bot
-    · intro h
-      let c : Weight K H L := ⟨n • (a : H → K) + b, h⟩
-      have hc : c.IsNonZero := by
-        intro hc₀
-        -- Definitional equality: `c.IsNonZero` is `(c : H → K) ≠ 0`, so `hc₀` means `c.1 = 0`.
-        change n • (a : H → K) + b = 0 at hc₀
-        have hrel : (n : K) • (a : Module.Dual K H) +
-            (1 : K) • (b : Module.Dual K H) = 0 := by
-          ext z
-          simpa [Weight.toLinear_apply] using congrFun hc₀ z
-        exact one_ne_zero (hab.eq_zero_of_pair hrel).2
-      refine ⟨⟨c, by simpa [LieSubalgebra.root] using hc⟩, ?_⟩
-      ext z
-      simp [P, ia, ib, c, Weight.toLinear_apply, add_comm]
+      P.root ib + n • P.root ia ∈ Set.range P.root ↔ rootSpace H (n • a + b) ≠ ⊥ :=
+    root_add_zsmul_mem_range_iff hlin n
   -- Step 2: Compare `chainTopCoeff` via characterization by maximal non-vanishing.
   constructor
   · apply le_antisymm
