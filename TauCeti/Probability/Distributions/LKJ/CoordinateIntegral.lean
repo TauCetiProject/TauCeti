@@ -40,7 +40,11 @@ both in strictly lower correlation coordinates and against the reference measure
 * `TauCeti.Probability.integrableOn_lkjPartialCorrelationKernel` and
   `TauCeti.Probability.lkjPartialCorrelationKernel_nonneg` — its integrability and nonnegativity
   on the open cube;
+* `TauCeti.Probability.prod_beta_lkjPartialCorrelationShape` — the LKJ normalizer as a product of
+  one beta factor per coordinate;
 * `TauCeti.Probability.integral_lkjPartialCorrelationKernel` — its integral over the open cube.
+* `TauCeti.Probability.prod_sqrt_pow_smul_rpow_det_eq_lkjPartialCorrelationKernel` — on the open
+  cube, the Jacobian times the determinant power is the product kernel.
 * `TauCeti.Probability.setIntegral_rpow_det_posDefCorrelationRegion`,
   `TauCeti.Probability.integrableOn_rpow_det_posDefCorrelationRegion` — the normalizing integral
   in correlation coordinates.
@@ -122,7 +126,9 @@ theorem integrableOn_lkjPartialCorrelationKernel {p : ℕ} {η : ℝ} (hη : 0 <
   exact Integrable.fintype_prod fun ij ↦
     integrableOn_Ioo_one_sub_sq_rpow (lkjPartialCorrelationShape_pos hη ij)
 
-private theorem prod_beta_lkjPartialCorrelationShape (p : ℕ) (η : ℝ) :
+/-- The LKJ normalizer has one factor `B(1 / 2, a)` for each partial-correlation coordinate,
+where `a` is its column-dependent shape. -/
+theorem prod_beta_lkjPartialCorrelationShape (p : ℕ) (η : ℝ) :
     (∏ ij : strictLowerTriangle p, beta (1 / 2) (lkjPartialCorrelationShape p η ij)) =
       lkjNormalizer p η := by
   unfold lkjPartialCorrelationShape
@@ -169,7 +175,8 @@ variable {p : ℕ} {η : ℝ}
 /-- On the open cube the Jacobian-weighted power of the determinant is the LKJ
 partial-correlation kernel: both factor into one-dimensional powers of the residual variances
 `1 - z ij ^ 2`. -/
-private theorem jacobian_mul_det_rpow {z : strictLowerTriangle p → ℝ} (hz : ∀ ij, |z ij| < 1) :
+theorem prod_sqrt_pow_smul_rpow_det_eq_lkjPartialCorrelationKernel
+    {z : strictLowerTriangle p → ℝ} (hz : ∀ ij, |z ij| < 1) :
     (∏ ij : strictLowerTriangle p, Real.sqrt (1 - z ij ^ 2) ^ (p - ij.1.2.1 - 2)) •
         (correlationMatrix p (correlationCoordinatesOfPartialCorrelation z) :
           Matrix (Fin p) (Fin p) ℝ).det ^ (η - 1) =
@@ -207,7 +214,8 @@ theorem integrableOn_rpow_det_posDefCorrelationRegion (hη : 0 < η) :
     IntegrableOn (fun x ↦ (correlationMatrix p x : Matrix (Fin p) (Fin p) ℝ).det ^ (η - 1))
       (posDefCorrelationRegion p) := by
   rw [← integrableOn_comp_correlationCoordinatesOfPartialCorrelation_iff,
-    integrableOn_congr_fun (fun z hz ↦ jacobian_mul_det_rpow hz)
+    integrableOn_congr_fun
+      (fun z hz ↦ prod_sqrt_pow_smul_rpow_det_eq_lkjPartialCorrelationKernel hz)
       measurableSet_partialCorrelationCube, partialCorrelationCube_eq_pi]
   exact integrableOn_lkjPartialCorrelationKernel hη
 
@@ -221,7 +229,8 @@ theorem setIntegral_rpow_det_posDefCorrelationRegion (hη : 0 < η) :
       lkjNormalizer p η := by
   rw [← setIntegral_comp_correlationCoordinatesOfPartialCorrelation,
     setIntegral_congr_fun measurableSet_partialCorrelationCube
-      fun z hz ↦ jacobian_mul_det_rpow hz, partialCorrelationCube_eq_pi]
+      fun z hz ↦ prod_sqrt_pow_smul_rpow_det_eq_lkjPartialCorrelationKernel hz,
+    partialCorrelationCube_eq_pi]
   exact integral_lkjPartialCorrelationKernel hη
 
 variable (p) in

@@ -8,7 +8,6 @@ module
 public import TauCeti.Probability.Distributions.Beta.Square
 import TauCeti.Probability.Distributions.Beta.Reflection
 import TauCeti.Probability.Distributions.Affine
-import TauCeti.Analysis.SpecialFunctions.Beta
 import TauCeti.MeasureTheory.Integral.OddSymmetric
 import Mathlib.MeasureTheory.Integral.Pi
 
@@ -57,26 +56,8 @@ theorem betaMeasure_map_centered_eq_withDensity (ha : 0 < a) :
   funext z
   rw [affineDensity_apply, betaPDF, sub_neg_eq_add]
   by_cases hz : z ∈ Set.Ioo (-1) 1
-  · have hx : 0 < (z + 1) / 2 ∧ (z + 1) / 2 < 1 := by
-      constructor <;> linarith [hz.1, hz.2]
-    have hprod : ((z + 1) / 2) ^ (a - 1) * (1 - (z + 1) / 2) ^ (a - 1) =
-        (1 - z ^ 2) ^ (a - 1) / (2 : ℝ) ^ (2 * a - 2) := by
-      rw [← mul_rpow hx.1.le (by linarith)]
-      have hid : (z + 1) / 2 * (1 - (z + 1) / 2) = (1 - z ^ 2) / 2 ^ 2 := by ring
-      rw [hid, div_rpow (by nlinarith [hz.1, hz.2]) (by norm_num),
-        ← rpow_natCast 2 2, ← rpow_mul (by norm_num)]
-      congr 2
-      ring
-    have hpow : (2 : ℝ) ^ (2 * a - 1) = 2 * (2 : ℝ) ^ (2 * a - 2) := by
-      rw [show 2 * a - 1 = (2 * a - 2) + 1 by ring, rpow_add (by norm_num)]
-      simp [mul_comm]
-    rw [Set.indicator_of_mem hz, ← ENNReal.ofReal_mul (by norm_num), betaPDFReal,
-      ite_eq_left hx, mul_assoc (1 / beta a a), hprod,
-      beta_one_half_left_eq_two_rpow_mul_beta_self ha, hpow]
-    congr 1
-    have := (beta_pos ha ha).ne'
-    field_simp
-    ring
+  · rw [Set.indicator_of_mem hz, ← ENNReal.ofReal_mul (by norm_num),
+      betaPDFReal_self_add_one_div_two ha hz, abs_two, inv_mul_cancel_left₀ two_ne_zero]
   · have hx : ¬ (0 < (z + 1) / 2 ∧ (z + 1) / 2 < 1) := fun h ↦
       hz ⟨by linarith [h.1], by linarith [h.2]⟩
     rw [Set.indicator_of_notMem hz, betaPDFReal, ite_eq_right hx, ENNReal.ofReal_zero, mul_zero]
