@@ -45,9 +45,9 @@ invertible derivative at a point of an open set `s` restricts to an `OpenPartial
 * `HasStrictFDerivAt.contDiffAt_toOpenPartialHomeomorph_symm` and
   `HasStrictFDerivAt.contDiffOn_toOpenPartialHomeomorph_symm`: the local inverse is `C^n` at every
   point of the target, and hence on the target.
-* `OpenPartialHomeomorph.contDiffOn_symm_of_isUnit_fderiv`: a `C^n` open partial homeomorphism of
-  a complete normed space whose derivative is invertible on its source has a `C^n` inverse on its
-  target.
+* `OpenPartialHomeomorph.contDiffOn_symm_of_isInvertible_fderiv`: a `C^n` open partial
+  homeomorphism from a complete normed space whose derivative is invertible on its source has a
+  `C^n` inverse on its target.
 * `TauCeti.ContDiffOn.exists_openPartialHomeomorph`: a `C^n` map (`1 ≤ n`) on an open set with
   invertible derivative at a point restricts to an `OpenPartialHomeomorph` around that point whose
   inverse is `C^n` on the whole target.
@@ -146,26 +146,22 @@ end Approximation
 
 section ContDiffInverse
 
-variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-
-/-- The continuous linear equivalence attached to a unit of `E →L[𝕜] E` has that unit's value as
-underlying continuous linear map. -/
-theorem ContinuousLinearEquiv.coe_ofUnit (A : (E →L[𝕜] E)ˣ) :
-    ((ContinuousLinearEquiv.ofUnit A : E ≃L[𝕜] E) : E →L[𝕜] E) = A := rfl
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
 /-- A `C^n` open partial homeomorphism of a complete normed space (`n ≠ 0`) whose derivative is
 invertible at every point of its source has a `C^n` inverse on its target. -/
-theorem OpenPartialHomeomorph.contDiffOn_symm_of_isUnit_fderiv [CompleteSpace E] {n : ℕ∞ω}
-    (ψ : OpenPartialHomeomorph E E) (hψ : ContDiffOn 𝕜 n ψ ψ.source)
-    (hunit : ∀ x ∈ ψ.source, IsUnit (fderiv 𝕜 ψ x)) (hn : n ≠ 0) :
+theorem OpenPartialHomeomorph.contDiffOn_symm_of_isInvertible_fderiv [CompleteSpace E] {n : ℕ∞ω}
+    (ψ : OpenPartialHomeomorph E F) (hψ : ContDiffOn 𝕜 n ψ ψ.source)
+    (hinv : ∀ x ∈ ψ.source, (fderiv 𝕜 ψ x).IsInvertible) (hn : n ≠ 0) :
     ContDiffOn 𝕜 n ψ.symm ψ.target := by
   intro y hy
   have hx := ψ.map_target hy
   have hat : ContDiffAt 𝕜 n ψ (ψ.symm y) :=
     (hψ _ hx).contDiffAt (ψ.open_source.mem_nhds hx)
-  obtain ⟨A, hA⟩ := hunit _ hx
-  refine (ψ.contDiffAt_symm hy (f₀' := ContinuousLinearEquiv.ofUnit A) ?_ hat).contDiffWithinAt
-  rw [ContinuousLinearEquiv.coe_ofUnit, hA]
+  obtain ⟨e, he⟩ := hinv _ hx
+  refine (ψ.contDiffAt_symm hy (f₀' := e) ?_ hat).contDiffWithinAt
+  rw [he]
   exact (hat.differentiableAt hn).hasFDerivAt
 
 end ContDiffInverse
