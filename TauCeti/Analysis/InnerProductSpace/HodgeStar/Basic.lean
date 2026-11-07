@@ -68,8 +68,8 @@ of a curvature form, its self-dual part and its Chern–Weil density.
 * `Orientation.hodgeStar_basis`: the formula `⋆ e_I = ε(I) e_{Iᶜ}` on an orthonormal basis.
 * `Orientation.hodgeStar_hodgeStar`: `⋆⋆x = (-1) ^ (k * l) x`, and
   `Orientation.hodgeStar_hodgeStar_of_even`: `⋆⋆x = x` in an even middle degree.
-* `Orientation.exists_hodgeStar_eq_neg_and_hodgeStar_sub_eq`: in an even middle degree every
-  `k`-vector is the sum of a self-dual and an anti-self-dual one.
+* `Orientation.hodgeStar_smul_add_hodgeStar`, `Orientation.hodgeStar_smul_sub_hodgeStar`: in an
+  even middle degree, `(x + ⋆x) / 2` is self-dual and `(x - ⋆x) / 2` is anti-self-dual.
 * `Orientation.trace_hodgeStar`: in a positive middle degree the Hodge star is trace free, so
   `Orientation.two_mul_finrank_eigenspace_hodgeStar_one` and
   `Orientation.two_mul_finrank_eigenspace_hodgeStar_neg_one`: in an even positive middle degree
@@ -192,10 +192,9 @@ theorem hodgeStar_orthonormalBasis (b : OrthonormalBasis (Fin n) ℝ V) {k l : �
   -- Pair both sides with the orthonormal basis of `⋀ˡ V`.
   refine InnerProductSpace.ext_inner_right_basis (b.toBasis.exteriorPower l) fun t ↦ ?_
   rw [inner_hodgeStar_apply, wedgePairing_exteriorPower_apply, volumeEquiv,
-    LinearEquiv.ofBijective_apply, volumeLinearMap_topVector,
-    ← OrthonormalBasis.toBasis_exteriorPower, OrthonormalBasis.coe_toBasis]
+    LinearEquiv.ofBijective_apply, volumeLinearMap_topVector]
   simp only [Units.smul_def, ← Int.cast_smul_eq_zsmul ℝ, real_inner_smul_left,
-    OrthonormalBasis.inner_eq_ite, smul_eq_mul]
+    OrthonormalBasis.inner_toBasis_exteriorPower, smul_eq_mul]
   -- `s` and `t` are disjoint exactly when `t` is the complement of `s`.
   have hcard : l + k = Fintype.card (Fin n) := by rw [Fintype.card_fin, ← _i.out]; omega
   rw [if_congr (disjoint_comm.trans (powersetCard.disjoint_iff_eq_compl hcard) |>.trans eq_comm)
@@ -246,14 +245,21 @@ theorem hodgeStar_hodgeStar_of_even {k : ℕ} (hk : Even k) (hkk : k + k = finra
     (x : ⋀[ℝ]^k V) : o.hodgeStar hkk (o.hodgeStar hkk x) = x := by
   rw [hodgeStar_hodgeStar, (hk.mul_right k).neg_one_pow, one_smul]
 
-/-- In an even middle degree every `k`-vector `x` splits into a self-dual and an anti-self-dual
-part: `μ = (x - ⋆x) / 2` satisfies `⋆μ = -μ`, and `x - μ = (x + ⋆x) / 2` satisfies
-`⋆(x - μ) = x - μ`. -/
-theorem exists_hodgeStar_eq_neg_and_hodgeStar_sub_eq {k : ℕ} (hk : Even k)
-    (hkk : k + k = finrank ℝ V) (x : ⋀[ℝ]^k V) :
-    ∃ μ : ⋀[ℝ]^k V, o.hodgeStar hkk μ = -μ ∧ o.hodgeStar hkk (x - μ) = x - μ := by
-  refine ⟨(2⁻¹ : ℝ) • (x - o.hodgeStar hkk x), ?_, ?_⟩ <;>
-    simp only [map_smul, map_sub, o.hodgeStar_hodgeStar_of_even hk hkk] <;> module
+/-- In an even middle degree, `k + k = finrank ℝ V` with `k` even, the part `(x + ⋆x) / 2` of `x`
+is self-dual. -/
+theorem hodgeStar_smul_add_hodgeStar {k : ℕ} (hk : Even k) (hkk : k + k = finrank ℝ V)
+    (x : ⋀[ℝ]^k V) :
+    o.hodgeStar hkk ((2⁻¹ : ℝ) • (x + o.hodgeStar hkk x)) =
+      (2⁻¹ : ℝ) • (x + o.hodgeStar hkk x) := by
+  rw [map_smul, map_add, o.hodgeStar_hodgeStar_of_even hk, add_comm]
+
+/-- In an even middle degree, `k + k = finrank ℝ V` with `k` even, the part `(x - ⋆x) / 2` of `x`
+is anti-self-dual. -/
+theorem hodgeStar_smul_sub_hodgeStar {k : ℕ} (hk : Even k) (hkk : k + k = finrank ℝ V)
+    (x : ⋀[ℝ]^k V) :
+    o.hodgeStar hkk ((2⁻¹ : ℝ) • (x - o.hodgeStar hkk x)) =
+      -((2⁻¹ : ℝ) • (x - o.hodgeStar hkk x)) := by
+  rw [map_smul, map_sub, o.hodgeStar_hodgeStar_of_even hk, ← smul_neg, neg_sub]
 
 /-- In a positive middle degree, `k + k = finrank ℝ V` with `0 < k`, the Hodge star is trace free:
 it sends each vector `e_I` of the basis of `⋀ᵏ V` induced by an orthonormal basis to a multiple of

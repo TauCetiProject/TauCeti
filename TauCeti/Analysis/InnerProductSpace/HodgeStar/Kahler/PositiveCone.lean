@@ -133,6 +133,16 @@ theorem inner_kahlerForm_nonneg_of_mem_positiveCone {J : AlmostComplexStructure 
 
 /-! ### Dimension four -/
 
+/-- Every two-vector `F` splits into the anti-self-dual part `μ = (F - ⋆F) / 2` and the
+self-dual part `F - μ = (F + ⋆F) / 2`. -/
+private theorem exists_hodgeStar_eq_neg_and_hodgeStar_sub_eq (o : Orientation ℝ V (Fin 4))
+    (hkl : 2 + 2 = finrank ℝ V) (F : ⋀[ℝ]^2 V) :
+    ∃ μ : ⋀[ℝ]^2 V, o.hodgeStar hkl μ = -μ ∧ o.hodgeStar hkl (F - μ) = F - μ := by
+  refine ⟨_, o.hodgeStar_smul_sub_hodgeStar even_two hkl F, ?_⟩
+  rw [show F - (2⁻¹ : ℝ) • (F - o.hodgeStar hkl F) = (2⁻¹ : ℝ) • (F + o.hodgeStar hkl F) by
+    module]
+  exact o.hodgeStar_smul_add_hodgeStar even_two hkl F
+
 section Frame
 
 variable [Fact (finrank ℝ V = 4)] {o : Orientation ℝ V (Fin 4)} (hkl : 2 + 2 = finrank ℝ V)
@@ -248,7 +258,7 @@ private theorem hodgeStar_antiInvariantPart {F μ : ⋀[ℝ]^2 V} (hμ : o.hodge
 positive cone. -/
 theorem norm_le_inner_kahlerForm_of_mem_positiveCone {F : ⋀[ℝ]^2 V} (hF : F ∈ J.positiveCone) :
     ‖F‖ ≤ ⟪J.kahlerForm, F⟫ := by
-  obtain ⟨μ, hμ, hFμ⟩ := o.exists_hodgeStar_eq_neg_and_hodgeStar_sub_eq even_two hkl F
+  obtain ⟨μ, hμ, hFμ⟩ := exists_hodgeStar_eq_neg_and_hodgeStar_sub_eq o hkl F
   obtain ⟨h1, h2⟩ := (mem_positiveCone_iff hkl he h₀ h₂ hμ hFμ).1 hF
   set c := ⟪J.kahlerForm, F⟫ / 2
   have hn := norm_add_smul_kahlerForm_add_sq hkl he h₀ h₂ (A := 0) (by simp) (by simp) hμ c
@@ -271,8 +281,8 @@ theorem inner_nonneg_of_mem_positiveCone {F G : ⋀[ℝ]^2 V} (hF : F ∈ J.posi
   have hJ := inner_apply_apply_of_orthonormalBasis h₀ h₂
   have hω : ⟪J.kahlerForm, J.kahlerForm⟫ = 2 := by
     rw [inner_kahlerForm_self hJ, (Fact.out : finrank ℝ V = 4)]; norm_num
-  obtain ⟨μ, hμ, hFμ⟩ := o.exists_hodgeStar_eq_neg_and_hodgeStar_sub_eq even_two hkl F
-  obtain ⟨ν, hν, hGν⟩ := o.exists_hodgeStar_eq_neg_and_hodgeStar_sub_eq even_two hkl G
+  obtain ⟨μ, hμ, hFμ⟩ := exists_hodgeStar_eq_neg_and_hodgeStar_sub_eq o hkl F
+  obtain ⟨ν, hν, hGν⟩ := exists_hodgeStar_eq_neg_and_hodgeStar_sub_eq o hkl G
   obtain ⟨hF1, hF2⟩ := (mem_positiveCone_iff hkl he h₀ h₂ hμ hFμ).1 hF
   obtain ⟨hG1, hG2⟩ := (mem_positiveCone_iff hkl he h₀ h₂ hν hGν).1 hG
   set a := ⟪J.kahlerForm, F⟫ / 2
@@ -304,8 +314,8 @@ theorem mul_inner_kahlerForm_le_inner_of_mem_positiveCone {Ω F : ⋀[ℝ]^2 V} 
     (hΩ : ∀ v, ε * ‖v‖ ^ 2 ≤ ⟪Ω, ιMulti ℝ 2 ![v, J v]⟫) (hF : F ∈ J.positiveCone) :
     ε * ⟪J.kahlerForm, F⟫ ≤ ⟪Ω, F⟫ := by
   have hJ := inner_apply_apply_of_orthonormalBasis h₀ h₂
-  obtain ⟨ν, hν, hΩν⟩ := o.exists_hodgeStar_eq_neg_and_hodgeStar_sub_eq even_two hkl Ω
-  obtain ⟨μ, hμ, hFμ⟩ := o.exists_hodgeStar_eq_neg_and_hodgeStar_sub_eq even_two hkl F
+  obtain ⟨ν, hν, hΩν⟩ := exists_hodgeStar_eq_neg_and_hodgeStar_sub_eq o hkl Ω
+  obtain ⟨μ, hμ, hFμ⟩ := exists_hodgeStar_eq_neg_and_hodgeStar_sub_eq o hkl F
   set c := ⟪J.kahlerForm, Ω⟫ / 2 with hc
   -- The `(1,1)`-part of `Ω - ε ω` is positive.
   set G := ν + (c - ε) • J.kahlerForm
@@ -432,7 +442,7 @@ theorem infDist_positiveCone {F μ : ⋀[ℝ]^2 V} (hμ : o.hodgeStar hkl μ = -
     rw [hu', hw']
   · -- Every point of the cone is at least this far.
     refine (le_infDist ⟨_, hG⟩).2 fun G' hG' ↦ ?_
-    obtain ⟨ν, hν, hGν⟩ := o.exists_hodgeStar_eq_neg_and_hodgeStar_sub_eq even_two hkl G'
+    obtain ⟨ν, hν, hGν⟩ := exists_hodgeStar_eq_neg_and_hodgeStar_sub_eq o hkl G'
     obtain ⟨h1, h2⟩ := (mem_positiveCone_iff hkl he h₀ h₂ hν hGν).1 hG'
     set d := ⟪J.kahlerForm, G'⟫ / 2
     have hG'eq : G' = d • J.kahlerForm + ν := by rw [← h1]; abel
