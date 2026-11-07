@@ -409,9 +409,10 @@ theorem degreeZeroBasis_apply (i : X) :
   -- The identification `gr_0(F) ≅ F ⧸ Φ(F)` carries `x'_i` to the class `⟦x_i⟧`.
   simp
 
+omit [LinearOrder X] in
 /-- The coordinate of the class of a generator `a` at `ξ_i` is `1` if `a = i` and `0` otherwise. -/
 @[simp]
-theorem degreeZeroBasis_repr_gradedMkZero (a i : X) :
+theorem degreeZeroBasis_repr_gradedMkZero [DecidableEq X] (a i : X) :
     (degreeZeroBasis p X).repr (gradedMkZero p (freeProP p X) (of a)) i =
       if a = i then 1 else 0 := by
   rw [← degreeZeroBasis_apply, Module.Basis.repr_self, Finsupp.single_apply]
