@@ -462,7 +462,7 @@ theorem lintegral_enorm_hamiltonianCurvature_negativePlanePerturbation_le (ω : 
 omit [FiniteDimensional ℝ V] in
 /-- The components of the negative plane perturbation in real coordinates are `C¹` jointly in the
 domain point and the target point, on the whole plane. -/
-private theorem contDiff_negativePlanePerturbation_apply (hH : Periodic H 1)
+theorem contDiff_negativePlanePerturbation_apply (hH : Periodic H 1)
     (hHs : ContDiff ℝ 1 (uncurry H)) (v : ℂ) :
     ContDiff ℝ 1
       (uncurry fun z x ↦ negativePlanePerturbation H (Complex.equivRealProdCLM.symm z) x v) := by
