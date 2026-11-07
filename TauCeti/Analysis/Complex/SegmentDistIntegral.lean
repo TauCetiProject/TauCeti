@@ -23,7 +23,7 @@ distance to `p` is at least the length of the segment times the distance of the 
 fixed parameter `c`, namely the foot of the perpendicular from `p` clamped to `[0, 1]`; the
 Cauchy--Schwarz inequality is what makes the comparison work.  Both pieces of the parameter
 interval then compare with a power of the distance to `c`, through the one-sided estimates
-`intervalIntegral.integral_le_of_le_mul_rpow_sub_right` and `..._left` of
+`intervalIntegral.norm_integral_le_of_norm_le_mul_rpow_sub_right` and `..._left` of
 `TauCeti.MeasureTheory.Integral.IntervalIntegral.PowerBounds`, and the singularity contributes
 only the finite constant `2 / (u + 1)`.
 
@@ -115,31 +115,35 @@ theorem integral_dist_rpow_segment_le {p : ℂ} {u : ℝ} (hu : -1 < u) (hu0 : u
     calc dist (w + s • (z - w)) p ^ u ≤ (‖z - w‖ * |s - c|) ^ u :=
           Real.rpow_le_rpow_of_nonpos hpos (hclamp s hs) hu0
       _ = ‖z - w‖ ^ u * |s - c| ^ u := Real.mul_rpow (norm_nonneg _) (abs_nonneg _)
-  have hmeasc : AEStronglyMeasurable (fun s : ℝ => dist (w + s • (z - w)) p ^ u)
-      (volume.restrict (Icc (0 : ℝ) 1)) := hmeas.restrict
-  have hnn' : ∀ s ∈ Icc (0 : ℝ) 1, 0 ≤ dist (w + s • (z - w)) p ^ u := fun s _ => hnn s
   -- the piece to the right of the foot of the perpendicular
-  have hbr : ∀ s ∈ Icc c 1, s ≠ c →
-      dist (w + s • (z - w)) p ^ u ≤ ‖z - w‖ ^ u * (s - c) ^ u := fun s hs hsne => by
-    have hb := hbnd s ⟨hc.1.trans hs.1, hs.2⟩ hsne
-    rwa [abs_of_pos (sub_pos.mpr (lt_of_le_of_ne hs.1 hsne.symm))] at hb
-  have hi2 := intervalIntegral.intervalIntegrable_of_le_mul_rpow_sub_right
-    (a := c) (b := 1) (K := ‖z - w‖ ^ u) hu hc.2 (fun s hs => hnn' s ⟨hc.1.trans hs.1, hs.2⟩)
-    (hmeasc.mono_measure (Measure.restrict_mono (Icc_subset_Icc hc.1 le_rfl) le_rfl)) hbr
-  have hb2 := intervalIntegral.integral_le_of_le_mul_rpow_sub_right
-    (a := c) (b := 1) (K := ‖z - w‖ ^ u) hu hc.2 (fun s hs => hnn' s ⟨hc.1.trans hs.1, hs.2⟩)
-    (hmeasc.mono_measure (Measure.restrict_mono (Icc_subset_Icc hc.1 le_rfl) le_rfl)) hbr
+  have hbr : ∀ᵐ s ∂volume.restrict (Ioc c 1), ‖dist (w + s • (z - w)) p ^ u‖ ≤
+      ‖z - w‖ ^ u * (s - c) ^ u := by
+    refine ae_restrict_of_forall_mem measurableSet_Ioc fun s hs => ?_
+    have hb := hbnd s ⟨hc.1.trans hs.1.le, hs.2⟩ hs.1.ne'
+    rw [Real.norm_of_nonneg (hnn s)]
+    rwa [abs_of_pos (sub_pos.mpr hs.1)] at hb
+  have hi2 := intervalIntegral.intervalIntegrable_of_norm_le_mul_rpow_sub_right
+    (f := fun s : ℝ => dist (w + s • (z - w)) p ^ u) (a := c) (b := 1) (K := ‖z - w‖ ^ u) hu
+    hc.2 hmeas.restrict hbr
+  have hb2 := (Real.le_norm_self _).trans
+    (intervalIntegral.norm_integral_le_of_norm_le_mul_rpow_sub_right
+      (f := fun s : ℝ => dist (w + s • (z - w)) p ^ u) (a := c) (b := 1) (K := ‖z - w‖ ^ u) hu
+      hc.2 hbr)
   -- the piece to the left of the foot of the perpendicular
-  have hbl : ∀ s ∈ Icc 0 c, s ≠ c →
-      dist (w + s • (z - w)) p ^ u ≤ ‖z - w‖ ^ u * (c - s) ^ u := fun s hs hsne => by
-    have hb := hbnd s ⟨hs.1, hs.2.trans hc.2⟩ hsne
+  have hbl : ∀ᵐ s ∂volume.restrict (Ioc 0 c), ‖dist (w + s • (z - w)) p ^ u‖ ≤
+      ‖z - w‖ ^ u * (c - s) ^ u := by
+    filter_upwards [Measure.ae_ne (volume.restrict (Ioc 0 c)) c,
+      self_mem_ae_restrict measurableSet_Ioc] with s hsne hs
+    have hb := hbnd s ⟨hs.1.le, hs.2.trans hc.2⟩ hsne
+    rw [Real.norm_of_nonneg (hnn s)]
     rwa [abs_of_neg (sub_neg.mpr (lt_of_le_of_ne hs.2 hsne)), neg_sub] at hb
-  have hi1 := intervalIntegral.intervalIntegrable_of_le_mul_rpow_sub_left
-    (a := 0) (b := c) (K := ‖z - w‖ ^ u) hu hc.1 (fun s hs => hnn' s ⟨hs.1, hs.2.trans hc.2⟩)
-    (hmeasc.mono_measure (Measure.restrict_mono (Icc_subset_Icc le_rfl hc.2) le_rfl)) hbl
-  have hb1 := intervalIntegral.integral_le_of_le_mul_rpow_sub_left
-    (a := 0) (b := c) (K := ‖z - w‖ ^ u) hu hc.1 (fun s hs => hnn' s ⟨hs.1, hs.2.trans hc.2⟩)
-    (hmeasc.mono_measure (Measure.restrict_mono (Icc_subset_Icc le_rfl hc.2) le_rfl)) hbl
+  have hi1 := intervalIntegral.intervalIntegrable_of_norm_le_mul_rpow_sub_left
+    (f := fun s : ℝ => dist (w + s • (z - w)) p ^ u) (a := 0) (b := c) (K := ‖z - w‖ ^ u) hu
+    hc.1 hmeas.restrict hbl
+  have hb1 := (Real.le_norm_self _).trans
+    (intervalIntegral.norm_integral_le_of_norm_le_mul_rpow_sub_left
+      (f := fun s : ℝ => dist (w + s • (z - w)) p ^ u) (a := 0) (b := c) (K := ‖z - w‖ ^ u) hu
+      hc.1 hbl)
   rw [sub_zero] at hb1
   have hsplit : (∫ s in (0 : ℝ)..1, dist (w + s • (z - w)) p ^ u)
       = (∫ s in (0 : ℝ)..c, dist (w + s • (z - w)) p ^ u)
