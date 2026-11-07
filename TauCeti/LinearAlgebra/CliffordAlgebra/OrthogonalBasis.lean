@@ -236,6 +236,22 @@ theorem basis_insert_of_forall_lt (hb : (QuadraticMap.associated Q).IsOrthoᵢ b
     Finset.sort_insert _ (fun x hx ↦ (ha x hx).le) fun h ↦ lt_irrefl a (ha a h)]
   simp
 
+/-- **A generator below every index times a basis vector**, for an orthogonal basis: if `a` is
+smaller than every index of `s`, then `ι Q (b a) * e_s` is the basis vector of `insert a s`, which
+is the case `k = 0` and `a ∉ s` of `CliffordAlgebra.ι_mul_basis`. -/
+theorem ι_mul_basis_of_forall_lt (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) {a : I}
+    {s : Finset I} (hat : ∀ x ∈ s, a < x) :
+    ι Q (b a) * basis Q b s =
+      ((-1 : R) ^ (s.filter (· < a)).card * if a ∈ s then Q (b a) else 1) •
+        basis Q b (s ∆ {a}) := by
+  have ha : a ∉ s := fun h ↦ lt_irrefl a (hat a h)
+  have hsd : s ∆ {a} = insert a s := by
+    ext x; simp only [Finset.mem_symmDiff, Finset.mem_insert, Finset.mem_singleton]; grind
+  have hf : s.filter (· < a) = ∅ :=
+    Finset.filter_eq_empty_iff.mpr fun x hx ↦ not_lt.mpr (hat x hx).le
+  rw [hsd, hf, ite_eq_right ha, basis_insert_of_forall_lt hb hat]
+  simp
+
 /-- **A generator times a basis vector**, for an orthogonal basis: `ι Q (b a) * e_t` is the basis
 vector of `t ∆ {a}`, with the sign `(-1) ^ k` for the number `k` of indices of `t` below `a`, and
 the scalar `Q (b a)` when `a ∈ t`, since the generator then meets itself. -/
@@ -252,17 +268,12 @@ theorem ι_mul_basis (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (a : I) (t 
     rw [basis_insert_of_forall_lt hb hc]
     rcases lt_trichotomy a c with h | rfl | h
     · -- `a` lies below every index, so its generator is adjoined in front.
-      have hat : ∀ x ∈ insert c t, a < x := by
-        simp only [Finset.mem_insert, forall_eq_or_imp]
-        exact ⟨h, fun x hx ↦ h.trans (hc x hx)⟩
-      have ha : a ∉ insert c t := fun h ↦ lt_irrefl a (hat a h)
-      have hsd : insert c t ∆ {a} = insert a (insert c t) := by
-        ext x; simp only [Finset.mem_symmDiff, Finset.mem_insert, Finset.mem_singleton]; grind
-      have hf : (insert c t).filter (· < a) = ∅ :=
-        Finset.filter_eq_empty_iff.mpr fun x hx ↦ not_lt.mpr (hat x hx).le
-      rw [← basis_insert_of_forall_lt hb hc, ← basis_insert_of_forall_lt hb hat, hsd, hf,
-        ite_eq_right ha]
-      simp
+      rw [← basis_insert_of_forall_lt hb hc]
+      exact ι_mul_basis_of_forall_lt hb fun x hx ↦ by
+        simp only [Finset.mem_insert] at hx
+        rcases hx with rfl | hx
+        · exact h
+        · exact h.trans (hc x hx)
     · -- `a` is the least index, and its generator squares to the scalar `Q (b a)`.
       have hsd : insert a t ∆ {a} = t := by
         ext x; simp only [Finset.mem_symmDiff, Finset.mem_insert, Finset.mem_singleton]; grind
