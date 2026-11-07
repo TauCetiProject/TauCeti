@@ -20,7 +20,7 @@ over the tuples satisfying `Φ`, of the fibres of the family over those tuples.
   `{x | Φ (g · x)} = ⋃ ε ∈ {ε | Φ ε}, ⋂ i, {x | g i x = ε i}`.
 * `TauCeti.exists_notMem_succ_of_notMem_iInter`: a point outside the intersection of a decreasing
   sequence of sets lies outside `K (k + 1)` for some `k`.
-* `TauCeti.exists_map_eq_of_notMem`: the pointwise limit of maps which eventually stabilize outside
+* `TauCeti.exists_map_eq_of_notMem`: a map taking the eventual value of maps which stabilize outside
   a decreasing sequence of sets, with a prescribed value on the intersection.
 -/
 
