@@ -165,6 +165,15 @@ theorem fractionValuation_algebraMap (a : NovikovSeries R H N) :
       periodValuation N a :=
   Valuation.extendToLocalization_apply_map_apply _ _ _ _
 
+/-- The value of a localized fraction is the numerator value times the inverse
+of the denominator value. -/
+@[simp]
+theorem fractionValuation_mk' (a : NovikovSeries R H N)
+    (s : nonZeroDivisors (NovikovSeries R H N)) :
+    fractionValuation R N F (IsLocalization.mk' F a s) =
+      periodValuation N a * (periodValuation N (s : NovikovSeries R H N))⁻¹ :=
+  Valuation.extendToLocalization_mk' _ _ _ _ _
+
 end Fractions
 
 section Field
