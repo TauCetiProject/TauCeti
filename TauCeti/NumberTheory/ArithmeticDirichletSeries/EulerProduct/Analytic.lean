@@ -213,6 +213,35 @@ theorem idealTerm_primeIdealPow_eq_mul_cpow_neg (f : IdealArithmeticFunction K)
     ← Complex.natCast_cpow_natCast_mul, Complex.cpow_nat_mul, Complex.cpow_neg]
   ring
 
+/-- Absolute convergence of the Dirichlet series of the local arithmetic factor at `P` at `s`
+makes the series over the prime powers of `P` summable. -/
+theorem summable_idealTerm_primeIdealPow (f : IdealArithmeticFunction K)
+    (P : HeightOneSpectrum (𝓞 K)) {s : ℂ}
+    (hs : LSeries.abscissaOfAbsConv (localArithmeticFactor f P) < s.re) :
+    Summable fun e : ℕ ↦ idealTerm K f s (P.primeIdealPow e) := by
+  have hsum := LSeriesSummable_of_abscissaOfAbsConv_lt_re hs
+  rw [LSeriesSummable] at hsum
+  have hsum' := hsum.comp_injective <|
+    Nat.pow_right_injective (NumberField.HeightOneSpectrum.one_lt_absNorm P)
+  refine hsum'.congr fun e ↦ ?_
+  simp only [Function.comp_apply]
+  rw [LSeries.term_of_ne_zero (pow_ne_zero e <| Nat.ne_of_gt <|
+      (Nat.zero_lt_one.trans <| NumberField.HeightOneSpectrum.one_lt_absNorm P)),
+    localArithmeticFactor_apply_pow, idealTerm_def, P.absNorm_primeIdealPow]
+
+/-- Multiplying a weighted prime-power term by `log N(P)` gives the term of the logarithmic
+derivative series at `P ^ n`. -/
+theorem log_absNorm_mul_natCast_mul_pow_eq (f : IdealArithmeticFunction K)
+    (P : HeightOneSpectrum (𝓞 K)) (s : ℂ) (n : ℕ) :
+    Complex.log (Ideal.absNorm P.asIdeal : ℂ) *
+        ((n : ℂ) * f (P.primeIdealPow n) * ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) ^ n) =
+      Complex.log (Ideal.absNorm (P.primeIdealPow n : Ideal (𝓞 K)) : ℂ) *
+        idealTerm K f s (P.primeIdealPow n) := by
+  rw [idealTerm_primeIdealPow_eq_mul_cpow_neg]
+  rw [P.absNorm_primeIdealPow, ← Complex.natCast_log, ← Complex.natCast_log]
+  push_cast [Real.log_pow]
+  ring
+
 /-- **The prime terms are a subseries of the ideal terms.** Each height-one prime contributes its
 own ideal as the `e = 1` member of its power series, and distinct primes give distinct ideals, so
 absolute convergence over ideals restricts to the primes. Multiplicativity plays no part. -/

@@ -80,55 +80,6 @@ theorem eulerFactor_ne_zero_of_localPowerSeries_ne_zero (D : EulerProductData K)
     D.eulerFactor P s ≠ 0 := by
   simpa only [D.coeff_localPowerSeries, D.localPowerSeries_eval_eq_eulerFactor] using hne
 
-/-- Absolute convergence of the Dirichlet series of an Euler product datum at `s` makes the
-series over the prime powers of `P` summable. -/
-theorem summable_idealTerm_primeIdealPow (D : EulerProductData K)
-    (P : HeightOneSpectrum (𝓞 K)) {s : ℂ}
-    (hs : LSeries.abscissaOfAbsConv (D.localArithmeticFactor P) < s.re) :
-    Summable fun e : ℕ ↦ idealTerm K D.toIdealArithmeticFunction s (P.primeIdealPow e) := by
-  have hsum := LSeriesSummable_of_abscissaOfAbsConv_lt_re hs
-  rw [LSeriesSummable] at hsum
-  have hsum' := hsum.comp_injective <|
-    Nat.pow_right_injective (NumberField.HeightOneSpectrum.one_lt_absNorm P)
-  refine hsum'.congr fun e ↦ ?_
-  simp only [Function.comp_apply]
-  rw [LSeries.term_of_ne_zero (pow_ne_zero e <| Nat.ne_of_gt <|
-      (Nat.zero_lt_one.trans <| NumberField.HeightOneSpectrum.one_lt_absNorm P)),
-    D.localArithmeticFactor_apply_pow, idealTerm_def, P.absNorm_primeIdealPow]
-
-/-- The Cauchy-product terms of the local logarithmic-derivative series against the local Euler
-factor collapse to `n * D(P ^ n) * x ^ n`. -/
-theorem sum_antidiagonal_mul_pow_localLogDerivSeries (D : EulerProductData K)
-    (P : HeightOneSpectrum (𝓞 K)) (x : ℂ) (n : ℕ) :
-    ∑ ij ∈ Finset.antidiagonal n,
-        (PowerSeries.coeff ij.1 (D.localLogDerivSeries P) * x ^ ij.1) *
-          (D (P.primeIdealPow ij.2) * x ^ ij.2) =
-      (n : ℂ) * D (P.primeIdealPow n) * x ^ n := by
-  calc
-    _ = (∑ ij ∈ Finset.antidiagonal n,
-        PowerSeries.coeff ij.1 (D.localLogDerivSeries P) * D (P.primeIdealPow ij.2)) * x ^ n := by
-      rw [Finset.sum_mul]
-      apply Finset.sum_congr rfl
-      intro ij hij
-      rw [Finset.mem_antidiagonal] at hij
-      rw [← hij, pow_add]
-      ring
-    _ = (n : ℂ) * D (P.primeIdealPow n) * x ^ n := by
-      rw [D.sum_antidiagonal_coeff_localLogDerivSeries_eq P n]
-
-/-- Multiplying a weighted prime-power term by `log N(P)` gives the term of the logarithmic
-derivative series at `P ^ n`. -/
-theorem log_absNorm_mul_natCast_mul_pow_eq (D : EulerProductData K)
-    (P : HeightOneSpectrum (𝓞 K)) (s : ℂ) (n : ℕ) :
-    Complex.log (Ideal.absNorm P.asIdeal : ℂ) *
-        ((n : ℂ) * D (P.primeIdealPow n) * ((Ideal.absNorm P.asIdeal : ℂ) ^ (-s)) ^ n) =
-      Complex.log (Ideal.absNorm (P.primeIdealPow n : Ideal (𝓞 K)) : ℂ) *
-        idealTerm K D.toIdealArithmeticFunction s (P.primeIdealPow n) := by
-  rw [idealTerm_primeIdealPow_eq_mul_cpow_neg]
-  rw [P.absNorm_primeIdealPow, ← Complex.natCast_log, ← Complex.natCast_log]
-  push_cast [Real.log_pow]
-  ring
-
 /-- **Evaluation of a local formal logarithmic derivative.** If the coefficient series of
 `X F_P'(X) / F_P(X)` converges at `X = N(P) ^ (-s)` and the local Euler factor does not vanish at
 `s`, then the analytic logarithmic derivative is `-log N(P)` times that sum.
@@ -149,7 +100,8 @@ theorem logDeriv_eulerFactor_eq_neg_log_mul_tsum_coeff_localLogDerivSeries
   let x : ℂ := (Ideal.absNorm P.asIdeal : ℂ) ^ (-s)
   let b : ℕ → ℂ := fun e ↦ PowerSeries.coeff e (D.localLogDerivSeries P)
   let a : ℕ → ℂ := fun e ↦ D (P.primeIdealPow e)
-  have hlocal := D.summable_idealTerm_primeIdealPow P hs
+  have hlocal := summable_idealTerm_primeIdealPow D.toIdealArithmeticFunction P
+    (by rwa [← D.localArithmeticFactor_eq])
   have ha : Summable fun e : ℕ ↦ a e * x ^ e :=
     hlocal.congr fun e ↦
       idealTerm_primeIdealPow_eq_mul_cpow_neg D.toIdealArithmeticFunction P s e
@@ -178,7 +130,7 @@ theorem logDeriv_eulerFactor_eq_neg_log_mul_tsum_coeff_localLogDerivSeries
       Complex.log (Ideal.absNorm P.asIdeal : ℂ) * ((n : ℂ) * a n * x ^ n) =
         Complex.log (Ideal.absNorm (P.primeIdealPow n : Ideal (𝓞 K)) : ℂ) *
           idealTerm K D.toIdealArithmeticFunction s (P.primeIdealPow n) :=
-    D.log_absNorm_mul_natCast_mul_pow_eq P s n
+    log_absNorm_mul_natCast_mul_pow_eq D.toIdealArithmeticFunction P s n
   have hlog_tsum :
       Complex.log (Ideal.absNorm P.asIdeal : ℂ) *
           (∑' n : ℕ, (n : ℂ) * a n * x ^ n) =
