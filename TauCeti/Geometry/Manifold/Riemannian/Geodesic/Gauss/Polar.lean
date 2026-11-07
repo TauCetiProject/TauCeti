@@ -85,11 +85,7 @@ theorem abs_inner_div_sqrt_inner_add_le_norm_mfderiv_riemannianExp {p : M}
     {v w : TangentSpace I p} {δ : ℝ} (hδ : 0 ≤ δ) (hv : v ∈ expDomain I M p) :
     |inner ℝ v w| / Real.sqrt (inner ℝ v v + δ) ≤
       ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v w‖ := by
-  have hnn : 0 ≤ inner ℝ v v + δ := add_nonneg real_inner_self_nonneg hδ
-  rcases hnn.eq_or_lt with h0 | hpos
-  · rw [← h0, Real.sqrt_zero, div_zero]
-    exact norm_nonneg _
-  apply (div_le_iff₀ (Real.sqrt_pos.mpr hpos)).2
+  apply div_le_of_le_mul₀ (Real.sqrt_nonneg _) (norm_nonneg _)
   have hpolar := abs_inner_le_norm_mul_norm_mfderiv_riemannianExp (I := I) (M := M) (w := w) hv
   calc
     |inner ℝ v w| ≤
