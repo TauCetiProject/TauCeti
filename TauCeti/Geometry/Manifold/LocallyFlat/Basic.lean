@@ -1016,15 +1016,11 @@ section ProductNeighborhood
 
 variable {G : Type*} [SeminormedAddCommGroup G] [NormedSpace ℝ G]
 
-/-- A slice chart whose target is a box `u ×ˢ ball 0 r` exhibits its source as a product of the
-part of the domain lying under it with the complementary model, the map being the zero slice.
-This is the geometric content of the local product statement; the general case reduces to it by
-shrinking the chart. -/
-private theorem exists_isOpenEmbedding_prod_of_target_eq_prod {ψ : OpenPartialHomeomorph M (F × G)}
-    {u : Set F} {r : ℝ} (hu : IsOpen u) (hr : 0 < r) (hψt : ψ.target = u ×ˢ ball (0 : G) r)
-    (hψ : IsSliceChart ψ ((univ : Set F) ×ˢ ({0} : Set G)) (range f)) (hf : IsEmbedding f) :
-    ∃ b : (f ⁻¹' ψ.source) × G → M,
-      IsOpenEmbedding b ∧ ∀ y : (f ⁻¹' ψ.source), b (y, 0) = f y := by
+/-- A slice chart whose target is a box `u ×ˢ ball 0 r` gives an open embedding of `u × G` into the
+ambient space, restricting to the chart inverse on the zero slice. -/
+private theorem exists_isOpenEmbedding_prod_symm_zero {ψ : OpenPartialHomeomorph M (F × G)}
+    {u : Set F} {r : ℝ} (hu : IsOpen u) (hr : 0 < r) (hψt : ψ.target = u ×ˢ ball (0 : G) r) :
+    ∃ σ : u × G → M, IsOpenEmbedding σ ∧ ∀ v : u, σ (v, 0) = ψ.symm ((v : F), (0 : G)) := by
   -- Read the normal factor of the box as the whole complementary model.
   set ρ := OpenPartialHomeomorph.univBall (0 : G) r with hρ
   have hρs : ρ.source = univ := OpenPartialHomeomorph.univBall_source _ _
@@ -1038,34 +1034,53 @@ private theorem exists_isOpenEmbedding_prod_of_target_eq_prod {ψ : OpenPartialH
     hu.isOpenEmbedding_subtypeVal.prodMap (ρ.isOpenEmbedding hρs)
   have hjr : range j = ψ.target := by
     rw [hj, range_prodMap, Subtype.range_coe, hρr, hψt]
-  set σ : u × G → M := ψ.symm ∘ j with hσ
-  have hσe : IsOpenEmbedding σ := ψ.symm.isOpenEmbedding_comp hje hjr.subset
+  exact ⟨ψ.symm ∘ j, ψ.symm.isOpenEmbedding_comp hje hjr.subset, fun v => by
+    simp [hj, hρ0]⟩
+
+omit [NormedSpace ℝ G] in
+/-- The zero slice of a slice chart whose target is a box `u ×ˢ ball 0 r` has, as image of `u`
+under the chart inverse, the part of `A` lying in the chart source. -/
+private theorem range_symm_zero_eq_inter {ψ : OpenPartialHomeomorph M (F × G)} {A : Set M}
+    {u : Set F} {r : ℝ} (hr : 0 < r) (hψt : ψ.target = u ×ˢ ball (0 : G) r)
+    (hψ : IsSliceChart ψ ((univ : Set F) ×ˢ ({0} : Set G)) A) :
+    range (fun v : u => ψ.symm ((v : F), (0 : G))) = ψ.source ∩ A := by
+  ext m
+  constructor
+  · rintro ⟨v, rfl⟩
+    have hmem : ((v : F), (0 : G)) ∈ ψ.target := by
+      rw [hψt]; exact ⟨v.2, mem_ball_self hr⟩
+    have hs : ψ.symm ((v : F), (0 : G)) ∈ ψ.source := ψ.map_target hmem
+    exact ⟨hs, (hψ.mem_iff hs).2 (by rw [ψ.right_inv hmem]; exact ⟨mem_univ _, rfl⟩)⟩
+  · rintro ⟨hms, hmr⟩
+    have h2 : (ψ m).2 = 0 := ((hψ.mem_iff hms).1 hmr).2
+    have h1 : (ψ m).1 ∈ u := by
+      have hmt := ψ.map_source hms
+      rw [hψt] at hmt
+      exact hmt.1
+    refine ⟨⟨(ψ m).1, h1⟩, ?_⟩
+    have hpair : (((ψ m).1 : F), (0 : G)) = ψ m := by rw [← h2]
+    change ψ.symm (((ψ m).1 : F), (0 : G)) = m
+    rw [hpair]
+    exact ψ.left_inv hms
+
+/-- A slice chart whose target is a box `u ×ˢ ball 0 r` exhibits its source as a product of the
+part of the domain lying under it with the complementary model, the map being the zero slice.
+This is the geometric content of the local product statement; the general case reduces to it by
+shrinking the chart. -/
+private theorem exists_isOpenEmbedding_prod_of_target_eq_prod {ψ : OpenPartialHomeomorph M (F × G)}
+    {u : Set F} {r : ℝ} (hu : IsOpen u) (hr : 0 < r) (hψt : ψ.target = u ×ˢ ball (0 : G) r)
+    (hψ : IsSliceChart ψ ((univ : Set F) ×ˢ ({0} : Set G)) (range f)) (hf : IsEmbedding f) :
+    ∃ b : (f ⁻¹' ψ.source) × G → M,
+      IsOpenEmbedding b ∧ ∀ y : (f ⁻¹' ψ.source), b (y, 0) = f y := by
+  obtain ⟨σ, hσe, hσ0⟩ := exists_isOpenEmbedding_prod_symm_zero hu hr hψt
   -- The zero slice of `σ` and the restriction of `f` are two embeddings with the same image.
   set e₁ : (f ⁻¹' ψ.source) → M := f ∘ ((↑) : (f ⁻¹' ψ.source) → N) with he₁
   set e₂ : u → M := fun v => σ (v, 0) with he₂
-  have he₂' : ∀ v : u, e₂ v = ψ.symm ((v : F), (0 : G)) := fun v => by
-    simp [he₂, hσ, hj, hρ0]
   have hr₁ : range e₁ = ψ.source ∩ range f := by
     rw [he₁, range_comp, Subtype.range_coe, image_preimage_eq_inter_range]
   have hr₂ : range e₂ = ψ.source ∩ range f := by
-    ext m
-    constructor
-    · rintro ⟨v, rfl⟩
-      have hmem : ((v : F), (0 : G)) ∈ ψ.target := by
-        rw [hψt]; exact ⟨v.2, mem_ball_self hr⟩
-      have hs : ψ.symm ((v : F), (0 : G)) ∈ ψ.source := ψ.map_target hmem
-      rw [he₂' v]
-      exact ⟨hs, (hψ.mem_iff hs).2 (by rw [ψ.right_inv hmem]; exact ⟨mem_univ _, rfl⟩)⟩
-    · rintro ⟨hms, hmr⟩
-      have h2 : (ψ m).2 = 0 := ((hψ.mem_iff hms).1 hmr).2
-      have h1 : (ψ m).1 ∈ u := by
-        have hmt := ψ.map_source hms
-        rw [hψt] at hmt
-        exact hmt.1
-      refine ⟨⟨(ψ m).1, h1⟩, ?_⟩
-      have hpair : (((ψ m).1 : F), (0 : G)) = ψ m := by rw [← h2]
-      rw [he₂' ⟨(ψ m).1, h1⟩, hpair]
-      exact ψ.left_inv hms
+    rw [← range_symm_zero_eq_inter hr hψt hψ]
+    exact congrArg range (funext hσ0)
   -- Two embeddings with the same image have homeomorphic domains, over the ambient space.
   have hb₁ : IsEmbedding e₁ := hf.comp IsEmbedding.subtypeVal
   have hb₂ : IsEmbedding e₂ := hσe.isEmbedding.comp (isEmbedding_prodMkLeft 0)
