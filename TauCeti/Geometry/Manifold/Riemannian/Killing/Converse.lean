@@ -51,7 +51,7 @@ transverse velocity at `0` of the flowed curve `q ↦ flowOf X t (γ q)` is loca
 `t`, for any curve `γ` through `p` with velocity `u`. -/
 theorem eventually_norm_sq_curveVelocity_flowOf_eq
     (hX₁ : CMDiff 1 (T% X)) {p : M} {u : TangentSpace I p} {γ : ℝ → M}
-    (hγ : ContMDiffAt 𝓘(ℝ) I 2 γ 0) (hγ₀ : γ 0 = p) (hvel : curveVelocity I γ 0 = u)
+    (hγ : MDifferentiableAt 𝓘(ℝ) I γ 0) (hγ₀ : γ 0 = p) (hvel : curveVelocity I γ 0 = u)
     (hflow : ∀ᶠ t : ℝ in 𝓝 0, ‖mfderiv I I (flowOf X t) p u‖ = ‖u‖) :
     (fun t : ℝ ↦ ‖curveVelocity I (fun q ↦ flowOf X t (γ q)) 0‖ ^ 2) =ᶠ[𝓝 0]
       fun _ ↦ ‖u‖ ^ 2 := by
@@ -64,7 +64,7 @@ theorem eventually_norm_sq_curveVelocity_flowOf_eq
     contMDiffAt_const contMDiffAt_id htd
   have hmap := curveVelocityWithin_map (s := univ)
     (by simpa only [hγ₀] using hslice.mdifferentiableAt one_ne_zero)
-    uniqueDiffWithinAt_univ (hγ.mdifferentiableAt (by norm_num)).mdifferentiableWithinAt
+    uniqueDiffWithinAt_univ hγ.mdifferentiableWithinAt
   simp only [curveVelocityWithin_univ, Function.comp_def, id_eq, hvel] at hmap
   have hnorm : ‖curveVelocity I (fun q ↦ flowOf X t (γ q)) 0‖ =
         ‖mfderiv I I (flowOf X t) p u‖ := by
@@ -113,7 +113,8 @@ theorem inner_leviCivitaConnection_self_eq_zero_of_eventually_norm_mfderiv_flowO
   rw [hpull, hvel, hγ₀] at hd
   -- Norm preservation makes that scalar function locally constant, on the actual flow domain.
   have hconst : (fun t ↦ ‖U t‖ ^ 2) =ᶠ[𝓝 0] fun _ ↦ ‖u‖ ^ 2 :=
-    eventually_norm_sq_curveVelocity_flowOf_eq hX₁ hγ hγ₀ hvel hflow
+    eventually_norm_sq_curveVelocity_flowOf_eq hX₁ (hγ.mdifferentiableAt (by norm_num)) hγ₀ hvel
+      hflow
   have heq := hd.deriv.symm.trans hconst.deriv_eq
   have hF₀₀ : F 0 0 = p := (congrFun hF₀ 0).trans hγ₀
   rw [deriv_const, hF₀₀] at heq
