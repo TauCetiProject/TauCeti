@@ -75,17 +75,6 @@ private theorem abs_sum_ite_sub_sum_ite_le (T : Finset ι) (c : κ) (i : ι) (x 
     split_ifs <;> norm_num
   · rw [sum_eq_zero fun e he ↦ by simp [hxx' e (ne_of_mem_of_not_mem he hi)], abs_zero]
 
-open scoped Classical in
-/-- The variance proxy of the bounded differences of a color count is `#T / 4`. -/
-private theorem sum_toNNReal_ite_sq_div_four [Fintype ι] (T : Finset ι) :
-    (((∑ e, (if e ∈ T then (1 : ℝ) else 0).toNNReal ^ 2 / 4 : NNReal)) : ℝ) = #T / 4 := by
-  have h1 (e : ι) : (((if e ∈ T then (1 : ℝ) else 0).toNNReal : NNReal) : ℝ) ^ 2 =
-      if e ∈ T then 1 else 0 := by
-    split_ifs <;> simp
-  rw [NNReal.coe_sum]
-  simp only [NNReal.coe_div, NNReal.coe_pow, NNReal.coe_ofNat, h1]
-  rw [← sum_div, sum_ite_mem, univ_inter, sum_const, nsmul_one]
-
 /-- **Hoeffding's inequality for a color count.** Color the points of a finite type `ι`
 independently according to a `PMF` `q` on `κ`. The number of points of `T` with color `c`
 deviates from its mean `q c * #T` by at least `a ≥ 0` with probability at most
@@ -121,7 +110,13 @@ theorem measureReal_le_abs_card_filter_sub_le [Fintype ι] [MeasurableSpace κ]
         (measurePreserving_eval _ e).measure_preimage (measurableSet_singleton c).nullMeasurableSet,
         PMF.toMeasure_apply_singleton _ _ (measurableSet_singleton c)]]
     rw [sum_const, nsmul_eq_mul, mul_comm]
-  have hvar := sum_toNNReal_ite_sq_div_four T
+  have hvar : (((∑ e, (if e ∈ T then (1 : ℝ) else 0).toNNReal ^ 2 / 4 : NNReal)) : ℝ) = #T / 4 := by
+    rw [Probability.coe_sum_toNNReal_sq_div_four fun e ↦ by split_ifs <;> norm_num]
+    have h1 (e : ι) : ((if e ∈ T then (1 : ℝ) else 0) / 2) ^ 2 = if e ∈ T then 1 / 4 else 0 := by
+      split_ifs <;> norm_num
+    simp_rw [h1]
+    rw [sum_ite_mem, univ_inter, sum_const, nsmul_eq_mul]
+    ring
   have hexp : -a ^ 2 / (2 * (#T / 4 : ℝ)) = -2 * a ^ 2 / #T := by ring
   have h₁ := hsub.measure_ge_le ha
   have h₂ := hsub.neg.measure_ge_le ha
