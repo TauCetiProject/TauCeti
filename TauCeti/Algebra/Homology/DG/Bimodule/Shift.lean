@@ -232,32 +232,38 @@ instance (n : ℤ) : (shiftFunctor.{uR, uA, uB, uM} (hA := hA) (hB := hB) n).Add
 instance (n : ℤ) : (shiftFunctor.{uR, uA, uB, uM} (hA := hA) (hB := hB) n).Linear R where
   map_smul := by intros; ext x; rfl
 
--- Package the common comparison construction once; inverse compatibility follows by
--- injectivity, so callers only check the grading, differential and left action forwards.
+-- Lift the right-module comparison, checking only the additional left linearity.
+-- Its inverse left linearity follows by injectivity.
 private noncomputable def isoOfLinearEquiv
     (M N : DGBimoduleCat.{uR, uA, uB, uM} hA hB) (e : M ≃ₗ[Bᵐᵒᵖ] N)
     (hg : ∀ p x, e x ∈ N.grading p ↔ x ∈ M.grading p)
     (hd : ∀ x, N.differential (e x) = e (M.differential x))
-    (hl : ∀ (a : A) (x : M), e (a • x) = a • e x) : M ≅ N where
-  hom := ⟨{ toLinearMap := e.toLinearMap
-            map_mem' := fun hx ↦ (hg _ _).mpr hx
-            map_d' := hd }, by
-    rw [mem_dgBimoduleHomSubmodule]
-    exact hl⟩
-  inv := ⟨{ toLinearMap := e.symm.toLinearMap
-            map_mem' := fun hx ↦ (hg _ (e.symm _)).mp (by simpa using hx)
-            map_d' := fun x ↦ by
-              apply e.injective
-              simpa using (hd (e.symm x)).symm }, by
-    rw [mem_dgBimoduleHomSubmodule]
+    (hl : ∀ (a : A) (x : M), e (a • x) = a • e x) : M ≅ N := by
+  let i := DGRightModuleCat.isoMk (M := M.toDGRightModuleCat) (N := N.toDGRightModuleCat)
+    e (fun p x ↦ (hg p x).symm) hd
+  refine
+    { hom := ⟨i.hom, ?_⟩
+      inv := ⟨i.inv, ?_⟩
+      hom_inv_id := ?_
+      inv_hom_id := ?_ }
+  · rw [mem_dgBimoduleHomSubmodule]
     intro a x
-    -- The stored right-linear map hides e.symm from the equivalence cancellation lemmas;
-    -- expose its evaluation before applying injectivity.
-    change e.symm (a • x) = a • e.symm x
+    -- Normalize the unbundled-map coercion so the categorical evaluation lemma matches.
+    change i.hom (a • x) = a • i.hom x
+    simpa only [i, DGRightModuleCat.isoMk_hom_apply] using hl a x
+  · rw [mem_dgBimoduleHomSubmodule]
+    intro a x
+    -- Use the same categorical coercion for the inverse evaluation lemma.
+    change i.inv (a • x) = a • i.inv x
+    simp only [i, DGRightModuleCat.isoMk_inv_apply]
     apply e.injective
-    simp only [LinearEquiv.apply_symm_apply, hl]⟩
-  hom_inv_id := by ext x; rw [comp_apply, id_apply]; exact e.symm_apply_apply x
-  inv_hom_id := by ext x; rw [comp_apply, id_apply]; exact e.apply_symm_apply x
+    simp only [LinearEquiv.apply_symm_apply, hl]
+  · apply (forgetToRightModuleCat (hA := hA) (hB := hB)).map_injective
+    rw [Functor.map_comp, CategoryTheory.Functor.map_id]
+    exact i.hom_inv_id
+  · apply (forgetToRightModuleCat (hA := hA) (hB := hB)).map_injective
+    rw [Functor.map_comp, CategoryTheory.Functor.map_id]
+    exact i.inv_hom_id
 
 /-- The identity comparison from the zero shift to the original DG bimodule. -/
 noncomputable def shiftZeroIso (M : DGBimoduleCat.{uR, uA, uB, uM} hA hB) :
@@ -277,13 +283,15 @@ noncomputable def shiftZeroIso (M : DGBimoduleCat.{uR, uA, uB, uM} hA hB) :
 @[simp]
 theorem shiftZeroIso_hom_apply
     (M : DGBimoduleCat.{uR, uA, uB, uM} hA hB) (x : M.shift 0) :
-    (shiftZeroIso M).hom x = (x : M) := (rfl)
+    (shiftZeroIso M).hom x = (x : M) := by
+  exact DGRightModuleCat.isoMk_hom_apply _ _ _ x
 
 /-- The inverse zero-shift comparison is the identity on underlying elements. -/
 @[simp]
 theorem shiftZeroIso_inv_apply
     (M : DGBimoduleCat.{uR, uA, uB, uM} hA hB) (x : M) :
-    (shiftZeroIso M).inv x = (x : M.shift 0) := (rfl)
+    (shiftZeroIso M).inv x = (x : M.shift 0) := by
+  exact DGRightModuleCat.isoMk_inv_apply _ _ _ x
 
 /-- A shift by a sum identifies with successive cohomological shifts, including left signs. -/
 noncomputable def shiftAddIso (M : DGBimoduleCat.{uR, uA, uB, uM} hA hB) (m n : ℤ) :
@@ -307,12 +315,14 @@ noncomputable def shiftAddIso (M : DGBimoduleCat.{uR, uA, uB, uM} hA hB) (m n : 
 /-- The addition comparison leaves underlying elements unchanged. -/
 @[simp]
 theorem shiftAddIso_hom_apply (M : DGBimoduleCat.{uR, uA, uB, uM} hA hB) (m n : ℤ)
-    (x : M.shift (m + n)) : (shiftAddIso M m n).hom x = (x : (M.shift m).shift n) := (rfl)
+    (x : M.shift (m + n)) : (shiftAddIso M m n).hom x = (x : (M.shift m).shift n) := by
+  exact DGRightModuleCat.isoMk_hom_apply _ _ _ x
 
 /-- The inverse addition comparison leaves underlying elements unchanged. -/
 @[simp]
 theorem shiftAddIso_inv_apply (M : DGBimoduleCat.{uR, uA, uB, uM} hA hB) (m n : ℤ)
-    (x : (M.shift m).shift n) : (shiftAddIso M m n).inv x = (x : M.shift (m + n)) := (rfl)
+    (x : (M.shift m).shift n) : (shiftAddIso M m n).inv x = (x : M.shift (m + n)) := by
+  exact DGRightModuleCat.isoMk_inv_apply _ _ _ x
 
 /-- The zero-shift comparisons are natural in the DG bimodule. -/
 noncomputable def shiftFunctorZeroIso :
@@ -321,7 +331,10 @@ noncomputable def shiftFunctorZeroIso :
     intro M N f
     ext x
     simp only [comp_apply, Functor.id_map]
-    rfl)
+    -- Normalize functor-object coercions so the comparison evaluation lemmas match.
+    change (shiftZeroIso N).hom ((shiftFunctor 0).map f x) = f ((shiftZeroIso M).hom x)
+    rw [shiftZeroIso_hom_apply, shiftZeroIso_hom_apply]
+    exact shiftFunctor_map_apply 0 f x)
 
 /-- The addition comparisons are natural in the DG bimodule. -/
 noncomputable def shiftFunctorAddIso (m n : ℤ) :
@@ -331,7 +344,11 @@ noncomputable def shiftFunctorAddIso (m n : ℤ) :
     intro M N f
     ext x
     simp only [Functor.comp_map, comp_apply]
-    rfl)
+    -- As above, normalize the functor-object coercions before rewriting evaluations.
+    change (shiftAddIso N m n).hom ((shiftFunctor (m + n)).map f x) =
+      (shiftFunctor n).map ((shiftFunctor m).map f) ((shiftAddIso M m n).hom x)
+    rw [shiftAddIso_hom_apply, shiftAddIso_hom_apply]
+    rw [shiftFunctor_map_apply, shiftFunctor_map_apply, shiftFunctor_map_apply])
 
 /-- The natural zero comparison uses the elementwise zero-shift comparison. -/
 @[simp]
