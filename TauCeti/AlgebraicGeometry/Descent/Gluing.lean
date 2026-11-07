@@ -81,17 +81,9 @@ private instance (U : S.affineOpens) : IsOpenImmersion (pieceHom Y g U).hom.left
 private theorem range_pieceHom (U : S.affineOpens) :
     Set.range (pieceHom Y g U).hom.left = (X.hom ≫ p) ⁻¹' U.1 := by
   have : IsIso (g U).hom.left := (Over.forget S').map_isIso (g U).hom
-  rw [pieceHom_hom_left]
-  refine subset_antisymm ?_ fun x hx ↦ ?_
-  · rintro _ ⟨y, rfl⟩
-    have h : _ ∈ Set.range ((X.hom ≫ p) ⁻¹ᵁ U.1).ι := ⟨(g U).hom.left y, rfl⟩
-    rw [Scheme.Opens.range_ι] at h
-    rwa [Scheme.Hom.comp_apply]
-  · obtain ⟨y, rfl⟩ : x ∈ Set.range ((X.hom ≫ p) ⁻¹ᵁ U.1).ι := by
-      rw [Scheme.Opens.range_ι]
-      exact hx
-    obtain ⟨y', rfl⟩ := (g U).hom.left.surjective y
-    exact ⟨y', Scheme.Hom.comp_apply _ _ _⟩
+  rw [pieceHom_hom_left, ← Scheme.Hom.coe_opensRange, Scheme.Hom.opensRange_comp_of_isIso,
+    Scheme.Hom.coe_opensRange, Scheme.Opens.range_ι]
+  rfl
 
 include g in
 /-- Each piece lies over its affine open. -/
