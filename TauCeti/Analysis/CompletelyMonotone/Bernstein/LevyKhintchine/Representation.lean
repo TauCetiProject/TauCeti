@@ -185,32 +185,12 @@ private lemma integrable_integratedLaplaceKernel_zero_one
     rw [hG_factor]
     exact mul_nonneg (Real.exp_nonneg _) (hq_nonneg x)
   -- Monotone convergence passes from the positive shifts to the endpoint kernel.
-  have hG_mono : ∀ x, Monotone fun n => ENNReal.ofReal (G n x) := by
-    intro x n m hnm
-    apply ENNReal.ofReal_le_ofReal
-    rw [hG_factor, hG_factor]
-    exact mul_le_mul_of_nonneg_right
-      (Real.exp_le_exp.mpr <| neg_le_neg <| mul_le_mul_of_nonneg_right
-        (antitone_levyApproximationParameter hnm) x.coe_nonneg)
-      (hq_nonneg x)
-  have hG_tendsto_real : ∀ x, Tendsto (fun n => G n x) atTop (𝓝 (q x)) := by
-    intro x
-    have hexp : Tendsto
-        (fun n => Real.exp (-(levyApproximationParameter n * (x : ℝ)))) atTop (𝓝 1) := by
-      have harg : Tendsto (fun n => -(levyApproximationParameter n * (x : ℝ))) atTop (𝓝 0) := by
-        simpa [mul_comm] using
-          tendsto_levyApproximationParameter.const_mul (-(x : ℝ))
-      simpa only [Real.exp_zero] using harg.rexp
-    simpa only [one_mul] using (hexp.mul_const (q x)).congr'
-      (Eventually.of_forall fun n => hG_factor n x |>.symm)
-  have hG_tendsto : ∀ x,
-      Tendsto (fun n => ENNReal.ofReal (G n x)) atTop (𝓝 (ENNReal.ofReal (q x))) :=
-    fun x => ENNReal.tendsto_ofReal (hG_tendsto_real x)
-  have hlin_tendsto := lintegral_tendsto_of_tendsto_of_monotone
-    (μ := σ) (f := fun n x => ENNReal.ofReal (G n x))
-    (F := fun x => ENNReal.ofReal (q x))
-    (fun n => (hG_int n).aestronglyMeasurable.aemeasurable.ennreal_ofReal)
-    (ae_of_all _ hG_mono) (ae_of_all _ hG_tendsto)
+  have hlin_tendsto : Tendsto (fun n => ∫⁻ x, ENNReal.ofReal (G n x) ∂σ) atTop
+      (𝓝 (∫⁻ x, ENNReal.ofReal (q x) ∂σ)) := by
+    simp_rw [hG_factor]
+    exact tendsto_lintegral_ofReal_exp_mul antitone_levyApproximationParameter
+      tendsto_levyApproximationParameter hq_nonneg
+      (continuous_integratedLaplaceKernel 0 1).aemeasurable
   -- Continuity at zero identifies the limiting integral with `f 1 - f 0`.
   have hε_zero : Tendsto (fun n => f (levyApproximationParameter n)) atTop (𝓝 (f 0)) :=
     by simpa using tendsto_apply_levyApproximationParameter_add hf le_rfl
