@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.IsManifold.InteriorChart
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import TauCeti.Geometry.Manifold.Boundary.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 
 /-!
 # Immersions at interior points of manifolds with boundary
@@ -69,16 +70,6 @@ variable {𝕜 : Type*} [RCLike 𝕜]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {n : ℕ∞ω} {g : E → E'} {p : E}
 
-/-- A chart of the maximal atlas of a vector space, followed by a homeomorphism which is `C^n` with
-`C^n` inverse, is again a chart of the maximal atlas. -/
-private theorem transHomeomorph_mem_maximalAtlas {σ : OpenPartialHomeomorph E E}
-    (hσ : σ ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n E) {T : E ≃ₜ E} (hT : ContDiff 𝕜 n T)
-    (hT' : ContDiff 𝕜 n T.symm) :
-    σ.transHomeomorph T ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n E :=
-  (σ.transHomeomorph T).mem_maximalAtlas_of_contMDiffOn
-    (hT.contMDiff.comp_contMDiffOn (contMDiffOn_of_mem_maximalAtlas hσ))
-    ((contMDiffOn_symm_of_mem_maximalAtlas hσ).comp hT'.contMDiff.contMDiffOn fun _ hv ↦ hv)
-
 /-- **Recentring an immersion normal form between vector spaces.** If `g` has an immersion normal
 form at `p`, then for all nonzero `a` and `b` there are charts `σ` near `p` and `ρ` near `g p` of
 the maximal atlases, sending `p` to `a` and `g p` to `b`, in which `g` reads as `u ↦ L (u, 0)` for a
@@ -125,8 +116,13 @@ private theorem exists_affine_recentred_charts
     rw [hT₂symm]
     fun_prop
   refine ⟨σ₀.transHomeomorph T₁, ρ₀.transHomeomorph T₂, h.equiv.trans A,
-    transHomeomorph_mem_maximalAtlas h.domChart_mem_maximalAtlas hT₁ hT₁',
-    transHomeomorph_mem_maximalAtlas h.codChart_mem_maximalAtlas hT₂' hT₂'', hp, by simp [T₁],
+    by rw [OpenPartialHomeomorph.transHomeomorph_eq_trans]
+       exact TauCeti.trans_mem_maximalAtlas_of_contDiffAt h.domChart_mem_maximalAtlas
+         (fun _ _ ↦ hT₁.contDiffAt) (fun _ _ ↦ hT₁'.contDiffAt),
+    by rw [OpenPartialHomeomorph.transHomeomorph_eq_trans]
+       exact TauCeti.trans_mem_maximalAtlas_of_contDiffAt h.codChart_mem_maximalAtlas
+         (fun _ _ ↦ hT₂'.contDiffAt) (fun _ _ ↦ hT₂''.contDiffAt),
+    hp, by simp [T₁],
     h.source_subset_preimage_source hp, by simp [hT₂], fun u hu ↦ ?_⟩
   -- In the new charts, the normal form of `g` is recentred by linearity.
   have hu' : u + (σ₀ p - a) ∈ σ₀.target := by
@@ -184,20 +180,6 @@ variable {𝕜 : Type*} [RCLike 𝕜]
   [TopologicalSpace M] [ChartedSpace H M] [TopologicalSpace N] [ChartedSpace G N]
   {n : ℕ∞ω} {f : M → N} {x : M}
 
-/-- A partial diffeomorphism from `M` to the model vector space, followed by a chart `σ` of the
-maximal atlas of the vector space and read back through the interior chart of the model, is a chart
-of the maximal atlas of `M`. -/
-private theorem _root_.PartialDiffeomorph.trans_trans_interiorChart_symm_mem_maximalAtlas
-    [IsManifold I n M] (Φ : PartialDiffeomorph I 𝓘(𝕜, E) M E n) {σ : OpenPartialHomeomorph E E}
-    (hσ : σ ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n E) :
-    (Φ.toOpenPartialHomeomorph.trans σ).trans I.interiorChart.symm ∈
-      IsManifold.maximalAtlas I n M :=
-  OpenPartialHomeomorph.trans_interiorChart_symm_mem_maximalAtlas
-    ((contMDiffOn_of_mem_maximalAtlas hσ).comp (Φ.contMDiffOn_toFun.mono inter_subset_left)
-      fun _ hy ↦ hy.2)
-    (Φ.contMDiffOn_invFun.comp ((contMDiffOn_symm_of_mem_maximalAtlas hσ).mono inter_subset_left)
-      fun _ hu ↦ hu.2)
-
 /-- **Immersion normal forms at interior points.** Let `x` be an interior point of `M` which `f`
 maps to an interior point of `N`, and let `f` be continuous at `x`. An immersion normal form of `f`
 read in the preferred extended charts, a map between open subsets of the model vector spaces, is
@@ -239,8 +221,7 @@ theorem of_writtenInExtChartAt_of_isInteriorPoint [Nontrivial E] [IsManifold I n
   -- In the recentred charts, `f` reads as `g` read in `σ` and `ρ`.
   have he'f (u : E) : e' (f (e.symm u)) = ρ (g (σ.symm u)) := by
     simp only [e, e', OpenPartialHomeomorph.coe_trans, OpenPartialHomeomorph.coe_trans_symm,
-      Function.comp_apply, hΦsymm, hΨ]
-    rfl
+      Function.comp_apply, hΦsymm, hΨ, g, writtenInExtChartAt]
   have hex : e x = a := by
     simp only [e, OpenPartialHomeomorph.coe_trans, Function.comp_apply, hΦ, hσp, p]
   have he'x : e' (f x) = b := by
