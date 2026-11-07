@@ -31,9 +31,11 @@ A left inverse `S` of `T` modulo an error term gives the estimate
 (`ContinuousLinearMap.norm_le_opNorm_mul_norm_add_norm_comp_sub_one`).
 
 Finally, an operator bounded below is injective
-(`ContinuousLinearMap.injective_of_forall_norm_le`) and stays nonzero under a sufficiently small
-perturbation (`ContinuousLinearMap.apply_add_ne_zero_of_forall_norm_le`), and is invertible if it
-is also surjective
+(`ContinuousLinearMap.injective_of_forall_norm_le`), a semilinear operator with a lower bound
+`α ‖v‖ ≤ ‖B v‖`, `0 < α`, has trivial kernel (`ContinuousLinearMap.ker_eq_bot_of_mul_norm_le`),
+and an operator bounded below stays nonzero under a sufficiently small perturbation
+(`ContinuousLinearMap.apply_add_ne_zero_of_forall_norm_le`) and is invertible if it is also
+surjective
 (`ContinuousLinearMap.isInvertible_of_surjective_of_forall_norm_le`), with inverse bounded by the
 same constant (`ContinuousLinearMap.norm_inverse_apply_le_of_forall_norm_le`); an invertible
 operator `A` on a normed space cancels against its inverse
@@ -148,6 +150,18 @@ theorem norm_le_opNorm_mul_norm_add_norm_comp_sub_one (T : X →L[𝕜] Y) (S : 
   calc ‖x‖ = ‖S (T x) - (S.comp T - 1 : X →L[𝕜] X) x‖ := congrArg _ hx
     _ ≤ ‖S (T x)‖ + ‖(S.comp T - 1 : X →L[𝕜] X) x‖ := norm_sub_le _ _
     _ ≤ ‖S‖ * ‖T x‖ + ‖(S.comp T - 1 : X →L[𝕜] X) x‖ := by gcongr; exact S.le_opNorm _
+
+/-- A continuous semilinear map bounded below, `α ‖v‖ ≤ ‖B v‖` with `0 < α`, has trivial
+kernel. -/
+theorem ker_eq_bot_of_mul_norm_le {R R₂ E F : Type*} [Semiring R] [Semiring R₂] {σ : R →+* R₂}
+    [NormedAddCommGroup E] [SeminormedAddCommGroup F] [Module R E] [Module R₂ F] {B : E →SL[σ] F}
+    {α : ℝ} (hα : 0 < α) (hB : ∀ v, α * ‖v‖ ≤ ‖B v‖) :
+    LinearMap.ker (B : E →ₛₗ[σ] F) = ⊥ :=
+  LinearMap.ker_eq_bot'.2 fun v hv ↦ by
+    have h := hB v
+    rw [ContinuousLinearMap.coe_coe] at hv
+    rw [hv, norm_zero] at h
+    exact norm_eq_zero.1 (le_antisymm (by nlinarith [norm_nonneg v]) (norm_nonneg v))
 
 section Inverse
 
