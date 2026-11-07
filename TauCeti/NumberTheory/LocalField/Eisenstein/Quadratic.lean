@@ -65,9 +65,8 @@ theorem adjoin_eq_top_of_sq_add_mul_add_eq_zero (ht : t ∈ 𝓂[K]) (hc : Irred
   have : Module.Finite K L := finite_of_valuativeExtension K L
   have hint : IsIntegral 𝒪[K] ω := IsIntegral.of_finite 𝒪[K] ω
   -- The minimal polynomial of `ω` over `𝒪[K]` is the Eisenstein quadratic, up to a unit.
-  have hassoc := associated_minpoly_of_eisenstein_isRoot ω _
-    (isEisensteinAt_X_pow_add_C_mul_X_add_C_of_irreducible ht hc le_rfl)
-    (by simp [hω])
+  have hf := isEisensteinAt_X_pow_add_C_mul_X_add_C_of_irreducible ht hc le_rfl
+  have hassoc := hf.associated_minpoly (ξ := ω) hf.isUnit_leadingCoeff (by simp [hω])
   have hnat : (minpoly 𝒪[K] ω).natDegree = 2 := by
     rw [natDegree_eq_of_degree_eq (degree_eq_degree_of_associated hassoc),
       natDegree_X_pow_add_C_mul_X_add_C t c le_rfl]
