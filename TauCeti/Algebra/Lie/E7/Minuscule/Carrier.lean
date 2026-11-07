@@ -44,7 +44,8 @@ roadmap before milestone L0 of the CFSGStatement roadmap can use this carrier.
   a closed subgroup of the carrier.
 * `TauCeti.E7Minuscule.coe_rootSubgroupPoints_inl` and
   `TauCeti.E7Minuscule.coe_rootSubgroupPoints_inr`: the positive and negative simple-root
-  matrices in the minuscule basis.
+  matrices in the minuscule basis; `TauCeti.E7Minuscule.coe_rootSubgroupPoints_eq_one_add_smul`
+  is their uniform form over the signed simple-root indices `Fin 7 ⊕ Fin 7`.
 * `TauCeti.E7Minuscule.weightTorus_conj_rootSubgroup`: the scheme-level pinning equation.
 * `TauCeti.E7Minuscule.weightTorusPoints_conj_rootSubgroupPoints`: the same equation on
   matrix-valued points.
@@ -370,6 +371,19 @@ theorem coe_rootSubgroupPoints_inr (i : Fin 7) (A : Type v) [CommRing A]
       (nilpotencyClass_rep_rootGenerator_le_two (.inr i))
       (rep_serreRootGenerator_inr_latticeBasis_eq_sum i)
       ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm u))
+
+/-- A simple-root point has matrix `1 + u • Eᵢ` or `1 + u • Fᵢ` in the minuscule basis, according
+to the sign of its root: the uniform form of `coe_rootSubgroupPoints_inl` and
+`coe_rootSubgroupPoints_inr` over the signed simple-root indices. -/
+theorem coe_rootSubgroupPoints_eq_one_add_smul (k : Fin 7 ⊕ Fin 7) (A : Type v) [CommRing A]
+    (u : Multiplicative A) :
+    ((rootSubgroupPoints k A u : Matrix.GeneralLinearGroup (Fin 56) A) :
+        Matrix (Fin 56) (Fin 56) A) =
+      1 + Multiplicative.toAdd u •
+        (Sum.elim raisingMatrix loweringMatrix k).map (Int.cast : ℤ → A) := by
+  rcases k with i | i
+  · exact coe_rootSubgroupPoints_inl i A u
+  · exact coe_rootSubgroupPoints_inr i A u
 
 /-- The split weight torus inside the type-`E₇` minuscule carrier points. -/
 noncomputable def weightTorusPoints (A : Type v) [CommRing A] :
