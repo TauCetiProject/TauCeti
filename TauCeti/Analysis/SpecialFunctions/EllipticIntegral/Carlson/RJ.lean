@@ -317,27 +317,21 @@ theorem sub_mul_carlsonRD_self_left {x y : ℂ} (hx : x ∈ slitPlane) (hy : y �
     integral_sub hint_diag hint_rc, ← carlsonRF_self hx, carlsonRF_def, carlsonRC_eq_integral]
   ring
 
-/-- The antiderivative `t ↦ -2 (t + x)^(1/2) (t + y)⁻¹` of the integrand of `R_D(x, y, y)` is
-continuous at `0` from the right, even when `x = 0` (as `re (1/2) > 0`). -/
+/-- The function `t ↦ -2 (t + x)^(1/2) (t + y)⁻¹` is continuous at `0` from the right, even when
+`x = 0` (as `re (1/2) > 0`). -/
 private theorem continuousWithinAt_neg_two_cpow_half_mul_inv {x y : ℂ}
     (hx : x ∈ slitPlane ∪ {0}) (hy : y ∈ slitPlane) :
     ContinuousWithinAt
       (fun t : ℝ => -2 * ((t : ℂ) + x) ^ (1 / 2 : ℂ) * ((t : ℂ) + y)⁻¹) (Ici 0) 0 := by
-  have hx_re : 0 ≤ (((0 : ℝ) : ℂ) + x).re ∨ (((0 : ℝ) : ℂ) + x).im ≠ 0 := by
-    rw [ofReal_zero, zero_add]
-    rcases hx with hx | hx
-    · exact (mem_slitPlane_iff.mp hx).imp le_of_lt id
-    · rw [Set.mem_singleton_iff.mp hx]; exact Or.inl le_rfl
-  have hc1 : ContinuousAt (fun t : ℝ => ((t : ℂ) + x) ^ (1 / 2 : ℂ)) 0 :=
-    ContinuousAt.comp (f := fun t : ℝ => (t : ℂ) + x)
-      (continuousAt_cpow_const_of_re_pos (w := 1 / 2) hx_re (by norm_num))
-      (by fun_prop : Continuous fun t : ℝ => (t : ℂ) + x).continuousAt
   have hc2 : ContinuousAt (fun t : ℝ => ((t : ℂ) + y)⁻¹) 0 :=
     (by fun_prop : Continuous fun t : ℝ => (t : ℂ) + y).continuousAt.inv₀
       (by rw [ofReal_zero, zero_add]; exact slitPlane_ne_zero hy)
-  exact ((continuousAt_const.mul hc1).mul hc2).continuousWithinAt
+  exact (continuousWithinAt_const.mul
+    (TauCeti.continuousOn_ofReal_add_cpow_Ici_of_re_pos hx (by norm_num) 0 self_mem_Ici)).mul
+    hc2.continuousWithinAt
 
-/-- The derivative of `t ↦ -2 (t + x)^(1/2) (t + y)⁻¹` on `(0, ∞)`. -/
+/-- The derivative of `t ↦ -2 (t + x)^(1/2) (t + y)⁻¹` on `(0, ∞)`: it is an antiderivative of the
+`R_C(x, y)` integrand minus `2 (y - x)` times the `R_D(x, y, y)` integrand. -/
 private theorem hasDerivAt_neg_two_cpow_half_mul_inv {x y : ℂ}
     (hx : x ∈ slitPlane ∪ {0}) (hy : y ∈ slitPlane) :
     ∀ t ∈ Ioi (0 : ℝ), HasDerivAt (fun t : ℝ => -2 * ((t : ℂ) + x) ^ (1 / 2 : ℂ) * ((t : ℂ) + y)⁻¹)
@@ -372,7 +366,7 @@ private theorem hasDerivAt_neg_two_cpow_half_mul_inv {x y : ℂ}
   rw [hv2, htx_eq, mul_assoc u, hv]
   linear_combination (2 * u * v⁻¹) * hv_inv
 
-/-- The antiderivative `t ↦ -2 (t + x)^(1/2) (t + y)⁻¹` decays like `(1 + t)^(-1/2)` at `∞`. -/
+/-- The function `t ↦ -2 (t + x)^(1/2) (t + y)⁻¹` tends to `0` as `t → ∞`. -/
 private theorem tendsto_neg_two_cpow_half_mul_inv_atTop {x y : ℂ} (hy : y ∈ slitPlane) :
     Tendsto (fun t : ℝ => -2 * ((t : ℂ) + x) ^ (1 / 2 : ℂ) * ((t : ℂ) + y)⁻¹) atTop (𝓝 0) := by
   obtain ⟨Cy, hCy0, hCy⟩ := TauCeti.exists_norm_inv_ofReal_add_le hy
