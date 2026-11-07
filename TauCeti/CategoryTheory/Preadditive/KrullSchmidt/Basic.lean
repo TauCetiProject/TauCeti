@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Preadditive.Indecomposable
-public import Mathlib.CategoryTheory.Conj
+public import TauCeti.CategoryTheory.Preadditive.Endomorphism
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
 public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
+import Mathlib.CategoryTheory.Adjunction.Limits
 public import Mathlib.RingTheory.LocalRing.Basic
 
 /-!
@@ -20,9 +21,6 @@ to a finite biproduct of objects with local endomorphism rings.
 ## Main definitions
 
 * `TauCeti.IsKrullSchmidt`: Krull-Schmidt categories.
-* `CategoryTheory.Iso.endRingEquiv`: the ring isomorphism `End X ≃+* End Y` induced by `X ≅ Y`.
-* `CategoryTheory.Functor.mapEndRingHom`: the ring homomorphism `End X →+* End (F.obj X)` of an
-  additive functor.
 
 ## Main results
 
@@ -30,7 +28,7 @@ to a finite biproduct of objects with local endomorphism rings.
   complete.
 * `TauCeti.IsKrullSchmidt.indecomposable_iff_isLocalRing_end`: in a Krull-Schmidt category, an
   object is indecomposable exactly when its endomorphism ring is local.
-* `TauCeti.IsKrullSchmidt.of_equivalence`: the Krull-Schmidt property is invariant under
+* `CategoryTheory.Equivalence.isKrullSchmidt`: the Krull-Schmidt property is invariant under
   equivalence of categories.
 
 ## Implementation notes
@@ -161,11 +159,6 @@ variable [HasFiniteBiproducts C]
 
 attribute [local instance] hasBinaryBiproducts_of_finite_biproducts
 
-/-- A biproduct over an empty index type is zero. -/
-private theorem isZero_biproduct_of_isEmpty {ι : Type} [IsEmpty ι] (P : ι → C) :
-    IsZero (⨁ P) :=
-  (IsZero.iff_id_eq_zero _).2 (biproduct.hom_ext' _ _ fun i ↦ isEmptyElim i)
-
 /-- Every idempotent of a finite biproduct of objects with local endomorphism rings splits. -/
 private theorem splits_of_biproduct (n : ℕ) : ∀ {ι : Type} [Fintype ι]
     (P : ι → C), Fintype.card ι = n → (∀ i, IsLocalRing (End (P i))) →
@@ -175,7 +168,8 @@ private theorem splits_of_biproduct (n : ℕ) : ∀ {ι : Type} [Fintype ι]
   | zero =>
     intro ι _ P hn _ e _
     have : IsEmpty ι := Fintype.card_eq_zero_iff.1 hn
-    have hz : IsZero (⨁ P) := isZero_biproduct_of_isEmpty P
+    have hz : IsZero (⨁ P) :=
+      (IsZero.iff_id_eq_zero _).2 (biproduct.hom_ext' _ _ fun i ↦ isEmptyElim i)
     exact ⟨⨁ P, 𝟙 _, 𝟙 _, by simp, hz.eq_of_src _ _⟩
   | succ n ih =>
     intro ι _ P hn hP e he
@@ -223,25 +217,6 @@ instance isIdempotentComplete_of_isKrullSchmidt [IsKrullSchmidt C] : IsIdempoten
     refine ⟨Y, i ≫ φ.inv, φ.hom ≫ r, by simp [hir], ?_⟩
     simp [reassoc_of% hri]
 
-end TauCeti
-
-namespace CategoryTheory.Iso
-
-variable {C : Type*} [Category* C] [Preadditive C]
-
-/-- Isomorphic objects have isomorphic endomorphism rings: `Iso.conj` is additive. -/
-def endRingEquiv {X Y : C} (φ : X ≅ Y) : End X ≃+* End Y where
-  __ := φ.conj
-  map_add' f g := by ext; simp
-
-end CategoryTheory.Iso
-
-namespace TauCeti
-
-open CategoryTheory CategoryTheory.Limits
-
-variable {C : Type*} [Category* C] [Preadditive C] [HasFiniteBiproducts C]
-
 attribute [local instance] hasBinaryBiproducts_of_finite_biproducts
 
 /-- **In a Krull-Schmidt category, an object is indecomposable exactly when its endomorphism ring
@@ -269,35 +244,12 @@ theorem IsKrullSchmidt.indecomposable_iff_isLocalRing_end [IsKrullSchmidt C] (X 
   have : Nontrivial (End X) := ψ.endRingEquiv.toEquiv.nontrivial
   exact IsLocalRing.of_surjective' ψ.symm.endRingEquiv.toRingHom ψ.symm.endRingEquiv.surjective
 
-end TauCeti
-
-namespace CategoryTheory.Functor
-
-variable {C D : Type*} [Category* C] [Category* D] [Preadditive C] [Preadditive D]
-
-/-- An additive functor induces a ring homomorphism on endomorphism rings, refining
-`CategoryTheory.Functor.mapEnd`. -/
-def mapEndRingHom (F : C ⥤ D) [F.Additive] (X : C) : End X →+* End (F.obj X) where
-  __ := F.mapEnd X
-  map_zero' := by ext; simp [mapEnd]
-  map_add' f g := by ext; simp [mapEnd]
-
-/-- A full additive functor induces a surjection on endomorphism rings. -/
-theorem mapEndRingHom_surjective (F : C ⥤ D) [F.Additive] [F.Full] (X : C) :
-    Function.Surjective (F.mapEndRingHom X) := fun f ↦
-  ⟨End.of (F.preimage f.asHom), by ext; simp [mapEndRingHom, mapEnd]⟩
-
-end CategoryTheory.Functor
-
-namespace TauCeti
-
-open CategoryTheory CategoryTheory.Limits
-
 /-- **The Krull-Schmidt property is invariant under equivalence of categories.** -/
-theorem IsKrullSchmidt.of_equivalence {C D : Type*} [Category* C] [Category* D] [Preadditive C]
-    [Preadditive D] [HasFiniteBiproducts C] [HasFiniteBiproducts D] [IsKrullSchmidt C]
-    (e : C ≌ D) [e.functor.Additive] : IsKrullSchmidt D where
+theorem _root_.CategoryTheory.Equivalence.isKrullSchmidt {C D : Type*} [Category* C]
+    [Category* D] [Preadditive C] [Preadditive D] [HasFiniteBiproducts C] [HasFiniteBiproducts D]
+    [IsKrullSchmidt C] (e : C ≌ D) : IsKrullSchmidt D where
   exists_iso_biproduct Y := by
+    have : e.functor.Additive := Functor.additive_of_preserves_binary_products e.functor
     obtain ⟨n, P, hP, ⟨φ⟩⟩ := IsKrullSchmidt.exists_iso_biproduct (e.inverse.obj Y)
     refine ⟨n, fun i ↦ e.functor.obj (P i), fun i ↦ ?_,
       ⟨(e.counitIso.app Y).symm ≪≫ e.functor.mapIso φ ≪≫ e.functor.mapBiproduct P⟩⟩
