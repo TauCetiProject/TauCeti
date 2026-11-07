@@ -23,9 +23,31 @@ homomorphism to counit-valued derivations gives the differentiated action of an 
 
 public section
 
-namespace TauCeti.Comodule
-
 open WithConv TensorProduct
+
+namespace LinearMap
+
+variable {R C : Type*} [CommSemiring R]
+  [AddCommMonoid C] [Module R C] [Coalgebra R C]
+
+/-- The unit of the convolution dual is the coalgebra counit. -/
+@[simp]
+theorem ofConv_one_eq_counit :
+    (1 : WithConv (Module.Dual R C)).ofConv = Coalgebra.counit := by
+  simp [convOne_def]
+
+/-- Multiplication in the convolution dual is successive contraction of comultiplication. -/
+theorem convMul_eq_comp_tensorComponent (f g : WithConv (Module.Dual R C)) :
+    (f * g).ofConv = f.ofConv ∘ₗ tensorComponent g.ofConv ∘ₗ Coalgebra.comul := by
+  have hp : f.ofConv ∘ₗ tensorComponent g.ofConv =
+      LinearMap.mul' R R ∘ₗ TensorProduct.map f.ofConv g.ofConv := by
+    ext c d
+    simp [mul_comm]
+  rw [← comp_assoc, hp, convMul_def, comp_assoc]
+
+end LinearMap
+
+namespace TauCeti.Comodule
 
 variable {R C M N : Type*} [CommSemiring R]
 variable [AddCommMonoid C] [Module R C] [Coalgebra R C]
@@ -51,19 +73,12 @@ noncomputable def convolutionAction : WithConv (C →ₗ[R] R) →ₐ[R] Module.
     simp [coactComponent_apply]
   map_one' := by
     ext m
-    have h : (1 : WithConv (C →ₗ[R] R)).ofConv = Coalgebra.counit := by
-      ext c
-      simp
-    rw [h, coactComponent_counit]
+    rw [LinearMap.ofConv_one_eq_counit, coactComponent_counit]
     rfl
   map_mul' f g := by
     ext m
     rw [_root_.mul_apply_eq_comp, coactComponent_coactComponent]
-    have hp : f.ofConv ∘ₗ LinearMap.tensorComponent g.ofConv =
-        LinearMap.mul' R R ∘ₗ TensorProduct.map f.ofConv g.ofConv := by
-      ext c d
-      simp [mul_comm]
-    rw [← LinearMap.comp_assoc, hp, LinearMap.convMul_def, LinearMap.comp_assoc]
+    rw [LinearMap.convMul_eq_comp_tensorComponent]
   commutes' r := by
     ext m
     have h : (algebraMap R (WithConv (C →ₗ[R] R)) r).ofConv =

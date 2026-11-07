@@ -6,20 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Coalgebra.Comodule.Convolution.Basic
-public import Mathlib.LinearAlgebra.FreeModule.Basic
+public import Mathlib.RingTheory.Finiteness.Projective
 import TauCeti.LinearAlgebra.TensorProduct.Basis
 import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
 # Reconstructing comodules from actions of a finite coalgebra's dual
 
-For a finite free coalgebra, every algebra action of the convolution dual comes from a
+For a finite projective coalgebra, every algebra action of the convolution dual comes from a
 unique right coaction. No finiteness condition is imposed on the module being acted on.
 This is the duality used to describe homogeneous polynomial representations as modules
 over Schur algebras, the duals of the homogeneous matrix-coordinate coalgebras.
 
 The reconstruction is characterized by contraction with every linear functional, so it
-is independent of the finite basis used to construct it.
+is independent of the finite dual family used to construct it.
 
 ## References
 
@@ -38,30 +38,33 @@ variable {R C M : Type*} [CommSemiring R]
   [AddCommMonoid C] [Module R C] [Coalgebra R C]
   [AddCommMonoid M] [Module R M]
 
-private def actionCoact {ι : Type*} [Fintype ι] (b : Module.Basis ι R C)
+private def actionCoact {ι : Type*} [Fintype ι]
+    (c : ι → C) (f : ι → Module.Dual R C)
     (ρ : WithConv (Module.Dual R C) →ₐ[R] Module.End R M) : M →ₗ[R] M ⊗[R] C :=
-  ∑ i, (TensorProduct.mk R M C).flip (b i) ∘ₗ ρ (toConv (b.coord i))
+  ∑ i, (TensorProduct.mk R M C).flip (c i) ∘ₗ ρ (toConv (f i))
 
 private theorem tensorComponent_actionCoact {ι : Type*} [Fintype ι]
-    (b : Module.Basis ι R C) (ρ : WithConv (Module.Dual R C) →ₐ[R] Module.End R M)
+    (c : ι → C) (f : ι → Module.Dual R C)
+    (hf : ∀ φ : Module.Dual R C, ∑ i, φ (c i) • f i = φ)
+    (ρ : WithConv (Module.Dual R C) →ₐ[R] Module.End R M)
     (φ : Module.Dual R C) (m : M) :
-    LinearMap.tensorComponent φ (actionCoact b ρ m) = ρ (toConv φ) m := by
+    LinearMap.tensorComponent φ (actionCoact c f ρ m) = ρ (toConv φ) m := by
   classical
-  have hφ : (∑ i, φ (b i) • toConv (b.coord i)) = toConv φ := by
-    apply WithConv.ofConv_injective
-    apply b.ext
-    intro j
-    simp
+  have hφ : (∑ i, φ (c i) • toConv (f i)) = toConv φ :=
+    WithConv.ofConv_injective (by simpa using hf φ)
   simp only [actionCoact, LinearMap.sum_apply, LinearMap.comp_apply,
     LinearMap.flip_apply, TensorProduct.mk_apply, map_sum, LinearMap.tensorComponent_tmul]
   rw [← hφ, map_sum]
   simp
 
-private theorem actionCoact_coassoc {ι : Type*} [Fintype ι]
-    (b : Module.Basis ι R C) (ρ : WithConv (Module.Dual R C) →ₐ[R] Module.End R M) :
-    (TensorProduct.assoc R M C C).toLinearMap ∘ₗ (actionCoact b ρ).rTensor C ∘ₗ
-        actionCoact b ρ = Coalgebra.comul.lTensor M ∘ₗ actionCoact b ρ := by
-  let := Module.Free.of_basis b
+variable [Module.Projective R C]
+
+private theorem actionCoact_coassoc
+    (ρ : WithConv (Module.Dual R C) →ₐ[R] Module.End R M)
+    (δ : M →ₗ[R] M ⊗[R] C)
+    (hδ : ∀ φ m, LinearMap.tensorComponent φ (δ m) = ρ (toConv φ) m) :
+    (TensorProduct.assoc R M C C).toLinearMap ∘ₗ δ.rTensor C ∘ₗ δ =
+      Coalgebra.comul.lTensor M ∘ₗ δ := by
   ext m
   apply (TensorProduct.assoc R M C C).symm.injective
   apply TensorProduct.tensor_eq_of_forall_tensorComponent_eq
@@ -71,44 +74,47 @@ private theorem actionCoact_coassoc {ι : Type*} [Fintype ι]
   simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply,
     LinearMap.tensorComponent_assoc_symm]
   -- The two contractions are the product of the two dual operators.
-  have hleft : LinearMap.tensorComponent ψ ((actionCoact b ρ).rTensor C
-      (actionCoact b ρ m)) = actionCoact b ρ (ρ (toConv ψ) m) := by
-    rw [LinearMap.rTensor_def, LinearMap.tensorComponent_map, LinearMap.comp_id,
-      tensorComponent_actionCoact]
-  rw [hleft, tensorComponent_actionCoact]
+  have hleft : LinearMap.tensorComponent ψ (δ.rTensor C (δ m)) = δ (ρ (toConv ψ) m) := by
+    rw [LinearMap.rTensor_def, LinearMap.tensorComponent_map, LinearMap.comp_id, hδ]
+  rw [hleft, hδ]
   have hright : LinearMap.tensorComponent φ
-      ((LinearMap.tensorComponent ψ).lTensor M
-        (Coalgebra.comul.lTensor M (actionCoact b ρ m))) =
-      LinearMap.tensorComponent ((toConv φ * toConv ψ).ofConv) (actionCoact b ρ m) := by
-    induction actionCoact b ρ m using TensorProduct.inductionOn with
-    | add x y hx hy => simp only [map_add, hx, hy]
-    | tmul x c =>
-      simp only [LinearMap.lTensor_tmul, LinearMap.convMul_def, LinearMap.comp_apply,
-        LinearMap.tensorComponent_def]
-      congr 1
-      induction Coalgebra.comul (R := R) c using TensorProduct.inductionOn with
-      | add a b ha hb => simp only [map_add, tmul_add, ha, hb]
-      | tmul a b => simp [mul_comm]
-  rw [hright, tensorComponent_actionCoact, map_mul]
-  rfl
+      ((LinearMap.tensorComponent ψ).lTensor M (Coalgebra.comul.lTensor M (δ m))) =
+      LinearMap.tensorComponent ((toConv φ * toConv ψ).ofConv) (δ m) := by
+    rw [← LinearMap.lTensor_comp_apply, LinearMap.lTensor_def,
+      LinearMap.tensorComponent_map, LinearMap.id_apply,
+      LinearMap.convMul_eq_comp_tensorComponent, ofConv_toConv, ofConv_toConv]
+  rw [hright, hδ, toConv_ofConv, map_mul, _root_.mul_apply_eq_comp]
 
-variable [Module.Free R C] [Module.Finite R C]
+variable [Module.Finite R C]
+
+private theorem exists_actionCoact
+    (ρ : WithConv (Module.Dual R C) →ₐ[R] Module.End R M) :
+    ∃ δ : M →ₗ[R] M ⊗[R] C,
+      ∀ φ m, LinearMap.tensorComponent φ (δ m) = ρ (toConv φ) m := by
+  obtain ⟨n, p, s, -, -, hps⟩ := Module.Finite.exists_comp_eq_id_of_projective R C
+  let b := Pi.basisFun R (Fin n)
+  have hf (φ : Module.Dual R C) :
+      ∑ i, φ (p (b i)) • (b.coord i ∘ₗ s) = φ := by
+    ext x
+    have hx : p (s x) = x := LinearMap.congr_fun hps x
+    have h := LinearMap.congr_fun (b.sum_dual_apply_smul_coord (φ ∘ₗ p)) (s x)
+    simpa [hx] using h
+  exact ⟨actionCoact (fun i => p (b i)) (fun i => b.coord i ∘ₗ s) ρ,
+    tensorComponent_actionCoact _ _ hf ρ⟩
 
 /-- Reconstruct a right coaction from an algebra action of the convolution dual of a
-finite free coalgebra. The acted-on module need not be finite or free. -/
+finite projective coalgebra. The acted-on module need not be finite or free. -/
 @[implicit_reducible]
 def ofConvolutionAction
     (ρ : WithConv (Module.Dual R C) →ₐ[R] Module.End R M) : Comodule R C M := by
-  letI := Fintype.ofFinite (Module.Free.ChooseBasisIndex R C)
-  let b := Module.Free.chooseBasis R C
-  refine ⟨actionCoact b ρ, actionCoact_coassoc b ρ, ?_⟩
+  let δ := (exists_actionCoact ρ).choose
+  have hδ := (exists_actionCoact ρ).choose_spec
+  refine ⟨δ, actionCoact_coassoc ρ δ hδ, ?_⟩
   ext m
   apply (TensorProduct.rid R M).injective
-  have h := tensorComponent_actionCoact b ρ (Coalgebra.counit (R := R) (A := C)) m
-  have h1 : toConv (Coalgebra.counit (R := R) (A := C)) =
-      (1 : WithConv (Module.Dual R C)) := by ext c; simp
-  rw [h1, map_one] at h
-  simpa [LinearMap.tensorComponent_def] using h
+  have h := hδ (Coalgebra.counit (R := R) (A := C)) m
+  rw [← LinearMap.ofConv_one_eq_counit, toConv_ofConv, map_one] at h
+  simpa [δ, LinearMap.tensorComponent_def] using h
 
 /-- Contracting the reconstructed coaction recovers the prescribed dual action. -/
 @[simp]
@@ -116,20 +122,23 @@ theorem tensorComponent_ofConvolutionAction
     (ρ : WithConv (Module.Dual R C) →ₐ[R] Module.End R M)
     (φ : Module.Dual R C) (m : M) :
     LinearMap.tensorComponent φ ((ofConvolutionAction ρ).coact m) = ρ (toConv φ) m := by
-  let := Fintype.ofFinite (Module.Free.ChooseBasisIndex R C)
-  exact tensorComponent_actionCoact (Module.Free.chooseBasis R C) ρ φ m
+  unfold ofConvolutionAction
+  exact (exists_actionCoact ρ).choose_spec φ m
 
-/-- In any finite basis of the coalgebra, reconstruction applies the dual coordinate
-operators and tensors their values with the basis vectors. -/
+/-- In any finite dual family of the coalgebra, reconstruction applies the dual operators
+and tensors their values with the corresponding vectors. For a finite basis `b`, take
+`c := b`, `f := b.coord` and `hf := b.sum_dual_apply_smul_coord`. -/
 theorem coact_ofConvolutionAction_eq_sum {ι : Type*} [Fintype ι]
-    (b : Module.Basis ι R C) (ρ : WithConv (Module.Dual R C) →ₐ[R] Module.End R M) (m : M) :
-    (ofConvolutionAction ρ).coact m = ∑ i, ρ (toConv (b.coord i)) m ⊗ₜ[R] b i := by
+    (c : ι → C) (f : ι → Module.Dual R C)
+    (hf : ∀ φ : Module.Dual R C, ∑ i, φ (c i) • f i = φ)
+    (ρ : WithConv (Module.Dual R C) →ₐ[R] Module.End R M) (m : M) :
+    (ofConvolutionAction ρ).coact m = ∑ i, ρ (toConv (f i)) m ⊗ₜ[R] c i := by
   apply TensorProduct.tensor_eq_of_forall_tensorComponent_eq
   intro φ
   rw [tensorComponent_ofConvolutionAction]
   simpa only [actionCoact, LinearMap.sum_apply, LinearMap.comp_apply,
     LinearMap.flip_apply, TensorProduct.mk_apply] using
-    (tensorComponent_actionCoact b ρ φ m).symm
+    (tensorComponent_actionCoact c f hf ρ φ m).symm
 
 /-- The convolution action of the reconstructed comodule is the original algebra action. -/
 @[simp]
@@ -151,7 +160,7 @@ theorem ofConvolutionAction_convolutionAction [σ : Comodule R C M] :
   rw [tensorComponent_ofConvolutionAction, convolutionAction_apply, ofConv_toConv]
 
 variable (R C M) in
-/-- Right coactions of a finite free coalgebra correspond bijectively to algebra actions of
+/-- Right coactions of a finite projective coalgebra correspond bijectively to algebra actions of
 its convolution dual. This includes arbitrary modules over the finite Schur algebras. -/
 def convolutionActionEquiv :
     Comodule R C M ≃ (WithConv (Module.Dual R C) →ₐ[R] Module.End R M) where
