@@ -51,33 +51,19 @@ theorem galoisLatticeProperty_iff (k : Type u) [Field k]
         ∀ x : M, IsOpen {sigma | M.ρ sigma x = x} :=
   Iff.rfl
 
-/-- A finitely generated free abelian group with open stabilizers gives an integral Galois
-lattice via its induced representation on the additive carrier. -/
-theorem galoisLatticeProperty_ofMulDistribMulAction (k : Type u) [Field k]
-    (G : Type u) [CommGroup G] [MulDistribMulAction (Field.absoluteGaloisGroup k) G]
-    [Module.Free ℤ (Additive G)] [Module.Finite ℤ (Additive G)]
-    (hopen : ∀ x : G,
-      IsOpen (MulAction.stabilizer (Field.absoluteGaloisGroup k) x :
-        Set (Field.absoluteGaloisGroup k))) :
-    galoisLatticeProperty k
-      (Rep.ofMulDistribMulAction (Field.absoluteGaloisGroup k) G) := by
-  rw [galoisLatticeProperty_iff]
-  let e : Rep.ofMulDistribMulAction (Field.absoluteGaloisGroup k) G ≃ₗ[ℤ] Additive G :=
-    Rep.toAdditive.toIntLinearEquiv
-  refine ⟨⟨Module.Free.of_equiv e.symm, Module.Finite.equiv e.symm⟩, ?_⟩
-  -- Expose Mathlib's bundled carrier so the representation evaluation lemma applies.
-  change ∀ x : Additive G, IsOpen {sigma |
-    (Rep.ofMulDistribMulAction (Field.absoluteGaloisGroup k) G).ρ sigma x = x}
-  intro x
-  have hstabilizer :
-      {sigma | (Rep.ofMulDistribMulAction (Field.absoluteGaloisGroup k) G).ρ sigma x = x} =
-        (MulAction.stabilizer (Field.absoluteGaloisGroup k) x.toMul : Set _) :=
-    Set.ext fun sigma ↦ by
-      simp only [Set.mem_ofPred_eq, SetLike.mem_coe, MulAction.mem_stabilizer_iff,
-        Rep.ofMulDistribMulAction_ρ_apply_apply]
-      exact Additive.ofMul.injective.eq_iff
-  rw [hstabilizer]
-  exact hopen x.toMul
+/-- The representation of the absolute Galois group induced on the additive carrier of a
+commutative group is an integral Galois lattice exactly when the group is finitely generated free
+abelian and each of its elements has an open stabilizer. -/
+theorem galoisLatticeProperty_ofMulDistribMulAction_iff (k : Type u) [Field k]
+    (G : Type u) [CommGroup G] [MulDistribMulAction (Field.absoluteGaloisGroup k) G] :
+    galoisLatticeProperty k (Rep.ofMulDistribMulAction (Field.absoluteGaloisGroup k) G) ↔
+      (Module.Free ℤ (Additive G) ∧ Module.Finite ℤ (Additive G)) ∧
+        ∀ x : G, IsOpen (MulAction.stabilizer (Field.absoluteGaloisGroup k) x :
+          Set (Field.absoluteGaloisGroup k)) := by
+  refine and_congr Iff.rfl ((Additive.toMul : Additive G ≃ G).forall_congr' fun x ↦ ?_)
+  convert Iff.rfl using 3
+  ext sigma
+  exact Additive.ofMul.injective.eq_iff.symm
 
 /-- Being a Galois lattice is invariant under equivariant integral-linear isomorphisms. -/
 instance (k : Type u) [Field k] :
