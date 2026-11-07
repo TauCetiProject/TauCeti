@@ -1103,7 +1103,8 @@ private theorem notMem_straightenRegion {n j k : ℕ} (hj : j < n) (hk : k < n) 
   · -- The piece lies in the window, entirely on one side of the arc being straightened.
     -- Distinct steps `j ≠ k < n` stay distinct modulo `n`, so the shifted parameter interval
     -- `[c, c + h]` and `[k h, k h + h]` overlap at most at an endpoint.
-    exact hφ.notMem_between_of_le_or_le hh hhδ hc_mem.1 hnear
+    exact hφ.notMem_between_of_le_or_le ⟨by linarith, by linarith⟩ ⟨by linarith, by linarith⟩
+      (by linarith) (Icc_subset_Icc hc_mem.1 (by linarith))
       (TauCeti.add_mul_add_h_le_or_le_of_ne hj hk hjk hh m) hx' ⟨h₁, h₂⟩
   · -- The piece is far from the arc being straightened.
     have hfar' : ∀ s ∈ Icc c (c + h), η ≤ ‖γ s - γ (k * h)‖ := fun s hs ↦ by
