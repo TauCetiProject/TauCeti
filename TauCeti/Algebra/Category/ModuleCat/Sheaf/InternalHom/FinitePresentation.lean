@@ -58,6 +58,102 @@ open _root_.SheafOfModules
 variable {X : TopCat.{u}} {R : Sheaf (Opens.grothendieckTopology X) CommRingCat.{u}}
   {M N : _root_.SheafOfModules.{u} (ringCatSheaf R)}
 
+/- The image of the `j`-th relation under restriction to `V`, read through the restricted
+generators, is the restriction of `∑ₖ aⱼₖ • eₖ`. -/
+private theorem map_free_relation_section {U V : Opens X} (f : V ⟶ U)
+    (P : (M.over U).Presentation) [Fintype P.generators.I]
+    (a : P.relations.I → P.generators.I →
+      ((ringCatSheaf R).over U).obj.obj (op (Over.mk (𝟙 U))))
+    (ha : ∀ j, (sectionsMap (kernel.ι P.generators.π) (P.relations.s j)).val
+        (op (Over.mk (𝟙 U))) = ∑ k, a j k • (freeSection k).eval (op (Over.mk (𝟙 U))))
+    (j : P.relations.I) :
+    (free P.generators.I).val.map (Over.homMk f : Over.mk f ⟶ Over.mk (𝟙 U)).op
+        (∑ k, a j k • (freeSection k).eval (op (Over.mk (𝟙 U)))) =
+      ((overMap (ringCatSheaf R) f).map ((freeHomEquiv _).symm P.relations.s ≫
+          kernel.ι P.generators.π)).val.app (op (Over.mk (𝟙 V)))
+        (((overMapUnitIso f).symm.hom ≫ (overMap (ringCatSheaf R) f).map (ιFree j)).val.app
+          (op (Over.mk (𝟙 V))) (1 : ((ringCatSheaf R).over V).obj.obj (op (Over.mk (𝟙 V))))) := by
+  let G := P.generators
+  let Y' : (Over U)ᵒᵖ := op (Over.mk f)
+  let i' : op (Over.mk (𝟙 U)) ⟶ Y' := (Over.homMk f : Over.mk f ⟶ Over.mk (𝟙 U)).op
+  let ρ : free P.relations.I ⟶ free G.I :=
+    (freeHomEquiv _).symm P.relations.s ≫ kernel.ι G.π
+  refine (congrArg ((free G.I).val.map i') (ha j)).symm.trans ?_
+  refine ((sectionsMap (kernel.ι G.π) (P.relations.s j)).property i').trans ?_
+  have : (free G.I).freeHomEquiv ρ j = sectionsMap (kernel.ι G.π) (P.relations.s j) :=
+    (freeHomEquiv_comp_apply _ (kernel.ι G.π) j).trans (congrArg (sectionsMap _)
+      (congrFun ((kernel G.π).freeHomEquiv.apply_symm_apply P.relations.s) j))
+  exact congrArg (fun s : (free G.I).sections ↦ s.eval Y') this.symm
+
+/- A morphism out of the restricted free sheaf that sends the restricted basis sections to sections
+satisfying the restricted relations kills the restricted relations. -/
+private theorem map_relations_comp_eq_zero {U V : Opens X} (f : V ⟶ U)
+    (P : (M.over U).Presentation) [Fintype P.generators.I]
+    (a : P.relations.I → P.generators.I →
+      ((ringCatSheaf R).over U).obj.obj (op (Over.mk (𝟙 U))))
+    (ha : ∀ j, (sectionsMap (kernel.ι P.generators.π) (P.relations.s j)).val
+        (op (Over.mk (𝟙 U))) = ∑ k, a j k • (freeSection k).eval (op (Over.mk (𝟙 U))))
+    (n : P.generators.I → N.val.obj (op V))
+    (hn : ∀ j, ∑ k, (ringCatSheaf R).obj.map f.op (a j k) • n k = 0)
+    (g' : (overMap (ringCatSheaf R) f).obj (free P.generators.I) ⟶ N.over V)
+    (hg'k : ∀ k, g'.val.app (op (Over.mk (𝟙 V)))
+      ((freeSection (R := (ringCatSheaf R).over U) k).eval (op (Over.mk f))) = n k) :
+    (overMap (ringCatSheaf R) f).map ((freeHomEquiv _).symm P.relations.s ≫
+      kernel.ι P.generators.π) ≫ g' = 0 := by
+  let F := overMap (ringCatSheaf R) f
+  let G := P.generators
+  let η : unit _ ≅ F.obj (unit _) := (overMapUnitIso f).symm
+  let ρ : free P.relations.I ⟶ free G.I :=
+    (freeHomEquiv _).symm P.relations.s ≫ kernel.ι G.π
+  let top : (Over V)ᵒᵖ := op (Over.mk (𝟙 V))
+  -- Rewriting with `comp_zero` here is very slow, so the zero morphisms are compared
+  -- through an explicit term.
+  refine (cancel_epi (mapFreeIso F P.relations.I η).hom).mp
+    ((?_ : (mapFreeIso F P.relations.I η).hom ≫ F.map ρ ≫ g' = 0).trans
+      (Limits.comp_zero (f := (mapFreeIso F P.relations.I η).hom)).symm)
+  apply (freeHomEquiv _).injective
+  funext j
+  have hιj := congrArg (fun φ : unit _ ⟶ F.obj (free P.relations.I) ↦ φ.val.app top
+      (1 : ((ringCatSheaf R).over V).obj.obj top))
+    (ιFree_mapFreeIso_hom F P.relations.I η j)
+  have htop : ((N.over V).freeHomEquiv
+      ((mapFreeIso F P.relations.I η).hom ≫ F.map ρ ≫ g') j).eval top = 0 := by
+    have e1 : ((N.over V).freeHomEquiv
+        ((mapFreeIso F P.relations.I η).hom ≫ F.map ρ ≫ g') j).eval top =
+        g'.val.app top ((F.map ρ).val.app top
+          ((mapFreeIso F P.relations.I η).hom.val.app top ((ιFree j).val.app top
+            (1 : ((ringCatSheaf R).over V).obj.obj top)))) :=
+      -- Evaluation of `freeHomEquiv` at `j` is evaluation of `ιFree j ≫ -` at `1`.
+      rfl
+    refine e1.trans
+      ((congrArg (fun y ↦ g'.val.app top ((F.map ρ).val.app top y)) hιj).trans ?_)
+    let Y' : (Over U)ᵒᵖ := op (Over.mk f)
+    let i' : op (Over.mk (𝟙 U)) ⟶ Y' := (Over.homMk f : Over.mk f ⟶ Over.mk (𝟙 U)).op
+    have e2 := map_free_relation_section f P a ha j
+    refine (congrArg (g'.val.app top) e2.symm).trans ?_
+    let r : G.I → ((ringCatSheaf R).over V).obj.obj top :=
+      fun k ↦ (ringCatSheaf R).obj.map f.op (a j k)
+    let e : G.I → (F.obj (free G.I)).val.obj top := fun k ↦ (freeSection k).eval Y'
+    have e3 (k : G.I) :
+        (free G.I).val.map i' (a j k • (freeSection k).eval (op (Over.mk (𝟙 U)))) =
+        ((ringCatSheaf R).over U).obj.map i' (a j k) •
+          (freeSection k).eval Y' :=
+      (PresheafOfModules.map_smul _ _ _ _).trans (congrArg _ ((freeSection k).property i'))
+    -- The restricted relation, read in the sections of `F (free I)` over `top`.
+    have hsum : (show (F.obj (free G.I)).val.obj top from (free G.I).val.map i'
+        (∑ k, a j k • (freeSection k).eval (op (Over.mk (𝟙 U))))) = ∑ k, r k • e k :=
+      (map_sum _ _ _).trans (Finset.sum_congr rfl fun k _ ↦ e3 k)
+    refine (congrArg (g'.val.app top) hsum).trans ?_
+    refine (map_sum _ _ _).trans ((Finset.sum_congr rfl fun k _ ↦ ?_).trans (hn j))
+    exact ((g'.val.app top).hom.map_smul (r k) (e k)).trans (congrArg (r k • ·) (hg'k k))
+  ext Y
+  let iY : top ⟶ Y := (Over.homMk Y.unop.hom : Y.unop ⟶ Over.mk (𝟙 V)).op
+  refine (((N.over V).freeHomEquiv
+      ((mapFreeIso F P.relations.I η).hom ≫ F.map ρ ≫ g') j).property iY).symm.trans ?_
+  refine (congrArg ((N.over V).val.map iY) htop).trans ?_
+  -- The value of the zero morphism on `1` is `0`.
+  exact (map_zero _).trans rfl
+
 /- Given a presentation of `M` on `U` whose relations have coefficients `a`, sections `n` of `N`
 over `V ⊆ U` satisfying the restricted relations are the images of the restricted generators
 under a morphism `M|_V ⟶ N|_V`. The morphism is obtained from the cokernel description of the
@@ -105,63 +201,7 @@ private theorem exists_hom_of_presentation {U V : Opens X} (f : V ⟶ U)
     exact (N.overSectionsEquiv_apply V _).symm.trans ((N.overSectionsEquiv V).apply_symm_apply _)
   -- `g'` kills the restricted relations: the `j`-th relation is sent to `∑ₖ aⱼₖ • n k`, which
   -- vanishes by `hn`. It suffices to check this over `top`.
-  have hg' : F.map ρ ≫ g' = 0 := by
-    -- Rewriting with `comp_zero` here is very slow, so the zero morphisms are compared
-    -- through an explicit term.
-    refine (cancel_epi (mapFreeIso F P.relations.I η).hom).mp
-      ((?_ : (mapFreeIso F P.relations.I η).hom ≫ F.map ρ ≫ g' = 0).trans
-        (Limits.comp_zero (f := (mapFreeIso F P.relations.I η).hom)).symm)
-    apply (freeHomEquiv _).injective
-    funext j
-    have hιj := congrArg (fun φ : unit _ ⟶ F.obj (free P.relations.I) ↦ φ.val.app top
-        (1 : ((ringCatSheaf R).over V).obj.obj top))
-      (ιFree_mapFreeIso_hom F P.relations.I η j)
-    have htop : ((N.over V).freeHomEquiv
-        ((mapFreeIso F P.relations.I η).hom ≫ F.map ρ ≫ g') j).eval top = 0 := by
-      have e1 : ((N.over V).freeHomEquiv
-          ((mapFreeIso F P.relations.I η).hom ≫ F.map ρ ≫ g') j).eval top =
-          g'.val.app top ((F.map ρ).val.app top
-            ((mapFreeIso F P.relations.I η).hom.val.app top ((ιFree j).val.app top
-              (1 : ((ringCatSheaf R).over V).obj.obj top)))) :=
-        -- Evaluation of `freeHomEquiv` at `j` is evaluation of `ιFree j ≫ -` at `1`.
-        rfl
-      refine e1.trans
-        ((congrArg (fun y ↦ g'.val.app top ((F.map ρ).val.app top y)) hιj).trans ?_)
-      let Y' : (Over U)ᵒᵖ := op (Over.mk f)
-      let i' : op (Over.mk (𝟙 U)) ⟶ Y' := (Over.homMk f : Over.mk f ⟶ Over.mk (𝟙 U)).op
-      have e2 : (free G.I).val.map i'
-            (∑ k, a j k • (freeSection k).eval (op (Over.mk (𝟙 U)))) =
-          (F.map ρ).val.app top ((η.hom ≫ F.map (ιFree j)).val.app top
-            (1 : ((ringCatSheaf R).over V).obj.obj top)) := by
-        refine (congrArg ((free G.I).val.map i') (ha j)).symm.trans ?_
-        refine ((sectionsMap (kernel.ι G.π) (P.relations.s j)).property i').trans ?_
-        have : (free G.I).freeHomEquiv ρ j = sectionsMap (kernel.ι G.π) (P.relations.s j) :=
-          (freeHomEquiv_comp_apply _ (kernel.ι G.π) j).trans (congrArg (sectionsMap _)
-            (congrFun ((kernel G.π).freeHomEquiv.apply_symm_apply P.relations.s) j))
-        exact congrArg (fun s : (free G.I).sections ↦ s.eval Y') this.symm
-      refine (congrArg (g'.val.app top) e2.symm).trans ?_
-      let r : G.I → ((ringCatSheaf R).over V).obj.obj top :=
-        fun k ↦ (ringCatSheaf R).obj.map f.op (a j k)
-      let e : G.I → (F.obj (free G.I)).val.obj top := fun k ↦ (freeSection k).eval Y'
-      have e3 (k : G.I) :
-          (free G.I).val.map i' (a j k • (freeSection k).eval (op (Over.mk (𝟙 U)))) =
-          ((ringCatSheaf R).over U).obj.map i' (a j k) •
-            (freeSection k).eval Y' :=
-        (PresheafOfModules.map_smul _ _ _ _).trans (congrArg _ ((freeSection k).property i'))
-      -- The restricted relation, read in the sections of `F (free I)` over `top`.
-      have hsum : (show (F.obj (free G.I)).val.obj top from (free G.I).val.map i'
-          (∑ k, a j k • (freeSection k).eval (op (Over.mk (𝟙 U))))) = ∑ k, r k • e k :=
-        (map_sum _ _ _).trans (Finset.sum_congr rfl fun k _ ↦ e3 k)
-      refine (congrArg (g'.val.app top) hsum).trans ?_
-      refine (map_sum _ _ _).trans ((Finset.sum_congr rfl fun k _ ↦ ?_).trans (hn j))
-      exact ((g'.val.app top).hom.map_smul (r k) (e k)).trans (congrArg (r k • ·) (hg'k k))
-    ext Y
-    let iY : top ⟶ Y := (Over.homMk Y.unop.hom : Y.unop ⟶ Over.mk (𝟙 V)).op
-    refine (((N.over V).freeHomEquiv
-        ((mapFreeIso F P.relations.I η).hom ≫ F.map ρ ≫ g') j).property iY).symm.trans ?_
-    refine (congrArg ((N.over V).val.map iY) htop).trans ?_
-    -- The value of the zero morphism on `1` is `0`.
-    exact (map_zero _).trans rfl
+  have hg' : F.map ρ ≫ g' = 0 := map_relations_comp_eq_zero f P a ha n hn g' hg'k
   obtain ⟨ψ', hψ'⟩ := CokernelCofork.IsColimit.desc' hc g' hg'
   -- The comparison `F (M|_U) ≅ M|_V` is the identity on sections, and the restricted
   -- generators are images of the restricted basis sections.
@@ -175,6 +215,51 @@ private theorem exists_hom_of_presentation {U V : Opens X} (f : V ⟶ U)
   have hψk := congrArg (fun φ : F.obj (free G.I) ⟶ N.over V ↦
     φ.val.app top ((freeSection k).eval (op (Over.mk f)))) hψ'
   exact (congrArg (ψ'.val.app top) hx).symm.trans (hψk.trans (hg'k k))
+
+/- The germ of the relation `∑ₖ aₖ • nₖ` vanishes, when the germs of the `nₖ` are the images under a
+linear map `φ` of the germs of generators satisfying that relation. -/
+private theorem germ_sum_smul_eq_zero {U V₀ : Opens X} (P : (M.over U).Presentation)
+    [Fintype P.generators.I] {x : X} (hx : x ∈ U) (hxV₀ : x ∈ V₀)
+    (φ : ↑(TopCat.Presheaf.stalk M.val.presheaf x) →ₗ[↑(TopCat.Presheaf.stalk R.obj x)]
+      ↑(TopCat.Presheaf.stalk N.val.presheaf x))
+    (f₀ : V₀ ⟶ U) {W : P.generators.I → Opens X} (hxW : ∀ k, x ∈ W k)
+    (g₀ : ∀ k, V₀ ⟶ W k) {n : ∀ k, N.val.obj (op (W k))}
+    (hn : ∀ k, TopCat.Presheaf.germ N.val.presheaf (W k) x (hxW k) (n k) =
+      φ (TopCat.Presheaf.germ M.val.presheaf U x hx
+        ((P.generators.s k).eval (op (Over.mk (𝟙 U))))))
+    (a : P.generators.I → ((ringCatSheaf R).over U).obj.obj (op (Over.mk (𝟙 U))))
+    (hrel : ∑ k, a k • (P.generators.s k).eval (op (Over.mk (𝟙 U))) = 0) :
+    TopCat.Presheaf.germ N.val.presheaf V₀ x hxV₀
+      (∑ k, (ringCatSheaf R).obj.map f₀.op (a k) • N.val.map (g₀ k).op (n k)) = 0 := by
+  have e1 (k : P.generators.I) : TopCat.Presheaf.germ N.val.presheaf V₀ x hxV₀
+      ((ringCatSheaf R).obj.map f₀.op (a k) •
+        N.val.map (g₀ k).op (n k)) =
+      TopCat.Presheaf.germ R.obj U x hx (a k) •
+        φ (TopCat.Presheaf.germ M.val.presheaf U x hx
+          ((P.generators.s k).eval (op (Over.mk (𝟙 U))))) := by
+    have hr : TopCat.Presheaf.germ R.obj V₀ x hxV₀
+        ((ringCatSheaf R).obj.map f₀.op (a k)) =
+        TopCat.Presheaf.germ R.obj U x hx (a k) :=
+      TopCat.Presheaf.germ_res_apply R.obj f₀ x hxV₀ (a k)
+    have hm : TopCat.Presheaf.germ N.val.presheaf V₀ x hxV₀ (N.val.map (g₀ k).op (n k)) =
+        TopCat.Presheaf.germ N.val.presheaf (W k) x (hxW k) (n k) :=
+      TopCat.Presheaf.germ_res_apply N.val.presheaf (g₀ k) x hxV₀ (n k)
+    refine (N.val.germ_smul (R := R.obj) x V₀ hxV₀ _ _).trans ?_
+    rw [hr]
+    exact congrArg (fun y : ↑(TopCat.Presheaf.stalk N.val.presheaf x) ↦
+      TopCat.Presheaf.germ R.obj U x hx (a k) • y) (hm.trans (hn k))
+  have hg : TopCat.Presheaf.germ M.val.presheaf U x hx
+      (∑ k, a k • (P.generators.s k).eval (op (Over.mk (𝟙 U)))) =
+      ∑ k, TopCat.Presheaf.germ R.obj U x hx (a k) •
+        TopCat.Presheaf.germ M.val.presheaf U x hx
+          ((P.generators.s k).eval (op (Over.mk (𝟙 U)))) :=
+    (map_sum _ _ _).trans (Finset.sum_congr rfl fun k _ ↦
+      M.val.germ_smul (R := R.obj) x U hx _ _)
+  refine (map_sum _ _ _).trans ((Finset.sum_congr rfl fun k _ ↦ e1 k).trans ?_)
+  refine (Finset.sum_congr rfl fun k _ ↦ (φ.map_smul _ _).symm).trans ?_
+  refine (map_sum φ _ _).symm.trans ((congrArg φ hg.symm).trans ?_)
+  exact (congrArg (fun y ↦ φ (TopCat.Presheaf.germ M.val.presheaf U x hx y)) hrel).trans
+    ((congrArg φ (map_zero _)).trans (map_zero φ))
 
 /- A linear map between stalks at a point of `U` lifts to a germ of a local morphism, given a
 finite presentation of `M` on `U`. -/
@@ -209,36 +294,8 @@ private theorem ihomStalkComparison_surjective_of_presentation {U : Opens X}
   let g₀ (k : P.generators.I) : V₀ ⟶ W k := homOfLE (inf_le_right.trans (iInf_le W k))
   let t (j : P.relations.I) : N.val.obj (op V₀) :=
     ∑ k, (ringCatSheaf R).obj.map f₀.op (a j k) • N.val.map (g₀ k).op (n k)
-  have ht (j : P.relations.I) : TopCat.Presheaf.germ N.val.presheaf V₀ x hxV₀ (t j) = 0 := by
-    have e1 (k : P.generators.I) : TopCat.Presheaf.germ N.val.presheaf V₀ x hxV₀
-        ((ringCatSheaf R).obj.map f₀.op (a j k) •
-          N.val.map (g₀ k).op (n k)) =
-        TopCat.Presheaf.germ R.obj U x hx (a j k) •
-          φ (TopCat.Presheaf.germ M.val.presheaf U x hx
-            ((P.generators.s k).eval (op (Over.mk (𝟙 U))))) := by
-      have hr : TopCat.Presheaf.germ R.obj V₀ x hxV₀
-          ((ringCatSheaf R).obj.map f₀.op (a j k)) =
-          TopCat.Presheaf.germ R.obj U x hx (a j k) :=
-        TopCat.Presheaf.germ_res_apply R.obj f₀ x hxV₀ (a j k)
-      have hm : TopCat.Presheaf.germ N.val.presheaf V₀ x hxV₀ (N.val.map (g₀ k).op (n k)) =
-          TopCat.Presheaf.germ N.val.presheaf (W k) x (hxW k) (n k) :=
-        TopCat.Presheaf.germ_res_apply N.val.presheaf (g₀ k) x hxV₀ (n k)
-      refine (N.val.germ_smul (R := R.obj) x V₀ hxV₀ _ _).trans ?_
-      rw [hr]
-      exact congrArg (fun y : ↑(TopCat.Presheaf.stalk N.val.presheaf x) ↦
-        TopCat.Presheaf.germ R.obj U x hx (a j k) • y) (hm.trans (hn k))
-    have hg : TopCat.Presheaf.germ M.val.presheaf U x hx
-        (∑ k, a j k • (P.generators.s k).eval (op (Over.mk (𝟙 U)))) =
-        ∑ k, TopCat.Presheaf.germ R.obj U x hx (a j k) •
-          TopCat.Presheaf.germ M.val.presheaf U x hx
-            ((P.generators.s k).eval (op (Over.mk (𝟙 U)))) :=
-      (map_sum _ _ _).trans (Finset.sum_congr rfl fun k _ ↦
-        M.val.germ_smul (R := R.obj) x U hx _ _)
-    refine (map_sum _ _ _).trans ((Finset.sum_congr rfl fun k _ ↦ e1 k).trans ?_)
-    refine (Finset.sum_congr rfl fun k _ ↦ (φ.map_smul _ _).symm).trans ?_
-    refine (map_sum φ _ _).symm.trans ((congrArg φ hg.symm).trans ?_)
-    exact (congrArg (fun y ↦ φ (TopCat.Presheaf.germ M.val.presheaf U x hx y)) (hrel j)).trans
-      ((congrArg φ (map_zero _)).trans (map_zero φ))
+  have ht (j : P.relations.I) : TopCat.Presheaf.germ N.val.presheaf V₀ x hxV₀ (t j) = 0 :=
+    germ_sum_smul_eq_zero P hx hxV₀ φ f₀ hxW g₀ hn (a j) (hrel j)
   -- Hence the finitely many `t j` vanish on a smaller neighbourhood `V`, where the restricted
   -- sections `n k` satisfy the restricted relations.
   choose W' hxW' i₁ i₂ heq using fun j ↦
@@ -254,20 +311,7 @@ private theorem ihomStalkComparison_surjective_of_presentation {U : Opens X}
       refine (PresheafOfModules.map_comp_apply N.val (i₁ j).op k₁.op (t j)).trans ?_
       exact (congrArg (fun y ↦ N.val.map k₁.op y) (heq j)).trans
         ((congrArg (fun y ↦ N.val.map k₁.op y) (map_zero _)).trans (map_zero _))
-    refine Eq.trans ?_ h2
-    refine Eq.trans ?_ (map_sum _ _ _).symm
-    refine Finset.sum_congr rfl fun k _ ↦ ?_
-    refine Eq.trans ?_ (PresheafOfModules.map_smul N.val h₀.op
-      ((ringCatSheaf R).obj.map f₀.op (a j k)) (N.val.map (g₀ k).op (n k))).symm
-    have er : (ringCatSheaf R).obj.map f.op (a j k) =
-        (ringCatSheaf R).obj.map h₀.op
-          ((ringCatSheaf R).obj.map f₀.op (a j k)) := by
-      rw [show f.op = f₀.op ≫ h₀.op from rfl, Functor.map_comp]
-      -- A composite of ring maps applied to `a j k` is the iterated application.
-      rfl
-    have en := PresheafOfModules.map_comp_apply N.val (g₀ k).op h₀.op (n k)
-    rw [er]
-    exact congrArg _ en
+    exact (PresheafOfModules.map_sum_smul_map N.val f₀ h₀ g₀ n (a j)).symm.trans h2
   -- These sections define a morphism `ψ : M|_V ⟶ N|_V`. Its germ agrees with `φ` on the germs
   -- of the generators, which span the stalk of `M`.
   obtain ⟨ψ, hψ⟩ := exists_hom_of_presentation f P a ha _ hn'
