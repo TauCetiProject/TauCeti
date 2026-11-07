@@ -186,10 +186,7 @@ private theorem map_incl_comp_proj_comp_perturb_incl :
   have hTh := c.reducedTensorWords_homotopy G H hdM hh hincl hproj
   have hpi := T.perturb_incl δ hsq hU
   simp only [T, hTi, hTp, hTh] at h1 h2 hpi
-  rw [show ReducedTensorWords.map (R := R) (c.incl ∘ₗ c.proj) =
-      ReducedTensorWords.map (R := R) c.incl ∘ₗ ReducedTensorWords.map (R := R) c.proj by
-    simp only [ReducedTensorWords.map_comp],
-    hpi, LinearMap.comp_sub,
+  rw [ReducedTensorWords.map_comp, hpi, LinearMap.comp_sub,
     LinearMap.comp_assoc, h1, LinearMap.comp_assoc, h2, LinearMap.comp_zero, LinearMap.comp_id]
   abel
 
