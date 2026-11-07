@@ -56,6 +56,27 @@ variable {K L 𝕜 ι : Type*} [TopologicalSpace K] [CompactSpace K] [Topologica
 
 variable [Fintype ι]
 
+/-- Expanding the finite linear combinations `∑ k, f i k • φ k` and `∑ l, g i l • ψ l` in a
+bilinear form turns `∑ i, B (∑ k, f i k • φ k) (∑ l, g i l • ψ l)` into the matrix sum
+`∑ k, ∑ l, B (φ k) (ψ l) * ⟪u k, v l⟫` for the Euclidean vectors `u k = (conj (f i k))ᵢ` and
+`v l = (g i l)ᵢ`. -/
+private theorem sum_apply_sum_smul_sum_smul_eq {M N : Type*} [AddCommMonoid M] [Module 𝕜 M]
+    [AddCommMonoid N] [Module 𝕜 N] {s : Type*} {t : Type*} [Fintype s] [Fintype t]
+    (B : M →ₗ[𝕜] N →ₗ[𝕜] 𝕜) (φ : s → M) (ψ : t → N) (f : ι → s → 𝕜) (g : ι → t → 𝕜) :
+    ∑ k : s, ∑ l : t, B (φ k) (ψ l) * ⟪(WithLp.toLp 2 fun i ↦ star (f i k) :
+      EuclideanSpace 𝕜 ι), WithLp.toLp 2 fun i ↦ g i l⟫_𝕜 =
+    ∑ i, B (∑ k : s, f i k • φ k) (∑ l : t, g i l • ψ l) := by
+  simp only [apply_sum_smul_sum_smul, smul_eq_mul, EuclideanSpace.inner_toLp_toLp,
+    dotProduct, Pi.star_apply, star_star, Finset.mul_sum]
+  calc _ = ∑ k : s, ∑ l : t, ∑ i, B (φ k) (ψ l) * f i k * g i l :=
+        Finset.sum_congr rfl fun k _ ↦ Finset.sum_congr rfl fun l _ ↦
+          Finset.sum_congr rfl fun i _ ↦ by ring
+    _ = ∑ k : s, ∑ i, ∑ l : t, B (φ k) (ψ l) * f i k * g i l :=
+        Finset.sum_congr rfl fun k _ ↦ Finset.sum_comm
+    _ = ∑ i, ∑ k : s, ∑ l : t, B (φ k) (ψ l) * f i k * g i l := Finset.sum_comm
+    _ = _ := Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun k _ ↦
+        Finset.sum_congr rfl fun l _ ↦ by ring
+
 /-- The matrix reduction: `∑ i, B (f i) (g i)` is within `2 * |ι| * C * δ` of a sum
 `∑ k, ∑ l, a k l * ⟪u k, v l⟫` for a finite matrix `a` with scalar bound `C` and Euclidean
 vectors of norm at most one. -/
@@ -96,18 +117,8 @@ private theorem exists_matrix_norm_sub_le [NormalSpace K] [NormalSpace L]
   -- The approximating sum is the matrix sum, and the error is controlled by `δ`.
   set f' : ι → C(K, 𝕜) := fun i ↦ ∑ k : s, f i k • φ k
   set g' : ι → C(L, 𝕜) := fun i ↦ ∑ l : t, g i l • ψ l
-  have hmat : ∑ k : s, ∑ l : t, B (φ k) (ψ l) * ⟪(WithLp.toLp 2 fun i ↦ star (f i k) :
-      EuclideanSpace 𝕜 ι), WithLp.toLp 2 fun i ↦ g i l⟫_𝕜 = ∑ i, B (f' i) (g' i) := by
-    simp only [f', g', apply_sum_smul_sum_smul, smul_eq_mul, EuclideanSpace.inner_toLp_toLp,
-      dotProduct, Pi.star_apply, star_star, Finset.mul_sum]
-    calc _ = ∑ k : s, ∑ l : t, ∑ i, B (φ k) (ψ l) * f i k * g i l :=
-          Finset.sum_congr rfl fun k _ ↦ Finset.sum_congr rfl fun l _ ↦
-            Finset.sum_congr rfl fun i _ ↦ by ring
-      _ = ∑ k : s, ∑ i, ∑ l : t, B (φ k) (ψ l) * f i k * g i l :=
-          Finset.sum_congr rfl fun k _ ↦ Finset.sum_comm
-      _ = ∑ i, ∑ k : s, ∑ l : t, B (φ k) (ψ l) * f i k * g i l := Finset.sum_comm
-      _ = _ := Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun k _ ↦
-          Finset.sum_congr rfl fun l _ ↦ by ring
+  have hmat := sum_apply_sum_smul_sum_smul_eq B φ ψ (fun i (k : s) ↦ f i k)
+    fun i (l : t) ↦ g i l
   rw [hmat, ← Finset.sum_sub_distrib]
   have hterm (i : ι) : ‖B (f i) (g i) - B (f' i) (g' i)‖ ≤ 2 * C * δ := by
     have heq : B (f i) (g i) - B (f' i) (g' i) =
