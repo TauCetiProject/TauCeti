@@ -135,6 +135,35 @@ theorem taylor_comp_barMap (f : AInfinityBimoduleHom MM NN) :
   simp only [AInfinityBimodule.taylor_def, taylor_def, LinearMap.comp_assoc,
     f.barDifferential_comp_barMap]
 
+/-- If `F` respects the left cofree coactions and `K + F ∘ₗ MM.barDifferential =
+NN.barDifferential ∘ₗ F`, then `K` intertwines the left coactions up to the Koszul twist on the
+left cofree factor. -/
+private theorem leftCoact_comp_commutator
+    {F : Comodule.Hom R (TensorWords R B)
+      ((TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B)
+      ((TensorWords R A ⊗[R] N) ⊗[R] TensorWords R B)}
+    (hleft : Comodule.leftCoactRTensor (TensorWords R B)
+        (Comodule.leftCofreeCoact R (TensorWords R A) N) ∘ₗ F.toLinearMap =
+      F.toLinearMap.lTensor (TensorWords R A) ∘ₗ
+        Comodule.leftCoactRTensor (TensorWords R B)
+          (Comodule.leftCofreeCoact R (TensorWords R A) M))
+    (K : (TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B →ₗ[R]
+      (TensorWords R A ⊗[R] N) ⊗[R] TensorWords R B)
+    (hK : K + F.toLinearMap ∘ₗ MM.barDifferential = NN.barDifferential ∘ₗ F.toLinearMap) :
+    Comodule.leftCoactRTensor (TensorWords R B)
+        (Comodule.leftCofreeCoact R (TensorWords R A) N) ∘ₗ K =
+      TensorProduct.map ((TensorWords.grading (AA.grading.shift 1)).koszulTwist 1) K ∘ₗ
+        Comodule.leftCoactRTensor (TensorWords R B)
+          (Comodule.leftCofreeCoact R (TensorWords R A) M) := by
+  have hb := AA.isHomogeneous_coaugmentedBarDifferential
+  simp only [← TensorWords.grading_piece] at hb
+  rw [eq_sub_of_add_eq hK]
+  simpa only [InternalGrading.koszulTwist_zero, ← LinearMap.lTensor_def,
+    zero_mul, Int.negOnePow_zero, Units.val_one, Int.cast_one, one_smul, zero_add] using
+    MM.isLeftGradedCoderivation_barDifferential.commutator_coact (p := 0)
+      NN.isLeftGradedCoderivation_barDifferential hb F.toLinearMap
+      (by simpa only [InternalGrading.koszulTwist_zero, ← LinearMap.lTensor_def] using hleft)
+
 /-- For a degree-zero bicomodule map, commutation with the differentials can be checked on
 its two-counit component. -/
 theorem barDifferential_comp_iff
@@ -170,18 +199,7 @@ theorem barDifferential_comp_iff
         Int.negOnePow_zero, Units.val_one, Int.cast_one, one_smul]
     -- The right coderivation commutator is already a right-comodule map. On the
     -- left, its two coalgebra-differential terms cancel, leaving a twisted map.
-    have hKl : Comodule.leftCoactRTensor (TensorWords R B)
-        (Comodule.leftCofreeCoact R (TensorWords R A) N) ∘ₗ K.toLinearMap =
-      TensorProduct.map ((TensorWords.grading (AA.grading.shift 1)).koszulTwist 1)
-        K.toLinearMap ∘ₗ Comodule.leftCoactRTensor (TensorWords R B)
-          (Comodule.leftCofreeCoact R (TensorWords R A) M) := by
-      have hb := AA.isHomogeneous_coaugmentedBarDifferential
-      simp only [← TensorWords.grading_piece] at hb
-      simpa only [hK, InternalGrading.koszulTwist_zero, ← LinearMap.lTensor_def,
-        zero_mul, Int.negOnePow_zero, Units.val_one, Int.cast_one, one_smul, zero_add] using
-        MM.isLeftGradedCoderivation_barDifferential.commutator_coact (p := 0)
-          NN.isLeftGradedCoderivation_barDifferential hb F.toLinearMap
-          (by simpa only [InternalGrading.koszulTwist_zero, ← LinearMap.lTensor_def] using hleft)
+    have hKl := leftCoact_comp_commutator hleft K.toLinearMap (by rw [hK]; abel)
     -- Cofreeness on both sides detects this commutator at the two counits.
     have hz : K = 0 := K.eq_zero_of_bicofree_counit_eq_zero _ hKl (by
       have hc : taylorProj R A B N ∘ₗ (NN.barDifferential ∘ₗ F.toLinearMap) =

@@ -462,6 +462,78 @@ private theorem boundaryWeight_le_one {z : ℂ} (hz : z ∈ planarSurface g) :
   · rw [(boundaryWeight_core hk hout).1]
     exact zero_le_one
 
+/-- **Moving along the boundary normal near a hole.** Near the `k`-th hole the point moves
+radially towards its centre, see `boundaryNormal_step`. -/
+private theorem boundaryNormal_step_hole {z : ℂ} (hz : z ∈ planarSurface g) {s : ℝ} (hs : 0 ≤ s)
+    (hw : (1 + s) * boundaryWeight g z ≤ 1) {k : Fin g} (hk : ‖z - holeCenter g k‖ < 3 / 4) :
+    z + (s / 4) • boundaryNormal g z ∈ planarSurface g ∧
+      boundaryWeight g (z + (s / 4) • boundaryNormal g z) = (1 + s) * boundaryWeight g z := by
+  rw [mem_planarSurface_iff] at hz
+  obtain ⟨hwk, hnk⟩ := boundaryWeight_hole hk
+  set r := ‖z - holeCenter g k‖ with hr
+  have hr₀ : 2⁻¹ ≤ r := hz.2 k
+  have hmax : max r 2⁻¹ = r := max_eq_left hr₀
+  have hwr : holeWeight g k z = 1 - 4 * (r - 2⁻¹) := max_eq_right (by linarith)
+  rw [hwk, hwr] at hw
+  have hsw : s * (1 - 4 * (r - 2⁻¹)) ≤ 4 * r - 2 := by linarith
+  have hsub : z + (s / 4) • boundaryNormal g z - holeCenter g k =
+      (1 - s * (1 - 4 * (r - 2⁻¹)) / (4 * r)) • (z - holeCenter g k) := by
+    rw [hnk, hwr, hmax, smul_smul, smul_neg, smul_smul]
+    module
+  have hc : 0 ≤ 1 - s * (1 - 4 * (r - 2⁻¹)) / (4 * r) := by
+    rw [sub_nonneg, div_le_one (by linarith)]
+    linarith
+  have hnorm : ‖z + (s / 4) • boundaryNormal g z - holeCenter g k‖ =
+      r - s * (1 - 4 * (r - 2⁻¹)) / 4 := by
+    rw [hsub, norm_smul, Real.norm_eq_abs, abs_of_nonneg hc, ← hr]
+    field_simp
+  have hk' : ‖z + (s / 4) • boundaryNormal g z - holeCenter g k‖ < 3 / 4 := by
+    rw [hnorm]
+    nlinarith
+  refine ⟨mem_planarSurface_iff.2 ⟨?_, fun j ↦ ?_⟩, ?_⟩
+  · have := norm_le_norm_add_norm_sub' (z + (s / 4) • boundaryNormal g z) (holeCenter g k : ℂ)
+    linarith [norm_holeCenter_le k]
+  · rcases eq_or_ne j k with rfl | hjk
+    · rw [hnorm]
+      linarith
+    · have h := two_le_norm_holeCenter_sub hjk
+      have := norm_sub_le_norm_sub_add_norm_sub (holeCenter g j : ℂ)
+        (z + (s / 4) • boundaryNormal g z) (holeCenter g k)
+      rw [norm_sub_rev (holeCenter g j : ℂ) (z + (s / 4) • boundaryNormal g z)] at this
+      linarith
+  · rw [(boundaryWeight_hole hk').1, holeWeight, hnorm, hwk, hwr, max_eq_right (by nlinarith)]
+    ring
+
+/-- **Moving along the boundary normal near the outer circle.** Near the outer circle the point
+moves radially away from the origin, see `boundaryNormal_step`. -/
+private theorem boundaryNormal_step_outer {z : ℂ} {s : ℝ} (hs : 0 ≤ s)
+    (hw : (1 + s) * boundaryWeight g z ≤ 1) (hout : g + 3 / 4 < ‖z‖) :
+    z + (s / 4) • boundaryNormal g z ∈ planarSurface g ∧
+      boundaryWeight g (z + (s / 4) • boundaryNormal g z) = (1 + s) * boundaryWeight g z := by
+  obtain ⟨hwo, hno⟩ := boundaryWeight_outer hout
+  set r := ‖z‖ with hr
+  have hmax : max r 2⁻¹ = r := max_eq_left (by linarith [(Nat.cast_nonneg g : (0 : ℝ) ≤ g)])
+  have hwr : outerWeight g z = 1 - 4 * ((g : ℝ) + 1 - r) := max_eq_right (by linarith)
+  rw [hwo, hwr] at hw
+  have hr₀ : 0 < r := by linarith [(Nat.cast_nonneg g : (0 : ℝ) ≤ g)]
+  have hc : 0 ≤ 1 + s * (1 - 4 * ((g : ℝ) + 1 - r)) / (4 * r) :=
+    add_nonneg zero_le_one (div_nonneg (mul_nonneg hs (by linarith)) (by linarith))
+  have hnorm : ‖z + (s / 4) • boundaryNormal g z‖ = r + s * (1 - 4 * ((g : ℝ) + 1 - r)) / 4 := by
+    have h : z + (s / 4) • boundaryNormal g z =
+        (1 + s * (1 - 4 * ((g : ℝ) + 1 - r)) / (4 * r)) • z := by
+      rw [hno, hwr, hmax, smul_smul, smul_smul]
+      module
+    rw [h, norm_smul, Real.norm_eq_abs, abs_of_nonneg hc, ← hr]
+    field_simp
+  have hout' : g + 3 / 4 < ‖z + (s / 4) • boundaryNormal g z‖ := by
+    rw [hnorm]
+    nlinarith
+  refine ⟨mem_planarSurface_iff.2 ⟨by rw [hnorm]; linarith, fun j ↦ ?_⟩, ?_⟩
+  · have := norm_sub_norm_le (z + (s / 4) • boundaryNormal g z) (holeCenter g j : ℂ)
+    linarith [norm_holeCenter_le j]
+  · rw [(boundaryWeight_outer hout').1, outerWeight, hnorm, hwo, hwr, max_eq_right (by nlinarith)]
+    ring
+
 /-- **Moving along the boundary normal.** Moving a point `z` of the planar surface by `s / 4` times
 its boundary normal, for `s ≥ 0` with `(1 + s)` times its boundary weight at most `1`, stays in the
 planar surface and multiplies the boundary weight by `1 + s`. -/
@@ -469,71 +541,13 @@ private theorem boundaryNormal_step {z : ℂ} (hz : z ∈ planarSurface g) {s : 
     (hw : (1 + s) * boundaryWeight g z ≤ 1) :
     z + (s / 4) • boundaryNormal g z ∈ planarSurface g ∧
       boundaryWeight g (z + (s / 4) • boundaryNormal g z) = (1 + s) * boundaryWeight g z := by
-  rw [mem_planarSurface_iff] at hz
   rcases boundaryWeight_cases (g := g) z with ⟨k, hk⟩ | hout | ⟨hk, hout⟩
-  · -- Near the `k`-th hole the point moves radially towards its centre.
-    obtain ⟨hwk, hnk⟩ := boundaryWeight_hole hk
-    set r := ‖z - holeCenter g k‖ with hr
-    have hr₀ : 2⁻¹ ≤ r := hz.2 k
-    have hmax : max r 2⁻¹ = r := max_eq_left hr₀
-    have hwr : holeWeight g k z = 1 - 4 * (r - 2⁻¹) := max_eq_right (by linarith)
-    rw [hwk, hwr] at hw
-    have hsw : s * (1 - 4 * (r - 2⁻¹)) ≤ 4 * r - 2 := by linarith
-    have hsub : z + (s / 4) • boundaryNormal g z - holeCenter g k =
-        (1 - s * (1 - 4 * (r - 2⁻¹)) / (4 * r)) • (z - holeCenter g k) := by
-      rw [hnk, hwr, hmax, smul_smul, smul_neg, smul_smul]
-      module
-    have hc : 0 ≤ 1 - s * (1 - 4 * (r - 2⁻¹)) / (4 * r) := by
-      rw [sub_nonneg, div_le_one (by linarith)]
-      linarith
-    have hnorm : ‖z + (s / 4) • boundaryNormal g z - holeCenter g k‖ =
-        r - s * (1 - 4 * (r - 2⁻¹)) / 4 := by
-      rw [hsub, norm_smul, Real.norm_eq_abs, abs_of_nonneg hc, ← hr]
-      field_simp
-    have hk' : ‖z + (s / 4) • boundaryNormal g z - holeCenter g k‖ < 3 / 4 := by
-      rw [hnorm]
-      nlinarith
-    refine ⟨mem_planarSurface_iff.2 ⟨?_, fun j ↦ ?_⟩, ?_⟩
-    · have := norm_le_norm_add_norm_sub' (z + (s / 4) • boundaryNormal g z) (holeCenter g k : ℂ)
-      linarith [norm_holeCenter_le k]
-    · rcases eq_or_ne j k with rfl | hjk
-      · rw [hnorm]
-        linarith
-      · have h := two_le_norm_holeCenter_sub hjk
-        have := norm_sub_le_norm_sub_add_norm_sub (holeCenter g j : ℂ)
-          (z + (s / 4) • boundaryNormal g z) (holeCenter g k)
-        rw [norm_sub_rev (holeCenter g j : ℂ) (z + (s / 4) • boundaryNormal g z)] at this
-        linarith
-    · rw [(boundaryWeight_hole hk').1, holeWeight, hnorm, hwk, hwr, max_eq_right (by nlinarith)]
-      ring
-  · -- Near the outer circle the point moves radially away from the origin.
-    obtain ⟨hwo, hno⟩ := boundaryWeight_outer hout
-    set r := ‖z‖ with hr
-    have hmax : max r 2⁻¹ = r := max_eq_left (by linarith [(Nat.cast_nonneg g : (0 : ℝ) ≤ g)])
-    have hwr : outerWeight g z = 1 - 4 * ((g : ℝ) + 1 - r) := max_eq_right (by linarith)
-    rw [hwo, hwr] at hw
-    have hr₀ : 0 < r := by linarith [(Nat.cast_nonneg g : (0 : ℝ) ≤ g)]
-    have hc : 0 ≤ 1 + s * (1 - 4 * ((g : ℝ) + 1 - r)) / (4 * r) :=
-      add_nonneg zero_le_one (div_nonneg (mul_nonneg hs (by linarith)) (by linarith))
-    have hnorm : ‖z + (s / 4) • boundaryNormal g z‖ = r + s * (1 - 4 * ((g : ℝ) + 1 - r)) / 4 := by
-      have h : z + (s / 4) • boundaryNormal g z =
-          (1 + s * (1 - 4 * ((g : ℝ) + 1 - r)) / (4 * r)) • z := by
-        rw [hno, hwr, hmax, smul_smul, smul_smul]
-        module
-      rw [h, norm_smul, Real.norm_eq_abs, abs_of_nonneg hc, ← hr]
-      field_simp
-    have hout' : g + 3 / 4 < ‖z + (s / 4) • boundaryNormal g z‖ := by
-      rw [hnorm]
-      nlinarith
-    refine ⟨mem_planarSurface_iff.2 ⟨by rw [hnorm]; linarith, fun j ↦ ?_⟩, ?_⟩
-    · have := norm_sub_norm_le (z + (s / 4) • boundaryNormal g z) (holeCenter g j : ℂ)
-      linarith [norm_holeCenter_le j]
-    · rw [(boundaryWeight_outer hout').1, outerWeight, hnorm, hwo, hwr, max_eq_right (by nlinarith)]
-      ring
+  · exact boundaryNormal_step_hole hz hs hw hk
+  · exact boundaryNormal_step_outer hs hw hout
   · -- Away from the boundary circles the point does not move.
     obtain ⟨hwc, hnc⟩ := boundaryWeight_core hk hout
     simp only [hnc, smul_zero, add_zero, hwc, mul_zero]
-    exact ⟨mem_planarSurface_iff.2 hz, trivial⟩
+    exact ⟨hz, trivial⟩
 
 /-- A point of the plane with boundary weight below `1` is an interior point of the planar
 surface. -/
