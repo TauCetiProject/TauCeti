@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.Cellular.AttachedToBase
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.MorseInequalities
-public import TauCeti.AlgebraicTopology.Singular.Triple
 public import TauCeti.Geometry.Manifold.Morse.Deformation.Homology
 public import TauCeti.Geometry.Manifold.Morse.RelCWComplex
 
@@ -184,28 +183,6 @@ theorem IsMorse.exists_isZero_singularHomology_sublevelPair_of_manifoldMorseInde
   exact ((IsZero.iff_id_eq_zero _).2 (Sigma.hom_ext _ _ isEmptyElim)).of_iso (hiso R n).some
 
 /-! ### Bands with a single critical value -/
-
-/-- If the bands `f⁻¹[a, s]` and `f⁻¹[t, b]` are compact and contain no critical points, then the
-relative homology of `({f ≤ b}, {f ≤ a})` is that of `({f ≤ t}, {f ≤ s})`: both are identified
-with the relative homology of `({f ≤ t}, {f ≤ a})` by the long exact sequences of the triples
-`{f ≤ a} ⊆ {f ≤ t} ⊆ {f ≤ b}` and `{f ≤ a} ⊆ {f ≤ s} ⊆ {f ≤ t}`. -/
-private def singularHomologySublevelPairIsoOfCollars (hf : ContMDiff I 𝓘(ℝ) ∞ f) {a s t b : ℝ}
-    (has : a ≤ s) (hst : s ≤ t) (htb : t ≤ b) (hcompact₁ : IsCompact (f ⁻¹' Icc a s))
-    (hcompact₂ : IsCompact (f ⁻¹' Icc t b))
-    (hreg₁ : ∀ x, a ≤ f x → f x ≤ s → mfderiv I 𝓘(ℝ) f x ≠ 0)
-    (hreg₂ : ∀ x, t ≤ f x → f x ≤ b → mfderiv I 𝓘(ℝ) f x ≠ 0)
-    {A : Type*} [Category A] [Abelian A] [HasCoproducts.{u} A] (R : A) (n : ℕ) :
-    (sublevelPair f (has.trans (hst.trans htb))).singularHomology R n ≅
-      (sublevelPair f hst).singularHomology R n :=
-  let T₁ := TopTriple.ofInclusions (X := TopCat.of M) (sublevel_mono f has) (sublevel_mono f hst)
-  let T₂ := TopTriple.ofInclusions (X := TopCat.of M) (sublevel_mono f (has.trans hst))
-    (sublevel_mono f htb)
-  have h₁ := isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero hf has hcompact₁ hreg₁ R
-  have h₂ := isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero hf htb hcompact₂ hreg₂ R
-  (@asIso _ _ _ _ _ (T₂.isIso_singularHomologyMap_innerToTotal_of_isZero R n (h₂ n)
-      (h₂ (n + 1)))).symm ≪≫
-    @asIso _ _ _ _ _ (T₁.isIso_singularHomologyMap_totalToOuter_of_isZero R n (h₁ n)
-      fun m _ ↦ h₁ m)
 
 /-- Around the only critical value `c` of a compact band `f⁻¹[a, b]`, with `a < c < b`, a width
 `ε ≤ min (c - a) (b - c)` leaves the collars `f⁻¹[a, c - ε]` and `f⁻¹[c + ε, b]` compact and
