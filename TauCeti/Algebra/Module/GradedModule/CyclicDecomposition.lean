@@ -58,6 +58,47 @@ universe u
 variable {k : Type*} {M : Type u} [Field k] [AddCommGroup M] [Module k M] [Module k[X] M]
   [IsScalarTower k k[X] M] {G : InternalGrading k M} {d : ℕ}
 
+omit [IsScalarTower k k[X] M] in
+/-- For a homogeneous `t` with `X ^ (m - 1) • t ≠ 0` there is a `k`-linear functional `φ` that is
+`1` on `X ^ (m - 1) • t`, vanishes on the other `X ^ l • t`, and whose vanishing on all `X ^ j • y`
+passes to the homogeneous components of `y`. -/
+private theorem exists_functional_eval_X_pow_smul (hd : d ≠ 0)
+    (hX : ∀ ⦃p : ℤ⦄ ⦃x : M⦄, x ∈ G.piece p → (X : k[X]) • x ∈ G.piece (p - d)) {m : ℕ}
+    {p : ℤ} {t : M} (htp : t ∈ G.piece p) (ht : (X ^ (m - 1) : k[X]) • t ≠ 0) :
+    ∃ φ : M →ₗ[k] k, (∀ l : ℕ, φ ((X ^ l : k[X]) • t) = if l = m - 1 then 1 else 0) ∧
+      ∀ (y : M) (r : ℤ), (∀ j : ℕ, φ ((X ^ j : k[X]) • y) = 0) →
+        ∀ j : ℕ, φ ((X ^ j : k[X]) • (DirectSum.decompose G.piece y r : M)) = 0 := by
+  classical
+  have hdz : (d : ℤ) ≠ 0 := by exact_mod_cast hd
+  -- `φ` reads off the component of degree `q` and sends `X ^ (m - 1) • t` to `1`.
+  set q : ℤ := p - ((m - 1 : ℕ) : ℤ) * d
+  have hv : (X ^ (m - 1) : k[X]) • t ∈ G.piece q := X_pow_smul_mem_piece hX (m - 1) htp
+  obtain ⟨φ₀, hφ₀⟩ := Module.Projective.exists_dual_eq_one k
+    (x := (⟨_, hv⟩ : G.piece q)) (by simpa [← Subtype.coe_ne_coe] using ht)
+  let φ : M →ₗ[k] k := φ₀ ∘ₗ DirectSum.component k ℤ (fun i ↦ G.piece i) q ∘ₗ
+    (DirectSum.decomposeLinearEquiv G.piece).toLinearMap
+  have hφ (y : M) : φ y = φ₀ (DirectSum.decompose G.piece y q) := rfl
+  refine ⟨φ, fun l ↦ ?_, fun y r hy j ↦ ?_⟩
+  · -- Of the elements `X ^ l • t`, only `X ^ (m - 1) • t` lies in degree `q`.
+    split_ifs with hl
+    · subst hl
+      rw [hφ, ← hφ₀]
+      exact congrArg φ₀ (Subtype.ext (DirectSum.decompose_of_mem_same _ hv))
+    · have hmem := X_pow_smul_mem_piece hX l htp
+      have hne : p - (l : ℤ) * d ≠ q := fun h ↦ hl <| by
+        have : (l : ℤ) * d = ((m - 1 : ℕ) : ℤ) * d := by omega
+        exact_mod_cast mul_right_cancel₀ hdz this
+      rw [hφ, Submodule.coe_eq_zero.mp (DirectSum.decompose_of_mem_ne _ hmem hne), map_zero]
+  · -- Homogeneity: `φ (X ^ j • y_r)` is either `0` or `φ (X ^ j • y)`.
+    have hmem := X_pow_smul_mem_piece hX j (DirectSum.decompose G.piece y r).2
+    by_cases hr : r - (j : ℤ) * d = q
+    · have key := coe_decompose_X_pow_smul hX j q y
+      rw [show q + (j : ℤ) * d = r by omega] at key
+      rw [← key, hφ,
+        Subtype.ext (DirectSum.decompose_of_mem_same _ (DirectSum.decompose G.piece _ q).2)]
+      exact hy j
+    · rw [hφ, Submodule.coe_eq_zero.mp (DirectSum.decompose_of_mem_ne _ hmem hr), map_zero]
+
 /-- **Splitting off a cyclic summand of maximal order.** Let `X` lower degree by `d ≠ 0`, let `L`
 be a homogeneous `k[X]`-submodule killed by `X ^ m`, and let `t ∈ L` be homogeneous with
 `X ^ (m - 1) • t ≠ 0`. Then the cyclic submodule `k[X] ∙ t` has a homogeneous complement in `L`. -/
@@ -72,51 +113,9 @@ theorem exists_disjoint_span_singleton_sup_eq (hd : d ≠ 0)
   have hm : m ≠ 0 := by
     rintro rfl
     exact ht (by simpa using hLm t htL)
-  have hdz : (d : ℤ) ≠ 0 := by exact_mod_cast hd
-  -- `φ` reads off the component of degree `q` and sends `X ^ (m - 1) • t` to `1`.
-  set q : ℤ := p - ((m - 1 : ℕ) : ℤ) * d
-  have hv : (X ^ (m - 1) : k[X]) • t ∈ G.piece q := X_pow_smul_mem_piece hX (m - 1) htp
-  obtain ⟨φ₀, hφ₀⟩ := Module.Projective.exists_dual_eq_one k
-    (x := (⟨_, hv⟩ : G.piece q)) (by simpa [← Subtype.coe_ne_coe] using ht)
-  let φ : M →ₗ[k] k := φ₀ ∘ₗ DirectSum.component k ℤ (fun i ↦ G.piece i) q ∘ₗ
-    (DirectSum.decomposeLinearEquiv G.piece).toLinearMap
-  have hφ (y : M) : φ y = φ₀ (DirectSum.decompose G.piece y q) := rfl
-  -- On a polynomial multiple, `φ` only sees the values on the `X ^ n`-multiples.
-  have hφ_poly (a : k[X]) (z : M) :
-      φ (a • z) = ∑ n ∈ a.support, a.coeff n * φ ((X ^ n : k[X]) • z) := by
-    conv_lhs => rw [a.as_sum_support_C_mul_X_pow, Finset.sum_smul]
-    rw [map_sum]
-    refine Finset.sum_congr rfl fun n _ ↦ ?_
-    rw [mul_smul, ← algebraMap_eq, algebraMap_smul, map_smul, smul_eq_mul]
-  -- Of the elements `X ^ l • t`, only `X ^ (m - 1) • t` lies in degree `q`.
-  have hφt (l : ℕ) : φ ((X ^ l : k[X]) • t) = if l = m - 1 then 1 else 0 := by
-    split_ifs with hl
-    · subst hl
-      rw [hφ, ← hφ₀]
-      exact congrArg φ₀ (Subtype.ext (DirectSum.decompose_of_mem_same _ hv))
-    · have hmem := X_pow_smul_mem_piece hX l htp
-      have hne : p - (l : ℤ) * d ≠ q := fun h ↦ hl <| by
-        have : (l : ℤ) * d = ((m - 1 : ℕ) : ℤ) * d := by omega
-        exact_mod_cast mul_right_cancel₀ hdz this
-      rw [hφ, Submodule.coe_eq_zero.mp (DirectSum.decompose_of_mem_ne _ hmem hne), map_zero]
-  have hφXt (a : k[X]) (j : ℕ) :
-      φ ((X ^ j : k[X]) • a • t) = if j ≤ m - 1 then a.coeff (m - 1 - j) else 0 := by
-    rw [smul_comm, hφ_poly]
-    simp_rw [← mul_smul, ← pow_add, hφt, mul_ite, mul_one, mul_zero]
-    rw [Finset.sum_ite, Finset.sum_const_zero, add_zero]
-    split_ifs with hj
-    · by_cases hc : a.coeff (m - 1 - j) = 0
-      · refine (Finset.sum_eq_zero fun n hn ↦ ?_).trans hc.symm
-        rw [Finset.mem_filter] at hn
-        rwa [show n = m - 1 - j by omega]
-      · rw [Finset.sum_eq_single_of_mem (m - 1 - j)
-          (Finset.mem_filter.mpr ⟨mem_support_iff.mpr hc, by omega⟩)]
-        intro n hn hne
-        rw [Finset.mem_filter] at hn
-        omega
-    · exact Finset.sum_eq_zero fun n hn ↦ by
-        rw [Finset.mem_filter] at hn
-        omega
+  obtain ⟨φ, hφt, hhom⟩ := exists_functional_eval_X_pow_smul hd hX htp ht
+  have hφXt := LinearMap.map_X_pow_smul_smul_eq φ hφt (m := m) (t := t)
+  have hφ_poly := LinearMap.map_smul_eq_sum_support_coeff_mul φ
   -- The complement: elements of `L` all of whose polynomial multiples are killed by `φ`.
   let K : Submodule k[X] M :=
     { carrier := {y | y ∈ L ∧ ∀ a : k[X], φ (a • y) = 0}
@@ -129,16 +128,8 @@ theorem exists_disjoint_span_singleton_sup_eq (hd : d ≠ 0)
     rw [hφ_poly]
     exact Finset.sum_eq_zero fun n _ ↦ by rw [h.2 n, mul_zero]
   refine ⟨K, fun r y hy ↦ ?_, ?_, ?_⟩
-  · -- Homogeneity: `φ (X ^ j • y_r)` is either `0` or `φ (X ^ j • y)`.
-    refine hmemK.mpr ⟨hL r hy.1, fun j ↦ ?_⟩
-    have hmem := X_pow_smul_mem_piece hX j (DirectSum.decompose G.piece y r).2
-    by_cases hr : r - (j : ℤ) * d = q
-    · have key := coe_decompose_X_pow_smul hX j q y
-      rw [show q + (j : ℤ) * d = r by omega] at key
-      rw [← key, hφ,
-        Subtype.ext (DirectSum.decompose_of_mem_same _ (DirectSum.decompose G.piece _ q).2)]
-      exact (hmemK.mp hy).2 j
-    · rw [hφ, Submodule.coe_eq_zero.mp (DirectSum.decompose_of_mem_ne _ hmem hr), map_zero]
+  · -- Homogeneity: the functional passes to the homogeneous components.
+    exact hmemK.mpr ⟨hL r hy.1, hhom y r (hmemK.mp hy).2⟩
   · -- Disjointness: a nonzero `a • t` has a nonzero coefficient seen by some `φ (X ^ j • _)`.
     refine Submodule.disjoint_def.mpr fun y hyt hyK ↦ ?_
     obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp hyt
@@ -170,6 +161,67 @@ theorem exists_disjoint_span_singleton_sup_eq (hd : d ≠ 0)
     rw [show y = a • t + (y - a • t) by abel]
     exact Submodule.add_mem_sup (Submodule.mem_span_singleton.mpr ⟨a, rfl⟩) hrest
 
+/-- **Noetherian induction step.** Let `L` be a homogeneous submodule killed by `X ^ N`. An
+admissible family of homogeneous generators (with annihilators `(X ^ m)`, `m ≠ 0`, and independent
+cyclic submodules) spanning `S`, together with a homogeneous complement `K` of `S` in `L`, extends
+to an admissible family spanning `L`. -/
+private theorem exists_supIndep_sup_eq_of_isCompl [Module.Finite k[X] M] (hd : d ≠ 0)
+    (hX : ∀ ⦃p : ℤ⦄ ⦃x : M⦄, x ∈ G.piece p → (X : k[X]) • x ∈ G.piece (p - d))
+    {L : Submodule k[X] M} {N : ℕ} (hLN : ∀ y ∈ L, (X ^ N : k[X]) • y = 0) (S : Submodule k[X] M)
+    (s : Finset M) (K : Submodule k[X] M)
+    (hs : (∀ t ∈ s, ∃ p m, t ∈ G.piece p ∧ m ≠ 0 ∧
+        Ideal.torsionOf k[X] M t = Ideal.span {X ^ m}) ∧ s.SupIndep (fun t ↦ k[X] ∙ t))
+    (hsS : s.sup (fun t ↦ k[X] ∙ t) = S) (hK : DirectSum.SetLike.IsHomogeneous G.piece K)
+    (hSK : Disjoint S K) (hSKL : S ⊔ K = L) :
+    ∃ s' : Finset M, ((∀ t ∈ s', ∃ p m, t ∈ G.piece p ∧ m ≠ 0 ∧
+        Ideal.torsionOf k[X] M t = Ideal.span {X ^ m}) ∧ s'.SupIndep (fun t ↦ k[X] ∙ t)) ∧
+      s'.sup (fun t ↦ k[X] ∙ t) = L := by
+  classical
+  induction S using IsNoetherian.induction generalizing s K with
+  | hgt S ih =>
+    by_cases hK0 : K = ⊥
+    · exact ⟨s, hs, by rw [hsS, ← hSKL, hK0, sup_bot_eq]⟩
+    have hKL : K ≤ L := hSKL ▸ le_sup_right
+    -- `m` is the exponent of `K`: the least power of `X` killing it.
+    have hex : ∃ m, ∀ y ∈ K, (X ^ m : k[X]) • y = 0 := ⟨N, fun y hy ↦ hLN y (hKL hy)⟩
+    let m := Nat.find hex
+    have hKm : ∀ y ∈ K, (X ^ m : k[X]) • y = 0 := Nat.find_spec hex
+    have hm : m ≠ 0 := by
+      intro hm0
+      refine hK0 (eq_bot_iff.mpr fun y hy ↦ ?_)
+      simpa [show m = 0 from hm0] using hKm y hy
+    obtain ⟨y, hyK, hy⟩ : ∃ y ∈ K, (X ^ (m - 1) : k[X]) • y ≠ 0 := by
+      by_contra! h
+      exact Nat.find_min hex (show m - 1 < m by omega) h
+    -- Some homogeneous component `t` of `y` still has `X ^ (m - 1) • t ≠ 0`.
+    obtain ⟨r, hr⟩ : ∃ r, (X ^ (m - 1) : k[X]) • (DirectSum.decompose G.piece y r : M) ≠ 0 := by
+      by_contra! h
+      refine hy ?_
+      rw [← DirectSum.sum_support_decompose G.piece y, Finset.smul_sum]
+      exact Finset.sum_eq_zero fun r _ ↦ h r
+    set t : M := (DirectSum.decompose G.piece y r : M)
+    have htK : t ∈ K := hK r hyK
+    have ht0 : t ≠ 0 := fun h ↦ hr (by rw [h, smul_zero])
+    obtain ⟨K', hK', hCK', hCK'K⟩ :=
+      exists_disjoint_span_singleton_sup_eq hd hX hK hKm htK
+        (DirectSum.decompose G.piece y r).2 hr
+    have hCK : k[X] ∙ t ≤ K := hCK'K ▸ le_sup_left
+    have hCS : Disjoint (k[X] ∙ t) S := (hSK.mono_right hCK).symm
+    have htor : Ideal.torsionOf k[X] M t = Ideal.span {X ^ m} :=
+      torsionOf_eq_span_X_pow (hKm t htK) hr
+    refine ih (S ⊔ k[X] ∙ t) (lt_of_le_of_ne le_sup_left fun h ↦ ht0 ?_) (insert t s) K'
+      ⟨?_, hs.2.insert ?_⟩ ?_ hK' ?_ ?_
+    · exact (Submodule.disjoint_def.mp hCS) t (Submodule.mem_span_singleton_self t)
+        (h ▸ Submodule.mem_sup_right (Submodule.mem_span_singleton_self t))
+    · intro t' ht'
+      rcases Finset.mem_insert.mp ht' with rfl | ht'
+      · exact ⟨r, m, (DirectSum.decompose G.piece y r).2, hm, htor⟩
+      · exact hs.1 t' ht'
+    · rwa [hsS]
+    · rw [Finset.sup_insert, hsS, sup_comm]
+    · exact hCK'.disjoint_sup_left_of_disjoint_sup_right (hCK'K ▸ hSK)
+    · rw [sup_assoc, hCK'K, hSKL]
+
 /-- **The torsion part of the structure theorem.** Let `X` lower degree by `d ≠ 0` in a finitely
 generated graded `k[X]`-module over a field. Then every homogeneous `k[X]`-submodule `L` contained
 in the torsion submodule is the independent sum of finitely many cyclic submodules `k[X] ∙ t i`,
@@ -187,74 +239,8 @@ theorem exists_iSupIndep_iSup_span_singleton_eq_of_le_torsion [Module.Finite k[X
   obtain ⟨N, hN⟩ := torsion_eq_torsionBy_X_pow hd hX (G := G)
   have hLN (y : M) (hy : y ∈ L) : (X ^ N : k[X]) • y = 0 :=
     (Submodule.mem_torsionBy_iff _ _).mp (hN ▸ hLT hy)
-  -- The admissible finite sets of generators: homogeneous, with annihilator `(X ^ m)`, `m ≠ 0`,
-  -- and generating independent cyclic submodules.
-  let Good (s : Finset M) : Prop :=
-    (∀ t ∈ s, ∃ p m, t ∈ G.piece p ∧ m ≠ 0 ∧ Ideal.torsionOf k[X] M t = Ideal.span {X ^ m}) ∧
-      s.SupIndep (fun t ↦ k[X] ∙ t)
-  -- Enlarge an admissible family spanning `S` with a homogeneous complement `K` of `S` in `L`,
-  -- by Noetherian induction on `S`.
-  have key : ∀ S : Submodule k[X] M, ∀ (s : Finset M) (K : Submodule k[X] M), Good s →
-      s.sup (fun t ↦ k[X] ∙ t) = S → DirectSum.SetLike.IsHomogeneous G.piece K →
-      Disjoint S K → S ⊔ K = L → ∃ s' : Finset M, Good s' ∧ s'.sup (fun t ↦ k[X] ∙ t) = L := by
-    intro S
-    induction S using IsNoetherian.induction with
-    | hgt S ih =>
-      intro s K hs hsS hK hSK hSKL
-      by_cases hK0 : K = ⊥
-      · exact ⟨s, hs, by rw [hsS, ← hSKL, hK0, sup_bot_eq]⟩
-      have hKL : K ≤ L := hSKL ▸ le_sup_right
-      -- `m` is the exponent of `K`: the least power of `X` killing it.
-      have hex : ∃ m, ∀ y ∈ K, (X ^ m : k[X]) • y = 0 := ⟨N, fun y hy ↦ hLN y (hKL hy)⟩
-      let m := Nat.find hex
-      have hKm : ∀ y ∈ K, (X ^ m : k[X]) • y = 0 := Nat.find_spec hex
-      have hm : m ≠ 0 := by
-        intro hm0
-        refine hK0 (eq_bot_iff.mpr fun y hy ↦ ?_)
-        simpa [show m = 0 from hm0] using hKm y hy
-      obtain ⟨y, hyK, hy⟩ : ∃ y ∈ K, (X ^ (m - 1) : k[X]) • y ≠ 0 := by
-        by_contra! h
-        exact Nat.find_min hex (show m - 1 < m by omega) h
-      -- Some homogeneous component `t` of `y` still has `X ^ (m - 1) • t ≠ 0`.
-      obtain ⟨r, hr⟩ : ∃ r, (X ^ (m - 1) : k[X]) • (DirectSum.decompose G.piece y r : M) ≠ 0 := by
-        by_contra! h
-        refine hy ?_
-        rw [← DirectSum.sum_support_decompose G.piece y, Finset.smul_sum]
-        exact Finset.sum_eq_zero fun r _ ↦ h r
-      set t : M := (DirectSum.decompose G.piece y r : M)
-      have htK : t ∈ K := hK r hyK
-      have ht0 : t ≠ 0 := fun h ↦ hr (by rw [h, smul_zero])
-      obtain ⟨K', hK', hCK', hCK'K⟩ :=
-        exists_disjoint_span_singleton_sup_eq hd hX hK hKm htK
-          (DirectSum.decompose G.piece y r).2 hr
-      have hCK : k[X] ∙ t ≤ K := hCK'K ▸ le_sup_left
-      have hCS : Disjoint (k[X] ∙ t) S := (hSK.mono_right hCK).symm
-      -- The annihilator of `t` is `(X ^ m)`: it contains `X ^ m` but not `X ^ (m - 1)`.
-      have htor : Ideal.torsionOf k[X] M t = Ideal.span {X ^ m} := by
-        obtain ⟨g, hg⟩ := (IsPrincipalIdealRing.principal (Ideal.torsionOf k[X] M t)).principal
-        have hmem (n : ℕ) : X ^ n ∈ Ideal.torsionOf k[X] M t ↔ g ∣ X ^ n := by
-          rw [hg, Ideal.submodule_span_eq, Ideal.mem_span_singleton]
-        obtain ⟨i, him, hgi⟩ := (dvd_prime_pow prime_X m).mp
-          ((hmem m).mp ((Ideal.mem_torsionOf_iff _ _).mpr (hKm t htK)))
-        have him' : i = m := by
-          by_contra hne
-          refine hr ((Ideal.mem_torsionOf_iff _ _).mp ((hmem (m - 1)).mpr ?_))
-          exact hgi.dvd.trans (pow_dvd_pow X (by omega))
-        rw [hg, Ideal.submodule_span_eq, Ideal.span_singleton_eq_span_singleton.mpr hgi, him']
-      refine ih (S ⊔ k[X] ∙ t) (lt_of_le_of_ne le_sup_left fun h ↦ ht0 ?_) (insert t s) K'
-        ⟨?_, hs.2.insert ?_⟩ ?_ hK' ?_ ?_
-      · exact (Submodule.disjoint_def.mp hCS) t (Submodule.mem_span_singleton_self t)
-          (h ▸ Submodule.mem_sup_right (Submodule.mem_span_singleton_self t))
-      · intro t' ht'
-        rcases Finset.mem_insert.mp ht' with rfl | ht'
-        · exact ⟨r, m, (DirectSum.decompose G.piece y r).2, hm, htor⟩
-        · exact hs.1 t' ht'
-      · rwa [hsS]
-      · rw [Finset.sup_insert, hsS, sup_comm]
-      · exact hCK'.disjoint_sup_left_of_disjoint_sup_right (hCK'K ▸ hSK)
-      · rw [sup_assoc, hCK'K, hSKL]
-  obtain ⟨s, hs, hsL⟩ := key ⊥ ∅ L ⟨by simp, Finset.supIndep_empty _⟩ (by simp) hL
-    disjoint_bot_left (bot_sup_eq L)
+  obtain ⟨s, hs, hsL⟩ := exists_supIndep_sup_eq_of_isCompl hd hX hLN ⊥ ∅ L
+    ⟨by simp, Finset.supIndep_empty _⟩ (by simp) hL disjoint_bot_left (bot_sup_eq L)
   choose deg m hdeg hm hmt using hs.1
   refine ⟨s, inferInstance, (↑), fun t ↦ deg t t.2, fun t ↦ m t t.2, fun t ↦ hdeg t t.2,
     fun t ↦ hm t t.2, fun t ↦ hmt t t.2, hs.2.independent, ?_⟩
