@@ -118,6 +118,7 @@ theorem Homotopic.cast_map_reparam (L : Path (Path.refl x) (Path.refl x)) {f : I
 
 /-- Concatenating every loop of a loop of loops `L` at the constant loop with the constant loop
 does not change its homotopy class. -/
+@[simp]
 theorem Homotopic.Quotient.cast_map_trans_prod_refl
     (L : Path.Homotopic.Quotient (Path.refl x) (Path.refl x)) :
     ((Path.Homotopic.prod L (Path.Homotopic.Quotient.refl (Path.refl x))).map
@@ -138,6 +139,7 @@ theorem Homotopic.Quotient.cast_map_trans_prod_refl
 
 /-- Concatenating the constant loop with every loop of a loop of loops `L` at the constant loop
 does not change its homotopy class. -/
+@[simp]
 theorem Homotopic.Quotient.cast_map_trans_refl_prod
     (L : Path.Homotopic.Quotient (Path.refl x) (Path.refl x)) :
     ((Path.Homotopic.prod (Path.Homotopic.Quotient.refl (Path.refl x)) L).map
