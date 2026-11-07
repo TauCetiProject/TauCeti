@@ -5,55 +5,56 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.Quiver.Path
-public import Mathlib.Order.Fin.Basic
-public import Mathlib.Data.Fintype.Fin
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Orientation
+public import Mathlib.Combinatorics.SimpleGraph.Hasse
 
 /-!
 # The linearly oriented quiver of type A
 
-`LineQuiver n` has vertices `0, …, n - 1` and one arrow from each vertex to its successor.
-A directed path exists precisely when its source is at most its target. This characterization
-allows constructions on intervals to use the order of the vertices without replacing the
-successor quiver by the quiver with an arrow for every comparable pair.
+`LineQuiver n` is the linear-order orientation of Mathlib's path graph on `Fin n`.
+A directed path exists precisely when its source is at most its target, and such a path
+is unique. These facts allow interval constructions to use the order of the vertices
+while retaining the successor arrows of the path graph.
 -/
 
 public section
 
 namespace TauCeti
 
-/-- The vertices of the linearly oriented quiver `0 → 1 → ⋯ → n - 1`. -/
-@[expose] def LineQuiver (n : ℕ) := Fin n
+open DoubledQuiver
+
+/-- The linear-order orientation of the path graph `0 — 1 — ⋯ — n - 1`. -/
+abbrev LineQuiver (n : ℕ) :=
+  OrientedQuiver (SimpleGraph.pathGraph n) (Orientation.ofLinearOrder _)
 
 namespace LineQuiver
 
 variable {n : ℕ}
 
-instance : LinearOrder (LineQuiver n) := inferInstanceAs (LinearOrder (Fin n))
+instance : LinearOrder (LineQuiver n) :=
+  LinearOrder.lift' (OrientedQuiver.vertexEquiv (SimpleGraph.pathGraph n)
+    (Orientation.ofLinearOrder _)).symm (Equiv.injective _)
 
-instance : Fintype (LineQuiver n) := inferInstanceAs (Fintype (Fin n))
+private theorem index_add_one_eq {i j : LineQuiver n} (e : i ⟶ j) :
+    ((OrientedQuiver.vertexEquiv _ _).symm i : Fin n).val + 1 =
+      ((OrientedQuiver.vertexEquiv _ _).symm j : Fin n).val := by
+  have e' : OrientedQuiver.vertex (SimpleGraph.pathGraph n) (Orientation.ofLinearOrder _)
+      ((OrientedQuiver.vertexEquiv _ _).symm i) ⟶
+      OrientedQuiver.vertex (SimpleGraph.pathGraph n) (Orientation.ofLinearOrder _)
+        ((OrientedQuiver.vertexEquiv _ _).symm j) := by
+    simpa only [← OrientedQuiver.vertexEquiv_apply, Equiv.apply_symm_apply] using e
+  have h := OrientedQuiver.homEquiv (SimpleGraph.pathGraph n)
+    (Orientation.ofLinearOrder _) _ _ e'
+  have hadj := SimpleGraph.pathGraph_adj.mp h.1
+  have hlt : ((OrientedQuiver.vertexEquiv _ _).symm i : Fin n).val <
+      ((OrientedQuiver.vertexEquiv _ _).symm j : Fin n).val :=
+    (Orientation.mem_ofLinearOrder_iff _ _).mp h.2
+  omega
 
-instance : Quiver (LineQuiver n) where
-  Hom i j := PLift (i.val + 1 = j.val)
-
-/-- The unique arrow between two consecutive vertices of the line quiver. -/
-def arrow (i j : LineQuiver n) (h : i.val + 1 = j.val) : i ⟶ j := ⟨h⟩
-
-/-- An arrow of the line quiver increases the vertex number by one. -/
-theorem val_add_one_eq {i j : LineQuiver n} (e : i ⟶ j) : i.val + 1 = j.val := e.down
-
-/-- Every directed path in the line quiver goes from a smaller vertex to a larger one. -/
-theorem le_of_path {i j : LineQuiver n} (p : Quiver.Path i j) : i ≤ j := by
-  induction p with
-  | nil => exact le_rfl
-  | @cons j l p e ih =>
-    have he := val_add_one_eq e
-    exact le_trans ih (by exact_mod_cast (by omega : j.val ≤ l.val))
-
-/-- Two vertices of the line quiver are joined by a directed path exactly when they are
-ordered in the direction of the arrows. -/
-theorem nonempty_path_iff_le (i j : LineQuiver n) : Nonempty (Quiver.Path i j) ↔ i ≤ j := by
-  refine ⟨fun ⟨p⟩ ↦ le_of_path p, fun hij ↦ ?_⟩
+private theorem nonempty_path_vertex (i j : Fin n) (hij : i ≤ j) :
+    Nonempty (Quiver.Path
+      (OrientedQuiver.vertex (SimpleGraph.pathGraph n) (Orientation.ofLinearOrder _) i)
+      (OrientedQuiver.vertex (SimpleGraph.pathGraph n) (Orientation.ofLinearOrder _) j)) := by
   have h : i.val ≤ j.val := hij
   obtain ⟨m, hm⟩ := Nat.exists_eq_add_of_le h
   clear h
@@ -63,10 +64,50 @@ theorem nonempty_path_iff_le (i j : LineQuiver n) : Nonempty (Quiver.Path i j) �
     subst j
     exact ⟨Quiver.Path.nil⟩
   | succ m ih =>
-    let l : LineQuiver n := ⟨j.val - 1, by omega⟩
+    let l : Fin n := ⟨j.val - 1, by omega⟩
     have hl : l.val = i.val + m := by dsimp [l]; omega
     obtain ⟨p⟩ := ih l (by exact_mod_cast (by omega : i.val ≤ l.val)) hl
-    exact ⟨p.cons ⟨by dsimp [l]; omega⟩⟩
+    have hadj : (SimpleGraph.pathGraph n).Adj l j :=
+      SimpleGraph.pathGraph_adj.mpr (Or.inl (by dsimp [l]; omega))
+    refine ⟨p.cons (OrientedQuiver.arrow _ _ hadj ?_)⟩
+    rw [Orientation.mem_ofLinearOrder_iff]
+    exact (by dsimp [l]; omega : l.val < j.val)
+
+/-- Two vertices of the line quiver are joined by a directed path exactly when they are
+ordered in the direction of the arrows. -/
+theorem nonempty_path_iff_le (i j : LineQuiver n) : Nonempty (Quiver.Path i j) ↔ i ≤ j := by
+  refine ⟨fun ⟨p⟩ ↦ OrientedQuiver.le_of_path_ofLinearOrder _ p, fun hij ↦ ?_⟩
+  have h := nonempty_path_vertex ((OrientedQuiver.vertexEquiv _ _).symm i)
+    ((OrientedQuiver.vertexEquiv _ _).symm j) hij
+  simpa only [← OrientedQuiver.vertexEquiv_apply, Equiv.apply_symm_apply] using h
+
+/-- There is at most one directed path between two vertices of the line quiver. -/
+instance (i j : LineQuiver n) : Subsingleton (Quiver.Path i j) := by
+  refine ⟨fun p q ↦ ?_⟩
+  induction p with
+  | nil =>
+    cases q with
+    | nil => rfl
+    | @cons l _ p e =>
+      have h : ((OrientedQuiver.vertexEquiv _ _).symm i : Fin n).val ≤
+          ((OrientedQuiver.vertexEquiv _ _).symm l : Fin n).val :=
+        OrientedQuiver.le_of_path_ofLinearOrder (SimpleGraph.pathGraph n) p
+      have he := index_add_one_eq e
+      omega
+  | @cons x y p e ih =>
+    cases q with
+    | nil =>
+      have h : ((OrientedQuiver.vertexEquiv _ _).symm i : Fin n).val ≤
+          ((OrientedQuiver.vertexEquiv _ _).symm x : Fin n).val :=
+        OrientedQuiver.le_of_path_ofLinearOrder (SimpleGraph.pathGraph n) p
+      have he := index_add_one_eq e
+      omega
+    | @cons x' _ q f =>
+      have he := index_add_one_eq e
+      have hf := index_add_one_eq f
+      have h : x = x' := (OrientedQuiver.vertexEquiv _ _).symm.injective (Fin.ext (by omega))
+      subst x'
+      rw [ih q, Subsingleton.elim e f]
 
 end LineQuiver
 end TauCeti

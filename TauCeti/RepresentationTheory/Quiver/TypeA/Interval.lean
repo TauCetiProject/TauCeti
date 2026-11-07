@@ -31,7 +31,7 @@ and proves the brick and distinctness properties; it does not assert their exhau
 
 public noncomputable section
 
-open CategoryTheory
+open CategoryTheory TauCeti.DoubledQuiver
 
 namespace TauCeti.LineQuiver
 
@@ -80,8 +80,8 @@ def intervalRep : QuiverRep k (LineQuiver n) where
       rw [intervalSpace_eq_zero k a b hi x]
       rfl
   map_comp := fun {i j l : LineQuiver n} p q ↦ by
-    have hij := le_of_path p
-    have hjl := le_of_path q
+    have hij := OrientedQuiver.le_of_path_ofLinearOrder (SimpleGraph.pathGraph n) p
+    have hjl := OrientedQuiver.le_of_path_ofLinearOrder (SimpleGraph.pathGraph n) q
     apply ModuleCat.hom_ext
     apply LinearMap.ext
     intro x
@@ -123,7 +123,7 @@ theorem intervalRepCoord_injective (i : LineQuiver n) :
 
 /-- The interval generator has coordinate one on the support and zero off the support. -/
 @[simp]
-theorem intervalRepCoord_generator (i : LineQuiver n) :
+theorem intervalRepCoord_intervalGenerator (i : LineQuiver n) :
     intervalRepCoord k a b i (intervalGenerator k a b i) =
       if a ≤ i ∧ i ≤ b then 1 else 0 := (rfl)
 
@@ -149,7 +149,7 @@ theorem intervalGenerator_ne_zero [Nontrivial k] {i : LineQuiver n} (hi : a ≤ 
 /-- Scalar coordinates reconstruct vectors from the distinguished interval generator,
 including in the zero spaces outside the interval. -/
 @[simp]
-theorem intervalRepCoord_smul_generator (i : LineQuiver n)
+theorem intervalRepCoord_smul_intervalGenerator (i : LineQuiver n)
     (x : (intervalRep k a b).obj ((Paths.of (LineQuiver n)).obj i)) :
     intervalRepCoord k a b i x • intervalGenerator k a b i = x := by
   by_cases hi : a ≤ i ∧ i ≤ b
@@ -164,10 +164,10 @@ theorem intervalRepCoord_smul_generator (i : LineQuiver n)
 /-- A path carries the interval generator to the generator at its target precisely when
 both endpoints lie in the interval; otherwise its value is zero. -/
 @[simp]
-theorem intervalRep_map_generator {i j : LineQuiver n} (p : Quiver.Path i j) :
+theorem intervalRep_map_intervalGenerator {i j : LineQuiver n} (p : Quiver.Path i j) :
     (intervalRep k a b).map p (intervalGenerator k a b i) =
       if a ≤ i ∧ j ≤ b then intervalGenerator k a b j else 0 := by
-  have hij := le_of_path p
+  have hij := OrientedQuiver.le_of_path_ofLinearOrder (SimpleGraph.pathGraph n) p
   by_cases hi : a ≤ i ∧ i ≤ b
   · by_cases hj : a ≤ j ∧ j ≤ b
     · rw [ite_eq_left ⟨hi.1, hj.2⟩]
@@ -180,6 +180,26 @@ theorem intervalRep_map_generator {i j : LineQuiver n} (p : Quiver.Path i j) :
   · have h : ¬ (a ≤ i ∧ j ≤ b) := fun h ↦ hi ⟨h.1, hij.trans h.2⟩
     rw [ite_eq_right h, intervalGenerator_eq_zero k a b hi]
     exact map_zero ((intervalRep k a b).map p).hom
+
+/-- In scalar coordinates, a path preserves a vector until it leaves the interval at the
+right endpoint. Coordinates outside the support are already zero. -/
+@[simp]
+theorem intervalRepCoord_map {i j : LineQuiver n} (p : Quiver.Path i j)
+    (x : (intervalRep k a b).obj ((Paths.of (LineQuiver n)).obj i)) :
+    intervalRepCoord k a b j ((intervalRep k a b).map p x) =
+      if j ≤ b then intervalRepCoord k a b i x else 0 := by
+  have hij := OrientedQuiver.le_of_path_ofLinearOrder (SimpleGraph.pathGraph n) p
+  -- Retype the bundled vertex vector as an element of its defining submodule.
+  let y : intervalSpace k a b i := x
+  change ((intervalMap k a b (j := j) y) : k) = if j ≤ b then (y : k) else 0
+  calc
+    _ = if a ≤ j ∧ j ≤ b then (y : k) else 0 := coe_intervalMap k a b y
+    _ = _ := by
+      by_cases hj : a ≤ j
+      · simp [hj]
+      · have hi : ¬ (a ≤ i ∧ i ≤ b) := fun hi ↦ hj (hi.1.trans hij)
+        have hy : (y : k) = 0 := congrArg Subtype.val (intervalSpace_eq_zero k a b hi y)
+        simp [hy]
 
 /-- An interval representation over a nonzero coefficient ring is zero exactly when
 its interval is empty. -/
@@ -213,7 +233,7 @@ theorem intervalRep_hom_ext {M : QuiverRep k (LineQuiver n)}
   apply ModuleCat.hom_ext
   apply LinearMap.ext
   intro x
-  rw [← intervalRepCoord_smul_generator k a b i x]
+  rw [← intervalRepCoord_smul_intervalGenerator k a b i x]
   simp only [map_smul]
   congr 1
   by_cases hi : a ≤ i ∧ i ≤ b
@@ -224,16 +244,16 @@ theorem intervalRep_hom_ext {M : QuiverRep k (LineQuiver n)}
     have hg : g.app i ((intervalRep k a b).map p (intervalGenerator k a b a)) =
         M.map p (g.app a (intervalGenerator k a b a)) :=
       ConcreteCategory.congr_hom (g.naturality p) (intervalGenerator k a b a)
-    simp only [intervalRep_map_generator, le_refl, true_and, ite_eq_left hi.2] at hf hg
+    simp only [intervalRep_map_intervalGenerator, le_refl, true_and, ite_eq_left hi.2] at hf hg
     exact hf.trans ((congrArg (M.map p) h).trans hg.symm)
   · simp [intervalGenerator_eq_zero k a b hi]
 
 /-- Every endomorphism of an interval representation is scalar multiplication. -/
-theorem intervalRep_end_eq_smul_id (f : intervalRep k a b ⟶ intervalRep k a b) :
+theorem intervalRep_exists_eq_smul_id (f : intervalRep k a b ⟶ intervalRep k a b) :
     ∃ c : k, f = c • 𝟙 (intervalRep k a b) := by
   refine ⟨intervalRepCoord k a b a (f.app a (intervalGenerator k a b a)),
     intervalRep_hom_ext ?_⟩
-  exact (intervalRepCoord_smul_generator k a b a _).symm
+  exact (intervalRepCoord_smul_intervalGenerator k a b a _).symm
 
 end Ring
 
@@ -254,7 +274,7 @@ theorem finrank_intervalRep_obj (i : LineQuiver n) :
   split_ifs with hi
   · exact (finrank_eq_one_iff_of_ne_zero' (intervalGenerator k a b i)
       (intervalGenerator_ne_zero k a b hi)).mpr (fun x ↦
-        ⟨intervalRepCoord k a b i x, intervalRepCoord_smul_generator k a b i x⟩)
+        ⟨intervalRepCoord k a b i x, intervalRepCoord_smul_intervalGenerator k a b i x⟩)
   · let := ModuleCat.subsingleton_of_isZero (isZero_intervalRep_obj k a b hi)
     exact Module.finrank_zero_of_subsingleton (R := k)
       (M := (intervalRep k a b).obj ((Paths.of (LineQuiver n)).obj i))
@@ -271,7 +291,7 @@ theorem finrank_end_intervalRep (hab : a ≤ b) :
       (f.app a).hom (intervalGenerator k a b a)) h
     exact intervalGenerator_ne_zero k a b ⟨le_rfl, hab⟩ h'
   exact (finrank_eq_one_iff_of_ne_zero' _ hid).mpr (fun f ↦
-    (intervalRep_end_eq_smul_id f).imp fun _ h ↦ h.symm)
+    (intervalRep_exists_eq_smul_id f).imp fun _ h ↦ h.symm)
 
 /-- Every nonempty interval representation is indecomposable, over any coefficient field. -/
 theorem indecomposable_intervalRep (hab : a ≤ b) : Indecomposable (intervalRep k a b) :=
