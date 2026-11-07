@@ -13,8 +13,9 @@ import TauCeti.Analysis.Complex.Circle
 
 Let `u, w` be orthogonal vectors with `Q u * Q w = 1`, for instance an orthonormal pair for
 `Q v = -‖v‖²`. The circle subgroup `CliffordAlgebra.spinCircle`, `y ↦ Re y + Im y J` with
-`J = ι u ι w`, is a double cover of the rotations of the plane of `u` and `w`: the element `y`
-rotates that plane by `y²`. In `Spinᶜ(Q)` this double cover is undone by twisting with the same
+`J = ι u ι w`, is a double cover of the rotations of the plane of `u` and `w`: when `Q u < 0` the
+element `y` rotates that plane, oriented by `(u, w)`, by `y²` (when `Q u > 0` it rotates it by
+`y⁻²`). In `Spinᶜ(Q)` this double cover is undone by twisting with the same
 circle element. The class
 
 `[Re y + Im y J, y] ∈ Spinᶜ(Q)`
@@ -27,9 +28,10 @@ depends only on `z = y²`, because replacing `y` by `-y` changes the sign of bot
 `spinCCircle (exp (i θ)) = [exp (θ J / 2), exp (i θ / 2)]`
 
 (`CliffordAlgebra.spinCCircle_exp`). At `θ = 2π` both entries equal `-1`, and `[-1, -1] = 1`.
-The rotation of `spinCCircle z` is the rotation of the plane by `z`, fixing the orthogonal
-complement, and its determinant character is `z`. So `spinCCircle` lifts `z ↦ (rotation by z, z)`
-along `Spinᶜ(Q) → SO(Q) × U(1)`. For a finite-dimensional nondegenerate form it is the only
+When `Q u < 0` the rotation of `spinCCircle z` is the rotation of the plane, oriented by `(u, w)`,
+by `z`, fixing the orthogonal complement (when `Q u > 0` it is the rotation by `z⁻¹`); its
+determinant character is `z`. So `spinCCircle` lifts `z ↦ (its rotation, z)` along
+`Spinᶜ(Q) → SO(Q) × U(1)`. For a finite-dimensional nondegenerate form it is the only
 homomorphism from the circle doing so (`CliffordAlgebra.eq_spinCCircle`).
 
 This is the structure-group form of the canonical `Spinᶜ` structure of an oriented plane field
@@ -63,8 +65,10 @@ through its determinant character on the second.
 * `CliffordAlgebra.toSpecialOrthogonal_spinCCircle_apply_left`,
   `CliffordAlgebra.toSpecialOrthogonal_spinCCircle_apply_right` and
   `CliffordAlgebra.toSpecialOrthogonal_spinCCircle_apply_of_isOrtho`: `spinCCircle z` rotates the
-  plane of `u` and `w` by `z` and fixes the vectors orthogonal to it.
-* `CliffordAlgebra.eq_spinCCircle`: uniqueness of a homomorphic lift of `z ↦ (rotation by z, z)`.
+  plane of `u` and `w`, oriented by `(u, w)`, by `z` when `Q u < 0` (by `z⁻¹` when `Q u > 0`) and
+  fixes the vectors orthogonal to it.
+* `CliffordAlgebra.eq_spinCCircle`: uniqueness of a homomorphic lift of these rotations with
+  determinant character the identity.
 * `CliffordAlgebra.spinCGroupMap_spinCCircle`: naturality under quadratic isometries.
 * `CliffordAlgebra.coe_spinCGroupHalfSpinRep_one_spinCCircle_apply_of_eq_I_smul`,
   `CliffordAlgebra.coe_spinCGroupHalfSpinRep_one_spinCCircle_apply_of_eq_neg_I_smul`,
@@ -115,8 +119,9 @@ variable (Q u w) in
 /-- **The `Spinᶜ` lift of the rotations of an oriented plane.** For orthogonal `u, w` with
 `Q u * Q w = 1` and `J = ι u ι w`, the homomorphism `U(1) → Spinᶜ(Q)` sending `y²` to
 `[Re y + Im y J, y]`; the class does not depend on the choice of square root `y`
-(`CliffordAlgebra.spinCGroup.mk_spinCircle_neg`). The element `z` rotates the plane of `u` and `w`
-by `z` and has determinant character `z`. -/
+(`CliffordAlgebra.spinCGroup.mk_spinCircle_neg`). The element `z` rotates the plane of `u` and `w`,
+oriented by `(u, w)`, by `z` when `Q u < 0` and by `z⁻¹` when `Q u > 0`; its determinant character
+is `z`. -/
 def spinCCircle : Circle →* spinCGroup Q hQ :=
   (powMonoidHom 2 : Circle →* Circle).liftOfRightInverse
     (fun z ↦ (z.exists_pow_nat_eq two_ne_zero).choose)
@@ -147,7 +152,9 @@ theorem det_spinCCircle (z : Circle) :
   rw [spinCCircle_sq, spinCGroup.det_mk]
 
 /-- **`spinCCircle` rotates its plane, first vector.** The element `z` moves `u` to
-`Re z u - Im z Q u w`; for `Q u = -1` this is the rotation of `u` towards `w` by `z`. -/
+`Re z u - Im z Q u w`; for `Q u = -1` this is the rotation of `u` towards `w` by `z`, and for
+`Q u = 1` the rotation by `z⁻¹`. -/
+@[simp]
 theorem toSpecialOrthogonal_spinCCircle_apply_left (z : Circle) :
     (spinCGroup.toSpecialOrthogonal Q hQ (spinCCircle Q hQ u w huw h z) : M ≃ₗ[ℝ] M) u =
       (z : ℂ).re • u - ((z : ℂ).im * Q u) • w := by
@@ -156,7 +163,9 @@ theorem toSpecialOrthogonal_spinCCircle_apply_left (z : Circle) :
     spinVectorAction_spinCircle_left huw h, Circle.coe_pow]
 
 /-- **`spinCCircle` rotates its plane, second vector.** The element `z` moves `w` to
-`Re z w + Im z Q w u`; for `Q w = -1` this is the rotation of `w` away from `u` by `z`. -/
+`Re z w + Im z Q w u`; for `Q w = -1` this is the rotation of `w` away from `u` by `z`, and for
+`Q w = 1` the rotation by `z⁻¹`. -/
+@[simp]
 theorem toSpecialOrthogonal_spinCCircle_apply_right (z : Circle) :
     (spinCGroup.toSpecialOrthogonal Q hQ (spinCCircle Q hQ u w huw h z) : M ≃ₗ[ℝ] M) w =
       (z : ℂ).re • w + ((z : ℂ).im * Q w) • u := by
@@ -165,6 +174,7 @@ theorem toSpecialOrthogonal_spinCCircle_apply_right (z : Circle) :
     spinVectorAction_spinCircle_right huw h, Circle.coe_pow]
 
 /-- **`spinCCircle` fixes the orthogonal complement of its plane.** -/
+@[simp]
 theorem toSpecialOrthogonal_spinCCircle_apply_of_isOrtho {v : M} (hu : Q.IsOrtho u v)
     (hw : Q.IsOrtho w v) (z : Circle) :
     (spinCGroup.toSpecialOrthogonal Q hQ (spinCCircle Q hQ u w huw h z) : M ≃ₗ[ℝ] M) v = v := by
@@ -216,6 +226,16 @@ private theorem spinCircle_eq_spinTorus (y : Circle) :
       y = b.spinTorus hQ (1, y) := by
   rw [OrthonormalBasis.spinTorus_apply, map_one, one_mul]
 
+/-- On each eigenspace of the chirality, `spinCCircle (y²)` acts as `y` times the torus element
+`(1, y)`. -/
+private theorem spinCGroupHalfSpinRep_spinCCircle_sq (ε : ℂ) (y : Circle) :
+    spinCGroupHalfSpinRep o ρ ε hQ₀
+        (spinCCircle Q hQ₀ (b 2) (b 3) (b.isOrtho_apply hQ (by decide))
+          (b.map_apply_mul_map_apply hQ 2 3) (y ^ 2)) =
+      (y : ℂ) • halfSpinRep o ρ ε (b.spinTorus hQ (1, y)) := by
+  rw [spinCCircle_sq, spinCGroupHalfSpinRep_mk, spinCHalfSpinRep_apply,
+    spinCircle_eq_spinTorus b hQ]
+
 include hb
 
 /-- **The weight `z` on `W⁺`**: the lift of the rotations of `⟨b₂, b₃⟩` acts by `z` on a positive
@@ -227,11 +247,10 @@ theorem coe_spinCGroupHalfSpinRep_one_spinCCircle_apply_of_eq_I_smul (z : Circle
         (spinCCircle Q hQ₀ (b 2) (b 3) (b.isOrtho_apply hQ (by decide))
           (b.map_apply_mul_map_apply hQ 2 3) z) ψ : W) = (z : ℂ) • (ψ : W) := by
   obtain ⟨y, rfl⟩ := z.exists_pow_nat_eq two_ne_zero
-  rw [spinCCircle_sq, spinCGroupHalfSpinRep_mk, spinCHalfSpinRep_apply, LinearMap.smul_apply,
-    Submodule.coe_smul, spinCircle_eq_spinTorus b hQ, halfSpinRep_one_spinTorus b hQ ρ hb,
-    one_mul,
-    coe_halfSpinRep_spinTorus_mk_one_apply_of_eq_I_smul b hQ o ρ y hψ, smul_smul, Circle.coe_pow,
-    sq]
+  rw [spinCGroupHalfSpinRep_spinCCircle_sq hQ₀ b hQ, halfSpinRep_one_spinTorus b hQ ρ hb,
+    one_mul, LinearMap.smul_apply, Submodule.coe_smul,
+    coe_halfSpinRep_spinTorus_mk_one_apply_of_eq_I_smul b hQ o ρ y hψ, smul_smul]
+  simp [sq]
 
 /-- **The weight `1` on `W⁺`**: the lift of the rotations of `⟨b₂, b₃⟩` fixes a positive
 half-spinor on which `c(b₀) c(b₁)` acts by `-i`. -/
@@ -242,11 +261,10 @@ theorem coe_spinCGroupHalfSpinRep_one_spinCCircle_apply_of_eq_neg_I_smul (z : Ci
         (spinCCircle Q hQ₀ (b 2) (b 3) (b.isOrtho_apply hQ (by decide))
           (b.map_apply_mul_map_apply hQ 2 3) z) ψ : W) = ψ := by
   obtain ⟨y, rfl⟩ := z.exists_pow_nat_eq two_ne_zero
-  rw [spinCCircle_sq, spinCGroupHalfSpinRep_mk, spinCHalfSpinRep_apply, LinearMap.smul_apply,
-    Submodule.coe_smul, spinCircle_eq_spinTorus b hQ, halfSpinRep_one_spinTorus b hQ ρ hb,
-    one_mul,
-    coe_halfSpinRep_spinTorus_mk_one_apply_of_eq_neg_I_smul b hQ o ρ y hψ, smul_smul,
-    mul_inv_cancel₀ (Circle.coe_ne_zero y), one_smul]
+  rw [spinCGroupHalfSpinRep_spinCCircle_sq hQ₀ b hQ, halfSpinRep_one_spinTorus b hQ ρ hb,
+    one_mul, LinearMap.smul_apply, Submodule.coe_smul,
+    coe_halfSpinRep_spinTorus_mk_one_apply_of_eq_neg_I_smul b hQ o ρ y hψ, smul_smul]
+  simp
 
 /-- **The weight `1` on `W⁻`**: the lift of the rotations of `⟨b₂, b₃⟩` fixes a negative
 half-spinor on which `c(b₀) c(b₁)` acts by `i`. -/
@@ -257,11 +275,10 @@ theorem coe_spinCGroupHalfSpinRep_neg_one_spinCCircle_apply_of_eq_I_smul (z : Ci
         (spinCCircle Q hQ₀ (b 2) (b 3) (b.isOrtho_apply hQ (by decide))
           (b.map_apply_mul_map_apply hQ 2 3) z) ψ : W) = ψ := by
   obtain ⟨y, rfl⟩ := z.exists_pow_nat_eq two_ne_zero
-  rw [spinCCircle_sq, spinCGroupHalfSpinRep_mk, spinCHalfSpinRep_apply, LinearMap.smul_apply,
-    Submodule.coe_smul, spinCircle_eq_spinTorus b hQ, halfSpinRep_neg_one_spinTorus b hQ ρ hb,
-    one_mul,
-    coe_halfSpinRep_spinTorus_mk_one_apply_of_eq_I_smul b hQ o ρ y⁻¹ hψ, smul_smul,
-    Circle.coe_inv, mul_inv_cancel₀ (Circle.coe_ne_zero y), one_smul]
+  rw [spinCGroupHalfSpinRep_spinCCircle_sq hQ₀ b hQ, halfSpinRep_neg_one_spinTorus b hQ ρ hb,
+    one_mul, LinearMap.smul_apply, Submodule.coe_smul,
+    coe_halfSpinRep_spinTorus_mk_one_apply_of_eq_I_smul b hQ o ρ y⁻¹ hψ, smul_smul]
+  simp
 
 /-- **The weight `z` on `W⁻`**: the lift of the rotations of `⟨b₂, b₃⟩` acts by `z` on a negative
 half-spinor on which `c(b₀) c(b₁)` acts by `-i`. -/
@@ -272,11 +289,10 @@ theorem coe_spinCGroupHalfSpinRep_neg_one_spinCCircle_apply_of_eq_neg_I_smul (z 
         (spinCCircle Q hQ₀ (b 2) (b 3) (b.isOrtho_apply hQ (by decide))
           (b.map_apply_mul_map_apply hQ 2 3) z) ψ : W) = (z : ℂ) • (ψ : W) := by
   obtain ⟨y, rfl⟩ := z.exists_pow_nat_eq two_ne_zero
-  rw [spinCCircle_sq, spinCGroupHalfSpinRep_mk, spinCHalfSpinRep_apply, LinearMap.smul_apply,
-    Submodule.coe_smul, spinCircle_eq_spinTorus b hQ, halfSpinRep_neg_one_spinTorus b hQ ρ hb,
-    one_mul,
-    coe_halfSpinRep_spinTorus_mk_one_apply_of_eq_neg_I_smul b hQ o ρ y⁻¹ hψ, smul_smul,
-    Circle.coe_inv, inv_inv, Circle.coe_pow, sq]
+  rw [spinCGroupHalfSpinRep_spinCCircle_sq hQ₀ b hQ, halfSpinRep_neg_one_spinTorus b hQ ρ hb,
+    one_mul, LinearMap.smul_apply, Submodule.coe_smul,
+    coe_halfSpinRep_spinTorus_mk_one_apply_of_eq_neg_I_smul b hQ o ρ y⁻¹ hψ, smul_smul]
+  simp [sq]
 
 end HalfSpin
 
