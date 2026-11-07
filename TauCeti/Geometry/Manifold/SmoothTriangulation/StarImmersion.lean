@@ -7,10 +7,13 @@ module
 
 public import TauCeti.Geometry.Manifold.SmoothTriangulation.Secant
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Finite
+public import TauCeti.Geometry.Manifold.SmoothTriangulation.Edgewise
 import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Coordinates
 import TauCeti.Analysis.Calculus.FDeriv.Antilipschitz
 import Mathlib.Analysis.Calculus.Deriv.AffineMap
 import Mathlib.Analysis.Calculus.TangentCone.Real
+import TauCeti.Analysis.Convex.Lipschitz
+import TauCeti.Geometry.Manifold.SmoothTriangulation.Lipschitz
 
 /-!
 # Star immersions of complexes
@@ -26,9 +29,15 @@ injective. Being an immersion on every closed simplex is not enough: two edges l
 in the same direction, say as `t ↦ (t, t ^ 2)` and `t ↦ (t, -t ^ 2)`, give an injective map
 whose points at parameter `t` are at distance `2 * t ^ 2` in the plane but at barycentric
 distance of order `t`. For star immersions of a finite complex there is no such loss: an
-injective star immersion is antilipschitz in barycentric coordinates. Together with
-`AntilipschitzWith.add_sub_lipschitzWith`, this keeps perturbations with small Lipschitz error,
-such as the secant maps of an embedding on fine subdivisions, injective.
+injective star immersion is antilipschitz in barycentric coordinates.
+
+This keeps perturbations with small Lipschitz error injective. The secant maps of `f` on fine
+edgewise subdivisions are such perturbations: their difference with `f` is Lipschitz with
+arbitrarily small constant in barycentric coordinates, also across different simplices. Hence the
+secant maps of an injective star immersion of a finite complex are antilipschitz, with a constant
+independent of the subdivision, and are closed embeddings. This is Munkres' secant approximation
+of an embedding of a complex (Chapter II, Section 9): an embedding which is linear on every
+simplex of a subdivision replaces the smooth one.
 
 By Munkres' Theorem 8.4, a smooth triangulation of a manifold is a star immersion in charts, so
 this is the separation input for comparing and fitting together smooth triangulations.
@@ -42,6 +51,12 @@ this is the separation input for comparing and fitting together smooth triangula
 
 * `TauCeti.IsStarImmersion.exists_antilipschitzWith`: an injective `C¹` star immersion of a
   complex on a finite vertex type is antilipschitz in barycentric coordinates.
+* `TauCeti.IsStarImmersion.exists_pos_eventually_norm_sub_le_mul_norm_secantMap_sub`: the secant
+  maps of an injective `C¹` star immersion on fine edgewise subdivisions are antilipschitz in
+  barycentric coordinates, uniformly in the subdivision.
+* `TauCeti.IsStarImmersion.eventually_isClosedEmbedding_secantMap_edgewiseSubdivision`: the
+  secant maps of an injective `C¹` star immersion of a finite complex on all sufficiently fine
+  edgewise subdivisions are closed embeddings.
 * `AbstractSimplicialComplex.isStarImmersion_secantMap`: an injective secant map, linear in
   barycentric coordinates on every closed simplex, is a star immersion.
 
@@ -53,7 +68,9 @@ extensions of `f` off its simplices. The proof of the separation bound works in 
 coordinates `ι → ℝ`. Near a pair of nearby points `x` and `y` of two simplices it chooses a common
 point `z` of the two simplices, compares `f` with its differential at `z`, and bounds the
 differential from below by compactness after rescaling the pair from the barycenter of the common
-face.
+face. The Lipschitz bound for the secant error is first proved on the simplices of the
+subdivision, glued across them on each closed simplex of `K`, and passed between two simplices
+of `K` through the same common point `z`; distant pairs are handled by uniform convergence.
 
 ## References
 
@@ -465,6 +482,10 @@ theorem isSimplexImmersion (h : IsStarImmersion n f) (σ : Face K) :
 theorem of_le {m : WithTop ℕ∞} (h : IsStarImmersion n f) (hmn : m ≤ n) : IsStarImmersion m f :=
   ⟨fun σ => (h.1 σ).of_le hmn, h.2⟩
 
+/-- A star immersion is continuous. -/
+theorem continuous (h : IsStarImmersion n f) : Continuous f :=
+  continuous_iff_faceInclusion.2 fun σ => (h.1 σ).continuous
+
 /-- Points of two closed simplices with the same coordinates are the same point. -/
 private theorem faceInclusion_eq {σ τ : Face K} {p : StandardSimplex σ.1}
     {q : StandardSimplex τ.1} (hpq : (p.1 : ι → ℝ) = q.1) :
@@ -574,13 +595,9 @@ theorem exists_antilipschitzWith (h : IsStarImmersion n f) (hn : 1 ≤ n) (hf : 
       AntilipschitzWith C (f ∘ (K.realizationHomeomorphRange (Set.toFinite K.faces)).symm) := by
   set e := K.realizationHomeomorphRange (Set.toFinite K.faces)
   obtain ⟨c, hc, δ, hδ, hlocal⟩ := exists_pos_mul_norm_sub_le_norm_sub h hn
-  have hfc : Continuous f := continuous_iff_faceInclusion.2 fun σ => by
-    obtain ⟨G, G', hGf, hGd, -⟩ := exists_coord (h.1 σ) hn
-    have hG : ContinuousOn G (coordSimplex σ.1) := fun w hw => (hGd w hw).continuousWithinAt
-    exact (hG.comp_continuous continuous_induced_dom (mem_coordSimplex σ)).congr hGf
   let : CompactSpace (range fun x : Realization K => (x.1 : ι → ℝ)) := e.compactSpace
   obtain ⟨C, hC, hanti⟩ := isCompact_univ.exists_antilipschitzWith_of_locally
-    (hfc.comp e.symm.continuous).continuousOn ((hf.comp e.symm.injective).injOn) hc hδ
+    (h.continuous.comp e.symm.continuous).continuousOn ((hf.comp e.symm.injective).injOn) hc hδ
     fun p _ q _ hpq => by
       have hdist : dist p q = ‖((e.symm p).1 : ι → ℝ) - (e.symm q).1‖ := by
         rw [Subtype.dist_eq, dist_eq_norm, K.coe_realizationHomeomorphRange_symm_apply,
@@ -589,6 +606,231 @@ theorem exists_antilipschitzWith (h : IsStarImmersion n f) (hn : 1 ≤ n) (hf : 
       rw [comp_apply, comp_apply, dist_eq_norm]
       exact hlocal _ _ hpq
   exact ⟨C, hC, fun p q => hanti ⟨p, mem_univ p⟩ ⟨q, mem_univ q⟩⟩
+
+
+/-! ### Secant maps on fine edgewise subdivisions -/
+
+section Secant
+
+open Filter _root_.PreAbstractSimplicialComplex
+
+variable [LinearOrder ι]
+
+/-- The secant error of `f` on the `k`-th edgewise subdivision: the difference between the secant
+map of `f` and `f`, read on the subdivision through the canonical map onto `|K|`. -/
+private def secantError (f : Realization K → E) (k : ℕ)
+    (x : Realization (K.edgewiseSubdivision k)) : E :=
+  (K.edgewiseSubdivision k).secantMap (f ∘ edgewiseSubdivisionRealizationMap K k) x -
+    f (edgewiseSubdivisionRealizationMap K k x)
+
+/-- On the closed simplices of every sufficiently fine edgewise subdivision, the secant error of a
+map which is a `C¹` immersion on every closed simplex is `ε`-Lipschitz in the original
+coordinates. -/
+private theorem eventually_norm_secantError_faceInclusion_sub_le
+    (hf : ∀ σ : Face K, IsSimplexImmersion 𝓘(ℝ, E) n (f ∘ faceInclusion K σ)) (hn : 1 ≤ n)
+    {ε : ℝ} (hε : 0 < ε) :
+    ∀ᶠ k in atTop, ∀ (ρ : Face (K.edgewiseSubdivision k)) (x y : StandardSimplex ρ.1),
+      ‖secantError f k (faceInclusion _ ρ y) - secantError f k (faceInclusion _ ρ x)‖ ≤
+        ε * ‖((edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ y)).1 : ι → ℝ) -
+          (edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ x)).1‖ := by
+  have : Finite (Face K) := (Set.toFinite K.faces).to_subtype
+  choose F hFg hF _ using fun σ => isSimplexImmersion_iff.mp (hf σ)
+  filter_upwards [eventually_all.mpr fun σ : Face K =>
+    ContDiffOn.eventually_norm_linearCombination_sub_comp_sub_le_edgewiseSubdivision
+      ((contMDiffOn_iff_contDiffOn.mp (hF σ)).of_le hn) hε] with k hk ρ x y
+  -- The simplex `ρ` lies in the face `σ` of `K` spanned by the entries of its vertices.
+  let σ : Face K := ⟨_, biUnion_image_mem_of_mem_edgewiseSubdivision ρ.2⟩
+  have hρσ : ∀ u ∈ ρ.1, ∀ l, u.1 l ∈ σ.1 := fun u hu l =>
+    Finset.mem_biUnion.mpr ⟨u, hu, Finset.mem_image_of_mem _ (Finset.mem_univ l)⟩
+  let w (t : StandardSimplex ρ.1) := ⇑(Finset.standardSimplexHomeomorph ρ.1 t).weights
+  have hφ (t : StandardSimplex ρ.1) :
+      edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ t) =
+        faceInclusion K σ (edgewiseSubdivisionFaceMap hρσ t) :=
+    congrFun (edgewiseSubdivisionRealizationMap_comp_faceInclusion ρ σ hρσ) t
+  -- In the coordinates of `σ`, the vertices of `ρ` combine to the image of `t`.
+  have hA (t : StandardSimplex ρ.1) :
+      Fintype.linearCombination ℝ (fun (a : ρ.1) (i : σ.1) => (edgewiseVertexPoint hρσ a).1 i)
+        (w t) = fun i : σ.1 => (edgewiseSubdivisionFaceMap hρσ t).1 i := by
+    funext i
+    rw [Fintype.linearCombination_apply, edgewiseSubdivisionFaceMap_apply, Finset.sum_apply,
+      ← Finset.sum_coe_sort ρ.1]
+    simp [w, Finset.standardSimplexHomeomorph_weights]
+  have hB (t : StandardSimplex ρ.1) :
+      Fintype.linearCombination ℝ
+          (fun a : ρ.1 => F σ fun i : σ.1 => (edgewiseVertexPoint hρσ a).1 i) (w t) -
+        F σ (Fintype.linearCombination ℝ
+          (fun (a : ρ.1) (i : σ.1) => (edgewiseVertexPoint hρσ a).1 i) (w t)) =
+        secantError f k (faceInclusion _ ρ t) := by
+    rw [hA, hFg, secantError, secantMap_faceInclusion_edgewiseSubdivision f ρ σ hρσ, hφ,
+      Fintype.linearCombination_apply]
+    simp only [hFg, w, Finset.standardSimplexHomeomorph_weights, comp_apply]
+  have h := hk σ K.toPreAbstractSimplicialComplex ρ.1 ρ.2 (edgewiseVertexPoint hρσ)
+    (coe_edgewiseVertexPoint hρσ) (Finset.standardSimplexHomeomorph ρ.1 x)
+    (Finset.standardSimplexHomeomorph ρ.1 y)
+  rw [hB, hB, map_sub, hA, hA] at h
+  refine h.trans (mul_le_mul_of_nonneg_left ?_ hε.le)
+  rw [hφ, hφ, faceInclusion_val, faceInclusion_val]
+  refine (pi_norm_le_iff_of_nonneg (norm_nonneg _)).2 fun i => ?_
+  exact norm_le_pi_norm (((edgewiseSubdivisionFaceMap hρσ y).1 : ι → ℝ) -
+    ((edgewiseSubdivisionFaceMap hρσ x).1 : ι → ℝ)) i.1
+
+/-- The secant error, read as a function of the original coordinates `ι → ℝ` (and extended by
+zero off the realization). -/
+private def secantErrorCoord (f : Realization K → E) (k : ℕ) : (ι → ℝ) → E :=
+  Function.extend
+    (fun x : Realization (K.edgewiseSubdivision k) =>
+      ((edgewiseSubdivisionRealizationMap K k x).1 : ι → ℝ))
+    (secantError f k) 0
+
+omit [Fintype ι] in
+/-- The secant error read in the original coordinates is the secant error. -/
+private theorem secantErrorCoord_apply (f : Realization K → E) (k : ℕ)
+    (x : Realization (K.edgewiseSubdivision k)) :
+    secantErrorCoord f k ((edgewiseSubdivisionRealizationMap K k x).1 : ι → ℝ) =
+      secantError f k x :=
+  Injective.extend_apply (fun _ _ h => edgewiseSubdivisionRealizationMap_injective
+    (Subtype.ext (DFunLike.coe_injective h))) _ _ x
+
+/-- A Lipschitz bound for the secant error on the closed simplices of the edgewise subdivision
+holds on every closed simplex of `K`, in the original coordinates. -/
+private theorem lipschitzOnWith_secantErrorCoord {k : ℕ} (hk : k ≠ 0) {ε : ℝ} (hε : 0 ≤ ε)
+    (hface : ∀ (ρ : Face (K.edgewiseSubdivision k)) (x y : StandardSimplex ρ.1),
+      ‖secantError f k (faceInclusion _ ρ y) - secantError f k (faceInclusion _ ρ x)‖ ≤
+        ε * ‖((edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ y)).1 : ι → ℝ) -
+          (edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ x)).1‖)
+    (σ : Face K) :
+    LipschitzOnWith (Real.toNNReal ε) (secantErrorCoord f k) (coordSimplex σ.1) := by
+  have : Finite (K.EdgewiseVertex k) := Finite.of_injective Subtype.val Subtype.val_injective
+  have : Finite (Face (K.edgewiseSubdivision k)) :=
+    Finite.of_injective Subtype.val Subtype.val_injective
+  refine convex_coordSimplex.lipschitzOnWith_of_finite_closed_cover
+    (fun ρ : Face (K.edgewiseSubdivision k) =>
+      convexHull ℝ (range fun a : ρ.1 => (edgewisePoint a.1.1 : ι → ℝ)))
+    (fun ρ => ((finite_range _).isCompact_convexHull (𝕜 := ℝ)).isClosed) (fun z hz => ?_)
+    (fun ρ => LipschitzOnWith.of_dist_le_mul fun z hz z' hz' => ?_)
+  · obtain ⟨t, rfl⟩ := exists_eq_of_mem_coordSimplex σ hz
+    rw [iUnion_convexHull_range_edgewisePoint K hk]
+    exact ⟨faceInclusion K σ t, congrArg DFunLike.coe (faceInclusion_val K σ t)⟩
+  · rw [← range_edgewiseSubdivisionRealizationMap_faceInclusion] at hz hz'
+    obtain ⟨t, rfl⟩ := hz.2
+    obtain ⟨t', rfl⟩ := hz'.2
+    rw [dist_eq_norm, dist_eq_norm, secantErrorCoord_apply, secantErrorCoord_apply,
+      Real.coe_toNNReal _ hε]
+    exact hface ρ t' t
+
+/-- On every sufficiently fine edgewise subdivision, the secant error of a continuous map which
+is a `C¹` immersion on every closed simplex is `ε`-Lipschitz in the original coordinates, also
+between points of different simplices. -/
+private theorem eventually_norm_secantError_sub_le
+    (hf : ∀ σ : Face K, IsSimplexImmersion 𝓘(ℝ, E) n (f ∘ faceInclusion K σ))
+    (hfc : Continuous f) (hn : 1 ≤ n) {ε : ℝ} (hε : 0 < ε) :
+    ∀ᶠ k in atTop, ∀ x y : Realization (K.edgewiseSubdivision k),
+      ‖secantError f k x - secantError f k y‖ ≤
+        ε * ‖((edgewiseSubdivisionRealizationMap K k x).1 : ι → ℝ) -
+          (edgewiseSubdivisionRealizationMap K k y).1‖ := by
+  set N : ℝ := (Fintype.card ι : ℝ)
+  have hN : 0 ≤ N := Nat.cast_nonneg _
+  filter_upwards [eventually_ne_atTop 0,
+    eventually_norm_secantError_faceInclusion_sub_le hf hn (ε := ε / (2 * N + 1)) (by positivity),
+    hfc.eventually_norm_secantMap_sub_lt_edgewiseSubdivision (Set.toFinite K.faces)
+      (ε := ε / (2 * (N + 1))) (by positivity)] with k hk hface hclose x y
+  set c := fun x : Realization (K.edgewiseSubdivision k) =>
+    ((edgewiseSubdivisionRealizationMap K k x).1 : ι → ℝ)
+  have hmem (x : Realization (K.edgewiseSubdivision k)) :
+      c x ∈ coordSimplex (carrier K (edgewiseSubdivisionRealizationMap K k x)).1 :=
+    mem_coordSimplex _ ⟨_, mem_convexHull_carrier K _⟩
+  by_cases hnear : N * ‖c x - c y‖ < 1
+  · -- Nearby points: pass through a common point `z` of the two closed simplices of `K`.
+    obtain ⟨z, hz, -, -, hyz, -⟩ := exists_mem_inter (hmem x) (hmem y) hnear
+    have hx := (lipschitzOnWith_secantErrorCoord hk (by positivity) hface _).dist_le_mul
+      (c x) (hmem x) z hz.1
+    have hy := (lipschitzOnWith_secantErrorCoord hk (by positivity) hface _).dist_le_mul
+      z hz.2 (c y) (hmem y)
+    rw [Real.coe_toNNReal _ (by positivity), dist_eq_norm, dist_eq_norm] at hx hy
+    rw [secantErrorCoord_apply] at hx hy
+    have hxz : ‖c x - z‖ ≤ ‖c x - c y‖ + ‖c y - z‖ := norm_sub_le_norm_sub_add_norm_sub _ _ _
+    have hzy : ‖z - c y‖ = ‖c y - z‖ := norm_sub_rev _ _
+    have hε' : ε / (2 * N + 1) * (2 * N + 1) = ε := div_mul_cancel₀ _ (by positivity)
+    calc ‖secantError f k x - secantError f k y‖
+        ≤ ‖secantError f k x - secantErrorCoord f k z‖ +
+          ‖secantErrorCoord f k z - secantError f k y‖ := norm_sub_le_norm_sub_add_norm_sub _ _ _
+      _ ≤ ε / (2 * N + 1) * (‖c x - c y‖ + 2 * ‖c y - z‖) := by nlinarith
+      _ ≤ ε / (2 * N + 1) * ((2 * N + 1) * ‖c x - c y‖) := by gcongr; nlinarith
+      _ = ε * ‖c x - c y‖ := by rw [← mul_assoc, hε']
+  · -- Distant points: both secant errors are uniformly small.
+    have hfar : 1 ≤ (N + 1) * ‖c x - c y‖ := by nlinarith [norm_nonneg (c x - c y)]
+    calc ‖secantError f k x - secantError f k y‖
+        ≤ ‖secantError f k x‖ + ‖secantError f k y‖ := norm_sub_le _ _
+      _ ≤ ε / (2 * (N + 1)) + ε / (2 * (N + 1)) := add_le_add (hclose x).le (hclose y).le
+      _ = ε / (N + 1) * 1 := by field_simp; ring
+      _ ≤ ε / (N + 1) * ((N + 1) * ‖c x - c y‖) := by gcongr
+      _ = ε * ‖c x - c y‖ := by field_simp
+
+/-- **Secant maps of embeddings are uniformly antilipschitz.** Let `f` be an injective `Cⁿ` star
+immersion, `1 ≤ n`, of a complex on a finite vertex type into a normed space. There is a constant
+`C` such that for all sufficiently large `k`, the secant map of `f` on the `k`-th edgewise
+subdivision satisfies `‖x - y‖ ≤ C * ‖s x - s y‖` for all points `x` and `y` of the subdivision,
+where `‖x - y‖` is the distance of their images in the barycentric coordinates of `|K|`. The
+constant does not depend on `k`. -/
+theorem exists_pos_eventually_norm_sub_le_mul_norm_secantMap_sub (h : IsStarImmersion n f)
+    (hn : 1 ≤ n) (hf : Injective f) :
+    ∃ C > 0, ∀ᶠ k in atTop, ∀ x y : Realization (K.edgewiseSubdivision k),
+      ‖((edgewiseSubdivisionRealizationMap K k x).1 : ι → ℝ) -
+          (edgewiseSubdivisionRealizationMap K k y).1‖ ≤
+        C * ‖(K.edgewiseSubdivision k).secantMap (f ∘ edgewiseSubdivisionRealizationMap K k) x -
+          (K.edgewiseSubdivision k).secantMap (f ∘ edgewiseSubdivisionRealizationMap K k) y‖ := by
+  set e := K.realizationHomeomorphRange (Set.toFinite K.faces)
+  obtain ⟨C, hC, hanti⟩ := h.exists_antilipschitzWith hn hf
+  have hC' : (0 : ℝ) < C := hC
+  refine ⟨2 * C, by positivity, ?_⟩
+  filter_upwards [eventually_norm_secantError_sub_le h.1 h.continuous hn
+    (ε := (2 * C)⁻¹) (by positivity)] with k hk x y
+  set φ := edgewiseSubdivisionRealizationMap K k
+  set s := (K.edgewiseSubdivision k).secantMap (f ∘ φ)
+  -- The antilipschitz bound for `f`, at the images of `x` and `y`.
+  have hfxy : ‖((φ x).1 : ι → ℝ) - (φ y).1‖ ≤ C * ‖f (φ x) - f (φ y)‖ := by
+    have hle := hanti.le_mul_dist (e (φ x)) (e (φ y))
+    rwa [Subtype.dist_eq, dist_eq_norm, coe_realizationHomeomorphRange_apply,
+      coe_realizationHomeomorphRange_apply, comp_apply, comp_apply, e.symm_apply_apply,
+      e.symm_apply_apply, dist_eq_norm] at hle
+  have hsplit : f (φ x) - f (φ y) = (s x - s y) - (secantError f k x - secantError f k y) := by
+    simp only [secantError, s, φ]
+    abel
+  have herr := hk x y
+  have hle : ‖f (φ x) - f (φ y)‖ ≤ ‖s x - s y‖ + ‖secantError f k x - secantError f k y‖ :=
+    hsplit ▸ norm_sub_le _ _
+  have hinv : (C : ℝ) * (2 * (C : ℝ))⁻¹ = 1 / 2 := by field_simp
+  have hchain : ‖((φ x).1 : ι → ℝ) - (φ y).1‖ ≤ C * ‖s x - s y‖ +
+      C * (2 * (C : ℝ))⁻¹ * ‖((φ x).1 : ι → ℝ) - (φ y).1‖ := by
+    rw [mul_assoc, ← mul_add]
+    exact hfxy.trans (mul_le_mul_of_nonneg_left (hle.trans (by gcongr)) hC'.le)
+  rw [hinv] at hchain
+  linarith
+
+omit [Fintype ι] in
+/-- **Secant maps of embeddings are embeddings.** Let `f` be an injective `Cⁿ` star immersion,
+`1 ≤ n`, of a complex on a finite vertex type into a normed space. For all sufficiently large
+`k`, the secant map of `f` on the `k`-th edgewise subdivision, the map which agrees with `f` at
+the points `edgewisePoint u` and is linear on every simplex of the subdivision, is a closed
+embedding. -/
+theorem eventually_isClosedEmbedding_secantMap_edgewiseSubdivision [Finite ι]
+    (h : IsStarImmersion n f) (hn : 1 ≤ n) (hf : Injective f) :
+    ∀ᶠ k in atTop, Topology.IsClosedEmbedding
+      ((K.edgewiseSubdivision k).secantMap (f ∘ edgewiseSubdivisionRealizationMap K k)) := by
+  have := Fintype.ofFinite ι
+  obtain ⟨C, -, hC⟩ := h.exists_pos_eventually_norm_sub_le_mul_norm_secantMap_sub hn hf
+  filter_upwards [hC, eventually_ne_atTop 0] with k hk hk0
+  have : CompactSpace (Realization K) := K.compactSpace_realization_of_finite_faces
+    (Set.toFinite K.faces)
+  have : CompactSpace (Realization (K.edgewiseSubdivision k)) :=
+    (edgewiseSubdivisionRealizationHomeomorph K hk0).symm.compactSpace
+  refine (continuous_secantMap _).isClosedEmbedding fun x y hxy => ?_
+  have hle := hk x y
+  rw [hxy, sub_self, norm_zero, mul_zero] at hle
+  exact edgewiseSubdivisionRealizationMap_injective
+    (Subtype.ext (DFunLike.coe_injective (sub_eq_zero.mp (norm_le_zero_iff.mp hle))))
+
+end Secant
 
 end Finite
 
