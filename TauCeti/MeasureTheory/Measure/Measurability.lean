@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.GiryMonad
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
 -- Non-public: measurability of the sections `ν.map (Prod.mk a)` is used only inside a proof.
 import Mathlib.MeasureTheory.Measure.Prod
 
@@ -27,6 +28,9 @@ of measures.
 * `TauCeti.MeasureTheory.measurable_map_finiteMeasure_of_measurable_uncurry` — jointly varying a
   finite measure and the map that pushes it forward is measurable, with a probability-measure
   specialization.
+* `MeasureTheory.measurableSet_isLocallyFiniteMeasure` and
+  `MeasureTheory.measurableSet_isFiniteMeasureOnCompacts` — local finiteness is a measurable
+  condition on measures on a locally compact, sigma-compact Hausdorff space.
 -/
 
 public section
@@ -111,3 +115,28 @@ theorem measurable_probabilityMeasure_map_of_measurable_uncurry
 end MeasureTheory
 
 end TauCeti
+
+namespace MeasureTheory
+
+variable {X : Type*} [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
+  [T2Space X] [WeaklyLocallyCompactSpace X] [SigmaCompactSpace X]
+
+/-- Local finiteness is a measurable condition in the evaluation sigma-algebra on measures. -/
+theorem measurableSet_isLocallyFiniteMeasure :
+    MeasurableSet {μ : Measure X | IsLocallyFiniteMeasure μ} := by
+  let K := CompactExhaustion.choice X
+  simp_rw [K.isLocallyFiniteMeasure_iff]
+  simp only [Set.ofPred_forall]
+  exact MeasurableSet.iInter fun n =>
+    measurableSet_lt (Measure.measurable_coe (K.isCompact n).measurableSet) measurable_const
+
+/-- Finiteness on compact sets is measurable in the evaluation sigma-algebra on measures. -/
+theorem measurableSet_isFiniteMeasureOnCompacts :
+    MeasurableSet {μ : Measure X | IsFiniteMeasureOnCompacts μ} := by
+  let K := CompactExhaustion.choice X
+  simp_rw [K.isFiniteMeasureOnCompacts_iff]
+  simp only [Set.ofPred_forall]
+  exact MeasurableSet.iInter fun n =>
+    measurableSet_lt (Measure.measurable_coe (K.isCompact n).measurableSet) measurable_const
+
+end MeasureTheory

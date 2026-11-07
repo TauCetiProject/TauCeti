@@ -97,6 +97,23 @@ variable {p : ℕ} [hp : Fact p.Prime] {G : Type u} [Group G] [TopologicalSpace 
 
 namespace IsProP
 
+/-- The arithmetic of the induction step of `natCard_H0_mul_natCard_H2_mul_pow`: the nine-term
+identity `a₀ * p ^ d * q₁ * a₂ = p * q₀ * a₁ * t * q₂` for `0 → N → M → M ⧸ N → 0` with `|N| = p`,
+together with the identity for `M ⧸ N` of order `p ^ k`, gives the identity for `M` of order
+`p ^ (k + 1)`, since `p ^ d * q₁` is nonzero. -/
+private theorem eq_of_mul_pow_succ {p k d a₀ a₁ a₂ q₀ q₁ q₂ t : ℕ} (hp : 0 < p) (hq₁ : 0 < q₁)
+    (hex : a₀ * p ^ d * q₁ * a₂ = p * q₀ * a₁ * t * q₂)
+    (hQ : q₀ * q₂ * p ^ (k * d) = q₁ * p ^ k * t ^ k) :
+    a₀ * a₂ * p ^ ((k + 1) * d) = a₁ * p ^ (k + 1) * t ^ (k + 1) := by
+  refine Nat.eq_of_mul_eq_mul_left (Nat.mul_pos (pow_pos hp d) hq₁) ?_
+  calc p ^ d * q₁ * (a₀ * a₂ * p ^ ((k + 1) * d))
+      = a₀ * p ^ d * q₁ * a₂ * p ^ ((k + 1) * d) := by ring
+    _ = p * q₀ * a₁ * t * q₂ * p ^ ((k + 1) * d) := by rw [hex]
+    _ = p * a₁ * t * p ^ d * (q₀ * q₂ * p ^ (k * d)) := by ring
+    _ = p * a₁ * t * p ^ d * (q₁ * p ^ k * t ^ k) := by rw [hQ]
+    _ = p ^ d * q₁ * (a₁ * p ^ (k + 1) * t ^ (k + 1)) := by ring
+
+
 variable (hG : IsProP p G) (hfg : IsTopologicallyFinitelyGenerated G)
   (htriv : ∀ (g : G) (x : ZMod p), g • x = x)
   (h3 : ∀ (A : Type u) [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
@@ -131,11 +148,8 @@ theorem natCard_H0_mul_natCard_H2_mul_pow (M : Type u) [AddCommGroup M] [Topolog
     simp
   | succ k ih =>
     have : Finite M := Nat.finite_of_card_ne_zero (hk ▸ pow_ne_zero _ hp.out.ne_zero)
-    have : Nontrivial M := by
-      rcases subsingleton_or_nontrivial M with hM | hM
-      · exact absurd (hk ▸ Nat.card_of_subsingleton (0 : M))
-          (Nat.one_lt_pow k.succ_ne_zero hp.out.one_lt).ne'
-      · exact hM
+    have : Nontrivial M :=
+      Finite.one_lt_card_iff_nontrivial.1 (hk ▸ Nat.one_lt_pow k.succ_ne_zero hp.out.one_lt)
     -- a `G`-stable subgroup `N` of order `p` with trivial action
     obtain ⟨N, hNcard, hNfix⟩ := exists_addSubgroup_natCard_eq_invariant_of_isProP hG
       (isPPrimaryTorsion_iff.1 (isPPrimaryTorsion_of_natCard_eq_pow hk))
@@ -180,20 +194,7 @@ theorem natCard_H0_mul_natCard_H2_mul_pow (M : Type u) [AddCommGroup M] [Topolog
     have : Finite (H1 G (M ⧸ N)) := hfg.finite_H1
     -- assemble, cancelling the nonzero factor `p ^ d(G) * |H¹(G, M ⧸ N)|`
     generalize topologicalGeneratorRankNat G hfg = d at hex hQ ⊢
-    refine Nat.eq_of_mul_eq_mul_left
-      (Nat.mul_pos (pow_pos hp.out.pos d) (Nat.card_pos (α := H1 G (M ⧸ N)))) ?_
-    calc p ^ d * Nat.card (H1 G (M ⧸ N)) *
-          (Nat.card (H0 G M) * Nat.card (H2 G M) * p ^ ((k + 1) * d))
-        = Nat.card (H0 G M) * p ^ d * Nat.card (H1 G (M ⧸ N)) * Nat.card (H2 G M) *
-            p ^ ((k + 1) * d) := by ring
-      _ = p * Nat.card (H0 G (M ⧸ N)) * Nat.card (H1 G M) * Nat.card (H2 G (ZMod p)) *
-            Nat.card (H2 G (M ⧸ N)) * p ^ ((k + 1) * d) := by rw [hex]
-      _ = p * Nat.card (H1 G M) * Nat.card (H2 G (ZMod p)) * p ^ d *
-            (Nat.card (H0 G (M ⧸ N)) * Nat.card (H2 G (M ⧸ N)) * p ^ (k * d)) := by ring
-      _ = p * Nat.card (H1 G M) * Nat.card (H2 G (ZMod p)) * p ^ d *
-            (Nat.card (H1 G (M ⧸ N)) * p ^ k * Nat.card (H2 G (ZMod p)) ^ k) := by rw [hQ]
-      _ = p ^ d * Nat.card (H1 G (M ⧸ N)) *
-            (Nat.card (H1 G M) * p ^ (k + 1) * Nat.card (H2 G (ZMod p)) ^ (k + 1)) := by ring
+    exact eq_of_mul_pow_succ hp.out.pos (Nat.card_pos (α := H1 G (M ⧸ N))) hex.symm hQ
 
 section OpenSubgroup
 
