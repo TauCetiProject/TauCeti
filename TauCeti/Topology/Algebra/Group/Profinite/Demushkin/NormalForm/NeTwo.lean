@@ -122,7 +122,7 @@ private theorem exists_continuousMulEquiv_gradedMk_eq_demushkinWordNeTwo
   · -- They have the same exponent vector `q e₁`, because `e₁` fixes `x₁`.
     refine Multiplicative.toAdd.injective ?_
     rw [toAdd_exponentSum_demushkinWordNeTwo,
-      show e₁ r = (e₁ : freeProP p (Fin n) →ₜ* freeProP p (Fin n)) r from rfl,
+      ← ContinuousMonoidHom.coe_coe e₁,
       toAdd_exponentSum_apply_eq_sum_smul,
       Finset.sum_eq_single ⟨0, hn⟩ (fun k _ hk ↦ by
         rw [hv, ite_eq_right fun h ↦ hk (Fin.ext h), zero_smul])
@@ -137,30 +137,6 @@ private theorem exists_continuousMulEquiv_gradedMk_eq_demushkinWordNeTwo
       rfl
     rw [span_range_degreeOneDeriv_eq_top_iff_nondegenerate_degreeOneForm, hr']
     exact (nondegenerate_degreeOneForm_gradedMap_iff e₁ _).2 hnd
-
-/-- The deviations in the closed commutator subgroup are absorbed by corrections lying in the
-commutator subgroup at `x₁`, the only generator carrying a nonzero exponent. -/
-private theorem exists_basisModificationDelta_eq_of_mem_commutator_topologicalClosure
-    (r : pLowerCentralSeries p (freeProP p (Fin n)) 1) (hn : 0 < n)
-    (hρ : Submodule.span (ZMod p) (Set.range fun i ↦ degreeOneDeriv p (Fin n) i
-      (gradedMk p (freeProP p (Fin n)) 1 r)) = ⊤)
-    (hc : ∀ i, (degreeOneBasis p (Fin n)).repr (gradedMk p (freeProP p (Fin n)) 1 r)
-      (Sum.inl i) = 0)
-    (hz : ∀ i, (exponentSum p (Fin n) (r : freeProP p (Fin n))).toAdd i ≠ 0 → i = ⟨0, hn⟩)
-    (m : ℕ) (hm : 1 ≤ m) (z : pLowerCentralSeries p (freeProP p (Fin n)) (m + 1))
-    (hzc : (z : freeProP p (Fin n)) ∈ (commutator (freeProP p (Fin n))).topologicalClosure) :
-    ∃ ω : Fin n → pLowerCentralSeries p (freeProP p (Fin n)) m,
-      (∀ i, (exponentSum p (Fin n) (r : freeProP p (Fin n))).toAdd i ≠ 0 →
-        (ω i : freeProP p (Fin n)) ∈ (commutator (freeProP p (Fin n))).topologicalClosure) ∧
-      basisModificationDelta p (Fin n) hm (gradedMk p (freeProP p (Fin n)) 1 r)
-        (fun i ↦ gradedMk p (freeProP p (Fin n)) m (ω i)) =
-          gradedMk p (freeProP p (Fin n)) (m + 1) z := by
-  obtain ⟨ω, hω₀, hω⟩ := exists_apply_mem_commutator_basisModificationDelta_eq_of_mem_range hm hρ
-    hc ⟨0, hn⟩ (gradedMk_mem_range_basisModificationDelta_of_mem_topologicalClosure_commutator
-      hm hρ hc z hzc)
-  refine ⟨ω, fun i hi ↦ ?_, hω⟩
-  obtain rfl := hz i hi
-  exact Subgroup.le_topologicalClosure _ hω₀
 
 /-- **Labute's normal form for a relator with exponent vector `q e₁`, `p ^ 2 ∣ q`.** Let `F` be the
 free pro-`p` group on `n` generators and let `r ∈ λ_1(F)` be a relator whose class in `gr_1(F)` has
@@ -197,10 +173,13 @@ theorem exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_toAdd_exponentS
   obtain ⟨e₂, he₂⟩ := exists_continuousMulEquiv_apply_eq_of_exponentSum_eq ⟨e₁ r, hmem⟩
     ⟨demushkinWordNeTwo q n (freeProPGen p n),
       demushkinWordNeTwo_mem_pLowerCentralSeries_one hpq n _⟩ hclass hrw
-    (fun m hm z hzc ↦ exists_basisModificationDelta_eq_of_mem_commutator_topologicalClosure
-      ⟨e₁ r, hmem⟩ hn hρ hc' hz m hm z hzc)
+    (fun m hm z hzc ↦ by
+      -- The corrections are in the commutator subgroup at `x₁`, the only generator with a nonzero
+      -- exponent.
+      obtain ⟨ω, hω₀, hω⟩ := exists_mem_topologicalClosure_commutator_basisModificationDelta_eq
+        hm hρ hc' ⟨0, hn⟩ z hzc
+      exact ⟨ω, fun i hi ↦ by obtain rfl := hz i hi; exact hω₀, hω⟩)
   exact ⟨e₁.trans e₂, he₂⟩
-
 
 /-- **Labute's normal form for `q ≠ p`** (Labute, Theorem 3, the cases `q = 0` and `q = p^f` with
 `f ≥ 2`). Let `r ∈ Φ(F)` be a relator of the free pro-`p` group on `n` generators presenting a
