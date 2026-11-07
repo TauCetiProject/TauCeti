@@ -685,8 +685,8 @@ private lemma exists_linearEquiv_pullbackSectionsLE_ι (M : X.Modules) {W : S.Op
       map_smul' r m := by
         rw [← IsScalarTower.algebraMap_smul Γ(X, UX) r m, map_smulₛₗ, RingHom.id_apply,
           ← IsScalarTower.algebraMap_smul Γ(UX.toScheme, ⊤) r,
-          algebraMap_baseRingToStructurePresheaf_eq_appLE f hW UX eX ⊤ r]
-        rfl }
+          algebraMap_baseRingToStructurePresheaf_eq_appLE f hW UX eX ⊤ r,
+          RingHom.algebraMap_toAlgebra] }
     (Scheme.Modules.bijective_pullbackSectionsLE_ι M UX ⊤ rfl), fun _ ↦ rfl⟩
 
 /-- Pulling sections back along the inclusions of the open subschemes `UX` and `UY` identifies the
@@ -741,8 +741,8 @@ private lemma exists_linearEquiv_pullbackSectionsLE_pullback (g' : X' ⟶ X) (M 
         simp only [e₀, AddMonoidHom.coe_comp, Function.comp_apply, LinearMap.toAddMonoidHom_coe]
         rw [← IsScalarTower.algebraMap_smul Γ(X', UY) a x, map_smulₛₗ, Hom.app_smul, Hom.app_smul,
           Hom.app_smul, RingHom.id_apply, ← IsScalarTower.algebraMap_smul Γ(UY.toScheme, T) a,
-          algebraMap_baseRingToStructurePresheaf_eq_appLE f' hW' UY eY' T a]
-        rfl }
+          algebraMap_baseRingToStructurePresheaf_eq_appLE f' hW' UY eY' T a,
+          RingHom.algebraMap_toAlgebra] }
     he₀, fun _ ↦ rfl⟩
 
 /-- Base change of sections over affine opens of the bases, either for an affine open `UX`, or for
