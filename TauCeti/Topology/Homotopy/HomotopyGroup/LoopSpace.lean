@@ -110,7 +110,7 @@ a bijection on homotopy groups. -/
 theorem bijective_map_iff_of_equiv {Y : Type*} [TopologicalSpace Y] {y : Y} (f : C(X, Y))
     (hf : f x = y) (e : M ≃ N) :
     Function.Bijective (map (N := M) f hf) ↔ Function.Bijective (map (N := N) f hf) := by
-  rw [map_eq_congrEquiv_symm_comp f hf e, Equiv.bijective_comp, Equiv.comp_bijective]
+  rw [map_eq_congrEquiv_symm_comp f hf e, Equiv.comp_bijective, Equiv.bijective_comp]
 
 /-- In positive dimensions, reindexing the cube directions along `e : M ≃ N` is an isomorphism
 of homotopy groups. The target index type inherits its nonemptiness, hence its group structure,
