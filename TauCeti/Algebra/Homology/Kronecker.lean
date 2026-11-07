@@ -245,14 +245,21 @@ lemma kroneckerEquiv_apply [Injective Y] (i : α) (x : (X.linearYonedaObj k Y).h
     kroneckerEquiv k X Y i x = kronecker k X Y i x :=
   (rfl)
 
+/-- The cochain `Xᵢ ⟶ Zᵢ ⟶ Hᵢ(X)` built from a retraction of the inclusion of the cycles vanishes
+on boundaries. -/
+@[reassoc (attr := simp)]
+lemma d_comp_retraction_iCycles_comp_homologyπ (j i : α) [IsSplitMono (X.iCycles i)] :
+    X.d j i ≫ retraction (X.iCycles i) ≫ X.homologyπ i = 0 := by
+  rw [← X.toCycles_i, Category.assoc, IsSplitMono.id_assoc, toCycles_comp_homologyπ]
+
 variable (k X Y) in
 /-- **The splitting of the universal coefficient sequence**: given a retraction of the inclusion
 of the cycles `Zᵢ ⟶ Xᵢ`, the `k`-linear right inverse of the Kronecker map sending `g : Hᵢ(X) ⟶ Y`
 to the class of the cocycle `Xᵢ ⟶ Zᵢ ⟶ Hᵢ(X) ⟶ Y`. It depends on the chosen retraction. -/
 def kroneckerSection (i : α) [IsSplitMono (X.iCycles i)] :
     (X.homology i ⟶ Y) →ₗ[k] (X.linearYonedaObj k Y).homology i :=
-  homologyClassOfComp k Y (retraction (X.iCycles i) ≫ X.homologyπ i) (by
-    rw [← X.toCycles_i, Category.assoc, IsSplitMono.id_assoc, toCycles_comp_homologyπ])
+  homologyClassOfComp k Y (retraction (X.iCycles i) ≫ X.homologyπ i)
+    (d_comp_retraction_iCycles_comp_homologyπ _ i)
 
 /-- `kroneckerSection k X Y i g` is the class of the cocycle `Xᵢ ⟶ Zᵢ ⟶ Hᵢ(X) ⟶ Y` built from the
 chosen retraction of the cycles. -/
