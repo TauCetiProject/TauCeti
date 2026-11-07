@@ -17,9 +17,10 @@ with bounded derivatives through order `k` preserve this space at integer order 
 coefficient need not have a Sobolev tail: this is the form needed for the linear terms produced
 by expanding the equation and gauge action about a nondecaying reference field.
 
-The matrix version allows mixing the connection and section coordinates and permits different
-bounds for each coefficient. These results assert membership, not boundedness of a completed
-operator or smoothness of the nonlinear equation map.
+The scalar statement is `mul_mem_realSobolevFunctions_natCast`. The matrix version allows mixing
+the connection and section coordinates and permits different bounds for each coefficient.
+These results assert membership, not boundedness of a completed operator or smoothness of the
+nonlinear equation map.
 
 ## References
 
@@ -33,6 +34,20 @@ namespace TauCeti.Vortex
 open MeasureTheory TemperedDistribution
 open scoped ContDiff
 
+/-- Multiplication by a smooth real coefficient whose derivatives through order `k` are bounded
+preserves the integer-order real Sobolev functions on the plane. No decay of the coefficient is
+required. -/
+theorem mul_mem_realSobolevFunctions_natCast (k : ℕ) {ψ : ℂ → ℝ} (hψ : ContDiff ℝ ∞ ψ) {M : ℝ}
+    (hM : 0 ≤ M) (hbound : ∀ j ≤ k, ∀ z, ‖iteratedFDeriv ℝ j ψ z‖ ≤ M) {g : ℂ → ℝ}
+    (hg : g ∈ realSobolevFunctions ℂ k 2) : ψ * g ∈ realSobolevFunctions ℂ k 2 := by
+  obtain ⟨u, hu, huS⟩ := mem_realSobolevFunctions.1 hg
+  obtain ⟨w, hwS, hw⟩ := exists_mem_realSobolevSubmodule_ae_eq_mul_of_bounded_derivatives
+    (by norm_num : (1 : ENNReal) < 2) (by norm_num : (2 : ENNReal) ≠ ⊤) k hψ hM hbound
+    (mem_realSobolevSubmodule.2 huS)
+  refine mem_realSobolevFunctions_of_ae_eq (coeFn_mem_realSobolevFunctions hwS) ?_
+  filter_upwards [hw, hu] with z hz hz₁
+  rw [hz, hz₁, Pi.mul_apply]
+
 /-- Smooth matrix coefficients act on integer-order plane-vortex Sobolev fields whenever
 each entry and its derivatives through order `k` are bounded. This includes coordinate changes
 which mix connection and section variations. -/
@@ -42,25 +57,13 @@ theorem mulVec_mem_sobolevFields_natCast (k : ℕ)
     {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ sobolevFields k) :
     (fun z ↦ WithLp.toLp 2 (fun i ↦ ∑ j : Fin 4, A i j z * y z j)) ∈
       sobolevFields k := by
-  refine mem_sobolevFields.mpr fun i ↦ mem_realSobolevFunctions.mpr ?_
-  have hentry (j : Fin 4) : ∃ v : Lp ℝ 2 (volume : Measure ℂ),
-      v ∈ realSobolevSubmodule ℂ k 2 ∧
-        (v : ℂ → ℝ) =ᵐ[volume] fun z ↦ A i j z * y z j := by
-    obtain ⟨u, hu, huS⟩ := mem_realSobolevFunctions.mp (mem_sobolevFields.mp hy j)
-    obtain ⟨M, hM, hMbound⟩ := hbound i j
-    obtain ⟨v, hvS, hv⟩ :=
-      exists_mem_realSobolevSubmodule_ae_eq_mul_of_bounded_derivatives
-        (by norm_num : (1 : ENNReal) < 2) (by norm_num : (2 : ENNReal) ≠ ⊤)
-        k (hA i j) hM hMbound (mem_realSobolevSubmodule.mpr huS)
-    refine ⟨v, hvS, ?_⟩
-    filter_upwards [hv, hu] with z hvz huz
-    rw [hvz, huz]
-  choose v hvS hv using hentry
-  refine ⟨∑ j, v j, ?_, mem_realSobolevSubmodule.mp
-    (Submodule.sum_mem _ fun j _ ↦ hvS j)⟩
-  filter_upwards [Lp.coeFn_finsetSum Finset.univ v, Filter.eventually_all.mpr hv] with z hz hvz
-  simp only [hz, Finset.sum_apply]
-  exact Finset.sum_congr rfl fun j _ ↦ hvz j
+  refine mem_sobolevFields.2 fun i ↦ ?_
+  have hsum := Submodule.sum_mem (realSobolevFunctions ℂ k 2) (t := Finset.univ) fun j _ ↦
+    have ⟨_, hM, hMbound⟩ := hbound i j
+    mul_mem_realSobolevFunctions_natCast k (hA i j) hM hMbound (mem_sobolevFields.1 hy j)
+  convert hsum using 1
+  ext z
+  simp
 
 /-- Multiplication by a smooth real coefficient with bounded derivatives through order `k`
 preserves the integer-order Sobolev direction space of plane-vortex fields. No decay of the
