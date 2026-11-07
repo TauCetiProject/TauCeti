@@ -8,9 +8,7 @@ module
 public import TauCeti.RingTheory.FormalGroup.NSMul.Basic
 public import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Basic
 -- Proof-only: the order filtration on points, substitution into points, the symmetric 2-cocycle
--- lemma, lowest-degree parts of substitutions, two-variable substitution identities, and the
--- permutations of `Fin 2`.
-import TauCeti.Data.Fin.Basic
+-- lemma, lowest-degree parts of substitutions, and two-variable substitution identities.
 import TauCeti.RingTheory.FormalGroup.Point.Order
 import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Classification
 import TauCeti.RingTheory.FormalGroup.TopNilpotentPoint.Basic
@@ -116,29 +114,6 @@ private theorem isAddCocycle₂_homogeneousComponentPolynomial (F : FormalGroup 
   refine MvPolynomial.coe_inj.mp ?_
   rw [MvPolynomial.coe_add, MvPolynomial.coe_add]
   linear_combination h
-
-/-- The degree-`n` part of a symmetric series `Φ` in two variables vanishing below degree `n`
-is a symmetric polynomial. -/
-theorem _root_.MvPowerSeries.isSymmetric_homogeneousComponentPolynomial {n : ℕ}
-    {Φ : MvPowerSeries (Fin 2) R} (hΦ : n ≤ Φ.order) (hsymm : Φ.subst ![X 1, X 0] = Φ) :
-    (homogeneousComponentPolynomial n Φ).IsSymmetric := by
-  have hX2 (i : Fin 2) := PowerSeries.HasSubst.X (S := R) i
-  have h : MvPolynomial.aeval ![MvPolynomial.X 1, MvPolynomial.X 0]
-      (homogeneousComponentPolynomial n Φ) = homogeneousComponentPolynomial n Φ := by
-    refine MvPolynomial.coe_inj.mp ?_
-    rw [← homogeneousComponent_subst_eq_coe_aeval hΦ (hasSubst_finTwo (hX2 1) (hX2 0))
-      (fun i ↦ by fin_cases i <;> simp)
-      (fun i ↦ by fin_cases i <;> simp [homogeneousComponent_one_X]), hsymm,
-      coe_homogeneousComponentPolynomial]
-  intro e
-  rcases Equiv.Perm.eq_one_or_swap_fin_two e with rfl | rfl
-  · simp
-  · have hswap : (MvPolynomial.X ∘ Equiv.swap (0 : Fin 2) 1 : Fin 2 → MvPolynomial (Fin 2) R) =
-        ![MvPolynomial.X 1, MvPolynomial.X 0] := by
-      funext i
-      fin_cases i <;> simp
-    rw [MvPolynomial.rename_eq_aeval, hswap]
-    exact h
 
 /-- **Leading terms of symmetric 2-cocycles.** Let `F` be a formal group law and let
 `Φ(X, Y)` be a symmetric series vanishing below degree `n ≠ 0` that satisfies the 2-cocycle
