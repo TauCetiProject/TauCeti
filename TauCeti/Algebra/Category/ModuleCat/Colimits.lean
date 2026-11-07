@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Kernels
 public import Mathlib.Algebra.Category.ModuleCat.Products
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.CategoryTheory.Functor.OfSequence
+public import Mathlib.RingTheory.Finiteness.Basic
 public import TauCeti.LinearAlgebra.FreeModule.Filtration
 
 /-!
@@ -45,6 +46,8 @@ the homology of a space exhausted by subspaces whose successive relative homolog
 
 * `TauCeti.ModuleCat.iSup_range_eq_top_of_isColimit`: the ranges of the legs of a colimit cocone
   span its point.
+* `ModuleCat.finite_coproduct_of_finite_support`: a coproduct of finite modules is finite if
+  only finitely many summands are nonzero.
 * `TauCeti.ModuleCat.isIso_of_isIso_app_self`: a natural transformation between
   colimit-preserving functors out of `ModuleCat R` whose component at `R` is invertible is an
   isomorphism.
@@ -139,7 +142,36 @@ namespace ModuleCat
 
 open CategoryTheory Limits DirectSum
 
-variable {R : Type u} [Ring R] (F : ℕ ⥤ ModuleCat.{v} R)
+variable {R : Type u} [Ring R]
+
+/-- A coproduct of finite modules is finite when only finitely many summands are nonzero.
+The index type itself need not be finite. -/
+theorem finite_coproduct_of_finite_support {ι : Type*} (M : ι → ModuleCat.{v} R)
+    [HasCoproduct M] [∀ i, Module.Finite R (M i)]
+    (hM : {i | ¬ IsZero (M i)}.Finite) : Module.Finite R (∐ M : ModuleCat.{v} R) := by
+  have : Finite {i | ¬ IsZero (M i)} := hM
+  have hrange :
+      (⨆ i, LinearMap.range (Sigma.ι M i).hom) =
+        ⨆ i : {i | ¬ IsZero (M i)}, LinearMap.range (Sigma.ι M i.1).hom := by
+    apply le_antisymm
+    · refine iSup_le fun i ↦ ?_
+      by_cases hi : IsZero (M i)
+      · have hz : Sigma.ι M i = 0 := hi.eq_of_src _ _
+        simp [hz]
+      · exact le_iSup_of_le ⟨i, hi⟩ le_rfl
+    · exact iSup_le fun i ↦
+        le_iSup (fun j ↦ LinearMap.range (Sigma.ι M j).hom) i.1
+  have htop : (⨆ i, LinearMap.range (Sigma.ι M i).hom) = ⊤ := by
+    have h := TauCeti.ModuleCat.iSup_range_eq_top_of_isColimit
+      (colimit.isColimit (Discrete.functor M))
+    have hsurj : Function.Surjective (Discrete.mk : ι → Discrete ι) :=
+      fun ⟨i⟩ ↦ ⟨i, rfl⟩
+    exact (hsurj.iSup_comp _).trans h
+  apply Module.Finite.of_fg_top
+  rw [← htop, hrange]
+  exact Submodule.fg_iSup _ fun i ↦ Submodule.fg_range _
+
+variable (F : ℕ ⥤ ModuleCat.{v} R)
 
 /-- The difference map of the telescope of a sequence `F₀ → F₁ → ⋯` of modules: the endomorphism
 of `⨁ₙ Fₙ` sending `x` in the summand `Fₙ` to `x - φₙ(x)`, where `φₙ(x)` lies in the summand
