@@ -105,14 +105,8 @@ theorem exists_space_eq_inter (hK : LocallyFinite fun s : K.faces => convexHull 
     exact Subtype.ext (Prod.ext
       (Subtype.ext (eq_of_mem_intrinsicInterior p.1.1.2 q.1.1.2 hxp.1 hxq.1))
       (Subtype.ext (eq_of_mem_intrinsicInterior p.1.2.2 q.1.2.2 hxp.2 hxq.2)))
-  have hfr : ∀ p, intrinsicFrontier ℝ (P p) ⊆ ⋃ (q) (_ : q ≠ p ∧ P q ⊆ P p), P q := by
-    intro p x hx
-    have hxP := intrinsicFrontier_subset (hPc p).isClosed hx
-    obtain ⟨q, hxq, hqp⟩ := hcell p.1.1.2 p.1.2.2 hxP.1 hxP.2
-    have hxi : x ∉ intrinsicInterior ℝ (P p) := by
-      rw [← intrinsicClosure_sdiff_intrinsicInterior] at hx
-      exact hx.2
-    exact mem_iUnion₂.2 ⟨q, ⟨fun hqp' => hxi (hqp' ▸ hxq), hqp⟩, intrinsicInterior_subset hxq⟩
+  have hfr := TauCeti.intrinsicFrontier_subset_iUnion_of_exists_mem_intrinsicInterior
+    (fun p => (hPc p).isClosed) fun p x hx => hcell p.1.1.2 p.1.2.2 hx.1 hx.2
   obtain ⟨M, hMs, -, hMP, hMlf⟩ := exists_subdivision P hPc hPv (fun q => q.2.some)
     (fun q => (hri q).symm ▸ q.2.some_mem) hPlf hdisj hfr
   refine ⟨M, ?_, fun s hs => ?_, hMlf⟩
