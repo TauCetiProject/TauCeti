@@ -142,7 +142,7 @@ private theorem integrableTopForm_and_integralTopForm_sheet [T2Space M]
     exact ⟨f z, hfz, by rw [hfe hzs, e.left_inv hzs]⟩
   have hmd : ∀ z ∈ e.source, MDifferentiableAt I J f z :=
     fun z _ ↦ hf.mdifferentiable one_ne_zero z
-  refine ⟨e.integrableTopForm_of_eq_mpullback hfe hmd hφ hφt hψs hψφ, ?_⟩
+  refine ⟨e.integrableTopForm_of_eq_mpullback hfe hmd rfl hφ hφt hψs hψφ, ?_⟩
   -- Change variables according to the orientation sign on the sheet.
   rcases orientationSign_eq_one_or_eq_neg_one_of_isRegularPoint (o := o) (o' := o') hx with h | h
   · rw [h, Int.cast_one, one_mul]
