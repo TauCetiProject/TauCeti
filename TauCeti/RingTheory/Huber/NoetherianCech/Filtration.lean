@@ -40,7 +40,7 @@ private theorem map_erase_faceIdeal_pow_le [DecidableEq ι]
     letI := faceTopology f P hf p (S.erase a.1)
     letI := faceTopology f P hf (p + 1) S
     ((facePair f P hf p (S.erase a.1)).idealOfDefinition ^ i).map
-      ((eraseRingHom f S a).restrict _ _
+      ((cechLocalizationEraseRingHom f S a).restrict _ _
         fun _ hr ↦ eraseRingHom_mem_ringOfDefinition f P hf p S a hr) ≤
       (facePair f P hf (p + 1) S).idealOfDefinition ^ i := by
   let _ := faceTopology f P hf p (S.erase a.1)
@@ -58,7 +58,7 @@ theorem cechLocalizationRestriction_erase_mem_faceFiltration [DecidableEq ι]
   let R := Localization.Away (∏ j ∈ S.erase a.1, f j)
   let T := Localization.Away (∏ j ∈ S, f j)
   let Q := LocalizedModule (.powers (∏ j ∈ S, f j)) M
-  let φ : R →+* T := eraseRingHom f S a
+  let φ : R →+* T := cechLocalizationEraseRingHom f S a
   let _ := faceTopology f P hf p (S.erase a.1)
   let _ := faceTopology f P hf (p + 1) S
   let D := (facePair f P hf p (S.erase a.1)).ringOfDefinition
@@ -71,7 +71,7 @@ theorem cechLocalizationRestriction_erase_mem_faceFiltration [DecidableEq ι]
   have hI r hr := map_erase_faceIdeal_pow_le f P hf p S a i
     (Ideal.mem_map_of_mem ψ (x := r) hr)
   let _ : Module R Q := Module.compHom Q φ
-  have : IsScalarTower B R Q := isScalarTower_compHom_eraseRingHom f M S a
+  have : IsScalarTower B R Q := isScalarTower_compHom_cechLocalizationEraseRingHom M f S a
   let u := (cechLocalizationRestriction M f (S.erase_subset a.1)).extendScalarsOfIsLocalization
     (.powers (∏ j ∈ S.erase a.1, f j)) R
   have hu (r : D) (y : LocalizedModule (.powers (∏ j ∈ S.erase a.1, f j)) M) :

@@ -42,8 +42,9 @@ variable [TopologicalSpace B] [IsTopologicalRing B] (P : PairOfDefinition B)
 
 private theorem continuous_eraseRingHom [DecidableEq ι] (p : ℕ) (S : Finset ι) (a : S) :
     @Continuous _ _ (faceTopology f P hf p (S.erase a.1)) (faceTopology f P hf (p + 1) S)
-      (eraseRingHom f S a) := by
-  rw [faceTopology_eq_locTopology, faceTopology_eq_locTopology, eraseRingHom_eq_awayLift]
+      (cechLocalizationEraseRingHom f S a) := by
+  rw [faceTopology_eq_locTopology, faceTopology_eq_locTopology,
+    cechLocalizationEraseRingHom_eq_awayLift]
   exact P.continuous_awayLift_locTopology _ _ _ (hasDenominatorPower f P hf p (S.erase a.1))
     _ _ _ (hasDenominatorPower f P hf (p + 1) S) (f a.1) ((Finset.prod_erase_mul S f a.2).symm)
     fun _ ht ↦ mul_mem_numerators f ht a.1
@@ -68,9 +69,9 @@ theorem continuous_cechLocalizationRestriction_erase [DecidableEq ι] (p : ℕ) 
   have := isModuleTopology_faceModuleTopology f P M hf (p + 1) S
   have := IsModuleTopology.isTopologicalAddGroup T N
   have := IsModuleTopology.toContinuousSMul T N
-  let φ : R →+* T := eraseRingHom f S a
+  let φ : R →+* T := cechLocalizationEraseRingHom f S a
   let _ : Module R N := Module.compHom N φ
-  have : IsScalarTower B R N := isScalarTower_compHom_eraseRingHom f M S a
+  have : IsScalarTower B R N := isScalarTower_compHom_cechLocalizationEraseRingHom M f S a
   have : ContinuousSMul R N := ⟨((continuous_eraseRingHom f P hf p S a).comp
     continuous_fst).smul continuous_snd⟩
   exact IsModuleTopology.continuous_of_linearMap
