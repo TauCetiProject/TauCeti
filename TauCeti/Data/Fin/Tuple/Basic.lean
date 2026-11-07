@@ -40,6 +40,8 @@ A tuple of length three is determined by its three entries.
   positions.
 * `Fin.update_append_castAdd`, `Fin.update_append_natAdd`: updating an entry of `Fin.append u v`
   updates the corresponding entry of `u` or of `v`.
+* `Fin.append_comp_swap_castAdd`, `Fin.append_comp_swap_natAdd`: exchanging two entries of
+  `Fin.append u v` exchanges the corresponding entries of `u` or of `v`.
 * `Fin.contractNth_zero_cons`, `Fin.contractNth_succ_cons`: contracting entries of a tuple
   `Fin.cons x a`.
 * `Fin.contractNth_castSucc_castSucc_snoc`, `Fin.contractNth_castSucc_last_snoc`: contracting
@@ -153,6 +155,28 @@ theorem update_append_natAdd {n : ℕ} (u : Fin m → α) (v : Fin n → α) (i 
       rw [Function.update_of_ne fun h ↦ by simp [Fin.ext_iff] at h; omega]
       simp)
     (fun j ↦ by simp [Function.update_apply]) j
+
+/-- Exchanging two entries of `Fin.append u v` at positions of `u` is appending `v` to `u` with
+those entries exchanged. -/
+theorem append_comp_swap_castAdd {n : ℕ} (u : Fin m → α) (v : Fin n → α) (j k : Fin m) :
+    append u v ∘ Equiv.swap (castAdd n j) (castAdd n k) = append (u ∘ Equiv.swap j k) v :=
+  funext fun i ↦ addCases
+    (fun i ↦ by rw [Function.comp_apply, ← (castAdd_injective m n).map_swap j k i]; simp)
+    (fun i ↦ by
+      rw [Function.comp_apply, Equiv.swap_apply_of_ne_of_ne
+        (fun h ↦ by simp [Fin.ext_iff] at h; omega) (fun h ↦ by simp [Fin.ext_iff] at h; omega)]
+      simp) i
+
+/-- Exchanging two entries of `Fin.append u v` at positions of `v` is prepending `u` to `v` with
+those entries exchanged. -/
+theorem append_comp_swap_natAdd {n : ℕ} (u : Fin m → α) (v : Fin n → α) (j k : Fin n) :
+    append u v ∘ Equiv.swap (natAdd m j) (natAdd m k) = append u (v ∘ Equiv.swap j k) :=
+  funext fun i ↦ addCases
+    (fun i ↦ by
+      rw [Function.comp_apply, Equiv.swap_apply_of_ne_of_ne
+        (fun h ↦ by simp [Fin.ext_iff] at h; omega) (fun h ↦ by simp [Fin.ext_iff] at h; omega)]
+      simp)
+    (fun i ↦ by rw [Function.comp_apply, ← (natAdd_injective n m).map_swap j k i]; simp) i
 
 section ContractNth
 
