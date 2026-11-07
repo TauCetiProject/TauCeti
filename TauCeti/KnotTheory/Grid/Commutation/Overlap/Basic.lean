@@ -202,6 +202,21 @@ namespace GridRectanglePentagonDecomposition
 
 variable {n : ℕ} {a s : Fin n} {x z : GridState n}
 
+/-- An empty rectangle of a rectangle-pentagon decomposition stays empty as the first rectangle of
+the underlying rectangle decomposition. -/
+theorem toRectangleDecomposition_first_isEmpty (D : GridRectanglePentagonDecomposition a s x z)
+    (hrectangle : D.rectangle.IsEmpty) : D.toRectangleDecomposition.first.IsEmpty := by
+  simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+    D.toRectangleDecomposition_first_toGridRectangle] using hrectangle
+
+/-- An empty pentagon of a rectangle-pentagon decomposition stays empty as the second rectangle of
+the underlying rectangle decomposition. -/
+theorem toRectangleDecomposition_second_isEmpty (D : GridRectanglePentagonDecomposition a s x z)
+    (hpentagon : D.pentagon.IsEmpty) : D.toRectangleDecomposition.second.IsEmpty := by
+  simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+    D.toRectangleDecomposition_middle,
+    D.toRectangleDecomposition_second_toGridRectangle] using hpentagon
+
 private theorem right_ne_right_of_left_eq_left
     (D : GridRectanglePentagonDecomposition a s x z)
     (hcommon : D.rectangle.left = D.pentagon.left)
@@ -258,6 +273,55 @@ theorem recut_first_right_of_left_eq_left
     _ = D.pentagon.right := toRectangleDecomposition_second_right D
     _ = finRotate n a := D.pentagon.right_eq
 
+/-- Row facts for the forgotten rectangle decomposition in the common-initial-side overlap: the
+pentagon's turn row lies in the second rectangle's interval, whose ends are the corner rows of the
+original decomposition, and the middle row lies strictly between the outer rows. -/
+private theorem turn_mem_second_of_left_eq_left
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hcommon : D.rectangle.left = D.pentagon.left)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty) :
+    s ∈ Grid.cIco D.toRectangleDecomposition.second.bottom
+        D.toRectangleDecomposition.second.top ∧
+      D.toRectangleDecomposition.second.bottom = x D.toRectangleDecomposition.first.right ∧
+      D.toRectangleDecomposition.second.top = x D.toRectangleDecomposition.second.right ∧
+      x D.toRectangleDecomposition.first.right ∈
+        Grid.cIoo (x D.toRectangleDecomposition.first.left)
+          (x D.toRectangleDecomposition.second.right) := by
+  have hcommon' : D.toRectangleDecomposition.first.left =
+      D.toRectangleDecomposition.second.left := by
+    simpa only [toRectangleDecomposition_first_left, toRectangleDecomposition_second_left] using
+      hcommon
+  have hright := D.right_ne_right_of_left_eq_left hcommon hone
+  have hrow := (D.toRectangleDecomposition.cyclicOrder_of_isEmpty_of_left_eq_left
+    hcommon' hright (D.toRectangleDecomposition_first_isEmpty hrectangle)
+    (D.toRectangleDecomposition_second_isEmpty hpentagon)).2
+  have hfirstBottom : D.toRectangleDecomposition.first.bottom =
+      x D.toRectangleDecomposition.first.left :=
+    D.toRectangleDecomposition.first.bottom_def
+  have hfirstTop : D.toRectangleDecomposition.first.top =
+      x D.toRectangleDecomposition.first.right :=
+    D.toRectangleDecomposition.first.top_def
+  have hsecondBottom : D.toRectangleDecomposition.second.bottom =
+      x D.toRectangleDecomposition.first.right := by
+    rw [GridRectangleBetween.bottom_def, ← hcommon',
+      D.toRectangleDecomposition.first.map_left]
+  have hsecondRight_ne_firstLeft : D.toRectangleDecomposition.second.right ≠
+      D.toRectangleDecomposition.first.left := by
+    intro h
+    exact D.toRectangleDecomposition.second.left_ne_right
+      (hcommon'.symm.trans h.symm)
+  have hsecondTop : D.toRectangleDecomposition.second.top =
+      x D.toRectangleDecomposition.second.right := by
+    rw [GridRectangleBetween.top_def]
+    exact D.toRectangleDecomposition.first.map_of_ne _ hsecondRight_ne_firstLeft hright.symm
+  refine ⟨?_, hsecondBottom, hsecondTop, ?_⟩
+  · simpa only [toRectangleDecomposition_middle, GridRectangleBetween.bottom_def,
+      GridRectangleBetween.top_def,
+      toRectangleDecomposition_second_left, toRectangleDecomposition_second_right] using
+      D.pentagon.turn_mem
+  · simpa only [hfirstBottom, hfirstTop, hsecondTop] using hrow
+
 /-- In the common-initial-side overlap, the first rectangle of the recut still contains the
 pentagon's turn row on its terminal side. -/
 theorem turn_mem_recut_first_of_left_eq_left
@@ -282,49 +346,8 @@ theorem turn_mem_recut_first_of_left_eq_left
       simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
         D.toRectangleDecomposition_middle,
         D.toRectangleDecomposition_second_toGridRectangle] using hpentagon)).first.top := by
-  -- Work in the forgotten rectangle decomposition to use its emptiness and cyclic-order facts.
-  have hempty : D.toRectangleDecomposition.first.IsEmpty ∧
-      D.toRectangleDecomposition.second.IsEmpty :=
-    ⟨by
-      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-        D.toRectangleDecomposition_first_toGridRectangle] using hrectangle,
-      by
-      simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-        D.toRectangleDecomposition_middle,
-        D.toRectangleDecomposition_second_toGridRectangle] using hpentagon⟩
-  have hcommon' : D.toRectangleDecomposition.first.left =
-      D.toRectangleDecomposition.second.left := by
-    simpa only [toRectangleDecomposition_first_left, toRectangleDecomposition_second_left] using
-      hcommon
-  have hright := D.right_ne_right_of_left_eq_left hcommon hone
-  have hrow := (D.toRectangleDecomposition.cyclicOrder_of_isEmpty_of_left_eq_left
-    hcommon' hright hempty.1 hempty.2).2
-  -- Convert the cyclic row order and pentagon turn interval to the original corner rows.
-  have hfirstBottom : D.toRectangleDecomposition.first.bottom =
-      x D.toRectangleDecomposition.first.left :=
-    D.toRectangleDecomposition.first.bottom_def
-  have hfirstTop : D.toRectangleDecomposition.first.top =
-      x D.toRectangleDecomposition.first.right :=
-    D.toRectangleDecomposition.first.top_def
-  have hsecondBottom : D.toRectangleDecomposition.second.bottom =
-      x D.toRectangleDecomposition.first.right := by
-    rw [GridRectangleBetween.bottom_def, ← hcommon',
-      D.toRectangleDecomposition.first.map_left]
-  have hsecondRight_ne_firstLeft : D.toRectangleDecomposition.second.right ≠
-      D.toRectangleDecomposition.first.left := by
-    intro h
-    exact D.toRectangleDecomposition.second.left_ne_right
-      (hcommon'.symm.trans h.symm)
-  have hsecondTop : D.toRectangleDecomposition.second.top =
-      x D.toRectangleDecomposition.second.right := by
-    rw [GridRectangleBetween.top_def]
-    exact D.toRectangleDecomposition.first.map_of_ne _ hsecondRight_ne_firstLeft hright.symm
-  have hturn : s ∈ Grid.cIco D.toRectangleDecomposition.second.bottom
-      D.toRectangleDecomposition.second.top := by
-    simpa only [toRectangleDecomposition_middle, GridRectangleBetween.bottom_def,
-      GridRectangleBetween.top_def,
-      toRectangleDecomposition_second_left, toRectangleDecomposition_second_right] using
-      D.pentagon.turn_mem
+  obtain ⟨hturn, hsecondBottom, hsecondTop, hrow'⟩ :=
+    D.turn_mem_second_of_left_eq_left hcommon hone hrectangle hpentagon
   have hdata := D.isRecutOfLeftEqLeft_recut hcommon hone hrectangle hpentagon
   -- The first recut branch preserves the full interval; the second splits it at the middle row.
   have hrecutRight := hdata.recut_sides.1
@@ -333,11 +356,7 @@ theorem turn_mem_recut_first_of_left_eq_left
   · rw [GridRectangleBetween.bottom_def, GridRectangleBetween.top_def, hrecutLeft,
       hrecutRight, ← hsecondBottom, ← hsecondTop]
     exact hturn
-  · have hrow' : x D.toRectangleDecomposition.first.right ∈
-        Grid.cIoo (x D.toRectangleDecomposition.first.left)
-          (x D.toRectangleDecomposition.second.right) := by
-      simpa only [hfirstBottom, hfirstTop, hsecondTop] using hrow
-    have hturn' : s ∈ Grid.cIco (x D.toRectangleDecomposition.first.right)
+  · have hturn' : s ∈ Grid.cIco (x D.toRectangleDecomposition.first.right)
         (x D.toRectangleDecomposition.second.right) := by
       simpa only [hsecondBottom, hsecondTop] using hturn
     rw [GridRectangleBetween.bottom_def, GridRectangleBetween.top_def, hrecutLeft,
@@ -649,6 +668,40 @@ theorem isRecut_recutOfIsEmpty
   rw [D.recutOfIsEmpty_eq_recut hone hrectangle hpentagon]
   exact D.toRectangleDecomposition.isRecut_recut hone _ _
 
+/-- The forgotten recut of a rectangle-pentagon decomposition with empty rectangle and pentagon and
+a common initial side is a recut of the left-equals-left kind. -/
+private theorem isRecutOfLeftEqLeft_recutOfIsEmpty
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hcommon : D.rectangle.left = D.pentagon.left)
+    (hone : D.toRectangleDecomposition.HasOneCommonSide)
+    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty) :
+    D.toRectangleDecomposition.IsRecutOfLeftEqLeft
+      (D.recutOfIsEmpty hone hrectangle hpentagon) := by
+  rw [D.recutOfIsEmpty_eq_recut]
+  exact D.toRectangleDecomposition.isRecutOfLeftEqLeft_recut
+    (by simpa only [toRectangleDecomposition_first_left,
+      toRectangleDecomposition_second_left] using hcommon) hone _ _
+
+/-- If the rectangle of a pentagon-rectangle decomposition `E` starts at a column `c` strictly
+inside `D`'s rectangle, ends where it does, and `E` has the swapped middle state, then `E`'s
+rectangle has the same bottom and top rows. -/
+private theorem recut_rectangle_bottom_top_of_middle_eq_swapColumns
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (E : GridPentagonRectangleDecomposition a s x z) {c : Fin n}
+    (hEleft : E.rectangle.left = c) (hEright : E.rectangle.right = D.rectangle.right)
+    (hEmiddle : E.middle = x.swapColumns D.rectangle.left c)
+    (hcol : c ∈ Grid.cIoo D.rectangle.left D.rectangle.right) :
+    E.rectangle.bottom = D.rectangle.bottom ∧ E.rectangle.top = D.rectangle.top := by
+  constructor
+  · rw [GridRectangleBetween.bottom_def, hEleft, hEmiddle,
+      GridState.swapColumns_apply, Equiv.swap_apply_right,
+      ← GridRectangleBetween.bottom_def]
+  · rw [GridRectangleBetween.top_def, hEright, hEmiddle,
+      GridState.swapColumns_apply,
+      Equiv.swap_apply_of_ne_of_ne D.rectangle.left_ne_right.symm
+        (Grid.ne_right_of_mem_cIoo hcol).symm,
+      ← GridRectangleBetween.top_def]
+
 /-- The promoted rectangle's side data in both common-initial-side recut branches.
 In the second branch its middle state and row endpoints also agree with the indicated
 column swap and the original rectangle. -/
@@ -675,12 +728,7 @@ theorem recut_rectangle_branch_data_of_left_eq_left
   have hE : E.toRectangleDecomposition = D.recutOfIsEmpty hone hrectangle hpentagon := by
     simpa only [E, D.recutOfIsEmpty_eq_recut] using
       D.recutLeftEqLeft_toRectangleDecomposition hcommon hone hrectangle hpentagon
-  have hdata : D.toRectangleDecomposition.IsRecutOfLeftEqLeft
-      (D.recutOfIsEmpty hone hrectangle hpentagon) := by
-    rw [D.recutOfIsEmpty_eq_recut]
-    exact D.toRectangleDecomposition.isRecutOfLeftEqLeft_recut
-      (by simpa only [toRectangleDecomposition_first_left,
-        toRectangleDecomposition_second_left] using hcommon) hone _ _
+  have hdata := D.isRecutOfLeftEqLeft_recutOfIsEmpty hcommon hone hrectangle hpentagon
   have hEright : E.rectangle.right = D.rectangle.right := by
     have h := hdata.recut_sides.2
     rw [← hE] at h
@@ -710,16 +758,8 @@ theorem recut_rectangle_branch_data_of_left_eq_left
       simpa only [GridPentagonRectangleDecomposition.toRectangleDecomposition_middle,
         toRectangleDecomposition_first_left, toRectangleDecomposition_second_right,
         D.pentagon.right_eq] using hmiddle
-    have hEbottom : E.rectangle.bottom = D.rectangle.bottom := by
-      rw [GridRectangleBetween.bottom_def, hEleft, hEmiddle,
-        GridState.swapColumns_apply, Equiv.swap_apply_right,
-        ← GridRectangleBetween.bottom_def]
-    have hEtop : E.rectangle.top = D.rectangle.top := by
-      rw [GridRectangleBetween.top_def, hEright, hEmiddle,
-        GridState.swapColumns_apply,
-        Equiv.swap_apply_of_ne_of_ne D.rectangle.left_ne_right.symm
-          (Grid.ne_right_of_mem_cIoo hcol').symm,
-        ← GridRectangleBetween.top_def]
+    obtain ⟨hEbottom, hEtop⟩ :=
+      D.recut_rectangle_bottom_top_of_middle_eq_swapColumns E hEleft hEright hEmiddle hcol'
     exact Or.inr ⟨hcol', hEleft, hEright, hEmiddle, hEbottom, hEtop⟩
 
 /-- Common setup for the terminal-side branch determination: the pentagon's terminal side
