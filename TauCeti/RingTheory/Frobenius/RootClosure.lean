@@ -129,9 +129,9 @@ theorem pow_mem_range_algebraMap_iff (n : ℕ) (x : Q) :
     exact ⟨fun h ↦ ih.mp (σ.mem_range_algebraMap_of_pow_mem_range h),
       fun h ↦ (algebraMap R Q).range.pow_mem (ih.mpr h) p⟩
 
-/-- There is no nontrivial intermediate subalgebra of the total fraction ring obtained by
-adjoining elements whose `p`-power iterates lie in the original Frobenius-split ring. The
-exponent may depend on the element; neither integrality nor module finiteness is assumed. -/
+/-- An intermediate subalgebra of the total fraction ring, each of whose elements has some
+`p ^ n`-th power in the original Frobenius-split ring, is the original ring (`⊥`). The exponent
+may depend on the element; neither integrality nor module finiteness is assumed. -/
 theorem subalgebra_eq_bot_of_forall_exists_pow_mem_range (A : Subalgebra R Q)
     (hA : ∀ x ∈ A, ∃ n : ℕ, x ^ p ^ n ∈ (algebraMap R Q).range) : A = ⊥ := by
   apply le_bot_iff.mp
