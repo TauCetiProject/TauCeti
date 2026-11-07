@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Enriched.Ordinary.Basic
+import TauCeti.CategoryTheory.Monoidal.Braided.Basic
 import Mathlib.Tactic.ApplyFun
 
 /-!
@@ -33,42 +34,6 @@ variable {C' : Type u₁} {D' : Type u₂} [EnrichedCategory V C'] [EnrichedCate
 abbrev UnitGradedNatTrans (F G : EnrichedFunctor V C' D') :=
   GradedNatTrans ((Center.ofBraided V).obj (𝟙_ V)) F G
 
-/-- Precomposing the `F.map` side of the unit whiskering square with the left unitor gives the
-braided tensor of `F.map` with `aY`. -/
-private theorem leftUnitor_comp_map_whiskerLeft
-    (F G : EnrichedFunctor V C' D') (X Y : C')
-    (aY : 𝟙_ V ⟶ F.obj Y ⟶[V] G.obj Y) :
-    (λ_ (X ⟶[V] Y)).hom ≫ F.map X Y ≫
-      (ρ_ (F.obj X ⟶[V] F.obj Y)).inv ≫
-      (F.obj X ⟶[V] F.obj Y) ◁ aY =
-      (β_ (𝟙_ V) (X ⟶[V] Y)).hom ≫ (F.map X Y ⊗ₘ aY) := by
-  have hb : (λ_ (X ⟶[V] Y)).hom ≫ (ρ_ (X ⟶[V] Y)).inv =
-      (β_ (𝟙_ V) (X ⟶[V] Y)).hom :=
-    (((ρ_ (X ⟶[V] Y)).eq_comp_inv).mpr
-      (braiding_rightUnitor (X ⟶[V] Y))).symm
-  calc
-    _ = (λ_ (X ⟶[V] Y)).hom ≫
-        ((ρ_ (X ⟶[V] Y)).inv ≫ (F.map X Y ⊗ₘ aY)) := by
-          rw [rightUnitor_inv_comp_tensorHom]
-    _ = ((λ_ (X ⟶[V] Y)).hom ≫ (ρ_ (X ⟶[V] Y)).inv) ≫
-        (F.map X Y ⊗ₘ aY) := by simp only [Category.assoc]
-    _ = _ := by rw [hb]
-
-omit [BraidedCategory V] in
-/-- Precomposing the `G.map` side of the unit whiskering square with the left unitor gives the
-tensor of `aX` with `G.map`. -/
-private theorem leftUnitor_comp_map_whiskerRight
-    (F G : EnrichedFunctor V C' D') (X Y : C')
-    (aX : 𝟙_ V ⟶ F.obj X ⟶[V] G.obj X) :
-    (λ_ (X ⟶[V] Y)).hom ≫ G.map X Y ≫
-      (λ_ (G.obj X ⟶[V] G.obj Y)).inv ≫
-      aX ▷ (G.obj X ⟶[V] G.obj Y) = aX ⊗ₘ G.map X Y := by
-  calc
-    _ = (λ_ (X ⟶[V] Y)).hom ≫
-        ((λ_ (X ⟶[V] Y)).inv ≫ (aX ⊗ₘ G.map X Y)) := by
-          rw [leftUnitor_inv_comp_tensorHom]
-    _ = _ := by simp
-
 /-- Graded naturality at the monoidal unit is equivalent to the ordinary whiskering square.
 The two sides differ by precomposition with the left unitor and the unit braiding. -/
 theorem unitGradedNaturality_iff
@@ -88,8 +53,8 @@ theorem unitGradedNaturality_iff
       (F.obj X ⟶[V] F.obj Y) ◁ aY ≫ eComp V (F.obj X) (F.obj Y) (G.obj Y) =
     G.map X Y ≫ (λ_ (G.obj X ⟶[V] G.obj Y)).inv ≫
       aX ▷ (G.obj X ⟶[V] G.obj Y) ≫ eComp V (F.obj X) (G.obj X) (G.obj Y))
-  have hl := leftUnitor_comp_map_whiskerLeft F G X Y aY
-  have hr := leftUnitor_comp_map_whiskerRight F G X Y aX
+  have hl := leftUnitor_hom_comp_rightUnitor_inv_whiskerLeft (F.map X Y) aY
+  have hr := leftUnitor_hom_comp_leftUnitor_inv_whiskerRight (G.map X Y) aX
   constructor
   · intro h
     apply (cancel_epi (λ_ (X ⟶[V] Y)).hom).mp

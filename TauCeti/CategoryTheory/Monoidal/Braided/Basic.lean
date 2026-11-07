@@ -19,7 +19,9 @@ which no rigidity is needed.
 
 This file also records naturality of the re-associated crossing
 `(α_ X Y Z).inv ≫ (β_ X Y).hom ▷ Z ≫ (α_ Y X Z).hom : X ⊗ (Y ⊗ Z) ⟶ Y ⊗ (X ⊗ Z)` of the first
-two factors of a right-bracketed triple with respect to whiskered and tensor-product morphisms.
+two factors of a right-bracketed triple with respect to whiskered and tensor-product morphisms,
+and two identities relating a morphism conjugated by unitors and whiskered by a morphism out of
+the unit to the tensor product of the two morphisms.
 -/
 
 public section
@@ -105,5 +107,22 @@ theorem whiskerLeft_tensorHom_comp_associator_inv_braiding_associator_hom (X : C
     associator_inv_naturality_right_assoc, whisker_exchange_assoc, associator_naturality_right,
     associator_inv_naturality_middle_assoc, ← comp_whiskerRight_assoc, braiding_naturality_right,
     comp_whiskerRight_assoc, associator_naturality_left_assoc]
+
+/-- Precomposing `f` followed by the right unitor inverse and the whiskering by
+`g : 𝟙_ C ⟶ Z` with the left unitor gives the braiding of the unit past the source of `f`,
+followed by the tensor product of `f` and `g`. -/
+theorem leftUnitor_hom_comp_rightUnitor_inv_whiskerLeft {X Y Z : C} (f : X ⟶ Y)
+    (g : 𝟙_ C ⟶ Z) :
+    (λ_ X).hom ≫ f ≫ (ρ_ Y).inv ≫ Y ◁ g = (β_ (𝟙_ C) X).hom ≫ (f ⊗ₘ g) := by
+  rw [← rightUnitor_inv_comp_tensorHom, braiding_tensorUnit_left, Category.assoc]
+
+omit [BraidedCategory C] in
+/-- Precomposing `f` followed by the left unitor inverse and the whiskering by
+`g : 𝟙_ C ⟶ Z` on the right with the left unitor gives the tensor product of `g` and `f`. -/
+theorem leftUnitor_hom_comp_leftUnitor_inv_whiskerRight {X Y Z : C} (f : X ⟶ Y)
+    (g : 𝟙_ C ⟶ Z) :
+    (λ_ X).hom ≫ f ≫ (λ_ Y).inv ≫ g ▷ Y = g ⊗ₘ f := by
+  rw [← leftUnitor_inv_comp_tensorHom]
+  simp
 
 end TauCeti
