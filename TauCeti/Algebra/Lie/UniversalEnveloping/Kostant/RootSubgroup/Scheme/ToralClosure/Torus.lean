@@ -64,29 +64,6 @@ variable {n : ℕ} (b : Module.Basis (Fin n) ℤ M)
 variable (wt : Fin n → κ → ℤ)
 
 omit [Module ℚ V] in
-/-- The diagonal coordinate of the weight torus point of the identity point of the group algebra
-of the character lattice is the group-algebra monomial of the corresponding weight. -/
-private theorem diagonalTorusCoordinates_pointsMap_weightCharacterMap_id [Fintype κ] (i : Fin n) :
-    (GeneralLinear.diagonalTorusCoordinates
-        (SplitTorus.pointsMulEquiv
-          (DiagonalizableGroup.pointsMap (GeneralLinear.weightCharacterMap wt)
-            (toConv (AlgHom.id ℤ (MonoidAlgebra ℤ (SplitTorus.characterGroup κ)))))) i :
-        MonoidAlgebra ℤ (SplitTorus.characterGroup κ)) =
-      MonoidAlgebra.single (SplitTorus.weightCharacter (wt i)) 1 := by
-  let H := MonoidAlgebra ℤ (SplitTorus.characterGroup κ)
-  let p : WithConv (H →ₐ[ℤ] H) := toConv (AlgHom.id ℤ H)
-  have hweight : (DiagonalizableGroup.charOfPoint p.ofConv
-      (SplitTorus.weightCharacter (wt i)) : H) =
-      MonoidAlgebra.single (SplitTorus.weightCharacter (wt i)) 1 := by
-    have hp : p.ofConv = AlgHom.id ℤ H := WithConv.ofConv_toConv _
-    rw [DiagonalizableGroup.charOfPoint_apply_coe, hp, AlgHom.id_apply]
-  have hcoordUnits :=
-    GeneralLinear.diagonalTorusCoordinates_pointsMap_weightCharacterMap wt
-      (CommAlgCat.of ℤ H) p i
-  rw [← SplitTorus.charOfPoint_weightCharacter] at hcoordUnits
-  exact (congrArg Units.val hcoordUnits).trans hweight
-
-omit [Module ℚ V] in
 private theorem weightTorusCoordinateMap_eq_diagonalCoordinateMap [Fintype κ] :
     GeneralLinear.weightTorusCoordinateMap (R := ℤ) wt =
       CommHopfAlgCat.ofHom (DiagonalizableGroup.diagonalCoordinateMap b
@@ -125,7 +102,7 @@ private theorem weightTorusCoordinateMap_eq_diagonalCoordinateMap [Fintype κ] :
     rw [DiagonalizableGroup.diagonalCoordinateMap_X]
     rcases eq_or_ne i j with rfl | hij
     · simp only [diagGL_apply, ↓reduceIte] at hleft
-      rw [diagonalTorusCoordinates_pointsMap_weightCharacterMap_id wt i] at hleft
+      rw [GeneralLinear.diagonalTorusCoordinates_pointsMap_weightCharacterMap_id wt i] at hleft
       simpa using hleft
     · simp only [diagGL_apply, hij, ↓reduceIte] at hleft
       simpa [Matrix.diagonal_apply_ne _ hij] using hleft
