@@ -115,6 +115,49 @@ private theorem linearIndependent_rootSimpleCorootFamily_ambient :
     (by rw [hx.span_rootSimpleCorootFamily_eq_top b])
     (card_root_sum_support_eq_finrank H b)
 
+omit hx in
+/-- Every coroot lies in the image in `L` of the integral span of the root vectors and simple
+coroots. -/
+private theorem coroot_mem_map_span_rootSimpleCorootFamily (alpha : Weight K H L) :
+    (coroot alpha : L) ∈
+      (Submodule.span ℤ (Set.range (rootSimpleCorootFamily (x := x) b))).map
+        (rootCorootSpan x).subtype := by
+  let Q := (Submodule.span ℤ (Set.range (rootSimpleCorootFamily (x := x) b))).map
+    (rootCorootSpan x).subtype
+  by_cases halpha : alpha.IsNonZero
+  · let a : H.root := ⟨alpha, by simpa⟩
+    have ha : (rootSystem H).coroot a ∈
+        Submodule.span ℤ ((rootSystem H).coroot '' b.support) :=
+      b.coroot_mem_span_int a
+    let inclℤ : H →ₗ[ℤ] L := H.incl.restrictScalars ℤ
+    have hmap : inclℤ ((rootSystem H).coroot a) ∈
+        Submodule.map inclℤ
+          (Submodule.span ℤ ((rootSystem H).coroot '' b.support)) :=
+      ⟨(rootSystem H).coroot a, ha, rfl⟩
+    rw [Submodule.map_span] at hmap
+    have hle : Submodule.span ℤ
+        (inclℤ '' ((rootSystem H).coroot '' b.support)) ≤ Q := by
+      rw [Submodule.span_le]
+      rintro _ ⟨_, ⟨i, hi, rfl⟩, rfl⟩
+      let j : b.support := ⟨i, hi⟩
+      refine ⟨rootSimpleCorootFamily (x := x) b (Sum.inr j),
+        Submodule.subset_span ⟨Sum.inr j, rfl⟩, ?_⟩
+      have hj : (rootSimpleCorootFamily (x := x) b (Sum.inr j) : L) =
+          H.incl ((rootSystem H).coroot i) := by
+        rw [coe_rootSimpleCorootFamily_inr, rootSystem_coroot_apply]
+        rfl
+      exact hj
+    have hm := hle hmap
+    have ha_weight : (a : Weight K H L) = alpha := rfl
+    have ha_coroot : inclℤ ((rootSystem H).coroot a) = (coroot alpha : L) := by
+      dsimp only [inclℤ]
+      rw [rootSystem_coroot_apply, ha_weight]
+      rfl
+    rw [ha_coroot] at hm
+    exact hm
+  · rw [coroot_eq_zero_iff.2 (not_not.mp halpha)]
+    exact Submodule.zero_mem _
+
 private theorem span_rootSimpleCorootFamily_lattice_eq_top :
     Submodule.span ℤ (Set.range (rootSimpleCorootFamily (x := x) b)) = ⊤ := by
   let P := Submodule.span ℤ (Set.range (rootSimpleCorootFamily (x := x) b))
@@ -126,40 +169,7 @@ private theorem span_rootSimpleCorootFamily_lattice_eq_top :
         Submodule.subset_span ⟨Sum.inl a, rfl⟩, rfl⟩
     · rw [hx.eq_zero_of_isZero alpha (not_not.mp halpha)]
       exact Submodule.zero_mem _
-  have hcoroot (alpha : Weight K H L) : (coroot alpha : L) ∈ Q := by
-    by_cases halpha : alpha.IsNonZero
-    · let a : H.root := ⟨alpha, by simpa⟩
-      have ha : (rootSystem H).coroot a ∈
-          Submodule.span ℤ ((rootSystem H).coroot '' b.support) :=
-        b.coroot_mem_span_int a
-      let inclℤ : H →ₗ[ℤ] L := H.incl.restrictScalars ℤ
-      have hmap : inclℤ ((rootSystem H).coroot a) ∈
-          Submodule.map inclℤ
-            (Submodule.span ℤ ((rootSystem H).coroot '' b.support)) :=
-        ⟨(rootSystem H).coroot a, ha, rfl⟩
-      rw [Submodule.map_span] at hmap
-      have hle : Submodule.span ℤ
-          (inclℤ '' ((rootSystem H).coroot '' b.support)) ≤ Q := by
-        rw [Submodule.span_le]
-        rintro _ ⟨_, ⟨i, hi, rfl⟩, rfl⟩
-        let j : b.support := ⟨i, hi⟩
-        refine ⟨rootSimpleCorootFamily (x := x) b (Sum.inr j),
-          Submodule.subset_span ⟨Sum.inr j, rfl⟩, ?_⟩
-        have hj : (rootSimpleCorootFamily (x := x) b (Sum.inr j) : L) =
-            H.incl ((rootSystem H).coroot i) := by
-          rw [coe_rootSimpleCorootFamily_inr, rootSystem_coroot_apply]
-          rfl
-        exact hj
-      have hm := hle hmap
-      have ha_weight : (a : Weight K H L) = alpha := rfl
-      have ha_coroot : inclℤ ((rootSystem H).coroot a) = (coroot alpha : L) := by
-        dsimp only [inclℤ]
-        rw [rootSystem_coroot_apply, ha_weight]
-        rfl
-      rw [ha_coroot] at hm
-      exact hm
-    · rw [coroot_eq_zero_iff.2 (not_not.mp halpha)]
-      exact Submodule.zero_mem _
+  have hcoroot := coroot_mem_map_span_rootSimpleCorootFamily (x := x) b
   have hspan : rootCorootSpan x ≤ Q := by
     rw [rootCorootSpan_le_iff]
     exact ⟨hroot, hcoroot⟩
