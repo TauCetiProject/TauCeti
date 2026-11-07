@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.Shor
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.UnboundedEdge
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.Boundary
 import TauCeti.Analysis.Complex.PlaneSeparation.Segment
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.TurningChain
 
 /-!
 # Separation of Schwarz--Christoffel sides from the closing side
@@ -119,50 +120,6 @@ private lemma exists_im_schwarzChristoffelVertex_succ_sub (a e : Fin (n + 1) →
     rw [Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im, zero_mul,
       add_zero, Complex.exp_ofReal_mul_I_im]
 
-/-- A telescoping step: if every side before `k` points upward, then `W k > W 0`.  Here the
-steps `W (l + 1) - W l` are positive multiples of `sin (θ l)` for a strictly increasing sequence
-`θ` bounded below by `-2π`, and `θ k ≤ -π`. -/
-private theorem sub_pos_of_step_of_le_neg_pi (W : ℕ → ℝ) (θ : Fin (n + 1) → ℝ)
-    (hθmono : StrictMono θ) (hθlow : ∀ l, -2 * Real.pi < θ l) {k : Fin (n + 1)}
-    (hkval : 0 < k.val) (hkn' : k.val < n) (hθk : θ k ≤ -Real.pi)
-    (hstep : ∀ l (hl : l < n), ∃ d : ℝ, 0 < d ∧
-      W (l + 1) - W l = d * Real.sin (θ ⟨l, by omega⟩)) :
-    W 0 < W k.val := by
-  have htel := Finset.sum_Ico_sub W (Nat.zero_le k.val)
-  rw [← sub_pos, ← htel]
-  refine Finset.sum_pos (fun l hl ↦ ?_) (Finset.nonempty_Ico.mpr hkval)
-  rw [Finset.mem_Ico] at hl
-  obtain ⟨d, hd, h⟩ := hstep l (hl.2.trans hkn')
-  rw [h]
-  have hlt : θ ⟨l, by omega⟩ < θ k := hθmono (Fin.mk_lt_mk.mpr hl.2)
-  refine mul_pos hd ?_
-  rw [← Real.sin_add_two_pi]
-  exact Real.sin_pos_of_pos_of_lt_pi (by linarith [hθlow ⟨l, by omega⟩]) (by linarith)
-
-/-- A telescoping step: if every side from `k` on points downward and the total height change is
-zero (`W n = W 0`), then `W 0 < W k`.  Here the steps `W (l + 1) - W l` are positive multiples of
-`sin (θ l)` for a strictly increasing sequence `θ` with `θ n = 0`, and `-π < θ k`. -/
-private theorem lt_of_sub_neg_of_step_of_not_le_neg_pi (W : ℕ → ℝ) (θ : Fin (n + 1) → ℝ)
-    (hθmono : StrictMono θ) (hθlast : θ (Fin.last n) = 0) {k : Fin (n + 1)}
-    (hkn' : k.val < n) (hθk : ¬ θ k ≤ -Real.pi)
-    (hstep : ∀ l (hl : l < n), ∃ d : ℝ, 0 < d ∧
-      W (l + 1) - W l = d * Real.sin (θ ⟨l, by omega⟩))
-    (hWn : W n = W 0) : W 0 < W k.val := by
-  have htel := Finset.sum_Ico_sub W hkn'.le
-  have hneg : ∑ l ∈ Finset.Ico k.val n, (W (l + 1) - W l) < 0 := by
-    refine Finset.sum_neg (fun l hl ↦ ?_) (Finset.nonempty_Ico.mpr hkn')
-    rw [Finset.mem_Ico] at hl
-    obtain ⟨d, hd, h⟩ := hstep l hl.2
-    rw [h]
-    have hle : θ k ≤ θ ⟨l, by omega⟩ := hθmono.monotone (Fin.mk_le_mk.mpr hl.1)
-    have hlt : θ ⟨l, by omega⟩ < θ (Fin.last n) :=
-      hθmono (Fin.mk_lt_mk.mpr (by simpa using hl.2))
-    rw [hθlast] at hlt
-    exact mul_neg_of_pos_of_neg hd
-      (Real.sin_neg_of_neg_of_neg_pi_lt hlt (by linarith))
-  rw [htel, hWn] at hneg
-  linarith
-
 /-- **The finite vertices lie above the closing line.**  For strictly ordered prevertices with
 exponents in `(-1, 0)` summing to `-2`, every finite Schwarz--Christoffel vertex other than the
 first and the last lies strictly above the horizontal line through the first vertex, which also
@@ -204,14 +161,14 @@ theorem im_schwarzChristoffelVertex_zero_lt (a e : Fin (n + 1) → ℝ) (z₀ : 
   rw [← hW, ← hW]
   simp only [Fin.val_zero]
   by_cases hθk : θ k ≤ -Real.pi
-  · exact sub_pos_of_step_of_le_neg_pi W θ hθmono hθlow hkval hkn' hθk hstep
+  · exact lt_of_step_of_le_neg_pi W θ hθmono hθlow hkval hkn' hθk hstep
   · have hWn : W n = W 0 := by
       have h1 := hW (Fin.last n)
       have h0 := hW 0
       rw [Fin.val_last] at h1
       rw [Fin.val_zero] at h0
       rw [h1, h0, hends]
-    exact lt_of_sub_neg_of_step_of_not_le_neg_pi W θ hθmono hθlast hkn' hθk hstep hWn
+    exact lt_of_step_of_not_le_neg_pi W θ hθmono hθlast hkn' hθk hstep hWn
 
 /-- **Every finite Schwarz--Christoffel vertex lies on or above the closing line.** The line is
 identified by the imaginary part of the first finite vertex. -/
