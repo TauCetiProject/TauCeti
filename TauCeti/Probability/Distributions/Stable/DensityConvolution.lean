@@ -51,9 +51,7 @@ lemma convolutionExists_stablePDFReal (hα : α ∈ Ioc 0 2) {β₂ : ℝ} (hβ�
     ConvolutionExists f (stablePDFReal α β₂ s₂ m₂) (mul ℝ ℝ) volume :=
   convolutionExists_of_integrable_of_ae_norm_le (mul ℝ ℝ) hf
     (continuous_stablePDFReal α β₂ s₂ m₂).aestronglyMeasurable
-    (.of_forall fun x ↦ by
-      rw [Real.norm_eq_abs, abs_of_nonneg (stablePDFReal_nonneg α β₂ s₂ m₂ x)]
-      exact stablePDFReal_le hα hβ₂ hs₂ m₂ x)
+    (.of_forall (norm_stablePDFReal_le hα hβ₂ hs₂ m₂))
 
 /-- The convolution of an integrable function with a stable density is continuous, when the
 stable law has skewness in `[-1, 1]` and positive scale. -/
@@ -61,9 +59,7 @@ lemma continuous_convolution_stablePDFReal (hα : α ∈ Ioc 0 2) {β₂ : ℝ} 
     {s₂ : ℝ≥0} (hs₂ : 0 < s₂) {f : ℝ → ℝ} (hf : Integrable f) (m₂ : ℝ) :
     Continuous (f ⋆[mul ℝ ℝ] stablePDFReal α β₂ s₂ m₂) :=
   BddAbove.continuous_convolution_right_of_integrable (mul ℝ ℝ)
-    ⟨Real.Gamma α⁻¹ / (Real.pi * α * s₂), forall_mem_range.2 fun x ↦ by
-      rw [Real.norm_eq_abs, abs_of_nonneg (stablePDFReal_nonneg α β₂ s₂ m₂ x)]
-      exact stablePDFReal_le hα hβ₂ hs₂ m₂ x⟩
+    ⟨Real.Gamma α⁻¹ / (Real.pi * α * s₂), forall_mem_range.2 (norm_stablePDFReal_le hα hβ₂ hs₂ m₂)⟩
     hf (continuous_stablePDFReal α β₂ s₂ m₂)
 
 /-- The pointwise convolution factorization of two stable densities of a common shape.
