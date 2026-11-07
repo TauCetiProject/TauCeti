@@ -114,9 +114,8 @@ private theorem exists_norm_add_smul_pow_eq (ρ : Representation k G V) {p : ℕ
     have hNπ : (linHom ρ ρ).norm π x = x + (p : k) • θ x := by
       rw [← hθ, LinearMap.sub_apply, LinearMap.id_apply, add_sub_cancel]
     conv_lhs => rw [hx x]
-    rw [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, hψπ, hNπ, map_add,
-      map_smul, pow_succ, LinearMap.neg_apply, LinearMap.comp_apply, smul_neg, mul_smul,
-      smul_add]
+    simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, LinearMap.neg_apply,
+      LinearMap.comp_apply, hψπ, hNπ, pow_succ, mul_smul, smul_add, smul_neg]
     abel
 
 /-- **Lifting a norm decomposition of the identity from `k/pk`.** Let `G` have order `p ^ m` and
@@ -137,9 +136,8 @@ theorem id_mem_range_norm_linHom_of_baseChange [Module.Projective k V] (ρ : Rep
   conv_rhs => rw [hx x]
   congr 1
   have hg (g : G) : ρ g (ψ (ρ g⁻¹ x)) = ψ x := by
-    rw [← hψ, ← mul_apply_eq_comp (ρ g), ← map_mul, mul_inv_cancel, map_one,
-      one_apply_eq_self]
-  rw [Finset.sum_congr rfl fun g _ ↦ hg g, Finset.sum_const, Finset.card_univ, hcard,
-    ← Nat.cast_smul_eq_nsmul k, Nat.cast_pow]
+    rw [← hψ, ← mul_apply_eq_comp (ρ g), ← map_mul]
+    simp
+  simp [hg, hcard, ← Nat.cast_smul_eq_nsmul k]
 
 end Representation
