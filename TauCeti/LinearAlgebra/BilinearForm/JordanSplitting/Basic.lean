@@ -307,9 +307,13 @@ theorem isJordanSplitting_reverse {N : ℕ → Submodule R M} {π : R} (hN : Dir
       ⟨hN.submodule_iSupIndep.comp hτ.injective,
         (hτ.surjective.iSup_comp N).trans hN.submodule_iSup_eq_top⟩
   · by_cases hk : k ≤ m
-    · rw [Function.comp_apply, show τ k = m - k from ite_eq_left hk]
+    · -- `τ k = m - k`; `simp` cannot rewrite inside the type of `restrict`, so rewrite with `rw`.
+      have hτk : τ k = m - k := ite_eq_left hk
+      rw [Function.comp_apply, hτk]
       exact hmod k hk
-    · rw [Function.comp_apply, show τ k = k from ite_eq_right hk, htop k (by omega)]
+    · -- `τ k = k` and `N k = ⊥` is a subsingleton.
+      have hτk : τ k = k := ite_eq_right hk
+      rw [Function.comp_apply, hτk, htop k (by omega)]
       exact isModular_of_subsingleton
 
 end Modular
