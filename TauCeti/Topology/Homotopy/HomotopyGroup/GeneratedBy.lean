@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Topology.Convenient.CompactlyGenerated
 public import TauCeti.Topology.Homotopy.HomotopyGroup.WeakHomotopyEquivalence
-public import Mathlib.Topology.Convenient.Category
 
 /-!
 # Homotopy groups and generated topologies
@@ -43,14 +42,38 @@ variable {ι : Type t} (G : ι → Type v) [∀ i, TopologicalSpace (G i)]
 
 namespace GenLoop
 
+/-- Lift a generalized loop from a generated cube to the generated refinement of its target. -/
+def toGeneratedBy [IsGeneratedBy G (N → I)] {x : WithGeneratedByTopology G X}
+    (p : Ω^ N X (WithGeneratedByTopology.counit G X x)) :
+    Ω^ N (WithGeneratedByTopology G X) x :=
+  ⟨p.val.toGeneratedBy G, fun z hz ↦ by simp [GenLoop.boundary p z hz]⟩
+
+@[simp]
+theorem coe_toGeneratedBy [IsGeneratedBy G (N → I)] {x : WithGeneratedByTopology G X}
+    (p : Ω^ N X (WithGeneratedByTopology.counit G X x)) :
+    (toGeneratedBy G p).val = p.val.toGeneratedBy G :=
+  (rfl)
+
+@[simp]
+theorem toGeneratedBy_apply [IsGeneratedBy G (N → I)] {x : WithGeneratedByTopology G X}
+    (p : Ω^ N X (WithGeneratedByTopology.counit G X x)) (z : N → I) :
+    toGeneratedBy G p z = WithGeneratedByTopology.equiv.symm (p z) := by
+  rw [← GenLoop.coe_coe, coe_toGeneratedBy, ContinuousMap.toGeneratedBy_apply, GenLoop.coe_coe]
+
+/-- Applying the counit to a lifted generalized loop recovers the original loop. -/
+@[simp]
+theorem map_toGeneratedBy [IsGeneratedBy G (N → I)]
+    {x : WithGeneratedByTopology G X} (p : Ω^ N X (WithGeneratedByTopology.counit G X x)) :
+    map (WithGeneratedByTopology.counit G X) rfl (toGeneratedBy G p) = p := by
+  apply Subtype.ext
+  rw [coe_map, coe_toGeneratedBy, ContinuousMap.equiv_comp_toGeneratedBy]
+
 /-- The generated-topology counit reflects homotopies relative to the cube boundary when
 the homotopy cylinder is generated. -/
 theorem homotopic_map_generatedByCounit_iff [IsGeneratedBy G (I × (N → I))]
     {x : WithGeneratedByTopology G X} (p q : Ω^ N (WithGeneratedByTopology G X) x) :
-    Homotopic (map (⟨WithGeneratedByTopology.equiv, WithGeneratedByTopology.continuous_equiv⟩ :
-      C(WithGeneratedByTopology G X, X)) rfl p)
-      (map (⟨WithGeneratedByTopology.equiv, WithGeneratedByTopology.continuous_equiv⟩ :
-        C(WithGeneratedByTopology G X, X)) rfl q) ↔ Homotopic p q := by
+    Homotopic (map (WithGeneratedByTopology.counit G X) rfl p)
+      (map (WithGeneratedByTopology.counit G X) rfl q) ↔ Homotopic p q := by
   constructor
   · rintro ⟨H⟩
     refine ⟨{ toFun := H.toContinuousMap.toGeneratedBy G
@@ -59,19 +82,11 @@ theorem homotopic_map_generatedByCounit_iff [IsGeneratedBy G (I × (N → I))]
               map_one_left := ?_
               prop' := ?_ }⟩
     · intro z
-      simp only [ContinuousMap.toGeneratedBy_apply, ContinuousMap.HomotopyWith.coe_toContinuousMap,
-        ContinuousMap.HomotopyWith.apply_zero, coe_coe, map_apply, ContinuousMap.coe_mk]
-      exact WithGeneratedByTopology.equiv.symm_apply_apply (p z)
+      simp
     · intro z
-      simp only [ContinuousMap.toGeneratedBy_apply, ContinuousMap.HomotopyWith.coe_toContinuousMap,
-        ContinuousMap.HomotopyWith.apply_one, coe_coe, map_apply, ContinuousMap.coe_mk]
-      exact WithGeneratedByTopology.equiv.symm_apply_apply (q z)
+      simp
     · intro s z hz
-      simp only [ContinuousMap.coe_mk, ContinuousMap.toGeneratedBy_apply,
-        ContinuousMap.HomotopyWith.coe_toContinuousMap]
-      rw [H.eq_fst s hz]
-      simp only [coe_coe, map_apply, ContinuousMap.coe_mk]
-      exact WithGeneratedByTopology.equiv.symm_apply_apply (p z)
+      simp [H.eq_fst s hz]
   · intro h
     exact map_homotopic h _ rfl
 
@@ -84,10 +99,8 @@ variable [IsGeneratedBy G (N → I)] [IsGeneratedBy G (I × (N → I))]
 /-- A generated refinement preserves cubical homotopy classes when both the cube and its
 homotopy cylinder are generated. The statement includes the empty index type. -/
 theorem bijective_map_generatedByCounit (x : WithGeneratedByTopology G X) :
-    Function.Bijective (map (N := N)
-      (⟨WithGeneratedByTopology.equiv, WithGeneratedByTopology.continuous_equiv⟩ :
-        C(WithGeneratedByTopology G X, X)) (rfl : WithGeneratedByTopology.equiv x =
-          WithGeneratedByTopology.equiv x)) := by
+    Function.Bijective (map (N := N) (WithGeneratedByTopology.counit G X)
+      (rfl : WithGeneratedByTopology.counit G X x = WithGeneratedByTopology.counit G X x)) := by
   constructor
   · intro a b
     refine Quotient.inductionOn₂ a b ?_
@@ -97,48 +110,61 @@ theorem bijective_map_generatedByCounit (x : WithGeneratedByTopology G X) :
   · intro a
     refine Quotient.inductionOn a ?_
     intro p
-    let q : Ω^ N (WithGeneratedByTopology G X) x :=
-      ⟨p.val.toGeneratedBy G, fun z hz ↦ by
-        rw [ContinuousMap.toGeneratedBy_apply, GenLoop.coe_coe, GenLoop.boundary p z hz]
-        exact WithGeneratedByTopology.equiv.symm_apply_apply x⟩
-    refine ⟨⟦q⟧, ?_⟩
-    rw [map_mk]
-    congr 1
-    ext z
-    simp only [GenLoop.map_apply, ContinuousMap.coe_mk]
-    have hq : (q : C(N → I, WithGeneratedByTopology G X)) = p.val.toGeneratedBy G := rfl
-    rw [← GenLoop.coe_coe q, hq, ContinuousMap.toGeneratedBy_apply]
-    exact (WithGeneratedByTopology.equiv (X := G)).apply_symm_apply (p z)
+    refine ⟨⟦GenLoop.toGeneratedBy G p⟧, ?_⟩
+    rw [map_mk, GenLoop.map_toGeneratedBy]
 
 /-- The homotopy-class comparison from a generated refinement to the original space.
 Its forward map is induced by the counit. -/
 noncomputable def generatedByCounitEquiv (x : WithGeneratedByTopology G X) :
     HomotopyGroup N (WithGeneratedByTopology G X) x ≃
-      HomotopyGroup N X (WithGeneratedByTopology.equiv x) :=
+      HomotopyGroup N X (WithGeneratedByTopology.counit G X x) :=
   Equiv.ofBijective _ (bijective_map_generatedByCounit G x)
 
 @[simp]
 theorem generatedByCounitEquiv_apply (x : WithGeneratedByTopology G X)
     (a : HomotopyGroup N (WithGeneratedByTopology G X) x) :
-    generatedByCounitEquiv G x a = map
-      (⟨WithGeneratedByTopology.equiv, WithGeneratedByTopology.continuous_equiv⟩ :
-        C(WithGeneratedByTopology G X, X)) rfl a :=
+    generatedByCounitEquiv G x a = map (WithGeneratedByTopology.counit G X) rfl a :=
   (rfl)
+
+/-- The inverse counit comparison lifts each generalized-loop representative. -/
+@[simp]
+theorem generatedByCounitEquiv_symm_mk (x : WithGeneratedByTopology G X)
+    (p : Ω^ N X (WithGeneratedByTopology.counit G X x)) :
+    (generatedByCounitEquiv G x).symm ⟦p⟧ = ⟦GenLoop.toGeneratedBy G p⟧ := by
+  have h : generatedByCounitEquiv G x ⟦GenLoop.toGeneratedBy G p⟧ =
+      (⟦p⟧ : HomotopyGroup N X (WithGeneratedByTopology.counit G X x)) := by
+    exact (generatedByCounitEquiv_apply G x _).trans
+      ((map_mk _ rfl _).trans (congrArg Quotient.mk'' (GenLoop.map_toGeneratedBy G p)))
+  exact (generatedByCounitEquiv G x).symm_apply_eq.mpr h.symm
 
 /-- In positive dimensions the counit comparison is an isomorphism of groups, with the
 native concatenation law on cubical homotopy groups. -/
 noncomputable def generatedByCounitMulEquiv [DecidableEq N] [Nonempty N]
     (x : WithGeneratedByTopology G X) :
     HomotopyGroup N (WithGeneratedByTopology G X) x ≃*
-      HomotopyGroup N X (WithGeneratedByTopology.equiv x) :=
-  MulEquiv.ofBijective (mapHom
-    (⟨WithGeneratedByTopology.equiv, WithGeneratedByTopology.continuous_equiv⟩ :
-      C(WithGeneratedByTopology G X, X)) rfl) (bijective_map_generatedByCounit G x)
+      HomotopyGroup N X (WithGeneratedByTopology.counit G X x) :=
+  MulEquiv.ofBijective (mapHom (WithGeneratedByTopology.counit G X) rfl)
+    (bijective_map_generatedByCounit G x)
 
 @[simp]
 theorem generatedByCounitMulEquiv_apply [DecidableEq N] [Nonempty N]
     (x : WithGeneratedByTopology G X) (a : HomotopyGroup N (WithGeneratedByTopology G X) x) :
     generatedByCounitMulEquiv G x a = generatedByCounitEquiv G x a :=
+  (rfl)
+
+@[simp]
+theorem generatedByCounitMulEquiv_toEquiv [DecidableEq N] [Nonempty N]
+    (x : WithGeneratedByTopology G X) :
+    (generatedByCounitMulEquiv (N := N) G x :
+      HomotopyGroup N (WithGeneratedByTopology G X) x ≃
+        HomotopyGroup N X (WithGeneratedByTopology.counit G X x)) = generatedByCounitEquiv G x :=
+  (rfl)
+
+@[simp]
+theorem generatedByCounitMulEquiv_symm_apply [DecidableEq N] [Nonempty N]
+    (x : WithGeneratedByTopology G X)
+    (a : HomotopyGroup N X (WithGeneratedByTopology.counit G X x)) :
+    (generatedByCounitMulEquiv G x).symm a = (generatedByCounitEquiv G x).symm a :=
   (rfl)
 
 end HomotopyGroup
@@ -151,14 +177,12 @@ theorem isWeakHomotopyEquivalence_generatedByCounit
     [∀ n : ℕ, IsGeneratedBy G (Fin n → I)]
     [∀ n : ℕ, IsGeneratedBy G (I × (Fin n → I))] (X : TopCat.{u}) :
     ((GeneratedByTopCat.adjCounit (X := G)).app X).hom.IsWeakHomotopyEquivalence := by
-  have hε : ((GeneratedByTopCat.adjCounit (X := G)).app X).hom =
-      (⟨WithGeneratedByTopology.equiv, WithGeneratedByTopology.continuous_equiv⟩ :
-        C(WithGeneratedByTopology G X, X)) := (rfl)
-  rw [hε]
-  refine ⟨fun y ↦ ⟨(WithGeneratedByTopology.equiv (X := G)).symm y, Joined.refl y⟩,
-    fun n x ↦ ?_⟩
-  -- Align the native counit's source with the explicit generated-topology carrier.
-  simpa only using! HomotopyGroup.bijective_map_generatedByCounit (N := Fin n) (X := X) G x
+  suffices h : (WithGeneratedByTopology.counit G X).IsWeakHomotopyEquivalence by
+    -- Align the categorical source with the explicit generated-topology carrier.
+    simpa only [GeneratedByTopCat.adjCounit_app_hom] using! h
+  refine ⟨fun y ↦ ⟨(WithGeneratedByTopology.equiv (X := G)).symm y,
+    by simpa using Joined.refl y⟩,
+    fun n x ↦ HomotopyGroup.bijective_map_generatedByCounit (N := Fin n) (X := X) G x⟩
 
 /-- Compact generation preserves path components and every based homotopy group, even for
 spaces whose original topology is not compactly generated. The test-space universe is
