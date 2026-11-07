@@ -74,7 +74,7 @@ of fraction fields. Conversely, if elements generate `L` over the fraction field
   generators of `L` over the fraction field of `A` generate an `A`-algebra with fraction field
   `L`.
 * `TauCeti.IntermediateField.finrank_le_of_adjoin_simple_eq_top_of_pow_mem`: if `β` generates `L`
-  over `K` and `β ^ n` lies in an intermediate field `E`, then `[L : E] ≤ n`.
+  over `K` and `β ^ n` lies in an intermediate field `E` for some `n > 0`, then `[L : E] ≤ n`.
 
 ## Generating sets
 
@@ -280,16 +280,14 @@ theorem adjoin_eq_top_of_algebra_adjoin_eq_top {β : S} (h : Algebra.adjoin R {�
   exact div_mem (key s) (key t)
 
 open Polynomial in
-/-- If `β` generates `L` over `K` and `β ^ n` lies in an intermediate field `E`, then
-`[L : E] ≤ n`: `β` is a root of the monic polynomial `X ^ n - C (β ^ n)` over `E`, so its minimal
-polynomial over `E` has degree at most `n`. -/
+/-- If `β` generates `L` over `K` and `β ^ n` lies in an intermediate field `E`, for some `n > 0`,
+then `[L : E] ≤ n`: `β` is a root of the monic polynomial `X ^ n - C (β ^ n)` over `E`, so its
+minimal polynomial over `E` has degree at most `n`. -/
 theorem finrank_le_of_adjoin_simple_eq_top_of_pow_mem {K L : Type*} [Field K] [Field L]
     [Algebra K L] {β : L} (hβ : IntermediateField.adjoin K {β} = ⊤) {E : IntermediateField K L}
     {n : ℕ} (hn : 0 < n) (hE : β ^ n ∈ E) : Module.finrank E L ≤ n := by
-  have hEβ : IntermediateField.adjoin E {β} = ⊤ := by
-    refine IntermediateField.restrictScalars_eq_top_iff (K := K).1 (top_le_iff.1 ?_)
-    rw [← hβ, IntermediateField.adjoin_simple_le_iff]
-    exact IntermediateField.mem_adjoin_simple_self E β
+  have hEβ : IntermediateField.adjoin E {β} = ⊤ :=
+    IntermediateField.adjoin_eq_top_of_adjoin_eq_top K hβ
   have hroot : aeval β (X ^ n - C ⟨β ^ n, hE⟩ : E[X]) = 0 := by simp
   rw [← IntermediateField.finrank_top', ← hEβ,
     IntermediateField.adjoin.finrank ⟨_, monic_X_pow_sub_C _ hn.ne', hroot⟩]
