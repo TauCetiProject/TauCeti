@@ -222,58 +222,6 @@ private theorem projModelBaseChange_comp_variableChange {A : Type u} [CommRing A
   subst h
   simp [projModelVariableChangeIso_hom_projModelBaseChange]
 
--- Restriction of global sections along `V ⊆ U` is compatible with restriction from `⊤`.
-private theorem comp_resAffine_eq (U V : S.affineOpens) (hVU : V.1 ≤ U.1) :
-    (S.presheaf.map (homOfLE hVU).op).hom.comp (resAffine U) = resAffine V := by
-  rw [resAffine, resAffine, ← CommRingCat.hom_comp, ← Functor.map_comp]
-  rfl
-
--- Compatible local sections over the affine opens glue to a global section.
-private theorem exists_glue_resAffine (a : ∀ U : S.affineOpens, Γ(S, U.1))
-    (ha : ∀ (U V : S.affineOpens) (hVU : V.1 ≤ U.1),
-      (S.presheaf.map (homOfLE hVU).op).hom (a U) = a V) :
-    ∃ x : Γ(S, ⊤), ∀ U, resAffine U x = a U :=
-  (S.existsUnique_gluing_affineOpens a fun U V hVU ↦
-    ha U V hVU).exists
-
--- Global sections are determined by their restrictions to the affine opens.
-private theorem eq_of_resAffine_eq (x y : Γ(S, ⊤)) (h : ∀ U, resAffine U x = resAffine U y) :
-    x = y :=
-  (S.existsUnique_gluing_affineOpens (fun U ↦ resAffine U y) fun U V hVU ↦
-    congrArg (· y) (congrArg DFunLike.coe (comp_resAffine_eq U V hVU))).unique h fun _ ↦ rfl
-
--- Changes of variables are determined by their restrictions to the affine opens.
-private theorem variableChange_eq_of_map_resAffine_eq (C₁ C₂ : VariableChange Γ(S, ⊤))
-    (h : ∀ U, C₁.map (resAffine U) = C₂.map (resAffine U)) : C₁ = C₂ := by
-  ext
-  · exact eq_of_resAffine_eq _ _ fun U ↦ congrArg (fun C ↦ (C.u : Γ(S, U.1))) (h U)
-  · exact eq_of_resAffine_eq _ _ fun U ↦ congrArg VariableChange.r (h U)
-  · exact eq_of_resAffine_eq _ _ fun U ↦ congrArg VariableChange.s (h U)
-  · exact eq_of_resAffine_eq _ _ fun U ↦ congrArg VariableChange.t (h U)
-
--- Compatible local changes of variables over the affine opens glue to a global one.
-private theorem exists_variableChange_map_resAffine
-    (C : ∀ U : S.affineOpens, VariableChange Γ(S, U.1))
-    (compat : ∀ (U V : S.affineOpens) (hVU : V.1 ≤ U.1),
-      (C U).map (S.presheaf.map (homOfLE hVU).op).hom = C V) :
-    ∃ C₀ : VariableChange Γ(S, ⊤), ∀ U, C₀.map (resAffine U) = C U := by
-  -- glue the four coefficients of the local changes of variables, and the inverse of `u`
-  obtain ⟨u, hu⟩ := exists_glue_resAffine (fun U ↦ ((C U).u : Γ(S, U.1))) fun U V hVU ↦
-    congrArg (fun C ↦ (C.u : Γ(S, V.1))) (compat U V hVU)
-  obtain ⟨v, hv⟩ := exists_glue_resAffine (fun U ↦ (↑(C U).u⁻¹ : Γ(S, U.1))) fun U V hVU ↦ by
-    simpa [VariableChange.map] using
-      congrArg (fun C : VariableChange Γ(S, V.1) ↦ ((C.u⁻¹ : Γ(S, V.1)ˣ) : Γ(S, V.1)))
-        (compat U V hVU)
-  obtain ⟨r, hr⟩ := exists_glue_resAffine (fun U ↦ (C U).r) fun U V hVU ↦
-    congrArg VariableChange.r (compat U V hVU)
-  obtain ⟨s, hs⟩ := exists_glue_resAffine (fun U ↦ (C U).s) fun U V hVU ↦
-    congrArg VariableChange.s (compat U V hVU)
-  obtain ⟨t, ht⟩ := exists_glue_resAffine (fun U ↦ (C U).t) fun U V hVU ↦
-    congrArg VariableChange.t (compat U V hVU)
-  exact ⟨⟨⟨u, v, eq_of_resAffine_eq _ _ fun U ↦ by simp [hu, hv],
-    eq_of_resAffine_eq _ _ fun U ↦ by simp [hu, hv]⟩, r, s, t⟩, fun U ↦
-    VariableChange.ext (Units.ext (hu U)) (hr U) (hs U) (ht U)⟩
-
 -- Over every point `g : Spec A ⟶ S`, a change of variables inducing `m` over `S` induces `m`.
 private theorem localι_comp_of_eq {A : Type u} [CommRing A] {φ : Γ(S, ⊤) →+* A}
     {g : Spec (.of A) ⟶ S} (hg : g ≫ S.toSpecΓ = Spec.map (CommRingCat.ofHom φ)) (m : X ⟶ X')
@@ -317,6 +265,8 @@ theorem existsUnique_hom_comp_eq_comp_projModelVariableChangeIso_hom (e : X ≅ 
   have compat (U V : S.affineOpens) (hVU : V.1 ≤ U.1) :
       (Cs U).map (S.presheaf.map (homOfLE hVU).op).hom = Cs V := by
     set ψ := (S.presheaf.map (homOfLE hVU).op).hom
+    have hcomp : ψ.comp (resAffine U) = resAffine V :=
+      Scheme.presheaf_map_homOfLE_comp hVU le_top
     have hg : Spec.map (CommRingCat.ofHom ψ) ≫ U.2.fromSpec = V.2.fromSpec := by
       rw [CommRingCat.ofHom_hom]
       exact U.2.map_fromSpec V.2 _
@@ -325,26 +275,27 @@ theorem existsUnique_hom_comp_eq_comp_projModelVariableChangeIso_hom (e : X ≅ 
       rw [Category.assoc, fromSpec_toSpecΓ_eq, ← Spec.map_comp]
       rfl
     obtain ⟨h, hC⟩ := hCs U
-    refine uniq V (exists_eq_comp_of_eq (by rw [map_map, comp_resAffine_eq U V hVU])
-      (by rw [map_map, comp_resAffine_eq U V hVU]) ?_ ?_ (map_of_eq_comp h hC ψ))
-    · rw [← eqToHom_localι hX (comp_resAffine_eq U V hVU) hg hg' (fromSpec_toSpecΓ_eq V),
+    refine uniq V (exists_eq_comp_of_eq (by rw [map_map, hcomp])
+      (by rw [map_map, hcomp]) ?_ ?_ (map_of_eq_comp h hC ψ))
+    · rw [← eqToHom_localι hX (hcomp) hg hg' (fromSpec_toSpecΓ_eq V),
         ← projModelBaseChange_localι hX (fromSpec_toSpecΓ_eq U) ψ hg', eqToHom_trans_assoc]
-    · rw [← eqToHom_localι hX' (comp_resAffine_eq U V hVU) hg hg' (fromSpec_toSpecΓ_eq V),
+    · rw [← eqToHom_localι hX' (hcomp) hg hg' (fromSpec_toSpecΓ_eq V),
         ← projModelBaseChange_localι hX' (fromSpec_toSpecΓ_eq U) ψ hg', eqToHom_trans_assoc]
-  obtain ⟨C, hCU⟩ := exists_variableChange_map_resAffine Cs compat
+  obtain ⟨C, hCU⟩ := VariableChange.exists_forall_affineOpens_map_eq Cs compat
+  replace hCU : ∀ U, C.map (resAffine U) = Cs U := hCU
   -- `C` carries `W'` to `W`, since it does so over every affine open
   have hW : C • W' = W := by
     have h (U : S.affineOpens) : (C • W').map (resAffine U) = W.map (resAffine U) := by
       rw [← map_variableChange, hCU]
       exact (hCs U).fst
     ext
-    · exact eq_of_resAffine_eq _ _ fun U ↦ congrArg WeierstrassCurve.a₁ (h U)
-    · exact eq_of_resAffine_eq _ _ fun U ↦ congrArg WeierstrassCurve.a₂ (h U)
-    · exact eq_of_resAffine_eq _ _ fun U ↦ congrArg WeierstrassCurve.a₃ (h U)
-    · exact eq_of_resAffine_eq _ _ fun U ↦ congrArg WeierstrassCurve.a₄ (h U)
-    · exact eq_of_resAffine_eq _ _ fun U ↦ congrArg WeierstrassCurve.a₆ (h U)
+    · exact S.eq_of_forall_affineOpens_map_eq fun U ↦ congrArg WeierstrassCurve.a₁ (h U)
+    · exact S.eq_of_forall_affineOpens_map_eq fun U ↦ congrArg WeierstrassCurve.a₂ (h U)
+    · exact S.eq_of_forall_affineOpens_map_eq fun U ↦ congrArg WeierstrassCurve.a₃ (h U)
+    · exact S.eq_of_forall_affineOpens_map_eq fun U ↦ congrArg WeierstrassCurve.a₄ (h U)
+    · exact S.eq_of_forall_affineOpens_map_eq fun U ↦ congrArg WeierstrassCurve.a₆ (h U)
   refine ⟨C, ⟨hW, hom_ext_localι hX fun U ↦ ?_⟩, fun C' ⟨h', hC'⟩ ↦
-    variableChange_eq_of_map_resAffine_eq _ _ fun U ↦
+    VariableChange.eq_of_forall_affineOpens_map_eq _ _ fun U ↦
     (uniq U (localι_comp_of_eq hX hX' _ e.hom he h' hC')).trans (hCU U).symm⟩
   -- over every affine open, both sides are induced by the restriction of `C`
   have H := hCs U
