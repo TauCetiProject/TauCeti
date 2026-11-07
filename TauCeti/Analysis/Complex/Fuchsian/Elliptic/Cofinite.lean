@@ -113,43 +113,6 @@ theorem IsCofinite.exists_pos_le_dist_smul_of_smul_eq_self (hΓ : Γ.IsCofinite)
   rw [hAB, dist_comm w] at this
   linarith
 
-/-- **Margulis step at an elliptic point.** In a discrete `Γ ≤ PSL(2, ℝ)`, if a nonidentity `A ∈ Γ`
-fixes `w` and `B ∈ Γ` is such that the Margulis inequality holds at some point `y`, then `B` fixes
-`w` as well, since it conjugates `A` to `A` or `A⁻¹`. -/
-private theorem smul_eq_self_of_abs_trace_sq_sub_four_add_lt [DiscreteTopology Γ] {A B : SL(2, ℝ)}
-    (hg : (A : PSL(2, ℝ)) ∈ Γ) (hk : (B : PSL(2, ℝ)) ∈ Γ) (hg₁ : (A : PSL(2, ℝ)) ≠ 1) {w : ℍ}
-    (hgw : (A : PSL(2, ℝ)) • w = w) (y : ℍ)
-    (h : |(A : Matrix (Fin 2) (Fin 2) ℝ).trace ^ 2 - 4| +
-      4 * (Real.cosh (dist (A • y) y) * Real.cosh (dist (B • y) y) - 1) < 1) :
-    (B : PSL(2, ℝ)) • w = w := by
-  have hM := conj_eq_or_conj_eq_inv_of_cosh_dist hg hk y h
-  by_contra hne
-  have hfix : ((B : PSL(2, ℝ)) * A * (B : PSL(2, ℝ))⁻¹) • ((B : PSL(2, ℝ)) • w) =
-      (B : PSL(2, ℝ)) • w := by
-    rw [mul_smul, mul_smul, inv_smul_smul, hgw]
-  have hgw' : (A : PSL(2, ℝ))⁻¹ • w = w := by rw [inv_smul_eq_iff, hgw]
-  rcases hM with h | h <;> rw [h] at hfix
-  · exact hg₁ (Matrix.ProjectiveSpecialLinearGroup.eq_one_of_smul_eq_self_of_smul_eq_self hgw
-      hfix hne)
-  · exact hg₁ (inv_eq_one.1
-      (Matrix.ProjectiveSpecialLinearGroup.eq_one_of_smul_eq_self_of_smul_eq_self hgw' hfix hne))
-
-/-- For small `τ > 0`, the constants in the thin-part argument at an elliptic point are bounded:
-`τ ≤ c / 2`, `4 (cosh τ * cosh τ - 1) < 1 / 2` and `4 (cosh τ - 1) < sinh (c / 4) ^ 2`. -/
-private theorem eventually_pos_le_cosh_lt {c : ℝ} (hc : 0 < c) (hs : 0 < Real.sinh (c / 4) ^ 2) :
-    ∀ᶠ τ in 𝓝[>] (0 : ℝ), 0 < τ ∧ τ ≤ c / 2 ∧
-      4 * (Real.cosh τ * Real.cosh τ - 1) < 1 / 2 ∧
-      4 * (Real.cosh τ - 1) < Real.sinh (c / 4) ^ 2 := by
-  have h₁ : Tendsto (fun τ ↦ 4 * (Real.cosh τ * Real.cosh τ - 1)) (𝓝 0) (𝓝 0) := by
-    simpa using (continuous_const.mul ((Real.continuous_cosh.mul Real.continuous_cosh).sub
-      continuous_const)).tendsto (0 : ℝ) (f := fun τ ↦ 4 * (Real.cosh τ * Real.cosh τ - 1))
-  have h₂ : Tendsto (fun τ ↦ 4 * (Real.cosh τ - 1)) (𝓝 0) (𝓝 0) := by
-    simpa using (continuous_const.mul (Real.continuous_cosh.sub continuous_const)).tendsto
-      (0 : ℝ) (f := fun τ ↦ 4 * (Real.cosh τ - 1))
-  exact eventually_mem_nhdsWithin.and <| ((eventually_le_nhds (half_pos hc)).and
-    ((h₁.eventually (gt_mem_nhds (by norm_num))).and
-      (h₂.eventually (gt_mem_nhds hs)))).filter_mono nhdsWithin_le_nhds
-
 /-- **The thin part at an elliptic point.** For a cofinite `Γ ≤ PSL(2, ℝ)` there is `τ > 0` with
 the following property. If a nonidentity element `g ∈ Γ` fixes `w ∈ ℍ` and moves `y ∈ ℍ` less
 than `τ`, then every element of `Γ` not fixing `w` moves `y` a hyperbolic distance at least `τ`.
@@ -159,9 +122,8 @@ theorem IsCofinite.exists_pos_le_dist_smul_of_dist_smul_lt (hΓ : Γ.IsCofinite)
       dist (g • y) y < τ → τ ≤ dist (k • y) y := by
   have := hΓ.discreteTopology
   obtain ⟨c, hc, hcA⟩ := hΓ.exists_pos_le_dist_smul_of_smul_eq_self
-  have hs : 0 < Real.sinh (c / 4) ^ 2 := pow_pos (Real.sinh_pos_iff.2 (by positivity)) 2
   -- choose `τ` small enough for the Margulis lemma and for the separation constant `c`
-  have hev := eventually_pos_le_cosh_lt hc hs
+  have hev := Real.eventually_pos_le_cosh_lt hc
   obtain ⟨τ, hτ, hτc, hτM, hτs⟩ := hev.exists
   refine ⟨τ, hτ, fun g hg hg₁ w hgw k hk hkw y hgy ↦ ?_⟩
   by_contra! hky
