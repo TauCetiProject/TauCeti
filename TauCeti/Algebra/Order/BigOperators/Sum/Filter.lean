@@ -32,6 +32,16 @@ theorem sum_filter_ne_pos {ι M : Type*} [Fintype ι] [DecidableEq ι] [Nontrivi
 
 variable {ι α M : Type*} [DecidableEq α] [AddCommMonoid M] {a : ι → α} {e : ι → M} {p q : α}
 
+/-- If the indexing function is injective, the filtered sum over the index `a k` is the single
+term `e k`, so a strict lower bound on `e k` is one on the sum. -/
+theorem lt_sum_filter_eq_of_injective [Fintype ι] [LT M] {c : M} (ha : Function.Injective a)
+    (k : ι) (hc : c < e k) : c < ∑ l with a l = a k, e l := by
+  classical
+  convert hc using 1
+  rw [Finset.sum_eq_single_of_mem k (by simp)]
+  intro l hl hlk
+  exact absurd (ha (Finset.mem_filter.1 hl).2) hlk
+
 /-- If all nonzero terms of a finite family have indices at or to the left of `p`, then its sum
 over the terms indexed by `q` vanishes whenever `q ≤ p` fails, for instance when `p < q`. -/
 theorem sum_filter_eq_zero_of_forall_ne_zero_le [LE α] (s : Finset ι) (hqp : ¬q ≤ p)

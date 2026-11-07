@@ -335,4 +335,55 @@ theorem im_schwarzChristoffelBoundary_first_lt (a e : Fin (n + 1) → ℝ)
       rw [← heq] at hlt
       exact hle.not_gt hlt
 
+/-- The unbounded arc to the left of the first prevertex lies strictly to the right of the vertex
+at infinity, on the closing line. -/
+theorem schwarzChristoffelVertexAtInfinity_lt_boundary_of_le_first
+    (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
+    (he : ∀ k, -1 < e k) (hsum : ∑ k, e k = -2) {x : ℝ} (hx : x ≤ a 0) :
+    schwarzChristoffelVertexAtInfinity a e z₀ < schwarzChristoffelBoundary a e z₀ x :=
+  schwarzChristoffelVertexAtInfinity_lt_boundary a e z₀
+    (Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le (α := OrderDual ℝ) Finset.univ
+      (by norm_num) (Finset.lt_sum_filter_eq_of_injective ha.injective 0 (he 0))
+      (fun i _ _ ↦ ha.monotone i.zero_le) hx)
+    (fun i _ ↦ hx.trans (ha.monotone i.zero_le)) hsum
+
+/-- The unbounded arc to the right of the last prevertex lies strictly to the left of the vertex
+at infinity, on the closing line. -/
+theorem schwarzChristoffelBoundary_lt_vertexAtInfinity_of_last_le
+    (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
+    (he : ∀ k, -1 < e k) (hsum : ∑ k, e k = -2) {x : ℝ} (hx : a (Fin.last n) ≤ x) :
+    schwarzChristoffelBoundary a e z₀ x < schwarzChristoffelVertexAtInfinity a e z₀ :=
+  schwarzChristoffelBoundary_lt_vertexAtInfinity a e z₀
+    (Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le Finset.univ (by norm_num)
+      (Finset.lt_sum_filter_eq_of_injective ha.injective (Fin.last n) (he _))
+      (fun i _ _ ↦ ha.monotone i.le_last) hx)
+    (fun i _ ↦ (ha.monotone i.le_last).trans hx) (by rw [hsum]; norm_num)
+
+/-- The bounded open arc lies strictly above the line through the vertex at infinity. -/
+theorem im_schwarzChristoffelVertexAtInfinity_lt_im_boundary
+    (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
+    (he : ∀ k, e k ∈ Ioo (-1 : ℝ) 0) (hsum : ∑ k, e k = -2) {x : ℝ}
+    (hx : x ∈ Ioo (a 0) (a (Fin.last n))) :
+    (schwarzChristoffelVertexAtInfinity a e z₀).im < (schwarzChristoffelBoundary a e z₀ x).im := by
+  rw [(Complex.lt_def.mp (schwarzChristoffelVertexAtInfinity_lt_boundary_of_le_first a e z₀ ha
+    (fun k ↦ (he k).1) hsum le_rfl)).2]
+  exact im_schwarzChristoffelBoundary_first_lt a e z₀ ha he hsum hx
+
+/-- The boundary never meets the vertex at infinity at a finite parameter. -/
+theorem schwarzChristoffelBoundary_ne_vertexAtInfinity
+    (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
+    (he : ∀ k, e k ∈ Ioo (-1 : ℝ) 0) (hsum : ∑ k, e k = -2) (x : ℝ) :
+    schwarzChristoffelBoundary a e z₀ x ≠ schwarzChristoffelVertexAtInfinity a e z₀ := by
+  by_cases hx₀ : x ≤ a 0
+  · exact (schwarzChristoffelVertexAtInfinity_lt_boundary_of_le_first a e z₀ ha
+      (fun k ↦ (he k).1) hsum hx₀).ne'
+  by_cases hxn : a (Fin.last n) ≤ x
+  · exact (schwarzChristoffelBoundary_lt_vertexAtInfinity_of_last_le a e z₀ ha
+      (fun k ↦ (he k).1) hsum hxn).ne
+  · intro h
+    have hi := im_schwarzChristoffelVertexAtInfinity_lt_im_boundary a e z₀ ha he hsum
+      ⟨lt_of_not_ge hx₀, lt_of_not_ge hxn⟩
+    rw [h] at hi
+    exact hi.false
+
 end TauCeti
