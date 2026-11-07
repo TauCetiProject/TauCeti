@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Fourier.Torus.Smooth
 import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.Algebra.Module.ZLattice.Summable
 import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
 
 /-!
@@ -19,7 +20,7 @@ proves that `B` has a unique kernel: a linear map `K` on the smooth functions on
 `UnitAddTorus (a ⊕ b)`, continuous for some `C^N'` norm, with `K (f ⊗ g) = B f g` for all smooth
 `f` and `g`. Here `(f ⊗ g)(x, y) = f x * g y` is `UnitAddTorus.tensor f g`.
 
-The kernel `TauCeti.UnitAddTorus.schwartzKernel B` is the double Fourier pairing
+The kernel `LinearMap.schwartzKernel B` is the double Fourier pairing
 
 `K h = ∑ (k, l), mFourierCoeff h (Sum.elim k l) • B (mFourier k) (mFourier l)`.
 
@@ -37,18 +38,19 @@ the Schwartz kernel theorem for distributions.
 ## Main definitions
 
 * `UnitAddTorus.tensor f g`: the function `(x, y) ↦ f x * g y` on the product torus.
-* `TauCeti.UnitAddTorus.schwartzKernel B hB`: the kernel of a continuous bilinear map `B`.
+* `LinearMap.schwartzKernel B hB`: the kernel of a continuous bilinear map `B`.
 
 ## Main results
 
+* `UnitAddTorus.tensor_add_left`, `UnitAddTorus.tensor_smul_left` and their `right` versions:
+  `tensor` is bilinear.
 * `UnitAddTorus.tensor_mFourier`: `mFourier k ⊗ mFourier l = mFourier (k, l)`.
 * `UnitAddTorus.mFourierCoeff_tensor`: the Fourier coefficients of `f ⊗ g` are the
   products of those of `f` and `g`.
-* `TauCeti.UnitAddTorus.exists_norm_schwartzKernel_le`: the kernel is continuous for a `C^N'`
-  norm.
-* `TauCeti.UnitAddTorus.schwartzKernel_tensor`: `K (f ⊗ g) = B f g`.
-* `TauCeti.UnitAddTorus.eq_schwartzKernel` and `TauCeti.UnitAddTorus.existsUnique_schwartzKernel`:
-  the kernel is the unique continuous linear map with this property.
+* `LinearMap.exists_norm_schwartzKernel_le`: the kernel is continuous for a `C^N'` norm.
+* `LinearMap.schwartzKernel_tensor`: `K (f ⊗ g) = B f g`.
+* `LinearMap.eq_schwartzKernel` and `LinearMap.existsUnique_schwartzKernel`: the kernel is the
+  unique continuous linear map with this property.
 
 ## References
 
@@ -79,6 +81,36 @@ def tensor (f : UnitAddTorus a → ℂ) (g : UnitAddTorus b → ℂ) : UnitAddTo
 theorem tensor_apply (f : UnitAddTorus a → ℂ) (g : UnitAddTorus b → ℂ) (z : UnitAddTorus (a ⊕ b)) :
     tensor f g z = f (fun i ↦ z (.inl i)) * g (fun i ↦ z (.inr i)) :=
   (rfl)
+
+@[simp]
+theorem tensor_zero_left (g : UnitAddTorus b → ℂ) : tensor (0 : UnitAddTorus a → ℂ) g = 0 := by
+  funext z
+  simp
+
+@[simp]
+theorem tensor_zero_right (f : UnitAddTorus a → ℂ) : tensor f (0 : UnitAddTorus b → ℂ) = 0 := by
+  funext z
+  simp
+
+theorem tensor_add_left (f f' : UnitAddTorus a → ℂ) (g : UnitAddTorus b → ℂ) :
+    tensor (f + f') g = tensor f g + tensor f' g := by
+  funext z
+  simp [add_mul]
+
+theorem tensor_add_right (f : UnitAddTorus a → ℂ) (g g' : UnitAddTorus b → ℂ) :
+    tensor f (g + g') = tensor f g + tensor f g' := by
+  funext z
+  simp [mul_add]
+
+theorem tensor_smul_left (c : ℂ) (f : UnitAddTorus a → ℂ) (g : UnitAddTorus b → ℂ) :
+    tensor (c • f) g = c • tensor f g := by
+  funext z
+  simp [mul_assoc]
+
+theorem tensor_smul_right (c : ℂ) (f : UnitAddTorus a → ℂ) (g : UnitAddTorus b → ℂ) :
+    tensor f (c • g) = c • tensor f g := by
+  funext z
+  simp [mul_left_comm]
 
 variable [Fintype a] [Fintype b]
 
@@ -118,7 +150,15 @@ theorem tensor_mem_smoothFunctions {f : UnitAddTorus a → ℂ} {g : UnitAddToru
   exact (hf.comp (contDiff_pi.2 fun i ↦ by fun_prop)).mul
     (hg.comp (contDiff_pi.2 fun i ↦ by fun_prop))
 
+end TauCeti.UnitAddTorus
+
 /-! ### The kernel of a continuous bilinear map -/
+
+namespace LinearMap
+
+open TauCeti.UnitAddTorus _root_.UnitAddTorus
+
+variable {a b : Type*} [Fintype a] [Fintype b]
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
   (B : smoothFunctions a →ₗ[ℂ] smoothFunctions b →ₗ[ℂ] F)
@@ -204,7 +244,7 @@ theorem schwartzKernel_apply (h : smoothFunctions (a ⊕ b)) :
 /-- **Continuity of the kernel.** The kernel of `B` is continuous for a `C^N'` norm. -/
 theorem exists_norm_schwartzKernel_le : ∃ (C' : ℝ) (N' : ℕ), ∀ (h : smoothFunctions (a ⊕ b)) M,
     DerivBound N' M (h : UnitAddTorus (a ⊕ b) → ℂ) → ‖schwartzKernel B hB h‖ ≤ C' * M := by
-  obtain ⟨C, N, hCN⟩ := id hB
+  have ⟨C, N, hCN⟩ := hB
   have hC := nonneg_of_bound B hCN
   refine ⟨C * (1 + 2 * π * Fintype.card (a ⊕ b)) ^ (2 * N) *
     (2 ^ (2 * N + Fintype.card (a ⊕ b) + 2) *
@@ -235,8 +275,8 @@ theorem exists_norm_schwartzKernel_le : ∃ (C' : ℝ) (N' : ℕ), ∀ (h : smoo
           ((1 + ‖n‖) ^ (2 * N) * ‖mFourierCoeff (h : UnitAddTorus (a ⊕ b) → ℂ) n‖) := by ring
       _ ≤ _ := by gcongr
   rw [schwartzKernel_apply]
-  refine (tsum_of_norm_bounded ((summable_inv_one_add_norm_pow.mul_left _).mul_left _).hasSum
-    key).trans_eq ?_
+  refine (tsum_of_norm_bounded
+    ((TauCeti.summable_pi_int_inv_one_add_norm_pow.mul_left _).mul_left _).hasSum key).trans_eq ?_
   rw [tsum_mul_left, tsum_mul_left]
   ring
 
@@ -244,18 +284,18 @@ theorem exists_norm_schwartzKernel_le : ∃ (C' : ℝ) (N' : ℕ), ∀ (h : smoo
 `K (f ⊗ g) = B f g`. -/
 theorem schwartzKernel_tensor (f : smoothFunctions a) (g : smoothFunctions b) :
     schwartzKernel B hB ⟨tensor f g, tensor_mem_smoothFunctions f.2 g.2⟩ = B f g := by
-  obtain ⟨C, N, hCN⟩ := id hB
+  have ⟨C, N, hCN⟩ := hB
   obtain ⟨Mg, hMg⟩ := exists_derivBound g.2 N
   -- Expansion of `B (mFourier k) g` in the Fourier series of `g`.
   have hrow (k : a → ℤ) : HasSum (fun l ↦ mFourierCoeff (g : UnitAddTorus b → ℂ) l •
       B (mFourierSmooth k) (mFourierSmooth l)) (B (mFourierSmooth k) g) :=
-    hasSum_mFourierCoeff_smul_apply (B (mFourierSmooth k))
+    (B (mFourierSmooth k)).hasSum_mFourierCoeff_smul_apply
       (C := C * (1 + 2 * π * Fintype.card a * ‖k‖) ^ N) (N := N) (fun v M hv ↦
         (hCN _ v _ M (by simpa using derivBound_mFourier k N) hv).trans_eq (by ring)) g
   -- Expansion of `B f g` in the Fourier series of `f`.
   have hcol : HasSum (fun k ↦ mFourierCoeff (f : UnitAddTorus a → ℂ) k • B (mFourierSmooth k) g)
       (B f g) := by
-    simpa using hasSum_mFourierCoeff_smul_apply (B.flip g) (C := C * Mg) (N := N)
+    simpa using (B.flip g).hasSum_mFourierCoeff_smul_apply (C := C * Mg) (N := N)
       (fun u M hu ↦ by simpa [mul_right_comm] using hCN u g M Mg hu hMg) f
   -- The double Fourier series converges absolutely.
   have hp : Summable fun q : (a → ℤ) × (b → ℤ) ↦ mFourierCoeff (f : UnitAddTorus a → ℂ) q.1 •
@@ -311,4 +351,4 @@ theorem existsUnique_schwartzKernel : ∃! K : smoothFunctions (a ⊕ b) →ₗ[
   ⟨schwartzKernel B hB, ⟨exists_norm_schwartzKernel_le B hB, schwartzKernel_tensor B hB⟩,
     fun _ hK ↦ eq_schwartzKernel B hB hK.1 hK.2⟩
 
-end TauCeti.UnitAddTorus
+end LinearMap

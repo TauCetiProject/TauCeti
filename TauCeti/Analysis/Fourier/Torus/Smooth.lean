@@ -42,6 +42,8 @@ theorem.
 
 * `TauCeti.UnitAddTorus.exists_derivBound`: a smooth function satisfies a `C^N` bound for every
   `N`.
+* `TauCeti.UnitAddTorus.DerivBound.add`, `TauCeti.UnitAddTorus.DerivBound.sub` and
+  `TauCeti.UnitAddTorus.DerivBound.const_smul`: the `C^N` bounds of sums and scalar multiples.
 * `TauCeti.UnitAddTorus.norm_iteratedFDeriv_mFourier_le` and
   `TauCeti.UnitAddTorus.derivBound_mFourier`: the derivative bounds for the Fourier monomials.
 * `TauCeti.UnitAddTorus.one_add_norm_pow_mul_norm_mFourierCoeff_le`: the decay estimate
@@ -50,7 +52,7 @@ theorem.
   function remain summable after multiplication by any polynomial weight `(1 + R ‖n‖) ^ N`.
 * `TauCeti.UnitAddTorus.eventually_derivBound_sub_sum`: the Fourier series of a smooth function
   converges to it in every `C^N` norm.
-* `TauCeti.UnitAddTorus.hasSum_mFourierCoeff_smul_apply`: a continuous linear map applied to a
+* `LinearMap.hasSum_mFourierCoeff_smul_apply`: a continuous linear map applied to a
   smooth function `f` is the sum of its values on the Fourier monomials, weighted by the Fourier
   coefficients of `f`.
 * `TauCeti.UnitAddTorus.linearMap_eq_of_apply_mFourierSmooth_eq`: two continuous linear maps that
@@ -111,9 +113,58 @@ def DerivBound (N : ℕ) (M : ℝ) (f : UnitAddTorus d → ℂ) : Prop :=
   ∀ j ≤ N, ∀ x : d → ℝ,
     ‖iteratedFDeriv ℝ j (fun x : d → ℝ ↦ f fun i ↦ (x i : UnitAddCircle)) x‖ ≤ M
 
+theorem derivBound_iff {N : ℕ} {M : ℝ} {f : UnitAddTorus d → ℂ} :
+    DerivBound N M f ↔ ∀ j ≤ N, ∀ x : d → ℝ,
+      ‖iteratedFDeriv ℝ j (fun x : d → ℝ ↦ f fun i ↦ (x i : UnitAddCircle)) x‖ ≤ M :=
+  Iff.rfl
+
+theorem DerivBound.norm_iteratedFDeriv_le {N : ℕ} {M : ℝ} {f : UnitAddTorus d → ℂ}
+    (h : DerivBound N M f) {j : ℕ} (hj : j ≤ N) (x : d → ℝ) :
+    ‖iteratedFDeriv ℝ j (fun x : d → ℝ ↦ f fun i ↦ (x i : UnitAddCircle)) x‖ ≤ M :=
+  h j hj x
+
 theorem DerivBound.mono {N : ℕ} {M M' : ℝ} {f : UnitAddTorus d → ℂ} (h : DerivBound N M f)
     (hM : M ≤ M') : DerivBound N M' f :=
   fun j hj x ↦ (h j hj x).trans hM
+
+/-- A bound for the derivatives of order at most `N` bounds those of smaller order. -/
+theorem DerivBound.of_le {N N' : ℕ} {M : ℝ} {f : UnitAddTorus d → ℂ} (h : DerivBound N M f)
+    (hN : N' ≤ N) : DerivBound N' M f :=
+  fun j hj x ↦ h j (hj.trans hN) x
+
+theorem DerivBound.neg {N : ℕ} {M : ℝ} {f : UnitAddTorus d → ℂ} (h : DerivBound N M f) :
+    DerivBound N M (-f) := fun j hj x ↦ by
+  have : (fun x : d → ℝ ↦ (-f) fun i ↦ (x i : UnitAddCircle)) =
+      -fun x : d → ℝ ↦ f fun i ↦ (x i : UnitAddCircle) := rfl
+  rw [this, iteratedFDeriv_neg_apply, norm_neg]
+  exact h j hj x
+
+theorem DerivBound.add {N : ℕ} {M₁ M₂ : ℝ} {f g : UnitAddTorus d → ℂ}
+    (hf : ContDiff ℝ N fun x : d → ℝ ↦ f fun i ↦ (x i : UnitAddCircle))
+    (hg : ContDiff ℝ N fun x : d → ℝ ↦ g fun i ↦ (x i : UnitAddCircle))
+    (h₁ : DerivBound N M₁ f) (h₂ : DerivBound N M₂ g) : DerivBound N (M₁ + M₂) (f + g) :=
+  fun j hj x ↦ by
+    have : (fun x : d → ℝ ↦ (f + g) fun i ↦ (x i : UnitAddCircle)) =
+        (fun x : d → ℝ ↦ f fun i ↦ (x i : UnitAddCircle)) +
+          fun x : d → ℝ ↦ g fun i ↦ (x i : UnitAddCircle) := rfl
+    rw [this, iteratedFDeriv_add_apply ((hf.of_le (mod_cast hj)).contDiffAt)
+      ((hg.of_le (mod_cast hj)).contDiffAt)]
+    exact (norm_add_le _ _).trans (add_le_add (h₁ j hj x) (h₂ j hj x))
+
+theorem DerivBound.sub {N : ℕ} {M₁ M₂ : ℝ} {f g : UnitAddTorus d → ℂ}
+    (hf : ContDiff ℝ N fun x : d → ℝ ↦ f fun i ↦ (x i : UnitAddCircle))
+    (hg : ContDiff ℝ N fun x : d → ℝ ↦ g fun i ↦ (x i : UnitAddCircle))
+    (h₁ : DerivBound N M₁ f) (h₂ : DerivBound N M₂ g) : DerivBound N (M₁ + M₂) (f - g) := by
+  rw [sub_eq_add_neg]
+  exact h₁.add hf (by simpa using hg.neg) h₂.neg
+
+theorem DerivBound.const_smul {N : ℕ} {M : ℝ} {f : UnitAddTorus d → ℂ}
+    (hf : ContDiff ℝ N fun x : d → ℝ ↦ f fun i ↦ (x i : UnitAddCircle)) (h : DerivBound N M f)
+    (c : ℂ) : DerivBound N (‖c‖ * M) (c • f) := fun j hj x ↦ by
+  have : (fun x : d → ℝ ↦ (c • f) fun i ↦ (x i : UnitAddCircle)) =
+      c • fun x : d → ℝ ↦ f fun i ↦ (x i : UnitAddCircle) := rfl
+  rw [this, iteratedFDeriv_const_smul_apply ((hf.of_le (mod_cast hj)).contDiffAt), norm_smul]
+  exact mul_le_mul_of_nonneg_left (h j hj x) (norm_nonneg c)
 
 theorem DerivBound.nonneg {N : ℕ} {M : ℝ} {f : UnitAddTorus d → ℂ} (h : DerivBound N M f) :
     0 ≤ M :=
@@ -211,32 +262,16 @@ theorem one_add_norm_pow_mul_norm_mFourierCoeff_le {f : UnitAddTorus d → ℂ} 
     gcongr
     nlinarith [mul_nonneg (by linarith [Real.two_le_pi] : (0 : ℝ) ≤ 2 * π - 1) (norm_nonneg n)]
   have hpow : (1 + ‖n‖) ^ k ≤ 2 ^ k * (1 + ‖n‖ ^ k) := by
-    calc (1 + ‖n‖) ^ k ≤ (2 * max 1 ‖n‖) ^ k := by
-          gcongr
-          linarith [le_max_left 1 ‖n‖, le_max_right 1 ‖n‖]
-      _ = 2 ^ k * max 1 ‖n‖ ^ k := mul_pow ..
+    calc (1 + ‖n‖) ^ k ≤ 2 ^ (k - 1) * (1 ^ k + ‖n‖ ^ k) := add_pow_le zero_le_one (norm_nonneg n) k
       _ ≤ 2 ^ k * (1 + ‖n‖ ^ k) := by
+          rw [one_pow]
           gcongr
-          rcases le_total 1 ‖n‖ with h | h
-          · rw [max_eq_right h]
-            linarith
-          · rw [max_eq_left h, one_pow]
-            linarith [pow_nonneg (norm_nonneg n) k]
+          exacts [one_le_two, Nat.sub_le k 1]
   calc (1 + ‖n‖) ^ k * ‖mFourierCoeff f n‖
       ≤ 2 ^ k * (1 + ‖n‖ ^ k) * ‖mFourierCoeff f n‖ := by gcongr
     _ = 2 ^ k * (‖mFourierCoeff f n‖ + ‖n‖ ^ k * ‖mFourierCoeff f n‖) := by ring
     _ ≤ 2 ^ k * (M + M) := by gcongr
     _ = 2 ^ (k + 1) * M := by ring
-
-/-- The series `∑ n, (1 + ‖n‖) ^ (-(card d + 1))` over `n : d → ℤ` converges. -/
-theorem summable_inv_one_add_norm_pow :
-    Summable fun n : d → ℤ ↦ ((1 + ‖n‖) ^ (Fintype.card d + 1))⁻¹ := by
-  refine Summable.of_norm_bounded_eventually
-    (summable_pi_int_norm_rpow (-((Fintype.card d + 1 : ℕ) : ℝ)) (by push_cast; linarith)) ?_
-  filter_upwards [(Set.finite_singleton (0 : d → ℤ)).compl_mem_cofinite] with n hn
-  have hpos : 0 < ‖n‖ := norm_pos_iff.2 hn
-  rw [Real.norm_of_nonneg (by positivity), Real.rpow_neg hpos.le, Real.rpow_natCast]
-  exact inv_anti₀ (by positivity) (pow_le_pow_left₀ hpos.le (by linarith) _)
 
 /-- A summable form of the decay estimate: if the lift of `f` is `C^(N + card d + 1)` and
 `DerivBound (N + card d + 1) M f`, then `(1 + ‖n‖) ^ N * ‖mFourierCoeff f n‖` is bounded by
@@ -260,7 +295,8 @@ theorem summable_norm_mFourierCoeff_mul_pow {f : UnitAddTorus d → ℂ} (hf : f
     Summable fun n ↦ ‖mFourierCoeff f n‖ * (1 + R * ‖n‖) ^ N := by
   obtain ⟨M, hM⟩ := exists_derivBound hf (N + Fintype.card d + 1)
   refine Summable.of_nonneg_of_le (fun n ↦ by positivity) (fun n ↦ ?_)
-    (summable_inv_one_add_norm_pow.mul_left ((1 + R) ^ N * (2 ^ (N + Fintype.card d + 2) * M)))
+    (summable_pi_int_inv_one_add_norm_pow.mul_left
+      ((1 + R) ^ N * (2 ^ (N + Fintype.card d + 2) * M)))
   have h1 : (1 + R * ‖n‖) ^ N ≤ (1 + R) ^ N * (1 + ‖n‖) ^ N := by
     rw [← mul_pow]
     gcongr
@@ -338,8 +374,8 @@ theorem eventually_derivBound_sub_sum {f : UnitAddTorus d → ℂ} (hf : f ∈ s
 smooth functions on the torus which is continuous for the `C^N` norm: `‖T u‖ ≤ C * M` whenever
 `DerivBound N M u`. Then for every smooth `f`, `T f` is the sum of the values `T (mFourier n)`,
 weighted by the Fourier coefficients of `f`. -/
-theorem hasSum_mFourierCoeff_smul_apply {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
-    (T : smoothFunctions d →ₗ[ℂ] F) {C : ℝ} {N : ℕ}
+theorem _root_.LinearMap.hasSum_mFourierCoeff_smul_apply {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℂ F] (T : smoothFunctions d →ₗ[ℂ] F) {C : ℝ} {N : ℕ}
     (hT : ∀ (u : smoothFunctions d) M, DerivBound N M (u : UnitAddTorus d → ℂ) → ‖T u‖ ≤ C * M)
     (f : smoothFunctions d) :
     HasSum (fun n ↦ mFourierCoeff (f : UnitAddTorus d → ℂ) n • T (mFourierSmooth n)) (T f) := by
@@ -370,7 +406,7 @@ theorem linearMap_eq_of_apply_mFourierSmooth_eq {F : Type*} [NormedAddCommGroup 
   obtain ⟨C, N, hT⟩ := hT
   obtain ⟨C', N', hT'⟩ := hT'
   ext f
-  refine (hasSum_mFourierCoeff_smul_apply T hT f).unique ?_
-  simpa only [h] using hasSum_mFourierCoeff_smul_apply T' hT' f
+  refine (T.hasSum_mFourierCoeff_smul_apply hT f).unique ?_
+  simpa only [h] using T'.hasSum_mFourierCoeff_smul_apply hT' f
 
 end TauCeti.UnitAddTorus
