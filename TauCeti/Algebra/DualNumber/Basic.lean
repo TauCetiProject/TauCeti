@@ -17,8 +17,8 @@ The coordinatewise scalar action on dual numbers commutes with multiplication. T
 instances make bilinear multiplication and convolution available with that module structure.
 Dual numbers over an Artinian ring are also Artinian, using their product module structure, and
 they are a finite module over their coefficient ring.
-Multiplication by `ε` is exact over a commutative ring. The element `1 + ε` is a unit
-with inverse `1 - ε`.
+Multiplication by `ε` is exact over any semiring. Over a commutative ring, the element
+`1 + ε` is a unit with inverse `1 - ε`.
 Algebra maps on dual numbers evaluate in terms of their restriction to constants and
 their value on `ε`. The dual numbers are free of rank two on the basis `1, ε`, so linear maps
 out of them are determined by their values on `1` and `ε`.
@@ -78,7 +78,7 @@ instance dualNumberIsArtinianRing {R : Type*} [Ring R] [IsArtinianRing R] :
   exact isArtinian_of_tower R (inferInstanceAs (IsArtinian R (R × R)))
 
 /-- Multiplication by `ε` on the dual numbers is exact. -/
-theorem dualNumber_mul_eps_exact {R : Type*} [CommRing R] :
+theorem dualNumber_mul_eps_exact {R : Type*} [Semiring R] :
     Function.Exact
       (LinearMap.toSpanSingleton (DualNumber R) (DualNumber R) DualNumber.eps)
       (LinearMap.toSpanSingleton (DualNumber R) (DualNumber R) DualNumber.eps) := by

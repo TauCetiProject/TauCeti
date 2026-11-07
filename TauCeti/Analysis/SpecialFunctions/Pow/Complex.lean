@@ -45,6 +45,8 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
 ## Main results
 
 * `TauCeti.ofReal_mul_cpow` -- a principal power splits across a nonnegative real factor.
+* `TauCeti.ofReal_prod_cpow` -- a principal power splits across a finite product of nonnegative
+  reals.
 * `TauCeti.mul_cpow_of_arg_add_mem` -- a principal power splits across a product when the
   arguments add in the principal range.
 * `TauCeti.mul_cpow_of_re_pos` -- the right-half-plane specialization.
@@ -98,6 +100,17 @@ theorem ofReal_mul_cpow {r : ℝ} (hr : 0 ≤ r) (z w : ℂ) :
     Complex.cpow_def_of_ne_zero (Complex.ofReal_ne_zero.mpr hr'.ne'),
     Complex.cpow_def_of_ne_zero hz, Complex.log_ofReal_mul hr' hz, add_mul, Complex.exp_add]
   rw [Complex.ofReal_log hr]
+
+/-- A principal complex power splits across a finite product of nonnegative reals:
+`((∏ i ∈ s, f i : ℝ) : ℂ) ^ z = ∏ i ∈ s, (f i : ℂ) ^ z`. -/
+theorem ofReal_prod_cpow {ι : Type*} (s : Finset ι) {f : ι → ℝ} (hf : ∀ i ∈ s, 0 ≤ f i)
+    (z : ℂ) : ((∏ i ∈ s, f i : ℝ) : ℂ) ^ z = ∏ i ∈ s, (f i : ℂ) ^ z := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih =>
+    rw [Finset.prod_insert hi, Finset.prod_insert hi, ofReal_mul, ofReal_mul_cpow (hf i (by simp)),
+      ← ih fun j hj ↦ hf j (Finset.mem_insert_of_mem hj)]
 
 /-- A principal power splits across a product when the sum of the arguments lies in the
 principal range `(-π, π]`, including when either factor is zero. -/

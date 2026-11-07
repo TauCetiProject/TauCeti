@@ -18,9 +18,9 @@ public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Assembly
 The classification list carries three families on the `D₄` diagram: the untwisted `D₄(q)`, the
 graph-twisted `²D₄(q)`, and the triality-twisted `³D₄(q)`, whose Steinberg map is the `q`-power
 Frobenius composed with the order-three symmetry `γ₃` of the diagram. The first two are built on
-the full-weight spin carrier in `TauCeti/GroupTheory/SpecificGroups/CFSG/TypeD.lean`. The third
-needs a carrier on which triality is a linear symmetry of the representation space. Triality
-permutes the three eight-dimensional representations of `D₄`, so neither the natural
+the full-weight spin carrier in `TauCeti/GroupTheory/SpecificGroups/CFSG/TypeD/Basic.lean`.
+The third needs a carrier on which triality is a linear symmetry of the representation space.
+Triality permutes the three eight-dimensional representations of `D₄`, so neither the natural
 representation nor the full spin module `V(ϖ₃) ⊕ V(ϖ₄)` is stable under it, and no fixed linear
 automorphism of either realizes it (triality does act on the spin carrier as an abstract
 automorphism, the spin representation being faithful, but not by such a matrix). The tripled
