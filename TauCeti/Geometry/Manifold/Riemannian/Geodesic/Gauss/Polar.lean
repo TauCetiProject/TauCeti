@@ -80,14 +80,15 @@ theorem abs_inner_le_norm_mul_norm_mfderiv_riemannianExp {p : M}
     _ = ‖v‖ * ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v w‖ := by
       rw [norm_mfderiv_riemannianExp_radial hv]
 
-/-- The pointwise polar inequality divided by the smoothed radius `√(⟪v, v⟫ + δ)`, for `δ > 0`. -/
+/-- The pointwise polar inequality divided by the smoothed radius `√(⟪v, v⟫ + δ)`, for `δ ≥ 0`. -/
 theorem abs_inner_div_sqrt_inner_add_le_norm_mfderiv_riemannianExp {p : M}
-    {v w : TangentSpace I p} {δ : ℝ} (hδ : 0 < δ) (hv : v ∈ expDomain I M p) :
+    {v w : TangentSpace I p} {δ : ℝ} (hδ : 0 ≤ δ) (hv : v ∈ expDomain I M p) :
     |inner ℝ v w| / Real.sqrt (inner ℝ v v + δ) ≤
       ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v w‖ := by
-  have hpos : 0 < inner ℝ v v + δ := by
-    have : 0 ≤ inner ℝ v v := real_inner_self_nonneg
-    positivity
+  have hnn : 0 ≤ inner ℝ v v + δ := add_nonneg real_inner_self_nonneg hδ
+  rcases hnn.eq_or_lt with h0 | hpos
+  · rw [← h0, Real.sqrt_zero, div_zero]
+    exact norm_nonneg _
   apply (div_le_iff₀ (Real.sqrt_pos.mpr hpos)).2
   have hpolar := abs_inner_le_norm_mul_norm_mfderiv_riemannianExp (I := I) (M := M) (w := w) hv
   calc
@@ -97,7 +98,7 @@ theorem abs_inner_div_sqrt_inner_add_le_norm_mfderiv_riemannianExp {p : M}
           ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v w‖ := by
       apply mul_le_mul_of_nonneg_right _ (norm_nonneg _)
       rw [norm_eq_sqrt_real_inner]
-      exact Real.sqrt_le_sqrt (le_add_of_nonneg_right hδ.le)
+      exact Real.sqrt_le_sqrt (le_add_of_nonneg_right hδ)
     _ = ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v w‖ *
           Real.sqrt (inner ℝ v v + δ) := by
       rw [mul_comm]
@@ -141,7 +142,7 @@ private theorem enorm_derivWithin_sqrt_real_inner_add_le_enorm_mfderiv {p : M}
           (derivWithin w (Icc a b) t)‖ := by
     rw [derivWithin_of_mem_nhds htN, hsqrt.deriv, Real.norm_eq_abs, abs_div,
       abs_of_pos (Real.sqrt_pos.mpr hpos)]
-    exact abs_inner_div_sqrt_inner_add_le_norm_mfderiv_riemannianExp hδ (hdom htIcc)
+    exact abs_inner_div_sqrt_inner_add_le_norm_mfderiv_riemannianExp hδ.le (hdom htIcc)
   calc
     ‖derivWithin (fun u ↦ Real.sqrt (inner ℝ (w u) (w u) + δ)) (Icc a b) t‖ₑ =
         ENNReal.ofReal
