@@ -15,7 +15,7 @@ import Mathlib.Tactic.Positivity
 For `0 ≤ r < R` in a linearly ordered field, the difference of squares `R ^ 2 - r ^ 2` is positive
 and at least `(R - r) ^ 2` (`TauCeti.sub_sq_le_sq_sub_sq`). Dividing by it compares with the gap
 `R - r`: `R / (R ^ 2 - r ^ 2) ≤ 1 / (R - r)` (`TauCeti.div_sq_sub_sq_le_one_div_sub`) and
-`R ^ 2 / (R ^ 2 - r ^ 2) ^ 2 ≤ 1 / (R - r) ^ 2` (`TauCeti.sq_div_sq_sub_sq_sq_le_one_div_sq`).
+`R ^ 2 / (R ^ 2 - r ^ 2) ^ 2 ≤ 1 / (R - r) ^ 2` (`TauCeti.sq_div_sq_sub_sq_sq_le_one_div_sub_sq`).
 These are the estimates behind the derivative bounds for radial cutoffs between two concentric
 balls.
 -/
@@ -42,7 +42,7 @@ theorem div_sq_sub_sq_le_one_div_sub (hr : 0 ≤ r) (hrR : r < R) :
   nlinarith
 
 /-- For `0 ≤ r < R`, one has `R ^ 2 / (R ^ 2 - r ^ 2) ^ 2 ≤ 1 / (R - r) ^ 2`. -/
-theorem sq_div_sq_sub_sq_sq_le_one_div_sq (hr : 0 ≤ r) (hrR : r < R) :
+theorem sq_div_sq_sub_sq_sq_le_one_div_sub_sq (hr : 0 ≤ r) (hrR : r < R) :
     R ^ 2 / (R ^ 2 - r ^ 2) ^ 2 ≤ 1 / (R - r) ^ 2 := by
   have hR : 0 < R := hr.trans_lt hrR
   have hD0 := sq_sub_sq_pos_of_lt hr hrR
