@@ -12,6 +12,7 @@ import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.Sobolev.W1p.VanishingBoundary
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # Classical solutions of the Dirichlet problem are weak solutions
@@ -122,38 +123,6 @@ theorem energyFormH1_one_zero_zero_eq_setIntegral_neg_laplacian_mul [DecidableEq
   · filter_upwards [hf] with x hx
     rw [hx, Pi.neg_apply]
 
-/-- The pairing of `-f` with a function `g` bounded by `S` on `V ⊆ Ω` is at most
-`S ∫_Ω |f|`. -/
-private theorem setIntegral_neg_mul_le_mul_setIntegral_abs {α : Type*} [MeasurableSpace α]
-    {ν : Measure α} {V Ω : Set α} {f g : α → ℝ} {S : ℝ} (hVΩ : V ⊆ Ω)
-    (hf : IntegrableOn f Ω ν) (hS0 : 0 ≤ S) (hg : AEStronglyMeasurable g (ν.restrict V))
-    (hgS : ∀ᵐ x ∂ν.restrict V, |g x| ≤ S) :
-    ∫ x in V, -f x * g x ∂ν ≤ S * ∫ x in Ω, |f x| ∂ν := by
-  have hbound : ∀ᵐ x ∂ν.restrict V, ‖-f x * g x‖ ≤ S * |f x| := by
-    filter_upwards [hgS] with x hx
-    rw [Real.norm_eq_abs, abs_mul, abs_neg, mul_comm]
-    exact mul_le_mul_of_nonneg_right hx (abs_nonneg _)
-  have hfV : IntegrableOn f V ν := hf.mono_set hVΩ
-  have hΔV : IntegrableOn (fun x => S * |f x|) V ν := hfV.abs.const_mul S
-  calc _ ≤ ∫ x in V, S * |f x| ∂ν :=
-        integral_mono_ae (hΔV.mono' (hfV.aestronglyMeasurable.neg.mul hg) hbound) hΔV
-          (hbound.mono fun x hx => (le_abs_self _).trans hx)
-    _ = S * ∫ x in V, |f x| ∂ν := integral_const_mul S _
-    _ ≤ S * ∫ x in Ω, |f x| ∂ν :=
-        mul_le_mul_of_nonneg_left (setIntegral_mono_set hf.abs
-          (ae_of_all _ fun _ => abs_nonneg _) (ae_of_all _ hVΩ)) hS0
-
-/-- A bound on the Bochner integral of `‖f‖²` over `A` bounds the Lebesgue integral of `‖f‖ₑ²`. -/
-private theorem setLIntegral_enorm_sq_le_ofReal {α E : Type*} [MeasurableSpace α]
-    [NormedAddCommGroup E] {ν : Measure α} {A : Set α} {f : α → E} {c : ℝ}
-    (hf : IntegrableOn (fun x => ‖f x‖ ^ 2) A ν) (h : ∫ x in A, ‖f x‖ ^ 2 ∂ν ≤ c) :
-    ∫⁻ x in A, ‖f x‖ₑ ^ 2 ∂ν ≤ ENNReal.ofReal c := by
-  calc ∫⁻ x in A, ‖f x‖ₑ ^ 2 ∂ν = ENNReal.ofReal (∫ x in A, ‖f x‖ ^ 2 ∂ν) := by
-        rw [ofReal_integral_eq_lintegral_ofReal hf (ae_of_all _ fun _ => by positivity)]
-        refine lintegral_congr fun x => ?_
-        rw [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
-    _ ≤ ENNReal.ofReal c := ENNReal.ofReal_le_ofReal h
-
 /-- **The energy of a classical solution above a positive level.** Let `w` be of class `C²` on a
 bounded open set `Ω`, continuous on its closure, zero on its frontier, with `|w| ≤ S` on `Ω` and
 `Δw` integrable on `Ω`. Then for `ε > 0`, testing `-Δw` against the truncation `(w - ε)⁺`, which
@@ -208,21 +177,23 @@ private theorem setLIntegral_enorm_gradient_sq_le
         indicator_of_notMem (s := A) (f := fun x => ‖∇ w x‖ ^ 2) fun h => hx h.2,
         WithLp.ofLp_zero, zero_dotProduct]
   -- The forcing side is at most `S ∫_Ω |Δw|`, because `0 ≤ (w - ε)⁺ ≤ |w| ≤ S` on `Ω`.
-  have hright := setIntegral_neg_mul_le_mul_setIntegral_abs hVO hΔ hS0
+  have hright := setIntegral_mul_le_mul_setIntegral_abs (f := -Δ w) hVO hΔ.neg hS0
     (Lp.aestronglyMeasurable _) (by
       filter_upwards [W1p.value_posPartAbove_ae h2 hε.le U, hUv, ae_restrict_mem hV]
         with x hPx hUx hxV
       rw [hPx, hUx, abs_of_nonneg (le_max_right (w x - ε) 0)]
       exact max_le (by linarith [le_abs_self (w x), hS x (hVO hxV)]) hS0)
+  simp only [Pi.neg_apply, abs_neg] at hright
   -- Back to the Lebesgue integral of `‖∇w‖ₑ²`.
   have hintA : IntegrableOn (fun x => ‖∇ w x‖ ^ 2) A mu := by
     refine ((W1p.integrable_norm_gradient_sq U).mono_measure
       (Measure.restrict_mono hAV le_rfl)).congr ?_
     filter_upwards [ae_restrict_of_ae_restrict_of_subset hAV hUg] with x hx
     rw [hx]
-  exact setLIntegral_enorm_sq_le_ofReal hintA (hleft ▸ hgreen ▸ hright)
+  exact MeasureTheory.setLIntegral_enorm_sq_le_ofReal hintA (hleft ▸ hgreen ▸ hright)
 
-/-- The energy above each level `ε > 0` of `|w|`, from the truncations of `w` and of `-w`. -/
+/-- **The energy of a classical solution above a positive level of `|w|`.** Under the hypotheses of
+`setLIntegral_enorm_gradient_sq_le`, for `ε > 0`, `∫_{Ω ∩ {ε < |w|}} ‖∇w‖² ≤ 2 S ∫_Ω |Δw|`. -/
 private theorem setLIntegral_enorm_gradient_sq_le_level
     (hb : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ ι))) (hw : ContDiffOn ℝ 2 w Omega)
     (hwc : ContinuousOn w (closure (Omega : Set (EuclideanSpace ℝ ι))))
@@ -266,7 +237,6 @@ private theorem setLIntegral_enorm_gradient_sq_le_add
         ENNReal.ofReal (S * ∫ x in Omega, |Δ w x| ∂mu) := by
   have hO := Omega.isOpen
   set C := ENNReal.ofReal (S * ∫ x in Omega, |Δ w x| ∂mu)
-  -- The energy above each level `ε > 0` of `|w|`, from the truncations of `w` and of `-w`.
   -- Letting `ε → 0`, the energy on the set where `w ≠ 0`.
   have hnz : ∫⁻ x in (Omega : Set (EuclideanSpace ℝ ι)) ∩ {x | w x ≠ 0}, ‖∇ w x‖ₑ ^ 2 ∂mu ≤
       C + C := by
