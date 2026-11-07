@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicTopology.Quasicategory.Basic
 public import TauCeti.AlgebraicTopology.DGNerve.HornFilling
 import Mathlib.AlgebraicTopology.SimplicialSet.HornColimits
+import TauCeti.Data.Fin.Basic
 import TauCeti.Data.Finset.Basic
 
 /-!
@@ -83,19 +84,6 @@ private lemma map_coh_heq_of_retraction {a b : Fin (n + 3)} (hab : a < b)
     (h₂ j (hT j (Or.inr (Or.inl rfl))).1 (hT j (Or.inr (Or.inl rfl))).2)
     fun s hs ↦ h₂ s (hT' s hs).1 (hT' s hs).2
 
-/-- Each face map `δ l : Fin (m + 1) → Fin (m + 2)` has a monotone retraction. -/
-private lemma exists_orderHom_succAbove_eq {m : ℕ} (l : Fin (m + 2)) :
-    ∃ ρ : Fin (m + 2) →o Fin (m + 1), ∀ v, v ≠ l → l.succAbove (ρ v) = v := by
-  by_cases hl : l = Fin.last (m + 1)
-  · subst hl
-    refine ⟨⟨(Fin.last m).predAbove, Fin.predAbove_right_monotone _⟩, fun v hv ↦ ?_⟩
-    rw [← Fin.succ_last] at hv ⊢
-    exact Fin.succ_succAbove_predAbove hv
-  · refine ⟨⟨(l.castPred hl).predAbove, Fin.predAbove_right_monotone _⟩, fun v hv ↦ ?_⟩
-    have := Fin.succAbove_predAbove (p := l.castPred hl) (i := v)
-      (by rwa [Fin.castSucc_castPred])
-    rwa [Fin.castSucc_castPred] at this
-
 /-- The extensions along the retractions `ρ l` of faces that agree on their common faces give
 the same coherences away from both faces. -/
 private lemma coh_map_retraction_heq (P : Fin (n + 3) → Prop)
@@ -112,10 +100,10 @@ private lemma coh_map_retraction_heq (P : Fin (n + 3) → Prop)
   intro a b ha hb i j S d hij hS hd hT
   rcases lt_trichotomy a b with hab | rfl | hab
   · exact map_coh_heq_of_retraction hab _ _ (hy a b ha hb hab) (hρ a) (hρ b)
-      (exists_orderHom_succAbove_eq _).choose_spec hT
+      (Fin.exists_orderHom_succAbove_eq _).choose_spec hT
   · rfl
   · exact (map_coh_heq_of_retraction hab _ _ (hy b a hb ha hab) (hρ b) (hρ a)
-      (exists_orderHom_succAbove_eq _).choose_spec fun v hv ↦ (hT v hv).symm).symm
+      (Fin.exists_orderHom_succAbove_eq _).choose_spec fun v hv ↦ (hT v hv).symm).symm
 
 /-- Glue the extended faces into coherences `f` on `X`: on a coherence missing a vertex `l`
 satisfying `P`, `f` is read off the face opposite to `l`. -/
@@ -233,7 +221,7 @@ theorem exists_coherences_of_faces (P : Fin (n + 3) → Prop) (X : Fin (n + 3) �
       ∀ x : Simplex R C (n + 2), x.obj = X → (∀ i j S d hij hS hd,
         (∃ l, P l ∧ l ≠ i ∧ l ≠ j ∧ l ∉ S) → x.coh i j S d hij hS hd ≍ f i j S d hij hS hd) →
         ∀ l hl, x.map (SimplexCategory.δ l).toOrderHom = y l hl := by
-  choose ρ hρ using fun l : Fin (n + 3) ↦ exists_orderHom_succAbove_eq l
+  choose ρ hρ using fun l : Fin (n + 3) ↦ Fin.exists_orderHom_succAbove_eq l
   -- The face opposite to `l`, extended degenerately to the whole simplex, has the objects `X`
   -- away from `l`.
   have hz : ∀ l hl v, v ≠ l → ((y l hl).map (ρ l)).obj v = X v := fun l hl v hv ↦
