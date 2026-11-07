@@ -61,6 +61,7 @@ installing a coercion; it is additive.
 * `EReal.coe_mul_coe_mul_add_coe_mul_sub` — nonnegative real scaling distributes through a
   weighted sum with a real subtrahend.
 * `EReal.ne_top_of_coe_mul_ne_top` — a positive real multiple can be `≠ ⊤` only if its operand is.
+* `EReal.coe_mul_le_coe_mul_iff` — multiplication by a positive real preserves and reflects `≤`.
 * `WithTop.toEReal_add` and `WithTop.toEReal_add_sub_coe_add` — the inclusion of `WithTop ℝ` into
   `EReal` is additive, and subtracting a real sum from the image of a sum splits termwise.
 -/
@@ -301,6 +302,13 @@ theorem _root_.EReal.ne_top_of_coe_mul_ne_top {c : ℝ} (hc : 0 < c) {d : EReal}
     (hd : (c : EReal) * d ≠ ⊤) : d ≠ ⊤ := by
   rintro rfl
   exact hd (EReal.coe_mul_top_of_pos hc)
+
+/-- Multiplication by a positive real number `c` preserves and reflects the order of `EReal`. -/
+theorem _root_.EReal.coe_mul_le_coe_mul_iff {c : ℝ} (hc : 0 < c) (a b : EReal) :
+    (c : EReal) * a ≤ (c : EReal) * b ↔ a ≤ b := by
+  have hc' : 0 < (c : EReal) := EReal.coe_pos.2 hc
+  rw [← EReal.div_le_iff_le_mul hc' (EReal.coe_ne_top c), ← EReal.mul_div,
+    EReal.mul_div_cancel (EReal.coe_ne_bot c) (EReal.coe_ne_top c) hc'.ne']
 
 end TauCeti
 
