@@ -28,6 +28,8 @@ identifies the moments of every weak limit point with those of `μ`.
 
 ## Main results
 
+* `MeasureTheory.ProbabilityMeasure.integrable_pow_and_integral_pow_eq_of_mapClusterPt`:
+  moments of a weak cluster point equal the limits of the moments.
 * `MeasureTheory.ProbabilityMeasure.tendsto_of_tendsto_integral_pow_of_determined_moments`: weak
   convergence when the limit is determined by its moments.
 
@@ -121,23 +123,23 @@ private theorem integrable_pow_two_mul_of_clampPow_integral_le
     (htrunc : ∀ k (R : ℝ≥0), ∫ x, clampPow R (2 * k) x ∂(ν : Measure ℝ) ≤ B k) :
     ∀ k, Integrable (fun x : ℝ => x ^ (2 * k)) (ν : Measure ℝ) := by
   intro k
-  have hc : Continuous fun x : ℝ => x ^ (2 * k) := by fun_prop
-  refine ⟨hc.aestronglyMeasurable, ?_⟩
-  rw [hasFiniteIntegral_iff_ofReal (ae_of_all _ fun x => (even_two_mul k).pow_nonneg x)]
-  calc ∫⁻ x, ENNReal.ofReal (x ^ (2 * k)) ∂(ν : Measure ℝ)
-      = ∫⁻ x, liminf (fun N : ℕ => ENNReal.ofReal (clampPow (N : ℝ≥0) (2 * k) x)) atTop
-          ∂(ν : Measure ℝ) := by
-        congr 1; ext x
-        exact ((ENNReal.continuous_ofReal.tendsto _).comp (tendsto_clampPow _ x)).liminf_eq.symm
-    _ ≤ liminf (fun N : ℕ => ∫⁻ x, ENNReal.ofReal (clampPow (N : ℝ≥0) (2 * k) x)
-          ∂(ν : Measure ℝ)) atTop :=
-        lintegral_liminf_le fun N =>
-          (clampPow (N : ℝ≥0) (2 * k)).continuous.measurable.ennreal_ofReal
-    _ ≤ ENNReal.ofReal (B k) := by
-        refine liminf_le_of_frequently_le' (Frequently.of_forall fun N => ?_)
-        rw [← ofReal_integral_eq_lintegral_ofReal (BoundedContinuousFunction.integrable _ _)
-          (ae_of_all _ fun x => (even_two_mul k).pow_nonneg _)]
-        exact ENNReal.ofReal_le_ofReal (htrunc k N)
+  apply integrable_of_tendsto
+    (G := fun N x ↦ clampPow (N : ℝ≥0) (2 * k) x)
+    (ae_of_all _ fun x ↦ tendsto_clampPow _ x)
+    (fun N ↦ (clampPow (N : ℝ≥0) (2 * k)).continuous.aestronglyMeasurable)
+  apply ne_of_lt
+  calc
+    liminf (fun N : ℕ => ∫⁻ x, ‖clampPow (N : ℝ≥0) (2 * k) x‖ₑ
+        ∂(ν : Measure ℝ)) atTop ≤ ENNReal.ofReal (B k) := by
+      refine liminf_le_of_frequently_le' (Frequently.of_forall fun N => ?_)
+      have hnonneg : ∀ x, 0 ≤ clampPow (N : ℝ≥0) (2 * k) x := by
+        intro x
+        rw [clampPow_apply]
+        exact (even_two_mul k).pow_nonneg _
+      simp_rw [Real.enorm_eq_ofReal (hnonneg _)]
+      rw [← ofReal_integral_eq_lintegral_ofReal (BoundedContinuousFunction.integrable _ _)
+        (ae_of_all _ hnonneg)]
+      exact ENNReal.ofReal_le_ofReal (htrunc k N)
     _ < ⊤ := ENNReal.ofReal_lt_top
 
 private theorem tendsto_integral_clampPow (ν : Measure ℝ) (k : ℕ)
@@ -153,7 +155,7 @@ private theorem tendsto_integral_clampPow (ν : Measure ℝ) (k : ℕ)
 
 /-- A weak cluster point of a sequence of probability measures with converging moments has
 finite moments, equal to the limits. -/
-private theorem integrable_pow_and_integral_pow_eq_of_mapClusterPt
+theorem _root_.MeasureTheory.ProbabilityMeasure.integrable_pow_and_integral_pow_eq_of_mapClusterPt
     {μn : ℕ → ProbabilityMeasure ℝ} {ν : ProbabilityMeasure ℝ}
     {m : ℕ → ℝ} (hint : ∀ k, ∀ᶠ n in atTop,
       Integrable (fun x : ℝ => x ^ k) (μn n : Measure ℝ))
