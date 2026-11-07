@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Quadratic
 import TauCeti.Algebra.BigOperators.Finset.Fiber
+import TauCeti.Analysis.Complex.HorizontalStrip
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.ExteriorPoint
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.SimpleBoundary
 
@@ -71,84 +72,6 @@ theorem exists_mem_range_schwarzChristoffelBoundary_iff_of_sum_eq_one
       (forall_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite (-A)) (fun i _ => (ha' i).1)
       hsum] at hR
   exact ⟨R, hR⟩
-
-/-- A preconnected set that meets an open set `U` and misses its frontier lies in `U`. -/
-theorem _root_.IsPreconnected.subset_of_isOpen_of_disjoint_frontier {α : Type*} [TopologicalSpace α]
-    {U s : Set α} (hs : IsPreconnected s) (hUo : IsOpen U) (hdisj : Disjoint s (frontier U))
-    (hmeet : (s ∩ U).Nonempty) : s ⊆ U := by
-  refine hs.subset_of_closure_inter_subset hUo hmeet fun w ⟨hwcl, hws⟩ => ?_
-  by_contra hwU
-  have hwfr : w ∈ frontier U := by
-    rw [hUo.frontier_eq]
-    exact ⟨hwcl, hwU⟩
-  exact hdisj.le_bot ⟨hws, hwfr⟩
-
-/-- If the frontier of an open set `U ⊆ ℂ` is, to the right of `R`, exactly the two horizontal
-lines at heights `lo` and `hi`, and a point of the band between them far to the right is not in the
-closure of `U`, then every point of `U` to the right of `R` lies strictly below or strictly above
-the band. -/
-theorem im_lt_or_lt_im_of_mem_of_frontier_eq {U : Set ℂ} (hUo : IsOpen U) {R hi lo : ℝ}
-    (hgap : lo < hi) (hline : ∀ w : ℂ, R < w.re → (w ∈ frontier U ↔ w.im = hi ∨ w.im = lo))
-    (hext : (⟨R + 1, (lo + hi) / 2⟩ : ℂ) ∉ closure U) {w : ℂ} (hwR : R < w.re) (hwU : w ∈ U) :
-    w.im < lo ∨ hi < w.im := by
-  have hne : w ∉ frontier U := by
-    rw [hUo.frontier_eq]
-    exact fun h => h.2 hwU
-  rw [hline w hwR, not_or] at hne
-  by_contra! hw
-  have hS := (convex_halfSpace_re_gt R).inter ((convex_halfSpace_im_gt lo).inter
-    (convex_halfSpace_im_lt hi)) |>.isPreconnected.subset_of_isOpen_of_disjoint_frontier hUo
-    (Set.disjoint_left.mpr fun v hv hvfr => by
-      have := (hline v hv.1).mp hvfr
-      rcases this with h | h
-      · exact hv.2.2.ne h
-      · exact hv.2.1.ne' h)
-    ⟨w, ⟨hwR, lt_of_le_of_ne hw.1 (Ne.symm hne.2), lt_of_le_of_ne hw.2 hne.1⟩, hwU⟩
-  exact hext (subset_closure (hS ⟨lt_add_one R,
-    show lo < (lo + hi) / 2 by linarith, show (lo + hi) / 2 < hi by linarith⟩))
-
-/-- Under the hypotheses of `im_lt_or_lt_im_of_mem_of_frontier_eq`, to the right of `R` the open
-set `U` is exactly the set of points strictly below or strictly above the band. -/
-theorem mem_iff_im_lt_or_lt_im_of_frontier_eq {U : Set ℂ} (hUo : IsOpen U) {R hi lo : ℝ}
-    (hgap : lo < hi) (hline : ∀ w : ℂ, R < w.re → (w ∈ frontier U ↔ w.im = hi ∨ w.im = lo))
-    (hext : (⟨R + 1, (lo + hi) / 2⟩ : ℂ) ∉ closure U) {w : ℂ} (hwR : R < w.re) :
-    w ∈ U ↔ w.im < lo ∨ hi < w.im := by
-  have hout {w : ℂ} (hwR : R < w.re) (hwU : w ∈ U) : w.im < lo ∨ hi < w.im :=
-    im_lt_or_lt_im_of_mem_of_frontier_eq hUo hgap hline hext hwR hwU
-  -- Each line lies in the closure of `U`, so points of `U` come close to it.
-  have hnear (h : ℝ) (hh : h = hi ∨ h = lo) :
-      ∃ u ∈ U, R < u.re ∧ |u.im - h| < (hi - lo) / 2 := by
-    have hw₀ : (⟨R + 1, h⟩ : ℂ) ∈ closure U :=
-      frontier_subset_closure ((hline _ (lt_add_one R)).mpr hh)
-    obtain ⟨u, huU, hu⟩ := Metric.mem_closure_iff.mp hw₀ (min 1 ((hi - lo) / 2))
-      (lt_min one_pos (by linarith))
-    rw [dist_eq_norm] at hu
-    have hre := (abs_lt.mp ((abs_re_le_norm _).trans_lt (hu.trans_le (min_le_left _ _)))).2
-    have him := (abs_im_le_norm _).trans_lt (hu.trans_le (min_le_right _ _))
-    simp only [sub_re, sub_im] at hre him
-    rw [abs_sub_comm] at him
-    exact ⟨u, huU, by linarith, him⟩
-  have habove : {w : ℂ | R < w.re ∧ hi < w.im} ⊆ U := by
-    obtain ⟨u, huU, huR, hu⟩ := hnear hi (Or.inl rfl)
-    refine ((convex_halfSpace_re_gt R).inter
-      (convex_halfSpace_im_gt hi)).isPreconnected.subset_of_isOpen_of_disjoint_frontier hUo
-      (Set.disjoint_left.mpr fun v hv hvfr => ?_)
-      ⟨u, ⟨huR, (hout huR huU).resolve_left fun h => ?_⟩, huU⟩
-    · rcases (hline v hv.1).mp hvfr with h | h
-      · exact hv.2.ne' h
-      · exact (hgap.trans hv.2).ne' h
-    · linarith [(abs_lt.mp hu).1]
-  have hbelow : {w : ℂ | R < w.re ∧ w.im < lo} ⊆ U := by
-    obtain ⟨u, huU, huR, hu⟩ := hnear lo (Or.inr rfl)
-    refine ((convex_halfSpace_re_gt R).inter
-      (convex_halfSpace_im_lt lo)).isPreconnected.subset_of_isOpen_of_disjoint_frontier hUo
-      (Set.disjoint_left.mpr fun v hv hvfr => ?_)
-      ⟨u, ⟨huR, (hout huR huU).resolve_right fun h => ?_⟩, huU⟩
-    · rcases (hline v hv.1).mp hvfr with h | h
-      · exact (hv.2.trans hgap).ne h
-      · exact hv.2.ne h
-    · linarith [(abs_lt.mp hu).2]
-  exact ⟨hout hwR, fun hw => hw.elim (fun h => hbelow ⟨hwR, h⟩) (fun h => habove ⟨hwR, h⟩)⟩
 
 /-- **The strip-complement end of a simple quadratic Schwarz--Christoffel map.** Suppose the
 finite prevertices are integrable, the total exponent is `1`, the real boundary parametrization
