@@ -18,7 +18,6 @@ import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 import Mathlib.Topology.Instances.Matrix
 -- Private: `ContinuousLinearMap.dual_finrank_eq` is used only inside proofs.
 import TauCeti.Analysis.Normed.Module.FiniteDimension
-import TauCeti.Analysis.Normed.Module.QuadraticMap
 
 /-!
 # Nondegeneracy of the bilinear form of a continuous linear map into the dual
@@ -66,9 +65,6 @@ use.
   continuous family of bilinear forms at a point holds on a neighbourhood of the point.
 * `ContinuousLinearMap.isInvertible_of_pos`: in finite dimensions, a map into the dual that is
   positive on nonzero diagonal vectors is invertible.
-* `ContinuousLinearMap.exists_pos_forall_le_neg_mul_sq`: a continuous bilinear form negative on
-  the nonzero vectors of a finite-dimensional subspace is bounded there by a negative multiple of
-  the squared norm.
 * `TauCeti.isInvertible_toContinuousBilinearMap_iff_separatingLeft`:
   contraction with a bilinear form is invertible exactly when it is left-separating in
   finite dimensions, identifying covectors with vectors for local contraction equations.
@@ -79,6 +75,9 @@ use.
 * `IsCompact.exists_pos_forall_mul_norm_sq_le`: in finite dimensions, a family of continuous
   bilinear forms, continuous on a compact set and positive on nonzero diagonal vectors, is bounded
   below on the diagonal by one positive multiple of the squared norm.
+* `ContinuousLinearMap.exists_pos_forall_le_neg_mul_sq`: a continuous bilinear form negative on
+  the nonzero vectors of a finite-dimensional subspace is bounded there by a negative multiple of
+  the squared norm.
 * `TauCeti.convex_setOfPred_symm_pos_isVonNBounded`: the continuous bilinear forms on a real
   topological vector space that are symmetric, positive definite and have a von Neumann bounded
   unit set form a convex set; these are the fibrewise conditions of a Riemannian metric.
@@ -237,32 +236,6 @@ theorem _root_.ContinuousLinearMap.isInvertible_of_pos
     by_contra hv0
     exact (hpos v hv0).ne' (hv v)
 
-/-- A continuous bilinear form that is negative on the nonzero vectors of a finite-dimensional
-subspace is uniformly negative there: it is bounded by a negative multiple of the squared norm. -/
-theorem _root_.ContinuousLinearMap.exists_pos_forall_le_neg_mul_sq
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    (L : E →L[ℝ] E →L[ℝ] ℝ) (N : Submodule ℝ E) [FiniteDimensional ℝ N]
-    (hN : ∀ x ∈ N, x ≠ 0 → L x x < 0) :
-    ∃ c > 0, ∀ x ∈ N, L x x ≤ -(c * ‖x‖ ^ 2) := by
-  set Q := L.toBilinForm.toQuadraticMap.restrict N
-  have hQ : Q.Anisotropic := fun x hx ↦ by
-    by_contra hx0
-    have h := hN x x.2 (by simpa using hx0)
-    simp only [Q, QuadraticMap.restrict_apply, LinearMap.BilinMap.toQuadraticMap_apply,
-      ContinuousLinearMap.toBilinForm_apply] at hx
-    linarith
-  have hcont : Continuous Q :=
-    (L.continuous.comp continuous_subtype_val).clm_apply continuous_subtype_val
-  obtain ⟨c, hc, hle⟩ := hQ.exists_pos_mul_norm_sq_le hcont
-  refine ⟨c, hc, fun x hx ↦ ?_⟩
-  rcases eq_or_ne x 0 with rfl | hx0
-  · simp
-  have h := hle ⟨x, hx⟩
-  simp only [Q, QuadraticMap.restrict_apply, LinearMap.BilinMap.toQuadraticMap_apply,
-    ContinuousLinearMap.toBilinForm_apply, Real.norm_eq_abs, abs_of_neg (hN x hx hx0),
-    ← Submodule.norm_coe] at h
-  linarith
-
 section Convex
 
 open Bornology Set
@@ -393,6 +366,18 @@ theorem _root_.IsCompact.exists_pos_forall_mul_norm_sq_le
     ring
   rw [heq, le_inv_mul_iff₀ (by positivity)] at hh
   linarith
+
+/-- A continuous bilinear form that is negative on the nonzero vectors of a finite-dimensional
+subspace is uniformly negative there: it is bounded by a negative multiple of the squared norm. -/
+theorem _root_.ContinuousLinearMap.exists_pos_forall_le_neg_mul_sq
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (L : E →L[ℝ] E →L[ℝ] ℝ) (N : Submodule ℝ E) [FiniteDimensional ℝ N]
+    (hN : ∀ x ∈ N, x ≠ 0 → L x x < 0) :
+    ∃ c > 0, ∀ x ∈ N, L x x ≤ -(c * ‖x‖ ^ 2) := by
+  obtain ⟨c, hc, h⟩ := (isCompact_singleton (x := ())).exists_pos_forall_mul_norm_sq_le
+    (E := N) (b := fun _ ↦ -(L.bilinearComp N.subtypeL N.subtypeL)) continuousOn_const
+    fun _ _ v hv ↦ by simpa using hN v v.2 (by simpa using hv)
+  exact ⟨c, hc, fun x hx ↦ by have := h () rfl ⟨x, hx⟩; simp at this; linarith⟩
 
 /-- On a finite-dimensional real normed space, a continuous bilinear form positive on
 nonzero diagonal vectors has a bounded unit sublevel set. Symmetry is not needed. -/
