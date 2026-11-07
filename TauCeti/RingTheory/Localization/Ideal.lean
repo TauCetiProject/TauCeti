@@ -47,25 +47,21 @@ namespace Ideal
 
 /-- If `f r` is a unit, `r • I ≤ (t)`, and `t ∈ I`, then `I` generates the principal ideal
 `(f t)` after applying the ring homomorphism `f`. -/
-theorem map_eq_span_singleton_of_isUnit {B B' : Type*} [CommSemiring B] [CommSemiring B']
-    (f : B →+* B') {I : Ideal B} {r t : B} (ht : t ∈ I) (h : r • I ≤ Ideal.span {t})
-    (hr : IsUnit (f r)) :
-    I.map f = Ideal.span {f t} := by
-  refine le_antisymm (Ideal.map_le_iff_le_comap.mpr fun i hi ↦ ?_) ?_
-  · obtain ⟨b, hb⟩ :=
-      Ideal.mem_span_singleton'.mp (h (Submodule.smul_mem_pointwise_smul i r I hi))
-    rw [Ideal.mem_comap, ← Ideal.unit_mul_mem_iff_mem _ hr, ← map_mul, ← smul_eq_mul, ← hb,
-      map_mul]
-    exact Ideal.mul_mem_left _ _ (Ideal.mem_span_singleton_self _)
-  · rw [Ideal.span_le, Set.singleton_subset_iff]
-    exact Ideal.mem_map_of_mem _ ht
+theorem map_eq_span_singleton_of_isUnit {B B' F : Type*} [CommSemiring B] [Semiring B']
+    [FunLike F B B'] [RingHomClass F B B'] (f : F) {I : Ideal B} {r t : B} (ht : t ∈ I)
+    (h : r • I ≤ span {t}) (hr : IsUnit (f r)) :
+    I.map f = span {f t} := by
+  refine le_antisymm (map_le_iff_le_comap.mpr fun i hi ↦ ?_)
+    ((span_singleton_le_iff_mem _).mpr (mem_map_of_mem f ht))
+  have := mem_map_of_mem f (h (Submodule.smul_mem_pointwise_smul i r I hi))
+  rwa [map_span, Set.image_singleton, smul_eq_mul, map_mul, unit_mul_mem_iff_mem _ hr] at this
 
 /-- If `r • I ≤ (t)` for some `t ∈ I`, then `I` generates the principal ideal `(t)` in the
 localization away from `r`. -/
 theorem map_algebraMap_away_eq_span_singleton {B B' : Type*} [CommSemiring B]
     [CommSemiring B'] [Algebra B B'] {I : Ideal B} {r t : B} [IsLocalization.Away r B']
-    (ht : t ∈ I) (h : r • I ≤ Ideal.span {t}) :
-    I.map (algebraMap B B') = Ideal.span {algebraMap B B' t} :=
+    (ht : t ∈ I) (h : r • I ≤ span {t}) :
+    I.map (algebraMap B B') = span {algebraMap B B' t} :=
   map_eq_span_singleton_of_isUnit (algebraMap B B') ht h
     (IsLocalization.Away.algebraMap_isUnit (S := B') r)
 
