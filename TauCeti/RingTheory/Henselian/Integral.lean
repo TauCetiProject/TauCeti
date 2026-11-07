@@ -10,8 +10,11 @@ public import TauCeti.RingTheory.Henselian.Idempotent
 import Mathlib.RingTheory.IntegralClosure.Algebra.Ideal
 import Mathlib.RingTheory.Polynomial.Eisenstein.Distinguished
 import TauCeti.RingTheory.AdjoinRoot.Idempotent
+import TauCeti.RingTheory.Henselian.Basic
 import TauCeti.RingTheory.Henselian.Factorization
+import TauCeti.RingTheory.Henselian.Radical
 import TauCeti.RingTheory.Idempotents.Polynomial
+import TauCeti.RingTheory.LocalRing.Monogenic
 
 /-!
 # Idempotents of integral algebras over a Henselian pair
@@ -34,6 +37,8 @@ pairs by their finite algebras, and by their integral algebras.
   monic `f`.
 * `Ideal.henselianRing_map_of_isIntegral`: if `(R, I)` is Henselian and `S` is an integral
   `R`-algebra, then `(S, IS)` is Henselian.
+* `TauCeti.HenselianLocalRing.of_finite`: a finite local algebra over a henselian local ring,
+  whose structure map is local, is henselian.
 * `TauCeti.henselianRing_iff_forall_bijOn_isIdempotentElem` and
   `TauCeti.henselianRing_iff_forall_bijOn_isIdempotentElem_of_isIntegral`: `(R, I)` is Henselian
   if and only if reduction modulo `IS` is a bijection on idempotents for every finite, or every
@@ -63,6 +68,7 @@ modulo `I` cutting out the factor `R[X]/(X - a₀)`
 * [Stacks Project, Lemma 15.11.6](https://stacks.math.columbia.edu/tag/09XI), conditions (1),
   (3) and (4).
 * [Stacks Project, Lemma 15.11.8](https://stacks.math.columbia.edu/tag/09XK).
+* [Stacks Project, Lemma 10.153.4](https://stacks.math.columbia.edu/tag/04GH).
 -/
 
 public section
@@ -165,6 +171,24 @@ instance henselianRing_map_of_isIntegral :
 end Ideal
 
 namespace TauCeti
+
+/-- A finite local algebra over a henselian local ring is henselian when its structure map
+is local. -/
+theorem HenselianLocalRing.of_finite (R S : Type*) [CommRing R] [CommRing S] [Algebra R S]
+    [HenselianLocalRing R] [IsLocalRing S] [Module.Finite R S]
+    [IsLocalHom (algebraMap R S)] : HenselianLocalRing S := by
+  let I := (IsLocalRing.maximalIdeal R).map (algebraMap R S)
+  have hrad : I.radical = IsLocalRing.maximalIdeal S := by
+    obtain ⟨n, hn⟩ := IsLocalRing.exists_maximalIdeal_pow_le_map (R := R) (S := S)
+    apply le_antisymm
+    · exact (Ideal.IsPrime.radical_le_iff inferInstance).mpr
+        (IsLocalRing.map_maximalIdeal_le _)
+    · intro b hb
+      exact ⟨n, hn (Ideal.pow_mem_pow hb n)⟩
+  have : HenselianRing S I := inferInstance
+  have : HenselianRing S I.radical := inferInstance
+  rw [hrad] at this
+  exact HenselianRing.henselianLocalRing S
 
 /-- **Henselian pairs and idempotents of finite algebras.** A pair `(R, I)` is Henselian if and
 only if, for every finite `R`-algebra `S` in the universe of `R`, the quotient map `S → S ⧸ IS`
