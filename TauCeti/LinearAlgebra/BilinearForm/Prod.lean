@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.BilinearForm.Hom
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
+public import Mathlib.LinearAlgebra.QuadraticForm.Prod
 
 /-!
 # Products of bilinear forms
@@ -23,6 +24,8 @@ product of perfect pairings is a perfect pairing.
 ## Main declarations
 
 * `LinearMap.BilinForm.prod`: the block-diagonal form on a product module.
+* `LinearMap.BilinForm.toQuadraticMap_prod`: the quadratic map of the product form is the
+  product of the quadratic maps.
 * `LinearMap.BilinForm.isSymm_prod_iff`: the product form is symmetric exactly when both factors
   are.
 * `LinearMap.BilinForm.flip_prod`: flipping the product form flips both factors.
@@ -51,6 +54,13 @@ def prod (B : LinearMap.BilinForm R M) (C : LinearMap.BilinForm R N) :
 theorem prod_apply (B : LinearMap.BilinForm R M) (C : LinearMap.BilinForm R N) (x y : M × N) :
     B.prod C x y = B x.1 y.1 + C x.2 y.2 :=
   (rfl)
+
+/-- The quadratic map of a product of bilinear forms is the product of the quadratic maps. -/
+@[simp]
+theorem toQuadraticMap_prod (B : LinearMap.BilinForm R M) (C : LinearMap.BilinForm R N) :
+    (B.prod C).toQuadraticMap = B.toQuadraticMap.prod C.toQuadraticMap := by
+  ext p
+  simp
 
 /-- A product of bilinear forms is symmetric exactly when both factors are. -/
 @[simp]

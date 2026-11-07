@@ -10,9 +10,11 @@ public import Mathlib.Analysis.RCLike.Basic
 import Mathlib.Analysis.Normed.Module.Convex
 
 /-!
-# Meromorphic order from limits and boundary conditions
+# Meromorphic order from limits and connected sets
 
 A nonzero limit of `(z - c) • f z` at `c` detects an exact simple pole of `f`.
+An analytic function on a connected set that is nonzero somewhere has finite meromorphic
+order throughout the set.
 
 On a nonempty closed disc `closedBall c R` over `ℝ` or `ℂ` (`RCLike 𝕜`), the boundary point
 `c + R` lies on `sphere c R` and `closedBall c R` is convex, hence preconnected. Consequently,
@@ -25,6 +27,8 @@ meromorphic order to every point of `closedBall c R`.
 
 * `MeromorphicAt.meromorphicOrderAt_eq_neg_one_of_tendsto_sub_smul`: a nonzero residue limit
   forces meromorphic order exactly `-1`.
+* `AnalyticOnNhd.meromorphicOrderAt_ne_top_of_exists_ne_zero`: a nonzero value on a connected
+  set rules out infinite order throughout the set.
 * `MeromorphicOn.meromorphicOrderAt_ne_top_of_forall_mem_sphere`: finite meromorphic order on the
   bounding sphere propagates throughout the closed disc.
 * `AnalyticOnNhd.meromorphicOrderAt_ne_top_of_forall_mem_sphere_ne_zero`: an analytic function on
@@ -33,6 +37,20 @@ meromorphic order to every point of `closedBall c R`.
 -/
 
 public section
+
+/-- An analytic function on a connected set has finite meromorphic order everywhere
+on that set if it is nonzero at some point of the set. -/
+theorem AnalyticOnNhd.meromorphicOrderAt_ne_top_of_exists_ne_zero
+    {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {U : Set 𝕜} {f : 𝕜 → E} (hf : AnalyticOnNhd 𝕜 f U) (hU : IsConnected U)
+    (h0 : ∃ z ∈ U, f z ≠ 0) {z : 𝕜} (hz : z ∈ U) : meromorphicOrderAt f z ≠ ⊤ := by
+  have hfin := (hf.meromorphicOn.exists_meromorphicOrderAt_ne_top_iff_forall hU).mp
+  have hex : ∃ z : U, meromorphicOrderAt f z ≠ ⊤ := by
+    obtain ⟨z, hz, hzero⟩ := h0
+    refine ⟨⟨z, hz⟩, ?_⟩
+    rw [(hf z hz).meromorphicOrderAt_eq, (hf z hz).analyticOrderAt_eq_zero.mpr hzero]
+    simp
+  exact hfin hex ⟨z, hz⟩
 
 open Filter Metric Topology
 
