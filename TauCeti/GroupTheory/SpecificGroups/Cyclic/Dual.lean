@@ -38,8 +38,7 @@ variable (G M : Type*) [CommGroup G] [Finite G] [IsCyclic G] [CommMonoid M]
   [HasEnoughRootsOfUnity M (Nat.card G)]
 
 /-- **Exactly `gcd(|G|, n - 1)` characters of a finite cyclic group `G` are fixed by the `n`-th
-power map** (`n ≠ 0`): `χ ∘ (g ↦ g ^ n) = χ` says `χ ^ (n - 1) = 1`, and the character group is
-isomorphic to `G`, so this is Mathlib's `IsCyclic.card_powMonoidHom_ker` transported to it. -/
+power map** (`n ≠ 0`). -/
 theorem natCard_monoidHom_comp_powMonoidHom_eq_eq_gcd {n : ℕ} (hn : n ≠ 0) :
     Nat.card {χ : G →* Mˣ // χ.comp (powMonoidHom n) = χ} = (Nat.card G).gcd (n - 1) := by
   obtain ⟨e⟩ := IsCyclic.monoidHom_equiv_self G M
