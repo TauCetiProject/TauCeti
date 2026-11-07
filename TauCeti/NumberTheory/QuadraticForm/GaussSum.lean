@@ -169,7 +169,7 @@ private theorem IsSymm.sum_stdAddChar_eq_sum_ite_smul_eq_zero (hA : A.IsSymm) {N
 /-- **Killing the `2 A`-image.** If `p` is odd and prime to `det A`, then in `ZMod N` with
 `p * M * p = N`, the vanishing of `(2 * (p * M)) • (A x)` forces `(p * M) • x = 0`: both say that
 `x` vanishes modulo `p`, since `2 A` is invertible modulo `p`. -/
-private theorem natCast_mul_smul_eq_zero_of_two_smul_mulVec_eq_zero {N M p : ℕ} [NeZero N]
+private theorem natCast_mul_smul_eq_zero_of_two_smul_mulVec_eq_zero {N M p : ℕ}
     [NeZero (p * M)] (hpM : p * M * p = N) (hodd : Odd p) (hdet : IsCoprime A.det p)
     (x : ι → ZMod N) :
     (2 * ((p * M : ℕ) : ZMod N)) • (A.map (Int.cast : ℤ → ZMod N) *ᵥ x) = 0 →
