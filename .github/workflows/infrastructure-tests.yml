@@ -110,6 +110,7 @@ jobs:
           export LEAN LEAN_SYSROOT
           python3 scripts/test_duplicate_declarations.py
           python3 scripts/test_check_imports.py
+          python3 scripts/test_ci_checkout.py --integration
           python3 scripts/test_bulk_unpack_cache.py --integration
           python3 scripts/test_lake_cache_reuse.py --integration
           python3 scripts/test_lake_cache_publish.py --integration
