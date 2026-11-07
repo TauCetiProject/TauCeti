@@ -70,7 +70,7 @@ theorem integrable_truncatedCauchyKernel (R : ℝ) : Integrable (truncatedCauchy
 /-- The inverse-distance integral over a disk centered at its pole is `2πR`. -/
 theorem integral_norm_sub_inv_closedBall {R : ℝ} (hR : 0 ≤ R) (w : ℂ) :
     (∫ z in closedBall w R, ‖z - w‖⁻¹) = 2 * Real.pi * R := by
-  rw [Measure.restrict_congr_set (volume.addHaar_closedBall_ae_eq_ball w R)]
+  rw [volume.restrict_closedBall_eq_restrict_ball w R]
   have h := TauCeti.integral_norm_sub_rpow_ball (mu := volume) (s := -1) (by simp) hR w
   norm_num [Complex.finrank_real_complex, measureReal_def, Complex.volume_ball] at h
   simpa only [Real.rpow_neg_one, norm_sub_rev, Real.rpow_one, div_one] using h

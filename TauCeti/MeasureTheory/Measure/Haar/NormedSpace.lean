@@ -51,6 +51,9 @@ to `ℝ` gives the same bound for `‖det f‖` over `ℂ`, or any `RCLike` fiel
   set in a nontrivial space.
 * `MeasureTheory.Measure.addHaar_closedBall_ae_eq_ball_of_ne_zero`: the same agreement at nonzero
   radius, including trivial spaces.
+* `MeasureTheory.Measure.restrict_closedBall_eq_restrict_ball`,
+  `MeasureTheory.Measure.restrict_closedBall_eq_restrict_ball_of_ne_zero`: restricting to a closed
+  ball or to the open ball of the same radius gives the same measure.
 * `MeasureTheory.Measure.ae_eq_closedBall_of_subset_of_measure_eq`: a set inside a closed ball,
   with the measure of a closed ball of the same radius, agrees with it up to a null set.
 * `MeasureTheory.Measure.addHaar_ball_lt_addHaar_ball_iff`: concentric balls are ordered by
@@ -214,6 +217,24 @@ theorem _root_.MeasureTheory.Measure.addHaar_closedBall_ae_eq_ball_of_ne_zero
     ext y
     simp [mem_closedBall, mem_ball, Subsingleton.elim y x, le_iff_lt_or_eq, Ne.symm hr]
   · exact mu.addHaar_closedBall_ae_eq_ball x r
+
+/-- In a nontrivial finite-dimensional space, restricting an additive Haar measure to a closed
+ball or to the open ball of the same radius gives the same measure. -/
+theorem _root_.MeasureTheory.Measure.restrict_closedBall_eq_restrict_ball
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [Nontrivial E] [MeasurableSpace E] [BorelSpace E]
+    (mu : Measure E) [mu.IsAddHaarMeasure] (x : E) (r : ℝ) :
+    mu.restrict (closedBall x r) = mu.restrict (ball x r) :=
+  Measure.restrict_congr_set (mu.addHaar_closedBall_ae_eq_ball x r)
+
+/-- At nonzero radius, restricting an additive Haar measure to a closed ball or to the open ball
+of the same radius gives the same measure, even in a trivial space. -/
+theorem _root_.MeasureTheory.Measure.restrict_closedBall_eq_restrict_ball_of_ne_zero
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E]
+    (mu : Measure E) [mu.IsAddHaarMeasure] (x : E) {r : ℝ} (hr : r ≠ 0) :
+    mu.restrict (closedBall x r) = mu.restrict (ball x r) :=
+  Measure.restrict_congr_set (mu.addHaar_closedBall_ae_eq_ball_of_ne_zero x r hr)
 
 /-- A null-measurable set inside a closed ball of radius `r`, with the measure of some closed ball
 of radius `r`, agrees up to a null set with the ball containing it. -/
