@@ -164,6 +164,18 @@ theorem trivializationAt_chartSource_baseSet [IsManifold I 1 M] (x : M) :
   exact y.property
 
 
+/-- The second component of the chart of a tangent bundle at `q`, read at a point with base point
+in the chart source.  Together with `TangentBundle.coe_chartAt_fst` this describes the
+tangent-bundle charts completely. -/
+@[simp, mfld_simps]
+theorem coe_chartAt_snd [IsManifold I 1 M] {p q : TangentBundle I M} :
+    (chartAt (ModelProd H E) q p).2 =
+      tangentCoordChange I p.1 q.1 p.1 p.2 := by
+  -- After unfolding the tangent-bundle chart, the fibre-to-model-space conversion is
+  -- definitionally the tangent coordinate change; no separate conversion lemma is needed.
+  rw [TangentBundle.chartAt]
+  rfl
+
 end TangentBundle
 
 namespace TauCeti.Manifold
@@ -288,28 +300,6 @@ theorem mvfderiv_extend_eventuallyEq (hf : ContMDiffAt I 𝓘(𝕜, F) 1 f x)
 end Extend
 
 section TangentChart
-
-section TangentBundleChart
-
-variable [IsManifold I 1 M]
-
-namespace TangentBundle
-
-/-- The second component of the chart of a tangent bundle at `q`, read at a point with base point
-in the chart source.  Together with `TangentBundle.coe_chartAt_fst` this describes the
-tangent-bundle charts completely. -/
-@[simp, mfld_simps]
-theorem coe_chartAt_snd {p q : TangentBundle I M} :
-    (chartAt (ModelProd H E) q p).2 =
-      tangentCoordChange I p.1 q.1 p.1 p.2 := by
-  -- After unfolding the tangent-bundle chart, the fibre-to-model-space conversion is
-  -- definitionally the tangent coordinate change; no separate conversion lemma is needed.
-  rw [TangentBundle.chartAt]
-  rfl
-
-end TangentBundle
-
-end TangentBundleChart
 
 /-- The tangent coordinate change between the charts at `x` and `y` is `C^n` on the overlap of
 the two chart sources, read in the chart at `x`.  This is Mathlib's
