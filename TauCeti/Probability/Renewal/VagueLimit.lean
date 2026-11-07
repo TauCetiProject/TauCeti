@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Renewal.Measure
 public import TauCeti.MeasureTheory.Measure.Vague
-public import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
+public import TauCeti.MeasureTheory.Constructions.BorelSpace.Basic
 
 /-!
 # Interval masses of constant vague renewal limits

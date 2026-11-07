@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Measure.FiniteMeasure.Portmanteau
+public import TauCeti.MeasureTheory.Measure.Portmanteau
 public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 public import Mathlib.MeasureTheory.Function.LocallyIntegrable
 public import Mathlib.Topology.UrysohnsLemma
