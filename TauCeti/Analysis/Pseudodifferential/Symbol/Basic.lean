@@ -110,6 +110,19 @@ theorem coefficient_injective :
     Function.Injective (coefficient : Symbol n V W m → CoordinateSpace n × CoordinateSpace n → _) :=
   fun _ _ h => Symbol.ext h
 
+/-- A symbol of order `m` has the growth bound `‖a(x, ξ)‖ ≤ C ⟨ξ⟩ ^ m` uniformly for `x` in each
+compact set. -/
+theorem exists_norm_coefficient_le (a : Symbol n V W m) (K : Set (CoordinateSpace n))
+    (hK : IsCompact K) :
+    ∃ C, ∀ x ∈ K, ∀ ξ, ‖a.coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
+  obtain ⟨C, -, hC⟩ := a.exists_bound K hK [] []
+  exact ⟨C, fun x hx ξ ↦ by simpa using hC x hx ξ⟩
+
+/-- Each frequency slice `ξ ↦ a(x, ξ)` of a symbol is continuous. -/
+theorem continuous_coefficient_slice (a : Symbol n V W m) (x : CoordinateSpace n) :
+    Continuous fun ξ ↦ a.coefficient (x, ξ) :=
+  a.contDiff_coefficient.continuous.comp (continuous_const.prodMk continuous_id)
+
 /-- A symbol satisfies its estimates with constants uniform in the position. -/
 def IsUniform (a : Symbol n V W m) : Prop :=
   ∀ α β : List (Fin n), ∃ C : ℝ, 0 ≤ C ∧ ∀ x ξ,
