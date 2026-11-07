@@ -10,6 +10,8 @@ public import TauCeti.RingTheory.Huber.Completion.Basic
 public import TauCeti.RingTheory.Localization.Completion
 public import TauCeti.Topology.Algebra.UniformRing
 
+import Mathlib.Topology.Algebra.Algebra
+
 /-!
 # The completion `A⟨T/s⟩`
 
@@ -499,6 +501,33 @@ theorem isHuberRing_completion_locTopology [IsTopologicalRing A] (P : PairOfDefi
   letI := isUniformAddGroup_locUniformSpace P T s S hden
   letI := isTopologicalRing_locUniformSpace P T s S hden
   ⟨⟨completionLocalization P T s S hden⟩⟩
+
+/-- The structure of a localization piece `Aₛ` and its completion for the packaged uniformity
+`locUniformSpace`: `Aₛ` is a uniform additive group and a topological ring, the actions of `A`
+are continuous (uniformly so on `Aₛ`), and the completion is a Huber ring with countably
+generated uniformity. Bundled so that a consumer sets each piece up in one line. -/
+theorem locUniformSpace_completion_facts [IsTopologicalRing A] (P : PairOfDefinition A)
+    (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (hden : HasDenominatorPower P T s S) :
+    letI := locUniformSpace P T s S hden
+    ∃ (_ : IsUniformAddGroup S) (_ : IsTopologicalRing S) (_ : ContinuousSMul A S)
+      (_ : UniformContinuousConstSMul A S), IsHuberRing (UniformSpace.Completion S) ∧
+        ContinuousSMul A (UniformSpace.Completion S) ∧
+        (uniformity (UniformSpace.Completion S)).IsCountablyGenerated := by
+  let _ := locUniformSpace P T s S hden
+  have h₁ := isUniformAddGroup_locUniformSpace P T s S hden
+  have h₂ := isTopologicalRing_locUniformSpace P T s S hden
+  have hS : ContinuousSMul A S := continuousSMul_of_algebraMap A S (by
+    rw [locUniformSpace_toTopologicalSpace]
+    exact continuous_algebraMap_locTopology P T s S hden)
+  have _ := uniformContinuousConstSMul_of_continuousConstSMul A S
+  have _ := isHuberRing_completion_locTopology P T s S hden
+  refine ⟨h₁, h₂, hS, inferInstance, inferInstance, ?_,
+    IsUniformAddGroup.uniformity_countably_generated⟩
+  exact continuousSMul_of_algebraMap A (UniformSpace.Completion S) <|
+    (continuous_toCompletionLoc P T s S hden).congr fun a ↦
+      (toCompletionLoc_apply P T s S hden a).trans
+        (UniformSpace.Completion.algebraMap_def S A a).symm
 
 /-- A topologically nilpotent denominator becomes a pseudouniformiser in the completed
 localization: it is inverted by localization and remains topologically nilpotent under the
