@@ -41,23 +41,19 @@ local notation "W(" n ")" =>
 local notation "X₀" => (Subtype.mk (X 0) (isRestricted_X _ 0) : T(2))
 local notation "X₁" => (Subtype.mk (X 1) (isRestricted_X _ 1) : T(2))
 
-private noncomputable def gaussAlgEquiv (n : ℕ) : W(n) ≃ₐ[A] T(n) :=
-  AlgEquiv.ofRingEquiv (f := restrictedMvPowerSeriesGaussEquiv)
-    (fun a ↦ restrictedMvPowerSeriesGaussEquiv_weightedC a)
-
 private theorem leIdeal_eq (f : A) :
     laurentFractionIdeal (fun _ : Fin 1 ↦ f) (Fin.elim0 : Fin 0 → A) =
-      (laurentCoverLeIdeal A f).map (gaussAlgEquiv 1) := by
+      (laurentCoverLeIdeal A f).map (restrictedMvPowerSeriesGaussAlgEquiv (n := 1) (R := A)) := by
   simp [laurentFractionIdeal_def, laurentCoverLeIdeal_def, Ideal.map_span,
-    gaussAlgEquiv, Set.range_unique, Fin.default_eq_zero]
+    coe_restrictedMvPowerSeriesGaussAlgEquiv, Set.range_unique, Fin.default_eq_zero]
   simpa only [neg_sub] using (Ideal.span_singleton_neg
     (algebraMap A T(1) f - ⟨X 0, isRestricted_X _ 0⟩))
 
 private theorem geIdeal_eq (f : A) :
     laurentFractionIdeal (Fin.elim0 : Fin 0 → A) (fun _ : Fin 1 ↦ f) =
-      (laurentCoverGeIdeal A f).map (gaussAlgEquiv 1) := by
+      (laurentCoverGeIdeal A f).map (restrictedMvPowerSeriesGaussAlgEquiv (n := 1) (R := A)) := by
   simp [laurentFractionIdeal_def, laurentCoverGeIdeal_def, Ideal.map_span,
-    gaussAlgEquiv, Set.range_unique, Fin.default_eq_zero]
+    coe_restrictedMvPowerSeriesGaussAlgEquiv, Set.range_unique, Fin.default_eq_zero]
   simpa only [neg_sub] using (Ideal.span_singleton_neg
     (1 - algebraMap A T(1) f * ⟨X 0, isRestricted_X _ 0⟩))
 
@@ -65,13 +61,15 @@ private theorem geIdeal_eq (f : A) :
 Laurent fraction algebra, compatibly with the ambient algebra. -/
 noncomputable def huberLeAlgEquiv (f : A) :
     laurentCoverLe A f ≃ₐ[A] LaurentFraction (fun _ : Fin 1 ↦ f) (Fin.elim0 : Fin 0 → A) :=
-  Ideal.quotientEquivAlg _ _ (gaussAlgEquiv 1) (leIdeal_eq f)
+  Ideal.quotientEquivAlg _ _ (restrictedMvPowerSeriesGaussAlgEquiv (n := 1) (R := A))
+    (leIdeal_eq f)
 
 /-- The Huber quotient presentation of the upper Laurent piece is its native Gauss-normed
 Laurent fraction algebra, compatibly with the ambient algebra. -/
 noncomputable def huberGeAlgEquiv (f : A) :
     laurentCoverGe A f ≃ₐ[A] LaurentFraction (Fin.elim0 : Fin 0 → A) (fun _ : Fin 1 ↦ f) :=
-  Ideal.quotientEquivAlg _ _ (gaussAlgEquiv 1) (geIdeal_eq f)
+  Ideal.quotientEquivAlg _ _ (restrictedMvPowerSeriesGaussAlgEquiv (n := 1) (R := A))
+    (geIdeal_eq f)
 
 private theorem overlapIdeal_eq (f : A) :
     laurentFractionIdeal (fun _ : Fin 1 ↦ f) (fun _ : Fin 1 ↦ f) =
@@ -106,7 +104,8 @@ private theorem overlapRelation_eq_map (f : A) :
 
 private theorem map_overlapIdeal (f : A) :
     laurentFractionIdeal (fun _ : Fin 1 ↦ f) (fun _ : Fin 1 ↦ f) =
-      (laurentIdeal A ⊔ overlapRelation f).map (gaussAlgEquiv 2) := by
+      (laurentIdeal A ⊔ overlapRelation f).map
+        (restrictedMvPowerSeriesGaussAlgEquiv (n := 2) (R := A)) := by
   have hI : laurentIdeal A = Ideal.span
       {1 - weightedX _ isWeightFamily_one_weight (0 : Fin 2) *
         weightedX _ isWeightFamily_one_weight 1} := by
@@ -114,7 +113,7 @@ private theorem map_overlapIdeal (f : A) :
     rw [mem_laurentIdeal, Ideal.mem_span_singleton]
     rfl
   rw [overlapIdeal_eq, Ideal.map_sup, hI, overlapRelation, Ideal.map_span, Ideal.map_span]
-  simp [gaussAlgEquiv, ← Ideal.span_insert]
+  simp [coe_restrictedMvPowerSeriesGaussAlgEquiv, ← Ideal.span_insert]
 
 /-- The Huber double-quotient presentation of the overlap is the native Laurent fraction
 algebra with relations `X = f` and `fY = 1`, compatibly with the ambient algebra. -/
@@ -123,23 +122,26 @@ noncomputable def huberOverlapAlgEquiv (f : A) :
       LaurentFraction (fun _ : Fin 1 ↦ f) (fun _ : Fin 1 ↦ f) := by
   exact (Ideal.quotientEquivAlgOfEq A (overlapRelation_eq_map f)).trans
     ((DoubleQuot.quotQuotEquivQuotSupₐ A (laurentIdeal A) (overlapRelation f)).trans
-      (Ideal.quotientEquivAlg _ _ (gaussAlgEquiv 2) (map_overlapIdeal f)))
+      (Ideal.quotientEquivAlg _ _ (restrictedMvPowerSeriesGaussAlgEquiv (n := 2) (R := A))
+        (map_overlapIdeal f)))
 
 /-- The lower-piece comparison preserves every restricted-series representative. -/
 @[simp]
 theorem huberLeAlgEquiv_mk (f : A) (g : W(1)) :
     huberLeAlgEquiv f (Ideal.Quotient.mk (laurentCoverLeIdeal A f) g) =
       Ideal.Quotient.mk (laurentFractionIdeal (fun _ : Fin 1 ↦ f) (Fin.elim0 : Fin 0 → A))
-        (restrictedMvPowerSeriesGaussEquiv g) :=
-  Ideal.quotientEquivAlg_mk _ _ _ _
+        (restrictedMvPowerSeriesGaussEquiv g) := by
+  rw [← coe_restrictedMvPowerSeriesGaussAlgEquiv]
+  exact Ideal.quotientEquivAlg_mk _ _ _ _
 
 /-- The upper-piece comparison preserves every restricted-series representative. -/
 @[simp]
 theorem huberGeAlgEquiv_mk (f : A) (g : W(1)) :
     huberGeAlgEquiv f (Ideal.Quotient.mk (laurentCoverGeIdeal A f) g) =
       Ideal.Quotient.mk (laurentFractionIdeal (Fin.elim0 : Fin 0 → A) (fun _ : Fin 1 ↦ f))
-        (restrictedMvPowerSeriesGaussEquiv g) :=
-  Ideal.quotientEquivAlg_mk _ _ _ _
+        (restrictedMvPowerSeriesGaussEquiv g) := by
+  rw [← coe_restrictedMvPowerSeriesGaussAlgEquiv]
+  exact Ideal.quotientEquivAlg_mk _ _ _ _
 
 /-- The overlap comparison preserves the two-variable series underlying a double quotient. -/
 @[simp]
@@ -148,9 +150,12 @@ theorem huberOverlapAlgEquiv_mk_mk (f : A) (g : W(2)) :
       (Ideal.Quotient.mk (laurentIdeal A) g)) =
       Ideal.Quotient.mk (laurentFractionIdeal (fun _ : Fin 1 ↦ f) (fun _ : Fin 1 ↦ f))
         (restrictedMvPowerSeriesGaussEquiv g) := by
+  rw [← coe_restrictedMvPowerSeriesGaussAlgEquiv]
   simp only [huberOverlapAlgEquiv]
-  exact (Ideal.quotientEquivAlg _ _ (gaussAlgEquiv 2) (map_overlapIdeal f)).toRingEquiv.congr_arg
-    (DoubleQuot.quotQuotEquivQuotSup_quotQuotMk (laurentIdeal A) (overlapRelation f) g)
+  exact
+    (Ideal.quotientEquivAlg _ _ (restrictedMvPowerSeriesGaussAlgEquiv (n := 2) (R := A))
+      (map_overlapIdeal f)).toRingEquiv.congr_arg
+      (DoubleQuot.quotQuotEquivQuotSup_quotQuotMk (laurentIdeal A) (overlapRelation f) g)
 
 local notation "L(" f ")" => LaurentFraction (fun _ : Fin 1 ↦ f) (Fin.elim0 : Fin 0 → A)
 local notation "G(" f ")" => LaurentFraction (Fin.elim0 : Fin 0 → A) (fun _ : Fin 1 ↦ f)
