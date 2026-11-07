@@ -60,6 +60,8 @@ every `R[T;T⁻¹]`-module. That automorphism is what a shift-compatible invaria
 * `TauCeti.mul_laurentEval`: an element commuting with a unit `u` up to a scalar `c` moves past
   evaluation at `u` by rescaling by `c`.
 * `TauCeti.eval₂_C_inv_pow_injective`: in particular `T ↦ T⁻ᵏ` is injective for `k ≠ 0`.
+* `LaurentPolynomial.algHom_apply_C` and `LaurentPolynomial.algHom_apply_T_neg_one`: an algebra
+  map `K[T;T⁻¹] →ₐ[K] K` fixes constants and sends `T (-1)` to the inverse of its value at `T 1`.
 * `TauCeti.laurentPolynomialC_smul`: a constant Laurent polynomial acts by integer scalar
   multiplication.
 * `TauCeti.map_smul_eq_laurentEval_smul`: a linear map turning `T` into a unit turns every
@@ -447,5 +449,23 @@ theorem _root_.TauCeti.mul_laurentEval {B : Type*} [Semiring B] [Algebra A B] {u
   | C_mul_T n a =>
     simp only [map_mul, rescale_C, rescale_T, laurentEval_C, laurentEval_T, ← Algebra.smul_def,
       smul_mul_assoc, mul_smul_comm, hpow, smul_smul, mul_comm a]
+
+section AlgHomToField
+
+variable {K : Type*} [Field K]
+
+/-- An algebra homomorphism from the Laurent polynomials to the coefficient field sends a constant
+to itself. -/
+@[simp]
+theorem algHom_apply_C (φ : K[T;T⁻¹] →ₐ[K] K) (x : K) : φ (C x) = x := by
+  rw [C_eq_algebraMap, AlgHom.commutes, Algebra.algebraMap_self_apply]
+
+/-- An algebra homomorphism to the coefficient field sending `T 1` to a unit `u` sends `T (-1)` to
+`u⁻¹`. -/
+theorem algHom_apply_T_neg_one {φ : K[T;T⁻¹] →ₐ[K] K} {u : Kˣ} (h : φ (T 1) = u) :
+    φ (T (-1)) = (u : K)⁻¹ := by
+  rw [laurentEval_unique u φ h, laurentEval_T, zpow_neg, zpow_one, Units.val_inv_eq_inv_val]
+
+end AlgHomToField
 
 end LaurentPolynomial
