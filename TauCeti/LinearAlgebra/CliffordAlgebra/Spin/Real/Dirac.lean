@@ -162,6 +162,7 @@ theorem diracVector_apply (v : Fin 4 → ℝ) :
   (rfl)
 
 /-- Physical Clifford multiplication squares to minus the native quadratic form. -/
+@[simp]
 theorem diracVector_mul_self (v : Fin 4 → ℝ) :
     diracVector v * diracVector v = (-realCliffordForm 3 1 v) • 1 := by
   set X : Matrix (Fin 2) (Fin 2) ℂ := (realCliffordThreeOneVectorEquivHermitian v).1 with hX
@@ -175,13 +176,10 @@ theorem diracVector_mul_self (v : Fin 4 → ℝ) :
 theorem diracVector_mul_add_mul_swap (v w : Fin 4 → ℝ) :
     diracVector v * diracVector w + diracVector w * diracVector v =
       (-QuadraticMap.polar (realCliffordForm 3 1) v w) • 1 := by
-  have h := diracVector_mul_self (v + w)
-  rw [map_add, add_mul, mul_add, mul_add, diracVector_mul_self v, diracVector_mul_self w] at h
-  rw [QuadraticMap.polar,
-    show -(realCliffordForm 3 1 (v + w) - realCliffordForm 3 1 v - realCliffordForm 3 1 w) =
-      -realCliffordForm 3 1 (v + w) - -realCliffordForm 3 1 v - -realCliffordForm 3 1 w by ring,
-    sub_smul, sub_smul, ← h]
-  abel
+  rw [← QuadraticMap.polar_neg, ← FunLike.coe_neg, ← Algebra.algebraMap_eq_smul_one]
+  exact CliffordAlgebra.mul_add_swap_eq_polar_of_forall_mul_self_eq (Q := -realCliffordForm 3 1)
+    diracVector (fun x => by
+      rw [diracVector_mul_self, neg_apply, Algebra.algebraMap_eq_smul_one]) v w
 
 /-- On time-first coordinates, physical Clifford multiplication squares to the Minkowski form
 `x₀² - x₁² - x₂² - x₃²`. -/
@@ -212,6 +210,11 @@ coefficients of `∂_μ` in the Dirac operator. -/
 noncomputable def diracGamma (μ : Fin 4) : Matrix (Fin 2 ⊕ Fin 2) (Fin 2 ⊕ Fin 2) ℂ :=
   (![1, -1, -1, -1] μ : ℝ) • diracVector (timeFirstToNative (Pi.single μ 1))
 
+/-- The defining formula of the dual-frame Dirac matrices: `Γ^μ = η^{μμ} C (P e_μ)`. -/
+theorem diracGamma_def (μ : Fin 4) :
+    diracGamma μ = (![1, -1, -1, -1] μ : ℝ) • diracVector (timeFirstToNative (Pi.single μ 1)) :=
+  (rfl)
+
 /-- The dual-frame Dirac matrices satisfy `{Γ^μ, Γ^ν} = 2 η^{μν}`. -/
 theorem diracGamma_mul_add_mul_swap (μ ν : Fin 4) :
     diracGamma μ * diracGamma ν + diracGamma ν * diracGamma μ =
@@ -232,6 +235,7 @@ theorem diracChirality_eq_fromBlocks : diracChirality = fromBlocks 1 0 0 (-1) :=
   simp [diracVector_apply, fromBlocks_multiply, fromBlocks_smul, fromBlocks_neg, one_fin_two]
 
 /-- The chirality matrix is an involution. -/
+@[simp]
 theorem diracChirality_mul_self : diracChirality * diracChirality = 1 := by
   rw [diracChirality_eq_fromBlocks, fromBlocks_multiply]
   simp
