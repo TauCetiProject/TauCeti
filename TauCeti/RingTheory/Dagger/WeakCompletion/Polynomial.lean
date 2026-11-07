@@ -65,16 +65,12 @@ private theorem polynomial_quotient_bijective {π : O} (hπ : π ≠ 0) (n : ℕ
     rw [intWashnitzerAlgebra.ker_mkₐ_comp_ofMvPolynomial] at hk
     simpa only [Ideal.span_singleton_pow, MvPolynomial.algebraMap_eq, map_pow] using hk
   · obtain ⟨w, rfl⟩ := Ideal.Quotient.mk_surjective z
-    obtain ⟨p, g, hg⟩ :=
-      intWashnitzerAlgebra.exists_ofMvPolynomial_add_algebraMap_mul_eq hπn w
+    obtain ⟨p, hp⟩ := intWashnitzerAlgebra.surjective_mkₐ_comp_ofMvPolynomial hπn
+      (Ideal.Quotient.mk _ w)
     refine ⟨Ideal.Quotient.mk _ p, ?_⟩
-    rw [Ideal.quotientMap_mk, Ideal.Quotient.eq]
-    have hm : algebraMap O W (π ^ n) * g ∈ Ideal.span {algebraMap O W π} ^ n := by
-      rw [map_pow]
-      exact Ideal.mul_mem_right _ _ (Ideal.pow_mem_pow (Ideal.subset_span rfl) n)
-    simpa only [AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, ← hg,
-      sub_add_eq_sub_sub, sub_self, zero_sub] using
-      (Ideal.span {algebraMap O W π} ^ n).neg_mem hm
+    rw [Ideal.quotientMap_mk, Ideal.span_singleton_pow, ← map_pow]
+    simpa only [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk,
+      AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom] using hp
 
 /-- The parameter-adic completion of the polynomial algebra is the integral Tate algebra.
 The comparison extends the inclusion of polynomials. -/
@@ -166,12 +162,14 @@ private theorem integral_of_mem {π : O} (hπ : π ≠ 0) (hπ1 : ‖(π : K)‖
   have hx : Algebra.adjoin O (Set.range (MvPolynomial.X : σ → P)) = ⊤ :=
     MvPolynomial.adjoin_range_X
   obtain ⟨c, Q, hQ, hz⟩ := (mem_weakCompletion_iff π hx).mp hz
+  have hπK : (π : K) ≠ 0 := by simpa using hπ
   apply (mem_intWashnitzerAlgebra_iff_exists_norm_coeff_le_pow
-    (norm_pos_iff.mpr (show (π : K) ≠ 0 by simpa using hπ)) hπ1).mpr
+    (norm_pos_iff.mpr hπK) hπ1).mpr
   refine ⟨c + 1, Nat.succ_pos _, fun t ↦ ?_⟩
   let k := t.degree / (c + 1)
   by_cases hk : k = 0
-  · rw [show t.degree / (c + 1) = 0 from hk, pow_zero]
+  · dsimp only [k] at hk
+    rw [hk, pow_zero]
     exact (MvPowerSeries.norm_coeff_le_norm (polynomialAdicCompletionEquiv hπ hπ1 z : T) t).trans
         (Subring.mem_unitClosedBall.mp (polynomialAdicCompletionEquiv hπ hπ1 z).property)
   let p : P := ∑ j ∈ range k, algebraMap O P π ^ j * Q j
@@ -239,10 +237,10 @@ private theorem mem_of_integral {π : O} (hπ : π ≠ 0) (hπ1 : ‖(π : K)‖
     (hz : (((polynomialAdicCompletionEquiv hπ hπ1 z : T₀) : T) : MvPowerSeries σ K) ∈ W) :
     z ∈ weakCompletion π P := by
   classical
+  have hπK : (π : K) ≠ 0 := by simpa using hπ
   open scoped MvPowerSeries.WithPiTopology in
     obtain ⟨c, Q, hQ1, hQdeg, hsum⟩ :=
-      (mem_intWashnitzerAlgebra_iff_exists_hasSum
-        (show (π : K) ≠ 0 by simpa using hπ) hπ1).mp hz
+      (mem_intWashnitzerAlgebra_iff_exists_hasSum hπK hπ1).mp hz
   have hQrange (j : ℕ) : ∃ p : P, p.map (Subring.unitClosedBall K).subtype = Q j := by
     apply MvPolynomial.mem_range_map_iff_coeffs_subset.mpr
     intro a ha
