@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.ModelExistence.AElementary
+public import TauCeti.ModelTheory.Infinitary.FormationClosed
 public import Mathlib.ModelTheory.Substructures
 public import TauCeti.ModelTheory.Substructures.Cardinality
 public import Mathlib.SetTheory.Cardinal.Arithmetic
@@ -21,6 +22,11 @@ symbols enter the bound separately, because a fragment need not contain an atomi
 mentioning them. The three cardinals start in the universes of `M`, of the formulas and of the
 function symbols, and are compared after lifting into their common universe.
 
+For a formation-closed fragment the bound is Marker's `max |X| |A|`. This is a corollary of the
+same construction, not a new one: such a fragment is infinite, since it contains `⊥` at every
+arity and formulas are tagged with their arity, and it has at least as many members as there are
+function symbols, so both `ℵ₀` and the function-symbol term are absorbed by `|A|`.
+
 ## Main definitions
 
 * `FirstOrder.Language.Fragment.witnessHull`: the witness hull of a set.
@@ -34,6 +40,8 @@ function symbols, and are compared after lifting into their common universe.
 * `FirstOrder.Language.exists_aElementary_substructure`: downward Löwenheim–Skolem for fragments.
 * `FirstOrder.Language.exists_countable_aElementary_substructure`: the countable form.
 * `FirstOrder.Language.exists_aElementary_substructure_of_eq_univ`: the form in one universe.
+* `FirstOrder.Language.Fragment.FormationClosed.exists_aElementary_substructure`: the bound
+  `max |X| |A|` for a formation-closed fragment.
 
 ## References
 
@@ -265,6 +273,24 @@ theorem exists_aElementary_substructure_of_eq_univ {L : Language.{u, u}} {M : Ty
     ∃ N : L.Substructure M, X ⊆ N ∧ AElementary A N.subtype ∧
       #N ≤ max ℵ₀ (max #X (max #A #(Σ n, L.Functions n))) := by
   simpa using exists_aElementary_substructure A X
+
+/-- **Downward Löwenheim–Skolem for formation-closed fragments.** For a formation-closed fragment
+`A`, every subset `X` of `M` lies in an `A`-elementary substructure with at most `max |X| |A|`
+elements: the fragment is infinite and has at least as many members as there are function
+symbols. -/
+theorem Fragment.FormationClosed.exists_aElementary_substructure {A : Fragment L}
+    (hA : A.FormationClosed) (X : Set M) :
+    ∃ N : L.Substructure M, X ⊆ N ∧ AElementary A N.subtype ∧
+      lift.{max u v} #N ≤ max (lift.{max u v} #X) (lift.{w} #A) := by
+  obtain ⟨N, hXN, hN, hcard⟩ := Language.exists_aElementary_substructure A X
+  refine ⟨N, hXN, hN, hcard.trans <| max_le ?_ <| max_le (le_max_left _ _) <|
+    max_le (le_max_right _ _) ?_⟩
+  · have h := lift_le.{w}.2 hA.aleph0_le_mk
+    rw [lift_aleph0] at h
+    exact h.trans (le_max_right _ _)
+  · have h := lift_le.{w}.2 hA.lift_mk_functions_le
+    rw [lift_lift] at h
+    exact h.trans (le_max_right _ _)
 
 end Language
 

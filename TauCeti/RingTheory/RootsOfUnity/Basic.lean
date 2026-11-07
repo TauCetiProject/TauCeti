@@ -63,8 +63,8 @@ Finally, for `n ∣ m` it records the power map from the `m`-th to the `n`-th ro
   exactly when there is no primitive `p`th root of unity.
 * `TauCeti.finite_torsionBy_additive_units`: the `n`-torsion of `Mˣ`, written additively, is
   finite when the `n`-th roots of unity are, for instance in a domain for `n ≠ 0`.
-* `TauCeti.exists_rootsOfUnity_isPrimitiveRoot_of_dvd`: for `k ∣ m`, a primitive `k`-th root of
-  unity is an `m`-th root of unity.
+* `TauCeti.exists_rootsOfUnity_isPrimitiveRoot_of_dvd`: for `k ∣ m`, if `M` has enough `k`-th roots
+  of unity, then some `m`-th root of unity is a primitive `k`-th root of unity.
 -/
 
 public section
@@ -308,20 +308,14 @@ theorem mem_ker_rootsOfUnityPowOfDvd_iff {M : Type*} [CommMonoid M] {n m : ℕ} 
     {η : rootsOfUnity m M} : η ∈ (rootsOfUnityPowOfDvd h).ker ↔ (η : Mˣ) ^ (m / n) = 1 := by
   rw [MonoidHom.mem_ker, ← Subtype.coe_inj, coe_rootsOfUnityPowOfDvd_apply, OneMemClass.coe_one]
 
-/-- For `n ∣ m`, an `m`-th root of unity that is a primitive `(m / n)`-th root of unity lies in the
-kernel of the power map `rootsOfUnityPowOfDvd h`. -/
-theorem mem_ker_rootsOfUnityPowOfDvd_of_isPrimitiveRoot {M : Type*} [CommMonoid M] {n m : ℕ}
-    (h : n ∣ m) {η : rootsOfUnity m M} (hη : IsPrimitiveRoot ((η : Mˣ) : M) (m / n)) :
-    η ∈ (rootsOfUnityPowOfDvd h).ker :=
-  (mem_ker_rootsOfUnityPowOfDvd_iff h).mpr (Units.ext (by simpa using hη.pow_eq_one))
-
-/-- For `k ∣ m`, if `M` has a primitive `k`-th root of unity, then some `m`-th root of unity is a
-primitive `k`-th root of unity. -/
+/-- For `k ∣ m`, if `M` has enough `k`-th roots of unity (in particular a primitive one), then some
+`m`-th root of unity is a primitive `k`-th root of unity. -/
 theorem exists_rootsOfUnity_isPrimitiveRoot_of_dvd {M : Type*} [CommMonoid M] {k m : ℕ}
     [NeZero k] (h : k ∣ m) [HasEnoughRootsOfUnity M k] :
-    ∃ η : rootsOfUnity m M, IsPrimitiveRoot ((η : Mˣ) : M) k := by
+    ∃ η : rootsOfUnity m M, IsPrimitiveRoot (η : Mˣ) k := by
   obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot M k
-  exact ⟨⟨hζ.toRootsOfUnity, rootsOfUnity_le_of_dvd h hζ.toRootsOfUnity.2⟩, by simpa using hζ⟩
+  exact ⟨⟨hζ.toRootsOfUnity, rootsOfUnity_le_of_dvd h hζ.toRootsOfUnity.2⟩,
+    IsPrimitiveRoot.coe_units_iff.mp (by simpa using hζ)⟩
 
 /-- The power transition at a nonzero order is the identity. -/
 @[simp]

@@ -50,6 +50,9 @@ A map of pairs `(X, A) ⟶ (Y, B)` induces maps from the relative cochains and c
   the three exactness statements `TopPair.singularCohomology_exact_relative`,
   `TopPair.singularCohomology_exact_space` and `TopPair.singularCohomology_exact_subspace`, and its
   naturality `TopPair.singularCohomologyδ_naturality`.
+* `TopPair.singularCohomologyMap_ofSubsetMap_id_comp_singularCohomologyπ`: for `S' ⊆ S`, the map
+  `Hⁿ(X, S) ⟶ Hⁿ(X)` factors through `Hⁿ(X, S')`; and
+  `TopPair.singularCohomologyπ_ofSubset_univ`: the map `Hⁿ(X, X) ⟶ Hⁿ(X)` vanishes.
 * `TopPair.isIso_singularCohomologyπ_of_isEmpty`: for an empty subspace, `Hⁿ(X, ∅) ⟶ Hⁿ(X)` is an
   isomorphism.
 
@@ -411,6 +414,34 @@ lemma singularCohomologyδ_naturality {P P' : TopPair.{w}} (f : P ⟶ P') (n m :
   HomologicalComplex.HomologySequence.δ_naturality (singularCochainComplexShortComplexMap f)
     (P'.shortExact_singularCochainComplexShortComplex R k M)
     (P.shortExact_singularCochainComplexShortComplex R k M) n m (by simpa)
+
+/-- For subsets `S' ⊆ S` of `X`, the map `Hⁿ(X, S) ⟶ Hⁿ(X)` factors through `Hⁿ(X, S') ⟶ Hⁿ(X)`,
+via the map induced by the identity of `X` as a map of pairs `(X, S') ⟶ (X, S)`. -/
+@[reassoc]
+lemma singularCohomologyMap_ofSubsetMap_id_comp_singularCohomologyπ {X : TopCat.{w}}
+    {S S' : Set X} (h : Set.MapsTo (𝟙 X) S' S) (n : ℕ) :
+    TopPair.singularCohomologyMap (ofSubsetMap (𝟙 X) h) n ≫
+        (ofSubset S').singularCohomologyπ R k M n =
+      (ofSubset S).singularCohomologyπ R k M n := by
+  have hid : TopCat.singularCohomologyMap (R := R) (k := k) (M := M)
+      (Hom.fst (ofSubsetMap (𝟙 X) h)) n = 𝟙 _ := by
+    rw [ofSubsetMap_fst]
+    exact TopCat.singularCohomologyMap_id X n
+  rw [← singularCohomologyπ_naturality, hid]
+  exact Category.comp_id _
+
+/-- The map `Hⁿ(X, X) ⟶ Hⁿ(X)` vanishes: it is killed by the restriction `Hⁿ(X) ⟶ Hⁿ(X)` along
+the inclusion of the subspace `X`, which is a split monomorphism. -/
+lemma singularCohomologyπ_ofSubset_univ (X : TopCat.{w}) (n : ℕ) :
+    (ofSubset (Set.univ : Set X)).singularCohomologyπ R k M n = 0 := by
+  let P := ofSubset (Set.univ : Set X)
+  let r : P.fst ⟶ P.snd := TopCat.ofHom ⟨fun x ↦ ⟨x, Set.mem_univ x⟩, by fun_prop⟩
+  have hr : r ≫ P.map = 𝟙 P.fst := TopCat.ext fun _ ↦ rfl
+  have : Mono (TopCat.singularCohomologyMap (R := R) (k := k) (M := M) P.map n) := by
+    refine SplitMono.mono ⟨TopCat.singularCohomologyMap r n, ?_⟩
+    rw [← TopCat.singularCohomologyMap_comp, hr, TopCat.singularCohomologyMap_id]
+  rw [← cancel_mono (TopCat.singularCohomologyMap P.map n),
+    singularCohomologyπ_comp_singularCohomologyMap, zero_comp]
 
 end LongExactSequence
 

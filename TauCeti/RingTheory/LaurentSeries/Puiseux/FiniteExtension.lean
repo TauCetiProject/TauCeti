@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
-public import TauCeti.RingTheory.LaurentSeries.Level.GaloisCorrespondence
+public import TauCeti.RingTheory.LaurentSeries.Level.Kummer
 public import TauCeti.RingTheory.LaurentSeries.Level.Trace
 public import TauCeti.RingTheory.LaurentSeries.Puiseux.AlgClosure
 
@@ -23,7 +23,7 @@ A finite-dimensional intermediate field `E` of the Puiseux field is spanned by f
 Puiseux series, so it lies in a single level `n`. The level `n` is a Galois extension of `K⸨X⸩`
 with cyclic Galois group `μₙ(K)`. A cyclic group has at most one subgroup of each index, so by the
 Galois correspondence `E` is the unique intermediate field of level `n` of degree `[E : K⸨X⸩]`,
-namely the level of that degree (`TauCeti.puiseuxField.eq_restrict_level_of_finrank_eq`).
+namely the level of that degree.
 
 Consequently a Puiseux series `x` generates the level `[K⸨X⸩(x) : K⸨X⸩]`, it lies in level `n`
 exactly when this degree divides `n`, and a root of a nonzero polynomial of degree `d` over
@@ -79,8 +79,7 @@ theorem eq_level_of_finrank_eq {E : IntermediateField K⸨X⸩ (puiseuxField K)}
   have he : e ∣ n := by
     rw [PNat.dvd_iff, ← h, ← level_finrank K n]
     exact finrank_dvd_of_le_right hn
-  -- Inside the cyclic Galois extension `level K n`, the only intermediate field of degree `e` is
-  -- level `e`.
+  -- Inside the cyclic Galois extension `level K n`, `E` is the level of its degree.
   rw [← lift_restrict hn, eq_restrict_level_of_finrank_eq he
     ((restrictAlgEquiv hn).toLinearEquiv.finrank_eq.symm.trans h), lift_restrict]
 
