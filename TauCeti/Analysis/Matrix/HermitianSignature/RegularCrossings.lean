@@ -85,6 +85,39 @@ theorem finite_setOf_not_nondegenerate_toBilinForm (hc : ContinuousOn V (Icc a b
       with t ht htD
     exact htD.2 ht
 
+/-- The negative index of `V` is constant from a nondegenerate `s ∈ [a, b]` to `u ≤ b` when no
+crossing lies in `(s, u]`. -/
+private theorem sigNeg_toBilinForm_eq_of_forall_lt (hc : ContinuousOn V (Icc a b))
+    (hsymm : ∀ t ∈ Icc a b, (V t).toBilinForm.IsSymm) {S : Finset ℝ}
+    (hS : ∀ t, t ∈ S ↔ t ∈ Icc a b ∧ ¬(V t).toBilinForm.Nondegenerate)
+    {s u : ℝ} (hs : s ∈ Icc a b) (hns : (V s).toBilinForm.Nondegenerate) (hsu : s ≤ u)
+    (hu : u ≤ b) (hno : ∀ t ∈ S, s < t → u < t) :
+    sigNeg (V s).toBilinForm.toQuadraticMap = sigNeg (V u).toBilinForm.toQuadraticMap := by
+  have hsub : Icc s u ⊆ Icc a b := Icc_subset_Icc hs.1 hu
+  refine sigNeg_toBilinForm_eq_of_isPreconnected isPreconnected_Icc (hc.mono hsub)
+    (fun t ht ↦ hsymm t (hsub ht)) (fun t ht ↦ ?_) ⟨le_rfl, hsu⟩ ⟨hsu, le_rfl⟩
+  by_contra hnt
+  have htS : t ∈ S := (hS t).2 ⟨hsub ht, hnt⟩
+  have hst : s < t := lt_of_le_of_ne ht.1 fun h ↦ hnt (h ▸ hns)
+  exact (hno t htS hst).not_ge ht.2
+
+/-- If `c` is the first element of a finite set `S` after `s`, and no element of `S` lies in
+`(c, t₂]`, then the elements of `S` after `s` are `c` and the elements after `t₂`. -/
+private theorem filter_lt_eq_insert_of_forall_lt {S : Finset ℝ} {s c t₂ : ℝ} (hc : c ∈ S)
+    (hsc : s < c) (hcmin : ∀ t ∈ S, s < t → c ≤ t) (hct : c < t₂)
+    (hgap : ∀ t ∈ S, c < t → t₂ < t) :
+    {t ∈ S | s < t} = insert c {t ∈ S | t₂ < t} := by
+  ext t
+  simp only [Finset.mem_filter, Finset.mem_insert]
+  constructor
+  · rintro ⟨htS, hst⟩
+    rcases (hcmin t htS hst).eq_or_lt with h | h
+    · exact Or.inl h.symm
+    · exact Or.inr ⟨htS, hgap t htS h⟩
+  · rintro (rfl | ⟨htS, ht⟩)
+    · exact ⟨hc, hsc⟩
+    · exact ⟨htS, hsc.trans (hct.trans ht)⟩
+
 /-- Let `S` be the finite set of crossings in `[a, b]`. For every nondegenerate `s ∈ [a, b]`, the
 negative index drops from `s` to `b` by the sum of the signatures of the crossing forms at the
 crossings after `s`. -/
@@ -103,22 +136,11 @@ private theorem sigNeg_sub_sigNeg_eq_sum (hc : ContinuousOn V (Icc a b))
   -- Induct on the number of crossings after `s`: the first crossing `c` after `s` is passed with
   -- `eventually_sigNeg_sub_sigNeg_eq_sigPos_sub_sigNeg_crossingForm`, landing at a nondegenerate
   -- `t₂ > c` with no crossing in `(c, t₂]`.
-  -- Between a nondegenerate `s` and a later `u` with no crossing in between, the negative index
-  -- does not change.
-  have hconst {u : ℝ} (hsu : s ≤ u) (hu : u ≤ b)
-      (hnd : ∀ t ∈ Icc s u, (V t).toBilinForm.Nondegenerate) :
-      sigNeg (V s).toBilinForm.toQuadraticMap = sigNeg (V u).toBilinForm.toQuadraticMap := by
-    have hsub : Icc s u ⊆ Icc a b := Icc_subset_Icc hs.1 hu
-    exact sigNeg_toBilinForm_eq_of_isPreconnected isPreconnected_Icc (hc.mono hsub)
-      (fun t ht ↦ hsymm t (hsub ht)) hnd ⟨le_rfl, hsu⟩ ⟨hsu, le_rfl⟩
   rcases Finset.eq_empty_or_nonempty {t ∈ S | s < t} with hempty | hne
   · -- No crossing after `s`.
     rw [hempty, Finset.sum_empty, sub_eq_zero, Nat.cast_inj]
-    refine hconst hs.2 le_rfl fun t ht ↦ ?_
-    by_contra hnt
-    have htS : t ∈ S := (hS t).2 ⟨⟨hs.1.trans ht.1, ht.2⟩, hnt⟩
-    have hst : s < t := lt_of_le_of_ne ht.1 fun h ↦ hnt (h ▸ hns)
-    exact Finset.eq_empty_iff_forall_notMem.1 hempty t (Finset.mem_filter.2 ⟨htS, hst⟩)
+    exact sigNeg_toBilinForm_eq_of_forall_lt hc hsymm hS hs hns hs.2 le_rfl fun t ht hst ↦
+      (Finset.eq_empty_iff_forall_notMem.1 hempty t (Finset.mem_filter.2 ⟨ht, hst⟩)).elim
   · -- `c` is the first crossing after `s`.
     set c := Finset.min' _ hne
     have hcmem := Finset.mem_filter.1 (Finset.min'_mem _ hne)
@@ -140,33 +162,21 @@ private theorem sigNeg_sub_sigNeg_eq_sum (hc : ContinuousOn V (Icc a b))
       ((eventually_sigNeg_sub_sigNeg_eq_sigPos_sub_sigNeg_crossingForm (hsymm c hcI)
         (hV c hc' hnc) (hreg c hc' hnc)).and (Ioo_mem_nhdsLT hsc)).exists
     obtain ⟨t₂, hjump, ht₂⟩ := (hjump.and (Ioo_mem_nhdsGT (lt_min hcu hcb))).exists
-    have ht₂b : t₂ < b := ht₂.2.trans_le (min_le_right _ _)
     have hnt₂ : (V t₂).toBilinForm.Nondegenerate := hu ⟨ht₂.1, ht₂.2.trans_le (min_le_left _ _)⟩
-    have ht₂I : t₂ ∈ Icc a b := ⟨hc'.1.le.trans ht₂.1.le, ht₂b.le⟩
+    have ht₂I : t₂ ∈ Icc a b := ⟨hc'.1.le.trans ht₂.1.le, (ht₂.2.trans_le (min_le_right _ _)).le⟩
     -- The crossings after `s` are `c` and the crossings after `t₂`.
-    have hsplit : {t ∈ S | s < t} = insert c {t ∈ S | t₂ < t} := by
-      ext t
-      simp only [Finset.mem_filter, Finset.mem_insert]
-      constructor
-      · rintro ⟨htS, hst⟩
-        rcases (hcmin t htS hst).eq_or_lt with h | h
-        · exact Or.inl h.symm
-        · refine Or.inr ⟨htS, lt_of_not_ge fun htt₂ ↦ ((hS t).1 htS).2 (hu ⟨h, ?_⟩)⟩
-          exact htt₂.trans_lt (ht₂.2.trans_le (min_le_left _ _))
-      · rintro (rfl | ⟨htS, ht⟩)
-        · exact hcmem
-        · exact ⟨htS, hsc.trans (ht₂.1.trans ht)⟩
+    have hsplit : {t ∈ S | s < t} = insert c {t ∈ S | t₂ < t} :=
+      filter_lt_eq_insert_of_forall_lt hcmem.1 hsc hcmin ht₂.1 fun t htS h ↦
+        lt_of_not_ge fun htt₂ ↦ ((hS t).1 htS).2
+          (hu ⟨h, htt₂.trans_lt (ht₂.2.trans_le (min_le_left _ _))⟩)
     have hcnot : c ∉ {t ∈ S | t₂ < t} := fun h ↦ (Finset.mem_filter.1 h).2.not_gt ht₂.1
     have hcard : #{t ∈ S | t₂ < t} < n := by
       rw [← hn, hsplit, Finset.card_insert_of_notMem hcnot]
       exact Nat.lt_succ_self _
     -- Assemble: no change on `[s, t₁]`, the jump at `c`, and the induction hypothesis at `t₂`.
     have h₁ : sigNeg (V s).toBilinForm.toQuadraticMap = sigNeg (V t₁).toBilinForm.toQuadraticMap :=
-      hconst ht₁.1.le (ht₁.2.trans hcb).le fun t ht ↦ by
-        by_contra hnt
-        have htS : t ∈ S := (hS t).2 ⟨⟨hs.1.trans ht.1, (ht.2.trans (ht₁.2.trans hcb).le)⟩, hnt⟩
-        have hst : s < t := lt_of_le_of_ne ht.1 fun h ↦ hnt (h ▸ hns)
-        exact (hcmin t htS hst).not_gt (ht.2.trans_lt ht₁.2)
+      sigNeg_toBilinForm_eq_of_forall_lt hc hsymm hS hs hns ht₁.1.le (ht₁.2.trans hcb).le
+        fun t htS hst ↦ ht₁.2.trans_le (hcmin t htS hst)
     rw [hsplit, Finset.sum_insert hcnot, ← hjump, ← ih _ hcard ht₂I hnt₂ rfl, h₁]
     ring
 
