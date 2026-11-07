@@ -36,6 +36,9 @@ hypothesis on `x₀` is needed.
 * `TauCeti.freeProP.exists_apply_mem_commutator_basisModificationDelta_eq_of_mem_range`: every
   element of `Im δ_ρ` is `δ_ρ(⟦ω⟧)` for a family `ω : X → λ_m(F)` with `ω_{x₀}` in the commutator
   subgroup of `F`.
+* `TauCeti.freeProP.exists_mem_topologicalClosure_commutator_basisModificationDelta_eq`: the class
+  of an element of `λ_{m+1}(F)` in the closed commutator subgroup is `δ_ρ(⟦ω⟧)` with `ω_{x₀}` in
+  the closed commutator subgroup.
 
 ## References
 
@@ -183,5 +186,24 @@ theorem exists_apply_mem_commutator_basisModificationDelta_eq_of_mem_range (hm :
   split_ifs with h
   · rw [h, hzω]
   · exact hw _
+
+/-- **Corrections in the closed commutator subgroup.** Let `ρ ∈ gr_1(F)` have no `p`-power part and
+partial derivatives spanning `gr_0(F)`, let `m ≥ 1`, and let `z ∈ λ_{m+1}(F)` lie in the closure of
+the commutator subgroup. Then the class of `z` is `δ_ρ(⟦ω⟧)` for a family `ω : X → λ_m(F)` whose
+component at the prescribed generator `x₀` lies in the closure of the commutator subgroup. -/
+theorem exists_mem_topologicalClosure_commutator_basisModificationDelta_eq (hm : 1 ≤ m)
+    {ρ : gradedPiece p (freeProP p X) 1}
+    (hρ : span (ZMod p) (Set.range fun i ↦ degreeOneDeriv p X i ρ) = ⊤)
+    (hc : ∀ i, (degreeOneBasis p X).repr ρ (Sum.inl i) = 0) (x₀ : X)
+    (z : pLowerCentralSeries p (freeProP p X) (m + 1))
+    (hz : (z : freeProP p X) ∈ (commutator (freeProP p X)).topologicalClosure) :
+    ∃ ω : X → pLowerCentralSeries p (freeProP p X) m,
+      (ω x₀ : freeProP p X) ∈ (commutator (freeProP p X)).topologicalClosure ∧
+        basisModificationDelta p X hm ρ (fun i ↦ gradedMk p (freeProP p X) m (ω i)) =
+          gradedMk p (freeProP p X) (m + 1) z := by
+  obtain ⟨ω, hω₀, hω⟩ := exists_apply_mem_commutator_basisModificationDelta_eq_of_mem_range hm hρ
+    hc x₀ (gradedMk_mem_range_basisModificationDelta_of_mem_topologicalClosure_commutator
+      hm hρ hc z hz)
+  exact ⟨ω, Subgroup.le_topologicalClosure _ hω₀, hω⟩
 
 end TauCeti.freeProP
