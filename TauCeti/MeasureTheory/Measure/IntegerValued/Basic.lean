@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.Count
 public import Mathlib.MeasureTheory.Measure.Map
 public import Mathlib.MeasureTheory.Measure.Restrict
+public import TauCeti.MeasureTheory.Measure.Sub
 
 /-!
 # Integer-valued measures
@@ -22,7 +23,8 @@ Neither local finiteness nor simplicity is part of this predicate.
 Integer-valued measures are closed under mapping, restriction and
 superposition. In particular, `IsIntegerValued.sum` applies to sums of Dirac occurrences,
 without requiring distinct locations or nonexplosion. Repeated locations retain their
-multiplicity. Local finiteness can subsequently be checked separately on compact sets.
+multiplicity. With measurable singletons, removing one Dirac occurrence also preserves
+integrality. Local finiteness can subsequently be checked separately on compact sets.
 
 The characterization `isIntegerValued_smul_dirac_iff` distinguishes an occurrence with natural
 multiplicity from an atom of fractional mass, and also records the allowed infinite-mass case.
@@ -203,6 +205,20 @@ theorem isIntegerValued_of_restrict {s : ℕ → Set X} (hs : ∀ n, MeasurableS
       iUnion_disjointed, hcover, restrict_univ]
   rw [heq]
   exact IsIntegerValued.sum hpieces
+
+/-- Removing one occurrence preserves integer multiplicities, including absent and infinite
+atoms. No local-finiteness or sigma-finiteness assumption is needed. -/
+theorem IsIntegerValued.sub_dirac [MeasurableSingletonClass X] (hμ : μ.IsIntegerValued)
+    (x : X) : (μ - dirac x).IsIntegerValued := by
+  rw [sub_dirac_eq_restrict_add_smul]
+  refine hμ.restrict.add ((isIntegerValued_smul_dirac_iff _ _).2 ?_)
+  rcases isIntegerValued_iff.1 hμ {x} (measurableSet_singleton x) with ⟨n, hn⟩ | hn
+  · left
+    cases n with
+    | zero => exact ⟨0, by simp [hn]⟩
+    | succ n => exact ⟨n, by simp [hn, Nat.cast_add]⟩
+  · right
+    simp [hn]
 
 end MeasureTheory.Measure
 
