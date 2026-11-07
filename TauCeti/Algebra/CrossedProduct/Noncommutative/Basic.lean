@@ -71,19 +71,19 @@ attribute [simp] factor_one_left
 
 variable (c : CrossedSystem k D G)
 
-/-- The identity element acts trivially: the composition law at `(1, 1)` makes `action 1` an
-idempotent automorphism. -/
+/-- The identity element acts trivially. -/
 @[simp]
 theorem action_one : c.action 1 = 1 := by
   ext d
+  -- the composition law at `(1, 1)` makes `action 1` an idempotent automorphism
   have h := c.action_mul 1 1 d
   rw [c.factor_one_left, Units.val_one, mul_one, one_mul, one_mul] at h
   simpa using (c.action 1).injective h
 
-/-- Right normalization of the factor: the cocycle law at `(g, 1, 1)` makes `factor g 1` an
-idempotent unit. -/
+/-- Right normalization of the factor: `factor g 1 = 1`. -/
 @[simp]
 theorem factor_one_right (g : G) : c.factor g 1 = 1 := by
+  -- the cocycle law at `(g, 1, 1)` makes `factor g 1` an idempotent unit
   have h := c.factor_assoc g 1 1
   rw [mul_one, mul_one, c.factor_one_left, Units.val_one, map_one, one_mul] at h
   exact mul_eq_right.mp (Units.ext (by simpa [Units.val_mul] using h))
