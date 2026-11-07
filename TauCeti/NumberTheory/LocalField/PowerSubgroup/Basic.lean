@@ -200,7 +200,7 @@ theorem card_powerClasses_eq_of_index_unitFiltration_one {n c : ℕ} (hn : n ≠
       ext
       simp [hn]
     simpa [hker, (AddEquiv.additiveMultiplicative ℤ).toIntLinearEquiv.finrank_eq] using
-      Subgroup.index_range_powMonoidHom_of_fg (Multiplicative ℤ) hn
+      Subgroup.index_range_powMonoidHom_of_fg (Multiplicative ℤ) n
   have hZker : Nat.card (powMonoidHom n : Multiplicative ℤ →* _).ker = 1 := by
     have : (powMonoidHom n : Multiplicative ℤ →* _).ker = ⊥ := by
       ext
