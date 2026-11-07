@@ -92,13 +92,23 @@ theorem analyticAt_Λ_iff (s : ℂ) : AnalyticAt ℂ P.Λ s ↔
         fun_prop (disch := assumption)
       · simp only [hk, smul_zero]; exact analyticAt_const
 
+omit [CompleteSpace E] in
 /-- The continued Mellin transform is entire exactly for strong functional-equation pairs. -/
 @[simp]
 theorem differentiable_Λ_iff : Differentiable ℂ P.Λ ↔ IsStrongFEPair P := by
   constructor
   · intro h
-    exact ⟨((P.analyticAt_Λ_iff 0).mp (h.analyticAt 0)).1.resolve_left (by simp),
-      ((P.analyticAt_Λ_iff P.k).mp (h.analyticAt P.k)).2.resolve_left (by simp)⟩
+    have hzero (a : ℂ) :
+        Tendsto (fun s ↦ (s - a) • P.Λ s) (𝓝[≠] a) (𝓝 0) := by
+      have hc : Continuous (fun s : ℂ ↦ (s - a) • P.Λ s) :=
+        (continuous_id.sub continuous_const).smul h.continuous
+      simpa only [sub_self, zero_smul] using (hc.tendsto a).mono_left nhdsWithin_le_nhds
+    constructor
+    · have hf := tendsto_nhds_unique P.Λ_residue_zero
+        (by simpa only [sub_zero] using hzero 0)
+      exact neg_injective (hf.trans neg_zero.symm)
+    · exact (smul_eq_zero_iff_right P.hε).mp
+        (tendsto_nhds_unique P.Λ_residue_k (hzero P.k))
   · exact IsStrongFEPair.differentiable_Λ
 
 end WeakFEPair

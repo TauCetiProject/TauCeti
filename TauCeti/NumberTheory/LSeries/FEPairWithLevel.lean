@@ -379,7 +379,7 @@ theorem meromorphicOrderAt_Λ_k [CompleteSpace E] (hg : P.g₀ ≠ 0) :
 
 /-- A level pair has an entire completion exactly when both constant terms vanish. -/
 @[simp]
-theorem differentiable_Λ_iff [CompleteSpace E] : Differentiable ℂ P.Λ ↔ P.f₀ = 0 ∧ P.g₀ = 0 := by
+theorem differentiable_Λ_iff : Differentiable ℂ P.Λ ↔ P.f₀ = 0 ∧ P.g₀ = 0 := by
   rw [← toWeakFEPair_Λ, WeakFEPair.differentiable_Λ_iff]
   exact ⟨fun h ↦ ⟨h.hf₀, h.hg₀⟩, fun h ↦ ⟨h.1, h.2⟩⟩
 
