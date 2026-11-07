@@ -9,7 +9,9 @@ public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Data.List.Sublists
+import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.ParametricFDeriv
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 
 /-!
 # Iterated coordinate derivatives on `ℝⁿ`
@@ -23,11 +25,14 @@ derivative.
 
 For a smooth function, `coordinateDeriv α f x` is the `k`-th Fréchet derivative evaluated on the
 corresponding standard basis vectors (`TauCeti.coordinateDeriv_eq_iteratedFDeriv`), so it is
-bounded by the norm of `iteratedFDeriv`, and it is additive and homogeneous in `f`. Smoothness is
-preserved, also jointly in an additional parameter (`ContDiff.coordinateDeriv_snd`,
-`ContDiff.coordinateDeriv_fst`). For a smooth function of two variables, iterated coordinate
-derivatives in the two variables commute (`TauCeti.coordinateDeriv_coordinateDeriv_comm`), by the
-symmetry of second derivatives.
+bounded by the norm of `iteratedFDeriv`; conversely the norm of the `k`-th Fréchet derivative is
+at most the sum of the norms of the coordinate derivatives along the words of length `k`
+(`TauCeti.norm_iteratedFDeriv_le_sum_norm_coordinateDeriv`), which gives a Leibniz bound for
+products with a scalar function (`TauCeti.norm_coordinateDeriv_smul_le`). It is additive and
+homogeneous in `f`. Smoothness is preserved, also jointly in an additional parameter
+(`ContDiff.coordinateDeriv_snd`, `ContDiff.coordinateDeriv_fst`). For a smooth function of two
+variables, iterated coordinate derivatives in the two variables commute
+(`TauCeti.coordinateDeriv_coordinateDeriv_comm`), by the symmetry of second derivatives.
 
 For a function `a(x, ξ)` of a position and a frequency, `TauCeti.mixedDeriv α β a x ξ` is the
 mixed derivative `∂_x^α ∂_ξ^β a(x, ξ)`, taking the frequency derivatives first. It is linear in
@@ -134,6 +139,45 @@ theorem norm_coordinateDeriv_le (α : List (Fin n)) {f : CoordinateSpace n → A
   rw [coordinateDeriv_eq_iteratedFDeriv α hf]
   refine ((iteratedFDeriv ℝ α.length f x).le_opNorm _).trans (le_of_eq ?_)
   simp
+
+/-- A coordinate derivative along the word `[w 0, …, w (k - 1)]` of a `C^k` function is its `k`-th
+Fréchet derivative evaluated on the standard basis vectors `e_{w 0}, …, e_{w (k - 1)}`. -/
+theorem coordinateDeriv_ofFn_eq_iteratedFDeriv {k : ℕ} (w : Fin k → Fin n)
+    {f : CoordinateSpace n → A} (hf : ContDiff ℝ k f) (x : CoordinateSpace n) :
+    coordinateDeriv (List.ofFn w) f x =
+      iteratedFDeriv ℝ k f x fun i => EuclideanSpace.single (w i) 1 := by
+  have key : ∀ (α : List (Fin n)) (h : α.length = k), coordinateDeriv α f x =
+      iteratedFDeriv ℝ k f x fun i => EuclideanSpace.single (α.get (i.cast h.symm)) 1 := by
+    rintro α rfl
+    exact coordinateDeriv_eq_iteratedFDeriv α hf x
+  simpa using key (List.ofFn w) List.length_ofFn
+
+/-- The norm of the `k`-th Fréchet derivative of a `C^k` function is at most the sum of the norms
+of its coordinate derivatives along all words of length `k`. This is a converse of
+`TauCeti.norm_coordinateDeriv_le`. -/
+theorem norm_iteratedFDeriv_le_sum_norm_coordinateDeriv {k : ℕ} {f : CoordinateSpace n → A}
+    (hf : ContDiff ℝ k f) (x : CoordinateSpace n) :
+    ‖iteratedFDeriv ℝ k f x‖ ≤ ∑ w : Fin k → Fin n, ‖coordinateDeriv (List.ofFn w) f x‖ := by
+  refine ((iteratedFDeriv ℝ k f x).opNorm_le_sum_norm_apply_orthonormalBasis
+    fun _ => EuclideanSpace.basisFun (Fin n) ℝ).trans_eq ?_
+  simp only [EuclideanSpace.basisFun_apply, coordinateDeriv_ofFn_eq_iteratedFDeriv _ hf]
+  -- The two sums only differ in the `Fintype` instance of the space of words.
+  convert rfl
+
+/-- The Leibniz bound for a coordinate derivative along a word of length `k` of the product
+`ψ • g` of a `C^k` scalar function and a `C^k` function, in terms of the Fréchet derivatives of `ψ`
+and the coordinate derivatives of `g`. -/
+theorem norm_coordinateDeriv_smul_le (α : List (Fin n)) {ψ : CoordinateSpace n → ℝ}
+    {g : CoordinateSpace n → A} (hψ : ContDiff ℝ α.length ψ) (hg : ContDiff ℝ α.length g)
+    (x : CoordinateSpace n) :
+    ‖coordinateDeriv α (fun y => ψ y • g y) x‖ ≤
+      ∑ i ∈ Finset.range (α.length + 1), (α.length.choose i : ℝ) * ‖iteratedFDeriv ℝ i ψ x‖ *
+        ∑ w : Fin (α.length - i) → Fin n, ‖coordinateDeriv (List.ofFn w) g x‖ := by
+  refine (norm_coordinateDeriv_le α (hψ.smul hg) x).trans ?_
+  refine (norm_iteratedFDeriv_smul_le hψ hg x le_rfl).trans ?_
+  gcongr with i
+  exact norm_iteratedFDeriv_le_sum_norm_coordinateDeriv
+    (hg.of_le (by exact_mod_cast Nat.sub_le _ _)) x
 
 theorem coordinateDeriv_add (α : List (Fin n)) {f g : CoordinateSpace n → A}
     (hf : ContDiff ℝ α.length f) (hg : ContDiff ℝ α.length g) :
