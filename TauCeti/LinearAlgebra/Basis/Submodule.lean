@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.Basis.VectorSpace
 public import TauCeti.LinearAlgebra.Basis.Basic
+import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 import TauCeti.LinearAlgebra.LinearIndependent.Fin
 
 /-!
@@ -31,6 +32,8 @@ public section
 open Submodule TauCeti
 
 namespace Submodule
+
+section
 
 variable {k V : Type*} [Field k] [AddCommGroup V] [Module k V] [Module.Finite k V]
 
@@ -59,10 +62,15 @@ theorem exists_basis_span_image_eq (W : Submodule k V) :
   rw [Finset.card_image_of_injective _ (e.injective.comp Sum.inl_injective)]
   simp
 
-/-- Two subspaces admit bases with a common initial basis for their intersection.
+end
+
+variable {k V : Type*} [DivisionRing k] [AddCommGroup V] [Module k V]
+
+/-- Two finite-dimensional subspaces admit bases with a common initial basis for their intersection.
 The concatenation of the common part and the two complementary parts is a basis
 of their sum. Empty parts, nested subspaces and the zero space are allowed. -/
-theorem exists_linearIndependent_span_inf_sup (U W : Submodule k V) :
+theorem exists_linearIndependent_span_inf_sup (U W : Submodule k V)
+    [Module.Finite k U] [Module.Finite k W] :
     ∃ (p q r : ℕ) (x : Fin p → V) (y : Fin q → V) (z : Fin r → V),
       LinearIndependent k (Fin.append x (Fin.append y z)) ∧
       span k (Set.range x) = U ⊓ W ∧
@@ -76,6 +84,8 @@ theorem exists_linearIndependent_span_inf_sup (U W : Submodule k V) :
   obtain ⟨Z, hIZ, hW⟩ := IsModularLattice.exists_disjoint_and_sup_eq
     (show U ⊓ W ≤ W from inf_le_right)
   have hZW : Z ≤ W := hW ▸ le_sup_right
+  have : Module.Finite k Y := finiteDimensional_of_le (hU ▸ le_sup_right : Y ≤ U)
+  have : Module.Finite k Z := finiteDimensional_of_le hZW
   have hUZ : Disjoint U Z := by
     apply disjoint_iff.mpr
     apply le_bot_iff.mp
@@ -84,7 +94,7 @@ theorem exists_linearIndependent_span_inf_sup (U W : Submodule k V) :
   let bX := Module.finBasis k ↥(U ⊓ W)
   let bY := Module.finBasis k Y
   let bZ := Module.finBasis k Z
-  have hbas (P : Submodule k V) :
+  have hbas (P : Submodule k V) [Module.Finite k P] :
       span k (Set.range fun i ↦ (Module.finBasis k P i : V)) = P := by
     have heq : (fun i ↦ (Module.finBasis k P i : V)) = P.subtype ∘ Module.finBasis k P := rfl
     rw [heq, Set.range_comp, ← Submodule.map_span,
