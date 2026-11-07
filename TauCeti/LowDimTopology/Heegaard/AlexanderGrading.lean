@@ -107,6 +107,7 @@ variable {w z : Basepoint} {x y : H.Generator} {k : ℤ}
 
 /-- An integer lies in `periodicAlexanderValues w z` when it is `n_z(E) - n_w(E)` for a domain
 `E` whose `α`- and `β`-parts are cycles. -/
+@[simp]
 theorem mem_periodicAlexanderValues_iff :
     k ∈ H.periodicAlexanderValues w z ↔ ∃ E : Region → ℤ,
       H.alphaArcBoundary (H.alphaBoundary E) = 0 ∧ H.betaArcBoundary (H.betaBoundary E) = 0 ∧

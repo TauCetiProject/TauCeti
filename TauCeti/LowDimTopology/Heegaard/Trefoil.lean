@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LowDimTopology.Heegaard.AlexanderGrading
-public import TauCeti.LowDimTopology.Heegaard.RelativeGrading
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.GroupTheory.Perm.Fin
 import Mathlib.Tactic.FinCases
@@ -42,18 +41,21 @@ The two bigons are domains from `x₀` to `x₂` (the bigon `B_z`) and from `x�
 `B_w`), each of Maslov index one, and the only domains from a generator to itself are the
 multiples of the whole surface. Hence:
 
-* the relative Alexander gradings are `A(x₀, x₂) = 1` and `A(x₁, x₂) = -1`, so the three
-  generators have Alexander gradings `1`, `-1`, `0`;
+* the relative Alexander gradings are `A(x₀, x₂) = 1` and `A(x₁, x₂) = -1`, so, normalizing
+  `A(x₂) = 0`, the three generators have Alexander gradings `1`, `-1`, `0`;
 * the relative Maslov gradings, computed in the diagram pointed at `w`, are `gr(x₀, x₂) = 1` and
   `gr(x₁, x₂) = -1`, so, in the order `x₀`, `x₂`, `x₁` of decreasing Alexander grading, the
   Maslov grading drops by one at each step;
 * no nonnegative domain joining two generators avoids both basepoints, so the hat knot Floer
   differential vanishes and `HFK̂` has one generator in each of the Alexander gradings `1`, `0`,
-  `-1`. The bigon `B_z` joins the generators of Alexander gradings `1` and `0` with
-  `n_z - n_w = 1`, and is not counted.
+  `-1`, with this normalization. The bigon `B_z` joins the generators of Alexander gradings `1`
+  and `0` with `n_z - n_w = 1`, and is not counted.
 
-These are the relative gradings of the knot Floer homology of the trefoil, whose graded Euler
-characteristic is its Alexander polynomial `t - 1 + t⁻¹`.
+All gradings here are relative: the values `1`, `0`, `-1` are determined only up to an overall
+shift, and `A(x₂) = 0` is a choice. The canonical absolute Alexander grading of knot Floer
+homology, fixed by the symmetry of `HFK̂` (equivalently, by the Seifert class), is not formalized
+here; with it, these are the gradings of the knot Floer homology of the trefoil, whose graded
+Euler characteristic is its Alexander polynomial `t - 1 + t⁻¹`.
 
 ## Main definitions
 
@@ -200,6 +202,7 @@ theorem trefoilGenerator_snd_zero (x : (trefoil b).Generator) : trefoilGenerator
   HeegaardIntersectionSystem.point_injective _ (funext fun i => by simp [Subsingleton.elim i 0])
 
 /-- The generator chain of `trefoilGenerator b a` is supported at `x_a`. -/
+@[simp 1100]
 theorem generatorChain_trefoilGenerator (a q : Fin 3) :
     (trefoil b).generatorChain (trefoilGenerator b a) q = if a = q then 1 else 0 := by
   rw [HeegaardIntersectionSystem.generatorChain_apply]
@@ -380,7 +383,8 @@ theorem hatDomains_trefoil (χ : Fin 3 → ℤ) (x y : (trefoil ![1, 2]).Generat
   simp at hμ
 
 /-- **The hat knot Floer differential of the trefoil diagram vanishes.** So `HFK̂` of this
-diagram has the three generators `x₀`, `x₂`, `x₁`, in the Alexander gradings `1`, `0`, `-1`. -/
+diagram has the three generators `x₀`, `x₂`, `x₁`, in the relative Alexander gradings `1`, `0`,
+`-1`, normalized by `A(x₂) = 0`. -/
 @[simp]
 theorem hatDifferential_trefoil (χ : Fin 3 → ℤ) : (trefoil ![1, 2]).hatDifferential χ = 0 :=
   hatDifferential_eq_zero_iff.mpr fun x y =>
