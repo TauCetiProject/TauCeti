@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.Minpoly.IsIntegrallyClosedIn
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
 
 /-!
 # The geometric degree of an extension of function fields
@@ -47,6 +48,10 @@ closure of `k`, this is Stichtenoth's splitting `[F' : F] = [F' · K : F · K] �
 
 ## Main results
 
+* `IntermediateField.constantCompositum_toSubfield`: adjoining constants to an intermediate
+  field gives the same subfield as adjoining its image to the constants.
+* `TauCeti.constantCompositum_adjoin_simple_toSubfield`: extending the constants of `k(t)`
+  gives `K(t)` as a subfield of the ambient field.
 * `TauCeti.constantCompositum_eq_top_iff`: an intermediate field into which `k'` maps is generated
   over `F` by the image of `k'` exactly when it is the compositum `F · k'`.
 * `TauCeti.constantCompositum_eq_top_iff_of_range_eq`: the compositum `F · k'` depends only on
@@ -276,6 +281,34 @@ theorem geometricDegree_eq_finrank : geometricDegree F k' F' = Module.finrank F 
 end ConstantsInBase
 
 end Compositum
+
+/-! ### The compositum of an intermediate field with the constants -/
+
+section IntermediateFieldCompositum
+
+open scoped IntermediateField
+
+variable {K : Type*} [Field k] [Field K]
+  [Algebra k K] [Algebra k F] [Algebra k F'] [Algebra K F'] [Algebra F F']
+  [IsScalarTower k K F'] [IsScalarTower k F F']
+
+omit [Algebra k K] [Algebra k F'] [IsScalarTower k K F'] [IsScalarTower k F F'] in
+/-- The compositum `C · K` is the same subfield of the ambient field whether it is formed
+by adjoining `K` to `C` or by adjoining the image of `C` to `K`. -/
+theorem _root_.IntermediateField.constantCompositum_toSubfield (C : IntermediateField k F) :
+    (constantCompositum C K F').toSubfield =
+      (IntermediateField.adjoin K (Set.range (algebraMap C F'))).toSubfield := by
+  rw [constantCompositum_def, IntermediateField.adjoin_toSubfield,
+    IntermediateField.adjoin_toSubfield, Set.union_comm]
+
+/-- For a simple parameter field `k(t)`, extending constants gives exactly `K(t)`
+as a subfield of the ambient field. -/
+theorem constantCompositum_adjoin_simple_toSubfield (x : F) :
+    (constantCompositum k⟮x⟯ K F').toSubfield = K⟮algebraMap F F' x⟯.toSubfield := by
+  rw [_root_.IntermediateField.constantCompositum_toSubfield,
+    IntermediateField.range_algebraMap_adjoin_simple, IntermediateField.adjoin_adjoin_right]
+
+end IntermediateFieldCompositum
 
 /-! ### Generators of the compositum -/
 
