@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star.PL.Simplex
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Ball
-import Mathlib.Topology.OpenPartialHomeomorph.Constructions
+import TauCeti.Topology.OpenPartialHomeomorph.Constructions
 
 /-!
 # PL charts on open vertex stars with spherical links
@@ -63,27 +63,14 @@ private theorem exists_openStar_chart_of_simplexModel
       (continuous_subtype_val.subtype_mk _)).subtype_val).subtype_mk _
     continuous_invFun := ((e₀.symm.continuous.comp
       (continuous_subtype_val.subtype_mk _)).subtype_val).subtype_mk _ }
-  let : Nonempty (interior (coordinateSimplex (Fin m))) :=
-    (nonempty_interior_coordinateSimplex _).to_subtype
-  let j := (isOpen_interior.isOpenEmbedding_subtypeVal
-    (s := interior (coordinateSimplex (Fin m)))).toOpenPartialHomeomorph
-  let f := e.toOpenPartialHomeomorph.trans j
-  let c := f.lift_openEmbedding (K.isOpen_openStarRealization v).isOpenEmbedding_subtypeVal
-  have hc (x : openStarRealization K v) : c x.1 = (e₀ (toStar x)).1 := by
-    rw [OpenPartialHomeomorph.lift_openEmbedding_apply,
-      OpenPartialHomeomorph.trans_apply,
-      Topology.IsOpenEmbedding.toOpenPartialHomeomorph_apply,
-      Homeomorph.toOpenPartialHomeomorph_apply]
-    rfl
-  have hcs : c.source = openStarRealization K v := by
-    simp only [c, f, j, OpenPartialHomeomorph.lift_openEmbedding_source,
-      OpenPartialHomeomorph.trans_source, Homeomorph.toOpenPartialHomeomorph_source,
-      Topology.IsOpenEmbedding.toOpenPartialHomeomorph_source, preimage_univ, inter_self,
-      image_univ, Subtype.range_coe]
-  have hct : c.target = interior (coordinateSimplex (Fin m)) := by
-    ext
-    simp [c, f, j]
-  exact ⟨c, hcs, hct, hc⟩
+  have hg : Topology.IsOpenEmbedding fun x : openStarRealization K v => (e x).1 :=
+    isOpen_interior.isOpenEmbedding_subtypeVal.comp e.isOpenEmbedding
+  obtain ⟨c, hcs, hc⟩ := OpenPartialHomeomorph.exists_source_eq_of_isOpenEmbedding
+    (K.isOpen_openStarRealization v) hg
+    (e.symm ⟨_, (nonempty_interior_coordinateSimplex (Fin m)).some_mem⟩)
+  refine ⟨c, hcs, ?_, fun x ↦ hc x⟩
+  rw [← c.image_source_eq_target, hcs, image_eq_range, funext hc, ← Function.comp_def,
+    range_comp, e.surjective.range_eq, image_univ, Subtype.range_coe]
 
 /-- A spherical vertex link gives a PL chart on the entire open star, with target the
 interior of a full-dimensional simplex. The vertex maps to the barycentre. The ambient
