@@ -241,9 +241,7 @@ theorem mvfderiv_apply {ι : Type*} [Fintype ι] {F'' : ι → Type*}
     {x : M} (hΦ : MDifferentiableAt I 𝓘(𝕜, (i : ι) → F'' i) Φ x) (i : ι) :
     mvfderiv I (fun y ↦ Φ y i) x = (ContinuousLinearMap.proj i).comp (mvfderiv I Φ x) := by
   ext v
-  have := mvfderiv_comp_apply_of_differentiableAt
-    (ContinuousLinearMap.proj (R := 𝕜) (φ := F'') i).differentiableAt hΦ v
   -- The component `fun y ↦ Φ y i` is `proj i ∘ Φ` by definition of the projection.
-  rwa [ContinuousLinearMap.fderiv] at this
+  exact (ContinuousLinearMap.proj (R := 𝕜) (φ := F'') i).mvfderiv_comp_apply hΦ v
 
 end TauCeti
