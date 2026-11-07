@@ -23,7 +23,7 @@ surjective, every norm-bounded set has weakly compact closure
 (`TauCeti.isCompact_closure_toWeakSpace`).
 
 Finally, every linear map from a vector space into the bidual of a normed space lifts into the
-space on the subspace of vectors sent into the canonical image (`TauCeti.exists_lift_doubleDual`).
+space on the subspace of vectors sent into the canonical image (`LinearMap.exists_lift_doubleDual`).
 -/
 
 public section
@@ -98,7 +98,7 @@ theorem isCompact_closure_toWeakSpace
 
 end TauCeti
 
-namespace TauCeti
+namespace LinearMap
 
 open NormedSpace
 
@@ -119,4 +119,4 @@ theorem exists_lift_doubleDual (ι : V →ₗ[𝕜] StrongDual 𝕜 (StrongDual 
     fun φ ↦ LinearMap.codRestrictOfInjective_comp_apply (ι ∘ₗ F₀.subtype) (J : E →ₗ[𝕜] _)
       hJ _ φ, fun v x hv ↦ ⟨x, hv.symm⟩⟩
 
-end TauCeti
+end LinearMap

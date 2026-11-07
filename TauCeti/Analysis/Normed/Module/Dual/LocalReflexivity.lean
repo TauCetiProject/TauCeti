@@ -272,7 +272,7 @@ theorem exists_continuousLinearMap_of_doubleDual [FiniteDimensional 𝕜 V]
   have : FiniteDimensional 𝕜 (Submodule.span 𝕜 (Set.range h)) :=
     FiniteDimensional.span_of_finite 𝕜 (Set.finite_range h)
   have : FiniteDimensional 𝕜 G' := Submodule.finiteDimensional_sup _ _
-  obtain ⟨F₀, A, hA, hF₀⟩ := TauCeti.exists_lift_doubleDual ι.toLinearMap
+  obtain ⟨F₀, A, hA, hF₀⟩ := ι.toLinearMap.exists_lift_doubleDual
   let J := inclusionInDoubleDual 𝕜 E
   have hJ : Function.Injective J := (inclusionInDoubleDualLi 𝕜 (E := E)).injective
   obtain ⟨T', hTA, hTG, hTu⟩ := TauCeti.exists_linearMap_norm_apply_lt ι.toLinearMap G' F₀ A hA
