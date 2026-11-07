@@ -329,6 +329,14 @@ theorem IsCutVertex.exists_isBlock_ne [Finite V] (h : G.IsCutVertex v) :
   · exact (hr v hv).2 rfl
   · exact hqb hv
 
+/-- A block containing a cut vertex contains a neighbour of that vertex. -/
+theorem IsBlock.exists_adj_of_isCutVertex_mem [Finite V] (hB : G.IsBlock B)
+    (hv : G.IsCutVertex v) (hvB : v ∈ B) : ∃ u ∈ B, G.Adj v u := by
+  obtain ⟨C, D, hC, hD, hCD, hvC, hvD⟩ := hv.exists_isBlock_ne
+  by_cases hBC : B = C
+  · exact hB.exists_adj_of_ne hD (hBC.trans_ne hCD) hvB hvD
+  · exact hB.exists_adj_of_ne hC hBC hvB hvC
+
 /-- **Cut vertices and blocks.** In a finite graph, a vertex is a cut vertex exactly when it lies
 in two distinct blocks. -/
 theorem isCutVertex_iff_exists_isBlock_ne [Finite V] :
