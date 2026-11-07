@@ -118,7 +118,7 @@ theorem primitiveRoot_pow_iff_dvd_localRootOfUnityOrder_of_finite
     simpa only [localRootOfUnityOrder_def, hord] using
       (orderOf_dvd_natCard (⟨u, hmem⟩ : pPowerRootsOfUnity p K))
   · intro hdvd
-    let _ := isCyclic_pPowerRootsOfUnity p K hfinite
+    have := hfinite
     obtain ⟨g, hg⟩ := IsCyclic.exists_ofOrder_eq_natCard
       (α := pPowerRootsOfUnity p K)
     have hdiv : p ^ n ∣ orderOf g := by
