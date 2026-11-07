@@ -14,6 +14,7 @@ import TauCeti.Geometry.Lie.Exponential.Derivative.Basic
 import TauCeti.Geometry.Lie.Subgroup.LieAlgebra
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 import TauCeti.RepresentationTheory.Compact.Unitarizable
+import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 
 /-!
 # Invariant forms on the Lie algebra of a Lie group
@@ -39,6 +40,10 @@ It uses `TauCeti.Lie.hasDerivAt_tangentAd_mulInvariantExp_smul_apply_zero` for `
   algebra of a compact Lie group, some adjoint translate of `X` brackets to zero with `Y`.
 * `TauCeti.Lie.lieInvariant_iff_adjoint_invariant`: on a connected group, tangent bilinear forms
   are infinitesimally invariant exactly when they are Ad-invariant.
+
+* `TauCeti.Lie.exists_isSymm_posDef_continuousBilinearMap_adjoint_invariant`:
+  a continuous symmetric positive adjoint-invariant form on the tangent Lie algebra of a compact
+  Lie group.
 
 ## References
 
@@ -108,6 +113,33 @@ theorem exists_isSymm_bilinForm_Ad_invariant [CompactSpace G] :
   let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
   exact ContRepresentation.exists_isSymm_bilinForm_invariant _
     (contMDiff_continuousAdjointRepresentation (I := I) (G := G)).continuous
+
+/-- The tangent Lie algebra of a compact Lie group has a continuous symmetric positive form
+invariant under the adjoint action. No connectedness or boundaryless-model hypothesis is needed. -/
+theorem exists_isSymm_posDef_continuousBilinearMap_adjoint_invariant [CompactSpace G] :
+    ∃ b : GroupLieAlgebra I G →L[ℝ] GroupLieAlgebra I G →L[ℝ] ℝ,
+      (∀ a c, b a c = b c a) ∧ (∀ a, a ≠ 0 → 0 < b a a) ∧
+        ∀ (g : G) (a c : GroupLieAlgebra I G),
+          b (adjointContinuousLinearMap g a) (adjointContinuousLinearMap g c) = b a c := by
+  let : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
+    finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
+  obtain ⟨B, hsymm, hpos, hAd⟩ := exists_isSymm_bilinForm_Ad_invariant (I := I) (G := G)
+  let e := leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+    BoundarylessManifold.isInteriorPoint
+  let b := (B.compl₁₂ e.symm.toLinearMap e.symm.toLinearMap).toContinuousBilinearMap
+  have hb (a c : GroupLieAlgebra I G) : b a c = B (e.symm a) (e.symm c) := by
+    simp only [b, LinearMap.toContinuousBilinearMap_apply, LinearMap.compl₁₂_apply,
+      LieHom.coe_toLinearMap, LieEquiv.coe_toLieHom]
+  refine ⟨b, fun a c ↦ ?_, fun a ha ↦ ?_, fun g a c ↦ ?_⟩
+  · rw [hb, hb]
+    exact hsymm.eq _ _
+  · rw [hb]
+    exact hpos _ (by simpa using ha)
+  · rw [hb, hb]
+    simp only [e, adjointContinuousLinearMap_apply,
+      leftInvariantDerivationLieEquivGroupLieAlgebra_symm_mfderiv_conjDiffeomorph]
+    rw [← continuousAdjointRepresentation_apply, ← continuousAdjointRepresentation_apply]
+    exact hAd.apply g (e.symm a) (e.symm c)
 
 /-- **Hunt's lemma.** For `X` and `Y` in the Lie algebra of a compact Lie group, some adjoint
 translate of `X` brackets to zero with `Y`. -/

@@ -411,20 +411,8 @@ theorem nijenhuis_apply_eq_fderivWithin_inChart (v w : TangentSpace I x) :
   have hs : UniqueDiffWithinAt ℝ (Set.range I) (extChartAt I x x) :=
     I.uniqueDiffOn _ (Set.mem_range_self _)
   -- The vector fields with constant coordinates `v` and `w` near `x`, and their images under `J`.
-  have hx : x ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' x
-  have hext (u : E) : (fun y ↦ e.symm y u : Π y : M, TangentSpace I y) =
-      FiberBundle.extend E (e.symm x u) := by
-    funext y
-    simp only [FiberBundle.extend, e, Bundle.Trivialization.apply_mk_symm _ hx]
-  have hmdiff (u : E) : MDiffAt (T% (fun y ↦ e.symm y u : Π y : M, TangentSpace I y)) x := by
-    have h := mdifferentiableAt_extend (I := I) E (e.symm x u)
-    rwa [← hext] at h
-  have hself (u : E) : e.symm x u = u := by
-    have h := VectorField.mpullbackWithin_extChartAt_symm_self (I := I)
-      (fun y ↦ e.symm y u : Π y : M, TangentSpace I y) x
-    rw [(mpullbackWithin_extChartAt_symm_trivializationAt_symm_eventuallyEq x u).eq_of_nhdsWithin
-      (Set.mem_range_self _)] at h
-    exact h.symm
+  have hmdiff := VectorField.mdifferentiableAt_trivializationAt_symm_apply (I := I) x
+  have hself := VectorField.trivializationAt_symm_apply_self (I := I) x
   -- Lie brackets at `x` are Lie brackets of the pullbacks to the model space.
   have hbr {V W : Π y : M, TangentSpace I y} {V' W' : E → E}
       (hV : VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I x).symm V (Set.range I)
