@@ -50,6 +50,9 @@ which quantifies over both subgroups. Neither reduces a comparison to generators
   modulo a central subgroup are equal.
 * `TauCeti.commutatorElement_pow_right_mem_iff`: when `⁅a, y⁆` commutes with `y` modulo a normal
   `N`, the commutator `⁅a, y ^ n⁆` lies in `N` exactly when `⁅a, y⁆ ^ n` does.
+* `TauCeti.exists_list_prod_mul_eq_mul_list_prod_mul`: an element whose commutators with the
+  factors of a product lie in a subgroup `Z` normalized by those factors moves from the right of
+  the product to its left, at the cost of a right factor in `Z`.
 * `TauCeti.commutatorElement_mul_mul_eq_mul_of_commute`: the commutator of two paired products
   splits into the product of their same-position commutators when the cross terms commute and
   `c * a` commutes with `⁅b, d⁆`; `TauCeti.commutatorElement_mul_mul_of_mem_center` is the case of
@@ -415,6 +418,25 @@ theorem commutatorElement_pow_right_mem_iff [N.Normal] {a y : G} (h : ⁅⁅a, y
     simpa only [map_commutatorElement, map_pow] using
       (hcomm.symm.commutatorElement_pow_right n).symm
   rw [hmem, hmem, key]
+
+/-- An element `y` whose commutators with the factors of a product lie in a subgroup `Z`
+normalized by those factors can be moved from the right of the product to its left, at the cost
+of a right factor in `Z`. -/
+theorem exists_list_prod_mul_eq_mul_list_prod_mul {Z : Subgroup G} {y : G} {as : List G}
+    (h : ∀ a ∈ as, a ∈ normalizer (Z : Set G) ∧ ⁅a⁻¹, y⁻¹⁆ ∈ Z) :
+    ∃ c ∈ Z, as.prod * y = y * as.prod * c := by
+  induction as with
+  | nil => exact ⟨1, Z.one_mem, by simp⟩
+  | cons a as ih =>
+    have h' : ∀ b ∈ as, b ∈ normalizer (Z : Set G) ∧ ⁅b⁻¹, y⁻¹⁆ ∈ Z :=
+      fun b hb => h b (List.mem_cons_of_mem a hb)
+    obtain ⟨c, hc, hcy⟩ := ih h'
+    have hP : as.prod⁻¹ ∈ normalizer (Z : Set G) :=
+      inv_mem (list_prod_mem fun b hb => (h' b hb).1)
+    refine ⟨as.prod⁻¹ * ⁅a⁻¹, y⁻¹⁆ * as.prod⁻¹⁻¹ * c,
+      mul_mem ((mem_normalizer_iff.mp hP _).mp (h a List.mem_cons_self).2) hc, ?_⟩
+    rw [List.prod_cons, mul_assoc, hcy, commutatorElement_def]
+    group
 
 end TauCeti
 
