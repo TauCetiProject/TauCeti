@@ -97,21 +97,6 @@ theorem tendsto_sectionValue_zero {l : Filter ℂ} {x : ℂ → EuclideanSpace �
   simp only [PiLp.zero_apply, ofReal_zero, zero_mul, add_zero, mul_zero] at this
   exact this.congr fun z ↦ (sectionValue_apply x z).symm
 
-/-- A field whose section has the degree-`m` end framing `α(z) (z / |z|)^(-m) → 1` has squared
-modulus `|α|² = 4 (p² + q²)` tending to one at infinity. -/
-theorem tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow {m : ℕ}
-    {x : ℂ → EuclideanSpace ℝ (Fin 4)}
-    (hframe : Filter.Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹)
-      (Filter.cocompact ℂ) (nhds 1)) :
-    Filter.Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (Filter.cocompact ℂ) (nhds 1) := by
-  have h := hframe.norm.pow 2
-  rw [norm_one, one_pow] at h
-  refine h.congr' ?_
-  filter_upwards [(isCompact_singleton (x := (0 : ℂ))).compl_mem_cocompact] with z hz
-  rw [norm_mul, norm_inv, norm_pow, norm_div]
-  simp only [norm_real, norm_norm, div_self (norm_ne_zero_iff.2 hz), one_pow, inv_one, mul_one]
-  exact sq_norm_sectionValue x z
-
 /-- The end framing `α(z) · phase(z) → 1`, with `|phase| → 1` at infinity, gives the squared modulus
 `|α|² = 4 (p² + q²)` tending to one at infinity. -/
 theorem tendsto_normSq_of_tendsto_sectionValue_mul {phase : ℂ → ℂ}
@@ -126,6 +111,20 @@ theorem tendsto_normSq_of_tendsto_sectionValue_mul {phase : ℂ → ℂ}
     filter_upwards [hphase.eventually_ne one_ne_zero] with z hz
     rw [Pi.div_apply, norm_mul, mul_div_cancel_right₀ _ hz]
   simpa only [sq_norm_sectionValue, one_pow] using hn.pow 2
+
+/-- A field whose section has the degree-`m` end framing `α(z) (z / |z|)^(-m) → 1` has squared
+modulus `|α|² = 4 (p² + q²)` tending to one at infinity. -/
+theorem tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow {m : ℕ}
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hframe : Filter.Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹)
+      (Filter.cocompact ℂ) (nhds 1)) :
+    Filter.Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (Filter.cocompact ℂ) (nhds 1) := by
+  refine tendsto_normSq_of_tendsto_sectionValue_mul
+    (phase := fun z ↦ ((z / (‖z‖ : ℂ)) ^ m)⁻¹) ?_ hframe
+  refine tendsto_const_nhds.congr' ?_
+  filter_upwards [(isCompact_singleton (x := (0 : ℂ))).compl_mem_cocompact] with z hz
+  simp only [norm_inv, norm_pow, norm_div, norm_real, norm_norm,
+    div_self (norm_ne_zero_iff.2 hz), one_pow, inv_one]
 
 /-- The section with its real coordinates composed with `ofRealCLM`, the form used to compute its
 regularity and derivative. -/
