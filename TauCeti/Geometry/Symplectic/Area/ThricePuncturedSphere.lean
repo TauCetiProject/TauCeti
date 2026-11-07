@@ -122,11 +122,6 @@ private theorem truncation_eq_union {R r ρ : ℝ} (hr : r = Real.exp (-(2 * π 
     · exact ⟨⟨h₁, by linarith [not_lt.1 h]⟩, h₃⟩
     · exact ⟨⟨by linarith, h₂⟩, by linarith⟩
 
-/-- The norm of `circleMap c a θ - c` is the radius `a`. -/
-private theorem norm_circleMap_sub_center (c : ℂ) {a : ℝ} (ha : 0 ≤ a) (θ : ℝ) :
-    ‖circleMap c a θ - c‖ = a := by
-  rw [circleMap_sub_center, norm_circleMap_zero, abs_of_nonneg ha]
-
 /-- A point within distance `1` of `1` is not `0`. -/
 private theorem ne_zero_of_norm_sub_one_lt {z : ℂ} (hz : ‖z - 1‖ < 1) : z ≠ 0 := by
   rintro rfl
@@ -149,14 +144,6 @@ private theorem ne_zero_ne_one_of_mem_annulus {r : ℝ} (hr : 0 < r) {z : ℂ}
   have := hz.1
   simp only [sub_self, norm_zero] at this
   linarith
-
-/-- The triangle inequality for the distances of `z` to `0` and `1`. -/
-private theorem norm_sub_one_bounds (z : ℂ) : ‖z‖ - 1 ≤ ‖z - 1‖ ∧ 1 - ‖z‖ ≤ ‖z - 1‖ := by
-  have t₁ := norm_sub_norm_le z 1
-  have t₂ := norm_sub_norm_le 1 z
-  rw [norm_one] at t₁ t₂
-  rw [norm_sub_rev] at t₂
-  exact ⟨t₁, t₂⟩
 
 /-- A closed annulus is compact. -/
 private theorem isCompact_annulus (c : ℂ) (a b : ℝ) :
@@ -221,17 +208,19 @@ private theorem integral_cutoff_sdiff (ω : SymplecticForm V) {u uc : ℂ → V}
   have hA : IsCompact (A₀ \ ball 1 (3 / 4)) := (isCompact_annulus 0 r ρ).diff isOpen_ball
   have hballA₀ : ball (1 : ℂ) (3 / 4) ⊆ A₀ := fun z hz ↦ by
     rw [mem_ball, dist_eq_norm] at hz
-    have := norm_sub_one_bounds z
+    have h₁ : ‖z‖ - 1 ≤ ‖z - 1‖ := by simpa using norm_sub_norm_le z (1 : ℂ)
+    have h₂ : 1 - ‖z‖ ≤ ‖z - 1‖ := by
+      simpa only [norm_one, norm_sub_rev] using norm_sub_norm_le (1 : ℂ) z
     refine ⟨?_, ?_⟩ <;> simp only [sub_zero] <;> linarith
   have hI₀ : ∫ z in A₀, ω (fderiv ℝ uc z 1) (fderiv ℝ uc z I) =
       ω.circleArea u 0 ρ - ω.circleArea u 0 r := by
     rw [integral_annulus ω 0 hr₀ (by linarith) fun z hz ↦ huc (ne_zero_of_mem_annulus hr₀ hz)]
     congr 1 <;> refine circleArea_congr ω fun θ ↦ huc_eq ?_
-    · have := (norm_sub_one_bounds (circleMap 0 ρ θ)).1
-      rw [norm_circleMap_zero, abs_of_nonneg (by linarith)] at this
+    · have := norm_sub_norm_le (circleMap 0 ρ θ) 1
+      rw [norm_circleMap_zero, abs_of_nonneg (by linarith), norm_one] at this
       linarith
-    · have := (norm_sub_one_bounds (circleMap 0 r θ)).2
-      rw [norm_circleMap_zero, abs_of_nonneg hr₀.le] at this
+    · have := norm_sub_norm_le 1 (circleMap 0 r θ)
+      rw [norm_one, norm_sub_rev, norm_circleMap_zero, abs_of_nonneg hr₀.le] at this
       linarith
   have hAu : ∫ z in A₀ \ ball 1 (3 / 4), ω (fderiv ℝ uc z 1) (fderiv ℝ uc z I) =
       ∫ z in A₀ \ ball 1 (3 / 4), ω (fderiv ℝ u z 1) (fderiv ℝ u z I) :=
@@ -267,10 +256,10 @@ private theorem integral_ball_cutoff (ω : SymplecticForm V) {u uc : ℂ → V}
     rw [integral_annulus ω 1 (by norm_num) (by norm_num)
       fun z hz ↦ huc (ne_zero_of_norm_sub_one_lt (by linarith [hz.2])),
       circleArea_eq_zero ω (c := 1) (r := 1 / 8) fun θ ↦
-        huc_zero (by rw [norm_circleMap_sub_center 1 (by norm_num)]; norm_num),
+        huc_zero (by norm_num),
       sub_zero]
     exact circleArea_congr ω fun θ ↦
-      huc_eq (by rw [norm_circleMap_sub_center 1 (by norm_num)]; norm_num)
+      huc_eq (by norm_num)
   rw [← hC, ← setIntegral_eq_of_subset_of_ae_sdiff_eq_zero
     measurableSet_closedBall.nullMeasurableSet ball_subset_closedBall ?_]
   · refine setIntegral_eq_of_subset_of_forall_sdiff_eq_zero measurableSet_closedBall
