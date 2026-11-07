@@ -41,7 +41,7 @@ variable {R L M N : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
   (A : Type*) [CommRing A] [Algebra R A]
 
 /-- Extending scalars preserves the equivariance of a Lie-module map. -/
-@[simp] theorem baseChange_map_lie (f : M →ₗ⁅R,L⁆ N) (x : A ⊗[R] L) (m : A ⊗[R] M) :
+@[simp] theorem map_lie_baseChange (f : M →ₗ⁅R,L⁆ N) (x : A ⊗[R] L) (m : A ⊗[R] M) :
     f.toLinearMap.baseChange A ⁅x, m⁆ = ⁅x, f.toLinearMap.baseChange A m⁆ := by
   induction x with
   | add x y hx hy =>
@@ -52,7 +52,7 @@ variable {R L M N : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
 def baseChange (f : M →ₗ⁅R,L⁆ N) :
     (A ⊗[R] M) →ₗ⁅A,A ⊗[R] L⁆ (A ⊗[R] N) where
   toLinearMap := f.toLinearMap.baseChange A
-  map_lie' {x m} := baseChange_map_lie A f x m
+  map_lie' {x m} := map_lie_baseChange A f x m
 
 /-- The underlying linear map of scalar extension is the linear scalar extension. -/
 @[simp] theorem toLinearMap_baseChange (f : M →ₗ⁅R,L⁆ N) :
