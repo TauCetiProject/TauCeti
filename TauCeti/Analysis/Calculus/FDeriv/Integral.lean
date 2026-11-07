@@ -41,7 +41,7 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 /-- In coordinates `Fin (n + 1) → ℝ`, the integral of a directional derivative of a continuous
 compactly supported map is zero, even if the derivative fails to exist on a countable set. This is
 the divergence theorem for the vector field `w • g` on a box strictly containing the support. -/
-theorem integral_apply_eq_zero_of_hasFDerivAt_off_countable_pi {n : ℕ}
+private theorem integral_apply_eq_zero_of_hasFDerivAt_off_countable_pi {n : ℕ}
     {g : (Fin (n + 1) → ℝ) → F} {G : (Fin (n + 1) → ℝ) → (Fin (n + 1) → ℝ) →L[ℝ] F}
     {s : Set (Fin (n + 1) → ℝ)} (hs : s.Countable) (hg : Continuous g)
     (hgc : HasCompactSupport g) (hgd : ∀ x ∉ s, HasFDerivAt g (G x) x) (w : Fin (n + 1) → ℝ)
