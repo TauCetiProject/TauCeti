@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.FixedSubmodule
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.GraphAutomorphism
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Root.Coordinates
-import TauCeti.LinearAlgebra.Basis.RangeSpan
+import TauCeti.LinearAlgebra.Span.Basic
 import TauCeti.LinearAlgebra.End.OrderTwoThree
 
 /-!

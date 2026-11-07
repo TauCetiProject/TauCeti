@@ -8,31 +8,15 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Basis
 
 /-!
-# Spans of the images of spanning families and bases
+# Spans of families in the span of a basis
 
-A semilinear map has the same scalar-extended image span when evaluated on a spanning family as
-when evaluated on its entire domain. Over a coefficient algebra `A` of the scalars, the `A`-span of
-a family lies in the `A`-span of a basis `b` exactly when every coordinate of the family in `b` lies
-in the image of `A`; in particular, a linear endomorphism maps the `A`-span of `b` into itself
-exactly when its matrix in `b` has entries in the image of `A`. Through a linear equivalence
-`L : M ≃ₗ[R] M₁ × M₂`, the vectors `L⁻¹ (0, vᵢ)` for a spanning family `v` of `M₂` span the kernel
-of `u ↦ (L u).1`.
+Over a coefficient algebra `A` of the scalars, the `A`-span of a family lies in the `A`-span of a
+basis `b` exactly when every coordinate of the family in `b` lies in the image of `A`; in
+particular, a linear endomorphism maps the `A`-span of `b` into itself exactly when its matrix in
+`b` has entries in the image of `A`.
 -/
 
 public section
-
-/-- Over a scalar extension, the image of a semilinear map is spanned by its values on any
-spanning family. The ring homomorphism defining semilinearity need not be surjective. -/
-theorem Submodule.span_range_eq_span_range_comp_of_span_eq_top
-    {R R' S M N ι : Type*} [Semiring R] [Semiring R'] [Semiring S] [SMul R' S]
-    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R' N]
-    [Module S N] [IsScalarTower R' S N] {σ : R →+* R'} {v : ι → M}
-    (hv : span R (Set.range v) = ⊤) (f : M →ₛₗ[σ] N) :
-    span S (Set.range f) = span S (Set.range (f ∘ v)) := by
-  refine le_antisymm (span_le.mpr ?_) (span_mono (Set.range_comp_subset_range _ _))
-  rintro _ ⟨x, rfl⟩
-  exact (image_span_subset f _ ((span S (Set.range (f ∘ v))).restrictScalars R')).mpr
-    (Set.forall_mem_range.mpr fun i ↦ subset_span ⟨i, rfl⟩) ⟨x, hv ▸ mem_top, rfl⟩
 
 namespace Module.Basis
 
@@ -88,21 +72,3 @@ theorem mapsTo_span_range_iff_forall_toMatrix_mem
   simp only [toMatrix_apply, LinearMap.toMatrix_apply, Function.comp_apply]
 
 end Module.Basis
-
-/-- Through a linear equivalence `L : M ≃ₗ[R] M₁ × M₂`, the vectors `L⁻¹ (0, vᵢ)` for a spanning
-family `v` of `M₂` span the kernel of the first component `u ↦ (L u).1`. -/
-theorem LinearEquiv.span_range_symm_inr_eq_ker {R M M₁ M₂ ι : Type*} [Semiring R]
-    [AddCommMonoid M] [Module R M] [AddCommMonoid M₁] [Module R M₁]
-    [AddCommMonoid M₂] [Module R M₂] (L : M ≃ₗ[R] M₁ × M₂) {v : ι → M₂}
-    (hv : Submodule.span R (Set.range v) = ⊤) :
-    Submodule.span R (Set.range fun i ↦ L.symm (0, v i)) =
-      LinearMap.ker (LinearMap.fst R M₁ M₂ ∘ₗ L.toLinearMap) := by
-  -- The vectors are the values of `L.symm ∘ inr` on `v`, so they span its range.
-  have hspan : Submodule.span R (Set.range fun i ↦ L.symm (0, v i)) =
-      LinearMap.range (L.symm.toLinearMap ∘ₗ LinearMap.inr R M₁ M₂) := by
-    rw [← Submodule.span_eq (LinearMap.range _), LinearMap.coe_range,
-      Submodule.span_range_eq_span_range_comp_of_span_eq_top hv]
-    rfl
-  -- The range of `L.symm ∘ inr` is the image under `L.symm` of `{0} × M₂ = ker (fst)`.
-  rw [hspan, LinearMap.range_comp, LinearMap.range_inr, LinearMap.ker_comp,
-    Submodule.map_equiv_eq_comap_symm, L.symm_symm]

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Represented.Flag.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.PointAction
-public import TauCeti.LinearAlgebra.Basis.RangeSpan
+public import TauCeti.LinearAlgebra.Span.Basic
 
 /-!
 # Scalar-extended coordinate spans of the represented modular F4 flag

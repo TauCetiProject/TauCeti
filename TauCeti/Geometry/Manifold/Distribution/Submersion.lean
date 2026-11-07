@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.Distribution
 public import TauCeti.Geometry.Manifold.Distribution.VectorBundle
 public import TauCeti.Geometry.Manifold.Submersion.Basic
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
-import TauCeti.LinearAlgebra.Basis.RangeSpan
+import TauCeti.LinearAlgebra.LinearEquiv.Basic
 
 /-!
 # The kernel distribution of a submersion

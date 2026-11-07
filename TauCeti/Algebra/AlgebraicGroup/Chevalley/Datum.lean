@@ -8,9 +8,9 @@ module
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.LinearMap
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Torus
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Weight.Basis
-public import TauCeti.LinearAlgebra.Basis.RangeSpan
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.KostantForm
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.WeightLattice
+public import TauCeti.LinearAlgebra.Span.Basic
 import TauCeti.Algebra.Lie.Sl2.Basic
 
 /-!
