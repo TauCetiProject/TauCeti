@@ -32,9 +32,9 @@ presented. When `C` has binary biproducts, the cokernel of a morphism from a fin
 functor to a finitely presented one is finitely presented: if `p : (-, Y) ⟶ F` is onto and
 `G` is presented by `g : X' ⟶ Y'`, lift `p ≫ φ` to `(-, u)` for some `u : Y ⟶ Y'`; then the
 cokernel of `φ` is presented by `g` and `u` together, as a morphism `X' ⊞ Y ⟶ Y'`. Finitely
-presented functors are also closed under binary biproducts. So when `C` is additive, `mod C`
-contains zero (which only needs `C` nonempty) and is closed under isomorphisms, cokernels and
-finite products and coproducts in the functor category.
+presented functors are also closed under binary biproducts. So when `C` is nonempty with binary
+biproducts (for example, additive), `mod C` contains zero (which only needs `C` nonempty) and is
+closed under isomorphisms, cokernels and finite products and coproducts in the functor category.
 
 ## Main declarations
 
@@ -230,19 +230,10 @@ instance : (isFinitelyPresentedFunctor C).IsClosedUnderBinaryProducts where
     exact IsLimit.conePointUniqueUpToIso (BinaryBiproduct.isLimit _ _)
       ((IsLimit.postcomposeHomEquiv (diagramIsoPair p.diag) _).2 p.isLimit)
 
+instance [Nonempty C] : (isFinitelyPresentedFunctor C).IsClosedUnderFiniteCoproducts := .mk'
+
+instance [Nonempty C] : (isFinitelyPresentedFunctor C).IsClosedUnderFiniteProducts := .mk'
+
 end Biproducts
-
-open ZeroObject in
-instance [HasFiniteBiproducts C] :
-    (isFinitelyPresentedFunctor C).IsClosedUnderFiniteCoproducts :=
-  have := hasBinaryBiproducts_of_finite_biproducts C
-  have : Nonempty C := ⟨0⟩
-  .mk'
-
-open ZeroObject in
-instance [HasFiniteBiproducts C] : (isFinitelyPresentedFunctor C).IsClosedUnderFiniteProducts :=
-  have := hasBinaryBiproducts_of_finite_biproducts C
-  have : Nonempty C := ⟨0⟩
-  .mk'
 
 end TauCeti
