@@ -40,6 +40,44 @@ private theorem diagonalChain_invariant {α : Type v}
   intro v v' hstep hv
   exact hstep.elim (fun hp => hv.trans (hperm hp)) (fun hb => hv.trans (hbin hb))
 
+omit [Invertible (2 : K)] in
+/-- In rank zero there is a single presentation, so any function on presentations agrees. -/
+private theorem lift_eq_of_rank_zero {α : Type v}
+    (f : (p : RegularFormPresentation K) → α) (w v : Fin 0 → Kˣ) :
+    f ⟨0, w⟩ = f ⟨0, v⟩ := by
+  have hpq : (⟨0, w⟩ : RegularFormPresentation K) = ⟨0, v⟩ := by
+    apply RegularFormPresentation.ext (p := ⟨0, w⟩) (q := ⟨0, v⟩) rfl
+    intro i
+    exact Fin.elim0 i
+  exact congrArg f hpq
+
+/-- In rank one, isometric presentations have coefficients differing by a square, so the rank-one
+invariance hypothesis applies. -/
+private theorem lift_eq_of_rank_one {α : Type v}
+    (f : (p : RegularFormPresentation K) → α)
+    (hone : ∀ a b : Kˣ, IsSquare (a * b) →
+      f ⟨1, fun _ => a⟩ = f ⟨1, fun _ => b⟩)
+    {w v : Fin 1 → Kˣ} (h : (presentedForm ⟨1, w⟩).Equivalent (presentedForm ⟨1, v⟩)) :
+    f ⟨1, w⟩ = f ⟨1, v⟩ := by
+  have hsq : IsSquare ((w 0) * (v 0)) := by
+    have hprUnit : (QuadraticMap.weightedSumSquares K w).Equivalent
+        (QuadraticMap.weightedSumSquares K v) := by
+      simpa only [presentedForm_eq_weightedSumSquares] using h
+    have := isSquare_prod_mul_prod_of_equivalent (R := K) (w := w) (v := v) hprUnit
+    simpa using this
+  have hp : (⟨1, w⟩ : RegularFormPresentation K) = ⟨1, fun _ => w 0⟩ := by
+    apply RegularFormPresentation.ext (p := ⟨1, w⟩) (q := ⟨1, fun _ => w 0⟩) rfl
+    intro i
+    fin_cases i
+    rfl
+  have hv : (⟨1, v⟩ : RegularFormPresentation K) = ⟨1, fun _ => v 0⟩ := by
+    apply RegularFormPresentation.ext (p := ⟨1, v⟩) (q := ⟨1, fun _ => v 0⟩) rfl
+    intro i
+    fin_cases i
+    rfl
+  rw [hp, hv]
+  exact hone _ _ hsq
+
 private theorem lift_eq_of_equivalent {α : Type v}
     (f : (p : RegularFormPresentation K) → α)
     (hperm : ∀ {n} {w w' : Fin n → Kˣ}, PermutationStep w w' →
@@ -55,49 +93,28 @@ private theorem lift_eq_of_equivalent {α : Type v}
     cases q with
     | mk m v =>
       have hn : n = m := fst_eq_of_presentedForm_equivalent h
-      -- Reindex the second coefficient family along the rank equality so both presentations have
-      -- the same index type.
-      let r : RegularFormPresentation K := ⟨n, v ∘ Fin.cast hn⟩
-      have hrq : (presentedForm r).Equivalent (presentedForm ⟨m, v⟩) := by
-        rw [presentedForm_eq_weightedSumSquares, presentedForm_eq_weightedSumSquares]
-        exact (equivalent_weightedSumSquares_comp (fun i => (v i : K)) (finCongr hn)).symm
-      have hpr : (presentedForm ⟨n, w⟩).Equivalent (presentedForm r) := h.trans hrq.symm
-      have hr : r = ⟨m, v⟩ := by
-        apply RegularFormPresentation.ext hn
-        intro i
-        rfl
       by_cases h0 : n = 0
       · subst n
         have hm : m = 0 := by omega
         subst m
-        have hpq : (⟨0, w⟩ : RegularFormPresentation K) = ⟨0, v⟩ := by
-          apply RegularFormPresentation.ext (p := ⟨0, w⟩) (q := ⟨0, v⟩) rfl
-          intro i
-          exact Fin.elim0 i
-        exact congrArg f hpq
+        exact lift_eq_of_rank_zero f w v
       by_cases h1 : n = 1
       · subst n
         have hm : m = 1 := by omega
         subst m
-        have hsq : IsSquare ((w 0) * (v 0)) := by
-          have hprUnit : (QuadraticMap.weightedSumSquares K w).Equivalent
-              (QuadraticMap.weightedSumSquares K r.2) := by
-            simpa only [presentedForm_eq_weightedSumSquares] using hpr
-          have := isSquare_prod_mul_prod_of_equivalent (R := K) (w := w) (v := r.2) hprUnit
-          simpa [r] using this
-        have hp : (⟨1, w⟩ : RegularFormPresentation K) = ⟨1, fun _ => w 0⟩ := by
-          apply RegularFormPresentation.ext (p := ⟨1, w⟩) (q := ⟨1, fun _ => w 0⟩) rfl
-          intro i
-          fin_cases i
-          rfl
-        have hv : (⟨1, v⟩ : RegularFormPresentation K) = ⟨1, fun _ => v 0⟩ := by
-          apply RegularFormPresentation.ext (p := ⟨1, v⟩) (q := ⟨1, fun _ => v 0⟩) rfl
-          intro i
-          fin_cases i
-          rfl
-        rw [hp, hv]
-        exact hone _ _ hsq
+        exact lift_eq_of_rank_one f hone h
       · have hn2 : 2 ≤ n := by omega
+        -- Reindex the second coefficient family along the rank equality so both presentations
+        -- have the same index type.
+        let r : RegularFormPresentation K := ⟨n, v ∘ Fin.cast hn⟩
+        have hrq : (presentedForm r).Equivalent (presentedForm ⟨m, v⟩) := by
+          rw [presentedForm_eq_weightedSumSquares, presentedForm_eq_weightedSumSquares]
+          exact (equivalent_weightedSumSquares_comp (fun i => (v i : K)) (finCongr hn)).symm
+        have hpr : (presentedForm ⟨n, w⟩).Equivalent (presentedForm r) := h.trans hrq.symm
+        have hr : r = ⟨m, v⟩ := by
+          apply RegularFormPresentation.ext hn
+          intro i
+          rfl
         have hprCoe : (QuadraticMap.weightedSumSquares K (fun i => (w i : K))).Equivalent
             (QuadraticMap.weightedSumSquares K (fun i => (r.2 i : K))) := by
           rw [← presentedForm_eq_weightedSumSquares_coe,
@@ -108,7 +125,6 @@ private theorem lift_eq_of_equivalent {α : Type v}
         calc
           f ⟨n, w⟩ = f r := diagonalChain_invariant f hperm hbin hchain
           _ = f ⟨m, v⟩ := congrArg f hr
-
 /-- Lift a function on diagonal coefficient presentations to isometry classes when it is
 invariant under coefficient permutations and binary replacements. The rank-one condition records
 the necessary invariance under changing a coefficient by a square, since no binary replacement
