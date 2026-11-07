@@ -37,7 +37,8 @@ It also records a perturbation bound for quotients, `|x / a - y / b| ≤ 2 (e + 
 `(1 - δ) b ≤ a ≤ b`, `δ ≤ 1 / 2` and `|x - y| ≤ e`, the comparison
 `2 t / (t² + ρ²) ≤ (2 t / r) (2 r / (r² + ρ²))` for `0 < t`, `0 < r ≤ ρ`, which compares the
 profiles `2 t / (t² + ρ²)` of two scales `t` and `r` outside the radius `r`, and the clearing
-bound `a * b ≤ 1` from `a ≤ (1 + b)⁻¹` for `0 ≤ b`.
+bound `a * b ≤ 1` from `a ≤ (1 + b)⁻¹` for `0 ≤ b`, and an error-budget bound: if `K` dominates
+`a + b + 1` then `ε / (2 K) * a + b * (ε / (2 K)) ≤ ε / 2`.
 
 ## Main results
 
@@ -54,6 +55,8 @@ bound `a * b ≤ 1` from `a ≤ (1 + b)⁻¹` for `0 ≤ b`.
 * `TauCeti.two_mul_div_add_sq_le_mul`: `2 t / (t² + ρ²) ≤ (2 t / r) (2 r / (r² + ρ²))` for
   `0 < t` and `0 < r ≤ ρ`.
 * `TauCeti.mul_le_one_of_le_inv_one_add`: `a * b ≤ 1` for `0 ≤ b` and `a ≤ (1 + b)⁻¹`.
+* `TauCeti.div_mul_add_mul_div_le_half`: `ε / (2 K) * a + b * (ε / (2 K)) ≤ ε / 2` when
+  `a + b + 1 ≤ K`.
 -/
 
 public section
@@ -164,6 +167,16 @@ theorem mul_le_one_of_le_inv_one_add {α : Type*} [Semifield α] [LinearOrder α
   refine (mul_le_mul_of_nonneg_right ha hb).trans ?_
   rw [inv_mul_eq_div, div_le_one (add_pos_of_pos_of_nonneg zero_lt_one hb)]
   exact le_add_of_nonneg_left zero_le_one
+
+/-- The error budget: if `K` dominates `a + b + 1`, the two error terms `ε / (2 K) * a` and
+`b * (ε / (2 K))` sum to at most `ε / 2`. -/
+theorem div_mul_add_mul_div_le_half {α : Type*} [Field α] [LinearOrder α]
+    [IsStrictOrderedRing α] {a b K ε : α} (hε : 0 < ε) (hK0 : 0 < K) (hK : a + b + 1 ≤ K) :
+    ε / (2 * K) * a + b * (ε / (2 * K)) ≤ ε / 2 := by
+  calc _ = ε / (2 * K) * (a + b) := by ring
+    _ ≤ ε / (2 * K) * K :=
+        mul_le_mul_of_nonneg_left (by linarith) (by positivity)
+    _ = ε / 2 := by field_simp
 
 end TauCeti
 

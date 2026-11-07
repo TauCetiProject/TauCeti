@@ -12,6 +12,7 @@ import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
 import Mathlib.Analysis.SumIntegralComparisons
 import TauCeti.Algebra.Order.BigOperators.Sum.ByParts
+import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 import TauCeti.Analysis.Asymptotics.Sum.Window
 
@@ -323,15 +324,6 @@ private lemma tsum_term_mul_eq_add_tsum_sub {psi : ℝ → ℂ} (ha : 0 ≤ a)
     simpa only [Pi.sub_apply] using this
   rw [← hsumpsi.tsum_add hsumerr]
   exact tsum_congr fun n ↦ by ring
-
-/-- The error budget: if `K` dominates `a + b + 1`, the two error terms `ε / (2 K) * a` and
-`b * (ε / (2 K))` sum to at most `ε / 2`. -/
-private lemma div_mul_add_mul_div_le_half {a b K ε : ℝ} (hε : 0 < ε) (hK0 : 0 < K)
-    (hK : a + b + 1 ≤ K) : ε / (2 * K) * a + b * (ε / (2 * K)) ≤ ε / 2 := by
-  calc _ = ε / (2 * K) * (a + b) := by ring
-    _ ≤ ε / (2 * K) * K :=
-        mul_le_mul_of_nonneg_left (by linarith) (by positivity)
-    _ = ε / 2 := by field_simp
 
 /-- **The smoothed Wiener--Ikehara asymptotic for an approximable weight.** Let `a` be
 nonnegative, with Dirichlet series summable on `Re s > 1` and a boundary remainder
