@@ -40,7 +40,6 @@ open sets on which the Dirichlet problem is solvable for all continuous data
 
 ## Main declarations
 
-* `TauCeti.IsBarrier.mono`: a barrier relative to `Ω` is a barrier relative to every subset.
 * `TauCeti.IsBarrier.exists_isBarrier_of_inter`: a local barrier yields a barrier.
 * `TauCeti.exists_isBarrier_iff_of_inter_eq`: regularity depends only on `Ω` near the point.
 * `InnerProductSpace.HarmonicOnNhd.isBarrier`: the harmonic function with boundary values
@@ -63,11 +62,6 @@ open InnerProductSpace Metric Set Filter Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {Ω Ω' V : Set E} {u w : E → ℝ} {ξ : E}
-
-/-- A barrier relative to `Ω` is a barrier relative to every subset of `Ω`. -/
-theorem IsBarrier.mono (hw : IsBarrier Ω ξ w) (h : Ω' ⊆ Ω) : IsBarrier Ω' ξ w :=
-  ⟨hw.subharmonicOn_neg.mono h, hw.continuousOn.mono (closure_mono h), hw.apply_self,
-    fun x hx ↦ hw.pos x (closure_mono h hx)⟩
 
 open scoped Classical in
 /-- Gluing a barrier `w` relative to `Ω ∩ ball ξ ρ` with a constant: if `m > 0` lies below `w` at
@@ -158,7 +152,7 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.isBarrier (hu : HarmonicOnNhd u �
   · exact absurd (Subsingleton.elim x ξ) hxξ
   -- The convex function `dist · ξ` is subharmonic, so lies below `u` on `closure Ω`.
   have hd : Continuous fun y ↦ dist y ξ := continuous_id.dist continuous_const
-  have hle := ((convexOn_dist ξ convex_univ).subharmonicOn isOpen_univ hd.continuousOn).mono
+  have hle := ((convexOn_dist ξ convex_univ).subharmonicOn isOpen_univ).mono
     (subset_univ Ω) |>.le_of_le_frontier hΩ hb hd.continuousOn hu huc
     (fun y hy ↦ (hug y hy).ge) x hx
   exact (dist_pos.2 hxξ).trans_le hle

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 public import Mathlib.MeasureTheory.Integral.Average
 public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
+import Mathlib.Analysis.Convex.Continuous
 import Mathlib.Analysis.Convex.Integral
 import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Basic
 import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Converse
@@ -47,8 +48,8 @@ family with upper barriers.
   subharmonic function from above satisfies the sub-mean-value inequality at the contact point.
 * `TauCeti.SubharmonicOn.congr`, `TauCeti.subharmonicOn_of_locally_subharmonicOn`: on open sets,
   subharmonicity depends only on the values of the function, and it is a local property.
-* `ConvexOn.subharmonicOn`: a continuous convex function is subharmonic, by Jensen's inequality,
-  since the centre of a ball is its barycentre.
+* `ConvexOn.subharmonicOn`: a convex function on an open set is subharmonic, by Jensen's
+  inequality, since the centre of a ball is its barycentre.
 * `TauCeti.SubharmonicOn.sup`: the pointwise maximum of two subharmonic functions is subharmonic.
 * `TauCeti.SubharmonicOn.const_smul`: a nonnegative multiple of a subharmonic function is
   subharmonic.
@@ -117,10 +118,11 @@ theorem subharmonicOn_of_locally_subharmonicOn
   · obtain ⟨V, -, hxV, hu⟩ := h x hx
     exact hu.frequently_le_setAverage x ⟨hx, hxV⟩
 
-/-- **A continuous convex function is subharmonic.** If `g` is convex and continuous on the
-open set `U`, then `g` is subharmonic on `U`. -/
-theorem _root_.ConvexOn.subharmonicOn {g : E → ℝ} (hg : ConvexOn ℝ U g) (hU : IsOpen U)
-    (hgc : ContinuousOn g U) : SubharmonicOn g U := by
+/-- **A convex function is subharmonic.** If `g` is convex on the open set `U`, then `g` is
+subharmonic on `U`; it is automatically continuous there, `E` being finite-dimensional. -/
+theorem _root_.ConvexOn.subharmonicOn {g : E → ℝ} (hg : ConvexOn ℝ U g) (hU : IsOpen U) :
+    SubharmonicOn g U := by
+  have hgc := hg.continuousOn hU
   refine ⟨hgc, fun x hx ↦ ?_⟩
   obtain ⟨ε, hε, hεU⟩ := nhds_basis_closedBall.mem_iff.1 (hU.mem_nhds hx)
   refine Eventually.frequently ?_

@@ -9,6 +9,8 @@ public import Mathlib.MeasureTheory.Group.Action
 public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Integral.Average
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
+import TauCeti.MeasureTheory.Group.Measure
+import TauCeti.MeasureTheory.Integral.OddSymmetric
 
 /-!
 # Integration on groups
@@ -64,21 +66,16 @@ theorem setIntegral_ball_eq_setIntegral_ball_zero_add
 /-- For a measure invariant under right addition and under negation, such as an additive Haar
 measure on a finite-dimensional real normed space, the integral of `x - x₀` over `ball x₀ R`
 vanishes: the centre is the barycentre of the ball. -/
+@[simp]
 theorem setIntegral_ball_sub_eq_zero {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [MeasurableSpace E] [MeasurableAdd E] [MeasurableNeg E] {μ : Measure E}
     [μ.IsAddRightInvariant] [μ.IsNegInvariant] (x₀ : E) (R : ℝ) :
     ∫ x in ball x₀ R, (x - x₀) ∂μ = 0 := by
   rw [setIntegral_ball_eq_setIntegral_ball_zero_add]
   simp only [add_sub_cancel_right]
-  -- Negation preserves `μ` and `ball 0 R`, and changes the sign of the integrand.
-  have h := (Measure.measurePreserving_neg μ).setIntegral_preimage_emb
-    (MeasurableEquiv.neg E).measurableEmbedding (fun y ↦ y) (ball (0 : E) R)
-  rw [neg_preimage, neg_ball, neg_zero, integral_neg] at h
-  have h2 : (2 : ℝ) • ∫ y in ball (0 : E) R, y ∂μ = 0 := by
-    rw [two_smul]
-    nth_rw 1 [← h]
-    exact neg_add_cancel _
-  exact (smul_eq_zero.1 h2).resolve_left two_ne_zero
+  -- Restricted to the symmetric set `ball 0 R`, `μ` is still invariant under negation.
+  have := Measure.isNegInvariant_restrict (μ := μ) (s := ball (0 : E) R) (by simp [neg_ball])
+  exact integral_eq_zero_of_odd (g := fun y : E ↦ y) fun _ ↦ rfl
 
 /-- For a measure invariant under right addition and under negation, such as an additive Haar
 measure on a finite-dimensional real normed space, the average of the identity over a ball of
