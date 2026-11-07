@@ -9,7 +9,6 @@ public import TauCeti.GroupTheory.GroupAction.Primitive
 public import TauCeti.GroupTheory.Perm.WreathProduct.Basic
 
 import Mathlib.Algebra.Group.Subgroup.Finite
-import Mathlib.Data.Finset.NoncommProd
 
 /-!
 # Primitivity of the two actions of a wreath product
@@ -102,6 +101,12 @@ private lemma inl_mulSingle_smul [DecidableEq ι] (i : ι) (g : D) (x : ι → �
     simp
   · simp [hji]
 
+/-- A base element `⟨t, 1⟩` acts on a function coordinatewise, by `t j` at the coordinate `j`. -/
+private lemma mk_one_smul (t : ι → D) (x : ι → Λ) :
+    (⟨t, 1⟩ : WreathProduct D ι) • x = fun j ↦ t j • x j := by
+  funext j
+  rfl
+
 /-- If a block of the product action contains the constant function `fun _ ↦ a` and a function
 differing from it in the single coordinate `i` (with value `b ≠ a`), then, by primitivity of the
 base action, it contains every function differing from the constant one in coordinate `i`. -/
@@ -112,14 +117,16 @@ private lemma update_mem_of_update_mem_ne [DecidableEq ι] [IsPreprimitive D Λ]
   let baseSingle : D →* WreathProduct D ι :=
     SemidirectProduct.inl.comp (MonoidHom.mulSingle (fun _ : ι ↦ D) i)
   let vary : Λ → ι → Λ := fun z ↦ Function.update (fun _ : ι ↦ a) i z
+  -- `baseSingle g` is `SemidirectProduct.inl (Pi.mulSingle i g)`, which is the form
+  -- `inl_mulSingle_smul` is stated for.
+  have hbase (g : D) : baseSingle g = (SemidirectProduct.inl (Pi.mulSingle i g : ι → D) :
+      WreathProduct D ι) := rfl
   -- Pulling the block back along the equivariant one-coordinate map lets base primitivity fill
   -- that coordinate completely.
   let varyEquiv : Λ →ₑ[baseSingle] (ι → Λ) :=
     { toFun := vary
       map_smul' := fun g z ↦ by
-        change vary (g • z) = (SemidirectProduct.inl (Pi.mulSingle i g : ι → D) :
-          WreathProduct D ι) • vary z
-        rw [inl_mulSingle_smul]
+        rw [hbase, inl_mulSingle_smul]
         simp [vary] }
   have hC : IsBlock D (varyEquiv ⁻¹' B) := hB.preimage varyEquiv
   -- The coercion of `varyEquiv` is `vary`, by definition.
@@ -127,11 +134,14 @@ private lemma update_mem_of_update_mem_ne [DecidableEq ι] [IsPreprimitive D Λ]
   have haC : a ∈ varyEquiv ⁻¹' B := by
     rw [Set.mem_preimage, hvary, Function.update_eq_self]
     exact hc
-  have hbC : b ∈ varyEquiv ⁻¹' B := by rwa [Set.mem_preimage, hvary]
+  have hbC : b ∈ varyEquiv ⁻¹' B := by
+    rw [Set.mem_preimage, hvary]
+    exact hbB
   have hC_univ : varyEquiv ⁻¹' B = Set.univ :=
     (IsPreprimitive.isTrivialBlock_of_isBlock hC).resolve_left fun h ↦ hba (h hbC haC)
   have hz : z ∈ varyEquiv ⁻¹' B := hC_univ.symm ▸ Set.mem_univ z
-  rwa [Set.mem_preimage, hvary] at hz
+  rw [Set.mem_preimage, hvary] at hz
+  exact hz
 
 /-- If a block of the product action contains the constant function `fun _ ↦ a` and all its
 perturbations in the coordinate `i`, then it contains all its perturbations in any coordinate
@@ -170,16 +180,12 @@ function space. -/
 private lemma eq_univ_of_forall_update_mem [Finite ι] [DecidableEq ι] [IsPretransitive D Λ]
     {B : Set (ι → Λ)} (hB : IsBlock (WreathProduct D ι) B) {a : Λ} (hc : (fun _ : ι ↦ a) ∈ B)
     (hvaryAt : ∀ (j : ι) (z : Λ), Function.update (fun _ : ι ↦ a) j z ∈ B) : B = Set.univ := by
-  let _ := Fintype.ofFinite ι
   let c : ι → Λ := fun _ ↦ a
-  let baseSingle (i : ι) : D →* WreathProduct D ι :=
-    SemidirectProduct.inl.comp (MonoidHom.mulSingle (fun _ : ι ↦ D) i)
-  have hsingle (j : ι) (g : D) : baseSingle j g ∈ stabilizer (WreathProduct D ι) B := by
+  have hsingle (j : ι) (g : D) : (SemidirectProduct.inl (Pi.mulSingle j g : ι → D) :
+      WreathProduct D ι) ∈ stabilizer (WreathProduct D ι) B := by
     rw [mem_stabilizer_iff]
     apply hB.smul_eq_of_mem hc
-    have hvalue : baseSingle j g • c = Function.update c j (g • a) :=
-      inl_mulSingle_smul j g c
-    rw [hvalue]
+    rw [inl_mulSingle_smul]
     exact hvaryAt j (g • a)
   -- Finiteness of `ι` now lets the single-coordinate elements generate an arbitrary base
   -- element, which sends the constant tuple to any prescribed tuple.
@@ -188,18 +194,14 @@ private lemma eq_univ_of_forall_update_mem [Finite ι] [DecidableEq ι] [IsPretr
   choose f hf using fun j ↦ exists_smul_eq D a (z j)
   let u : WreathProduct D ι := ⟨f, 1⟩
   have huB : u ∈ stabilizer (WreathProduct D ι) B := by
-    let K := (stabilizer (WreathProduct D ι) B).comap SemidirectProduct.inl
-    have hfK : f ∈ K := by
-      rw [← Finset.noncommProd_mulSingle f]
-      apply K.noncommProd_mem
-        (fun i _ j _ _ ↦ Pi.mulSingle_apply_commute f i j)
-      intro j _
-      exact hsingle j (f j)
+    have hfK : f ∈ (stabilizer (WreathProduct D ι) B).comap SemidirectProduct.inl :=
+      Subgroup.pi_mem_of_mulSingle_mem f fun j ↦ hsingle j (f j)
     -- `u = ⟨f, 1⟩` is `SemidirectProduct.inl f` by definition.
     exact Subgroup.mem_comap.mp hfK
   have huc : u • c = z := by
+    rw [mk_one_smul]
     funext j
-    simpa [u, c] using hf j
+    exact hf j
   rw [← huc, ← mem_stabilizer_iff.mp huB]
   exact Set.smul_mem_smul_set hc
 
@@ -213,15 +215,13 @@ private lemma exists_update_mem_ne [DecidableEq ι] [FaithfulSMul D Λ]
     (hc : (fun _ : ι ↦ a) ∈ B) {y : ι → Λ} (hy : y ∈ B) (hyc : y ≠ fun _ : ι ↦ a) :
     ∃ (i : ι) (b : Λ), b ≠ a ∧ Function.update (fun _ : ι ↦ a) i b ∈ B := by
   let c : ι → Λ := fun _ ↦ a
-  let baseSingle (i : ι) : D →* WreathProduct D ι :=
-    SemidirectProduct.inl.comp (MonoidHom.mulSingle (fun _ : ι ↦ D) i)
   obtain ⟨i, hi⟩ : ∃ i, y i ≠ a := by
     by_contra h
     push Not at h
     exact hyc (funext h)
   -- A stabilizer element moves the exceptional coordinate without moving the constant tuple.
   obtain ⟨d, hda, hdy⟩ := exists_mem_stabilizer_smul_ne a ha hi
-  let s : WreathProduct D ι := baseSingle i d
+  let s : WreathProduct D ι := SemidirectProduct.inl (Pi.mulSingle i d : ι → D)
   have hsy_eq (z : ι → Λ) : s • z = Function.update z i (d • z i) := inl_mulSingle_smul i d z
   clear_value s
   have hsc : s • c = c := by
@@ -232,16 +232,16 @@ private lemma exists_update_mem_ne [DecidableEq ι] [FaithfulSMul D Λ]
   choose t ht using fun j ↦ exists_smul_eq D (y j) a
   let w : WreathProduct D ι := ⟨t, 1⟩
   have hwy : w • y = c := by
+    rw [mk_one_smul]
     funext j
-    simpa [w, c] using ht j
+    exact ht j
   have hwB : w • B = B := hB.smul_eq_of_mem hy (hwy.symm ▸ hc)
   let b : Λ := (w • (s • y)) i
   have hba : b ≠ a := by
     have hb : b = t i • (d • y i) := by
       simp only [b]
-      rw [hsy_eq]
-      have hone : (1 : Equiv.Perm ι).symm i = i := rfl
-      simp [w, hone]
+      rw [hsy_eq, mk_one_smul]
+      simp
     rw [hb, ← ht i]
     exact fun h ↦ hdy (smul_left_cancel (t i) h)
   have hwsy : w • (s • y) ∈ B := hwB ▸ Set.smul_mem_smul_set hsy
@@ -253,9 +253,8 @@ private lemma exists_update_mem_ne [DecidableEq ι] [FaithfulSMul D Λ]
       simp [b]
     · calc
         (w • (s • y)) j = (w • y) j := by
-          rw [hsy_eq]
-          have hone : (1 : Equiv.Perm ι).symm j = j := rfl
-          simp [w, hone, hji]
+          rw [hsy_eq, mk_one_smul, mk_one_smul]
+          simp [hji]
         _ = c j := congrFun hwy j
         _ = Function.update c i b j := by simp [hji]
   rwa [← hwsy_eq]
@@ -277,8 +276,10 @@ theorem isPreprimitive_product [Finite ι] [FaithfulSMul D Λ]
   let _ : IsPretransitive (WreathProduct D ι) (ι → Λ) :=
     { exists_smul_eq := fun x y ↦ by
         choose d hd using fun i ↦ exists_smul_eq D (x i) (y i)
-        refine ⟨⟨d, 1⟩, funext fun i ↦ ?_⟩
-        simpa using hd i }
+        refine ⟨⟨d, 1⟩, ?_⟩
+        rw [mk_one_smul]
+        funext i
+        exact hd i }
   -- It suffices to show that a nonsingleton block through the constant function is universal.
   apply IsPreprimitive.of_isTrivialBlock_base (fun _ : ι ↦ a)
   intro B hc hB
