@@ -87,7 +87,9 @@ Hamiltonians, it is `∂_s H_{(s, t)}`, and in particular for a continuation per
   along a line near which the perturbation is cylindrical.
 * `SymplecticForm.hamiltonianCurvature_congr_of_eventuallyEq`,
   `SymplecticForm.hamiltonianCurvature_comp_add_right`: the curvature is local in the domain and
-  commutes with domain translations, and likewise for the perturbed derivative
+  commutes with domain translations (so data that agree on an open set have the same integrated
+  curvature over it, `SymplecticForm.setLIntegral_enorm_hamiltonianCurvature_congr_of_isOpen`),
+  and likewise for the perturbed derivative
   (`SymplecticForm.perturbedFDeriv_congr_of_eventuallyEq`,
   `SymplecticForm.perturbedFDeriv_comp_add_right`) and the energy density
   (`SymplecticForm.floerEnergyDensity_congr_of_eventuallyEq`,
@@ -205,6 +207,16 @@ theorem hamiltonianCurvature_congr_of_eventuallyEq (ω : SymplecticForm V)
   have ht' : (fun w ↦ Kt w x) =ᶠ[𝓝 z] fun w ↦ Kt' w x := ht.mono fun _ hw ↦ congrFun hw x
   rw [hamiltonianCurvature_def, hamiltonianCurvature_def, hs'.fderiv_eq, ht'.fderiv_eq,
     hs.eq_of_nhds, ht.eq_of_nhds]
+
+/-- Perturbation data that agree on an open set have the same integrated curvature over it. -/
+theorem setLIntegral_enorm_hamiltonianCurvature_congr_of_isOpen (ω : SymplecticForm V)
+    {Ks Kt Ks' Kt' : ℝ × ℝ → V → ℝ} {U : Set (ℝ × ℝ)} (hU : IsOpen U) (hs : EqOn Ks Ks' U)
+    (ht : EqOn Kt Kt' U) (u : ℝ × ℝ → V) :
+    ∫⁻ z in U, ‖ω.hamiltonianCurvature Ks Kt z (u z)‖ₑ =
+      ∫⁻ z in U, ‖ω.hamiltonianCurvature Ks' Kt' z (u z)‖ₑ :=
+  setLIntegral_congr_fun hU.measurableSet fun z hz ↦ by
+    rw [ω.hamiltonianCurvature_congr_of_eventuallyEq (hs.eventuallyEq_of_mem (hU.mem_nhds hz))
+      (ht.eventuallyEq_of_mem (hU.mem_nhds hz))]
 
 /-- Curvature commutes with translations of the domain. -/
 theorem hamiltonianCurvature_comp_add_right (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ)

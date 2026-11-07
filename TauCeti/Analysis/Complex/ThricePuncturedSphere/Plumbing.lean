@@ -126,6 +126,11 @@ theorem hasDerivAt_plumbingMap (q : Puncture) (L : ℝ) (w : ℂ) :
   rw [mul_one] at h
   exact h
 
+/-- The plumbing map is complex-smooth. -/
+theorem contDiff_plumbingMap (q : Puncture) (L : ℝ) {n : WithTop ℕ∞} :
+    ContDiff ℂ n (q.plumbingMap L) :=
+  contDiff_const.add (contDiff_const.mul contDiff_id)
+
 @[simp]
 theorem deriv_plumbingMap (q : Puncture) (L : ℝ) (w : ℂ) :
     deriv (q.plumbingMap L) w = q.plumbingFactor L :=
