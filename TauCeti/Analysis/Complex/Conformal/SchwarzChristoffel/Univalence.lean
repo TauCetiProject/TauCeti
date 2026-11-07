@@ -7,7 +7,10 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Primitive
 import Mathlib.Analysis.Complex.Convex
+import TauCeti.Algebra.Order.BigOperators.Sum.AbsSumMulLt
 import TauCeti.Analysis.Calculus.Deriv.InjOn
+import TauCeti.Analysis.Complex.Univalence
+import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 
 /-!
 # An exponent criterion for Schwarz--Christoffel univalence
@@ -36,56 +39,9 @@ noncomputable section
 
 open Complex Finset Set UpperHalfPlane
 
-namespace Complex
-
-/-- A complex number in the open upper half-plane has argument within `π / 2` of `π / 2`. -/
-theorem abs_arg_sub_pi_div_two_lt_of_im_pos {w : ℂ} (hw : 0 < w.im) :
-    |w.arg - Real.pi / 2| < Real.pi / 2 := by
-  have hpos : 0 < w.arg := by
-    have hne : w.arg ≠ 0 := by
-      intro h
-      exact hw.ne' (arg_eq_zero_iff.mp h).2
-    exact lt_of_le_of_ne (arg_nonneg_iff.mpr hw.le) (Ne.symm hne)
-  have hlt := arg_lt_pi_iff.mpr (Or.inr hw.ne')
-  exact abs_lt.mpr ⟨by linarith, by linarith⟩
-
-end Complex
-
 namespace TauCeti
 
 variable {ι : Type*} [Fintype ι]
-
-/-- A weighted sum with total absolute weight at most one of numbers of absolute value less than
-`c` has absolute value less than `c`. -/
-theorem abs_sum_mul_lt_of_sum_abs_le_one {c : ℝ} (hc : 0 < c) (e x : ι → ℝ)
-    (he : ∑ i, |e i| ≤ 1) (hx : ∀ i, |x i| < c) : |∑ i, e i * x i| < c := by
-  by_cases hzero : ∀ i, e i = 0
-  · simpa [hzero] using hc
-  · push Not at hzero
-    obtain ⟨j, hj⟩ := hzero
-    calc
-      |∑ i, e i * x i| ≤ ∑ i, |e i| * |x i| := by
-        simpa [abs_mul] using abs_sum_le_sum_abs (fun i => e i * x i) (univ : Finset ι)
-      _ < ∑ i, |e i| * c :=
-        sum_lt_sum (fun i _ => mul_le_mul_of_nonneg_left (hx i).le (abs_nonneg _))
-          ⟨j, mem_univ j, mul_lt_mul_of_pos_left (hx j) (abs_pos.mpr hj)⟩
-      _ ≤ c := by
-        rw [← sum_mul]
-        nlinarith
-
-/-- On the upper half-plane the Schwarz--Christoffel integrand is the exponential of the sum of
-the principal logarithms of its factors. -/
-theorem schwarzChristoffelIntegrand_eq_exp_sum_log (a e : ι → ℝ) {z : ℂ}
-    (hz : z ∈ upperHalfPlaneSet) :
-    schwarzChristoffelIntegrand a e z = exp (∑ i, log (z - (a i : ℂ)) * (e i : ℂ)) := by
-  simp only [schwarzChristoffelIntegrand_def, exp_sum]
-  apply prod_congr rfl
-  intro i _
-  exact cpow_def_of_ne_zero (by
-    intro h
-    have := congrArg Complex.im h
-    simp only [sub_im, ofReal_im, sub_zero, zero_im] at this
-    exact hz.ne' this) _
 
 /-- If the absolute turning exponents sum to at most one, a fixed rotation places the
 Schwarz--Christoffel integrand strictly in the right half-plane. -/
@@ -105,7 +61,8 @@ theorem re_exp_mul_schwarzChristoffelIntegrand_pos_of_sum_abs_le_one
     simp [S, θ, mul_im, log_im, mul_sub, sum_sub_distrib, sum_mul, mul_comm]
   have hrot : exp (-(θ : ℂ) * Complex.I) * schwarzChristoffelIntegrand a e z =
       exp (S - (θ : ℂ) * Complex.I) := by
-    rw [schwarzChristoffelIntegrand_eq_exp_sum_log a e hz, ← exp_add]
+    have hne : ∀ i, z ≠ (a i : ℂ) := fun i h => (show 0 < z.im from hz).ne' (by simp [h])
+    rw [schwarzChristoffelIntegrand_eq_exp_sum_log a e hne, ← exp_add]
     congr 1
     ring
   -- Its real part is positive because the centered argument lies between -π/2 and π/2.
