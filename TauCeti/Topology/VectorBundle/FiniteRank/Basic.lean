@@ -98,6 +98,33 @@ is definitionally the identity. This avoids unpacking the fields of `VectorBundl
   simpa only [A.indexAt_eq, ContinuousLinearMap.id_apply] using
     A.core.coordChange_self (A.core.indexAt x) x (A.core.mem_baseSet_at x) v
 
+/-- Every base point lies in the domain of its own chart. -/
+theorem mem_baseSet_self (A : FiniteRankBundleCore 𝕜 B) (x : B) : x ∈ A.core.baseSet x := by
+  simpa only [A.indexAt_eq] using A.core.mem_baseSet_at x
+
+/-- The preferred trivialization of `A.core` at `x` is the chart `A.core.localTriv x`. -/
+theorem trivializationAt_core (A : FiniteRankBundleCore 𝕜 B) (x : B) :
+    trivializationAt (Fin A.rank → 𝕜) A.core.Fiber x = A.core.localTriv x := by
+  rw [A.core.trivializationAt, ← A.core.localTrivAt_def, A.indexAt_eq]
+
+/-- Expressing a fibre map between point-indexed cores in charts `i` and `j` conjugates by the
+transitions through `x` without mentioning `indexAt`. -/
+theorem inChartCoordinates_core (A D : FiniteRankBundleCore 𝕜 B) (i j x : B)
+    (ϕ : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)) :
+    A.core.inChartCoordinates D.core i j x ϕ =
+      (D.core.coordChange x j x).comp (ϕ.comp (A.core.coordChange i x x)) := by
+  apply ContinuousLinearMap.ext
+  intro u
+  rw [inChartCoordinates_apply, A.indexAt_eq, D.indexAt_eq,
+    ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply]
+
+/-- Pointwise form of `inChartCoordinates_core`. -/
+theorem inChartCoordinates_core_apply (A D : FiniteRankBundleCore 𝕜 B) (i j x : B)
+    (ϕ : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)) (u : Fin A.rank → 𝕜) :
+    A.core.inChartCoordinates D.core i j x ϕ u =
+      D.core.coordChange x j x (ϕ (A.core.coordChange i x x u)) := by
+  rw [inChartCoordinates_apply, A.indexAt_eq, D.indexAt_eq]
+
 /-- The category of point-indexed finite-rank cores, with genuine coordinate bundle morphisms. -/
 instance : Category (FiniteRankBundleCore 𝕜 B) where
   Hom A D := CoordinateHom A.core D.core

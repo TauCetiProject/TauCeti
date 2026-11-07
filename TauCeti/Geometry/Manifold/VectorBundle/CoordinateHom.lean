@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Topology.VectorBundle.Descent
 import TauCeti.Data.Bundle
+import TauCeti.Geometry.Manifold.VectorBundle.Translate
 
 /-!
 # `C^n` cocycle morphisms and `C^n` bundle equivalences
@@ -30,6 +31,16 @@ the same as holomorphic bundle equivalences of the glued holomorphic vector bund
 * `VectorBundleCore.contMDiff_hom_bundle_iff_forall_contMDiffOn`: a section of the Hom bundle
   between two `C^n` cores is `C^n` exactly when it is `C^n` in every pair of a source chart and
   a target chart, on their common domain.
+* `VectorBundleCore.CoordinateHom.contMDiffOn_inChartCoordinates_id`,
+  `VectorBundleCore.CoordinateHom.contMDiffOn_inChartCoordinates_comp`,
+  `VectorBundleCore.CoordinateHom.contMDiffOn_inChartCoordinates_add`,
+  `VectorBundleCore.CoordinateHom.contMDiffOn_inChartCoordinates_zero`,
+  `VectorBundleCore.CoordinateHom.contMDiffOn_inChartCoordinates_neg`, and the corresponding
+  `contMDiff_totalSpaceMap_*` lemmas: `C^n` regularity of chart operators and of glued total-space
+  maps is preserved by identity, composition, and the group operations.
+* `VectorBundleCore.CoordinateHom.toDiffeomorphOfInv`: two mutually inverse cocycle morphisms with
+  `C^n` total-space maps form a `C^n` diffeomorphism of total spaces without completeness or
+  finite-dimensionality assumptions.
 * `VectorBundleCore.CoordinateHom.contMDiff_totalSpaceMap_iff`: for a finite-dimensional source
   fibre, the glued map of a cocycle morphism is `C^n` exactly when all its chart operators are.
 * `VectorBundleCore.CoordinateHom.toDiffeomorph`: a cocycle morphism with `C^n` chart operators
@@ -99,6 +110,78 @@ theorem contMDiff_hom_bundle_iff_forall_contMDiffOn [Z.IsContMDiff IB n] [W.IsCo
 
 namespace CoordinateHom
 
+/-- On a `C^n` core, the chart operators of the identity cocycle morphism are `C^n`. -/
+theorem contMDiffOn_inChartCoordinates_id [Z.IsContMDiff IB n] (i j : ι) :
+    ContMDiffOn IB 𝓘(𝕜, F →L[𝕜] F) n (fun x ↦ Z.inChartCoordinates Z i j x ((id Z).fiberMap x))
+      (Z.baseSet i ∩ Z.baseSet j) :=
+  (Z.contMDiffOn_coordChange IB i j).congr fun x hx ↦ by
+    ext v
+    simp only [fiberMap_id, inChartCoordinates_apply, ContinuousLinearMap.id_apply]
+    exact Z.coordChange_comp i (Z.indexAt x) j x ⟨⟨hx.1, Z.mem_baseSet_at x⟩, hx.2⟩ v
+
+/-- The chart operators of the zero cocycle morphism are `C^n`. -/
+theorem contMDiffOn_inChartCoordinates_zero (i : ι) (j : κ) :
+    ContMDiffOn IB 𝓘(𝕜, F →L[𝕜] G) n
+      (fun x ↦ Z.inChartCoordinates W i j x ((0 : CoordinateHom Z W).fiberMap x))
+      (Z.baseSet i ∩ W.baseSet j) :=
+  (contMDiffOn_const (c := (0 : F →L[𝕜] G))).congr fun x hx ↦
+    ((0 : CoordinateHom Z W).operator_eq i j ⟨x, hx⟩).symm
+
+/-- Pointwise addition of cocycle morphisms preserves `C^n` regularity of chart operators. -/
+theorem contMDiffOn_inChartCoordinates_add {a b : CoordinateHom Z W} {i : ι} {j : κ}
+    (ha : ContMDiffOn IB 𝓘(𝕜, F →L[𝕜] G) n
+      (fun x ↦ Z.inChartCoordinates W i j x (a.fiberMap x)) (Z.baseSet i ∩ W.baseSet j))
+    (hb : ContMDiffOn IB 𝓘(𝕜, F →L[𝕜] G) n
+      (fun x ↦ Z.inChartCoordinates W i j x (b.fiberMap x)) (Z.baseSet i ∩ W.baseSet j)) :
+    ContMDiffOn IB 𝓘(𝕜, F →L[𝕜] G) n
+      (fun x ↦ Z.inChartCoordinates W i j x ((a + b).fiberMap x)) (Z.baseSet i ∩ W.baseSet j) := by
+  intro x hx
+  refine (contDiff_add.comp_contMDiffWithinAt ((ha x hx).prodMk_space (hb x hx))).congr
+    (fun y hy ↦ ?_) ?_
+  · ext v
+    simp [inChartCoordinates_apply]
+  · ext v
+    simp [inChartCoordinates_apply]
+
+/-- Negation of a cocycle morphism preserves `C^n` regularity of chart operators. -/
+theorem contMDiffOn_inChartCoordinates_neg {a : CoordinateHom Z W} {i : ι} {j : κ}
+    (ha : ContMDiffOn IB 𝓘(𝕜, F →L[𝕜] G) n
+      (fun x ↦ Z.inChartCoordinates W i j x (a.fiberMap x)) (Z.baseSet i ∩ W.baseSet j)) :
+    ContMDiffOn IB 𝓘(𝕜, F →L[𝕜] G) n
+      (fun x ↦ Z.inChartCoordinates W i j x ((-a).fiberMap x)) (Z.baseSet i ∩ W.baseSet j) := by
+  intro x hx
+  refine (contDiff_neg.comp_contMDiffWithinAt (ha x hx)).congr (fun y hy ↦ ?_) ?_
+  · ext v
+    simp [inChartCoordinates_apply]
+  · ext v
+    simp [inChartCoordinates_apply]
+
+/-- Composition of cocycle morphisms preserves `C^n` regularity of chart operators. -/
+theorem contMDiffOn_inChartCoordinates_comp {H ν : Type*} [NormedAddCommGroup H] [NormedSpace 𝕜 H]
+    {V : VectorBundleCore 𝕜 B H ν} {b : CoordinateHom W V} {a : CoordinateHom Z W}
+    (hb : ∀ j k, ContMDiffOn IB 𝓘(𝕜, G →L[𝕜] H) n
+      (fun x ↦ W.inChartCoordinates V j k x (b.fiberMap x)) (W.baseSet j ∩ V.baseSet k))
+    (ha : ∀ i j, ContMDiffOn IB 𝓘(𝕜, F →L[𝕜] G) n
+      (fun x ↦ Z.inChartCoordinates W i j x (a.fiberMap x)) (Z.baseSet i ∩ W.baseSet j))
+    (i : ι) (k : ν) :
+    ContMDiffOn IB 𝓘(𝕜, F →L[𝕜] H) n
+      (fun x ↦ Z.inChartCoordinates V i k x ((b.comp a).fiberMap x))
+      (Z.baseSet i ∩ V.baseSet k) := by
+  intro x₀ hx₀
+  -- Near each base point, factor the composite through the preferred intermediate chart of `W`.
+  let j := W.indexAt x₀
+  let U := (Z.baseSet i ∩ W.baseSet j) ∩ (W.baseSet j ∩ V.baseSet k)
+  have hUopen : IsOpen U :=
+    ((Z.isOpen_baseSet i).inter (W.isOpen_baseSet j)).inter
+      ((W.isOpen_baseSet j).inter (V.isOpen_baseSet k))
+  have hx₀U : x₀ ∈ U := ⟨⟨hx₀.1, W.mem_baseSet_at x₀⟩, ⟨W.mem_baseSet_at x₀, hx₀.2⟩⟩
+  have hcomp : ContMDiffOn IB 𝓘(𝕜, F →L[𝕜] H) n
+      (fun x ↦ Z.inChartCoordinates V i k x ((b.comp a).fiberMap x)) U :=
+    (((hb j k).mono inter_subset_right).clm_comp ((ha i j).mono inter_subset_left)).congr
+      fun x hx ↦ by
+        rw [fiberMap_comp, inChartCoordinates_comp Z W V i k hx.1.2]
+  exact ((hcomp x₀ hx₀U).contMDiffAt (hUopen.mem_nhds hx₀U)).contMDiffWithinAt
+
 /-- A cocycle morphism between two `C^n` cores whose chart operators are `C^n` glues to a `C^n`
 map of total spaces. Unlike `VectorBundleCore.CoordinateHom.contMDiff_totalSpaceMap_iff`, this
 direction needs no finite-dimensionality. -/
@@ -109,6 +192,93 @@ theorem contMDiff_totalSpaceMap [Z.IsContMDiff IB n] [W.IsContMDiff IB n] (a : C
   rw [totalSpaceMap_def]
   exact ((contMDiff_hom_bundle_iff_forall_contMDiffOn.2 ha).comp
     (contMDiff_proj Z.Fiber)).clm_bundle_apply contMDiff_id
+
+/-- The glued total-space map of the identity cocycle morphism is `C^n`. -/
+theorem contMDiff_totalSpaceMap_id (Z : VectorBundleCore 𝕜 B F ι) :
+    ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, F)) n (id Z).totalSpaceMap := by
+  rw [totalSpaceMap_id]
+  exact contMDiff_id
+
+/-- The glued total-space map of the zero cocycle morphism is `C^n`. -/
+theorem contMDiff_totalSpaceMap_zero :
+    ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, G)) n (0 : CoordinateHom Z W).totalSpaceMap :=
+  ((contMDiff_zeroSection 𝕜 W.Fiber).comp (contMDiff_proj Z.Fiber)).congr fun _ ↦ by
+    rw [totalSpaceMap_def]
+    simp only [Function.comp_apply, fiberMap_zero, zeroSection]
+    -- The zero element of the core fibre `W.Fiber _` is `0 : G`.
+    rfl
+
+/-- Pointwise addition of cocycle morphisms preserves `C^n` regularity of glued total-space
+maps. -/
+theorem contMDiff_totalSpaceMap_add {a b : CoordinateHom Z W}
+    (ha : ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, G)) n a.totalSpaceMap)
+    (hb : ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, G)) n b.totalSpaceMap) :
+    ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, G)) n (a + b).totalSpaceMap := by
+  rw [totalSpaceMap_def] at ha hb ⊢
+  refine (ha.add_sectionAlong hb).congr fun p ↦ ?_
+  rw [fiberMap_add]
+  -- Addition on `F →L[𝕜] G` applied to `p.2 : Z.Fiber p.proj` is addition on `W.Fiber p.proj`.
+  rfl
+
+/-- Negation of a cocycle morphism preserves `C^n` regularity of its glued total-space map. -/
+theorem contMDiff_totalSpaceMap_neg {a : CoordinateHom Z W}
+    (ha : ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, G)) n a.totalSpaceMap) :
+    ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, G)) n (-a).totalSpaceMap := by
+  intro p₀
+  have ha₀ := (Bundle.contMDiffAt_totalSpace.1 (ha p₀)).2
+  rw [Bundle.contMDiffAt_totalSpace]
+  simp only [totalSpaceMap_proj] at ha₀ ⊢
+  refine ⟨(contMDiff_proj Z.Fiber).contMDiffAt, ?_⟩
+  refine (contDiff_neg.comp_contMDiffAt ha₀).congr_of_eventuallyEq
+    (Filter.Eventually.of_forall ?_)
+  rintro ⟨x, v⟩
+  dsimp only [Function.comp_apply]
+  rw [W.trivializationAt, ← W.localTrivAt_def]
+  simp only [totalSpaceMap_mk, localTriv_apply, fiberMap_neg]
+  exact map_neg (W.coordChange (W.indexAt x) (W.indexAt p₀.proj) x) (a.fiberMap x v)
+
+/-- Composition of cocycle morphisms preserves `C^n` regularity of glued total-space maps. -/
+theorem contMDiff_totalSpaceMap_comp {H ν : Type*} [NormedAddCommGroup H] [NormedSpace 𝕜 H]
+    {V : VectorBundleCore 𝕜 B H ν} {b : CoordinateHom W V} {a : CoordinateHom Z W}
+    (hb : ContMDiff (IB.prod 𝓘(𝕜, G)) (IB.prod 𝓘(𝕜, H)) n b.totalSpaceMap)
+    (ha : ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, G)) n a.totalSpaceMap) :
+    ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, H)) n (b.comp a).totalSpaceMap := by
+  rw [totalSpaceMap_comp]
+  exact hb.comp ha
+
+/-- Two mutually inverse cocycle morphisms whose glued total-space maps are `C^n` form a `C^n`
+diffeomorphism of total spaces. Unlike `VectorBundleCore.CoordinateHom.toDiffeomorph`, neither
+completeness of the scalar field, finite-dimensionality of the fibre, nor `C^n` regularity of the
+cores is needed when an explicit inverse cocycle morphism is given. -/
+def toDiffeomorphOfInv (a : CoordinateHom Z W) (b : CoordinateHom W Z)
+    (hba : b.comp a = id Z) (hab : a.comp b = id W)
+    (ha : ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, G)) n a.totalSpaceMap)
+    (hb : ContMDiff (IB.prod 𝓘(𝕜, G)) (IB.prod 𝓘(𝕜, F)) n b.totalSpaceMap) :
+    Z.TotalSpace ≃ₘ^n⟮IB.prod 𝓘(𝕜, F), IB.prod 𝓘(𝕜, G)⟯ W.TotalSpace where
+  toFun := a.totalSpaceMap
+  invFun := b.totalSpaceMap
+  left_inv p := by
+    have h := congrFun (congrArg totalSpaceMap hba) p
+    rwa [totalSpaceMap_comp, Function.comp_apply, totalSpaceMap_id, _root_.id_eq] at h
+  right_inv p := by
+    have h := congrFun (congrArg totalSpaceMap hab) p
+    rwa [totalSpaceMap_comp, Function.comp_apply, totalSpaceMap_id, _root_.id_eq] at h
+  contMDiff_toFun := ha
+  contMDiff_invFun := hb
+
+@[simp]
+theorem coe_toDiffeomorphOfInv (a : CoordinateHom Z W) (b : CoordinateHom W Z)
+    (hba : b.comp a = id Z) (hab : a.comp b = id W)
+    (ha : ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, G)) n a.totalSpaceMap)
+    (hb : ContMDiff (IB.prod 𝓘(𝕜, G)) (IB.prod 𝓘(𝕜, F)) n b.totalSpaceMap) :
+    ⇑(toDiffeomorphOfInv a b hba hab ha hb) = a.totalSpaceMap := (rfl)
+
+@[simp]
+theorem coe_toDiffeomorphOfInv_symm (a : CoordinateHom Z W) (b : CoordinateHom W Z)
+    (hba : b.comp a = id Z) (hab : a.comp b = id W)
+    (ha : ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, G)) n a.totalSpaceMap)
+    (hb : ContMDiff (IB.prod 𝓘(𝕜, G)) (IB.prod 𝓘(𝕜, F)) n b.totalSpaceMap) :
+    ⇑(toDiffeomorphOfInv a b hba hab ha hb).symm = b.totalSpaceMap := (rfl)
 
 variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F] [Z.IsContMDiff IB n] [W.IsContMDiff IB n]
 
