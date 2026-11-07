@@ -825,17 +825,16 @@ theorem exists_isWeakSolutionDirichlet_top_ae_eq_on_of_isCompact
         ∀ᵐ x ∂mu, x ∈ S → g x = f x := by
   -- A smooth cutoff, equal to one near `S` and compactly supported in `Ω`.
   obtain ⟨ψ, hψ, -, hψ_one, hψc, hts⟩ :=
-    hS.exists_contDiff_cutoff Omega.isOpen hSΩ
+    hS.exists_contDiff_cutoff_eventuallyEq_one Omega.isOpen hSΩ
   have hψ_S : ∀ x ∈ S, ψ x = 1 ∧ ∇ ψ x = 0 := fun x hx => by
-    have hev : ψ =ᶠ[nhds x] fun _ => (1 : ℝ) := mem_interior_iff_mem_nhds.1 (hψ_one hx)
+    have hev : ψ =ᶠ[nhds x] fun _ => (1 : ℝ) := hψ_one x hx
     exact ⟨hev.eq_of_nhds, hev.gradient_eq.trans (gradient_fun_const x 1)⟩
   -- Near `S` the conormal field of `ψ` vanishes, and with it its divergence.
   have hdiv_S : ∀ x ∈ S, divMatrixGradient a ψ x = 0 := by
     intro x hx
     have hgrad_near : ∀ᶠ y in nhds x, ∇ ψ y = 0 := by
-      filter_upwards [IsOpen.mem_nhds isOpen_interior (hψ_one hx)] with y hy
-      have hev : ψ =ᶠ[nhds y] fun _ => (1 : ℝ) := mem_interior_iff_mem_nhds.1 hy
-      exact hev.gradient_eq.trans (gradient_fun_const y 1)
+      filter_upwards [(hψ_one x hx).eventually_nhds] with y hy
+      exact (EventuallyEq.gradient_eq hy).trans (gradient_fun_const y 1)
     refine Finset.sum_eq_zero fun i _ => ?_
     have hfield : (fun y => matrixBilinearForm (a y) (EuclideanSpace.basisFun ι ℝ i)
         (∇ ψ y)) =ᶠ[nhds x] 0 := by
