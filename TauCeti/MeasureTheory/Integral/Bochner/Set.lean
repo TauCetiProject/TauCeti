@@ -132,8 +132,7 @@ namespace MeasureTheory
 `V ⊆ Ω` is at most `S ∫_Ω |f|`. -/
 theorem setIntegral_mul_le_mul_setIntegral_abs {α : Type*} [MeasurableSpace α]
     {ν : Measure α} {V Ω : Set α} {f g : α → ℝ} {S : ℝ} (hVΩ : V ⊆ Ω)
-    (hf : IntegrableOn f Ω ν) (hS0 : 0 ≤ S) (hg : AEStronglyMeasurable g (ν.restrict V))
-    (hgS : ∀ᵐ x ∂ν.restrict V, |g x| ≤ S) :
+    (hf : IntegrableOn f Ω ν) (hS0 : 0 ≤ S) (hgS : ∀ᵐ x ∂ν.restrict V, |g x| ≤ S) :
     ∫ x in V, f x * g x ∂ν ≤ S * ∫ x in Ω, |f x| ∂ν := by
   have hbound : ∀ᵐ x ∂ν.restrict V, ‖f x * g x‖ ≤ S * |f x| := by
     filter_upwards [hgS] with x hx
@@ -141,9 +140,8 @@ theorem setIntegral_mul_le_mul_setIntegral_abs {α : Type*} [MeasurableSpace α]
     exact mul_le_mul_of_nonneg_right hx (abs_nonneg _)
   have hfV : IntegrableOn f V ν := hf.mono_set hVΩ
   have hΔV : IntegrableOn (fun x => S * |f x|) V ν := hfV.abs.const_mul S
-  calc _ ≤ ∫ x in V, S * |f x| ∂ν :=
-        integral_mono_ae (hΔV.mono' (hfV.aestronglyMeasurable.mul hg) hbound) hΔV
-          (hbound.mono fun x hx => (le_abs_self _).trans hx)
+  calc _ ≤ ‖∫ x in V, f x * g x ∂ν‖ := Real.le_norm_self _
+    _ ≤ ∫ x in V, S * |f x| ∂ν := norm_integral_le_of_norm_le hΔV hbound
     _ = S * ∫ x in V, |f x| ∂ν := integral_const_mul S _
     _ ≤ S * ∫ x in Ω, |f x| ∂ν :=
         mul_le_mul_of_nonneg_left (setIntegral_mono_set hf.abs

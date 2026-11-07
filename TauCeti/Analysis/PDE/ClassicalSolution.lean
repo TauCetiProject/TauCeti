@@ -177,8 +177,8 @@ private theorem setLIntegral_enorm_gradient_sq_le
         indicator_of_notMem (s := A) (f := fun x => ‖∇ w x‖ ^ 2) fun h => hx h.2,
         WithLp.ofLp_zero, zero_dotProduct]
   -- The forcing side is at most `S ∫_Ω |Δw|`, because `0 ≤ (w - ε)⁺ ≤ |w| ≤ S` on `Ω`.
-  have hright := setIntegral_mul_le_mul_setIntegral_abs (f := -Δ w) hVO hΔ.neg hS0
-    (Lp.aestronglyMeasurable _) (by
+  have hright := setIntegral_mul_le_mul_setIntegral_abs (f := -Δ w)
+    (g := W1p.value (W1p.posPartAbove h2 hε.le U)) hVO hΔ.neg hS0 (by
       filter_upwards [W1p.value_posPartAbove_ae h2 hε.le U, hUv, ae_restrict_mem hV]
         with x hPx hUx hxV
       rw [hPx, hUx, abs_of_nonneg (le_max_right (w x - ε) 0)]
