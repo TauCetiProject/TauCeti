@@ -742,10 +742,16 @@ theorem tangentSpaceOpenEquiv_mfderiv_apply
     {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
     {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M']
     {U : Opens M} {V : Opens M'} {f : U → V} {A : M → M'} {x : U}
-    (hf : MDifferentiableAt I I' f x) (hA : MDifferentiableAt I I' A x)
+    (hf : MDifferentiableAt I I' f x)
     (hcomp : Subtype.val ∘ f = A ∘ Subtype.val) (v : TangentSpace I x) :
     tangentSpaceOpenEquiv (I := I') (f x) (mfderiv I I' f x v) =
       mfderiv I I' A x (tangentSpaceOpenEquiv (I := I) x v) := by
+  have hA : MDifferentiableAt I I' A x := by
+    have h1 : MDifferentiableAt I I' (Subtype.val ∘ f) x :=
+      (contMDiff_subtype_val.mdifferentiableAt one_ne_zero).comp x hf
+    rw [hcomp] at h1
+    exact ((differentiableWithinAt_localInvariantProp (I := I)
+      (I' := I')).liftPropAt_iff_comp_subtype_val (U := U) A x).2 h1
   have h := mfderiv_comp_apply x
     (contMDiff_subtype_val.mdifferentiableAt one_ne_zero (x := f x)) hf v
   rw [hcomp, mfderiv_comp_apply x hA (contMDiff_subtype_val.mdifferentiableAt one_ne_zero) v,
@@ -758,7 +764,7 @@ model vector space. -/
 theorem mfderiv_inclusion_apply {U V : Opens M} (h : U ≤ V) (x : U)
     (v : TangentSpace I x) : mfderiv I I (Opens.inclusion h) x v = v := by
   have h' := tangentSpaceOpenEquiv_mfderiv_apply (A := id)
-    ((contMDiff_inclusion h).mdifferentiableAt one_ne_zero) mdifferentiableAt_id rfl v
+    ((contMDiff_inclusion h).mdifferentiableAt one_ne_zero) rfl v
   rw [tangentSpaceOpenEquiv_apply, tangentSpaceOpenEquiv_apply, mfderiv_id] at h'
   exact h'
 
