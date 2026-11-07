@@ -6,10 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Rat.Defs
-public import Mathlib.RingTheory.Coprime.Basic
+public import Mathlib.RingTheory.Coprime.Lemmas
 
 import Mathlib.Data.Int.GCD
-import Mathlib.RingTheory.Int.Basic
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -78,8 +77,7 @@ theorem exists_isCoprime_intCast_mul_add_intCast_mul_eq_zero (x y : ℚ) :
   by_cases hy : y = 0
   · exact ⟨0, 1, isCoprime_one_right, by simp [hy]⟩
   · let t : ℚ := x / y
-    have hcop : IsCoprime t.num (t.den : ℤ) :=
-      Int.isCoprime_iff_nat_coprime.mpr (by simpa using t.reduced)
+    have hcop : IsCoprime t.num (t.den : ℤ) := Rat.isCoprime_num_den t
     refine ⟨t.den, -t.num, hcop.symm.neg_right, ?_⟩
     have hmul := congrArg (fun z : ℚ ↦ z * y) t.mul_den_eq_num
     have ht : t * y = x := div_mul_cancel₀ x hy
