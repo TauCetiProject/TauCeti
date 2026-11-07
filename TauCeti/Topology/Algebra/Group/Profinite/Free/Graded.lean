@@ -276,6 +276,54 @@ private theorem sum_smul_degreeOneFamily_eq_zero [Fintype X] {H : Type u} [Group
   simpa only [map_sum, map_smul, map_zero, AddMonoidHom.coe_toZModLinearMap,
     gradedMap_degreeOneFamily, hcomp] using h
 
+omit [Finite X] in
+/-- The coefficient of `[x'_i, x'_j]` in a vanishing linear combination of the degree-one family
+of the generators of `freeProP p X` is zero, for `i < j`: it is read off in the Heisenberg group
+over `𝔽_p`, sending `x_i, x_j` to the standard generators and the others to `1`. -/
+private theorem coeff_inr_eq_zero_of_sum_smul_degreeOneFamily_eq_zero [Fintype X]
+    {c : X ⊕ {ij : X × X // ij.1 < ij.2} → ZMod p}
+    (hc : ∑ k, c k • degreeOneFamily p (of : X → freeProP p X) k = 0) {i j : X} (hij : i < j) :
+    c (Sum.inr ⟨(i, j), hij⟩) = 0 := by
+  classical
+  let e : ULift.{u} (HeisenbergGroup (ZMod p)) ≃* HeisenbergGroup (ZMod p) := MulEquiv.ulift
+  have hP : IsProP p (ULift.{u} (HeisenbergGroup (ZMod p))) :=
+    ((HeisenbergGroup.isPGroup_zmod p).of_equiv e.symm).isProP
+  let y : X → ULift.{u} (HeisenbergGroup (ZMod p)) := fun k ↦
+    if k = i then e.symm ⟨1, 0, 0⟩ else if k = j then e.symm ⟨0, 1, 0⟩ else 1
+  have hpow (k : X) : gradedPow p _ 0 (gradedMkZero p _ (y k)) = 0 := by
+    simp only [y]
+    split_ifs
+    · exact e.gradedPow_gradedMkZero_eq_zero_heisenbergGroup rfl (mul_zero _)
+    · exact e.gradedPow_gradedMkZero_eq_zero_heisenbergGroup rfl (zero_mul _)
+    · rw [gradedMkZero_one, gradedPow_zero]
+  have h := sum_smul_degreeOneFamily_eq_zero p X hP y hc
+  rw [Fintype.sum_eq_single (Sum.inr ⟨(i, j), hij⟩)] at h
+  · refine (smul_eq_zero_iff_left ?_).mp h
+    rw [degreeOneFamily_inr]
+    simpa [y, hij.ne'] using e.gradedBracket_gradedMkZero_ne_zero_heisenbergGroup
+  · intro k hk
+    refine smul_eq_zero_of_right _ ?_
+    rcases k with k | ⟨⟨k, l⟩, hkl⟩
+    · rw [degreeOneFamily_inl, hpow]
+    · rw [degreeOneFamily_inr]
+      -- Unless `(k, l) = (i, j)`, one of `y k`, `y l` is `1` and its class is `0`.
+      have hzero : y k = 1 ∨ y l = 1 := by
+        by_cases hki : k = i
+        · right
+          have hlj : l ≠ j := fun hlj ↦ hk (by subst hki hlj; rfl)
+          have hli : l ≠ i := (hki ▸ hkl).ne'
+          simp [y, hli, hlj]
+        · by_cases hkj : k = j
+          · right
+            have hli : l ≠ i := (hij.trans (hkj ▸ hkl)).ne'
+            have hlj : l ≠ j := (hkj ▸ hkl).ne'
+            simp [y, hli, hlj]
+          · left
+            simp [y, hki, hkj]
+      rcases hzero with h | h
+      · rw [h, gradedMkZero_one, map_zero, AddMonoidHom.zero_apply]
+      · rw [h, gradedMkZero_one, map_zero]
+
 /-- **Linear independence**: the `p`-power classes `π x'_i` and the brackets `[x'_i, x'_j]` for
 `i < j` of the generator classes are linearly independent in `gr_1(freeProP p X)`. The
 coefficient of `π x'_i` is read off in `ℤ/p²`, and the coefficient of `[x'_i, x'_j]` in the
@@ -310,46 +358,7 @@ theorem linearIndependent_degreeOneFamily_of :
       · rw [degreeOneFamily_inr, gradedBracket_gradedMkZero, gradedMk_eq_zero_iff, Subgroup.coe_mk,
           commutatorElement_eq_one_iff_mul_comm.mpr (mul_comm _ _)]
         exact one_mem _
-  · -- The coefficient of `[x'_i, x'_j]`: send `x_i, x_j` to the standard generators of the
-    -- Heisenberg group over `𝔽_p` and the others to `1`.
-    let e : ULift.{u} (HeisenbergGroup (ZMod p)) ≃* HeisenbergGroup (ZMod p) := MulEquiv.ulift
-    have hP : IsProP p (ULift.{u} (HeisenbergGroup (ZMod p))) :=
-      ((HeisenbergGroup.isPGroup_zmod p).of_equiv e.symm).isProP
-    let y : X → ULift.{u} (HeisenbergGroup (ZMod p)) := fun k ↦
-      if k = i then e.symm ⟨1, 0, 0⟩ else if k = j then e.symm ⟨0, 1, 0⟩ else 1
-    have hpow (k : X) : gradedPow p _ 0 (gradedMkZero p _ (y k)) = 0 := by
-      simp only [y]
-      split_ifs
-      · exact e.gradedPow_gradedMkZero_eq_zero_heisenbergGroup rfl (mul_zero _)
-      · exact e.gradedPow_gradedMkZero_eq_zero_heisenbergGroup rfl (zero_mul _)
-      · rw [gradedMkZero_one, gradedPow_zero]
-    have h := sum_smul_degreeOneFamily_eq_zero p X hP y hc
-    rw [Fintype.sum_eq_single (Sum.inr ⟨(i, j), hij⟩)] at h
-    · refine (smul_eq_zero_iff_left ?_).mp h
-      rw [degreeOneFamily_inr]
-      simpa [y, hij.ne'] using e.gradedBracket_gradedMkZero_ne_zero_heisenbergGroup
-    · intro k hk
-      refine smul_eq_zero_of_right _ ?_
-      rcases k with k | ⟨⟨k, l⟩, hkl⟩
-      · rw [degreeOneFamily_inl, hpow]
-      · rw [degreeOneFamily_inr]
-        -- Unless `(k, l) = (i, j)`, one of `y k`, `y l` is `1` and its class is `0`.
-        have hzero : y k = 1 ∨ y l = 1 := by
-          by_cases hki : k = i
-          · right
-            have hlj : l ≠ j := fun hlj ↦ hk (by subst hki hlj; rfl)
-            have hli : l ≠ i := (hki ▸ hkl).ne'
-            simp [y, hli, hlj]
-          · by_cases hkj : k = j
-            · right
-              have hli : l ≠ i := (hij.trans (hkj ▸ hkl)).ne'
-              have hlj : l ≠ j := (hkj ▸ hkl).ne'
-              simp [y, hli, hlj]
-            · left
-              simp [y, hki, hkj]
-        rcases hzero with h | h
-        · rw [h, gradedMkZero_one, map_zero, AddMonoidHom.zero_apply]
-        · rw [h, gradedMkZero_one, map_zero]
+  · exact coeff_inr_eq_zero_of_sum_smul_degreeOneFamily_eq_zero p X hc hij
 
 omit [Finite X] [LinearOrder X] in
 /-- **The iterated `p`-powers of the generator classes are linearly independent**: for every `j`,
@@ -390,6 +399,23 @@ theorem span_gradedMkZero_image_range_of_eq_top :
   span_gradedMkZero_image_eq_top
     ((isTopologicallyFinitelyGenerated_freeProP p X).isOpen_pLowerCentralSeries Fact.out 1)
     (topologicalClosure_closure_range_of_eq_top p X)
+
+variable {p X} in
+omit [LinearOrder X] in
+/-- A bracket `[τ, y]` with a class `y ∈ gr_0(F)` of the free pro-`p` group lies in a subspace
+as soon as the brackets `[τ, ξ_j]` with the generator classes do, by bilinearity. -/
+theorem gradedBracket_mem_of_forall_gradedMkZero_of {m : ℕ} {τ : gradedPiece p (freeProP p X) m}
+    {W : Submodule (ZMod p) (gradedPiece p (freeProP p X) (m + 0 + 1))}
+    (hW : ∀ j : X, gradedBracket p (freeProP p X) m 0 τ (gradedMkZero p (freeProP p X) (of j)) ∈ W)
+    (y : gradedPiece p (freeProP p X) 0) : gradedBracket p (freeProP p X) m 0 τ y ∈ W := by
+  have hle : span (ZMod p) (gradedMkZero p (freeProP p X) '' Set.range of) ≤
+      W.comap (gradedBracketLinear p (freeProP p X) m 0 τ) := by
+    rw [span_le]
+    rintro _ ⟨_, ⟨j, rfl⟩, rfl⟩
+    rw [SetLike.mem_coe, Submodule.mem_comap, gradedBracketLinear_apply]
+    exact hW j
+  have h := hle (by rw [span_gradedMkZero_image_range_of_eq_top]; exact mem_top : y ∈ _)
+  rwa [Submodule.mem_comap, gradedBracketLinear_apply] at h
 
 omit [LinearOrder X] in
 /-- **The basis of `gr_0` of a free pro-`p` group of finite rank** formed by the classes
