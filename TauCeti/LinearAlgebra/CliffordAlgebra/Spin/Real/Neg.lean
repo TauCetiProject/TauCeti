@@ -65,7 +65,7 @@ public section
 
 namespace CliffordAlgebra
 
-open TauCeti
+open TauCeti TauCeti.CliffordAlgebra
 
 variable (p q : ℕ)
 
@@ -77,13 +77,12 @@ noncomputable def realCliffordSpinGroupEquivNeg :
   (spinGroupEquivNeg (realCliffordForm p q)).trans
     (realCliffordFormNegIsometry p q).spinGroupEquiv
 
-/-- The Clifford value of `realCliffordSpinGroupEquivNeg p q x` is obtained by applying
-`evenEquivEvenNeg` and then the coordinate isometry. -/
+/-- The Clifford value of `realCliffordSpinGroupEquivNeg p q x` is the even comparison
+`TauCeti.CliffordAlgebra.realCliffordEvenToNeg p q` applied to its even Clifford value. -/
 theorem coe_realCliffordSpinGroupEquivNeg_apply (x : realCliffordSpinGroup p q) :
     (realCliffordSpinGroupEquivNeg p q x : CliffordAlgebra (realCliffordForm q p)) =
-      map (realCliffordFormNegIsometry p q).toIsometry
-        (evenEquivEvenNeg (realCliffordForm p q) (spinGroupToEven (realCliffordForm p q) x)) := by
-  rw [realCliffordSpinGroupEquivNeg, MulEquiv.trans_apply,
+      realCliffordEvenToNeg p q (spinGroupToEven (realCliffordForm p q) x) := by
+  rw [realCliffordEvenToNeg_apply, realCliffordSpinGroupEquivNeg, MulEquiv.trans_apply,
     QuadraticMap.IsometryEquiv.spinGroupEquiv_apply, QuadraticMap.Isometry.coe_spinGroupMap_apply,
     coe_spinGroupEquivNeg_apply]
 
