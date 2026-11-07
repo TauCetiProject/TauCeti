@@ -28,6 +28,11 @@ on nonempty open sets.
 * `TauCeti.integrable_indicator_Ico_one`: the indicator function of `[a, b)` is integrable.
 * `TauCeti.setIntegral_abs_eq_sub`: the integral of `|f|` over `s` is the integral of `f` over the
   part of `s` where `f ≥ 0` minus its integral over the rest of `s`.
+* `MeasureTheory.setIntegral_mul_le_mul_setIntegral_abs`: the pairing of an integrable `f` on `Ω`
+  with a function `g` bounded by `S` on `V ⊆ Ω` is at most `S ∫_Ω |f|`.
+* `MeasureTheory.setLIntegral_enorm_sq_eq_ofReal_setIntegral`: the Lebesgue integral of `‖f‖ₑ ^ 2`
+  over `A` is `ofReal` of the Bochner integral of `‖f‖ ^ 2`, and
+  `MeasureTheory.setLIntegral_enorm_sq_le_ofReal` the corresponding bound.
 * `Continuous.eq_zero_of_integral_conj_mul_self_eq_zero`: a continuous square-integrable function
   `h` with `∫ conj (h x) * h x = 0` vanishes.
 -/
@@ -120,3 +125,44 @@ theorem Continuous.eq_zero_of_integral_conj_mul_self_eq_zero {X 𝕜 : Type*} [T
     (by simpa using hx)
   simp_rw [RCLike.conj_mul, ← RCLike.ofReal_pow, integral_ofReal, RCLike.ofReal_eq_zero] at h0
   exact hpos.ne' h0
+
+namespace MeasureTheory
+
+/-- The pairing of an integrable function `f` on `Ω` with a function `g` bounded by `S` on
+`V ⊆ Ω` is at most `S ∫_Ω |f|`. -/
+theorem setIntegral_mul_le_mul_setIntegral_abs {α : Type*} [MeasurableSpace α]
+    {ν : Measure α} {V Ω : Set α} {f g : α → ℝ} {S : ℝ} (hVΩ : V ⊆ Ω)
+    (hf : IntegrableOn f Ω ν) (hS0 : 0 ≤ S) (hgS : ∀ᵐ x ∂ν.restrict V, |g x| ≤ S) :
+    ∫ x in V, f x * g x ∂ν ≤ S * ∫ x in Ω, |f x| ∂ν := by
+  have hbound : ∀ᵐ x ∂ν.restrict V, ‖f x * g x‖ ≤ S * |f x| := by
+    filter_upwards [hgS] with x hx
+    rw [Real.norm_eq_abs, abs_mul, mul_comm]
+    exact mul_le_mul_of_nonneg_right hx (abs_nonneg _)
+  have hfV : IntegrableOn f V ν := hf.mono_set hVΩ
+  have hΔV : IntegrableOn (fun x => S * |f x|) V ν := hfV.abs.const_mul S
+  calc _ ≤ ‖∫ x in V, f x * g x ∂ν‖ := Real.le_norm_self _
+    _ ≤ ∫ x in V, S * |f x| ∂ν := norm_integral_le_of_norm_le hΔV hbound
+    _ = S * ∫ x in V, |f x| ∂ν := integral_const_mul S _
+    _ ≤ S * ∫ x in Ω, |f x| ∂ν :=
+        mul_le_mul_of_nonneg_left (setIntegral_mono_set hf.abs
+          (ae_of_all _ fun _ => abs_nonneg _) (ae_of_all _ hVΩ)) hS0
+
+/-- The Lebesgue integral of `‖f‖ₑ ^ 2` over `A` is the `ENNReal.ofReal` of the Bochner integral of
+`‖f‖ ^ 2`, when `‖f‖ ^ 2` is integrable on `A`. -/
+theorem setLIntegral_enorm_sq_eq_ofReal_setIntegral {α E : Type*} [MeasurableSpace α]
+    [NormedAddCommGroup E] {ν : Measure α} {A : Set α} {f : α → E}
+    (hf : IntegrableOn (fun x => ‖f x‖ ^ 2) A ν) :
+    ∫⁻ x in A, ‖f x‖ₑ ^ 2 ∂ν = ENNReal.ofReal (∫ x in A, ‖f x‖ ^ 2 ∂ν) := by
+  rw [ofReal_integral_eq_lintegral_ofReal hf (ae_of_all _ fun _ => by positivity)]
+  refine lintegral_congr fun x => ?_
+  rw [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
+
+/-- A bound on the Bochner integral of `‖f‖ ^ 2` over `A` bounds the Lebesgue integral of
+`‖f‖ₑ ^ 2`. -/
+theorem setLIntegral_enorm_sq_le_ofReal {α E : Type*} [MeasurableSpace α]
+    [NormedAddCommGroup E] {ν : Measure α} {A : Set α} {f : α → E} {c : ℝ}
+    (hf : IntegrableOn (fun x => ‖f x‖ ^ 2) A ν) (h : ∫ x in A, ‖f x‖ ^ 2 ∂ν ≤ c) :
+    ∫⁻ x in A, ‖f x‖ₑ ^ 2 ∂ν ≤ ENNReal.ofReal c :=
+  (setLIntegral_enorm_sq_eq_ofReal_setIntegral hf).trans_le (ENNReal.ofReal_le_ofReal h)
+
+end MeasureTheory
