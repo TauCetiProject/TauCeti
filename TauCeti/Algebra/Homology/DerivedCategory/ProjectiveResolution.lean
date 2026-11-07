@@ -41,6 +41,9 @@ morphisms out of it.
   above complex of projective objects.
 * `DerivedCategory.exists_projective_isGE_isStrictlyLE_of_bounded`: such a complex can moreover
   be chosen with cohomology bounded below.
+* `DerivedCategory.Bounded.exists_bounded_projective_iff_exists_projective_Qh_obj_iso`: an object
+  of the bounded derived category is represented by a bounded complex of projectives if and only
+  if it is the image of one from the bounded homotopy category.
 * `TauCeti.DerivedCategory.Bounded.leftOrthogonal_quotient_obj_of_projective`: a bounded complex
   of projectives is left orthogonal to the acyclic objects of the bounded homotopy category.
 * `TauCeti.DerivedCategory.Bounded.Qh_map_bijective_of_projective`: the localization
@@ -171,6 +174,36 @@ theorem exists_projective_isGE_isStrictlyLE_of_bounded [EnoughProjectives C]
   exact ⟨K, a, b, (isGE_Q_obj_iff K a).1 (TStructure.t.isGE_of_iso e.symm a), ‹_›, hK, ⟨e⟩⟩
 
 end DerivedCategory
+
+namespace DerivedCategory.Bounded
+
+variable {C : Type u} [Category.{v} C] [Abelian C] [HasDerivedCategory.{w} C]
+
+open TauCeti.DerivedCategory.Bounded in
+/-- An object of the bounded derived category is represented by a bounded complex `K` of
+projective objects if and only if it is the image of such a complex, as an object of the bounded
+homotopy category. -/
+theorem exists_bounded_projective_iff_exists_projective_Qh_obj_iso
+    (X : DerivedCategory.Bounded C) :
+    (∃ (K : CochainComplex C ℤ) (a b : ℤ), K.IsStrictlyGE a ∧ K.IsStrictlyLE b ∧
+      (∀ n, Projective (K.X n)) ∧ Nonempty (Q.obj K ≅ DerivedCategory.Bounded.ι.obj X)) ↔
+    ∃ K : CochainComplex.Bounded C, (∀ n, Projective (K.obj.X n)) ∧
+      Nonempty ((TauCeti.DerivedCategory.Bounded.Qh C).obj
+        ((TauCeti.HomotopyCategory.Bounded.quotient C).obj K) ≅ X) := by
+  -- Both sides compare `X` with the image of the same complex, along this isomorphism.
+  let φ (K : CochainComplex.Bounded C) : DerivedCategory.Bounded.ι.obj
+      ((TauCeti.DerivedCategory.Bounded.Qh C).obj
+        ((TauCeti.HomotopyCategory.Bounded.quotient C).obj K)) ≅ Q.obj K.obj :=
+    (QhCompιIsoιCompQh C).app _ ≪≫ DerivedCategory.Qh.mapIso (eqToIso
+      (TauCeti.HomotopyCategory.Bounded.quotient_obj_obj C K)) ≪≫ (quotientCompQhIso C).app K.obj
+  refine ⟨fun ⟨K, a, b, _, _, hK, ⟨e⟩⟩ ↦ ?_, fun ⟨K, hK, ⟨e⟩⟩ ↦ ?_⟩
+  · let K' : CochainComplex.Bounded C :=
+      ⟨K, (CochainComplex.bounded_iff _ _).2 ⟨a, b, ‹_›, ‹_›⟩⟩
+    exact ⟨K', hK, ⟨DerivedCategory.Bounded.ι.preimageIso (φ K' ≪≫ e)⟩⟩
+  · obtain ⟨a, b, _, _⟩ := (CochainComplex.bounded_iff C K.obj).1 K.property
+    exact ⟨K.obj, a, b, ‹_›, ‹_›, hK, ⟨(φ K).symm ≪≫ DerivedCategory.Bounded.ι.mapIso e⟩⟩
+
+end DerivedCategory.Bounded
 
 namespace TauCeti.DerivedCategory.Bounded
 

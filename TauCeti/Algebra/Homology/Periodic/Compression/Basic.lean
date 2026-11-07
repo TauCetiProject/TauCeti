@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.GradedObject
-public import Mathlib.CategoryTheory.Preadditive.Projective.Basic
 public import TauCeti.Algebra.Homology.HomotopyCategory.Bounded.Basic
 public import TauCeti.CategoryTheory.Limits.Shapes.Products
+public import TauCeti.CategoryTheory.Preadditive.Projective.Basic
 
 /-!
 # Compression of bounded complexes to periodic complexes
@@ -125,9 +125,8 @@ lemma compression_hom_ext {r : ZMod n} {A : C} {f g : (compression n K).X r ⟶ 
 
 /-- The compression of a complex of projective objects has projective terms: each term is a
 coproduct of projective objects. -/
-instance [∀ i, Projective (K.X i)] (r : ZMod n) : Projective ((compression n K).X r) where
-  factors f e _ := ⟨compressionDesc n K fun i hi ↦
-    Projective.factorThru (ιCompression n K i r hi ≫ f) e, by ext; simp⟩
+instance [∀ i, Projective (K.X i)] (r : ZMod n) : Projective ((compression n K).X r) :=
+  Projective.of_isColimit_cofan (GradedObject.isColimitCofanMapObj K.X (fun i : ℤ ↦ (i : ZMod n)) r)
 
 /-- On the summand of degree `i`, the differential of the compression is the differential of
 `K` into degree `i + 1`. -/

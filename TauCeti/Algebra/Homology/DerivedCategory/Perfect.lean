@@ -236,23 +236,6 @@ namespace DerivedCategory.Bounded
 variable {C : Type u} [Category.{v} C] [Abelian C] [HasDerivedCategory.{w} C]
 
 open TauCeti.DerivedCategory.Bounded in
-/-- An object of the bounded derived category represented by a bounded complex `K` of projective
-objects is the image of `K`, as an object of the bounded homotopy category. -/
-private lemma exists_projective_Qh_obj_iso {X : DerivedCategory.Bounded C}
-    (h : ∃ (K : CochainComplex C ℤ) (a b : ℤ), K.IsStrictlyGE a ∧ K.IsStrictlyLE b ∧
-      (∀ n, Projective (K.X n)) ∧ Nonempty (Q.obj K ≅ DerivedCategory.Bounded.ι.obj X)) :
-    ∃ K : CochainComplex.Bounded C, (∀ n, Projective (K.obj.X n)) ∧
-      Nonempty ((TauCeti.DerivedCategory.Bounded.Qh C).obj
-        ((TauCeti.HomotopyCategory.Bounded.quotient C).obj K) ≅ X) := by
-  obtain ⟨K, a, b, _, _, hK, ⟨e⟩⟩ := h
-  let K' : CochainComplex.Bounded C :=
-    ⟨K, (CochainComplex.bounded_iff _ _).2 ⟨a, b, ‹_›, ‹_›⟩⟩
-  exact ⟨K', hK, ⟨ι.preimageIso
-    ((QhCompιIsoιCompQh C).app _ ≪≫ DerivedCategory.Qh.mapIso (eqToIso
-      (TauCeti.HomotopyCategory.Bounded.quotient_obj_obj C K')) ≪≫
-      (quotientCompQhIso C).app K ≪≫ e)⟩⟩
-
-open TauCeti.DerivedCategory.Bounded in
 /-- **Perfect objects are the bounded complexes of projectives**: in an abelian category with
 enough projectives, an object of the bounded derived category is perfect if and only if it is the
 image of a bounded complex of projective objects. -/
@@ -261,7 +244,8 @@ theorem perfect_iff [EnoughProjectives C] (X : DerivedCategory.Bounded C) :
       ∃ K : CochainComplex.Bounded C, (∀ n, Projective (K.obj.X n)) ∧
         Nonempty ((TauCeti.DerivedCategory.Bounded.Qh C).obj
           ((TauCeti.HomotopyCategory.Bounded.quotient C).obj K) ≅ X) :=
-  ⟨fun hX ↦ exists_projective_Qh_obj_iso (exists_bounded_projective_of_perfect hX),
+  ⟨fun hX ↦ (exists_bounded_projective_iff_exists_projective_Qh_obj_iso X).1
+      (exists_bounded_projective_of_perfect hX),
     fun ⟨K, hK, ⟨e⟩⟩ ↦ (perfect C).prop_of_iso e (perfect_Qh_obj_quotient_obj C K hK)⟩
 
 /-- **Bounded complexes of projectives in finite global dimension**: in an abelian category with
@@ -272,6 +256,7 @@ theorem exists_projective_Qh_obj_iso_of_hasProjectiveDimensionLT [EnoughProjecti
     ∃ K : CochainComplex.Bounded C, (∀ n, Projective (K.obj.X n)) ∧
       Nonempty ((TauCeti.DerivedCategory.Bounded.Qh C).obj
         ((TauCeti.HomotopyCategory.Bounded.quotient C).obj K) ≅ X) :=
-  exists_projective_Qh_obj_iso (exists_bounded_projective_of_hasProjectiveDimensionLT d hd X)
+  (exists_bounded_projective_iff_exists_projective_Qh_obj_iso X).1
+    (exists_bounded_projective_of_hasProjectiveDimensionLT d hd X)
 
 end DerivedCategory.Bounded
