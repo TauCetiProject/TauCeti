@@ -14,8 +14,7 @@ public import TauCeti.RingTheory.TraceFunctional.Radical
 For an unnormalized Markov trace, strand inclusion pulls back the later trace radical
 exactly to the earlier one. Consequently it induces injective algebra maps between the
 trace-radical quotients. This is purely algebraic: no positivity or invertibility of the
-loop parameter is required. In particular, the reverse inclusion uses the Markov cap,
-not cancellation of the loop parameter in the strand-inclusion trace formula.
+loop parameter is required.
 
 The Jones–Wenzl projection belongs to the trace radical precisely when its quantum
 dimension vanishes, provided the quantum integers used in its construction are units.
@@ -40,9 +39,7 @@ variable {R : Type*} [CommRing R] {δ : R}
   {tr : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R}
   (htr : IsMarkovTrace R δ tr)
 
-/-- Strand inclusion pulls back the trace radical exactly, even at zero loop parameter.
-The normal form gives preservation, and testing against a capped included element gives
-reflection of radical membership. -/
+/-- Strand inclusion pulls back the trace radical exactly, even at zero loop parameter. -/
 @[simp]
 theorem comap_traceRadical_strandIncl (n : ℕ) :
     Ideal.comap (strandIncl (R := R) (δ := δ) (n := n))
@@ -65,6 +62,12 @@ theorem comap_traceRadical_strandIncl (n : ℕ) :
         rw [← mul_assoc, ← mul_assoc, ← map_mul,
           htr.map_strandIncl_mul_e_last_mul, mul_assoc, hx (a * b)]
     exact fun y ↦ LinearMap.congr_fun hf y
+
+/-- Strand inclusion preserves and reflects trace-radical membership. -/
+theorem strandIncl_mem_traceRadical_iff {n : ℕ} (x : TemperleyLieb R δ (n + 1)) :
+    strandIncl x ∈ (tr (n + 2)).traceRadical (htr.map_mul_comm (n + 2)) ↔
+      x ∈ (tr (n + 1)).traceRadical (htr.map_mul_comm (n + 1)) := by
+  rw [← Ideal.mem_comap, htr.comap_traceRadical_strandIncl]
 
 /-- The strand map on the quotients by the multiplication-pairing radicals.
 These are algebraic quotients; no norm or star structure is asserted here. -/
