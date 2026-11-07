@@ -9,8 +9,8 @@ public import TauCeti.Analysis.Pseudodifferential.Quantization
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
-import Mathlib.Analysis.Fourier.FourierTransformDeriv
 import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
+import TauCeti.Analysis.Fourier.CharDeriv
 
 /-!
 # The kernel of the Kohn–Nirenberg quantization
@@ -249,20 +249,6 @@ theorem eq_quantizationKernel_of_forall [CompleteSpace V] [CompleteSpace W] {K :
       quantizeSchwartzValue_eq_integral_quantizationKernel ha]
   exact congrFun ((hK.clm_apply continuous_const).ae_eq_iff_eq volume
     (hK₀.clm_apply continuous_const) |>.1 hae) y
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The character `ζ ↦ exp(2πi ⟪ζ, z⟫)` has line derivative `2πi ⟪v, z⟫ exp(2πi ⟪ζ, z⟫)` in the
-direction `v`. -/
-theorem hasLineDerivAt_fourierChar_inner (z ζ v : E) :
-    HasLineDerivAt ℝ (fun ζ ↦ (𝐞 ⟪ζ, z⟫ : ℂ)) (2 * π * Complex.I * ⟪v, z⟫ * 𝐞 ⟪ζ, z⟫) ζ v := by
-  have h := ((hasDerivAt_fourierChar ⟪ζ, z⟫).hasFDerivAt.comp ζ
-    ((innerSL ℝ z).hasFDerivAt.congr_of_eventuallyEq
-      (Filter.Eventually.of_forall fun ζ' ↦ real_inner_comm z ζ'))).hasLineDerivAt v
-  convert h using 1
-  · funext ζ'
-    simp
-  · simp [real_inner_comm z v]
-    ring
 
 /-- **Multiplication by the displacement.** If `ξ ↦ a(x, ξ)` has line derivative `a'(x, ξ)` in
 the direction `v` and both are integrable, then `⟪x - y, v⟫ K_a(x, y) = i K_{a'}(x, y)`. In terms
