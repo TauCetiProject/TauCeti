@@ -72,6 +72,8 @@ theorem continuousOn_pointwise_comp_of_norm_le {X : Type*} [TopologicalSpace X]
       toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E G ((S x).comp (T x))) s := by
   intro x hx
   apply PointwiseConvergenceCLM.tendsto_iff_forall_tendsto.mpr
+  -- Evaluation of `toPointwiseConvergenceCLM … f` is definitionally evaluation of `f`,
+  -- in both the hypotheses and the composition goal.
   exact tendsto_comp_apply_of_eventually_norm_le
     (PointwiseConvergenceCLM.tendsto_iff_forall_tendsto.mp (hS x hx))
     (PointwiseConvergenceCLM.tendsto_iff_forall_tendsto.mp (hT x hx))
@@ -123,12 +125,18 @@ variable {𝕜 H : Type*} [RCLike 𝕜] [NormedAddCommGroup H]
   [InnerProductSpace 𝕜 H] [CompleteSpace H]
 
 /-- Orthogonal projections are closed in the strong operator topology. -/
-theorem isClosed_setOf_isStarProjection :
-    IsClosed {P : H →Lₚₜ[𝕜] H |
-      IsStarProjection ((UniformConvergenceCLM.ofFun (RingHom.id 𝕜) H _).symm P)} := by
+theorem isClosed_image_toPointwiseConvergenceCLM_setOf_isStarProjection :
+    IsClosed (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) H H ''
+      {P : H →L[𝕜] H | IsStarProjection P}) := by
   refine isClosed_iff_forall_filter.mpr fun P l hl hmem hlim => ?_
-  have := hl
-  exact IsStarProjection.of_tendsto_pointwise (le_principal_iff.mp hmem)
-    (tendsto_iff_forall_tendsto.mp hlim)
+  have : l.NeBot := hl -- Supplies the instance for `IsStarProjection.of_tendsto_pointwise`.
+  -- `ofFun.symm` and `toPointwiseConvergenceCLM` preserve the underlying operator
+  -- definitionally, so their evaluations agree and rewrapping the limit gives `P`.
+  refine ⟨(UniformConvergenceCLM.ofFun (RingHom.id 𝕜) H _).symm P,
+    IsStarProjection.of_tendsto_pointwise ?_ (tendsto_iff_forall_tendsto.mp hlim), rfl⟩
+  apply Filter.Eventually.mono (le_principal_iff.mp hmem)
+  rintro i ⟨Q, hQ, hQi⟩
+  subst i
+  exact hQ
 
 end PointwiseConvergenceCLM
