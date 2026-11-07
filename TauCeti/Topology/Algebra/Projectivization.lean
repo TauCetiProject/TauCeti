@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.LocallyConvex.SeparatingDual
 public import Mathlib.Analysis.Normed.Module.Connected
 public import Mathlib.Analysis.RCLike.Lemmas
+public import Mathlib.Topology.Algebra.Projectivization
 public import TauCeti.LinearAlgebra.Projectivization.AffineChart
 public import TauCeti.LinearAlgebra.Projectivization.Basic
 public import TauCeti.Topology.Algebra.ConstMulAction
@@ -16,11 +17,12 @@ public import TauCeti.Topology.Algebra.ConstMulAction
 # The quotient topology on projective space
 
 `ℙ K V` is the quotient of the nonzero vectors `{v : V // v ≠ 0}` by the action of `Kˣ`.
-When `V` carries a topology we give `ℙ K V` the quotient topology, and we show that the
-quotient map `Projectivization.mk'` is an open quotient map as soon as scalar multiplication
-by units of `K` is continuous on `V`.
+When `V` carries a topology, Mathlib gives `ℙ K V` the quotient topology
+(`Projectivization.instTopologicalSpace`) and shows that the quotient map `Projectivization.mk'`
+is an open quotient map as soon as scalar multiplication by units of `K` is continuous on `V`
+(`Projectivization.isOpenQuotientMap_mk'`, in `Mathlib/Topology/Algebra/Projectivization`).
 
-We then prove the separation and compactness properties of this topology which make
+We prove the separation and compactness properties of this topology which make
 projective space a compact Hausdorff space, the ambient space of projective algebraic sets.
 Over a topological field `K` whose continuous linear forms on `V` separate points (for instance
 any normed space over `ℝ` or `ℂ`, by the Hahn–Banach theorem), two nonzero vectors span the same
@@ -40,15 +42,6 @@ of projective space.
 
 ## Main results
 
-* `Projectivization.instTopologicalSpace`: the quotient topology on `ℙ K V`.
-* `Projectivization.isQuotientMap_mk'`, `Projectivization.continuous_mk'`:
-  `mk' K : {v : V // v ≠ 0} → ℙ K V` is a quotient map, in particular continuous.
-* `Projectivization.isOpenQuotientMap_mk'`: `mk' K` is an open quotient map when `Kˣ` acts
-  continuously on `V`.
-* `Projectivization.continuous_iff`: a map out of `ℙ K V` is continuous iff its composite with
-  `mk' K` is.
-* `Projectivization.continuous_mk`, `Projectivization.continuous_map`: `Projectivization.mk`
-  and `Projectivization.map` are continuous.
 * `Projectivization.isOpen_linearProjectionDomain`: the points where a continuous linear map does
   not vanish form an open set.
 * `Projectivization.mk'_eq_mk'_iff_forall_strongDual`: when continuous linear forms separate
@@ -68,11 +61,6 @@ of projective space.
   homeomorphism from `U_i` onto `Fin n → K`.
 * `Projectivization.interAffineOpenHomeomorph`: the affine chart identifies the part `X ∩ U_i` of a
   set `X` with its image in `Fin n → K`.
-
-The topology and its quotient-map API (`instTopologicalSpace` through `isOpenQuotientMap_mk'`)
-follow Zayn Blore's Mathlib pull request
-[mathlib4#44117](https://github.com/leanprover-community/mathlib4/pull/44117), with the same names
-and statements.
 -/
 
 public section
@@ -88,42 +76,6 @@ variable {K V : Type*} [DivisionRing K] [AddCommGroup V] [Module K V]
 
 variable [TopologicalSpace V]
 
-/-- The quotient topology on `ℙ K V`, coinduced by `Projectivization.mk'`. -/
-instance instTopologicalSpace : TopologicalSpace (ℙ K V) :=
-  inferInstanceAs (TopologicalSpace (Quotient (projectivizationSetoid K V)))
-
-/-- The map `mk' K` from nonzero vectors to `ℙ K V` is a quotient map. -/
-theorem isQuotientMap_mk' : IsQuotientMap (mk' K : {v : V // v ≠ 0} → ℙ K V) :=
-  isQuotientMap_quotient_mk'
-
-/-- The map `mk' K` from nonzero vectors to `ℙ K V` is continuous. -/
-@[fun_prop]
-theorem continuous_mk' : Continuous (mk' K : {v : V // v ≠ 0} → ℙ K V) :=
-  continuous_quotient_mk'
-
-variable {α : Type*} [TopologicalSpace α]
-
-/-- A map out of `ℙ K V` is continuous iff its composite with `mk' K` is continuous. -/
-theorem continuous_iff {f : ℙ K V → α} : Continuous f ↔ Continuous (f ∘ mk' K) :=
-  isQuotientMap_mk'.continuous_iff
-
-/-- `Projectivization.mk` is continuous in the vector, as long as the vector stays nonzero. -/
-@[fun_prop]
-theorem continuous_mk {f : α → V} (hf : Continuous f) (hf₀ : ∀ x, f x ≠ 0) :
-    Continuous fun x ↦ mk K (f x) (hf₀ x) :=
-  continuous_mk'.comp (hf.subtype_mk hf₀)
-
-section Map
-
-variable {L W : Type*} [DivisionRing L] [AddCommGroup W] [Module L W] [TopologicalSpace W]
-
-/-- An injective continuous semilinear map induces a continuous map on projective spaces. -/
-theorem continuous_map {σ : K →+* L} {f : V →ₛₗ[σ] W} (hf : Function.Injective f)
-    (hfc : Continuous f) : Continuous (map f hf) :=
-  continuous_iff.2 <| continuous_mk (hfc.comp continuous_subtype_val) _
-
-end Map
-
 /-- The set of points at which a continuous linear map does not vanish, the domain of
 `Projectivization.linearProjection G`, is open. -/
 theorem isOpen_linearProjectionDomain {W : Type*} [AddCommGroup W] [Module K W]
@@ -135,17 +87,6 @@ theorem isOpen_linearProjectionDomain {W : Type*} [AddCommGroup W] [Module K W]
   simp [mk'_eq_mk]
 
 variable [ContinuousConstSMul Kˣ V]
-
-/-- When scalar multiplication by units of `K` is continuous on `V`, the map `mk' K` from
-nonzero vectors to `ℙ K V` is open. -/
-theorem isOpenMap_mk' : IsOpenMap (mk' K : {v : V // v ≠ 0} → ℙ K V) := fun U hU ↦ by
-  rw [← isQuotientMap_mk'.isOpen_preimage, preimage_image_mk']
-  exact isOpen_iUnion fun a ↦ isOpenMap_smul a U hU
-
-/-- When scalar multiplication by units of `K` is continuous on `V`, the map `mk' K` from
-nonzero vectors to `ℙ K V` is an open quotient map. -/
-theorem isOpenQuotientMap_mk' : IsOpenQuotientMap (mk' K : {v : V // v ≠ 0} → ℙ K V) :=
-  ⟨Quotient.mk''_surjective, continuous_mk', isOpenMap_mk'⟩
 
 /-- Projective space is second countable when the vector space is. -/
 instance instSecondCountableTopology [SecondCountableTopology V] :
