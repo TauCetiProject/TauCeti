@@ -49,20 +49,6 @@ namespace TauCeti.ClassFieldTheory
 variable {K L : Type} [Field K] [NumberField K] [Field L] [NumberField L] [Algebra K L]
   [IsGalois K L]
 
-/-- If the places outside a finite set `S` containing the ramified support of `F/K` are unramified,
-then every place of `K` outside `S` has an unramified place of `F` above it. -/
-private theorem exists_liesOver_isUnramifiedAt_of_notMem_finset {F : Type} [Field F]
-    [NumberField F] [Algebra K F] (S : Finset (HeightOneSpectrum (𝓞 K)))
-    (hS : TauCeti.NumberField.ramifiedSupport K F ⊆ S) (v : HeightOneSpectrum (𝓞 K))
-    (hv : v ∉ (S : Set _)) :
-    ∃ w : HeightOneSpectrum (𝓞 F), w.asIdeal.LiesOver v.asIdeal ∧
-      Algebra.IsUnramifiedAt (𝓞 K) w.asIdeal := by
-  obtain ⟨w, hw⟩ := HeightOneSpectrum.under_surjective (𝓞 K) (𝓞 F) v
-  have : w.asIdeal.LiesOver v.asIdeal := hw ▸ inferInstance
-  refine ⟨w, inferInstance, TauCeti.NumberField.isUnramifiedAway_ramifiedSupport v ?_
-    w.asIdeal⟩
-  exact fun hram ↦ hv (hS hram)
-
 /-- The auxiliary cardinality count: if `F'` is a degree-`p` subextension of the Kummer field of
 the `S`-units and `p ^ #T = [M : F']`, then `#T + 1 = #S_∞(K) + #S`. -/
 private theorem card_add_one_eq_of_finrank_kummerField {p : ℕ} (hp : p.Prime)
@@ -133,7 +119,7 @@ theorem exists_auxiliaryKummerNorms_of_finrank_prime {p : ℕ} (hp : p.Prime)
   obtain ⟨S, hS₀S, hcl, hpS⟩ := ClassGroup.exists_finset_superset_closure_classGroupMk_image_eq_top
     (S₀ ∪ TauCeti.NumberField.ramifiedSupport K F) (a := (p : 𝓞 K))
     (Nat.cast_ne_zero.mpr hp.ne_zero)
-  have hur := exists_liesOver_isUnramifiedAt_of_notMem_finset (F := F) S
+  have hur := TauCeti.NumberField.exists_liesOver_isUnramifiedAt_of_notMem_finset (L := F) S
     (Finset.subset_union_right.trans hS₀S)
   let M := kummerField (SeparableClosure K) p ((S : Set (HeightOneSpectrum (𝓞 K))).unit K)
   have hFM : F ≤ M := TauCeti.NumberField.le_kummerField_sUnits_of_isCyclic hcl hF.dvd hur
