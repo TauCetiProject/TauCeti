@@ -26,9 +26,16 @@ public section
 
 open Ideal.Quotient
 
-namespace TauCeti
-
 variable {R : Type*} [CommRing R] [IsDedekindDomain R]
+
+/-- Every prime factor of an ideal in a Dedekind domain is a maximal ideal. -/
+theorem Ideal.isMaximal_of_mem_factors {J P : Ideal R}
+    (hP : P ∈ UniqueFactorizationMonoid.factors J) : P.IsMaximal :=
+  Ideal.IsPrime.isMaximal
+    (Ideal.isPrime_of_prime (UniqueFactorizationMonoid.prime_of_factor P hP))
+    (UniqueFactorizationMonoid.prime_of_factor P hP).ne_zero
+
+namespace TauCeti
 
 /-- Reduction between ideal quotients of a Dedekind domain is surjective on units when the source
 ideal is nonzero. No finiteness assumption on the residue fields is needed. -/
@@ -40,9 +47,7 @@ theorem units_map_quotient_factor_surjective {I J : Ideal R} (h : J ≤ I) (hJ :
   let s := (UniqueFactorizationMonoid.factors J).toFinset.filter fun P => ¬I ≤ P
   let B : Ideal R := ∏ P ∈ s, P
   have hmax (P : Ideal R) (hP : P ∈ UniqueFactorizationMonoid.factors J) : P.IsMaximal :=
-    Ideal.IsPrime.isMaximal
-      (Ideal.isPrime_of_prime (UniqueFactorizationMonoid.prime_of_factor P hP))
-      (UniqueFactorizationMonoid.prime_of_factor P hP).ne_zero
+    Ideal.isMaximal_of_mem_factors hP
   have hIB : I ⊔ B = ⊤ := by
     apply Ideal.sup_prod_eq_top
     intro P hP
