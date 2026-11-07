@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.Prod
 public import Mathlib.Algebra.Field.Defs
+public import Mathlib.Algebra.Module.Prod
+public import Mathlib.Algebra.Order.ZeroLEOne
 public import Mathlib.Data.Set.Function
 import Mathlib.Algebra.GroupWithZero.Action.Units
 
@@ -14,10 +15,11 @@ import Mathlib.Algebra.GroupWithZero.Action.Units
 # Geometric cones and radial extensions
 
 The geometric cone `s.cone 𝕜` on a subset of a module over a partially ordered division
-semiring `𝕜` consists of its apex and the rays `(t • x, t)` with `x ∈ s` and `t > 0`. The radial
-extension `coneMap 𝕜 f` preserves height and scales the base value by that height. It depends
-only on the restriction of `f` to the base, respects composition, and carries maps of bases and
-their left inverses to maps of cones and their left inverses.
+semiring `𝕜` consists of its apex and the rays `(t • x, t)` with `x ∈ s` and `t > 0`. When
+`0 < 1` in `𝕜`, the base `s` sits in the cone at height one. The radial extension `coneMap 𝕜 f`
+preserves height and scales the base value by that height. It depends only on the restriction of
+`f` to the base, respects composition, and carries maps of bases and their left inverses to maps
+of cones and their left inverses.
 
 These constructions provide cone models for extending maps of links across
 vertex stars, independently of any PL regularity assumptions.
@@ -42,8 +44,9 @@ namespace Set
 variable [PartialOrder 𝕜]
 
 variable (𝕜) in
-/-- The geometric cone on a set, with its apex at height zero and its base at height one.
-The cone on the empty set consists of the apex alone. -/
+/-- The geometric cone on a set, with its apex at height zero. When `0 < 1` in `𝕜`, the base
+sits at height one (`Set.mk_one_mem_cone_iff`). The cone on the empty set consists of the apex
+alone. -/
 def cone (s : Set E) : Set (E × 𝕜) :=
   {p | p = 0 ∨ 0 < p.2 ∧ p.2⁻¹ • p.1 ∈ s}
 
@@ -67,6 +70,12 @@ theorem cone_empty : (∅ : Set E).cone 𝕜 = {0} := by
 theorem smul_mem_cone_iff {s : Set E} (x : E) {t : 𝕜} (ht : 0 < t) :
     (t • x, t) ∈ s.cone 𝕜 ↔ x ∈ s := by
   simp [mem_cone, ht, ht.ne', smul_smul]
+
+/-- When `0 < 1`, the base of the cone is its slice at height one. -/
+@[simp]
+theorem mk_one_mem_cone_iff [ZeroLEOneClass 𝕜] {s : Set E} (x : E) :
+    (x, (1 : 𝕜)) ∈ s.cone 𝕜 ↔ x ∈ s := by
+  simpa using smul_mem_cone_iff (s := s) x (zero_lt_one' 𝕜)
 
 end Set
 
