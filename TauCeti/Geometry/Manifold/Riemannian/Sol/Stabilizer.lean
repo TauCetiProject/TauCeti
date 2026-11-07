@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Sol.Height
 public import TauCeti.Geometry.Manifold.Riemannian.Sol.Isotropy
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Ext
+import TauCeti.LinearAlgebra.Prod
 
 /-!
 # The isotropy group of Sol
@@ -98,27 +99,9 @@ private theorem diagonal_derivative (Φ : Isom J Sol) (hfix : Φ 1 = 1)
   have hc (u : P) : A (u.1, -u.2.1, 0) = ((A u).1, -(A u).2.1, 0) := by
     simpa [A] using derivative_commutes Φ (ε := 1) (by simpa using hd) 1 u
   -- The distinct eigenvalues force each coordinate axis to be invariant.
-  have h₁ : A (1, 0, 0) = ((A (1, 0, 0)).1, 0, 0) := by
-    have h := congrArg (fun v : P => v.2.1) (hc (1, 0, 0))
-    simp only [neg_zero] at h
-    have hzero : (A (1, 0, 0)).2.1 = 0 := by linarith
-    exact Prod.ext rfl (Prod.ext hzero (hz (1, 0, 0)))
-  have h₂ : A (0, 1, 0) = (0, (A (0, 1, 0)).2.1, 0) := by
-    have h := congrArg Prod.fst (hc (0, 1, 0))
-    have hneg : A (0, -1, 0) = -A (0, 1, 0) := by
-      simpa using A.map_neg (0, 1, 0)
-    rw [hneg] at h
-    simp only [Prod.fst_neg] at h
-    exact Prod.ext (by linarith)
-      (Prod.ext rfl (hz (0, 1, 0)))
-  have h₃ : A (0, 0, 1) = (0, 0, 1) := by
-    have h := hc (0, 0, 1)
-    simp only [neg_zero] at h
-    have hzero : A (0, 0, 0) = 0 := A.map_zero
-    rw [hzero] at h
-    exact Prod.ext (congrArg Prod.fst h).symm
-      (Prod.ext (by have := congrArg (fun v : P => v.2.1) h; dsimp at this; linarith)
-        (hz (0, 0, 1)))
+  obtain ⟨h₁, h₂, h₃⟩ : A (1, 0, 0) = ((A (1, 0, 0)).1, 0, 0) ∧
+      A (0, 1, 0) = (0, (A (0, 1, 0)).2.1, 0) ∧ A (0, 0, 1) = (0, 0, 1) :=
+    TauCeti.LinearMap.map_axes_of_snd_snd_of_commute (A : P →ₗ[ℝ] P) hz hc
   -- At the identity the metric is Euclidean, so the two horizontal factors are signs.
   have hnorm (u : P) : (A u).1 ^ 2 + (A u).2.1 ^ 2 + (A u).2.2 ^ 2 =
       u.1 ^ 2 + u.2.1 ^ 2 + u.2.2 ^ 2 := by
