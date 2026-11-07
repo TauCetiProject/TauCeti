@@ -200,9 +200,9 @@ theorem re_mlogDeriv_apply_eq_zero {u : M → ℂ} {x : M} (hu : MDifferentiable
     simpa using (Real.exp_eq_one_iff _).mp h.symm
   rw [mlogDeriv_eq_of_eventuallyEq_mul_exp hx hg hug, mextDeriv_ofFunction,
     ContinuousAlternatingMap.ofSubsingleton_apply_apply]
-  have h := mvfderiv_comp_apply_of_differentiableAt Complex.reCLM.differentiableAt hg (v 0)
+  have h := Complex.reCLM.mvfderiv_comp_apply hg (v 0)
   have h0 : mvfderiv I (fun _ : M ↦ (0 : ℝ)) x = 0 := mvfderiv_eq_zero_iff.mpr (mfderiv_const ..)
-  rw [hre.mvfderiv_eq, h0, Complex.reCLM.fderiv, Complex.reCLM_apply] at h
+  rw [hre.mvfderiv_eq, h0, Complex.reCLM_apply] at h
   simpa using h.symm
 
 /-- **A function with imaginary logarithmic derivative has constant modulus** on a connected
