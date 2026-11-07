@@ -120,27 +120,34 @@ private theorem measurableSet_pairReindex_preimage_cylinder_blockSigma {F : Fins
         (Z := fun p (x : ℕ × ℕ → α) => x p) hpJ)
   exact hread hS
 
+/-- A law invariant under the finitary diagonal action is invariant under the diagonal
+relabelling `pairReindex π π` by a finitely supported permutation `π`. -/
+private theorem map_pairReindex_eq_self_of_finite {ρ : Measure (ℕ × ℕ → α)}
+    [SMulInvariantMeasure FinitaryPerm (ℕ × ℕ → α) ρ] {π : Equiv.Perm ℕ}
+    (hπ : (MulAction.fixedBy ℕ π)ᶜ.Finite) : ρ.map (pairReindex π π) = ρ := by
+  have hπ' : (MulAction.fixedBy ℕ π⁻¹)ᶜ.Finite := by
+    simpa only [MulAction.fixedBy_inv ℕ] using hπ
+  ext s hs
+  rw [Measure.map_apply (measurable_pairReindex _ _) hs]
+  have h := SMulInvariantMeasure.measure_preimage_smul (μ := ρ) (FinitaryPerm.ofPerm π⁻¹ hπ') hs
+  simpa only [finitaryPerm_smul_array_def, FinitaryPerm.toPerm_ofPerm, inv_inv] using h
+
 /-- A finitary-invariant law gives the symmetric difference of a measurable set `t` with an
 invariant set `s` the same measure after relabelling `t` by a finitary permutation. -/
 private theorem measure_symmDiff_pairReindex_preimage_eq {ρ : Measure (ℕ × ℕ → α)}
     [SMulInvariantMeasure FinitaryPerm (ℕ × ℕ → α) ρ] {π : Equiv.Perm ℕ}
-    (hπ : (MulAction.fixedBy ℕ π⁻¹)ᶜ.Finite) {s t : Set (ℕ × ℕ → α)} (hs : MeasurableSet s)
+    (hπ : (MulAction.fixedBy ℕ π)ᶜ.Finite) {s t : Set (ℕ × ℕ → α)} (hs : MeasurableSet s)
     (ht : MeasurableSet t) (hinv : ∀ g : FinitaryPerm, (fun x : ℕ × ℕ → α => g • x) ⁻¹' s = s) :
     ρ (symmDiff (pairReindex π π ⁻¹' t) s) = ρ (symmDiff t s) := by
   have hs_inv : pairReindex π π ⁻¹' s = s := by
-    have hg := hinv (FinitaryPerm.ofPerm π⁻¹ hπ)
+    have hπ' : (MulAction.fixedBy ℕ π⁻¹)ᶜ.Finite := by
+      simpa only [MulAction.fixedBy_inv ℕ] using hπ
+    have hg := hinv (FinitaryPerm.ofPerm π⁻¹ hπ')
     simpa only [finitaryPerm_smul_array_def, FinitaryPerm.toPerm_ofPerm, inv_inv] using hg
-  -- the swap acts by `pairReindex π π`, so invariance of `ρ` under the action is invariance
-  -- under this reindexing
-  have hmap : ρ.map (pairReindex π π) = ρ := by
-    ext u hu
-    rw [Measure.map_apply (measurable_pairReindex _ _) hu]
-    have h := SMulInvariantMeasure.measure_preimage_smul (FinitaryPerm.ofPerm π⁻¹ hπ) hu
-      (μ := ρ)
-    simpa only [finitaryPerm_smul_array_def, FinitaryPerm.toPerm_ofPerm, inv_inv] using h
   have hpre : symmDiff (pairReindex π π ⁻¹' t) s = pairReindex π π ⁻¹' symmDiff t s := by
     rw [Set.preimage_symmDiff, hs_inv]
-  rw [hpre, ← Measure.map_apply (measurable_pairReindex π π) (ht.symmDiff hs), hmap]
+  rw [hpre, ← Measure.map_apply (measurable_pairReindex π π) (ht.symmDiff hs),
+    map_pairReindex_eq_self_of_finite hπ]
 
 private theorem measure_eq_zero_or_one_of_jointlyDissociated
     {ρ : Measure (ℕ × ℕ → α)} [IsProbabilityMeasure ρ]
@@ -192,10 +199,9 @@ private theorem measure_eq_zero_or_one_of_jointlyDissociated
       (blockSigma (fun p (x : ℕ × ℕ → α) => x p) ((I : Set ℕ) ×ˢ (I : Set ℕ)))
       (blockSigma (fun p (x : ℕ × ℕ → α) => x p) ((J : Set ℕ) ×ˢ (J : Set ℕ))) ρ).mp
         (hdiss.indep_blockSigma_prod_self hIJset) t t' ht_block ht'_block
-  have hπinv : (MulAction.fixedBy ℕ π⁻¹)ᶜ.Finite := by
-    simpa only [π, MulAction.fixedBy_inv ℕ] using Nat.finite_compl_fixedBy_blockSwap N
   have ht'_symm : ρ (symmDiff t' s) = ρ (symmDiff t s) :=
-    measure_symmDiff_pairReindex_preimage_eq hπinv hs ht_meas hinv
+    measure_symmDiff_pairReindex_preimage_eq (π := π) (Nat.finite_compl_fixedBy_blockSwap N) hs
+      ht_meas hinv
   have h1 : ρ.real (symmDiff t s) < ε := by
     rw [ht]
     exact ENNReal.toReal_lt_of_lt_ofReal hFS
@@ -292,14 +298,7 @@ theorem jointlyExchangeable_of_smulInvariantMeasure {ρ : Measure (ℕ × ℕ �
   obtain ⟨π, hπfin, hπ⟩ := Equiv.Perm.exists_finite_compl_fixedBy_apply_eq_on_finset σ
     (F.image Prod.fst ∪ F.image Prod.snd)
   refine ⟨π, π, ?_, ?_⟩
-  · -- the law is invariant under `π`, read through the action
-    have hπ' : (MulAction.fixedBy ℕ π⁻¹)ᶜ.Finite := by
-      simpa only [MulAction.fixedBy_inv ℕ] using hπfin
-    have h := SMulInvariantMeasure.measure_preimage_smul (μ := ρ) (FinitaryPerm.ofPerm π⁻¹ hπ')
-    ext s hs
-    rw [Measure.map_apply (measurable_pairReindex _ _) hs]
-    have := h hs
-    simpa only [finitaryPerm_smul_array_def, FinitaryPerm.toPerm_ofPerm, inv_inv] using this
+  · exact map_pairReindex_eq_self_of_finite hπfin
   · intro p hp
     exact ⟨hπ _ (Finset.mem_union_left _ (Finset.mem_image_of_mem _ hp)),
       hπ _ (Finset.mem_union_right _ (Finset.mem_image_of_mem _ hp))⟩
