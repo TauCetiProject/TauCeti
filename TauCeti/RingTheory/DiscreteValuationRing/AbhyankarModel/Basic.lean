@@ -650,7 +650,10 @@ theorem algebraMap_abhyankarModelIntegralClosureAlgEquiv [IsReduced (B ⧸ Ideal
     _ = σ (abhyankarModelAwayAlgEquiv ϖ u e d Cϖ
           (Localization.Away (algebraMap B (abhyankarModel ϖ u e d) ϖ)) z) := by
         rw [abhyankarModelIntegralClosureAlgEquiv, AlgEquiv.trans_apply,
-          IsIntegralClosure.algebraMap_equiv]
+          IsIntegralClosure.algebraMap_equiv B
+            (integralClosure B (Localization.Away (algebraMap B (abhyankarModel ϖ u e d) ϖ)))
+            (Localization.Away (algebraMap B (abhyankarModel ϖ u e d) ϖ))
+            (abhyankarModel ϖ u e d)]
         simp only [Subalgebra.algebraMap_eq, Algebra.algebraMap_self, RingHomCompTriple.comp_eq,
           AlgHom.coe_toRingHom, Subalgebra.coe_val, AlgEquiv.coe_mapIntegralClosure]
     _ = _ := DFunLike.congr_fun hσ (z : Cϖ)
