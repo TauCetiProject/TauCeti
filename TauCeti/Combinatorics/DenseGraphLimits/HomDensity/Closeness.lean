@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.HomDensity.Finite
 import TauCeti.Probability.UniformSampling
-import Mathlib.Data.Fintype.CardEmbedding
+import TauCeti.Data.Fintype.CardEmbedding
 import Mathlib.Data.Nat.Choose.Basic
 import Mathlib.Tactic.Linarith
 
@@ -50,7 +50,8 @@ namespace DenseGraphLimits
 variable {V W : Type*} [Fintype V] [Fintype W]
 
 /-- Over an empty host graph, the homomorphism and injective homomorphism densities differ by at
-most `C(k,2) / n`: both quotients vanish. -/
+most `C(k,2) / n`: the two densities coincide, both being `1` for an empty pattern and `0`
+otherwise. -/
 private theorem homDensityFin_sub_injHomDensity_le_of_card_eq_zero
     (F : SimpleGraph V) (G : SimpleGraph W) (hW0 : Fintype.card W = 0) :
     |homDensityFin F G - injHomDensity F G|
@@ -74,35 +75,6 @@ private theorem homDensityFin_sub_injHomDensity_le_of_card_eq_zero
       zero_pow hk0]
     simp
 
-omit [Fintype V] [Fintype W] in
-/-- Injective maps preserving adjacency correspond to injective graph homomorphisms. -/
-private theorem natCard_injective_inter_adjPreserving (F : SimpleGraph V) (G : SimpleGraph W) :
-    Nat.card {f : V → W // f ∈ {f : V → W | Function.Injective f} ∩
-        {f : V → W | ∀ a b, F.Adj a b → G.Adj (f a) (f b)}} =
-      Nat.card {φ : F →g G // Function.Injective ⇑φ} := by
-  let e : {f : V → W // f ∈ {f : V → W | Function.Injective f} ∩
-        {f : V → W | ∀ a b, F.Adj a b → G.Adj (f a) (f b)}} ≃
-      {φ : F →g G // Function.Injective ⇑φ} :=
-    { toFun := fun f => ⟨⟨f.1, fun {a b} hab => f.2.2 a b hab⟩, f.2.1⟩
-      invFun := fun φ => ⟨⇑φ.1, φ.2, fun {a b} hab => φ.1.map_rel hab⟩
-      left_inv := by intro f; rfl
-      right_inv := by
-        intro φ
-        apply Subtype.ext
-        exact RelHom.ext (fun _ => rfl) }
-  exact Nat.card_congr e
-
-/-- There are `n.descFactorial k` injective maps from a `k`-element type to an `n`-element type. -/
-private theorem natCard_injective :
-    Nat.card {f : V → W // f ∈ {f : V → W | Function.Injective f}} =
-      (Fintype.card W).descFactorial (Fintype.card V) := by
-  let e : {f : V → W // f ∈ {f : V → W | Function.Injective f}} ≃ (V ↪ W) :=
-    { toFun := fun f => ⟨f.1, f.2⟩
-      invFun := fun e => ⟨e.1, e.2⟩
-      left_inv := by intro f; rfl
-      right_inv := by intro e; rfl }
-  rw [Nat.card_congr e, Nat.card_eq_fintype_card, Fintype.card_embedding_eq]
-
 /-- The homomorphism density and the injective homomorphism density differ by at most
 `C(k,2) / n`, where `k` is the number of vertices of the pattern and `n` the number of
 vertices of the host, for every finite pattern and host graph.
@@ -121,9 +93,11 @@ theorem homDensityFin_sub_injHomDensity_le (F : SimpleGraph V) (G : SimpleGraph 
       simpa [A] using (F.card_hom_eq_card_adjPreservingMaps G).symm
     have hEA : Nat.card {f : V → W // f ∈ E ∩ A} =
         Nat.card {φ : F →g G // Function.Injective ⇑φ} :=
-      natCard_injective_inter_adjPreserving F G
+      F.natCard_injective_inter_adjPreserving G
     have hE : Nat.card {f : V → W // f ∈ E} =
-        (Fintype.card W).descFactorial (Fintype.card V) := natCard_injective
+        (Fintype.card W).descFactorial (Fintype.card V) := by
+      rw [← Fintype.card_subtype_injective (α := V) (β := W), ← Nat.card_eq_fintype_card]
+      rfl
     have hU : Nat.card (V → W) = Fintype.card W ^ Fintype.card V := by
       rw [Nat.card_fun, Nat.card_eq_fintype_card, Nat.card_eq_fintype_card]
     have hleft := Probability.uniformOn_injective_le_add_choose_two_div (ι := V) (κ := W) A
