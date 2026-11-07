@@ -282,6 +282,40 @@ private theorem IsMaximalIntegralCurveFlowPoint.add (n : ℕ)
   ring_nf at hadd
   simpa only [F, G, Function.comp_apply] using hadd
 
+/-- The regular times of the maximal trajectory through `x` that lie in a closed set `K`, on which
+the trajectory is continuous, form a closed set. -/
+private theorem isClosed_setOf_isMaximalIntegralCurveFlowPoint_inter [CompleteSpace E]
+    [FiniteDimensional ℝ E] (n : ℕ) [IsManifold I (n + 1 : ℕ) M]
+    (hv : CMDiff (n + 1 : ℕ) (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) (x : M) {K : Set ℝ}
+    (hK : IsClosed K) (hcurve : ContinuousOn (maximalIntegralCurve v x) K) :
+    IsClosed ({s : ℝ | IsMaximalIntegralCurveFlowPoint (I := I) n v (x, s)} ∩ K) := by
+  have hPopen : IsOpen {p | IsMaximalIntegralCurveFlowPoint (I := I) n v p} :=
+    isOpen_isMaximalIntegralCurveFlowPoint (I := I) n v
+  -- Restart at a nearby regular time and use continuity of the fixed maximal trajectory to make
+  -- the remaining time lie in the regular time-zero germ.
+  rw [← closure_subset_iff_isClosed]
+  intro r hr
+  have hrK : r ∈ K := hK.closure_subset_iff.mpr inter_subset_right hr
+  have hgr : ContinuousWithinAt
+      (fun s : ℝ ↦ (maximalIntegralCurve v x s, r - s)) K r :=
+    (hcurve r hrK).prodMk ((continuousAt_const.sub continuousAt_id).continuousWithinAt)
+  have hzero : (maximalIntegralCurve v x r, (0 : ℝ)) ∈
+      {p | IsMaximalIntegralCurveFlowPoint (I := I) n v p} :=
+    isMaximalIntegralCurveFlowPoint_zero (I := I) n hv _
+  have hpre : {s : ℝ | IsMaximalIntegralCurveFlowPoint (I := I) n v
+      (maximalIntegralCurve v x s, r - s)} ∈ 𝓝[K] r := by
+    have hzero' : (maximalIntegralCurve v x r, r - r) ∈
+        {p | IsMaximalIntegralCurveFlowPoint (I := I) n v p} := by
+      simpa only [sub_self] using hzero
+    exact hgr.eventually (hPopen.mem_nhds hzero')
+  obtain ⟨w, hwr, hw⟩ := mem_nhdsWithin_iff_exists_mem_nhds_inter.mp hpre
+  obtain ⟨s, hsw, hsS, hsK⟩ := mem_closure_iff_nhds.mp hr w hwr
+  have hsr : IsMaximalIntegralCurveFlowPoint (I := I) n v
+      (maximalIntegralCurve v x s, r - s) := hw ⟨hsw, hsK⟩
+  have hadd := hsS.add n hv hsr
+  ring_nf at hadd
+  exact ⟨hadd, hrK⟩
+
 /-- Every point in the natural domain is a regular point of the finite-order maximal flow. -/
 private theorem isMaximalIntegralCurveFlowPoint_of_mem [CompleteSpace E]
     [FiniteDimensional ℝ E] (n : ℕ) [IsManifold I (n + 1 : ℕ) M]
@@ -309,34 +343,8 @@ private theorem isMaximalIntegralCurveFlowPoint_of_mem [CompleteSpace E]
     exact hPopen.preimage (continuous_const.prodMk continuous_id)
   have hcurve : ContinuousOn (maximalIntegralCurve v x) K :=
     (isMIntegralCurveOn_maximalIntegralCurve hvone).continuousOn.mono hKsub
-  -- A limit of regular times is regular: restart at a nearby regular time and use continuity of
-  -- the fixed maximal trajectory to make the remaining time lie in the regular time-zero germ.
-  have hSKclosed : IsClosed (S ∩ K) := by
-    rw [← closure_subset_iff_isClosed]
-    intro r hr
-    have hrK : r ∈ K := by
-      apply (isClosed_Icc.closure_subset_iff.mpr inter_subset_right) hr
-    have hgr : ContinuousWithinAt
-        (fun s : ℝ ↦ (maximalIntegralCurve v x s, r - s)) K r := by
-      exact (hcurve r hrK).prodMk
-        ((continuousAt_const.sub continuousAt_id).continuousWithinAt)
-    have hzero :
-        (maximalIntegralCurve v x r, (0 : ℝ)) ∈ P :=
-      isMaximalIntegralCurveFlowPoint_zero (I := I) n hv _
-    have hpre : {s : ℝ | (maximalIntegralCurve v x s, r - s) ∈ P} ∈ 𝓝[K] r := by
-      have hzero' : (maximalIntegralCurve v x r, r - r) ∈ P := by
-        simpa only [sub_self] using hzero
-      exact hgr.eventually (hPopen.mem_nhds hzero')
-    obtain ⟨w, hwr, hw⟩ := mem_nhdsWithin_iff_exists_mem_nhds_inter.mp hpre
-    obtain ⟨s, hsw, hsS, hsK⟩ :=
-      (mem_closure_iff_nhds.mp hr w hwr)
-    have hs : IsMaximalIntegralCurveFlowPoint (I := I) n v (x, s) := hsS
-    have hsr : IsMaximalIntegralCurveFlowPoint (I := I) n v
-        (maximalIntegralCurve v x s, r - s) :=
-      hw ⟨hsw, hsK⟩
-    have hadd := hs.add n hv hsr
-    ring_nf at hadd
-    exact ⟨hadd, hrK⟩
+  have hSKclosed : IsClosed (S ∩ K) :=
+    isClosed_setOf_isMaximalIntegralCurveFlowPoint_inter n hv x isClosed_Icc hcurve
   have h0K : (0 : ℝ) ∈ K := by
     exact ⟨min_le_left _ _, le_max_left _ _⟩
   have htK : t ∈ K := by
