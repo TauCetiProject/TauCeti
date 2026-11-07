@@ -64,15 +64,6 @@ theorem schwarzChristoffelIntegrand_affine_prevertices (a e : ι → ℝ) {c : �
   rw [Complex.ofReal_sum]
   exact (cpow_sum (Complex.ofReal_ne_zero.mpr hc.ne') (fun i ↦ (e i : ℂ)) Finset.univ).symm
 
-/-- The scale factor `c ^ (S + 1)` of the primitive is the scale factor `c ^ S` of the integrand
-times `c`. -/
-private lemma cpow_sum_add_one_eq (e : ι → ℝ) {c : ℝ} (hc : 0 < c) :
-    (c : ℂ) ^ (((∑ i, e i) + 1 : ℝ) : ℂ) = (c : ℂ) ^ ((∑ i, e i : ℝ) : ℂ) * (c : ℂ) := by
-  have h_exp : (((∑ i, e i) + 1 : ℝ) : ℂ) = ((∑ i, e i : ℝ) : ℂ) + 1 := by
-    push_cast
-    ring
-  rw [h_exp, Complex.cpow_add _ _ (Complex.ofReal_ne_zero.mpr hc.ne'), Complex.cpow_one]
-
 /-- The normalized primitive for the affinely changed prevertices and base point, composed with the
 affine map, has derivative the scaled integrand. -/
 private lemma hasDerivAt_primitive_comp_affine (a e : ι → ℝ) (z₀ : UpperHalfPlane) {c : ℝ}
@@ -89,7 +80,8 @@ private lemma hasDerivAt_primitive_comp_affine (a e : ι → ℝ) (z₀ : UpperH
       (d +ᵥ ((⟨c, hc⟩ : {x : ℝ // 0 < x}) • z₀))
       (by simpa [upperHalfPlaneSet, mul_im] using mul_pos hc hw)).comp w hinner
   refine hcomp.congr_deriv ?_
-  rw [schwarzChristoffelIntegrand_affine_prevertices a e hc d w, cpow_sum_add_one_eq e hc]
+  rw [schwarzChristoffelIntegrand_affine_prevertices a e hc d w, Complex.ofReal_add,
+    Complex.ofReal_one, Complex.cpow_add _ _ (Complex.ofReal_ne_zero.mpr hc.ne'), Complex.cpow_one]
   ring
 
 /-- The normalized Schwarz--Christoffel primitive is covariant under a simultaneous positive
@@ -110,7 +102,9 @@ theorem schwarzChristoffelPrimitive_affine_prevertices (a e : ι → ℝ)
   have hcoe : (z₀' : ℂ) = (c : ℂ) * (z₀ : ℂ) + (d : ℂ) := by
     simp [z₀', UpperHalfPlane.coe_vadd, UpperHalfPlane.coe_pos_real_smul,
       Complex.real_smul, add_comm]
-  have hC : C = (c : ℂ) ^ ((∑ i, e i : ℝ) : ℂ) * (c : ℂ) := cpow_sum_add_one_eq e hc
+  have hC : C = (c : ℂ) ^ ((∑ i, e i : ℝ) : ℂ) * (c : ℂ) := by
+    simp only [C]
+    rw [Complex.ofReal_add, Complex.ofReal_one, Complex.cpow_add _ _ hc₀, Complex.cpow_one]
   have hleft := fun w (hw : w ∈ upperHalfPlaneSet) ↦
     hasDerivAt_primitive_comp_affine a e z₀ hc d hw
   have hC₀ : C ≠ 0 := by
