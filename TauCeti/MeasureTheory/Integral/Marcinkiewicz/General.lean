@@ -469,7 +469,7 @@ omit [MeasurableSpace α] [MeasurableSpace G] [TopologicalSpace G] [OpensMeasura
 /-- If `T v ≤ T g₁ + T g₂` almost everywhere and `d + e ≤ 1`, then the superlevel set of `T v` at
 the height `t` is almost everywhere covered by the superlevel set of `T g₁` at the height `d * t`
 and that of `T g₂` at the height `e * t`. -/
-theorem setOf_ofReal_lt_ae_le_union {g₁ g₂ : α → G} (ht : 0 < t) (hd : 0 < d) (he : 0 < e)
+theorem setOf_ofReal_lt_ae_le_union {g₁ g₂ : α → G} (ht : 0 ≤ t) (hd : 0 ≤ d) (he : 0 ≤ e)
     (hde : d + e ≤ 1) (hTv : T v ≤ᵐ[ν] T g₁ + T g₂) :
     {y | ENNReal.ofReal t < T v y} ≤ᵐ[ν]
       {y | ENNReal.ofReal (d * t) < T g₁ y} ∪ {y | ENNReal.ofReal (e * t) < T g₂ y} := by
@@ -553,7 +553,7 @@ theorem meas_ofReal_lt_le_add_setLIntegral (hv : AEMeasurable v μ) (ht : 0 < t)
     exact setLIntegral_congr (hv.ae_eq_mk.fun_comp fun z => ‖z‖ₑ ≤ ENNReal.ofReal (c * t)).symm
   calc ν {y | ENNReal.ofReal t < T v y}
       ≤ ν ({y | ENNReal.ofReal (d * t) < T g₁ y} ∪ {y | ENNReal.ofReal (e * t) < T g₂ y}) :=
-        measure_mono_ae (setOf_ofReal_lt_ae_le_union ht hd he hde hTv)
+        measure_mono_ae (setOf_ofReal_lt_ae_le_union ht.le hd.le he.le hde hTv)
     _ ≤ ν {y | ENNReal.ofReal (d * t) < T g₁ y} + ν {y | ENNReal.ofReal (e * t) < T g₂ y} :=
         measure_union_le _ _
     _ ≤ A₀ * ENNReal.ofReal ((d * t) ^ (-p₀)) * ∫⁻ x, ‖g₁ x‖ₑ ^ p₀ ∂μ +
