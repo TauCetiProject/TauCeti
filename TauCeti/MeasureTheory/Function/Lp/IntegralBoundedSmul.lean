@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import TauCeti.MeasureTheory.Function.Lp.Norm
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 
@@ -20,15 +21,16 @@ inequality on `W`,
 
 (`TauCeti.integrable_smul_and_norm_integral_smul_le`). This is the estimate that makes
 `h ↦ ∫ k • h` continuous on `Lᵖ` functions supported in `W`, used to pass to the limit in kernel
-integrals `∫ K(x - y) h(y) dy` for `x` away from the support of `h`.
+integrals `∫ K(x - y) h(y) dy` for `x` away from the support of `h`
+(`TauCeti.tendsto_integral_smul_of_tendsto_eLpNorm_sub`).
 -/
 
 public section
 
 namespace TauCeti
 
-open MeasureTheory Set
-open scoped ENNReal
+open MeasureTheory Set Filter
+open scoped ENNReal Topology
 
 variable {α F : Type*} [MeasurableSpace α] {μ : Measure α} [NormedAddCommGroup F]
   [NormedSpace ℝ F]
@@ -43,12 +45,7 @@ theorem integrable_smul_and_norm_integral_smul_le {k : α → ℝ} {W : Set α} 
     Integrable (fun y => k y • h y) μ ∧
       ‖∫ y, k y • h y ∂μ‖ ≤ B * (μ W ^ (1 - 1 / p.toReal) * eLpNorm h p μ).toReal := by
   have : IsFiniteMeasure (μ.restrict W) := isFiniteMeasure_restrict.2 hμW
-  have hexp : 0 ≤ 1 - 1 / p.toReal := by
-    rcases eq_or_ne p ∞ with rfl | hp_top
-    · simp
-    · have h1p : (1 : ℝ) ≤ p.toReal := by
-        simpa using ENNReal.toReal_mono hp_top hp
-      exact sub_nonneg.2 (div_le_one_of_le₀ h1p (by positivity))
+  have hexp := zero_le_one_sub_one_div_toReal hp
   have hhW : IntegrableOn h W μ := (hh.restrict W).integrable hp
   have hbound : ∀ᵐ y ∂μ.restrict W, ‖k y • h y‖ ≤ B * ‖h y‖ := hkB.mono fun y hy => by
     rw [norm_smul]
@@ -74,5 +71,32 @@ theorem integrable_smul_and_norm_integral_smul_le {k : α → ℝ} {W : Set α} 
         gcongr
         exact Measure.restrict_le_self
     _ = _ := mul_comm _ _
+
+/-- **Continuity of kernel integrals in `Lᵖ`.** Let `k` be a.e. bounded by `B` on a set `W` of
+finite measure, and let `φ i` and `f` be in `Lᵖ`, `1 ≤ p`, and vanish a.e. off `W` (for `φ i`
+eventually along `l`). If `φ i → f` in `Lᵖ`, then `∫ k • φ i → ∫ k • f`. -/
+theorem tendsto_integral_smul_of_tendsto_eLpNorm_sub {ι : Type*} {l : Filter ι} {k : α → ℝ}
+    {W : Set α} (hμW : μ W ≠ ∞) {B : ℝ} (hB : 0 ≤ B) (hk : AEStronglyMeasurable k (μ.restrict W))
+    (hkB : ∀ᵐ y ∂μ.restrict W, ‖k y‖ ≤ B) {p : ℝ≥0∞} (hp : 1 ≤ p) {φ : ι → α → F} {f : α → F}
+    (hφ : ∀ i, MemLp (φ i) p μ) (hf : MemLp f p μ)
+    (hφ0 : ∀ᶠ i in l, ∀ᵐ y ∂μ, y ∉ W → φ i y = 0) (hf0 : ∀ᵐ y ∂μ, y ∉ W → f y = 0)
+    (hlim : Tendsto (fun i => eLpNorm (φ i - f) p μ) l (𝓝 0)) :
+    Tendsto (fun i => ∫ y, k y • φ i y ∂μ) l (𝓝 (∫ y, k y • f y ∂μ)) := by
+  rw [tendsto_iff_norm_sub_tendsto_zero]
+  have hexp := zero_le_one_sub_one_div_toReal hp
+  have hlim' : Tendsto (fun i => B * (μ W ^ (1 - 1 / p.toReal) * eLpNorm (φ i - f) p μ).toReal) l
+      (𝓝 0) := by
+    have h := ENNReal.Tendsto.const_mul hlim (Or.inr (ENNReal.rpow_ne_top_of_nonneg hexp hμW))
+    rw [mul_zero] at h
+    simpa using ((ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp h).const_mul B
+  refine squeeze_zero_norm' ?_ hlim'
+  filter_upwards [hφ0] with i hi
+  obtain ⟨hint₁, -⟩ := integrable_smul_and_norm_integral_smul_le hμW hB hk hkB hp (hφ i) hi
+  obtain ⟨hint₂, -⟩ := integrable_smul_and_norm_integral_smul_le hμW hB hk hkB hp hf hf0
+  obtain ⟨-, hle⟩ := integrable_smul_and_norm_integral_smul_le hμW hB hk hkB hp ((hφ i).sub hf)
+    ((hi.and hf0).mono fun y hy hyW => by simp [hy.1 hyW, hy.2 hyW])
+  rw [norm_norm, ← integral_sub hint₁ hint₂]
+  simp_rw [← smul_sub]
+  exact hle
 
 end TauCeti
