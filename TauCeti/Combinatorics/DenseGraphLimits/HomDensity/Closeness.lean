@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.HomDensity.Finite
 import TauCeti.Probability.UniformSampling
-import Mathlib.Data.Fintype.CardEmbedding
+import TauCeti.Data.Fintype.CardEmbedding
 import Mathlib.Data.Nat.Choose.Basic
 import Mathlib.Tactic.Linarith
 
@@ -49,6 +49,28 @@ namespace DenseGraphLimits
 
 variable {V W : Type*} [Fintype V] [Fintype W]
 
+/-- Over an empty host graph, the homomorphism and injective homomorphism densities differ by at
+most `C(k,2) / n`: the two densities coincide, both being `1` for an empty pattern and `0`
+otherwise. -/
+private theorem homDensityFin_sub_injHomDensity_le_of_card_eq_zero
+    (F : SimpleGraph V) (G : SimpleGraph W) (hW0 : Fintype.card W = 0) :
+    |homDensityFin F G - injHomDensity F G|
+      ≤ ((Fintype.card V).choose 2 : ℝ) / (Fintype.card W : ℝ) := by
+  classical
+  rw [homDensityFin_def, injHomDensity_def]
+  by_cases hk0 : Fintype.card V = 0
+  · have hV : IsEmpty V := Fintype.card_eq_zero_iff.mp hk0
+    have hsub : ∀ φ : F →g G, Function.Injective (⇑φ : V → W) := by
+      intro φ a b _
+      exact False.elim (hV.false a)
+    rw [Nat.card_congr (Equiv.subtypeUnivEquiv hsub).symm, hk0, pow_zero, Nat.descFactorial_zero,
+      Nat.cast_one]
+    simp [hW0]
+  -- both denominators vanish, so both quotients are zero whatever the numerators
+  · rw [hW0, Nat.descFactorial_eq_zero_iff_lt.mpr (Nat.pos_of_ne_zero hk0), Nat.cast_zero,
+      zero_pow hk0]
+    simp
+
 /-- The homomorphism density and the injective homomorphism density differ by at most
 `C(k,2) / n`, where `k` is the number of vertices of the pattern and `n` the number of
 vertices of the host, for every finite pattern and host graph.
@@ -58,23 +80,7 @@ theorem homDensityFin_sub_injHomDensity_le (F : SimpleGraph V) (G : SimpleGraph 
       ≤ ((Fintype.card V).choose 2 : ℝ) / (Fintype.card W : ℝ) := by
   classical
   by_cases hW0 : Fintype.card W = 0
-  · rw [homDensityFin_def, injHomDensity_def]
-    by_cases hk0 : Fintype.card V = 0
-    · have hV : IsEmpty V := Fintype.card_eq_zero_iff.mp hk0
-      have hsub : ∀ φ : F →g G, Function.Injective (⇑φ : V → W) := by
-        intro φ a b _
-        exact False.elim (hV.false a)
-      have e : (F →g G) ≃ {φ : F →g G // Function.Injective ⇑φ} :=
-        { toFun := fun φ => ⟨φ, hsub φ⟩
-          invFun := Subtype.val
-          left_inv := fun _ => rfl
-          right_inv := fun ⟨_, _⟩ => rfl }
-      rw [Nat.card_congr e, hk0, pow_zero, Nat.descFactorial_zero, Nat.cast_one]
-      simp [hW0]
-    -- both denominators vanish, so both quotients are zero whatever the numerators
-    · rw [hW0, Nat.descFactorial_eq_zero_iff_lt.mpr (Nat.pos_of_ne_zero hk0), Nat.cast_zero,
-        zero_pow hk0]
-      simp
+  · exact homDensityFin_sub_injHomDensity_le_of_card_eq_zero F G hW0
   · have _ : 0 < Fintype.card W := Nat.pos_of_ne_zero hW0
     let _ : MeasurableSpace W := ⊤
     let A : Set (V → W) := {f | ∀ a b, F.Adj a b → G.Adj (f a) (f b)}
@@ -82,24 +88,12 @@ theorem homDensityFin_sub_injHomDensity_le (F : SimpleGraph V) (G : SimpleGraph 
     have hA : Nat.card {f : V → W // f ∈ A} = Nat.card (F →g G) := by
       simpa [A] using (F.card_hom_eq_card_adjPreservingMaps G).symm
     have hEA : Nat.card {f : V → W // f ∈ E ∩ A} =
-        Nat.card {φ : F →g G // Function.Injective ⇑φ} := by
-      let e : {f : V → W // f ∈ E ∩ A} ≃ {φ : F →g G // Function.Injective ⇑φ} :=
-        { toFun := fun f => ⟨⟨f.1, fun {a b} hab => f.2.2 a b hab⟩, f.2.1⟩
-          invFun := fun φ => ⟨⇑φ.1, φ.2, fun {a b} hab => φ.1.map_rel hab⟩
-          left_inv := by intro f; rfl
-          right_inv := by
-            intro φ
-            apply Subtype.ext
-            exact RelHom.ext (fun _ => rfl) }
-      exact Nat.card_congr e
+        Nat.card {φ : F →g G // Function.Injective ⇑φ} :=
+      F.natCard_injective_inter_adjPreserving G
     have hE : Nat.card {f : V → W // f ∈ E} =
         (Fintype.card W).descFactorial (Fintype.card V) := by
-      let e : {f : V → W // f ∈ E} ≃ (V ↪ W) :=
-        { toFun := fun f => ⟨f.1, f.2⟩
-          invFun := fun e => ⟨e.1, e.2⟩
-          left_inv := by intro f; rfl
-          right_inv := by intro e; rfl }
-      rw [Nat.card_congr e, Nat.card_eq_fintype_card, Fintype.card_embedding_eq]
+      rw [← Fintype.card_subtype_injective (α := V) (β := W), ← Nat.card_eq_fintype_card]
+      rfl
     have hU : Nat.card (V → W) = Fintype.card W ^ Fintype.card V := by
       rw [Nat.card_fun, Nat.card_eq_fintype_card, Nat.card_eq_fintype_card]
     have hleft := Probability.uniformOn_injective_le_add_choose_two_div (ι := V) (κ := W) A
