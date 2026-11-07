@@ -93,6 +93,14 @@ noncomputable instance [CompleteSpace E] (j : ℕ) : CompleteSpace (IteratedGrad
       let _ : CompleteSpace (IteratedGradient E j) := ih
       exact inferInstance
 
+/-- Every iterated gradient target is finite-dimensional when the original space is. -/
+instance [FiniteDimensional ℝ E] (j : ℕ) : FiniteDimensional ℝ (IteratedGradient E j) := by
+  induction j with
+  | zero => exact inferInstance
+  | succ j ih =>
+      let _ : FiniteDimensional ℝ (IteratedGradient E j) := ih
+      exact inferInstance
+
 end IteratedGradient
 
 section IteratedGradientChain
