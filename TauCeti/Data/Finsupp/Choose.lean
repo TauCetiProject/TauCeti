@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Finsupp.Basic
-public import Mathlib.Data.Finsupp.Order
 public import Mathlib.Data.Finsupp.Weight
 public import Mathlib.Data.Nat.Choose.Bounds
+public import Mathlib.Data.Nat.Choose.Sum
+public import TauCeti.Data.Finsupp.Interval
 
 /-!
 # Multi-index binomial coefficients
@@ -23,6 +24,7 @@ derivative `∂^d` scales the monomial `X^m`.
 * `Finsupp.prod_choose_add_single`: Pascal's rule in a single coordinate `i`.
 * `Finsupp.prod_choose_add_comm`: `∏ⱼ (aⱼ + bⱼ choose aⱼ)` is symmetric in `a` and `b`.
 * `Finsupp.prod_choose_le_two_pow_degree`: the coefficient is at most `2 ^ |m|`.
+* `Finsupp.prod_add_pow`: multi-index binomial expansion of `∏ⱼ (xⱼ + yⱼ) ^ γⱼ` over `β ≤ γ`.
 -/
 
 public section
@@ -95,5 +97,34 @@ theorem prod_choose_le_two_pow_degree (d m : σ →₀ ℕ) :
       _ = 2 ^ m.degree := by rw [Finset.prod_pow_eq_pow_sum, degree_apply]
   · rw [prod_choose_eq_zero hdm]
     exact Nat.zero_le _
+
+open Classical in
+/-- Multi-index binomial theorem: `∏ⱼ (xⱼ + yⱼ) ^ γⱼ` expands over `β ≤ γ` into
+`∏ⱼ (γⱼ choose βⱼ) xⱼ ^ βⱼ yⱼ ^ (γⱼ - βⱼ)`. -/
+theorem prod_add_pow {R : Type*} [CommSemiring R] (x y : σ → R) (γ : σ →₀ ℕ) :
+    (γ.prod fun j k ↦ (x j + y j) ^ k) =
+      ∑ β ∈ Finset.Iic γ,
+        γ.prod fun j k ↦ (k.choose (β j) : R) * x j ^ β j * y j ^ (k - β j) := by
+  classical
+  induction γ using Finsupp.induction with
+  | zero =>
+    have h0 : Finset.Iic (0 : σ →₀ ℕ) = {0} := Finset.Iic_bot
+    simp [h0]
+  | single_add j k s hj hk ih =>
+    -- Split the product at coordinate `j`, apply the univariate binomial theorem on `j`, and
+    -- reindex `(m, β') ∈ Iic k ×ˢ Iic s` along `single j m + β' ∈ Iic (single j k + s)`.
+    rw [Finsupp.prod_add_index' (fun _ ↦ pow_zero _) (fun _ _ _ ↦ pow_add _ _ _),
+      Finsupp.prod_single_index (h := fun i n ↦ (x i + y i) ^ n) (pow_zero _), add_pow,
+      Nat.range_succ_eq_Iic, ih, Finset.sum_mul_sum, Finsupp.sum_Iic_single_add k hj]
+    refine Finset.sum_congr rfl fun m _ ↦ Finset.sum_congr rfl fun β' hβ' ↦ ?_
+    have hsj : s j = 0 := notMem_support_iff.1 hj
+    have hβ'j : β' j = 0 := nonpos_iff_eq_zero.1 ((Finset.mem_Iic.1 hβ' j).trans_eq hsj)
+    rw [Finsupp.prod, Finsupp.prod, Finsupp.support_single_add hj hk, Finset.prod_cons]
+    congr 1
+    · simp only [Finsupp.add_apply, single_eq_same, hsj, hβ'j, add_zero]
+      ac_rfl
+    · refine Finset.prod_congr rfl fun i hi ↦ ?_
+      have hij : j ≠ i := fun h ↦ hj (h ▸ hi)
+      simp [hij]
 
 end Finsupp

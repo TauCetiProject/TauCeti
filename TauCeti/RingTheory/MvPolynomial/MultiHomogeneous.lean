@@ -18,7 +18,7 @@ multidegree `d : κ → ℕ`* when every monomial occurring in `P` has degree ex
 variables of block `h`, for every `h`. Equivalently, `P` is weighted homogeneous of weight `d h`
 for the indicator weight of every block, which is how the block-homogeneous calculus of
 `TauCeti.RingTheory.MvPolynomial.HasseDeriv.WeightedHomogeneous` and
-`TauCeti.RingTheory.MvPolynomial.BlockHomogenize` already phrases it; the predicate
+`TauCeti.RingTheory.MvPolynomial.BlockHomogenize.Basic` already phrases it; the predicate
 `MvPolynomial.IsMultiHomogeneous` names that conjunction.
 
 Multihomogeneous polynomials are the auxiliary polynomials of Schmidt's proof of the Subspace

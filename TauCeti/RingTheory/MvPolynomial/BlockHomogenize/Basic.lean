@@ -7,8 +7,11 @@ module
 
 public import Mathlib.Algebra.Polynomial.Homogenize
 public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
+public import TauCeti.Algebra.MvPolynomial.Degrees
 public import TauCeti.Algebra.MvPolynomial.Monomial
 public import TauCeti.Data.Finsupp.Weight
+
+import Mathlib.Data.Finsupp.Interval
 
 /-!
 # Block homogenization of multivariate polynomials
@@ -35,6 +38,8 @@ multihomogeneous polynomials to which the product theorem and the index estimate
 
 * `MvPolynomial.blockHomogenizeExponent b d e`: the exponent `(d - t(e)) ⊕ e` on `B ⊕ S`.
 * `MvPolynomial.blockHomogenize b d f`: the block homogenization of `f`.
+* `MvPolynomial.blockExponents b d`: for finite `S`, the finite set of multi-indices `γ : S →₀ ℕ`
+  satisfying `t_h(γ) ≤ d h` in every block `h`.
 
 ## Main results
 
@@ -49,6 +54,10 @@ multihomogeneous polynomials to which the product theorem and the index estimate
   degree `d h` in block `h`.
 * `MvPolynomial.blockHomogenize_aeval_one_X`: a polynomial homogeneous of degree `d h` in every
   block is the block homogenization of its dehomogenization.
+* `MvPolynomial.mapDomain_le_of_mem_support_aeval_one_X`: dehomogenizing a polynomial homogeneous
+  of degree `d h` in every block yields a `d`-bounded affine polynomial.
+* `MvPolynomial.mem_blockExponents`, `MvPolynomial.support_subset_blockExponents_iff`: membership
+  in `blockExponents b d` and characterization of `d`-bounded supports for finite `S`.
 * `MvPolynomial.rename_blockHomogenize_unique`: comparison with `Polynomial.homogenize`.
 
 ## References
@@ -62,6 +71,8 @@ public section
 namespace MvPolynomial
 
 open Finsupp
+
+section Homogenize
 
 variable {R B S : Type*} [CommSemiring R] [Fintype B] (b : S → B) (d : B → ℕ)
 
@@ -307,6 +318,36 @@ theorem blockHomogenize_aeval_one_X {F : MvPolynomial (B ⊕ S) R}
     ite_eq_left fun h ↦ H h ▸ le_add_self,
     (blockHomogenizeExponent_eq_sumElim_iff b d (a := a)).2 fun h ↦ by have := H h; omega]
 
+omit [Fintype B] in
+/-- Dehomogenizing a polynomial `F : MvPolynomial (B ⊕ S) R` that is homogeneous of degree `d h` in
+every block `h` produces an affine polynomial whose monomials satisfy `t_h(e) ≤ d h`. -/
+theorem mapDomain_le_of_mem_support_aeval_one_X {F : MvPolynomial (B ⊕ S) R}
+    (hF : ∀ h, F.IsWeightedHomogeneous (fun v ↦ if Sum.elim id b v = h then 1 else 0) (d h))
+    {e : S →₀ ℕ} (he : e ∈ (aeval (Sum.elim (fun _ ↦ 1) (X : S → MvPolynomial S R)) F).support)
+    (h : B) :
+    e.mapDomain b h ≤ d h := by
+  classical
+  rw [mem_support_iff] at he
+  have hex : ∃ u ∈ F.support,
+      (aeval (Sum.elim (fun _ : B ↦ (1 : MvPolynomial S R)) X)
+        (monomial u (F.coeff u))).coeff e ≠ 0 := by
+    by_contra! hall
+    apply he
+    conv_lhs => rw [F.as_sum]
+    rw [map_sum, coeff_sum]
+    exact Finset.sum_eq_zero hall
+  obtain ⟨u, hu, hne⟩ := hex
+  obtain ⟨κ, e', rfl⟩ : ∃ (κ : B →₀ ℕ) (e' : S →₀ ℕ), u = κ.sumElim e' :=
+    ⟨_, _, (comapDomain_sumElim_comapDomain u).symm⟩
+  rw [aeval_def, eval₂_monomial_sumElim_of_eq_one _ _ (fun _ ↦ rfl), Sum.elim_comp_inr,
+    ← aeval_def, aeval_X_left_apply, coeff_monomial] at hne
+  have he' : e' = e := by_contra fun h' ↦ hne (ite_eq_right h')
+  subst e'
+  have hdeg : κ h + e.mapDomain b h = d h := by
+    rw [← Finsupp.weight_ite_sumElim_eq_add_mapDomain_apply]
+    exact hF h (mem_support_iff.1 hu)
+  exact hdeg ▸ le_add_self
+
 end Weight
 
 /-- With one block and one affine variable, block homogenization is `Polynomial.homogenize`:
@@ -344,6 +385,47 @@ theorem rename_blockHomogenize_unique [Unique B] [Unique S] (p : Polynomial R) :
         Polynomial.homogenize_monomial hk]
     · rw [ite_eq_right fun H ↦ hk ((hmap default).symm.trans_le (H default)), map_zero,
         Polynomial.homogenize_monomial_of_lt (not_le.mp hk)]
+
+end Homogenize
+
+section BlockExponents
+
+variable {R B S : Type*} [CommSemiring R] [Finite S] (b : S → B) (d : B → ℕ)
+
+open Classical in
+/-- For a finite variable type `S`, the finite set of multi-indices `γ : S →₀ ℕ` whose degree
+`t_h(γ) = γ.mapDomain b h` in every block `h` is at most `d h`. -/
+noncomputable def blockExponents : Finset (S →₀ ℕ) :=
+  {γ ∈ Finset.Iic (equivFunOnFinite.symm (d ∘ b)) | ∀ h, γ.mapDomain b h ≤ d h}
+
+@[simp]
+theorem mem_blockExponents {γ : S →₀ ℕ} :
+    γ ∈ blockExponents b d ↔ ∀ h, γ.mapDomain b h ≤ d h := by
+  classical
+  simp only [blockExponents, Finset.mem_filter, Finset.mem_Iic, and_iff_right_iff_imp]
+  intro h j
+  have hj : γ j ≤ γ.mapDomain b (b j) := by
+    have hle : single j (γ j) ≤ γ := Finsupp.single_le_iff.2 le_rfl
+    simpa using Finsupp.mapDomain_mono (f := b) hle (b j)
+  simpa using hj.trans (h (b j))
+
+theorem zero_mem_blockExponents : (0 : S →₀ ℕ) ∈ blockExponents b d := by
+  simp
+
+theorem blockExponents_nonempty : (blockExponents b d).Nonempty :=
+  ⟨0, zero_mem_blockExponents b d⟩
+
+theorem blockExponents_mono {d₁ d₂ : B → ℕ} (hd : d₁ ≤ d₂) :
+    blockExponents b d₁ ⊆ blockExponents b d₂ := fun _ hγ ↦
+  (mem_blockExponents b d₂).2 fun h ↦ ((mem_blockExponents b d₁).1 hγ h).trans (hd h)
+
+/-- A polynomial in finitely many variables is `d`-bounded if and only if its support lies in
+`blockExponents b d`. -/
+theorem support_subset_blockExponents_iff {f : MvPolynomial S R} :
+    f.support ⊆ blockExponents b d ↔ ∀ e ∈ f.support, ∀ h, e.mapDomain b h ≤ d h := by
+  simp [Finset.subset_iff]
+
+end BlockExponents
 
 /-- In one block of degree `1`, the product of two affine variables exceeds the block bound and is
 discarded, although each exponent is at most `1`. -/

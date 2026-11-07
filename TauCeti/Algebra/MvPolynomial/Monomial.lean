@@ -32,6 +32,8 @@ univariate polynomial in the variable `Xᵢ`, on monomials.
   monomials in two disjoint groups of variables.
 * `MvPolynomial.eval₂_monomial_sumElim_of_eq_one`: evaluating `c X^a Y^e` with every `X`
   variable set to `1` gives the value of `c Y^e`.
+* `MvPolynomial.coeff_rename_inl_mul_monomial_sumElim`: the `[X^κ Y^β]` coefficient of
+  `rename Sum.inl P * monomial (u.sumElim β') c`.
 * `Polynomial.toMvPolynomial_monomial`: a univariate monomial placed in `Xᵢ` is the multivariate
   monomial with exponent `n eᵢ`.
 -/
@@ -91,6 +93,38 @@ theorem eval₂_monomial_sumElim_of_eq_one {σ τ R T : Type*} [CommSemiring R] 
     (c : R) :
     eval₂ φ x (monomial (a.sumElim e) c) = eval₂ φ (x ∘ Sum.inr) (monomial e c) := by
   simp [eval₂_monomial, Finsupp.prod_sumElim, Function.comp_def, hx]
+
+open Classical in
+/-- Multiplying a polynomial in the `.inl` variables by a monomial `c X^u Y^β'` contributes to
+`[X^κ Y^β]` only when `β' = β` and `u ≤ κ`, where it selects the coefficient `[X^(κ - u)]`. -/
+theorem coeff_rename_inl_mul_monomial_sumElim {σ τ R : Type*} [CommSemiring R]
+    (P : MvPolynomial τ R) (u κ : τ →₀ ℕ) (β' β : σ →₀ ℕ) (c : R) :
+    (rename Sum.inl P * monomial (u.sumElim β') c).coeff (κ.sumElim β) =
+      if β' = β ∧ u ≤ κ then P.coeff (κ - u) * c else 0 := by
+  classical
+  have hle : u.sumElim β' ≤ κ.sumElim β ↔ u ≤ κ ∧ β' ≤ β := by
+    simp [Finsupp.le_def, Sum.forall]
+  have hsub : κ.sumElim β - u.sumElim β' = (κ - u).sumElim (β - β') := by
+    ext (_ | _) <;> simp
+  simp only [coeff_mul_monomial', hle, hsub]
+  by_cases hβ : β' = β
+  · subst hβ
+    have hmap : (κ - u).sumElim (0 : σ →₀ ℕ) = (κ - u).mapDomain Sum.inl := by
+      simp [Finsupp.sumElim_eq_add]
+    simp [tsub_self, hmap, coeff_rename_mapDomain Sum.inl Sum.inl_injective]
+  · simp only [hβ, false_and, ↓reduceIte]
+    split_ifs with h
+    · obtain ⟨_, hβle⟩ := h
+      have hne : β - β' ≠ 0 := fun hz ↦ hβ (le_antisymm hβle (tsub_eq_zero_iff_le.1 hz))
+      obtain ⟨j, hj⟩ : ∃ j, (β - β') j ≠ 0 := by
+        by_contra! hall
+        exact hne (Finsupp.ext hall)
+      rw [coeff_rename_eq_zero Sum.inl P, zero_mul]
+      intro μ hμ
+      have h0 : (μ.mapDomain Sum.inl) (.inr j) = 0 :=
+        Finsupp.mapDomain_of_notMem_range μ _ (by simp)
+      exact (hj (by simpa [h0] using (DFunLike.congr_fun hμ (.inr j)).symm)).elim
+    · rfl
 
 end MvPolynomial
 

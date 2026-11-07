@@ -36,11 +36,16 @@ indices used for auxiliary polynomials in the proof of Roth's theorem.
 
 ## Main results
 
-* `MvPolynomial.ofReal_le_weightedIndex_of_eval_hasseDeriv_eq_zero`: for a polynomial with
-  partial degrees at most `r`, the index is at least a real threshold `t` once the jets `∂^d P`
-  with `d ≤ r` and `∑ j, d j / r j < t` vanish.
-* `MvPolynomial.le_sum_div_of_le_weightedIndex`: a nonzero jet `∂^d P` at a point where the
-  index is at least `t` has `d ≤ r` and real weight `t ≤ ∑ j, d j / r j`.
+* `MvPolynomial.weightedIndex_le`, `MvPolynomial.le_weightedIndex_of_forall`: upper and lower
+  bounds for the index in terms of the reciprocal weights of nonzero Hasse jets.
+* `MvPolynomial.ofReal_le_weightedIndex_of_eval_hasseDeriv_eq_zero`,
+  `MvPolynomial.ofReal_le_weightedIndex_comp_of_eval_hasseDeriv_eq_zero`: for a polynomial with
+  partial degrees at most `r` (or block degrees at most `d` along `b : σ → B`), the index is at
+  least a real threshold `t` once the jets within the degree bounds of real weight `< t` vanish.
+* `MvPolynomial.le_sum_div_of_le_weightedIndex`,
+  `MvPolynomial.le_sum_mapDomain_div_of_le_weightedIndex_comp`: a nonzero jet at a point where the
+  index is at least `t` satisfies the partial or block degree bounds and has real weight at least
+  `t`.
 * `MvPolynomial.weightedIndex_mul`: `Ind(P Q) = Ind(P) + Ind(Q)` without zero divisors.
 * `MvPolynomial.le_weightedIndex_det`: the index of a determinant is at least the sum over the
   columns of lower bounds for the indices of their entries.
@@ -97,6 +102,15 @@ theorem weightedIndex_le {r : σ → ℕ} {a : σ → R} {P : MvPolynomial σ R}
     weightedIndex r a P ≤ d.weight (fun j ↦ (r j : ℝ≥0∞)⁻¹) :=
   iInf_le_of_le d (iInf_le_of_le hd le_rfl)
 
+/-- If every nonzero Hasse jet at `a` has reciprocal weight at least `t`, then the index is at
+least `t`. -/
+theorem le_weightedIndex_of_forall {r : σ → ℕ} {a : σ → R} {P : MvPolynomial σ R} {t : ℝ≥0∞}
+    (h : ∀ d : σ →₀ ℕ, eval a (hasseDeriv d P) ≠ 0 →
+      t ≤ d.weight (fun j ↦ (r j : ℝ≥0∞)⁻¹)) :
+    t ≤ weightedIndex r a P :=
+  -- `weightedIndex` is not `@[expose]`, so downstream modules cannot apply `le_iInf₂` directly.
+  le_iInf₂ h
+
 /-- A nonzero jet of a polynomial with partial degrees `degreeOf i P ≤ r i` and index at least
 `t` satisfies `d ≤ r` and has weight `t ≤ ∑ᵢ dᵢ / rᵢ`, computed in `ℝ`. -/
 theorem le_sum_div_of_le_weightedIndex [Fintype σ] {P : MvPolynomial σ R} {r : σ → ℕ}
@@ -111,6 +125,23 @@ theorem le_sum_div_of_le_weightedIndex [Fintype σ] {P : MvPolynomial σ R} {r :
   refine ⟨hdr, ?_⟩
   exact (ENNReal.ofReal_le_ofReal_iff (Finset.sum_nonneg fun i _ ↦ by positivity)).1
     (ht.trans ((weightedIndex_le hd).trans_eq (Finsupp.weight_inv_natCast_eq_ofReal_sum_div hdr)))
+
+/-- A nonzero jet `∂^γ f (a)` of a polynomial with block degree bounds `e.mapDomain b h ≤ d h` at a
+point where `weightedIndex (d ∘ b) a f` is at least `ENNReal.ofReal t` satisfies
+`γ.mapDomain b h ≤ d h` for every block `h` and `t ≤ ∑ h, γ.mapDomain b h / d h` in `ℝ`. -/
+theorem le_sum_mapDomain_div_of_le_weightedIndex_comp {B : Type*} [Fintype B] (b : σ → B)
+    (d : B → ℕ) {f : MvPolynomial σ R} (hf : ∀ e ∈ f.support, ∀ h, e.mapDomain b h ≤ d h)
+    {a : σ → R} {t : ℝ} (ht : ENNReal.ofReal t ≤ weightedIndex (d ∘ b) a f) {γ : σ →₀ ℕ}
+    (hγ : eval a (hasseDeriv γ f) ≠ 0) :
+    (∀ h, γ.mapDomain b h ≤ d h) ∧ t ≤ ∑ h, (γ.mapDomain b h : ℝ) / d h := by
+  have hγd : ∀ h, γ.mapDomain b h ≤ d h :=
+    mapDomain_le_of_hasseDeriv_ne_zero b d hf (fun hz ↦ hγ (by simp [hz]))
+  refine ⟨hγd, ?_⟩
+  have hw : γ.weight (fun j ↦ (((d ∘ b) j : ℕ) : ℝ≥0∞)⁻¹) =
+      ENNReal.ofReal (∑ h, (γ.mapDomain b h : ℝ) / d h) := by
+    rw [Finsupp.weight_inv_natCast_comp, Finsupp.weight_inv_natCast_eq_ofReal_sum_div hγd]
+  exact (ENNReal.ofReal_le_ofReal_iff (Finset.sum_nonneg fun h _ ↦ by positivity)).1
+    (ht.trans ((weightedIndex_le hγ).trans_eq hw))
 
 /-- An index lower bound is equivalent to the vanishing of all jets of strictly smaller
 weight. The strict inequality also covers the threshold `⊤`. -/
@@ -143,6 +174,23 @@ theorem ofReal_le_weightedIndex_of_eval_hasseDeriv_eq_zero [Fintype σ] {P : MvP
   · push Not at hdr
     obtain ⟨j, hj⟩ := hdr
     rw [hasseDeriv_eq_zero_of_degreeOf_lt ((hdeg j).trans_lt hj), map_zero]
+
+/-- For a polynomial `f` with block degree bounds `e.mapDomain b h ≤ d h`, the block-weighted index
+`weightedIndex (d ∘ b) a f` is at least `ENNReal.ofReal t` once `(∂^γ f)(a) = 0` for every `γ` with
+`γ.mapDomain b h ≤ d h` and real block weight `∑ h, γ.mapDomain b h / d h < t`. -/
+theorem ofReal_le_weightedIndex_comp_of_eval_hasseDeriv_eq_zero {B : Type*} [Fintype B]
+    (b : σ → B) (d : B → ℕ) {f : MvPolynomial σ R}
+    (hf : ∀ e ∈ f.support, ∀ h, e.mapDomain b h ≤ d h) {a : σ → R} {t : ℝ}
+    (hvan : ∀ γ : σ →₀ ℕ, (∀ h, γ.mapDomain b h ≤ d h) →
+      ∑ h, (γ.mapDomain b h : ℝ) / d h < t → eval a (hasseDeriv γ f) = 0) :
+    ENNReal.ofReal t ≤ weightedIndex (d ∘ b) a f := by
+  refine le_weightedIndex_of_forall fun γ hγ ↦ le_of_not_gt fun hlt ↦ hγ ?_
+  by_cases hγd : ∀ h, γ.mapDomain b h ≤ d h
+  · rw [Finsupp.weight_inv_natCast_comp, Finsupp.weight_inv_natCast_eq_ofReal_sum_div hγd] at hlt
+    exact hvan γ hγd (ENNReal.ofReal_lt_ofReal_iff'.1 hlt).1
+  · push Not at hγd
+    obtain ⟨h, hh⟩ := hγd
+    rw [hasseDeriv_eq_zero_of_lt_mapDomain b d hf hh, map_zero]
 
 @[simp]
 theorem weightedIndex_zero (r : σ → ℕ) (a : σ → R) :
