@@ -36,6 +36,10 @@ the generic contraction-independence identity that feeds them:
 * `iCondIndep_of_condIndep_compl` — a family is conditionally independent if each member is
   conditionally independent of all the others together. It turns local deletion arguments into
   simultaneous conditional independence.
+* `CondIndepFun.map_prod_eq_compProd_prodMkRight` — the joint-law form of conditional
+  independence: if `Z` and `X` are conditionally independent given `W`, the joint law of
+  `((W, Z), X)` is the law of `(W, Z)` composed with the kernel of `X` given `W`, ignoring `Z`.
+  The Aldous--Hoover cell and block coding steps use it.
 
 The first four results feed the de Finetti block-product factorisation / prefix-deletion drop-info
 step — the standard conditional-independence characterisation of the de Finetti route; see
