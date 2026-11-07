@@ -18,6 +18,7 @@ import Mathlib.RingTheory.Flat.Localization
 import Mathlib.RingTheory.KrullDimension.Field
 import TauCeti.Algebra.Category.ModuleCat.Ext.Basic
 import TauCeti.Data.ENat.Basic
+import TauCeti.RingTheory.Finiteness.Nakayama
 import TauCeti.RingTheory.KrullDimension.Regular
 import TauCeti.RingTheory.Localization.Module
 
@@ -56,6 +57,8 @@ The regular-sequence transfer lemmas for linear maps live in
   `0 → X₁ → X₂ → X₃ → 0` whose first map induces zero on `Ext N - n` for every `n`, the depth
   of `X₁` is at least one more than that of `X₃`. This sharpens Mathlib's
   `ModuleCat.depth_min_snd_trd_add_one_le_fst_right`.
+* `ModuleCat.depth_le_depth_of_support_subset`: for finite modules `N` and `M` over a Noetherian
+  ring with `Supp N ⊆ V(I)`, `I.depth M ≤ N.depth M`.
 * `IsLocalRing.depth_prod` and `IsLocalRing.depth_eq_depth_self_of_free`: the depth of a product
   is the minimum of the depths, so a nonzero finite free module has the depth of the ring.
 * `IsLocalRing.depth_add_one_le_depth_ker`: for a free presentation `0 → K → F → M → 0` with
@@ -142,6 +145,34 @@ theorem depth_trd_add_one_le_fst_of_comp_mk₀_eq_zero (N : ModuleCat.{v} R)
     obtain ⟨x₃, rfl⟩ := Ext.covariant_sequence_exact₁ N hS x (h _ x) rfl
     obtain ⟨y₃, rfl⟩ := Ext.covariant_sequence_exact₁ N hS y (h _ y) rfl
     rw [Subsingleton.elim x₃ y₃]
+
+/-- For finite modules `N` and `M` over a Noetherian ring with `N` supported in `V(I)`, the depth
+of `M` with respect to `I` is at most the depth `N.depth M`: `Ext N M i` vanishes for every
+`i < I.depth M`. Unlike `ModuleCat.depth_eq_depth_of_support_eq`, this needs neither `N ≠ 0` nor
+`I M ≠ M`. The proof uses the Rees theorem `ModuleCat.exists_isRegular_tfae` (Matsumura,
+*Commutative Algebra*, Theorem 28). -/
+theorem depth_le_depth_of_support_subset [IsNoetherianRing R] (I : Ideal R) (N M : ModuleCat.{v} R)
+    [Module.Finite R N] [Module.Finite R M]
+    (hsupp : Module.support R N ⊆ PrimeSpectrum.zeroLocus I) : I.depth M ≤ N.depth M := by
+  have hrad : I ≤ (Module.annihilator R N).radical := by
+    rwa [Module.support_eq_zeroLocus, PrimeSpectrum.zeroLocus_subset_zeroLocus_iff] at hsupp
+  -- If the annihilators are comaximal, every `Ext N M i` vanishes.
+  by_cases h : Module.annihilator R N ⊔ Module.annihilator R M = ⊤
+  · rw [(depth_eq_top_iff N M).2 fun i ↦ Ext.subsingleton_of_annihilator_sup_eq_top h i]
+    exact le_top
+  -- Otherwise `N ≠ 0` and `I M ≠ M`, the setting of the Rees theorem.
+  have : Nontrivial N := not_subsingleton_iff_nontrivial.1 fun hN ↦
+    h (by simp [Module.annihilator_eq_top_iff.2 hN])
+  have hI : I • (⊤ : Submodule R M) < ⊤ := by
+    refine lt_top_iff_ne_top.2 fun hI ↦ h (Ideal.radical_eq_top.1 (top_le_iff.1 ?_))
+    rw [← (Ideal.smul_top_eq_top_iff_sup_annihilator_eq_top I).1 hI]
+    exact sup_le (hrad.trans (Ideal.radical_mono le_sup_left))
+      (le_sup_right.trans Ideal.le_radical)
+  rw [depth]
+  refine le_sSup fun i hi ↦ ?_
+  have rees := (exists_isRegular_tfae I (i + 1) M hI).out 1 2
+  refine rees.2 (fun j hj ↦ ?_) N ‹_› ‹_› hsupp i (Nat.lt_add_one i)
+  exact subsingleton_ext_of_lt_depth ((Nat.cast_le.2 (Nat.lt_add_one_iff.1 hj)).trans_lt hi)
 
 end ModuleCat
 
