@@ -150,6 +150,25 @@ theorem loopArea_comp_sub_mul (ω : SymplecticForm V) {g : ℝ → V} (hg : Func
   simp only [hderiv, hsmul, intervalIntegral.integral_const_mul, hsub, hshift, smul_eq_mul]
   field_simp
 
+/-- **The loop area of a circle traversed forwards.** If `g` is `2π`-periodic, the loop
+`t ↦ g(θ₀ + 2πt)` runs once through a period of `g`, so its loop area is the area
+`½ ∫_{-π}^{π} ω(g(θ), g'(θ)) dθ` of `g` over one period. -/
+theorem loopArea_comp_add_mul (ω : SymplecticForm V) {g : ℝ → V} (hg : Function.Periodic g (2 * π))
+    (θ₀ : ℝ) :
+    ω.loopArea (fun t ↦ g (θ₀ + 2 * π * t)) =
+      (1 / 2 : ℝ) * ∫ θ in -π..π, ω (g θ) (deriv g θ) := by
+  -- Traverse the reflected function `θ ↦ g(-θ)` backwards.
+  have hg' : Function.Periodic (fun θ ↦ g (-θ)) (2 * π) := fun θ ↦ by
+    simp only
+    rw [show -(θ + 2 * π) = -θ - 2 * π by ring, ← hg (-θ - 2 * π), sub_add_cancel]
+  have h := ω.loopArea_comp_sub_mul hg' (-θ₀)
+  have hloop : (fun t ↦ g (-(-θ₀ - 2 * π * t))) = fun t ↦ g (θ₀ + 2 * π * t) :=
+    funext fun t ↦ congrArg g (by ring)
+  simp only [hloop, deriv_comp_neg, map_neg] at h
+  rw [h, intervalIntegral.integral_neg,
+    intervalIntegral.integral_comp_neg (fun θ ↦ ω (g θ) (deriv g θ)), neg_neg]
+  ring
+
 variable [FiniteDimensional ℝ V] {u : ℝ × ℝ → V} {a b : ℝ}
 
 /-- **The symplectic area of a cylinder.** Let `u` be `C²` near `[a, b] × [0, 1]`, with
