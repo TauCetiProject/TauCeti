@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.BetaGas.Basic
+import TauCeti.Algebra.Order.BigOperators.SumProd
+import TauCeti.MeasureTheory.Integral.GaussianGrowth
 
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 
@@ -28,89 +30,84 @@ namespace TauCeti.Probability
 private def gaussianBetaGasPairs (n : ℕ) : Finset (Fin n × Fin n) :=
   Finset.univ.filter fun p => p.1 < p.2
 
-private lemma integrable_one_add_abs_rpow_mul_exp_neg_sq {p a : ℝ}
-    (hp : 0 ≤ p) (ha : 0 < a) :
-    Integrable (fun x : ℝ => (1 + |x|) ^ p * exp (-a * x ^ 2)) volume := by
-  let k := ⌈p⌉₊
-  have hpk : p ≤ (k : ℝ) := Nat.le_ceil p
-  have hconst : Integrable (fun x : ℝ => exp (-a * x ^ 2)) volume :=
-    integrable_exp_neg_mul_sq ha
-  have hk_gt : -1 < ((2 * k : ℕ) : ℝ) := by
-    have hnonneg : 0 ≤ ((2 * k : ℕ) : ℝ) := Nat.cast_nonneg _
-    linarith
-  have hpow : Integrable (fun x : ℝ => x ^ (2 * k : ℕ) * exp (-a * x ^ 2)) volume := by
-    simpa only [Real.rpow_natCast] using
-      (integrable_rpow_mul_exp_neg_mul_sq ha
-        (s := ((2 * k : ℕ) : ℝ)) hk_gt)
-  have hmajor : Integrable (fun x : ℝ =>
-      2 ^ k * (exp (-a * x ^ 2) + x ^ (2 * k : ℕ) * exp (-a * x ^ 2))) volume :=
-    (hconst.add hpow).const_mul (2 ^ k)
-  have hbound : ∀ x : ℝ,
-      (1 + |x|) ^ p * exp (-a * x ^ 2) ≤
-        2 ^ k * (exp (-a * x ^ 2) + x ^ (2 * k : ℕ) * exp (-a * x ^ 2)) := by
-    intro x
-    have hx : 1 ≤ 1 + |x| := by nlinarith [abs_nonneg x]
-    have hsmall : (1 + |x|) ^ p ≤ (1 + |x|) ^ (k : ℝ) :=
-      Real.rpow_le_rpow_of_exponent_le hx hpk
-    have hlarge : (1 + |x|) ^ k ≤ 2 ^ k * (1 + x ^ (2 * k : ℕ)) := by
-      have hu : 0 ≤ |x| := abs_nonneg x
-      have hsum : 1 + |x| ≤ 2 * max 1 |x| := by
-        by_cases h : 1 ≤ |x|
-        · rw [max_eq_right h]
-          nlinarith
-        · rw [max_eq_left (le_of_not_ge h)]
-          nlinarith
-      have hsumPow : (1 + |x|) ^ k ≤ (2 * max 1 |x|) ^ k :=
-        pow_le_pow_left₀ (by nlinarith [abs_nonneg x]) hsum k
-      have hmax : max 1 |x| ^ k ≤ 1 + x ^ (2 * k : ℕ) := by
-        have hxeven : 0 ≤ x ^ (2 * k : ℕ) := (even_two_mul k).pow_nonneg x
-        by_cases hx1 : |x| ≤ 1
-        · rw [max_eq_left hx1]
-          simpa only [one_pow] using (le_add_of_nonneg_right hxeven : 1 ≤ 1 + x ^ (2 * k : ℕ))
-        · rw [max_eq_right (le_of_not_ge hx1)]
-          have hxgt : 1 < |x| := lt_of_not_ge hx1
-          have hpowle : |x| ^ k ≤ |x| ^ (2 * k) := by
-            apply pow_le_pow_right₀ (by linarith : 1 ≤ |x|)
-            omega
-          have heven : |x| ^ (2 * k) = x ^ (2 * k : ℕ) := by
-            rw [← abs_pow]
-            exact abs_of_nonneg hxeven
-          exact hpowle.trans (heven ▸ le_add_of_nonneg_left (by norm_num))
-      calc
-        (1 + |x|) ^ k ≤ (2 * max 1 |x|) ^ k := hsumPow
-        _ = 2 ^ k * max 1 |x| ^ k := by rw [mul_pow]
-        _ ≤ 2 ^ k * (1 + x ^ (2 * k : ℕ)) := by
-          gcongr
-    have hexp : 0 ≤ exp (-a * x ^ 2) := (exp_pos _).le
-    have hkcast : (1 + |x|) ^ (k : ℝ) = (1 + |x|) ^ k := by
-      rw [Real.rpow_natCast]
-    rw [hkcast] at hsmall
-    calc
-      _ ≤ (1 + |x|) ^ k * exp (-a * x ^ 2) := by gcongr
-      _ ≤ 2 ^ k * (1 + x ^ (2 * k : ℕ)) * exp (-a * x ^ 2) := by
-        gcongr
-      _ = 2 ^ k * (exp (-a * x ^ 2) +
-          x ^ (2 * k : ℕ) * exp (-a * x ^ 2)) := by ring
-  apply Integrable.mono' hmajor (by fun_prop)
-  · filter_upwards with x
-    simpa only [Real.norm_eq_abs, abs_of_nonneg (by positivity : 0 ≤
-      (1 + |x|) ^ p * exp (-a * x ^ 2))] using hbound x
-
-private lemma one_add_sum_le_prod {ι : Type*} (s : Finset ι) (f : ι → ℝ)
-    (hf : ∀ i ∈ s, 0 ≤ f i) :
-    1 + ∑ i ∈ s, f i ≤ ∏ i ∈ s, (1 + f i) := by
+private lemma gaussianBetaGasWeight_le_prod (n : ℕ) {β : ℝ} (hβ : 0 < β)
+    (x : Fin n → ℝ) :
+    gaussianBetaGasWeight n β x ≤
+      ∏ i : Fin n, ((1 + |x i|) ^ (2 * (β * ((gaussianBetaGasPairs n).card : ℝ))) *
+        exp (-(β * (n : ℝ) / 4) * x i ^ 2)) := by
   classical
-  induction s using Finset.induction_on with
-  | empty => simp
-  | @insert i s hi ih =>
-    have hf' : ∀ j ∈ s, 0 ≤ f j := fun j hj => hf j (Finset.mem_insert_of_mem hj)
-    have hs : 0 ≤ ∑ j ∈ s, f j := Finset.sum_nonneg hf'
-    have hi0 : 0 ≤ f i := hf i (Finset.mem_insert_self i s)
-    have ih' := ih hf'
-    rw [Finset.sum_insert hi, Finset.prod_insert hi]
-    have hgap : 0 ≤ (∏ j ∈ s, (1 + f j)) - (1 + ∑ j ∈ s, f j) :=
-      sub_nonneg.mpr ih'
-    nlinarith [mul_nonneg hi0 hs, mul_nonneg hi0 hgap]
+  let pairs := gaussianBetaGasPairs n
+  let a : ℝ := β * (n : ℝ) / 4
+  set p : ℝ := 2 * (β * (pairs.card : ℝ)) with hp_def
+  let q : ℝ := ∏ i : Fin n, (1 + |x i|)
+  have hqsum : 1 + ∑ i : Fin n, |x i| ≤ q := by
+    simpa [q] using one_add_sum_le_prod (Finset.univ : Finset (Fin n))
+      (fun i => |x i|) (fun _ _ => abs_nonneg _)
+  have hqone : 1 ≤ q := by
+    have hsum : 0 ≤ ∑ i : Fin n, |x i| :=
+      Finset.sum_nonneg fun _ _ => abs_nonneg _
+    linarith
+  have hqnonneg : 0 ≤ q := by linarith [hqone]
+  have hqpow : q ^ 2 ≥ 1 + 2 * ∑ i : Fin n, |x i| := by
+    nlinarith [hqsum, hqone]
+  have hpair : ∀ z ∈ pairs, |x z.1 - x z.2| ≤ q ^ 2 := by
+    intro z hz
+    have hi : |x z.1| ≤ ∑ i : Fin n, |x i| :=
+      Finset.single_le_sum (f := fun i : Fin n => |x i|)
+        (fun _ _ => abs_nonneg _) (Finset.mem_univ _)
+    have hj : |x z.2| ≤ ∑ i : Fin n, |x i| :=
+      Finset.single_le_sum (f := fun i : Fin n => |x i|)
+        (fun _ _ => abs_nonneg _) (Finset.mem_univ _)
+    have hdist := abs_sub_le (x z.1) 0 (x z.2)
+    simp only [sub_zero, zero_sub, abs_neg] at hdist
+    have hnonneg : 0 ≤ ∑ i : Fin n, |x i| :=
+      Finset.sum_nonneg fun _ _ => abs_nonneg _
+    nlinarith
+  have hvander : (∏ z ∈ pairs, |x z.1 - x z.2| ^ β) ≤
+      q ^ p := by
+    calc
+      _ ≤ ∏ z ∈ pairs, (q ^ 2) ^ β := by
+        apply Finset.prod_le_prod₀
+          (fun z hz => by positivity)
+          (fun z hz => Real.rpow_le_rpow (abs_nonneg _) (hpair z hz) hβ.le)
+      _ = ((q ^ 2) ^ β) ^ (pairs.card : ℕ) := by
+        simp [Finset.prod_const]
+      _ = ((q ^ 2) ^ β) ^ (pairs.card : ℝ) := by
+        rw [← Real.rpow_natCast]
+      _ = (q ^ 2) ^ (β * (pairs.card : ℝ)) := by
+        rw [← Real.rpow_mul (by positivity : 0 ≤ q ^ 2)]
+      _ = q ^ (2 * (β * (pairs.card : ℝ))) := by
+        have hq2 : q ^ (2 : ℕ) = q ^ ((2 : ℕ) : ℝ) := by
+          symm
+          exact Real.rpow_natCast q 2
+        rw [hq2, ← Real.rpow_mul hqnonneg (↑(2 : ℕ) : ℝ)
+          (β * (pairs.card : ℝ))]
+        congr 1
+      _ = q ^ p := by
+        rw [hp_def]
+  have hexp : exp (-(β * (n : ℝ) / 4) * ∑ i : Fin n, x i ^ 2) =
+      ∏ i : Fin n, exp (-a * x i ^ 2) := by
+    rw [show -(β * (n : ℝ) / 4) * ∑ i : Fin n, x i ^ 2 =
+      ∑ i : Fin n, (-a * x i ^ 2) by simp [a, Finset.mul_sum]]
+    exact Real.exp_sum _ _
+  have hqpowprod : q ^ p = ∏ i : Fin n, (1 + |x i|) ^ p := by
+    exact (Real.finsetProd_rpow (Finset.univ : Finset (Fin n))
+      (fun i => 1 + |x i|) (fun _ _ => by positivity) p).symm
+  have hpoint : gaussianBetaGasWeight n β x ≤
+      ∏ i : Fin n, ((1 + |x i|) ^ p * exp (-a * x i ^ 2)) := by
+    rw [gaussianBetaGasWeight_def]
+    change exp (-(β * (n : ℝ) / 4) * ∑ i, x i ^ 2) *
+      (∏ z ∈ pairs, |x z.1 - x z.2| ^ β) ≤ _
+    rw [hexp]
+    calc
+      _ ≤ (∏ i : Fin n, exp (-a * x i ^ 2)) * q ^ p := by
+        exact mul_le_mul_of_nonneg_left hvander (by positivity)
+      _ = ∏ i : Fin n, ((1 + |x i|) ^ p * exp (-a * x i ^ 2)) := by
+        rw [hqpowprod, ← Finset.prod_mul_distrib]
+        apply Finset.prod_congr rfl
+        intro i hi
+        ring
+  exact hpoint
 
 /-- The Gaussian beta-gas weight is integrable for every positive inverse temperature. -/
 theorem integrable_gaussianBetaGasWeight (n : ℕ) {β : ℝ} (hβ : 0 < β) :
@@ -138,77 +135,10 @@ theorem integrable_gaussianBetaGasWeight (n : ℕ) {β : ℝ} (hβ : 0 < β) :
     apply Integrable.mono' hmajor
       ((continuous_gaussianBetaGasWeight n hβ.le).aestronglyMeasurable)
     filter_upwards with x
-    let q : ℝ := ∏ i : Fin n, (1 + |x i|)
-    have hqsum : 1 + ∑ i : Fin n, |x i| ≤ q := by
-      simpa [q] using one_add_sum_le_prod (Finset.univ : Finset (Fin n))
-        (fun i => |x i|) (fun _ _ => abs_nonneg _)
-    have hqone : 1 ≤ q := by
-      have hsum : 0 ≤ ∑ i : Fin n, |x i| :=
-        Finset.sum_nonneg fun _ _ => abs_nonneg _
-      linarith
-    have hqnonneg : 0 ≤ q := by linarith [hqone]
-    have hqpow : q ^ 2 ≥ 1 + 2 * ∑ i : Fin n, |x i| := by
-      nlinarith [hqsum, hqone]
-    have hpair : ∀ z ∈ pairs, |x z.1 - x z.2| ≤ q ^ 2 := by
-      intro z hz
-      have hi : |x z.1| ≤ ∑ i : Fin n, |x i| :=
-        Finset.single_le_sum (f := fun i : Fin n => |x i|)
-          (fun _ _ => abs_nonneg _) (Finset.mem_univ _)
-      have hj : |x z.2| ≤ ∑ i : Fin n, |x i| :=
-        Finset.single_le_sum (f := fun i : Fin n => |x i|)
-          (fun _ _ => abs_nonneg _) (Finset.mem_univ _)
-      have hdist := abs_sub_le (x z.1) 0 (x z.2)
-      simp only [sub_zero, zero_sub, abs_neg] at hdist
-      have hnonneg : 0 ≤ ∑ i : Fin n, |x i| :=
-        Finset.sum_nonneg fun _ _ => abs_nonneg _
-      nlinarith
-    have hvander : (∏ z ∈ pairs, |x z.1 - x z.2| ^ β) ≤
-        q ^ p := by
-      calc
-        _ ≤ ∏ z ∈ pairs, (q ^ 2) ^ β := by
-          apply Finset.prod_le_prod₀
-            (fun z hz => by positivity)
-            (fun z hz => Real.rpow_le_rpow (abs_nonneg _) (hpair z hz) hβ.le)
-        _ = ((q ^ 2) ^ β) ^ (pairs.card : ℕ) := by
-          simp [Finset.prod_const]
-        _ = ((q ^ 2) ^ β) ^ (pairs.card : ℝ) := by
-          rw [← Real.rpow_natCast]
-        _ = (q ^ 2) ^ (β * (pairs.card : ℝ)) := by
-          rw [← Real.rpow_mul (by positivity : 0 ≤ q ^ 2)]
-        _ = q ^ (2 * (β * (pairs.card : ℝ))) := by
-          have hq2 : q ^ (2 : ℕ) = q ^ ((2 : ℕ) : ℝ) := by
-            symm
-            exact Real.rpow_natCast q 2
-          rw [hq2, ← Real.rpow_mul hqnonneg (↑(2 : ℕ) : ℝ)
-            (β * (pairs.card : ℝ))]
-          congr 1
-        _ = q ^ p := by
-          rfl
-    have hexp : exp (-(β * (n : ℝ) / 4) * ∑ i : Fin n, x i ^ 2) =
-        ∏ i : Fin n, exp (-a * x i ^ 2) := by
-      rw [show -(β * (n : ℝ) / 4) * ∑ i : Fin n, x i ^ 2 =
-        ∑ i : Fin n, (-a * x i ^ 2) by simp [a, Finset.mul_sum]]
-      exact Real.exp_sum _ _
-    have hqpowprod : q ^ p = ∏ i : Fin n, (1 + |x i|) ^ p := by
-      exact (Real.finsetProd_rpow (Finset.univ : Finset (Fin n))
-        (fun i => 1 + |x i|) (fun _ _ => by positivity) p).symm
-    have hpoint : gaussianBetaGasWeight n β x ≤
-        ∏ i : Fin n, ((1 + |x i|) ^ p * exp (-a * x i ^ 2)) := by
-      rw [gaussianBetaGasWeight_def]
-      change exp (-(β * (n : ℝ) / 4) * ∑ i, x i ^ 2) *
-        (∏ z ∈ pairs, |x z.1 - x z.2| ^ β) ≤ _
-      rw [hexp]
-      calc
-        _ ≤ (∏ i : Fin n, exp (-a * x i ^ 2)) * q ^ p := by
-          exact mul_le_mul_of_nonneg_left hvander (by positivity)
-        _ = ∏ i : Fin n, ((1 + |x i|) ^ p * exp (-a * x i ^ 2)) := by
-          rw [hqpowprod, ← Finset.prod_mul_distrib]
-          apply Finset.prod_congr rfl
-          intro i hi
-          ring
     simpa only [Real.norm_eq_abs, abs_of_nonneg (gaussianBetaGasWeight_nonneg n β x),
       abs_of_nonneg (by positivity :
-        0 ≤ ∏ i : Fin n, ((1 + |x i|) ^ p * exp (-a * x i ^ 2)))] using hpoint
+        0 ≤ ∏ i : Fin n, ((1 + |x i|) ^ p * exp (-a * x i ^ 2)))] using
+      gaussianBetaGasWeight_le_prod n hβ x
 
 /-- The Gaussian beta-gas partition function is strictly positive. -/
 theorem gaussianBetaGasPartitionFunction_pos (n : ℕ) {β : ℝ} (hβ : 0 < β) :
