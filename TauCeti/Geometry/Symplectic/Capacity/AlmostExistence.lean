@@ -12,10 +12,11 @@ import TauCeti.Geometry.Manifold.Flow.Complete
 import TauCeti.Geometry.Manifold.IntegralCurve.Basic
 import TauCeti.Geometry.Manifold.IntegralCurve.GlobalFlow
 import TauCeti.Geometry.Manifold.LocallyContractible
+import TauCeti.Geometry.Manifold.RegularValue.Factorization
 import TauCeti.Geometry.Symplectic.Hamiltonian.Characteristic
 
 /-!
-# Contractible almost existence from a finite relative capacity
+# Contractible almost existence from a finite capacity
 
 Let `σ` be a nondegenerate two-form on a finite-dimensional boundaryless Hausdorff manifold `M` and
 `F : M → ℝ` a smooth function whose sublevel sets `{F ≤ s}` are compact for `s < b` and which
@@ -25,7 +26,11 @@ for `Z ⊆ {F ≤ a}`, gives a closed characteristic, contractible in `M`, on al
 level of `F` in `(a, b)`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.ae_hasContractibleClosedCharacteristic`). Hence every
 level in `(a, b)` has the contractible almost existence property in `M`
-(`TauCeti.SmoothTwoForm.IsNondegenerate.hasContractibleAlmostExistence`).
+(`TauCeti.SmoothTwoForm.IsNondegenerate.hasContractibleAlmostExistence`). Since the relative
+capacity is bounded by the absolute one, finiteness of the capacity `c°_HZ(M)` of the manifold
+gives the contractible almost existence property on every nonempty regular level of `F` with
+compact sublevel sets
+(`IsNondegenerate.hasContractibleAlmostExistence_of_contractibleHZCapacity_ne_top`).
 
 The monotonicity argument
 (`IsNondegenerate.ae_forall_exists_hasContractibleClosedCharacteristicOfPeriodLE`) provides, for
@@ -52,6 +57,9 @@ while periodic orbits whose periods tend to `0` accumulate only at rest points.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.hasContractibleAlmostExistence`: under the same
   hypotheses, finite relative capacity gives the contractible almost existence property on every
   level in `(a, b)`, the relative form of Barraud–Damian–Humilière–Oancea, Proposition 6.3.
+* `IsNondegenerate.hasContractibleAlmostExistence_of_contractibleHZCapacity_ne_top`: finiteness of
+  `c°_HZ(M)` implies the contractible almost existence property of every nonempty regular level
+  with compact sublevel sets, Proposition 6.3 for the symplectic manifold `M` itself.
 
 ## References
 
@@ -106,6 +114,22 @@ private theorem exists_isCompleteVectorField_eq_hamiltonianVectorField (hσ : σ
   · simp only [Pi.smul_apply', ψ, Real.smoothTransition.one_of_one_le
       ((one_le_div (show 0 < b - m by linarith)).2 (show b - m ≤ b - F x by linarith)), one_smul]
 
+/-- **A regular level carries no rest points of the cut-off flow.** If `v` agrees with the
+Hamiltonian vector field `X_F` on `{F ≤ m}`, `s ≤ m` is a regular value of `F`, and `x₀` lies on
+the level `s`, then the orbit of `x₀` under the flow of `v` is not constant. -/
+private theorem not_forall_globalFlow_eq_self (hσ : σ.IsNondegenerate) {s m : ℝ}
+    (hs : IsRegularValue I 𝓘(ℝ) F s) {v : (x : M) → TangentSpace I x}
+    (hv : ContMDiff I I.tangent 1 (fun x ↦ (⟨x, v x⟩ : TangentBundle I M)))
+    (hcomplete : IsCompleteVectorField v) (hsm : s ≤ m)
+    (hvX : ∀ x, F x ≤ m → v x = σ.hamiltonianVectorField F x) {x₀ : M} (hx₀ : F x₀ = s) :
+    ¬ ∀ t, globalFlow v hv hcomplete t x₀ = x₀ := fun hfix ↦ by
+  refine hσ.hamiltonianVectorField_ne_zero (hs.isRegularPoint hx₀) ?_
+  -- The orbit of `x₀` is a constant integral curve of `v`, so `v x₀ = 0`.
+  have h₀ := isMIntegralCurve_globalFlow hv hcomplete x₀
+  rw [show (fun t ↦ globalFlow v hv hcomplete t x₀) = fun _ ↦ x₀ from funext hfix] at h₀
+  rw [← hvX x₀ (hx₀.trans_le hsm)]
+  exact isMIntegralCurve_const_iff.1 h₀
+
 /-- **A closed characteristic on a limiting level.** Let `F` be `C²`, `s` a regular value of `F`
 and `{F ≤ b}` compact for some `b > s`. If levels of `F` arbitrarily close to `s` carry closed
 characteristics, contractible in `M`, of period at most `K`, then so does the level `s`. -/
@@ -151,16 +175,8 @@ theorem hasContractibleClosedCharacteristicOfPeriodLE_of_frequently (hσ : σ.Is
     tendsto_nhds_unique
       ((hF.continuous.tendsto _).comp ((ϕ.continuous_toFun t).tendsto x₀ |>.comp hxlim))
       (hc.congr' (hϕγ.mono fun c h ↦ by simp [h t, hlev c t]))
-  have hvX₀ (t : ℝ) : v (ϕ t x₀) = σ.hamiltonianVectorField F (ϕ t x₀) :=
-    hvX _ ((hlev₀ t).trans_le (by linarith))
-  have hrest : ¬ ∀ t, ϕ t x₀ = x₀ := fun hfix ↦ by
-    have hx₀ : F x₀ = s := by simpa [hfix 0] using hlev₀ 0
-    refine hσ.hamiltonianVectorField_ne_zero (hs.isRegularPoint hx₀) ?_
-    -- The orbit of `x₀` is a constant integral curve of `v`, so `v x₀ = 0`.
-    have h₀ := isMIntegralCurve_globalFlow hv hcomplete x₀
-    rw [show (fun t ↦ globalFlow v hv hcomplete t x₀) = fun _ ↦ x₀ from funext hfix] at h₀
-    rw [← hvX x₀ (hx₀.trans_le hsm.le)]
-    exact isMIntegralCurve_const_iff.1 h₀
+  have hrest : ¬ ∀ t, ϕ t x₀ = x₀ := not_forall_globalFlow_eq_self hσ hs hv hcomplete hsm.le hvX
+    (by simpa using hlev₀ 0)
   -- The limit period is positive, since fast periodic orbits accumulate at rest points.
   have hT₀ : 0 < T₀ := by
     refine (ge_of_tendsto hTlim (Eventually.of_forall fun c ↦ (hT c).le)).lt_of_ne fun h₀ ↦
@@ -174,7 +190,7 @@ theorem hasContractibleClosedCharacteristicOfPeriodLE_of_frequently (hσ : σ.Is
     le_of_tendsto hTlim (.of_forall hTK), fun t ↦ ?_, fun t ↦ ?_, ?_, hlev₀,
     (⟨fun y ↦ ⟨y, mem_univ y⟩, by fun_prop⟩ : C(M, univ)).comp g₀, hg₀.comp_right _,
     fun t ↦ by simp [hg₀x]⟩
-  · rw [← hvX₀ t]
+  · rw [← hvX _ ((hlev₀ t).trans_le hsm.le)]
     exact isMIntegralCurve_globalFlow hv hcomplete x₀ t
   · simp only [ϕ.map_add, hfix₀]
   · by_contra! hcon
@@ -219,6 +235,44 @@ theorem hasContractibleAlmostExistence (hσ : σ.IsNondegenerate) (hF : ContMDif
   refine hs ⟨?_, ?_⟩
   · linarith [hsc.1, min_le_left (c - a) (b - c)]
   · linarith [hsc.2, min_le_right (c - a) (b - c)]
+
+/-- **Finite capacity implies contractible almost existence** (Barraud–Damian–Humilière–Oancea,
+Proposition 6.3, after Hofer–Zehnder and Struwe). Let the model `I` be boundaryless and `σ`
+nondegenerate, with finite `π₁`-sensitive Hofer–Zehnder capacity `c°_HZ(M)`, and let `F` be
+smooth. Every nonempty regular level `F⁻¹(c)` such that `{F ≤ b}` is compact for some `b > c` has
+the contractible almost existence property in `M`. -/
+theorem hasContractibleAlmostExistence_of_contractibleHZCapacity_ne_top [I.Boundaryless]
+    (hσ : σ.IsNondegenerate) (hF : ContMDiff I 𝓘(ℝ) ∞ F)
+    (hcap : σ.contractibleHZCapacity univ ≠ (∞ : ℝ≥0∞)) {b c : ℝ} (hcb : c < b)
+    (hcpt : IsCompact {x | F x ≤ b}) (hreg : IsRegularValue I 𝓘(ℝ) F c) (hne : ∃ x, F x = c) :
+    σ.HasContractibleAlmostExistence univ F c := by
+  -- `F` is open at a point of the regular level, so its range contains a neighbourhood of `c`.
+  obtain ⟨x, hx⟩ := hne
+  have hrange : range F ∈ 𝓝 c := by
+    rw [← hx, ← (hreg.isRegularPoint hx).map_nhds_eq (hF x) (by simp)]
+    exact mem_of_superset (image_mem_map univ_mem) (image_subset_range F univ)
+  obtain ⟨ε, hε, hεr⟩ := Metric.mem_nhds_iff.1 hrange
+  set ε' := min ε (b - c)
+  have hε' : 0 < ε' := lt_min hε (sub_pos.2 hcb)
+  have hε'ε : ε' ≤ ε := min_le_left _ _
+  have hε'b : ε' ≤ b - c := min_le_right _ _
+  have hball : Ioo (c - ε') (c + ε') ⊆ range F := fun r hr ↦ hεr (by
+    rw [Metric.mem_ball, Real.dist_eq, abs_lt]
+    constructor <;> linarith [hr.1, hr.2])
+  -- Apply the relative theorem on `(c - ε' / 2, c + ε')` with `Z = {F < c - ε' / 2}`.
+  obtain ⟨y, hy⟩ := hball (show c - 3 * ε' / 4 ∈ Ioo (c - ε') (c + ε') from
+    ⟨by linarith, by linarith⟩)
+  refine hσ.hasContractibleAlmostExistence hF
+    (a := c - ε' / 2) (b := c + ε') (Z := {y | F y < c - ε' / 2})
+    (fun s hs ↦ hcpt.of_isClosed_subset (isClosed_le hF.continuous continuous_const)
+      fun z hz ↦ by rw [mem_ofPred_eq] at hz ⊢; linarith)
+    ((Ioo_subset_Ioo_left (by linarith)).trans hball)
+    (fun _ hz ↦ by rw [mem_ofPred_eq] at hz ⊢; exact hz.le)
+    (ne_top_of_le_ne_top hcap ((relContractibleHZCapacity_mono (subset_univ _) subset_rfl).trans
+      (relContractibleHZCapacity_le_contractibleHZCapacity
+        ⟨y, mem_interior_iff_mem_nhds.2 <| (isOpen_lt hF.continuous continuous_const).mem_nhds
+          (by rw [mem_ofPred_eq]; linarith)⟩)))
+    ⟨by linarith, by linarith⟩
 
 end IsNondegenerate
 

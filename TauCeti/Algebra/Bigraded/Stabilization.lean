@@ -28,7 +28,7 @@ multiplication by `TauCeti.Bigraded.W`, and unwinding the convolution gives the 
 `(P * W)(m, a) = P(m, a) + P(m + 1, a + 1)`.
 
 The quotient is not vacuous, and that is the substance here. Multiplication by `W` is injective
-(`TauCeti.Bigraded.mul_W_left_injective`), so no information beyond the number of stabilizations
+(`mul_left_injective₀ W_ne_zero`), so no information beyond the number of stabilizations
 is lost; note this genuinely uses finite support, since on unbounded bigraded vector spaces
 tensoring with `W` is *not* injective. Consequently each stable class contains exactly one
 `W`-indivisible series (`TauCeti.Bigraded.exists_isReduced`,
@@ -59,7 +59,8 @@ only after that factor is divided out.
 
 * `TauCeti.Bigraded.coeff_mul_W` and `TauCeti.Bigraded.coeff_mul_W_pow`: tensoring with `W`
   adds the diagonal shift by `(1, 1)`, and iterating it adds binomial multiples of the shifts.
-* `TauCeti.Bigraded.mul_W_left_injective`: tensoring with `W` is injective.
+* `TauCeti.Bigraded.W_ne_zero`: `W` is not zero, so tensoring with it is injective by
+  `mul_left_injective₀`.
 * `TauCeti.Bigraded.exists_isReduced` and `TauCeti.Bigraded.IsReduced.eq_of_mul_W_pow_eq`: every
   series is a stabilization of a unique reduced one.
 * `TauCeti.Bigraded.isStablyEquiv_iff_reducedRep_eq`: the reduced representative is a complete
@@ -116,17 +117,6 @@ theorem coeff_mul_W (P : Series) (g : ℤ × ℤ) :
   have h : (P * single ((-1 : ℤ), (-1 : ℤ)) 1).coeff g = P.coeff (g + (1, 1)) := by
     simp
   rw [W, mul_add, mul_one, AddMonoidAlgebra.coeff_add, Finsupp.add_apply, h]
-
-/-- Tensoring with `W` is injective. This is where finite support is essential: on bigraded
-vector spaces with unbounded support the same operation is not injective, since for instance a
-one-dimensional summand in every bidegree `(m, m)` and a two-dimensional summand in every second
-such bidegree have the same stabilization. -/
-theorem mul_W_left_injective : Function.Injective fun P : Series => P * W :=
-  fun _ _ h => mul_right_cancel₀ W_ne_zero h
-
-/-- Tensoring with `W` repeatedly is injective. -/
-theorem mul_W_pow_left_injective (k : ℕ) : Function.Injective fun P : Series => P * W ^ k :=
-  fun _ _ h => mul_right_cancel₀ (pow_ne_zero k W_ne_zero) h
 
 /-- The bigraded dimensions of a `k`-fold stabilization. The summand of `P ⊗ W^{⊗k}` in bidegree
 `(m, a)` collects the summands of `P` in the bidegrees `(m + i, a + i)` on the diagonal above it,
@@ -295,7 +285,7 @@ theorem IsReduced.eq_of_mul_W_pow_eq {P Q : Series} (hP : IsReduced P) (hQ : IsR
   · exact (this hQ hP h.symm (Nat.le_of_not_le hij)).symm
   obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hij
   have hcancel : P = Q * W ^ d := by
-    refine mul_W_pow_left_injective i ?_
+    refine mul_left_injective₀ (pow_ne_zero i W_ne_zero) ?_
     simpa [pow_add, mul_assoc, mul_comm, mul_left_comm] using h
   rcases Nat.eq_zero_or_pos d with rfl | hd
   · simpa using hcancel

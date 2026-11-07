@@ -130,6 +130,16 @@ theorem ofFinsupp_apply_val (a : S →₀ R) (s : S) : (ofFinsupp F a).val s = a
 theorem ofFinsupp_injective : Function.Injective (ofFinsupp (R := R) F) :=
   fun _ _ h => DFunLike.coe_injective (congrArg Subtype.val h)
 
+/-- A completed combination is a finite combination exactly when it has finitely many nonzero
+coefficients. -/
+theorem mem_range_ofFinsupp_iff {a : NovikovModule R F} :
+    a ∈ LinearMap.range (ofFinsupp F) ↔ (Function.support a.val).Finite := by
+  refine ⟨?_, fun ha => ⟨Finsupp.ofSupportFinite a.val ha, Subtype.ext ?_⟩⟩
+  · rintro ⟨x, rfl⟩
+    exact x.hasFiniteSupport
+  · ext s
+    simp [Finsupp.ofSupportFinite_coe]
+
 /-- The truncation of a completed combination above the potential cutoff `C`: the finite
 combination keeping the coefficients of the generators of potential `> C`. -/
 def trunc (C : ℝ) (a : NovikovModule R F) : S →₀ R :=
