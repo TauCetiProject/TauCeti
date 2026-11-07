@@ -46,11 +46,12 @@ integer-order `H^{k,p}`. The product has a real `Lᵖ` representative with the a
 regularity. The coefficient need not decay or be integrable. -/
 theorem exists_mem_realSobolevSubmodule_ae_eq_mul_of_bounded_derivatives
     {p : ENNReal} [Fact (1 ≤ p)] (hp : 1 < p) (hp_top : p ≠ ⊤) (k : ℕ)
-    {ψ : E → ℝ} (hψ : ContDiff ℝ ∞ ψ) {M : ℝ} (hM : 0 ≤ M)
+    {ψ : E → ℝ} (hψ : ContDiff ℝ ∞ ψ) {M : ℝ}
     (hbound : ∀ j ≤ k, ∀ x, ‖iteratedFDeriv ℝ j ψ x‖ ≤ M)
     {u : Lp ℝ p (volume : Measure E)} (hu : u ∈ realSobolevSubmodule E k p) :
     ∃ v : Lp ℝ p (volume : Measure E), v ∈ realSobolevSubmodule E k p ∧
       (v : E → ℝ) =ᵐ[volume] fun x ↦ ψ x * u x := by
+  have hM : 0 ≤ M := (norm_nonneg _).trans (hbound 0 k.zero_le 0)
   obtain ⟨w, hw⟩ := (Lp.memSobolev_natCast_iff_exists_wkp_value_eq hp hp_top k u).mp
     (mem_realSobolevSubmodule.mp hu)
   have hw₀ : w ∈ wkp0Submodule (volume : Measure E) ⊤ p k := by
