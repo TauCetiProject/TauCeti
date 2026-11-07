@@ -164,18 +164,20 @@ theorem norm_iteratedFDeriv_le_sum_norm_coordinateDeriv {k : ℕ} {f : Coordinat
   -- The two sums only differ in the `Fintype` instance of the space of words.
   convert rfl
 
-/-- The Leibniz bound for a coordinate derivative of the product `ψ • g` of a smooth scalar
-function and a smooth function, in terms of the Fréchet derivatives of `ψ` and the coordinate
-derivatives of `g`. -/
-theorem norm_coordinateDeriv_smul_le {ψ : CoordinateSpace n → ℝ} {g : CoordinateSpace n → A}
-    (hψ : ContDiff ℝ ∞ ψ) (hg : ContDiff ℝ ∞ g) (α : List (Fin n)) (x : CoordinateSpace n) :
+/-- The Leibniz bound for a coordinate derivative along a word of length `k` of the product
+`ψ • g` of a `C^k` scalar function and a `C^k` function, in terms of the Fréchet derivatives of `ψ`
+and the coordinate derivatives of `g`. -/
+theorem norm_coordinateDeriv_smul_le (α : List (Fin n)) {ψ : CoordinateSpace n → ℝ}
+    {g : CoordinateSpace n → A} (hψ : ContDiff ℝ α.length ψ) (hg : ContDiff ℝ α.length g)
+    (x : CoordinateSpace n) :
     ‖coordinateDeriv α (fun y => ψ y • g y) x‖ ≤
       ∑ i ∈ Finset.range (α.length + 1), (α.length.choose i : ℝ) * ‖iteratedFDeriv ℝ i ψ x‖ *
         ∑ w : Fin (α.length - i) → Fin n, ‖coordinateDeriv (List.ofFn w) g x‖ := by
-  refine (norm_coordinateDeriv_le α (contDiff_infty.1 (hψ.smul hg) _) x).trans ?_
-  refine (norm_iteratedFDeriv_smul_le hψ hg x (WithTop.coe_le_coe.2 le_top)).trans ?_
+  refine (norm_coordinateDeriv_le α (hψ.smul hg) x).trans ?_
+  refine (norm_iteratedFDeriv_smul_le hψ hg x le_rfl).trans ?_
   gcongr with i
-  exact norm_iteratedFDeriv_le_sum_norm_coordinateDeriv (contDiff_infty.1 hg _) x
+  exact norm_iteratedFDeriv_le_sum_norm_coordinateDeriv
+    (hg.of_le (by exact_mod_cast Nat.sub_le _ _)) x
 
 theorem coordinateDeriv_add (α : List (Fin n)) {f g : CoordinateSpace n → A}
     (hf : ContDiff ℝ α.length f) (hg : ContDiff ℝ α.length g) :

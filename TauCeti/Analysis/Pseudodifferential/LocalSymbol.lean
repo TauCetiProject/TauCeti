@@ -417,7 +417,8 @@ private theorem exists_bound_extend (a : LocalSymbol U V W m) (hψ : ContDiff �
       exact congrFun (coordinateDeriv_const_smul β
         (contDiff_infty.1 (hb.comp (contDiff_prodMk_right y)) _) (ψ y)) ξ
     rw [hψb]
-    refine (norm_coordinateDeriv_smul_le hψ (contDiff_coordinateDeriv_slice hb β ξ) α x).trans ?_
+    refine (norm_coordinateDeriv_smul_le α (contDiff_infty.1 hψ _)
+      (contDiff_infty.1 (contDiff_coordinateDeriv_slice hb β ξ) _) x).trans ?_
     rw [Finset.sum_mul]
     refine Finset.sum_le_sum fun i _ => ?_
     have hψi : ‖iteratedFDeriv ℝ i ψ x‖ ≤ max (B i) 0 := (hB i x hxL).trans (le_max_left _ _)
@@ -486,7 +487,7 @@ theorem hasCompactSpatialSupport_extend (hψc : HasCompactSupport ψ) (a : Local
 restriction of the original symbol. -/
 theorem restrict_extend_of_eqOn_one (h : U' ≤ U) (hψ1 : EqOn ψ 1 U')
     (a : LocalSymbol U V W m) : (extend ψ hψ hψU a).restrict U' = restrict h a :=
-  ext_of_mem fun x hx ξ => by simp [hx, show ψ x = 1 from hψ1 hx]
+  ext_of_mem fun x hx ξ => by simp [hx, (hψ1 hx).trans (Pi.one_apply x)]
 
 end Extend
 
