@@ -48,6 +48,8 @@ weights.
   when its component maps have different source and target modules.
 * `LinearMap.det_piMap`: the determinant of a coordinatewise endomorphism `LinearMap.piMap f` of a
   finite dependent product is the product of the determinants of its components.
+* `LinearMap.pi_apply_eq_sum_single`: a linear map on `ι → R` is the sum of its values on the
+  coordinate vectors `Pi.single i 1`, weighted by the coordinates.
 * `TauCeti.finrank_linearMap_pi_eq_sum`: the finite rank of maps between finite dependent
   products is the sum of the ranks of the finite free component hom spaces.
 * `LinearMap.sum_finrank_add_finrank_ker_of_surjective`: rank–nullity for a surjection from a
@@ -246,6 +248,16 @@ public theorem sum_finrank_add_finrank_ker_of_surjective {K M ι : Type*} [Divis
   have := finite_of_surjective_pi Φ hΦ
   rw [← Module.finrank_pi_fintype, ← finrank_top K, ← range_eq_top.2 hΦ]
   exact finrank_range_add_finrank_ker Φ
+
+/-- A linear map on `ι → R` is determined by its values on the coordinate vectors:
+`f x = ∑ i, x i • f (Pi.single i 1)`. This is Mathlib's `LinearMap.pi_apply_eq_sum_univ` with the
+coordinate vectors written as `Pi.single i 1`. -/
+public theorem pi_apply_eq_sum_single {R M ι : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    [Fintype ι] [DecidableEq ι] (f : (ι → R) →ₗ[R] M) (x : ι → R) :
+    f x = ∑ i, x i • f (Pi.single i 1) := by
+  rw [pi_apply_eq_sum_univ f x]
+  congr! with i
+  simp [Pi.single_apply, eq_comm]
 
 end LinearMap
 

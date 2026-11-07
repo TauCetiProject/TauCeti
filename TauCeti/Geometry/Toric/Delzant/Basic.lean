@@ -10,6 +10,8 @@ public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.Algebra.Module.Primitive
 public import TauCeti.Analysis.Convex.Polyhedron.Extreme
 
+import Mathlib.Analysis.LocallyConvex.SeparatingDual
+
 /-!
 # Delzant polytopes
 
@@ -42,6 +44,9 @@ active (`TauCeti.Toric.exists_mem_extremePoints_activeSet_subset`). In particula
 facet contains a vertex; at that vertex its normal belongs to a lattice basis. Hence every facet
 normal is primitive (`TauCeti.Toric.IsDelzant.isPrimitive`): the facet normals are the primitive
 inward normals.
+When the lattice map is injective, a Delzant polytope also has a point on none of its facets
+(`TauCeti.Toric.IsDelzant.exists_activeSet_eq_empty`): with at least two facets, the barycentre
+of points lying only on one facet each; with a single facet, such a point pushed off it.
 
 Translating the polytope by `y ∈ V*` changes the support constants to `c j + ⟨y, u j⟩` and keeps
 the normals (`TauCeti.Toric.facetPolyhedron_add`). It preserves the active constraints, hence
@@ -65,6 +70,8 @@ freedom of shifting a moment map by a constant.
   normals are linearly independent and generate the lattice.
 * `TauCeti.Toric.IsSmoothVertex.ncard_activeSet`: exactly `rank N` facets meet at a smooth vertex.
 * `TauCeti.Toric.IsDelzant.isPrimitive`: the facet normals of a Delzant polytope are primitive.
+* `TauCeti.Toric.IsDelzant.exists_activeSet_eq_empty`: for an injective lattice map, a Delzant
+  polytope has a point on none of its facets.
 * `TauCeti.Toric.facetPolyhedron_add`, `TauCeti.Toric.isDelzant_add_iff`: translations.
 
 ## References
@@ -221,6 +228,42 @@ theorem isPrimitive (j : ι) : IsPrimitive (u j) := by
   obtain ⟨x, hx, hj⟩ := hΔ.exists_mem_extremePoints_mem_activeSet j
   obtain ⟨b, hb⟩ := hΔ.isSmoothVertex x hx
   simpa only [hb] using b.isPrimitive ⟨j, hj⟩
+
+/-- **A Delzant polytope has an interior point.** For an injective lattice map, some point of a
+Delzant polytope lies on none of its facets. -/
+theorem exists_activeSet_eq_empty [Finite ι] (hi : Function.Injective i) :
+    ∃ x ∈ facetPolyhedron i u c, activeSet (facetPairing i u) c x = ∅ := by
+  choose x hx hxj using hΔ.irredundant
+  have hslack : ∀ j k, j ≠ k → c j < x k (i (u j)) := fun j k hjk ↦
+    (mem_facetPolyhedron.1 (hx k) j).lt_of_ne fun h ↦ hjk <| by
+      simpa [hxj k] using (mem_activeSet.2 h.symm : j ∈ activeSet (facetPairing i u) c (x k))
+  rcases subsingleton_or_nontrivial ι with hι | hι
+  · obtain hι' | ⟨⟨j⟩⟩ := isEmpty_or_nonempty ι
+    · exact ⟨0, mem_facetPolyhedron.2 isEmptyElim, eq_empty_of_isEmpty _⟩
+    -- With a single facet `j`, move off it in a direction `w` with `⟨w, u j⟩ = 1`.
+    obtain ⟨w, hw⟩ := SeparatingDual.exists_eq_one (R := ℝ)
+      ((map_ne_zero_iff i hi).2 (hΔ.isPrimitive j).ne_zero)
+    have hlt : ∀ k, c k < (x j + w) (i (u k)) := fun k ↦ by
+      obtain rfl := Subsingleton.elim k j
+      have := mem_facetPolyhedron.1 (hx k) k
+      simp only [add_apply, hw]
+      linarith
+    exact ⟨x j + w, mem_facetPolyhedron.2 fun k ↦ (hlt k).le,
+      eq_empty_of_forall_notMem fun k hk ↦ (hlt k).ne' (mem_activeSet.1 hk)⟩
+  -- With at least two facets, the barycentre of the points `x k` lies on no facet.
+  have := Fintype.ofFinite ι
+  set n : ℝ := (Fintype.card ι : ℝ)
+  have hn : 0 < n := Nat.cast_pos.2 Fintype.card_pos
+  have hlt : ∀ j, c j < (n⁻¹ • ∑ k, x k) (i (u j)) := fun j ↦ by
+    obtain ⟨k, hk⟩ := exists_ne j
+    have hsum : ∑ _k : ι, c j < ∑ k, x k (i (u j)) :=
+      Finset.sum_lt_sum (fun k _ ↦ mem_facetPolyhedron.1 (hx k) j) ⟨k, Finset.mem_univ _,
+        hslack j k hk.symm⟩
+    rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul] at hsum
+    simp only [smul_apply, sum_apply, smul_eq_mul]
+    rwa [lt_inv_mul_iff₀ hn]
+  exact ⟨_, mem_facetPolyhedron.2 fun j ↦ (hlt j).le,
+    eq_empty_of_forall_notMem fun j hj ↦ (hlt j).ne' (mem_activeSet.1 hj)⟩
 
 end IsDelzant
 
