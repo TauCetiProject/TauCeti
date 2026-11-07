@@ -15,7 +15,8 @@ Elementary analytic facts about functions that are only controlled off the latti
 a period pair `L`:
 
 * `PeriodPair.differentiableAt_zero_ite_div`: the quotient `A / B` of two functions analytic at
-  `0` and vanishing there, extended by `c` on the lattice, is differentiable at `0`;
+  `0` and vanishing there, extended by `c` on the lattice, is differentiable at `0` when `B` has
+  derivative `b ≠ 0` and `A` has derivative `c * b` there;
 * `PeriodPair.differentiable_of_periodic`: a lattice-periodic function that is differentiable at
   `0` and off the lattice is entire;
 * `PeriodPair.eq_of_forall_notMem_lattice`: two continuous functions that agree off the lattice
