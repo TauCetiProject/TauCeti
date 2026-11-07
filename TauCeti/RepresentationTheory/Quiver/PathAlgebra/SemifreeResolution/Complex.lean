@@ -27,7 +27,7 @@ cofibrancy, or Hochschild comparison is asserted here.
 ## References
 
 * B. Keller, *Deformed Calabi--Yau completions*, Section 6.
-* Y. Liu and W. Wang, *A-infinity deformations of zigzag algebras via Ginzburg dg algebras*,
+* Y. Liu and Z. Wang, *A-infinity deformations of zigzag algebras via Ginzburg dg algebras*,
   for the small resolution in the Hochschild calculation.
 -/
 
@@ -144,6 +144,25 @@ theorem vertexTensorComplexAugmentation_f_apply (n : ℤ)
     gradedCochainComplexXEquiv_gradedCochainComplexHom_f_apply, LinearMap.comp_apply,
     LinearMap.restrictScalars_apply, LinearEquiv.coe_coe]
 
+/-- The universal derivation relative to the vertex subalgebra, as a map of cochain complexes.
+It has degree zero before suspending the arrow term in the small resolution. -/
+noncomputable def arrowTensorDerivationComplexHom :
+    K ⟶ arrowTensorComplex k Q wt d hd hdε :=
+  gradedCochainComplexHom (arrowTensorDerivation k Q)
+    (LinearMap.isHomogeneous_def.mpr fun _ _ hx ↦
+      (isHomogeneous_arrowTensorDerivation k Q wt).map_mem hx)
+    (LinearMap.ext fun x ↦ arrowTensorBimoduleDifferential_arrowTensorDerivation hd hdε x)
+
+/-- On each homogeneous piece the complex-level derivation is the universal derivation. -/
+@[simp]
+theorem arrowTensorDerivationComplexHom_f_apply (n : ℤ) (x : (K).X n) :
+    (gradedCochainComplexXEquiv n
+      (((arrowTensorDerivationComplexHom k Q wt d hd hdε).f n).hom x) :
+        arrowTensorBimodule k Q) =
+      arrowTensorDerivation k Q (gradedCochainComplexXEquiv n x) := by
+  simp only [arrowTensorDerivationComplexHom,
+    gradedCochainComplexXEquiv_gradedCochainComplexHom_f_apply]
+
 /-- The standard path-algebra bimodule sequence, viewed as scalar cochain complexes. -/
 noncomputable def standardResolutionSequence :
     ShortComplex (CochainComplex (ModuleCat k) ℤ) where
@@ -160,6 +179,13 @@ noncomputable def standardResolutionSequence :
       vertexTensorComplexAugmentation_f_apply, arrowTensorDifferentialComplexHom_f_apply,
       vertexTensorMul_arrowTensorDifferential, ModuleCat.hom_zero, LinearMap.zero_apply,
       map_zero, ZeroMemClass.coe_zero]
+
+/-- The arrow-to-vertex boundary followed by multiplication is zero as a complex map. -/
+@[reassoc (attr := simp)]
+theorem arrowTensorDifferentialComplexHom_comp_vertexTensorComplexAugmentation :
+    arrowTensorDifferentialComplexHom k Q wt d hd hdε ≫
+      vertexTensorComplexAugmentation k Q wt d hd hdε = 0 :=
+  (standardResolutionSequence k Q wt d hd hdε).zero
 
 @[simp]
 theorem standardResolutionSequence_X₁ :
