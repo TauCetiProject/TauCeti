@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Extension.Presentation.Basic
-public import Mathlib.RingTheory.TensorProduct.MvPolynomial
 
 /-!
 # Algebra homomorphisms out of a presented algebra
