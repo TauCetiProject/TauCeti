@@ -15,7 +15,8 @@ import Mathlib.Tactic.Linarith
 
 A matrix congruent to the identity modulo `N` fixes every row vector in
 `(N⁻¹ℤ/ℤ)ⁿ`. The statement here gives an actual integral translation between
-the two vectors in any characteristic-zero field, rather than passing to a quotient.
+the two vectors in any division ring, rather than passing to a quotient.
+If `N` casts to zero, division by zero makes both vectors zero.
 This is useful for transformation laws whose multipliers depend on integral translations.
 -/
 
@@ -24,14 +25,16 @@ public section
 namespace Matrix
 
 /-- A matrix reducing to the identity modulo `N` carries `a / N` to itself plus an
-integral vector. The denominator is nonzero, and the identity holds in any
-characteristic-zero field. -/
+integral vector in any division ring. If `N` casts to zero, the zero integral
+vector witnesses the identity. -/
 theorem exists_vecMul_div_eq_add_intCast {ι K : Type*} [Fintype ι] [DecidableEq ι]
-    [Field K] [CharZero K] (M : Matrix ι ι ℤ) {N : ℕ} (hN : N ≠ 0)
+    [DivisionRing K] (M : Matrix ι ι ℤ) {N : ℕ}
     (hM : M.map (Int.castRingHom (ZMod N)) = 1) (a : ι → ℤ) :
     ∃ s : ι → ℤ,
       (fun i ↦ (a i : K) / N) ᵥ* M.map (Int.castRingHom K) =
         (fun i ↦ (a i : K) / N) + fun i ↦ (s i : K) := by
+  by_cases hN : (N : K) = 0
+  · exact ⟨0, by ext j; simp [hN, vecMul, dotProduct]⟩
   have hdiv : ∀ i j, (N : ℤ) ∣ M i j - (1 : Matrix ι ι ℤ) i j := by
     intro i j
     rw [← ZMod.intCast_zmod_eq_zero_iff_dvd]
