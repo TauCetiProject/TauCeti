@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Subgroup
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.StructureConstant
-import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Commutator.Basic
+import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.MultiplyLacedRelations
 
 /-!
 # Chevalley commutators along a double root string
@@ -198,19 +198,9 @@ theorem chevalleyRootSubgroup_mul_of_doubleString
               (u ^ 2 * v)))) *
         chevalleyRootSubgroup ρ M hM hnil α A (Multiplicative.ofAdd u) := by
   obtain ⟨had, hbg, _⟩ := doubleString_brackets hγ hδ hbot htop
-  -- All-root divided-power stability lets us use the existing Kostant relation.
-  have hMall : ∀ z ∈ kostantForm (t.chevalleySystem ht) (t.lieBasis ht).h,
-      ∀ w ∈ M, ρ z w ∈ M := by
-    intro z hz w hw
-    apply kostantForm_apply_mem (t.chevalleySystem ht) (t.lieBasis ht).h ρ
-      M.toIntSubmodule ?_ ?_ z hz hw
-    · intro k n w hw
-      rw [Associative.map_dividedPower]
-      exact dividedPower_chevalleySystem_smul_mem ρ M hM hnil k n w hw
-    · intro k n w hw
-      exact hM _ (ringChoose_mem_kostantForm _ _ k n) w hw
   have hmul := kostantRootSubgroupPoints_mul_of_lie_lie_eq'
-    (t.chevalleySystem ht) (t.lieBasis ht).h ρ M hMall
+    (t.chevalleySystem ht) (t.lieBasis ht).h ρ M
+    (kostantForm_chevalleySystem_apply_mem ρ M hM hnil)
     (lie_chevalleySystem_eq_structureConstant_zsmul hγ)
     (lie_lie_chevalleySystem_of_chainBotCoeff_eq_zero hγ hδ hbot) had hbg
     (isNilpotent_apply_ι_chevalleySystem ρ hnil α)
@@ -242,23 +232,25 @@ theorem commutatorElement_chevalleyRootSubgroup_of_doubleString
         (Multiplicative.ofAdd
           (((t.structureConstant ht α β * (t.structureConstant ht α γ / 2) : ℤ) : A) *
             (u ^ 2 * v))) := by
-  obtain ⟨_, hbg, hbd⟩ := doubleString_brackets hγ hδ hbot htop
-  let c := t.structureConstant ht α β
-  let d := c * (t.structureConstant ht α γ / 2)
-  -- The β-factor commutes with both correction factors in the product relation.
-  have hcomm : Commute
-      (chevalleyRootSubgroup ρ M hM hnil β A (Multiplicative.ofAdd v))
-      (chevalleyRootSubgroup ρ M hM hnil γ A (Multiplicative.ofAdd ((c : A) * (u * v))) *
-        chevalleyRootSubgroup ρ M hM hnil δ A
-          (Multiplicative.ofAdd ((d : A) * (u ^ 2 * v)))) := by
-    apply Commute.mul_right
-    all_goals apply Units.ext
-    all_goals simp only [Units.val_mul, chevalleyRootSubgroup_val, toAdd_ofAdd]
-    · exact (commute_baseChangeExp M (commute_of_lie_eq_zero ρ hbg) _ _ _ _).eq
-    · exact (commute_baseChangeExp M (commute_of_lie_eq_zero ρ hbd) _ _ _ _).eq
-  rw [commutatorElement_def,
-    chevalleyRootSubgroup_mul_of_doubleString ρ M hM hnil hγ hδ hbot htop,
-    mul_inv_cancel_right, hcomm.eq, mul_inv_cancel_right]
+  obtain ⟨had, hbg, hbd⟩ := doubleString_brackets hγ hδ hbot htop
+  have hcomm := commutatorElement_kostantRootSubgroupPoints_of_lie_lie_eq' (A := A)
+    (t.chevalleySystem ht) (t.lieBasis ht).h ρ M
+    (kostantForm_chevalleySystem_apply_mem ρ M hM hnil)
+    (lie_chevalleySystem_eq_structureConstant_zsmul hγ)
+    (lie_lie_chevalleySystem_of_chainBotCoeff_eq_zero hγ hδ hbot) had hbg hbd
+    (isNilpotent_apply_ι_chevalleySystem ρ hnil α)
+    (isNilpotent_apply_ι_chevalleySystem ρ hnil β)
+    (isNilpotent_apply_ι_chevalleySystem ρ hnil γ)
+    (isNilpotent_apply_ι_chevalleySystem ρ hnil δ)
+  -- Identify the canonical integer algebra with the one stored by the category object.
+  have hA : Ring.toIntAlgebra A = (inferInstance : Algebra ℤ A) := Subsingleton.elim _ _
+  rw [hA] at hcomm
+  specialize hcomm
+    ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm (Multiplicative.ofAdd u))
+    ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm (Multiplicative.ofAdd v))
+  convert hcomm using 2 <;> apply Units.ext <;>
+    simp only [chevalleyRootSubgroup_val, kostantRootSubgroupPoints_val,
+      MulEquiv.apply_symm_apply, toAdd_ofAdd]
 
 end
 
