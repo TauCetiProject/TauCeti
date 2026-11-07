@@ -40,6 +40,32 @@ variable
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
 
+/-- An operation on sections which is additive on globally smooth sections takes equal values on
+two finite sums of globally smooth sections whenever it takes equal values on the summands.  The
+sums are again globally smooth.  The target needs only an addition, without any algebraic laws. -/
+theorem map_sum_eq_of_contMDiff_additive [IsManifold I ∞ M]
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    {W : M → Type*} [TopologicalSpace (TotalSpace G W)]
+    [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [∀ x, TopologicalSpace (W x)]
+    [FiberBundle G W] [VectorBundle ℝ G W] [ContMDiffVectorBundle ∞ G W I]
+    {A : Type*} [Add A] (Φ : (Π x : M, W x) → A)
+    (hadd : ∀ {s s' : Π x : M, W x}, CMDiff ∞ (T% s) → CMDiff ∞ (T% s') →
+      Φ (s + s') = Φ s + Φ s')
+    {ι : Type*} (q : Finset ι) (u v : ι → Π x : M, W x)
+    (hu : ∀ i, CMDiff ∞ (T% (u i))) (hv : ∀ i, CMDiff ∞ (T% (v i)))
+    (huv : ∀ i, Φ (u i) = Φ (v i)) :
+    CMDiff ∞ (T% (∑ i ∈ q, u i)) ∧ CMDiff ∞ (T% (∑ i ∈ q, v i)) ∧
+      Φ (∑ i ∈ q, u i) = Φ (∑ i ∈ q, v i) := by
+  classical
+  induction q using Finset.induction_on with
+  | empty =>
+      simp only [Finset.sum_empty, and_true]
+      exact ⟨contMDiff_zeroSection ℝ W, contMDiff_zeroSection ℝ W⟩
+  | @insert i q hi ih =>
+      simp only [Finset.sum_insert hi]
+      refine ⟨(hu i).add_section ih.1, (hv i).add_section ih.2.1, ?_⟩
+      rw [hadd (hu i) ih.1, hadd (hv i) ih.2.1, huv i, ih.2.2]
+
 /-- On a finite-rank smooth real vector bundle over a finite-dimensional Hausdorff manifold,
 a local operation which is additive and linear over globally smooth functions on globally
 smooth sections depends only on the value of such a section at the point of evaluation.
@@ -98,25 +124,10 @@ theorem eq_of_contMDiff_tensorial
     have hρ' : ρ y = 1 := by simpa using hρ
     dsimp only [expansion]
     simpa [coeff', frame', hρ', coeff, frame] using hu.symm
-  -- Compare finite sums directly: no additive identity or scalar-action laws on `A` are needed.
-  have hsum (q : Finset (Basis.ofVectorSpaceIndex ℝ G))
-      (u v : Basis.ofVectorSpaceIndex ℝ G → Π x : M, W x)
-      (hu : ∀ i, CMDiff ∞ (T% (u i))) (hv : ∀ i, CMDiff ∞ (T% (v i)))
-      (huv : ∀ i, Φ (u i) = Φ (v i)) :
-      CMDiff ∞ (T% (∑ i ∈ q, u i)) ∧ CMDiff ∞ (T% (∑ i ∈ q, v i)) ∧
-        Φ (∑ i ∈ q, u i) = Φ (∑ i ∈ q, v i) := by
-    induction q using Finset.induction_on with
-    | empty =>
-        simp only [Finset.sum_empty, and_true]
-        exact ⟨contMDiff_zeroSection ℝ W, contMDiff_zeroSection ℝ W⟩
-    | @insert i q hi ih =>
-        simp only [Finset.sum_insert hi]
-        refine ⟨(hu i).add_section ih.1, (hv i).add_section ih.2.1, ?_⟩
-        rw [hadd (hu i) ih.1, hadd (hv i) ih.2.1, huv i, ih.2.2]
   rw [hlocal hs (hexpansion s hs) ((hexpansion_eq s).mono fun y hy ↦ hy.symm),
     hlocal hs' (hexpansion s' hs') ((hexpansion_eq s').mono fun y hy ↦ hy.symm)]
   dsimp only [expansion]
-  refine (hsum Finset.univ (fun i ↦ coeff' s i • frame' i)
+  refine (map_sum_eq_of_contMDiff_additive Φ hadd Finset.univ (fun i ↦ coeff' s i • frame' i)
     (fun i ↦ coeff' s' i • frame' i)
     (fun i ↦ (hcoeff' s hs i).smul_section (hframe i))
     (fun i ↦ (hcoeff' s' hs' i).smul_section (hframe i)) ?_).2.2
