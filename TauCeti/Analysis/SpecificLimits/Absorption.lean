@@ -37,6 +37,8 @@ subsolution into an `Lᵖ` bound with `p < 2`.
 * `TauCeti.le_add_mul_of_le_add_of_le_add_mul_add_mul`: absorbs bounded lower-order terms of a
   step estimate between concentric balls into the `(t - s)⁻¹` and `(t - s)⁻²` terms, so that
   `TauCeti.sq_mul_le_of_forall_le` applies.
+* `TauCeti.add_mul_le_mul_add_mul_of_sq_eq`: with `ε² = t₀`, the factor `t₀` absorbs the powers
+  `ε⁻²` and `ε⁻¹` in a mollification estimate.
 
 ## References
 
@@ -320,5 +322,42 @@ theorem le_add_mul_of_le_add_of_le_add_mul_add_mul {k G F h z a K cA β γ R s t
     add_nonneg (mul_nonneg hK hPW) (mul_nonneg (mul_nonneg hQ0 hcA) hPW)
   have hdist : a * (F + β * h + γ * z) = a * F + a * (β * h + γ * z) := by ring
   linarith
+
+/-- **Absorbing the powers of `ε` into `t₀ = ε²`.** With `ε = √t₀ ≤ √T` and `m ≥ 0`, the terms
+`w / ε²` and `w / ε` (with `w = ω(ε)` the modulus of continuity at scale `ε`) in the estimate
+produced by mollifying at scale `ε` are bounded by multiples of `w`, the factor `t₀` turning
+`ε⁻²` and `ε⁻¹` into constants. -/
+theorem add_mul_le_mul_add_mul_of_sq_eq {T t₀ ε C₀ w M F m Lam β γ : ℝ} (hm : 0 ≤ m)
+    (hC₀ : 0 ≤ C₀) (hw0 : 0 ≤ w) (hM0 : 0 ≤ M) (hF0 : 0 ≤ F) (ht₀ : t₀ ∈ Ioc 0 T) (hε : 0 < ε)
+    (hεsq : ε ^ 2 = t₀) :
+    w + t₀ * (F + m * Lam * (C₀ * w / ε ^ 2) + β * (C₀ * w / ε) +
+      |γ| * (M + w)) ≤ (1 + (m * |Lam| * C₀ + |β| * C₀ * √T + |γ| * |T|)) * w +
+      (1 + |γ|) * (t₀ * (M + F)) := by
+  have hT : t₀ ≤ T := ht₀.2
+  have hsqrt : ε ≤ √T := (Real.le_sqrt' hε).2 (hεsq ▸ hT)
+  have hLam0 : m * Lam ≤ m * |Lam| :=
+    mul_le_mul_of_nonneg_left (le_abs_self Lam) hm
+  have h2 : t₀ * (m * Lam * (C₀ * w / ε ^ 2)) ≤
+      m * |Lam| * C₀ * w := by
+    have : t₀ * (m * Lam * (C₀ * w / ε ^ 2)) =
+        m * Lam * (C₀ * w) := by
+      rw [hεsq]
+      field_simp [ht₀.1.ne']
+    rw [this, mul_assoc _ C₀]
+    exact mul_le_mul_of_nonneg_right hLam0 (mul_nonneg hC₀ hw0)
+  have h1 : t₀ * (β * (C₀ * w / ε)) ≤ |β| * C₀ * √T * w := by
+    have : t₀ * (β * (C₀ * w / ε)) = ε * β * C₀ * w := by
+      rw [← hεsq]
+      field_simp
+    rw [this]
+    have hβ : ε * β ≤ √T * |β| :=
+      (mul_le_mul_of_nonneg_left (le_abs_self β) hε.le).trans
+        (mul_le_mul_of_nonneg_right hsqrt (abs_nonneg β))
+    nlinarith [mul_nonneg hC₀ hw0]
+  have h0 : t₀ * (|γ| * (M + w)) ≤ |γ| * |T| * w + |γ| * (t₀ * (M + F)) := by
+    have htT : t₀ ≤ |T| := hT.trans (le_abs_self T)
+    nlinarith [mul_le_mul_of_nonneg_left htT (mul_nonneg (abs_nonneg γ) hw0),
+      mul_nonneg (mul_nonneg (abs_nonneg γ) ht₀.1.le) hF0]
+  nlinarith [mul_nonneg ht₀.1.le hM0]
 
 end TauCeti

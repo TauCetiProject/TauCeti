@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.MaximumPrinciple.Parabolic.WholeSpace
 public import Mathlib.Topology.UniformSpace.UniformConvergence
 import TauCeti.Analysis.Calculus.BumpFunction.Oscillation
 import TauCeti.Analysis.Matrix.Contraction
+import TauCeti.Analysis.SpecificLimits.Absorption
 
 /-!
 # Uniform attainment of the initial data by a modulus of continuity
@@ -203,42 +204,6 @@ theorem abs_sub_le_exp_mul_mul_add_mul_of_abs_deriv_sub_sum_mul_fderiv_fderiv_ad
     hvbdd.1 hcd' hdiff' hPv (fun y ↦ by rw [hv]; exact hw y) ⟨ht₀.1.le, le_rfl⟩ x
   rwa [hv] at hbound
 
-omit [DecidableEq ι] in
-/-- **Absorbing the powers of `ε` into `t₀ = ε²`.** With `ε = √t₀`, the terms `ω(ε) / ε²` and
-`ω(ε) / ε` produced by mollifying at scale `ε` are bounded by multiples of `w = ω(ε)`. -/
-private theorem add_mul_le_mul_add_mul_of_sq_eq {t₀ ε C₀ w M F : ℝ} (hC₀ : 0 ≤ C₀)
-    (hw0 : 0 ≤ w) (hM0 : 0 ≤ M) (hF0 : 0 ≤ F) (ht₀ : t₀ ∈ Ioc 0 T) (hε : 0 < ε)
-    (hεsq : ε ^ 2 = t₀) :
-    w + t₀ * (F + Fintype.card ι ^ 2 * Lam * (C₀ * w / ε ^ 2) + β * (C₀ * w / ε) +
-      |γ| * (M + w)) ≤ (1 + (Fintype.card ι ^ 2 * |Lam| * C₀ + |β| * C₀ * √T + |γ| * |T|)) * w +
-      (1 + |γ|) * (t₀ * (M + F)) := by
-  have hT : t₀ ≤ T := ht₀.2
-  have hsqrt : ε ≤ √T := (Real.le_sqrt' hε).2 (hεsq ▸ hT)
-  have hLam0 : Fintype.card ι ^ 2 * Lam ≤ Fintype.card ι ^ 2 * |Lam| :=
-    mul_le_mul_of_nonneg_left (le_abs_self Lam) (by positivity)
-  have h2 : t₀ * (Fintype.card ι ^ 2 * Lam * (C₀ * w / ε ^ 2)) ≤
-      Fintype.card ι ^ 2 * |Lam| * C₀ * w := by
-    have : t₀ * (Fintype.card ι ^ 2 * Lam * (C₀ * w / ε ^ 2)) =
-        Fintype.card ι ^ 2 * Lam * (C₀ * w) := by
-      rw [hεsq]
-      field_simp [ht₀.1.ne']
-    rw [this, mul_assoc _ C₀]
-    exact mul_le_mul_of_nonneg_right hLam0 (mul_nonneg hC₀ hw0)
-  have h1 : t₀ * (β * (C₀ * w / ε)) ≤ |β| * C₀ * √T * w := by
-    have : t₀ * (β * (C₀ * w / ε)) = ε * β * C₀ * w := by
-      rw [← hεsq]
-      field_simp
-    rw [this]
-    have hβ : ε * β ≤ √T * |β| :=
-      (mul_le_mul_of_nonneg_left (le_abs_self β) hε.le).trans
-        (mul_le_mul_of_nonneg_right hsqrt (abs_nonneg β))
-    nlinarith [mul_nonneg hC₀ hw0]
-  have h0 : t₀ * (|γ| * (M + w)) ≤ |γ| * |T| * w + |γ| * (t₀ * (M + F)) := by
-    have htT : t₀ ≤ |T| := hT.trans (le_abs_self T)
-    nlinarith [mul_le_mul_of_nonneg_left htT (mul_nonneg (abs_nonneg γ) hw0),
-      mul_nonneg (mul_nonneg (abs_nonneg γ) ht₀.1.le) hF0]
-  nlinarith [mul_nonneg ht₀.1.le hM0]
-
 /-- **Uniform attainment of the initial data by a modulus of continuity.** There is a constant
 `C`, depending only on `ι`, `T`, `Λ`, `β` and `γ`, with the following property. Let the
 coefficients satisfy, for `0 < t < T`, `0 ≤ ξᵀ a(t, x) ξ`, `|aⁱʲ(t, x)| ≤ Λ`, `‖b(t, x)‖ ≤ β` and
@@ -300,8 +265,8 @@ theorem exists_abs_sub_le_mul_add_mul_of_abs_deriv_sub_sum_mul_fderiv_fderiv_add
   have hT : t₀ ≤ T := ht₀.2
   have hexp : Real.exp (|γ| * t₀) ≤ Real.exp (|γ| * T) :=
     Real.exp_le_exp.2 (mul_le_mul_of_nonneg_left hT (abs_nonneg γ))
-  have hinner := add_mul_le_mul_add_mul_of_sq_eq (ι := ι) (Lam := Lam) (β := β) (γ := γ) hC₀ hw0 hM0
-    hF0 ht₀ hε hεsq
+  have hinner := TauCeti.add_mul_le_mul_add_mul_of_sq_eq (m := (Fintype.card ι : ℝ) ^ 2)
+    (Lam := Lam) (β := β) (γ := γ) (by positivity) hC₀ hw0 hM0 hF0 ht₀ hε hεsq
   have hinner0 : 0 ≤ (1 + K) * w + (1 + |γ|) * (t₀ * (M + F)) := by
     have := ht₀.1.le
     positivity
