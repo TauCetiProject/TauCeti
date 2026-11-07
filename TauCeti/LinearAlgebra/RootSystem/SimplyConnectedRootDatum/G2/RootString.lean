@@ -171,10 +171,12 @@ theorem g2_root_sub_notMem_range_of_short_add_long_eq_root (i j k : Fin 12)
       g2SimplyConnectedRootDatum.root j + g2SimplyConnectedRootDatum.root i) :
     g2SimplyConnectedRootDatum.root j - g2SimplyConnectedRootDatum.root i ∉
       Set.range g2SimplyConnectedRootDatum.root := by
-  simp only [Set.mem_range, not_exists, g2SimplyConnectedRootDatum_root, g2Root_apply] at hk ⊢
-  rw [g2Length_apply] at hi hj
-  revert i j k
-  decide +kernel
+  have hadd : g2SimplyConnectedRootDatum.root i + g2SimplyConnectedRootDatum.root j ∈
+      range g2SimplyConnectedRootDatum.root := ⟨k, hk.trans (add_comm _ _)⟩
+  have hbot :=
+    (g2_chainBotCoeff_eq_zero_and_chainTopCoeff_eq_three_of_short_long i j hi hj hadd).1
+  exact (g2SimplyConnectedRootDatum.chainBotCoeff_eq_zero_iff.mp hbot).resolve_left
+    (not_not.mpr (g2SimplyConnectedRootDatum.linearIndependent_of_add_mem_range_root' hadd))
 
 /-- A root equal to twice a short root plus a long root of `G₂` is short. -/
 theorem g2Length_eq_one_of_two_smul_short_add_long_eq_root (i j k : Fin 12)
