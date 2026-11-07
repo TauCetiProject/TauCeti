@@ -81,8 +81,11 @@ jobs:
   # status context (see pr-build.yml's header note on that collision). This workflow only runs on
   # push-to-main / schedule, never on a PR, so its check-run can't wedge a PR today — the distinct name
   # is hygiene so a future PR trigger here could never reintroduce the collision.
-  # The data assets are generated here, in a job with no Lean in it. They are cheap -- minutes,
-  # all Python and gh -- whereas `build-site` below elaborates TauCeti and compiles the site.
+  # Scheduled and manual runs refresh data here. Every push-triggered deploy restores data
+  # instead: the all-PR statistics and readiness scans can take over an hour even with a warm
+  # cache. Pushes need not repeat those scans, including generator/workflow changes; use a
+  # manual dispatch to refresh those immediately. Existing Pages serialization
+  # still lets an already-running refresh finish before that code deploy starts.
   # The two used to fail together for no better reason than sharing a job: an unrelated Verso
   # error in Site.Front meant nothing deployed, so a perfectly good pipeline-health.json derived
   # ninety minutes earlier in that same job was thrown away. Separating them means a site that
@@ -93,6 +96,8 @@ jobs:
     runs-on:
       - nscloud-ubuntu-24.04-amd64-4x8-with-features;job.priority=0
       - namespace-features:github.run-id=${{ github.run_id }}
+    env:
+      REFRESH_SITE_DATA: ${{ github.event_name != 'push' }}
     outputs:
       # Which of the generated data assets could not be regenerated this run. The steps that
       # produce them are deliberately non-fatal -- a GitHub hiccup should cost a stale chart, not
@@ -132,6 +137,7 @@ jobs:
           tools-ref: 18285517f50cf43fdf748e3fd0e858a812a68c65
           project-directory: .
       - name: Restore the last published data assets
+        id: retained-data
         uses: actions/cache/restore@v4
         with:
           path: ${{ github.workspace }}/web/static_files
@@ -140,11 +146,19 @@ jobs:
           key: site-data-v1-${{ github.run_id }}
           restore-keys: site-data-v1-
 
+      - name: Note retained data on a push deploy
+        if: env.REFRESH_SITE_DATA != 'true'
+        env:
+          RESTORED_KEY: ${{ steps.retained-data.outputs.cache-matched-key }}
+        run: |
+          echo "::notice::Push-triggered deploy: reusing generated data from ${RESTORED_KEY:-committed fallbacks}; embedded timestamps and coverage are unchanged. Scheduled and manual runs refresh the data."
+
       # Participation scans GitHub independently of PR history, so start it while
       # the other generators run. The per-roadmap chart below instead reuses the
       # bors-aware PR snapshot, including each PR's title and diff size.
       # Timeout bounds a hung query; the wait step retries failures once.
       - name: Start the participation snapshot in the background
+        if: env.REFRESH_SITE_DATA == 'true'
         working-directory: ${{ github.workspace }}
         env:
           GH_TOKEN: ${{ github.token }}
@@ -165,12 +179,14 @@ jobs:
             --out web/static_files/participation.svg
 
       - name: Clone the roadmap repository (full history, for its chart)
+        if: env.REFRESH_SITE_DATA == 'true'
         working-directory: ${{ github.workspace }}
         run: git clone --quiet https://github.com/TauCetiProject/TauCetiRoadmap.git /tmp/roadmap
 
       # Compare every historical library point with the same pinned Mathlib tree.
       # No Mathlib build or oleans are needed: only Lean source line counts.
       - name: Read the pinned Mathlib revision
+        if: env.REFRESH_SITE_DATA == 'true'
         id: statistics-mathlib
         working-directory: ${{ github.workspace }}
         run: |
@@ -179,6 +195,7 @@ jobs:
           echo "ref=$ref" >> "$GITHUB_OUTPUT"
 
       - name: Checkout Mathlib source for the statistics baseline
+        if: env.REFRESH_SITE_DATA == 'true'
         uses: actions/checkout@v4
         with:
           repository: leanprover-community/mathlib4
@@ -195,6 +212,7 @@ jobs:
       # `cd web && lake exe web` renders something; refresh them by running these same
       # two commands. The deployed charts always come from this step, not from the repo.
       - name: Regenerate the lines-of-code charts into static_files
+        if: env.REFRESH_SITE_DATA == 'true'
         working-directory: ${{ github.workspace }}
         run: |
           python3 scripts/loc_graph.py \
@@ -223,6 +241,7 @@ jobs:
       # a depleted budget rather than giving up, so a cold start (first run, or an evicted entry)
       # still completes; it just costs an hour of waiting instead of three minutes.
       - name: Restore the previous pull-request snapshot
+        if: env.REFRESH_SITE_DATA == 'true'
         uses: actions/cache/restore@v4
         with:
           path: ${{ runner.temp }}/pr-snapshot.json
@@ -235,6 +254,7 @@ jobs:
       # paginates both the PR connection and each label timeline, and bounds contributor
       # rendering so growth in participation cannot make the deployed SVG unmanageably large.
       - name: Regenerate the pull-request statistics into static_files
+        if: env.REFRESH_SITE_DATA == 'true'
         working-directory: ${{ github.workspace }}
         env:
           GH_TOKEN: ${{ github.token }}
@@ -255,6 +275,7 @@ jobs:
       # Read exactly the same normalized merge history as the contributor charts.
       # A separate `gh pr list --state merged` loses bors squash merges.
       - name: Regenerate the per-roadmap chart from the pull-request snapshot
+        if: env.REFRESH_SITE_DATA == 'true'
         working-directory: ${{ github.workspace }}
         run: |
           python3 scripts/loc_roadmap_graph.py \
@@ -270,7 +291,7 @@ jobs:
       # step must never be the thing that fails the job it exists to make cheaper.
       - name: Check whether a snapshot is present to save
         id: snapshot
-        if: always()
+        if: always() && env.REFRESH_SITE_DATA == 'true'
         working-directory: ${{ github.workspace }}
         run: |
           if [ -s "$RUNNER_TEMP/pr-snapshot.json" ]; then
@@ -283,7 +304,7 @@ jobs:
         # Saved even when the step above failed: an older or partial snapshot still spares the
         # next run most of the walk, and the alternative is that one bad run condemns every later
         # one to a cold start.
-        if: always() && steps.snapshot.outputs.present == 'true'
+        if: always() && steps.snapshot.outputs.present == 'true' && env.REFRESH_SITE_DATA == 'true'
         uses: actions/cache/save@v4
         with:
           path: ${{ runner.temp }}/pr-snapshot.json
@@ -295,11 +316,13 @@ jobs:
       # anything asking "where is the queue stuck" reads a file instead of
       # repeating the fetch.
       - name: Checkout the pinned merge policy (read-only)
+        if: env.REFRESH_SITE_DATA == 'true'
         id: merge-policy
         continue-on-error: true
         uses: ./.github/actions/checkout-merge-policy
 
       - name: Derive pipeline health from the same snapshot
+        if: env.REFRESH_SITE_DATA == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         working-directory: ${{ github.workspace }}
@@ -336,6 +359,7 @@ jobs:
       # merged pull requests itself, which is a few dozen requests. As with the charts, a failure
       # keeps the committed fallback JSON in place rather than sinking the deploy.
       - name: Regenerate the roadmap progress board into static_files
+        if: env.REFRESH_SITE_DATA == 'true'
         working-directory: ${{ github.workspace }}
         env:
           GH_TOKEN: ${{ github.token }}
@@ -368,6 +392,7 @@ jobs:
       # Cache the already-published CI charts. The site build does not collect CI
       # data or download/rebuild the historical SQLite database.
       - name: Regenerate the CI charts into static_files
+        if: env.REFRESH_SITE_DATA == 'true'
         working-directory: ${{ github.workspace }}
         env:
           GH_TOKEN: ${{ github.token }}
@@ -385,6 +410,7 @@ jobs:
       # statistics finish, so it no longer competes for their GraphQL budget.
       # A failed retry keeps the last published SVG and records a data failure.
       - name: Wait for the background generators
+        if: env.REFRESH_SITE_DATA == 'true'
         working-directory: ${{ github.workspace }}
         env:
           GH_TOKEN: ${{ github.token }}
@@ -459,8 +485,10 @@ jobs:
 
       # Saved for the next run to restore, so a generator that fails then still has a
       # last-good asset to leave in place. Never allowed to fail the job: this is an
-      # optimisation against future outages, not a precondition for this deploy.
+      # optimisation against future outages, not a precondition for this deploy. Only refresh
+      # runs save: a push-triggered deploy must not give unchanged data a new cache generation.
       - name: Save the data assets for the next run
+        if: env.REFRESH_SITE_DATA == 'true'
         continue-on-error: true
         uses: actions/cache/save@v4
         with:
@@ -904,6 +932,7 @@ jobs:
       - name: Report what is serving stale data
         env:
           ASSETS: ${{ needs.build-data.outputs.data-failures }}
+          REFRESH_SITE_DATA: ${{ github.event_name != 'push' }}
           DATA_RESULT: ${{ needs.build-data.result }}
           SITE_RESULT: ${{ needs.build-site.result }}
           FALLBACK_RESULT: ${{ needs.fallback-site.result }}
@@ -912,10 +941,10 @@ jobs:
         run: |
           stale=0
           if [ "$DATA_RESULT" != "success" ]; then
-            echo "::error title=Data generation did not finish::the build-data job ended '${DATA_RESULT}', so nothing was regenerated this run"
+            echo "::error title=Data preparation did not finish::the build-data job ended '${DATA_RESULT}', so this run did not prepare its data artifact"
             stale=1
           elif [ -n "$ASSETS" ]; then
-            echo "::error title=Stale site data::these could not be regenerated and are now serving whatever was published last: ${ASSETS}"
+            echo "::error title=Stale site data::these could not be regenerated or restored; serving the retained assets where available: ${ASSETS}"
             stale=1
           fi
           # Fresh data that never reached the site is just as stale to everyone reading it.
@@ -923,7 +952,7 @@ jobs:
             echo "::error title=Nothing was published::build-site ended '${SITE_RESULT}' and deploy ended '${DEPLOY_RESULT}', so the site still serves an earlier run's data, however old that is"
             stale=1
           elif [ "$SITE_RESULT" != "success" ]; then
-            # The data is current either way, so this is not a freshness failure -- but the run
+            # The data artifact is available either way, but the run
             # must still go red, because a site that cannot compile is exactly the condition the
             # fallback exists to paper over, and papering over it silently is how it went
             # unnoticed for nine days. Which pages actually got published depends on which cache
@@ -931,12 +960,16 @@ jobs:
             if [ "$RESTORED_KEY" = "site-out-v1-${GITHUB_RUN_ID}" ]; then
               echo "::error title=Recovered by the fallback::build-site ended '${SITE_RESULT}' after its site was built and cached, so the published pages ARE this run's; the upload or a later step is what failed"
             else
-              echo "::error title=Published from the fallback::build-site ended '${SITE_RESULT}'; the data is current but the site's own pages are whatever the last successful build produced (${RESTORED_KEY:-unknown cache})"
+              echo "::error title=Published from the fallback::build-site ended '${SITE_RESULT}'; the site's own pages are whatever the last successful build produced (${RESTORED_KEY:-unknown cache})"
             fi
             stale=1
           fi
           if [ "$stale" = "0" ]; then
-            echo "every data asset regenerated, and the site deployed"
+            if [ "$REFRESH_SITE_DATA" = "true" ]; then
+              echo "every data asset regenerated, and the site deployed"
+            else
+              echo "::warning title=Retained site data::push deployment completed without refreshing statistics; existing data timestamps and coverage are unchanged"
+            fi
             exit 0
           fi
           exit 1
