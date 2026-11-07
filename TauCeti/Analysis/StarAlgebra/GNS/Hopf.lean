@@ -15,7 +15,10 @@ A nonzero positive invariant functional on a complex Hopf algebra has no GNS nul
 Either left or right invariance suffices: positivity turns a null vector into a radical
 vector for the multiplication pairing, and algebraic faithfulness of invariant integrals
 then makes it zero. Consequently the functional is strictly positive on every nonzero
-square, and its algebraic GNS class map and representation are injective.
+square, and its algebraic GNS class map and representation are injective. These consequences
+follow from the general results in `GNS.Basic`: compose either null-space theorem below with
+`apply_star_mul_self_pos_of_nullSubmodule_eq_bot`, `classMap_injective_iff`, and
+`representation_injective_of_classMap_injective`.
 
 No norm, finite dimension, normalization, or compatibility between star and coproduct is
 needed. In particular, the representation here is by algebraic endomorphisms, not asserted
@@ -29,8 +32,6 @@ unitarization and construction of C*-completions.
 -/
 
 public section
-
-open scoped ComplexOrder InnerProductSpace
 
 namespace TauCeti.StarPositiveFunctional
 
@@ -59,73 +60,5 @@ theorem nullSubmodule_eq_bot_of_isRightInvariantIntegral
     rw [toLinearMap_apply, ← φ.star_apply_star_mul b a,
       (φ.mem_nullSubmodule a).mp ha b, star_zero]
   simpa using congrArg star hstar
-
-/-- Positive left invariant integrals detect zero by a single square. -/
-@[simp]
-theorem apply_star_mul_self_eq_zero_iff_of_isLeftInvariantIntegral
-    (hh : φ.toLinearMap.IsLeftInvariantIntegral) (h0 : φ.toLinearMap ≠ 0) (a : H) :
-    φ (star a * a) = 0 ↔ a = 0 := by
-  rw [← φ.mem_nullSubmodule_iff_apply_star_mul_self_eq_zero,
-    φ.nullSubmodule_eq_bot_of_isLeftInvariantIntegral hh h0, Submodule.mem_bot]
-
-/-- Positive right invariant integrals detect zero by a single square. -/
-@[simp]
-theorem apply_star_mul_self_eq_zero_iff_of_isRightInvariantIntegral
-    (hh : φ.toLinearMap.IsRightInvariantIntegral) (h0 : φ.toLinearMap ≠ 0) (a : H) :
-    φ (star a * a) = 0 ↔ a = 0 := by
-  rw [← φ.mem_nullSubmodule_iff_apply_star_mul_self_eq_zero,
-    φ.nullSubmodule_eq_bot_of_isRightInvariantIntegral hh h0, Submodule.mem_bot]
-
-/-- A nonzero positive left invariant integral is strictly positive on nonzero squares. -/
-theorem apply_star_mul_self_pos_of_isLeftInvariantIntegral
-    (hh : φ.toLinearMap.IsLeftInvariantIntegral) (h0 : φ.toLinearMap ≠ 0)
-    {a : H} (ha : a ≠ 0) : 0 < φ (star a * a) :=
-  (φ.square_nonneg a).lt_of_ne' fun hz =>
-    ha ((φ.apply_star_mul_self_eq_zero_iff_of_isLeftInvariantIntegral hh h0 a).mp hz)
-
-/-- A nonzero positive right invariant integral is strictly positive on nonzero squares. -/
-theorem apply_star_mul_self_pos_of_isRightInvariantIntegral
-    (hh : φ.toLinearMap.IsRightInvariantIntegral) (h0 : φ.toLinearMap ≠ 0)
-    {a : H} (ha : a ≠ 0) : 0 < φ (star a * a) :=
-  (φ.square_nonneg a).lt_of_ne' fun hz =>
-    ha ((φ.apply_star_mul_self_eq_zero_iff_of_isRightInvariantIntegral hh h0 a).mp hz)
-
-/-- The algebraic GNS class map of a nonzero positive left invariant integral is injective. -/
-theorem classMap_injective_of_isLeftInvariantIntegral
-    (hh : φ.toLinearMap.IsLeftInvariantIntegral) (h0 : φ.toLinearMap ≠ 0) :
-    Function.Injective φ.classMap := by
-  apply (injective_iff_map_eq_zero φ.classMap).mpr
-  intro a ha
-  exact (φ.apply_star_mul_self_eq_zero_iff_of_isLeftInvariantIntegral hh h0 a).mp
-    ((φ.classMap_eq_zero_iff a).mp ha)
-
-/-- The algebraic GNS class map of a nonzero positive right invariant integral is injective. -/
-theorem classMap_injective_of_isRightInvariantIntegral
-    (hh : φ.toLinearMap.IsRightInvariantIntegral) (h0 : φ.toLinearMap ≠ 0) :
-    Function.Injective φ.classMap := by
-  apply (injective_iff_map_eq_zero φ.classMap).mpr
-  intro a ha
-  exact (φ.apply_star_mul_self_eq_zero_iff_of_isRightInvariantIntegral hh h0 a).mp
-    ((φ.classMap_eq_zero_iff a).mp ha)
-
-/-- The algebraic GNS representation of a nonzero positive left invariant integral is
-faithful. No boundedness of the representing endomorphisms is asserted. -/
-theorem representation_injective_of_isLeftInvariantIntegral
-    (hh : φ.toLinearMap.IsLeftInvariantIntegral) (h0 : φ.toLinearMap ≠ 0) :
-    Function.Injective φ.representation := by
-  intro a b hab
-  apply φ.classMap_injective_of_isLeftInvariantIntegral hh h0
-  simpa only [φ.representation_cyclicVector] using
-    congrArg (fun T : Module.End ℂ φ.GNS => T φ.cyclicVector) hab
-
-/-- The algebraic GNS representation of a nonzero positive right invariant integral is
-faithful. No boundedness of the representing endomorphisms is asserted. -/
-theorem representation_injective_of_isRightInvariantIntegral
-    (hh : φ.toLinearMap.IsRightInvariantIntegral) (h0 : φ.toLinearMap ≠ 0) :
-    Function.Injective φ.representation := by
-  intro a b hab
-  apply φ.classMap_injective_of_isRightInvariantIntegral hh h0
-  simpa only [φ.representation_cyclicVector] using
-    congrArg (fun T : Module.End ℂ φ.GNS => T φ.cyclicVector) hab
 
 end TauCeti.StarPositiveFunctional
