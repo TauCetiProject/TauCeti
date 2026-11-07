@@ -183,64 +183,28 @@ substitution. This is also the representative computation rule for the descended
 theorem toFunctor_map_homMk {X Y : FreeMonoidalCategory S.Obj} (f : FreeMonoidal.Hom X Y) :
     σ.toFunctor.map (FreeMonoidal.homMk (X := ⟨X⟩) (Y := ⟨Y⟩) f) =
       FreeMonoidal.homMk (f.subst σ) := by
-  -- Normalize interpreted endpoints before applying the quotient computation rules.
-  induction f <;> try dsimp only [projectObj] at *
-  case id X =>
-    rw [FreeMonoidal.homMk_id ⟨X⟩, Functor.map_id, FreeMonoidal.Hom.subst_id,
-      FreeMonoidal.homMk_id (projectObj σ.obj X)]
-    rfl
-  -- Structural generators evaluate to the corresponding target structural maps.
-  -- `erw` matches the native tensor objects with their wrapped formal-word presentation.
-  case α_hom X Y Z =>
-    dsimp only [Hom.subst]
-    erw [homMk_α_hom ⟨X⟩ ⟨Y⟩ ⟨Z⟩,
-      homMk_α_hom (projectObj σ.obj X) (projectObj σ.obj Y) (projectObj σ.obj Z)]
-    exact lift_map_associator_hom _ _ _ _ _
-  case α_inv X Y Z =>
-    dsimp only [Hom.subst]
-    erw [homMk_α_inv ⟨X⟩ ⟨Y⟩ ⟨Z⟩,
-      homMk_α_inv (projectObj σ.obj X) (projectObj σ.obj Y) (projectObj σ.obj Z)]
-    exact lift_map_associator_inv _ _ _ _ _
-  case l_hom X =>
-    dsimp only [Hom.subst]
-    erw [homMk_l_hom ⟨X⟩, homMk_l_hom (projectObj σ.obj X)]
-    exact lift_map_leftUnitor_hom _ _ _
-  case l_inv X =>
-    dsimp only [Hom.subst]
-    erw [homMk_l_inv ⟨X⟩, homMk_l_inv (projectObj σ.obj X)]
-    exact lift_map_leftUnitor_inv _ _ _
-  case ρ_hom X =>
-    dsimp only [Hom.subst]
-    erw [homMk_ρ_hom ⟨X⟩, homMk_ρ_hom (projectObj σ.obj X)]
-    exact lift_map_rightUnitor_hom _ _ _
-  case ρ_inv X =>
-    dsimp only [Hom.subst]
-    erw [homMk_ρ_inv ⟨X⟩, homMk_ρ_inv (projectObj σ.obj X)]
-    exact lift_map_rightUnitor_inv _ _ _
-  case coupon g =>
-    simp only [Hom.subst_coupon, homMk_coupon, toFunctor_map_coupon]
-    rfl
-  -- Composites, whiskerings and tensors use the existing lift computation rules.
-  case comp X Y Z f g hf hg =>
-    rw [homMk_comp (X := ⟨X⟩) (Y := ⟨Y⟩) (Z := ⟨Z⟩), Functor.map_comp,
-      Hom.subst_comp, homMk_comp (X := projectObj σ.obj X) (Y := projectObj σ.obj Y)
-        (Z := projectObj σ.obj Z), hf, hg]
-    rfl
-  case whiskerLeft X Y Z f hf =>
-    rw [homMk_whiskerLeft ⟨X⟩ (Y₁ := ⟨Y⟩) (Y₂ := ⟨Z⟩), Hom.subst_whiskerLeft,
-      homMk_whiskerLeft (projectObj σ.obj X) (Y₁ := projectObj σ.obj Y)
-        (Y₂ := projectObj σ.obj Z)]
-    exact (lift_map_whiskerLeft _ _ _ _).trans (congrArg (fun f ↦ projectObj σ.obj X ◁ f) hf)
-  case whiskerRight Y Z f X hf =>
-    rw [homMk_whiskerRight (X₁ := ⟨Y⟩) (X₂ := ⟨Z⟩) _ ⟨X⟩, Hom.subst_whiskerRight,
-      homMk_whiskerRight (X₁ := projectObj σ.obj Y) (X₂ := projectObj σ.obj Z)
-        _ (projectObj σ.obj X)]
-    exact (lift_map_whiskerRight _ _ _ _).trans (congrArg (fun f ↦ f ▷ projectObj σ.obj X) hf)
-  case tensor W X Y Z f g hf hg =>
-    rw [homMk_tensor (X₁ := ⟨W⟩) (Y₁ := ⟨Y⟩) (X₂ := ⟨X⟩) (Y₂ := ⟨Z⟩), Hom.subst_tensor,
-      homMk_tensor (X₁ := projectObj σ.obj W) (Y₁ := projectObj σ.obj Y)
-        (X₂ := projectObj σ.obj X) (Y₂ := projectObj σ.obj Z)]
-    exact (lift_map_tensorHom _ _ _ _).trans (congrArg₂ (fun f g ↦ f ⊗ₘ g) hf hg)
+  -- The lift's interpreter is opaque in this module, so use its computation lemmas.
+  -- The `homMk` structural generators and the wrapped interpreted endpoints are
+  -- definitionally the corresponding native categorical objects and morphisms.
+  induction f with
+  | id X => exact liftMap_id _ _ ⟨X⟩
+  | α_hom X Y Z => exact lift_map_associator_hom _ _ ⟨X⟩ ⟨Y⟩ ⟨Z⟩
+  | α_inv X Y Z => exact lift_map_associator_inv _ _ ⟨X⟩ ⟨Y⟩ ⟨Z⟩
+  | l_hom X => exact lift_map_leftUnitor_hom _ _ ⟨X⟩
+  | l_inv X => exact lift_map_leftUnitor_inv _ _ ⟨X⟩
+  | ρ_hom X => exact lift_map_rightUnitor_hom _ _ ⟨X⟩
+  | ρ_inv X => exact lift_map_rightUnitor_inv _ _ ⟨X⟩
+  | coupon g => exact lift_map_coupon _ _ g
+  | comp f g hf hg =>
+    exact (liftMap_comp _ _ (homMk f) (homMk g)).trans (congrArg₂ (· ≫ ·) hf hg)
+  | whiskerLeft X f hf =>
+    exact (lift_map_whiskerLeft _ _ ⟨X⟩ (homMk f)).trans
+      (congrArg (projectObj σ.obj X ◁ ·) hf)
+  | whiskerRight f X hf =>
+    exact (lift_map_whiskerRight _ _ (homMk f) ⟨X⟩).trans
+      (congrArg (· ▷ projectObj σ.obj X) hf)
+  | tensor f g hf hg =>
+    exact (lift_map_tensorHom _ _ (homMk f) (homMk g)).trans (congrArg₂ (· ⊗ₘ ·) hf hg)
 
 end Substitution
 
