@@ -100,7 +100,7 @@ private lemma restrict_atkinLehnerOperatorCusp_levelRaise_mem_cuspFormsOld [NeZe
 `W_Q` carries `V₁ g₀` or `V_p g₀`, for a cusp form `g₀` on `Γ₀(L)` with `p * L = N`, to an old
 form, whether or not `p` divides `Q`. -/
 private lemma restrict_atkinLehnerOperatorCusp_levelRaise_prime_mem_cuspFormsOld {L : ℕ}
-    [NeZero N] [NeZero L] [NeZero d] {p R : ℕ} (h : Q ∥ N) (hp : p.Prime) (hpL : p * L = N)
+    [NeZero N] [NeZero d] {p R : ℕ} (h : Q ∥ N) (hp : p.Prime) (hpL : p * L = N)
     (hR : N = Q * R) (hQR : Nat.Coprime Q R) (hLN' : L ≠ N) (hd : d = 1 ∨ d = p)
     (hdvd : d * L ∣ N) (g₀ : CuspForm ((Gamma0 L).map (mapGL ℝ)) k) :
     CuspForm.restrict (Gamma1_map_le_Gamma0_map N)
