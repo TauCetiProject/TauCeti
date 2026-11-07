@@ -7,7 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Constructions.BorelSpace.Order
 public import TauCeti.MeasureTheory.Measure.IntegerValued.Basic
-public import Mathlib.MeasureTheory.Measure.Stieltjes
+public import TauCeti.MeasureTheory.Measure.Stieltjes
 
 /-!
 # Counting measures from Stieltjes functions
@@ -34,14 +34,6 @@ open MeasureTheory Set Filter Topology
 open scoped ENNReal NNReal
 
 namespace StieltjesFunction
-
-/-- The cumulative mass of a Stieltjes measure on the half-line is its increment from zero. -/
-@[simp]
-theorem measure_Iic_nnreal (f : StieltjesFunction ℝ≥0) (t : ℝ≥0) :
-    f.measure (Iic t) = ENNReal.ofReal (f t - f 0) := by
-  apply f.measure_Iic
-  rw [atBot_eq_pure_of_isBot (isBot_bot : IsBot (0 : ℝ≥0))]
-  exact tendsto_pure_nhds _ _
 
 /-- A Stieltjes function on the half-line with natural-valued increments from zero defines an
 integer-valued measure. Its initial value is arbitrary: the measure records increments and has
