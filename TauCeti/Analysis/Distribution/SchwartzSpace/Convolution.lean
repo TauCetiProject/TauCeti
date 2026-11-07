@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Distribution.FourierMultiplier
 public import Mathlib.Analysis.Fourier.Convolution
 import TauCeti.Analysis.Convolution.Young
+import TauCeti.MeasureTheory.Integral.SchurTest
 
 /-!
 # Convolution and the Fourier transform on Schwartz space
@@ -33,11 +34,21 @@ This follows from the inverse convolution theorem `𝓕⁻ (f ⋆ g) = 𝓕⁻ f
 Mathlib's `Real.fourier_bilin_convolution_eq` composed with the reflection `ξ ↦ -ξ`. It is the
 starting point of the estimates for multiplication operators on Sobolev spaces.
 
+Derivatives of a convolution `κ ⋆ f` of a scalar Schwartz kernel with a Schwartz function fall on
+the kernel, `∂ᵥ (κ ⋆ f) = (∂ᵥ κ) ⋆ f`, and convolution with a Schwartz kernel maps `Lᵖ` to `L^q`
+whenever `1 ≤ p ≤ q ≤ ∞`, by Young's inequality for integral kernels. Together these turn an
+identity `f = κ ⋆ f` on the Fourier side into `Lᵖ`–`L^q` bounds for all derivatives of `f`, as in
+Bernstein's inequality for band-limited functions.
+
 ## Main declarations
 
 * `SchwartzMap.fourierMultiplierCLM_eq_convolution`: the multiplier with symbol `σ` is
   `SchwartzMap.convolution` with `𝓕⁻ σ`.
 * `SchwartzMap.fourierMultiplierCLM_apply_eq_integral`: the same, pointwise, as an integral.
+* `SchwartzMap.lineDerivOp_convolution_lsmul`, `SchwartzMap.iteratedLineDerivOp_convolution_lsmul`:
+  derivatives of `κ ⋆ f` fall on the scalar kernel `κ`.
+* `SchwartzMap.exists_eLpNorm_convolution_le`: convolution with a Schwartz kernel maps `Lᵖ` to
+  `L^q` for `1 ≤ p ≤ q ≤ ∞`.
 * `SchwartzMap.eLpNorm_fourierMultiplierCLM_le`: the `Lᵖ` bound `‖T_σ φ‖_p ≤ ‖𝓕⁻ σ‖₁ ‖φ‖_p`.
 * `SchwartzMap.fourierInv_convolution`: the inverse Fourier transform of a convolution is the
   pairing of the inverse Fourier transforms.
@@ -49,13 +60,16 @@ starting point of the estimates for multiplication operators on Sobolev spaces.
 ## References
 
 * L. Grafakos, *Classical Fourier Analysis*, 3rd ed., Sections 2.2 and 2.5.
+* G. B. Folland, *Real Analysis: Modern Techniques and Their Applications*, 2nd ed.,
+  Proposition 8.9 (Young's inequality).
 -/
 
 public section
 
 open scoped FourierTransform SchwartzMap ENNReal
 open FourierTransform ContinuousLinearMap MeasureTheory
-open scoped Convolution
+open scoped Convolution NNReal
+open LineDeriv
 
 namespace SchwartzMap
 
@@ -80,6 +94,102 @@ theorem fourierMultiplierCLM_apply_eq_integral (σ : 𝓢(E, ℂ)) (φ : 𝓢(E,
     fourierMultiplierCLM F σ φ x = ∫ y, 𝓕⁻ σ (x - y) • φ y := by
   rw [fourierMultiplierCLM_eq_convolution, convolution_apply, MeasureTheory.convolution_eq_swap]
   simp only [lsmul_apply]
+
+/-- A line derivative of the convolution of a scalar Schwartz kernel with a Schwartz function
+falls on the kernel. -/
+theorem lineDerivOp_convolution_lsmul (κ : 𝓢(E, ℂ)) (f : 𝓢(E, F)) (v : E) :
+    ∂_{v} (convolution (lsmul ℂ ℂ) κ f) = convolution (lsmul ℂ ℂ) (∂_{v} κ) f := by
+  have hσ := fourierMultiplierCLM_eq_convolution (F := F) (𝓕 κ)
+  have hσ' := fourierMultiplierCLM_eq_convolution (F := F) (𝓕 (∂_{v} κ))
+  simp only [FourierTransform.fourierInv_fourier_eq] at hσ hσ'
+  have hv : (inner ℝ · v : E → ℝ).HasTemperateGrowth := by fun_prop
+  rw [← hσ, ← hσ', fourierMultiplierCLM_apply, fourierMultiplierCLM_apply,
+    lineDerivOp_fourierInv_eq, fourier_lineDerivOp_eq]
+  congr 1
+  ext ξ
+  simp only [smul_apply, smulLeftCLM_apply_apply hv,
+    smulLeftCLM_apply_apply (𝓕 κ).hasTemperateGrowth,
+    smulLeftCLM_apply_apply
+      ((2 * Real.pi * Complex.I) • smulLeftCLM ℂ (inner ℝ · v) (𝓕 κ)).hasTemperateGrowth]
+  rw [smul_assoc, smul_assoc]
+
+/-- Iterated line derivatives of the convolution of a scalar Schwartz kernel with a Schwartz
+function fall on the kernel. -/
+theorem iteratedLineDerivOp_convolution_lsmul (κ : 𝓢(E, ℂ)) (f : 𝓢(E, F)) {n : ℕ}
+    (m : Fin n → E) :
+    ∂^{m} (convolution (lsmul ℂ ℂ) κ f) = convolution (lsmul ℂ ℂ) (∂^{m} κ) f := by
+  induction n with
+  | zero => simp only [iteratedLineDerivOp_fin_zero]
+  | succ n ih =>
+    rw [iteratedLineDerivOp_succ_left, ih, lineDerivOp_convolution_lsmul,
+      ← iteratedLineDerivOp_succ_left]
+
+omit [CompleteSpace F] in
+/-- Convolution with a Schwartz kernel `κ` maps `Lᵖ` to `L^q` for `1 ≤ p ≤ q ≤ ∞`: there is `C`
+with `‖κ ⋆ f‖_q ≤ C ‖f‖_p` for every a.e. strongly measurable `f`. For `q < ∞` this is Young's
+inequality for integral kernels, with `κ ∈ L^r` for `1/p + 1/r = 1 + 1/q`; for `q = ∞` it is
+Hölder's inequality at every point. -/
+theorem exists_eLpNorm_convolution_le (κ : 𝓢(E, ℂ)) {p q : ℝ≥0∞} (hp : 1 ≤ p) (hpq : p ≤ q) :
+    ∃ C : ℝ≥0, ∀ f : E → F, AEStronglyMeasurable f →
+      eLpNorm (κ ⋆[lsmul ℂ ℂ] f) q ≤ C * eLpNorm f p := by
+  rcases eq_or_ne q ∞ with rfl | hq
+  · -- For `q = ∞` this is Hölder's inequality at every point.
+    have : (ENNReal.conjExponent p).HolderConjugate p :=
+      (ENNReal.HolderConjugate.conjExponent hp).symm
+    have hfin : ‖lsmul ℂ ℂ (E := F)‖ₑ * eLpNorm κ (ENNReal.conjExponent p) ≠ ∞ :=
+      ENNReal.mul_ne_top enorm_ne_top (κ.memLp _).eLpNorm_ne_top
+    refine ⟨(‖lsmul ℂ ℂ (E := F)‖ₑ * eLpNorm κ (ENNReal.conjExponent p)).toNNReal,
+      fun f hf => ?_⟩
+    rw [ENNReal.coe_toNNReal hfin,
+      eLpNorm_exponent_top (κ.continuous.aestronglyMeasurable.convolution _ hf)]
+    exact eLpNormEssSup_le_of_ae_enorm_bound (ae_of_all _ fun x =>
+      enorm_convolution_le _ κ.continuous.aestronglyMeasurable hf x)
+  · -- For `q < ∞` this is Young's inequality for integral kernels, with the exponent `r` given by
+    -- `1/p + 1/r = 1 + 1/q`.
+    have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
+    have hp_top : p ≠ ∞ := ne_top_of_le_ne_top hq hpq
+    have hq0 : q ≠ 0 := (zero_lt_one.trans_le (hp.trans hpq)).ne'
+    have hp' : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp_top hp
+    have hpq' : p.toReal ≤ q.toReal := ENNReal.toReal_mono hq hpq
+    have hq'0 : 0 < q.toReal := ENNReal.toReal_pos hq0 hq
+    have hp'1 : p.toReal⁻¹ ≤ 1 := inv_le_one_of_one_le₀ hp'
+    set r : ℝ := (1 + q.toReal⁻¹ - p.toReal⁻¹)⁻¹ with hr_def
+    have hr0 : 0 < r := inv_pos.2 (by have := inv_pos.2 hq'0; linarith)
+    have hr : p.toReal⁻¹ + r⁻¹ = 1 + q.toReal⁻¹ := by rw [hr_def, inv_inv]; ring
+    set A : ℝ≥0∞ := ∫⁻ y, ‖κ y‖ₑ ^ r
+    have hA : A ≠ ∞ := by
+      have := lintegral_rpow_enorm_lt_top_of_eLpNorm_lt_top (p := ENNReal.ofReal r)
+        (by simpa using hr0) ENNReal.ofReal_ne_top (κ.memLp _).eLpNorm_lt_top
+      simpa [ENNReal.toReal_ofReal hr0.le] using this.ne
+    set C' : ℝ≥0∞ := (A ^ (q.toReal * (1 - p.toReal⁻¹)) * A) ^ q.toReal⁻¹
+    have hC' : C' ≠ ∞ :=
+      ENNReal.rpow_ne_top_of_nonneg (inv_nonneg.2 hq'0.le) (ENNReal.mul_ne_top
+        (ENNReal.rpow_ne_top_of_nonneg (by have := sub_nonneg.2 hp'1; positivity) hA) hA)
+    refine ⟨C'.toNNReal, fun f hf => ?_⟩
+    rw [ENNReal.coe_toNNReal hC']
+    have hpt (x : E) : ‖(κ ⋆[lsmul ℂ ℂ] f) x‖ₑ ≤ ∫⁻ y, ‖κ (x - y)‖ₑ * ‖f y‖ₑ := by
+      rw [convolution_lsmul_swap]
+      refine (enorm_integral_le_lintegral_enorm _).trans_eq ?_
+      simp_rw [enorm_smul]
+    have hS := TauCeti.lintegral_rpow_lintegral_mul_le_of_inv_add_inv_eq (μ := volume)
+      (ν := volume) (k := fun x y => ‖κ (x - y)‖ₑ)
+      ((κ.continuous.comp continuous_sub).enorm.measurable.aemeasurable) hf.enorm hp' hpq' hr
+      (A := A) (B := A)
+      (ae_of_all _ fun x => (lintegral_sub_left_eq_self (fun z => ‖κ z‖ₑ ^ r) x).le)
+      (ae_of_all _ fun y => (lintegral_sub_right_eq_self (fun z => ‖κ z‖ₑ ^ r) y).le)
+    rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hq0 hq
+        (κ.continuous.aestronglyMeasurable.convolution _ hf),
+      eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp_top hf]
+    calc (∫⁻ x, ‖(κ ⋆[lsmul ℂ ℂ] f) x‖ₑ ^ q.toReal) ^ (1 / q.toReal)
+        ≤ (∫⁻ x, (∫⁻ y, ‖κ (x - y)‖ₑ * ‖f y‖ₑ) ^ q.toReal) ^ (1 / q.toReal) := by
+          gcongr with x; exact hpt x
+      _ ≤ (A ^ (q.toReal * (1 - p.toReal⁻¹)) * A *
+            (∫⁻ y, ‖f y‖ₑ ^ p.toReal) ^ (q.toReal / p.toReal)) ^ (1 / q.toReal) := by
+          gcongr
+      _ = C' * (∫⁻ y, ‖f y‖ₑ ^ p.toReal) ^ (1 / p.toReal) := by
+          rw [ENNReal.mul_rpow_of_nonneg _ _ (by positivity), ← ENNReal.rpow_mul, one_div]
+          congr 2
+          field_simp
 
 /-- **`Lᵖ` bound for a multiplier with Schwartz symbol.** For `1 ≤ p ≤ ∞` the multiplier with a
 Schwartz symbol `σ` satisfies `‖T_σ φ‖_p ≤ ‖𝓕⁻ σ‖₁ ‖φ‖_p` on Schwartz functions. -/
