@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.ModularForms.Conjugate
 public import TauCeti.NumberTheory.ModularForms.Newforms.Newform
 import TauCeti.NumberTheory.ModularForms.Petersson.Conjugate
 import TauCeti.NumberTheory.ModularForms.Newforms.PeterssonAdjoint
-import TauCeti.NumberTheory.ModularForms.Newforms.StrongMultiplicityOne
+import TauCeti.NumberTheory.ModularForms.Newforms.StrongMultiplicityOne.Basic
 
 /-!
 # The conjugate of a newform

@@ -126,8 +126,8 @@ theorem exists_isRoot_adjoin_eq_top_of_eisenstein {f : 𝒪[K][X]} (hf : f.IsEis
       (x := y) L.val.injective).mp hx
   have : Module.IsTorsionFree 𝒪[K] L := Module.IsTorsionFree.trans K
   have hassoc : Associated (minpoly 𝒪[K] y) f :=
-    associated_minpoly_of_eisenstein_isRoot y f hf (by
-      simpa only [IsRoot, eval_map, ← aeval_def] using hy)
+    hf.associated_minpoly hf.isUnit_leadingCoeff <| by
+      simpa only [IsRoot, eval_map, ← aeval_def] using hy
   have hf0 : f ≠ 0 := by
     rintro rfl
     exact hf.leading (by simp)
