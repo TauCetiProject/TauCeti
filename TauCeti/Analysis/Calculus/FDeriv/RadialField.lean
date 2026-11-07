@@ -16,10 +16,16 @@ For a scalar profile `c`, the radial field `y ↦ c (‖y - x₀‖ ^ 2) • (y 
 `c (‖x - x₀‖ ^ 2) • id + (c' (‖x - x₀‖ ^ 2) • 2 • innerSL ℝ (x - x₀)).smulRight (x - x₀)`
 (`HasDerivAt.hasFDerivAt_smul_sub_norm_sq`). If `c` and `c'` are bounded and vanish beyond the
 squared radius `R ^ 2`, then the field and this derivative are bounded in norm
-(`TauCeti.norm_smul_sub_le`, `TauCeti.norm_smul_id_add_smulRight_le`).
+(`TauCeti.norm_smul_sub_le_of_eq_zero_of_sq_lt`,
+`TauCeti.norm_smul_id_add_smulRight_le_of_eq_zero_of_sq_lt`).
 -/
 
 public section
+
+/-- The Fréchet derivative of `y ↦ ‖y - x₀‖ ^ 2` at `x` is `2 • innerSL ℝ (x - x₀)`. -/
+theorem hasFDerivAt_norm_sq_sub {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    (x₀ x : E) : HasFDerivAt (fun y => ‖y - x₀‖ ^ 2) (2 • innerSL ℝ (x - x₀)) x := by
+  simpa using ((hasFDerivAt_id x).sub_const x₀).norm_sq
 
 /-- The Fréchet derivative of the radial field `y ↦ c (‖y - x₀‖ ^ 2) • (y - x₀)`, for `c` with
 derivative `c'` at `‖x - x₀‖ ^ 2`. -/
@@ -29,9 +35,8 @@ theorem _root_.HasDerivAt.hasFDerivAt_smul_sub_norm_sq {E : Type*} [NormedAddCom
     HasFDerivAt (fun y => c (‖y - x₀‖ ^ 2) • (y - x₀))
       (c (‖x - x₀‖ ^ 2) • ContinuousLinearMap.id ℝ E +
         (c' • 2 • innerSL ℝ (x - x₀)).smulRight (x - x₀)) x := by
-  have h1 : HasFDerivAt (fun y => ‖y - x₀‖ ^ 2) (2 • innerSL ℝ (x - x₀)) x := by
-    simpa using ((hasFDerivAt_id x).sub_const x₀).norm_sq
-  exact (hcd.comp_hasFDerivAt x h1).smul ((hasFDerivAt_id x).sub_const x₀)
+  exact (hcd.comp_hasFDerivAt x (hasFDerivAt_norm_sq_sub x₀ x)).smul
+    ((hasFDerivAt_id x).sub_const x₀)
 
 namespace TauCeti
 
@@ -39,8 +44,8 @@ variable {E : Type*} [NormedAddCommGroup E]
 
 /-- Norm bound for a radial vector field `c (‖y - x₀‖ ^ 2) • (y - x₀)` with `c` bounded by `a` and
 vanishing beyond the squared radius `R ^ 2`. -/
-theorem norm_smul_sub_le [NormedSpace ℝ E] {c : ℝ → ℝ} {a R : ℝ} (hc : ∀ τ, |c τ| ≤ a)
-    (hc0 : ∀ τ, R ^ 2 < τ → c τ = 0) (hR : 0 ≤ R) (x₀ x : E) :
+theorem norm_smul_sub_le_of_eq_zero_of_sq_lt [NormedSpace ℝ E] {c : ℝ → ℝ} {a R : ℝ}
+    (hc : ∀ τ, |c τ| ≤ a) (hc0 : ∀ τ, R ^ 2 < τ → c τ = 0) (hR : 0 ≤ R) (x₀ x : E) :
     ‖c (‖x - x₀‖ ^ 2) • (x - x₀)‖ ≤ a * R := by
   rw [norm_smul, Real.norm_eq_abs]
   rcases le_or_gt ‖x - x₀‖ R with hx | hx
@@ -51,9 +56,9 @@ theorem norm_smul_sub_le [NormedSpace ℝ E] {c : ℝ → ℝ} {a R : ℝ} (hc :
 /-- Norm bound for the operator `c (‖x - x₀‖ ^ 2) • id + (c' (‖x - x₀‖ ^ 2) • 2 • innerSL ℝ
 (x - x₀)).smulRight (x - x₀)`, the derivative of a radial vector field, with `c` and `c'` bounded
 by `a` and `b` and vanishing beyond the squared radius `R ^ 2`. -/
-theorem norm_smul_id_add_smulRight_le [InnerProductSpace ℝ E] {c c' : ℝ → ℝ} {a b R : ℝ}
-    (hc : ∀ τ, |c τ| ≤ a) (hc' : ∀ τ, |c' τ| ≤ b) (hc0 : ∀ τ, R ^ 2 < τ → c τ = 0)
-    (hc'0 : ∀ τ, R ^ 2 < τ → c' τ = 0) (hR : 0 ≤ R) (x₀ x : E) :
+theorem norm_smul_id_add_smulRight_le_of_eq_zero_of_sq_lt [InnerProductSpace ℝ E]
+    {c c' : ℝ → ℝ} {a b R : ℝ} (hc : ∀ τ, |c τ| ≤ a) (hc' : ∀ τ, |c' τ| ≤ b)
+    (hc0 : ∀ τ, R ^ 2 < τ → c τ = 0) (hc'0 : ∀ τ, R ^ 2 < τ → c' τ = 0) (hR : 0 ≤ R) (x₀ x : E) :
     ‖c (‖x - x₀‖ ^ 2) • ContinuousLinearMap.id ℝ E +
       (c' (‖x - x₀‖ ^ 2) • 2 • innerSL ℝ (x - x₀)).smulRight (x - x₀)‖ ≤ a + 2 * b * R ^ 2 := by
   have ha := (abs_nonneg _).trans (hc 0)
