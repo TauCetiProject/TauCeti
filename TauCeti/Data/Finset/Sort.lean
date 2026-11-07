@@ -38,6 +38,9 @@ Moving the points of a finset `B` of `Fin n` along the rotation `finRotate n` (`
 last position going to `0`) commutes with sorting up to a cyclic rotation of the list.
 
 The `i`-th smallest element of `s` has exactly `i` elements of `s` below it.
+
+Every nonempty finset can be listed by a sequence strictly increasing on a finite initial segment
+(`Finset.exists_strictMonoOn_Iic_surj`).
 -/
 
 public section
@@ -60,6 +63,33 @@ theorem sort_erase (s : Finset α) (a : α) : sort (s.erase a) r = (sort s r).er
 section LinearOrder
 
 variable {α β : Type*} [LinearOrder α] [LinearOrder β] {s : Finset α} {f : α → β}
+
+/-- A nonempty finset in a linear order can be listed by a sequence strictly increasing on
+`Set.Iic n`, with all entries on that segment in the finset and every element reached there. -/
+theorem exists_strictMonoOn_Iic_surj (d : Finset α) (hd : d.Nonempty) :
+    ∃ (n : ℕ) (τ : ℕ → α), StrictMonoOn τ (Set.Iic n) ∧
+      (∀ j ≤ n, τ j ∈ d) ∧ ∀ x ∈ d, ∃ j ≤ n, τ j = x := by
+  classical
+  have hcard : 0 < d.card := card_pos.mpr hd
+  let n := d.card - 1
+  have hn : n + 1 = d.card := by omega
+  let e := d.orderIsoOfFin hn.symm
+  -- Freeze the increasing enumeration after its last entry.
+  let τ : ℕ → α := fun j ↦ (e ⟨min j n, by omega⟩ : α)
+  have hτj (j : ℕ) (hj : j ≤ n) : τ j = (e ⟨j, by omega⟩ : α) := by
+    simp [τ, min_eq_left hj]
+  refine ⟨n, τ, ?_, ?_, ?_⟩
+  · intro i hi j hj hij
+    rw [hτj i hi, hτj j hj]
+    exact e.strictMono hij
+  · intro j hj
+    rw [hτj j hj]
+    exact (e ⟨j, by omega⟩).property
+  · intro x hx
+    let j := e.symm ⟨x, hx⟩
+    refine ⟨j, by omega, ?_⟩
+    rw [hτj j (by omega)]
+    exact congrArg Subtype.val (e.apply_symm_apply ⟨x, hx⟩)
 
 /-- Collapsing `j` onto its predecessor `i` in `s` is monotone on `s`, identifies only
 `i` and `j`, and strictly decreases the cardinality of the image of `s`. -/
