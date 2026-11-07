@@ -525,6 +525,7 @@ variable {K L M : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 
 /-- The image under a residue embedding `φ` of the residue of `z ∈ 𝒪[L]` is a root of the reduction
 of the minimal polynomial of `z` over `𝒪[K]`. -/
+@[simp]
 theorem aeval_residue_minpoly_eq_zero (φ : 𝓀[L] →ₐ[𝓀[K]] 𝓀[M]) (z : 𝒪[L]) :
     Polynomial.aeval (φ (IsLocalRing.residue 𝒪[L] z)) (minpoly 𝒪[K] (z : L)) = 0 := by
   rw [show (z : L) = algebraMap 𝒪[L] L z from rfl,
