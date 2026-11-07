@@ -211,8 +211,7 @@ private lemma beta_sub_beta_add_one (hν : 2 < ν) :
     linarith
   have hright : beta (1 / 2) (b + 1) =
       b / (b + 1 / 2) * beta (1 / 2) b := by
-    rw [beta_comm (1 / 2) (b + 1), beta_add_one_left hb hsum,
-      beta_comm b (1 / 2)]
+    rw [beta_add_one_right hb (by simpa [add_comm] using hsum), add_comm (1 / 2) b]
   have hleft : beta (1 / 2 + 1) b =
       (1 / 2) / (1 / 2 + b) * beta (1 / 2) b :=
     beta_add_one_left (by norm_num) (by simpa [add_comm] using hsum)

@@ -87,7 +87,8 @@ and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its densi
 * `ProbabilityTheory.beta_one_half_left_eq_two_rpow_mul_beta_self` — Legendre's duplication
   formula as a relation between `Β(1/2, a)` and `Β(a, a)`;
 * `ProbabilityTheory.beta_one_right` — the value `Β(a, 1) = 1 / a`;
-* `ProbabilityTheory.beta_add_one_left` — the unit step `Β(a + 1, b) = a / (a + b) * Β(a, b)`;
+* `ProbabilityTheory.beta_add_one_left`, `ProbabilityTheory.beta_add_one_right` — the unit steps
+  `Β(a + 1, b) = a / (a + b) * Β(a, b)` and `Β(a, b + 1) = b / (a + b) * Β(a, b)`;
 * `ProbabilityTheory.beta_three_halves_three_halves` — the value `Β(3/2, 3/2) = π / 8`.
 * `ProbabilityTheory.tendsto_natCast_mul_beta_atTop` — `n Β(n, s) → 0` along the natural numbers
   for `s > 1`.
@@ -1001,6 +1002,11 @@ theorem beta_add_one_left (ha : a ≠ 0) (hab : a + b ≠ 0) :
   rw [ProbabilityTheory.beta, ProbabilityTheory.beta, hshift, Real.Gamma_add_one ha,
     Real.Gamma_add_one hab]
   field_simp
+
+/-- The unit step of Euler's beta function in its second parameter. -/
+theorem beta_add_one_right (hb : b ≠ 0) (hab : a + b ≠ 0) :
+    beta a (b + 1) = b / (a + b) * beta a b := by
+  rw [beta_comm, beta_add_one_left hb (by rwa [add_comm]), beta_comm, add_comm b a]
 
 /-- Shifting one unit from the second beta parameter to the first gives a rational ratio. -/
 theorem beta_add_one_sub_one_div (ha : 0 < a) (hb : 1 < b) :
