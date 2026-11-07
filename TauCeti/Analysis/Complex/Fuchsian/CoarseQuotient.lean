@@ -146,7 +146,25 @@ theorem mdifferentiable_quotientMk :
   simp only [mfld_simps]
   exact mdifferentiableAt_stabilizerBallQuotientChart_comp_quotientMk _ _ (mem_chart_source ℂ _)
 
-variable {Γ} in
+variable {Γ}
+
+omit [ProperlyDiscontinuousSMul Γ ℍ] in
+/-- The pullback of a map on the orbit space along the orbit projection is `Γ`-invariant, so it is
+holomorphic at `g • z` as soon as it is holomorphic at `z`. -/
+theorem mdifferentiableAt_comp_quotientMk_smul {E' : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℂ E'] {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℂ E' H'}
+    {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M'] {F : orbitRel.Quotient Γ ℍ → M'} {z : ℍ}
+    (g : Γ) (hF : MDifferentiableAt 𝓘(ℂ) I' (F ∘ Quotient.mk _) z) :
+    MDifferentiableAt 𝓘(ℂ) I' (F ∘ Quotient.mk _) (g • z) := by
+  have heq : (F ∘ Quotient.mk (orbitRel Γ ℍ)) =
+      (F ∘ Quotient.mk (orbitRel Γ ℍ)) ∘ (fun τ : ℍ ↦ g⁻¹ • τ) := by
+    funext τ
+    exact congrArg F (Quotient.sound (orbitRel_apply.mpr (mem_orbit τ g⁻¹))).symm
+  rw [heq]
+  refine MDifferentiableAt.comp (g • z) ?_
+    ((contMDiff_const_smul (I := 𝓘(ℂ)) (n := ∞) g⁻¹).mdifferentiable (by simp) (g • z))
+  rwa [inv_smul_smul]
+
 /-- **Holomorphic descent at a free orbit.** A map from the orbit space is holomorphic at the orbit
 of a point with trivial stabilizer as soon as its pullback along the orbit projection is
 holomorphic at that point. -/
@@ -162,16 +180,8 @@ theorem mdifferentiableAt_of_comp_quotientMk {E' : Type*} [NormedAddCommGroup E'
   have hm : Nat.card (stabilizer Γ q.out) = 1 := by
     rw [← hg, stabilizer_smul_eq_stabilizer_map_conj, hz, Subgroup.map_bot, Subgroup.card_bot]
   set z₀ := q.out with _
-  -- The pullback is holomorphic at `g • z` as well, by invariance under `Γ`.
-  have hFg : MDifferentiableAt 𝓘(ℂ) I' (F ∘ Quotient.mk _) z₀ := by
-    have heq : (F ∘ Quotient.mk (orbitRel Γ ℍ)) =
-        (F ∘ Quotient.mk (orbitRel Γ ℍ)) ∘ (fun τ : ℍ ↦ g⁻¹ • τ) := by
-      funext τ
-      exact congrArg F (Quotient.sound (orbitRel_apply.mpr (mem_orbit τ g⁻¹))).symm
-    rw [heq]
-    refine MDifferentiableAt.comp z₀ ?_
-      ((contMDiff_const_smul (I := 𝓘(ℂ)) (n := ∞) g⁻¹).mdifferentiable (by simp) z₀)
-    rwa [← hg, inv_smul_smul]
+  have hFg := mdifferentiableAt_comp_quotientMk_smul g hF
+  rw [hg] at hFg
   -- The inverse of the disc coordinate at `z₀`, as a function on `ℂ`.
   set ψ : ℂ → ℂ := fun w ↦ ((z₀ : ℂ) - conj (z₀ : ℂ) * w) / (1 - w) with hψ
   have hψτ : ∀ w (hw : ‖w‖ < 1),
