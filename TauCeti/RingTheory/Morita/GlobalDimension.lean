@@ -23,8 +23,8 @@ dimension in every universe in which both are small.
 
 ## Main results
 
-* `TauCeti.globalDimension_eq_of_equivalence`: rings with equivalent module categories have the
-  same global dimension.
+* `CategoryTheory.Equivalence.globalDimension_eq`: rings with equivalent module categories have
+  the same global dimension.
 * `IsMoritaEquivalent.globalDimension_eq`: Morita equivalent algebras have the same global
   dimension.
 * `TauCeti.globalDimension_matrix`: a matrix ring has the global dimension of its coefficients.
@@ -37,17 +37,18 @@ dimension in every universe in which both are small.
 
 public section
 
-universe v u u' u₁ u₂
+universe v v' u u' u₁ u₂
 
 open CategoryTheory
 
 namespace TauCeti
 
 /-- **Rings with equivalent module categories have the same global dimension.** No linearity of
-the equivalence is needed: an equivalence of module categories is automatically additive. -/
-theorem globalDimension_eq_of_equivalence {R : Type u} [Ring R] {S : Type u'} [Ring S]
-    (e : ModuleCat.{v} R ≌ ModuleCat.{v} S) : globalDimension.{v} R = globalDimension.{v} S := by
-  have := e.functor.additive_of_preserves_binary_products
+the equivalence is needed: an equivalence of module categories is automatically additive. The
+two module categories may live in different universes. -/
+theorem _root_.CategoryTheory.Equivalence.globalDimension_eq {R : Type u} [Ring R] {S : Type u'}
+    [Ring S] (e : ModuleCat.{v} R ≌ ModuleCat.{v'} S) :
+    globalDimension.{v} R = globalDimension.{v'} S := by
   refine le_antisymm ((globalDimension_le_iff R _).mpr fun M ↦ ?_)
     ((globalDimension_le_iff S _).mpr fun N ↦ ?_)
   · rw [← e.projectiveDimension_functor_obj M]
@@ -66,7 +67,7 @@ theorem _root_.IsMoritaEquivalent.globalDimension_eq {R : Type*} [CommSemiring R
   obtain ⟨e⟩ := h.cond
   rw [globalDimension_eq_globalDimension.{v, max u₁ u₂} A,
     globalDimension_eq_globalDimension.{v, max u₁ u₂} B]
-  exact globalDimension_eq_of_equivalence e.eqv
+  exact e.eqv.globalDimension_eq
 
 /-- **A matrix ring has the global dimension of its coefficients.** -/
 @[simp]
