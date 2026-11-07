@@ -115,7 +115,7 @@ theorem inChartAt_mpullback_eq_compContinuousLinearMap (ω : RoughForm I' M' F k
   rw [hw, mpullbackWithin_eq_compContinuousLinearMap ω
     (f := f ∘ (extChartAt I β).symm) (s := range I) (w := z) α hfα hg
     (I.uniqueDiffOn.uniqueDiffWithinAt (extChartAt_target_subset_range β hz))]
-  rfl
+  simp only [Function.comp_apply]
 
 variable [IsManifold I' 1 M'] in
 /-- The pullback of a form at `x` along a map `f`, with `f x` in the preferred chart at `c`, is the
@@ -133,6 +133,7 @@ theorem mpullback_eq_compContinuousLinearMap (ω : RoughForm I' M' F k) {f : M �
     inChartAt_mpullback_eq_compContinuousLinearMap ω x c (mem_extChartAt_target x) hf'
       (by rwa [extChartAt_to_inv])]
   simp only [extChartAt_to_inv]
+  -- `TangentSpace I x` is definitionally the model space `E`, which is what `rfl` unfolds.
   rfl
 
 end TauCeti.RoughForm
