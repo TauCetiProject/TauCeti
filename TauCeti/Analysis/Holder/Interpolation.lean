@@ -303,8 +303,8 @@ theorem norm_image_sub_sub_sub_le_of_hasFDerivWithinAt {s : Set E} {g : E → F}
   have hmv := norm_image_sub_le_of_norm_deriv_le_segment' hderiv hbound 1
     (right_mem_Icc.2 zero_le_one)
   have hψ : ψ 1 - ψ 0 = g (x + w) - g x - g' x w - (2 : ℝ)⁻¹ • g'' x w w := by
-    simp [ψ]
-    abel
+    simp only [ψ, one_smul, zero_smul, add_zero]
+    module
   rw [← hψ]
   simpa using hmv
 
@@ -380,7 +380,7 @@ theorem norm_le_of_hasFDerivWithinAt_of_closedBall_two_mul_subset {s : Set E} {g
   have hw : ‖w‖ = ε := by rw [norm_smul, hv, mul_one, Real.norm_of_nonneg hε.le]
   have hseg : segment ℝ x (x + w) ⊆ s :=
     ((convex_closedBall x (2 * ε)).segment_subset (Metric.mem_closedBall_self (by positivity))
-      (by simp [hw]; linarith)).trans hxs
+      (by rw [Metric.mem_closedBall, dist_self_add_left, hw]; linarith)).trans hxs
   have hD := hH.norm_apply_le_of_hasFDerivWithinAt hg' hseg
   rw [hw, map_smul, norm_smul, Real.norm_of_nonneg hε.le] at hD
   have hxw := h1 (x + w) (by simp [hw])
@@ -394,25 +394,17 @@ theorem norm_le_of_hasFDerivWithinAt_of_closedBall_two_mul_subset {s : Set E} {g
   have hMε : ε * (M / ε) = M := mul_div_cancel₀ M hε.ne'
   nlinarith
 
-/-- For `u` of class `C²` on an open set `U ⊇ s`, with `D²u` `α`-Hölder on `s`, the first and second
-Fréchet derivatives are derivatives within `s`, and the second one is `α`-Hölder on `s` with the
-same constant. -/
-private theorem hasFDerivWithinAt_and_holderOnWith_fderiv_fderiv {U s : Set E} {u : E → F}
-    (hU : IsOpen U) (hu : ContDiffOn ℝ 2 u U) (hsU : s ⊆ U) {H α : ℝ≥0}
-    (hH : HolderOnWith H α (iteratedFDeriv ℝ 2 u) s) :
+/-- For `u` of class `C²` on an open set `U ⊇ s`, the first and second Fréchet derivatives are
+derivatives within `s`. -/
+private theorem hasFDerivWithinAt_fderiv_and_fderiv_fderiv {U s : Set E} {u : E → F}
+    (hU : IsOpen U) (hu : ContDiffOn ℝ 2 u U) (hsU : s ⊆ U) :
     (∀ y ∈ s, HasFDerivWithinAt u (fderiv ℝ u y) s y) ∧
-      (∀ y ∈ s, HasFDerivWithinAt (fderiv ℝ u) (fderiv ℝ (fderiv ℝ u) y) s y) ∧
-      HolderOnWith H α (fderiv ℝ (fderiv ℝ u)) s := by
-  refine ⟨fun y hy => ?_, fun y hy => ?_, fun y hy z hz => ?_⟩
+      (∀ y ∈ s, HasFDerivWithinAt (fderiv ℝ u) (fderiv ℝ (fderiv ℝ u) y) s y) := by
+  refine ⟨fun y hy => ?_, fun y hy => ?_⟩
   · exact ((hu.contDiffAt (hU.mem_nhds (hsU hy))).differentiableAt (by norm_num)).hasFDerivAt
       |>.hasFDerivWithinAt
   · exact (((hu.contDiffAt (hU.mem_nhds (hsU hy))).fderiv_right (m := 1)
       (by norm_num)).differentiableAt one_ne_zero).hasFDerivAt.hasFDerivWithinAt
-  · -- `D²u` and the second Fréchet derivative differ by a linear isometry.
-    rw [← TauCeti.continuousMultilinearCurryFin2_iteratedFDeriv_two u y,
-      ← TauCeti.continuousMultilinearCurryFin2_iteratedFDeriv_two u z,
-      LinearIsometryEquiv.edist_map]
-    exact hH y hy z hz
 
 /-- **Interpolation of the gradient of a `C²` function on a ball.** Let `u` be `C²` on an open set
 `U ⊇ s`, with `D²u` `α`-Hölder with constant `H` on `s` and `‖u‖ ≤ M` on `s`. Then
@@ -422,7 +414,8 @@ theorem norm_fderiv_le_of_contDiffOn {U s : Set E} {u : E → F} (hU : IsOpen U)
     (hH : HolderOnWith H α (iteratedFDeriv ℝ 2 u) s) {M : ℝ} (hM : ∀ y ∈ s, ‖u y‖ ≤ M)
     {x : E} {ε : ℝ} (hε : 0 < ε) (hxs : Metric.closedBall x ε ⊆ s) :
     ‖fderiv ℝ u x‖ ≤ M / ε + H * ε ^ (1 + (α : ℝ)) := by
-  obtain ⟨hd1, hd2, hH'⟩ := hasFDerivWithinAt_and_holderOnWith_fderiv_fderiv hU hu hsU hH
+  obtain ⟨hd1, hd2⟩ := hasFDerivWithinAt_fderiv_and_fderiv_fderiv hU hu hsU
+  have hH' := (TauCeti.holderOnWith_fderiv_fderiv_iff_iteratedFDeriv_two u).2 hH
   exact hH'.norm_le_of_hasFDerivWithinAt_of_closedBall_subset hd1 hd2 hM hε hxs
 
 /-- **Interpolation of the Hessian of a `C²` function on a ball.** Let `u` be `C²` on an open set
@@ -434,7 +427,8 @@ theorem norm_iteratedFDeriv_two_le_of_contDiffOn {U s : Set E} {u : E → F} (hU
     (hH : HolderOnWith H α (iteratedFDeriv ℝ 2 u) s) {M : ℝ} (hM : ∀ y ∈ s, ‖u y‖ ≤ M)
     {x : E} {ε : ℝ} (hε : 0 < ε) (hxs : Metric.closedBall x (2 * ε) ⊆ s) :
     ‖iteratedFDeriv ℝ 2 u x‖ ≤ 2 * M / ε ^ 2 + 3 * H * ε ^ (α : ℝ) := by
-  obtain ⟨hd1, hd2, hH'⟩ := hasFDerivWithinAt_and_holderOnWith_fderiv_fderiv hU hu hsU hH
+  obtain ⟨hd1, hd2⟩ := hasFDerivWithinAt_fderiv_and_fderiv_fderiv hU hu hsU
+  have hH' := (TauCeti.holderOnWith_fderiv_fderiv_iff_iteratedFDeriv_two u).2 hH
   rw [← norm_iteratedFDeriv_fderiv (n := 1), norm_iteratedFDeriv_one]
   exact hH'.norm_le_of_hasFDerivWithinAt_of_closedBall_two_mul_subset hd1 hd2 hM hε hxs
 

@@ -275,13 +275,9 @@ theorem memHolder_secondFDeriv (f : C2HolderSpace α E F) :
 /-- The canonical second iterated Fréchet derivative is globally `α`-Hölder. -/
 theorem memHolder_iteratedFDeriv_two (f : C2HolderSpace α E F) :
     MemHolder α (iteratedFDeriv ℝ 2 (f : E → F)) := by
-  -- Currying is an isometry taking `D²f` to the second Fréchet derivative.
   obtain ⟨C, hC⟩ := f.memHolder_secondFDeriv
-  refine ⟨C, fun x y => ?_⟩
-  rw [← (continuousMultilinearCurryFin2 ℝ E F).edist_map,
-    continuousMultilinearCurryFin2_iteratedFDeriv_two,
-    continuousMultilinearCurryFin2_iteratedFDeriv_two]
-  exact hC x y
+  exact ⟨C, holderOnWith_univ.1 <|
+    (holderOnWith_fderiv_fderiv_iff_iteratedFDeriv_two _).1 (holderOnWith_univ.2 hC)⟩
 
 /-- Two bounded `C^{2,α}` maps are equal when their underlying functions agree pointwise. -/
 @[ext]
