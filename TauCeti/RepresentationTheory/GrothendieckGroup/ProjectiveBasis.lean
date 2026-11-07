@@ -203,38 +203,6 @@ private theorem mem_span_of_subsingleton (X : (finiteProjectiveModules R).FullSu
   exact ExactK0.of_eq_zero_of_isZero (IsZero.of_full_of_faithful_of_isZero
     (finiteProjectiveModules R).ι X (ModuleCat.isZero_of_subsingleton X.obj))
 
-/-- The class of a finitely generated projective module is the sum of the classes of two
-complementary projective submodules: `0 → T → X → T' → 0` is a conflation. -/
-private theorem exactK0_of_eq_add_of_isCompl (X : (finiteProjectiveModules R).FullSubcategory)
-    {T T' : Submodule R X.obj} (hcompl : IsCompl T T') (hTproj : Module.Projective R T)
-    (hT'proj : Module.Projective R T') :
-    (ExactK0.of X : ExactK0.{u} (finiteProjectiveModulesExactStructure R)) =
-      (ExactK0.of ⟨ModuleCat.of R T, finiteProjectiveModules_iff.mpr ⟨inferInstance, hTproj⟩⟩ :
-          ExactK0.{u} (finiteProjectiveModulesExactStructure R)) +
-        (ExactK0.of ⟨ModuleCat.of R T', finiteProjectiveModules_iff.mpr ⟨inferInstance, hT'proj⟩⟩ :
-          ExactK0.{u} (finiteProjectiveModulesExactStructure R)) := by
-  have hex : Function.Exact T.subtype (T'.projectionOnto T hcompl.symm) :=
-    LinearMap.exact_iff.mpr
-      (by rw [Submodule.ker_projectionOnto hcompl.symm, Submodule.range_subtype])
-  set XT : (finiteProjectiveModules R).FullSubcategory :=
-    ⟨ModuleCat.of R T, finiteProjectiveModules_iff.mpr ⟨inferInstance, hTproj⟩⟩
-  set XT' : (finiteProjectiveModules R).FullSubcategory :=
-    ⟨ModuleCat.of R T', finiteProjectiveModules_iff.mpr ⟨inferInstance, hT'proj⟩⟩
-  set f : XT ⟶ X := ObjectProperty.homMk (ModuleCat.ofHom T.subtype)
-  set g : X ⟶ XT' :=
-    ObjectProperty.homMk (ModuleCat.ofHom (T'.projectionOnto T hcompl.symm))
-  have hzeroc : f ≫ g = 0 := by
-    refine ObjectProperty.hom_ext _ (ModuleCat.hom_ext (LinearMap.ext fun x ↦ ?_))
-    exact Submodule.projectionOnto_apply_right hcompl.symm x
-  have hconf : (finiteProjectiveModulesExactStructure R).Conflation
-      (ShortComplex.mk f g hzeroc) := by
-    rw [finiteProjectiveModulesExactStructure_conflation_iff]
-    apply ModuleCat.shortComplex_shortExact
-    · exact hex
-    · exact T.injective_subtype
-    · exact Submodule.projectionOnto_surjective hcompl.symm
-  exact ExactK0.of_conflation.{u, u, u + 1} hconf
-
 /-- Splitting off one indecomposable summand at a time expresses the class of a finitely generated
 projective module of length at most `n` in terms of the exhaustive family.  Each step replaces the
 module by a complement of an indecomposable summand, whose length is strictly smaller. -/
@@ -262,7 +230,7 @@ private theorem mem_span_of_length_le
       ⟨ModuleCat.of R T, finiteProjectiveModules_iff.mpr ⟨inferInstance, hTproj⟩⟩
     set XT' : (finiteProjectiveModules R).FullSubcategory :=
       ⟨ModuleCat.of R T', finiteProjectiveModules_iff.mpr ⟨inferInstance, hT'proj⟩⟩
-    have hsum := exactK0_of_eq_add_of_isCompl X hcompl hTproj hT'proj
+    have hsum := exactK0_of_eq_add_of_isCompl X hcompl
     have hTmem : (ExactK0.of XT : ExactK0.{u} (finiteProjectiveModulesExactStructure R)) ∈
         Submodule.span ℤ (Set.range fun i ↦
           (ExactK0.of (P i) : ExactK0.{u} (finiteProjectiveModulesExactStructure R))) := by
