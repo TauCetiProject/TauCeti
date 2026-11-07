@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
+public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
 public import Mathlib.RingTheory.MvPowerSeries.Order
 public import Mathlib.RingTheory.MvPowerSeries.Substitution
+-- Proof-only: the permutations of `Fin 2`.
+import TauCeti.Data.Fin.Basic
 -- Proof-only: coefficients of a difference of substitutions.
 import TauCeti.RingTheory.MvPowerSeries.Substitution
 
@@ -28,7 +31,9 @@ expression such as `f(F(X, Y), Z)`, for a formal group law `F(X, Y) = X + Y + �
 the polynomial `f_p(X + Y, Z)`. In finitely many variables the degree-`p` component is a
 polynomial (`MvPowerSeries.homogeneousComponentPolynomial`), and the lowest-degree component of
 `f(a)` is that polynomial evaluated at the linear parts of the `a i`
-(`MvPowerSeries.homogeneousComponent_subst_eq_coe_aeval`).
+(`MvPowerSeries.homogeneousComponent_subst_eq_coe_aeval`). For a symmetric series in two
+variables this polynomial is symmetric
+(`MvPowerSeries.isSymmetric_homogeneousComponentPolynomial`).
 
 Products and powers of close series are close: the order of `x y - x' y'` is bounded through
 those of `x - x'` and `y - y'` (`MvPowerSeries.le_order_mul_sub_mul`), and if `x` and `y` have
@@ -308,6 +313,29 @@ theorem homogeneousComponent_subst_eq_coe_aeval [CommRing R] {n : ℕ} {f : MvPo
   simp_rw [hl]
   simpa using (MvPolynomial.comp_aeval_apply (MvPolynomial.coeToMvPowerSeries.algHom R)
     (homogeneousComponentPolynomial n f) (f := l)).symm
+
+/-- The degree-`n` part of a symmetric series `Φ` in two variables vanishing below degree `n`
+is a symmetric polynomial. -/
+theorem isSymmetric_homogeneousComponentPolynomial [CommRing R] {n : ℕ}
+    {Φ : MvPowerSeries (Fin 2) R} (hΦ : n ≤ Φ.order) (hsymm : Φ.subst ![X 1, X 0] = Φ) :
+    (homogeneousComponentPolynomial n Φ).IsSymmetric := by
+  have hX2 (i : Fin 2) := PowerSeries.HasSubst.X (S := R) i
+  have h : MvPolynomial.aeval ![MvPolynomial.X 1, MvPolynomial.X 0]
+      (homogeneousComponentPolynomial n Φ) = homogeneousComponentPolynomial n Φ := by
+    refine MvPolynomial.coe_inj.mp ?_
+    rw [← homogeneousComponent_subst_eq_coe_aeval hΦ (hasSubst_finTwo (hX2 1) (hX2 0))
+      (fun i ↦ by fin_cases i <;> simp)
+      (fun i ↦ by fin_cases i <;> simp [homogeneousComponent_one_X]), hsymm,
+      coe_homogeneousComponentPolynomial]
+  intro e
+  rcases Equiv.Perm.eq_one_or_swap_fin_two e with rfl | rfl
+  · simp
+  · have hswap : (MvPolynomial.X ∘ Equiv.swap (0 : Fin 2) 1 : Fin 2 → MvPolynomial (Fin 2) R) =
+        ![MvPolynomial.X 1, MvPolynomial.X 0] := by
+      funext i
+      fin_cases i <;> simp
+    rw [MvPolynomial.rename_eq_aeval, hswap]
+    exact h
 
 end Polynomial
 
