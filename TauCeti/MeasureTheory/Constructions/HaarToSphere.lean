@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Constructions.HaarToSphere
 public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import Mathlib.Analysis.SpecialFunctions.Pow.Integral
+import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 
 /-!
 # Integration in polar coordinates
@@ -230,35 +231,11 @@ theorem integral_Ioi_ray_fderiv_apply_smul_eq_neg
         fderiv ℝ f (r • (u : E)) (r • (u : E))) = -f 0 := by
   set d := Module.finrank ℝ E
   have hd : 1 ≤ d := Module.finrank_pos
-  have hf' : Continuous (fderiv ℝ f) := hf.continuous_fderiv one_ne_zero
-  have hdiff : Differentiable ℝ f := hf.differentiable one_ne_zero
   have hu : ‖(u : E)‖ = 1 := norm_eq_of_mem_sphere u
   rw [setIntegral_congr_fun measurableSet_Ioi (g := fun r ↦ fderiv ℝ f (r • (u : E)) u)
     fun r (hr : 0 < r) ↦ ?_]
-  · obtain ⟨R, hR⟩ := hc.isCompact.isBounded.subset_closedBall 0
-    have hzero : ∀ r : ℝ, R < |r| → r • (u : E) ∉ tsupport f := fun r hr hmem ↦ by
-      have := hR hmem
-      rw [mem_closedBall_zero_iff, norm_smul, hu, mul_one, Real.norm_eq_abs] at this
-      linarith
-    have hderiv : ∀ r : ℝ, HasDerivAt (fun s : ℝ ↦ f (s • (u : E)))
-        (fderiv ℝ f (r • (u : E)) u) r := fun r ↦
-      ((hdiff (r • (u : E))).hasFDerivAt.comp_hasDerivAt r
-        ((hasDerivAt_id r).smul_const (u : E))).congr_deriv (by simp)
-    have hcs : HasCompactSupport fun r : ℝ ↦ fderiv ℝ f (r • (u : E)) u := by
-      refine HasCompactSupport.intro (isCompact_closedBall (0 : ℝ) R) fun r hr ↦ ?_
-      rw [mem_closedBall_zero_iff, Real.norm_eq_abs, not_le] at hr
-      have h0 : fderiv ℝ f (r • (u : E)) = 0 :=
-        Function.notMem_support.mp fun h ↦ hzero r hr (support_fderiv_subset ℝ h)
-      simp [h0]
-    rw [integral_Ioi_of_hasDerivAt_of_tendsto' (fun r _ ↦ hderiv r)
-      ((hf'.clm_apply continuous_const).comp (continuous_id.smul continuous_const)
-        |>.integrable_of_hasCompactSupport hcs).integrableOn
-      (m := 0) ?_]
-    · simp
-    · refine tendsto_const_nhds.congr' ?_
-      filter_upwards [eventually_gt_atTop R] with r hr
-      exact (image_eq_zero_of_notMem_tsupport
-        (hzero r (lt_of_lt_of_le hr (le_abs_self r)))).symm
+  · have hu0 : (u : E) ≠ 0 := fun h ↦ by simp [h] at hu
+    simpa only [zero_add] using hc.integral_Ioi_fderiv_apply_ray hf 0 hu0
   · have hpow : r ^ (d - 1) * r ^ (-(d : ℝ)) * r = 1 := by
       rw [mul_right_comm, ← pow_succ, Nat.sub_add_cancel hd, ← Real.rpow_natCast,
         ← Real.rpow_add hr, add_neg_cancel, Real.rpow_zero]
