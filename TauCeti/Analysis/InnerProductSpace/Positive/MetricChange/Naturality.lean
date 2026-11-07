@@ -124,8 +124,7 @@ theorem metricChangeBetween_apply_metricChangeBetween (h k : E →L[ℝ] E →L[
 
 section Coordinates
 
-variable [FiniteDimensional ℝ E]
-  {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [CompleteSpace F]
 
 /-- Canonical transport commutes with arbitrary linear changes of coordinates, with both
 metrics pulled back together. This is the chart-independence equation for metric transport. -/
@@ -144,8 +143,8 @@ theorem metricChangeBetween_bilinearComp (h k : F →L[ℝ] F →L[ℝ] ℝ)
   -- Conjugating the canonical transport satisfies the same intrinsic characterization.
   have heq : h'.metricChangeBetween k' = S := by
     apply (metricChangeBetween_eq_iff h' k'
-      (isStrictlyPositive_continuousLinearMapOfBilin_bilinearComp h _ hH e.injective)
-      (isStrictlyPositive_continuousLinearMapOfBilin_bilinearComp k _ hK e.injective) S).2
+      (isStrictlyPositive_continuousLinearMapOfBilin_bilinearComp_equiv h e hH)
+      (isStrictlyPositive_continuousLinearMapOfBilin_bilinearComp_equiv k e hK) S).2
     simp only [h', k', bilinearComp_apply, ContinuousLinearEquiv.coe_coe, hS]
     exact ⟨fun u v ↦ hsym (e u) (e v), fun u ↦ hpos (e u), fun u v ↦ hiso (e u) (e v)⟩
   exact congr($(heq) x)
@@ -157,8 +156,8 @@ theorem metricChangeBetweenEquiv_bilinearComp (h k : F →L[ℝ] F →L[ℝ] ℝ
     (hK : IsStrictlyPositive k♯) :
     (h.bilinearComp (e : E →L[ℝ] F) (e : E →L[ℝ] F)).metricChangeBetweenEquiv
         (k.bilinearComp (e : E →L[ℝ] F) (e : E →L[ℝ] F))
-        (isStrictlyPositive_continuousLinearMapOfBilin_bilinearComp h _ hH e.injective)
-        (isStrictlyPositive_continuousLinearMapOfBilin_bilinearComp k _ hK e.injective) =
+        (isStrictlyPositive_continuousLinearMapOfBilin_bilinearComp_equiv h e hH)
+        (isStrictlyPositive_continuousLinearMapOfBilin_bilinearComp_equiv k e hK) =
       e.trans ((h.metricChangeBetweenEquiv k hH hK).trans e.symm) := by
   ext x
   simp only [metricChangeBetweenEquiv_apply, ContinuousLinearEquiv.trans_apply,

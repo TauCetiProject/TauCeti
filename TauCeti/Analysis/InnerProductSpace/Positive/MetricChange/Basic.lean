@@ -326,16 +326,59 @@ end InnerProductSpace
 
 namespace ContinuousLinearMap
 
-/-- Pullback of a positive metric by an injective linear map is positive in finite
-dimension. No preservation of the reference inner products is needed. -/
+/-- Pullback of a positive metric by a continuous linear equivalence of real Hilbert spaces
+is positive. No preservation of the reference inner products is needed. -/
+theorem isStrictlyPositive_continuousLinearMapOfBilin_bilinearComp_equiv
+    [CompleteSpace E] [CompleteSpace F]
+    (h : F →L[ℝ] F →L[ℝ] ℝ) (e : E ≃L[ℝ] F) (hH : IsStrictlyPositive h♯) :
+    IsStrictlyPositive (h.bilinearComp (e : E →L[ℝ] F) (e : E →L[ℝ] F))♯ := by
+  have heq : (h.bilinearComp (e : E →L[ℝ] F) (e : E →L[ℝ] F))♯ =
+      (e : E →L[ℝ] F).adjoint ∘L h♯ ∘L (e : E →L[ℝ] F) := by
+    ext u
+    apply ext_inner_right ℝ
+    intro v
+    rw [continuousLinearMapOfBilin_apply, bilinearComp_apply, comp_apply, comp_apply,
+      adjoint_inner_left, continuousLinearMapOfBilin_apply]
+  have hleft (x : E) :
+      (e : E →L[ℝ] F).adjoint ((e.symm : F →L[ℝ] E).adjoint x) = x := by
+    rw [← comp_apply, ← adjoint_comp]
+    simp [adjoint_id]
+  have hright (x : F) :
+      (e.symm : F →L[ℝ] E).adjoint ((e : E →L[ℝ] F).adjoint x) = x := by
+    rw [← comp_apply, ← adjoint_comp]
+    simp [adjoint_id]
+  obtain ⟨u, hu⟩ := hH.isUnit
+  rw [heq, IsStrictlyPositive.iff_of_unital]
+  refine ⟨nonneg_iff_isPositive.mpr ((nonneg_iff_isPositive.mp hH.nonneg).adjoint_conj _), ?_⟩
+  refine ⟨⟨(e : E →L[ℝ] F).adjoint ∘L h♯ ∘L (e : E →L[ℝ] F),
+    (e.symm : F →L[ℝ] E) ∘L (↑u⁻¹ : F →L[ℝ] F) ∘L
+      (e.symm : F →L[ℝ] E).adjoint, ?_, ?_⟩, rfl⟩
+  · ext x
+    simp only [mul_apply_eq_comp, comp_apply, ContinuousLinearEquiv.coe_coe,
+      ContinuousLinearEquiv.apply_symm_apply, ← hu]
+    simp only [← mul_apply_eq_comp, Units.mul_inv, one_apply_eq_self, hleft]
+  · ext x
+    simp only [mul_apply_eq_comp, comp_apply, ← hu, hright]
+    simp only [← mul_apply_eq_comp, Units.inv_mul, one_apply_eq_self,
+      ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_apply_apply]
+
+/-- Pullback of a positive metric on a real Hilbert space by an injective linear map from a
+finite-dimensional space is positive. No preservation of the reference inner products is needed. -/
 theorem isStrictlyPositive_continuousLinearMapOfBilin_bilinearComp
-    [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
+    [FiniteDimensional ℝ E] [CompleteSpace F]
     (h : F →L[ℝ] F →L[ℝ] ℝ) (f : E →L[ℝ] F) (hH : IsStrictlyPositive h♯)
     (hf : Function.Injective f) : IsStrictlyPositive (h.bilinearComp f f)♯ := by
-  obtain ⟨hsym, hpos⟩ := isStrictlyPositive_continuousLinearMapOfBilin_iff.1 hH
-  exact isStrictlyPositive_continuousLinearMapOfBilin_iff.2
-    ⟨fun u v ↦ hsym (f u) (f v), fun u hu ↦ hpos (f u) (by simpa only [map_zero] using
-      (hf.ne hu : f u ≠ f 0))⟩
+  have hP := nonneg_iff_isPositive.mp hH.nonneg
+  refine isStrictlyPositive_continuousLinearMapOfBilin_iff.2 ⟨fun u v ↦ ?_, fun u hu ↦ ?_⟩
+  · simp only [bilinearComp_apply]
+    rw [← continuousLinearMapOfBilin_apply (𝕜 := ℝ) h, hP.inner_left_eq_inner_right,
+      real_inner_comm, continuousLinearMapOfBilin_apply]
+  · rw [bilinearComp_apply, ← inner_sqrt_apply_sqrt_apply hH.nonneg]
+    apply real_inner_self_pos.mpr
+    intro hzero
+    apply (hf.ne hu : f u ≠ f 0)
+    have hinv := metricChangeTransport_apply_sqrt_apply hH (f u)
+    simpa only [hzero, map_zero] using hinv.symm
 
 variable [CompleteSpace E]
 
