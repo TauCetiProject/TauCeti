@@ -185,7 +185,8 @@ private theorem contMDiffAt_pantsEnd (w : ThricePuncturedSphere) (x : M) :
         (fun p => cayleyFormula (A p) (B q p)) ((w : ℂ), x) := by
       simp only [cayleyFormula_def]
       exact (((contMDiffAt_const.add (hA.clm_comp (hB q))).clm_comp hi).neg)
-    exact (Floer.contMDiffAt_smoothTransition_endCoord q (ne_endCenter w.2 q) x).smul hformula
+    exact (Floer.contMDiffAt_smoothTransition_endCoord q 1 (ne_endCenter w.2 q) x).smul
+      hformula
   have hcoordC {p : ℂ × M} (hp : p.2 ∈ e.baseSet) :
       coord p.2 (pantsCayley J J₀ p.1 p.2) = C p := by
     simp only [pantsCayley, hconj hp, map_sum, map_smul, map_cayleyFormula, C, A, B]
