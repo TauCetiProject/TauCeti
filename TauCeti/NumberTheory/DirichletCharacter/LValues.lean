@@ -194,10 +194,34 @@ theorem generalizedBernoulli_one_ne_zero (hχ : χ.IsPrimitive) (hodd : χ.Odd) 
   have hzero : χ⁻¹.LFunction 1 = 0 := by simpa [hB] using hL
   exact LFunction_apply_one_ne_zero (inv_ne_one.mpr hχ1) hzero
 
-/-- The constant coefficient identity of the normalized Eisenstein series: for a primitive
-character `χ` with `χ(-1) = (-1)ᵏ`, the normalization of the Eisenstein series cancels against the
-Gauss sum and the `L`-value, leaving `-Bₖ,χ / (2k)`. -/
-theorem inv_normalization_mul_tsum_eq_generalizedBernoulli
+omit [NeZero N] in
+/-- For a character with `χ (-1) = -(-1) ^ k`, the series `∑ χ⁻¹ d * d ^ (-k)` over nonzero integers
+vanishes, since the terms at `d` and `-d` cancel. -/
+private theorem tsum_inv_mul_zpow_neg_eq_zero_of_apply_neg_one_eq_neg
+    (hχ : χ (-1) = -(-1 : ℂ) ^ k) :
+    ∑' d : ℤ, χ⁻¹ d * (d : ℂ) ^ (-(k : ℤ)) = 0 := by
+  have hinv : χ⁻¹ (-1) = -(-1 : ℂ) ^ k := by
+    rw [MulChar.inv_apply_eq_inv', hχ]
+    rcases neg_one_pow_eq_or ℂ k with h | h <;> simp [h]
+  have hodd : ∀ d : ℤ, χ⁻¹ (-d : ℤ) * ((-d : ℤ) : ℂ) ^ (-(k : ℤ)) =
+      -(χ⁻¹ d * (d : ℂ) ^ (-(k : ℤ))) := by
+    intro d
+    have hz : ((-d : ℤ) : ℂ) ^ (-(k : ℤ)) = (-1 : ℂ) ^ k * (d : ℂ) ^ (-(k : ℤ)) := by
+      rw [Int.cast_neg, neg_eq_neg_one_mul, mul_zpow, zpow_neg, zpow_natCast, zpow_neg,
+        zpow_natCast, ← inv_pow, inv_neg_one]
+    have hc : χ⁻¹ (-d : ℤ) = -(-1 : ℂ) ^ k * χ⁻¹ d := by
+      rw [Int.cast_neg, neg_eq_neg_one_mul, map_mul, hinv]
+    rw [hz, hc]
+    rcases neg_one_pow_eq_or ℂ k with h | h <;> rw [h] <;> ring
+  have h2 : ∑' d : ℤ, χ⁻¹ d * (d : ℂ) ^ (-(k : ℤ)) =
+      -∑' d : ℤ, χ⁻¹ d * (d : ℂ) ^ (-(k : ℤ)) := by
+    rw [← tsum_neg, ← (Equiv.neg ℤ).tsum_eq]
+    exact tsum_congr hodd
+  linear_combination h2 / 2
+
+/-- The constant coefficient identity of the normalized Eisenstein series for a character with
+`χ (-1) = (-1) ^ k`. -/
+private theorem inv_normalization_mul_tsum_eq_generalizedBernoulli_of_apply_neg_one_eq_pow
     (hk : 2 ≤ k) (hχ : χ.IsPrimitive) (hχpar : χ (-1) = (-1 : ℂ) ^ k) :
     (2 * (-2 * π * I) ^ k / (((k - 1).factorial : ℂ) * (N : ℂ) ^ k) *
         gaussSum χ⁻¹ ZMod.stdAddChar)⁻¹ * ∑' d : ℤ, χ⁻¹ d * (d : ℂ) ^ (-(k : ℤ)) =
@@ -245,5 +269,25 @@ theorem inv_normalization_mul_tsum_eq_generalizedBernoulli
       have hk0 : (k : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
       field_simp
       linear_combination -χ.generalizedBernoulli k * hpower
+
+/-- The constant coefficient identity of the normalized Eisenstein series: for a primitive
+character `χ` and `2 ≤ k`, the normalization of the Eisenstein series cancels against the Gauss
+sum and the `L`-value, leaving `-Bₖ,χ / (2k)`. When `χ (-1) ≠ (-1) ᵏ` both sides vanish. -/
+theorem inv_normalization_mul_tsum_eq_generalizedBernoulli
+    (hk : 2 ≤ k) (hχ : χ.IsPrimitive) :
+    (2 * (-2 * π * I) ^ k / (((k - 1).factorial : ℂ) * (N : ℂ) ^ k) *
+        gaussSum χ⁻¹ ZMod.stdAddChar)⁻¹ * ∑' d : ℤ, χ⁻¹ d * (d : ℂ) ^ (-(k : ℤ)) =
+      -χ.generalizedBernoulli k / (2 * (k : ℂ)) := by
+  by_cases hχpar : χ (-1) = (-1 : ℂ) ^ k
+  · exact inv_normalization_mul_tsum_eq_generalizedBernoulli_of_apply_neg_one_eq_pow χ hk hχ hχpar
+  · have hneg : χ (-1) = -(-1 : ℂ) ^ k := by
+      rcases χ.even_or_odd with he | ho
+      · rw [he] at hχpar ⊢
+        rcases neg_one_pow_eq_or ℂ k with h | h <;> simp_all
+      · rw [ho] at hχpar ⊢
+        rcases neg_one_pow_eq_or ℂ k with h | h <;> simp_all
+    rw [tsum_inv_mul_zpow_neg_eq_zero_of_apply_neg_one_eq_neg χ hneg,
+      generalizedBernoulli_eq_zero_of_apply_neg_one_eq_neg (Or.inl (by omega)) hneg]
+    simp
 
 end DirichletCharacter

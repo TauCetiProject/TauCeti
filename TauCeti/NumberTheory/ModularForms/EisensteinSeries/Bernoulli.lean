@@ -58,12 +58,8 @@ theorem qExpansion_normalizedCharEisensteinSeriesMF_coeff_zero
   · subst u
     have hψ : ψ 0 = 1 := by
       rw [Subsingleton.elim (0 : ZMod 1) 1, map_one]
-    have hψneg : ψ (-1) = 1 := by
-      rw [Subsingleton.elim (-1 : ZMod 1) 1, map_one]
-    have hφpar : φ (-1) = (-1 : ℂ) ^ k := by
-      simpa only [hψneg, one_mul, zpow_natCast] using hpar
     simp only [hψ, one_mul]
-    exact φ.inv_normalization_mul_tsum_eq_generalizedBernoulli (by omega) hφ hφpar
+    exact φ.inv_normalization_mul_tsum_eq_generalizedBernoulli (by omega) hφ
   · rw [ψ.map_zero' hu, zero_mul, mul_zero]
 
 /-- A raised normalized character Eisenstein series has the same Bernoulli constant
