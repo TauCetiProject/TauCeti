@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.MeasureTheory.Function.BoundedMeanOscillation
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.Decomposition
 public import TauCeti.MeasureTheory.Measure.Haar.EuclideanSpace
 import TauCeti.Analysis.Normed.Module.Ball
@@ -73,6 +74,8 @@ averages under positive finite scaling.
   arbitrary cube `closedBall c r`.
 * `TauCeti.exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le`: exponential integrability
   on Euclidean balls.
+* `TauCeti.exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le_of_bmoSeminorm_le`: the same
+  on every ball for a locally integrable function with bounded BMO seminorm.
 * `TauCeti.exists_setLIntegral_exp_mul_mul_setLIntegral_exp_neg_mul_ball_le`: Moser's crossover
   estimate for real functions of bounded mean oscillation on Euclidean balls.
 
@@ -1073,6 +1076,32 @@ theorem exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le :
     (by linarith)).trans ?_
   gcongr
   exact hfinal.trans_eq hCK.symm
+
+/-- **The John–Nirenberg inequality for functions of bounded mean oscillation.** There are
+constants `A > 0` and `C`, depending only on the dimension `n ≥ 1`, such that the following holds
+for every additive Haar measure `μ` on `ℝⁿ = EuclideanSpace ℝ ι`. If `f : ℝⁿ → E` is locally
+integrable with `‖f‖_{BMO} ≤ M` and `σ M ≤ A`, then on every ball `B`,
+
+`∫_B exp (σ ‖f - f_B‖) ≤ C |B|`. -/
+theorem exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le_of_bmoSeminorm_le [Nonempty ι] :
+    ∃ A : ℝ, 0 < A ∧ ∃ C : ℝ≥0, ∀ {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+      [CompleteSpace E] {μ : Measure (EuclideanSpace ℝ ι)} [μ.IsAddHaarMeasure]
+      {f : EuclideanSpace ℝ ι → E} {M : ℝ≥0} {σ : ℝ},
+      LocallyIntegrable f μ → bmoSeminorm f μ ≤ M → σ * M ≤ A →
+      ∀ (x₀ : EuclideanSpace ℝ ι) (r : ℝ),
+        ∫⁻ x in ball x₀ r, ENNReal.ofReal (Real.exp (σ * ‖f x - ⨍ y in ball x₀ r, f y ∂μ‖)) ∂μ ≤
+          C * μ (ball x₀ r) := by
+  obtain ⟨A, hA, C, h⟩ := exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le (ι := ι)
+  refine ⟨A, hA, C, fun {E} _ _ _ μ _ f M σ hf hM hσ x₀ r => ?_⟩
+  have hn : 0 < 2 * √(Fintype.card ι : ℝ) := by
+    have : (0 : ℝ) < Fintype.card ι := by exact_mod_cast Fintype.card_pos
+    positivity
+  have hR : 2 * √(Fintype.card ι : ℝ) * r / (2 * √(Fintype.card ι : ℝ)) = r := by
+    field_simp
+  have := h (x₀ := x₀) (R := 2 * √(Fintype.card ι : ℝ) * r)
+    ((hf.integrableOn_isCompact (isCompact_closedBall _ _)).mono_set ball_subset_closedBall)
+    (fun y s _ => (setLAverage_enorm_sub_setAverage_le_bmoSeminorm f μ y s).trans hM) hσ
+  rwa [hR] at this
 
 /-- **Moser's crossover estimate.** There are constants `A > 0` and `C`, depending only on the
 dimension `n`, such that the following holds for every additive Haar measure `μ` on
