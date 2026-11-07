@@ -27,7 +27,7 @@ universe u
 
 noncomputable section
 
-namespace TauCeti.Examples.FormalScheme.Spf
+namespace TauCeti.Examples.FormalScheme.Spf.Morphism
 
 section Evaluation
 
@@ -117,4 +117,4 @@ example (J : Ideal ℤ_[p]) :
 
 end Padic
 
-end TauCeti.Examples.FormalScheme.Spf
+end TauCeti.Examples.FormalScheme.Spf.Morphism
