@@ -189,11 +189,11 @@ nonempty (`j < m`). This excludes the empty-determinant terminal case. -/
 /-- Lowering the right bound contributes a leading-coefficient power, with no
 additional sign. The smaller terminal index is included. -/
 theorem _root_.Polynomial.signedPsc_eq_coeff_pow_mul_of_right_degree_drop
-    {p q : R[X]} {m n N j : ℕ} (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n)
+    {p q : R[X]} {m n N j : ℕ} (hn : q.natDegree ≤ n)
     (hN : n ≤ N) (hjm : j ≤ m) (hjn : j ≤ n) :
     signedPsc p q m N j = p.coeff m ^ (N - n) * signedPsc p q m n j := by
   rw [signedPsc_of_le p q (by omega), signedPsc_of_le p q (by omega),
-    psc_eq_coeff_pow_mul_of_right_degree_drop hm hn hN hjm hjn]
+    psc_eq_coeff_pow_mul_of_right_degree_drop hn hN hjm hjn]
   ring
 
 /-- Lowering the left bound contributes the normalization-gap sign as well as
@@ -223,7 +223,7 @@ theorem _root_.Polynomial.signedPsc_eq_zero_of_natDegree_lt_bounds {p q : R[X]}
 mapping coefficients, and the fixed left bound is retained. -/
 theorem _root_.Polynomial.map_signedPsc_of_right_degree_drop [CommRing S]
     (f : R →+* S) {p q : R[X]} {m n N j : ℕ}
-    (hm : (p.map f).natDegree ≤ m) (hn : (q.map f).natDegree ≤ n)
+    (hn : (q.map f).natDegree ≤ n)
     (hN : n ≤ N) (hjm : j ≤ m) (hjn : j ≤ n) :
     f (signedPsc p q m N j) = f (p.coeff m) ^ (N - n) *
       signedPsc (p.map f) ((q.reductum (n + 1)).map f) m n j := by
@@ -231,7 +231,7 @@ theorem _root_.Polynomial.map_signedPsc_of_right_degree_drop [CommRing S]
     rw [← reductum_map]
     exact reductum_eq_self (by omega)
   rw [htrunc, ← signedPsc_map_map,
-    signedPsc_eq_coeff_pow_mul_of_right_degree_drop hm hn hN hjm hjn, coeff_map]
+    signedPsc_eq_coeff_pow_mul_of_right_degree_drop hn hN hjm hjn, coeff_map]
 
 /-- Specialization with a left degree drop, including its gap sign. Truncation
 is performed over the original coefficient ring. -/

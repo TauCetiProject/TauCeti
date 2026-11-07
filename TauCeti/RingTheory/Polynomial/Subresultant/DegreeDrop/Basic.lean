@@ -149,19 +149,26 @@ theorem _root_.Polynomial.psc_succ_right {p q : R[X]} {m n j : ℕ}
     rw [hgap, pow_succ, mul_comm]
 
 /-- An arbitrary drop in the right bound contributes the corresponding power of the
-coefficient at the left bound. The lower right bound need only dominate the degree. -/
+coefficient at the left bound. The lower right bound need only dominate the degree; the left
+input is truncated to its formal bound, so no degree bound on it is needed. -/
 theorem _root_.Polynomial.psc_eq_coeff_pow_mul_of_right_degree_drop {p q : R[X]}
-    {m n N j : ℕ} (hm : p.natDegree ≤ m) (hn : q.natDegree ≤ n)
+    {m n N j : ℕ} (hn : q.natDegree ≤ n)
     (hN : n ≤ N) (hjm : j ≤ m) (hjn : j ≤ n) :
     psc p q m N j = p.coeff m ^ (N - n) * psc p q m n j := by
-  by_cases hjm' : j < m
-  · simpa only [subresultantCoeff_self] using
-      subresultantCoeff_eq_coeff_pow_mul_of_right_degree_drop hm hn hN hjm' hjn j
-  · have hjeq : j = m := by omega
-    subst j
-    rw [psc_left_bound, psc_left_bound, ← pow_add]
-    congr 1
-    omega
+  have key : ∀ p' : R[X], p'.natDegree ≤ m →
+      psc p' q m N j = p'.coeff m ^ (N - n) * psc p' q m n j := by
+    intro p' hm
+    by_cases hjm' : j < m
+    · simpa only [subresultantCoeff_self] using
+        subresultantCoeff_eq_coeff_pow_mul_of_right_degree_drop hm hn hN hjm' hjn j
+    · have hjeq : j = m := by omega
+      subst j
+      rw [psc_left_bound, psc_left_bound, ← pow_add]
+      congr 1
+      omega
+  have h := key (p.reductum (m + 1)) (Nat.lt_succ_iff.mp (natDegree_reductum_lt _ _))
+  rw [psc_reductum_left, psc_reductum_left, coeff_reductum] at h
+  simpa only [lt_add_one, ↓reduceIte] using h
 
 /-- Dropping the left bound also contributes the sign of moving its removed columns
 past the right block. The lower left bound need only dominate the degree. -/
@@ -189,19 +196,6 @@ theorem _root_.Polynomial.psc_eq_zero_of_natDegree_lt_bounds {p q : R[X]} {m n j
   rw [psc_succ_right hm.le (by omega) (by omega) (by omega),
     coeff_eq_zero_of_natDegree_lt hm, zero_mul]
 
-/-- The principal subresultant coefficient reads only the coefficients of the left input below
-its formal bound, so it is unchanged by truncating the left input to that bound. -/
-theorem _root_.Polynomial.psc_reductum_left (p q : R[X]) (m n j : ℕ) :
-    psc (p.reductum (m + 1)) q m n j = psc p q m n j := by
-  rw [psc_def, psc_def]
-  congr 1
-  ext i k
-  induction k using Fin.addCases with
-  | left k => simp
-  | right k =>
-    simp only [subresultantMatrix_natAdd, coeff_reductum]
-    split_ifs <;> first | rfl | omega
-
 /-- After coefficient specialization, lowering the right bound amounts to truncating
 that input and multiplying by a power of the specialized coefficient at the left bound.
 In particular, the lower bound can be the actual degree of the specialized right input. -/
@@ -214,13 +208,8 @@ theorem _root_.Polynomial.map_psc_of_right_degree_drop {S : Type*} [CommRing S]
   have htrunc : (q.reductum (n + 1)).map f = q.map f := by
     rw [← reductum_map]
     exact reductum_eq_self (by omega)
-  have hm : ((p.map f).reductum (m + 1)).natDegree ≤ m :=
-    Nat.lt_succ_iff.mp (natDegree_reductum_lt _ _)
-  have key := psc_eq_coeff_pow_mul_of_right_degree_drop hm hn hN hjm hjn
-  rw [psc_reductum_left, psc_reductum_left, coeff_reductum] at key
-  simp only [lt_add_one, ↓reduceIte, coeff_map] at key
-  rw [htrunc, ← psc_map_map]
-  exact key
+  rw [htrunc, ← psc_map_map, psc_eq_coeff_pow_mul_of_right_degree_drop hn hN hjm hjn,
+    coeff_map]
 
 /-- The left-bound specialization formula retains the column-block sign as well as the
 power of the specialized coefficient at the right bound. Truncation occurs before mapping. -/
