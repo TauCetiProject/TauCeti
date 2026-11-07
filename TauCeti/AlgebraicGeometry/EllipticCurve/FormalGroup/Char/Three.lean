@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height
 import Mathlib.Tactic.ReduceModChar
-import TauCeti.RingTheory.MvPowerSeries.Rename
 
 /-!
 # Height two in characteristic three
@@ -140,63 +139,13 @@ private theorem exists_nsmulSeries_two_sub_formalInverse (hb : W.b₂ = 0) :
       (formalGroup W).nsmulSeries 2 = W.formalInverse + PowerSeries.X ^ 9 * s ∧
       PowerSeries.constantCoeff s = -(W.b₄ ^ 2) := by
   obtain ⟨r, hroot, hr⟩ := W.exists_formalThirdRoot_diagonal hb
-  let q := subst (fun _ : Unit ⊕ Unit => (PowerSeries.X : PowerSeries R)) W.formalThirdRoot
-  have hq : PowerSeries.constantCoeff q = 0 := by
-    dsimp only [q]
-    rw [hroot]
-    simp
-  have hX : HasSubst (fun _ : Unit ⊕ Unit => (PowerSeries.X : PowerSeries R)) :=
-    hasSubst_of_constantCoeff_zero fun _ => PowerSeries.constantCoeff_X
-  have htwo : (formalGroup W).nsmulSeries 2 = PowerSeries.subst q W.formalInverse := by
-    rw [FormalGroup.nsmulSeries_succ, FormalGroup.nsmulSeries_one,
-      formalGroup_toPowerSeries, subst_rename _ _ (PowerSeries.hasSubst_pair
-        PowerSeries.constantCoeff_X PowerSeries.constantCoeff_X)]
-    have hfamily : (![PowerSeries.X, PowerSeries.X] : Fin 2 → PowerSeries R) ∘
-        TauCeti.unitSumUnitEquivFinTwo = fun _ => PowerSeries.X := by
-      funext s
-      rcases s with ⟨⟨⟩⟩ | ⟨⟨⟩⟩ <;> simp
-    rw [hfamily, formalAdd_def, ← PowerSeries.subst_def,
-      subst_powerSeriesSubst hX
-        (PowerSeries.HasSubst.of_constantCoeff_zero W.constantCoeff_formalThirdRoot)]
   -- Negation preserves this degree-nine congruence, with linear coefficient `-1`.
-  have hdvd : PowerSeries.X ^ 9 ∣
-      (formalGroup W).nsmulSeries 2 - W.formalInverse := by
-    rw [htwo]
-    have hqdiv : PowerSeries.X ^ 9 ∣ q - PowerSeries.X :=
-      ⟨r, by dsimp only [q]; rw [hroot]; ring⟩
-    have h := PowerSeries.X_pow_dvd_subst_sub_subst hq PowerSeries.constantCoeff_X
-      hqdiv W.formalInverse
-    simpa only [PowerSeries.X_subst] using h
-  obtain ⟨s, hs⟩ := hdvd
-  have hs' : (formalGroup W).nsmulSeries 2 = W.formalInverse + PowerSeries.X ^ 9 * s := by
-    linear_combination hs
-  have hsc : PowerSeries.constantCoeff s = -(W.b₄ ^ 2) := by
-    have h := PowerSeries.coeff_subst_update_add_X_pow_mul W.formalInverse
-      (a := fun _ : Unit => (PowerSeries.X : PowerSeries R)) HasSubst.X
-      (fun _ => PowerSeries.constantCoeff_X) () r (by decide : (9 : ℕ) ≠ 0) le_rfl
-    have hc := congrArg (PowerSeries.coeff 9) hs'
-    rw [htwo] at hc
-    dsimp only [q] at hc
-    rw [hroot] at hc
-    have hup : Function.update (fun _ : Unit => (PowerSeries.X : PowerSeries R)) ()
-        (PowerSeries.X + PowerSeries.X ^ 9 * r) =
-          fun _ => PowerSeries.X + PowerSeries.X ^ 9 * r := by
-      funext i
-      cases i
-      simp
-    rw [hup, ← PowerSeries.subst_def, ← PowerSeries.subst_def, PowerSeries.X_subst] at h
-    simp only [Algebra.algebraMap_self, RingHom.id_apply, ite_true] at h
-    -- The perturbation lemma uses multivariate coefficients even for a single variable.
-    have hi : MvPowerSeries.coeff (Finsupp.single () 1) W.formalInverse = -1 := by
-      simpa only [← PowerSeries.coeff_def Finsupp.single_eq_same, ← W.formalGroup_addInvX]
-        using (formalGroup W).coeff_one_addInvX
-    rw [hi, hr] at h
-    simp only [neg_one_mul] at h
-    rw [h] at hc
-    simp only [map_add, PowerSeries.coeff_X_pow_mul', le_refl, ite_true, Nat.sub_self,
-      PowerSeries.coeff_zero_eq_constantCoeff_apply] at hc
-    linear_combination -hc
-  exact ⟨s, hs', hsc⟩
+  obtain ⟨s, hs, hsc⟩ := PowerSeries.exists_subst_add_X_pow_mul W.formalInverse
+    PowerSeries.constantCoeff_X r (by decide : (9 : ℕ) ≠ 0)
+  refine ⟨s, ?_, ?_⟩
+  · rw [W.nsmulSeries_two_formalGroup, hroot, hs, PowerSeries.X_subst]
+  · rw [← W.formalGroup_addInvX, (formalGroup W).coeff_one_addInvX, hr] at hsc
+    simpa only [Algebra.algebraMap_self, RingHom.id_apply, neg_one_mul] using hsc
 
 /-- When `b₂ = 0` in characteristic three, the tripling series vanishes below degree nine,
 with degree-nine coefficient `-b₄²`. Smoothness is unnecessary for this computation. -/
@@ -206,25 +155,9 @@ theorem coeff_nsmulSeries_three_formalGroup_of_char_three (hb : W.b₂ = 0) {n :
       if n = 9 then -(W.b₄ ^ 2) else 0 := by
   obtain ⟨s, hs', hsc⟩ := W.exists_nsmulSeries_two_sub_formalInverse hb
   -- Adding `T` cancels the inverse parameter and retains that leading coefficient.
-  have ha₀ : ∀ i, PowerSeries.constantCoeff
-      ((![(formalGroup W).addInvX, PowerSeries.X] : Fin 2 → PowerSeries R) i) = 0 := by
-    intro i
-    fin_cases i
-    · exact (formalGroup W).constantCoeff_addInvX
-    · exact PowerSeries.constantCoeff_X
-  have ha := hasSubst_of_constantCoeff_zero ha₀
-  have hu : Function.update (![(formalGroup W).addInvX, PowerSeries.X] :
-      Fin 2 → PowerSeries R) 0 ((formalGroup W).addInvX + PowerSeries.X ^ 9 * s) =
-        ![(formalGroup W).nsmulSeries 2, PowerSeries.X] := by
-    rw [W.formalGroup_addInvX, ← hs']
-    funext i
-    fin_cases i <;> simp
-  have h := PowerSeries.coeff_subst_update_add_X_pow_mul (formalGroup W).toPowerSeries
-    ha ha₀ 0 s (by decide : (9 : ℕ) ≠ 0) hn
-  rw [(formalGroup W).subst_addInvX_X_eq_zero, map_zero, Matrix.cons_val_zero, hu,
-    (formalGroup W).lin_coeff_X] at h
-  rw [FormalGroup.nsmulSeries_succ]
-  simpa only [Algebra.algebraMap_self, RingHom.id_apply, one_mul, zero_add, hsc] using h
+  have h := (formalGroup W).coeff_nsmulSeries_succ_of_eq_addInvX_add_X_pow_mul
+    (by simpa only [formalGroup_addInvX] using hs') (by decide : (9 : ℕ) ≠ 0) hn
+  simpa only [hsc] using h
 
 end Ring
 

@@ -105,6 +105,8 @@ of a completed group algebra attached to two topological generators.
 * `PowerSeries.coeff_subst_update_add_X_pow_mul`: perturbing one entry `a s` of a substituted
   family by `X ^ m * r` changes coefficients only from degree `m` on, and in degree `m` only
   through the linear term `Xₛ` of the multivariate series.
+* `PowerSeries.exists_subst_add_X_pow_mul`: perturbing a zero-constant input by `X ^ m * r`
+  gives a difference `X ^ m * s` with `s(0) = f₁ r(0)`.
 * `PowerSeries.algHom_eq_substAlgHom`: an algebra map `R⟦X⟧ → S⟦X⟧` sending `X` to a
   substitutable series is a substitution.
 * `PowerSeries.subst_add_of_sq_eq_zero`: `f (a + h) = f (a) + h f' (a)` when `h ^ 2 = 0`, and
@@ -485,6 +487,36 @@ theorem coeff_subst_update_add_X_pow_mul [DecidableEq σ] (G : MvPowerSeries σ 
   by_cases hnm : n = m
   · simp [hnm]
   · simp [hnm, show ¬m ≤ n by omega]
+
+/-- Perturbing an input of zero constant coefficient by `X ^ m * r`, for `m ≠ 0`, changes
+`f` by `X ^ m * s`, where `s(0)` is the linear coefficient of `f` times `r(0)`. -/
+theorem exists_subst_add_X_pow_mul (f : R⟦X⟧) {a : S⟦X⟧} (ha : constantCoeff a = 0)
+    (r : S⟦X⟧) {m : ℕ} (hm : m ≠ 0) :
+    ∃ s : S⟦X⟧, f.subst (a + X ^ m * r) = f.subst a + X ^ m * s ∧
+      constantCoeff s = algebraMap R S (coeff 1 f) * constantCoeff r := by
+  have hcoeff (n : ℕ) (hn : n ≤ m) :
+      coeff n (f.subst (a + X ^ m * r)) = coeff n (f.subst a) +
+        if n = m then algebraMap R S (coeff 1 f) * constantCoeff r else 0 := by
+    have h := coeff_subst_update_add_X_pow_mul f (a := fun _ : Unit => a)
+      (MvPowerSeries.hasSubst_of_constantCoeff_zero fun _ => ha) (fun _ => ha) () r hm hn
+    have hup : Function.update (fun _ : Unit => a) () (a + X ^ m * r) =
+        fun _ => a + X ^ m * r := by
+      funext i
+      cases i
+      simp
+    rw [hup, ← subst_def, ← subst_def,
+      ← coeff_def Finsupp.single_eq_same] at h
+    exact h
+  obtain ⟨s, hs⟩ : X ^ m ∣ f.subst (a + X ^ m * r) - f.subst a := by
+    apply X_pow_dvd_iff.mpr
+    intro n hn
+    rw [map_sub, hcoeff n hn.le, ite_eq_right hn.ne, add_zero, sub_self]
+  refine ⟨s, ?_, ?_⟩
+  · linear_combination hs
+  · have h := congrArg (coeff m) hs
+    rw [map_sub, hcoeff m le_rfl, ite_eq_left rfl, coeff_X_pow_mul', ite_eq_left le_rfl,
+      Nat.sub_self, coeff_zero_eq_constantCoeff_apply] at h
+    linear_combination -h
 
 end Perturbation
 
