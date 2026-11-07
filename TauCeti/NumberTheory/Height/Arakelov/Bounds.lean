@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.Height.Arakelov.Basic
 
 import Mathlib.Analysis.Matrix.Normed
 import Mathlib.Algebra.Order.Ring.IsNonarchimedean
+import TauCeti.Data.Matrix.Mul
 import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 
 /-!
@@ -122,21 +123,6 @@ end TauCeti
 namespace Matrix
 
 open TauCeti
-
-/-- If the entries of a matrix product are not all zero, then the inner index type is nonempty and
-the entries of neither factor are all zero. -/
-private theorem nonempty_and_entries_ne_zero_of_mul {K : Type*} [Field K] {m n p : Type*}
-    [Fintype n] (A : Matrix m n K) (B : Matrix n p K)
-    (hc : (fun q : m × p ↦ (A * B) q.1 q.2) ≠ 0) :
-    Nonempty n ∧ (fun q : m × n ↦ A q.1 q.2) ≠ 0 ∧ (fun q : n × p ↦ B q.1 q.2) ≠ 0 := by
-  refine ⟨?_, fun ha ↦ hc ?_, fun hb ↦ hc ?_⟩
-  · by_contra hn
-    have := not_nonempty_iff.mp hn
-    exact hc (funext fun q ↦ by simp [Matrix.mul_apply])
-  · have hA : A = 0 := Matrix.ext fun i j ↦ congrFun ha (i, j)
-    exact funext fun q ↦ by simp [hA]
-  · have hB : B = 0 := Matrix.ext fun i j ↦ congrFun hb (i, j)
-    exact funext fun q ↦ by simp [hB]
 
 variable {K : Type*} [Field K] [NumberField K] {m n p : Type*} [Finite m] [Fintype n] [Finite p]
 
