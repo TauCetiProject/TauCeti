@@ -33,6 +33,12 @@ It is adapted from the Mathlib drafts
 [#38292](https://github.com/leanprover-community/mathlib4/pull/38292) by Kim Morrison, for
 Stage 0.1 of the `TauCetiRoadmap/UniversalCovers` roadmap, following the earlier Tau Ceti
 work in [#42](https://github.com/TauCetiProject/TauCeti/pull/42).
+
+The final section shows with the same tubes that null-homotopy of a continuous family of loops,
+with varying basepoints, is locally constant in the parameter (`isClopen_setOf_homotopic_refl`):
+a loop near a given one lies in the same tube and is conjugate to it by a short path between the
+basepoints. This is how contractibility of the periodic orbits of a flow is seen to be locally
+constant along its fixed points.
 -/
 
 noncomputable section
@@ -255,5 +261,60 @@ public instance (priority := 100) Path.Homotopic.Quotient.discreteTopology
     DiscreteTopology (Path.Homotopic.Quotient x y) :=
   discreteTopology_of_semilocallySimplyConnectedOn fun p ↦
     .of_semilocallySimplyConnectedSpace (range p)
+
+/-! ### Null-homotopy of continuous families of loops -/
+
+/-- In a locally path-connected space, let `γ y` be a loop at `a y` depending continuously on a
+parameter `y`, and suppose the space is semilocally simply connected along `γ y₀`. Then for `y`
+near `y₀` the loop `γ y` is null-homotopic exactly when `γ y₀` is. -/
+public theorem eventually_homotopic_refl_iff_of_semilocallySimplyConnectedOn
+    [LocallyPathConnectedSpace X] {Y : Type*} [TopologicalSpace Y] {a : Y → X}
+    (γ : ∀ y, Path (a y) (a y)) (hγ : Continuous ↿γ) {y₀ : Y}
+    (hslsc : SemilocallySimplyConnectedOn (range (γ y₀))) :
+    ∀ᶠ y in 𝓝 y₀, (γ y).Homotopic (Path.refl (a y)) ↔ (γ y₀).Homotopic (Path.refl (a y₀)) := by
+  obtain ⟨n, part, T, hT⟩ := (γ y₀).exists_isInTube_of_semilocallySimplyConnectedOn hslsc
+  -- Nearby loops lie in the same tube, with basepoints joined to `a y₀` inside the path component
+  -- of `a y₀` in the intersection of the first and last vertex sets.
+  have hx : a y₀ ∈ T.V 0 ∩ T.V (Fin.last n) := by
+    have h₀ := hT.mem_V 0
+    have h₁ := hT.mem_V (Fin.last n)
+    rw [part.t_zero, Path.source] at h₀
+    rw [part.t_last, Path.target] at h₁
+    exact ⟨h₀, h₁⟩
+  have hcurry : Continuous fun y ↦ (γ y).toContinuousMap :=
+    (ContinuousMap.curry ⟨_, hγ⟩).continuous
+  have ha : Continuous a :=
+    (hγ.comp (continuous_id.prodMk (continuous_const (y := (0 : unitInterval))))).congr
+      fun y ↦ (γ y).source
+  have htube : ∀ᶠ y in 𝓝 y₀, Path.IsInTube (γ y) part T :=
+    ((T.isOpen_setOf_isInTube part).preimage hcurry).mem_nhds hT
+  have hW : ∀ᶠ y in 𝓝 y₀, a y ∈ pathComponentIn (T.V 0 ∩ T.V (Fin.last n)) (a y₀) :=
+    (((T.isOpen_V 0).inter (T.isOpen_V _)).pathComponentIn _).preimage ha |>.mem_nhds
+      (mem_pathComponentIn_self hx)
+  filter_upwards [htube, hW] with y hy hyW
+  have hρ : range hyW.somePath ⊆ T.V 0 ∩ T.V (Fin.last n) :=
+    range_subset_iff.mpr hyW.somePath_mem
+  have h := hT.trans_homotopic_trans hy (hρ.trans inter_subset_left)
+    (hρ.trans inter_subset_right)
+  constructor
+  · intro hnull
+    exact Path.Homotopic.trans_right_cancel <| h.trans <|
+      (Path.Homotopic.trans_right_of_nullhomotopic hnull).trans (Path.Homotopic.refl_trans _).symm
+  · intro hnull
+    exact Path.Homotopic.trans_left_cancel <| h.symm.trans <|
+      (Path.Homotopic.trans_left_of_nullhomotopic hnull).trans (Path.Homotopic.trans_refl _).symm
+
+/-- **Null-homotopy of a continuous family of loops is locally constant.** In a semilocally simply
+connected, locally path-connected space, let `γ y` be a loop at `a y` depending continuously on a
+parameter `y`. The parameters at which the loop is null-homotopic form a clopen set. -/
+public theorem isClopen_setOf_homotopic_refl [SemilocallySimplyConnectedSpace X]
+    [LocallyPathConnectedSpace X] {Y : Type*} [TopologicalSpace Y] {a : Y → X}
+    (γ : ∀ y, Path (a y) (a y)) (hγ : Continuous ↿γ) :
+    IsClopen {y | (γ y).Homotopic (Path.refl (a y))} := by
+  have h (y₀ : Y) := eventually_homotopic_refl_iff_of_semilocallySimplyConnectedOn γ hγ
+    (.of_semilocallySimplyConnectedSpace (range (γ y₀)))
+  refine ⟨isOpen_compl_iff.mp <| isOpen_iff_mem_nhds.mpr fun y₀ hy₀ ↦ ?_,
+    isOpen_iff_mem_nhds.mpr fun y₀ hy₀ ↦ (h y₀).mono fun y hy ↦ hy.mpr hy₀⟩
+  exact (h y₀).mono fun y hy hy' ↦ hy₀ (hy.mp hy')
 
 end

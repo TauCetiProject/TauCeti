@@ -31,6 +31,10 @@ Mathlib's `SimplyConnectedSpace` is phrased with based paths; this file supplies
 for free loops parametrised by the circle, which is how circles are compared in conditions such as
 simple connectivity at infinity.
 
+After rotating the circle, a continuous `p`-periodic curve `γ : ℝ → X` is contractible, as a map
+`ℝ ⧸ pℤ → X`, exactly when the loop it traces over a period `[s, s + p]` (`Function.Periodic.loop`)
+is null-homotopic (`Function.Periodic.exists_nullhomotopic_iff_homotopic_loop`).
+
 Null-homotopy of a loop does not depend on its constant speed: a null-homotopic loop
 `g : AddCircle T → X`, run at speed `a ≠ 0` (backwards when `a < 0`), is the null-homotopic loop
 `t ↦ g (t * a)` on `AddCircle (T / |a|)` (`ContinuousMap.Nullhomotopic.exists_addCircle_comp_mul`).
@@ -42,6 +46,9 @@ Null-homotopy of a loop does not depend on its constant speed: a null-homotopic 
   constant loop.
 * `ContinuousMap.nullhomotopic_addCircle_of_simplyConnectedSpace`: every continuous map from a
   circle `AddCircle p` with `0 < p` into a simply connected space is null-homotopic.
+* `Function.Periodic.loop`: the loop traced by a continuous periodic curve over one period.
+* `Function.Periodic.exists_nullhomotopic_iff_homotopic_loop`: a continuous periodic curve is
+  contractible exactly when its loop over a period is null-homotopic.
 * `ContinuousMap.Nullhomotopic.exists_addCircle_comp_mul`: a null-homotopic loop run at constant
   nonzero speed is null-homotopic.
 -/
@@ -131,3 +138,53 @@ theorem Nullhomotopic.exists_addCircle_comp_mul {T a : ℝ} (hT : T ≠ 0) (ha :
     rw [ContinuousMap.comp_apply, he, abs_of_pos ha']
 
 end ContinuousMap
+
+namespace Function.Periodic
+
+variable {p : ℝ} {X : Type*} [TopologicalSpace X] {γ : ℝ → X}
+
+/-- The loop at `γ s` traced by a continuous `p`-periodic curve `γ` over the period `[s, s + p]`:
+`t ↦ γ (s + t * p)` on the unit interval. -/
+def loop (hp : Periodic γ p) (hγ : Continuous γ) (s : ℝ) : Path (γ s) (γ s) where
+  toFun t := γ (s + t * p)
+  continuous_toFun := by fun_prop
+  source' := by simp
+  target' := by simp [hp s]
+
+@[simp]
+theorem loop_apply (hp : Periodic γ p) (hγ : Continuous γ) (s : ℝ) (t : I) :
+    hp.loop hγ s t = γ (s + t * p) :=
+  (rfl)
+
+/-- **A periodic curve is contractible exactly when its loop over a period is.** For `0 < p`, the
+map `ℝ ⧸ pℤ → X` induced by a continuous `p`-periodic curve `γ` is null-homotopic exactly when
+the loop traced by `γ` over the period `[s, s + p]` is null-homotopic relative to its endpoints,
+for any initial time `s`. -/
+theorem exists_nullhomotopic_iff_homotopic_loop [Fact (0 < p)] (hp : Periodic γ p)
+    (hγ : Continuous γ) (s : ℝ) :
+    (∃ g : C(AddCircle p, X), g.Nullhomotopic ∧ ∀ t : ℝ, g t = γ t) ↔
+      (hp.loop hγ s).Homotopic (Path.refl (γ s)) := by
+  -- Rotating the circle by `s` turns `g` into a map whose based loop is `hp.loop hγ s`.
+  let r (u : ℝ) : C(AddCircle p, AddCircle p) :=
+    ⟨(· + (u : AddCircle p)), continuous_id.add continuous_const⟩
+  have hr (u : ℝ) (θ : AddCircle p) : r u θ = θ + u := rfl
+  have hrot (g : C(AddCircle p, X)) : (g.comp (r s)).Nullhomotopic → g.Nullhomotopic := by
+    intro h
+    have hg : (g.comp (r s)).comp (r (-s)) = g := by
+      ext θ
+      simp [r]
+    exact hg ▸ h.comp_left (r (-s))
+  have key (g : C(AddCircle p, X)) (hg : ∀ t : ℝ, g t = γ t) :
+      (g.comp (r s)).Nullhomotopic ↔ (hp.loop hγ s).Homotopic (Path.refl (γ s)) :=
+    (g.comp (r s)).nullhomotopic_iff_homotopic_refl _ fun t ↦ by
+      rw [loop_apply, ContinuousMap.comp_apply, hr, AddCircle.ofUnitInterval_apply,
+        ← AddCircle.coe_add, hg, add_comm]
+  constructor
+  · rintro ⟨g, hg, hgγ⟩
+    exact (key g hgγ).1 (hg.comp_left (r s))
+  · intro h
+    let g : C(AddCircle p, X) := ⟨hp.lift, hγ.quotient_liftOn' _⟩
+    have hgγ (t : ℝ) : g t = γ t := hp.lift_coe t
+    exact ⟨g, hrot g ((key g hgγ).2 h), hgγ⟩
+
+end Function.Periodic
