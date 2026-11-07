@@ -101,6 +101,30 @@ theorem parabolicOperatorL_mul_sub_mul_parabolicOperatorL :
   rw [hc]
   ring
 
+/-- **The cutoff error of the time/spatial operator.** The operator `∂ₜ - L₀` applied to the
+cutoff has norm at most the sum of the norms of its time derivative, its Hessian weighted by `A`
+and its gradient weighted by `B`. -/
+theorem norm_timeDerivL_sub_spatialOperatorL_zero_le :
+    ‖timeDerivL χ - spatialOperatorL hα A B 0 χ‖ ≤
+      ‖timeDerivL χ‖ + ‖A‖ * ‖spatialSecondFDerivL χ‖ +
+        ‖B‖ * ‖spatialFDerivHolderL hα χ‖ := by
+  have hsp : spatialOperatorL hα A B 0 χ =
+      (ContinuousLinearMap.id ℝ _).compHolder₂ A (spatialSecondFDerivL χ) +
+        (ContinuousLinearMap.id ℝ _).compHolder₂ B (spatialFDerivHolderL hα χ) := by
+    ext p
+    simp
+  rw [hsp]
+  calc
+    _ ≤ ‖timeDerivL χ‖ + ‖(ContinuousLinearMap.id ℝ _).compHolder₂ A
+        (spatialSecondFDerivL χ) + (ContinuousLinearMap.id ℝ _).compHolder₂ B
+          (spatialFDerivHolderL hα χ)‖ := norm_sub_le _ _
+    _ ≤ ‖timeDerivL χ‖ + (‖A‖ * ‖spatialSecondFDerivL χ‖ +
+        ‖B‖ * ‖spatialFDerivHolderL hα χ‖) := by
+      exact add_le_add le_rfl ((norm_add_le _ _).trans
+        (add_le_add (ContinuousLinearMap.norm_id_compHolder₂_apply_le A (spatialSecondFDerivL χ))
+          (ContinuousLinearMap.norm_id_compHolder₂_apply_le B (spatialFDerivHolderL hα χ))))
+    _ = _ := by ring
+
 /-- **The lower-order commutator bound.** Only the time derivative, spatial Hessian and
 spatial gradient of the cutoff enter the bound. In particular it is independent of `C` and
 of the second derivatives and time derivative of `u`. -/
@@ -123,25 +147,7 @@ theorem norm_parabolicOperatorL_mul_sub_mul_parabolicOperatorL_le :
       simpa only [one_mul] using mul_le_mul_of_nonneg_right
         (mul_le_mul_of_nonneg_right hT (norm_nonneg f)) (norm_nonneg g))
   -- The other error is multiplication by the time/spatial operator applied to the cutoff.
-  have hZ : ‖timeDerivL χ - spatialOperatorL hα A B 0 χ‖ ≤
-      ‖timeDerivL χ‖ + ‖A‖ * ‖spatialSecondFDerivL χ‖ +
-        ‖B‖ * ‖spatialFDerivHolderL hα χ‖ := by
-    have hsp : spatialOperatorL hα A B 0 χ =
-        (ContinuousLinearMap.id ℝ _).compHolder₂ A (spatialSecondFDerivL χ) +
-          (ContinuousLinearMap.id ℝ _).compHolder₂ B (spatialFDerivHolderL hα χ) := by
-      ext p
-      simp
-    rw [hsp]
-    calc
-      _ ≤ ‖timeDerivL χ‖ + ‖(ContinuousLinearMap.id ℝ _).compHolder₂ A
-          (spatialSecondFDerivL χ) + (ContinuousLinearMap.id ℝ _).compHolder₂ B
-            (spatialFDerivHolderL hα χ)‖ := norm_sub_le _ _
-      _ ≤ ‖timeDerivL χ‖ + (‖A‖ * ‖spatialSecondFDerivL χ‖ +
-          ‖B‖ * ‖spatialFDerivHolderL hα χ‖) := by
-        exact add_le_add le_rfl ((norm_add_le _ _).trans
-          (add_le_add (ContinuousLinearMap.norm_id_compHolder₂_apply_le A (spatialSecondFDerivL χ))
-            (ContinuousLinearMap.norm_id_compHolder₂_apply_le B (spatialFDerivHolderL hα χ))))
-      _ = _ := by ring
+  have hZ := norm_timeDerivL_sub_spatialOperatorL_zero_le hα A B χ
   -- Combine the three errors; every factor involving the solution has order at most one.
   rw [parabolicOperatorL_mul_sub_mul_parabolicOperatorL]
   have hvalue := (ContinuousLinearMap.mul ℝ ℝ).norm_compHolder₂_apply_le
