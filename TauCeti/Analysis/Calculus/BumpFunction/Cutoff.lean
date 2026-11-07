@@ -40,10 +40,11 @@ function is bounded and Hölder continuous with every exponent at most one
 
 It also provides radial cutoffs between two concentric closed balls of radii `r < R` whose
 gradient is at most `c / (R - r)` and whose second derivative is at most `c / (R - r)²` for a
-universal constant `c`, the quantitative form needed by iteration arguments over families of balls
-with shrinking gaps. On the line, a smooth cutoff of the identity equals `s` on `[-r, r]` and
-vanishes outside `(-R, R)` (`TauCeti.exists_contDiff_cutoff_id`), and smooth plateaus supported
-in `[c - r - 1, c + r + 1]` have `L²` mass at least `2 r` and derivative energy bounded
+constant `c` that does not depend on the centre or the radii, the quantitative form needed by
+iteration arguments over families of balls with shrinking gaps. On the line, a smooth cutoff of
+the identity equals `s` on `[-r, r]` and vanishes outside `(-R, R)`
+(`TauCeti.exists_contDiff_cutoff_id`), and smooth plateaus supported in
+`[c - r - 1, c + r + 1]` have `L²` mass at least `2 r` and derivative energy bounded
 independently of `c` and `r` (`TauCeti.exists_forall_contDiff_plateau`).
 
 ## References
@@ -382,9 +383,10 @@ theorem contDiffAt_tsum_of_eventually_eq_zero {𝕜 ι F : Type*} [NontriviallyN
     ContDiffAt 𝕜 n (fun y => ∑' j, g j y) x :=
   (ContDiffAt.sum hg).congr_of_eventuallyEq (hs.mono fun _ hy => tsum_eq_sum hy)
 
-/-- **Radial cutoffs with quantitative derivative bounds.** There is a universal constant `c`
-such that for every centre `x₀` and radii `0 ≤ r < R`, some smooth `ψ` with values in `[0, 1]`
-equals one on `closedBall x₀ r`, has topological support in `closedBall x₀ R`, and satisfies
+/-- **Radial cutoffs with quantitative derivative bounds.** There is a constant `c`, independent
+of the centre and the radii (it may depend on the space `E`), such that for every centre `x₀`
+and radii `0 ≤ r < R`, some smooth `ψ` with values in `[0, 1]` equals one on `closedBall x₀ r`,
+has topological support in `closedBall x₀ R`, and satisfies
 
 `‖∇ψ x‖ ≤ c / (R - r)` and `‖D(∇ψ) x‖ ≤ c / (R - r)²` for every `x`.
 
