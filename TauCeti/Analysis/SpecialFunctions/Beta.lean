@@ -88,6 +88,9 @@ and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its densi
   formula as a relation between `Β(1/2, a)` and `Β(a, a)`;
 * `ProbabilityTheory.beta_one_right` — the value `Β(a, 1) = 1 / a`;
 * `ProbabilityTheory.beta_add_one_left` — the unit step `Β(a + 1, b) = a / (a + b) * Β(a, b)`;
+* `ProbabilityTheory.beta_add_one_sub_one_div` and `ProbabilityTheory.beta_add_two_sub_two_div` —
+  the ratios `Β(a + 1, b - 1) / Β(a, b) = a / (b - 1)` and
+  `Β(a + 2, b - 2) / Β(a, b) = a (a + 1) / ((b - 1) (b - 2))`;
 * `ProbabilityTheory.beta_three_halves_three_halves` — the value `Β(3/2, 3/2) = π / 8`.
 * `ProbabilityTheory.tendsto_natCast_mul_beta_atTop` — `n Β(n, s) → 0` along the natural numbers
   for `s > 1`.
@@ -531,10 +534,8 @@ private lemma image_sqrt_Ioi : Real.sqrt '' Ioi 0 = Ioi 0 := by
     exact ⟨x ^ 2, mem_Ioi.mpr (pow_pos (mem_Ioi.mp hx) 2), Real.sqrt_sq (mem_Ioi.mp hx).le⟩
 
 /-- The square root is injective on the positive half-line. -/
-private lemma injOn_sqrt_Ioi : InjOn Real.sqrt (Ioi 0) := by
-  intro u hu v hv huv
-  have := congrArg (· ^ 2) huv
-  simpa [Real.sq_sqrt (mem_Ioi.mp hu).le, Real.sq_sqrt (mem_Ioi.mp hv).le] using this
+private lemma injOn_sqrt_Ioi : InjOn Real.sqrt (Ioi 0) := fun _ hu _ hv h =>
+  (Real.sqrt_inj (mem_Ioi.1 hu).le (mem_Ioi.1 hv).le).1 h
 
 /-- Under the square root the kernel `(1 + x ^ 2) ^ (-s)` becomes the integrand of Euler's second
 beta integral with first parameter `1 / 2`. -/
