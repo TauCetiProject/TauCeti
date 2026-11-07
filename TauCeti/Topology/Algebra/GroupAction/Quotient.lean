@@ -32,6 +32,8 @@ quotient manifold is read off from a compact fundamental domain upstairs.
 * `TauCeti.continuous_section_orbitRelQuotientRec_iff`: the descent of a `G`-invariant section of
   the pullback of a family `V` over the orbit space is continuous, as a map into the total space,
   exactly when the section upstairs is.
+* `MulActionHom.isEmbedding_orbitRelQuotientMap`: an equivariant embedding descends to an
+  embedding of orbit spaces when the acting-group map is surjective.
 * `SubMulAction.isOpenEmbedding_orbitRelQuotientMap`: for an open slice `S` for a subgroup `H`, an
   `H`-invariant open set moved into itself only by elements of `H`, the map `S / H → X / G` of
   orbit spaces is an open embedding. For `H = ⊥` this recovers
@@ -103,6 +105,22 @@ theorem _root_.SubMulAction.isOpenEmbedding_orbitRelQuotientMap {H : Subgroup G}
     (hS_open.isOpenMap_subtype_val _ (hU.preimage continuous_quot_mk))
 
 end Slice
+
+/-- An equivariant embedding descends to an embedding of orbit spaces when the map of acting
+groups is surjective and the target action is by homeomorphisms. -/
+theorem _root_.MulActionHom.isEmbedding_orbitRelQuotientMap
+    {G H X Y : Type*} [Group G] [Group H] [MulAction G X] [MulAction H Y]
+    [TopologicalSpace X] [TopologicalSpace Y] [ContinuousConstSMul H Y]
+    {σ : G → H} (φ : X →ₑ[σ] Y) (hφ : Topology.IsEmbedding φ)
+    (hσ : Function.Surjective σ) : Topology.IsEmbedding φ.orbitRelQuotientMap := by
+  refine isEmbedding_of_isOpenQuotientMap_of_isInducing φ φ.orbitRelQuotientMap
+    (Quotient.mk _) (Quotient.mk _) φ.orbitRelQuotientMap_comp_mk
+    hφ.isInducing isQuotientMap_quotient_mk'
+    MulAction.isOpenQuotientMap_quotientMk (φ.orbitRelQuotientMap_injective hφ.injective hσ) ?_
+  rintro y ⟨_, ⟨x, rfl⟩, hx⟩
+  obtain ⟨g, hg⟩ := MulAction.orbitRel_apply.1 (Quotient.exact hx)
+  obtain ⟨k, hk⟩ := hσ g⁻¹
+  exact ⟨k • x, by simpa [map_smulₛₗ, hk] using congrArg (fun z ↦ g⁻¹ • z) hg.symm⟩
 
 section Compact
 
