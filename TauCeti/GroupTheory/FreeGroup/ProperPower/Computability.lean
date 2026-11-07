@@ -88,67 +88,70 @@ theorem isProperPower_mk_iff_exists_bounded_replicate {w : List (α × Bool)}
       exact (Group.isProperPower_conj_iff _ _).mpr
         (Group.isProperPower_pow _ hn)
 
+/-- The relation saying that a word is a conjugate of a block repeated `n ≥ 2` times, with
+the conjugator and block given by two lengths, is primitive recursive. -/
+private theorem primrecRel_repeatedBlock [Primcodable α] :
+    PrimrecRel fun n (p : List (α × Bool) × ℕ × ℕ) => 2 ≤ n ∧
+      p.1 = p.1.take p.2.1 ++
+        (List.replicate n ((p.1.drop p.2.1).take p.2.2)).flatten ++
+        invRev (p.1.take p.2.1) := by
+  have word : Primrec fun p : ℕ × (List (α × Bool) × ℕ × ℕ) => p.2.1 :=
+    Primrec.fst.comp Primrec.snd
+  have start : Primrec fun p : ℕ × (List (α × Bool) × ℕ × ℕ) => p.2.2.1 :=
+    Primrec.fst.comp (Primrec.snd.comp Primrec.snd)
+  have size : Primrec fun p : ℕ × (List (α × Bool) × ℕ × ℕ) => p.2.2.2 :=
+    Primrec.snd.comp (Primrec.snd.comp Primrec.snd)
+  have initial := Primrec.list_take.comp start word
+  have block := Primrec.list_take.comp size (Primrec.list_drop.comp start word)
+  have repeated : Primrec fun p : ℕ × (List (α × Bool) × ℕ × ℕ) =>
+      (List.replicate p.1 ((p.2.1.drop p.2.2.1).take p.2.2.2)).flatten := by
+    exact (Primrec.list_flatten.comp
+      (Primrec.list_map (Primrec.list_range.comp Primrec.fst)
+        (Primrec.to₂ <| block.comp Primrec.fst))).of_eq fun _ => by
+          simp only [List.map_const', List.length_range]
+  exact (Primrec.nat_le.comp (Primrec.const 2) Primrec.fst).and
+    (Primrec.eq.comp word (Primrec.list_append.comp
+      (Primrec.list_append.comp initial repeated) (primrec_invRev.comp initial)))
+
 /-- Proper-power membership of the element represented by an arbitrary word is primitive
 recursive on Mathlib's standard list encoding. The alphabet need not be finite. -/
 theorem primrecPred_isProperPower_mk [Primcodable α] :
     PrimrecPred fun w : List (α × Bool) => Group.IsProperPower (mk w) := by
   classical
-  let W := List (α × Bool)
   -- With all three indices fixed, the test uses only primitive-recursive list operations.
-  have step : PrimrecRel fun n (p : W × ℕ × ℕ) => 2 ≤ n ∧
-      p.1 = p.1.take p.2.1 ++
-        (List.replicate n ((p.1.drop p.2.1).take p.2.2)).flatten ++
-        invRev (p.1.take p.2.1) := by
-    have word : Primrec fun p : ℕ × (W × ℕ × ℕ) => p.2.1 :=
-      Primrec.fst.comp Primrec.snd
-    have start : Primrec fun p : ℕ × (W × ℕ × ℕ) => p.2.2.1 :=
-      Primrec.fst.comp (Primrec.snd.comp Primrec.snd)
-    have size : Primrec fun p : ℕ × (W × ℕ × ℕ) => p.2.2.2 :=
-      Primrec.snd.comp (Primrec.snd.comp Primrec.snd)
-    have initial := Primrec.list_take.comp start word
-    have block := Primrec.list_take.comp size (Primrec.list_drop.comp start word)
-    have repeated : Primrec fun p : ℕ × (W × ℕ × ℕ) =>
-        (List.replicate p.1 ((p.2.1.drop p.2.2.1).take p.2.2.2)).flatten := by
-      exact (Primrec.list_flatten.comp
-        (Primrec.list_map (Primrec.list_range.comp Primrec.fst)
-          (Primrec.to₂ <| block.comp Primrec.fst))).of_eq fun _ => by
-            simp only [List.map_const', List.length_range]
-    exact (Primrec.nat_le.comp (Primrec.const 2) Primrec.fst).and
-      (Primrec.eq.comp word (Primrec.list_append.comp
-        (Primrec.list_append.comp initial repeated) (primrec_invRev.comp initial)))
   -- Eliminate the indices in turn by bounded list searches, then freely reduce the input.
-  have exponent : PrimrecPred fun p : W × ℕ × ℕ =>
+  have exponent : PrimrecPred fun p : List (α × Bool) × ℕ × ℕ =>
       ∃ n ≤ p.1.length, 2 ≤ n ∧ p.1 = p.1.take p.2.1 ++
         (List.replicate n ((p.1.drop p.2.1).take p.2.2)).flatten ++
         invRev (p.1.take p.2.1) := by
-    exact (step.exists_mem_list.comp
+    exact (primrecRel_repeatedBlock.exists_mem_list.comp
       (Primrec.list_range.comp (Primrec.succ.comp (Primrec.list_length.comp Primrec.fst)))
       Primrec.id).of_eq fun _ => by simp only [List.mem_range, Nat.lt_succ_iff, id_eq]
-  have blockSize : PrimrecRel fun j (p : W × ℕ) =>
+  have blockSize : PrimrecRel fun j (p : List (α × Bool) × ℕ) =>
       ∃ n ≤ p.1.length, 2 ≤ n ∧ p.1 = p.1.take p.2 ++
         (List.replicate n ((p.1.drop p.2).take j)).flatten ++
         invRev (p.1.take p.2) :=
     exponent.comp (Primrec.pair (Primrec.fst.comp Primrec.snd)
       (Primrec.pair (Primrec.snd.comp Primrec.snd) Primrec.fst))
-  have blockSearch : PrimrecPred fun p : W × ℕ =>
+  have blockSearch : PrimrecPred fun p : List (α × Bool) × ℕ =>
       ∃ j ≤ p.1.length, ∃ n ≤ p.1.length, 2 ≤ n ∧ p.1 = p.1.take p.2 ++
         (List.replicate n ((p.1.drop p.2).take j)).flatten ++
         invRev (p.1.take p.2) := by
     exact (blockSize.exists_mem_list.comp
       (Primrec.list_range.comp (Primrec.succ.comp (Primrec.list_length.comp Primrec.fst)))
       Primrec.id).of_eq fun _ => by simp only [List.mem_range, Nat.lt_succ_iff, id_eq]
-  have conjugatorSize : PrimrecRel fun i (w : W) =>
+  have conjugatorSize : PrimrecRel fun i (w : List (α × Bool)) =>
       ∃ j ≤ w.length, ∃ n ≤ w.length, 2 ≤ n ∧ w = w.take i ++
         (List.replicate n ((w.drop i).take j)).flatten ++ invRev (w.take i) :=
     blockSearch.comp (Primrec.pair Primrec.snd Primrec.fst)
-  have search : PrimrecPred fun w : W =>
+  have search : PrimrecPred fun w : List (α × Bool) =>
       ∃ i ≤ w.length, ∃ j ≤ w.length, ∃ n ≤ w.length, 2 ≤ n ∧
         w = w.take i ++ (List.replicate n ((w.drop i).take j)).flatten ++
           invRev (w.take i) := by
     exact (conjugatorSize.exists_mem_list.comp
       (Primrec.list_range.comp (Primrec.succ.comp Primrec.list_length))
       Primrec.id).of_eq fun _ => by simp only [List.mem_range, Nat.lt_succ_iff, id_eq]
-  have test := (Primrec.eq.comp (Primrec.id (α := W)) (Primrec.const [])).or search
+  have test := (Primrec.eq.comp (Primrec.id (α := List (α × Bool))) (Primrec.const [])).or search
   exact (test.comp primrec_reduce).of_eq fun w => by
     simp only [id_eq]
     rw [← isProperPower_mk_iff_exists_bounded_replicate
