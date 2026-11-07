@@ -9,6 +9,7 @@ public import Mathlib.Analysis.LocallyConvex.WeakOperatorTopology
 public import Mathlib.Analysis.LocallyConvex.HahnBanach
 public import Mathlib.Analysis.LocallyConvex.PointwiseConvergence
 public import Mathlib.Analysis.LocallyConvex.WeakSpace
+public import TauCeti.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 
 /-!
 # Comparing the strong and weak operator topologies
@@ -73,28 +74,6 @@ theorem isClosed_image_ofCLM_centralizer (s : Set (E →L[𝕜] E)) :
   exact isClosed_centralizer _
 
 end Set
-
-namespace PointwiseConvergenceCLM
-
-variable {𝕜₁ 𝕜₂ E F : Type*} [NormedField 𝕜₁] [NormedField 𝕜₂] {σ : 𝕜₁ →+* 𝕜₂}
-    [RingHomSurjective σ] [RingHomIsometric σ] [AddCommGroup E] [TopologicalSpace E]
-    [Module 𝕜₁ E] [ContinuousSMul 𝕜₁ E] [AddCommGroup F] [TopologicalSpace F]
-    [IsTopologicalAddGroup F] [Module 𝕜₂ F] [ContinuousSMul 𝕜₂ F]
-
-/-- Scalar multiplication is jointly continuous for the topology of pointwise convergence, since
-finite sets are von Neumann bounded. -/
-instance continuousSMul : ContinuousSMul 𝕜₂ (E →SLₚₜ[σ] F) :=
-  UniformConvergenceCLM.continuousSMul σ F _ fun _ ↦ Set.Finite.isVonNBounded
-
-end PointwiseConvergenceCLM
-
-/-- Passing to the topology of pointwise convergence does not identify distinct maps. -/
-theorem ContinuousLinearMap.toPointwiseConvergenceCLM_injective {𝕜₁ 𝕜₂ E F : Type*}
-    [NormedField 𝕜₁] [NormedField 𝕜₂] {σ : 𝕜₁ →+* 𝕜₂} [AddCommGroup E] [TopologicalSpace E]
-    [Module 𝕜₁ E] [ContinuousSMul 𝕜₁ E] [AddCommGroup F] [TopologicalSpace F]
-    [IsTopologicalAddGroup F] [Module 𝕜₂ F] [ContinuousConstSMul 𝕜₂ F] :
-    Function.Injective (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F) :=
-  fun _ _ h ↦ ContinuousLinearMap.ext fun v ↦ congrArg (fun T : E →SLₚₜ[σ] F ↦ T v) h
 
 namespace PointwiseConvergenceCLM
 
@@ -169,7 +148,7 @@ theorem exists_finset_sum_eq (φ : StrongDual 𝕜 (E →SWOT[σ] F)) :
   -- The composite is `φ` itself on underlying operators.
   exact ⟨s, g, fun A ↦ hg (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 σ E F A.toCLM)⟩
 
-variable [RingHomSurjective σ] [RingHomIsometric σ] [NormedSpace ℝ F] [IsScalarTower ℝ 𝕜 F]
+variable [NormedSpace ℝ F] [IsScalarTower ℝ 𝕜 F]
 
 /-- For a convex set of operators, the closures in the topology of pointwise convergence (the
 strong operator topology) and in the weak operator topology contain the same operators. -/

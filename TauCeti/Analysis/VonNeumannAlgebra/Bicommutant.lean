@@ -147,12 +147,14 @@ theorem closure_image_toPointwiseConvergenceCLM_inter_selfAdjoint [NormedSpace �
         ((S : Set (H →L[𝕜] H)).centralizer.centralizer ∩ selfAdjoint (H →L[𝕜] H)) := by
   set q := ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) H H
   -- The self-adjoint part is convex, so its strong and weak operator closures agree.
-  have hconv : Convex ℝ ((S : Set (H →L[𝕜] H)) ∩ selfAdjoint (H →L[𝕜] H)) := by
-    rintro a ⟨haS, ha⟩ b ⟨hbS, hb⟩ t u - - -
-    have hreal (r : ℝ) : IsSelfAdjoint (r : 𝕜) := RCLike.conj_ofReal r
-    rw [RCLike.real_smul_eq_coe_smul (K := 𝕜) t a, RCLike.real_smul_eq_coe_smul (K := 𝕜) u b]
-    exact ⟨add_mem (SMulMemClass.smul_mem _ haS) (SMulMemClass.smul_mem _ hbS),
-      ((hreal t).smul ha).add ((hreal u).smul hb)⟩
+  -- Mathlib records only `StarModule 𝕜` here; real scalars act through `𝕜`, so they commute
+  -- with adjoints and `selfAdjoint.submodule ℝ` is available.
+  have : StarModule ℝ (H →L[𝕜] H) := ⟨fun r a ↦ by
+    simp only [RCLike.real_smul_eq_coe_smul (K := 𝕜), star_smul, RCLike.star_def,
+      RCLike.conj_ofReal, star_trivial]⟩
+  have hconv : Convex ℝ ((S : Set (H →L[𝕜] H)) ∩ selfAdjoint (H →L[𝕜] H)) :=
+    (S.toSubalgebra.toSubmodule.restrictScalars ℝ).convex.inter
+      (selfAdjoint.submodule ℝ (H →L[𝕜] H)).convex
   ext T
   -- `q` is the identity on underlying operators.
   obtain ⟨x, rfl⟩ : ∃ x : H →L[𝕜] H, q x = T := ⟨T, rfl⟩
