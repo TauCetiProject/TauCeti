@@ -63,12 +63,8 @@ private theorem homDensityFin_sub_injHomDensity_le_of_card_eq_zero
     have hsub : ∀ φ : F →g G, Function.Injective (⇑φ : V → W) := by
       intro φ a b _
       exact False.elim (hV.false a)
-    have e : (F →g G) ≃ {φ : F →g G // Function.Injective ⇑φ} :=
-      { toFun := fun φ => ⟨φ, hsub φ⟩
-        invFun := Subtype.val
-        left_inv := fun _ => rfl
-        right_inv := fun ⟨_, _⟩ => rfl }
-    rw [Nat.card_congr e, hk0, pow_zero, Nat.descFactorial_zero, Nat.cast_one]
+    rw [Nat.card_congr (Equiv.subtypeUnivEquiv hsub).symm, hk0, pow_zero, Nat.descFactorial_zero,
+      Nat.cast_one]
     simp [hW0]
   -- both denominators vanish, so both quotients are zero whatever the numerators
   · rw [hW0, Nat.descFactorial_eq_zero_iff_lt.mpr (Nat.pos_of_ne_zero hk0), Nat.cast_zero,
