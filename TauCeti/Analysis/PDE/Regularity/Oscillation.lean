@@ -226,7 +226,7 @@ theorem exists_ae_value_le_sub_mul_sub_lowerOrder [Nonempty ι] {θ : ℝ} (hθ 
   have hDy : D₀ * (1 + (beta * R / lam) ^ 2) ^ Fintype.card ι * P * √I ≤ D * P * √I := by
     simp only [D]
     gcongr
-  filter_upwards [hbound (k := l) h ha hb hc hb_bound hc_bound hc_nonneg hu (hk.trans hkl) hR
+  filter_upwards [hbound (k := l) h ha hb hc hb_bound hc_bound hc_nonneg hu (hk.trans hkl)
     hballR] with x hx
   calc W1p.value u x ≤ l + D * P * √I := hx.trans (by linarith)
     _ ≤ l + (M - l) / 2 := by linarith
@@ -681,7 +681,7 @@ theorem exists_ae_value_mem_Icc_add_mul_rpow_mul_rpow_mul_sqrt_setIntegral_drift
   -- Local boundedness: `u ∈ [-K, K]` on `B(x₀, R/2)`.
   have hK : ∀ᵐ x ∂mu.restrict (ball x₀ (R / 2)), W1p.value u x ∈ Icc (-K) K := by
     filter_upwards [hbound (gamma := 0) h ha hb aestronglyMeasurable_const hb_bound
-      (fun _ _ => by simp) (fun _ _ => le_rfl) hu hR hball] with x hx
+      (fun _ _ => by simp) (fun _ _ => le_rfl) hu hball] with x hx
     refine mem_Icc.2 (abs_le.1 (hx.trans ?_))
     simp only [K, D]
     gcongr
