@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.Taylor
 public import TauCeti.MeasureTheory.Integral.Pi
+public import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
 # Lindeberg replacement
@@ -149,6 +150,24 @@ theorem abs_integral_prod_sub_integral_prod_le {μ ν : Measure ℝ}
   exact abs_integral_sub_integral_le (μ := μ) (ν := ν)
     (g := fun t ↦ g (t, w)) (M := M) (r := r) (hsm w) (hM w) hμ hν hmom
 
+/-- Integrability under a mixed product measure with first factor `ν 0` or `μ 0`, from
+integrability under every hybrid product measure on `Fin (n + 1) → ℝ`. -/
+private lemma integrable_cons_prod_ite {n : ℕ} (μ ν : Fin (n + 1) → Measure ℝ)
+    [∀ i, IsProbabilityMeasure (μ i)] [∀ i, IsProbabilityMeasure (ν i)]
+    {f : (Fin (n + 1) → ℝ) → ℝ}
+    (hfi : ∀ s : Fin (n + 1) → Bool,
+      Integrable f (Measure.pi fun i ↦ if s i then ν i else μ i))
+    (b : Bool) (s : Fin n → Bool) :
+    Integrable (fun p : ℝ × (Fin n → ℝ) ↦ f (Fin.cons p.1 p.2))
+      ((if b then ν 0 else μ 0).prod
+        (Measure.pi fun i : Fin n ↦ if s i then ν i.succ else μ i.succ)) := by
+  let bs : Fin (n + 1) → Bool := Fin.cons b s
+  let ρ : Fin (n + 1) → Measure ℝ := fun i ↦ if bs i = true then ν i else μ i
+  have h := integrable_pi_succ ρ (hfi bs)
+  simpa [ρ, MeasurableEquiv.piFinSuccAbove_symm_apply, Fin.insertNthEquiv_zero,
+    Fin.zero_succAbove, bs, Fin.cons_zero, Fin.cons_succ, Function.comp_def,
+    Fin.consEquiv_apply] using h
+
 /-- **Lindeberg replacement.** Let `μ i` and `ν i` be probability measures on `ℝ` with finite
 absolute moments of order `r + 1` and the same moments up to order `r`. If `f` is integrable under
 every hybrid product measure that chooses each coordinate from either `μ` or `ν`, and is
@@ -173,18 +192,7 @@ theorem abs_integral_pi_sub_integral_pi_le {r n : ℕ} (μ ν : Fin n → Measur
   induction n with
   | zero => rw [Measure.pi_of_empty μ, Measure.pi_of_empty ν]; simp
   | succ n ih =>
-    have hprod (b : Bool) (s : Fin n → Bool) :
-        Integrable (fun p : ℝ × (Fin n → ℝ) ↦ f (Fin.cons p.1 p.2))
-          ((if b then ν 0 else μ 0).prod
-            (Measure.pi fun i : Fin n ↦ if s i then ν i.succ else μ i.succ)) := by
-      let bs : Fin (n + 1) → Bool := Fin.cons b s
-      let ρ : Fin (n + 1) → Measure ℝ := fun i ↦
-        if bs i = true then ν i else μ i
-      have h := (measurePreserving_piFinSuccAbove ρ 0).symm.integrable_comp_of_integrable
-        (hfi bs)
-      simpa [ρ, MeasurableEquiv.piFinSuccAbove_symm_apply, Fin.insertNthEquiv_zero,
-        Fin.zero_succAbove, bs, Fin.cons_zero, Fin.cons_succ, Function.comp_def,
-        Fin.consEquiv_apply] using h
+    have hprod := integrable_cons_prod_ite μ ν hfi
     rw [integral_pi_succ μ, integral_pi_succ ν]
     simp only [MeasurableEquiv.piFinSuccAbove_symm_apply, Fin.insertNthEquiv_zero,
       Fin.zero_succAbove]
@@ -211,22 +219,11 @@ theorem abs_integral_pi_sub_integral_pi_le {r n : ℕ} (μ ν : Fin n → Measur
       have hνmix : Integrable (fun p : ℝ × (Fin n → ℝ) ↦ f (Fin.cons p.1 p.2))
           ((ν 0).prod (Measure.pi ν')) := by
         simpa [hν'] using hprod true fun _ ↦ true
-      have htail : ∀ s : Fin n → Bool, ∀ᵐ t ∂ν 0,
-          Integrable (fun w : Fin n → ℝ ↦ f (Fin.cons t w))
-            (Measure.pi fun i ↦ if s i then ν i.succ else μ i.succ) := by
-        intro s
-        exact (hprod true s).prod_right_ae
       have htail_all : ∀ᵐ t ∂ν 0, ∀ s : Fin n → Bool,
           Integrable (fun w : Fin n → ℝ ↦ f (Fin.cons t w))
             (Measure.pi fun i ↦ if s i then ν i.succ else μ i.succ) :=
-        ae_all_iff.2 htail
-      rw [integral_prod _ hμmix, integral_prod _ hνmix,
-        ← integral_sub hμmix.integral_prod_left hνmix.integral_prod_left]
-      rw [← Real.norm_eq_abs]
-      refine le_trans (norm_integral_le_of_norm_le_const
-        (C := ∑ i : Fin n, M i.succ / (r + 1)! *
-          (∫ t, |t| ^ (r + 1) ∂μ i.succ + ∫ t, |t| ^ (r + 1) ∂ν i.succ))
-        ?_) (by simp)
+        ae_all_iff.2 fun s ↦ (hprod true s).prod_right_ae
+      refine abs_integral_prod_sub_integral_prod_le_of_ae hμmix hνmix ?_
       filter_upwards [htail_all] with t ht
       have h := ih μ' ν' (fun i ↦ hμ i.succ) (fun i ↦ hν i.succ)
         (fun i ↦ hmom i.succ)
