@@ -411,18 +411,13 @@ private theorem toSubmodule_pathSpan_one_eq_bot_of_simple {M : QuiverRep k Q} [S
     rw [QuiverSubrep.pathSpan_one_self_of_forall_map_eq_zero (i := i) x hxi] at hmem
     exact (Submodule.mem_bot k).1 hmem
 
-/-- In an acyclic quiver every closed path has length zero. -/
-private theorem length_eq_zero_of_isAcyclic (hQ : Quiver.IsAcyclic Q) {i : Q}
-    (p : Quiver.Path i i) : p.length = 0 := by
-  rw [hQ.eq_nil p, Quiver.Path.length_nil]
-
 /-- Over an acyclic quiver, a simple representation with a nonzero vector at `i` vanishes away
 from `i`. -/
 private theorem isZero_obj_of_simple_of_ne (hQ : Quiver.IsAcyclic Q) (M : QuiverRep k Q) [Simple M]
     {i : Q} {x : M.obj ((Paths.of Q).obj i)} (hx : x ≠ 0) {a : Q} (ha : a ≠ i) :
     IsZero (M.obj a) := by
   have hxi : ∀ p : Quiver.Path i i, p.length ≠ 0 → M.map p x = 0 := fun p hp ↦
-    absurd (length_eq_zero_of_isAcyclic hQ p) hp
+    absurd (hQ.length_eq_zero p) hp
   refine ModuleCat.isZero_iff_subsingleton.2 (subsingleton_of_forall_eq 0 fun y ↦ ?_)
   have hy : y ∈ (QuiverSubrep.pathSpan (i := i) x 0).toSubmodule a := by
     rw [QuiverSubrep.toSubmodule_pathSpan_zero_eq_top_of_simple hx a]
@@ -466,7 +461,7 @@ theorem exists_iso_simpleRep_of_simple (hQ : Quiver.IsAcyclic Q) (M : QuiverRep 
   have hxp : ∀ {a : Q} (p : Quiver.Path i a), p.length ≠ 0 → M.map p x = 0 := by
     intro a p hp
     rcases eq_or_ne a i with rfl | ha
-    · exact absurd (length_eq_zero_of_isAcyclic hQ p) hp
+    · exact absurd (hQ.length_eq_zero p) hp
     · have : Subsingleton (M.obj a) := ModuleCat.subsingleton_of_isZero (hM a ha)
       exact Subsingleton.elim _ _
   refine ⟨i, ⟨?_⟩⟩
