@@ -788,6 +788,18 @@ theorem subset_or_disjoint_of_mem_inf_atomise {P : Finpartition s} {F : Finset (
   obtain ⟨T, hT, htT⟩ := (inf_le_right : P ⊓ atomise s F ≤ atomise s F) ht
   exact (subset_or_disjoint_of_mem_atomise hT hu).imp htT.trans (Disjoint.mono_left htT)
 
+/-- Cutting a partition along `F` and refining by the atoms gives at most
+`#P.parts * 4 ^ #P.parts ^ 2` parts when `#F ≤ 2 * #P.parts ^ 2`. -/
+theorem card_parts_inf_atomise_le_of_card_le (P : Finpartition s)
+    (F : Finset (Finset α)) (hF : #F ≤ 2 * #P.parts ^ 2) :
+    #(P ⊓ atomise s F).parts ≤ #P.parts * 4 ^ #P.parts ^ 2 :=
+  calc #(P ⊓ atomise s F).parts ≤ #P.parts * #(atomise s F).parts :=
+        card_parts_inf_le_mul P _
+    _ ≤ #P.parts * 2 ^ (2 * #P.parts ^ 2) := by
+      gcongr
+      exact card_atomise_le.trans (Nat.pow_le_pow_right two_pos hF)
+    _ = #P.parts * 4 ^ #P.parts ^ 2 := by rw [pow_mul]; norm_num
+
 end Atomise
 
 section Comap

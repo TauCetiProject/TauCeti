@@ -165,6 +165,19 @@ theorem mul_le_one_of_le_inv_one_add {α : Type*} [Semifield α] [LinearOrder α
   rw [inv_mul_eq_div, div_le_one (add_pos_of_pos_of_nonneg zero_lt_one hb)]
   exact le_add_of_nonneg_left zero_le_one
 
+/-- The final estimate of the energy increment: the gain `ε² ε² M / D`, where `M` exceeds
+`ε n²` and `D ≤ n²`, exceeds `ε⁵`. -/
+theorem pow_five_lt_of_mul_div_le {α : Type*} [Field α] [LinearOrder α]
+    [IsStrictOrderedRing α] {ε M D n g : α} (hε : 0 < ε) (hD : 0 < D)
+    (hDn : D ≤ n ^ 2) (hbad : ε * n ^ 2 < M) (hgain : ε ^ 2 * ε ^ 2 * (M / D) ≤ g) :
+    ε ^ 5 < g := by
+  have hn : 0 < n ^ 2 := hD.trans_le hDn
+  have hM₀ : 0 ≤ M := hbad.le.trans' (by positivity)
+  have hM : ε < M / D :=
+    ((lt_div_iff₀ hn).2 hbad).trans_le (div_le_div_of_nonneg_left hM₀ hD hDn)
+  have hε4 : 0 < ε ^ 2 * ε ^ 2 := by positivity
+  nlinarith
+
 end TauCeti
 
 /-- If `w` is bounded above on `K` and every positive `ε` admits a point `z ∈ K` with
