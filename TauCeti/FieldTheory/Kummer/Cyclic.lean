@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.KummerExtension
-public import TauCeti.Algebra.Polynomial.XPowSubC
+public import TauCeti.Algebra.Polynomial.XPow.SubC
 public import TauCeti.FieldTheory.Kummer.Character
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
 

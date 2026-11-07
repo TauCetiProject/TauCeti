@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Neighborhoods
+public import TauCeti.Data.Set.Lattice
 
 /-!
 # Covers by the interiors of a complement and a neighbourhood
@@ -21,6 +22,9 @@ cover the space exactly when `closure s ⊆ interior t`. For a closed point `p`,
   space if and only if `closure s ⊆ interior t`.
 * `TauCeti.interior_compl_singleton_union_interior_eq_univ`: the interiors of the complement of a
   closed point and of a neighbourhood of that point cover the space.
+* `TauCeti.iInter_mem_range_succ_interior_subset_iInter`: for a family of sets that is eventually
+  constant, the intersection of the interiors of its first members lies in the intersection of
+  all of them.
 -/
 
 public section
@@ -43,5 +47,13 @@ theorem interior_compl_singleton_union_interior_eq_univ {p : X} (hp : IsClosed (
     {B : Set X} (hB : B ∈ 𝓝 p) : interior {p}ᶜ ∪ interior B = univ :=
   interior_compl_union_interior_eq_univ_iff.2 <| by
     rwa [hp.closure_eq, singleton_subset_iff, mem_interior_iff_mem_nhds]
+
+/-- If a family of sets is eventually constant from index `j₀`, then the intersection of the
+interiors of its first `j₀ + 1` members lies in the intersection of all members. -/
+theorem iInter_mem_range_succ_interior_subset_iInter
+    (S : ℕ → Set X) (j₀ : ℕ) (hS : ∀ j, j₀ ≤ j → S j = S j₀) :
+    ⋂ j ∈ Finset.range (j₀ + 1), interior (S j) ⊆ ⋂ j, S j := by
+  rw [← iInter_mem_range_succ_eq_iInter S j₀ hS]
+  exact iInter₂_mono fun j _ ↦ interior_subset
 
 end TauCeti
