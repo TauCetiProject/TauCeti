@@ -145,12 +145,6 @@ private theorem exists_toIntervalLocalization_mul_pow_eq {a b : ℕ} (ha : a ≠
         = v (algebraMap O K c) * (ρ₂ ^ i * ρ₁ ^ (a - i)) := by
           field_simp
       _ ≤ v (algebraMap O K c) := mul_le_of_le_one_right (by positivity) hle
-/-- The valuation of the pseudouniformiser `ϖ`, as a real number, is positive. -/
-private theorem coe_valuation_pos (hv : v.Integers O) (hϖ : ϖ ≠ 0) :
-    0 < (v (algebraMap O K ϖ) : ℝ) := by
-  rw [NNReal.coe_pos, pos_iff_ne_zero, map_ne_zero, map_ne_zero_iff _ hv.hom_inj]
-  exact hϖ
-
 /-- The Gauss valuation at radius `ρ` of the numerator `y` of the fraction `y / (p [ϖ]) ^ m` is
 the norm of the fraction at radius `ρ`, times `(ρ v(ϖ)) ^ m`. -/
 private theorem gaussValuation_eq_mul_gaussValuationAway_mk' {m : ℕ}
@@ -160,7 +154,8 @@ private theorem gaussValuation_eq_mul_gaussValuationAway_mk' {m : ℕ}
       gaussValuationAway p hv hϖ ρ hρ B₀ (IsLocalization.mk' B₀ y s) *
         (ρ ^ m * v (algebraMap O K ϖ) ^ m) := by
   have := hv.isDomain
-  have hw := coe_valuation_pos hv hϖ
+  have hw : 0 < (v (algebraMap O K ϖ) : ℝ) :=
+    NNReal.coe_pos.mpr (hv.valuation_pos_iff_ne_zero.mpr hϖ)
   have hρ0 : (0 : ℝ) < ρ := hρ.1
   rw [gaussValuationAway_mk', ← hm]
   simp only [map_pow, map_mul, gaussValuation_p, gaussValuation_teichmuller, NNReal.coe_mul,
@@ -208,7 +203,8 @@ private theorem norm_mul_pow_le_norm_mk' {a m i : ℕ}
     (heb : ‖e‖ * ρ₁ ^ a * (ρ₁ ^ (m - i) * v (algebraMap O K ϖ) ^ m) ≤
       v (algebraMap O K (y.teichmullerCoeff i))) :
     ‖e‖ * ρ₁ ^ a ≤ ‖IsLocalization.mk' B₀ y s‖ := by
-  have hw := coe_valuation_pos hv hϖ
+  have hw : 0 < (v (algebraMap O K ϖ) : ℝ) :=
+    NNReal.coe_pos.mpr (hv.valuation_pos_iff_ne_zero.mpr hϖ)
   have hρ₁0 : (0 : ℝ) < ρ₁ := hρ₁.1
   have hyi : (v (algebraMap O K (y.teichmullerCoeff i)) : ℝ) * ρ₁ ^ i ≤
       gaussValuation p hv ρ₁ hρ₁.2 y := by
@@ -237,14 +233,17 @@ private theorem norm_mk'_mul_pow_le_norm_mk' {a m : ℕ}
     ‖IsLocalization.mk' A₀ ((p : 𝕎 O) * h)
         (⟨teichmuller p ϖ ^ m, m, rfl⟩ : Submonoid.powers (teichmuller p ϖ))‖ * ρ₁ ^ a ≤
       ‖IsLocalization.mk' B₀ y s‖ := by
-  have hw := coe_valuation_pos hv hϖ
+  have hw : 0 < (v (algebraMap O K ϖ) : ℝ) :=
+    NNReal.coe_pos.mpr (hv.valuation_pos_iff_ne_zero.mpr hϖ)
   have hρ₂0 : (0 : ℝ) < ρ₂ := hρ₂.1
   have hrem : gaussValuation p hv ρ₂ hρ₂.2 ((p : 𝕎 O) ^ (m + 1) * h) ≤
       gaussValuation p hv ρ₂ hρ₂.2 y := by
-    rw [← hh]
-    refine Valuation.map_sub_le _ le_rfl (Valuation.map_sum_le _ fun i _ ↦ ?_)
-    rw [gaussValuation_teichmuller_mul_pow]
-    exact le_gaussValuation hv hρ₂.2 y i
+    have hb : y = ∑ i ∈ Finset.range (m + 1),
+        teichmuller p (y.teichmullerCoeff i) * (p : 𝕎 O) ^ i + (p : 𝕎 O) ^ (m + 1) * h := by
+      rw [Nat.range_succ_eq_Iic, ← hh]
+      ring
+    rw [map_mul, map_pow, gaussValuation_p, mul_comm]
+    exact gaussValuation_mul_pow_le_of_eq_sum_add_pow_mul hv hρ₂.2 hb
   have hrem' : (ρ₂ : ℝ) ^ m * gaussValuation p hv ρ₂ hρ₂.2 ((p : 𝕎 O) * h) ≤
       gaussValuationAway p hv hϖ ρ₂ hρ₂ B₀ (IsLocalization.mk' B₀ y s) *
         (ρ₂ ^ m * v (algebraMap O K ϖ) ^ m) := by
