@@ -291,6 +291,28 @@ theorem equation_apply_two (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
       x z 0 * x z 2 - x z 1 * x z 3 := by
   rfl
 
+/-- The vortex equation is local: its value at a point depends only on the germ of the field
+there. -/
+theorem equation_eq_of_eventuallyEq {x y : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (h : x =ᶠ[nhds z] y) : equation x z = equation y z := by
+  have hc (i : Fin 4) : (fun w ↦ x w i) =ᶠ[nhds z] fun w ↦ y w i :=
+    h.mono fun w hw ↦ congrArg (fun v : EuclideanSpace ℝ (Fin 4) ↦ v i) hw
+  ext j
+  fin_cases j <;> simp [(hc _).fderiv_eq, h.eq_of_nhds]
+
+/-- The equation of a `C^(n+1)` field is `C^n`. -/
+theorem contDiff_equation {n : WithTop ℕ∞} {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hx : ContDiff ℝ (n + 1) x) : ContDiff ℝ n (equation x) := by
+  have hxi (i : Fin 4) : ContDiff ℝ (n + 1) (fun z ↦ x z i) := contDiff_euclidean.mp hx i
+  have hd (i : Fin 4) (v : ℂ) : ContDiff ℝ n (fun z ↦ fderiv ℝ (fun w ↦ x w i) z v) :=
+    ((hxi i).fderiv_right le_rfl).clm_apply contDiff_const
+  have hv (i : Fin 4) : ContDiff ℝ n (fun z ↦ x z i) := (hxi i).of_le le_self_add
+  refine contDiff_euclidean.mpr fun i ↦ ?_
+  fin_cases i
+  · simp only [Fin.zero_eta, equation_apply_zero]; fun_prop
+  · simp only [Fin.mk_one, equation_apply_one]; fun_prop
+  · simp only [Fin.reduceFinMk, equation_apply_two]; fun_prop
+
 /-- At a solution of the vortex equation the curvature coefficient `∂₁ b₂ - ∂₂ b₁` of
 `F_a = i (∂₁ b₂ - ∂₂ b₁) ds ∧ dt` is `-(1 - |α|²) / 8`. -/
 theorem curvature_eq_of_equation_eq_zero {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}

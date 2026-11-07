@@ -111,6 +111,30 @@ theorem contDiff_referenceField (f : ContDiffBump (0 : ℝ)) (m : ℕ) :
   · exact (reCLM.contDiff.comp hs).div_const 2
   · exact (imCLM.contDiff.comp hs).div_const 2
 
+/-- Every derivative of every coordinate of the reference field is bounded. -/
+theorem exists_norm_iteratedFDeriv_referenceField_apply_le (f : ContDiffBump (0 : ℝ)) (m : ℕ)
+    (i : Fin 4) (n : ℕ) :
+    ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ referenceField f m z i) z‖ ≤ C := by
+  -- Each coordinate is a real functional of the reference connection or section.
+  have hcomp {g : ℂ → ℂ} (hg : ContDiff ℝ ∞ g) (hb : ∃ C, ∀ z, ‖iteratedFDeriv ℝ n g z‖ ≤ C)
+      (L : ℂ →L[ℝ] ℝ) : ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ L (g z)) z‖ ≤ C := by
+    obtain ⟨C, hC⟩ := hb
+    exact ⟨‖L‖ * C, fun z ↦ (L.norm_iteratedFDeriv_comp_left hg.contDiffAt
+      (by exact_mod_cast le_top)).trans (by gcongr; exact hC z)⟩
+  have hc (v : ℂ) : ContDiff ℝ ∞ (fun z ↦ referenceConnection f m z v) :=
+    (contDiff_referenceConnection f m).clm_apply contDiff_const
+  fin_cases i
+  · simpa [referenceField_apply] using
+      hcomp (hc 1) (exists_norm_iteratedFDeriv_referenceConnection_apply_le f m n 1) imCLM
+  · simpa [referenceField_apply] using
+      hcomp (hc I) (exists_norm_iteratedFDeriv_referenceConnection_apply_le f m n I) imCLM
+  · simpa [referenceField_apply, div_eq_inv_mul] using
+      hcomp (contDiff_referenceSection f m) (exists_norm_iteratedFDeriv_referenceSection_le f m n)
+        ((2⁻¹ : ℝ) • reCLM)
+  · simpa [referenceField_apply, div_eq_inv_mul] using
+      hcomp (contDiff_referenceSection f m) (exists_norm_iteratedFDeriv_referenceSection_le f m n)
+        ((2⁻¹ : ℝ) • imCLM)
+
 /-- Changing the radial cutoff changes the reference field by a compactly supported field. -/
 theorem hasCompactSupport_referenceField_sub (f g : ContDiffBump (0 : ℝ)) (m : ℕ) :
     HasCompactSupport (referenceField f m - referenceField g m) := by
