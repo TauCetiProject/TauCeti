@@ -17,7 +17,11 @@ recover the part of a concatenated unordered tuple lying in a given set from the
 summands.
 
 It also counts the factors of a product of `if p x then a else 1` over a multiset: the product is
-`a` raised to the number of elements satisfying `p`.
+`a` raised to the number of elements satisfying `p`. More generally, a product over the elements
+satisfying `p` is a product over all elements with the others replaced by `1`
+(`Multiset.prod_map_filter`). Finally, filtering a multiset of pairs on the second coordinate and
+projecting to the first recovers the multiplicities of the pairs
+(`Multiset.count_map_fst_filter_snd_eq`).
 -/
 
 public section
@@ -37,5 +41,27 @@ elements satisfying `p`, counted with multiplicity. -/
 theorem prod_map_ite_one {M : Type*} [CommMonoid M] (s : Multiset α) (a : M) :
     (s.map fun x ↦ if p x then a else 1).prod = a ^ (s.filter p).card :=
   Quot.inductionOn s fun l ↦ by simp [List.prod_map_ite]
+
+/-- The product of `f` over the elements satisfying `p` is the product over all elements of
+`if p x then f x else 1`. -/
+@[to_additive /-- The sum of `f` over the elements satisfying `p` is the sum over all elements of
+`if p x then f x else 0`. -/]
+theorem prod_map_filter {M : Type*} [CommMonoid M] (s : Multiset α) (f : α → M) :
+    ((s.filter p).map f).prod = (s.map fun x ↦ if p x then f x else 1).prod := by
+  induction s using Multiset.induction_on with
+  | empty => simp
+  | cons a s ih => by_cases h : p a <;> simp [h, ih]
+
+/-- Filtering a multiset of pairs on the second coordinate `b` and projecting to the first
+coordinate counts `a` as often as the pair `(a, b)` occurs. -/
+theorem count_map_fst_filter_snd_eq {β : Type*} [DecidableEq α] [DecidableEq β]
+    (s : Multiset (α × β)) (a : α) (b : β) :
+    ((s.filter (·.2 = b)).map Prod.fst).count a = s.count (a, b) := by
+  rw [count_map, filter_filter, count_eq_card_filter_eq]
+  congr 1
+  refine filter_congr fun x _ ↦ ?_
+  rcases x with ⟨x, y⟩
+  simp only [Prod.mk.injEq]
+  tauto
 
 end Multiset
