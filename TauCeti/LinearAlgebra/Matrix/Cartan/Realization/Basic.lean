@@ -103,6 +103,10 @@ theorem rootEvaluation_corootMap (c : I → K) :
 /-- The span of the simple coroots, as an embedded coordinate space. -/
 def corootSpan : Submodule K H := Submodule.span K (Set.range R.coroot)
 
+omit [Fintype I] in
+/-- The coroot span is the span of the simple coroots. -/
+theorem corootSpan_def : R.corootSpan = Submodule.span K (Set.range R.coroot) := (rfl)
+
 /-- The coroot embedding has image the coroot span. -/
 theorem range_corootMap : LinearMap.range R.corootMap = R.corootSpan :=
   Fintype.range_linearCombination K R.coroot
@@ -174,6 +178,10 @@ section FiniteDimensional
 /-- A finite-dimensional realization is minimal if it attains the sharp dimension bound. -/
 def IsMinimal (_R : CartanRealization A H) : Prop :=
   FiniteDimensional K H ∧ finrank K H = 2 * Fintype.card I - A.rank
+
+variable {R} in
+/-- A minimal realization has finite-dimensional ambient space. -/
+theorem IsMinimal.finiteDimensional (hR : R.IsMinimal) : FiniteDimensional K H := hR.1
 
 variable [FiniteDimensional K H]
 
@@ -327,6 +335,33 @@ theorem isMinimal_map (e : H ≃ₗ[K] H') : (R.map e).IsMinimal ↔ R.IsMinimal
   · rintro ⟨hfin, hdim⟩
     let := hfin
     exact ⟨e.finiteDimensional, by rw [← e.finrank_eq]; exact hdim⟩
+
+omit [Fintype I] in
+/-- If the coroots span both realizations, there is a unique linear equivalence preserving
+all simple roots and coroots. Unlike the singular minimal case, the coroots form a basis. -/
+theorem existsUnique_equiv_of_corootSpan_eq_top (S : CartanRealization A H')
+    (hR : R.corootSpan = ⊤) (hS : S.corootSpan = ⊤) :
+    ∃! e : H ≃ₗ[K] H', (∀ i, e (R.coroot i) = S.coroot i) ∧
+      ∀ i h, S.root i (e h) = R.root i h := by
+  let b := Basis.mk R.coroot_linearIndependent (le_of_eq hR.symm)
+  let c := Basis.mk S.coroot_linearIndependent (le_of_eq hS.symm)
+  have hb (i : I) : b i = R.coroot i := Basis.mk_apply _ _ i
+  have hc (i : I) : c i = S.coroot i := Basis.mk_apply _ _ i
+  let e := b.equiv c (Equiv.refl I)
+  have he (i : I) : e (R.coroot i) = S.coroot i := by
+    simpa only [hb, hc, Equiv.refl_apply] using b.equiv_apply i c (Equiv.refl I)
+  refine ⟨e, ⟨he, ?_⟩, ?_⟩
+  · intro i h
+    have hf : (S.root i).comp e.toLinearMap = R.root i := by
+      apply b.ext
+      intro j
+      simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, hb, he, root_coroot]
+    exact LinearMap.congr_fun hf h
+  · intro f hf
+    apply LinearEquiv.toLinearMap_injective
+    apply b.ext
+    intro i
+    simpa only [LinearEquiv.coe_coe, hb] using (hf.1 i).trans (he i).symm
 
 end Transport
 
