@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Subsystem.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.ClosedRootSubgroup
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.Torus.Basic
-import TauCeti.CategoryTheory.Subobject.FactorThru
 
 /-!
 # The positive subgroup scheme of the pinned Geck carrier
@@ -381,24 +380,11 @@ theorem geckTorusPositiveClosedSubgroup_le_iff
     rw [ClosedSubgroupScheme.coe_mk,
       UniversalEnvelopingAlgebra.coe_kostantTorusSubsystemClosedSubgroup]
     exact Subobject.mk_eq_mk_of_comm _ _ eB (by simp [eB, eG, geckTorusPositiveInclusion])
-  have hfactor {Y : Grp (Over (Spec (CommRingCat.of ℤ)))}
-      (g : Y ⟶ UniversalEnvelopingAlgebra.kostantToralGroupScheme
-        (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
-        (t.geckCoordinateLattice ht).toAddSubgroup
-        (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
-        (t.isNilpotent_geckRepresentation_rootGenerator ht)
-        (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht)) :
-      (∃! f : Y ⟶ (((ClosedSubgroupScheme.mapIso eG P).1 :
-          Grp (Over (Spec (CommRingCat.of ℤ))))),
-        f ≫ (ClosedSubgroupScheme.mapIso eG P).1.arrow = g) ↔
-      ∃! f : Y ⟶ (P.1 : Grp (Over (Spec (CommRingCat.of ℤ)))), f ≫ P.1.arrow = g ≫ eG.inv := by
-    rw [← Subobject.factors_iff_existsUnique, ← Subobject.factors_iff_existsUnique,
-      ClosedSubgroupScheme.coe_mapIso, ← Subobject.mapIsoToOrderIso_apply,
-      Subobject.factors_mapIsoToOrderIso_iff]
   rw [← (ClosedSubgroupScheme.mapIso eG).le_iff_le, hmap,
     UniversalEnvelopingAlgebra.kostantTorusSubsystemClosedSubgroup_le_iff]
-  simp only [hfactor, eG, eqToIso.inv, ← geckRootSubgroup_def, ← geckWeightTorus_def,
-    Set.mem_range, forall_exists_index, forall_apply_eq_imp_iff]
+  simp only [ClosedSubgroupScheme.existsUnique_comp_arrow_mapIso_iff, eG, eqToIso.inv,
+    ← geckRootSubgroup_def, ← geckWeightTorus_def, Set.mem_range,
+    forall_exists_index, forall_apply_eq_imp_iff]
 
 /-! ## Rigidity -/
 
