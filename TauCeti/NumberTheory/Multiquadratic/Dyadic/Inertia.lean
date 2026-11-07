@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.Multiquadratic.ResidueDegree
 public import TauCeti.NumberTheory.Multiquadratic.Quadratic.Ramification
 import TauCeti.Algebra.Algebra.Equiv
+import TauCeti.Algebra.CharZero.IntCast
 import TauCeti.Algebra.Field.SqrtIntDiv
 import TauCeti.Algebra.Squarefree
 import TauCeti.FieldTheory.Galois.FixedField
@@ -194,7 +195,7 @@ private theorem apply_mul_mul_eq_mul_mul {b c i : ι} (hb : d b % 4 = 3) (hc : 2
 
 omit hτ in
 private theorem root_ne_zero (i : ι) : r i ≠ 0 :=
-  ne_zero_of_sq_eq_intCast (hr i) fun h => hd i (h ▸ dvd_zero 4)
+  ne_zero_of_pow_eq_intCast two_ne_zero (hr i) fun h => hd i (h ▸ dvd_zero 4)
 
 end Fixing
 
@@ -473,7 +474,7 @@ theorem inertiaDeg_eq_two_iff_exists_sq_eq_mod_eight_eq_five [IsGalois ℚ K]
       rw [hydef, map_mul, AlgEquiv.commutes, hfix σ hσ]
     have hφy : φ y = -y := by
       rw [hydef, map_mul, AlgEquiv.commutes, hφx, mul_neg]
-    have hy0 : y ≠ 0 := ne_zero_of_sq_eq_intCast hy hs.ne_zero
+    have hy0 : y ≠ 0 := ne_zero_of_pow_eq_intCast two_ne_zero hy hs.ne_zero
     -- Inertia fixes `y`; hence `s ≡ 1 (mod 4)`.
     have hs4 : s % 4 = 1 := by
       have h4 := TauCeti.Int.not_four_dvd_of_squarefree hs

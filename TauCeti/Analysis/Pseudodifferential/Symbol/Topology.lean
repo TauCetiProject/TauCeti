@@ -42,13 +42,13 @@ The main results are:
 * `TauCeti.Symbol.mixedDerivCLM`, `TauCeti.Symbol.continuous_mixedDeriv`: every mixed derivative
   at a point is a continuous linear function of the symbol;
 * `TauCeti.Symbol.isUniform_iff_bddAbove_seminorm`: a symbol is uniform exactly when its seminorms
-  are bounded independently of the compact set;
-* `TauCeti.Symbol.seminorm_comp_le`: the Leibniz bound of a seminorm of a composition `b ∘ a` by
-  sums of products of seminorms of `b` and `a`;
-* `TauCeti.Symbol.continuous_comp`, `Continuous.symbol_comp`: composition of symbols is jointly
-  continuous, so continuous parameter families compose to continuous families;
-* `TauCeti.Symbol.compLeftCLM`, `TauCeti.Symbol.compRightCLM`: composition with a fixed symbol on
-  either side as a continuous linear map.
+  are bounded independently of the compact set.
+* `TauCeti.Symbol.seminorm_comp_le`: the Leibniz estimate bounding the seminorms of a composition
+  `b ∘ a` by sums of products of seminorms of `b` and `a`;
+* `TauCeti.Symbol.continuous_comp`: composition of symbols is jointly continuous, so the
+  composition of two continuous parameter families is continuous (`Continuous.symbol_comp`);
+  with one factor fixed it is a continuous linear map (`TauCeti.Symbol.compLeftCLM`,
+  `TauCeti.Symbol.compRightCLM`).
 
 On a nonempty compact set, the constant symbol `T` has seminorm `‖T‖` without derivatives; with
 any derivative its seminorms vanish (`TauCeti.Symbol.seminorm_const_nil_nil`,
@@ -402,90 +402,104 @@ end Topology
 
 section Comp
 
+open Filter Topology
+
 variable {U : Type*} [NormedAddCommGroup U] [NormedSpace ℂ U]
 
-/-- The seminorm `p_{K,α,β}` of the composition `b ∘ a` is at most the sum of the products
-`p_{K,s₁,t₁}(b) p_{K,s₂,t₂}(a)` over all splittings of `α` into `s₁, s₂` and of `β` into
-`t₁, t₂`, as in the Leibniz rule. -/
+/-- The Leibniz estimate for the seminorms of a composition: `p_{K,α,β}(b ∘ a)` is at most the sum,
+over the splittings of `α` and `β` into complementary subwords, of the products
+`p_{K,α₁,β₁}(b) p_{K,α₂,β₂}(a)`. -/
 theorem seminorm_comp_le (K : Compacts (CoordinateSpace n)) (α β : List (Fin n))
     (b : Symbol n W U m') (a : Symbol n V W m) :
     Symbol.seminorm K α β (b.comp a) ≤
-      (β.sublists'.revzip.map fun t =>
-        (α.sublists'.revzip.map fun s =>
-          Symbol.seminorm K s.1 t.1 b * Symbol.seminorm K s.2 t.2 a).sum).sum := by
-  have hc : (b.comp a).coefficient = fun p => (b.coefficient p).comp (a.coefficient p) :=
-    funext (coefficient_comp b a)
-  refine seminorm_le_bound K α β _ (List.sum_nonneg ?_) fun x hx ξ => ?_
-  · simp only [List.mem_map]
-    rintro _ ⟨t, -, rfl⟩
-    refine List.sum_nonneg ?_
-    simp only [List.mem_map]
-    rintro _ ⟨s, -, rfl⟩
-    exact mul_nonneg (apply_nonneg _ _) (apply_nonneg _ _)
-  · rw [hc]
+      (β.sublists'.revzip.map fun t => (α.sublists'.revzip.map fun s =>
+        Symbol.seminorm K s.1 t.1 b * Symbol.seminorm K s.2 t.2 a).sum).sum := by
+  refine seminorm_le_bound K α β _ (List.sum_nonneg fun _ h => ?_) fun x hx ξ => ?_
+  · obtain ⟨t, -, rfl⟩ := List.mem_map.1 h
+    exact List.sum_nonneg fun _ h' => by
+      obtain ⟨s, -, rfl⟩ := List.mem_map.1 h'
+      exact mul_nonneg (apply_nonneg _ _) (apply_nonneg _ _)
+  · have hc : (b.comp a).coefficient = fun p => (b.coefficient p).comp (a.coefficient p) :=
+      funext (coefficient_comp b a)
+    rw [hc]
     exact norm_mixedDeriv_comp_le b.contDiff_coefficient a.contDiff_coefficient
       (fun s t => le_seminorm K s t b hx ξ) (fun s t => le_seminorm K s t a hx ξ) α β
 
-/-- Composition of symbols, `(b, a) ↦ b ∘ a`, is jointly continuous. -/
+/-- If all products `p_{K,α₁,β₁}(b_i) p_{K,α₂,β₂}(a_i)` tend to zero, then so does
+`p_{K,α,β}(b_i ∘ a_i)`, by the Leibniz estimate `seminorm_comp_le`. -/
+private theorem tendsto_seminorm_comp {ι : Type*} {l : Filter ι} (K : Compacts (CoordinateSpace n))
+    (α β : List (Fin n)) {b : ι → Symbol n W U m'} {a : ι → Symbol n V W m}
+    (h : ∀ s₁ t₁ s₂ t₂, Tendsto (fun i =>
+      Symbol.seminorm K s₁ t₁ (b i) * Symbol.seminorm K s₂ t₂ (a i)) l (𝓝 0)) :
+    Tendsto (fun i => Symbol.seminorm K α β ((b i).comp (a i))) l (𝓝 0) := by
+  refine squeeze_zero (fun _ => apply_nonneg _ _) (fun i => seminorm_comp_le K α β (b i) (a i)) ?_
+  have := tendsto_list_sum (a := fun _ => (0 : ℝ)) β.sublists'.revzip fun t _ => by
+    simpa using tendsto_list_sum (a := fun _ => (0 : ℝ)) α.sublists'.revzip
+      fun s _ => h s.1 t.1 s.2 t.2
+  simpa using this
+
+/-- Composition of symbols is jointly continuous for the symbol topologies. -/
 theorem continuous_comp :
     Continuous fun p : Symbol n W U m' × Symbol n V W m => p.1.comp p.2 := by
-  refine continuous_iff_continuousAt.2 fun ⟨b₀, a₀⟩ => ?_
-  refine (withSeminorms.tendsto_nhds _ _).2 fun ⟨K, α, β⟩ ε hε => ?_
-  -- The bound of `seminorm_comp_le`: continuous, and zero when either factor is zero.
-  let B : Symbol n W U m' × Symbol n V W m → ℝ := fun p =>
-    (β.sublists'.revzip.map fun t =>
-      (α.sublists'.revzip.map fun s =>
-        Symbol.seminorm K s.1 t.1 p.1 * Symbol.seminorm K s.2 t.2 p.2).sum).sum
-  have hB : Continuous B :=
-    continuous_list_sum _ fun t _ => continuous_list_sum _ fun s _ =>
-      ((withSeminorms.continuous_seminorm (K, s.1, t.1)).comp continuous_fst).mul
-        ((withSeminorms.continuous_seminorm (K, s.2, t.2)).comp continuous_snd)
-  -- Write `b ∘ a - b₀ ∘ a₀ = (b - b₀) ∘ a + b₀ ∘ (a - a₀)` and bound both terms by `B`.
-  have hg : Continuous fun p : Symbol n W U m' × Symbol n V W m =>
-      B (p.1 - b₀, p.2) + B (b₀, p.2 - a₀) :=
-    (hB.comp ((continuous_fst.sub continuous_const).prodMk continuous_snd)).add
-      (hB.comp (continuous_const.prodMk (continuous_snd.sub continuous_const)))
-  have h0 : B (b₀ - b₀, a₀) + B (b₀, a₀ - a₀) < ε := by simpa [B] using hε
-  filter_upwards [hg.continuousAt.eventually (gt_mem_nhds h0)] with p hp
-  calc seminormFamily n V U (m' + m) (K, α, β) (p.1.comp p.2 - b₀.comp a₀)
-      = Symbol.seminorm K α β ((p.1 - b₀).comp p.2 + b₀.comp (p.2 - a₀)) := by
-        rw [seminormFamily_apply, sub_comp, comp_sub]
-        abel_nf
-    _ ≤ Symbol.seminorm K α β ((p.1 - b₀).comp p.2) +
-          Symbol.seminorm K α β (b₀.comp (p.2 - a₀)) := map_add_le_add _ _ _
-    _ ≤ B (p.1 - b₀, p.2) + B (b₀, p.2 - a₀) :=
-        add_le_add (seminorm_comp_le K α β _ _) (seminorm_comp_le K α β _ _)
-    _ < ε := hp
+  refine continuous_iff_continuousAt.2 fun p₀ => ?_
+  rw [ContinuousAt, withSeminorms.tendsto_nhds]
+  rintro ⟨K, α, β⟩ ε hε
+  have hb : ∀ s t, Tendsto (fun p : Symbol n W U m' × Symbol n V W m =>
+      Symbol.seminorm K s t (p.1 - p₀.1)) (𝓝 p₀) (𝓝 0) := fun s t =>
+    ((withSeminorms.continuous_seminorm (K, s, t)).comp
+      (continuous_fst.sub continuous_const)).tendsto' p₀ 0 (by simp)
+  have ha : ∀ s t, Tendsto (fun p : Symbol n W U m' × Symbol n V W m =>
+      Symbol.seminorm K s t (p.2 - p₀.2)) (𝓝 p₀) (𝓝 0) := fun s t =>
+    ((withSeminorms.continuous_seminorm (K, s, t)).comp
+      (continuous_snd.sub continuous_const)).tendsto' p₀ 0 (by simp)
+  -- `b ∘ a - b₀ ∘ a₀ = (b - b₀) ∘ (a - a₀) + (b - b₀) ∘ a₀ + b₀ ∘ (a - a₀)`.
+  have h₁ := tendsto_seminorm_comp K α β fun s₁ t₁ s₂ t₂ => by
+    simpa using (hb s₁ t₁).mul (ha s₂ t₂)
+  have h₂ := tendsto_seminorm_comp K α β (a := fun _ => p₀.2) fun s₁ t₁ s₂ t₂ => by
+    simpa using (hb s₁ t₁).mul_const (Symbol.seminorm K s₂ t₂ p₀.2)
+  have h₃ := tendsto_seminorm_comp K α β (b := fun _ => p₀.1) fun s₁ t₁ s₂ t₂ => by
+    simpa using (ha s₂ t₂).const_mul (Symbol.seminorm K s₁ t₁ p₀.1)
+  have key : Tendsto (fun p : Symbol n W U m' × Symbol n V W m =>
+      Symbol.seminorm K α β (p.1.comp p.2 - p₀.1.comp p₀.2)) (𝓝 p₀) (𝓝 0) := by
+    refine squeeze_zero (fun _ => apply_nonneg _ _) (fun p => ?_) (by
+      simpa using (h₁.add h₂).add h₃)
+    have hp : p.1.comp p.2 - p₀.1.comp p₀.2 =
+        (p.1 - p₀.1).comp (p.2 - p₀.2) + (p.1 - p₀.1).comp p₀.2 + p₀.1.comp (p.2 - p₀.2) := by
+      simp only [sub_comp, comp_sub]
+      abel
+    rw [hp]
+    exact (map_add_le_add _ _ _).trans (add_le_add_left (map_add_le_add _ _ _) _)
+  simpa using (tendsto_order.1 key).2 ε hε
 
-/-- Composition depends continuously on a parameter: if `b x` and `a x` are continuous families of
-symbols, so is `b x ∘ a x`. -/
-@[continuity, fun_prop]
-theorem _root_.Continuous.symbol_comp {X : Type*} [TopologicalSpace X] {b : X → Symbol n W U m'}
-    {a : X → Symbol n V W m} (hb : Continuous b) (ha : Continuous a) :
-    Continuous fun x => (b x).comp (a x) :=
-  continuous_comp.comp (hb.prodMk ha)
-
-/-- Composition `a ↦ b ∘ a` on the left with a fixed symbol `b`, as a continuous linear map. -/
+/-- Composition on the left with a fixed symbol `b`, `a ↦ b ∘ a`, as a continuous linear map. -/
 def compLeftCLM (b : Symbol n W U m') : Symbol n V W m →L[ℂ] Symbol n V U (m' + m) where
-  toFun := b.comp
+  toFun a := b.comp a
   map_add' := comp_add b
   map_smul' c a := comp_smul c b a
-  cont := continuous_const.symbol_comp continuous_id
+  cont := continuous_comp.comp (continuous_const.prodMk continuous_id)
 
 @[simp]
 theorem compLeftCLM_apply (b : Symbol n W U m') (a : Symbol n V W m) :
     compLeftCLM b a = b.comp a := (rfl)
 
-/-- Composition `b ↦ b ∘ a` on the right with a fixed symbol `a`, as a continuous linear map. -/
+/-- Composition on the right with a fixed symbol `a`, `b ↦ b ∘ a`, as a continuous linear map. -/
 def compRightCLM (a : Symbol n V W m) : Symbol n W U m' →L[ℂ] Symbol n V U (m' + m) where
   toFun b := b.comp a
   map_add' b₁ b₂ := add_comp b₁ b₂ a
   map_smul' c b := smul_comp c b a
-  cont := continuous_id.symbol_comp continuous_const
+  cont := continuous_comp.comp (continuous_id.prodMk continuous_const)
 
 @[simp]
 theorem compRightCLM_apply (a : Symbol n V W m) (b : Symbol n W U m') :
     compRightCLM a b = b.comp a := (rfl)
+
+/-- The pointwise composition of two continuous families of symbols is a continuous family of
+symbols. -/
+@[continuity, fun_prop]
+theorem _root_.Continuous.symbol_comp {X : Type*} [TopologicalSpace X] {b : X → Symbol n W U m'}
+    {a : X → Symbol n V W m} (hb : Continuous b) (ha : Continuous a) :
+    Continuous fun x => (b x).comp (a x) :=
+  continuous_comp.comp (hb.prodMk ha)
 
 end Comp
 

@@ -60,7 +60,7 @@ theorem integral_id_map_multinomialToEuclidean_dirichletMultinomialMeasure
     (StdSimplex.single (Classical.arbitrary ι) : StdSimplex ℝ≥0 ι).extendWeights
       (fun i ↦ (x i).toNNReal)
   have hp : Measurable p := (StdSimplex.measurable_extendWeights _).comp (by fun_prop)
-  have hweights := ae_extendWeights_dirichletMeasure ha
+  have hweights := ae_extendWeights_dirichletMeasure (a := a)
     (StdSimplex.single (Classical.arbitrary ι))
   rw [integral_map (by fun_prop) (by fun_prop),
     integral_dirichletMultinomialMeasure_eq_integral _ n p hp hweights]
@@ -95,7 +95,7 @@ private theorem covariance_cast_dirichletMultinomialMeasure {a : ι → ℝ}
   have hp : Measurable p := (StdSimplex.measurable_extendWeights _).comp (by fun_prop)
   have hK : Measurable (fun x ↦ multinomialMeasure n (p x)) :=
     measurable_multinomialMeasure.comp (measurable_const.prodMk hp)
-  have hweights := ae_extendWeights_dirichletMeasure ha
+  have hweights := ae_extendWeights_dirichletMeasure (a := a)
     (StdSimplex.single (Classical.arbitrary ι))
   have hmem (l : ι) : MemLp (fun k : ι → ℕ ↦ (k l : ℝ)) 2
       (dirichletMultinomialMeasure n a) :=
