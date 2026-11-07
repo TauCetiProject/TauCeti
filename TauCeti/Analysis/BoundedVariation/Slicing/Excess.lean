@@ -22,9 +22,7 @@ Consequently, for any null-measurable family `A` of noninterval sections,
 
 The weighted version retains the transverse divergence pairing in the joint slicing inequality.
 It localizes the extra cost to `A`, without requiring measurability of the collection of all
-noninterval sections. Neither equality in Steiner's inequality nor interval sections from that
-equality are asserted here: these lower bounds must still be compared with the perimeter of
-the symmetral.
+noninterval sections.
 
 ## References
 
@@ -47,7 +45,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 /-- The weighted perimeters of line sections pay twice for every positive-length section and
 an additional two for each section in a null-measurable family `A` of noninterval sections.
 The weight is arbitrary and nonnegative; no measurability assumption on it is needed. -/
-theorem two_mul_setLIntegral_add_two_mul_setLIntegral_le_lintegral_perimeter_lineSection
+theorem two_mul_setLIntegral_add_two_mul_setLIntegral_le_lintegral_mul_perimeter_lineSection
     {s : Set E} (hs : NullMeasurableSet s volume) (hfin : volume s ≠ ∞)
     (e : E) (he : ‖e‖ = 1) {A : Set (ℝ ∙ e)ᗮ} (hA : NullMeasurableSet A volume)
     (hbad : ∀ᵐ y : (ℝ ∙ e)ᗮ ∂volume, y ∈ A →
@@ -102,7 +100,7 @@ theorem two_mul_setLIntegral_add_two_mul_setLIntegral_add_ofReal_integral_le_per
       ENNReal.ofReal (∫ y : (ℝ ∙ e)ᗮ, divergenceCLM φ y *
         volume.real {t : ℝ | (y : E) + t • e ∈ s}) ≤ perimeter volume ⊤ s :=
   (add_le_add
-    (two_mul_setLIntegral_add_two_mul_setLIntegral_le_lintegral_perimeter_lineSection
+    (two_mul_setLIntegral_add_two_mul_setLIntegral_le_lintegral_mul_perimeter_lineSection
       hs hfin e he hA hbad (fun y ↦ ENNReal.ofReal √(1 - ‖φ y‖ ^ 2))) le_rfl).trans
     (lintegral_mul_perimeter_lineSection_add_ofReal_integral_le hs hfin e he φ hφ)
 
@@ -116,7 +114,7 @@ theorem two_mul_volume_add_two_mul_volume_le_perimeter_of_noninterval_lineSectio
       ∀ I : Set ℝ, I.OrdConnected → ¬{t : ℝ | (y : E) + t • e ∈ s} =ᵐ[volume] I) :
     2 * volume {y : (ℝ ∙ e)ᗮ | 0 < volume {t : ℝ | (y : E) + t • e ∈ s}} +
         2 * volume A ≤ perimeter volume ⊤ s := by
-  have h := two_mul_setLIntegral_add_two_mul_setLIntegral_le_lintegral_perimeter_lineSection
+  have h := two_mul_setLIntegral_add_two_mul_setLIntegral_le_lintegral_mul_perimeter_lineSection
     hs hfin e he hA hbad (fun _ ↦ 1)
   simpa using h.trans (by simpa using lintegral_perimeter_lineSection_le hs hfin e he)
 
