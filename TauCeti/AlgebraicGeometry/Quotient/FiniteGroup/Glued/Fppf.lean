@@ -39,6 +39,13 @@ to the affine torsor square. The étale surjective projection generates an fppf 
 the fppf quotient statement follows from the kernel pair by
 `CategoryTheory.IsKernelPair.isColimitYonedaCofork`.
 
+The proofs adapt those of the relative case over a base scheme in
+`TauCeti.AlgebraicGeometry.Quotient.FiniteGroup.Relative.Fppf`: the étale, torsor-square and
+fppf-coequalizer arguments follow
+`CategoryTheory.CommMon.etale_invariantSubalgebraPresheaf_relativeSpecπ_of_free`,
+`CategoryTheory.CommMon.isPullback_invariantSubalgebraPresheaf_relativeSpecπ_of_free` and
+`CategoryTheory.CommMon.isColimitInvariantQuotientFppfYonedaCofork`.
+
 ## Main results
 
 * `TauCeti.InvariantQuotient.etale_projection_of_free` and
