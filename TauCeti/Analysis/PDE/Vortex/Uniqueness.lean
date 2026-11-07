@@ -226,29 +226,6 @@ open scoped ContDiff
 
 variable {x y : ℂ → EuclideanSpace ℝ (Fin 4)}
 
-/-- The end framing gives `|α| → 1` at infinity, in the form `4 * (x₂ ^ 2 + x₃ ^ 2) → 1`. -/
-lemma tendsto_four_mul_sq_of_tendsto_sectionValue_mul {phase : ℂ → ℂ}
-    (hphase : Tendsto (fun z ↦ ‖phase z‖) (cocompact ℂ) (𝓝 1))
-    (hfr : Tendsto (fun z ↦ sectionValue x z * phase z) (cocompact ℂ) (𝓝 1)) :
-    Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1) := by
-  have hn : Tendsto (fun z ↦ ‖sectionValue x z‖) (cocompact ℂ) (𝓝 1) := by
-    have hdiv := hfr.norm.div hphase one_ne_zero
-    rw [norm_one, div_one] at hdiv
-    refine hdiv.congr' ?_
-    filter_upwards [hphase.eventually_ne one_ne_zero] with z hz
-    rw [Pi.div_apply, norm_mul, mul_div_cancel_right₀ _ hz]
-  simpa only [sq_norm_sectionValue, one_pow] using hn.pow 2
-
-/-- If the complex section value is nonzero on a dense set, so is `x₂ ^ 2 + x₃ ^ 2`. -/
-private lemma dense_sq_add_sq_ne_zero_of_dense_sectionValue
-    (hdense : Dense {z | sectionValue x z ≠ 0}) : Dense {z | x z 2 ^ 2 + x z 3 ^ 2 ≠ 0} :=
-  hdense.mono fun z hz ↦ by
-    have h4 := sq_norm_sectionValue x z
-    simp only [Set.mem_ofPred_eq] at hz ⊢
-    intro h0
-    rw [h0, mul_zero] at h4
-    exact hz (norm_eq_zero.mp ((pow_eq_zero_iff two_ne_zero).mp h4))
-
 /-- **Uniqueness of framed plane vortices with prescribed zeros, modulo framed gauge.** Let `x`
 and `y` be smooth solutions of the vortex equation on the plane with the same end framing
 `α (z) · phase (z) → 1`, where `|phase| → 1` at infinity; for example `phase` is the winding
@@ -272,15 +249,16 @@ theorem existsUnique_framedGaugeGroup_smul_eq (hx : ContDiff ℝ ∞ x) (hy : Co
   have hd (f : ℂ → ℝ) (hf : ContDiff ℝ ∞ f) : Differentiable ℝ f := hf.differentiable (by simp)
   obtain ⟨h, hh, hh₀, hα⟩ := exists_contDiff_sectionValue_eq_mul (k := ⊤) le_top (hxi 0) (hxi 1)
     (hd _ (hxi 2)) (hd _ (hxi 3)) hxhol (hyi 0) (hyi 1) (hd _ (hyi 2)) (hd _ (hyi 3)) hyhol hnx hny
-  have hxlim := tendsto_four_mul_sq_of_tendsto_sectionValue_mul hphase hxfr
-  have hylim := tendsto_four_mul_sq_of_tendsto_sectionValue_mul hphase hyfr
+  have hxlim := tendsto_normSq_of_tendsto_sectionValue_mul hphase hxfr
+  have hylim := tendsto_normSq_of_tendsto_sectionValue_mul hphase hyfr
   -- The zeros of `α_y` are finite, so their complement is dense.
   have hdense : Dense {z | sectionValue y z ≠ 0} := by
     refine (dense_univ.sdiff_finite (finite_setOfPred_sectionValue_eq_zero (k := ⊤) le_top (hyi 0)
       (hyi 1) (hd _ (hyi 2)) (hd _ (hyi 3)) hyhol hylim)).mono fun z hz ↦ ?_
     simp only [Set.mem_sdiff, Set.mem_univ, true_and, Set.mem_ofPred_eq] at hz ⊢
     exact hz
-  have hdense' := dense_sq_add_sq_ne_zero_of_dense_sectionValue hdense
+  have hdense' : Dense {z | y z 2 ^ 2 + y z 3 ^ 2 ≠ 0} :=
+    hdense.mono fun z hz ↦ by simpa [sectionValue_eq_zero_iff] using hz
   have hα' (z : ℂ) : (x z 2 + x z 3 * I : ℂ) = h z * (y z 2 + y z 3 * I) := by
     have := hα z
     rw [sectionValue_apply, sectionValue_apply] at this
