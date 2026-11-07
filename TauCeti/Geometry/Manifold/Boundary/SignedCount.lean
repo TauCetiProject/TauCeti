@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.BigOperators.Ring.Int
 public import TauCeti.Geometry.Manifold.Boundary.InducedOrientation
 public import TauCeti.Geometry.Manifold.Boundary.OneDimensional
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Stokes
@@ -20,7 +21,9 @@ outward-first orientation `TauCeti.boundaryOrientation o`. On a zero-dimensional
 orientation is a sign `±1` at each point: the sign `Orientation.signBasis` of the orientation of
 the zero tangent space relative to its unique basis, indexed by `Fin 0`. At a boundary point `x`
 the sign is `1` exactly when an outward tangent vector at `x` is positively oriented for `o`, and
-`-1` exactly when it is negatively oriented.
+`-1` exactly when it is negatively oriented
+(`TauCeti.signBasis_orientationAt_boundaryOrientation_eq_one_iff`,
+`TauCeti.signBasis_orientationAt_boundaryOrientation_eq_neg_one_iff`).
 
 The statements take the basis of each zero tangent space as an argument `e`; any choice, such as
 `(EuclideanSpace.basisFun (Fin 0) ℝ).toBasis`, is the unique one.
@@ -36,14 +39,11 @@ broken trajectories, so the signed counts of broken trajectories cancel.
 The proof is Stokes' theorem `TauCeti.integralTopForm_mextDeriv` for the constant function `1`.
 Its exterior derivative vanishes, so the integral of the boundary restriction vanishes, and on the
 finite zero-dimensional boundary that integral is the sum of the orientation signs
-(`TauCeti.integralTopForm_ofFunction_finite_zeroDim`).
+(`TauCeti.integralTopForm_ofFunction_finite_zeroDim`). The equality of the two counts follows by
+`Int.finsum_units_eq_ncard_sub_ncard`.
 
 ## Main results
 
-* `TauCeti.signBasis_orientationAt_boundaryOrientation_eq_one_iff`,
-  `TauCeti.signBasis_orientationAt_boundaryOrientation_eq_neg_one_iff`: the boundary sign at a
-  point is `1`, respectively `-1`, exactly when an outward vector there is positively,
-  respectively negatively, oriented.
 * `TauCeti.finsum_signBasis_orientationAt_boundaryOrientation_eq_zero`: the boundary signs of a
   compact oriented one-manifold add up to zero.
 * `TauCeti.ncard_setOf_signBasis_eq_one_eq_ncard_setOf_signBasis_eq_neg_one`: a compact oriented
@@ -73,44 +73,6 @@ variable {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanHalfSpace (0 +
 
 local instance : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin 0)) 1 ((𝓡∂ (0 + 1)).boundary M) :=
   isManifold_boundary M one_ne_zero
-
-/-- The boundary sign at `x`, read against any basis `e` of the zero-dimensional tangent space,
-is `1` exactly when an outward tangent vector at `x`, taken as a basis of the tangent line, is
-positively oriented. -/
-theorem signBasis_orientationAt_boundaryOrientation_eq_one_iff
-    (o : Manifold.Orientation (𝓡∂ (0 + 1)) M (Fin 1)) (x : (𝓡∂ (0 + 1)).boundary M)
-    {v : TangentSpace (𝓡∂ (0 + 1)) (x : M)} (hv : IsOutwardPointing (x : M) v)
-    (b : Module.Basis (Fin 1) ℝ (TangentSpace (𝓡∂ (0 + 1)) (x : M))) (hb : b 0 = v)
-    (e : Module.Basis (Fin 0) ℝ (TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin 0)) x)) :
-    Orientation.signBasis ((boundaryOrientation o).orientationAt x) e = 1 ↔
-      b.orientation = o.orientationAt (x : M) := by
-  rw [← boundaryOrientation_spec o x hv e b (by funext i; rw [Fin.fin_one_eq_zero i, hb]; rfl)]
-  rcases e.orientation_eq_or_eq_neg ((boundaryOrientation o).orientationAt x) with h | h <;>
-    rw [h]
-  · exact ⟨fun _ ↦ rfl, fun _ ↦ Orientation.signBasis_orientation e⟩
-  · rw [Orientation.signBasis_neg, Orientation.signBasis_orientation]
-    exact ⟨fun h' ↦ absurd h' (by decide), fun h' ↦ absurd h' (Module.Ray.ne_neg_self _)⟩
-
-/-- The boundary sign at `x`, read against any basis `e` of the zero-dimensional tangent space,
-is `-1` exactly when an outward tangent vector at `x`, taken as a basis of the tangent line, is
-negatively oriented. -/
-theorem signBasis_orientationAt_boundaryOrientation_eq_neg_one_iff
-    (o : Manifold.Orientation (𝓡∂ (0 + 1)) M (Fin 1)) (x : (𝓡∂ (0 + 1)).boundary M)
-    {v : TangentSpace (𝓡∂ (0 + 1)) (x : M)} (hv : IsOutwardPointing (x : M) v)
-    (b : Module.Basis (Fin 1) ℝ (TangentSpace (𝓡∂ (0 + 1)) (x : M))) (hb : b 0 = v)
-    (e : Module.Basis (Fin 0) ℝ (TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin 0)) x)) :
-    Orientation.signBasis ((boundaryOrientation o).orientationAt x) e = -1 ↔
-      b.orientation = -o.orientationAt (x : M) := by
-  have key := signBasis_orientationAt_boundaryOrientation_eq_one_iff o x hv b hb e
-  rcases Int.units_eq_one_or (Orientation.signBasis ((boundaryOrientation o).orientationAt x) e)
-    with h | h
-  · refine ⟨fun h' ↦ absurd (h.symm.trans h') (by decide), fun h' ↦ ?_⟩
-    exact absurd ((key.mp h).symm.trans h') (Module.Ray.ne_neg_self _)
-  · refine ⟨fun _ ↦ ?_, fun _ ↦ h⟩
-    have hne : o.orientationAt (x : M) ≠ b.orientation :=
-      fun he ↦ absurd (h.symm.trans (key.mpr he.symm)) (by decide)
-    rw [(b.orientation_ne_iff_eq_neg _).mp hne]
-    exact (neg_neg b.orientation).symm
 
 variable [T2Space M] [CompactSpace M]
 
@@ -160,29 +122,9 @@ theorem ncard_setOf_signBasis_eq_one_eq_ncard_setOf_signBasis_eq_neg_one
       Module.Basis (Fin 0) ℝ (TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin 0)) x)) :
     {x | Orientation.signBasis ((boundaryOrientation o).orientationAt x) (e x) = 1}.ncard =
       {x | Orientation.signBasis ((boundaryOrientation o).orientationAt x) (e x) = -1}.ncard := by
-  classical
-  let _ : Fintype ((𝓡∂ (0 + 1)).boundary M) :=
-    (ModelWithCorners.finite_boundary_euclideanHalfSpace_one (M := M)).fintype
-  suffices ∀ s : (𝓡∂ (0 + 1)).boundary M → ℤˣ, ∑ᶠ x, (s x : ℤ) = 0 →
-      {x | s x = 1}.ncard = {x | s x = -1}.ncard from
-    this _ (finsum_signBasis_orientationAt_boundaryOrientation_eq_zero o e)
-  intro s h
-  rw [finsum_eq_sum_of_fintype,
-    ← Finset.sum_filter_add_sum_filter_not Finset.univ (fun x ↦ s x = 1)] at h
-  have hneg : Finset.univ.filter (fun x ↦ ¬s x = 1) = Finset.univ.filter (fun x ↦ s x = -1) := by
-    ext x
-    rcases Int.units_eq_one_or (s x) with hx | hx <;> simp [hx]
-  have h₁ : ∑ x ∈ Finset.univ.filter (fun x ↦ s x = 1), (s x : ℤ) =
-      (Finset.univ.filter (fun x ↦ s x = 1)).card := by
-    rw [Finset.card_eq_sum_ones, Nat.cast_sum]
-    exact Finset.sum_congr rfl fun x hx ↦ by simp [(Finset.mem_filter.mp hx).2]
-  have h₂ : ∑ x ∈ Finset.univ.filter (fun x ↦ s x = -1), (s x : ℤ) =
-      -(Finset.univ.filter (fun x ↦ s x = -1)).card := by
-    rw [Finset.card_eq_sum_ones, Nat.cast_sum, ← Finset.sum_neg_distrib]
-    exact Finset.sum_congr rfl fun x hx ↦ by simp [(Finset.mem_filter.mp hx).2]
-  rw [hneg] at h
-  rw [← Finset.coe_filter_univ, ← Finset.coe_filter_univ, Set.ncard_coe_finset,
-    Set.ncard_coe_finset]
+  have := (ModelWithCorners.finite_boundary_euclideanHalfSpace_one (M := M)).to_subtype
+  have h := finsum_signBasis_orientationAt_boundaryOrientation_eq_zero o e
+  rw [Int.finsum_units_eq_ncard_sub_ncard] at h
   omega
 
 end TauCeti
