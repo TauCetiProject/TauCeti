@@ -22,6 +22,9 @@ function for a closed set, but assumes the manifold σ-compact and does not make
 compact. Here neither is needed, since finitely many bump functions cover `K`. Cutoffs of this
 form extend a vector field given near a compact set to a compactly supported one, and so a
 complete one.
+
+The construction, smoothing a finite sum of bump functions by `Real.smoothTransition`, follows the
+bump cover in the proof of `TauCeti.exists_vectorField_mvfderiv_eq_neg_one`.
 -/
 
 public section

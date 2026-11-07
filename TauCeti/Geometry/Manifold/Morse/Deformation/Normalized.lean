@@ -9,10 +9,9 @@ public import TauCeti.Geometry.Manifold.IntegralCurve.GlobalFlow
 public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 public import TauCeti.Topology.Order.Sublevel
-import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Geometry.Manifold.Flow.Complete
 import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
-import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
+import TauCeti.Geometry.Manifold.VectorField.Normalized
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
@@ -20,17 +19,17 @@ import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 Let `f` be a smooth real function on a boundaryless finite-dimensional manifold `M`, and let `Y` be
 a smooth vector field along which `f` strictly decreases on a compact set `K`, that is
-`df(Y) < 0` on `K`. Rescaling `Y` by the positive function `1 / (-df(Y))` gives a field along
-which `f` decreases at unit speed. Cut off away from `K`, this is a smooth vector field `X` with
-compact support, a nonnegative multiple of `Y` at every point, which equals `Y / (-df(Y))` near
-`K` (`TauCeti.exists_vectorField_eq_inv_smul_of_mvfderiv_lt_zero`).
+`df(Y) < 0` on `K`. Cut off away from `K`, its rescaling `Y / (-df(Y))` is a smooth vector field
+`X` with compact support, a nonnegative multiple of `Y` at every point, along which `f` decreases at
+unit speed near `K` (`TauCeti.exists_vectorField_eq_inv_smul_of_mvfderiv_lt_zero`).
 
 When `K` is a compact band `f⁻¹[a, b]`, the flow of `X` lowers `f` at unit speed through the band
-(`TauCeti.exists_flow_eq_inv_smul_of_mvfderiv_lt_zero`). Following it from a point `x` of
-`{f ≤ b}` for the time `max (f x - a) 0`, exactly the time needed to reach the level `a`, is a
-retraction of `{f ≤ b}` onto `{f ≤ a}`, and following it part of the way is a homotopy fixing
-`{f ≤ a}` pointwise (`TauCeti.exists_sublevelDeformation_of_mvfderiv_lt_zero`). Near the band
-the field `X` is a positive multiple of `Y`, so the points move along the flow lines of `Y`.
+(`TauCeti.exists_flow_apply_eq_sub_of_mvfderiv_lt_zero`). Following it from a point `x` of
+`{f ≤ b}` for the time `max (f x - a) 0` is a retraction of `{f ≤ b}` onto `{f ≤ a}`: a point with
+`a ≤ f x` reaches the level `a` after the time `f x - a`, and a point with `f x ≤ a` stays fixed.
+Following the flow part of the way is a homotopy fixing `{f ≤ a}` pointwise
+(`TauCeti.exists_sublevelDeformation_of_mvfderiv_lt_zero`). Near the band the field `X` is a
+positive multiple of `Y`, so the points move along the flow lines of `Y`.
 
 Two choices of `Y` give the classical constructions of Milnor's deformation.
 
@@ -40,19 +39,17 @@ Two choices of `Y` give the classical constructions of Milnor's deformation.
 * For a pseudo-gradient `Y` adapted to a Morse function, `X` is its rescaling with `df(X) = -1`
   near the band (`TauCeti.IsAdaptedPseudoGradient.exists_sublevelDeformation`).
 
-In both cases the deformation retraction moves each point of `{f ≤ b}` to the level `a` in the time
-`f x - a` and fixes `{f ≤ a}`; only the flow lines along which the points move depend on `Y`. The
-construction of `TauCeti.exists_sublevelDeformation` uses instead a field built from charts, with
-no metric or pseudo-gradient.
+In both cases the deformation retraction moves each point of `{f ≤ b}` with `a ≤ f x` to the level
+`a` in the time `f x - a` and fixes `{f ≤ a}`; only the flow lines along which the points move
+depend on `Y`. The construction of `TauCeti.exists_sublevelDeformation` uses instead a field built
+from charts, with no metric or pseudo-gradient.
 
 ## Main results
 
-* `TauCeti.exists_vectorField_eq_inv_smul_of_mvfderiv_lt_zero`: the cut-off normalized field
-  `Y / (-df(Y))` near a compact set on which `df(Y) < 0`.
-* `TauCeti.exists_flow_eq_inv_smul_of_mvfderiv_lt_zero`: its flow lowers `f` at unit speed through
-  a compact band.
+* `TauCeti.exists_flow_apply_eq_sub_of_mvfderiv_lt_zero`: the flow of the cut-off normalized field
+  `Y / (-df(Y))` lowers `f` at unit speed through a compact band.
 * `TauCeti.exists_sublevelDeformation_of_mvfderiv_lt_zero`: the deformation retraction of
-  `{f ≤ b}` onto `{f ≤ a}` along this flow, with hitting time `f x - a`.
+  `{f ≤ b}` onto `{f ≤ a}` along this flow, with hitting time `max (f x - a) 0`.
 * `TauCeti.exists_sublevelDeformation_neg_mgradient`: the same along the normalized
   negative gradient `-grad f / ‖grad f‖²` of a smooth Riemannian metric.
 * `TauCeti.IsAdaptedPseudoGradient.exists_sublevelDeformation`: the same along a rescaled adapted
@@ -78,56 +75,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
   {f : M → ℝ} {Y : (x : M) → TangentSpace I x}
 
-/-- **Normalizing a descending field near a compact set.** Let `f` be smooth and `Y` a smooth
-vector field with `df(Y) < 0` on a compact set `K`. Then there is a smooth vector field `X`,
-vanishing outside a compact set, which is a nonnegative multiple of `Y` at every point, along which
-`f` never increases, and which equals the normalized field `Y / (-df(Y))` on an open neighbourhood
-`U` of `K` on which `df(Y) < 0`. In particular `df(X) = -1` on `U`. -/
-theorem exists_vectorField_eq_inv_smul_of_mvfderiv_lt_zero (hf : ContMDiff I 𝓘(ℝ) ∞ f)
-    (hY : ContMDiff I I.tangent ∞ (fun x ↦ (⟨x, Y x⟩ : TangentBundle I M)))
-    {K : Set M} (hK : IsCompact K) (hKY : ∀ x ∈ K, mvfderiv I f x (Y x) < 0) :
-    ∃ X : (x : M) → TangentSpace I x,
-      ContMDiff I I.tangent ∞ (fun x ↦ (⟨x, X x⟩ : TangentBundle I M)) ∧
-      (∀ x, ∃ c : ℝ, 0 ≤ c ∧ X x = c • Y x) ∧ (∀ x, mvfderiv I f x (X x) ≤ 0) ∧
-      (∃ U, IsOpen U ∧ K ⊆ U ∧
-        ∀ x ∈ U, mvfderiv I f x (Y x) < 0 ∧ X x = (-mvfderiv I f x (Y x))⁻¹ • Y x) ∧
-      ∃ C, IsCompact C ∧ ∀ x ∉ C, X x = 0 := by
-  -- The derivative `g = df(Y)` is smooth, and negative on an open set containing `K`.
-  obtain ⟨g, hg⟩ : ∃ g : M → ℝ, ∀ y, g y = mvfderiv I f y (Y y) := ⟨_, fun _ ↦ rfl⟩
-  have hgC : ContMDiff I 𝓘(ℝ) ∞ g := by
-    rw [funext hg]
-    exact (hf.contMDiff_mvfderiv_apply (m := ∞) (by simp)).comp hY
-  have hW : IsOpen {y | g y < 0} := isOpen_lt hgC.continuous continuous_const
-  obtain ⟨σ, hσC, hσ1, hσC_compact, hσW, hσ01⟩ := hK.exists_contMDiff_one_nhds_tsupport_subset I hW
-    fun x hx ↦ by rw [mem_ofPred_eq, hg]; exact hKY x hx
-  have hσg : ∀ y, σ y ≠ 0 → g y < 0 := fun y hy ↦ hσW (subset_tsupport _ hy)
-  -- Off `{g < 0}` the cutoff vanishes, and on `{g < 0}` the normalized field is smooth.
-  have hZ : ContMDiffOn I I.tangent ∞
-      (fun y ↦ (⟨y, (-g y)⁻¹ • Y y⟩ : TangentBundle I M)) {y | g y < 0} :=
-    (hgC.neg.contMDiffOn.inv₀ fun y (hy : g y < 0) ↦ neg_ne_zero.2 hy.ne).smul_section
-      hY.contMDiffOn
-  obtain ⟨X, hX⟩ : ∃ X : (x : M) → TangentSpace I x, ∀ y, X y = σ y • ((-g y)⁻¹ • Y y) :=
-    ⟨_, fun _ ↦ rfl⟩
-  have hdfX : ∀ y, mvfderiv I f y (X y) = -σ y := fun y ↦ by
-    rw [hX, map_smul, map_smul, smul_eq_mul, smul_eq_mul, ← hg]
-    by_cases hy : σ y = 0
-    · simp [hy]
-    · field_simp [(hσg y hy).ne]
-  refine ⟨X, ?_, fun y ↦ ⟨σ y * (-g y)⁻¹, ?_, by rw [hX, smul_smul]⟩,
-    fun y ↦ by rw [hdfX]; linarith [(hσ01 y).1],
-    ⟨interior {y | σ y = 1}, isOpen_interior, subset_interior_iff_mem_nhdsSet.2 hσ1,
-      fun y hy ↦ ?_⟩, tsupport σ, hσC_compact, fun y hy ↦ ?_⟩
-  · rw [funext hX]
-    exact ContMDiffOn.smul_section_of_tsupport hσC.contMDiffOn hW hσW hZ
-  · by_cases hy : σ y = 0
-    · simp [hy]
-    · exact mul_nonneg (hσ01 y).1 (inv_nonneg.2 (by linarith [hσg y hy]))
-  · have hσy : σ y = 1 := interior_subset hy
-    refine ⟨?_, by rw [hX, hσy, one_smul, hg]⟩
-    rw [← hg]
-    exact hσg y (by rw [hσy]; exact one_ne_zero)
-  · rw [hX, image_eq_zero_of_notMem_tsupport hy, zero_smul]
-
 variable [I.Boundaryless]
 
 /-- **The flow of a normalized descending field.** Let `f` be smooth, let the band `f⁻¹[a, b]` be
@@ -136,7 +83,7 @@ vector field `X`, a nonnegative multiple of `Y` at every point and equal to the 
 `Y / (-df(Y))` on an open neighbourhood of the band, whose flow `φ` is jointly smooth in time and
 space, never increases `f`, and lowers `f` at unit speed through the band: if `f x ≤ b`, `t ≥ 0`
 and `f x - t ≥ a`, then `f (φ t x) = f x - t`. -/
-theorem exists_flow_eq_inv_smul_of_mvfderiv_lt_zero (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+theorem exists_flow_apply_eq_sub_of_mvfderiv_lt_zero (hf : ContMDiff I 𝓘(ℝ) ∞ f)
     (hY : ContMDiff I I.tangent ∞ (fun x ↦ (⟨x, Y x⟩ : TangentBundle I M))) {a b : ℝ}
     (hcompact : IsCompact (f ⁻¹' Icc a b))
     (hbandY : ∀ x, a ≤ f x → f x ≤ b → mvfderiv I f x (Y x) < 0) :
@@ -169,9 +116,9 @@ theorem exists_flow_eq_inv_smul_of_mvfderiv_lt_zero (hf : ContMDiff I 𝓘(ℝ) 
 `f` be smooth, `a ≤ b`, let the band `f⁻¹[a, b]` be compact, and let `Y` be a smooth vector field
 with `df(Y) < 0` on the band. Let `X` be a smooth vector field equal to the normalized field
 `Y / (-df(Y))` on an open neighbourhood of the band, with flow `φ`. Following `φ` from each point
-`x` of `{f ≤ b}` for the time `max (f x - a) 0` it takes to reach the level `a` is a retraction `r`
-of `{f ≤ b}` onto `{f ≤ a}`, and there is a homotopy from the inclusion of `r` to the identity
-fixing `{f ≤ a}` pointwise. -/
+`x` of `{f ≤ b}` for the time `max (f x - a) 0`, which brings `x` to the level `a` if `a ≤ f x` and
+leaves it fixed if `f x ≤ a`, is a retraction `r` of `{f ≤ b}` onto `{f ≤ a}`, and there is a
+homotopy from the inclusion of `r` to the identity fixing `{f ≤ a}` pointwise. -/
 theorem exists_sublevelDeformation_of_mvfderiv_lt_zero (hf : ContMDiff I 𝓘(ℝ) ∞ f)
     (hY : ContMDiff I I.tangent ∞ (fun x ↦ (⟨x, Y x⟩ : TangentBundle I M))) {a b : ℝ}
     (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b))
@@ -186,7 +133,7 @@ theorem exists_sublevelDeformation_of_mvfderiv_lt_zero (hf : ContMDiff I 𝓘(�
           Nonempty (ContinuousMap.HomotopyRel ((sublevelInclusion f a b hab).comp r)
             (ContinuousMap.id _) {x | f x ≤ a}) := by
   obtain ⟨X, hX, -, hXU, φ, -, hφX, -, hφ⟩ :=
-    exists_flow_eq_inv_smul_of_mvfderiv_lt_zero hf hY hcompact hbandY
+    exists_flow_apply_eq_sub_of_mvfderiv_lt_zero hf hY hcompact hbandY
   exact ⟨X, hX, hXU, φ, hφX,
     exists_sublevelDeformation_of_apply_eq_sub hf.continuous hab φ φ.cont' φ.map_zero_apply hφ⟩
 
@@ -194,9 +141,10 @@ theorem exists_sublevelDeformation_of_mvfderiv_lt_zero (hf : ContMDiff I 𝓘(�
 smooth on a manifold with a smooth Riemannian metric, `a ≤ b`, and let the band `f⁻¹[a, b]` be
 compact and contain no critical point of `f`. Let `X` be a smooth vector field equal to the
 normalized negative gradient `-grad f / ‖grad f‖²` on an open neighbourhood of the band, with flow
-`φ`. Following `φ` from each point `x` of `{f ≤ b}` for the time `max (f x - a) 0` it takes to
-reach the level `a` is a retraction `r` of `{f ≤ b}` onto `{f ≤ a}`, and there is a homotopy from
-the inclusion of `r` to the identity fixing `{f ≤ a}` pointwise. -/
+`φ`. Following `φ` from each point `x` of `{f ≤ b}` for the time `max (f x - a) 0`, which brings
+`x` to the level `a` if `a ≤ f x` and leaves it fixed if `f x ≤ a`, is a retraction `r` of
+`{f ≤ b}` onto `{f ≤ a}`, and there is a homotopy from the inclusion of `r` to the identity fixing
+`{f ≤ a}` pointwise. -/
 theorem exists_sublevelDeformation_neg_mgradient
     [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
     [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
@@ -237,9 +185,10 @@ variable {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [T2Space M]
 adapted to a smooth function `f`, let `a ≤ b`, and let the band `f⁻¹[a, b]` be compact and contain
 no critical point of `f`. Let `X` be a smooth vector field equal to the rescaled pseudo-gradient
 `Y / (-df(Y))`, with `df(X) = -1`, on an open neighbourhood of the band, with flow `φ`. Following
-`φ` from each point `x` of `{f ≤ b}` for the time `max (f x - a) 0` it takes to reach the level `a`
-is a retraction `r` of `{f ≤ b}` onto `{f ≤ a}`, and there is a homotopy from the inclusion of `r`
-to the identity fixing `{f ≤ a}` pointwise. -/
+`φ` from each point `x` of `{f ≤ b}` for the time `max (f x - a) 0`, which brings `x` to the level
+`a` if `a ≤ f x` and leaves it fixed if `f x ≤ a`, is a retraction `r` of `{f ≤ b}` onto
+`{f ≤ a}`, and there is a homotopy from the inclusion of `r` to the identity fixing `{f ≤ a}`
+pointwise. -/
 theorem exists_sublevelDeformation (hY : IsAdaptedPseudoGradient f Y)
     (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ f) {a b : ℝ} (hab : a ≤ b)
     (hcompact : IsCompact (f ⁻¹' Icc a b))
