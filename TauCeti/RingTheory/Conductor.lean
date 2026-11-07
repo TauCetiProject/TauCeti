@@ -9,6 +9,8 @@ public import Mathlib.RingTheory.Finiteness.Basic
 public import Mathlib.RingTheory.Ideal.Colon
 public import TauCeti.Algebra.Module.LocalizedModule.Submodule
 public import TauCeti.RingTheory.Localization.Annihilator
+public import TauCeti.RingTheory.Flat.Annihilator
+public import Mathlib.RingTheory.IsTensorProduct
 
 /-!
 # The conductor of an algebra
@@ -46,6 +48,8 @@ its target glue to an ideal sheaf. Without finiteness only one inclusion holds.
   lies in the conductor of the localization.
 * `TauCeti.Algebra.conductor_eq_map`: for `B` finite over `A`, the conductor of a
   localization `S⁻¹B` over `S⁻¹A` is the extension of the conductor of `B` over `A`.
+* `TauCeti.Algebra.conductor_eq_map_of_flat`: conductors commute with flat base change
+  when `B / A` is finite; in particular this applies to finite algebras.
 
 ## References
 
@@ -124,5 +128,34 @@ theorem conductor_eq_map [Module.Finite A B] :
   rwa [Submodule.localized'_one S A' B'] at h
 
 end Localization
+
+section BaseChange
+
+variable (A) {B : Type*} [CommRing B] [Algebra A B]
+  (A' B' : Type*) [CommRing A'] [CommRing B'] [Algebra A A']
+  [Algebra A B'] [Algebra A' B'] [Algebra B B']
+  [IsScalarTower A A' B'] [IsScalarTower A B B']
+  [Algebra.IsPushout A A' B B'] [Module.Flat A A']
+  [Module.Finite A (B ⧸ (1 : Submodule A B))]
+
+/-- The conductor commutes with flat base change when `B / A` is finite, in particular
+for finite algebras. The pushout formulation applies to any chosen realization of the
+base-changed algebra. This follows from flat base change of annihilators (Stacks Tag 07T8). -/
+theorem conductor_eq_map_of_flat :
+    conductor A' B' = (conductor A B).map (algebraMap A A') := by
+  let e := Algebra.IsPushout.equiv A A' B B'
+  have hmap : (LinearMap.range ((Algebra.linearMap A B).baseChange A')).map
+      e.toLinearMap = (1 : Submodule A' B') := by
+    rw [← LinearMap.baseChange_range, ← Submodule.one_eq_range,
+      Submodule.one_eq_span, Submodule.baseChange_span, Submodule.map_span]
+    simp [Algebra.IsPushout.equiv_tmul, Submodule.one_eq_span, e]
+  let q := Submodule.Quotient.equiv _ _ e.toLinearEquiv hmap
+  rw [conductor_eq_annihilator, ← q.annihilator_eq]
+  rw [conductor_eq_annihilator, Submodule.one_eq_range]
+  have : Module.Finite A (B ⧸ LinearMap.range (Algebra.linearMap A B)) := by
+    rwa [← Submodule.one_eq_range]
+  exact (Algebra.linearMap A B).cokernel_annihilator_flat_baseChange (S := A')
+
+end BaseChange
 
 end TauCeti.Algebra
