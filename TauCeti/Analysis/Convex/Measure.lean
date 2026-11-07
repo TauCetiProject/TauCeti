@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Convex.Measure
 
 import Mathlib.Analysis.Normed.Affine.AddTorsorBases
+import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Analysis.Normed.Module.Convex
 
 /-!

@@ -8,15 +8,13 @@ module
 public import Mathlib.Analysis.Normed.Module.Convex
 
 /-!
-# Convex sets and balls in normed spaces
+# Closed convex hulls and convex sets containing a ball
 
 Taking the closed convex hull of a set in a real seminormed space preserves both boundedness and
 diameter. These are the closed-hull counterparts of `isBounded_convexHull` and `convexHull_diam`.
 
 A convex set containing a ball `ball x r` and a point `y` contains the ball of radius `(1 - t) * r`
-about `x + t • (y - x)` for every `0 ≤ t ≤ 1` (`Convex.ball_add_smul_sub_subset`). The balls of
-radius `‖v‖ / 2` about the points `x + j • v`, `j : ℕ`, are pairwise disjoint
-(`TauCeti.pairwise_disjoint_ball_add_natCast_smul`).
+about `x + t • (y - x)` for every `0 ≤ t ≤ 1` (`Convex.ball_add_smul_sub_subset`).
 -/
 
 public section
@@ -36,19 +34,6 @@ theorem isBounded_closedConvexHull : IsBounded (closedConvexHull ℝ K) ↔ IsBo
 @[simp]
 theorem diam_closedConvexHull : diam (closedConvexHull ℝ K) = diam K := by
   rw [closedConvexHull_eq_closure_convexHull, diam_closure, convexHull_diam]
-
-/-- The balls of radius `‖v‖ / 2` about the points `x + j • v`, `j : ℕ`, are pairwise disjoint. -/
-theorem pairwise_disjoint_ball_add_natCast_smul {E : Type*} [SeminormedAddCommGroup E]
-    [NormedSpace ℝ E] (x v : E) :
-    Pairwise (Function.onFun Disjoint fun j : ℕ => ball (x + (j : ℝ) • v) (‖v‖ / 2)) := by
-  intro i j hij
-  refine ball_disjoint_ball ?_
-  have h : (1 : ℝ) ≤ |(i : ℝ) - j| := by
-    simpa only [Nat.dist_eq] using Nat.pairwise_one_le_dist hij
-  have hdist : dist (x + (i : ℝ) • v) (x + (j : ℝ) • v) = |(i : ℝ) - j| * ‖v‖ := by
-    rw [dist_eq_norm, add_sub_add_left_eq_sub, ← sub_smul, norm_smul, Real.norm_eq_abs]
-  rw [hdist, add_halves]
-  nlinarith [norm_nonneg v]
 
 end TauCeti
 

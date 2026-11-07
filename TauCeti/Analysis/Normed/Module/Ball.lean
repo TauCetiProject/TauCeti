@@ -12,6 +12,7 @@ public import Mathlib.Analysis.Normed.Module.Ball.Pointwise
 public import Mathlib.LinearAlgebra.Span.Defs
 public import TauCeti.Analysis.Normed.Module.RCLike.Real
 import Mathlib.Tactic.Module
+import Mathlib.Topology.Instances.Nat
 
 /-!
 # Metric balls and spheres in normed spaces
@@ -43,6 +44,9 @@ For `t ≥ 0`, the outer parallel set `K + t • closedBall 0 1` of a compact se
 
 Half the difference body of a bounded set lies in a ball of half its diameter. A bounded set
 centrally symmetric up to translation lies in a ball of half its diameter about its center.
+
+The balls of radius `‖v‖ / 2` about the points `x + j • v`, `j : ℕ`, are pairwise disjoint
+(`TauCeti.pairwise_disjoint_ball_add_natCast_smul`).
 -/
 
 public section
@@ -233,5 +237,23 @@ theorem subset_closedBall_diam_div_two_of_neg_eq_vadd {H : Set E}
   exact norm_half_smul_sub_le (dist_eq_norm y _ ▸ dist_le_diam_of_mem hH hy hy')
 
 end Diameter
+
+section Disjoint
+
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- The balls of radius `‖v‖ / 2` about the points `x + j • v`, `j : ℕ`, are pairwise disjoint. -/
+theorem pairwise_disjoint_ball_add_natCast_smul (x v : E) :
+    Pairwise (Function.onFun Disjoint fun j : ℕ => ball (x + (j : ℝ) • v) (‖v‖ / 2)) := by
+  intro i j hij
+  refine ball_disjoint_ball ?_
+  have h : (1 : ℝ) ≤ |(i : ℝ) - j| := by
+    simpa only [Nat.dist_eq] using Nat.pairwise_one_le_dist hij
+  have hdist : dist (x + (i : ℝ) • v) (x + (j : ℝ) • v) = |(i : ℝ) - j| * ‖v‖ := by
+    rw [dist_eq_norm, add_sub_add_left_eq_sub, ← sub_smul, norm_smul, Real.norm_eq_abs]
+  rw [hdist, add_halves]
+  nlinarith [norm_nonneg v]
+
+end Disjoint
 
 end TauCeti
