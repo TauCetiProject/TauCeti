@@ -75,6 +75,8 @@ plateau, built from two smooth transitions, is equal to `1` on `[a + δ, b - δ]
 * `TauCeti.contDiff_positiveCutoff`: the cutoff of a function that is `C¹` on `(0, ∞)` is `C¹`.
 * `TauCeti.exists_nnnorm_deriv_positiveCutoff_le`: its derivative is bounded when `g'` is bounded
   on `[m, ∞)`.
+* `TauCeti.deriv_eq_zero_of_not_mem_Ioo`: a `C¹` function constant on `(-∞, a]` and on `[b, ∞)` has
+  zero derivative outside `(a, b)`.
 * `TauCeti.exists_contDiff_antitone_cutoff`: a smooth nonincreasing step from a value `v ≥ 0` on
   `(-∞, a]` down to `0` on `[b, ∞)`.
 * `TauCeti.exists_contDiff_plateau`: a smooth function with values in `[0, 1]`, vanishing outside
@@ -430,6 +432,27 @@ theorem exists_nnnorm_deriv_positiveCutoff_le {m : ℝ} (hm : 0 < m) {g : ℝ �
   · exact (hC t ⟨ht, htm⟩).trans (le_max_left _ _)
   · rw [deriv_positiveCutoff hm g (by linarith), Real.norm_eq_abs]
     exact (hK t htm.le).trans (le_max_right _ _)
+
+/-- A `C¹` function that is constant on `(-∞, a]` and on `[b, ∞)` has vanishing derivative outside
+`(a, b)`. The derivative vanishes on the open rays by local constancy, and on their closures by
+continuity of the derivative. -/
+theorem deriv_eq_zero_of_not_mem_Ioo {μ : ℝ → ℝ} {a b c : ℝ} (hμ : ContDiff ℝ 1 μ)
+    (hlow : ∀ r ≤ a, μ r = μ a) (hhigh : ∀ r, b ≤ r → μ r = c) :
+    ∀ r ∉ Ioo a b, deriv μ r = 0 := by
+  have hcl : IsClosed {x | deriv μ x = 0} :=
+    isClosed_eq (hμ.continuous_deriv le_rfl) continuous_const
+  have hlt : Iio a ⊆ {x | deriv μ x = 0} := fun r hr ↦ by
+    have : μ =ᶠ[nhds r] fun _ ↦ μ a :=
+      Filter.eventually_of_mem (Iio_mem_nhds hr) fun x hx ↦ hlow x hx.le
+    simpa using this.deriv_eq
+  have hgt : Ioi b ⊆ {x | deriv μ x = 0} := fun r hr ↦ by
+    have : μ =ᶠ[nhds r] fun _ ↦ c :=
+      Filter.eventually_of_mem (Ioi_mem_nhds hr) fun x hx ↦ hhigh x hx.le
+    simpa using this.deriv_eq
+  intro r hr
+  rcases not_and_or.1 (by simpa only [mem_Ioo] using hr) with h | h
+  · exact (closure_Iio (a := a) ▸ closure_minimal hlt hcl) (not_lt.1 h)
+  · exact (closure_Ioi (a := b) ▸ closure_minimal hgt hcl) (not_lt.1 h)
 
 /-- A smooth nonincreasing step down from a value `v ≥ 0` to `0`: for `a < b` there is a smooth
 antitone function `μ ≥ 0` equal to `v` on `(-∞, a]` and to `0` on `[b, ∞)`. -/
