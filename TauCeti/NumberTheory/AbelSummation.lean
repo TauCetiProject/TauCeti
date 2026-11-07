@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Asymptotics.Lemmas
 public import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
 public import Mathlib.NumberTheory.AbelSummation
 
@@ -272,47 +273,29 @@ theorem sum_Icc_rpow_mul_eq (c : ℕ → ℝ) (τ : ℝ) {x : ℝ} (hx : 1 ≤ x
   funext t
   ring
 
-/-- **Partial sums weighted by a power.** If the partial sums of `c` grow like `κ x`, that is
-`x⁻¹ ∑_{1 ≤ n ≤ x} c n → κ`, then for every exponent `τ > -1` the partial sums weighted by `n ^ τ`
-grow like `κ x ^ (τ + 1) / (τ + 1)`:
-`(x ^ (τ + 1))⁻¹ ∑_{1 ≤ n ≤ x} n ^ τ c n → κ / (τ + 1)`. No sign condition on `c` is needed. -/
-theorem tendsto_rpow_inv_mul_sum_Icc_rpow_mul {c : ℕ → ℝ} {κ τ : ℝ} (hτ : -1 < τ)
-    (h : Tendsto (fun x : ℝ ↦ x⁻¹ * ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, c n) atTop (𝓝 κ)) :
-    Tendsto (fun x : ℝ ↦ (x ^ (τ + 1))⁻¹ * ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, (n : ℝ) ^ τ * c n) atTop
-      (𝓝 (κ / (τ + 1))) := by
-  have hτ1 : 0 < τ + 1 := by linarith
+/-- The partial sums of `c`, minus a linear function, are interval integrable above `1`, being a
+step function minus a continuous function. -/
+theorem intervalIntegrable_sum_Icc_sub_mul (c : ℕ → ℝ) (κ : ℝ) {x : ℝ} (hx : 1 ≤ x) :
+    IntervalIntegrable (fun t : ℝ ↦ ∑ n ∈ Finset.Icc 1 ⌊t⌋₊, c n - κ * t) volume 1 x := by
+  have hS_int : IntervalIntegrable (fun t : ℝ ↦ ∑ n ∈ Finset.Icc 1 ⌊t⌋₊, c n) volume 1 x := by
+    refine (intervalIntegrable_iff_integrableOn_Icc_of_le hx).mpr ?_
+    simpa using integrableOn_mul_sum_Icc c (m := 1) zero_le_one
+      (continuous_const (y := (1 : ℝ))).integrableOn_Icc
+  exact hS_int.sub ((continuous_const.mul continuous_id).intervalIntegrable 1 x)
+
+/-- The Abel-summation identity `sum_Icc_rpow_mul_eq`, with the partial sums `S t` split as
+`(S t - κ t) + κ t` inside the integral and everything divided by `x ^ (τ + 1)`. -/
+theorem sum_Icc_rpow_mul_eq_div_add_integral_sub_mul {c : ℕ → ℝ} {κ τ : ℝ} (hτ : -1 < τ)
+    {x : ℝ} (hx : 1 ≤ x) :
+    x⁻¹ * ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, c n -
+        τ * ((∫ t in (1 : ℝ)..x, t ^ (τ - 1) *
+          (∑ n ∈ Finset.Icc 1 ⌊t⌋₊, c n - κ * t)) / x ^ (τ + 1)) -
+        τ * κ / (τ + 1) + τ * κ / (τ + 1) * (x ^ (τ + 1))⁻¹ =
+      (x ^ (τ + 1))⁻¹ * ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, (n : ℝ) ^ τ * c n := by
+  have hE_int := intervalIntegrable_sum_Icc_sub_mul c κ hx
   set S : ℝ → ℝ := fun t ↦ ∑ n ∈ Finset.Icc 1 ⌊t⌋₊, c n
   set E : ℝ → ℝ := fun t ↦ S t - κ * t with hE
-  -- The partial sums are interval integrable above `1`, being a step function.
-  have hE_int (x : ℝ) (hx : 1 ≤ x) : IntervalIntegrable E volume 1 x := by
-    have hS_int : IntervalIntegrable S volume 1 x := by
-      refine (intervalIntegrable_iff_integrableOn_Icc_of_le hx).mpr ?_
-      simpa using integrableOn_mul_sum_Icc c (m := 1) zero_le_one
-        (continuous_const (y := (1 : ℝ))).integrableOn_Icc
-    exact hS_int.sub ((continuous_const.mul continuous_id).intervalIntegrable 1 x)
-  -- The hypothesis says `E t = o(t)`.
-  have hEo : E =o[atTop] id := by
-    refine (isLittleO_iff_tendsto' ?_).mpr ?_
-    · filter_upwards [eventually_gt_atTop (0 : ℝ)] with t ht h0
-      exact absurd h0 ht.ne'
-    · have h0 : Tendsto (fun t ↦ t⁻¹ * S t - κ) atTop (𝓝 0) := by
-        simpa using h.sub_const κ
-      refine h0.congr' ?_
-      filter_upwards [eventually_gt_atTop (0 : ℝ)] with t ht
-      simp only [hE, id]
-      field_simp
-  have hI := (isLittleO_integral_rpow_sub_one_mul hτ hE_int hEo).tendsto_div_nhds_zero
-  have hpow : Tendsto (fun x : ℝ ↦ (x ^ (τ + 1))⁻¹) atTop (𝓝 0) :=
-    (tendsto_rpow_atTop hτ1).inv_tendsto_atTop
-  have hlim := ((h.sub (hI.const_mul τ)).sub_const (τ * κ / (τ + 1))).add
-    (hpow.const_mul (τ * κ / (τ + 1)))
-  have hval : κ - τ * 0 - τ * κ / (τ + 1) + τ * κ / (τ + 1) * 0 = κ / (τ + 1) := by
-    field_simp
-    ring
-  rw [hval] at hlim
-  refine hlim.congr' ?_
-  -- In the Abel-summation identity, split `S t = E t + κ t` inside the integral.
-  filter_upwards [eventually_ge_atTop (1 : ℝ)] with x hx
+  have hτ1 : 0 < τ + 1 := by linarith
   have hx0 : 0 < x := by linarith
   have hcont : ContinuousOn (fun t : ℝ ↦ t ^ (τ - 1)) (uIcc 1 x) := fun t ht ↦ by
     rw [uIcc_of_le hx] at ht
@@ -322,7 +305,7 @@ theorem tendsto_rpow_inv_mul_sum_Icc_rpow_mul {c : ℕ → ℝ} {κ τ : ℝ} (h
     have hκ : ∫ t in (1 : ℝ)..x, t ^ τ = (x ^ (τ + 1) - 1) / (τ + 1) := by
       rw [integral_rpow (Or.inl hτ), Real.one_rpow]
     rw [← hκ, ← intervalIntegral.integral_const_mul,
-      ← intervalIntegral.integral_add ((hE_int x hx).continuousOn_mul hcont)
+      ← intervalIntegral.integral_add (hE_int.continuousOn_mul hcont)
         ((intervalIntegral.intervalIntegrable_rpow' hτ).const_mul κ)]
     refine intervalIntegral.integral_congr fun t ht ↦ ?_
     rw [uIcc_of_le hx] at ht
@@ -334,5 +317,30 @@ theorem tendsto_rpow_inv_mul_sum_Icc_rpow_mul {c : ℕ → ℝ} {κ τ : ℝ} (h
   rw [sum_Icc_rpow_mul_eq c τ hx, hsplit, Real.rpow_add_one hx0.ne']
   field_simp
   ring
+
+/-- **Partial sums weighted by a power.** If the partial sums of `c` grow like `κ x`, that is
+`x⁻¹ ∑_{1 ≤ n ≤ x} c n → κ`, then for every exponent `τ > -1` the partial sums weighted by `n ^ τ`
+grow like `κ x ^ (τ + 1) / (τ + 1)`:
+`(x ^ (τ + 1))⁻¹ ∑_{1 ≤ n ≤ x} n ^ τ c n → κ / (τ + 1)`. No sign condition on `c` is needed. -/
+theorem tendsto_rpow_inv_mul_sum_Icc_rpow_mul {c : ℕ → ℝ} {κ τ : ℝ} (hτ : -1 < τ)
+    (h : Tendsto (fun x : ℝ ↦ x⁻¹ * ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, c n) atTop (𝓝 κ)) :
+    Tendsto (fun x : ℝ ↦ (x ^ (τ + 1))⁻¹ * ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, (n : ℝ) ^ τ * c n) atTop
+      (𝓝 (κ / (τ + 1))) := by
+  have hτ1 : 0 < τ + 1 := by linarith
+  have hI := (isLittleO_integral_rpow_sub_one_mul hτ
+    (fun x hx ↦ intervalIntegrable_sum_Icc_sub_mul c κ hx)
+    ((isLittleO_sub_mul_iff_tendsto_div (eventually_ne_atTop 0)).mpr
+      (by simpa [div_eq_mul_inv, mul_comm] using h))).tendsto_div_nhds_zero
+  have hpow : Tendsto (fun x : ℝ ↦ (x ^ (τ + 1))⁻¹) atTop (𝓝 0) :=
+    (tendsto_rpow_atTop hτ1).inv_tendsto_atTop
+  have hlim := ((h.sub (hI.const_mul τ)).sub_const (τ * κ / (τ + 1))).add
+    (hpow.const_mul (τ * κ / (τ + 1)))
+  have hval : κ - τ * 0 - τ * κ / (τ + 1) + τ * κ / (τ + 1) * 0 = κ / (τ + 1) := by
+    field_simp
+    ring
+  rw [hval] at hlim
+  refine hlim.congr' ?_
+  filter_upwards [eventually_ge_atTop (1 : ℝ)] with x hx
+  exact sum_Icc_rpow_mul_eq_div_add_integral_sub_mul hτ hx
 
 end TauCeti
