@@ -7,8 +7,8 @@ module
 
 import Mathlib.Algebra.Group.Shrink
 import Mathlib.Topology.Maps.Proper.Basic
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.Descent
 
-public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Descent
 public import TauCeti.Topology.Algebra.Group.ClosedSubgroup
 public import TauCeti.Topology.Algebra.Group.Profinite.EmbeddingProblem.Lift
 
