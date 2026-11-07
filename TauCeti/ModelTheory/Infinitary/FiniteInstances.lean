@@ -26,6 +26,30 @@ public section
 
 universe u v w wγ
 
+namespace TauCeti
+
+/-- A finite family of finite tuples in `γ`, together with one more tuple, factor through a single
+injective enumeration `b : Fin m ↪ γ`: each entry of each tuple is `b` of some index. -/
+theorem exists_embedding_fin_comp_eq {γ : Type*} {ι : Type*} [Finite ι] {k : ι → ℕ}
+    (d : ∀ x, Fin (k x) → γ) {n : ℕ} (c : Fin n → γ) :
+    ∃ (m : ℕ) (b : Fin m ↪ γ) (f : Fin n → Fin m) (g : ∀ x, Fin (k x) → Fin m),
+      (∀ i, b (f i) = c i) ∧ ∀ x i, b (g x i) = d x i := by
+  let F : Set γ := Set.range c ∪ ⋃ x, Set.range (d x)
+  have hF : F.Finite :=
+    (Set.finite_range c).union (Set.finite_iUnion fun x => Set.finite_range (d x))
+  obtain ⟨m, b, hb⟩ := hF.fin_embedding
+  have hc (i : Fin n) : ∃ j, b j = c i := by
+    rw [← Set.mem_range, hb]
+    exact Or.inl ⟨i, rfl⟩
+  have hd' (x : ι) (i : Fin (k x)) : ∃ j, b j = d x i := by
+    rw [← Set.mem_range, hb]
+    exact Or.inr (Set.mem_iUnion.2 ⟨x, i, rfl⟩)
+  choose f hf using hc
+  choose g hg using hd'
+  exact ⟨m, b, f, g, hf, hg⟩
+
+end TauCeti
+
 namespace FirstOrder.Language.Fragment.FormationClosed
 
 open BoundedFormulaInf
@@ -47,18 +71,7 @@ theorem exists_formula_iff_exists_constants (hA : A.FormationClosed)
   let := hσ.fintype
   choose k χ d hχ hd using fun x : σ => mem_instances.1 (hσA x.property)
   -- Enumerate all constants in the instances and in the prescribed tuple without repetitions.
-  let F : Set γ := Set.range c ∪ ⋃ x : σ, Set.range (d x)
-  have hF : F.Finite :=
-    (Set.finite_range c).union (Set.finite_iUnion fun x => Set.finite_range (d x))
-  obtain ⟨m, b, hb⟩ := hF.fin_embedding
-  have hc (i : Fin n) : ∃ j, b j = c i := by
-    rw [← Set.mem_range, hb]
-    exact Or.inl ⟨i, rfl⟩
-  have hd' (x : σ) (i : Fin (k x)) : ∃ j, b j = d x i := by
-    rw [← Set.mem_range, hb]
-    exact Or.inr (Set.mem_iUnion.2 ⟨x, i, rfl⟩)
-  choose f hf using hc
-  choose g hg using hd'
+  obtain ⟨m, b, f, g, hf, hg⟩ := TauCeti.exists_embedding_fin_comp_eq d c
   -- The last slots hold one value for each distinct constant; link the first slots to them.
   -- In particular, repeated entries of `c` must have equal values.
   let ψ (x : σ) : L.BoundedFormulaω Empty (n + m) :=
