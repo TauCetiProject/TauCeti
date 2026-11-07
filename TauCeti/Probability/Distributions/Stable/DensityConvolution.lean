@@ -41,6 +41,39 @@ namespace TauCeti.Probability
 
 variable {α β : ℝ} {s : ℝ≥0}
 
+/-- If `s ^ α = s₁ ^ α + s₂ ^ α` for a positive exponent and positive `s₁`, `s₂`, then `s` is
+positive. -/
+private lemma pos_of_rpow_eq_add_rpow (hα : 0 < α) {s₁ s₂ : ℝ≥0} (hs₁ : 0 < s₁) (hs₂ : 0 < s₂)
+    (hs : (s : ℝ) ^ α = (s₁ : ℝ) ^ α + (s₂ : ℝ) ^ α) : 0 < s := by
+  rw [← NNReal.coe_pos]
+  by_contra hsn
+  have hscoe : (s : ℝ) = 0 :=
+    le_antisymm (not_lt.mp hsn) (NNReal.coe_nonneg s)
+  have hpow : (s : ℝ) ^ α = 0 :=
+    (Real.rpow_eq_zero (NNReal.coe_nonneg s) hα.ne').2 hscoe
+  rw [hpow] at hs
+  have hrhs : 0 < (s₁ : ℝ) ^ α + (s₂ : ℝ) ^ α :=
+    add_pos (Real.rpow_pos_of_pos (NNReal.coe_pos.2 hs₁) α)
+      (Real.rpow_pos_of_pos (NNReal.coe_pos.2 hs₂) α)
+  linarith
+
+/-- The convolution of two stable densities of a common shape exists, and it is continuous. -/
+private lemma convolutionExists_and_continuous_stablePDFReal (hα : α ∈ Ioc 0 2) {β₁ β₂ : ℝ}
+    (hβ₂ : |β₂| ≤ 1) {s₁ s₂ : ℝ≥0} (hs₂ : 0 < s₂) (m₁ m₂ : ℝ) :
+    ConvolutionExists (stablePDFReal α β₁ s₁ m₁) (stablePDFReal α β₂ s₂ m₂) (mul ℝ ℝ) volume ∧
+      Continuous (stablePDFReal α β₁ s₁ m₁ ⋆[mul ℝ ℝ] stablePDFReal α β₂ s₂ m₂) := by
+  have hfint := integrable_stablePDFReal α β₁ s₁ m₁
+  have hgcont := continuous_stablePDFReal α β₂ s₂ m₂
+  let C := Real.Gamma α⁻¹ / (Real.pi * α * s₂)
+  have hgC : ∀ x, ‖stablePDFReal α β₂ s₂ m₂ x‖ ≤ C := fun x ↦ by
+    rw [Real.norm_eq_abs, abs_of_nonneg (stablePDFReal_nonneg α β₂ s₂ m₂ x)]
+    exact stablePDFReal_le hα hβ₂ hs₂ m₂ x
+  have hgbdd : BddAbove (range fun x ↦ ‖stablePDFReal α β₂ s₂ m₂ x‖) :=
+    ⟨C, forall_mem_range.2 hgC⟩
+  exact ⟨convolutionExists_of_integrable_of_ae_norm_le (mul ℝ ℝ) hfint
+      hgcont.aestronglyMeasurable (Filter.Eventually.of_forall hgC),
+    hgbdd.continuous_convolution_right_of_integrable (mul ℝ ℝ) hfint hgcont⟩
+
 /-- The pointwise convolution factorization of two stable densities of a common shape.
 
 The hypotheses are the same scale, skewness, and `S₁`-location equations as in
@@ -55,37 +88,13 @@ theorem stablePDFReal_convolution_stablePDFReal_of_eq (hα : α ∈ Ioc 0 2) {β
       stableS1Location α β₁ s₁ m₁ + stableS1Location α β₂ s₂ m₂) :
     stablePDFReal α β₁ s₁ m₁ ⋆[mul ℝ ℝ] stablePDFReal α β₂ s₂ m₂ =
       stablePDFReal α β s m := by
-  have hs0 : 0 < s := by
-    rw [← NNReal.coe_pos]
-    by_contra hsn
-    have hscoe : (s : ℝ) = 0 :=
-      le_antisymm (not_lt.mp hsn) (NNReal.coe_nonneg s)
-    have hpow : (s : ℝ) ^ α = 0 :=
-      (Real.rpow_eq_zero (NNReal.coe_nonneg s) hα.1.ne').2 hscoe
-    rw [hpow] at hs
-    have hrhs : 0 < (s₁ : ℝ) ^ α + (s₂ : ℝ) ^ α :=
-      add_pos (Real.rpow_pos_of_pos (NNReal.coe_pos.2 hs₁) α)
-        (Real.rpow_pos_of_pos (NNReal.coe_pos.2 hs₂) α)
-    linarith
-  have hfint := integrable_stablePDFReal α β₁ s₁ m₁
-  have hgcont := continuous_stablePDFReal α β₂ s₂ m₂
+  have hs0 : 0 < s := pos_of_rpow_eq_add_rpow hα.1 hs₁ hs₂ hs
   have hf0 : 0 ≤ stablePDFReal α β₁ s₁ m₁ :=
     fun x ↦ stablePDFReal_nonneg α β₁ s₁ m₁ x
   have hg0 : 0 ≤ stablePDFReal α β₂ s₂ m₂ :=
     fun x ↦ stablePDFReal_nonneg α β₂ s₂ m₂ x
-  let C := Real.Gamma α⁻¹ / (Real.pi * α * s₂)
-  have hgC : ∀ x, ‖stablePDFReal α β₂ s₂ m₂ x‖ ≤ C := fun x ↦ by
-    rw [Real.norm_eq_abs, abs_of_nonneg (hg0 x)]
-    exact stablePDFReal_le hα hβ₂ hs₂ m₂ x
-  have hconv : ConvolutionExists (stablePDFReal α β₁ s₁ m₁)
-      (stablePDFReal α β₂ s₂ m₂) (mul ℝ ℝ) volume :=
-    convolutionExists_of_integrable_of_ae_norm_le (mul ℝ ℝ) hfint
-      hgcont.aestronglyMeasurable (Filter.Eventually.of_forall hgC)
-  have hgbdd : BddAbove (range fun x ↦ ‖stablePDFReal α β₂ s₂ m₂ x‖) :=
-    ⟨C, forall_mem_range.2 hgC⟩
-  have hconvcont : Continuous
-      (stablePDFReal α β₁ s₁ m₁ ⋆[mul ℝ ℝ] stablePDFReal α β₂ s₂ m₂) :=
-    hgbdd.continuous_convolution_right_of_integrable (mul ℝ ℝ) hfint hgcont
+  obtain ⟨hconv, hconvcont⟩ :=
+    convolutionExists_and_continuous_stablePDFReal (β₁ := β₁) (s₁ := s₁) hα hβ₂ hs₂ m₁ m₂
   have hmeasure :
       volume.withDensity (fun x ↦ ENNReal.ofReal (stablePDFReal α β₁ s₁ m₁ x)) ∗
           volume.withDensity (fun x ↦ ENNReal.ofReal (stablePDFReal α β₂ s₂ m₂ x)) =
