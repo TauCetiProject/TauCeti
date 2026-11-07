@@ -288,7 +288,40 @@ private theorem sum_ne_zero_of_forall_valuation_lt (Q' : Place k' F') {ι : Type
   rw [hsum, map_zero] at hval
   exact (Q'.valuation.ne_zero_iff.mpr hTj) hval.symm
 
+/-- **A strictly dominant term of a vanishing sum cannot exist**: if `y ≠ 0` is a root of
+`φ ∈ F[X]` and some term `c_j y ^ j` with `c_j ≠ 0` has strictly smaller order at `P'` than every
+other term of nonzero coefficient, the strict triangle inequality is contradicted. -/
+private theorem false_of_ord_term_lt {φ : F[X]} {y : F'} (hy : aeval y φ = 0) (hy0 : y ≠ 0)
+    {j : ℕ} (hj : j ≤ φ.natDegree) (hcj : φ.coeff j ≠ 0)
+    (h : ∀ i ≤ φ.natDegree, i ≠ j → φ.coeff i ≠ 0 →
+      P'.ord (algebraMap F F' (φ.coeff j) * y ^ j) <
+        P'.ord (algebraMap F F' (φ.coeff i) * y ^ i)) : False := by
+  classical
+  have hsum : ∑ i ∈ Finset.range (φ.natDegree + 1), algebraMap F F' (φ.coeff i) * y ^ i = 0 := by
+    rw [← hy, Polynomial.aeval_eq_sum_range]
+    exact Finset.sum_congr rfl fun i _ => (Algebra.smul_def _ _).symm
+  have hTne : ∀ i, φ.coeff i ≠ 0 → algebraMap F F' (φ.coeff i) * y ^ i ≠ 0 := fun i hci =>
+    mul_ne_zero (by simpa using hci) (pow_ne_zero i hy0)
+  refine sum_ne_zero_of_forall_valuation_lt P' (Finset.mem_range.mpr (by omega)) (hTne j hcj)
+    (fun i hi hne ↦ valuation_lt_of_ord_lt (hTne j hcj) fun hi0 ↦ h i
+      (Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)) hne fun hc ↦ hi0 (by simp [hc]))
+    hsum
+
 variable (k F) [Algebra.IsIntegral F F']
+
+/-- For a polynomial Eisenstein at the place below `P'`, a lower-order term `c_i y ^ i` with
+`c_i ≠ 0` has order at least `e(P' ∣ P) + i · ord_{P'} y`. -/
+private theorem ramificationIdx_add_mul_ord_le_ord_term {φ : F[X]}
+    (hφ : (P'.restrict k F).IsEisensteinAt φ) {y : F'} (hy0 : y ≠ 0) {i : ℕ}
+    (hi : i < φ.natDegree) (hci : φ.coeff i ≠ 0) :
+    (ramificationIdx F P' : ℤ) + i * P'.ord y ≤ P'.ord (algebraMap F F' (φ.coeff i) * y ^ i) := by
+  have hpos : 0 < (P'.restrict k F).ord (φ.coeff i) :=
+    ((P'.restrict k F).valuation_lt_one_iff_ord_pos hci).mp (hφ.valuation_coeff_lt_one i hi)
+  have hge : (ramificationIdx F P' : ℤ) ≤
+      ramificationIdx F P' * (P'.restrict k F).ord (φ.coeff i) :=
+    le_mul_of_one_le_right (by exact_mod_cast (ramificationIdx_pos F P').le) hpos
+  rw [ord_algebraMap_mul_pow k F P' hy0 hci]
+  linarith
 
 /-- **The order of a root of an Eisenstein polynomial** (Stichtenoth, Proposition 3.1.15): if
 `φ ∈ F[X]` of degree `n` is Eisenstein at the place of `F / k` below `P'`, then a root `y ∈ F'`
@@ -298,100 +331,52 @@ theorem natDegree_mul_ord_eq_ramificationIdx {φ : F[X]}
     (hφ : (P'.restrict k F).IsEisensteinAt φ)
     {y : F'} (hy : aeval y φ = 0) :
     (φ.natDegree : ℤ) * P'.ord y = ramificationIdx F P' := by
-  classical
   have hdeg : 0 < φ.natDegree := hφ.natDegree_pos
   set P := P'.restrict k F
   set n := φ.natDegree with hndef
   set e : ℤ := (ramificationIdx F P' : ℤ) with hedef
-  have he0 : 0 < e := by
-    rw [hedef]
-    exact_mod_cast ramificationIdx_pos F P'
+  have he0 : 0 < e := by simpa [hedef] using ramificationIdx_pos F P'
   have hord0 := hφ.ord_coeff_zero
-  have hc0 : φ.coeff 0 ≠ 0 := by
-    intro h
-    rw [h, P.ord_zero] at hord0
-    exact absurd hord0 (by decide)
+  have hc0 : φ.coeff 0 ≠ 0 := fun h ↦ by simp [h] at hord0
   have hy0 : y ≠ 0 := by
     rintro rfl
     have h : algebraMap F F' (φ.coeff 0) = 0 := by
       simpa [Polynomial.aeval_def, Polynomial.eval₂_at_zero] using hy
     exact hc0 ((map_eq_zero (algebraMap F F')).mp h)
   set m := P'.ord y
-  set T : ℕ → F' := fun i => algebraMap F F' (φ.coeff i) * y ^ i with hTdef
-  have hsum : ∑ i ∈ Finset.range (n + 1), T i = 0 := by
-    rw [← hy, Polynomial.aeval_eq_sum_range]
-    exact Finset.sum_congr rfl fun i _ => (Algebra.smul_def _ _).symm
-  have hTne : ∀ i, φ.coeff i ≠ 0 → T i ≠ 0 := fun i hci =>
-    mul_ne_zero (by simpa using hci) (pow_ne_zero i hy0)
-  have hordT : ∀ i, φ.coeff i ≠ 0 → P'.ord (T i) = e * P.ord (φ.coeff i) + i * m := by
-    intro i hci
-    have h1 : algebraMap F F' (φ.coeff i) ≠ 0 := by simpa using hci
-    rw [hTdef]
-    simp only
-    rw [P'.ord_mul h1 (pow_ne_zero i hy0), P'.ord_pow, ord_algebraMap_restrict k F P']
-  have hφ0 : φ ≠ 0 := fun h => by simp [h, hndef] at hdeg
   have hcoeff_n : φ.coeff n = φ.leadingCoeff := by rw [hndef, Polynomial.coeff_natDegree]
-  have hcn0 : φ.coeff n ≠ 0 := by
-    rw [hcoeff_n]
-    exact Polynomial.leadingCoeff_ne_zero.mpr hφ0
-  have hTn0 : T n ≠ 0 := hTne n hcn0
-  have hT00 : T 0 ≠ 0 := hTne 0 hc0
-  have hordTn : P'.ord (T n) = n * m := by
-    rw [hordT n hcn0, hcoeff_n, hφ.ord_leadingCoeff, mul_zero, zero_add]
-  have hordT0 : P'.ord (T 0) = e := by
-    rw [hordT 0 hc0, hord0, mul_one, Nat.cast_zero, zero_mul, add_zero]
-  have hlow : ∀ i, i < n → φ.coeff i ≠ 0 → e + i * m ≤ P'.ord (T i) := by
-    intro i hi hci
-    have hpos : 0 < P.ord (φ.coeff i) :=
-      (P.valuation_lt_one_iff_ord_pos hci).mp (hφ.valuation_coeff_lt_one i hi)
-    have hge : e ≤ e * P.ord (φ.coeff i) := le_mul_of_one_le_right he0.le hpos
-    rw [hordT i hci]
-    linarith
+  have hcn0 : φ.coeff n ≠ 0 := hcoeff_n ▸ Polynomial.leadingCoeff_ne_zero.mpr
+    (fun h => by simp [h, hndef] at hdeg)
+  have hordTn : P'.ord (algebraMap F F' (φ.coeff n) * y ^ n) = n * m := by
+    rw [ord_algebraMap_mul_pow k F P' hy0 hcn0, hcoeff_n, hφ.ord_leadingCoeff, mul_zero, zero_add]
+  have hordT0 : P'.ord (algebraMap F F' (φ.coeff 0) * y ^ 0) = e := by
+    rw [ord_algebraMap_mul_pow k F P' hy0 hc0, hord0, mul_one, Nat.cast_zero, zero_mul, add_zero]
+  have hlow := fun i (hi : i < n) ↦ ramificationIdx_add_mul_ord_le_ord_term k F hφ hy0 hi
   -- Step 1: the root has positive order, else the leading term dominates.
   have hm1 : 1 ≤ m := by
     by_contra hcon
-    have hm0 : m ≤ 0 := by omega
-    refine sum_ne_zero_of_forall_valuation_lt P' (Finset.self_mem_range_succ n) hTn0 ?_ hsum
-    intro i hi hne
-    refine valuation_lt_of_ord_lt hTn0 fun hi0 => ?_
-    have hci : φ.coeff i ≠ 0 := fun h => hi0 (by rw [hTdef]; simp [h])
-    have hilt : i < n := by
-      rw [Finset.mem_range] at hi
-      omega
+    refine false_of_ord_term_lt (P' := P') hy hy0 le_rfl hcn0 fun i hi hne hci ↦ ?_
     have hle : (n : ℤ) * m ≤ (i : ℤ) * m :=
-      mul_le_mul_of_nonpos_right (by exact_mod_cast hilt.le) hm0
-    have := hlow i hilt hci
+      mul_le_mul_of_nonpos_right (by exact_mod_cast hi) (by omega)
+    have := hlow i (by omega) hci
     rw [hordTn]
     linarith
   -- Step 2: neither the leading term nor the constant term may dominate.
   have hkey : (n : ℤ) * m = e := by
     rcases lt_trichotomy ((n : ℤ) * m) e with hlt | heq | hgt
-    · refine absurd hsum (sum_ne_zero_of_forall_valuation_lt P'
-        (Finset.self_mem_range_succ n) hTn0 ?_)
-      intro i hi hne
-      refine valuation_lt_of_ord_lt hTn0 fun hi0 => ?_
-      have hci : φ.coeff i ≠ 0 := fun h => hi0 (by rw [hTdef]; simp [h])
-      have hilt : i < n := by
-        rw [Finset.mem_range] at hi
-        omega
+    · refine (false_of_ord_term_lt (P' := P') hy hy0 le_rfl hcn0 fun i hi hne hci ↦ ?_).elim
       have hnn : (0 : ℤ) ≤ (i : ℤ) * m := mul_nonneg (Int.natCast_nonneg i) (by omega)
-      have := hlow i hilt hci
+      have := hlow i (by omega) hci
       rw [hordTn]
       linarith
     · exact heq
-    · refine absurd hsum (sum_ne_zero_of_forall_valuation_lt P'
-        (Finset.mem_range.mpr (by omega)) hT00 ?_)
-      intro i hi hne
-      refine valuation_lt_of_ord_lt hT00 fun hi0 => ?_
-      have hci : φ.coeff i ≠ 0 := fun h => hi0 (by rw [hTdef]; simp [h])
+    · refine (false_of_ord_term_lt (P' := P') hy hy0 (Nat.zero_le _) hc0 fun i hi hne hci ↦ ?_).elim
       rw [hordT0]
-      rcases eq_or_lt_of_le (Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)) with rfl | hilt
+      rcases eq_or_lt_of_le hi with rfl | hilt
       · rw [hordTn]
         linarith
-      · have hi1 : 1 ≤ (i : ℤ) := by
-          have : 0 < i := Nat.pos_of_ne_zero hne
-          exact_mod_cast this
-        have hnn : (1 : ℤ) ≤ (i : ℤ) * m := one_le_mul_of_one_le_of_one_le hi1 hm1
+      · have hnn : (1 : ℤ) ≤ (i : ℤ) * m :=
+          one_le_mul_of_one_le_of_one_le (by exact_mod_cast Nat.pos_of_ne_zero hne) hm1
         have := hlow i hilt hci
         linarith
   rw [hkey]
