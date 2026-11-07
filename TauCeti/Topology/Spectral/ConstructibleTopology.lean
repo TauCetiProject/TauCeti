@@ -30,8 +30,8 @@ space the constructible topology is totally separated, which makes compact subse
   statement for the induced map between the `WithConstructibleTopology` type synonyms.
 * `IsGenericPoint.mem_closure_constructibleTopology`: a generic point of the closure of a
   subset lies in its constructible closure, in any topological space.
-* `PrespectralSpace.exists_isOpen_isCompact_of_not_specializes`: if `x` does not specialize to
-  `y`, a quasi-compact open subset contains `y` but not `x`.
+* `PrespectralSpace.not_specializes_iff_exists_isOpen_isCompact`: `x` does not specialize to `y`
+  if and only if some quasi-compact open subset contains `y` but not `x`.
 * `IsCompact.eq_sInter_of_stableUnderGeneralization`: in a prespectral space, a quasi-compact
   subset stable under generalization is the intersection of the quasi-compact opens containing it.
 * `IsCompact.isClopen_preimage_ofTopology_of_isOpen`: a quasi-compact open subset is clopen
@@ -117,34 +117,24 @@ theorem IsGenericPoint.mem_closure_constructibleTopology {s : Set X} {η : X}
 
 /-! ### Separation of the constructible topology -/
 
-/-- In a prespectral space, if `x` does not specialize to `y`, then some quasi-compact open subset
-contains `y` but not `x`. -/
-theorem PrespectralSpace.exists_isOpen_isCompact_of_not_specializes [PrespectralSpace X]
-    {x y : X} (h : ¬ x ⤳ y) : ∃ U : Set X, IsOpen U ∧ IsCompact U ∧ y ∈ U ∧ x ∉ U := by
-  rw [PrespectralSpace.isTopologicalBasis.nhds_hasBasis.specializes_iff] at h
-  push Not at h
-  obtain ⟨U, ⟨⟨hUo, hUc⟩, hyU⟩, hxU⟩ := h
-  exact ⟨U, hUo, hUc, hyU, hxU⟩
+/-- In a prespectral space, `x` does not specialize to `y` if and only if some quasi-compact open
+subset contains `y` but not `x`. -/
+theorem PrespectralSpace.not_specializes_iff_exists_isOpen_isCompact [PrespectralSpace X]
+    {x y : X} : ¬ x ⤳ y ↔ ∃ U : Set X, IsOpen U ∧ IsCompact U ∧ y ∈ U ∧ x ∉ U := by
+  simp [PrespectralSpace.isTopologicalBasis.nhds_hasBasis.specializes_iff, and_assoc]
 
 /-- In a prespectral space, a quasi-compact subset that is stable under generalization is the
 intersection of the quasi-compact open subsets containing it. -/
 theorem IsCompact.eq_sInter_of_stableUnderGeneralization [PrespectralSpace X] {s : Set X}
     (hs : IsCompact s) (hg : StableUnderGeneralization s) :
     s = ⋂₀ {U | IsOpen U ∧ IsCompact U ∧ s ⊆ U} := by
-  refine Set.Subset.antisymm (fun x hx ↦ Set.mem_sInter.2 fun U hU ↦ hU.2.2 hx) fun x hx ↦ ?_
+  refine Set.Subset.antisymm (subset_sInter fun _ hU ↦ hU.2.2) fun x hx ↦ ?_
   by_contra hxs
-  -- Each `z ∈ s` has a quasi-compact open neighbourhood `U z` missing `x`, since `x` is not a
-  -- generalization of `z`.
-  have hU (z : X) (hz : z ∈ s) : ∃ U : Set X, IsOpen U ∧ IsCompact U ∧ z ∈ U ∧ x ∉ U :=
-    PrespectralSpace.exists_isOpen_isCompact_of_not_specializes fun h ↦ hxs (hg h hz)
-  choose! U hUo hUc hzU hxU using hU
-  -- Finitely many of the `U z` cover `s`; their union is a quasi-compact open missing `x`.
-  obtain ⟨t, hts, htfin, hcover⟩ := hs.elim_finite_subcover_image
-    (fun z hz ↦ hUo z hz) (fun w hw ↦ Set.mem_biUnion hw (hzU _ hw))
-  obtain ⟨z, hz, hxz⟩ := Set.mem_iUnion₂.1 <| Set.mem_sInter.1 hx (⋃ z ∈ t, U z)
-    ⟨isOpen_biUnion fun z hz ↦ hUo z (hts hz),
-      htfin.isCompact_biUnion fun z hz ↦ hUc z (hts hz), hcover⟩
-  exact hxU z (hts hz) hxz
+  -- Since `x ∉ s` and `s` is stable under generalization, `s` misses the closure of `{x}`. A
+  -- quasi-compact open subset between `s` and the complement of that closure misses `x`.
+  obtain ⟨U, hUc, hUo, hsU, hUx⟩ := PrespectralSpace.exists_isCompact_and_isOpen_between hs
+    isClosed_closure.isOpen_compl fun z hz hzx ↦ hxs (hg (specializes_iff_mem_closure.2 hzx) hz)
+  exact hUx (mem_sInter.1 hx U ⟨hUo, hUc, hsU⟩) (subset_closure rfl)
 
 /-- The preimage in `WithConstructibleTopology X` of a quasi-compact open subset of `X` is
 clopen. -/
@@ -165,8 +155,8 @@ instance WithConstructibleTopology.instTotallySeparatedSpace [PrespectralSpace X
   obtain ⟨U, hUo, ⟨hx, hy⟩ | ⟨hy, hx⟩⟩ :=
     exists_isOpen_xor_mem ((WithTopology.ofTopology_injective _).ne hxy)
   · obtain ⟨V, hVo, hVc, hxV, hyV⟩ :=
-      PrespectralSpace.exists_isOpen_isCompact_of_not_specializes (hUo.not_specializes hy hx)
+      PrespectralSpace.not_specializes_iff_exists_isOpen_isCompact.1 (hUo.not_specializes hy hx)
     exact ⟨_, hVc.isClopen_preimage_ofTopology_of_isOpen hVo, hxV, hyV⟩
   · obtain ⟨V, hVo, hVc, hyV, hxV⟩ :=
-      PrespectralSpace.exists_isOpen_isCompact_of_not_specializes (hUo.not_specializes hx hy)
+      PrespectralSpace.not_specializes_iff_exists_isOpen_isCompact.1 (hUo.not_specializes hx hy)
     exact ⟨_, (hVc.isClopen_preimage_ofTopology_of_isOpen hVo).compl, hxV, fun h ↦ h hyV⟩
