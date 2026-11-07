@@ -79,7 +79,7 @@ variable {k : Type u} {F : Type v} [Field k] [Field F] [Algebra k F] {A : Valuat
 /-- The estimate behind Stichtenoth's Lemma 1.1.7: if `j` is the largest index of `s` whose
 polynomial `q j` has nonzero constant term, and `q j (x)` is a unit, then the term `q j (x) * y j`
 strictly dominates, for the valuation of `A`, every other term `q i (x) * y i` with `i ∈ s`. -/
-private theorem valuation_aeval_mul_lt [A.valuation.IsTrivialOn k]
+private theorem valuation_aeval_mul_lt
     (hkle : ∀ c : k, A.valuation (algebraMap k F c) ≤ 1) {x : F} (hx : A.valuation x < 1)
     (hxpos : 0 < A.valuation x) {ι : Type*} [LinearOrder ι] {y : ι → F}
     (hy : ∀ i, A.valuation (y i) < 1) (hmono : StrictMono fun i ↦ A.valuation (y i))
