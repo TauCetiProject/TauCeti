@@ -59,6 +59,37 @@ variable {m : ℕ} {R : Type*} [CommRing R]
   exact ⟨fun i j hij ↦ Matrix.one_apply_ne (ne_of_gt hij),
     fun i j hij ↦ Matrix.one_apply_ne (ne_of_lt hij), fun _ _ ↦ trivial⟩
 
+/-- The lower-left block of a flag-preserving symplectic matrix, in paired coordinates, is
+zero. -/
+private theorem toBlocks₂₁_mulEquivGLSymplectic_eq_zero (g : matrixSubgroup m (A := R)) :
+    (((mulEquivGLSymplectic m R g.val : GLSymplectic (Fin m) R) :
+      GL (Fin m ⊕ Fin m) R) : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) R).toBlocks₂₁ = 0 := by
+  ext i j
+  have hg := (mem_matrixSubgroup_iff m g.val).mp g.2
+  simpa only [coe_mulEquivGLSymplectic, Equiv.coe_reindexGL,
+    Matrix.submatrix_apply, Matrix.toBlocks₂₁, Matrix.of_apply, Equiv.symm_symm,
+    finSumFinEquiv_apply_left, finSumFinEquiv_apply_right, Fin.natAdd_eq_addNat,
+    Matrix.zero_apply] using hg.2.2 i j
+
+/-- The upper-left block of a flag-preserving symplectic matrix, in paired coordinates, is
+invertible: the zero lower-left block makes it pair with the lower-right block to the identity. -/
+private theorem isUnit_toBlocks₁₁_mulEquivGLSymplectic (g : matrixSubgroup m (A := R)) :
+    IsUnit (((mulEquivGLSymplectic m R g.val : GLSymplectic (Fin m) R) :
+      GL (Fin m ⊕ Fin m) R) : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) R).toBlocks₁₁ := by
+  set M : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) R :=
+    (((mulEquivGLSymplectic m R g.val : GLSymplectic (Fin m) R) :
+      GL (Fin m ⊕ Fin m) R) : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) R) with hM
+  have hzero : M.toBlocks₂₁ = 0 := toBlocks₂₁_mulEquivGLSymplectic_eq_zero g
+  have hsymp : M ∈ Matrix.symplecticGroup (Fin m) R :=
+    GLSymplectic.mem_iff_mem_symplecticGroup.mp (mulEquivGLSymplectic m R g.val).2
+  have hAD : M.toBlocks₁₁ᵀ * M.toBlocks₂₂ = 1 := by
+    have hblocks := SymplecticGroup.fromBlocks_mem_iff.mp (M.fromBlocks_toBlocks.symm ▸ hsymp)
+    simpa only [hzero, Matrix.transpose_zero, Matrix.zero_mul, sub_zero] using hblocks.2.2
+  apply (Matrix.isUnit_iff_isUnit_det _).mpr
+  apply isUnit_of_mul_isUnit_left (y := M.toBlocks₂₂.det)
+  rw [← Matrix.det_transpose M.toBlocks₁₁, ← Matrix.det_mul, hAD, Matrix.det_one]
+  exact isUnit_one
+
 /-- Every flag-preserving symplectic matrix is the product of an upper-triangular Levi element
 and an upper unipotent with symmetric block. -/
 theorem exists_leviHom_mul_upperUnipotent (g : matrixSubgroup m (A := R)) :
@@ -68,23 +99,8 @@ theorem exists_leviHom_mul_upperUnipotent (g : matrixSubgroup m (A := R)) :
     (((mulEquivGLSymplectic m R g.val : GLSymplectic (Fin m) R) :
       GL (Fin m ⊕ Fin m) R) : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) R)
   -- The zero lower-left block makes the upper-left block invertible.
-  have hzero : M.toBlocks₂₁ = 0 := by
-    ext i j
-    have hg := (mem_matrixSubgroup_iff m g.val).mp g.2
-    simpa only [M, coe_mulEquivGLSymplectic, Equiv.coe_reindexGL,
-      Matrix.submatrix_apply, Matrix.toBlocks₂₁, Matrix.of_apply, Equiv.symm_symm,
-      finSumFinEquiv_apply_left, finSumFinEquiv_apply_right, Fin.natAdd_eq_addNat,
-      Matrix.zero_apply] using hg.2.2 i j
-  have hsymp : M ∈ Matrix.symplecticGroup (Fin m) R :=
-    GLSymplectic.mem_iff_mem_symplecticGroup.mp (mulEquivGLSymplectic m R g.val).2
-  have hAD : M.toBlocks₁₁ᵀ * M.toBlocks₂₂ = 1 := by
-    have hblocks := SymplecticGroup.fromBlocks_mem_iff.mp (M.fromBlocks_toBlocks.symm ▸ hsymp)
-    simpa only [hzero, Matrix.transpose_zero, Matrix.zero_mul, sub_zero] using hblocks.2.2
-  have hunit : IsUnit M.toBlocks₁₁ := by
-    apply (Matrix.isUnit_iff_isUnit_det _).mpr
-    apply isUnit_of_mul_isUnit_left (y := M.toBlocks₂₂.det)
-    rw [← Matrix.det_transpose M.toBlocks₁₁, ← Matrix.det_mul, hAD, Matrix.det_one]
-    exact isUnit_one
+  have hzero : M.toBlocks₂₁ = 0 := toBlocks₂₁_mulEquivGLSymplectic_eq_zero g
+  have hunit : IsUnit M.toBlocks₁₁ := isUnit_toBlocks₁₁_mulEquivGLSymplectic g
   obtain ⟨S, T, P, hS, hT, hfactor⟩ :=
     exists_gaussian_decomposition_of_isUnit_toBlocks₁₁ g.val hunit
   -- Read the Gaussian factors in paired coordinates to eliminate the lower unipotent.
