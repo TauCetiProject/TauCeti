@@ -6,9 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Linear.BalancedEvaluation
+public import TauCeti.LinearAlgebra.TensorProduct.Balanced.FiniteDimensional
 public import TauCeti.RepresentationTheory.FDRep.Basic
 public import Mathlib.RingTheory.SimpleModule.Isotypic
 import Mathlib.RepresentationTheory.Rep.Iso
+import Mathlib.LinearAlgebra.Basis.MulOpposite
+import TauCeti.RepresentationTheory.Irreducible
+import TauCeti.RepresentationTheory.Simple.Basic
 
 /-!
 # Isotypic reconstruction over the full commutant
@@ -24,6 +28,9 @@ The left endomorphism action on `S` is the explicit `FDRep.endModule`, obtained
 from `Functor.endModule` for the composite forgetful functor to modules. The inverse and its
 naturality are
 characterized by evaluation, independently of the decomposition chosen in the proof.
+For a simple `S`, tensoring a right-commutant module with `S` preserves and reflects
+finite-dimensionality over the ground field; its dimension counts copies of `S`
+using dimension over the full endomorphism division algebra.
 
 ## References
 
@@ -150,5 +157,43 @@ theorem isotypicBalancedEvaluationEquiv_symm_naturality (S W U : FDRep k G)
   rw [isotypicBalancedEvaluationEquiv_apply, Functor.balancedEvaluation_naturality,
     ← isotypicBalancedEvaluationEquiv_apply S W hW]
   simp
+
+end FDRep
+
+namespace FDRep
+
+open CategoryTheory TauCeti
+
+universe u v
+
+variable {k : Type u} {G : Type v} [Field k] [Monoid G]
+  (S : FDRep k G) [Simple S]
+  {M : Type*} [AddCommGroup M] [Module k M] [Module (End S)ᵐᵒᵖ M]
+  [IsScalarTower k (End S)ᵐᵒᵖ M]
+
+local notation "R" => forget₂ (FDRep k G) (Rep k G)
+local notation "F" => (R) ⋙ forget₂ (Rep k G) (ModuleCat k)
+
+attribute [local instance] endModule
+
+/-- Tensoring a right-commutant module with a simple finite representation
+preserves and reflects finite-dimensionality over the ground field. -/
+theorem finite_balancedTensorProduct_iff :
+    Module.Finite k (BalancedTensorProduct k (End S) M ((R).obj S)) ↔
+      Module.Finite k M := by
+  let : IsScalarTower k (End S) ((R).obj S) := (F).endModule_isScalarTower S
+  have : Nontrivial ((R).obj S) := (FDRep.isIrreducible_of_simple S).nontrivial
+  have : Module.Finite k (End S) := Module.Finite.equiv End.linearEquiv.symm
+  rw [BalancedTensorProduct.finite_iff]
+  exact ⟨fun _ ↦ Module.Finite.trans (End S)ᵐᵒᵖ M,
+    fun _ ↦ Module.Finite.of_restrictScalars_finite k (End S)ᵐᵒᵖ M⟩
+
+/-- The dimension of a balanced multiplicity tensor counts copies of the simple
+representation using dimension over its endomorphism division algebra. -/
+theorem finrank_balancedTensorProduct [Module.Finite (End S)ᵐᵒᵖ M] :
+    Module.finrank k (BalancedTensorProduct k (End S) M ((R).obj S)) =
+      Module.finrank (End S)ᵐᵒᵖ M * Module.finrank k S := by
+  let : IsScalarTower k (End S) ((R).obj S) := (F).endModule_isScalarTower S
+  exact BalancedTensorProduct.finrank
 
 end FDRep
