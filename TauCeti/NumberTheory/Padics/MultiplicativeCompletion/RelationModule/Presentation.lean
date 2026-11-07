@@ -166,8 +166,7 @@ private theorem exists_linearMap_of_equivariant
   refine ⟨MonoidAlgebra.equivariantOfLinearOfComm β₀ hequiv, fun x ↦ ?_⟩
   simp only [MonoidAlgebra.equivariantOfLinearOfComm_apply, hβ₀]
   rw [← freeProfiniteGroup.abelianizationProPLinearEquivRelationModule_apply]
-  change ofMul (ψ (e.symm (e (ofMul x))).toMul) = _
-  rw [e.symm_apply_apply, toMul_ofMul]
+  simp only [e, LinearEquiv.symm_apply_apply, toMul_ofMul]
 
 /-- A surjective free profinite presentation of `G_K` induces a `ℤ_p[Gal(L/K)]`-linear
 surjection from the relation module onto the completed multiplicative group `A(L)`.
