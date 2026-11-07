@@ -11,6 +11,7 @@ public import TauCeti.RepresentationTheory.Homological.TateCohomology.SplittingM
 import Mathlib.NumberTheory.Padics.LocalField
 import TauCeti.Algebra.Module.Projective.Semilinear
 import TauCeti.Algebra.MonoidAlgebra.Exactness
+import TauCeti.LinearAlgebra.LinearEquiv.Basic
 import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.RingHoms
@@ -319,19 +320,6 @@ private theorem smul_toMul_mapDomainRingEquiv {p : ℕ} [Fact p.Prime] {L K : Ty
     rw [MonoidAlgebra.mapDomainRingEquiv_single, padicCompletionUnits_single_smul, hsmul,
       toMul_ofMul, toMul_ofMul, haut, padicCompletionUnits_single_smul]
 
-/-- A ring isomorphism over a common target carries the kernel of one map to the kernel of the
-other, as a semilinear image. -/
-private theorem map_ker_toSemilinearEquiv {A B S : Type*} [Semiring A] [Semiring B] [Semiring S]
-    (Φ : A ≃+* B) (g : A →+* S) (h : B →+* S)
-    (hΦ : ∀ x, h (Φ x) = g x) :
-    Submodule.map (Φ.toSemilinearEquiv : A →ₛₗ[(Φ : A →+* B)] B) (RingHom.ker g) =
-      RingHom.ker h := by
-  have : RingHomInvPair (Φ : A →+* B) (Φ.symm : B →+* A) := .of_ringEquiv Φ
-  have : RingHomInvPair (Φ.symm : B →+* A) (Φ : A →+* B) := .of_ringEquiv_symm Φ
-  ext y
-  rw [Submodule.mem_map_equiv, RingHom.mem_ker, RingHom.mem_ker, ← hΦ]
-  exact Iff.of_eq (congrArg (· = 0) (congrArg _ (Φ.apply_symm_apply y)))
-
 /-- **Transport of the Tate module along an isomorphism of layers.** Let `L/K` and `L'/K'` be
 layers, `L', K'` in `Type`, with an isomorphism `φ` of their automorphism groups and a
 `ℤ_p`-linear isomorphism `A(L) ≃ A(L')` intertwining the actions of `σ` and `φ σ`. Then a Tate
@@ -364,7 +352,7 @@ theorem nonempty_of_equiv {L K : Type u} [Field L] [Field K] [Algebra K L]
       map_smul' _ _ := rfl
       left_inv _ := rfl
       right_inv _ := rfl }
-  have hI := map_ker_toSemilinearEquiv Φ (MonoidAlgebra.augmentation ℤ_[p] (L ≃ₐ[K] L))
+  have hI := RingEquiv.map_ker_toSemilinearEquiv Φ (MonoidAlgebra.augmentation ℤ_[p] (L ≃ₐ[K] L))
     (MonoidAlgebra.augmentation ℤ_[p] (L' ≃ₐ[K'] L'))
     (MonoidAlgebra.augmentation_mapDomainRingEquiv ℤ_[p] φ)
   let eI := Φ.toSemilinearEquiv.ofSubmodules _ _ hI
