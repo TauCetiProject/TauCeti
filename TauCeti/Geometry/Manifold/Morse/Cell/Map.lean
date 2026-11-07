@@ -103,6 +103,13 @@ theorem morseCellMap_def (hk : k ≤ n) (w : EuclideanSpace ℝ (Fin k)) :
 theorem morseCellMap_zero (hk : k ≤ n) : morseCellMap ψ hk ε 0 = ψ.symm 0 := by
   simp [morseCellMap_def]
 
+/-- Scaling the parameter of a characteristic disc rescales its width quadratically. -/
+theorem morseCellMap_smul (hk : k ≤ n) {a : ℝ} (ha : 0 ≤ a)
+    (w : EuclideanSpace ℝ (Fin k)) :
+    morseCellMap ψ hk ε (a • w) = morseCellMap ψ hk (ε * a ^ 2) w := by
+  simp only [morseCellMap_def, map_smul, smul_smul, Real.sqrt_mul' ε (sq_nonneg a),
+    Real.sqrt_sq ha]
+
 private theorem norm_smul_piLpExtendByZero (hk : k ≤ n) (w : EuclideanSpace ℝ (Fin k)) :
     ‖√ε • piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb hk) w‖ = √ε * ‖w‖ := by
   rw [norm_smul, LinearIsometry.norm_map, Real.norm_of_nonneg (Real.sqrt_nonneg _)]
@@ -271,6 +278,14 @@ theorem coe_morseCharacteristicMap_apply (hk : k ≤ n) (hε : 0 ≤ ε) (w : To
 theorem coe_morseAttachingMap_apply (hk : k ≤ n) (hε : 0 ≤ ε) (w : TopCat.diskBoundary.{u} k) :
     (morseAttachingMap ψ hk hε hball hf w : M) = morseCellMap ψ hk ε w.down :=
   (rfl)
+
+/-- On the boundary sphere, the characteristic map of the cell is its attaching map. This is the
+pointwise form of `OpenPartialHomeomorph.morseAttachingMap_comp_sublevelInclusion`. -/
+theorem coe_morseCharacteristicMap_diskBoundaryInclusion (hk : k ≤ n) (hε : 0 ≤ ε)
+    (s : TopCat.diskBoundary.{u} k) :
+    (morseCharacteristicMap ψ hk hε hball hf (TopCat.diskBoundaryInclusion k s) : M) =
+      morseAttachingMap ψ hk hε hball hf s :=
+  congrArg (morseCellMap ψ hk ε) (TauCeti.TopCat.coe_diskBoundaryInclusion_apply_down k s)
 
 /-- The attaching map is the restriction of the characteristic map to the boundary sphere: the
 square formed with the inclusions `∂D^k ⊆ D^k` and `M_{c-ε} ⊆ M_{c+ε}` commutes. This is the

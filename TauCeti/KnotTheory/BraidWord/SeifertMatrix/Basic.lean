@@ -10,6 +10,7 @@ public import TauCeti.GroupTheory.SpecificGroups.Braid.Word
 public import TauCeti.KnotTheory.Signature
 public import TauCeti.KnotTheory.TristramLevine.Basic
 
+import TauCeti.Data.List.AppendCons
 import TauCeti.Data.List.Rotate
 
 /-!
@@ -92,6 +93,8 @@ Those comparisons are not made here.
 * `TauCeti.BraidWord.exists_seifertMatrix_append_cons_cons_comm`: exchanging adjacent letters on
   distant levels relabels the Seifert matrix.
 * `TauCeti.BraidWord.exists_seifertMatrix_stabilize`: so does Markov stabilization.
+* `TauCeti.BraidWord.exists_seifertMatrix_append_cons_of_not_exists`: so does changing the sign of
+  a letter alone on its level, whose band lies on no loop.
 * `TauCeti.BraidWord.exists_seifertMatrix_append_singleton`: moving the first letter to the end
   changes the Seifert matrix by a unimodular congruence.
 * `TauCeti.BraidWord.alexander_seifertMatrix_rotate` and
@@ -434,6 +437,67 @@ theorem exists_seifertMatrix_stabilize :
     signAt_stabilize_of_lt w ε (ha12.trans ha2)]
 
 end Stabilize
+
+section Lone
+
+variable (u v : BraidWord n) (i : Fin (n - 1)) (ε ε' : ℤˣ)
+
+private theorem levelAt_append_cons_sign (k : ℕ) :
+    (u ++ (i, ε) :: v).levelAt k = (u ++ (i, ε') :: v).levelAt k := by
+  rw [levelAt_def, levelAt_def]
+  rcases eq_or_ne k u.length with rfl | hk
+  · simp
+  · rw [List.getElem?_append_cons_of_ne u v _ _ hk]
+
+private theorem signAt_append_cons_sign {k : ℕ} (hk : k ≠ u.length) :
+    (u ++ (i, ε) :: v).signAt k = (u ++ (i, ε') :: v).signAt k := by
+  rw [signAt_def, signAt_def, List.getElem?_append_cons_of_ne u v _ _ hk]
+
+/-- A position other than `u.length` of `u ++ x :: v` holds a letter of `u ++ v`. -/
+private theorem exists_mem_of_levelAt_append_cons {x : Fin (n - 1) × ℤˣ} {k l : ℕ}
+    (hk : k ≠ u.length) (h : (u ++ x :: v).levelAt k = some l) :
+    ∃ y ∈ u ++ v, (y.1 : ℕ) = l := by
+  rw [levelAt_def, Option.map_eq_some_iff] at h
+  obtain ⟨y, hy, rfl⟩ := h
+  refine ⟨y, ?_, rfl⟩
+  -- The entry at `k` stays `y` when the letter at `u.length` is replaced by one other than `y`.
+  rw [List.getElem?_append_cons_of_ne u v x (y.1, -y.2) hk] at hy
+  have hne : y ≠ (y.1, -y.2) := fun h ↦ units_ne_neg_self y.2 (congrArg Prod.snd h)
+  simpa [hne] using List.mem_of_getElem? hy
+
+/-- If no letter of `u ++ v` lies on level `i`, no loop of `u ++ (i, ε) :: v` runs through the
+letter `(i, ε)`: it is alone on its level. -/
+private theorem IsSeifertLoop.ne_length_of_not_exists (h : ¬∃ x ∈ u ++ v, x.1 = i) {p : ℕ × ℕ}
+    (hp : (u ++ (i, ε) :: v).IsSeifertLoop p) : p.1 ≠ u.length ∧ p.2 ≠ u.length := by
+  obtain ⟨h12, -, hl, -⟩ := hp
+  have hi : (u ++ (i, ε) :: v).levelAt u.length = some (i : ℕ) := by simp
+  have hlone {k : ℕ} (hk : k ≠ u.length) : (u ++ (i, ε) :: v).levelAt k ≠ some (i : ℕ) :=
+    fun hk' ↦ by
+      obtain ⟨y, hy, hyi⟩ := exists_mem_of_levelAt_append_cons u v hk hk'
+      exact h ⟨y, hy, Fin.ext hyi⟩
+  constructor <;> intro he
+  · exact hlone (k := p.2) (by omega) (by rw [hl, he, hi])
+  · exact hlone (k := p.1) (by omega) (by rw [← hl, he, hi])
+
+/-- **The sign of a letter alone on its level does not change the Seifert matrix.** If no other
+letter lies on level `i`, the band of the letter `σᵢ^ε` is the only band between the discs `Dᵢ`
+and `Dᵢ₊₁` of the canonical Seifert surface, so it lies on no loop, and changing its sign only
+relabels the loops. -/
+theorem exists_seifertMatrix_append_cons_of_not_exists (h : ¬∃ x ∈ u ++ v, x.1 = i) :
+    ∃ ι : (u ++ (i, ε') :: v).seifertLoops ≃ (u ++ (i, ε) :: v).seifertLoops,
+      (u ++ (i, ε') :: v).seifertMatrix = (u ++ (i, ε) :: v).seifertMatrix.submatrix ι ι := by
+  have hloops : ∀ p, p ∈ (u ++ (i, ε') :: v).seifertLoops ↔ p ∈ (u ++ (i, ε) :: v).seifertLoops :=
+    fun p ↦ by
+      simp only [mem_seifertLoops, isSeifertLoop_iff, levelAt_append_cons_sign u v i ε' ε,
+        List.length_append, List.length_cons]
+  refine ⟨Equiv.subtypeEquivRight hloops, Matrix.ext fun a b ↦ ?_⟩
+  obtain ⟨ha1, ha2⟩ := IsSeifertLoop.ne_length_of_not_exists u v i ε h
+    ((mem_seifertLoops _).1 ((hloops a).1 a.2))
+  simp only [Matrix.submatrix_apply, Equiv.subtypeEquivRight_apply_coe, seifertMatrix,
+    Matrix.of_apply, seifertEntry, levelAt_append_cons_sign u v i ε' ε,
+    signAt_append_cons_sign u v i ε' ε ha1, signAt_append_cons_sign u v i ε' ε ha2]
+
+end Lone
 
 /-! ### Telescoping along a level
 
@@ -955,6 +1019,126 @@ private theorem seifertEntry_append_singleton_eq_sum {a b : ℕ × ℕ}
     exact seifertEntry_append_singleton_of_lt ha.1 (snd_lt_length_of_ne ha ha2) hb.1
       (snd_lt_length_of_ne hb hb2)
 
+/-- The loops of `x :: v` are carried to those of `v ++ [x]` by lowering both ends by one, except
+that a loop through the first letter goes to the loop through the moved letter. -/
+private theorem exists_rotate_map :
+    ∃ κ : seifertLoops (n := n) (x :: v) → (v ++ [x]).seifertLoops,
+      (∀ c, c.1.1 ≠ 0 → (κ c).1 = (c.1.1 - 1, c.1.2 - 1)) ∧
+        ∀ c, c.1.1 = 0 → (κ c).1 = (m - 1, v.length) := by
+  have hmlen := lt_length_of_levelAt_cons hm
+  -- a loop through the first letter lies on the level of `x`, so that level has a second letter
+  have hm0 : ∀ c : seifertLoops (n := n) (x :: v), c.1.1 = 0 → m ≠ 0 := fun c h0 ↦ by
+    have hc := (mem_seifertLoops _).1 c.2
+    have hl : levelAt (n := n) (x :: v) c.1.2 = some (x.1 : ℕ) := by
+      rw [hc.2.2.1, h0, levelAt_cons_zero]
+    have := not_lt.1 fun h ↦ hm' _ h hl
+    have := ((mem_seifertLoops _).1 c.2).fst_lt_snd
+    omega
+  refine ⟨fun c ↦
+    ⟨if c.1.1 = 0 then (m - 1, v.length) else (c.1.1 - 1, c.1.2 - 1), by
+      rw [mem_seifertLoops]
+      split_ifs with h0
+      · exact isSeifertLoop_sub_one_length hm hm' (hm0 c h0)
+      · have hc := (mem_seifertLoops _).1 c.2
+        have h1 := hc.fst_lt_snd
+        have h2 := hc.snd_lt_length
+        simp only [List.length_cons] at h2
+        rw [isSeifertLoop_append_singleton_iff_cons x v (by omega),
+          sub_one_add_one_pair h0 (by omega)]
+        exact hc⟩,
+    fun c h0 ↦ by simp [h0], fun c h0 ↦ by simp [h0]⟩
+
+/-- The map `κ` of `exists_rotate_map` is a bijection. -/
+private theorem bijective_of_rotate_map
+    (κ : seifertLoops (n := n) (x :: v) → (v ++ [x]).seifertLoops)
+    (hκ : ∀ c, c.1.1 ≠ 0 → (κ c).1 = (c.1.1 - 1, c.1.2 - 1))
+    (hκ₀ : ∀ c, c.1.1 = 0 → (κ c).1 = (m - 1, v.length)) : Function.Bijective κ := by
+  refine ⟨fun c d h ↦ Subtype.ext ?_, fun a ↦ ?_⟩
+  · have hc := (mem_seifertLoops _).1 c.2
+    have hd := (mem_seifertLoops _).1 d.2
+    have hc1 := hc.fst_lt_snd
+    have hc2 := hc.snd_lt_length
+    have hd1 := hd.fst_lt_snd
+    have hd2 := hd.snd_lt_length
+    simp only [List.length_cons] at hc2 hd2
+    have h' := congrArg Subtype.val h
+    by_cases h0 : c.1.1 = 0 <;> by_cases h0' : d.1.1 = 0
+    · exact hc.eq_of_fst_eq hd (h0.trans h0'.symm)
+    · rw [hκ₀ c h0, hκ d h0', Prod.mk.injEq] at h'
+      omega
+    · rw [hκ c h0, hκ₀ d h0', Prod.mk.injEq] at h'
+      omega
+    · rw [hκ c h0, hκ d h0', Prod.mk.injEq] at h'
+      exact Prod.ext (by omega) (by omega)
+  · have ha := (mem_seifertLoops _).1 a.2
+    by_cases ha2 : a.1.2 = v.length
+    · -- the loop through the moved letter comes from the first loop of the level of `x`
+      have ha1 := fst_add_one_eq_of_snd_eq_length hm hm' ha ha2
+      have hex : ∃ j, 0 < j ∧ levelAt (n := n) (x :: v) j = some (x.1 : ℕ) := ⟨m, by omega, hm⟩
+      classical
+      have hq := Nat.find_spec hex
+      have hc : IsSeifertLoop (n := n) (x :: v) (0, Nat.find hex) :=
+        ⟨hq.1, (levelAt_ne_none_iff (x :: v : BraidWord n)).1 (by simp [hq.2]),
+          hq.2.trans (levelAt_cons_zero x v).symm, fun j hj hj' hjl ↦
+            Nat.find_min hex hj ⟨hj', hjl.trans (levelAt_cons_zero x v)⟩⟩
+      refine ⟨⟨(0, Nat.find hex), (mem_seifertLoops _).2 hc⟩, Subtype.ext ?_⟩
+      rw [hκ₀ _ rfl]
+      exact Prod.ext (by simp only; omega) ha2.symm
+    · have ha2' := snd_lt_length_of_ne ha ha2
+      refine ⟨⟨(a.1.1 + 1, a.1.2 + 1), (mem_seifertLoops _).2
+        ((isSeifertLoop_append_singleton_iff_cons x v ha2').1 ha)⟩, Subtype.ext ?_⟩
+      rw [hκ _ (Nat.succ_ne_zero _)]
+      simp
+
+omit hm hm' in
+/-- The change of basis `rotateRow x v (κ ·)` is the identity except in the row of the first loop
+of the level of `x`, so it is unimodular. -/
+private theorem isUnit_det_rotateRow
+    (κ : seifertLoops (n := n) (x :: v) → (v ++ [x]).seifertLoops)
+    (hκ : ∀ c, c.1.1 ≠ 0 → (κ c).1 = (c.1.1 - 1, c.1.2 - 1))
+    (hκ₀ : ∀ c, c.1.1 = 0 → (κ c).1 = (m - 1, v.length)) :
+    IsUnit (Matrix.of fun c d ↦ rotateRow x v (κ c) d :
+      Matrix (seifertLoops (n := n) (x :: v)) (seifertLoops (n := n) (x :: v)) ℤ).det := by
+  set P : Matrix (seifertLoops (n := n) (x :: v)) (seifertLoops (n := n) (x :: v)) ℤ :=
+    Matrix.of fun c d ↦ rotateRow x v (κ c) d with hPdef
+  have hrow : ∀ c d : seifertLoops (n := n) (x :: v), c.1.1 ≠ 0 →
+      rotateRow x v (κ c) d = (1 : Matrix _ _ ℤ) c d := fun c d h0 ↦ by
+    have hc := (mem_seifertLoops _).1 c.2
+    have h1 := hc.fst_lt_snd
+    have h2 := hc.snd_lt_length
+    simp only [List.length_cons] at h2
+    have hne : c.1.2 - 1 ≠ v.length := by omega
+    rw [rotateRow, hκ c h0, Matrix.one_apply]
+    simp only [hne, ↓reduceIte, sub_one_add_one_pair h0 (by omega), eq_comm (a := d.1),
+      Subtype.ext_iff]
+  by_cases h₀ : ∃ c₀ : seifertLoops (n := n) (x :: v), c₀.1.1 = 0
+  · obtain ⟨c₀, hc₀⟩ := h₀
+    set r : seifertLoops (n := n) (x :: v) → ℤ := fun d ↦
+      if levelAt (n := n) (x :: v) d.1.1 = some (x.1 : ℕ) then -1 else 0 with hr
+    have hsum : ∑ k, r k • (1 : Matrix (seifertLoops (n := n) (x :: v))
+        (seifertLoops (n := n) (x :: v)) ℤ) k = r := by
+      ext d
+      simp [Matrix.one_apply]
+    have hP : P = (1 : Matrix _ _ ℤ).updateRow c₀
+        (∑ k, r k • (1 : Matrix (seifertLoops (n := n) (x :: v))
+          (seifertLoops (n := n) (x :: v)) ℤ) k) := by
+      rw [hsum]
+      ext c d
+      by_cases hc : c = c₀
+      · subst hc
+        simp [hPdef, rotateRow, hκ₀ c hc₀, hr]
+      · rw [hPdef, Matrix.of_apply, Matrix.updateRow_ne hc, hrow c d fun h ↦ hc (Subtype.ext
+          (((mem_seifertLoops _).1 c.2).eq_of_fst_eq ((mem_seifertLoops _).1 c₀.2)
+            (h.trans hc₀.symm)))]
+    rw [hP, Matrix.det_updateRow_sum, Matrix.det_one, smul_eq_mul, mul_one, hr]
+    simp [hc₀]
+  · push Not at h₀
+    have hP : P = 1 := by
+      ext c d
+      exact hrow c d (h₀ c)
+    rw [hP, Matrix.det_one]
+    exact isUnit_one
+
 variable (x v) in
 omit hm hm' in
 /-- **Cyclic rotation is a unimodular change of basis of the Seifert matrix.** Moving the first
@@ -969,111 +1153,18 @@ theorem exists_seifertMatrix_append_singleton :
         (v ++ [x]).seifertMatrix = (P * seifertMatrix (n := n) (x :: v) * Pᵀ).submatrix ι ι := by
   -- the last letter of `x :: v` on the level of `x`
   obtain ⟨m, hm, hm'⟩ := exists_levelAt_cons_last x v
-  have hmlen := lt_length_of_levelAt_cons hm
-  have hlen : ∀ c : seifertLoops (n := n) (x :: v), c.1.1 < c.1.2 ∧ c.1.2 < v.length + 1 :=
-    fun c ↦ by
-      have hc := (mem_seifertLoops _).1 c.2
-      exact ⟨hc.1, by simpa using hc.2.1⟩
-  -- a loop through the first letter lies on the level of `x`, so that level has a second letter
-  have hm0 : ∀ c : seifertLoops (n := n) (x :: v), c.1.1 = 0 → m ≠ 0 := fun c h0 ↦ by
-    have hc := (mem_seifertLoops _).1 c.2
-    have hl : levelAt (n := n) (x :: v) c.1.2 = some (x.1 : ℕ) := by
-      rw [hc.2.2.1, h0, levelAt_cons_zero]
-    have := not_lt.1 fun h ↦ hm' _ h hl
-    have := (hlen c).1
-    omega
-  -- the change of basis, read on the loops of `x :: v`
-  let κ : seifertLoops (n := n) (x :: v) → (v ++ [x]).seifertLoops := fun c ↦
-    ⟨if c.1.1 = 0 then (m - 1, v.length) else (c.1.1 - 1, c.1.2 - 1), by
-      rw [mem_seifertLoops]
-      split_ifs with h0
-      · exact isSeifertLoop_sub_one_length hm hm' (hm0 c h0)
-      · have := hlen c
-        rw [isSeifertLoop_append_singleton_iff_cons x v (by omega),
-          sub_one_add_one_pair h0 (by omega)]
-        exact (mem_seifertLoops _).1 c.2⟩
-  have hκ : ∀ c : seifertLoops (n := n) (x :: v), c.1.1 ≠ 0 →
-      (κ c).1 = (c.1.1 - 1, c.1.2 - 1) := fun c h0 ↦ by simp [κ, h0]
-  have hκ₀ : ∀ c : seifertLoops (n := n) (x :: v), c.1.1 = 0 → (κ c).1 = (m - 1, v.length) :=
-    fun c h0 ↦ by simp [κ, h0]
-  have hκbij : Function.Bijective κ := by
-    refine ⟨fun c d h ↦ Subtype.ext ?_, fun a ↦ ?_⟩
-    · have hc := hlen c
-      have hd := hlen d
-      have h' := congrArg Subtype.val h
-      by_cases h0 : c.1.1 = 0 <;> by_cases h0' : d.1.1 = 0
-      · exact ((mem_seifertLoops _).1 c.2).eq_of_fst_eq ((mem_seifertLoops _).1 d.2)
-          (h0.trans h0'.symm)
-      · rw [hκ₀ c h0, hκ d h0', Prod.mk.injEq] at h'
-        omega
-      · rw [hκ c h0, hκ₀ d h0', Prod.mk.injEq] at h'
-        omega
-      · rw [hκ c h0, hκ d h0', Prod.mk.injEq] at h'
-        exact Prod.ext (by omega) (by omega)
-    · have ha := (mem_seifertLoops _).1 a.2
-      by_cases ha2 : a.1.2 = v.length
-      · -- the loop through the moved letter comes from the first loop of the level of `x`
-        have ha1 := fst_add_one_eq_of_snd_eq_length hm hm' ha ha2
-        have hex : ∃ j, 0 < j ∧ levelAt (n := n) (x :: v) j = some (x.1 : ℕ) := ⟨m, by omega, hm⟩
-        classical
-        have hq := Nat.find_spec hex
-        have hc : IsSeifertLoop (n := n) (x :: v) (0, Nat.find hex) :=
-          ⟨hq.1, (levelAt_ne_none_iff (x :: v : BraidWord n)).1 (by simp [hq.2]),
-            hq.2.trans (levelAt_cons_zero x v).symm, fun j hj hj' hjl ↦
-              Nat.find_min hex hj ⟨hj', hjl.trans (levelAt_cons_zero x v)⟩⟩
-        refine ⟨⟨(0, Nat.find hex), (mem_seifertLoops _).2 hc⟩, Subtype.ext ?_⟩
-        rw [hκ₀ _ rfl]
-        exact Prod.ext (by simp only; omega) ha2.symm
-      · have ha2' := snd_lt_length_of_ne ha ha2
-        refine ⟨⟨(a.1.1 + 1, a.1.2 + 1), (mem_seifertLoops _).2
-          ((isSeifertLoop_append_singleton_iff_cons x v ha2').1 ha)⟩, Subtype.ext ?_⟩
-        rw [hκ _ (Nat.succ_ne_zero _)]
-        simp
+  obtain ⟨κ, hκ, hκ₀⟩ := exists_rotate_map hm hm'
+  have hκbij := bijective_of_rotate_map hm hm' κ hκ hκ₀
   set P : Matrix (seifertLoops (n := n) (x :: v)) (seifertLoops (n := n) (x :: v)) ℤ :=
     Matrix.of fun c d ↦ rotateRow x v (κ c) d with hPdef
-  refine ⟨(Equiv.ofBijective κ hκbij).symm, P, ?_, ?_⟩
-  · -- the change of basis is the identity except in the row of the first loop of the level of `x`
-    have hrow : ∀ c d : seifertLoops (n := n) (x :: v), c.1.1 ≠ 0 →
-        rotateRow x v (κ c) d = (1 : Matrix _ _ ℤ) c d := fun c d h0 ↦ by
-      have := hlen c
-      have hne : c.1.2 - 1 ≠ v.length := by omega
-      rw [rotateRow, hκ c h0, Matrix.one_apply]
-      simp only [hne, ↓reduceIte, sub_one_add_one_pair h0 (by omega), eq_comm (a := d.1),
-        Subtype.ext_iff]
-    by_cases h₀ : ∃ c₀ : seifertLoops (n := n) (x :: v), c₀.1.1 = 0
-    · obtain ⟨c₀, hc₀⟩ := h₀
-      set r : seifertLoops (n := n) (x :: v) → ℤ := fun d ↦
-        if levelAt (n := n) (x :: v) d.1.1 = some (x.1 : ℕ) then -1 else 0 with hr
-      have hsum : ∑ k, r k • (1 : Matrix (seifertLoops (n := n) (x :: v))
-          (seifertLoops (n := n) (x :: v)) ℤ) k = r := by
-        ext d
-        simp [Matrix.one_apply]
-      have hP : P = (1 : Matrix _ _ ℤ).updateRow c₀
-          (∑ k, r k • (1 : Matrix (seifertLoops (n := n) (x :: v))
-            (seifertLoops (n := n) (x :: v)) ℤ) k) := by
-        rw [hsum]
-        ext c d
-        by_cases hc : c = c₀
-        · subst hc
-          simp [hPdef, rotateRow, hκ₀ c hc₀, hr]
-        · rw [hPdef, Matrix.of_apply, Matrix.updateRow_ne hc, hrow c d fun h ↦ hc (Subtype.ext
-            (((mem_seifertLoops _).1 c.2).eq_of_fst_eq ((mem_seifertLoops _).1 c₀.2)
-              (h.trans hc₀.symm)))]
-      rw [hP, Matrix.det_updateRow_sum, Matrix.det_one, smul_eq_mul, mul_one, hr]
-      simp [hc₀]
-    · push Not at h₀
-      have hP : P = 1 := by
-        ext c d
-        exact hrow c d (h₀ c)
-      rw [hP, Matrix.det_one]
-      exact isUnit_one
-  · ext a b
-    simp only [hPdef, seifertMatrix, Matrix.submatrix_apply, Matrix.mul_apply,
-      Matrix.transpose_apply, Matrix.of_apply, Equiv.ofBijective_apply_symm_apply]
-    rw [Finset.univ_eq_attach, seifertEntry_append_singleton_eq_sum ((mem_seifertLoops _).1 a.2)
-      ((mem_seifertLoops _).1 b.2), ← Finset.sum_attach]
-    refine Finset.sum_congr rfl fun d _ ↦ ?_
-    rw [← Finset.sum_attach]
+  refine ⟨(Equiv.ofBijective κ hκbij).symm, P, isUnit_det_rotateRow κ hκ hκ₀, ?_⟩
+  ext a b
+  simp only [hPdef, seifertMatrix, Matrix.submatrix_apply, Matrix.mul_apply,
+    Matrix.transpose_apply, Matrix.of_apply, Equiv.ofBijective_apply_symm_apply]
+  rw [Finset.univ_eq_attach, seifertEntry_append_singleton_eq_sum ((mem_seifertLoops _).1 a.2)
+    ((mem_seifertLoops _).1 b.2), ← Finset.sum_attach]
+  refine Finset.sum_congr rfl fun d _ ↦ ?_
+  rw [← Finset.sum_attach]
 
 end Rotate
 

@@ -231,25 +231,7 @@ end Algebraic
 
 section Analytic
 
-variable [NormedCommRing R]
-
-/-- If the rows of `w` outside a finite set `F` vanish, the block of `w ^ k` on `F` is the
-`k`-th power of the block of `w` on `F`. -/
-private theorem submatrix_matrixCoeff_pow {w : C₀(I, R) →L[R] C₀(I, R)} {F : Finset I}
-    (hw : ∀ i ∉ F, ∀ j, w.matrixCoeff i j = 0) (k : ℕ) :
-    (w ^ k).matrixCoeff.submatrix (Subtype.val : F → I) (Subtype.val : F → I) =
-      w.matrixCoeff.submatrix (Subtype.val : F → I) (Subtype.val : F → I) ^ k := by
-  induction k with
-  | zero =>
-    ext x y
-    simp [Matrix.one_apply]
-  | succ k ih =>
-    ext x y
-    rw [pow_succ, pow_succ, Matrix.submatrix_apply, matrixCoeff_mul, Matrix.mul_apply, ← ih,
-      tsum_eq_sum (s := F) fun l hl ↦ by simp [hw l hl], ← Finset.sum_coe_sort F]
-    simp
-
-variable [NormOneClass R] [IsUltrametricDist R]
+variable [NormedCommRing R] [NormOneClass R] [IsUltrametricDist R]
 
 /-- **Resolvent entries of a map with finitely many nonzero rows.** If the rows of `w` outside a
 finite set `F` vanish and `r i` bounds the `i`-th row of `w`, then `c ≥ 0` bounds the entries

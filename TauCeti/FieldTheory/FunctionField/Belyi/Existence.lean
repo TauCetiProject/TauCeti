@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.FunctionField.Belyi.Polynomial
+public import TauCeti.FieldTheory.FunctionField.Belyi.Polynomial.Basic
 public import TauCeti.FieldTheory.FunctionField.Basic
 public import TauCeti.FieldTheory.RatFunc.Transcendental
 import TauCeti.FieldTheory.FunctionField.Different.Divisor

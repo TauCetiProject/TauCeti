@@ -8,6 +8,8 @@ module
 public import Mathlib.MeasureTheory.Measure.Hausdorff
 public import Mathlib.MeasureTheory.Measure.Regular
 import Mathlib.MeasureTheory.Covering.Vitali
+import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
+import TauCeti.MeasureTheory.Measure.InterBall
 import TauCeti.MeasureTheory.Measure.Hausdorff
 
 /-!
@@ -23,6 +25,11 @@ the `d`-dimensional upper density of `μ` is at least `c` on `A`, then `μ` domi
 Neither `A` nor `μ` needs any further regularity, and `c` is not required to be finite. The
 constant is sharp: no covering constant is lost.
 
+Conversely, if at every point `x` of `A` all small closed balls satisfy
+`μ (closedBall x r) ≤ c (2 r) ^ d` with `c ≠ 0, ∞`, then `μ A ≤ 2 ^ d c μH[d] A`. A set of
+diameter `ρ` meeting `A` at `x` lies in `closedBall x ρ`, so here a factor `2 ^ d` is lost. In
+particular `μ` vanishes on the `μH[d]`-null subsets of `A`.
+
 As a consequence, a null-measurable set `A` of finite `d`-dimensional Hausdorff measure has upper
 density zero at almost every point outside it:
 `μH[d] (A ∩ closedBall x r) / (2 r) ^ d → 0` as `r → 0⁺` for `μH[d]`-almost every `x ∉ A`.
@@ -37,6 +44,9 @@ place of `(2 r) ^ k`, are in `TauCeti.Geometry.Euclidean.Volume.Measure`.
 * `MeasureTheory.Measure.mul_hausdorffMeasure_le_measure_of_isOpen` and
   `MeasureTheory.Measure.mul_hausdorffMeasure_le_measure`: a measure whose upper density is at
   least `c` on `A` dominates `c • μH[d]` on `A`.
+* `MeasureTheory.Measure.measure_le_mul_hausdorffMeasure`: a measure with
+  `μ (closedBall x r) ≤ c (2 r) ^ d` for all small `r` at every point `x` of `A`, where
+  `c ≠ 0, ∞`, is at most `2 ^ d c • μH[d]` on `A`.
 * `TauCeti.ae_tendsto_hausdorffMeasure_inter_closedBall_div`: zero density outside a
   null-measurable set of finite Hausdorff measure.
 
@@ -47,12 +57,14 @@ The domination is proved with the Vitali covering lemma
 which `μ` is large. The selected disjoint balls are countable because they have positive measure
 inside a set of finite measure, and the sum of `(2 r) ^ d` over them is at most `μ U / c`. Finitely
 many of them, together with the threefold enlargements of the others, cover `A`, and the sum over
-the enlargements tends to zero.
+the enlargements tends to zero. The reverse comparison needs no covering lemma: on the part of `A`
+where the bound holds below a fixed radius, `μ` is bounded on small sets by `2 ^ d c diam ^ d`,
+which is compared with the Hausdorff measure by `OuterMeasure.le_mkMetric`.
 
 ## References
 
 * H. Federer, *Geometric Measure Theory*, 2.10.19 (densities and Hausdorff measures).
-* P. Mattila, *Geometry of Sets and Measures in Euclidean Spaces*, Theorem 6.2.
+* P. Mattila, *Geometry of Sets and Measures in Euclidean Spaces*, Theorems 6.2 and 6.9.
 -/
 
 public section
@@ -99,13 +111,12 @@ private lemma countable_and_tsum_le_of_pairwiseDisjoint (μ : Measure X) {d : �
 `∑ (2 ρ i) ^ d` by `3 ^ d`, so the new sum is at most `∑ (2 ρ i) ^ d + 3 ^ d ∑_{i ∉ F} (2 ρ i) ^ d`.
 -/
 private lemma tsum_ofReal_two_mul_ite_le {ι : Type*} [DecidableEq ι] (F : Finset ι) (ρ : ι → ℝ)
-    {d : ℝ} (hd : 0 ≤ d) :
+    (d : ℝ) :
     ∑' i, ENNReal.ofReal (2 * if i ∈ F then ρ i else 3 * ρ i) ^ d ≤
       ∑' i, ENNReal.ofReal (2 * ρ i) ^ d +
         3 ^ d * ∑' i : {i // i ∉ F}, ENNReal.ofReal (2 * ρ i) ^ d := by
   have h3 (i : ι) : ENNReal.ofReal (2 * (3 * ρ i)) ^ d = 3 ^ d * ENNReal.ofReal (2 * ρ i) ^ d := by
-    rw [mul_left_comm, ENNReal.ofReal_mul zero_le_three, ENNReal.mul_rpow_of_nonneg _ _ hd,
-      ENNReal.ofReal_ofNat]
+    rw [mul_left_comm, ENNReal.ofReal_mul_rpow zero_le_three, ENNReal.ofReal_ofNat]
   calc _ ≤ ∑' i, (ENNReal.ofReal (2 * ρ i) ^ d +
         {i | i ∉ F}.indicator (fun i => 3 ^ d * ENNReal.ofReal (2 * ρ i) ^ d) i) :=
         tsum_le_tsum fun i => by
@@ -117,6 +128,45 @@ private lemma tsum_ofReal_two_mul_ite_le {ι : Type*} [DecidableEq ι] (F : Fins
         rw [tsum_add, ← tsum_subtype, ENNReal.tsum_mul_left]
         -- `↥{i | i ∉ F}` is notation for the subtype `{i // i ∉ F}`.
         rfl
+
+/-- If `μ (closedBall x ρ) ≤ c (2 ρ) ^ d` for every `x ∈ B` and every radius `ρ ∈ [0, ε)`, where
+`c ≠ 0, ∞`, then `μ B ≤ 2 ^ d * c * μH[d] B`: a set of diameter `ρ` meeting `B` at `x` lies in
+`closedBall x ρ`. -/
+private lemma measure_le_mul_hausdorffMeasure_of_forall_closedBall_le (μ : Measure X) {d : ℝ}
+    {c : ℝ≥0∞} (hc0 : c ≠ 0) (hc : c ≠ ∞) {B : Set X} {ε : ℝ} (hε : 0 < ε)
+    (h : ∀ x ∈ B, ∀ ρ : ℝ, 0 ≤ ρ → ρ < ε →
+      μ (closedBall x ρ) ≤ c * ENNReal.ofReal (2 * ρ) ^ d) :
+    μ B ≤ 2 ^ d * c * μH[d] B := by
+  have h2 : (2 : ℝ≥0∞) ^ d * c ≠ 0 :=
+    mul_ne_zero (ENNReal.rpow_pos two_pos ENNReal.ofNat_ne_top).ne' hc0
+  have h2top : (2 : ℝ≥0∞) ^ d * c ≠ ∞ :=
+    ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_ne_zero two_ne_zero ENNReal.ofNat_ne_top) hc
+  -- Every set of diameter at most `ε / 2` meets `B` in measure at most `2 ^ d c diam ^ d`.
+  have hle : μ.toOuterMeasure.restrict B ≤ OuterMeasure.mkMetric fun r => 2 ^ d * c * r ^ d := by
+    refine OuterMeasure.le_mkMetric _ _ (ENNReal.ofReal (ε / 2)) (by simpa using hε) fun s hs => ?_
+    rw [OuterMeasure.restrict_apply]
+    rcases (s ∩ B).eq_empty_or_nonempty with he | ⟨x, hxs, hxB⟩
+    · simp [he]
+    have hstop : ediam s ≠ ∞ := ne_top_of_le_ne_top ENNReal.ofReal_ne_top hs
+    have hsub : s ⊆ closedBall x (ediam s).toReal := fun y hy => by
+      rw [mem_closedBall, dist_edist]
+      exact ENNReal.toReal_mono hstop (edist_le_ediam_of_mem hy hxs)
+    have hρε : (ediam s).toReal < ε :=
+      (ENNReal.toReal_le_of_le_ofReal (by positivity) hs).trans_lt (half_lt_self hε)
+    calc μ (s ∩ B) ≤ μ (closedBall x (ediam s).toReal) :=
+          measure_mono (inter_subset_left.trans hsub)
+      _ ≤ c * ENNReal.ofReal (2 * (ediam s).toReal) ^ d := h x hxB _ ENNReal.toReal_nonneg hρε
+      _ = 2 ^ d * c * ediam s ^ d := by
+        rw [ENNReal.ofReal_mul_rpow zero_le_two, ENNReal.ofReal_toReal hstop, ENNReal.ofReal_ofNat]
+        ring
+  calc μ B = μ.toOuterMeasure.restrict B B := by
+        rw [OuterMeasure.restrict_apply, inter_self, toOuterMeasure_apply]
+    _ ≤ OuterMeasure.mkMetric (fun r => 2 ^ d * c * r ^ d) B := hle _
+    _ = Measure.mkMetric (fun r => 2 ^ d * c * r ^ d) B := by
+        rw [← Measure.mkMetric_toOuterMeasure, toOuterMeasure_apply]
+    _ ≤ ((2 ^ d * c) • μH[d]) B :=
+        Measure.mkMetric_mono_smul h2top h2 (Eventually.of_forall fun _ => le_rfl) _
+    _ = 2 ^ d * c * μH[d] B := by rw [smul_apply, smul_eq_mul]
 
 end TauCeti
 
@@ -177,7 +227,7 @@ theorem mul_hausdorffMeasure_le_measure_of_isOpen (μ : Measure X) {d : ℝ} (hd
     refine mem_iUnion.2 ⟨⟨b, hbu⟩, ?_⟩
     simp only [hbF, ↓reduceIte, mem_closedBall]
     linarith [dist_triangle x y b.1, mem_closedBall'.1 hyx, mem_closedBall.1 hyb]
-  · calc _ ≤ _ := TauCeti.tsum_ofReal_two_mul_ite_le F (fun p : u => p.1.2) hd
+  · calc _ ≤ _ := TauCeti.tsum_ofReal_two_mul_ite_le F (fun p : u => p.1.2) d
       _ ≤ μ U / c + 3 ^ d * (ε / 3 ^ d) := by gcongr
       _ ≤ μ U / c + ε := by gcongr; exact ENNReal.mul_div_le
 
@@ -191,6 +241,35 @@ theorem mul_hausdorffMeasure_le_measure (μ : Measure X) [μ.OuterRegular] {d : 
   refine le_of_forall_gt fun b hb => ?_
   obtain ⟨U, hAU, hU, hUb⟩ := A.exists_isOpen_lt_of_lt b hb
   exact (mul_hausdorffMeasure_le_measure_of_isOpen μ hd hU hAU h).trans_lt hUb
+
+/-- **Upper density comparison for Hausdorff measure.** If at every point `x` of `A` all small
+closed balls satisfy `μ (closedBall x r) ≤ c (2 r) ^ d`, where `c ≠ 0, ∞`, then
+`μ A ≤ 2 ^ d * c * μH[d] A`. -/
+theorem measure_le_mul_hausdorffMeasure (μ : Measure X) {d : ℝ} {c : ℝ≥0∞} (hc0 : c ≠ 0)
+    (hc : c ≠ ∞) {A : Set X}
+    (h : ∀ x ∈ A, ∀ᶠ r in 𝓝[>] 0, μ (closedBall x r) ≤ c * ENNReal.ofReal (2 * r) ^ d) :
+    μ A ≤ 2 ^ d * c * μH[d] A := by
+  -- `B j`: the points of `A` at which the bound holds for every radius in `(0, 1 / (j + 1))`.
+  set B : ℕ → Set X := fun j => {x | x ∈ A ∧ ∀ r ∈ Ioo (0 : ℝ) (1 / (j + 1)),
+    μ (closedBall x r) ≤ c * ENNReal.ofReal (2 * r) ^ d}
+  have hBmono : Monotone B := fun i j hij x hx => ⟨hx.1, fun r hr => hx.2 r
+    ⟨hr.1, hr.2.trans_le (one_div_le_one_div_of_le (by positivity) (by gcongr))⟩⟩
+  have hAB : A ⊆ ⋃ j, B j := fun x hx => by
+    obtain ⟨ε, hε, hεA⟩ := (mem_nhdsGT_iff_exists_Ioo_subset' one_pos).1 (h x hx)
+    obtain ⟨j, hj⟩ := exists_nat_one_div_lt hε
+    exact mem_iUnion.2 ⟨j, hx, fun r hr => hεA ⟨hr.1, hr.2.trans hj⟩⟩
+  refine (measure_mono hAB).trans ((hBmono.measure_iUnion (μ := μ)).trans_le (iSup_le fun j => ?_))
+  -- The bound extends from radii in `(0, 1 / (j + 1))` to radii in `[0, 1 / (j + 1))`.
+  have hcont : Continuous fun r : ℝ => c * ENNReal.ofReal (2 * r) ^ d :=
+    (ENNReal.continuous_const_mul hc).comp (ENNReal.continuous_rpow_const.comp
+      (ENNReal.continuous_ofReal.comp (continuous_const.mul continuous_id)))
+  refine (TauCeti.measure_le_mul_hausdorffMeasure_of_forall_closedBall_le μ hc0 hc
+    (B := B j) (ε := 1 / (j + 1)) (by positivity) fun x hx ρ hρ hρε =>
+      measure_closedBall_le_of_frequently_le μ hcont.continuousWithinAt
+        (eventually_of_mem (Ioo_mem_nhdsGT hρε) fun r hr =>
+          hx.2 r ⟨hρ.trans_lt hr.1, hr.2⟩).frequently).trans ?_
+  gcongr
+  exact fun x hx => hx.1
 
 end MeasureTheory.Measure
 

@@ -8,9 +8,10 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.FTaylorSeries
 public import TauCeti.Analysis.Calculus.FDeriv.Submodule
 public import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
+public import Mathlib.Analysis.Calculus.UniformLimitsDeriv
 
 /-!
-# Taylor derivatives in subspaces and through isometries
+# Taylor derivatives in subspaces, through isometries, and under limits
 
 For `HasFTaylorSeriesUpTo n f q`, if `f` takes values in a closed subspace,
 then the Taylor coefficients `q x m` take values there at every order `m ≤ n`. The proof uses
@@ -18,12 +19,17 @@ the closed-subspace derivative criterion at each successive order.
 
 A linear isometry lifts a Taylor derivative series when its coefficients lie in the
 isometry’s range; this lifting does not require the range to be closed.
+
+Over a real or complex normed field, locally uniform limits of the coefficients of Taylor
+derivative series are again Taylor derivative series, provided the underlying functions converge
+pointwise. This is the derivative-compatibility step in completeness of smooth function spaces.
+The limit argument uses Mathlib's `hasFDerivAt_of_tendstoLocallyUniformlyOn`.
 -/
 
 public section
 
 open Filter Set
-open scoped ContDiff
+open scoped ContDiff Topology
 
 variable {𝕜 D F : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup D] [NormedSpace 𝕜 D]
@@ -57,6 +63,49 @@ theorem HasFTaylorSeriesUpTo.apply_mem_of_range_subset
         (ih (le_of_lt hmn) y) (ih (le_of_lt hmn) x)) (v 0)
     simpa only [ContinuousMultilinearMap.curryLeft_apply, Fin.cons_self_tail]
       using hv (Fin.tail v)
+
+/-- On an open set, locally uniform limits of Taylor derivative series are Taylor derivative
+series of the pointwise limit. No completeness of the target is needed once limits are given. -/
+theorem HasFTaylorSeriesUpToOn.of_tendstoLocallyUniformlyOn [IsRCLikeNormedField 𝕜]
+    {s : Set D} (hs : IsOpen s) {ι : Type*} {l : Filter ι} [l.NeBot]
+    {fᵢ : ι → D → F} {qᵢ : ι → D → FormalMultilinearSeries 𝕜 D F}
+    (h : ∀ i, HasFTaylorSeriesUpToOn n (fᵢ i) (qᵢ i) s)
+    (hq : ∀ m : ℕ, m ≤ n →
+      TendstoLocallyUniformlyOn (fun i x ↦ qᵢ i x m) (fun x ↦ q x m) l s)
+    (hf : ∀ x ∈ s, Tendsto (fun i ↦ fᵢ i x) l (𝓝 (f x))) :
+    HasFTaylorSeriesUpToOn n f q s := by
+  constructor
+  · intro x hx
+    have hzero := ((continuousMultilinearCurryFin0 𝕜 D F).continuous.tendsto (q x 0)).comp
+      ((hq 0 (by simp)).tendsto_at hx)
+    exact tendsto_nhds_unique hzero (by
+      simpa only [Function.comp_def, continuousMultilinearCurryFin0_apply,
+        ← ContinuousMultilinearMap.curry0_apply, (h _).zero_eq _ hx] using hf x hx)
+  · intro m hm x hx
+    have hsuc : ((m + 1 : ℕ) : WithTop ℕ∞) ≤ n :=
+      ENat.add_one_natCast_le_withTop_of_lt hm
+    have hc := (continuousMultilinearCurryLeftEquiv 𝕜 (fun _ : Fin (m + 1) ↦ D) F).isometry
+    have hlim := hc.uniformContinuous.comp_tendstoLocallyUniformlyOn (hq (m + 1) hsuc)
+    exact (hasFDerivAt_of_tendstoLocallyUniformlyOn hs hlim
+      (fun i y hy ↦ ((h i).fderivWithin m hm y hy).hasFDerivAt (hs.mem_nhds hy))
+      (fun y hy ↦ (hq m hm.le).tendsto_at hy) hx).hasFDerivWithinAt
+  · intro m hm
+    exact (hq m hm).continuousOn (Filter.Eventually.of_forall fun i ↦ (h i).cont m hm).frequently
+
+/-- Locally uniform limits of Taylor derivative series are Taylor derivative series of the
+pointwise limit. This is the whole-source specialization of the open-set result. -/
+theorem HasFTaylorSeriesUpTo.of_tendstoLocallyUniformly [IsRCLikeNormedField 𝕜]
+    {ι : Type*} {l : Filter ι} [l.NeBot] {fᵢ : ι → D → F}
+    {qᵢ : ι → D → FormalMultilinearSeries 𝕜 D F}
+    (h : ∀ i, HasFTaylorSeriesUpTo n (fᵢ i) (qᵢ i))
+    (hq : ∀ m : ℕ, m ≤ n → TendstoLocallyUniformly (fun i x ↦ qᵢ i x m) (fun x ↦ q x m) l)
+    (hf : ∀ x, Tendsto (fun i ↦ fᵢ i x) l (𝓝 (f x))) :
+    HasFTaylorSeriesUpTo n f q :=
+  hasFTaylorSeriesUpToOn_univ_iff.mp
+    (HasFTaylorSeriesUpToOn.of_tendstoLocallyUniformlyOn isOpen_univ
+      (fun i ↦ (h i).hasFTaylorSeriesUpToOn univ)
+      (fun m hm ↦ (hq m hm).tendstoLocallyUniformlyOn) (fun x _ ↦ hf x))
+
 noncomputable section
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]

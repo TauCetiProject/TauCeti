@@ -7,7 +7,7 @@ module
 
 public import TauCeti.KnotTheory.Grid.Commutation.SimplyBlocked
 public import TauCeti.KnotTheory.Grid.Commutation.Components
-public import TauCeti.KnotTheory.Grid.Homology.SimplyBlocked
+public import TauCeti.KnotTheory.Grid.Homology.SimplyBlocked.Basic
 import TauCeti.Algebra.CharP.Two
 import TauCeti.KnotTheory.Grid.Commutation.Homotopy.Equation
 
@@ -220,10 +220,11 @@ noncomputable def simplyBlockedHomologyCommutationMap :
 
 /-- The commutation map takes a cycle class to the class of its specified pentagon image. -/
 @[simp]
-theorem simplyBlockedHomologyCommutationMap_simplyBlockedHomologyClass
+theorem simplyBlockedHomologyCommutationMap_oneVariableSpecializationHomologyClass
     (z : hG.simplyBlockedCycles R i) :
-    hG.simplyBlockedHomologyCommutationMap R C i (hG.simplyBlockedHomologyClass R i z) =
-      (hG').simplyBlockedHomologyClass R (σ i) (hG.simplyBlockedCommutationCyclesMap R C i z) := by
+    hG.simplyBlockedHomologyCommutationMap R C i (G.oneVariableSpecializationHomologyClass R i z) =
+      (G').oneVariableSpecializationHomologyClass R (σ i)
+        (hG.simplyBlockedCommutationCyclesMap R C i z) := by
   simp only [simplyBlockedHomologyCommutationMap, LinearMap.comp_apply, LinearEquiv.coe_coe,
     LinearEquiv.symm_apply_eq]
   -- Pass through the categorical isomorphisms to the explicit quotient classes.
@@ -239,18 +240,20 @@ theorem simplyBlockedHomologyCommutationMap_bijective :
     Function.Bijective (hG.simplyBlockedHomologyCommutationMap R C i) := by
   refine ⟨(injective_iff_map_eq_zero _).mpr fun y hy => ?_, fun y => ?_⟩
   · -- A cycle whose pentagon image is a boundary is a boundary.
-    obtain ⟨z, rfl⟩ := hG.simplyBlockedHomologyClass_surjective R i y
-    rw [simplyBlockedHomologyCommutationMap_simplyBlockedHomologyClass,
-      simplyBlockedHomologyClass_eq_zero_iff, mem_simplyBlockedBoundaries_iff,
+    obtain ⟨z, rfl⟩ := G.oneVariableSpecializationHomologyClass_surjective R i y
+    rw [simplyBlockedHomologyCommutationMap_oneVariableSpecializationHomologyClass,
+      oneVariableSpecializationHomologyClass_eq_zero_iff,
+      (hG').mem_simplyBlockedBoundaries_iff R (σ i),
       simplyBlockedChainEquiv_simplyBlockedCommutationCyclesMap] at hy
     have hz := (hG.mem_simplyBlockedCycles R i z).mp z.2
     obtain ⟨Z, hZ⟩ := simplyBlockedSpecialization_surjective R i (G.simplyBlockedChainEquiv R i z)
     rw [← hZ, simplyBlockedCommutationMap_simplyBlockedSpecialization] at hy
     rw [← hZ, ← simplyBlockedSpecialization_unblockedDifferential] at hz
-    rw [simplyBlockedHomologyClass_eq_zero_iff, mem_simplyBlockedBoundaries_iff, ← hZ]
+    rw [oneVariableSpecializationHomologyClass_eq_zero_iff,
+      hG.mem_simplyBlockedBoundaries_iff R i, ← hZ]
     exact G.simplyBlockedSpecialization_mem_range_of_commutationMap R C i hz hy
   · -- The class of a cycle `y` of the commuted diagram is the image of the class of `Ψ y`.
-    obtain ⟨y, rfl⟩ := (hG').simplyBlockedHomologyClass_surjective R (σ i) y
+    obtain ⟨y, rfl⟩ := (G').oneVariableSpecializationHomologyClass_surjective R (σ i) y
     have hy := ((hG').mem_simplyBlockedCycles R (σ i) y).mp y.2
     obtain ⟨Y, hY⟩ :=
       simplyBlockedSpecialization_surjective R (σ i) ((G').simplyBlockedChainEquiv R (σ i) y)
@@ -261,9 +264,10 @@ theorem simplyBlockedHomologyCommutationMap_bijective :
         rw [hG.mem_simplyBlockedCycles R i, LinearEquiv.apply_symm_apply,
           ← simplyBlockedSpecialization_unblockedDifferential]
         exact G.simplyBlockedSpecialization_unblockedDifferential_commutationMap_reverse R C i hy⟩
-    refine ⟨hG.simplyBlockedHomologyClass R i z, ?_⟩
-    rw [simplyBlockedHomologyCommutationMap_simplyBlockedHomologyClass,
-      simplyBlockedHomologyClass_eq_iff, mem_simplyBlockedBoundaries_iff, Submodule.coe_sub,
+    refine ⟨G.oneVariableSpecializationHomologyClass R i z, ?_⟩
+    rw [simplyBlockedHomologyCommutationMap_oneVariableSpecializationHomologyClass,
+      oneVariableSpecializationHomologyClass_eq_iff,
+      (hG').mem_simplyBlockedBoundaries_iff R (σ i), Submodule.coe_sub,
       map_sub, simplyBlockedChainEquiv_simplyBlockedCommutationCyclesMap, ← hY,
       LinearEquiv.apply_symm_apply, simplyBlockedCommutationMap_simplyBlockedSpecialization]
     exact G.simplyBlockedSpecialization_commutationMap_commutationMap_reverse_sub_mem_range R C i hy

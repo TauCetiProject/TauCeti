@@ -72,7 +72,9 @@ On a compact manifold the scalar curvature of every smooth metric is bounded bel
   a compact factor of positive scalar curvature, scaled down, dominates a factor whose scalar
   curvature is bounded below; more generally
   `exists_pos_hasPositiveScalarCurvature_prodTangentSpace_rescale_of_forall_le` does so for a
-  factor whose scalar curvature has a positive lower bound.
+  factor whose scalar curvature has a positive lower bound, and
+  `exists_pos_forall_hasPositiveScalarCurvature_prodTangentSpace_rescale_of_forall_le` does so
+  uniformly for a family of metrics with a common lower bound.
 
 ## References
 
@@ -285,6 +287,29 @@ theorem HasPositiveScalarCurvature.prodTangentSpace_of_nonneg_left
     rw [scalarCurvature_prodTangentSpace]
     exact add_pos_of_nonneg_of_pos (h p.1) (h₂ p.2)
 
+/-- **Shrinking a factor of uniformly positive scalar curvature, uniformly in a family.** Let
+`g₂` be a metric whose scalar curvature is at least `δ > 0`, and let `f i` be metrics whose
+scalar curvatures have a common lower bound `m`. Then there is `ε > 0` such that `f i × c g₂` has
+positive scalar curvature for every `i` and every `0 < c < ε`. -/
+theorem exists_pos_forall_hasPositiveScalarCurvature_prodTangentSpace_rescale_of_forall_le
+    {ι : Type*} {f : ι → ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)} {m : ℝ}
+    (hf : ∀ i x, m ≤ (f i).scalarCurvature x) {δ : ℝ} (hδ : 0 < δ)
+    (h₂ : ∀ y, δ ≤ g₂.scalarCurvature y) :
+    ∃ ε : ℝ, 0 < ε ∧ ∀ (c : ℝ) (hc : 0 < c), c < ε → ∀ i,
+      ((f i).prodTangentSpace
+        (g₂.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc)).HasPositiveScalarCurvature := by
+  have hm₀ : 0 < |m| + 1 := by positivity
+  refine ⟨δ / (|m| + 1), div_pos hδ hm₀, fun c hc hcε i p ↦ ?_⟩
+  -- `Scal(p) = Scal_{f i}(p.1) + c⁻¹ Scal_{g₂}(p.2) ≥ m + c⁻¹ δ`, and `c⁻¹ δ > |m| + 1`.
+  rw [scalarCurvature_prodTangentSpace, scalarCurvature_rescale_const]
+  have h₁ : m ≤ (f i).scalarCurvature p.1 := hf i p.1
+  have hδc : |m| + 1 < c⁻¹ * δ := by
+    rw [inv_mul_eq_div, lt_div_iff₀ hc]
+    rwa [lt_div_iff₀ hm₀, mul_comm] at hcε
+  have hδ₂ : c⁻¹ * δ ≤ c⁻¹ * g₂.scalarCurvature p.2 :=
+    mul_le_mul_of_nonneg_left (h₂ p.2) (inv_pos.2 hc).le
+  linarith [neg_abs_le m]
+
 /-- **Shrinking a factor of uniformly positive scalar curvature.** Let `g₂` be a metric whose
 scalar curvature is at least `δ > 0`, and let `g` be a metric whose scalar curvature is bounded
 below. Then there is `ε > 0` such that `g × c g₂` has positive scalar curvature for every
@@ -296,17 +321,10 @@ theorem exists_pos_hasPositiveScalarCurvature_prodTangentSpace_rescale_of_forall
       (g.prodTangentSpace
         (g₂.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc)).HasPositiveScalarCurvature := by
   obtain ⟨m, hm⟩ := h
-  have hm₀ : 0 < |m| + 1 := by positivity
-  refine ⟨δ / (|m| + 1), div_pos hδ hm₀, fun c hc hcε p ↦ ?_⟩
-  -- `Scal(p) = Scal_g(p.1) + c⁻¹ Scal_{g₂}(p.2) ≥ m + c⁻¹ δ`, and `c⁻¹ δ > |m| + 1`.
-  rw [scalarCurvature_prodTangentSpace, scalarCurvature_rescale_const]
-  have h₁ : m ≤ g.scalarCurvature p.1 := hm ⟨p.1, rfl⟩
-  have hδc : |m| + 1 < c⁻¹ * δ := by
-    rw [inv_mul_eq_div, lt_div_iff₀ hc]
-    rwa [lt_div_iff₀ hm₀, mul_comm] at hcε
-  have hδ₂ : c⁻¹ * δ ≤ c⁻¹ * g₂.scalarCurvature p.2 :=
-    mul_le_mul_of_nonneg_left (h₂ p.2) (inv_pos.2 hc).le
-  linarith [neg_abs_le m]
+  obtain ⟨ε, hε, hfε⟩ :=
+    exists_pos_forall_hasPositiveScalarCurvature_prodTangentSpace_rescale_of_forall_le
+      (f := fun _ : Unit ↦ g) (fun _ x ↦ hm ⟨x, rfl⟩) hδ h₂
+  exact ⟨ε, hε, fun c hc hcε ↦ hfε c hc hcε ()⟩
 
 /-- **Shrinking a compact factor of positive scalar curvature.** Let `g₂` be a metric of positive
 scalar curvature on a compact manifold `N`, and let `g` be a metric whose scalar curvature is

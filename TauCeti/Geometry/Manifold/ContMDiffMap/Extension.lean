@@ -8,7 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.PartitionOfUnity
 
 /-!
-# Gluing local smooth extensions on a closed set
+# Extending local smooth data to global smooth maps
 
 Vector-valued data on a closed subset of a smooth manifold extend globally if they
 extend smoothly near every point of that subset. The extension can have topological
@@ -16,6 +16,10 @@ support inside any prescribed open neighbourhood. This is the partition-of-unity
 step in extending velocities from an embedded submanifold to its ambient manifold.
 
 The construction uses Mathlib's `SmoothPartitionOfUnity.contMDiff_finsum_smul`.
+
+The pointwise form needs only one bump function: a function that is smooth on an open
+neighbourhood of a point has the germ there of a globally smooth map
+(`ContMDiffOn.exists_contMDiffMap_eventuallyEq`), with no paracompactness assumption.
 Reference: M. Hirsch, *Differential Topology*, Chapter 2, §2, and Chapter 8, §1.
 -/
 
@@ -23,6 +27,50 @@ public section
 
 open Set Function Topology
 open scoped Manifold ContDiff
+
+namespace ContMDiffMap
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] {n : ℕ∞ω}
+
+/-- Extending a native smooth map arbitrarily outside an open source preserves differentiability
+on the original source. -/
+theorem contDiffOn_extend (U : TopologicalSpace.Opens E)
+    (f : C^n⟮𝓘(𝕜, E), U; 𝓘(𝕜, F), F⟯) (g : E → F) :
+    ContDiffOn 𝕜 n (Function.extend Subtype.val f g) U := by
+  apply ContMDiffOn.contDiffOn
+  intro x hx
+  have hf := f.contMDiff ⟨x, hx⟩
+  have heq : (fun z : U ↦ Function.extend Subtype.val f g (z : E)) = f :=
+    Function.extend_comp Subtype.val_injective _ _
+  rw [← heq] at hf
+  exact (contMDiffAt_subtype_iff.mp hf).contMDiffWithinAt
+
+end ContMDiffMap
+
+section Germ
+
+variable {E F H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
+
+/-- **A smooth germ is the germ of a global smooth map.** A vector-valued function that is smooth
+on an open neighbourhood of a point agrees near that point with a globally smooth map, namely its
+product with a smooth bump function supported in that neighbourhood. -/
+theorem ContMDiffOn.exists_contMDiffMap_eventuallyEq {U : Set M} {g : M → F} {x : M}
+    (hg : ContMDiffOn I 𝓘(ℝ, F) ∞ g U) (hU : IsOpen U) (hx : x ∈ U) :
+    ∃ G : C^∞⟮I, M; 𝓘(ℝ, F), F⟯, (G : M → F) =ᶠ[𝓝 x] g := by
+  obtain ⟨β, hβ, -⟩ :=
+    (SmoothBumpFunction.nhds_basis_support (I := I) (hU.mem_nhds hx)).mem_iff.mp (hU.mem_nhds hx)
+  refine ⟨⟨fun y ↦ β y • g y, contMDiff_of_tsupport fun y hy ↦ ?_⟩, ?_⟩
+  · have hyU : y ∈ U := hβ (tsupport_smul_subset_left _ _ hy)
+    exact β.contMDiffAt.smul (hg.contMDiffAt (hU.mem_nhds hyU))
+  · filter_upwards [β.eventuallyEq_one] with y hy
+    simp [hy]
+
+end Germ
 
 variable {E F H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]

@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 public import TauCeti.Geometry.Lie.Exponential.Derivative.Basic
 import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
+import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
 /-!
 # Local inverse of the Lie-group exponential
 
@@ -31,6 +33,8 @@ tangent-space exponential.
 * `isLocalDiffeomorphAt_mulInvariantExpChart_zero`: the fully charted exponential is a local
   `C∞` local diffeomorphism at zero.
 * `exists_injOn_mulInvariantExp_modelSpace`: exponential is injective near zero.
+* `TauCeti.exists_contMDiffMap_eventually_apply_lieExp_eq`: every smooth germ on the Lie algebra
+  at zero is the pullback along `lieExp` of a globally smooth function on the group.
 
 ## References
 
@@ -500,54 +504,37 @@ private theorem exists_mulInvariantExpChartPartialDiffeomorph [FiniteDimensional
     exact (ContinuousLinearEquiv.toUnit (ContinuousLinearEquiv.refl ℝ E)).isUnit
   let φ := mulInvariantExpOpenPartialHomeomorph (I := I) (G := G)
   let ψ := φ.restrOpen U hUopen
-  have hψ_apply (x : E) : ψ x = F x := by
-    exact mulInvariantExpOpenPartialHomeomorph_apply (I := I) (G := G) x
+  have hsrc : ψ.source = φ.source ∩ U := OpenPartialHomeomorph.restrOpen_source _ _ hUopen
+  have hψF : (ψ : E → E) = F := funext fun x =>
+    mulInvariantExpOpenPartialHomeomorph_apply (I := I) (G := G) x
   have hzeroψ : (0 : E) ∈ ψ.source := by
-    rw [OpenPartialHomeomorph.restrOpen_source]
+    rw [hsrc]
     exact ⟨zero_mem_mulInvariantExpOpenPartialHomeomorph_source (I := I) (G := G), hzeroU⟩
   have hψsmooth : ContDiffOn ℝ ∞ ψ ψ.source := by
-    rw [show (ψ : E → E) = F by funext x; exact hψ_apply x]
-    apply hF.mono
-    intro x hx
-    rw [OpenPartialHomeomorph.restrOpen_source] at hx
+    rw [hψF]
+    refine hF.mono fun x hx => ?_
+    rw [hsrc] at hx
     exact hx.2.1
-  -- At every target point the derivative is invertible, so smoothness of the global forward map
+  -- At every source point the derivative is invertible, so smoothness of the global forward map
   -- bootstraps the homeomorphism's inverse to `C∞` on the entire fixed target neighborhood.
   have hψsymmSmooth : ContDiffOn ℝ ∞ ψ.symm ψ.target := by
-    intro y hy
-    have hxy := ψ.map_target hy
-    have hxyU : ψ.symm y ∈ U := by
-      rw [OpenPartialHomeomorph.restrOpen_source] at hxy
-      exact hxy.2
-    have hxyS : ψ.symm y ∈ S := hxyU.1
-    have hFxy : ContDiffAt ℝ ∞ F (ψ.symm y) :=
-      (hF (ψ.symm y) hxyS).contDiffAt (hSopen.mem_nhds hxyS)
-    obtain ⟨A, hA⟩ := hxyU.2
-    apply (ψ.contDiffAt_symm hy (f₀' := ContinuousLinearEquiv.ofUnit A) ?_ ?_).contDiffWithinAt
-    · rw [show (ψ : E → E) = F by funext x; exact hψ_apply x]
-      rw [show ((ContinuousLinearEquiv.ofUnit A : E ≃L[ℝ] E) : E →L[ℝ] E) =
-          fderiv ℝ F (ψ.symm y) by exact hA]
-      exact (hFxy.differentiableAt (by simp)).hasFDerivAt
-    · rw [show (ψ : E → E) = F by funext x; exact hψ_apply x]
-      exact hFxy
-  let d : PartialDiffeomorph 𝓘(ℝ, E) 𝓘(ℝ, E) E E ∞ := {
-    toPartialEquiv := ψ.toPartialEquiv
-    open_source := ψ.open_source
-    open_target := ψ.open_target
-    contMDiffOn_toFun := by
-      rw [contMDiffOn_iff_contDiffOn]
-      exact hψsmooth
-    contMDiffOn_invFun := by
-      rw [contMDiffOn_iff_contDiffOn]
-      exact hψsymmSmooth
-  }
-  refine ⟨d, hzeroψ, ?_, ?_⟩
-  · intro x hx
-    change x ∈ ψ.source at hx
-    rw [OpenPartialHomeomorph.restrOpen_source] at hx
-    exact hx.2.1
-  · funext x
-    exact (hψ_apply x).symm
+    refine ψ.contDiffOn_symm_of_isInvertible_fderiv hψsmooth (fun x hx => ?_) (by simp)
+    rw [hsrc] at hx
+    obtain ⟨A, hA⟩ := hx.2.2
+    rw [hψF]
+    exact ⟨ContinuousLinearEquiv.ofUnit A, hA⟩
+  -- The partial diffeomorphism has the underlying partial equivalence of `ψ`, so its source and
+  -- coercion are those of `ψ`.
+  have hd := TauCeti.PartialDiffeomorph.ofOpenPartialHomeomorph_toPartialEquiv ψ hψsmooth
+    hψsymmSmooth
+  have hdsrc : (TauCeti.PartialDiffeomorph.ofOpenPartialHomeomorph ψ hψsmooth hψsymmSmooth).source
+      = ψ.source := congrArg PartialEquiv.source hd
+  have hdcoe : ⇑(TauCeti.PartialDiffeomorph.ofOpenPartialHomeomorph ψ hψsmooth hψsymmSmooth) =
+      ψ := congrArg (⇑) hd
+  refine ⟨TauCeti.PartialDiffeomorph.ofOpenPartialHomeomorph ψ hψsmooth hψsymmSmooth,
+    hdsrc ▸ hzeroψ, fun x hx => ?_, hψF.symm.trans hdcoe.symm⟩
+  rw [hdsrc, hsrc] at hx
+  exact hx.2.1
 
 /-- The fully charted exponential is a smooth local diffeomorphism at zero. -/
 theorem isLocalDiffeomorphAt_mulInvariantExpChart_zero [FiniteDimensional ℝ E]
@@ -646,3 +633,27 @@ theorem isLocalDiffeomorphAt_lieExp_zero [FiniteDimensional ℝ E]
     rw [Function.comp_apply, lieExp_eq_mulInvariantExp,
       leftInvariantDerivationLinearIsometryEquivModelVectorSpace_apply]]
   exact hcomp
+
+namespace TauCeti
+
+/-- **Smooth functions with a prescribed germ along the exponential.** Every smooth function `φ`
+on the Lie algebra is, near `0`, the composite of a globally smooth function on `G` with the
+exponential. -/
+theorem exists_contMDiffMap_eventually_apply_lieExp_eq [FiniteDimensional ℝ E]
+    [LieGroup I ∞ G] [T2Space G] [BoundarylessManifold I G] {φ : LeftInvariantDerivation I G → ℝ}
+    (hφ : ContDiff ℝ ∞ φ) :
+    ∃ f : C^∞⟮I, G; ℝ⟯, ∀ᶠ Y in 𝓝 (0 : LeftInvariantDerivation I G), f (lieExp Y) = φ Y := by
+  have hd := isLocalDiffeomorphAt_lieExp_zero (I := I) (G := G)
+  have h1 : (1 : G) ∈ hd.localInverse.source := by
+    simpa only [lieExp_zero] using hd.localInverse_mem_source
+  obtain ⟨f, hf⟩ := (hφ.contMDiff.comp_contMDiffOn
+    hd.contMDiffOn_localInverse).exists_contMDiffMap_eventuallyEq hd.localInverse_open_source h1
+  refine ⟨f, ?_⟩
+  have hexp : Tendsto (lieExp (I := I) (G := G)) (𝓝 0) (𝓝 1) := by
+    simpa only [lieExp_zero] using
+      ((contMDiff_lieExp (I := I) (G := G)).continuous.tendsto (0 : LeftInvariantDerivation I G))
+  filter_upwards [hexp.eventually hf, hd.localInverse_eventuallyEq_left] with Y hY hY'
+  rw [hY, comp_apply]
+  exact congrArg φ hY'
+
+end TauCeti

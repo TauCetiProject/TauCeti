@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Head
-public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Projective
+public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Projective.Basic
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Specialization
 public import TauCeti.RepresentationTheory.GrothendieckGroup.CartanMatrix
 
@@ -46,6 +46,9 @@ matrix in the projectives `A eᵢ` and the simples `Sᵢ` with the graded Cartan
 * `TauCeti.isExhaustiveSimpleFamily_gradedIdempotentHead` and
   `TauCeti.isExhaustiveSimpleFamily_gradedPositiveMulQuotient_of_isPrimitiveIdempotent`: the
   underlying heads exhaust the ordinary simple modules.
+* `TauCeti.gradedFiniteProjectiveModulesForgetK0_basis_gradedIdempotentProjectiveBasisOfPrimitive`
+  and `TauCeti.gradedFiniteModulesForgetK0_basis_gradedIdempotentHeadBasisOfPrimitive`: at
+  `q = 1`, the primitive idempotent projective and head bases forget to the ordinary bases.
 * `TauCeti.cartanMatrix_span_singleton_eq_map_gradedCartanMatrix`: in the primitive idempotent
   bases, the ordinary Cartan matrix is the graded Cartan matrix at `q = 1`.
 
@@ -219,6 +222,42 @@ theorem gradedIdempotentHeadForgetK0EquivOfPrimitive_symm_head (i : I) :
   unfold gradedIdempotentHeadForgetK0EquivOfPrimitive
   exact gradedFiniteModulesForgetK0EquivOfSimpleFamilies_symm_simple ..
 
+omit [IsSemisimpleRing (𝒜 0)] in
+/-- At `q = 1`, the graded projective basis `[A eᵢ]` forgets to the ordinary projective basis
+`[A eᵢ]`. -/
+theorem gradedFiniteProjectiveModulesForgetK0_basis_gradedIdempotentProjectiveBasisOfPrimitive
+    [IsArtinianRing A] (i : I) :
+    gradedFiniteProjectiveModulesForgetK0 𝒜 (LaurentSpecialization.basis (1 : ℤˣ)
+        (gradedIdempotentProjectiveBasisOfPrimitive he he₀
+          (fun i ↦ Ideal.isHomogeneous_span_singleton 𝒜
+            (SetLike.isHomogeneousElem_coe (Subtype.mk (e i) (he₀ i) : 𝒜 0)))
+          hprim hnoniso) i) =
+      indecomposableProjectiveClassBasis (fun i ↦ (⟨ModuleCat.of A (Ideal.span {e i}),
+          finiteProjectiveModules_iff.2 ⟨inferInstance, (he.idem i).projective_span_singleton⟩⟩ :
+            (finiteProjectiveModules A).FullSubcategory))
+        (fun i ↦ (hprim i).isIndecomposableModule) hnoniso
+        (isExhaustiveIndecomposableProjectiveFamily_span_singleton he hprim) i := by
+  -- The underlying module of the graded ideal `GradedModuleCat.ofIdeal` is the ideal itself.
+  rw [indecomposableProjectiveClassBasis_apply, LaurentSpecialization.basis_apply,
+    gradedIdempotentProjectiveBasisOfPrimitive_apply, gradedFiniteProjectiveModulesForgetK0_mk_of,
+    gradedFiniteProjectiveModulesForget_obj]
+
+/-- At `q = 1`, the graded head basis `[Sᵢ]` forgets to the ordinary simple-class basis of the
+underlying heads. -/
+theorem gradedFiniteModulesForgetK0_basis_gradedIdempotentHeadBasisOfPrimitive
+    [IsArtinianRing A]
+    [∀ i, IsSimpleModule A (FGModuleCat.of A (gradedPositiveMulQuotient 𝒜 (he₀ i)))] (i : I) :
+    gradedFiniteModulesForgetK0 𝒜 (LaurentSpecialization.basis (1 : ℤˣ)
+        (gradedIdempotentHeadBasisOfPrimitive hneg he he₀ hprim hnoniso) i) =
+      simpleClassBasis (fun i ↦ FGModuleCat.of A (gradedPositiveMulQuotient 𝒜 (he₀ i)))
+        (hnoniso.mono fun i j ↦
+          isEmpty_linearEquiv_gradedPositiveMulQuotient hneg (hprim i) (he₀ i) (hprim j) (he₀ j))
+        (isExhaustiveSimpleFamily_gradedPositiveMulQuotient_of_isPrimitiveIdempotent hneg he he₀
+          hprim) i := by
+  rw [simpleClassBasis_apply, LaurentSpecialization.basis_apply,
+    gradedIdempotentHeadBasisOfPrimitive_apply, gradedFiniteModulesForgetK0_mk_of,
+    gradedFiniteModulesForget_obj]
+
 include hneg he hprim hnoniso in
 /-- **The Cartan matrix is the graded Cartan matrix at `q = 1`** in the bases given by a complete
 family of orthogonal primitive idempotents `eᵢ` of degree zero with pairwise nonisomorphic left
@@ -248,14 +287,11 @@ theorem cartanMatrix_span_singleton_eq_map_gradedCartanMatrix :
   let _ : ∀ i, IsSimpleModule A (T i) := fun i ↦
     isSimpleModule_gradedPositiveMulQuotient hneg (hprim i) (he₀ i)
   refine (cartanMatrix_eq_toMatrix ..).trans <|
-    toMatrix_cartanMap_eq_map_gradedCartanMatrix _ _ _ _ _ (fun j ↦ ?_) fun i ↦ ?_
-  · -- The underlying module of the graded ideal `GradedModuleCat.ofIdeal` is the ideal itself.
-    rw [indecomposableProjectiveClassBasis_apply, LaurentSpecialization.basis_apply,
-      gradedIdempotentProjectiveBasisOfPrimitive_apply, gradedFiniteProjectiveModulesForgetK0_mk_of,
-      gradedFiniteProjectiveModulesForget_obj]
-  · simp only [LaurentSpecialization.basis_apply, gradedIdempotentHeadBasisOfPrimitive_apply,
-      gradedFiniteModulesForgetK0_mk_of, gradedFiniteModulesForget_obj]
-    exact (simpleClassBasis_apply T _ _ i).symm
+    toMatrix_cartanMap_eq_map_gradedCartanMatrix _ _ _ _ _
+      (gradedFiniteProjectiveModulesForgetK0_basis_gradedIdempotentProjectiveBasisOfPrimitive he
+        he₀ hprim hnoniso)
+      (gradedFiniteModulesForgetK0_basis_gradedIdempotentHeadBasisOfPrimitive hneg he he₀ hprim
+        hnoniso)
 
 end Primitive
 

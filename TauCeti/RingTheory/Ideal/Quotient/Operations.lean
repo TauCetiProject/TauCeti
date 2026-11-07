@@ -35,6 +35,10 @@ are unique. This quotient extensionality lemma is used to construct compatible r
 More generally, if `R ⧸ I → S ⧸ J` is surjective, every element of `S` is congruent modulo `J` to
 the image of an element of `R` (`Ideal.exists_sub_mem_of_surjective_quotientMap`).
 
+An action of a monoid by ring automorphisms preserving a two-sided ideal `I` descends to an action
+on the quotient by `I` (`MonoidHom.quotientRingAut`), assembled from Mathlib's
+`Ideal.quotientEquiv`.
+
 If every class modulo a maximal ideal `m` comes from `f`, then `m.comap f` is maximal
 (`Ideal.isMaximal_comap_of_surjective_quotient_mk_comp`).
 -/
@@ -122,7 +126,48 @@ theorem isMaximal_comap_of_surjective_quotient_mk_comp {A S F : Type*} [Ring A] 
   have := RingHom.ker_isMaximal_of_surjective ((Ideal.Quotient.mk m).comp (f : A →+* S)) hf
   rwa [← RingHom.comap_ker, Ideal.mk_ker, Ideal.comap_coe] at this
 
+/-- The linear combination, with coefficients in `R ⧸ I`, of the classes in `S ⧸ IS` of elements
+`b j` of `S`, evaluated at the classes of `c j`, is the class of `∑ j, c j * b j`. -/
+theorem Quotient.linearCombination_mk_map_apply {S ι : Type*} [CommRing S] [Algebra R S]
+    [Fintype ι] (I : Ideal R) (b : ι → S) (c : ι → R) :
+    Fintype.linearCombination (R ⧸ I) (fun j ↦ Ideal.Quotient.mk (I.map (algebraMap R S)) (b j))
+        (fun j ↦ Ideal.Quotient.mk I (c j)) =
+      Ideal.Quotient.mk (I.map (algebraMap R S)) (∑ j, algebraMap R S (c j) * b j) := by
+  simp [Fintype.linearCombination_apply, map_sum, Algebra.smul_def]
+
 end Ideal
+
+namespace MonoidHom
+
+variable {H : Type*} [Monoid H] {A : Type*} [Ring A] (a : H →* RingAut A) (I : Ideal A)
+  [I.IsTwoSided] (hI : ∀ h, I.map (a h : A →+* A) = I)
+
+/-- An action of a monoid `H` on a ring `A` by ring automorphisms that preserve a two-sided ideal
+`I` descends to an action on `A ⧸ I`: the element `h` acts by `Ideal.quotientEquiv I I (a h)`,
+which sends the class of `x` to the class of `a h x`. -/
+def quotientRingAut : H →* RingAut (A ⧸ I) where
+  toFun h := Ideal.quotientEquiv I I (a h) (hI h).symm
+  map_one' := by
+    ext x
+    obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
+    simp [RingAut.one_eq_refl]
+  map_mul' g h := by
+    ext x
+    obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
+    simp [RingAut.mul_apply]
+
+@[simp]
+theorem quotientRingAut_apply_mk (h : H) (x : A) :
+    a.quotientRingAut I hI h (Ideal.Quotient.mk I x) = Ideal.Quotient.mk I (a h x) :=
+  (rfl)
+
+@[simp]
+theorem quotientRingAut_symm_apply_mk (h : H) (x : A) :
+    (a.quotientRingAut I hI h).symm (Ideal.Quotient.mk I x) =
+      Ideal.Quotient.mk I ((a h).symm x) :=
+  (rfl)
+
+end MonoidHom
 
 namespace TauCeti.Ideal.Quotient
 

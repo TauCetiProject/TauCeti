@@ -28,8 +28,9 @@ that makes `1 + p^f ℤ_p` a subgroup of `ℤ_pˣ`.
 
 The unit group `ℤ_pˣ` is a profinite group: it is the closed unit sphere of the compact
 totally disconnected space `ℤ_p`, and the topology of the units is the subspace topology because
-`ℤ_p` is a complete normed ring. The instances `CompactSpace ℤ_[p]ˣ` and
-`TotallyDisconnectedSpace ℤ_[p]ˣ` are recorded here.
+`ℤ_p` is a complete normed ring. Compactness is Mathlib's instance for the units of a compact `T₁`
+topological monoid, recorded here as a shortcut instance; the instance
+`TotallyDisconnectedSpace ℤ_[p]ˣ` is proved here.
 
 Two consequences of the ultrametric divisibility in `ℤ_p` are recorded as well: an element
 divides every element of no larger norm, so that a finite family of `p`-adic integers is a common
@@ -56,6 +57,8 @@ calculation for first continuous cohomology with trivial integer coefficients.
   `w i₀ = 1` at some index `i₀`.
 * `PadicInt.units_neg_one_ne_one`: `-1 ≠ 1` in `ℤ_[p]ˣ`.
 * `PadicInt.range_units_val`: the units of `ℤ_[p]` are the elements of norm `1`.
+* `PadicInt.norm_smul_of_isUnit`: a unit of `ℤ_[p]` acts isometrically on every module with
+  contractive scalar action.
 * `PadicInt.not_isUnit_iff_dvd`: the nonunits of `ℤ_[p]` are the multiples of `p`; in
   particular an integer is a unit of `ℤ_[p]` exactly when `p` does not divide it
   (`PadicInt.isUnit_intCast_iff`), and `2` is not a unit of `ℤ_[2]` (`PadicInt.not_isUnit_two`).
@@ -65,6 +68,8 @@ calculation for first continuous cohomology with trivial integer coefficients.
   `pℤ_p` form an open set.
 * `Int.associated_iff_forall_associated_padicInt`: two integers have equal absolute values
   exactly when they are associated in every `ℤ_[p]`.
+* `Int.ideal_eq_iff_forall_map_padicInt_eq`: two ideals of `ℤ` are equal exactly when their
+  extensions to every `ℤ_[p]` agree.
 * `Padic.exists_eq_zpow_valuation_mul`: every nonzero `x : ℚ_[p]` is `p ^ v(x)` times a unit of
   `ℤ_[p]`.
 * `Padic.valuation_p_zpow_mul`: multiplying a nonzero `x : ℚ_[p]` by `p ^ α` adds `α` to its
@@ -164,6 +169,16 @@ theorem range_units_val : Set.range (Units.val : ℤ_[p]ˣ → ℤ_[p]) = {x | �
   -- `IsUnit x` is by definition `∃ u : ℤ_[p]ˣ, ↑u = x`, that is `x ∈ Set.range Units.val`.
   Set.ext fun _ ↦ isUnit_iff
 
+/-- A unit of `ℤ_p` acts isometrically on every module with contractive scalar action. -/
+theorem norm_smul_of_isUnit {E : Type*} [SeminormedAddGroup E] [MulActionWithZero ℤ_[p] E]
+    [IsBoundedSMul ℤ_[p] E] {u : ℤ_[p]} (hu : IsUnit u) (e : E) : ‖u • e‖ = ‖e‖ := by
+  obtain ⟨u, rfl⟩ := hu
+  have h1 (v : ℤ_[p]ˣ) : ‖(v : ℤ_[p])‖ = 1 := isUnit_iff.1 v.isUnit
+  refine le_antisymm ((norm_smul_le _ _).trans_eq (by rw [h1, one_mul])) ?_
+  calc ‖e‖ = ‖((u⁻¹ : ℤ_[p]ˣ) : ℤ_[p]) • (u : ℤ_[p]) • e‖ := by
+        rw [smul_smul, Units.inv_mul, one_smul]
+    _ ≤ ‖(u : ℤ_[p]) • e‖ := (norm_smul_le _ _).trans_eq (by rw [h1, one_mul])
+
 /-- Mathlib's `PadicInt.inv` is the ring inverse: the inverse on units and `0` on nonunits. -/
 theorem inv_eq_inverse (z : ℤ_[p]) : z.inv = Ring.inverse z := by
   by_cases hz : IsUnit z
@@ -202,14 +217,12 @@ theorem not_isUnit_two : ¬IsUnit (2 : ℤ_[2]) := by
 theorem continuous_inverse : Continuous (Ring.inverse : ℤ_[p] → ℤ_[p]) :=
   NormedRing.continuous_inverse_of_isOpen_nonunits (IsLocalRing.isOpen_maximalIdeal ℤ_[p])
 
-/-- `ℤ_pˣ` is compact: it is the closed unit sphere of the compact space `ℤ_p`, and the topology
-on the units of the complete normed ring `ℤ_p` is the subspace topology. -/
-instance compactSpace_units : CompactSpace ℤ_[p]ˣ := by
-  have h : IsCompact (Set.range (Units.val : ℤ_[p]ˣ → ℤ_[p])) := by
-    rw [range_units_val]
-    exact (isClosed_eq continuous_norm continuous_const).isCompact
-  rw [← Set.image_univ] at h
-  exact isCompact_univ_iff.mp (Units.isOpenEmbedding_val.isInducing.isCompact_iff.mpr h)
+/-- `ℤ_pˣ` is compact: Mathlib's `Units.instCompactSpaceOfT1SpaceOfContinuousMul` for the units
+of the compact `T₁` topological monoid `ℤ_p`. It is recorded as a shortcut instance because the
+instance term matters for unification: elaborating continuous linear maps on `C(ℤ_[p]ˣ, ℤ_[p])`
+(`TauCeti.NumberTheory.Padics.Measure.UnitCoordinates`) identifies the sup-norm topology with the
+compact-open topology, which times out at `whnf` with Mathlib's applied instance term. -/
+instance compactSpace_units : CompactSpace ℤ_[p]ˣ := inferInstance
 
 /-- `ℤ_pˣ` is totally disconnected, as a subspace of the ultrametric space `ℤ_p`. -/
 instance totallyDisconnectedSpace_units : TotallyDisconnectedSpace ℤ_[p]ˣ :=
@@ -280,6 +293,21 @@ theorem Int.associated_iff_forall_associated_padicInt {a b : ℤ} :
   exact Nat.dvd_antisymm
     ((Nat.dvd_iff_prime_pow_dvd_dvd _ _).mpr fun p k hp ↦ (key p k hp).mp)
     ((Nat.dvd_iff_prime_pow_dvd_dvd _ _).mpr fun p k hp ↦ (key p k hp).mpr)
+
+/-- Two ideals of `ℤ` are equal exactly when their extensions to `ℤ_[p]` agree for every prime
+`p`. -/
+theorem Int.ideal_eq_iff_forall_map_padicInt_eq {I J : Ideal ℤ} :
+    I = J ↔ ∀ (p : ℕ) [Fact p.Prime],
+      I.map (algebraMap ℤ ℤ_[p]) = J.map (algebraMap ℤ ℤ_[p]) := by
+  refine ⟨fun h p _ ↦ h ▸ rfl, fun h ↦ ?_⟩
+  rw [← Submodule.IsPrincipal.span_singleton_generator I,
+    ← Submodule.IsPrincipal.span_singleton_generator J] at h ⊢
+  refine Ideal.span_singleton_eq_span_singleton.mpr
+    (Int.associated_iff_forall_associated_padicInt.mpr fun p _ ↦ ?_)
+  have hp := h p
+  rw [Ideal.map_span, Ideal.map_span, Set.image_singleton, Set.image_singleton,
+    Ideal.span_singleton_eq_span_singleton] at hp
+  simpa only [algebraMap_int_eq, eq_intCast] using hp
 
 namespace Padic
 

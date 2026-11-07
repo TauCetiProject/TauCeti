@@ -59,7 +59,7 @@ url = "https://bors.taucetiproject.org"
 repository_id = 1 # hosted supplies Neon only; YOU operate the runtime
 deployment = "cloudflare"
 
-# Shared machine ceilings apply across both job classes. The Namespace ceiling
+# Registered runners advertise each machine's slots and CI classes. The Namespace ceiling
 # counts queued/running builds; simultaneous picker decisions can exceed it briefly.
 [services.fleet]
 mode = "hosted"
@@ -68,25 +68,18 @@ namespace_build_cap = 20
 pr_order = ["github", "chris", "tauchonki", "yael", "brett", "namespace"]
 staging_order = ["tauchonki", "chris", "yael", "brett", "namespace", "github"]
 
+# Slot counts and CI classes come from the runners each host registers.
 [services.fleet.machines.chris]
 enrollment_name = "chris-server"
-max_jobs = 3
-kinds = ["pr", "staging"]
 
 [services.fleet.machines.tauchonki]
 machine_id = "11e2756fc11042d798f759410573a935"
-max_jobs = 2
-kinds = ["pr", "staging"]
 
 [services.fleet.machines.yael]
 enrollment_name = "yael-server"
-max_jobs = 12
-kinds = ["pr", "staging"]
 
 [services.fleet.machines.brett]
 enrollment_name = "brett-server"
-max_jobs = 24
-kinds = ["pr", "staging"]
 
 [services.cache]
 mode = "hosted"
@@ -99,6 +92,15 @@ artifact_write_url = "https://ec2169bdf033f56b009956d4b64ba8ef.r2.cloudflarestor
 
 revision_write_url = "https://ec2169bdf033f56b009956d4b64ba8ef.r2.cloudflarestorage.com/tauceti-cache/revisions"
 
+# Outputs the queue's repair worker publishes after a green repair build, under the chain tip's
+# revision (R2 bucket tauceti-repair). Staging CI fetches them for the staging head, the queue's
+# other candidate tips and the base before building; Lake rebuilds whatever differs and the
+# audits run as usual. Public, read-only here.
+[services.repair_cache]
+mode = "hosted"
+name = "tauceti-repair"
+url = "https://repair-cache.taucetiproject.org"
+
 [publication]
 docs_url = "https://taucetiproject.github.io/TauCeti/docs"
 zulip_site = "https://leanprover.zulipchat.com"
@@ -107,10 +109,10 @@ zulip_topic = "Progress logs"
 
 [tools.tools]
 repo="TauCetiProject/TauCetiTools"
-ref="8269cb437ca29c0ae67e373d89d026850eb7dd4d"
+ref="d288926c619a7247c92a1000d44ff9157220ff54"
 [tools.review]
 repo="TauCetiProject/TauCetiReview"
-ref="32ce2069308080df4e08df14c2160012a51c8152"
+ref="7fd3a39e02c5a16cf7be65508a7ffb2c336dcada"
 [tools.progress]
 repo="TauCetiProject/TauCetiProgress"
 ref="047029660478ea2af4ad8cdfe0c88db0d5d1ca29"

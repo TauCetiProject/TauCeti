@@ -9,6 +9,9 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Oscillator.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.LinearAlgebra.BilinearForm.Isometry
 
 /-!
 # Action–angle coordinates of the harmonic oscillator
@@ -47,10 +50,18 @@ energy: the integral curve through `(θ, I)` returns to its starting point at ti
 `t` is an integer multiple of `2π / ν`. Its action is the classical loop integral
 `I = (1 / 2π) ∮ p dq` over one period.
 
+For finitely many uncoupled oscillators, of masses `m i` and frequencies `ν i`, applying the
+parametrization in each phase plane at fixed actions `I i` gives
+`TauCeti.oscillatorTorusEmbedding m ν I` from the angle torus `(ℝ / 2πℤ)^ι` to `ι → ℝ × ℝ`. For
+positive masses, frequencies and actions it is a closed embedding onto the invariant torus
+`{x | ∀ i, oscillatorAction (m i) (ν i) (x i) = I i}`.
+
 ## Main definitions
 
 * `TauCeti.oscillatorActionAngle m ν`: the action–angle parametrization.
 * `TauCeti.oscillatorAction m ν`, `TauCeti.oscillatorAngle m ν`: the action and angle of a point.
+* `TauCeti.oscillatorTorusEmbedding m ν I`: the parametrization of an invariant torus of
+  uncoupled oscillators by the angle torus.
 
 ## Main results
 
@@ -64,6 +75,8 @@ energy: the integral curve through `(θ, I)` returns to its starting point at ti
   action.
 * `TauCeti.oscillatorActionAngle_add_eq_self_iff`: the period lattice is `(2π / ν) ℤ`.
 * `TauCeti.integral_oscillatorActionAngle_snd_mul_deriv_fst`: `∮ p dq = 2π I` over one period.
+* `TauCeti.isClosedEmbedding_oscillatorTorusEmbedding`, `TauCeti.range_oscillatorTorusEmbedding`:
+  the angle torus is embedded onto the invariant torus of positive actions `I`.
 
 ## References
 
@@ -80,6 +93,7 @@ noncomputable section
 namespace TauCeti
 
 open Real ContinuousLinearMap
+open scoped Manifold ContDiff
 
 variable {m ν : ℝ}
 
@@ -103,6 +117,11 @@ theorem oscillatorActionAngle_eq_of_coe_eq {θ θ' : ℝ} (h : (θ : Real.Angle)
   have hc : Real.cos θ = Real.cos θ' := by rw [← Real.Angle.cos_coe, h, Real.Angle.cos_coe]
   simp [oscillatorActionAngle_apply, hs, hc]
 
+/-- At a fixed action `I`, the action–angle parametrization is `2π`-periodic in the angle. -/
+theorem periodic_oscillatorActionAngle (m ν I : ℝ) :
+    Function.Periodic (fun θ : ℝ ↦ oscillatorActionAngle m ν (θ, I)) (2 * π) :=
+  fun θ ↦ by simp [oscillatorActionAngle_apply, Real.sin_add_two_pi, Real.cos_add_two_pi]
+
 /-- In action–angle coordinates the energy is `ν I`. -/
 theorem oscillatorHamiltonian_oscillatorActionAngle (hm : 0 < m) (hν : 0 < ν) {y : ℝ × ℝ}
     (hI : 0 ≤ y.2) : oscillatorHamiltonian m ν (oscillatorActionAngle m ν y) = ν * y.2 := by
@@ -114,6 +133,20 @@ theorem oscillatorHamiltonian_oscillatorActionAngle (hm : 0 < m) (hν : 0 < ν) 
   rw [hc, hr]
   linear_combination 2 * m * ν * y.2 * (m * ν) * Real.sin_sq_add_cos_sq y.1 +
     2 * y.2 * Real.cos y.1 ^ 2 * (√(m * ν) ^ 2 + m * ν) * hc
+
+/-- The real action–angle parametrization is smooth wherever the action is positive. -/
+theorem contDiffOn_oscillatorActionAngle :
+    ContDiffOn ℝ ∞ (oscillatorActionAngle m ν) {y | 0 < y.2} := by
+  intro y hy
+  have hr : ContDiffAt ℝ ∞ (fun z : ℝ × ℝ ↦ √(2 * z.2)) y :=
+    (contDiffAt_const.mul contDiffAt_snd).sqrt (mul_pos two_pos hy).ne'
+  have heq : oscillatorActionAngle m ν = fun z : ℝ × ℝ ↦
+      (√(2 * z.2) / √(m * ν) * Real.sin z.1, √(m * ν) * √(2 * z.2) * Real.cos z.1) :=
+    funext (oscillatorActionAngle_apply m ν)
+  rw [heq]
+  exact ((hr.div_const _).mul (Real.contDiff_sin.contDiffAt.comp y contDiffAt_fst)).prodMk
+    ((contDiffAt_const.mul hr).mul (Real.contDiff_cos.contDiffAt.comp y contDiffAt_fst))
+    |>.contDiffWithinAt
 
 /-- The derivative of the action–angle parametrization at a point of positive action. Writing
 `r = √(2I)` and `c = √(m ν)`, it sends `(δθ, δI)` to
@@ -150,6 +183,27 @@ theorem stdSymplecticForm_fderiv_oscillatorActionAngle (hm : 0 < m) (hν : 0 < �
     ContinuousLinearMap.prod_apply, add_apply, smul_apply, coe_fst', coe_snd', smul_eq_mul]
   field_simp
   linear_combination (u.1 * v.2 - u.2 * v.1) * √(2 * y.2) ^ 2 * Real.sin_sq_add_cos_sq y.1
+
+/-- At positive action the real action–angle parametrization is a local diffeomorphism. -/
+theorem isLocalDiffeomorphAt_oscillatorActionAngle (hm : 0 < m) (hν : 0 < ν)
+    {y : ℝ × ℝ} (hy : 0 < y.2) :
+    IsLocalDiffeomorphAt 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ) ∞ (oscillatorActionAngle m ν) y := by
+  let L := fderiv ℝ (oscillatorActionAngle m ν) y
+  let ι : (stdSymplecticForm (V := ℝ)).toBilinForm →bᵢ
+      (stdSymplecticForm (V := ℝ)).toBilinForm :=
+    { toLinearMap := L.toLinearMap
+      map_app' := stdSymplecticForm_fderiv_oscillatorActionAngle hm hν hy }
+  have hinj : Function.Injective L := ι.injective (stdSymplecticForm (V := ℝ)).nondegenerate.1
+  let e := (LinearEquiv.ofBijective L.toLinearMap
+    ⟨hinj, LinearMap.injective_iff_surjective.mp hinj⟩).toContinuousLinearEquiv
+  refine isLocalDiffeomorphAt_of_mfderiv_eq
+    contDiffOn_oscillatorActionAngle.contMDiffOn (isOpen_lt continuous_const continuous_snd)
+    hy BoundarylessManifold.isInteriorPoint (by simp)
+    (e := (NormedSpace.fromTangentSpace y).trans
+      (e.trans (NormedSpace.fromTangentSpace (oscillatorActionAngle m ν y)).symm)) ?_
+  rw [mfderiv_eq_fderiv]
+  -- The self-model tangent equivalences act as identities; `ofBijective` retains L's map.
+  rfl
 
 /-- **The Hamiltonian vector field is `ν ∂_θ`**: at a point of positive action, the derivative of
 the parametrization sends `(ν, 0)` to the Hamiltonian vector field of the energy. -/
@@ -344,5 +398,97 @@ theorem integral_oscillatorActionAngle_snd_mul_deriv_fst (hm : 0 < m) (hν : 0 <
   rw [intervalIntegral.integral_const_mul, integral_cos_sq]
   simp
   ring
+
+/-! ### Invariant tori of uncoupled oscillators -/
+
+section InvariantTorus
+
+open Set
+
+variable {ι : Type*} {m ν I : ι → ℝ}
+
+/-- The action–angle parametrization of the torus of actions `I`: the angle torus `(ℝ / 2πℤ)^ι`
+is sent to the point `oscillatorActionAngle (m i) (ν i) (φ i, I i)` in the `i`-th phase plane.
+For positive masses, frequencies and actions it is a closed embedding onto the invariant torus
+`{x | ∀ i, oscillatorAction (m i) (ν i) (x i) = I i}`
+(`TauCeti.isClosedEmbedding_oscillatorTorusEmbedding`, `TauCeti.range_oscillatorTorusEmbedding`).
+-/
+def oscillatorTorusEmbedding (m ν I : ι → ℝ) (φ : ι → AddCircle (2 * π)) :
+    ι → ℝ × ℝ :=
+  fun i ↦ (periodic_oscillatorActionAngle (m i) (ν i) (I i)).lift (φ i)
+
+/-- The `i`-th coordinate of `oscillatorTorusEmbedding` at an angle `a` whose `i`-th entry is the
+class of `φ : ℝ` is the action–angle parametrization at `(φ, I i)`. This form applies to an
+arbitrary angle `a`; it is not a simp lemma because `φ` does not occur on the left-hand side. -/
+theorem oscillatorTorusEmbedding_apply_of_coe_eq {a : ι → AddCircle (2 * π)} {i : ι} {φ : ℝ}
+    (h : (φ : AddCircle (2 * π)) = a i) :
+    oscillatorTorusEmbedding m ν I a i = oscillatorActionAngle (m i) (ν i) (φ, I i) := by
+  unfold oscillatorTorusEmbedding
+  rw [← h]
+  exact (periodic_oscillatorActionAngle _ _ _).lift_coe φ
+
+/-- On angles lifted from `ι → ℝ`, `oscillatorTorusEmbedding` is the action–angle
+parametrization in each coordinate. -/
+@[simp]
+theorem oscillatorTorusEmbedding_coe (m ν I : ι → ℝ) (φ : ι → ℝ) :
+    oscillatorTorusEmbedding m ν I (fun i ↦ (φ i : AddCircle (2 * π))) =
+      fun i ↦ oscillatorActionAngle (m i) (ν i) (φ i, I i) :=
+  funext fun _ ↦ oscillatorTorusEmbedding_apply_of_coe_eq rfl
+
+/-- The action–angle parametrization of a torus of actions is continuous. -/
+theorem continuous_oscillatorTorusEmbedding (m ν I : ι → ℝ) :
+    Continuous (oscillatorTorusEmbedding m ν I) := by
+  refine continuous_pi fun i ↦ Continuous.comp ?_ (continuous_apply i)
+  refine (QuotientAddGroup.isQuotientMap_mk (AddSubgroup.zmultiples (2 * π))).continuous_iff.2 ?_
+  have hc : Continuous fun φ : ℝ ↦ oscillatorActionAngle (m i) (ν i) (φ, I i) := by
+    simp only [oscillatorActionAngle_apply]
+    fun_prop
+  exact hc.congr fun φ ↦ ((periodic_oscillatorActionAngle _ _ _).lift_coe φ).symm
+
+/-- For positive masses, frequencies and actions, distinct angles give distinct points. -/
+theorem injective_oscillatorTorusEmbedding (hm : ∀ i, 0 < m i) (hν : ∀ i, 0 < ν i)
+    (hI : ∀ i, 0 < I i) : Function.Injective (oscillatorTorusEmbedding m ν I) := by
+  intro a b hab
+  funext i
+  obtain ⟨α, hα⟩ := QuotientAddGroup.mk_surjective (a i)
+  obtain ⟨β, hβ⟩ := QuotientAddGroup.mk_surjective (b i)
+  have hab := congrFun hab i
+  rw [oscillatorTorusEmbedding_apply_of_coe_eq hα, oscillatorTorusEmbedding_apply_of_coe_eq hβ]
+    at hab
+  have h := ((oscillatorActionAngle_eq_oscillatorActionAngle_iff (hm i) (hν i) (hI i) (hI i)).1
+    hab).2
+  rw [← sub_eq_zero, ← Real.Angle.coe_sub, Real.Angle.coe_eq_zero_iff] at h
+  rw [← hα, ← hβ, ← sub_eq_zero, ← AddCircle.coe_sub, AddCircle.coe_eq_zero_iff]
+  exact h
+
+/-- For positive masses and frequencies and nonnegative actions `I`, the action–angle
+parametrization covers exactly the level set of the actions `I`. -/
+theorem range_oscillatorTorusEmbedding (hm : ∀ i, 0 < m i) (hν : ∀ i, 0 < ν i)
+    (hI : ∀ i, 0 ≤ I i) :
+    range (oscillatorTorusEmbedding m ν I) =
+      {x | ∀ i, oscillatorAction (m i) (ν i) (x i) = I i} := by
+  ext x
+  constructor
+  · rintro ⟨a, rfl⟩ i
+    obtain ⟨φ, hφ⟩ := QuotientAddGroup.mk_surjective (a i)
+    rw [oscillatorTorusEmbedding_apply_of_coe_eq hφ]
+    exact oscillatorAction_oscillatorActionAngle (hm i) (hν i) (hI i)
+  · intro hx
+    refine ⟨fun i ↦ ((oscillatorAngle (m i) (ν i) (x i)).toReal : AddCircle (2 * π)), ?_⟩
+    rw [oscillatorTorusEmbedding_coe]
+    funext i
+    rw [← hx i]
+    exact oscillatorActionAngle_oscillatorAction (hm i) (hν i) (Real.Angle.coe_toReal _)
+
+/-- For positive masses, frequencies and actions, the action–angle parametrization is a closed
+embedding of the compact angle torus. -/
+theorem isClosedEmbedding_oscillatorTorusEmbedding (hm : ∀ i, 0 < m i) (hν : ∀ i, 0 < ν i)
+    (hI : ∀ i, 0 < I i) :
+    Topology.IsClosedEmbedding (oscillatorTorusEmbedding m ν I) :=
+  have : Fact (0 < 2 * π) := ⟨two_pi_pos⟩
+  (continuous_oscillatorTorusEmbedding m ν I).isClosedEmbedding
+    (injective_oscillatorTorusEmbedding hm hν hI)
+
+end InvariantTorus
 
 end TauCeti

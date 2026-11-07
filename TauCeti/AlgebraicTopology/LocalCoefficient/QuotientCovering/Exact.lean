@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.LocalCoefficient.QuotientCovering.Basic
 public import TauCeti.RepresentationTheory.Rep.CoinvariantsTensor
 public import Mathlib.CategoryTheory.Abelian.FunctorCategory
+public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 
 /-!
@@ -18,7 +19,9 @@ the fibre of the local system associated to a representation `A` with the underl
 module of `A`. The identification sends `⟦a ⊗ [g • e]⟧` to `A.ρ g⁻¹ a`, and is natural
 in `A`. It uses Mathlib's `Representation.coinvariantsTprodLeftRegularLEquiv` after
 identifying the fibre torsor with `G`. The tensor-coinvariant equivalence is Mathlib's
-construction by Amelia Livingston.
+construction by Amelia Livingston. In particular the fibres are projective when the underlying
+module of `A` is projective over `k`
+(`IsQuotientCoveringMap.projective_associatedLocalSystem_obj`).
 
 Consequently `IsQuotientCoveringMap.associatedLocalSystemFunctor` preserves small limits
 and small colimits. In particular, a short exact sequence of representations gives a
@@ -43,23 +46,6 @@ namespace IsQuotientCoveringMap
 
 variable {E B : TopCat.{u}} {p : E ⟶ B} {G : Type u} [Group G] [MulAction G E]
   (hG : IsQuotientCoveringMap p G) (k : Type u) [CommRing k]
-
-private def fiberRepresentationIsoLeftRegular {x : B} (e : p ⁻¹' {x}) :
-    Rep.of (hG.fiberRepresentation k x) ≅ Rep.leftRegular k G := by
-  letI := hG.mulActionFiber x
-  refine Rep.mkIso (.mk (Finsupp.domLCongr (hG.fiberEquivGroup e) ≪≫ₗ
-    (MonoidAlgebra.coeffLinearEquiv k).symm) fun g ↦ ?_)
-  ext e' r
-  have he : hG.fiberEquivGroup e (g • e') = g * hG.fiberEquivGroup e e' := by
-    apply (hG.fiberEquivGroup_eq_iff e _ _).2
-    simp only [coe_mulActionFiber_smul, mul_smul, fiberEquivGroup_smul_self]
-  simp [fiberRepresentation_single, he]
-
-private lemma fiberRepresentationIsoLeftRegular_hom_single {x : B} (e e' : p ⁻¹' {x})
-    (r : k) :
-    (fiberRepresentationIsoLeftRegular hG k e).hom.hom (Finsupp.single e' r) =
-      MonoidAlgebra.single (hG.fiberEquivGroup e e') r := by
-  simp [fiberRepresentationIsoLeftRegular]
 
 /-- A choice of sheet identifies the fibre of the associated local system with the
 underlying coefficient module. -/
@@ -115,6 +101,13 @@ lemma associatedLocalSystemFiberIso_hom_naturality {A A' : Rep.{u} k G} (f : A �
     associatedLocalSystemMap_app_coinvariantsTensorMk,
     associatedLocalSystemFiberIso_hom_coinvariantsTensorMk]
   simp
+
+/-- The fibres of the local system associated to a representation are projective as soon as its
+underlying module is projective over `k`, being isomorphic to it. -/
+instance projective_associatedLocalSystem_obj (A : Rep.{u} k G) [Module.Projective k A]
+    (x : FundamentalGroupoid B) : Projective ((hG.associatedLocalSystem k A).obj x) :=
+  have ⟨e, he⟩ := hG.surjective x.as
+  Projective.of_iso (hG.associatedLocalSystemFiberIso k A ⟨e, he⟩).symm inferInstance
 
 /-- Evaluation of associated local systems at a point is naturally isomorphic to forgetting
 the action, after choosing a sheet over that point. -/

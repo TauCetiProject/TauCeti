@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Spectrum
 public import Mathlib.LinearAlgebra.Basis.SMul
+import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
+import TauCeti.Analysis.InnerProductSpace.Positive.SquareRoot
 
 /-!
 # A positive-definite form is the standard one in suitable coordinates
@@ -24,10 +26,22 @@ root by scaling an orthonormal eigenbasis of `S` instead. The eigenvalues of `S`
 because the form is definite, so dividing the `i`-th eigenvector by `√(λ i)` produces a basis that
 is orthonormal *for the form*, and `e` is the map carrying the eigenbasis to it.
 
+Over the reals, a related factorization can be chosen compatibly with a prescribed direction `ν`:
+`ContinuousLinearMap.exists_continuousLinearEquiv_comp_adjoint_eq_of_isSymmetric` factors a
+positive-definite symmetric operator as `A = e e†`, so that `⟪A x, y⟫ = ⟪e† x, e† y⟫`, with
+`e† ν` a positive multiple of `ν`. Composing with such an `e` turns the second-order operator
+`u ↦ tr (A D²u)` into the Laplacian, since `D²(u ∘ e) = e† (D²u ∘ e) e`, while `e⁻¹` maps each
+half-space `{⟪x, ν⟫ > a}` onto another half-space with the same normal. This is how
+constant-coefficient elliptic equations on a half-space reduce to Poisson's equation on a
+half-space.
+
 ## Main statements
 
 * `TauCeti.exists_continuousLinearEquiv_inner_map_map`: a positive-definite symmetric operator's
   form becomes the standard inner product after a change of coordinates.
+* `ContinuousLinearMap.exists_continuousLinearEquiv_comp_adjoint_eq_of_isSymmetric`: a
+  positive-definite symmetric operator factors as `e e†`, with `e†` fixing the direction of a
+  given vector.
 
 Only the existence of `e` is exported, since it depends on a choice of eigenbasis. The operator is
 taken continuous and the change of coordinates produced is a continuous linear equivalence; on a
@@ -101,5 +115,78 @@ theorem exists_continuousLinearEquiv_inner_map_map (S : V →L[𝕜] V)
   conv_lhs => rw [← b.sum_repr' x, ← b.sum_repr' y]
   simp only [map_sum, map_smul, sum_inner, inner_sum, inner_smul_left, inner_smul_right, hkey]
   simp [inner_conj_symm, mul_comm]
+
+section Real
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+
+/-- **Factoring a positive-definite operator through a prescribed direction.** Let `A` be a
+symmetric operator on a finite-dimensional real inner product space with `λ ‖ξ‖² ≤ ⟪A ξ, ξ⟫` for
+some `λ > 0`, and let `ν ≠ 0`. Then there is a continuous linear automorphism `e` with
+`e e† = A`, whose adjoint maps `ν` to a positive multiple of `ν`, and with
+`‖e⁻¹ x‖ ≤ ‖x‖ / √λ`.
+
+One can take `e = √A ∘ R`, where `√A` is the positive square root of `A` and `R` is the reflection
+exchanging `ν` and the vector of the same length in the direction of `√A ν`. -/
+theorem _root_.ContinuousLinearMap.exists_continuousLinearEquiv_comp_adjoint_eq_of_isSymmetric
+    (A : V →L[ℝ] V) (hA : (A : V →ₗ[ℝ] V).IsSymmetric) {lam : ℝ} (hlam : 0 < lam)
+    (hpos : ∀ ξ : V, lam * ‖ξ‖ ^ 2 ≤ ⟪A ξ, ξ⟫_ℝ) {ν : V} (hν : ν ≠ 0) :
+    ∃ e : V ≃L[ℝ] V, (e : V →L[ℝ] V) ∘L (e : V →L[ℝ] V).adjoint = A ∧
+      (∃ c : ℝ, 0 < c ∧ (e : V →L[ℝ] V).adjoint ν = c • ν) ∧
+      ∀ x : V, ‖e.symm x‖ ≤ (√lam)⁻¹ * ‖x‖ := by
+  have hT : (A : V →ₗ[ℝ] V).IsPositive :=
+    ((A : V →ₗ[ℝ] V).isPositive_iff).2 ⟨hA, fun x => (by positivity : 0 ≤ lam * ‖x‖ ^ 2).trans
+      (hpos x)⟩
+  set R := hT.sqrt
+  -- `‖R x‖² = ⟪A x, x⟫ ≥ λ ‖x‖²`, so `R` is injective.
+  have hRn : ∀ x, lam * ‖x‖ ^ 2 ≤ ‖R x‖ ^ 2 := fun x => by
+    rw [hT.norm_sqrt_apply_sq x, RCLike.re_to_real]
+    exact hpos x
+  have hRinj : Function.Injective R := by
+    refine (injective_iff_map_eq_zero R).2 fun x hx => ?_
+    have h := hRn x
+    rw [hx, norm_zero] at h
+    have : ‖x‖ ^ 2 ≤ 0 := by nlinarith
+    exact norm_eq_zero.1 (pow_eq_zero_iff two_ne_zero |>.1 (le_antisymm this (sq_nonneg _)))
+  set Rc : V ≃L[ℝ] V := (LinearEquiv.ofInjectiveEndo R hRinj).toContinuousLinearEquiv
+  have hRν : R ν ≠ 0 := fun h => hν (hRinj (h.trans (map_zero R).symm))
+  -- the reflection `O` carries `ν` to the direction of `R ν`, with the same norm
+  set w : V := (‖ν‖ / ‖R ν‖) • R ν
+  have hw : ‖ν‖ = ‖w‖ := by
+    rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg (by positivity),
+      div_mul_cancel₀ _ (norm_ne_zero_iff.2 hRν)]
+  set O := (ℝ ∙ (ν - w))ᗮ.reflection
+  have hOν : O ν = w := Submodule.reflection_sub hw
+  have hOw : O w = ν := by rw [← hOν, Submodule.reflection_reflection]
+  have hOO : ∀ x, O (O x) = x := Submodule.reflection_reflection _
+  have hOinner : ∀ x y, ⟪O x, y⟫_ℝ = ⟪x, O y⟫_ℝ := fun x y => by
+    rw [← O.inner_map_map x (O y), hOO]
+  set e : V ≃L[ℝ] V := O.toContinuousLinearEquiv.trans Rc
+  -- `Rc` is `R` bundled as an equivalence, so `e` is `R ∘ O` by construction
+  have he : ∀ y, e y = R (O y) := fun y => rfl
+  -- the adjoint of `e = R ∘ O` is `O ∘ R`
+  have hadj : ∀ x, (e : V →L[ℝ] V).adjoint x = O (R x) := by
+    intro x
+    refine ext_inner_right ℝ fun y => ?_
+    rw [ContinuousLinearMap.adjoint_inner_left, ContinuousLinearEquiv.coe_coe, he,
+      ← hT.sqrt_isSymmetric, hOinner]
+  refine ⟨e, ?_, ⟨‖R ν‖ / ‖ν‖, by positivity, ?_⟩, fun x => ?_⟩
+  · ext x
+    rw [ContinuousLinearMap.comp_apply, hadj, ContinuousLinearEquiv.coe_coe, he, hOO,
+      ← LinearMap.comp_apply, hT.sqrt_sq, ContinuousLinearMap.coe_coe]
+  · have hRw : R ν = (‖R ν‖ / ‖ν‖) • w := by
+      rw [smul_smul, div_mul_div_cancel₀ (norm_ne_zero_iff.2 hν),
+        div_self (norm_ne_zero_iff.2 hRν), one_smul]
+    rw [hadj]
+    exact (congrArg O hRw).trans (by rw [map_smul, hOw])
+  · -- `λ ‖y‖² ≤ ‖R (O y)‖² = ‖e y‖²`, applied to `y = e⁻¹ x`
+    have h := hRn (O (e.symm x))
+    rw [← he, e.apply_symm_apply, O.norm_map] at h
+    rw [inv_mul_eq_div, le_div_iff₀ (Real.sqrt_pos.2 hlam)]
+    refine (pow_le_pow_iff_left₀ (by positivity) (norm_nonneg _) two_ne_zero).1 ?_
+    rw [mul_pow, Real.sq_sqrt hlam.le, mul_comm]
+    exact h
+
+end Real
 
 end TauCeti

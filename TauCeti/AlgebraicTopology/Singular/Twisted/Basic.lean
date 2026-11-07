@@ -42,6 +42,8 @@ twisted by the system pulled back along `f`.
 * `TauCeti.LocalCoefficientSystem.twistedChains`: the simplicial module of twisted chains, and
   `twistedChainComplex`, `twistedHomology` for its alternating face map complex and homology.
   Maps out of twisted chains are built summand by summand with `twistedChainsDesc`.
+  Each degree is projective when the fibres of the system are
+  (`projective_twistedChainComplex_X`).
   The coefficient of a twisted chain on a singular simplex is `twistedChainComplexCoeff`, and by
   `twistedChainComplex_ext_coeff` a twisted chain is determined by its coefficients. Only finitely
   many of them are nonzero, and the chain is their sum
@@ -200,6 +202,16 @@ def vertexTransport (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m) :
 lemma vertexTransport_def (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m) :
     vertexTransport α σ = pathTransport σ (toTopInitialVertex m.unop)
       (toTop.map α.unop (toTopInitialVertex n.unop)) := (rfl)
+
+/-- Inverse vertex transport runs inside the original simplex from the reindexed initial
+vertex back to the original initial vertex. -/
+lemma inv_vertexTransport (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m) :
+    inv (vertexTransport α σ) =
+      pathTransport σ (toTop.map α.unop (toTopInitialVertex n.unop))
+        (toTopInitialVertex m.unop) := by
+  apply IsIso.inv_eq_of_hom_inv_id
+  simp only [vertexTransport_def]
+  exact (pathTransport_comp σ _ _ _).trans (pathTransport_self σ _)
 
 /-- Vertex transport is represented by the image of any path to the reindexed initial vertex. -/
 lemma vertexTransport_eq_mk (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m)
@@ -483,6 +495,15 @@ lemma ιTwistedChainComplex_twistedChainComplexDesc {k : ℕ} {A : ModuleCat.{ma
     ιTwistedChainComplex L k σ ≫ twistedChainComplexDesc L φ = φ σ :=
   ιTwistedChains_twistedChainsDesc L φ σ
 
+/-- If every fibre of `L` is projective, then so is every degree of the twisted chain complex, a
+coproduct of fibres. -/
+instance projective_twistedChainComplex_X [∀ x, Projective (L.obj x)] (k : ℕ) :
+    Projective ((twistedChainComplex L).X k) where
+  factors f e _ :=
+    ⟨twistedChainComplexDesc L fun σ ↦ Projective.factorThru (ιTwistedChainComplex L k σ ≫ f) e,
+      twistedChainComplex_hom_ext L fun σ ↦ by
+        rw [ιTwistedChainComplex_twistedChainComplexDesc_assoc, Projective.factorThru_comp]⟩
+
 /-- The boundary of the twisted chain complex sends the summand of a singular `(k + 1)`-simplex
 `σ` to the alternating sum of the summands of the faces of `σ`, the coefficients being transported
 from the initial vertex of `σ` to the initial vertex of each face. -/
@@ -533,6 +554,12 @@ lemma twistedChainComplexCoeff_ιTwistedChainComplex_apply_of_ne
     {σ ρ : (TopCat.toSSet.obj X) _⦋k⦌} (h : σ ≠ ρ) (x : L.obj (initialVertex σ)) :
     (twistedChainComplexCoeff L ρ).hom ((ιTwistedChainComplex L k σ).hom x) = 0 :=
   congrArg (fun f ↦ f.hom x) (ιTwistedChainComplex_twistedChainComplexCoeff_of_ne L h)
+
+/-- A chain supported on a single simplex `τ` only has a nonzero coefficient on `τ`. -/
+lemma eq_of_twistedChainComplexCoeff_ιTwistedChainComplex_ne_zero
+    {σ τ : (TopCat.toSSet.obj X) _⦋k⦌} {x : L.obj (initialVertex τ)}
+    (h : (twistedChainComplexCoeff L σ).hom ((ιTwistedChainComplex L k τ).hom x) ≠ 0) : τ = σ :=
+  by_contra fun hne ↦ h (twistedChainComplexCoeff_ιTwistedChainComplex_apply_of_ne L hne _)
 
 /-- Summing a family of additive maps out of the simplex fibres against the coefficients of a
 finite sum of chains, each supported on one simplex, applies the maps summand by summand. -/
@@ -654,6 +681,28 @@ lemma twistedChainComplexCoeff_d_ιTwistedChainComplex_apply_of_forall_ne
     (twistedChainComplexCoeff L ρ).hom (((twistedChainComplex L).d (k + 1) k).hom
       ((ιTwistedChainComplex L (k + 1) σ).hom x)) = 0 :=
   congrArg (fun f ↦ f.hom x) (ιTwistedChainComplex_d_twistedChainComplexCoeff_of_forall_ne L h)
+
+/-- The twisted boundary of a chain supported in a set `s` is supported in `s`. -/
+lemma range_simplexMap_subset_of_twistedChainComplexCoeff_d_ne_zero
+    {z : (twistedChainComplex L).X (k + 1)} {s : Set X}
+    (hz : ∀ σ, (twistedChainComplexCoeff L σ).hom z ≠ 0 → Set.range (TopCat.simplexMap σ) ⊆ s)
+    {ρ : (TopCat.toSSet.obj X) _⦋k⦌}
+    (hρ : (twistedChainComplexCoeff L ρ).hom (((twistedChainComplex L).d (k + 1) k).hom z) ≠ 0) :
+    Set.range (TopCat.simplexMap ρ) ⊆ s := by
+  -- Expand `z` as the finite sum of its single-simplex parts; some summand contributes to `ρ`.
+  have hfin := finite_support_twistedChainComplexCoeff L z
+  rw [← finsum_ιTwistedChainComplex_twistedChainComplexCoeff L z,
+    map_finsum _ (hfin.subset fun σ hσ h ↦ hσ (by simp only [h, map_zero])),
+    map_finsum _ (hfin.subset fun σ hσ h ↦ hσ (by simp only [h, map_zero]))] at hρ
+  obtain ⟨σ, hσ⟩ := not_forall.1 (mt finsum_eq_zero_of_forall_eq_zero hρ)
+  have hσz : (twistedChainComplexCoeff L σ).hom z ≠ 0 := fun h ↦
+    hσ (by rw [h, map_zero, map_zero, map_zero])
+  -- That summand is supported on `σ`, so `ρ` is a face of `σ`.
+  obtain ⟨i, rfl⟩ :
+      ∃ i : Fin (k + 2), (TopCat.toSSet.obj X).map (SimplexCategory.δ i).op σ = ρ := by
+    by_contra! hne
+    exact hσ (twistedChainComplexCoeff_d_ιTwistedChainComplex_apply_of_forall_ne L hne _)
+  exact (TopCat.range_simplexMap_map_subset _ σ).trans (hz σ hσz)
 
 end Coeff
 

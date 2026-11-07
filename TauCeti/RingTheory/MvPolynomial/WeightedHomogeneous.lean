@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Basic.ENNReal.Operations
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
+public import TauCeti.RingTheory.MvPolynomial.Rescale
+import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
 
 /-!
 # Weighted homogeneity under substitution and evaluation
@@ -46,9 +48,19 @@ homogeneity in block `b`: a polynomial that does not vanish at a point with zero
 degree zero in block `b`, and the blocks of degree zero can be replaced simultaneously by
 arbitrary vectors without changing the value.
 
+A polynomial algebra presentation also transports the weighted grading to its target: the
+images of the homogeneous pieces form an internal graded algebra. A ring map from an integral
+polynomial algebra with this grading preserves degrees exactly when the images of its variables
+have the prescribed degrees, allowing additive regrading of the target.
+
 Over a semiring without zero divisors, the lowest weighted homogeneous components of two
 polynomials multiply to a nonzero component of their product. So, for weights in `ℝ≥0∞`, the
 least weight of a monomial of a product is the sum of the least weights for the factors.
+
+For weights in a sup-semilattice with a bottom element, sums and products satisfy the usual upper
+bounds on weighted total degree. For cancellative ordered weights, the component of a product
+at the sum of the maximal weights is the product of the maximal-weight components, even when
+zero divisors make this component zero. Injective coefficient maps preserve weighted degrees.
 
 For canonically ordered weights with truncated subtraction, the weighted homogeneous component of
 weight `n` of a product `p * q` with `q` weighted homogeneous of weight `d` is the component of
@@ -183,23 +195,9 @@ theorem coeff_aeval_C_X_mul_X_pow (w : σ → ℕ) (φ : MvPolynomial σ R) (n :
 monomial by `t` to the power of its weight. -/
 theorem coeff_aeval_C_pow_mul_X (t : R) (w : σ → ℕ) (φ : MvPolynomial σ R) (d : σ →₀ ℕ) :
     (aeval (fun i ↦ C (t ^ w i) * X i) φ).coeff d = t ^ Finsupp.weight w d * φ.coeff d := by
-  classical
-  induction φ using MvPolynomial.induction_on' with
-  | monomial e r =>
-    have h : aeval (fun i ↦ C (t ^ w i) * X i) (monomial e r) =
-        monomial e (t ^ Finsupp.weight w e * r) := by
-      rw [aeval_monomial, monomial_eq]
-      simp only [Finsupp.prod, Finsupp.weight_apply, Finsupp.sum, mul_pow, Finset.prod_mul_distrib,
-        ← pow_mul', Finset.prod_pow_eq_pow_sum, ← map_pow, ← map_prod, algebraMap_eq, smul_eq_mul,
-        map_mul]
-      ring
-    rw [h, coeff_monomial, coeff_monomial]
-    split_ifs with he
-    · rw [he]
-    · rw [mul_zero]
-  | add p q hp hq =>
-    simp only [map_add, AddMonoidAlgebra.coeff_add, Finsupp.coe_add, Pi.add_apply]
-    rw [hp, hq, mul_add]
+  rw [← rescale_eq_aeval, coeff_rescale]
+  simp only [Finsupp.prod, Finsupp.weight_apply, Finsupp.sum, ← pow_mul',
+    Finset.prod_pow_eq_pow_sum, smul_eq_mul]
 
 /-- **Weighted homogeneity from scaling.** If the powers of `t` are pairwise distinct and
 substituting `t ^ w i • X i` for each variable `X i` multiplies `φ` by `t ^ n`, then `φ` is
@@ -301,6 +299,79 @@ theorem eval₂_congr_of_block_isWeightedHomogeneous_zero {S ι κ : Type*} [Com
   MvPolynomial.eval₂_congr _ _ _ fun {p} {_} hi hc ↦ h p fun hp ↦ by
     simpa using (hF p.1 hp).apply_eq_zero_of_coeff_ne_zero hc (Finsupp.mem_support_iff.mp hi)
 
+section TopWeight
+
+open Finsupp
+
+section DegreeBounds
+
+variable {M : Type*} [AddCommMonoid M] [SemilatticeSup M] [OrderBot M]
+  (w : σ → M) (p q : MvPolynomial σ R)
+
+/-- The weighted total degree of a sum is bounded by the supremum of the degrees. -/
+theorem weightedTotalDegree_add_le :
+    (p + q).weightedTotalDegree w ≤ p.weightedTotalDegree w ⊔ q.weightedTotalDegree w :=
+  AddMonoidAlgebra.sup_support_coeff_add_le (weight w) p q
+
+/-- The weighted total degree of a product is bounded by the sum of the degrees. -/
+theorem weightedTotalDegree_mul_le [IsOrderedAddMonoid M] :
+    (p * q).weightedTotalDegree w ≤ p.weightedTotalDegree w + q.weightedTotalDegree w :=
+  AddMonoidAlgebra.sup_support_coeff_mul_le (fun a b ↦ (map_add (weight w) a b).le) p q
+
+end DegreeBounds
+
+variable {M : Type*} [AddCommMonoid M] [LinearOrder M] [OrderBot M]
+  (w : σ → M) (p q : MvPolynomial σ R)
+
+/-- At the sum of the maximal weights, the component of a product is the product of the top
+components. This holds even when zero divisors make that component vanish. -/
+theorem weightedHomogeneousComponent_weightedTotalDegree_add [IsOrderedCancelAddMonoid M] :
+    weightedHomogeneousComponent w (p.weightedTotalDegree w + q.weightedTotalDegree w) (p * q) =
+      weightedHomogeneousComponent w (p.weightedTotalDegree w) p *
+        weightedHomogeneousComponent w (q.weightedTotalDegree w) q := by
+  classical
+  ext d
+  rw [coeff_weightedHomogeneousComponent, coeff_mul, coeff_mul]
+  split_ifs with hd
+  · apply Finset.sum_congr rfl
+    intro x hx
+    rw [coeff_weightedHomogeneousComponent, coeff_weightedHomogeneousComponent]
+    by_cases hxp : p.coeff x.1 = 0
+    · simp [hxp]
+    by_cases hxq : q.coeff x.2 = 0
+    · simp [hxq]
+    have hp := le_weightedTotalDegree w (mem_support_iff.mpr hxp)
+    have hq := le_weightedTotalDegree w (mem_support_iff.mpr hxq)
+    have hxw : weight w x.1 + weight w x.2 =
+        p.weightedTotalDegree w + q.weightedTotalDegree w := by
+      rw [← map_add, Finset.mem_antidiagonal.mp hx, hd]
+    have he₁ : weight w x.1 = p.weightedTotalDegree w := by
+      apply le_antisymm hp
+      by_contra! hlt
+      exact (ne_of_lt (add_lt_add_of_lt_of_le hlt hq)) hxw
+    have he₂ : weight w x.2 = q.weightedTotalDegree w := by
+      apply le_antisymm hq
+      by_contra! hlt
+      exact (ne_of_lt (add_lt_add_of_le_of_lt hp hlt)) hxw
+    simp [he₁, he₂]
+  · symm
+    apply Finset.sum_eq_zero
+    intro x hx
+    rw [coeff_weightedHomogeneousComponent, coeff_weightedHomogeneousComponent]
+    have hxw : weight w x.1 + weight w x.2 = weight w d := by
+      rw [← map_add, Finset.mem_antidiagonal.mp hx]
+    split_ifs <;> simp_all
+
+end TopWeight
+
+/-- Injective coefficient maps preserve weighted total degrees. -/
+theorem weightedTotalDegree_map_of_injective {S M : Type*} [CommSemiring S]
+    [AddCommMonoid M] [SemilatticeSup M] [OrderBot M] (w : σ → M) (φ : R →+* S)
+    (hφ : Function.Injective φ) (p : MvPolynomial σ R) :
+    (map φ p).weightedTotalDegree w = p.weightedTotalDegree w := by
+  rw [weightedTotalDegree, support_map_of_injective _ hφ]
+  rfl
+
 section SupportWeight
 
 open scoped ENNReal
@@ -390,5 +461,55 @@ theorem IsWeightedHomogeneous.weightedHomogeneousComponent_mul_right
 end Component
 
 end CommSemiring
+
+namespace WeightedHomogeneousSubmodule
+
+/-- Transporting the weighted polynomial pieces along an algebra equivalence preserves the
+multiplicative grading. -/
+theorem gradedMonoid_map {M A : Type*} [AddCommMonoid M] [CommSemiring R]
+    [Semiring A] [Algebra R A] (w : σ → M) (e : MvPolynomial σ R ≃ₐ[R] A) :
+    SetLike.GradedMonoid (fun n ↦ (weightedHomogeneousSubmodule R w n).map e.toLinearMap) where
+  one_mem := Submodule.mem_map.mpr ⟨1, isWeightedHomogeneous_one R w, map_one e⟩
+  mul_mem _ _ _ _ ha hb := by
+    obtain ⟨a, ha', rfl⟩ := Submodule.mem_map.mp ha
+    obtain ⟨b, hb', rfl⟩ := Submodule.mem_map.mp hb
+    exact Submodule.mem_map.mpr ⟨a * b, ha'.mul hb', map_mul e _ _⟩
+
+/-- An algebra equivalence transports the weighted polynomial decomposition to an internal
+direct sum decomposition of its target. -/
+theorem isInternal_map {M A : Type*} [AddCommMonoid M] [DecidableEq M] [CommRing R]
+    [Ring A] [Algebra R A] (w : σ → M) (e : MvPolynomial σ R ≃ₐ[R] A) :
+    DirectSum.IsInternal (fun n ↦ (weightedHomogeneousSubmodule R w n).map e.toLinearMap) := by
+  classical
+  let := MvPolynomial.weightedGradedAlgebra (R := R) (w := w)
+  have hW := DirectSum.Decomposition.isInternal (weightedHomogeneousSubmodule R w)
+  apply DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top
+  · exact e.toLinearMap.iSupIndep_map e.injective hW.submodule_iSupIndep
+  · rw [← Submodule.map_iSup, hW.submodule_iSup_eq_top, Submodule.map_top,
+      LinearMap.range_eq_top]
+    exact e.surjective
+
+/-- A ring map from integral polynomials preserves regraded weights exactly when the images
+of its variables have the given degrees. The target pieces may be additive subgroups rather
+than submodules. -/
+theorem map_mem_iff {M A S ι : Type*} [AddCommMonoid M] [CommRing A]
+    [SetLike S A] [AddSubgroupClass S A] [AddCommMonoid ι]
+    (w : σ → M) (𝒜 : ι → S) [SetLike.GradedMonoid 𝒜] (r : M →+ ι)
+    (f : MvPolynomial σ ℤ →+* A) :
+    (∀ ⦃n⦄ ⦃p⦄, p.IsWeightedHomogeneous w n → f p ∈ 𝒜 (r n)) ↔
+      ∀ i, f (X i) ∈ 𝒜 (r (w i)) := by
+  refine ⟨fun h i ↦ h (isWeightedHomogeneous_X _ _ _), ?_⟩
+  intro h n p hp
+  have := AddSubgroupClass.zsmulMemClass (S := S) (M := A)
+  have hpr : p.IsWeightedHomogeneous (r ∘ w) (r n) := fun d hd ↦ by
+    simp only [← hp hd, Finsupp.weight_apply, map_finsuppSum, map_nsmul, Function.comp_apply]
+  have hp' := hpr.aeval_mem (𝒜 := 𝒜) h
+  have he : f.toIntAlgHom p = aeval (f.toIntAlgHom ∘ X) p :=
+    DFunLike.congr_fun (aeval_unique f.toIntAlgHom) p
+  simp only [Function.comp_def, RingHom.toIntAlgHom_apply] at he
+  rw [he]
+  exact hp'
+
+end WeightedHomogeneousSubmodule
 
 end MvPolynomial

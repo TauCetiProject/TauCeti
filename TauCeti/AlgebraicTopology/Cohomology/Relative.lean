@@ -7,6 +7,10 @@ module
 
 public import TauCeti.Algebra.Homology.HomologySequenceLemmas
 public import TauCeti.AlgebraicTopology.Cohomology.Basic
+public import TauCeti.AlgebraicTopology.Singular.Empty
+
+public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Excision
+public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Restrict
 public import TauCeti.AlgebraicTopology.Singular.Relative
 
 /-!
@@ -31,7 +35,10 @@ A map of pairs `(X, A) ⟶ (Y, B)` induces maps from the relative cochains and c
 
 * `SSetPair.cochainComplexMap`: the map of relative cochain complexes induced by a map of pairs of
   simplicial sets, a quasi-isomorphism when it is one on both components
-  (`SSetPair.quasiIso_cochainComplexMap`).
+  (`SSetPair.quasiIso_cochainComplexMap`); in particular for the inclusion of a restricted pair
+  (`SSetPair.quasiIso_cochainComplexMap_restrictι`). A map of pairs bijecting the simplices
+  outside the subspaces induces an isomorphism of relative cochain complexes
+  (`SSetPair.isIso_cochainComplexMap_of_relativeSimplex_equiv`).
 * `TopPair.singularCochainComplex`, `TopPair.singularCohomology`, and the maps
   `TopPair.singularCochainComplexMap` and `TopPair.singularCohomologyMap` induced by maps of
   pairs, with `TopPair.singularCohomologyFunctor` the functor `TopPairᵒᵖ ⥤ ModuleCat k`;
@@ -43,6 +50,11 @@ A map of pairs `(X, A) ⟶ (Y, B)` induces maps from the relative cochains and c
   the three exactness statements `TopPair.singularCohomology_exact_relative`,
   `TopPair.singularCohomology_exact_space` and `TopPair.singularCohomology_exact_subspace`, and its
   naturality `TopPair.singularCohomologyδ_naturality`.
+* `TopPair.singularCohomologyMap_ofSubsetMap_id_comp_singularCohomologyπ`: for `S' ⊆ S`, the map
+  `Hⁿ(X, S) ⟶ Hⁿ(X)` factors through `Hⁿ(X, S')`; and
+  `TopPair.singularCohomologyπ_ofSubset_univ`: the map `Hⁿ(X, X) ⟶ Hⁿ(X)` vanishes.
+* `TopPair.isIso_singularCohomologyπ_of_isEmpty`: for an empty subspace, `Hⁿ(X, ∅) ⟶ Hⁿ(X)` is an
+  isomorphism.
 
 ## References
 
@@ -106,6 +118,29 @@ lemma quasiIso_cochainComplexMap {P Q : SSetPair.{w}} (f : P ⟶ Q)
       rw [Functor.mapShortComplex_map_τ₃, ShortComplex.opMap_τ₃, chainComplexShortComplexMap_τ₁]
       exact ‹QuasiIso (SSet.cochainComplexMap (R := R) (k := k) (M := M) f.left)›)
   rwa [Functor.mapShortComplex_map_τ₁, ShortComplex.opMap_τ₁, chainComplexShortComplexMap_τ₃] at h
+
+/-- A map of simplicial-set pairs that bijects the ambient simplices outside the subspaces in
+every degree induces an isomorphism of relative cochain complexes. -/
+theorem isIso_cochainComplexMap_of_relativeSimplex_equiv {P P' : SSetPair.{w}} (f : P ⟶ P')
+    (e : ∀ n, P.RelativeSimplex n ≃ P'.RelativeSimplex n)
+    (he : ∀ n (x : P.RelativeSimplex n),
+      (e n x).1 = f.right.app (Opposite.op (SimplexCategory.mk n)) x.1) :
+    IsIso (cochainComplexMap (R := R) (k := k) (M := M) f) := by
+  have := isIso_chainComplexMap_of_relativeSimplex_equiv f R e he
+  exact (linearYonedaFunctor k M).map_isIso (chainComplexMap f R).op
+
+/-- If restricting cochains along the inclusions of a subcomplex `S` of the ambient simplicial set
+of a pair `P` and of its preimage in the subcomplex of `P` are quasi-isomorphisms, then so is
+restricting relative cochains along the inclusion of the restricted pair. -/
+lemma quasiIso_cochainComplexMap_restrictι {P : SSetPair.{w}} (S : P.right.Subcomplex)
+    (h₁ : QuasiIso (SSet.cochainComplexMap (R := R) (k := k) (M := M) (S.preimage P.hom).ι))
+    (h₂ : QuasiIso (SSet.cochainComplexMap (R := R) (k := k) (M := M) S.ι)) :
+    QuasiIso (cochainComplexMap (R := R) (k := k) (M := M) (P.restrictι S)) := by
+  have : QuasiIso (SSet.cochainComplexMap (R := R) (k := k) (M := M) (P.restrictι S).left) := by
+    rwa [restrictι_left]
+  have : QuasiIso (SSet.cochainComplexMap (R := R) (k := k) (M := M) (P.restrictι S).right) := by
+    rwa [restrictι_right]
+  exact quasiIso_cochainComplexMap _
 
 end SSetPair
 
@@ -303,6 +338,16 @@ instance : Mono (P.singularCohomologyπ R k M 0) := by
       rw [ComplexShape.up_Rel] at h
       omega
 
+/-- For a pair `(X, A)` with `A` empty, the map `Hⁿ(X, A) ⟶ Hⁿ(X)` is an isomorphism: the relative
+singular chains of `(X, ∅)` are the singular chains of `X`. -/
+instance isIso_singularCohomologyπ_of_isEmpty [IsEmpty P.snd] (n : ℕ) :
+    IsIso (P.singularCohomologyπ R k M n) := by
+  have : IsIso (P.singularChainComplexπ R) := SSetPair.isIso_chainComplexπ _ R
+  have : IsIso (P.singularCochainComplexShortComplex R k M).f := by
+    rw [singularCochainComplexShortComplex_f_eq]
+    exact Functor.map_isIso _ _
+  exact (HomologicalComplex.homologyFunctor _ _ n).map_isIso _
+
 /-- Exactness at ambient cohomology: `Hⁿ(X, A) ⟶ Hⁿ(X) ⟶ Hⁿ(A)` is exact. -/
 lemma singularCohomology_exact_space (n : ℕ) :
     (ShortComplex.mk _ _ (P.singularCohomologyπ_comp_singularCohomologyMap R k M n)).Exact :=
@@ -369,6 +414,34 @@ lemma singularCohomologyδ_naturality {P P' : TopPair.{w}} (f : P ⟶ P') (n m :
   HomologicalComplex.HomologySequence.δ_naturality (singularCochainComplexShortComplexMap f)
     (P'.shortExact_singularCochainComplexShortComplex R k M)
     (P.shortExact_singularCochainComplexShortComplex R k M) n m (by simpa)
+
+/-- For subsets `S' ⊆ S` of `X`, the map `Hⁿ(X, S) ⟶ Hⁿ(X)` factors through `Hⁿ(X, S') ⟶ Hⁿ(X)`,
+via the map induced by the identity of `X` as a map of pairs `(X, S') ⟶ (X, S)`. -/
+@[reassoc]
+lemma singularCohomologyMap_ofSubsetMap_id_comp_singularCohomologyπ {X : TopCat.{w}}
+    {S S' : Set X} (h : Set.MapsTo (𝟙 X) S' S) (n : ℕ) :
+    TopPair.singularCohomologyMap (ofSubsetMap (𝟙 X) h) n ≫
+        (ofSubset S').singularCohomologyπ R k M n =
+      (ofSubset S).singularCohomologyπ R k M n := by
+  have hid : TopCat.singularCohomologyMap (R := R) (k := k) (M := M)
+      (Hom.fst (ofSubsetMap (𝟙 X) h)) n = 𝟙 _ := by
+    rw [ofSubsetMap_fst]
+    exact TopCat.singularCohomologyMap_id X n
+  rw [← singularCohomologyπ_naturality, hid]
+  exact Category.comp_id _
+
+/-- The map `Hⁿ(X, X) ⟶ Hⁿ(X)` vanishes: it is killed by the restriction `Hⁿ(X) ⟶ Hⁿ(X)` along
+the inclusion of the subspace `X`, which is a split monomorphism. -/
+lemma singularCohomologyπ_ofSubset_univ (X : TopCat.{w}) (n : ℕ) :
+    (ofSubset (Set.univ : Set X)).singularCohomologyπ R k M n = 0 := by
+  let P := ofSubset (Set.univ : Set X)
+  let r : P.fst ⟶ P.snd := TopCat.ofHom ⟨fun x ↦ ⟨x, Set.mem_univ x⟩, by fun_prop⟩
+  have hr : r ≫ P.map = 𝟙 P.fst := TopCat.ext fun _ ↦ rfl
+  have : Mono (TopCat.singularCohomologyMap (R := R) (k := k) (M := M) P.map n) := by
+    refine SplitMono.mono ⟨TopCat.singularCohomologyMap r n, ?_⟩
+    rw [← TopCat.singularCohomologyMap_comp, hr, TopCat.singularCohomologyMap_id]
+  rw [← cancel_mono (TopCat.singularCohomologyMap P.map n),
+    singularCohomologyπ_comp_singularCohomologyMap, zero_comp]
 
 end LongExactSequence
 

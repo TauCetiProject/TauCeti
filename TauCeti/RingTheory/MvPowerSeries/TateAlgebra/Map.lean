@@ -40,6 +40,8 @@ presentations of `B^I` as strict quotients of `A^r{Y}` (Kedlaya, Lemma 4.9).
 * `TauCeti.MvPowerSeries.restrictedMap_algebraMap`: `restrictedMap` sends constants to constants.
 * `MvPowerSeries.restrictedMap_polynomialToRestricted`: `restrictedMap` sends polynomials to their
   coefficientwise images.
+* `TauCeti.MvPowerSeries.coe_restrictedSumEquiv_restrictedMap`: `restrictedMap` commutes with the
+  iteration `R{X/c, Y/d} ≅ R{Y/d}{X/c}`.
 * `TauCeti.MvPowerSeries.norm_restrictedMap_le`: `restrictedMap` is bounded by the same constant.
 * `TauCeti.MvPowerSeries.norm_restrictedMap` and `TauCeti.MvPowerSeries.isometry_restrictedMap`:
   a norm-preserving `φ` induces an isometry for the Gauss norms.
@@ -149,10 +151,10 @@ theorem restrictedMap_restrictedMap {T : Type*} [NormedRing T] [IsUltrametricDis
   Subtype.ext <| MvPowerSeries.ext fun _ ↦ by simp
 
 /-- `restrictedMap` does not increase the Gauss norm by more than the bound on `φ`. -/
-theorem norm_restrictedMap_le [∀ i, Fact (0 < c i)] (hC : 0 ≤ C)
+theorem norm_restrictedMap_le [∀ i, Fact (0 < c i)]
     (f : IsRestricted.subring (R := R) c) :
     ‖restrictedMap φ hφ f‖ ≤ C * ‖f‖ := by
-  apply norm_le_mul_of_norm_coeff_le hC
+  apply norm_le_mul_of_norm_coeff_le
   intro t
   rw [coeff_restrictedMap]
   exact hφ _
@@ -170,20 +172,15 @@ theorem isometry_restrictedMap [∀ i, Fact (0 < c i)] (hφ' : ∀ r, ‖φ r‖
   AddMonoidHomClass.isometry_iff_norm _ |>.mpr (norm_restrictedMap φ hφ hφ')
 
 /-- Bounded coefficient maps are Lipschitz for the Gauss norm. -/
-theorem lipschitzWith_restrictedMap [∀ i, Fact (0 < c i)] (hC : 0 ≤ C) :
+theorem lipschitzWith_restrictedMap [∀ i, Fact (0 < c i)] :
     LipschitzWith (Real.toNNReal C) (restrictedMap (c := c) φ hφ) :=
-  AddMonoidHomClass.lipschitz_of_bound _ C (norm_restrictedMap_le φ hφ hC)
+  AddMonoidHomClass.lipschitz_of_bound _ C (norm_restrictedMap_le φ hφ)
 
 /-- Bounded coefficient maps are continuous for the Gauss norm topologies. -/
 @[continuity]
 theorem continuous_restrictedMap [∀ i, Fact (0 < c i)] :
-    Continuous (restrictedMap (c := c) φ hφ) := by
-  have hφ' : ∀ a, ‖φ a‖ ≤ max C 0 * ‖a‖ := fun a ↦
-    (hφ a).trans (mul_le_mul_of_nonneg_right (le_max_left C 0) (norm_nonneg a))
-  apply (lipschitzWith_restrictedMap (c := c) φ hφ' (le_max_right C 0)).continuous.congr
-  intro f
-  apply Subtype.ext
-  simp only [coe_restrictedMap]
+    Continuous (restrictedMap (c := c) φ hφ) :=
+  (lipschitzWith_restrictedMap (c := c) φ hφ).continuous
 
 /-- A uniform bound for coefficient lifts gives a restricted lift with the same bound at
 each coefficient. This does not require positive radii or complete coefficient rings. -/
@@ -230,6 +227,18 @@ theorem restrictedMap_polynomialToRestricted (p : MvPolynomial σ R) :
     restrictedMap φ hφ (TauCeti.MvPowerSeries.polynomialToRestricted c p) =
       TauCeti.MvPowerSeries.polynomialToRestricted c (MvPolynomial.map φ p) :=
   Subtype.ext (by ext t; simp [coe_restrictedMap, MvPolynomial.coeff_map])
+
+/-- Iteration commutes with bounded coefficient maps: the iterated series of the coefficientwise
+image of `f` under `φ : R →+* S` is the image of the iterated series of `f` under the
+coefficientwise map `R{Y/d} →+* S{Y/d}` induced by `φ`. -/
+theorem coe_restrictedSumEquiv_restrictedMap {τ : Type*} {d : τ → ℝ} [∀ i, Fact (0 < c i)]
+    [∀ j, Fact (0 < d j)] (f : IsRestricted.subring (R := R) (Sum.elim c d)) :
+    (restrictedSumEquiv (restrictedMap φ hφ f) :
+        MvPowerSeries σ (IsRestricted.subring (R := S) d)) =
+      map (restrictedMap φ hφ)
+        (restrictedSumEquiv f : MvPowerSeries σ (IsRestricted.subring (R := R) d)) := by
+  refine MvPowerSeries.ext fun a ↦ Subtype.ext <| MvPowerSeries.ext fun b ↦ ?_
+  simp [coeff_map]
 
 end Algebra
 

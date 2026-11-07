@@ -43,8 +43,12 @@ computation every matrix model of a Lie algebra performs on its root vectors.
   `LinearMap.exists_toMatrixRight'_comp_eq_fromBlocks`: a direct summand of `m → R` is presented
   by an idempotent matrix, and a split short exact sequence of such summands presents its middle
   term by the block-diagonal sum of the idempotent matrices of its outer terms.
+* `Matrix.linearIndependent_row_one`: over any semiring, the rows of an identity matrix are
+  linearly independent.
 * `Algebra.toLin_leftMulMatrix`: the linear map of the left multiplication matrix of `x` is left
   multiplication by `x`.
+* `Algebra.leftMulMatrix_algebraMap`: the left multiplication matrix of an element of the base ring
+  is the corresponding scalar matrix.
 * `Module.Basis.equivFun_list_prod_smul`: the coordinates of a product of linear automorphisms
   applied to a vector are the product of their matrices applied to its coordinates.
 
@@ -188,6 +192,18 @@ theorem exists_toMatrixRight'_comp_eq_fromBlocks [Fintype n] [DecidableEq n]
 
 end LinearMap
 
+namespace Matrix
+
+/-- The rows of an identity matrix are linearly independent: they are the standard basis
+vectors `Pi.single i 1`. -/
+theorem linearIndependent_row_one {R m : Type*} [Semiring R] [DecidableEq m] :
+    LinearIndependent R (1 : Matrix m m R).row := by
+  convert Pi.linearIndependent_single_one m R using 1
+  ext i j
+  exact one_eq_pi_single
+
+end Matrix
+
 namespace Algebra
 
 /-- The linear map of the left multiplication matrix of `x` in a basis `b` is left multiplication
@@ -197,6 +213,14 @@ theorem toLin_leftMulMatrix {R S : Type*} [CommSemiring R] [Semiring S] [Algebra
     {m : Type*} [Fintype m] [DecidableEq m] (b : Module.Basis m R S) (x : S) :
     Matrix.toLin b b (leftMulMatrix b x) = LinearMap.mulLeft R x := by
   rw [← toMatrix_lmul_eq, Matrix.toLin_toMatrix]
+
+-- Not a `simp` lemma: `simp` rewrites the left-hand side through `AlgHom.commutes` first, into
+-- `algebraMap R (Matrix ι ι R) r`, so this lemma would never fire.
+/-- Left multiplication by an element of the base ring is the corresponding scalar matrix. -/
+theorem leftMulMatrix_algebraMap {R S : Type*} [CommSemiring R] [Semiring S] [Algebra R S]
+    {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Module.Basis ι R S) (r : R) :
+    leftMulMatrix b (algebraMap R S r) = Matrix.scalar ι r := by
+  simp [Matrix.algebraMap_eq_diagonal, Matrix.scalar_apply]
 
 end Algebra
 

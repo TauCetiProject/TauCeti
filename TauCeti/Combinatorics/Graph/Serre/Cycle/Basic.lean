@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Serre.Basic
+public import TauCeti.Combinatorics.Graph.Serre.Cycle.Forest
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import Mathlib.Data.ZMod.Basic
 import Mathlib.Algebra.CharP.Two
@@ -218,6 +218,65 @@ theorem incidenceBoundary_mapDomain_inclusion {O' : Set Γ.E} (h : O ⊆ O')
       Γ.incidenceBoundary O R c := by
   simp only [incidenceBoundary, Finsupp.linearCombination_mapDomain]
   rfl
+
+section
+
+variable {F : Set Γ.E} {R : Type*} [Ring R]
+
+/-- The difference of two vertex unit chains is a boundary whenever the vertices are
+connected in the support graph. No acyclicity hypothesis is needed. -/
+theorem single_sub_single_mem_range_incidenceBoundary {a b : Γ.V}
+    (h : (Γ.supportGraph F).Reachable a b) :
+    Finsupp.single b (1 : R) - Finsupp.single a 1 ∈
+      LinearMap.range (Γ.incidenceBoundary F R) := by
+  obtain ⟨p⟩ := h
+  induction p with
+  | nil => simp
+  | @cons a b c hab p ih =>
+    have hedge : Finsupp.single b (1 : R) - Finsupp.single a 1 ∈
+        LinearMap.range (Γ.incidenceBoundary F R) := by
+      rcases (Γ.supportGraph_adj F a b).mp hab with ⟨-, h | h⟩
+      · obtain ⟨e, he, rfl, rfl⟩ := h
+        exact ⟨Finsupp.single ⟨e, he⟩ 1, by simp⟩
+      · obtain ⟨e, he, rfl, rfl⟩ := h
+        exact ⟨-Finsupp.single ⟨e, he⟩ 1, by simp [neg_sub]⟩
+    convert (LinearMap.range (Γ.incidenceBoundary F R)).add_mem ih hedge using 1
+    exact (sub_add_sub_cancel _ _ _).symm
+
+/-- A boundary-zero chain supported on a dart set with injective boundary vanishes.
+The chain may be written in any larger ambient dart set. -/
+theorem eq_zero_of_incidenceBoundary_eq_zero
+    (hsub : F ⊆ O) (hinj : Function.Injective (Γ.incidenceBoundary F R)) (c : O →₀ R)
+    (hc : Γ.incidenceBoundary O R c = 0) (hs : ∀ e ∈ c.support, e.val ∈ F) :
+    c = 0 := by
+  classical
+  let i : F → O := Set.inclusion hsub
+  have hi : Function.Injective i := Set.inclusion_injective hsub
+  let b := Finsupp.comapDomain i c hi.injOn
+  have hb : Finsupp.mapDomain i b = c := by
+    apply Finsupp.mapDomain_comapDomain i hi c
+    intro e he
+    exact ⟨⟨e.val, hs e he⟩, Subtype.ext rfl⟩
+  have hboundary : Γ.incidenceBoundary F R b = 0 := by
+    rw [← Γ.incidenceBoundary_mapDomain_inclusion hsub R b, hb, hc]
+  have hbzero : b = 0 := hinj (hboundary.trans (map_zero _).symm)
+  rw [← hb, hbzero, Finsupp.mapDomain_zero]
+
+/-- If the boundary is injective on a dart subset, chains in any larger dart set are
+determined by their boundaries and their coordinates outside that subset. -/
+theorem eq_of_incidenceBoundary_eq_of_forall_notMem
+    (hsub : F ⊆ O) (hinj : Function.Injective (Γ.incidenceBoundary F R)) (c d : O →₀ R)
+    (hboundary : Γ.incidenceBoundary O R c = Γ.incidenceBoundary O R d)
+    (hchord : ∀ e : O, e.val ∉ F → c e = d e) : c = d := by
+  apply sub_eq_zero.mp
+  apply eq_zero_of_incidenceBoundary_eq_zero hsub hinj (c - d)
+  · simp [hboundary]
+  · intro e he
+    by_contra h
+    have hzero : (c - d) e = 0 := by simp [hchord e h]
+    exact (Finsupp.mem_support_iff.mp he) hzero
+
+end
 
 /-- Enlarging the chosen dart set carries boundary-zero chains to boundary-zero chains over
 any coefficient ring. -/

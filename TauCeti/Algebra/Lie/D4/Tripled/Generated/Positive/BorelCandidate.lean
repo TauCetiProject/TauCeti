@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.Lie.D4.Tripled.Generated.Positive.Basic
+public import TauCeti.Algebra.Lie.D4.Tripled.Generated.Positive.Presentation
 public import TauCeti.Algebra.Lie.D4.Tripled.Generated.StandardComodule
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Weight.Order
 public import TauCeti.Algebra.AlgebraicGroup.Borel.Basic
@@ -115,9 +115,8 @@ theorem upperTriangular_comap_le_definingIdeal_comap :
       (GeneralLinear.conjCoordinateIso (permutationGL (k := A) weightOrderEquiv)).inv.hom
       (ConcreteCategory.bijective_of_isIso
         (GeneralLinear.conjCoordinateIso (permutationGL (k := A) weightOrderEquiv)).inv).2 ≤
-      (definingIdeal A).comapOfSurjective (generatedCoordinateMap A).hom
-        (generatedCoordinateMap_surjective A) := by
-  rw [CommHopfAlgCat.comapOfSurjective_commonKernelHopfIdeal,
+      ambientDefiningIdeal A := by
+  rw [ambientDefiningIdeal_eq_commonKernelHopfIdeal,
     CommHopfAlgCat.le_commonKernelHopfIdeal_iff]
   rintro (i | ⟨⟩)
   · rw [generator_inl, generatedCoordinateMap_comp_generatedCoordinateLift]
@@ -157,8 +156,7 @@ theorem geometricallySolvablePoints_coordinateHopfAlgebra :
     (GeneralLinear.UpperTriangular.definingHopfIdeal k 24)
   let f := CommHopfAlgCat.quotientMapOfLe (GeneralLinear.coordinateHopfAlgebra k 24)
     (upperTriangular_comap_le_definingIdeal_comap k)
-  let e' := CommHopfAlgCat.Hom.quotientIsoOfSurjective
-    (generatedCoordinateMap k) (generatedCoordinateMap_surjective k) (definingIdeal k)
+  let e' := ambientQuotientIso k
   exact geometricallySolvablePointsCommHopfAlgProperty_of_surjective k
     (e.inv ≫ f ≫ e'.hom)
     ((ConcreteCategory.bijective_of_isIso e'.hom).2.comp

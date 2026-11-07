@@ -9,6 +9,9 @@ public import TauCeti.NumberTheory.DirichletCharacter.GeneralizedBernoulli
 public import TauCeti.NumberTheory.DirichletCharacter.GaussSum
 import Mathlib.NumberTheory.ZetaValues
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Cotangent
+import TauCeti.Data.ZMod.Count
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.Cotangent
 
 /-!
 # Generalized Bernoulli numbers and primitive character sums
@@ -22,6 +25,13 @@ number defined using residue representatives in `{1, …, N}`.
 The formula includes both parities and modulus one: the integer sum is zero when the
 character and weight have opposite parities. These special values give the constant
 coefficients of normalized Eisenstein series.
+
+In weight one the cotangent takes the place of the critical-value sum: for a nontrivial primitive
+`φ` modulo `v ∣ N`, `∑_{j mod N} φ⁻¹(j) π cot (π j / N) = N · 2π i g(φ⁻¹) B₁,φ / v`
+(`DirichletCharacter.IsPrimitive.sum_inv_mul_pi_mul_cot`), by the finite Fourier expansion of the
+cotangent and the Fourier coefficients of `φ⁻¹`. For primitive odd characters the first
+generalized Bernoulli number is nonzero (`DirichletCharacter.generalizedBernoulli_one_ne_zero`),
+by the cotangent formula for `L(1, φ⁻¹)` and Dirichlet nonvanishing.
 
 ## References
 
@@ -113,5 +123,75 @@ theorem gaussSum_mul_tsum_inv_pow_eq_generalizedBernoulli (hχ : χ.IsPrimitive)
     mul_assoc]
   rw [← Finset.mul_sum]
   field_simp
+
+/-- **The cotangent sum of a primitive character.** For a nontrivial primitive `φ` modulo
+`v ∣ N`, `∑_{j mod N} φ⁻¹(j) π cot (π j / N) = N · 2π i g(φ⁻¹) B₁,φ / v`. -/
+theorem IsPrimitive.sum_inv_mul_pi_mul_cot {v N : ℕ} [NeZero v] [NeZero N]
+    {φ : DirichletCharacter ℂ v} (hφ : φ.IsPrimitive) (hv : v ∣ N) (hφ1 : φ ≠ 1) :
+    ∑ j : ZMod N, φ⁻¹ (j.val : ZMod v) * (π * cot (π * (j.val / N))) =
+      N * (2 * π * I / v * gaussSum φ⁻¹ ZMod.stdAddChar * φ.generalizedBernoulli 1) := by
+  have : Nontrivial (ZMod v) := ZMod.nontrivial_iff.mpr fun h ↦ hφ1 (φ.level_one' h)
+  set L := N / v with hL
+  have hN : N = v * L := (Nat.mul_div_cancel' hv).symm
+  have hL0 : L ≠ 0 := fun h ↦ NeZero.ne N (by rw [hN, h, mul_zero])
+  -- expand each cotangent in its finite Fourier series; the term at `j = 0` vanishes
+  have hexp (j : ZMod N) : φ⁻¹ (j.val : ZMod v) * (π * cot (π * (j.val / N))) =
+      π * I * φ⁻¹ (j.val : ZMod v) + 2 * π * I / N *
+        ∑ m : ZMod N, (m.val : ℂ) * (φ⁻¹ (j.val : ZMod v) * ZMod.stdAddChar (m * j)) := by
+    rcases eq_or_ne j 0 with rfl | hj
+    · simp [MulChar.map_zero]
+    · rw [TauCeti.pi_mul_cot_pi_mul_val_div_eq_sum N hj]
+      simp_rw [mul_left_comm _ (φ⁻¹ _), ← Finset.mul_sum]
+      ring
+  simp_rw [hexp]
+  rw [Finset.sum_add_distrib, ← Finset.mul_sum, ← Finset.mul_sum, Finset.sum_comm]
+  simp_rw [← Finset.mul_sum, hφ.sum_inv_mul_stdAddChar hv, ← hL]
+  rw [ZMod.sum_comp_natCast_val hv fun r ↦ φ⁻¹ r,
+    MulChar.sum_eq_zero_of_ne_one (inv_ne_one.mpr hφ1), smul_zero, mul_zero, zero_add]
+  -- only the multiples `m = L y` contribute, and `∑_y y φ(y) = v B₁,φ`
+  have hreindex : ∑ m : ZMod N, (m.val : ℂ) * (if L ∣ m.val then
+      (L : ℂ) * (φ ((m.val / L : ℕ) : ZMod v) * gaussSum φ⁻¹ ZMod.stdAddChar) else 0) =
+      ∑ y : ZMod v, (L * y.val : ℕ) * ((L : ℂ) * (φ (y.val : ZMod v) *
+        gaussSum φ⁻¹ ZMod.stdAddChar)) := by
+    rw [← ZMod.sum_ite_dvd_val hv fun q ↦ ((L * q : ℕ) : ℂ) * ((L : ℂ) * (φ (q : ZMod v) *
+      gaussSum φ⁻¹ ZMod.stdAddChar)), ← hL]
+    refine Finset.sum_congr rfl fun m _ ↦ ?_
+    split_ifs with h
+    · rw [Nat.mul_div_cancel' h]
+    · rw [mul_zero]
+  rw [hreindex]
+  simp_rw [ZMod.natCast_zmod_val]
+  have hB := natCast_mul_generalizedBernoulli_one_of_ne_one hφ1
+  have hsum : ∑ y : ZMod v, ((L * y.val : ℕ) : ℂ) *
+      ((L : ℂ) * (φ y * gaussSum φ⁻¹ ZMod.stdAddChar)) =
+      L * L * gaussSum φ⁻¹ ZMod.stdAddChar * (v * φ.generalizedBernoulli 1) := by
+    rw [hB, Finset.mul_sum]
+    refine Finset.sum_congr rfl fun y _ ↦ ?_
+    push_cast
+    ring
+  rw [hsum]
+  have hv0 : (v : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne v)
+  rw [hN]
+  push_cast
+  field_simp
+
+/-- The first generalized Bernoulli number of a primitive odd character is nonzero.
+Primitivity is essential: an imprimitive odd character can acquire an Euler factor vanishing
+at zero. -/
+theorem generalizedBernoulli_one_ne_zero (hχ : χ.IsPrimitive) (hodd : χ.Odd) :
+    χ.generalizedBernoulli 1 ≠ 0 := by
+  have hχ1 : χ ≠ 1 := by
+    rintro rfl
+    exact Odd.not_even 1 hodd even_one
+  have hinv : χ⁻¹.Odd := by
+    rw [Odd, MulChar.inv_apply_eq_inv', hodd, inv_neg, inv_one]
+  have hL := χ⁻¹.two_mul_LFunction_one_eq_sum_mul_cot hinv
+  have hsum := hχ.sum_inv_mul_pi_mul_cot (dvd_refl N) hχ1
+  simp only [ZMod.natCast_zmod_val] at hsum
+  simp_rw [div_mul_eq_mul_div] at hL
+  rw [← Finset.sum_div, hsum] at hL
+  intro hB
+  have hzero : χ⁻¹.LFunction 1 = 0 := by simpa [hB] using hL
+  exact LFunction_apply_one_ne_zero (inv_ne_one.mpr hχ1) hzero
 
 end DirichletCharacter

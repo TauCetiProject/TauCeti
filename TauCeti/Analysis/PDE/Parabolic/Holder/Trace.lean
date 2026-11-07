@@ -52,13 +52,39 @@ theorem contDiff_spatialSlice (f : ParabolicC2HolderSpace α E F hab) (t : Icc a
   have hxx : _root_.fderiv ℝ (_root_.fderiv ℝ fun x ↦ f (slabMk x t)) =
       fun x ↦ spatialSecondFDerivL f (slabMk x t) :=
     funext (f.fderiv_fderiv_eq t)
-  have hc : Continuous (fun x : E ↦ slabMk x t) :=
-    continuous_slabMk.comp (continuous_id.prodMk continuous_const)
+  have hc : Continuous (fun x : E ↦ slabMk x t) := by fun_prop
   rw [← one_add_one_eq_two, contDiff_succ_iff_fderiv]
   refine ⟨fun x ↦ (f.hasSpatialFDerivAt t x).differentiableAt, by simp, ?_⟩
   rw [contDiff_one_iff_fderiv, hxx, hx]
   exact ⟨fun x ↦ (f.hasSpatialSecondFDerivAt t x).differentiableAt,
     (spatialSecondFDerivL f).continuous.comp hc⟩
+
+/-- The ordinary derivative of a real spatial slice is its gradient evaluated at one. -/
+theorem hasDerivAt_spatialSlice (f : ParabolicC2HolderSpace α ℝ F hab)
+    (t : Icc a b) (x : ℝ) :
+    HasDerivAt (fun y ↦ f (slabMk y t)) (spatialFDerivL f (slabMk x t) 1) x :=
+  (f.hasSpatialFDerivAt t x).hasDerivAt
+
+/-- The derivative of a real spatial slice in terms of the recorded gradient. -/
+theorem deriv_spatialSlice (f : ParabolicC2HolderSpace α ℝ F hab)
+    (t : Icc a b) (x : ℝ) :
+    deriv (fun y ↦ f (slabMk y t)) x = spatialFDerivL f (slabMk x t) 1 :=
+  (f.hasDerivAt_spatialSlice t x).deriv
+
+/-- Differentiating the spatial gradient applied to a fixed vector gives the Hessian. -/
+theorem hasDerivAt_spatialFDerivL_apply (f : ParabolicC2HolderSpace α ℝ F hab)
+    (t : Icc a b) (x v : ℝ) :
+    HasDerivAt (fun y ↦ spatialFDerivL f (slabMk y t) v)
+      (spatialSecondFDerivL f (slabMk x t) 1 v) x := by
+  simpa using (f.hasSpatialSecondFDerivAt t x).hasDerivAt.clm_apply
+    (hasDerivAt_const x v)
+
+/-- The derivative of the applied spatial gradient in terms of the recorded Hessian. -/
+theorem deriv_spatialFDerivL_apply (f : ParabolicC2HolderSpace α ℝ F hab)
+    (t : Icc a b) (x v : ℝ) :
+    deriv (fun y ↦ spatialFDerivL f (slabMk y t) v) x =
+      spatialSecondFDerivL f (slabMk x t) 1 v :=
+  (f.hasDerivAt_spatialFDerivL_apply t x v).deriv
 
 /-- The spatial Hessian has Hölder constant at most the parabolic Hessian seminorm, also
 when represented as a continuous multilinear second derivative. -/
