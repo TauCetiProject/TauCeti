@@ -81,6 +81,61 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpac
   {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam c₀ : ℝ} {K : ℝ≥0} {ν : EuclideanSpace ℝ ι}
   {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ}
 
+omit [DecidableEq ι] in
+/-- If `a'` agrees with `a` on an open `Ω₁ ≤ Ω`, is bounded and continuous, and `u ∈ H¹(Ω)` solves
+the equation with coefficients `a, b, c` and right-hand side `f`, then the restriction of `u`
+to `Ω₁` solves the equation with principal part `a'` and no lower-order terms, with some forcing
+`g ∈ L²(Ω₁)`. -/
+private theorem exists_forcing_restrictL_of_eqOn {Ω₁ : Opens (EuclideanSpace ℝ ι)}
+    {a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {M : ℝ} (hΩ₁ : Ω₁ ≤ Omega) (haa' : EqOn a' a Ω₁)
+    (hM : ∀ x, ‖matrixBilinearForm (a' x)‖ ≤ M)
+    (hK : Continuous fun x => matrixBilinearForm (a' x))
+    (hb : MemLp b ⊤ (mu.restrict Omega)) (hc : MemLp c ⊤ (mu.restrict Omega))
+    {f : Lp ℝ 2 (mu.restrict Omega)} {u : W1p mu Omega 2}
+    (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 a b c u (v : W1p mu Omega 2) =
+      ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu) :
+    ∃ g : Lp ℝ 2 (mu.restrict Ω₁), ∀ v : W1p0 mu Ω₁ 2,
+      energyFormH1 a' 0 0 (W1p.restrictL hΩ₁ u) (v : W1p mu Ω₁ 2) =
+        ∫ x in Ω₁, g x * W1p.value (v : W1p mu Ω₁ 2) x ∂mu := by
+  have hle : mu.restrict Ω₁ ≤ mu.restrict Omega :=
+    Measure.restrict_mono (SetLike.coe_subset_coe.mpr hΩ₁) le_rfl
+  have hfU : MemLp f 2 (mu.restrict Ω₁) := (Lp.memLp f).mono_measure hle
+  have hu₁ : ∀ v : W1p0 mu Ω₁ 2, energyFormH1 a' b c (W1p.restrictL hΩ₁ u) (v : W1p mu Ω₁ 2) =
+      ∫ x in Ω₁, hfU.toLp f x * W1p.value (v : W1p mu Ω₁ 2) x ∂mu := by
+    intro v
+    have h := energyFormH1_restrictL_eq_setIntegral hΩ₁ hu v
+    rw [energyFormH1_def] at h ⊢
+    rw [setIntegral_congr_fun Ω₁.isOpen.measurableSet fun x hx => by rw [haa' hx], h]
+    refine integral_congr_ae ?_
+    filter_upwards [hfU.coeFn_toLp] with x hx
+    rw [hx]
+  exact exists_forcing_energyFormH1_principal_eq (memLp_energyIntegrand_of_continuous hM hK Ω₁)
+    (hb.mono_measure hle) (hc.mono_measure hle) hu₁
+
+/-- If `w ∈ H¹₀(H)` is a weak solution on `H` for a Lipschitz field `a'` that is uniformly elliptic
+on `H`, and `H` is invariant under the translations orthogonal to `ν`, then any `u'` on an open
+`Ω' ≤ H` whose gradient is that of `w` on `Ω'` is the first-order part of an element of
+`W^{2,2}(Ω')`. -/
+private theorem exists_lowerOrder_eq_of_gradient_eq_of_isWeakSolutionDirichlet (hν : ν ≠ 0)
+    (hH : ∀ τ, ⟪τ, ν⟫_ℝ = 0 → ∀ t : ℝ, MapsTo (· + t • τ) H H)
+    {a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {K' : ℝ≥0}
+    (ha' : UniformlyEllipticOn (H : Set (EuclideanSpace ℝ ι)) a' lam Lam)
+    (hK' : LipschitzWith K' fun x => matrixBilinearForm (a' x))
+    {g : Lp ℝ 2 (mu.restrict H)} {w : W1p0 mu H 2} (hw : IsWeakSolutionDirichlet a' 0 0 g w)
+    {Ω' : Opens (EuclideanSpace ℝ ι)} (hΩ' : Ω' ≤ H) {u' : W1p mu Ω' 2}
+    (hgrad : ∀ᵐ x ∂mu.restrict Ω', W1p.gradient (w : W1p mu H 2) x = W1p.gradient u' x) :
+    ∃ W : Wkp mu Ω' 2 2, Wkp.lowerOrder 1 W = u' := by
+  refine W1p.exists_lowerOrder_eq_of_forall_hasWeakLineDerivOn _ (EuclideanSpace.basisFun ι ℝ)
+    fun i j => ?_
+  obtain ⟨G, hG⟩ := ha'.exists_hasWeakLineDerivOn_gradient_of_mapsTo hν hH hK'.lipschitzOnWith hw
+    (EuclideanSpace.basisFun ι ℝ j) (EuclideanSpace.basisFun ι ℝ i)
+  have hGm : MemLp G 2 (mu.restrict Ω') :=
+    (Lp.memLp G).mono_measure (Measure.restrict_mono (SetLike.coe_subset_coe.mpr hΩ') le_rfl)
+  refine ⟨hGm.toLp G, ((hG.mono hΩ').congr_ae ?_).congr_ae_deriv hGm.coeFn_toLp.symm⟩
+  filter_upwards [hgrad] with x hx
+  rw [hx]
+
 /-- **Local `H²` regularity near a flat part of the boundary.** Let `ν ≠ 0`, and let `H` be an
 open set mapped into itself by every translation orthogonal to `ν`, as a half-space
 `{x | c₀ < ⟪x, ν⟫}` is. Let `Ω` and `U` be open with `Ω ∩ U = H ∩ U`. Let `a` be uniformly
@@ -114,31 +169,17 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_mapsTo (hν : ν �
     ha.exists_lipschitzWith_eqOn_inter (T := H) hK (hΩU ▸ subset_rfl) hV hVU
   set Ω₁ : Opens (EuclideanSpace ℝ ι) := Omega ⊓ W
   have hΩ₁ : Ω₁ ≤ Omega := inf_le_left
-  have hle : mu.restrict Ω₁ ≤ mu.restrict Omega :=
-    Measure.restrict_mono (SetLike.coe_subset_coe.mpr hΩ₁) le_rfl
   have hWU' : (W : Set (EuclideanSpace ℝ ι)) ⊆ U := SetLike.coe_subset_coe.mpr hWU
   -- Near `U` the domain is the half-space, so `Ω ∩ W ⊆ H`.
   have hΩ₁H : Ω₁ ≤ H := fun x hx => by
     have hxU : x ∈ (Omega : Set (EuclideanSpace ℝ ι)) ∩ U := ⟨hx.1, hWU' hx.2⟩
     rw [hΩU] at hxU
     exact hxU.1
-  -- On `Ω ∩ W`, the restriction of `u` solves the equation with the principal coefficient `a'`.
+  -- On `Ω ∩ W`, the restriction of `u` solves the equation with the principal coefficient `a'`,
+  -- and the lower-order terms move to the right-hand side.
   set u₁ := W1p.restrictL hΩ₁ u
-  have hfU : MemLp f 2 (mu.restrict Ω₁) := (Lp.memLp f).mono_measure hle
-  have hu₁ : ∀ v : W1p0 mu Ω₁ 2, energyFormH1 a' b c u₁ (v : W1p mu Ω₁ 2) =
-      ∫ x in Ω₁, hfU.toLp f x * W1p.value (v : W1p mu Ω₁ 2) x ∂mu := by
-    intro v
-    have h := energyFormH1_restrictL_eq_setIntegral hΩ₁ hu v
-    rw [energyFormH1_def] at h ⊢
-    rw [setIntegral_congr_fun Ω₁.isOpen.measurableSet fun x hx => by
-      rw [haa' ⟨⟨hx.1, hWU' hx.2⟩, hx.2⟩], h]
-    refine integral_congr_ae ?_
-    filter_upwards [hfU.coeFn_toLp] with x hx
-    rw [hx]
-  -- The lower-order terms move to the right-hand side.
-  obtain ⟨g, hg⟩ := exists_forcing_energyFormH1_principal_eq
-    (memLp_energyIntegrand_of_continuous hM' hK'.continuous Ω₁)
-    (hb.mono_measure hle) (hc.mono_measure hle) hu₁
+  obtain ⟨g, hg⟩ := exists_forcing_restrictL_of_eqOn hΩ₁
+    (fun x hx => haa' ⟨⟨hx.1, hWU' hx.2⟩, hx.2⟩) hM' hK'.continuous hb hc hu
   -- A cutoff equal to one near `closure V` and supported in `W`.
   obtain ⟨ψ, N, hψ, -, hψ1, hψc, hψs, hN, hψN, hgradN⟩ :=
     hV.exists_contDiff_cutoff_with_bounds W.isOpen hVW
@@ -179,15 +220,7 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_mapsTo (hν : ν �
     have hxV := hψ_V x (subset_closure hx.2)
     rw [h1, h3, indicator_of_mem (hΩVΩ₁ hx), hxV.1, hxV.2, one_smul, smul_zero, add_zero, h2]
   -- The global theorem on `H` gives the second derivatives.
-  refine W1p.exists_lowerOrder_eq_of_forall_hasWeakLineDerivOn _ (EuclideanSpace.basisFun ι ℝ)
-    fun i j => ?_
-  obtain ⟨G, hG⟩ := ha'.exists_hasWeakLineDerivOn_gradient_of_mapsTo hν hH hK'.lipschitzOnWith hw
-    (EuclideanSpace.basisFun ι ℝ j) (EuclideanSpace.basisFun ι ℝ i)
-  have hGm : MemLp G 2 (mu.restrict (Omega ⊓ V)) :=
-    (Lp.memLp G).mono_measure (Measure.restrict_mono (SetLike.coe_subset_coe.mpr hΩV) le_rfl)
-  refine ⟨hGm.toLp G, ((hG.mono hΩV).congr_ae ?_).congr_ae_deriv hGm.coeFn_toLp.symm⟩
-  filter_upwards [hgradV] with x hx
-  rw [hx]
+  exact exists_lowerOrder_eq_of_gradient_eq_of_isWeakSolutionDirichlet hν hH ha' hK' hw hΩV hgradV
 
 /-- **Local `H²` regularity near the boundary of a half-space.** Let `H = {x | c₀ < ⟪x, ν⟫}` with
 `ν ≠ 0`, and let `Ω` and `U` be open with `Ω ∩ U = H ∩ U`, so that `∂Ω ∩ U` is a piece of the
