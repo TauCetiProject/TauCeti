@@ -234,8 +234,7 @@ theorem tensorMultiplicityNumerator_def [Fintype G] [DecidableEq k] (V X : FDRep
   rw [tensorMultiplicityNumerator]
   congr!
 
-/-- The numerator has degree less than the number of character values, so the series is a proper
-rational function. -/
+/-- The numerator has degree less than the number of character values. -/
 theorem natDegree_tensorMultiplicityNumerator_lt [Fintype G] (V X : FDRep k G) :
     (V.tensorMultiplicityNumerator X).natDegree < V.characterValueCount := by
   classical
