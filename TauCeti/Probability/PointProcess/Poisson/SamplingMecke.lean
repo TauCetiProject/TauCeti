@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.MeasureTheory.Integral.Lebesgue.Dirac
 public import TauCeti.Probability.Distributions.Poisson.SizeBias
 public import TauCeti.Probability.Independence.RandomPrefix
 public import Mathlib.MeasureTheory.Constructions.Pi
@@ -20,7 +21,7 @@ location and multiplying by the mean count. Multiplicities are retained, and nei
 location space nor its probability law needs to be atomless.
 
 The finite-product identities apply even to sigma-finite location measures. For probability
-location laws, `ProbabilityTheory.IndepFun.mecke_poisson_sample` transfers the insertion identity
+location laws, `ProbabilityTheory.IndepFun.mecke_poissonMeasure_sample` transfers the identity
 to any realization with an independent Poisson count and iid locations. No configuration
 carrier or canonical sample space is imposed on the caller. The passage from fixed sample
 size to Poisson size uses `TauCeti.Probability.withDensity_natCast_poissonMeasure`.
@@ -52,8 +53,6 @@ theorem lintegral_sum_dirac_pi_succ [SigmaFinite Q] (hg : Measurable g) (n : ℕ
       (n + 1 : ℝ≥0∞) * ∫⁻ y, ∫⁻ x : Fin n → X,
         g (y, Measure.dirac y + ∑ i, Measure.dirac (x i))
           ∂Measure.pi (fun _ ↦ Q) ∂Q := by
-  have hm {k : ℕ} : Measurable (fun x : Fin k → X ↦ ∑ i, Measure.dirac (x i)) := by
-    fun_prop
   have hi (i : Fin (n + 1)) :
       (∫⁻ x : Fin (n + 1) → X, g (x i, ∑ j, Measure.dirac (x j))
         ∂Measure.pi (fun _ ↦ Q)) =
@@ -62,8 +61,7 @@ theorem lintegral_sum_dirac_pi_succ [SigmaFinite Q] (hg : Measurable g) (n : ℕ
             ∂Measure.pi (fun _ ↦ Q) ∂Q := by
     let h : X × (Fin n → X) → ℝ≥0∞ :=
       fun p ↦ g (p.1, Measure.dirac p.1 + ∑ j, Measure.dirac (p.2 j))
-    have hh : Measurable h := hg.comp (measurable_fst.prodMk
-      ((Measure.measurable_dirac.comp measurable_fst).add (hm.comp measurable_snd)))
+    have hh : Measurable h := hg.comp (by fun_prop)
     rw [← lintegral_prod _ hh.aemeasurable,
       ← (measurePreserving_piFinSuccAbove (fun _ : Fin (n + 1) ↦ Q) i).lintegral_comp hh]
     apply lintegral_congr
@@ -72,18 +70,12 @@ theorem lintegral_sum_dirac_pi_succ [SigmaFinite Q] (hg : Measurable g) (n : ℕ
       Fin.insertNthEquiv_symm_apply, Fin.removeNth, Function.comp_def] using
       congrArg (fun μ ↦ g (x i, μ)) (Fin.sum_univ_succAbove
         (fun j ↦ Measure.dirac (x j)) i)
-  have hdirac (x : Fin (n + 1) → X) :
-      (∫⁻ y, g (y, ∑ i, Measure.dirac (x i)) ∂(∑ i, Measure.dirac (x i))) =
-        ∑ i, g (x i, ∑ j, Measure.dirac (x j)) := by
-    rw [lintegral_finsetSum_measure]
-    apply Finset.sum_congr rfl
-    intro i _
-    exact lintegral_dirac' _ (hg.comp (measurable_id.prodMk measurable_const))
-  simp_rw [hdirac]
+  simp_rw [lintegral_finsetSum_dirac (f := fun y ↦ g (y, _)) _ _
+    (hg.comp (measurable_id.prodMk measurable_const))]
   rw [lintegral_finsetSum Finset.univ
     (f := fun (i : Fin (n + 1)) (x : Fin (n + 1) → X) ↦
       g (x i, ∑ j, Measure.dirac (x j)))
-    (fun i _ ↦ hg.comp ((measurable_pi_apply i).prodMk hm))]
+    (fun i _ ↦ hg.comp (by fun_prop))]
   simp_rw [hi]
   simp
 
@@ -92,7 +84,7 @@ selects an occurrence of the sample, whereas the right side inserts an independe
 The identity includes zero rate and extended-valued tests. For a probability location law
 this is the usual sampling formula; sigma-finite location measures give the same
 product-integral identity. -/
-theorem lintegral_sum_dirac_poisson_pi [SigmaFinite Q]
+theorem lintegral_sum_dirac_poissonMeasure_pi [SigmaFinite Q]
     (r : ℝ≥0) (hg : Measurable g) :
     (∫⁻ n : ℕ, ∫⁻ x : Fin n → X, ∫⁻ y, g (y, ∑ i, Measure.dirac (x i))
       ∂(∑ i, Measure.dirac (x i)) ∂Measure.pi (fun _ ↦ Q) ∂poissonMeasure r) =
@@ -135,7 +127,7 @@ namespace ProbabilityTheory
 
 /-- An independent Poisson number of iid locations satisfies Mecke's insertion identity
 on any probability realization. The empirical measure counts occurrences with multiplicity. -/
-theorem IndepFun.mecke_poisson_sample {Ω X : Type*}
+theorem IndepFun.mecke_poissonMeasure_sample {Ω X : Type*}
     [MeasurableSpace Ω] [MeasurableSpace X] {P : Measure Ω} [IsProbabilityMeasure P]
     {Q : Measure X} [IsProbabilityMeasure Q] {N : Ω → ℕ} {Z : ℕ → Ω → X}
     (hNZ : IndepFun N (fun ω i ↦ Z i ω) P) (hind : iIndepFun Z P)
@@ -145,25 +137,17 @@ theorem IndepFun.mecke_poisson_sample {Ω X : Type*}
       ∂(∑ i : Fin (N ω), Measure.dirac (Z i ω)) ∂P) =
       (r : ℝ≥0∞) * ∫⁻ y, ∫⁻ ω,
         g (y, Measure.dirac y + ∑ i : Fin (N ω), Measure.dirac (Z i ω)) ∂P ∂Q := by
-  have hm (n : ℕ) : Measurable (fun x : Fin n → X ↦ ∑ i, Measure.dirac (x i)) := by
-    fun_prop
   have hleft (n : ℕ) : Measurable (fun x : Fin n → X ↦
       ∫⁻ y, g (y, ∑ i, Measure.dirac (x i)) ∂(∑ i, Measure.dirac (x i))) := by
-    have heq (x : Fin n → X) :
-        (∫⁻ y, g (y, ∑ i, Measure.dirac (x i)) ∂(∑ i, Measure.dirac (x i))) =
-          ∑ i, g (x i, ∑ j, Measure.dirac (x j)) := by
-      rw [lintegral_finsetSum_measure]
-      apply Finset.sum_congr rfl
-      intro i _
-      exact lintegral_dirac' _ (hg.comp (measurable_id.prodMk measurable_const))
-    simp_rw [heq]
-    exact Finset.measurable_sum _ fun i _ ↦ hg.comp ((measurable_pi_apply i).prodMk (hm n))
-  rw [hNZ.lintegral_random_prefix hind hZ hN hleft, Q.lintegral_sum_dirac_poisson_pi r hg]
+    simp_rw [lintegral_finsetSum_dirac (f := fun y ↦ g (y, _)) _ _
+      (hg.comp (measurable_id.prodMk measurable_const))]
+    exact Finset.measurable_sum _ fun i _ ↦ hg.comp (by fun_prop)
+  rw [hNZ.lintegral_random_prefix hind hZ hN hleft,
+    Q.lintegral_sum_dirac_poissonMeasure_pi r hg]
   congr 1
   apply lintegral_congr
   intro y
   exact (hNZ.lintegral_random_prefix hind hZ hN
-    (fun n ↦ hg.comp (measurable_const.prodMk
-      (measurable_const.add (hm n))))).symm
+    (fun n ↦ hg.comp (by fun_prop))).symm
 
 end ProbabilityTheory

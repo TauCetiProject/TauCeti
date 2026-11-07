@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Probability.Independence.InfinitePi
 import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Measure.ProductKernel
 
 /-!
 # Integrating an independent random iid prefix
@@ -42,11 +43,9 @@ theorem IndepFun.lintegral_random_prefix {Ω X : Type*}
   rw [hpair.lintegral_comp hm.aemeasurable, lintegral_prod _ hm.aemeasurable]
   apply lintegral_congr
   intro n
-  have hfinite : HasLaw (fun z : ℕ → X ↦ fun i : Fin n ↦ z i)
-      (Measure.pi (fun _ : Fin n ↦ Q)) (Measure.infinitePi (fun _ : ℕ ↦ Q)) :=
-    ((iIndepFun_infinitePi (P := fun _ : ℕ ↦ Q) (X := fun _ ↦ (id : X → X))
-      (fun _ ↦ measurable_id)).precomp Fin.val_injective).hasLaw_pi
-      (fun i ↦ (measurePreserving_eval_infinitePi (fun _ : ℕ ↦ Q) i).hasLaw)
-  exact hfinite.lintegral_comp (hh n).aemeasurable
+  rw [← lintegral_map (hh n) (by fun_prop)]
+  have hprefix := TauCeti.MeasureTheory.map_prefixProj_infinitePi_const ⟨Q, inferInstance⟩ n
+  simp only [ProbabilityMeasure.coe_mk] at hprefix
+  rw [hprefix]
 
 end ProbabilityTheory
