@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
 public import TauCeti.MeasureTheory.Function.Lp.Precomposition
+public import Mathlib.Analysis.CStarAlgebra.Matrix
 import TauCeti.Analysis.Calculus.ContDiff.FaaDiBruno
 import Mathlib.Analysis.Normed.Operator.Extend
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
@@ -414,6 +415,21 @@ theorem abs_det_le_inv (h : IsChangeOfVariables k U V Φ L c) {Ψ : E → E} {k'
   rw [le_inv_comm₀ (abs_pos.2 fun h0 => by simp [h0] at hmul) hΨ.pos]
   calc c' ≤ |(fderiv ℝ Ψ (Φ y)).det| := hΨ.le_abs_det _ (h.mapsTo hy)
     _ = |(fderiv ℝ Φ y).det|⁻¹ := eq_inv_of_mul_eq_one_right hmul
+
+/-- For a change of variables `Φ` of Euclidean space from `U` into `V`, with inverse `Ψ`
+differentiable on `V`, the operator of the inverse Jacobian matrix of `Φ` at `y ∈ U` is
+`DΨ(Φ y)`. -/
+theorem toEuclideanCLM_inv_fderiv {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {U V : Opens (EuclideanSpace ℝ ι)} {Φ Ψ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    (h : IsChangeOfVariables k U V Φ L c) (hΨ : DifferentiableOn ℝ Ψ V)
+    (hΦΨ : RightInvOn Ψ Φ V) (hΨΦ : LeftInvOn Ψ Φ U) {y : EuclideanSpace ℝ ι}
+    (hy : y ∈ (U : Set (EuclideanSpace ℝ ι))) :
+    Matrix.toEuclideanCLM (𝕜 := ℝ) ((Matrix.toEuclideanCLM (𝕜 := ℝ)).symm (fderiv ℝ Φ y))⁻¹ =
+      fderiv ℝ Ψ (Φ y) := by
+  rw [Matrix.inv_eq_right_inv (B := (Matrix.toEuclideanCLM (𝕜 := ℝ)).symm (fderiv ℝ Ψ (Φ y))),
+    StarAlgEquiv.apply_symm_apply]
+  rw [← map_mul, ContinuousLinearMap.mul_def, h.fderiv_comp_fderiv_eq_id hΨ hΦΨ hΨΦ hy,
+    ← ContinuousLinearMap.one_def, map_one]
 
 variable [MeasurableSpace E] [BorelSpace E] {mu : Measure E}
 

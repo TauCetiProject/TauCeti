@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.PDE.EnergyForm.Sobolev
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
-public import Mathlib.Analysis.CStarAlgebra.Matrix
 
 /-!
 # Divergence-form equations under a change of variables
@@ -61,8 +60,8 @@ change of variables formula `MeasureTheory.integral_image_eq_integral_abs_det_fd
   solutions.
 * `TauCeti.PDE.UniformlyEllipticOn.pullbackPrincipalCoeff`: uniform ellipticity of the transported
   principal coefficient.
-* `TauCeti.PDE.memLp_pullbackDensity`, `TauCeti.PDE.memLp_top_pullbackDriftCoeff`: the
-  transported forcing, mass and drift stay in `Lᵖ`, respectively `L^∞`.
+* `TauCeti.PDE.memLp_pullbackDensity`, `TauCeti.PDE.memLp_pullbackDriftCoeff`: the
+  transported forcing, mass and drift stay in `Lᵖ`.
 
 ## References
 
@@ -200,19 +199,6 @@ theorem setIntegral_pullbackDensity_mul_value (hΦ : Wkp.IsChangeOfVariables 1 U
 
 variable [DecidableEq ι]
 
-/-- For a change of variables `Φ` from `U` onto `V` with inverse `Ψ`, the operator of the inverse
-Jacobian matrix of `Φ` at `y ∈ U` is `DΨ(Φ y)`. -/
-theorem toEuclideanCLM_inv_fderiv (hΦ : Wkp.IsChangeOfVariables 1 U V Φ L κ)
-    (hΨ : Wkp.IsChangeOfVariables 1 V U Ψ L' κ') (hΦΨ : RightInvOn Ψ Φ V)
-    (hΨΦ : LeftInvOn Ψ Φ U) {y : EuclideanSpace ℝ ι} (hy : y ∈ (U : Set (EuclideanSpace ℝ ι))) :
-    toEuclideanCLM (𝕜 := ℝ) ((toEuclideanCLM (𝕜 := ℝ)).symm (fderiv ℝ Φ y))⁻¹ =
-      fderiv ℝ Ψ (Φ y) := by
-  rw [Matrix.inv_eq_right_inv (B := (toEuclideanCLM (𝕜 := ℝ)).symm (fderiv ℝ Ψ (Φ y))),
-    StarAlgEquiv.apply_symm_apply]
-  rw [← map_mul, ContinuousLinearMap.mul_def,
-    hΦ.fderiv_comp_fderiv_eq_id hΨ.differentiableOn hΦΨ hΨΦ hy,
-    ← ContinuousLinearMap.one_def, map_one]
-
 /-- **The energy form under a change of variables.** Let `Φ` be a change of variables of order one
 from `U` onto `V` with inverse `Ψ`, itself a change of variables of order one. For `u ∈ H¹(V)` and
 `z ∈ H¹(U)`, the energy form on `U` with the transported coefficients, evaluated at `u ∘ Φ` and `z`,
@@ -253,9 +239,9 @@ theorem energyFormH1_pullback_compL (hΦ : Wkp.IsChangeOfVariables 1 U V Φ L κ
   rw [jetField_apply, jetField_apply, jetField_apply, jetField_apply, hv, hgv, hw, hgw,
     hΨΦ hy]
   rw [smul_eq_mul, pullbackPrincipalCoeff_def, pullbackDriftCoeff_def, pullbackDensity_apply,
-    ← toEuclideanCLM_inv_fderiv hΦ hΨ hΦΨ hΨΦ hy]
+    ← hΦ.toEuclideanCLM_inv_fderiv hΨ.differentiableOn hΦΨ hΨΦ hy]
   refine energyIntegrand_pullback ?_ _ _ _ _ _ _ _ _
-  rw [toEuclideanCLM_inv_fderiv hΦ hΨ hΦΨ hΨΦ hy,
+  rw [hΦ.toEuclideanCLM_inv_fderiv hΨ.differentiableOn hΦΨ hΨΦ hy,
     hΦ.fderiv_comp_fderiv_eq_id hΨ.differentiableOn hΦΨ hΨΦ hy]
 
 /-- **Weak solutions under a change of variables.** Let `Φ` be a change of variables of order one
@@ -296,7 +282,8 @@ theorem matrixBilinearForm_pullbackPrincipalCoeff (hΦ : Wkp.IsChangeOfVariables
         (ContinuousLinearMap.adjoint (fderiv ℝ Ψ (Φ y)) η)
         (ContinuousLinearMap.adjoint (fderiv ℝ Ψ (Φ y)) ξ) := by
   rw [pullbackPrincipalCoeff_def, matrixBilinearForm_smul_apply,
-    matrixBilinearForm_mul_mul_transpose, toEuclideanCLM_inv_fderiv hΦ hΨ hΦΨ hΨΦ hy]
+    matrixBilinearForm_mul_mul_transpose,
+    hΦ.toEuclideanCLM_inv_fderiv hΨ.differentiableOn hΦΨ hΨΦ hy]
 
 /-- The transported drift at `y ∈ U` is `|det DΦ(y)| DΨ(Φ y) b(Φ y)`. -/
 theorem pullbackDriftCoeff_eq (hΦ : Wkp.IsChangeOfVariables 1 U V Φ L κ)
@@ -304,7 +291,7 @@ theorem pullbackDriftCoeff_eq (hΦ : Wkp.IsChangeOfVariables 1 U V Φ L κ)
     (hΨΦ : LeftInvOn Ψ Φ U) (b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι)
     {y : EuclideanSpace ℝ ι} (hy : y ∈ (U : Set (EuclideanSpace ℝ ι))) :
     pullbackDriftCoeff Φ b y = |(fderiv ℝ Φ y).det| • fderiv ℝ Ψ (Φ y) (b (Φ y)) := by
-  rw [pullbackDriftCoeff_def, toEuclideanCLM_inv_fderiv hΦ hΨ hΦΨ hΨΦ hy]
+  rw [pullbackDriftCoeff_def, hΦ.toEuclideanCLM_inv_fderiv hΨ.differentiableOn hΦΨ hΨΦ hy]
 
 /-- The lower ellipticity bound of the transported principal coefficient at `y ∈ U`:
 `κ λ / L² ‖ξ‖² ≤ ξᵀ a_Φ(y) ξ`, since `‖ξ‖ ≤ L ‖DΨ(Φ y)ᵀ ξ‖` and `κ ≤ |det DΦ(y)|`. -/
@@ -442,12 +429,13 @@ theorem memLp_pullbackDensity (hΦ : Wkp.IsChangeOfVariables 1 U V Φ L κ)
   rw [pullbackDensity_apply, norm_mul, Real.norm_eq_abs, abs_abs, Function.comp_apply]
   exact mul_le_mul_of_nonneg_right (hΦ.abs_det_le_inv hΨ hΦΨ hΨΦ hy) (norm_nonneg _)
 
-/-- **The transported drift stays essentially bounded.** If `b ∈ L^∞(V)`, then the transported
-drift `b_Φ ∈ L^∞(U)`. -/
-theorem memLp_top_pullbackDriftCoeff (hΦ : Wkp.IsChangeOfVariables 1 U V Φ L κ)
+/-- **The transported drift stays in `Lᵖ`.** If `b ∈ Lᵖ(V)`, then the transported drift
+`b_Φ ∈ Lᵖ(U)`. With `p = ∞` this is the bounded drift of the half-space theory. -/
+theorem memLp_pullbackDriftCoeff (hΦ : Wkp.IsChangeOfVariables 1 U V Φ L κ)
     (hΨ : Wkp.IsChangeOfVariables 1 V U Ψ L' κ') (hΦΨ : RightInvOn Ψ Φ V)
     (hΨΦ : LeftInvOn Ψ Φ U) {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
-    (hb : MemLp b ⊤ (mu.restrict V)) : MemLp (pullbackDriftCoeff Φ b) ⊤ (mu.restrict U) := by
+    {p : ENNReal} (hb : MemLp b p (mu.restrict V)) :
+    MemLp (pullbackDriftCoeff Φ b) p (mu.restrict U) := by
   have hbΦ := hΦ.memLp_comp hb
   have hJ : AEStronglyMeasurable (fun y => |(fderiv ℝ Φ y).det|) (mu.restrict U) :=
     (continuous_abs.measurable.comp (ContinuousLinearMap.continuous_det.measurable.comp

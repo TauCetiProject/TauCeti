@@ -304,10 +304,12 @@ lemma matrixBilinearForm_mul_mul_transpose [DecidableEq n] (M A : Matrix n n ℝ
     matrixBilinearForm (M * A * Mᵀ) η ξ =
       matrixBilinearForm A (ContinuousLinearMap.adjoint (toEuclideanCLM (n := n) (𝕜 := ℝ) M) η)
         (ContinuousLinearMap.adjoint (toEuclideanCLM (n := n) (𝕜 := ℝ) M) ξ) := by
-  rw [matrixBilinearForm_eq_inner, matrixBilinearForm_eq_inner, map_mul, map_mul,
-    ← conjTranspose_eq_transpose_of_trivial, ← star_eq_conjTranspose, map_star,
-    ContinuousLinearMap.star_eq_adjoint, ContinuousLinearMap.mul_def,
-    ContinuousLinearMap.mul_def, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
+  -- Over `ℝ` the transpose is the star, whose operator is the adjoint.
+  have hMt : toEuclideanCLM (n := n) (𝕜 := ℝ) Mᵀ =
+      ContinuousLinearMap.adjoint (toEuclideanCLM (n := n) (𝕜 := ℝ) M) := by
+    rw [← conjTranspose_eq_transpose_of_trivial, ← star_eq_conjTranspose, map_star,
+      ContinuousLinearMap.star_eq_adjoint]
+  simp only [matrixBilinearForm_eq_inner, map_mul, hMt, mul_apply_eq_comp,
     ContinuousLinearMap.adjoint_inner_left]
 
 /-- The action of a matrix on Euclidean space is bounded by the operator norm of its bilinear
