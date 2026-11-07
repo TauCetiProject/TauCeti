@@ -12,7 +12,6 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Realization
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Relabel.Basic
-import TauCeti.Data.Fintype.Fin
 
 /-!
 # The realization of a simplex boundary
@@ -354,9 +353,10 @@ theorem nonempty_homeomorph_simplexBoundary_sphere {ι : Type*}
   let P := simplexBoundary (Finset.univ : Finset (Fin (n + 2)))
   have hP : P = (standardSuccSimplexBoundary n).toPreAbstractSimplicialComplex :=
     (standardSuccSimplexBoundary_toPreAbstractSimplicialComplex n).symm
-  obtain ⟨f, himage⟩ := Fin.exists_embedding_image_univ_eq hV
-  obtain ⟨r⟩ := nonempty_finsetRelabelingHomeomorph
-    ⟨f, by rw [map_simplexBoundary, himage]⟩ hP hA
+  obtain ⟨f, hf⟩ := Function.Embedding.exists_of_card_eq_finset (α := Fin (n + 2)) (s := V)
+    (by simpa using hV.symm)
+  let r := (P.realizationRelabelingHomeomorph (R := simplexBoundary V) f
+    (by rw [map_simplexBoundary, ← Finset.map_eq_image, hf]) hP hA).symm
   exact ⟨r.trans (realizationStandardSuccSimplexBoundaryHomeomorphSphere n)⟩
 
 end PreAbstractSimplicialComplex

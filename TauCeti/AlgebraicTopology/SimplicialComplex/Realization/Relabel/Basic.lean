@@ -188,22 +188,6 @@ def realizationRelabelingHomeomorph {R : PreAbstractSimplicialComplex β}
       (Homeomorph.setCongr (s := {x : Realization L | x.1.support ∈ P.map f})
         (t := {x : Realization L | x.1.support ∈ R}) (by rw [hmap])))
 
-/-- A precomplex on `Fin m` that some embedding `Fin m ↪ ι` carries onto `R` has the realization
-of its model on `Fin m` as a homeomorphic polyhedron. The witness is existential because the
-enumeration of the vertices is noncanonical; only one enumeration needs to carry `P` onto `R`. -/
-theorem nonempty_finsetRelabelingHomeomorph
-    {ι : Type*} {A : AbstractSimplicialComplex ι} {m : ℕ}
-    {K : AbstractSimplicialComplex (Fin m)}
-    {P : PreAbstractSimplicialComplex (Fin m)} {R : PreAbstractSimplicialComplex ι}
-    [DecidableEq ι]
-    (hmap : ∃ f : Fin m ↪ ι, P.map f = R)
-    (hP : P = K.toPreAbstractSimplicialComplex)
-    (hR : R ≤ A.toPreAbstractSimplicialComplex) :
-    Nonempty ({x : Realization A // x.1.support ∈ R} ≃ₜ Realization K) := by
-  classical
-  obtain ⟨f, hf⟩ := hmap
-  exact ⟨(P.realizationRelabelingHomeomorph f hf hP hR).symm⟩
-
 /-- Relabeling pushes forward the finitely supported barycentric coordinate vector. -/
 @[simp]
 theorem relabelingHomeomorph_val
