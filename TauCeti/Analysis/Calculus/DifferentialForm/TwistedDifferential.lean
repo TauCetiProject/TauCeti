@@ -12,7 +12,6 @@ public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Specializations
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 import TauCeti.Analysis.Calculus.DifferentialForm.Integral
-import TauCeti.LinearAlgebra.Basis.Fin
 import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 
 /-!
@@ -130,15 +129,12 @@ theorem integral_twistedDifferential_wedge_eq [MeasurableSpace E] [BorelSpace E]
   have hg' : ContDiff ℝ 1 fun x ↦ constOfIsEmpty ℝ E (Fin 0) (g x) :=
     (constOfIsEmptyLIE ℝ E ℝ (Fin 0)).contDiff.comp hg
   -- Integrate by parts the degree-zero form `g` against `η'`.
-  let b₀ := b.reindex (finCongr (by omega : 1 + m = 0 + m + 1))
-  have hibp := b₀.integral_extDeriv_wedge_eq_integral_wedge_extDeriv hg' hη' hcη'
-  have hb₀ : b₀.addHaar = b.addHaar := Module.Basis.addHaar_reindex _ _
-  simp only [extDeriv_constOfIsEmpty, wedge_def, pairedWedge_apply_zero_left, hb₀] at hibp
-  have e₁ : ⇑b₀ ∘ Fin.cast (show 0 + 1 + m = 0 + m + 1 by omega) = ⇑b :=
-    b.reindex_finCongr_comp_cast _ _
-  have e₂ : (⇑b₀ ∘ Fin.cast (show 0 + (m + 1) = 0 + m + 1 by omega)) ∘
-      Fin.cast (Nat.zero_add (m + 1)).symm = ⇑b ∘ Fin.cast (show m + 1 = 1 + m by omega) :=
-    b.reindex_finCongr_comp_cast _ _
+  have hibp := b.integral_extDeriv_wedge_eq_integral_wedge_extDeriv (by omega) hg' hη' hcη'
+  simp only [extDeriv_constOfIsEmpty, wedge_def, pairedWedge_apply_zero_left] at hibp
+  -- The index casts produced by the two wedges are the identity, up to the cast `m + 1 = 1 + m`.
+  have e₁ : ⇑b ∘ Fin.cast (show 0 + 1 + m = 1 + m by omega) = ⇑b := rfl
+  have e₂ : (⇑b ∘ Fin.cast (show 0 + (m + 1) = 1 + m by omega)) ∘
+      Fin.cast (Nat.zero_add (m + 1)).symm = ⇑b ∘ Fin.cast (show m + 1 = 1 + m by omega) := rfl
   rw [e₁, e₂] at hibp
   simp only [ContinuousLinearMap.mul_apply', constOfIsEmpty_apply, pow_zero] at hibp
   simp only [hpt, integral_const_mul]

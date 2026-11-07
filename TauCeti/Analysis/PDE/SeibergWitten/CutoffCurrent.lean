@@ -348,6 +348,15 @@ theorem hasDerivAt_modulusPotential (hχ : Continuous χ) (hχ₀ : χ =ᶠ[𝓝
   intervalIntegral.integral_hasDerivAt_right (hcont.intervalIntegrable _ _)
     hcont.aestronglyMeasurable.stronglyMeasurableAtFilter hcont.continuousAt
 
+/-- The modulus potential of a continuous cutoff vanishing near `0` is `C¹`. -/
+theorem contDiff_modulusPotential (hχ : Continuous χ) (hχ₀ : χ =ᶠ[𝓝 0] 0) :
+    ContDiff ℝ 1 (modulusPotential χ) := by
+  refine contDiff_one_iff_deriv.2
+    ⟨fun t ↦ (hasDerivAt_modulusPotential hχ hχ₀ t).differentiableAt, ?_⟩
+  rw [show deriv (modulusPotential χ) = fun t ↦ χ t / t from
+    funext fun t ↦ (hasDerivAt_modulusPotential hχ hχ₀ t).deriv]
+  exact hχ.div_id_of_eventuallyEq_zero hχ₀
+
 /-- The modulus potential is constant near `0`, for a continuous cutoff vanishing near `0`. -/
 theorem modulusPotential_eventuallyEq (hχ : Continuous χ) (hχ₀ : χ =ᶠ[𝓝 0] 0) :
     modulusPotential χ =ᶠ[𝓝 0] fun _ ↦ modulusPotential χ 0 := by

@@ -96,17 +96,18 @@ theorem _root_.Module.Basis.integral_extDeriv_eq_zero {E : Type*}
 
 open ContinuousAlternatingMap in
 /-- **Integration by parts for differential forms.** For C1 real-valued forms `φ` of degree `k`
-and `ψ` of degree `l` on a space of dimension `k + l + 1`, with `ψ` compactly supported,
+and `ψ` of degree `l` on a space of dimension `N = k + l + 1`, with `ψ` compactly supported,
 `∫ dφ ∧ ψ = -(-1) ^ k ∫ φ ∧ dψ`. The top-degree coefficients are taken on a basis `b` and
 integrated against its Haar measure; the degrees `k + 1 + l` and `k + (l + 1)` of the two wedges
-are identified with `k + l + 1` by `Fin.cast`. -/
+are identified with `N` by `Fin.cast`. -/
 theorem _root_.Module.Basis.integral_extDeriv_wedge_eq_integral_wedge_extDeriv {E : Type*}
     [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E]
-    [BorelSpace E] {k l : ℕ} (b : Module.Basis (Fin (k + l + 1)) ℝ E)
+    [BorelSpace E] {k l N : ℕ} (b : Module.Basis (Fin N) ℝ E) (hN : k + l + 1 = N)
     {φ : E → E [⋀^Fin k]→L[ℝ] ℝ} {ψ : E → E [⋀^Fin l]→L[ℝ] ℝ}
     (hφ : ContDiff ℝ 1 φ) (hψ : ContDiff ℝ 1 ψ) (hc : HasCompactSupport ψ) :
     ∫ x, wedge (extDeriv φ x) (ψ x) (b ∘ Fin.cast (by omega)) ∂b.addHaar =
       -(-1 : ℝ) ^ k * ∫ x, wedge (φ x) (extDeriv ψ x) (b ∘ Fin.cast (by omega)) ∂b.addHaar := by
+  subst hN
   obtain ⟨hint, hzero⟩ := b.integral_extDeriv_eq_zero (hφ.wedge hψ) hc.wedge_left
   -- The Leibniz rule splits `d (φ ∧ ψ)` into the two pairings being compared.
   have hL (x : E) : extDeriv (fun x ↦ wedge (φ x) (ψ x)) x b =

@@ -8,10 +8,8 @@ module
 public import TauCeti.Analysis.PDE.SeibergWitten.CutoffCurrent
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import TauCeti.MeasureTheory.Measure.Haar.OfBasis
-import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.MeasureTheory.Function.LocallyIntegrable
-import TauCeti.Topology.Algebra.GroupWithZero.DivId
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Calculus.DifferentialForm.Integral
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
@@ -82,16 +80,11 @@ theorem integral_cutoffCurrent_add_extDeriv_wedge_eq (e : Module.Basis (Fin (2 +
     (hζ : ContDiff ℝ 1 ζ) (hc : HasCompactSupport ζ) :
     ∫ x, wedge (cutoffCurrent χ b α x + extDeriv b x) (ζ x) e ∂e.addHaar =
       ∫ x, wedge (cutoffPhaseForm χ b α x) (extDeriv ζ x) (e ∘ Fin.cast (by omega)) ∂e.addHaar := by
-  let e' := e.reindex (finCongr (by omega : 2 + n = 1 + n + 1))
-  have he' : e'.addHaar = e.addHaar := Module.Basis.addHaar_reindex _ _
-  have h := e'.integral_extDeriv_wedge_eq_integral_wedge_extDeriv
+  have h := e.integral_extDeriv_wedge_eq_integral_wedge_extDeriv (by omega)
     (contDiff_cutoffPhaseForm hα hb hχ hχ₀) hζ hc
-  have e₁ : ⇑e' ∘ Fin.cast (show 1 + 1 + n = 1 + n + 1 by omega) = ⇑e :=
-    e.reindex_finCongr_comp_cast _ _
-  have e₂ : ⇑e' ∘ Fin.cast (show 1 + (n + 1) = 1 + n + 1 by omega) =
-      ⇑e ∘ Fin.cast (show 1 + (n + 1) = 2 + n by omega) :=
-    e.reindex_finCongr_comp_cast _ _
-  rw [e₁, e₂, he', pow_one, neg_neg, one_mul] at h
+  -- The index cast `1 + 1 + n = 2 + n` is the identity.
+  have e₁ : ⇑e ∘ Fin.cast (show 1 + 1 + n = 2 + n by omega) = ⇑e := rfl
+  rw [e₁, pow_one, neg_neg, one_mul] at h
   simpa only [cutoffCurrent_apply, sub_add_cancel] using h
 
 omit [FiniteDimensional ℝ E] in
@@ -212,10 +205,8 @@ theorem exists_abs_integral_cutoffCurrent_add_extDeriv_wedge_le
   have hs : ContDiff ℝ 1 fun y ↦ normSq (α y) := by
     simp_rw [normSq_eq_norm_sq]
     exact (contDiff_norm_sq ℝ).comp (hα.of_le one_le_two)
-  have hg : ContDiff ℝ 1 fun y ↦ H (normSq (α y)) := by
-    refine (contDiff_one_iff_deriv.2 ⟨fun t ↦ (hH t).differentiableAt, ?_⟩).comp hs
-    rw [show deriv H = fun t ↦ χ t / t from funext fun t ↦ (hH t).deriv]
-    exact hχ.continuous.div_id_of_eventuallyEq_zero hχ₀
+  have hg : ContDiff ℝ 1 fun y ↦ H (normSq (α y)) :=
+    (contDiff_modulusPotential hχ.continuous hχ₀).comp hs
   have hdec (x : E) : cutoffPhaseForm χ b α x =
       J.twistedDifferential (fun y ↦ H (normSq (α y))) x + cutoffDBarForm J χ b α x :=
     cutoffPhaseForm_eq_twistedDifferential_add J (hH _) (hχc 0 hc)
