@@ -10,6 +10,7 @@ public import Mathlib.CategoryTheory.ObjectProperty.FullSubcategory
 public import Mathlib.Topology.Category.TopCat.Basic
 public import Mathlib.Topology.Covering.Basic
 public import Mathlib.CategoryTheory.Comma.Over.Basic
+public import TauCeti.Topology.Category.TopCat.Over
 public import TauCeti.Topology.IsLocalHomeomorph
 
 /-!
@@ -40,9 +41,6 @@ fundamental-group actions.
 
 * `TauCeti.Over.isCoveringMap` and `TauCeti.Over.isCoveringMap_iff`: the property of an object
   of `TopCat / X` that its structure morphism is a covering map, and its membership lemma.
-* `TauCeti.Over.isIso_iff_isHomeomorph_hom_left`: a morphism in a full subcategory of `TopCat / X`,
-  such as a map of covers, is an isomorphism exactly when its map of total spaces is a
-  homeomorphism.
 * `TauCeti.CoveringSpace X`: covering spaces over `X` and maps over `X`.
 * `TauCeti.CoveringSpace.mk`, `proj`, `homMk`, `isoMk`: constructors for covering spaces and
   their morphisms and isomorphisms.
@@ -71,8 +69,7 @@ over category selected by a property of the structure morphism. The `forget`, `m
 `homMk`, and `isoMk` APIs are adapted from
 `Mathlib/CategoryTheory/Subobject/MonoOver.lean`, using the generic `Over` and
 `ObjectProperty.FullSubcategory` constructors directly, and are stated once for
-`TauCeti.CoveringSpace.FullSubcategory`. The isomorphism characterization is stated once for
-every full subcategory of `TopCat / X`.
+`TauCeti.CoveringSpace.FullSubcategory`.
 -/
 
 public section
@@ -97,21 +94,6 @@ This is the lemma downstream modules use to build objects of the full subcategor
 theorem isCoveringMap_iff {X : TopCat.{u}} {p : CategoryTheory.Over X} :
     isCoveringMap X p ↔ _root_.IsCoveringMap p.hom :=
   Iff.rfl
-
-/-- A morphism in `TopCat / X` is an isomorphism exactly when its map on left objects is a
-homeomorphism. -/
-theorem isIso_iff_isHomeomorph_left {X : TopCat.{u}} {p q : CategoryTheory.Over X}
-    (f : p ⟶ q) : IsIso f ↔ IsHomeomorph f.left := by
-  rw [← TopCat.isIso_iff_isHomeomorph]
-  exact (isIso_iff_of_reflects_iso _ (CategoryTheory.Over.forget X)).symm
-
-/-- A morphism in a full subcategory of `TopCat / X` is an isomorphism exactly when its map of
-total spaces is a homeomorphism. This applies to maps in `TauCeti.CoveringSpace X` and in every
-`TauCeti.CoveringSpace.FullSubcategory X P`. -/
-theorem isIso_iff_isHomeomorph_hom_left {X : TopCat.{u}}
-    {Q : ObjectProperty (CategoryTheory.Over X)} {p q : Q.FullSubcategory} (f : p ⟶ q) :
-    IsIso f ↔ IsHomeomorph f.hom.left := by
-  rw [← ObjectProperty.isIso_hom_iff, isIso_iff_isHomeomorph_left]
 
 end Over
 
