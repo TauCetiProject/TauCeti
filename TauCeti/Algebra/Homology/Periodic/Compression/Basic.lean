@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.GradedObject
+public import Mathlib.CategoryTheory.Preadditive.Projective.Basic
 public import TauCeti.Algebra.Homology.HomotopyCategory.Bounded.Basic
 public import TauCeti.CategoryTheory.Limits.Shapes.Products
 
@@ -22,6 +23,7 @@ No signs are introduced. The coproduct over a residue class is Mathlib's
 morphisms and finite coproducts, since only finitely many of its terms are nonzero.
 The summand inclusions `TauCeti.PeriodicComplex.ιCompression` and the summand projections
 `TauCeti.PeriodicComplex.πCompression` intertwine the differentials of `K` and of its compression.
+The compression of a complex of projective objects has projective terms.
 
 Compression is functorial, additive, and carries homotopies to homotopies. Consequently the
 compression functor on bounded complexes, `TauCeti.PeriodicComplex.compressionFunctor`, descends
@@ -120,6 +122,12 @@ lemma compression_hom_ext {r : ZMod n} {A : C} {f g : (compression n K).X r ⟶ 
     (h : ∀ (i : ℤ) (hi : (i : ZMod n) = r), ιCompression n K i r hi ≫ f =
       ιCompression n K i r hi ≫ g) : f = g :=
   GradedObject.mapObj_ext _ _ _ _ h
+
+/-- The compression of a complex of projective objects has projective terms: each term is a
+coproduct of projective objects. -/
+instance [∀ i, Projective (K.X i)] (r : ZMod n) : Projective ((compression n K).X r) where
+  factors f e _ := ⟨compressionDesc n K fun i hi ↦
+    Projective.factorThru (ιCompression n K i r hi ≫ f) e, by ext; simp⟩
 
 /-- On the summand of degree `i`, the differential of the compression is the differential of
 `K` into degree `i + 1`. -/
