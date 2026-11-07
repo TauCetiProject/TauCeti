@@ -101,59 +101,6 @@ private theorem exists_value_of_forall_ofArrow_mul_mem (N : Submodule Π Π) (g 
   have h := congrArg (doubledArrowSign k b • ·) (hyz w b)
   simpa only [smul_smul, doubledArrowSign_mul_self, one_smul] using h
 
-/-- A left ideal containing the classes of all arrows leaving `v` contains the class of every path
-of positive length leaving `v`. -/
-private theorem preprojective_ofPath_mem_of_forall_ofArrow_mem {v : Q} (S : Submodule Π Π)
-    (harr : ∀ (w : Symmetrify Q) (c : Symmetrify.of.obj v ⟶ w), π (ofArrow c) ∈ S)
-    {w : Symmetrify Q} (p : Path (Symmetrify.of.obj v) w) (hp : 0 < p.length) :
-    π (ofPath ⟨_, _, p⟩) ∈ S := by
-  induction p with
-  | nil => exact absurd hp (lt_irrefl 0)
-  | cons p' c ih =>
-    rcases Nat.eq_zero_or_pos p'.length with h0 | hpos
-    · obtain rfl := Path.eq_of_length_zero p' h0
-      obtain rfl := Path.eq_nil_of_length_zero p' h0
-      rw [← Path.comp_toPath_eq_cons, Path.nil_comp, ← ofArrow_eq_ofPath]
-      exact harr _ c
-    · rw [← ofArrow_mul_ofPath, map_mul]
-      exact S.smul_mem _ (ih hpos)
-
-/-- A left ideal containing the classes of all arrows leaving `v` contains, for every `a`, the
-difference of `a e_v` and a scalar multiple of `e_v`. -/
-private theorem exists_sub_smul_vertexIdempotent_mem_of_forall_ofArrow_mem {v : Q}
-    (S : Submodule Π Π)
-    (harr : ∀ (w : Symmetrify Q) (c : Symmetrify.of.obj v ⟶ w), π (ofArrow c) ∈ S) (a : Π) :
-    ∃ t : k, a * π (doubledVertexIdempotent k v) - t • π (doubledVertexIdempotent k v) ∈ S := by
-  obtain ⟨f, rfl⟩ := preprojectiveMk_surjective k Q a
-  induction f using PathAlgebra.induction_linear with
-  | zero => exact ⟨0, by simp only [map_zero, zero_mul, zero_smul, sub_zero, S.zero_mem]⟩
-  | add f f' hf hf' =>
-    obtain ⟨t, ht⟩ := hf
-    obtain ⟨t', ht'⟩ := hf'
-    refine ⟨t + t', ?_⟩
-    convert S.add_mem ht ht' using 1
-    rw [map_add, add_mul, add_smul]
-    abel
-  | single x c =>
-    obtain ⟨u, w, p⟩ := x
-    rw [single_eq_smul_ofPath, map_smul, smul_mul_assoc, ← map_mul,
-      doubledVertexIdempotent_def]
-    by_cases hu : u = Symmetrify.of.obj v
-    · subst u
-      rw [ofPath_mul_vertexIdempotent]
-      rcases Nat.eq_zero_or_pos p.length with h0 | hpos
-      · obtain rfl := Path.eq_of_length_zero p h0
-        obtain rfl := Path.eq_nil_of_length_zero p h0
-        exact ⟨c, by rw [← vertexIdempotent_eq_ofPath, sub_self]; exact S.zero_mem⟩
-      · exact ⟨0, by
-          rw [zero_smul, sub_zero]
-          exact S.smul_of_tower_mem c
-            (preprojective_ofPath_mem_of_forall_ofArrow_mem k S harr p hpos)⟩
-    · refine ⟨0, ?_⟩
-      rw [ofPath_mul_vertexIdempotent_of_ne _ (Ne.symm hu), map_zero, smul_zero, zero_smul,
-        sub_zero]
-      exact S.zero_mem
-
 /-- **The one-vertex extension is well defined.** Let `m ∈ e_v Π` lie outside the left ideal `N`,
 let every arrow `c` leaving `v` move `m` into `N`, and let `y ∈ e_v Π` satisfy `g (c m) = c y`
 for all of them. If `n + a m = 0` with `n ∈ N`, then `g n + a y = 0`. -/
