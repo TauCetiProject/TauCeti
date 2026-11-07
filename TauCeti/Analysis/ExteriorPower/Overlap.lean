@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.ExteriorPower.Nonarchimedean
+import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
 import Mathlib.Basic.Real.Pointwise
 
 /-!
@@ -191,24 +192,6 @@ private theorem iSup_plucker_single_overlap_le {r : ℕ} (v : AbsoluteValue K �
   exact v.iSup_plucker_append_le hv _ _
 
 omit [Finite ι] in
-/-- If the column change `Q` kills `x` off the pivot columns `e`, then normalizing by the inverse of
-the pivot matrix turns the rows of `x * Q` into coordinate vectors. -/
-private theorem inv_submatrix_mul_row_eq_single [Fintype ι] {x : Matrix (Fin p) ι K}
-    {e : Fin p ↪ ι} {Q : Matrix ι ι K} (he : (x.submatrix id e).det ≠ 0)
-    (hred : ∀ i j, (x * Q) i j = if j ∈ range e then x i j else 0) :
-    ((x.submatrix id e)⁻¹ * (x * Q)).row = fun i ↦ Pi.single (e i) 1 := by
-  set P := x.submatrix id e
-  ext i j
-  by_cases hj : j ∈ range e
-  · obtain ⟨b, rfl⟩ := hj
-    have h := congrArg (fun M : Matrix (Fin p) (Fin p) K ↦ M i b)
-      (Matrix.nonsing_inv_mul P (isUnit_iff_ne_zero.mpr he))
-    simpa [P, Matrix.mul_apply, hred, Pi.single_apply,
-      e.injective.eq_iff, Matrix.one_apply, eq_comm] using h
-  · have hz : ∀ b, e b ≠ j := fun b h ↦ hj ⟨b, h⟩
-    simp [Matrix.mul_apply, hred, hj, hz, Ne.symm]
-
-omit [Finite ι] in
 /-- Changing coordinates by an integral invertible matrix `Q` preserves the exterior maximum norm
 of a concatenation, and normalizing the first block by the inverse of a square matrix `P`
 multiplies it by `v P⁻¹.det`. -/
@@ -262,7 +245,7 @@ theorem iSup_plucker_overlap_le {r : ℕ} (v : AbsoluteValue K ℝ)
     -- Integral column reduction supports the common rows on the pivot columns;
     -- normalizing their pivot matrix then makes them coordinate vectors.
     have hX : X.row = fun i ↦ Pi.single (e i) 1 :=
-      inv_submatrix_mul_row_eq_single (x := Matrix.of x) he hred
+      Matrix.inv_submatrix_mul_row_eq_single (x := Matrix.of x) he hred
     -- The same column change preserves every exterior norm; the row operation
     -- on the common block multiplies each extended exterior norm by a.
     have hright {n : ℕ} (t : Fin n → ι → K) :
