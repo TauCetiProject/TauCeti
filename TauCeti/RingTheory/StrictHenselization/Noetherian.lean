@@ -82,23 +82,23 @@ private theorem flat_adicCompletion [IsNoetherianRing R] :
     Module.Flat R (AdicCompletion (maximalIdeal (algebra R Ω)) (algebra R Ω)) := by
   set S := algebra R Ω
   set J := maximalIdeal S
-  set Ŝ := AdicCompletion J S
+  set C := AdicCompletion J S
   have hJ : J = (maximalIdeal R).map (algebraMap R S) := maximalIdeal_eq_map R Ω
   have hfg : J.FG := fg_maximalIdeal R Ω
-  have : IsNoetherianRing Ŝ := isNoetherianRing_adicCompletion R Ω
-  refine Module.Flat.of_forall_flat_quotient_pow (S := Ŝ) (I := maximalIdeal R) ?_ fun n ↦ ?_
+  have : IsNoetherianRing C := isNoetherianRing_adicCompletion R Ω
+  refine Module.Flat.of_forall_flat_quotient_pow (S := C) (I := maximalIdeal R) ?_ fun n ↦ ?_
   · -- The extension of `𝔪` to the completion is the extension of `J`, which lies in the Jacobson
-    -- radical of the `J`-adically complete ring `Ŝ`.
+    -- radical of the `J`-adically complete ring `C`.
     have := AdicCompletion.isAdicComplete_self J hfg
-    rw [IsScalarTower.algebraMap_eq R S Ŝ, ← Ideal.map_map, ← hJ, Ideal.jacobson_bot]
+    rw [IsScalarTower.algebraMap_eq R S C, ← Ideal.map_map, ← hJ, Ideal.jacobson_bot]
     exact IsAdicComplete.le_jacobson _
-  · -- The map `S → Ŝ` induces `S ⧸ 𝔪 ^ n S ≃ Ŝ ⧸ 𝔪 ^ n Ŝ`.
+  · -- The map `S → C` induces `S ⧸ 𝔪 ^ n S ≃ C ⧸ 𝔪 ^ n C`.
     set P := maximalIdeal R ^ n
     have hmem {T : Type u} [CommRing T] [Algebra R T] [Algebra S T] [IsScalarTower R S T]
         (x : T) : x ∈ (P • ⊤ : Submodule R T) ↔ x ∈ (J ^ n).map (algebraMap S T) := by
       rw [Ideal.smul_top_eq_map, Submodule.restrictScalars_mem, hJ, ← Ideal.map_pow,
         Ideal.map_map, ← IsScalarTower.algebraMap_eq]
-    let f := Submodule.mapQ _ _ (IsScalarTower.toAlgHom R S Ŝ).toLinearMap
+    let f := Submodule.mapQ _ _ (IsScalarTower.toAlgHom R S C).toLinearMap
       (Submodule.smul_top_le_comap_smul_top P _)
     have hinj : Function.Injective f := by
       refine (injective_iff_map_eq_zero f).mpr fun x hx ↦ ?_
