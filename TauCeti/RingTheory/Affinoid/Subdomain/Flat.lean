@@ -122,6 +122,9 @@ theorem prod_injective {B C : Type u} [CommRing B] [CommRing C] [Algebra K B] [A
   have hprod (x : A) :
       piFinTwoEquiv D ((RingHom.pi fun i ↦ (χ i).toRingHom) x) = (φ.prod ψ) x := by
     simp only [piFinTwoEquiv_apply, RingHom.pi_apply, AlgHom.prod_apply]
+    -- Naive `Fin.cons_zero`/`Fin.cons_one` rewriting disrupts the dependent `D i` carriers.
+    -- Here `rfl` reduces `Fin.cons` at literal indices `0` and `1`, including the
+    -- corresponding `CommRing` and `Algebra` instance families.
     rfl
   exact (hprod a).trans (hab.trans (hprod b).symm)
 
