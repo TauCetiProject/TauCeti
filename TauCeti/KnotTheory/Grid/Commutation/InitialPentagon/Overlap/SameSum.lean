@@ -215,6 +215,19 @@ private theorem recutInitialSelf_first_notMem_columns
       exact Grid.left_mem_cIco (Grid.ne_left_of_mem_cIoo hcol).symm
     exact Finset.disjoint_left.mp (Grid.disjoint_cIco_cIco_of_mem_cIoo hcol) hb' hb
 
+/-- The first rectangle covers the column `finRotate n a` but not the column `a`. -/
+private lemma notMem_and_finRotate_mem_first_coveredColumns
+    (D : GridRectangleInitialPentagonDecomposition a s x z)
+    (hcommon : D.first.left = D.second.left) :
+    a ∉ D.first.toGridRectangle.coveredColumns ∧
+      finRotate n a ∈ D.first.toGridRectangle.coveredColumns := by
+  rw [GridRectangle.mem_coveredColumns, GridRectangle.mem_coveredColumns,
+    GridRectangleBetween.toGridRectangle_left, GridRectangleBetween.toGridRectangle_right,
+    hcommon, D.second_left_eq]
+  refine ⟨by simp, ?_⟩
+  rw [← D.second_left_eq]
+  exact Grid.left_mem_cIco (by simpa only [hcommon] using D.first.left_ne_right)
+
 /-- The original and recut rectangle--initial-side-pentagon domains cover the same squares with
 the same multiplicities. -/
 theorem coveredSquares_val_add_recutInitialSelf
@@ -241,15 +254,7 @@ theorem coveredSquares_val_add_recutInitialSelf
       (D.toGridRectangleDecomposition.second_bottom_eq_first_top_of_left_eq_left hcommon).symm
   have hDtop : D.pentagon.top = D.second.top := by
     simp only [D.pentagon_toGridRectangleBetween]
-  have haD : a ∉ D.first.toGridRectangle.coveredColumns := by
-    rw [GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_left,
-      GridRectangleBetween.toGridRectangle_right, hcommon, D.second_left_eq]
-    simp
-  have hbD : finRotate n a ∈ D.first.toGridRectangle.coveredColumns := by
-    rw [GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_left,
-      GridRectangleBetween.toGridRectangle_right, hcommon, D.second_left_eq]
-    rw [← D.second_left_eq]
-    exact Grid.left_mem_cIco (Grid.ne_left_of_mem_cIoo hcol).symm
+  obtain ⟨haD, hbD⟩ := D.notMem_and_finRotate_mem_first_coveredColumns hcommon
   have hrep := (D.isRecut_recutInitialSelf hcommon hcol hfirst hsecond).isRepartition.val_add_val_eq
   have hcount := fun q => congrArg (Multiset.count q) hrep
   simp only [Multiset.count_add, Multiset.count_eq_of_nodup (Finset.nodup _),

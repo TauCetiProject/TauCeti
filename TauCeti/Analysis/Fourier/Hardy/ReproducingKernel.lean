@@ -45,8 +45,7 @@ def diskEvaluation : HardySpace →L[ℂ] ℂ :=
     { toFun := fun x => x.diskFunction w
       map_add' := fun x y => x.diskFunction_add y
         (by simpa only [Metric.mem_ball, dist_zero_right] using w.property)
-      map_smul' := fun c x => x.diskFunction_smul c
-        (by simpa only [Metric.mem_ball, dist_zero_right] using w.property) }
+      map_smul' := fun c x => x.diskFunction_smul c }
     (√(1 - ‖(w : ℂ)‖ ^ 2))⁻¹ fun x => by
       simpa only [LinearMap.coe_mk, AddHom.coe_mk, div_eq_mul_inv, mul_comm] using
         x.norm_diskFunction_le (by simpa only [Metric.mem_ball, dist_zero_right] using w.property)
@@ -83,17 +82,24 @@ theorem eq_reproducingKernel_iff (k : HardySpace) :
   · intro h
     exact ext_inner_right ℂ fun x => (h x).trans (inner_reproducingKernel w x).symm
 
+/-- The disk function of the Szegő kernel is its geometric-series expression wherever the series
+`∑ (conj w * z) ^ n` converges, that is, whenever `‖conj w * z‖ < 1`; this includes the closed unit
+disk. -/
+theorem diskFunction_reproducingKernel_of_norm_conj_mul_lt_one {z : ℂ}
+    (hz : ‖starRingEnd ℂ (w : ℂ) * z‖ < 1) :
+    (reproducingKernel w).diskFunction z = (1 - starRingEnd ℂ (w : ℂ) * z)⁻¹ := by
+  rw [diskFunction_def]
+  simp_rw [← hardyBasis_repr, hardyBasis_repr_reproducingKernel, ← mul_pow]
+  exact tsum_geometric_of_norm_lt_one hz
+
 /-- The disk function of the Szegő kernel is its usual geometric-series expression. -/
 @[simp↓]
 theorem diskFunction_reproducingKernel {z : ℂ} (hz : ‖z‖ < 1) :
     (reproducingKernel w).diskFunction z = (1 - starRingEnd ℂ (w : ℂ) * z)⁻¹ := by
   have hw : ‖(w : ℂ)‖ < 1 := by simpa only [Metric.mem_ball, dist_zero_right] using w.property
-  have hprod : ‖starRingEnd ℂ (w : ℂ) * z‖ < 1 := by
-    rw [norm_mul, Complex.norm_conj]
-    nlinarith [norm_nonneg (w : ℂ), norm_nonneg z]
-  rw [diskFunction_def]
-  simp_rw [← hardyBasis_repr, hardyBasis_repr_reproducingKernel, ← mul_pow]
-  exact tsum_geometric_of_norm_lt_one hprod
+  refine diskFunction_reproducingKernel_of_norm_conj_mul_lt_one w ?_
+  rw [norm_mul, Complex.norm_conj]
+  nlinarith [norm_nonneg (w : ℂ), norm_nonneg z]
 
 /-- The squared norm of the Szegő kernel. -/
 theorem norm_reproducingKernel_sq :
@@ -157,7 +163,7 @@ theorem norm_normalize_reproducingKernel :
 theorem diskFunction_normalize_reproducingKernel {z : ℂ} (hz : ‖z‖ < 1) :
     (NormedSpace.normalize (reproducingKernel w)).diskFunction z =
       (√(1 - ‖(w : ℂ)‖ ^ 2) : ℂ) * (1 - starRingEnd ℂ (w : ℂ) * z)⁻¹ := by
-  rw [normalize_reproducingKernel, diskFunction_smul _ _ hz,
+  rw [normalize_reproducingKernel, diskFunction_smul _ _,
     diskFunction_reproducingKernel w hz]
 
 end TauCeti.HardySpace
