@@ -69,7 +69,7 @@ theorem setIntegral_ball_bilinear_self_mul_bubble_sq_of_finrank_eq_six
 
 /-- In dimension six the quadratic moment differs from its logarithmic leading term by an
 explicit multiple of `t⁴`; there is no sign assumption on the trace. -/
-theorem abs_setIntegral_ball_bilinear_self_mul_bubble_sq_sub_mul_log_le
+theorem abs_setIntegral_ball_bilinear_self_mul_bubble_sq_sub_mul_log_le_of_finrank_eq_six
     (μ : Measure E) [μ.IsAddHaarMeasure] (hn : finrank ℝ E = 6)
     (e : OrthonormalBasis ι ℝ E) (B : E →L[ℝ] E →L[ℝ] ℝ)
     {t : ℝ} (ht : 0 < t) (a : E) {R : ℝ} (hR : 0 ≤ R) :
