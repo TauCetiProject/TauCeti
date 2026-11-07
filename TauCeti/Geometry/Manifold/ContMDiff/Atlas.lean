@@ -128,6 +128,45 @@ theorem contMDiffAt_prodMap_symm_id_of_mem_maximalAtlas
 
 end ProdMap
 
+section EventuallyTarget
+
+variable {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [TopologicalSpace H']
+  {I' : ModelWithCorners 𝕜 E' H'} [TopologicalSpace M'] [ChartedSpace H' M']
+  [IsManifold I n M] [IsManifold I' n M']
+
+/-- Near the centre of a preferred chart, the points of the chart target are sent by the chart
+inverse to points where a finitely differentiable `f` is `C^n` and lands in the source of the
+target chart. -/
+theorem eventually_target_and_contMDiffAt {f : M → M'} (hn : n ≠ ∞) (x : M)
+    (hf : ContMDiffAt I I' n f x) :
+    ∀ᶠ z in nhdsWithin (extChartAt I x x) (Set.range I), z ∈ (extChartAt I x).target ∧
+      f ((extChartAt I x).symm z) ∈ (extChartAt I' (f x)).source ∧
+        ContMDiffAt I I' n f ((extChartAt I x).symm z) := by
+  let e := extChartAt I x
+  let e' := extChartAt I' (f x)
+  have hex : e.symm (e x) = x := by
+    simpa only [e] using extChartAt_to_inv (I := I) x
+  have hflocal : ∀ᶠ y in nhdsWithin (e x) (Set.range I), ContMDiffAt I I' n f (e.symm y) := by
+    have he : ContinuousWithinAt e.symm (Set.range I) (e x) :=
+      (continuousAt_extChartAt_symm'' (mem_extChartAt_target (I := I) x)).continuousWithinAt
+    have hf' := (contMDiffAt_iff_contMDiffAt_nhds hn).mp hf
+    have hlim := he.tendsto
+    rw [hex] at hlim
+    exact hlim.eventually hf'
+  have hsource : e.target ∈ nhdsWithin (e x) (Set.range I) := extChartAt_target_mem_nhdsWithin x
+  have htarget : (f ∘ e.symm) ⁻¹' e'.source ∈ nhdsWithin (e x) (Set.range I) := by
+    have hfc : ContinuousAt f (e.symm (e x)) := by
+      simpa only [hex] using hf.continuousAt
+    apply (hfc.comp_continuousWithinAt
+      (continuousAt_extChartAt_symm'' (mem_extChartAt_target (I := I) x)).continuousWithinAt
+      ).preimage_mem_nhdsWithin
+    convert extChartAt_source_mem_nhds (I := I') (f x) using 1
+    simp only [Function.comp_apply, hex]
+  filter_upwards [hsource, htarget, hflocal] with z hz hzf hfx
+  exact ⟨hz, hzf, hfx⟩
+
+end EventuallyTarget
+
 end TauCeti
 
 namespace OpenPartialHomeomorph

@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Chart
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
+import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
 
 /-!
@@ -78,105 +79,6 @@ theorem SmoothForm.mpullback_realLineCoordForm (h : M → ℝ) :
 
 variable [IsManifold I 2 M] [IsManifold I' 2 M']
 
-/-- Near the centre of a preferred chart, the points of the chart target are sent by the chart
-inverse to points where `f` is `C²` and lands in the source of the target chart. -/
-private theorem eventually_target_and_contMDiffAt {f : M → M'} (x : M)
-    (hf : ContMDiffAt I I' 2 f x) :
-    ∀ᶠ z in 𝓝[range I] extChartAt I x x, z ∈ (extChartAt I x).target ∧
-      f ((extChartAt I x).symm z) ∈ (extChartAt I' (f x)).source ∧
-        ContMDiffAt I I' 2 f ((extChartAt I x).symm z) := by
-  let e := extChartAt I x
-  let e' := extChartAt I' (f x)
-  have hex : e.symm (e x) = x := by
-    simpa only [e] using extChartAt_to_inv (I := I) x
-  have hflocal : ∀ᶠ y in 𝓝[range I] e x, ContMDiffAt I I' 2 f (e.symm y) := by
-    have he : ContinuousWithinAt e.symm (range I) (e x) :=
-      (mdifferentiableWithinAt_extChartAt_symm
-        (mem_extChartAt_target (I := I) x)).continuousWithinAt
-    have hf' := (contMDiffAt_iff_contMDiffAt_nhds (n := (2 : WithTop ℕ∞)) (by norm_num)).mp hf
-    have hlim := he.tendsto
-    rw [hex] at hlim
-    exact hlim.eventually hf'
-  have hsource : e.target ∈ 𝓝[range I] e x := extChartAt_target_mem_nhdsWithin x
-  have htarget : (f ∘ e.symm) ⁻¹' e'.source ∈ 𝓝[range I] e x := by
-    have hfc : ContinuousAt f (e.symm (e x)) := by
-      simpa only [hex] using hf.continuousAt
-    apply (hfc.comp_continuousWithinAt
-      (mdifferentiableWithinAt_extChartAt_symm
-        (mem_extChartAt_target (I := I) x)).continuousWithinAt).preimage_mem_nhdsWithin
-    convert extChartAt_source_mem_nhds (I := I') (f x) using 1
-    simp only [Function.comp_apply, hex]
-  filter_upwards [hsource, htarget, hflocal] with z hz hzf hfx
-  exact ⟨hz, hzf, hfx⟩
-
-/-- At a chart coordinate where `f` is `C²` and lands in the source of the target chart, the
-coordinate expression of `f` is `C²` within the model range. -/
-private theorem contDiffWithinAt_writtenInExtChartAt_two {f : M → M'} (x : M) {z : E}
-    (hz : z ∈ (extChartAt I x).target)
-    (hzf : f ((extChartAt I x).symm z) ∈ (extChartAt I' (f x)).source)
-    (hfx : ContMDiffAt I I' 2 f ((extChartAt I x).symm z)) :
-    ContDiffWithinAt ℝ 2 (writtenInExtChartAt I I' x f) (range I) z := by
-  have hchart : ContMDiffAt I' 𝓘(ℝ, E') 2 (extChartAt I' (f x))
-      (f ((extChartAt I x).symm z)) :=
-    contMDiffAt_extChartAt' (by simpa only [extChartAt_source] using hzf)
-  have hfsx : ContMDiffWithinAt 𝓘(ℝ, E) I' 2 (f ∘ (extChartAt I x).symm) (range I) z :=
-    hfx.contMDiffWithinAt.comp z (contMDiffWithinAt_extChartAt_symm_range x hz)
-      (mapsTo_univ _ _)
-  simpa only [writtenInExtChartAt, Function.comp_assoc] using
-    (hchart.contMDiffWithinAt.comp z hfsx (mapsTo_univ _ _)).contDiffWithinAt
-
-/-- At a chart coordinate where `f` is `C²` and lands in the source of the target chart, pulling
-`φ` back along the inverse target chart and then along the coordinate expression of `f` is the
-same as pulling back along `f` and then along the inverse source chart. -/
-private theorem mpullbackWithin_chartSymm_mpullback_eq {f : M → M'} (x : M) {z : E}
-    (hz : z ∈ (extChartAt I x).target)
-    (hzf : f ((extChartAt I x).symm z) ∈ (extChartAt I' (f x)).source)
-    (hfx : ContMDiffAt I I' 2 f ((extChartAt I x).symm z)) (φ : RoughForm I' M' F k) :
-    mpullbackWithin 𝓘(ℝ, E) I (extChartAt I x).symm (range I) (mpullback I I' f φ) z =
-      mpullbackWithin 𝓘(ℝ, E) 𝓘(ℝ, E') (writtenInExtChartAt I I' x f) (range I)
-        (mpullbackWithin 𝓘(ℝ, E') I' (extChartAt I' (f x)).symm (range I') φ) z := by
-  let e := extChartAt I x
-  let e' := extChartAt I' (f x)
-  let g := writtenInExtChartAt I I' x f
-  have hsmooth : ContMDiffWithinAt 𝓘(ℝ, E) I 2 e.symm (range I) z :=
-    contMDiffWithinAt_extChartAt_symm_range x hz
-  have hcoord : ContDiffWithinAt ℝ 2 g (range I) z :=
-    contDiffWithinAt_writtenInExtChartAt_two x hz hzf hfx
-  have hpre : (f ∘ e.symm) ⁻¹' e'.source ∈ 𝓝[range I] z := by
-    apply (hfx.continuousAt.comp_continuousWithinAt
-      hsmooth.continuousWithinAt).preimage_mem_nhdsWithin
-    exact extChartAt_source_mem_nhds' hzf
-  have hmaps : g ⁻¹' range I' ∈ 𝓝[range I] z := by
-    apply mem_of_superset hpre
-    intro w hw
-    exact extChartAt_target_subset_range (I := I') (f x) (e'.map_source hw)
-  have hcomp : (e'.symm ∘ g) =ᶠ[𝓝[range I] z] (f ∘ e.symm) := by
-    filter_upwards [hpre] with w hw
-    exact e'.left_inv hw
-  have hzrange : z ∈ range I := extChartAt_target_subset_range x hz
-  have hleft := mpullbackWithin_comp_of_preimage_mem_nhdsWithin
-    (I := 𝓘(ℝ, E)) (I' := I) (I'' := I') (f := e.symm) (g := f)
-    (s := range I) (t := univ) (x := z)
-    (hsmooth.mdifferentiableWithinAt (by norm_num))
-    (hfx.mdifferentiableAt (by norm_num)).mdifferentiableWithinAt
-    (by simp) ((I.uniqueDiffOn z hzrange).uniqueMDiffWithinAt) φ
-  have hright := mpullbackWithin_comp_of_preimage_mem_nhdsWithin
-    (I := 𝓘(ℝ, E)) (I' := 𝓘(ℝ, E')) (I'' := I') (f := g) (g := e'.symm)
-    (s := range I) (t := range I') (x := z)
-    (hcoord.differentiableWithinAt (by norm_num)).mdifferentiableWithinAt
-    (mdifferentiableWithinAt_extChartAt_symm (e'.map_source hzf)) hmaps
-    ((I.uniqueDiffOn z hzrange).uniqueMDiffWithinAt) φ
-  have hcomposite :
-      mpullbackWithin 𝓘(ℝ, E) I' (e'.symm ∘ g) (range I) φ z =
-        mpullbackWithin 𝓘(ℝ, E) I' (f ∘ e.symm) (range I) φ z := by
-    ext v
-    simp only [mpullbackWithin_apply]
-    rw [hcomp.mfderivWithin_eq (hcomp.self_of_nhdsWithin hzrange)]
-    rw [hcomp.self_of_nhdsWithin hzrange]
-    simp [tangentSpaceCast]
-  simp only [mpullbackWithin_univ] at hleft
-  exact hleft.symm.trans (hcomposite.symm.trans hright)
-
 /-- The coordinate expression of a pullback agrees, at a chart coordinate where `f` is `C²` and
 lands in the source of the target chart, with the flat pullback of the coordinate expression of
 the form by the derivative of the coordinate expression of `f`. -/
@@ -187,10 +89,24 @@ private theorem inChartAt_mpullback_eq_at {f : M → M'} (x : M) {z : E}
     (mpullback I I' f φ).inChartAt x z =
       (φ.inChartAt (f x) (writtenInExtChartAt I I' x f z)).compContinuousLinearMap
         (fderivWithin ℝ (writtenInExtChartAt I I' x f) (range I) z) := by
-  have hchain := mpullbackWithin_chartSymm_mpullback_eq x hz hzf hfx φ
-  rw [mpullbackWithin_eq_flat] at hchain
-  rw [RoughForm.inChartAt_eq_mpullbackWithin, RoughForm.inChartAt_eq_mpullbackWithin φ (f x),
-    hchain]
+  have hdiff : MDifferentiableAt I I' f ((extChartAt I x).symm z) :=
+    hfx.mdifferentiableAt (by norm_num)
+  have hzrange : z ∈ range I := extChartAt_target_subset_range x hz
+  rw [RoughForm.inChartAt_mpullback φ f x hz hdiff]
+  have hlhs : (φ (f ((extChartAt I x).symm z))).compContinuousLinearMap
+      (mfderivWithin 𝓘(ℝ, E) I' (f ∘ (extChartAt I x).symm) (range I) z) =
+        mpullbackWithin 𝓘(ℝ, E) I' (f ∘ (extChartAt I x).symm) (range I) φ z := by
+    ext v
+    rw [mpullbackWithin_apply]
+    -- the two sides differ only by unfolding `Function.comp`
+    rfl
+  have hcomp : MDifferentiableWithinAt 𝓘(ℝ, E) I' (f ∘ (extChartAt I x).symm) (range I) z :=
+    hdiff.comp_mdifferentiableWithinAt _ (mdifferentiableWithinAt_extChartAt_symm hz)
+  rw [hlhs, RoughForm.mpullbackWithin_eq_compContinuousLinearMap φ (f := f ∘ (extChartAt I x).symm)
+    (s := range I) (w := z) (f x) hzf hcomp
+    (I.uniqueDiffOn.uniqueDiffWithinAt hzrange)]
+  -- model-space tangent spaces are definitionally the model spaces, and the two sides agree up to
+  -- unfolding `writtenInExtChartAt`
   rfl
 
 private theorem inChartAt_mpullback_eventuallyEq {f : M → M'} (x : M)
@@ -198,7 +114,7 @@ private theorem inChartAt_mpullback_eventuallyEq {f : M → M'} (x : M)
     (mpullback I I' f φ).inChartAt x =ᶠ[𝓝[range I] extChartAt I x x]
       fun z ↦ (φ.inChartAt (f x) (writtenInExtChartAt I I' x f z)).compContinuousLinearMap
         (fderivWithin ℝ (writtenInExtChartAt I I' x f) (range I) z) := by
-  filter_upwards [eventually_target_and_contMDiffAt x hf] with z hz
+  filter_upwards [eventually_target_and_contMDiffAt (by norm_num) x hf] with z hz
   exact inChartAt_mpullback_eq_at x hz.1 hz.2.1 hz.2.2 φ
 
 /-- At a point, pullback commutes with the exterior derivative. -/

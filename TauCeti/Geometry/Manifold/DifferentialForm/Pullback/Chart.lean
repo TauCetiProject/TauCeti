@@ -39,16 +39,6 @@ variable {E H M E' H' M' F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M'] [ChartedSpace H' M']
   [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ}
 
-omit [IsManifold I 1 M] in
-/-- The coordinate expression of a rough form in the preferred chart at `x` is its within-range
-pullback along the inverse chart. -/
-theorem inChartAt_eq_mpullbackWithin (φ : RoughForm I M F k) (x : M) (z : E) :
-    φ.inChartAt x z =
-      mpullbackWithin 𝓘(ℝ, E) I (extChartAt I x).symm (range I) φ z := by
-  ext v
-  rw [inChartAt_apply]
-  exact (mpullbackWithin_apply _ _ φ z v).symm
-
 /-- The actual pullback's coefficient in a preferred source chart is obtained from the
 within-range derivative of the composite with its inverse chart. -/
 theorem inChartAt_mpullback (ω : RoughForm I' M' F k) (f : M → M') (α : M) {z : E}
