@@ -107,7 +107,7 @@ theorem card_empty_two_eq [Group.FG Rˣ] (h2 : (2 : R) ≠ 0) :
       2 ^ (finrank ℤ (Additive Rˣ) + 1) *
         Nat.card (powMonoidHom 2 : ClassGroup R →* ClassGroup R).ker := by
   -- `(Rˣ : (Rˣ)²) = 2 ^ r · #μ₂(R)`, and `μ₂(R) = {±1}` has two elements
-  rw [card_empty_eq K 2, Subgroup.index_range_powMonoidHom_of_fg Rˣ,
+  rw [card_empty_eq K 2, Subgroup.index_range_powMonoidHom_of_fg Rˣ _,
     ← rootsOfUnity_eq_ker, TauCeti.card_rootsOfUnity_two h2, pow_succ]
 
 end selmerGroup

@@ -129,7 +129,7 @@ theorem card_range_μ [AddGroup.FG W.Point] :
     Nat.card (μ (W := W)).range =
       2 ^ finrank ℤ W.Point * Nat.card (nsmulAddMonoidHom (α := W.Point) 2).ker := by
   rw [← Subgroup.index_ker (μ (W := W)), ker_μ_eq, AddSubgroup.index_toSubgroup,
-    AddSubgroup.index_range_nsmul_of_fg _]
+    AddSubgroup.index_range_nsmul_of_fg _ _]
 
 open scoped Classical in
 /-- **The rank bound from a 2-Selmer group**: any subgroup of `W.M` that is finite and contains

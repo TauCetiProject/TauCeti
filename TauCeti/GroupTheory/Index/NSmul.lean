@@ -253,7 +253,7 @@ subgroup is trivial and the second factor is `1`. -/
 -- Mathlib rather than from the source's own helpers: `AddSubgroup.index_range` replaces its
 -- `AddMonoidHom.index_range_eq_card_ker`, and `Module.IsTorsion.rank_eq_zero` replaces its
 -- `Module.rank_eq_zero_of_finite`.
-theorem index_range_nsmul_of_fg (G : Type*) [AddCommGroup G] [AddGroup.FG G] {n : ℕ} :
+theorem index_range_nsmul_of_fg (G : Type*) [AddCommGroup G] [AddGroup.FG G] (n : ℕ) :
     (nsmulAddMonoidHom (α := G) n).range.index =
       n ^ finrank ℤ G * Nat.card (nsmulAddMonoidHom (α := G) n).ker := by
   rcases eq_or_ne n 0 with rfl | hn
@@ -310,13 +310,13 @@ namespace Subgroup
 /-- **The index of the `n`-th powers in a finitely generated commutative group** `G` is
 `n ^ finrank ℤ (Additive G) * #G[n]`, where `G[n]` is the `n`-torsion subgroup. This is
 `AddSubgroup.index_range_nsmul_of_fg` read in `Additive G`. -/
-theorem index_range_powMonoidHom_of_fg (G : Type*) [CommGroup G] [Group.FG G] {n : ℕ} :
+theorem index_range_powMonoidHom_of_fg (G : Type*) [CommGroup G] [Group.FG G] (n : ℕ) :
     (powMonoidHom (α := G) n).range.index =
       n ^ finrank ℤ (Additive G) * Nat.card (powMonoidHom (α := G) n).ker := by
   have h : (powMonoidHom (α := G) n).toAdditive = nsmulAddMonoidHom n := by
     ext x
     simp
-  have := AddSubgroup.index_range_nsmul_of_fg (Additive G) (n := n)
+  have := AddSubgroup.index_range_nsmul_of_fg (Additive G) n
   rwa [← h, MonoidHom.coe_toAdditive_range, MonoidHom.coe_toAdditive_ker,
     index_toAddSubgroup] at this
 
