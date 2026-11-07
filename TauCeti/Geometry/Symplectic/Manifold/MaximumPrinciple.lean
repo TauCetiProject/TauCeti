@@ -69,7 +69,7 @@ public section
 namespace TauCeti.Pseudoholomorphic
 
 open InnerProductSpace Laplacian Filter Topology Complex Set
-open scoped Manifold ContDiff
+open scoped _root_.Manifold ContDiff
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [I.Boundaryless] [TopologicalSpace M] [ChartedSpace H M]
