@@ -36,12 +36,6 @@ namespace TauCeti.LFunctions
 
 variable {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N) (hχ : χ.IsPrimitive)
 
-/-- A nonprincipal primitive Dirichlet record has no poles. -/
-theorem dirichletData_polarOrder_eq_zero (hne : χ ≠ 1) :
-    (dirichletData χ hχ).polarOrder = 0 := by
-  have hN : N ≠ 1 := fun h ↦ hne (hχ.eq_one_iff.mpr h)
-  simp [dirichletData_polarOrder, hN]
-
 /-- No pole-clearing polynomial is needed for a nonprincipal primitive character. -/
 theorem dirichletData_polarPolynomial_of_ne_one (hne : χ ≠ 1) :
     (dirichletData χ hχ).polarPolynomial = 1 := by
@@ -53,7 +47,7 @@ theorem dirichletData_entireCompletion_of_ne_one (hne : χ ≠ 1) :
     (dirichletData χ hχ).entireCompletion = (dirichletData χ hχ).completed := by
   ext s
   rw [(dirichletData_hasMeromorphicContinuation χ hχ).entireCompletion_eq
-    (by rw [dirichletData_polarOrder_eq_zero χ hχ hne]; rfl),
+    (by simp only [dirichletData_polarOrder_eq_zero χ hχ hne, Finsupp.zero_apply]),
     dirichletData_polarPolynomial_of_ne_one χ hχ hne, Polynomial.eval_one, one_mul]
 
 /-- The conductor factor changes no zero multiplicities of the completed Dirichlet function. -/
@@ -67,7 +61,7 @@ theorem analyticOrderAt_dirichletData_entireCompletion (hne : χ ≠ 1) (s : ℂ
     fun_prop (disch := exact Or.inl hNpos)
   have hc0 : (N : ℂ) ^ (s / 2) ≠ 0 := by simp [hN]
   rw [funext (dirichletData_completed χ hχ)]
-  change analyticOrderAt ((fun z : ℂ ↦ (N : ℂ) ^ (z / 2)) * χ.completedLFunction) s = _
+  rw [← Pi.mul_def]
   have hL := (DirichletCharacter.differentiable_completedLFunction hne).analyticAt s
   rw [analyticOrderAt_mul hc hL,
     hc.analyticOrderAt_eq_zero.mpr hc0, zero_add]
@@ -113,7 +107,7 @@ theorem dirichletData_entireCompletion_zero_ne_zero (hne : χ ≠ 1) :
   rw [dirichletData_entireCompletion_of_ne_one χ hχ hne] at hz h1
   have hp := dirichletData_polarOrder_eq_zero χ hχ hne
   have heq := (dirichletData_hasFunctionalEquation χ hχ).completed_eq 1
-    (by rw [hp]; rfl) (by rw [hp]; rfl)
+    (by simp only [hp, Finsupp.zero_apply]) (by simp only [hp, Finsupp.zero_apply])
   apply h1
   rw [sub_self, AnalyticLFunctionData.dual_completed_apply, map_zero, hz, map_zero,
     mul_zero] at heq

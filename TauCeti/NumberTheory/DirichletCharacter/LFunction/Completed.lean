@@ -60,8 +60,7 @@ theorem analyticAt_gammaFactor_of_re_pos
     {s : ℂ} (hs : 0 < s.re) : AnalyticAt ℂ χ.gammaFactor s := by
   have h := (χ.differentiable_inv_gammaFactor.analyticAt s).inv
     (inv_ne_zero (χ.gammaFactor_ne_zero_of_re_pos hs))
-  change AnalyticAt ℂ (fun z ↦ ((χ.gammaFactor z)⁻¹)⁻¹) s at h
-  simpa only [inv_inv] using h
+  simpa only [Pi.inv_def, inv_inv] using h
 
 /-- On the half-plane of absolute convergence, the completed Dirichlet function is its
 archimedean gamma factor times its Dirichlet series. -/
