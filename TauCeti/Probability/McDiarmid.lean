@@ -27,7 +27,9 @@ and the induction hypothesis controls the function obtained by averaging over it
 
 * `TauCeti.Probability.hasSubgaussianMGF_of_bounded_differences` gives the result for an arbitrary
   finite index type;
-* `TauCeti.Probability.hasSubgaussianMGF_of_bounded_differences_fin` specializes it to `Fin n`.
+* `TauCeti.Probability.hasSubgaussianMGF_of_bounded_differences_fin` specializes it to `Fin n`;
+* `TauCeti.Probability.neg_sq_div_two_mul_variance_proxy` computes the exponent of the resulting
+  two-sided tail bound for bounded differences `q / n`.
 
 The proof uses Hoeffding's lemma in oscillation form
 (`MeasureTheory.Measure.integral_exp_mul_sub_integral_le_of_abs_sub_le`) and the decomposition of a
@@ -359,5 +361,17 @@ theorem hasSubgaussianMGF_of_bounded_differences_fin
     ring
   rw [← hvar]
   exact hasSubgaussianMGF_of_bounded_differences ν f hf (fun _ => c) hbd
+
+/-- The exponent in the two-sided tail bound for the variance proxy `n (q / n / 2)²` of a
+`q / n`-bounded-differences estimator is `-ε²n / (2q²)`. -/
+theorem neg_sq_div_two_mul_variance_proxy {q n : ℕ} {ε : ℝ} (hq : 0 < q) (hn : 0 < n) :
+    -(ε / 2) ^ 2 / (2 * (((n : ℝ≥0) * (Real.toNNReal ((q : ℝ) / (n : ℝ)) / 2) ^ 2 : ℝ≥0) : ℝ)) =
+      -(ε ^ 2 * (n : ℝ)) / (2 * (q : ℝ) ^ 2) := by
+  have hqR : (0 : ℝ) < q := by exact_mod_cast hq
+  have hnR : (0 : ℝ) < n := by exact_mod_cast hn
+  simp only [NNReal.coe_mul, NNReal.coe_pow, NNReal.coe_div,
+    Real.coe_toNNReal _ (by positivity : (0 : ℝ) ≤ (q : ℝ) / (n : ℝ)),
+    NNReal.coe_natCast, NNReal.coe_ofNat]
+  field_simp
 
 end TauCeti.Probability

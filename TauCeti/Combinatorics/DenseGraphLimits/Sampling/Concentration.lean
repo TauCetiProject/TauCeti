@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.Sampling.Exposure
 import TauCeti.Combinatorics.DenseGraphLimits.Sampling.Expectation
+import TauCeti.Probability.Concentration.SubgaussianTail
 import TauCeti.Probability.McDiarmid
 
 /-!
@@ -61,46 +62,6 @@ private theorem integral_homDensityFin_exposedSample {V : Type*} [Fintype V]
   rw [← map_exposedSample W n,
     integral_map (measurable_exposedSample W).aemeasurable hG.aestronglyMeasurable]
 
-/-- Two-sided sub-Gaussian tail around a shifted center: if `g - c` is sub-Gaussian with variance
-proxy `σ` and the center `c` is within `ε / 2` of the target `t`, then `g` deviates from `t` by at
-least `ε` with probability at most `2 exp (-(ε / 2)² / (2σ))`. -/
-private theorem measureReal_abs_sub_ge_le_of_hasSubgaussianMGF {α : Type*} [MeasurableSpace α]
-    {P : Measure α} [IsProbabilityMeasure P] {g : α → ℝ} {c t ε : ℝ} {σ : ℝ≥0}
-    (h : ProbabilityTheory.HasSubgaussianMGF (fun x => g x - c) σ P) (hct : |c - t| ≤ ε / 2)
-    (hε : 0 < ε) :
-    P.real {x | ε ≤ |g x - t|} ≤ 2 * Real.exp (-(ε / 2) ^ 2 / (2 * (σ : ℝ))) := by
-  have htail₁ := h.measure_ge_le (ε := ε / 2) (half_pos hε).le
-  have htail₂ := h.neg.measure_ge_le (ε := ε / 2) (half_pos hε).le
-  have hincl : {x | ε ≤ |g x - t|} ⊆ {x | ε / 2 ≤ g x - c} ∪ {x | ε / 2 ≤ -(g x - c)} := by
-    intro x hx
-    rw [Set.mem_ofPred_eq] at hx
-    have hcenter : ε / 2 ≤ |g x - c| := by
-      have htri : |g x - t| ≤ |g x - c| + |c - t| := abs_sub_le _ _ _
-      linarith [abs_nonneg (g x - c)]
-    rcases le_abs.mp hcenter with h | h
-    · exact Or.inl h
-    · exact Or.inr h
-  calc
-    P.real {x | ε ≤ |g x - t|} ≤ P.real ({x | ε / 2 ≤ g x - c} ∪ {x | ε / 2 ≤ -(g x - c)}) :=
-      measureReal_mono hincl
-    _ ≤ P.real {x | ε / 2 ≤ g x - c} + P.real {x | ε / 2 ≤ -(g x - c)} :=
-      measureReal_union_le _ _
-    _ ≤ Real.exp (-(ε / 2) ^ 2 / (2 * (σ : ℝ))) + Real.exp (-(ε / 2) ^ 2 / (2 * (σ : ℝ))) :=
-      add_le_add htail₁ htail₂
-    _ = 2 * Real.exp (-(ε / 2) ^ 2 / (2 * (σ : ℝ))) := by ring
-
-/-- The exponent in the two-sided tail bound for the variance proxy `n (q / n / 2)²` of a
-`q / n`-bounded-differences estimator is `-ε²n / (2q²)`. -/
-private theorem neg_sq_div_two_mul_variance_proxy {q n : ℕ} {ε : ℝ} (hq : 0 < q) (hn : 0 < n) :
-    -(ε / 2) ^ 2 / (2 * (((n : ℝ≥0) * (Real.toNNReal ((q : ℝ) / (n : ℝ)) / 2) ^ 2 : ℝ≥0) : ℝ)) =
-      -(ε ^ 2 * (n : ℝ)) / (2 * (q : ℝ) ^ 2) := by
-  have hqR : (0 : ℝ) < q := by exact_mod_cast hq
-  have hnR : (0 : ℝ) < n := by exact_mod_cast hn
-  simp only [NNReal.coe_mul, NNReal.coe_pow, NNReal.coe_div,
-    Real.coe_toNNReal _ (by positivity : (0 : ℝ) ≤ (q : ℝ) / (n : ℝ)),
-    NNReal.coe_natCast, NNReal.coe_ofNat]
-  field_simp
-
 /-- The collision bias of the mean ordinary homomorphism density along the padded exposure is at
 most `ε / 2` once `2q² ≤ εn`, where `q` is the number of vertices of `F`. -/
 private theorem abs_integral_homDensityFin_exposedSample_sub_le {V : Type*} [Fintype V]
@@ -138,7 +99,8 @@ private theorem sampleGraph_homDensityFin_concentration_of_card_pos {V : Type*} 
   have hVn : Fintype.card V ≤ n := by
     have hεn : ε * (n : ℝ) ≤ n := by nlinarith
     have hq1 : (1 : ℝ) ≤ Fintype.card V := by exact_mod_cast hq
-    exact_mod_cast (show (Fintype.card V : ℝ) ≤ n by nlinarith)
+    have hVnR : (Fintype.card V : ℝ) ≤ n := by nlinarith
+    exact_mod_cast hVnR
   let ν : Measure (Ω × (Fin n → ℝ)) :=
     μ.prod (Measure.pi fun _ : Fin n => Probability.uniformMeasure 0 1)
   let f : (Fin n → Ω × (Fin n → ℝ)) → ℝ := fun x => homDensityFin F (exposedSample W x)
@@ -157,8 +119,8 @@ private theorem sampleGraph_homDensityFin_concentration_of_card_pos {V : Type*} 
   rw [hν] at hsub
   rw [← map_exposedSample W n,
     map_measureReal_apply (measurable_exposedSample W) MeasurableSet.of_discrete,
-    ← neg_sq_div_two_mul_variance_proxy (ε := ε) hq hnpos]
-  exact measureReal_abs_sub_ge_le_of_hasSubgaussianMGF (g := f) hsub
+    ← Probability.neg_sq_div_two_mul_variance_proxy (ε := ε) hq hnpos]
+  exact Probability.measureReal_abs_sub_ge_le_of_hasSubgaussianMGF (g := f) hsub
     (abs_integral_homDensityFin_exposedSample_sub_le F W hq hnpos hVn hn) hε
 
 /-- **Exponential concentration of a sampled homomorphism density.** Let `F` have `q` vertices.
