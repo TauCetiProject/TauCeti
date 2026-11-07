@@ -48,6 +48,13 @@ complex is set up.
 * `CategoryTheory.Subobject.extend_factors`: extension is compatible with chain maps.
 * `CategoryTheory.Subobject.mem_range_extend_arrow_f_iff`: for complexes of modules, in the degree
   `e.f i` the extended subcomplex consists of the elements whose image in degree `i` lies in `S`.
+
+## Provenance
+
+`Subobject.extend` and its API, together with the preservation of monomorphisms by
+`HomologicalComplex.extendMap`, are adapted from the closed TauCeti PR
+[#16864](https://github.com/TauCetiProject/TauCeti/pull/16864) (the Serre filtration of cubical
+chains), where they served to regrade the Serre filtration.
 -/
 
 public section
