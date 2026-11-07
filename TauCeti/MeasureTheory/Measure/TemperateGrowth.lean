@@ -35,6 +35,42 @@ public section
 open MeasureTheory Set
 open scoped NNReal
 
+namespace MeasureTheory
+
+/-- On the unit interval `[n, n + 1]`, a nonpositive power of `1 + ‖x‖` is bounded by
+`2 ^ (-p)` times its value at the left endpoint `n`. -/
+theorem one_add_norm_rpow_le_two_rpow_mul_of_mem_Icc_intCast {p : ℝ} (hp : p ≤ 0) (n : ℤ)
+    {x : ℝ} (hx : x ∈ Icc (n : ℝ) (n + 1)) :
+    (1 + ‖x‖) ^ p ≤ (2 : ℝ) ^ (-p) * (1 + ‖(n : ℝ)‖) ^ p := by
+  have hn : ‖(n : ℝ)‖ ≤ 1 + ‖x‖ := by
+    have hsub : ‖(n : ℝ) - x‖ ≤ 1 := by
+      rw [Real.norm_eq_abs, abs_le]
+      constructor <;> linarith [hx.1, hx.2]
+    calc
+      ‖(n : ℝ)‖ ≤ ‖(n : ℝ) - x‖ + ‖x‖ := norm_le_norm_sub_add _ _
+      _ ≤ 1 + ‖x‖ := by gcongr
+  have hbase : (1 + ‖(n : ℝ)‖) / 2 ≤ 1 + ‖x‖ := by
+    linarith [norm_nonneg x]
+  calc
+    (1 + ‖x‖) ^ p ≤ ((1 + ‖(n : ℝ)‖) / 2) ^ p :=
+      Real.rpow_le_rpow_of_nonpos (by positivity) hbase hp
+    _ = (2 : ℝ) ^ (-p) * (1 + ‖(n : ℝ)‖) ^ p := by
+      rw [Real.div_rpow (by positivity) (by positivity), Real.rpow_neg (by positivity)]
+      ring
+
+/-- The inverse powers `(1 + ‖n‖) ^ p`, `p < -1`, are summable over the integers. -/
+theorem summable_one_add_norm_intCast_rpow {p : ℝ} (hp : p < -1) :
+    Summable (fun n : ℤ => (1 + ‖(n : ℝ)‖) ^ p) := by
+  have hsNat : Summable (fun n : ℕ => (1 + (n : ℝ)) ^ p) := by
+    have hs := (Real.summable_one_div_nat_add_rpow 1 (-p)).2 (by linarith)
+    convert hs using 1
+    ext n
+    rw [abs_of_pos (by positivity), Real.rpow_neg (by positivity)]
+    simp [add_comm]
+  simpa [summable_int_iff_summable_nat_and_neg] using And.intro hsNat hsNat
+
+end MeasureTheory
+
 namespace MeasureTheory.Measure
 
 /-- Uniformly bounded masses on the integer unit intervals imply integrability of every
@@ -49,23 +85,8 @@ theorem integrable_one_add_norm_rpow_of_measure_Icc_int_le (μ : Measure ℝ)
     exact Continuous.rpow_const (by fun_prop) (fun x => Or.inl (by positivity))
   -- On each unit interval, the weight is bounded by a constant times its value at the left end.
   have hb (n : ℤ) {x : ℝ} (hx : x ∈ Icc (n : ℝ) (n + 1)) : ‖f x‖ ≤ b n := by
-    have hn : ‖(n : ℝ)‖ ≤ 1 + ‖x‖ := by
-      have hsub : ‖(n : ℝ) - x‖ ≤ 1 := by
-        rw [Real.norm_eq_abs, abs_le]
-        constructor <;> linarith [hx.1, hx.2]
-      calc
-        ‖(n : ℝ)‖ ≤ ‖(n : ℝ) - x‖ + ‖x‖ := norm_le_norm_sub_add _ _
-        _ ≤ 1 + ‖x‖ := by gcongr
-    have hbase : (1 + ‖(n : ℝ)‖) / 2 ≤ 1 + ‖x‖ := by
-      linarith [norm_nonneg x]
-    calc
-      ‖f x‖ = (1 + ‖x‖) ^ p := Real.norm_of_nonneg (by positivity)
-      _ ≤ ((1 + ‖(n : ℝ)‖) / 2) ^ p :=
-        Real.rpow_le_rpow_of_nonpos (by positivity) hbase (by linarith)
-      _ = b n := by
-        dsimp [b]
-        rw [Real.div_rpow (by positivity) (by positivity), Real.rpow_neg (by positivity)]
-        ring
+    rw [Real.norm_of_nonneg (by positivity)]
+    exact one_add_norm_rpow_le_two_rpow_mul_of_mem_Icc_intCast (by linarith) n hx
   have hi (n : ℤ) : IntegrableOn f (Icc (n : ℝ) (n + 1)) μ := by
     have hm : μ (Icc (n : ℝ) (n + 1)) < ⊤ :=
       (hμ n).trans_lt (by simp)
@@ -73,15 +94,7 @@ theorem integrable_one_add_norm_rpow_of_measure_Icc_int_le (μ : Measure ℝ)
       ⟨by simpa using hm⟩
     exact ⟨hf.aestronglyMeasurable, .of_bounded
       (ae_restrict_of_forall_mem measurableSet_Icc fun x hx => hb n hx)⟩
-  -- The majorants form a two-sided p-series, including the interval containing zero.
-  have hsNat : Summable (fun n : ℕ => (1 + (n : ℝ)) ^ p) := by
-    have hs := (Real.summable_one_div_nat_add_rpow 1 (-p)).2 (by linarith)
-    convert hs using 1
-    ext n
-    rw [abs_of_pos (by positivity), Real.rpow_neg (by positivity)]
-    simp [add_comm]
-  have hs : Summable (fun n : ℤ => (1 + ‖(n : ℝ)‖) ^ p) := by
-    simpa [summable_int_iff_summable_nat_and_neg] using And.intro hsNat hsNat
+  have hs := summable_one_add_norm_intCast_rpow hp
   -- Sum the interval integrals using the uniform mass bound; overlaps at atoms cause no problem.
   have hsum : Summable fun n : ℤ => ∫ x in Icc (n : ℝ) (n + 1), ‖f x‖ ∂μ := by
     refine (hs.mul_left ((2 : ℝ) ^ (-p) * C)).of_nonneg_of_le
