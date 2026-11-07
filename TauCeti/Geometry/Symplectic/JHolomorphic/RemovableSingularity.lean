@@ -112,27 +112,6 @@ theorem exists_continuousOn_update_of_finite_energy
       simpa using hqK
     · simpa [Function.update_of_ne hzz] using huK ⟨hz, hzz⟩
 
-omit [FiniteDimensional ℝ V] in
-/-- If a real-linear map out of `ℂ` sends `I` to `A (L 1)`, where `A` squares to `-1`, then so does
-its precomposition with multiplication by any `b`: `L (b * I) = A (L b)`. -/
-private theorem apply_mul_I_eq_of_apply_I_eq {L : ℂ →L[ℝ] V} {A : V →L[ℝ] V}
-    (hL : L I = A (L 1)) (hA : ∀ v, A (A v) = -v) (b : ℂ) : L (b * I) = A (L b) := by
-  have h := (L : ℂ →ₗ[ℝ] V).apply_eq_re_smul_one_add_im_smul_I
-  simp only [ContinuousLinearMap.coe_coe] at h
-  rw [h, h b, hL]
-  simp [hA]
-  module
-
-omit [FiniteDimensional ℝ V] in
-/-- If a real-linear map out of `ℂ` sends `I` to `A (L 1)`, where `‖A‖ ≤ M`, then `L 1` controls
-`L`: `‖L a‖ ≤ (1 + M) * ‖L 1‖ * ‖a‖`. -/
-private theorem norm_apply_le_of_apply_I_eq {L : ℂ →L[ℝ] V} {A : V →L[ℝ] V} {M : ℝ}
-    (hL : L I = A (L 1)) (hA : ‖A‖ ≤ M) (a : ℂ) : ‖L a‖ ≤ (1 + M) * ‖L 1‖ * ‖a‖ := by
-  refine (L.norm_apply_le_norm_one_add_norm_I a).trans
-    (mul_le_mul_of_nonneg_right ?_ (norm_nonneg a))
-  rw [hL]
-  linarith [A.le_of_opNorm_le hA (L 1)]
-
 /-- **The energy near infinity is the energy of the inverted map near zero**, up to a constant:
 for a solution of `∂ₜu = J(u) ∂ₛu` outside the disc of radius `R`, with `‖J‖ ≤ M` along it, the
 map `w ↦ u w⁻¹` has integrable energy density on the disc of radius `R⁻¹` whenever `u` has
@@ -167,7 +146,8 @@ private theorem integrableOn_norm_fderiv_comp_inv_sq {M : ℝ}
   -- Pointwise, `‖∂ₛ(u ∘ inv)‖ ≤ (1 + M) ‖w‖⁻² ‖∂ₛu‖` by the Cauchy--Riemann equation.
   have hbound (w : ℂ) (hw : w ∈ D) : ‖fderiv ℝ (fun w ↦ u w⁻¹) w 1‖ ^ 2 ≤
       (1 + M) ^ 2 * (|(f' w).det| * ‖fderiv ℝ u w⁻¹ 1‖ ^ 2) := by
-    have hle := norm_apply_le_of_apply_I_eq (hCR _ (hDE hw)) (hM _ (hDE hw)) (-(w ^ 2)⁻¹)
+    have hle := ContinuousLinearMap.norm_apply_le_of_apply_I_eq (hCR _ (hDE hw)) (hM _ (hDE hw))
+      (-(w ^ 2)⁻¹)
     rw [fderiv_comp_inv_apply hw.2 (hdu w hw), mul_one, hdet]
     calc _ ≤ ((1 + M) * ‖fderiv ℝ u w⁻¹ 1‖ * ‖-(w ^ 2)⁻¹‖) ^ 2 :=
           pow_le_pow_left₀ (norm_nonneg _) hle 2
@@ -203,7 +183,8 @@ theorem exists_tendsto_cocompact_of_finite_energy
     have hdw : DifferentiableAt ℝ u w⁻¹ :=
       hdu.differentiableAt (isClosed_closedBall.isOpen_compl.mem_nhds (hDE hw))
     rw [fderiv_comp_inv_apply hw.2 hdw, fderiv_comp_inv_apply hw.2 hdw, mul_one]
-    exact apply_mul_I_eq_of_apply_I_eq (hCR _ (hDE hw)) (hJsq _ (huK (hDE hw))) _
+    exact (fderiv ℝ u w⁻¹ : ℂ →ₗ[ℝ] V).apply_mul_I_eq_of_apply_I_eq (A := J (u w⁻¹))
+      (hCR _ (hDE hw)) (hJsq _ (huK (hDE hw))) _
   obtain ⟨q, hqK, hlim, -, -⟩ := ω.exists_continuousOn_update_of_finite_energy hg hc
     (inv_pos.2 hR) hW hJ hK hKW hJsq (hu.comp ((contDiffOn_inv ℝ).mono fun w hw ↦ hw.2) hDE)
     hCRv (huK.comp hDE) (fun w hw ↦ htame _ (hDE hw))
