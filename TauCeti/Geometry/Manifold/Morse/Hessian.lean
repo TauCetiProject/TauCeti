@@ -676,8 +676,7 @@ theorem criticalHessian_apply_eq_of_mem_maximalAtlas (hf : ContMDiffAt I 𝓘(�
   obtain ⟨φ, hφx, hφ, hDφ, -, hfg, hreg⟩ := exists_transition he hx
   have key := fderiv_fderiv_comp_apply_of_fderiv_eq_zero (hreg f hf) hφ
     (hφx ▸ (mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero
-      (IsManifold.maximalAtlas_subset_of_le (by norm_num) he) hx
-      (hf.mdifferentiableAt two_ne_zero)).mp hcrit) v w
+      (IsManifold.maximalAtlas_subset_of_le (by norm_num) he) hx).mp hcrit) v w
   rw [← (hfg f).fderiv.fderiv_eq, hDφ, hφx] at key
   exact key
 
@@ -716,8 +715,7 @@ theorem manifoldMorseIndex_eq_morseIndex_of_mem_maximalAtlas (hf : ContMDiffAt I
   obtain ⟨φ, hφx, hφ, -, hinv, hfg, hreg⟩ := exists_transition he hx
   rw [manifoldMorseIndex_def, morseIndex_congr_of_eventuallyEq (hfg f),
     morseIndex_comp (hreg f hf) hφ (hφx ▸ (mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero
-      (IsManifold.maximalAtlas_subset_of_le (by norm_num) he) hx
-      (hf.mdifferentiableAt two_ne_zero)).mp hcrit) hinv, hφx]
+      (IsManifold.maximalAtlas_subset_of_le (by norm_num) he) hx).mp hcrit) hinv, hφx]
 
 omit hx in
 /-- At a nondegenerate critical point in a chart's target, the coordinate Morse index equals
@@ -746,8 +744,7 @@ theorem isMorseOn_iff_of_mem_maximalAtlas {s : Set M} (hf : ∀ x ∈ s, ContMDi
   -- Criticality and nondegeneracy at a point of `s` may be read in the chart `e`.
   have hcrit {x : M} (hx : x ∈ s) :
       x ∈ criticalPoints I f ↔ fderiv ℝ (f ∘ (e.extend I).symm) (e.extend I x) = 0 :=
-    mem_criticalPoints.trans (mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero he₁ (hs hx)
-      ((hf x hx).mdifferentiableAt (by simp)))
+    mem_criticalPoints.trans (mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero he₁ (hs hx))
   rw [isMorseOn_iff_criticalPoints, hasNondegenerateCriticalPointsOn_iff]
   refine ⟨fun h ↦ ?_, fun h ↦ ⟨fun x hx ↦ (hf x hx).contMDiffWithinAt, fun x hx hx₀ ↦ ?_⟩⟩
   · rintro _ ⟨x, hx, rfl⟩ hx₀
