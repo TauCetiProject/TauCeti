@@ -25,6 +25,8 @@ interchangeably when edge identities carry no additional information.
 
 * `Graph.edgeEndsEquiv`: actual edges of a simple multigraph are the edges of its underlying
   simple graph.
+* `Graph.ofSimpleGraphEdgeSetEquiv`: actual edges of the multigraph built from a simple graph
+  are the edges of that simple graph.
 * `Graph.ofSimpleGraphToSimpleGraphIso`: the canonical multigraph isomorphism from the graph
   reconstructed from the underlying simple graph to the original simple multigraph.
 -/
@@ -93,14 +95,26 @@ theorem edgeEnds_edgeEndsEquiv_symm_apply (G : Graph V E) [G.Simple]
     G.edgeEnds (G.edgeEndsEquiv.symm p) = p := by
   exact congrArg Subtype.val (G.edgeEndsEquiv.apply_symm_apply p)
 
-private def ofSimpleGraphEdgeSetEquiv (H : SimpleGraph G.vertexSet) :
+/-- The actual edges of the multigraph built from a simple graph are exactly the edges of that
+simple graph. -/
+def ofSimpleGraphEdgeSetEquiv {α : Type*} (H : SimpleGraph α) :
     (ofSimpleGraph H).edgeSet ≃ H.edgeSet :=
   Equiv.subtypeEquivRight fun _ ↦ by rw [edgeSet_ofSimpleGraph]
 
+/-- The edge equivalence `Graph.ofSimpleGraphEdgeSetEquiv` does not change the underlying
+unordered pair. -/
 @[simp]
-private theorem coe_ofSimpleGraphEdgeSetEquiv_apply (H : SimpleGraph G.vertexSet)
+theorem coe_ofSimpleGraphEdgeSetEquiv_apply {α : Type*} (H : SimpleGraph α)
     (e : (ofSimpleGraph H).edgeSet) :
-    (ofSimpleGraphEdgeSetEquiv H e : Sym2 G.vertexSet) = e :=
+    (ofSimpleGraphEdgeSetEquiv H e : Sym2 α) = e :=
+  (rfl)
+
+/-- The inverse of `Graph.ofSimpleGraphEdgeSetEquiv` does not change the underlying unordered
+pair. -/
+@[simp]
+theorem coe_ofSimpleGraphEdgeSetEquiv_symm_apply {α : Type*} (H : SimpleGraph α)
+    (e : H.edgeSet) :
+    ((ofSimpleGraphEdgeSetEquiv H).symm e : Sym2 α) = e :=
   (rfl)
 
 /-- Reconstructing a simple multigraph from its underlying simple graph gives an isomorphic
