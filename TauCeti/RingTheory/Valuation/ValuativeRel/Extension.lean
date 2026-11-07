@@ -37,6 +37,8 @@ the two valuative topologies.
   valuative relation is nontrivial.
 * `TauCeti.integerRingAlgebra`: the induced algebra structure on the valuation rings.
 * `TauCeti.residueFieldAlgebra`: the induced algebra structure on the residue fields.
+* `TauCeti.algebraMap_comp_algebraMap_integerRing`: the structure maps of the valuation rings and
+  of the fields form a commuting square.
 * `TauCeti.algebraMap_integerRing_dvd_iff`: the map of valuation rings reflects divisibility.
 * `TauCeti.aroots_eq_map_roots_integerRing`: the roots in `L` of a monic polynomial over the
   valuation ring of `K` are its roots in the valuation ring of `L`.
@@ -103,6 +105,12 @@ noncomputable instance residueFieldAlgebra : Algebra 𝓀ᵥ[K] 𝓀ᵥ[L] :=
 theorem coe_algebraMap_integerRing (x : 𝒪ᵥ[K]) :
     ((algebraMap 𝒪ᵥ[K] 𝒪ᵥ[L] x : 𝒪ᵥ[L]) : L) = algebraMap K L (x : K) :=
   Valuation.HasExtension.coe_algebraMap_valuationSubring_eq (valuation K) (valuation L) x
+
+/-- The square from `𝒪ᵥ[K]` to `L` through `𝒪ᵥ[L]` and through `K` commutes. -/
+theorem algebraMap_comp_algebraMap_integerRing :
+    (algebraMap 𝒪ᵥ[L] L).comp (algebraMap 𝒪ᵥ[K] 𝒪ᵥ[L]) =
+      (algebraMap K L).comp (algebraMap 𝒪ᵥ[K] K) := by
+  rw [← IsScalarTower.algebraMap_eq, ← IsScalarTower.algebraMap_eq]
 
 /-- The integer-ring structure map reflects divisibility: an integer of `K` divides another in the
 integers of `L` exactly when it does in the integers of `K`, since both say that its value is

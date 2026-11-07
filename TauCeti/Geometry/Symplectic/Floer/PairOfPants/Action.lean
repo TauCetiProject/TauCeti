@@ -509,7 +509,7 @@ private theorem integral_floerEnergyDensity_image_endChart_eq (ω : SymplecticFo
           add_zero] at h
         simp only [comp_apply, endChart_apply, Complex.equivRealProdCLM_symm_apply,
           Complex.ofReal_one, one_mul, Complex.ofReal_zero, zero_mul, add_zero, h]
-  simp only [equivRealProdCLM_cylindricalEndLift]
+  simp only [← endChart_mk]
   rcases endSign_eq_one_or_eq_neg_one q with h | h
   · have hP : P = Ioc c R := by ext s; simp [P, h]
     have hae : P ×ˢ Ico (0 : ℝ) 1 =ᵐ[volume] Icc c R ×ˢ Icc 0 1 := by
@@ -716,7 +716,7 @@ theorem integral_floerEnergyDensity_pairOfPantsPerturbation_inter_eq_sum_hamilto
         (q.cylindricalEndLift (↑(q.endSign * c) + ↑t * Complex.I))) := by
     funext t
     refine hv_eq _ ?_
-    rw [equivRealProdCLM_cylindricalEndLift, re_endCoord_endChart, ← mul_assoc, endSign_mul_self,
+    rw [← endChart_mk, re_endCoord_endChart, ← mul_assoc, endSign_mul_self,
       one_mul]
     linarith
   have hloop {r : Puncture} (hr : r ∈ Finset.univ.erase q) :
@@ -726,7 +726,7 @@ theorem integral_floerEnergyDensity_pairOfPantsPerturbation_inter_eq_sum_hamilto
         (r.cylindricalEndLift (↑(r.endSign * R) + ↑t * Complex.I))) := by
     funext t
     refine hv_eq _ ?_
-    rw [equivRealProdCLM_cylindricalEndLift]
+    rw [← endChart_mk]
     linarith [endSign_mul_re_endCoord_nonpos (Finset.ne_of_mem_erase hr) (q := r) (r := q)
       (w := Complex.equivRealProdCLM.symm (endChart r (r.endSign * R, t)))
       (by rw [re_endCoord_endChart, ← mul_assoc, endSign_mul_self, one_mul]; linarith)]

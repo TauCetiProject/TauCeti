@@ -210,6 +210,28 @@ theorem re_endCoord_inf_one_pos : 0 < (inf.endCoord 1).re := by
   rw [this, Real.log_inv, neg_neg]
   exact div_pos (Real.log_pos one_lt_two) (by positivity)
 
+/-- On the closed disc `‖w‖ ≤ 2 exp (2πR)` with `R ≥ 0`, the signed longitudinal coordinate `-s` of
+the end at `∞` is at most `R`: the disc is bounded by the circle `s = -R` of that end. -/
+theorem neg_re_endCoord_inf_le {R : ℝ} (hR : 0 ≤ R) {w : ℂ}
+    (hw : ‖w‖ ≤ 2 * Real.exp (2 * π * R)) : -(inf.endCoord w).re ≤ R := by
+  rw [re_endCoord, endCenter_inf, endScale_inf, sub_zero, neg_div, neg_neg,
+    div_le_iff₀ (by positivity)]
+  rcases eq_or_ne w 0 with rfl | hw₀
+  · simpa using mul_nonneg hR Real.two_pi_pos.le
+  · rw [Real.log_le_iff_le_exp (by simpa using hw₀), norm_div, Complex.norm_ofNat, mul_comm R]
+    linarith
+
+/-- On the punctured disc `0 < ‖w - c_q‖ ≤ exp (-2πr) / 2` about the center of a positive end `q`,
+the longitudinal coordinate of that end is at least `r`: the disc is bounded by the circle `s = r`
+of the end. -/
+theorem le_re_endCoord_of_norm_sub_endCenter_le {q : Puncture} (hq : q ≠ inf) {r : ℝ} {w : ℂ}
+    (hw : w ≠ q.endCenter) (h : ‖w - q.endCenter‖ ≤ Real.exp (-(2 * π * r)) / 2) :
+    r ≤ (q.endCoord w).re := by
+  have hd : 0 < ‖w - q.endCenter‖ := norm_pos_iff.2 (sub_ne_zero.2 hw)
+  rw [re_endCoord, norm_div, norm_endScale hq, le_div_iff₀ (by positivity), le_neg,
+    Real.log_le_iff_le_exp (by positivity), div_le_iff₀ (by norm_num), mul_comm r]
+  linarith
+
 /-- Off the disc `‖w‖ < exp (-2π) / 2`, the longitudinal coordinate of the end at `0` is at most
 `1`. -/
 theorem re_endCoord_zero_le_one {w : ℂ} (hw : Real.exp (-(2 * π)) / 2 ≤ ‖w‖) :

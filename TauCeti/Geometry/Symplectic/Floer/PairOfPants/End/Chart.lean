@@ -110,11 +110,10 @@ theorem endChart_apply (q : Puncture) (z : ℝ × ℝ) :
       Complex.equivRealProdCLM (q.cylindricalEndLift (Complex.equivRealProdCLM.symm z)) :=
   (rfl)
 
-/-- A point `φ_q(x + i t)` of an end lift, in the real coordinates, is the value of the end chart at
-`(x, t)`. -/
-theorem equivRealProdCLM_cylindricalEndLift (q : Puncture) (x t : ℝ) :
-    Complex.equivRealProdCLM (q.cylindricalEndLift (↑x + ↑t * Complex.I)) = endChart q (x, t) := by
-  rw [endChart_apply, Complex.equivRealProdCLM_symm_apply]
+/-- The end chart at a point `(s, t)` of the cylinder is the end lift at `s + i t`. -/
+theorem endChart_mk (q : Puncture) (s t : ℝ) :
+    endChart q (s, t) = Complex.equivRealProdCLM (q.cylindricalEndLift (↑s + ↑t * Complex.I)) := by
+  simp [endChart_apply, Complex.equivRealProdCLM_symm_apply]
 
 /-- In complex coordinates the end chart is the end lift. -/
 @[simp]
