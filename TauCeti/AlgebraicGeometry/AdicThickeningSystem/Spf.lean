@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicThickeningSystem.Basic
+public import Mathlib.RingTheory.AdicCompletion.LocalRing
+public import TauCeti.RingTheory.AdicCompletion.Algebra
 public import TauCeti.RingTheory.AdicCompletion.Limit
 
 /-!
@@ -32,6 +34,10 @@ the morphism induced by `φ` is adic (`IsAdicHom`) if and only if
 `(I ^ (n + 1)).map φ ⊔ J ^ (n + 2) = J ^ (n + 1)` for every `n`
 (`AdicThickeningSystem.isAdicHom_spfMap_iff`, `Spf.isAdicHom_map_iff`).
 
+For a finitely generated ideal `I` of any commutative ring `R`, the `I`-adic completion `R̂` is an
+adic ring with ideal of definition `I R̂` (`AdicRing.completion`), and `R → R̂` induces isomorphisms
+`R ⧸ I ^ (n + 1) ≅ R̂ ⧸ (I R̂) ^ (n + 1)`, so that `Spf R̂ ≅ spf I` (`Spf.completionIso`).
+
 ## Main definitions
 
 * `TauCeti.AlgebraicGeometry.AdicRing`: a commutative ring bundled with a finitely generated ideal
@@ -49,6 +55,9 @@ the morphism induced by `φ` is adic (`IsAdicHom`) if and only if
   `{φ : A →+* B // I ≤ J.comap φ}` when `B` is `J`-adically complete.
 * `TauCeti.AlgebraicGeometry.AdicThickeningSystem.uniqueSpfMaximalIdeal`: for a local ring `R`,
   every level of `spf (IsLocalRing.maximalIdeal R)` has a unique point.
+* `TauCeti.AlgebraicGeometry.AdicRing.completion`: the `I`-adic completion of a ring along a
+  finitely generated ideal `I`, as an adic ring.
+* `TauCeti.AlgebraicGeometry.Spf.completionIso`: for `I` finitely generated, `Spf R̂ ≅ spf I`.
 
 ## Main results
 
@@ -58,6 +67,8 @@ the morphism induced by `φ` is adic (`IsAdicHom`) if and only if
 * `TauCeti.AlgebraicGeometry.AdicThickeningSystem.isLocallyNoetherian_spf`,
   `TauCeti.AlgebraicGeometry.Spf.isLocallyNoetherian`: `Spf A` is locally Noetherian when `A` is a
   Noetherian ring.
+* `TauCeti.AlgebraicGeometry.AdicThickeningSystem.isIso_spfMap_algebraMap`: for `I` finitely
+  generated, the completion map `R → R̂` induces an isomorphism `spf (I R̂) ⟶ spf I`.
 
 ## References
 
@@ -104,6 +115,25 @@ theorem ofBot_carrier (R : Type u) [CommRing R] : (ofBot R).carrier = R :=
 
 @[simp]
 theorem ofBot_ideal (R : Type u) [CommRing R] : (ofBot R).ideal = ⊥ :=
+  (rfl)
+
+/-- The `I`-adic completion `R̂` of a commutative ring `R` along a finitely generated ideal `I`, as
+an adic ring with ideal of definition `I R̂` (`AdicCompletion.isAdicComplete_self`). -/
+noncomputable abbrev completion {R : Type u} [CommRing R] (I : Ideal R) (fg : I.FG) :
+    AdicRing.{u} where
+  carrier := AdicCompletion I R
+  ideal := I.map (algebraMap R (AdicCompletion I R))
+  fg := fg.map _
+  complete := AdicCompletion.isAdicComplete_self I fg
+
+@[simp]
+theorem completion_carrier {R : Type u} [CommRing R] (I : Ideal R) (fg : I.FG) :
+    (completion I fg).carrier = AdicCompletion I R :=
+  (rfl)
+
+@[simp]
+theorem completion_ideal {R : Type u} [CommRing R] (I : Ideal R) (fg : I.FG) :
+    (completion I fg).ideal = I.map (algebraMap R (AdicCompletion I R)) :=
   (rfl)
 
 end AdicRing
@@ -290,6 +320,16 @@ theorem spfMap_comp {I : Ideal R} {J : Ideal S} {K : Ideal T}
   ext x
   rfl
 
+/-- The morphism `spfMap φ hφ : spf J ⟶ spf I` lies over `Spec.map φ : Spec S ⟶ Spec R`. -/
+@[reassoc (attr := simp)]
+theorem spfMap_spfToSpec {I : Ideal R} {J : Ideal S} (φ : R →+* S) (hφ : I ≤ J.comap φ) :
+    spfMap φ hφ ≫ spfToSpec I = spfToSpec J ≫ ofScheme.map (Spec.map (CommRingCat.ofHom φ)) := by
+  ext n
+  rw [comp_app, comp_app]
+  -- Both sides are `Spec.map` of the ring map `R → S ⧸ J ^ (n + 1)`, `x ↦ [φ x]`.
+  exact (Spec.map_comp _ _).symm.trans
+    (Spec.map_comp (CommRingCat.ofHom φ) (CommRingCat.ofHom (Ideal.Quotient.mk (J ^ (n + 1)))))
+
 /-- The level-preserving morphism `spfMap φ hφ : spf J ⟶ spf I` is adic if and only if at every
 level `n`, `(I ^ (n + 1)).map φ ⊔ J ^ (n + 2) = J ^ (n + 1)`. In particular, at `n = 0` an adic
 morphism satisfies `I.map φ ⊔ J ^ 2 = J`. -/
@@ -408,6 +448,24 @@ theorem mk_comp_spfHomEquiv_apply {I : Ideal R} {J : Ideal S} [IsAdicComplete J 
     Ideal.quotientPowSuccDiagram, unop_op] at hn ⊢
   ext x
   exact congr($hn x)
+
+/-- For a finitely generated ideal `I` of `R`, the morphism `spf (I R̂) ⟶ spf I` induced by the
+completion map `R → R̂` is an isomorphism, since `R ⧸ I ^ (n + 1) → R̂ ⧸ (I R̂) ^ (n + 1)` is
+bijective at every level. -/
+theorem isIso_spfMap_algebraMap (I : Ideal R) (fg : I.FG) :
+    IsIso (spfMap (I := I) (J := I.map (algebraMap R (AdicCompletion I R)))
+      (algebraMap R (AdicCompletion I R)) Ideal.le_comap_map) := by
+  refine (isIso_iff_forall_isIso_app _).mpr fun n ↦ ?_
+  rw [spfMap_app]
+  have hH : I ^ (n + 1) ≤ ((I.map (algebraMap R (AdicCompletion I R))) ^ (n + 1)).comap
+      (algebraMap R (AdicCompletion I R)) :=
+    (Ideal.pow_right_mono Ideal.le_comap_map (n + 1)).trans (Ideal.le_comap_pow _ (n + 1))
+  have := (ConcreteCategory.isIso_iff_bijective
+    (CommRingCat.ofHom (Ideal.quotientMap _ (algebraMap R (AdicCompletion I R)) hH))).mpr
+    (AdicCompletion.quotientMap_algebraMap_bijective fg (n + 1) (H := hH))
+  -- The ascription states the instance between the affine schemes `Spec (R̂ ⧸ (I R̂) ^ (n + 1))`
+  -- and `Spec (R ⧸ I ^ (n + 1))`, which instance search does not see through the levels of `spf`.
+  exact (inferInstance : IsIso (Spec.map (CommRingCat.ofHom (Ideal.quotientMap _ _ hH))))
 
 end Unbundled
 
@@ -543,6 +601,34 @@ theorem mk_comp_homEquiv_apply {A B : AdicRing.{u}} (f : Spf B ⟶ Spf A) (n : �
 instance isLocallyNoetherian (A : AdicRing.{u}) [IsNoetherianRing A.carrier] :
     (Spf A).IsLocallyNoetherian :=
   AdicThickeningSystem.isLocallyNoetherian_spf A.ideal
+
+section Completion
+
+variable {R : Type u} [CommRing R] (I : Ideal R) (fg : I.FG)
+
+/-- For a finitely generated ideal `I` of `R`, the formal spectrum of the `I`-adic completion `R̂`
+is the system `spf I` of the affine schemes `Spec (R ⧸ I ^ (n + 1))`, via the completion map
+`R → R̂`. -/
+noncomputable def completionIso : Spf (AdicRing.completion I fg) ≅ AdicThickeningSystem.spf I :=
+  @asIso _ _ _ _
+    (AdicThickeningSystem.spfMap (algebraMap R (AdicCompletion I R)) Ideal.le_comap_map)
+    (AdicThickeningSystem.isIso_spfMap_algebraMap I fg)
+
+@[simp]
+theorem completionIso_hom :
+    (completionIso I fg).hom =
+      AdicThickeningSystem.spfMap (algebraMap R (AdicCompletion I R)) Ideal.le_comap_map :=
+  (rfl)
+
+/-- `completionIso` lies over the morphism `Spec R̂ ⟶ Spec R` induced by the completion map. -/
+@[reassoc]
+theorem completionIso_hom_spfToSpec :
+    (completionIso I fg).hom ≫ AdicThickeningSystem.spfToSpec I =
+      toSpec (AdicRing.completion I fg) ≫ AdicThickeningSystem.ofScheme.map
+        (Spec.map (CommRingCat.ofHom (algebraMap R (AdicCompletion I R)))) :=
+  AdicThickeningSystem.spfMap_spfToSpec _ Ideal.le_comap_map
+
+end Completion
 
 end Spf
 

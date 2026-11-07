@@ -114,7 +114,8 @@ private theorem eq_of_hom_of_hom ⦃a b b' : AffineE7⦄ (e : a ⟶ b) (e' : a �
 
 /-- **The underlying graph of `TauCeti.Quiver.AffineE7` is acyclic**, so it is the tree `E₇~`. -/
 theorem isAcyclic_underlyingGraph : (underlyingGraph AffineE7).IsAcyclic :=
-  isAcyclic_underlyingGraph_of_lt height height_lt eq_of_hom_of_hom
+  isAcyclic_underlyingGraph_of_lt height (fun _ _ e _ ↦ height_lt e)
+    fun _ _ _ e e' _ _ ↦ eq_of_hom_of_hom e e'
 
 /-- Two vertices of `TauCeti.Quiver.AffineE7` are joined by at most one arrow, counted in both
 directions. -/
