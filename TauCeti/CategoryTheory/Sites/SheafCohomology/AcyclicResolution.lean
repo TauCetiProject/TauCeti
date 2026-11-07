@@ -191,6 +191,7 @@ theorem exists_d_hom_app_eq_of_resolution (n : ℕ) (hF : Subsingleton (F.H' (n 
 
 /-- **Classes of sections are compatible with restriction**: restricting the class of a section
 `s` of `Kⁿ` over `V` along `i : U ⟶ V` gives the class of the restricted section. -/
+@[simp]
 theorem cohomologyPresheaf_map_resolutionClass {U : C} (i : U ⟶ V) {n : ℕ}
     (s : (K.X n).obj.obj (op V)) (hs : (K.d n (n + 1)).hom.app (op V) s = 0) :
     (F.cohomologyPresheaf n).map i.op (resolutionClass ι hι hι' hK V s hs) =
@@ -335,6 +336,7 @@ noncomputable def homologyIsoCohomologyPresheaf :
 
 /-- Under `homologyIsoCohomologyPresheaf`, the homology class of a cycle `s ∈ Kⁿ(U)` is its class
 `resolutionClass` in `Hⁿ(U, F)`. -/
+@[simp]
 lemma homologyIsoCohomologyPresheaf_hom_app_homologyπ_apply (U : Cᵒᵖ)
     (z : ((((sheafToPresheaf J AddCommGrpCat.{v}).mapHomologicalComplex _).obj K).cycles n).obj
       U) :
