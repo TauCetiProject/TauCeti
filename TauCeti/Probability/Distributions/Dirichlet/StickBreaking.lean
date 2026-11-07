@@ -197,7 +197,8 @@ theorem map_dirichletStickInsert_prod_betaMeasure_dirichletMeasure {a : Option Î
   calc
     _ = (dirichletMeasure a).map id := by
       apply Measure.map_congr
-      filter_upwards [ae_pos_dirichletMeasure ha, ae_sum_eq_one_dirichletMeasure ha] with x hx hs
+      filter_upwards [ae_pos_dirichletMeasure (a := a), ae_sum_eq_one_dirichletMeasure (a := a)]
+        with x hx hs
       exact dirichletStickInsert_split hs
         (Finset.sum_pos (fun i _ â†¦ hx (some i)) Finset.univ_nonempty).ne'
     _ = _ := Measure.map_id
