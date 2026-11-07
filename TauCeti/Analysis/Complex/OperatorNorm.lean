@@ -11,7 +11,9 @@ public import Mathlib.Analysis.Complex.OperatorNorm
 # Bounds for real-linear maps out of the complex line
 
 The values on `1` and `I` control a real-linear map on every complex vector. This
-estimate turns a Cauchy--Riemann equation into a bound on the full differential.
+estimate turns a Cauchy--Riemann equation into a bound on the full differential: if
+`L I = A (L 1)` with `‖A‖ ≤ M`, then `‖L a‖ ≤ (1 + M) * ‖L 1‖ * ‖a‖`
+(`ContinuousLinearMap.norm_apply_le_of_apply_I_eq`).
 -/
 
 public section
@@ -34,6 +36,16 @@ theorem norm_apply_le_norm_one_add_norm_I {V : Type*} [SeminormedAddCommGroup V]
       · exact Complex.abs_re_le_norm z
       · exact Complex.abs_im_le_norm z
     _ = (‖L 1‖ + ‖L Complex.I‖) * ‖z‖ := by ring
+
+/-- If a real-linear map out of `ℂ` sends `I` to `A (L 1)`, where `‖A‖ ≤ M`, then `L 1` controls
+`L`: `‖L a‖ ≤ (1 + M) * ‖L 1‖ * ‖a‖`. -/
+theorem norm_apply_le_of_apply_I_eq {V : Type*} [SeminormedAddCommGroup V] [NormedSpace ℝ V]
+    {L : ℂ →L[ℝ] V} {A : V →L[ℝ] V} {M : ℝ} (hL : L Complex.I = A (L 1)) (hA : ‖A‖ ≤ M)
+    (a : ℂ) : ‖L a‖ ≤ (1 + M) * ‖L 1‖ * ‖a‖ := by
+  refine (L.norm_apply_le_norm_one_add_norm_I a).trans
+    (mul_le_mul_of_nonneg_right ?_ (norm_nonneg a))
+  rw [hL]
+  linarith [A.le_of_opNorm_le hA (L 1)]
 
 end ContinuousLinearMap
 
