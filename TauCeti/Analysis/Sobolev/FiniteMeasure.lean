@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Embedding
 import TauCeti.Analysis.Sobolev.Poincare.Potential
+import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Integral.Bochner.Holder
 import TauCeti.MeasureTheory.Integral.RieszPotential
 
@@ -279,37 +280,6 @@ private def W1p0.setIntegralMulₗ (f : E → ℝ)
     rw [hx, Pi.smul_apply, smul_eq_mul]
     ring
 
-/-- **The exponent for the `Lʳ` pairing on `W^{1,2}_0`.** For `n ≥ 1` and `r > 1` with
-`n (2 - r) < 2 r`, there is a finite exponent `t ≥ 2` with `1/2 - 1/t < 1/n` and `1/r + 1/t ≤ 1`:
-take `1/t = min (1/2) (1 - 1/r)`. -/
-private lemma exists_nnreal_two_le_inv_sub_lt_and_inv_add_le_one {n : ℝ} (hn : 1 ≤ n) {r : ℝ≥0}
-    (hr : 1 < r) (hrn : n * (2 - r) < 2 * r) :
-    ∃ t : ℝ≥0, 0 < t ∧ (2 : ℝ≥0∞) ≤ t ∧ 2⁻¹ - (t : ℝ)⁻¹ < n⁻¹ ∧
-      (r : ℝ)⁻¹ + (t : ℝ)⁻¹ ≤ 1 := by
-  have hr1 : (1 : ℝ) < r := by exact_mod_cast hr
-  set τ : ℝ := min 2⁻¹ (1 - (r : ℝ)⁻¹)
-  have hrinv : (r : ℝ)⁻¹ < 1 := inv_lt_one_of_one_lt₀ hr1
-  have hτ0 : 0 < τ := lt_min (by norm_num) (by linarith)
-  have hτ2 : τ ≤ 2⁻¹ := min_le_left _ _
-  have hτr : τ ≤ 1 - (r : ℝ)⁻¹ := min_le_right _ _
-  have hτn : 2⁻¹ - τ < n⁻¹ := by
-    have hn0 : 0 < n⁻¹ := inv_pos.2 (by linarith)
-    have h2r : (r : ℝ)⁻¹ < 2⁻¹ + n⁻¹ := by
-      rw [← sub_pos, show (2⁻¹ + n⁻¹ - (r : ℝ)⁻¹) = (2 * r - n * (2 - r)) / (2 * n * r) by
-        field_simp; ring]
-      exact div_pos (by linarith) (by positivity)
-    have : 2⁻¹ - n⁻¹ < τ := lt_min (by linarith) (by linarith)
-    linarith
-  set t : ℝ≥0 := Real.toNNReal τ⁻¹
-  have ht : (t : ℝ) = τ⁻¹ := Real.coe_toNNReal _ (inv_nonneg.2 hτ0.le)
-  have ht0 : (0 : ℝ) < t := by rw [ht]; positivity
-  have h2t : (2 : ℝ≥0∞) ≤ t := by
-    have : (2 : ℝ) ≤ t := by
-      rw [ht, le_inv_comm₀ two_pos hτ0]
-      exact hτ2
-    exact_mod_cast this
-  exact ⟨t, by exact_mod_cast ht0, h2t, by rwa [ht, inv_inv], by rw [ht, inv_inv]; linarith⟩
-
 /-- **An `Lʳ` function acts continuously on `W^{1,2}_0(Ω)`.** Let `n ≥ 1` be the dimension, let
 `Ω` have finite measure, and let `r > 1` with `n (2 - r) < 2 r`, that is `r > 2n/(n + 2)` (which
 is automatic for `n ≤ 2`). For `f ∈ Lʳ(Ω)`, the pairing `v ↦ ∫_Ω f v` is a continuous linear
@@ -325,7 +295,8 @@ theorem W1p0.exists_strongDual_apply_eq_setIntegral_of_memLp [Nontrivial E]
   have hn : (1 : ℝ) ≤ n := Nat.one_le_cast.2 finrank_pos
   set ν := mu.restrict (Omega : Set E)
   have : IsFiniteMeasure ν := isFiniteMeasure_restrict.2 hOmega
-  obtain ⟨t, ht0, h2t, hτn, hrt⟩ := exists_nnreal_two_le_inv_sub_lt_and_inv_add_le_one hn hr hrn
+  obtain ⟨t, ht0, h2t, hτn, hrt⟩ :=
+    ENNReal.exists_nnreal_two_le_inv_sub_lt_and_inv_add_le_one hn hr hrn
   -- The Sobolev inequality `‖v‖_{Lᵗ} ≤ S ‖∇v‖_{L²}` on `W^{1,2}_0(Ω)`.
   obtain ⟨S, hSfin, hS⟩ : ∃ S : ℝ≥0∞, S ≠ ∞ ∧ ∀ v : W1p0 mu Omega 2,
       eLpNorm (W1p.value (v : W1p mu Omega 2)) t ν ≤ S * ‖W1p.gradient (v : W1p mu Omega 2)‖ₑ :=
