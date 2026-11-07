@@ -185,40 +185,6 @@ theorem abelianizationHom_ofAdd [Fintype X] (u : X → ℤ_[p]) :
 
 variable (r : freeProP p X)
 
-/-- The abelianization isomorphism of the free pro-`p` group carries the `p`-adic powers of the
-class of `r` to the multiples of its exponent vector. -/
-private lemma abelianizationEquiv_padicPow_class (l : ℤ_[p]) :
-    freeProP.abelianizationEquiv p X
-        ((isProP_freeProP p X).topologicalAbelianization_self.padicPow
-          (r : TopologicalAbelianization (freeProP p X)) l) =
-      ofAdd (l • (freeProP.exponentSum p X r).toAdd) := by
-  have hερ : freeProP.abelianizationEquiv p X (r : TopologicalAbelianization (freeProP p X)) =
-      ofAdd (freeProP.exponentSum p X r).toAdd := by
-    rw [freeProP.abelianizationEquiv_mk, ofAdd_toAdd]
-  have h := (isProP_freeProP p X).topologicalAbelianization_self.map_padicPow_pi
-    (freeProP.abelianizationEquiv p X : TopologicalAbelianization
-      (freeProP p X) →ₜ* Multiplicative (X → ℤ_[p]))
-    (r : TopologicalAbelianization (freeProP p X)) l
-  rwa [ContinuousMonoidHom.coe_coe, hερ, toAdd_ofAdd] at h
-
-omit [Finite X] in
-/-- The closed normal closure of `r` lies in the preimage of the closed subgroup of `p`-adic powers
-of the class of `r` in `F^{ab}`. -/
-private lemma normalClosure_topologicalClosure_le_comap_range_padicPowHom :
-    (Subgroup.normalClosure {r}).topologicalClosure ≤
-      (((isProP_freeProP p X).topologicalAbelianization_self.padicPowHom
-        (r : TopologicalAbelianization (freeProP p X)) :
-          Multiplicative ℤ_[p] →* TopologicalAbelianization (freeProP p X)).range).comap
-            (QuotientGroup.mk' (commutator (freeProP p X)).topologicalClosure) := by
-  have hF := (isProP_freeProP p X).topologicalAbelianization_self
-  refine Subgroup.topologicalClosure_minimal _ (Subgroup.normalClosure_le_normal ?_) ?_
-  · rw [Set.singleton_subset_iff, SetLike.mem_coe, Subgroup.mem_comap, MonoidHom.mem_range]
-    exact ⟨ofAdd 1, by
-      rw [MonoidHom.coe_ofClass, hF.padicPowHom_ofAdd_one, QuotientGroup.mk'_apply]⟩
-  · rw [Subgroup.coe_comap, MonoidHom.coe_range, MonoidHom.coe_ofClass]
-    exact ((isCompact_range (hF.padicPowHom _).continuous).isClosed).preimage
-      continuous_quot_mk
-
 /-- **The kernel of the abelianization map of a one-relator presentation** is the `ℤ_p`-span of the
 exponent vector of the relator: for `G = ⟨X ∣ r⟩` and `u : X → ℤ_p`, the element `∏ x, x_x ^ (u x)`
 of `G^{ab}` is trivial exactly when `u` is a `ℤ_p`-multiple of `exponentSum r`. -/
@@ -227,7 +193,7 @@ theorem abelianizationHom_ofAdd_eq_one_iff (u : X → ℤ_[p]) :
       u ∈ Submodule.span ℤ_[p] {(freeProP.exponentSum p X r).toAdd} := by
   have hF := (isProP_freeProP p X).topologicalAbelianization_self
   have hG := (isProP p X {r}).topologicalAbelianization_self
-  have hpow := abelianizationEquiv_padicPow_class r
+  have hpow := freeProP.abelianizationEquiv_padicPow_class p X r
   constructor
   · intro h
     -- The image of `u` in `F^{ab}` lies in the kernel of `F^{ab} → G^{ab}`, which is the image of
@@ -245,7 +211,7 @@ theorem abelianizationHom_ofAdd_eq_one_iff (u : X → ℤ_[p]) :
       (mk_surjective p {r}), ker_mk] at hmem
     obtain ⟨y, hy, hyu⟩ := hmem
     obtain ⟨l, hl⟩ := MonoidHom.mem_range.mp (Subgroup.mem_comap.mp
-      (normalClosure_topologicalClosure_le_comap_range_padicPowHom r hy))
+      (freeProP.normalClosure_topologicalClosure_le_comap_range_padicPowHom p X r hy))
     refine Submodule.mem_span_singleton.mpr ⟨l.toAdd, ?_⟩
     have h' := congrArg (freeProP.abelianizationEquiv p X) hyu
     rw [ContinuousMulEquiv.apply_symm_apply, ← hl, MonoidHom.coe_ofClass, hF.padicPowHom_apply,
