@@ -75,6 +75,24 @@ open scoped ENNReal Convolution
 
 namespace TauCeti
 
+/-- The integral of the pointwise minimum of two bounded measurable functions is at most the
+integral of the first one, for a finite measure. -/
+theorem integral_min_le_left_of_abs_le {α : Type*} [MeasurableSpace α] {μ : Measure α}
+    [IsFiniteMeasure μ] {f g : α → ℝ} {M : ℝ} (hf : Measurable f) (hg : Measurable g)
+    (hfM : ∀ x, |f x| ≤ M) (hgM : ∀ x, |g x| ≤ M) : ∫ x, min (f x) (g x) ∂μ ≤ ∫ x, f x ∂μ :=
+  integral_mono (.of_bound (hf.min hg).aestronglyMeasurable M (ae_of_all _ fun x ↦
+    abs_min_le_max_abs_abs.trans (max_le (hfM x) (hgM x))))
+    (.of_bound hf.aestronglyMeasurable M (ae_of_all _ hfM)) fun _ ↦ min_le_left _ _
+
+/-- The integral of the first of two bounded measurable functions is at most the integral of their
+pointwise maximum, for a finite measure. -/
+theorem integral_le_integral_max_of_abs_le {α : Type*} [MeasurableSpace α] {μ : Measure α}
+    [IsFiniteMeasure μ] {f g : α → ℝ} {M : ℝ} (hf : Measurable f) (hg : Measurable g)
+    (hfM : ∀ x, |f x| ≤ M) (hgM : ∀ x, |g x| ≤ M) : ∫ x, f x ∂μ ≤ ∫ x, max (f x) (g x) ∂μ :=
+  integral_mono (.of_bound hf.aestronglyMeasurable M (ae_of_all _ hfM))
+    (.of_bound (hf.max hg).aestronglyMeasurable M (ae_of_all _ fun x ↦
+      abs_max_le_max_abs_abs.trans (max_le (hfM x) (hgM x)))) fun _ ↦ le_max_left _ _
+
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
   [FiniteDimensional ℝ E] [BorelSpace E] {v : ℝ → E → E} {a b : ℝ} {u : ℝ × E → ℝ} {M M' : ℝ}
   {L : E → ℝ} {ν : ℝ → FiniteMeasure E} {m : Measure (ℝ × E)} [m.IsAddHaarMeasure]
@@ -191,17 +209,12 @@ theorem ofReal_integral_sub_integral_le_lintegral_of_add_smul_le
     (fun n ↦ ae_of_all _ (haM n))
     (hua.mono fun _ hx ↦
       tendsto_max_convolution_lsmul_of_upperSemicontinuousAt hρ0 hρ1 hρs (hconv _) hx)
-  have hint {t : ℝ} {f : E → ℝ} (hf : Measurable f) (hfM : ∀ x, ‖f x‖ ≤ M) :
-      Integrable f (ν t : Measure E) :=
-    .of_bound hf.aestronglyMeasurable M (ae_of_all _ hfM)
   refine le_of_tendsto (ENNReal.tendsto_ofReal (hlimb.sub hlima)) (.of_forall fun n ↦ ?_)
   refine (ENNReal.ofReal_le_ofReal (sub_le_sub ?_ ?_)).trans
     (ofReal_integral_convolution_sub_le_lintegral h hν hab hloc huM hsub (β n)
       (div_lt_self hr (by linarith [n.cast_nonneg (α := ℝ)])))
-  · exact integral_mono (hint ((hψmeas n b).min (hmeas b)) (hbM n))
-      (hint (hψmeas n b) fun x ↦ by simpa [Real.norm_eq_abs] using hψM n _) fun x ↦ min_le_left _ _
-  · exact integral_mono (hint (hψmeas n a) fun x ↦ by simpa [Real.norm_eq_abs] using hψM n _)
-      (hint ((hψmeas n a).max (hmeas a)) (haM n)) fun x ↦ le_max_left _ _
+  · exact integral_min_le_left_of_abs_le (hψmeas n b) (hmeas b) (fun _ ↦ hψM n _) fun _ ↦ huM' _
+  · exact integral_le_integral_max_of_abs_le (hψmeas n a) (hmeas a) (fun _ ↦ hψM n _) fun _ ↦ huM' _
 
 end IsContinuityEquation
 
