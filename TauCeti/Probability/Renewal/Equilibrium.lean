@@ -171,16 +171,21 @@ theorem equilibriumExcessLaw_Ioi (F : Measure ℝ≥0) (x : ℝ≥0) :
 /-- The normalized integral of the excess-tail forcing is exactly the real equilibrium
 tail. With finite mean the forcing is integrable by
 `integrableOn_Ioi_measureReal_tail_add`; with infinite mean both coefficients are zero. -/
-theorem equilibriumExcessLaw_real_Ioi_eq_integral_tail_add (F : Measure ℝ≥0)
-    [IsFiniteMeasure F] (x : ℝ≥0) :
+theorem equilibriumExcessLaw_real_Ioi_eq_integral_tail_add (F : Measure ℝ≥0) (x : ℝ≥0) :
     F.equilibriumExcessLaw.real (Ioi (x : ℝ)) =
       ((∫⁻ u, (u : ℝ≥0∞) ∂F)⁻¹).toReal *
         ∫ t : ℝ in Ioi 0, F.real (Ioi (t.toNNReal + x)) := by
+  by_cases hmean : (∫⁻ u, (u : ℝ≥0∞) ∂F) = ∞
+  · simp [hmean]
   have hm : Measurable fun t : ℝ => F (Ioi (t.toNNReal + x)) :=
     Antitone.measurable fun _ _ h => measure_mono (Ioi_subset_Ioi (by gcongr))
+  have htail : (∫⁻ t : ℝ in Ioi 0, F (Ioi (t.toNNReal + x))) ≠ ∞ := by
+    rw [lintegral_Ioi_tail_add]
+    exact ne_top_of_le_ne_top hmean
+      (lintegral_mono fun u => ENNReal.coe_le_coe.mpr (tsub_le_self : u - x ≤ u))
   rw [measureReal_def, equilibriumExcessLaw_Ioi, ENNReal.toReal_mul,
     ← lintegral_Ioi_tail_add, ← integral_toReal hm.aemeasurable
-      (ae_of_all _ fun _ => measure_lt_top _ _)]
+      (ae_lt_top' hm.aemeasurable htail)]
   rfl
 
 end MeasureTheory.Measure
