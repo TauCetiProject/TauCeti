@@ -96,7 +96,7 @@ private theorem restrictSubgroup_facts (p : ℕ) [Fact p.Prime] {G : Type*} [Gro
   have hAX : IsScalarTower AC A X := ⟨fun r s x ↦ by
     rw [hX r (s • x)]
     exact mul_smul (φA r) s x⟩
-  refine ⟨hAA, hAX, ⟨fun a r x ↦ ?_⟩, .trans A X, .trans (S := A)⟩
+  refine ⟨hAA, hAX, ⟨fun a r x ↦ ?_⟩, .trans A X, .trans A X⟩
   rw [hX (a • r) x, hX r x]
   exact (congrArg (· • x) (map_smul φA a r)).trans (smul_assoc a (φA r) x)
 
@@ -358,8 +358,8 @@ private theorem natCard_linearMap_reduction_eq_of_tensorRat (p : ℕ) [Fact p.Pr
   let _ : Module.Projective (MonoidAlgebra ℤ_[p] G) XN := hXNp
   let _ : Module.Finite ℤ_[p] XM := .trans (MonoidAlgebra ℤ_[p] G) XM
   let _ : Module.Finite ℤ_[p] XN := .trans (MonoidAlgebra ℤ_[p] G) XN
-  let _ : Module.Projective ℤ_[p] XM := Module.Projective.trans (S := MonoidAlgebra ℤ_[p] G)
-  let _ : Module.Projective ℤ_[p] XN := Module.Projective.trans (S := MonoidAlgebra ℤ_[p] G)
+  let _ : Module.Projective ℤ_[p] XM := Module.Projective.trans (MonoidAlgebra ℤ_[p] G) XM
+  let _ : Module.Projective ℤ_[p] XN := Module.Projective.trans (MonoidAlgebra ℤ_[p] G) XN
   refine natCard_invariants_eq_of_trace_eq p _ _ XM XN fM hfM fN hfN
     (trace_ofModule'_eq_of_forall_equiv_comp_zpowers p _ _ XM XN fM hfM fN hfN fun g hg ↦ ?_)
   obtain ⟨e, he⟩ := exists_linearEquiv_commute_reduction_of_not_dvd p (Subgroup.zpowers g)
