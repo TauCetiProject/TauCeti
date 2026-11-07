@@ -23,8 +23,9 @@ remaining case,
 `Γ₁(N) · diag(1, p) · Γ₁(N) = (⋃_{b < p} Γ₁(N) · !![1, b; 0, p])  ∪  Γ₁(N) · σ · diag(p, 1)`,
 
 a disjoint union of `p + 1` **right** cosets. Here `σ = !![m, n; N, p]` is any integral matrix
-with `m p − n N = 1`: an element of `Γ₀(N)`, *not* of `Γ₁(N)`, and it is that twist which later
-supplies the factor `χ(p)` in the Hecke recurrence at a good prime.
+with `m p − n N = 1`: an element of `Γ₀(N)` whose lower-right entry is `p`, so that it lies in
+`Γ₁(N)` only when `p ≡ 1 (mod N)`, and it is that twist which later supplies the factor `χ(p)`
+in the Hecke recurrence at a good prime.
 
 ## Where the hypotheses enter
 

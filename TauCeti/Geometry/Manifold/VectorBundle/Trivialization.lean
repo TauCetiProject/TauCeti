@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
+public import Mathlib.Geometry.Manifold.ContMDiffMap
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 
@@ -137,5 +138,39 @@ theorem isLocalDiffeomorphAt_symm {q : B × F} (hq : q ∈ e.target) :
     IsLocalDiffeomorphAt (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, F)) n e.toOpenPartialHomeomorph.symm q :=
   TauCeti.isLocalDiffeomorphAt_of_eqOn (Φ := (e.toPartialDiffeomorph IB n).symm) hq
     fun _ _ ↦ rfl
+
+end Bundle.Trivialization
+
+
+namespace Bundle.Trivialization
+
+open TopologicalSpace
+open scoped ContDiff
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)]
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [VectorBundle 𝕜 F V]
+  {n : ℕ∞ω} [ContMDiffVectorBundle n F V I]
+  (e e' : Trivialization F (π F V)) [MemTrivializationAtlas e] [MemTrivializationAtlas e']
+  {U : Opens M} (hU : (U : Set M) ⊆ e.baseSet) (hU' : (U : Set M) ⊆ e'.baseSet)
+
+/-- The actual frame-change operator as a smooth map on any common open frame domain. -/
+def frameTransitionMap : C^n⟮I, U; 𝓘(𝕜, F →L[𝕜] F), F →L[𝕜] F⟯ :=
+  ⟨fun x ↦ (e.coordChangeL 𝕜 e' x : F →L[𝕜] F), fun x ↦
+    (contMDiffAt_coordChangeL (e := e) (e' := e') (hU x.2) (hU' x.2)).comp x
+      contMDiff_subtype_val.contMDiffAt⟩
+
+/-- Evaluation of the smooth frame-change operator is the native bundle coordinate change. -/
+@[simp]
+theorem frameTransitionMap_apply (x : U) :
+    frameTransitionMap (I := I) (n := n) e e' hU hU' x =
+      (e.coordChangeL 𝕜 e' x : F →L[𝕜] F) := by
+  rfl
+
 
 end Bundle.Trivialization

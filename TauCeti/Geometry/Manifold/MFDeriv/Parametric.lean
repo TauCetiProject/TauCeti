@@ -46,6 +46,8 @@ boundary points.
   jointly `C²` family is the differential of its parameter derivative.
 * `TauCeti.Manifold.contMDiffAt_mvfderiv_of_contMDiffAt_uncurry`: the differential at a fixed point
   of a jointly `C^n` family parametrized by a manifold is `C^m` in the parameter for `m + 1 ≤ n`.
+* `TauCeti.Manifold.contMDiff_mfderiv_apply_one_zero`: the velocity `q ↦ dΓ_q (1, 0)` of a `C^n`
+  map `Γ` out of `𝕜 × M` is a `C^m` section along it for `m + 1 ≤ n`.
 -/
 
 public section
@@ -199,5 +201,29 @@ theorem contMDiffAt_mvfderiv_of_contMDiffAt_uncurry
   rfl
 
 end ManifoldParameter
+
+section Velocity
+
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] {H' : Type*} [TopologicalSpace H']
+  {J : ModelWithCorners 𝕜 E' H'} {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
+  [IsManifold J 1 N] {Γ : 𝕜 × M → N}
+
+/-- The velocity `q ↦ dΓ_q (1, 0)` of a `C^n` map out of `𝕜 × M` is a `C^m` section along it when
+`m + 1 ≤ n`. -/
+theorem contMDiff_mfderiv_apply_one_zero
+    (hΓ : ContMDiff (𝓘(𝕜, 𝕜).prod I) J n Γ) (hmn : m + 1 ≤ n) :
+    ContMDiff (𝓘(𝕜, 𝕜).prod I) J.tangent m fun q =>
+      TotalSpace.mk' E' (Γ q) (mfderiv (𝓘(𝕜, 𝕜).prod I) J Γ q ((1 : 𝕜), (0 : E))) := by
+  have hclock : ContMDiff 𝓘(𝕜, 𝕜) 𝓘(𝕜, 𝕜).tangent m
+      (fun s : 𝕜 => (⟨s, (1 : 𝕜)⟩ : TangentBundle 𝓘(𝕜, 𝕜) 𝕜)) :=
+    contMDiff_vectorSpace_iff_contDiff.2 contDiff_const
+  have hunit : ContMDiff (𝓘(𝕜, 𝕜).prod I) (𝓘(𝕜, 𝕜).prod I).tangent m
+      (fun q : 𝕜 × M => (⟨q, ((1 : 𝕜), (0 : E))⟩ : TangentBundle (𝓘(𝕜, 𝕜).prod I) (𝕜 × M))) :=
+    (contMDiff_equivTangentBundleProd_symm (I := 𝓘(𝕜, 𝕜)) (M := 𝕜) (I' := I) (M' := M)).comp
+      ((hclock.comp contMDiff_fst).prodMk
+        ((Bundle.contMDiff_zeroSection 𝕜 (TangentSpace I : M → Type _)).comp contMDiff_snd))
+  exact (hΓ.contMDiff_tangentMap hmn).comp hunit
+
+end Velocity
 
 end TauCeti.Manifold
