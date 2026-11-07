@@ -25,7 +25,9 @@ sections are continuous (`ContinuousAt.add_section`, `ContinuousAt.smul_section`
 `ContinuousAt.sum_section`, `Continuous.finsum_section_of_locallyFinite`; for global scalar
 multiples use `Continuous.smul_totalSpace`), and a function with
 closed support inside an open set multiplies a section continuous on that set into a globally
-continuous section (`ContinuousOn.smul_section_of_tsupport`).
+continuous section (`ContinuousOn.smul_section_of_tsupport`). The more general
+`Continuous.add_totalSpace` also allows the common base point of the two summands to vary
+along a map from another space.
 
 A linear trivialization reconstructs a section from arbitrary model coordinates by
 `Bundle.Trivialization.sectionFromCoordinates`, with the two coordinate inverse laws on its base
@@ -76,6 +78,34 @@ theorem continuousOn_section_iff {a : Set B} (ha : a ⊆ e.baseSet) :
   forall₂_congr fun _ hx ↦ e.continuousWithinAt_section_iff (ha hx)
 
 end Bundle.Trivialization
+
+section MovingBase
+
+variable {𝕜 B F : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace B]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] {E : B → Type*}
+  [∀ x, AddCommMonoid (E x)] [∀ x, Module 𝕜 (E x)] [∀ x, TopologicalSpace (E x)]
+  [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle 𝕜 F E]
+
+variable (𝕜) in
+include 𝕜 in
+/-- The fibrewise sum of continuous maps into a vector bundle over a common, possibly
+varying, base map is continuous. -/
+theorem Continuous.add_totalSpace {Y : Type*} [TopologicalSpace Y] {b : Y → B}
+    {s t : ∀ y, E (b y)}
+    (hs : Continuous (fun y ↦ TotalSpace.mk' F (b y) (s y)))
+    (ht : Continuous (fun y ↦ TotalSpace.mk' F (b y) (t y))) :
+    Continuous (fun y ↦ TotalSpace.mk' F (b y) (s y + t y)) := by
+  refine continuous_iff_continuousAt.2 fun y₀ ↦ ?_
+  have hs' := (FiberBundle.continuousAt_totalSpace F _).1 (hs.continuousAt (x := y₀))
+  have ht' := (FiberBundle.continuousAt_totalSpace F _).1 (ht.continuousAt (x := y₀))
+  rw [FiberBundle.continuousAt_totalSpace]
+  refine ⟨hs'.1, (hs'.2.add ht'.2).congr ?_⟩
+  let e := trivializationAt F E (b y₀)
+  filter_upwards [hs'.1.preimage_mem_nhds
+    (e.open_baseSet.mem_nhds (mem_baseSet_trivializationAt F E (b y₀)))] with y hy
+  exact ((e.linear 𝕜 hy).map_add (s y) (t y)).symm
+
+end MovingBase
 
 section Operations
 
