@@ -22,12 +22,12 @@ This file defines the state space `TauCeti.stateSpace A` as a subset of the weak
 
 * `TauCeti.mem_stateSpace_iff_exists_positiveLinearMap`: the states are exactly the positive
   linear maps `A →ₚ[ℂ] ℂ` of norm one, through the automatic continuity of positive maps.
-* `WeakDual.ext_nonneg`: a functional on `A` is determined by its values on nonnegative elements,
-  since these span `A`.
 * `TauCeti.convex_stateSpace`: the state space is convex. No unit is needed, because the norm of
   a positive functional is its limit along an approximate unit.
-* `TauCeti.mapsTo_comp_stateSpace_of_surjective` and `TauCeti.mapsTo_comp_stateSpace`: states pull
-  back to states along surjective star homomorphisms and along unital star homomorphisms.
+* `TauCeti.pullbackFunctional`: precomposition with a star homomorphism, as a complex-linear map
+  of weak-* duals. By `TauCeti.mapsTo_pullbackFunctional_stateSpace_of_surjective` and
+  `TauCeti.mapsTo_pullbackFunctional_stateSpace` it restricts to an affine map of state spaces
+  along surjective star homomorphisms and along unital star homomorphisms.
 
 For unital `A`:
 
@@ -54,19 +54,6 @@ public section
 
 open Set Filter WeakDual
 open scoped ComplexOrder Topology
-
-namespace WeakDual
-
-variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-
-/-- A functional on a C⋆-algebra is determined by its values on nonnegative elements, since
-these span the algebra. In particular two states that agree on nonnegative elements are equal. -/
-theorem ext_nonneg {φ ψ : WeakDual ℂ A} (h : ∀ a, 0 ≤ a → φ a = ψ a) : φ = ψ := by
-  have := LinearMap.ext_on (CStarAlgebra.span_nonneg (A := A))
-    (f := (toStrongDual φ : A →ₗ[ℂ] ℂ)) (g := toStrongDual ψ) fun a ha => h a ha
-  exact DFunLike.ext _ _ fun a => by simpa using LinearMap.congr_fun this a
-
-end WeakDual
 
 namespace TauCeti
 
@@ -101,18 +88,15 @@ theorem norm_apply_le_of_mem_stateSpace (hφ : φ ∈ stateSpace A) (a : A) : �
 /-- In the norm topology of the continuous dual, the state space is closed. -/
 theorem isClosed_preimage_toWeakDual_stateSpace :
     IsClosed (StrongDual.toWeakDual ⁻¹' stateSpace A) := by
-  have hpos : IsClosed {f : StrongDual ℂ A | ∀ a, 0 ≤ a → 0 ≤ f a} := by
-    simp only [ofPred_forall]
-    exact isClosed_iInter fun a => isClosed_iInter fun _ =>
-      isClosed_Ici.preimage ((ContinuousLinearMap.apply ℂ ℂ a).continuous)
-  exact hpos.inter (isClosed_eq continuous_norm continuous_const)
+  exact (isClosed_setOf_map_nonneg.preimage NormedSpace.Dual.toWeakDual_continuous).inter
+    (isClosed_eq continuous_norm continuous_const)
 
 variable [StarOrderedRing A]
 
 /-- A positive linear functional, continuous by `PositiveLinearMap.exists_norm_apply_le`, is a
 state exactly when its norm is one. -/
 @[simp]
-theorem toWeakDual_mem_stateSpace_iff (ω : A →ₚ[ℂ] ℂ) :
+theorem _root_.PositiveLinearMap.toWeakDual_mem_stateSpace_iff (ω : A →ₚ[ℂ] ℂ) :
     StrongDual.toWeakDual (PositiveContinuousLinearMap.ofClass ω : A →L[ℂ] ℂ) ∈ stateSpace A ↔
       ‖(PositiveContinuousLinearMap.ofClass ω : A →L[ℂ] ℂ)‖ = 1 := by
   simp only [mem_stateSpace_iff, StrongDual.toWeakDual_apply,
@@ -124,7 +108,7 @@ weak-* dual. -/
 theorem mem_stateSpace_iff_exists_positiveLinearMap :
     φ ∈ stateSpace A ↔ ∃ ω : A →ₚ[ℂ] ℂ, ‖(PositiveContinuousLinearMap.ofClass ω : A →L[ℂ] ℂ)‖ = 1 ∧
       StrongDual.toWeakDual (PositiveContinuousLinearMap.ofClass ω : A →L[ℂ] ℂ) = φ := by
-  refine ⟨fun hφ => ?_, fun ⟨ω, hω, h⟩ => h ▸ (toWeakDual_mem_stateSpace_iff ω).2 hω⟩
+  refine ⟨fun hφ => ?_, fun ⟨ω, hω, h⟩ => h ▸ ω.toWeakDual_mem_stateSpace_iff.2 hω⟩
   let ω : A →ₚ[ℂ] ℂ := .mk₀ (toStrongDual φ : A →ₗ[ℂ] ℂ) fun _ => map_nonneg_of_mem_stateSpace hφ
   have hω : (PositiveContinuousLinearMap.ofClass ω : A →L[ℂ] ℂ) = toStrongDual φ := by
     -- `PositiveLinearMap.mk₀` has no evaluation lemma; it evaluates as `φ` by definition
@@ -149,25 +133,37 @@ theorem convex_stateSpace : Convex ℝ (stateSpace A) := by
 variable {B F : Type*} [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
   [FunLike F A B] [NonUnitalAlgHomClass F ℂ A B] [StarHomClass F A B]
 
+variable (A) in
+/-- Precomposition of functionals with a star homomorphism `f : A → B`, as a complex-linear map
+`WeakDual ℂ B →ₗ[ℂ] WeakDual ℂ A`. On states it is the pullback of states along `f`, which is
+affine when `f` is surjective or unital. -/
+@[expose] noncomputable def pullbackFunctional (f : F) : WeakDual ℂ B →ₗ[ℂ] WeakDual ℂ A where
+  toFun φ := StrongDual.toWeakDual
+    ((toStrongDual φ).comp (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B))
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+
+/-- The pullback of a functional along `f` evaluates as `φ ∘ f`. -/
+@[simp]
+theorem pullbackFunctional_apply (f : F) (φ : WeakDual ℂ B) (a : A) :
+    pullbackFunctional A f φ a = φ (f a) :=
+  rfl
+
 /-- **Pullback of states along a surjective star homomorphism.** Composing a state of `B` with a
 surjective star homomorphism `A → B` gives a state of `A`. Without surjectivity the norm of the
 composite can drop, for instance to `0`. -/
-theorem mapsTo_comp_stateSpace_of_surjective (f : F) (hf : Function.Surjective f) :
-    MapsTo (fun φ : WeakDual ℂ B =>
-        StrongDual.toWeakDual
-          ((toStrongDual φ).comp (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B)))
-      (stateSpace B) (stateSpace A) := by
+theorem mapsTo_pullbackFunctional_stateSpace_of_surjective (f : F) (hf : Function.Surjective f) :
+    MapsTo (pullbackFunctional A f) (stateSpace B) (stateSpace A) := by
   intro φ hφ
   let ω : B →P[ℂ] ℂ := .mk₀ (toStrongDual φ) fun _ => map_nonneg_of_mem_stateSpace hφ
   have hcomp : ((ω.comp (.ofClass f) : A →P[ℂ] ℂ) : A →L[ℂ] ℂ) =
-      (toStrongDual φ).comp (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B) := by
+      toStrongDual (pullbackFunctional A f φ) := by
     -- `PositiveContinuousLinearMap.mk₀` has no evaluation lemma; both sides evaluate as
     -- `φ ∘ f` by definition
     ext
     rfl
   refine mem_stateSpace_iff.2 ⟨fun a ha => map_nonneg_of_mem_stateSpace hφ (map_nonneg f ha), ?_⟩
-  rw [StrongDual.toStrongDual_toWeakDual, ← hcomp,
-    PositiveContinuousLinearMap.opNorm_comp_ofClass_of_surjective ω f hf]
+  rw [← hcomp, PositiveContinuousLinearMap.opNorm_comp_ofClass_of_surjective ω f hf]
   exact norm_toStrongDual_of_mem_stateSpace hφ
 
 end NonUnital
@@ -189,7 +185,7 @@ theorem map_one_of_mem_stateSpace (hφ : φ ∈ stateSpace A) : φ 1 = 1 :=
   (mem_stateSpace_iff_map_one.1 hφ).2
 
 /-- On a unital C⋆-algebra, a functional is a state exactly when `‖φ‖ = φ 1 = 1`. Positivity is
-then automatic: a functional whose norm is attained at the unit is positive. -/
+then automatic: it follows from `φ 1 = ‖φ‖ = 1`. -/
 theorem mem_stateSpace_iff_norm_eq_one_and_map_one :
     φ ∈ stateSpace A ↔ ‖toStrongDual φ‖ = 1 ∧ φ 1 = 1 := by
   refine ⟨fun hφ => ⟨norm_toStrongDual_of_mem_stateSpace hφ, map_one_of_mem_stateSpace hφ⟩,
@@ -234,10 +230,11 @@ theorem closure_convexHull_extremePoints_stateSpace :
 /-- **Existence of pure states.** A nonzero unital C⋆-algebra has an extreme state. -/
 theorem extremePoints_stateSpace_nonempty [Nontrivial A] :
     (extremePoints ℝ (stateSpace A)).Nonempty := by
-  by_contra h
-  have h' := closure_convexHull_extremePoints_stateSpace (A := A)
-  rw [Set.not_nonempty_iff_eq_empty.1 h, convexHull_empty, closure_empty] at h'
-  exact (stateSpace_nonempty (A := A)).ne_empty h'.symm
+  -- The weak-* dual inherits its real local convexity from the canonical dual pairing.
+  let : IsScalarTower ℝ ℂ (WeakDual ℂ A) := inferInstanceAs (IsScalarTower ℝ ℂ (StrongDual ℂ A))
+  let : LocallyConvexSpace ℝ (WeakDual ℂ A) :=
+    inferInstanceAs (LocallyConvexSpace ℝ (WeakBilin (topDualPairing ℂ A)))
+  exact isCompact_stateSpace.extremePoints_nonempty stateSpace_nonempty
 
 /-- The only state of `ℂ` is the identity functional. -/
 theorem stateSpace_complex :
@@ -254,11 +251,8 @@ variable {B F : Type*} [CStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
 
 /-- **Pullback of states along a unital star homomorphism.** Composing a state of `B` with a
 unital star homomorphism `A → B` gives a state of `A`. -/
-theorem mapsTo_comp_stateSpace (f : F) :
-    MapsTo (fun φ : WeakDual ℂ B =>
-        StrongDual.toWeakDual
-          ((toStrongDual φ).comp (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B)))
-      (stateSpace B) (stateSpace A) := by
+theorem mapsTo_pullbackFunctional_stateSpace (f : F) :
+    MapsTo (pullbackFunctional A f) (stateSpace B) (stateSpace A) := by
   intro φ hφ
   refine mem_stateSpace_iff_map_one.2 ⟨fun a ha => ?_, ?_⟩
   · simpa using map_nonneg_of_mem_stateSpace hφ (map_nonneg f ha)
