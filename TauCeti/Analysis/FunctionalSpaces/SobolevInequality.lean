@@ -99,7 +99,7 @@ theorem eLpNorm_le_eLpNorm_fderiv_one_of_integrable {F : Type*} [NormedAddCommGr
         (hu.continuous_iteratedFDeriv le_rfl |>.aestronglyMeasurable)
         (.of_forall fun x => (norm_iteratedFDeriv_one u).symm)
   have hlim (k : ℕ) (hk : k ≤ 1) := tendsto_eLpNorm_iteratedFDeriv_cutoff_sub (μ := μ)
-    one_ne_zero ENNReal.one_ne_top (χ.contDiff (n := k)) χ.eventuallyEq_one
+    ENNReal.one_ne_top (χ.contDiff (n := k)) χ.eventuallyEq_one
     (fun i _ x => hB i x) (hu.of_le (by exact_mod_cast hk))
     fun i hi => hmem i (hi.trans hk)
   -- The cutoffs converge to `u` in `L¹`, and the `L¹` norms of their derivatives are at most
