@@ -29,8 +29,7 @@ out this configuration, which is
 * `TauCeti.NumericalType.exists_weight_intersection_branch_seven_eq`: the `E₇`
   configuration is simply laced.
 * `TauCeti.NumericalType.exists_weight_intersection_branch_eight_eq`: a chain of seven with a
-  distinct leaf at its fourth component, in a numerical type with a further component, is simply
-  laced.
+  distinct leaf at its fourth component is simply laced.
 * `TauCeti.NumericalType.IsSelfIntersectionMinusTwoChain.intersection_branch_eq_zero`:
   a distinct eighth `(-2)`-index cannot meet the middle component of the chain, excluding the
   affine `E₇` configuration.
@@ -114,21 +113,21 @@ theorem exists_weight_intersection_branch_seven_eq
       simpa [this] using hbranch5
 
 /-- A chain of seven `(-2)`-indices with a distinct extra `(-2)`-index meeting its fourth
-component, in a numerical type with a further component, is simply laced: all eight weights agree,
+component is simply laced: all eight weights agree,
 the chain has the intersections of a path, and the extra component meets only the fourth. This is
 the weight and intersection data of the overlapping finite `E₇` subdiagrams that omit the right,
 respectively left, endpoint of the chain; the affine `E₇` diagram is excluded and classified
 from it. -/
 theorem exists_weight_intersection_branch_eight_eq
     {c : ℕ → T.Component} (hc : T.IsSelfIntersectionMinusTwoChain 7 c)
-    (hcard : 7 < Fintype.card T.Component) {branch : T.Component}
-    (hbranch_ne : ∀ i < 7, branch ≠ c i)
+    {branch : T.Component} (hbranch_ne : ∀ i < 7, branch ≠ c i)
     (hbranch_self : T.intersection branch branch = -(2 * (T.weight branch : ℤ)))
     (hbranch_pos : 0 < T.intersection (c 3) branch) :
     ∃ w : ℕ+, (T.weight branch : ℤ) = w ∧ (∀ i < 7, (T.weight (c i) : ℤ) = w) ∧
       (∀ {i j : ℕ}, i < 7 → j < 7 → T.intersection (c i) (c j) =
         if i = j then -(2 * (w : ℤ)) else if i + 1 = j ∨ j + 1 = i then (w : ℤ) else 0) ∧
       ∀ {i : ℕ}, i < 7 → T.intersection (c i) branch = if i = 3 then (w : ℤ) else 0 := by
+  have hcard : 7 < Fintype.card T.Component := hc.le_card_snoc hbranch_ne
   obtain ⟨w, hw, hwb, hedge, hab, hbranch_zero⟩ :=
     T.exists_weight_intersection_branch_seven_eq (hc.mono (by omega))
       (fun i hi ↦ hbranch_ne i (by omega)) hbranch_self hbranch_pos
@@ -176,7 +175,7 @@ theorem intersection_branch_eq_zero {c : ℕ → T.Component}
     (T.offDiagonal_nonneg _ _ (hbranch_ne 3 (by omega)).symm).lt_of_ne
       (Ne.symm hbranch_nonzero)
   obtain ⟨w, hwb, hweight, hentry, hbranch_entry⟩ :=
-    T.exists_weight_intersection_branch_eight_eq hc (by omega) hbranch_ne hbranch_self hbranch_pos
+    T.exists_weight_intersection_branch_eight_eq hc hbranch_ne hbranch_self hbranch_pos
   -- The affine `E₇` marks `1, 2, 3, 4, 3, 2, 1` on the chain and `2` on the branch give a
   -- positive vector whose rows all vanish, contradicting negative definiteness.
   let d : ℕ → T.Component := fun i ↦ if i = 7 then branch else c i

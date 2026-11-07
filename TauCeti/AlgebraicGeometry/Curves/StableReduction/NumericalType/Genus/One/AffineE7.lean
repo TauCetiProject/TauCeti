@@ -145,7 +145,7 @@ private lemma affineE7_weights_intersections (l : Fin 8 → T.Component)
     have hz := hc.intersection_branch_eq_zero T (by omega) hbne (hself 1)
     exact hbpos.ne' hz
   obtain ⟨w, hwb, hweight, hentry, hbentry⟩ :=
-    T.exists_weight_intersection_branch_eight_eq hc (by omega) hbne (hself 1) hbpos
+    T.exists_weight_intersection_branch_eight_eq hc hbne (hself 1) hbpos
   exact ⟨hcard, T.affineE7_weights_intersections_of_chain l c rfl rfl rfl rfl rfl rfl rfl (hself 1)
     hwb hweight hentry hbentry⟩
 
