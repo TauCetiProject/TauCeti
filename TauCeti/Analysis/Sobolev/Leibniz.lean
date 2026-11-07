@@ -129,9 +129,9 @@ theorem HasWeakLineDerivOn.contDiffOn_smul (h : HasWeakLineDerivOn μ Ω u u' v)
   have hint1 : Integrable (fun x => lineDeriv ℝ (Φ : E → ℝ) x v • u x) μ :=
     integrable_lineDeriv_smul_of_locallyIntegrableOn h.locallyIntegrableOn Φ v
   have hint2 : Integrable (fun x => (Ψ : E → ℝ) x • u x) μ :=
-    integrable_smul_of_locallyIntegrableOn h.locallyIntegrableOn Ψ
+    Ψ.integrable_smul h.locallyIntegrableOn
   have hint3 : Integrable (fun x => (Φ : E → ℝ) x • u' x) μ :=
-    integrable_smul_of_locallyIntegrableOn h.locallyIntegrableOn_deriv Φ
+    Φ.integrable_smul h.locallyIntegrableOn_deriv
   -- The classical product rule for the smooth factors.
   have hlineΦ : ∀ x, lineDeriv ℝ (Φ : E → ℝ) x v
       = ψ x * lineDeriv ℝ (φ : E → ℝ) x v + (Ψ : E → ℝ) x := fun x => by
@@ -272,8 +272,8 @@ theorem HasWeakLineDerivOn.lipschitzWith_smul (h : HasWeakLineDerivOn μ Ω u u'
   set w₃ : E → F := fun x => (φ : E → ℝ) x • u x
   have hw₁ : Integrable w₁ μ := integrable_lineDeriv_smul_of_locallyIntegrableOn
     h.locallyIntegrableOn φ v
-  have hw₂ : Integrable w₂ μ := integrable_smul_of_locallyIntegrableOn h.locallyIntegrableOn_deriv φ
-  have hw₃ : Integrable w₃ μ := integrable_smul_of_locallyIntegrableOn h.locallyIntegrableOn φ
+  have hw₂ : Integrable w₂ μ := φ.integrable_smul h.locallyIntegrableOn_deriv
+  have hw₃ : Integrable w₃ μ := φ.integrable_smul h.locallyIntegrableOn
   have hK : IsCompact (tsupport (φ : E → ℝ)) := φ.hasCompactSupport.isCompact
   -- `w₁` and `w₂` vanish off the support of `φ`, so they stay integrable against continuous
   -- factors.
