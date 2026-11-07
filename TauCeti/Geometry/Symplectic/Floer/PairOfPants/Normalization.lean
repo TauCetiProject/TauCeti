@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.Action
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature
 
 /-!
@@ -36,7 +35,8 @@ Hamiltonians `c_q`, which has no Hamiltonian vector field
   `∑ q, ±∫₀¹ c_q`, with the sign `+` on the input ends `0`, `1` and `-` on the output end `∞`
   (`TauCeti.SymplecticForm.setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_const`).
 
-So along every map continuous on `S`, the integrated curvature changes by `∑ q, ±∫₀¹ c_q`
+So along every map whose curvature for `H_q` is integrable on `S`, the integrated curvature
+changes by `∑ q, ±∫₀¹ c_q`
 (`TauCeti.SymplecticForm.setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_add_const`),
 which is exactly the change `∑ q, ±∫₀¹ c_q` of the Hamiltonian terms at the asymptotic orbits.
 The two changes cancel in the energy identity, as they must, since the energy itself is unchanged.
@@ -242,19 +242,22 @@ theorem setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_const (ω : Sym
   rw [hu]
   linarith
 
-/-- **Normalizing the end Hamiltonians shifts the integrated curvature.** Along a map continuous
-on the pair of pants, the integrated curvature of the perturbation of the end Hamiltonians
-`H_q + c_q` is the integrated curvature for `H_q` plus `∑ q, ±∫₀¹ c_q`, with the sign `+` on the
-input ends and `-` on the output end. This is also the change of the Hamiltonian terms
-`∑ q, ±∫₀¹ H_q(t, x_q(t)) dt` of the energy identity
+/-- **Normalizing the end Hamiltonians shifts the integrated curvature.** Along a map whose
+curvature for `H_q` is integrable on the pair of pants, the integrated curvature of the
+perturbation of the end Hamiltonians `H_q + c_q` is the integrated curvature for `H_q` plus
+`∑ q, ±∫₀¹ c_q`, with the sign `+` on the input ends and `-` on the output end. This is also the
+change of the Hamiltonian terms `∑ q, ±∫₀¹ H_q(t, x_q(t)) dt` of the energy identity
 `SymplecticForm.integral_floerEnergyDensity_pairOfPantsPerturbation`, so the two changes cancel
 and the energy identity for `H_q + c_q` is the one for `H_q`. -/
 theorem setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_add_const (ω : SymplecticForm V)
     (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
-    {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) (hc : ∀ q, Periodic (c q) 1)
-    (hcs : ∀ q, ContDiff ℝ 1 (c q)) {u : ℝ × ℝ → V}
-    (hu : ContinuousOn u {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
-      Complex.equivRealProdCLM.symm z ≠ 1}) :
+    (hc : ∀ q, Periodic (c q) 1) (hcs : ∀ q, ContDiff ℝ 1 (c q)) {u : ℝ × ℝ → V}
+    (hu : IntegrableOn (fun z ↦ ω.hamiltonianCurvature
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        z (u z))
+      {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+        Complex.equivRealProdCLM.symm z ≠ 1}) :
     ∫ z in {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
         Complex.equivRealProdCLM.symm z ≠ 1}, ω.hamiltonianCurvature
         (fun z x ↦ pairOfPantsPerturbation (fun q t y ↦ H q t y + c q t)
@@ -268,10 +271,15 @@ theorem setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_add_const (ω :
           z (u z)) +
         ∑ q, q.endSign * ∫ t in (0 : ℝ)..1, c q t := by
   obtain ⟨Bc, hBc⟩ := exists_forall_abs_le hc hcs
+  -- The curvature of the normalization does not depend on the target point, so it is integrable
+  -- along `u` because it is along the constant map `0`.
+  have hk := (ω.integrableOn_hamiltonianCurvature_pairOfPantsPerturbation
+    (periodic_const_target hc) (contDiff_uncurry_const_target hcs) (B := Bc)
+    (fun q t _ ↦ hBc q t) (u := fun _ ↦ (0 : V)) continuousOn_const).congr_fun
+    (fun z _ ↦ ω.hamiltonianCurvature_pairOfPantsPerturbation_const_target c z 0 (u z))
+    isOpen_thricePuncturedSphereReal.measurableSet
   rw [← ω.setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_const hc hcs u,
-    ← integral_add (ω.integrableOn_hamiltonianCurvature_pairOfPantsPerturbation hH hHs hB hu)
-      (ω.integrableOn_hamiltonianCurvature_pairOfPantsPerturbation (periodic_const_target hc)
-        (contDiff_uncurry_const_target hcs) (B := Bc) (fun q t _ ↦ hBc q t) hu)]
+    ← integral_add hu hk]
   exact setIntegral_congr_fun isOpen_thricePuncturedSphereReal.measurableSet fun z hz ↦
     ω.hamiltonianCurvature_pairOfPantsPerturbation_add_const hH hHs hc hcs hz (u z)
 
