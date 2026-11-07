@@ -24,7 +24,8 @@ On a compact boundaryless manifold the minimum is finite (`TauCeti.minCriticalCo
 a Morse function exists, and it has finitely many critical points. Together with attainment this
 makes `c(M)` a natural number, realized by a smooth function with a finite critical set; no default
 natural value is assigned when the minimum is infinite. The minimum is bounded below by the
-Lusternik–Schnirelmann count of `M` (`TauCeti.lsCategoryCount_univ_le_minCriticalCount`), it
+Lusternik–Schnirelmann count of `M` (`TauCeti.lsCategoryCount_univ_le_minCriticalCount`), hence
+by the cup length of `M` plus one (`TauCeti.lsCupLength_add_one_le_minCriticalCount`), it
 vanishes exactly on the empty manifold (`TauCeti.minCriticalCount_eq_zero_iff`), and it is at
 least `2` as soon as `M` has two points (`TauCeti.two_le_minCriticalCount`), attained on every
 sphere by the height function (`TauCeti.minCriticalCount_sphere`).
@@ -37,6 +38,7 @@ sphere by the height function (`TauCeti.minCriticalCount_sphere`).
 * `TauCeti.exists_totalCriticalCount_eq_minCriticalCount`: the minimum is attained.
 * `TauCeti.minCriticalCount_ne_top`: the minimum is finite on a compact manifold.
 * `TauCeti.lsCategoryCount_univ_le_minCriticalCount`: the Lusternik–Schnirelmann lower bound.
+* `TauCeti.lsCupLength_add_one_le_minCriticalCount`: the cup-length lower bound.
 * `TauCeti.minCriticalCount_eq_zero_iff` and `TauCeti.two_le_minCriticalCount`: the elementary
   lower bounds.
 * `TauCeti.minCriticalCount_sphere`: the minimum is `2` on every sphere.
@@ -121,6 +123,13 @@ every smooth function has at least as many critical points as the Lusternik–Sc
 `M`, so `c(M)` is bounded below by that count. -/
 theorem lsCategoryCount_univ_le_minCriticalCount : lsCategoryCount M univ ≤ minCriticalCount I M :=
   le_minCriticalCount_iff.2 fun _ hf ↦ lsCategoryCount_univ_le_totalCriticalCount hf
+
+/-- **The cup-length lower bound for `c(M)`.** On a nonempty compact boundaryless manifold `M`,
+every smooth function has more critical points than the cup length of `M` with coefficients in any
+commutative ring `R` in the universe of `M`, so `lsCupLength M R + 1 ≤ c(M)`. -/
+theorem lsCupLength_add_one_le_minCriticalCount [Nonempty M] (R : Type _) [CommRing R] :
+    lsCupLength M R + 1 ≤ minCriticalCount I M :=
+  lsCupLength_add_one_le_lsCategoryCount_univ.trans lsCategoryCount_univ_le_minCriticalCount
 
 end Boundaryless
 
