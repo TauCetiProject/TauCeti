@@ -11,44 +11,13 @@ public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.F4.Short
 /-!
 # Short-root neighbours of long roots in type F4
 
-The integral span of the short-root weights detects every coroot. Together with the F4 length
-bounds, this supplies a descending-free root string through each long root.
+The F4 length bounds and root strings give each long root a short neighbour one step away in a
+descending-free root string.
 -/
 
 public section
 
 namespace TauCeti.DynkinType
-
-/-- Every F₄ root has a short root pairing nontrivially with it: the short-root weights span the
-root lattice, so they detect every coroot. -/
-theorem exists_f4Length_eq_one_pairing_ne_zero (α : Fin 48) :
-    ∃ β : Fin 48, f4Length β = 1 ∧ f4SimplyConnectedRootDatum.pairing β α ≠ 0 := by
-  let P := f4SimplyConnectedRootDatum
-  by_contra h
-  push Not at h
-  have hzero : ∀ x ∈ Submodule.span ℤ (Set.range f4ShortRootWeight),
-      P.toLinearMap x (P.coroot α) = 0 := by
-    intro x hx
-    induction hx using Submodule.span_induction with
-    | mem x hx =>
-        obtain ⟨a, rfl⟩ := hx
-        by_cases ha : f4ShortRootWeight a = 0
-        · simp [ha]
-        · obtain ⟨β, hβ, hroot⟩ :=
-            (f4ShortRootWeight_ne_zero_iff_exists_shortRoot a).mp ha
-          have hroot' : P.root β = f4ShortRootWeight a := by
-            simpa only [P, f4SimplyConnectedRootDatum_root] using hroot
-          rw [← hroot', P.root_coroot_eq_pairing, h β hβ]
-    | zero => simp
-    | add x y _ _ ihx ihy => simp [ihx, ihy]
-    | smul a x _ ih =>
-        simp only [map_smul, LinearMap.smul_apply, ih, smul_zero]
-  have hmem : P.root α ∈ Submodule.span ℤ (Set.range f4ShortRootWeight) := by
-    rw [span_range_f4ShortRootWeight_eq_top]
-    exact Submodule.mem_top
-  have hbad := hzero (P.root α) hmem
-  rw [P.root_coroot_eq_pairing, P.pairing_same] at hbad
-  norm_num at hbad
 
 /-- Every long F₄ root pairs to `-1` with some short root: a short root pairing nontrivially with
 it pairs to `±1`, and reflecting it in itself flips the sign. -/
@@ -71,19 +40,12 @@ theorem exists_f4Length_eq_one_pairing_eq_neg_one (α : Fin 48) (hα : f4Length 
     omega
   rcases hp₀ with hp₀ | hp₀
   · exact ⟨β₀, hβ₀, hp₀⟩
-  · let β := P.reflectionPerm β₀ β₀
-    have hβroot : P.root β = P.root β₀ + (-2 : ℤ) • P.root β₀ := by
-      rw [P.root_reflectionPerm, P.reflection_apply_self]
-      module
-    have hβlen := f4Length_of_root_eq_add_zsmul β₀ β₀ β (-2) hβroot
-    have hβ : f4Length β = 1 := by
-      rw [hβ₀, P.pairing_same] at hβlen
-      norm_num at hβlen
-      exact hβlen
+  · let β := f4OppositeRootIndex β₀
+    have hβ : f4Length β = 1 := (f4Length_opposite β₀).trans hβ₀
     have hβpair : P.pairing β α = -1 := by
       -- Unfold the local abbreviation `β` so that the reflection lemma below applies.
-      change P.pairing (P.reflectionPerm β₀ β₀) α = -1
-      rw [P.pairing_reflectionPerm_self_left, hp₀]
+      change P.pairing (f4OppositeRootIndex β₀) α = -1
+      rw [f4OppositeRootIndex_eq_reflectionPerm, P.pairing_reflectionPerm_self_left, hp₀]
     exact ⟨β, hβ, hβpair⟩
 
 /-- Every long F₄ root has a short neighbour one step away in a descending-free root string.
