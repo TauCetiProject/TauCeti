@@ -222,7 +222,8 @@ theorem sum_algebraMap_mul_pow_mem_filtration {t : F} (ht : P.ord t = 1) {n : �
   intro d hd
   have hpow := P.mem_filtration_ord (t ^ d)
   simp only [P.ord_pow, ht, mul_one] at hpow
-  apply P.filtration_antitone (show (n : ℤ) ≤ d by exact_mod_cast hS d hd)
+  have hdegree : (n : ℤ) ≤ (d : ℤ) := by exact_mod_cast hS d hd
+  apply P.filtration_antitone hdegree
   have hm := P.mul_mem_filtration
     (P.mem_filtration_zero_iff.mpr (P.algebraMap_mem_integers (c d))) hpow
   simpa only [zero_add] using hm
