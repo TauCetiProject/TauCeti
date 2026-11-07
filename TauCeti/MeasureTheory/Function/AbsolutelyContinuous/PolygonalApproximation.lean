@@ -103,6 +103,53 @@ private theorem ae_deriv_const_add_integral {v : ℝ → E} (hv : IntervalIntegr
     left_mem_uIcc).const_add x).deriv
 
 omit [CompleteSpace E] in
+/-- Correcting a step approximation `s` of the velocity of `γ` by the average defect `D` costs at
+most the `L¹` approximation error. -/
+private theorem norm_sub_integral_le [FiniteDimensional ℝ E] {γ : ℝ → E}
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hab : a < b) {s : ℝ → E}
+    (hsi : IntervalIntegrable s volume a b) {ε : ℝ}
+    (hg : (∫ t in Ioc a b, ‖s t - deriv γ t‖) ≤ ε) :
+    ‖γ b - γ a - ∫ t in a..b, s t‖ ≤ ε := by
+  have hγi := hγ.intervalIntegrable_deriv_of_finiteDimensional
+  have hEq : γ b - γ a - ∫ t in a..b, s t = ∫ t in a..b, deriv γ t - s t := by
+    rw [intervalIntegral.integral_sub hγi hsi, hγ.integral_deriv_eq_sub_of_finiteDimensional]
+  rw [hEq]
+  apply (intervalIntegral.norm_integral_le_integral_norm hab.le).trans
+  simpa only [intervalIntegral.integral_of_le hab.le, norm_sub_rev] using hg
+
+/-- The primitive of a step velocity corrected by its average defect reaches the prescribed
+endpoint. -/
+private theorem add_integral_add_inv_smul_eq (hab : a < b) {s : ℝ → E}
+    (hsi : IntervalIntegrable s volume a b) (x y : E) :
+    x + ∫ t in a..b, (s t + (b - a)⁻¹ • (y - x - ∫ t in a..b, s t)) = y := by
+  rw [intervalIntegral.integral_add hsi (intervalIntegrable_const),
+    intervalIntegral.integral_const, smul_smul, mul_inv_cancel₀ (sub_pos.mpr hab).ne', one_smul]
+  abel
+
+omit [CompleteSpace E] in
+private theorem setIntegral_norm_inv_smul (hab : a < b) (D : E) :
+    (∫ _ in Ioc a b, ‖(b - a)⁻¹ • D‖) = ‖D‖ := by
+  rw [setIntegral_const, measureReal_def, Real.volume_Ioc,
+    ENNReal.toReal_ofReal (sub_nonneg.mpr hab.le)]
+  simp only [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos (sub_pos.mpr hab), smul_eq_mul]
+  rw [← mul_assoc, mul_inv_cancel₀ (sub_pos.mpr hab).ne', one_mul]
+
+omit [CompleteSpace E] [NormedSpace ℝ E] in
+private theorem integral_norm_add_const_sub_le {s f : ℝ → E} (c : E)
+    (hs : IntegrableOn s (Ioc a b)) (hf : IntegrableOn f (Ioc a b)) :
+    (∫ t in Ioc a b, ‖s t + c - f t‖) ≤
+      (∫ t in Ioc a b, ‖s t - f t‖) + ∫ _ in Ioc a b, ‖c‖ := by
+  have h1 : Integrable (fun t ↦ ‖s t - f t‖) (volume.restrict (Ioc a b)) := (hs.sub hf).norm
+  rw [← integral_add h1 (integrable_const _)]
+  refine integral_mono ((hs.add (integrable_const c)).sub hf).norm
+    ((hs.sub hf).norm.add (integrable_const _)) ?_
+  intro t
+  dsimp only
+  have he : s t + c - f t = (s t - f t) + c := by abel
+  rw [he]
+  exact norm_add_le _ _
+
+omit [CompleteSpace E] in
 private theorem exists_polygonal_error_le [FiniteDimensional ℝ E] {γ : ℝ → E}
     (hγ : AbsolutelyContinuousOnInterval γ a b) (hab : a < b) {ε : ℝ} (hε : 0 < ε) :
     ∃ p : ℝ → E, TauCeti.IsPolygonalOnInterval p a b ∧
@@ -123,56 +170,27 @@ private theorem exists_polygonal_error_le [FiniteDimensional ℝ E] {γ : ℝ �
   let c := (b - a)⁻¹ • D
   let v := fun t ↦ s t + c
   let p := fun t ↦ γ a + ∫ t in a..t, v t
-  have hvi' : IntegrableOn v (Ioc a b) := hsi'.add (integrable_const c)
-  have hvi : IntervalIntegrable v volume a b := by
-    rwa [intervalIntegrable_iff, uIoc_of_le hab.le]
   have hpa : p a = γ a := by simp [p]
-  have hpb : p b = γ b := by
-    dsimp [p, v]
-    rw [intervalIntegral.integral_add hsi (intervalIntegrable_const),
-      intervalIntegral.integral_const]
-    dsimp [c]
-    rw [smul_smul, mul_inv_cancel₀ (sub_pos.mpr hab).ne', one_smul]
-    dsimp [D]
-    abel
+  have hpb : p b = γ b := add_integral_add_inv_smul_eq hab hsi (γ a) (γ b)
   have hpPoly : TauCeti.IsPolygonalOnInterval p a b := polygonal_primitive hab N hN g (γ a) c
-  have hpAC := hpPoly.absolutelyContinuousOnInterval
+  have hvi : IntervalIntegrable v volume a b := by
+    rw [intervalIntegrable_iff, uIoc_of_le hab.le]
+    exact hsi'.add (integrable_const c)
   have hpderiv : deriv p =ᵐ[volume.restrict (Ioc a b)] v :=
     ae_deriv_const_add_integral hvi hab.le (γ a)
   -- The mean correction costs at most the original velocity approximation error.
-  have hD : ‖D‖ ≤ ε := by
-    have hEq : D = ∫ t in a..b, deriv γ t - s t := by
-      rw [intervalIntegral.integral_sub hγi hsi,
-        hγ.integral_deriv_eq_sub_of_finiteDimensional]
-    rw [hEq]
-    apply (intervalIntegral.norm_integral_le_integral_norm hab.le).trans
-    simpa only [intervalIntegral.integral_of_le hab.le, norm_sub_rev] using hg
-  have hc : (∫ _ in Ioc a b, ‖c‖) ≤ ε := by
-    have hEq : (∫ _ in Ioc a b, ‖c‖) = ‖D‖ := by
-      rw [setIntegral_const, measureReal_def, Real.volume_Ioc,
-        ENNReal.toReal_ofReal (sub_nonneg.mpr hab.le)]
-      simp only [c, norm_smul, Real.norm_eq_abs, abs_inv,
-        abs_of_pos (sub_pos.mpr hab), smul_eq_mul]
-      rw [← mul_assoc, mul_inv_cancel₀ (sub_pos.mpr hab).ne', one_mul]
-    exact hEq ▸ hD
+  have hD : ‖D‖ ≤ ε := norm_sub_integral_le hγ hab hsi hg
   have herror : (∫ t in Ioc a b, ‖v t - deriv γ t‖) ≤ 2 * ε := by
-    calc
-      _ ≤ ∫ t in Ioc a b, ‖s t - deriv γ t‖ + ‖c‖ := by
-        apply integral_mono (hvi'.sub hγi').norm ((hsi'.sub hγi').norm.add (integrable_const _))
-        intro t
-        simp only [v, Pi.sub_apply, Pi.add_apply]
-        have he : s t + c - deriv γ t = (s t - deriv γ t) + c := by abel
-        rw [he]
-        exact norm_add_le _ _
-      _ = (∫ t in Ioc a b, ‖s t - deriv γ t‖) + ∫ _ in Ioc a b, ‖c‖ :=
-        integral_add (hsi'.sub hγi').norm (integrable_const _)
-      _ ≤ 2 * ε := by linarith
+    refine (integral_norm_add_const_sub_le c hsi' hγi').trans ?_
+    rw [setIntegral_norm_inv_smul hab D]
+    linarith
   -- Velocity convergence implies uniform convergence through the AC fundamental theorem.
   have hderiv : (∫ t in a..b, ‖deriv p t - deriv γ t‖) ≤ 2 * ε := by
     rw [intervalIntegral.integral_of_le hab.le]
     apply le_trans (integral_congr_ae (hpderiv.mono fun t ht ↦ by rw [ht])).le herror
   have hunif : ∀ t ∈ Icc a b, ‖p t - γ t‖ ≤ 2 * ε := fun t ht ↦
-    (hpAC.norm_sub_le_integral_norm_deriv_sub hγ hpa ht).trans hderiv
+    (hpPoly.absolutelyContinuousOnInterval.norm_sub_le_integral_norm_deriv_sub hγ hpa ht).trans
+      hderiv
   exact ⟨p, hpPoly, hpa, hpb, hunif, hderiv⟩
 
 omit [CompleteSpace E] in
