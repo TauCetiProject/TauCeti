@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.ObjectProperty.Retract
-public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.FinAdd
+public import Mathlib.Data.Fintype.Sum
+public import Mathlib.Logic.Equiv.Fin.Basic
+public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
 public import TauCeti.CategoryTheory.ObjectProperty
 
 /-!
@@ -65,7 +67,10 @@ private theorem additiveClosure_biprod {X Y : C} (hX : additiveClosure M X)
   obtain ⟨n, ⟨e⟩⟩ := additiveClosure_iff.mp hX
   obtain ⟨m, ⟨e'⟩⟩ := additiveClosure_iff.mp hY
   exact additiveClosure_iff.mpr ⟨n + m, ⟨Retract.trans
-    { i := biprod.map e.i e'.i, r := biprod.map e.r e'.r } (biprodBiproductIso M n m).retract⟩⟩
+    { i := biprod.map e.i e'.i, r := biprod.map e.r e'.r }
+    ((biproductSumIso _ _).symm ≪≫ biproduct.whiskerEquiv finSumFinEquiv fun
+      | .inl _ => Iso.refl M
+      | .inr _ => Iso.refl M).retract⟩⟩
 
 instance : (additiveClosure M).IsClosedUnderFiniteProducts :=
   have : (additiveClosure M).IsClosedUnderBinaryProducts :=
