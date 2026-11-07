@@ -130,7 +130,8 @@ theorem nsmul_mkQ_eq_zero_iff (θ : IntegralPrimitiveElement K) (n : ℕ) (b : �
     (n • θ.adjoin.toSubmodule.mkQ b : θ.Quotient) = 0 ↔ (n : 𝓞 K) * b ∈ θ.adjoin := by
   rw [← map_nsmul, mkQ_eq_zero_iff, nsmul_eq_mul]
 
-/-- If some `β ∈ 𝓞 K` outside `ℤ[θ]` has `p β ∈ ℤ[θ]`, then `p` divides the index of `ℤ[θ]`. -/
+/-- For a prime `p`, if some `β ∈ 𝓞 K` outside `ℤ[θ]` has `p β ∈ ℤ[θ]`, then `p` divides the index
+of `ℤ[θ]`. -/
 theorem dvd_index_of_natCast_mul_mem_adjoin (θ : IntegralPrimitiveElement K) {p : ℕ}
     [Fact p.Prime] {β : 𝓞 K} (hβ : β ∉ θ.adjoin) (hpβ : (p : 𝓞 K) * β ∈ θ.adjoin) :
     p ∣ θ.index := by
