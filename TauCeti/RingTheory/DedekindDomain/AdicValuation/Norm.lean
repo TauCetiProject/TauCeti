@@ -42,10 +42,10 @@ open scoped AdicCompletionExtension
 namespace TauCeti
 
 variable {R : Type*} [CommRing R] [IsDedekindDomain R]
-  [Ring.HasFiniteQuotients R] [Infinite R]
+  [Ring.HasFiniteQuotients R]
   {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
   {B : Type*} [CommRing B] [IsDedekindDomain B] [Algebra R B]
-  [Ring.HasFiniteQuotients B] [Infinite B]
+  [Ring.HasFiniteQuotients B]
   {L : Type*} [Field L] [Algebra K L] [Algebra R L] [IsScalarTower R K L]
   [Algebra B L] [IsFractionRing B L] [IsScalarTower R B L]
 

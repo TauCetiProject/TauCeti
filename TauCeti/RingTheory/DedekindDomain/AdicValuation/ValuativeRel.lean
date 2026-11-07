@@ -42,8 +42,8 @@ nonarchimedean local field, the steps of its unit filtration are read off from `
   quotient representative.
 * `IsDedekindDomain.HeightOneSpectrum.ringChar_residueField_adicCompletion_dvd_iff`: the residue
   characteristic of `K_v` divides `n` exactly when `n ∈ v`.
-* `IsDedekindDomain.HeightOneSpectrum.natCard_residueField_adicCompletion_eq_absNorm`: when `R` is
-  infinite, that residue field has `Ideal.absNorm v.asIdeal` elements.
+* `IsDedekindDomain.HeightOneSpectrum.natCard_residueField_adicCompletion_eq_absNorm`: that
+  residue field has `Ideal.absNorm v.asIdeal` elements.
 * `IsDedekindDomain.HeightOneSpectrum.isNonarchimedeanLocalField_adicCompletion`: an adic
   completion with finite residue field is a nonarchimedean local field.
 * `IsDedekindDomain.HeightOneSpectrum.normalizedValuationWithZero_adicCompletion`: the
@@ -232,10 +232,10 @@ theorem ringChar_residueField_adicCompletion_dvd_iff {n : ℕ} :
     map_eq_zero_iff _ (RingEquiv.injective _), ← map_natCast (Ideal.Quotient.mk v.asIdeal),
     Ideal.Quotient.eq_zero_iff_mem]
 
-/-- If `R` is infinite, the residue field of `K_v` has cardinality the absolute norm of `v`. -/
-theorem natCard_residueField_adicCompletion_eq_absNorm [Infinite R] :
+/-- The residue field of `K_v` has cardinality the absolute norm of `v`. -/
+theorem natCard_residueField_adicCompletion_eq_absNorm :
     Nat.card 𝓀[v.adicCompletion K] = Ideal.absNorm v.asIdeal := by
-  rw [Ideal.absNorm_apply, Submodule.cardQuot_apply]
+  rw [Ideal.absNorm_of_ne_bot v.ne_bot, Submodule.cardQuot_apply]
   exact (Nat.card_congr (residueFieldEquivAdicCompletion v).toEquiv).symm
 
 /-- An adic completion with finite residue field is a nonarchimedean local field. -/
