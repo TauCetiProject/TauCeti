@@ -78,12 +78,19 @@ theorem eulerDegree_injective_of_genus_eq_zero :
 variable [IsNoetherian X] [hX : Fact (∀ x : X, coheight x ≤ 1)]
 
 include hφ hg in
+/-- The degree homomorphism on the Picard group is injective for a proper regular integral
+curve of genus zero with constant global functions. -/
+theorem eulerDegreeHom_injective_of_genus_eq_zero :
+    Function.Injective (eulerDegreeHom k X) := fun _ _ h ↦
+  Additive.toMul.injective (eulerDegree_injective_of_genus_eq_zero hX.out hφ hg
+    (by simpa only [eulerDegreeHom_apply] using h))
+
+include hφ hg in
 /-- The degree-zero Picard group of a proper regular integral genus-zero curve with constant
 global functions is trivial, without any rational-point hypothesis. -/
 theorem picZero_eq_bot_of_genus_eq_zero : picZero k X = ⊥ :=
-  (picZero_eq_ker k X).trans ((AddMonoidHom.ker_eq_bot_iff _).mpr fun _ _ h ↦
-    Additive.toMul.injective (eulerDegree_injective_of_genus_eq_zero hX.out hφ hg
-      (by simpa only [eulerDegreeHom_apply] using h)))
+  (picZero_eq_ker k X).trans ((AddMonoidHom.ker_eq_bot_iff _).mpr
+    (eulerDegreeHom_injective_of_genus_eq_zero hφ hg))
 
 /-- Degree identifies the Picard group of a proper regular integral genus-zero curve with
 constant global functions with `ℤ`, provided it has a line-bundle class `a` of degree one.
@@ -92,10 +99,9 @@ noncomputable def picardDegreeEquivOfGenusZero
     (a : LineBundleClass X) (ha : eulerDegree k a = 1) :
     Additive (LineBundleClass X) ≃+ ℤ :=
   AddEquiv.ofBijective (eulerDegreeHom k X) ⟨
-    fun _ _ h ↦ Additive.toMul.injective (eulerDegree_injective_of_genus_eq_zero hX.out hφ hg
-      (by simpa only [eulerDegreeHom_apply] using h)),
+    eulerDegreeHom_injective_of_genus_eq_zero hφ hg,
     fun n ↦ ⟨Additive.ofMul (a ^ n), by
-      simp only [eulerDegreeHom_apply, toMul_ofMul, eulerDegree_zpow k hX.out, ha, mul_one]⟩⟩
+      simp only [eulerDegreeHom_apply, toMul_ofMul, eulerDegree_zpow k, ha, mul_one]⟩⟩
 
 /-- The genus-zero Picard-group identification evaluates to Euler-characteristic degree. -/
 @[simp]
@@ -111,6 +117,6 @@ lemma picardDegreeEquivOfGenusZero_symm_apply (a : LineBundleClass X)
     (ha : eulerDegree k a = 1) (n : ℤ) :
     (picardDegreeEquivOfGenusZero hφ hg a ha).symm n = Additive.ofMul (a ^ n) := by
   apply (picardDegreeEquivOfGenusZero hφ hg a ha).injective
-  simp [eulerDegree_zpow k hX.out, ha]
+  simp [eulerDegree_zpow k, ha]
 
 end TauCeti.AlgebraicGeometry.LineBundleClass

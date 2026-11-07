@@ -80,7 +80,7 @@ theorem eulerDegree_twistingSheaf (n : ℤ) : InvertibleSheaf.eulerDegree k (ℒ
     (fun i : ULift.{u} (Fin 2) ↦ coord k i.down) (fun i ↦ coord_mem k i.down)
     (by simpa only [iSup_ulift] using iSup_basicOpen_coord_eq_top k) n
   rw [← LineBundleClass.eulerDegree_mk, hclass,
-    LineBundleClass.eulerDegree_zpow k (Scheme.IsCurveOver.coheight_le_one (k := k)),
+    LineBundleClass.eulerDegree_zpow k,
     LineBundleClass.eulerDegree_mk, eulerDegree_twistingSheaf_one, mul_one]
 
 /-- **`Pic(ℙ¹_k) ≃ ℤ`**, via degree; tensor product is written additively on the source.
