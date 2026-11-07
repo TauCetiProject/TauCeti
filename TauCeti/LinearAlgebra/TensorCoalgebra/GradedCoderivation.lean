@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Module.GradedModule.Internal
 public import TauCeti.Algebra.Ring.NegOnePow
 public import TauCeti.LinearAlgebra.TensorCoalgebra.Coderivation
 public import TauCeti.LinearAlgebra.Graded.LinearMap
+public import TauCeti.LinearAlgebra.TensorProduct.Basic
 
 /-!
 # Graded coderivations of the reduced tensor coalgebra
@@ -758,6 +759,122 @@ private theorem splice_twistedTuple_congr (G : InternalGrading R M) (q : ℤ) {n
   · have e2 : ¬(c ≤ c + j ∧ c + j < c + p) := by omega
     rw [ite_eq_right (show ¬(c + j < c + p) from by omega), ite_eq_right e2]
 
+/-- The coproduct of a graded Taylor coderivation applied to a whole word is a sum of two triple
+sums over a cut, a collapsed-block start, and a block length: the first collapses a block in the
+right half of the cut, the second in the left half. -/
+private theorem deconcatenation_gradedCoderiv_subword_eq (G : InternalGrading R M)
+    (F : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) {n : ℕ} (x : Fin n → M) :
+    deconcatenation R M (gradedCoderiv G F q (subword R x 0 n)) =
+      (∑ p ∈ Finset.range n, ∑ d ∈ Finset.range (n + 1), ∑ c ∈ Finset.range (p + 1),
+          subword R (twistedTuple G q x 0 p) 0 c ⊗ₜ[R]
+            splice R (twistedTuple G q x 0 p) c (n - c) (p - c) d (F (subword R x p d))) +
+        ∑ p ∈ Finset.range n, ∑ d ∈ Finset.range (n + 1), ∑ c ∈ Finset.range n,
+          splice R (twistedTuple G q x 0 p) 0 c p d (F (subword R x p d)) ⊗ₜ[R]
+            subword R (twistedTuple G q x 0 p) c (n - c) := by
+  rw [gradedCoderiv_subword G F q x (K := n) (le_refl n), map_sum,
+    ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun p _ ↦ ?_
+  rw [map_sum, ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun d _ ↦ ?_
+  rw [deconcatenation_splice R (twistedTuple G q x 0 p)]
+  simp only [Nat.zero_add]
+
+/-- The right-hand side of the twisted co-Leibniz identity for the graded Taylor expansion, on a
+whole word, as a triple sum over a cut, a collapsed-block start, and a block length. -/
+private theorem coLeibniz_gradedCoderiv_subword_eq (G : InternalGrading R M)
+    (F : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) {n : ℕ} (x : Fin n → M) :
+    LinearMap.rTensor (ReducedTensorWords R M) (gradedCoderiv G F q)
+        (deconcatenation R M (subword R x 0 n)) +
+      LinearMap.lTensor (ReducedTensorWords R M) (gradedCoderiv G F q)
+        (LinearMap.rTensor (ReducedTensorWords R M)
+          (ReducedTensorWords.map (R := R) (InternalGrading.koszulTwist G q))
+          (deconcatenation R M (subword R x 0 n))) =
+      (∑ c ∈ Finset.range n, ∑ p ∈ Finset.range n, ∑ d ∈ Finset.range (n + 1),
+          splice R (twistedTuple G q x 0 p) 0 c p d (F (subword R x p d)) ⊗ₜ[R]
+            subword R x c (n - c)) +
+        ∑ c ∈ Finset.range n, ∑ p ∈ Finset.range n, ∑ d ∈ Finset.range (n + 1),
+          subword R (twistedTuple G q x 0 c) 0 c ⊗ₜ[R]
+            splice R (twistedTuple G q x c p) c (n - c) p d
+              (F (subword R x (c + p) d)) := by
+  have hdelta : deconcatenation R M (subword R x 0 n) =
+      ∑ c ∈ Finset.range n, subword R x 0 c ⊗ₜ[R] subword R x c (n - c) := by
+    rw [deconcatenation_subword R x (a := 0) (b := n)]
+    simp only [Nat.zero_add]
+    exact sum_Ioo_eq_sum_range n _ (by rw [subword_length_zero, TensorProduct.zero_tmul])
+  rw [hdelta, map_sum, map_sum, map_sum]
+  congr 1 <;> refine Finset.sum_congr rfl fun c hc ↦ ?_ <;>
+    simp only [Finset.mem_range] at hc
+  · rw [LinearMap.rTensor_tmul,
+      gradedCoderiv_subword G F q x (a := 0) (b := c) (K := n) (by omega),
+      TensorProduct.sum_tmul]
+    exact Finset.sum_congr rfl fun p _ ↦ by
+      rw [TensorProduct.sum_tmul]
+      simp only [Nat.zero_add]
+  · rw [LinearMap.rTensor_tmul, map_twist_subword G q x (hab := by omega),
+      LinearMap.lTensor_tmul,
+      gradedCoderiv_subword G F q x (a := c) (b := n - c) (K := n) (by omega)]
+    rw [TensorProduct.tmul_sum]
+    refine Finset.sum_congr rfl fun p _ ↦ ?_
+    rw [TensorProduct.tmul_sum]
+
+/-- Blocks collapsed in the left half match the plain co-Leibniz term. -/
+private theorem sum_splice_tmul_subword_twistedTuple_eq (G : InternalGrading R M)
+    (F : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) {n : ℕ} (x : Fin n → M) :
+    ∑ p ∈ Finset.range n, ∑ d ∈ Finset.range (n + 1), ∑ c ∈ Finset.range n,
+      splice R (twistedTuple G q x 0 p) 0 c p d (F (subword R x p d)) ⊗ₜ[R]
+        subword R (twistedTuple G q x 0 p) c (n - c) =
+    ∑ c ∈ Finset.range n, ∑ p ∈ Finset.range n, ∑ d ∈ Finset.range (n + 1),
+      splice R (twistedTuple G q x 0 p) 0 c p d (F (subword R x p d)) ⊗ₜ[R]
+        subword R x c (n - c) := by
+  refine Eq.trans (Finset.sum_congr rfl fun p _ ↦ Finset.sum_comm) ?_
+  refine Finset.sum_comm.trans ?_
+  refine Finset.sum_congr rfl fun c hc ↦ Finset.sum_congr rfl fun p _ ↦
+    Finset.sum_congr rfl fun d _ ↦ ?_
+  simp only [Finset.mem_range] at hc
+  by_cases hpc : p + d ≤ c
+  · have hrw : subword R (twistedTuple G q x 0 p) c (n - c) = subword R x c (n - c) :=
+      subword_congr R _ _ (by omega) (by omega) fun j hj ↦ by
+        have h2 : ¬((0:ℕ) ≤ c + j ∧ c + j < 0 + p) := by omega
+        simp only [twistedTuple_apply, h2, ite_false]
+    simp only [hrw]
+  · rw [splice_eq_zero_of_block_lt_add R (twistedTuple G q x 0 p)
+      (F (subword R x p d)) (by omega), TensorProduct.zero_tmul,
+      TensorProduct.zero_tmul]
+
+/-- Blocks collapsed in the right half match the twisted co-Leibniz term, after reindexing the
+absolute block position through the triangle identity. -/
+private theorem sum_subword_twistedTuple_tmul_splice_eq (G : InternalGrading R M)
+    (F : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) {n : ℕ} (x : Fin n → M) :
+    ∑ p ∈ Finset.range n, ∑ d ∈ Finset.range (n + 1),
+      ∑ c ∈ Finset.range (p + 1),
+        subword R (twistedTuple G q x 0 p) 0 c ⊗ₜ[R]
+          splice R (twistedTuple G q x 0 p) c (n - c) (p - c) d (F (subword R x p d)) =
+    ∑ c ∈ Finset.range n, ∑ p ∈ Finset.range n, ∑ d ∈ Finset.range (n + 1),
+      subword R (twistedTuple G q x 0 c) 0 c ⊗ₜ[R]
+        splice R (twistedTuple G q x c p) c (n - c) p d
+          (F (subword R x (c + p) d)) := by
+  have hg : ∀ c p : ℕ, n ≤ c + p →
+      (∑ d ∈ Finset.range (n + 1),
+          subword R (twistedTuple G q x 0 c) 0 c ⊗ₜ[R]
+            splice R (twistedTuple G q x c p) c (n - c) p d
+              (F (subword R x (c + p) d))) = 0 :=
+    fun c p hp ↦ sum_tmul_splice_eq_zero R (twistedTuple G q x c p)
+      (subword R (twistedTuple G q x 0 c) 0 c) (fun d => F (subword R x (c + p) d)) hp
+  rw [(sum_range_triangle n _ hg).symm]
+  rw [Finset.sum_congr rfl fun p (_ : p ∈ Finset.range n) ↦ Finset.sum_comm]
+  refine Finset.sum_congr rfl fun P hP ↦ Finset.sum_congr rfl fun c hc ↦
+    Finset.sum_congr rfl fun d _ ↦ ?_
+  simp only [Finset.mem_range] at hP hc
+  have hcp : c + (P - c) = P := by omega
+  have hl := subword_twistedTuple_congr (G := G) (q := q) (x := x) (m := P) (c := c)
+    (by omega) (by omega)
+  have hbF : subword R x (c + (P - c)) d = subword R x P d := by
+    rw [hcp]
+  have hr := splice_twistedTuple_congr (G := G) (q := q) (x := x) (b := n - c) (c := c)
+    (p := P - c) (d := d) (hab := by omega)
+  rw [hcp] at hr
+  rw [← hbF, hl, hr]
+
 /-- The graded Taylor expansion of any linear map `F` from tensor words to letters is a
 `q`-twisted coderivation: the signed analogue of `isCoderivation_coderiv`.  The twist of the
 letters preceding each collapsed block produces exactly the Koszul sign `(-1)^(q * |left half|)`
@@ -767,112 +884,10 @@ theorem ReducedTensorWords.isGradedCoderivation_gradedCoderiv (G : InternalGradi
     (F : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) :
     IsGradedCoderivation G q (gradedCoderiv G F q) := by
   refine linearMap_ext R M fun n x ↦ ?_
-  have hn : 0 < n.1 := n.2
   simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.add_apply]
-  rw [of_tprod_eq_subword R hn x]
-  -- Both sides expand as triple sums over a cut, a collapsed-block start, and a block length.
-  have hLHS : deconcatenation R M (gradedCoderiv G F q (subword R x 0 n.1)) =
-      (∑ p ∈ Finset.range n.1, ∑ d ∈ Finset.range (n.1 + 1), ∑ c ∈ Finset.range (p + 1),
-          subword R (twistedTuple G q x 0 p) 0 c ⊗ₜ[R]
-            splice R (twistedTuple G q x 0 p) c (n.1 - c) (p - c) d (F (subword R x p d))) +
-        ∑ p ∈ Finset.range n.1, ∑ d ∈ Finset.range (n.1 + 1), ∑ c ∈ Finset.range n.1,
-          splice R (twistedTuple G q x 0 p) 0 c p d (F (subword R x p d)) ⊗ₜ[R]
-            subword R (twistedTuple G q x 0 p) c (n.1 - c) := by
-    rw [gradedCoderiv_subword G F q x (K := n.1) (le_refl n.1), map_sum,
-      ← Finset.sum_add_distrib]
-    refine Finset.sum_congr rfl fun p _ ↦ ?_
-    rw [map_sum, ← Finset.sum_add_distrib]
-    refine Finset.sum_congr rfl fun d _ ↦ ?_
-    rw [deconcatenation_splice R (twistedTuple G q x 0 p)]
-    simp only [Nat.zero_add]
-  have hdelta : deconcatenation R M (subword R x 0 n.1) =
-      ∑ c ∈ Finset.range n.1, subword R x 0 c ⊗ₜ[R] subword R x c (n.1 - c) := by
-    rw [deconcatenation_subword R x (a := 0) (b := n.1)]
-    simp only [Nat.zero_add]
-    exact sum_Ioo_eq_sum_range n.1 _ (by rw [subword_length_zero, TensorProduct.zero_tmul])
-  have hRHS : LinearMap.rTensor (ReducedTensorWords R M) (gradedCoderiv G F q)
-        (deconcatenation R M (subword R x 0 n.1)) +
-      LinearMap.lTensor (ReducedTensorWords R M) (gradedCoderiv G F q)
-        (LinearMap.rTensor (ReducedTensorWords R M)
-          (ReducedTensorWords.map (R := R) (InternalGrading.koszulTwist G q))
-          (deconcatenation R M (subword R x 0 n.1))) =
-      (∑ c ∈ Finset.range n.1, ∑ p ∈ Finset.range n.1, ∑ d ∈ Finset.range (n.1 + 1),
-          splice R (twistedTuple G q x 0 p) 0 c p d (F (subword R x p d)) ⊗ₜ[R]
-            subword R x c (n.1 - c)) +
-        ∑ c ∈ Finset.range n.1, ∑ p ∈ Finset.range n.1, ∑ d ∈ Finset.range (n.1 + 1),
-          subword R (twistedTuple G q x 0 c) 0 c ⊗ₜ[R]
-            splice R (twistedTuple G q x c p) c (n.1 - c) p d
-              (F (subword R x (c + p) d)) := by
-    rw [hdelta, map_sum, map_sum, map_sum]
-    congr 1 <;> refine Finset.sum_congr rfl fun c hc ↦ ?_ <;>
-      simp only [Finset.mem_range] at hc
-    · rw [LinearMap.rTensor_tmul,
-        gradedCoderiv_subword G F q x (a := 0) (b := c) (K := n.1) (by omega),
-        TensorProduct.sum_tmul]
-      exact Finset.sum_congr rfl fun p _ ↦ by
-        rw [TensorProduct.sum_tmul]
-        simp only [Nat.zero_add]
-    · rw [LinearMap.rTensor_tmul, map_twist_subword G q x (hab := by omega),
-        LinearMap.lTensor_tmul,
-        gradedCoderiv_subword G F q x (a := c) (b := n.1 - c) (K := n.1) (by omega)]
-      rw [TensorProduct.tmul_sum]
-      refine Finset.sum_congr rfl fun p _ ↦ ?_
-      rw [TensorProduct.tmul_sum]
-  rw [hLHS]
-  rw [hRHS]
-  -- Blocks collapsed in the left half match the plain co-Leibniz term.
-  have hA2 : ∑ p ∈ Finset.range n.1, ∑ d ∈ Finset.range (n.1 + 1), ∑ c ∈ Finset.range n.1,
-      splice R (twistedTuple G q x 0 p) 0 c p d (F (subword R x p d)) ⊗ₜ[R]
-        subword R (twistedTuple G q x 0 p) c (n.1 - c) =
-    ∑ c ∈ Finset.range n.1, ∑ p ∈ Finset.range n.1, ∑ d ∈ Finset.range (n.1 + 1),
-      splice R (twistedTuple G q x 0 p) 0 c p d (F (subword R x p d)) ⊗ₜ[R]
-        subword R x c (n.1 - c) := by
-    refine Eq.trans (Finset.sum_congr rfl fun p _ ↦ Finset.sum_comm) ?_
-    refine Finset.sum_comm.trans ?_
-    refine Finset.sum_congr rfl fun c hc ↦ Finset.sum_congr rfl fun p _ ↦
-      Finset.sum_congr rfl fun d _ ↦ ?_
-    simp only [Finset.mem_range] at hc
-    by_cases hpc : p + d ≤ c
-    · have hrw : subword R (twistedTuple G q x 0 p) c (n.1 - c) = subword R x c (n.1 - c) :=
-        subword_congr R _ _ (by omega) (by omega) fun j hj ↦ by
-          have h2 : ¬((0:ℕ) ≤ c + j ∧ c + j < 0 + p) := by omega
-          simp only [twistedTuple_apply, h2, ite_false]
-      simp only [hrw]
-    · rw [splice_eq_zero_of_block_lt_add R (twistedTuple G q x 0 p)
-        (F (subword R x p d)) (by omega), TensorProduct.zero_tmul,
-        TensorProduct.zero_tmul]
-  -- Blocks collapsed in the right half match the twisted co-Leibniz term, after reindexing the
-  -- absolute block position through the triangle identity.
-  have hA1 : ∑ p ∈ Finset.range n.1, ∑ d ∈ Finset.range (n.1 + 1),
-      ∑ c ∈ Finset.range (p + 1),
-        subword R (twistedTuple G q x 0 p) 0 c ⊗ₜ[R]
-          splice R (twistedTuple G q x 0 p) c (n.1 - c) (p - c) d (F (subword R x p d)) =
-    ∑ c ∈ Finset.range n.1, ∑ p ∈ Finset.range n.1, ∑ d ∈ Finset.range (n.1 + 1),
-      subword R (twistedTuple G q x 0 c) 0 c ⊗ₜ[R]
-        splice R (twistedTuple G q x c p) c (n.1 - c) p d
-          (F (subword R x (c + p) d)) := by
-    have hg : ∀ c p : ℕ, n.1 ≤ c + p →
-        (∑ d ∈ Finset.range (n.1 + 1),
-            subword R (twistedTuple G q x 0 c) 0 c ⊗ₜ[R]
-              splice R (twistedTuple G q x c p) c (n.1 - c) p d
-                (F (subword R x (c + p) d))) = 0 :=
-      fun c p hp ↦ sum_tmul_splice_eq_zero R (twistedTuple G q x c p)
-        (subword R (twistedTuple G q x 0 c) 0 c) (fun d => F (subword R x (c + p) d)) hp
-    rw [(sum_range_triangle n.1 _ hg).symm]
-    rw [Finset.sum_congr rfl fun p (_ : p ∈ Finset.range n.1) ↦ Finset.sum_comm]
-    refine Finset.sum_congr rfl fun P hP ↦ Finset.sum_congr rfl fun c hc ↦
-      Finset.sum_congr rfl fun d _ ↦ ?_
-    simp only [Finset.mem_range] at hP hc
-    have hcp : c + (P - c) = P := by omega
-    have hl := subword_twistedTuple_congr (G := G) (q := q) (x := x) (m := P) (c := c)
-      (by omega) (by omega)
-    have hbF : subword R x (c + (P - c)) d = subword R x P d := by
-      rw [hcp]
-    have hr := splice_twistedTuple_congr (G := G) (q := q) (x := x) (b := n.1 - c) (c := c)
-      (p := P - c) (d := d) (hab := by omega)
-    rw [hcp] at hr
-    rw [← hbF, hl, hr]
-  rw [add_comm, hA2, hA1]
+  rw [of_tprod_eq_subword R n.2 x, deconcatenation_gradedCoderiv_subword_eq,
+    coLeibniz_gradedCoderiv_subword_eq, add_comm, sum_splice_tmul_subword_twistedTuple_eq,
+    sum_subword_twistedTuple_tmul_splice_eq]
 
 
 /-! ### Determinedness and the correspondence -/
@@ -951,64 +966,16 @@ theorem ReducedTensorWords.IsGradedCoderivation.isCoderivation_comp_self
   intro z
   simp only [LinearMap.comp_apply, LinearMap.add_apply]
   rw [hb.deconcatenation_apply (b z), hb.deconcatenation_apply z]
-  simp only [map_add]
-  let τ := ReducedTensorWords.map (R := R) (InternalGrading.koszulTwist G q)
-  let w := deconcatenation R M z
-  have hfirst :
-      LinearMap.rTensor (ReducedTensorWords R M) b
-          (LinearMap.rTensor (ReducedTensorWords R M) b w) =
-        LinearMap.rTensor (ReducedTensorWords R M) (b ∘ₗ b) w := by
-    rw [← LinearMap.rTensor_comp_apply]
-  have hcrossLeft :
-      LinearMap.rTensor (ReducedTensorWords R M) b
-          (LinearMap.lTensor (ReducedTensorWords R M) b
-            (LinearMap.rTensor (ReducedTensorWords R M) τ w)) =
-        TensorProduct.map (b ∘ₗ τ) b w := by
-    rw [← LinearMap.comp_apply, LinearMap.rTensor_comp_lTensor, LinearMap.map_rTensor]
-  have hcrossRight :
-      LinearMap.lTensor (ReducedTensorWords R M) b
-          (LinearMap.rTensor (ReducedTensorWords R M) τ
-            (LinearMap.rTensor (ReducedTensorWords R M) b w)) =
-        TensorProduct.map (τ ∘ₗ b) b w := by
-    rw [← LinearMap.rTensor_comp_apply, ← LinearMap.comp_apply,
-      LinearMap.lTensor_comp_rTensor]
-  have hcross :
-      TensorProduct.map (b ∘ₗ τ) b w + TensorProduct.map (τ ∘ₗ b) b w = 0 := by
-    have hodd' : b ∘ₗ τ + τ ∘ₗ b = 0 := hodd
-    rw [← LinearMap.add_apply, ← TensorProduct.map_add_left,
-      hodd', TensorProduct.map_zero_left, LinearMap.zero_apply]
-  have hcommute (y : ReducedTensorWords R M ⊗[R] ReducedTensorWords R M) :
-      LinearMap.rTensor (ReducedTensorWords R M) τ
-          (LinearMap.lTensor (ReducedTensorWords R M) b y) =
-        LinearMap.lTensor (ReducedTensorWords R M) b
-          (LinearMap.rTensor (ReducedTensorWords R M) τ y) := by
-    rw [← LinearMap.comp_apply, LinearMap.rTensor_comp_lTensor,
-      ← LinearMap.comp_apply, LinearMap.lTensor_comp_rTensor]
-  have hlast :
-      LinearMap.lTensor (ReducedTensorWords R M) b
-          (LinearMap.rTensor (ReducedTensorWords R M) τ
-            (LinearMap.lTensor (ReducedTensorWords R M) b
-              (LinearMap.rTensor (ReducedTensorWords R M) τ w))) =
-        LinearMap.lTensor (ReducedTensorWords R M) (b ∘ₗ b) w := by
-    have hτ : τ ∘ₗ τ = LinearMap.id := by
-      rw [← ReducedTensorWords.map_comp, InternalGrading.koszulTwist_comp_self,
-        ReducedTensorWords.map_id]
-    rw [hcommute, ← LinearMap.lTensor_comp_apply, ← LinearMap.rTensor_comp_apply,
-      hτ, LinearMap.rTensor_id_apply]
-  rw [hfirst, hcrossLeft, hcrossRight, hlast]
-  calc
-    (LinearMap.rTensor (ReducedTensorWords R M) (b ∘ₗ b) w +
-          TensorProduct.map (b ∘ₗ τ) b w) +
-        (TensorProduct.map (τ ∘ₗ b) b w +
-          LinearMap.lTensor (ReducedTensorWords R M) (b ∘ₗ b) w) =
-      LinearMap.rTensor (ReducedTensorWords R M) (b ∘ₗ b) w +
-          (TensorProduct.map (b ∘ₗ τ) b w +
-            TensorProduct.map (τ ∘ₗ b) b w) +
-        LinearMap.lTensor (ReducedTensorWords R M) (b ∘ₗ b) w := by
-          ac_rfl
-    _ = LinearMap.rTensor (ReducedTensorWords R M) (b ∘ₗ b) w +
-        LinearMap.lTensor (ReducedTensorWords R M) (b ∘ₗ b) w := by
-      rw [hcross, add_zero]
+  have hτ : ReducedTensorWords.map (R := R) (InternalGrading.koszulTwist G q) ∘ₗ
+      ReducedTensorWords.map (R := R) (InternalGrading.koszulTwist G q) = LinearMap.id := by
+    rw [← ReducedTensorWords.map_comp, InternalGrading.koszulTwist_comp_self,
+      ReducedTensorWords.map_id]
+  have h := LinearMap.congr_fun (LinearMap.rTensor_add_lTensor_comp_rTensor_comp_self b
+    (ReducedTensorWords.map (R := R) (InternalGrading.koszulTwist G q)) hτ hodd)
+    (deconcatenation R M z)
+  simp only [LinearMap.add_apply, LinearMap.comp_apply, map_add] at h ⊢
+  rw [← h]
+  abel
 
 /-! ### Twist parameter zero -/
 
