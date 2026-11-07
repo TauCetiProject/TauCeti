@@ -100,7 +100,7 @@ globally strongly measurable representative to `[0, 1]`. The set `s` needs no me
 * `Continuous.integrable_mul_of_continuousOn`: a continuous function compactly supported in
   a set `U`, times a function continuous on `U`, is integrable.
 * `Continuous.integrable_smul_of_continuousOn`: the same for a scalar multiple of a continuous
-  compactly supported function by a function continuous on `U`.
+  compactly supported function by a function continuous on `U`, with `U` not required to be open.
 
 ## Attribution
 
@@ -440,15 +440,31 @@ theorem Continuous.integrable_mul_of_continuousOn {R : Type*} [NormedRing R] {f 
     ((Function.support_mul_subset_left f g).trans (subset_tsupport f))]
   exact hK.integrableOn_compact' hcf.isCompact (isClosed_tsupport f).measurableSet
 
-/-- The scalar multiple of a continuous compactly supported function `b`, whose support lies in an
-open set `U`, by a function `a` continuous on `U` is integrable, for any measure finite on compact
-sets. The function `a` need not be continuous, or even bounded, off `U`. -/
+/-- The scalar multiple of a continuous compactly supported function `b`, whose support lies in a
+set `U`, by a function `a` continuous on `U` is integrable, for any measure finite on compact
+sets. The function `a` need not be continuous, or even bounded, off `U`, and `U` need not be
+open. -/
 theorem Continuous.integrable_smul_of_continuousOn {𝕜 F : Type*} [NormedField 𝕜]
     [NormedAddCommGroup F] [NormedSpace 𝕜 F] {a : X → 𝕜} {b : X → F} {U : Set X}
-    (hb : Continuous b) (hbc : HasCompactSupport b) (hU : IsOpen U) (hbU : tsupport b ⊆ U)
-    (ha : ContinuousOn a U) : Integrable (fun x ↦ a x • b x) μ :=
-  ((ha.smul hb.continuousOn).continuous_of_tsupport_subset hU
-    ((tsupport_smul_subset_right _ _).trans hbU)).integrable_of_hasCompactSupport hbc.smul_left
+    (hb : Continuous b) (hbc : HasCompactSupport b) (hbU : tsupport b ⊆ U)
+    (ha : ContinuousOn a U) : Integrable (fun x ↦ a x • b x) μ := by
+  have hzero : ∀ x ∈ Uᶜ, b x = 0 := fun x hx ↦
+    image_eq_zero_of_notMem_tsupport fun h ↦ hx (hbU h)
+  have hcont : Continuous fun x ↦ a x • b x := by
+    refine continuous_iff_continuousAt.2 fun x ↦ ?_
+    by_cases hxU : x ∈ U
+    · rw [← continuousWithinAt_univ, ← Set.union_compl_self U, continuousWithinAt_union]
+      refine ⟨(ha x hxU).smul hb.continuousAt.continuousWithinAt, ?_⟩
+      by_cases hx : x ∈ closure Uᶜ
+      · have hbx : b x = 0 := Set.EqOn.closure hzero hb continuous_const hx
+        exact (continuousWithinAt_const (b := (0 : F))).congr
+          (fun y hy ↦ by simp [hzero y hy]) (by simp [hbx])
+      · exact continuousWithinAt_of_notMem_closure hx
+    · have hx : x ∉ tsupport b := fun h ↦ hxU (hbU h)
+      have hev : b =ᶠ[nhds x] 0 := notMem_tsupport_iff_eventuallyEq.1 hx
+      exact (continuousAt_const (y := (0 : F))).congr
+        (hev.mono fun y (hy : b y = 0) ↦ by simp [hy])
+  exact hcont.integrable_of_hasCompactSupport hbc.smul_left
 
 /-- A function continuous on a compact set `K` lies in every `Lᵖ` on each measurable subset of
 `K`, for a measure that is finite on compact sets: it is bounded there, and the subset has finite
