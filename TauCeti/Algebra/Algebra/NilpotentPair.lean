@@ -241,6 +241,177 @@ private theorem span_pair_pow_succ_le_span_quarticWords (hx : x ^ 2 = 0) (hy : y
     rcases hc with rfl | rfl
     exacts [h.1, h.2]
 
+/-- The reduced words `quarticWords x y` of lengths one to three lie in the commutator submodule,
+given `x x = 0`, the reduced expansion of `(x + y) ^ 3`, that `2` and `3` are units, and that `x`,
+`y`, `y ^ 2`, `(x + y) ^ 2` and `(x + y) ^ 3` lie in the commutator submodule. -/
+private theorem forall_mem_commutatorSubmodule_quarticWords_lengths_one_to_three {k : Type*}
+    [Semiring k] [Module k A] (hxx : x * x = 0)
+    (hcube : (x + y) ^ 3 = x * y * x + x * y * y + y * x * y + y * y * x) (h2 : IsUnit (2 : k))
+    (h3 : IsUnit (3 : k)) (hx₀ : x ∈ commutatorSubmodule k A) (hy₀ : y ∈ commutatorSubmodule k A)
+    (hy₁ : y ^ 2 ∈ commutatorSubmodule k A) (hs : (x + y) ^ 2 ∈ commutatorSubmodule k A)
+    (hc : (x + y) ^ 3 ∈ commutatorSubmodule k A) :
+    (∀ b ∈ quarticWords x y 0, b ∈ commutatorSubmodule k A) ∧
+    (∀ b ∈ quarticWords x y 1, b ∈ commutatorSubmodule k A) ∧
+    (∀ b ∈ quarticWords x y 2, b ∈ commutatorSubmodule k A) := by
+  let C := commutatorSubmodule k A
+  -- Length two: twice `x y` is `(x + y) ^ 2 - y ^ 2` plus the commutator `x y - y x`.
+  have hxy₀ : x * y ∈ C := by
+    have h : (2 : k) • (x * y) = (x + y) ^ 2 + -y ^ 2 + (x * y - y * x) := by
+      rw [two_smul, sq, sq]
+      simp only [mul_add, add_mul, hxx]
+      abel
+    have hmem : (2 : k) • (x * y) ∈ C := by
+      rw [h]
+      exact add_mem (add_mem hs (neg_mem_commutatorSubmodule hy₁))
+        (mul_sub_mul_mem_commutatorSubmodule k A x y)
+    exact (Submodule.smul_mem_iff_of_isUnit _ h2).1 hmem
+  -- Length three: `x y x` rotates into `x x y = 0`, and three times `x y y` is `(x + y) ^ 3`
+  -- minus `x y x` up to two commutators.
+  have hxyx : x * y * x ∈ C :=
+    mul_mem_commutatorSubmodule_comm.2
+      (by simp only [← mul_assoc, hxx, zero_mul, zero_mem])
+  have hxyy : x * y * y ∈ C := by
+    have h : (3 : k) • (x * y * y) = (x + y) ^ 3 + -(x * y * x) + (x * y * y - y * (x * y)) +
+        (x * (y * y) - y * y * x) := by
+      rw [hcube, ← two_add_one_eq_three, add_smul, two_smul, one_smul]
+      noncomm_ring
+    have hmem : (3 : k) • (x * y * y) ∈ C := by
+      rw [h]
+      exact add_mem (add_mem (add_mem hc (neg_mem_commutatorSubmodule hxyx))
+        (mul_sub_mul_mem_commutatorSubmodule _ _ _ _)) (mul_sub_mul_mem_commutatorSubmodule _ _ _ _)
+    exact (Submodule.smul_mem_iff_of_isUnit _ h3).1 hmem
+  refine ⟨?_, ?_, ?_⟩ <;> simp only [quarticWords, Set.forall_mem_insert, Set.forall_mem_singleton]
+  · exact ⟨hx₀, hy₀⟩
+  · exact ⟨hxy₀, mul_mem_commutatorSubmodule_comm.2 hxy₀, by rwa [sq] at hy₁⟩
+  · refine ⟨hxyx, hxyy, ?_, ?_⟩
+    · rw [mul_assoc]
+      exact mul_mem_commutatorSubmodule_comm.2 hxyy
+    · exact mul_mem_commutatorSubmodule_comm.2 (by rw [← mul_assoc]; exact hxyy)
+
+/-- The reduced words `quarticWords x y` of length four lie in the commutator submodule, given `x x
+= 0`, `a y y y = 0` for every `a`, the vanishing of the sum `hT` of the reduced words of length four
+(the expansion of `(x + y) ^ 4`), and that `2` is a unit. -/
+private theorem forall_mem_commutatorSubmodule_quarticWords_length_four {k : Type*} [Semiring k]
+    [Module k A] (hxx : x * x = 0) (r₁ : ∀ a : A, a * y * y * y = 0)
+    (hT : x * y * x * y + x * y * y * x + y * x * y * x + y * x * y * y + y * y * x * y = 0)
+    (h2 : IsUnit (2 : k)) :
+    ∀ b ∈ quarticWords x y 3, b ∈ commutatorSubmodule k A := by
+  let C := commutatorSubmodule k A
+  -- Length four: `x y y x`, `y x y y` and `y y x y` rotate into words containing `x x` or
+  -- `y y y`, and then twice `y x y x` is a sum of commutators.
+  have hxyyx : x * y * y * x ∈ C :=
+    mul_mem_commutatorSubmodule_comm.2 (by simp only [← mul_assoc, hxx, zero_mul, zero_mem])
+  have hyxyy : y * x * y * y ∈ C :=
+    by simpa only [mul_assoc] using
+      mul_mem_commutatorSubmodule_comm.2 (r₁ x ▸ zero_mem C : x * y * y * y ∈ C)
+  have hyyxy : y * y * x * y ∈ C :=
+    by simpa only [mul_assoc] using mul_mem_commutatorSubmodule_comm.2 hyxyy
+  have hyxyx : y * x * y * x ∈ C := by
+    have h : (2 : k) • (y * x * y * x) = (y * x * y * x - x * (y * x * y)) + -(x * y * y * x) +
+        -(y * x * y * y) + -(y * y * x * y) := by
+      rw [two_smul]
+      linear_combination (norm := skip) hT
+      noncomm_ring
+    have hmem : (2 : k) • (y * x * y * x) ∈ C := by
+      rw [h]
+      exact add_mem (add_mem (add_mem (mul_sub_mul_mem_commutatorSubmodule _ _ _ _)
+        (neg_mem_commutatorSubmodule hxyyx)) (neg_mem_commutatorSubmodule hyxyy))
+        (neg_mem_commutatorSubmodule hyyxy)
+    exact (Submodule.smul_mem_iff_of_isUnit _ h2).1 hmem
+  simp only [quarticWords, Set.forall_mem_insert, Set.forall_mem_singleton]
+  exact ⟨hxyyx, hyxyx, hyxyy, hyyxy⟩
+
+/-- The reduced words `quarticWords x y` of lengths five and six lie in the commutator submodule,
+given `x x = 0`, `y y y = 0`, `a x x = 0` and `a y y y = 0` for every `a`, and the vanishing of the
+sum `hT` of the reduced words of length four (the expansion of `(x + y) ^ 4`). -/
+private theorem forall_mem_commutatorSubmodule_quarticWords_lengths_five_six {k : Type*}
+    [Semiring k] [Module k A] (hxx : x * x = 0) (hyyy : y * y * y = 0) (r₀ : ∀ a : A, a * x * x = 0)
+    (r₁ : ∀ a : A, a * y * y * y = 0)
+    (hT : x * y * x * y + x * y * y * x + y * x * y * x + y * x * y * y + y * y * x * y = 0) :
+    (∀ b ∈ quarticWords x y 4, b ∈ commutatorSubmodule k A) ∧
+    (∀ b ∈ quarticWords x y 5, b ∈ commutatorSubmodule k A) := by
+  let C := commutatorSubmodule k A
+  -- Length five: the difference of the expansion multiplied by `y` and by `x` leaves `x y y x y`
+  -- up to commutators and words rotating into `x x` or `y y y`.
+  have hyyxyy : y * y * x * y * y ∈ C :=
+    by simpa only [mul_assoc] using
+      mul_mem_commutatorSubmodule_comm.2 (r₁ (y * x) ▸ zero_mem C : y * x * y * y * y ∈ C)
+  have hxyxyx : x * y * x * y * x ∈ C :=
+    by simpa only [mul_assoc] using
+      mul_mem_commutatorSubmodule_comm.2 (r₀ (y * x * y) ▸ zero_mem C : y * x * y * x * x ∈ C)
+  have hxyyxy : x * y * y * x * y ∈ C := by
+    have h : x * y * y * x * y = (x * y * x * y * y - y * (x * y * x * y)) +
+        (x * y * y * x * y - y * (x * y * y * x)) + (x * (y * y * x * y) - y * y * x * y * x) +
+        -(y * y * x * y * y) + x * y * x * y * x := by
+      linear_combination (norm := skip) y * hT - x * hT
+      simp only [mul_add, ← mul_assoc, hxx, hyyy, zero_mul, zero_add, add_zero]
+      noncomm_ring
+    rw [h]
+    exact add_mem (add_mem (add_mem (add_mem (mul_sub_mul_mem_commutatorSubmodule _ _ _ _)
+      (mul_sub_mul_mem_commutatorSubmodule _ _ _ _))
+      (mul_sub_mul_mem_commutatorSubmodule _ _ _ _)) (neg_mem_commutatorSubmodule hyyxyy)) hxyxyx
+  -- Length six: the expansion multiplied by `y y` leaves `y y x y y x` up to a word rotating into
+  -- `y y y`.
+  have hyyxyyx : y * y * x * y * y * x ∈ C := by
+    have h : y * y * x * y * y * x = -(y * y * (x * y * x * y)) := by
+      linear_combination (norm := skip) y * y * hT
+      simp only [mul_add, ← mul_assoc, hyyy, zero_mul, add_zero]
+      noncomm_ring
+    rw [h]
+    exact neg_mem_commutatorSubmodule
+      (mul_mem_commutatorSubmodule_comm.2 (by simp only [← mul_assoc, r₁, zero_mem]))
+  refine ⟨?_, ?_⟩ <;> simp only [quarticWords, Set.forall_mem_insert, Set.forall_mem_singleton]
+  · exact ⟨hxyyxy,
+      (by simpa only [mul_assoc] using mul_mem_commutatorSubmodule_comm.2 hxyyxy),
+      mul_mem_commutatorSubmodule_comm.2 (by convert hxyyxy using 1; noncomm_ring), hyyxyy⟩
+  · exact ⟨mul_mem_commutatorSubmodule_comm.2 (by simp only [← mul_assoc, hxx, zero_mul, zero_mem]),
+      mul_mem_commutatorSubmodule_comm.2 (by simpa only [mul_assoc] using hyyxyyx), hyyxyyx⟩
+
+/-- The reduced words `quarticWords x y` of lengths seven and eight lie in the commutator submodule,
+given `x x = 0`, `y y y = 0`, `a x x = 0` and `a y y y = 0` for every `a`, the vanishing of the sum
+`hT` of the reduced words of length four (the expansion of `(x + y) ^ 4`), and that `2` is a unit.
+-/
+private theorem forall_mem_commutatorSubmodule_quarticWords_lengths_seven_eight {k : Type*}
+    [Semiring k] [Module k A] (hxx : x * x = 0) (hyyy : y * y * y = 0) (r₀ : ∀ a : A, a * x * x = 0)
+    (r₁ : ∀ a : A, a * y * y * y = 0)
+    (hT : x * y * x * y + x * y * y * x + y * x * y * x + y * x * y * y + y * y * x * y = 0)
+    (h2 : IsUnit (2 : k)) :
+    (∀ b ∈ quarticWords x y 6, b ∈ commutatorSubmodule k A) ∧
+    (∀ b ∈ quarticWords x y 7, b ∈ commutatorSubmodule k A) := by
+  let C := commutatorSubmodule k A
+  -- Length seven: the expansion multiplied by `x y y` leaves `x y y x y x y` up to a word rotating
+  -- into `x x`.
+  have hxyyxyxy : x * y * y * x * y * x * y ∈ C := by
+    have h : x * y * y * x * y * x * y = -(x * y * y * x * y * y * x) := by
+      linear_combination (norm := skip) x * y * y * hT
+      simp only [mul_add, ← mul_assoc, r₁, zero_mul, add_zero]
+      noncomm_ring
+    rw [h]
+    exact neg_mem_commutatorSubmodule
+      (mul_mem_commutatorSubmodule_comm.2 (by simp only [← mul_assoc, hxx, zero_mul, zero_mem]))
+  -- Length eight: the expansion multiplied by `x y y x` shows that twice `y y x y y x y x` is a
+  -- sum of commutators and a word rotating into `x x`.
+  have hxyyxyxyx : x * y * y * x * y * x * y * x ∈ C := by
+    exact mul_mem_commutatorSubmodule_comm.2 (by simp only [← mul_assoc, hxx, zero_mul, zero_mem])
+  have hyyxyyxyx : y * y * x * y * y * x * y * x ∈ C := by
+    have h : (2 : k) • (y * y * x * y * y * x * y * x) =
+        (y * y * (x * y * y * x * y * x) - x * y * y * x * y * x * (y * y)) +
+        (y * y * x * y * y * x * y * x - x * (y * y * x * y * y * x * y)) +
+        -(x * y * y * x * y * x * y * x) := by
+      rw [two_smul]
+      linear_combination (norm := skip) x * y * y * x * hT
+      simp only [mul_add, ← mul_assoc, r₀, zero_mul, zero_add, add_zero]
+      noncomm_ring
+    have hmem : (2 : k) • (y * y * x * y * y * x * y * x) ∈ C := by
+      rw [h]
+      exact add_mem (add_mem (mul_sub_mul_mem_commutatorSubmodule _ _ _ _)
+        (mul_sub_mul_mem_commutatorSubmodule _ _ _ _)) (neg_mem_commutatorSubmodule hxyyxyxyx)
+    exact (Submodule.smul_mem_iff_of_isUnit _ h2).1 hmem
+  refine ⟨?_, ?_⟩ <;> simp only [quarticWords, Set.forall_mem_insert, Set.forall_mem_singleton]
+  · exact ⟨(by simpa only [mul_assoc] using mul_mem_commutatorSubmodule_comm.2 hxyyxyxy),
+      mul_mem_commutatorSubmodule_comm.2 (by simp only [← mul_assoc, hyyy, zero_mul, zero_mem])⟩
+  · exact hyyxyyxyx
+
 /-- **Words in a square-zero and a cube-zero element with a fourth-power-zero sum are sums of
 commutators.** Let `x ^ 2 = 0`, `y ^ 3 = 0` and `(x + y) ^ 4 = 0`, and suppose that `x`, `y`,
 `y ^ 2`, `(x + y) ^ 2` and `(x + y) ^ 3` lie in the commutator submodule `[B, B]`. If `2` and `3`
@@ -259,7 +430,6 @@ theorem mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_four {B : Type*}
     (hy₀ : y ∈ commutatorSubmodule k B) (hy₁ : y ^ 2 ∈ commutatorSubmodule k B)
     (hs : (x + y) ^ 2 ∈ commutatorSubmodule k B) (hc : (x + y) ^ 3 ∈ commutatorSubmodule k B)
     {t : ℕ} {w : B} (hw : w ∈ span ℤ {x, y} ^ (t + 1)) : w ∈ commutatorSubmodule k B := by
-  let C := commutatorSubmodule k B
   have hxx : x * x = 0 := by rw [← sq, hx]
   have hyyy : y * y * y = 0 := by rw [← pow_three', hy]
   have r₀ (a : B) : a * x * x = 0 := by rw [mul_assoc, hxx, mul_zero]
@@ -274,121 +444,18 @@ theorem mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_four {B : Type*}
     simp only [pow_succ, pow_zero, one_mul, mul_add, add_mul, hxx, hyyy, r₀, r₁, zero_add,
       add_zero]
     noncomm_ring
-  have hneg {a : B} (h : a ∈ C) : -a ∈ C := neg_mem_commutatorSubmodule h
-  -- Rotations: a product lies in `[B, B]` exactly when its rotation does, here up to
-  -- reassociating the rotated product or the target.
-  have hrot {a b : B} (h : b * a ∈ C) : a * b ∈ C := mul_mem_commutatorSubmodule_comm.2 h
-  have hrotEq {a b c : B} (e : b * a = c) (h : c ∈ C) : a * b ∈ C := hrot (e ▸ h)
-  have hrotAssoc {a b c : B} (e : a * b = c) (h : b * a ∈ C) : c ∈ C := e ▸ hrot h
-  have hzero {a : B} (h : a = 0) : a ∈ C := h ▸ zero_mem _
-  have hcomm (a b : B) : a * b - b * a ∈ C := mul_sub_mul_mem_commutatorSubmodule k B a b
-  -- Length two: twice `x y` is `(x + y) ^ 2 - y ^ 2` plus the commutator `x y - y x`.
-  have hxy₀ : x * y ∈ C := by
-    have h : (2 : k) • (x * y) = (x + y) ^ 2 + -y ^ 2 + (x * y - y * x) := by
-      rw [two_smul, sq, sq]
-      simp only [mul_add, add_mul, hxx]
-      abel
-    have hmem : (2 : k) • (x * y) ∈ C := by
-      rw [h]
-      exact add_mem (add_mem hs (hneg hy₁)) (hcomm x y)
-    exact (Submodule.smul_mem_iff_of_isUnit _ h2).1 hmem
-  -- Length three: `x y x` rotates into `x x y = 0`, and three times `x y y` is `(x + y) ^ 3`
-  -- minus `x y x` up to two commutators.
-  have hxyx : x * y * x ∈ C := hrot (hzero (by rw [← mul_assoc, hxx, zero_mul]))
-  have hxyy : x * y * y ∈ C := by
-    have h : (3 : k) • (x * y * y) = (x + y) ^ 3 + -(x * y * x) + -(y * (x * y) - x * y * y) +
-        -(y * y * x - x * (y * y)) := by
-      rw [hcube, ← two_add_one_eq_three, add_smul, two_smul, one_smul]
-      noncomm_ring
-    have hmem : (3 : k) • (x * y * y) ∈ C := by
-      rw [h]
-      exact add_mem (add_mem (add_mem hc (hneg hxyx)) (hneg (hcomm _ _))) (hneg (hcomm _ _))
-    exact (Submodule.smul_mem_iff_of_isUnit _ h3).1 hmem
-  -- Length four: `x y y x`, `y x y y` and `y y x y` rotate into words containing `x x` or
-  -- `y y y`, and then twice `y x y x` is a sum of commutators.
-  have hxyyx : x * y * y * x ∈ C := hrot (hzero (by simp only [← mul_assoc, hxx, zero_mul]))
-  have hyxyy : y * x * y * y ∈ C := hrotAssoc (by simp only [mul_assoc]) (hzero (r₁ x))
-  have hyyxy : y * y * x * y ∈ C := hrotAssoc (by simp only [mul_assoc]) hyxyy
-  have hyxyx : y * x * y * x ∈ C := by
-    have h : (2 : k) • (y * x * y * x) = -(x * (y * x * y) - y * x * y * x) + -(x * y * y * x) +
-        -(y * x * y * y) + -(y * y * x * y) := by
-      rw [two_smul]
-      linear_combination (norm := skip) hT
-      noncomm_ring
-    have hmem : (2 : k) • (y * x * y * x) ∈ C := by
-      rw [h]
-      exact add_mem (add_mem (add_mem (hneg (hcomm _ _)) (hneg hxyyx)) (hneg hyxyy)) (hneg hyyxy)
-    exact (Submodule.smul_mem_iff_of_isUnit _ h2).1 hmem
-  -- Length five: the difference of the expansion multiplied by `y` and by `x` leaves `x y y x y`
-  -- up to commutators and words rotating into `x x` or `y y y`.
-  have hyyxyy : y * y * x * y * y ∈ C :=
-    hrotAssoc (by simp only [mul_assoc]) (hzero (r₁ (y * x)))
-  have hxyxyx : x * y * x * y * x ∈ C :=
-    hrotAssoc (by simp only [mul_assoc]) (hzero (r₀ (y * x * y)))
-  have hxyyxy : x * y * y * x * y ∈ C := by
-    have h : x * y * y * x * y = -(y * (x * y * x * y) - x * y * x * y * y) +
-        -(y * (x * y * y * x) - x * y * y * x * y) + -(y * y * x * y * x - x * (y * y * x * y)) +
-        -(y * y * x * y * y) + x * y * x * y * x := by
-      linear_combination (norm := skip) y * hT - x * hT
-      simp only [mul_add, ← mul_assoc, hxx, hyyy, zero_mul, zero_add, add_zero]
-      noncomm_ring
-    rw [h]
-    exact add_mem (add_mem (add_mem (add_mem (hneg (hcomm _ _)) (hneg (hcomm _ _)))
-      (hneg (hcomm _ _))) (hneg hyyxyy)) hxyxyx
-  -- Length six: the expansion multiplied by `y y` leaves `y y x y y x` up to a word rotating into
-  -- `y y y`.
-  have hyyxyyx : y * y * x * y * y * x ∈ C := by
-    have h : y * y * x * y * y * x = -(y * y * (x * y * x * y)) := by
-      linear_combination (norm := skip) y * y * hT
-      simp only [mul_add, ← mul_assoc, hyyy, zero_mul, add_zero]
-      noncomm_ring
-    rw [h]
-    exact hneg (hrot (hzero (by simp only [← mul_assoc, r₁])))
-  -- Length seven: the expansion multiplied by `x y y` leaves `x y y x y x y` up to a word rotating
-  -- into `x x`.
-  have hxyyxyxy : x * y * y * x * y * x * y ∈ C := by
-    have h : x * y * y * x * y * x * y = -(x * y * y * x * y * y * x) := by
-      linear_combination (norm := skip) x * y * y * hT
-      simp only [mul_add, ← mul_assoc, r₁, zero_mul, add_zero]
-      noncomm_ring
-    rw [h]
-    exact hneg (hrot (hzero (by simp only [← mul_assoc, hxx, zero_mul])))
-  -- Length eight: the expansion multiplied by `x y y x` shows that twice `y y x y y x y x` is a
-  -- sum of commutators and a word rotating into `x x`.
-  have hxyyxyxyx : x * y * y * x * y * x * y * x ∈ C := by
-    exact hrot (hzero (by simp only [← mul_assoc, hxx, zero_mul]))
-  have hyyxyyxyx : y * y * x * y * y * x * y * x ∈ C := by
-    have h : (2 : k) • (y * y * x * y * y * x * y * x) =
-        -(x * y * y * x * y * x * (y * y) - y * y * (x * y * y * x * y * x)) +
-        -(x * (y * y * x * y * y * x * y) - y * y * x * y * y * x * y * x) +
-        -(x * y * y * x * y * x * y * x) := by
-      rw [two_smul]
-      linear_combination (norm := skip) x * y * y * x * hT
-      simp only [mul_add, ← mul_assoc, r₀, zero_mul, zero_add, add_zero]
-      noncomm_ring
-    have hmem : (2 : k) • (y * y * x * y * y * x * y * x) ∈ C := by
-      rw [h]
-      exact add_mem (add_mem (hneg (hcomm _ _)) (hneg (hcomm _ _))) (hneg hxyyxyxyx)
-    exact (Submodule.smul_mem_iff_of_isUnit _ h2).1 hmem
-  -- Every reduced word of positive length lies in `[B, B]`.
-  have hwords : ∀ b ∈ quarticWords x y t, b ∈ C := by
+  obtain ⟨l₁, l₂, l₃⟩ :=
+    forall_mem_commutatorSubmodule_quarticWords_lengths_one_to_three (k := k) hxx hcube h2 h3 hx₀
+      hy₀ hy₁ hs hc
+  have l₄ := forall_mem_commutatorSubmodule_quarticWords_length_four (k := k) hxx r₁ hT h2
+  obtain ⟨l₅, l₆⟩ :=
+    forall_mem_commutatorSubmodule_quarticWords_lengths_five_six (k := k) hxx hyyy r₀ r₁ hT
+  obtain ⟨l₇, l₈⟩ :=
+    forall_mem_commutatorSubmodule_quarticWords_lengths_seven_eight (k := k) hxx hyyy r₀ r₁ hT h2
+  have hwords : ∀ b ∈ quarticWords x y t, b ∈ commutatorSubmodule k B := by
     rcases Nat.lt_or_ge t 8 with ht | ht
-    · interval_cases t <;>
-        simp only [quarticWords, Set.forall_mem_insert, Set.forall_mem_singleton]
-      · exact ⟨hx₀, hy₀⟩
-      · exact ⟨hxy₀, hrot hxy₀, by rwa [sq] at hy₁⟩
-      · refine ⟨hxyx, hxyy, ?_, ?_⟩
-        · rw [mul_assoc]
-          exact hrot hxyy
-        · exact hrot (by rw [← mul_assoc]; exact hxyy)
-      · exact ⟨hxyyx, hyxyx, hyxyy, hyyxy⟩
-      · exact ⟨hxyyxy, hrotAssoc (by simp only [mul_assoc]) hxyyxy,
-          hrotEq (by noncomm_ring) hxyyxy, hyyxyy⟩
-      · exact ⟨hrot (hzero (by simp only [← mul_assoc, hxx, zero_mul])),
-          hrotEq (by simp only [mul_assoc]) hyyxyyx, hyyxyyx⟩
-      · exact ⟨hrotAssoc (by simp only [mul_assoc]) hxyyxyxy,
-          hrot (hzero (by simp only [← mul_assoc, hyyy, zero_mul]))⟩
-      · exact hyyxyyxyx
+    · interval_cases t
+      exacts [l₁, l₂, l₃, l₄, l₅, l₆, l₇, l₈]
     · obtain ⟨t, rfl⟩ : ∃ t', t = t' + 8 := ⟨t - 8, by omega⟩
       simp [quarticWords]
   have hle := span_pair_pow_succ_le_span_quarticWords hx hy hxy t hw
@@ -460,6 +527,25 @@ private theorem quintic_rewriting_rules (hx : x ^ 2 = 0) (hy : y ^ 3 = 0)
   linear_combination (norm := skip) r₄ a * (y * y) - r₄ (a * y) * y + r₄ (a * y * y)
   simp only [add_mul, neg_mul, ← mul_assoc, r₁, zero_add, add_zero]
   noncomm_ring
+
+/-- The rewriting rules of `quintic_rewriting_rules` with no left factor. -/
+private theorem quintic_rewriting_rules_one (hx : x ^ 2 = 0) (hy : y ^ 3 = 0)
+    (hxy : (x + y) ^ 5 = 0) :
+    x * x = 0 ∧ y * y * y = 0 ∧
+    x * y * x * y * x = -(x * y * x * y * y + x * y * y * x * y + y * x * y * x * y +
+      y * x * y * y * x + y * y * x * y * x + y * y * x * y * y) ∧
+    x * y * x * y * y * x = -(x * y * y * x * y * x) +
+      y * x * y * x * y * y + y * x * y * y * x * y + y * y * x * y * x * y ∧
+    x * y * y * x * y * y * x * y * x * y =
+      -(x * y * y * x * y * y * x * y * y * x + y * x * y * y * x * y * y * x * y * x +
+        y * x * y * y * x * y * y * x * y * y + y * y * x * y * y * x * y * y * x * y) ∧
+    x * y * y * x * y * y * x * y * y * x * y * y =
+      y * x * y * y * x * y * y * x * y * y * x * y -
+        y * y * x * y * y * x * y * y * x * y * y * x := by
+  obtain ⟨r₀, r₁, r₂, r₃, r₄, r₅⟩ := quintic_rewriting_rules hx hy hxy
+  exact ⟨by simpa only [one_mul] using r₀ 1, by simpa only [one_mul] using r₁ 1,
+    by simpa only [one_mul] using r₂ 1, by simpa only [one_mul] using r₃ 1,
+    by simpa only [one_mul] using r₄ 1, by simpa only [one_mul] using r₅ 1⟩
 
 /-- The reduced words of length `t + 1` for the rewriting rules of
 `quintic_rewriting_rules`: the words containing none of the six leading words `x x`, `y y y`,
@@ -553,93 +639,77 @@ theorem span_pair_pow_fifteen_eq_bot (hx : x ^ 2 = 0) (hy : y ^ 3 = 0) (hxy : (x
   have hw' : w ∈ span ℤ {x, y} ^ 15 := span_pow (R := ℤ) {x, y} 15 ▸ subset_span hw
   rwa [h15, mem_bot] at hw'
 
-/-- **Words in a square-zero and a cube-zero element with a fifth-power-zero sum are sums of
-commutators.** Let `x ^ 2 = 0`, `y ^ 3 = 0` and `(x + y) ^ 5 = 0`, and suppose that `x`, `y`,
-`y ^ 2` and the powers `(x + y) ^ j` for `2 ≤ j < 5` lie in the commutator submodule `[B, B]`. If
-`2`, `3` and `5` are units in `k`, then every product of a positive number of factors from
-`{x, y}` lies in `[B, B]`. -/
-theorem mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_five {B : Type*} [Ring B]
-    {k : Type*} [Semiring k] [Module k B] {x y : B} (h2 : IsUnit (2 : k)) (h3 : IsUnit (3 : k))
-    (h5 : IsUnit (5 : k)) (hx : x ^ 2 = 0) (hy : y ^ 3 = 0) (hxy : (x + y) ^ 5 = 0)
-    (hx₀ : x ∈ commutatorSubmodule k B) (hy₀ : y ∈ commutatorSubmodule k B)
-    (hy₁ : y ^ 2 ∈ commutatorSubmodule k B) (hs : (x + y) ^ 2 ∈ commutatorSubmodule k B)
-    (hc : (x + y) ^ 3 ∈ commutatorSubmodule k B) (hq : (x + y) ^ 4 ∈ commutatorSubmodule k B)
-    {t : ℕ} {w : B} (hw : w ∈ span ℤ {x, y} ^ (t + 1)) : w ∈ commutatorSubmodule k B := by
-  obtain ⟨r₀, r₁, r₂, r₃, r₄, r₅⟩ := quintic_rewriting_rules hx hy hxy
-  have r₀' := r₀ 1
-  have r₁' := r₁ 1
-  have r₂' := r₂ 1
-  have r₃' := r₃ 1
-  have r₄' := r₄ 1
-  have r₅' := r₅ 1
-  simp only [one_mul] at r₀' r₁' r₂' r₃' r₄' r₅'
-  -- Work in the quotient of `B` by the commutator submodule, viewed as an additive subgroup.
-  let C := commutatorSubmodule k B
-  let D : AddSubgroup B := { C.toAddSubmonoid with neg_mem' := neg_mem_commutatorSubmodule }
-  have hD {a : B} : a ∈ D ↔ a ∈ C := Iff.rfl
-  let f := QuotientAddGroup.mk' D
-  have hf {a : B} (h : a ∈ C) : f a = 0 := (QuotientAddGroup.eq_zero_iff a).2 (hD.2 h)
-  -- Rotating a product does not change its class.
-  have hrot (a b : B) : f (a * b) = f (b * a) := by
-    rw [QuotientAddGroup.mk'_apply, QuotientAddGroup.mk'_apply, QuotientAddGroup.eq, hD,
-      neg_add_eq_sub]
-    exact mul_sub_mul_mem_commutatorSubmodule k B b a
-  -- A class killed by a unit multiple vanishes.
-  have hdiv {n : ℕ} (hn : IsUnit (n : k)) {a : B} (h : (n : ℤ) • f a = 0) : f a = 0 := by
-    rw [← map_zsmul, QuotientAddGroup.mk'_apply, QuotientAddGroup.eq_zero_iff, hD, natCast_zsmul,
-      ← Nat.cast_smul_eq_nsmul k] at h
-    exact hf ((Submodule.smul_mem_iff_of_isUnit _ hn).1 h)
-  have u2 : IsUnit ((2 : ℕ) : k) := by exact_mod_cast h2
-  have u3 : IsUnit ((3 : ℕ) : k) := by exact_mod_cast h3
-  have u5 : IsUnit ((5 : ℕ) : k) := by exact_mod_cast h5
-  -- In each length `d`, every `eᵢ` is a relation `f (a * v) = f (v * a)` for a letter `a` and a
-  -- reduced word `v` of length `d - 1`, or for `d ≤ 4` a hypothesis, rewritten into reduced words.
-  -- Every `wⱼ` solves these relations, and the previous `wᵢ`, for one reduced word of length `d`.
+/-- The reduced words `quinticWords x y` of lengths one to three are killed by an additive map `f`
+that is invariant under rotation, given `x ^ 2 = 0`, `y ^ 3 = 0` and `(x + y) ^ 5 = 0`, that `2` and
+`3` cancel in `f`, and that `f` vanishes on `x`, `y`, `y * y`, `(x + y) ^ 2` and `(x + y) ^ 3`. -/
+private theorem map_quinticWords_eq_zero_lengths_one_to_three {Q : Type*} [AddCommGroup Q]
+    (f : A →+ Q) (hx : x ^ 2 = 0) (hy : y ^ 3 = 0) (hxy : (x + y) ^ 5 = 0)
+    (hrot : ∀ a b : A, f (a * b) = f (b * a)) (hdiv₂ : ∀ {a : A}, ((2 : ℕ) : ℤ) • f a = 0 → f a = 0)
+    (hdiv₃ : ∀ {a : A}, ((3 : ℕ) : ℤ) • f a = 0 → f a = 0) (hx₀ : f x = 0) (hy₀ : f y = 0)
+    (hy₁ : f (y * y) = 0) (hs : f ((x + y) ^ 2) = 0) (hc : f ((x + y) ^ 3) = 0) :
+    (∀ b ∈ quinticWords x y 0, f b = 0) ∧
+    (∀ b ∈ quinticWords x y 1, f b = 0) ∧
+    (∀ b ∈ quinticWords x y 2, f b = 0) := by
+  obtain ⟨r₀, r₁, _, _, _, _⟩ := quintic_rewriting_rules hx hy hxy
+  obtain ⟨r₀', r₁', -, -, -, -⟩ := quintic_rewriting_rules_one hx hy hxy
   -- Length 1.
   have l₁ : ∀ b ∈ quinticWords x y 0, f b = 0 := by
-    have w₁ : f x = 0 := hf hx₀
-    have w₂ : f y = 0 := hf hy₀
+    have w₁ : f x = 0 := hx₀
+    have w₂ : f y = 0 := hy₀
     simp only [quinticWords, Set.forall_mem_insert, Set.forall_mem_singleton]
     exact ⟨w₁, w₂⟩
   -- Length 2.
   have l₂ : ∀ b ∈ quinticWords x y 1, f b = 0 := by
-    have e₁ := hf hs
+    have e₁ := hs
     have e₂ := hrot y x
     simp only [pow_succ, pow_zero, one_mul, mul_add, r₀', add_mul, zero_add, map_add] at e₁ e₂
-    have w₁ : f (y * y) = 0 := hf (by rwa [← sq])
-    have w₂ : f (x * y) = 0 := hdiv u2 <| by linear_combination (norm := module) e₁ - e₂ - w₁
+    have w₁ := hy₁
+    have w₂ : f (x * y) = 0 := hdiv₂ <| by linear_combination (norm := module) e₁ - e₂ - w₁
     have w₃ : f (y * x) = 0 := by linear_combination (norm := module) e₂ + w₂
     simp only [quinticWords, Set.forall_mem_insert, Set.forall_mem_singleton]
     exact ⟨w₂, w₃, w₁⟩
   -- Length 3.
   have l₃ : ∀ b ∈ quinticWords x y 2, f b = 0 := by
     have e₁ := hrot x (x * y)
-    have e₂ := hf hc
+    have e₂ := hc
     have e₃ := hrot y (x * y)
     have e₄ := hrot x (y * y)
     have e₅ := hrot y (y * x)
     simp only [pow_succ, pow_zero, one_mul, mul_add, ← mul_assoc, r₀, r₀', r₁', add_mul, zero_mul,
       add_zero, zero_add, map_add, map_zero] at e₁ e₂ e₃ e₄ e₅
     have w₁ : f (x * y * x) = 0 := by linear_combination (norm := module) -e₁
-    have w₂ : f (x * y * y) = 0 := hdiv u3 <| by
+    have w₂ : f (x * y * y) = 0 := hdiv₃ <| by
       linear_combination (norm := module) e₂ - e₃ + e₄ - w₁
     have w₃ : f (y * x * y) = 0 := by linear_combination (norm := module) e₃ + w₂
     have w₄ : f (y * y * x) = 0 := by linear_combination (norm := module) e₅ + w₃
     simp only [quinticWords, Set.forall_mem_insert, Set.forall_mem_singleton]
     exact ⟨w₁, w₂, w₃, w₄⟩
+  exact ⟨l₁, l₂, l₃⟩
+
+/-- The reduced words `quinticWords x y` of lengths four and five are killed by an additive map `f`
+that is invariant under rotation, given `x ^ 2 = 0`, `y ^ 3 = 0` and `(x + y) ^ 5 = 0`, that `2` and
+`5` cancel in `f`, and that `f` vanishes on `(x + y) ^ 4`. -/
+private theorem map_quinticWords_eq_zero_lengths_four_five {Q : Type*} [AddCommGroup Q] (f : A →+ Q)
+    (hx : x ^ 2 = 0) (hy : y ^ 3 = 0) (hxy : (x + y) ^ 5 = 0)
+    (hrot : ∀ a b : A, f (a * b) = f (b * a)) (hdiv₂ : ∀ {a : A}, ((2 : ℕ) : ℤ) • f a = 0 → f a = 0)
+    (hdiv₅ : ∀ {a : A}, ((5 : ℕ) : ℤ) • f a = 0 → f a = 0) (hq : f ((x + y) ^ 4) = 0) :
+    (∀ b ∈ quinticWords x y 3, f b = 0) ∧
+    (∀ b ∈ quinticWords x y 4, f b = 0) := by
+  obtain ⟨r₀, r₁, r₂, _, _, _⟩ := quintic_rewriting_rules hx hy hxy
+  obtain ⟨r₀', r₁', r₂', -, -, -⟩ := quintic_rewriting_rules_one hx hy hxy
   -- Length 4.
   have l₄ : ∀ b ∈ quinticWords x y 3, f b = 0 := by
     have e₁ := hrot x (x * y * y)
     have e₂ := hrot y (x * y * y)
     have e₃ := hrot y (y * y * x)
-    have e₄ := hf hq
+    have e₄ := hq
     have e₅ := hrot y (x * y * x)
     simp only [pow_succ, pow_zero, one_mul, mul_add, ← mul_assoc, r₀, r₁, r₀', r₁', add_mul,
       zero_mul, add_zero, zero_add, map_add, map_zero] at e₁ e₂ e₃ e₄ e₅
     have w₁ : f (x * y * y * x) = 0 := by linear_combination (norm := module) -e₁
     have w₂ : f (y * x * y * y) = 0 := by linear_combination (norm := module) e₂
     have w₃ : f (y * y * x * y) = 0 := by linear_combination (norm := module) -e₃
-    have w₄ : f (x * y * x * y) = 0 := hdiv u2 <| by
+    have w₄ : f (x * y * x * y) = 0 := hdiv₂ <| by
       linear_combination (norm := module) e₄ - e₅ - w₁ - w₂ - w₃
     have w₅ : f (y * x * y * x) = 0 := by linear_combination (norm := module) e₅ + w₄
     simp only [quinticWords, Set.forall_mem_insert, Set.forall_mem_singleton]
@@ -654,7 +724,7 @@ theorem mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_five {B : Type*}
     have e₆ := hrot x (y * x * y * y)
     simp only [← mul_assoc, r₁, r₀', r₂', zero_mul, map_add, map_neg, map_zero] at e₁ e₂ e₃ e₄ e₅ e₆
     have w₁ : f (y * y * x * y * y) = 0 := by linear_combination (norm := module) e₁
-    have w₂ : f (x * y * x * y * y) = 0 := hdiv u5 <| by
+    have w₂ : f (x * y * x * y * y) = 0 := hdiv₅ <| by
       linear_combination (norm := module) e₂ - 2 • e₃ + e₄ - e₅ + 2 • e₆ - w₁
     have w₃ : f (y * x * y * x * y) = 0 := by linear_combination (norm := module) e₃ + w₂
     have w₄ : f (y * x * y * y * x) = 0 := by linear_combination (norm := module) -e₆ + w₂
@@ -662,6 +732,18 @@ theorem mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_five {B : Type*}
     have w₆ : f (y * y * x * y * x) = 0 := by linear_combination (norm := module) e₅ + w₃
     simp only [quinticWords, Set.forall_mem_insert, Set.forall_mem_singleton]
     exact ⟨w₂, w₅, w₃, w₄, w₆, w₁⟩
+  exact ⟨l₄, l₅⟩
+
+/-- The reduced words `quinticWords x y` of lengths six and seven are killed by an additive map `f`
+that is invariant under rotation, given `x ^ 2 = 0`, `y ^ 3 = 0` and `(x + y) ^ 5 = 0`; no
+cancellation property or value of `f` is needed. -/
+private theorem map_quinticWords_eq_zero_lengths_six_seven {Q : Type*} [AddCommGroup Q] (f : A →+ Q)
+    (hx : x ^ 2 = 0) (hy : y ^ 3 = 0) (hxy : (x + y) ^ 5 = 0)
+    (hrot : ∀ a b : A, f (a * b) = f (b * a)) :
+    (∀ b ∈ quinticWords x y 5, f b = 0) ∧
+    (∀ b ∈ quinticWords x y 6, f b = 0) := by
+  obtain ⟨r₀, r₁, r₂, r₃, _, _⟩ := quintic_rewriting_rules hx hy hxy
+  obtain ⟨r₀', r₁', r₂', r₃', -, -⟩ := quintic_rewriting_rules_one hx hy hxy
   -- Length 6.
   have l₆ : ∀ b ∈ quinticWords x y 5, f b = 0 := by
     have e₁ := hrot x (x * y * y * x * y)
@@ -700,6 +782,18 @@ theorem mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_five {B : Type*}
     have w₆ : f (y * x * y * y * x * y * x) = 0 := by linear_combination (norm := module) e₆ + w₅
     simp only [quinticWords, Set.forall_mem_insert, Set.forall_mem_singleton]
     exact ⟨w₅, w₁, w₆, w₂, w₃, w₄⟩
+  exact ⟨l₆, l₇⟩
+
+/-- The reduced words `quinticWords x y` of length eight are killed by an additive map `f` that is
+invariant under rotation, given `x ^ 2 = 0`, `y ^ 3 = 0` and `(x + y) ^ 5 = 0`, and that `2` cancels
+in `f`; no value of `f` is needed. -/
+private theorem map_quinticWords_eq_zero_length_eight {Q : Type*} [AddCommGroup Q] (f : A →+ Q)
+    (hx : x ^ 2 = 0) (hy : y ^ 3 = 0) (hxy : (x + y) ^ 5 = 0)
+    (hrot : ∀ a b : A, f (a * b) = f (b * a))
+    (hdiv₂ : ∀ {a : A}, ((2 : ℕ) : ℤ) • f a = 0 → f a = 0) :
+    (∀ b ∈ quinticWords x y 7, f b = 0) := by
+  obtain ⟨r₀, r₁, r₂, r₃, _, _⟩ := quintic_rewriting_rules hx hy hxy
+  obtain ⟨r₀', r₁', -, -, -, -⟩ := quintic_rewriting_rules_one hx hy hxy
   -- Length 8.
   have l₈ : ∀ b ∈ quinticWords x y 7, f b = 0 := by
     have e₁ := hrot y (y * x * y * y * x * y * y)
@@ -711,7 +805,7 @@ theorem mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_five {B : Type*}
     simp only [← mul_assoc, r₁, r₂, r₃, r₀', r₁', zero_mul, add_zero, map_add, map_neg,
       map_zero] at e₁ e₂ e₃ e₄ e₅ e₆
     have w₁ : f (y * y * x * y * y * x * y * y) = 0 := by linear_combination (norm := module) e₁
-    have w₂ : f (x * y * y * x * y * x * y * y) = 0 := hdiv u2 <| by
+    have w₂ : f (x * y * y * x * y * x * y * y) = 0 := hdiv₂ <| by
       linear_combination (norm := module) -e₂ - e₃ + e₄
     have w₃ : f (x * y * y * x * y * y * x * y) = 0 := by
       linear_combination (norm := module) e₅ - w₂
@@ -723,6 +817,18 @@ theorem mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_five {B : Type*}
       linear_combination (norm := module) e₃ + w₄
     simp only [quinticWords, Set.forall_mem_insert, Set.forall_mem_singleton]
     exact ⟨w₂, w₃, w₄, w₅, w₆, w₁⟩
+  exact l₈
+
+/-- The reduced words `quinticWords x y` of length nine are killed by an additive map `f` that is
+invariant under rotation, given `x ^ 2 = 0`, `y ^ 3 = 0` and `(x + y) ^ 5 = 0`, and that `3` cancels
+in `f`; no value of `f` is needed. -/
+private theorem map_quinticWords_eq_zero_length_nine {Q : Type*} [AddCommGroup Q] (f : A →+ Q)
+    (hx : x ^ 2 = 0) (hy : y ^ 3 = 0) (hxy : (x + y) ^ 5 = 0)
+    (hrot : ∀ a b : A, f (a * b) = f (b * a))
+    (hdiv₃ : ∀ {a : A}, ((3 : ℕ) : ℤ) • f a = 0 → f a = 0) :
+    (∀ b ∈ quinticWords x y 8, f b = 0) := by
+  obtain ⟨r₀, r₁, r₂, r₃, _, _⟩ := quintic_rewriting_rules hx hy hxy
+  obtain ⟨r₀', r₁', -, r₃', -, -⟩ := quintic_rewriting_rules_one hx hy hxy
   -- Length 9.
   have l₉ : ∀ b ∈ quinticWords x y 8, f b = 0 := by
     have e₁ := hrot x (x * y * y * x * y * x * y * y)
@@ -738,7 +844,7 @@ theorem mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_five {B : Type*}
     have w₂ : f (y * x * y * y * x * y * x * y * y) = 0 := by linear_combination (norm := module) e₂
     have w₃ : f (y * y * x * y * y * x * y * x * y) = 0 := by
       linear_combination (norm := module) -e₃
-    have w₄ : f (y * x * y * y * x * y * y * x * y) = 0 := hdiv u3 <| by
+    have w₄ : f (y * x * y * y * x * y * y * x * y) = 0 := hdiv₃ <| by
       linear_combination (norm := module) e₄ + e₅ + e₆
     have w₅ : f (x * y * y * x * y * y * x * y * y) = 0 := by
       linear_combination (norm := module) -e₄ + w₄
@@ -746,6 +852,19 @@ theorem mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_five {B : Type*}
       linear_combination (norm := module) e₇ + w₄
     simp only [quinticWords, Set.forall_mem_insert, Set.forall_mem_singleton]
     exact ⟨w₁, w₅, w₂, w₄, w₃, w₆⟩
+  exact l₉
+
+/-- The reduced words `quinticWords x y` of lengths ten and eleven are killed by an additive map `f`
+that is invariant under rotation, given `x ^ 2 = 0`, `y ^ 3 = 0` and `(x + y) ^ 5 = 0`, and that `2`
+cancels in `f`; no value of `f` is needed. -/
+private theorem map_quinticWords_eq_zero_lengths_ten_eleven {Q : Type*} [AddCommGroup Q]
+    (f : A →+ Q) (hx : x ^ 2 = 0) (hy : y ^ 3 = 0) (hxy : (x + y) ^ 5 = 0)
+    (hrot : ∀ a b : A, f (a * b) = f (b * a))
+    (hdiv₂ : ∀ {a : A}, ((2 : ℕ) : ℤ) • f a = 0 → f a = 0) :
+    (∀ b ∈ quinticWords x y 9, f b = 0) ∧
+    (∀ b ∈ quinticWords x y 10, f b = 0) := by
+  obtain ⟨r₀, r₁, r₂, r₃, r₄, _⟩ := quintic_rewriting_rules hx hy hxy
+  obtain ⟨r₀', r₁', -, r₃', r₄', -⟩ := quintic_rewriting_rules_one hx hy hxy
   -- Length 10.
   have l₁₀ : ∀ b ∈ quinticWords x y 9, f b = 0 := by
     have e₁ := hrot x (x * y * y * x * y * y * x * y * y)
@@ -777,7 +896,7 @@ theorem mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_five {B : Type*}
       map_add, map_neg, map_zero] at e₁ e₂ e₃ e₄
     have w₁ : f (y * y * x * y * y * x * y * y * x * y * y) = 0 := by
       linear_combination (norm := module) e₁
-    have w₂ : f (y * y * x * y * y * x * y * y * x * y * x) = 0 := hdiv u2 <| by
+    have w₂ : f (y * y * x * y * y * x * y * y * x * y * x) = 0 := hdiv₂ <| by
       linear_combination (norm := module) -e₂ + e₃
     have w₃ : f (x * y * y * x * y * y * x * y * y * x * y) = 0 := by
       linear_combination (norm := module) -e₄ + w₂
@@ -785,6 +904,20 @@ theorem mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_five {B : Type*}
       linear_combination (norm := module) e₂ + w₃
     simp only [quinticWords, Set.forall_mem_insert, Set.forall_mem_singleton]
     exact ⟨w₃, w₄, w₂, w₁⟩
+  exact ⟨l₁₀, l₁₁⟩
+
+/-- The reduced words `quinticWords x y` of lengths twelve to fourteen are killed by an additive map
+`f` that is invariant under rotation, given `x ^ 2 = 0`, `y ^ 3 = 0` and `(x + y) ^ 5 = 0`, and that
+`2` cancels in `f`; no value of `f` is needed. -/
+private theorem map_quinticWords_eq_zero_lengths_twelve_to_fourteen {Q : Type*} [AddCommGroup Q]
+    (f : A →+ Q) (hx : x ^ 2 = 0) (hy : y ^ 3 = 0) (hxy : (x + y) ^ 5 = 0)
+    (hrot : ∀ a b : A, f (a * b) = f (b * a))
+    (hdiv₂ : ∀ {a : A}, ((2 : ℕ) : ℤ) • f a = 0 → f a = 0) :
+    (∀ b ∈ quinticWords x y 11, f b = 0) ∧
+    (∀ b ∈ quinticWords x y 12, f b = 0) ∧
+    (∀ b ∈ quinticWords x y 13, f b = 0) := by
+  obtain ⟨r₀, r₁, _, _, r₄, r₅⟩ := quintic_rewriting_rules hx hy hxy
+  obtain ⟨r₀', r₁', -, -, -, r₅'⟩ := quintic_rewriting_rules_one hx hy hxy
   -- Length 12.
   have l₁₂ : ∀ b ∈ quinticWords x y 11, f b = 0 := by
     have e₁ := hrot x (x * y * y * x * y * y * x * y * y * x * y)
@@ -814,10 +947,54 @@ theorem mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_five {B : Type*}
   have l₁₄ : ∀ b ∈ quinticWords x y 13, f b = 0 := by
     have e₁ := hrot y (y * x * y * y * x * y * y * x * y * y * x * y * x)
     simp only [← mul_assoc, r₁, r₄, r₅, r₁', zero_mul, add_zero, sub_zero, map_neg] at e₁
-    have w₁ : f (y * y * x * y * y * x * y * y * x * y * y * x * y * x) = 0 := hdiv u2 <| by
+    have w₁ : f (y * y * x * y * y * x * y * y * x * y * y * x * y * x) = 0 := hdiv₂ <| by
       linear_combination (norm := module) e₁
     simp only [quinticWords, Set.forall_mem_singleton]
     exact w₁
+  exact ⟨l₁₂, l₁₃, l₁₄⟩
+
+
+/-- **Words in a square-zero and a cube-zero element with a fifth-power-zero sum are sums of
+commutators.** Let `x ^ 2 = 0`, `y ^ 3 = 0` and `(x + y) ^ 5 = 0`, and suppose that `x`, `y`,
+`y ^ 2` and the powers `(x + y) ^ j` for `2 ≤ j < 5` lie in the commutator submodule `[B, B]`. If
+`2`, `3` and `5` are units in `k`, then every product of a positive number of factors from
+`{x, y}` lies in `[B, B]`. -/
+theorem mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_five {B : Type*} [Ring B]
+    {k : Type*} [Semiring k] [Module k B] {x y : B} (h2 : IsUnit (2 : k)) (h3 : IsUnit (3 : k))
+    (h5 : IsUnit (5 : k)) (hx : x ^ 2 = 0) (hy : y ^ 3 = 0) (hxy : (x + y) ^ 5 = 0)
+    (hx₀ : x ∈ commutatorSubmodule k B) (hy₀ : y ∈ commutatorSubmodule k B)
+    (hy₁ : y ^ 2 ∈ commutatorSubmodule k B) (hs : (x + y) ^ 2 ∈ commutatorSubmodule k B)
+    (hc : (x + y) ^ 3 ∈ commutatorSubmodule k B) (hq : (x + y) ^ 4 ∈ commutatorSubmodule k B)
+    {t : ℕ} {w : B} (hw : w ∈ span ℤ {x, y} ^ (t + 1)) : w ∈ commutatorSubmodule k B := by
+  -- Work in the quotient of `B` by the commutator submodule, viewed as an additive subgroup.
+  let C := commutatorSubmodule k B
+  let D : AddSubgroup B := { C.toAddSubmonoid with neg_mem' := neg_mem_commutatorSubmodule }
+  have hD {a : B} : a ∈ D ↔ a ∈ C := Iff.rfl
+  let f := QuotientAddGroup.mk' D
+  have hf {a : B} (h : a ∈ C) : f a = 0 := (QuotientAddGroup.eq_zero_iff a).2 (hD.2 h)
+  -- Rotating a product does not change its class.
+  have hrot (a b : B) : f (a * b) = f (b * a) := by
+    rw [QuotientAddGroup.mk'_apply, QuotientAddGroup.mk'_apply, QuotientAddGroup.eq, hD,
+      neg_add_eq_sub]
+    exact mul_sub_mul_mem_commutatorSubmodule k B b a
+  -- A class killed by a unit multiple vanishes.
+  have hdiv {n : ℕ} (hn : IsUnit (n : k)) {a : B} (h : (n : ℤ) • f a = 0) : f a = 0 := by
+    rw [← map_zsmul, QuotientAddGroup.mk'_apply, QuotientAddGroup.eq_zero_iff, hD, natCast_zsmul,
+      ← Nat.cast_smul_eq_nsmul k] at h
+    exact hf ((Submodule.smul_mem_iff_of_isUnit _ hn).1 h)
+  have u2 : IsUnit ((2 : ℕ) : k) := by exact_mod_cast h2
+  have u3 : IsUnit ((3 : ℕ) : k) := by exact_mod_cast h3
+  have u5 : IsUnit ((5 : ℕ) : k) := by exact_mod_cast h5
+  obtain ⟨l₁, l₂, l₃⟩ := map_quinticWords_eq_zero_lengths_one_to_three f hx hy hxy hrot
+    (hdiv u2) (hdiv u3) (hf hx₀) (hf hy₀) (hf (by rwa [← sq])) (hf hs) (hf hc)
+  obtain ⟨l₄, l₅⟩ := map_quinticWords_eq_zero_lengths_four_five f hx hy hxy hrot (hdiv u2)
+    (hdiv u5) (hf hq)
+  obtain ⟨l₆, l₇⟩ := map_quinticWords_eq_zero_lengths_six_seven f hx hy hxy hrot
+  have l₈ := map_quinticWords_eq_zero_length_eight f hx hy hxy hrot (hdiv u2)
+  have l₉ := map_quinticWords_eq_zero_length_nine f hx hy hxy hrot (hdiv u3)
+  obtain ⟨l₁₀, l₁₁⟩ := map_quinticWords_eq_zero_lengths_ten_eleven f hx hy hxy hrot (hdiv u2)
+  obtain ⟨l₁₂, l₁₃, l₁₄⟩ :=
+    map_quinticWords_eq_zero_lengths_twelve_to_fourteen f hx hy hxy hrot (hdiv u2)
   -- Every reduced word of positive length lies in `[B, B]`.
   have hwords : ∀ b ∈ quinticWords x y t, b ∈ C := by
     intro b hb
