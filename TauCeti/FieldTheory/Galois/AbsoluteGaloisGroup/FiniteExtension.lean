@@ -421,7 +421,7 @@ end Normal
 variable {K L} in
 /-- If `g` generates the Galois group of a finite Galois extension `L / K`, then every element of
 the group is `g ^ p` for some `p` below the degree. -/
-theorem exists_pow_lt_finrank_eq [IsGalois K L] {g : L ≃ₐ[K] L}
+theorem exists_pow_lt_finrank_eq {g : L ≃ₐ[K] L}
     (hg : ∀ σ, σ ∈ Subgroup.zpowers g) (hord : orderOf g = Module.finrank K L)
     (τ : L ≃ₐ[K] L) : ∃ p < Module.finrank K L, τ = g ^ p := by
   classical
