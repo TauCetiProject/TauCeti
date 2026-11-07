@@ -218,15 +218,6 @@ private theorem injOn_smul_ofLp {ψ : W → E} {s : Set W} (hnorm : ∀ w ∈ s,
     simpa only [← ht] using h
   exact WithLp.ofLp_injective 2 (Prod.ext ht hw)
 
-/-- The integral of `t ^ k` over `Ioo 0 1` is `1 / (k + 1)`. -/
-private theorem lintegral_ofReal_pow_Ioo (k : ℕ) :
-    ∫⁻ t in Ioo (0 : ℝ) 1, ENNReal.ofReal (t ^ k) = ((k + 1 : ℕ) : ℝ≥0∞)⁻¹ := by
-  have h := lintegral_ofReal_rpow_Ioo (s := k) (by linarith [k.cast_nonneg (α := ℝ)])
-    zero_le_one
-  simp_rw [Real.rpow_natCast] at h
-  rw [h, Real.one_rpow, one_div, ENNReal.ofReal_inv_of_pos (by positivity)]
-  norm_cast
-
 /-- **Cone formula.** Let `ψ : W → E` take values in the unit sphere near a measurable set `s`,
 where `dim W + 1 = dim E`, and let `ψ` be injective on `s` and differentiable on `s` with injective
 derivative. Then the `dim W`-dimensional Hausdorff measure of `ψ '' s` is `dim E` times the
@@ -277,6 +268,10 @@ theorem euclideanHausdorffMeasure_image_eq_finrank_mul_volume_Ioo_smul {ψ : W �
   have hF : Measurable fun p : ℝ × W =>
       ENNReal.ofReal (p.1 ^ k) * ENNReal.ofReal (fderiv ℝ ψ p.2).normDet :=
     (hpow.comp measurable_fst).mul (hJψ.comp measurable_snd)
+  have hone : ∫⁻ t in Ioo (0 : ℝ) 1, ENNReal.ofReal (t ^ k) = ((k + 1 : ℕ) : ℝ≥0∞)⁻¹ := by
+    rw [lintegral_ofReal_pow_Ioo k zero_le_one, one_pow, one_div,
+      ENNReal.ofReal_inv_of_pos (by positivity)]
+    norm_cast
   -- Separate the radial and spherical variables by Fubini–Tonelli, and apply the area formula
   -- to `ψ`.
   rw [hrank, InnerProductSpace.euclideanHausdorffMeasure_eq_volume, himage,
@@ -285,7 +280,7 @@ theorem euclideanHausdorffMeasure_image_eq_finrank_mul_volume_Ioo_smul {ψ : W �
     (WithLp.volume_preserving_ofLp ℝ W).setLIntegral_comp_preimage
       (measurableSet_Ioo.prod hs) hF,
     Measure.volume_eq_prod, ← Measure.prod_restrict, lintegral_prod_mul hpow.aemeasurable
-      hJψ.aemeasurable, lintegral_ofReal_pow_Ioo k,
+      hJψ.aemeasurable, hone,
     lintegral_normDet_fderiv_eq_euclideanHausdorffMeasure_image hs hd hinj hψs] at harea
   rw [← harea, ← hdim, ← mul_assoc, ENNReal.mul_inv_cancel (by simp) (by simp), one_mul]
 
