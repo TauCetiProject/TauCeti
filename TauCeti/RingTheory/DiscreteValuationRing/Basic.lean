@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.Perfect
 public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Basic
 public import Mathlib.RingTheory.LocalRing.Quotient
 import Mathlib.RingTheory.Ideal.IsPrincipalPowQuotient
+import TauCeti.Algebra.Polynomial.Cubic.TripleRoot
 import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 
 /-!
@@ -43,6 +45,9 @@ distinct, a discrete valuation ring is also infinite.
   equivalent to `n ≤ addVal (x - y)`.
 * `Irreducible.residue_eq_zero_iff_dvd`: for a uniformizer `ϖ`, the residue of `x` vanishes
   exactly when `ϖ ∣ x`.
+* `TauCeti.IsDiscreteValuationRing.exists_dvd_of_residue_cubic_eq_pow_three`: over a perfect
+  residue field, a cubic whose residue is a cube has a lifted triple root `ρ`, with the shifted
+  coefficients divisible by `ϖ`.
 * `TauCeti.IsDiscreteValuationRing.infinite`: a discrete valuation ring is infinite, since the
   powers of a uniformizer are pairwise distinct.
 -/
@@ -165,6 +170,55 @@ theorem addVal_eq_one_iff_irreducible {x : S} :
 theorem _root_.Irreducible.residue_eq_zero_iff_dvd {ϖ : S} (hϖ : Irreducible ϖ) (x : S) :
     residue S x = 0 ↔ ϖ ∣ x := by
   rw [residue_eq_zero_iff, hϖ.maximalIdeal_eq, Ideal.mem_span_singleton]
+
+/-- The residue cubic step of Tate's algorithm. Let `a₂ = ϖ A₂`, `a₄ = ϖ² A₄` and `a₆ = ϖ³ A₆`
+satisfy the triple-root conditions `ϖ³ ∣ a₂² − 3 a₄`, `ϖ⁵ ∣ a₄² − 3 a₂ a₆` and
+`ϖ⁴ ∣ a₂ a₄ − 9 a₆`. Over a perfect residue field the cubic `T³ + A₂ T² + A₄ T + A₆` is then a cube
+modulo `ϖ`, so some `ρ ∈ S` lifts its triple root: `ϖ` divides the coefficients `A₂ + 3 ρ`,
+`A₄ + 2 ρ A₂ + 3 ρ²` and `A₆ + ρ A₄ + ρ² A₂ + ρ³` of the shifted cubic `P(T + ρ)`. -/
+theorem exists_dvd_of_residue_cubic_eq_pow_three [PerfectField (ResidueField S)]
+    {ϖ : S} (hϖ : Irreducible ϖ) {a₂ a₄ a₆ A₂ A₄ A₆ : S} (hA₂ : a₂ = ϖ * A₂) (hA₄ : a₄ = ϖ ^ 2 * A₄)
+    (hA₆ : a₆ = ϖ ^ 3 * A₆) (hb : ϖ ^ 3 ∣ a₂ ^ 2 - 3 * a₄) (hc : ϖ ^ 5 ∣ a₄ ^ 2 - 3 * a₂ * a₆)
+    (hd : ϖ ^ 4 ∣ a₂ * a₄ - 9 * a₆) :
+    ∃ ρ : S, ϖ ∣ A₂ + 3 * ρ ∧ ϖ ∣ A₄ + 2 * ρ * A₂ + 3 * ρ ^ 2 ∧
+      ϖ ∣ A₆ + ρ * A₄ + ρ ^ 2 * A₂ + ρ ^ 3 := by
+  have hϖ₀ : ϖ ≠ 0 := hϖ.prime.ne_zero
+  have key (x : S) : residue S x = 0 ↔ ϖ ∣ x := hϖ.residue_eq_zero_iff_dvd x
+  -- The three conditions say that the residue cubic `T³ + A₂ T² + A₄ T + A₆` is a cube.
+  have hcancel {n : ℕ} {x : S} (h : ϖ ^ n * ϖ ∣ ϖ ^ n * x) : residue S x = 0 :=
+    (key x).2 ((mul_dvd_mul_iff_left (pow_ne_zero n hϖ₀)).1 h)
+  have hb' : residue S A₂ ^ 2 = 3 * residue S A₄ := by
+    rw [← sub_eq_zero, ← map_pow, ← map_ofNat (residue S) 3, ← map_mul, ← map_sub]
+    refine hcancel (n := 2) ?_
+    rw [← pow_succ]
+    convert hb using 1
+    rw [hA₂, hA₄]
+    ring
+  have hc' : residue S A₄ ^ 2 = 3 * residue S A₂ * residue S A₆ := by
+    rw [← sub_eq_zero, ← map_pow, ← map_ofNat (residue S) 3, ← map_mul, ← map_mul, ← map_sub]
+    refine hcancel (n := 4) ?_
+    rw [← pow_succ]
+    convert hc using 1
+    rw [hA₂, hA₄, hA₆]
+    ring
+  have hd' : residue S A₂ * residue S A₄ = 9 * residue S A₆ := by
+    rw [← sub_eq_zero, ← map_mul, ← map_ofNat (residue S) 9, ← map_mul, ← map_sub]
+    refine hcancel (n := 3) ?_
+    rw [← pow_succ]
+    convert hd using 1
+    rw [hA₂, hA₄, hA₆]
+    ring
+  obtain ⟨ρ', hρ'⟩ := TauCeti.Polynomial.exists_cubic_eq_X_sub_C_pow_three_iff.2 ⟨hb', hc', hd'⟩
+  obtain ⟨ρ, rfl⟩ := residue_surjective ρ'
+  obtain ⟨hρ₂, hρ₄, hρ₆⟩ := TauCeti.Polynomial.cubic_eq_X_sub_C_pow_three_iff.1 hρ'
+  -- Lift the triple root to `ρ ∈ S`; then `x ↦ x + ϖ ρ` moves it to `0`.
+  have e₂ : ϖ ∣ A₂ + 3 * ρ := (key _).1 (by
+    simp only [map_add, map_mul, map_ofNat, hρ₂]; ring)
+  have e₄ : ϖ ∣ A₄ + 2 * ρ * A₂ + 3 * ρ ^ 2 := (key _).1 (by
+    simp only [map_add, map_mul, map_pow, map_ofNat, hρ₂, hρ₄]; ring)
+  have e₆ : ϖ ∣ A₆ + ρ * A₄ + ρ ^ 2 * A₂ + ρ ^ 3 := (key _).1 (by
+    simp only [map_add, map_mul, map_pow, hρ₂, hρ₄, hρ₆]; ring)
+  exact ⟨ρ, e₂, e₄, e₆⟩
 
 /-- A discrete valuation ring is infinite: the powers of a uniformizer are pairwise distinct. -/
 instance infinite : Infinite S := by
