@@ -135,42 +135,6 @@ theorem W1p.restrictL_contDiffSMul_mem_w1p0Submodule (hp : p ≠ (∞ : ℝ≥0�
     hres]
   exact W1p.ofTestFunctionₗ_mem_w1p0Submodule Psi
 
-/-- **The weak gradient of a Sobolev function vanishing off a compact set vanishes off it.**  If
-`u ∈ W^{1,p}(Ω)` vanishes almost everywhere outside a compact `K ⊆ Ω`, then so does its weak
-gradient, because `u` vanishes on the open set `Ω \ K`. -/
-theorem W1p.gradient_ae_eq_zero_of_value_ae_eq_zero_of_isCompact {u : W1p mu Omega p}
-    (hK : IsCompact K)
-    (hu : ∀ᵐ x ∂mu.restrict (Omega : Set E), x ∉ K → W1p.value u x = 0) :
-    ∀ᵐ x ∂mu.restrict (Omega : Set E), x ∉ K → W1p.gradient u x = 0 := by
-  have hmeas : MeasurableSet (Omega : Set E) := Omega.isOpen.measurableSet
-  have humu : ∀ᵐ x ∂mu, x ∈ (Omega : Set E) → x ∉ K → W1p.value u x = 0 :=
-    (ae_restrict_iff' hmeas).1 hu
-  set V : Opens E := ⟨(Omega : Set E) \ K, Omega.isOpen.sdiff hK.isClosed⟩
-  have hVmeas : MeasurableSet (V : Set E) := V.isOpen.measurableSet
-  have hvalV : ∀ᵐ x ∂mu.restrict (V : Set E), W1p.value u x = 0 := by
-    rw [ae_restrict_iff' hVmeas]
-    filter_upwards [humu] with x hx hxV
-    exact hx hxV.1 hxV.2
-  have hgradV := (ae_restrict_iff' hVmeas).1
-    (W1p.gradient_ae_eq_zero_of_value_ae_eq_zero (V := V) Set.sdiff_subset hvalV)
-  rw [ae_restrict_iff' hmeas]
-  filter_upwards [hgradV] with x hx hxO hxK
-  exact hx ⟨hxO, hxK⟩
-
-/-- A whole-space Sobolev function whose value is the zero-extension of the value of `u` restricts
-to `u` on `Ω`. -/
-theorem W1p.restrictL_eq_of_value_ae_eq_indicator {u : W1p mu Omega p} {w : W1p mu (⊤ : Opens E) p}
-    (hvalw : ⇑(W1p.value w) =ᵐ[mu.restrict ((⊤ : Opens E) : Set E)]
-      (Omega : Set E).indicator (W1p.value u : E → ℝ)) :
-    W1p.restrictL le_top w = u := by
-  have hmeas : MeasurableSet (Omega : Set E) := Omega.isOpen.measurableSet
-  have hsub : (Omega : Set E) ⊆ ((⊤ : Opens E) : Set E) := by simp
-  refine W1p.ext_value (Lp.ext ?_)
-  filter_upwards [W1p.value_restrictL_ae le_top w,
-    hvalw.filter_mono (ae_mono (Measure.restrict_mono hsub le_rfl)), ae_restrict_mem hmeas]
-    with x h1 h2 hx
-  rw [h1, h2, indicator_of_mem hx]
-
 /-- **A compactly supported Sobolev function lies in `W^{1,p}_0(Ω)`.**  If `u ∈ W^{1,p}(Ω)`
 vanishes almost everywhere outside a compact `K ⊆ Ω`, then `u` is a `W^{1,p}`-limit of test
 functions on `Ω`.
@@ -185,7 +149,7 @@ theorem W1p.mem_w1p0Submodule_of_isCompact (hp : p ≠ (∞ : ℝ≥0∞)) {u : 
   have hsub : (Omega : Set E) ⊆ ((⊤ : Opens E) : Set E) := by simp
   have humu : ∀ᵐ x ∂mu, x ∈ (Omega : Set E) → x ∉ K → W1p.value u x = 0 :=
     (ae_restrict_iff' hmeas).1 hu
-  have hgrad := W1p.gradient_ae_eq_zero_of_value_ae_eq_zero_of_isCompact hK hu
+  have hgrad := W1p.gradient_ae_eq_zero_of_value_ae_eq_zero_of_isClosed hK.isClosed hu
   -- the zero-extension of `u` to the whole space is again a Sobolev function
   have hweak : HasWeakFDerivOn mu ⊤
       ((extendByZeroLpₗᵢ ℝ mu hmeas hsub (W1p.value u) : E → ℝ))
