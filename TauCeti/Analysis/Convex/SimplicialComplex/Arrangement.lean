@@ -248,37 +248,21 @@ theorem exists_isSubdivision_forall_nonneg_or_forall_nonpos [Finite ι] (hK : K.
       (Subtype.ext (eq_of_mem_intrinsicInterior p.1.1.2 q.1.1.2 hxp.1 hxq.1)) ?_)
     funext i
     exact (hxp.2 i).symm.trans (hxq.2 i)
-  have hfr : ∀ p, intrinsicFrontier ℝ (P p) ⊆ ⋃ (q) (_ : q ≠ p ∧ P q ⊆ P p), P q := by
-    intro p x hx
-    have hxP := intrinsicFrontier_subset (hPc p).isClosed hx
-    obtain ⟨q, hxq, hqp⟩ := hcell p.1.1.2 hxP.1 hxP.2
-    have hxi : x ∉ intrinsicInterior ℝ (P p) := by
-      rw [← intrinsicClosure_sdiff_intrinsicInterior] at hx
-      exact hx.2
-    exact mem_iUnion₂.2 ⟨q, ⟨fun hqp' => hxi (hqp' ▸ hxq), hqp⟩, intrinsicInterior_subset hxq⟩
+  have hfr := TauCeti.intrinsicFrontier_subset_iUnion_of_exists_mem_intrinsicInterior
+    (fun p => (hPc p).isClosed) fun p x hx => hcell p.1.1.2 hx.1 hx.2
   obtain ⟨M, hMs, hMP, hMface, -⟩ := exists_subdivision P hPc hPv
     (fun q => ((hPne q).intrinsicInterior (hPv q)).some)
     (fun q => ((hPne q).intrinsicInterior (hPv q)).some_mem) (locallyFinite_of_finite P) hdisj hfr
-  have hspace : M.space = K.space := by
-    rw [hMs]
-    ext x
-    refine ⟨fun hx => ?_, fun hx => ?_⟩
-    · obtain ⟨p, hxp⟩ := mem_iUnion.1 hx
-      exact mem_space_iff.2 ⟨_, p.1.1.2, hxp.1⟩
-    · obtain ⟨σ, hσ, hxσ⟩ := mem_space_iff.1 hx
-      obtain ⟨q, hxq, -⟩ := hcell hσ hxσ (openSignCell_subset_signCell (mem_openSignCell_sign g x))
-      exact mem_iUnion.2 ⟨q, intrinsicInterior_subset hxq⟩
-  have hconv : ∀ s ∈ M.faces, ∃ p : J, convexHull ℝ (s : Set E) ⊆ P p := fun s hs => by
-    obtain ⟨p, -, hsp⟩ := hMface s hs
-    exact ⟨p, convexHull_min hsp (hPv p)⟩
-  refine ⟨M, ⟨hspace, fun s hs => ?_⟩, ?_, fun s hs i => ?_⟩
-  · obtain ⟨p, hp⟩ := hconv s hs
-    exact ⟨_, p.1.1.2, hp.trans inter_subset_left⟩
-  · refine (Set.finite_iUnion fun p => (hMP p).2).subset fun s hs => ?_
-    obtain ⟨p, -, hsp⟩ := hMface s hs
-    exact mem_iUnion.2 ⟨p, mem_restrict_faces.2 ⟨hs, hsp⟩⟩
-  · obtain ⟨p, hp⟩ := hconv s hs
-    exact nonneg_or_nonpos_of_subset_signCell (hp.trans inter_subset_right) i
+  have hcov : ∀ x ∈ K.space, ∃ q, x ∈ P q := fun x hx => by
+    obtain ⟨σ, hσ, hxσ⟩ := mem_space_iff.1 hx
+    obtain ⟨q, hxq, -⟩ := hcell hσ hxσ (openSignCell_subset_signCell (mem_openSignCell_sign g x))
+    exact ⟨q, intrinsicInterior_subset hxq⟩
+  obtain ⟨hM, hMfin, hconv⟩ := isSubdivision_of_cells (fun p => p.1.1.2)
+    (fun p => inter_subset_left) hPv hcov hMs (fun p => (hMP p).2)
+    fun s hs => (hMface s hs).imp fun _ h => h.2
+  refine ⟨M, hM, hMfin, fun s hs i => ?_⟩
+  obtain ⟨p, hp⟩ := hconv s hs
+  exact nonneg_or_nonpos_of_subset_signCell (hp.trans inter_subset_right) i
 
 /-- **Subdividing a triangulation along finitely many convex polyhedra.** A finite geometric
 simplicial complex `K` in a finite-dimensional real normed space has a finite subdivision each of
