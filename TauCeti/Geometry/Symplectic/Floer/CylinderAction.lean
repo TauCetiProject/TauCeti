@@ -91,8 +91,7 @@ theorem IsNondegenerate.floerEnergyDensity_cylindrical_nonneg (hω : ω.IsNondeg
       J (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag -
         ω.hamiltonianVectorField (H z.2) (u z)) = 0) :
     0 ≤ ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z :=
-  floerEnergyDensity_nonneg hω hJ <|
-    (ω.isComplexLinearMap_perturbedMFDeriv_iff _ _ u z J).2 (by simpa using hfloer)
+  hω.floerEnergyDensity_zero_left_nonneg hJ hfloer
 
 /-! ### The energy identity for cylindrical perturbations -/
 
@@ -117,25 +116,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_cylindrical (hω : ω.IsNond
   have hKt : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry fun (w : ℝ × ℝ) ↦ H w.2) :=
     hH.comp ((contDiff_snd.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd)
   have hω₀ : IsSmoothForm I 0 ω.1 := ω.isSmoothForm.of_le (by simp)
-  -- The symplectic area density is the integrand of the rectangle integral.
-  let area : ℝ × ℝ → ℝ := fun z ↦ SmoothBundleForm.eval₂ ω (u z)
-    (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag)
-  have harea_cont : Continuous area := (hω₀.continuous_apply_mfderiv hu).congr fun z ↦ by
-    simp [area, SmoothBundleForm.eval₂_apply, stdComplexLineReal_eq, stdComplexLineImag_eq]
-  -- The derivative term `d(K(u))` is continuous, since `K_t(u)` is `C¹`.
-  have hf : ContDiff ℝ 1 fun w ↦ H w.2 (u w) :=
-    contMDiff_iff_contDiff.mp (hKt.comp (contMDiff_id.prodMk hu))
-  have hdK : Continuous fun z ↦ fderiv ℝ (fun w ↦ H w.2 (u w)) z stdComplexLineReal :=
-    (hf.continuous_fderiv one_ne_zero).clm_apply continuous_const
-  -- Pointwise, the energy density is the area density plus `d(K(u))`.
-  have hpt (z : ℝ × ℝ) : ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z =
-      area z + fderiv ℝ (fun w ↦ H w.2 (u w)) z stdComplexLineReal := by
-    rw [hω.floerEnergyDensity_eq ((hu z).mdifferentiableAt one_ne_zero)
-      (contMDiffAt_const.mdifferentiableAt one_ne_zero)
-      ((hKt _).mdifferentiableAt one_ne_zero), hamiltonianCurvature_cylindrical]
-    simp [area]
-  have hE : Continuous (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u) :=
-    (harea_cont.add hdK).congr fun z ↦ (hpt z).symm
+  have hE := hω.continuous_floerEnergyDensity_zero_left hKt hu
   have h := hω.integral_floerEnergyDensity (Ks := fun _ _ ↦ 0) (Kt := fun w ↦ H w.2) isOpen_univ
     hu.contMDiffOn contMDiffOn_const hKt.contMDiffOn hab' (subset_univ _)
     (hE.continuousOn.integrableOn_compact isCompact_Icc)
