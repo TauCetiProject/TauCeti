@@ -26,8 +26,8 @@ multiplication models.
 * `StarAlgHom.representationDiagMeasure_conj`: transport of diagonal measures.
 * `StarAlgHom.representationPolarizedMeasure_conj`: transport of polarized measures.
 * `StarAlgHom.representationBorelOperator_conj`: conjugation of the Borel extension.
-* `StarAlgHom.representation_proj_conj`: conjugation of spectral projections.
-* `StarAlgHom.representation_integral_conj`: conjugation of Borel integrals.
+* `StarAlgHom.ofRepresentation_proj_conj`: conjugation of spectral projections.
+* `StarAlgHom.integral_ofRepresentation_conj`: conjugation of Borel integrals.
 
 ## References
 
@@ -96,7 +96,7 @@ theorem representationBorelOperator_conj
 
 /-- The projection-valued measure of a unitarily conjugated representation has the conjugate
 projection field, including when the Hilbert space changes. -/
-theorem representation_proj_conj
+theorem ofRepresentation_proj_conj
     (π : C(K, ℂ) →⋆ₐ[ℂ] (H →L[ℂ] H)) (U : H ≃ₗᵢ[ℂ] H')
     {B : Set K} (hB : MeasurableSet B) :
     (TauCeti.ProjValMeasure.ofRepresentation
@@ -107,7 +107,7 @@ theorem representation_proj_conj
 
 /-- Integration against the projection-valued measure of a unitarily conjugated representation
 conjugates every bounded Borel integral by the same unitary. -/
-theorem representation_integral_conj
+theorem integral_ofRepresentation_conj
     (π : C(K, ℂ) →⋆ₐ[ℂ] (H →L[ℂ] H)) (U : H ≃ₗᵢ[ℂ] H')
     (f : TauCeti.BoundedBorelFunction K) :
     (TauCeti.ProjValMeasure.ofRepresentation
