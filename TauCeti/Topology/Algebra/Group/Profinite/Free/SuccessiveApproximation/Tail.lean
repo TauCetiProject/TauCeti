@@ -216,7 +216,7 @@ private theorem exists_continuousMonoidHom_inv_mul_apply_mem_succ
       freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) (k + 1 + 1 + 1))) ?_
     have hk := gradedMk_eq_gradedMk_iff.mp hkey
     rw [← QuotientGroup.mk_mul, ← QuotientGroup.mk_mul]
-    simp only [mul_assoc] at hk ⊢
+    simp only [mul_assoc, ContinuousMonoidHom.coe_comp, Function.comp_apply] at hk ⊢
     exact hk
 
 /-- **Finite successive approximation with tails.** Let `r, w ∈ λ_1(F)` have the same class
@@ -359,8 +359,8 @@ theorem exists_continuousMulEquiv_apply_eq_of_range_sup_gradedPowIterSpan_eq_top
     (fun k i ↦ (s k).1.2 i) (fun k i ↦ congrArg (fun x ↦ x.1.2 i) (hs k)) fun k i ↦ (s k).2.2.1 i
   refine ⟨e, t, fun i ↦ (Subgroup.mem_inf.mp (htH i)).1, fun i ↦ (Subgroup.mem_inf.mp (htH i)).2,
     eq_of_forall_mk_eq_of_iInf_eq_bot (hP.iInf_pLowerCentralSeries_eq_bot hp) fun k ↦ ?_⟩
-  rw [QuotientGroup.mk_mul, QuotientGroup.mk_mul, QuotientGroup.mk_list_prod,
-    QuotientGroup.mk_list_prod, List.map_map, List.map_map, Function.comp_def, funext (hts k)]
+  simp only [QuotientGroup.mk_mul, QuotientGroup.mk_list_prod, List.map_map, Function.comp_def,
+    funext (hts k)]
   exact (he k r).trans (s k).2.2.2
 
 end TauCeti.freeProP
