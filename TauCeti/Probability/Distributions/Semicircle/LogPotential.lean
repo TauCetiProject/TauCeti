@@ -553,12 +553,14 @@ private theorem log_norm_eq_primitive_re {z : ℂ} (hz : 0 < z.im) :
 
 end UpperHalfPlane
 
+private def mBoundary (x ε : ℝ) : ℂ := m ((x : ℂ) + (ε : ℂ) * Complex.I)
+
+private def mBoundaryNormSq (x ε : ℝ) : ℝ :=
+  (mBoundary x ε).re ^ 2 + (mBoundary x ε).im ^ 2
+
 private theorem m_boundary_identities (x ε : ℝ) (hε : 0 < ε) :
-    let z : ℂ := (x : ℂ) + (ε : ℂ) * Complex.I
-    let a : ℝ := (m z).re
-    let b : ℝ := (m z).im
-    let q : ℝ := a ^ 2 + b ^ 2
-    a * (q + 1) = -x * q ∧ b * (1 - q) = ε * q := by
+    (mBoundary x ε).re * (mBoundaryNormSq x ε + 1) = -x * mBoundaryNormSq x ε ∧
+      (mBoundary x ε).im * (1 - mBoundaryNormSq x ε) = ε * mBoundaryNormSq x ε := by
   let z : ℂ := (x : ℂ) + (ε : ℂ) * Complex.I
   let a : ℝ := (m z).re
   let b : ℝ := (m z).im
@@ -597,23 +599,21 @@ private theorem m_boundary_identities (x ε : ℝ) (hε : 0 < ε) :
     simp [z, c, q, Complex.add_im, Complex.mul_re, Complex.mul_im] at h
     norm_cast at h
     nlinarith
+  -- Restate the boundary abbreviations using the local real and imaginary parts.
+  change a * (q + 1) = -x * q ∧ b * (1 - q) = ε * q
   constructor <;> nlinarith [hreal, himag]
 
 private theorem m_boundary_q_estimate {x ε : ℝ} (hx : x ∈ Icc (-2) 2)
     (hε : 0 < ε) :
-    let z : ℂ := (x : ℂ) + (ε : ℂ) * Complex.I
-    let a : ℝ := (m z).re
-    let b : ℝ := (m z).im
-    let q : ℝ := a ^ 2 + b ^ 2
-    0 < 1 - q ∧ (1 - q) ^ 2 ≤ 2 * ε := by
+    0 < 1 - mBoundaryNormSq x ε ∧ (1 - mBoundaryNormSq x ε) ^ 2 ≤ 2 * ε := by
   let z : ℂ := (x : ℂ) + (ε : ℂ) * Complex.I
   let a : ℝ := (m z).re
   let b : ℝ := (m z).im
   let q : ℝ := a ^ 2 + b ^ 2
   have hz : 0 < z.im := by simp [z, hε]
   have hids := m_boundary_identities x ε hε
-  have hreal : a * (q + 1) = -x * q := by simpa [z, a, b, q] using hids.1
-  have himag : b * (1 - q) = ε * q := by simpa [z, a, b, q] using hids.2
+  have hreal : a * (q + 1) = -x * q := hids.1
+  have himag : b * (1 - q) = ε * q := hids.2
   have hb : 0 < b := by simpa [b, z] using m_im_pos hz
   have hq : 0 < q := by dsimp [q]; positivity
   have hq_lt : q < 1 := by
@@ -706,8 +706,8 @@ private theorem tendsto_m_boundary_normSq {x : ℝ} (hx : x ∈ Icc (-2) 2) :
     let b : ℝ := (m z).im
     let q : ℝ := a ^ 2 + b ^ 2
     have hest := m_boundary_q_estimate hx hε
-    have hqpos : 0 < 1 - q := by simpa [z, a, b, q] using hest.1
-    have hqbound : (1 - q) ^ 2 ≤ 2 * ε := by simpa [z, a, b, q] using hest.2
+    have hqpos : 0 < 1 - q := hest.1
+    have hqbound : (1 - q) ^ 2 ≤ 2 * ε := hest.2
     simp only [Set.mem_Iio] at hεsmall
     have hεsq : 2 * ε < (1 - c) ^ 2 := by linarith
     have hsq : (1 - q) ^ 2 < (1 - c) ^ 2 := lt_of_le_of_lt hqbound hεsq
@@ -727,7 +727,7 @@ private theorem tendsto_m_boundary_normSq {x : ℝ} (hx : x ∈ Icc (-2) 2) :
     let q : ℝ := a ^ 2 + b ^ 2
     have hest := m_boundary_q_estimate hx hε
     have hqbound : q < 1 := by
-      have hqpos : 0 < 1 - q := by simpa [z, a, b, q] using hest.1
+      have hqpos : 0 < 1 - q := hest.1
       linarith
     have hc1 : 1 < c := by linarith
     have : q < c := hqbound.trans hc1
@@ -753,7 +753,7 @@ private theorem tendsto_m_boundary_re {x : ℝ} (hx : x ∈ Icc (-2) 2) :
     let b : ℝ := (m z).im
     let q : ℝ := a ^ 2 + b ^ 2
     have hids := m_boundary_identities x ε hε
-    have hreal : a * (q + 1) = -x * q := by simpa [z, a, b, q] using hids.1
+    have hreal : a * (q + 1) = -x * q := hids.1
     have hqnonneg : 0 ≤ q := by dsimp [q]; positivity
     have hformula : a = -x * q / (q + 1) := by
       have hqp : q + 1 ≠ 0 := by linarith
@@ -782,7 +782,7 @@ private theorem tendsto_eps_mul_m_boundary_im {x : ℝ} (hx : x ∈ Icc (-2) 2) 
     let q : ℝ := a ^ 2 + b ^ 2
     have hest := m_boundary_q_estimate hx hε
     have hq_lt : q < 1 := by
-      have hqpos : 0 < 1 - q := by simpa [z, a, b, q] using hest.1
+      have hqpos : 0 < 1 - q := hest.1
       linarith
     have hb : 0 < b := by simpa [b, z] using m_im_pos (by simpa [z] using hε)
     have hb_sq : b ^ 2 ≤ 1 := by
