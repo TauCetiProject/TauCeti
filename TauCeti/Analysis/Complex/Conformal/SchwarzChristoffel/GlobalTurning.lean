@@ -34,6 +34,8 @@ in `SchwarzChristoffel.Turning`.
 * `TauCeti.schwarzChristoffelEdgeAngle_eq_neg_two_pi_of_lt_first` and
   `TauCeti.schwarzChristoffelEdgeAngle_eq_zero_of_last_le` -- the two unbounded edge angles are
   `-2π` and zero.
+* `TauCeti.schwarzChristoffelEdgeAngle_natIndexed_turning` -- the edge angles, indexed by naturals,
+  turn monotonically from above `-2π` up to `0`.
 
 ## References
 
@@ -182,5 +184,24 @@ theorem schwarzChristoffelEdgeAngle_eq_zero_of_last_le
     schwarzChristoffelEdgeAngle a e c = 0 :=
   schwarzChristoffelEdgeAngle_eq_zero_of_forall_le a e fun i ↦
     (ha i.le_last).trans hc
+
+/-- **The edge angles, indexed by naturals, turn monotonically from above `-2π` up to `0`.**
+For any `φ : ℕ → ℝ` agreeing with `k ↦ schwarzChristoffelEdgeAngle a e (a k)` on `Fin (n + 1)`,
+the sequence is monotone on `0 ≤ l ≤ m ≤ n`, bounded below by `-2π`, and vanishes at `n`. -/
+theorem schwarzChristoffelEdgeAngle_natIndexed_turning (a e : Fin (n + 1) → ℝ)
+    (ha : StrictMono a) (he : ∀ k, e k < 0) (hsum : ∑ k, e k = -2)
+    (φ : ℕ → ℝ) (hφ : ∀ k : Fin (n + 1), φ k = schwarzChristoffelEdgeAngle a e (a k)) :
+    (∀ l m : ℕ, l ≤ m → m ≤ n → φ l ≤ φ m) ∧ (∀ l : ℕ, l ≤ n → -2 * Real.pi < φ l) ∧
+      φ n = 0 := by
+  have hangle := schwarzChristoffelEdgeAngle_comp_strictMono a e ha he
+  refine ⟨fun l m hlm hm ↦ ?_, fun l hl ↦ ?_, ?_⟩
+  · have := hangle.monotone
+      (Fin.mk_le_mk.mpr hlm : (⟨l, by omega⟩ : Fin (n + 1)) ≤ ⟨m, by omega⟩)
+    simpa only [← hφ] using this
+  · have := (schwarzChristoffelEdgeAngle_mem_Ioc a e he hsum ⟨l, by omega⟩).1
+    simpa only [← hφ] using this
+  · have :=
+      schwarzChristoffelEdgeAngle_eq_zero_of_last_le a e ha.monotone (le_refl (a (Fin.last n)))
+    simpa only [← hφ, Fin.val_last] using this
 
 end TauCeti
