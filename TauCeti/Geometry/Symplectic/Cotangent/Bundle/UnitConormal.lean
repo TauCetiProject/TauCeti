@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Contact.Legendrian
+public import TauCeti.Geometry.Contact.Isotropic
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Conormal
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.ContactType
+import TauCeti.Geometry.Contact.Pullback
 import TauCeti.Geometry.Manifold.Immersion.Differential
 import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 
@@ -35,12 +36,10 @@ embedding (`TauCeti.CotangentBundle.isSmoothEmbedding_unitConormalInclusion`) wi
 
 The Liouville form `λ` vanishes on `N*Q`, hence on the unit conormal bundle. So, for an ambient
 manifold of positive dimension `n + 1`, the unit conormal bundle is a Legendrian embedding of a
-manifold of dimension `n` into the contact manifold `S*M` of dimension `2 n + 1`, both for the
-contact form `α_g = λ|S*M`
-(`TauCeti.CotangentBundle.isLegendrianEmbedding_unitConormalInclusion_liouvilleForm`) and for the
-contact form `α_b = -λ|S*M` of the opposite coorientation, the boundary form of the primitive `-λ`
-of `ω = -dλ`
-(`TauCeti.CotangentBundle.isLegendrianEmbedding_unitConormalInclusion_neg_liouvilleForm`).
+manifold of dimension `n` into the contact manifold `S*M` of dimension `2 n + 1`, for its contact
+structure `ker(λ|S*M)` (`TauCeti.CotangentBundle.isLegendrianEmbedding_unitConormalInclusion`).
+This is also the kernel of the contact form `α_b = -λ|S*M` of the opposite coorientation, the
+boundary form of the primitive `-λ` of `ω = -dλ`.
 
 The atlas and the manifold structure only use that `i` is smooth with injective differentials;
 the embedding into `S*M` uses that `i` is a smooth embedding. The vector bundle structure of `N*Q`
@@ -59,9 +58,8 @@ in the statements about it.
   of dimension `dim M - 1`.
 * `TauCeti.CotangentBundle.isSmoothEmbedding_unitConormalInclusion`: it is smoothly embedded in
   `S*M`.
-* `TauCeti.CotangentBundle.isLegendrianEmbedding_unitConormalInclusion_liouvilleForm`,
-  `TauCeti.CotangentBundle.isLegendrianEmbedding_unitConormalInclusion_neg_liouvilleForm`: it is
-  a Legendrian embedding for `λ|S*M` and for `-λ|S*M`.
+* `TauCeti.CotangentBundle.isLegendrianEmbedding_unitConormalInclusion`: it is a Legendrian
+  embedding for the contact structure `ker(λ|S*M)`.
 
 ## References
 
@@ -302,18 +300,20 @@ theorem isSmoothEmbedding_unitConormalInclusion (hi : IsSmoothEmbedding J I ∞ 
     ((hf z).mdifferentiableAt (by simp)), ContinuousLinearMap.coe_comp] at h
   exact h.of_comp
 
-/-- **The unit conormal bundle is Legendrian for `λ|S*M`.** For a smooth embedding `i : Q → M`
-into a Riemannian manifold of positive dimension `n + 1`, the inclusion of the unit conormal
-bundle, a manifold of dimension `n`, into the unit cosphere bundle is a Legendrian embedding for
-the contact form `α_g = λ|S*M`. -/
-theorem isLegendrianEmbedding_unitConormalInclusion_liouvilleForm [Nontrivial E]
+/-- **The unit conormal bundle is Legendrian.** For a smooth embedding `i : Q → M` into a
+Riemannian manifold of positive dimension `n + 1`, the inclusion of the unit conormal bundle, a
+manifold of dimension `n`, into the unit cosphere bundle is a Legendrian embedding for the contact
+structure `ker(λ|S*M)`. This is also the kernel of the contact form `α_b = -λ|S*M`, the
+restriction of the primitive `-λ` of `ω = -dλ` (`TauCeti.SmoothForm.kerDistribution_neg`). -/
+theorem isLegendrianEmbedding_unitConormalInclusion [Nontrivial E]
     (hi : IsSmoothEmbedding J I ∞ i) (hk : finrank ℝ F + k = finrank ℝ E) :
     letI := conormalFiberBundle (n := ∞) hi.contMDiff (by simp)
       (hi.isImmersion.mfderiv_injective (by simp)) hk
     letI := unitConormalChartedSpace k hi.contMDiff (hi.isImmersion.mfderiv_injective (by simp)) hk
-    (SmoothForm.mpullback (Subtype.val : cosphereBundle I M → CotangentBundle I M)
-      (isSmoothEmbedding_coe_cosphereBundle (I := I) (M := M)).contMDiff
-      (liouvilleForm I M)).IsLegendrianEmbedding 𝓘(ℝ, Fin (finrank ℝ E - 1) → ℝ)
+    IsLegendrianEmbedding 𝓘(ℝ, Fin (finrank ℝ E - 1) → ℝ)
+      (SmoothForm.mpullback (Subtype.val : cosphereBundle I M → CotangentBundle I M)
+        (isSmoothEmbedding_coe_cosphereBundle (I := I) (M := M)).contMDiff
+        (liouvilleForm I M)).kerDistribution
       (unitConormalInclusion J I k i) := by
   have hinj := hi.isImmersion.mfderiv_injective (by simp)
   let := conormalFiberBundle (n := ∞) hi.contMDiff (by simp) hinj hk
@@ -324,10 +324,17 @@ theorem isLegendrianEmbedding_unitConormalInclusion_liouvilleForm [Nontrivial E]
   have hv := isSmoothEmbedding_coe_unitConormal hi.contMDiff hinj hk
   have hS := isSmoothEmbedding_coe_cosphereBundle (I := I) (M := M)
   have hf := contMDiff_unitConormalInclusion hi hk
-  refine ⟨⟨(isSmoothEmbedding_unitConormalInclusion hi hk).isImmersion, ?_, ?_⟩,
-    (isSmoothEmbedding_unitConormalInclusion hi hk).isEmbedding⟩
+  -- The kernel of `λ|S*M` is a `C¹` contact structure, which needs a `C²` manifold structure.
+  have : IsManifold 𝓘(ℝ, Fin (finrank ℝ (E × (E →L[ℝ] ℝ)) - 1) → ℝ) (1 + 1)
+      (cosphereBundle I M) := .of_le (n := ∞) (by norm_num)
+  refine (isLegendrianEmbedding_iff_of_isSmoothEmbedding
+    (isSmoothEmbedding_unitConormalInclusion hi hk)).2
+    ⟨isContactForm_mpullback_liouvilleForm_cosphereBundle.isContactDistribution_kerDistribution,
+      (isSmoothEmbedding_unitConormalInclusion hi hk).isImmersion, ?_, ?_⟩
   · -- The Liouville form vanishes on conormal covectors.
-    rw [SmoothForm.isIsotropicMap_iff_mpullback_eq_zero, SmoothForm.coe_mpullback,
+    rw [SmoothForm.isHorizontalMap_kerDistribution_iff_mpullback_eq_zero _ hf]
+    apply Subtype.ext
+    rw [SmoothForm.coe_mpullback, SmoothForm.coe_mpullback,
       ← TauCeti.mpullback_comp (hf.mdifferentiable (by simp))
         (hS.contMDiff.mdifferentiable (by simp))]
     exact mpullback_liouvilleForm_eq_zero_of_conormal
@@ -340,28 +347,6 @@ theorem isLegendrianEmbedding_unitConormalInclusion_liouvilleForm [Nontrivial E]
   · rw [finrank_fin_fun, finrank_fin_fun, finrank_prod, ContinuousLinearMap.dual_finrank_eq]
     have := Module.finrank_pos (R := ℝ) (M := E)
     omega
-
-/-- **The unit conormal bundle is Legendrian for `-λ|S*M`.** For a smooth embedding `i : Q → M`
-into a Riemannian manifold of positive dimension `n + 1`, the inclusion of the unit conormal
-bundle into the unit cosphere bundle is a Legendrian embedding for the contact form
-`α_b = -λ|S*M`, the restriction of the primitive `-λ` of `ω = -dλ`. -/
-theorem isLegendrianEmbedding_unitConormalInclusion_neg_liouvilleForm [Nontrivial E]
-    (hi : IsSmoothEmbedding J I ∞ i) (hk : finrank ℝ F + k = finrank ℝ E) :
-    letI := conormalFiberBundle (n := ∞) hi.contMDiff (by simp)
-      (hi.isImmersion.mfderiv_injective (by simp)) hk
-    letI := unitConormalChartedSpace k hi.contMDiff (hi.isImmersion.mfderiv_injective (by simp)) hk
-    (SmoothForm.mpullback (Subtype.val : cosphereBundle I M → CotangentBundle I M)
-      (isSmoothEmbedding_coe_cosphereBundle (I := I) (M := M)).contMDiff
-      (-liouvilleForm I M)).IsLegendrianEmbedding 𝓘(ℝ, Fin (finrank ℝ E - 1) → ℝ)
-      (unitConormalInclusion J I k i) := by
-  have hinj := hi.isImmersion.mfderiv_injective (by simp)
-  let := conormalFiberBundle (n := ∞) hi.contMDiff (by simp) hinj hk
-  let := unitConormalChartedSpace k hi.contMDiff hinj hk
-  have h := isLegendrianEmbedding_unitConormalInclusion_liouvilleForm hi hk
-  -- The form `-λ|S*M` is `-1` times `λ|S*M`, with the same kernel.
-  refine ⟨(SmoothForm.isLegendrianImmersion_iff_of_eq_smul (g := fun _ ↦ -1)
-    (fun _ ↦ neg_ne_zero.2 one_ne_zero) fun x ↦ ?_).2 h.1, h.2⟩
-  rw [map_neg, neg_one_smul, SmoothForm.neg_toRoughForm, Pi.neg_apply]
 
 end Legendrian
 
