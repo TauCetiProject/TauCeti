@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 public import Mathlib.Analysis.Normed.Module.Connected
 public import TauCeti.Analysis.InnerProductSpace.Indefinite
+public import TauCeti.Analysis.Normed.Module.NegativeSubspace
 public import TauCeti.LinearAlgebra.Orientation.Basic
 
 /-!
@@ -20,10 +21,10 @@ with negative coordinates `u` and positive coordinates `v`. A submodule `W ≤ E
 `‖v‖ < ‖u‖` for every nonzero `(u, v) ∈ W`.
 
 Such a `W` meets the positive factor `0 × F` only in `0`, so the projection to `E` is injective on
-it and `dim W ≤ dim E` (`Submodule.IsSplitNegative.finrank_le`). The graph of a linear map
+it and `dim W ≤ dim E` (`Submodule.finrank_le_of_norm_snd_lt`). The graph of a linear map
 `T : E → F` is split-negative exactly when `T` strictly decreases the norm of every nonzero vector
 (`Submodule.isSplitNegative_graph_iff`); when `E` is finite-dimensional this means `‖T‖ < 1`
-(`Submodule.isSplitNegative_graph_iff_norm_lt_one`).
+(`ContinuousLinearMap.opNorm_lt_one_iff_forall_mem_graph_norm_snd_lt`).
 
 When `E` is a finite-dimensional inner product space, a split-negative subspace is maximal exactly
 when its dimension is `dim E` (`Submodule.maximal_isSplitNegative_iff`): a split-negative
@@ -108,22 +109,6 @@ theorem IsSplitNegative.disjoint_ker_fst (hW : W.IsSplitNegative) :
   by_contra hw0
   exact hW.fst_ne_zero hw hw0 hw'
 
-/-- The projection of a split-negative subspace to the negative factor is injective. -/
-theorem IsSplitNegative.injective_fst (hW : W.IsSplitNegative) :
-    Function.Injective ((LinearMap.fst ℝ E F).comp W.subtype) := by
-  rw [← LinearMap.ker_eq_bot, LinearMap.ker_comp, ← disjoint_iff_comap_eq_bot]
-  exact hW.disjoint_ker_fst
-
-/-- A split-negative subspace is finite-dimensional when the negative factor is. -/
-theorem IsSplitNegative.finiteDimensional [FiniteDimensional ℝ E] (hW : W.IsSplitNegative) :
-    FiniteDimensional ℝ W :=
-  Module.Finite.of_injective _ hW.injective_fst
-
-/-- A split-negative subspace has dimension at most that of the negative factor. -/
-theorem IsSplitNegative.finrank_le [FiniteDimensional ℝ E] (hW : W.IsSplitNegative) :
-    finrank ℝ W ≤ finrank ℝ E :=
-  LinearMap.finrank_le_finrank_of_injective hW.injective_fst
-
 /-- The graph of a linear map `T : E → F` is split-negative exactly when `T` strictly decreases
 the norm of every nonzero vector. -/
 theorem isSplitNegative_graph_iff (T : E →ₗ[ℝ] F) :
@@ -133,25 +118,6 @@ theorem isSplitNegative_graph_iff (T : E →ₗ[ℝ] F) :
   rw [hw]
   refine h _ fun h1 ↦ hw0 (Prod.ext h1 ?_)
   rw [hw, h1, map_zero, Prod.snd_zero]
-
-/-- In finite dimension, the graph of a continuous linear map `T : E → F` is split-negative
-exactly when `‖T‖ < 1`. -/
-theorem isSplitNegative_graph_iff_norm_lt_one [FiniteDimensional ℝ E] (T : E →L[ℝ] F) :
-    (LinearMap.graph (T : E →ₗ[ℝ] F)).IsSplitNegative ↔ ‖T‖ < 1 := by
-  rw [isSplitNegative_graph_iff]
-  refine ⟨fun h ↦ ?_, fun h u hu ↦ ?_⟩
-  · rcases subsingleton_or_nontrivial E with hE | hE
-    · rw [Subsingleton.elim T 0, norm_zero]
-      exact one_pos
-    -- The norm of `T` is attained on the compact unit sphere.
-    obtain ⟨u₀, hu₀, hmax⟩ := (isCompact_sphere (0 : E) 1).exists_isMaxOn
-      (NormedSpace.sphere_nonempty.2 zero_le_one) (continuous_norm.comp T.continuous).continuousOn
-    rw [mem_sphere_zero_iff_norm] at hu₀
-    have hu₀0 : u₀ ≠ 0 := norm_ne_zero_iff.1 (hu₀.symm ▸ one_ne_zero)
-    refine (T.opNorm_le_of_unit_norm (norm_nonneg _) fun u hu ↦ ?_).trans_lt
-      ((h u₀ hu₀0).trans_eq hu₀)
-    exact hmax (mem_sphere_zero_iff_norm.2 hu)
-  · simpa using (T.le_opNorm u).trans_lt ((mul_lt_iff_lt_one_left (norm_pos_iff.2 hu)).2 h)
 
 end Normed
 
@@ -188,12 +154,13 @@ private theorem IsSplitNegative.sup_span_inl (hW : W.IsSplitNegative) {u : E}
 maximal exactly when its dimension is `dim E`. -/
 theorem maximal_isSplitNegative_iff :
     Maximal IsSplitNegative W ↔ W.IsSplitNegative ∧ finrank ℝ W = finrank ℝ E := by
-  refine ⟨fun h ↦ ⟨h.prop, le_antisymm h.prop.finrank_le (not_lt.1 fun hlt ↦ ?_)⟩,
+  refine ⟨fun h ↦ ⟨h.prop, le_antisymm (W.finrank_le_of_norm_snd_lt h.prop)
+    (not_lt.1 fun hlt ↦ ?_)⟩,
     fun ⟨hW, hdim⟩ ↦ ⟨hW, fun W' hW' hle ↦ ?_⟩⟩
   · -- A subspace of smaller dimension can be enlarged by a vector orthogonal to its projection.
     have hP : LinearMap.range ((LinearMap.fst ℝ E F).comp W.subtype) ≠ ⊤ := by
       intro htop
-      have := LinearMap.finrank_range_of_inj h.prop.injective_fst
+      have := LinearMap.finrank_range_of_inj (W.injective_fst_of_norm_snd_lt h.prop)
       rw [htop, finrank_top] at this
       omega
     obtain ⟨u, hu, hu0⟩ := (Submodule.ne_bot_iff _).1 (mt orthogonal_eq_bot_iff.1 hP)
@@ -201,15 +168,15 @@ theorem maximal_isSplitNegative_iff :
       h.2 (h.prop.sup_span_inl hu hu0) le_sup_left (mem_sup_right (mem_span_singleton_self _))
     exact hu0 (inner_self_eq_zero.1
       (inner_right_of_mem_orthogonal (LinearMap.mem_range.2 ⟨⟨_, hmem⟩, rfl⟩) hu))
-  · have := hW'.finiteDimensional
-    exact (eq_of_le_of_finrank_le hle (hW'.finrank_le.trans hdim.ge)).ge
+  · exact (eq_of_le_of_finrank_eq_of_norm_snd_lt _ _ hle hdim hW').ge
 
 /-- The projection of a maximal split-negative subspace to the negative factor is bijective. -/
 theorem bijective_fst_of_maximal_isSplitNegative (hW : Maximal IsSplitNegative W) :
     Function.Bijective ((LinearMap.fst ℝ E F).comp W.subtype) := by
-  have := hW.prop.finiteDimensional
-  exact ⟨hW.prop.injective_fst, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
-    (maximal_isSplitNegative_iff.1 hW).2).1 hW.prop.injective_fst⟩
+  have := W.finiteDimensional_of_norm_snd_lt hW.prop
+  have hinj := W.injective_fst_of_norm_snd_lt hW.prop
+  exact ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
+    (maximal_isSplitNegative_iff.1 hW).2).1 hinj⟩
 
 /-- Over a finite-dimensional inner product space `E`, the maximal split-negative subspaces of
 `E × F` are exactly the graphs of the continuous linear maps `T : E → F` with `‖T‖ < 1`. -/
@@ -218,12 +185,10 @@ theorem maximal_isSplitNegative_iff_exists_eq_graph :
       ∃ T : E →L[ℝ] F, ‖T‖ < 1 ∧ W = LinearMap.graph (T : E →ₗ[ℝ] F) := by
   constructor
   · intro h
-    obtain ⟨T, rfl⟩ := exists_eq_graph (bijective_fst_of_maximal_isSplitNegative h)
-    refine ⟨LinearMap.toContinuousLinearMap T, ?_, by simp⟩
-    rw [← isSplitNegative_graph_iff_norm_lt_one]
-    simpa using h.prop
+    exact W.exists_eq_graph_of_finrank_eq_of_norm_snd_lt (maximal_isSplitNegative_iff.1 h).2 h.prop
   · rintro ⟨T, hT, rfl⟩
-    refine maximal_isSplitNegative_iff.2 ⟨(isSplitNegative_graph_iff_norm_lt_one T).2 hT, ?_⟩
+    refine maximal_isSplitNegative_iff.2
+      ⟨T.opNorm_lt_one_iff_forall_mem_graph_norm_snd_lt.1 hT, ?_⟩
     rw [LinearMap.graph_eq_range_prod, LinearMap.finrank_range_of_inj]
     intro x y hxy
     exact congr(($hxy).1)
@@ -287,13 +252,15 @@ private theorem bijective_graph_ball :
       (⟨LinearMap.graph ((T : E →L[ℝ] F) : E →ₗ[ℝ] F),
         maximal_isSplitNegative_iff_exists_eq_graph.2 ⟨T, mem_ball_zero_iff.1 T.2, rfl⟩⟩ :
         {W : Submodule ℝ (E × F) // Maximal IsSplitNegative W}) := by
-  refine ⟨fun T₁ T₂ h ↦ Subtype.ext <| ContinuousLinearMap.ext fun u ↦ ?_, fun W ↦ ?_⟩
-  · have h' : LinearMap.graph ((T₁ : E →L[ℝ] F) : E →ₗ[ℝ] F) =
-        LinearMap.graph ((T₂ : E →L[ℝ] F) : E →ₗ[ℝ] F) :=
-      congrArg Subtype.val h
-    have hu : (u, (T₁ : E →L[ℝ] F) u) ∈ LinearMap.graph ((T₂ : E →L[ℝ] F) : E →ₗ[ℝ] F) :=
-      h' ▸ (LinearMap.mem_graph_iff _ _).2 rfl
-    exact (LinearMap.mem_graph_iff _ _).1 hu
+  refine ⟨fun T₁ T₂ h ↦ Subtype.ext ?_, fun W ↦ ?_⟩
+  · -- Graph coordinates are unique on a full-dimensional negative subspace.
+    set W := LinearMap.graph ((T₁ : E →L[ℝ] F) : E →ₗ[ℝ] F)
+    have h' : W = LinearMap.graph ((T₂ : E →L[ℝ] F) : E →ₗ[ℝ] F) := congrArg Subtype.val h
+    have hW : Maximal IsSplitNegative W :=
+      maximal_isSplitNegative_iff_exists_eq_graph.2 ⟨T₁, mem_ball_zero_iff.1 T₁.2, rfl⟩
+    obtain ⟨hneg, hdim⟩ := maximal_isSplitNegative_iff.1 hW
+    exact ((existsUnique_eq_graph_iff_finrank_eq_and_norm_snd_lt W).2 ⟨hdim, hneg⟩).unique
+      ⟨mem_ball_zero_iff.1 T₁.2, rfl⟩ ⟨mem_ball_zero_iff.1 T₂.2, h'⟩
   · obtain ⟨T, hT, hW⟩ := maximal_isSplitNegative_iff_exists_eq_graph.1 W.2
     exact ⟨⟨T, mem_ball_zero_iff.2 hT⟩, Subtype.ext hW.symm⟩
 
