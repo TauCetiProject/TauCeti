@@ -281,4 +281,26 @@ theorem rpow_den_num_le_iff {b : ℝ≥0} (hb : 1 < b) (r : ℝ) (hr : 0 < r)
     NNRat.cast_def, div_le_div_iff₀ hr (by exact_mod_cast q.den_pos)]
   constructor <;> intro h <;> nlinarith
 
+/-- Bounding a maximum of rescaled constants: for `0 ≤ α ≤ 1`, `C = C₀ N / R ^ α / 2`, `M = D N`
+and `ρ = R / 2`, the number `max (2 C) (2 M / ρ ^ α)` is at most `max C₀ (4 D) * R ^ (-α) * N`. -/
+lemma max_two_mul_le_toNNReal {α C M ρ : ℝ≥0} {C₀ D N R : ℝ} (hα1 : (α : ℝ) ≤ 1)
+    (hR : 0 < R) (hC₀ : 0 ≤ C₀) (hD : 0 ≤ D) (hN : 0 ≤ N) (hC : (C : ℝ) = C₀ * N / R ^ (α : ℝ) / 2)
+    (hM : (M : ℝ) = D * N) (hρ : (ρ : ℝ) = R / 2) :
+    max (2 * C) (2 * M / ρ ^ (α : ℝ)) ≤ (max C₀ (4 * D) * R ^ (-(α : ℝ)) * N).toNNReal := by
+  have h2α : (2 : ℝ) ^ (α : ℝ) ≤ 2 := by
+    simpa using Real.rpow_le_rpow_of_exponent_le one_le_two hα1
+  rw [Real.le_toNNReal_iff_coe_le (by positivity)]
+  push_cast
+  rw [hC, hM, hρ, Real.div_rpow hR.le zero_le_two, Real.rpow_neg hR.le]
+  refine max_le ?_ ?_
+  · calc 2 * (C₀ * N / R ^ (α : ℝ) / 2) = C₀ * (R ^ (α : ℝ))⁻¹ * N := by field_simp
+      _ ≤ _ := by gcongr; exact le_max_left _ _
+  · calc 2 * (D * N) / (R ^ (α : ℝ) / 2 ^ (α : ℝ))
+        = 2 * 2 ^ (α : ℝ) * D * (R ^ (α : ℝ))⁻¹ * N := by field_simp
+      _ ≤ 2 * 2 * D * (R ^ (α : ℝ))⁻¹ * N := by gcongr
+      _ ≤ _ := by
+        rw [show (2 : ℝ) * 2 * D = 4 * D by ring]
+        gcongr
+        exact le_max_right _ _
+
 end NNReal
