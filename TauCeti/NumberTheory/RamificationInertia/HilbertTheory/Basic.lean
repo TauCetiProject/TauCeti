@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.RamificationInertia.HilbertTheory
 public import TauCeti.NumberTheory.RamificationInertia.SeparableDegree
 import Mathlib.FieldTheory.PurelyInseparable.Tower
 import Mathlib.RingTheory.Finiteness.Quotient
+import TauCeti.NumberTheory.RamificationInertia.Galois
 
 /-!
 # Splitting of a prime in the inertia field
