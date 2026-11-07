@@ -142,6 +142,7 @@ private theorem exists_openPartialHomeomorph_normal_of_isUnit_compression {g : E
     refine continuousAt_fst.prodMk (ContinuousAt.clm_apply ?_
       (W₀.orthogonalProjectionOnto.continuous.comp continuous_snd).continuousAt)
     have hinvc : ContinuousAt Ring.inverse (R u₀) := by
+      -- `hR₀` is stated for the explicit compression, which is definitionally `R u₀`.
       rw [show R u₀ = 1 from hR₀]
       exact NormedRing.inverse_continuousAt (R := W₀ →L[ℝ] W₀) 1
     exact ContinuousAt.comp (x := ((u₀, 0) : E × V)) hinvc
@@ -194,23 +195,20 @@ private theorem injOn_normal_of_forall_mem_source {g : E → V} {W₀ : Submodul
   refine Prod.ext h1 ?_
   rw [← hQp, ← hQp', h1, hρ]
 
-omit [FiniteDimensional ℝ V] in
+omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ E] in
 /-- The normal map sends relatively open sets of normal vectors of length less than `δ` at points
 of `s` to open sets, given a local homeomorphism `h` and a map `ρ` into its source which invert it
 there. -/
 private theorem isOpen_image_normal_of_forall_mem_source {g : E → V} {W₀ : Submodule ℝ V}
-    {Q : E → V →L[ℝ] V} (hQ : Q = fun u => (fderiv ℝ g u).rangeᗮ.starProjection)
+    {Q : E → V →L[ℝ] V} (hQmem : ∀ u w, Q u w ∈ (fderiv ℝ g u).rangeᗮ)
     {h : OpenPartialHomeomorph (E × W₀) V} {ρ : E × V → E × W₀} {s : Set E} {δ : ℝ}
     (hs : IsOpen s) (hQc : ∀ u ∈ s, ContinuousAt Q u) (hρ₁ : ∀ p, (ρ p).1 = p.1)
     (hΨh : ∀ q, h q = g q.1 + Q q.1 q.2)
     (hkey : ∀ p : E × V, p.1 ∈ s → p.2 ∈ (fderiv ℝ g p.1).rangeᗮ → ‖p.2‖ < δ →
-      ρ p ∈ h.source ∧ Q p.1 (ρ p).2 = p.2 ∧ h (ρ p) = g p.1 + p.2)
+      ρ p ∈ h.source ∧ Q p.1 (ρ p).2 = p.2)
     (O : Set (E × V)) (hO : IsOpen O) :
     IsOpen ((fun p : E × V => g p.1 + p.2) ''
       (O ∩ {p | p.1 ∈ s ∧ p.2 ∈ (fderiv ℝ g p.1).rangeᗮ ∧ ‖p.2‖ < δ})) := by
-  have hQmem : ∀ u w, Q u w ∈ (fderiv ℝ g u).rangeᗮ := fun u w => by
-    rw [hQ]
-    exact Submodule.starProjection_apply_mem _ _
   -- The image is the image under `h` of an open subset of its source.
   let θ : E × W₀ → E × V := fun q => (q.1, Q q.1 q.2)
   have hθc : ContinuousOn θ (h.source ∩ s ×ˢ univ) := by
@@ -225,7 +223,10 @@ private theorem isOpen_image_normal_of_forall_mem_source {g : E → V} {W₀ : S
     ext y
     constructor
     · rintro ⟨p, ⟨hpO, hu, hv, hvδ⟩, rfl⟩
-      obtain ⟨hρp, hQp, hΨp⟩ := hkey p hu hv hvδ
+      obtain ⟨hρp, hQp⟩ := hkey p hu hv hvδ
+      -- `h (ρ p) = g p.1 + p.2`, from `hΨh` and `Q p.1 (ρ p).2 = p.2`.
+      have hΨp : h (ρ p) = g p.1 + p.2 := by
+        rw [hΨh, hρ₁, hQp]
       refine ⟨ρ p, ⟨⟨hρp, by rw [hρ₁]; exact hu, mem_univ _⟩, ?_⟩, hΨp⟩
       have hθρ : θ (ρ p) = p :=
         Prod.ext (hρ₁ p) ((congrArg (fun u => Q u (ρ p).2) (hρ₁ p)).trans hQp)
@@ -257,7 +258,8 @@ private theorem exists_injOn_isOpen_image_normal {g : E → V} {u₀ : E}
     injOn_normal_of_forall_mem_source (Q := fun u => (fderiv ℝ g u).rangeᗮ.starProjection) hρ₁
       hkey,
     isOpen_image_normal_of_forall_mem_source (Q := fun u => (fderiv ℝ g u).rangeᗮ.starProjection)
-      rfl hs_open hQc hρ₁ hΨh hkey⟩
+      (fun _ _ => Submodule.starProjection_apply_mem _ _) hs_open hQc hρ₁ hΨh
+      fun p hu hv hvδ => (hkey p hu hv hvδ).imp_right And.left⟩
 end Local
 
 section Manifold
