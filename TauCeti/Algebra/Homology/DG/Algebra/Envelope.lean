@@ -96,6 +96,22 @@ theorem envelopeDifferential_tmul_of_mem (n : ℤ) {p : ℤ} {x : A} (hx : x ∈
     one_mul, ← negOnePowCast_eq_intCast, ← TensorProduct.smul_tmul', smul_smul,
     ← negOnePowCast_add, add_comm n p]
 
+/-- Expand the enveloping-action Leibniz expression on a pure tensor with homogeneous left
+factor. The two module elements may be chosen independently; in a Leibniz rule they are an
+element and its differential. -/
+theorem envelopeDifferential_tmul_smul_add {M : Type*} [AddCommGroup M]
+    [Module R M] [Module (A ⊗[R] Aᵐᵒᵖ) M] [IsScalarTower R (A ⊗[R] Aᵐᵒᵖ) M]
+    (n : ℤ) {p : ℤ} {x : A} (hx : x ∈ 𝒜 p) (y : A) (z z' : M) :
+    envelopeDifferential 𝒜 d n (x ⊗ₜ[R] op y) • z +
+        TensorProduct.map σ LinearMap.id (x ⊗ₜ[R] op y) • z' =
+      (d x ⊗ₜ[R] op y) • z + negOnePowCast R p • ((x ⊗ₜ[R] op y) • z') +
+        negOnePowCast R (p + n) • ((x ⊗ₜ[R] op (d y)) • z) := by
+  simp only [envelopeDifferential_tmul_of_mem n hx, add_smul,
+    TensorProduct.map_tmul, LinearMap.id_apply,
+    InternalGrading.koszulTwist_ofDecomposition_apply_of_mem _ hx, one_mul,
+    ← negOnePowCast_eq_intCast, ← TensorProduct.smul_tmul', smul_assoc,
+    add_right_comm]
+
 end Def
 
 section DG

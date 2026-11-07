@@ -82,12 +82,8 @@ theorem vertexTensorBimoduleDifferential_tmul_smul {p q : ℤ} {x : A}
       (d x ⊗ₜ[k] op y) • z +
         negOnePowCast k p • ((x ⊗ₜ[k] op y) • vertexTensorBimoduleDifferential wt d z) +
           negOnePowCast k (p + q) • ((x ⊗ₜ[k] op (d y)) • z) := by
-  rw [vertexTensorBimoduleDifferential_smul_of_mem hd hdε hz,
-    envelopeDifferential_tmul_of_mem q hx, add_smul, smul_assoc,
-    TensorProduct.map_tmul, LinearMap.id_apply,
-    InternalGrading.koszulTwist_ofDecomposition_apply_of_mem _ hx, one_mul,
-    ← negOnePowCast_eq_intCast, ← TensorProduct.smul_tmul', smul_assoc]
-  abel
+  rw [vertexTensorBimoduleDifferential_smul_of_mem hd hdε hz]
+  exact envelopeDifferential_tmul_smul_add q hx y z _
 
 variable [DecidableEq Q] [∀ i j : Q, DecidableEq (i ⟶ j)]
 
@@ -114,11 +110,7 @@ theorem arrowTensorBimoduleDifferential_tmul_smul {p q : ℤ} {x : A}
       (d x ⊗ₜ[k] op y) • z +
         negOnePowCast k p • ((x ⊗ₜ[k] op y) • arrowTensorBimoduleDifferential wt d z) +
           negOnePowCast k (p + q) • ((x ⊗ₜ[k] op (d y)) • z) := by
-  rw [arrowTensorBimoduleDifferential_smul_of_mem hd hdε hz,
-    envelopeDifferential_tmul_of_mem q hx, add_smul, smul_assoc,
-    TensorProduct.map_tmul, LinearMap.id_apply,
-    InternalGrading.koszulTwist_ofDecomposition_apply_of_mem _ hx, one_mul,
-    ← negOnePowCast_eq_intCast, ← TensorProduct.smul_tmul', smul_assoc]
-  abel
+  rw [arrowTensorBimoduleDifferential_smul_of_mem hd hdε hz]
+  exact envelopeDifferential_tmul_smul_add q hx y z _
 
 end TauCeti.PathAlgebra
