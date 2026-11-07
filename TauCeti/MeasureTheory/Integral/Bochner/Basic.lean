@@ -335,13 +335,13 @@ truncation `((f - l)⁺)²` is at most `(M - l)²` times the measure of the uppe
 `{l ≤ f}`. In De Giorgi's method this turns a measure estimate for upper level sets into an `L²`
 estimate for truncations. -/
 theorem integral_max_sub_sq_le_mul_measureReal {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
-    [IsFiniteMeasure μ] {f : Ω → ℝ} (hf : Measurable f) {l M : ℝ} (hM : ∀ᵐ x ∂μ, f x ≤ M) :
+    [IsFiniteMeasure μ] {f : Ω → ℝ} (hf : AEMeasurable f μ) {l M : ℝ} (hM : ∀ᵐ x ∂μ, f x ≤ M) :
     ∫ x, max (f x - l) 0 ^ 2 ∂μ ≤ (M - l) ^ 2 * μ.real {x | l ≤ f x} := by
-  have hS : MeasurableSet {x | l ≤ f x} := measurableSet_le measurable_const hf
+  have hS : NullMeasurableSet {x | l ≤ f x} μ := nullMeasurableSet_le aemeasurable_const hf
   calc ∫ x, max (f x - l) 0 ^ 2 ∂μ
       ≤ ∫ x, {x | l ≤ f x}.indicator (fun _ => (M - l) ^ 2) x ∂μ := by
         refine integral_mono_of_nonneg (Eventually.of_forall fun x => by positivity)
-          ((integrable_const _).indicator hS) ?_
+          ((integrable_const _).indicator₀ hS) ?_
         filter_upwards [hM] with x hx
         by_cases hlx : l ≤ f x
         · rw [Set.indicator_of_mem (by exact hlx)]
@@ -349,7 +349,7 @@ theorem integral_max_sub_sq_le_mul_measureReal {Ω : Type*} [MeasurableSpace Ω]
         · rw [Set.indicator_of_notMem (by exact hlx), max_eq_right (by linarith)]
           norm_num
     _ = (M - l) ^ 2 * μ.real {x | l ≤ f x} := by
-        rw [integral_indicator_const _ hS, smul_eq_mul, mul_comm]
+        rw [integral_indicator₀ hS, setIntegral_const, smul_eq_mul, mul_comm]
 
 /-- The positive part of the integral of a real-valued function is at most the integral of its
 pointwise positive part. No integrability or pointwise sign assumption on `f` is needed. -/

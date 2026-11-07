@@ -194,7 +194,7 @@ theorem exists_ae_value_le_sub_mul_sub_lowerOrder [Nonempty ι] {θ : ℝ} (hθ 
   have : IsFiniteMeasure (mu.restrict (ball x₀ R)) :=
     isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
   have hI : I ≤ (M - l) ^ 2 * A :=
-    MeasureTheory.integral_max_sub_sq_le_mul_measureReal (Lp.stronglyMeasurable _).measurable
+    MeasureTheory.integral_max_sub_sq_le_mul_measureReal (Lp.stronglyMeasurable _).aemeasurable
       (ae_restrict_of_ae_restrict_of_subset (ball_subset_ball (by linarith)) hM)
   -- The scale factor of local boundedness cancels the volume of the ball.
   set P := R ^ (-(Fintype.card ι : ℝ) / 2)
