@@ -301,9 +301,10 @@ theorem pcMem_evenFiniteSentence_iff {M : Type w} [Language.empty.Structure M] :
 /-- Over `Language.empty`, every finite structure of odd cardinality is in the projective
 class of `oddFiniteSentence`: expand it by an involution with a single fixed point. -/
 private theorem pcMem_oddFiniteSentence_of_odd {M : Type w} [Language.empty.Structure M]
-    (hfin : Finite M) {k : ℕ} (hk : Nat.card M = 2 * k + 1) :
+    {k : ℕ} (hk : Nat.card M = 2 * k + 1) :
     LHom.PCMem LHom.sumInl oddFiniteSentence M := by
   rw [LHom.pcMem_iff]
+  have hfin : Finite M := Nat.finite_of_card_ne_zero (by omega)
   let : Fintype M := Fintype.ofFinite M
   let e : M ≃ (Fin k ⊕ Fin k) ⊕ Unit := Fintype.equivOfCardEq <| by
     rw [← Nat.card_eq_fintype_card, hk, Fintype.card_sum, Fintype.card_sum, Fintype.card_fin,
@@ -325,11 +326,13 @@ private theorem pcMem_oddFiniteSentence_of_odd {M : Type w} [Language.empty.Stru
     SentenceInf.realize_inf, SentenceInf.realize_not, realize_infiniteSentence_iff]
   refine ⟨⟨⟨not_infinite_iff_finite.2 hfin,
     realize_structureOfInvolutive_involution fun x => by simp [f, swapOdd]⟩, ?_⟩, ?_⟩
-  · simp only [S, SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_ex,
+  · -- the `rfl` rewrites `0 : Fin 1` as `Fin.last 0`, the index form `Fin.snoc_last` expects
+    simp only [S, SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_ex,
       realize_invAtom, relMap_structureOfInvolutive, Matrix.cons_val_zero, Matrix.cons_val_one,
       show (0 : Fin 1) = Fin.last 0 from rfl, Fin.snoc_last]
     exact ⟨e.symm (.inr ()), (hfix_iff (e.symm (.inr ()))).2 rfl⟩
-  · simp only [S, SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_all,
+  · -- the `rfl` rewrites `1 : Fin 2` as `Fin.last 1`, the index form `Fin.snoc_last` expects
+    simp only [S, SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_all,
       BoundedFormulaInf.realize_imp, BoundedFormulaInf.realize_equal, realize_invAtom, bvar,
       Term.realize_var, Sum.elim_inr, relMap_structureOfInvolutive, Matrix.cons_val_zero,
       Fin.snoc_apply_zero, Fin.snoc_zero, show (1 : Fin 2) = Fin.last 1 from rfl, Fin.snoc_last]
@@ -362,8 +365,8 @@ theorem pcMem_oddFiniteSentence_iff {M : Type w} [Language.empty.Structure M] :
       (even_iff_two_dvd.not.2 fun hdvd => ?_)⟩
     obtain ⟨y, hy, hne⟩ := Equiv.Perm.exists_fixed_point_of_prime' (p := 2) (n := 1) hdvd hσ hx₀
     exact hne (huniqfix y x₀ hy hx₀)
-  · rintro ⟨hfin, k, hk⟩
-    exact pcMem_oddFiniteSentence_of_odd hfin hk
+  · rintro ⟨-, k, hk⟩
+    exact pcMem_oddFiniteSentence_of_odd hk
 
 /-- `evenCardSentence` holds in `M` exactly when `M` is finite of even cardinality. -/
 theorem realize_evenCardSentence_iff (M : Type w) [Language.empty.Structure M] :
