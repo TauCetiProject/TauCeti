@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Discrete
-public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 
 /-!
@@ -35,6 +34,12 @@ open scoped ZeroAtInfty
 
 namespace ZeroAtInftyContinuousMap
 
+/-- The unconditional sum of an ultrametric null family is bounded by its sup norm. -/
+theorem norm_tsum_le {I E : Type*} [TopologicalSpace I] [SeminormedAddCommGroup E]
+    [IsUltrametricDist E] (f : C₀(I, E)) : ‖∑' i, f i‖ ≤ ‖f‖ :=
+  IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg (norm_nonneg f)
+    (norm_coe_le_norm f)
+
 variable {I J R E F : Type*} [TopologicalSpace I] [DiscreteTopology I]
   [NormedAddCommGroup E] [IsUltrametricDist E] [CompleteSpace E]
 
@@ -42,12 +47,6 @@ variable {I J R E F : Type*} [TopologicalSpace I] [DiscreteTopology I]
 summable. -/
 theorem summable (f : C₀(I, E)) : Summable f :=
   NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero f.tendsto_cofinite
-
-omit [DiscreteTopology I] [CompleteSpace E] in
-/-- The unconditional sum of an ultrametric null family is bounded by its sup norm. -/
-theorem norm_tsum_le (f : C₀(I, E)) : ‖∑' i, f i‖ ≤ ‖f‖ :=
-  IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg (norm_nonneg f)
-    (norm_coe_le_norm f)
 
 variable (R) [Semiring R] [Module R E] [ContinuousConstSMul R E]
 
