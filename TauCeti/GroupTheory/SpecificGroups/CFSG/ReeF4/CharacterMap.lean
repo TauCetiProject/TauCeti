@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.CharacterMap
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.ReeF4.Basic
-public import TauCeti.GroupTheory.SpecificGroups.CFSG.HalfFrobenius
 
 /-!
 # Character pullback of the represented Ree F₄ Steinberg map

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.QuotientSpecialIsogeny
 public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.CharacterMap
-public import TauCeti.LinearAlgebra.RootSystem.Isogeny.Power
 public import TauCeti.LinearAlgebra.RootSystem.Isogeny.Special
 
 /-!
