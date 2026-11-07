@@ -92,7 +92,7 @@ structure IsMorseBottFamily (i : ∀ a, SmoothEmbedding (J a) I n (S a) M) (f : 
   range_eq_connectedComponentIn (a : ι) (s : S a) :
     range (i a) = connectedComponentIn (criticalPoints I f) (i a s)
   /-- Distinct indices give distinct pieces. -/
-  injective_range : Injective fun a ↦ range (i a)
+  range_injective : Injective fun a ↦ range (i a)
   /-- Every critical point lies on some piece. -/
   criticalPoints_subset_iUnion_range : criticalPoints I f ⊆ ⋃ a, range (i a)
   /-- The family of pieces is locally finite. -/
@@ -132,7 +132,7 @@ theorem exists_range_eq_connectedComponentIn (hx : x ∈ criticalPoints I f) :
 /-- Distinct pieces are disjoint. -/
 theorem pairwise_disjoint_range : Pairwise (Disjoint on fun a ↦ range (i a)) := by
   intro a b hab
-  exact disjoint_left.2 fun x hxa hxb ↦ hab (h.injective_range
+  exact disjoint_left.2 fun x hxa hxb ↦ hab (h.range_injective
     ((h.range_eq_connectedComponentIn_of_mem a hxa).trans
       (h.range_eq_connectedComponentIn_of_mem b hxb).symm))
 
@@ -165,7 +165,7 @@ theorem neg : IsMorseBottFamily i (-f) where
   range_eq_connectedComponentIn a s := by
     rw [criticalPoints_neg]
     exact h.range_eq_connectedComponentIn a s
-  injective_range := h.injective_range
+  range_injective := h.range_injective
   criticalPoints_subset_iUnion_range := by
     rw [criticalPoints_neg]
     exact h.criticalPoints_subset_iUnion_range
@@ -216,7 +216,7 @@ theorem IsMorse.exists_isMorseBottFamily [I.Boundaryless] [FiniteDimensional ℝ
   have : T1Space M := I.t1Space M
   have : IsManifold I 1 M := .of_le hn
   let i : ∀ _ : criticalPoints I f, SmoothEmbedding 𝓘(ℝ, Z) I n Z M := fun a ↦
-    .ofIsSmoothEmbedding _ (Manifold.isSmoothEmbedding_const_of_subsingleton hn (a : M))
+    .ofIsSmoothEmbedding _ (isSmoothEmbedding_const_of_subsingleton hn (a : M))
   have hrange (a : criticalPoints I f) : range (i a) = {(a : M)} := by
     rw [SmoothEmbedding.coe_ofIsSmoothEmbedding]
     exact range_const
