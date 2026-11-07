@@ -25,6 +25,9 @@ giving the product Cauchy kernel expansion. Over a complete normed field, the La
 `∑_{n ≥ 1} f(qⁿw)` is the power series `∑_{k ≥ 1} c(k - 1) qᵏ wᵏ / (1 - qᵏ)` in `w` for every
 power series `f(z) = ∑_{k ≥ 0} c(k) z^(k + 1)` whose coefficients grow slowly enough. This applies
 to `z / (1 - z)²`, `z² / (1 - z)³` and `z / (1 - z)³`, whose coefficients are binomial.
+
+The geometric weights `(1 - q) qᵏ` sum to `1` and have mean `q / (1 - q)`, so over a normed
+field they average an affine function `c k + B` of `k` to `c q / (1 - q) + B`.
 -/
 
 public section
@@ -192,6 +195,16 @@ theorem summable_norm_natCast_mul_pow {a : ℕ → ℕ} (m : ℕ)
   have h : ‖(a k : K)‖ ≤ a k := by simpa using Nat.norm_cast_le (α := K) (a k)
   gcongr
   exact h.trans (by exact_mod_cast ha k)
+
+/-- The geometric weights `(1 - q) qᵏ` average an affine function of `k` to its value at the
+mean `q / (1 - q)`: `∑ₖ (1 - q) qᵏ (c k + B) = c q / (1 - q) + B`, for `‖q‖ < 1`. -/
+theorem hasSum_one_sub_mul_geometric_mul_affine {q : K} (hq : ‖q‖ < 1) (c B : K) :
+    HasSum (fun k : ℕ ↦ (1 - q) * q ^ k * (c * k + B)) (c * q / (1 - q) + B) := by
+  have hq1 : 1 - q ≠ 0 := sub_ne_zero.2 fun h ↦ by simp [← h] at hq
+  convert ((hasSum_coe_mul_geometric_of_norm_lt_one hq).mul_left ((1 - q) * c)).add
+    ((hasSum_geometric_of_norm_lt_one hq).mul_left ((1 - q) * B)) using 1
+  · ext k; ring
+  · field_simp
 
 variable [CompleteSpace K]
 
