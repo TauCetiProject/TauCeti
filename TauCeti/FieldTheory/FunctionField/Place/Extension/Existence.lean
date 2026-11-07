@@ -145,18 +145,6 @@ theorem isIntegral_iff_forall_restrict_eq_mem_integers (hF' : IsFunctionField k'
     rw [integers_ofValuationSubring]
     exact hBV (isIntegral_algebraMap (x := (⟨f, hf⟩ : P.integers)))
   exact hxV (integers_ofValuationSubring hF' hk'V hV ▸ h _ hP')
-
-variable (k F) (P' : Place k' F') in
-omit [Algebra.IsIntegral k k'] in
-/-- **The local model `𝒪'_P` of `F' / k'` at `P'` consists of functions regular at `P'`**: its
-elements are integral over `𝒪_P`, whose functions are regular at `P'`. -/
-theorem algebraMap_mem_integers_of_mem_integralClosure
-    (b : integralClosure ((P'.restrict k F).integers) F') :
-    algebraMap (integralClosure ((P'.restrict k F).integers) F') F' b ∈ P'.integers := by
-  rw [Subalgebra.algebraMap_eq]
-  exact P'.mem_integers_of_isIntegral (R := ((P'.restrict k F).integers))
-    (fun a ↦ (mem_integers_restrict_iff k F P' (a : F)).mp a.2) b.2
-
 end Integral
 
 /-- **Existence of extensions of places for an extension of function fields** (Stichtenoth,

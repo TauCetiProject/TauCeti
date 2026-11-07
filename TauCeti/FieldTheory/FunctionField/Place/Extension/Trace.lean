@@ -213,25 +213,6 @@ private theorem mem_filtration_of_mem_map_span_pow (hF' : IsFunctionField k' F')
     (zpow_mem_filtration k F hx hQ' m)
   simpa [IsScalarTower.algebraMap_apply P.integers F F'] using this
 
-variable {k F} in
-omit [Algebra.IsIntegral k k'] in
-/-- An element of the local model `𝒪'_P` times one vanishing to order `a` at a place `Q'` over `P`
-vanishes to order `a` at `Q'`. -/
-private theorem mul_mem_filtration_of_mem_integralClosure
-    {P : Place k F} {Q' : Place k' F'} (hQ' : Q'.restrict k F = P) {a : ℤ} {y : F'}
-    (hy : y ∈ Q'.filtration a) (s : integralClosure P.integers F') :
-    y * s ∈ Q'.filtration a := by
-  subst hQ'
-  simpa using Q'.mul_mem_filtration hy
-    (Q'.mem_filtration_zero_iff.mpr (algebraMap_mem_integers_of_mem_integralClosure k F Q' s))
-
-/-- A function congruent modulo the `m`-th filtration to a regular function is regular. -/
-private theorem mem_integers_of_sub_mem_filtration {y w : F'} (hy : y ∈ P'.integers) {m : ℕ}
-    (hw : w - y ∈ P'.filtration m) : w ∈ P'.integers := by
-  have := add_mem (P'.filtration_antitone (Nat.cast_nonneg m) hw)
-    (P'.mem_filtration_zero_iff.mpr hy)
-  rwa [sub_add_cancel, mem_filtration_zero_iff] at this
-
 /-- A function regular at `P'` and vanishing to order `e(Q' ∣ P) · m` at every other place `Q'` over
 `P` lies in the local model `𝒪'_P`. -/
 private theorem mem_integralClosure_of_forall_mem_filtration (hF' : IsFunctionField k' F')
@@ -471,8 +452,7 @@ private theorem exists_ringHom_powerSeries (m : ℕ)
     exact (congrArg _ h).trans ((AlgHom.commutes _ c).trans PowerSeries.algebraMap_apply)
   · rw [← powerSeriesExpansionResidueField_uniformizer P' ht']
     refine congrArg (P'.powerSeriesExpansionResidueField ht') (Subtype.ext ?_)
-    change (algebraMap _ (integralClosure (P'.restrict k F).integers F') x : F') =
-      algebraMap F F' t
+    simp only [ιS, RingHom.codRestrict_apply]
     rw [← hx]
     exact (IsScalarTower.algebraMap_apply (P'.restrict k F).integers F F' x).symm
 
@@ -497,19 +477,6 @@ private theorem exists_small_trunc_eq (hF' : IsFunctionField k F') (he : ramific
     (by simpa using hw)
   rw [map_sub, map_sub, sub_eq_zero] at hdiff
   rw [hΦ _ hwint, hdiff, hy]
-
-omit [FiniteDimensional F F'] [Algebra.IsSeparable k P'.ResidueField] in
-include hPP' in
-/-- A function of `F` that vanishes to order `m` at `P` does so at the places `P'` over it, when
-`e(P' ∣ P) = 1`. -/
-private theorem algebraMap_mem_filtration (he : ramificationIdx F P' = 1) {r : F} {m : ℕ}
-    (hr : r ∈ P.filtration m) : algebraMap F F' r ∈ P'.filtration m := by
-  subst hPP'
-  rcases eq_or_ne r 0 with rfl | h0
-  · simp
-  rw [mem_filtration_iff_le_ord _ h0] at hr
-  rw [mem_filtration_iff_le_ord _ ((map_ne_zero _).mpr h0), ord_algebraMap_restrict k F P', he]
-  simpa using hr
 
 omit [Algebra.IsSeparable k P'.ResidueField] in
 include hPP' in
@@ -591,7 +558,7 @@ private theorem mem_span_pow_of_sum_mem_map_span_pow (hF' : IsFunctionField k F'
       push_cast
       refine sum_mem fun j _ ↦ ?_
       simpa [IsScalarTower.algebraMap_apply (P'.restrict k F).integers F F'] using
-        P'.mul_mem_filtration (algebraMap_mem_filtration P' rfl he (hτ j))
+        P'.mul_mem_filtration (algebraMap_mem_filtration k F P' he (hτ j))
           (P'.mem_filtration_zero_iff.mpr
             (algebraMap_mem_integers_of_mem_integralClosure k F P' (b j)))
     convert sub_mem h hd using 1
