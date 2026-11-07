@@ -166,28 +166,27 @@ theorem isContMDiffDistribution_ker_bilinFormAt [FiniteDimensional ℝ E] {n : �
   obtain ⟨W, hW, hx₀W, hWe, v, hv, hvker⟩ :=
     (contMDiffOn_trivBilin (n := n) σ x₀).exists_contMDiffOn_basis_ker e.open_baseSet hkA
       (mem_baseSet_trivializationAt E (TangentSpace I) x₀)
+  -- On `W`, the inverse of `e` at `y` is the inverse of the linear equivalence `L y`.
+  have hsymm {y : M} (hy : y ∈ W) : e.symm y = ⇑(L y (hWe hy)).symm := by
+    funext u
+    rw [e.symm_continuousLinearEquivAt_eq (hWe hy), e.symmL_apply (hWe hy)]
   refine ⟨W, hW, hx₀W, fun i y ↦ e.symm y (v i y), ⟨fun i y hy ↦ ?_, fun {y} hy ↦ ?_,
     fun {y} hy ↦ ?_⟩⟩
   · -- In `e`, the coordinates of the frame are the smooth maps `v i`.
     refine (Trivialization.contMDiffWithinAt_section (e := e) W (hWe hy)).2 ?_
     exact (hv i y hy).congr (fun z hz ↦ by simp only [e.apply_mk_symm (hWe hz)])
       (by simp only [e.apply_mk_symm (hWe hy)])
-  · have hL : (fun i ↦ e.symm y (v i y)) = (L y (hWe hy)).symm ∘ (v · y) := by
-      funext i
-      simp [L]
-    rw [hL]
+  · rw [hsymm hy]
     exact (hvker y hy).1.map' _ (L y (hWe hy)).symm.ker
-  · have hL : range (fun i ↦ e.symm y (v i y)) =
-        ((L y (hWe hy)).symm : E →ₗ[ℝ] TangentSpace I y) '' range (v · y) := by
-      rw [← range_comp]
-      rfl
-    rw [hL, Submodule.span_image, (hvker y hy).2, ker_bilinFormAt_eq_comap σ (hWe hy),
-      Submodule.comap_equiv_eq_map_symm]
-    rfl
+  · rw [hsymm hy, ← Function.comp_def, range_comp, ← ContinuousLinearEquiv.coe_toLinearEquiv,
+      ← LinearEquiv.coe_coe, Submodule.span_image, (hvker y hy).2,
+      ker_bilinFormAt_eq_comap σ (hWe hy), Submodule.comap_equiv_eq_map_symm,
+      ContinuousLinearEquiv.toLinearEquiv_symm]
 
 /-- **The kernels of a closed two-form form an involutive distribution.** If `σ` is closed and
 `V`, `W` are vector fields differentiable and tangent to the kernels of `σ` on an open set, then
-so is their Lie bracket. No constant-rank hypothesis is needed. -/
+their Lie bracket is tangent to the kernels on that set. No constant-rank hypothesis is
+needed. -/
 theorem isInvolutiveDistribution_ker_bilinFormAt [IsManifold I 2 M] (σ : SmoothForm I M ℝ 2)
     (hσ : σ.IsClosed) : IsInvolutiveDistribution I fun x ↦ LinearMap.ker (σ.bilinFormAt x) := by
   have : IsManifold I (1 + 1) M := IsManifold.of_le (n := 2) one_add_one_eq_two.le
@@ -196,14 +195,11 @@ theorem isInvolutiveDistribution_ker_bilinFormAt [IsManifold I 2 M] (σ : Smooth
   refine isInvolutiveDistribution_iff.mpr fun U hU V W hV hW hVD hWD x hx ↦ ?_
   rw [LinearMap.mem_ker]
   ext w
-  -- Extend `w` to a vector field `Z` with constant coordinates in a tangent trivialization.
-  let e := trivializationAt E (TangentSpace I) x
-  have hxe : x ∈ e.baseSet := mem_baseSet_trivializationAt E (TangentSpace I) x
-  let Z : (y : M) → TangentSpace I y := fun y ↦ e.symm y (e ⟨x, w⟩).2
-  have hZx : Z x = w := e.symm_apply_apply_mk hxe w
+  -- Extend `w` to a vector field `Z`.
+  let Z : (y : M) → TangentSpace I y := FiberBundle.extend E w
+  have hZx : Z x = w := FiberBundle.extend_apply_self E w
   have hZ : MDifferentiableAt I I.tangent (fun y ↦ (Z y : TangentBundle I M)) x :=
-    ((Manifold.contMDiffOn_symm_baseSet (e := e) (e ⟨x, w⟩).2).contMDiffAt
-      (e.open_baseSet.mem_nhds hxe)).mdifferentiableAt one_ne_zero
+    FiberBundle.mdifferentiableAt_extend I E w
   have hVx := (hV x hx).mdifferentiableAt (hU.mem_nhds hx)
   have hWx := (hW x hx).mdifferentiableAt (hU.mem_nhds hx)
   -- Functions which vanish near `x` have zero derivative there.
@@ -226,9 +222,9 @@ theorem isInvolutiveDistribution_ker_bilinFormAt [IsManifold I 2 M] (σ : Smooth
     hzero fun y hy ↦ hker hVD hy _, hker' hWD hx, hker' hVD hx, hZx] at hd
   simpa [bilinFormAt_apply, SmoothBundleForm.eval₂_apply, sub_eq_zero, eq_comm] using hd
 
-/-- The **characteristic foliation** of a presymplectic form: a closed two-form `σ` whose kernels
-all have dimension `k` is the tangent distribution `x ↦ ker σ_x` of a `C^n` foliation of rank
-`k`. -/
+/-- The **characteristic foliation** of a presymplectic form: for a closed two-form `σ` whose
+kernels all have dimension `k`, the `C^n` foliation of rank `k` whose tangent distribution is
+`x ↦ ker σ_x` (requires `1 ≤ n`). -/
 def characteristicFoliation [FiniteDimensional ℝ E] {n : ℕ∞ω} [ENat.LEInfty n]
     [IsManifold I (n + 1) M] (σ : SmoothForm I M ℝ 2) (hσ : σ.IsClosed) {k : ℕ}
     (hk : ∀ x, finrank ℝ (LinearMap.ker (σ.bilinFormAt x)) = k) (hn : 1 ≤ n) :
