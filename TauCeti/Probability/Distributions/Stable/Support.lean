@@ -331,7 +331,8 @@ private theorem stablePDFReal_pos_iff_mem_interior_add_support (hα : α ∈ Ioc
   rw [← congrFun hconv x, ← hsupp]
   exact convolution_pos_iff_mem_interior_add_tsupport hf hf hf0 hf0
     (hsupp ▸ hconvex) (hsupp ▸ hconvex)
-    (convolutionExists_stablePDFReal hα hβ hr c c x)
+    (convolutionExists_stablePDFReal hα hβ hr
+      (integrable_stablePDFReal α β r c) c x)
 
 /-- A positive-scale stable density with full support is strictly positive everywhere. -/
 private theorem stablePDFReal_pos_of_support_eq_univ (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 1)

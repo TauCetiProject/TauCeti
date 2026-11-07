@@ -24,8 +24,8 @@ positivity of stable densities.
 ## Main results
 
 * `TauCeti.Probability.convolutionExists_stablePDFReal` and
-  `TauCeti.Probability.continuous_convolution_stablePDFReal`: the convolution of two stable
-  densities exists and is continuous.
+  `TauCeti.Probability.continuous_convolution_stablePDFReal`: the convolution of an integrable
+  function with a stable density exists and is continuous.
 * `TauCeti.Probability.stablePDFReal_convolution_stablePDFReal_of_eq` is the pointwise density
   counterpart of `stableMeasure_conv_stableMeasure_of_eq`.
 
@@ -44,27 +44,27 @@ namespace TauCeti.Probability
 
 variable {α β : ℝ} {s : ℝ≥0}
 
-/-- The convolution of two stable densities of a common shape exists, when the second law has
-skewness in `[-1, 1]` and positive scale. -/
-lemma convolutionExists_stablePDFReal (hα : α ∈ Ioc 0 2) {β₁ β₂ : ℝ} (hβ₂ : |β₂| ≤ 1)
-    {s₁ s₂ : ℝ≥0} (hs₂ : 0 < s₂) (m₁ m₂ : ℝ) :
-    ConvolutionExists (stablePDFReal α β₁ s₁ m₁) (stablePDFReal α β₂ s₂ m₂) (mul ℝ ℝ) volume :=
-  convolutionExists_of_integrable_of_ae_norm_le (mul ℝ ℝ) (integrable_stablePDFReal α β₁ s₁ m₁)
+/-- The convolution of an integrable function with a stable density exists, when the stable law
+has skewness in `[-1, 1]` and positive scale. -/
+lemma convolutionExists_stablePDFReal (hα : α ∈ Ioc 0 2) {β₂ : ℝ} (hβ₂ : |β₂| ≤ 1)
+    {s₂ : ℝ≥0} (hs₂ : 0 < s₂) {f : ℝ → ℝ} (hf : Integrable f) (m₂ : ℝ) :
+    ConvolutionExists f (stablePDFReal α β₂ s₂ m₂) (mul ℝ ℝ) volume :=
+  convolutionExists_of_integrable_of_ae_norm_le (mul ℝ ℝ) hf
     (continuous_stablePDFReal α β₂ s₂ m₂).aestronglyMeasurable
     (.of_forall fun x ↦ by
       rw [Real.norm_eq_abs, abs_of_nonneg (stablePDFReal_nonneg α β₂ s₂ m₂ x)]
       exact stablePDFReal_le hα hβ₂ hs₂ m₂ x)
 
-/-- The convolution of two stable densities of a common shape is continuous, when the second law
-has skewness in `[-1, 1]` and positive scale. -/
-lemma continuous_convolution_stablePDFReal (hα : α ∈ Ioc 0 2) {β₁ β₂ : ℝ} (hβ₂ : |β₂| ≤ 1)
-    {s₁ s₂ : ℝ≥0} (hs₂ : 0 < s₂) (m₁ m₂ : ℝ) :
-    Continuous (stablePDFReal α β₁ s₁ m₁ ⋆[mul ℝ ℝ] stablePDFReal α β₂ s₂ m₂) :=
+/-- The convolution of an integrable function with a stable density is continuous, when the
+stable law has skewness in `[-1, 1]` and positive scale. -/
+lemma continuous_convolution_stablePDFReal (hα : α ∈ Ioc 0 2) {β₂ : ℝ} (hβ₂ : |β₂| ≤ 1)
+    {s₂ : ℝ≥0} (hs₂ : 0 < s₂) {f : ℝ → ℝ} (hf : Integrable f) (m₂ : ℝ) :
+    Continuous (f ⋆[mul ℝ ℝ] stablePDFReal α β₂ s₂ m₂) :=
   BddAbove.continuous_convolution_right_of_integrable (mul ℝ ℝ)
     ⟨Real.Gamma α⁻¹ / (Real.pi * α * s₂), forall_mem_range.2 fun x ↦ by
       rw [Real.norm_eq_abs, abs_of_nonneg (stablePDFReal_nonneg α β₂ s₂ m₂ x)]
       exact stablePDFReal_le hα hβ₂ hs₂ m₂ x⟩
-    (integrable_stablePDFReal α β₁ s₁ m₁) (continuous_stablePDFReal α β₂ s₂ m₂)
+    hf (continuous_stablePDFReal α β₂ s₂ m₂)
 
 /-- The pointwise convolution factorization of two stable densities of a common shape.
 
@@ -91,8 +91,9 @@ theorem stablePDFReal_convolution_stablePDFReal_of_eq (hα : α ∈ Ioc 0 2) {β
     fun x ↦ stablePDFReal_nonneg α β₁ s₁ m₁ x
   have hg0 : 0 ≤ stablePDFReal α β₂ s₂ m₂ :=
     fun x ↦ stablePDFReal_nonneg α β₂ s₂ m₂ x
-  have hconv := convolutionExists_stablePDFReal (β₁ := β₁) (s₁ := s₁) hα hβ₂ hs₂ m₁ m₂
-  have hconvcont := continuous_convolution_stablePDFReal (β₁ := β₁) (s₁ := s₁) hα hβ₂ hs₂ m₁ m₂
+  have hconv := convolutionExists_stablePDFReal hα hβ₂ hs₂ (integrable_stablePDFReal α β₁ s₁ m₁) m₂
+  have hconvcont := continuous_convolution_stablePDFReal hα hβ₂ hs₂
+    (integrable_stablePDFReal α β₁ s₁ m₁) m₂
   have hmeasure :
       volume.withDensity (fun x ↦ ENNReal.ofReal (stablePDFReal α β₁ s₁ m₁ x)) ∗
           volume.withDensity (fun x ↦ ENNReal.ofReal (stablePDFReal α β₂ s₂ m₂ x)) =
