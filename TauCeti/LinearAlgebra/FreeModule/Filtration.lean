@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.Projective
 public import Mathlib.LinearAlgebra.DirectSum.Basis
+public import TauCeti.LinearAlgebra.DirectSum.Filtration
 
 /-!
 # Free modules with an exhaustive filtration by free subquotients
@@ -49,60 +50,19 @@ theorem of_filtration (N : ℕ → Submodule R M) (hN : Monotone N) (h0 : N 0 = 
   choose s hs using hsplit
   have hs' (j : ℕ) (q : Q j) : Submodule.Quotient.mk (s j q) = q :=
     LinearMap.congr_fun (hs j) q
-  let ψ : (⨁ j, Q j) →ₗ[R] M := DirectSum.toModule R ℕ M fun j ↦ (N (j + 1)).subtype ∘ₗ s j
-  have hψ (j : ℕ) (q : Q j) : ψ (DFinsupp.single j q) = s j q :=
-    DirectSum.toModule_lof R j q
-  have hψof (j : ℕ) (q : Q j) : ψ (DirectSum.of Q j q) = s j q :=
-    DirectSum.toModule_lof R j q
-  -- An element supported below `J` maps into `N J`, and only `0` maps to `0`.
-  have key (J : ℕ) : ∀ d : ⨁ j, Q j, (∀ j ∈ d.support, j < J) →
-      ψ d ∈ N J ∧ (ψ d = 0 → d = 0) := by
-    induction J with
-    | zero =>
-      intro d hd
-      have : d = 0 := DFinsupp.support_eq_empty.mp <|
-        Finset.eq_empty_of_forall_notMem fun j hj ↦ Nat.not_lt_zero _ (hd j hj)
-      subst this
-      simp
-    | succ J ih =>
-      intro d hd
-      have hd' : ∀ j ∈ (d.erase J).support, j < J := by
-        intro j hj
-        rw [DFinsupp.support_erase, Finset.mem_erase] at hj
-        exact lt_of_le_of_ne (Nat.lt_succ_iff.mp (hd j hj.2)) hj.1
-      obtain ⟨hmem, hzero⟩ := ih _ hd'
-      have hd_eq : d = d.erase J + DFinsupp.single J (d J) := (DFinsupp.erase_add_single J d).symm
-      have hψd : ψ d = ψ (d.erase J) + (s J (d J) : M) := by
-        rw [hd_eq, map_add, hψ, DFinsupp.erase_add_single]
-      refine ⟨hψd ▸ add_mem (hN J.le_succ hmem) (s J (d J)).2, fun h ↦ ?_⟩
-      have hJ : d J = 0 := by
-        have hmemJ : (s J (d J) : M) ∈ N J := by
-          have : (s J (d J) : M) = -ψ (d.erase J) :=
-            eq_neg_of_add_eq_zero_right (hψd.symm.trans h)
-          exact this ▸ neg_mem hmem
-        rw [← hs' J (d J), Submodule.Quotient.mk_eq_zero]
-        exact hmemJ
-      have herase : d.erase J = 0 := hzero (by simpa [hJ] using hψd.symm.trans h)
-      rw [hd_eq, herase, hJ, zero_add, DFinsupp.single_zero]
-  have hinj : Function.Injective ψ := by
-    apply LinearMap.ker_eq_bot.mp
-    rw [Submodule.eq_bot_iff]
-    intro d hd
-    refine (key (d.support.sup id + 1) d fun j hj ↦ ?_).2 (LinearMap.mem_ker.mp hd)
-    exact Nat.lt_succ_of_le (Finset.le_sup (f := id) hj)
-  have hsurj : Function.Surjective ψ := by
-    rw [← LinearMap.range_eq_top, eq_top_iff, ← htop, iSup_le_iff]
-    intro J
-    induction J with
-    | zero => simp [h0]
-    | succ J ih =>
-      intro x hx
-      let y : N (J + 1) := ⟨x, hx⟩
-      have hrest : y - s J (Submodule.Quotient.mk y) ∈ (N J).submoduleOf (N (J + 1)) := by
-        rw [← Submodule.Quotient.mk_eq_zero, Submodule.Quotient.mk_sub, hs', sub_self]
-      obtain ⟨d, hd⟩ := ih hrest
-      refine ⟨d + DirectSum.of Q J (Submodule.Quotient.mk y), ?_⟩
-      rw [map_add, hd, hψof, Submodule.subtype_apply, Submodule.coe_sub, sub_add_cancel]
-  exact Module.Free.of_equiv (LinearEquiv.ofBijective ψ ⟨hinj, hsurj⟩)
+  let f (j : ℕ) : Q j →ₗ[R] M := (N (j + 1)).subtype ∘ₗ s j
+  have hψinj : Function.Injective (DirectSum.toModule R ℕ M f) :=
+    DirectSum.toModule_injective_of_filtration N hN f (fun j q ↦ (s j q).2) fun j q hq ↦ by
+      rw [← hs' j q, Submodule.Quotient.mk_eq_zero]
+      exact hq
+  have hψsurj : Function.Surjective (DirectSum.toModule R ℕ M f) :=
+    DirectSum.toModule_surjective_of_filtration N h0 htop f fun J x hx ↦ by
+      refine ⟨Submodule.Quotient.mk ⟨x, hx⟩, ?_⟩
+      -- Membership in `submoduleOf` unfolds definitionally to membership of the coerced element
+      -- in `N J`, and `f J q` is the coercion of `s J q`; `change` states the goal on `N (J + 1)`.
+      change (⟨x, hx⟩ - s J (Submodule.Quotient.mk ⟨x, hx⟩) : N (J + 1)) ∈
+        (N J).submoduleOf (N (J + 1))
+      rw [← Submodule.Quotient.mk_eq_zero, Submodule.Quotient.mk_sub, hs', sub_self]
+  exact Module.Free.of_equiv (LinearEquiv.ofBijective _ ⟨hψinj, hψsurj⟩)
 
 end Module.Free
