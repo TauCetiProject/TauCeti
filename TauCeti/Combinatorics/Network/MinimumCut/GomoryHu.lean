@@ -301,7 +301,7 @@ variable [DecidableEq V] [AddCommMonoid K] [LinearOrder K] [IsOrderedCancelAddMo
 to `r` that crosses no cut of an edge between representatives. -/
 private theorem IsPartialCutTree.exists_isMinimum_not_crosses (hf : IsSymmSubmodular f)
     {R : Finset V} {T : SimpleGraph V} (hP : IsPartialCutTree f R T) {r x : V} (hxR : x ∉ R)
-    (hxr : T.Adj x r) (hrx : r ≠ x) :
+    (hxr : T.Adj x r) :
     ∃ X, IsMinimum f {r} {x} X ∧
       ∀ ⦃u v : V⦄, u ∈ R → v ∈ R → T.Adj u v → ¬X.Crosses (T.edgeSide u v) := by
   obtain ⟨X, hX, hXcross⟩ := exists_isMinimum_forall_not_crosses hf
@@ -309,7 +309,7 @@ private theorem IsPartialCutTree.exists_isMinimum_not_crosses (hf : IsSymmSubmod
     (by
       rintro _ ⟨a, b, -, -, hab, rfl⟩ _ ⟨c, d, -, -, hcd, rfl⟩ -
       exact hP.isTree.not_crosses_edgeSide hab hcd)
-    (fun _ ⟨a, b, ha, hb, hab, h⟩ ↦ ⟨a, b, h ▸ hP.isMinimum ha hb hab⟩) hrx
+    (fun _ ⟨a, b, ha, hb, hab, h⟩ ↦ ⟨a, b, h ▸ hP.isMinimum ha hb hab⟩) hxr.ne.symm
     (by
       rintro _ ⟨u, v, hu, hv, -, rfl⟩
       refine hxr.symm.mem_edgeSide_iff <|
@@ -339,7 +339,7 @@ omit [AddCommMonoid K] [LinearOrder K] [IsOrderedCancelAddMonoid K] in
 /-- After rewiring, a leaf `v` outside `insert x R` is still attached to a single representative. -/
 private theorem IsPartialCutTree.exists_mem_insert_rewire_adj_iff [Preorder K] {f : Finset V → K}
     {R : Finset V} {T : SimpleGraph V} (hP : IsPartialCutTree f R T) {r x v : V} {X : Finset V}
-    (hrR : r ∈ R) (hx : ∀ y, T.Adj x y ↔ y = r) (hv : v ∉ insert x R) :
+    (hrR : r ∈ R) (hv : v ∉ insert x R) :
     ∃ c ∈ insert x R, ∀ y, (rewire T X r x).Adj v y ↔ y = c := by
   obtain ⟨hvx, hvR⟩ := not_or.mp (mt mem_insert.mpr hv)
   obtain ⟨c, hcR, hc⟩ := hP.exists_adj_iff v hvR
@@ -360,7 +360,7 @@ private theorem IsPartialCutTree.exists_insert (hf : IsSymmSubmodular f)
   have hxr : T.Adj x r := (hx r).mpr rfl
   have hrx : r ≠ x := hxr.ne.symm
   -- Choose a minimum `r`–`x` cut `X` crossing none of the cuts of edges between representatives.
-  obtain ⟨X, hX, hXcross⟩ := hP.exists_isMinimum_not_crosses hf hxR hxr hrx
+  obtain ⟨X, hX, hXcross⟩ := hP.exists_isMinimum_not_crosses hf hxR hxr
   obtain ⟨hrX, hxX⟩ := isAdmissible_singleton.mp hX.admissible
   have hrX' : r ∉ Xᶜ := by simpa using hrX
   have hxX' : x ∈ Xᶜ := mem_compl.mpr hxX
@@ -382,7 +382,7 @@ private theorem IsPartialCutTree.exists_insert (hf : IsSymmSubmodular f)
     ((isAcyclic_iff_forall_adj_isBridge.mp hT'.isAcyclic h).compl_edgeSide
       hT'.connected.preconnected).symm
   refine ⟨T', hT', fun v hv ↦ ?_, fun u v hu hv huv ↦ ?_⟩
-  · exact hP.exists_mem_insert_rewire_adj_iff hrR hx hv
+  · exact hP.exists_mem_insert_rewire_adj_iff hrR hv
   · -- Every edge between representatives leaves a minimum cut.
     have hcompl_min {a b : V} (h : T'.Adj a b) (hm : IsMinimum f {a} {b} (T'.edgeSide a b)) :
         IsMinimum f {b} {a} (T'.edgeSide b a) := by
