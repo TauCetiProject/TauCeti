@@ -11,7 +11,8 @@ public import Mathlib.Analysis.Complex.Angle
 # The angle between `I` and `I * w`
 
 The unoriented angle between `I` and `I * w` is `arccos (Re w / |w|)` (`Complex.angle_I_I_mul`);
-for `w` in the open upper half-plane this is the argument of `w`.
+for `w` in the open upper half-plane this is the argument of `w`. The file also records a rotation
+identity for `exp (θ I)`.
 
 ## Main results
 
@@ -28,5 +29,11 @@ theorem angle_I_I_mul (w : ℂ) :
     InnerProductGeometry.angle I (I * w) = Real.arccos (w.re / ‖w‖) := by
   rw [InnerProductGeometry.angle, Complex.inner, norm_mul, norm_I, one_mul, one_mul]
   simp [conj_I]
+
+/-- Rotating a real multiple of `exp (θ I)` by `exp (-θ I)` gives a real number. -/
+theorem im_exp_neg_mul_mul_ofReal_mul_exp (θ r : ℝ) :
+    (Complex.exp (-θ * Complex.I) * ((r : ℂ) * Complex.exp (θ * Complex.I))).im = 0 := by
+  rw [mul_left_comm, ← Complex.exp_add, neg_mul, neg_add_cancel, Complex.exp_zero, mul_one,
+    Complex.ofReal_im]
 
 end Complex
