@@ -34,6 +34,8 @@ quadratic forms with the subgroup preserving both summands.
 * `LinearEquiv.det_prodCongr`: `det (e₁.prodCongr e₂) = det e₁ * det e₂` for finite free
   modules; this is `LinearMap.det_prodMap` for linear equivalences.
 * `Module.Basis.det_prod`: changes between product bases have the product determinant.
+* `Module.Basis.map_prodAssoc_prod`: reassociating a triple product carries the ordered product
+  basis `(b × c) × d` to `b × (c × d)`, up to relabelling the index.
 * `LinearEquiv.det_skewProd`: the same determinant formula for block triangular
   automorphisms, independently of the off-diagonal block.
 * `LinearMap.coprod_comp_prodComm`: precomposing `f.coprod g` with the exchange of factors gives
@@ -194,6 +196,33 @@ theorem det_prod (b b' : Basis ι R E) (c c' : Basis κ R F) :
     cases i <;> cases j <;>
       simp [Basis.toMatrix_apply]
   rw [he, Matrix.det_fromBlocks_zero₂₁]
+
+/-- Reassociating `(E × F) × G` as `E × (F × G)` carries the ordered product basis `(b × c) × d`,
+indexed by `Fin (m + n + p)`, to the ordered product basis `b × (c × d)`, reindexed along
+`m + n + p = m + (n + p)`. -/
+theorem map_prodAssoc_prod {R E F G : Type*} [Semiring R] [AddCommMonoid E] [Module R E]
+    [AddCommMonoid F] [Module R F] [AddCommMonoid G] [Module R G] {m n p : ℕ}
+    (b : Basis (Fin m) R E) (c : Basis (Fin n) R F) (d : Basis (Fin p) R G) :
+    ((((b.prod c).reindex finSumFinEquiv).prod d).reindex finSumFinEquiv).map
+        (LinearEquiv.prodAssoc R E F G) =
+      ((b.prod ((c.prod d).reindex finSumFinEquiv)).reindex finSumFinEquiv).reindex
+        (finCongr (add_assoc m n p).symm) := by
+  refine Basis.eq_of_apply_eq fun i ↦ ?_
+  induction i using Fin.addCases with
+  | left j =>
+    induction j using Fin.addCases with
+    | left k =>
+      have h : Fin.cast (add_assoc m n p) (Fin.castAdd p (Fin.castAdd n k)) =
+          Fin.castAdd (n + p) k := Fin.ext rfl
+      simp [Basis.prod_apply, h]
+    | right k =>
+      have h : Fin.cast (add_assoc m n p) (Fin.castAdd p (Fin.natAdd m k)) =
+          Fin.natAdd m (Fin.castAdd p k) := Fin.ext rfl
+      simp [Basis.prod_apply, h]
+  | right k =>
+    have h : Fin.cast (add_assoc m n p) (Fin.natAdd (m + n) k) =
+        Fin.natAdd m (Fin.natAdd n k) := Fin.ext (Nat.add_assoc m n k)
+    simp [Basis.prod_apply, h]
 
 end Module.Basis
 

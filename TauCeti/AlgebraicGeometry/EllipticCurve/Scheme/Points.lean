@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.VariableCha
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Unimodular
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Chart
 import TauCeti.AlgebraicGeometry.RationalPoint.Basic
+import TauCeti.AlgebraicGeometry.ResidueField
 -- Proof-only: the body of the zero section `projModelZero` is not exposed.
 import all TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.ProjModel
 
@@ -525,11 +526,8 @@ theorem projModelAffinePoint_apply_eq_iff {x' y' : R} (h' : W.toAffine.Equation 
   have := s.isPrime
   let g := algebraMap R s.asIdeal.ResidueField
   -- the closed point `t` of `Spec κ(s)` lies over `s`
-  let t : Spec (.of s.asIdeal.ResidueField) := ⟨⊥, Ideal.isPrime_bot⟩
-  have ht : Spec.map (CommRingCat.ofHom g) t = s := by
-    refine PrimeSpectrum.ext ?_
-    rw [Spec.map_apply, PrimeSpectrum.comap_asIdeal, CommRingCat.hom_ofHom,
-      ← RingHom.ker_eq_comap_bot, Ideal.ker_algebraMap_residueField]
+  let t : Spec (.of s.asIdeal.ResidueField) := IsLocalRing.closedPoint _
+  have ht : Spec.map (CommRingCat.ofHom g) t = s := Spec.map_algebraMap_residueField_closedPoint s
   -- two sections agree over `s` exactly when they agree as points with values in `κ(s)`
   conv_lhs => rw [← ht]
   rw [← TauCeti.AlgebraicGeometry.comp_eq_comp_iff_of_section

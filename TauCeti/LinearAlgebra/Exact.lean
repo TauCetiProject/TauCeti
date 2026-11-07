@@ -41,6 +41,9 @@ by a homology theory,
 `Fin (n + 2)` with a single family of spaces; the long exact sequences of homology theories are
 instead indexed by `ℕ` with three families of spaces, which is the form taken here.
 
+For four consecutive maps, `LinearMap.finrank_sub_finrank_sub_finrank_of_exact` gives the
+alternating dimension difference with endpoint kernel corrections.
+
 For an exact augmented sequence with one family of spaces,
 `TauCeti.sum_range_neg_one_pow_finrank_eq_add_of_exact` records the finite alternating sum
 with its final image correction. It applies even when the full resolution is unbounded.
@@ -120,6 +123,43 @@ theorem _root_.LinearMap.finrank_ker_coprod_neg_add {k X Y T : Type*} [DivisionR
   have h' := (LinearMap.exact_subtype_ker_map _).finrank_eq_add (Submodule.injective_subtype _) h
   rw [Module.finrank_prod] at h'
   exact h'.symm
+
+section FiniteDimensionalExact
+
+variable {k : Type*} [DivisionRing k]
+
+/-- In an exact pair, the dimension of the middle space is the sum of the two image ranks.
+Only the middle space needs to be finite-dimensional. -/
+theorem _root_.LinearMap.finrank_eq_finrank_range_add_finrank_range_of_exact
+    {U V W : Type*} [AddCommGroup U] [Module k U] [AddCommGroup V] [Module k V]
+    [AddCommGroup W] [Module k W] [FiniteDimensional k V]
+    (f : U →ₗ[k] V) (g : V →ₗ[k] W) (h : Function.Exact f g) :
+    Module.finrank k V = Module.finrank k f.range + Module.finrank k g.range := by
+  have hr := g.finrank_range_add_finrank_ker
+  rw [h.linearMap_ker_eq] at hr
+  omega
+
+/-- For four consecutive maps in an exact chain, the alternating dimension difference of
+its first three spaces is minus the sum of the two endpoint kernel dimensions.
+Only the first three spaces need to be finite-dimensional. -/
+theorem _root_.LinearMap.finrank_sub_finrank_sub_finrank_of_exact
+    {A B C D E : Type*} [AddCommGroup A] [Module k A] [AddCommGroup B] [Module k B]
+    [AddCommGroup C] [Module k C] [AddCommGroup D] [Module k D]
+    [AddCommGroup E] [Module k E]
+    [FiniteDimensional k A] [FiniteDimensional k B] [FiniteDimensional k C]
+    (f : A →ₗ[k] B) (g : B →ₗ[k] C) (δ : C →ₗ[k] D) (f' : D →ₗ[k] E)
+    (hfg : Function.Exact f g) (hgδ : Function.Exact g δ)
+    (hδf : Function.Exact δ f') :
+    (Module.finrank k B : ℤ) - Module.finrank k A - Module.finrank k C =
+      -(Module.finrank k f.ker : ℤ) - Module.finrank k f'.ker := by
+  have hB := f.finrank_eq_finrank_range_add_finrank_range_of_exact g hfg
+  have hC := g.finrank_eq_finrank_range_add_finrank_range_of_exact δ hgδ
+  have hA := f.finrank_range_add_finrank_ker
+  have hker : Module.finrank k f'.ker = Module.finrank k δ.range :=
+    congrArg (fun S : Submodule k D ↦ Module.finrank k S) hδf.linearMap_ker_eq
+  omega
+
+end FiniteDimensionalExact
 
 /-- If `M --f--> N --g--> P` is exact at `N` and both `M` and `P` are trivial, then so is `N`. -/
 theorem subsingleton_of_exact {M N P : Type*} [Zero P] {f : M → N} {g : N → P}
