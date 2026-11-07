@@ -105,11 +105,7 @@ theorem pentagonRectangleWeight_recutLeftEqLeft
       GridPentagonRectangleDecomposition.toRectangleDecomposition_first_left,
       GridPentagonRectangleDecomposition.toRectangleDecomposition_second_left,
       D.pentagon.right_eq] at hcol hPleft hrleft
-    have ha : C.column ∉ Grid.cIco D.rectangle.left D.rectangle.right := fun ha =>
-      Finset.disjoint_left.mp (Grid.disjoint_cIco_cIco_of_mem_cIoo hcol) ha
-        (Grid.self_mem_cIco_finRotate (Grid.ne_right_of_mem_cIoo hcol))
-    have hb : finRotate n C.column ∉ Grid.cIco D.rectangle.left D.rectangle.right := fun hb =>
-      Grid.right_notMem_cIco _ _ (Grid.mem_cIco_of_mem_cIco_of_mem_cIoo hb hcol)
+    obtain ⟨ha, hb⟩ := Grid.notMem_cIco_of_mem_cIoo_finRotate hcol
     rw [hrleft, GridRectangleBetween.bottom_def, hPleft, hPbottom]
     simp only [ha, hb, false_and, ↓reduceIte]
   -- The remaining rectangle starts at the commuted grid line and keeps the original rectangle's
@@ -164,20 +160,14 @@ theorem pentagonRectangleWeight_recutRightEqRightFirst
   refine D.coveredSquares_val_add_val_eq_of_isRepartition E
     (D.isRecut_recutRightEqRightFirst hcommon hone hrectangle hpentagon hfirst).isRepartition
     fun t => ?_
-  obtain ⟨-, -, -, -, hcols, ha, -⟩ :=
+  obtain ⟨-, -, -, -, -, ha, -, hb⟩ :=
     D.recutRightEqRightFirst_rectangle_geometry hcommon hone hrectangle hpentagon hfirst
-  rw [← hE] at hcols ha
+  rw [← hE] at ha hb
   obtain ⟨hcol, -, hleft⟩ :=
     D.first_recut_branch_data_of_right_eq_right hcommon hone hrectangle hpentagon hfirst
   simp only [GridRectanglePentagonDecomposition.toRectangleDecomposition_first_left,
     GridRectanglePentagonDecomposition.toRectangleDecomposition_first_right,
     GridRectanglePentagonDecomposition.toRectangleDecomposition_second_left] at hcol hleft
-  -- The remaining rectangle lies inside the original rectangle, which stops before the
-  -- replaced grid line, and misses the column before that line.
-  have hb : finRotate n C.column ∉ E.rectangle.toGridRectangle.coveredColumns :=
-    fun hb => Grid.right_notMem_cIco D.rectangle.left (finRotate n C.column) (by
-      simpa only [GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_left,
-        GridRectangleBetween.toGridRectangle_right, hcommon, D.pentagon.right_eq] using hcols hb)
   -- The promoted pentagon starts where the original pentagon does.
   have hbottom : E.pentagon.bottom = D.pentagon.bottom := by
     rw [hE, D.recutRightEqRightFirst_pentagon_bottom, GridRectangleBetween.bottom_def, hleft,

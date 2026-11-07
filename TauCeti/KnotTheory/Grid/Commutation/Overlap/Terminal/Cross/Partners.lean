@@ -180,13 +180,9 @@ private theorem crossRecut_mem_rectanglePentagonDecompositions
   -- The first promotion of the inverse domain is `E`; check its corrected square multiset.
   obtain ⟨hfirst, hpromote⟩ :=
     D.exists_recutRightEqRightFirst_eq_of_isRecut E hDcommon hDone hr hp hback
-  obtain ⟨-, -, -, -, hcols, ha, -⟩ :=
+  obtain ⟨-, -, -, -, -, ha, -, hb⟩ :=
     D.recutRightEqRightFirst_rectangle_geometry hDcommon hDone hr hp hfirst
-  rw [hpromote] at hcols ha
-  have hb : finRotate n C.column ∉ E.rectangle.toGridRectangle.coveredColumns := fun hb =>
-    Grid.right_notMem_cIco D.rectangle.left (finRotate n C.column) (by
-      simpa only [GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_left,
-        GridRectangleBetween.toGridRectangle_right, hDcommon, D.pentagon.right_eq] using hcols hb)
+  rw [hpromote] at ha hb
   have hbottom : D.pentagon.bottom = E.pentagon.bottom := by
     have h := (E.crossRecut_geometry hcommon hone hf hs hrow).2.2.2.2.1
     rw [← hDrect] at h
