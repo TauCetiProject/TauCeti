@@ -16,7 +16,7 @@ import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem
 import TauCeti.Geometry.Manifold.Riemannian.Poincare
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
 import TauCeti.MeasureTheory.Integral.ContinuousMap
-import TauCeti.MeasureTheory.Integral.ExpAddMul
+import TauCeti.MeasureTheory.Integral.Exp.AddMul
 
 /-!
 # The Liouville energy of the curvature equation
@@ -35,8 +35,13 @@ equation through `J`. The function `K` is arbitrary here; nothing below uses the
 The first variation of `J` at `u` in the direction `v` is
 `∫ (⟪∇v, ∇u⟫ + K v + e^(2u) v) dV`, which Green's identity turns into `∫ v (Δ⁺u + K + e^(2u)) dV`
 on a closed manifold. Hence a `C²` function is a critical point of `J` exactly when it solves the
-equation. The integrand of `J` is convex in `(u, ∇u)`, so `J` lies above its tangent lines at a `C²`
-function, and a solution is a global minimizer of `J`; conversely a `C²` minimizer is a solution.
+equation. The first-variation and Euler–Lagrange arguments adapt the proof pattern of the
+Euler–Lagrange equation of the Yamabe quotient,
+`TauCeti.Yamabe.forall_hasDerivAt_yamabeQuotient_add_smul_iff_exists_conformalLaplacian_eq`:
+differentiate under the integral sign, apply Green's identity, and conclude by the fundamental
+lemma of the calculus of variations. The integrand of `J` is convex in `(u, ∇u)`, so `J` lies
+above its tangent lines at a `C²` function, and a solution is a global minimizer of `J`; conversely
+a `C²` minimizer is a solution.
 
 For existence by minimization, the decisive property is coercivity. Suppose `M` is connected and
 `∫ K dV < 0`; when `K` is the Gaussian curvature of a closed surface, Gauss–Bonnet identifies
