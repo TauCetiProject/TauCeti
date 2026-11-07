@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.Embedding.Boundary
 public import Mathlib.Algebra.Homology.Embedding.RestrictionHomology
 
 /-!
@@ -40,39 +41,29 @@ variable {ι ι' : Type*} {c : ComplexShape ι} {c' : ComplexShape ι'} (e : c.E
 /-- An embedding of complex shapes which is surjective and reflects the relations carries previous
 indices to previous indices. -/
 lemma prev_f_of_surjective (he : Function.Surjective e.f) (j : ι) :
-    c'.prev (e.f j) = e.f (c.prev j) := by
-  by_cases h : ∃ i, c.Rel i j
-  · obtain ⟨i, hi⟩ := h
-    rw [c.prev_eq' hi, c'.prev_eq' (e.rel hi)]
-  · simp only [not_exists] at h
-    rw [c.prev_eq_self' j h, c'.prev_eq_self' (e.f j) fun k hk ↦ ?_]
-    obtain ⟨i, rfl⟩ := he k
-    exact h i ((e.rel_iff i j).1 hk)
+    c'.prev (e.f j) = e.f (c.prev j) :=
+  have : e.IsTruncLE := { mem_prev := fun {i' _} _ ↦ he i' }
+  e.prev_f rfl
 
 /-- An embedding of complex shapes which is surjective and reflects the relations carries next
 indices to next indices. -/
 lemma next_f_of_surjective (he : Function.Surjective e.f) (j : ι) :
-    c'.next (e.f j) = e.f (c.next j) := by
-  by_cases h : ∃ k, c.Rel j k
-  · obtain ⟨k, hk⟩ := h
-    rw [c.next_eq' hk, c'.next_eq' (e.rel hk)]
-  · simp only [not_exists] at h
-    rw [c.next_eq_self' j h, c'.next_eq_self' (e.f j) fun k hk ↦ ?_]
-    obtain ⟨i, rfl⟩ := he k
-    exact h i ((e.rel_iff j i).1 hk)
+    c'.next (e.f j) = e.f (c.next j) :=
+  have : e.IsTruncGE := { mem_next := fun {_ k'} _ ↦ he k' }
+  e.next_f rfl
 
 end ComplexShape.Embedding
 
 namespace HomologicalComplex
 
-variable {C : Type*} [Category* C] [Abelian C] {ι ι' : Type*} {c : ComplexShape ι}
+variable {C : Type*} [Category* C] [HasZeroMorphisms C] {ι ι' : Type*} {c : ComplexShape ι}
   {c' : ComplexShape ι'} (e : c.Embedding c') [e.IsRelIff] (he : Function.Surjective e.f)
 
 /-- The homology of the restriction of a complex along a surjective embedding of complex shapes
 which reflects the relations is the homology of the complex at the corresponding index `j'`, the
 image of `j`. -/
 noncomputable def restrictionHomologyIsoOfSurjective (K : HomologicalComplex C c') (j : ι)
-    (j' : ι') (hj : e.f j = j') :
+    (j' : ι') (hj : e.f j = j') [K.HasHomology j'] [(K.restriction e).HasHomology j] :
     (K.restriction e).homology j ≅ K.homology j' :=
   K.restrictionHomologyIso e _ j _ rfl rfl rfl hj rfl
     (by rw [← hj, e.prev_f_of_surjective he j]) (by rw [← hj, e.next_f_of_surjective he j])
@@ -80,7 +71,9 @@ noncomputable def restrictionHomologyIsoOfSurjective (K : HomologicalComplex C c
 /-- The comparison `restrictionHomologyIsoOfSurjective` is natural in the complex. -/
 @[reassoc (attr := simp)]
 lemma homologyMap_restrictionMap_restrictionHomologyIsoOfSurjective_hom
-    {K L : HomologicalComplex C c'} (φ : K ⟶ L) (j : ι) (j' : ι') (hj : e.f j = j') :
+    {K L : HomologicalComplex C c'} (φ : K ⟶ L) (j : ι) (j' : ι') (hj : e.f j = j')
+    [K.HasHomology j'] [L.HasHomology j'] [(K.restriction e).HasHomology j]
+    [(L.restriction e).HasHomology j] :
     homologyMap (restrictionMap φ e) j ≫ (L.restrictionHomologyIsoOfSurjective e he j j' hj).hom =
       (K.restrictionHomologyIsoOfSurjective e he j j' hj).hom ≫ homologyMap φ j' := by
   subst hj

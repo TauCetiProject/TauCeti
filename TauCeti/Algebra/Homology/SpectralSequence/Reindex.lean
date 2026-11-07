@@ -37,7 +37,7 @@ followed by that of `E`.
 * `CategoryTheory.SpectralSequence.reindexFunctor`: reindexing as a functor.
 -/
 
-@[expose] public section
+public section
 
 open CategoryTheory
 
@@ -50,6 +50,7 @@ variable {C : Type*} [Category* C] [Abelian C] {κ κ' : Type*} {c : ℤ → Com
 /-- The **reindexed spectral sequence**: page `r` is page `r + d` of `E`, with its object at
 `i : κ'` the object of `E` at `f i`. Here `f : κ' ≃ κ` identifies the complex shape `c' r` of the
 `r`th page with the complex shape `c (r + d)` of the `(r + d)`th page of `E`. -/
+@[expose]
 noncomputable def reindex (E : SpectralSequence C c r₀) : SpectralSequence C c' r₀' where
   page r hr := (E.page (r + d)).restriction (ComplexShape.Embedding.mk' _ _ f f.injective (hf r))
   iso r r' j hrr' hr :=
@@ -102,6 +103,7 @@ lemma homologyMap_restrictionMap_comp_iso_hom (φ : E ⟶ E') (r r' : ℤ) (j : 
     φ.comm (r + d) (r' + d) (f j) (by lia) (by lia)]
 
 /-- The morphism of reindexed spectral sequences induced by a morphism of spectral sequences. -/
+@[expose]
 noncomputable def reindexMap (φ : E ⟶ E') : E.reindex d f hf hd ⟶ E'.reindex d f hf hd where
   hom r hr := HomologicalComplex.restrictionMap (φ.hom (r + d))
     (ComplexShape.Embedding.mk' _ _ f f.injective (hf r))
@@ -115,7 +117,7 @@ lemma reindexMap_hom_f (φ : E ⟶ E') (r : ℤ) (hr : r₀' ≤ r) (j : κ') :
 variable (C c' r₀')
 
 /-- Reindexing spectral sequences, as a functor. -/
-@[simps]
+@[expose, simps]
 noncomputable def reindexFunctor : SpectralSequence C c r₀ ⥤ SpectralSequence C c' r₀' where
   obj E := E.reindex d f hf hd
   map φ := reindexMap d f hf hd φ

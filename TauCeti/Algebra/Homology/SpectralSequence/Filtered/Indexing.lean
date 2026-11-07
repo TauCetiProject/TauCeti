@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.SpectralSequence.Reindex
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Exhaustive
+public import TauCeti.CategoryTheory.Subobject.Cokernel
 
 /-!
 # Classical indexing of the spectral sequence of a filtered complex
@@ -63,14 +64,6 @@ open CategoryTheory Limits
 namespace CochainComplex
 
 variable {C : Type*} [Category* C] [Abelian C] {K : CochainComplex C ℤ}
-
-/-- The cokernel of an inclusion `A ≤ B` of subobjects is unchanged, up to the canonical
-isomorphism, when `A` and `B` are replaced by equal subobjects. This rewrites the indices of the
-graded pieces of a filtration after reindexing. -/
-private noncomputable def cokernelOfLEIsoOfEq {A B A' B' : Subobject K} (hA : A = A')
-    (hB : B = B') (h : A ≤ B) (h' : A' ≤ B') :
-    cokernel (Subobject.ofLE A B h) ≅ cokernel (Subobject.ofLE A' B' h') :=
-  eqToIso (by subst hA hB; rfl)
 
 /-! ### Decreasing filtrations -/
 
@@ -138,7 +131,7 @@ noncomputable def decreasingFiltrationSpectralSequenceFirstPageXIso (p q : ℤ) 
       (p + q) (by dsimp; lia) ≪≫
     (HomologicalComplex.homologyFunctor C _ (p + q)).mapIso
       (cokernelFiltrationFunctorMapIso _ _ _ ≪≫
-        cokernelOfLEIsoOfEq (by simp [add_comm]) (by simp) _ _)
+        Subobject.cokernelOfLEIsoOfEq (by simp [add_comm]) (by simp) _ _)
 
 /-- **Strong convergence of the spectral sequence of a finite decreasing filtration.** If
 `F^a = ⊥` and `F^b = ⊤`, then on every page `r ≥ 1` with `a ≤ p + r` and `p - r + 1 ≤ b`, the object
@@ -227,7 +220,7 @@ noncomputable def homologicalFiltrationSpectralSequenceFirstPageXIso (p q : ℤ)
       (-(p + q)) (by dsimp; lia) ≪≫
     (HomologicalComplex.homologyFunctor C _ (-(p + q))).mapIso
       (cokernelFiltrationFunctorMapIso _ _ _ ≪≫
-        cokernelOfLEIsoOfEq (filtrationEInt_coe F (p - 1)) (filtrationEInt_coe F p) _ _)
+        Subobject.cokernelOfLEIsoOfEq (filtrationEInt_coe F (p - 1)) (filtrationEInt_coe F p) _ _)
 
 /-- **Strong convergence of the homological spectral sequence of a finite filtration.** If
 `F_a = ⊥` and `F_b = ⊤`, then on every page `r ≥ 1` with `p - r ≤ a` and `b ≤ p + r - 1`, the object
@@ -291,7 +284,7 @@ noncomputable def decreasingFiltrationSpectralSequencePageXIsoGradedOfExhaustive
         rw [show 2 * p + q + 1 + (-p - 1) - 1 = p + q - 1 by lia]
         exact (h₃ (-i - 1) (by lia)).of_iso
           ((HomologicalComplex.homologyFunctor _ _ (p + q - 1)).mapIso
-            (cokernelOfLEIsoOfEq (by rw [Function.comp_apply]; congr 1; lia)
+            (Subobject.cokernelOfLEIsoOfEq (by rw [Function.comp_apply]; congr 1; lia)
               (by rw [Function.comp_apply]; congr 1; lia) _ _))) ≪≫
     eqToIso (by dsimp only; rw [show 2 * p + q + 1 + (-p - 1) = p + q by lia])
 
