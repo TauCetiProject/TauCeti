@@ -25,9 +25,9 @@ Thus this topology retains the gluing equations when taking coefficient limits.
 Point evaluation is continuous, and the section space is Hausdorff.
 
 The topology is supplied explicitly, rather than installed globally, since the frame domains
-are parameters. The results here concern a specified family of frame domains; no comparison
-between different covers or completeness assertion is made. Neither compactness nor finite
-dimensionality is needed, and the chart derivatives allow manifolds with corners.
+are parameters. The results here concern a specified family of frame domains. Cover comparison
+and continuity of open restriction are proved in `Section.FrameCover`; completeness is separate.
+Neither compactness nor finite dimensionality is needed, and chart derivatives allow corners.
 
 ## References
 
@@ -86,6 +86,12 @@ specified frame domains. For smooth sections, all finite derivative orders are i
 @[instance_reducible]
 def frameTopology : TopologicalSpace Cₛ^n⟮I; F, V⟯ :=
   .induced (frameJet (I := I) e U hU) inferInstance
+
+/-- The frame topology is the topology induced by the existing native frame jet. -/
+theorem frameTopology_eq_induced_frameJet :
+    frameTopology (I := I) (n := n) e U hU =
+      TopologicalSpace.induced (frameJet (I := I) (n := n) e U hU) inferInstance := by
+  rfl
 
 /-- A section family is continuous exactly when all its frame-coordinate chart jets are
 continuous in the compact-open topology. -/

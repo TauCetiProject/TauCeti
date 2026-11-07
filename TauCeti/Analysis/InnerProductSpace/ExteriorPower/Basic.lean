@@ -41,6 +41,7 @@ operator that represents the two-form `ω(u, w) = ⟪F, u ∧ w⟫` through the 
 * `exteriorPower.inner_lieMap_left`: the derivation action `D_A` of a skew-adjoint `A` on
   `⋀ⁿ E` is skew-adjoint, `⟪D_A x, y⟫ = -⟪x, D_A y⟫`.
 * `OrthonormalBasis.sum_norm_sq_ιMulti_two`: contraction of squared wedge norms in a basis.
+* `OrthonormalBasis.inner_toBasis_exteriorPower`: the induced basis of `⋀ⁿ E` is orthonormal.
 * `OrthonormalBasis.ιMulti_two_eq_sum`, `OrthonormalBasis.inner_ιMulti_two_eq_sum`,
   `OrthonormalBasis.norm_sq_eq_sum_sq_inner_ιMulti_two`: the coordinates of two-vectors in the
   basis `bᵢ ∧ bⱼ` induced by an orthonormal basis `b` of a four-dimensional space.
@@ -195,6 +196,13 @@ theorem sum_norm_sq_ιMulti_two (b : OrthonormalBasis ι ℝ E) (u : E) :
   simp only [hw, Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ,
     nsmul_eq_mul, b.sum_sq_inner_right]
   ring
+
+/-- The basis of `⋀ⁿ E` induced by an orthonormal basis `b` of `E` is orthonormal. -/
+theorem inner_toBasis_exteriorPower [LinearOrder ι] (b : OrthonormalBasis ι ℝ E) (n : ℕ)
+    (u v : Set.powersetCard ι n) :
+    ⟪b.toBasis.exteriorPower n u, b.toBasis.exteriorPower n v⟫ = if u = v then 1 else 0 := by
+  rw [← OrthonormalBasis.toBasis_exteriorPower, OrthonormalBasis.coe_toBasis,
+    OrthonormalBasis.inner_eq_ite]
 
 /-! ### Two-vectors in an orthonormal frame of a four-dimensional space -/
 

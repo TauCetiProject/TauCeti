@@ -39,6 +39,9 @@ power.
 A natural power `b ^ n` with `1 ≤ b` and `n ≤ δ r` is at most `(b ^ δ) ^ r`, which turns a degree
 bound with a real factor `δ` into a bound by an `r`-th power.
 
+A power `x ^ y` of a nonnegative real with exponent `0 ≤ y ≤ 1` is at most `1 + x`, which bounds
+the fractional powers `T ^ (α / 2)` and `√T` of a time horizon uniformly by `1 + T`.
+
 A positive power `x ↦ x ^ a` maps the open unit interval onto itself, with inverse `y ↦ y ^ a⁻¹`.
 This is the image needed when a change of variables `y = x ^ a` is performed on `(0, 1)`.
 
@@ -79,6 +82,7 @@ with the corresponding integral of `q`-th powers.
 * `Real.rpow_one_sub_inv_natCast_pow`: `(x ^ (1 - 1/n)) ^ n = x ^ (n - 1)` for `0 ≤ x` and
   `n ≠ 0`.
 * `Real.pow_le_rpow_pow_of_le_mul`: `b ^ n ≤ (b ^ δ) ^ r` when `1 ≤ b` and `n ≤ δ r`.
+* `Real.rpow_le_one_add`: `x ^ y ≤ 1 + x` for `0 ≤ x` and `0 ≤ y ≤ 1`.
 * `Real.image_rpow_Ioo_zero_one`: a positive power maps the open unit interval onto itself.
 * `Real.le_one_of_forall_pow_le_mul_rpow`: `r ≤ 1` when `r ^ n ≤ C * (1 + n) ^ s` for all `n`.
 * `TauCeti.exp_neg_mul_abs_isLittleO_abs_rpow_cocompact`: a positive-rate exponential beats every
@@ -160,6 +164,13 @@ theorem pow_le_rpow_pow_of_le_mul {b δ : ℝ} (hb : 1 ≤ b) {n r : ℕ} (hn : 
     b ^ n ≤ (b ^ δ) ^ r := by
   rw [← rpow_mul_natCast (by linarith), ← rpow_natCast]
   exact rpow_le_rpow_of_exponent_le hb hn
+
+/-- A power of a nonnegative real with exponent in `[0, 1]` is at most `1 + x`: `x ^ y ≤ 1` for
+`x ≤ 1` and `x ^ y ≤ x` for `1 ≤ x`. -/
+theorem rpow_le_one_add {x y : ℝ} (hx : 0 ≤ x) (hy₀ : 0 ≤ y) (hy₁ : y ≤ 1) : x ^ y ≤ 1 + x := by
+  rcases le_total x 1 with h | h
+  · linarith [rpow_le_one hx h hy₀]
+  · linarith [rpow_le_self_of_one_le h hy₁]
 
 /-- A positive power `x ↦ x ^ a` maps the open unit interval onto itself. -/
 theorem image_rpow_Ioo_zero_one {a : ℝ} (ha : 0 < a) :
