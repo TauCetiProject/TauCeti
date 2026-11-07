@@ -98,6 +98,10 @@ addition, exactly as in the ring case.
   the target, and dually `TauCeti.mem_jacobsonRadical_iff_not_isSplitEpi` into such an object.
 * `TauCeti.IsIrreducibleMorphism.mem_jacobsonRadical`: an irreducible morphism out of an object
   with a local endomorphism ring is radical.
+* `TauCeti.mem_jacobsonRadical_biproduct_iff` and
+  `TauCeti.mem_jacobsonRadical_iff_forall_not_isIso`: **the matrix description**, for
+  decompositions into objects with local endomorphism rings a morphism is radical exactly when no
+  component is an isomorphism.
 * `TauCeti.jacobsonRadicalSq_le_iff`: the universal property of the square of the radical, a
   subgroup contains it exactly when it contains every composite of two radical morphisms.
 * `TauCeti.jacobsonRadicalSq_le_jacobsonRadical`,
@@ -408,6 +412,40 @@ theorem mem_jacobsonRadical_self_iff_not_isUnit {f : End X} :
   exact not_congr (isUnit_iff_isIso f).symm
 
 end Local
+
+open Limits in
+/-- **The matrix description of the radical**: between two finite biproducts of objects with local
+endomorphism rings, a morphism is radical exactly when none of its components is an isomorphism. -/
+theorem mem_jacobsonRadical_biproduct_iff {I J : Type*} [Finite I] [Finite J] (P : I → C)
+    (Q : J → C) [HasBiproduct P] [HasBiproduct Q] (hP : ∀ i, IsLocalRing (End (P i)))
+    (hQ : ∀ j, IsLocalRing (End (Q j))) {f : ⨁ P ⟶ ⨁ Q} :
+    f ∈ jacobsonRadical (⨁ P) (⨁ Q) ↔
+      ∀ i j, ¬ IsIso (biproduct.ι P i ≫ f ≫ biproduct.π Q j) := by
+  rw [mem_jacobsonRadical_biproduct_left_iff]
+  refine forall_congr' fun i ↦ ?_
+  rw [mem_jacobsonRadical_biproduct_right_iff]
+  refine forall_congr' fun j ↦ ?_
+  have := hP i
+  have := hQ j
+  rw [Category.assoc, mem_jacobsonRadical_iff_not_isIso]
+
+open Limits in
+/-- **The matrix description of the radical, along decompositions**: for decompositions
+`X ≅ ⨁ P` and `Y ≅ ⨁ Q` into objects with local endomorphism rings, a morphism `f : X ⟶ Y` is
+radical exactly when none of its components `P i ⟶ Q j` is an isomorphism. -/
+theorem mem_jacobsonRadical_iff_forall_not_isIso {I J : Type*} [Finite I] [Finite J]
+    {X Y : C} (P : I → C) (Q : J → C) [HasBiproduct P] [HasBiproduct Q]
+    (hP : ∀ i, IsLocalRing (End (P i))) (hQ : ∀ j, IsLocalRing (End (Q j))) (φ : X ≅ ⨁ P)
+    (ψ : Y ≅ ⨁ Q) {f : X ⟶ Y} :
+    f ∈ jacobsonRadical X Y ↔
+      ∀ i j, ¬ IsIso (biproduct.ι P i ≫ φ.inv ≫ f ≫ ψ.hom ≫ biproduct.π Q j) := by
+  have h : f ∈ jacobsonRadical X Y ↔ φ.inv ≫ f ≫ ψ.hom ∈ jacobsonRadical (⨁ P) (⨁ Q) := by
+    refine ⟨fun hf ↦ comp_mem_jacobsonRadical_left _ (comp_mem_jacobsonRadical_right hf _),
+      fun hf ↦ ?_⟩
+    have := comp_mem_jacobsonRadical_left φ.hom (comp_mem_jacobsonRadical_right hf ψ.inv)
+    simpa using this
+  rw [h, mem_jacobsonRadical_biproduct_iff P Q hP hQ]
+  simp only [Category.assoc]
 
 /-! ### The square of the radical -/
 
