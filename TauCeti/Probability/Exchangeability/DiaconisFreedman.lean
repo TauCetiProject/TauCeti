@@ -84,25 +84,6 @@ section Representation
 variable {μ : Measure Ω} {X : ℕ → Ω → α} {Y : α × ℕ → Ω → α} {a₀ : α}
   {lam : Ω → ProbabilityMeasure (α → α)}
 
-/-- The law of the first `n + 1` states at a single finite path is the measure of the event
-that the process follows any sequence extending that path. -/
-theorem prefixLaw_singleton_eq_measure_setOf [MeasurableSingletonClass α]
-    (hX : ∀ i, AEMeasurable (X i) μ) {n : ℕ} (w : Fin (n + 1) → α) (w' : ℕ → α)
-    (hfin : ∀ (j : ℕ) (hj : j < n + 1), w' j = w ⟨j, hj⟩) :
-    prefixLaw μ X (n + 1) {w} = μ {ω | ∀ j ≤ n, X j ω = w' j} := by
-  rw [prefixLaw_def, blockLaw_apply_of_measurable μ X (fun i : Fin (n + 1) => i.val)
-    (fun i => hX i.val) (measurableSet_singleton w)]
-  congr 1
-  ext ω
-  simp only [Set.mem_preimage, Set.mem_singleton_iff, Set.mem_ofPred_eq, funext_iff]
-  constructor
-  · intro h j hj
-    rw [hfin j (Nat.lt_succ_of_le hj)]
-    exact h ⟨j, Nat.lt_succ_of_le hj⟩
-  · intro h i
-    rw [← hfin i.val i.isLt]
-    exact h i.val (Nat.lt_succ_iff.1 i.isLt)
-
 /-- The path event for a path starting at `a₀` is an array event, whose measure is the integral
 of the product of the row marginals of the mixing representative along the path. -/
 private theorem measure_setOf_forall_le_eq_lintegral_of_start [Countable α]
