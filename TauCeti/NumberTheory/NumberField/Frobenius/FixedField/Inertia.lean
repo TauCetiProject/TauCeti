@@ -228,13 +228,13 @@ theorem inertiaDeg_under_fixedField_mul_card_inf (Q : Ideal (𝓞 L)) [Q.IsPrime
 /-- **The residue degree is a relative index.**  For any subgroup `H` and `φ` a Frobenius at an
 unramified `Q`, the residue degree below `L ^ H` is `Subgroup.relIndex`, Mathlib's name for the
 index of `H ⊓ ⟨φ⟩` in `⟨φ⟩`. -/
-theorem inertiaDeg_under_fixedField_eq_relIndex (Q : Ideal (𝓞 L)) [Q.IsPrime] (hQ : Q ≠ ⊥)
+theorem inertiaDeg_under_fixedField_eq_relIndex (Q : Ideal (𝓞 L)) [Q.IsPrime]
     [Algebra.IsUnramifiedAt (𝓞 K) Q] (H : Subgroup (L ≃ₐ[K] L)) {φ : L ≃ₐ[K] L}
     (hφ : IsArithFrobAt (𝓞 K) φ Q) :
     (Q.under (𝓞 ↥(fixedField H))).inertiaDeg (𝓞 K) = H.relIndex (Subgroup.zpowers φ) := by
-  have hmul := inertiaDeg_under_fixedField_mul_card_inf Q hQ H
-  rw [← zpowers_eq_stabilizer_of_isArithFrobAt Q hQ hφ,
-    ← orderOf_eq_inertiaDeg_of_isArithFrobAt Q hQ hφ] at hmul
+  have hmul := inertiaDeg_under_fixedField_mul_card_inf Q hφ.ne_bot H
+  rw [← zpowers_eq_stabilizer_of_isArithFrobAt Q hφ,
+    ← orderOf_eq_inertiaDeg_of_isArithFrobAt Q hφ] at hmul
   have hidx := Subgroup.relIndex_inf_mul_relIndex ⊥ H (Subgroup.zpowers φ)
   simp only [Subgroup.relIndex_bot_left, bot_inf_eq] at hidx
   rw [inf_comm, Nat.card_zpowers φ, ← hmul, mul_comm] at hidx
@@ -243,11 +243,10 @@ theorem inertiaDeg_under_fixedField_eq_relIndex (Q : Ideal (𝓞 L)) [Q.IsPrime]
 /-- The residue degree below the fixed field of a power of a Frobenius is its exponent's
 greatest common divisor with the Frobenius order. -/
 theorem inertiaDeg_under_fixedField_zpowers_pow_eq_gcd (Q : Ideal (𝓞 L)) [Q.IsPrime]
-    (hQ : Q ≠ ⊥) [Algebra.IsUnramifiedAt (𝓞 K) Q] {φ : L ≃ₐ[K] L}
-    (hφ : IsArithFrobAt (𝓞 K) φ Q) (k : ℕ) :
+    [Algebra.IsUnramifiedAt (𝓞 K) Q] {φ : L ≃ₐ[K] L} (hφ : IsArithFrobAt (𝓞 K) φ Q) (k : ℕ) :
     (Q.under (𝓞 ↥(fixedField (Subgroup.zpowers (φ ^ k))))).inertiaDeg (𝓞 K) =
       Nat.gcd k (orderOf φ) := by
-  rw [inertiaDeg_under_fixedField_eq_relIndex Q hQ _ hφ,
+  rw [inertiaDeg_under_fixedField_eq_relIndex Q _ hφ,
     ← zpow_natCast, Subgroup.relIndex_zpowers_zpow]
   simp
 
@@ -256,13 +255,13 @@ unramified `Q`, the residue degree below `L ^ H` is the smallest `n ≥ 1` with 
 
 This is the characterization the fixed-field fibre count uses: it turns the residue degree into a
 condition on powers of the Frobenius, with no index or relative index left to unfold. -/
-theorem isLeast_pow_mem_inertiaDeg_under_fixedField (Q : Ideal (𝓞 L)) [Q.IsPrime] (hQ : Q ≠ ⊥)
+theorem isLeast_pow_mem_inertiaDeg_under_fixedField (Q : Ideal (𝓞 L)) [Q.IsPrime]
     [Algebra.IsUnramifiedAt (𝓞 K) Q] (H : Subgroup (L ≃ₐ[K] L)) {φ : L ≃ₐ[K] L}
     (hφ : IsArithFrobAt (𝓞 K) φ Q) :
     IsLeast {n : ℕ | 0 < n ∧ φ ^ n ∈ H}
       ((Q.under (𝓞 ↥(fixedField H))).inertiaDeg (𝓞 K)) := by
   have : H.IsFiniteRelIndex (Subgroup.zpowers φ) := ⟨Subgroup.index_ne_zero_of_finite⟩
-  rw [inertiaDeg_under_fixedField_eq_relIndex Q hQ H hφ]
+  rw [inertiaDeg_under_fixedField_eq_relIndex Q H hφ]
   exact Subgroup.isLeast_pow_mem_relIndex_zpowers φ H
 
 /-- **Residue degree one is membership.**  The prime below `Q` in `L ^ H` has residue degree one
@@ -270,19 +269,18 @@ over `𝓞 K` exactly when a Frobenius at `Q` lies in `H`. -/
 -- Deliberately not `@[simp]`: `φ` occurs only in the hypothesis `hφ`, never in the left-hand
 -- side, so `simp` cannot infer it and the rule would never fire. The simp-NF linter rejects
 -- the attribute.
-theorem inertiaDeg_under_fixedField_eq_one_iff (Q : Ideal (𝓞 L)) [Q.IsPrime] (hQ : Q ≠ ⊥)
+theorem inertiaDeg_under_fixedField_eq_one_iff (Q : Ideal (𝓞 L)) [Q.IsPrime]
     [Algebra.IsUnramifiedAt (𝓞 K) Q] (H : Subgroup (L ≃ₐ[K] L)) {φ : L ≃ₐ[K] L}
     (hφ : IsArithFrobAt (𝓞 K) φ Q) :
     (Q.under (𝓞 ↥(fixedField H))).inertiaDeg (𝓞 K) = 1 ↔ φ ∈ H := by
-  rw [inertiaDeg_under_fixedField_eq_relIndex Q hQ H hφ, Subgroup.relIndex_eq_one,
+  rw [inertiaDeg_under_fixedField_eq_relIndex Q H hφ, Subgroup.relIndex_eq_one,
     Subgroup.zpowers_le]
 
 /-- **The prime below `Q` in the fixed field of a Frobenius at `Q` has degree one.**  The case
 `H = ⟨σ⟩` with `σ` itself the Frobenius, where membership is automatic. -/
 theorem inertiaDeg_under_fixedField_eq_one_of_isArithFrobAt (Q : Ideal (𝓞 L)) [Q.IsPrime]
-    (hQ : Q ≠ ⊥) [Algebra.IsUnramifiedAt (𝓞 K) Q] {σ : L ≃ₐ[K] L}
-    (hσ : IsArithFrobAt (𝓞 K) σ Q) :
+    [Algebra.IsUnramifiedAt (𝓞 K) Q] {σ : L ≃ₐ[K] L} (hσ : IsArithFrobAt (𝓞 K) σ Q) :
     (Q.under (𝓞 ↥(fixedField (Subgroup.zpowers σ)))).inertiaDeg (𝓞 K) = 1 :=
-  (inertiaDeg_under_fixedField_eq_one_iff Q hQ (Subgroup.zpowers σ) hσ).2 (Subgroup.mem_zpowers σ)
+  (inertiaDeg_under_fixedField_eq_one_iff Q (Subgroup.zpowers σ) hσ).2 (Subgroup.mem_zpowers σ)
 
 end Ideal

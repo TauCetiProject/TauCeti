@@ -93,7 +93,7 @@ section ForkGraph
 
 variable (k : Type*) [CommRing k] {n : ℕ} {G : SimpleGraph (Fin n)} {c : ℕ}
   (hn : n = c + 3)
-  (hG : ∀ i j : Fin n, G.Adj i j ↔ (i : ℕ) + 1 = j ∧ (j : ℕ) ≤ c ∨ (j : ℕ) + 1 = i ∧ (i : ℕ) ≤ c ∨
+  (hG : ∀ i j : Fin n, G.Adj i j → (i : ℕ) + 1 = j ∧ (j : ℕ) ≤ c ∨ (j : ℕ) + 1 = i ∧ (i : ℕ) ≤ c ∨
     (i : ℕ) = c ∧ c < j ∨ (j : ℕ) = c ∧ c < i)
 include hn hG
 
@@ -126,7 +126,7 @@ private theorem mem_commutatorSubmodule_of_mem_forkSpan_pow (h2 : IsUnit (2 : k)
   have hx₀ := forkTurn_mem_commutatorSubmodule k hG (l := c + 1) (by omega) (by omega)
   have hy₀ := forkTurn_mem_commutatorSubmodule k hG (l := c + 2) (by omega) (by omega)
   have hs := forkTurn_add_pow_succ_mem_commutatorSubmodule k hn hG
-  obtain ⟨α, β, rfl⟩ := Submodule.mem_span_pair.mp (span_pair_pow_succ_le (R := ℤ) hx hy t hw)
+  obtain ⟨α, β, rfl⟩ := Submodule.mem_span_pair.mp ((span_pair_pow_succ (R := ℤ) hx hy t).le hw)
   refine add_mem (zsmul_mem ?_ α) (zsmul_mem ?_ β)
   · exact mul_add_pow_mem_commutatorSubmodule h2 hx hy hx₀ hs t
   · rw [add_comm (forkTurn k G c (c + 1))] at hs ⊢
@@ -286,7 +286,7 @@ theorem signlessPreprojectiveMk_D_ofPath_mem_commutatorSubmodule (h2 : IsUnit (2
   by_cases hab : a = b
   · subst hab
     exact signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_fork k (c := n - 3)
-      (by omega) (diagramGraph_D_adj hn) h2 p hx
+      (by omega) (fun i j => (diagramGraph_D_adj hn i j).1) h2 p hx
   · exact signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_ne k p
       fun h => hab (vertex_injective DG h)
 

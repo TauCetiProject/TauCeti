@@ -255,6 +255,20 @@ theorem laplaceBeltrami_def (I : ModelWithCorners ℝ E H) {M : Type*} [Topologi
     laplaceBeltrami I f x = divergence I (mgradient I f) x := by
   rw [laplaceBeltrami]
 
+/-- For a Laplace–Beltrami eigenfunction, the derivative of its Laplacian along its
+gradient is minus the eigenvalue times the squared gradient norm. -/
+theorem mvfderiv_laplaceBeltrami_mgradient_of_laplaceBeltrami_eq_neg_mul
+    {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+    [IsManifold I 2 M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    {f : M → ℝ} {lam : ℝ} (heig : ∀ x, laplaceBeltrami I f x = -lam * f x) (x : M) :
+    mvfderiv I (laplaceBeltrami I f) x (mgradient I f x) =
+      -lam * ‖mgradient I f x‖ ^ 2 := by
+  have heq : laplaceBeltrami I f = -lam • f := funext heig
+  rw [heq, mvfderiv_const_smul_field, smul_apply, smul_eq_mul,
+    ← inner_mgradient, real_inner_self_eq_norm_sq]
+
 /-- On a `C^m` manifold with a `C^k` Riemannian metric, the Laplace--Beltrami operator of a
 `C^(n + 2)` function is `C^n` when `n + 2 ≤ m` and `n + 1 ≤ k`; like the flat Laplacian, it
 loses two derivatives.  The finite-regularity statement is useful when the operator is used under
@@ -284,6 +298,18 @@ theorem contMDiff_laplaceBeltrami {n m k : ℕ∞ω}
     exact laplaceBeltrami_def I f x
   rw [hEq]
   exact hdiv
+
+/-- For a `C¹` Riemannian metric, the Laplace--Beltrami operator of a `C²` function is
+continuous. -/
+theorem continuous_laplaceBeltrami
+    {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+    [IsManifold I 2 M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f) :
+    Continuous (laplaceBeltrami I f) :=
+  (contMDiff_laplaceBeltrami (n := 0) (m := 2) (k := 1) (by simp) (by simp)
+    (by simpa using hf)).continuous
 
 section OperatorLaws
 
@@ -415,7 +441,7 @@ theorem hessian_smul (c : ℝ) {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
     hessian I (c • f) x v w = c * hessian I f x v w := by
   let : IsManifold I ((1 : ℕ∞ω) + 1) M := by
     simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
-  simp only [hessian, mgradient_smul c (hf.mdifferentiable (by simp)),
+  simp only [hessian, mgradient_smul,
     (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv.smul_const c
       (mdifferentiable_mgradient (I := I) hf x),
     smul_apply, real_inner_smul_left]
@@ -487,7 +513,7 @@ theorem laplaceBeltrami_smul (c : ℝ) {f : M → ℝ} (hf : ContMDiff I 𝓘(�
     laplaceBeltrami I (c • f) x = c * laplaceBeltrami I f x := by
   let : IsManifold I ((1 : ℕ∞ω) + 1) M := by
     simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
-  simp only [laplaceBeltrami, mgradient_smul c (hf.mdifferentiable (by simp))]
+  simp only [laplaceBeltrami, mgradient_smul]
   exact divergence_smul I c _ x
     (mdifferentiable_mgradient (I := I) hf x)
 

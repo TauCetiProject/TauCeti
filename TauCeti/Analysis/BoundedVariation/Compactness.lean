@@ -11,6 +11,7 @@ import TauCeti.Analysis.BoundedVariation.Multiplication
 import TauCeti.Analysis.BoundedVariation.Translation
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.MeasureTheory.Function.Lp.FrechetKolmogorov
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Function.Lp.Subsequence
 import TauCeti.MeasureTheory.Integral.Lebesgue.Cutoff
 
@@ -90,6 +91,40 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 
 variable {K : Set E} {S : Set (E → ℝ)} {M : ℝ≥0∞}
 
+/-- **The Fréchet--Kolmogorov step.** A family of integrable functions `F u` vanishing off a
+bounded set `L`, bounded in `L¹` and in total variation on the whole space, is totally bounded in
+`L¹(μ)`: the translation estimate gives the equicontinuity under translations. -/
+theorem totallyBounded_of_integrable_totalVariationOn_le {F : (E → ℝ) → E → ℝ} {L : Set E}
+    {B : ℝ≥0∞} (hL : Bornology.IsBounded L) (hM : M ≠ ⊤) (hB : B ≠ ⊤)
+    (hsupp : ∀ u ∈ S, ∀ x ∉ L, F u x = 0) (hint : ∀ u ∈ S, Integrable (F u) μ)
+    (hnorm : ∀ u ∈ S, ∫⁻ x, ‖F u x‖ₑ ∂μ ≤ M)
+    (hvar : ∀ u ∈ S, totalVariationOn μ ⊤ (F u) ≤ B) :
+    TotallyBounded {f : Lp ℝ 1 μ | ∃ u ∈ S, f =ᵐ[μ] F u} := by
+  refine totallyBounded_of_comp_add_sub_of_isBounded_of_ae_eq_zero_compl ENNReal.one_ne_top
+    hL ?_ hM ?_ ?_
+  · rintro f ⟨u, hu, hf⟩
+    filter_upwards [hf] with x hx hxL
+    rw [hx]
+    exact hsupp u hu x hxL
+  · rintro f ⟨u, hu, hf⟩
+    rw [eLpNorm_congr_ae hf, eLpNorm_one_eq_lintegral_enorm (hint u hu).aestronglyMeasurable]
+    exact hnorm u hu
+  · intro ε hε
+    obtain ⟨δ, hδ, hδε⟩ := ENNReal.exists_nnreal_pos_mul_lt hB hε.ne'
+    refine ⟨δ, by exact_mod_cast hδ, fun f ⟨u, hu, hf⟩ h hh => ?_⟩
+    have hfh : (fun x => f (x + h)) =ᵐ[μ] fun x => F u (x + h) :=
+      (measurePreserving_add_right μ h).quasiMeasurePreserving.ae_eq_comp hf
+    have hinc : (fun x => f (x + h) - f x) =ᵐ[μ] fun x => F u (x + h) - F u x := by
+      filter_upwards [hfh, hf] with x h₁ h₂
+      rw [h₁, h₂]
+    rw [eLpNorm_congr_ae hinc, eLpNorm_one_eq_lintegral_enorm
+      (f := fun x => F u (x + h) - F u x)
+      (((hint u hu).comp_add_right h).sub (hint u hu)).aestronglyMeasurable]
+    refine (lintegral_enorm_comp_add_sub_le_mul_totalVariationOn
+      (hint u hu).locallyIntegrable h).trans ?_
+    refine (mul_le_mul' ?_ (hvar u hu)).trans hδε.le
+    exact enorm_le_coe.mpr (by exact_mod_cast hh.le)
+
 /-- **Compactness of families of bounded variation.** Let `S` be a family of functions on `Ω`
 that is bounded in `L¹(Ω)` and in variation on `Ω`: `∫_Ω |u| ≤ M` and `|Du|(Ω) ≤ M` for every
 `u ∈ S`, with `M < ∞`. Then for every compact `K ⊆ Ω` the restrictions to `K` of the members of
@@ -125,44 +160,15 @@ theorem totallyBounded_of_setLIntegral_le_of_totalVariationOn_le (hK : IsCompact
     (totalVariationOn_top_mul_le hχ hχ1 hχΩ (fun x => hC (mem_range_self x))
       (huΩ u hu).locallyIntegrableOn).trans (by gcongr <;> simp [hvar u hu, hbdd u hu])
   -- The Fréchet--Kolmogorov criterion applies to the family of the `χ u` in `L¹`.
-  set T : Set (Lp ℝ 1 μ) := {f | ∃ u ∈ S, f =ᵐ[μ] χ * u}
-  have hT : TotallyBounded T := by
-    refine totallyBounded_of_comp_add_sub_of_isBounded_of_ae_eq_zero_compl ENNReal.one_ne_top
-      hχc.isCompact.isBounded ?_ hM ?_ ?_
-    · rintro f ⟨u, -, hf⟩
-      filter_upwards [hf] with x hx hxs
-      rw [hx, Pi.mul_apply, image_eq_zero_of_notMem_tsupport hxs, zero_mul]
-    · rintro f ⟨u, hu, hf⟩
-      rw [eLpNorm_congr_ae hf, eLpNorm_one_eq_lintegral_enorm (hint u hu).aestronglyMeasurable]
-      exact (hnorm u).trans (hbdd u hu)
-    · intro ε hε
-      obtain ⟨δ, hδ, hδε⟩ := ENNReal.exists_nnreal_pos_mul_lt hB hε.ne'
-      refine ⟨δ, by exact_mod_cast hδ, fun f ⟨u, hu, hf⟩ h hh => ?_⟩
-      have hfh : (fun x => f (x + h)) =ᵐ[μ] fun x => (χ * u) (x + h) :=
-        (measurePreserving_add_right μ h).quasiMeasurePreserving.ae_eq_comp hf
-      have hinc : (fun x => f (x + h) - f x) =ᵐ[μ] fun x => (χ * u) (x + h) - (χ * u) x := by
-        filter_upwards [hfh, hf] with x h₁ h₂
-        rw [h₁, h₂]
-      rw [eLpNorm_congr_ae hinc, eLpNorm_one_eq_lintegral_enorm
-        (f := fun x => (χ * u) (x + h) - (χ * u) x)
-        (((hint u hu).comp_add_right h).sub (hint u hu)).aestronglyMeasurable]
-      refine (lintegral_enorm_comp_add_sub_le_mul_totalVariationOn
-        (hint u hu).locallyIntegrable h).trans ?_
-      refine (mul_le_mul' ?_ (hvarχ u hu)).trans hδε.le
-      exact enorm_le_coe.mpr (by exact_mod_cast hh.le)
-  -- Restricting to `K`, where `χ = 1`, recovers the members of `S`.
-  let res : Lp ℝ 1 μ →L[ℝ] Lp ℝ 1 (μ.restrict K) :=
-    Lp.LpToLpOfMeasureLeSMul ENNReal.one_ne_top (by simpa using Measure.restrict_le_self)
-  refine (hT.image res.uniformContinuous).subset ?_
-  rintro f ⟨u, hu, hfu⟩
-  refine ⟨(hint u hu).toL1 _, ⟨u, hu, Integrable.coeFn_toL1 _⟩, ?_⟩
-  refine Lp.ext ?_
-  filter_upwards [Lp.coeFn_LpToLpOfMeasureLeSMul (μ := μ.restrict K) ENNReal.one_ne_top
-      (by simpa using Measure.restrict_le_self) ((hint u hu).toL1 _),
-    ae_restrict_of_ae (Integrable.coeFn_toL1 (hint u hu)), ae_restrict_mem hK.measurableSet,
-    hfu] with x h₁ h₂ hx h₃
-  have hχx : χ x = 1 := interior_subset (hχK hx)
-  rw [h₁, h₂, h₃, Pi.mul_apply, hχx, one_mul]
+  have hT := totallyBounded_of_integrable_totalVariationOn_le (S := S) (F := (χ * ·))
+    hχc.isCompact.isBounded hM hB (fun u hu x hx => by
+      simp [image_eq_zero_of_notMem_tsupport hx]) hint
+    (fun u hu => (hnorm u).trans (hbdd u hu)) hvarχ
+  exact totallyBounded_restrict_of_forall_eqOn (g := (χ * ·)) hK.measurableSet
+    (fun u hu => memLp_one_iff_integrable.2 (hint u hu))
+    (fun u _ x hx => by
+      have hχx : χ x = 1 := interior_subset (hχK hx)
+      rw [Pi.mul_apply, hχx, one_mul]) hT
 
 /-- **Compactness of families of bounded variation**, in the form of a compact embedding: under
 the hypotheses of `TauCeti.totallyBounded_of_setLIntegral_le_of_totalVariationOn_le`, the closure in
