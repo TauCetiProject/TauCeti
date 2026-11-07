@@ -333,6 +333,7 @@ theorem _root_.EReal.coe_add_add_eq_of_add_add_eq {A B px nx py ny : ℝ≥0∞}
       linarith
 
 /-- Multiplication by a positive real number `c` preserves and reflects the order of `EReal`. -/
+@[simp]
 theorem _root_.EReal.coe_mul_le_coe_mul_iff {c : ℝ} (hc : 0 < c) (a b : EReal) :
     (c : EReal) * a ≤ (c : EReal) * b ↔ a ≤ b := by
   have hc' : 0 < (c : EReal) := EReal.coe_pos.2 hc
