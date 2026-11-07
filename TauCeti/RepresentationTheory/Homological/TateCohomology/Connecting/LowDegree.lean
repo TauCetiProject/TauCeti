@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.LowDegree
 import Mathlib.Algebra.Homology.ConcreteCategory
+import TauCeti.Algebra.Homology.ModuleCat.Basic
 
 /-!
 # The connecting map across the Tate norm
@@ -36,85 +37,69 @@ namespace TauCeti.TateCohomology
 
 variable {R G : Type u} [CommRing R] [Group G] [Fintype G]
 
+/-- The map `S.g` sends the lift `y` of a norm-zero element `z` to the cycle representing `z`. -/
+private lemma tateComplex_map_g_f_neg_one_chainsIso₀_inv {S : ShortComplex (Rep R G)}
+    (z : LinearMap.ker S.X₃.ρ.norm) (y : S.X₂) (hy : S.g.hom y = z) :
+    (tateComplex.map S.g).f (-1) ((chainsIso₀ S.X₂).inv y) =
+      (tateComplex S.X₃).iCycles (-1) ((HNegOneCyclesIso S.X₃).inv z) := by
+  apply (ModuleCat.mono_iff_injective (chainsIso₀ S.X₃).hom).mp inferInstance
+  calc
+    _ = S.g.hom y := by
+      simpa only [ConcreteCategory.comp_apply, Iso.inv_hom_id_apply] using!
+        ConcreteCategory.congr_hom (chainsMap_f_0_comp_chainsIso₀ (.id G) S.g)
+          ((chainsIso₀ S.X₂).inv y)
+    _ = z := hy
+    _ = _ := by
+      have hcomp : (HNegOneCyclesIso S.X₃).inv ≫ (tateComplex S.X₃).iCycles (-1) ≫
+          (chainsIso₀ S.X₃).hom = ModuleCat.ofHom (LinearMap.ker S.X₃.ρ.norm).subtype :=
+        ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ (chainsIso₀ S.X₃).hom)
+          (HNegOneCyclesIso_inv_comp_iCycles S.X₃))).trans (by simp)
+      simpa only [ConcreteCategory.comp_apply] using! (ConcreteCategory.congr_hom hcomp z).symm
+
+/-- The map `S.f` sends the cycle representing an invariant lift `x` of the norm of `y` to the
+differential of `y`. -/
+private lemma tateComplex_map_f_f_zero_H0CyclesIso_inv {S : ShortComplex (Rep R G)}
+    (y : S.X₂) (x : S.X₁.ρ.invariants) (hx : S.f.hom x = S.X₂.ρ.norm y) :
+    (tateComplex.map S.f).f 0 ((tateComplex S.X₁).iCycles 0 ((H0CyclesIso S.X₁).inv x)) =
+      (tateComplex S.X₂).d (-1) 0 ((chainsIso₀ S.X₂).inv y) := by
+  apply (ModuleCat.mono_iff_injective (cochainsIso₀ S.X₂).hom).mp inferInstance
+  calc
+    _ = S.f.hom x := by
+      have hnat := ConcreteCategory.congr_hom
+        (cochainsMap_f_0_comp_cochainsIso₀ (.id G) S.f)
+        ((tateComplex S.X₁).iCycles 0 ((H0CyclesIso S.X₁).inv x))
+      have hcomp : (H0CyclesIso S.X₁).inv ≫ (tateComplex S.X₁).iCycles 0 ≫
+          (cochainsIso₀ S.X₁).hom = ModuleCat.ofHom S.X₁.ρ.invariants.subtype :=
+        ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ (cochainsIso₀ S.X₁).hom)
+          (H0CyclesIso_inv_comp_iCycles S.X₁))).trans (by simp)
+      have hcx := ConcreteCategory.congr_hom hcomp x
+      simp only [ConcreteCategory.comp_apply] at hnat hcx
+      exact hnat.trans (congrArg S.f.hom hcx)
+    _ = S.X₂.ρ.norm y := hx
+    _ = _ := by
+      -- The differential at the join is the Tate norm; the two comparison isomorphisms cancel.
+      have hn : (chainsIso₀ S.X₂).inv ≫ (tateComplex S.X₂).d (-1) 0 ≫
+          (cochainsIso₀ S.X₂).hom = S.X₂.norm.asHom.toModuleCatHom := by
+        rw [tateComplex_d_neg_one, Rep.tateNorm]
+        simp only [Category.assoc, Iso.inv_hom_id_assoc, Iso.inv_hom_id, Category.comp_id]
+      simpa only [ConcreteCategory.comp_apply] using!
+        (ConcreteCategory.congr_hom hn y).symm
+
 /-- The connecting map from degree `-1` to degree zero sends a norm-zero representative to the
 class of the norm of a lift, read in the invariant submodule of the first coefficient module. -/
 theorem δ_neg_one_HNegOneπ {S : ShortComplex (Rep R G)} (hS : S.ShortExact)
     (z : LinearMap.ker S.X₃.ρ.norm) (y : S.X₂) (hy : S.g.hom y = z)
     (x : S.X₁.ρ.invariants) (hx : S.f.hom x = S.X₂.ρ.norm y) :
     _root_.TateCohomology.δ hS (-1) (HNegOneπ S.X₃ z) = H0π S.X₁ x := by
-  -- Translate the norm-kernel and invariant representatives to the cycles used by the
-  -- concrete connecting-map formula. The two squares express that `y` lifts `z`
-  -- and its norm lifts `x`.
-  let y' : (tateComplex S.X₂).X (-1) := (chainsIso₀ S.X₂).inv y
-  have hc₃ : (HNegOneCyclesIso S.X₃).inv ≫ (tateComplex S.X₃).iCycles (-1) ≫
-      (chainsIso₀ S.X₃).hom = ModuleCat.ofHom (LinearMap.ker S.X₃.ρ.norm).subtype :=
-    (congrArg ((HNegOneCyclesIso S.X₃).inv ≫ ·)
-      (HNegOneCyclesIso_hom_comp_subtype S.X₃).symm).trans (Iso.inv_hom_id_assoc _ _)
-  have hc₁ : (H0CyclesIso S.X₁).inv ≫ (tateComplex S.X₁).iCycles 0 ≫
-      (cochainsIso₀ S.X₁).hom = ModuleCat.ofHom S.X₁.ρ.invariants.subtype :=
-    (congrArg ((H0CyclesIso S.X₁).inv ≫ ·)
-      (H0CyclesIso_hom_comp_subtype S.X₁).symm).trans (Iso.inv_hom_id_assoc _ _)
-  have hg : (tateComplex.map S.g).f (-1) y' =
-      (tateComplex S.X₃).iCycles (-1) ((HNegOneCyclesIso S.X₃).inv z) := by
-    apply (ModuleCat.mono_iff_injective (chainsIso₀ S.X₃).hom).mp inferInstance
-    calc
-      _ = S.g.hom y := by
-        simpa only [ConcreteCategory.comp_apply, Iso.inv_hom_id_apply] using!
-          ConcreteCategory.congr_hom (chainsMap_f_0_comp_chainsIso₀ (.id G) S.g)
-            ((chainsIso₀ S.X₂).inv y)
-      _ = z := hy
-      _ = _ := by
-        simpa only [ConcreteCategory.comp_apply] using! (ConcreteCategory.congr_hom hc₃ z).symm
-  have hf : (tateComplex.map S.f).f 0
-      ((tateComplex S.X₁).iCycles 0 ((H0CyclesIso S.X₁).inv x)) =
-      (tateComplex S.X₂).d (-1) 0 y' := by
-    apply (ModuleCat.mono_iff_injective (cochainsIso₀ S.X₂).hom).mp inferInstance
-    calc
-      _ = S.f.hom x := by
-        have hnat := ConcreteCategory.congr_hom
-          (cochainsMap_f_0_comp_cochainsIso₀ (.id G) S.f)
-          ((tateComplex S.X₁).iCycles 0 ((H0CyclesIso S.X₁).inv x))
-        have hcx := ConcreteCategory.congr_hom hc₁ x
-        simp only [ConcreteCategory.comp_apply] at hnat hcx
-        exact hnat.trans (congrArg S.f.hom hcx)
-      _ = S.X₂.ρ.norm y := hx
-      _ = _ := by
-        -- The differential at the join is the Tate norm; the two comparison isomorphisms cancel.
-        have hn : (chainsIso₀ S.X₂).inv ≫ (tateComplex S.X₂).d (-1) 0 ≫
-            (cochainsIso₀ S.X₂).hom = S.X₂.norm.asHom.toModuleCatHom := by
-          rw [tateComplex_d_neg_one, Rep.tateNorm]
-          simp only [Category.assoc, Iso.inv_hom_id_assoc, Iso.inv_hom_id, Category.comp_id]
-        simpa only [ConcreteCategory.comp_apply] using!
-          (ConcreteCategory.congr_hom hn y).symm
-  have hz : (tateComplex S.X₃).d (-1) 0
-      ((tateComplex S.X₃).iCycles (-1) ((HNegOneCyclesIso S.X₃).inv z)) = 0 := by
-    simpa using!
-      ConcreteCategory.congr_hom ((tateComplex S.X₃).iCycles_d (-1) 0)
-        ((HNegOneCyclesIso S.X₃).inv z)
-  have h := (_root_.TateCohomology.map_tateComplexFunctor_shortExact hS).δ_apply
-    (-1) 0 (by simp)
-    ((tateComplex S.X₃).iCycles (-1) ((HNegOneCyclesIso S.X₃).inv z)) hz
-    y' hg ((tateComplex S.X₁).iCycles 0 ((H0CyclesIso S.X₁).inv x)) hf 1 (by simp)
-  have hc₃' : (tateComplex S.X₃).cyclesMk (i := (-1))
-      ((tateComplex S.X₃).iCycles (-1) ((HNegOneCyclesIso S.X₃).inv z)) 0
-      (by simp) hz = (HNegOneCyclesIso S.X₃).inv z := by
-    apply (ModuleCat.mono_iff_injective ((tateComplex S.X₃).iCycles (-1))).mp inferInstance
-    simpa using! HomologicalComplex.i_cyclesMk (tateComplex S.X₃) (i := (-1))
-      ((tateComplex S.X₃).iCycles (-1) ((HNegOneCyclesIso S.X₃).inv z)) 0 (by simp) hz
-  have hc₁' (hzero : (tateComplex S.X₁).d 0 1
-      ((tateComplex S.X₁).iCycles 0 ((H0CyclesIso S.X₁).inv x)) = 0) :
-      (tateComplex S.X₁).cyclesMk (i := 0)
-      ((tateComplex S.X₁).iCycles 0 ((H0CyclesIso S.X₁).inv x)) 1 (by simp)
-      hzero = (H0CyclesIso S.X₁).inv x := by
-    apply (ModuleCat.mono_iff_injective ((tateComplex S.X₁).iCycles 0)).mp inferInstance
-    simpa using! HomologicalComplex.i_cyclesMk (tateComplex S.X₁) (i := 0)
-      ((tateComplex S.X₁).iCycles 0 ((H0CyclesIso S.X₁).inv x)) 1 (by simp) hzero
-  -- Identify the mapped complexes explicitly, then replace the constructed cycles by the
-  -- norm-kernel and invariant representatives. Forgetting a module morphism retains its action.
-  dsimp only [ShortComplex.map_X₁, ShortComplex.map_X₃, tateComplexFunctor_obj] at h
-  erw [hc₃', hc₁'] at h
+  -- The two squares express that `y` lifts `z` and its norm lifts `x`.
+  have hg := tateComplex_map_g_f_neg_one_chainsIso₀_inv z y hy
+  have hf := tateComplex_map_f_f_zero_H0CyclesIso_inv y x hx
+  have h := (_root_.TateCohomology.map_tateComplexFunctor_shortExact hS).moduleCat_δ_homologyπ
+    (-1) 0 (by simp) ((HNegOneCyclesIso S.X₃).inv z) ((chainsIso₀ S.X₂).inv y) hg
+    ((H0CyclesIso S.X₁).inv x) hf
   rw [HNegOneπ_eq_HNegOneCyclesIso_inv_comp_homologyπ, H0π_eq_H0CyclesIso_inv_comp_homologyπ]
   exact h
+
 
 /-- Every class in degree `-1` admits lifts realizing the norm formula for its connecting image. -/
 theorem exists_δ_neg_one_eq_H0π {S : ShortComplex (Rep R G)} (hS : S.ShortExact)
