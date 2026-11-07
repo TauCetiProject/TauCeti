@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Kernel.Irreducible
+public import TauCeti.Probability.Kernel.Composition.Power
 
 /-!
 # Reachability and communication for kernels
@@ -58,6 +59,14 @@ theorem communicates_def (x y : S) : κ.Communicates x y ↔ κ.Reaches x y ∧ 
 target state. -/
 theorem reaches_def (x y : S) :
     κ.Reaches x y ↔ ∃ n : ℕ, 0 < (κ ^ n) x {y} := Iff.rfl
+
+/-- Reachability under a deterministic kernel is membership in the forward orbit. -/
+@[simp]
+theorem reaches_deterministic [MeasurableSingletonClass S] {f : S → S}
+    (hf : Measurable f) (x y : S) :
+    (deterministic f hf).Reaches x y ↔ ∃ n : ℕ, f^[n] x = y := by
+  simp [reaches_def, deterministic_pow, deterministic_apply, pos_iff_ne_zero,
+    Set.indicator_apply_eq_zero]
 
 /-- Every state reaches itself. -/
 @[simp] theorem Reaches.refl (x : S) : κ.Reaches x x := by

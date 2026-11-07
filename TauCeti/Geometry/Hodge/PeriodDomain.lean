@@ -28,9 +28,9 @@ genuine constraint on a `HodgeType`, since it rules out every type whose Hodge n
 up to the rank of the lattice one wants to carry it.
 
 The symmetry group `Aut(V, Qint)` of the pair — where the monodromy of a variation of Hodge
-structure lands — is not redefined here: it is `TauCeti.BilinForm.isometryGroup Qint`, the subgroup
-of `V ≃ₗ[ℤ] V` cut out by `TauCeti.BilinForm.IsIsometry`. The complex-manifold structure on the set
-of period-domain points is out of scope; it needs flag-variety topology.
+structure lands — is not redefined here: it is `LinearMap.BilinForm.isometryGroup Qint`, the
+subgroup of `V ≃ₗ[ℤ] V` cut out by `TauCeti.BilinForm.IsIsometry`. The complex-manifold structure
+on the set of period-domain points is out of scope; it needs flag-variety topology.
 
 ## Main declarations
 
