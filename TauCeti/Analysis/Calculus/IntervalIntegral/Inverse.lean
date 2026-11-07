@@ -32,33 +32,30 @@ open scoped ContDiff Topology
 
 namespace TauCeti
 
-/-- The accumulated integral `t ↦ ∫ r in a..t, w r` of a continuous function bounded below by a
-positive constant tends to `+∞` at `+∞` and to `-∞` at `-∞`. -/
-theorem tendsto_intervalIntegral_atTop_atBot {w : ℝ → ℝ} (hw : Continuous w) {m : ℝ}
-    (hm : 0 < m) (hwm : ∀ t, m ≤ w t) (a : ℝ) :
+/-- The accumulated integral `t ↦ ∫ r in a..t, w r` of a locally integrable function bounded below
+by a positive constant tends to `+∞` at `+∞` and to `-∞` at `-∞`. -/
+theorem tendsto_intervalIntegral_atTop_atBot {w : ℝ → ℝ}
+    {a : ℝ} (hw : ∀ t, IntervalIntegrable w volume a t) {m : ℝ} (hm : 0 < m)
+    (hwm : ∀ t, m ≤ w t) :
     Tendsto (fun t ↦ ∫ r in a..t, w r) atTop atTop ∧
       Tendsto (fun t ↦ ∫ r in a..t, w r) atBot atBot := by
-  let φ : ℝ → ℝ := fun t ↦ ∫ r in a..t, w r
-  have hφ : ∀ t, HasDerivAt φ (w t) t := fun t ↦ (hw.integral_hasStrictDerivAt a t).hasDerivAt
-  have hg : Monotone fun t ↦ φ t - m * t := by
-    have hgd : ∀ t, HasDerivAt (fun t ↦ φ t - m * t) (w t - m) t := fun t ↦
-      (hφ t).sub (by simpa using (hasDerivAt_id t).const_mul m)
-    refine monotone_of_deriv_nonneg (fun t ↦ (hgd t).differentiableAt) fun t ↦ ?_
-    rw [(hgd t).deriv]
-    exact sub_nonneg.2 (hwm t)
+  -- Compare with the integral `m * (t - a)` of the constant lower bound.
   constructor
   · refine tendsto_atTop_mono' atTop ?_
-      (tendsto_atTop_add_const_left _ (φ 0) (tendsto_id.const_mul_atTop hm))
-    filter_upwards [eventually_ge_atTop 0] with t ht
-    have h := hg ht
-    simp only [mul_zero, sub_zero] at h
+      (tendsto_atTop_add_const_right _ (-(m * a)) (tendsto_id.const_mul_atTop hm))
+    filter_upwards [eventually_ge_atTop a] with t ht
+    have h := intervalIntegral.integral_mono_on ht intervalIntegrable_const (hw t)
+      fun r _ ↦ hwm r
+    simp only [intervalIntegral.integral_const, smul_eq_mul] at h
     simp only [id]
     linarith
   · refine tendsto_atBot_mono' atBot ?_
-      (tendsto_atBot_add_const_left _ (φ 0) (tendsto_id.const_mul_atBot hm))
-    filter_upwards [eventually_le_atBot 0] with t ht
-    have h := hg ht
-    simp only [mul_zero, sub_zero] at h
+      (tendsto_atBot_add_const_right _ (-(m * a)) (tendsto_id.const_mul_atBot hm))
+    filter_upwards [eventually_le_atBot a] with t ht
+    have h := intervalIntegral.integral_mono_on ht intervalIntegrable_const (hw t).symm
+      fun r _ ↦ hwm r
+    simp only [intervalIntegral.integral_const, smul_eq_mul] at h
+    rw [intervalIntegral.integral_symm]
     simp only [id]
     linarith
 
@@ -74,7 +71,8 @@ theorem exists_orderIso_contDiff_inverse_intervalIntegral {w : ℝ → ℝ} (hw 
   have hφ : ∀ t, HasDerivAt φ (w t) t := fun t ↦ (hw.integral_hasStrictDerivAt a t).hasDerivAt
   have hφcont : Continuous φ := continuous_iff_continuousAt.2 fun t ↦ (hφ t).continuousAt
   have hφmono : StrictMono φ := strictMono_of_hasDerivAt_pos hφ hwpos
-  obtain ⟨htop, hbot⟩ := tendsto_intervalIntegral_atTop_atBot hw hm hwm a
+  obtain ⟨htop, hbot⟩ :=
+    tendsto_intervalIntegral_atTop_atBot (fun t ↦ hw.intervalIntegrable a t) hm hwm
   let e : ℝ ≃o ℝ := StrictMono.orderIsoOfSurjective φ hφmono (hφcont.surjective htop hbot)
   have hφψ : ∀ s, φ (e.symm s) = s := e.apply_symm_apply
   have hψd : ∀ s, HasDerivAt e.symm (w (e.symm s))⁻¹ s := fun s ↦
