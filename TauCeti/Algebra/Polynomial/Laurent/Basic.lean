@@ -61,7 +61,8 @@ every `R[T;T⁻¹]`-module. That automorphism is what a shift-compatible invaria
   evaluation at `u` by rescaling by `c`.
 * `TauCeti.eval₂_C_inv_pow_injective`: in particular `T ↦ T⁻ᵏ` is injective for `k ≠ 0`.
 * `LaurentPolynomial.algHom_apply_C` and `LaurentPolynomial.algHom_apply_T_neg_one`: an algebra
-  map `K[T;T⁻¹] →ₐ[K] K` fixes constants and sends `T (-1)` to the inverse of its value at `T 1`.
+  map `R[T;T⁻¹] →ₐ[R] R` fixes constants, and an algebra map sending `T 1` to a unit sends
+  `T (-1)` to its inverse.
 * `TauCeti.laurentPolynomialC_smul`: a constant Laurent polynomial acts by integer scalar
   multiplication.
 * `TauCeti.map_smul_eq_laurentEval_smul`: a linear map turning `T` into a unit turns every
@@ -452,19 +453,20 @@ theorem _root_.TauCeti.mul_laurentEval {B : Type*} [Semiring B] [Algebra A B] {u
 
 section AlgHomToField
 
-variable {K : Type*} [Field K]
+variable {R : Type*} [CommSemiring R]
 
-/-- An algebra homomorphism from the Laurent polynomials to the coefficient field sends a constant
+/-- An algebra homomorphism from the Laurent polynomials to the coefficient ring sends a constant
 to itself. -/
 @[simp]
-theorem algHom_apply_C (φ : K[T;T⁻¹] →ₐ[K] K) (x : K) : φ (C x) = x := by
+theorem algHom_apply_C (φ : R[T;T⁻¹] →ₐ[R] R) (x : R) : φ (C x) = x := by
   rw [C_eq_algebraMap, AlgHom.commutes, Algebra.algebraMap_self_apply]
 
-/-- An algebra homomorphism to the coefficient field sending `T 1` to a unit `u` sends `T (-1)` to
-`u⁻¹`. -/
-theorem algHom_apply_T_neg_one {φ : K[T;T⁻¹] →ₐ[K] K} {u : Kˣ} (h : φ (T 1) = u) :
-    φ (T (-1)) = (u : K)⁻¹ := by
-  rw [laurentEval_unique u φ h, laurentEval_T, zpow_neg, zpow_one, Units.val_inv_eq_inv_val]
+variable {A : Type*} [Semiring A] [Algebra R A]
+
+/-- An algebra homomorphism sending `T 1` to a unit `u` sends `T (-1)` to `u⁻¹`. -/
+theorem algHom_apply_T_neg_one {φ : R[T;T⁻¹] →ₐ[R] A} {u : Aˣ} (h : φ (T 1) = u) :
+    φ (T (-1)) = ↑u⁻¹ := by
+  rw [laurentEval_unique u φ h, laurentEval_T, zpow_neg, zpow_one]
 
 end AlgHomToField
 
