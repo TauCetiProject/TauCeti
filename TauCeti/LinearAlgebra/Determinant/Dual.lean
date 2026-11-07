@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Determinant.Line
+public import TauCeti.LinearAlgebra.Dual.Annihilator
 public import TauCeti.LinearAlgebra.Dual.Rank
 import TauCeti.LinearAlgebra.Dual.Lemmas
 
@@ -18,9 +19,9 @@ power: the pairing `(φ₁ ∧ ⋯ ∧ φₙ, v₁ ∧ ⋯ ∧ vₙ) ↦ det (φ
 `exteriorPower.pairingDual` in top degree.
 
 For a linear map `f : M → N` of vector spaces, the dual map `f^* : N^* → M^*` exchanges kernel and
-cokernel up to duality: `ker f^*` is the space of functionals vanishing on `range f`, which is
-`(coker f)^*` (`LinearMap.kerDualMapEquiv`), and `coker f^* = M^* ⧸ range f^*` is `(ker f)^*` by
-restriction (`LinearMap.cokerDualMapEquiv`). When kernel and cokernel are finite-dimensional, as
+cokernel up to duality: `ker f^* ≃ (coker f)^*` (`LinearMap.kerDualMapEquiv`) and
+`coker f^* ≃ (ker f)^*` (`LinearMap.cokerDualMapEquiv`), both from
+`TauCeti.LinearAlgebra.Dual.Annihilator`. When kernel and cokernel are finite-dimensional, as
 for a Fredholm operator, the determinant lines therefore agree:
 
 `det f^* = det (ker f^*) ⊗ (det (coker f^*))^* ≃ (det (coker f))^* ⊗ (det (ker f))^{**}`
@@ -41,8 +42,6 @@ line of an operator are transported to the determinant line of its adjoint.
 
 * `TauCeti.detLineDualEquiv`: the isomorphism `det (V^*) ≃ (det V)^*`, with value
   `TauCeti.detLineDualEquiv_ιMulti_ιMulti`.
-* `LinearMap.kerDualMapEquiv`: `ker f^* ≃ (coker f)^*`.
-* `LinearMap.cokerDualMapEquiv`: `coker f^* ≃ (ker f)^*`.
 * `LinearMap.detLineDualMapEquiv`: the isomorphism `det f^* ≃ det f`, with value
   `LinearMap.smul_detLineDualMapEquiv_tmul`.
 
@@ -94,43 +93,6 @@ open TauCeti
 variable {K : Type*} [Field K] {M N : Type*} [AddCommGroup M] [Module K M]
   [AddCommGroup N] [Module K N] (f : M →ₗ[K] N)
 
-/-- The kernel of the dual map `f^*` is the dual of the cokernel of `f`: a functional on `N`
-vanishing on `range f` is a functional on `N ⧸ range f`. -/
-def kerDualMapEquiv : ker f.dualMap ≃ₗ[K] Dual K (N ⧸ range f) :=
-  (LinearEquiv.ofEq _ _ f.ker_dualMap_eq_dualAnnihilator_range).trans
-    (range f).dualQuotEquivDualAnnihilator.symm
-
-@[simp]
-theorem kerDualMapEquiv_apply_mk (φ : ker f.dualMap) (n : N) :
-    f.kerDualMapEquiv φ (Submodule.Quotient.mk n) = (φ : Dual K N) n :=
-  (rfl)
-
-@[simp]
-theorem coe_kerDualMapEquiv_symm (ψ : Dual K (N ⧸ range f)) :
-    (f.kerDualMapEquiv.symm ψ : Dual K N) = ψ ∘ₗ (range f).mkQ :=
-  (rfl)
-
-/-- The cokernel of the dual map `f^*` is the dual of the kernel of `f`: the class of a functional
-on `M` modulo `range f^*` is its restriction to `ker f`. -/
-def cokerDualMapEquiv : (Dual K M ⧸ range f.dualMap) ≃ₗ[K] Dual K (ker f) :=
-  (Submodule.quotEquivOfEq _ _ f.range_dualMap_eq_dualAnnihilator_ker).trans
-    (Subspace.quotAnnihilatorEquiv (ker f))
-
-@[simp]
-theorem cokerDualMapEquiv_mk_apply (θ : Dual K M) (u : ker f) :
-    f.cokerDualMapEquiv (Submodule.Quotient.mk θ) u = θ u :=
-  (rfl)
-
-/-- The kernel of `f^*` has the dimension of the cokernel of `f`. -/
-theorem finrank_ker_dualMap_eq_finrank_quotient_range :
-    finrank K (ker f.dualMap) = finrank K (N ⧸ range f) :=
-  f.kerDualMapEquiv.finrank_eq.trans Subspace.dual_finrank_eq
-
-/-- The cokernel of `f^*` has the dimension of the kernel of `f`. -/
-theorem finrank_quotient_range_dualMap :
-    finrank K (Dual K M ⧸ range f.dualMap) = finrank K (ker f) :=
-  f.cokerDualMapEquiv.finrank_eq.trans Subspace.dual_finrank_eq
-
 /-- The isomorphism `det (ker f^*) ≃ (det (coker f))^*` underlying `detLineDualMapEquiv`. -/
 private def detLineKerDualMapEquiv [FiniteDimensional K (N ⧸ range f)] :
     TauCeti.detLine K (ker f.dualMap) ≃ₗ[K] Dual K (TauCeti.detLine K (N ⧸ range f)) :=
@@ -164,19 +126,6 @@ private theorem detLineDualMapEquiv_tmul [FiniteDimensional K (ker f)]
     TensorProduct.comm_tmul, LinearEquiv.trans_apply]
 
 variable {f}
-
-/-- The step of `smul_detLineDualMapEquiv_tmul` computing the cokernel factor: in a line `L`, the
-vector `x` with pairings `ψ x = β (C.symm ψ)`, for an isomorphism `C : P ≃ L^*`, satisfies
-`C p w • x = β p • w` for all `p` and `w`. -/
-private theorem smul_evalEquiv_symm_dualMap {L P : Type*} [AddCommGroup L] [Module K L]
-    [FiniteDimensional K L] [AddCommGroup P] [Module K P] (hL : finrank K L = 1)
-    (C : P ≃ₗ[K] Dual K L) (β : Dual K P) (p : P) (w : L) :
-    C p w • (evalEquiv K L).symm (C.symm.dualMap β) = β p • w := by
-  rw [← sub_eq_zero]
-  refine (Module.forall_dual_apply_eq_zero_iff K _).mp fun ψ ↦ ?_
-  rw [map_sub, map_smul, map_smul, apply_evalEquiv_symm_apply, LinearEquiv.dualMap_apply,
-    ← map_smul, ← map_smul, (C p).apply_smul_eq_apply_smul_of_finrank_eq_one hL ψ w, map_smul,
-    LinearEquiv.symm_apply_apply, map_smul, smul_eq_mul, smul_eq_mul, mul_comm, sub_self]
 
 /-- The kernel factor of `detLineDualMapEquiv`: the image of `φ₁ ∧ ⋯ ∧ φ_c`, for functionals
 `φᵢ` on `N` vanishing on `range f`, is the functional on `det (coker f)` sending the exterior
@@ -236,7 +185,7 @@ theorem smul_detLineDualMapEquiv_tmul [FiniteDimensional K (ker f)]
       detLineKerDualMapEquiv_ιMulti, hψ]
   -- The cokernel factor `x` pairs with each functional `ψ'` on `det (ker f)` through `β`, and
   -- `det (ker f)` is a line, so `det (θⱼ uᵢ) • x = β (θ₁ ∧ ⋯ ∧ θ_k) • (u₁ ∧ ⋯ ∧ u_k)`.
-  have hcoker := smul_evalEquiv_symm_dualMap (TauCeti.finrank_detLine K (ker f))
+  have hcoker := Dual.smul_evalEquiv_symm_dualMap (TauCeti.finrank_detLine K (ker f))
     f.detLineCokerDualMapEquiv β (exteriorPower.ιMulti K _ ((range f.dualMap).mkQ ∘ θ))
     (exteriorPower.ιMulti K _ u)
   rw [← detLineCokerDualMapEquiv_ιMulti, detLineDualMapEquiv_tmul, hker,

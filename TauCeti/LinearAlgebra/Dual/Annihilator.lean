@@ -22,6 +22,11 @@ functional factoring through a quotient `V ⧸ U` annihilates `U`
 For complementary submodules `p` and `q`, over any commutative ring, restriction to `p`
 identifies the annihilator of `q` with the dual of `p`
 (`Submodule.dualAnnihilatorEquivOfIsCompl`); the inverse extends a functional by zero on `q`.
+
+The dual map `f^* : N^* → M^*` of a linear map `f : M → N` exchanges kernel and cokernel up to
+duality. Over any commutative ring, `ker f^*` is the space of functionals vanishing on `range f`,
+which is `(coker f)^*` (`LinearMap.kerDualMapEquiv`). Over a field, `coker f^* = M^* ⧸ range f^*`
+is `(ker f)^*` by restriction (`LinearMap.cokerDualMapEquiv`).
 -/
 
 public section
@@ -85,3 +90,62 @@ theorem dualAnnihilator_map_dualMap_eq (S : Submodule k W) (f : V →ₗ[k] W) :
     Submodule.ker_mkQ]
 
 end Submodule
+
+namespace LinearMap
+
+open Module
+
+section CommRing
+
+variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+  [AddCommGroup N] [Module R N] (f : M →ₗ[R] N)
+
+/-- The kernel of the dual map `f^*` is the dual of the cokernel of `f`: a functional on `N`
+vanishing on `range f` is a functional on `N ⧸ range f`. -/
+noncomputable def kerDualMapEquiv : ker f.dualMap ≃ₗ[R] Dual R (N ⧸ range f) :=
+  (LinearEquiv.ofEq _ _ f.ker_dualMap_eq_dualAnnihilator_range).trans
+    (range f).dualQuotEquivDualAnnihilator.symm
+
+@[simp]
+theorem kerDualMapEquiv_apply_mk (φ : ker f.dualMap) (n : N) :
+    f.kerDualMapEquiv φ (Submodule.Quotient.mk n) = (φ : Dual R N) n :=
+  (rfl)
+
+@[simp]
+theorem coe_kerDualMapEquiv_symm (ψ : Dual R (N ⧸ range f)) :
+    (f.kerDualMapEquiv.symm ψ : Dual R N) = ψ ∘ₗ (range f).mkQ :=
+  (rfl)
+
+end CommRing
+
+section Field
+
+variable {K M N : Type*} [Field K] [AddCommGroup M] [Module K M]
+  [AddCommGroup N] [Module K N] (f : M →ₗ[K] N)
+
+/-- The cokernel of the dual map `f^*` is the dual of the kernel of `f`: the class of a functional
+on `M` modulo `range f^*` is its restriction to `ker f`. -/
+noncomputable def cokerDualMapEquiv : (Dual K M ⧸ range f.dualMap) ≃ₗ[K] Dual K (ker f) :=
+  (Submodule.quotEquivOfEq _ _ f.range_dualMap_eq_dualAnnihilator_ker).trans
+    (Subspace.quotAnnihilatorEquiv (ker f))
+
+@[simp]
+theorem cokerDualMapEquiv_mk_apply (θ : Dual K M) (u : ker f) :
+    f.cokerDualMapEquiv (Submodule.Quotient.mk θ) u = θ u :=
+  (rfl)
+
+/-- The `finrank` of the kernel of `f^*` equals the `finrank` of the cokernel of `f`. When the
+cokernel is finite-dimensional this says the two spaces have the same dimension. -/
+theorem finrank_ker_dualMap_eq_finrank_quotient_range :
+    finrank K (ker f.dualMap) = finrank K (N ⧸ range f) :=
+  f.kerDualMapEquiv.finrank_eq.trans Subspace.dual_finrank_eq
+
+/-- The `finrank` of the cokernel of `f^*` equals the `finrank` of the kernel of `f`. When the
+kernel is finite-dimensional this says the two spaces have the same dimension. -/
+theorem finrank_quotient_range_dualMap :
+    finrank K (Dual K M ⧸ range f.dualMap) = finrank K (ker f) :=
+  f.cokerDualMapEquiv.finrank_eq.trans Subspace.dual_finrank_eq
+
+end Field
+
+end LinearMap
