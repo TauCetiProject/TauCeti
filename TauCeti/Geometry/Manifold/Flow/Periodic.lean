@@ -342,7 +342,7 @@ theorem finite_contractiblePeriodicSolutions [FiniteDimensional ℝ E] [CompactS
   -- points, hence a finite set.
   have hK : IsClosed (Subtype.val '' {y | P (e.symm y)}) :=
     hY.isClosedMap_subtype_val _ (isClopen_setOf_homotopic_refl _ hfam).isClosed
-  have hKfin := hK.finite_of_isNondegenerateFixedPt (I := I) <| by
+  have hKfin := hK.isCompact.finite_of_isNondegenerateFixedPt (I := I) <| by
     rintro _ ⟨y, hy, rfl⟩
     have hnd := h _ ((hP _).1 hy)
     rwa [periodicSolutionsEquivFixedPoints_symm_apply, timeDependentFlowOf_self hX] at hnd

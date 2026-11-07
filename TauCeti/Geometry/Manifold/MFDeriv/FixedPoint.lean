@@ -35,10 +35,11 @@ expression `g` of `f` has `g - id` with injective derivative at `x`, so `g z ≠
 to `x`, because an injective linear map of a finite-dimensional space is bounded below. Without
 finite dimensionality, injectivity of `df_x - 1` does not imply isolation. The argument is carried
 out within the range of the model with corners, so it also applies at boundary points.
-Consequently, on such a compact manifold, a closed set of nondegenerate fixed points is compact
-and discrete, hence finite (`IsClosed.finite_of_isNondegenerateFixedPt`). In particular a
-continuous self-map all of whose fixed points are nondegenerate has only finitely many fixed points
-(`TauCeti.finite_fixedPoints_of_isNondegenerateFixedPt`), since its fixed-point set is closed.
+Consequently a compact set of nondegenerate fixed points is discrete, hence finite
+(`IsCompact.finite_of_isNondegenerateFixedPt`). In particular a continuous self-map of such a
+compact manifold all of whose fixed points are nondegenerate has only finitely many fixed points
+(`TauCeti.finite_fixedPoints_of_isNondegenerateFixedPt`), since its fixed-point set is closed,
+hence compact.
 
 At a fixed point the differential of `f^[n]` is `(df_x) ^ n`, so `x` is a nondegenerate fixed point
 of `f^[n]` exactly when `(df_x) ^ n` fixes no nonzero vector. For a periodic point of period `k`,
@@ -60,9 +61,8 @@ excludes both eigenvalues `1` and `-1` from the return maps of all covers of per
 
 * `TauCeti.IsNondegenerateFixedPt.eventually_not_isFixedPt`: on a manifold modelled on a
   finite-dimensional space over a complete field, nondegenerate fixed points are isolated.
-* `IsClosed.finite_of_isNondegenerateFixedPt`: on a compact manifold modelled on a
-  finite-dimensional space over a complete field, a closed set of nondegenerate fixed points is
-  finite.
+* `IsCompact.finite_of_isNondegenerateFixedPt`: on a manifold modelled on a finite-dimensional
+  space over a complete field, a compact set of nondegenerate fixed points is finite.
 * `TauCeti.finite_fixedPoints_of_isNondegenerateFixedPt`: on a compact manifold modelled on a
   finite-dimensional space over a complete field, a continuous map whose fixed points are all
   nondegenerate has finitely many fixed points.
@@ -171,13 +171,13 @@ theorem eventually_not_isFixedPt (h : IsNondegenerateFixedPt I f x) :
 
 end IsNondegenerateFixedPt
 
-/-- **Finiteness of closed sets of nondegenerate fixed points.** On a compact manifold modelled on
-a finite-dimensional space, a closed set all of whose points are nondegenerate fixed points of
-`f` is finite, since each of its points is isolated among the fixed points of `f`. -/
-theorem _root_.IsClosed.finite_of_isNondegenerateFixedPt [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E]
-    [CompactSpace M] {s : Set M} (hs : IsClosed s) (h : ∀ x ∈ s, IsNondegenerateFixedPt I f x) :
-    s.Finite :=
-  hs.isCompact.finite <| isDiscrete_iff_nhdsNE.2 fun x hx ↦ inf_principal_eq_bot.2 <|
+/-- **Finiteness of compact sets of nondegenerate fixed points.** On a manifold modelled on a
+finite-dimensional space, a compact set all of whose points are nondegenerate fixed points of `f`
+is finite, since each of its points is isolated among the fixed points of `f`. -/
+theorem _root_.IsCompact.finite_of_isNondegenerateFixedPt [CompleteSpace 𝕜]
+    [FiniteDimensional 𝕜 E] {s : Set M} (hs : IsCompact s)
+    (h : ∀ x ∈ s, IsNondegenerateFixedPt I f x) : s.Finite :=
+  hs.finite <| isDiscrete_iff_nhdsNE.2 fun x hx ↦ inf_principal_eq_bot.2 <|
     (h x hx).eventually_not_isFixedPt.mono fun y hy hys ↦ hy (h y hys).isFixedPt
 
 /-- **Finiteness of nondegenerate fixed points.** A continuous self-map of a compact manifold,
@@ -186,7 +186,7 @@ finitely many fixed points. -/
 theorem finite_fixedPoints_of_isNondegenerateFixedPt [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E]
     [CompactSpace M] [T2Space M] (hf : Continuous f)
     (h : ∀ x ∈ fixedPoints f, IsNondegenerateFixedPt I f x) : (fixedPoints f).Finite :=
-  (isClosed_fixedPoints hf).finite_of_isNondegenerateFixedPt h
+  (isClosed_fixedPoints hf).isCompact.finite_of_isNondegenerateFixedPt h
 
 /-! ### Iterates
 
