@@ -22,6 +22,7 @@ python3 scripts/pr_status/test_zulip.py
 python3 scripts/pr_status/test_conflicts.py
 python3 scripts/test_structure_nudge.py
 python3 scripts/test_workflow_pins.py
+python3 scripts/test_pages_data_refresh.py
 python3 scripts/test_control_batch_workflows.py
 python3 scripts/test_control_batch_budget.py
 python3 scripts/test_queue_release.py

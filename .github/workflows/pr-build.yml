@@ -156,6 +156,12 @@ jobs:
           path: gate
           persist-credentials: false
           fetch-depth: 1
+          # Trusted setup consumes project configuration, scripts, and local actions.
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /.github/
+            /scripts/
+            /tauceti.toml
 
       - name: Prepare pinned shared tools
         uses: TauCetiProject/TauCetiTools/.github/actions/setup@d6650c72c037f106edd138adec8c6ca493491c07

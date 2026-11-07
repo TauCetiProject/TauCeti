@@ -161,22 +161,23 @@ private lemma lowerFaces_insert [DecidableEq ι] (a b : ι → ℝ) (T : Finset 
     Finset.mem_erase]
   grind
 
-/-- Cutting a box along the coordinate `i` at `s`: a lifting problem relative to the lower faces
-in the directions `T` is solved on the lower half, then on the upper half relative to the lower
-faces in the directions `T` and `i`, and the two solutions glue. -/
-private lemma boxLifts_of_cut [DecidableEq ι] {H : (ι → ℝ) → B} {a b : ι → ℝ} {T : Finset ι}
-    {i : ι} {s : ℝ} (has : a i ≤ s) (hsb : s ≤ b i)
-    (h₁ : BoxLifts p H a (Function.update b i s) T)
-    (h₂ : BoxLifts p H (Function.update a i s) b (insert i T)) : BoxLifts p H a b T := by
+/-- The upper half of a cut box: given a lift `G₁` of `H` on the lower half that agrees with `g` on
+the lower faces, and assuming the lifting property of the upper box `h₂`, there is a lift `G₂` of
+`H` on the upper half that agrees with `G₁` on the cut and with `g` on the other lower faces. -/
+private lemma exists_lift_upper_of_cut [DecidableEq ι] {H : (ι → ℝ) → B} {a b : ι → ℝ}
+    {T : Finset ι} {i : ι} {s : ℝ} (has : a i ≤ s) {g G₁ : (ι → ℝ) → E}
+    (hg : ContinuousOn g (lowerFaces a b T)) (hgH : ∀ x ∈ lowerFaces a b T, p (g x) = H x)
+    (hG₁ : ContinuousOn G₁ (Icc a (Function.update b i s)))
+    (hpG₁ : ∀ x ∈ Icc a (Function.update b i s), p (G₁ x) = H x)
+    (hG₁g : ∀ x ∈ lowerFaces a (Function.update b i s) T, G₁ x = g x)
+    (h₂ : BoxLifts p H (Function.update a i s) b (insert i T)) :
+    ∃ G₂ : (ι → ℝ) → E, ContinuousOn G₂ (Icc (Function.update a i s) b) ∧
+      (∀ x ∈ Icc (Function.update a i s) b, p (G₂ x) = H x) ∧
+      (∀ x ∈ lowerFaces (Function.update a i s) b {i}, G₂ x = G₁ x) ∧
+      ∀ x ∈ lowerFaces (Function.update a i s) b (T.erase i), G₂ x = g x := by
   set b₁ := Function.update b i s
   set a₂ := Function.update a i s
-  have hb₁ : b₁ ≤ b := update_le_iff.2 ⟨hsb, fun _ _ ↦ le_rfl⟩
   have ha₂ : a ≤ a₂ := le_update_iff.2 ⟨has, fun _ _ ↦ le_rfl⟩
-  have faces₁ : lowerFaces a b₁ T ⊆ lowerFaces a b T := fun x hx ↦
-    let ⟨hx, h⟩ := mem_lowerFaces.1 hx
-    mem_lowerFaces.2 ⟨⟨hx.1, hx.2.trans hb₁⟩, h⟩
-  intro g hg hgH
-  obtain ⟨G₁, hG₁, hpG₁, hG₁g⟩ := h₁ g (hg.mono faces₁) fun x hx ↦ hgH x (faces₁ hx)
   -- The lower faces of the upper half are the cut `P` and the faces `R` in the other directions
   -- of `T`.  The lift there is `G₁` on the cut and `g` on the other faces.
   let φ : (ι → ℝ) → E := fun x ↦ if x i ≤ s then G₁ x else g x
@@ -211,6 +212,28 @@ private lemma boxLifts_of_cut [DecidableEq ι] {H : (ι → ℝ) → B} {a b : �
     rw [hG₂φ x (lowerFaces_insert a₂ b T i ▸ Or.inl hx), hφP hx]
   have hG₂R : ∀ x ∈ R, G₂ x = g x := fun x hx ↦ by
     rw [hG₂φ x (lowerFaces_insert a₂ b T i ▸ Or.inr hx), hφR hx]
+  exact ⟨G₂, hG₂, hpG₂, hG₂P, hG₂R⟩
+
+/-- Cutting a box along the coordinate `i` at `s`: a lifting problem relative to the lower faces
+in the directions `T` is solved on the lower half, then on the upper half relative to the lower
+faces in the directions `T` and `i`, and the two solutions glue. -/
+private lemma boxLifts_of_cut [DecidableEq ι] {H : (ι → ℝ) → B} {a b : ι → ℝ} {T : Finset ι}
+    {i : ι} {s : ℝ} (has : a i ≤ s) (hsb : s ≤ b i)
+    (h₁ : BoxLifts p H a (Function.update b i s) T)
+    (h₂ : BoxLifts p H (Function.update a i s) b (insert i T)) : BoxLifts p H a b T := by
+  set b₁ := Function.update b i s
+  set a₂ := Function.update a i s
+  have hb₁ : b₁ ≤ b := update_le_iff.2 ⟨hsb, fun _ _ ↦ le_rfl⟩
+  have ha₂ : a ≤ a₂ := le_update_iff.2 ⟨has, fun _ _ ↦ le_rfl⟩
+  have faces₁ : lowerFaces a b₁ T ⊆ lowerFaces a b T := fun x hx ↦
+    let ⟨hx, h⟩ := mem_lowerFaces.1 hx
+    mem_lowerFaces.2 ⟨⟨hx.1, hx.2.trans hb₁⟩, h⟩
+  intro g hg hgH
+  obtain ⟨G₁, hG₁, hpG₁, hG₁g⟩ := h₁ g (hg.mono faces₁) fun x hx ↦ hgH x (faces₁ hx)
+  obtain ⟨G₂, hG₂, hpG₂, hG₂P, hG₂R⟩ :=
+    exists_lift_upper_of_cut has hg hgH hG₁ hpG₁ hG₁g h₂
+  set P := lowerFaces a₂ b {i}
+  set R := lowerFaces a₂ b (T.erase i)
   -- glue the two solutions along the cut
   have hIcc : Icc a b = Icc a b₁ ∪ Icc a₂ b := by
     refine Subset.antisymm (fun x hx ↦ ?_) (union_subset (Icc_subset_Icc le_rfl hb₁)

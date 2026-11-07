@@ -99,6 +99,7 @@ theorem tendsto_dirichletMeasure_concentration_atBot [MeasurableSpace ι]
       with x hx0 hx1
     exact EuclideanSpace.abs_sub_sum_mul_basisFun_le_sqrt (fun i ↦ (hx0 i).le) hx1 hK
 
+omit [Nonempty ι] in
 /-- The mean squared distance from the fixed mean of a Dirichlet law is the sum of its
 coordinate variances. It decays inversely with one plus the total concentration. -/
 theorem integral_norm_sub_sq_dirichletMeasure_smul (p : Convexity.StdSimplex ℝ ι)
@@ -106,6 +107,7 @@ theorem integral_norm_sub_sq_dirichletMeasure_smul (p : Convexity.StdSimplex ℝ
     ∫ x, ‖x - (EuclideanSpace.equiv ι ℝ).symm p.weights‖ ^ 2
       ∂dirichletMeasure (fun i ↦ c * p.weights i) =
         (1 - ∑ i, p.weights i ^ 2) / (c + 1) := by
+  have := p.nonempty
   have ha (i : ι) : 0 < c * p.weights i := mul_pos hc (hp i)
   let _ := isProbabilityMeasure_dirichletMeasure ha
   have hsum : ∑ i, c * p.weights i = c := by simp [← Finset.mul_sum]
