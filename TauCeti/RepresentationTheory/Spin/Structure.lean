@@ -113,21 +113,19 @@ variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
 The count is `finrank (CliffordAlgebra Q) = 2 ^ finrank V = 2 ^ (2 * l) = (2 ^ l) ^ 2 =
 finrank (Module.End K S)`, where the outer two equalities hold for every quadratic form on a
 finite free module and the inner one is the even-dimensional reading of the summand dimensions
-above. Injectivity of the Fock action is then forced by its surjectivity. The dimension count
-needs no hypothesis on `2`; the rest of the section inverts it. -/
+above. Injectivity of the Fock action is then forced by its surjectivity. Neither step needs a
+hypothesis on `2`. -/
 
 section Structure
 
-variable [Invertible (2 : K)] [FiniteDimensional K V]
+variable [FiniteDimensional K V]
 
-omit [Invertible (2 : K)] in
 /-- **The spinor module has dimension `2 ^ l`** when the polarized quadratic space has dimension
 `2 * l`. -/
 theorem finrank_exteriorAlgebra_W_of_finrank_eq_two_mul {l : ℕ}
     (hV : finrank K V = 2 * l) : finrank K (ExteriorAlgebra K P.W) = 2 ^ l := by
   rw [TauCeti.ExteriorAlgebra.finrank_eq_two_pow, P.finrank_W_eq_of_finrank_eq_two_mul hV]
 
-omit [Invertible (2 : K)] in
 /-- **The Clifford algebra and the operator algebra of the spinor module have equal dimension** in
 even dimension: `2 ^ (2 * l)` on the left, `(2 ^ l) ^ 2` on the right. This is the dimension count
 that upgrades the surjection `spinAction_surjective` to an isomorphism. -/
@@ -148,8 +146,7 @@ end SpinPolarizationData
 section Structure
 
 variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
-  {Q : QuadraticForm K V} (P : SpinPolarizationData Q)
-  [Invertible (2 : K)] [FiniteDimensional K V]
+  {Q : QuadraticForm K V} (P : SpinPolarizationData Q) [FiniteDimensional K V]
 
 /-- **The Fock action is faithful in even dimension.** It is surjective onto an algebra of the same
 dimension, so it is injective. -/
@@ -173,7 +170,7 @@ section Structure
 
 variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
   {Q : QuadraticForm K V} (P : SpinPolarizationData Q)
-  [Invertible (2 : K)] [FiniteDimensional K V]
+  [FiniteDimensional K V]
 
 /-- **The structure theorem in operator form**: for an even-dimensional polarized quadratic space,
 the Fock action is an isomorphism of `K`-algebras from `CliffordAlgebra Q` onto the endomorphism
@@ -236,9 +233,9 @@ section EvenStructure
 
 variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
   {Q : QuadraticForm K V} (P : SpinPolarizationData Q)
-  [Invertible (2 : K)] [FiniteDimensional K V]
+  [FiniteDimensional K V]
 
-omit [Invertible (2 : K)] [FiniteDimensional K V] in
+omit [FiniteDimensional K V] in
 private theorem spinAction_eq_zero_on_of_maps_le
     (M N : Submodule K (ExteriorAlgebra K P.W)) (hMN : Disjoint M N)
     {x₀ x₁ : CliffordAlgebra Q} (heven : M.map (spinAction Q P x₀) ≤ M)

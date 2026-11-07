@@ -18,7 +18,8 @@ import TauCeti.LinearAlgebra.Dual.Lemmas
 -- Private: `Module.Basis.map_exteriorAlgebra` proves the naturality of the basis.
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Subspace
 import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
--- Private: `QuadraticMap.toBilin` writes `-Q` as a triangular bilinear form.
+-- Private: `LinearMap.BilinMap.toQuadraticMap_surjective` writes `-Q` as the quadratic form of a
+-- bilinear form.
 import Mathlib.LinearAlgebra.QuadraticForm.Basis
 
 /-!
@@ -32,17 +33,17 @@ linear (not algebra) isomorphism `CliffordAlgebra Q ≃ₗ[R] ExteriorAlgebra R 
 quadratic form. Deforming the form therefore deforms the multiplication and nothing else, and the
 underlying module of `CliffordAlgebra Q` is as free, and as large, as the exterior algebra of `M`.
 
-This file records that. Over a commutative ring in which `2` is invertible, `CliffordAlgebra Q` is a
-free `R`-module whenever `M` is, with an explicit basis
-`CliffordAlgebra.basis Q b : Basis (Finset I) R (CliffordAlgebra Q)` attached to a basis `b`
-of `M` indexed by a linearly ordered `I`, and it is finite whenever `M` is. Over every nontrivial
-commutative ring, `CliffordAlgebra Q` has rank `2 ^ finrank R M` whenever `M` is finite free: the
-quadratic form `-Q` is that of a triangular bilinear form, so `CliffordAlgebra.changeFormEquiv`
-identifies `CliffordAlgebra Q` linearly with the exterior algebra without dividing by `2`. The
-`2 ^ n` is `∑ₖ (n choose k)` (`finrank_eq_sum_choose`), the count that a degree-graded argument
-would produce one exterior power at a time; the basis, in contrast, is indexed by the finite subsets
-of a basis index set, because it is transported from Mathlib's basis `Module.Basis.ExteriorAlgebra`
-of the exterior algebra.
+This file records that. Over every commutative ring, `CliffordAlgebra Q` is a free `R`-module
+whenever `M` is free and a finite `R`-module whenever `M` is finite (`CliffordAlgebra.instFree`,
+`CliffordAlgebra.instFinite`), and it has rank `2 ^ finrank R M` whenever `R` is nontrivial and `M`
+is finite free: for free `M` the quadratic form `-Q` is that of a bilinear form, so
+`CliffordAlgebra.changeFormEquiv` identifies `CliffordAlgebra Q` linearly with the exterior algebra
+without dividing by `2`. Over a commutative ring in which `2` is invertible, there is moreover an
+explicit basis `CliffordAlgebra.basis Q b : Basis (Finset I) R (CliffordAlgebra Q)` attached to a
+basis `b` of `M` indexed by a linearly ordered `I`. The `2 ^ n` is `∑ₖ (n choose k)`
+(`finrank_eq_sum_choose`), the count that a degree-graded argument would produce one exterior power
+at a time; the basis, in contrast, is indexed by the finite subsets of a basis index set, because it
+is transported from Mathlib's basis `Module.Basis.ExteriorAlgebra` of the exterior algebra.
 
 A second section splits that count in half along Mathlib's `ℤ/2`-grading `evenOdd Q`. Over a field
 the two halves of the grading of the Clifford algebra of a nonzero space are isomorphic for *every*
@@ -117,6 +118,53 @@ namespace CliffordAlgebra
 
 open TauCeti
 
+section General
+
+variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
+  (Q : QuadraticForm R M)
+
+/-- The Clifford algebra of a free module is a free module, over every commutative ring. -/
+instance instFree [Module.Free R M] : Module.Free R (CliffordAlgebra Q) := by
+  -- `M` being free, `-Q` is the quadratic form of a bilinear form `B`, so `changeFormEquiv`
+  -- identifies the algebra linearly with the exterior algebra, with no division by `2`.
+  obtain ⟨B, hB⟩ := LinearMap.BilinMap.toQuadraticMap_surjective (-Q)
+  exact Module.Free.of_equiv (changeFormEquiv (hB.trans (zero_sub Q).symm)).symm
+
+/-- The Clifford algebra of a finite module is a finite module, over every commutative ring. -/
+instance instFinite [Module.Finite R M] : Module.Finite R (CliffordAlgebra Q) := by
+  -- It is a quotient of the Clifford algebra of a finite free module, which is finite by the same
+  -- `changeFormEquiv` argument as `CliffordAlgebra.instFree`.
+  obtain ⟨n, f, hf⟩ := Module.Finite.exists_fin' R M
+  obtain ⟨B, hB⟩ := LinearMap.BilinMap.toQuadraticMap_surjective (-(Q.comp f))
+  have := Module.Finite.equiv (changeFormEquiv (hB.trans (zero_sub (Q.comp f)).symm)).symm
+  exact Module.Finite.of_surjective (map (Q₁ := Q.comp f) ⟨f, fun _ ↦ rfl⟩).toLinearMap
+    (map_surjective _ hf)
+
+/-- The Clifford algebra of a finite free module of rank `n` has rank `2 ^ n`, for every quadratic
+form on it. -/
+theorem finrank_eq_two_pow [Nontrivial R] [Module.Free R M] [Module.Finite R M] :
+    finrank R (CliffordAlgebra Q) = 2 ^ finrank R M := by
+  -- As for `CliffordAlgebra.instFree`: `changeFormEquiv` along a bilinear form for `-Q` identifies
+  -- the algebra linearly with the exterior algebra, with no division by `2`.
+  obtain ⟨B, hB⟩ := LinearMap.BilinMap.toQuadraticMap_surjective (-Q)
+  exact (changeFormEquiv (hB.trans (zero_sub Q).symm)).finrank_eq.trans
+    ExteriorAlgebra.finrank_eq_two_pow
+
+/-- The rank of a Clifford algebra as a sum of binomial coefficients: `2 ^ n = ∑ₖ (n choose k)`,
+the count that adding up the exterior powers `⋀[R]^k M`, of ranks `(n choose k)`, produces. -/
+theorem finrank_eq_sum_choose [Nontrivial R] [Module.Free R M] [Module.Finite R M] :
+    finrank R (CliffordAlgebra Q) =
+      ∑ k ∈ Finset.range (finrank R M + 1), (finrank R M).choose k := by
+  rw [finrank_eq_two_pow, Nat.sum_range_choose]
+
+/-- A Clifford algebra of a finite free module has positive rank, its rank being a power of two. -/
+theorem finrank_pos [Nontrivial R] [Module.Free R M] [Module.Finite R M] :
+    0 < finrank R (CliffordAlgebra Q) := by
+  rw [finrank_eq_two_pow]
+  positivity
+
+end General
+
 section CommRing
 
 variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M] [Invertible (2 : R)]
@@ -178,17 +226,6 @@ theorem map_basis {M' : Type*} [AddCommGroup M'] [Module R M'] {Q' : QuadraticFo
   rw [equivExterior_map, equivExterior_basis, equivExterior_basis]
   exact b.map_exteriorAlgebra s e.toLinearEquiv
 
-/-- The Clifford algebra of a free module is a free module, over a ring in which `2` is
-invertible. -/
-instance instFree [Module.Free R M] : Module.Free R (CliffordAlgebra Q) :=
-  Module.Free.of_equiv (equivExterior Q).symm
-
-/-- The Clifford algebra of a finite module is a finite module, over a ring in which `2` is
-invertible. -/
-instance instFinite [Module.Finite R M] :
-    Module.Finite R (CliffordAlgebra Q) :=
-  Module.Finite.equiv (equivExterior Q).symm
-
 /-- A Clifford algebra has the rank of the exterior algebra of the same module. The right-hand side
 does not mention `Q`: deforming the quadratic form deforms the multiplication and leaves the
 underlying module alone. -/
@@ -203,34 +240,6 @@ theorem finrank_eq_finrank_exteriorAlgebra :
   (equivExterior Q).finrank_eq
 
 end CommRing
-
-section General
-
-variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
-  (Q : QuadraticForm R M)
-
-/-- The Clifford algebra of a finite free module of rank `n` has rank `2 ^ n`, for every quadratic
-form on it. -/
-theorem finrank_eq_two_pow [Nontrivial R] [Module.Free R M] [Module.Finite R M] :
-    finrank R (CliffordAlgebra Q) = 2 ^ finrank R M := by
-  have h : ((-Q).toBilin (Module.finBasis R M)).toQuadraticMap = 0 - Q := by
-    rw [QuadraticMap.toQuadraticMap_toBilin, zero_sub]
-  exact (changeFormEquiv h).finrank_eq.trans ExteriorAlgebra.finrank_eq_two_pow
-
-/-- The rank of a Clifford algebra as a sum of binomial coefficients: `2 ^ n = ∑ₖ (n choose k)`,
-the count that adding up the exterior powers `⋀[R]^k M`, of ranks `(n choose k)`, produces. -/
-theorem finrank_eq_sum_choose [Nontrivial R] [Module.Free R M] [Module.Finite R M] :
-    finrank R (CliffordAlgebra Q) =
-      ∑ k ∈ Finset.range (finrank R M + 1), (finrank R M).choose k := by
-  rw [finrank_eq_two_pow, Nat.sum_range_choose]
-
-/-- A Clifford algebra of a finite free module has positive rank, its rank being a power of two. -/
-theorem finrank_pos [Nontrivial R] [Module.Free R M] [Module.Finite R M] :
-    0 < finrank R (CliffordAlgebra Q) := by
-  rw [finrank_eq_two_pow]
-  positivity
-
-end General
 
 section Field
 
@@ -281,7 +290,6 @@ The whole algebra is counted by `CliffordAlgebra.finrank_eq_two_pow` and halved 
 covers the zero form, the even and odd halves of an exterior algebra, as well. -/
 theorem finrank_evenOdd [Module.Finite K V] [Nontrivial V] (i : ZMod 2) :
     finrank K (evenOdd Q i) = 2 ^ (finrank K V - 1) :=
-  haveI := Module.finite_of_finrank_pos (finrank_pos Q)
   finrank_evenOdd_of_finrank_eq_two_pow Q Module.finrank_pos (finrank_eq_two_pow Q) i
 
 /-- Over a field, the even Clifford algebra of a nonzero
@@ -303,7 +311,6 @@ theorem finrank_eq_two_pow_of_bijective_lsmul [Module.Finite K V]
     (h : Function.Bijective (Algebra.lsmul K K S : CliffordAlgebra Q →ₐ[K] Module.End K S))
     (hV : Even (finrank K V)) :
     finrank K S = 2 ^ (finrank K V / 2) := by
-  have := Module.finite_of_finrank_pos (finrank_pos Q)
   have hdim := (AlgEquiv.ofBijective _ h).toLinearEquiv.finrank_eq
   rw [finrank_eq_two_pow, Module.finrank_linearMap, ← Nat.div_two_mul_two_of_even hV, pow_mul,
     sq] at hdim
@@ -315,7 +322,6 @@ the endomorphism algebra of `S`, then `finrank K V` is even: comparing dimension
 theorem even_finrank_of_algEquiv_end [Module.Finite K V] {S : Type*}
     [AddCommGroup S] [Module K S] (ρ : CliffordAlgebra Q ≃ₐ[K] Module.End K S) :
     Even (finrank K V) := by
-  have := Module.finite_of_finrank_pos (finrank_pos Q)
   have : Module.Finite K (Module.End K S) := Module.Finite.equiv ρ.toLinearEquiv
   have := Module.Finite.of_finite_end K S
   have hdim := ρ.toLinearEquiv.finrank_eq
