@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.FinTwo
 public import Mathlib.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
+import TauCeti.LinearAlgebra.Matrix.Commute
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 
 /-!
@@ -98,47 +99,58 @@ theorem isParabolic_mk_iff (a : SL(2, R)) :
   · exact hpar
   · simpa [GeneralLinearGroup.IsParabolic] using hpar
 
-/-- Parabolicity is invariant under conjugation in `PSL(2, R)`. -/
+omit [NoZeroDivisors R] in
+/-- Parabolicity is invariant under conjugation in `PSL(2, R)`: conjugate the parabolic
+representative. -/
 @[simp]
 theorem isParabolic_conj_iff (g h : PSL(2, R)) :
     IsParabolic (g * h * g⁻¹) ↔ IsParabolic h := by
-  induction g using QuotientGroup.induction_on with | H a => ?_
-  induction h using QuotientGroup.induction_on with | H b => ?_
-  rw [← QuotientGroup.mk_inv, ← QuotientGroup.mk_mul, ← QuotientGroup.mk_mul,
-    isParabolic_mk_iff, isParabolic_mk_iff, map_mul, map_mul, map_inv,
-    GeneralLinearGroup.isParabolic_conj_iff]
+  have hone (g h : PSL(2, R)) (hh : IsParabolic h) : IsParabolic (g * h * g⁻¹) := by
+    induction g using QuotientGroup.induction_on with | H a => ?_
+    obtain ⟨b, rfl, hb⟩ := hh
+    refine ⟨a * b * a⁻¹, ?_, ?_⟩
+    · rw [QuotientGroup.mk_mul, QuotientGroup.mk_mul, QuotientGroup.mk_inv]
+    · rwa [map_mul, map_mul, map_inv, GeneralLinearGroup.isParabolic_conj_iff]
+  exact ⟨fun h' ↦ by simpa [mul_assoc] using hone g⁻¹ _ h', hone g h⟩
 
+omit [NoZeroDivisors R] in
 /-- Parabolicity is invariant under conjugation in `PSL(2, R)`, with the inverse on the left. -/
 @[simp]
 theorem isParabolic_conj_iff' (g h : PSL(2, R)) :
     IsParabolic (g⁻¹ * h * g) ↔ IsParabolic h := by
   simpa using isParabolic_conj_iff g⁻¹ h
 
-/-- The identity of `PSL(2, R)` is not parabolic: a parabolic matrix is not scalar. -/
+omit [NoZeroDivisors R] in
+/-- The identity of `PSL(2, R)` is not parabolic: a representative of the identity is central,
+hence scalar, and a parabolic matrix is not scalar. -/
 @[simp]
 theorem not_isParabolic_one : ¬ IsParabolic (1 : PSL(2, R)) := by
-  rw [← QuotientGroup.mk_one, isParabolic_mk_iff, map_one]
-  exact fun h ↦ h.1 ⟨1, by simp⟩
+  rintro ⟨a, ha, hpar⟩
+  rw [QuotientGroup.eq_one_iff, SpecialLinearGroup.mem_center_iff] at ha
+  obtain ⟨r, -, hr⟩ := ha
+  exact hpar.1 ⟨r, by simpa using hr⟩
 
+omit [NoZeroDivisors R] in
 theorem IsParabolic.ne_one {g : PSL(2, R)} (hg : IsParabolic g) : g ≠ 1 := by
   rintro rfl
   exact not_isParabolic_one hg
 
+omit [NoZeroDivisors R] in
 /-- Parabolicity is invariant under inversion in `PSL(2, R)`: the inverse of a matrix of
 `SL(2, R)` is its adjugate, which has the same trace and is scalar exactly when the matrix is. -/
 @[simp]
 theorem isParabolic_inv_iff {g : PSL(2, R)} : IsParabolic g⁻¹ ↔ IsParabolic g := by
-  induction g using QuotientGroup.induction_on with | H a => ?_
-  rw [← QuotientGroup.mk_inv, isParabolic_mk_iff, isParabolic_mk_iff]
-  have hscalar (m : Matrix (Fin 2) (Fin 2) R) :
-      m ∈ Set.range (scalar (Fin 2)) ↔ m 0 1 = 0 ∧ m 1 0 = 0 ∧ m 0 0 = m 1 1 := by
-    refine ⟨by rintro ⟨r, rfl⟩; simp, fun ⟨h01, h10, h00⟩ ↦ ⟨m 0 0, ?_⟩⟩
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp [h01, h10, h00]
-  simp only [GeneralLinearGroup.IsParabolic, SpecialLinearGroup.coe_GL_coe_matrix,
-    SpecialLinearGroup.coe_inv, Matrix.IsParabolic, hscalar, Matrix.discr_fin_two,
-    Matrix.adjugate_fin_two, Matrix.trace_fin_two, Matrix.det_fin_two]
-  simp [eq_comm, and_comm, add_comm, mul_comm]
+  have key (a : SL(2, R)) :
+      ((a⁻¹ : SL(2, R)) : GL (Fin 2) R).IsParabolic ↔ (a : GL (Fin 2) R).IsParabolic := by
+    simp only [GeneralLinearGroup.IsParabolic, SpecialLinearGroup.coe_GL_coe_matrix,
+      SpecialLinearGroup.coe_inv, Matrix.IsParabolic, TauCeti.mem_range_scalar_fin_two_iff,
+      Matrix.discr_fin_two,
+      Matrix.adjugate_fin_two, Matrix.trace_fin_two, Matrix.det_fin_two]
+    simp [eq_comm, and_comm, add_comm, mul_comm]
+  have hone {g : PSL(2, R)} (h : IsParabolic g) : IsParabolic g⁻¹ := by
+    obtain ⟨a, rfl, hpar⟩ := h
+    exact ⟨a⁻¹, QuotientGroup.mk_inv _ _, (key a).2 hpar⟩
+  exact ⟨fun h ↦ inv_inv g ▸ hone h, hone⟩
 
 alias ⟨_, IsParabolic.inv⟩ := isParabolic_inv_iff
 
@@ -287,12 +299,17 @@ theorem exists_eq_upperRightHom_of_commute {g : PSL(2, R)} {x : R}
   have hd : a 0 0 = a 1 1 := mul_left_cancel₀ hx (by linear_combination -h01)
   exact ⟨a 0 0 * a 0 1, mk_eq_upperRightHom a h10 hd⟩
 
+omit [NoZeroDivisors R] in
 /-- A translation is parabolic exactly when it is nontrivial. -/
 @[simp]
 theorem isParabolic_upperRightHom_iff {x : R} : IsParabolic (upperRightHom x) ↔ x ≠ 0 := by
-  rw [upperRightHom_apply, isParabolic_mk_iff, GeneralLinearGroup.IsParabolic,
-    SpecialLinearGroup.coe_GL_coe_matrix, Matrix.isParabolic_iff_of_upperTriangular] <;>
-    simp [SpecialLinearGroup.transvection_coe]
+  refine ⟨?_, fun hx ↦ ⟨_, (upperRightHom_apply x).symm, ?_⟩⟩
+  · exact fun h hx ↦ h.ne_one (by rw [hx, AddChar.map_zero_eq_one])
+  · simp only [GeneralLinearGroup.IsParabolic, SpecialLinearGroup.coe_GL_coe_matrix,
+      Matrix.IsParabolic, Matrix.discr_fin_two, Matrix.trace_fin_two, Matrix.det_fin_two,
+      SpecialLinearGroup.transvection_coe]
+    refine ⟨?_, by simp; ring⟩
+    exact fun hs ↦ hx (by simpa using (TauCeti.mem_range_scalar_fin_two_iff.1 hs).1)
 
 /-- If `T` represents `upperRightHom x`, that is `T = ±!![1, x; 0, 1]`, then
 `tr ⁅T, X⁆ - 2 = x² c²`, where `c` is the lower-left entry of `X`. -/
