@@ -96,6 +96,9 @@ Remark 4.3.7). At a rational place the latter is the residue `TauCeti.Place.kaeh
   place `P` with separable residue field, `dz/dt` is integral at `P` whenever `z` is.
 * `TauCeti.Place.iterate_derivativeOfSeparating_sub_zsmul_mem_filtration`: if `z` vanishes to
   order at least `m`, then `dⁱz/dtⁱ ≡ m (m - 1) ⋯ (m - i + 1) z / tⁱ` modulo order `m - i + 1`.
+* `TauCeti.Place.normalized_entry_sub_mem_filtration_one`: normalizing the `i`-th iterated
+  derivative of a nonzero `f` by `tⁱ / f` gives `(descPochhammer ℤ i).eval (ord f)` modulo the
+  maximal ideal.
 * `TauCeti.Place.kaehlerResidue_eq_kaehlerResidue`: the residue of a differential is independent
   of the uniformizer used to compute it.
 * `TauCeti.Place.kaehlerResidue_D`: exact differentials have residue zero.
@@ -267,6 +270,27 @@ theorem iterate_derivativeOfSeparating_sub_zsmul_mem_filtration {m : ℤ} {z : F
       ring
     rw [key]
     refine add_mem (P.filtration_antitone ?_ h1) (P.filtration_antitone ?_ h2) <;> omega
+
+include ht in
+/-- Normalizing the entry of the Wronskian matrix of a nonzero function `f` by `t ^ i / f` gives
+the integer `(descPochhammer ℤ i).eval (ord f)`, up to the maximal ideal of `P`. -/
+theorem normalized_entry_sub_mem_filtration_one {f : F} (hf : f ≠ 0) (i : ℕ) :
+    t ^ i * (f⁻¹ * (⇑(derivativeOfSeparating htr))^[i] f) -
+      (((descPochhammer ℤ i).eval (P.ord f) : ℤ) : F) ∈ P.filtration 1 := by
+  have ht0 : t ≠ 0 := by
+    rintro rfl
+    simp at ht
+  have hE := P.iterate_derivativeOfSeparating_sub_zsmul_mem_filtration ht htr
+    (P.mem_filtration_ord f) i
+  have hw : t ^ i * f⁻¹ ∈ P.filtration (i - P.ord f) := by
+    convert P.mul_mem_filtration (P.mem_filtration_ord (t ^ i))
+      (P.mem_filtration_ord f⁻¹) using 2
+    simp [ht, sub_eq_add_neg]
+  convert P.mul_mem_filtration hw hE using 1
+  · congr 1
+    omega
+  · simp only [zsmul_eq_mul, inv_pow]
+    field_simp
 
 end ResidueField
 

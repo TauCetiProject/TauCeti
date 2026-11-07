@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.CompactSupp
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Pullback
 public import Mathlib.Geometry.Manifold.Instances.Icc
-import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 
 /-!
 # Integrability of compactly supported continuous top forms
@@ -110,11 +110,9 @@ theorem integralTopForm_real_eq_integral {φ : RoughForm 𝓘(ℝ, ℝ) ℝ ℝ 
     (hφ : IsSmoothForm 𝓘(ℝ, ℝ) 0 φ)
     (hc : IsCompact (_root_.tsupport (α := ℝ [⋀^Fin 1]→L[ℝ] ℝ) φ)) :
     integralTopForm Manifold.Orientation.real φ = ∫ t, φ t fun _ ↦ 1 := by
-  have hvol : (Module.Basis.singleton (Fin 1) ℝ).addHaar = volume := by
-    rw [← OrthonormalBasis.toBasis_singleton]
-    exact OrthonormalBasis.addHaar_eq_volume _
   rw [Manifold.Orientation.real_eq_model,
-    integralTopForm_model_eq_integral _ _ hφ hc (Module.Basis.singleton (Fin 1) ℝ) rfl, hvol,
+    integralTopForm_model_eq_integral _ _ hφ hc (Module.Basis.singleton (Fin 1) ℝ) rfl,
+    Module.Basis.addHaar_singleton,
     Module.Basis.coe_singleton]
   -- Mathlib's unit tangent vector `1 : TangentSpace 𝓘(ℝ) t` is defined to be `1 : ℝ`.
   rfl
