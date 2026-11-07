@@ -499,6 +499,41 @@ theorem exists_mem_nhds_isClosed_isNowhereDense_image_not_surjective_levelSetPar
   · rw [← hset]; exact hNclosed
   · rw [← hset]; exact hNdense
 
+/-- Local parametric transversality in pointwise form. Near a solution `(x, l)` of `f = c` with
+surjective total linearization and Fredholm fixed-parameter linearization, there is a
+neighbourhood `V` of `(x, l)` on which `f` is differentiable, and a nowhere dense set `A` of
+parameters, such that every solution in `V` at which the fixed-parameter derivative is not
+surjective has its parameter in `A`. -/
+theorem exists_mem_nhds_isNowhereDense_forall_not_surjective_fderiv_comp_inl_mem
+    {n : ℕ∞ω} (hf : HasStrictFDerivAt f (D₁.coprod D₂) (x, l))
+    (hcont : ContDiffAt ℝ n f (x, l)) (hD₁ : ContinuousLinearMap.IsFredholm D₁)
+    (hD : Surjective (D₁.coprod D₂)) (hxl : f (x, l) = c)
+    (hn : ((finrank ℝ D₁.ker * finrank ℝ D₁.ker + 1 : ℕ) : ℕ∞ω) ≤ n) :
+    ∃ V ∈ 𝓝 ((x, l) : E × Λ), ∃ A : Set Λ, IsNowhereDense A ∧
+      ∀ p ∈ V, DifferentiableAt ℝ f p ∧ (f p = c →
+        ¬ Surjective ((fderiv ℝ f p).comp (ContinuousLinearMap.inl ℝ E Λ)) → p.2 ∈ A) := by
+  obtain ⟨N, hN, -, -, hA⟩ :=
+    exists_mem_nhds_isClosed_isNowhereDense_image_not_surjective_levelSetParameterMap
+      hf hcont hD₁ hD hxl hn (U := univ) Filter.univ_mem
+  obtain ⟨Q, hQ, hQsub⟩ := exists_mem_nhds_forall_mem_source_and_levelSetChart_mem hf hD
+    (hD₁.closedComplemented_ker_coprod hD) hxl hN
+  have hne : ((finrank ℝ D₁.ker * finrank ℝ D₁.ker + 1 : ℕ) : ℕ∞ω) ≠ ∞ :=
+    (fun m : ℕ ↦ (by simp : ((m : ℕ) : ℕ∞ω) ≠ ∞)) _
+  have hne0 : ((finrank ℝ D₁.ker * finrank ℝ D₁.ker + 1 : ℕ) : ℕ∞ω) ≠ 0 :=
+    (fun m : ℕ ↦ (by simp : ((m + 1 : ℕ) : ℕ∞ω) ≠ 0)) _
+  have hdiff : ∀ᶠ w in 𝓝 ((x, l) : E × Λ), DifferentiableAt ℝ f w := by
+    filter_upwards [(hcont.of_le hn).eventually hne] with w hw
+    exact hw.differentiableAt hne0
+  refine ⟨Q ∩ {p | DifferentiableAt ℝ f p}, Filter.inter_mem hQ hdiff, _, hA, ?_⟩
+  rintro p ⟨hpQ, hpd⟩
+  refine ⟨hpd, fun hp hbad ↦ ?_⟩
+  obtain ⟨hsrc, hvN⟩ := hQsub ⟨p, hp⟩ hpQ
+  refine ⟨_, ⟨hvN, ?_⟩, levelSetParameterMap_levelSetChart hf hD
+    (hD₁.closedComplemented_ker_coprod hD) hxl hsrc⟩
+  simp only [Set.mem_ofPred_eq]
+  rwa [(levelSetChart hf (LinearMap.range_eq_top.mpr hD)
+    (hD₁.closedComplemented_ker_coprod hD) hxl).left_inv hsrc]
+
 end Real
 
 end TauCeti

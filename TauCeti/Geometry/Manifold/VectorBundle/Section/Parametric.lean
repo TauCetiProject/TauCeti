@@ -124,6 +124,143 @@ theorem isRegularSectionParameter_trivial (b : M × Λ → B) (f : M × Λ → F
 variable [NormedAddCommGroup Λ] [NormedSpace ℝ Λ] [CompleteSpace X] [CompleteSpace Λ]
   [CompleteSpace F] [IsManifold 𝓘(ℝ, X) 1 M]
 
+omit [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace X] [CompleteSpace Λ]
+  [CompleteSpace F] [IsManifold 𝓘(ℝ, X) 1 M] in
+/-- The coordinate expression of a function on `M × Λ` in the chart at `(x, l)` is the
+expression in the chart at `x`, with the parameter left alone. -/
+private theorem comp_extChartAt_prod_symm_eq {c : M × Λ → F} {f : X × Λ → F} {x : M} (l : Λ)
+    (hf : ∀ p, f p = c ((extChartAt 𝓘(ℝ, X) x).symm p.1, p.2)) :
+    c ∘ (extChartAt (𝓘(ℝ, X).prod 𝓘(ℝ, Λ)) (x, l)).symm = f := by
+  rw [extChartAt_prod]
+  ext p
+  simp [hf]
+
+omit [NormedSpace ℝ F] [∀ a, TopologicalSpace (E a)] [∀ a, Module ℝ (E a)] [FiberBundle F E]
+  [VectorBundle ℝ F E] [∀ a, AddCommGroup (E a)] [NormedAddCommGroup Λ] [NormedSpace ℝ Λ]
+  [CompleteSpace X] [CompleteSpace Λ] [CompleteSpace F] [IsManifold 𝓘(ℝ, X) 1 M] in
+/-- The coordinate equation `f` restricted to a fixed parameter is the section read in the
+trivialization `e`, composed with the inverse chart. -/
+private theorem coordinate_comp_symm_eq {x : M} {k : Λ} {e : Trivialization F (π F E)}
+    {f : X × Λ → F}
+    (hf : ∀ p, f p = (e ⟨b ((extChartAt 𝓘(ℝ, X) x).symm p.1, p.2),
+      s ((extChartAt 𝓘(ℝ, X) x).symm p.1, p.2)⟩).2) :
+    (fun y ↦ (e ⟨b (y, k), s (y, k)⟩).2) ∘ (extChartAt 𝓘(ℝ, X) x).symm = fun y ↦ f (y, k) := by
+  ext y
+  simp [hf]
+
+omit [CompleteSpace X] [CompleteSpace Λ] [CompleteSpace F] [IsManifold 𝓘(ℝ, X) 1 M] in
+/-- At a section zero, the derivative of the coordinate equation `f` in the `M` direction is the
+intrinsic linearization at the centre of the chart, so it has the same surjectivity, Fredholm
+and kernel properties as the intrinsic one, and the total derivative is surjective. Here `f` is
+the section read in the chart at `x` and a trivialization `e` over the point `b (x, l)`. -/
+private theorem coordinate_derivative_facts_at_zero {n : ℕ∞ω} {x : M} {l : Λ}
+    {e : Trivialization F (π F E)} (hee : e = trivializationAt F E (b (x, l)))
+    {f : X × Λ → F}
+    (hf : ∀ p, f p = (e ⟨b ((extChartAt 𝓘(ℝ, X) x).symm p.1, p.2),
+      s ((extChartAt 𝓘(ℝ, X) x).symm p.1, p.2)⟩).2)
+    (hcont : ContMDiffAt (𝓘(ℝ, X).prod 𝓘(ℝ, Λ)) (I.prod 𝓘(ℝ, F)) n
+      (fun w ↦ (⟨b w, s w⟩ : TotalSpace F E)) (x, l))
+    (hFred : ContinuousLinearMap.IsFredholm
+      (sectionLinearization (F := F) 𝓘(ℝ, X) (fun y ↦ b (y, l)) (fun y ↦ s (y, l)) x))
+    (htotal : Surjective (sectionLinearization (F := F) (𝓘(ℝ, X).prod 𝓘(ℝ, Λ)) b s (x, l)))
+    (hn : ((finrank ℝ (sectionLinearization (F := F) 𝓘(ℝ, X) (fun y ↦ b (y, l))
+      (fun y ↦ s (y, l)) x).ker ^ 2 + 1 : ℕ) : ℕ∞ω) ≤ n)
+    (hz : s (x, l) = 0) (hb : ∀ w, s w = 0 → ContinuousAt b w) :
+    ContDiffAt ℝ n f (extChartAt 𝓘(ℝ, X) x x, l) ∧
+      Surjective (fderiv ℝ f (extChartAt 𝓘(ℝ, X) x x, l)) ∧
+      ContinuousLinearMap.IsFredholm ((fderiv ℝ f (extChartAt 𝓘(ℝ, X) x x, l)).comp
+        (ContinuousLinearMap.inl ℝ X Λ)) ∧
+      ((finrank ℝ ((fderiv ℝ f (extChartAt 𝓘(ℝ, X) x x, l)).comp
+        (ContinuousLinearMap.inl ℝ X Λ)).ker * finrank ℝ ((fderiv ℝ f
+        (extChartAt 𝓘(ℝ, X) x x, l)).comp (ContinuousLinearMap.inl ℝ X Λ)).ker + 1 : ℕ) :
+          ℕ∞ω) ≤ n := by
+  subst hee
+  have he : b (x, l) ∈ (trivializationAt F E (b (x, l))).baseSet :=
+    mem_baseSet_trivializationAt F E (b (x, l))
+  let c : M × Λ → F := fun w ↦ (trivializationAt F E (b (x, l)) ⟨b w, s w⟩).2
+  have hn0 : n ≠ 0 := by
+    rintro rfl
+    exact absurd hn (by simp)
+  have hcn : ContMDiffAt (𝓘(ℝ, X).prod 𝓘(ℝ, Λ)) 𝓘(ℝ, F) n c (x, l) :=
+    (contMDiffAt_totalSpace.mp hcont).2
+  have hcd : MDifferentiableAt (𝓘(ℝ, X).prod 𝓘(ℝ, Λ)) 𝓘(ℝ, F) c (x, l) :=
+    hcn.mdifferentiableAt hn0
+  have hfeq := comp_extChartAt_prod_symm_eq (c := c) l hf
+  have hpt : extChartAt (𝓘(ℝ, X).prod 𝓘(ℝ, Λ)) (x, l) (x, l) = (extChartAt 𝓘(ℝ, X) x x, l) := by
+    simp
+  have hfn : ContDiffAt ℝ n f (extChartAt 𝓘(ℝ, X) x x, l) := by
+    simpa only [hfeq, hpt] using hcn.contDiffAt_comp_extChartAt_symm
+  have hcl : MDifferentiableAt 𝓘(ℝ, X) 𝓘(ℝ, F) (fun y ↦ c (y, l)) x :=
+    hcd.comp (I' := 𝓘(ℝ, X).prod 𝓘(ℝ, Λ)) (f := fun y ↦ (y, l)) x
+      (mdifferentiableAt_id.prodMk mdifferentiableAt_const)
+  have hbl : ContinuousAt (fun y ↦ b (y, l)) x :=
+    ContinuousAt.comp (f := fun y ↦ (y, l)) (hb _ hz) (continuousAt_id.prodMk continuousAt_const)
+  have hD₁ : (fderiv ℝ f (extChartAt 𝓘(ℝ, X) x x, l)).comp (ContinuousLinearMap.inl ℝ X Λ) =
+      mvfderiv 𝓘(ℝ, X) (fun y ↦ c (y, l)) x := by
+    rw [hcl.mvfderiv_eq_fderiv_comp_extChartAt_symm, coordinate_comp_symm_eq hf]
+    exact ((hfn.differentiableAt hn0).hasFDerivAt.comp (extChartAt 𝓘(ℝ, X) x x)
+      (hasFDerivAt_prodMk_left (𝕜 := ℝ) (extChartAt 𝓘(ℝ, X) x x) l)).fderiv.symm
+  refine ⟨hfn, ?_, ?_, ?_⟩
+  · rw [← hfeq, ← hpt, ← hcd.mvfderiv_eq_fderiv_comp_extChartAt_symm]
+    exact (surjective_sectionLinearization_iff (hb _ hz) he hcd hz).mp htotal
+  · rw [hD₁]
+    exact (isFredholm_sectionLinearization_iff hbl he hcl hz).mp hFred
+  · rw [ker_sectionLinearization hbl he hcl hz] at hn
+    rw [hD₁, ← pow_two]
+    exact hn
+
+omit [CompleteSpace X] [CompleteSpace Λ] [CompleteSpace F] in
+/-- Away from the centre of the chart, if the coordinate derivative in the `M` direction is
+surjective at a section zero over the trivialization's base set, then the intrinsic
+linearization there is surjective: it is the coordinate derivative composed with the derivative
+of the chart. -/
+private theorem surjective_sectionLinearization_of_surjective_fderiv_comp_inl {x x' : M} {k : Λ}
+    {e : Trivialization F (π F E)} [MemTrivializationAtlas e] {f : X × Λ → F}
+    (hf : ∀ p, f p = (e ⟨b ((extChartAt 𝓘(ℝ, X) x).symm p.1, p.2),
+      s ((extChartAt 𝓘(ℝ, X) x).symm p.1, p.2)⟩).2)
+    (hx' : x' ∈ (chartAt X x).source) (hwe : b (x', k) ∈ e.baseSet)
+    (hw : s (x', k) = 0) (hb : ∀ w, s w = 0 → ContinuousAt b w)
+    (hwd : DifferentiableAt ℝ f (extChartAt 𝓘(ℝ, X) x x', k))
+    (hcoord : Surjective ((fderiv ℝ f (extChartAt 𝓘(ℝ, X) x x', k)).comp
+      (ContinuousLinearMap.inl ℝ X Λ))) :
+    Surjective (sectionLinearization (F := F) 𝓘(ℝ, X) (fun y ↦ b (y, k))
+      (fun y ↦ s (y, k)) x') := by
+  let c : M × Λ → F := fun w ↦ (e ⟨b w, s w⟩).2
+  set φ := extChartAt 𝓘(ℝ, X) x with hφ
+  have hx'φ : x' ∈ φ.source := by rwa [hφ, extChartAt_source]
+  have hleft : φ.symm (φ x') = x' := φ.left_inv hx'φ
+  have hfk : HasFDerivAt (fun y ↦ f (y, k)) ((fderiv ℝ f (φ x', k)).comp
+      (ContinuousLinearMap.inl ℝ X Λ)) (φ x') :=
+    HasFDerivAt.comp (g := f) (φ x') hwd.hasFDerivAt (hasFDerivAt_prodMk_left (φ x') k)
+  have hck : MDifferentiableAt 𝓘(ℝ, X) 𝓘(ℝ, F) (fun y ↦ c (y, k)) x' := by
+    refine (hfk.differentiableAt.mdifferentiableAt.comp x'
+      (mdifferentiableAt_extChartAt hx')).congr_of_eventuallyEq ?_
+    filter_upwards [extChartAt_source_mem_nhds' hx'φ] with y hy
+    have hy' : y ∈ φ.source := hy
+    simp only [comp_apply, hf, c]
+    rw [φ.left_inv hy']
+  have hbk : ContinuousAt (fun y ↦ b (y, k)) x' :=
+    ContinuousAt.comp (f := fun y ↦ (y, k)) (hb _ hw) (continuousAt_id.prodMk continuousAt_const)
+  refine (surjective_sectionLinearization_iff hbk hwe hck hw).mpr ?_
+  have hsymm : MDifferentiableAt 𝓘(ℝ, X) 𝓘(ℝ, X) φ.symm (φ x') := by
+    have h := mdifferentiableWithinAt_extChartAt_symm (I := 𝓘(ℝ, X)) (φ.map_source hx'φ)
+    rwa [modelWithCornersSelf_coe, range_id, mdifferentiableWithinAt_univ] at h
+  have hck' : MDifferentiableAt 𝓘(ℝ, X) 𝓘(ℝ, F) (fun y ↦ c (y, k)) (φ.symm (φ x')) := by
+    rwa [hleft]
+  have hcomp := mvfderiv_comp (φ x') hck' hsymm
+  have hfd : fderiv ℝ ((fun y ↦ c (y, k)) ∘ φ.symm) (φ x') =
+      (fderiv ℝ f (φ x', k)).comp (ContinuousLinearMap.inl ℝ X Λ) := by
+    rw [coordinate_comp_symm_eq hf]
+    exact hfk.fderiv
+  rw [mvfderiv_eq_fderiv, hfd] at hcomp
+  have hs : Surjective ((mvfderiv 𝓘(ℝ, X) (fun y ↦ c (y, k)) (φ.symm (φ x'))).comp
+      (mfderiv 𝓘(ℝ, X) 𝓘(ℝ, X) φ.symm (φ x'))) := by
+    rw [← hcomp, ContinuousLinearMap.coe_comp]
+    exact hcoord.comp (NormedSpace.fromTangentSpace (φ x')).surjective
+  rw [ContinuousLinearMap.coe_comp] at hs
+  have h := hs.of_comp
+  rwa [hleft] at h
+
 /-- Near a zero, the parameters of nearby non-regular zeros lie in a nowhere dense set. The
 section is read in the preferred source chart and bundle trivialization at the zero. -/
 private theorem exists_section_badParameter_neighborhood {n : ℕ∞ω} {x : M} {l : Λ}
@@ -146,80 +283,30 @@ private theorem exists_section_badParameter_neighborhood {n : ℕ∞ω} {x : M} 
   -- non-regular section zero is a non-regular zero of `f` close to the centre.
   let e := trivializationAt F E (b (x, l))
   let φ := extChartAt 𝓘(ℝ, X) x
-  -- The coordinate expression of the section, in the chart at `x` and the trivialization `e`.
-  let c : M × Λ → F := fun w ↦ (e ⟨b w, s w⟩).2
-  let f : X × Λ → F := fun p ↦ c (φ.symm p.1, p.2)
+  let f : X × Λ → F := fun p ↦ (e ⟨b (φ.symm p.1, p.2), s (φ.symm p.1, p.2)⟩).2
+  have hf : ∀ p, f p = (e ⟨b (φ.symm p.1, p.2), s (φ.symm p.1, p.2)⟩).2 := fun _ ↦ rfl
   have he : b (x, l) ∈ e.baseSet := mem_baseSet_trivializationAt F E (b (x, l))
+  obtain ⟨hfn, hsurj, hFred', hn'⟩ :=
+    coordinate_derivative_facts_at_zero rfl hf hcont hFred htotal hn hz hb
   have hn0 : n ≠ 0 := by
     rintro rfl
     exact absurd hn (by simp)
-  have hcn : ContMDiffAt (𝓘(ℝ, X).prod 𝓘(ℝ, Λ)) 𝓘(ℝ, F) n c (x, l) :=
-    (contMDiffAt_totalSpace.mp hcont).2
-  have hcd : MDifferentiableAt (𝓘(ℝ, X).prod 𝓘(ℝ, Λ)) 𝓘(ℝ, F) c (x, l) :=
-    hcn.mdifferentiableAt hn0
-  have hfeq : c ∘ (extChartAt (𝓘(ℝ, X).prod 𝓘(ℝ, Λ)) (x, l)).symm = f := by
-    rw [extChartAt_prod]
-    ext p
-    simp [f, φ]
-  have hpt : extChartAt (𝓘(ℝ, X).prod 𝓘(ℝ, Λ)) (x, l) (x, l) = (φ x, l) := by
-    simp [φ]
-  have hfn : ContDiffAt ℝ n f (φ x, l) := by
-    simpa only [hfeq, hpt] using hcn.contDiffAt_comp_extChartAt_symm
-  let D₁ := (fderiv ℝ f (φ x, l)).comp (ContinuousLinearMap.inl ℝ X Λ)
-  let D₂ := (fderiv ℝ f (φ x, l)).comp (ContinuousLinearMap.inr ℝ X Λ)
-  have hstrict : HasStrictFDerivAt f (D₁.coprod D₂) (φ x, l) := by
-    simpa only [D₁, D₂, ContinuousLinearMap.coprod_comp_inl_inr] using
+  have hstrict : HasStrictFDerivAt f ((fderiv ℝ f (φ x, l)).comp (ContinuousLinearMap.inl ℝ X Λ)
+      |>.coprod ((fderiv ℝ f (φ x, l)).comp (ContinuousLinearMap.inr ℝ X Λ))) (φ x, l) := by
+    simpa only [ContinuousLinearMap.coprod_comp_inl_inr] using
       hfn.hasStrictFDerivAt_fderiv hn0
-  have hsurj : Surjective (D₁.coprod D₂) := by
-    rw [ContinuousLinearMap.coprod_comp_inl_inr, ← hfeq, ← hpt,
-      ← hcd.mvfderiv_eq_fderiv_comp_extChartAt_symm]
-    exact (surjective_sectionLinearization_iff (hb _ hz) he hcd hz).mp htotal
-  -- At the centre of the chart, the coordinate derivative in the `M` direction is intrinsic.
-  have hcl : MDifferentiableAt 𝓘(ℝ, X) 𝓘(ℝ, F) (fun y ↦ c (y, l)) x :=
-    hcd.comp (I' := 𝓘(ℝ, X).prod 𝓘(ℝ, Λ)) (f := fun y ↦ (y, l)) x
-      (mdifferentiableAt_id.prodMk mdifferentiableAt_const)
-  have hbl : ContinuousAt (fun y ↦ b (y, l)) x :=
-    ContinuousAt.comp (f := fun y ↦ (y, l)) (hb _ hz) (continuousAt_id.prodMk continuousAt_const)
-  have hD₁ : D₁ = mvfderiv 𝓘(ℝ, X) (fun y ↦ c (y, l)) x := by
-    rw [hcl.mvfderiv_eq_fderiv_comp_extChartAt_symm]
-    exact ((hfn.differentiableAt hn0).hasFDerivAt.comp (φ x)
-      (hasFDerivAt_prodMk_left (𝕜 := ℝ) (φ x) l)).fderiv.symm
-  have hFred' : ContinuousLinearMap.IsFredholm D₁ := by
-    rw [hD₁]
-    exact (isFredholm_sectionLinearization_iff hbl he hcl hz).mp hFred
-  have hn' : ((finrank ℝ D₁.ker * finrank ℝ D₁.ker + 1 : ℕ) : ℕ∞ω) ≤ n := by
-    rw [ker_sectionLinearization hbl he hcl hz] at hn
-    rw [hD₁, ← pow_two]
-    exact hn
   -- A section zero in the chart source and over the trivialization's base set is a coordinate
   -- zero.
   have hfzero_of : ∀ {x' : M} {k : Λ}, x' ∈ φ.source → b (x', k) ∈ e.baseSet →
       s (x', k) = 0 → f (φ x', k) = 0 := by
     intro x' k hx' hbase hzero
-    simp only [f, c]
+    simp only [f]
     rw [φ.left_inv hx', hzero]
     exact congrArg Prod.snd (e.zeroSection ℝ hbase)
-  have hfzero : f (φ x, l) = 0 := hfzero_of (mem_extChartAt_source x) he hz
-  -- Apply local Sard--Smale to the coordinate equation, before restricting to section zeros.
-  obtain ⟨N, hN, -, -, hA⟩ :=
-    exists_mem_nhds_isClosed_isNowhereDense_image_not_surjective_levelSetParameterMap
-      hstrict hfn hFred' hsurj hfzero hn' (U := univ) univ_mem
-  let Φ := levelSetChart hstrict (LinearMap.range_eq_top.mpr hsurj)
-    (hFred'.closedComplemented_ker_coprod hsurj) hfzero
-  let g := levelSetParameterMap hstrict hsurj
-    (hFred'.closedComplemented_ker_coprod hsurj) hfzero
-  let A := g '' (N ∩ {k | ¬ Surjective
-    ((fderiv ℝ f ((Φ.symm k : ↥{p | f p = 0}) : X × Λ)).comp
-      (ContinuousLinearMap.inl ℝ X Λ))})
-  obtain ⟨V, hV, hVsub⟩ := exists_mem_nhds_forall_mem_source_and_levelSetChart_mem hstrict
-    hsurj (hFred'.closedComplemented_ker_coprod hsurj) hfzero hN
-  have hne : ((finrank ℝ D₁.ker * finrank ℝ D₁.ker + 1 : ℕ) : ℕ∞ω) ≠ ∞ :=
-    (fun m : ℕ ↦ (by simp : (m : ℕ∞ω) ≠ ∞)) _
-  have hne0 : ((finrank ℝ D₁.ker * finrank ℝ D₁.ker + 1 : ℕ) : ℕ∞ω) ≠ 0 :=
-    (fun m : ℕ ↦ (by simp : ((m + 1 : ℕ) : ℕ∞ω) ≠ 0)) _
-  have hdiff : {p | DifferentiableAt ℝ f p} ∈ 𝓝 (φ x, l) := by
-    filter_upwards [(hfn.of_le hn').eventually hne] with p hp
-    exact hp.differentiableAt hne0
+  obtain ⟨V, hV, A, hA, hVA⟩ :=
+    exists_mem_nhds_isNowhereDense_forall_not_surjective_fderiv_comp_inl_mem hstrict hfn hFred'
+      (by simpa only [ContinuousLinearMap.coprod_comp_inl_inr] using hsurj)
+      (hfzero_of (mem_extChartAt_source x) he hz) hn'
   -- Points near `(x, l)` are read in the chart at `x`.
   let ψ : M × Λ → X × Λ := fun w ↦ (φ w.1, w.2)
   have hψ : ContinuousAt ψ (x, l) :=
@@ -231,60 +318,16 @@ private theorem exists_section_badParameter_neighborhood {n : ℕ∞ω} {x : M} 
     (hb _ hz).preimage_mem_nhds (e.open_baseSet.mem_nhds he)
   -- Restrict to the chart source and the trivialization's base set: extended coordinate zeros
   -- outside them need not be section zeros. The intrinsic linearization is recovered here.
-  refine ⟨Subtype.val ⁻¹' ((chartAt X x).source ×ˢ univ ∩ b ⁻¹' e.baseSet ∩
-      ψ ⁻¹' (V ∩ {p | DifferentiableAt ℝ f p})),
+  refine ⟨Subtype.val ⁻¹' ((chartAt X x).source ×ˢ univ ∩ b ⁻¹' e.baseSet ∩ ψ ⁻¹' V),
     continuous_subtype_val.continuousAt.preimage_mem_nhds
-      (inter_mem (inter_mem hsource hbase) (hψ.preimage_mem_nhds (inter_mem hV hdiff))),
-    A, hA, ?_⟩
-  rintro ⟨⟨x', k⟩, hw⟩ ⟨⟨⟨hx', -⟩, hwe⟩, hwV, hwd⟩ hbad
+      (inter_mem (inter_mem hsource hbase) (hψ.preimage_mem_nhds hV)), A, hA, ?_⟩
+  rintro ⟨⟨x', k⟩, hw⟩ ⟨⟨⟨hx', -⟩, hwe⟩, hwV⟩ hbad
   simp only [mem_ofPred_eq] at hw hwe
   have hx'φ : x' ∈ φ.source := by rwa [extChartAt_source]
-  have hleft : φ.symm (φ x') = x' := φ.left_inv hx'φ
-  let v : ↥{p | f p = 0} := ⟨(φ x', k), hfzero_of hx'φ hwe hw⟩
-  have hvV : v ∈ Subtype.val ⁻¹' V := by simpa [v, ψ] using hwV
-  have hvQ : v ∈ Φ.source ∩ Φ ⁻¹' N := hVsub v hvV
-  have hvback : Φ.symm (Φ v) = v := Φ.left_inv hvQ.1
-  -- Away from the centre the coordinate derivative is the intrinsic one followed by the
-  -- derivative of the inverse chart; so a regular coordinate zero is a regular section zero.
-  have hwd' : DifferentiableAt ℝ f (φ x', k) := hwd
-  have hfk : HasFDerivAt (fun y ↦ f (y, k)) ((fderiv ℝ f (φ x', k)).comp
-      (ContinuousLinearMap.inl ℝ X Λ)) (φ x') :=
-    HasFDerivAt.comp (g := f) (φ x') hwd'.hasFDerivAt (hasFDerivAt_prodMk_left (φ x') k)
-  have hck : MDifferentiableAt 𝓘(ℝ, X) 𝓘(ℝ, F) (fun y ↦ c (y, k)) x' := by
-    refine (hfk.differentiableAt.mdifferentiableAt.comp x'
-      (mdifferentiableAt_extChartAt hx')).congr_of_eventuallyEq ?_
-    filter_upwards [extChartAt_source_mem_nhds' hx'φ] with y hy
-    simp only [comp_apply, f, φ.left_inv hy]
-  have hbk : ContinuousAt (fun y ↦ b (y, k)) x' :=
-    ContinuousAt.comp (f := fun y ↦ (y, k)) (hb _ hw) (continuousAt_id.prodMk continuousAt_const)
-  have hbadcoord : ¬ Surjective ((fderiv ℝ f (φ x', k)).comp
-      (ContinuousLinearMap.inl ℝ X Λ)) := by
-    intro hcoord
-    apply hbad
-    refine (surjective_sectionLinearization_iff hbk hwe hck hw).mpr ?_
-    have hsymm : MDifferentiableAt 𝓘(ℝ, X) 𝓘(ℝ, X) φ.symm (φ x') := by
-      have h := mdifferentiableWithinAt_extChartAt_symm (I := 𝓘(ℝ, X)) (φ.map_source hx'φ)
-      rwa [modelWithCornersSelf_coe, range_id, mdifferentiableWithinAt_univ] at h
-    have hck' : MDifferentiableAt 𝓘(ℝ, X) 𝓘(ℝ, F) (fun y ↦ c (y, k)) (φ.symm (φ x')) := by
-      rwa [hleft]
-    have hcomp := mvfderiv_comp (φ x') hck' hsymm
-    have hfd : fderiv ℝ ((fun y ↦ c (y, k)) ∘ φ.symm) (φ x') =
-        (fderiv ℝ f (φ x', k)).comp (ContinuousLinearMap.inl ℝ X Λ) :=
-      hfk.fderiv
-    rw [mvfderiv_eq_fderiv, hfd] at hcomp
-    have hs : Surjective ((mvfderiv 𝓘(ℝ, X) (fun y ↦ c (y, k)) (φ.symm (φ x'))).comp
-        (mfderiv 𝓘(ℝ, X) 𝓘(ℝ, X) φ.symm (φ x'))) := by
-      rw [← hcomp, ContinuousLinearMap.coe_comp]
-      exact hcoord.comp (NormedSpace.fromTangentSpace (φ x')).surjective
-    rw [ContinuousLinearMap.coe_comp] at hs
-    have h := hs.of_comp
-    rwa [hleft] at h
-  refine ⟨Φ v, ⟨hvQ.2, ?_⟩, ?_⟩
-  · simp only [mem_ofPred_eq]
-    rw [hvback]
-    exact hbadcoord
-  · exact levelSetParameterMap_levelSetChart hstrict hsurj
-      (hFred'.closedComplemented_ker_coprod hsurj) hfzero hvQ.1
+  obtain ⟨hwd, hwA⟩ := hVA _ hwV
+  exact hwA (hfzero_of hx'φ hwe hw) fun hcoord ↦
+    hbad (surjective_sectionLinearization_of_surjective_fderiv_comp_inl hf hx' hwe hw hb hwd
+      hcoord)
 
 variable [SecondCountableTopology ↥{z | s z = 0}] {n : ℕ∞ω}
     (hcont : ∀ z, s z = 0 → ContMDiffAt (𝓘(ℝ, X).prod 𝓘(ℝ, Λ)) (I.prod 𝓘(ℝ, F)) n
