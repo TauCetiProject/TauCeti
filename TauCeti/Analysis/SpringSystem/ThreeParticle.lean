@@ -14,6 +14,7 @@ public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.RepresentationTheory.Invariants
 public import TauCeti.Algebra.MonoidAlgebra.CyclicTwo
 public import TauCeti.Data.ZMod.MonoidHomEquiv
+public import TauCeti.LinearAlgebra.Eigenspace.Separation
 
 /-!
 # Three particles on a line: the reflection symmetry and the normal modes
@@ -284,23 +285,19 @@ complementary. -/
 theorem isCompl_invariants_threeParticleRep :
     IsCompl threeParticleRep.invariants
       (⨅ g, End.eigenspace (threeParticleRep g) (cyclicTwoSign ℝ g)) := by
-  rw [invariants_threeParticleRep, iInf_eigenspace_threeParticleRep_cyclicTwoSign]
-  refine ⟨Submodule.disjoint_def.2 fun x hx hy ↦ ?_, Submodule.codisjoint_iff_exists_add_eq.2
-    fun x ↦ ?_⟩
-  · obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.1 hx
-    obtain ⟨a, b, h⟩ := Submodule.mem_span_pair.1 hy
-    have h0 := congrFun h 0
-    have h1 := congrFun h 1
-    have h2 := congrFun h 2
-    simp at h0 h1 h2
-    have hc : c = 0 := by linarith
-    simp [hc]
-  · refine ⟨((x 0 - x 2) / 2) • ![1, 0, -1],
-      ((x 0 + x 1 + x 2) / 3) • ![1, 1, 1] + ((x 0 + x 2 - 2 * x 1) / 6) • ![1, -2, 1],
-      Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self _),
-      Submodule.mem_span_pair.2 ⟨_, _, rfl⟩, ?_⟩
-    ext i
-    fin_cases i <;> simp <;> ring
+  have h (χ : Multiplicative (ZMod 2) →* ℝ) :
+      ⨅ g, End.eigenspace (threeParticleRep g) (χ g) =
+        End.eigenspace (threeParticleReflection : End ℝ (Fin 3 → ℝ)) (χ (.ofAdd 1)) := by
+    ext x
+    rw [mem_iInf_eigenspace_threeParticleRep_iff, End.mem_eigenspace_iff]
+    rfl
+  have hinv : threeParticleRep.invariants =
+      ⨅ g, End.eigenspace (threeParticleRep g) ((1 : Multiplicative (ZMod 2) →* ℝ) g) := by
+    ext x
+    simp [Representation.mem_invariants]
+  rw [hinv, h, h, cyclicTwoSign_ofAdd_one, MonoidHom.one_apply]
+  exact isCompl_eigenspace_one_neg_one two_ne_zero.isUnit fun x ↦ by
+    simpa [pow_two] using LinearEquiv.congr_fun threeParticleReflection_sq x
 
 /-- The trivial character occurs once: the trivial isotypic component is a line. -/
 theorem finrank_invariants_threeParticleRep : finrank ℝ threeParticleRep.invariants = 1 := by
