@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Category.Grp.Limits
 public import Mathlib.Algebra.Category.ModuleCat.Colimits
 public import Mathlib.CategoryTheory.Sites.LocallyBijective
 public import TauCeti.CategoryTheory.Limits.Lattice
-public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.ModuleCat
+public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Refinement
 public import TauCeti.Topology.Sheaves.Cech.Colimit
 import Mathlib.Algebra.Category.Grp.EpiMono
 
@@ -145,7 +145,7 @@ theorem isZero_cechCohomology_obj_of_locally_eq_zero (h₀ : IsZero (P.obj (op �
       ∃ (V : Opens X) (hVW : V ≤ W), x ∈ V ∧ P.map (homOfLE hVW).op s = 0) (n : ℕ) :
     IsZero ((cechCohomology X (ModuleCat.{u} R) n).obj P) := by
   refine TauCeti.CategoryTheory.isZero_cechCohomology_obj_of_forall_exists_homologyMap_eq_zero
-    _ _ n P fun U z ↦ ?_
+    _ _ n (forget₂ _ AddCommGrpCat) P fun U z ↦ ?_
   -- a class is represented by a cocycle, which some refinement kills
   let K := (cechComplexFunctor U.opens).obj P
   obtain ⟨c, rfl⟩ := (ModuleCat.epi_iff_surjective (K.homologyπ n)).1 inferInstance z
@@ -157,7 +157,8 @@ theorem isZero_cechCohomology_obj_of_locally_eq_zero (h₀ : IsZero (P.obj (op �
     apply (ModuleCat.mono_iff_injective (HomologicalComplex.iCycles _ n)).1 inferInstance
     rw [← ConcreteCategory.comp_apply, HomologicalComplex.cyclesMap_i, ConcreteCategory.comp_apply,
       hc, map_zero]
-  rw [← ConcreteCategory.comp_apply, HomologicalComplex.homologyπ_naturality,
+  rw [ModuleCat.forget₂_map, AddCommGrpCat.ofHom_apply, AddMonoidHom.coe_ofClass,
+    ← ConcreteCategory.comp_apply, HomologicalComplex.homologyπ_naturality,
     ConcreteCategory.comp_apply, h, map_zero]
 
 /-- **Presheaves with zero sheafification have no Čech cohomology.** On a compact normal space,
@@ -227,36 +228,20 @@ theorem isZero_cechCohomology_zero_obj_of_locally_eq_zero (P : (Opens X)ᵒᵖ �
     (hP : ∀ (W : Opens X) (s : P.obj (op W)) (x : X), x ∈ W →
       ∃ (V : Opens X) (hVW : V ≤ W), x ∈ V ∧ P.map (homOfLE hVW).op s = 0) :
     IsZero ((cechCohomology X AddCommGrpCat.{u} 0).obj P) := by
-  refine (IsZero.iff_id_eq_zero _).2 (TauCeti.CategoryTheory.cechCohomology_obj_hom_ext fun U ↦ ?_)
-  rw [Category.comp_id, comp_zero]
-  ext z
+  refine TauCeti.CategoryTheory.isZero_cechCohomology_obj_of_forall_exists_homologyMap_eq_zero
+    _ _ 0 (𝟭 _) P fun U z ↦ ?_
+  -- a class is represented by a cocycle, which some refinement kills
   let K := (cechComplexFunctor U.opens).obj P
   obtain ⟨c, rfl⟩ := (AddCommGrpCat.epi_iff_surjective (K.homologyπ 0)).1 inferInstance z
   obtain ⟨V, φ, hc⟩ := exists_cechComplexMap_f_zero_eq_zero_of_locally_eq_zero P hP U
     (K.iCycles 0 c)
+  refine ⟨V, ⟨φ⟩, φ, ?_⟩
   have h : HomologicalComplex.cyclesMap (TauCeti.CategoryTheory.cechComplexMap P φ) 0 c = 0 := by
     apply (AddCommGrpCat.mono_iff_injective (HomologicalComplex.iCycles _ 0)).1 inferInstance
     rw [← ConcreteCategory.comp_apply, HomologicalComplex.cyclesMap_i, ConcreteCategory.comp_apply,
       hc, map_zero]
-  -- the structure map at `U` factors through the finer cover `V`; as in
-  -- `TauCeti.CategoryTheory.isZero_cechCohomology_obj_of_forall_exists_homologyMap_eq_zero`, these
-  -- composites typecheck only up to unfolding `cechCohomologyDiagram`, so the steps are terms
-  have hι : HomologicalComplex.homologyMap (TauCeti.CategoryTheory.cechComplexMap P φ) 0 ≫
-      (TauCeti.CategoryTheory.cechCohomologyι PointOpenCover.toFormalCoproduct
-        (fun _ _ h ↦ h) 0 V).app P =
-      (TauCeti.CategoryTheory.cechCohomologyι PointOpenCover.toFormalCoproduct
-        (fun _ _ h ↦ h) 0 U).app P := by
-    rw [← TauCeti.CategoryTheory.cechComplexHomologyMap_app]
-    exact (NatTrans.comp_app _ _ P).symm.trans <| NatTrans.congr_app
-      (TauCeti.CategoryTheory.cechComplexHomologyMap_comp_cechCohomologyι AddCommGrpCat.{u}
-        PointOpenCover.toFormalCoproduct (fun _ _ h ↦ h) 0 ⟨φ⟩ φ) P
-  have hz : HomologicalComplex.homologyMap (TauCeti.CategoryTheory.cechComplexMap P φ) 0
-      (K.homologyπ 0 c) = 0 := by
-    rw [← ConcreteCategory.comp_apply, HomologicalComplex.homologyπ_naturality,
-      ConcreteCategory.comp_apply, h, map_zero]
-  rw [← hι]
-  exact (congrArg ((TauCeti.CategoryTheory.cechCohomologyι PointOpenCover.toFormalCoproduct
-    (fun _ _ h ↦ h) 0 V).app P).hom hz).trans (map_zero _)
+  rw [Functor.id_map, ← ConcreteCategory.comp_apply, HomologicalComplex.homologyπ_naturality,
+    ConcreteCategory.comp_apply, h, map_zero]
 
 end DegreeZero
 

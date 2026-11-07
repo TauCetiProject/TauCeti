@@ -12,9 +12,10 @@ import TauCeti.Algebra.Homology.Ext.Basic
 import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.LongExactSequence
 import TauCeti.CategoryTheory.Sites.SheafCohomology.LongExactSequence
-import TauCeti.Topology.Sheaves.Cartan
 import TauCeti.Topology.Sheaves.Cech.LocallyZero
+import TauCeti.Topology.Sheaves.Exact
 import TauCeti.Topology.Sheaves.Flasque.Basic
+import TauCeti.Topology.Sheaves.InjectiveImage
 
 /-!
 # Vanishing of degree one Čech cohomology implies vanishing of sheaf cohomology
@@ -74,8 +75,7 @@ variable {X : TopCat.{u}} (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCa
 `I ⟶ Q` from the chosen injective sheaf containing `F` to its cokernel `Q`, and `C` is the
 cokernel presheaf of `G ⟶ Q`. -/
 private abbrev imageCokernelSequence : ShortComplex ((Opens X)ᵒᵖ ⥤ AddCommGrpCat.{u}) :=
-  ShortComplex.mk (image.ι (cokernel.π (Injective.ι F)).hom)
-    (cokernel.π (image.ι (cokernel.π (Injective.ι F)).hom)) (cokernel.condition _)
+  ShortComplex.cokernelSequence (image.ι (cokernel.π (Injective.ι F)).hom)
 
 /-- The sequence `0 ⟶ G ⟶ Q ⟶ C ⟶ 0` is exact on every open. -/
 private lemma imageCokernelSequence_map_shortExact (V : (Opens X)ᵒᵖ) :
@@ -95,14 +95,21 @@ private lemma imageCokernelSequence_locally_eq_zero (W : Opens X)
     q x hx
   refine ⟨V, hVW, hxV, ?_⟩
   -- the image of the lift `t` in `Q` lies in `G`, so it vanishes in `C`
-  have hzero : (imageCokernelSequence F).g.app (op V)
+  have hzero : (cokernel.π (image.ι (cokernel.π (Injective.ι F)).hom)).app (op V)
       ((cokernel.π (Injective.ι F)).hom.app (op V) t) = 0 := by
-    rw [← image.fac (cokernel.π (Injective.ι F)).hom]
-    exact (ConcreteCategory.congr_hom (NatTrans.congr_app (imageCokernelSequence F).zero (op V))
-      ((factorThruImage (cokernel.π (Injective.ι F)).hom).app (op V) t)).trans (by simp)
+    have hfac : (cokernel.π (Injective.ι F)).hom.app (op V) t =
+        (image.ι (cokernel.π (Injective.ι F)).hom).app (op V)
+          ((factorThruImage (cokernel.π (Injective.ι F)).hom).app (op V) t) :=
+      (ConcreteCategory.congr_hom
+        (NatTrans.congr_app (image.fac (cokernel.π (Injective.ι F)).hom) (op V)) t).symm
+    rw [hfac]
+    refine (ConcreteCategory.congr_hom (NatTrans.congr_app
+      (cokernel.condition (image.ι (cokernel.π (Injective.ι F)).hom)) (op V)) _).trans ?_
+    simp
   rw [← NatTrans.naturality_apply]
-  -- `ht` is stated for the presheaf of the sheaf `Q`, which is the middle term of the sequence
-  -- only up to unfolding `imageCokernelSequence`, so it is applied through `congrArg`
+  -- `ht` is stated for the presheaf of the sheaf `Q` and `hzero` for the cokernel map `Q ⟶ C`,
+  -- which are the middle term and the second map of the sequence only up to unfolding
+  -- `imageCokernelSequence`, so they are combined as terms
   exact (congrArg (fun y ↦ (imageCokernelSequence F).g.app (op V) y) ht).symm.trans hzero
 
 variable {F} in
@@ -152,8 +159,10 @@ private lemma surjective_app_functor_obj_top (W : Opens X)
   have h₁ : Epi ((cechCohomology Y AddCommGrpCat.{u} 0).map (R.map (injectiveImageSequence F).g)) :=
     (ShortComplex.exact_iff_epi _ (h.eq_zero_of_tgt _)).1
       (TauCeti.CategoryTheory.cechCohomology_exact₃ _ _ hS₁ 0)
-  -- `ČH⁰(W, G) ⟶ ČH⁰(W, Q)` is onto, as `ČH⁰(W, C) = 0`
-  have h₂ : Epi ((cechCohomology Y AddCommGrpCat.{u} 0).map (R.map (imageCokernelSequence F).f)) :=
+  -- `ČH⁰(W, G) ⟶ ČH⁰(W, Q)` is onto, as `ČH⁰(W, C) = 0`; the map `G ⟶ Q` is the first map
+  -- `(imageCokernelSequence F).f` of the sequence up to unfolding `ShortComplex.cokernelSequence`
+  have h₂ : Epi ((cechCohomology Y AddCommGrpCat.{u} 0).map
+      (R.map (image.ι (cokernel.π (Injective.ι F)).hom))) :=
     (ShortComplex.exact_iff_epi _ ((isZero_cechCohomology_zero_obj_of_locally_eq_zero _
       (restrict_imageCokernelSequence_locally_eq_zero W)).eq_zero_of_tgt _)).1
       (TauCeti.CategoryTheory.cechCohomology_exact₂ _ _ hS₂ 0)
@@ -165,11 +174,12 @@ private lemma surjective_app_functor_obj_top (W : Opens X)
       (P.map (cokernel.π (Injective.ι F))).hom) := by
     -- the restriction of a morphism of sheaves is its whiskering by `Φ.op`
     have hfac : (P.map (cokernel.π (Injective.ι F))).hom =
-        R.map ((injectiveImageSequence F).g ≫ (imageCokernelSequence F).f) :=
+        R.map ((injectiveImageSequence F).g ≫ image.ι (cokernel.π (Injective.ι F)).hom) :=
       congrArg R.map (image.fac _).symm
     have h₄ := epi_comp
       ((cechCohomology Y AddCommGrpCat.{u} 0).map (R.map (injectiveImageSequence F).g))
-      ((cechCohomology Y AddCommGrpCat.{u} 0).map (R.map (imageCokernelSequence F).f))
+      ((cechCohomology Y AddCommGrpCat.{u} 0).map
+        (R.map (image.ι (cokernel.π (Injective.ι F)).hom)))
     rwa [← Functor.map_comp, ← Functor.map_comp, ← hfac] at h₄
   -- in degree `0`, the Čech cohomology of a sheaf is its global sections, naturally
   have hnat := (Iso.eq_comp_inv _).2
