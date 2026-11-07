@@ -109,6 +109,13 @@ theorem mem_plusSubring_iff_coeff_zero {h : IsRingOfIntegralElements Bplus}
   rw [zero_add] at hn
   rwa [hn]
 
+/-- Inclusion of rings of integral elements induces inclusion of their integral tilts. -/
+theorem plusSubring_mono {Cplus : Subring B} (hB : IsRingOfIntegralElements Bplus)
+    (hC : IsRingOfIntegralElements Cplus) (hBC : Bplus ≤ Cplus) :
+    plusSubring p hB ≤ plusSubring p hC :=
+  fun _ hx ↦ mem_plusSubring_iff_coeff_zero.mpr
+    (hBC (mem_plusSubring_iff_coeff_zero.mp hx))
+
 /-- The integral tilt is an open subring: membership is tested on the zeroth coordinate. -/
 theorem isOpen_plusSubring {Bplus : Subring B} (h : IsRingOfIntegralElements Bplus) :
     IsOpen (plusSubring p h : Set (uniformTilt p B)) := by

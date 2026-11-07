@@ -29,7 +29,9 @@ the quotient by `y` is `A ⧸ (f)`.
 
 If a subring `S` of `B` is integrally closed in `B`, then its preimage under a ring homomorphism
 `f : A → B` is integrally closed in `A`: an element of `A` integral over the preimage is sent by
-`f` to an element integral over `S`, which therefore lies in `S`.
+`f` to an element integral over `S`, which therefore lies in `S`. Conversely, a surjective ring
+homomorphism carries an integrally closed subring containing its kernel to an integrally closed
+subring: lift a monic integral equation, whose evaluation then lies in the kernel.
 
 ## Main results
 
@@ -45,6 +47,8 @@ If a subring `S` of `B` is integrally closed in `B`, then its preimage under a r
 * `IsIntegrallyClosedIn.of_isLocalization_away`: the case of the localization `R[1/x]`.
 * `Subring.isIntegrallyClosedIn_comap`: the preimage of an integrally closed subring is integrally
   closed.
+* `Subring.isIntegrallyClosedIn_map_of_ker_le`: a surjective ring homomorphism carries an
+  integrally closed subring containing its kernel to an integrally closed subring.
 * `Subring.mem_of_pow_mem_of_isIntegrallyClosedIn`: a subring integrally closed in `A` contains
   every element some positive power of which it contains.
 -/
@@ -174,5 +178,33 @@ theorem mem_of_pow_mem_of_isIntegrallyClosedIn {S : Subring A} [IsIntegrallyClos
   have hpow : IsIntegral S (a ^ n) := isIntegral_algebraMap (R := S) (x := (⟨a ^ n, ha⟩ : S))
   obtain ⟨y, hy⟩ := IsIntegrallyClosedIn.exists_algebraMap_eq_of_isIntegral_pow hn hpow
   exact hy ▸ y.2
+
+/-- A surjective ring homomorphism carries an integrally closed subring to an integrally closed
+subring if its kernel is contained in that subring. -/
+theorem isIntegrallyClosedIn_map_of_ker_le (S : Subring A) [IsIntegrallyClosedIn S A]
+    (f : A →+* B) (hf : Function.Surjective f) (hker : (RingHom.ker f : Set A) ⊆ S) :
+    IsIntegrallyClosedIn (S.map f) B := by
+  classical
+  let g : S →+* S.map f := f.restrict S (S.map f) fun x hx ↦ ⟨x, hx, rfl⟩
+  have hg : Function.Surjective g := by
+    rintro ⟨_, a, ha, rfl⟩
+    exact ⟨⟨a, ha⟩, rfl⟩
+  refine Subring.isIntegrallyClosedIn_iff.mpr fun b ⟨q, hq, hqb⟩ ↦ ?_
+  obtain ⟨a, rfl⟩ := hf b
+  obtain ⟨p, hpq, -, hp⟩ := Polynomial.lifts_and_natDegree_eq_and_monic
+    (Polynomial.mem_lifts_of_surjective hg q) hq
+  have heval : f (Polynomial.aeval a p) = 0 := by
+    rw [Polynomial.aeval_def, Polynomial.hom_eval₂]
+    rw [← hqb, ← hpq, Polynomial.eval₂_map]
+    rfl
+  have hmem : Polynomial.aeval a p ∈ S := hker heval
+  by_cases hdeg : p.natDegree = 0
+  · have hone : (1 : B) = 0 := by
+      simpa [Polynomial.eq_one_of_monic_natDegree_zero hp hdeg] using heval
+    have hfa : f a = 0 := by rw [← mul_one (f a), hone, mul_zero]
+    exact ⟨a, hker hfa, rfl⟩
+  · have ha : IsIntegral S a := IsIntegral.of_aeval_monic hp hdeg
+      (isIntegral_algebraMap (x := (⟨_, hmem⟩ : S)))
+    exact ⟨a, Subring.isIntegrallyClosedIn_iff.mp inferInstance ha, rfl⟩
 
 end Subring
