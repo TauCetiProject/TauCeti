@@ -207,6 +207,14 @@ theorem le_mul_rpow_one_div_iff {a C I q : ℝ} (ha : 0 ≤ a) (hC : 0 ≤ C) (h
   rw [← rpow_le_rpow_iff ha (by positivity) hq, mul_rpow hC (by positivity), one_div,
     rpow_inv_rpow hI hq.ne']
 
+/-- Rescaling a power law: if `X ≤ N` and `C = C₀ N / R ^ α / 2`, then
+`C₀ (r / R) ^ α X ≤ 2 (C r ^ α)` for `r, R > 0` and `C₀ ≥ 0`. -/
+lemma mul_rpow_div_mul_le_two_mul {α C₀ N R r X C : ℝ} (hC₀ : 0 ≤ C₀) (hr : 0 < r)
+    (hR : 0 < R) (hX : X ≤ N) (hC : C = C₀ * N / R ^ α / 2) :
+    C₀ * (r / R) ^ α * X ≤ 2 * (C * r ^ α) :=
+  calc _ ≤ C₀ * (r / R) ^ α * N := by gcongr
+    _ = 2 * (C * r ^ α) := by rw [hC, Real.div_rpow hr.le hR.le]; field_simp
+
 /-- The limit of the ratio `D ^ n / (n ω (D ^ n - ρ ^ n))` as `D → ∞` is `(n ω)⁻¹`, for every real
 `ρ` and `n ≠ 0`. -/
 theorem tendsto_pow_div_mul_sub_pow_atTop {n : ℕ} {ω : ℝ} (hn0 : n ≠ 0) (ρ : ℝ) :
