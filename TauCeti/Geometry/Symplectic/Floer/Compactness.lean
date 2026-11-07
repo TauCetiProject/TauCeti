@@ -64,12 +64,12 @@ The same holds uniformly over a compact parameter window
 and `X_p` depend jointly `C²` on a parameter `p` in a real inner product space and the parameters
 `pₖ` of the solutions lie in a compact set `C`, a single threshold works for all parameters in `C`,
 and the subsequence can be chosen so that its parameters also converge in `C`. This is the
-compactness statement needed for the one-parameter families of domains and data (continuation,
-associativity, comparison) whose boundary counts give chain homotopies. It reduces to the
-unparametrized statement by adjoining the parameter to the target as a constant coordinate, which
-leaves the energy density unchanged. The limit is only shown to be
-continuous; its regularity, the rescaled bubbles at the points of `Z` (spheres for the structure
-`J(z, ·)` frozen at the bubbling point), and breaking along cylindrical ends are not treated here.
+compactness statement needed for the one-parameter families of Floer data `J_p`, `X_p`
+(continuation, associativity, comparison) whose boundary counts give chain homotopies. It reduces
+to the unparametrized statement by adjoining the parameter to the target as a constant coordinate,
+which leaves the energy density unchanged. The limit is only shown to be continuous; its
+regularity, the rescaled bubbles at the points of `Z` (spheres for the structure `J(z, ·)` frozen
+at the bubbling point), and breaking along cylindrical ends are not treated here.
 
 ## References
 
@@ -329,13 +329,14 @@ private theorem contDiffOn_parameterX {X : P → ℂ × V → ℂ →L[ℝ] V} {
 /-- **Floer solutions over a compact parameter window converge off finitely many bubbling
 points.** Let `J_p` and `X_p` depend on a parameter `p` in a real inner product space `P`, jointly
 `C²` on an open set `W ⊆ P × (ℂ × V)` containing `C × D × K` for compact `C ⊆ P`, `D ⊆ ℂ` and
-`K ⊆ V`, with `J_p(z, x)² = -1` there. There is a threshold `δ > 0` with the following property.
-Let `uₖ` be `C³` solutions of `∂ₜu - X_{pₖ}(z, u) i = J_{pₖ}(z, u)(∂ₛu - X_{pₖ}(z, u) 1)` on an
-open set `Ω ⊆ D`, for parameters `pₖ ∈ C`, with image in `K` and energy `∫_Ω ‖∂ₛuₖ‖² ≤ E`. Then
-there are a subsequence `φ`, a limit parameter `p₀ ∈ C` of `p_{φ n}`, a finite set `Z ⊆ Ω` with
-`#Z * δ ≤ E`, and a continuous `v : Ω \ Z → K` such that along `φ` every disc about a point of `Z`
-eventually carries energy at least `δ`, the differentials are uniformly bounded on every compact
-subset of `Ω \ Z`, and `u_{φ n} → v` locally uniformly on `Ω \ Z`. -/
+`K ⊆ V`, with `J_p(z, x)² = -1` on `C × D × K`. There is a threshold `δ > 0` with the following
+property. Let `uₖ` be `C³` solutions of
+`∂ₜu - X_{pₖ}(z, u) i = J_{pₖ}(z, u)(∂ₛu - X_{pₖ}(z, u) 1)` on an open set `Ω ⊆ D`, for parameters
+`pₖ ∈ C`, with image in `K` and energy `∫_Ω ‖∂ₛuₖ‖² ≤ E`. Then there are a subsequence `φ`, a
+limit parameter `p₀ ∈ C` of `p_{φ n}`, a finite set `Z ⊆ Ω` with `#Z * δ ≤ E`, and a continuous
+`v : Ω \ Z → K` such that along `φ` every disc about a point of `Z` eventually carries energy at
+least `δ`, the differentials are uniformly bounded on every compact subset of `Ω \ Z`, and
+`u_{φ n} → v` locally uniformly on `Ω \ Z`. -/
 theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset
     {J : P → ℂ × V → V →L[ℝ] V} {X : P → ℂ × V → ℂ →L[ℝ] V} {W : Set (P × (ℂ × V))}
     {C : Set P} {D : Set ℂ} {K : Set V}
