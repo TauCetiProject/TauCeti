@@ -84,6 +84,14 @@ theorem gnsEquiv_intertwines (a : A) (v : f.GNS) :
   · intro b
     simp [toGNS_apply, map_mul]
 
+/-- The inverse GNS unitary intertwines the given representation with the canonical one. -/
+@[simp]
+theorem gnsEquiv_symm_intertwines (a : A) (w : H) :
+    (f.gnsEquiv π ξ hcyc hf).symm (π a w) =
+      f.gnsNonUnitalStarAlgHom a ((f.gnsEquiv π ξ hcyc hf).symm w) := by
+  apply (f.gnsEquiv π ξ hcyc hf).injective
+  simp
+
 /-- Agreement on algebra classes uniquely determines the GNS unitary. -/
 theorem gnsEquiv_unique (U : f.GNS ≃ₗᵢ[ℂ] H)
     (hU : ∀ a, U (f.toGNS a) = π a ξ) : U = f.gnsEquiv π ξ hcyc hf := by
@@ -116,6 +124,20 @@ theorem gnsEquiv_apply_gnsVector :
     f.gnsEquiv π.toNonUnitalStarAlgHom ξ hcyc hf f.gnsVector = ξ := by
   simpa [toGNS_apply, gnsVector_def] using
     f.gnsEquiv_apply_coe π.toNonUnitalStarAlgHom ξ hcyc hf 1
+
+/-- The inverse GNS unitary intertwines the given unital representation with the canonical one. -/
+@[simp]
+theorem gnsEquiv_symm_intertwines_unital (a : A) (w : H) :
+    (f.gnsEquiv π.toNonUnitalStarAlgHom ξ hcyc hf).symm (π a w) =
+      f.gnsStarAlgHom a ((f.gnsEquiv π.toNonUnitalStarAlgHom ξ hcyc hf).symm w) :=
+  f.gnsEquiv_symm_intertwines π.toNonUnitalStarAlgHom ξ hcyc hf a w
+
+/-- The inverse GNS unitary sends the given cyclic vector to the canonical one. -/
+@[simp]
+theorem gnsEquiv_symm_apply_self :
+    (f.gnsEquiv π.toNonUnitalStarAlgHom ξ hcyc hf).symm ξ = f.gnsVector := by
+  apply (f.gnsEquiv π.toNonUnitalStarAlgHom ξ hcyc hf).injective
+  simp
 
 include hcyc hf in
 /-- A cyclic unital vector realization of a positive functional has a unique unitary
