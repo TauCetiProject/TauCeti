@@ -152,7 +152,7 @@ theorem _root_.ContDiffOn.contDiff_smul_of_tsupport_subset {𝕜 F : Type*}
 /-- Where a function `ζ` equals one on a neighbourhood of `x`, every iterated derivative of `ζ * u`
 at `x` is that of `u`. -/
 theorem _root_.Filter.EventuallyEq.iteratedFDeriv_mul_eq {𝕜 F A : Type*} [NontriviallyNormedField 𝕜]
-    [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedRing A] [NormedAlgebra 𝕜 A] {k : ℕ}
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedRing A] [NormedSpace 𝕜 A] {k : ℕ}
     {ζ u : F → A} {x : F} (hζ : ζ =ᶠ[𝓝 x] 1) :
     iteratedFDeriv 𝕜 k (ζ * u) x = iteratedFDeriv 𝕜 k u x := by
   have hev : ζ * u =ᶠ[𝓝 x] u := by
