@@ -40,8 +40,6 @@ law in `Quadratic/Ramification.lean`: a prime coprime to `2` divides it exactly 
 * `TauCeti.Multiquadratic.fundamentalDiscriminant_ne_zero`: it is nonzero for nonzero `d`.
 * `TauCeti.Multiquadratic.fundamentalDiscriminant_primeDiscriminantRadicand`: a prime discriminant
   is the fundamental discriminant of its own radicand.
-* `TauCeti.Multiquadratic.eq_of_isEvenPrimeDiscriminant_of_prod_eq`: a set of prime
-  discriminants whose product is a fundamental discriminant has at most one even member.
 -/
 
 public section
@@ -138,17 +136,5 @@ theorem fundamentalDiscriminant_primeDiscriminantRadicand {D : ℤ} (hD : IsPrim
     rcases hev with rfl | rfl | rfl <;> norm_num [fundamentalDiscriminant_def]
   · rw [primeDiscriminantRadicand_oddPrimeDiscriminant hodd,
       fundamentalDiscriminant_of_mod_four_eq_one (oddPrimeDiscriminant_mod_four_eq_one hodd)]
-
-/-- **A set of prime discriminants whose product is a fundamental discriminant contains at most
-one even prime discriminant.** Two distinct even prime discriminants (among `-4`, `8`, `-8`) have
-a product divisible by `16`. -/
-theorem eq_of_isEvenPrimeDiscriminant_of_prod_eq {s : Finset ℤ} {D : ℤ}
-    (hD : Int.IsFundamentalDiscr D) (hprod : ∏ P ∈ s, P = D) {P Q : ℤ} (hP : P ∈ s)
-    (hQ : Q ∈ s) (hPe : IsEvenPrimeDiscriminant P) (hQe : IsEvenPrimeDiscriminant Q) : P = Q := by
-  by_contra hne
-  refine hD.not_sixteen_dvd (dvd_trans ?_ (hprod ▸ ?_ : P * Q ∣ _))
-  · rcases hPe with rfl | rfl | rfl <;> rcases hQe with rfl | rfl | rfl <;> simp at hne <;> norm_num
-  · simpa [Finset.prod_pair hne] using
-      Finset.prod_dvd_prod_of_subset {P, Q} s id (by simp [Finset.insert_subset_iff, hP, hQ])
 
 end TauCeti.Multiquadratic
