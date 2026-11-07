@@ -21,6 +21,8 @@ against any measure on `ℝ` whose polynomial moments are finite (up to the rele
   combination of moments;
 * `integrable_eval_of_forall_integrable_pow` — the all-moments corollary: every polynomial is
   integrable when every monomial is;
+* `tendsto_integral_eval_of_tendsto_integral_pow` — convergence of polynomial integrals from
+  eventual integrability and convergence of monomial integrals;
 * `integrable_pow_of_ae_abs_le` — every monomial is integrable against a finite measure
   concentrated on a bounded interval, so such measures satisfy the moment hypothesis;
 * `abs_integral_eval_sub_le` — a polynomial that approximates a bounded continuous function within
@@ -45,6 +47,8 @@ public section
 namespace TauCeti
 
 open MeasureTheory Polynomial
+open Filter
+open scoped Topology
 
 variable {μ : Measure ℝ}
 
@@ -66,6 +70,28 @@ theorem integral_eval_eq_sum_range {q : ℝ[X]}
   rw [integral_finsetSum _ fun k hk =>
     (hmom k (Nat.lt_succ_iff.1 (Finset.mem_range.1 hk))).const_mul _]
   simp_rw [integral_const_mul]
+
+/-- If every monomial is eventually integrable against `μᵢ`, then eventually all monomials up to
+the degree of a given polynomial are integrable. -/
+theorem eventually_forall_le_natDegree_integrable {ι : Type*} {l : Filter ι}
+    {μs : ι → Measure ℝ}
+    (hμs : ∀ n, ∀ᶠ i in l, Integrable (fun x : ℝ => x ^ n) (μs i)) (p : ℝ[X]) :
+    ∀ᶠ i in l, ∀ k ≤ p.natDegree, Integrable (fun x : ℝ => x ^ k) (μs i) :=
+  (eventually_all_finite (Set.finite_Iic p.natDegree)).2 fun n _ => hμs n
+
+/-- If every moment `∫ xⁿ dμᵢ` converges to `∫ xⁿ dμ`, then so does the integral of every real
+polynomial. The moments must be genuine: each monomial is assumed integrable against `μ` and,
+eventually, against `μᵢ`. -/
+theorem tendsto_integral_eval_of_tendsto_integral_pow {ι : Type*} {l : Filter ι}
+    {μs : ι → Measure ℝ} {μ : Measure ℝ}
+    (hμs : ∀ n, ∀ᶠ i in l, Integrable (fun x : ℝ => x ^ n) (μs i))
+    (hμ : ∀ n, Integrable (fun x : ℝ => x ^ n) μ)
+    (h : ∀ n, Tendsto (fun i => ∫ x, x ^ n ∂μs i) l (𝓝 (∫ x, x ^ n ∂μ))) (p : ℝ[X]) :
+    Tendsto (fun i => ∫ x, p.eval x ∂μs i) l (𝓝 (∫ x, p.eval x ∂μ)) := by
+  rw [integral_eval_eq_sum_range fun n _ => hμ n]
+  refine (tendsto_finsetSum _ fun n _ => (h n).const_mul (p.coeff n)).congr' ?_
+  filter_upwards [eventually_forall_le_natDegree_integrable hμs p] with i hi
+  exact (integral_eval_eq_sum_range hi).symm
 
 /-- A real polynomial is integrable against any measure all of whose polynomial moments are
 finite. -/

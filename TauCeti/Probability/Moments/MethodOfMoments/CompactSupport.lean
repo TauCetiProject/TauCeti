@@ -12,19 +12,21 @@ import TauCeti.MeasureTheory.Function.PolynomialMemLp
 /-!
 # Weak convergence from convergence of moments
 
-The *method of moments* on the real line: if probability measures `μᵢ` on `ℝ` have finite moments
-of every order and `∫ xⁿ dμᵢ → ∫ xⁿ dμ` for every `n`, where the limit `μ` is concentrated on a
-compact set, then `μᵢ → μ` weakly. The approximating measures need not be compactly supported,
+The *method of moments* on the real line: if probability measures `μᵢ` on `ℝ` have moments that
+are eventually finite and `∫ xⁿ dμᵢ → ∫ xⁿ dμ` for every `n`, where the limit `μ` is concentrated
+on a compact set, then `μᵢ → μ` weakly. The approximating measures need not be compactly supported,
 let alone supported in one common compact set. This is how a limit theorem proved by computing
 moments, such as the free central limit theorem or the moment convergence of a random-matrix
 ensemble, is turned into weak convergence of the corresponding laws.
 
 ## Main results
 
-* `TauCeti.tendsto_integral_eval_of_tendsto_integral_pow` — convergence of all moments gives
-  convergence of the integral of every real polynomial.
 * `MeasureTheory.ProbabilityMeasure.tendsto_of_tendsto_integral_pow` — the method of moments:
   moment convergence to a compactly supported limit implies weak convergence.
+
+Polynomial integrability and convergence of polynomial integrals are available in
+`TauCeti.MeasureTheory.Function.PolynomialMemLp`. The method for moment-determinate limits is in
+`TauCeti.Probability.Moments.MethodOfMoments.Determinate`.
 
 ## Implementation notes
 
@@ -51,26 +53,6 @@ open scoped Topology BoundedContinuousFunction
 namespace TauCeti
 
 variable {ι : Type*} {l : Filter ι}
-
-/-- If every monomial is eventually integrable against `μᵢ`, then eventually all the monomials up
-to the degree of a given polynomial are. -/
-private theorem eventually_forall_le_natDegree_integrable {μs : ι → Measure ℝ}
-    (hμs : ∀ n, ∀ᶠ i in l, Integrable (fun x : ℝ => x ^ n) (μs i)) (p : ℝ[X]) :
-    ∀ᶠ i in l, ∀ k ≤ p.natDegree, Integrable (fun x : ℝ => x ^ k) (μs i) :=
-  (eventually_all_finite (Set.finite_Iic p.natDegree)).2 fun n _ => hμs n
-
-/-- If every moment `∫ xⁿ dμᵢ` converges to `∫ xⁿ dμ`, then so does the integral of every real
-polynomial. The moments must be genuine: each monomial is assumed integrable against `μ` and,
-eventually, against `μᵢ`. -/
-theorem tendsto_integral_eval_of_tendsto_integral_pow {μs : ι → Measure ℝ} {μ : Measure ℝ}
-    (hμs : ∀ n, ∀ᶠ i in l, Integrable (fun x : ℝ => x ^ n) (μs i))
-    (hμ : ∀ n, Integrable (fun x : ℝ => x ^ n) μ)
-    (h : ∀ n, Tendsto (fun i => ∫ x, x ^ n ∂μs i) l (𝓝 (∫ x, x ^ n ∂μ))) (p : ℝ[X]) :
-    Tendsto (fun i => ∫ x, p.eval x ∂μs i) l (𝓝 (∫ x, p.eval x ∂μ)) := by
-  rw [integral_eval_eq_sum_range fun n _ => hμ n]
-  refine (tendsto_finsetSum _ fun n _ => (h n).const_mul (p.coeff n)).congr' ?_
-  filter_upwards [eventually_forall_le_natDegree_integrable hμs p] with i hi
-  exact (integral_eval_eq_sum_range hi).symm
 
 /-- The pointwise domination behind the method of moments: if `|f| ≤ C` and `|p - f| < δ` on
 `[-M, M]`, then for all `t > 0` and `n`, everywhere on `ℝ`,
@@ -168,9 +150,11 @@ open TauCeti
 
 variable {ι : Type*} {l : Filter ι}
 
-/-- **The method of moments.** Let `μᵢ` and `μ` be probability measures on `ℝ` such that `μ` is
-concentrated on a compact set, every moment of `μᵢ` is eventually finite, and
-`∫ xⁿ dμᵢ → ∫ xⁿ dμ` for every `n`. Then `μᵢ → μ` weakly. -/
+/-- **The method of moments for compactly supported limits.** Let `μᵢ` and `μ` be probability
+measures on `ℝ` such that `μ` is concentrated on a compact set, every moment of `μᵢ` is eventually
+finite, and `∫ xⁿ dμᵢ → ∫ xⁿ dμ` for every `n`. Then `μᵢ → μ` weakly. For a moment-determinate
+limit without a compact-support assumption, see
+`MeasureTheory.ProbabilityMeasure.tendsto_of_tendsto_integral_pow_of_determined_moments`. -/
 theorem tendsto_of_tendsto_integral_pow {μs : ι → ProbabilityMeasure ℝ}
     {μ : ProbabilityMeasure ℝ} {K : Set ℝ} (hK : IsCompact K) (hμK : (μ : Measure ℝ) Kᶜ = 0)
     (hμs : ∀ n, ∀ᶠ i in l, Integrable (fun x : ℝ => x ^ n) (μs i : Measure ℝ))
