@@ -183,11 +183,9 @@ theorem HolderOnWith.of_le_of_dist_le {X Y : Type*} [PseudoMetricSpace X] [Pseud
 theorem HolderOnWith.dist_le_mul_rpow_of_mem_ball {X Y : Type*} [PseudoMetricSpace X]
     [PseudoMetricSpace Y] {C r : ℝ≥0} {f : X → Y} {x₀ x : X} {ρ : ℝ}
     (hf : HolderOnWith C r f (Metric.ball x₀ ρ)) (hx : x ∈ Metric.ball x₀ ρ) :
-    dist (f x) (f x₀) ≤ C * ρ ^ (r : ℝ) := by
-  have hx' := Metric.mem_ball.1 hx
-  calc dist (f x) (f x₀) ≤ C * dist x x₀ ^ (r : ℝ) :=
-        hf.dist_le hx (Metric.mem_ball_self (dist_nonneg.trans_lt hx'))
-    _ ≤ C * ρ ^ (r : ℝ) := by gcongr
+    dist (f x) (f x₀) ≤ C * ρ ^ (r : ℝ) :=
+  hf.dist_le_of_le hx (Metric.mem_ball_self (dist_nonneg.trans_lt (Metric.mem_ball.1 hx)))
+    (Metric.mem_ball.1 hx).le
 
 /-- A bounded Lipschitz map is Hölder for every exponent at most one, without a bounded-domain
 assumption. The scale-one estimate uses the Lipschitz constant plus twice the value bound. -/
