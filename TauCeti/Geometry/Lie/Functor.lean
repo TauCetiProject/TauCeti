@@ -97,7 +97,7 @@ private theorem mfderiv_monoidHom_mulInvariantVectorField
 /-- The differential at the identity of a smooth homomorphism preserves the Lie bracket of the
 tangent Lie algebras. -/
 theorem ContMDiffMonoidMorphism.groupLieAlgebraMap_lie
-    [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
+    [CompleteSpace E] [CompleteSpace E']
     (φ : ContMDiffMonoidMorphism I I' ∞ G G')
     (X Y : GroupLieAlgebra I G) :
     φ.toMonoidHom.groupLieAlgebraMap I I' ⁅X, Y⁆ =
