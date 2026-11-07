@@ -23,6 +23,8 @@ corresponding component of `S.arrow` (`CategoryTheory.Subobject.factors_of_foral
 
 * `CategoryTheory.Subobject.factors_iff_forall_mem_range`: a morphism factors through a subcomplex
   exactly when it does degreewise.
+* `CategoryTheory.Subobject.range_mk_arrow_f`: the subcomplex `Subobject.mk f` of a monomorphism
+  `f` has, in each degree, the range of the component of `f`.
 -/
 
 public section
@@ -62,5 +64,14 @@ theorem factors_iff_forall_mem_range :
   refine ⟨fun hS n x ↦ ⟨((S.factorThru g hS).f n).hom x, ?_⟩, factors_of_forall_mem_range S g⟩
   rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp, ← HomologicalComplex.comp_f,
     Subobject.factorThru_arrow]
+
+omit S in
+/-- In each degree, the subcomplex `Subobject.mk f` of a monomorphism of complexes of modules is
+the range of the component of `f`. -/
+theorem range_mk_arrow_f (f : K ⟶ L) [Mono f] (i : ι) :
+    LinearMap.range ((Subobject.mk f).arrow.f i).hom = LinearMap.range (f.f i).hom := by
+  rw [← Subobject.underlyingIso_hom_comp_eq_mk, HomologicalComplex.comp_f, ModuleCat.hom_comp,
+    LinearMap.range_comp_of_range_eq_top _
+      (LinearMap.range_eq_top.2 ((ModuleCat.epi_iff_surjective _).1 inferInstance))]
 
 end CategoryTheory.Subobject
