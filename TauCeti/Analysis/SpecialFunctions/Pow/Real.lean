@@ -72,6 +72,7 @@ with the corresponding integral of `q`-th powers.
 * `Real.rpow_eventuallyEq_exp_mul_log`: `x ^ q = exp (q * log x)` eventually along a filter on
   which `x` is eventually positive.
 * `Real.sqrt_pow_eq_rpow`: `√(x ^ n) = x ^ (n / 2)` for `0 ≤ x`.
+* `Real.pow_sqrt_eq_rpow`: `√x ^ n = x ^ (n / 2)` for `0 ≤ x`.
 * `Real.sq_rpow_div_two`: `(x ^ 2) ^ (s / 2) = x ^ s` for `0 ≤ x`.
 * `Real.rpow_one_div_natCast_sub_le_iff`: `x ^ (1 / (d - i)) ≤ y ↔ x ≤ y ^ (d - i)` for `i < d`
   and nonnegative `x`, `y`.
@@ -135,6 +136,11 @@ theorem rpow_eventuallyEq_exp_mul_log {l : Filter ℝ} (hpos : ∀ᶠ x in l, 0 
 exponent: `√(x ^ n) = x ^ (n / 2)`. -/
 theorem sqrt_pow_eq_rpow {x : ℝ} (hx : 0 ≤ x) (n : ℕ) : √(x ^ n) = x ^ ((n : ℝ) / 2) := by
   rw [sqrt_eq_rpow, ← rpow_natCast, ← rpow_mul hx, mul_one_div]
+
+/-- A natural power of the square root of a nonnegative real is the real power with half the
+exponent: `√x ^ n = x ^ (n / 2)`. -/
+theorem pow_sqrt_eq_rpow {x : ℝ} (hx : 0 ≤ x) (n : ℕ) : √x ^ n = x ^ ((n : ℝ) / 2) := by
+  rw [← rpow_natCast, ← rpow_div_two_eq_sqrt _ hx]
 
 /-- For a nonnegative real number `a`, taking the real power `s / 2` of `a ^ 2` gives `a ^ s`. -/
 @[simp]
