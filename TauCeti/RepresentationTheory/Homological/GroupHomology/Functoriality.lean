@@ -17,7 +17,8 @@ matching Mathlib's instance for its cohomological counterpart `groupCohomology.c
 
 It also records how the map on first homology induced by a group homomorphism `f : H →* G` reads
 through Mathlib's identification `H₁(G, A) ≃ Gᵃᵇ ⊗ A` for trivial coefficients: it is
-`Abelianization.map f` tensored with the coefficients.
+`Abelianization.map f` tensored with the coefficients. With trivial coefficients, the vanishing
+of group homology is also transported along isomorphisms of groups.
 
 ## Main results
 
@@ -27,6 +28,8 @@ through Mathlib's identification `H₁(G, A) ≃ Gᵃᵇ ⊗ A` for trivial coef
   by `f : H →* G` and `φ : A ⟶ Res(f)(B)` sends the class of `x ⊗ a` to that of `f x ⊗ φ a`.
 * `TauCeti.groupHomology.H1AddEquivOfIsTrivial_map`: with trivial coefficients, change of group
   and a coefficient map act as `Abelianization.map f ⊗ φ`.
+* `TauCeti.groupHomology.subsingleton_groupHomology_of_mulEquiv`: vanishing of group homology
+  with trivial coefficients is invariant under group isomorphisms.
 * `Rep.chainsMap_inclusion_comp_chainsMap_subtype`: the maps of inhomogeneous
   chains induced by inclusions of subgroups `S ≤ T ≤ G` compose.
 * `Rep.map_inclusion_comp_map_subtype`: so do the induced maps on homology.
@@ -102,6 +105,14 @@ theorem H1AddEquivOfIsTrivial_map {A : Rep R H} {B : Rep R G} [A.IsTrivial] [B.I
     rw [H1AddEquivOfIsTrivial_symm_tmul, ← mkH1OfIsTrivial_apply, map_mkH1OfIsTrivial]
     simpa using H1AddEquivOfIsTrivial_single B (f h) (φ.hom a)
   | add t t' ht ht' => rw [map_add, map_add, map_add, ht, ht', map_add]
+
+/-- Group homology with trivial coefficients is invariant under isomorphisms of groups: if it
+vanishes in degree `n` for `H`, then it vanishes in degree `n` for every group `G ≃* H`. -/
+theorem subsingleton_groupHomology_of_mulEquiv (e : G ≃* H) {n : ℕ}
+    [Subsingleton (groupHomology (Rep.trivial R H R) n)] :
+    Subsingleton (groupHomology (Rep.trivial R G R) n) :=
+  (mapIso (A := Rep.trivial R G R) (B := Rep.trivial R H R) e (LinearEquiv.refl R R)
+    (fun _ ↦ by ext; simp) n).toLinearEquiv.toEquiv.subsingleton
 
 end IsTrivial
 
