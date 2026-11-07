@@ -25,11 +25,11 @@ the operator `TauCeti.WeakDerivStep.trajectoryOperator` for the coefficient fami
 trajectories from `p` to `q` are the zeros of a section whose linearization at `γ` is `D_γ`, so the
 Fredholm property and index of `D_γ` give the expected dimension of the space of trajectories.
 
-This file proves that for a `C³` function `D_γ` is Fredholm of index `ind(p) - ind(q)`, the
-difference of the Morse indices of the endpoints. The coefficient family is `C¹` with
-invertible limits `Hess f(p)` and `Hess f(q)`, and its derivative
-`D(Hess f)(γ) (-∇f(γ))` tends to zero because the gradient vanishes at the endpoints. So
-`TauCeti.WeakDerivStep.isFredholm_trajectoryOperator` applies, and
+This file proves that for a `C²` function `D_γ` is Fredholm of index `ind(p) - ind(q)`, the
+difference of the Morse indices of the endpoints. The coefficient family is a continuous family of
+symmetric operators with invertible limits `Hess f(p)` and `Hess f(q)`, which therefore have
+Lyapunov forms. So `TauCeti.WeakDerivStep.isFredholm_trajectoryOperator_of_hasLyapunovForm`
+applies, and
 `TauCeti.WeakDerivStep.index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank`
 identifies the index with the difference of the numbers of negative eigenvalues of the two
 Hessians, which are the Morse indices.
@@ -240,101 +240,85 @@ private theorem exists_pos_mul_norm_le_hessianOperator (hp : IsNondegenerateCrit
   · rw [← he₂]
     exact (mul_le_mul_of_nonneg_right (min_le_right _ _) (norm_nonneg v)).trans (h₂ v)
 
-/-- The coefficient family `s ↦ Hess f(γ s)` of the linearized operator satisfies the hypotheses
-of `TauCeti.WeakDerivStep.isFredholm_trajectoryOperator`: it is a `C¹` family of symmetric
-operators with invertible limits `Hess f(p)` and `Hess f(q)` and derivative tending to zero at both
-ends. -/
+/-- The coefficient family `s ↦ Hess f(γ s)` of the linearized operator is a continuous family of
+symmetric operators with invertible limits `Hess f(p)` and `Hess f(q)`. -/
 private theorem trajectory_hypotheses (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x))
-    (hf : ContDiff ℝ 3 f) (hp : IsNondegenerateCriticalPoint f p)
+    (hf : ContDiff ℝ 2 f) (hp : IsNondegenerateCriticalPoint f p)
     (hq : IsNondegenerateCriticalPoint f q) (hbot : Tendsto γ atBot (𝓝 p))
     (htop : Tendsto γ atTop (𝓝 q)) :
-    ContDiff ℝ 1 (fun s ↦ hessianOperator f (γ s)) ∧
+    Continuous (fun s ↦ hessianOperator f (γ s)) ∧
       (∀ s, (hessianOperator f (γ s)).toLinearMap.IsSymmetric) ∧
       (∃ α > 0, (∀ v, α * ‖v‖ ≤ ‖hessianOperator f p v‖) ∧
         ∀ v, α * ‖v‖ ≤ ‖hessianOperator f q v‖) ∧
       Tendsto (fun s ↦ hessianOperator f (γ s)) atBot (𝓝 (hessianOperator f p)) ∧
-      Tendsto (fun s ↦ hessianOperator f (γ s)) atTop (𝓝 (hessianOperator f q)) ∧
-      Tendsto (deriv fun s ↦ hessianOperator f (γ s)) atBot (𝓝 0) ∧
-      Tendsto (deriv fun s ↦ hessianOperator f (γ s)) atTop (𝓝 0) := by
-  have hgrad : ContDiff ℝ 2 (∇ f) := hf.gradient_right (by norm_num)
-  have hH : ContDiff ℝ 1 (hessianOperator f) := hf.contDiff_hessianOperator (by norm_num)
-  have hγ1 : ContDiff ℝ 1 γ := by
-    refine contDiff_one_iff_deriv.2 ⟨fun t ↦ (hγ t).differentiableAt, ?_⟩
-    rw [show deriv γ = fun t ↦ -∇ f (γ t) from funext fun t ↦ (hγ t).deriv]
-    exact (hgrad.continuous.comp hγ.continuous).neg
-  -- The derivative of the coefficient family is `D(Hess f)(γ) (-∇f(γ))`, a continuous function of
-  -- `γ` that vanishes at the critical points.
-  set G : E → E →L[ℝ] E := fun x ↦ fderiv ℝ (hessianOperator f) x (-∇ f x)
-  have hG : Continuous G :=
-    (hH.continuous_fderiv one_ne_zero).clm_apply hgrad.continuous.neg
-  have hderiv : deriv (fun s ↦ hessianOperator f (γ s)) = G ∘ γ := funext fun s ↦
-    (((hH.differentiable one_ne_zero (γ s)).hasFDerivAt).comp_hasDerivAt s (hγ s)).deriv
-  have hGp : G p = 0 := by simp [G, hp.gradient_eq_zero]
-  have hGq : G q = 0 := by simp [G, hq.gradient_eq_zero]
-  refine ⟨hH.comp hγ1, fun s ↦ ?_, exists_pos_mul_norm_le_hessianOperator hp hq,
-    (hH.continuous.tendsto p).comp hbot, (hH.continuous.tendsto q).comp htop, ?_, ?_⟩
-  · exact ((hf.of_le (by norm_num)).contDiffAt.isSelfAdjoint_hessianOperator).isSymmetric
-  · rw [hderiv, ← hGp]
-    exact (hG.tendsto p).comp hbot
-  · rw [hderiv, ← hGq]
-    exact (hG.tendsto q).comp htop
+      Tendsto (fun s ↦ hessianOperator f (γ s)) atTop (𝓝 (hessianOperator f q)) := by
+  have hH := (hf.contDiff_hessianOperator (m := 0) (by norm_num)).continuous
+  refine ⟨hH.comp hγ.continuous, fun s ↦ ?_, exists_pos_mul_norm_le_hessianOperator hp hq,
+    (hH.tendsto p).comp hbot, (hH.tendsto q).comp htop⟩
+  exact (hf.contDiffAt.isSelfAdjoint_hessianOperator).isSymmetric
 
-/-- **The linearized operator along a gradient trajectory is Fredholm.** Let `f` be a `C³` function
+/-- **The linearized operator along a gradient trajectory is Fredholm.** Let `f` be a `C²` function
 on a finite-dimensional real inner product space and `γ` a negative gradient trajectory from a
 nondegenerate critical point `p` at `-∞` to a nondegenerate critical point `q` at `+∞`. Then the
 linearized operator `ξ ↦ ξ' + Hess f(γ) ξ` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is Fredholm. -/
 theorem isFredholm_trajectoryOperator_hessianOperator
-    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : ContDiff ℝ 3 f)
+    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : ContDiff ℝ 2 f)
     (hp : IsNondegenerateCriticalPoint f p) (hq : IsNondegenerateCriticalPoint f q)
     (hbot : Tendsto γ atBot (𝓝 p)) (htop : Tendsto γ atTop (𝓝 q))
     {AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] fun s ↦ hessianOperator f (γ s)) :
     (trajectoryOperator (p := 2) AL).IsFredholm := by
-  obtain ⟨hA, hsym, ⟨α, hα, hminus, hplus⟩, hAbot, hAtop, hdbot, hdtop⟩ :=
+  obtain ⟨hA, hsym, ⟨α, hα, hminus, hplus⟩, hAbot, hAtop⟩ :=
     trajectory_hypotheses hγ hf hp hq hbot htop
-  exact isFredholm_trajectoryOperator hA hsym hα hminus hplus hAbot hAtop hdbot hdtop AL hAL
+  exact isFredholm_trajectoryOperator_of_hasLyapunovForm hA
+    (ContinuousLinearMap.hasLyapunovForm_of_tendsto_of_isSymmetric hsym hAbot hα hminus)
+    (ContinuousLinearMap.hasLyapunovForm_of_tendsto_of_isSymmetric hsym hAtop hα hplus) hAbot hAtop
+    AL hAL
 
 /-- **The index of the linearized operator is the difference of the Morse indices.** Let `f` be a
-`C³` function on a finite-dimensional real inner product space and `γ` a negative gradient
+`C²` function on a finite-dimensional real inner product space and `γ` a negative gradient
 trajectory from a nondegenerate critical point `p` at `-∞` to a nondegenerate critical point `q` at
 `+∞`. Then the Fredholm index of the linearized operator `ξ ↦ ξ' + Hess f(γ) ξ` from
 `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is `morseIndex f p - morseIndex f q`. -/
 theorem index_trajectoryOperator_hessianOperator
-    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : ContDiff ℝ 3 f)
+    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : ContDiff ℝ 2 f)
     (hp : IsNondegenerateCriticalPoint f p) (hq : IsNondegenerateCriticalPoint f q)
     (hbot : Tendsto γ atBot (𝓝 p)) (htop : Tendsto γ atTop (𝓝 q))
     {AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] fun s ↦ hessianOperator f (γ s)) :
     (trajectoryOperator (p := 2) AL).index = (morseIndex f p : ℤ) - morseIndex f q := by
-  obtain ⟨hA, hsym, ⟨α, hα, hminus, hplus⟩, hAbot, hAtop, hdbot, hdtop⟩ :=
+  obtain ⟨hA, hsym, ⟨α, hα, hminus, hplus⟩, hAbot, hAtop⟩ :=
     trajectory_hypotheses hγ hf hp hq hbot htop
-  rw [index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank hA hsym hα hminus
-      hplus hAbot hAtop hdbot hdtop AL hAL,
+  rw [index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank hA
+      (ContinuousLinearMap.isClosed_setOf_isSymmetric.mem_of_tendsto hAbot (.of_forall hsym))
+      (ContinuousLinearMap.isClosed_setOf_isSymmetric.mem_of_tendsto hAtop (.of_forall hsym)) hα
+      hminus hplus hAbot hAtop AL hAL,
     hp.contDiffAt.morseIndex_eq_finrank_pointSpectralSubspace,
     hq.contDiffAt.morseIndex_eq_finrank_pointSpectralSubspace]
 
 /-- **In dimension one the linearized operator is onto exactly when the index drops by one.** On a
-one-dimensional space, let `f` be a `C³` function and `γ` a negative gradient trajectory from a
+one-dimensional space, let `f` be a `C²` function and `γ` a negative gradient trajectory from a
 nondegenerate critical point `p` at `-∞` to a different nondegenerate critical point `q` at `+∞`.
 Then `ξ ↦ ξ' + Hess f(γ) ξ` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is surjective if and only if
 `morseIndex f p = morseIndex f q + 1`: its kernel is a line, so its cokernel vanishes exactly when
 its index is one. -/
 theorem surjective_trajectoryOperator_hessianOperator_iff (hE : Module.finrank ℝ E = 1)
-    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : ContDiff ℝ 3 f)
+    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : ContDiff ℝ 2 f)
     (hp : IsNondegenerateCriticalPoint f p) (hq : IsNondegenerateCriticalPoint f q)
     (hbot : Tendsto γ atBot (𝓝 p)) (htop : Tendsto γ atTop (𝓝 q)) (hpq : p ≠ q)
     {AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] fun s ↦ hessianOperator f (γ s)) :
     Function.Surjective (trajectoryOperator (p := 2) AL) ↔
       morseIndex f p = morseIndex f q + 1 := by
-  have hf2 : ContDiff ℝ 2 f := hf.of_le (by norm_num)
   have hindex := index_trajectoryOperator_hessianOperator hγ hf hp hq hbot htop hAL
   have hclosed := (isFredholm_trajectoryOperator_hessianOperator hγ hf hp hq hbot htop
     hAL).isClosed_range
-  have hsym : ∀ᵐ s ∂volume.restrict ((⊤ : Opens ℝ) : Set ℝ), (AL s).toLinearMap.IsSymmetric := by
+  -- The Hessian is symmetric, so the coefficient is its own pointwise adjoint.
+  have hadj : ∀ᵐ s ∂volume.restrict ((⊤ : Opens ℝ) : Set ℝ),
+      AL s = ContinuousLinearMap.adjoint (AL s) := by
     filter_upwards [hAL] with s hs
     rw [hs]
-    exact hf2.contDiffAt.isSelfAdjoint_hessianOperator.isSymmetric
+    exact hf.contDiffAt.isSelfAdjoint_hessianOperator.isSymmetric.clm_adjoint_eq.symm
   -- The kernel of the formal adjoint is finite dimensional: it is a space of solutions of a linear
   -- equation on `E`.
   have hA : Continuous fun s ↦ -hessianOperator f (γ s) :=
@@ -342,19 +326,19 @@ theorem surjective_trajectoryOperator_hessianOperator_iff (hE : Module.finrank �
   have := (kerTrajectoryOperatorEquiv hA (-AL) (by
     filter_upwards [Lp.coeFn_neg AL, hAL] with s hs hAs
     simp only [hs, Pi.neg_apply, hAs])).symm.finiteDimensional
-  rw [index_trajectoryOperator_of_isClosed_range hsym hclosed,
-    finrank_ker_trajectoryOperator_hessianOperator_eq_one hE hγ hf2 hbot htop hpq hAL] at hindex
-  rw [surjective_trajectoryOperator_iff_ker_neg_eq_bot hsym hclosed, ← Submodule.finrank_eq_zero]
+  rw [index_trajectoryOperator_of_isClosed_range hadj hclosed,
+    finrank_ker_trajectoryOperator_hessianOperator_eq_one hE hγ hf hbot htop hpq hAL] at hindex
+  rw [surjective_trajectoryOperator_iff_ker_neg_eq_bot hadj hclosed, ← Submodule.finrank_eq_zero]
   omega
 
-/-- **A surjective linearized operator lowers the Morse index.** Let `f` be a `C³` function on a
+/-- **A surjective linearized operator lowers the Morse index.** Let `f` be a `C²` function on a
 finite-dimensional real inner product space and `γ` a negative gradient trajectory from a
 nondegenerate critical point `p` at `-∞` to a different nondegenerate critical point `q` at `+∞`.
 If the linearized operator `ξ ↦ ξ' + Hess f(γ) ξ` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is surjective,
 then `morseIndex f q < morseIndex f p`: its index `morseIndex f p - morseIndex f q` is then the
 dimension of its kernel, which contains the nonzero velocity of `γ`. -/
 theorem morseIndex_lt_morseIndex_of_surjective
-    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : ContDiff ℝ 3 f)
+    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : ContDiff ℝ 2 f)
     (hp : IsNondegenerateCriticalPoint f p) (hq : IsNondegenerateCriticalPoint f q)
     (hbot : Tendsto γ atBot (𝓝 p)) (htop : Tendsto γ atTop (𝓝 q)) (hpq : p ≠ q)
     {AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
@@ -363,8 +347,7 @@ theorem morseIndex_lt_morseIndex_of_surjective
     morseIndex f q < morseIndex f p := by
   have hindex := index_trajectoryOperator_hessianOperator hγ hf hp hq hbot htop hAL
   rw [ContinuousLinearMap.index_of_surjective _ hsurj] at hindex
-  have hpos := finrank_ker_trajectoryOperator_hessianOperator_pos hγ (hf.of_le (by norm_num)) hbot
-    htop hpq hAL
+  have hpos := finrank_ker_trajectoryOperator_hessianOperator_pos hγ hf hbot htop hpq hAL
   omega
 
 end IsIntegralCurve

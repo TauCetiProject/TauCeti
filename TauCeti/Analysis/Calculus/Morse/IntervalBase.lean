@@ -330,11 +330,13 @@ theorem ker_trajectoryOperator_neg_intervalBasePotential_eq_bot (hC : 0 < C)
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
       fun s ↦ hessianOperator (intervalBasePotential C) (γ s)) :
     (trajectoryOperator (p := 2) (-AL)).ker = ⊥ := by
-  have hsym : ∀ᵐ s ∂volume.restrict ((⊤ : Opens ℝ) : Set ℝ), (AL s).toLinearMap.IsSymmetric := by
+  have hadj : ∀ᵐ s ∂volume.restrict ((⊤ : Opens ℝ) : Set ℝ),
+      AL s = ContinuousLinearMap.adjoint (AL s) := by
     filter_upwards [hAL] with s hs
     rw [hs]
     exact (contDiff_intervalBasePotential C).contDiffAt.isSelfAdjoint_hessianOperator.isSymmetric
-  exact (surjective_trajectoryOperator_iff_ker_neg_eq_bot hsym
+      |>.clm_adjoint_eq.symm
+  exact (surjective_trajectoryOperator_iff_ker_neg_eq_bot hadj
     (isFredholm_trajectoryOperator_intervalBasePotential hC.ne' hγ hbot htop hAL).isClosed_range).1
     (surjective_trajectoryOperator_intervalBasePotential hC hγ hbot htop hAL)
 

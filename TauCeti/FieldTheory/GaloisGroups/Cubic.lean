@@ -138,7 +138,7 @@ theorem discr_X_pow_three_sub_two : (X ^ 3 - 2 : ℚ[X]).discr = -108 := by
 /-- `X³ - 3X - 1` is irreducible over `ℚ`: it has no root modulo `2`, so no integral root. -/
 theorem irreducible_X_pow_three_sub_three_mul_X_sub_one :
     Irreducible (X ^ 3 - 3 * X - 1 : ℚ[X]) := by
-  have := irreducible_map_intCast_of_natDegree_eq_three (g := X ^ 3 - 3 * X - 1)
+  have := Monic.irreducible_map_of_natDegree_eq_three (K := ℚ) (g := (X ^ 3 - 3 * X - 1 : ℤ[X]))
     (by monicity!) (by compute_degree!) fun m hm => by
       have h2 := congrArg (Int.cast : ℤ → ZMod 2) hm
       push_cast [eval_sub, eval_pow, eval_X, eval_mul, eval_one, eval_ofNat] at h2
@@ -149,7 +149,7 @@ theorem irreducible_X_pow_three_sub_three_mul_X_sub_one :
 
 /-- `X³ - 2` is irreducible over `ℚ`: it has no root modulo `7`, so no integral root. -/
 theorem irreducible_X_pow_three_sub_two : Irreducible (X ^ 3 - 2 : ℚ[X]) := by
-  have := irreducible_map_intCast_of_natDegree_eq_three (g := X ^ 3 - 2)
+  have := Monic.irreducible_map_of_natDegree_eq_three (K := ℚ) (g := (X ^ 3 - 2 : ℤ[X]))
     (by monicity!) (by compute_degree!) fun m hm => by
       have h7 := congrArg (Int.cast : ℤ → ZMod 7) hm
       push_cast [eval_sub, eval_pow, eval_X, eval_ofNat] at h7

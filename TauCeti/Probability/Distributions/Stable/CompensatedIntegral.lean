@@ -5,9 +5,9 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Probability.Distributions.Stable.SmallJumps
+public import TauCeti.Probability.Distributions.Stable.SmallJump.Basic
+import TauCeti.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
-import Mathlib.MeasureTheory.Integral.DominatedConvergence
 
 /-!
 # Integrability of the compensated stable characteristic kernel
@@ -135,21 +135,17 @@ theorem tendsto_integral_exp_sub_one_sub_sin_stableLevyMeasure (α β t : ℝ) :
         ∂stableLevyMeasure α β) (𝓝 0)
       (𝓝 (∫ x : ℝ, Complex.exp ((t * x : ℝ) * Complex.I) - 1 -
         (t * sin x : ℝ) * Complex.I ∂stableLevyMeasure α β)) := by
-  have hi := integrable_exp_sub_one_sub_sin_stableLevyMeasure α β t
-  have hs (ε : ℝ) : MeasurableSet {x : ℝ | ε < |x|} := by measurability
-  simp_rw [← integral_indicator (hs _)]
-  apply tendsto_integral_filter_of_dominated_convergence
-    (fun x : ℝ ↦ ‖Complex.exp ((t * x : ℝ) * Complex.I) - 1 -
-      (t * sin x : ℝ) * Complex.I‖)
-  · exact .of_forall fun ε ↦ hi.aestronglyMeasurable.indicator (hs ε)
-  · exact .of_forall fun ε ↦ ae_of_all _ fun x ↦ norm_indicator_le_norm_self _ _
-  · exact hi.norm
-  · apply ae_of_all
-    intro x
-    by_cases hx : x = 0
-    · simp [hx, indicator_apply]
-    · apply tendsto_const_nhds.congr'
-      filter_upwards [eventually_lt_nhds (abs_pos.mpr hx)] with ε hε
-      simp only [indicator_apply, mem_ofPred_eq, ite_eq_left hε]
+  exact tendsto_integral_abs_gt
+    (integrable_exp_sub_one_sub_sin_stableLevyMeasure α β t) (by simp)
+
+/-- If `t * x ≤ 0` for almost every jump, removing a shrinking neighbourhood of zero
+recovers the real compensated Lévy integral. No one-sided restriction on the cutoff is needed. -/
+theorem tendsto_integral_exp_mul_sub_one_sub_mul_sin_stableLevyMeasure {α β t : ℝ}
+    (ht : ∀ᵐ x ∂stableLevyMeasure α β, t * x ≤ 0) :
+    Tendsto (fun ε : ℝ ↦ ∫ x in {x : ℝ | ε < |x|},
+      exp (t * x) - 1 - t * sin x ∂stableLevyMeasure α β) (𝓝 0)
+      (𝓝 (∫ x, exp (t * x) - 1 - t * sin x ∂stableLevyMeasure α β)) := by
+  exact tendsto_integral_abs_gt
+    (integrable_exp_mul_sub_one_sub_mul_sin_stableLevyMeasure ht) (by simp)
 
 end TauCeti.Probability

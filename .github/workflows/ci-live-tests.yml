@@ -20,7 +20,9 @@ permissions:
   contents: read
 jobs:
   tests:
-    runs-on: ubuntu-latest
+    runs-on:
+      - nscloud-ubuntu-24.04-amd64-2x4-with-features
+      - namespace-features:github.run-id=${{ github.run_id }}
     steps:
       - uses: actions/checkout@v4
       - name: Prepare pinned shared tools
@@ -29,6 +31,8 @@ jobs:
           tools-repository: TauCetiProject/TauCetiTools
           tools-ref: a8b16c3dd0c0730a1963052cb520808e161222ef
           project-directory: .
+      - name: Restore project-owned live CI contracts
+        run: git restore --source=HEAD -- scripts/test_ci_live_browser.mjs scripts/test_ci_live_summary.py
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
