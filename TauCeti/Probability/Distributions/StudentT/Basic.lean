@@ -306,15 +306,11 @@ instance isNegInvariant_studentTMeasure (ν : ℝ) : (studentTMeasure ν).IsNegI
 origin and because points are null. -/
 theorem studentTMeasure_real_Iic_eq_real_Ioi_neg (ν x : ℝ) :
     (studentTMeasure ν).real (Iic x) = (studentTMeasure ν).real (Ioi (-x)) := by
-  have hpre : (fun w : ℝ => -w) ⁻¹' (Iic x) = Ici (-x) := by
-    ext w
-    simp [le_iff_eq_or_lt]
   have hnull : (studentTMeasure ν) ({-x} : Set ℝ) = 0 :=
     (studentTMeasure_absolutelyContinuous ν) (measure_singleton (-x))
   have hcic := (measure_congr (Ioi_ae_eq_Ici' hnull)).symm
   have h2 : (studentTMeasure ν) (Iic x) = (studentTMeasure ν) (Ici (-x)) := by
-    conv_lhs => rw [← studentTMeasure_map_neg ν]
-    rw [Measure.map_apply measurable_neg measurableSet_Iic, hpre]
+    simpa only [Set.neg_Iic] using (Measure.measure_neg (studentTMeasure ν) (Iic x)).symm
   rw [Measure.real, Measure.real, h2, hcic]
 
 /-! ### One degree of freedom -/
