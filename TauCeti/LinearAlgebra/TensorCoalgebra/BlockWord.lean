@@ -150,17 +150,9 @@ private theorem sum_Ioo_blockWord_tmul (a b : ℕ) :
     ∑ c ∈ Finset.Ioo 0 (b + 1), blockWord R e a c ⊗ₜ[R] blockWord R e (a + c) (b + 1 - c) =
       ∑ c ∈ Finset.range b,
         blockWord R e a (c + 1) ⊗ₜ[R] blockWord R e (a + c + 1) (b - c) := by
-  refine Finset.sum_nbij' (· - 1) (· + 1) ?_ ?_ ?_ ?_ ?_ <;>
-    simp only [Finset.mem_Ioo, Finset.mem_range]
-  · omega
-  · omega
-  · intro c hc; omega
-  · intro c _; omega
-  · intro c hc
-    obtain ⟨c, rfl⟩ := Nat.exists_eq_add_of_lt hc.1
-    simp only [zero_add, Nat.add_sub_cancel]
-    congr 2
-    omega
+  rw [← Finset.Ico_add_one_left_eq_Ioo, Finset.sum_Ico_eq_sum_range]
+  refine Finset.sum_congr (by simp) fun c _ ↦ ?_
+  rw [zero_add, add_comm 1 c, ← add_assoc, show b + 1 - (c + 1) = b - c by omega]
 
 /-- Block words form a block family. -/
 theorem isBlockFamily_blockWord : IsBlockFamily R (blockWord R e) := by
