@@ -51,6 +51,8 @@ attaching two `0`-cells to the empty space gives the discrete two-point space.
   `n`-th space is `skeletonLT C n` (`TauCeti.range_toRelativeCWComplex_incl_app`), its cells are
   those of `C` (`TauCeti.toRelativeCWComplexCellsEquiv`), and its cell inclusions are the
   characteristic maps (`TauCeti.coe_toRelativeCWComplex_cells_ι_apply`).
+* `TauCeti.toTopCatCWComplex`: the absolute categorical `TopCat.CWComplex` structure on a
+  Hausdorff space `Y` carrying a classical `CWComplex` structure on `Set.univ`.
 
 ## References
 
@@ -254,5 +256,73 @@ lemma coe_toRelativeCWComplex_cells_ι_apply (γ : (toRelativeCWComplex C).Cells
     (coe_cellDiskHom_apply γ.k z)
 
 end RelativeCWComplex
+
+section CWComplex
+
+/-- **A Hausdorff space carrying a classical `CWComplex` structure on `Set.univ` is a categorical
+`TopCat.CWComplex`.** The body is exposed so that the `n`-th space is `skeletonObj (univ : Set Y) n`
+and the `n`-cells attached at step `n` are `cell (univ : Set Y) n` by definition. -/
+@[expose] def toTopCatCWComplex (Y : TopCat.{w}) [T2Space Y] [CWComplex (univ : Set Y)] :
+    TopCat.CWComplex Y where
+  F := skeletonFunctor (univ : Set Y)
+  isoBot :=
+    (TopCat.isoOfHomeo (Homeomorph.setCongr
+      (s := (skeletonLT (univ : Set Y) ((⊥ : ℕ) : ℕ∞) : Set Y)) (t := (∅ : Set Y))
+      (by rw [Nat.bot_eq_zero, Nat.cast_zero, skeletonLT_zero_eq_base]))).trans
+      { hom := TopCat.ofHom ⟨fun x ↦ x.2.elim, continuous_of_discreteTopology⟩
+        inv := Limits.initial.to _
+        hom_inv_id := by ext x; exact x.2.elim
+        inv_hom_id := Limits.initial.hom_ext _ _ }
+  incl := (skeletonCocone (univ : Set Y)).ι ≫
+    (Functor.const ℕ).map (TopCat.isoOfHomeo (Homeomorph.Set.univ Y)).hom
+  isColimit :=
+    let eUniv : TopCat.of (univ : Set Y) ≅ Y := TopCat.isoOfHomeo (Homeomorph.Set.univ Y)
+    (isColimitSkeletonCocone (univ : Set Y)).ofIsoColimit (Cocone.ext eUniv fun _ ↦ rfl)
+  fac := Limits.initial.hom_ext _ _
+  attachCells n _ := skeletonAttachCells (univ : Set Y) n
+
+@[simp]
+lemma toTopCatCWComplex_obj (Y : TopCat.{w}) [T2Space Y] [CWComplex (univ : Set Y)] (n : ℕ) :
+    (toTopCatCWComplex Y).F.obj n = skeletonObj (univ : Set Y) n :=
+  (rfl)
+
+lemma toTopCatCWComplex_incl_app_apply (Y : TopCat.{w}) [T2Space Y] [CWComplex (univ : Set Y)]
+    (n : ℕ) (x : (toTopCatCWComplex Y).F.obj n) :
+    (toTopCatCWComplex Y).incl.app n x = x.1 :=
+  (rfl)
+
+/-- The cells of `TauCeti.toTopCatCWComplex Y` are the classical cells
+`Σ n, cell (univ : Set Y) n`. -/
+def toTopCatCWComplexCellsEquiv (Y : TopCat.{w}) [T2Space Y] [CWComplex (univ : Set Y)] :
+    (toTopCatCWComplex Y).Cells ≃ Σ n : ℕ, cell (univ : Set Y) n where
+  toFun γ := ⟨γ.j, γ.k⟩
+  invFun γ := ⟨γ.1, not_isMax γ.1, γ.2⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+@[simp]
+lemma toTopCatCWComplexCellsEquiv_apply (Y : TopCat.{w}) [T2Space Y] [CWComplex (univ : Set Y)]
+    (γ : (toTopCatCWComplex Y).Cells) :
+    toTopCatCWComplexCellsEquiv Y γ = ⟨γ.j, γ.k⟩ :=
+  (rfl)
+
+@[simp]
+lemma toTopCatCWComplexCellsEquiv_symm_apply (Y : TopCat.{w}) [T2Space Y]
+    [CWComplex (univ : Set Y)] (n : ℕ) (i : cell (univ : Set Y) n) :
+    (toTopCatCWComplexCellsEquiv Y).symm ⟨n, i⟩ = ⟨n, not_isMax n, i⟩ :=
+  (rfl)
+
+/-- The inclusion of a cell of `TauCeti.toTopCatCWComplex Y` is the characteristic map of the
+corresponding classical cell, read on the Euclidean disk through
+`TauCeti.diskHomeomorphClosedBall`. -/
+@[simp]
+lemma toTopCatCWComplex_cells_ι_apply (Y : TopCat.{w}) [T2Space Y] [CWComplex (univ : Set Y)]
+    (γ : (toTopCatCWComplex Y).Cells) (z : TopCat.disk.{w} γ.j) :
+    γ.ι z = map (C := (univ : Set Y)) γ.j γ.k (diskHomeomorphClosedBall γ.j z) := by
+  rw [RelativeCellComplex.Cells.ι, ConcreteCategory.comp_apply]
+  exact (congrArg Subtype.val (ConcreteCategory.congr_hom (skeletonAttachCells_cell γ.k) z)).trans
+    (coe_cellDiskHom_apply γ.k z)
+
+end CWComplex
 
 end TauCeti
