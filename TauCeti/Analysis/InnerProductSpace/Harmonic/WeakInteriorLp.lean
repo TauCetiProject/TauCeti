@@ -14,14 +14,15 @@ import TauCeti.MeasureTheory.Function.Lp.Norm
 /-!
 # Quantitative Sobolev bounds for weakly harmonic remainders
 
-A weakly harmonic real function has the native harmonic representative given by Weyl's lemma.
-On a smaller ball its values and actual derivative are bounded by the outer `L¹` norm, and
-its restriction is represented in the native `W1p` space with the corresponding norm bound.
+A weakly harmonic function with finite-dimensional real coefficients has the native harmonic
+representative given by Weyl's lemma. On a smaller ball its values and actual derivative are
+bounded by the outer `L¹` norm. For real-valued functions its restriction is represented in
+the native `W1p` space with the corresponding norm bound.
 This supplies the harmonic-remainder step of local divergence-form Laplace regularity.
 
-The classical estimates allow Banach coefficients. For the weak representative and bundled `W1p`
-statements here, the existing finite-dimensional Weyl theorem is specialized to real coefficients
-to match the real-valued native Sobolev carrier.
+The classical estimates allow Banach coefficients, and the weak representative estimate uses
+the finite-dimensional Weyl theorem. Only the bundled `W1p` statements specialize to real
+coefficients to match the real-valued native Sobolev carrier.
 
 ## References
 
@@ -38,17 +39,19 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] {Ω : Opens E}
 
-/-- The native harmonic representative of a weakly harmonic real function has uniform value
-and actual derivative bounds on an inner ball, controlled only by the outer `L¹` norm. -/
+/-- The native harmonic representative of a weakly harmonic finite-dimensional vector function
+has uniform value and actual derivative bounds on an inner ball, controlled only by the outer
+`L¹` norm. -/
 theorem WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq_norm_and_norm_fderiv_le_integral_norm
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
     (c : E) {r R : ℝ} (hrR : r < R) (hRΩ : ball c R ⊆ Ω) :
-    ∃ C : ℝ≥0, ∀ {u : E → ℝ}, WeaklyHarmonicOn μ Ω u → IntegrableOn u (ball c R) μ →
-      ∃ v : E → ℝ, HarmonicOnNhd v Ω ∧ u =ᵐ[μ.restrict Ω] v ∧
+    ∃ C : ℝ≥0, ∀ {u : E → F}, WeaklyHarmonicOn μ Ω u → IntegrableOn u (ball c R) μ →
+      ∃ v : E → F, HarmonicOnNhd v Ω ∧ u =ᵐ[μ.restrict Ω] v ∧
         ∀ x ∈ closedBall c r,
           ‖v x‖ ≤ C * ∫ z in ball c R, ‖u z‖ ∂μ ∧
             ‖fderiv ℝ v x‖ ≤ C * ∫ z in ball c R, ‖u z‖ ∂μ := by
   obtain ⟨C, hC⟩ := exists_norm_and_norm_fderiv_le_integral_norm_of_harmonicOnNhd
-    (F := ℝ) (μ := μ) c hrR
+    (F := F) (μ := μ) c hrR
   refine ⟨C, fun {u} hu hi ↦ ?_⟩
   obtain ⟨v, hv, huv⟩ := hu.exists_harmonicOnNhd_ae_eq
   have hae := ae_restrict_of_ae_restrict_of_subset hRΩ huv
@@ -72,7 +75,7 @@ theorem WeaklyHarmonicOn.exists_W1p_value_ae_eq_norm_le_integral_norm
         ‖w‖ ≤ C * ∫ z in ball c R, ‖u z‖ ∂μ := by
   obtain ⟨C, hC⟩ :=
     WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq_norm_and_norm_fderiv_le_integral_norm
-      (μ := μ) c hrR hRΩ
+      (F := ℝ) (μ := μ) c hrR hRΩ
   let V : ℝ := (measureUnivNNReal (μ.restrict (ball c r)) : ℝ≥0) ^ p.toReal⁻¹
   have hV : 0 ≤ V := by positivity
   refine ⟨(2 * V * C).toNNReal, fun {u} hu hi ↦ ?_⟩
