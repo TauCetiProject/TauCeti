@@ -153,66 +153,6 @@ private theorem exists_section_exact_on_support (hF : IsFunctionField k F)
   apply hzU (some ⟨P, hP⟩)
   simpa only [U, Submodule.submoduleOf, Submodule.mem_comap, Submodule.subtype_apply] using hmem
 
-/-- Multiplication by a section `z` of `L(D)` is a `k`-linear map `L(B) → L(E)` whenever
-`D + B ≤ E`. -/
-private theorem exists_linearMap_mul_riemannRochSpace {B D E : Divisor k F} (hDBE : D + B ≤ E)
-    {z : F} (hz : z ∈ riemannRochSpace D) :
-    ∃ f : riemannRochSpace B →ₗ[k] riemannRochSpace E, ∀ x, (f x : F) = z * x :=
-  ⟨{ toFun := fun x ↦ ⟨z * x, riemannRochSpace_mono hDBE
-        (mul_mem_riemannRochSpace_add (A := D) (B := B) hz x.2)⟩
-     map_add' := fun x y ↦ by
-       ext
-       simp only [Submodule.coe_add, mul_add]
-     map_smul' := fun c x ↦ by
-       ext
-       simp only [Submodule.coe_smul_of_tower, RingHom.id_apply, Algebra.smul_def]
-       ring }, fun _ ↦ rfl⟩
-
-/-- A section `x` of `L(B)` such that `z * x ∈ L(D)`, where `z` has the exact order `-D.coeff P` at
-every place `P` in the support of `B` and `L(D)` is `L(A)`, is algebraic over the constants. -/
-private theorem mem_algebraicClosure_of_mul_mem_riemannRochSpace (hF : IsFunctionField k F)
-    {A B D : Divisor k F} (hspace : riemannRochSpace D = riemannRochSpace A) {z x : F}
-    (hz0 : z ≠ 0) (hzord : ∀ P ∈ B.support, P.ord z = -D.coeff P)
-    (hxB : x ∈ riemannRochSpace B) (hxz : z * x ∈ riemannRochSpace A) :
-    x ∈ algebraicClosure k F := by
-  apply (Place.mem_algebraicClosure_iff_forall_mem_integers hF).mpr
-  intro P
-  rw [P.mem_integers_iff_ord_nonneg]
-  rcases eq_or_ne x 0 with hx0 | hx0
-  · simp [hx0]
-  by_cases hPB : P ∈ B.support
-  · have hbound := (mem_riemannRochSpace_iff_neg_le_ord (mul_ne_zero hz0 hx0)).mp
-      (hspace ▸ hxz) P
-    rw [P.ord_mul hz0 hx0, hzord P hPB] at hbound
-    omega
-  · have hxbound := (mem_riemannRochSpace_iff_neg_le_ord hx0).mp hxB P
-    have hcoeff : B.coeff P = 0 := by
-      simpa only [WeilDivisor.mem_support_iff, not_not] using hPB
-    rw [hcoeff] at hxbound
-    omega
-
-/-- Rank-nullity for a map `L(B) → L(A + B) / L(A)` with one-dimensional kernel gives the
-dimension inequality. -/
-private theorem dim_add_le_one_add_dim_add_of_finrank_ker_eq_one (hF : IsFunctionField k F)
-    {A B : Divisor k F} (hB : 0 ≤ B)
-    (T : riemannRochSpace B →ₗ[k]
-      (riemannRochSpace (A + B) ⧸ (riemannRochSpace A).submoduleOf (riemannRochSpace (A + B))))
-    (hker : Module.finrank k T.ker = 1) :
-    dim A + dim B ≤ 1 + dim (A + B) := by
-  let _ := finiteDimensional_riemannRochSpace hF B
-  let _ := finiteDimensional_riemannRochSpace hF (A + B)
-  have hrank := LinearMap.finrank_range_add_finrank_ker T
-  have hrange := Submodule.finrank_le T.range
-  have hquotRank := rank_quotient_riemannRochSpace_add_dim hF
-    (D := A) (E := A + B) (le_add_of_nonneg_right hB)
-  have hquot : Module.finrank k (riemannRochSpace (A + B) ⧸
-      (riemannRochSpace A).submoduleOf (riemannRochSpace (A + B))) + dim A = dim (A + B) := by
-    rw [← Module.finrank_eq_rank] at hquotRank
-    exact_mod_cast hquotRank
-  rw [hker, Nat.add_comm] at hrank
-  rw [← dim_def B] at hrank
-  omega
-
 /-- Stichtenoth's dimension inequality for effective divisors, when the constant field has more
 than `deg B + 1` elements.  The general form follows by replacing both divisors by effective
 representatives. -/
