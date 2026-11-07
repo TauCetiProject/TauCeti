@@ -45,6 +45,15 @@ variable {k : Type u} {A : Type v} {M : Type w} {N : Type t} {P : Type w'} {Q : 
   (eP : Q ≃ₗ[k] Module.Dual k P)
   (heP : ∀ (a : A) (q : Q) (p : P), eP (a • q) p = eP q (MulOpposite.op a • p))
 
+include eM heM in
+/-- The `A`-action on a module identified equivariantly with the `k`-dual of a right module
+commutes with the `k`-action. -/
+theorem isScalarTower_of_moduleDual : IsScalarTower k A N :=
+  IsScalarTower.of_algebraMap_smul fun c n ↦ by
+    apply eM.injective
+    ext m
+    simp [heM, ← MulOpposite.algebraMap_apply]
+
 /-- Precomposition, transported to the specified left duals of right modules. -/
 def moduleDualMap : Q →ₗ[A] N where
   toFun q := eM.symm ((f.restrictScalars k).dualMap (eP q))
@@ -96,9 +105,9 @@ section Field
 variable {k : Type u} {A : Type v} {M : Type w} {N : Type t} {P : Type w'} {Q : Type t'}
   [Field k] [Semiring A] [Algebra k A]
   [AddCommGroup M] [Module Aᵐᵒᵖ M] [Module k M] [IsScalarTower k Aᵐᵒᵖ M]
-  [AddCommGroup N] [Module A N] [Module k N] [IsScalarTower k A N]
+  [AddCommGroup N] [Module A N] [Module k N]
   [AddCommGroup P] [Module Aᵐᵒᵖ P] [Module k P] [IsScalarTower k Aᵐᵒᵖ P]
-  [AddCommGroup Q] [Module A Q] [Module k Q] [IsScalarTower k A Q]
+  [AddCommGroup Q] [Module A Q] [Module k Q]
   (f : M →ₗ[Aᵐᵒᵖ] P)
   (eM : N ≃ₗ[k] Module.Dual k M)
   (heM : ∀ (a : A) (n : N) (m : M), eM (a • n) m = eM n (MulOpposite.op a • m))
@@ -110,6 +119,8 @@ module needs to be finite-dimensional for this range calculation. -/
 theorem range_moduleDualMap :
     LinearMap.range (moduleDualMap f eM heM eP heP) =
       moduleDualAnnihilator eM heM (LinearMap.ker f) := by
+  have := isScalarTower_of_moduleDual eM heM
+  have := isScalarTower_of_moduleDual eP heP
   have hsquare : eM.toLinearMap ∘ₗ (moduleDualMap f eM heM eP heP).restrictScalars k =
       (f.restrictScalars k).dualMap ∘ₗ eP.toLinearMap := by
     ext q m
@@ -126,6 +137,7 @@ and reflects this minimality condition. Only the original source needs to be fin
 theorem isEssential_range_moduleDualMap_iff [FiniteDimensional k M] :
     IsEssential (LinearMap.range (moduleDualMap f eM heM eP heP)) ↔
       IsSuperfluous (LinearMap.ker f) := by
+  have := isScalarTower_of_moduleDual eM heM
   rw [range_moduleDualMap f eM heM eP heP, isEssential_moduleDualAnnihilator_iff]
 
 end Field
