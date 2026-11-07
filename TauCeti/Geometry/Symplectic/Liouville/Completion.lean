@@ -121,7 +121,7 @@ theorem flowOf_notMem (h : IsLiouvilleDomain ω α W) (hZ : RoughForm.interior Z
 /-- **The Liouville trajectories through the boundary are disjoint.** If the Liouville field `Z`
 of a Liouville domain `W` is complete, then `(y, t) ↦ ψ_t(y)` is injective on `∂W × ℝ`, where `ψ`
 is the flow of `Z`. -/
-theorem injOn_flowOf [FiniteDimensional ℝ E] (h : IsLiouvilleDomain ω α W)
+theorem injOn_flowOf (h : IsLiouvilleDomain ω α W)
     (hZ : RoughForm.interior Z ω.1 = α.1) (hc : IsCompleteVectorField Z) :
     InjOn (fun p : M × ℝ ↦ flowOf Z p.2 p.1) (frontier W ×ˢ univ) := by
   have hZs : ContMDiff I I.tangent 1 (T% Z) := (h.contMDiff_of_interior_eq hZ).of_le (by simp)
