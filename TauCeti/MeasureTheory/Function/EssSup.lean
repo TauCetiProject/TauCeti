@@ -89,16 +89,13 @@ theorem ae_le_csSup_of_bddAbove (f : α → ℝ) {k : ℝ} (hk : ¬ ∀ᵐ x ∂
   have hkL : k ∈ L := ⟨le_rfl, hk⟩
   set M := sSup L
   have hle : ∀ᵐ x ∂ν, f x ≤ M := by
-    have hj : ∀ j : ℕ, ∀ᵐ x ∂ν, f x ≤ M + 1 / ((j : ℝ) + 1) := by
-      intro j
-      by_contra hj
-      have hmemL : M + 1 / ((j : ℝ) + 1) ∈ L :=
-        ⟨(le_csSup hbdd hkL).trans (le_add_of_nonneg_right (by positivity)), hj⟩
-      linarith [le_csSup hbdd hmemL, (by positivity : (0 : ℝ) < 1 / ((j : ℝ) + 1))]
-    filter_upwards [ae_all_iff.2 hj] with x hx
-    refine le_of_forall_pos_le_add fun ε hε ↦ ?_
-    obtain ⟨j, hjε⟩ := exists_nat_one_div_lt hε
-    linarith [hx j]
+    rw [eventually_le_const_iff_forall_gt_eventually_lt_const]
+    intro b hb
+    obtain ⟨c, hMc, hcb⟩ := exists_between hb
+    have hc : ∀ᵐ x ∂ν, f x ≤ c := by
+      by_contra hc
+      exact (le_csSup hbdd ⟨(le_csSup hbdd hkL).trans hMc.le, hc⟩).not_gt hMc
+    exact hc.mono fun x hx ↦ hx.trans_lt hcb
   exact ⟨hle, lt_of_not_ge fun hMk ↦ hk (hle.mono fun x hx ↦ hx.trans hMk)⟩
 
 end Oscillation
