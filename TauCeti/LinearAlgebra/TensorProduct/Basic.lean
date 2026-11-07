@@ -43,6 +43,8 @@ pure tensors over a finite spanning family of the right factor.
   multiplication.
 * `TensorProduct.exists_eq_sum_tmul_of_span_eq_top`: over a finite spanning family of the right
   factor, every tensor is a sum of pure tensors with those right factors.
+* `TensorProduct.tensorTensorTensorComm_comm_tmul_comm`: exchanging the factors of both arguments
+  of `tensorTensorTensorComm` exchanges the factors of its value.
 
 ## References
 
@@ -298,5 +300,20 @@ theorem exists_eq_sum_tmul_of_span_eq_top {κ : Type*} [Fintype κ] {n : κ → 
     obtain ⟨m, rfl⟩ := hx
     obtain ⟨m', rfl⟩ := hy
     exact ⟨m + m', by simp [add_tmul, Finset.sum_add_distrib]⟩
+
+variable {P Q : Type*} [AddCommMonoid P] [Module R P] [AddCommMonoid Q] [Module R Q]
+
+/-- Exchanging the factors of both arguments of `tensorTensorTensorComm` exchanges the factors of
+its value: `(n ⊗ m) ⊗ (q ⊗ p) ↦ (n ⊗ q) ⊗ (m ⊗ p)` is the exchange of
+`(m ⊗ n) ⊗ (p ⊗ q) ↦ (m ⊗ p) ⊗ (n ⊗ q)`. -/
+theorem tensorTensorTensorComm_comm_tmul_comm (x : M ⊗[R] N) (y : P ⊗[R] Q) :
+    tensorTensorTensorComm R N M Q P (TensorProduct.comm R M N x ⊗ₜ TensorProduct.comm R P Q y) =
+      TensorProduct.comm R _ _ (tensorTensorTensorComm R M N P Q (x ⊗ₜ y)) := by
+  induction x using TensorProduct.inductionOn with
+  | add x x' h h' => simp only [map_add, add_tmul, h, h']
+  | tmul m n =>
+    induction y using TensorProduct.inductionOn with
+    | add y y' h h' => simp only [map_add, tmul_add, h, h']
+    | tmul p q => simp
 
 end TensorProduct
