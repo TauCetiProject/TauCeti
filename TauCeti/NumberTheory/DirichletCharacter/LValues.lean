@@ -197,7 +197,7 @@ theorem generalizedBernoulli_one_ne_zero (hχ : χ.IsPrimitive) (hodd : χ.Odd) 
 omit [NeZero N] in
 /-- For a character with `χ (-1) = -(-1) ^ k`, the series `∑ χ⁻¹ d * d ^ (-k)` over nonzero integers
 vanishes, since the terms at `d` and `-d` cancel. -/
-private theorem tsum_inv_mul_zpow_neg_eq_zero_of_apply_neg_one_eq_neg
+theorem tsum_inv_mul_zpow_neg_eq_zero_of_apply_neg_one_eq_neg
     (hχ : χ (-1) = -(-1 : ℂ) ^ k) :
     ∑' d : ℤ, χ⁻¹ d * (d : ℂ) ^ (-(k : ℤ)) = 0 := by
   have hinv : χ⁻¹ (-1) = -(-1 : ℂ) ^ k := by
@@ -231,11 +231,9 @@ private theorem inv_normalization_mul_tsum_eq_generalizedBernoulli_of_apply_neg_
     (ZMod.isPrimitive_stdAddChar N)
   rw [ZMod.card, hχpar] at hprod
   have hv : (N : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
-  have hχinv : (χ⁻¹).IsPrimitive := by
-    rwa [DirichletCharacter.isPrimitive_def, DirichletCharacter.conductor_inv]
   have hτ := DirichletCharacter.gaussSum_ne_zero_of_isPrimitive hv hχ
     (ZMod.isPrimitive_stdAddChar N)
-  have hτinv := DirichletCharacter.gaussSum_ne_zero_of_isPrimitive hv hχinv
+  have hτinv := DirichletCharacter.gaussSum_inv_ne_zero_of_isPrimitive hv hχ
     (ZMod.isPrimitive_stdAddChar N)
   have hf : ((k - 1).factorial : ℂ) ≠ 0 :=
     Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _)
