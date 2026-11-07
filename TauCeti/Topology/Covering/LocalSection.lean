@@ -30,6 +30,9 @@ and `E` is Hausdorff. Every point `e'` over `V` lies on its own section, whose b
 
 ## Main results
 
+* `IsLocallyInjective.eqOn_of_leftInvOn`: two sections of a locally injective map over a
+  preconnected set, continuous there, that agree at one point agree on the set, when the total
+  space is Hausdorff.
 * `IsCoveringMap.of_forall_exists_section`: a continuous map with local sections of uniform
   radius and open image, from a Hausdorff space to a locally connected pseudometric space, is a
   covering map.
@@ -47,42 +50,19 @@ namespace TauCeti
 
 variable {E X : Type*} [TopologicalSpace E] [PseudoMetricSpace X] {p : E → X}
 
-omit [TopologicalSpace E] in
-/-- `p` is injective on the image of any subset of a ball under a section over that ball. -/
-private lemma injOn_image_section {c : X} {ε : ℝ} {s : X → E} (hps : ∀ x ∈ ball c ε, p (s x) = x)
-    {V : Set X} (hV : V ⊆ ball c ε) : InjOn p (s '' V) := by
-  rintro _ ⟨y, hy, rfl⟩ _ ⟨z, hz, rfl⟩ hyz
-  rw [hps y (hV hy), hps z (hV hz)] at hyz
-  rw [hyz]
-
-/-- The image of an open part of a ball under a continuous section over the ball with open image
-is open. -/
-private lemma isOpen_image_section (hp : Continuous p) {c : X} {ε : ℝ} {s : X → E}
-    (hso : IsOpen (s '' ball c ε)) (hps : ∀ x ∈ ball c ε, p (s x) = x) {V : Set X}
-    (hV : V ⊆ ball c ε) (hVo : IsOpen V) : IsOpen (s '' V) := by
-  convert hso.inter (hVo.preimage hp) using 1
-  ext e'
-  constructor
-  · rintro ⟨y, hy, rfl⟩
-    exact ⟨⟨y, hV hy, rfl⟩, by rwa [mem_preimage, hps y (hV hy)]⟩
-  · rintro ⟨⟨y, hy, rfl⟩, hy'⟩
-    rw [mem_preimage, hps y hy] at hy'
-    exact ⟨y, hy', rfl⟩
-
-/-- Two sections over balls that agree at one point of a preconnected set inside both balls agree
-on that set, when `p` is locally injective and the total space is Hausdorff. -/
-private lemma eqOn_section [T2Space E] (hinj : IsLocallyInjective p) {c c' : X} {ε : ℝ}
-    {s s' : X → E} (hsc : ContinuousOn s (ball c ε)) (hsc' : ContinuousOn s' (ball c' ε))
-    (hps : ∀ x ∈ ball c ε, p (s x) = x) (hps' : ∀ x ∈ ball c' ε, p (s' x) = x) {V : Set X}
-    (hV : IsPreconnected V) (he : V ⊆ ball c ε) (he' : V ⊆ ball c' ε) {y : X} (hy : y ∈ V)
-    (hee' : s y = s' y) : EqOn s s' V :=
-  (T2Space.isSeparatedMap p).eqOn_of_comp_eqOn hinj hV (hsc.mono he) (hsc'.mono he')
-    (fun z hz ↦ by simp only [Function.comp_apply, hps z (he hz), hps' z (he' hz)]) hy hee'
+/-- Two sections of `p` over a preconnected set `S` that are continuous on `S` and agree at one
+point of `S` agree on `S`, when `p` is locally injective and the total space is Hausdorff. -/
+theorem _root_.IsLocallyInjective.eqOn_of_leftInvOn [T2Space E] (hinj : IsLocallyInjective p)
+    {S : Set X} {s s' : X → E} (hS : IsPreconnected S) (hs : ContinuousOn s S)
+    (hs' : ContinuousOn s' S) (hl : LeftInvOn p s S) (hl' : LeftInvOn p s' S) {y : X} (hy : y ∈ S)
+    (hee' : s y = s' y) : EqOn s s' S :=
+  (T2Space.isSeparatedMap p).eqOn_of_comp_eqOn hinj hS hs hs'
+    (fun z hz ↦ by simp only [Function.comp_apply, hl hz, hl' hz]) hy hee'
 
 /-- The trivialisation step: if the fibre `p ⁻¹' {x}` is nonempty, and `V` is a connected open
-neighbourhood of `x` lying in the ball of every point over `V` (`hfib`), with every point over `V`
-on the sheet `s e '' V` through some point `e` of the fibre (`hmem`), then `x` is evenly covered
-by `p`. -/
+neighbourhood of `x` lying in the ball of every point of the fibre over `x` (`hfib`), with every
+point over `V` on the sheet `s e '' V` through some point `e` of the fibre (`hmem`), then `x` is
+evenly covered by `p`. -/
 private lemma isEvenlyCovered_of_sections [T2Space E] (hp : Continuous p) {ε : ℝ} (hε : 0 < ε)
     {s : E → X → E} (hsc : ∀ e, ContinuousOn (s e) (ball (p e) ε))
     (hso : ∀ e, IsOpen (s e '' ball (p e) ε)) (hps : ∀ e, ∀ x ∈ ball (p e) ε, p (s e x) = x)
@@ -101,10 +81,13 @@ private lemma isEvenlyCovered_of_sections [T2Space E] (hp : Continuous p) {ε : 
   have : Nonempty (p ⁻¹' {x}) := hF.to_subtype
   refine .of_trivialization (t := hVo.trivializationDiscrete (fun e : p ⁻¹' {x} ↦ s e '' V) V
     (fun e W hWV ↦ ⟨fun hW ↦ ?_, fun hW ↦ ?_⟩)
-    (fun e ↦ injOn_image_section (hps e) (hfib e e.2))
+    (fun e ↦ (LeftInvOn.rightInvOn_image fun y hy ↦ hps e y (hfib e e.2 hy)).injOn)
     (fun e y hy ↦ ⟨s e y, mem_image_of_mem _ hy, hps e y (hfib e e.2 hy)⟩) ?_ ?_) hxV
   · -- an open subset of `V` has open preimage in each sheet
-    exact (hp.isOpen_preimage W hW).inter (isOpen_image_section hp (hso e) (hps e) (hfib e e.2) hVo)
+    have hl : LeftInvOn p (s e) (ball (p e) ε) := hps e
+    have himg : s e '' V = p ⁻¹' V ∩ s e '' ball (p e) ε := by
+      simpa only [inter_eq_left.mpr (hfib e e.2)] using hl.image_inter' (s₁ := V)
+    exact (hp.isOpen_preimage W hW).inter (himg ▸ (hVo.preimage hp).inter (hso e))
   · -- conversely, an open trace on a sheet comes from an open subset of `V`
     convert ((hsc e).mono (hfib e e.2)).isOpen_inter_preimage hVo hW using 1
     ext y
@@ -123,8 +106,9 @@ private lemma isEvenlyCovered_of_sections [T2Space E] (hp : Continuous p) {ε : 
     subst hzy'
     refine hee' (Subtype.ext ?_)
     rw [← hsx e e.2, ← hsx e' e'.2]
-    exact eqOn_section hinj (hsc e) (hsc e') (hps e) (hps e') hVc.isPreconnected (hfib e e.2)
-      (hfib e' e'.2) hy hzy.symm hxV
+    exact hinj.eqOn_of_leftInvOn hVc.isPreconnected ((hsc e).mono (hfib e e.2))
+      ((hsc e').mono (hfib e' e'.2)) (fun y hy ↦ hps e y (hfib e e.2 hy))
+      (fun y hy ↦ hps e' y (hfib e' e'.2 hy)) hy hzy.symm hxV
   · exact fun e' he' ↦ mem_iUnion.2 ⟨⟨_, (hmem e' he').1⟩, (hmem e' he').2⟩
 
 /-- **A map with local sections of uniform radius is a covering map.** Let `p : E → X` be a
@@ -140,7 +124,7 @@ theorem _root_.IsCoveringMap.of_forall_exists_section [T2Space E] [LocallyConnec
   choose s hsc hso hps hse using h
   have hinj : IsLocallyInjective p := fun e ↦
     ⟨s e '' ball (p e) ε, hso e, ⟨p e, mem_ball_self hε, hse e⟩,
-      injOn_image_section (hps e) subset_rfl⟩
+      (LeftInvOn.rightInvOn_image (hps e)).injOn⟩
   intro x
   obtain ⟨V, ⟨hVo, hxV, hVc⟩, hVx⟩ :=
     (LocallyConnectedSpace.open_connected_basis x).mem_iff.1 (ball_mem_nhds x (half_pos hε))
@@ -159,8 +143,9 @@ theorem _root_.IsCoveringMap.of_forall_exists_section [T2Space E] [LocallyConnec
       s e' x ∈ p ⁻¹' {x} ∧ e' ∈ s (s e' x) '' V := by
     have hfx : s e' x ∈ p ⁻¹' {x} := hps e' x (hVball e' he' hxV)
     refine ⟨hfx, p e', he', ?_⟩
-    rw [eqOn_section hinj (hsc _) (hsc _) (hps _) (hps _) hVc.isPreconnected (hfib _ hfx)
-      (hVball e' he') hxV (hsx _ hfx) he', hse]
+    rw [hinj.eqOn_of_leftInvOn hVc.isPreconnected ((hsc _).mono (hfib _ hfx))
+      ((hsc _).mono (hVball e' he')) (fun y hy ↦ hps _ y (hfib _ hfx hy))
+      (fun y hy ↦ hps _ y (hVball e' he' hy)) hxV (hsx _ hfx) he', hse]
   by_cases hF : (p ⁻¹' {x}).Nonempty
   · exact isEvenlyCovered_of_sections hp hε hsc hso hps hse hinj hVo hxV hVc hF hfib hsx hmem
   · have : IsEmpty (p ⁻¹' {x}) := isEmpty_coe_sort.2 (not_nonempty_iff_eq_empty.1 hF)
