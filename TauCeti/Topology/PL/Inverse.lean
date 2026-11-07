@@ -55,7 +55,8 @@ theorem isPiecewiseAffineOn_inverse_of_finite_simplex_cover {ι : Type*} [Finite
   have hleft (i : ι) : LeftInvOn g (A i) (s i) := fun x hx => by
     rw [← heq i (subset_convexHull ℝ _ hx)]
     exact hgf x (mem_iUnion.mpr ⟨i, subset_convexHull ℝ _ hx⟩)
-  choose B hB using fun i => (A i).exists_leftInvOn_affineSpan (hind i) (hleft i).injOn
+  choose B hB using fun i => (A i).toAffineMap.exists_leftInvOn_affineSpan (hind i)
+    (hleft i).injOn
   let C (i : ι) : Set F := convexHull ℝ ((A i) '' s i)
   have himage (i : ι) : C i = f '' convexHull ℝ (s i) := by
     calc

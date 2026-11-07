@@ -57,7 +57,7 @@ theorem exists_continuousAffineMap_eqOn (hs : AffineIndependent 𝕜 ((↑) : s 
 
 end AffineIndependent
 
-namespace ContinuousAffineMap
+namespace AffineMap
 
 variable {E V P : Type*} [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
   [IsTopologicalAddGroup E] [ContinuousSMul 𝕜 E]
@@ -66,12 +66,12 @@ variable {E V P : Type*} [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
 
 /-- An affine map that is injective on a set whose image is affinely independent has a
 continuous affine left inverse on the affine span of that set. -/
-theorem exists_leftInvOn_affineSpan (A : E →ᴬ[𝕜] P)
+theorem exists_leftInvOn_affineSpan (A : E →ᵃ[𝕜] P)
     (hA : AffineIndependent 𝕜 ((↑) : (A '' s) → P)) (hinj : InjOn A s) :
     ∃ B : P →ᴬ[𝕜] E, LeftInvOn B A (affineSpan 𝕜 s) := by
   obtain ⟨B, hB⟩ := hA.exists_continuousAffineMap_eqOn (Function.invFunOn A s)
-  have heq : EqOn (B.comp A).toAffineMap (AffineMap.id 𝕜 E) s := fun x hx =>
+  have heq : EqOn (B.toAffineMap.comp A) (id 𝕜 E) s := fun x hx =>
     (hB ⟨x, hx, rfl⟩).trans (hinj.leftInvOn_invFunOn hx)
-  exact ⟨B, fun x hx => AffineMap.eqOn_affineSpan heq hx⟩
+  exact ⟨B, fun x hx => eqOn_affineSpan heq hx⟩
 
-end ContinuousAffineMap
+end AffineMap
