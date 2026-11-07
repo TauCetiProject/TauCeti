@@ -293,11 +293,7 @@ theorem hasDerivAt_measureReal_gaussianReal {v : ℝ≥0} (hv : v ≠ 0) {l r : 
 function. -/
 theorem measureReal_Ioi_gaussianReal (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (x : ℝ) :
     (gaussianReal m v).real (Ioi x) = Real.erfc ((x - m) / √(2 * (v : ℝ))) / 2 := by
-  have h : (gaussianReal m v).real (Iic x) = (1 + Real.erf ((x - m) / √(2 * (v : ℝ)))) / 2 := by
-    rw [← cdf_eq_real]
-    exact cdf_gaussianReal_eq m hv x
-  rw [← compl_Iic, measureReal_compl measurableSet_Iic, h, Real.erfc_def]
-  simp only [probReal_univ]
+  rw [Measure.measureReal_Ioi_eq_one_sub_cdf, cdf_gaussianReal_eq m hv x, Real.erfc_def]
   ring
 
 /-- The upper tail of a Gaussian law with nonzero variance is a value of the standard Gaussian
