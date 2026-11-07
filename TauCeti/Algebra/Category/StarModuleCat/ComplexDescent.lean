@@ -83,18 +83,22 @@ noncomputable abbrev realPointsFunctor : StarModuleCat.{u} ℂ ⥤ ModuleCat.{u}
 /-- A real module is canonically the fixed points of its complexification. -/
 noncomputable def _root_.ModuleCat.realPointsComplexificationEquiv (W : ModuleCat.{u} ℝ) :
     W ≃ₗ[ℝ] realPointsFunctor.obj (complexificationFunctor.obj W) :=
-  LinearEquiv.ofBijective
+  LinearEquiv.ofLinearMap
     ((TensorProduct.mk ℝ ℂ W 1).codRestrict _ (fun w => by
       apply mem_realPoints.mpr
       simpa only [LinearEquiv.coe_coe, starLinearEquiv_apply, TensorProduct.mk_apply, map_one]
         using W.star_complexification_tmul (1 : ℂ) w))
-    ⟨fun x y h => by
-        have h' : (1 : ℂ) ⊗ₜ[ℝ] x = 1 ⊗ₜ[ℝ] y := congrArg Subtype.val h
-        simpa using congrArg (realPart W) h',
-      fun v => by
-        obtain ⟨w, hw⟩ := (tmulConj_eq_self_iff W (v : ℂ ⊗[ℝ] W)).mp
-          (mem_realPoints.mp v.property)
-        exact ⟨w, Subtype.ext hw.symm⟩⟩
+    ((realPart W).comp (Submodule.subtype _))
+    (by
+      apply LinearMap.ext
+      intro v
+      apply Subtype.ext
+      -- The functor's bundled module instances prevent simp from matching comp_apply.
+      change (1 : ℂ) ⊗ₜ[ℝ] realPart W (v : ℂ ⊗[ℝ] W) = (v : ℂ ⊗[ℝ] W)
+      obtain ⟨w, hw⟩ := (tmulConj_eq_self_iff W (v : ℂ ⊗[ℝ] W)).mp
+        (mem_realPoints.mp v.property)
+      simp [hw])
+    (by ext w; exact realPart_one_tmul W w)
 
 /-- The unit embeds a real vector as a tensor with scalar one. -/
 @[simp] theorem _root_.ModuleCat.realPointsComplexificationEquiv_apply
@@ -104,11 +108,7 @@ noncomputable def _root_.ModuleCat.realPointsComplexificationEquiv (W : ModuleCa
 /-- The inverse unit reads off the real part of a fixed tensor. -/
 @[simp] theorem _root_.ModuleCat.realPointsComplexificationEquiv_symm_apply
     (W : ModuleCat.{u} ℝ) (v : realPointsFunctor.obj (complexificationFunctor.obj W)) :
-    W.realPointsComplexificationEquiv.symm v = realPart W (v : ℂ ⊗[ℝ] W) := by
-  have h := congrArg (fun w : realPointsFunctor.obj (complexificationFunctor.obj W) =>
-    realPart W (w : ℂ ⊗[ℝ] W)) (W.realPointsComplexificationEquiv.apply_symm_apply v)
-  rw [ModuleCat.realPointsComplexificationEquiv_apply] at h
-  simpa only [realPart_tmul, Complex.one_re, one_smul] using h
+    W.realPointsComplexificationEquiv.symm v = realPart W (v : ℂ ⊗[ℝ] W) := (rfl)
 
 -- These typed proofs keep the opaque star-linear equivalence and the chosen tensor star
 -- visible to rewriting, rather than leaving proof arguments typed only up to unfolding.
@@ -177,8 +177,10 @@ noncomputable def complexificationCounitIso :
     intro v
     induction v using TensorProduct.inductionOn with
     | tmul z w =>
-      simp only [Functor.comp_map, Functor.id_map, StarModuleCat.comp_hom,
+      simp only [Functor.comp_map, Functor.id_map, StarModuleCat.hom_comp,
         LinearMap.comp_apply]
+      -- Simp cannot match the tensor formulas through the functor's chosen star instance;
+      -- rw uses the definitional equality between these bundled module instances.
       rw [ModuleCat.complexificationFunctor_map_tmul (realPointsFunctor.map f) z w,
         StarModuleCat.complexificationRealPointsIso_hom_tmul,
         StarModuleCat.complexificationRealPointsIso_hom_tmul]
@@ -205,7 +207,9 @@ includes naturality and both triangle identities. -/
     apply StarModuleCat.hom_ext
     apply TensorProduct.AlgebraTensorModule.ext
     intro z w
-    rw [StarModuleCat.comp_hom, LinearMap.comp_apply,
+    -- Simp cannot match the tensor formulas through the functor's chosen star instance;
+    -- rw uses the definitional equality between these bundled module instances.
+    rw [StarModuleCat.hom_comp, LinearMap.comp_apply,
       StarModuleCat.complexificationCounitIso_hom_app,
       ModuleCat.complexificationFunctor_map_tmul,
       StarModuleCat.complexificationRealPointsIso_hom_tmul,

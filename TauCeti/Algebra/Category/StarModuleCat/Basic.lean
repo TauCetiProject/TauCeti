@@ -87,9 +87,9 @@ abbrev ofHom {V W : StarModuleCat R} (f : V →ₗ[R] W)
 @[ext] theorem hom_ext {V W : StarModuleCat R} {f g : V ⟶ W}
     (h : f.hom = g.hom) : f = g := Hom.ext h
 
-@[simp] theorem id_hom (V : StarModuleCat R) : (𝟙 V : V ⟶ V).hom = LinearMap.id := rfl
+@[simp] theorem hom_id (V : StarModuleCat R) : (𝟙 V : V ⟶ V).hom = LinearMap.id := rfl
 
-@[simp] theorem comp_hom {V W X : StarModuleCat R} (f : V ⟶ W) (g : W ⟶ X) :
+@[simp] theorem hom_comp {V W X : StarModuleCat R} (f : V ⟶ W) (g : W ⟶ X) :
     (f ≫ g).hom = g.hom.comp f.hom := rfl
 
 /-- A star-preserving linear equivalence gives an isomorphism of star modules. -/
