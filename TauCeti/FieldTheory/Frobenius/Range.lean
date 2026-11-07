@@ -42,9 +42,8 @@ noncomputable def frobeniusPowers : IntermediateField k F := by
 /-- The underlying subfield is Mathlib's field range of iterated Frobenius. -/
 theorem frobeniusPowers_toSubfield :
     letI : ExpChar F p := expChar_of_injective_algebraMap (algebraMap k F).injective p
-    (frobeniusPowers k F p n).toSubfield = (iterateFrobenius F p n).fieldRange := by
-  unfold frobeniusPowers
-  exact Subfield.toIntermediateField_toSubfield _ _
+    (frobeniusPowers k F p n).toSubfield = (iterateFrobenius F p n).fieldRange :=
+  (rfl)
 
 /-- Membership in the Frobenius power subfield means being a `p^n`-th power in `F`. -/
 @[simp]
@@ -77,6 +76,14 @@ theorem iterateFrobeniusEquivPowers_algebraMap (c : k) :
       algebraMap k (frobeniusPowers k F p n) (iterateFrobeniusEquiv k p n c) := by
   apply Subtype.ext
   simp [iterateFrobenius_def]
+
+/-- The inverse of the power-subfield isomorphism acts on constants by the inverse Frobenius
+automorphism of `k`. -/
+@[simp]
+theorem iterateFrobeniusEquivPowers_symm_algebraMap (c : k) :
+    (iterateFrobeniusEquivPowers k F p n).symm (algebraMap k (frobeniusPowers k F p n) c) =
+      algebraMap k F ((iterateFrobeniusEquiv k p n).symm c) :=
+  (iterateFrobeniusEquivPowers k F p n).symm_apply_eq.mpr (by simp)
 
 /-- The ambient field is purely inseparable over its iterated Frobenius power subfield. -/
 instance isPurelyInseparable_frobeniusPowers :
