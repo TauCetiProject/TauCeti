@@ -35,8 +35,8 @@ metric, adjoint and spectral analysis are not treated here.
 In degree zero, `d_t g = 0` exactly when `e^{t f} g` is locally constant
 (`TauCeti.wittenExtDerivₗ_apply_eq_zero_iff_isLocallyConstant`). In particular `d_t` annihilates
 `e^{-t f}` (`TauCeti.wittenExtDerivₗ_expSMulEquiv_neg_ofFunction_one`); for `f = x²` on the line
-this is the Gaussian `e^{-t x²}`, the ground state of the harmonic oscillator obtained from the
-Witten Laplacian at a nondegenerate minimum.
+and `t > 0` this is the Gaussian `e^{-t x²}`, which for the standard Euclidean metric is the ground
+state of the harmonic oscillator obtained from the Witten Laplacian at a nondegenerate minimum.
 
 ## Main definitions
 
@@ -93,11 +93,11 @@ theorem mextDeriv_exp_mul_smul {f : M → ℝ} {φ : RoughForm I M ℝ k} {x : M
     simpa using ((hasDerivAt_id (f x)).const_mul t).exp
   have hexp : MDifferentiableAt I 𝓘(ℝ, ℝ) (fun y ↦ Real.exp (t * f y)) x :=
     (hderiv.differentiableAt.comp_mdifferentiableAt hf :)
-  rw [mextDeriv_fun_smul hexp hφ v, RoughForm.wedge_def, RoughForm.wedgeWith_apply',
-    RoughForm.wedge_def, RoughForm.wedgeWith_apply',
+  rw [mextDeriv_fun_smul hexp hφ v]
+  simp only [RoughForm.wedge_def, RoughForm.wedgeWith_apply',
     mextDeriv_ofFunction_comp_of_hasDerivAt hf hderiv,
-    ContinuousAlternatingMap.pairedWedge_smul_left]
-  simp only [ContinuousAlternatingMap.smul_apply, smul_eq_mul]
+    ContinuousAlternatingMap.pairedWedge_smul_left, ContinuousAlternatingMap.smul_apply,
+    smul_eq_mul]
   ring
 
 end RoughForm
@@ -175,11 +175,11 @@ theorem wittenExtDerivₗ_apply (f : C^∞⟮I, M; ℝ⟯) (t : ℝ) (φ : Smoot
     (wittenExtDerivₗ f t k φ).1 x v =
       mextDeriv φ.1 x v + t * (mextDeriv (RoughForm.ofFunction I f)).wedge φ.1 x
         (v ∘ Fin.cast (show 0 + 1 + k = k + 1 by omega)) := by
-  have hφ := φ.mdifferentiableAt x
-  rw [wittenExtDerivₗ_def, coe_expSMulEquiv, ContinuousAlternatingMap.smul_apply, smul_eq_mul,
-    mextDerivₗ_apply, coe_expSMulEquiv,
-    mextDeriv_exp_mul_smul (f.contMDiff.mdifferentiableAt (by simp)) hφ, ← mul_assoc,
-    ← Real.exp_add, neg_mul, neg_add_cancel, Real.exp_zero, one_mul]
+  simp only [wittenExtDerivₗ_def, coe_expSMulEquiv, mextDerivₗ_apply,
+    ContinuousAlternatingMap.smul_apply, smul_eq_mul]
+  rw [mextDeriv_exp_mul_smul (f.contMDiff.mdifferentiableAt (by simp)) (φ.mdifferentiableAt x),
+    ← mul_assoc, ← Real.exp_add]
+  simp
 
 /-- **`d_t = d + t df ∧ ·` as an identity of smooth forms.** Here `df` is the exterior derivative
 of the smooth `0`-form of `f`, and the degree `0 + 1 + k` of the wedge is transported to `k + 1`. -/
@@ -191,10 +191,11 @@ theorem wittenExtDerivₗ_eq_add_smul (f : C^∞⟮I, M; ℝ⟯) (t : ℝ) (φ :
   apply Subtype.ext
   funext x
   ext v
-  rw [wittenExtDerivₗ_apply, Submodule.coe_add, Pi.add_apply, ContinuousAlternatingMap.add_apply,
-    Submodule.coe_smul, Pi.smul_apply, ContinuousAlternatingMap.smul_apply, smul_eq_mul,
-    SmoothForm.cast_apply, SmoothForm.coe_wedge, mextDerivₗ_apply, mextDerivₗ_apply,
-    SmoothForm.coe_ofFunction]
+  simp only [wittenExtDerivₗ_apply, Submodule.coe_add, Submodule.coe_smul, Pi.add_apply,
+    Pi.smul_apply, ContinuousAlternatingMap.add_apply, ContinuousAlternatingMap.smul_apply,
+    smul_eq_mul]
+  rw [SmoothForm.cast_apply]
+  simp [mextDerivₗ_apply]
 
 /-- At `t = 0` the Witten differential is the exterior derivative. -/
 @[simp]
@@ -287,8 +288,9 @@ theorem wittenExtDerivₗ_apply_eq_zero_iff_isLocallyConstant (g : SmoothForm I 
     ← mem_closedForms_iff_mextDerivₗ_eq_zero, mem_closedForms_zero_iff, coe_expSMulEquiv]
   simp only [ContinuousAlternatingMap.smul_apply, smul_eq_mul]
 
-/-- **`e^{-t f}` is annihilated by the Witten differential**: `d_t (e^{-t f} · 1) = 0`. For a
-nondegenerate minimum of `f = x²` on the line this is the Gaussian `e^{-t x²}`. -/
+/-- **`e^{-t f}` is annihilated by the Witten differential**: `d_t (e^{-t f} · 1) = 0`. For
+`f = x²` on the line, with its nondegenerate minimum at `0`, and `t > 0`, this is the Gaussian
+`e^{-t x²}`. -/
 theorem wittenExtDerivₗ_expSMulEquiv_neg_ofFunction_one :
     wittenExtDerivₗ f t 0 (expSMulEquiv 0 f (-t) (SmoothForm.ofFunction (ContMDiffMap.const 1))) =
       0 := by
