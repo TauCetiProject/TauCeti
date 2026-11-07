@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.AddChar
 public import Mathlib.Data.Matrix.Block
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
+import TauCeti.Algebra.Group.AddChar
 
 /-!
 # Gauss sums of quadratic forms over a finite semiring
@@ -32,7 +33,6 @@ The evaluations of such sums at odd moduli are in `TauCeti.NumberTheory.Quadrati
 
 ## Main results
 
-* `AddChar.map_sum_eq_prod`: an additive character turns finite sums into products.
 * `Matrix.sum_addChar_dotProduct_transpose_mul_mul_mulVec`: invariance under congruence.
 * `Matrix.sum_addChar_dotProduct_fromBlocks_zero_zero_mulVec`: multiplicativity over block
   diagonal matrices.
@@ -44,17 +44,6 @@ The evaluations of such sums at odd moduli are in `TauCeti.NumberTheory.Quadrati
 public section
 
 open scoped Matrix
-
-namespace AddChar
-
-/-- An additive character turns a finite sum into the product of its values. -/
-theorem map_sum_eq_prod {ι A M : Type*} [AddCommMonoid A] [CommMonoid M] (ψ : AddChar A M)
-    (s : Finset ι) (f : ι → A) : ψ (∑ i ∈ s, f i) = ∏ i ∈ s, ψ (f i) := by
-  induction s using Finset.cons_induction with
-  | empty => simp
-  | cons a s ha ih => rw [Finset.sum_cons, map_add_eq_mul, ih, Finset.prod_cons]
-
-end AddChar
 
 namespace Matrix
 
