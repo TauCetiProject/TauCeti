@@ -89,6 +89,32 @@ theorem dominates_of_spechtMultiplicity_ne_zero (μ : lam.card.Partition)
 
 /-! ### The diagonal intertwiner space -/
 
+/-- The orbit of the polytabloid `e_t` under the symmetric group spans the Specht module `S^lam`,
+viewed as a `ℚ`-subrepresentation of the permutation module. -/
+private theorem span_orbit_polytabloid_eq_top (t : YoungTableau lam) :
+    Submodule.span ℚ
+      (Set.range fun σ : Equiv.Perm (Fin lam.card) =>
+        (spechtSubrepresentation (R := ℚ) lam).toRepresentation σ
+          ⟨polytabloid (R := ℚ) t, polytabloid_mem_spechtSubrepresentation t⟩) = ⊤ := by
+  let et : (spechtSubrepresentation (R := ℚ) lam).toSubmodule :=
+    ⟨polytabloid (R := ℚ) t, polytabloid_mem_spechtSubrepresentation t⟩
+  apply Submodule.map_injective_of_injective
+    (spechtSubrepresentation (R := ℚ) lam).toSubmodule.injective_subtype
+  rw [Submodule.map_top, Submodule.range_subtype, Submodule.map_span]
+  have himage : (spechtSubrepresentation (R := ℚ) lam).toSubmodule.subtype ''
+      Set.range (fun σ : Equiv.Perm (Fin lam.card) =>
+        (spechtSubrepresentation (R := ℚ) lam).toRepresentation σ et) =
+      Set.range (fun σ : Equiv.Perm (Fin lam.card) =>
+        (permutationModule (R := ℚ) (shapePartition lam)).ρ σ (polytabloid (R := ℚ) t)) := by
+    ext x
+    constructor
+    · rintro ⟨y, ⟨σ, rfl⟩, rfl⟩
+      exact ⟨σ, rfl⟩
+    · rintro ⟨σ, rfl⟩
+      exact ⟨_, ⟨σ, rfl⟩, rfl⟩
+  rw [himage]
+  exact (spechtSubrepresentation_eq_span_orbit t).symm
+
 /-- Every intertwiner `S^lam → M^lam` is a scalar multiple of the canonical inclusion.  This
 characterizes the diagonal intertwiner space and yields the diagonal case of Young's rule. -/
 private theorem exists_intertwiningMap_eq_smul_subtype
@@ -120,25 +146,7 @@ private theorem exists_intertwiningMap_eq_smul_subtype
     simpa only [et] using congrArg
       (fun x : (spechtSubrepresentation (R := ℚ) lam).toSubmodule =>
         κ • (x : (permutationModule (R := ℚ) (shapePartition lam)).V)) hbet.symm
-  have hspan : Submodule.span ℚ
-      (Set.range fun σ : Equiv.Perm (Fin lam.card) =>
-        (spechtSubrepresentation (R := ℚ) lam).toRepresentation σ et) = ⊤ := by
-    apply Submodule.map_injective_of_injective
-      (spechtSubrepresentation (R := ℚ) lam).toSubmodule.injective_subtype
-    rw [Submodule.map_top, Submodule.range_subtype, Submodule.map_span]
-    have himage : (spechtSubrepresentation (R := ℚ) lam).toSubmodule.subtype ''
-        Set.range (fun σ : Equiv.Perm (Fin lam.card) =>
-          (spechtSubrepresentation (R := ℚ) lam).toRepresentation σ et) =
-        Set.range (fun σ : Equiv.Perm (Fin lam.card) =>
-          (permutationModule (R := ℚ) (shapePartition lam)).ρ σ (polytabloid (R := ℚ) t)) := by
-      ext x
-      constructor
-      · rintro ⟨y, ⟨σ, rfl⟩, rfl⟩
-        exact ⟨σ, rfl⟩
-      · rintro ⟨σ, rfl⟩
-        exact ⟨_, ⟨σ, rfl⟩, rfl⟩
-    rw [himage]
-    exact (spechtSubrepresentation_eq_span_orbit t).symm
+  have hspan := span_orbit_polytabloid_eq_top t
   apply Representation.IntertwiningMap.ext
   refine (Submodule.linearMap_eq_iff_of_span_eq_top _ _ hspan).2 ?_
   rintro ⟨_, ⟨σ, rfl⟩⟩
