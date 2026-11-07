@@ -279,6 +279,23 @@ theorem fourierLp_smul_fourierLp_smul {p : ℝ≥0∞} (m n : ℤ)
     coeFn_fourierLp_smul n f, coeFn_fourierLp_smul (m + n) f] with x h₁ h₂ h₃
   rw [h₁, h₂, h₃, fourier_add, mul_assoc]
 
+/-- Multiplying an `Lᵖ` function by the bounded Fourier monomial `e_0 = 1` leaves it unchanged. -/
+@[simp]
+theorem fourierLp_zero_smul {p : ℝ≥0∞} (f : Lp ℂ p (haarAddCircle (T := T))) :
+    (fourierLp (T := T) ∞ 0 • f : Lp ℂ p (haarAddCircle (T := T))) = f := by
+  apply Lp.ext
+  filter_upwards [coeFn_fourierLp_smul 0 f] with x hx
+  rw [hx, fourier_zero, one_mul]
+
+/-- The complex conjugate of the `Lᵖ` Fourier monomial `e_n` is `e_(-n)`. -/
+@[simp]
+theorem star_fourierLp (p : ℝ≥0∞) [Fact (1 ≤ p)] (n : ℤ) :
+    star (fourierLp (T := T) p n) = fourierLp (T := T) p (-n) := by
+  apply Lp.ext
+  filter_upwards [Lp.coeFn_star (fourierLp (T := T) p n), coeFn_fourierLp (T := T) p n,
+    coeFn_fourierLp (T := T) p (-n)] with x h hn hneg
+  rw [h, Pi.star_apply, hn, hneg, fourier_neg, RCLike.star_def]
+
 /-- Multiplying an `Lᵖ` function by the bounded Fourier monomial `e_n` shifts its Fourier
 coefficients by `n`. -/
 @[simp]
