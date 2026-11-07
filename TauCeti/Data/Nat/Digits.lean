@@ -15,7 +15,11 @@ import Mathlib.Data.Nat.Prime.Factorial
 import Mathlib.Tactic.LinearCombination
 
 /-!
-# Digits of `j + b * y`, factorials of digits, and cyclic shifts of digits
+# Digit identities and redundant words
+
+Redundant words with digits at most `2k` cover the doubled radix interval `[0, 2 * k ^ n]`
+at each positive length `n`. This allows automata to compare blocks crossing canonical
+radix boundaries.
 
 For a digit `j < b`, the base-`b` digits of `j + b * y` are `j` followed by the digits of `y`.
 This gives the digit sum and the products over the digits of `j + b * y` in terms of those of
@@ -32,6 +36,8 @@ sums into the exponents `t` of Stickelberger's element `∑ t σ_t⁻¹`.
 
 ## Main results
 
+* `Nat.exists_list_fin_two_mul_length_ofDigits_eq`: every value in `[0, 2 * k ^ n]`
+  has a redundant digit word of length `n > 0`, with digits at most `2k`.
 * `Nat.sum_digits_add_mul`: the digit sum of `j + b * y` is `j` plus the digit sum of `y`.
 * `Nat.prod_map_digits_add_mul`: `∏ g(dᵢ)` over the digits of `j + b * y` is `g j` times the
   product over the digits of `y`, whenever `g 0 = 1`.
@@ -50,6 +56,8 @@ sums into the exponents `t` of Stickelberger's element `∑ t σ_t⁻¹`.
 
 * S. A. Katre, *Gauss–Jacobi sums and Stickelberger's theorem*, §3.
 * L. C. Washington, *Introduction to Cyclotomic Fields*, 2nd ed., §6.2.
+* Thijmen J. P. Krebs, *A more reasonable proof of Cobham's theorem* (2018), Section 3,
+  for redundant digit words covering a doubled radix interval.
 -/
 
 public section
@@ -217,5 +225,35 @@ theorem sub_one_mul_sum_pow_mul_mod_eq_mul_sum_digits_div_mul {b f m t : ℕ}
   simp_rw [hd, mul_comm m d, mul_left_comm _ d t, Nat.mul_mod_mul_left, ← mul_sum,
     mul_left_comm _ d, mul_assoc d m] at h
   exact Nat.eq_of_mul_eq_mul_left hd0 h
+
+/-- Every value in the doubled radix interval has a word of the prescribed positive length
+with digits at most twice the base. The upper endpoint is included. -/
+theorem exists_list_fin_two_mul_length_ofDigits_eq {k n z : ℕ} (hk : 0 < k) (hn : 0 < n)
+    (hz : z ≤ 2 * k ^ n) :
+    ∃ w : List (Fin (2 * k + 1)), w.length = n ∧ ofDigits k (w.map Fin.val) = z := by
+  induction n generalizing z with
+  | zero => omega
+  | succ n ih =>
+    rcases n with _ | n
+    · refine ⟨[⟨z, by simpa using Nat.lt_succ_of_le hz⟩], rfl, ?_⟩
+      simp
+    · have hdiv : z / k ≤ 2 * k ^ (n + 1) := by
+        apply Nat.div_le_of_le_mul
+        simpa [pow_succ, Nat.mul_assoc, Nat.mul_comm, Nat.mul_left_comm] using hz
+      obtain ⟨w, hw, hv⟩ := ih (by omega) hdiv
+      refine ⟨⟨z % k, (Nat.mod_lt z hk).trans_le (by omega)⟩ :: w, by simp [hw], ?_⟩
+      simpa [ofDigits_cons, hv, Nat.mul_comm, Nat.add_comm] using Nat.mod_add_div z k
+
+-- The endpoint has a redundant most-significant-first representation [4, 0].
+example : ofDigits 2 (([4, 0] : List ℕ).reverse) = 2 * 2 ^ 2 := by decide
+
+-- Positive length matters, even though leading zero digits are allowed.
+example : ¬ ∃ w : List (Fin 5), w.length = 0 ∧ ofDigits 2 (w.map Fin.val) = 2 := by
+  simp
+
+-- Zero has a representation at every positive prescribed length.
+example {n : ℕ} (hn : 0 < n) :
+    ∃ w : List (Fin 5), w.length = n ∧ ofDigits 2 (w.map Fin.val) = 0 :=
+  exists_list_fin_two_mul_length_ofDigits_eq (k := 2) (by decide) hn (Nat.zero_le _)
 
 end Nat
