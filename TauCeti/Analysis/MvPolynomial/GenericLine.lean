@@ -25,16 +25,11 @@ namespace MvPolynomial
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
-/-- A nonzero plane polynomial admits a line of slope outside any finite forbidden set
-that detects its ambient order at a specified point. -/
-theorem exists_analyticOrderAt_eval_finTwo_eq (p : MvPolynomial (Fin 2) 𝕜)
-    (hp : p ≠ 0) (a : Fin 2 → 𝕜) (s : Finset 𝕜) :
-    ∃ c ∉ s, analyticOrderAt (fun t : 𝕜 ↦ eval ![a 0 + t, a 1 + c * t] p) 0 = p.orderAt a := by
+/-- A nonzero plane polynomial does not vanish at some point whose first coordinate is nonzero
+and whose slope `v 1 / v 0` avoids a given finite set. -/
+private lemma exists_eval_ne_zero_and_div_notMem {H : MvPolynomial (Fin 2) 𝕜} (hH : H ≠ 0)
+    (s : Finset 𝕜) : ∃ v : Fin 2 → 𝕜, eval v H ≠ 0 ∧ v 0 ≠ 0 ∧ v 1 / v 0 ∉ s := by
   classical
-  obtain ⟨m, hm⟩ := ENat.ne_top_iff_exists.1 ((orderAt_eq_top_iff (p := p) (a := a)).not.2 hp)
-  -- Exclude bad slopes while choosing a direction detecting the first Taylor term.
-  let H := homogeneousComponent m (taylor a p)
-  have hH : H ≠ 0 := p.homogeneousComponent_ne_zero_of_orderAt_eq a hm.symm
   have hlinear (b : 𝕜) : (X 1 - C b * X 0 : MvPolynomial (Fin 2) 𝕜) ≠ 0 := by
     intro hzero
     have := congrArg (fun q : MvPolynomial (Fin 2) 𝕜 ↦ q.coeff (Finsupp.single 1 1)) hzero
@@ -50,12 +45,19 @@ theorem exists_analyticOrderAt_eval_finTwo_eq (p : MvPolynomial (Fin 2) 𝕜)
   simp only [map_mul, eval_X, map_prod, map_sub, eval_C, mul_ne_zero_iff,
     Finset.prod_ne_zero_iff] at hv
   have hv0 : v 0 ≠ 0 := hv.1.2
-  have hc : v 1 / v 0 ∉ s := by
-    intro hmem
-    exact hv.2 _ hmem (by rw [div_mul_cancel₀ _ hv0, sub_self])
+  refine ⟨v, hv.1.1, hv0, fun hmem ↦ hv.2 _ hmem (by rw [div_mul_cancel₀ _ hv0, sub_self])⟩
+
+/-- Along a direction `v` on which the lowest-degree Taylor component of `p` at `a` does not
+vanish, the line `t ↦ a + t • v` is analytic at `0` and detects the ambient order of `p`
+at `a`. -/
+private lemma analyticAt_and_analyticOrderAt_eval_add_smul (p : MvPolynomial (Fin 2) 𝕜)
+    (a v : Fin 2 → 𝕜) {m : ℕ} (hm : (m : ℕ∞) = p.orderAt a)
+    (hv : eval v (homogeneousComponent m (taylor a p)) ≠ 0) :
+    AnalyticAt 𝕜 (fun t : 𝕜 ↦ eval (a + t • v) p) 0 ∧
+      analyticOrderAt (fun t : 𝕜 ↦ eval (a + t • v) p) 0 = m := by
   let q := aeval (fun i ↦ Polynomial.C (a i) + Polynomial.C (v i) * Polynomial.X) p
   have hqm : q.coeff m ≠ 0 := by
-    simpa only [q, coeff_aeval_C_add_C_mul_X, H] using hv.1.1
+    simpa only [q, coeff_aeval_C_add_C_mul_X] using hv
   have hq : q ≠ 0 := fun hzero ↦ hqm (by simp [hzero])
   have hdegree : q.natTrailingDegree = m := by
     apply le_antisymm (Polynomial.natTrailingDegree_le_of_ne_zero hqm)
@@ -72,6 +74,19 @@ theorem exists_analyticOrderAt_eval_finTwo_eq (p : MvPolynomial (Fin 2) 𝕜)
   have ha : AnalyticAt 𝕜 (fun t : 𝕜 ↦ eval (a + t • v) p) 0 := by
     rw [heq]
     exact (AnalyticOnNhd.eval_polynomial q) 0 (Set.mem_univ _)
+  exact ⟨ha, horder⟩
+
+/-- A nonzero plane polynomial admits a line of slope outside any finite forbidden set
+that detects its ambient order at a specified point. -/
+theorem exists_analyticOrderAt_eval_finTwo_eq (p : MvPolynomial (Fin 2) 𝕜)
+    (hp : p ≠ 0) (a : Fin 2 → 𝕜) (s : Finset 𝕜) :
+    ∃ c ∉ s, analyticOrderAt (fun t : 𝕜 ↦ eval ![a 0 + t, a 1 + c * t] p) 0 = p.orderAt a := by
+  classical
+  obtain ⟨m, hm⟩ := ENat.ne_top_iff_exists.1 ((orderAt_eq_top_iff (p := p) (a := a)).not.2 hp)
+  have hH : homogeneousComponent m (taylor a p) ≠ 0 :=
+    p.homogeneousComponent_ne_zero_of_orderAt_eq a hm.symm
+  obtain ⟨v, hv, hv0, hc⟩ := exists_eval_ne_zero_and_div_notMem hH s
+  obtain ⟨ha, horder⟩ := analyticAt_and_analyticOrderAt_eval_add_smul p a v hm hv
   -- Rescaling the line parameter fixes its first coordinate to one.
   have hg : AnalyticAt 𝕜 (fun t : 𝕜 ↦ (v 0)⁻¹ * t) 0 :=
     analyticAt_const.mul analyticAt_id
