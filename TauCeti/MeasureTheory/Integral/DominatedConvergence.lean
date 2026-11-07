@@ -30,6 +30,8 @@ shrinking neighbourhood of zero from an integrable function vanishing at zero.
   to one on `ball 0 (R i)` with `R i → ∞` tend to the integral over the whole space.
 * `TauCeti.tendsto_integral_abs_gt`: removing a shrinking neighbourhood of zero recovers the
   integral of an integrable function vanishing at zero.
+* `TauCeti.tendsto_setIntegral_preimage_Ioo_zero`: integrals of an integrable function over the
+  shells `{0 < w < η k}` tend to `0` as `η k` tends to `0`.
 -/
 
 public section
@@ -144,5 +146,25 @@ theorem tendsto_integral_smul_of_eq_one_ball {E F : Type*} [NormedAddCommGroup E
   · refine tendsto_const_nhds.congr' ?_
     filter_upwards [hR.eventually_gt_atTop ‖x‖] with i hi
     rw [hχ1 i x hi, one_smul]
+
+/-- **Integrals over shrinking shells vanish.** If `w` is measurable and `η k` tends to `0`,
+then the integral of an integrable `f` over the shells `{0 < w < η k}` tends to `0`, by dominated
+convergence: the indicator of the `k`th shell tends to `0` at every point. -/
+theorem tendsto_setIntegral_preimage_Ioo_zero {α F : Type*} [MeasurableSpace α]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {μ : Measure α} {f : α → F} (hf : Integrable f μ)
+    {w : α → ℝ} (hw : Measurable w) {η : ℕ → ℝ} (hηlim : Tendsto η atTop (𝓝 0)) :
+    Tendsto (fun k ↦ ∫ x in w ⁻¹' Ioo 0 (η k), f x ∂μ) atTop (𝓝 0) := by
+  have hmeas (k : ℕ) : MeasurableSet (w ⁻¹' Ioo 0 (η k)) := hw measurableSet_Ioo
+  have h := tendsto_integral_of_dominated_convergence (μ := μ) (fun x ↦ ‖f x‖)
+    (F := fun k x ↦ (w ⁻¹' Ioo 0 (η k)).indicator f x) (f := fun _ ↦ (0 : F))
+    (fun k ↦ hf.aestronglyMeasurable.indicator (hmeas k)) hf.norm
+    (fun k ↦ .of_forall fun x ↦ norm_indicator_le_norm_self f x) (.of_forall fun x ↦ ?_)
+  · simpa only [integral_indicator (hmeas _), integral_zero] using h
+  · by_cases hx : 0 < w x
+    · refine tendsto_const_nhds.congr' ?_
+      filter_upwards [hηlim.eventually (gt_mem_nhds hx)] with k hk
+      exact (indicator_of_notMem (show x ∉ w ⁻¹' Ioo 0 (η k) from fun h' => h'.2.not_gt hk) f).symm
+    · refine tendsto_const_nhds.congr fun k => ?_
+      exact (indicator_of_notMem (show x ∉ w ⁻¹' Ioo 0 (η k) from fun h' => hx h'.1) f).symm
 
 end TauCeti
