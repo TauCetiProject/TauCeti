@@ -19,7 +19,9 @@ support rather than an explicit `Finsupp.single`.
 The coordinate and linear-map lemmas hold over a semiring of scalars. For a finite integer basis of
 an additive group, we also express an additive map in coordinates. A ring homomorphism's values on
 an integer basis cannot all vanish when its target is nontrivial. Over a ring in which `2 ≠ 0`, no
-basis vector is the negative of a basis vector.
+basis vector is the negative of a basis vector. For a basis indexed by a sum `ι ⊕ κ`, the linear
+maps with prescribed values on the vectors indexed by `κ` are parametrized by their values on the
+vectors indexed by `ι`.
 
 ## Main results
 
@@ -40,6 +42,8 @@ basis vector is the negative of a basis vector.
   an integer basis do not all vanish.
 * `Module.Basis.ne_neg`: over a ring in which `2 ≠ 0`, no basis vector is the negative of a basis
   vector.
+* `Module.Basis.constrSumInrEquiv`: the linear maps with prescribed values on the basis vectors
+  `b (inr j)` correspond to their values on the basis vectors `b (inl l)`.
 -/
 
 public section
@@ -158,5 +162,33 @@ theorem ne_neg (b : Basis ι R M) (h2 : (2 : R) ≠ 0) (i j : ι) : b i ≠ -b j
     exact h2 (by rw [← one_add_one_eq_two, h', add_zero])
 
 end Ring
+
+section SumInr
+
+variable {κ R M N : Type*} [Semiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N]
+  [Module R N] (b : Basis (ι ⊕ κ) R M) (v : κ → N)
+
+/-- A linear map `f : M → N` with prescribed values `f (b (inr j)) = v j` on part of a basis `b` is
+determined by its values on the remaining basis vectors `b (inl l)`, and these are arbitrary. -/
+noncomputable def constrSumInrEquiv :
+    {f : M →ₗ[R] N // ∀ j, f (b (.inr j)) = v j} ≃ (ι → N) where
+  toFun f l := f.1 (b (.inl l))
+  invFun g := ⟨b.constr ℕ (Sum.elim g v), fun j ↦ by rw [constr_basis, Sum.elim_inr]⟩
+  left_inv f := Subtype.ext <| b.ext fun i ↦ by rcases i with l | j <;> simp [f.2]
+  right_inv g := funext fun l ↦ by simp
+
+/-- The parameter of a linear map records its values on the basis vectors `b (inl l)`. -/
+@[simp]
+theorem constrSumInrEquiv_apply (f : {f : M →ₗ[R] N // ∀ j, f (b (.inr j)) = v j}) (l : ι) :
+    b.constrSumInrEquiv v f l = f.1 (b (.inl l)) :=
+  (rfl)
+
+/-- The linear map with parameter `g` sends `b (inl l)` to `g l` and `b (inr j)` to `v j`. -/
+@[simp]
+theorem coe_constrSumInrEquiv_symm_apply (g : ι → N) :
+    ((b.constrSumInrEquiv v).symm g).1 = b.constr ℕ (Sum.elim g v) :=
+  (rfl)
+
+end SumInr
 
 end Module.Basis

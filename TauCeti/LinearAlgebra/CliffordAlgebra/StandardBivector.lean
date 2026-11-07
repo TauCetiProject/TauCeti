@@ -254,6 +254,30 @@ private theorem standardBivectorToSoLinear_mulVec (u v x : Fin n → R) :
   simp [dotProduct]
   ring
 
+/-- The generator case of `ι_standardBivectorToSoLinear_mulVec_of_polar`: the identity for a
+decomposable exterior square `u 0 ∧ u 1`. -/
+private theorem ι_standardBivectorToSoLinear_mulVec_ιMulti_of_polar
+    (Q : QuadraticForm R (Fin n → R))
+    (hpolar : ∀ a b, QuadraticMap.polar Q a b = 2 * ∑ i, a i * b i)
+    (u : Fin 2 → Fin n → R) (y : Fin n → R) :
+    ι Q ((((standardBivectorToSoLinear n R (exteriorPower.ιMulti R 2 u) :
+      LieAlgebra.Orthogonal.so (Fin n) R) : Matrix (Fin n) (Fin n) R) *ᵥ y)) =
+      ⁅((bivectorExteriorEquivQuadraticLieSubalgebra Q (exteriorPower.ιMulti R 2 u) :
+        quadraticLieSubalgebra Q) : CliffordAlgebra Q), ι Q y⁆ := by
+  have hu : u = ![u 0, u 1] := by
+    funext i
+    fin_cases i <;> rfl
+  rw [hu]
+  rw [standardBivectorToSoLinear_mulVec, map_sub, map_smul, map_smul]
+  -- Expose the quadratic-subalgebra coercion before applying its public equation.
+  change _ =
+    ⁅((bivectorExteriorEquivQuadraticLieSubalgebra Q
+        (exteriorPower.ιMulti R 2 ![u 0, u 1]) :
+      quadraticLieSubalgebra Q) : CliffordAlgebra Q), ι Q y⁆
+  rw [coe_bivectorExteriorEquivQuadraticLieSubalgebra_apply,
+    bivectorExterior_apply_ιMulti, bivector_lie_ι]
+  rw [hpolar, hpolar, map_sub, map_smul, map_smul]
+
 private theorem ι_standardBivectorToSoLinear_mulVec_of_polar
     (Q : QuadraticForm R (Fin n → R))
     (hpolar : ∀ a b, QuadraticMap.polar Q a b = 2 * ∑ i, a i * b i)
@@ -307,23 +331,7 @@ private theorem ι_standardBivectorToSoLinear_mulVec_of_polar
   apply exteriorPower.linearMap_ext
   apply AlternatingMap.ext
   intro u
-  have hu : u = ![u 0, u 1] := by
-    funext i
-    fin_cases i <;> rfl
-  rw [hu]
-  -- Expose the local quadratic form and the decomposable exterior generator.
-  change ι Q
-      ((((standardBivectorToSoLinear n R (exteriorPower.ιMulti R 2 ![u 0, u 1]) :
-        LieAlgebra.Orthogonal.so (Fin n) R) : Matrix (Fin n) (Fin n) R) *ᵥ y)) = _
-  rw [standardBivectorToSoLinear_mulVec, map_sub, map_smul, map_smul]
-  -- Expose the quadratic-subalgebra coercion before applying its public equation.
-  change _ =
-    ⁅((bivectorExteriorEquivQuadraticLieSubalgebra Q
-        (exteriorPower.ιMulti R 2 ![u 0, u 1]) :
-      quadraticLieSubalgebra Q) : CliffordAlgebra Q), ι Q y⁆
-  rw [coe_bivectorExteriorEquivQuadraticLieSubalgebra_apply,
-    bivectorExterior_apply_ιMulti, bivector_lie_ι]
-  rw [hpolar, hpolar, map_sub, map_smul, map_smul]
+  exact ι_standardBivectorToSoLinear_mulVec_ιMulti_of_polar n R Q hpolar u y
 
 private theorem ι_standardBivectorToSoLinear_mulVec
     (x : ⋀[R]^2 (Fin n → R)) (y : Fin n → R) :
