@@ -14,7 +14,8 @@ import Mathlib.Tactic.FinCases
 # Fixed-cardinality subsets of linear orders
 
 This file collects two enumerations of fixed-cardinality subsets through Mathlib's
-`Set.powersetCard.ofFinEmbEquiv`.
+`Set.powersetCard.ofFinEmbEquiv`, together with the sum and product formulas for its increasing
+enumeration.
 
 In a linear order, a three-element finite set is listed exactly once as an increasing triple
 `a < b < c`. `Set.powersetCard.ofLtTriple` is this enumeration, an equivalence between the
@@ -37,6 +38,18 @@ open Finset
 namespace Set.powersetCard
 
 variable {I : Type*} [LinearOrder I]
+
+/-- A product over the increasing enumeration of a fixed-cardinality subset is the product
+over that subset. -/
+@[to_additive (attr := simp) /-- Summing over the increasing enumeration of a fixed-cardinality
+subset is the same as summing over that subset. -/]
+theorem prod_comp_ofFinEmbEquiv_symm {n : ℕ} (s : powersetCard I n)
+    {M : Type*} [CommMonoid M] (f : I → M) :
+    ∏ a, f (ofFinEmbEquiv.symm s a) = ∏ i ∈ (s : Finset I), f i := by
+  -- Both sides enumerate the subset using its order isomorphism with `Fin n`.
+  exact (Fintype.prod_equiv (orderIsoOfFin s).toEquiv
+    (fun a ↦ f (ofFinEmbEquiv.symm s a)) (fun i ↦ f i.val) fun _ ↦ rfl).trans
+    (Finset.prod_coe_sort s.val f)
 
 /-- An increasing triple, as an order embedding of `Fin 3`. -/
 private def ltTripleEmb (t : {t : I × I × I // t.1 < t.2.1 ∧ t.2.1 < t.2.2}) : Fin 3 ↪o I :=
