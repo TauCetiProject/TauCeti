@@ -330,12 +330,20 @@ theorem IsCutVertex.exists_isBlock_ne [Finite V] (h : G.IsCutVertex v) :
   · exact hqb hv
 
 /-- A block containing a cut vertex contains a neighbour of that vertex. -/
-theorem IsBlock.exists_adj_of_isCutVertex_mem [Finite V] (hB : G.IsBlock B)
+theorem IsBlock.exists_adj_of_isCutVertex_mem (hB : G.IsBlock B)
     (hv : G.IsCutVertex v) (hvB : v ∈ B) : ∃ u ∈ B, G.Adj v u := by
-  obtain ⟨C, D, hC, hD, hCD, hvC, hvD⟩ := hv.exists_isBlock_ne
-  by_cases hBC : B = C
-  · exact hB.exists_adj_of_ne hD (hBC.trans_ne hCD) hvB hvD
-  · exact hB.exists_adj_of_ne hC hBC hvB hvC
+  classical
+  -- A cut vertex is not isolated, so `B` is not the singleton block `{v}`.
+  obtain ⟨d, hdB, hdv⟩ : ∃ d ∈ B, d ≠ v := by
+    by_contra! h
+    have hiso : G.IsIsolated v := (G.isBlock_singleton_iff_isIsolated v).1
+      (Set.eq_singleton_iff_unique_mem.2 ⟨hvB, h⟩ ▸ hB)
+    obtain ⟨u, w, huv, -, ⟨p⟩, hp⟩ := isCutVertex_iff_exists_forall_walk_mem_support.1 hv
+    exact not_reachable_of_neighborSet_right_eq_empty huv hiso.neighborSet_eq_empty
+      (p.takeUntil v (hp p)).reachable
+  obtain ⟨p⟩ := hB.connected.preconnected ⟨v, hvB⟩ ⟨d, hdB⟩
+  have hp : ¬p.Nil := Walk.not_nil_of_ne fun h ↦ hdv (congrArg Subtype.val h).symm
+  exact ⟨p.snd, p.snd.property, induce_adj.1 (Walk.adj_snd hp)⟩
 
 /-- **Cut vertices and blocks.** In a finite graph, a vertex is a cut vertex exactly when it lies
 in two distinct blocks. -/

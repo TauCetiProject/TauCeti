@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.SimpleGraph.Connectivity.BlockCut.Forest
+public import TauCeti.Combinatorics.SimpleGraph.Connectivity.BlockCut.Basic
 
 /-!
 # Degrees of cut vertices in the block--cut forest
@@ -35,7 +35,7 @@ variable {V : Type u} {G : SimpleGraph V} {v : V}
 
 namespace CutVertex
 
-variable [Finite V] (c : G.CutVertex)
+variable (c : G.CutVertex)
 
 /-- The connected components left inside the original component of a cut vertex after deleting
 that vertex. -/
@@ -101,6 +101,8 @@ private theorem incidentBlockComponent_injective :
   exact hcq (B.1.2.mem_support_of_ne D.1.2 hne' B.2 D.2
     (c.neighborInBlock_mem B) (c.neighborInBlock_mem D) q)
 
+variable [Finite V]
+
 private theorem incidentBlockComponent_surjective :
     Function.Surjective c.incidentBlockComponent := by
   intro C
@@ -165,6 +167,11 @@ noncomputable def incidentBlockEquivDeletedComponent :
   Equiv.ofBijective c.incidentBlockComponent
     ⟨c.incidentBlockComponent_injective, c.incidentBlockComponent_surjective⟩
 
+private theorem incidentBlockEquivDeletedComponent_apply
+    (B : {B : G.BlockVertex // (c : V) ∈ (B : Set V)}) :
+    c.incidentBlockEquivDeletedComponent B = c.incidentBlockComponent B :=
+  rfl
+
 /-- The deletion component corresponding to an incident block contains every vertex of that
 block other than the deleted cut vertex. -/
 theorem mem_incidentBlockEquivDeletedComponent
@@ -184,8 +191,7 @@ theorem mem_incidentBlockEquivDeletedComponent
     exact ⟨p, fun z hz ↦ Set.mem_compl_singleton_iff.mpr (hp z hz).2⟩
   have hcomponent : (G.induce ({(c : V)}ᶜ : Set V)).connectedComponentMk x' =
       (c.incidentBlockEquivDeletedComponent B).1 := by
-    change (G.induce ({(c : V)}ᶜ : Set V)).connectedComponentMk x' =
-      (c.incidentBlockComponent B).1
+    rw [incidentBlockEquivDeletedComponent_apply]
     simpa only [incidentBlockComponent] using ConnectedComponent.sound hreach
   exact (ConnectedComponent.mem_supp_iff _ _).mpr hcomponent
 
@@ -203,47 +209,6 @@ theorem degree_blockCutGraph_eq_natCard_deletedComponent
     [Fintype ↑(G.blockCutGraph.neighborSet (.inr c))] :
     G.blockCutGraph.degree (.inr c) = Nat.card c.DeletedComponent := by
   rw [← ncard_neighborSet, c.ncard_neighborSet_blockCutGraph_eq_natCard_deletedComponent]
-
-omit [Finite V] in
-private theorem natCard_fiber_componentMap_eq_one {C : G.ConnectedComponent}
-    (hC : C ≠ G.connectedComponentMk c) :
-    Nat.card {D : (G.induce ({(c : V)}ᶜ : Set V)).ConnectedComponent //
-      D.map (Embedding.induce ({(c : V)}ᶜ : Set V)).toHom = C} = 1 := by
-  classical
-  rw [Nat.card_eq_one_iff_unique]
-  constructor
-  · constructor
-    intro D E
-    obtain ⟨x, hxD⟩ := D.1.exists_rep
-    obtain ⟨y, hyE⟩ := E.1.exists_rep
-    have hxC : G.connectedComponentMk (x : V) = C :=
-      (ConnectedComponent.map_mk (Embedding.induce ({(c : V)}ᶜ : Set V)).toHom x).symm.trans
-        ((congrArg (ConnectedComponent.map
-          (Embedding.induce ({(c : V)}ᶜ : Set V)).toHom) hxD).trans D.2)
-    have hyC : G.connectedComponentMk (y : V) = C :=
-      (ConnectedComponent.map_mk (Embedding.induce ({(c : V)}ᶜ : Set V)).toHom y).symm.trans
-        ((congrArg (ConnectedComponent.map
-          (Embedding.induce ({(c : V)}ᶜ : Set V)).toHom) hyE).trans E.2)
-    obtain ⟨p⟩ := ConnectedComponent.exact (hxC.trans hyC.symm)
-    have hcp : (c : V) ∉ p.support := by
-      intro hc
-      have hxc : G.connectedComponentMk (x : V) = G.connectedComponentMk c :=
-        ConnectedComponent.sound (p.takeUntil c hc).reachable
-      exact hC (hxC.symm.trans hxc)
-    have hxy : (G.induce ({(c : V)}ᶜ : Set V)).Reachable x y :=
-      reachable_induce_iff.mpr ⟨p, fun z hz ↦
-        Set.mem_compl_singleton_iff.mpr fun hzc ↦ hcp (hzc ▸ hz)⟩
-    apply Subtype.ext
-    exact hxD.symm.trans ((ConnectedComponent.sound hxy).trans hyE)
-  · obtain ⟨x, hxC⟩ := C.exists_rep
-    have hxc : x ≠ c := by
-      intro h
-      subst x
-      exact hC hxC.symm
-    let x' : ↑({(c : V)}ᶜ : Set V) := ⟨x, Set.mem_compl_singleton_iff.mpr hxc⟩
-    refine ⟨⟨(G.induce ({(c : V)}ᶜ : Set V)).connectedComponentMk x', ?_⟩⟩
-    rw [ConnectedComponent.map_mk]
-    exact hxC
 
 /-- **The block--cut degree formula.** Deleting a cut vertex adds its block--cut degree minus
 one to the number of connected components. -/
@@ -265,7 +230,7 @@ theorem natCard_connectedComponent_induce_compl_singleton_add_one :
     exact c.ncard_neighborSet_blockCutGraph_eq_natCard_deletedComponent.symm
   have hfiber (C : G.ConnectedComponent) (hC : C ≠ C₀) :
       Nat.card {D // f D = C} = 1 := by
-    exact c.natCard_fiber_componentMap_eq_one hC
+    exact ConnectedComponent.natCard_fiber_map_induce_compl_singleton_eq_one hC
   have hsum : ∑ C ∈ Finset.univ.erase C₀, Nat.card {D // f D = C} =
       Nat.card G.ConnectedComponent - 1 := by
     calc
