@@ -142,7 +142,25 @@ end DivisionRing
 
 section Field
 
-variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
+variable {K V ι : Type*} [Field K] [AddCommGroup V] [Module K V]
+
+/-- The rank of a family of forms restricted to a finite-dimensional subspace is the
+codimension, in that subspace, of their common kernel. -/
+theorem finrank_span_restrict_add_finrank_inf_iInf_ker (L : ι → Dual K V)
+    (U : Submodule K V) [FiniteDimensional K U] (s : Set ι) :
+    finrank K (Submodule.span K ((fun i ↦ (L i).comp U.subtype) '' s)) +
+      finrank K ↥(U ⊓ ⨅ i ∈ s, LinearMap.ker (L i)) = finrank K U := by
+  let A := Submodule.span K ((fun i ↦ (L i).comp U.subtype) '' s)
+  have hA : A.dualCoannihilator =
+      (U ⊓ ⨅ i ∈ s, LinearMap.ker (L i)).comap U.subtype := by
+    dsimp only [A]
+    rw [SetLike.ext'_iff, Submodule.coe_dualCoannihilator_span]
+    ext x
+    simp
+  have h := Subspace.finrank_add_finrank_dualCoannihilator_eq A
+  rw [hA, (Submodule.comapSubtypeEquivOfLe
+    (inf_le_left : U ⊓ ⨅ i ∈ s, LinearMap.ker (L i) ≤ U)).finrank_eq] at h
+  exact h
 
 /-- Any two functionals on a line are proportional: `c w • ψ = ψ w • c` for every vector `w`. -/
 theorem apply_smul_eq_apply_smul_of_finrank_eq_one (hV : finrank K V = 1) (c ψ : Dual K V)
