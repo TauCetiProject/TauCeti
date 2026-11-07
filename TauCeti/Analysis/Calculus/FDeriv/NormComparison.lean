@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
+public import Mathlib.Topology.Algebra.Module.Equiv.Pi
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Slope
@@ -20,6 +21,15 @@ distances of their base points obey the same bound.
 
 `LipschitzWith.norm_fderiv_comp_le` applies this comparison to postcomposition by a Lipschitz
 map, without assuming differentiability of the outer map.
+
+## Main results
+
+* `HasFDerivAt.norm_apply_le_mul_norm_apply`: a norm comparison of increments passes to the
+  derivative.
+* `LipschitzWith.norm_fderiv_comp_le`: postcomposition by a Lipschitz map.
+* `TauCeti.injective_fderiv_tail_comp`: if a differentiable parametrization of a set whose heights
+  are bounded by `A` times the distances of base points has injective derivative, so does its
+  projection to the base.
 -/
 
 public section
@@ -71,3 +81,35 @@ theorem LipschitzWith.norm_fderiv_comp_le {f : E → F} {g : F → G} {C : ℝ�
         simpa only [mul_assoc] using
           mul_le_mul_of_nonneg_left ((fderiv 𝕜 f x).le_opNorm v) C.coe_nonneg
   · simp [fderiv_zero_of_not_differentiableAt hgf, mul_nonneg C.coe_nonneg (norm_nonneg _)]
+
+namespace TauCeti
+
+/-- If `φ` parametrizes points of `ψ` near `u₀` with injective derivative at `u₀`, and `ψ`
+satisfies the height inequality, then the projection `Fin.tail ∘ φ` also has injective derivative
+at `u₀`: tangent vectors to `ψ` satisfy the height inequality as well. -/
+theorem injective_fderiv_tail_comp {n d : ℕ}
+    {ψ : Set (Fin (n + 1) → 𝕜)} {A : ℝ≥0} {φ : (Fin d → 𝕜) → Fin (n + 1) → 𝕜} {u₀ : Fin d → 𝕜}
+    (hφ : DifferentiableAt 𝕜 φ u₀) (hDφ : Function.Injective (fderiv 𝕜 φ u₀))
+    (h : ∀ v ∈ ψ, ∀ w ∈ ψ, dist (v 0) (w 0) ≤ A * dist (Fin.tail v) (Fin.tail w))
+    (hφψ : ∀ᶠ u in 𝓝 u₀, φ u ∈ ψ) :
+    Function.Injective (fderiv 𝕜 (fun u ↦ Fin.tail (φ u)) u₀) := by
+  let τ : (Fin (n + 1) → 𝕜) →L[𝕜] Fin n → 𝕜 := Pi.compRightL 𝕜 (fun _ ↦ 𝕜) Fin.succ
+  have hτ (w : Fin (n + 1) → 𝕜) : τ w = Fin.tail w :=
+    funext fun i ↦ Pi.compRightL_apply 𝕜 (fun _ ↦ 𝕜) Fin.succ w i
+  have hp' : HasFDerivAt (fun u ↦ Fin.tail (φ u)) (τ.comp (fderiv 𝕜 φ u₀)) u₀ := by
+    simpa only [Function.comp_def, hτ] using τ.hasFDerivAt.comp u₀ hφ.hasFDerivAt
+  rw [hp'.fderiv]
+  refine (injective_iff_map_eq_zero _).2 fun k hk ↦ hDφ ?_
+  rw [ContinuousLinearMap.comp_apply, hτ] at hk
+  have h0 : ‖fderiv 𝕜 φ u₀ k 0‖ ≤ A * ‖τ (fderiv 𝕜 φ u₀ k)‖ := by
+    refine hφ.hasFDerivAt.norm_apply_le_mul_norm_apply
+      (L := ContinuousLinearMap.proj 0) ?_ k
+    filter_upwards [hφψ] with u hu
+    have := h _ hu _ hφψ.self_of_nhds
+    rwa [dist_eq_norm, dist_eq_norm, ← hτ, ← hτ, ← map_sub] at this
+  rw [hτ, hk, norm_zero, mul_zero, norm_le_zero_iff] at h0
+  rw [map_zero]
+  funext i
+  exact Fin.cases h0 (fun j ↦ congrFun hk j) i
+
+end TauCeti
