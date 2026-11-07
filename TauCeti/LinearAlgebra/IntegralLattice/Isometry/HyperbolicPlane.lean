@@ -6,6 +6,7 @@ Authors: Wentao Li
 module
 public import TauCeti.LinearAlgebra.IntegralLattice.Examples
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Group
+import TauCeti.Data.Rat.EqOneOrNegOnePair
 import Mathlib.Data.Fintype.Card
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.NormNum
@@ -102,15 +103,6 @@ private theorem isometry_hyperbolicPlane_basis_relations
     norm_num only [hyperbolicPlane_form_apply, Matrix.cons_val_zero, Matrix.cons_val_one] at h
     exact h
 
-/-- Two rationals that are integers with product one are both `1` or both `-1`. -/
-private theorem eq_one_or_neg_one_pair {a b : ℚ} (ha : ∃ n : ℤ, (n : ℚ) = a)
-    (hb : ∃ m : ℤ, (m : ℚ) = b) (hab : a * b = 1) :
-    (a = 1 ∧ b = 1) ∨ (a = -1 ∧ b = -1) := by
-  obtain ⟨n, rfl⟩ := ha
-  obtain ⟨m, rfl⟩ := hb
-  have hnm : n * m = 1 := by exact_mod_cast hab
-  exact_mod_cast Int.eq_one_or_neg_one_of_mul_eq_one' hnm
-
 /-- The full integral isometry group of the hyperbolic plane consists of the identity,
 negation, coordinate exchange, and their composite. -/
 theorem hyperbolicPlane_isometry_eq (e : Isometry hyperbolicPlane hyperbolicPlane) :
@@ -120,7 +112,7 @@ theorem hyperbolicPlane_isometry_eq (e : Isometry hyperbolicPlane hyperbolicPlan
   obtain ⟨hxx, hyy, hxy⟩ := isometry_hyperbolicPlane_basis_relations e
   rcases mul_eq_zero.mp hxx with hx0 | hx1
   · have hprod : e ![1, 0] 1 * e ![0, 1] 0 = 1 := by simpa [hx0] using hxy
-    have hpair := eq_one_or_neg_one_pair (hx 1) (hy 0) hprod
+    have hpair := Rat.eq_one_or_neg_one_pair_of_mul_eq_one (hx 1) (hy 0) hprod
     rcases hpair with ⟨h, hy0⟩ | ⟨h, hy0⟩
     · have hy1 : e ![0, 1] 1 = 0 := by simpa [hy0] using hyy
       right; right; left
@@ -131,7 +123,7 @@ theorem hyperbolicPlane_isometry_eq (e : Isometry hyperbolicPlane hyperbolicPlan
       apply isometry_eq_of_basis_images <;> ext i <;> fin_cases i <;>
         simp [hx0, h, hy0, hy1]
   · have hprod : e ![1, 0] 0 * e ![0, 1] 1 = 1 := by simpa [hx1] using hxy
-    have hpair := eq_one_or_neg_one_pair (hx 0) (hy 1) hprod
+    have hpair := Rat.eq_one_or_neg_one_pair_of_mul_eq_one (hx 0) (hy 1) hprod
     rcases hpair with ⟨h, hy1⟩ | ⟨h, hy1⟩
     · have hy0 : e ![0, 1] 0 = 0 := by simpa [hy1] using hyy
       left
