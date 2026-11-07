@@ -216,9 +216,9 @@ private theorem exists_compactConvexPolygon_three {α β γ : ℝ} (hα : 0 < α
     exists_third_vertex ht hρ₁ hρ₂ hγ (by linarith) hρc₁ hρc₂ hD hkey
   have hd : 0 < Real.log t := Real.log_pos ht
   obtain ⟨hIc₁, hcc₁⟩ := circleCenter_eq_of_re_eq_zero (B := UpperHalfPlane.I) (s := 1)
-    (by rw [UpperHalfPlane.coe_I]; apply Complex.ext <;> simp) hCre (by rw [hρc₁]; ring) hCc₁
+    (by rw [UpperHalfPlane.coe_I]; apply Complex.ext <;> simp) hCre.ne' (by rw [hρc₁]; ring) hCc₁
   obtain ⟨hBc₂, hcc₂⟩ := circleCenter_eq_of_re_eq_zero (coe_geodesicLine_one_log (by linarith))
-    hCre hρc₂ hCc₂
+    hCre.ne' hρc₂ hCc₂
   obtain ⟨hv₀, hv₁, hv₂⟩ := leftHalfPlane_normal_form ht hCre
   refine ⟨⟨![UpperHalfPlane.I, C, geodesicLine 1 (Real.log t)], le_rfl, fun i j hji hji' ↦ ?_⟩,
     ?_, ?_, ?_⟩
