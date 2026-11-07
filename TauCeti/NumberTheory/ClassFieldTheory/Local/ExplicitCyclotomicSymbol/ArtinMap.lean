@@ -119,6 +119,72 @@ private theorem apply_eq_self_of_mk_eq_artinMap_of_fixes {x : ℚ_[p]ˣ}
   obtain rfl : Units.map (Algebra.norm ℚ_[p] : M →* ℚ_[p]) y = x := Units.ext hy
   exact cyclotomicSymbol_norm_fixes p m M hM y ρ hρ z
 
+/-- A representative `g` of the Artin symbol of `p u`, `u ∈ ℤ_pˣ`, is an arithmetic Frobenius lift
+on the roots of unity of order `p ^ f - 1`: it raises each of them to the `p`-th power. -/
+private theorem apply_eq_pow_of_mk_eq_artinMap_padic_uniformizer {u : ℤ_[p]ˣ} {x : ℚ_[p]ˣ}
+    (hx : (x : ℚ_[p]) = p * (u : ℤ_[p])) (g : Field.absoluteGaloisGroup ℚ_[p])
+    (hg : (g : Field.absoluteGaloisGroupAbelianization ℚ_[p]) = artinMap ℚ_[p] x) {f : ℕ}
+    (hf : f ≠ 0) (t : AlgebraicClosure ℚ_[p]) (ht : t ^ (p ^ f - 1) = 1) :
+    DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) g t = t ^ p := by
+  have hp := (Fact.out : p.Prime)
+  have hv : (x : ℚ_[p]).valuation = 1 := by
+    simp [hx, Padic.valuation_mul, hp.ne_zero, PadicInt.valuation_eq_zero_of_isUnit u.isUnit]
+  have hπ : IsUniformizer ℚ_[p] x := by
+    rw [isUniformizer_def, ← ofAdd_toAdd (normalizedValuation ℚ_[p] x),
+      _root_.Padic.toAdd_normalizedValuation_eq_valuation, hv]
+  have hgF := isArithFrobeniusLift_of_mk_eq_artinMap_uniformizer ℚ_[p] hπ g hg
+  have hpow : t ^ p ^ f = t := by
+    rw [← Nat.sub_add_cancel (Nat.one_le_pow f p hp.pos), pow_succ, ht, one_mul]
+  simpa using isArithFrobeniusLift_iff.1 hgF t f hf (by simpa using hpow)
+
+/-- The reduction modulo `pⁿ` of the exponent by which an automorphism `κ` of `ℚ_p` acts on the
+`m`-th roots of unity of a cyclotomic subfield `E` is its `p`-adic cyclotomic character. -/
+private theorem cast_autToPow_restrictNormalHom_eq_toZModPow
+    {m n : ℕ} [NeZero m] (E : IntermediateField ℚ_[p] (AlgebraicClosure ℚ_[p])) [Normal ℚ_[p] E]
+    {ζ' : E} (hζ' : IsPrimitiveRoot ζ' m) (hd : p ^ n ∣ m) (κ : Field.absoluteGaloisGroup ℚ_[p]) :
+    ((hζ'.autToPow ℚ_[p] (AlgEquiv.restrictNormalHom E κ) : ZMod m).cast : ZMod (p ^ n)) =
+      PadicInt.toZModPow n (localCyclotomicCharacter p ℚ_[p] κ : ℤ_[p]) := by
+  rw [hζ'.cast_autToPow_restrictNormalHom_eq hd κ
+      fun t ht ↦ cyclotomicCharacter.spec p (AlgEquiv.toRingEquiv κ) t ht,
+    ZMod.natCast_zmod_val, localCyclotomicCharacter_apply]
+
+/-- If `ρ` acts on the `m`-th roots of unity through the explicit symbol of `x`, and `g` represents
+the Artin symbol of `x`, then the restriction of `ρ` to a finite abelian subextension `E` of
+`ℚ_p(μ_m)` is a power of the restriction of `g`: both fix the same subextensions of `E`. -/
+private theorem restrictNormalHom_mem_zpowers_of_mk_eq_artinMap {x : ℚ_[p]ˣ}
+    (g : Field.absoluteGaloisGroup ℚ_[p])
+    (hg : (g : Field.absoluteGaloisGroupAbelianization ℚ_[p]) = artinMap ℚ_[p] x)
+    (m : ℕ) [NeZero m] (ρ : Field.absoluteGaloisGroup ℚ_[p])
+    (hρ : ∀ z : AlgebraicClosure ℚ_[p], z ^ m = 1 →
+      ρ.toRingEquiv z = z ^ ((cyclotomicSymbol m p x : ZMod m).val))
+    (E : IntermediateField ℚ_[p] (AlgebraicClosure ℚ_[p])) [FiniteDimensional ℚ_[p] E]
+    [IsAbelianGalois ℚ_[p] E]
+    (hE : E ≤ IntermediateField.adjoin ℚ_[p] {z : AlgebraicClosure ℚ_[p] | z ^ m = 1}) :
+    AlgEquiv.restrictNormalHom E ρ ∈ Subgroup.zpowers (AlgEquiv.restrictNormalHom E g) := by
+  let M : IntermediateField ℚ_[p] E :=
+    IntermediateField.fixedField (Subgroup.zpowers (AlgEquiv.restrictNormalHom E g))
+  have : IsGalois ℚ_[p] M := IsGalois.of_fixedField_normal_subgroup _
+  have : FiniteDimensional ℚ_[p] (M.map E.val) :=
+    (M.equivMap E.val).toLinearEquiv.finiteDimensional
+  have : IsGalois ℚ_[p] (M.map E.val) := IsGalois.of_algEquiv (M.equivMap E.val)
+  have hME : M.map E.val ≤ IntermediateField.adjoin ℚ_[p] {z | z ^ m = 1} := by
+    rintro _ ⟨z, -, rfl⟩
+    exact hE z.2
+  have hgM :
+      ∀ z : M.map E.val, DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) g
+        (z : AlgebraicClosure ℚ_[p]) = z := by
+    rintro ⟨_, z, hz, rfl⟩
+    exact (AlgEquiv.restrictNormalHom_apply E g z).symm.trans
+      (congrArg Subtype.val ((IntermediateField.mem_fixedField_iff _ _).1 hz
+        (AlgEquiv.restrictNormalHom E g) (Subgroup.mem_zpowers _)))
+  rw [← IntermediateField.fixingSubgroup_fixedField
+      (Subgroup.zpowers (AlgEquiv.restrictNormalHom E g)),
+    IntermediateField.mem_fixingSubgroup_iff]
+  intro z hz
+  exact Subtype.ext ((AlgEquiv.restrictNormalHom_apply E ρ z).trans
+    (apply_eq_self_of_mk_eq_artinMap_of_fixes p g hg m ρ hρ (M.map E.val) hME hgM
+      ⟨z, z, hz, rfl⟩))
+
 /- Proof sketch. Fix `u ∈ ℤ_pˣ` and `n`, put `f = φ(pⁿ)`, `N = p ^ f - 1` and `E = ℚ_p(μ_{pⁿN})`,
 and let `g` represent the Artin symbol of the uniformizer `p u`. Then `g` acts on `μ_N` as
 arithmetic Frobenius `ζ ↦ ζ ^ p`, and `p u` is a norm from the fixed field `M` of `g` in `E` by
@@ -141,26 +207,13 @@ private theorem toZModPow_localCyclotomicCharacter_of_mk_eq_artinMap {u : ℤ_[p
   set f := (p ^ n).totient
   have hf : f ≠ 0 := (Nat.totient_pos.2 (pow_pos hp.pos n)).ne'
   set N := p ^ f - 1
-  have hN : N ≠ 0 := Nat.sub_ne_zero_of_lt (Nat.one_lt_pow hf hp.one_lt)
   set m := p ^ n * N
-  have : NeZero m := ⟨mul_ne_zero (pow_ne_zero n hp.ne_zero) hN⟩
+  have : NeZero m := ⟨mul_ne_zero (pow_ne_zero n hp.ne_zero)
+    (Nat.sub_ne_zero_of_lt (Nat.one_lt_pow hf hp.one_lt))⟩
   have hpN : p.Coprime N := Nat.coprime_pow_sub_one p f hp.one_lt hf
-  have hcop : (p ^ n).Coprime N := hpN.pow_left n
   have hdN : N ∣ m := dvd_mul_left N _
   have hdP : p ^ n ∣ m := dvd_mul_right _ N
-  -- `p u` is a uniformizer, so `g` is an arithmetic Frobenius lift: it raises the `N`-th roots of
-  -- unity to the `p`-th power.
-  have hv : (x : ℚ_[p]).valuation = 1 := by
-    simp [hx, Padic.valuation_mul, hp.ne_zero, PadicInt.valuation_eq_zero_of_isUnit u.isUnit]
-  have hπ : IsUniformizer ℚ_[p] x := by
-    rw [isUniformizer_def, ← ofAdd_toAdd (normalizedValuation ℚ_[p] x),
-      _root_.Padic.toAdd_normalizedValuation_eq_valuation, hv]
-  have hgF := isArithFrobeniusLift_of_mk_eq_artinMap_uniformizer ℚ_[p] hπ g hg
-  have hgN (t : AlgebraicClosure ℚ_[p]) (ht : t ^ N = 1) :
-      DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) g t = t ^ p := by
-    have hpow : t ^ p ^ f = t := by
-      rw [← Nat.sub_add_cancel (Nat.one_le_pow f p hp.pos), pow_succ, ht, one_mul]
-    simpa using isArithFrobeniusLift_iff.1 hgF t f hf (by simpa using hpow)
+  have hgN := apply_eq_pow_of_mk_eq_artinMap_padic_uniformizer p hx g hg hf
   -- An element `ρ` with cyclotomic character `u⁻¹` that also raises the `N`-th roots of unity to
   -- the `p`-th power.
   obtain ⟨ρ, hρχ, hρN⟩ := exists_localCyclotomicCharacter_eq_and_apply_of_pow_eq_one p u⁻¹ hf
@@ -174,41 +227,17 @@ private theorem toZModPow_localCyclotomicCharacter_of_mk_eq_artinMap {u : ℤ_[p
   have hζ' : IsPrimitiveRoot ζ' m := IsPrimitiveRoot.coe_submonoidClass_iff.1 hζ
   set gE := AlgEquiv.restrictNormalHom E g
   set ρE := AlgEquiv.restrictNormalHom E ρ
-  -- The action of `κ ∈ G_{ℚ_p}` on the `d`-th roots of unity, for `d ∣ m`, determines the
-  -- reduction modulo `d` of the exponent of its restriction to `E`.
-  have hcast {d c : ℕ} (hd : d ∣ m) (κ : Field.absoluteGaloisGroup ℚ_[p])
-      (hκ : ∀ t : AlgebraicClosure ℚ_[p], t ^ d = 1 →
-        DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) κ t = t ^ c) :
-      ((hζ'.autToPow ℚ_[p] (AlgEquiv.restrictNormalHom E κ) : ZMod m).cast : ZMod d) = c :=
-    hζ'.cast_autToPow_eq_natCast hd <| Subtype.ext <|
-      (AlgEquiv.restrictNormalHom_apply E κ _).trans <| by
-        rw [IntermediateField.coe_pow, IntermediateField.coe_pow]
-        exact hκ _ (by rw [← pow_mul, Nat.div_mul_cancel hd, hζ.pow_eq_one])
   -- The reductions of the exponents of `g` and `ρ` modulo `pⁿ` and modulo `N`.
-  have hgP : ((hζ'.autToPow ℚ_[p] gE : ZMod m).cast : ZMod (p ^ n)) =
-      PadicInt.toZModPow n (localCyclotomicCharacter p ℚ_[p] g : ℤ_[p]) := by
-    rw [hcast hdP g fun t ht ↦ cyclotomicCharacter.spec p (AlgEquiv.toRingEquiv g) t ht,
-      ZMod.natCast_zmod_val, localCyclotomicCharacter_apply]
+  have hgP := cast_autToPow_restrictNormalHom_eq_toZModPow p E hζ' hdP g
   have hρP : ((hζ'.autToPow ℚ_[p] ρE : ZMod m).cast : ZMod (p ^ n)) =
       PadicInt.toZModPow n ((u⁻¹ : ℤ_[p]ˣ) : ℤ_[p]) := by
-    rw [hcast hdP ρ fun t ht ↦ cyclotomicCharacter.spec p (AlgEquiv.toRingEquiv ρ) t ht,
-      ZMod.natCast_zmod_val, ← hρχ, localCyclotomicCharacter_apply]
-  have hgN' : ((hζ'.autToPow ℚ_[p] gE : ZMod m).cast : ZMod N) = p := hcast hdN g hgN
-  have hρN' : ((hζ'.autToPow ℚ_[p] ρE : ZMod m).cast : ZMod N) = p := hcast hdN ρ hρN
-  -- The reductions of the explicit symbol of `p u` modulo `pⁿ` and modulo `N`.
-  have hsP : ZMod.unitsMap hdP (cyclotomicSymbol m p x) =
-      (Units.map (PadicInt.toZModPow n : ℤ_[p] →+* ZMod (p ^ n)).toMonoidHom u)⁻¹ :=
-    unitsMap_cyclotomicSymbol_primePow m p hdP x 1 u (by simp [hx])
-  have hsN : ZMod.unitsMap hdN (cyclotomicSymbol m p x) = ZMod.unitOfCoprime p hpN := by
-    simpa using unitsMap_cyclotomicSymbol_of_coprime m p hdN hpN x 1 u (by simp [hx])
-  -- `ρ` acts on the `m`-th roots of unity through the explicit symbol of `p u`, as the two agree
-  -- modulo the coprime factors `pⁿ` and `N` of `m`.
+    rw [cast_autToPow_restrictNormalHom_eq_toZModPow p E hζ' hdP ρ, hρχ]
+  have hρN' : ((hζ'.autToPow ℚ_[p] ρE : ZMod m).cast : ZMod N) = p :=
+    hζ'.cast_autToPow_restrictNormalHom_eq hdN ρ hρN
+  -- `ρ` acts on the `m`-th roots of unity through the explicit symbol of `p u`.
   set r := hζ'.autToPow ℚ_[p] ρE
-  have hrs : (r : ZMod m) = cyclotomicSymbol m p x := by
-    refine ZMod.eq_of_cast_eq_of_coprime hcop ?_ ?_
-    · rw [hρP, ← ZMod.unitsMap_val hdP, hsP]
-      simp
-    · rw [hρN', ← ZMod.unitsMap_val hdN, hsN, ZMod.coe_unitOfCoprime]
+  have hrs : (r : ZMod m) = cyclotomicSymbol m p x :=
+    eq_cyclotomicSymbol_of_cast_eq p hx hpN hρP hρN'
   have hρm (z : AlgebraicClosure ℚ_[p]) (hz : z ^ m = 1) :
       ρ.toRingEquiv z = z ^ ((cyclotomicSymbol m p x : ZMod m).val) := by
     have hρζ :
@@ -216,48 +245,14 @@ private theorem toZModPow_localCyclotomicCharacter_of_mk_eq_artinMap {u : ℤ_[p
       rw [← AlgEquiv.restrictNormalHom_apply E ρ ζ', ← hζ'.autToPow_spec ℚ_[p],
         IntermediateField.coe_pow]
     exact hrs ▸ hζ.map_eq_pow (ρ.toRingEquiv : AlgebraicClosure ℚ_[p] →+* _) hρζ hz
-  -- The fixed field `M` of `g` in `E`. By local reciprocity `p u` is a norm from `M`, so `ρ` fixes
-  -- `M` and its restriction to `E` is a power of that of `g`.
-  let M : IntermediateField ℚ_[p] E := IntermediateField.fixedField (Subgroup.zpowers gE)
-  have : IsGalois ℚ_[p] M := IsGalois.of_fixedField_normal_subgroup _
-  have : FiniteDimensional ℚ_[p] (M.map E.val) :=
-    (M.equivMap E.val).toLinearEquiv.finiteDimensional
-  have : IsGalois ℚ_[p] (M.map E.val) := IsGalois.of_algEquiv (M.equivMap E.val)
-  have hME : M.map E.val ≤ IntermediateField.adjoin ℚ_[p] {z | z ^ m = 1} := by
-    rintro _ ⟨z, -, rfl⟩
-    exact IntermediateField.adjoin.mono ℚ_[p] {ζ} {z | z ^ m = 1}
-      (Set.singleton_subset_iff.2 hζ.pow_eq_one) (z : E).2
-  have hgM :
-      ∀ z : M.map E.val, DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) g
-        (z : AlgebraicClosure ℚ_[p]) = z := by
-    rintro ⟨_, z, hz, rfl⟩
-    exact (AlgEquiv.restrictNormalHom_apply E g z).symm.trans
-      (congrArg Subtype.val ((IntermediateField.mem_fixedField_iff _ _).1 hz gE
-        (Subgroup.mem_zpowers gE)))
-  have hρE : ρE ∈ Subgroup.zpowers gE := by
-    rw [← IntermediateField.fixingSubgroup_fixedField (Subgroup.zpowers gE),
-      IntermediateField.mem_fixingSubgroup_iff]
-    intro z hz
-    exact Subtype.ext ((AlgEquiv.restrictNormalHom_apply E ρ z).trans
-      (apply_eq_self_of_mk_eq_artinMap_of_fixes p g hg m ρ hρm (M.map E.val) hME hgM
-        ⟨z, z, hz, rfl⟩))
-  obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.1 hρE
-  set a := hζ'.autToPow ℚ_[p] gE
-  have hra : r = a ^ k := by simp only [r, a, ← hk, map_zpow]
-  -- Modulo `N`, both act as `p`, which has order `f`; so `k ≡ 1` modulo `f`.
-  have hqN : ZMod.unitsMap hdN a = ZMod.unitOfCoprime p hpN :=
-    Units.ext (by rw [ZMod.unitsMap_val, hgN', ZMod.coe_unitOfCoprime])
-  have hqN' : ZMod.unitsMap hdN r = ZMod.unitOfCoprime p hpN :=
-    Units.ext (by rw [ZMod.unitsMap_val, hρN', ZMod.coe_unitOfCoprime])
-  obtain ⟨j, hj⟩ : (f : ℤ) ∣ k - 1 := by
-    rw [← TauCeti.ZMod.orderOf_unitOfCoprime_pow_sub_one p f hp.one_lt hf,
-      orderOf_dvd_iff_zpow_eq_one, zpow_sub_one, mul_inv_eq_one]
-    convert (hqN'.symm.trans (by rw [hra, map_zpow, hqN])).symm
-  -- Modulo `pⁿ`, the class of `g` has order dividing `f = φ(pⁿ)`, so `r` and `a` agree there.
-  have hkj : k = f * j + 1 := by omega
-  have hP : ZMod.unitsMap hdP r = ZMod.unitsMap hdP a := by
-    rw [hra, map_zpow, hkj, zpow_add_one, zpow_mul, zpow_natCast,
-      ZMod.pow_totient, one_zpow, one_mul]
+  -- By local reciprocity `ρ` is a power `g ^ k` on `E`; compare the two modulo `N` and `pⁿ`.
+  obtain ⟨k, hk⟩ : ∃ k : ℤ, gE ^ k = ρE := Subgroup.mem_zpowers_iff.1
+    (restrictNormalHom_mem_zpowers_of_mk_eq_artinMap p g hg m ρ hρm E
+      (IntermediateField.adjoin.mono ℚ_[p] {ζ} {z | z ^ m = 1}
+        (Set.singleton_subset_iff.2 hζ.pow_eq_one)))
+  have hP := ZMod.unitsMap_eq_of_zpow_of_unitsMap_eq (Fact.out : p.Prime).one_lt hf hpN hdN hdP
+    (a := hζ'.autToPow ℚ_[p] gE) (k := k) (by simp only [r, ← hk, map_zpow])
+    (hζ'.cast_autToPow_restrictNormalHom_eq hdN g hgN) hρN'
   rw [← hgP, ← hρP, ← ZMod.unitsMap_val hdP, ← ZMod.unitsMap_val hdP, hP]
 
 /-- **The cyclotomic character of the Artin symbols of `ℚ_p`.** If `x = pᵏ u` with `u ∈ ℤ_pˣ`, the
