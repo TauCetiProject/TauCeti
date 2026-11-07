@@ -124,13 +124,9 @@ theorem exists_analyticOnNhd_nonmonic_root_sub_eq_zpow_mul_unit_conj
     (fun b hb ↦ Prod.ext (hττ b.1 hb.1) (Complex.conj_conj b.2))
     (fun b hb ↦ by simpa only [q, κ, map_pow] using hconj _ (hq hb))
     ⟨(x₀, t₀), x₀.2, t₀.2⟩
-  have hgfull (i : Fin d) : EqOn (g (σ i)) (fun b ↦ conj (g i (κ b))) T := by
-    refine TauCeti.eqOn_prod_of_eqOn_prod_diff_singleton (c := (0 : ℂ)) isOpen_ball
-      (hg (σ i)).1.continuousOn
-      (Complex.continuous_conj.comp_continuousOn ((hg i).1.continuousOn.comp hκ hκT)) ?_
-    intro b hb
-    simp only [(hg (σ i)).2 hb, (hg i).2 (hκS hb), hσ i b hb,
-      κ, map_mul, map_pow, Complex.conj_conj]
+  have hgfull (i : Fin d) : EqOn (g (σ i)) (fun b ↦ conj (g i (κ b))) T :=
+    TauCeti.eqOn_conj_extension (τ := τ) (fun i ↦ (hg i).1.continuousOn) (fun i ↦ (hg i).2) hσ
+      hκ hκT hκS i
   -- Compare Laurent forms at x₀ and τ x₀. Neither parameter must be fixed by τ.
   have heq (i j : Fin d) (hij : i ≠ j) (b : E × ℂ) (hb : b ∈ S) :
       b.2 ^ e (σ i) (σ j) (σ.injective.ne hij) * w (σ i) (σ j) (σ.injective.ne hij) b =

@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Polynomial.Conjugation
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 import TauCeti.Analysis.Normed.Module.Connected
+import TauCeti.Analysis.Analytic.Laurent.Conjugation
 
 /-!
 # Conjugation-compatible nonmonic Puiseux branches
@@ -119,16 +120,8 @@ theorem exists_analyticOnNhd_nonmonic_powerSubstitution_conj
   obtain ⟨σ, ⟨hσσ, hσ⟩, huniq⟩ := TauCeti.existsUnique_root_conj_perm_of_subset_closure
     hSc subset_rfl subset_closure (fun i ↦ (hra i).continuousOn)
     (fun b hb ↦ (hfac b hb).1) hroot (hκ.mono hST) hκS hκS hκκ hsymm b₀
-  -- The removed pole is a real monomial, so scaling commutes with conjugation.
-  -- Continuity then carries the identity through the exceptional hyperplane.
-  have hgconj (i : Fin d) : EqOn (g (σ i)) (fun b ↦ conj (g i (κ b))) S := by
-    intro b hb
-    simp only [(hga (σ i)).2 hb, (hga i).2 (hκS hb), hσ i b hb,
-      κ, map_mul, map_pow, Complex.conj_conj]
-  have hgfull (i : Fin d) : EqOn (g (σ i)) (fun b ↦ conj (g i (κ b))) T :=
-    TauCeti.eqOn_prod_of_eqOn_prod_diff_singleton isOpen_ball (hga (σ i)).1.continuousOn
-      (Complex.continuous_conj.comp_continuousOn ((hga i).1.continuousOn.comp hκ hκT))
-      (hgconj i)
+  have hgfull := fun i ↦ TauCeti.eqOn_conj_extension (fun i ↦ (hga i).1.continuousOn)
+    (fun i ↦ (hga i).2) hσ hκ hκT hκS i
   refine ⟨r, g, hra, hga, hfac, σ, ⟨hσσ, hσ, hgfull⟩, ?_⟩
   intro σ' hσ'
   exact huniq σ' ⟨hσ'.1, hσ'.2.1⟩

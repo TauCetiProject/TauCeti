@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Analytic.IsolatedZeros
 import Mathlib.Analysis.Analytic.Constructions
+import TauCeti.Analysis.Complex.RemovableSingularity
 public import Mathlib.Analysis.Complex.Basic
 
 /-!
@@ -16,6 +17,9 @@ If two Laurent forms are interchanged by conjugation near two corresponding para
 their integer exponents agree and their unit germs are interchanged as well.
 The exponents may be negative. Real analyticity of the units suffices; the
 parameter map need only be continuous at the central parameter.
+
+The same conjugation compatibility passes from the punctured product to the hyperplane by
+continuity (`TauCeti.eqOn_conj_extension`).
 
 This comparison makes the Laurent forms of nonmonic polynomial roots compatible
 with the conjugation action on root labels. It uses Mathlib's uniqueness theorem
@@ -118,3 +122,33 @@ theorem laurent_eq_of_conj {u v : E × ℂ → ℂ} {x₀ : E} {m n : ℤ} {τ :
   exact hext p.1 hp.1 hp.2
 
 end AnalyticAt
+
+namespace TauCeti
+
+variable {E : Type*} [TopologicalSpace E] {U : Set E} {d n a : ℕ} {R' : ℝ} {τ : E → E}
+
+/-- Conjugation compatibility of the pole-removed extensions: if continuous functions `g i` on
+`U × ball 0 R'` agree off the hyperplane `z = 0` with the monomial `z ^ (n * a)` times branches
+`r i` that satisfy it, then the `g i` satisfy it on the full product, by continuity through the
+exceptional hyperplane. The removed pole is a real monomial, so scaling commutes with
+conjugation. -/
+lemma eqOn_conj_extension {g r : Fin d → E × ℂ → ℂ} {σ : Equiv.Perm (Fin d)}
+    (hgc : ∀ i, ContinuousOn (g i) (U ×ˢ Metric.ball 0 R'))
+    (hge : ∀ i, EqOn (g i) (fun b ↦ b.2 ^ (n * a) * r i b)
+      (U ×ˢ (Metric.ball 0 R' \ {0})))
+    (hσ : ∀ i b, b ∈ U ×ˢ (Metric.ball 0 R' \ {0}) →
+      r (σ i) b = conj (r i (τ b.1, conj b.2)))
+    (hκ : ContinuousOn (fun b : E × ℂ ↦ (τ b.1, conj b.2)) (U ×ˢ Metric.ball 0 R'))
+    (hκT : MapsTo (fun b : E × ℂ ↦ (τ b.1, conj b.2)) (U ×ˢ Metric.ball 0 R')
+      (U ×ˢ Metric.ball 0 R'))
+    (hκS : MapsTo (fun b : E × ℂ ↦ (τ b.1, conj b.2)) (U ×ˢ (Metric.ball 0 R' \ {0}))
+      (U ×ˢ (Metric.ball 0 R' \ {0}))) (i : Fin d) :
+    EqOn (g (σ i)) (fun b ↦ conj (g i (τ b.1, conj b.2))) (U ×ˢ Metric.ball 0 R') := by
+  have hgconj : EqOn (g (σ i)) (fun b ↦ conj (g i (τ b.1, conj b.2)))
+      (U ×ˢ (Metric.ball 0 R' \ {0})) := by
+    intro b hb
+    simp only [hge (σ i) hb, hge i (hκS hb), hσ i b hb, map_mul, map_pow, Complex.conj_conj]
+  exact eqOn_prod_of_eqOn_prod_diff_singleton Metric.isOpen_ball (hgc (σ i))
+    (Complex.continuous_conj.comp_continuousOn ((hgc i).comp hκ hκT)) hgconj
+
+end TauCeti
