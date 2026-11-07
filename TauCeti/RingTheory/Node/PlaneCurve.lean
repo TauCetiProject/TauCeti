@@ -128,7 +128,7 @@ theorem exists_hypersurface_presentation_of_formallyUnramified (b : Basis ι Q �
   obtain ⟨s₀, hloc, y, b', hQy, hy', hb', hf2, φ, hφ⟩ := this
   -- The differentials of the relations `g s` with `s ≠ s₀` and of the `yⱼ` form a basis of
   -- `Ω[Q⁄K]`, so `P` is formally smooth by the Jacobian criterion.
-  have hsmooth := formallySmooth_quotient_compl_of_coordinates b₀ hx hb₀ hσ s₀ y hQy hloc
+  have hsmooth := b₀.formallySmooth_quotient_compl_of_coordinates hx hb₀ hσ s₀ y hQy
   -- `φ` is a `K`-algebra isomorphism, so it carries the singular locus of `A` to that of `P ⧸ (f)`,
   -- which is therefore unramified and contains the closed point.
   let φ' : ((Q ⧸ Ideal.span (g '' {s₀}ᶜ)) ⧸
