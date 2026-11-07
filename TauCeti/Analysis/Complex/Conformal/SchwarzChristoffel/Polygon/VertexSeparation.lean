@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.BoundedArcInjective
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.Nonconvex.Separation
+import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.ExponentSum
 
 /-!
 # A vertex separation criterion for a Schwarz--Christoffel boundary arc
@@ -56,8 +57,7 @@ theorem schwarzChristoffelBoundary_injOn_prevertex_interval_of_vertex_separation
         ((c * (v - u)).im < 0 ∧ (c * (w - u)).im < 0)) :
     InjOn (schwarzChristoffelBoundary a e z₀)
       (Icc (a 0) (a (Fin.last n))) := by
-  have hfinite (k : Fin (n + 1)) : -1 < ∑ l with a l = a k, e l := by
-    simpa [ha.injective.eq_iff, Finset.filter_eq'] using he k
+  have hfinite := neg_one_lt_sum_filter_apply_eq_apply a e ha.injective he
   apply schwarzChristoffelBoundary_injOn_prevertex_interval_of_edge_intersections
     a e z₀ ha.monotone hfinite
   intro i j hij z hzi hzj

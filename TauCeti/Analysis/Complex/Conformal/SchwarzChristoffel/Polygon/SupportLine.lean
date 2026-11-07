@@ -12,6 +12,7 @@ import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.ClosingSide
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.LongTurn
 import TauCeti.Analysis.Normed.Module.FilledHull
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.TurningChain
+import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.ExponentSum
 
 /-!
 # Bounded Schwarz--Christoffel sides are supporting lines
@@ -78,8 +79,7 @@ private lemma im_exp_neg_mul_sub_schwarzChristoffelVertex_nonneg (a e : Fin (n +
     0 ≤ (Complex.exp (-schwarzChristoffelEdgeAngle a e (a i.castSucc) * Complex.I) *
       (schwarzChristoffelVertexAtInfinity a e z₀ - schwarzChristoffelVertex a e z₀ i.castSucc)).im
     := by
-  have hfinite (k : Fin (n + 1)) : -1 < ∑ l with a l = a k, e l := by
-    simpa [ha.injective.eq_iff, Finset.filter_eq'] using (he k).1
+  have hfinite := neg_one_lt_sum_filter_apply_eq_apply a e ha.injective fun k ↦ (he k).1
   set θ := schwarzChristoffelEdgeAngle a e (a i.castSucc)
   set u := Complex.exp (-θ * Complex.I)
   set w := schwarzChristoffelVertex a e z₀ i.castSucc
@@ -200,8 +200,7 @@ theorem im_exp_neg_mul_schwarzChristoffelPrimitive_sub_pos
     (hz : z ∈ upperHalfPlaneSet) :
     0 < (Complex.exp (-schwarzChristoffelEdgeAngle a e (a i.castSucc) * Complex.I) *
       (schwarzChristoffelPrimitive a e z₀ z - schwarzChristoffelVertex a e z₀ i.castSucc)).im := by
-  have hfinite (k : Fin (n + 1)) : -1 < ∑ l with a l = a k, e l := by
-    simpa [ha.injective.eq_iff, Finset.filter_eq'] using (he k).1
+  have hfinite := neg_one_lt_sum_filter_apply_eq_apply a e ha.injective fun k ↦ (he k).1
   have hinfty : ∑ k, e k < -1 := by rw [hsum]; norm_num
   apply im_exp_neg_mul_sub_schwarzChristoffelVertex_pos_of_mem_interior_closedConvexHull
     a e z₀ ha he hsum i
@@ -219,8 +218,7 @@ theorem disjoint_interior_closedConvexHull_schwarzChristoffelPolygon_edgeSet_cas
       ((schwarzChristoffelPolygon a e z₀).edgeSet ℝ i.castSucc.castSucc) := by
   rw [schwarzChristoffelPolygon_edgeSet_castSucc_castSucc, Set.disjoint_left]
   intro z hz hside
-  have hfinite (k : Fin (n + 1)) : -1 < ∑ l with a l = a k, e l := by
-    simpa [ha.injective.eq_iff, Finset.filter_eq'] using (he k).1
+  have hfinite := neg_one_lt_sum_filter_apply_eq_apply a e ha.injective fun k ↦ (he k).1
   set u := Complex.exp (-schwarzChristoffelEdgeAngle a e (a i.castSucc) * Complex.I)
   set w := schwarzChristoffelVertex a e z₀ i.castSucc
   -- Both ends of the side lie on the rotated line, hence so does the whole side.
@@ -245,8 +243,7 @@ theorem disjoint_image_schwarzChristoffelPrimitive_edgeSet_castSucc_castSucc
       ((schwarzChristoffelPolygon a e z₀).edgeSet ℝ i.castSucc.castSucc) := by
   apply (disjoint_interior_closedConvexHull_schwarzChristoffelPolygon_edgeSet_castSucc_castSucc
     a e z₀ ha he hsum i).mono_left
-  have hfinite (k : Fin (n + 1)) : -1 < ∑ l with a l = a k, e l := by
-    simpa [ha.injective.eq_iff, Finset.filter_eq'] using (he k).1
+  have hfinite := neg_one_lt_sum_filter_apply_eq_apply a e ha.injective fun k ↦ (he k).1
   have hinfty : ∑ k, e k < -1 := by rw [hsum]; norm_num
   rw [← range_schwarzChristoffelCompactifiedBoundary a e z₀ ha.monotone hfinite hinfty]
   exact image_schwarzChristoffelPrimitive_subset_interior_closedConvexHull
