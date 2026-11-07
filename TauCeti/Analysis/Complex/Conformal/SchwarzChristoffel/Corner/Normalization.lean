@@ -58,14 +58,14 @@ private theorem power_coordinate_props
       Complex.arg (f z - w) ∈ Ioo 0 (β * Real.pi))
     (hedges : ∀ z ∈ Ω, z.im = 0 →
       Complex.arg (f z - w) = 0 ∨ Complex.arg (f z - w) = β * Real.pi)
-    (hinj : InjOn f (Ω ∩ {z : ℂ | 0 ≤ z.im}))
-    (g : ℂ → ℂ) (hg : g = fun z => (f z - w) ^ ((β⁻¹ : ℝ) : ℂ)) :
-    ContinuousOn g (Ω ∩ {z : ℂ | 0 ≤ z.im}) ∧ DifferentiableOn ℂ g (Ω ∩ {z : ℂ | 0 < z.im}) ∧
-      MapsTo g (Ω ∩ {z : ℂ | 0 < z.im}) {z : ℂ | 0 < z.im} ∧
-      (∀ z ∈ Ω, z.im = 0 → (g z).im = 0) ∧
-      (∀ z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im}, g z ^ (β : ℂ) = f z - w) ∧
-      InjOn g (Ω ∩ {z : ℂ | 0 ≤ z.im}) := by
-  subst hg
+    (hinj : InjOn f (Ω ∩ {z : ℂ | 0 ≤ z.im})) :
+    ContinuousOn (fun z => (f z - w) ^ ((β⁻¹ : ℝ) : ℂ)) (Ω ∩ {z : ℂ | 0 ≤ z.im}) ∧
+      DifferentiableOn ℂ (fun z => (f z - w) ^ ((β⁻¹ : ℝ) : ℂ)) (Ω ∩ {z : ℂ | 0 < z.im}) ∧
+      MapsTo (fun z => (f z - w) ^ ((β⁻¹ : ℝ) : ℂ)) (Ω ∩ {z : ℂ | 0 < z.im})
+        {z : ℂ | 0 < z.im} ∧
+      (∀ z ∈ Ω, z.im = 0 → ((f z - w) ^ ((β⁻¹ : ℝ) : ℂ)).im = 0) ∧
+      (∀ z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im}, ((f z - w) ^ ((β⁻¹ : ℝ) : ℂ)) ^ (β : ℂ) = f z - w) ∧
+      InjOn (fun z => (f z - w) ^ ((β⁻¹ : ℝ) : ℂ)) (Ω ∩ {z : ℂ | 0 ≤ z.im}) := by
   have hβinv : 0 < β⁻¹ := inv_pos.mpr hβ
   have harg : ∀ z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im},
       0 ≤ Complex.arg (f z - w) ∧ Complex.arg (f z - w) ≤ β * Real.pi := by
@@ -102,6 +102,7 @@ private theorem power_coordinate_props
     have hangpi : Complex.arg (f z - w) * β⁻¹ < Real.pi := calc
       _ < (β * Real.pi) * β⁻¹ := mul_lt_mul_of_pos_right (hinterior z hz).2 hβinv
       _ = Real.pi := by field_simp
+    -- `MapsTo` unfolds to set membership of the beta-reduced value
     change 0 < ((f z - w) ^ ((β⁻¹ : ℝ) : ℂ)).im
     rw [Complex.cpow_ofReal_im]
     exact mul_pos (Real.rpow_pos_of_pos (norm_pos_iff.mpr hne) _) <|
@@ -149,10 +150,8 @@ theorem exists_differentiableOn_injOn_eqOn_add_cpow_of_convex_corner
       EqOn f (fun z => w + h z ^ (β : ℂ)) (Ω ∩ {z : ℂ | 0 < z.im}) := by
   let g : ℂ → ℂ := fun z => (f z - w) ^ ((β⁻¹ : ℝ) : ℂ)
   have hβinv : 0 < β⁻¹ := inv_pos.mpr hβ
-  obtain ⟨hcontg, hdiffg, hupper, hreal, hrecover', hinjg⟩ :=
-    power_coordinate_props hβ hβ1 hcont hholo hinterior hedges hinj g rfl
-  have hrecover {z : ℂ} (hz : z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im}) :
-      g z ^ (β : ℂ) = f z - w := hrecover' z hz
+  obtain ⟨hcontg, hdiffg, hupper, hreal, hrecover, hinjg⟩ :=
+    power_coordinate_props hβ hβ1 hcont hholo hinterior hedges hinj
   let h := schwarzReflection g
   have hhdiff : DifferentiableOn ℂ h Ω :=
     differentiableOn_schwarzReflection_of_symmetric hΩopen hΩconj hcontg hdiffg hreal
@@ -176,7 +175,7 @@ theorem exists_differentiableOn_injOn_eqOn_add_cpow_of_convex_corner
     -- Expose `EqOn`'s pointwise goal so the two characteristic equalities can rewrite it.
     change f z = w + h z ^ (β : ℂ)
     have hzim : 0 ≤ z.im := hz.2.le
-    rw [hheq ⟨hz.1, hzim⟩, hrecover ⟨hz.1, hzim⟩]
+    rw [hheq ⟨hz.1, hzim⟩, hrecover z ⟨hz.1, hzim⟩]
     ring
 
 /-- **The pre-Schwarzian residue at a convex conformal corner.** Under the geometric sector
