@@ -16,13 +16,16 @@ defined as the least `n` for which some bound holds takes the value `⊤` rather
 undefined when no bound holds at all. Invariants of this shape are cohomological dimensions,
 where `P n` says that cohomology vanishes above degree `n`.
 
-When `P` is monotone (a bound at `m` gives a bound at every `n ≥ m`), the characterization
-`leastENatBound P ≤ n ↔ P n` recovers the predicate from the invariant.
+In general `leastENatBound P ≤ n` says that some `m ≤ n` satisfies `P`. When `P` is monotone
+(a bound at `m` gives a bound at every `n ≥ m`), this becomes `leastENatBound P ≤ n ↔ P n`, which
+recovers the predicate from the invariant.
 
 ## Main results
 
 * `TauCeti.leastENatBound`: the infimum in `ℕ∞` of the natural numbers satisfying a predicate.
-* `TauCeti.leastENatBound_le_iff`: for a monotone predicate, `leastENatBound P ≤ n ↔ P n`.
+* `TauCeti.leastENatBound_le_iff`: `leastENatBound P ≤ n ↔ ∃ m ≤ n, P m`.
+* `TauCeti.leastENatBound_le_iff_of_monotone`: for a monotone predicate,
+  `leastENatBound P ≤ n ↔ P n`.
 * `TauCeti.leastENatBound_eq_top_iff`: the value is `⊤` exactly when the predicate never holds.
 * `TauCeti.leastENatBound_eq_zero_iff`: the value is `0` exactly when the predicate holds at `0`.
 * `TauCeti.leastENatBound_antitone`: a weaker predicate has a smaller least bound.
@@ -54,7 +57,7 @@ theorem leastENatBound_eq_top_iff : leastENatBound P = ⊤ ↔ ∀ n : ℕ, ¬P 
   simp [leastENatBound]
 
 /-- The least bound is `0` exactly when `0` satisfies the predicate. Unlike
-`leastENatBound_le_iff`, this needs no monotonicity. -/
+`leastENatBound_le_iff_of_monotone`, this needs no monotonicity. -/
 @[simp]
 theorem leastENatBound_eq_zero_iff : leastENatBound P = 0 ↔ P 0 := by
   simp [leastENatBound]
@@ -65,16 +68,21 @@ theorem leastENatBound_eq_find [DecidablePred P] (h : ∃ n, P n) :
   le_antisymm (leastENatBound_le (Nat.find_spec h))
     (le_leastENatBound_iff.2 fun _ hn ↦ ENat.natCast_le_natCast.2 (Nat.find_min' h hn))
 
-/-- For a monotone predicate, the least bound is at most `n` exactly when `n` satisfies the
-predicate. -/
-theorem leastENatBound_le_iff (hP : Monotone P) (n : ℕ) : leastENatBound P ≤ n ↔ P n := by
+/-- The least bound is at most `n` exactly when some `m ≤ n` satisfies the predicate. -/
+@[simp]
+theorem leastENatBound_le_iff {n : ℕ} : leastENatBound P ≤ n ↔ ∃ m ≤ n, P m := by
   classical
-  refine ⟨fun hle ↦ ?_, leastENatBound_le⟩
+  refine ⟨fun hle ↦ ?_, fun ⟨m, hmn, hm⟩ ↦ (leastENatBound_le hm).trans (mod_cast hmn)⟩
   by_cases h : ∃ m, P m
   · rw [leastENatBound_eq_find h, ENat.natCast_le_natCast] at hle
-    exact hP hle (Nat.find_spec h)
-  · rw [leastENatBound_eq_top_iff.2 (not_exists.1 h), top_le_iff] at hle
-    exact absurd hle (ENat.natCast_ne_top n)
+    exact ⟨_, hle, Nat.find_spec h⟩
+  · simp [leastENatBound_eq_top_iff.2 (not_exists.1 h)] at hle
+
+/-- For a monotone predicate, the least bound is at most `n` exactly when `n` satisfies the
+predicate. -/
+theorem leastENatBound_le_iff_of_monotone (hP : Monotone P) (n : ℕ) :
+    leastENatBound P ≤ n ↔ P n :=
+  leastENatBound_le_iff.trans ⟨fun ⟨_, hmn, hm⟩ ↦ hP hmn hm, fun h ↦ ⟨n, le_rfl, h⟩⟩
 
 /-- A weaker predicate has a smaller least bound. -/
 theorem leastENatBound_antitone : Antitone leastENatBound :=

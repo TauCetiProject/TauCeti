@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Young.RowInsertion
 public import Mathlib.Data.List.Chain
+public import Mathlib.Data.List.MinMax
 public import TauCeti.Data.List.GetD
 
 /-!
@@ -1012,6 +1013,37 @@ theorem rowInsert_reverseRowInsert {k : ℕ} {rows : List (List α)} (h : rows.I
         rowInsertIndex x (reverseRowInsert k rows).1 = k := by
   obtain ⟨c, hc, hret, -, -, hins, hidx⟩ := exists_reverseRowInsert_of_isTableauRows h hk
   exact ⟨_, hret, hins, hidx⟩
+
+/-- A nonempty tableau has a largest entry `a`, and a highest row `k` ending in `a`. -/
+theorem _root_.List.IsTableauRows.exists_forall_le_getLast?_getD_eq_some {Q : List (List α)}
+    (hQ : Q.IsTableauRows) (hQnil : Q ≠ []) :
+    ∃ a k, (∀ x ∈ Q.flatten, x ≤ a) ∧ (Q.getD k []).getLast? = some a ∧
+      ∀ i < k, (Q.getD i []).getLast? ≠ some a := by
+  have hflat : Q.flatten ≠ [] := by
+    obtain ⟨row, rows, rfl⟩ := exists_cons_of_ne_nil hQnil
+    simp [(isTableauRows_cons.mp hQ).1]
+  obtain ⟨a, ha⟩ := Option.ne_none_iff_exists'.mp (mt (List.argmax_eq_none (f := id)).mp hflat)
+  have hmax (x) (hx : x ∈ Q.flatten) : x ≤ a := List.le_of_mem_argmax (f := id) hx ha
+  classical
+  have hex := hQ.exists_getLast?_getD_eq_some (List.argmax_mem ha) hmax
+  exact ⟨a, Nat.find hex, hmax, Nat.find_spec hex, fun i hi => Nat.find_min hex hi⟩
+
+/-- Reverse insertion from a corner of `P`, and removal of the last letter of the same row of a
+tableau `Q` of the same shape, give two tableaux of the same shape. -/
+theorem length_getD_reverseRowInsert_fst {α β : Type*} [Preorder α] [LinearOrder β]
+    {P : List (List β)} {Q : List (List α)} (hP : P.IsTableauRows) (hQ : Q.IsTableauRows)
+    (hshape : ∀ i, (P.getD i []).length = (Q.getD i []).length) {k : ℕ}
+    (hk : (Q.getD (k + 1) []).length < (Q.getD k []).length) (i : ℕ) :
+    ((reverseRowInsert k P).1.getD i []).length = ((dropLastOfRow k Q).getD i []).length := by
+  obtain ⟨b, -, hins, hidx⟩ := rowInsert_reverseRowInsert hP (by rwa [hshape, hshape])
+  have h1 := length_getD_rowInsert b (reverseRowInsert k P).1 i
+  rw [hins, hidx, hshape] at h1
+  rw [getD_dropLastOfRow hQ hk i]
+  split_ifs at h1 ⊢ with hik
+  · subst hik
+    rw [length_dropLast]
+    omega
+  · omega
 
 /-! ### Insertion as a bijection -/
 

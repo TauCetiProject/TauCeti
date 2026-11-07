@@ -89,6 +89,30 @@ lemma _root_.CategoryTheory.CommMon.equalizerSubalgebraPresheaf_sections (U : X.
     (CommMon.equalizerSubalgebraPresheaf f g).sections U = CommMon.equalizerSections f g U :=
   (rfl)
 
+/-- The image of `r` in the sections of `A` on which `f` and `g` agree over `X.basicOpen r` is a
+unit, because it is already a unit in `Γ(X, X.basicOpen r)`. -/
+private theorem _root_.CategoryTheory.CommMon.isUnit_algebraMap_equalizerSections_basicOpen
+    {U : X.Opens} (r : Γ(X, U)) :
+    letI := ((A.restrictSections (homOfLE (X.basicOpen_le r))).restrict
+      (CommMon.equalizerSections f g U) (CommMon.equalizerSections f g (X.basicOpen r))
+      fun _ ↦ CommMon.restrictSections_mem_equalizerSections f g _).toAlgebra
+    IsUnit (algebraMap (CommMon.equalizerSections f g U)
+      (CommMon.equalizerSections f g (X.basicOpen r)) (algebraMap Γ(X, U)
+        (CommMon.equalizerSections f g U) r)) := by
+  let _ : Algebra (CommMon.equalizerSections f g U)
+      (CommMon.equalizerSections f g (X.basicOpen r)) :=
+    ((A.restrictSections (homOfLE (X.basicOpen_le r))).restrict
+      (CommMon.equalizerSections f g U) (CommMon.equalizerSections f g (X.basicOpen r))
+      fun _ ↦ CommMon.restrictSections_mem_equalizerSections f g _).toAlgebra
+  have : algebraMap (CommMon.equalizerSections f g U)
+      (CommMon.equalizerSections f g (X.basicOpen r)) (algebraMap Γ(X, U)
+        (CommMon.equalizerSections f g U) r) =
+      algebraMap Γ(X, X.basicOpen r) (CommMon.equalizerSections f g (X.basicOpen r))
+        (X.presheaf.map (homOfLE (X.basicOpen_le r)).op r) :=
+    Subtype.ext (A.restrictSections_algebraMap (homOfLE (X.basicOpen_le r)) r)
+  rw [this]
+  exact (X.toRingedSpace.isUnit_res_basicOpen r).map _
+
 /-- Over the basic open `X.basicOpen r` of an affine open `U`, the sections of `A` on which `f`
 and `g` agree are the localization away from `r` of those over `U`. This is the counterpart of
 `CommMon.isLocalization_basicOpen` for the equalizer: localization is exact. -/
@@ -118,13 +142,8 @@ theorem _root_.CategoryTheory.CommMon.isLocalization_equalizerSections_basicOpen
   refine (isLocalization_iff _ _).mpr ⟨?_, ?_, ?_⟩
   · -- The image of `r` is a unit, already in `Γ(X, X.basicOpen r)`.
     rintro ⟨_, n, rfl⟩
-    have : algebraMap E E' (algebraMap Γ(X, U) E r ^ n) =
-        algebraMap Γ(X, X.basicOpen r) E' (X.presheaf.map i.op r) ^ n := by
-      rw [map_pow]
-      congr 1
-      exact Subtype.ext (A.restrictSections_algebraMap i r)
-    rw [this]
-    exact ((X.toRingedSpace.isUnit_res_basicOpen r).map _).pow n
+    rw [map_pow]
+    exact (CommMon.isUnit_algebraMap_equalizerSections_basicOpen f g r).pow n
   · -- A section `z` with `z * r ^ n = x` has `f x` and `g x` equal away from `r`, hence
     -- `r ^ m * x` lies in the equalizer for some `m`.
     intro z
