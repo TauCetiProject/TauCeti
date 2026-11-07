@@ -102,7 +102,7 @@ omit [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E] [DiscreteTopol
   [IsZLattice ℝ L] in
 /-- Termwise in the coset splitting of `θ_{γ+L}(A τ)`, the twisted Gauss sum at `a γ + m` collects
 the Gauss factors of the classes `y ∈ L / c L`, with `σ = τ + d / c`. -/
-private theorem term_eq_sum_gaussTerm (A : SL(2, ℤ)) {c : ℕ} [NeZero c]
+private theorem term_eq_sum_gaussTerm (A : SL(2, ℤ)) {c : ℕ}
     [Fintype (L ⧸ ((c : ℝ) • L).submoduleOf L)] (γ : dual L) (τ σ : ℍ)
     (hσ : σ = ((A 1 1 : ℝ) / c) +ᵥ τ) (m : dual L) :
     cexp (2 * π * I * (((A 0 0 * ‖(γ : E)‖ ^ 2 / 2 + ⟪(γ : E), (m : E)⟫) / c : ℝ) : ℂ)) *
