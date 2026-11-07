@@ -99,24 +99,17 @@ private theorem hasDerivAt_comp_add_add_comp_sub (hA : ∀ z, HasDerivAt A (A' z
   have h := ((hA (x + t)).comp_const_add x t).fun_add ((hB (x - t)).comp_const_sub x t)
   rwa [← sub_eq_add_neg] at h
 
-private theorem hasDerivAt_deriv_of_contDiff_two {A : ℝ → F} (hA : ContDiff ℝ 2 A) (z : ℝ) :
-    HasDerivAt (deriv A) (deriv (deriv A) z) z :=
-  (hA.differentiable_deriv_two z).hasDerivAt
-
-private theorem hasDerivAt_of_contDiff_two {A : ℝ → F} (hA : ContDiff ℝ 2 A) (z : ℝ) :
-    HasDerivAt A (deriv A z) z :=
-  (hA.differentiable (by norm_num)).differentiableAt.hasDerivAt
-
 /-- **Travelling waves solve the wave equation.** If `A` and `B` are `C²`, then
 `u(t, x) = A(x + t) + B(x - t)` satisfies `∂ₜ²u = ∂ₓ²u` everywhere. -/
 theorem deriv_deriv_comp_add_add_comp_sub (hA : ContDiff ℝ 2 A) (hB : ContDiff ℝ 2 B)
     (t x : ℝ) :
     deriv (fun s ↦ deriv (fun r ↦ A (x + r) + B (x - r)) s) t =
       deriv (deriv fun y ↦ A (y + t) + B (y - t)) x := by
-  have h1 := hasDerivAt_comp_add_add_comp_sub (hasDerivAt_of_contDiff_two hA)
-    (hasDerivAt_of_contDiff_two hB)
-  have h2 := hasDerivAt_comp_add_add_comp_sub (hasDerivAt_deriv_of_contDiff_two hA)
-    (fun z ↦ (hasDerivAt_deriv_of_contDiff_two hB z).neg)
+  have hA2 (z : ℝ) := (hA.differentiable_deriv_two z).hasDerivAt
+  have hB2 (z : ℝ) := (hB.differentiable_deriv_two z).hasDerivAt
+  have h1 := hasDerivAt_comp_add_add_comp_sub (fun z ↦ (hA.differentiable two_ne_zero z).hasDerivAt)
+    (fun z ↦ (hB.differentiable two_ne_zero z).hasDerivAt)
+  have h2 := hasDerivAt_comp_add_add_comp_sub hA2 fun z ↦ (hB2 z).neg
   have ht : deriv (fun r ↦ A (x + r) + B (x - r)) =
       fun s ↦ deriv A (x + s) + (-deriv B) (x - s) := by
     ext s
@@ -124,8 +117,7 @@ theorem deriv_deriv_comp_add_add_comp_sub (hA : ContDiff ℝ 2 A) (hB : ContDiff
   have hx : deriv (fun y ↦ A (y + t) + B (y - t)) =
       fun y ↦ deriv A (y + t) + deriv B (y - t) :=
     funext fun y ↦ (h1 t y).2.deriv
-  rw [ht, hx, (h2 t x).1.deriv, (hasDerivAt_comp_add_add_comp_sub
-    (hasDerivAt_deriv_of_contDiff_two hA) (hasDerivAt_deriv_of_contDiff_two hB) t x).2.deriv]
+  rw [ht, hx, (h2 t x).1.deriv, (hasDerivAt_comp_add_add_comp_sub hA2 hB2 t x).2.deriv]
   simp [sub_eq_add_neg]
 
 end TravellingWave
@@ -210,6 +202,7 @@ theorem hasDerivAt_dAlembert_space [CompleteSpace F] (hf : Differentiable ℝ f)
   (hasDerivAt_dAlembert hf hg t x).2
 
 /-- At time zero, the time derivative of d'Alembert's formula is the initial velocity. -/
+@[simp]
 theorem deriv_dAlembert_zero [CompleteSpace F] (hf : Differentiable ℝ f) (hg : Continuous g)
     (x : ℝ) :
     deriv (fun t ↦ dAlembert f g t x) 0 = g x := by
@@ -295,24 +288,6 @@ section Representation
 
 variable {u : ℝ → ℝ → F}
 
-/-- The time derivative of `u` is the derivative of `uncurry u` in the direction `(1, 0)`. -/
-private theorem hasDerivAt_time_fderiv (hu : Differentiable ℝ (uncurry u)) (t x : ℝ) :
-    HasDerivAt (fun s ↦ u s x) (fderiv ℝ (uncurry u) (t, x) (1, 0)) t := by
-  simpa only [uncurry_apply_pair, timeFDeriv_apply] using hasDerivAt_parameterCurve (hu (t, x))
-
-/-- The space derivative of `u` is the derivative of `uncurry u` in the direction `(0, 1)`. -/
-private theorem hasDerivAt_space_fderiv (hu : Differentiable ℝ (uncurry u)) (t x : ℝ) :
-    HasDerivAt (u t) (fderiv ℝ (uncurry u) (t, x) (0, 1)) x := by
-  simpa only [uncurry_apply_pair, spatialFDeriv_apply] using
-    (hasFDerivAt_timeSlice (hu (t, x))).hasDerivAt
-
-/-- For `u` of class `C²`, every directional derivative of `uncurry u` is continuous along the
-initial line `t = 0`. -/
-private theorem continuous_fderiv_apply_time_zero (hu : ContDiff ℝ 2 (uncurry u)) (v : ℝ × ℝ) :
-    Continuous fun z ↦ fderiv ℝ (uncurry u) (0, z) v :=
-  ((hu.continuous_fderiv (by norm_num)).comp (continuous_const.prodMk continuous_id)).clm_apply
-    continuous_const
-
 /-- **The characteristic factorization.** For a `C²` solution of the wave equation,
 `w = ∂ₜu + ∂ₓu`, the derivative of `u` in the direction `(1, 1)`, is constant along the lines
 `x + t = const`: `w(t, x) = w(0, x + t)`. -/
@@ -329,9 +304,9 @@ private theorem fderiv_apply_one_one_eq (hu : ContDiff ℝ 2 (uncurry u))
       fderiv ℝ (fderiv ℝ U) p (0, 1) (0, 1) := by
     rintro ⟨t, x⟩
     have ht : deriv (fun r ↦ u r x) = fun s ↦ fderiv ℝ U (s, x) (1, 0) :=
-      funext fun s ↦ (hasDerivAt_time_fderiv hU1 s x).deriv
+      funext fun s ↦ (hasDerivAt_parameterCurve_uncurry (hU1 (s, x))).deriv
     have hx : deriv (u t) = fun y ↦ fderiv ℝ U (t, y) (0, 1) :=
-      funext fun y ↦ (hasDerivAt_space_fderiv hU1 t y).deriv
+      funext fun y ↦ (hasDerivAt_timeSlice_uncurry (hU1 (t, y))).deriv
     have h := hwave t x
     rwa [ht, hx, (hasDerivAt_fderiv_apply_fst (hD _) _).deriv,
       (hasDerivAt_fderiv_apply_snd (hD _) _).deriv] at h
@@ -368,11 +343,13 @@ theorem eq_dAlembert_of_deriv_deriv_eq (hu : ContDiff ℝ 2 (uncurry u))
   set g : ℝ → F := fun y ↦ deriv (fun s ↦ u s y) 0
   -- `h z = w(0, z) = g z + (u 0)' z` is the value of `∂ₜu + ∂ₓu` on the initial line.
   set h : ℝ → F := fun z ↦ fderiv ℝ U (0, z) (1, 1)
-  have hcont (v : ℝ × ℝ) : Continuous fun z ↦ fderiv ℝ U (0, z) v :=
-    continuous_fderiv_apply_time_zero hu v
-  have hg (z : ℝ) : g z = fderiv ℝ U (0, z) (1, 0) := (hasDerivAt_time_fderiv hU1 0 z).deriv
+  have hcont (v : ℝ × ℝ) : Continuous fun z ↦ fderiv ℝ U (0, z) v := by
+    have := hu.continuous_fderiv (by norm_num)
+    fun_prop
+  have hg (z : ℝ) : g z = fderiv ℝ U (0, z) (1, 0) :=
+    (hasDerivAt_parameterCurve_uncurry (hU1 (0, z))).deriv
   have hf' (z : ℝ) : HasDerivAt (u 0) (fderiv ℝ U (0, z) (0, 1)) z :=
-    hasDerivAt_space_fderiv hU1 0 z
+    hasDerivAt_timeSlice_uncurry (hU1 (0, z))
   have hh : h = fun z ↦ g z + fderiv ℝ U (0, z) (0, 1) := by
     ext z
     rw [hg z, ← map_add, Prod.mk_add_mk, add_zero, zero_add]
@@ -461,9 +438,11 @@ theorem lintegral_enorm_deriv_sq_add_enorm_deriv_sq_eq [CompleteSpace H] {u : �
   have hf : ContDiff ℝ 1 f := (hu.comp (contDiff_const.prodMk contDiff_id)).of_le (by norm_num)
   have hg : Continuous g := by
     have : g = fun y ↦ fderiv ℝ (uncurry u) (0, y) (1, 0) :=
-      funext fun y ↦ (hasDerivAt_time_fderiv (hu.differentiable (by norm_num)) 0 y).deriv
+      funext fun y ↦
+        (hasDerivAt_parameterCurve_uncurry (hu.differentiable (by norm_num) (0, y))).deriv
+    have hD := hu.continuous_fderiv (by norm_num)
     rw [this]
-    exact continuous_fderiv_apply_time_zero hu _
+    fun_prop
   have hf' : Continuous (deriv f) := hf.continuous_deriv_one
   have hfd : Differentiable ℝ f := hf.differentiable (by norm_num)
   have key : ∀ t, ∫⁻ x, (‖deriv (fun s ↦ u s x) t‖ₑ ^ 2 + ‖deriv (u t) x‖ₑ ^ 2) =
