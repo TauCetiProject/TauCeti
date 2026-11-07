@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Integral.Layercake
+public import TauCeti.MeasureTheory.Integral.LayerCake
 public import Mathlib.MeasureTheory.Measure.WithDensity
+import Mathlib.MeasureTheory.Group.Integral
 
 /-!
 # The equilibrium excess-life distribution
@@ -15,7 +16,9 @@ For an interarrival law `F` on the half-line with finite positive extended mean 
 the equilibrium excess-life distribution has density `F((t, ∞)) / μ` for `t > 0`
 and zero density for `t ≤ 0`. This file constructs that measure on `ℝ`, proves
 normalization, and computes its distribution function. The layer-cake identity
-identifies the integral of the tail with the extended mean.
+identifies the integral of the tail with the extended mean. The survival function is the
+normalized expected truncated gap. Equivalently it is the normalized integral of the shifted
+interarrival tail, the forcing term in the renewal equation for the excess tail.
 
 This is the candidate limiting distribution of the residual waiting time in an
 ordinary renewal process. Its construction does not require a nonlattice law;
@@ -141,5 +144,43 @@ theorem equilibriumExcessLaw_dirac (a : ℝ≥0) :
   congr 2
   ext t
   simp [and_comm]
+
+/-- The equilibrium excess tail is the normalized expected truncated gap. This extended
+formula also covers infinite interarrival means. -/
+theorem equilibriumExcessLaw_Ioi (F : Measure ℝ≥0) (x : ℝ≥0) :
+    F.equilibriumExcessLaw (Ioi (x : ℝ)) =
+      (∫⁻ u, (u : ℝ≥0∞) ∂F)⁻¹ * ∫⁻ u, ((u - x : ℝ≥0) : ℝ≥0∞) ∂F := by
+  rw [equilibriumExcessLaw_apply F measurableSet_Ioi,
+    inter_eq_left.2 (Ioi_subset_Ioi x.coe_nonneg)]
+  congr 1
+  have hm : Measurable fun t : ℝ => F {u | t < (u : ℝ)} :=
+    Antitone.measurable fun _ _ h => measure_mono fun _ hu => h.trans_lt hu
+  have hpre : (fun t : ℝ => t + x) ⁻¹' Ioi (x : ℝ) = Ioi 0 := by
+    ext t
+    simp
+  have hshift := MeasurePreserving.setLIntegral_comp_preimage (s := Ioi (x : ℝ))
+    (measurePreserving_add_right (volume : Measure ℝ) (x : ℝ)) measurableSet_Ioi hm
+  rw [hpre] at hshift
+  rw [← hshift, ← lintegral_Ioi_tail_add]
+  refine setLIntegral_congr_fun measurableSet_Ioi fun t ht => ?_
+  congr 1
+  ext u
+  simp only [mem_ofPred_eq, mem_Ioi, ← NNReal.coe_lt_coe, NNReal.coe_add,
+    Real.coe_toNNReal _ ht.le]
+
+/-- The normalized integral of the excess-tail forcing is exactly the real equilibrium
+tail. With finite mean the forcing is integrable by
+`integrableOn_Ioi_measureReal_tail_add`; with infinite mean both coefficients are zero. -/
+theorem equilibriumExcessLaw_real_Ioi_eq_integral_tail_add (F : Measure ℝ≥0)
+    [IsFiniteMeasure F] (x : ℝ≥0) :
+    F.equilibriumExcessLaw.real (Ioi (x : ℝ)) =
+      ((∫⁻ u, (u : ℝ≥0∞) ∂F)⁻¹).toReal *
+        ∫ t : ℝ in Ioi 0, F.real (Ioi (t.toNNReal + x)) := by
+  have hm : Measurable fun t : ℝ => F (Ioi (t.toNNReal + x)) :=
+    Antitone.measurable fun _ _ h => measure_mono (Ioi_subset_Ioi (by gcongr))
+  rw [measureReal_def, equilibriumExcessLaw_Ioi, ENNReal.toReal_mul,
+    ← lintegral_Ioi_tail_add, ← integral_toReal hm.aemeasurable
+      (ae_of_all _ fun _ => measure_lt_top _ _)]
+  rfl
 
 end MeasureTheory.Measure
