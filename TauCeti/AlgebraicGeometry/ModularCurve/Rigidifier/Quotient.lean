@@ -119,11 +119,11 @@ private theorem isKernelPair_and (hP : P.IsRigid) :
       Surjective (D.doubleQuotientπ R) ∧ LocallyOfFinitePresentation (D.doubleQuotientπ R) := by
   have := (D.doubleEquivalenceRelation R hP).isEquivalenceRelation
   have : IsFinite (V.baseChangeFunctorHom (D.rep V)).base := by
-    rw [EllObj.baseChangeFunctorHom_base]; assumption
+    rwa [EllObj.baseChangeFunctorHom_base]
   have : Flat (V.baseChangeFunctorHom (D.rep V)).base := by
-    rw [EllObj.baseChangeFunctorHom_base]; assumption
+    rwa [EllObj.baseChangeFunctorHom_base]
   have : LocallyOfFinitePresentation (V.baseChangeFunctorHom (D.rep V)).base := by
-    rw [EllObj.baseChangeFunctorHom_base]; assumption
+    rwa [EllObj.baseChangeFunctorHom_base]
   -- `doubleQuotientπ` is by definition the projection to the affine coequalizer
   unfold doubleQuotientπ
   exact ⟨Scheme.Hom.isKernelPair_affineCoequalizerπ _ _, Scheme.Hom.isFinite_affineCoequalizerπ _ _,
