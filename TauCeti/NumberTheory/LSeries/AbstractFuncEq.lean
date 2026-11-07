@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.LSeries.AbstractFuncEq
-public import Mathlib.Analysis.Meromorphic.Order
+public import TauCeti.Analysis.Meromorphic.Order
 import Mathlib.Analysis.Complex.CauchyIntegral
 
 /-!
@@ -46,25 +46,14 @@ theorem meromorphic_Λ : Meromorphic P.Λ := by
 /-- A nonzero constant term at infinity gives an exact simple pole at zero. -/
 theorem meromorphicOrderAt_Λ_zero (hf : P.f₀ ≠ 0) :
     meromorphicOrderAt P.Λ 0 = (-1 : ℤ) := by
-  have h := (tendsto_ne_zero_iff_meromorphicOrderAt_eq_zero
-    ((MeromorphicAt.id 0).smul (P.meromorphic_Λ 0))).mp
-      ⟨-P.f₀, neg_ne_zero.mpr hf, P.Λ_residue_zero⟩
-  rw [meromorphicOrderAt_smul (MeromorphicAt.id 0) (P.meromorphic_Λ 0),
-    meromorphicOrderAt_id] at h
-  exact (WithTop.add_left_inj (by simp : (1 : WithTop ℤ) ≠ ⊤)).mp
-    (h.trans (by norm_num : (0 : WithTop ℤ) = 1 + (-1 : ℤ)))
+  exact (P.meromorphic_Λ 0).meromorphicOrderAt_eq_neg_one_of_tendsto_sub_smul
+    (neg_ne_zero.mpr hf) (by simpa only [sub_zero] using P.Λ_residue_zero)
 
 /-- A nonzero dual constant term gives an exact simple pole at the weight. -/
 theorem meromorphicOrderAt_Λ_k (hg : P.g₀ ≠ 0) :
     meromorphicOrderAt P.Λ P.k = (-1 : ℤ) := by
-  have hm : MeromorphicAt (fun s : ℂ ↦ s - P.k) P.k := by fun_prop
-  have h := (tendsto_ne_zero_iff_meromorphicOrderAt_eq_zero
-    (hm.smul (P.meromorphic_Λ P.k))).mp
-      ⟨P.ε • P.g₀, smul_ne_zero P.hε hg, P.Λ_residue_k⟩
-  rw [meromorphicOrderAt_smul hm (P.meromorphic_Λ P.k),
-    meromorphicOrderAt_id_sub_const] at h
-  exact (WithTop.add_left_inj (by simp : (1 : WithTop ℤ) ≠ ⊤)).mp
-    (h.trans (by norm_num : (0 : WithTop ℤ) = 1 + (-1 : ℤ)))
+  exact (P.meromorphic_Λ P.k).meromorphicOrderAt_eq_neg_one_of_tendsto_sub_smul
+    (smul_ne_zero P.hε hg) P.Λ_residue_k
 
 /-- The only singularities of the continued Mellin transform are the poles detected by the
 constant terms. This asserts analyticity of the actual representative, not just of its germ. -/
@@ -73,24 +62,23 @@ theorem analyticAt_Λ_iff (s : ℂ) : AnalyticAt ℂ P.Λ s ↔
     (s ≠ 0 ∨ P.f₀ = 0) ∧ (s ≠ P.k ∨ P.g₀ = 0) := by
   constructor
   · intro h
+    have hnot (a : ℂ) (ha : meromorphicOrderAt P.Λ a = (-1 : ℤ)) :
+        ¬ AnalyticAt ℂ P.Λ a := by
+      intro han
+      have hn := han.meromorphicOrderAt_nonneg
+      rw [ha] at hn
+      have : (0 : ℤ) ≤ -1 := WithTop.coe_le_coe.mp hn
+      omega
     constructor
     · by_cases hs : s = 0
       · right
         by_contra hf
-        subst s
-        have hn := h.meromorphicOrderAt_nonneg
-        rw [P.meromorphicOrderAt_Λ_zero hf] at hn
-        have : (0 : ℤ) ≤ -1 := WithTop.coe_le_coe.mp hn
-        omega
+        exact hnot 0 (P.meromorphicOrderAt_Λ_zero hf) (hs ▸ h)
       · exact Or.inl hs
     · by_cases hs : s = P.k
       · right
         by_contra hg
-        subst s
-        have hn := h.meromorphicOrderAt_nonneg
-        rw [P.meromorphicOrderAt_Λ_k hg] at hn
-        have : (0 : ℤ) ≤ -1 := WithTop.coe_le_coe.mp hn
-        omega
+        exact hnot P.k (P.meromorphicOrderAt_Λ_k hg) (hs ▸ h)
       · exact Or.inl hs
   · rintro ⟨h0, hk⟩
     have h := P.differentiable_Λ₀.analyticAt s
