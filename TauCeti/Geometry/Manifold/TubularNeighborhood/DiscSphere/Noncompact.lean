@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.DiscSphere.Basic
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.Noncompact
 public import TauCeti.Topology.Algebra.Group.Pointwise
+public import TauCeti.Topology.Maps.IsEmpty
 
 /-!
 # Closed normal discs over noncompact submanifolds
@@ -156,14 +157,6 @@ theorem frontier_image_normalTube (hf : ContMDiff I 𝓘(ℝ, V) 1 f) {ε R : �
 
 end Regularity
 
-omit [InnerProductSpace ℝ V] in
-/-- Over an empty core, every restricted normal addition map has empty domain, so it is an
-open and a closed embedding. -/
-private theorem isEmpty_embeddings [IsEmpty M] (s : Set (M × V)) (g : M × V → V) :
-    IsOpenEmbedding (s.domRestrict g) ∧ IsClosedEmbedding (s.domRestrict g) := by
-  have : IsEmpty s := ⟨fun p ↦ IsEmpty.false p.1.1⟩
-  exact ⟨.of_isEmpty _, .of_subsingleton _, by simp [Set.eq_empty_of_isEmpty s]⟩
-
 /-- **Noncompact closed disc and sphere tubular theorem.** A closed `C²` Euclidean
 embedding admits a positive continuous radius with a closed disc embedding and the
 normal sphere image as the frontier of its open tube. -/
@@ -181,8 +174,9 @@ theorem exists_isClosedEmbedding_normalDiscBundleOfRadius [FiniteDimensional ℝ
       frontier ((fun p : M × V => f p.1 + p.2) '' normalTubeOfRadius I f r) =
         (fun p : M × V => f p.1 + p.2) '' normalSphereBundleOfRadius I f r := by
   rcases isEmpty_or_nonempty M with hM | ⟨⟨x⟩⟩
-  · exact ⟨1, fun x ↦ (IsEmpty.false x).elim, (isEmpty_embeddings _ _).1,
-      (isEmpty_embeddings _ _).2, (isEmpty_embeddings _ _).2, by simp [Set.eq_empty_of_isEmpty]⟩
+  · have (s : Set (M × V)) : IsEmpty s := ⟨fun p ↦ IsEmpty.false p.1.1⟩
+    exact ⟨1, fun x ↦ (IsEmpty.false x).elim, .of_isEmpty _, .of_isEmpty _, .of_isEmpty _,
+      by simp [Set.eq_empty_of_isEmpty]⟩
   have : FiniteDimensional ℝ E :=
     .of_injective (mfderiv I 𝓘(ℝ, V) f x : E →L[ℝ] V).toLinearMap (himm x)
   have : IsManifold I 1 M := .of_le (n := 2) (by norm_num)
@@ -220,8 +214,9 @@ theorem exists_isClosedEmbedding_normalDiscBundleOfRadius_const [FiniteDimension
       frontier ((fun p : M × V => f p.1 + p.2) '' normalTube I f ε) =
         (fun p : M × V => f p.1 + p.2) '' normalSphereBundleOfRadius I f (fun _ => ε) := by
   rcases isEmpty_or_nonempty M with hM | ⟨⟨x⟩⟩
-  · exact ⟨1, one_pos, (isEmpty_embeddings _ _).1, (isEmpty_embeddings _ _).2,
-      (isEmpty_embeddings _ _).2, by simp [Set.eq_empty_of_isEmpty]⟩
+  · have (s : Set (M × V)) : IsEmpty s := ⟨fun p ↦ IsEmpty.false p.1.1⟩
+    exact ⟨1, one_pos, .of_isEmpty _, .of_isEmpty _, .of_isEmpty _,
+      by simp [Set.eq_empty_of_isEmpty]⟩
   have : FiniteDimensional ℝ E :=
     .of_injective (mfderiv I 𝓘(ℝ, V) f x : E →L[ℝ] V).toLinearMap (himm x)
   have : IsManifold I 1 M := IsManifold.of_le (n := 2) (by norm_num)
