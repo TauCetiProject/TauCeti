@@ -16,6 +16,7 @@ import Mathlib.Topology.ContinuousMap.Compact
 import Mathlib.Topology.UniformSpace.UniformApproximation
 import TauCeti.NumberTheory.Padics.Measure.Norm
 import TauCeti.Topology.Algebra.Group.LocallyConstant
+import TauCeti.Topology.Algebra.Ring.Basic
 import TauCeti.Topology.ContinuousMap.LocallyConstant
 
 /-!
@@ -499,17 +500,10 @@ theorem isHomeomorph_toCompletedGroupAlgebra_weak :
 open Topology in
 /-- Integral measures on a profinite group form a topological ring for the weak topology. -/
 theorem _root_.TauCeti.isTopologicalRing_integralMeasures_weak :
-    @IsTopologicalRing D(Γ, ℤ_[p]) WeakTopology _ := by
+    @IsTopologicalRing D(Γ, ℤ_[p]) WeakTopology _ :=
   let : TopologicalSpace D(Γ, ℤ_[p]) := WeakTopology
-  have h := (isHomeomorph_toCompletedGroupAlgebra_weak (Γ := Γ) (p := p)).isEmbedding.isInducing
-  let : IsTopologicalAddGroup D(Γ, ℤ_[p]) :=
-    h.isTopologicalAddGroup (toCompletedGroupAlgebra (Γ := Γ) (R := ℤ_[p])).toAddMonoidHom
-  let : ContinuousMul D(Γ, ℤ_[p]) := h.continuousMul
-    (toCompletedGroupAlgebra (Γ := Γ) (R := ℤ_[p]))
-  exact
-    { continuous_add := continuous_add
-      continuous_mul := continuous_mul
-      continuous_neg := continuous_neg }
+  (isHomeomorph_toCompletedGroupAlgebra_weak (Γ := Γ) (p := p)).isEmbedding.isInducing
+    |>.isTopologicalRing (toCompletedGroupAlgebra (Γ := Γ) (R := ℤ_[p]))
 
 /-- **Weak compactness of integral measures.** The integral measures on a profinite group are
 compact for the weak topology, being homeomorphic to the compact completed group algebra. -/
