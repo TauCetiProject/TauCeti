@@ -84,6 +84,13 @@ instance [IsNoetherianRing R] (i j : ℤ) :
     inferInstanceAs (Module.Finite R ((D.khovanovComplex hD R j).X i))
   exact ((D.khovanovComplex hD R j).sc i).finite_homology
 
+/-- The normalized chain groups vanish outside the cochain interval `[-n₋, n₊]`. -/
+theorem isZero_khovanovComplex_X_of_cochain_notMem_Icc {i : ℤ}
+    (hi : i ∉ Set.Icc (-(D.negativeCrossingCount : ℤ)) D.positiveCrossingCount) (j : ℤ) :
+    IsZero ((D.khovanovComplex hD R j).X i) :=
+  (D.khovanovComplex hD R j).isZero_X_of_notMem_Icc
+    (-(D.negativeCrossingCount : ℤ)) D.positiveCrossingCount (by simpa using hi)
+
 /-- Khovanov cohomology vanishes outside the normalized cochain interval `[-n₋, n₊]`. -/
 theorem isZero_khovanovHomology_of_cochain_notMem_Icc {i : ℤ}
     (hi : i ∉ Set.Icc (-(D.negativeCrossingCount : ℤ)) D.positiveCrossingCount) (j : ℤ) :
@@ -136,9 +143,10 @@ theorem finite_quantumSupport_khovanovComplex :
     by_contra h
     exact hj (D.isZero_khovanovComplex_of_quantum_notMem_Icc hD R h)
 
-/-- Khovanov cohomology is supported in a finite rectangle in the two gradings jointly. -/
-theorem finite_bigradedSupport_khovanovHomology :
-    {p : ℤ × ℤ | ¬ IsZero (D.khovanovHomology hD R p.1 p.2)}.Finite := by
+/-- The normalized chain groups are supported in a finite rectangle in the two gradings
+jointly. -/
+theorem finite_bigradedSupport_khovanovComplex :
+    {p : ℤ × ℤ | ¬ IsZero ((D.khovanovComplex hD R p.2).X p.1)}.Finite := by
   refine ((Set.finite_Icc (-(D.negativeCrossingCount : ℤ)) D.positiveCrossingCount).prod
     (Set.finite_Icc
       ((D.positiveCrossingCount : ℤ) - 2 * D.negativeCrossingCount -
@@ -148,8 +156,14 @@ theorem finite_bigradedSupport_khovanovHomology :
   rintro ⟨i, j⟩ h
   constructor
   · by_contra hi
-    exact h (D.isZero_khovanovHomology_of_cochain_notMem_Icc hD R hi j)
+    exact h (D.isZero_khovanovComplex_X_of_cochain_notMem_Icc hD R hi j)
   · by_contra hj
-    exact h (D.isZero_khovanovHomology_of_quantum_notMem_Icc hD R hj i)
+    exact h (D.isZero_khovanovComplex_X_of_quantum_notMem_Icc hD R hj i)
+
+/-- Khovanov cohomology is supported in a finite rectangle in the two gradings jointly. -/
+theorem finite_bigradedSupport_khovanovHomology :
+    {p : ℤ × ℤ | ¬ IsZero (D.khovanovHomology hD R p.1 p.2)}.Finite :=
+  (D.finite_bigradedSupport_khovanovComplex hD R).subset fun _ hp hX ↦
+    hp (ExactAt.of_isZero hX).isZero_homology
 
 end TauCeti.OrientedPDCode
