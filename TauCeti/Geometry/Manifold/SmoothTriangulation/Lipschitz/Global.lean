@@ -92,15 +92,17 @@ private theorem eventually_norm_error_sub_le
         ‖(B ⇑y.weights - F (A ⇑y.weights)) - (B ⇑x.weights - F (A ⇑x.weights))‖ ≤
           ε * ‖A (⇑y.weights - ⇑x.weights)‖ := by
   let σ : Finset ι := univ
-  let L : (σ → ℝ) →L[ℝ] (ι → ℝ) :=
-    ContinuousLinearMap.pi fun i => ContinuousLinearMap.proj ⟨i, mem_univ i⟩
+  let e : σ ≃ ι := Equiv.subtypeUnivEquiv mem_univ
+  let L := ContinuousLinearEquiv.piCongrLeft ℝ (fun _ : ι => ℝ) e
+  have hL_apply (v : σ → ℝ) (i : ι) : L v i = v ⟨i, mem_univ i⟩ :=
+    Equiv.piCongrLeft_apply_apply (fun _ : ι => ℝ) e v ⟨i, mem_univ i⟩
   have hmap : MapsTo L (range fun x : Convexity.StdSimplex ℝ σ => ⇑x.weights)
       (range fun x : Convexity.StdSimplex ℝ ι => ⇑x.weights) := by
     rintro _ ⟨x, rfl⟩
     rw [Convexity.StdSimplex.range_toFun_comp_weights]
     refine ⟨mem_iInter.mpr fun i => ?_, ?_⟩
     · exact x.weights_nonneg ⟨i, mem_univ i⟩
-    · simpa [L, σ] using x.total_of_fintype
+    · simpa [hL_apply, σ] using x.total_of_fintype
   have hFL := hF.comp L.contDiff.contDiffOn hmap
   filter_upwards [hFL.eventually_norm_linearCombination_sub_comp_sub_le_edgewiseSubdivision hε]
     with k hk ρ
@@ -111,22 +113,26 @@ private theorem eventually_norm_error_sub_le
       simpa only [Finset.coe_image] using edgewisePoint_mem_convexHull
         (a.1.ne_zero) (fun _ => mem_univ _)⟩
   have hnorm (v : σ → ℝ) : ‖v‖ = ‖L v‖ := by
-    apply le_antisymm
-    · exact (pi_norm_le_iff_of_nonneg (norm_nonneg _)).mpr fun i =>
-        (norm_le_pi_norm (L v) i.1)
-    · exact (pi_norm_le_iff_of_nonneg (norm_nonneg _)).mpr fun i =>
-        norm_le_pi_norm v ⟨i, mem_univ i⟩
+    -- The linear and isometric versions share the same underlying `Equiv.piCongrLeft`.
+    exact ((IsometryEquiv.piCongrLeft (Y := fun _ : ι => ℝ) e).isometry.norm_map_of_map_zero
+      (by ext; rfl) v).symm
   have h := hk K.toPreAbstractSimplicialComplex ρ.1 ρ.2 p (fun _ => rfl) x y
   have hL (v : ρ.1 → ℝ) :
       L (∑ a : ρ.1, v a • fun i : σ => (p a).1 i) =
         ∑ a : ρ.1, v a • (edgewisePoint a.1.1 : ι → ℝ) := by
     ext i
-    simp [L, p]
+    simp [hL_apply, p]
   have hLp (a : ρ.1) : L (fun i : σ => (p a).1 i) =
       (edgewisePoint a.1.1 : ι → ℝ) := by
     ext i
-    rfl
-  simpa only [Function.comp_apply, Fintype.linearCombination_apply, hnorm, hL, hLp] using h
+    simp [hL_apply, p]
+  have herror (v : ρ.1 → ℝ) :
+      (∑ a : ρ.1, v a • (F ∘ L) (fun i : σ => (p a).1 i)) -
+        (F ∘ L) (∑ a : ρ.1, v a • fun i : σ => (p a).1 i) =
+      (∑ a : ρ.1, v a • F (edgewisePoint a.1.1 : ι → ℝ)) -
+        F (∑ a : ρ.1, v a • (edgewisePoint a.1.1 : ι → ℝ)) := by
+    simp only [Function.comp_apply, hL, hLp]
+  simpa only [Fintype.linearCombination_apply, herror, hnorm, hL] using h
 
 /-- The error of the secant interpolant on fine edgewise subdivisions of a closed simplex
 has arbitrarily small Lipschitz constant on the whole original simplex. The two points may
@@ -153,6 +159,7 @@ theorem eventually_norm_secantMap_sub_sub_le_edgewiseSubdivision
   let s := ((⊤ : AbstractSimplicialComplex ι).edgewiseSubdivision k).secantMap (f ∘ q)
   let d := subdivisionCoordinates (ι := ι) hk
   let S := range fun x : Convexity.StdSimplex ℝ ι => ⇑x.weights
+  -- Transport the secant map to the original simplex before gluing the facewise bounds.
   let g : (ι → ℝ) → E := fun z => if hz : z ∈ S then s (d.symm ⟨z, hz⟩) else 0
   have hmem (z : Realization ((⊤ : AbstractSimplicialComplex ι).edgewiseSubdivision k)) :
       ((q z).1 : ι → ℝ) ∈ S := by
@@ -171,6 +178,7 @@ theorem eventually_norm_secantMap_sub_sub_le_edgewiseSubdivision
     rw [← range_edgewiseSubdivisionRealizationMap_faceInclusion ρ]
     refine LipschitzOnWith.of_dist_le_mul ?_
     rintro _ ⟨x, rfl⟩ _ ⟨y, rfl⟩
+    -- Identify the geometric coordinates and the secant values separately on this face.
     have hcoords (z : StandardSimplex ρ.1) :
         (∑ a : ρ.1, z.1 a • (edgewisePoint a.1.1 : ι → ℝ)) =
           ((q (faceInclusion _ ρ z)).1 : ι → ℝ) := by
@@ -182,11 +190,22 @@ theorem eventually_norm_secantMap_sub_sub_le_edgewiseSubdivision
         Finsupp.linearCombination_apply_of_mem_supported ℝ hsupp,
         Finset.sum_apply', Finset.sum_apply, Finsupp.smul_apply, Pi.smul_apply, smul_eq_mul]
       exact Finset.sum_coe_sort ρ.1 fun a => z.1 a * edgewisePoint a.1 i
-    simpa only [dist_eq_norm, NNReal.coe_mk, hg, s, secantMap_faceInclusion, Function.comp_apply,
-      f, q, edgewiseSubdivisionRealizationMap_vertex, Fintype.linearCombination_apply,
-      map_sub, Finset.standardSimplexHomeomorph_weights, hcoords] using
-      hface ρ (Finset.standardSimplexHomeomorph ρ.1 y)
-        (Finset.standardSimplexHomeomorph ρ.1 x)
+    have hsecant (z : StandardSimplex ρ.1) :
+        (∑ a : ρ.1, z.1 a • F (edgewisePoint a.1.1 : ι → ℝ)) =
+          s (faceInclusion _ ρ z) := by
+      simp [s, secantMap_faceInclusion, f, q]
+    have herror (z : StandardSimplex ρ.1) :
+        (∑ a : ρ.1, z.1 a • F (edgewisePoint a.1.1 : ι → ℝ)) -
+          F (∑ a : ρ.1, z.1 a • (edgewisePoint a.1.1 : ι → ℝ)) =
+        g ((q (faceInclusion _ ρ z)).1 : ι → ℝ) -
+          F ((q (faceInclusion _ ρ z)).1 : ι → ℝ) := by
+      rw [hcoords, hsecant, hg]
+    have h := hface ρ (Finset.standardSimplexHomeomorph ρ.1 y)
+      (Finset.standardSimplexHomeomorph ρ.1 x)
+    rw [map_sub] at h
+    simp only [Fintype.linearCombination_apply, Finset.standardSimplexHomeomorph_weights] at h
+    rw [herror, herror, hcoords, hcoords] at h
+    simpa only [dist_eq_norm, NNReal.coe_mk] using h
   intro x y
   simpa only [dist_eq_norm, NNReal.coe_mk, hg, s, f, q] using
     hLip.dist_le_mul _ (hmem x) _ (hmem y)
@@ -195,19 +214,23 @@ theorem eventually_norm_secantMap_sub_sub_le_edgewiseSubdivision
 on every sufficiently fine edgewise subdivision. The separation assumption is on the
 whole original simplex, and the conclusion rules out collisions across subdivided faces. -/
 theorem eventually_isClosedEmbedding_secantMap_edgewiseSubdivision
-    {F : (ι → ℝ) → E}
+    {F : (ι → ℝ) → E} {C : ℝ≥0}
     (hF : ContDiffOn ℝ 1 F (range fun x : Convexity.StdSimplex ℝ ι => ⇑x.weights))
-    (hsep : ∃ C > 0, AntilipschitzWith C
+    (hsep : AntilipschitzWith C
       ((range fun x : Convexity.StdSimplex ℝ ι => ⇑x.weights).domRestrict F)) :
     ∀ᶠ k in atTop,
       let K : AbstractSimplicialComplex ι := ⊤
       let f : Realization K → E := fun x => F (x.1 : ι → ℝ)
       Topology.IsClosedEmbedding ((K.edgewiseSubdivision k).secantMap
         (f ∘ edgewiseSubdivisionRealizationMap K k)) := by
-  obtain ⟨C, hC, hsep⟩ := hsep
-  let δ : ℝ≥0 := C⁻¹ / 2
+  have hsep' : AntilipschitzWith (C + 1)
+      ((range fun x : Convexity.StdSimplex ℝ ι => ⇑x.weights).domRestrict F) := by
+    refine AntilipschitzWith.of_le_mul_dist fun x y => (hsep.le_mul_dist x y).trans ?_
+    exact mul_le_mul_of_nonneg_right (by simp) dist_nonneg
+  have hC : 0 < C + 1 := by positivity
+  let δ : ℝ≥0 := (C + 1)⁻¹ / 2
   have hδ : 0 < δ := by dsimp [δ]; positivity
-  have hsmall : δ < C⁻¹ := by dsimp [δ]; exact half_lt_self (inv_pos.mpr hC)
+  have hsmall : δ < (C + 1)⁻¹ := by dsimp [δ]; exact half_lt_self (inv_pos.mpr hC)
   filter_upwards [eventually_ne_atTop 0,
     hF.eventually_norm_secantMap_sub_sub_le_edgewiseSubdivision (NNReal.coe_pos.mpr hδ)]
     with k hk herror
@@ -220,13 +243,16 @@ theorem eventually_isClosedEmbedding_secantMap_edgewiseSubdivision
   let d := subdivisionCoordinates (ι := ι) hk
   let A := (range fun x : Convexity.StdSimplex ℝ ι => ⇑x.weights).domRestrict F
   let B := s ∘ d.symm
+  have hcoords (x) : ((q (d.symm x)).1 : ι → ℝ) = x.1 :=
+    subdivisionCoordinates_symm_apply_val hk x
+  have herror_coords (x) : s (d.symm x) - f (q (d.symm x)) = (B - A) x := by
+    simp only [Pi.sub_apply, B, A, Function.comp_apply, Set.domRestrict_apply, f, hcoords]
   have hLip : LipschitzWith δ (B - A) := by
     refine LipschitzWith.of_dist_le_mul fun x y => ?_
-    simpa only [dist_eq_norm, Pi.sub_apply, B, A, Function.comp_apply,
-      Set.domRestrict_apply, s, f, K, q, d,
-      subdivisionCoordinates_symm_apply_val, Subtype.dist_eq] using
-        herror (d.symm x) (d.symm y)
-  have hB : Injective B := (hsep.add_sub_lipschitzWith hLip hsmall).injective
+    have h := herror (d.symm x) (d.symm y)
+    rw [herror_coords, herror_coords, hcoords, hcoords] at h
+    simpa only [dist_eq_norm, Subtype.dist_eq] using h
+  have hB : Injective B := (hsep'.add_sub_lipschitzWith hLip hsmall).injective
   have hs : Injective s := by
     intro x y hxy
     apply d.injective
