@@ -93,7 +93,7 @@ theorem sq_ne_residue_s (a : ResidueField BaseRing) :
   simpa only [s, map_pow, ← basePlace.algebraMap_residueField, AlgEquiv.commutes,
     Algebra.algebraMap_self, RingHom.id_apply] using congrArg residueEquiv h
 
-/-- Differentiation in the second variable obstructs a square representation after reduction. -/
+/-- In the residue field, the reduction of `u` is not of the form `a² + s b²`. -/
 theorem sq_add_residue_s_mul_sq_ne_residue_u (a b : ResidueField BaseRing) :
     a ^ 2 + residue BaseRing s * b ^ 2 ≠ residue BaseRing u := by
   intro h
