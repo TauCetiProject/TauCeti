@@ -82,7 +82,7 @@ private theorem hasDerivAt_schwarzChristoffelPowerRemainder (a e : ι → ℝ)
 
 private theorem exists_bound_schwarzChristoffelPowerRemainder_on_semicircle
     (a e : ι → ℝ) (z₀ : UpperHalfPlane) (hsum : -1 < ∑ i, e i)
-    {R : ℝ} (_hR : 0 < R) (haR : ∀ i, |a i| < R) :
+    {R : ℝ} (haR : ∀ i, |a i| < R) :
     ∃ M : ℝ, 0 ≤ M ∧ ∀ z ∈ upperHalfPlaneSet, ‖z‖ = R →
       ‖schwarzChristoffelPowerRemainder a e z₀ z‖ ≤ M := by
   classical
@@ -268,7 +268,7 @@ theorem tendsto_schwarzChristoffelPrimitive_div_cpow_atInfinity_of_neg_one_lt_su
       exact mul_le_mul_of_nonneg_right
         (hR₀ (le_max_left R₀ A |>.trans hyR) hy).le (Real.rpow_nonneg (norm_nonneg y) _)
     obtain ⟨M, _, hM⟩ :=
-      exists_bound_schwarzChristoffelPowerRemainder_on_semicircle a e z₀ hsum hR haR
+      exists_bound_schwarzChristoffelPowerRemainder_on_semicircle a e z₀ hsum haR
     have hsmall : Tendsto (fun r : ℝ => M / r ^ α) atTop (nhds 0) :=
       tendsto_const_nhds.div_atTop (tendsto_rpow_atTop hα)
     have hevsmall : ∀ᶠ r : ℝ in atTop, M / r ^ α < ε / 2 := by
