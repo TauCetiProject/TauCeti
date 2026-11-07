@@ -110,7 +110,7 @@ theorem stablePDFReal_pos_of_abs_lt_one (hα : α ∈ Ioc 0 2) (hβ : |β| < 1)
   rw [← congrFun hconv x]
   apply (convolution_pos_iff_mem_interior_add_tsupport hf hf hf0 hf0
     (by rw [hsupp]; exact convex_univ) (by rw [hsupp]; exact convex_univ)
-    (convolutionExists_stablePDFReal hα hβ.le hr c c x)).2
+    (convolutionExists_stablePDFReal hα hβ.le hr (integrable_stablePDFReal α β r c) c x)).2
   simp [hsupp]
 
 end TauCeti.Probability
