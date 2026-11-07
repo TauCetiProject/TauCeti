@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Montgomery.Double
 public import TauCeti.AlgebraicGeometry.EllipticCurve.PointCount
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.WorkedExamples
 public import Mathlib.Algebra.Field.ZMod
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic
 
@@ -158,10 +159,13 @@ local instance : Fact (Nat.Prime 5) := ⟨by decide⟩
 local instance : (model (0 : ZMod 5) 1).IsElliptic :=
   isElliptic_model_iff_ne_zero.mpr ⟨by decide, by decide, by decide⟩
 
--- The native group has `4` elements: infinity and `(0, 0)`, `(2, 0)`, `(3, 0)`.
+-- The native group has `4` elements: `model 0 1` is `WorkedExamples.curveX3AddX`, whose
+-- point count is `WorkedExamples.pointCount_curveX3AddX`.
 private theorem card_point_five : Nat.card (model (0 : ZMod 5) 1).toAffine.Point = 4 := by
-  rw [card_point_model_zero_one]
-  decide
+  have h : model (0 : ZMod 5) 1 = WorkedExamples.curveX3AddX := by
+    ext <;> simp
+  rw [← pointCount_eq_card_point, h]
+  exact WorkedExamples.pointCount_curveX3AddX
 
 example : Nat.card (model (0 : ZMod 5) 1).toAffine.Point = 4 :=
   card_point_five
@@ -192,8 +196,8 @@ example : ¬ IsAddCyclic (model (0 : ZMod 5) 1).toAffine.Point := by
   rw [hg, card_point_five] at h₂
   norm_num at h₂
 
--- Every fibre of the projective `x`-coordinate is a singleton:
--- `(1 : 0)`, `(0 : 1)`, `(2 : 1)` and `(3 : 1)` each come from one native point.
+-- Every fibre of the projective `x`-coordinate has at most one point: `(1 : 0)`, `(0 : 1)`,
+-- `(2 : 1)` and `(3 : 1)` each come from exactly one native point, the others from none.
 example : Function.Injective (projectiveX (0 : ZMod 5) (one_ne_zero : (1 : ZMod 5) ≠ 0)) :=
   fun _ Q h ↦ ((projectiveX_eq_projectiveX_iff _).mp h).elim id
     fun h ↦ h.trans (neg_eq_self_five Q)
