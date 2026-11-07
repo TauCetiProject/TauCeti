@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 public import TauCeti.Analysis.Calculus.CoordinateDeriv
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 
 /-!
 # The symbol classes `S^m_{1,0}`
@@ -814,30 +815,17 @@ def ofBoundedFrequencySupport (f : CoordinateSpace n × CoordinateSpace n → V 
   coefficient := f
   contDiff_coefficient := hf
   exists_bound K hK α β := by
-    -- At frequencies of norm `> R` every mixed derivative vanishes; on the compact set
-    -- `K ×ˢ closedBall 0 R` the continuous quotient of the derivative by the weight is bounded.
-    have hw : Continuous fun p : CoordinateSpace n × CoordinateSpace n =>
-        (1 + ‖p.2‖ ^ 2) ^ ((m - β.length) / 2) :=
-      (continuous_const.add (continuous_snd.norm.pow 2)).rpow_const fun p =>
-        Or.inl (by positivity : (0 : ℝ) < 1 + ‖p.2‖ ^ 2).ne'
-    have hKR := hK.prod (isCompact_closedBall (0 : CoordinateSpace n) R)
-    obtain ⟨M, hM⟩ := hKR.exists_bound_of_continuousOn ((hf.mixedDeriv α β).continuous.norm.div hw
-      fun p => (rpow_weight_pos p.2 _).ne').continuousOn
-    refine ⟨max M 0, le_max_right _ _, fun x hx ξ => ?_⟩
+    obtain ⟨C, hC, hCK⟩ := (contDiff_zero.2 (hf.mixedDeriv α β).continuous
+      ).exists_norm_iteratedFDeriv_le_one_add_norm_sq_rpow_of_norm_le hK R (m - β.length)
+    refine ⟨C, hC, fun x hx ξ => ?_⟩
     rcases le_or_gt ‖ξ‖ R with hξ | hξ
-    · have h := (le_abs_self _).trans ((hM (x, ξ) ⟨hx, mem_closedBall_zero_iff.2 hξ⟩).trans
-        (le_max_left M 0))
-      rw [Pi.div_apply, div_le_iff₀ (rpow_weight_pos ξ _)] at h
-      exact h
-    · have hzero : (fun y => coordinateDeriv β (fun η => f (y, η)) ξ) = 0 := by
-        funext y
-        have hy : (fun η => f (y, η)) =ᶠ[nhds ξ] 0 :=
-          Filter.eventually_of_mem ((isOpen_lt continuous_const continuous_norm).mem_nhds hξ)
-            fun η hη => hR y η (le_of_lt hη)
-        rw [(hy.coordinateDeriv β).eq_of_nhds, coordinateDeriv_zero]
-        rfl
-      rw [mixedDeriv_def, hzero, coordinateDeriv_zero, Pi.zero_apply, norm_zero]
-      exact mul_nonneg (le_max_right _ _) (rpow_weight_pos ξ _).le
+    · simpa only [norm_iteratedFDeriv_zero] using hCK x hx ξ hξ
+    · -- Near frequencies of norm `> R` the coefficient vanishes identically.
+      have h0 : f =ᶠ[nhds (x, ξ)] 0 := by
+        filter_upwards [(isOpen_lt continuous_const continuous_snd.norm).mem_nhds
+          (show R < ‖(x, ξ).2‖ from hξ)] with p hp using hR p.1 p.2 hp.le
+      rw [Filter.EventuallyEq.mixedDeriv_eq h0, mixedDeriv_zero, norm_zero]
+      exact mul_nonneg hC (rpow_weight_pos ξ _).le
 
 @[simp]
 theorem coefficient_ofBoundedFrequencySupport

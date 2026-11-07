@@ -31,8 +31,9 @@ symmetry of second derivatives.
 
 For a function `a(x, ξ)` of a position and a frequency, `TauCeti.mixedDeriv α β a x ξ` is the
 mixed derivative `∂_x^α ∂_ξ^β a(x, ξ)`, taking the frequency derivatives first. It is linear in
-smooth `a`, local in the position, and for smooth `a` the order of the two kinds of derivatives
-does not matter (`TauCeti.mixedDeriv_eq_coordinateDeriv_snd`).
+smooth `a`, depends only on the germ of `a` at `(x, ξ)` (`Filter.EventuallyEq.mixedDeriv_eq`),
+and for smooth `a` the order of the two kinds of derivatives does not matter
+(`TauCeti.mixedDeriv_eq_coordinateDeriv_snd`).
 
 Both satisfy the general Leibniz rule for a continuous bilinear map `B`: the derivative of
 `x ↦ B (f x) (g x)` along a word `α` is the sum, over the pairs `(s, t)` of complementary subwords
@@ -396,16 +397,28 @@ theorem mixedDeriv_zero (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
     exact congrFun (coordinateDeriv_zero β) ξ
   rw [mixedDeriv_def, h, coordinateDeriv_zero, Pi.zero_apply]
 
+/-- Mixed derivatives at `(x, ξ)` only depend on the germ of the function there. -/
+theorem _root_.Filter.EventuallyEq.mixedDeriv_eq {x ξ : CoordinateSpace n}
+    (h : a =ᶠ[nhds (x, ξ)] b) (α β : List (Fin n)) :
+    mixedDeriv α β a x ξ = mixedDeriv α β b x ξ := by
+  rw [nhds_prod_eq] at h
+  obtain ⟨pa, hpa, pb, hpb, hab⟩ := Filter.eventually_prod_iff.1 h
+  have h' : (fun y => coordinateDeriv β (fun η => a (y, η)) ξ) =ᶠ[nhds x]
+      fun y => coordinateDeriv β (fun η => b (y, η)) ξ := by
+    filter_upwards [hpa] with y hy
+    have hy' : (fun η => a (y, η)) =ᶠ[nhds ξ] fun η => b (y, η) := by
+      filter_upwards [hpb] with η hη using hab hy hη
+    exact (hy'.coordinateDeriv β).eq_of_nhds
+  exact (h'.coordinateDeriv α).eq_of_nhds
+
 /-- Mixed derivatives at `x` only depend on the values at positions near `x`: if `a` and `b` agree
 for all frequencies at all positions near `x`, then so do all their mixed derivatives at `x`. -/
 theorem mixedDeriv_congr_of_eventually {x : CoordinateSpace n}
     (h : ∀ᶠ y in nhds x, ∀ η, a (y, η) = b (y, η)) (α β : List (Fin n)) (ξ : CoordinateSpace n) :
     mixedDeriv α β a x ξ = mixedDeriv α β b x ξ := by
-  have h' : (fun y => coordinateDeriv β (fun η => a (y, η)) ξ) =ᶠ[nhds x]
-      fun y => coordinateDeriv β (fun η => b (y, η)) ξ := by
-    filter_upwards [h] with y hy
-    rw [show (fun η => a (y, η)) = fun η => b (y, η) from funext hy]
-  rw [mixedDeriv_def, mixedDeriv_def, (h'.coordinateDeriv α).eq_of_nhds]
+  have h' : a =ᶠ[nhds (x, ξ)] b := by
+    filter_upwards [continuous_fst.continuousAt.eventually h] with p hp using hp p.2
+  exact h'.mixedDeriv_eq α β
 
 /-- If `a` vanishes for all frequencies at all positions near `x`, then so do all its mixed
 derivatives at `x`. -/

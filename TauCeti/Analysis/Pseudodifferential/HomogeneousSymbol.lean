@@ -12,6 +12,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.Analysis.Calculus.CoordinateDeriv
 public import TauCeti.Analysis.Pseudodifferential.FrequencyCutoff
+import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Homogeneous
 import TauCeti.Analysis.Normed.Module.Multilinear.Basic
@@ -58,6 +59,10 @@ The file develops:
   (`HomogeneousSymbol.exists_norm_iteratedFDeriv_smul_coefficient_le`), and changing the cutoff
   changes it by a smoothing term, whose derivatives are bounded by every power of `⟨ξ⟩`
   (`HomogeneousSymbol.exists_norm_iteratedFDeriv_sub_smul_coefficient_le`);
+* conversely to the growth bound, a homogeneous symbol of degree `m` that is `O(‖ξ‖ ^ s)` at
+  large frequencies for some `s < m` vanishes
+  (`HomogeneousSymbol.eq_zero_of_forall_exists_norm_le`); this is what makes the homogeneous
+  terms of a classical expansion unique;
 * on an inner product space, the symbol `HomogeneousSymbol.normRpow`, which is `‖ξ‖ ^ m` times
   the identity and is homogeneous of every real degree `m`.
 
@@ -704,6 +709,30 @@ theorem contDiff_smul_coefficient (χ : FrequencyCutoff E) :
     rw [Pi.zero_apply] at hq
     simp [hq]
   · exact ((χ.contDiff.comp contDiff_snd).contDiffAt).smul (a.contDiffAt_coefficient h)
+
+/-- **Homogeneous symbols decaying faster than their degree vanish.** If at every position a
+homogeneous symbol of degree `m` is bounded at large frequencies by `C ‖ξ‖ ^ s` for some `s < m`,
+then it is zero. -/
+theorem eq_zero_of_forall_exists_norm_le
+    (h : ∀ x, ∃ C R s : ℝ, s < m ∧ ∀ ξ, R ≤ ‖ξ‖ → ‖a.coefficient (x, ξ)‖ ≤ C * ‖ξ‖ ^ s) :
+    a = 0 := by
+  refine ext_of_ne_zero fun x ξ hξ ↦ ?_
+  obtain ⟨C, R, s, hs, hb⟩ := h x
+  have hn : 0 < ‖ξ‖ := norm_pos_iff.2 hξ
+  -- By homogeneity `a (x, ξ) = t ^ (-m) • a (x, t • ξ)`, which is `O(t ^ (s - m))` as `t → ∞`.
+  have hle : ∀ᶠ t in atTop, ‖a.coefficient (x, ξ)‖ ≤ C * ‖ξ‖ ^ s * t ^ (-(m - s)) := by
+    filter_upwards [eventually_ge_atTop (R / ‖ξ‖), eventually_gt_atTop 0] with t htR ht
+    have htξ : R ≤ ‖t • ξ‖ := by
+      rw [norm_smul, Real.norm_of_nonneg ht.le]
+      exact (div_le_iff₀ hn).1 htR
+    have hb' := hb (t • ξ) htξ
+    rw [a.homogeneous x ξ t ht, norm_smul, Real.norm_of_nonneg (by positivity), norm_smul,
+      Real.norm_of_nonneg ht.le, Real.mul_rpow ht.le hn.le] at hb'
+    rw [neg_sub, Real.rpow_sub ht, ← mul_div_assoc, le_div_iff₀ (by positivity)]
+    linarith
+  have hlim : Tendsto (fun t : ℝ ↦ C * ‖ξ‖ ^ s * t ^ (-(m - s))) atTop (𝓝 0) := by
+    simpa using (tendsto_rpow_neg_atTop (sub_pos.2 hs)).const_mul (C * ‖ξ‖ ^ s)
+  simpa using ge_of_tendsto hlim hle
 
 end Growth
 
