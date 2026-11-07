@@ -40,25 +40,26 @@ unramified criterion and the bound `f(L/K) · (e(L/K) - 1) ≤ δ(L/K)`.
 
 ## Main definitions
 
-* `TauCeti.discriminantIdeal`: the local discriminant ideal `𝔩(L/K) = N_{L/K}(𝔡(L/K))`, the
-  relative discriminant `relDiscr 𝒪[K] 𝒪[L]` of the two rings of integers.
+* The local discriminant ideal `𝔩(L/K) = N_{L/K}(𝔡(L/K))` is the relative discriminant
+  `TauCeti.relDiscr 𝒪[K] 𝒪[L]` of the two rings of integers (an ideal of `𝒪[K]`, not the
+  different ideal `𝔡(L/K)`, which is an ideal of `𝒪[L]`); it gets no separate name here.
 * `TauCeti.discriminantExponent`: the local discriminant exponent `δ(L/K)` of a separable
   extension, the multiplicity of `𝓂[K]` in `𝔩(L/K)`.
 
 ## Main results
 
-* `TauCeti.discriminantIdeal_def`, `TauCeti.discriminantExponent_def`: the defining formulas.
-* `TauCeti.discriminantIdeal_eq_of_algEquiv` and `TauCeti.discriminantExponent_eq_of_algEquiv`:
+* `TauCeti.relDiscr_def`, `TauCeti.discriminantExponent_def`: the defining formulas.
+* `TauCeti.relDiscr_eq_of_algEquiv` and `TauCeti.discriminantExponent_eq_of_algEquiv`:
   invariance under equivalence of finite extensions over the base field.
 * `TauCeti.discriminantExponent_eq_inertiaDegree_mul_differentExponent`: the product formula
   `δ(L/K) = f(L/K) · d(L/K)`.
-* `TauCeti.discriminantIdeal_eq_maximalIdeal_pow`: `𝔩(L/K) = 𝓂[K] ^ δ(L/K)`.
+* `TauCeti.relDiscr_eq_maximalIdeal_pow`: `𝔩(L/K) = 𝓂[K] ^ δ(L/K)`.
 * `TauCeti.IsTotallyRamified.addVal_aeval_derivative_minpoly_eq_discriminantExponent`:
   the derivative of a uniformizer's minimal polynomial has order `δ(L/K)` in a totally
   ramified extension.
-* `TauCeti.pow_dvd_discriminantIdeal_iff_le_discriminantExponent`: the characteristic property,
+* `TauCeti.pow_dvd_relDiscr_iff_le_discriminantExponent`: the characteristic property,
   `𝓂[K] ^ n ∣ 𝔩(L/K) ↔ n ≤ δ(L/K)`.
-* `TauCeti.discriminantIdeal_eq_top_iff` and `TauCeti.discriminantExponent_eq_zero_iff`: the
+* `TauCeti.relDiscr_eq_top_iff` and `TauCeti.discriminantExponent_eq_zero_iff`: the
   discriminant is trivial exactly when the extension is unramified.
 * `TauCeti.inertiaDegree_mul_ramificationIndex_sub_one_le_discriminantExponent`: the local
   discriminant bound, `f(L/K) · (e(L/K) - 1) ≤ δ(L/K)`.
@@ -84,54 +85,39 @@ variable (K L : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
 
-/-- The local discriminant ideal `𝔩(L/K) = N_{L/K}(𝔡(L/K))` of an extension `L/K` of
-nonarchimedean local fields: the norm image of the different ideal, an ideal of the base ring
-`𝒪[K]`. It is not the different ideal `𝔡(L/K)`, which is an ideal of `𝒪[L]`.
-
-It is the relative discriminant `relDiscr 𝒪[K] 𝒪[L]` of the two rings of integers, the same
-carrier for any finite extension of Dedekind domains, named here for the local field extension. -/
-noncomputable def discriminantIdeal : Ideal 𝒪[K] :=
-  relDiscr 𝒪[K] 𝒪[L]
-
-/-- The defining formula of the local discriminant ideal: the relative norm of the different
-ideal, in the form of `TauCeti.relDiscr_def`. -/
-theorem discriminantIdeal_def :
-    discriminantIdeal K L = Ideal.relNorm 𝒪[K] (differentIdeal 𝒪[K] 𝒪[L]) := by
-  rw [discriminantIdeal, relDiscr_def]
-
 variable [Algebra.IsSeparable K L]
 
 /-- The local discriminant ideal is the `f(L/K) · d(L/K)`-th power of the maximal ideal of the
 base ring, the form in which the norm image of the different is computed before the discriminant
 exponent is read off it. -/
-private theorem discriminantIdeal_eq_maximalIdeal_pow_mul :
-    discriminantIdeal K L = 𝓂[K] ^ (inertiaDegree K L * differentExponent K L) := by
-  rw [discriminantIdeal_def, differentIdeal_eq_maximalIdeal_pow (K := K) (L := L),
+private theorem relDiscr_eq_maximalIdeal_pow_mul :
+    relDiscr 𝒪[K] 𝒪[L] = 𝓂[K] ^ (inertiaDegree K L * differentExponent K L) := by
+  rw [relDiscr_def, differentIdeal_eq_maximalIdeal_pow (K := K) (L := L),
     map_pow, relNorm_maximalIdeal_eq_maximalIdeal_pow (K := K) (L := L), pow_mul]
 
 /-- The local discriminant ideal of a separable extension of local fields is nonzero, being the
 norm of the nonzero different ideal: the norm of an ideal of a Dedekind domain is zero only for the
 zero ideal, by `Ideal.relNorm_eq_bot_iff`. -/
-theorem discriminantIdeal_ne_bot : discriminantIdeal K L ≠ ⊥ := by
+theorem relDiscr_ne_bot : relDiscr 𝒪[K] 𝒪[L] ≠ ⊥ := by
   intro h
-  rw [discriminantIdeal_def] at h
+  rw [relDiscr_def] at h
   exact differentIdeal_ne_bot (Ideal.relNorm_eq_bot_iff.mp h)
 
 /-- The order of vanishing of the discriminant ideal of a separable extension at the maximal ideal
 of the base ring is finite: the maximal ideal of `𝒪[K]` is a prime ideal and the discriminant ideal
-is nonzero, by `discriminantIdeal_ne_bot`. -/
-private theorem discriminantIdeal_finiteMultiplicity :
-    FiniteMultiplicity 𝓂[K] (discriminantIdeal K L) :=
+is nonzero, by `relDiscr_ne_bot`. -/
+private theorem relDiscr_finiteMultiplicity :
+    FiniteMultiplicity 𝓂[K] (relDiscr 𝒪[K] 𝒪[L]) :=
   FiniteMultiplicity.of_prime_left
     (Ideal.prime_of_isPrime (IsDiscreteValuationRing.not_a_field 𝒪[K]) inferInstance)
-    (discriminantIdeal_ne_bot (K := K) (L := L))
+    (relDiscr_ne_bot (K := K) (L := L))
 
 -- The parameters of `discriminantExponent` are spelled out rather than taken from the enclosing
 -- `variable`s, so that the separability instance is an argument of the definition itself and
 -- `discriminantExponent` cannot be formed at all for an inseparable extension.
 /--
 The local discriminant exponent `δ(L/K)` of a separable extension `L/K` of nonarchimedean
-local fields: the order of vanishing of the discriminant ideal `discriminantIdeal K L` at the
+local fields: the order of vanishing of the discriminant ideal `relDiscr 𝒪[K] 𝒪[L]` at the
 maximal ideal of `𝒪[K]`, the largest `n` with `𝓂[K] ^ n ∣ 𝔩(L/K)`.
 
 The separability hypothesis belongs to the definition and not only to the theorems below. The
@@ -144,16 +130,16 @@ def discriminantExponent (K L : Type*) [Field K] [ValuativeRel K] [TopologicalSp
     [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
     [Algebra.IsSeparable K L] : ℕ := by
   classical
-  exact Nat.find (discriminantIdeal_finiteMultiplicity (K := K) (L := L))
+  exact Nat.find (relDiscr_finiteMultiplicity (K := K) (L := L))
 
 /-- The defining formula of `discriminantExponent`: the order of vanishing of the discriminant
 ideal at the maximal ideal of the base ring is its multiplicity. -/
 theorem discriminantExponent_def :
-    discriminantExponent K L = multiplicity 𝓂[K] (discriminantIdeal K L) := by
+    discriminantExponent K L = multiplicity 𝓂[K] (relDiscr 𝒪[K] 𝒪[L]) := by
   classical
-  have hf : FiniteMultiplicity 𝓂[K] (discriminantIdeal K L) :=
-    discriminantIdeal_finiteMultiplicity (K := K) (L := L)
-  have h : emultiplicity 𝓂[K] (discriminantIdeal K L) = (Nat.find hf : ℕ∞) := by
+  have hf : FiniteMultiplicity 𝓂[K] (relDiscr 𝒪[K] 𝒪[L]) :=
+    relDiscr_finiteMultiplicity (K := K) (L := L)
+  have h : emultiplicity 𝓂[K] (relDiscr 𝒪[K] 𝒪[L]) = (Nat.find hf : ℕ∞) := by
     rw [emultiplicity, dite_eq_left hf]
   exact (multiplicity_eq_of_emultiplicity_eq_some h).symm
 
@@ -161,7 +147,7 @@ theorem discriminantExponent_def :
 `L/K` separable. -/
 theorem discriminantExponent_eq_inertiaDegree_mul_differentExponent :
     discriminantExponent K L = inertiaDegree K L * differentExponent K L := by
-  rw [discriminantExponent_def, discriminantIdeal_eq_maximalIdeal_pow_mul,
+  rw [discriminantExponent_def, relDiscr_eq_maximalIdeal_pow_mul,
     multiplicity_pow_self_of_prime
       (Ideal.prime_of_isPrime (IsDiscreteValuationRing.not_a_field 𝒪[K]) inferInstance)]
 
@@ -180,17 +166,17 @@ theorem IsTotallyRamified.addVal_aeval_derivative_minpoly_eq_discriminantExponen
 
 /-- **The local discriminant ideal is the `δ(L/K)`-th power of the maximal ideal of `𝒪[K]`**:
 `𝔩(L/K) = 𝓂[K] ^ δ(L/K)`, for `L/K` separable. -/
-theorem discriminantIdeal_eq_maximalIdeal_pow :
-    discriminantIdeal K L = 𝓂[K] ^ discriminantExponent K L := by
+theorem relDiscr_eq_maximalIdeal_pow :
+    relDiscr 𝒪[K] 𝒪[L] = 𝓂[K] ^ discriminantExponent K L := by
   rw [discriminantExponent_eq_inertiaDegree_mul_differentExponent,
-    discriminantIdeal_eq_maximalIdeal_pow_mul]
+    relDiscr_eq_maximalIdeal_pow_mul]
 
 /-- **The characteristic property of the local discriminant exponent**: the `n`-th power of the
 maximal ideal of `𝒪[K]` divides the discriminant ideal exactly when `n ≤ δ(L/K)`. -/
 @[simp]
-theorem pow_dvd_discriminantIdeal_iff_le_discriminantExponent {n : ℕ} :
-    𝓂[K] ^ n ∣ discriminantIdeal K L ↔ n ≤ discriminantExponent K L :=
-  (discriminantIdeal_finiteMultiplicity (K := K) (L := L)).pow_dvd_iff_le_multiplicity.trans
+theorem pow_dvd_relDiscr_iff_le_discriminantExponent {n : ℕ} :
+    𝓂[K] ^ n ∣ relDiscr 𝒪[K] 𝒪[L] ↔ n ≤ discriminantExponent K L :=
+  (relDiscr_finiteMultiplicity (K := K) (L := L)).pow_dvd_iff_le_multiplicity.trans
     (by rw [← discriminantExponent_def])
 
 /-- **The first half of Dedekind's different theorem, for the discriminant**: the discriminant
@@ -247,8 +233,8 @@ theorem discriminantExponent_eq_zero_iff :
 /-- **The discriminant of a local extension is trivial exactly when the extension is
 unramified**: `𝔩(L/K) = 𝒪[K]` if and only if `L/K` is unramified. -/
 @[simp]
-theorem discriminantIdeal_eq_top_iff : discriminantIdeal K L = ⊤ ↔ IsUnramified K L := by
-  rw [← discriminantExponent_eq_zero_iff, discriminantIdeal_eq_maximalIdeal_pow]
+theorem relDiscr_eq_top_iff : relDiscr 𝒪[K] 𝒪[L] = ⊤ ↔ IsUnramified K L := by
+  rw [← discriminantExponent_eq_zero_iff, relDiscr_eq_maximalIdeal_pow]
   refine ⟨fun h ↦ ?_, fun h ↦ by rw [h, pow_zero, Ideal.one_eq_top]⟩
   by_contra hd
   exact (maximalIdeal.isMaximal 𝒪[K]).ne_top (eq_top_mono (Ideal.pow_le_self hd) h)
@@ -260,9 +246,9 @@ variable (M : Type*) [Field M] [ValuativeRel M] [TopologicalSpace M]
   [Module.Finite K L] [Module.Finite K M]
 
 /-- The discriminant ideal is unchanged by an equivalence of extensions over the base field. -/
-theorem discriminantIdeal_eq_of_algEquiv (e : L ≃ₐ[K] M) :
-    discriminantIdeal K L = discriminantIdeal K M := by
-  rw [discriminantIdeal_def, discriminantIdeal_def,
+theorem relDiscr_eq_of_algEquiv (e : L ≃ₐ[K] M) :
+    relDiscr 𝒪[K] 𝒪[L] = relDiscr 𝒪[K] 𝒪[M] := by
+  rw [relDiscr_def, relDiscr_def,
     ← differentIdeal_map_integerRingEquiv K L M e, Ideal.relNorm_map_algEquiv]
 
 /-- The local discriminant exponent is invariant under equivalence of finite extensions. -/
@@ -272,7 +258,7 @@ theorem discriminantExponent_eq_of_algEquiv (e : L ≃ₐ[K] M) :
        discriminantExponent K M) := by
   have : Algebra.IsSeparable K M := AlgEquiv.Algebra.isSeparable e
   rw [discriminantExponent_def, discriminantExponent_def,
-    discriminantIdeal_eq_of_algEquiv K L M e]
+    relDiscr_eq_of_algEquiv K L M e]
 
 end AlgEquiv
 
