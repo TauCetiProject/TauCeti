@@ -361,6 +361,7 @@ theorem toAdd_exponentSum_apply_eq_sum_smul [Fintype X] {Y : Type v}
 
 /-- The abelianization isomorphism of the free pro-`p` group carries the `p`-adic powers of the
 class of `r` to the multiples of its exponent vector. -/
+@[simp]
 lemma abelianizationEquiv_padicPow_class (r : freeProP p X) (l : ℤ_[p]) :
     abelianizationEquiv p X
         ((isProP_freeProP p X).topologicalAbelianization_self.padicPow
@@ -375,16 +376,23 @@ lemma abelianizationEquiv_padicPow_class (r : freeProP p X) (l : ℤ_[p]) :
     (r : TopologicalAbelianization (freeProP p X)) l
   rwa [ContinuousMonoidHom.coe_coe, hερ, toAdd_ofAdd] at h
 
-omit [Finite X] in
+end freeProP
+
+namespace IsProP
+
 /-- The closed normal closure of `r` lies in the preimage of the closed subgroup of `p`-adic powers
-of the class of `r` in `F^{ab}`. -/
-lemma normalClosure_topologicalClosure_le_comap_range_padicPowHom (r : freeProP p X) :
+of the class of `r` in the topological abelianization. -/
+lemma normalClosure_topologicalClosure_le_comap_range_padicPowHom {p : ℕ} [Fact p.Prime]
+    {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
+    [TotallyDisconnectedSpace G]
+    (hG : IsProP p G)
+    (r : G) :
     (Subgroup.normalClosure {r}).topologicalClosure ≤
-      (((isProP_freeProP p X).topologicalAbelianization_self.padicPowHom
-        (r : TopologicalAbelianization (freeProP p X)) :
-          Multiplicative ℤ_[p] →* TopologicalAbelianization (freeProP p X)).range).comap
-            (QuotientGroup.mk' (commutator (freeProP p X)).topologicalClosure) := by
-  have hF := (isProP_freeProP p X).topologicalAbelianization_self
+      ((hG.topologicalAbelianization_self.padicPowHom
+        (r : TopologicalAbelianization G) :
+          Multiplicative ℤ_[p] →* TopologicalAbelianization G).range).comap
+            (QuotientGroup.mk' (commutator G).topologicalClosure) := by
+  have hF := hG.topologicalAbelianization_self
   refine Subgroup.topologicalClosure_minimal _ (Subgroup.normalClosure_le_normal ?_) ?_
   · rw [Set.singleton_subset_iff, SetLike.mem_coe, Subgroup.mem_comap, MonoidHom.mem_range]
     exact ⟨ofAdd 1, by
@@ -393,6 +401,6 @@ lemma normalClosure_topologicalClosure_le_comap_range_padicPowHom (r : freeProP 
     exact ((isCompact_range (hF.padicPowHom _).continuous).isClosed).preimage
       continuous_quot_mk
 
-end freeProP
+end IsProP
 
 end TauCeti
