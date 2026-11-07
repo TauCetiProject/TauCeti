@@ -25,7 +25,9 @@ unity. For `p < ∞`, localizing the restriction of a `W^{1,p}_0(Ω)` function t
 `V` lands in `W^{1,p}_0(V)` when `V ∩ tsupport ψ ⊆ Ω` and `Ω ∩ tsupport ψ ⊆ V`
 (`TauCeti.W1p.localizeL_restrictL_mem_w1p0Submodule`). In particular a `W^{1,p}_0(Ω)` function
 vanishing off a compact subset of `V` restricts to `W^{1,p}_0(Ω ∩ V)`
-(`TauCeti.W1p.restrictL_mem_w1p0Submodule_of_isCompact`).
+(`TauCeti.W1p.restrictL_mem_w1p0Submodule_of_isCompact`). Consequently, zero boundary values
+carry over to any open set agreeing with `Ω` near such a compact set
+(`TauCeti.W1p.mem_w1p0Submodule_of_inter_eq_of_isCompact`).
 
 For any set with compact closure in `Ω` and finite `p`,
 `TauCeti.W1p.exists_zeroBoundaryLocalization` supplies a bounded cutoff operator into a
@@ -253,6 +255,37 @@ theorem W1p.restrictL_mem_w1p0Submodule_of_isCompact {V : Opens E} {K : Set E}
   by_cases hxK : x ∈ K
   · rw [hψK x hxK, one_smul]
   · rw [h4 hxK, smul_zero]
+
+/-- **Zero boundary values transfer between domains that agree near the support.** Let `Ω`, `V`
+and `U` be open with `Ω ∩ U = V ∩ U`, and let `u ∈ W^{1,p}_0(Ω)`, `p < ∞`, vanish almost everywhere
+off a compact set `K ⊆ U`. Then every `w ∈ W^{1,p}(V)` that agrees with `u` on `Ω` and vanishes
+elsewhere lies in `W^{1,p}_0(V)`: restricted to `Ω ∩ U` the function `u` keeps zero boundary
+values, and `w` is its extension by zero to `V ⊇ Ω ∩ U`. -/
+theorem W1p.mem_w1p0Submodule_of_inter_eq_of_isCompact {V : Opens E} {K : Set E}
+    (hp : p ≠ (∞ : ℝ≥0∞)) (hΩV : (Ω : Set E) ∩ U = (V : Set E) ∩ U) (hK : IsCompact K)
+    (hKU : K ⊆ U) {u : W1p μ Ω p} (hu : u ∈ w1p0Submodule μ Ω p)
+    (hu0 : ∀ᵐ x ∂μ.restrict Ω, x ∉ K → W1p.value u x = 0) {w : W1p μ V p}
+    (hw : W1p.value w =ᵐ[μ.restrict V] (Ω : Set E).indicator (W1p.value u)) :
+    w ∈ w1p0Submodule μ V p := by
+  have hsub : Ω ⊓ U ≤ V := fun x hx => (hΩV ▸ hx : x ∈ (V : Set E) ∩ U).1
+  let w₀ := W1p0.extendByZeroL hsub
+    ⟨_, W1p.restrictL_mem_w1p0Submodule_of_isCompact hp hK hKU hu hu0⟩
+  suffices w = (w₀ : W1p μ V p) from this ▸ w₀.2
+  refine W1p.ext_value (Lp.ext ?_)
+  rw [W1p0.value_extendByZeroL]
+  filter_upwards [hw, coeFn_extendByZeroLpₗᵢ ℝ (Ω ⊓ U).isOpen.measurableSet
+      (SetLike.coe_subset_coe.mpr hsub) (W1p.value (W1p.restrictL inf_le_left u : W1p μ _ p)),
+    ae_restrict_of_ae ((ae_restrict_iff' (Ω ⊓ U).isOpen.measurableSet).1
+      (W1p.value_restrictL_ae (inf_le_left : Ω ⊓ U ≤ Ω) u)),
+    ae_restrict_of_ae ((ae_restrict_iff' Ω.isOpen.measurableSet).1 hu0)] with x h1 h2 h3 h4
+  rw [h1, h2]
+  by_cases hxΩ : x ∈ (Ω : Set E)
+  · by_cases hxU : x ∈ (U : Set E)
+    · rw [indicator_of_mem hxΩ, indicator_of_mem (⟨hxΩ, hxU⟩ : x ∈ ((Ω ⊓ U : Opens E) : Set E)),
+        h3 ⟨hxΩ, hxU⟩]
+    · rw [indicator_of_mem hxΩ, h4 hxΩ fun hxK => hxU (hKU hxK),
+        indicator_of_notMem fun hx => hxU (Opens.mem_inf.1 hx).2]
+  · rw [indicator_of_notMem hxΩ, indicator_of_notMem fun hx => hxΩ (Opens.mem_inf.1 hx).1]
 
 /-- For finite `p`, one cutoff realizes restriction on `V` as a bounded linear map into a
 zero-boundary Sobolev space on a finite-measure interior domain. -/
