@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 public import TauCeti.Geometry.Symplectic.Darboux.EuclideanBasis
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 
-import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
 import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 import TauCeti.Geometry.Symplectic.Darboux.Basic
@@ -41,10 +40,11 @@ straightens any prescribed nonzero tangent vector at `x₀` to `(0, EuclideanSpa
 `(EuclideanSpace.single 0 1, 0)`.
 
 The proof reads `form` in the preferred extended chart at `x₀` on the interior of its target,
-applies the flat Moser–Darboux theorem
-`TauCeti.exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq`, centers the resulting
-coordinate diffeomorphism by translation, and transports the constant model form along continuous
-linear symplectomorphisms.
+applies the centred flat Moser–Darboux theorem
+`TauCeti.exists_diffeomorph_centered_forall_mem_eq_compContinuousLinearMap_fderiv`, composes its
+diffeomorphism with the extended chart restricted to an open set
+(`TauCeti.exists_partialDiffeomorph_comp_extChartAt`), and transports the constant model form along
+continuous linear symplectomorphisms.
 
 ## Main declarations
 
@@ -174,86 +174,33 @@ theorem IsSymplectic.exists_darbouxChart_of_isInteriorPoint
   have hnd : ∀ v : E, (∀ w : E, η y₀ ![v, w] = 0) → v = 0 := fun v hv ↦
     form₀.separatingLeft v fun w ↦ (hform₀_apply v w).trans (hv w)
   -- Apply the flat Moser–Darboux theorem to `η` on `W` around `y₀`.
-  obtain ⟨ψ, hψy₀, hev⟩ :=
-    exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq (r := (⊤ : ℕ∞)) le_top
-      isOpen_interior hy₀W (form.isSmoothForm.contDiffOn_inChartAt_interior_target x₀)
+  obtain ⟨Φ_flat, V₀, hΦy₀, hV₀_open, hy₀V₀, hV₀_sub, hη_inv⟩ :=
+    exists_diffeomorph_centered_forall_mem_eq_compContinuousLinearMap_fderiv (r := (⊤ : ℕ∞))
+      le_top isOpen_interior hy₀W (form.isSmoothForm.contDiffOn_inChartAt_interior_target x₀)
       (fun z hz ↦ hform.isClosed.extDeriv_inChartAt_eq_zero x₀ hz) hnd
-  have hψsymm_y₀ : ψ.symm y₀ = y₀ := ψ.symm_apply_eq.2 hψy₀.symm
-  -- Pull the neighborhood where `ψ^* η = η y₀` back along `ψ.symm` and intersect with `W`.
-  have hnhds_symm :
-      {y : E | (η (ψ (ψ.symm y))).compContinuousLinearMap (fderiv ℝ ψ (ψ.symm y)) = η y₀} ∩ W ∈
-        𝓝 y₀ := by
-    refine Filter.inter_mem ?_ (isOpen_interior.mem_nhds hy₀W)
-    have hcont : ContinuousAt ψ.symm y₀ := ψ.symm.continuous.continuousAt
-    rw [ContinuousAt, hψsymm_y₀] at hcont
-    exact hcont hev
-  obtain ⟨V₀, hV₀_sub, hV₀_open, hy₀V₀⟩ := mem_nhds_iff.1 hnhds_symm
-  -- Invert the flat pullback identity on `V₀`:
-  -- `η y = (η y₀).compContinuousLinearMap (fderiv ℝ ψ.symm y)`.
-  have hψ_diff : Differentiable ℝ ψ :=
-    (contMDiff_iff_contDiff.1 ψ.contMDiff).differentiable (by simp)
-  have hψsymm_diff : Differentiable ℝ ψ.symm :=
-    (contMDiff_iff_contDiff.1 ψ.symm.contMDiff).differentiable (by simp)
-  have hη_inv (y : E) (hy : y ∈ V₀) (u₁ u₂ : E) :
-      η y ![u₁, u₂] = η y₀ ![fderiv ℝ ψ.symm y u₁, fderiv ℝ ψ.symm y u₂] := by
-    have hzy := (hV₀_sub hy).1
-    have hcomp : (fderiv ℝ ψ (ψ.symm y)).comp (fderiv ℝ ψ.symm y) = ContinuousLinearMap.id ℝ E := by
-      have hc := (fderiv_comp y (hψ_diff (ψ.symm y)) (hψsymm_diff y)).symm
-      have hid : ⇑ψ ∘ ⇑ψ.symm = id := funext ψ.apply_symm_apply
-      rwa [hid, fderiv_id] at hc
-    have happ := congrArg
-      (fun A : E [⋀^Fin 2]→L[ℝ] ℝ ↦ A ![fderiv ℝ ψ.symm y u₁, fderiv ℝ ψ.symm y u₂]) hzy
-    simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply, ψ.apply_symm_apply] at happ
-    rw [← happ]
-    congr 1
-    ext i
-    fin_cases i <;> dsimp
-    · exact (DFunLike.congr_fun hcomp u₁).symm
-    · exact (DFunLike.congr_fun hcomp u₂).symm
-  -- Center the flat diffeomorphism at `0` by subtracting `y₀`.
-  let Φ_flat : E ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ E :=
-    ψ.symm.trans (Diffeomorph.smulAdd ∞ (1 : ℝ) (-y₀) one_ne_zero)
-  have hΦ_coe : ⇑Φ_flat = fun y ↦ ψ.symm y - y₀ := by
-    ext y
-    simp [Φ_flat, sub_eq_add_neg]
-  have hΦ_diff : Differentiable ℝ Φ_flat :=
-    (contMDiff_iff_contDiff.1 Φ_flat.contMDiff).differentiable (by simp)
-  -- Restrict `extChartPartialDiffeomorph` to the preimage of `V₀` and compose with `Φ_flat`.
-  let e₀ := extChartPartialDiffeomorph I ∞ x₀
-  let S : Set M := (extChartAt I x₀).source ∩ extChartAt I x₀ ⁻¹' V₀
-  have hS_open : IsOpen S := isOpen_extChartAt_preimage' (I := I) x₀ hV₀_open
-  have hS_sub : S ⊆ e₀.source := by
-    rw [extChartPartialDiffeomorph_source]
-    exact inter_subset_inter_right _ (preimage_mono fun z hz ↦ (hV₀_sub hz).2)
-  let chart : PartialDiffeomorph I 𝓘(ℝ, E) M E ∞ :=
-    (e₀.restrOpen S hS_open).trans Φ_flat.toPartialDiffeomorph
-  have hchart_src : chart.source = S := by
-    simp [chart, inter_eq_right.2 hS_sub]
-  have hchart_coe (y : M) : chart y = Φ_flat (extChartAt I x₀ y) := by
-    simp [chart, e₀]
+  obtain ⟨chart, hchart_src, hchart_coe, hmvf⟩ :=
+    exists_partialDiffeomorph_comp_extChartAt I ∞ x₀ hV₀_open hV₀_sub
+      (by exact_mod_cast le_top) Φ_flat
   have hx₀_src : x₀ ∈ chart.source := by
     rw [hchart_src]
     exact ⟨mem_extChartAt_source x₀, hy₀V₀⟩
   have hchart_x₀ : chart x₀ = 0 := by
-    rw [hchart_coe, congrFun hΦ_coe, hψsymm_y₀, sub_self]
+    rw [hchart_coe]
+    exact hΦy₀
   refine ⟨chart, form₀, hx₀_src, hchart_x₀, fun x hx v w ↦ ?_⟩
-  have hxS : x ∈ S := hchart_src ▸ hx
-  have hx_chart : x ∈ (chartAt H x₀).source := by simpa only [extChartAt_source] using hxS.1
-  have hmd_ext : MDifferentiableAt I 𝓘(ℝ, E) (extChartAt I x₀) x :=
-    mdifferentiableAt_extChartAt hx_chart
-  have hmvf (u : TangentSpace I x) :
-      mvfderiv I chart x u =
-        fderiv ℝ ψ.symm (extChartAt I x₀ x) (mvfderiv I (extChartAt I x₀) x u) := by
-    have heq_fn : ⇑chart = ⇑Φ_flat ∘ ⇑(extChartAt I x₀) := funext hchart_coe
-    rw [heq_fn, mvfderiv_comp_apply_of_differentiableAt (hΦ_diff _) hmd_ext, hΦ_coe,
-      fderiv_sub_const]
+  have hxS : x ∈ (extChartAt I x₀).source ∩ extChartAt I x₀ ⁻¹' V₀ :=
+    hchart_src ▸ hx
   have hvec : (fun i ↦ mvfderiv I (extChartAt I x₀) x (![v, w] i)) =
       ![mvfderiv I (extChartAt I x₀) x v, mvfderiv I (extChartAt I x₀) x w] := by
     ext i
     fin_cases i <;> rfl
   rw [SmoothBundleForm.eval₂_apply, RoughForm.apply_eq_inChartAt_mvfderiv form.1 hxS.1, hvec,
-    hmvf v, hmvf w]
-  exact (hη_inv (extChartAt I x₀ x) hxS.2 _ _).trans (hform₀_apply _ _).symm
+    hmvf x hx v, hmvf x hx w]
+  rw [hform₀_apply, hη_inv (extChartAt I x₀ x) hxS.2]
+  simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply]
+  congr 1
+  ext i
+  fin_cases i <;> rfl
 
 /-- **Darboux's theorem for a prescribed model symplectic form at an interior point.** Around any
 interior point `x₀` of `(M, form)` and for any chosen symplectic form `form₀` on `E`, there is a
