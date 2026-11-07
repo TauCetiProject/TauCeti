@@ -149,17 +149,10 @@ theorem natCast_smul_id_apply (a : A.V) : ((ℓ : k) • 𝟙 A : A ⟶ A).hom a
 does not kill it. -/
 theorem card_ker_natCast_smul_id_lt [Finite A.V] (x : A.V) (hx : ℓ • x ≠ 0) :
     Nat.card (ker ((ℓ : k) • 𝟙 A)).V < Nat.card A.V := by
-  have : Fintype A.V := Fintype.ofFinite _
-  have hι := kerι_injective ((ℓ : k) • 𝟙 A)
-  have : Finite (ker ((ℓ : k) • 𝟙 A)).V := .of_injective _ hι
-  have : Fintype (ker ((ℓ : k) • 𝟙 A)).V := Fintype.ofFinite _
-  rw [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card]
-  refine Fintype.card_lt_of_injective_not_surjective _ hι fun hsurj ↦ hx ?_
-  obtain ⟨z, hz⟩ := hsurj x
-  have hz' := z.2
-  rw [LinearMap.mem_ker] at hz'
-  rw [← hz, ← natCast_smul_id_apply, kerι_apply]
-  exact hz'
+  set f : A ⟶ A := (ℓ : k) • 𝟙 A
+  exact Finite.card_subtype_lt (p := (· ∈ f.hom.ker)) (x := x) fun hmem ↦ hx <| by
+    rw [LinearMap.mem_ker] at hmem
+    exact (natCast_smul_id_apply A ℓ x).symm.trans hmem
 
 /-- The quotient of a finite representation by its `ℓ`-torsion is strictly smaller than the
 representation when a nonzero vector is killed by `ℓ`. -/
