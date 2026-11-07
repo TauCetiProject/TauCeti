@@ -116,15 +116,11 @@ theorem exists_hypersurface_localizationAway_of_formallyUnramified [Nonempty σ]
     rw [Matrix.det_zero_of_row_eq hne (by ext k; simp [hxy]), map_zero]
     exact q.zero_mem
   obtain ⟨s₀, hs₀⟩ : ∃ s₀, ∀ s, s ∈ Set.range c ↔ s ≠ s₀ := by
-    have : (Finset.univ.image c)ᶜ.card = 1 := by
-      rw [Finset.card_compl, Finset.card_image_of_injective _ hc, Finset.card_univ,
-        Fintype.card_fin, hσ, Nat.add_sub_cancel_left]
-    obtain ⟨s₀, hs₀⟩ := Finset.card_eq_one.1 this
-    refine ⟨s₀, fun s ↦ ?_⟩
-    have := Finset.ext_iff.1 hs₀ s
-    simp only [Finset.mem_compl, Finset.mem_image, Finset.mem_univ, true_and,
-      Finset.mem_singleton] at this
-    rw [Set.mem_range, ne_eq, ← this, not_not]
+    obtain ⟨s₀, hs₀, huniq⟩ :=
+      Fintype.existsUnique_notMem_image_of_injective_of_card_eq_add_one c hc (by simpa using hσ)
+    refine ⟨s₀, fun s ↦ ⟨?_, fun hs ↦ by_contra fun h ↦ hs (huniq s (by simpa using h))⟩⟩
+    rintro ⟨k, rfl⟩ rfl
+    exact hs₀ (Finset.mem_image_of_mem c (Finset.mem_univ k))
   -- The other relations cut out a relative surface, standard smooth where the minor is a unit.
   set J₀ := Ideal.span (Set.range (P.relation ∘ c))
   let P' := PreSubmersivePresentation.naive (v := P.relation ∘ c) r hr
