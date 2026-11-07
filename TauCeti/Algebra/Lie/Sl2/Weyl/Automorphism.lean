@@ -317,6 +317,21 @@ lemma weylAut_apply_eq_expAd_neg_expAd_expAd_neg (t : IsSl2Triple h e f) (y : L)
     rw [hW, ← expAd_symm e he, LieEquiv.apply_symm_apply, LieEquiv.symm_apply_apply]
   rw [hD (expAd e he _), hEi, hD y, hA, hB, hC]
 
+/-- Negating and exchanging the raising and lowering elements of an `sl₂` triple leaves its
+Weyl automorphism unchanged. -/
+theorem _root_.IsSl2Triple.weylAut_neg_symm (t : IsSl2Triple h e f)
+    (he : ∀ z, ∃ k, ((ad K L e) ^ k) z = 0)
+    (hf : ∀ z, ∃ k, ((ad K L f) ^ k) z = 0)
+    (hf' : ∀ z, ∃ k, ((ad K L (-f)) ^ k) z = 0)
+    (he' : ∀ z, ∃ k, ((ad K L (-e)) ^ k) z = 0) (y : L) :
+    weylAut t.neg_symm hf' he' y = weylAut t he hf y := by
+  calc
+    weylAut t.neg_symm hf' he' y =
+        expAd (-f) hf' (expAd e he (expAd (-f) hf' y)) := by
+      simp only [weylAut_apply, neg_neg]
+    _ = weylAut t he hf y :=
+      (weylAut_apply_eq_expAd_neg_expAd_expAd_neg he hf hf' t y).symm
+
 /-- A Lie homomorphism carrying the raising and lowering elements of one `sl₂` triple to
 those of another intertwines their Weyl automorphisms. -/
 theorem _root_.LieHom.map_weylAut_of_eq {L' : Type*} [LieRing L'] [LieAlgebra K L']
@@ -352,9 +367,8 @@ theorem _root_.LieHom.map_weylAut (ω : L →ₗ⁅K⁆ L) (t : IsSl2Triple h e 
     (hf z).imp fun _ ↦ ad_neg_pow_apply_eq_zero
   have he' : ∀ z, ∃ k, ((ad K L (-e)) ^ k) z = 0 := fun z ↦
     (he z).imp fun _ ↦ ad_neg_pow_apply_eq_zero
-  simpa only [weylAut_apply, neg_neg,
-    ← weylAut_apply_eq_expAd_neg_expAd_expAd_neg he hf hf' t] using
-    ω.map_weylAut_of_eq t t.neg_symm he hf hf' he' hωe hωf y
+  exact (ω.map_weylAut_of_eq t t.neg_symm he hf hf' he' hωe hωf y).trans
+    (t.weylAut_neg_symm he hf hf' he' (ω y))
 
 end CommRing
 
