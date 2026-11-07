@@ -91,49 +91,6 @@ private theorem minkowski_bound_lt_six
       rw [div_lt_iff₀ Real.pi_pos]
       nlinarith [Real.pi_gt_d2]
 
-/-- Over every rational prime `p` there is a nonzero prime ideal of `𝓞 K`. -/
-private theorem exists_prime_ne_zero_liesOver (p : ℕ) (hp : p.Prime) :
-    ∃ P : Ideal (𝓞 K), P.IsPrime ∧ P ≠ 0 ∧ P.LiesOver (span {(p : ℤ)}) := by
-  have _ : Fact p.Prime := ⟨hp⟩
-  have _ : (span {(p : ℤ)}).IsPrime :=
-    (Ideal.span_singleton_prime (by exact_mod_cast hp.ne_zero)).mpr
-      (Int.prime_iff_natAbs_prime.mpr (by simpa using hp))
-  obtain ⟨⟨P, hPprime, hPover⟩⟩ :=
-    (inferInstance : Nonempty ((span {(p : ℤ)}).primesOver (𝓞 K)))
-  refine ⟨P, hPprime, ?_, hPover⟩
-  rw [Ideal.zero_eq_bot]
-  exact Ideal.ne_bot_of_liesOver_of_ne_bot (p := span {(p : ℤ)}) (by simpa using hp.ne_zero) P
-
-/-- The classes of the nonzero prime ideals of `𝓞 K` above a rational prime `p` lie in a finite set
-of at most `[K : ℚ]` classes. -/
-private theorem exists_finset_card_le_finrank_mk0_mem (p : ℕ) (hp : p.Prime) :
-    ∃ F : Finset (ClassGroup (𝓞 K)), F.card ≤ finrank ℚ K ∧
-      ∀ I : (Ideal (𝓞 K))⁰, I.1.IsPrime → I.1.LiesOver (span {(p : ℤ)}) →
-        ClassGroup.mk0 I ∈ F := by
-  classical
-  have _ : Fact p.Prime := ⟨hp⟩
-  have hpne : (span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := by simpa using hp.ne_zero
-  have _ : (span {(p : ℤ)}).IsPrime :=
-    (Ideal.span_singleton_prime (by exact_mod_cast hp.ne_zero)).mpr
-      (Int.prime_iff_natAbs_prime.mpr (by simpa using hp))
-  have _ : (span {(p : ℤ)}).IsMaximal := Ideal.IsPrime.isMaximal inferInstance hpne
-  let primes : Finset (Ideal (𝓞 K)) := IsDedekindDomain.primesOverFinset (span {(p : ℤ)}) (𝓞 K)
-  let classOf : {P // P ∈ primes} → ClassGroup (𝓞 K) := fun P =>
-    ClassGroup.mk0 ⟨P.1, mem_nonZeroDivisors_of_ne_zero (by
-      have hdata := (IsDedekindDomain.mem_primesOverFinset_iff hpne (𝓞 K)).mp P.2
-      let _ : P.1.LiesOver (span {(p : ℤ)}) := hdata.2
-      rw [Ideal.zero_eq_bot]
-      exact Ideal.ne_bot_of_liesOver_of_ne_bot (p := span {(p : ℤ)}) hpne P.1)⟩
-  refine ⟨primes.attach.image classOf, ?_, fun I hprime hover => ?_⟩
-  · calc
-      (primes.attach.image classOf).card ≤ primes.attach.card := Finset.card_image_le
-      _ = primes.card := Finset.card_attach
-      _ ≤ finrank ℚ K := card_primesOverFinset_le_finrank (K := K) hpne
-  · have hmem : I.1 ∈ primes := by
-      rw [IsDedekindDomain.mem_primesOverFinset_iff hpne]
-      exact ⟨hprime, hover⟩
-    exact Finset.mem_image.mpr ⟨⟨I.1, hmem⟩, Finset.mem_attach _ _, rfl⟩
-
 /-- The Minkowski case analysis for `ℚ(√-21)`: an integral ideal of norm at most `5` is trivial in
 the class group, equals the chosen prime `P2` above `2` or the chosen prime `P3` above `3`, or is a
 prime above `5`. -/

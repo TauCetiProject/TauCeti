@@ -268,3 +268,44 @@ theorem isPrime_span_natCast_iff_of_eq_prod_primesOverFinset_pow {p e : ℕ}
     exact hQmem.1
 
 end TauCeti.NumberField
+
+namespace NumberField
+
+variable {K : Type*} [Field K] [NumberField K]
+
+/-- Over every rational prime `p` there is a nonzero prime ideal of `𝓞 K`. -/
+theorem exists_prime_ne_zero_liesOver (p : ℕ) (hp : p.Prime) :
+    ∃ P : Ideal (𝓞 K), P.IsPrime ∧ P ≠ 0 ∧ P.LiesOver (span {(p : ℤ)}) := by
+  have _ : Fact p.Prime := ⟨hp⟩
+  obtain ⟨⟨P, hPprime, hPover⟩⟩ :=
+    (inferInstance : Nonempty ((span {(p : ℤ)}).primesOver (𝓞 K)))
+  refine ⟨P, hPprime, ?_, hPover⟩
+  rw [Ideal.zero_eq_bot]
+  exact Ideal.ne_bot_of_liesOver_of_ne_bot (p := span {(p : ℤ)}) (by simpa using hp.ne_zero) P
+
+/-- The classes of the nonzero prime ideals of `𝓞 K` above a rational prime `p` lie in a finite set
+of at most `[K : ℚ]` classes. -/
+theorem exists_finset_card_le_finrank_mk0_mem (p : ℕ) (hp : p.Prime) :
+    ∃ F : Finset (ClassGroup (𝓞 K)), F.card ≤ Module.finrank ℚ K ∧
+      ∀ I : (Ideal (𝓞 K))⁰, I.1.IsPrime → I.1.LiesOver (span {(p : ℤ)}) →
+        ClassGroup.mk0 I ∈ F := by
+  classical
+  have _ : Fact p.Prime := ⟨hp⟩
+  have hpne : (span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := by simpa using hp.ne_zero
+  let primes : Finset (Ideal (𝓞 K)) := IsDedekindDomain.primesOverFinset (span {(p : ℤ)}) (𝓞 K)
+  let classOf : {P // P ∈ primes} → ClassGroup (𝓞 K) := fun P =>
+    ClassGroup.mk0 ⟨P.1, by
+      have hdata := (IsDedekindDomain.mem_primesOverFinset_iff hpne (𝓞 K)).mp P.2
+      let _ : P.1.LiesOver (span {(p : ℤ)}) := hdata.2
+      exact mem_nonZeroDivisors_of_prime_of_liesOver hp P.1⟩
+  refine ⟨primes.attach.image classOf, ?_, fun I hprime hover => ?_⟩
+  · calc
+      (primes.attach.image classOf).card ≤ primes.attach.card := Finset.card_image_le
+      _ = primes.card := Finset.card_attach
+      _ ≤ Module.finrank ℚ K := TauCeti.NumberField.card_primesOverFinset_le_finrank (K := K) hpne
+  · have hmem : I.1 ∈ primes := by
+      rw [IsDedekindDomain.mem_primesOverFinset_iff hpne]
+      exact ⟨hprime, hover⟩
+    exact Finset.mem_image.mpr ⟨⟨I.1, hmem⟩, Finset.mem_attach _ _, rfl⟩
+
+end NumberField
