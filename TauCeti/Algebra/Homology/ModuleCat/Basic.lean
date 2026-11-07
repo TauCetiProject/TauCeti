@@ -11,6 +11,7 @@ public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.Algebra.Homology.ConcreteCategory
 public import Mathlib.RingTheory.Finiteness.Defs
+public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import TauCeti.LinearAlgebra.End.LocallyNilpotent
 
 /-!
@@ -81,12 +82,6 @@ public section
 open CategoryTheory
 
 namespace HomologicalComplex
-
-/-- A chain map of complexes of modules commutes with the differentials, on elements. -/
-theorem Hom.comm_apply {R : Type*} [Ring R] {ι : Type*} {c : ComplexShape ι}
-    {K L : HomologicalComplex (ModuleCat R) c} (φ : K ⟶ L) (i j : ι) (x : K.X i) :
-    L.d i j (φ.f i x) = φ.f j (K.d i j x) := by
-  rw [← ModuleCat.comp_apply, φ.comm, ModuleCat.comp_apply]
 
 /-- Homology maps commute with the class map from cycles, on elements of complexes of modules.
 
