@@ -233,7 +233,7 @@ theorem exists_mfderiv_eq_zero_of_minimalPeriod_eq_zero [I'.Boundaryless] [Compa
   -- By Fermat's theorem, `τ` has zero differential at its maximum.
   have hτ0 : mfderiv I' 𝓘(ℝ) τ c₁ = 0 :=
     mem_criticalPoints_iff_mfderiv_eq_zero.1
-      ((hmax.isLocalMax univ_mem).mem_criticalPoints (I := I'))
+      (hmax.mem_criticalPoints (I := I'))
   -- Since `v c' = [τ c', x]`, the chain rule gives `dv = 0` at `c₁`.
   have hpair := (hτ0 ▸ hτd.hasMFDerivAt).prodMk (hasMFDerivAt_const (I := I') (I' := I) x c₁)
   have hq : MDifferentiableAt (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (τ c₁, x) :=

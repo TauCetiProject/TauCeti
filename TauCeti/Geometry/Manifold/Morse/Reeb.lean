@@ -75,11 +75,11 @@ private theorem IsMorse.nonempty_homeomorph_sphere_of_lt (hf : IsMorse I f) {x�
   -- Small sublevels at the minimum and small superlevels at the maximum are discs.
   obtain ⟨R₀, hR₀, he₀⟩ :=
     (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
-      ((hx₀.isLocalMin univ_mem).mem_criticalPoints)).exists_sublevel_homeomorph_closedBall
+      hx₀.mem_criticalPoints).exists_sublevel_homeomorph_closedBall
       hsmooth (isClosed_le hfc continuous_const).isCompact hfc.continuousOn hlt hmin
   obtain ⟨R₁, hR₁, he₁⟩ :=
     (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
-      ((hx₁.isLocalMax univ_mem).mem_criticalPoints)).neg.exists_sublevel_homeomorph_closedBall
+      hx₁.mem_criticalPoints).neg.exists_sublevel_homeomorph_closedBall
       hsmooth' (isClosed_le hfc.neg continuous_const).isCompact hfc.neg.continuousOn
       (a := -f x₀) (by simpa using hlt) hmax
   -- Choose a common radius `r` with `f x₀ + r² < f x₁ - r²`.

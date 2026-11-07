@@ -59,7 +59,8 @@ polynomial in the Morse inequalities.
 * `TauCeti.criticalPoints_comp_subtypeVal` and `TauCeti.totalCriticalCount_comp_subtypeVal`: the
   critical points of the restriction of `f` to an open submanifold `U` are those of `f` in `U`.
 * `TauCeti.criticalPoints_comp_subtypeVal`: the critical set of a restriction to an open subset.
-* `IsLocalExtr.mem_criticalPoints`, `TauCeti.criticalPoints_nonempty` and
+* `IsLocalExtr.mem_criticalPoints`, `IsMinOn.mem_criticalPoints`, `IsMaxOn.mem_criticalPoints`,
+  `TauCeti.criticalPoints_nonempty` and
   `TauCeti.exists_mem_criticalPoints_of_isCompact_sublevel`: Fermat's theorem on a manifold and the
   existence of critical points on compact manifolds and in compact sublevels.
 * `TauCeti.isClosed_criticalPoints` and
@@ -302,6 +303,14 @@ theorem _root_.IsLocalMin.mem_criticalPoints (h : IsLocalMin f x) : x ∈ critic
 theorem _root_.IsLocalMax.mem_criticalPoints (h : IsLocalMax f x) : x ∈ criticalPoints I f :=
   IsLocalExtr.mem_criticalPoints (IsMaxFilter.isExtrFilter h)
 
+/-- A global minimum point is a critical point. -/
+theorem _root_.IsMinOn.mem_criticalPoints (h : IsMinOn f univ x) : x ∈ criticalPoints I f :=
+  (h.isLocalMin univ_mem).mem_criticalPoints
+
+/-- A global maximum point is a critical point. -/
+theorem _root_.IsMaxOn.mem_criticalPoints (h : IsMaxOn f univ x) : x ∈ criticalPoints I f :=
+  (h.isLocalMax univ_mem).mem_criticalPoints
+
 /-- If the only critical points of `f` are a global minimum `x₀` and a point `x₁` with a larger
 value, then `x₀` is the only point at which `f` attains its minimum: any other such point would be
 a third critical point. -/
@@ -309,7 +318,7 @@ theorem _root_.IsMinOn.eq_of_le_of_two_criticalPoints {x₀ x₁ y : M} (hx₀ :
     (hlt : f x₀ < f x₁) (hcrit : ∀ x ∈ criticalPoints I f, x = x₀ ∨ x = x₁)
     (hy : f y ≤ f x₀) : y = x₀ := by
   have hy' : IsMinOn f univ y := isMinOn_univ_iff.2 fun z ↦ hy.trans (hx₀ (mem_univ z))
-  refine (hcrit y (hy'.isLocalMin univ_mem).mem_criticalPoints).resolve_right ?_
+  refine (hcrit y hy'.mem_criticalPoints).resolve_right ?_
   rintro rfl
   exact hy.not_gt hlt
 
@@ -320,7 +329,7 @@ theorem _root_.IsMaxOn.eq_of_le_of_two_criticalPoints {x₀ x₁ y : M} (hx₁ :
     (hlt : f x₀ < f x₁) (hcrit : ∀ x ∈ criticalPoints I f, x = x₀ ∨ x = x₁)
     (hy : f x₁ ≤ f y) : y = x₁ := by
   have hy' : IsMaxOn f univ y := isMaxOn_univ_iff.2 fun z ↦ (hx₁ (mem_univ z)).trans hy
-  refine (hcrit y (hy'.isLocalMax univ_mem).mem_criticalPoints).resolve_left ?_
+  refine (hcrit y hy'.mem_criticalPoints).resolve_left ?_
   rintro rfl
   exact hy.not_gt hlt
 
@@ -329,7 +338,7 @@ instance a point where it attains its minimum. -/
 theorem criticalPoints_nonempty [CompactSpace M] [Nonempty M] (hf : Continuous f) :
     (criticalPoints I f).Nonempty := by
   obtain ⟨x, -, hx⟩ := isCompact_univ.exists_isMinOn univ_nonempty hf.continuousOn
-  exact ⟨x, (hx.isLocalMin univ_mem).mem_criticalPoints⟩
+  exact ⟨x, hx.mem_criticalPoints⟩
 
 /-- A function on a boundaryless manifold has a critical point in each nonempty compact sublevel
 `{f ≤ t}` on which it is continuous, for instance a point where it attains its minimum. -/
@@ -340,7 +349,7 @@ theorem exists_mem_criticalPoints_of_isCompact_sublevel {t : ℝ}
   -- Points outside the sublevel have values above `t ≥ f x`, so `x` is a global minimum.
   have hglobal : IsMinOn f univ x := fun y _ ↦
     (le_or_gt (f y) t).elim (fun hy ↦ hmin hy) fun hy ↦ (hx.trans hy.le : f x ≤ f y)
-  exact ⟨x, (hglobal.isLocalMin univ_mem).mem_criticalPoints, hx⟩
+  exact ⟨x, hglobal.mem_criticalPoints, hx⟩
 
 /-! ### Closedness, isolation and finiteness -/
 
@@ -649,8 +658,8 @@ theorem exists_isMinOn_isMaxOn_of_totalCriticalCount_eq_two [I.Boundaryless] [Co
   obtain ⟨x₁, -, hx₁⟩ := isCompact_univ.exists_isMaxOn ⟨p, mem_univ p⟩ hf.continuousOn
   rcases (hx₀ (mem_univ x₁)).lt_or_eq with hlt | hconst
   · -- The minimum and the maximum are two distinct critical points, so they are all of them.
-    have h₀ := (hx₀.isLocalMin univ_mem).mem_criticalPoints (I := I)
-    have h₁ := (hx₁.isLocalMax univ_mem).mem_criticalPoints (I := I)
+    have h₀ := hx₀.mem_criticalPoints (I := I)
+    have h₁ := hx₁.mem_criticalPoints (I := I)
     have hne : x₀ ≠ x₁ := fun h ↦ hlt.ne (congrArg f h)
     refine ⟨x₀, x₁, hx₀, hx₁, hne, ?_, .inl hlt⟩
     rw [hpq', mem_insert_iff, mem_singleton_iff] at h₀ h₁
@@ -663,7 +672,7 @@ theorem exists_isMinOn_isMaxOn_of_totalCriticalCount_eq_two [I.Boundaryless] [Co
   have hmin (x : M) : IsMinOn f univ x := isMinOn_univ_iff.2 fun y ↦ by rw [hall x, hall y]
   have hmax (x : M) : IsMaxOn f univ x := isMaxOn_univ_iff.2 fun y ↦ by rw [hall x, hall y]
   have hcrit : criticalPoints I f = univ :=
-    eq_univ_of_forall fun x ↦ ((hmin x).isLocalMin univ_mem).mem_criticalPoints
+    eq_univ_of_forall fun x ↦ (hmin x).mem_criticalPoints
   exact ⟨p, q, hmin p, hmax q, hpq, hpq', .inr ⟨fun x ↦ by rw [hall x, hall p], hcrit⟩⟩
 
 section FiniteDimensional
