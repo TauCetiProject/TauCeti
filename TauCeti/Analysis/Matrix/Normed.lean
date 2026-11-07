@@ -15,13 +15,15 @@ This file exposes the topology underlying Mathlib's `L∞` operator norm on fini
 matrix norms are scoped, consumers can select this topology locally without reconstructing the
 instance projection chain.
 
-Mathlib's `ContinuousStar` instance for matrices is stated for the entrywise topology, which is
-the same topology but not the same instance, so continuity of the conjugate transpose has to be
-restated for the topology selected here.
+Mathlib's `ContinuousStar` instance for matrices is stated for the entrywise topology. The `L∞`
+operator topology agrees with it definitionally (`Matrix.linftyOpTopologicalSpace_eq`), but it is
+not syntactically the same instance, so continuity of the conjugate transpose is transported along
+that equality to the topology selected here.
 
 ## Main declarations
 
 * `Matrix.linftyOpTopologicalSpace`: the topology induced by the `L∞` operator norm.
+* `Matrix.linftyOpTopologicalSpace_eq`: that topology is the entrywise topology on matrices.
 * `Matrix.linftyOpContinuousStar`: conjugate transposition is continuous for that topology.
 -/
 
@@ -36,6 +38,17 @@ protected noncomputable abbrev linftyOpTopologicalSpace
   (Matrix.linftyOpSeminormedAddCommGroup (m := m) (n := n) (α := α)).toPseudoMetricSpace
     |>.toUniformSpace |>.toTopologicalSpace
 
+/-- The topology of the `L∞` operator norm is the entrywise topology on matrices.
+
+This holds by `rfl` by design of Mathlib's `PiLp.pseudoMetricSpaceToPi`, which underlies
+`Matrix.linftyOpSeminormedAddCommGroup`: it pulls back the `L^p` distance along `WithLp.toLp`
+and then replaces the uniformity by the product uniformity, so the induced topology is the
+product topology, which is Mathlib's topology on matrices. -/
+theorem linftyOpTopologicalSpace_eq (m n : Type*) [Fintype m] [Fintype n]
+    (α : Type*) [SeminormedAddCommGroup α] :
+    Matrix.linftyOpTopologicalSpace m n α = (inferInstance : TopologicalSpace (Matrix m n α)) :=
+  rfl
+
 section
 
 attribute [local instance] Matrix.linftyOpTopologicalSpace
@@ -44,7 +57,7 @@ attribute [local instance] Matrix.linftyOpTopologicalSpace
 protected theorem linftyOpContinuousStar (n : Type*) [Fintype n]
     (α : Type*) [SeminormedAddCommGroup α] [Star α] [ContinuousStar α] :
     ContinuousStar (Matrix n n α) :=
-  ⟨continuous_id.matrix_conjTranspose⟩
+  linftyOpTopologicalSpace_eq n n α ▸ inferInstance
 
 end
 
