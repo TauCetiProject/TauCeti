@@ -20,7 +20,10 @@ therefore have a negative slot-`0` derivative.  The definition uses the preferre
 `mfderiv`; the positive normal derivative of actual chart transitions proves coordinate
 independence in `isOutwardPointing_iff_tangentCoordChange`. This is the interface used by boundary
 orientation and Stokes
-constructions.
+constructions. When the inward coordinate of the preferred chart is a nonzero multiple of `g - c`
+for a real function `g`, outwardness is the sign of the derivative of `g`
+(`isOutwardPointing_iff_mul_mvfderiv_neg`); this is how a boundary defining function, such as the
+function cutting out a sublevel, detects the outward direction.
 
 The sign convention follows J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Proposition
 15.33, adapted to Mathlib's convention that the constrained coordinate is in slot `0`.
@@ -33,7 +36,7 @@ public section
 
 open Set
 open Bundle
-open scoped Manifold ContDiff
+open scoped Manifold ContDiff Topology
 
 namespace TauCeti
 
@@ -72,6 +75,47 @@ theorem isOutwardPointing_iff_tangentCoordChange [IsManifold (𝓡∂ (n + 1)) 1
   change (fun w : EuclideanSpace ℝ (Fin (n + 1)) ↦ w 0) v < 0 ↔ _
   exact (smul_neg_iff_of_pos_left ha).symm.trans (iff_of_eq
     (congrArg (fun r : ℝ ↦ r < 0) (hnormal v).symm))
+
+/-- Suppose that, near a boundary point `x`, the inward coordinate (slot `0`) of the preferred
+chart at `x` is `s * (g - c)` for a real function `g` and constants `c` and `s ≠ 0`. Then a
+tangent vector `v` at `x` points outward exactly when `s` times the derivative of `g` is negative
+on it. For `s = -1` this says that `g` increases along outward vectors. -/
+theorem isOutwardPointing_iff_mul_mvfderiv_neg [IsManifold (𝓡∂ (n + 1)) 1 M] {x : M}
+    (hx : x ∈ (𝓡∂ (n + 1)).boundary M) {g : M → ℝ} {c s : ℝ} (hs : s ≠ 0)
+    (hchart : ∀ᶠ w in 𝓝 x, (chartAt (EuclideanHalfSpace (n + 1)) x w).1 0 = s * (g w - c))
+    (v : TangentSpace (𝓡∂ (n + 1)) x) :
+    IsOutwardPointing x v ↔ s * mvfderiv (𝓡∂ (n + 1)) g x v < 0 := by
+  -- The inward coordinate `t` of the preferred chart, and its derivative at `x`.
+  set t : M → ℝ := EuclideanSpace.proj (0 : Fin (n + 1)) ∘ extChartAt (𝓡∂ (n + 1)) x with ht
+  have hd : MDifferentiableAt (𝓡∂ (n + 1)) 𝓘(ℝ) t x :=
+    (EuclideanSpace.proj (0 : Fin (n + 1)) :
+      EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] ℝ).mdifferentiableAt.comp x
+        (mdifferentiableAt_extChartAt (mem_chart_source _ x))
+  have hdt : mvfderiv (𝓡∂ (n + 1)) t x v =
+      (NormedSpace.fromTangentSpace (extChartAt (𝓡∂ (n + 1)) x x)
+        (mfderiv (𝓡∂ (n + 1)) 𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1)))
+          (extChartAt (𝓡∂ (n + 1)) x) x v)) 0 := by
+    rw [ht, mvfderiv_comp_apply_of_differentiableAt (I := 𝓡∂ (n + 1))
+      (EuclideanSpace.proj (0 : Fin (n + 1))).differentiableAt
+      (mdifferentiableAt_extChartAt (mem_chart_source _ x))]
+    simp only [ContinuousLinearMap.fderiv, mvfderiv_apply_eq_mfderiv_apply,
+      mfderiv_extChartAt_self, NormedSpace.fromTangentSpace_apply]
+    -- The tangent fibre of the half-space model is the model space itself, on which `proj 0` is
+    -- evaluation in slot `0`; the tangent-space wrapper blocks the rewriting lemmas for both.
+    rfl
+  -- Near `x`, `g` is the affine function `c + s⁻¹ * t`.
+  have hg : g =ᶠ[𝓝 x] (fun r : ℝ ↦ c + s⁻¹ * r) ∘ t := by
+    filter_upwards [hchart] with w hw
+    simp only [ht, Function.comp_apply, extChartAt_coe, modelWithCornersEuclideanHalfSpace_toFun,
+      EuclideanSpace.coe_proj]
+    rw [hw]
+    field_simp
+    ring
+  have hφ : HasFDerivAt (fun r : ℝ ↦ c + s⁻¹ * r) (s⁻¹ • ContinuousLinearMap.id ℝ ℝ) (t x) :=
+    ((hasFDerivAt_id _).const_mul s⁻¹).const_add c
+  rw [isOutwardPointing_iff, and_iff_right hx, ← hdt, hg.mvfderiv_eq,
+    mvfderiv_comp_apply_of_differentiableAt hφ.differentiableAt hd, hφ.fderiv, smul_apply,
+    ContinuousLinearMap.id_apply, smul_eq_mul, mul_inv_cancel_left₀ hs]
 
 namespace IsOutwardPointing
 
