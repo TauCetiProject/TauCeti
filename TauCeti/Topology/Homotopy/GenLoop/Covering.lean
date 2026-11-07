@@ -96,12 +96,10 @@ private theorem apply_genLoopLiftCurry [Nonempty N] (γ : Ω^ N X (p e)) (y : I^
 homotopy lifts a constant path starting at `e`. -/
 private theorem genLoopLiftCurry_zero [Nonempty N] (γ : Ω^ N X (p e)) :
     genLoopLiftCurry hp e γ 0 = e := by
-  -- The contraction of the cube fixes its corner `0`.
-  have h0 (t : I) : TauCeti.cubeContraction N (t, 0) = 0 :=
-    funext fun j => by rw [TauCeti.cubeContraction_apply]; exact Set.Icc.convexComb_eq _ _
   have hconst := hp.const_of_comp (g := fun t : I => genLoopFamilyLift hp e (t, γ, 0))
     (by fun_prop) (fun t t' => by
-      simp only [apply_genLoopFamilyLift hp e, genLoopFamily_apply, h0]) 1 0
+      simp only [apply_genLoopFamilyLift hp e, genLoopFamily_apply,
+        TauCeti.cubeContraction_apply_zero]) 1 0
   exact hconst.trans (hp.liftHomotopy_zero _ _ (genLoopFamily_zero e) _)
 
 /-- The lift is constant at `e` on the cube boundary: there it takes values in the discrete fibre
