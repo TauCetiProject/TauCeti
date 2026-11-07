@@ -69,8 +69,8 @@ Given an almost complex structure `J`, the cutoff phase form also has a modulus 
 (`abs_modulusPotential_le`, `norm_cutoffDBarForm_le`). Since `Θ - i F_a = d(χ(s) τ)`, its pairing
 with a test form `ζ` is the pairing of `χ(s) τ = d^c_J H(s) + E` with `dζ`; after an integration
 by parts in the first term, these pointwise bounds reduce that pairing to integral bounds on
-`1 - |α|²` and on `∂bar_a α`. Those integral bounds and the integration by parts are not part of
-this file.
+`1 - |α|²` and on `∂bar_a α`. This reduction is carried out in
+`TauCeti.Analysis.PDE.SeibergWitten.CurvatureComparison`.
 
 The cutoff phase form, the cutoff current, their regularity, support and gauge invariance are
 stated on an arbitrary real normed space, which plays the role of a coordinate chart; the gauge
@@ -127,6 +127,13 @@ theorem covariantDeriv_apply (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → 
     covariantDeriv b α x v = fderiv ℝ α x v + I * b x (fun _ ↦ v) * α x := by
   simp [covariantDeriv, ofSubsingletonLIE_symm_apply]
   ring
+
+/-- The covariant derivative of a `C¹` section for a continuous connection form is
+continuous. -/
+theorem continuous_covariantDeriv (hα : ContDiff ℝ 1 α) (hb : Continuous b) :
+    Continuous (covariantDeriv b α) := by
+  unfold covariantDeriv
+  fun_prop
 
 /-- The phase form `τ = Im (α⁻¹ dα) + b` of a pair `(a, α)` with `a = i b`. Away from the zeros
 of `α` it is `Im (conj α ∇_a α) / |α|²` (`covariantPhaseForm_apply_eq_div`). -/
@@ -456,6 +463,13 @@ theorem covariantDBar_apply_apply (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E
     (covariantDeriv b α x : E →ₗ[ℝ] ℂ)).apply v
   rw [← coe_covariantDBar_eq_complexAntilinearPart, DistribSMul.toLinearMap_apply] at h
   rw [h, smul_eq_mul, neg_mul]
+
+/-- `∂bar_a α` of a `C¹` section for a continuous connection form is continuous. -/
+theorem continuous_covariantDBar {b : E → E [⋀^Fin 1]→L[ℝ] ℝ} (hα : ContDiff ℝ 1 α)
+    (hb : Continuous b) : Continuous (covariantDBar J b α) := by
+  have h := continuous_covariantDeriv hα hb
+  unfold covariantDBar
+  fun_prop
 
 /-- The correction one-form `E = 2 χ(|α|²) Re (α⁻¹ ∂bar_a α) ∘ J`. -/
 def cutoffDBarForm (χ : ℝ → ℝ) (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ) (x : E) :

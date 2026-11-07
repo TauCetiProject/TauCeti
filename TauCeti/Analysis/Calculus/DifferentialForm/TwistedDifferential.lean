@@ -8,6 +8,12 @@ module
 public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.Geometry.Symplectic.AlmostComplex
+public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Specializations
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import TauCeti.MeasureTheory.Measure.Haar.OfBasis
+import TauCeti.Analysis.Calculus.DifferentialForm.Integral
+import TauCeti.LinearAlgebra.Basis.Fin
+import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 
 /-!
 # The twisted differential of a real function
@@ -25,6 +31,11 @@ differential of a real function `f` is the one-form `d^c_J f = -(1/2) df ∘ J`.
   `d^c_J (H ∘ f) = H'(f) • d^c_J f`.
 * `TauCeti.AlmostComplexStructure.twistedDifferential_add`,
   `TauCeti.AlmostComplexStructure.twistedDifferential_const_smul`: linearity.
+* `TauCeti.AlmostComplexStructure.integral_twistedDifferential_wedge_eq`: integration by parts.
+  For a compactly supported form `η` of complementary degree,
+  `∫ d^c_J g ∧ η = (det J / 2) ∫ g d((-J)^* η)`. Pulling back by `J` moves `J` from `dg` onto `η`
+  at the cost of `det J`, and then `g` absorbs the derivative. The right side involves `g` but
+  not its derivative.
 -/
 
 public section
@@ -71,6 +82,67 @@ theorem twistedDifferential_const_smul (c : ℝ) (f : E → ℝ) (x : E) :
     J.twistedDifferential (c • f) x = c • J.twistedDifferential f x := by
   ext v
   simp [fderiv_const_smul_field]
+  ring
+
+/-- The twisted differential of a `C^(n+1)` function is `C^n`. -/
+theorem contDiff_twistedDifferential {n : WithTop ℕ∞} {f : E → ℝ} (hf : ContDiff ℝ (n + 1) f) :
+    ContDiff ℝ n (J.twistedDifferential f) := by
+  unfold twistedDifferential
+  exact (ofSubsingletonLIE (𝕜 := ℝ) (E := E) (F := ℝ) (0 : Fin 1)).contDiff.comp
+    (((hf.fderiv_right le_rfl).clm_comp contDiff_const).const_smul _)
+
+open MeasureTheory in
+/-- **Integration by parts for the twisted differential.** For a C1 function `g` and a compactly
+supported C1 form `η` of degree `m` on a space of dimension `1 + m`,
+`∫ d^c_J g ∧ η = (det J / 2) ∫ g d((-J)^* η)`, the top-degree coefficients being taken on a basis
+`b` and integrated against its Haar measure. Here `(-J)^* η` is the pullback of `η` by the inverse
+`-J` of `J`. -/
+theorem integral_twistedDifferential_wedge_eq [MeasurableSpace E] [BorelSpace E] {m : ℕ}
+    (b : Module.Basis (Fin (1 + m)) ℝ E) {g : E → ℝ} {η : E → E [⋀^Fin m]→L[ℝ] ℝ}
+    (hg : ContDiff ℝ 1 g) (hη : ContDiff ℝ 1 η) (hc : HasCompactSupport η) :
+    ∫ x, wedge (J.twistedDifferential g x) (η x) b ∂b.addHaar =
+      LinearMap.det J.toLinearMap / 2 * ∫ x, g x * extDeriv
+        (fun y ↦ (η y).compContinuousLinearMap (-LinearMap.toContinuousLinearMap J.toLinearMap)) x
+        (b ∘ Fin.cast (by omega)) ∂b.addHaar := by
+  set J' := LinearMap.toContinuousLinearMap J.toLinearMap
+  set η' := fun y ↦ (η y).compContinuousLinearMap (-J')
+  -- Pointwise, pulling back by `J` turns `d^c_J g ∧ η` into `-(det J / 2) dg ∧ η'`.
+  have hpt (x : E) : wedge (J.twistedDifferential g x) (η x) b =
+      -(LinearMap.det J.toLinearMap / 2) *
+        wedge (ofSubsingleton ℝ E ℝ (0 : Fin 1) (fderiv ℝ g x)) (η' x) b := by
+    have h₁ : J.twistedDifferential g x = (-2⁻¹ : ℝ) •
+        (ofSubsingleton ℝ E ℝ (0 : Fin 1) (fderiv ℝ g x)).compContinuousLinearMap J' := by
+      ext v
+      simp [J']
+    have h₂ : η x = (η' x).compContinuousLinearMap J' := by
+      ext v
+      simp only [η', compContinuousLinearMap_apply]
+      congr 1
+      funext i
+      simp [J', J.apply_apply]
+    rw [h₁, h₂, wedge_smul_left, wedge_compContinuousLinearMap,
+      ContinuousAlternatingMap.smul_apply, compContinuousLinearMap_apply_basis]
+    simp [J']
+    ring
+  have hη' : ContDiff ℝ 1 η' :=
+    (compContinuousLinearMapCLM (F := ℝ) (ι := Fin m) (-J')).contDiff.comp hη
+  have hcη' : HasCompactSupport η' := hc.mono fun x hx h ↦ hx (by ext; simp [η', h])
+  have hg' : ContDiff ℝ 1 fun x ↦ constOfIsEmpty ℝ E (Fin 0) (g x) :=
+    (constOfIsEmptyLIE ℝ E ℝ (Fin 0)).contDiff.comp hg
+  -- Integrate by parts the degree-zero form `g` against `η'`.
+  let b₀ := b.reindex (finCongr (by omega : 1 + m = 0 + m + 1))
+  have hibp := b₀.integral_extDeriv_wedge_eq_integral_wedge_extDeriv hg' hη' hcη'
+  have hb₀ : b₀.addHaar = b.addHaar := Module.Basis.addHaar_reindex _ _
+  simp only [extDeriv_constOfIsEmpty, wedge_def, pairedWedge_apply_zero_left, hb₀] at hibp
+  have e₁ : ⇑b₀ ∘ Fin.cast (show 0 + 1 + m = 0 + m + 1 by omega) = ⇑b :=
+    b.reindex_finCongr_comp_cast _ _
+  have e₂ : (⇑b₀ ∘ Fin.cast (show 0 + (m + 1) = 0 + m + 1 by omega)) ∘
+      Fin.cast (Nat.zero_add (m + 1)).symm = ⇑b ∘ Fin.cast (show m + 1 = 1 + m by omega) :=
+    b.reindex_finCongr_comp_cast _ _
+  rw [e₁, e₂] at hibp
+  simp only [ContinuousLinearMap.mul_apply', constOfIsEmpty_apply, pow_zero] at hibp
+  simp only [hpt, integral_const_mul]
+  simp only [wedge_def, hibp]
   ring
 
 end TauCeti.AlmostComplexStructure
