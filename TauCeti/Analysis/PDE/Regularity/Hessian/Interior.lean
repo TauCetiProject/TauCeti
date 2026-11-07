@@ -78,6 +78,60 @@ open scoped ENNReal NNReal InnerProductSpace Gradient ContDiff
 
 variable {n : ℕ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
+/-- **The Hessian on a ball is bounded by the cutoff-weighted Hessian of the restriction.** If a
+smooth compactly supported function `ζ` equals `1` on the closed ball of radius `s` about `x₀`, and
+the open ball lies in `U ≤ Ω`, then the `Lᵖ` norm on `B(x₀, s)` of the weak Hessian of `u` is at
+most the `Lᵖ` norm on `U` of `ζ` times the weak Hessian of the restriction of `u` to `U`. -/
+private theorem lpNorm_iteratedGradient_ball_le_lpNorm_smul
+    {Omega U : Opens (EuclideanSpace ℝ (Fin n))} (hU : U ≤ Omega)
+    {x₀ : EuclideanSpace ℝ (Fin n)} {s : ℝ} (hsU : ball x₀ s ⊆ U)
+    (u : Wkp (volume : Measure (EuclideanSpace ℝ (Fin n))) Omega p 2)
+    {ζ : EuclideanSpace ℝ (Fin n) → ℝ} (hζ : ContDiff ℝ ∞ ζ) (hζ1 : Set.EqOn ζ 1 (closedBall x₀ s))
+    (hcpt : HasCompactSupport ζ) :
+    lpNorm (Wkp.iteratedGradient 1 u) p (volume.restrict (ball x₀ s)) ≤
+      lpNorm (fun x => ζ x • Wkp.iteratedGradient 1 (Wkp.restrictL hU 2 u) x) p
+        (volume.restrict (U : Set (EuclideanSpace ℝ (Fin n)))) := by
+  have hζH : MemLp (fun x => ζ x • Wkp.iteratedGradient 1 (Wkp.restrictL hU 2 u) x) p
+      (volume.restrict (U : Set (EuclideanSpace ℝ (Fin n)))) :=
+    (hζ.continuous.memLp_top_of_hasCompactSupport hcpt _).smul (Lp.memLp _)
+  have hae : (Wkp.iteratedGradient 1 u : EuclideanSpace ℝ (Fin n) → _) =ᵐ[volume.restrict
+      (ball x₀ s)] fun x => ζ x • Wkp.iteratedGradient 1 (Wkp.restrictL hU 2 u) x := by
+    filter_upwards [ae_restrict_of_ae_restrict_of_subset hsU
+      (Wkp.iteratedGradient_restrictL_ae hU 1 u), ae_restrict_mem measurableSet_ball]
+      with x h1 hx
+    rw [hζ1 (ball_subset_closedBall hx), h1, Pi.one_apply, one_smul]
+  rw [← toReal_eLpNorm, eLpNorm_congr_ae hae]
+  exact ENNReal.toReal_mono hζH.eLpNorm_ne_top
+    (eLpNorm_mono_measure _ (Measure.restrict_mono hsU le_rfl))
+
+/-- **The equation restricts to a subball.** If `u ∈ W^{2,p}(Ω)` satisfies
+`∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu = f` almost everywhere on `B(x₀, R)` and `U ⊆ B(x₀, R)`, then its restriction to
+`U` satisfies the same equation almost everywhere on `U`, with `f` read as an element of `Lᵖ(U)`. -/
+private theorem ae_sum_mul_inner_restrictL_eq {Omega U : Opens (EuclideanSpace ℝ (Fin n))}
+    (hU : U ≤ Omega) {x₀ : EuclideanSpace ℝ (Fin n)} {R : ℝ}
+    (hUR : (U : Set (EuclideanSpace ℝ (Fin n))) ⊆ ball x₀ R)
+    {a : EuclideanSpace ℝ (Fin n) → Matrix (Fin n) (Fin n) ℝ} {f : EuclideanSpace ℝ (Fin n) → ℝ}
+    (hft : MemLp f p (volume.restrict (U : Set (EuclideanSpace ℝ (Fin n)))))
+    (u : Wkp (volume : Measure (EuclideanSpace ℝ (Fin n))) Omega p 2)
+    (heq : ∀ᵐ x ∂(volume.restrict (ball x₀ R)),
+      ∑ i, ∑ j, a x i j * ⟪Wkp.iteratedGradient 1 u x (EuclideanSpace.single i 1),
+        EuclideanSpace.single j 1⟫_ℝ = f x) :
+    ∀ᵐ x ∂(volume.restrict (U : Set (EuclideanSpace ℝ (Fin n)))),
+      ∑ i, ∑ j, a x i j * ⟪Wkp.iteratedGradient 1 (Wkp.restrictL hU 2 u) x
+        (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ = hft.toLp f x := by
+  filter_upwards [Wkp.iteratedGradient_restrictL_ae hU 1 u, hft.coeFn_toLp,
+    ae_restrict_of_ae_restrict_of_subset hUR heq] with x h1 h2 h3
+  rw [h1, h2, h3]
+
+/-- The two rescalings of the cutoff constant when the midpoint `m` of `s < t` replaces `t`. -/
+private theorem two_mul_div_sub_eq_of_eq_midpoint {s t m : ℝ} (c : ℝ) (hm : m = (s + t) / 2)
+    (hst : s < t) :
+    2 * (c / (m - s)) = 4 * c / (t - s) ∧ c / (m - s) ^ 2 = 4 * c / (t - s) ^ 2 := by
+  have hms : m - s = (t - s) / 2 := by rw [hm]; ring
+  have hts : t - s ≠ 0 := sub_ne_zero.2 hst.ne'
+  rw [hms]
+  constructor <;> (field_simp; ring)
+
 /-- **The localized estimate between concentric balls.** For `0 < s < t ≤ R`, applying the
 localized Calderón–Zygmund estimate on `B_t` to a cutoff between `B_s` and `B_t` bounds `D²u` on
 `B_s` by `f` and `∇u` on `B_t` and by `u` on `B_R`, with the explicit dependence on `t - s` coming
@@ -122,30 +176,12 @@ private theorem exists_lpNorm_iteratedGradient_ball_le_of_lt (hn : 0 < n) (hp : 
   have hζabs : ∀ x, |ζ x| ≤ 1 := fun x =>
     abs_le.2 ⟨by linarith [(hζr ⟨x, rfl⟩).1], (hζr ⟨x, rfl⟩).2⟩
   have hft : MemLp f p (volume.restrict U) := hf.mono_measure (Measure.restrict_mono hUR le_rfl)
-  -- The localized estimate for the restriction `v` of `u` to `B_t`.
-  have hveq : ∀ᵐ x ∂(volume.restrict (U : Set (EuclideanSpace ℝ (Fin n)))),
-      ∑ i, ∑ j, a x i j * ⟪Wkp.iteratedGradient 1 v x (EuclideanSpace.single i 1),
-        EuclideanSpace.single j 1⟫_ℝ = hft.toLp f x := by
-    filter_upwards [Wkp.iteratedGradient_restrictL_ae hU 1 u, hft.coeFn_toLp,
-      ae_restrict_of_ae_restrict_of_subset hUR heq] with x h1 h2 h3
-    rw [h1, h2, h3]
+  have hveq := ae_sum_mul_inner_restrictL_eq hU hUR hft u heq
   have key := hloc hlam hA hζ hcpt hζU hζg hζh (ha.mono_measure (Measure.restrict_mono hUR le_rfl))
     hε (haA.mono fun x hx hxζ => hx (hUR (hζU hxζ))) hΛ
     (haΛ.mono fun x hx hxζ => hx (hUR (hζU hxζ))) v (hft.toLp f) hveq
   -- Compare each term of the localized estimate with the norms on balls.
-  have hζH : MemLp (fun x => ζ x • Wkp.iteratedGradient 1 v x) p (volume.restrict U) :=
-    (hζ.continuous.memLp_top_of_hasCompactSupport hcpt _).smul (Lp.memLp _)
-  have hlow : lpNorm (Wkp.iteratedGradient 1 u) p (volume.restrict (ball x₀ s)) ≤
-      lpNorm (fun x => ζ x • Wkp.iteratedGradient 1 v x) p (volume.restrict U) := by
-    have hae : (Wkp.iteratedGradient 1 u : EuclideanSpace ℝ (Fin n) → _) =ᵐ[volume.restrict
-        (ball x₀ s)] fun x => ζ x • Wkp.iteratedGradient 1 v x := by
-      filter_upwards [ae_restrict_of_ae_restrict_of_subset hsU
-        (Wkp.iteratedGradient_restrictL_ae hU 1 u), ae_restrict_mem measurableSet_ball]
-        with x h1 hx
-      rw [hζ1 (ball_subset_closedBall hx), h1, Pi.one_apply, one_smul]
-    rw [← toReal_eLpNorm, eLpNorm_congr_ae hae]
-    exact ENNReal.toReal_mono hζH.eLpNorm_ne_top
-      (eLpNorm_mono_measure _ (Measure.restrict_mono hsU le_rfl))
+  have hlow := lpNorm_iteratedGradient_ball_le_lpNorm_smul hU hsU u hζ hζ1 hcpt
   have hfb : lpNorm (fun x => ζ x * hft.toLp f x) p (volume.restrict U) ≤
       lpNorm f p (volume.restrict (ball x₀ t)) := by
     refine ENNReal.toReal_mono hft.eLpNorm_ne_top (eLpNorm_mono_ae
@@ -164,16 +200,7 @@ private theorem exists_lpNorm_iteratedGradient_ball_le_of_lt (hn : 0 < n) (hp : 
     exact lpNorm_mono_measure
       ((Lp.memLp (Wkp.value 2 u)).mono_measure (Measure.restrict_mono hR le_rfl))
       (Measure.restrict_mono hUR le_rfl)
-  have hms : m - s = (t - s) / 2 := by rw [hm]; ring
-  have hts : t - s ≠ 0 := sub_ne_zero.2 hst.ne'
-  have hm1 : 2 * (c / (m - s)) = 4 * c / (t - s) := by
-    rw [hms]
-    field_simp
-    ring
-  have hm2 : c / (m - s) ^ 2 = 4 * c / (t - s) ^ 2 := by
-    rw [hms]
-    field_simp
-    ring
+  obtain ⟨hm1, hm2⟩ := two_mul_div_sub_eq_of_eq_midpoint c hm hst
   rw [hm1, hm2, hng] at key
   calc _ ≤ _ := hlow
     _ ≤ _ := key
