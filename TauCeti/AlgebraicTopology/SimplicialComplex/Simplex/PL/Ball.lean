@@ -234,19 +234,21 @@ section PLOn
 variable {ι : Type*} {n : ℕ}
 
 /-- The inverse of the simplex half-space chart, followed by the coordinate lift and a PL map `G`
-on the standard simplex, is PL on the model coordinates of any set `T` of chart targets. -/
+on the standard simplex, is PL on the model coordinates of any set `T` of targets of the chart at
+the vertex `v`. -/
 theorem isPLOn_comp_simplexHalfSpace_symm
-    {T : Set {q : (Fin n → ℝ) × ℝ | 0 ≤ q.2}} {G : (Fin (n + 2) → ℝ) → (ι → ℝ)}
+    (v : Option (Option (Fin n))) {T : Set {q : (Fin n → ℝ) × ℝ | 0 ≤ q.2}}
+    {G : (Fin (n + 2) → ℝ) → (ι → ℝ)}
     (hG : IsPLOn G (range fun y : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 2))) =>
       (y.1 : Fin (n + 2) → ℝ)))
-    (hT : T = (simplexHalfSpacePLChart n none).target) :
+    (hT : T ⊆ (simplexHalfSpacePLChart n v).target) :
     IsPLOn (G ∘ simplexBoundaryCoordinateLift n ∘
-        (coordinateSimplexHalfSpaceMap (ι := Fin n) none).symm)
+        (coordinateSimplexHalfSpaceMap (ι := Fin n) v).symm)
       ((modelWithCornersHalfSpace (Fin n → ℝ)).symm ⁻¹' T ∩
         range (modelWithCornersHalfSpace (Fin n → ℝ))) := by
-  let a := simplexHalfSpacePLChart n none
+  let a := simplexHalfSpacePLChart n v
   let R := simplexBoundaryCoordinateLift n
-  let A := coordinateSimplexHalfSpaceMap (ι := Fin n) none
+  let A := coordinateSimplexHalfSpaceMap (ι := Fin n) v
   let s := (modelWithCornersHalfSpace (Fin n → ℝ)).symm ⁻¹' T ∩
     range (modelWithCornersHalfSpace (Fin n → ℝ))
   have hmap : MapsTo (R ∘ A.symm) s
@@ -255,14 +257,14 @@ theorem isPLOn_comp_simplexHalfSpace_symm
     intro z hz
     have hnonneg : 0 ≤ z.2 := by simpa using hz.2
     let y := (modelWithCornersHalfSpace (Fin n → ℝ)).symm z
-    have hy : y ∈ a.target := hT ▸ hz.1
+    have hy : y ∈ a.target := hT hz.1
     refine ⟨a.symm y, ?_⟩
     simpa only [a, R, A, y, Function.comp_apply,
       coe_modelWithCornersHalfSpace_symm_apply _ hnonneg] using
-        coe_simplexHalfSpacePLChart_symm_apply n none hy
+        coe_simplexHalfSpacePLChart_symm_apply n v hy
   exact hG.comp
     (((isPLOn_continuousAffineMap R univ).comp
-      (isPiecewiseAffineOn_coordinateSimplexHalfSpaceMap_symm none).isPLOn
+      (isPiecewiseAffineOn_coordinateSimplexHalfSpaceMap_symm v).isPLOn
       (mapsTo_univ _ _)).mono (subset_univ _)) hmap
 
 end PLOn

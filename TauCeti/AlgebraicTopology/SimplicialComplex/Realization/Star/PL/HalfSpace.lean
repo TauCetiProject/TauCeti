@@ -141,7 +141,7 @@ theorem IsCombinatorialBall.exists_openPartialHomeomorph_openStar_isPL
   · exact (isPiecewiseAffineOn_coordinateSimplexHalfSpaceMap none).isPLOn.comp
       ((isPLOn_continuousAffineMap P.toContinuousAffineMap univ).comp hF
         (mapsTo_univ _ _)) (mapsTo_univ _ _)
-  · exact isPLOn_comp_simplexHalfSpace_symm hG hct
+  · exact isPLOn_comp_simplexHalfSpace_symm none hG hct.subset
   · intro x hx
     have hx' : x ∈ openStarRealization K v := hcs ▸ hx
     rw [hc ⟨x, hx'⟩, coe_simplexHalfSpacePLChart_apply]
