@@ -45,11 +45,6 @@ A real power of `ENNReal.ofReal (a * r)` with `0 ≤ a` splits as `ofReal a ^ d 
 for every exponent `d`, since neither factor is `∞`. This rescales the gauge `(2 r) ^ d` of
 densities and Hausdorff measures.
 
-Truncations at a cap `k` interact with real powers through two pointwise inequalities: dividing
-by `ε ≤ 1` before truncating costs at most the factor `ε⁻¹ ^ p`, and for `q ≥ 1` the product
-`a · min(a, k) ^ (q + δ - 1)` is at most `a ^ q · min(a, k) ^ δ`. These are the truncated forms of
-the power identities used when a layer-cake integral is cut off at a finite height.
-
 For a base in `ℝ≥0` greater than one, power comparisons also express rational bounds and
 closed intervals for a reciprocal radius parameter `α / r`.
 
@@ -72,9 +67,6 @@ closed intervals for a reciprocal radius parameter `α / r`.
 * `ENNReal.ofReal_inv_sqrt_le_of_pow_three_le`: `y³ ≤ 2 |d|` gives `1 / √d ≤ √2 y^(-3/2)`.
 * `ENNReal.exists_enorm_sub_rpow_neg_half_mul_le`: for three distinct points `eᵢ`, the product of
   the `‖z - eᵢ‖ₑ ^ (-1/2)` is at most a constant times their sum.
-* `ENNReal.min_mul_inv_rpow_le`: `min (a ε⁻¹) k ^ p ≤ ε⁻¹ ^ p · min a k ^ p` for `ε ≤ 1`.
-* `ENNReal.mul_min_rpow_le`: `a · min a k ^ (q + δ - 1) ≤ a ^ q · min a k ^ δ` for `q ≥ 1` and
-  `δ ≥ 0`.
 * `NNReal.rpow_neg_mem_Icc_iff`: an interval of negative powers is equivalent to an interval
   for the reciprocal parameter `α / r`.
 -/
@@ -229,36 +221,6 @@ theorem exists_enorm_sub_rpow_neg_half_mul_le {E : Type*} [NormedAddGroup E] {e�
     calc h₁ * h₂ * h₃ ≤ h₁ * k * k := by gcongr <;> exact far ‹_›
       _ = k * k * h₁ := by ring
       _ ≤ k * k * (h₁ + h₂ + h₃) := by gcongr; exact le_self_add.trans le_self_add
-
-
-/-- Truncating `a / ε` at `k` costs at most the factor `ε⁻¹` compared with truncating `a`, when
-`ε ≤ 1`. -/
-theorem min_mul_inv_rpow_le (a k : ℝ≥0∞) {ε : ℝ≥0∞} (hε1 : ε ≤ 1) {p : ℝ} (hp : 0 ≤ p) :
-    min (a * ε⁻¹) k ^ p ≤ ε⁻¹ ^ p * min a k ^ p := by
-  rw [← ENNReal.mul_rpow_of_nonneg _ _ hp]
-  refine ENNReal.rpow_le_rpow ?_ hp
-  have h1 : 1 ≤ ε⁻¹ := ENNReal.one_le_inv.2 hε1
-  rcases le_total a k with hak | hak
-  · rw [min_eq_left hak, mul_comm]
-    exact min_le_left _ _
-  · rw [min_eq_right hak]
-    exact (min_le_right _ _).trans (le_mul_of_one_le_left zero_le h1)
-
-/-- For `q ≥ 1` and `δ ≥ 0`, `a · min(a, k) ^ (q + δ - 1) ≤ a ^ q · min(a, k) ^ δ`. -/
-theorem mul_min_rpow_le (a k : ℝ≥0∞) {q δ : ℝ} (hq : 1 ≤ q) (hδ : 0 ≤ δ) :
-    a * min a k ^ (q + δ - 1) ≤ a ^ q * min a k ^ δ := by
-  have hq1 : 0 ≤ q - 1 := by linarith
-  calc a * min a k ^ (q + δ - 1) = a * (min a k ^ (q - 1) * min a k ^ δ) := by
-        rw [← ENNReal.rpow_add_of_nonneg _ _ hq1 hδ]
-        ring_nf
-    _ ≤ a * (a ^ (q - 1) * min a k ^ δ) := by
-        gcongr
-        exact min_le_left _ _
-    _ = a ^ q * min a k ^ δ := by
-        rw [← mul_assoc]
-        congr 1
-        conv_rhs => rw [← add_sub_cancel 1 q]
-        rw [ENNReal.rpow_add_of_nonneg _ _ zero_le_one hq1, ENNReal.rpow_one]
 
 end ENNReal
 

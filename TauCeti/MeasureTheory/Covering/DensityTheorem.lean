@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Covering.DensityTheorem
+public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+-- Proof-only: open and closed balls agree up to a null set for an additive Haar measure.
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Lebesgue points along concentric closed balls
@@ -15,7 +18,9 @@ differentiation theorem for a uniformly locally doubling measure along arbitrary
 closed balls shrinking to a point. This file records its most common special case: almost every
 point `x` is a Lebesgue point of a locally integrable function `f` in the sense that the mean
 oscillation `⨍_{closedBall x r} ‖f - f x‖` tends to zero as `r → 0⁺`, and the analogous statement
-for the averages of an integrable `ℝ≥0∞`-valued function.
+for the averages of an integrable `ℝ≥0∞`-valued function. For an additive Haar measure on a
+finite-dimensional real normed space, spheres are null, so the same averages over open balls
+converge as well.
 -/
 
 public section
@@ -51,3 +56,23 @@ theorem ae_tendsto_setLAverage_closedBall {f : α → ℝ≥0∞} (hf : AEMeasur
   simp only [Function.comp_apply, id, setLAverage_eq]
 
 end IsUnifLocDoublingMeasure
+
+namespace MeasureTheory.Measure
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E]
+
+/-- **Lebesgue differentiation theorem along concentric open balls, for an additive Haar
+measure.** For an a.e. measurable `f : E → ℝ≥0∞` with finite integral, the averages
+`⨍_{ball x r} f` tend to `f x` as `r → 0⁺` for almost every `x`. Open and closed balls of positive
+radius differ by a null set, so this is `IsUnifLocDoublingMeasure.ae_tendsto_setLAverage_closedBall`
+for open balls. -/
+theorem ae_tendsto_setLAverage_ball (μ : Measure E) [μ.IsAddHaarMeasure] {f : E → ℝ≥0∞}
+    (hf : AEMeasurable f μ) (hfin : ∫⁻ x, f x ∂μ ≠ ∞) :
+    ∀ᵐ x ∂μ, Tendsto (fun r => ⨍⁻ y in ball x r, f y ∂μ) (𝓝[>] 0) (𝓝 (f x)) := by
+  filter_upwards [IsUnifLocDoublingMeasure.ae_tendsto_setLAverage_closedBall μ hf hfin] with x hx
+  refine Tendsto.congr' ?_ hx
+  filter_upwards [self_mem_nhdsWithin] with r hr
+  exact setLAverage_congr (μ.addHaar_closedBall_ae_eq_ball_of_ne_zero x r (ne_of_gt hr))
+
+end MeasureTheory.Measure

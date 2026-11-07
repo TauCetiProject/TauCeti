@@ -13,7 +13,6 @@ import TauCeti.MeasureTheory.Covering.Vitali
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.LayerCake
 import TauCeti.MeasureTheory.Measure.Haar.Average
-import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Gehring's lemma
@@ -47,7 +46,8 @@ Gehring's lemma then gives Meyers' estimate `∇u ∈ L^{2 + ε}_loc`.
   reverse Hölder inequality on such a ball and a disjoint Vitali subfamily give the bound.
 * `setLIntegral_mul_min_rpow_le`: integrating the level-set estimate against `δ t ^ (δ - 1)` with
   the layer-cake formula bounds `∫_{B(x₀, r)} g ^ q min(g, k) ^ δ` by a small multiple of the
-  same quantity on `B(x₀, s)`, plus terms that blow up only like a power of `(s - r)⁻¹`.
+  same quantity on `B(x₀, s)`, plus terms that blow up only like a power of `(s - r)⁻¹`. The
+  truncated layer-cake bounds for the three terms of the level-set estimate are proved first.
 * The absorption lemma over the radii `R / 2 ≤ r < s ≤ R`
   (`TauCeti.exists_le_mul_mul_rpow_add_of_le_mul_add`) removes the small multiple; the truncation
   at `k` keeps every quantity finite, and monotone convergence lets `k → ∞`.
@@ -68,10 +68,135 @@ lemma replace the Calderón–Zygmund cubes of the textbook proofs.
 
 public section
 
-namespace TauCeti
-
 open MeasureTheory Metric Set Filter Module
 open scoped ENNReal NNReal Topology
+
+/-! ### Truncated layer-cake bounds -/
+
+namespace ENNReal
+
+/-- Truncating `a / ε` at `k` costs at most the factor `ε⁻¹` compared with truncating `a`, when
+`ε ≤ 1`. -/
+private theorem min_mul_inv_rpow_le (a k : ℝ≥0∞) {ε : ℝ≥0∞} (hε1 : ε ≤ 1) {p : ℝ} (hp : 0 ≤ p) :
+    min (a * ε⁻¹) k ^ p ≤ ε⁻¹ ^ p * min a k ^ p := by
+  rw [← ENNReal.mul_rpow_of_nonneg _ _ hp]
+  refine ENNReal.rpow_le_rpow ?_ hp
+  have h1 : 1 ≤ ε⁻¹ := ENNReal.one_le_inv.2 hε1
+  rcases le_total a k with hak | hak
+  · rw [min_eq_left hak, mul_comm]
+    exact min_le_left _ _
+  · rw [min_eq_right hak]
+    exact (min_le_right _ _).trans (le_mul_of_one_le_left zero_le h1)
+
+/-- For `q ≥ 1` and `δ ≥ 0`, `a · min(a, k) ^ (q + δ - 1) ≤ a ^ q · min(a, k) ^ δ`. -/
+private theorem mul_min_rpow_le (a k : ℝ≥0∞) {q δ : ℝ} (hq : 1 ≤ q) (hδ : 0 ≤ δ) :
+    a * min a k ^ (q + δ - 1) ≤ a ^ q * min a k ^ δ := by
+  have hq1 : 0 ≤ q - 1 := by linarith
+  calc a * min a k ^ (q + δ - 1) = a * (min a k ^ (q - 1) * min a k ^ δ) := by
+        rw [← ENNReal.rpow_add_of_nonneg _ _ hq1 hδ]
+        ring_nf
+    _ ≤ a * (a ^ (q - 1) * min a k ^ δ) := by
+        gcongr
+        exact min_le_left _ _
+    _ = a ^ q * min a k ^ δ := by
+        rw [← mul_assoc]
+        congr 1
+        conv_rhs => rw [← add_sub_cancel 1 q]
+        rw [ENNReal.rpow_add_of_nonneg _ _ zero_le_one hq1, ENNReal.rpow_one]
+
+end ENNReal
+
+namespace MeasureTheory.Measure
+
+variable {α : Type*} [MeasurableSpace α]
+
+/-- The layer cake formula for a constant height `t₀`, truncated at `k`: integrating
+`δ t ^ (δ - 1)` over `0 < t < min(t₀, k)` gives at most `t₀ ^ δ` times the total mass `m univ`. -/
+private theorem ofReal_mul_setLIntegral_measure_lt_const_le (m : Measure α) {t₀ : ℝ} (ht₀ : 0 ≤ t₀)
+    (k : ℝ≥0) {δ : ℝ} (hδ : 0 < δ) :
+    ENNReal.ofReal δ * ∫⁻ t in Ioo 0 (k : ℝ),
+        m {_x : α | ENNReal.ofReal t < ENNReal.ofReal t₀} * ENNReal.ofReal (t ^ (δ - 1)) ≤
+      ENNReal.ofReal (t₀ ^ δ) * m univ := by
+  rw [← lintegral_min_rpow_eq m aemeasurable_const k hδ, ← lintegral_const]
+  refine lintegral_mono fun _ => ?_
+  rw [← ENNReal.ofReal_rpow_of_nonneg ht₀ hδ.le]
+  exact ENNReal.rpow_le_rpow (min_le_left _ _) hδ.le
+
+/-- The layer cake formula for `g / ε` with respect to the weight `g`, truncated at `k`:
+integrating `δ t ^ (q + δ - 2)` against the distribution function of `g / ε` gives at most
+`δ / (q + δ - 1) · ε ^ (1 - q - δ)` times `∫ g ^ q min(g, k) ^ δ`. -/
+private theorem ofReal_mul_setLIntegral_withDensity_lt_le (m : Measure α) {g : α → ℝ≥0∞}
+    (hg : Measurable g) {ε : ℝ≥0∞} (hε0 : ε ≠ 0) (hε1 : ε ≤ 1) (k : ℝ≥0) {q δ : ℝ}
+    (hq : 1 ≤ q) (hδ : 0 < δ) :
+    ENNReal.ofReal δ * ∫⁻ t in Ioo 0 (k : ℝ), ENNReal.ofReal t ^ (q - 1) *
+        m.withDensity g {x | ENNReal.ofReal t < g x * ε⁻¹} * ENNReal.ofReal (t ^ (δ - 1)) ≤
+      ENNReal.ofReal (δ / (q + δ - 1)) * ε⁻¹ ^ (q + δ - 1) *
+        ∫⁻ x, g x ^ q * min (g x) k ^ δ ∂m := by
+  have hp : 0 < q + δ - 1 := by linarith
+  have hgε : Measurable fun x => g x * ε⁻¹ := hg.mul_const _
+  set N : ℝ → ℝ≥0∞ := fun t => m.withDensity g {x | ENNReal.ofReal t < g x * ε⁻¹}
+  -- Combine the powers of `t` into `t ^ (p - 1)` for `p = q + δ - 1`.
+  have hcongr : ∫⁻ t in Ioo 0 (k : ℝ), ENNReal.ofReal t ^ (q - 1) * N t *
+        ENNReal.ofReal (t ^ (δ - 1)) =
+      ∫⁻ t in Ioo 0 (k : ℝ), N t * ENNReal.ofReal (t ^ (q + δ - 1 - 1)) := by
+    refine setLIntegral_congr_fun measurableSet_Ioo fun t ht => ?_
+    rw [ENNReal.ofReal_rpow_of_nonneg ht.1.le (by linarith),
+      show t ^ (q + δ - 1 - 1) = t ^ (q - 1) * t ^ (δ - 1) by
+        rw [← Real.rpow_add ht.1]; ring_nf,
+      ENNReal.ofReal_mul (Real.rpow_nonneg ht.1.le _)]
+    ring
+  have hδsplit : ENNReal.ofReal δ =
+      ENNReal.ofReal (δ / (q + δ - 1)) * ENNReal.ofReal (q + δ - 1) := by
+    rw [← ENNReal.ofReal_mul (div_nonneg hδ.le hp.le), div_mul_cancel₀ _ hp.ne']
+  rw [hcongr, hδsplit]
+  calc ENNReal.ofReal (δ / (q + δ - 1)) * ENNReal.ofReal (q + δ - 1) *
+        ∫⁻ t in Ioo 0 (k : ℝ), N t * ENNReal.ofReal (t ^ (q + δ - 1 - 1))
+      = ENNReal.ofReal (δ / (q + δ - 1)) *
+          ∫⁻ x, min (g x * ε⁻¹) k ^ (q + δ - 1) ∂m.withDensity g := by
+        rw [lintegral_min_rpow_eq _ hgε.aemeasurable k hp]
+        ring
+    _ ≤ ENNReal.ofReal (δ / (q + δ - 1)) *
+          (ε⁻¹ ^ (q + δ - 1) * ∫⁻ x, g x ^ q * min (g x) k ^ δ ∂m) := by
+        gcongr
+        rw [lintegral_withDensity_eq_lintegral_mul _ hg ((hgε.min measurable_const).pow_const _),
+          ← lintegral_const_mul' _ _
+            (ENNReal.rpow_ne_top_of_nonneg hp.le (ENNReal.inv_ne_top.2 hε0))]
+        refine lintegral_mono fun x => ?_
+        simp only [Pi.mul_apply]
+        calc g x * min (g x * ε⁻¹) k ^ (q + δ - 1)
+            ≤ g x * (ε⁻¹ ^ (q + δ - 1) * min (g x) k ^ (q + δ - 1)) := by
+              gcongr
+              exact ENNReal.min_mul_inv_rpow_le _ _ hε1 hp.le
+          _ = ε⁻¹ ^ (q + δ - 1) * (g x * min (g x) k ^ (q + δ - 1)) := by ring
+          _ ≤ _ := mul_le_mul_right (ENNReal.mul_min_rpow_le _ _ hq hδ.le) _
+    _ = _ := by ring
+
+/-- The layer cake formula for `h / ε` with respect to the weight `h ^ q`, truncated at `k`:
+integrating `δ t ^ (δ - 1)` against its distribution function gives at most
+`ε ^ (-δ) ∫ h ^ (q + δ)`. -/
+private theorem ofReal_mul_setLIntegral_withDensity_rpow_lt_le (m : Measure α) {h : α → ℝ≥0∞}
+    (hh : Measurable h) {ε : ℝ≥0∞} (hε0 : ε ≠ 0) (k : ℝ≥0) {q δ : ℝ} (hq : 0 ≤ q) (hδ : 0 < δ) :
+    ENNReal.ofReal δ * ∫⁻ t in Ioo 0 (k : ℝ), m.withDensity (fun x => h x ^ q)
+        {x | ENNReal.ofReal t < h x * ε⁻¹} * ENNReal.ofReal (t ^ (δ - 1)) ≤
+      ε⁻¹ ^ δ * ∫⁻ x, h x ^ (q + δ) ∂m := by
+  have hhε : Measurable fun x => h x * ε⁻¹ := hh.mul_const _
+  rw [← lintegral_min_rpow_eq _ hhε.aemeasurable k hδ, lintegral_withDensity_eq_lintegral_mul _
+    (hh.pow_const q) ((hhε.min measurable_const).pow_const _), ← lintegral_const_mul' _ _
+    (ENNReal.rpow_ne_top_of_nonneg hδ.le (ENNReal.inv_ne_top.2 hε0))]
+  refine lintegral_mono fun x => ?_
+  simp only [Pi.mul_apply]
+  calc h x ^ q * min (h x * ε⁻¹) k ^ δ ≤ h x ^ q * (ε⁻¹ ^ δ * h x ^ δ) := by
+        gcongr
+        rw [← ENNReal.mul_rpow_of_nonneg _ _ hδ.le, mul_comm]
+        gcongr
+        exact min_le_left _ _
+    _ = ε⁻¹ ^ δ * h x ^ (q + δ) := by
+        rw [ENNReal.rpow_add_of_nonneg _ _ hq hδ.le]
+        ring
+
+end MeasureTheory.Measure
+
+namespace TauCeti
 
 section General
 
@@ -222,6 +347,38 @@ private theorem rpow_inv_rpow_eq {d : ℕ} {q δ R a u : ℝ} (hR : 0 ≤ R) (ha
     ← Real.rpow_mul h16, Real.div_rpow (by positivity) hu.le, Real.rpow_neg hu.le]
   field_simp
 
+/-- **Choosing a stopping radius.** Suppose `c < A ρ` for some `0 < ρ ≤ ρm`, while `A ρ ≤ c` for
+every `ρm < ρ ≤ ρM`. Then some `0 < ρ ≤ ρm` with `c < A ρ` has `A ρ' ≤ c` for every
+`2 ρ ≤ ρ' ≤ ρM`: take `ρ` above half the supremum of the radii with `c < A ρ`. -/
+private theorem exists_stopping_radius {γ : Type*} [LinearOrder γ] {A : ℝ → γ} {c : γ}
+    {ρm ρM : ℝ} (hne : ∃ ρ, 0 < ρ ∧ ρ ≤ ρm ∧ c < A ρ)
+    (hlarge : ∀ ρ, ρm < ρ → ρ ≤ ρM → A ρ ≤ c) :
+    ∃ ρ, (0 < ρ ∧ ρ ≤ ρm ∧ c < A ρ) ∧ ∀ ρ', 2 * ρ ≤ ρ' → ρ' ≤ ρM → A ρ' ≤ c := by
+  set S := {ρ | 0 < ρ ∧ ρ ≤ ρm ∧ c < A ρ}
+  have hS : S.Nonempty := hne
+  have hbdd : BddAbove S := ⟨ρm, fun ρ hρ => hρ.2.1⟩
+  have hσ : 0 < sSup S := hS.some_mem.1.trans_le (le_csSup hbdd hS.some_mem)
+  obtain ⟨ρ, hρS, hρ⟩ := exists_lt_of_lt_csSup hS (half_lt_self hσ)
+  have hmax : ∀ ρ' ∈ S, ρ' < 2 * ρ := fun ρ' hρ' => by linarith [le_csSup hbdd hρ']
+  refine ⟨ρ, hρS, fun ρ' h1 h2 => ?_⟩
+  rcases le_or_gt ρ' ρm with h3 | h3
+  · by_contra hcon
+    exact (not_lt.2 h1) (hmax ρ' ⟨by linarith [hρS.1], h3, not_le.1 hcon⟩)
+  · exact hlarge ρ' h3 h2
+
+/-- Truncating at `k` bounds `∫_A g ^ q min(g, k) ^ δ` by `k ^ δ ∫_B g ^ q` for `A ⊆ B`; in
+particular the truncated integrals are finite when `∫_B g ^ q` is. -/
+private theorem setLIntegral_mul_min_rpow_le_of_subset {μ : Measure α} {g : α → ℝ≥0∞} {q δ : ℝ}
+    (hδ : 0 ≤ δ) (k : ℝ≥0) {A B : Set α} (hAB : A ⊆ B) :
+    ∫⁻ x in A, g x ^ q * min (g x) k ^ δ ∂μ ≤ (k : ℝ≥0∞) ^ δ * ∫⁻ x in B, g x ^ q ∂μ := by
+  calc _ ≤ ∫⁻ x in B, g x ^ q * min (g x) k ^ δ ∂μ := lintegral_mono_set hAB
+    _ ≤ ∫⁻ x in B, (k : ℝ≥0∞) ^ δ * g x ^ q ∂μ := by
+        refine lintegral_mono fun x => ?_
+        rw [mul_comm]
+        gcongr
+        exact min_le_right _ _
+    _ = _ := lintegral_const_mul' _ _ (ENNReal.rpow_ne_top_of_nonneg hδ ENNReal.coe_ne_top)
+
 end General
 
 section Euclidean
@@ -276,40 +433,28 @@ private theorem setLIntegral_indicator_rpow_le {q : ℝ} (hq : 1 < q) {b ε : �
       (pow_le_pow_left₀ (div_nonneg hR hρ0.le) hle _)) _
   -- The stopping radius: no radius in `S x` is twice as large.
   have hstop : ∀ x ∈ ball x₀ r, (S x).Nonempty → ∃ ρ ∈ S x, ∀ ρ', 2 * ρ ≤ ρ' → ρ' ≤ 8 * ρm →
-      ⨍⁻ y in ball x ρ', G y ∂μ ≤ t ^ q := by
-    intro x hx hne
-    have hbdd : BddAbove (S x) := ⟨ρm, fun ρ hρ => hρ.2.1⟩
-    have hσ : 0 < sSup (S x) := hne.some_mem.1.trans_le (le_csSup hbdd hne.some_mem)
-    obtain ⟨ρ, hρS, hρ⟩ := exists_lt_of_lt_csSup hne (half_lt_self hσ)
-    have hmax : ∀ ρ' ∈ S x, ρ' < 2 * ρ := fun ρ' hρ' => by linarith [le_csSup hbdd hρ']
-    refine ⟨ρ, hρS, fun ρ' h1 h2 => ?_⟩
-    rcases le_or_gt ρ' ρm with h3 | h3
-    · by_contra hcon
-      exact (not_lt.2 h1) (hmax ρ' ⟨by linarith [hρS.1], h3, not_le.1 hcon⟩)
-    · exact hlarge x hx ρ' h3 h2
+      ⨍⁻ y in ball x ρ', G y ∂μ ≤ t ^ q :=
+    fun x hx hne => exists_stopping_radius hne (hlarge x hx)
   -- Lebesgue's differentiation theorem: almost every point where `g > t` has a radius in `S x`.
   have hleb : ∀ᵐ x ∂μ, x ∈ ball x₀ r → t < g x → (S x).Nonempty := by
-    set F := (ball x₀ R).indicator G
-    have hF : AEMeasurable F μ := ((hg.pow_const q).indicator measurableSet_ball).aemeasurable
-    have hFfin : ∫⁻ x, F x ∂μ ≠ ∞ := by rwa [lintegral_indicator measurableSet_ball]
-    filter_upwards [IsUnifLocDoublingMeasure.ae_tendsto_setLAverage_closedBall μ hF hFfin]
-      with x hx hxr htg
+    have hF : AEMeasurable ((ball x₀ R).indicator G) μ :=
+      ((hg.pow_const q).indicator measurableSet_ball).aemeasurable
+    have hFfin : ∫⁻ x, (ball x₀ R).indicator G x ∂μ ≠ ∞ := by
+      rwa [lintegral_indicator measurableSet_ball]
+    filter_upwards [μ.ae_tendsto_setLAverage_ball hF hFfin] with x hx hxr htg
     have hxR : x ∈ ball x₀ R := hsubR (ball_subset_ball hrs.le hxr)
-    have hFx : F x = G x := indicator_of_mem hxR G
-    have hev : ∀ᶠ ρ in 𝓝[>] (0 : ℝ), t ^ q < ⨍⁻ y in closedBall x ρ, F y ∂μ :=
-      hx (Ioi_mem_nhds (by rw [hFx]; exact ENNReal.rpow_lt_rpow htg hq0))
+    have hev : ∀ᶠ ρ in 𝓝[>] (0 : ℝ), t ^ q < ⨍⁻ y in ball x ρ, (ball x₀ R).indicator G y ∂μ :=
+      hx (Ioi_mem_nhds (by rw [indicator_of_mem hxR]; exact ENNReal.rpow_lt_rpow htg hq0))
     have hpos : 0 < min ρm (R - dist x x₀) := lt_min hρm0 (sub_pos.2 (mem_ball.1 hxR))
     have hev2 : ∀ᶠ ρ in 𝓝[>] (0 : ℝ), ρ < min ρm (R - dist x x₀) :=
       nhdsWithin_le_nhds (Iio_mem_nhds hpos)
     obtain ⟨ρ, h1, h2, h3⟩ := (hev.and (hev2.and self_mem_nhdsWithin)).exists
     refine ⟨ρ, h3, (h2.trans_le (min_le_left _ _)).le, ?_⟩
-    -- Pass from the closed ball, on which `F = G`, to the open ball.
-    have hcl : closedBall x ρ ⊆ ball x₀ R :=
-      closedBall_subset_ball' (by linarith [h2.trans_le (min_le_right _ _)])
-    have hae := μ.addHaar_closedBall_ae_eq_ball_of_ne_zero x ρ (ne_of_gt h3)
-    rwa [setLAverage_eq, setLIntegral_congr_fun measurableSet_closedBall
-        (fun y hy => indicator_of_mem (hcl hy) G), setLIntegral_congr hae, measure_congr hae,
-      ← setLAverage_eq] at h1
+    -- On `B(x, ρ) ⊆ B(x₀, R)` the indicator agrees with `G`.
+    have hsub' : ball x ρ ⊆ ball x₀ R :=
+      ball_subset_ball' (by linarith [h2.trans_le (min_le_right _ _)])
+    rwa [setLAverage_eq, setLIntegral_congr_fun measurableSet_ball
+      (fun y hy => indicator_of_mem (hsub' hy) G), ← setLAverage_eq] at h1
   -- Choose the stopping radii; on each stopping ball the estimate on a stopping set applies.
   choose! ρ hρS hρbig using hstop
   set X := {x | x ∈ ball x₀ r ∧ (S x).Nonempty}
@@ -470,164 +615,120 @@ private theorem setLIntegral_mul_min_rpow_le {q : ℝ} (hq : 1 < q) {b ε : ℝ�
     _ ≤ _ := add_le_add hIA (mul_le_mul_right (add_le_add
         ((mul_le_mul_right hIB b).trans_eq (by ring)) hIC) _)
 
-/-- **Absorption for a fixed truncation.** Feeding `setLIntegral_mul_min_rpow_le` into the
-absorption lemma bounds the truncated integral `∫_{B(x₀, R / 2)} g ^ q min(g, k) ^ δ` independently
-of `k`. Here `C₀` is the constant of the absorption lemma for the coefficient `θ` of
-`setLIntegral_mul_min_rpow_le` and the exponent `dim E · δ / q`. -/
+/-- **The step inequality in real form.** For `r < s ≤ R`, the truncated integrals
+`Φ(ρ) = ∫_{B(x₀, ρ)} g ^ q min(g, k) ^ δ` satisfy
+
+`Φ(r) ≤ θ Φ(s) + (16 R) ^ β a ^ (δ / q) (∫_{B(x₀, R)} g ^ q) (s - r) ^ (-β) + K ε⁻¹ ^ δ I`,
+
+with `I = ∫_{B(x₀, R)} h ^ (q + δ)`, where `θ` is the coefficient of
+`setLIntegral_mul_min_rpow_le`, `K = 2 · 4 ^ dim E`, `a` is the average of `g ^ q` over
+`B(x₀, R)` and `β = dim E · δ / q`. This is the hypothesis of the absorption lemma
+`exists_le_mul_mul_rpow_add_of_le_mul_add`. -/
 private theorem toReal_setLIntegral_mul_min_rpow_le {q : ℝ} (hq : 1 < q) {b ε : ℝ≥0∞}
-    (hε : b * ε + ε ^ q ≤ 2⁻¹) (hε0 : ε ≠ 0) (hε1 : ε ≤ 1) {δ C₀ : ℝ} (hδ : 0 < δ)
-    (hθ : 2 * ENNReal.ofReal (4 ^ finrank ℝ E) *
-      (b * ENNReal.ofReal (δ / (q + δ - 1)) * ε⁻¹ ^ (q + δ - 1)) ≤ 2⁻¹)
-    (hC₀ : ∀ {f : ℝ → ℝ} {r₀ r₁ A B : ℝ}, r₀ < r₁ → 0 ≤ A → 0 ≤ B →
-      BddAbove (f '' Icc r₀ r₁) →
-      (∀ s t, r₀ ≤ s → s < t → t ≤ r₁ → f s ≤
-        (2 * ENNReal.ofReal (4 ^ finrank ℝ E) *
-          (b * ENNReal.ofReal (δ / (q + δ - 1)) * ε⁻¹ ^ (q + δ - 1))).toReal * f t +
-          A * (t - s) ^ (-(finrank ℝ E * δ / q)) + B) →
-      f r₀ ≤ C₀ * (A * (r₁ - r₀) ^ (-(finrank ℝ E * δ / q)) + B))
-    {g h : E → ℝ≥0∞} (hg : Measurable g) (hh : Measurable h) {x₀ : E} {R : ℝ} (hR : 0 < R)
+    (hb : b ≠ ∞) (hε : b * ε + ε ^ q ≤ 2⁻¹) (hε0 : ε ≠ 0) (hε1 : ε ≤ 1) {g h : E → ℝ≥0∞}
+    (hg : Measurable g) (hh : Measurable h) {x₀ : E} {R r s : ℝ} (hR : 0 < R) (hrs : r < s)
+    (hsR : s ≤ R) {δ : ℝ} (hδ : 0 < δ)
     (hRH : ∀ y ρ, 0 < ρ → ball y (2 * ρ) ⊆ ball x₀ R →
       ⨍⁻ x in ball y ρ, g x ^ q ∂μ ≤
         b * (⨍⁻ x in ball y (2 * ρ), g x ∂μ) ^ q + ⨍⁻ x in ball y (2 * ρ), h x ^ q ∂μ)
     (hIg : ∫⁻ x in ball x₀ R, g x ^ q ∂μ ≠ ∞) (hIh : ∫⁻ x in ball x₀ R, h x ^ (q + δ) ∂μ ≠ ∞)
     (k : ℝ≥0) :
-    ∫⁻ x in ball x₀ (R / 2), g x ^ q * min (g x) k ^ δ ∂μ ≤ ENNReal.ofReal
-      (C₀ * ((16 * R) ^ (finrank ℝ E * δ / q) * (⨍⁻ x in ball x₀ R, g x ^ q ∂μ).toReal ^ (δ / q) *
-          (∫⁻ x in ball x₀ R, g x ^ q ∂μ).toReal * (R / 2) ^ (-(finrank ℝ E * δ / q)) +
-        (2 * ENNReal.ofReal (4 ^ finrank ℝ E) * ε⁻¹ ^ δ *
-          ∫⁻ x in ball x₀ R, h x ^ (q + δ) ∂μ).toReal)) := by
+    (∫⁻ x in ball x₀ r, g x ^ q * min (g x) k ^ δ ∂μ).toReal ≤
+      (2 * ENNReal.ofReal (4 ^ finrank ℝ E) *
+          (b * ENNReal.ofReal (δ / (q + δ - 1)) * ε⁻¹ ^ (q + δ - 1))).toReal *
+        (∫⁻ x in ball x₀ s, g x ^ q * min (g x) k ^ δ ∂μ).toReal +
+      (16 * R) ^ (finrank ℝ E * δ / q) * (⨍⁻ x in ball x₀ R, g x ^ q ∂μ).toReal ^ (δ / q) *
+        (∫⁻ x in ball x₀ R, g x ^ q ∂μ).toReal * (s - r) ^ (-(finrank ℝ E * δ / q)) +
+      (2 * ENNReal.ofReal (4 ^ finrank ℝ E) * ε⁻¹ ^ δ *
+        ∫⁻ x in ball x₀ R, h x ^ (q + δ) ∂μ).toReal := by
   have hq0 : 0 < q := one_pos.trans hq
+  have hu : 0 < s - r := sub_pos.2 hrs
   set d := finrank ℝ E
-  set β : ℝ := d * δ / q
   set K := 2 * ENNReal.ofReal (4 ^ d)
   set θE := K * (b * ENNReal.ofReal (δ / (q + δ - 1)) * ε⁻¹ ^ (q + δ - 1))
   set Ig := ∫⁻ x in ball x₀ R, g x ^ q ∂μ
   set Ih := ∫⁻ x in ball x₀ R, h x ^ (q + δ) ∂μ
   set a := (⨍⁻ x in ball x₀ R, g x ^ q ∂μ).toReal
   set Φ : ℝ → ℝ≥0∞ := fun ρ => ∫⁻ x in ball x₀ ρ, g x ^ q * min (g x) k ^ δ ∂μ
-  have hθtop : θE ≠ ∞ := ne_top_of_le_ne_top (by simp) hθ
-  have hKtop : K * ε⁻¹ ^ δ * Ih ≠ ∞ := ENNReal.mul_ne_top (ENNReal.mul_ne_top
-    (ENNReal.mul_ne_top (by simp) ENNReal.ofReal_ne_top)
-    (ENNReal.rpow_ne_top_of_nonneg hδ.le (ENNReal.inv_ne_top.2 hε0))) hIh
-  have hav : ⨍⁻ x in ball x₀ R, g x ^ q ∂μ = ENNReal.ofReal a := by
-    rw [ENNReal.ofReal_toReal]
-    rw [setLAverage_eq]
-    exact ENNReal.div_ne_top hIg (measure_ball_pos μ x₀ hR).ne'
-  -- The truncated integrals are finite.
-  have hΦtop : ∀ ρ ≤ R, Φ ρ ≤ (k : ℝ≥0∞) ^ δ * Ig := by
-    intro ρ hρ
-    calc Φ ρ ≤ ∫⁻ x in ball x₀ R, g x ^ q * min (g x) k ^ δ ∂μ :=
-          lintegral_mono_set (ball_subset_ball hρ)
-      _ ≤ ∫⁻ x in ball x₀ R, (k : ℝ≥0∞) ^ δ * g x ^ q ∂μ := by
-          refine lintegral_mono fun x => ?_
-          rw [mul_comm]
-          gcongr
-          exact min_le_right _ _
-      _ = _ := lintegral_const_mul' _ _ (ENNReal.rpow_ne_top_of_nonneg hδ.le ENNReal.coe_ne_top)
-  have hkI : (k : ℝ≥0∞) ^ δ * Ig ≠ ∞ :=
-    ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg hδ.le ENNReal.coe_ne_top) hIg
-  have hΦne : ∀ ρ ≤ R, Φ ρ ≠ ∞ := fun ρ hρ => ne_top_of_le_ne_top hkI (hΦtop ρ hρ)
-  -- The step inequality between radii `R / 2 ≤ r < s ≤ R`.
-  have hstep : ∀ r s, R / 2 ≤ r → r < s → s ≤ R → (Φ r).toReal ≤
-      θE.toReal * (Φ s).toReal + (16 * R) ^ β * a ^ (δ / q) * Ig.toReal * (s - r) ^ (-β) +
-        (K * ε⁻¹ ^ δ * Ih).toReal := by
-    intro r s hr hrs hsR
-    have hu : 0 < s - r := sub_pos.2 hrs
-    set X := (16 * R / (s - r)) ^ d * a
-    have hX : 0 ≤ X := by positivity
-    have hT : ENNReal.ofReal ((16 * R / (s - r)) ^ d) * ⨍⁻ x in ball x₀ R, g x ^ q ∂μ ≤
-        ENNReal.ofReal (X ^ q⁻¹) ^ q := by
-      rw [hav, ← ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_rpow_of_nonneg
-        (by positivity) hq0.le, Real.rpow_inv_rpow hX hq0.ne']
-    have h3 := setLIntegral_mul_min_rpow_le hq hε hε0 hε1 hg hh hrs hsR hIg hRH
-      (by positivity) hT k hδ
-    have hle : Φ r ≤ ENNReal.ofReal ((X ^ q⁻¹) ^ δ) * Ig + θE * Φ s + K * ε⁻¹ ^ δ * Ih := by
-      refine h3.trans ?_
-      have h0 : ∫⁻ x in ball x₀ r, g x ^ q ∂μ ≤ Ig :=
-        lintegral_mono_set (ball_subset_ball (hrs.le.trans hsR))
-      have h1 : ∫⁻ x in ball x₀ s, h x ^ (q + δ) ∂μ ≤ Ih :=
-        lintegral_mono_set (ball_subset_ball hsR)
-      calc _ ≤ ENNReal.ofReal ((X ^ q⁻¹) ^ δ) * Ig + K * (b * ENNReal.ofReal (δ / (q + δ - 1)) *
-            ε⁻¹ ^ (q + δ - 1) * Φ s + ε⁻¹ ^ δ * Ih) := by gcongr
-        _ = _ := by ring
-    have hfin1 : ENNReal.ofReal ((X ^ q⁻¹) ^ δ) * Ig ≠ ∞ :=
-      ENNReal.mul_ne_top ENNReal.ofReal_ne_top hIg
-    have hfin2 : θE * Φ s ≠ ∞ := ENNReal.mul_ne_top hθtop (hΦne s hsR)
-    have := ENNReal.toReal_mono (ENNReal.add_ne_top.2 ⟨ENNReal.add_ne_top.2 ⟨hfin1, hfin2⟩, hKtop⟩)
-      hle
-    rw [ENNReal.toReal_add (ENNReal.add_ne_top.2 ⟨hfin1, hfin2⟩) hKtop,
-      ENNReal.toReal_add hfin1 hfin2,
-      ENNReal.toReal_mul, ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity),
-      rpow_inv_rpow_eq hR.le ENNReal.toReal_nonneg hu] at this
-    linarith
-  have hbdd : BddAbove ((fun ρ => (Φ ρ).toReal) '' Icc (R / 2) R) :=
-    ⟨((k : ℝ≥0∞) ^ δ * Ig).toReal, by
-      rintro _ ⟨ρ, hρ, rfl⟩
-      exact ENNReal.toReal_mono hkI (hΦtop ρ hρ.2)⟩
-  have := hC₀ (f := fun ρ => (Φ ρ).toReal) (by linarith) (by positivity) ENNReal.toReal_nonneg hbdd
-    hstep
-  rw [show R - R / 2 = R / 2 by ring] at this
-  exact (ENNReal.le_ofReal_iff_toReal_le (hΦne _ (by linarith))
-    (ENNReal.toReal_nonneg.trans this)).2 this
+  have hεinv : ε⁻¹ ≠ ∞ := ENNReal.inv_ne_top.2 hε0
+  have hKtop : K ≠ ∞ := ENNReal.mul_ne_top ENNReal.ofNat_ne_top ENNReal.ofReal_ne_top
+  have hθtop : θE ≠ ∞ := ENNReal.mul_ne_top hKtop (ENNReal.mul_ne_top
+    (ENNReal.mul_ne_top hb ENNReal.ofReal_ne_top)
+    (ENNReal.rpow_ne_top_of_nonneg (by linarith) hεinv))
+  have hKhtop : K * ε⁻¹ ^ δ * Ih ≠ ∞ :=
+    ENNReal.mul_ne_top (ENNReal.mul_ne_top hKtop (ENNReal.rpow_ne_top_of_nonneg hδ.le hεinv)) hIh
+  have hΦs : Φ s ≠ ∞ := ne_top_of_le_ne_top
+    (ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg hδ.le ENNReal.coe_ne_top) hIg)
+    (setLIntegral_mul_min_rpow_le_of_subset hδ.le k (ball_subset_ball hsR))
+  -- The level-set estimate applies above the height `t₀ = X ^ (1 / q)`.
+  set X := (16 * R / (s - r)) ^ d * a
+  have hX : 0 ≤ X := by positivity
+  have hav : ⨍⁻ x in ball x₀ R, g x ^ q ∂μ = ENNReal.ofReal a :=
+    (ENNReal.ofReal_toReal (setLAverage_lt_top hIg).ne).symm
+  have hT : ENNReal.ofReal ((16 * R / (s - r)) ^ d) * ⨍⁻ x in ball x₀ R, g x ^ q ∂μ ≤
+      ENNReal.ofReal (X ^ q⁻¹) ^ q := by
+    rw [hav, ← ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_rpow_of_nonneg
+      (by positivity) hq0.le, Real.rpow_inv_rpow hX hq0.ne']
+  have h3 := setLIntegral_mul_min_rpow_le hq hε hε0 hε1 hg hh hrs hsR hIg hRH
+    (by positivity) hT k hδ
+  have hle : Φ r ≤ ENNReal.ofReal ((X ^ q⁻¹) ^ δ) * Ig + θE * Φ s + K * ε⁻¹ ^ δ * Ih := by
+    refine h3.trans ?_
+    have h0 : ∫⁻ x in ball x₀ r, g x ^ q ∂μ ≤ Ig :=
+      lintegral_mono_set (ball_subset_ball (hrs.le.trans hsR))
+    have h1 : ∫⁻ x in ball x₀ s, h x ^ (q + δ) ∂μ ≤ Ih :=
+      lintegral_mono_set (ball_subset_ball hsR)
+    calc _ ≤ ENNReal.ofReal ((X ^ q⁻¹) ^ δ) * Ig + K * (b * ENNReal.ofReal (δ / (q + δ - 1)) *
+          ε⁻¹ ^ (q + δ - 1) * Φ s + ε⁻¹ ^ δ * Ih) := by gcongr
+      _ = _ := by ring
+  -- Pass to real numbers; `rpow_inv_rpow_eq` writes `t₀ ^ δ` as a power of `s - r`.
+  have hfin1 : ENNReal.ofReal ((X ^ q⁻¹) ^ δ) * Ig ≠ ∞ :=
+    ENNReal.mul_ne_top ENNReal.ofReal_ne_top hIg
+  have hfin2 : θE * Φ s ≠ ∞ := ENNReal.mul_ne_top hθtop hΦs
+  have := ENNReal.toReal_mono (ENNReal.add_ne_top.2 ⟨ENNReal.add_ne_top.2 ⟨hfin1, hfin2⟩, hKhtop⟩)
+    hle
+  rw [ENNReal.toReal_add (ENNReal.add_ne_top.2 ⟨hfin1, hfin2⟩) hKhtop,
+    ENNReal.toReal_add hfin1 hfin2,
+    ENNReal.toReal_mul, ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity),
+    rpow_inv_rpow_eq hR.le ENNReal.toReal_nonneg hu] at this
+  linarith
 
-/-- Gehring's lemma for measurable functions; see `exists_setLAverage_rpow_add_le`. -/
-private theorem exists_setLAverage_rpow_add_le_of_measurable {q : ℝ} (hq : 1 < q) (b : ℝ≥0) :
-    ∃ δ₀ : ℝ, 0 < δ₀ ∧ ∀ δ, 0 < δ → δ ≤ δ₀ → ∃ C : ℝ≥0, ∀ {g h : E → ℝ≥0∞} {x₀ : E} {R : ℝ},
-      0 < R → Measurable g → Measurable h →
-      (∀ y ρ, 0 < ρ → ball y (2 * ρ) ⊆ ball x₀ R →
-        ⨍⁻ x in ball y ρ, g x ^ q ∂μ ≤
-          b * (⨍⁻ x in ball y (2 * ρ), g x ∂μ) ^ q + ⨍⁻ x in ball y (2 * ρ), h x ^ q ∂μ) →
-      ⨍⁻ x in ball x₀ (R / 2), g x ^ (q + δ) ∂μ ≤
-        C * ((⨍⁻ x in ball x₀ R, g x ^ q ∂μ) ^ ((q + δ) / q) +
+/-- **From the absorbed estimate to averages.** Suppose the integral of `g ^ (q + δ)` over
+`B(x₀, R / 2)` is at most the output
+`C₀ ((16 R) ^ β a ^ (δ / q) ∫_{B(x₀, R)} g ^ q · (R / 2) ^ (-β) + K ∫_{B(x₀, R)} h ^ (q + δ))`
+of the absorption lemma, where `a` is the average of `g ^ q` over `B(x₀, R)` and
+`β = dim E · δ / q`. Dividing by the measure of the half ball, which is `2 ^ (-dim E)` times that
+of `B(x₀, R)`, gives Gehring's estimate with the constant `C₀ 2 ^ dim E (32 ^ β + K)`. -/
+private theorem setLAverage_rpow_add_le_of_setLIntegral_le {q δ : ℝ} (hq : 0 < q) (hδ : 0 < δ)
+    {C₀ K : ℝ} (hC₀ : 0 ≤ C₀) (hK : 0 ≤ K) {g h : E → ℝ≥0∞} {x₀ : E} {R : ℝ} (hR : 0 < R)
+    (hIg : ∫⁻ x in ball x₀ R, g x ^ q ∂μ ≠ ∞) (hIh : ∫⁻ x in ball x₀ R, h x ^ (q + δ) ∂μ ≠ ∞)
+    (hJ : ∫⁻ x in ball x₀ (R / 2), g x ^ (q + δ) ∂μ ≤ ENNReal.ofReal (C₀ *
+      ((16 * R) ^ (finrank ℝ E * δ / q) * (⨍⁻ x in ball x₀ R, g x ^ q ∂μ).toReal ^ (δ / q) *
+          (∫⁻ x in ball x₀ R, g x ^ q ∂μ).toReal * (R / 2) ^ (-(finrank ℝ E * δ / q)) +
+        K * (∫⁻ x in ball x₀ R, h x ^ (q + δ) ∂μ).toReal))) :
+    ⨍⁻ x in ball x₀ (R / 2), g x ^ (q + δ) ∂μ ≤
+      ENNReal.ofReal (C₀ * 2 ^ finrank ℝ E * (32 ^ (finrank ℝ E * δ / q) + K)) *
+        ((⨍⁻ x in ball x₀ R, g x ^ q ∂μ) ^ ((q + δ) / q) +
           ⨍⁻ x in ball x₀ R, h x ^ (q + δ) ∂μ) := by
-  have hq0 : 0 < q := one_pos.trans hq
-  obtain ⟨ε, hε0, hε1, hε, δ₀, hδ₀, hθ⟩ := exists_gehring_constants hq b (finrank ℝ E)
-  refine ⟨δ₀, hδ₀, fun δ hδ hδδ₀ => ?_⟩
   set d := finrank ℝ E
   set β : ℝ := d * δ / q
-  have hθE := hθ δ hδ hδδ₀
-  have hθ1 : (2 * ENNReal.ofReal (4 ^ d) *
-      ((b : ℝ≥0∞) * ENNReal.ofReal (δ / (q + δ - 1)) * ε⁻¹ ^ (q + δ - 1))).toReal < 1 := by
-    have := ENNReal.toReal_mono (by simp) hθE
-    rw [ENNReal.toReal_inv, ENNReal.toReal_ofNat] at this
-    linarith
-  obtain ⟨C₀, hC₀pos, hC₀⟩ := exists_le_mul_mul_rpow_add_of_le_mul_add ENNReal.toReal_nonneg hθ1 β
-  set Kh := (2 * ENNReal.ofReal (4 ^ d) * ε⁻¹ ^ δ).toReal
-  have hKh : 0 ≤ Kh := ENNReal.toReal_nonneg
-  set C : ℝ := C₀ * 2 ^ d * (32 ^ β + Kh)
-  have hC : 0 < C := by positivity
-  refine ⟨C.toNNReal, fun {g h x₀ R} hR hg hh hRH => ?_⟩
-  have hCne : (C.toNNReal : ℝ≥0∞) ≠ 0 := by simpa using hC
-  have hB₀ : μ (ball x₀ R) ≠ ∞ := measure_ball_lt_top.ne
-  -- If either integral on the right is infinite, there is nothing to prove.
-  by_cases hIg : ∫⁻ x in ball x₀ R, g x ^ q ∂μ = ∞
-  · rw [setLAverage_eq μ (fun x => g x ^ q) (ball x₀ R), hIg, ENNReal.top_div_of_ne_top hB₀,
-      ENNReal.top_rpow_of_pos (by positivity), top_add, ENNReal.mul_top hCne]
-    exact le_top
-  by_cases hIh : ∫⁻ x in ball x₀ R, h x ^ (q + δ) ∂μ = ∞
-  · rw [setLAverage_eq μ (fun x => h x ^ (q + δ)) (ball x₀ R), hIh, ENNReal.top_div_of_ne_top hB₀,
-      add_top, ENNReal.mul_top hCne]
-    exact le_top
-  -- Let the truncation level tend to infinity.
-  have hk := toReal_setLIntegral_mul_min_rpow_le hq hε hε0 hε1 hδ hθE hC₀ hg hh hR hRH hIg hIh
-  have hlim := Measure.tendsto_lintegral_mul_min_rpow (μ.restrict (ball x₀ (R / 2))) hg hq0.le hδ
-  have hJ := le_of_tendsto' hlim fun k => hk k
-  -- Rewrite both sides in terms of real numbers.
+  set C := C₀ * 2 ^ d * (32 ^ β + K) with hCdef
+  have hC : 0 ≤ C := by positivity
+  -- The measures of the two balls, as real numbers.
   set m := μ (ball x₀ (R / 2))
   have hm0 : m ≠ 0 := (measure_ball_pos μ x₀ (by positivity)).ne'
   have hmtop : m ≠ ∞ := measure_ball_lt_top.ne
   set mr := m.toReal
   have hmr : 0 < mr := ENNReal.toReal_pos hm0 hmtop
+  have hB₀ : μ (ball x₀ R) ≠ ∞ := measure_ball_lt_top.ne
   have hB₀eq : μ (ball x₀ R) = ENNReal.ofReal (2 ^ d * mr) := by
     rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_toReal hmtop]
     conv_lhs => rw [show R = 2 * (R / 2) by ring]
     rw [Measure.addHaar_ball_mul_of_pos μ x₀ two_pos (R / 2), ← Measure.addHaar_ball_center μ x₀]
+  -- The averages and integrals over `B(x₀, R)`, as real numbers.
   set a := (⨍⁻ x in ball x₀ R, g x ^ q ∂μ).toReal
   have ha : 0 ≤ a := ENNReal.toReal_nonneg
-  have hav : ⨍⁻ x in ball x₀ R, g x ^ q ∂μ = ENNReal.ofReal a := by
-    rw [ENNReal.ofReal_toReal]
-    rw [setLAverage_eq]
-    exact ENNReal.div_ne_top hIg (measure_ball_pos μ x₀ hR).ne'
+  have hav : ⨍⁻ x in ball x₀ R, g x ^ q ∂μ = ENNReal.ofReal a :=
+    (ENNReal.ofReal_toReal (setLAverage_lt_top hIg).ne).symm
   have hIgr : (∫⁻ x in ball x₀ R, g x ^ q ∂μ).toReal = 2 ^ d * mr * a := by
     rw [← measure_mul_setLAverage _ hB₀, hav, hB₀eq, ← ENNReal.ofReal_mul (by positivity),
       ENNReal.toReal_ofReal (by positivity)]
@@ -646,26 +747,95 @@ private theorem exists_setLAverage_rpow_add_le_of_measurable {q : ℝ} (hq : 1 <
       Real.rpow_one]
   set P := a ^ ((q + δ) / q)
   have hP0 : 0 ≤ P := by positivity
+  -- Reduce to an inequality between real numbers.
   rw [setLAverage_eq, hav, havh, ENNReal.ofReal_rpow_of_nonneg ha (by positivity),
-    ← ENNReal.ofReal_add hP0 (by positivity), ← ENNReal.ofReal.eq_def, ← ENNReal.ofReal_mul hC.le,
+    ← ENNReal.ofReal_add hP0 (by positivity), ← ENNReal.ofReal_mul hC,
     ENNReal.div_le_iff hm0 hmtop, ← ENNReal.ofReal_toReal hmtop,
     ← ENNReal.ofReal_mul (by positivity)]
   refine hJ.trans (ENNReal.ofReal_le_ofReal ?_)
-  rw [hIgr, ENNReal.toReal_mul]
+  rw [hIgr]
   have hrhs : C * (P + Ihr / (2 ^ d * mr)) * mr =
-      C₀ * (2 ^ d * 32 ^ β * mr * P + 2 ^ d * Kh * mr * P + 32 ^ β * Ihr + Kh * Ihr) := by
-    simp only [C]
+      C₀ * (2 ^ d * 32 ^ β * mr * P + 2 ^ d * K * mr * P + 32 ^ β * Ihr + K * Ihr) := by
+    rw [hCdef]
     field_simp
     ring
-  calc C₀ * ((16 * R) ^ β * a ^ (δ / q) * (2 ^ d * mr * a) * (R / 2) ^ (-β) + Kh * Ihr)
-      = C₀ * (2 ^ d * 32 ^ β * mr * P + Kh * Ihr) := by
+  calc C₀ * ((16 * R) ^ β * a ^ (δ / q) * (2 ^ d * mr * a) * (R / 2) ^ (-β) + K * Ihr)
+      = C₀ * (2 ^ d * 32 ^ β * mr * P + K * Ihr) := by
         rw [← h32, ← hP]
         ring
     _ ≤ _ := by
         rw [hrhs]
         gcongr
-        have : 0 ≤ 2 ^ d * Kh * mr * P + 32 ^ β * Ihr := by positivity
+        have : 0 ≤ 2 ^ d * K * mr * P + 32 ^ β * Ihr := by positivity
         linarith
+
+/-- Gehring's lemma for measurable functions; see `exists_setLAverage_rpow_add_le`. -/
+private theorem exists_setLAverage_rpow_add_le_of_measurable {q : ℝ} (hq : 1 < q) (b : ℝ≥0) :
+    ∃ δ₀ : ℝ, 0 < δ₀ ∧ ∀ δ, 0 < δ → δ ≤ δ₀ → ∃ C : ℝ≥0, ∀ {g h : E → ℝ≥0∞} {x₀ : E} {R : ℝ},
+      0 < R → Measurable g → Measurable h →
+      (∀ y ρ, 0 < ρ → ball y (2 * ρ) ⊆ ball x₀ R →
+        ⨍⁻ x in ball y ρ, g x ^ q ∂μ ≤
+          b * (⨍⁻ x in ball y (2 * ρ), g x ∂μ) ^ q + ⨍⁻ x in ball y (2 * ρ), h x ^ q ∂μ) →
+      ⨍⁻ x in ball x₀ (R / 2), g x ^ (q + δ) ∂μ ≤
+        C * ((⨍⁻ x in ball x₀ R, g x ^ q ∂μ) ^ ((q + δ) / q) +
+          ⨍⁻ x in ball x₀ R, h x ^ (q + δ) ∂μ) := by
+  have hq0 : 0 < q := one_pos.trans hq
+  -- The height ratio `ε`, the gain `δ₀`, and for each `δ` the constant `C₀` of the absorption
+  -- lemma for the coefficient `θ < 1` and the exponent `β = dim E · δ / q`.
+  obtain ⟨ε, hε0, hε1, hε, δ₀, hδ₀, hθ⟩ := exists_gehring_constants hq b (finrank ℝ E)
+  refine ⟨δ₀, hδ₀, fun δ hδ hδδ₀ => ?_⟩
+  set d := finrank ℝ E
+  set β : ℝ := d * δ / q
+  have hθ1 : (2 * ENNReal.ofReal (4 ^ d) *
+      ((b : ℝ≥0∞) * ENNReal.ofReal (δ / (q + δ - 1)) * ε⁻¹ ^ (q + δ - 1))).toReal < 1 := by
+    have := ENNReal.toReal_mono (by simp) (hθ δ hδ hδδ₀)
+    rw [ENNReal.toReal_inv, ENNReal.toReal_ofNat] at this
+    linarith
+  obtain ⟨C₀, hC₀pos, hC₀⟩ := exists_le_mul_mul_rpow_add_of_le_mul_add ENNReal.toReal_nonneg hθ1 β
+  set Kh := (2 * ENNReal.ofReal (4 ^ d) * ε⁻¹ ^ δ).toReal
+  have hKh : 0 ≤ Kh := ENNReal.toReal_nonneg
+  set C : ℝ := C₀ * 2 ^ d * (32 ^ β + Kh)
+  have hC : 0 < C := by positivity
+  refine ⟨C.toNNReal, fun {g h x₀ R} hR hg hh hRH => ?_⟩
+  rw [ENNReal.ofNNReal_toNNReal]
+  have hCne : ENNReal.ofReal C ≠ 0 := (ENNReal.ofReal_pos.2 hC).ne'
+  have hB₀ : μ (ball x₀ R) ≠ ∞ := measure_ball_lt_top.ne
+  -- If either integral on the right is infinite, there is nothing to prove.
+  by_cases hIg : ∫⁻ x in ball x₀ R, g x ^ q ∂μ = ∞
+  · rw [setLAverage_eq μ (fun x => g x ^ q) (ball x₀ R), hIg, ENNReal.top_div_of_ne_top hB₀,
+      ENNReal.top_rpow_of_pos (by positivity), top_add, ENNReal.mul_top hCne]
+    exact le_top
+  by_cases hIh : ∫⁻ x in ball x₀ R, h x ^ (q + δ) ∂μ = ∞
+  · rw [setLAverage_eq μ (fun x => h x ^ (q + δ)) (ball x₀ R), hIh, ENNReal.top_div_of_ne_top hB₀,
+      add_top, ENNReal.mul_top hCne]
+    exact le_top
+  -- For each truncation level `k`, absorb the small multiple across the radii
+  -- `R / 2 ≤ r < s ≤ R`; the truncated integrals are finite, hence bounded in `ρ`.
+  have hkI : ∀ k : ℝ≥0, (k : ℝ≥0∞) ^ δ * ∫⁻ x in ball x₀ R, g x ^ q ∂μ ≠ ∞ := fun k =>
+    ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg hδ.le ENNReal.coe_ne_top) hIg
+  have hk : ∀ k : ℕ, ∫⁻ x in ball x₀ (R / 2), g x ^ q * min (g x) ((k : ℝ≥0) : ℝ≥0∞) ^ δ ∂μ ≤
+      ENNReal.ofReal (C₀ * ((16 * R) ^ β * (⨍⁻ x in ball x₀ R, g x ^ q ∂μ).toReal ^ (δ / q) *
+          (∫⁻ x in ball x₀ R, g x ^ q ∂μ).toReal * (R / 2) ^ (-β) +
+        Kh * (∫⁻ x in ball x₀ R, h x ^ (q + δ) ∂μ).toReal)) := by
+    intro k
+    have hΦ : ∀ ρ ≤ R, ∫⁻ x in ball x₀ ρ, g x ^ q * min (g x) ((k : ℝ≥0) : ℝ≥0∞) ^ δ ∂μ ≤
+        ((k : ℝ≥0) : ℝ≥0∞) ^ δ * ∫⁻ x in ball x₀ R, g x ^ q ∂μ := fun ρ hρ =>
+      setLIntegral_mul_min_rpow_le_of_subset hδ.le _ (ball_subset_ball hρ)
+    have hbdd : BddAbove ((fun ρ => (∫⁻ x in ball x₀ ρ,
+        g x ^ q * min (g x) ((k : ℝ≥0) : ℝ≥0∞) ^ δ ∂μ).toReal) '' Icc (R / 2) R) :=
+      ⟨(((k : ℝ≥0) : ℝ≥0∞) ^ δ * ∫⁻ x in ball x₀ R, g x ^ q ∂μ).toReal, by
+        rintro _ ⟨ρ, hρ, rfl⟩
+        exact ENNReal.toReal_mono (hkI k) (hΦ ρ hρ.2)⟩
+    have habs := hC₀ (by linarith) (by positivity) ENNReal.toReal_nonneg hbdd
+      fun r s _ hrs hsR => toReal_setLIntegral_mul_min_rpow_le hq ENNReal.coe_ne_top hε hε0 hε1
+        hg hh hR hrs hsR hδ hRH hIg hIh k
+    rw [show R - R / 2 = R / 2 by ring, ENNReal.toReal_mul] at habs
+    exact (ENNReal.le_ofReal_iff_toReal_le (ne_top_of_le_ne_top (hkI k) (hΦ _ (by linarith)))
+      (ENNReal.toReal_nonneg.trans habs)).2 habs
+  -- Let the truncation level tend to infinity, and pass to averages.
+  have hlim := Measure.tendsto_lintegral_mul_min_rpow (μ.restrict (ball x₀ (R / 2))) hg hq0.le hδ
+  exact setLAverage_rpow_add_le_of_setLIntegral_le hq0 hδ hC₀pos.le hKh hR hIg hIh
+    (le_of_tendsto' hlim hk)
 
 /-- **Gehring's lemma.** Let `q > 1` and `b ≥ 0`. There is `δ₀ > 0` such that for every
 `0 < δ ≤ δ₀` there is a constant `C`, independent of the functions, the centre and the radius, with
