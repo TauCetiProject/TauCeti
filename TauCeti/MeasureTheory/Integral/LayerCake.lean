@@ -50,6 +50,11 @@ Finally, it records the signed layer-cake representation of a real number,
 the integral over all levels `t` of the indicators of its superlevel sets `{u > t}`, corrected by
 `1_{t < 0}` so that the integrand is integrable.
 
+The truncated power formula `∫ min(f, k) ^ p = p ∫_0^k m {f > t} t ^ (p - 1) dt` is recorded
+together with the measurability of the distribution function `t ↦ m {f > t}`. The truncation lets
+a layer-cake argument work with finite quantities; monotone convergence removes it again, and the
+truncated integrals `∫ g ^ q min(g, k) ^ δ` increase to `∫ g ^ (q + δ)` as `k → ∞`.
+
 For positive real powers on a finite measure space, it also characterizes integrability by the
 weighted strict tail `μ.real {x | t < f x} * t ^ (p - 1)`, either on `(0, ∞)` or at infinity.
 The weighted tail is measurable without any measurability assumption on `f`, and its contribution
@@ -72,6 +77,12 @@ from bounded thresholds is integrable.
 * `MeasureTheory.Measure.exists_strictMono_ae_tendsto_measure_symmDiff_setOf_lt` — along a
   subsequence of an `L¹`-convergent sequence, the superlevel sets converge in measure at almost
   every level;
+* `MeasureTheory.Measure.measurable_measure_ofReal_lt` — the distribution function
+  `t ↦ m {f > t}` is measurable;
+* `MeasureTheory.Measure.lintegral_min_rpow_eq` — the integral of a truncated power
+  `min f k ^ p`, level by level up to the cap `k`;
+* `MeasureTheory.Measure.tendsto_lintegral_mul_min_rpow` — the truncated integrals
+  `∫ g ^ q min(g, k) ^ δ` increase to `∫ g ^ (q + δ)` as `k → ∞`;
 * `TauCeti.lintegral_ofReal_sub_eq_lintegral_measure` — the integral of a positive part
   `(g - f)⁺`, level by level;
 * `TauCeti.lintegral_sub_eq_lintegral_measure_sdiff` — the integral of a truncated difference
@@ -95,7 +106,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set
-open scoped ENNReal symmDiff
+open scoped ENNReal NNReal symmDiff
 
 namespace TauCeti
 
@@ -244,6 +255,60 @@ end TauCeti
 namespace MeasureTheory.Measure
 
 variable {α : Type*} [MeasurableSpace α]
+
+/-- **The layer cake formula for a truncation.** For `p > 0` and a cap `k`, the integral of
+`min f k ^ p` is `p` times the integral of `m {t < f} t ^ (p - 1)` over the heights `0 < t < k`. -/
+theorem lintegral_min_rpow_eq (m : Measure α) {f : α → ℝ≥0∞} (hf : AEMeasurable f m) (k : ℝ≥0)
+    {p : ℝ} (hp : 0 < p) :
+    ∫⁻ x, min (f x) k ^ p ∂m = ENNReal.ofReal p *
+      ∫⁻ t in Ioo 0 (k : ℝ), m {x | ENNReal.ofReal t < f x} * ENNReal.ofReal (t ^ (p - 1)) := by
+  rw [TauCeti.lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul m (hf.min aemeasurable_const) hp,
+    ← Ioi_inter_Iio, inter_comm, ← setLIntegral_indicator measurableSet_Iio]
+  congr 1
+  refine setLIntegral_congr_fun measurableSet_Ioi fun t ht => ?_
+  rcases lt_or_ge t k with htk | htk
+  · -- Below the cap, `min (f x) k` exceeds `t` exactly when `f x` does.
+    have hk : ENNReal.ofReal t < k := by
+      rw [← ENNReal.ofReal_coe_nnreal]
+      exact (ENNReal.ofReal_lt_ofReal_iff (lt_trans ht htk)).2 htk
+    rw [indicator_of_mem (by exact htk)]
+    simp only [lt_min_iff, hk, and_true]
+  · -- At or above the cap, `min (f x) k` never exceeds `t`.
+    have hk : (k : ℝ≥0∞) ≤ ENNReal.ofReal t := by
+      rw [← ENNReal.ofReal_coe_nnreal]
+      exact ENNReal.ofReal_le_ofReal htk
+    have hempty : {x | ENNReal.ofReal t < min (f x) k} = ∅ :=
+      eq_empty_iff_forall_notMem.2 fun x hx => not_lt.2 ((min_le_right _ _).trans hk) hx
+    rw [indicator_of_notMem (by simpa using htk), hempty, measure_empty, zero_mul]
+
+/-- The distribution function `t ↦ m {f > t}` is measurable, being antitone. -/
+theorem measurable_measure_ofReal_lt (m : Measure α) (f : α → ℝ≥0∞) :
+    Measurable fun t : ℝ => m {x | ENNReal.ofReal t < f x} :=
+  Antitone.measurable fun _ _ htt' =>
+    measure_mono fun _ hx => lt_of_le_of_lt (ENNReal.ofReal_le_ofReal htt') hx
+
+open Filter Topology in
+/-- **Removing a truncation.** As `k → ∞`, the integrals of `g ^ q min(g, k) ^ δ` increase to the
+integral of `g ^ (q + δ)`. -/
+theorem tendsto_lintegral_mul_min_rpow (m : Measure α) {g : α → ℝ≥0∞} (hg : Measurable g)
+    {q δ : ℝ} (hq : 0 ≤ q) (hδ : 0 < δ) :
+    Tendsto (fun k : ℕ => ∫⁻ x, g x ^ q * min (g x) (k : ℝ≥0) ^ δ ∂m) atTop
+      (𝓝 (∫⁻ x, g x ^ (q + δ) ∂m)) := by
+  refine lintegral_tendsto_of_tendsto_of_monotone
+    (fun k => ((hg.pow_const q).mul ((hg.min measurable_const).pow_const δ)).aemeasurable)
+    (ae_of_all _ fun x k k' hkk' => ?_) (ae_of_all _ fun x => ?_)
+  · dsimp only
+    gcongr
+  · have hmin : Tendsto (fun k : ℕ => min (g x) ((k : ℝ≥0) : ℝ≥0∞)) atTop (𝓝 (g x)) := by
+      simpa using tendsto_const_nhds.min ENNReal.tendsto_nat_nhds_top
+    have hpow := (ENNReal.continuous_rpow_const (y := δ)).tendsto (g x) |>.comp hmin
+    rw [ENNReal.rpow_add_of_nonneg _ _ hq hδ.le]
+    refine ENNReal.Tendsto.const_mul hpow ?_
+    by_cases hgx : g x = ∞
+    · left
+      simp [hgx, hδ]
+    · right
+      exact ENNReal.rpow_ne_top_of_nonneg hq hgx
 
 /-- Thresholding a real function at a level separated from `0` and `1` by `δ > 0`
 approximates a set in measure, with error at most its `L¹` distance from the indicator
