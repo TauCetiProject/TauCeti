@@ -650,6 +650,22 @@ theorem laplaceBeltrami_sq_le_finrank_mul_sum_hessian_sq
   exact Finset.sum_le_sum fun i _ ↦ Finset.single_le_sum
     (f := fun j ↦ hessian I f x (b i) (b j) ^ 2) (fun j _ ↦ sq_nonneg _) (Finset.mem_univ i)
 
+/-- If the Hessian of `f` at `x` is `c` times the metric, then `Δ f x = n c`, where `n` is the
+dimension. -/
+theorem laplaceBeltrami_eq_finrank_mul_of_hessian_eq_mul_inner
+    {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
+    [ChartedSpace H M] [IsManifold I 2 M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    {f : M → ℝ} {x : M} {c : ℝ}
+    (h : ∀ v w : TangentSpace I x, hessian I f x v w = c * inner ℝ v w) :
+    laplaceBeltrami I f x = Module.finrank ℝ E * c := by
+  let b := stdOrthonormalBasis ℝ (TangentSpace I x)
+  rw [laplaceBeltrami_eq_sum_hessian I f x b]
+  simp only [h, b.orthonormal.1, real_inner_self_eq_norm_sq, one_pow, mul_one,
+    Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
+  rw [← Module.finrank_eq_card_basis b.toBasis, finrank_tangentSpace]
+
 /-! ### Linear coordinates -/
 
 /-- **The Hessian in linear coordinates.** On a finite-dimensional real normed space `F` whose
