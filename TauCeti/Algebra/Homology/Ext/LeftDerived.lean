@@ -7,7 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Abelian.Ext
 public import Mathlib.CategoryTheory.Abelian.Projective.Ext
-import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
+import TauCeti.Algebra.Homology.LinearYoneda
 
 /-!
 # Vanishing of the two `Ext` functors
@@ -24,15 +24,15 @@ This file shows that the two constructions vanish together: both are zero exactl
 complex `Hom(P, Y)` is exact in degree `n`. In degree `n + 1` this says that every cocycle
 `f : Pₙ₊₁ ⟶ Y` is a coboundary. In degree `0` it says that every morphism `P₀ ⟶ Y` killed by
 `P₁ ⟶ P₀` is zero; as `X` is the cokernel of `P₁ ⟶ P₀`, these morphisms are the morphisms
-`X ⟶ Y`. This lets vanishing results proved for the derived-category
-`Ext`, such as the vanishing of `Ext (R ⧸ I) M` below the depth, be used for the left derived
-functor, and hence for local cohomology.
+`X ⟶ Y`. The matching descriptions of the exactness of `Hom(P, Y)` are
+`ChainComplex.exactAt_linearYonedaObj_zero_iff` and
+`ChainComplex.exactAt_linearYonedaObj_succ_iff` in `TauCeti.Algebra.Homology.LinearYoneda`.
+This lets vanishing results proved for the derived-category `Ext`, such as the vanishing of
+`Ext (R ⧸ I) M` below the depth, be used for the left derived functor, and hence for local
+cohomology.
 
 ## Main results
 
-* `ChainComplex.exactAt_linearYonedaObj_zero_iff` and
-  `ChainComplex.exactAt_linearYonedaObj_succ_iff`: exactness of `Hom(K, Y)` for a chain complex
-  `K` indexed by `ℕ`, in terms of morphisms out of the terms of `K`.
 * `CategoryTheory.ProjectiveResolution.subsingleton_ext_iff_exactAt`: `Ext X Y n` vanishes if and
   only if `Hom(P, Y)` is exact in degree `n`.
 * `CategoryTheory.ProjectiveResolution.isZero_Ext_iff_exactAt`: the same for the left derived
@@ -52,41 +52,6 @@ public section
 universe w v u t
 
 open CategoryTheory Limits
-
-namespace ChainComplex
-
-variable {C : Type u} [Category.{v} C] [Abelian C] (k : Type t) [Ring k] [Linear k C]
-  (K : ChainComplex C ℕ) (Y : C)
-
-/-- The complex `Hom(K, Y)` is exact in degree `0` exactly when every morphism `K₀ ⟶ Y` killed by
-the differential `K₁ ⟶ K₀` is zero. -/
-theorem exactAt_linearYonedaObj_zero_iff :
-    (K.linearYonedaObj k Y).ExactAt 0 ↔ ∀ f : K.X 0 ⟶ Y, K.d 1 0 ≫ f = 0 → f = 0 := by
-  rw [HomologicalComplex.exactAt_iff' _ 0 0 1 CochainComplex.prev_nat_zero (by simp),
-    ShortComplex.moduleCat_exact_iff]
-  have h00 : (K.linearYonedaObj k Y).d 0 0 = 0 :=
-    HomologicalComplex.shape _ 0 0 (Nat.succ_ne_zero 0)
-  -- The elements of `Hom(K, Y)` in degree `0` are the morphisms `K₀ ⟶ Y`, and the zero element
-  -- of `ModuleCat.of k (K₀ ⟶ Y)` is the zero morphism; `exact` uses this identification.
-  refine forall_congr' fun f ↦ imp_congr Iff.rfl ⟨fun ⟨x, hx⟩ ↦ ?_, fun hf ↦ ⟨0, ?_⟩⟩
-  · have h : f = 0 := by simpa [h00] using hx.symm
-    exact h
-  · subst hf
-    exact map_zero _
-
-/-- The complex `Hom(K, Y)` is exact in degree `n + 1` exactly when every morphism `Kₙ₊₁ ⟶ Y`
-killed by the differential `Kₙ₊₂ ⟶ Kₙ₊₁` factors through the differential `Kₙ₊₁ ⟶ Kₙ`. -/
-theorem exactAt_linearYonedaObj_succ_iff (n : ℕ) :
-    (K.linearYonedaObj k Y).ExactAt (n + 1) ↔
-      ∀ f : K.X (n + 1) ⟶ Y, K.d (n + 2) (n + 1) ≫ f = 0 →
-        ∃ g : K.X n ⟶ Y, K.d (n + 1) n ≫ g = f := by
-  rw [HomologicalComplex.exactAt_iff' _ n (n + 1) (n + 2) (CochainComplex.prev_nat_succ n)
-    (by simp), ShortComplex.moduleCat_exact_iff]
-  -- The differentials of `Hom(K, Y)` are precomposition with those of `K`
-  -- (`ChainComplex.linearYonedaObj_d`), so both sides are the same statement.
-  rfl
-
-end ChainComplex
 
 namespace CategoryTheory.ProjectiveResolution
 

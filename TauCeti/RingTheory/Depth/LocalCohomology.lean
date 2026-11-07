@@ -7,9 +7,8 @@ module
 
 public import Mathlib.Algebra.Homology.LocalCohomology
 public import Mathlib.RingTheory.Depth.Basic
-import TauCeti.Algebra.Category.ModuleCat.Ext.Basic
 import TauCeti.Algebra.Homology.Ext.LeftDerived
-import TauCeti.RingTheory.Finiteness.Nakayama
+import TauCeti.RingTheory.Depth.Basic
 
 /-!
 # Local cohomology vanishes below the depth
@@ -28,13 +27,12 @@ derived-category groups `Ext (R ⧸ I) M i`. The two constructions of `Ext` vani
 (`CategoryTheory.Abelian.Ext.subsingleton_iff_isZero_Ext`), so it suffices to show that each
 `Ext (R ⧸ Iⁿ) M i` vanishes for `i < I.depth M`. This follows from the Rees theorem
 `ModuleCat.exists_isRegular_tfae`: below the `I`-depth of `M`, `Ext N M i` vanishes for every finite
-module `N` supported in `V(I)`. Equivalently, `I.depth M ≤ N.depth M` for such `N`, which also
+module `N` supported in `V(I)`. Equivalently, `I.depth M ≤ N.depth M` for such `N`
+(`ModuleCat.depth_le_depth_of_support_subset` in `TauCeti.RingTheory.Depth.Basic`), which also
 holds when `I M = M`, as then `N` and `M` have comaximal annihilators.
 
 ## Main results
 
-* `ModuleCat.depth_le_depth_of_support_subset`: for finite modules `N` and `M` over a Noetherian
-  ring with `Supp N ⊆ V(I)`, `I.depth M ≤ N.depth M`.
 * `localCohomology.isZero_obj_of_lt_depth`: `H^i_I(M) = 0` for `i < I.depth M`.
 
 ## References
@@ -49,39 +47,6 @@ public section
 universe v u
 
 open CategoryTheory Limits Abelian
-
-namespace ModuleCat
-
-variable {R : Type u} [CommRing R] [Small.{v} R] [IsNoetherianRing R]
-
-/-- For finite modules `N` and `M` over a Noetherian ring with `N` supported in `V(I)`, the depth
-of `M` with respect to `I` is at most the depth `N.depth M`: `Ext N M i` vanishes for every
-`i < I.depth M`. Unlike `ModuleCat.depth_eq_depth_of_support_eq`, this needs neither `N ≠ 0` nor
-`I M ≠ M`. -/
-theorem depth_le_depth_of_support_subset (I : Ideal R) (N M : ModuleCat.{v} R)
-    [Module.Finite R N] [Module.Finite R M]
-    (hsupp : Module.support R N ⊆ PrimeSpectrum.zeroLocus I) : I.depth M ≤ N.depth M := by
-  have hrad : I ≤ (Module.annihilator R N).radical := by
-    rwa [Module.support_eq_zeroLocus, PrimeSpectrum.zeroLocus_subset_zeroLocus_iff] at hsupp
-  -- If the annihilators are comaximal, every `Ext N M i` vanishes.
-  by_cases h : Module.annihilator R N ⊔ Module.annihilator R M = ⊤
-  · rw [(depth_eq_top_iff N M).2 fun i ↦ Ext.subsingleton_of_annihilator_sup_eq_top h i]
-    exact le_top
-  -- Otherwise `N ≠ 0` and `I M ≠ M`, the setting of the Rees theorem.
-  have : Nontrivial N := not_subsingleton_iff_nontrivial.1 fun hN ↦
-    h (by simp [Module.annihilator_eq_top_iff.2 hN])
-  have hI : I • (⊤ : Submodule R M) < ⊤ := by
-    refine lt_top_iff_ne_top.2 fun hI ↦ h (Ideal.radical_eq_top.1 (top_le_iff.1 ?_))
-    rw [← (Ideal.smul_top_eq_top_iff_sup_annihilator_eq_top I).1 hI]
-    exact sup_le (hrad.trans (Ideal.radical_mono le_sup_left))
-      (le_sup_right.trans Ideal.le_radical)
-  rw [depth]
-  refine le_sSup fun i hi ↦ ?_
-  have rees := (exists_isRegular_tfae I (i + 1) M hI).out 1 2
-  refine rees.2 (fun j hj ↦ ?_) N ‹_› ‹_› hsupp i (Nat.lt_add_one i)
-  exact subsingleton_ext_of_lt_depth ((Nat.cast_le.2 (Nat.lt_add_one_iff.1 hj)).trans_lt hi)
-
-end ModuleCat
 
 namespace localCohomology
 
