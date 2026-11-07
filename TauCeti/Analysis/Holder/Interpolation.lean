@@ -10,6 +10,10 @@ public import Mathlib.Analysis.Calculus.MeanValue
 public import Mathlib.Analysis.Normed.Operator.Mul
 public import Mathlib.Topology.MetricSpace.Holder
 public import TauCeti.Topology.MetricSpace.Holder
+public import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
+import Mathlib.Analysis.Calculus.ContDiff.Comp
+import Mathlib.Analysis.Calculus.Deriv.Comp
+import Mathlib.Analysis.Calculus.Deriv.Pow
 
 /-!
 # Interpolation inequalities for derivatives
@@ -35,6 +39,17 @@ supremum of `D^(k+2) f`, which must be finite a priori, gives
 `‖D^(k+2) f‖_∞ ≤ 32 ε⁻² ‖D^k f‖_∞ + 2 ε^α [D^(k+2) f]_α`.
 
 All constants are absolute: they depend neither on the dimension nor on `α`.
+
+Interior estimates need local bounds, which use the second derivative. If `g''` is `α`-Hölder with
+constant `H` on `s`, the second-order Taylor remainder of `g` along a segment in `s` is at most
+`H ‖w‖^(2 + α)`. In the symmetric difference `g (x + w) - g (x - w)` the second-order terms cancel,
+so at the centre `x` of a closed ball of radius `ε` in `s`, with `‖g‖ ≤ M` there,
+
+`‖g' x‖ ≤ M / ε + H ε^(1 + α)`,
+
+and at the centre of a closed ball of radius `2 ε` in `s`, `‖g'' x‖ ≤ 2 M / ε² + 3 H ε^α`. Only
+the values of `g` and the Hölder constant of `g''` on `s` enter. For a function which is `C²` on
+an open set containing `s`, with `D²u` `α`-Hölder on `s`, these are bounds on `‖Du‖` and `‖D²u‖`.
 
 On a closed interval `[a, b]` the same argument applies to one-sided derivatives within
 `[a, b]`, for steps `h` with `2 h ≤ b - a`, since from each point of `[a, b]` a step of length `h`
@@ -72,6 +87,13 @@ linear approximation error by the difference of the Hessians.
   derivatives above `D^k f`, and
   `HolderWith.norm_iteratedFDeriv_succ_le_and_norm_iteratedFDeriv_add_two_le`: both bounds with
   one constant, for scales `ε ≤ 1`.
+* `HolderOnWith.norm_image_sub_sub_sub_le_of_hasFDerivWithinAt`: the second-order Taylor bound
+  for a Hölder second derivative.
+* `HolderOnWith.norm_le_of_hasFDerivWithinAt_of_closedBall_subset` and
+  `HolderOnWith.norm_le_of_hasFDerivWithinAt_of_closedBall_two_mul_subset`: the local
+  interpolation inequalities for the first and second derivatives on a ball.
+* `HolderOnWith.norm_fderiv_le_of_contDiffOn` and
+  `HolderOnWith.norm_iteratedFDeriv_two_le_of_contDiffOn`: the same for a `C²` function.
 * `HolderOnWith.norm_le_of_hasDerivWithinAt_Icc`: the interpolation inequality for derivatives
   within a closed interval.
 * `TauCeti.holderOnWith_Icc_of_hasFDerivAt_of_hasDerivWithinAt`: the temporal
@@ -225,6 +247,190 @@ theorem norm_le_of_hasDerivWithinAt_Icc {f f' : ℝ → F} {a b : ℝ} {H β : �
   rw [Real.rpow_add' hh.le (by positivity), Real.rpow_one] at hD
   rw [div_add' _ _ _ hh.ne', le_div_iff₀ hh]
   nlinarith [hM t ht, hM (t + w) hwmem]
+
+/-- **Second-order Taylor bound for a Hölder second derivative.** If `g` has derivative `g'`
+within `s`, `g'` has derivative `g''` within `s`, and `g''` is `α`-Hölder with constant `H` on
+`s`, then for a segment from `x` to `x + w` contained in `s`, the error of the second-order Taylor
+polynomial is at most `H ‖w‖^(2 + α)`. -/
+theorem norm_image_sub_sub_sub_le_of_hasFDerivWithinAt {s : Set E} {g : E → F}
+    {g' : E → E →L[ℝ] F} {g'' : E → E →L[ℝ] E →L[ℝ] F} {H α : ℝ≥0}
+    (hH : HolderOnWith H α g'' s) (hg : ∀ y ∈ s, HasFDerivWithinAt g (g' y) s y)
+    (hg' : ∀ y ∈ s, HasFDerivWithinAt g' (g'' y) s y) {x w : E}
+    (hxw : segment ℝ x (x + w) ⊆ s) :
+    ‖g (x + w) - g x - g' x w - (2 : ℝ)⁻¹ • g'' x w w‖ ≤ H * ‖w‖ ^ (2 + (α : ℝ)) := by
+  have hmem : ∀ τ ∈ Icc (0 : ℝ) 1, x + τ • w ∈ segment ℝ x (x + w) := fun τ hτ => by
+    rw [segment_eq_image']
+    exact ⟨τ, hτ, by simp⟩
+  -- The remainder `ψ τ = g (x + τ w) - τ g' x w - τ² / 2 g'' x w w` has derivative
+  -- `(g' (x + τ w) - g' x - g'' x (τ w)) w`, which the first-order bound for `g'` controls.
+  set ψ : ℝ → F := fun τ => g (x + τ • w) - τ • g' x w - (τ ^ 2 / 2) • g'' x w w
+  have hderiv : ∀ τ ∈ Icc (0 : ℝ) 1, HasDerivWithinAt ψ
+      (g' (x + τ • w) w - g' x w - τ • g'' x w w) (Icc 0 1) τ := by
+    intro τ hτ
+    have hline : HasDerivWithinAt (fun σ : ℝ => x + σ • w) w (Icc 0 1) τ := by
+      simpa using (((hasDerivAt_id τ).smul_const w).const_add x).hasDerivWithinAt
+    have hgτ := HasFDerivWithinAt.comp_hasDerivWithinAt τ (hg _ (hxw (hmem τ hτ))) hline
+      fun σ hσ => hxw (hmem σ hσ)
+    have hlin := ((hasDerivAt_id τ).smul_const (g' x w)).hasDerivWithinAt (s := Icc 0 1)
+    have hquad := (((hasDerivAt_pow 2 τ).div_const 2).smul_const (g'' x w w)).hasDerivWithinAt
+      (s := Icc 0 1)
+    convert (hgτ.sub hlin).sub hquad using 1
+    · funext σ
+      simp [ψ]
+    · have h2 : ((2 : ℕ) : ℝ) * τ ^ (2 - 1) / 2 = τ := by norm_num
+      rw [h2, one_smul]
+  have hbound : ∀ τ ∈ Ico (0 : ℝ) 1,
+      ‖g' (x + τ • w) w - g' x w - τ • g'' x w w‖ ≤ H * ‖w‖ ^ (2 + (α : ℝ)) := by
+    intro τ hτ
+    have hseg : segment ℝ x (x + τ • w) ⊆ s := ((convex_segment x (x + w)).segment_subset
+      (left_mem_segment ℝ x (x + w)) (hmem τ (Ico_subset_Icc_self hτ))).trans hxw
+    have hT := hH.norm_image_sub_sub_le_of_hasFDerivWithinAt hg' hseg
+    have hτw : ‖τ • w‖ ≤ ‖w‖ := by
+      rw [norm_smul, Real.norm_of_nonneg hτ.1]
+      exact mul_le_of_le_one_left (norm_nonneg w) hτ.2.le
+    have heq : g' (x + τ • w) w - g' x w - τ • g'' x w w =
+        (g' (x + τ • w) - g' x - g'' x (τ • w)) w := by
+      simp
+    rw [heq, Real.rpow_add' (norm_nonneg w) (by positivity), Real.rpow_two, ← mul_assoc]
+    refine (ContinuousLinearMap.le_opNorm _ w).trans ?_
+    calc ‖g' (x + τ • w) - g' x - g'' x (τ • w)‖ * ‖w‖
+        ≤ H * ‖τ • w‖ ^ (1 + (α : ℝ)) * ‖w‖ := by gcongr
+      _ ≤ H * ‖w‖ ^ (1 + (α : ℝ)) * ‖w‖ := by gcongr
+      _ = H * ‖w‖ ^ (2 : ℝ) * ‖w‖ ^ (α : ℝ) := by
+        rw [Real.rpow_add' (norm_nonneg w) (by positivity), Real.rpow_one, Real.rpow_two]
+        ring
+      _ = H * ‖w‖ ^ 2 * ‖w‖ ^ (α : ℝ) := by rw [Real.rpow_two]
+  have hmv := norm_image_sub_le_of_norm_deriv_le_segment' hderiv hbound 1
+    (right_mem_Icc.2 zero_le_one)
+  have hψ : ψ 1 - ψ 0 = g (x + w) - g x - g' x w - (2 : ℝ)⁻¹ • g'' x w w := by
+    simp only [ψ, one_smul, zero_smul, add_zero]
+    module
+  rw [← hψ]
+  simpa using hmv
+
+/-- **Interpolation of the first derivative on a ball.** If `g` has derivative `g'` within `s`,
+`g'` has derivative `g''` within `s`, `g''` is `α`-Hölder with constant `H` on `s` and `‖g‖ ≤ M`
+on `s`, then `‖g' x‖ ≤ M / ε + H ε^(1 + α)` at every centre `x` of a closed ball of radius
+`ε > 0` contained in `s`. The symmetric difference `g (x + w) - g (x - w)` approximates `2 g' x w`
+up to `2 H ‖w‖^(2 + α)`, since the second-order terms cancel. -/
+theorem norm_le_of_hasFDerivWithinAt_of_closedBall_subset {s : Set E} {g : E → F}
+    {g' : E → E →L[ℝ] F} {g'' : E → E →L[ℝ] E →L[ℝ] F} {H α : ℝ≥0}
+    (hH : HolderOnWith H α g'' s) (hg : ∀ y ∈ s, HasFDerivWithinAt g (g' y) s y)
+    (hg' : ∀ y ∈ s, HasFDerivWithinAt g' (g'' y) s y) {M : ℝ} (hM : ∀ y ∈ s, ‖g y‖ ≤ M)
+    {x : E} {ε : ℝ} (hε : 0 < ε) (hxs : Metric.closedBall x ε ⊆ s) :
+    ‖g' x‖ ≤ M / ε + H * ε ^ (1 + (α : ℝ)) := by
+  have hx : x ∈ s := hxs (Metric.mem_closedBall_self hε.le)
+  have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM x hx)
+  refine ContinuousLinearMap.opNorm_le_of_unit_norm (by positivity) fun v hv => ?_
+  -- Test `g' x` in the direction `w = ε v` and in the opposite direction.
+  set w := ε • v
+  have hw : ‖w‖ = ε := by rw [norm_smul, hv, mul_one, Real.norm_of_nonneg hε.le]
+  have hseg : ∀ u : E, ‖u‖ = ε → segment ℝ x (x + u) ⊆ s := fun u hu =>
+    ((convex_closedBall x ε).segment_subset (Metric.mem_closedBall_self hε.le)
+      (by simp [hu])).trans hxs
+  have hp := hH.norm_image_sub_sub_sub_le_of_hasFDerivWithinAt hg hg' (hseg w hw)
+  have hm := hH.norm_image_sub_sub_sub_le_of_hasFDerivWithinAt hg hg' (hseg (-w) (by simp [hw]))
+  rw [hw] at hp
+  rw [norm_neg, hw] at hm
+  have hdiff : (2 : ℝ) • g' x w = (g (x + w) - g (x + -w)) -
+      ((g (x + w) - g x - g' x w - (2 : ℝ)⁻¹ • g'' x w w) -
+        (g (x + -w) - g x - g' x (-w) - (2 : ℝ)⁻¹ • g'' x (-w) (-w))) := by
+    simp only [map_neg, neg_apply, neg_neg]
+    module
+  have hMp := hM _ (hseg w hw (right_mem_segment ℝ _ _))
+  have hMm := hM _ (hseg (-w) (by simp [hw]) (right_mem_segment ℝ _ _))
+  have h2 : 2 * ‖g' x w‖ ≤ 2 * M + 2 * (H * ε ^ (2 + (α : ℝ))) := by
+    have := congrArg norm hdiff
+    rw [norm_smul, Real.norm_two] at this
+    rw [this]
+    refine (norm_sub_le _ _).trans ?_
+    have h₁ := norm_sub_le (g (x + w)) (g (x + -w))
+    have h₂ := norm_sub_le (g (x + w) - g x - g' x w - (2 : ℝ)⁻¹ • g'' x w w)
+      (g (x + -w) - g x - g' x (-w) - (2 : ℝ)⁻¹ • g'' x (-w) (-w))
+    linarith
+  have hgw : ‖g' x w‖ = ε * ‖g' x v‖ := by
+    rw [map_smul, norm_smul, Real.norm_of_nonneg hε.le]
+  rw [hgw] at h2
+  rw [Real.rpow_add' hε.le (by positivity), Real.rpow_one, div_add' _ _ _ hε.ne', le_div_iff₀ hε]
+  rw [Real.rpow_add' hε.le (by positivity), Real.rpow_two, sq] at h2
+  have hre : (H : ℝ) * (ε * ε ^ (α : ℝ)) * ε = H * (ε * ε * ε ^ (α : ℝ)) := by ring
+  linarith
+
+/-- **Interpolation of the second derivative on a ball.** If `g` has derivative `g'` within `s`,
+`g'` has derivative `g''` within `s`, `g''` is `α`-Hölder with constant `H` on `s` and `‖g‖ ≤ M`
+on `s`, then `‖g'' x‖ ≤ 2 M / ε² + 3 H ε^α` at every centre `x` of a closed ball of radius
+`2 ε > 0` contained in `s`. Only `g` and the Hölder constant of `g''` enter, so this is the local
+form of the interpolation inequality used to absorb lower-order terms in interior estimates. -/
+theorem norm_le_of_hasFDerivWithinAt_of_closedBall_two_mul_subset {s : Set E} {g : E → F}
+    {g' : E → E →L[ℝ] F} {g'' : E → E →L[ℝ] E →L[ℝ] F} {H α : ℝ≥0}
+    (hH : HolderOnWith H α g'' s) (hg : ∀ y ∈ s, HasFDerivWithinAt g (g' y) s y)
+    (hg' : ∀ y ∈ s, HasFDerivWithinAt g' (g'' y) s y) {M : ℝ} (hM : ∀ y ∈ s, ‖g y‖ ≤ M)
+    {x : E} {ε : ℝ} (hε : 0 < ε) (hxs : Metric.closedBall x (2 * ε) ⊆ s) :
+    ‖g'' x‖ ≤ 2 * M / ε ^ 2 + 3 * H * ε ^ (α : ℝ) := by
+  have hx : x ∈ s := hxs (Metric.mem_closedBall_self (by positivity))
+  have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM x hx)
+  -- The first derivative is bounded at every point whose `ε`-ball lies in `s`.
+  have h1 : ∀ y, dist y x ≤ ε → ‖g' y‖ ≤ M / ε + H * ε ^ (1 + (α : ℝ)) := fun y hy =>
+    hH.norm_le_of_hasFDerivWithinAt_of_closedBall_subset hg hg' hM hε fun z hz =>
+      hxs (by
+        rw [Metric.mem_closedBall] at hz ⊢
+        linarith [dist_triangle z y x])
+  refine ContinuousLinearMap.opNorm_le_of_unit_norm (by positivity) fun v hv => ?_
+  set w := ε • v
+  have hw : ‖w‖ = ε := by rw [norm_smul, hv, mul_one, Real.norm_of_nonneg hε.le]
+  have hseg : segment ℝ x (x + w) ⊆ s :=
+    ((convex_closedBall x (2 * ε)).segment_subset (Metric.mem_closedBall_self (by positivity))
+      (by rw [Metric.mem_closedBall, dist_self_add_left, hw]; linarith)).trans hxs
+  have hD := hH.norm_apply_le_of_hasFDerivWithinAt hg' hseg
+  rw [hw, map_smul, norm_smul, Real.norm_of_nonneg hε.le] at hD
+  have hxw := h1 (x + w) (by simp [hw])
+  have hxx := h1 x (by simp [hε.le])
+  rw [Real.rpow_add' hε.le (by positivity), Real.rpow_one] at hD hxw hxx
+  rw [div_add' _ _ _ (by positivity), le_div_iff₀ (by positivity)]
+  have hεα : 0 ≤ (H : ℝ) * ε ^ (α : ℝ) := by positivity
+  have key : ε * ‖g'' x v‖ ≤ 2 * (M / ε) + 3 * (H * (ε * ε ^ (α : ℝ))) := by linarith
+  have key' : ε * (ε * ‖g'' x v‖) ≤ ε * (2 * (M / ε) + 3 * (H * (ε * ε ^ (α : ℝ)))) :=
+    mul_le_mul_of_nonneg_left key hε.le
+  have hMε : ε * (M / ε) = M := mul_div_cancel₀ M hε.ne'
+  nlinarith
+
+/-- For `u` of class `C²` on an open set `U ⊇ s`, the first and second Fréchet derivatives are
+derivatives within `s`. -/
+private theorem hasFDerivWithinAt_fderiv_and_fderiv_fderiv {U s : Set E} {u : E → F}
+    (hU : IsOpen U) (hu : ContDiffOn ℝ 2 u U) (hsU : s ⊆ U) :
+    (∀ y ∈ s, HasFDerivWithinAt u (fderiv ℝ u y) s y) ∧
+      (∀ y ∈ s, HasFDerivWithinAt (fderiv ℝ u) (fderiv ℝ (fderiv ℝ u) y) s y) := by
+  refine ⟨fun y hy => ?_, fun y hy => ?_⟩
+  · exact ((hu.contDiffAt (hU.mem_nhds (hsU hy))).differentiableAt (by norm_num)).hasFDerivAt
+      |>.hasFDerivWithinAt
+  · exact (((hu.contDiffAt (hU.mem_nhds (hsU hy))).fderiv_right (m := 1)
+      (by norm_num)).differentiableAt one_ne_zero).hasFDerivAt.hasFDerivWithinAt
+
+/-- **Interpolation of the gradient of a `C²` function on a ball.** Let `u` be `C²` on an open set
+`U ⊇ s`, with `D²u` `α`-Hölder with constant `H` on `s` and `‖u‖ ≤ M` on `s`. Then
+`‖Du(x)‖ ≤ M / ε + H ε^(1 + α)` at every centre `x` of a closed ball of radius `ε > 0` in `s`. -/
+theorem norm_fderiv_le_of_contDiffOn {U s : Set E} {u : E → F} (hU : IsOpen U)
+    (hu : ContDiffOn ℝ 2 u U) (hsU : s ⊆ U) {H α : ℝ≥0}
+    (hH : HolderOnWith H α (iteratedFDeriv ℝ 2 u) s) {M : ℝ} (hM : ∀ y ∈ s, ‖u y‖ ≤ M)
+    {x : E} {ε : ℝ} (hε : 0 < ε) (hxs : Metric.closedBall x ε ⊆ s) :
+    ‖fderiv ℝ u x‖ ≤ M / ε + H * ε ^ (1 + (α : ℝ)) := by
+  obtain ⟨hd1, hd2⟩ := hasFDerivWithinAt_fderiv_and_fderiv_fderiv hU hu hsU
+  have hH' := (TauCeti.holderOnWith_fderiv_fderiv_iff_iteratedFDeriv_two u).2 hH
+  exact hH'.norm_le_of_hasFDerivWithinAt_of_closedBall_subset hd1 hd2 hM hε hxs
+
+/-- **Interpolation of the Hessian of a `C²` function on a ball.** Let `u` be `C²` on an open set
+`U ⊇ s`, with `D²u` `α`-Hölder with constant `H` on `s` and `‖u‖ ≤ M` on `s`. Then
+`‖D²u(x)‖ ≤ 2 M / ε² + 3 H ε^α` at every centre `x` of a closed ball of radius `2 ε > 0` in
+`s`. -/
+theorem norm_iteratedFDeriv_two_le_of_contDiffOn {U s : Set E} {u : E → F} (hU : IsOpen U)
+    (hu : ContDiffOn ℝ 2 u U) (hsU : s ⊆ U) {H α : ℝ≥0}
+    (hH : HolderOnWith H α (iteratedFDeriv ℝ 2 u) s) {M : ℝ} (hM : ∀ y ∈ s, ‖u y‖ ≤ M)
+    {x : E} {ε : ℝ} (hε : 0 < ε) (hxs : Metric.closedBall x (2 * ε) ⊆ s) :
+    ‖iteratedFDeriv ℝ 2 u x‖ ≤ 2 * M / ε ^ 2 + 3 * H * ε ^ (α : ℝ) := by
+  obtain ⟨hd1, hd2⟩ := hasFDerivWithinAt_fderiv_and_fderiv_fderiv hU hu hsU
+  have hH' := (TauCeti.holderOnWith_fderiv_fderiv_iff_iteratedFDeriv_two u).2 hH
+  rw [← norm_iteratedFDeriv_fderiv (n := 1), norm_iteratedFDeriv_one]
+  exact hH'.norm_le_of_hasFDerivWithinAt_of_closedBall_two_mul_subset hd1 hd2 hM hε hxs
 
 end HolderOnWith
 
