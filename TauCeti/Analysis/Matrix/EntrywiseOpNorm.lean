@@ -36,20 +36,6 @@ open Matrix
 
 open scoped BigOperators
 
-/-- The `i`-th coordinate of the Euclidean action of a matrix is the usual row sum. -/
-theorem _root_.Matrix.toEuclideanLin_apply_eq_sum {𝕜 ι κ : Type*} [RCLike 𝕜]
-    [Fintype κ] [DecidableEq κ]
-    (A : Matrix ι κ 𝕜) (x : EuclideanSpace 𝕜 κ) (i : ι) :
-    (Matrix.toEuclideanLin A x) i = ∑ j : κ, A i j * x j := by
-  -- `toEuclideanLin` abbreviates `toLpLin 2 2`; use its public evaluation
-  -- theorem instead of reducing the `EuclideanSpace`/`WithLp` implementation.
-  calc
-    _ = (WithLp.toLp 2 (A *ᵥ WithLp.ofLp x)) i :=
-      congrArg (fun y : EuclideanSpace 𝕜 ι => y i)
-        (Matrix.toLpLin_apply (p := 2) (q := 2) A x)
-    _ = ∑ j : κ, A i j * x j := by
-      simp [Matrix.mulVec, dotProduct]
-
 /-- If every entry of a finite matrix is bounded by `ε ≥ 0`, each coordinate of its Euclidean
 action has norm at most `ε * (√(card κ) * ‖x‖)`. -/
 theorem _root_.Matrix.norm_toEuclideanLin_apply_le_of_entry_le {𝕜 ι κ : Type*} [RCLike 𝕜]
@@ -59,7 +45,10 @@ theorem _root_.Matrix.norm_toEuclideanLin_apply_le_of_entry_le {𝕜 ι κ : Typ
     ‖(Matrix.toEuclideanLin A x) i‖ ≤ ε * (Real.sqrt (Fintype.card κ) * ‖x‖) := by
   calc
     ‖(Matrix.toEuclideanLin A x) i‖ = ‖∑ j : κ, A i j * x j‖ := by
-      rw [Matrix.toEuclideanLin_apply_eq_sum]
+      exact congrArg norm
+        ((congrArg (fun y : EuclideanSpace 𝕜 ι => y i)
+          (Matrix.toLpLin_apply (p := 2) (q := 2) A x)).trans
+          (Matrix.mulVec_apply_eq_sum A (WithLp.ofLp x) i))
     _ ≤ ∑ j : κ, ‖A i j * x j‖ := norm_sum_le _ _
     _ = ∑ j : κ, ‖A i j‖ * ‖x j‖ := by simp only [norm_mul]
     _ ≤ ∑ j : κ, ε * ‖x j‖ :=
