@@ -112,13 +112,13 @@ variable {R : Type*} {S : Type*} {T : Type*} [Ring R] [Ring S] [Ring T]
 homomorphism. -/
 @[simp]
 theorem RingHom.toIntAlgHom_id : (RingHom.id R).toIntAlgHom = AlgHom.id ℤ R :=
-  rfl
+  AlgHom.ext fun _ ↦ rfl
 
 /-- `RingHom.toIntAlgHom` preserves composition. -/
 @[simp]
 theorem RingHom.toIntAlgHom_comp (f : S →+* T) (g : R →+* S) :
     (f.comp g).toIntAlgHom = f.toIntAlgHom.comp g.toIntAlgHom :=
-  rfl
+  AlgHom.ext fun _ ↦ rfl
 
 /-- Reading a ring homomorphism as a `ℤ`-algebra homomorphism and back recovers it: composing
 `AlgHom.toRingHom` after `RingHom.toIntAlgHom` is the identity, so `RingHom.toIntAlgHom` is a
@@ -129,7 +129,7 @@ is a `simp` lemma making the coercion the simp-normal form; a `.toRingHom` left-
 be rewritten before this could fire. -/
 @[simp]
 theorem RingHom.toIntAlgHom_toRingHom (f : R →+* S) : (f.toIntAlgHom : R →+* S) = f :=
-  rfl
+  RingHom.ext fun _ ↦ rfl
 
 /-- Reading a `ℤ`-algebra homomorphism as a ring homomorphism and back recovers it: composing
 `RingHom.toIntAlgHom` after `AlgHom.toRingHom` is the identity, so `RingHom.toIntAlgHom` is a
@@ -138,7 +138,7 @@ left inverse of `AlgHom.toRingHom`.
 Stated through the coercion, for the reason given above. -/
 @[simp]
 theorem AlgHom.toRingHom_toIntAlgHom (φ : R →ₐ[ℤ] S) : (φ : R →+* S).toIntAlgHom = φ :=
-  rfl
+  AlgHom.ext fun _ ↦ rfl
 
 end ToIntAlgHom
 
