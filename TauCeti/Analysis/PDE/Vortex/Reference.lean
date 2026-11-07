@@ -119,7 +119,7 @@ theorem referenceConnection_eq_angular (f : ContDiffBump (0 : ℝ)) (m : ℕ) {z
   simp [referenceConnection, cutoff_eq_one f hz, div_eq_mul_inv, mul_comm]
 
 /-- The winding phase `(z / ‖z‖)^m` is smooth away from the origin. -/
-private theorem contDiffOn_phase (m : ℕ) {N : WithTop ℕ∞} :
+theorem contDiffOn_phase (m : ℕ) {N : WithTop ℕ∞} :
     ContDiffOn ℝ N (fun z : ℂ ↦ (z / (‖z‖ : ℂ)) ^ m) {0}ᶜ := by
   intro z hz
   have hz : z ≠ 0 := hz

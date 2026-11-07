@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.FieldSpace
 public import TauCeti.Analysis.PDE.Vortex.GaugeFixed
-import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.PDE.Vortex.FramedGauge.Basic
 import TauCeti.Analysis.Sobolev.BesselPotential.Algebra
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
@@ -69,66 +68,11 @@ open scoped ContDiff Topology
 
 /-! ### The reference field outside its cutoff disc -/
 
-/-- The unit phase `w / |w|` as a circle-valued map, with value `1` at the origin. -/
-private def unitPhase (w : ℂ) : Circle := Circle.exp (arg w)
-
-private theorem coe_unitPhase {w : ℂ} (hw : w ≠ 0) :
-    (unitPhase w : ℂ) = w * ((‖w‖⁻¹ : ℝ) : ℂ) := by
-  have h := norm_mul_exp_arg_mul_I w
-  have hn : (‖w‖ : ℂ) ≠ 0 := ofReal_ne_zero.2 (norm_ne_zero_iff.2 hw)
-  rw [unitPhase, Circle.coe_exp, ofReal_inv]
-  field_simp
-  rw [mul_comm]
-  exact h
-
-private theorem contDiffAt_mul_inv_norm {w : ℂ} (hw : w ≠ 0) :
-    ContDiffAt ℝ ∞ (fun v : ℂ ↦ v * ((‖v‖⁻¹ : ℝ) : ℂ)) w :=
-  contDiffAt_id.mul (ofRealCLM.contDiff.contDiffAt.comp w
-    ((contDiffAt_norm ℂ hw).inv (norm_ne_zero_iff.2 hw)))
-
-private theorem eventuallyEq_unitPhase {w : ℂ} (hw : w ≠ 0) :
-    (fun v ↦ (unitPhase v : ℂ)) =ᶠ[𝓝 w] fun v ↦ v * ((‖v‖⁻¹ : ℝ) : ℂ) :=
-  Filter.eventually_of_mem (isOpen_compl_singleton.mem_nhds hw) fun _ hv ↦ coe_unitPhase hv
-
-private theorem contDiffAt_unitPhase_pow (m : ℕ) {w : ℂ} (hw : w ≠ 0) :
-    ContDiffAt ℝ ∞ (fun v ↦ ((unitPhase ^ m) v : ℂ)) w := by
-  simp only [Pi.pow_apply, Circle.coe_pow]
-  exact ((contDiffAt_mul_inv_norm hw).congr_of_eventuallyEq (eventuallyEq_unitPhase hw)).pow m
-
-/-- The logarithmic derivative of the unit phase is `dθ`, `dθ_w (v) = Im (v / w)`. -/
-private theorem gaugeForm_unitPhase {w : ℂ} (hw : w ≠ 0) (v : ℂ) :
-    gaugeForm unitPhase w v = (v / w).im := by
-  have hr : DifferentiableAt ℝ (fun v : ℂ ↦ ‖v‖⁻¹) w :=
-    ((contDiffAt_norm ℂ (n := 1) hw).differentiableAt one_ne_zero).inv (norm_ne_zero_iff.2 hw)
-  -- The factor `‖·‖⁻¹` is real, and so is its derivative.
-  have hd : HasFDerivAt (fun v : ℂ ↦ ((‖v‖⁻¹ : ℝ) : ℂ))
-      (ofRealCLM.comp (fderiv ℝ (fun v : ℂ ↦ ‖v‖⁻¹) w)) w :=
-    ofRealCLM.hasFDerivAt.comp w hr.hasFDerivAt
-  rw [gaugeForm_apply, (eventuallyEq_unitPhase hw).fderiv_eq, coe_unitPhase hw,
-    fderiv_fun_mul differentiableAt_fun_id hd.differentiableAt, hd.fderiv]
-  have hn : ‖w‖ ^ 2 = w.re * w.re + w.im * w.im := by
-    rw [← normSq_apply, normSq_eq_norm_sq]
-  have hn0 : ‖w‖ ≠ 0 := norm_ne_zero_iff.2 hw
-  simp only [ofReal_inv, map_mul, map_inv₀, conj_ofReal, fderiv_fun_id, add_apply, smul_apply,
-    ContinuousLinearMap.comp_apply, ofRealCLM_apply, smul_eq_mul, ContinuousLinearMap.id_apply,
-    mul_im, mul_re, conj_re, inv_re, ofReal_re, normSq_apply, ofReal_im, mul_zero, add_zero,
-    div_self_mul_self', conj_im, inv_im, neg_zero, zero_div, sub_zero, add_im, zero_add, zero_mul,
-    neg_mul, add_re, div_im]
-  rw [← hn]
-  field_simp
-  ring
-
-private theorem gaugeForm_unitPhase_pow (m : ℕ) {w : ℂ} (hw : w ≠ 0) (v : ℂ) :
-    gaugeForm (unitPhase ^ m) w v = m * (v / w).im := by
-  induction m with
-  | zero => simp
-  | succ n ih =>
-    have hd (k : ℕ) : DifferentiableAt ℝ (fun v ↦ ((unitPhase ^ k) v : ℂ)) w :=
-      (contDiffAt_unitPhase_pow k hw).differentiableAt (by simp)
-    rw [pow_succ, gaugeForm_mul (hd n) (by simpa using hd 1)]
-    simp only [FunLike.coe_add, Pi.add_apply, ih, gaugeForm_unitPhase hw]
-    push_cast
-    ring
+private theorem ne_zero_of_rOut_lt_norm_sq (f : ContDiffBump (0 : ℝ)) {z : ℂ}
+    (hz : f.rOut < ‖z‖ ^ 2) : z ≠ 0 := by
+  rintro rfl
+  simp only [norm_zero, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow] at hz
+  linarith [f.rOut_pos]
 
 /-- Outside its cutoff disc, the reference field is the gauge transform of the vacuum by the
 winding phase `(z / |z|)^m`. -/
@@ -138,13 +82,8 @@ private theorem referenceField_eventuallyEq (f : ContDiffBump (0 : ℝ)) (m : �
   have hopen : IsOpen {w : ℂ | f.rOut < ‖w‖ ^ 2} :=
     isOpen_lt continuous_const (continuous_norm.pow 2)
   filter_upwards [hopen.mem_nhds hz] with w hw
-  have hw0 : w ≠ 0 := by
-    rintro rfl
-    simp only [norm_zero, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow] at hw
-    linarith [f.rOut_pos]
+  have hw0 := ne_zero_of_rOut_lt_norm_sq f hw
   have hsec := referenceSection_eq_phase f m (le_of_lt hw)
-  have hphase : (w * (‖w‖ : ℂ)⁻¹) ^ m = (unitPhase w : ℂ) ^ m := by
-    rw [coe_unitPhase hw0, ofReal_inv]
   ext i
   fin_cases i
   · simp [referenceField_apply, gaugeTransform_apply, vacuumField_apply,
@@ -152,18 +91,15 @@ private theorem referenceField_eventuallyEq (f : ContDiffBump (0 : ℝ)) (m : �
   · simp [referenceField_apply, gaugeTransform_apply, vacuumField_apply,
       referenceConnection_eq_angular f m (le_of_lt hw), gaugeForm_unitPhase_pow m hw0]
   · simp [-referenceSection_apply, referenceField_apply, gaugeTransform_apply, vacuumField_apply,
-      hsec, hphase, div_eq_mul_inv]
+      hsec, coe_unitPhase hw0, div_eq_mul_inv]
   · simp [-referenceSection_apply, referenceField_apply, gaugeTransform_apply, vacuumField_apply,
-      hsec, hphase, div_eq_mul_inv]
+      hsec, coe_unitPhase hw0, div_eq_mul_inv]
 
 /-- **The reference field is a vortex outside its cutoff disc.** Where the cutoff is inactive,
 the reference pair `(-i m dθ, (z / |z|)^m)` is a gauge transform of the vacuum. -/
 theorem equation_referenceField_eq_zero (f : ContDiffBump (0 : ℝ)) (m : ℕ) {z : ℂ}
     (hz : f.rOut < ‖z‖ ^ 2) : equation (referenceField f m) z = 0 := by
-  have hz0 : z ≠ 0 := by
-    rintro rfl
-    simp only [norm_zero, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow] at hz
-    linarith [f.rOut_pos]
+  have hz0 := ne_zero_of_rOut_lt_norm_sq f hz
   rw [equation_eq_of_eventuallyEq (referenceField_eventuallyEq f m hz),
     equation_gaugeTransform_eq_zero_iff ((contDiffAt_unitPhase_pow m hz0).of_le (by simp))
       (fun i ↦ by simp [vacuumField_apply])]
@@ -213,14 +149,6 @@ theorem mul_mem_realSobolevFunctions_of_mem_framedFieldSpace (hk : 1 < k)
   ext z
   simp only [Pi.add_apply, Pi.mul_apply, Pi.sub_apply, PiLp.sub_apply]
   ring
-
-/-- The classical partial derivatives of the coordinates of a `C¹` field of order `s + 1` have
-order `s`. -/
-theorem fderiv_apply_mem_realSobolevFunctions_of_mem_sobolevFields {s : ℝ} (hs : 0 ≤ s)
-    (hy : y ∈ sobolevFields (s + 1)) (hy₁ : ContDiff ℝ 1 y) (i : Fin 4) (v : ℂ) :
-    (fun z ↦ fderiv ℝ (fun w ↦ y w i) z v) ∈ realSobolevFunctions ℂ s 2 :=
-  fderiv_apply_mem_realSobolevFunctions (by norm_num) (by norm_num) hs
-    (contDiff_euclidean.1 hy₁ i) (mem_sobolevFields.1 hy i) v
 
 /-- The products `x_i y_j` of a framed field of order `k + 1` and a Sobolev field of order
 `k + 1` have order `k + 1`, in particular order `k`. -/

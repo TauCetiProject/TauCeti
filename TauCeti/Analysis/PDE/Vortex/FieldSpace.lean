@@ -198,6 +198,15 @@ theorem sobolevFields_mono {s s' : ℝ} (h : s' ≤ s) : sobolevFields s ≤ sob
   fun _ hy ↦ mem_sobolevFields.2 fun i ↦
     realSobolevFunctions_mono (by norm_num) (by norm_num) h (mem_sobolevFields.1 hy i)
 
+/-- The classical partial derivatives of the coordinates of a `C¹` field of order `s + 1` have
+order `s`. -/
+theorem fderiv_apply_mem_realSobolevFunctions_of_mem_sobolevFields {s : ℝ} (hs : 0 ≤ s)
+    {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ sobolevFields (s + 1)) (hy₁ : ContDiff ℝ 1 y)
+    (i : Fin 4) (v : ℂ) :
+    (fun z ↦ fderiv ℝ (fun w ↦ y w i) z v) ∈ realSobolevFunctions ℂ s 2 :=
+  fderiv_apply_mem_realSobolevFunctions (by norm_num) (by norm_num) hs
+    (contDiff_euclidean.1 hy₁ i) (mem_sobolevFields.1 hy i) v
+
 /-- A smooth compactly supported field lies in every Sobolev space. -/
 theorem mem_sobolevFields_of_hasCompactSupport {y : ℂ → EuclideanSpace ℝ (Fin 4)}
     (hy : ContDiff ℝ ∞ y) (hc : HasCompactSupport y) (s : ℝ) : y ∈ sobolevFields s :=
