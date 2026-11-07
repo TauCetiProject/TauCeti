@@ -22,6 +22,9 @@ while its image in `ℚ` has inverse `1 / 2`. Every ring homomorphism from a fie
 ring is local, so the statement applies, for instance, to the casts `ℚ → ℝ` and `ℝ → ℂ`: an
 inverse computed over `ℚ` is the inverse over `ℝ`.
 
+`Matrix.inv_submatrix_mul_row_eq_single` normalizes the rows of a matrix whose columns off a pivot
+set vanish to coordinate vectors, by the inverse of its pivot submatrix.
+
 `LinearMap.toMatrix_ringInverse` identifies the matrix of an endomorphism's ring inverse.
 -/
 
@@ -41,6 +44,23 @@ theorem map_nonsing_inv (f : F) [IsLocalHom f] (A : Matrix n n R) :
   rw [inv_def, inv_def, ← hdet, ← hadj, ← map_ringInverse f]
   ext i j
   simp
+
+/-- If the column change `Q` kills `x` off the pivot columns `e`, then normalizing by the inverse of
+the pivot matrix turns the rows of `x * Q` into coordinate vectors. -/
+theorem inv_submatrix_mul_row_eq_single {K ι : Type*} [Field K] [Fintype ι] [DecidableEq ι] {p : ℕ}
+    {x : Matrix (Fin p) ι K} {e : Fin p ↪ ι} {Q : Matrix ι ι K} (he : (x.submatrix id e).det ≠ 0)
+    (hred : ∀ i j, (x * Q) i j = if j ∈ Set.range e then x i j else 0) :
+    ((x.submatrix id e)⁻¹ * (x * Q)).row = fun i ↦ Pi.single (e i) 1 := by
+  set P := x.submatrix id e
+  ext i j
+  by_cases hj : j ∈ Set.range e
+  · obtain ⟨b, rfl⟩ := hj
+    have h := congrArg (fun M : Matrix (Fin p) (Fin p) K ↦ M i b)
+      (Matrix.nonsing_inv_mul P (isUnit_iff_ne_zero.mpr he))
+    simpa [P, Matrix.mul_apply, hred, Pi.single_apply,
+      e.injective.eq_iff, Matrix.one_apply, eq_comm] using h
+  · have hz : ∀ b, e b ≠ j := fun b h ↦ hj ⟨b, h⟩
+    simp [Matrix.mul_apply, hred, hj, hz, Ne.symm]
 
 end Matrix
 
