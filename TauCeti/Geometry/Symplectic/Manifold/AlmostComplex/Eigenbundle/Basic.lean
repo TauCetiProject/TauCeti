@@ -27,15 +27,19 @@ onto `T^(1,0)_x M` (`TauCeti.AlmostComplexStructure.holomorphicPart_injective` a
 `TauCeti.AlmostComplexStructure.range_holomorphicPart`). So the `(1,0)`-parts of a smooth local
 frame of the tangent bundle form a smooth local frame of `T^(1,0) M`, as a real subbundle of the
 complexified tangent bundle, and the smooth local frame criterion
-`TauCeti.HasLocalContMDiffSubbundleFrames.contMDiffVectorBundle` applies. The case of `T^(0,1) M`
-is the case of `T^(1,0) M` for the almost complex structure `-J`.
+`TauCeti.HasLocalContMDiffSubbundleFrames.contMDiffVectorBundle` applies. Likewise the
+`(0,1)`-parts of a smooth local frame of the tangent bundle form a smooth local frame of
+`T^(0,1) M`.
 
 ## Main results
 
-* `TauCeti.SmoothAlmostComplexStructure.contMDiffOn_holomorphicPart`: the `(1,0)`-part of a `C^n`
-  vector field is a `C^n` section of the complexified tangent bundle.
-* `TauCeti.SmoothAlmostComplexStructure.isSubbundleFrameOn_holomorphicPart`: the `(1,0)`-parts of
-  a local frame of the tangent bundle form a local frame of `T^(1,0) M`.
+* `TauCeti.SmoothAlmostComplexStructure.contMDiffOn_holomorphicPart` and
+  `TauCeti.SmoothAlmostComplexStructure.contMDiffOn_antiholomorphicPart`: the `(1,0)`- and
+  `(0,1)`-parts of a `C^n` vector field are `C^n` sections of the complexified tangent bundle.
+* `TauCeti.SmoothAlmostComplexStructure.isSubbundleFrameOn_holomorphicPart` and
+  `TauCeti.SmoothAlmostComplexStructure.isSubbundleFrameOn_antiholomorphicPart`: the `(1,0)`-parts
+  (resp. `(0,1)`-parts) of a local frame of the tangent bundle form a local frame of `T^(1,0) M`
+  (resp. `T^(0,1) M`).
 * `TauCeti.SmoothAlmostComplexStructure.hasLocalContMDiffSubbundleFrames_eigenspace_I` and
   `TauCeti.SmoothAlmostComplexStructure.hasLocalContMDiffSubbundleFrames_eigenspace_neg_I`:
   `T^(1,0) M` and `T^(0,1) M` have smooth local frames with `finrank ℝ E` members near every
@@ -94,6 +98,37 @@ theorem isSubbundleFrameOn_holomorphicPart {ι : Type*} {n : ℕ∞ω}
       ← eq_top_iff.mpr (hX.generating hx), Submodule.map_span, ← range_comp]
     rfl
 
+/-- The `(0,1)`-part `x ↦ (X x)^(0,1)` of a vector field `X` which is `C^n` on `U` is a section of
+the complexified tangent bundle which is `C^n` on `U`. -/
+theorem contMDiffOn_antiholomorphicPart {n : ℕ∞ω} [ENat.LEInfty n]
+    {X : Π x : M, TangentSpace I x} {U : Set M} (hX : CMDiff[U] n (T% X)) :
+    ContMDiffOn I (I.prod 𝓘(ℝ, Complexification E)) n
+      (fun x ↦ TotalSpace.mk' (Complexification E) (E := fun y ↦ ℂ ⊗[ℝ] TangentSpace I y) x
+        ((J.almostComplexStructureAt x).antiholomorphicPart (X x))) U := by
+  rw [contMDiffOn_complexification_totalSpace_iff]
+  simp only [AlmostComplexStructure.realPart_antiholomorphicPart,
+    AlmostComplexStructure.imaginaryPart_antiholomorphicPart, almostComplexStructureAt_apply]
+  exact ⟨hX.const_smul_section, ((J.toEndomorphism.contMDiff.of_le ENat.LEInfty.out
+    ).contMDiffOn.clm_bundle_apply hX).const_smul_section⟩
+
+/-- The `(0,1)`-parts `x ↦ (X i x)^(0,1)` of a local frame `X` of the tangent bundle on `U` form
+a local frame on `U` of `T^(0,1) M`, the family of `-i`-eigenspaces of the complexified almost
+complex structure, as real subspaces of the complexified tangent spaces. -/
+theorem isSubbundleFrameOn_antiholomorphicPart {ι : Type*} {n : ℕ∞ω}
+    {X : ι → Π x : M, TangentSpace I x} {U : Set M} (hX : IsLocalFrameOn I E n X U) :
+    IsSubbundleFrameOn (Complexification E)
+      (fun x ↦ (eigenspace ((J.almostComplexStructureAt x).toLinearMap.baseChange ℂ)
+        (-Complex.I)).restrictScalars ℝ)
+      (fun i x ↦ (J.almostComplexStructureAt x).antiholomorphicPart (X i x)) U where
+  continuousOn i :=
+    (J.contMDiffOn_antiholomorphicPart ((hX.contMDiffOn i).of_le zero_le)).continuousOn
+  linearIndependent hx := (hX.linearIndependent hx).map' _
+    (LinearMap.ker_eq_bot.mpr (AlmostComplexStructure.antiholomorphicPart_injective _))
+  span_eq {x} hx := by
+    rw [← AlmostComplexStructure.range_antiholomorphicPart, ← Submodule.map_top,
+      ← eq_top_iff.mpr (hX.generating hx), Submodule.map_span, ← range_comp]
+    rfl
+
 variable [FiniteDimensional ℝ E]
 
 /-- **The eigenbundle `T^(1,0) M` is a smooth subbundle.** The `i`-eigenspaces of the complexified
@@ -114,18 +149,19 @@ theorem hasLocalContMDiffSubbundleFrames_eigenspace_I :
 
 /-- **The eigenbundle `T^(0,1) M` is a smooth subbundle.** The `-i`-eigenspaces of the
 complexified almost complex structure, as real subspaces of the complexified tangent spaces, have
-smooth local frames with `finrank ℝ E` members near every point. Hence they form a smooth real
-vector bundle with model fibre `Fin (finrank ℝ E) → ℝ`, a smooth subbundle of the complexified
-tangent bundle (`TauCeti.HasLocalContMDiffSubbundleFrames.contMDiffVectorBundle`). -/
+smooth local frames with `finrank ℝ E` members near every point: the `(0,1)`-parts of the local
+frames of the tangent bundle given by its trivializations. Hence they form a smooth real vector
+bundle with model fibre `Fin (finrank ℝ E) → ℝ`, a smooth subbundle of the complexified tangent
+bundle (`TauCeti.HasLocalContMDiffSubbundleFrames.contMDiffVectorBundle`). -/
 theorem hasLocalContMDiffSubbundleFrames_eigenspace_neg_I :
     HasLocalContMDiffSubbundleFrames I ∞ (Complexification E) (Fin (finrank ℝ E))
       fun x ↦ (eigenspace ((J.almostComplexStructureAt x).toLinearMap.baseChange ℂ)
         (-Complex.I)).restrictScalars ℝ := by
-  -- `T^(0,1) M` for `J` is `T^(1,0) M` for `-J`.
-  have h (x : M) :
-      eigenspace ((J.almostComplexStructureAt x).toLinearMap.baseChange ℂ) (-Complex.I) =
-        eigenspace (((-J).almostComplexStructureAt x).toLinearMap.baseChange ℂ) Complex.I := by
-    rw [neg_almostComplexStructureAt, AlmostComplexStructure.eigenspace_neg_baseChange_I]
-  simpa only [h] using (-J).hasLocalContMDiffSubbundleFrames_eigenspace_I
+  refine hasLocalContMDiffSubbundleFrames_iff.mpr fun x ↦ ?_
+  let e := trivializationAt E (TangentSpace I) x
+  exact ⟨e.baseSet, e.open_baseSet, FiberBundle.mem_baseSet_trivializationAt' x, _,
+    J.isSubbundleFrameOn_antiholomorphicPart
+      (e.isLocalFrameOn_localFrame_baseSet I ∞ (finBasis ℝ E)),
+    fun i ↦ J.contMDiffOn_antiholomorphicPart (e.contMDiffOn_localFrame_baseSet ∞ (finBasis ℝ E) i)⟩
 
 end TauCeti.SmoothAlmostComplexStructure

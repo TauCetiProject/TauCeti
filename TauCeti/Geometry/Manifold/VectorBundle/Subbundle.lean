@@ -33,9 +33,9 @@ compatibility condition for the trivializations of `C^n` local frames to form a 
 bundle structure on `V`, a `C^n` subbundle of `E`. When `V` has `C^n` local frames of a fixed
 finite size near every point (`TauCeti.HasLocalContMDiffSubbundleFrames`), the atlas of all their
 trivializations is such a structure
-(`TauCeti.HasLocalContMDiffSubbundleFrames.contMDiffVectorBundle`);
-`TauCeti.IsContMDiffDistribution.contMDiffVectorBundle` assembles it for the distributions of a
-manifold.
+(`TauCeti.HasLocalContMDiffSubbundleFrames.contMDiffVectorBundle`). The distributions of a
+manifold (`TauCeti.IsContMDiffDistribution.contMDiffVectorBundle`) and conormal bundles
+(`TauCeti.CotangentBundle.conormalContMDiffVectorBundle`) are instances.
 
 Read in a trivialization of `E` near a point `y₀`, a `C^n` frame `X` becomes a `C^n` family of
 injective operators `A_X y : 𝕜ᵏ →L[𝕜] F`, namely `c ↦ ∑ i, c i • X i y`
