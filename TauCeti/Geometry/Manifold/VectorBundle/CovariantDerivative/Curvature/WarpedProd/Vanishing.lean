@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Tensor
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.WarpedProd
-import Mathlib.Analysis.Calculus.Deriv.Inv
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
@@ -170,32 +169,8 @@ private theorem IsWarpedProduct.curvatureOperator_horizontal_horizontal_vertical
     simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply,
       mvfderiv_comp_fst_apply, prodVectorField_fst, Function.comp_apply, hfirst,
       smul_smul, add_smul]
-  -- The scalar commutator cancels the second derivatives and the bracket term.
-  have hda {U Z : Π x : M, TangentSpace I x} (hU : CMDiff ∞ (T% U)) :
-      mvfderiv I (a U) p.1 (Z p.1) =
-        (1 / f p.1) * mvfderiv I (fun x ↦ mvfderiv I f x (U x)) p.1 (Z p.1) -
-          (mvfderiv I f p.1 (U p.1) / f p.1 ^ 2) * mvfderiv I f p.1 (Z p.1) := by
-    have hinv : mvfderiv I (fun x ↦ (f x)⁻¹) p.1 (Z p.1) =
-        -(f p.1 ^ 2)⁻¹ * mvfderiv I f p.1 (Z p.1) := by
-      have hd := mvfderiv_comp_apply_of_differentiableAt
-        (hasDerivAt_inv hp).differentiableAt (hfd p.1) (Z p.1)
-      rw [(hasDerivAt_inv hp).hasFDerivAt.fderiv] at hd
-      simpa only [Function.comp_def, ContinuousLinearMap.toSpanSingleton_apply,
-        smul_eq_mul, mul_comm] using hd
-    dsimp only [a]
-    simp only [div_eq_mul_inv]
-    rw [mvfderiv_fun_mul (g := fun x ↦ (f x)⁻¹) (hdU hU) ((hfd p.1).inv hp)]
-    simp only [add_apply, smul_apply, smul_eq_mul, hinv]
-    ring
-  -- The first two covariant derivatives and the bracket term now have one scalar coefficient.
-  have hcomm := mvfderiv_mlieBracket (hf p.1) (by simp)
-    (hX.mdifferentiableAt (by simp)) (hY.mdifferentiableAt (by simp))
-  have hc : a Y p.1 * a X p.1 + mvfderiv I (a Y) p.1 (X p.1) -
-      (a X p.1 * a Y p.1 + mvfderiv I (a X) p.1 (Y p.1)) -
-        a (mlieBracket I X Y) p.1 = 0 := by
-    rw [hda hY, hda hX]
-    simp only [a, hcomm]
-    ring
+  have hc := mvfderiv_div_commutator_eq_zero a (fun _ ↦ rfl) (hf p.1)
+    (hX.mdifferentiableAt (by simp)) (hY.mdifferentiableAt (by simp)) (hdU hX) (hdU hY) hp
   have hfirst' (U : Π x : M, TangentSpace I x) :
       (fun q ↦ leviCivitaConnection (I.prod J) (M × N) (prodVectorField (I := I) 0 V) q
         (prodVectorField (J := J) U 0 q)) =
