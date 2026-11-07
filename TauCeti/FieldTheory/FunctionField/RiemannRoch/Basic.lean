@@ -185,8 +185,8 @@ theorem riemannRochSpace_sub_ofFinset_eq {D : Divisor k F} {T : Finset (Place k 
     (hT : ∀ P ∈ T, riemannRochSpace (D - WeilDivisor.ofPoint P) = riemannRochSpace D) :
     riemannRochSpace (D - WeilDivisor.ofFinset T) = riemannRochSpace D := by
   classical
-  refine le_antisymm (riemannRochSpace_mono (sub_le_self _ (WeilDivisor.isEffective_iff_zero_le.mp
-    (WeilDivisor.isEffective_ofFinset T)))) fun f hf ↦ ?_
+  refine le_antisymm (riemannRochSpace_mono (sub_le_self _ (WeilDivisor.ofFinset_nonneg T)))
+    fun f hf ↦ ?_
   refine mem_riemannRochSpace_iff.mpr fun Q ↦ ?_
   by_cases hQ : Q ∈ T
   · rw [← hT Q hQ, mem_riemannRochSpace_iff] at hf
@@ -498,7 +498,7 @@ theorem finiteDimensional_riemannRochSpace (hF : IsFunctionField k F) (D : Divis
     FiniteDimensional k (riemannRochSpace D) := by
   have := (finiteDimensional_and_finrank_le_of_le hF
     (Divisor.degree D⁺ - Divisor.degree (0 : Divisor k F)).toNat 0 D⁺
-    (WeilDivisor.isEffective_iff_zero_le.mp (WeilDivisor.isEffective_posPart D)) le_rfl
+    (posPart_nonneg D) le_rfl
     (finiteDimensional_riemannRochSpace_zero hF)).1
   exact Submodule.finiteDimensional_of_le (riemannRochSpace_mono (le_posPart D))
 
@@ -581,8 +581,7 @@ theorem Divisor.dim_le_degree_posPart_add_finrank (hF : IsFunctionField k F) (D 
     (Divisor.dim D : ℤ) ≤
       Divisor.degree D⁺ + Module.finrank k (algebraicClosure k F) := by
   have hmono : Divisor.dim D ≤ Divisor.dim D⁺ := Divisor.dim_mono hF (le_posPart D)
-  have h := Divisor.dim_le_dim_add_degree_sub hF
-    (WeilDivisor.isEffective_iff_zero_le.mp (WeilDivisor.isEffective_posPart D))
+  have h := Divisor.dim_le_dim_add_degree_sub hF (posPart_nonneg D)
   rw [Divisor.dim_zero hF, Divisor.degree_zero] at h
   omega
 

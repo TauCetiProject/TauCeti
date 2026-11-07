@@ -47,6 +47,9 @@ Euler product with integer coefficients, so `ζ` has integer coefficients
 (`TauCeti.NovikovSeries.orbitZeta_eq_mapRingHom_eulerProduct`). Neither the injectivity of `N` nor
 the discreteness of its image is used, and the exponent group may have torsion.
 
+The specialisation of the product formula to the Lefschetz signs `sgn det (1 - f ^ k)` of
+linearized return maps `f` is in `TauCeti.RingTheory.NovikovSeries.OrbitZeta.ReturnMap`.
+
 ## Main definitions
 
 * `TauCeti.NovikovSeries.orbitLog`: the orbit logarithm `∑ᵢ ∑ₖ ε i (k + 1) / (k + 1) ·

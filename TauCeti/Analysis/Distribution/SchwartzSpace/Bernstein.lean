@@ -107,8 +107,7 @@ private theorem fourier_apply_smul_ne_zero_of_fourier_dilate_ne_zero {R : ℝ} (
 
 private theorem eLpNorm_dilate {R : ℝ} (hR : 0 < R) (f : 𝓢(E, F)) (p : ℝ≥0∞) :
     eLpNorm (dilate R hR f) p = ENNReal.ofReal (R ^ (finrank ℝ E / p.toReal)) * eLpNorm f p := by
-  rw [coe_dilate]
-  exact Measure.eLpNorm_comp_inv_smul volume _ hR p
+  rw [coe_dilate, Measure.eLpNorm_comp_inv_smul volume _ hR.ne' p, abs_of_pos hR]
 
 private theorem eLpNorm_iteratedFDeriv_dilate {R : ℝ} (hR : 0 < R) (f : 𝓢(E, F)) (k : ℕ)
     (p : ℝ≥0∞) :
@@ -121,7 +120,7 @@ private theorem eLpNorm_iteratedFDeriv_dilate {R : ℝ} (hR : 0 < R) (f : 𝓢(E
     rfl
   rw [h]
   refine (eLpNorm_const_smul _ _ _ _).trans ?_
-  rw [Measure.eLpNorm_comp_inv_smul volume _ hR p, ← mul_assoc,
+  rw [Measure.eLpNorm_comp_inv_smul volume _ hR.ne' p, abs_of_pos hR, ← mul_assoc,
     Real.enorm_of_nonneg (by positivity), ← ENNReal.ofReal_mul (by positivity)]
 
 variable [CompleteSpace F]
