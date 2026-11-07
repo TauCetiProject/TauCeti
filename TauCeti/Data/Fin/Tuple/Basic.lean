@@ -167,7 +167,7 @@ theorem append_comp_swap_castAdd {n : ℕ} (u : Fin m → α) (v : Fin n → α)
         (fun h ↦ by simp [Fin.ext_iff] at h; omega) (fun h ↦ by simp [Fin.ext_iff] at h; omega)]
       simp) i
 
-/-- Exchanging two entries of `Fin.append u v` at positions of `v` is appending `u` to `v` with
+/-- Exchanging two entries of `Fin.append u v` at positions of `v` is prepending `u` to `v` with
 those entries exchanged. -/
 theorem append_comp_swap_natAdd {n : ℕ} (u : Fin m → α) (v : Fin n → α) (j k : Fin n) :
     append u v ∘ Equiv.swap (natAdd m j) (natAdd m k) = append u (v ∘ Equiv.swap j k) :=

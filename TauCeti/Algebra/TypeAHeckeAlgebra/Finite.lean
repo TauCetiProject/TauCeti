@@ -432,8 +432,12 @@ variable (R q a b) in
 strands, sending the generator `T j` to the generator `T (a + j)`. -/
 def natAdd : TypeAHeckeAlgebra R q b →ₐ[R] TypeAHeckeAlgebra R q (a + b) :=
   lift (fun j ↦ T q ⟨a + j, by omega⟩) (fun _ ↦ T_mul_self _)
-    (fun {i j} h ↦ T_braid (Or.inl (show a + (i : ℕ) + 1 = a + j by omega)))
-    (fun {i j} h ↦ (commute_T (Or.inl (show a + (i : ℕ) + 2 ≤ a + j by omega))).eq)
+    (fun {i j} h ↦ by
+      have hij : a + (i : ℕ) + 1 = a + j := by omega
+      exact T_braid (Or.inl hij))
+    (fun {i j} h ↦ by
+      have hij : a + (i : ℕ) + 2 ≤ a + j := by omega
+      exact (commute_T (Or.inl hij)).eq)
 
 /-- The right block map sends the generator `T j` to the generator `T (a + j)`. -/
 @[simp]
@@ -452,7 +456,10 @@ theorem commute_castAdd_natAdd (x : TypeAHeckeAlgebra R q a) (y : TypeAHeckeAlge
   refine (Algebra.commute_of_mem_adjoin_of_forall_mem_commute (hmem _ x) ?_).symm
   rintro _ ⟨i, rfl⟩
   simp only [Function.comp_apply, castAdd_T, natAdd_T]
-  exact commute_T (Or.inr (show (i : ℕ) + 2 ≤ a + j by have := i.isLt; omega))
+  have hij : (i : ℕ) + 2 ≤ a + j := by
+    have := i.isLt
+    omega
+  exact commute_T (Or.inr hij)
 
 /-- The left block map is compatible with the maps to the infinite type-A Hecke algebra. -/
 @[simp]
