@@ -178,7 +178,7 @@ private theorem isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_topCommRingCat_o
       (isRingOfIntegralElements_completedPlusSubring P Aplus (fun j _ ↦ hP j.2) hAplus
         T s _ hden)
       (locOpensComap_spaBasicOpen_self P Aplus T s _ hden) hUB hcovB E
-  refine TauCeti.TopologicalSpace.Opens.isSheafFor_ofArrows_of_equiv
+  refine (TauCeti.TopologicalSpace.Opens.isSheafFor_ofArrows_iff_of_equiv
     (F := presentationLimitPresheaf P Aplus ⋙ TopCommRingCat.isCompleteSeparated.ι ⋙
       coyoneda.obj (op E))
     (G := presentationLimitPresheaf (completionLocalization P T s _ hden)
@@ -187,7 +187,7 @@ private theorem isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_topCommRingCat_o
     (locOpensComap P Aplus T s _ hden) (fun _ _ h ↦ locOpensComap_mono P Aplus T s _ hden h)
     (locOpensComap_inf P Aplus T s _ hden) (fun V hV V' hV' ↦ inf_mem_spaRationalOpens hV hV') hW
     hU hUW (fun V hV hVW ↦ (((coyoneda.obj (op E)).mapIso
-      (TopCommRingCat.isCompleteSeparated.ι.mapIso (σ V hV hVW))).toEquiv)) ?_ hB
+      (TopCommRingCat.isCompleteSeparated.ι.mapIso (σ V hV hVW))).toEquiv)) ?_).2 hB
   intro V V' hV hV' hVW h x
   simp only [Iso.toEquiv_fun, Functor.mapIso_hom, Functor.comp_map]
   dsimp [coyoneda]
