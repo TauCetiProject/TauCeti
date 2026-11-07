@@ -200,6 +200,38 @@ theorem exists_eq_comp_piEvalAlgHom {R ι : Type*} [CommSemiring R] [_root_.Fini
       commutes' r := by rw [← Pi.algebraMap_apply ι A r i, ← h4, AlgHom.commutes] },
     AlgHom.ext h4⟩
 
+/-- Maps from a finite product into a nontrivial domain are precisely maps from one factor,
+precomposed with the corresponding projection. This includes the empty product, which has no
+maps to a nontrivial domain. -/
+noncomputable def sigmaEquivPi {R ι : Type*} [CommSemiring R] [_root_.Finite ι]
+    (A : ι → Type*) [∀ i, Semiring (A i)] [∀ i, Algebra R (A i)]
+    (B : Type*) [Semiring B] [Algebra R B] [NoZeroDivisors B] [Nontrivial B] :
+    (Σ i, A i →ₐ[R] B) ≃ ((Π i, A i) →ₐ[R] B) := by
+  classical
+  refine Equiv.ofBijective (fun f ↦ f.2.comp (Pi.evalAlgHom R A f.1)) ⟨?_, ?_⟩
+  · rintro ⟨i, φ⟩ ⟨j, ψ⟩ h
+    have hij : i = j := by
+      by_contra hne
+      have := DFunLike.congr_fun h (Pi.single i 1)
+      simp [Ne.symm hne] at this
+    subst j
+    congr 1
+    ext a
+    have := DFunLike.congr_fun h (Pi.single i a)
+    simpa using this
+  · intro φ
+    obtain ⟨i, ψ, rfl⟩ := φ.exists_eq_comp_piEvalAlgHom
+    exact ⟨⟨i, ψ⟩, rfl⟩
+
+/-- The factor-map equivalence is composition with coordinate evaluation. -/
+@[simp]
+theorem sigmaEquivPi_apply {R ι : Type*} [CommSemiring R] [_root_.Finite ι]
+    (A : ι → Type*) [∀ i, Semiring (A i)] [∀ i, Algebra R (A i)]
+    (B : Type*) [Semiring B] [Algebra R B] [NoZeroDivisors B] [Nontrivial B]
+    (i : ι) (φ : A i →ₐ[R] B) :
+    sigmaEquivPi A B ⟨i, φ⟩ = φ.comp (Pi.evalAlgHom R A i) :=
+  (rfl)
+
 end AlgHom
 
 open scoped TensorProduct
