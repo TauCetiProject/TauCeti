@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
@@ -44,6 +45,13 @@ and so separate points.
   independent family of functionals has a biorthogonal family of vectors.
 * `LinearIndependent.eq_zero_of_forall_apply_eq_zero`: linearly independent functionals, as many
   as the dimension, have no common zero but `0`.
+* `LinearIndependent.exists_sum_smul_eq_proj`, `LinearIndependent.pi_bijective`,
+  `LinearIndependent.det_pi_ne_zero`: `#ι` linearly independent forms on `Kⁱ` express every
+  coordinate projection and assemble into a bijective endomorphism of nonzero determinant.
+* `Matrix.of_apply_eq_mul_transpose_toMatrix'_pi` and `Matrix.det_of_apply_eq_det_mul_det_pi`:
+  evaluating linear forms `l` on `ι → R` against vectors `x` multiplies `Matrix.of x` on the right
+  by `(LinearMap.toMatrix' (LinearMap.pi l))ᵀ`, so for `#ι` forms and `#ι` vectors its determinant
+  is `(Matrix.of x).det * LinearMap.det (LinearMap.pi l)`.
 -/
 
 public section
@@ -129,6 +137,30 @@ theorem span_sub_div_smul_eq_ker [FiniteDimensional K V] (f : Dual K V) {ι : Ty
     exact Nat.sub_eq_of_eq_add hker.symm
 
 end DivisionRing
+
+section Field
+
+variable {K V ι : Type*} [Field K] [AddCommGroup V] [Module K V]
+
+/-- The rank of a family of forms restricted to a finite-dimensional subspace is the
+codimension, in that subspace, of their common kernel. -/
+theorem finrank_span_restrict_add_finrank_inf_iInf_ker (L : ι → Dual K V)
+    (U : Submodule K V) [FiniteDimensional K U] (s : Set ι) :
+    finrank K (Submodule.span K ((fun i ↦ (L i).comp U.subtype) '' s)) +
+      finrank K ↥(U ⊓ ⨅ i ∈ s, LinearMap.ker (L i)) = finrank K U := by
+  let A := Submodule.span K ((fun i ↦ (L i).comp U.subtype) '' s)
+  have hA : A.dualCoannihilator =
+      (U ⊓ ⨅ i ∈ s, LinearMap.ker (L i)).comap U.subtype := by
+    dsimp only [A]
+    rw [SetLike.ext'_iff, Submodule.coe_dualCoannihilator_span]
+    ext x
+    simp
+  have h := Subspace.finrank_add_finrank_dualCoannihilator_eq A
+  rw [hA, (Submodule.comapSubtypeEquivOfLe
+    (inf_le_left : U ⊓ ⨅ i ∈ s, LinearMap.ker (L i) ≤ U)).finrank_eq] at h
+  exact h
+
+end Field
 
 end Module.Dual
 
@@ -223,4 +255,54 @@ theorem eq_zero_of_forall_apply_eq_zero {L : ι → Module.Dual K V} (hL : Linea
 
 end Separation
 
+/-- `#ι` linearly independent forms on `Kⁱ` span its dual, so every coordinate projection is a
+combination of them. -/
+theorem exists_sum_smul_eq_proj {K ι : Type*} [Field K] [Fintype ι]
+    {l : ι → Module.Dual K (ι → K)} (hl : LinearIndependent K l) :
+    ∃ a : ι → ι → K, ∀ j, ∑ i, a j i • l i = LinearMap.proj j := by
+  have hspan : Submodule.span K (Set.range l) = ⊤ :=
+    hl.span_eq_top_of_card_eq_finrank' (by simp [Subspace.dual_finrank_eq])
+  choose a ha using fun j : ι ↦ (Submodule.mem_span_range_iff_exists_fun K).mp
+    (hspan ▸ Submodule.mem_top : LinearMap.proj (φ := fun _ : ι ↦ K) j ∈ _)
+  exact ⟨a, ha⟩
+
+/-- `#ι` linearly independent forms on `Kⁱ` assemble into a bijective endomorphism
+`LinearMap.pi l`. -/
+theorem pi_bijective {K ι : Type*} [Field K] [Finite ι]
+    {l : ι → Module.Dual K (ι → K)} (hl : LinearIndependent K l) :
+    Function.Bijective (LinearMap.pi l) := by
+  have := Fintype.ofFinite ι
+  have hinj : Function.Injective (LinearMap.pi l) :=
+    LinearMap.ker_eq_bot.mp <| eq_bot_iff.mpr fun x hx ↦
+      hl.eq_zero_of_forall_apply_eq_zero (by simp) fun i ↦ congr_fun hx i
+  exact ⟨hinj, LinearMap.injective_iff_surjective.mp hinj⟩
+
+/-- `#ι` linearly independent forms on `Kⁱ` have nonzero determinant
+`LinearMap.det (LinearMap.pi l)`. -/
+theorem det_pi_ne_zero {K ι : Type*} [Field K] [Finite ι]
+    {l : ι → Module.Dual K (ι → K)} (hl : LinearIndependent K l) :
+    LinearMap.det (LinearMap.pi l) ≠ 0 :=
+  (LinearMap.isUnit_iff_isUnit_det (LinearMap.pi l) |>.mp
+    (Module.End.isUnit_iff (LinearMap.pi l) |>.mpr hl.pi_bijective)).ne_zero
+
 end LinearIndependent
+
+namespace Matrix
+
+/-- Evaluating a family of linear forms `l` on `ι → R` against a family of vectors `x` multiplies
+`Matrix.of x` on the right by `(LinearMap.toMatrix' (LinearMap.pi l))ᵀ`. -/
+theorem of_apply_eq_mul_transpose_toMatrix'_pi {R κ ι μ : Type*} [CommSemiring R] [Fintype ι]
+    [DecidableEq ι] (l : μ → Module.Dual R (ι → R)) (x : κ → ι → R) :
+    Matrix.of (fun k i ↦ l i (x k)) = Matrix.of x * (LinearMap.toMatrix' (LinearMap.pi l))ᵀ := by
+  ext k i
+  conv_lhs => rw [of_apply, ← (Pi.basisFun R ι).sum_repr (x k), map_sum]
+  simp [Matrix.mul_apply, LinearMap.toMatrix'_apply]
+
+/-- The determinant of `(l i (x k))_{k, i}` for `#ι` linear forms `l` and `#ι` vectors `x` on
+`ι → R` equals `(Matrix.of x).det * LinearMap.det (LinearMap.pi l)`. -/
+theorem det_of_apply_eq_det_mul_det_pi {R ι : Type*} [CommRing R] [Fintype ι] [DecidableEq ι]
+    (l : ι → Module.Dual R (ι → R)) (x : ι → ι → R) :
+    (Matrix.of fun k i ↦ l i (x k)).det = (Matrix.of x).det * LinearMap.det (LinearMap.pi l) := by
+  rw [of_apply_eq_mul_transpose_toMatrix'_pi, det_mul, det_transpose, LinearMap.det_toMatrix']
+
+end Matrix

@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Homotopy.Equiv
+public import Mathlib.Topology.LocalAtTarget
+public import TauCeti.Topology.Homeomorph.Extend
 
 /-!
 # Deformation retractions
@@ -16,6 +18,8 @@ the image of the final inclusion throughout. Inclusions are expressed as continu
 so the result also applies to subspaces represented by different but homeomorphic types; for
 subsets of one space, `ContinuousMap.HomotopicRel.exists_inter_deformation_trans` states it with
 set inclusions.
+A strong deformation retraction also determines every retraction onto the same subspace up to
+homotopy relative to that subspace (`ContinuousMap.HomotopicRel.of_leftInverse`).
 Strong deformation retractions of subsets also transport along homeomorphisms
 (`Homeomorph.exists_deformation_of_image_eq`).
 
@@ -25,6 +29,16 @@ inclusion of `A` is then a homotopy equivalence
 (`ContinuousMap.HomotopyEquiv.ofWeakDeformationRetraction`). Unlike a strong deformation
 retraction, the deformation need not fix `A`, which allows straight-line deformations that slide
 points of `A` within `A`.
+
+Deformations of an open piece extend by the identity. Let `j : Y → X` be an open embedding. A
+continuous family of self-maps of `Y` which fixes the points of `j ⁻¹' V`, for an open
+neighbourhood `V` of the complement of the range of `j`, extends by the identity to a continuous
+family of self-maps of `X` (`Topology.IsOpenEmbedding.exists_continuousMap_extend_id`). Hence a
+strong deformation retraction of `j ⁻¹' S` onto `j ⁻¹' T` extends to one of `S` onto `T`,
+provided the points of `S` outside the range of `j` have an open neighbourhood `V` with
+`S ∩ V ⊆ T` (`Topology.IsOpenEmbedding.exists_deformation_of_preimage`). This is how deformations
+of the smooth part `X \ A` of a space, built for instance from the flow of a function `F` that is
+small near the closed set `A`, are turned into deformations of `X` fixing `A`.
 
 ## References
 
@@ -65,6 +79,18 @@ theorem comp_retractions {i : C(Y, X)} {j : C(Z, Y)} {r : C(X, Y)} {s : C(Y, Z)}
         simpa only [ContinuousMap.coe_mk, ContinuousMap.comp_apply, hr (j z),
           ContinuousMap.id_apply] using congrArg i (G.eq_fst t (mem_range_self z)) }
   exact ⟨H'.trans G'⟩
+
+/-- **Retractions onto a strong deformation retract are unique up to relative homotopy.** If the
+composite of `r'` with `i` is homotopic to the identity relative to `S`, then every left inverse
+`r` of `i` is homotopic to `r'` relative to `S`. No condition relating `S` to the range of `i` is
+needed. -/
+theorem of_leftInverse {i : C(Y, X)} {r r' : C(X, Y)} {S : Set X}
+    (h : (i.comp r').HomotopicRel (ContinuousMap.id X) S) (hr : LeftInverse r i) :
+    r'.HomotopicRel r S := by
+  -- Apply `r` to the homotopy from `i ∘ r'` to the identity; `r ∘ i ∘ r' = r'`.
+  have hri : r.comp i = ContinuousMap.id Y := ContinuousMap.ext hr
+  simpa only [← ContinuousMap.comp_assoc, hri, ContinuousMap.id_comp, ContinuousMap.comp_id] using
+    h.comp_continuousMap r
 
 variable {A B S : Set X} in
 /-- **Strong deformation retractions of subspaces compose.** Let `B ⊆ A` be subspaces, and let
@@ -179,3 +205,55 @@ theorem coe_ofWeakDeformationRetraction_symm_apply (hAB : A ⊆ B) (H : I × B �
   (rfl)
 
 end ContinuousMap.HomotopyEquiv
+
+namespace Topology.IsOpenEmbedding
+
+open unitInterval
+
+variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {j : Y → X}
+
+/-- **A strong deformation retraction extends by the identity off an open embedding.** Let
+`j : Y → X` be an open embedding and `T ⊆ S` subsets of `X`, with preimages `t ⊆ s` in `Y`.
+Suppose the points of `S` outside the range of `j` have an open neighbourhood `V` with
+`S ∩ V ⊆ T`. If `H` is a strong deformation retraction of `s` onto `t`, then `T` is a strong
+deformation retract of `S`: the deformation is `H` transported along `j` and extended by the
+identity, which it already is on `j ⁻¹' V`. -/
+theorem exists_deformation_of_preimage (hj : IsOpenEmbedding j) {S T V : Set X} {s t : Set Y}
+    (hTS : T ⊆ S) (hts : t ⊆ s) (hs : j ⁻¹' S = s) (ht : j ⁻¹' T = t) (hV : IsOpen V)
+    (hSV : S \ range j ⊆ V) (hVT : S ∩ V ⊆ T) (r : C(s, t))
+    (H : ((ContinuousMap.inclusion hts).comp r).HomotopyRel (.id s) {y | (y : Y) ∈ t}) :
+    ∃ r : C(S, T), (∀ x, r (ContinuousMap.inclusion hTS x) = x) ∧
+      Nonempty (((ContinuousMap.inclusion hTS).comp r).HomotopyRel (.id S) {x | (x : X) ∈ T}) := by
+  subst hs ht
+  -- Restricted to `j ⁻¹' S`, `j` is an open embedding into `S`, along which `H` extends.
+  let k : j ⁻¹' S → S := S.restrictPreimage j
+  have hkS {x : S} (hx : x ∉ range k) : (x : X) ∈ V :=
+    hSV ⟨x.2, fun ⟨y, hy⟩ ↦ hx ⟨⟨y, by simp [hy, x.2]⟩, Subtype.ext hy⟩⟩
+  obtain ⟨G, hGk, hG⟩ := (S.restrictPreimage_isOpenEmbedding hj).exists_continuousMap_extend_id
+    (hV.preimage continuous_subtype_val) (fun _ ↦ hkS) H.toContinuousMap
+    fun t y hy ↦ H.eq_snd t (hVT ⟨y.2, hy⟩)
+  -- The extended deformation fixes every point of `T` and starts inside `T`.
+  have hGT (t : I) (x : S) (hx : (x : X) ∈ T) : G (t, x) = x := by
+    by_cases hxk : x ∈ range k
+    · obtain ⟨y, rfl⟩ := hxk
+      exact (hGk t y).trans (congrArg k (H.eq_snd t hx))
+    · exact hG t x (hkS hxk)
+  have hG₀ (x : S) : (G (0, x) : X) ∈ T := by
+    by_cases hxk : x ∈ range k
+    · obtain ⟨y, rfl⟩ := hxk
+      rw [hGk, ContinuousMap.HomotopyWith.coe_toContinuousMap, H.apply_zero]
+      exact (r y).2
+    · rw [hG 0 x (hkS hxk)]
+      exact hVT ⟨x.2, hkS hxk⟩
+  refine ⟨⟨fun x ↦ ⟨G (0, x), hG₀ x⟩, by fun_prop⟩,
+    fun x ↦ Subtype.ext congr(Subtype.val $(hGT 0 (ContinuousMap.inclusion hTS x) x.2)), ⟨
+      { toFun := G
+        map_zero_left := fun _ ↦ rfl
+        map_one_left := fun x ↦ ?_
+        prop' := fun t x hx ↦ (hGT t x hx).trans (hGT 0 x hx).symm }⟩⟩
+  by_cases hxk : x ∈ range k
+  · obtain ⟨y, rfl⟩ := hxk
+    exact (hGk 1 y).trans (congrArg k (H.apply_one y))
+  · exact hG 1 x (hkS hxk)
+
+end Topology.IsOpenEmbedding

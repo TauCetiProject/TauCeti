@@ -35,6 +35,9 @@ correspondence.
   `Cl_𝔪 ≃* Gal(rayClassField 𝔪 / K)` (`rayClassArtinEquiv`), hence
   `[rayClassField 𝔪 : K] = #Cl_𝔪` (`finrank_rayClassField`).
 
+For a totally complex base, the narrow and ordinary Hilbert class fields coincide
+(`narrowHilbertClassField_eq_hilbertClassField`), since there are no real places.
+
 The **Hilbert class field** `hilbertClassField K` is the ray class field of the trivial modulus,
 and the **narrow Hilbert class field** `narrowHilbertClassField K` that of the modulus carrying
 every real place and no finite place. The Artin map identifies the class group of `K` with the
@@ -42,6 +45,14 @@ Galois group of the Hilbert class field (`hilbertClassArtinEquiv`), whose degree
 class number (`finrank_hilbertClassField`). Likewise it identifies the narrow class group with the
 Galois group of the narrow Hilbert class field (`narrowHilbertClassArtinEquiv`), whose degree is
 the order of the narrow class group (`finrank_narrowHilbertClassField`).
+
+The Hilbert class field is the **maximal unramified abelian extension** of `K`: a finite abelian
+extension of `K` embeds in it exactly when it is unramified at every finite prime and at every
+infinite place (`fieldRange_le_hilbertClassField_iff`), and it is itself unramified everywhere
+(`isUnramifiedAt_hilbertClassField`, `isUnramifiedAtInfinitePlaces_hilbertClassField`). The narrow
+Hilbert class field is the maximal abelian extension unramified at the finite primes, the real
+places being allowed to ramify (`fieldRange_le_narrowHilbertClassField_iff`,
+`isUnramifiedAt_narrowHilbertClassField`).
 
 ## Main definitions
 
@@ -69,6 +80,10 @@ the order of the narrow class group (`finrank_narrowHilbertClassField`).
   `TauCeti.ClassFieldTheory.finrank_hilbertClassField` and
   `TauCeti.ClassFieldTheory.finrank_narrowHilbertClassField`: the degrees are the order of the ray
   class group, the class number and the order of the narrow class group.
+* `TauCeti.ClassFieldTheory.fieldRange_le_hilbertClassField_iff`: the Hilbert class field is the
+  maximal abelian extension unramified at every finite and every infinite place.
+* `TauCeti.ClassFieldTheory.fieldRange_le_narrowHilbertClassField_iff`: the narrow Hilbert class
+  field is the maximal abelian extension unramified at every finite prime.
 
 ## References
 
@@ -78,7 +93,7 @@ the order of the narrow class group (`finrank_narrowHilbertClassField`).
 
 public noncomputable section
 
-open NumberField TauCeti.GlobalNumberFields
+open IsDedekindDomain NumberField TauCeti.GlobalNumberFields
 open scoped nonZeroDivisors
 
 namespace TauCeti.ClassFieldTheory
@@ -244,6 +259,13 @@ theorem hilbertClassField_le_narrowHilbertClassField :
     hilbertClassField K ≤ narrowHilbertClassField K :=
   hilbertClassField_le_rayClassField _
 
+/-- Over a totally complex number field, the narrow and ordinary Hilbert class fields coincide:
+there are no real places at which a narrow class field could allow extra ramification. -/
+@[simp]
+theorem narrowHilbertClassField_eq_hilbertClassField [IsTotallyComplex K] :
+    narrowHilbertClassField K = hilbertClassField K :=
+  congrArg rayClassField (narrowModulus_eq_one K)
+
 /-- **Reciprocity for the Hilbert class field**: the Artin map identifies the class group of `K`
 with the Galois group of the Hilbert class field: `rayClassArtinEquiv` at the trivial modulus, read
 on the class group through `oneEquivClassGroup`. -/
@@ -328,5 +350,58 @@ theorem narrowHilbertClassArtinEquiv_symm_apply (σ : Gal(narrowHilbertClassFiel
 theorem finrank_narrowHilbertClassField :
     Module.finrank K (narrowHilbertClassField K) = Nat.card (NarrowClassGroup K) := by
   rw [← IsGalois.card_aut_eq_finrank, Nat.card_congr (narrowHilbertClassArtinEquiv K).toEquiv]
+
+/-! ### The Hilbert class fields are the maximal unramified abelian extensions -/
+
+/-- **The Hilbert class field is unramified at every finite prime**: every prime of the Hilbert
+class field of `K` is unramified over `𝓞 K`. -/
+theorem isUnramifiedAt_hilbertClassField (w : HeightOneSpectrum (𝓞 (hilbertClassField K))) :
+    Algebra.IsUnramifiedAt (𝓞 K) w.asIdeal :=
+  (isAdmissibleModulus_one_iff.1 (isAdmissibleModulus_rayClassField _)).1 w
+
+/-- **The Hilbert class field is unramified at the infinite places**: every real place of `K`
+stays real in the Hilbert class field. -/
+instance isUnramifiedAtInfinitePlaces_hilbertClassField :
+    IsUnramifiedAtInfinitePlaces K (hilbertClassField K) :=
+  (isAdmissibleModulus_one_iff.1 (isAdmissibleModulus_rayClassField _)).2
+
+variable {K} in
+/-- **The Hilbert class field is the maximal unramified abelian extension**: a finite abelian
+extension `L/K` of number fields, embedded in `Kˢ` by `ι`, lies in the Hilbert class field of `K`
+exactly when it is unramified at every finite prime and at every infinite place. -/
+theorem fieldRange_le_hilbertClassField_iff (ι : L →ₐ[K] SeparableClosure K) :
+    ι.fieldRange ≤ hilbertClassField K ↔
+      (∀ w : HeightOneSpectrum (𝓞 L), Algebra.IsUnramifiedAt (𝓞 K) w.asIdeal) ∧
+        IsUnramifiedAtInfinitePlaces K L := by
+  rw [← isAdmissibleModulus_iff_le_rayClassField, isAdmissibleModulus_one_iff]
+
+variable {K} in
+/-- An everywhere-unramified abelian extension whose degree equals the class number is the
+Hilbert class field, for every embedding into the separable closure of the base. -/
+theorem fieldRange_eq_hilbertClassField_of_unramified_of_finrank_eq_classNumber
+    (ι : L →ₐ[K] SeparableClosure K)
+    (hfin : ∀ w : HeightOneSpectrum (𝓞 L), Algebra.IsUnramifiedAt (𝓞 K) w.asIdeal)
+    (hinf : IsUnramifiedAtInfinitePlaces K L) (hdeg : Module.finrank K L = classNumber K) :
+    ι.fieldRange = hilbertClassField K := by
+  apply IntermediateField.eq_of_le_of_finrank_eq
+  · exact (fieldRange_le_hilbertClassField_iff ι).2 ⟨hfin, hinf⟩
+  · rw [← ι.equivFieldRange.toLinearEquiv.finrank_eq, finrank_hilbertClassField, hdeg]
+
+/-- **The narrow Hilbert class field is unramified at every finite prime**: every prime of the
+narrow Hilbert class field of `K` is unramified over `𝓞 K`. -/
+theorem isUnramifiedAt_narrowHilbertClassField
+    (w : HeightOneSpectrum (𝓞 (narrowHilbertClassField K))) :
+    Algebra.IsUnramifiedAt (𝓞 K) w.asIdeal :=
+  isAdmissibleModulus_narrowModulus_iff.1 (isAdmissibleModulus_rayClassField _) w
+
+variable {K} in
+/-- **The narrow Hilbert class field is the maximal abelian extension unramified at the finite
+primes**: a finite abelian extension `L/K` of number fields, embedded in `Kˢ` by `ι`, lies in the
+narrow Hilbert class field of `K` exactly when it is unramified at every finite prime. The real
+places of `K` may ramify. -/
+theorem fieldRange_le_narrowHilbertClassField_iff (ι : L →ₐ[K] SeparableClosure K) :
+    ι.fieldRange ≤ narrowHilbertClassField K ↔
+      ∀ w : HeightOneSpectrum (𝓞 L), Algebra.IsUnramifiedAt (𝓞 K) w.asIdeal := by
+  rw [← isAdmissibleModulus_iff_le_rayClassField, isAdmissibleModulus_narrowModulus_iff]
 
 end TauCeti.ClassFieldTheory

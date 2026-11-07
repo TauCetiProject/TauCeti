@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Category.QuiverTotal
-public import TauCeti.CategoryTheory.Groupoid.ActionCategory.Basic
+public import TauCeti.CategoryTheory.Groupoid.ActionCategory.Map
 public import Mathlib.Topology.Algebra.ProperAction.Basic
 public import Mathlib.Topology.IsLocalHomeomorph
 
@@ -23,7 +23,18 @@ The source-target map is proper precisely when the action is proper. For a discr
 each fixed-label slice is an open bisection: source and target are local homeomorphisms. Thus
 these topologies give the topological action presentations used for finite quotient charts,
 without imposing faithfulness or discarding ineffective isotropy. The basic topology, units,
-composition and source charts are also available for monoid actions.
+composition and source charts are also available for monoid actions. The functor
+`CategoryTheory.ActionCategory.map φ f` induced by a continuous map `f` equivariant along a
+continuous monoid homomorphism `φ` is continuous on total arrows, and jointly continuous in a
+parameter when `f` varies continuously (`TauCeti.ActionGroupoid.continuous_mapTotal_map`,
+`TauCeti.ActionGroupoid.continuous_uncurry_mapTotal_map`).
+
+In these coordinates, the functor `CategoryTheory.ActionCategory.map φ f` induced by a map `f`
+equivariant along a homomorphism `φ` acts on total arrows as `Prod.map φ f`
+(`TauCeti.ActionGroupoid.mapTotal_map_eq`), so it is an embedding or an open embedding on total
+arrows when `φ` and `f` both are. In particular, the inclusion
+`CategoryTheory.ActionCategory.restrict U` of the action groupoid on an invariant subset is an
+embedding on total arrows (`TauCeti.ActionGroupoid.isEmbedding_mapTotal_restrict`).
 
 ## References
 
@@ -214,9 +225,66 @@ theorem isLocalHomeomorph_source :
       ActionCategory G X) :=
   IsLocalHomeomorph.mk _ fun f => ⟨sourceChart G X f.hom.hom, rfl, fun _ _ => rfl⟩
 
+variable {G X} in
+/-- Near an arrow `f`, every arrow has the label of `f`, so there its target is the translate of
+its source by that fixed label. -/
+theorem eventually_back_right_eq_smul (f : Quiver.Total (ActionCategory G X)) :
+    ∀ᶠ a in 𝓝 f, a.right.back = f.hom.hom • a.left.back := by
+  filter_upwards [((isOpen_discrete {f.hom.hom}).preimage (continuous_label G X)).mem_nhds rfl]
+    with a ha
+  rw [Set.mem_preimage, Set.mem_singleton_iff] at ha
+  rw [← ha]
+  exact a.hom.map_val.symm
+
 end Discrete
 
 end Monoid
+
+section Map
+
+variable {G X} {N Y : Type*} [Monoid G] [Monoid N] [MulAction G X] [MulAction N Y]
+  [TopologicalSpace G] [TopologicalSpace N] [TopologicalSpace X] [TopologicalSpace Y]
+  (φ : G →* N) (f : X →ₑ[φ] Y)
+
+/-- In label-source coordinates, the functor induced by a map `f` equivariant along `φ` acts on
+total arrows as the product of `φ` and `f`. -/
+theorem mapTotal_map_eq : (map φ f).toPrefunctor.mapTotal =
+    (arrowHomeomorph N Y).symm ∘ Prod.map φ f ∘ arrowHomeomorph G X := by
+  funext ⟨_, _, g⟩
+  apply (arrowHomeomorph N Y).injective
+  simp [objEquiv]
+
+/-- The functor induced by an equivariant embedding along an embedding of monoids is an embedding
+on total arrows. -/
+theorem isEmbedding_mapTotal_map (hφ : IsEmbedding φ) (hf : IsEmbedding f) :
+    IsEmbedding (map φ f).toPrefunctor.mapTotal := by
+  rw [mapTotal_map_eq]
+  exact (arrowHomeomorph N Y).symm.isEmbedding.comp
+    ((hφ.prodMap hf).comp (arrowHomeomorph G X).isEmbedding)
+
+/-- The functor induced by an equivariant open embedding along an open embedding of monoids is an
+open embedding on total arrows. -/
+theorem isOpenEmbedding_mapTotal_map (hφ : IsOpenEmbedding φ) (hf : IsOpenEmbedding f) :
+    IsOpenEmbedding (map φ f).toPrefunctor.mapTotal := by
+  rw [mapTotal_map_eq]
+  exact (arrowHomeomorph N Y).symm.isOpenEmbedding.comp
+    ((hφ.prodMap hf).comp (arrowHomeomorph G X).isOpenEmbedding)
+
+end Map
+
+section Restrict
+
+variable {M X : Type*} [Monoid M] [MulAction M X] (U : SubMulAction M X)
+  [TopologicalSpace M] [TopologicalSpace X]
+
+/-- The inclusion of the action groupoid on an invariant subset is an embedding on total arrows.
+In label-source coordinates it is the product of the identity of `M` and the inclusion of the
+subset. -/
+theorem isEmbedding_mapTotal_restrict : IsEmbedding (restrict U).toPrefunctor.mapTotal := by
+  rw [restrict_eq_map]
+  exact isEmbedding_mapTotal_map _ _ IsEmbedding.id IsEmbedding.subtypeVal
+
+end Restrict
 
 section Group
 
@@ -279,5 +347,34 @@ theorem isLocalHomeomorph_target :
     exact a.hom.map_val.symm.trans (congrArg (· • a.left.back) hl)
 
 end Group
+
+section Map
+
+variable {X} {M N Y : Type*} [Monoid M] [Monoid N] [MulAction M X] [MulAction N Y]
+  [TopologicalSpace M] [TopologicalSpace N] [TopologicalSpace X] [TopologicalSpace Y]
+
+/-- The functors of action groupoids induced by a family of equivariant maps along a continuous
+monoid homomorphism, depending continuously on a parameter and the point, are jointly continuous
+in the parameter and the total arrow. -/
+theorem continuous_uncurry_mapTotal_map {T : Type*} [TopologicalSpace T] {φ : M →* N}
+    (hφ : Continuous φ) {f : T → X →ₑ[φ] Y} (hf : Continuous fun p : T × X ↦ f p.1 p.2) :
+    Continuous fun p : T × Quiver.Total (ActionCategory M X) ↦
+      (ActionCategory.map φ (f p.1)).toPrefunctor.mapTotal p.2 :=
+  (arrowHomeomorph N Y).isInducing.continuous_iff.2 <| by
+    -- In label-source coordinates, the arrow `(g, x)` at parameter `s` goes to `(φ g, f s x)`.
+    have : Continuous fun p : T × M × X ↦ (φ p.2.1, f p.1 p.2.2) :=
+      (hφ.comp (continuous_fst.comp continuous_snd)).prodMk
+        (hf.comp (continuous_fst.prodMk (continuous_snd.comp continuous_snd)))
+    exact (this.comp (continuous_id.prodMap (arrowHomeomorph M X).continuous)).congr
+      fun _ ↦ by simp
+
+/-- The functor of action groupoids induced by a continuous equivariant map along a continuous
+monoid homomorphism is continuous on total arrows. -/
+theorem continuous_mapTotal_map {φ : M →* N} (hφ : Continuous φ) {f : X →ₑ[φ] Y}
+    (hf : Continuous f) : Continuous (ActionCategory.map φ f).toPrefunctor.mapTotal :=
+  (continuous_uncurry_mapTotal_map hφ (f := fun _ : Unit ↦ f) (hf.comp continuous_snd)).comp
+    (.prodMk_right ())
+
+end Map
 
 end TauCeti.ActionGroupoid

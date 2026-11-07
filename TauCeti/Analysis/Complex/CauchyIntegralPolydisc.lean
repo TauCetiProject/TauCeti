@@ -10,6 +10,7 @@ public import TauCeti.MeasureTheory.Integral.Torus.ContinuousMap
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.Calculus.FDeriv.Prod
+import Mathlib.Analysis.Calculus.FDeriv.Star
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Topology.ContinuousMap.Compact
 import Mathlib.Topology.ContinuousMap.Units
@@ -52,8 +53,12 @@ distinguished boundary is the torus `T(c, R)` of Mathlib's `torusIntegral`.
   normed space which is complex differentiable on a neighbourhood of a point is analytic there.
 * `DifferentiableOn.contDiffOn_of_finiteDimensional`: such a function is `C^n` on an open set on
   which it is complex differentiable, for every `n`.
+  `Differentiable.contDiff_of_finiteDimensional` and `Differentiable.fderiv_of_finiteDimensional`
+  are the corresponding statements for a function differentiable everywhere.
 * `TauCeti.analyticOnNhd_iff_differentiableOn_of_finiteDimensional`: on an open subset of a
   finite-dimensional complex normed space, analyticity and complex differentiability agree.
+* `AnalyticAt.star_star`: on a finite-dimensional complex normed space with conjugations,
+  `star ∘ f ∘ star` is analytic at `star z` whenever `f` is analytic at `z`.
 * `TauCeti.hasFDerivAt_integral_smul_of_analyticAt`: an integral `q ↦ ∫ a, g a • f (q, φ a) ∂μ`,
   with `g` integrable and `φ` continuous with values in a compact set `K`, whose integrand is
   jointly analytic along `{p} × K` may be differentiated under the integral sign at `p`.
@@ -359,12 +364,37 @@ theorem _root_.DifferentiableOn.contDiffOn_of_finiteDimensional {n : WithTop ℕ
     (hd : DifferentiableOn ℂ f s) (hs : IsOpen s) : ContDiffOn ℂ n f s :=
   (hd.analyticOnNhd_of_finiteDimensional hs).contDiffOn_of_completeSpace
 
+/-- A complex differentiable function on a finite-dimensional complex normed space is `C^n` for
+every `n`, including `n = ω`. This is the several-variable form of `Differentiable.contDiff`. -/
+theorem _root_.Differentiable.contDiff_of_finiteDimensional {n : WithTop ℕ∞}
+    (hd : Differentiable ℂ f) : ContDiff ℂ n f :=
+  contDiffOn_univ.mp (hd.differentiableOn.contDiffOn_of_finiteDimensional isOpen_univ)
+
+/-- The derivative of a complex differentiable function on a finite-dimensional complex normed
+space is complex differentiable. This is the several-variable form of `Differentiable.deriv`. -/
+theorem _root_.Differentiable.fderiv_of_finiteDimensional (hd : Differentiable ℂ f) :
+    Differentiable ℂ (fderiv ℂ f) :=
+  ((hd.contDiff_of_finiteDimensional (n := 2)).fderiv_right (m := 1) (by norm_num)).differentiable
+    one_ne_zero
+
 /-- On an open subset of a finite-dimensional complex normed space, a function is analytic if and
 only if it is complex differentiable. This is the several-variable form of
 `Complex.analyticOnNhd_iff_differentiableOn`. -/
 theorem analyticOnNhd_iff_differentiableOn_of_finiteDimensional (hs : IsOpen s) :
     AnalyticOnNhd ℂ f s ↔ DifferentiableOn ℂ f s :=
   ⟨AnalyticOnNhd.differentiableOn, fun hd => hd.analyticOnNhd_of_finiteDimensional hs⟩
+
+/-- If `f` is analytic at `z`, then `star ∘ f ∘ star` is analytic at `star z`, for a function on
+a finite-dimensional complex normed space with conjugations. This is the analytic form of
+`DifferentiableAt.star_star`; in one variable it is `AnalyticAt.conj_conj`. -/
+theorem _root_.AnalyticAt.star_star [StarAddMonoid V] [StarModule ℂ V] [ContinuousStar V]
+    [StarAddMonoid E] [StarModule ℂ E] [ContinuousStar E] (hf : AnalyticAt ℂ f z) :
+    AnalyticAt ℂ (star ∘ f ∘ star) (star z) := by
+  have hstar : Tendsto star (𝓝 (star z)) (𝓝 z) := by
+    simpa using (continuous_star (R := V)).tendsto (star z)
+  refine DifferentiableOn.analyticAt_of_finiteDimensional (s := star ⁻¹' {y | AnalyticAt ℂ f y})
+    (fun y hy => ?_) (hstar hf.eventually_analyticAt)
+  simpa using (hy.differentiableAt.star_star).differentiableWithinAt
 
 end FiniteDimensional
 

@@ -5,10 +5,8 @@ Authors: Claude
 -/
 module
 
-public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
-public import Mathlib.Algebra.Category.ModuleCat.Basic
-public import Mathlib.Topology.Instances.AddCircle.Defs
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
+public import Mathlib.Topology.Instances.AddCircle.Defs
 
 /-!
 # The short exact sequence `0 → ℤ → ℚ → ℚ/ℤ → 0`
@@ -33,21 +31,19 @@ namespace ModuleCat
 
 /-- The short complex `ℤ → ℚ → ℚ/ℤ` of `ℤ`-modules, with `ℚ/ℤ` the rational circle
 `AddCircle (1 : ℚ)`: the inclusion of the integers followed by reduction modulo `1`. -/
-abbrev ratAddCircleShortComplex : ShortComplex (ModuleCat.{0} ℤ) :=
-  .moduleCatMk (Int.castAddHom ℚ).toIntLinearMap
-    (QuotientAddGroup.mk' (AddSubgroup.zmultiples (1 : ℚ))).toIntLinearMap (by ext; simp)
+abbrev ratAddCircleShortComplex : ShortComplex (ModuleCat.{0} ℤ) where
+  X₁ := .of ℤ ℤ
+  X₂ := .of ℤ ℚ
+  X₃ := .of ℤ (AddCircle (1 : ℚ))
+  f := ofHom (Int.castAddHom ℚ).toIntLinearMap
+  g := ofHom (QuotientAddGroup.mk' (AddSubgroup.zmultiples (1 : ℚ))).toIntLinearMap
+  zero := by ext; simp
 
 /-- The sequence `0 → ℤ → ℚ → ℚ/ℤ → 0` of `ℤ`-modules is short exact. -/
 theorem ratAddCircleShortComplex_shortExact : ratAddCircleShortComplex.ShortExact :=
-  -- exactness at `ℚ` says that `x : ℚ` vanishes modulo `1` iff it lies in `zmultiples 1`, the
-  -- image of `Int.cast`. The three facts are applied pointwise because the maps of
-  -- `ShortComplex.moduleCatMk` are `ModuleCat.ofHom`s, which unify with the plain functions only
-  -- after applying them to an element.
-  shortComplex_shortExact _
-    (fun (x : ℚ) ↦ by
-      change (x : AddCircle (1 : ℚ)) = 0 ↔ ∃ n : ℤ, (n : ℚ) = x
-      simp [AddSubgroup.mem_zmultiples_iff])
-    (fun _ _ h ↦ Int.cast_injective (α := ℚ) h)
-    (fun x ↦ QuotientAddGroup.mk'_surjective (AddSubgroup.zmultiples (1 : ℚ)) x)
+  -- exactness at `ℚ`: `x : ℚ` vanishes modulo `1` iff it lies in `zmultiples 1`, the image of
+  -- `Int.cast`
+  shortComplex_shortExact _ (fun _ ↦ by simp [AddSubgroup.mem_zmultiples_iff])
+    (by simpa using Int.cast_injective) (by simpa using QuotientAddGroup.mk_surjective)
 
 end ModuleCat

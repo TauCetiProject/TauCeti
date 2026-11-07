@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.ContinuousLog.Basic
+public import TauCeti.Analysis.Complex.ContinuousLog.Circle
 import TauCeti.Topology.ConnectedComponents
 import TauCeti.Topology.Connected.LocallyPathConnected
 import Mathlib.Analysis.Complex.BranchLogRoot
@@ -57,9 +57,8 @@ A zero-free continuous function on the plane has a continuous logarithm by
 `Complex.exists_continuousOn_eqOn_exp_comp`, hence so does its restriction to any circle. But `V`
 is bounded, so a large enough circle about `a` misses `closure V`, and there `Φ z = z - a`, which
 has **no** continuous logarithm on a circle about `a`
-(`TauCeti.not_hasContinuousLogOn_sub_sphere`) — the classical winding obstruction, proved here by
-following `t ↦ h (a + r * exp (t * I)) - t * I - log r` once around and finding it both constant and
-shifted by `2 * π * I`. That contradiction is the theorem.
+(`TauCeti.not_hasContinuousLogOn_sub_sphere`, the classical winding obstruction, proved in
+`TauCeti/Analysis/Complex/ContinuousLog/Circle.lean`). That contradiction is the theorem.
 
 Nothing in the argument looks at curves inside `K`, or asks `K` to be connected, locally connected,
 or to contain an arc; `K` enters only through the frontier of one component of its complement.
@@ -101,8 +100,6 @@ Taking for `b` a point far to the left of a bounded closed set `K`, Borsuk's the
 
 ## Main results
 
-* `TauCeti.not_hasContinuousLogOn_sub_sphere` — `z ↦ z - a` has no continuous logarithm on a circle
-  centred at `a`.
 * `TauCeti.mem_connectedComponentIn_of_hasContinuousLogOn` — **Borsuk's separation theorem**: a
   continuous logarithm of the Borsuk map on a bounded closed set puts the two points in one
   component of the complement.
@@ -133,48 +130,6 @@ open Bornology Complex Metric Set
 open scoped Real
 
 variable {K : Set ℂ} {a b : ℂ}
-
-/-! ## The winding obstruction on a circle -/
-
-/-- **A circle carries no continuous logarithm of the map to its centre.** This is the winding
-obstruction used in the plane-separation argument. -/
-theorem not_hasContinuousLogOn_sub_sphere {r : ℝ} (hr : 0 ≤ r) (a : ℂ) :
-    ¬ HasContinuousLogOn (fun z => z - a) (sphere a r) := by
-  rcases hr.eq_or_lt with rfl | hr
-  · intro hlog
-    exact (hlog.ne_zero (by simp : a ∈ sphere a 0)) (sub_self a)
-  rw [hasContinuousLogOn_iff]
-  rintro ⟨h, hcont, heq⟩
-  set γ : ℝ → ℂ := circleMap a r with hγdef
-  have hγsub : ∀ t, γ t - a = circleMap 0 r t := fun t => by
-    rw [hγdef, circleMap_sub_center]
-  have hγmem : ∀ t, γ t ∈ sphere a r := fun t => by
-    simpa only [hγdef] using circleMap_mem_sphere a hr.le t
-  have hγc : Continuous γ := by
-    simpa only [hγdef] using continuous_circleMap a r
-  set k : ℝ → ℂ := fun t => h (γ t) - t * Complex.I - Real.log r with hkdef
-  have hkc : Continuous k := by
-    have hhγ : Continuous fun t : ℝ => h (γ t) := hcont.comp_continuous hγc hγmem
-    exact (hhγ.sub (Complex.continuous_ofReal.mul continuous_const)).sub continuous_const
-  have hexpr : Complex.exp ((Real.log r : ℝ) : ℂ) = (r : ℂ) := by
-    rw [← Complex.ofReal_exp, Real.exp_log hr]
-  have hk1 : ∀ t, Complex.exp (k t) = 1 := fun t => by
-    rw [hkdef]
-    have hr0 : (r : ℂ) ≠ 0 := by exact_mod_cast hr.ne'
-    rw [Complex.exp_sub, Complex.exp_sub, heq _ (hγmem t), hγsub, circleMap_zero, hexpr]
-    field_simp
-  have hpre : IsPreconnected (range k) := isPreconnected_range hkc
-  have hconst : k 0 = k (2 * π) :=
-    eq_of_isPreconnected_of_forall_exp_eq_one hpre (by rintro w ⟨t, rfl⟩; exact hk1 t)
-      (mem_range_self 0) (mem_range_self (2 * π))
-  have hγ2 : γ (2 * π) = γ 0 := by
-    simpa [hγdef] using periodic_circleMap a r 0
-  rw [hkdef] at hconst
-  simp only [hγ2, Complex.ofReal_zero, zero_mul, sub_zero] at hconst
-  have hzero : ((2 * π : ℝ) : ℂ) * Complex.I = 0 := by linear_combination hconst
-  rcases mul_eq_zero.mp hzero with hπ | hI
-  · exact (by positivity : (0 : ℝ) < 2 * π).ne' (by exact_mod_cast hπ)
-  · exact Complex.I_ne_zero hI
 
 /-! ## Borsuk's separation theorem -/
 

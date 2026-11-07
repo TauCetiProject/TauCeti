@@ -77,6 +77,9 @@ along it, so no canonical sample space is imposed on users.
 * `TauCeti.Probability.hasLaw_markovChainLaw_iff` — a process on an arbitrary measure space has
   path law `markovChainLaw ν κ` exactly when it starts from `ν` and its prefix laws satisfy the
   Markov recursion.
+* `TauCeti.Probability.prefixLaw_compProd_apply_prod` — for any process, the prefix-law side of
+  that recursion, evaluated on a rectangle `A ×ˢ C`, is the integral of `κ (X n) C` over the event
+  `{(X 0, …, X n) ∈ A}`.
 * `TauCeti.Probability.hasLaw_markovChainLaw_iff_prefixLaw_singleton` — on a countable state space,
   a process has path law `markovChainLaw ν κ` exactly when its finite path masses are given by the
   product formula.
@@ -516,6 +519,25 @@ theorem hasLaw_markovChainLaw_iff [IsFiniteMeasure ν] (hX : ∀ n, AEMeasurable
   refine ⟨fun h => ?_, fun h => ⟨hY, Measure.eq_markovChainLaw ν κ h.1 h.2⟩⟩
   rw [pathLaw_def, h.map_eq]
   exact ⟨markovChainLaw_map_eval_zero ν κ, markovChainLaw_map_prefix_succ_eq_compProd ν κ⟩
+
+omit [IsMarkovKernel κ] in
+/-- The joint law of a prefix `(X 0, …, X n)` of a process and one further `κ`-step from its last
+coordinate, evaluated on a rectangle `A ×ˢ C`: it is the integral of `κ (X n) C` over the event
+`{(X 0, …, X n) ∈ A}`. -/
+theorem prefixLaw_compProd_apply_prod [SFinite μ] [IsSFiniteKernel κ] (hX : ∀ n, Measurable (X n))
+    (n : ℕ) {A : Set (Fin (n + 1) → α)} (hA : MeasurableSet A) {C : Set α} (hC : MeasurableSet C) :
+    (prefixLaw μ X (n + 1) ⊗ₘ κ.comap (fun w : Fin (n + 1) → α => w (Fin.last n))
+        (measurable_pi_apply (Fin.last n))) (A ×ˢ C) =
+      ∫⁻ ω in (fun ω (i : Fin (n + 1)) => X i ω) ⁻¹' A, κ (X n ω) C ∂μ := by
+  have hpre : Measurable fun ω (i : Fin (n + 1)) => X i ω := measurable_pi_iff.2 fun i => hX i
+  have : SFinite (prefixLaw μ X (n + 1)) := by
+    rw [prefixLaw_def, blockLaw_def]
+    infer_instance
+  rw [Measure.compProd_apply_prod hA hC, prefixLaw_def, blockLaw_def]
+  simp only [Kernel.comap_apply]
+  rw [setLIntegral_map (f := fun w : Fin (n + 1) → α => κ (w (Fin.last n)) C) hA
+    ((κ.measurable_coe hC).comp (measurable_pi_apply _)) hpre]
+  simp
 
 /-- **Product-formula characterization of the law of a Markov chain.** On a countable state space
 with measurable singletons, the path of a coordinatewise a.e. measurable process `X` has law

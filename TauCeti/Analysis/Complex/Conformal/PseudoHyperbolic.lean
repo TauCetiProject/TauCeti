@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.UnitDisc.Basic
+public import TauCeti.Analysis.Complex.Basic
 
 /-!
 # The pseudo-hyperbolic expression on the unit disc
@@ -13,7 +14,7 @@ public import Mathlib.Analysis.Complex.UnitDisc.Basic
 This file records the scalar pseudo-hyperbolic expression `‖(z - w) / (1 - conj w * z)‖`, on
 which the Schwarz--Pick lemma and the hyperbolic distance on the disc are built.  The main API
 proves that the denominator is nonzero on the open unit disc — hence of positive norm
-(`TauCeti.norm_one_sub_conj_mul_pos_of_norm_lt_one`), a positivity side condition
+(`TauCeti.norm_one_sub_conj_mul_pos_of_norm_le_one_of_norm_lt_one`), a positivity side condition
 used when manipulating inequalities involving that denominator — that the hyperbolic defect
 `1 - ‖z‖ ^ 2` is positive there (`TauCeti.one_sub_sq_norm_pos_of_norm_lt_one`), that the
 expression is symmetric, that it is strictly less than one for two points of the unit disc —
@@ -61,6 +62,7 @@ lemma pseudoHyperbolicExpr_eq_norm_div_norm (z w : ℂ) :
     pseudoHyperbolicExpr z w = ‖z - w‖ / ‖1 - (starRingEnd ℂ) w * z‖ := by
   rw [pseudoHyperbolicExpr_def, norm_div]
 
+/-- The pseudo-hyperbolic expression is nonnegative. -/
 @[simp]
 lemma pseudoHyperbolicExpr_nonneg (z w : ℂ) : 0 ≤ pseudoHyperbolicExpr z w :=
   norm_nonneg _
@@ -70,20 +72,11 @@ lemma pseudoHyperbolicExpr_nonneg (z w : ℂ) : 0 ≤ pseudoHyperbolicExpr z w :
 lemma pseudoHyperbolicExpr_self (z : ℂ) : pseudoHyperbolicExpr z z = 0 := by
   simp [pseudoHyperbolicExpr]
 
-private lemma norm_one_sub_conj_mul_comm (z w : ℂ) :
-    ‖1 - (starRingEnd ℂ) w * z‖ = ‖1 - (starRingEnd ℂ) z * w‖ := by
-  calc
-    ‖1 - (starRingEnd ℂ) w * z‖ =
-        ‖(starRingEnd ℂ) (1 - (starRingEnd ℂ) w * z)‖ := by rw [norm_conj]
-    _ = ‖1 - (starRingEnd ℂ) z * w‖ := by
-      congr 1
-      simp [mul_comm]
-
 /-- The pseudo-hyperbolic expression is symmetric in its two arguments. -/
 lemma pseudoHyperbolicExpr_comm (z w : ℂ) :
     pseudoHyperbolicExpr z w = pseudoHyperbolicExpr w z := by
-  unfold pseudoHyperbolicExpr
-  rw [norm_div, norm_div, norm_sub_rev, norm_one_sub_conj_mul_comm]
+  rw [pseudoHyperbolicExpr_eq_norm_div_norm, pseudoHyperbolicExpr_eq_norm_div_norm, norm_sub_rev,
+    norm_one_sub_conj_mul_comm]
 
 /-- **Conjugation invariance.** Conjugating both arguments leaves the pseudo-hyperbolic
 expression unchanged: conjugation is the orientation-reversing symmetry of the disc. -/
@@ -93,11 +86,6 @@ lemma pseudoHyperbolicExpr_conj (z w : ℂ) :
   rw [pseudoHyperbolicExpr_def, pseudoHyperbolicExpr_def,
     ← norm_conj ((z - w) / (1 - (starRingEnd ℂ) w * z)), map_div₀]
   simp
-
-/-- If the two points are equal, their pseudo-hyperbolic expression is zero. -/
-lemma pseudoHyperbolicExpr_eq_zero_of_eq {z w : ℂ} (h : z = w) :
-    pseudoHyperbolicExpr z w = 0 := by
-  simp [h]
 
 /-- The pseudo-hyperbolic expression with right endpoint zero is the norm. -/
 @[simp]
@@ -115,128 +103,101 @@ pseudo-hyperbolic expression unchanged.  This is a purely algebraic identity val
 @[simp]
 lemma pseudoHyperbolicExpr_const_mul {c : ℂ} (hc : ‖c‖ = 1) (z w : ℂ) :
     pseudoHyperbolicExpr (c * z) (c * w) = pseudoHyperbolicExpr z w := by
-  have hcc : (starRingEnd ℂ) c * c = 1 := by
-    rw [mul_comm, Complex.mul_conj, Complex.normSq_eq_norm_sq, hc]
-    norm_num
+  have hcc : (starRingEnd ℂ) c * c = 1 := by simp [Complex.conj_mul', hc]
   have hden : (starRingEnd ℂ) (c * w) * (c * z) = (starRingEnd ℂ) w * z := by
     rw [map_mul]
-    calc (starRingEnd ℂ) c * (starRingEnd ℂ) w * (c * z)
-        = ((starRingEnd ℂ) c * c) * ((starRingEnd ℂ) w * z) := by ring
-      _ = (starRingEnd ℂ) w * z := by rw [hcc, one_mul]
-  have hnum : c * z - c * w = c * (z - w) := by ring
-  have hden' : (1 : ℂ) - (starRingEnd ℂ) (c * w) * (c * z) =
-      1 - (starRingEnd ℂ) w * z := by
-    rw [hden]
-  rw [pseudoHyperbolicExpr_def, pseudoHyperbolicExpr_def, hnum, hden',
-    mul_div_assoc, norm_mul, hc, one_mul]
+    linear_combination (starRingEnd ℂ) w * z * hcc
+  rw [pseudoHyperbolicExpr_def, pseudoHyperbolicExpr_def, hden, ← mul_sub, mul_div_assoc, norm_mul,
+    hc, one_mul]
 
 /-- If the denominator is nonzero, zero pseudo-hyperbolic expression characterizes equality. -/
 lemma pseudoHyperbolicExpr_eq_zero_iff_of_den_ne_zero {z w : ℂ}
     (hden : 1 - (starRingEnd ℂ) w * z ≠ 0) :
     pseudoHyperbolicExpr z w = 0 ↔ z = w := by
-  rw [pseudoHyperbolicExpr, norm_eq_zero, div_eq_zero_iff]
-  simp only [hden, or_false]
-  exact sub_eq_zero
+  rw [pseudoHyperbolicExpr_def, norm_eq_zero, div_eq_zero_iff, or_iff_left hden, sub_eq_zero]
 
-/-- On the open unit disc, the denominator in the pseudo-hyperbolic expression is nonzero. -/
-lemma one_sub_conj_mul_ne_zero_of_norm_lt_one {z w : ℂ}
-    (hz : ‖z‖ < 1) (hw : ‖w‖ < 1) :
+/-- The denominator in the pseudo-hyperbolic expression is nonzero when `z` lies in the closed
+unit disc and `w` in the open unit disc. -/
+lemma one_sub_conj_mul_ne_zero_of_norm_le_one_of_norm_lt_one {z w : ℂ}
+    (hz : ‖z‖ ≤ 1) (hw : ‖w‖ < 1) :
     1 - (starRingEnd ℂ) w * z ≠ 0 :=
   (isUnit_one_sub_of_norm_lt_one (x := (starRingEnd ℂ) w * z)
     (by
       rw [norm_mul, norm_conj]
-      exact (mul_le_of_le_one_left (norm_nonneg _) hw.le).trans_lt hz)).ne_zero
+      exact (mul_le_of_le_one_right (norm_nonneg _) hz).trans_lt hw)).ne_zero
 
 /-- If one point is inside the unit disc and the other is on its boundary, both the
 pseudo-hyperbolic numerator and denominator are nonzero. -/
 lemma sub_ne_zero_and_one_sub_conj_mul_ne_zero_of_norm_lt_one_of_norm_eq_one {w z : ℂ}
     (hw : ‖w‖ < 1) (hz : ‖z‖ = 1) :
-    z - w ≠ 0 ∧ 1 - (starRingEnd ℂ) w * z ≠ 0 := by
-  have hzw : z - w ≠ 0 := by
-    intro h
-    have : z = w := sub_eq_zero.mp h
-    rw [this] at hz
-    linarith
-  have hden : 1 - (starRingEnd ℂ) w * z ≠ 0 := by
-    intro h
-    have heq : (starRingEnd ℂ) w * z = 1 := (sub_eq_zero.mp h).symm
-    have hnorm : ‖(starRingEnd ℂ) w * z‖ = 1 := by rw [heq]; simp
-    rw [norm_mul, Complex.norm_conj, hz, mul_one] at hnorm
-    linarith
-  exact ⟨hzw, hden⟩
+    z - w ≠ 0 ∧ 1 - (starRingEnd ℂ) w * z ≠ 0 :=
+  ⟨sub_ne_zero.2 (by rintro rfl; linarith),
+    one_sub_conj_mul_ne_zero_of_norm_le_one_of_norm_lt_one hz.le hw⟩
 
 /-- For points in the open unit ball, the denominator in the pseudo-hyperbolic expression is
 nonzero. -/
 lemma one_sub_conj_mul_ne_zero_of_mem_ball {z w : ℂ}
     (hz : z ∈ ball (0 : ℂ) 1) (hw : w ∈ ball (0 : ℂ) 1) :
     1 - (starRingEnd ℂ) w * z ≠ 0 :=
-  one_sub_conj_mul_ne_zero_of_norm_lt_one (by simpa [mem_ball_zero_iff] using hz)
-    (by simpa [mem_ball_zero_iff] using hw)
+  one_sub_conj_mul_ne_zero_of_norm_le_one_of_norm_lt_one (mem_ball_zero_iff.mp hz).le
+    (mem_ball_zero_iff.mp hw)
 
 /-- For bundled unit-disc points, the denominator in the pseudo-hyperbolic expression is
 nonzero. -/
 lemma one_sub_conj_mul_ne_zero_unitDisc (z w : Complex.UnitDisc) :
     1 - (starRingEnd ℂ) (w : ℂ) * (z : ℂ) ≠ 0 :=
-  one_sub_conj_mul_ne_zero_of_norm_lt_one z.norm_lt_one w.norm_lt_one
+  one_sub_conj_mul_ne_zero_of_norm_le_one_of_norm_lt_one z.norm_lt_one.le w.norm_lt_one
 
 /-- On the open unit disc, the hyperbolic defect `1 - ‖z‖ ^ 2` is positive. -/
-lemma one_sub_sq_norm_pos_of_norm_lt_one {z : ℂ} (hz : ‖z‖ < 1) : 0 < 1 - ‖z‖ ^ 2 := by
-  nlinarith [norm_nonneg z]
+lemma one_sub_sq_norm_pos_of_norm_lt_one {z : ℂ} (hz : ‖z‖ < 1) : 0 < 1 - ‖z‖ ^ 2 :=
+  sub_pos.2 (pow_lt_one₀ (norm_nonneg z) hz two_ne_zero)
 
-/-- On the open unit disc, the denominator in the pseudo-hyperbolic expression has positive norm.
-This is a positivity side condition used when manipulating inequalities involving this
-denominator. -/
-lemma norm_one_sub_conj_mul_pos_of_norm_lt_one {z w : ℂ} (hz : ‖z‖ < 1) (hw : ‖w‖ < 1) :
+/-- When `z` lies in the closed unit disc and `w` in the open unit disc, the denominator in the
+pseudo-hyperbolic expression has positive norm. This is a positivity side condition used when
+manipulating inequalities involving this denominator. -/
+lemma norm_one_sub_conj_mul_pos_of_norm_le_one_of_norm_lt_one {z w : ℂ}
+    (hz : ‖z‖ ≤ 1) (hw : ‖w‖ < 1) :
     0 < ‖1 - (starRingEnd ℂ) w * z‖ :=
-  norm_pos_iff.mpr (one_sub_conj_mul_ne_zero_of_norm_lt_one hz hw)
+  norm_pos_iff.mpr (one_sub_conj_mul_ne_zero_of_norm_le_one_of_norm_lt_one hz hw)
 
 /-- For a point of norm at most one, the denominator of the Moebius factor evaluated at the
 factor's own center has norm `1 - ‖w‖ ^ 2`. -/
 lemma norm_one_sub_conj_mul_self_of_norm_le_one {w : ℂ} (hw : ‖w‖ ≤ 1) :
     ‖(1 : ℂ) - (starRingEnd ℂ) w * w‖ = 1 - ‖w‖ ^ 2 := by
-  have hconj : (starRingEnd ℂ) w * w = ((‖w‖ ^ 2 : ℝ) : ℂ) := by
-    rw [mul_comm, Complex.mul_conj, Complex.normSq_eq_norm_sq]
-  rw [hconj, ← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs,
-    abs_of_nonneg (by nlinarith [norm_nonneg w])]
+  rw [Complex.conj_mul']
+  exact_mod_cast Complex.norm_of_nonneg (sub_nonneg.2 (pow_le_one₀ (norm_nonneg w) hw))
 
-/-- On the open unit disc, zero pseudo-hyperbolic expression characterizes equality. -/
-lemma pseudoHyperbolicExpr_eq_zero_iff_of_norm_lt_one {z w : ℂ}
-    (hz : ‖z‖ < 1) (hw : ‖w‖ < 1) :
+/-- For `z` in the closed unit disc and `w` in the open unit disc, zero pseudo-hyperbolic
+expression characterizes equality. -/
+lemma pseudoHyperbolicExpr_eq_zero_iff_of_norm_le_one_of_norm_lt_one {z w : ℂ}
+    (hz : ‖z‖ ≤ 1) (hw : ‖w‖ < 1) :
     pseudoHyperbolicExpr z w = 0 ↔ z = w :=
   pseudoHyperbolicExpr_eq_zero_iff_of_den_ne_zero
-    (one_sub_conj_mul_ne_zero_of_norm_lt_one hz hw)
+    (one_sub_conj_mul_ne_zero_of_norm_le_one_of_norm_lt_one hz hw)
 
 /-- For points in the open unit ball, zero pseudo-hyperbolic expression characterizes equality. -/
 lemma pseudoHyperbolicExpr_eq_zero_iff_of_mem_ball {z w : ℂ}
     (hz : z ∈ ball (0 : ℂ) 1) (hw : w ∈ ball (0 : ℂ) 1) :
     pseudoHyperbolicExpr z w = 0 ↔ z = w :=
-  pseudoHyperbolicExpr_eq_zero_iff_of_norm_lt_one (by simpa [mem_ball_zero_iff] using hz)
-    (by simpa [mem_ball_zero_iff] using hw)
+  pseudoHyperbolicExpr_eq_zero_iff_of_norm_le_one_of_norm_lt_one (mem_ball_zero_iff.mp hz).le
+    (mem_ball_zero_iff.mp hw)
 
 /-- For bundled unit-disc points, zero pseudo-hyperbolic expression characterizes equality. -/
 @[simp]
 lemma pseudoHyperbolicExpr_eq_zero_iff_unitDisc (z w : Complex.UnitDisc) :
     pseudoHyperbolicExpr (z : ℂ) (w : ℂ) = 0 ↔ z = w := by
-  rw [pseudoHyperbolicExpr_eq_zero_iff_of_norm_lt_one z.norm_lt_one w.norm_lt_one]
-  exact Subtype.ext_iff.symm
-
-private lemma normSq_one_sub_conj_mul_sub_normSq_sub (z w : ℂ) :
-    Complex.normSq (1 - (starRingEnd ℂ) w * z) - Complex.normSq (z - w) =
-      (1 - Complex.normSq z) * (1 - Complex.normSq w) := by
-  rw [Complex.normSq_sub, Complex.normSq_sub, Complex.normSq_mul, Complex.normSq_conj,
-    Complex.normSq_one]
-  have hre : (1 * (starRingEnd ℂ) ((starRingEnd ℂ) w * z)).re =
-      (z * (starRingEnd ℂ) w).re := by
-    simp [mul_comm]
-  rw [hre]
-  ring_nf
+  rw [pseudoHyperbolicExpr_eq_zero_iff_of_norm_le_one_of_norm_lt_one z.norm_lt_one.le
+    w.norm_lt_one, Complex.UnitDisc.coe_inj]
 
 /-- **Poincaré defect identity (norm form).** The difference of the squared norms of the Moebius
 denominator and numerator factors is the product of the two hyperbolic defects:
 `‖1 - conj w * z‖ ^ 2 - ‖z - w‖ ^ 2 = (1 - ‖z‖ ^ 2) * (1 - ‖w‖ ^ 2)`. -/
 lemma norm_sq_one_sub_conj_mul_sub_norm_sq_sub (z w : ℂ) :
     ‖(1 : ℂ) - (starRingEnd ℂ) w * z‖ ^ 2 - ‖z - w‖ ^ 2 = (1 - ‖z‖ ^ 2) * (1 - ‖w‖ ^ 2) := by
-  simpa only [Complex.normSq_eq_norm_sq] using normSq_one_sub_conj_mul_sub_normSq_sub z w
+  simp only [← Complex.normSq_eq_norm_sq, Complex.normSq_apply, Complex.sub_re, Complex.sub_im,
+    Complex.mul_re, Complex.mul_im, Complex.conj_re, Complex.conj_im, Complex.one_re,
+    Complex.one_im]
+  ring
 
 /-- **Equal norms plus equal pseudo-hyperbolic expression force equal distance.** For four points
 of the open unit disc with `‖z'‖ = ‖z‖` and `‖w'‖ = ‖w‖`, the pseudo-hyperbolic expression
@@ -245,69 +206,49 @@ lemma norm_sub_eq_of_pseudoHyperbolicExpr_eq {z w z' w' : ℂ}
     (hz : ‖z‖ < 1) (hw : ‖w‖ < 1) (hnz : ‖z'‖ = ‖z‖) (hnw : ‖w'‖ = ‖w‖)
     (h : pseudoHyperbolicExpr z' w' = pseudoHyperbolicExpr z w) :
     ‖z' - w'‖ = ‖z - w‖ := by
-  have hz' : ‖z'‖ < 1 := by rwa [hnz]
-  have hw' : ‖w'‖ < 1 := by rwa [hnw]
-  have hc : 0 < (1 - ‖z‖ ^ 2) * (1 - ‖w‖ ^ 2) :=
+  have hD : 0 < (1 - ‖z‖ ^ 2) * (1 - ‖w‖ ^ 2) :=
     mul_pos (one_sub_sq_norm_pos_of_norm_lt_one hz) (one_sub_sq_norm_pos_of_norm_lt_one hw)
-  have hden : ‖(1 : ℂ) - (starRingEnd ℂ) w * z‖ ≠ 0 :=
-    norm_ne_zero_iff.mpr (one_sub_conj_mul_ne_zero_of_norm_lt_one hz hw)
-  have hden' : ‖(1 : ℂ) - (starRingEnd ℂ) w' * z'‖ ≠ 0 :=
-    norm_ne_zero_iff.mpr (one_sub_conj_mul_ne_zero_of_norm_lt_one hz' hw')
-  -- The Poincaré defect identity writes each squared denominator as the squared numerator plus a
-  -- correction depending only on the two norms, which the two pairs share.
-  have hB : ‖(1 : ℂ) - (starRingEnd ℂ) w * z‖ ^ 2
-      = ‖z - w‖ ^ 2 + (1 - ‖z‖ ^ 2) * (1 - ‖w‖ ^ 2) := by
-    have := norm_sq_one_sub_conj_mul_sub_norm_sq_sub z w
-    linarith
-  have hB' : ‖(1 : ℂ) - (starRingEnd ℂ) w' * z'‖ ^ 2
-      = ‖z' - w'‖ ^ 2 + (1 - ‖z‖ ^ 2) * (1 - ‖w‖ ^ 2) := by
-    have := norm_sq_one_sub_conj_mul_sub_norm_sq_sub z' w'
-    rw [hnz, hnw] at this
-    linarith
-  have hquot : ‖z' - w'‖ * ‖(1 : ℂ) - (starRingEnd ℂ) w * z‖
-      = ‖z - w‖ * ‖(1 : ℂ) - (starRingEnd ℂ) w' * z'‖ := by
-    have h' : ‖z' - w'‖ / ‖(1 : ℂ) - (starRingEnd ℂ) w' * z'‖
-        = ‖z - w‖ / ‖(1 : ℂ) - (starRingEnd ℂ) w * z‖ := by
-      simpa only [pseudoHyperbolicExpr_def, norm_div] using h
-    exact (div_eq_div_iff hden' hden).mp h'
-  have hsq : ‖z' - w'‖ ^ 2 * ‖(1 : ℂ) - (starRingEnd ℂ) w * z‖ ^ 2
-      = ‖z - w‖ ^ 2 * ‖(1 : ℂ) - (starRingEnd ℂ) w' * z'‖ ^ 2 := by
-    rw [← mul_pow, ← mul_pow, hquot]
-  rw [hB, hB'] at hsq
-  have hAA : ‖z' - w'‖ ^ 2 = ‖z - w‖ ^ 2 := by nlinarith [hsq, hc]
-  exact (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp hAA
+  have hB := norm_sq_one_sub_conj_mul_sub_norm_sq_sub z w
+  have hB' := norm_sq_one_sub_conj_mul_sub_norm_sq_sub z' w'
+  rw [hnz, hnw] at hB'
+  rw [pseudoHyperbolicExpr_eq_norm_div_norm, pseudoHyperbolicExpr_eq_norm_div_norm,
+    div_eq_div_iff
+      (norm_one_sub_conj_mul_pos_of_norm_le_one_of_norm_lt_one (hnz.trans_lt hz).le
+        (hnw.trans_lt hw)).ne'
+      (norm_one_sub_conj_mul_pos_of_norm_le_one_of_norm_lt_one hz.le hw).ne'] at h
+  -- Squaring `h` and substituting the Poincaré defect identity for both pairs, which share the
+  -- same defect product, leaves the difference of the squared numerators times that product.
+  have key : (‖z' - w'‖ ^ 2 - ‖z - w‖ ^ 2) * ((1 - ‖z‖ ^ 2) * (1 - ‖w‖ ^ 2)) = 0 := by
+    linear_combination (‖z' - w'‖ * ‖1 - (starRingEnd ℂ) w * z‖ +
+      ‖z - w‖ * ‖1 - (starRingEnd ℂ) w' * z'‖) * h - ‖z' - w'‖ ^ 2 * hB + ‖z - w‖ ^ 2 * hB'
+  exact (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).1
+    (sub_eq_zero.1 ((mul_eq_zero.1 key).resolve_right hD.ne'))
 
 /-- For two points of norm less than one, the numerator norm is smaller than the denominator
 norm in the pseudo-hyperbolic expression. -/
 lemma norm_sub_lt_norm_one_sub_conj_mul_of_norm_lt_one {z w : ℂ}
     (hz : ‖z‖ < 1) (hw : ‖w‖ < 1) :
     ‖z - w‖ < ‖1 - (starRingEnd ℂ) w * z‖ := by
-  rw [← sq_lt_sq₀ (norm_nonneg _) (norm_nonneg _), ← Complex.normSq_eq_norm_sq,
-    ← Complex.normSq_eq_norm_sq]
-  have hpos : 0 < (1 - Complex.normSq z) * (1 - Complex.normSq w) := by
-    rw [Complex.normSq_eq_norm_sq, Complex.normSq_eq_norm_sq]
-    exact mul_pos (one_sub_sq_norm_pos_of_norm_lt_one hz)
-      (one_sub_sq_norm_pos_of_norm_lt_one hw)
-  have hdiff := normSq_one_sub_conj_mul_sub_normSq_sub z w
-  nlinarith
+  rw [← sq_lt_sq₀ (norm_nonneg _) (norm_nonneg _)]
+  have := norm_sq_one_sub_conj_mul_sub_norm_sq_sub z w
+  have := mul_pos (one_sub_sq_norm_pos_of_norm_lt_one hz) (one_sub_sq_norm_pos_of_norm_lt_one hw)
+  linarith
 
 /-- The pseudo-hyperbolic expression of two points of norm less than one is strictly less
 than one. -/
 lemma pseudoHyperbolicExpr_lt_one_of_norm_lt_one {z w : ℂ}
     (hz : ‖z‖ < 1) (hw : ‖w‖ < 1) :
     pseudoHyperbolicExpr z w < 1 := by
-  have hden : 0 < ‖1 - (starRingEnd ℂ) w * z‖ := norm_one_sub_conj_mul_pos_of_norm_lt_one hz hw
-  have hlt := norm_sub_lt_norm_one_sub_conj_mul_of_norm_lt_one hz hw
-  rw [pseudoHyperbolicExpr, norm_div]
-  rwa [div_lt_one hden]
+  rw [pseudoHyperbolicExpr_eq_norm_div_norm,
+    div_lt_one (norm_one_sub_conj_mul_pos_of_norm_le_one_of_norm_lt_one hz.le hw)]
+  exact norm_sub_lt_norm_one_sub_conj_mul_of_norm_lt_one hz hw
 
 /-- The pseudo-hyperbolic expression of two points in the open unit ball is strictly less
 than one. -/
 lemma pseudoHyperbolicExpr_lt_one_of_mem_ball {z w : ℂ}
     (hz : z ∈ ball (0 : ℂ) 1) (hw : w ∈ ball (0 : ℂ) 1) :
     pseudoHyperbolicExpr z w < 1 :=
-  pseudoHyperbolicExpr_lt_one_of_norm_lt_one (by simpa [mem_ball_zero_iff] using hz)
-    (by simpa [mem_ball_zero_iff] using hw)
+  pseudoHyperbolicExpr_lt_one_of_norm_lt_one (mem_ball_zero_iff.mp hz) (mem_ball_zero_iff.mp hw)
 
 /-- The pseudo-hyperbolic expression of two bundled unit-disc points is strictly less
 than one. -/
@@ -320,7 +261,7 @@ lemma pseudoHyperbolicExpr_lt_one_unitDisc (z w : Complex.UnitDisc) :
 condition of the `Real.artanh` lemmas applied to it to define the hyperbolic distance. -/
 lemma pseudoHyperbolicExpr_mem_Ioo_of_norm_lt_one {z w : ℂ} (hz : ‖z‖ < 1) (hw : ‖w‖ < 1) :
     pseudoHyperbolicExpr z w ∈ Ioo (-1 : ℝ) 1 :=
-  ⟨by linarith [pseudoHyperbolicExpr_nonneg z w],
+  ⟨neg_one_lt_zero.trans_le (pseudoHyperbolicExpr_nonneg z w),
     pseudoHyperbolicExpr_lt_one_of_norm_lt_one hz hw⟩
 
 /-- The pseudo-hyperbolic expression is continuous on the product of two copies of the open
@@ -328,13 +269,8 @@ unit disc, where its Moebius denominator does not vanish. -/
 lemma continuousOn_pseudoHyperbolicExpr :
     ContinuousOn (fun p : ℂ × ℂ ↦ pseudoHyperbolicExpr p.1 p.2)
       (ball (0 : ℂ) 1 ×ˢ ball (0 : ℂ) 1) := by
-  have hnum : Continuous fun p : ℂ × ℂ ↦ p.1 - p.2 := continuous_fst.sub continuous_snd
-  have hden : Continuous fun p : ℂ × ℂ ↦ (1 : ℂ) - (starRingEnd ℂ) p.2 * p.1 :=
-    continuous_const.sub ((Complex.continuous_conj.comp continuous_snd).mul continuous_fst)
-  have hne : ∀ p ∈ ball (0 : ℂ) 1 ×ˢ ball (0 : ℂ) 1,
-      (1 : ℂ) - (starRingEnd ℂ) p.2 * p.1 ≠ 0 := fun _ hp ↦
-    one_sub_conj_mul_ne_zero_of_mem_ball hp.1 hp.2
-  exact ((hnum.continuousOn.div hden.continuousOn hne).norm).congr fun p _ ↦
-    pseudoHyperbolicExpr_def p.1 p.2
+  refine ContinuousOn.congr ?_ fun p _ ↦ pseudoHyperbolicExpr_def p.1 p.2
+  refine (ContinuousOn.div (by fun_prop) (by fun_prop) ?_).norm
+  exact fun p hp ↦ one_sub_conj_mul_ne_zero_of_mem_ball hp.1 hp.2
 
 end TauCeti

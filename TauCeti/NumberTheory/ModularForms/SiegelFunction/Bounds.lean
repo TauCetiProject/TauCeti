@@ -31,6 +31,9 @@ derived from them at large imaginary part are in
   `A^{B₂(a)/2} exp (2 A^a / (1 - A))`.
 * `TauCeti.ModularForm.norm_siegelFunction_le_of_apply_zero_eq_zero`: for `a = 0`, the bound
   `A^{1/12} |1 - e^{2π i b}| exp (2A / (1 - A))`.
+* `TauCeti.ModularForm.norm_siegelFunction_zero_half_pow_twelve_le`,
+  `TauCeti.ModularForm.le_norm_siegelFunction_zero_half_pow_twelve`: the two-sided enclosure
+  `4096 A (1 ∓ A / (1 - 2A))²⁴` of `|g_{(0, 1/2)}(τ)¹²|` near `i∞`.
 
 ## References
 
@@ -125,5 +128,45 @@ theorem norm_siegelFunction_le_of_apply_zero_eq_zero {r : Fin 2 → ℝ} (hr : r
     ← two_mul]
   congr 2
   norm_num
+
+
+/-- With `A = |q|`, `|g_{(0, 1/2)}(τ)¹²| = 4096 A |∏_{n ≥ 1} (1 + qⁿ)|²⁴` on the upper
+half-plane. -/
+theorem norm_siegelFunction_zero_half_pow_twelve {τ : ℂ} (hτ : 0 < τ.im) :
+    ‖siegelFunction ![0, 1 / 2] τ ^ 12‖ = 4096 * ‖cexp (2 * π * I * τ)‖ *
+      ‖∏' n : ℕ, (1 + cexp (2 * π * I * τ) ^ (n + 1))‖ ^ 24 := by
+  rw [siegelFunction_zero_half_pow_twelve hτ, norm_mul, norm_mul, norm_pow]
+  norm_num
+
+/-- With `A = |q| < 1/2`, `|g_{(0, 1/2)}(τ)¹²| ≤ 4096 A (1 + A / (1 - 2A))²⁴` on the upper
+half-plane. -/
+theorem norm_siegelFunction_zero_half_pow_twelve_le {τ : ℂ} (hτ : 0 < τ.im)
+    (hq : 2 * ‖cexp (2 * π * I * τ)‖ < 1) :
+    ‖siegelFunction ![0, 1 / 2] τ ^ 12‖ ≤ 4096 * ‖cexp (2 * π * I * τ)‖ *
+      (1 + ‖cexp (2 * π * I * τ)‖ / (1 - 2 * ‖cexp (2 * π * I * τ)‖)) ^ 24 := by
+  have h := norm_tprod_one_add_pow_sub_one_le hq
+  have := norm_le_norm_add_norm_sub' (∏' n : ℕ, (1 + cexp (2 * π * I * τ) ^ (n + 1))) 1
+  rw [norm_one] at this
+  rw [norm_siegelFunction_zero_half_pow_twelve hτ]
+  gcongr
+  linarith
+
+/-- With `A = |q| < 1/3`, `4096 A (1 - A / (1 - 2A))²⁴ ≤ |g_{(0, 1/2)}(τ)¹²|` on the upper
+half-plane. -/
+theorem le_norm_siegelFunction_zero_half_pow_twelve {τ : ℂ} (hτ : 0 < τ.im)
+    (hq : 3 * ‖cexp (2 * π * I * τ)‖ < 1) :
+    4096 * ‖cexp (2 * π * I * τ)‖ *
+      (1 - ‖cexp (2 * π * I * τ)‖ / (1 - 2 * ‖cexp (2 * π * I * τ)‖)) ^ 24 ≤
+      ‖siegelFunction ![0, 1 / 2] τ ^ 12‖ := by
+  have hA := norm_nonneg (cexp (2 * π * I * τ))
+  have h := norm_tprod_one_add_pow_sub_one_le (by linarith : 2 * ‖cexp (2 * π * I * τ)‖ < 1)
+  have hε : 0 ≤ 1 - ‖cexp (2 * π * I * τ)‖ / (1 - 2 * ‖cexp (2 * π * I * τ)‖) := by
+    rw [sub_nonneg, div_le_one (by linarith)]
+    linarith
+  have := norm_sub_norm_le (1 : ℂ) (∏' n : ℕ, (1 + cexp (2 * π * I * τ) ^ (n + 1)))
+  rw [norm_one, norm_sub_rev] at this
+  rw [norm_siegelFunction_zero_half_pow_twelve hτ]
+  gcongr
+  linarith
 
 end TauCeti.ModularForm

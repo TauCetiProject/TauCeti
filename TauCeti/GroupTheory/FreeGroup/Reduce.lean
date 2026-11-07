@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.FreeGroup.Reduce
+public import TauCeti.Data.List.CommonPrefix
+import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 
 /-!
 # Reduced words in free groups
@@ -18,6 +20,11 @@ The last section controls cancellation under left multiplication: if the reduced
 not begin with the formal inverse of `x₂`, then the reduced word of `(x₁ ++ x₂) * g` still begins
 with `x₁` whenever `x₁ ++ x₂` is reduced. This is the prefix calculus behind ping-pong arguments
 on reduced words, such as the big powers property of free groups.
+
+Finally, the reduced word of `g⁻¹ * f` arises from those of `g` and `f` by cancelling their
+longest common prefix, so `‖g⁻¹ * f‖ + 2 * commonPrefixLength g f = ‖g‖ + ‖f‖` for the word
+length `‖·‖`. Thus the Gromov product of word length is the common prefix length of reduced
+words.
 -/
 
 public section
@@ -71,6 +78,18 @@ theorem IsReduced.append_append_invRev {w u : List (α × Bool)} (hw : IsReduced
     rw [Option.mem_def.mp hx] at this
     cases x; cases z
     simp_all [Bool.eq_not]
+
+/-- A nonempty reduced word is never its own formal inverse: otherwise it would represent an
+element of order at most two of the torsion-free group `FreeGroup α`. -/
+theorem IsReduced.invRev_ne_self {w : List (α × Bool)} (hw : IsReduced w) (hw₀ : w ≠ []) :
+    FreeGroup.invRev w ≠ w := by
+  intro h
+  have hsq : mk w ^ 2 = 1 := by
+    rw [pow_two]
+    nth_rw 1 [← h]
+    rw [← inv_mk, inv_mul_cancel]
+  rw [pow_eq_one_iff_left (Nat.succ_ne_zero 1), one_eq_mk] at hsq
+  exact hw₀ (hw.eq_of_mk_eq IsReduced.nil hsq)
 
 section Prefix
 
@@ -157,5 +176,54 @@ theorem prefix_toWord_mk_append_mul {x₁ x₂ : List (α × Bool)} {g : FreeGro
     exact (prefix_cons_inj a).2 (ih hx')
 
 end Prefix
+
+section CommonPrefix
+
+variable [DecidableEq α]
+
+/-- For reduced words `u` and `v`, the reduced word of `(mk u)⁻¹ * mk v` has length
+`u.length + v.length - 2 * commonPrefixLength u v`. Intuitively, this reduced word arises from
+`invRev u ++ v` by cancelling the longest common prefix of `u` and `v`. -/
+theorem length_toWord_inv_mk_mul_mk {u v : List (α × Bool)} (hu : IsReduced u)
+    (hv : IsReduced v) :
+    ((mk u)⁻¹ * mk v).toWord.length + 2 * List.commonPrefixLength u v = u.length + v.length := by
+  induction u generalizing v with
+  | nil => simp [hv.reduce_eq]
+  | cons a u ih =>
+    cases v with
+    | nil => simp [inv_mk, hu.invRev.reduce_eq]
+    | cons b v =>
+      by_cases hab : a = b
+      · subst hab
+        have hmul : (mk (a :: u))⁻¹ * mk (a :: v) = (mk u)⁻¹ * mk v := by
+          simp only [← List.singleton_append (l := u), ← List.singleton_append (l := v), ← mul_mk,
+            mul_inv_rev, mul_assoc, inv_mul_cancel_left]
+        have := ih (hu.infix (List.suffix_cons a u).isInfix)
+          (hv.infix (List.suffix_cons a v).isInfix)
+        simp only [hmul, List.commonPrefixLength_cons_cons, ite_true, List.length_cons]
+        omega
+      · -- No letter cancels: `invRev (a :: u)` ends with `a⁻¹`, and `b ≠ a`.
+        have hred : IsReduced (invRev (a :: u) ++ b :: v) := by
+          refine List.isChain_append.2 ⟨hu.invRev, hv, fun x hx y hy hxy => ?_⟩
+          simp only [invRev, List.map_cons, List.reverse_cons, List.getLast?_append,
+            List.getLast?_singleton, Option.some_or, Option.mem_def, Option.some.injEq] at hx
+          simp only [List.head?_cons, Option.mem_def, Option.some.injEq] at hy
+          subst hx hy
+          obtain ⟨a₁, a₂⟩ := a
+          obtain ⟨b₁, b₂⟩ := b
+          simp only at hxy ⊢
+          subst hxy
+          cases a₂ <;> cases b₂ <;> simp_all
+        rw [inv_mk, mul_mk, toWord_mk, hred.reduce_eq]
+        simp [hab]
+
+/-- The word length of `g⁻¹ * f` is the sum of the word lengths of `g` and `f` minus twice the
+length of the longest common prefix of their reduced words. -/
+theorem norm_inv_mul_add_two_mul_commonPrefixLength (g f : FreeGroup α) :
+    norm (g⁻¹ * f) + 2 * List.commonPrefixLength g.toWord f.toWord = norm g + norm f := by
+  have h := length_toWord_inv_mk_mul_mk (isReduced_toWord (x := g)) (isReduced_toWord (x := f))
+  rwa [mk_toWord, mk_toWord] at h
+
+end CommonPrefix
 
 end FreeGroup

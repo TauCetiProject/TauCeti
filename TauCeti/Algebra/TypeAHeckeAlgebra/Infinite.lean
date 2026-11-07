@@ -232,6 +232,12 @@ theorem val_inv_unitT (i : ℕ) :
     (↑(unitT q i)⁻¹ : InfiniteTypeAHeckeAlgebra R q) = T q i - algebraMap R _ ((q : R) - ↑q⁻¹) :=
   (rfl)
 
+/-- The difference between a generator and its inverse is the Hecke skein scalar. -/
+theorem T_sub_val_inv_unitT (i : ℕ) :
+    T q i - (↑(unitT q i)⁻¹ : InfiniteTypeAHeckeAlgebra R q) =
+      algebraMap R _ ((q : R) - ↑q⁻¹) := by
+  simp [val_inv_unitT]
+
 /-- The inverse of a generator satisfies the quadratic relation with parameter `q⁻¹`. -/
 theorem val_inv_unitT_mul_self (i : ℕ) :
     (↑(unitT q i)⁻¹ : InfiniteTypeAHeckeAlgebra R q) * ↑(unitT q i)⁻¹ =
@@ -297,6 +303,17 @@ def stage (n : ℕ) : Subalgebra R (InfiniteTypeAHeckeAlgebra R q) :=
 /-- A generator crossing two of the first `n` strands lies in the stage `n`. -/
 theorem T_mem_stage {i n : ℕ} (h : i + 1 < n) : T q i ∈ stage R q n :=
   Algebra.subset_adjoin ⟨⟨i, by omega⟩, rfl⟩
+
+/-- A generator crossing two of the first `n` strands is a unit of the stage `n`: its inverse
+`T i - (q - q⁻¹)` lies in the same stage. -/
+theorem isUnit_mk_T {i n : ℕ} (h : i + 1 < n) :
+    IsUnit (⟨T q i, T_mem_stage h⟩ : stage R q n) := by
+  have hinv : (↑(unitT q i)⁻¹ : InfiniteTypeAHeckeAlgebra R q) ∈ stage R q n := by
+    rw [val_inv_unitT]
+    exact sub_mem (T_mem_stage h) (algebraMap_mem _ _)
+  refine isUnit_iff_exists.2 ⟨⟨_, hinv⟩, Subtype.ext ?_, Subtype.ext ?_⟩
+  · simpa only [MulMemClass.mk_mul_mk, OneMemClass.coe_one, val_unitT] using (unitT q i).mul_inv
+  · simpa only [MulMemClass.mk_mul_mk, OneMemClass.coe_one, val_unitT] using (unitT q i).inv_mul
 
 /-- The stage `n` is contained in a subalgebra exactly when every generator crossing two of the
 first `n` strands is. -/
@@ -377,36 +394,42 @@ private theorem stageSplit_le_iff {n : ℕ} {P : Submodule R (InfiniteTypeAHecke
   obtain ⟨a, ha, rfl⟩ := Submodule.mem_mul_span_singleton.1 hy
   exact h a ha b hb
 
+/-- `Hₙ₊₁ + Hₙ₊₁ Tₙ Hₙ₊₁` is stable under left multiplication by the stage `n + 1`. -/
+private theorem toSubmodule_stage_mul_stageSplit (n : ℕ) :
+    Subalgebra.toSubmodule (stage R q (n + 1)) * stageSplit R q n = stageSplit R q n := by
+  simp only [stageSplit, Submodule.mul_sup, ← mul_assoc,
+    (Subalgebra.isIdempotentElem_toSubmodule (stage R q (n + 1))).eq]
+
+/-- `Hₙ₊₁ + Hₙ₊₁ Tₙ Hₙ₊₁` is stable under right multiplication by the stage `n + 1`. -/
+private theorem stageSplit_mul_toSubmodule_stage (n : ℕ) :
+    stageSplit R q n * Subalgebra.toSubmodule (stage R q (n + 1)) = stageSplit R q n := by
+  simp only [stageSplit, Submodule.sup_mul, mul_assoc,
+    (Subalgebra.isIdempotentElem_toSubmodule (stage R q (n + 1))).eq]
+
+/-- `Hₙ₊₁ + Hₙ₊₁ Tₙ Hₙ₊₁` is stable under left multiplication by the last generator
+`Tₙ` as soon as `Tₙ Hₙ₊₁ Tₙ` lies in it. -/
+private theorem T_mul_mem_stageSplit_of_forall {n : ℕ}
+    (hT : ∀ a ∈ stage R q (n + 1), T q n * a * T q n ∈ stageSplit R q n)
+    {m : InfiniteTypeAHeckeAlgebra R q} (hm : m ∈ stageSplit R q n) :
+    T q n * m ∈ stageSplit R q n := by
+  obtain ⟨m₁, hm₁, m₂, hm₂, rfl⟩ := Submodule.mem_sup.1 hm
+  clear hm
+  rw [mul_add]
+  refine add_mem ?_ ?_
+  · simpa only [one_mul] using mul_T_mul_mem_stageSplit (one_mem _) hm₁
+  · induction hm₂ using Submodule.mul_induction_on' with
+    | mem_mul_mem y hy b hb =>
+      obtain ⟨a, ha, rfl⟩ := Submodule.mem_mul_span_singleton.1 hy
+      rw [← stageSplit_mul_toSubmodule_stage, ← mul_assoc, ← mul_assoc]
+      exact Submodule.mul_mem_mul (hT a ha) hb
+    | add y _ y' _ hy hy' =>
+      rw [mul_add]
+      exact add_mem hy hy'
+
 /-- The stage `n + 2` lies in `Hₙ₊₁ + Hₙ₊₁ Tₙ Hₙ₊₁` as soon as `Tₙ Hₙ₊₁ Tₙ` does. -/
 private theorem toSubmodule_stage_add_two_le_stageSplit {n : ℕ}
     (hT : ∀ a ∈ stage R q (n + 1), T q n * a * T q n ∈ stageSplit R q n) :
     Subalgebra.toSubmodule (stage R q (n + 2)) ≤ stageSplit R q n := by
-  have hS : Subalgebra.toSubmodule (stage R q (n + 1)) *
-      Subalgebra.toSubmodule (stage R q (n + 1)) = Subalgebra.toSubmodule (stage R q (n + 1)) :=
-    (Subalgebra.isIdempotentElem_toSubmodule _).eq
-  -- The submodule is stable under multiplication by the stage `n + 1` on either side.
-  have hleft : Subalgebra.toSubmodule (stage R q (n + 1)) * stageSplit R q n =
-      stageSplit R q n := by
-    simp only [stageSplit, Submodule.mul_sup, ← mul_assoc, hS]
-  have hright : stageSplit R q n * Subalgebra.toSubmodule (stage R q (n + 1)) =
-      stageSplit R q n := by
-    simp only [stageSplit, Submodule.sup_mul, mul_assoc, hS]
-  -- It is also stable under left multiplication by the last generator `T n`.
-  have hTmul : ∀ m ∈ stageSplit R q n, T q n * m ∈ stageSplit R q n := by
-    intro m hm
-    obtain ⟨m₁, hm₁, m₂, hm₂, rfl⟩ := Submodule.mem_sup.1 hm
-    clear hm
-    rw [mul_add]
-    refine add_mem ?_ ?_
-    · simpa only [one_mul] using mul_T_mul_mem_stageSplit (one_mem _) hm₁
-    · induction hm₂ using Submodule.mul_induction_on' with
-      | mem_mul_mem y hy b hb =>
-        obtain ⟨a, ha, rfl⟩ := Submodule.mem_mul_span_singleton.1 hy
-        rw [← hright, ← mul_assoc, ← mul_assoc]
-        exact Submodule.mul_mem_mul (hT a ha) hb
-      | add y _ y' _ hy hy' =>
-        rw [mul_add]
-        exact add_mem hy hy'
   -- Hence it is stable under left multiplication by the stage `n + 2`, and contains `1`.
   intro x hx
   rw [Subalgebra.mem_toSubmodule, stage] at hx
@@ -418,11 +441,11 @@ private theorem toSubmodule_stage_add_two_le_stageSplit {n : ℕ}
     dsimp only
     rcases (show (i : ℕ) < n ∨ (i : ℕ) = n by omega) with hi | hi
     · intro m hm
-      rw [← hleft]
+      rw [← toSubmodule_stage_mul_stageSplit]
       exact Submodule.mul_mem_mul (T_mem_stage (by omega)) hm
     · intro m hm
       rw [hi]
-      exact hTmul m hm
+      exact T_mul_mem_stageSplit_of_forall hT hm
   | algebraMap r =>
     intro m hm
     rw [← Algebra.smul_def]
@@ -563,6 +586,24 @@ theorem braidHom_sigma {n : ℕ} (i : Fin (n - 1)) :
     braidHom R q n (BraidGroup.sigma i) = unitT q i :=
   BraidGroup.lift_sigma _ _ _ i
 
+/-- Conjugation of a braid does not change its Hecke trace for a tracial linear functional. -/
+theorem map_braidHom_conj {τ : InfiniteTypeAHeckeAlgebra R q →ₗ[R] R}
+    (htr : ∀ x y, τ (x * y) = τ (y * x)) {n : ℕ} (b c : BraidGroup n) :
+    τ (braidHom R q n (c * b * c⁻¹)) = τ (braidHom R q n b) := by
+  simp only [map_mul, map_inv, Units.val_mul]
+  rw [htr, ← mul_assoc, Units.inv_mul, one_mul]
+
+/-- The Hecke skein identity holds for every linear functional, without a trace hypothesis,
+and in an arbitrary braid context. -/
+theorem _root_.LinearMap.map_braidHom_skein (τ : InfiniteTypeAHeckeAlgebra R q →ₗ[R] R)
+    {n : ℕ} (b c : BraidGroup (n + 1)) (i : Fin n) :
+    τ (braidHom R q (n + 1) (b * BraidGroup.sigma (n := n + 1) i * c)) -
+        τ (braidHom R q (n + 1) (b * (BraidGroup.sigma (n := n + 1) i)⁻¹ * c)) =
+      ((q : R) - ↑q⁻¹) * τ (braidHom R q (n + 1) (b * c)) := by
+  simp only [map_mul, map_inv, braidHom_sigma, Units.val_mul, val_unitT]
+  rw [← map_sub, ← sub_mul, ← mul_sub, T_sub_val_inv_unitT]
+  simp [Algebra.algebraMap_eq_smul_one]
+
 /-- Adding an uncrossed last strand does not change the image of a braid: the braid
 homomorphisms are compatible with the strand inclusions of the braid groups. -/
 @[simp]
@@ -643,6 +684,17 @@ theorem shift_mem_stage {n : ℕ} (k : ℕ) {x : InfiniteTypeAHeckeAlgebra R q}
       rw [Subalgebra.mem_comap, shift_T]
       exact T_mem_stage (by omega)
   exact h hx
+
+/-- The strand shift by `k` carries a unit of the stage `n` to a unit of the stage `n + k`: it is
+the image under the shift, restricted to an algebra map between the stages. -/
+theorem isUnit_mk_shift {n : ℕ} (k : ℕ) {x : InfiniteTypeAHeckeAlgebra R q}
+    {hx : x ∈ stage R q n} (h : IsUnit (⟨x, hx⟩ : stage R q n)) :
+    IsUnit (⟨shift R q k x, shift_mem_stage k hx⟩ : stage R q (n + k)) := by
+  let f : stage R q n →ₐ[R] stage R q (n + k) :=
+    ((shift R q k).comp (stage R q n).val).codRestrict _ fun y ↦ shift_mem_stage k y.2
+  have e : f ⟨x, hx⟩ = ⟨shift R q k x, shift_mem_stage k hx⟩ :=
+    Subtype.ext ((AlgHom.coe_codRestrict _ _ _ _).trans (AlgHom.comp_apply _ _ _))
+  exact e ▸ h.map f
 
 /-- The image of the strand shift by `k` is generated by the generators `T (i + k)`. -/
 theorem shift_mem_adjoin (k : ℕ) (x : InfiniteTypeAHeckeAlgebra R q) :

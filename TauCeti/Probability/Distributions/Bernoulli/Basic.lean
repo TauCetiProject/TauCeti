@@ -48,6 +48,15 @@ namespace TauCeti
 
 namespace Probability
 
+/-- A Bernoulli law with a nonzero success value and positive success probability has mass
+strictly less than one at zero. -/
+theorem bernoulliMeasure_singleton_zero_lt_one {α : Type*} [MeasurableSpace α]
+    [MeasurableSingletonClass α] [Zero α] {a : α} {p : unitInterval}
+    (ha : a ≠ 0) (hp : 0 < (p : ℝ)) : bernoulliMeasure a 0 p {0} < 1 := by
+  rw [bernoulliMeasure_apply_of_notMem_of_mem p (measurableSet_singleton 0)
+    (by simpa using ha) rfl]
+  exact_mod_cast sub_lt_self (1 : ℝ) hp
+
 /-- The probability-generating function of a Bernoulli distribution. -/
 @[simp]
 theorem pgf_bernoulliMeasure (p : unitInterval) (t : ℝ) :

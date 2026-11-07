@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Sl2.Kostant.Span
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Basis
-public import TauCeti.RingTheory.Polynomial.BinomialBasis
+public import TauCeti.RingTheory.Polynomial.Binomial.Basis
 public import TauCeti.RingTheory.DividedPowers.Basis
 import Mathlib.LinearAlgebra.TensorProduct.Basis
 
@@ -32,7 +32,7 @@ integral lattice, without assuming integral linear independence.
 
 The construction reuses the rational PBW basis and the univariate binomial polynomial basis
 in `TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Basis` and
-`TauCeti.RingTheory.Polynomial.BinomialBasis`.
+`TauCeti.RingTheory.Polynomial.Binomial.Basis`.
 -/
 
 public section

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.Deriv.Add
 public import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 public import Mathlib.Topology.Covering.AddCircle
 public import Mathlib.Topology.Instances.ZMultiples
@@ -12,6 +13,7 @@ public import TauCeti.Geometry.Manifold.Algebra.LieGroup
 public import TauCeti.Geometry.Manifold.Instances.Quotient
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 public import TauCeti.Geometry.Manifold.PullbackGroupoid
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod
 
 /-!
 # The circle `AddCircle p` as a smooth manifold
@@ -58,6 +60,9 @@ analytic diffeomorphism with derivative `p⁻¹ * q`.
 * `AddCircle.symm_apply_of_coe_apply`, `AddCircle.mfderiv_of_coe_apply`,
   `AddCircle.mfderiv_extChartAt_symm`: the inverse of a local lift is the quotient map, and local
   lifts and the inverses of the extended charts have derivative the identity of `ℝ`.
+* `AddCircle.coe_extChartAt_apply`, `AddCircle.coe_extChartAt_self`,
+  `AddCircle.extChartAt_symm_apply`: the extended charts are local lifts, and their inverses are
+  the quotient map on their targets.
 * `AddCircle.instLieAddGroup`: `AddCircle p` is an analytic additive Lie group. In particular,
   multiplication by an integer is analytic (`TauCeti.contMDiff_zsmul`).
 * `AddCircle.contMDiff_of_comp_coe_eq`, `AddCircle.hasMFDerivAt_of_comp_coe_eq`: a map
@@ -66,6 +71,12 @@ analytic diffeomorphism with derivative `p⁻¹ * q`.
   (`AddCircle.contDiff_of_comp_coe_eq`).
 * `AddCircle.hasMFDerivAt_coe`, `AddCircle.mfderiv_add_right`: the quotient map and the
   translations have derivative the identity of `ℝ`.
+* `AddCircle.isLocalDiffeomorph_prodMap_coe`, `AddCircle.hasMFDerivAt_prodMap_coe`,
+  `AddCircle.mfderiv_prodMap_coe`: the quotient map
+  `ℝ × ℝ → AddCircle p × AddCircle q` is an analytic local diffeomorphism whose differential is the
+  identity of `ℝ × ℝ`.
+* `AddCircle.hasMFDerivAt_add_coe_comp`: the velocity of a curve `s ↦ x + [f s]` is the derivative
+  of `f`.
 * `AddCircle.mfderiv_zsmul`: multiplication by an integer `k` has derivative multiplication by `k`.
 * `AddCircle.mfderiv_diffeomorphAddCircle`: the rescaling from period `p` to period `q` has
   derivative multiplication by `p⁻¹ * q`.
@@ -419,6 +430,23 @@ theorem mfderiv_coe (t : ℝ) :
   (hasMFDerivAt_coe p t).mfderiv
 
 variable {p} in
+/-- If `f : ℝ → ℝ` has derivative `f'` at `t`, the curve `s ↦ x + [f s]` of `AddCircle p` has
+velocity `f'` at `t`, read in the tangent line of `AddCircle p`. -/
+theorem hasMFDerivAt_add_coe_comp {f : ℝ → ℝ} {f' t : ℝ} (hf : HasDerivAt f f' t)
+    (x : AddCircle p) :
+    HasMFDerivAt 𝓘(ℝ) 𝓘(ℝ) (fun s ↦ x + (f s : AddCircle p)) t
+      ((1 : ℝ →L[ℝ] ℝ).smulRight f') := by
+  obtain ⟨a, rfl⟩ := QuotientAddGroup.mk_surjective x
+  -- The curve is the image of the real curve `s ↦ a + f s` under the quotient map, whose
+  -- derivative is the identity.
+  have h : (fun s ↦ (a : AddCircle p) + (f s : AddCircle p)) =
+      ((↑) : ℝ → AddCircle p) ∘ fun s ↦ a + f s :=
+    funext fun s ↦ (coe_add p a (f s)).symm
+  rw [h]
+  exact ((hasMFDerivAt_coe p (a + f t)).comp t
+    (hf.const_add a).hasFDerivAt.hasMFDerivAt).congr_mfderiv (ContinuousLinearMap.id_comp _)
+
+variable {p} in
 /-- At the image of `t`, a differentiable map out of `AddCircle p` has the derivative of its
 periodic lift at `t`. -/
 theorem mfderiv_comp_coe {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
@@ -447,16 +475,34 @@ theorem mfderiv_of_coe_apply {c : OpenPartialHomeomorph (AddCircle p) ℝ}
   exact h.symm
 
 variable {p} in
+/-- The extended charts of `AddCircle p` are local lifts to `ℝ`: an extended chart sends each point
+of its source to a real number representing it. -/
+theorem coe_extChartAt_apply (x : AddCircle p) {y : AddCircle p}
+    (hy : y ∈ (extChartAt 𝓘(ℝ) x).source) : (extChartAt 𝓘(ℝ) x y : AddCircle p) = y := by
+  simpa using coe_apply_of_mem_atlas (chart_mem_atlas ℝ x) (by simpa using hy)
+
+variable {p} in
+/-- The extended chart of `AddCircle p` at `x` sends `x` to a real number representing it. -/
+theorem coe_extChartAt_self (x : AddCircle p) : (extChartAt 𝓘(ℝ) x x : AddCircle p) = x :=
+  coe_extChartAt_apply x (mem_extChartAt_source x)
+
+variable {p} in
+/-- On its target, the inverse of an extended chart of `AddCircle p` is the quotient map
+`ℝ → AddCircle p`. -/
+theorem extChartAt_symm_apply (x : AddCircle p) {z : ℝ} (hz : z ∈ (extChartAt 𝓘(ℝ) x).target) :
+    (extChartAt 𝓘(ℝ) x).symm z = (z : AddCircle p) := by
+  simpa using symm_apply_of_coe_apply
+    (fun y hy ↦ coe_apply_of_mem_atlas (chart_mem_atlas ℝ x) hy) (by simpa using hz)
+
+variable {p} in
 /-- At each point of its target, the inverse of an extended chart of `AddCircle p` has derivative
 the identity of `ℝ`: near that point it is the quotient map `ℝ → AddCircle p`. -/
 theorem mfderiv_extChartAt_symm (x : AddCircle p) {z : ℝ}
     (hz : z ∈ (extChartAt 𝓘(ℝ) x).target) :
     mfderiv 𝓘(ℝ) 𝓘(ℝ) (extChartAt 𝓘(ℝ) x).symm z = ContinuousLinearMap.id ℝ ℝ := by
-  have hz' : z ∈ (chartAt ℝ x).target := by simpa using hz
   have h : (extChartAt 𝓘(ℝ) x).symm =ᶠ[𝓝 z] ((↑) : ℝ → AddCircle p) := by
-    filter_upwards [(chartAt ℝ x).open_target.mem_nhds hz'] with u hu
-    simpa using symm_apply_of_coe_apply
-      (fun y hy ↦ coe_apply_of_mem_atlas (chart_mem_atlas ℝ x) hy) hu
+    filter_upwards [isOpen_extChartAt_target x |>.mem_nhds hz] with u hu
+    exact extChartAt_symm_apply x hu
   rw [h.mfderiv_eq, mfderiv_coe]
   -- The identification `tangentSpaceCast` of tangent spaces at equal points is the identity.
   rfl
@@ -607,5 +653,44 @@ theorem mfderiv_diffeomorphAddCircle (n : ℕ∞ω) (x : AddCircle p) :
   obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective x
   exact (hasMFDerivAt_of_comp_coe_eq (funext (diffeomorphAddCircle_apply_mk p q n))
     ((hasFDerivAt_id t).mul_const (p⁻¹ * q))).mfderiv
+
+/-! ### The quotient map of a torus of two circles -/
+
+omit [Fact (0 < p)] [Fact (0 < q)] in
+/-- The quotient map `ℝ × ℝ → AddCircle p × AddCircle q` is surjective. -/
+theorem prodMap_coe_surjective :
+    Function.Surjective (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q)) :=
+  QuotientAddGroup.mk_surjective.prodMap QuotientAddGroup.mk_surjective
+
+/-- The quotient map `ℝ × ℝ → AddCircle p × AddCircle q` is an analytic local diffeomorphism. -/
+theorem isLocalDiffeomorph_prodMap_coe (n : ℕ∞ω) :
+    IsLocalDiffeomorph 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ).prod 𝓘(ℝ)) n
+      (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q)) := by
+  rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
+  exact (isLocalDiffeomorph_coe p n).prodMap (isLocalDiffeomorph_coe q n)
+
+/-- The quotient map `ℝ × ℝ → AddCircle p × AddCircle q` has derivative the identity of `ℝ × ℝ`,
+the tangent spaces of both circles being read in their charts. -/
+theorem hasMFDerivAt_prodMap_coe (z : ℝ × ℝ) :
+    HasMFDerivAt 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ).prod 𝓘(ℝ))
+      (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q)) z
+      (ContinuousLinearMap.id ℝ (ℝ × ℝ)) := by
+  -- The product of the identity derivatives of the two factors is the identity of `ℝ × ℝ`.
+  have hid : (ContinuousLinearMap.id ℝ ℝ).prodMap (ContinuousLinearMap.id ℝ ℝ) =
+      ContinuousLinearMap.id ℝ (ℝ × ℝ) := by
+    ext <;> simp
+  rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
+  refine ((hasMFDerivAt_coe p z.1).prodMap (hasMFDerivAt_coe q z.2)).congr_mfderiv ?_
+  rw [mfderiv_coe, mfderiv_coe]
+  exact hid
+
+/-- The derivative of the quotient map `ℝ × ℝ → AddCircle p × AddCircle q` is the identity of
+`ℝ × ℝ`. -/
+@[simp]
+theorem mfderiv_prodMap_coe (z : ℝ × ℝ) :
+    mfderiv 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ).prod 𝓘(ℝ))
+        (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q)) z =
+      ContinuousLinearMap.id ℝ (ℝ × ℝ) :=
+  (hasMFDerivAt_prodMap_coe p q z).mfderiv
 
 end AddCircle

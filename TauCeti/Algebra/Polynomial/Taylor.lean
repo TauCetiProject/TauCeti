@@ -28,12 +28,18 @@ shift, which removes the subleading coefficient whenever `p.natDegree` is invert
 
 ## Main results
 
+* `Polynomial.coeff_taylor_eq_sum`: the coefficients of the Taylor expansion as finite sums of
+  binomial multiples of the coefficients of `p` times powers of `r`.
 * `Polynomial.natTrailingDegree_taylor`: the Taylor expansion at `r` starts in degree
   `p.rootMultiplicity r`.
 * `Polynomial.coeff_taylor_rootMultiplicity`, `Polynomial.trailingCoeff_taylor`: its trailing
   coefficient is `(p /ₘ (X - C r) ^ p.rootMultiplicity r).eval r`.
 * `Polynomial.eval_hasseDeriv_rootMultiplicity_ne_zero`: for `p ≠ 0`, the Hasse derivative of
   order `p.rootMultiplicity r` does not vanish at `r`.
+* `Polynomial.X_sub_C_pow_dvd_iff_forall_eval_hasseDeriv_eq_zero`,
+  `Polynomial.le_rootMultiplicity_iff_forall_eval_hasseDeriv_eq_zero`: `(X - r) ^ n` divides `p`
+  (and for `p ≠ 0`, `n ≤ p.rootMultiplicity r`) if and only if the Hasse derivatives of `p` of
+  order less than `n` vanish at `r`.
 * `Polynomial.pow_sub_dvd_hasseDeriv_of_pow_dvd`: if `(X - r) ^ n` divides `p`, then
   `(X - r) ^ (n - k)` divides the Hasse derivative of `p` of order `k`.
 * `Polynomial.eval_hasseDeriv_X_sub_C_pow`: the Hasse derivatives of `(X - r) ^ m` at `r`.
@@ -44,6 +50,17 @@ shift, which removes the subleading coefficient whenever `p.natDegree` is invert
 public section
 
 namespace Polynomial
+
+/-- The coefficients of the Taylor expansion `p(X + r)` as finite sums: the coefficient of `X ^ m`
+is `∑ₖ (k + m).choose m • (p.coeff (k + m) * r ^ k)`, summed over any range of indices `k`
+beyond the degree of `p`. -/
+theorem coeff_taylor_eq_sum {R : Type*} [Semiring R] {p : R[X]} {N : ℕ} (hN : p.natDegree < N)
+    (r : R) (m : ℕ) :
+    (taylor r p).coeff m = ∑ k ∈ Finset.range N, (k + m).choose m • (p.coeff (k + m) * r ^ k) := by
+  rw [taylor_coeff, eval_eq_sum_range' ((natDegree_hasseDeriv_le p m).trans_lt
+    ((Nat.sub_le _ _).trans_lt hN))]
+  refine Finset.sum_congr rfl fun k _ => ?_
+  rw [hasseDeriv_coeff, nsmul_eq_mul, mul_assoc]
 
 /-- The subleading coefficient of the Taylor expansion `p(X + r)` is that of `p` plus
 `p.natDegree * r * p.leadingCoeff`. -/
@@ -90,17 +107,27 @@ theorem eval_hasseDeriv_rootMultiplicity_ne_zero {p : R[X]} (hp : p ≠ 0) (r : 
   rw [← taylor_coeff, ← natTrailingDegree_taylor]
   exact coeff_natTrailingDegree_ne_zero.2 ((taylor_eq_zero _ _).not.2 hp)
 
+/-- `(X - r) ^ n` divides `p` if and only if every Hasse derivative of `p` of order less than `n`
+vanishes at `r`. -/
+theorem X_sub_C_pow_dvd_iff_forall_eval_hasseDeriv_eq_zero {p : R[X]} {r : R} {n : ℕ} :
+    (X - C r) ^ n ∣ p ↔ ∀ i < n, (hasseDeriv i p).eval r = 0 := by
+  simp [X_sub_C_pow_dvd_iff, ← taylor_apply, X_pow_dvd_iff, taylor_coeff]
+
+/-- For `p ≠ 0`, `r` has multiplicity at least `n` as a root of `p` if and only if every Hasse
+derivative of `p` of order less than `n` vanishes at `r`. -/
+theorem le_rootMultiplicity_iff_forall_eval_hasseDeriv_eq_zero {p : R[X]} (hp : p ≠ 0) {r : R}
+    {n : ℕ} : n ≤ p.rootMultiplicity r ↔ ∀ i < n, (hasseDeriv i p).eval r = 0 := by
+  rw [le_rootMultiplicity_iff hp, X_sub_C_pow_dvd_iff_forall_eval_hasseDeriv_eq_zero]
+
 /-- If `(X - r) ^ n` divides `p`, then `(X - r) ^ (n - k)` divides the Hasse derivative of `p` of
 order `k`. This is the analogue of `Polynomial.pow_sub_dvd_iterate_derivative_of_pow_dvd` for
 Hasse derivatives; it does not follow from it when `k !` is not invertible in `R`. -/
 theorem pow_sub_dvd_hasseDeriv_of_pow_dvd {p : R[X]} {r : R} {n : ℕ} (k : ℕ)
     (h : (X - C r) ^ n ∣ p) : (X - C r) ^ (n - k) ∣ hasseDeriv k p := by
-  rw [X_sub_C_pow_dvd_iff, ← taylor_apply, X_pow_dvd_iff] at h ⊢
+  rw [X_sub_C_pow_dvd_iff_forall_eval_hasseDeriv_eq_zero] at h ⊢
   intro j hj
-  have := h (j + k) (by omega)
-  rw [taylor_coeff] at this ⊢
-  rw [← LinearMap.comp_apply, hasseDeriv_comp, LinearMap.smul_apply, nsmul_eq_mul, eval_mul, this,
-    mul_zero]
+  rw [← LinearMap.comp_apply, hasseDeriv_comp, LinearMap.smul_apply, nsmul_eq_mul, eval_mul,
+    h (j + k) (by omega), mul_zero]
 
 /-- The Hasse derivative of order `i` of `(X - r) ^ m` is `1` at `r` if `i = m`, and `0`
 otherwise: the Taylor expansion of `(X - r) ^ m` at `r` is `X ^ m`. -/

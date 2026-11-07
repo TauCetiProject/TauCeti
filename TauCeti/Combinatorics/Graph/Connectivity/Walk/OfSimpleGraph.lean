@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Graph.Delete
 public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
-public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Basic
+public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Maps
 
 /-!
 # Walks in graphs constructed from simple graphs
@@ -22,7 +22,9 @@ providing the basic bridge through which simple-graph connectivity results can b
 multigraph walks.
 
 In the other direction, reachability by edge-labelled walks in a multigraph `G` agrees with
-reachability in its underlying simple graph `G.toSimpleGraph`.
+reachability in its underlying simple graph `G.toSimpleGraph`. A walk in the underlying simple
+graph can be lifted to the multigraph by choosing one actual edge for each adjacency; this lift
+preserves the vertex sequence and hence the path predicate.
 -/
 
 public section
@@ -252,9 +254,78 @@ theorem isCycle_toSimpleGraph_iff (p : (Graph.ofSimpleGraph H).Walk x x) :
 
 end Graph.Walk
 
+namespace SimpleGraph.Walk
+
+variable {α : Type u} {β : Type*} {G : Graph α β} {x y z : G.vertexSet}
+
+/-- Lift a walk in the underlying simple graph of a multigraph by choosing one actual edge for
+each adjacency. The lift preserves the visited vertices but makes no canonical choice among
+parallel edges. -/
+noncomputable def liftToGraph {G : Graph α β} :
+    {x y : G.vertexSet} → G.toSimpleGraph.Walk x y → G.Walk x y
+  | _, _, .nil => .nil
+  | _, _, .cons h p =>
+      .cons (Classical.choose h.2) (Classical.choose_spec h.2) (liftToGraph p)
+
+@[simp]
+theorem liftToGraph_nil {G : Graph α β} (x : G.vertexSet) :
+    (SimpleGraph.Walk.nil : G.toSimpleGraph.Walk x x).liftToGraph = .nil :=
+  (rfl)
+
+@[simp]
+theorem liftToGraph_cons (h : G.toSimpleGraph.Adj x y) (p : G.toSimpleGraph.Walk y z) :
+    (SimpleGraph.Walk.cons h p).liftToGraph =
+      .cons (Classical.choose h.2) (Classical.choose_spec h.2) p.liftToGraph :=
+  (rfl)
+
+@[simp]
+theorem liftToGraph_append (p : G.toSimpleGraph.Walk x y) (q : G.toSimpleGraph.Walk y z) :
+    (p.append q).liftToGraph = p.liftToGraph.append q.liftToGraph := by
+  induction p with
+  | nil => rw [nil_append, liftToGraph_nil, Graph.Walk.nil_append]
+  | cons h p ih =>
+      rw [cons_append, liftToGraph_cons, liftToGraph_cons, ih, Graph.Walk.cons_append]
+
+/-- Lifting a simplified walk preserves its vertex sequence, after forgetting the actual-vertex
+membership proofs. -/
+@[simp]
+theorem support_liftToGraph (p : G.toSimpleGraph.Walk x y) :
+    p.liftToGraph.support = p.support.map Subtype.val := by
+  induction p with
+  | nil => simp only [liftToGraph_nil, Graph.Walk.support_nil, support_nil, List.map_cons,
+      List.map_nil]
+  | cons h p ih =>
+      rw [liftToGraph_cons, Graph.Walk.support_cons, ih, support_cons, List.map_cons]
+
+/-- Lifting a simplified walk preserves its length. -/
+@[simp]
+theorem length_liftToGraph (p : G.toSimpleGraph.Walk x y) :
+    p.liftToGraph.length = p.length := by
+  induction p <;> simp_all
+
+/-- A lifted walk is a path exactly when the simplified walk is a path. -/
+@[simp]
+theorem isPath_liftToGraph_iff (p : G.toSimpleGraph.Walk x y) :
+    p.liftToGraph.IsPath ↔ p.IsPath := by
+  rw [Graph.Walk.isPath_def, SimpleGraph.Walk.isPath_def, support_liftToGraph,
+    List.nodup_map_iff Subtype.val_injective]
+
+end SimpleGraph.Walk
+
 namespace Graph
 
-variable {α β : Type*} {G : Graph α β}
+variable {α β : Type*} {G H : Graph α β}
+
+/-- A subgraph inclusion `H ≤ G` induces a homomorphism of underlying simple graphs, sending each
+actual vertex of `H` to itself. -/
+def toSimpleGraphHomOfLE (hHG : H ≤ G) : H.toSimpleGraph →g G.toSimpleGraph where
+  toFun z := ⟨z, hHG.vertexSet_mono z.2⟩
+  map_rel' hzw :=
+    ⟨fun h ↦ hzw.1 (Subtype.ext (Subtype.mk.inj h)), hzw.2.mono hHG⟩
+
+@[simp]
+theorem coe_toSimpleGraphHomOfLE_apply (hHG : H ≤ G) (z : V(H)) :
+    (toSimpleGraphHomOfLE hHG z : α) = z := (rfl)
 
 /-- Reachability by an edge-labelled walk gives reachability in the underlying simple graph. -/
 theorem Reachable.toSimpleGraph_reachable {x y : α} (h : G.Reachable x y) :
@@ -278,11 +349,30 @@ theorem toSimpleGraph_reachable_iff {u v : V(G)} :
     G.toSimpleGraph.Reachable u v ↔ G.Reachable u v := by
   refine ⟨?_, fun h ↦ h.toSimpleGraph_reachable⟩
   rintro ⟨p⟩
-  induction p with
-  | nil => exact Reachable.refl (Subtype.property _)
-  | cons huv _ ih =>
-      obtain ⟨-, e, he⟩ := huv
-      exact he.reachable.trans ih
+  exact p.liftToGraph.reachable u.property
+
+/-- Two actual vertices are reachable after deleting `S` exactly when some walk between them in
+the underlying simple graph avoids `S`. -/
+theorem toSimpleGraph_reachable_deleteVerts_iff_exists_walk {S : Set α} {x y : V(G)} :
+    (G.deleteVerts S).Reachable x y ↔ ∃ p : G.toSimpleGraph.Walk x y, ∀ z ∈ p.support, ↑z ∉ S := by
+  constructor
+  · intro h
+    obtain ⟨p⟩ := (toSimpleGraph_reachable_iff (G := G.deleteVerts S) (u := ⟨x, h.left_mem⟩)
+      (v := ⟨y, h.right_mem⟩)).mpr h
+    refine ⟨(p.map (toSimpleGraphHomOfLE deleteVerts_le)).copy
+      (Subtype.ext (coe_toSimpleGraphHomOfLE_apply _ _))
+      (Subtype.ext (coe_toSimpleGraphHomOfLE_apply _ _)), fun z hz ↦ ?_⟩
+    rw [SimpleGraph.Walk.support_copy, SimpleGraph.Walk.support_map] at hz
+    obtain ⟨z, -, rfl⟩ := List.mem_map.mp hz
+    have hz : (z : α) ∈ V(G) ∧ (z : α) ∉ S := by
+      simpa only [vertexSet_deleteVerts, Set.mem_sdiff] using z.property
+    rw [coe_toSimpleGraphHomOfLE_apply]
+    exact hz.2
+  · rintro ⟨p, hp⟩
+    refine reachable_deleteVerts_iff_exists_walk.mpr ⟨p.liftToGraph, x.property, fun z hz ↦ ?_⟩
+    rw [SimpleGraph.Walk.support_liftToGraph] at hz
+    obtain ⟨z, hz', rfl⟩ := List.mem_map.mp hz
+    exact hp z hz'
 
 /-- Deletion in a multigraph agrees with deletion in its simplification, retaining the original
 endpoints. -/

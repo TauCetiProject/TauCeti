@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Determinant
+public import TauCeti.LinearAlgebra.Determinant.Basic
 public import TauCeti.Geometry.Polygon.DoublePoint
 public import TauCeti.KnotTheory.GaussCode.Basic
 
@@ -53,6 +53,8 @@ by Reidemeister moves, are not proved here.
 
 ## Main results
 
+* `Polygon.fract_mem_Ioo_of_mem_crossingTimes`: no crossing time is an integer, since no vertex is
+  a double point.
 * `Polygon.range_visitTime` and `Polygon.strictMono_visitTime`: the visits are the crossing times,
   in increasing order.
 * `Polygon.gaussCode_visit_eq_visit_iff`: two visits belong to the same crossing exactly when
@@ -62,14 +64,18 @@ by Reidemeister moves, are not proved here.
 * `Polygon.boundaryParam_visitTime_partner`: the partner visit is at the partner double point.
 * `Polygon.gaussCode_over_eq_true_iff`: the over/under convention.
 * `Polygon.gaussCode_sign_visit`: the sign of a crossing is the sign of `b.det ![u, w, d]`.
-* `Polygon.visitTime_cast_eq_of_crossingTimes_eq`: an increasing change of time carrying the
-  crossing times of one simple polygon onto those of another matches their visits.
+* `Polygon.visitTime_cast_eq_of_crossingTimes_eq`: a change of time, increasing on the crossing
+  times of one simple polygon and carrying them onto those of another, matches their visits.
 * `Polygon.gaussCode_partner_cast_eq_of_boundaryParam_eq`: if a map, injective on the double
   points, carries the visits of one simple polygon to those of another and respects the fibres of
   the projections, then it carries partner visits to partner visits.
-* `Polygon.visitTime_cast_eq_of_strictMono` and `Polygon.gaussCode_partner_cast_eq_of_strictMono`:
-  an increasing change of time between the traversals of two simple polygons with the same double
-  points, through the same points at the crossing times, matches their visits and partner visits.
+* `Polygon.gaussCode_eq_of_strictMonoOn`: if such a map moreover respects the over/under data and
+  the signs, along a change of time matching the visits, the two polygons have the same Gauss
+  code, even though the crossing points may move.
+* `Polygon.crossingTimes_eq_image_of_doublePoints_eq`, `Polygon.visitTime_cast_eq_of_strictMono`
+  and `Polygon.gaussCode_partner_cast_eq_of_strictMono`: an increasing change of time between the
+  traversals of two simple polygons with the same double points, through the same points at the
+  crossing times, matches their crossing times, their visits and their partner visits.
 * `Polygon.gaussCode_eq_of_strictMono`: if moreover the edge directions at corresponding crossing
   times agree up to positive factors, the two polygons have the same Gauss code.
 
@@ -184,8 +190,8 @@ private theorem exists_smul_eq_vsub_partnerTime {t : ℝ} (ht : t ∈ poly.cross
   exact doublePointPartner_ne ht.2 ha.symm
 
 /-- A crossing time is not a vertex time: its point lies in the interior of an edge. -/
-private theorem fract_mem_Ioo (hπ : poly.IsRegularProjection ℝ (projAlong ℝ p₀ d)) {t : ℝ}
-    (ht : t ∈ poly.crossingTimes p₀ d) : Int.fract t ∈ Ioo (0 : ℝ) 1 := by
+theorem fract_mem_Ioo_of_mem_crossingTimes (hπ : poly.IsRegularProjection ℝ (projAlong ℝ p₀ d))
+    {t : ℝ} (ht : t ∈ poly.crossingTimes p₀ d) : Int.fract t ∈ Ioo (0 : ℝ) 1 := by
   refine ⟨(Int.fract_nonneg t).lt_of_ne fun h ↦ ?_, Int.fract_lt_one t⟩
   have hv := ht.2
   rw [boundaryParam_eq_edgePath_edgeIndexAt, ← h, edgePath, lineMap_apply_zero] at hv
@@ -200,7 +206,8 @@ private theorem linearIndependent_of_mem_crossingTimes (hs : poly.IsSimple ℝ)
       poly (finRotate n (edgeIndexAt n (partnerTime poly p₀ d t))) -ᵥ
         poly (edgeIndexAt n (partnerTime poly p₀ d t)), d] := by
   have ht' := partnerTime_mem_crossingTimes ht
-  refine hπ.linearIndependent_of_projAlong_eq hs (fract_mem_Ioo hπ ht) (fract_mem_Ioo hπ ht') ?_ ?_
+  refine hπ.linearIndependent_of_projAlong_eq hs (fract_mem_Ioo_of_mem_crossingTimes hπ ht)
+    (fract_mem_Ioo_of_mem_crossingTimes hπ ht') ?_ ?_
   · rw [← boundaryParam_eq_edgePath_edgeIndexAt, ← boundaryParam_eq_edgePath_edgeIndexAt]
     exact fun h ↦ partnerTime_ne ht (hs.injOn_boundaryParam ht'.1 ht.1 h.symm)
   · rw [← boundaryParam_eq_edgePath_edgeIndexAt, ← boundaryParam_eq_edgePath_edgeIndexAt,
@@ -277,16 +284,13 @@ private theorem involutive_partnerTime (hs : poly.IsSimple ℝ)
 private noncomputable def crossingMatching (hs : poly.IsSimple ℝ)
     (hπ : poly.IsRegularProjection ℝ (projAlong ℝ p₀ d)) :
     PerfectMatching (poly.crossingTimes p₀ d) :=
-  .mk ((involutive_partnerTime hs hπ).toPerm _)
-    (fun t ↦ by rw [Involutive.coe_toPerm]; exact involutive_partnerTime hs hπ t)
-    (fun t h ↦ partnerTime_ne t.2 <| by
-      rw [Involutive.coe_toPerm] at h
-      exact congrArg Subtype.val h)
+  .ofInvolutive (involutive_partnerTime hs hπ)
+    (fun t h ↦ partnerTime_ne t.2 (congrArg Subtype.val h))
 
 private theorem coe_crossingMatching_apply (hs : poly.IsSimple ℝ)
     (hπ : poly.IsRegularProjection ℝ (projAlong ℝ p₀ d)) (t : poly.crossingTimes p₀ d) :
     ((crossingMatching hs hπ).val t : ℝ) = partnerTime poly p₀ d t := by
-  rw [crossingMatching, PerfectMatching.val_mk, Involutive.coe_toPerm]
+  rw [crossingMatching, PerfectMatching.ofInvolutive_apply]
 
 private theorem crossingOver_crossingMatching (hs : poly.IsSimple ℝ)
     (hπ : poly.IsRegularProjection ℝ (projAlong ℝ p₀ d)) (t : poly.crossingTimes p₀ d) :
@@ -464,10 +468,10 @@ variable {V' P' : Type*} [AddCommGroup V'] [Module ℝ V'] [AddTorsor V' P'] {m 
   (hπ' : poly'.IsRegularProjection ℝ (projAlong ℝ q₀ d')) {φ : ℝ → ℝ}
 
 /-- **Visit times under a change of time.** Let `poly'` be a simple polygon with a regular
-projection along `d'`, and `φ` an increasing change of time carrying the crossing times of `poly`
-onto those of `poly'`. Then `φ` carries each visit time of `poly` to the visit time of `poly'` with
-the same index, the visits being identified by `Fin.cast h`. -/
-theorem visitTime_cast_eq_of_crossingTimes_eq (hφ : StrictMono φ)
+projection along `d'`, and `φ` a change of time, increasing on the crossing times of `poly`,
+carrying them onto those of `poly'`. Then `φ` carries each visit time of `poly` to the visit time
+of `poly'` with the same index, the visits being identified by `Fin.cast h`. -/
+theorem visitTime_cast_eq_of_crossingTimes_eq (hφ : StrictMonoOn φ (poly.crossingTimes p₀ d))
     (hct : poly'.crossingTimes q₀ d' = φ '' poly.crossingTimes p₀ d)
     (h : 2 * ((poly.doublePoints ℝ (projAlong ℝ p₀ d)).ncard / 2) =
       2 * ((poly'.doublePoints ℝ (projAlong ℝ q₀ d')).ncard / 2)) (j) :
@@ -477,8 +481,10 @@ theorem visitTime_cast_eq_of_crossingTimes_eq (hφ : StrictMono φ)
   have hrange : range (visitTime hs' hπ' ∘ Fin.cast h) = range (φ ∘ visitTime hs hπ) := by
     have hcast : Surjective (Fin.cast h) := fun x ↦ ⟨Fin.cast h.symm x, by simp⟩
     rw [range_comp, range_comp, hcast.range_eq, image_univ, range_visitTime, range_visitTime, hct]
-  exact congrFun ((hf.range_inj_of_wellFoundedLT (hφ.comp (strictMono_visitTime hs hπ))).1
-    hrange) j
+  have hφv : StrictMono (φ ∘ visitTime hs hπ) := fun k l hkl ↦
+    hφ (visitTime_mem_crossingTimes hs hπ k) (visitTime_mem_crossingTimes hs hπ l)
+      (strictMono_visitTime hs hπ hkl)
+  exact congrFun ((hf.range_inj_of_wellFoundedLT hφv).1 hrange) j
 
 /-- **Partners of visits at corresponding points.** Let `poly'` be a simple polygon with a regular
 projection along `d'`, and `g` a map, injective on the double points of `poly`, carrying them into
@@ -509,12 +515,124 @@ theorem gaussCode_partner_cast_eq_of_boundaryParam_eq {g : P → P'}
     (fun he ↦ doublePointPartner_ne hx (hg hx' hx he))
     (hfib _ hx _ hx' (apply_doublePointPartner _).symm).symm).symm
 
+/-- **Gauss codes under a correspondence of crossings.** Let `poly'` be a simple polygon with a
+regular projection along `d'`, `φ` a change of time, increasing on the crossing times of `poly`
+and carrying them onto those of `poly'`, and `g` a map carrying the point of `poly` at each crossing
+time `t` to the point of `poly'` at time `φ t`. Suppose that `g` is injective on the double points
+of `poly`, carries double points with the same projection along `d` to points with the same
+projection along `d'`, and carries a double point lying over another one, viewed from the side
+into which `d` points, to a point lying over the image of the other one, viewed from the side into
+which `d'` points. Suppose finally that at corresponding crossings the determinants of the edge
+directions with `d`, respectively `d'`, have the same sign. Then the two polygons have the same
+Gauss code. The crossing points themselves may move: the codes only see the order of the visits,
+the over/under data and the signs. The numbers of crossings agree, and the codes are compared
+together with them. -/
+theorem gaussCode_eq_of_strictMonoOn {g : P → P'}
+    (hφ : StrictMonoOn φ (poly.crossingTimes p₀ d))
+    (hct : poly'.crossingTimes q₀ d' = φ '' poly.crossingTimes p₀ d)
+    (hbp : ∀ t ∈ poly.crossingTimes p₀ d,
+      poly'.boundaryParam (φ t) = g (poly.boundaryParam t))
+    (hg : InjOn g (poly.doublePoints ℝ (projAlong ℝ p₀ d)))
+    (hfib : ∀ x ∈ poly.doublePoints ℝ (projAlong ℝ p₀ d),
+      ∀ y ∈ poly.doublePoints ℝ (projAlong ℝ p₀ d),
+      projAlong ℝ p₀ d x = projAlong ℝ p₀ d y → projAlong ℝ q₀ d' (g x) = projAlong ℝ q₀ d' (g y))
+    (hover : ∀ x ∈ poly.doublePoints ℝ (projAlong ℝ p₀ d),
+      ∀ y ∈ poly.doublePoints ℝ (projAlong ℝ p₀ d),
+      (∃ c : ℝ, 0 < c ∧ c • d = x -ᵥ y) → ∃ c : ℝ, 0 < c ∧ c • d' = g x -ᵥ g y)
+    (hsign : ∀ t ∈ poly.crossingTimes p₀ d, ∀ t' ∈ poly.crossingTimes p₀ d,
+      poly.boundaryParam t' =
+        poly.doublePointPartner ℝ (projAlong ℝ p₀ d) (poly.boundaryParam t) →
+      SignType.sign (b'.det
+        ![poly' (finRotate m (edgeIndexAt m (φ t))) -ᵥ poly' (edgeIndexAt m (φ t)),
+          poly' (finRotate m (edgeIndexAt m (φ t'))) -ᵥ poly' (edgeIndexAt m (φ t')), d']) =
+      SignType.sign (b.det
+        ![poly (finRotate n (edgeIndexAt n t)) -ᵥ poly (edgeIndexAt n t),
+          poly (finRotate n (edgeIndexAt n t')) -ᵥ poly (edgeIndexAt n t'), d])) :
+    (⟨_, gaussCode hs' hπ' b'⟩ : Σ m, BasedOrientedGaussCode m) = ⟨_, gaussCode hs hπ b⟩ := by
+  set D := gaussCode hs hπ b
+  set D' := gaussCode hs' hπ' b'
+  -- `φ` matches the crossing times, so the two polygons have as many double points.
+  have hm : (poly.doublePoints ℝ (projAlong ℝ p₀ d)).ncard / 2 =
+      (poly'.doublePoints ℝ (projAlong ℝ q₀ d')).ncard / 2 := by
+    rw [← ncard_crossingTimes hs, ← ncard_crossingTimes hs', hct, hφ.injOn.ncard_image]
+  have h2 : 2 * ((poly.doublePoints ℝ (projAlong ℝ p₀ d)).ncard / 2) =
+      2 * ((poly'.doublePoints ℝ (projAlong ℝ q₀ d')).ncard / 2) := by
+    rw [hm]
+  have hmem (k) : visitTime hs hπ k ∈ poly.crossingTimes p₀ d := visitTime_mem_crossingTimes hs hπ k
+  have hvt := visitTime_cast_eq_of_crossingTimes_eq hs hπ hs' hπ' hφ hct h2
+  have hpartner (k) : D'.partner.val (Fin.cast h2 k) = Fin.cast h2 (D.partner.val k) :=
+    gaussCode_partner_cast_eq_of_boundaryParam_eq b hs hπ b' hs' hπ' hg (fun x hx ↦ by
+        obtain ⟨t, ht, rfl⟩ := (image_boundaryParam_crossingTimes (poly := poly)).symm ▸ hx
+        rw [← hbp t ht]
+        exact poly'.boundaryParam_mem_boundary _) hfib h2 (Equiv.refl _)
+      (fun l ↦ by rw [hvt, hbp _ (hmem l), Equiv.refl_apply]) k
+  have hbpv (k) : poly'.boundaryParam (visitTime hs' hπ' (Fin.cast h2 k)) =
+      g (poly.boundaryParam (visitTime hs hπ k)) := by
+    rw [hvt, hbp _ (hmem k)]
+  have hbpv' (k) : poly'.boundaryParam (visitTime hs' hπ' (D'.partner.val (Fin.cast h2 k))) =
+      g (poly.boundaryParam (visitTime hs hπ (D.partner.val k))) := by
+    rw [hpartner, hbpv]
+  have hdp (k) : poly.boundaryParam (visitTime hs hπ k) ∈ poly.doublePoints ℝ (projAlong ℝ p₀ d) :=
+    (mem_crossingTimes.1 (hmem k)).2
+  -- An over visit of `poly` corresponds to an over visit of `poly'`, hence the over/under data
+  -- agree, the two visits of a crossing having opposite data.
+  have hover₁ (k) (hk : D.over k = true) : D'.over (Fin.cast h2 k) = true := by
+    rw [gaussCode_over_eq_true_iff] at hk ⊢
+    rw [hbpv, hbpv']
+    exact hover _ (hdp k) _ (hdp _) hk
+  have hover' (k) : D'.over (Fin.cast h2 k) = D.over k := by
+    cases hk : D.over k
+    · have hpk : D.over (D.partner.val k) = true := by rw [D.over_partner, hk, Bool.not_false]
+      have h' := hover₁ _ hpk
+      rw [← hpartner, D'.over_partner] at h'
+      simpa using h'
+    · exact hover₁ k hk
+  -- The crossing signs agree at an over visit.
+  have hsign' (k) (hk : D.over k = true) :
+      D'.sign (D'.visit (Fin.cast h2 k)) = D.sign (D.visit k) := by
+    refine Units.ext ?_
+    rw [gaussCode_sign_visit b' hs' hπ' (by rw [hover', hk]), gaussCode_sign_visit b hs hπ hk,
+      hpartner, hvt, hvt]
+    exact congrArg _ (hsign _ (hmem k) _ (hmem _) (boundaryParam_visitTime_partner b hs hπ k))
+  -- `φ` is increasing on the crossing times, so it preserves the order of first visits.
+  have hmin {t t'} (ht : t ∈ poly.crossingTimes p₀ d) (ht' : t' ∈ poly.crossingTimes p₀ d) :
+      min (φ t) (φ t') = φ (min t t') ∧ min t t' ∈ poly.crossingTimes p₀ d := by
+    rcases le_total t t' with h | h
+    · exact ⟨by rw [min_eq_left (hφ.monotoneOn ht ht' h), min_eq_left h], by rwa [min_eq_left h]⟩
+    · exact ⟨by rw [min_eq_right (hφ.monotoneOn ht' ht h), min_eq_right h],
+        by rwa [min_eq_right h]⟩
+  refine (BasedOrientedGaussCode.sigma_mk_eq_of_visit_lt_visit_iff hm (fun k l ↦ ?_)
+    (fun k ↦ (hover' k).symm) (fun k hk ↦ (hsign' k hk).symm)).symm
+  rw [gaussCode_visit_lt_visit_iff, gaussCode_visit_lt_visit_iff, hpartner, hpartner, hvt, hvt,
+    hvt, hvt, (hmin (hmem k) (hmem _)).1, (hmin (hmem l) (hmem _)).1,
+    hφ.lt_iff_lt (hmin (hmem k) (hmem _)).2 (hmin (hmem l) (hmem _)).2]
+
 end ChangeOfTime
 
 section SameDoublePoints
 
 variable {m : ℕ} [NeZero m] {poly' : Polygon P m} (hs' : poly'.IsSimple ℝ)
   (hπ' : poly'.IsRegularProjection ℝ (projAlong ℝ p₀ d)) {φ : ℝ → ℝ}
+
+include hs' in
+/-- **Crossing times of polygons with the same double points.** Let `poly'` be a simple polygon
+with the same double points as `poly`, and `φ` a change of time carrying each crossing time of
+`poly` to a time in one period `[0, m)` of the boundary parametrization of `poly'`, at the same
+point. Then `φ` carries the crossing times of `poly` onto those of `poly'`. -/
+theorem crossingTimes_eq_image_of_doublePoints_eq
+    (hDP : poly'.doublePoints ℝ (projAlong ℝ p₀ d) = poly.doublePoints ℝ (projAlong ℝ p₀ d))
+    (hφt : ∀ t ∈ poly.crossingTimes p₀ d,
+      φ t ∈ Ico (0 : ℝ) m ∧ poly'.boundaryParam (φ t) = poly.boundaryParam t) :
+    poly'.crossingTimes p₀ d = φ '' poly.crossingTimes p₀ d := by
+  refine Subset.antisymm (fun t' ht' ↦ ?_) ?_
+  · obtain ⟨ht'₁, ht'₂⟩ := mem_crossingTimes.1 ht'
+    rw [hDP] at ht'₂
+    obtain ⟨t, ht, hbt⟩ := exists_mem_Ico_boundaryParam_eq (doublePoints_subset_boundary ht'₂)
+    have htc : t ∈ poly.crossingTimes p₀ d := mem_crossingTimes.2 ⟨ht, hbt ▸ ht'₂⟩
+    refine ⟨t, htc, hs'.injOn_boundaryParam (hφt t htc).1 ht'₁ ?_⟩
+    rw [(hφt t htc).2, hbt]
+  · rintro _ ⟨t, ht, rfl⟩
+    exact mem_crossingTimes.2 ⟨(hφt t ht).1, by rw [(hφt t ht).2, hDP]; exact ht.2⟩
 
 /-- **Visit times of polygons with the same double points.** Let `poly'` be a simple polygon with
 the same double points as `poly`, and `φ` an increasing change of time carrying each crossing time
@@ -527,18 +645,9 @@ theorem visitTime_cast_eq_of_strictMono
       φ t ∈ Ico (0 : ℝ) m ∧ poly'.boundaryParam (φ t) = poly.boundaryParam t)
     (h : 2 * ((poly.doublePoints ℝ (projAlong ℝ p₀ d)).ncard / 2) =
       2 * ((poly'.doublePoints ℝ (projAlong ℝ p₀ d)).ncard / 2)) (j) :
-    visitTime hs' hπ' (Fin.cast h j) = φ (visitTime hs hπ j) := by
-  -- The change of time carries the crossing times of `poly` onto those of `poly'`.
-  refine visitTime_cast_eq_of_crossingTimes_eq hs hπ hs' hπ' hφ
-    (Subset.antisymm (fun t' ht' ↦ ?_) ?_) h j
-  · obtain ⟨ht'₁, ht'₂⟩ := mem_crossingTimes.1 ht'
-    rw [hDP] at ht'₂
-    obtain ⟨t, ht, hbt⟩ := exists_mem_Ico_boundaryParam_eq (doublePoints_subset_boundary ht'₂)
-    have htc : t ∈ poly.crossingTimes p₀ d := mem_crossingTimes.2 ⟨ht, hbt ▸ ht'₂⟩
-    refine ⟨t, htc, hs'.injOn_boundaryParam (hφt t htc).1 ht'₁ ?_⟩
-    rw [(hφt t htc).2, hbt]
-  · rintro _ ⟨t, ht, rfl⟩
-    exact mem_crossingTimes.2 ⟨(hφt t ht).1, by rw [(hφt t ht).2, hDP]; exact ht.2⟩
+    visitTime hs' hπ' (Fin.cast h j) = φ (visitTime hs hπ j) :=
+  visitTime_cast_eq_of_crossingTimes_eq hs hπ hs' hπ' (hφ.strictMonoOn _)
+    (crossingTimes_eq_image_of_doublePoints_eq hs' hDP hφt) h j
 
 /-- **Partners under a change of time.** Under the hypotheses of
 `Polygon.visitTime_cast_eq_of_strictMono`, the visits of the Gauss codes of `poly` and `poly'`
@@ -570,48 +679,14 @@ theorem gaussCode_eq_of_strictMono
           poly' (finRotate m (edgeIndexAt m (φ t))) -ᵥ poly' (edgeIndexAt m (φ t)) =
             r • (poly (finRotate n (edgeIndexAt n t)) -ᵥ poly (edgeIndexAt n t))) :
     (⟨_, gaussCode hs' hπ' b⟩ : Σ m, BasedOrientedGaussCode m) = ⟨_, gaussCode hs hπ b⟩ := by
-  set π := projAlong ℝ p₀ d
-  set D := gaussCode hs hπ b
-  set D' := gaussCode hs' hπ' b
-  have hm : (poly.doublePoints ℝ π).ncard / 2 = (poly'.doublePoints ℝ π).ncard / 2 := by rw [hDP]
-  have h2 : 2 * ((poly.doublePoints ℝ π).ncard / 2) = 2 * ((poly'.doublePoints ℝ π).ncard / 2) := by
-    rw [hm]
-  -- The change of time carries the visits of `poly` to those of `poly'`, with their partners.
-  have hφt' (t) (ht : t ∈ poly.crossingTimes p₀ d) := And.intro (hφt t ht).1 (hφt t ht).2.1
-  have hvt := visitTime_cast_eq_of_strictMono hs hπ hs' hπ' hDP hφ hφt' h2
-  have hpartner := gaussCode_partner_cast_eq_of_strictMono b hs hπ hs' hπ' hDP hφ hφt' h2
-  have hmem (j) : visitTime hs hπ j ∈ poly.crossingTimes p₀ d := visitTime_mem_crossingTimes hs hπ j
-  have hbp (j) : poly'.boundaryParam (visitTime hs' hπ' (Fin.cast h2 j)) =
-      poly.boundaryParam (visitTime hs hπ j) := by
-    rw [hvt, (hφt _ (hmem j)).2.1]
-  have hvt' (j) : visitTime hs' hπ' (D'.partner.val (Fin.cast h2 j)) =
-      φ (visitTime hs hπ (D.partner.val j)) := by
-    rw [hpartner, hvt]
-  have hbp' (j) : poly'.boundaryParam (visitTime hs' hπ' (D'.partner.val (Fin.cast h2 j))) =
-      poly.boundaryParam (visitTime hs hπ (D.partner.val j)) := by
-    rw [hpartner, hbp]
-  have hover (j) : D'.over (Fin.cast h2 j) = D.over j := by
-    rw [Bool.eq_iff_iff, gaussCode_over_eq_true_iff, gaussCode_over_eq_true_iff, hbp, hbp']
-  -- The crossing signs agree at an over visit.
-  have hsign (j) (hj : D.over j = true) :
-      D'.sign (D'.visit (Fin.cast h2 j)) = D.sign (D.visit j) := by
-    have hj' : D'.over (Fin.cast h2 j) = true := by rw [hover, hj]
-    obtain ⟨-, -, r, hr, hdir⟩ := hφt _ (hmem j)
-    obtain ⟨-, -, r', hr', hdir'⟩ := hφt _ (hmem (D.partner.val j))
-    -- The determinant of the edge directions is rescaled by the positive factor `r * r'`.
-    have hdet (u w : V) : b.det ![r • u, r' • w, d] = r * r' * b.det ![u, w, d] := by
-      have hv : ![r • u, r' • w, d] = fun k ↦ ![r, r', 1] k • ![u, w, d] k := by
-        ext k
-        fin_cases k <;> simp
-      rw [hv, AlternatingMap.map_smul_univ, Fin.prod_univ_three]
-      simp
-    refine Units.ext ?_
-    rw [gaussCode_sign_visit b hs' hπ' hj', gaussCode_sign_visit b hs hπ hj, hvt, hvt', hdir,
-      hdir', hdet, sign_mul, sign_mul, sign_pos hr, sign_pos hr', one_mul, one_mul]
-  refine (BasedOrientedGaussCode.sigma_mk_eq_of_visit_lt_visit_iff hm (fun j k ↦ ?_)
-    (fun j ↦ (hover j).symm) (fun j hj ↦ (hsign j hj).symm)).symm
-  rw [gaussCode_visit_lt_visit_iff, gaussCode_visit_lt_visit_iff, hvt, hvt, hvt', hvt',
-    ← hφ.monotone.map_min, ← hφ.monotone.map_min, hφ.lt_iff_lt]
+  refine gaussCode_eq_of_strictMonoOn b hs hπ b hs' hπ' (g := id) (hφ.strictMonoOn _)
+    (crossingTimes_eq_image_of_doublePoints_eq hs' hDP fun t ht ↦ ⟨(hφt t ht).1, (hφt t ht).2.1⟩)
+    (fun t ht ↦ (hφt t ht).2.1) (injOn_id _) (fun _ _ _ _ h ↦ h) (fun _ _ _ _ h ↦ h)
+    fun t ht t' ht' _ ↦ ?_
+  -- The determinant of the edge directions is rescaled by a positive factor.
+  obtain ⟨-, -, r, hr, hdir⟩ := hφt t ht
+  obtain ⟨-, -, r', hr', hdir'⟩ := hφt t' ht'
+  rw [hdir, hdir', b.det_smul_smul_vecCons, sign_mul, sign_pos (mul_pos hr hr'), one_mul]
 
 end SameDoublePoints
 

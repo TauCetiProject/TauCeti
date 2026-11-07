@@ -40,15 +40,22 @@ to `(m + 1)(n + 1)`.
 * `TauCeti.UqSl2.clebschGordanInclusion`: the module map `L_(m + n - 2j)^(εδ) → L_m^ε ⊗ L_n^δ`
   sending `v₀` to `w_j`.
 * `TauCeti.UqSl2.clebschGordanEquiv`: the Clebsch–Gordan isomorphism.
+* `TauCeti.UqSl2.IsClebschGordanChannel`, `TauCeti.UqSl2.IsClebschGordanChannel.index`: admissible
+  highest weights `k = m + n - 2j` in `L_m ⊗ L_n` and their summand index `(m + n - k) / 2`.
 
 ## Main results
 
 * `TauCeti.UqSl2.e_smul_clebschGordanVector`: `E w_j = 0`.
 * `TauCeti.UqSl2.clebschGordanVector_mem_weightSpace`: `K w_j = εδ q^(m + n - 2j) w_j`.
 * `TauCeti.UqSl2.clebschGordanVector_ne_zero`: `w_j ≠ 0` for `j ≤ n`.
+* `TauCeti.UqSl2.clebschGordanInclusion_zero_left_vec`,
+  `TauCeti.UqSl2.clebschGordanInclusion_zero_right_vec`: explicit images of `v_k` when `m = 0` or
+  `n = 0`.
 * `TauCeti.UqSl2.iSupIndep_range_clebschGordanInclusion`: the summands are independent.
 * `TauCeti.UqSl2.clebschGordanEquiv_apply`, `TauCeti.UqSl2.clebschGordanEquiv_single`: the
   isomorphism is the sum of the inclusions.
+* `TauCeti.UqSl2.isClebschGordanChannel_iff`, `TauCeti.UqSl2.sum_fin_channel_eq_sum_range`:
+  triangle-and-parity characterization and channel-to-weight sum reindexing.
 
 ## References
 
@@ -91,6 +98,15 @@ theorem clebschGordanCoeff_succ (m n : ℕ) (δ : ℤˣ) (j i : ℕ) :
         quantumInteger q ((m : ℤ) - i) * clebschGordanCoeff q m n δ j i := by
   rw [clebschGordanCoeff]
 
+/-- Multiplying the right sign `δ` by `ζ` scales the `i`-th Clebsch–Gordan coefficient by `ζ^i`. -/
+theorem clebschGordanCoeff_mul_sign (m n : ℕ) (δ ζ : ℤˣ) (j i : ℕ) :
+    clebschGordanCoeff q m n (δ * ζ) j i = (ζ : ℂ) ^ i * clebschGordanCoeff q m n δ j i := by
+  induction i with
+  | zero => simp
+  | succ i ih =>
+    rw [clebschGordanCoeff_succ, clebschGordanCoeff_succ, ih, pow_succ, Units.val_mul,
+      Int.cast_mul]; ring
+
 /-- At a generic parameter and for `i < m`, the Clebsch–Gordan recurrence with its denominator
 cleared: `[m - i]_q α_(i+1) = -δ q^(m - 2i) [n - j + i + 1]_q α_i`. -/
 theorem quantumInteger_mul_clebschGordanCoeff_succ (hq : IsGenericQuantumParameter q)
@@ -121,6 +137,34 @@ theorem clebschGordanVector_def (j : ℕ) :
     clebschGordanVector q m ε n δ j = ∑ i ∈ Finset.range (j + 1), clebschGordanCoeff q m n δ j i •
       tmul ℂ (UqSl2 q) (vec q m ε i) (vec q n δ ((j : ℤ) - i)) := by
   rw [clebschGordanVector]
+
+/-- The leading Clebsch–Gordan highest vector `w₀` is the pure tensor `v₀ ⊗ v₀`. -/
+@[simp]
+theorem clebschGordanVector_zero (m : ℕ) (ε : ℤˣ) (n : ℕ) (δ : ℤˣ) :
+    clebschGordanVector q m ε n δ 0 = tmul ℂ (UqSl2 q) (vec q m ε 0) (vec q n δ 0) := by
+  simp [clebschGordanVector_def]
+
+/-- Reassociating `w_j ⊗ x` expands it into pure triple tensors `v_i ⊗ (v_(j - i) ⊗ x)`. -/
+theorem assoc_clebschGordanVector_tmul {P : Type*} [AddCommMonoid P] [Module ℂ P]
+    [Module (UqSl2 q) P] [IsScalarTower ℂ (UqSl2 q) P] (j : ℕ) (x : P) :
+    assoc ℂ (UqSl2 q) (LadderModule q m ε) (LadderModule q n δ) P
+      (tmul ℂ (UqSl2 q) (clebschGordanVector q m ε n δ j) x) =
+    ∑ i ∈ Finset.range (j + 1), clebschGordanCoeff q m n δ j i •
+      tmul ℂ (UqSl2 q) (vec q m ε i) (tmul ℂ (UqSl2 q) (vec q n δ ((j : ℤ) - i)) x) := by
+  rw [clebschGordanVector_def, sum_tmul, map_sum]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [← smul_tmul', LinearMapClass.map_smul_of_tower, assoc_tmul]
+
+/-- Inverse-reassociating `x ⊗ w_j` expands it into pure triple tensors `(x ⊗ v_i) ⊗ v_(j - i)`. -/
+theorem assoc_symm_tmul_clebschGordanVector {M : Type*} [AddCommMonoid M] [Module ℂ M]
+    [Module (UqSl2 q) M] [IsScalarTower ℂ (UqSl2 q) M] (x : M) (j : ℕ) :
+    (assoc ℂ (UqSl2 q) M (LadderModule q m ε) (LadderModule q n δ)).symm
+      (tmul ℂ (UqSl2 q) x (clebschGordanVector q m ε n δ j)) =
+    ∑ i ∈ Finset.range (j + 1), clebschGordanCoeff q m n δ j i •
+      tmul ℂ (UqSl2 q) (tmul ℂ (UqSl2 q) x (vec q m ε i)) (vec q n δ ((j : ℤ) - i)) := by
+  rw [clebschGordanVector_def, tmul_sum, map_sum]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [tmul_smul, LinearMapClass.map_smul_of_tower, assoc_symm_tmul]
 
 /-- The Clebsch–Gordan vector `w_j` has weight `εδ q^(m + n - 2j)`. -/
 theorem clebschGordanVector_mem_weightSpace (j : ℕ) :
@@ -229,9 +273,35 @@ theorem clebschGordanInclusion_vec_zero (hq : IsGenericQuantumParameter q)
 theorem clebschGordanInclusion_vec (hq : IsGenericQuantumParameter q) (j : Fin (min m n + 1))
     (k : ℕ) :
     clebschGordanInclusion (ε := ε) (δ := δ) hq j (vec q _ _ k) =
-      (∏ i ∈ Finset.range k, quantumInteger q (i + 1))⁻¹ •
+      (quantumFactorial q k)⁻¹ •
         f q ^ k • clebschGordanVector q m ε n δ j :=
   lift_vec ..
+
+/-- Tensoring with `L_0^ε` on the left embeds `v_k` as `v₀ ⊗ v_k`. -/
+theorem clebschGordanInclusion_zero_left_vec (hq : IsGenericQuantumParameter q) (k : ℕ) :
+    clebschGordanInclusion (m := 0) (n := n) (ε := ε) (δ := δ) hq 0 (vec q _ _ k) =
+      tmul ℂ (UqSl2 q) (vec q 0 ε 0) (vec q n δ k) := by
+  induction k with
+  | zero => rw [Nat.cast_zero, clebschGordanInclusion_vec_zero]; simp
+  | succ k ih =>
+    apply smul_right_injective _ (quantumInteger_ne_zero hq (r := (k : ℤ) + 1) (by omega))
+    dsimp only
+    rw [Nat.cast_succ, ← LinearMapClass.map_smul_of_tower, ← f_smul_vec, map_smul, ih, f_smul_tmul]
+    simp [f_smul_vec]
+
+/-- Tensoring with `L_0^δ` on the right embeds `v_k` as `δ^k (v_k ⊗ v₀)`. -/
+theorem clebschGordanInclusion_zero_right_vec (hq : IsGenericQuantumParameter q) (k : ℕ) :
+    clebschGordanInclusion (m := m) (n := 0) (ε := ε) (δ := δ) hq 0 (vec q _ _ k) =
+      ((δ : ℂ) ^ k) • tmul ℂ (UqSl2 q) (vec q m ε k) (vec q 0 δ 0) := by
+  induction k with
+  | zero => rw [Nat.cast_zero, clebschGordanInclusion_vec_zero]; simp
+  | succ k ih =>
+    apply smul_right_injective _ (quantumInteger_ne_zero hq (r := (k : ℤ) + 1) (by omega))
+    dsimp only
+    rw [Nat.cast_succ, ← LinearMapClass.map_smul_of_tower, ← f_smul_vec, map_smul, ih, smul_comm,
+      f_smul_tmul]
+    simp [f_smul_vec, ← smul_tmul', tmul_smul, smul_smul, pow_succ]
+    congr 1; ring
 
 /-- The Clebsch–Gordan inclusions are injective. -/
 theorem clebschGordanInclusion_injective (hq : IsGenericQuantumParameter q)
@@ -341,5 +411,102 @@ theorem clebschGordanEquiv_single (hq : IsGenericQuantumParameter q) (j : Fin (m
     clebschGordanEquiv hq (Pi.single j x) = clebschGordanInclusion hq j x := by
   rw [clebschGordanEquiv, LinearEquiv.ofBijective_apply, clebschGordanSum,
     LinearMap.lsum_piSingle]
+
+/-- Composing the Clebsch–Gordan isomorphism with a coordinate inclusion gives the
+corresponding normalized Clebsch–Gordan inclusion. -/
+@[simp]
+theorem clebschGordanEquiv_comp_single (hq : IsGenericQuantumParameter q)
+    (j : Fin (min m n + 1)) :
+    (clebschGordanEquiv (m := m) (n := n) (ε := ε) (δ := δ) hq).toLinearMap.comp
+      (LinearMap.single _ _ j) = clebschGordanInclusion hq j := by
+  ext x
+  simp
+
+/-! ### Admissible Clebsch–Gordan channels -/
+
+/-- `IsClebschGordanChannel m n k` holds when `L_k` occurs in the binary Clebsch–Gordan
+decomposition of `L_m ⊗ L_n`, i.e., `k = m + n - 2j` for some `j ≤ min m n`. -/
+def IsClebschGordanChannel (m n k : ℕ) : Prop :=
+  ∃ j : Fin (min m n + 1), m + n - 2 * (j : ℕ) = k
+
+/-- Definitional characterization of `IsClebschGordanChannel`. -/
+theorem isClebschGordanChannel_def {m n k : ℕ} :
+    IsClebschGordanChannel m n k ↔ ∃ j : Fin (min m n + 1), m + n - 2 * (j : ℕ) = k := Iff.rfl
+
+instance (m n : ℕ) : DecidablePred (IsClebschGordanChannel m n) :=
+  fun _ => decidable_of_iff _ isClebschGordanChannel_def.symm
+
+/-- Every Clebsch–Gordan channel of `L_m ⊗ L_n` has highest weight at most `m + n`. -/
+theorem IsClebschGordanChannel.le_add {m n k : ℕ} (h : IsClebschGordanChannel m n k) :
+    k ≤ m + n := by rcases h with ⟨_, rfl⟩; omega
+
+/-- Triangle and parity characterization of admissible binary Clebsch–Gordan channels. -/
+theorem isClebschGordanChannel_iff {m n k : ℕ} :
+    IsClebschGordanChannel m n k ↔
+      k ≤ m + n ∧ m ≤ n + k ∧ n ≤ m + k ∧ Even (m + n - k) := by
+  constructor
+  · rintro ⟨j, rfl⟩; have := j.isLt; exact ⟨by omega, by omega, by omega, ⟨j, by omega⟩⟩
+  · rintro ⟨_, _, _, r, _⟩; exact ⟨⟨r, by omega⟩, by dsimp only; omega⟩
+
+/-- The unique summand index `j : Fin (min m n + 1)` witnessing `k = m + n - 2j`, computed
+explicitly as `(m + n - k) / 2`. -/
+def IsClebschGordanChannel.index {m n k : ℕ} (h : IsClebschGordanChannel m n k) :
+    Fin (min m n + 1) :=
+  ⟨(m + n - k) / 2, by rcases h with ⟨j, rfl⟩; have := j.isLt; omega⟩
+
+/-- The underlying natural number of `h.index` is `(m + n - k) / 2`. -/
+theorem IsClebschGordanChannel.val_index {m n k : ℕ} (h : IsClebschGordanChannel m n k) :
+    (h.index : ℕ) = (m + n - k) / 2 := (rfl)
+
+/-- The constructive index of an admissible channel recovers its highest weight `k`. -/
+@[simp] theorem IsClebschGordanChannel.sub_two_mul_index {m n k : ℕ}
+    (h : IsClebschGordanChannel m n k) : m + n - 2 * (h.index : ℕ) = k := by
+  rcases h with ⟨j, rfl⟩; have := j.isLt; simp only [index]; omega
+
+/-- Uniqueness of the Clebsch–Gordan summand index for a given channel weight `k`. -/
+theorem IsClebschGordanChannel.index_eq_of_eq {m n k : ℕ} (h : IsClebschGordanChannel m n k)
+    {j : Fin (min m n + 1)} (hj : m + n - 2 * (j : ℕ) = k) : h.index = j := by
+  ext; have := j.isLt; simp only [index, ← hj]; omega
+
+/-- `h.index = j` holds exactly when `m + n - 2j = k`. -/
+@[simp] theorem IsClebschGordanChannel.index_eq_iff {m n k : ℕ} (h : IsClebschGordanChannel m n k)
+    (j : Fin (min m n + 1)) : h.index = j ↔ m + n - 2 * (j : ℕ) = k :=
+  ⟨fun hj => hj ▸ h.sub_two_mul_index, h.index_eq_of_eq⟩
+
+/-- Every summand index `j : Fin (min m n + 1)` gives an admissible Clebsch–Gordan channel. -/
+theorem isClebschGordanChannel_sub_two_mul {m n : ℕ} (j : Fin (min m n + 1)) :
+    IsClebschGordanChannel m n (m + n - 2 * (j : ℕ)) := ⟨j, rfl⟩
+
+/-- The constructive index of `m + n - 2j` is `j`. -/
+@[simp] theorem IsClebschGordanChannel.index_sub_two_mul {m n : ℕ} (j : Fin (min m n + 1)) :
+    (isClebschGordanChannel_sub_two_mul j).index = j :=
+  (isClebschGordanChannel_sub_two_mul j).index_eq_of_eq rfl
+
+/-- The leading channel `m + n` (`j = 0`) is always admissible. -/
+theorem isClebschGordanChannel_add (m n : ℕ) : IsClebschGordanChannel m n (m + n) := ⟨0, by simp⟩
+
+/-- Tensoring with `L_0` on the left has `n` as its unique admissible channel. -/
+@[simp] theorem isClebschGordanChannel_zero_left {n k : ℕ} : IsClebschGordanChannel 0 n k ↔ k = n :=
+  ⟨by rintro ⟨j, rfl⟩; have := j.isLt; omega, fun h => h ▸ ⟨0, by simp⟩⟩
+
+/-- Tensoring with `L_0` on the right has `m` as its unique admissible channel. -/
+@[simp] theorem isClebschGordanChannel_zero_right {m k : ℕ} :
+    IsClebschGordanChannel m 0 k ↔ k = m :=
+  ⟨by rintro ⟨j, rfl⟩; have := j.isLt; omega, fun h => h ▸ ⟨0, by simp⟩⟩
+
+/-- Reindexing a sum over channel indices `i : Fin (min m n + 1)` as a sum over weights
+`w ∈ Finset.range (m + n + 1)` when `g` vanishes outside admissible channels. -/
+theorem sum_fin_channel_eq_sum_range {M : Type*} [AddCommMonoid M] (m n : ℕ) (g : ℕ → M)
+    (hg : ∀ w, ¬ IsClebschGordanChannel m n w → g w = 0) :
+    (∑ i : Fin (min m n + 1), g (m + n - 2 * (i : ℕ))) = ∑ w ∈ Finset.range (m + n + 1), g w := by
+  trans ∑ w ∈ (Finset.range (m + n + 1)).filter (IsClebschGordanChannel m n), g w
+  · refine Finset.sum_bij (fun (i : Fin (min m n + 1)) _ => m + n - 2 * (i : ℕ)) ?_ ?_ ?_
+      fun _ _ => rfl
+    · intro i _; rw [Finset.mem_filter, Finset.mem_range]
+      exact ⟨by omega, isClebschGordanChannel_sub_two_mul i⟩
+    · intro i₁ _ i₂ _ _; have := i₁.isLt; have := i₂.isLt; ext; omega
+    · intro w hw; rw [Finset.mem_filter] at hw
+      exact ⟨hw.2.index, Finset.mem_univ _, hw.2.sub_two_mul_index⟩
+  · exact Finset.sum_filter_of_ne fun w _ hfw => by by_contra h; exact hfw (hg w h)
 
 end TauCeti.UqSl2

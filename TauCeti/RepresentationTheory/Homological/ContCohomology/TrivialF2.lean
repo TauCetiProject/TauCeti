@@ -12,7 +12,7 @@ public import TauCeti.RepresentationTheory.Continuous.Restriction
 public import TauCeti.RepresentationTheory.Continuous.TopRep.EqToHom
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Functoriality
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.InnerConjugation
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Basic
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Restriction
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Torsion
 public import TauCeti.Topology.Algebra.Group.ContinuousAut.Basic
 
@@ -45,7 +45,8 @@ is required for the induced cohomology maps.
   coefficients.
 * `TauCeti.trivialF2CoeffHom`: the identification of the trivial `𝔽₂` coefficients of two
   monoids, with `TauCeti.trivialF2CoeffHom_smul` its equivariance along a monoid
-  homomorphism.
+  homomorphism, and `TauCeti.trivialF2_map_smul` the equivariance of every carrier map along
+  every map of monoids in independent universes.
 * `TauCeti.trivialF2Map`: pullback along any continuous group homomorphism with trivial
   `𝔽₂` coefficients, and `TauCeti.trivialF2Iso` for a topological group isomorphism.
 * `TauCeti.trivialF2QuotientEquivFixedPoints`: trivial `𝔽₂` coefficients on a quotient `G ⧸ N`,
@@ -66,6 +67,9 @@ is required for the induced cohomology maps.
   `TauCeti.eqToHom_ofDiscreteModule_trivialF2_apply` and
   `TauCeti.eqToHom_ofDiscreteModule_trivialF2_symm_apply` its carrier-level reading.
 * `TauCeti.res_trivialF2_hom`: restriction preserves the coefficient object on the nose.
+* `TauCeti.smoothResFunctor_trivialF2`: smooth restriction along a continuous monoid
+  homomorphism preserves trivial `𝔽₂` coefficients, with
+  `TauCeti.eqToHom_smoothResFunctor_trivialF2_apply` its value rule.
 * `TauCeti.trivialF2Map_subgroupSubtype`: the general pullback recovers subgroup restriction.
 * `TauCeti.trivialF2Map_id`, `TauCeti.trivialF2Map_comp`: the functoriality laws.
 * `TauCeti.trivialF2Map_eq_of_conj`: over a locally compact target, pullbacks along two
@@ -84,7 +88,7 @@ public section
 
 namespace TauCeti
 
-universe u
+universe u v
 
 section Monoid
 
@@ -241,6 +245,20 @@ discrete continuous representations. -/
 noncomputable abbrev DiscreteRep.trivialF2 : DiscreteRep.{0, u, u} ℤ G :=
   (ofSmoothDiscrete ℤ G).obj ⟨TauCeti.trivialF2 G, isSmoothDiscrete_trivialF2 G⟩
 
+/-- Smooth restriction along a continuous monoid homomorphism preserves the canonical trivial
+`𝔽₂` coefficient object. -/
+-- Not a simp lemma: `smoothResFunctor_obj` rewrites the left-hand side first.
+theorem smoothResFunctor_trivialF2 {H : Type u} [Monoid H] [TopologicalSpace H]
+    (φ : H →* G) (hφ : Continuous φ) :
+    (smoothResFunctor ℤ φ hφ).obj ⟨trivialF2 G, isSmoothDiscrete_trivialF2 G⟩ =
+      ⟨trivialF2 H, isSmoothDiscrete_trivialF2 H⟩ := (rfl)
+
+/-- The smooth restriction identification preserves the underlying `𝔽₂` value. -/
+theorem eqToHom_smoothResFunctor_trivialF2_apply {H : Type u} [Monoid H] [TopologicalSpace H]
+    (φ : H →* G) (hφ : Continuous φ) (x : (trivialF2 G).V) :
+    trivialF2Equiv H ((CategoryTheory.eqToHom
+      (smoothResFunctor_trivialF2 G φ hφ)).hom.hom x) = trivialF2Equiv G x := (rfl)
+
 /-- Restriction on continuous cohomology with trivial `𝔽₂` coefficients. This is the
 generic restriction map followed by the on-the-nose identification `res_trivialF2_hom`. -/
 noncomputable def trivialF2ResMap (S : Subgroup G) (n : ℕ) :
@@ -272,13 +290,20 @@ end Group
 
 section CoeffHom
 
-variable {G H : Type u} [Monoid G] [Monoid H]
+variable {G : Type u} {H : Type v} [Monoid G] [Monoid H]
 
 attribute [local instance] TopRep.distribMulAction
 
 /-- The identification of the trivial `𝔽₂` coefficients of `G` with those of `H`. -/
 noncomputable def trivialF2CoeffHom : (trivialF2 G).V →+ (trivialF2 H).V :=
   ((trivialF2Equiv G).trans (trivialF2Equiv H).symm).toAddMonoidHom
+
+/-- The coefficient identification is the additive map underlying the composite of the
+identifications of both coefficient objects with `ZMod 2`. -/
+theorem trivialF2CoeffHom_def :
+    (trivialF2CoeffHom : (trivialF2 G).V →+ (trivialF2 H).V) =
+      ((trivialF2Equiv G).trans (trivialF2Equiv H).symm).toAddMonoidHom :=
+  (rfl)
 
 /-- The coefficient identification sends an element to the one with the same underlying value. -/
 @[simp]
@@ -289,6 +314,13 @@ theorem trivialF2CoeffHom_apply (m : (trivialF2 G).V) :
 /-- The identification `trivialF2CoeffHom` is equivariant along every monoid homomorphism. -/
 theorem trivialF2CoeffHom_smul (φ : H →* G) (h : H) (m : (trivialF2 G).V) :
     trivialF2CoeffHom (φ h • m) = h • (trivialF2CoeffHom m : (trivialF2 H).V) := by
+  simp only [TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply]
+
+/-- Every map between the carriers of two trivial `𝔽₂` objects is equivariant along every map
+of the monoids, both actions being trivial. The monoids may lie in independent universes. -/
+theorem trivialF2_map_smul {G : Type u} [Monoid G] {H : Type v} [Monoid H] (φ : H → G)
+    (f : (trivialF2 G).V → (trivialF2 H).V) (h : H) (m : (trivialF2 G).V) :
+    f (φ h • m) = h • f m := by
   simp only [TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply]
 
 end CoeffHom

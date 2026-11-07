@@ -11,6 +11,7 @@ public import TauCeti.Combinatorics.NoncrossingPartition.Basic
 public import TauCeti.Order.Partition.Pairing
 import Mathlib.Algebra.BigOperators.Fin
 import TauCeti.Algebra.BigOperators.Finset.Range
+import TauCeti.Data.Finset.Basic
 
 /-!
 # Noncrossing partitions and noncrossing pairings are counted by the Catalan numbers
@@ -52,6 +53,9 @@ and none of an odd number of positions.
   `|s| = 2 n`, and `card_isPairing_eq_zero` — `|NC₂(s)| = 0` when `|s|` is odd.
 * `TauCeti.NoncrossingPartition.card_isPairing_fin_eq_catalan` — `|NC₂(2n)| = catalan n` for the
   positions of `Fin (2 * n)`.
+* `TauCeti.NoncrossingPartition.sum_prod_ite_card_eq_two` — weighting the parts of size two by `v`
+  and all others by `0`, the noncrossing partitions of `2 n` positions have total weight
+  `v ^ n * catalan n`, and those of an odd number of positions total weight `0`.
 
 ## References
 
@@ -456,6 +460,24 @@ section Pairing
 
 variable {P : Finpartition s}
 
+/-- A part inside the positions strictly between `m` and `x` is a part of the restriction there. -/
+private theorem part_restrict_between (hP : P.IsNoncrossing) (hm : ∀ y ∈ s, m ≤ y)
+    (hxm : x ∈ P.part m) (hmax : ∀ y ∈ P.part m, y ≤ x) {a : α}
+    (ha : a ∈ {y ∈ {y ∈ s | y < x} | m < y}) (ham : a ∉ P.part m) :
+    ((P.restrict (filter_subset (· < x) s)).restrict (filter_subset (m < ·) _)).part a =
+      P.part a := by
+  have hsub := part_subset_filter_between hP hm hxm hmax (mem_filter.1 (mem_filter.1 ha).1).1
+    (mem_filter.1 (mem_filter.1 ha).1).2.le ham
+  rw [Finpartition.part_restrict _ _ ha, Finpartition.part_restrict _ _ (mem_filter.1 ha).1,
+    inter_eq_left.2 (hsub.trans (filter_subset _ _)), inter_eq_left.2 hsub]
+
+/-- A part through a position after `x` is a part of the restriction there. -/
+private theorem part_restrict_after (hP : P.IsNoncrossing) (hm : ∀ y ∈ s, m ≤ y)
+    (hxm : x ∈ P.part m) (hmax : ∀ y ∈ P.part m, y ≤ x) {a : α} (ha : a ∈ {y ∈ s | x < y}) :
+    (P.restrict (filter_subset (x < ·) s)).part a = P.part a := by
+  rw [Finpartition.part_restrict _ _ ha,
+    inter_eq_left.2 (part_subset_filter_gt hP hm hxm hmax (mem_filter.1 ha).2)]
+
 /-- Let `x > m` be the last position of the part of the first position `m` of a noncrossing
 partition `P`. Then `P` is a pairing iff `m` is the only position before `x` in its part, and the
 restrictions of `P` to the positions strictly between `m` and `x` and to the positions after `x`
@@ -466,37 +488,9 @@ private theorem isPairing_iff_restrict (hP : P.IsNoncrossing) (hm : ∀ y ∈ s,
       ((P.restrict (filter_subset (· < x) s)).restrict (filter_subset (m < ·) _)).IsPairing) ∧
       (P.restrict (filter_subset (x < ·) s)).IsPairing := by
   have hms : m ∈ s := P.part_nonempty.1 ⟨x, hxm⟩
-  -- A part inside the positions strictly between `m` and `x` is a part of the restriction there.
-  have hbetween {a : α} (ha : a ∈ {y ∈ {y ∈ s | y < x} | m < y}) (ham : a ∉ P.part m) :
-      ((P.restrict (filter_subset (· < x) s)).restrict (filter_subset (m < ·) _)).part a =
-        P.part a := by
-    have hsub := part_subset_filter_between hP hm hxm hmax (mem_filter.1 (mem_filter.1 ha).1).1
-      (mem_filter.1 (mem_filter.1 ha).1).2.le ham
-    rw [Finpartition.part_restrict _ _ ha, Finpartition.part_restrict _ _ (mem_filter.1 ha).1,
-      inter_eq_left.2 (hsub.trans (filter_subset _ _)), inter_eq_left.2 hsub]
-  -- A part through a position after `x` is a part of the restriction there.
-  have hafter {a : α} (ha : a ∈ {y ∈ s | x < y}) :
-      (P.restrict (filter_subset (x < ·) s)).part a = P.part a := by
-    rw [Finpartition.part_restrict _ _ ha,
-      inter_eq_left.2 (part_subset_filter_gt hP hm hxm hmax (mem_filter.1 ha).2)]
-  -- The part of `m` is `{m, x}` iff `m` is its only position before `x`.
-  have hpair : P.part m = {m, x} ↔ P.part m ∩ {y ∈ s | y < x} = {m} := by
-    refine ⟨fun h => ?_, fun h => Subset.antisymm (fun y hy => ?_) ?_⟩
-    · rw [h]
-      ext y
-      simp only [mem_inter, mem_insert, mem_singleton, mem_filter]
-      constructor
-      · rintro ⟨rfl | rfl, -, hy⟩
-        exacts [rfl, absurd hy (lt_irrefl _)]
-      · rintro rfl
-        exact ⟨Or.inl rfl, hms, hmx⟩
-    · rcases (hmax y hy).lt_or_eq with hyx | rfl
-      · exact mem_insert.2 <| Or.inl <| mem_singleton.1 <|
-          h ▸ mem_inter.2 ⟨hy, mem_filter.2 ⟨P.part_subset m hy, hyx⟩⟩
-      · exact mem_insert.2 <| Or.inr <| mem_singleton_self _
-    · exact insert_subset (P.mem_part_self.2 hms) (singleton_subset_iff.2 hxm)
   rw [Finpartition.isPairing_iff_part, Finpartition.isPairing_iff_part,
-    Finpartition.isPairing_iff_part, ← hpair]
+    Finpartition.isPairing_iff_part,
+    ← P.part_eq_pair_iff_inter_filter_lt_eq_singleton hxm hmax hmx]
   constructor
   · intro h
     have hm2 : P.part m = {m, x} :=
@@ -508,9 +502,9 @@ private theorem isPairing_iff_restrict (hP : P.IsNoncrossing) (hm : ∀ y ∈ s,
       rintro (rfl | rfl)
       exacts [lt_irrefl _ (mem_filter.1 ha).2, lt_irrefl _ (mem_filter.1 (mem_filter.1 ha).1).2]
     refine ⟨⟨hm2, fun a ha => ?_⟩, fun a ha => ?_⟩
-    · rw [hbetween ha (hnot ha)]
+    · rw [part_restrict_between hP hm hxm hmax ha (hnot ha)]
       exact h a (mem_filter.1 (mem_filter.1 ha).1).1
-    · rw [hafter ha]
+    · rw [part_restrict_after hP hm hxm hmax ha]
       exact h a (mem_filter.1 ha).1
   · rintro ⟨⟨hm2, hM⟩, hR⟩ a ha
     by_cases ham : a ∈ P.part m
@@ -519,9 +513,9 @@ private theorem isPairing_iff_restrict (hP : P.IsNoncrossing) (hm : ∀ y ∈ s,
     · have hav : a ∈ {y ∈ {y ∈ s | y < x} | m < y} :=
         mem_filter.2 ⟨mem_filter.2 ⟨ha, hax⟩,
           (hm a ha).lt_of_ne fun h => ham (h ▸ P.mem_part_self.2 hms)⟩
-      rw [← hbetween hav ham]
+      rw [← part_restrict_between hP hm hxm hmax hav ham]
       exact hM a hav
-    · rw [← hafter (mem_filter.2 ⟨ha, hxa⟩)]
+    · rw [← part_restrict_after hP hm hxm hmax (mem_filter.2 ⟨ha, hxa⟩)]
       exact hR a (mem_filter.2 ⟨ha, hxa⟩)
 
 /-- The last position of the part of the first position `m` is `m` itself exactly when that part
@@ -608,6 +602,32 @@ theorem card_isPairing_eq_zero (hs : Odd #s) :
     Fintype.card {P : NoncrossingPartition s // P.1.IsPairing} = 0 :=
   Fintype.card_eq_zero_iff.2 ⟨fun P => Nat.not_even_iff_odd.2 hs P.2.even_card⟩
 
+/-- The empty set has a single noncrossing partition, with no parts, and it is a pairing. -/
+private theorem card_isPairing_eq_one (hs : s = ∅) :
+    Fintype.card {P : NoncrossingPartition s // P.1.IsPairing} = 1 := by
+  rw [Fintype.card_eq_one_iff]
+  refine ⟨⟨⊥, Finpartition.isPairing_iff.2 fun B hB => ?_⟩,
+    fun P => Subtype.ext (eq_bot_of_eq_empty hs _)⟩
+  rw [Finpartition.parts_eq_empty_iff.2 hs] at hB
+  exact absurd hB (notMem_empty B)
+
+/-- The number of noncrossing pairings of a set smaller than `2 * k + 1`, given the Catalan count
+for all smaller sizes, depends only on its size. -/
+private theorem card_isPairing_eq_ite {k : ℕ}
+    (ih : ∀ n < k + 1, ∀ {s : Finset α}, #s = 2 * n →
+      Fintype.card {P : NoncrossingPartition s // P.1.IsPairing} = catalan n)
+    {t : Finset α} (ht : #t < 2 * k + 1) :
+    Fintype.card {P : NoncrossingPartition t // P.1.IsPairing} =
+      if Even #t then catalan (#t / 2) else 0 := by
+  by_cases he : Even #t
+  · obtain ⟨j, hj⟩ := he
+    rw [ih j (by omega) (by omega)]
+    simp only [hj, show Even (j + j) from ⟨j, rfl⟩, ↓reduceIte]
+    congr 1
+    omega
+  · rw [card_isPairing_eq_zero (Nat.not_even_iff_odd.1 he)]
+    simp only [he, ↓reduceIte]
+
 /-- The noncrossing pairings of a finite set of `2 * n` positions in a linear order are counted by
 the Catalan number `catalan n`. -/
 theorem card_isPairing_eq_catalan {n : ℕ} (hn : #s = 2 * n) :
@@ -615,34 +635,15 @@ theorem card_isPairing_eq_catalan {n : ℕ} (hn : #s = 2 * n) :
   induction n using Nat.strong_induction_on generalizing s with
   | _ n ih =>
   rcases n with _ | k
-  · -- The empty set has a single partition, with no parts, and it is a pairing.
-    have hs : s = ⊥ := card_eq_zero.1 hn
-    rw [catalan_zero, Fintype.card_eq_one_iff]
-    refine ⟨⟨⊥, Finpartition.isPairing_iff.2 fun B hB => ?_⟩,
-      fun P => Subtype.ext (eq_bot_of_eq_empty hs _)⟩
-    rw [Finpartition.parts_eq_empty_iff.2 hs] at hB
-    exact absurd hB (notMem_empty B)
+  · rw [catalan_zero]
+    exact card_isPairing_eq_one (card_eq_zero.1 hn)
   have hs : s.Nonempty := card_pos.1 (by omega)
   -- The number of noncrossing pairings of a smaller set depends only on its size.
   let g (i : ℕ) : ℕ := if Even i then catalan (i / 2) else 0
-  have hg {t : Finset α} (ht : #t < 2 * k + 1) :
-      Fintype.card {P : NoncrossingPartition t // P.1.IsPairing} = g #t := by
-    by_cases he : Even #t
-    · obtain ⟨j, hj⟩ := he
-      rw [ih j (by omega) (by omega)]
-      simp only [g, hj, show Even (j + j) from ⟨j, rfl⟩, ↓reduceIte]
-      congr 1
-      omega
-    · rw [card_isPairing_eq_zero (Nat.not_even_iff_odd.1 he)]
-      simp only [g, he, ↓reduceIte]
   -- Reindex the recurrence by the positions after the first position `m`.
   set w := {x ∈ s | s.min' hs < x} with hw_def
   have hw : #w = 2 * k + 1 := by
-    have : w = s.erase (s.min' hs) := by
-      ext y
-      simp only [hw_def, mem_filter, mem_erase]
-      exact ⟨fun h => ⟨h.2.ne', h.1⟩, fun h => ⟨h.2, (s.min'_le y h.2).lt_of_ne' h.1⟩⟩
-    rw [this, card_erase_of_mem (s.min'_mem hs), hn]
+    rw [hw_def, filter_min'_lt_eq_erase hs, card_erase_of_mem (s.min'_mem hs), hn]
     omega
   have hlt {x : α} (hx : x ∈ w) {p : α → Prop} [DecidablePred p] (hp : ¬p x) :
       #{y ∈ w | p y} < 2 * k + 1 :=
@@ -658,7 +659,8 @@ theorem card_isPairing_eq_catalan {n : ℕ} (hn : #s = 2 * n) :
       exact filter_congr fun y _ => ⟨fun h => ⟨hmx.trans h, h⟩, And.right⟩
     have hv : {y ∈ s | s.min' hs < y ∧ y < x} = {y ∈ w | y < x} := by
       rw [hw_def, filter_filter]
-    rw [hu, hv, hg (hlt hx (p := (· < x)) (lt_irrefl x)), hg (hlt hx (p := (x < ·)) (lt_irrefl x))]
+    rw [hu, hv, card_isPairing_eq_ite ih (hlt hx (p := (· < x)) (lt_irrefl x)),
+      card_isPairing_eq_ite ih (hlt hx (p := (x < ·)) (lt_irrefl x))]
   -- Only the even sizes contribute.
   have hodd : ∑ j ∈ range k, g (2 * j + 1) * g (2 * k - (2 * j + 1)) = 0 :=
     sum_eq_zero fun j _ => by simp only [g, Nat.not_even_two_mul_add_one, ↓reduceIte, zero_mul]
@@ -674,6 +676,26 @@ theorem card_isPairing_fin_eq_catalan (n : ℕ) :
     Fintype.card {P : NoncrossingPartition (univ : Finset (Fin (2 * n))) // P.1.IsPairing} =
       catalan n :=
   card_isPairing_eq_catalan (by rw [card_univ, Fintype.card_fin])
+
+/-- Weighting each part of size two by `v` and every other part by `0`, the total weight of the
+noncrossing partitions of `s` is `v ^ (#s / 2) * catalan (#s / 2)` for `#s` even and `0` for `#s`
+odd: only the noncrossing pairings contribute, each with weight `v ^ (#s / 2)`. These are the
+moments of a semicircular element of variance `v`, whose only nonzero free cumulant is the second
+one. -/
+theorem sum_prod_ite_card_eq_two {M : Type*} [CommSemiring M] (s : Finset α) (v : M) :
+    ∑ P : NoncrossingPartition s, ∏ B ∈ P.1.parts, (if #B = 2 then v else 0) =
+      if Even #s then v ^ (#s / 2) * catalan (#s / 2) else 0 := by
+  have h (P : NoncrossingPartition s) : ∏ B ∈ P.1.parts, (if #B = 2 then v else 0) =
+      if P.1.IsPairing then v ^ (#s / 2) else 0 := by
+    simp only [prod_ite_zero, prod_const, ← Finpartition.isPairing_iff]
+    split_ifs with hP
+    · rw [hP.card_eq_two_mul, Nat.mul_div_cancel_left _ two_pos]
+    · rfl
+  rw [sum_congr rfl fun P _ => h P, ← sum_filter, sum_const, ← Fintype.card_subtype, nsmul_eq_mul,
+    mul_comm]
+  split_ifs with hs
+  · rw [card_isPairing_eq_catalan (n := #s / 2) (Nat.two_mul_div_two_of_even hs).symm]
+  · rw [card_isPairing_eq_zero (Nat.not_even_iff_odd.1 hs), Nat.cast_zero, mul_zero]
 
 end Pairing
 

@@ -57,6 +57,8 @@ basis of the indecomposables of a connected graded ring generate it.
 * `TauCeti.LazardRing.coeff_formalGroup_sub_nsmul_generator_mem_sq`: for `0 < i ≤ n`,
   `a_{i, n+1-i} ≡ ((n + 1).choose i / d_{n+1}) • xₙ` modulo `I²`.
 * `TauCeti.LazardRing.cotangentBasis_apply`: the basis vectors are the classes of the `xₙ`.
+* `TauCeti.LazardRing.sub_sum_generator_mem_sq`: modulo `I²`, an element of `I` is the
+  combination of the `xₙ` given by its coordinates in this basis.
 
 ## References
 
@@ -89,6 +91,11 @@ theorem augmentation_coeff_formalGroup (d : Fin 2 →₀ ℕ) :
     augmentation (coeff d formalGroup.toPowerSeries) = coeff d (X 0 + X 1 : MvPowerSeries _ ℤ) := by
   rw [← coeff_map, ← FormalGroup.map_toPowerSeries, augmentation, map_lift,
     FormalGroup.𝔾ₐ_toPowerSeries]
+
+/-- The augmentation classifies the additive formal group law. -/
+@[simp]
+theorem map_augmentation : formalGroup.map augmentation = FormalGroup.𝔾ₐ :=
+  map_lift _
 
 /-- On polynomials in the `aᵢⱼ`, the augmentation is the constant coefficient. -/
 @[simp]
@@ -312,17 +319,14 @@ private theorem snd_cocycleHom_generator (n m : ℕ+) :
       have h₁ : ¬(i = 1 ∧ (m : ℕ) + 1 - i = 0) := by omega
       have h₂ : ¬(i = 0 ∧ (m : ℕ) + 1 - i = 1) := by omega
       simp [h₁, h₂]
-    rw [map_zsmul, TrivSqZeroExt.snd_smul, cocycleHom_coeff_formalGroup, hX, zero_add,
-      coeff_lazardCocycle]
+    rw [map_zsmul, TrivSqZeroExt.snd_smul, cocycleHom_coeff_formalGroup, hX, zero_add]
     by_cases hmn : m = n
     · subst hmn
-      have hi₀ : i ≠ 0 := by omega
-      have hj₀ : (m : ℕ) + 1 - i ≠ 0 := by omega
-      have hsum : i + (m + 1 - i) = m + 1 := by omega
-      simp [hi₀, hj₀, hsum, mul_comm]
+      rw [coeff_single_add_single_lazardCocycle (by omega) (by omega)]
+      simp [mul_comm]
     · have hmn' : (m : ℕ) ≠ n := fun h ↦ hmn (PNat.coe_injective h)
       have hsum : i + (m + 1 - i) ≠ n + 1 := by omega
-      simp [hmn, hsum]
+      simp [coeff_lazardCocycle, hmn, hsum]
   rw [sum_congr rfl h]
   split_ifs with hmn
   · subst hmn
@@ -404,5 +408,16 @@ theorem cotangentBasis_apply (n : ℕ+) :
     cotangentBasis n =
       augmentationIdeal.toCotangent ⟨generator n, generator_mem_augmentationIdeal n⟩ :=
   Module.Basis.mk_apply _ _ n
+
+/-- Modulo the square of the augmentation ideal, an element `y` of the augmentation ideal is the
+combination `∑ cₙ xₙ` of the generators, where `(cₙ)ₙ` are the coordinates of the class of `y` in
+the basis `TauCeti.LazardRing.cotangentBasis` of `I ⧸ I²`. -/
+theorem sub_sum_generator_mem_sq {y : LazardRing} (hy : y ∈ augmentationIdeal) :
+    y - ↑((cotangentBasis.repr (augmentationIdeal.toCotangent ⟨y, hy⟩)).sum
+      fun n k ↦ k • (⟨generator n, generator_mem_augmentationIdeal n⟩ : augmentationIdeal)) ∈
+      augmentationIdeal ^ 2 := by
+  refine (augmentationIdeal.toCotangent_eq (x := ⟨y, hy⟩)).1 ?_
+  conv_lhs => rw [← cotangentBasis.linearCombination_repr (augmentationIdeal.toCotangent _)]
+  simp only [Finsupp.linearCombination_apply, map_finsuppSum, map_zsmul, cotangentBasis_apply]
 
 end TauCeti.LazardRing

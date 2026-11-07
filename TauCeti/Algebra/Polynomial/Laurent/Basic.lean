@@ -55,6 +55,7 @@ every `R[T;T⁻¹]`-module. That automorphism is what a shift-compatible invaria
   at the `n`-th power.
 * `TauCeti.laurentEval_eq_eval₂`: over a commutative target, this evaluation is Mathlib's
   `LaurentPolynomial.eval₂`.
+* `LaurentPolynomial.hom_eval₂`: a ring homomorphism commutes with `LaurentPolynomial.eval₂`.
 * `TauCeti.eval₂_C_injective_of_val_eq_T`: the substitution `T ↦ Tᵏ` is injective for `k ≠ 0`.
 * `TauCeti.mul_laurentEval`: an element commuting with a unit `u` up to a scalar `c` moves past
   evaluation at `u` by rescaling by `c`.
@@ -104,6 +105,16 @@ theorem mapDomainAlgHom_mulRight_comp_toAlgHom {S : Type*} [CommSemiring S] [Alg
         (IsScalarTower.toAlgHom R S (LaurentPolynomial S)) =
       IsScalarTower.toAlgHom R S (LaurentPolynomial S) :=
   AlgHom.ext fun a ↦ (AddMonoidAlgebra.mapDomainAlgHom S S (AddMonoidHom.mulRight n)).commutes a
+
+/-- A ring homomorphism commutes with evaluation of Laurent polynomials: applying `g` after
+evaluating at the unit `x` along `f` is evaluating at the unit `g x` along `g ∘ f`. This is the
+Laurent analogue of `Polynomial.hom_eval₂`. -/
+theorem hom_eval₂ {R S U : Type*} [CommSemiring R] [CommSemiring S] [CommSemiring U] (p : R[T;T⁻¹])
+    (f : R →+* S) (g : S →+* U) (x : Sˣ) :
+    g (eval₂ f x p) = eval₂ (g.comp f) (Units.map (g : S →* U) x) p := by
+  induction p using LaurentPolynomial.induction_on' with
+  | add p q hp hq => rw [map_add, map_add, map_add, hp, hq]
+  | C_mul_T n a => simp [eval₂_C_mul_T, ← map_zpow]
 
 end LaurentPolynomial
 
