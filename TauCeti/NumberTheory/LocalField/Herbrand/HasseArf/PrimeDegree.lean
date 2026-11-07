@@ -64,17 +64,6 @@ theorem UpperJump.eq_of_finrank_prime {u v : RamificationIndexDomain}
   exact le_antisymm (le_of_not_gt (no_two_jumps hv hu)) (le_of_not_gt (no_two_jumps hu hv))
 
 variable {K L} in
-/-- If the inverse Herbrand function sends `u` to `-1`, then `u = -1`. -/
-private theorem coe_eq_neg_one_of_inverseHerbrand_eq_neg_one {u : RamificationIndexDomain}
-    (hinverse : inverseHerbrand K L u = ⟨(-1 : ℝ), le_rfl⟩) : (u : ℝ) = -1 := by
-  have hinverse_neg_one :
-      inverseHerbrand K L ⟨(-1 : ℝ), le_rfl⟩ = ⟨(-1 : ℝ), le_rfl⟩ :=
-    inverseHerbrand_of_coe_le_zero K L (by norm_num)
-  have hu_eq : u = ⟨(-1 : ℝ), le_rfl⟩ :=
-    (inverseHerbrand_strictMono K L).injective <| hinverse.trans hinverse_neg_one.symm
-  exact congrArg Subtype.val hu_eq
-
-variable {K L} in
 /-- In prime degree, if the inverse Herbrand function sends `u` to a natural number `t` at which
 the lower filtration drops, then `u = t`. -/
 private theorem coe_eq_natCast_of_inverseHerbrand_eq_natCast
