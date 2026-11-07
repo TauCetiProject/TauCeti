@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.MeasureTheory.Measure.Haar.Unique
-import TauCeti.MeasureTheory.Measure.Interval
+import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 
 /-!
 # Integrating complementary power bounds
@@ -26,7 +26,7 @@ The one-sided estimates `intervalIntegral.intervalIntegrable_of_norm_le_mul_rpow
 in a normed group whose norm is bounded almost everywhere on `(a, b]` by `K * (s - a) ^ u` with
 `-1 < u`: it is interval integrable, with integral of norm at most
 `K * ((b - a) ^ (u + 1) / (u + 1))`. The `_left` forms treat the singularity at `b`, with bound
-`K * (b - s) ^ u`, by reflection, using `MeasureTheory.measurePreserving_sub_left_restrict_Ioc`.
+`K * (b - s) ^ u`, using `TauCeti.intervalIntegrable_sub_rpow` and `TauCeti.integral_sub_rpow`.
 -/
 
 public section
@@ -37,6 +37,11 @@ open MeasureTheory Set
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
+private theorem intervalIntegrable_mul_rpow_sub_right {a b K u : ℝ} (hu : -1 < u) :
+    IntervalIntegrable (fun s : ℝ => K * (s - a) ^ u) volume a b := by
+  have h := (intervalIntegrable_rpow' (a := 0) (b := b - a) hu).comp_sub_right a
+  simpa using h.const_mul K
+
 omit [NormedSpace ℝ E] in
 /-- A function whose norm is bounded almost everywhere on `(a, b]` by `K * (s - a) ^ u` with
 `-1 < u` is interval integrable on `[a, b]`, given that it is a.e. strongly measurable there. -/
@@ -44,11 +49,8 @@ theorem intervalIntegrable_of_norm_le_mul_rpow_sub_right {f : ℝ → E} {a b K 
     (hu : -1 < u) (hab : a ≤ b) (hmeas : AEStronglyMeasurable f (volume.restrict (Ioc a b)))
     (hbound : ∀ᵐ s ∂volume.restrict (Ioc a b), ‖f s‖ ≤ K * (s - a) ^ u) :
     IntervalIntegrable f volume a b := by
-  have hint : IntervalIntegrable (fun s : ℝ => K * (s - a) ^ u) volume a b := by
-    have h := (intervalIntegrable_rpow' (a := 0) (b := b - a) hu).comp_sub_right a
-    simpa using h.const_mul K
   rw [← uIoc_of_le hab] at hmeas hbound
-  exact hint.mono_fun' hmeas hbound
+  exact (intervalIntegrable_mul_rpow_sub_right hu).mono_fun' hmeas hbound
 
 /-- A function whose norm is bounded almost everywhere on `(a, b]` by `K * (s - a) ^ u` with
 `-1 < u` has integral over `[a, b]` of norm at most `K * ((b - a) ^ (u + 1) / (u + 1))`. -/
@@ -57,11 +59,8 @@ theorem norm_integral_le_of_norm_le_mul_rpow_sub_right {f : ℝ → E} {a b K u 
     (hbound : ∀ᵐ s ∂volume.restrict (Ioc a b), ‖f s‖ ≤ K * (s - a) ^ u) :
     ‖∫ s in a..b, f s‖ ≤ K * ((b - a) ^ (u + 1) / (u + 1)) := by
   have hu1 : (0 : ℝ) < u + 1 := by linarith
-  have hint : IntervalIntegrable (fun s : ℝ => K * (s - a) ^ u) volume a b := by
-    have h := (intervalIntegrable_rpow' (a := 0) (b := b - a) hu).comp_sub_right a
-    simpa using h.const_mul K
   refine (norm_integral_le_of_norm_le hab ((ae_restrict_iff' measurableSet_Ioc).mp hbound)
-    hint).trans_eq ?_
+    (intervalIntegrable_mul_rpow_sub_right hu)).trans_eq ?_
   rw [integral_const_mul, integral_comp_sub_right (fun x : ℝ => x ^ u) a, sub_self,
     integral_rpow (Or.inl hu), Real.zero_rpow hu1.ne']
   ring
@@ -73,12 +72,8 @@ theorem intervalIntegrable_of_norm_le_mul_rpow_sub_left {f : ℝ → E} {a b K u
     (hu : -1 < u) (hab : a ≤ b) (hmeas : AEStronglyMeasurable f (volume.restrict (Ioc a b)))
     (hbound : ∀ᵐ s ∂volume.restrict (Ioc a b), ‖f s‖ ≤ K * (b - s) ^ u) :
     IntervalIntegrable f volume a b := by
-  have hmp := measurePreserving_sub_left_restrict_Ioc a b
-  have hi := intervalIntegrable_of_norm_le_mul_rpow_sub_right (f := fun s => f (a + b - s))
-    (K := K) hu hab (hmeas.comp_measurePreserving hmp)
-    ((hmp.quasiMeasurePreserving.ae hbound).mono fun s hs => by
-      rwa [show b - (a + b - s) = s - a by ring] at hs)
-  simpa using (hi.comp_sub_left (a + b)).symm
+  rw [← uIoc_of_le hab] at hmeas hbound
+  exact ((TauCeti.intervalIntegrable_sub_rpow hu a b).const_mul K).mono_fun' hmeas hbound
 
 /-- The mirror image of `intervalIntegral.norm_integral_le_of_norm_le_mul_rpow_sub_right`: the
 singularity is at the right endpoint `b`. -/
@@ -86,13 +81,9 @@ theorem norm_integral_le_of_norm_le_mul_rpow_sub_left {f : ℝ → E} {a b K u :
     (hu : -1 < u) (hab : a ≤ b)
     (hbound : ∀ᵐ s ∂volume.restrict (Ioc a b), ‖f s‖ ≤ K * (b - s) ^ u) :
     ‖∫ s in a..b, f s‖ ≤ K * ((b - a) ^ (u + 1) / (u + 1)) := by
-  have hmp := measurePreserving_sub_left_restrict_Ioc a b
-  have hle := norm_integral_le_of_norm_le_mul_rpow_sub_right (f := fun s => f (a + b - s))
-    (K := K) hu hab
-    ((hmp.quasiMeasurePreserving.ae hbound).mono fun s hs => by
-      rwa [show b - (a + b - s) = s - a by ring] at hs)
-  rwa [integral_comp_sub_left f (a + b), show a + b - b = a by ring,
-    show a + b - a = b by ring] at hle
+  refine (norm_integral_le_of_norm_le hab ((ae_restrict_iff' measurableSet_Ioc).mp hbound)
+    ((TauCeti.intervalIntegrable_sub_rpow hu a b).const_mul K)).trans_eq ?_
+  rw [integral_const_mul, TauCeti.integral_sub_rpow hu]
 
 end intervalIntegral
 

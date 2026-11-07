@@ -450,11 +450,11 @@ theorem exists_norm_fderiv_heatDuhamelPotential_le :
   obtain ⟨C, hC⟩ := exists_ae_norm_iteratedFDeriv_heatKernel_convolution_le_one (E := E) (F := F)
   refine ⟨2 * C, fun {f M t} hf hfM ht x => ?_⟩
   have hae := hC hf hfM ht
-  rw [uIoc_of_le ht.le, ae_restrict_iff' measurableSet_Ioc] at hae
+  rw [uIoc_of_le ht.le] at hae
   rw [← norm_iteratedFDeriv_one, iteratedFDeriv_heatDuhamelPotential hf hfM ht le_rfl]
-  refine (intervalIntegral.norm_integral_le_of_norm_le ht.le (hae.mono fun s hs hsI => hs hsI x)
-    ((intervalIntegrable_sub_rpow (by norm_num) 0 t).const_mul (C * M))).trans_eq ?_
-  rw [intervalIntegral.integral_const_mul, integral_sub_rpow (by norm_num), sqrt_eq_rpow]
+  refine (intervalIntegral.norm_integral_le_of_norm_le_mul_rpow_sub_left (K := C * M)
+    (by norm_num) ht.le (hae.mono fun s hs => hs x)).trans_eq ?_
+  rw [sqrt_eq_rpow]
   norm_num
   ring
 
@@ -478,11 +478,10 @@ private theorem exists_norm_integral_iteratedFDeriv_two_heatKernel_convolution_l
     positivity
   have ht : 0 < t := ha.trans_lt hat
   have hae := hC hf hfM hH ht
-  rw [uIoc_of_le ht.le, ae_restrict_iff' measurableSet_Ioc] at hae
-  refine (intervalIntegral.norm_integral_le_of_norm_le hat.le
-    (hae.mono fun s hs hsI => hs (Ioc_subset_Ioc ha le_rfl hsI) x)
-    ((intervalIntegrable_sub_rpow (by linarith) a t).const_mul (C * H))).trans_eq ?_
-  rw [intervalIntegral.integral_const_mul, integral_sub_rpow (by linarith)]
+  rw [uIoc_of_le ht.le] at hae
+  refine (intervalIntegral.norm_integral_le_of_norm_le_mul_rpow_sub_left (K := C * H)
+    (by linarith) hat.le (ae_restrict_of_ae_restrict_of_subset (Ioc_subset_Ioc ha le_rfl)
+      (hae.mono fun s hs => hs x))).trans_eq ?_
   have h : ((α : ℝ) - 2) / 2 + 1 = α / 2 := by ring
   rw [h]
   field_simp
