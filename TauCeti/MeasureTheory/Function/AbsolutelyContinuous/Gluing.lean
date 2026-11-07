@@ -135,13 +135,6 @@ theorem of_affine_subdivision {E : Type*} [SeminormedAddCommGroup E] [NormedSpac
 
 end AbsolutelyContinuousOnInterval
 
-/-- Every breakpoint of a monotone subdivision from `a` to `b` lies in `[a, b]`. -/
-theorem TauCeti.subdivision_mem_uIcc {a b : ℝ} {N : ℕ} {s : Fin (N + 1) → ℝ} (hs : Monotone s)
-    (ha : s 0 = a) (hb : s (Fin.last N) = b) (i : Fin (N + 1)) : s i ∈ uIcc a b := by
-  have hab : a ≤ b := by rw [← ha, ← hb]; exact hs (Fin.zero_le _)
-  rw [uIcc_of_le hab, ← ha, ← hb]
-  exact ⟨hs (Fin.zero_le _), hs (Fin.le_last _)⟩
-
 /-- A raw curve is polygonal on an interval if a finite increasing subdivision expresses it as
 the affine interpolation of its successive vertex values on every closed cell. -/
 @[expose] def TauCeti.IsPolygonalOnInterval {F : Type*} [AddCommGroup F] [Module ℝ F]

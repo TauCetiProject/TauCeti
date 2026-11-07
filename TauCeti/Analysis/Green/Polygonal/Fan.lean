@@ -14,6 +14,7 @@ import TauCeti.Algebra.BigOperators.Fin
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.Basic.Complex.BigOperators
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Gluing
+import TauCeti.Order.Interval.Set.Subdivision
 
 /-!
 # Winding weights of polygonal triangle fans

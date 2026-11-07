@@ -9,6 +9,7 @@ public import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuo
 public import Mathlib.Topology.UniformSpace.UniformConvergence
 public import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Gluing
 import TauCeti.MeasureTheory.Function.IntervalStep
+import TauCeti.Order.Interval.Set.Subdivision
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 

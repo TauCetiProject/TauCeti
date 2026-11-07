@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Green.Polygonal.Basic
 public import TauCeti.Analysis.Green.AbsolutelyContinuous
 public import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.PolygonalApproximation
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Gluing
+import TauCeti.Order.Interval.Set.Subdivision
 
 /-!
 # Circulation of raw polygonal curves
