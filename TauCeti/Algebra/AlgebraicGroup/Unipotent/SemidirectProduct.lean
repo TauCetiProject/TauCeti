@@ -57,16 +57,6 @@ namespace geometricallyUnipotentPointsCommHopfAlgProperty
 
 variable (k : Type u) [Field k]
 
-/-- A unipotent point acts on every finitely generated comodule through an endomorphism `ρ x`
-with `ρ x - 1` nilpotent. -/
-private theorem isNilpotent_pointsRepresentation_sub_one {k : Type u} [Field k]
-    {H : Type u} [Semiring H] [HopfAlgebra k H] {x : WithConv (H →ₐ[k] AlgebraicClosure k)}
-    (hx : HopfAlgebra.IsUnipotentPoint x) (M : FGComoduleCat.{u, u, u} k H) :
-    IsNilpotent
-      (Comodule.pointsRepresentation (R := k) (H := H) (A := AlgebraicClosure k) M x - 1) := by
-  rw [Comodule.pointsRepresentation_apply]
-  exact (HopfAlgebra.isUnipotentPoint_iff_forall_isNilpotent_endOfPoint_sub_one x).mp hx M
-
 /-- An internal semidirect product of affine groups with geometrically unipotent points again has
 geometrically unipotent points. -/
 theorem semidirectProduct (H K : _root_.CommHopfAlgCat.{u} k)
@@ -105,7 +95,7 @@ theorem semidirectProduct (H K : _root_.CommHopfAlgCat.{u} k)
       apply ePoint.injective
       rw [A.pointMulEquiv_mapDomain_coordinateInl, MulEquiv.symm_apply_apply]
       exact SemidirectProduct.ext rfl hxright
-    exact isNilpotent_pointsRepresentation_sub_one
+    exact HopfAlgebra.IsUnipotentPoint.isNilpotent_pointsRepresentation_sub_one
       (hpoint ▸ (hH p).mapDomain A.coordinateInl.hom) M
   have hW (x : W) : IsNilpotent (rho x - 1) := by
     obtain ⟨r, hr⟩ := x.2
@@ -114,7 +104,7 @@ theorem semidirectProduct (H K : _root_.CommHopfAlgCat.{u} k)
       apply ePoint.injective
       rw [A.pointMulEquiv_mapDomain_coordinateInr, MulEquiv.symm_apply_apply]
       exact hr.symm
-    exact isNilpotent_pointsRepresentation_sub_one
+    exact HopfAlgebra.IsUnipotentPoint.isNilpotent_pointsRepresentation_sub_one
       (hpoint ▸ (hK p).mapDomain A.coordinateInr.hom) M
   have hg : g ∈ U ⊔ W := by
     simp only [U, W]
