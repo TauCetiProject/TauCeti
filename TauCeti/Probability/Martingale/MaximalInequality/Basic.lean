@@ -32,6 +32,8 @@ this is how the running maximum of an exponential martingale is shown to be inte
 
 ## Main declarations
 
+* `MeasureTheory.Submartingale.mul_measure_exists_mem_le_le_setIntegral`: the finite-set
+  inequality retaining the crossing event in the terminal expectation.
 * `MeasureTheory.Submartingale.mul_measure_exists_mem_le_le`: the maximal inequality over a finite
   set of times.
 * `MeasureTheory.Submartingale.mul_measure_exists_le_lt_le`: the maximal inequality over all times
@@ -58,50 +60,61 @@ namespace MeasureTheory.Submartingale
 variable {Ω ι : Type*} {m0 : MeasurableSpace Ω} {μ : Measure Ω} [LinearOrder ι]
   {ℱ : Filtration ι m0} {f : ι → Ω → ℝ}
 
-/-- **Doob's maximal inequality over a finite set of times.** For a nonnegative submartingale `f`
-and a finite set `F` of times `≤ T`, `ε P(∃ t ∈ F, ε ≤ f_t) ≤ E[f_T]`. -/
-theorem mul_measure_exists_mem_le_le [IsFiniteMeasure μ] (hf : Submartingale f ℱ μ)
-    (hnonneg : 0 ≤ f) (ε : ℝ≥0) {F : Finset ι} {T : ι} (hF : ∀ t ∈ F, t ≤ T) :
-    ε * μ {ω | ∃ t ∈ F, (ε : ℝ) ≤ f t ω} ≤ ENNReal.ofReal (∫ ω, f T ω ∂μ) := by
+/-- **Event-refined Doob inequality on a finite set.** The terminal expectation is restricted
+to the same crossing event, even when the terminal time does not belong to the sampled set. -/
+theorem mul_measure_exists_mem_le_le_setIntegral [IsFiniteMeasure μ]
+    (hf : Submartingale f ℱ μ) (hnonneg : 0 ≤ f) (ε : ℝ≥0) {F : Finset ι} {T : ι}
+    (hF : ∀ t ∈ F, t ≤ T) :
+    ε * μ {ω | ∃ t ∈ F, (ε : ℝ) ≤ f t ω} ≤
+      ENNReal.ofReal (∫ ω in {ω | ∃ t ∈ F, (ε : ℝ) ≤ f t ω}, f T ω ∂μ) := by
   classical
-  -- Enumerate `G = F ∪ {T}` increasingly as `τ 0 ≤ ⋯ ≤ τ n = T`, extended constantly beyond `n`,
-  -- and apply `maximal_ineq` to the discrete submartingale `j ↦ f (τ j)`.
-  set G := insert T F
-  set n := G.card - 1
-  have hG : G.card = n + 1 :=
-    (Nat.sub_add_cancel (Finset.card_pos.2 (Finset.insert_nonempty _ _))).symm
-  set e := G.orderEmbOfFin hG
+  obtain hEmpty | hne := F.eq_empty_or_nonempty
+  · simp [hEmpty]
+  -- Sample exactly F, not F ∪ {T}: adding T would enlarge the event on the right.
+  set n := F.card - 1
+  have hcard : F.card = n + 1 := (Nat.sub_add_cancel hne.card_pos).symm
+  let e := F.orderEmbOfFin hcard
   let τ : ℕ → ι := fun j ↦ e ⟨min j n, by omega⟩
   have hτ : Monotone τ := fun i j hij ↦ e.monotone (Fin.mk_le_mk.2 (min_le_min_right _ hij))
-  have hτn : τ n = T := by
-    have hmax : G.max' (Finset.insert_nonempty _ _) = T :=
-      le_antisymm (Finset.max'_le _ _ _ fun t ht ↦ by
-        rcases Finset.mem_insert.1 ht with rfl | ht
-        exacts [le_rfl, hF t ht]) (Finset.le_max' _ _ (Finset.mem_insert_self _ _))
-    simpa [τ, hmax] using Finset.orderEmbOfFin_last hG (Nat.succ_pos n)
+  have hmem (j : ℕ) : τ j ∈ F := F.orderEmbOfFin_mem hcard _
+  have hτn : τ n = F.max' hne := by
+    simpa [τ, e] using Finset.orderEmbOfFin_last hcard (Nat.succ_pos n)
   let 𝒢 : Filtration ℕ m0 := ⟨fun j ↦ ℱ (τ j), fun _ _ hij ↦ ℱ.mono (hτ hij), fun _ ↦ ℱ.le _⟩
   have hg : Submartingale (fun j ↦ f (τ j)) 𝒢 μ :=
     ⟨fun j ↦ hf.stronglyAdapted (τ j), fun _ _ hij ↦ hf.ae_le_condExp (hτ hij),
       fun j ↦ hf.integrable (τ j)⟩
-  have hsub : {ω | ∃ t ∈ F, (ε : ℝ) ≤ f t ω} ⊆ {ω | (ε : ℝ) ≤
+  have hset : {ω | ∃ t ∈ F, (ε : ℝ) ≤ f t ω} = {ω | (ε : ℝ) ≤
       (Finset.range (n + 1)).sup' Finset.nonempty_range_add_one fun k ↦ f (τ k) ω} := by
-    rintro ω ⟨t, ht, hεt⟩
-    obtain ⟨i, rfl⟩ : t ∈ range e := by
-      rw [Finset.range_orderEmbOfFin]
-      exact Finset.mem_insert_of_mem ht
-    refine hεt.trans (Finset.le_sup'_of_le _ (Finset.mem_range.2 i.2) ?_)
-    simp only [τ, min_eq_left (Nat.le_of_lt_succ i.2), le_refl]
+    ext ω
+    simp only [mem_ofPred_eq, Finset.le_sup'_iff]
+    constructor
+    · rintro ⟨t, ht, hεt⟩
+      obtain ⟨i, rfl⟩ : t ∈ range e := by
+        rw [Finset.range_orderEmbOfFin]
+        exact ht
+      exact ⟨i, Finset.mem_range.2 i.2, by simpa [τ, min_eq_left (by omega : (i : ℕ) ≤ n)]⟩
+    · rintro ⟨j, hj, hεj⟩
+      exact ⟨τ j, hmem j, hεj⟩
+  have hmeas : MeasurableSet[ℱ (τ n)] {ω | ∃ t ∈ F, (ε : ℝ) ≤ f t ω} := by
+    simp only [← exists_prop, ofPred_exists]
+    apply F.measurableSet_biUnion
+    intro t ht
+    exact measurableSet_le measurable_const
+      (((hf.stronglyAdapted t).mono (ℱ.mono (by rw [hτn]; exact F.le_max' t ht))).measurable)
   calc ε * μ {ω | ∃ t ∈ F, (ε : ℝ) ≤ f t ω}
-      ≤ ε * μ {ω | (ε : ℝ) ≤
-          (Finset.range (n + 1)).sup' Finset.nonempty_range_add_one fun k ↦ f (τ k) ω} := by
-        gcongr
-    _ ≤ ENNReal.ofReal (∫ ω in {ω | (ε : ℝ) ≤
-          (Finset.range (n + 1)).sup' Finset.nonempty_range_add_one fun k ↦ f (τ k) ω},
-            f (τ n) ω ∂μ) := maximal_ineq hg (fun _ ↦ hnonneg _) n
-    _ ≤ ENNReal.ofReal (∫ ω, f T ω ∂μ) := by
-        rw [hτn]
-        exact ENNReal.ofReal_le_ofReal
-          (setIntegral_le_integral (hf.integrable T) (Eventually.of_forall (hnonneg T)))
+      ≤ ENNReal.ofReal (∫ ω in {ω | ∃ t ∈ F, (ε : ℝ) ≤ f t ω}, f (τ n) ω ∂μ) := by
+        rw [hset]
+        exact maximal_ineq hg (fun _ ↦ hnonneg _) n
+    _ ≤ _ := ENNReal.ofReal_le_ofReal (hf.setIntegral_le (hF _ (hmem n)) hmeas)
+
+/-- **Doob's maximal inequality over a finite set of times.** For a nonnegative submartingale `f`
+and a finite set `F` of times `≤ T`, `ε P(∃ t ∈ F, ε ≤ f_t) ≤ E[f_T]`. -/
+theorem mul_measure_exists_mem_le_le [IsFiniteMeasure μ] (hf : Submartingale f ℱ μ)
+    (hnonneg : 0 ≤ f) (ε : ℝ≥0) {F : Finset ι} {T : ι} (hF : ∀ t ∈ F, t ≤ T) :
+    ε * μ {ω | ∃ t ∈ F, (ε : ℝ) ≤ f t ω} ≤ ENNReal.ofReal (∫ ω, f T ω ∂μ) :=
+  (hf.mul_measure_exists_mem_le_le_setIntegral hnonneg ε hF).trans
+    (ENNReal.ofReal_le_ofReal
+      (setIntegral_le_integral (hf.integrable T) (Eventually.of_forall (hnonneg T))))
 
 section ContinuousTime
 
