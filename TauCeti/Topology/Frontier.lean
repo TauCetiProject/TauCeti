@@ -136,6 +136,16 @@ theorem _root_.IsPreconnected.subset_interior_or_subset_compl_closure (hS : IsPr
   exact hS.subset_or_subset isOpen_interior isClosed_closure.isOpen_compl
     (disjoint_compl_right.mono_left (interior_subset.trans subset_closure)) hsub
 
+/-- **The connected component of a point in the complement of a set `F` stays inside any set
+containing the point whose frontier lies in `F`.** Otherwise the component, being preconnected,
+would meet both the set and its complement, hence its frontier, which lies in `F`. -/
+theorem connectedComponentIn_subset_of_frontier_subset {F : Set X} {x₀ : X} (hx₀F : x₀ ∈ Fᶜ)
+    (hs : x₀ ∈ V) (hfr : frontier V ⊆ F) : connectedComponentIn Fᶜ x₀ ⊆ V := by
+  by_contra h
+  obtain ⟨p, hpC, hpf⟩ := isPreconnected_connectedComponentIn.inter_frontier_nonempty
+    ⟨x₀, mem_connectedComponentIn hx₀F, hs⟩ (Set.not_subset.mp h)
+  exact connectedComponentIn_subset _ _ hpC (hfr hpf)
+
 end Straddle
 
 section ImageSplit
