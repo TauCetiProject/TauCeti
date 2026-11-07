@@ -117,32 +117,32 @@ private theorem continuousOn_bottomBoundary
     (hk : ∀ {u t : I} {z : I^N}, z ∈ Cube.boundary N →
       k (u, (t, z)) = H (t, openBoxContraction u (0, z))) :
     ContinuousOn k {x | x.2 ∈ Cube.prodBoundary N} := by
-    have hS : {x : I × (I × I^N) | x.2 ∈ Cube.prodBoundary N} =
-        {x | x.2.1 = 0} ∪ ({x | x.2.1 = 1} ∪ {x | x.2.2 ∈ Cube.boundary N}) := by
-      ext x
-      simp [or_assoc]
-    rw [hS]
-    have hc₀ : IsClosed {x : I × (I × I^N) | x.2.1 = 0} := isClosed_eq (by fun_prop) (by fun_prop)
-    have hc₁ : IsClosed {x : I × (I × I^N) | x.2.1 = 1} := isClosed_eq (by fun_prop) (by fun_prop)
-    have hc₂ : IsClosed {x : I × (I × I^N) | x.2.2 ∈ Cube.boundary N} :=
-      hasHomotopyExtensionProperty_cubeBoundary.isClosed.preimage (by fun_prop)
-    refine ContinuousOn.union_of_isClosed ?_ (ContinuousOn.union_of_isClosed ?_ ?_ hc₁ hc₂) hc₀
-      ((hc₁.union hc₂))
-    · refine (by fun_prop : Continuous fun x : I × (I × I^N) ↦
-        (p : C(I × (I^N), X.pair.fst)) (0, x.2.2)).continuousOn.congr fun x hx ↦ ?_
-      obtain ⟨u, t, z⟩ := x
-      obtain rfl : t = 0 := hx
-      exact hk₀ u z
-    · refine (by fun_prop : Continuous fun x : I × (I × I^N) ↦
-        (q : C(I × (I^N), X.pair.fst)) (0, x.2.2)).continuousOn.congr fun x hx ↦ ?_
-      obtain ⟨u, t, z⟩ := x
-      obtain rfl : t = 1 := hx
-      exact hk₁ u z
-    · refine (H.continuous.comp ((continuous_fst.comp continuous_snd).prodMk
-        (continuous_openBoxContraction.comp (by fun_prop : Continuous fun x : I × (I × I^N) ↦
-          (x.1, ((0 : I), x.2.2)))))).continuousOn.congr fun x hx ↦ ?_
-      obtain ⟨u, t, z⟩ := x
-      exact hk hx
+  have hS : {x : I × (I × I^N) | x.2 ∈ Cube.prodBoundary N} =
+      {x | x.2.1 = 0} ∪ ({x | x.2.1 = 1} ∪ {x | x.2.2 ∈ Cube.boundary N}) := by
+    ext x
+    simp [or_assoc]
+  rw [hS]
+  have hc₀ : IsClosed {x : I × (I × I^N) | x.2.1 = 0} := isClosed_eq (by fun_prop) (by fun_prop)
+  have hc₁ : IsClosed {x : I × (I × I^N) | x.2.1 = 1} := isClosed_eq (by fun_prop) (by fun_prop)
+  have hc₂ : IsClosed {x : I × (I × I^N) | x.2.2 ∈ Cube.boundary N} :=
+    hasHomotopyExtensionProperty_cubeBoundary.isClosed.preimage (by fun_prop)
+  refine ContinuousOn.union_of_isClosed ?_ (ContinuousOn.union_of_isClosed ?_ ?_ hc₁ hc₂) hc₀
+    ((hc₁.union hc₂))
+  · refine (by fun_prop : Continuous fun x : I × (I × I^N) ↦
+      (p : C(I × (I^N), X.pair.fst)) (0, x.2.2)).continuousOn.congr fun x hx ↦ ?_
+    obtain ⟨u, t, z⟩ := x
+    obtain rfl : t = 0 := hx
+    exact hk₀ u z
+  · refine (by fun_prop : Continuous fun x : I × (I × I^N) ↦
+      (q : C(I × (I^N), X.pair.fst)) (0, x.2.2)).continuousOn.congr fun x hx ↦ ?_
+    obtain ⟨u, t, z⟩ := x
+    obtain rfl : t = 1 := hx
+    exact hk₁ u z
+  · refine (H.continuous.comp ((continuous_fst.comp continuous_snd).prodMk
+      (continuous_openBoxContraction.comp (by fun_prop : Continuous fun x : I × (I × I^N) ↦
+        (x.1, ((0 : I), x.2.2)))))).continuousOn.congr fun x hx ↦ ?_
+    obtain ⟨u, t, z⟩ := x
+    exact hk hx
 
 /-- The deformation of a homotopy `H` through maps of pairs, from `p` to `q`, on the face
 `I × ({0} × I^N)` of the cube `I × (I × I^N)`, the first coordinate being time: it starts at `H`,
@@ -203,8 +203,8 @@ private theorem exists_bottomHomotopy
   · exact (hL' u 1 z (Cube.mk_mem_prodBoundary (.inl rfl))).trans (hk₁ u z)
   · exact (hL' u t z (Cube.mem_prodBoundary_iff.2 (Or.inr hz))).trans (hk hz)
 
-/-- The deformation `K` of `exists_homotopy_eq_on_openBox` is continuous on the boundary of the
-cube `I × (I × (I × I^N))`, which is the union of four closed faces. -/
+/-- The deformation `K` of `exists_homotopy_eq_on_openBox` is continuous on `I × T`, where `T` is
+the boundary of the cube `I × (I × I^N)`, the union of four closed faces. -/
 private theorem continuousOn_openBoxDeformation
     (H : (p : C(I × (I^N), X.pair.fst)).HomotopyWith q
       fun f ↦ MapsTo f (Cube.prodBoundary N) (range X.pair.map))
@@ -255,8 +255,10 @@ private theorem continuousOn_openBoxDeformation
     obtain ⟨u, t, w⟩ := x
     exact hKJ u t hx
 
-/-- Extend the deformation `K` of a homotopy `H` on the boundary of the cube over the cube, and take
-its end: this is the homotopy of `exists_homotopy_eq_on_openBox`. -/
+/-- Let `K` be a deformation of a homotopy `H` of relative cubes on `I × ∂(I × (I × I^N))`: it
+agrees with `L` on `s = 0`, with `p` and `q` at the two ends, and with `H ∘ openBoxContraction` on
+the open box. Then there is a homotopy `p ≃ q` which sends `{0} × I^N` into the subspace and the
+open box to `H (t, (1, cubeCenter))`. -/
 private theorem exists_homotopy_of_deformation
     (H : (p : C(I × (I^N), X.pair.fst)).HomotopyWith q
       fun f ↦ MapsTo f (Cube.prodBoundary N) (range X.pair.map))
@@ -267,11 +269,11 @@ private theorem exists_homotopy_of_deformation
     (hKp : ∀ (u : I) (w : I × I^N), K (u, (0, w)) = p w)
     (hKq : ∀ (u : I) (w : I × I^N), K (u, (1, w)) = q w)
     (hKJ : ∀ (u t : I) {w : I × I^N}, (w.1 = 1 ∨ w.2 ∈ Cube.boundary N) →
-      K (u, (t, w)) = H (t, openBoxContraction u w))
-    (hcont : ContinuousOn K {x | (x.2.1 = 0 ∨ x.2.1 = 1) ∨ x.2.2 ∈ Cube.prodBoundary N}) :
+      K (u, (t, w)) = H (t, openBoxContraction u w)) :
     ∃ F : (p : C(I × (I^N), X.pair.fst)).Homotopy q,
       (∀ t z, F (t, (0, z)) ∈ range X.pair.map) ∧
       ∀ t w, (w.1 = 1 ∨ w.2 ∈ Cube.boundary N) → F (t, w) = H (t, (1, cubeCenter)) := by
+  have hcont := continuousOn_openBoxDeformation H K hK₀ hKp hKq hKJ
   let T : Set (I × (I × I^N)) := {x | (x.1 = 0 ∨ x.1 = 1) ∨ x.2 ∈ Cube.prodBoundary N}
   -- Extend the deformation over the cube, and take its end.
   have hT := hasHomotopyExtensionProperty_boundary_prod (N := N)
@@ -344,7 +346,6 @@ private theorem exists_homotopy_eq_on_openBox
       rw [hKq, apply_openBoxContraction H (.inr rfl) u hw, H.apply_one, RelGenLoop.coe_coe]
     simp [K, hs, ht₀, ht₁]
   exact exists_homotopy_of_deformation H L hL₀ hLB K hK₀ hKp hKq hKJ
-    (continuousOn_openBoxDeformation H K hK₀ hKp hKq hKJ)
 
 namespace RelGenLoop
 
