@@ -21,6 +21,10 @@ This realizes categorical tensor-algebra constructions as concrete internally gr
 algebras, without changing their underlying module, grading, or differential. The construction
 is underived; it does not assert cofibrancy or a Calabi--Yau property.
 
+This is the DG bimodule analogue of Mathlib's
+`ModuleCat.MonModuleEquivalenceAlgebra.MonObj.toRing` and
+`ModuleCat.MonModuleEquivalenceAlgebra.functor`.
+
 ## References
 
 * B. Keller, *Deformed Calabi--Yau completions*, Section 4.
@@ -121,14 +125,16 @@ theorem monObj_isDGAlgebra : IsDGAlgebra M.grading M.differential where
       rw [tensorObj_differential]
       exact tensorObj_differential_tmul hx y
     rw [monObj_mul_def, map_d, hd, map_add, map_zsmul_unit]
-    rfl
+    simp only [monObj_mul_def]
 
 /-- The unit morphism of a DG bimodule monoid is a DG algebra map from the base algebra. -/
 def monObjBaseHom : DGAlgHom hA (monObj_isDGAlgebra M) where
   toAlgHom := AlgHom.ofLinearMap
     (((MonObj.one (X := M)).val.toLinearMap.restrictScalars R).comp
       (tensorUnitEquiv hA).toLinearMap)
-    (by rfl)
+    (by
+      simpa only [LinearMap.comp_apply, LinearMap.restrictScalars_apply, LinearEquiv.coe_coe,
+        DGRightModuleHom.coe_toLinearMap, DGBimoduleHom.coe_val] using (monObj_one_def M).symm)
     (fun a b ↦ by
       simp only [LinearMap.comp_apply, LinearMap.restrictScalars_apply, LinearEquiv.coe_coe,
         DGRightModuleHom.coe_toLinearMap, DGBimoduleHom.coe_val]
@@ -156,12 +162,14 @@ theorem monObjBaseHom_apply (a : A) :
 
 /-- Left multiplication by a base element is the original left action. -/
 @[simp]
-theorem monObjBaseHom_mul (a : A) (x : M) : monObjBaseHom M a * x = a • x := by
+theorem monObjBaseHom_mul_eq_smul (a : A) (x : M) :
+    monObjBaseHom M a * x = a • x := by
   rw [monObjBaseHom_apply, monObj_one_apply_mul]
 
 /-- Right multiplication by a base element is the original right action. -/
 @[simp]
-theorem mul_monObjBaseHom (x : M) (a : A) : x * monObjBaseHom M a = op a • x := by
+theorem mul_monObjBaseHom_eq_op_smul (x : M) (a : A) :
+    x * monObjBaseHom M a = op a • x := by
   rw [monObjBaseHom_apply, monObj_mul_one_apply]
 
 variable {M} {N : DGBimoduleCat.{uR, uA, uA, uA} hA hA} [MonObj N]
@@ -187,7 +195,7 @@ theorem monObjMap_apply (f : M ⟶ N) [IsMonHom f] (x : M) : monObjMap f x = f x
 
 /-- Morphisms of DG bimodule monoids commute with the base algebra maps. -/
 @[simp]
-theorem monObjMap_base (f : M ⟶ N) [IsMonHom f] (a : A) :
+theorem apply_monObjBaseHom (f : M ⟶ N) [IsMonHom f] (a : A) :
     f (monObjBaseHom M a) = monObjBaseHom N a := by
   have h := congrArg (fun g ↦ g (tensorUnitEquiv hA a)) (IsMonHom.one_hom f)
   simpa only [comp_apply, monObjBaseHom_apply] using h
