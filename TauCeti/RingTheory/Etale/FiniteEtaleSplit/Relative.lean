@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Etale.FiniteEtaleSplit.Basic
 public import TauCeti.RingTheory.TotallySplit
+import Mathlib.RingTheory.SimpleModule.InjectiveProjective
 
 /-!
 # Totally split algebras over a totally split algebra
@@ -19,7 +20,8 @@ disjoint unions of copies of `Spec K`. Above every `K`-point `χ` of `A` there a
 
 When this rank is a constant `d`, the points of `B` are labelled by pairs of a point of `A` and an
 index in `Fin d`, compatibly with the projection to the points of `A`, and `B` is the trivial
-cover `Fin d → A` of `A`. This splits a finite flat cover of constant rank of a finite étale
+cover `Fin d → A` of `A`. Here flatness is automatic, since `A` is a semisimple ring. This splits
+a finite flat cover of constant rank of a finite étale
 scheme over a field once both schemes are split over the base field, for instance the branches
 of a nodal curve over its nodes.
 
@@ -74,12 +76,19 @@ theorem card_algHom_comp_eq_rankAtStalk [IsFiniteSplit K B] [Module.Flat A B] (�
     card_algHom_eq_finrank, hrank]
 
 /-- **A totally split algebra of constant rank over a totally split algebra is a trivial cover.**
-Let `A` and `B` be totally split algebras over a field `K`, with `B` a flat `A`-algebra of constant
+Let `A` and `B` be totally split algebras over a field `K`, with `B` an `A`-algebra of constant
 rank `d`. Then `B` is `A`-isomorphic to `Fin d → A`: the `K`-points of `B` are labelled by pairs
-of a `K`-point of `A` below them and an index in `Fin d`. -/
+of a `K`-point of `A` below them and an index in `Fin d`. No flatness hypothesis is needed: `A`
+is a finite product of copies of `K`, a semisimple ring, over which every module is flat. -/
 theorem nonempty_algEquiv_fun_of_rankAtStalk_eq [IsFiniteSplit K A] [IsFiniteSplit K B]
-    [Module.Flat A B] {d : ℕ} (hd : ∀ p, Module.rankAtStalk (R := A) B p = d) :
+    {d : ℕ} (hd : ∀ p, Module.rankAtStalk (R := A) B p = d) :
     Nonempty (B ≃ₐ[A] (Fin d → A)) := by
+  -- `A ≃ₐ[K] (Fin n → K)` is semisimple, so `B` is projective, hence flat, over `A`.
+  have : Module.Flat A B := by
+    obtain ⟨n, ⟨e⟩⟩ := nonempty_algEquiv_fun K A
+    have := e.symm.toRingHom.isSemisimpleRing_of_surjective e.symm.surjective
+    have := Module.projective_of_isSemisimpleRing A B
+    infer_instance
   have := Finite.algHom K A K
   have := Finite.algHom K B K
   -- Each point `χ` of `A` has exactly `d` points of `B` above it, so the points of `B` are
