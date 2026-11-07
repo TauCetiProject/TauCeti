@@ -70,9 +70,7 @@ theorem mapsTo_preReflection_orbit_weylGroup (i : ι) (lam : V) :
       (MulAction.orbit P.weylGroup lam) (MulAction.orbit P.weylGroup lam) := by
   rintro _ ⟨w, rfl⟩
   refine ⟨weylGroup.ofIdx P i * w, ?_⟩
-  dsimp only
-  rw [mul_smul, weylGroup.ofIdx_smul, Equiv.reflection_smul,
-    P.reflection_apply, Module.preReflection_apply]
+  simp [mul_smul, P.reflection_apply, Module.preReflection_apply]
 
 end Field
 
