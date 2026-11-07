@@ -159,6 +159,13 @@ theorem ord_smul (x : F') : (σ • P).ord x = P.ord (σ.symm x) := by
 theorem ord_smul_apply (x : F') : (σ • P).ord (σ x) = P.ord x := by
   simp
 
+/-- The involution `y ↦ -y` exchanges the orders of `y - b` and `y + b`, for a constant `b`. -/
+theorem ord_smul_sub_eq_ord_add {y : F'} (hσ : σ y = -y) (b : k) :
+    (σ • P).ord (y - algebraMap k F' b) = P.ord (y + algebraMap k F' b) := by
+  have hσsymm : σ.symm y = -y := by rw [AlgEquiv.symm_apply_eq, map_neg, hσ, neg_neg]
+  rw [ord_smul, map_sub, hσsymm, IsScalarTower.algebraMap_apply k F F', AlgEquiv.commutes,
+    ← IsScalarTower.algebraMap_apply, ← neg_add', ord_neg]
+
 /-- Membership in the valuation ring of `σ • P`, read off at `P`. -/
 theorem mem_integers_smul_iff {x : F'} : x ∈ (σ • P).integers ↔ σ.symm x ∈ P.integers := by
   simp
@@ -282,6 +289,26 @@ theorem relativeDegree_smul : relativeDegree k F (σ • P) = relativeDegree k F
   simpa [IsLocalRing.ResidueField.map_residue] using congrArg (IsLocalRing.residue _) hAB
 
 end Restrict
+
+section Quadratic
+
+variable [FiniteDimensional F F']
+
+/-- A place of a quadratic extension `F' / F` over a place `Q` of degree one which is unramified
+and not fixed by an automorphism of `F' / F` has degree one: it and its conjugate are two places
+over `Q`. -/
+theorem degree_eq_one_of_smul_ne (hrank : Module.finrank F F' = 2) {Q : Place k F}
+    (hQ : Q.degree = 1) (σ : F' ≃ₐ[F] F') {P : Place k F'} (hP : P.restrict k F = Q)
+    (he : ramificationIdx F P = 1) (hne : σ • P ≠ P) : P.degree = 1 := by
+  classical
+  have hsum := sum_ramificationIdx_mul_relativeDegree_le_finrank k F Q {P, σ • P}
+    (by simp [hP])
+  rw [Finset.sum_pair hne.symm, ramificationIdx_smul, relativeDegree_smul, he, hrank] at hsum
+  have := one_le_relativeDegree k F P
+  rw [degree_eq_degree_restrict_mul_relativeDegree k F P, hP, hQ]
+  omega
+
+end Quadratic
 
 section Galois
 
