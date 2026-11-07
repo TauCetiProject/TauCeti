@@ -230,15 +230,6 @@ theorem dualGaussSum_sqrt_two_smul_span_orthonormalBasis_ne_jacobiSym (hι : Fin
 
 /-! ### The Gauss sums of `√2 ℤ b` and the squared Landsberg–Schaar identity -/
 
-/-- `‖∑ i, nᵢ • r b i‖² = r² ∑ i, nᵢ²`, since `b` is orthonormal. -/
-private theorem norm_sum_zsmul_smul_sq (r : ℝ) (n : ι → ℤ) :
-    ‖∑ i, n i • (r • b i)‖ ^ 2 = r ^ 2 * ∑ i, (n i : ℝ) ^ 2 := by
-  have h : ∑ i, n i • (r • b i) = ∑ i, ((n i : ℝ) * r) • b i := by
-    simp_rw [← Int.cast_smul_eq_zsmul ℝ, smul_smul]
-  rw [h, ← real_inner_self_eq_norm_sq, b.orthonormal.inner_sum, Finset.mul_sum]
-  simp only [conj_trivial]
-  exact Finset.sum_congr rfl fun i _ ↦ by ring
-
 /-- Let `M` be a lattice with a `ℤ`-basis `r b`. A function `f` on `M / mM` given by
 `e(s ‖v‖²)` on the class of each `v ∈ M` sums to the `n`-th power of the one-variable sum
 `∑_{u < m} e(s r² u²)`, where `n` is the rank: in the coordinates of `(ℤ / m)ⁿ`, `e(s ‖v‖²)` is
@@ -259,9 +250,13 @@ private theorem sum_quotient_eq_pow {M : Submodule ℤ E} (B : Basis ι ℤ M) {
       hf, ← Complex.exp_sum]
     congr 1
     rw [Submodule.coe_sum]
-    simp_rw [Submodule.coe_smul, hB, norm_sum_zsmul_smul_sq, Int.cast_natCast]
+    simp_rw [Submodule.coe_smul, hB, ← Int.cast_smul_eq_zsmul ℝ, smul_smul]
+    have hn := b.orthonormal.orthogonalFamily.norm_sum (fun i ↦ (((x i).val : ℤ) : ℝ) * r) .univ
+    simp only [LinearIsometry.toSpanSingleton_apply] at hn
+    rw [hn]
+    simp_rw [Real.norm_eq_abs, sq_abs, Int.cast_natCast]
     push_cast
-    rw [Finset.mul_sum, Finset.mul_sum, Finset.mul_sum]
+    rw [Finset.mul_sum, Finset.mul_sum]
     exact Finset.sum_congr rfl fun i _ ↦ by ring
   rw [Fintype.sum_congr _ _ hterm, ← Fintype.prod_sum (fun (_ : ι) (u : ZMod m) ↦
     cexp (2 * π * I * ((s * r ^ 2 * (u.val : ℝ) ^ 2 : ℝ) : ℂ))), Finset.prod_const,
@@ -283,13 +278,10 @@ theorem gaussSum_sqrt_two_smul_span_orthonormalBasis_eq_pow (a : ℤ) (c : ℕ) 
     gaussSum (√2 • span ℤ (Set.range b)) (isEven_sqrt_two_smul_span_orthonormalBasis b) a c =
       (∑ u ∈ Finset.range c, cexp (2 * π * I * a * u ^ 2 / c)) ^ Fintype.card ι := by
   have hc : (c : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne c)
-  let B₀ : Basis ι ℤ (span ℤ (Set.range b)) :=
-    (b.toBasis.restrictScalars ℤ).map (LinearEquiv.ofEq _ _ (by rw [b.coe_toBasis]))
-  have hB₀ (i : ι) : (B₀ i : E) = b i := by
-    simp only [B₀, Basis.map_apply, LinearEquiv.coe_ofEq_apply, Basis.restrictScalars_apply]
-    exact congrFun b.coe_toBasis i
-  rw [gaussSum_def, sum_quotient_eq_pow b (basisSmul B₀ (NeZero.ne √(2 : ℝ)))
-    (fun i ↦ by rw [coe_basisSmul_apply, hB₀]) c rfl (a / (2 * c)) _ fun v ↦ ?_,
+  rw [gaussSum_def, sum_quotient_eq_pow b
+    (basisSmul (basisSpanOrthonormalBasis b) (NeZero.ne √(2 : ℝ)))
+    (fun i ↦ by rw [coe_basisSmul_apply, coe_basisSpanOrthonormalBasis_apply]) c rfl
+    (a / (2 * c)) _ fun v ↦ ?_,
     Real.sq_sqrt zero_le_two]
   · refine congrArg (· ^ _) (Finset.sum_congr rfl fun u _ ↦ congrArg cexp ?_)
     push_cast
@@ -317,14 +309,10 @@ theorem dualGaussSum_sqrt_two_smul_span_orthonormalBasis_eq_pow (t : ℤ) (a : �
     field_simp
     push_cast
     linear_combination (a : ℝ) * this
-  let B₀ : Basis ι ℤ (span ℤ (Set.range b)) :=
-    (b.toBasis.restrictScalars ℤ).map (LinearEquiv.ofEq _ _ (by rw [b.coe_toBasis]))
-  have hB₀ (i : ι) : (B₀ i : E) = b i := by
-    simp only [B₀, Basis.map_apply, LinearEquiv.coe_ofEq_apply, Basis.restrictScalars_apply]
-    exact congrFun b.coe_toBasis i
-  let B := (basisSmul B₀ (inv_ne_zero h2)).map (LinearEquiv.ofEq _ _ hdual.symm)
+  let B := (basisSmul (basisSpanOrthonormalBasis b) (inv_ne_zero h2)).map
+    (LinearEquiv.ofEq _ _ hdual.symm)
   have hB (i : ι) : (B i : E) = (√(2 : ℝ))⁻¹ • b i := by
-    simp [B, hB₀]
+    simp [B]
   rw [dualGaussSum_def, sum_quotient_eq_pow b B hB (2 * a) (by rw [hsmul]) (t / (2 * a)) _
     fun v ↦ ?_, inv_pow, Real.sq_sqrt zero_le_two]
   · refine congrArg (· ^ _) (Finset.sum_congr rfl fun u _ ↦ congrArg cexp ?_)
