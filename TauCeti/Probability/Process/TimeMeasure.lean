@@ -32,22 +32,26 @@ theorem timeMeasure_def (T : ℝ≥0) :
     timeMeasure T = (Measure.comap ((↑) : ℝ≥0 → ℝ) volume).restrict (Ioc 0 T) :=
   (rfl)
 
+/-- The mass of a measurable time set is its real Lebesgue mass within the horizon. -/
+theorem timeMeasure_apply (T : ℝ≥0) {s : Set ℝ≥0} (hs : MeasurableSet s) :
+    timeMeasure T s = volume (((↑) : ℝ≥0 → ℝ) '' (s ∩ Ioc 0 T)) := by
+  rw [timeMeasure_def, Measure.restrict_apply hs,
+    (NNReal.isClosedEmbedding_coe.measurableEmbedding).comap_apply]
+
 /-- A time interval has its Lebesgue length, truncated at the horizon. -/
 @[simp]
 theorem timeMeasure_Ioc (T s t : ℝ≥0) :
     timeMeasure T (Ioc s t) = ENNReal.ofReal ((min t T : ℝ≥0) - (s : ℝ)) := by
-  rw [timeMeasure_def, Measure.restrict_apply measurableSet_Ioc, Ioc_inter_Ioc,
-    max_eq_left (zero_le : (0 : ℝ≥0) ≤ s),
-    (NNReal.isClosedEmbedding_coe.measurableEmbedding).comap_apply,
+  simp [timeMeasure_apply T measurableSet_Ioc, Ioc_inter_Ioc,
     NNReal.image_coe_Ioc, Real.volume_Ioc]
 
 /-- The total time mass is the length of the horizon. -/
 @[simp]
 theorem timeMeasure_univ (T : ℝ≥0) : timeMeasure T univ = T := by
-  rw [timeMeasure_def, Measure.restrict_apply_univ,
-    (NNReal.isClosedEmbedding_coe.measurableEmbedding).comap_apply,
-    NNReal.image_coe_Ioc, Real.volume_Ioc]
-  simp
+  calc
+    timeMeasure T univ = timeMeasure T (Ioc 0 T) := by
+      rw [timeMeasure_def, Measure.restrict_apply_univ, Measure.restrict_apply_self]
+    _ = T := by simp
 
 /-- Finite time horizons have finite time mass. -/
 instance (T : ℝ≥0) : IsFiniteMeasure (timeMeasure T) :=
@@ -61,8 +65,7 @@ theorem timeMeasure_zero : timeMeasure 0 = 0 := by
 /-- The initial time carries no mass, independently of the horizon. -/
 @[simp]
 theorem timeMeasure_singleton_zero (T : ℝ≥0) : timeMeasure T {0} = 0 := by
-  rw [timeMeasure_def, Measure.restrict_apply (measurableSet_singleton 0)]
-  simp
+  simp [timeMeasure_apply T (measurableSet_singleton 0)]
 
 /-- Restricting time measure again clips the horizon to the smaller endpoint. -/
 @[simp]

@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Process.TimeMeasure
-public import TauCeti.Probability.Process.Predictable
+public import TauCeti.Probability.Process.Predictable.Basic
 public import Mathlib.MeasureTheory.Measure.Prod
 
 /-!
-# The finite-horizon Brownian predictable measure
+# The finite-horizon predictable time-product measure
 
 For a filtration `ℱ`, `ℱ.predictableMeasure P T` is the restriction of Lebesgue-time × `P`
 to `(0,T]`, trimmed to the predictable sigma-algebra. No Brownian process, usual conditions,
