@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.Disk
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.Topology.Algebra.OrthogonalGroup
 import TauCeti.Analysis.InnerProductSpace.LinearIsometry
+import TauCeti.Topology.Homotopy.LinearIsometryEquiv
 
 /-!
 # Orthogonal maps of the Euclidean disk
@@ -147,44 +148,7 @@ variable {n : ℕ}
 
 section Rotation
 
-/-- A path `γ` of linear isometries of `ℝⁿ` ending at the identity, continuous in the
-operator-norm topology, gives the homotopy `(t, x) ↦ γ t x` from a map `f` acting as `γ 0` to the
-identity, on any subset `S` of `ℝⁿ` preserved by linear isometries. -/
-private def pathHomotopy {S : Set (EuclideanSpace ℝ (Fin n))}
-    (hS : ∀ h : EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n), MapsTo h S S)
-    {γ : I → (EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n))}
-    (hγ : Continuous (fun t ↦ ((γ t).toContinuousLinearEquiv :
-      EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n))))
-    (h1 : γ 1 = LinearIsometryEquiv.refl ℝ _) {f : C(ULift.{u} S, ULift.{u} S)}
-    (hf : ∀ x, ((f x).down : EuclideanSpace ℝ (Fin n)) = γ 0 x.down) :
-    f.Homotopy (ContinuousMap.id _) where
-  toFun p := ULift.up ⟨γ p.1 p.2.down, hS (γ p.1) p.2.down.2⟩
-  continuous_toFun := continuous_uliftUp.comp (((hγ.comp continuous_fst).clm_apply
-    (continuous_subtype_val.comp (continuous_uliftDown.comp continuous_snd))).subtype_mk _)
-  map_zero_left x := ULift.ext (Subtype.ext (hf x).symm)
-  map_one_left x := ULift.ext (Subtype.ext (by simp [h1]))
-
-/-- The homotopy `pathHomotopy` acts at time `t` by `γ t`. -/
-private theorem pathHomotopy_apply_down {S : Set (EuclideanSpace ℝ (Fin n))}
-    (hS : ∀ h : EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n), MapsTo h S S)
-    {γ : I → (EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n))}
-    (hγ : Continuous (fun t ↦ ((γ t).toContinuousLinearEquiv :
-      EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n))))
-    (h1 : γ 1 = LinearIsometryEquiv.refl ℝ _) {f : C(ULift.{u} S, ULift.{u} S)}
-    (hf : ∀ x, ((f x).down : EuclideanSpace ℝ (Fin n)) = γ 0 x.down) (p : I × ULift.{u} S) :
-    ((pathHomotopy hS hγ h1 hf p).down : EuclideanSpace ℝ (Fin n)) = γ p.1 p.2.down :=
-  rfl
-
 variable {g : EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n)}
-
-/-- An orientation-preserving linear isometry of `ℝⁿ` is joined to the identity by a path of
-linear isometries, continuous in the operator-norm topology. -/
-private theorem exists_path_refl (hg : LinearMap.det g.toLinearMap = 1) :
-    ∃ γ : I → (EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n)),
-      Continuous (fun t ↦ ((γ t).toContinuousLinearEquiv :
-        EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n))) ∧
-      γ 0 = g ∧ γ 1 = LinearIsometryEquiv.refl ℝ _ :=
-  exists_path_linearIsometryEquiv_of_det_eq <| hg.trans LinearMap.det_id.symm
 
 /-- **An orientation-preserving orthogonal map of a disk is homotopic to the identity through maps
 of pairs.** If `det g = 1`, there is a homotopy from the disk map of `g` to the identity of
@@ -194,12 +158,15 @@ theorem exists_homotopy_diskMap_id_of_det_eq_one (hg : LinearMap.det g.toLinearM
     ∃ H : (LinearIsometryEquiv.diskMap.{u} g).hom.Homotopy (ContinuousMap.id _),
       ∀ t (s : TopCat.diskBoundary.{u} n), H (t, TopCat.diskBoundaryInclusion n s) ∈
         range (TopCat.diskBoundaryInclusion n) := by
-  obtain ⟨γ, hγ, h0, h1⟩ := exists_path_refl hg
-  refine ⟨pathHomotopy (S := closedBall 0 1) (fun h x hx ↦ by simpa using hx) hγ h1
-    (f := (LinearIsometryEquiv.diskMap.{u} g).hom)
-    (fun w ↦ (LinearIsometryEquiv.coe_diskMap_apply_down g w).trans (by rw [h0])), fun t s ↦ ?_⟩
+  obtain ⟨γ, hγ, h0, h1⟩ :=
+    exists_path_linearIsometryEquiv_of_det_eq (g' := .refl ℝ _) <| hg.trans LinearMap.det_id.symm
+  refine ⟨linearIsometryEquivPathHomotopy (S := closedBall 0 1)
+    (fun t x hx ↦ by simpa using hx) hγ (f₀ := (LinearIsometryEquiv.diskMap.{u} g).hom)
+    (f₁ := ContinuousMap.id _)
+    (fun w ↦ (LinearIsometryEquiv.coe_diskMap_apply_down g w).trans (by rw [h0]))
+    (fun w ↦ by simp [h1]), fun t s ↦ ?_⟩
   rw [mem_range_diskBoundaryInclusion_iff]
-  refine (congrArg norm (pathHomotopy_apply_down _ _ _ _ (t, _))).trans ?_
+  refine (congrArg norm (coe_linearIsometryEquivPathHomotopy_apply_down _ _ _ _ (t, _))).trans ?_
   rw [LinearIsometryEquiv.norm_map, coe_diskBoundaryInclusion_apply_down]
   exact mem_sphere_zero_iff_norm.1 s.down.2
 
@@ -207,10 +174,12 @@ theorem exists_homotopy_diskMap_id_of_det_eq_one (hg : LinearMap.det g.toLinearM
 `det g = 1`, the boundary map of `g` is homotopic to the identity of `TopCat.diskBoundary n`. -/
 theorem homotopic_diskBoundaryMap_id_of_det_eq_one (hg : LinearMap.det g.toLinearMap = 1) :
     (LinearIsometryEquiv.diskBoundaryMap.{u} g).hom.Homotopic (ContinuousMap.id _) := by
-  obtain ⟨γ, hγ, h0, h1⟩ := exists_path_refl hg
-  exact ⟨pathHomotopy (S := sphere 0 1) (fun h x hx ↦ by simpa using hx) hγ h1
-    (f := (LinearIsometryEquiv.diskBoundaryMap.{u} g).hom)
-    (fun s ↦ (LinearIsometryEquiv.coe_diskBoundaryMap_apply_down g s).trans (by rw [h0]))⟩
+  obtain ⟨γ, hγ, h0, h1⟩ :=
+    exists_path_linearIsometryEquiv_of_det_eq (g' := .refl ℝ _) <| hg.trans LinearMap.det_id.symm
+  exact ⟨linearIsometryEquivPathHomotopy (S := sphere 0 1) (fun t x hx ↦ by simpa using hx) hγ
+    (f₀ := (LinearIsometryEquiv.diskBoundaryMap.{u} g).hom) (f₁ := ContinuousMap.id _)
+    (fun s ↦ (LinearIsometryEquiv.coe_diskBoundaryMap_apply_down g s).trans (by rw [h0]))
+    (fun s ↦ by simp [h1])⟩
 
 /-- **Precomposing with an orientation-preserving orthogonal map does not change a map of pairs
 up to homotopy.** If `det g = 1` and `χ : D^n → X` sends the boundary sphere into `S`, then the
