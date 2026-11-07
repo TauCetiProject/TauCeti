@@ -50,6 +50,10 @@ not microlocally smooth.
   `Distribution.waveFrontSet_ofFun_eq_empty` for a function smooth on `Ω`.
 * `Distribution.waveFrontSet_delta`: the point mass at `x₀ ∈ Ω` has wave front set
   `{x₀} × (E \ {0})`.
+* `Distribution.waveFrontSet_ofFun_one_map_subtype`: the surface measure of a subspace `V`, that
+  is, Lebesgue measure of `V` pushed forward to `E`, has wave front set `(Ω ∩ V) × (Vᗮ \ {0})`,
+  the conormal set of `V`. Its localized Fourier transform is computed by
+  `Distribution.localFourier_ofFun_one_map_subtype` as a Fourier transform on `V`.
 
 ## Implementation notes
 
@@ -420,6 +424,153 @@ theorem isMicrolocallySmoothAt_ofFun {f : E → ℂ} (hf : ContDiffOn ℝ ∞ f 
 theorem waveFrontSet_ofFun_eq_empty {f : E → ℂ} (hf : ContDiffOn ℝ ∞ f Ω) :
     (ofFun Ω f MeasureTheory.volume ⊤).waveFrontSet = ∅ :=
   eq_empty_iff_forall_notMem.2 fun _ ⟨hx, _, h⟩ => h (isMicrolocallySmoothAt_ofFun hf hx _)
+
+/-! ### The surface measure of a subspace -/
+
+/-- The localized Fourier transform of the surface measure of a subspace `V`, that is, Lebesgue
+measure of `V` pushed forward to `E`, is the Fourier transform on `V` of the restriction of the
+cutoff to `V`, evaluated at the orthogonal projection of the frequency onto `V`. -/
+theorem localFourier_ofFun_one_map_subtype (V : Submodule ℝ E) (φ : 𝓓(Ω, ℂ)) (η : E) :
+    (ofFun Ω 1 (MeasureTheory.volume.map ((↑) : V → E)) ⊤).localFourier φ η =
+      𝓕 (fun v : V => φ v) (V.orthogonalProjectionOnto η) := by
+  have hce : Topology.IsClosedEmbedding ((↑) : V → E) :=
+    V.isClosedEmbedding_subtype V.closed_of_finiteDimensional
+  -- The pushed-forward measure is finite on compact sets, so constants are locally integrable.
+  have : MeasureTheory.IsFiniteMeasureOnCompacts
+      (MeasureTheory.volume.map ((↑) : V → E)) :=
+    ⟨fun K hK => by
+      rw [hce.measurableEmbedding.map_apply]
+      exact (hce.isCompact_preimage hK).measure_lt_top⟩
+  rw [localFourier,
+    complexPairing_ofFun (f := 1) ((MeasureTheory.locallyIntegrable_const 1).locallyIntegrableOn _),
+    hce.measurableEmbedding.integral_map, Real.fourier_eq]
+  refine MeasureTheory.integral_congr_ae (Eventually.of_forall fun v => ?_)
+  beta_reduce
+  rw [Submodule.inner_orthogonalProjectionOnto_eq_of_mem_left]
+  simp [bilinLeftCLM_apply, TauCeti.fourierAtom_eq_fourierChar, -TauCeti.fourierAtom_apply,
+    Circle.smul_def, mul_comm]
+
+/-- Away from `V` the surface measure of `V` is microlocally smooth in every direction. -/
+private theorem isMicrolocallySmoothAt_ofFun_one_map_subtype_of_notMem (V : Submodule ℝ E)
+    {x : E} (hx : x ∈ Ω) (hxV : x ∉ V) (ξ : E) :
+    (ofFun Ω 1 (MeasureTheory.volume.map ((↑) : V → E)) ⊤).IsMicrolocallySmoothAt x ξ := by
+  obtain ⟨φ, hφ, hφx⟩ := exists_tsupport_subset_apply_eq (n := ⊤)
+    (inter_mem (V.closed_of_finiteDimensional.isOpen_compl.mem_nhds hxV) (Ω.isOpen.mem_nhds hx))
+    inter_subset_right (1 : ℂ)
+  -- The cutoff vanishes on `V`, so the localized Fourier transform vanishes identically.
+  have hg : (fun v : V => φ v) = 0 :=
+    funext fun v => image_eq_zero_of_notMem_tsupport fun h => (hφ h).1 v.2
+  exact isMicrolocallySmoothAt_of_forall_decay (φ := φ) (by simp [hφx])
+    (fun N => ⟨0, fun η => by simp [localFourier_ofFun_one_map_subtype, hg, Real.fourier_eq]⟩) ξ
+
+/-- At a frequency `ξ` which is not orthogonal to `V`, the surface measure of `V` is microlocally
+smooth: its localized Fourier transform decays rapidly in the open cone of frequencies `η` with
+`‖P ξ‖ ‖η‖ < 2 ‖ξ‖ ‖P η‖`, where `P` is the orthogonal projection onto `V`. -/
+private theorem isMicrolocallySmoothAt_ofFun_one_map_subtype_of_notMem_orthogonal
+    (V : Submodule ℝ E) {x ξ : E} (hx : x ∈ Ω) (hξ : ξ ∉ Vᗮ) :
+    (ofFun Ω 1 (MeasureTheory.volume.map ((↑) : V → E)) ⊤).IsMicrolocallySmoothAt x ξ := by
+  obtain ⟨φ, -, hφx⟩ := exists_tsupport_subset_apply_eq (n := ⊤) (Ω.isOpen.mem_nhds hx)
+    subset_rfl (1 : ℂ)
+  set P := V.orthogonalProjectionOnto
+  have hPξ : 0 < ‖P ξ‖ :=
+    norm_pos_iff.2 <| by rwa [ne_eq, Submodule.orthogonalProjectionOnto_eq_zero_iff]
+  have hξ0 : 0 < ‖ξ‖ := norm_pos_iff.2 fun h => hξ (h ▸ Vᗮ.zero_mem)
+  have hce : Topology.IsClosedEmbedding ((↑) : V → E) :=
+    V.isClosedEmbedding_subtype V.closed_of_finiteDimensional
+  refine ⟨φ, by simp [hφx], {η | ‖P ξ‖ * ‖η‖ < 2 * ‖ξ‖ * ‖P η‖},
+    isOpen_lt (by fun_prop) (by fun_prop),
+    by simp only [mem_ofPred_eq]; nlinarith [mul_pos hPξ hξ0], fun t ht η hη => ?_, fun N => ?_⟩
+  · simp only [mem_ofPred_eq, map_smul, norm_smul, Real.norm_of_nonneg ht.le] at hη ⊢
+    nlinarith [mul_lt_mul_of_pos_left hη ht]
+  · -- On the cone `1 + ‖η‖ ≤ (1 + b) (1 + ‖P η‖)`, and the restriction of `φ` to `V` is a test
+    -- function, whose Fourier transform decays rapidly.
+    obtain ⟨C, hC⟩ := TauCeti.exists_one_add_norm_pow_mul_norm_fourier_le
+      (φ.contDiff.comp V.subtypeL.contDiff)
+      (φ.hasCompactSupport.comp_isClosedEmbedding hce) N
+    set b := 2 * ‖ξ‖ / ‖P ξ‖
+    refine ⟨(1 + b) ^ N * C, fun η hη => ?_⟩
+    have hb : 0 ≤ b := by positivity
+    have hηb : ‖η‖ ≤ b * ‖P η‖ := by
+      rw [div_mul_eq_mul_div, le_div_iff₀ hPξ]
+      exact mul_comm ‖η‖ _ ▸ hη.le
+    have h1 : 1 + ‖η‖ ≤ (1 + b) * (1 + ‖P η‖) := by nlinarith [norm_nonneg (P η)]
+    rw [localFourier_ofFun_one_map_subtype]
+    calc (1 + ‖η‖) ^ N * ‖𝓕 (fun v : V => φ v) (P η)‖
+        ≤ ((1 + b) * (1 + ‖P η‖)) ^ N * ‖𝓕 (fun v : V => φ v) (P η)‖ := by gcongr
+      _ = (1 + b) ^ N * ((1 + ‖P η‖) ^ N * ‖𝓕 (fun v : V => φ v) (P η)‖) := by
+          rw [mul_pow]; ring
+      _ ≤ (1 + b) ^ N * C := by gcongr; exact hC _
+
+/-- At a point of `V` the surface measure of `V` is not microlocally smooth in any nonzero
+direction `ξ ∈ Vᗮ`: every open cone around `ξ` contains the frequencies `t • ξ + w` for `w ∈ V`
+and `t` large, at which the localized Fourier transform takes the value `𝓕 (φ|_V) w`
+independently of `t`, so rapid decay forces `φ|_V = 0`. -/
+private theorem not_isMicrolocallySmoothAt_ofFun_one_map_subtype (V : Submodule ℝ E) {x ξ : E}
+    (hxV : x ∈ V) (hξ : ξ ∈ Vᗮ) (hξ0 : ξ ≠ 0) :
+    ¬ (ofFun Ω 1 (MeasureTheory.volume.map ((↑) : V → E)) ⊤).IsMicrolocallySmoothAt x ξ := by
+  rintro ⟨φ, hφ, Γ, hΓ, hξΓ, hcone, hdecay⟩
+  obtain ⟨C, hC⟩ := hdecay 1
+  obtain ⟨δ, hδ, hball⟩ := Metric.isOpen_iff.1 hΓ ξ hξΓ
+  have hξpos : 0 < ‖ξ‖ := norm_pos_iff.2 hξ0
+  set g : V → ℂ := fun v => φ v
+  -- The Fourier transform of the restriction `g` of the cutoff to `V` vanishes.
+  have hF : 𝓕 g = 0 := by
+    ext w
+    by_contra hw
+    have hw' : 0 < ‖𝓕 g w‖ := norm_pos_iff.2 hw
+    set t := (|C| / ‖𝓕 g w‖ + ‖(w : E)‖) / ‖ξ‖ + ‖(w : E)‖ / δ + 1
+    have ht : 0 < t := by positivity
+    have htξ : |C| / ‖𝓕 g w‖ + ‖(w : E)‖ ≤ t * ‖ξ‖ :=
+      (div_le_iff₀ hξpos).1 (by simp only [t]; linarith [div_nonneg (norm_nonneg (w : E)) hδ.le])
+    have htδ : ‖(w : E)‖ < t * δ :=
+      (div_lt_iff₀ hδ).1 (by simp only [t]; linarith [div_nonneg (by positivity : 0 ≤
+        |C| / ‖𝓕 g w‖ + ‖(w : E)‖) hξpos.le])
+    -- The frequency `t • ξ + w` lies in the cone and projects to `w`.
+    have hmem : t • ξ + (w : E) ∈ Γ := by
+      have h := hcone t ht (ξ + t⁻¹ • (w : E)) <| hball <| by
+        rw [Metric.mem_ball, dist_eq_norm, add_sub_cancel_left, norm_smul, norm_inv,
+          Real.norm_of_nonneg ht.le, inv_mul_lt_iff₀ ht]
+        exact htδ
+      rwa [smul_add, smul_smul, mul_inv_cancel₀ ht.ne', one_smul] at h
+    have hP : V.orthogonalProjectionOnto (t • ξ + (w : E)) = w := by
+      rw [map_add, map_smul, (Submodule.orthogonalProjectionOnto_eq_zero_iff).2 hξ, smul_zero,
+        zero_add, Submodule.orthogonalProjectionOnto_mem_subspace_eq_self]
+    have hbound := hC _ hmem
+    rw [localFourier_ofFun_one_map_subtype, hP, pow_one] at hbound
+    have hnorm : t * ‖ξ‖ ≤ ‖t • ξ + (w : E)‖ + ‖(w : E)‖ := by
+      rw [← Real.norm_of_nonneg ht.le, ← norm_smul, Real.norm_of_nonneg ht.le]
+      simpa using norm_sub_le (t • ξ + (w : E)) (w : E)
+    have hCw : |C| = |C| / ‖𝓕 g w‖ * ‖𝓕 g w‖ := (div_mul_cancel₀ _ hw'.ne').symm
+    nlinarith [le_abs_self C, div_nonneg (abs_nonneg C) hw'.le]
+  -- By Fourier inversion `g = 0`, contradicting `φ x ≠ 0`.
+  have hce : Topology.IsClosedEmbedding ((↑) : V → E) :=
+    V.isClosedEmbedding_subtype V.closed_of_finiteDimensional
+  have hgc : Continuous g := φ.continuous.comp continuous_subtype_val
+  have hinv := hgc.fourierInv_fourier_eq
+    (hgc.integrable_of_hasCompactSupport
+      (φ.hasCompactSupport.comp_isClosedEmbedding hce))
+    (by rw [hF]; exact MeasureTheory.integrable_zero _ _ _)
+  have := congrFun hinv ⟨x, hxV⟩
+  simp [hF, Real.fourierInv_eq, g] at this
+  exact hφ this.symm
+
+/-- **The wave front set of the surface measure of a subspace is its conormal set.** The surface
+measure of a subspace `V`, that is, Lebesgue measure of `V` pushed forward to `E`, is singular
+exactly at the points of `V` in `Ω`, and there exactly in the nonzero directions orthogonal to
+`V`. For `V = ⊤` the measure is Lebesgue measure and the wave front set is empty; for `V = ⊥` it
+is the point mass at the origin, singular in every direction. -/
+theorem waveFrontSet_ofFun_one_map_subtype (V : Submodule ℝ E) :
+    (ofFun Ω 1 (MeasureTheory.volume.map ((↑) : V → E)) ⊤).waveFrontSet =
+      ((Ω : Set E) ∩ V) ×ˢ ((Vᗮ : Set E) \ {0}) := by
+  ext ⟨x, ξ⟩
+  simp only [mem_waveFrontSet_iff, mem_prod, mem_inter_iff, Set.mem_sdiff, SetLike.mem_coe,
+    mem_singleton_iff]
+  refine ⟨fun ⟨hx, hξ, hT⟩ => ⟨⟨hx, ?_⟩, ?_, hξ⟩, fun ⟨⟨hx, hxV⟩, hξV, hξ⟩ =>
+    ⟨hx, hξ, not_isMicrolocallySmoothAt_ofFun_one_map_subtype V hxV hξV hξ⟩⟩
+  · exact by_contra fun hxV =>
+      hT (isMicrolocallySmoothAt_ofFun_one_map_subtype_of_notMem V hx hxV ξ)
+  · exact by_contra fun hξV =>
+      hT (isMicrolocallySmoothAt_ofFun_one_map_subtype_of_notMem_orthogonal V hx hξV)
 
 end FiniteDimensional
 
