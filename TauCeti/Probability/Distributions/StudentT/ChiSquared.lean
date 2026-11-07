@@ -60,7 +60,7 @@ theorem studentTMeasure_map_sq {ν : ℝ} (hν : 0 < ν) :
     isProbabilityMeasure_fisherSnedecorMeasure one_pos hν
   apply Measure.eq_of_cdf
   ext x
-  rw [cdf_eq_real, map_measureReal_apply (by fun_prop) measurableSet_Iic,
+  rw [Measure.cdf_map _ _ (by fun_prop),
     cdf_fisherSnedecorMeasure_eq one_pos hν]
   by_cases hx : x < 0
   · have hpreimage : (fun y : ℝ ↦ y ^ 2) ⁻¹' Iic x = ∅ := by

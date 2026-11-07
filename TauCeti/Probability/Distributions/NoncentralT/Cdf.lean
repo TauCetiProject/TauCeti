@@ -65,7 +65,7 @@ theorem cdf_noncentralTMeasure_eq (hν : 0 < ν) (δ x : ℝ) :
   have hpre : (· / √(v / ν)) ⁻¹' Iic x = Iic (x * √(v / ν)) := by
     ext y
     simp [div_le_iff₀ hv]
-  rw [cdf_eq_real, map_measureReal_apply (by fun_prop) measurableSet_Iic, hpre, ← cdf_eq_real,
+  rw [Measure.cdf_map _ _ (by fun_prop), hpre, ← cdf_eq_real,
     cdf_gaussianReal_eq _ one_ne_zero, cdf_gaussianReal_eq _ one_ne_zero, sub_zero]
 
 /-- For positive degrees, the cdf of the noncentral t law is strictly increasing. -/

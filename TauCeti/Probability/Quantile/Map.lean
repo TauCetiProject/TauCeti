@@ -89,7 +89,7 @@ theorem quantile_map_of_monotoneOn [IsProbabilityMeasure μ] (hs : s.OrdConnecte
   have hq := hs.quantile_mem hμs h0 h1
   refine le_antisymm ((quantile_le_iff _ h0 h1).2 ?_) (le_of_not_gt fun hlt ↦ ?_)
   · -- Every point of `s` below the quantile is sent below its image.
-    rw [cdf_eq_real, map_measureReal_apply_of_aemeasurable hgm measurableSet_Iic]
+    rw [Measure.cdf_map _ _ hgm]
     refine (le_cdf_quantile μ h1).trans ?_
     rw [cdf_eq_real]
     exact ENNReal.toReal_mono (measure_ne_top _ _)
@@ -100,7 +100,7 @@ theorem quantile_map_of_monotoneOn [IsProbabilityMeasure μ] (hs : s.OrdConnecte
       (eventually_nhdsWithin_iff.1 ((hgc _ hq).eventually (lt_mem_nhds hlt)))
       ⟨μ.quantile t - 1, by linarith⟩
     refine ((lt_quantile_iff μ h0 h1).1 hlq).not_ge ((le_cdf_quantile (μ.map g) h1).trans ?_)
-    rw [cdf_eq_real, map_measureReal_apply_of_aemeasurable hgm measurableSet_Iic, cdf_eq_real]
+    rw [Measure.cdf_map _ _ hgm, cdf_eq_real]
     refine ENNReal.toReal_mono (measure_ne_top _ _) (measure_mono_ae (hμs.mono fun x hx hxy ↦ ?_))
     simp only [mem_preimage, mem_Iic] at hxy ⊢
     by_contra! hxl
@@ -125,7 +125,7 @@ theorem upperQuantile_map_of_monotoneOn [IsProbabilityMeasure μ] (hs : s.OrdCon
       (eventually_nhdsWithin_iff.1 ((hgc _ hp).eventually (gt_mem_nhds hy)))
       ⟨μ.upperQuantile t + 1, by linarith⟩
     refine upperQuantile_le_of_lt_cdf _ h0 (((upperQuantile_lt_iff μ h0 h1).1 hpr).trans_le ?_)
-    rw [cdf_eq_real, map_measureReal_apply_of_aemeasurable hgm measurableSet_Iic]
+    rw [Measure.cdf_map _ _ hgm]
     refine ENNReal.toReal_mono (measure_ne_top _ _) (measure_mono_ae (hμs.mono fun x hx hxr ↦ ?_))
     rcases le_or_gt (μ.upperQuantile t) x with hpx | hxp
     · exact (hr ⟨hpx, hxr⟩ hx).le
@@ -164,8 +164,7 @@ theorem upperQuantile_map_of_monotone [IsProbabilityMeasure μ] (hg : Monotone g
   have hpre : (Neg.neg ⁻¹' Iic y : Set ℝ) = (Iio (-y))ᶜ := by
     ext x
     simp
-  rw [quantile_le_iff _ h0 h1, cdf_eq_real, neg_def,
-    map_measureReal_apply measurable_neg measurableSet_Iic, hpre,
+  rw [quantile_le_iff _ h0 h1, neg_def, Measure.cdf_map _ _ measurable_neg.aemeasurable, hpre,
     measureReal_compl measurableSet_Iio, probReal_univ, neg_le,
     le_upperQuantile_iff μ (by linarith) (by linarith)]
   constructor <;> intro h <;> linarith

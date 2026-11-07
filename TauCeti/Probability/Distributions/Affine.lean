@@ -254,8 +254,7 @@ theorem cdf_map_affine_of_pos [IsProbabilityMeasure μ] (hb : 0 < b) (x : ℝ) :
     ext y
     simp only [mem_preimage, mem_Iic, le_div_iff₀ hb]
     constructor <;> intro h <;> linarith
-  rw [cdf_eq_real, cdf_eq_real, map_measureReal_apply (measurable_affine a b) measurableSet_Iic,
-    hpre]
+  rw [Measure.cdf_map _ _ (measurable_affine a b).aemeasurable, hpre, cdf_eq_real]
 
 /-- At a negative slope, the cdf of the affine image is one minus the mass `μ` gives to the open
 half-line below the pulled-back point `(x - a) / b`, that is, one minus the left limit of the cdf
@@ -266,7 +265,7 @@ theorem cdf_map_affine_of_neg [IsProbabilityMeasure μ] (hb : b < 0) (x : ℝ) :
     ext y
     simp only [mem_preimage, mem_Iic, mem_compl_iff, mem_Iio, not_lt, div_le_iff_of_neg hb]
     constructor <;> intro h <;> linarith
-  rw [cdf_eq_real, map_measureReal_apply (measurable_affine a b) measurableSet_Iic, hpre,
+  rw [Measure.cdf_map _ _ (measurable_affine a b).aemeasurable, hpre,
     measureReal_compl measurableSet_Iio, probReal_univ]
 
 /-! ### Quantiles -/
