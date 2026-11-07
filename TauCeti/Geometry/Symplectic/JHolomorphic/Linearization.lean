@@ -20,8 +20,10 @@ family of target endomorphisms. The parameter derivative includes both the
 variation of the map and the variation of the target almost complex structure.
 
 These are local-coordinate formulas, without a Sobolev completion or a transversality
-assertion. For square-minus-one structures, the defect equals twice the usual anti-complex-linear
-part composed with the source structure.
+assertion. The Leibniz rule identifies the first-order symbol, and the reparametrization
+formula proves that infinitesimal source reparametrizations have tangent-valued linearization.
+For square-minus-one structures, the defect equals twice the usual anti-complex-linear part
+composed with the source structure.
 The geometric linearization follows McDuff–Salamon, *J-holomorphic Curves and Symplectic
 Topology*, Section 3.1. The exchange of map and parameter derivatives uses
 `TauCeti.hasFDerivAt_spatialFDeriv`, based on Mathlib's `ContDiffAt.isSymmSndFDerivAt`.
@@ -183,6 +185,68 @@ theorem fderiv_cauchyRiemannOperator_apply
   have hsplit (a : V) : (h, a) = (0, a) + (h, (0 : V)) := by simp
   rw [hsplit, map_add]
   simp only [_root_.add_apply]
+  abel
+
+/-- Differentiating the holomorphicity identity in a source direction. -/
+private theorem fderiv_cauchyRiemannOperator_eq_zero
+    (j : U →L[ℝ] U) (J : V → V →L[ℝ] V) (u : U → V) (x a v : U)
+    (hu : ContDiffAt ℝ 2 u x) (hJ : DifferentiableAt ℝ J (u x))
+    (hhol : ∀ᶠ y in 𝓝 x, cauchyRiemannOperator j J u y = 0) :
+    fderiv ℝ (fderiv ℝ u) x a (j v) -
+      J (u x) (fderiv ℝ (fderiv ℝ u) x a v) -
+      fderiv ℝ J (u x) (fderiv ℝ u x a) (fderiv ℝ u x v) = 0 := by
+  have hdu := (hu.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
+  have hJu := hJ.comp x (hu.differentiableAt (by norm_num))
+  have hh : (fun y ↦ fderiv ℝ u y (j v)) =ᶠ[𝓝 x]
+      (fun y ↦ J (u y) (fderiv ℝ u y v)) := by
+    filter_upwards [hhol] with y hy
+    have he := congrArg (fun L : U →L[ℝ] V ↦ L v) hy
+    simpa only [cauchyRiemannOperator_apply, zero_apply, sub_eq_zero] using he
+  have hleft := (hdu.hasFDerivAt.clm_apply (hasFDerivAt_const (x := x) (j v))).fderiv
+  have hright := (hJu.hasFDerivAt.clm_apply
+    (hdu.hasFDerivAt.clm_apply (hasFDerivAt_const (x := x) v))).fderiv
+  have he := congrArg (fun L : U →L[ℝ] V ↦ L a)
+    (hleft.symm.trans (hh.fderiv_eq.trans hright))
+  simp only [add_apply, comp_apply, flip_apply, zero_apply, map_zero, zero_add] at he
+  rw [fderiv_comp x hJ (hu.differentiableAt (by norm_num))] at he
+  simp only [comp_apply, Function.comp_apply] at he
+  rw [he]
+  abel
+
+/-- The ambient linearization on an infinitesimal reparametrization is tangent:
+`D_u(du · a) = du · (da ∘ j - j ∘ da)`. The target structure may vary arbitrarily off the curve. -/
+theorem cauchyRiemannLinearization_fderiv_apply
+    (j : U →L[ℝ] U) (J : V → V →L[ℝ] V) (u : U → V) (a : U → U) (x v : U)
+    (hu : ContDiffAt ℝ 2 u x) (ha : DifferentiableAt ℝ a x)
+    (hJ : DifferentiableAt ℝ J (u x))
+    (hhol : ∀ᶠ y in 𝓝 x, cauchyRiemannOperator j J u y = 0) :
+    cauchyRiemannLinearization j J u (fun y ↦ fderiv ℝ u y (a y)) x v =
+      fderiv ℝ u x (fderiv ℝ a x (j v) - j (fderiv ℝ a x v)) := by
+  have hdu := (hu.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
+  have hs := hu.isSymmSndFDerivAt (by norm_num)
+  have he := fderiv_cauchyRiemannOperator_eq_zero j J u x (a x) v hu hJ hhol
+  have ht : J (u x) (fderiv ℝ u x (fderiv ℝ a x v)) =
+      fderiv ℝ u x (j (fderiv ℝ a x v)) := by
+    have he := congrArg (fun L : U →L[ℝ] V ↦ L (fderiv ℝ a x v)) hhol.self_of_nhds
+    simp only [cauchyRiemannOperator_apply, zero_apply, sub_eq_zero] at he
+    exact he.symm
+  simp only [cauchyRiemannLinearization_apply, fderiv_clm_apply hdu ha,
+    add_apply, comp_apply, flip_apply, map_add, map_sub]
+  rw [hs (j v) (a x), hs v (a x), ht]
+  rw [sub_sub, sub_eq_zero] at he
+  rw [he]
+  abel
+
+/-- Leibniz rule for the ambient linearization. Its symbol is
+`ξ ↦ df(jv) ξ - df(v) J ξ`, with no integrability assumption on `J`. -/
+theorem cauchyRiemannLinearization_fun_smul
+    (j : U →L[ℝ] U) (J : V → V →L[ℝ] V) (u ξ : U → V) (f : U → ℝ) (x v : U)
+    (hf : DifferentiableAt ℝ f x) (hξ : DifferentiableAt ℝ ξ x) :
+    cauchyRiemannLinearization j J u (fun y ↦ f y • ξ y) x v =
+      f x • cauchyRiemannLinearization j J u ξ x v +
+        fderiv ℝ f x (j v) • ξ x - fderiv ℝ f x v • J (u x) (ξ x) := by
+  simp only [cauchyRiemannLinearization_apply, fderiv_fun_smul hf hξ, add_apply,
+    smul_apply, smulRight_apply, map_add, map_smul, smul_sub]
   abel
 
 end TauCeti
