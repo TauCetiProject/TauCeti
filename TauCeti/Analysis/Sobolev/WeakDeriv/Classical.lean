@@ -43,6 +43,41 @@ variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace �
   {mu : Measure E} [mu.IsAddHaarMeasure] {Omega : Opens E}
   {u : E → F} {U : E → E →L[ℝ] F}
 
+/-- Convolving a function that is continuous at `x` with normalized bumps of radius tending to zero
+converges uniformly to it on a neighbourhood filter of `x`. -/
+private theorem tendstoUniformlyOnFilter_convolution_normed [CompleteSpace F] {x : E}
+    {g : E → F}
+    (hgm : AEStronglyMeasurable g mu) (hgx : ContinuousAt g x) {phi : ℕ → ContDiffBump (0 : E)}
+    (hphi : Tendsto (fun n => (phi n).rOut) atTop (𝓝 0)) :
+    TendstoUniformlyOnFilter (fun n => g ⋆[(ContinuousLinearMap.lsmul ℝ ℝ).flip, mu]
+      (phi n).normed mu) g atTop (𝓝 x) := by
+  have hconv : Tendsto (fun p : ℕ × E => (g ⋆[(ContinuousLinearMap.lsmul ℝ ℝ).flip, mu]
+      (phi p.1).normed mu) p.2) (atTop ×ˢ 𝓝 x) (𝓝 (g x)) := by
+    simp only [convolution_flip]
+    exact ContDiffBump.convolution_tendsto_right (hphi.comp tendsto_fst)
+      (Eventually.of_forall fun _ => hgm) (hgx.tendsto.comp tendsto_snd) tendsto_snd
+  have hdist : Tendsto (fun p : ℕ × E =>
+      dist ((g ⋆[(ContinuousLinearMap.lsmul ℝ ℝ).flip, mu] (phi p.1).normed mu) p.2) (g p.2))
+      (atTop ×ˢ 𝓝 x) (𝓝 0) := by
+    simpa only [dist_self, Function.comp_apply] using hconv.dist (hgx.tendsto.comp tendsto_snd)
+  rw [Metric.tendstoUniformlyOnFilter_iff]
+  intro ε hε
+  simpa only [dist_comm] using (tendsto_order.1 hdist).2 ε hε
+
+omit [MeasurableSpace E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] in
+/-- Eventually along `atTop ×ˢ 𝓝 x`, a radius sequence tending to zero plus the distance to `x`
+stays below any positive `r`. -/
+private theorem eventually_add_dist_lt {x : E} {r : ℝ} (hr : 0 < r) {rho : ℕ → ℝ}
+    (hrho : Tendsto rho atTop (𝓝 0)) :
+    ∀ᶠ p : ℕ × E in atTop ×ˢ 𝓝 x, rho p.1 + dist p.2 x < r := by
+  have ht : Tendsto (fun p : ℕ × E => rho p.1 + dist p.2 x)
+      (atTop ×ˢ 𝓝 x) (𝓝 (0 + dist x x)) :=
+    (hrho.comp tendsto_fst).add
+      (((continuous_id.dist continuous_const).tendsto x).comp tendsto_snd)
+  have ht0 : Tendsto (fun p : ℕ × E => rho p.1 + dist p.2 x)
+      (atTop ×ˢ 𝓝 x) (𝓝 0) := by simpa only [dist_self, zero_add] using ht
+  exact (tendsto_order.1 ht0).2 r hr
+
 private theorem HasWeakFDerivOn.hasFDerivAt_indicator_of_integrableOn_ball
     {x : E} {r : ℝ} (h : HasWeakFDerivOn mu ⟨ball x r, isOpen_ball⟩ u U) (hr : 0 < r)
     (hu : IntegrableOn u (ball x r) mu) (hU : IntegrableOn U (ball x r) mu)
@@ -72,29 +107,10 @@ private theorem HasWeakFDerivOn.hasFDerivAt_indicator_of_integrableOn_ball
   -- yields exactly the near-point uniform convergence required by the derivative limit theorem.
   have hUx : ContinuousAt ((ball x r).indicator U) x :=
     hUc_ext.continuousAt (ball_mem_nhds x hr)
-  have hconv : Tendsto (fun p : ℕ × E => f' p.1 p.2) (atTop ×ˢ 𝓝 x)
-      (𝓝 (((ball x r).indicator U) x)) := by
-    simp only [f', convolution_flip]
-    exact ContDiffBump.convolution_tendsto_right (hphi.comp tendsto_fst)
-      (Eventually.of_forall fun _ => hUm)
-      (hUx.tendsto.comp tendsto_snd) tendsto_snd
-  have hdist : Tendsto (fun p : ℕ × E => dist (f' p.1 p.2) (((ball x r).indicator U) p.2))
-      (atTop ×ˢ 𝓝 x) (𝓝 0) := by
-    simpa only [dist_self, Function.comp_apply] using hconv.dist (hUx.tendsto.comp tendsto_snd)
-  have hunif : TendstoUniformlyOnFilter f' ((ball x r).indicator U) atTop (𝓝 x) := by
-    rw [Metric.tendstoUniformlyOnFilter_iff]
-    intro ε hε
-    simpa only [dist_comm] using (tendsto_order.1 hdist).2 ε hε
+  have hunif : TendstoUniformlyOnFilter f' ((ball x r).indicator U) atTop (𝓝 x) :=
+    tendstoUniformlyOnFilter_convolution_normed hUm hUx hphi
   -- Eventually all translated kernel supports lie inside the original domain.
-  have hsmall : ∀ᶠ p : ℕ × E in atTop ×ˢ 𝓝 x,
-      (phi p.1).rOut + dist p.2 x < r := by
-    have ht : Tendsto (fun p : ℕ × E => (phi p.1).rOut + dist p.2 x)
-        (atTop ×ˢ 𝓝 x) (𝓝 (0 + dist x x)) :=
-      (hphi.comp tendsto_fst).add
-        (((continuous_id.dist continuous_const).tendsto x).comp tendsto_snd)
-    have ht0 : Tendsto (fun p : ℕ × E => (phi p.1).rOut + dist p.2 x)
-        (atTop ×ˢ 𝓝 x) (𝓝 0) := by simpa only [dist_self, zero_add] using ht
-    exact (tendsto_order.1 ht0).2 r hr
+  have hsmall := eventually_add_dist_lt (x := x) hr hphi
   have hderiv : ∀ᶠ p : ℕ × E in atTop ×ˢ 𝓝 x, HasFDerivAt (f p.1) (f' p.1 p.2) p.2 := by
     filter_upwards [hsmall] with p hp
     exact h.hasFDerivAt_indicator_convolution_normed (memLp_one_iff_integrable.2 hu)
