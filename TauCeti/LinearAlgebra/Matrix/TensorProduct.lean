@@ -98,30 +98,33 @@ theorem kroneckerFinAlgEquiv_tmul (m n : ℕ) (R : Type*) [CommSemiring R]
 
 section StarAlgHom
 
-variable (R : Type*) {α m : Type*} (n : Type*) [CommSemiring R] [CommSemiring α] [StarRing α]
+variable (R : Type*) {α m : Type*} (n : Type*) [CommSemiring R] [Semiring α] [StarRing α]
   [Algebra R α] [Fintype m] [DecidableEq m] [Fintype n] [DecidableEq n]
 
 /-- Tensoring by the identity on the right, `A ↦ A ⊗ₖ 1`, as a unital ⋆-algebra homomorphism
-over `R`, for entries in any commutative ⋆-semiring `α` that is an `R`-algebra. -/
+over `R`, for entries in any ⋆-semiring `α` that is an `R`-algebra. -/
 def kroneckerOneStarAlgHom : Matrix m m α →⋆ₐ[R] Matrix (m × n) (m × n) α where
   toFun X := X ⊗ₖ (1 : Matrix n n α)
   map_one' := one_kronecker_one
-  map_mul' X Y := by rw [← mul_kronecker_mul, mul_one]
+  map_mul' X Y := by simp only [kronecker_one, blockDiagonal_mul]
   map_zero' := zero_kronecker _
   map_add' X Y := add_kronecker X Y _
   commutes' r := by simp [Algebra.algebraMap_eq_smul_one, smul_kronecker]
-  map_star' X := by simp [star_eq_conjTranspose, conjTranspose_kronecker]
+  map_star' X := by simp [star_eq_conjTranspose, kronecker_one, blockDiagonal_conjTranspose]
 
 /-- Tensoring by the identity on the left, `B ↦ 1 ⊗ₖ B`, as a unital ⋆-algebra homomorphism
-over `R`, for entries in any commutative ⋆-semiring `α` that is an `R`-algebra. -/
+over `R`, for entries in any ⋆-semiring `α` that is an `R`-algebra. -/
 def oneKroneckerStarAlgHom : Matrix n n α →⋆ₐ[R] Matrix (m × n) (m × n) α where
   toFun X := (1 : Matrix m m α) ⊗ₖ X
   map_one' := one_kronecker_one
-  map_mul' X Y := by rw [← mul_kronecker_mul, mul_one]
+  map_mul' X Y := by
+    simp only [one_kronecker, blockDiagonal_mul, reindex_apply, submatrix_mul_equiv]
   map_zero' := kronecker_zero _
   map_add' X Y := kronecker_add _ X Y
   commutes' r := by simp [Algebra.algebraMap_eq_smul_one, kronecker_smul]
-  map_star' X := by simp [star_eq_conjTranspose, conjTranspose_kronecker]
+  map_star' X := by
+    simp [star_eq_conjTranspose, one_kronecker, blockDiagonal_conjTranspose,
+      conjTranspose_submatrix]
 
 variable {R n}
 
