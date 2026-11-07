@@ -76,6 +76,11 @@ trust. The manifest binds the default layout, platform, official toolchain,
 configuration bytes, published revision, producer revision and each module's
 archive name, SHA-256 provenance and exact complete output inventory. Matching is by the exact selected archive per module;
 the installer never chooses an ancestor or changes publication eligibility.
+A content-stable archive may serve different native input identities. In that
+case the private trace receives the selected record's input hash, exactly as stock
+`leantar` writes it; its output hashes remain unchanged. The source trace schema
+and original input binding must match. A candidate change without a corresponding
+selected native record still fails normal input validation and rebuilds.
 
 Keep the order: native cache fetch, applicable repair, pre-build publication
 snapshot, prepared/bulk installation, native build, audits, then publication.

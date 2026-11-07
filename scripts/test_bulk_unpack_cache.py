@@ -166,7 +166,7 @@ class PreparedSeedTests(unittest.TestCase):
             (self.seed / "build" / relative).chmod(0o444)
         self.manifest = dict(schema=1, kind="tauceti-prepared-root-v1", identity=bulk.configuration(self.root),
                              published_revision="a" * 40, producer_revision="b" * 40,
-                             modules={"TauCeti.Seeded": dict(archive=self.archive.name, archive_sha256=bulk.file_digest(self.archive), files=self.files)})
+                             modules={"TauCeti.Seeded": dict(archive=self.archive.name, archive_sha256=bulk.file_digest(self.archive), native_input_hash=self.record.stem, files=self.files)})
         self.write_manifest()
 
     def write_manifest(self):
@@ -433,11 +433,28 @@ class PreparedSeedNativeTests(unittest.TestCase):
                 return {str(p.relative_to(directory)): bulk.file_digest(p) for p in directory.rglob("*") if p.is_file()}
             before = fingerprint(seed)
             (producer / "TauCeti/M19.lean").write_text("module\npublic def m19 : Nat := 190\n")
+            # A comment changes native input identity while leaving every
+            # archived output byte identical. Seed traces must bind to the
+            # native-selected input exactly as stock leantar would.
+            comment_source = "module\npublic def m17 : Nat := 17\n-- appended comment\n"
+            (producer / "TauCeti/M17.lean").write_text(comment_source)
             lake(producer, "build", "--iofail", "-o", ".lake/map.jsonl")
             lake(producer, "cache", "stage", ".lake/map.jsonl", str(root / "new"))
+            reference = fresh("trace-reference")
+            (reference / "TauCeti/M17.lean").write_text(comment_source)
+            (reference / "TauCeti/M19.lean").write_text("module\npublic def m19 : Nat := 190\n")
+            lake(reference, "cache", "unstage", str(root / "new"))
+            alias_entry = manifest["modules"]["TauCeti.M17"]
+            alias_record, = [r for r in bulk.selected_records(reference) if r["archive"] == alias_entry["archive"]]
+            self.assertNotEqual(alias_record["hash"], alias_entry["native_input_hash"])
+            alias_outputs = bulk.extract_records([alias_record], root / "native-trace-reference")
+            expected_trace, = [source.read_bytes() for _, _, files in alias_outputs for source, relative in files
+                               if relative.endswith(".trace")]
+            stock_map = None
             for case, limit in (("zero", 0), ("partial", 8), ("near", 100), ("interrupted", 8), ("deleted", 100)):
                 project = fresh(case)
                 (project / "TauCeti/M19.lean").write_text("module\npublic def m19 : Nat := 190\n")
+                (project / "TauCeti/M17.lean").write_text(comment_source)
                 lake(project, "cache", "unstage", str(root / "new"))
                 if case == "deleted":
                     (project / "TauCeti/M0.lean").unlink()
@@ -468,6 +485,7 @@ class PreparedSeedNativeTests(unittest.TestCase):
                     retained = list((project / ".lake/cache/outputs/TauCeti").glob("*.json"))
                     self.assertEqual(len(retained), 1)
                     self.assertEqual(retained[0].read_bytes(), originals[retained[0]])
+                self.assertEqual((project / ".lake/build/lib/lean/TauCeti/M17.trace").read_bytes(), expected_trace)
                 log = lake(project, "build", "--iofail", expected=1 if case == "deleted" else 0)
                 if case == "deleted":
                     self.assertFalse((project / ".lake/build/lib/lean/TauCeti/M0.olean").exists())
@@ -475,6 +493,12 @@ class PreparedSeedNativeTests(unittest.TestCase):
                 else:
                     self.assertNotIn("Unpacked", log)
                     self.assertNotIn("Built TauCeti", log)
+                    lake(project, "build", "--no-build", "--rehash", "-o", ".lake/after.jsonl")
+                    lines = (project / ".lake/after.jsonl").read_text().splitlines()
+                    current_map = (json.loads(lines[0]), dict(map(json.loads, lines[1:])))
+                    if stock_map is None:
+                        stock_map = current_map
+                    self.assertEqual(current_map, stock_map)
                     (project / "TauCeti/M18.lean").write_text("module\npublic def m18 : Nat := 180\n")
                     self.assertIn("Built TauCeti.M18", lake(project, "build", "--iofail"))
                 self.assertEqual(fingerprint(selected_seed), selected_before)

@@ -26,6 +26,7 @@ HASH = re.compile(r"[0-9a-f]{16}")
 ARCHIVE = re.compile(r"[0-9a-f]{16}\.ltar")
 REVISION = re.compile(r"[0-9a-f]{40}")
 SCHEMA = "2026-02-25"
+TRACE_SCHEMA = "2025-09-10"
 MODULE = re.compile(r"TauCeti(?:\.[A-Za-z_][A-Za-z0-9_']*)*")
 CONFIG = ("lean-toolchain", "lakefile.toml", "lake-manifest.json")
 OUTPUTS = (("lib", "lib/lean", ("trace", "olean", "olean.server", "olean.private", "ilean", "ir", "ir.sig")),
@@ -134,6 +135,8 @@ def read_seed(seed, project):
         allowed = module_paths(module)
         if (not isinstance(entry, dict) or not isinstance(entry.get("archive"), str)
                 or not ARCHIVE.fullmatch(entry["archive"]) or entry["archive"] in by_archive
+                or not isinstance(entry.get("native_input_hash"), str)
+                or not HASH.fullmatch(entry["native_input_hash"])
                 or not isinstance(entry.get("archive_sha256"), str)
                 or not re.fullmatch(r"[0-9a-f]{64}", entry["archive_sha256"])
                 or not isinstance(entry.get("files"), list) or not entry["files"]
@@ -217,17 +220,32 @@ def assemble(project, records, staging, seed=None):
             reason = "accepted"
         except (OSError, ValueError, TypeError, AttributeError) as error:
             reason = str(error)
-    hits, misses = [], []
+    hits, misses, trace_updates = [], [], []
     for record in records:
         entry = entries.get(record["archive"])
         if entry and source_present(project, entry["module"]):
             try:
                 files = [(seed_file(seed, p), p) for p in entry["files"]]
+                rebound = None
+                if entry["native_input_hash"] != record["hash"]:
+                    relative = next(p for _, p in files if p.endswith(".trace"))
+                    trace = json.loads(seed_file(seed, relative).read_text())
+                    if (not isinstance(trace, dict) or trace.get("schemaVersion") != TRACE_SCHEMA
+                            or trace.get("depHash") != entry["native_input_hash"]
+                            or not isinstance(trace.get("outputs"), dict)):
+                        raise ValueError("unsupported seed trace association")
+                    # Stock leantar binds an archive's unchanged output hashes to
+                    # the selected native input record. Do exactly that when one
+                    # content-stable archive serves multiple input identities.
+                    trace["depHash"] = record["hash"]
+                    rebound = (relative, trace)
             except (OSError, ValueError) as error:
                 # A damaged optional entry stays in the one native bulk miss set.
                 reason = "unusable seed entry: " + str(error)
             else:
                 hits.append((record, entry, files))
+                if rebound is not None:
+                    trace_updates.append(rebound)
                 continue
         misses.append(record)
     extracted = extract_records(misses, staging / "unpacked")
@@ -259,7 +277,9 @@ def assemble(project, records, staging, seed=None):
         else:
             target.parent.mkdir(parents=True, exist_ok=True)
             source.rename(target)
-    return combined, satisfied, dict(seed_hit_modules=len(hits), bulk_archives=len(misses),
+    for relative, trace in trace_updates:
+        (combined / relative).write_text(json.dumps(trace, separators=(",", ":")))
+    return combined, satisfied, dict(seed_hit_modules=len(hits), seed_rebound_traces=len(trace_updates), bulk_archives=len(misses),
                                     satisfied_records=len(satisfied), seed_reason=reason,
                                     materialization=sorted(methods))
 
@@ -363,7 +383,7 @@ def export_seed(project, destination, snapshot, *, published_revision, producer_
                 target.parent.mkdir(parents=True, exist_ok=True)
                 source.rename(target)
                 target.chmod(0o444)
-            modules[module] = dict(archive=record["archive"], archive_sha256=record["sha256"], files=sorted(allowed))
+            modules[module] = dict(archive=record["archive"], archive_sha256=record["sha256"], native_input_hash=record["hash"], files=sorted(allowed))
         value = dict(schema=1, kind="tauceti-prepared-root-v1", identity=identity,
                      published_revision=published_revision, producer_revision=producer_revision, modules=modules)
         (payload / "manifest.json").write_text(json.dumps(value, sort_keys=True) + "\n")
