@@ -45,8 +45,9 @@ interior source points with the same ambient image, intertwining the two integra
   dimension equals the rank of the distribution at any image point.
 * `TauCeti.isIntegralManifold_id`: the identity is an integral manifold of the full tangent
   distribution.
-* `TauCeti.IsIntegralManifold.eventually_sub_mem`: an integral immersion of a constant distribution
-  locally stays in one affine plaque, including at boundary source points.
+* `TauCeti.IsIntegralManifold.eventually_sub_mem`: an integral immersion, of regularity at least
+  one, of a finite-dimensional constant distribution locally stays in one affine plaque, including
+  at boundary source points.
 * `TauCeti.IsIntegralManifold.exists_plaque_chart`: a local chart in an affine plaque with the
   prescribed ambient inclusion.
 * `TauCeti.IsIntegralManifold.exists_plaque_transition`: a local change of integral parameters
@@ -203,7 +204,8 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J n N]
   {W : Submodule ℝ E} [FiniteDimensional ℝ W] {f : N → E} {x : N} {s : Set N}
 
-/-- An integral immersion of a constant distribution locally stays in one affine plaque. -/
+/-- An integral immersion, of regularity at least one, of a finite-dimensional constant
+distribution locally stays in one affine plaque. -/
 theorem IsIntegralManifold.eventually_sub_mem
     (hf : IsIntegralManifold (I := 𝓘(ℝ, E)) J n (fun _ : E ↦ W) f)
     (hn : 1 ≤ n) : ∀ᶠ z in 𝓝 x, f z - f x ∈ W := by
