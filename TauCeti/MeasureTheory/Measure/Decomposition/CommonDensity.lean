@@ -12,7 +12,7 @@ public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
 import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 
 /-!
-# Densities of finitely many signed differences against a common measure
+# Densities against a common measure, and normalizing a density
 
 Let `λ` be a measure and let `ν₁ i`, `ν₂ i` be finitely many pairs of measures on a σ-compact
 topological space, all finite on compact sets. The sum `ρ = λ + ∑ i, (ν₁ i + ν₂ i)` is finite on
@@ -24,6 +24,12 @@ This is how a vector-valued functional, given componentwise as differences of me
 represented by a single vector-valued density against one measure `ρ` which also dominates a
 prescribed variation measure `λ`. Its pointwise norm is then compared with the density of `λ`
 with respect to `ρ`, as in a polar decomposition.
+
+The file also contains the normalization step of a polar decomposition
+(`MeasureTheory.Measure.exists_norm_le_one_toReal_rnDeriv_smul_eq`): a measurable field `g`
+dominated by the density `dλ/dρ` of `λ ≪ ρ` agrees `ρ`-almost everywhere with
+`(dλ/dρ).toReal • σ`, where `σ` is a measurable field of norm at most one `λ`-almost everywhere.
+This `σ` is the unit field of the polar decomposition.
 
 ## References
 
@@ -78,8 +84,8 @@ theorem exists_common_density_sub {X ι : Type*} [TopologicalSpace X] [SigmaComp
     integral_toReal_rnDeriv_mul (hac (Or.inr rfl))]
 
 /-- **Normalizing a density.** If a measurable field `g` has pointwise norm at most the density
-`dλ/dρ` of a measure `λ ≪ ρ` (up to a `ρ`-null set), then `g` is `dλ/dρ` times a measurable field
-`σ` of norm at most one `λ`-almost everywhere. -/
+`dλ/dρ` of a measure `λ ≪ ρ` (up to a `ρ`-null set), then `g` agrees `ρ`-almost everywhere with
+`(dλ/dρ).toReal • σ` for a measurable field `σ` of norm at most one `λ`-almost everywhere. -/
 theorem exists_norm_le_one_toReal_rnDeriv_smul_eq {X E : Type*} [MeasurableSpace X]
     [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
     [SecondCountableTopology E] {lam ρ : Measure X} [SigmaFinite lam] (hlam : lam ≪ ρ)
