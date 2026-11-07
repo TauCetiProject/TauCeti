@@ -180,23 +180,6 @@ theorem coeff_eq_zero_of_mem_orderSubmodule {N n : ℤ} {u : currentAlgebra R L}
   | add u v _ _ hu hv => simp [hu, hv]
   | smul r u _ hu => simp [hu]
 
-/-- Vanishing of lower coefficients characterizes order for a free coefficient module. -/
-theorem mem_orderSubmodule_iff [Module.Free R L] (N : ℤ) (u : currentAlgebra R L) :
-    u ∈ orderSubmodule R L N ↔ ∀ n < N, coeff R L n u = 0 := by
-  classical
-  refine ⟨fun hu n hn ↦ coeff_eq_zero_of_mem_orderSubmodule R L hu hn, fun hu ↦ ?_⟩
-  let b := Module.Free.chooseBasis R L
-  let e := TensorProduct.equivFinsuppOfBasisRight (M := R⸨X⸩) b
-  rw [← e.symm_apply_apply u, TensorProduct.equivFinsuppOfBasisRight_symm_apply]
-  apply Submodule.sum_mem
-  intro i hi
-  apply tmul_mem_orderSubmodule
-  rw [HahnSeries.le_orderTop_iff_forall]
-  intro n hn
-  rw [HahnModule.coeff_equivFinsuppOfBasisRight, HahnModule.coeff_tensorProductToHahnModule,
-    hu n (by exact_mod_cast hn)]
-  simp
-
 /-- Increasing the required order makes the order submodule smaller. -/
 theorem orderSubmodule_antitone : Antitone (orderSubmodule R L) := by
   intro M N hMN
@@ -256,6 +239,42 @@ def trunc (N : ℤ) : currentAlgebra R L →ₗ[R] R[T;T⁻¹] ⊗[R] L :=
 @[simp]
 theorem trunc_tmul (N : ℤ) (f : R⸨X⸩) (x : L) :
     trunc R L N (f ⊗ₜ x) = _root_.LaurentSeries.trunc N f ⊗ₜ x := (rfl)
+
+/-- Vanishing of lower coefficients characterizes order for any coefficient module. -/
+theorem mem_orderSubmodule_iff (N : ℤ) (u : currentAlgebra R L) :
+    u ∈ orderSubmodule R L N ↔ ∀ n < N, coeff R L n u = 0 := by
+  classical
+  refine ⟨fun hu n hn ↦ coeff_eq_zero_of_mem_orderSubmodule R L hu hn, fun hu ↦ ?_⟩
+  -- Polynomial currents have coefficient coordinates even when `L` is not free.
+  let e := TensorProduct.equivFinsuppOfBasisLeft (N := L) (AddMonoidAlgebra.basis ℤ R)
+  have hcoeff (v : currentAlgebra R L) (n : ℤ) :
+      e (trunc R L N v) n = if n < N then coeff R L n v else 0 := by
+    induction v using TensorProduct.inductionOn with
+    | tmul f x =>
+      simp only [trunc_tmul, e, TensorProduct.equivFinsuppOfBasisLeft_apply_tmul_apply,
+        coeff_tmul]
+      -- Unfold the standard monomial basis coordinates to polynomial coefficients.
+      change ((LaurentSeries.trunc N f).coeff n) • x = _
+      by_cases hn : n < N <;> simp [hn]
+    | add v w hv hw => by_cases hn : n < N <;> simp [hv, hw, hn]
+  have ht : trunc R L N u = 0 := e.injective <| by
+    ext n
+    simp only [hcoeff, map_zero, Finsupp.zero_apply, ite_eq_right_iff]
+    exact hu n
+  -- The current differs from its zero truncation by a current of order at least `N`.
+  let i : R[T;T⁻¹] →ₐ[R] R⸨X⸩ :=
+    { toRingHom := LaurentPolynomial.toLaurentSeries
+      commutes' := fun r ↦ by simp [HahnSeries.algebraMap_apply] }
+  have herr (v : currentAlgebra R L) :
+      i.toLinearMap.rTensor L (trunc R L N v) - v ∈ orderSubmodule R L N := by
+    induction v using TensorProduct.inductionOn with
+    | tmul f x =>
+      rw [trunc_tmul, LinearMap.rTensor_tmul, ← TensorProduct.sub_tmul]
+      exact tmul_mem_orderSubmodule R L N
+        (_root_.LaurentSeries.le_orderTop_sub_toLaurentSeries_trunc N f) x
+    | add v w hv hw =>
+      simpa only [map_add, add_sub_add_comm] using (orderSubmodule R L N).add_mem hv hw
+  simpa [ht] using (orderSubmodule R L N).neg_mem (herr u)
 
 /-- Polynomial currents of order below `N`, spanned by the modes `t^m ⊗ x` with `m < N`. For
 `N = 0` these are the negative currents `t⁻¹ L[t⁻¹]`. -/

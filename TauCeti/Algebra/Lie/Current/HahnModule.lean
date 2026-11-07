@@ -46,9 +46,9 @@ attribute [local instance 1100] HahnSeries.instAlgebra
 variable (R V : Type*) [CommRing R] [AddCommGroup V] [Module R V]
 
 /-- The coefficient comparison pulls the Laurent lattice back to the tensor-current order
-submodule. Freeness is needed to detect tensor currents by their coefficients. -/
+submodule, without a freeness assumption on the coefficient module. -/
 @[simp]
-theorem tensorProductToHahnModule_mem_lattice_iff [Module.Free R V]
+theorem tensorProductToHahnModule_mem_lattice_iff
     (u : currentAlgebra R V) (N : ℤ) :
     _root_.HahnModule.tensorProductToHahnModule ℤ R V u ∈ HahnModule.lattice R V N ↔
       u ∈ orderSubmodule R V N := by
@@ -56,8 +56,8 @@ theorem tensorProductToHahnModule_mem_lattice_iff [Module.Free R V]
     mem_orderSubmodule_iff]
 
 /-- The order topology on tensor currents is induced by the lattice topology on vector-valued
-Laurent series, without a finite-generation hypothesis. -/
-theorem isInducing_tensorProductToHahnModule [Module.Free R V] :
+Laurent series, without freeness or finite-generation hypotheses. -/
+theorem isInducing_tensorProductToHahnModule :
     IsInducing (_root_.HahnModule.tensorProductToHahnModule ℤ R V) := by
   apply IsTopologicalAddGroup.isInducing_iff_nhds_zero.mpr
   apply (hasBasis_nhds_zero R V).eq_of_same_basis
