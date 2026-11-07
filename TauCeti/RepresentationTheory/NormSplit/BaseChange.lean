@@ -37,15 +37,14 @@ namespace Representation
 
 variable {k G V : Type*} [CommRing k] [Group G] [Fintype G] [AddCommGroup V] [Module k V]
 
-/-- **Lifting a norm decomposition of the identity from `k/pk`.** Let `G` have order `p ^ m` and
-act on a projective `k`-module `V` on which multiplication by `p` is injective. If the identity of
-`(k/pk) ⊗ V` is a norm for the conjugation action of `G`, then so is the identity of `V`. -/
-theorem id_mem_range_norm_linHom_of_baseChange [Module.Projective k V] (ρ : Representation k G V)
-    {p m : ℕ} (hcard : Fintype.card G = p ^ m) (hp : ∀ v : V, (p : k) • v = 0 → v = 0)
+/-- Lifting the norm decomposition of the identity from `k/pk` to `V` gives an endomorphism `π` of
+`V` whose norm is the identity up to `p` times an endomorphism `θ`. -/
+private theorem exists_norm_sub_id_eq_smul [Module.Projective k V] (ρ : Representation k G V)
+    {p : ℕ}
     (h : LinearMap.id ∈ LinearMap.range
       (linHom (ρ.baseChange (k ⧸ Ideal.span {(p : k)}))
         (ρ.baseChange (k ⧸ Ideal.span {(p : k)}))).norm) :
-    LinearMap.id ∈ LinearMap.range (linHom ρ ρ).norm := by
+    ∃ π θ : V →ₗ[k] V, ∀ v, ((linHom ρ ρ).norm π - LinearMap.id : V →ₗ[k] V) v = (p : k) • θ v := by
   classical
   set Q := k ⧸ Ideal.span {(p : k)}
   set ρQ := ρ.baseChange Q
@@ -77,6 +76,14 @@ theorem id_mem_range_norm_linHom_of_baseChange [Module.Projective k V] (ρ : Rep
     conv_rhs => rw [hπQ' (red v)]
     refine Finset.sum_congr rfl fun g _ ↦ ?_
     rw [← hredρ, hπ, ← hredρ]
+  exact ⟨π, θ, hθ⟩
+
+/-- If `p` is a non-zero-divisor on `V` and the norm of `π` is the identity up to `p` times `θ`,
+then `θ` is equivariant. -/
+private theorem equivariant_of_norm_sub_id_eq_smul (ρ : Representation k G V) {p : ℕ}
+    (hp : ∀ v : V, (p : k) • v = 0 → v = 0) (π θ : V →ₗ[k] V)
+    (hθ : ∀ v, ((linHom ρ ρ).norm π - LinearMap.id : V →ₗ[k] V) v = (p : k) • θ v) (g : G) (x : V) :
+    θ (ρ g x) = ρ g (θ x) := by
   -- An equivariant `ψ` with `p • ψ` equivariant-divisible stays equivariant.
   have hcancel {ψ : V →ₗ[k] V} {δ : V →ₗ[k] V} (hδ : ∀ g x, δ (ρ g x) = ρ g (δ x))
       (hψ : ∀ x, δ x = (p : k) • ψ x) (g : G) (x : V) : ψ (ρ g x) = ρ g (ψ x) := by
@@ -87,35 +94,50 @@ theorem id_mem_range_norm_linHom_of_baseChange [Module.Projective k V] (ρ : Rep
     have := LinearMap.congr_fun (self_norm_apply (linHom ρ ρ) g π) (ρ g x)
     rw [linHom_apply] at this
     simpa using this.symm
-  have hθρ (g : G) (x : V) : θ (ρ g x) = ρ g (θ x) :=
-    hcancel (δ := (linHom ρ ρ).norm π - LinearMap.id)
-      (fun g x ↦ by simp [hNπρ]) hθ g x
-  -- For every `j`, the identity is a norm plus `p ^ j` times an equivariant endomorphism.
-  have key (j : ℕ) : ∃ φ ψ : V →ₗ[k] V, (∀ g x, ψ (ρ g x) = ρ g (ψ x)) ∧
+  exact hcancel (δ := (linHom ρ ρ).norm π - LinearMap.id)
+    (fun g x ↦ by simp [hNπρ]) hθ g x
+
+/-- For every `j`, the identity is a norm plus `p ^ j` times an equivariant endomorphism. -/
+private theorem exists_norm_add_smul_pow_eq (ρ : Representation k G V) {p : ℕ}
+    (π θ : V →ₗ[k] V)
+    (hθ : ∀ v, ((linHom ρ ρ).norm π - LinearMap.id : V →ₗ[k] V) v = (p : k) • θ v)
+    (hθρ : ∀ g x, θ (ρ g x) = ρ g (θ x)) (j : ℕ) :
+    ∃ φ ψ : V →ₗ[k] V, (∀ g x, ψ (ρ g x) = ρ g (ψ x)) ∧
       ∀ x, x = (linHom ρ ρ).norm φ x + ((p : k) ^ j) • ψ x := by
-    induction j with
-    | zero => exact ⟨0, LinearMap.id, fun _ _ ↦ rfl, fun x ↦ by simp⟩
-    | succ j ih =>
-      obtain ⟨φ, ψ, hψ, hx⟩ := ih
-      refine ⟨φ + ((p : k) ^ j) • (ψ ∘ₗ π), -(ψ ∘ₗ θ), fun g x ↦ by simp [hθρ, hψ], fun x ↦ ?_⟩
-      have hψπ : (linHom ρ ρ).norm (ψ ∘ₗ π) x = ψ ((linHom ρ ρ).norm π x) := by
-        simp only [norm_linHom_apply, LinearMap.comp_apply, map_sum, hψ]
-      have hNπ : (linHom ρ ρ).norm π x = x + (p : k) • θ x := by
-        rw [← hθ, LinearMap.sub_apply, LinearMap.id_apply, add_sub_cancel]
-      conv_lhs => rw [hx x]
-      rw [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, hψπ, hNπ, map_add,
-        map_smul, pow_succ, LinearMap.neg_apply, LinearMap.comp_apply, smul_neg, mul_smul,
-        smul_add]
-      abel
-  obtain ⟨φ, ψ, hψ, hx⟩ := key m
+  induction j with
+  | zero => exact ⟨0, LinearMap.id, fun _ _ ↦ rfl, fun x ↦ by simp⟩
+  | succ j ih =>
+    obtain ⟨φ, ψ, hψ, hx⟩ := ih
+    refine ⟨φ + ((p : k) ^ j) • (ψ ∘ₗ π), -(ψ ∘ₗ θ), fun g x ↦ by simp [hθρ, hψ], fun x ↦ ?_⟩
+    have hψπ : (linHom ρ ρ).norm (ψ ∘ₗ π) x = ψ ((linHom ρ ρ).norm π x) := by
+      simp only [norm_linHom_apply, LinearMap.comp_apply, map_sum, hψ]
+    have hNπ : (linHom ρ ρ).norm π x = x + (p : k) • θ x := by
+      rw [← hθ, LinearMap.sub_apply, LinearMap.id_apply, add_sub_cancel]
+    conv_lhs => rw [hx x]
+    simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, LinearMap.neg_apply,
+      LinearMap.comp_apply, hψπ, hNπ, pow_succ, mul_smul, smul_add, smul_neg]
+    abel
+
+/-- **Lifting a norm decomposition of the identity from `k/pk`.** Let `G` have order `p ^ m` and
+act on a projective `k`-module `V` on which multiplication by `p` is injective. If the identity of
+`(k/pk) ⊗ V` is a norm for the conjugation action of `G`, then so is the identity of `V`. -/
+theorem id_mem_range_norm_linHom_of_baseChange [Module.Projective k V] (ρ : Representation k G V)
+    {p m : ℕ} (hcard : Fintype.card G = p ^ m) (hp : ∀ v : V, (p : k) • v = 0 → v = 0)
+    (h : LinearMap.id ∈ LinearMap.range
+      (linHom (ρ.baseChange (k ⧸ Ideal.span {(p : k)}))
+        (ρ.baseChange (k ⧸ Ideal.span {(p : k)}))).norm) :
+    LinearMap.id ∈ LinearMap.range (linHom ρ ρ).norm := by
+  classical
+  obtain ⟨π, θ, hθ⟩ := exists_norm_sub_id_eq_smul ρ h
+  have hθρ := equivariant_of_norm_sub_id_eq_smul ρ hp π θ hθ
+  obtain ⟨φ, ψ, hψ, hx⟩ := exists_norm_add_smul_pow_eq ρ π θ hθ hθρ m
   refine ⟨φ + ψ, LinearMap.ext fun x ↦ ?_⟩
   rw [LinearMap.id_apply, map_add, LinearMap.add_apply, norm_linHom_apply ρ ρ ψ]
   conv_rhs => rw [hx x]
   congr 1
   have hg (g : G) : ρ g (ψ (ρ g⁻¹ x)) = ψ x := by
-    rw [← hψ, ← mul_apply_eq_comp (ρ g), ← map_mul, mul_inv_cancel, map_one,
-      one_apply_eq_self]
-  rw [Finset.sum_congr rfl fun g _ ↦ hg g, Finset.sum_const, Finset.card_univ, hcard,
-    ← Nat.cast_smul_eq_nsmul k, Nat.cast_pow]
+    rw [← hψ, ← mul_apply_eq_comp (ρ g), ← map_mul]
+    simp
+  simp [hg, hcard, ← Nat.cast_smul_eq_nsmul k]
 
 end Representation
