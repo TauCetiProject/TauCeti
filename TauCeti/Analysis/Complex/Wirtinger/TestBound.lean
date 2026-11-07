@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Wirtinger.Mollification
 public import TauCeti.Analysis.Complex.Wirtinger.InteriorEstimate
-public import TauCeti.Analysis.Sobolev.TestFunctionLp
+public import TauCeti.Analysis.Sobolev.TestFunctionLp.Basic
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import Mathlib.Topology.MetricSpace.Thickening
