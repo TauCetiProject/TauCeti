@@ -47,27 +47,6 @@ namespace Polynomial
 
 variable {n d : ℕ} {S : Set (Fin n → ℝ)}
 
-/-- A nonzero polynomial whose Lazard valuation is constant on `S` has eventually constant Lazard
-valuation, equal to that of the exponent at `x`, along any map `φ` that eventually lands in `S`. -/
-private theorem eventually_lazardValuation_eq {f : MvPolynomial (Fin n) ℝ} (hf : f ≠ 0)
-    {φ : (Fin d → ℝ) → Fin n → ℝ} {a : Fin d → ℝ} (hφS : ∀ᶠ u in 𝓝 a, φ u ∈ S)
-    (heq : ∀ x ∈ S, ∀ y ∈ S, f.lazardValuation x = f.lazardValuation y) (x : S) :
-    ∀ᶠ u in 𝓝 a, f.lazardValuation (φ u) = toLex (f.lazardExponent x) := by
-  filter_upwards [hφS] with u hu
-  rw [heq (φ u) hu x x.2, lazardValuation_eq_lazardExponent hf x]
-
-/-- The pullback of an open set of coordinates under the first coordinates of a chart is open,
-and the coordinates give a continuous map from the part of `S` inside it to the open set. -/
-private theorem chart_preimage_isOpen_continuous
-    (e : OpenPartialHomeomorph (Fin n → ℝ) (Fin n → ℝ)) {V : Set (Fin d → ℝ)} (hV : IsOpen V) :
-    IsOpen (e.source ∩ (fun y ↦ TauCeti.firstCoords ℝ n d (e y)) ⁻¹' V) ∧
-      Continuous (fun y : ↥(S ∩ (e.source ∩ (fun y ↦ TauCeti.firstCoords ℝ n d (e y)) ⁻¹' V)) ↦
-        (⟨TauCeti.firstCoords ℝ n d (e y), y.2.2.2⟩ : V)) := by
-  refine ⟨((TauCeti.firstCoords ℝ n d).continuous.comp_continuousOn
-    e.continuousOn).isOpen_inter_preimage e.open_source hV, ?_⟩
-  exact Continuous.subtype_mk ((TauCeti.firstCoords ℝ n d).continuous.comp
-    (e.continuousOn.comp_continuous continuous_subtype_val fun y ↦ y.2.2.1)) _
-
 /-- Analytic Lazard lifting for a polynomial with nonzero formal constant coefficient. Here the
 trailing coefficient is the constant coefficient, and no coordinate factor occurs. -/
 private theorem nonempty_lazardDelineation_of_coeff_zero_ne_zero
@@ -106,7 +85,7 @@ private theorem nonempty_lazardDelineation_of_coeff_zero_ne_zero
       (eventually_lazardValuation_eq hdiscr hφS hdiscr_eq x)
   -- Pull the coordinate neighborhood back through the chart, retaining an ambient open set
   -- as required by local-to-global gluing.
-  obtain ⟨hU, hψ⟩ := chart_preimage_isOpen_continuous (S := S) e hV
+  obtain ⟨hU, hψ⟩ := e.firstCoords_preimage_isOpen_and_continuous (S := S) hV
   let U : Set (Fin n → ℝ) := e.source ∩
     (fun y ↦ TauCeti.firstCoords ℝ n d (e y)) ⁻¹' V
   let T : Set (Fin n → ℝ) := S ∩ U
