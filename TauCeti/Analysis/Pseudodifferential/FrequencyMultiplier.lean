@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Distribution.Sobolev
 public import TauCeti.Analysis.Pseudodifferential.Quantization
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
+import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 
 /-!
@@ -32,7 +33,7 @@ On `ℝⁿ`, a smooth coefficient `b(ξ)` with `‖D^k b(ξ)‖ ≤ C_k ⟨ξ⟩
 `m` with estimates uniform in the position (`TauCeti.Symbol.ofFrequency`). Examples are the
 Bessel weight (`TauCeti.Symbol.besselPotential`, of order `s`), whose quantization is Mathlib's
 `TemperedDistribution.besselPotential`, and the linear coefficient `⟪ξ, v⟫` of `-i ∂_v`
-(`TauCeti.Symbol.ofInner`), which has order `1` but not order `0`.
+(`TauCeti.Symbol.ofInner`), which has order `1` but no smaller order.
 
 ## Main declarations
 
@@ -42,9 +43,11 @@ Bessel weight (`TauCeti.Symbol.besselPotential`, of order `s`), whose quantizati
 * `TauCeti.quantizeSchwartzValue_quantizeFrequencyCLM`: `Op(a) (b(D) u) = Op(a b) u`, and
   `TauCeti.quantizeSchwartzValue_fourierMultiplierCLM` for Mathlib's scalar multipliers.
 * `TauCeti.quantizeFrequencyCLM_comp`: frequency multipliers compose by the pointwise product.
-* `TauCeti.toTemperedDistribution_quantizeFrequencyCLM_besselPotential`: the Bessel weight
-  quantizes to Mathlib's Bessel potential.
-* `TauCeti.Symbol.ofFrequency`, `TauCeti.Symbol.isUniform_ofFrequency`: frequency-only symbols.
+* `TauCeti.quantizeFrequencyCLM_besselWeight`,
+  `TauCeti.toTemperedDistribution_quantizeFrequencyCLM_besselPotential`: the Bessel weight
+  quantizes to Mathlib's Bessel multiplier and Bessel potential.
+* `TauCeti.Symbol.quantizeSchwartzValue_ofFrequency`: the frequency-only symbol
+  `TauCeti.Symbol.ofFrequency` quantizes to `b(D)`.
 * `TauCeti.Symbol.besselPotential` and `TauCeti.Symbol.ofInner`, with
   `TauCeti.Symbol.not_exists_coefficient_eq_ofInner_coefficient`.
 
@@ -61,35 +64,6 @@ open scoped FourierTransform SchwartzMap RealInnerProductSpace ContDiff LineDeri
 open MeasureTheory Real FourierTransform
 
 noncomputable section
-
-/-- **Symbol estimates give temperate growth.** A smooth function whose `k`-th derivative is
-bounded by `C_k (1 + ‖x‖²) ^ ((m - k) / 2)` for every `k` has temperate growth. -/
-theorem Function.HasTemperateGrowth.of_norm_iteratedFDeriv_le_one_add_norm_sq_rpow
-    {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {f : E → F} {m : ℝ} (hf : ContDiff ℝ ∞ f)
-    (hbound : ∀ k : ℕ, ∃ C, ∀ x, ‖iteratedFDeriv ℝ k f x‖ ≤ C * (1 + ‖x‖ ^ 2) ^ ((m - k) / 2)) :
-    f.HasTemperateGrowth := by
-  refine ⟨hf, fun k ↦ ?_⟩
-  obtain ⟨C, hC⟩ := hbound k
-  refine ⟨⌈m⌉₊, max C 0, fun x ↦ (hC x).trans ?_⟩
-  have h1 : 1 ≤ 1 + ‖x‖ ^ 2 := le_add_of_nonneg_right (by positivity)
-  have hw : (1 + ‖x‖ ^ 2) ^ ((m - k) / 2) ≤ (1 + ‖x‖) ^ ⌈m⌉₊ :=
-    calc (1 + ‖x‖ ^ 2) ^ ((m - k) / 2) ≤ (1 + ‖x‖ ^ 2) ^ ((⌈m⌉₊ : ℝ) / 2) :=
-          Real.rpow_le_rpow_of_exponent_le h1 (by
-            have := Nat.le_ceil m
-            have : (0 : ℝ) ≤ k := k.cast_nonneg
-            linarith)
-      _ ≤ ((1 + ‖x‖) ^ 2) ^ ((⌈m⌉₊ : ℝ) / 2) :=
-          Real.rpow_le_rpow (by positivity) (by nlinarith [norm_nonneg x]) (by positivity)
-      _ = (1 + ‖x‖) ^ ⌈m⌉₊ := by
-          rw [← Real.rpow_natCast (1 + ‖x‖) 2, ← Real.rpow_mul (by positivity),
-            ← Real.rpow_natCast]
-          congr 1
-          push_cast
-          ring
-  calc C * (1 + ‖x‖ ^ 2) ^ ((m - k) / 2) ≤ max C 0 * (1 + ‖x‖ ^ 2) ^ ((m - k) / 2) :=
-        mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity)
-    _ ≤ max C 0 * (1 + ‖x‖) ^ ⌈m⌉₊ := mul_le_mul_of_nonneg_left hw (le_max_right _ _)
 
 namespace TauCeti
 
@@ -113,6 +87,11 @@ def quantizeFrequencyCLM (b : E → V →L[ℂ] W) : 𝓢(E, V) →L[ℂ] 𝓢(E
         (g := fun ζ : E ↦ b ((2 * π) • ζ)) (by fun_prop) ∘L
       fourierCLM ℂ 𝓢(E, V)
   else 0
+
+/-- The multiplier of a coefficient without temperate growth is defined to be `0`. -/
+theorem quantizeFrequencyCLM_of_not_hasTemperateGrowth {b : E → V →L[ℂ] W}
+    (hb : ¬b.HasTemperateGrowth) : quantizeFrequencyCLM b = 0 := by
+  simp [quantizeFrequencyCLM, hb]
 
 variable [CompleteSpace W] {b : E → V →L[ℂ] W}
 
@@ -182,20 +161,42 @@ private theorem hasTemperateGrowth_besselWeight (s : ℝ) :
     ((Function.hasTemperateGrowth_one_add_norm_sq_rpow E (s / 2)).comp
     ((2 * π)⁻¹ • ContinuousLinearMap.id ℝ E).hasTemperateGrowth)
 
-/-- **The Bessel weight quantizes to the Bessel potential.** The multiplier with coefficient
-`(1 + ‖ξ / 2π‖²) ^ (s / 2)` in the angular frequency `ξ` is Mathlib's Bessel potential
-`TemperedDistribution.besselPotential E V s`, the multiplier `(1 + ‖ζ‖²) ^ (s / 2)` in the
-frequency `ζ = ξ / 2π`. -/
+/-- The left quantization of the Bessel weight `(1 + ‖ξ / 2π‖²) ^ (s / 2)` in the angular
+frequency `ξ` is Mathlib's Fourier multiplier `(1 + ‖ζ‖²) ^ (s / 2)` in the frequency
+`ζ = ξ / 2π`. -/
+theorem quantizeSchwartzValue_besselWeight (s : ℝ) (u : 𝓢(E, V)) (x : E) :
+    quantizeSchwartzValue (fun p : E × E ↦
+        (((1 + ‖(2 * π)⁻¹ • p.2‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • ContinuousLinearMap.id ℂ V) u x =
+      SchwartzMap.fourierMultiplierCLM V
+        (fun ζ : E ↦ (((1 + ‖ζ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) u x := by
+  rw [quantizeSchwartzValue_eq_fourierMultiplierCLM
+    (g := fun ξ ↦ (((1 + ‖(2 * π)⁻¹ • ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ))
+    (hasTemperateGrowth_besselWeight s)]
+  simp only [inv_smul_smul₀ (by positivity : (2 * π) ≠ 0)]
+
+/-- **The Bessel weight quantizes to the Bessel multiplier.** The multiplier with coefficient
+`(1 + ‖ξ / 2π‖²) ^ (s / 2)` in the angular frequency `ξ` is Mathlib's Fourier multiplier
+`(1 + ‖ζ‖²) ^ (s / 2)` in the frequency `ζ = ξ / 2π`. -/
+theorem quantizeFrequencyCLM_besselWeight [CompleteSpace V] (s : ℝ) :
+    quantizeFrequencyCLM (fun ξ : E ↦
+        (((1 + ‖(2 * π)⁻¹ • ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • ContinuousLinearMap.id ℂ V) =
+      SchwartzMap.fourierMultiplierCLM V (fun ζ : E ↦ (((1 + ‖ζ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) := by
+  have hw := hasTemperateGrowth_besselWeight (E := E) s
+  ext u x
+  rw [← quantizeSchwartzValue_comp_snd (by fun_prop), quantizeSchwartzValue_besselWeight]
+
+/-- **The Bessel weight quantizes to the Bessel potential.** As a tempered distribution, the
+multiplier with coefficient `(1 + ‖ξ / 2π‖²) ^ (s / 2)` in the angular frequency `ξ` is Mathlib's
+Bessel potential `TemperedDistribution.besselPotential E V s`, the multiplier
+`(1 + ‖ζ‖²) ^ (s / 2)` in the frequency `ζ = ξ / 2π`. -/
 theorem toTemperedDistribution_quantizeFrequencyCLM_besselPotential [CompleteSpace V] (s : ℝ)
     (u : 𝓢(E, V)) :
     (quantizeFrequencyCLM (fun ξ : E ↦
         (((1 + ‖(2 * π)⁻¹ • ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • ContinuousLinearMap.id ℂ V) u :
           𝓢'(E, V)) =
       TemperedDistribution.besselPotential E V s u := by
-  rw [quantizeFrequencyCLM_smul_id (hasTemperateGrowth_besselWeight s),
-    TemperedDistribution.besselPotential,
+  rw [quantizeFrequencyCLM_besselWeight, TemperedDistribution.besselPotential,
     TemperedDistribution.fourierMultiplierCLM_toTemperedDistributionCLM_eq (by fun_prop)]
-  simp only [inv_smul_smul₀ (by positivity : (2 * π) ≠ 0)]
 
 end Multiplier
 
@@ -206,53 +207,16 @@ variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [Nor
 
 section Frequency
 
-variable {b : CoordinateSpace n → V →L[ℂ] W}
-
-/-- The frequency-only estimates hold with constants uniform in the position. -/
-private theorem exists_bound_comp_snd (hb : ContDiff ℝ ∞ b)
-    (hbound : ∀ k : ℕ, ∃ C, ∀ ξ, ‖iteratedFDeriv ℝ k b ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - k) / 2))
-    (α β : List (Fin n)) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ x ξ,
-      ‖mixedDeriv α β (fun p ↦ b p.2) x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
-  rcases eq_or_ne α [] with rfl | hα
-  · obtain ⟨C, hC⟩ := hbound β.length
-    refine ⟨max C 0, le_max_right _ _, fun x ξ ↦ ?_⟩
-    rw [mixedDeriv_nil_comp_snd]
-    calc ‖coordinateDeriv β b ξ‖ ≤ ‖iteratedFDeriv ℝ β.length b ξ‖ :=
-          norm_coordinateDeriv_le β (hb.of_le (mod_cast le_top)) ξ
-      _ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := hC ξ
-      _ ≤ max C 0 * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) :=
-          mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity)
-  · exact ⟨0, le_rfl, fun x ξ ↦ by simp [mixedDeriv_comp_snd b hα]⟩
-
-/-- A smooth frequency-only coefficient `a(x, ξ) = b(ξ)` whose derivatives satisfy
-`‖D^k b(ξ)‖ ≤ C_k ⟨ξ⟩ ^ (m - k)` is a symbol of order `m`. Its quantization is the Fourier
-multiplier `b(D)` (`TauCeti.Symbol.quantizeSchwartzValue_ofFrequency`). -/
-def ofFrequency (b : CoordinateSpace n → V →L[ℂ] W) (hb : ContDiff ℝ ∞ b)
-    (hbound : ∀ k : ℕ, ∃ C, ∀ ξ, ‖iteratedFDeriv ℝ k b ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - k) / 2)) :
-    Symbol n V W m where
-  coefficient p := b p.2
-  contDiff_coefficient := hb.comp contDiff_snd
-  exists_bound _ _ α β :=
-    (exists_bound_comp_snd hb hbound α β).imp fun _ hC ↦ ⟨hC.1, fun x _ ξ ↦ hC.2 x ξ⟩
-
-variable (hb : ContDiff ℝ ∞ b)
+variable {b : CoordinateSpace n → V →L[ℂ] W} (hb : ContDiff ℝ ∞ b)
   (hbound : ∀ k : ℕ, ∃ C, ∀ ξ, ‖iteratedFDeriv ℝ k b ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - k) / 2))
-
-@[simp]
-theorem coefficient_ofFrequency (p : CoordinateSpace n × CoordinateSpace n) :
-    (ofFrequency b hb hbound).coefficient p = b p.2 := (rfl)
-
-/-- A frequency-only symbol satisfies its estimates uniformly in the position. -/
-theorem isUniform_ofFrequency : (ofFrequency b hb hbound).IsUniform :=
-  isUniform_iff.2 (exists_bound_comp_snd hb hbound)
 
 /-- The quantization of a frequency-only symbol is the Fourier multiplier `b(D)`. -/
 theorem quantizeSchwartzValue_ofFrequency [CompleteSpace W] (u : 𝓢(CoordinateSpace n, V))
     (x : CoordinateSpace n) :
     quantizeSchwartzValue (ofFrequency b hb hbound).coefficient u x =
-      quantizeFrequencyCLM b u x :=
-  quantizeSchwartzValue_comp_snd
+      quantizeFrequencyCLM b u x := by
+  rw [funext (coefficient_ofFrequency hb hbound)]
+  exact quantizeSchwartzValue_comp_snd
     (Function.HasTemperateGrowth.of_norm_iteratedFDeriv_le_one_add_norm_sq_rpow hb hbound) u x
 
 end Frequency
@@ -280,25 +244,6 @@ private theorem contDiff_ofReal_smul_and_exists_norm_iteratedFDeriv_le
           (mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity))) (norm_nonneg L)
     _ = ‖L‖ * max C 0 * (1 + ‖ξ‖ ^ 2) ^ ((m - k) / 2) := (mul_assoc _ _ _).symm
 
-/-- Shrinking the frequency by `0 < c ≤ 1` changes the weight `(1 + ‖ξ‖²) ^ t` by a bounded
-factor. -/
-private theorem one_add_norm_smul_sq_rpow_le {c : ℝ} (hc0 : 0 < c) (hc1 : c ≤ 1) (t : ℝ)
-    (ξ : CoordinateSpace n) :
-    (1 + ‖c • ξ‖ ^ 2) ^ t ≤ max 1 ((c ^ 2) ^ t) * (1 + ‖ξ‖ ^ 2) ^ t := by
-  have hc2 : c ^ 2 ≤ 1 := pow_le_one₀ hc0.le hc1
-  rw [norm_smul, Real.norm_of_nonneg hc0.le, mul_pow]
-  rcases le_total 0 t with ht | ht
-  · calc (1 + c ^ 2 * ‖ξ‖ ^ 2) ^ t ≤ (1 + ‖ξ‖ ^ 2) ^ t :=
-          Real.rpow_le_rpow (by positivity)
-            (by nlinarith [sq_nonneg ‖ξ‖]) ht
-      _ ≤ max 1 ((c ^ 2) ^ t) * (1 + ‖ξ‖ ^ 2) ^ t :=
-          le_mul_of_one_le_left (by positivity) (le_max_left _ _)
-  · calc (1 + c ^ 2 * ‖ξ‖ ^ 2) ^ t ≤ (c ^ 2 * (1 + ‖ξ‖ ^ 2)) ^ t :=
-          Real.rpow_le_rpow_of_nonpos (by positivity) (by nlinarith) ht
-      _ = (c ^ 2) ^ t * (1 + ‖ξ‖ ^ 2) ^ t := Real.mul_rpow (by positivity) (by positivity)
-      _ ≤ max 1 ((c ^ 2) ^ t) * (1 + ‖ξ‖ ^ 2) ^ t :=
-          mul_le_mul_of_nonneg_right (le_max_right _ _) (by positivity)
-
 /-- The Bessel weight `(1 + ‖ξ / 2π‖²) ^ (s / 2)` is smooth. -/
 private theorem contDiff_besselWeight (s : ℝ) :
     ContDiff ℝ ∞ (fun ξ : CoordinateSpace n ↦ (1 + ‖(2 * π)⁻¹ • ξ‖ ^ 2) ^ (s / 2)) :=
@@ -310,33 +255,8 @@ private theorem exists_norm_iteratedFDeriv_besselWeight_le (s : ℝ) (k : ℕ) :
     ∃ C, ∀ ξ : CoordinateSpace n,
       ‖iteratedFDeriv ℝ k (fun ξ : CoordinateSpace n ↦ (1 + ‖(2 * π)⁻¹ • ξ‖ ^ 2) ^ (s / 2)) ξ‖ ≤
         C * (1 + ‖ξ‖ ^ 2) ^ ((s - k) / 2) := by
-  set c : ℝ := (2 * π)⁻¹
-  have hc0 : 0 < c := by positivity
-  have hc1 : c ≤ 1 := inv_le_one_of_one_le₀ (by linarith [Real.two_le_pi])
-  set g : CoordinateSpace n →L[ℝ] CoordinateSpace n := c • ContinuousLinearMap.id ℝ _
-  set f : CoordinateSpace n → ℝ := fun x ↦ (1 + ‖x‖ ^ 2) ^ (s / 2)
-  have hf : ContDiff ℝ ∞ f :=
-    (contDiff_const.add (contDiff_norm_sq ℝ)).rpow_const_of_ne fun x ↦ by positivity
-  obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_one_add_norm_sq_rpow_le
-    (E := CoordinateSpace n) (s / 2) k
-  refine ⟨max C 0 * max 1 ((c ^ 2) ^ ((s - k) / 2)) * ‖g‖ ^ k, fun ξ ↦ ?_⟩
-  have hcomp : (fun ξ : CoordinateSpace n ↦ (1 + ‖c • ξ‖ ^ 2) ^ (s / 2)) = f ∘ g := (rfl)
-  rw [hcomp, g.iteratedFDeriv_comp_right hf ξ (mod_cast le_top)]
-  have hexp : s / 2 - k / 2 = (s - k) / 2 := by ring
-  calc ‖(iteratedFDeriv ℝ k f (g ξ)).compContinuousLinearMap fun _ ↦ g‖
-        ≤ ‖iteratedFDeriv ℝ k f (g ξ)‖ * ∏ _ : Fin k, ‖g‖ :=
-        ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _
-    _ = ‖iteratedFDeriv ℝ k f (g ξ)‖ * ‖g‖ ^ k := by simp
-    _ ≤ (max C 0 * (1 + ‖c • ξ‖ ^ 2) ^ ((s - k) / 2)) * ‖g‖ ^ k := by
-        gcongr
-        rw [← hexp]
-        exact (hC (g ξ)).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity))
-    _ ≤ (max C 0 * (max 1 ((c ^ 2) ^ ((s - k) / 2)) * (1 + ‖ξ‖ ^ 2) ^ ((s - k) / 2))) *
-          ‖g‖ ^ k := by
-        gcongr
-        exact one_add_norm_smul_sq_rpow_le hc0 hc1 _ ξ
-    _ = max C 0 * max 1 ((c ^ 2) ^ ((s - k) / 2)) * ‖g‖ ^ k *
-          (1 + ‖ξ‖ ^ 2) ^ ((s - k) / 2) := by ring
+  rw [sub_div]
+  exact exists_norm_iteratedFDeriv_one_add_norm_smul_sq_rpow_le (by positivity) (s / 2) k
 
 /-- The Bessel weight `⟨ξ / 2π⟩ ^ s = (1 + ‖ξ / 2π‖²) ^ (s / 2)` in the angular frequency, a
 uniform symbol of order `s` (`TauCeti.Symbol.isUniform_besselPotential`). Its quantization is
@@ -352,7 +272,8 @@ def besselPotential (s : ℝ) : Symbol n V V s :=
 @[simp]
 theorem coefficient_besselPotential (s : ℝ) (p : CoordinateSpace n × CoordinateSpace n) :
     (besselPotential s : Symbol n V V s).coefficient p =
-      (((1 + ‖(2 * π)⁻¹ • p.2‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • ContinuousLinearMap.id ℂ V := (rfl)
+      (((1 + ‖(2 * π)⁻¹ • p.2‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • ContinuousLinearMap.id ℂ V :=
+  coefficient_ofFrequency _ _ p
 
 theorem isUniform_besselPotential (s : ℝ) : (besselPotential s : Symbol n V V s).IsUniform :=
   isUniform_ofFrequency _ _
@@ -364,12 +285,8 @@ theorem quantizeSchwartzValue_besselPotential (s : ℝ) (u : 𝓢(CoordinateSpac
     quantizeSchwartzValue (besselPotential s : Symbol n V V s).coefficient u x =
       SchwartzMap.fourierMultiplierCLM V
         (fun ζ : CoordinateSpace n ↦ (((1 + ‖ζ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) u x := by
-  rw [show (besselPotential s : Symbol n V V s).coefficient = fun p ↦
-      (((1 + ‖(2 * π)⁻¹ • p.2‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • ContinuousLinearMap.id ℂ V from (rfl),
-    quantizeSchwartzValue_eq_fourierMultiplierCLM
-      (g := fun ξ ↦ (((1 + ‖(2 * π)⁻¹ • ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ))
-      (hasTemperateGrowth_besselWeight s)]
-  simp only [inv_smul_smul₀ (by positivity : (2 * π) ≠ 0)]
+  rw [funext (coefficient_besselPotential (n := n) (V := V) s),
+    quantizeSchwartzValue_besselWeight]
 
 /-- The linear function `⟪ξ, v⟫` satisfies the symbol estimates of order `1`. -/
 private theorem exists_norm_iteratedFDeriv_inner_le (v : CoordinateSpace n) (k : ℕ) :
@@ -382,8 +299,8 @@ private theorem exists_norm_iteratedFDeriv_inner_le (v : CoordinateSpace n) (k :
   exact ⟨_, (innerSL ℝ v).norm_iteratedFDeriv_le_one_add_norm_sq_rpow k⟩
 
 /-- The coefficient `⟪ξ, v⟫` of `D_v = -i ∂_v`, a uniform symbol of order `1`
-(`TauCeti.Symbol.quantizeSchwartzValue_ofInner`). It is not a symbol of order `0`
-(`TauCeti.Symbol.not_exists_coefficient_eq_ofInner_coefficient`). -/
+(`TauCeti.Symbol.quantizeSchwartzValue_ofInner`). It is not a symbol of any
+order `m < 1` (`TauCeti.Symbol.not_exists_coefficient_eq_ofInner_coefficient`). -/
 def ofInner (v : CoordinateSpace n) : Symbol n V V 1 :=
   ofFrequency (fun ξ ↦ ((⟪ξ, v⟫ : ℝ) : ℂ) • ContinuousLinearMap.id ℂ V)
     (contDiff_ofReal_smul_and_exists_norm_iteratedFDeriv_le (g := fun ξ ↦ ⟪ξ, v⟫)
@@ -394,7 +311,8 @@ def ofInner (v : CoordinateSpace n) : Symbol n V V 1 :=
 @[simp]
 theorem coefficient_ofInner (v : CoordinateSpace n) (p : CoordinateSpace n × CoordinateSpace n) :
     (ofInner v : Symbol n V V 1).coefficient p =
-      ((⟪p.2, v⟫ : ℝ) : ℂ) • ContinuousLinearMap.id ℂ V := (rfl)
+      ((⟪p.2, v⟫ : ℝ) : ℂ) • ContinuousLinearMap.id ℂ V :=
+  coefficient_ofFrequency _ _ p
 
 theorem isUniform_ofInner (v : CoordinateSpace n) : (ofInner v : Symbol n V V 1).IsUniform :=
   isUniform_ofFrequency _ _
@@ -402,24 +320,56 @@ theorem isUniform_ofInner (v : CoordinateSpace n) : (ofInner v : Symbol n V V 1)
 /-- The symbol `⟪ξ, v⟫` quantizes to `D_v = -i ∂_v`. -/
 theorem quantizeSchwartzValue_ofInner [CompleteSpace V] (v : CoordinateSpace n)
     (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
-    quantizeSchwartzValue (ofInner v : Symbol n V V 1).coefficient u x = -Complex.I • ∂_{v} u x :=
-  quantizeSchwartzValue_inner_eq_lineDerivOp v u x
+    quantizeSchwartzValue (ofInner v : Symbol n V V 1).coefficient u x =
+      -Complex.I • ∂_{v} u x := by
+  rw [funext (coefficient_ofInner (V := V) v)]
+  exact quantizeSchwartzValue_inner_eq_lineDerivOp v u x
 
-/-- The order of `⟪ξ, v⟫` is exactly `1`: for `v ≠ 0` and a nonzero fibre, no symbol of order `0`
-has this coefficient, since it is unbounded along the ray `ξ = t v`. -/
+/-- `⟪ξ, v⟫` has no order below `1`: for `v ≠ 0`, a nonzero fibre and `m < 1`, no symbol of
+order `m` has this coefficient, since along the ray `ξ = t v` it grows like `t`, faster than
+`⟨ξ⟩ ^ m`. -/
 theorem not_exists_coefficient_eq_ofInner_coefficient [Nontrivial V] {v : CoordinateSpace n}
-    (hv : v ≠ 0) :
-    ¬∃ a : Symbol n V V 0, a.coefficient = (ofInner v : Symbol n V V 1).coefficient := by
+    (hv : v ≠ 0) (hm : m < 1) :
+    ¬∃ a : Symbol n V V m, a.coefficient = (ofInner v : Symbol n V V 1).coefficient := by
   rintro ⟨a, ha⟩
   obtain ⟨C, -, hC⟩ := a.exists_bound {0} isCompact_singleton [] []
-  have hv2 : 0 < ‖v‖ ^ 2 := by positivity
-  have h := hC 0 rfl (((|C| + 1) / ‖v‖ ^ 2) • v)
-  rw [mixedDeriv_nil_nil, ha, coefficient_ofInner] at h
-  simp only [List.length_nil, CharP.cast_eq_zero, sub_zero, zero_div, Real.rpow_zero, mul_one,
-    norm_smul, ContinuousLinearMap.norm_id, Complex.norm_real, Real.norm_eq_abs,
-    real_inner_smul_left, real_inner_self_eq_norm_sq] at h
-  rw [div_mul_cancel₀ _ hv2.ne', abs_of_pos (by positivity)] at h
-  linarith [le_abs_self C]
+  set m₀ := max m 0
+  have hvpos : 0 < ‖v‖ := norm_pos_iff.2 hv
+  have hp : 0 < 1 - m₀ := sub_pos.2 (max_lt hm one_pos)
+  -- Choose `S ≥ 2` with `S ^ (1 - m₀) > 2 |C| / ‖v‖`; test the bound at `ξ = (S / 2) v / ‖v‖`.
+  obtain ⟨S, hS, hS2⟩ := (((tendsto_rpow_atTop hp).eventually_gt_atTop (2 * |C| / ‖v‖)).and
+    (Filter.eventually_ge_atTop 2)).exists
+  have hS0 : 0 < S := by linarith
+  set ξ : CoordinateSpace n := (S / (2 * ‖v‖)) • v
+  have hξ : ‖ξ‖ = S / 2 := by
+    rw [norm_smul, Real.norm_of_nonneg (by positivity)]
+    field_simp
+  have hinner : ⟪ξ, v⟫ = S / 2 * ‖v‖ := by
+    rw [real_inner_smul_left, real_inner_self_eq_norm_sq]
+    field_simp
+  have h := hC 0 rfl ξ
+  rw [mixedDeriv_nil_nil, ha, coefficient_ofInner, norm_smul, ContinuousLinearMap.norm_id, mul_one,
+    Complex.norm_real, Real.norm_eq_abs, hinner, abs_of_nonneg (by positivity), List.length_nil,
+    Nat.cast_zero, sub_zero, hξ] at h
+  -- The weight is at most `S ^ m₀`, since `1 + (S / 2) ^ 2 ≤ S ^ 2`.
+  have hweight : (1 + (S / 2) ^ 2) ^ (m / 2) ≤ S ^ m₀ :=
+    calc (1 + (S / 2) ^ 2) ^ (m / 2) ≤ (1 + (S / 2) ^ 2) ^ (m₀ / 2) :=
+          Real.rpow_le_rpow_of_exponent_le (by nlinarith) (by linarith [le_max_left m 0])
+      _ ≤ (S ^ 2) ^ (m₀ / 2) :=
+          Real.rpow_le_rpow (by positivity) (by nlinarith) (by positivity)
+      _ = S ^ m₀ := by
+          rw [← Real.rpow_natCast, ← Real.rpow_mul hS0.le]
+          congr 1
+          ring
+  have hbound : C * (1 + (S / 2) ^ 2) ^ (m / 2) ≤ |C| * S ^ m₀ :=
+    (mul_le_mul_of_nonneg_right (le_abs_self C) (by positivity)).trans
+      (mul_le_mul_of_nonneg_left hweight (abs_nonneg C))
+  have key : 2 * |C| * S ^ m₀ < S * ‖v‖ :=
+    calc 2 * |C| * S ^ m₀ < S ^ (1 - m₀) * ‖v‖ * S ^ m₀ :=
+          mul_lt_mul_of_pos_right ((div_lt_iff₀ hvpos).1 hS) (Real.rpow_pos_of_pos hS0 _)
+      _ = S * ‖v‖ := by
+          rw [mul_right_comm, ← Real.rpow_add hS0, sub_add_cancel, Real.rpow_one]
+  linarith
 
 end Examples
 
