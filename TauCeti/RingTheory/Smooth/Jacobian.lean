@@ -79,10 +79,8 @@ theorem formallySmooth_quotient_of_basis_kaehlerDifferential (b : Module.Basis (
   have hN : RingHom.ker (algebraMap Q (Q ⧸ Ideal.span (Set.range g))) =
       Ideal.span (Set.range g) := by
     rw [Ideal.Quotient.algebraMap_eq, Ideal.mk_ker]
-  refine (Algebra.FormallySmooth.iff_injective_cotangentComplexBaseChange Q
-    (IsLocalRing.ResidueField (Q ⧸ Ideal.span (Set.range g))) Ideal.Quotient.mk_surjective
-    (by rw [hN]; exact Submodule.fg_span (Set.finite_range g))
-    (by rw [IsLocalRing.ResidueField.algebraMap_eq, IsLocalRing.ker_residue])).2 ?_
+  refine (Algebra.FormallySmooth.iff_injective_cotangentComplexBaseChange_residueField Q
+    Ideal.Quotient.mk_surjective (by rw [hN]; exact Submodule.fg_span (Set.finite_range g))).2 ?_
   set κ := IsLocalRing.ResidueField (Q ⧸ Ideal.span (Set.range g))
   set N := RingHom.ker (algebraMap Q (Q ⧸ Ideal.span (Set.range g)))
   -- `κ ⊗[Q] N` is spanned by the `1 ⊗ g t`, which map to part of a basis of `κ ⊗[Q] Ω[Q⁄K]`.
@@ -92,8 +90,8 @@ theorem formallySmooth_quotient_of_basis_kaehlerDifferential (b : Module.Basis (
     rw [Submodule.map_span, Submodule.map_subtype_top, ← Set.range_comp]
     exact hN.symm
   have hv : Submodule.span κ (Set.range fun t ↦ (1 : κ) ⊗ₜ[Q] v t) = ⊤ := by
-    rw [← Submodule.baseChange_top, ← hvN, Submodule.baseChange_span, ← Set.range_comp]
-    rfl
+    rw [← Submodule.baseChange_top, ← hvN, Submodule.baseChange_span, ← Set.range_comp']
+    simp only [TensorProduct.mk_apply]
   let bκ := Algebra.TensorProduct.basis κ b
   have himg (t : τ) : cotangentComplexBaseChange K _ Q κ ((1 : κ) ⊗ₜ v t) = bκ (.inl t) := by
     rw [cotangentComplexBaseChange_tmul, one_smul, kerToTensor_apply,
