@@ -284,13 +284,7 @@ theorem contDiffAt_lyapunovPerronGraphMap_of_uniformContDiffOn {n : ℕ}
     (hNn : TauCeti.UniformContDiffOn ℝ n N s) (hδ : 0 < δ)
     (hξ₀ : ∀ t, ball (lyapunovPerronSolution A P N hs hu hα hN hsmall ξ₀ t) δ ⊆ s) :
     ContDiffAt ℝ n (lyapunovPerronGraphMap A P N hs hu hα hN hsmall) ξ₀ := by
-  have hgraph : lyapunovPerronGraphMap A P N hs hu hα hN hsmall =
-      fun ξ ↦ BoundedContinuousFunction.evalCLM ℝ 0
-        (lyapunovPerronSolution A P N hs hu hα hN hsmall ξ) - P ξ := by
-    funext ξ
-    rw [BoundedContinuousFunction.evalCLM_apply,
-      lyapunovPerronSolution_zero_eq_add_lyapunovPerronGraphMap, add_sub_cancel_left]
-  rw [hgraph]
+  rw [lyapunovPerronGraphMap_eq_evalCLM_sub]
   exact ((BoundedContinuousFunction.evalCLM ℝ 0).contDiff.contDiffAt.comp ξ₀
     (contDiffAt_lyapunovPerronSolution_of_uniformContDiffOn hs hu hα hN hsmall hNn hδ hξ₀)).sub
     P.contDiff.contDiffAt
@@ -317,14 +311,8 @@ theorem fderiv_lyapunovPerronGraphMap
     hNs hN' hδ hξ₀).differentiableAt one_ne_zero).hasFDerivAt
   have h := ((BoundedContinuousFunction.evalCLM ℝ 0).hasFDerivAt.comp ξ₀ hS).sub
     P.hasFDerivAt
-  have heq : (fun ξ ↦ BoundedContinuousFunction.evalCLM ℝ 0
-      (lyapunovPerronSolution A P N hs hu hα hN hsmall ξ) - P ξ) =
-      lyapunovPerronGraphMap A P N hs hu hα hN hsmall := by
-    funext ξ
-    simp only [BoundedContinuousFunction.evalCLM_apply,
-      lyapunovPerronSolution_zero_eq_add_lyapunovPerronGraphMap, add_sub_cancel_left]
-  exact (h.congr_of_eventuallyEq
-    (Filter.Eventually.of_forall fun ξ ↦ (congrFun heq ξ).symm)).fderiv
+  rw [lyapunovPerronGraphMap_eq_evalCLM_sub]
+  exact h.fderiv
 
 end ContinuousLinearMap
 

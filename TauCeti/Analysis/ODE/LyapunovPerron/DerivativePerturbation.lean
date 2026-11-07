@@ -149,8 +149,10 @@ theorem norm_fderiv_lyapunovPerronSolution_sub_le {d : ℝ}
   simp only [div_eq_mul_inv] at hbound ⊢
   nlinarith only [hbound]
 
-/-- The tangent graph changes by at most the variational solution bound. The stable projection
-cancels, and evaluation at zero has operator norm at most one. -/
+/-- The graph-map derivatives at parameter `ξ` for remainder `N` and at parameter `ζ` for
+remainder `M` differ in operator norm by at most the same bound as in
+`ContinuousLinearMap.norm_fderiv_lyapunovPerronSolution_sub_le`, provided the linearized
+remainders along the two trajectories differ uniformly by at most `d`. -/
 theorem norm_fderiv_lyapunovPerronGraphMap_sub_le {d : ℝ}
     (hderiv : ∀ t,
       ‖N' (lyapunovPerronSolution A P N hs hu hα hN hsmall ξ t) -
