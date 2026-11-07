@@ -62,3 +62,42 @@ a local certificate. It exercises actual upload workflow shell, omission, change
 objects, missing/corrupt inheritance, interrupted/retried uploads, full fallback,
 fresh-checkout restoration and stale-source rejection. It uses only dummy keys
 and never contacts the production write endpoint.
+
+## Optional prepared root outputs
+
+`bulk-unpack-cache.py` can assemble a fresh private build from a trusted immutable
+seed plus the archive selection already made by native Lake. The ordinary command
+keeps its existing bulk path; no workflow currently supplies `--seed`.
+
+A caller supplying that option must authenticate the seed through the image or
+payload owner, keep its source immutable for the entire operation, and keep it
+outside the candidate's normalized `.lake`. A manifest alone does not establish
+trust. The manifest binds the default layout, platform, official toolchain,
+configuration bytes, published revision, producer revision and each module's
+archive name, SHA-256 provenance and exact complete output inventory. Matching is by the exact selected archive per module;
+the installer never chooses an ancestor or changes publication eligibility.
+
+Keep the order: native cache fetch, applicable repair, pre-build publication
+snapshot, prepared/bulk installation, native build, audits, then publication.
+All misses share one bulk extraction into private staging. Only supported,
+disjoint matching seed outputs join that staging tree. The helper publishes the
+combined tree before removing satisfied mappings; mappings for deleted sources
+and other unsatisfied work remain. Archive bytes and the publication snapshot
+remain available for ordinary restoration and reconnect.
+
+The trusted producer supplies the complete extracted file inventory for each
+module; the consumer checks its supported paths and required core outputs. Seed
+files may be read-only. Candidate files have independent inodes and owner
+write permission so native Lake can invalidate and rebuild them. The installer
+probes the actual clone operation under its consumer UID, then uses private copies
+when that operation is unsupported. Permission, space and corruption errors retain
+the original records and ordinary restoration path. No shared writable cache or
+candidate-to-seed hard links are introduced.
+
+Trusted producers may call `export_seed` after a successful native main build,
+using the existing pre-build snapshot. It checks the snapshot's archive digests,
+extracts the recorded archives, and includes only outputs whose bytes match that
+validated build. It publishes the complete seed directory at once. This API does
+not run builds, choose revisions or authorize candidate publication. Image
+installation and rollout require separate full-size guest validation and cost
+measurements.
