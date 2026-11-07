@@ -102,6 +102,18 @@ private theorem denom_mapGL_STS_inv_pow (r : ℕ) (z : ℍ) :
   simp only [RingHom.mapMatrix_apply, Matrix.map_apply, h10, h11]
   simp [algebraMap_int_eq]
 
+/-- The denominators of `(S T S⁻¹) ^ (n * m)` at a point `z` are pairwise distinct as `m` varies,
+for `n > 0`. -/
+private theorem denom_mapGL_STS_inv_pow_injective {n : ℕ} (hn : 0 < n) (z : ℍ) :
+    Function.Injective fun m : ℕ ↦ denom (mapGL ℝ ((S * T * S⁻¹ : SL(2, ℤ)) ^ (n * m))) z :=
+  fun m₁ m₂ hm ↦ by
+    have him := congrArg Complex.im hm
+    simp only [denom_mapGL_STS_inv_pow, Complex.add_im, Complex.one_im, add_zero,
+      Complex.neg_im, Complex.mul_im, Complex.natCast_im] at him
+    have hmul : ((n * m₁ : ℕ) : ℝ) = ((n * m₂ : ℕ) : ℝ) :=
+      mul_right_cancel₀ z.im_ne_zero (by simpa using him)
+    exact Nat.eq_of_mul_eq_mul_left hn (Nat.cast_injective hmul)
+
 /-- **Linear independence of slash-invariant forms across weights.** When `Γ` has finite-index
 intersection with `SL₂(ℤ)`, the evaluation `evalDirectSum` into `ℍ → ℂ` is injective. -/
 theorem evalDirectSum_injective [Subgroup.IsFiniteRelIndex Γ 𝒮ℒ] :
@@ -123,13 +135,8 @@ theorem evalDirectSum_injective [Subgroup.IsFiniteRelIndex Γ 𝒮ℒ] :
   let d (m : ℕ) : ℂˣ := Units.mk0 (denom (γ m) z) (denom_ne_zero (γ m) z)
   have hd_val (m : ℕ) : (d m : ℂ) = -((n * m : ℕ) : ℂ) * z + 1 :=
     denom_mapGL_STS_inv_pow (n * m) z
-  have hd_inj : Function.Injective d := fun m₁ m₂ hm ↦ by
-    have him := congrArg (Complex.im ∘ Units.val) hm
-    simp only [Function.comp_apply, hd_val, Complex.add_im, Complex.one_im, add_zero,
-      Complex.neg_im, Complex.mul_im, Complex.natCast_im] at him
-    have hmul : ((n * m₁ : ℕ) : ℝ) = ((n * m₂ : ℕ) : ℝ) :=
-      mul_right_cancel₀ z.im_ne_zero (by simpa using him)
-    exact Nat.eq_of_mul_eq_mul_left hn (Nat.cast_injective hmul)
+  have hd_inj : Function.Injective d := fun m₁ m₂ hm ↦
+    denom_mapGL_STS_inv_pow_injective hn z (congrArg Units.val hm)
   have hd_root (m : ℕ) : p.smeval (d m) = 0 := by
     rw [← LaurentPolynomial.leval_apply (R := ℂ), map_sum]
     simp only [LaurentPolynomial.leval_apply, LaurentPolynomial.smeval_single, smul_eq_mul,
