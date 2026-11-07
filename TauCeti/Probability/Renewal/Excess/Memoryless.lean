@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Probability.Independence.DisjointBlocks
 public import TauCeti.Probability.Renewal.Excess.Basic
 public import TauCeti.Probability.Renewal.Exponential
 
@@ -53,12 +54,7 @@ private lemma measure_prefix_count_excess_integral
   have := isProbabilityMeasure_expMeasure hr
   -- The next increment is independent of the entire completed prefix, not just its sum.
   have hp : Measurable (fun ω (i : Fin n) ↦ T i ω) := by fun_prop
-  have hi : IndepFun (fun ω (i : Fin n) ↦ T i ω) (fun ω ↦ (T n ω : ℝ)) P := by
-    have h := hindep.indepFun_set (Iio n) {n}
-      (by simp only [disjoint_left, mem_Iio, mem_singleton_iff]; omega) hT
-    exact h.comp
-      (by fun_prop : Measurable (fun (z : Iio n → ℝ≥0) (i : Fin n) ↦ z ⟨i, i.isLt⟩))
-      (by fun_prop : Measurable (fun (z : ({n} : Set ℕ) → ℝ≥0) ↦ (z ⟨n, by simp⟩ : ℝ)))
+  have hi := (hindep.indepFun_prefix hT n).comp measurable_id measurable_coe_nnreal_real
   have hsum (ω : Ω) : ∑ i : Fin n, T i ω = arrival T n ω := by
     exact (Fin.sum_univ_eq_sum_range (fun i ↦ T i ω) n).trans (arrival_def T n ω).symm
   let B : Set ((Fin n → ℝ≥0) × ℝ) :=
@@ -152,8 +148,15 @@ theorem map_renewalExcess_restrict_prefix_count_of_expMeasure
     by_cases hx : 0 ≤ x
     · lift x to ℝ≥0 using hx with y hy
       rw [ite_eq_left y.coe_nonneg]
-      simpa [H, preimage, ← ofPred_and, and_comm, and_left_comm, and_assoc, mul_comm] using
-        measure_prefix_count_lt_renewalExcess_of_expMeasure hT hindep hlaw n hA t y
+      have hset : (fun ω ↦ (renewalExcess T t ω : ℝ)) ⁻¹' Ioi (y : ℝ) ∩ H =
+          {ω | (fun i : Fin n ↦ T i ω) ∈ A ∧ renewalCountNat T t ω = n ∧
+            y < renewalExcess T t ω} := by
+        ext ω
+        simp only [mem_inter_iff, mem_preimage, mem_Ioi, H, mem_ofPred_eq,
+          NNReal.coe_lt_coe]
+        tauto
+      rw [hset, measure_prefix_count_lt_renewalExcess_of_expMeasure hT hindep hlaw n hA t y]
+      exact mul_comm _ _
     · rw [ite_eq_right hx]
       have hset : (fun ω ↦ (renewalExcess T t ω : ℝ)) ⁻¹' Ioi x ∩ H = H := by
         apply inter_eq_right.2
