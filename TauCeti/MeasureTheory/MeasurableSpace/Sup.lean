@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.MeasurableSpace.Basic
 public import Mathlib.MeasureTheory.PiSystem
 
 /-!
@@ -45,5 +46,23 @@ theorem sup_eq_generateFrom_inter_measurableSet (mF mG : MeasurableSpace Ω) :
     exact measurableSet_generateFrom ⟨Set.univ, s, MeasurableSet.univ, hs, (Set.univ_inter s).symm⟩
   · rintro s ⟨tF, tG, htF, htG, rfl⟩
     exact ((le_sup_left : mF ≤ mF ⊔ mG) _ htF).inter ((le_sup_right : mG ≤ mF ⊔ mG) _ htG)
+
+variable {ι α : Type*} [MeasurableSpace α]
+
+/-- A cylinder of the block over `S` is the preimage, under the map `ω ↦ (X p ω)ₚ`, of a
+measurable cylinder over a finite subset of `S`: this describes the members of `piiUnionInter` of
+the comap σ-algebras. -/
+theorem exists_eq_preimage_pi_of_mem_piiUnionInter {X : ι → Ω → α} {S : Set ι} {A : Set Ω}
+    (hA : A ∈ piiUnionInter
+      (fun p ↦ {s | MeasurableSet[MeasurableSpace.comap (X p) inferInstance] s}) S) :
+    ∃ (t : Finset ι) (C : ι → Set α), ↑t ⊆ S ∧ (∀ p ∈ t, MeasurableSet (C p)) ∧
+      A = (fun ω p ↦ X p ω) ⁻¹' Set.pi (↑t) C := by
+  classical
+  obtain ⟨t, ht, f, hf, rfl⟩ := hA
+  choose! C hC hCeq using fun p hp ↦ MeasurableSpace.measurableSet_comap.1 (hf p hp)
+  refine ⟨t, C, ht, hC, ?_⟩
+  ext ω
+  simp only [Set.mem_iInter, Set.mem_preimage, Set.mem_pi, Finset.mem_coe]
+  exact forall₂_congr fun p hp ↦ by rw [← hCeq p hp, Set.mem_preimage]
 
 end MeasurableSpace

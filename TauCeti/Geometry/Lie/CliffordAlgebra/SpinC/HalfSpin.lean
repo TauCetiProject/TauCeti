@@ -68,12 +68,15 @@ def realSpinCHalfSpinSmoothHom : ContMDiffMonoidMorphism I 𝓘(ℝ, S →L[ℂ]
       (((realSpinDiffeomorphUnitsRange 4).contMDiff.comp contMDiff_fst).prodMk contMDiff_snd)
     convert h using 1
     funext p
+    apply ContinuousLinearMap.ext
+    intro ψ
     simp only [Function.comp_apply, realSpinDiffeomorphUnitsRange_apply,
       ContinuousMulEquiv.symm_apply_apply]
     simp only [MulEquiv.toMonoidHom_eq_coe, OneHom.toFun_eq_coe, MonoidHom.toOneHom_coe,
       MonoidHom.coe_comp, MonoidHom.coe_ofClass, MulEquiv.coe_mk, AlgEquiv.toEquiv_eq_coe,
       EquivLike.coe_coe, Function.comp_apply, OrthonormalBasis.realSpinCGroupHom_mk,
-      spinCGroupHalfSpinRep_mk, Module.End.toContinuousLinearMap_apply]
+      spinCGroupHalfSpinRep_mk, Module.End.toContinuousLinearMap_apply,
+      LinearMap.coe_toContinuousLinearMap']
 
 /-- The smooth action is the algebraic quotient action after the Spinᶜ frame comparison. -/
 theorem realSpinCHalfSpinSmoothHom_apply (hQ₀' : Q ≠ 0) (x : SpinC) :
