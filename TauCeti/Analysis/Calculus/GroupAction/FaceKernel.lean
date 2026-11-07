@@ -39,27 +39,6 @@ public section
 
 open Filter Topology TauCeti
 
-/-- A continuous linear endomorphism of finite order, invertible in the field, that fixes `ker q`
-pointwise and satisfies `q ∘ T = q` is the identity. -/
-theorem ContinuousLinearMap.eq_one_of_comp_subtypeL_ker_eq {𝕜 E F : Type*}
-    [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-    [NormedAddCommGroup F] [NormedSpace 𝕜 F] (T : E →L[𝕜] E) (q : E →L[𝕜] F) (n : ℕ)
-    (hn : (n : 𝕜) ≠ 0) (hpow : T ^ n = 1) (hnormal : q.comp T = q)
-    (hfaceDeriv : T.comp q.ker.subtypeL = q.ker.subtypeL) : T = 1 := by
-  have hfixed : q.ker ≤ LinearMap.ker ((T : Module.End 𝕜 E) - 1) := by
-    intro v hv
-    have h := DFunLike.congr_fun hfaceDeriv ⟨v, hv⟩
-    simpa using sub_eq_zero.mpr h
-  have hrange : LinearMap.range ((T : Module.End 𝕜 E) - 1) ≤ q.ker := by
-    rintro v ⟨w, rfl⟩
-    have h := DFunLike.congr_fun hnormal w
-    simpa using sub_eq_zero.mpr h
-  have hpow' : (T : Module.End 𝕜 E) ^ n = 1 := by
-    simpa using congrArg ContinuousLinearMap.toLinearMap hpow
-  exact ContinuousLinearMap.coe_injective <|
-    Module.End.eq_one_of_pow_eq_one_of_range_sub_one_le (T : Module.End 𝕜 E) q.ker hn hpow'
-      hfixed hrange
-
 namespace OpenPartialHomeomorph
 
 variable {𝕜 G X E F : Type*} [NontriviallyNormedField 𝕜] [Group G] [Fintype G]
@@ -119,9 +98,14 @@ theorem eventually_smul_eq_iff_on_ker (χ : OpenPartialHomeomorph X E) {x : X}
     have hnormal : q.comp (σ g) = q := by
       have hd := q.hasFDerivAt.comp (0 : E) (hderiv g)
       exact hd.unique (q.hasFDerivAt.congr_of_eventuallyEq hq)
-    have hone : σ g = 1 := ContinuousLinearMap.eq_one_of_comp_subtypeL_ker_eq (σ g) q
-      (Fintype.card G) (Invertible.ne_zero _) (by rw [← map_pow, pow_card_eq_one, map_one])
-      hnormal hfaceDeriv
+    have hone : σ g = 1 := by
+      refine ContinuousLinearMap.coe_injective
+        (Module.End.eq_one_of_pow_eq_one_of_comp_ker_subtype_eq (σ g : Module.End 𝕜 E)
+          (q : E →ₗ[𝕜] F) (n := Fintype.card G) (Invertible.ne_zero _) ?_
+          (congrArg ContinuousLinearMap.toLinearMap hnormal)
+          (congrArg ContinuousLinearMap.toLinearMap hfaceDeriv))
+      simpa using congrArg ContinuousLinearMap.toLinearMap
+        (show σ g ^ Fintype.card G = 1 by rw [← map_pow, pow_card_eq_one, map_one])
     exact MulAction.mem_germKernel.mp <|
       (χ.map_eq_one_iff_mem_germKernel hx hfix σ
         (hasStrictFDerivAt_conj_smul_isotropyRepresentation hx hfix hD) g).mp hone
