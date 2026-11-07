@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.MarkovChain.EntranceLimits
 public import TauCeti.Probability.MarkovChain.MeanReturn
-public import TauCeti.Probability.Process.Excursion.MarkovChain
+public import TauCeti.Probability.Process.ReturnGapRenewal
 public import TauCeti.Probability.Renewal.StrongLaw
 
 /-!
@@ -20,10 +20,9 @@ states and recurrent states with infinite mean have limiting frequency zero.
 The expectations have the same limit by bounded convergence. These assertions
 also transfer to arbitrary realizations with the specified path law.
 
-The recurrent case consumes the independent-excursion decomposition
-`TauCeti.Probability.iIndepFun_excursionProcess` and the renewal strong law.
-An excursion omits its closing return step, so its length plus one is the
-renewal increment. No integrability of the return time is assumed.
+The recurrent case consumes the independent return-gap laws and identifies their
+renewal count with positive-time visits. The renewal strong law then gives the
+limit without any integrability assumption on the return time.
 
 Writing `r_y = (m_y⁻¹).toReal` with `m_y = κ.meanReturnTime y`, the limit holds at every state
 with no recurrence hypothesis: started at `y`, the occupation frequency of `y` converges almost
@@ -55,79 +54,34 @@ private theorem IsRecurrent.ae_tendsto_visitCount_succ_div (hy : κ.IsRecurrent 
     ∀ᵐ x ∂markovChainLaw (Measure.dirac y) κ,
       Tendsto (fun n : ℕ => (visitCount (fun k => x (k + 1)) y n : ℝ) / n) atTop
         (𝓝 (κ.meanReturnTime y)⁻¹.toReal) := by
-  -- Excursion lengths plus their closing return steps form an i.i.d. renewal process.
+  -- Independent return gaps give the renewal increments and their extended mean.
   let P := markovChainLaw (Measure.dirac y) κ
-  let E := excursionProcess (fun n (x : ℕ → α) => x n) y
-  let T (k : ℕ) (x : ℕ → α) : ℝ≥0 := (E k x).length + 1
-  have hret := κ.ae_infinite_setOf_eq_markovChainLaw_dirac (isRecurrent_iff.mp hy)
+  let T (k : ℕ) (x : ℕ → α) : ℝ≥0 := returnGap (fun n x => x n) y k x
+  have hrec := isRecurrent_iff.mp hy
+  have hret := κ.ae_infinite_setOf_eq_markovChainLaw_dirac hrec
   have h0 := markovChainLaw_dirac_ae_apply_zero κ y
-  have hEm (k : ℕ) : Measurable (E k) := by
-    have he : E k = fun x => excursion x y k := funext fun x => excursionProcess_apply _ _ _ _
-    rw [he]
-    exact measurable_excursion y k (measurableSet_singleton y)
-  have hlen : Measurable (fun e : List α => ((e.length : ℝ≥0) + 1)) :=
-    (measurable_of_countable (fun n : ℕ => (n : ℝ≥0))).comp
-      measurable_list_length |>.add_const 1
+  have hcast : Measurable (fun n : ℕ => (n : ℝ≥0)) := measurable_of_countable _
   have hi : ProbabilityTheory.iIndepFun T P :=
-    (iIndepFun_excursionProcess hret).comp _ (fun _ => hlen)
-  have hid (k : ℕ) : IdentDistrib (T k) (T 0) P P := by
-    apply IdentDistrib.comp _ hlen
-    refine ⟨(hEm k).aemeasurable, (hEm 0).aemeasurable, ?_⟩
-    exact (map_excursionProcess_eq_excursionLaw k
-      (hret.mono fun x hx => exists_visitCount_of_infinite hx (k + 1))).trans
-      (map_excursionProcess_eq_excursionLaw 0
-        (hret.mono fun x hx => exists_visitCount_of_infinite hx 1)).symm
+    (κ.iIndepFun_returnGap hrec).comp _ (fun _ => hcast)
+  have hid (k : ℕ) : IdentDistrib (T k) (T 0) P P :=
+    ((κ.hasLaw_returnGap hrec k).identDistrib (κ.hasLaw_returnGap hrec 0)).comp hcast
   have hz : P {x | T 0 x = 0} < 1 := by
-    have : {x | T 0 x = 0} = ∅ := by ext x; simp [T]
-    simp [this]
-  -- On recurrent paths its arrivals are exactly the enumerated visits, starting at zero.
-  have harr : ∀ᵐ x ∂P, ∀ k, arrival T k x = (visitTime x y k : ℝ≥0) := by
-    filter_upwards [hret, h0] with x hx hx0 k
-    have hs : ∑ i ∈ Finset.range k, ((excursion x y i).length + 1) = visitTime x y k := by
-      induction k with
-      | zero => simp [visitTime_zero_of_eq hx0]
-      | succ k ih =>
-        rw [Finset.sum_range_succ, ih]
-        have hstep := loopSteps_excursionPrefix_of_infinite_of_zero hx hx0 (k + 1)
-        rw [excursionPrefix_succ, loopSteps_append,
-          loopSteps_excursionPrefix_of_infinite_of_zero hx hx0 k] at hstep
-        simpa only [loopSteps_cons, loopSteps_nil, add_zero] using hstep
-    simpa only [arrival_def, T, E, excursionProcess_apply, Nat.cast_sum,
-      Nat.cast_add, Nat.cast_one] using congrArg (fun n : ℕ => (n : ℝ≥0)) hs
-  -- The first increment is the specified positive return, not the entrance at time zero.
+    have hzero : P {x | T 0 x = 0} = 0 := by
+      apply measure_eq_zero_iff_ae_notMem.mpr
+      filter_upwards [hret] with x hx
+      have hpos := returnGap_pos (X := fun n (x : ℕ → α) => x n) (k := 0)
+        (exists_visitCount_of_infinite hx 1)
+      simpa only [Set.mem_ofPred_eq, T, Nat.cast_eq_zero] using hpos.ne'
+    simp [hzero]
   have hmean : (∫⁻ x, (T 0 x : ℝ≥0∞) ∂P) = κ.meanReturnTime y := by
-    rw [meanReturnTime_def]
-    apply lintegral_congr_ae
-    filter_upwards [harr, h0, hret] with x hx hx0 hxret
-    have hvisit := successiveVisit_eq_visitTime (X := fun n (x : ℕ → α) => x n)
-      (exists_visitCount_of_infinite hxret 1)
-    rw [successiveVisit_one_eq_hittingAfter_of_zero hx0] at hvisit
-    rw [hvisit]
-    have hcast (n : ℕ) : ENat.toENNReal (n : WithTop ℕ) = (n : ℝ≥0∞) :=
-      ENat.toENNReal_coe n
-    simpa only [arrival_def, Finset.sum_range_one, hcast, ENNReal.coe_natCast] using
-      congrArg (fun t : ℝ≥0 => (t : ℝ≥0∞)) (hx 1)
-  -- Invert the renewal strong law and identify its count with positive-time occupation.
+    simpa only [T, ENNReal.coe_natCast] using hy.lintegral_returnGap 0
   have hLLN := ae_tendsto_renewalCountNat_div (T := T) (fun _ _ h => hi.indepFun h) hid hz
   rw [hmean] at hLLN
-  filter_upwards [hLLN, ae_tendsto_arrival_atTop (T := T) hi hid hz, harr, hret, h0]
-    with x hx hnonexp hxarr hxret hx0
-  have hcount (n : ℕ) : renewalCountNat T (n : ℝ≥0) x =
-      visitCount (fun k => x (k + 1)) y n := by
-    apply eq_of_forall_le_iff
-    intro k
-    rw [le_renewalCountNat_iff hnonexp, hxarr]
-    have hvisit := successiveVisit_eq_visitTime (X := fun n (x : ℕ → α) => x n)
-      (exists_visitCount_of_infinite hxret k)
-    have hc := successiveVisit_le_iff (X := fun n (x : ℕ → α) => x n)
-      (a := y) (k := k) (ω := x) (n := n)
-    rw [hvisit] at hc
-    have hsplit := visitCount_add x y 1 n
-    rw [Nat.add_comm 1 n] at hsplit
-    simp only [visitCount_succ_of_eq hx0, visitCount_zero, zero_add] at hsplit
-    simpa only [Nat.cast_le, hsplit, Nat.add_comm 1, Nat.lt_add_one_iff] using hc
-  simpa only [Function.comp_def, hcount, NNReal.coe_natCast] using
-    hx.comp (tendsto_natCast_atTop_atTop (R := ℝ≥0))
+  -- The deterministic adapter excludes the initial visit and includes time n.
+  filter_upwards [hLLN, hret, h0] with x hx hxret hx0
+  simpa only [Function.comp_def, T,
+    renewalCountNat_returnGap (X := fun n (x : ℕ → α) => x n) hxret hx0,
+    NNReal.coe_natCast] using hx.comp (tendsto_natCast_atTop_atTop (R := ℝ≥0))
 
 /-- **Occupation strong law from the counted state.** The positive-time visit frequency
 converges to the reciprocal extended mean first-return time, without any finite-mean

@@ -114,6 +114,12 @@ theorem IsTransient.meanReturnTime_eq_top (hx : κ.IsTransient x) : κ.meanRetur
   have hlt := isTransient_iff_return_probability_lt_one.mp hx
   exact (tsub_pos_of_lt hlt).ne'
 
+/-- Finite extended mean return time implies almost-sure return. -/
+theorem isRecurrent_of_meanReturnTime_ne_top (h : κ.meanReturnTime x ≠ ∞) :
+    κ.IsRecurrent x := by
+  by_contra hx
+  exact h ((isTransient_iff.mpr hx).meanReturnTime_eq_top)
+
 /-- A state is recurrent exactly when its diagonal Green function is infinite. -/
 theorem isRecurrent_iff_tsum_eq_top :
     κ.IsRecurrent x ↔ ∑' n : ℕ, (κ ^ n) x {x} = ∞ :=

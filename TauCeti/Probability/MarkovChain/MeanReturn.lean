@@ -33,12 +33,6 @@ namespace ProbabilityTheory.Kernel
 variable {S : Type*} [MeasurableSpace S] [MeasurableSingletonClass S]
   {κ : Kernel S S} [IsMarkovKernel κ] {x : S}
 
-/-- Finite extended mean return time implies almost-sure return. -/
-theorem isRecurrent_of_meanReturnTime_ne_top (h : κ.meanReturnTime x ≠ ∞) :
-    κ.IsRecurrent x := by
-  by_contra hx
-  exact h ((isTransient_iff.mpr hx).meanReturnTime_eq_top)
-
 variable [Countable S]
 
 /-- At a recurrent state every return gap has the extended mean positive return time.
