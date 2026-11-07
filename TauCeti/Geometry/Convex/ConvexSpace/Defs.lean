@@ -91,8 +91,8 @@ theorem sum_filter_weights_map [Fintype X] [Fintype Y] (f : X → Y) (x : StdSim
 
 /-- A point of `StdSimplex R Y` whose weights are supported on the range of an injective map
 `f : X → Y`, pulled back to `StdSimplex R X`: a right inverse of `StdSimplex.map f` on its range
-(`StdSimplex.map_comap`). -/
-@[expose] noncomputable def comap {f : X → Y} (hf : f.Injective) (y : StdSimplex R Y)
+(`StdSimplex.map_comap`), and a left inverse of it (`StdSimplex.comap_map`). -/
+noncomputable def comap {f : X → Y} (hf : f.Injective) (y : StdSimplex R Y)
     (h : ↑y.weights.support ⊆ Set.range f) : StdSimplex R X where
   weights := Finsupp.comapDomain f y.weights hf.injOn
   nonneg a := by simp
@@ -103,11 +103,18 @@ theorem sum_filter_weights_map [Fintype X] [Fintype Y] (f : X → Y) (x : StdSim
 
 omit [IsStrictOrderedRing R] in
 /-- The weights of a pulled back point are the pulled back weights. -/
-@[simp]
 theorem weights_comap {f : X → Y} (hf : f.Injective) (y : StdSimplex R Y)
     (h : ↑y.weights.support ⊆ Set.range f) :
     (comap hf y h).weights = Finsupp.comapDomain f y.weights hf.injOn :=
-  rfl
+  (rfl)
+
+omit [IsStrictOrderedRing R] in
+/-- The weight of a pulled back point at `a` is the weight of the point at `f a`. -/
+@[simp]
+theorem weights_comap_apply {f : X → Y} (hf : f.Injective) (y : StdSimplex R Y)
+    (h : ↑y.weights.support ⊆ Set.range f) (a : X) :
+    (comap hf y h).weights a = y.weights (f a) := by
+  rw [weights_comap, Finsupp.comapDomain_apply]
 
 /-- Pulling back a point along an injective map whose range contains its support, and then mapping
 forward again, recovers the point. -/
@@ -116,6 +123,14 @@ theorem map_comap {f : X → Y} (hf : f.Injective) (y : StdSimplex R Y)
     (h : ↑y.weights.support ⊆ Set.range f) : (comap hf y h).map f = y := by
   rw [← weights_inj, weights_map, weights_comap]
   exact Finsupp.mapDomain_comapDomain f hf y.weights h
+
+/-- Mapping a point forward along an injective map and pulling it back again recovers the
+point. -/
+@[simp]
+theorem comap_map {f : X → Y} (hf : f.Injective) (x : StdSimplex R X)
+    (h : ↑(x.map f).weights.support ⊆ Set.range f) : comap hf (x.map f) h = x := by
+  ext a
+  rw [weights_comap_apply, weights_map_apply_of_injective hf]
 
 /-- A point of a standard simplex lies on the facet opposite `j` exactly when its `j`-th weight
 vanishes. -/

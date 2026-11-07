@@ -265,9 +265,15 @@ variable {X Y : SSet.{u}}
 /-- The point of the geometric realization `|X|` with barycentric coordinates `w` in the
 realization of the `n`-simplex `x` of `X`: the value at `w` of the singular simplex
 `(sSetTopAdj.unit.app X).app _ x` of `|X|`. -/
-@[expose] noncomputable def toTopObjMk {n : ℕ} (x : X _⦋n⦌) (w : StdSimplex ℝ (Fin (n + 1))) :
+noncomputable def toTopObjMk {n : ℕ} (x : X _⦋n⦌) (w : StdSimplex ℝ (Fin (n + 1))) :
     |X| :=
   TopCat.toSSetObjEquiv _ _ ((sSetTopAdj.unit.app X).app _ x) w
+
+/-- The point `toTopObjMk x w` is the value at `w` of the singular simplex of `|X|` given by `x`
+under the unit of the adjunction. -/
+lemma toTopObjMk_def {n : ℕ} (x : X _⦋n⦌) (w : StdSimplex ℝ (Fin (n + 1))) :
+    toTopObjMk x w = TopCat.toSSetObjEquiv _ _ ((sSetTopAdj.unit.app X).app _ x) w :=
+  (rfl)
 
 /-- The point of `|X|` given by an `n`-simplex depends continuously on its coordinates. -/
 @[fun_prop]
@@ -291,6 +297,14 @@ lemma toTopObjMk_map {m n : ℕ} (θ : ⦋m⦌ ⟶ ⦋n⦌) (x : X _⦋n⦌) (w 
   dsimp at h
   rw [toTopObjMk, toTopObjMk, h, TopCat.toSSetObjEquiv_naturality_apply]
 
+/-- The value of a continuous map out of `|X|` at the point of a simplex is the value of the
+corresponding singular simplex. -/
+lemma apply_toTopObjMk {T : TopCat.{u}} (F : |X| ⟶ T) {n : ℕ} (x : X _⦋n⦌)
+    (w : StdSimplex ℝ (Fin (n + 1))) :
+    F (toTopObjMk x w) = TopCat.toSSetObjEquiv _ _ ((sSetTopAdj.homEquiv X T F).app _ x) w := by
+  rw [Adjunction.homEquiv_unit, NatTrans.comp_app, ConcreteCategory.comp_apply,
+    TauCeti.TopCat.toSSetObjEquiv_toSSet_map_app, ContinuousMap.comp_apply, toTopObjMk]
+
 /-- Two continuous maps out of `|X|` agree once they agree on the points of all simplices. -/
 lemma toTop_hom_ext {T : TopCat.{u}} {g₁ g₂ : |X| ⟶ T}
     (h : ∀ (n : ℕ) (x : X _⦋n⦌) (w : StdSimplex ℝ (Fin (n + 1))),
@@ -300,7 +314,8 @@ lemma toTop_hom_ext {T : TopCat.{u}} {g₁ g₂ : |X| ⟶ T}
   induction n using SimplexCategory.rec with | _ n => ?_
   apply (T.toSSetObjEquiv _).injective
   ext w
-  rw [Adjunction.homEquiv_unit, Adjunction.homEquiv_unit]
+  simp only [TypeCat.Fun.toFun_apply]
+  rw [← apply_toTopObjMk, ← apply_toTopObjMk]
   exact h n x w
 
 end SSet
