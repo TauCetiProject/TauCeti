@@ -23,11 +23,13 @@ space, separates them by a uniform distance on compact sets of starting paramete
 * `TauCeti.exists_pos_le_dist_apply_add`: a continuous function injective modulo `T` moves a
   definite distance over parameter differences in `[δ, T - δ]`, uniformly over starting parameters
   in a compact set.
+* `TauCeti.exists_pos_le_dist_apply_add_uncurry`: the same uniformly along a continuous family of
+  such functions, over a compact set of times.
 -/
 
 public section
 
-open Set
+open Function Set
 
 namespace TauCeti
 
@@ -44,20 +46,36 @@ theorem apply_ne_apply_add (hinj : ∀ s t, γ s = γ t → ∃ k : ℤ, s = t +
   · have : (k : ℝ) ≤ -1 := by exact_mod_cast Int.le_sub_one_of_lt hk0
     nlinarith
 
+/-- A continuous family `Γ t` of functions into a metric space, each injective modulo `T` for `t`
+in a compact set `k`, moves a definite distance over parameter differences in `[δ, T - δ]`,
+uniformly over the times `t ∈ k` and over starting parameters in a compact set. -/
+theorem exists_pos_le_dist_apply_add_uncurry [MetricSpace α] {β : Type*} [TopologicalSpace β]
+    {Γ : β → ℝ → α} (hΓ : Continuous (uncurry Γ)) {k : Set β} (hk : IsCompact k)
+    (hinj : ∀ t ∈ k, ∀ s s', Γ t s = Γ t s' → ∃ n : ℤ, s = s' + n * T) {s : Set ℝ}
+    (hs : IsCompact s) {δ : ℝ} (hδ : 0 < δ) :
+    ∃ η > 0, ∀ t ∈ k, ∀ a ∈ s, ∀ d ∈ Icc δ (T - δ), η ≤ dist (Γ t (a + d)) (Γ t a) := by
+  rcases (k ×ˢ s ×ˢ Icc δ (T - δ)).eq_empty_or_nonempty with he | hne
+  · exact ⟨1, one_pos, fun t ht a ha d hd ↦
+      (eq_empty_iff_forall_notMem.1 he (t, a, d) ⟨ht, ha, hd⟩).elim⟩
+  have hcont : Continuous fun p : β × ℝ × ℝ ↦ dist (Γ p.1 (p.2.1 + p.2.2)) (Γ p.1 p.2.1) :=
+    (hΓ.comp (continuous_fst.prodMk (continuous_snd.fst.add continuous_snd.snd))).dist
+      (hΓ.comp (continuous_fst.prodMk continuous_snd.fst))
+  obtain ⟨p, hp, hmin⟩ := (hk.prod (hs.prod isCompact_Icc)).exists_isMinOn hne hcont.continuousOn
+  refine ⟨_, dist_pos.2 fun heq ↦ ?_, fun t ht a ha d hd ↦
+    isMinOn_iff.1 hmin (t, a, d) ⟨ht, ha, hd⟩⟩
+  -- A coincidence `Γ t (a + d) = Γ t a` is impossible since `0 < d < T`.
+  have hd₁ : δ ≤ p.2.2 := hp.2.2.1
+  have hd₂ : p.2.2 ≤ T - δ := hp.2.2.2
+  exact apply_ne_apply_add (hinj p.1 hp.1) (by linarith) (by linarith) heq.symm
+
 /-- A continuous function into a metric space, injective modulo `T`, moves a definite distance
 over parameter differences in `[δ, T - δ]`, uniformly over starting parameters in a compact
 set. -/
 theorem exists_pos_le_dist_apply_add [MetricSpace α] (hγ : Continuous γ)
     (hinj : ∀ s t, γ s = γ t → ∃ k : ℤ, s = t + k * T) {s : Set ℝ} (hs : IsCompact s) {δ : ℝ}
     (hδ : 0 < δ) : ∃ η > 0, ∀ a ∈ s, ∀ d ∈ Icc δ (T - δ), η ≤ dist (γ (a + d)) (γ a) := by
-  rcases (s ×ˢ Icc δ (T - δ)).eq_empty_or_nonempty with he | hne
-  · exact ⟨1, one_pos, fun a ha d hd ↦ (eq_empty_iff_forall_notMem.1 he (a, d) ⟨ha, hd⟩).elim⟩
-  obtain ⟨p, hp, hmin⟩ := (hs.prod isCompact_Icc).exists_isMinOn hne
-    (Continuous.continuousOn (f := fun p : ℝ × ℝ ↦ dist (γ (p.1 + p.2)) (γ p.1)) (by fun_prop))
-  refine ⟨_, dist_pos.2 fun heq ↦ ?_, fun a ha d hd ↦ isMinOn_iff.1 hmin (a, d) ⟨ha, hd⟩⟩
-  -- A coincidence `γ (a + d) = γ a` is impossible since `0 < d < T`.
-  have hd₁ : δ ≤ p.2 := (mem_prod.1 hp).2.1
-  have hd₂ : p.2 ≤ T - δ := (mem_prod.1 hp).2.2
-  exact apply_ne_apply_add hinj (by linarith) (by linarith) heq.symm
+  obtain ⟨η, hη, h⟩ := exists_pos_le_dist_apply_add_uncurry (Γ := fun _ : Unit ↦ γ)
+    (hγ.comp continuous_snd) isCompact_univ (fun _ _ ↦ hinj) hs hδ
+  exact ⟨η, hη, h () (mem_univ _)⟩
 
 end TauCeti

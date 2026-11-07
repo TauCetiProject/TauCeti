@@ -24,7 +24,8 @@ surjective. The additive version gives the same criterion for additive homomorph
 any scalar or topological assumptions.
 
 The file also records the value and the inverse of a product `MulEquiv.prodCongr` of two
-multiplicative isomorphisms, which Mathlib states only for the underlying `Equiv.prodCongr`, and
+multiplicative isomorphisms, which Mathlib states only for the underlying `Equiv.prodCongr`, the
+fact that a product of automorphisms of order dividing `m` has order dividing `m`, and
 recognizes a commutative monoid with projections and inclusions satisfying the biproduct
 identities as the product of the two factors.
 
@@ -37,6 +38,8 @@ identities as the product of the two factors.
   identities.
 * `MulEquiv.prodCongr_apply`, `MulEquiv.prodCongr_symm`: the product of two isomorphisms acts
   componentwise, and its inverse is the product of the inverses.
+* `MulEquiv.iterate_prodCongr_eq_id`: the product of two automorphisms of order dividing `m` has
+  order dividing `m`.
 -/
 
 public section
@@ -121,6 +124,14 @@ theorem prodCongr_apply (f : M ≃* M') (g : N ≃* N') (x : M × N) :
 /-- The inverse of a product of two additive isomorphisms is the product of the inverses. -/]
 theorem prodCongr_symm (f : M ≃* M') (g : N ≃* N') :
     (f.prodCongr g).symm = f.symm.prodCongr g.symm := (rfl)
+
+/-- If the automorphisms `f` and `g` have order dividing `m`, so does their product `f × g`. -/
+@[to_additive iterate_prodCongr_eq_id
+/-- If the additive automorphisms `f` and `g` have order dividing `m`, so does their product
+`f × g`. -/]
+theorem iterate_prodCongr_eq_id {f : M ≃* M} {g : N ≃* N} {m : ℕ} (hf : (⇑f)^[m] = id)
+    (hg : (⇑g)^[m] = id) : (⇑(f.prodCongr g))^[m] = id :=
+  (Prod.map_iterate f g m).trans (by rw [hf, hg, Prod.map_id])
 
 section ofProdCoprod
 

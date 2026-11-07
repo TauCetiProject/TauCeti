@@ -31,8 +31,6 @@ embedding `LieAlgebra.LoopAlgebra.toHahnModule` of polynomial loops `L[t, t⁻¹
   of Lie algebras over `HahnSeries Γ R`, for an arbitrary coefficient Lie algebra.
 * `HahnModule.tensorProductLieEquiv`: for finite free `L`, the Lie algebra equivalence
   `HahnSeries Γ R ⊗[R] L ≃ₗ⁅HahnSeries Γ R⁆ HahnModule Γ R L`.
-* `HahnModule.coeff_tensorProductToHahnModule`: on formal currents, the comparison preserves
-  coefficients.
 * `LieHom.hahnModuleMap_tensorProductLieHom`: the comparison map is natural in the Lie algebra.
 * `HahnModule.tensorProductToHahnModule_ofLoop`: on polynomial loops, the comparison is
   `LieAlgebra.LoopAlgebra.toHahnModule`.
@@ -134,17 +132,6 @@ open scoped LaurentSeries
 
 -- Match the coefficientwise scalar action used to define formal currents.
 attribute [local instance 1100] HahnSeries.instAlgebra
-
-/-- On formal currents, the comparison with module-valued Laurent series preserves
-coefficients. -/
-@[simp]
-theorem coeff_tensorProductToHahnModule {V : Type*} [AddCommGroup V] [Module R V]
-    (u : TauCeti.currentAlgebra R V) (n : ℤ) :
-    ((of R).symm (tensorProductToHahnModule ℤ R V u)).coeff n =
-      TauCeti.CurrentAlgebra.coeff R V n u := by
-  induction u using TensorProduct.inductionOn with
-  | tmul f x => simp
-  | add u v hu hv => simp only [map_add, of_symm_add, HahnSeries.coeff_add, hu, hv]
 
 /-- On polynomial loops, the comparison of formal currents with `L`-valued Laurent series is the
 embedding `LieAlgebra.LoopAlgebra.toHahnModule`. -/

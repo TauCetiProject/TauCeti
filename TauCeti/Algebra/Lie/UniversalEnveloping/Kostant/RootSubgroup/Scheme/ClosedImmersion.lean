@@ -49,6 +49,12 @@ left to the caller in the general construction.
   `TauCeti.Algebra.Lie.Symplectic.StandardCarrier.AlternatingForm`.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantRootGeneratorIntMatrix_eq_of_action`: the basis
   action determines the integral root matrix.
+* `TauCeti.UniversalEnvelopingAlgebra.kostantRootGeneratorIntMatrix_mul_self`: square-zero
+  represented root operators give square-zero integral matrices.
+* `TauCeti.UniversalEnvelopingAlgebra.lie_kostantRootGeneratorIntMatrix_eq_zero`,
+  `TauCeti.UniversalEnvelopingAlgebra.lie_lie_kostantRootGeneratorIntMatrix_eq_smul` and
+  `TauCeti.UniversalEnvelopingAlgebra.lie_kostantRootGeneratorIntMatrix_lie_eq_zero`:
+  bracket relations among root generators hold for their integral matrices.
 * `TauCeti.UniversalEnvelopingAlgebra.repr_kostantRootSubgroupPoints_baseChange`: the coordinates
   of a root-subgroup point on a base-changed basis vector.
 * `TauCeti.UniversalEnvelopingAlgebra.repr_kostantRootSubgroupPoints_of_isRootStep`: a root step
@@ -181,6 +187,81 @@ theorem kostantRootGeneratorIntMatrix_eq_toMatrix [Fintype η] [DecidableEq η] 
   congr 2
   apply Subtype.ext
   rw [coe_kostantRootOperator_apply]
+
+section MatrixRelations
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+variable [Fintype η]
+
+local notation "rootOp" => kostantRootOperator e h ρ M hM
+local notation "rootRep" => ρ.toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ)
+
+/-- A square-zero represented root generator has a square-zero integral lattice matrix. -/
+theorem kostantRootGeneratorIntMatrix_mul_self
+    (hsq : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) *
+      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) = 0) :
+    kostantRootGeneratorIntMatrix e h ρ M hM i b *
+      kostantRootGeneratorIntMatrix e h ρ M hM i b = 0 := by
+  classical
+  have hop : rootOp i * rootOp i = 0 := by
+    refine LinearMap.ext fun m => Subtype.ext ?_
+    have hm := congrArg (fun f => f (m : V)) hsq
+    simpa only [mul_apply_eq_comp, coe_kostantRootOperator_apply, LinearMap.zero_apply,
+      ZeroMemClass.coe_zero] using hm
+  rw [kostantRootGeneratorIntMatrix_eq_toMatrix, ← LinearMap.toMatrix_mul, hop, map_zero]
+
+/-- Commuting root generators give commuting integral lattice matrices. -/
+theorem lie_kostantRootGeneratorIntMatrix_eq_zero {j : ι} (hij : ⁅e i, e j⁆ = 0) :
+    ⁅kostantRootGeneratorIntMatrix e h ρ M hM i b,
+      kostantRootGeneratorIntMatrix e h ρ M hM j b⁆ = 0 := by
+  classical
+  have hop : ⁅rootOp i, rootOp j⁆ = 0 := by
+    refine LinearMap.ext fun m => Subtype.ext ?_
+    have hr : ⁅rootRep (e i), rootRep (e j)⁆ = 0 := by
+      rw [← LieHom.map_lie, hij, map_zero]
+    have hm := congrArg (fun f => f (m : V)) hr
+    simpa only [Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp,
+      AddSubgroupClass.coe_sub, LinearMap.zero_apply, ZeroMemClass.coe_zero,
+      coe_kostantRootOperator_apply, LieHom.comp_apply, AlgHom.toLieHom_apply] using hm
+  simpa only [Ring.lie_def, map_sub, LinearMap.toMatrix_mul, map_zero,
+    kostantRootGeneratorIntMatrix_eq_toMatrix] using
+    congrArg (LinearMap.toMatrix b b) hop
+
+/-- An integer nested-bracket relation among root generators holds for their integral matrices. -/
+theorem lie_lie_kostantRootGeneratorIntMatrix_eq_smul {j k l : ι} (c : ℤ)
+    (hijk : ⁅⁅e i, e j⁆, e k⁆ = c • e l) :
+    ⁅⁅kostantRootGeneratorIntMatrix e h ρ M hM i b,
+        kostantRootGeneratorIntMatrix e h ρ M hM j b⁆,
+      kostantRootGeneratorIntMatrix e h ρ M hM k b⁆ =
+      c • kostantRootGeneratorIntMatrix e h ρ M hM l b := by
+  classical
+  have hop : ⁅⁅rootOp i, rootOp j⁆, rootOp k⁆ = c • rootOp l := by
+    refine LinearMap.ext fun m => Subtype.ext ?_
+    have hr : ⁅⁅rootRep (e i), rootRep (e j)⁆, rootRep (e k)⁆ = c • rootRep (e l) := by
+      rw [← LieHom.map_lie, ← LieHom.map_lie, hijk, map_zsmul]
+    have hm := congrArg (fun f => f (m : V)) hr
+    simpa only [Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp,
+      AddSubgroupClass.coe_sub, LinearMap.map_sub, LinearMap.smul_apply,
+      AddSubgroupClass.coe_zsmul, coe_kostantRootOperator_apply,
+      LieHom.comp_apply, AlgHom.toLieHom_apply] using hm
+  simpa only [Ring.lie_def, map_sub, LinearMap.toMatrix_mul, map_zsmul,
+    kostantRootGeneratorIntMatrix_eq_toMatrix] using
+    congrArg (LinearMap.toMatrix b b) hop
+
+/-- A vanishing right-nested bracket of root generators vanishes on their integral matrices. -/
+theorem lie_kostantRootGeneratorIntMatrix_lie_eq_zero {j k : ι}
+    (hijk : ⁅e i, ⁅e j, e k⁆⁆ = 0) :
+    ⁅kostantRootGeneratorIntMatrix e h ρ M hM i b,
+      ⁅kostantRootGeneratorIntMatrix e h ρ M hM j b,
+        kostantRootGeneratorIntMatrix e h ρ M hM k b⁆⁆ = 0 := by
+  classical
+  have hleft : ⁅⁅e j, e k⁆, e i⁆ = (0 : ℤ) • e i := by
+    rw [← lie_skew, hijk, neg_zero, zero_smul]
+  have hm := lie_lie_kostantRootGeneratorIntMatrix_eq_smul e h ρ M hM j b 0 hleft
+  rwa [zero_smul, ← lie_skew, neg_eq_zero] at hm
+
+end MatrixRelations
 
 /-- If a represented root generator acts on the lattice basis by the columns of `X`, then its
 integral matrix is `X`. -/

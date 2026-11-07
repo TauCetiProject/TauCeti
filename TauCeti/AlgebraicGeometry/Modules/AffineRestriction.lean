@@ -35,6 +35,13 @@ scalars.
 * `AlgebraicGeometry.Scheme.Modules.isBaseChange_sectionsRestriction`: for a quasi-coherent `M`
   and affine opens `V ≤ U`, restriction `Γ(M, U) → Γ(M, V)` is a base change along
   `Γ(X, U) → Γ(X, V)`.
+* `AlgebraicGeometry.Scheme.Modules.isBaseChange_sectionsRestrictionLinearMap`: the same for
+  restriction of sections as a named linear map `Scheme.Modules.sectionsRestrictionLinearMap`.
+* `AlgebraicGeometry.Scheme.Modules.Hom.bijective_app_of_le`: a morphism of quasi-coherent
+  modules bijective on the sections over an affine open `U` is bijective over every affine
+  `V ≤ U`.
+* `AlgebraicGeometry.Scheme.Modules.Hom.isIso_of_bijective_app`: a morphism of quasi-coherent
+  modules bijective on the sections over the members of an affine open cover is an isomorphism.
 
 ## References
 
@@ -76,6 +83,8 @@ private theorem isBaseChange_sectionsRestriction_basicOpen [M.IsQuasicoherent]
   have : IsLocalization.Away f Γ(X, X.basicOpen f) := hU.isLocalization_basicOpen f
   exact (isLocalizedModule_iff_isBaseChange (Submonoid.powers f) Γ(X, X.basicOpen f) _).mp
     (M.isLocalizedModule_basicOpenRestrict hU f)
+
+section
 
 variable [Algebra Γ(X, U) Γ(X, V)] [Module Γ(X, U) Γ(M, V)]
   [IsScalarTower Γ(X, U) Γ(X, V) Γ(M, V)]
@@ -161,6 +170,99 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.isBaseChange_sectionsRestriction
       (IsLocalizedModule.map_comp _ _ _ _)
   rw [h]
   exact Function.bijective_id
+
+/-- Restriction of sections `Γ(M, U) → Γ(M, V)` as a `Γ(X, U)`-linear map, for module structures
+compatible with restriction of functions. -/
+def _root_.AlgebraicGeometry.Scheme.Modules.sectionsRestrictionLinearMap (hVU : V ≤ U)
+    (hA : ∀ r, algebraMap Γ(X, U) Γ(X, V) r = X.presheaf.map (homOfLE hVU).op r) :
+    Γ(M, U) →ₗ[Γ(X, U)] Γ(M, V) where
+  toFun := M.presheaf.map (homOfLE hVU).op
+  map_add' := map_add _
+  map_smul' r s := by
+    rw [RingHom.id_apply, Scheme.Modules.map_smul, ← hA, algebraMap_smul]
+
+/-- `Scheme.Modules.sectionsRestrictionLinearMap` applies the restriction map of `M`. -/
+@[simp]
+theorem _root_.AlgebraicGeometry.Scheme.Modules.sectionsRestrictionLinearMap_apply (hVU : V ≤ U)
+    (hA : ∀ r, algebraMap Γ(X, U) Γ(X, V) r = X.presheaf.map (homOfLE hVU).op r) (s : Γ(M, U)) :
+    M.sectionsRestrictionLinearMap hVU hA s = M.presheaf.map (homOfLE hVU).op s :=
+  (rfl)
+
+/-- For a quasi-coherent `M` and affine opens `V ≤ U`, the restriction map
+`Scheme.Modules.sectionsRestrictionLinearMap` is a base change along `Γ(X, U) → Γ(X, V)`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.isBaseChange_sectionsRestrictionLinearMap
+    [M.IsQuasicoherent] (hU : IsAffineOpen U) (hV : IsAffineOpen V) (hVU : V ≤ U)
+    (hA : ∀ r, algebraMap Γ(X, U) Γ(X, V) r = X.presheaf.map (homOfLE hVU).op r) :
+    IsBaseChange Γ(X, V) (M.sectionsRestrictionLinearMap hVU hA) :=
+  M.isBaseChange_sectionsRestriction hU hV hVU hA _ fun _ ↦ rfl
+
+end
+
+variable {M} {N : X.Modules}
+
+open Scheme.Modules in
+/-- A morphism of quasi-coherent modules that is bijective on the sections over an affine open `U`
+is bijective on the sections over every affine open `V ≤ U`: both restrictions are base changes
+along `Γ(X, U) → Γ(X, V)`, and the map over `V` is the base change of the map over `U`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.Hom.bijective_app_of_le
+    [M.IsQuasicoherent] [N.IsQuasicoherent] (φ : M ⟶ N) (hU : IsAffineOpen U)
+    (hV : IsAffineOpen V) (hVU : V ≤ U) (h : Function.Bijective (φ.app U)) :
+    Function.Bijective (φ.app V) := by
+  let := (X.presheaf.map (homOfLE hVU).op).hom.toAlgebra
+  -- Sections over `V` are `Γ(X, U)`-modules by restriction of scalars.
+  let _ (P : X.Modules) : Module Γ(X, U) Γ(P, V) := Module.compHom _ (algebraMap Γ(X, U) Γ(X, V))
+  have _ (P : X.Modules) : IsScalarTower Γ(X, U) Γ(X, V) Γ(P, V) :=
+    .of_algebraMap_smul fun _ _ ↦ rfl
+  have hM := M.isBaseChange_sectionsRestrictionLinearMap hU hV hVU fun _ ↦ rfl
+  have hN := N.isBaseChange_sectionsRestrictionLinearMap hU hV hVU fun _ ↦ rfl
+  let φU : Γ(M, U) ≃ₗ[Γ(X, U)] Γ(N, U) := .ofBijective
+    { toFun := φ.app U
+      map_add' := map_add _
+      map_smul' := φ.app_smul } h
+  let φV : Γ(M, V) →ₗ[Γ(X, V)] Γ(N, V) :=
+    { toFun := φ.app V
+      map_add' := map_add _
+      map_smul' := φ.app_smul }
+  -- Under the two base-change identifications, `φ.app V` is the base change of `φ.app U`.
+  have key : φV ∘ₗ hM.equiv.toLinearMap =
+      hN.equiv.toLinearMap ∘ₗ (LinearEquiv.baseChange Γ(X, U) Γ(X, V) _ _ φU).toLinearMap := by
+    refine TensorProduct.AlgebraTensorModule.ext fun a s ↦ ?_
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, IsBaseChange.equiv_tmul,
+      LinearEquiv.baseChange_tmul]
+    rw [LinearMap.map_smul]
+    congr 1
+    have h := congr($(φ.mapPresheaf.naturality (homOfLE hVU).op) s)
+    simp only [ConcreteCategory.comp_apply, mapPresheaf_app] at h
+    exact h
+  have hcomp : Function.Bijective (φV ∘ hM.equiv) := by
+    rw [← LinearEquiv.coe_coe, ← LinearMap.coe_comp, key]
+    exact ((LinearEquiv.baseChange Γ(X, U) Γ(X, V) _ _ φU).trans hN.equiv).bijective
+  exact (Function.Bijective.of_comp_iff φV hM.equiv.bijective).mp hcomp
+
+open Scheme.Modules in
+/-- **Isomorphisms of quasi-coherent modules are detected on an affine open cover.** A morphism
+of quasi-coherent modules that is bijective on the sections over the members of an affine open
+cover is an isomorphism. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.Hom.isIso_of_bijective_app
+    [M.IsQuasicoherent] [N.IsQuasicoherent] (φ : M ⟶ N) {ι : Type*} {U : ι → X.Opens}
+    (hU : ∀ i, IsAffineOpen (U i)) (hcover : ⨆ i, U i = ⊤)
+    (h : ∀ i, Function.Bijective (φ.app (U i))) : IsIso φ := by
+  -- The affine opens contained in a member of the cover form a basis of `X`, and `φ` is bijective
+  -- on the sections over each of them.
+  let B : {V : X.Opens // IsAffineOpen V ∧ ∃ i, V ≤ U i} → X.Opens := Subtype.val
+  have hB : Opens.IsBasis (Set.range B) := by
+    refine Opens.isBasis_iff_nbhd.mpr fun {W x} hx ↦ ?_
+    obtain ⟨i, hi⟩ := Opens.mem_iSup.mp (hcover.ge (Set.mem_univ x))
+    obtain ⟨_, ⟨V, hV, rfl⟩, hxV, hVW⟩ :=
+      X.isBasis_affineOpens.exists_subset_of_mem_open (Opens.mem_inf.2 ⟨hx, hi⟩) (W ⊓ U i).2
+    exact ⟨V, ⟨⟨V, hV, i, hVW.trans inf_le_right⟩, rfl⟩, hxV, hVW.trans inf_le_left⟩
+  let ψ : (⟨M.presheaf, M.isSheaf⟩ : TopCat.Sheaf AddCommGrpCat X) ⟶ ⟨N.presheaf, N.isSheaf⟩ :=
+    ObjectProperty.homMk φ.mapPresheaf
+  have : IsIso ψ := TopCat.Sheaf.isIso_iff_isIso_basis hB fun ⟨V, hV, i, hVi⟩ ↦
+    (ConcreteCategory.isIso_iff_bijective _).mpr (φ.bijective_app_of_le (hU i) hV hVi (h i))
+  refine Hom.isIso_iff_isIso_app.mpr fun V ↦ ?_
+  have : IsIso ((TopCat.Sheaf.forget _ _).map ψ) := inferInstance
+  exact NatIso.isIso_app_of_isIso ((TopCat.Sheaf.forget _ _).map ψ) (op V)
 
 end
 

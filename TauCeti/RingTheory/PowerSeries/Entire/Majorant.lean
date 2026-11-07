@@ -56,6 +56,8 @@ transform `D(B, F)`, which is therefore entire.
   norms of an entire series tend to zero.
 * `PowerSeries.IsEntire.exists_newtonMajorant` and `PowerSeries.isEntire_of_norm_coeff_le_prod`:
   the two directions of `PowerSeries.isEntire_iff_exists_newtonMajorant`.
+* `PowerSeries.IsEntire.exists_newtonMajorant_mul`: a Newton majorant dominating the
+  convolution of the coefficient norms of two entire series.
 * `PowerSeries.norm_coeff_succ_mul_pow_le_colemanMajorant` and
   `PowerSeries.colemanMajorant_le`: `β_B(r)` is the least upper bound of the weighted
   coefficients of positive degree.
@@ -163,6 +165,24 @@ theorem isEntire_iff_exists_newtonMajorant (hF0 : ‖coeff 0 F‖ ≤ 1) :
       ∀ j, ‖coeff j F‖ ≤ ∏ i ∈ range j, ρ i :=
   ⟨fun hF ↦ hF.exists_newtonMajorant hF0,
     fun ⟨_, _, _, hρ, hF⟩ ↦ isEntire_of_norm_coeff_le_prod hρ hF⟩
+
+/-- **Newton majorants of products.** For entire series `F = ∑ aⱼ Tʲ` and `G = ∑ bⱼ Tʲ` with
+`‖a₀‖ ≤ 1` and `‖b₀‖ ≤ 1`, one positive antitone sequence `ρ` tending to zero dominates the
+convolution of their coefficient norms: `∑ i + l = j, ‖aᵢ‖ ‖bₗ‖ ≤ ∏ i < j, ρᵢ`. It is therefore
+a Newton majorant of `F * G` and of every product of truncations of `F` and `G`. -/
+theorem IsEntire.exists_newtonMajorant_mul {G : R⟦X⟧} (hF : F.IsEntire) (hG : G.IsEntire)
+    (hF0 : ‖coeff 0 F‖ ≤ 1) (hG0 : ‖coeff 0 G‖ ≤ 1) :
+    ∃ ρ : ℕ → ℝ, (∀ i, 0 < ρ i) ∧ Antitone ρ ∧ Tendsto ρ atTop (𝓝 0) ∧
+      ∀ j, ∑ x ∈ antidiagonal j, ‖coeff x.1 F‖ * ‖coeff x.2 G‖ ≤ ∏ i ∈ range j, ρ i := by
+  -- the real series of coefficient norms of an entire series is entire
+  have hnorm {H : R⟦X⟧} (hH : H.IsEntire) : (mk fun n ↦ ‖coeff n H‖ : ℝ⟦X⟧).IsEntire :=
+    isEntire_iff.2 fun r ↦ by simpa [isRestricted_iff'] using hH.isRestricted r
+  obtain ⟨ρ, hρ₀, hρ, hlim, hρFG⟩ := ((hnorm hF).mul (hnorm hG)).exists_newtonMajorant (by
+    simpa [coeff_mul] using mul_le_mul hF0 hG0 (norm_nonneg _) zero_le_one)
+  refine ⟨ρ, hρ₀, hρ, hlim, fun j ↦ ?_⟩
+  have hsum : 0 ≤ ∑ x ∈ antidiagonal j, ‖coeff x.1 F‖ * ‖coeff x.2 G‖ :=
+    sum_nonneg fun x _ ↦ mul_nonneg (norm_nonneg _) (norm_nonneg _)
+  simpa [coeff_mul, abs_of_nonneg hsum] using hρFG j
 
 /-- Truncation preserves a Newton majorant: `‖coeff j (trunc b F)‖ ≤ ∏ i < j, ρ i` whenever
 `‖coeff j F‖ ≤ ∏ i < j, ρ i` for all `j` and `ρ` is nonnegative. -/

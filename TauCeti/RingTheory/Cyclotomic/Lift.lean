@@ -233,13 +233,12 @@ theorem conjugateResiduesRingHom_apply [Fact p.Prime] [NeZero e] {α : ZMod p}
     conjugateResiduesRingHom hα x = conjugateResidues α x :=
   funext fun _ => reduceRingHom_apply _ _ _ _
 
-/-- The residue tuple of `0` is `0`.  Unlike the other componentwise rules this needs no
+/-- The residue tuple of `0` is `0`.  Unlike the rules for `1` and products this needs no
 primitive root: every coordinate of `0` vanishes, so every residue does. -/
 @[simp]
 theorem conjugateResidues_zero {α : ZMod p} : conjugateResidues α (0 : Cyclotomic e) = 0 := by
   funext j
-  rw [conjugateResidues_apply, reduce_eq_sum]
-  simp
+  simp [conjugateResidues_apply]
 
 /-- The residue tuple of `1` is `1`. -/
 @[simp]
@@ -247,20 +246,20 @@ theorem conjugateResidues_one [Fact p.Prime] [NeZero e] {α : ZMod p}
     (hα : IsPrimitiveRoot α e) : conjugateResidues α (1 : Cyclotomic e) = 1 := by
   rw [← conjugateResiduesRingHom_apply hα, map_one]
 
-/-- Residue tuples add. -/
+/-- Residue tuples add.  Like the residue tuple of `0`, this needs no primitive root: reduction
+is additive in the coordinates. -/
 @[simp]
-theorem conjugateResidues_add [Fact p.Prime] [NeZero e] {α : ZMod p}
-    (hα : IsPrimitiveRoot α e) (x y : Cyclotomic e) :
+theorem conjugateResidues_add {α : ZMod p} (x y : Cyclotomic e) :
     conjugateResidues α (x + y) = conjugateResidues α x + conjugateResidues α y := by
-  rw [← conjugateResiduesRingHom_apply hα, map_add, conjugateResiduesRingHom_apply,
-    conjugateResiduesRingHom_apply]
+  funext j
+  simp [conjugateResidues_apply]
 
-/-- Residue tuples negate. -/
+/-- Residue tuples negate.  This needs no primitive root either. -/
 @[simp]
-theorem conjugateResidues_neg [Fact p.Prime] [NeZero e] {α : ZMod p}
-    (hα : IsPrimitiveRoot α e) (x : Cyclotomic e) :
+theorem conjugateResidues_neg {α : ZMod p} (x : Cyclotomic e) :
     conjugateResidues α (-x) = -conjugateResidues α x := by
-  rw [← conjugateResiduesRingHom_apply hα, map_neg, conjugateResiduesRingHom_apply]
+  funext j
+  simp [conjugateResidues_apply]
 
 /-- Residue tuples multiply. -/
 @[simp]

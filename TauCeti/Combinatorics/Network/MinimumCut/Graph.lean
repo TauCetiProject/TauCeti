@@ -129,9 +129,7 @@ theorem edgeReachability_eq_edgeCutCapacity_edgeSide
     G.edgeReachability s t =
       ((G.edgeCutCapacity (fun _ ↦ (1 : ℕ)) (T.edgeSide u v) : ℕ) : ℕ∞) := by
   have hcut := hT.isMinimum_edgeSide_of_mem_edges hp huv hmin hs
-  obtain ⟨hs', ht⟩ := TauCeti.TerminalCut.isAdmissible_singleton.mp hcut.admissible
-  have hst : s ≠ t := fun h ↦ ht (h ▸ hs')
-  rw [G.edgeReachability_eq_pairMinimumValue hst, hcut.pairMinimumValue_eq]
+  rw [G.edgeReachability_eq_pairMinimumValue hcut.admissible.ne, hcut.pairMinimumValue_eq]
 
 end TauCeti.TerminalCut.IsCutTree
 

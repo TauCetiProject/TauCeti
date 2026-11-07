@@ -78,6 +78,16 @@ namespace Matrix
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
+/-- If the ranks of all powers of `Y` are bounded by those of a nilpotent matrix `X`,
+then `Y` is nilpotent too. -/
+theorem isNilpotent_of_forall_rank_pow_le {K : Type*} [Field K] {X Y : Matrix n n K}
+    (hX : IsNilpotent X) (h : ∀ k, (Y ^ k).rank ≤ (X ^ k).rank) : IsNilpotent Y := by
+  obtain ⟨N, hN⟩ := hX
+  apply (isNilpotent_toLin'_iff Y).1
+  refine ⟨N, LinearMap.range_eq_bot.1 (Submodule.finrank_eq_zero.1 ?_)⟩
+  have := h N
+  rwa [hN, rank_zero, Nat.le_zero, rank, ← toLin'_apply', toLin'_pow] at this
+
 section Zariski
 
 variable {k K : Type*} [Field k] [Field K] [Algebra k K]
@@ -223,11 +233,8 @@ theorem mem_of_forall_rank_pow_le {X : Matrix n n K} (hX : IsNilpotent X)
   rintro Y rfl h
   have hXl : IsNilpotent (toLin' X) := (isNilpotent_toLin'_iff X).2 hX
   obtain ⟨κ, _, ⟨b⟩⟩ := Module.End.exists_jordanChainBasis hXl
-  have hYl : IsNilpotent (toLin' Y) := by
-    obtain ⟨N, hN⟩ := hX
-    refine ⟨N, LinearMap.range_eq_bot.1 (Submodule.finrank_eq_zero.1 ?_)⟩
-    have := h N
-    rwa [hN, rank_zero, Nat.le_zero, rank, ← toLin'_apply', toLin'_pow] at this
+  have hYl : IsNilpotent (toLin' Y) :=
+    (isNilpotent_toLin'_iff Y).2 (isNilpotent_of_forall_rank_pow_le hX h)
   obtain ⟨ι, _, ⟨c⟩⟩ := Module.End.exists_jordanChainBasis hYl
   by_cases heq : ∀ k, (Y ^ k).rank = (X ^ k).rank
   · -- Equal ranks of powers make `Y` conjugate to `X`.

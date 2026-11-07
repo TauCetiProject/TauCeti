@@ -89,8 +89,14 @@ multiple `t` of the level prime to `a`.
   for `m ∈ L^∨ \ L`.
 * `ZLattice.gaussSumTwisted_eq_of_mem`: for `m ∈ L` and `a d ≡ 1 (mod c)`,
   `G_L(a, c; m) = e(-a d² ‖m‖² / (2c)) G_L(a, c)`.
+* `ZLattice.dualGaussSum_one`: for `c = 1` the Gauss sum over `L^∨ / cL` is the sum
+  `∑_{γ ∈ L^∨ / L} e(a ‖γ‖² / 2)` over the discriminant group.
+* `ZLattice.conj_dualGaussSum`: complex conjugation negates the coefficient of the Gauss sum over
+  `L^∨ / cL`.
 * `ZLattice.dualGaussSum_level_mul`: for an even full lattice of level `N`,
   `∑_{y ∈ L^∨ / cL} e(N b ‖y‖² / (2c)) = |L^∨ / L| · G_{√N • L^∨}(b, c)`.
+* `ZLattice.dualGaussSum_eq_pow_mul_card_of_dvd`: for an even full lattice of rank `n` and level
+  `N`, if `a N ∣ t` then `∑_{y ∈ L^∨ / aL} e(t ‖y‖² / (2a)) = aⁿ |L^∨ / L|`.
 * `ZLattice.IsEven.gaussSum_eq_jacobiSym`: for odd `c` prime to `a` and to `det L`,
   `G_L(a, c) = (D_L / c) c^k`.
 * `ZLattice.IsEven.dualGaussSum_eq_jacobiSym`: for odd `a` and a multiple `t` of the level prime
@@ -467,6 +473,37 @@ theorem dualGaussSum_def (a : ℤ) (c : ℕ) [Fintype (dual L ⧸ ((c : ℝ) •
     dualGaussSum L hL a c = ∑ y, dualGaussTerm L hL a c y :=
   (rfl)
 
+/-- For `c = 1` the Gauss sum over `L^∨ / cL` is the sum `∑_{γ ∈ L^∨ / L} e(a ‖γ‖² / 2)` over the
+discriminant group, computed with any function `f` on `L^∨ / L` taking the value
+`e(a ‖v‖² / 2)` at the class of each `v ∈ L^∨`. -/
+theorem dualGaussSum_one (a : ℤ) [Fintype (dual L ⧸ (((1 : ℕ) : ℝ) • L).submoduleOf (dual L))]
+    [Fintype (DiscriminantGroup L)] (f : DiscriminantGroup L → ℂ)
+    (hf : ∀ v : dual L,
+      f (Submodule.Quotient.mk v) = cexp (2 * π * I * ((a * ‖(v : E)‖ ^ 2 / 2 : ℝ) : ℂ))) :
+    dualGaussSum L hL a 1 = ∑ γ, f γ := by
+  have h : (((1 : ℕ) : ℝ) • L).submoduleOf (dual L) = L.submoduleOf (dual L) := by
+    rw [Nat.cast_one, one_smul]
+  rw [dualGaussSum_def]
+  refine Fintype.sum_equiv (Submodule.quotEquivOfEq _ _ h).toEquiv _ _ fun y ↦ ?_
+  induction y using Submodule.Quotient.induction_on with | H v
+  rw [LinearEquiv.coe_toEquiv, Submodule.quotEquivOfEq_mk, hf, dualGaussTerm_mk, Nat.cast_one,
+    mul_one]
+
+/-- Complex conjugation negates the coefficient of the Gauss sum over `L^∨ / cL`:
+`conj (∑_y e(a ‖y‖² / (2c))) = ∑_y e(-a ‖y‖² / (2c))`. -/
+@[simp]
+theorem conj_dualGaussSum (a : ℤ) (c : ℕ)
+    [Fintype (dual L ⧸ ((c : ℝ) • L).submoduleOf (dual L))] :
+    starRingEnd ℂ (dualGaussSum L hL a c) = dualGaussSum L hL (-a) c := by
+  rw [dualGaussSum_def, dualGaussSum_def, map_sum]
+  refine Finset.sum_congr rfl fun y _ ↦ ?_
+  induction y using Submodule.Quotient.induction_on with | H v
+  rw [dualGaussTerm_mk, dualGaussTerm_mk, ← exp_conj]
+  simp only [map_mul, map_ofNat, conj_ofReal, conj_I]
+  congr 1
+  push_cast
+  ring
+
 variable [FiniteDimensional ℝ E] [DiscreteTopology L] [IsZLattice ℝ L]
 
 /-- The descent to the Fricke partner `M = √N • L^∨`, with `M` kept abstract. The summand
@@ -535,6 +572,32 @@ theorem dualGaussSum_level_mul (b : ℤ) (c : ℕ)
       Nat.card (DiscriminantGroup L) *
         gaussSum (√(level L : ℝ) • dual L) (isEven_sqrt_level_smul_dual L) b c :=
   dualGaussSum_level_mul_aux hL b c rfl _
+
+/-- **The trivial dual Gauss sum.** Let `L` be an even full lattice of rank `n` and level `N`. If
+`a N` divides `t`, then every summand `e(t ‖y‖² / (2a))` is `1`, since `N ‖y‖² / 2 ∈ ℤ` for
+`y ∈ L^∨`, and the Gauss sum over `L^∨ / aL` is its number of classes:
+`∑_{y ∈ L^∨ / aL} e(t ‖y‖² / (2a)) = aⁿ |L^∨ / L|`. -/
+theorem dualGaussSum_eq_pow_mul_card_of_dvd {t : ℤ} {a : ℕ}
+    [Fintype (dual L ⧸ ((a : ℝ) • L).submoduleOf (dual L))] (h : (a * level L : ℤ) ∣ t) :
+    dualGaussSum L hL t a = a ^ finrank ℝ E * Nat.card (DiscriminantGroup L) := by
+  obtain ⟨s, rfl⟩ := h
+  have hterm (y : dual L ⧸ ((a : ℝ) • L).submoduleOf (dual L)) :
+      dualGaussTerm L hL (a * level L * s) a y = 1 := by
+    induction y using Submodule.Quotient.induction_on with | H v
+    rcases eq_or_ne a 0 with rfl | ha
+    · simp
+    obtain ⟨j, hj⟩ := exists_level_mul_norm_sq_eq v.2
+    -- The argument of `e` is `s N ‖v‖² / 2 = s j`, an integer.
+    have harg : ((a * level L * s : ℤ) : ℝ) * ‖(v : E)‖ ^ 2 / (2 * a) = ((s * j : ℤ) : ℝ) := by
+      have ha' : (a : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr ha
+      rw [show ((a * level L * s : ℤ) : ℝ) * ‖(v : E)‖ ^ 2 / (2 * a) =
+          s * ((level L : ℝ) * ‖(v : E)‖ ^ 2) / 2 by push_cast; field_simp, hj]
+      push_cast
+      ring
+    rw [dualGaussTerm_mk, harg, ofReal_intCast, mul_comm, exp_int_mul_two_pi_mul_I]
+  rw [dualGaussSum_def, Fintype.sum_congr _ _ hterm, Finset.sum_const, Finset.card_univ,
+    nsmul_one, ← Nat.card_eq_fintype_card, hL.isIntegral.card_quotient_smul_submoduleOf_dual]
+  norm_cast
 
 end DualGaussSum
 

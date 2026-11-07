@@ -44,6 +44,13 @@ manifold differential of a function to tangent vectors whose base point varies.
 * `VectorField.mpullbackWithin_extChartAt_symm_trivializationAt_symm_eventuallyEq`: a vector
   field with constant coordinates in the tangent-bundle trivialization at `x` pulls back to a
   constant field near the chart centre.
+* `VectorField.mdifferentiableAt_trivializationAt_symm_apply`: a vector field with constant
+  coordinates in the tangent-bundle trivialization at `x` is differentiable at `x`.
+* `VectorField.trivializationAt_symm_apply_self`: such a field takes the value `u` at `x`.
+* `VectorField.mpullback_extChartAt_symm_apply_eq_mfderiv`: on a boundaryless model, the
+  inverse-chart pullback is the image of the field under the differential of the chart.
+* `ContMDiffOn.contDiffOn_mpullback_extChartAt_symm`: on a boundaryless model, the inverse-chart
+  pullback of a `C^m` vector field is `C^m` on the chart target, when `m + 1 ≤ n`.
 * `MDifferentiableWithinAt.differentiableWithinAt_mpullbackWithin_extChartAt_symm`:
   differentiability of these coordinate expressions without a completeness assumption.
 * `TauCeti.fderivWithin_chart_apply_mpullbackWithin`: the chain rule identifies coordinate
@@ -299,12 +306,70 @@ theorem mpullbackWithin_extChartAt_symm_trivializationAt_symm_eventuallyEq (x : 
   rw [(extChartAt I x).right_inv hz] at h
   rw [h, Trivialization.apply_mk_symm _ hy']
 
+/-- The vector field with constant coordinates `u` in the trivialization of the tangent bundle at
+`x` is differentiable at `x`. -/
+theorem mdifferentiableAt_trivializationAt_symm_apply (x : M) (u : E) :
+    MDiffAt (T% (fun y ↦ (trivializationAt E (TangentSpace I) x).symm y u :
+      Π y : M, TangentSpace I y)) x := by
+  have hx : x ∈ (trivializationAt E (TangentSpace I) x).baseSet :=
+    FiberBundle.mem_baseSet_trivializationAt' x
+  have hext : (fun y ↦ (trivializationAt E (TangentSpace I) x).symm y u :
+      Π y : M, TangentSpace I y) =
+      FiberBundle.extend E ((trivializationAt E (TangentSpace I) x).symm x u) := by
+    funext y
+    simp only [FiberBundle.extend, Bundle.Trivialization.apply_mk_symm _ hx]
+  have h := FiberBundle.mdifferentiableAt_extend (I := I) E
+    ((trivializationAt E (TangentSpace I) x).symm x u)
+  rwa [← hext] at h
+
+/-- The vector field with constant coordinates `u` in the trivialization of the tangent bundle at
+`x` takes the value `u` at `x`. -/
+@[simp]
+theorem trivializationAt_symm_apply_self (x : M) (u : E) :
+    (trivializationAt E (TangentSpace I) x).symm x u = u := by
+  have h := mpullbackWithin_extChartAt_symm_self (I := I)
+    (fun y ↦ (trivializationAt E (TangentSpace I) x).symm y u : Π y : M, TangentSpace I y) x
+  rw [(mpullbackWithin_extChartAt_symm_trivializationAt_symm_eventuallyEq x u).eq_of_nhdsWithin
+    (Set.mem_range_self _)] at h
+  exact h.symm
+
+/-- On a boundaryless model, the pullback of a vector field along an inverse extended chart, at
+the image of a point `y` of the chart source, is the image of `V y` under the differential of the
+extended chart at `y`. -/
+theorem mpullback_extChartAt_symm_apply_eq_mfderiv [I.Boundaryless]
+    (V : (x : M) → TangentSpace I x) {y : M} (hy : y ∈ (extChartAt I x).source) :
+    mpullback 𝓘(𝕜, E) I (extChartAt I x).symm V (extChartAt I x y) =
+      mfderiv I 𝓘(𝕜, E) (extChartAt I x) y (V y) := by
+  have hinv := isInvertible_mfderivWithin_extChartAt_symm ((extChartAt I x).map_source hy)
+  rw [I.range_eq_univ, mfderivWithin_univ] at hinv
+  have hcomp := mfderivWithin_extChartAt_symm_comp_mfderiv_extChartAt' (I := I) hy
+  rw [I.range_eq_univ, mfderivWithin_univ] at hcomp
+  rw [mpullback_apply, hinv.inverse_apply_eq, (extChartAt I x).left_inv hy]
+  exact (DFunLike.congr_fun hcomp (V y)).symm
+
 end VectorField
 
 open Filter
 open scoped Topology
 
 variable {V : (x : M) → TangentSpace I x} {s : Set M} {x : M}
+
+/-- On a boundaryless model of a `C^n` manifold, the pullback along an inverse extended chart of a
+vector field which is `C^m` on an open set `U`, with `m + 1 ≤ n`, is `C^m` on the part of the
+chart target which the inverse chart maps into `U`. -/
+theorem ContMDiffOn.contDiffOn_mpullback_extChartAt_symm [CompleteSpace E] [I.Boundaryless]
+    [IsManifold I n M] {U : Set M}
+    (hV : ContMDiffOn I I.tangent m (fun y ↦ (⟨y, V y⟩ : TangentBundle I M)) U) (hU : IsOpen U)
+    (hmn : m + 1 ≤ n) :
+    ContDiffOn 𝕜 m (VectorField.mpullback 𝓘(𝕜, E) I (extChartAt I x).symm V)
+      ((extChartAt I x).target ∩ (extChartAt I x).symm ⁻¹' U) := fun z hz ↦ by
+  have hf : ContMDiffAt 𝓘(𝕜, E) I n (extChartAt I x).symm z :=
+    (contMDiffOn_extChartAt_symm x).contMDiffAt ((isOpen_extChartAt_target x).mem_nhds hz.1)
+  have hf' := isInvertible_mfderivWithin_extChartAt_symm hz.1
+  rw [I.range_eq_univ, mfderivWithin_univ] at hf'
+  have hVz := hV.contMDiffAt (hU.mem_nhds hz.2)
+  exact (contMDiffAt_vectorSpace_iff_contDiffAt.1
+    (hVz.mpullback_vectorField_preimage hf hf' hmn)).contDiffWithinAt
 
 /-- Differentiability of a vector field as a tangent-bundle section implies differentiability
 of its inverse-chart pullback within the corresponding chart set. No completeness of the model

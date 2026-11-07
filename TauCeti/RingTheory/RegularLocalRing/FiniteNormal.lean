@@ -61,7 +61,8 @@ theorem isRegular_pair_of_finite_normal (hinj : Function.Injective (algebraMap A
     simpa using ⟨TauCeti.IsLocalRing.mem_maximalIdeal_of_span_pair_eq_maximalIdeal hxy,
       TauCeti.IsLocalRing.mem_maximalIdeal_of_span_pair_eq_maximalIdeal
         (Set.pair_comm x y ▸ hxy)⟩
-  have hx := TauCeti.IsLocalRing.ne_zero_of_span_pair_eq_maximalIdeal hdim hxy
+  have hx := TauCeti.IsLocalRing.ne_zero_of_span_pair_eq_maximalIdeal
+    (not_isPrincipal_maximalIdeal_of_one_lt_ringKrullDim (R := A) (hdim ▸ by decide)) hxy
   have hxB : algebraMap A B x ≠ 0 := by simpa using hinj.ne hx
   have hmap : (span {x, y}).map (algebraMap A B) =
       span {algebraMap A B x, algebraMap A B y} := by
@@ -91,7 +92,7 @@ theorem isRegular_pair_of_finite_normal (hinj : Function.Injective (algebraMap A
     refine IsWeaklyRegular.cons (IsSMulRegular.of_ne_zero hxB) ?_
     rw [e.isWeaklyRegular_congr, isWeaklyRegular_singleton_iff]
     exact TauCeti.IsIntegrallyClosed.isSMulRegular_quotient_span_singleton_of_radical_span_pair
-      hmB hxB hrad
+      hmB hrad
   apply IsRegular.of_isWeaklyRegular_of_mem_maximalIdeal _ hmem
   exact (isWeaklyRegular_map_algebraMap_iff B B [x, y]).mp (by simpa using hregB)
 

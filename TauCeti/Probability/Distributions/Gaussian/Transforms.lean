@@ -31,6 +31,8 @@ measurable, including sigma algebras larger than the Borel sigma algebra.
 * `ProbabilityTheory.IsGaussian.mgf_dual` computes the moment-generating function of an almost
   everywhere measurable continuous linear functional of a Gaussian measure from its mean and
   variance.
+* `ProbabilityTheory.IsGaussian.lintegral_ofReal_exp_mul_dual` gives the same exponential
+  moment as a nonnegative integral.
 * `TauCeti.Probability.integrableExpSet_inner_multivariateGaussian` gives the exact domain for a
   directional
   functional of a multivariate Gaussian.
@@ -80,6 +82,17 @@ theorem mgf_dual (L : StrongDual ℝ E) (t : ℝ) (hL : AEMeasurable L μ := by 
   rw [← mgf_id_map hL, IsGaussian.map_eq_gaussianReal L, mgf_id_gaussianReal]
   rw [Real.coe_toNNReal _ (variance_nonneg _ _)]
   ring_nf
+
+/-- The exponential moment of an almost everywhere measurable continuous linear functional of a
+Gaussian measure as a nonnegative integral:
+`∫⁻ exp (t L) dμ = exp (t μ[L] + t² / 2 · Var[L; μ])`. -/
+theorem lintegral_ofReal_exp_mul_dual (L : StrongDual ℝ E) (t : ℝ)
+    (hL : AEMeasurable L μ := by fun_prop) :
+    ∫⁻ y, .ofReal (Real.exp (t * L y)) ∂μ =
+      .ofReal (Real.exp (t * μ[L] + t ^ 2 / 2 * Var[L; μ])) := by
+  have hint : t ∈ integrableExpSet L μ := by simp [integrableExpSet_dual L hL]
+  rw [← ofReal_integral_eq_lintegral_ofReal hint (.of_forall fun _ ↦ (Real.exp_pos _).le),
+    ← mgf_dual L t hL, mgf]
 
 end IsGaussian
 

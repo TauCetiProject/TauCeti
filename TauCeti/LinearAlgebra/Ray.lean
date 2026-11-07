@@ -11,6 +11,9 @@ import Mathlib.Order.Preorder.Finite
 /-!
 # Vectors in the same ray: sums, finite orbits, and durations of segments
 
+Scaling a ray by a unit commutes with negating it (`Module.Ray.units_smul_neg`), complementing
+Mathlib's `Module.Ray.neg_units_smul`.
+
 Two nonzero vectors in the same ray cannot cancel: their sum is again nonzero. This is the
 non-degeneracy needed to merge adjacent segments of a piecewise-linear path that point in the same
 direction. A vector lies in the same ray as such a sum exactly when it lies in the same ray as the
@@ -41,6 +44,18 @@ theorem SameRay.trans_of_ne_zero (hxy : SameRay R x y) (hyz : SameRay R y z) (hy
   hxy.trans hyz fun h ↦ absurd h hy
 
 end Semiring
+
+section Neg
+
+variable {R M : Type*} [CommRing R] [PartialOrder R] [IsStrictOrderedRing R]
+  [AddCommGroup M] [Module R M]
+
+/-- Scaling a ray by a unit commutes with negating it. -/
+theorem Module.Ray.units_smul_neg (u : Rˣ) (v : Module.Ray R M) : u • -v = -(u • v) := by
+  induction v using Module.Ray.ind with | h v hv =>
+    simp only [neg_rayOfNeZero, smul_rayOfNeZero, Units.smul_def, smul_neg]
+
+end Neg
 
 variable {R M : Type*} [CommRing R] [PartialOrder R] [IsStrictOrderedRing R] [IsDomain R]
   [AddCommGroup M] [Module R M] [IsTorsionFree R M] {x y z : M}

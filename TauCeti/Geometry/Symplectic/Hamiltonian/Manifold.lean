@@ -39,7 +39,8 @@ needed to integrate it to a Hamiltonian flow. Rescaling the form by `c ≠ 0` re
 Hamiltonian vector field by `c⁻¹`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.hamiltonianVectorField_smul`), and post-composing the
 Hamiltonian with a real function `φ` rescales it pointwise by `φ'`, `X_{φ ∘ f} = φ'(f) X_f`
-(`TauCeti.SmoothTwoForm.hamiltonianVectorField_comp`).
+(`TauCeti.SmoothTwoForm.hamiltonianVectorField_comp`). The value of `X_f` at `x` only depends on the
+germ of `f` at `x` (`Filter.EventuallyEq.hamiltonianVectorField_eq`).
 
 Since `σ` is alternating, `df(X) = σ(X, X) = 0` for a Hamiltonian vector field `X` of `f`: the
 Hamiltonian is constant along the integral curves of `X`, which is conservation of energy
@@ -112,7 +113,7 @@ public section
 noncomputable section
 
 open Bundle
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold Topology
 
 namespace TauCeti
 
@@ -188,6 +189,12 @@ def hamiltonianVectorField (σ : SmoothTwoForm I M) (f : M → ℝ) (x : M) : Ta
 theorem hamiltonianVectorField_def (σ : SmoothTwoForm I M) (f : M → ℝ) (x : M) :
     σ.hamiltonianVectorField f x = (σ.flat x).inverse (mvfderiv I f x) :=
   (rfl)
+
+/-- **The Hamiltonian vector field is local**: at `x` it depends only on the germ of the
+Hamiltonian at `x`. -/
+theorem _root_.Filter.EventuallyEq.hamiltonianVectorField_eq (σ : SmoothTwoForm I M) {x : M}
+    (hfg : f =ᶠ[𝓝 x] g) : σ.hamiltonianVectorField f x = σ.hamiltonianVectorField g x := by
+  rw [hamiltonianVectorField_def, hamiltonianVectorField_def, hfg.mvfderiv_eq]
 
 /-- The Hamiltonian vector field of a constant function vanishes. -/
 @[simp]
@@ -267,6 +274,13 @@ include h
 theorem flat_hamiltonianVectorField (f : M → ℝ) (x : M) :
     σ.flat x (σ.hamiltonianVectorField f x) = mvfderiv I f x :=
   (h.isInvertible_flat x).self_apply_inverse _
+
+/-- **The zeros of a Hamiltonian vector field are the critical points of the Hamiltonian**:
+`X_f(x) = 0` exactly when `df_x = 0`. -/
+theorem hamiltonianVectorField_eq_zero_iff {x : M} :
+    σ.hamiltonianVectorField f x = 0 ↔ mvfderiv I f x = 0 := by
+  rw [← h.flat_hamiltonianVectorField f x]
+  exact (map_eq_zero_iff _ (h.isInvertible_flat x).injective).symm
 
 /-- **Contraction with the Hamiltonian vector field** is the differential of the Hamiltonian,
 `σ(X_f, v) = df(v)`. -/

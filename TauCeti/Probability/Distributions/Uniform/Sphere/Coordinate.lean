@@ -187,6 +187,21 @@ theorem map_sq_inner_uniformSphereMeasure (hd : 2 ≤ Module.finrank ℝ E) (v :
       ring
     _ = _ := by rw [betaMeasure_map_centered_sq ha]
 
+/-- In dimension at least two, a nonzero real linear observable of a uniform sphere point
+has the symmetric incomplete Beta cdf in the affine coordinate of its support interval. -/
+theorem cdf_map_inner_uniformSphereMeasure (hd : 2 ≤ Module.finrank ℝ E) {v : E}
+    (hv : v ≠ 0) (x : ℝ) :
+    cdf ((uniformSphereMeasure E).map (fun u : sphere (0 : E) 1 ↦ ⟪v, (u : E)⟫)) x =
+      regularizedIncompleteBeta (((Module.finrank ℝ E : ℝ) - 1) / 2)
+        (((Module.finrank ℝ E : ℝ) - 1) / 2) ((x + ‖v‖) / (2 * ‖v‖)) := by
+  have ha : 0 < ((Module.finrank ℝ E : ℝ) - 1) / 2 := by
+    exact div_pos (sub_pos.mpr (by exact_mod_cast (by omega : 1 < Module.finrank ℝ E))) two_pos
+  have := isProbabilityMeasureBeta ha ha
+  have hfun : (fun y : ℝ ↦ ‖v‖ * (-1 + 2 * y)) =
+      fun y ↦ -‖v‖ + (2 * ‖v‖) * y := by ext y; ring
+  rw [map_inner_uniformSphereMeasure hd v, hfun,
+    cdf_map_affine_of_pos (by positivity), cdf_betaMeasure_eq ha ha, sub_neg_eq_add]
+
 /-- Quantiles of any real linear observable of a uniform sphere point scale with the
 norm of its representing vector, including the zero observable. -/
 theorem quantile_map_inner_uniformSphereMeasure (hd : 2 ≤ Module.finrank ℝ E) (v : E)

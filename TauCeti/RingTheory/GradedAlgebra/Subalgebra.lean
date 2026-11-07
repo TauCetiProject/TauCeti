@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.RingTheory.GradedAlgebra.AlgHom
 public import Mathlib.RingTheory.GradedAlgebra.Homogeneous.Ideal
 public import Mathlib.RingTheory.Ideal.Over
@@ -31,6 +32,8 @@ underlying effective descent for projective spectra.
 
 ## Main results
 
+* `Subalgebra.map_val_grading`, `Subalgebra.finrank_grading`: the degree-`i` piece of `T` is
+  `T ∩ 𝒜 i`, and has its rank.
 * `Subalgebra.isInternal_grading`: the induced grading of a homogeneous subalgebra is internal.
 * `Subalgebra.coe_decompose_grading`: the homogeneous components of an element of `T` are its
   homogeneous components in `A`.
@@ -60,6 +63,22 @@ omit [DecidableEq ι] [AddMonoid ι] in
 @[simp]
 theorem mem_grading_iff {i : ι} {x : T} : x ∈ T.grading 𝒜 i ↔ (x : A) ∈ 𝒜 i :=
   Iff.rfl
+
+omit [DecidableEq ι] [AddMonoid ι] in
+/-- The inclusion `T → A` carries the degree-`i` piece of the induced grading of `T` onto
+`T ∩ 𝒜 i`. -/
+theorem map_val_grading (i : ι) :
+    (T.grading 𝒜 i).map T.val.toLinearMap = Subalgebra.toSubmodule T ⊓ 𝒜 i := by
+  ext x
+  simp only [Submodule.mem_map, mem_grading_iff, Submodule.mem_inf, mem_toSubmodule]
+  exact ⟨by rintro ⟨y, hy, rfl⟩; exact ⟨y.2, hy⟩, fun hx ↦ ⟨⟨x, hx.1⟩, hx.2, rfl⟩⟩
+
+omit [DecidableEq ι] [AddMonoid ι] in
+/-- The degree-`i` piece of the induced grading of `T` has the rank of `T ∩ 𝒜 i`. -/
+theorem finrank_grading (i : ι) :
+    Module.finrank R (T.grading 𝒜 i) = Module.finrank R ↥(Subalgebra.toSubmodule T ⊓ 𝒜 i) := by
+  rw [← map_val_grading]
+  exact (Submodule.equivMapOfInjective _ Subtype.val_injective _).finrank_eq
 
 instance [SetLike.GradedMonoid 𝒜] : SetLike.GradedMonoid (T.grading 𝒜) where
   one_mem := SetLike.GradedOne.one_mem (A := 𝒜)

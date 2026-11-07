@@ -71,7 +71,7 @@ by `3` over an arbitrary base ring
 
 The change-of-variables formula for `Ψ₂Sq` is what the real period of a Weierstrass curve over `ℝ`,
 an integral of `Ψ₂Sq(x)^(-1/2)`, needs in order to scale by `|u|` under a change of variables
-(`TauCeti/AlgebraicGeometry/EllipticCurve/RealPeriod.lean`). The one for `Ψ₃` transports the
+(`TauCeti/AlgebraicGeometry/EllipticCurve/RealPeriod/Basic.lean`). The one for `Ψ₃` transports the
 condition that a point has order `3` along a change of variables
 (`TauCeti/AlgebraicGeometry/EllipticCurve/LevelThreeNormalForm.lean`).
 

@@ -73,6 +73,10 @@ differential vanishes and the hat chain complex is `𝔽₂²` with zero differe
   annulus, the relative grading of `p₀` over `p₁` is one.
 * `TauCeti.HeegaardRegionSystem.maslovIndex_sub_two_mul_circleTimesSphere_one`: with the
   basepoint in a bigon, `μ(D) - 2 n_z(D)` depends on the domain `D` from `p₀` to `p₁`.
+* `TauCeti.HeegaardRegionSystem.periodicMaslovIndices_circleTimesSphere_one` and
+  `TauCeti.HeegaardRegionSystem.coe_relativeGrading_circleTimesSphere_one`: with the basepoint
+  in a bigon, the periodic Maslov indices are the even integers, and the relative grading of
+  `p₀` over `p₁` is one modulo two.
 * `TauCeti.HeegaardRegionSystem.hatDomains_circleTimesSphere_zero_zero_one`: with the basepoint
   in the annulus, the hat differential counts the two bigons from `p₀` to `p₁`.
 * `TauCeti.HeegaardRegionSystem.hatDifferential_circleTimesSphere_zero`: these cancel, and the hat
@@ -351,8 +355,16 @@ theorem relativeGrading_circleTimesSphere_zero :
     maslovIndex_circleTimesSphere_single_one]
   simp
 
+/-- With the basepoint in the annulus, the periodic Maslov indices vanish at both generators. -/
+theorem periodicMaslovIndices_circleTimesSphere_zero (a : Fin 2) :
+    (circleTimesSphere 0).periodicMaslovIndices ![0, 1, 1] (circleTimesSphereGenerator 0 a) = ⊥ :=
+  periodicMaslovIndices_eq_bot_iff.mpr fun _ =>
+    maslovIndex_circleTimesSphere_zero_of_mem_periodicDomains a
+
 /-- With the basepoint in the bigon `B₁`, the two bigons from `p₀` to `p₁` give the different
-values `-1` and `1` of `μ(D) - 2 n_z(D)`, so this diagram has no well-defined relative grading. -/
+values `-1` and `1` of `μ(D) - 2 n_z(D)`, so this diagram has no well-defined integer relative
+grading; it has one modulo two
+(`TauCeti.HeegaardRegionSystem.coe_relativeGrading_circleTimesSphere_one`). -/
 theorem maslovIndex_sub_two_mul_circleTimesSphere_one :
     (circleTimesSphere 1).maslovIndex ![0, 1, 1] (circleTimesSphereGenerator 1 0)
         (circleTimesSphereGenerator 1 1) (Pi.single 1 1) -
@@ -362,6 +374,39 @@ theorem maslovIndex_sub_two_mul_circleTimesSphere_one :
           2 * (Pi.single 2 1 : Fin 3 → ℤ) ((circleTimesSphere 1).basepoint ()) = 1 := by
   rw [maslovIndex_circleTimesSphere_single_one, maslovIndex_circleTimesSphere_single_two]
   norm_num
+
+/-- With the basepoint in the bigon `B₁`, the periodic domains of the genus-one diagram of
+`S¹ × S²` are the multiples of `A + 2 B₂`. -/
+theorem periodicDomains_circleTimesSphere_one :
+    (circleTimesSphere 1).periodicDomains = AddSubgroup.zmultiples ![1, 0, 2] := by
+  ext D
+  rw [mem_periodicDomains_circleTimesSphere_iff, AddSubgroup.mem_zmultiples_iff]
+  constructor
+  · rintro ⟨h1, h12⟩
+    refine ⟨D 0, funext fun i => ?_⟩
+    fin_cases i <;> simp <;> omega
+  · rintro ⟨k, rfl⟩
+    simp [mul_comm]
+
+/-- With the basepoint in the bigon `B₁`, the periodic domain `A + 2 B₂` has Maslov index two at
+both generators, so the periodic Maslov indices are the even integers. -/
+theorem periodicMaslovIndices_circleTimesSphere_one (a : Fin 2) :
+    (circleTimesSphere 1).periodicMaslovIndices ![0, 1, 1] (circleTimesSphereGenerator 1 a) =
+      AddSubgroup.zmultiples 2 := by
+  rw [periodicMaslovIndices_def, periodicDomains_circleTimesSphere_one,
+    AddMonoidHom.map_zmultiples]
+  congr 1
+  fin_cases a <;> simp [cornerCount_circleTimesSphere, Fin.sum_univ_three] <;> norm_num
+
+/-- With the basepoint in the bigon `B₁`, the relative grading of `p₀` over `p₁` is one modulo
+two: the bigons give `-1` and `1`, which agree modulo the periodic Maslov indices. -/
+theorem coe_relativeGrading_circleTimesSphere_one :
+    ((circleTimesSphere 1).relativeGrading ![0, 1, 1] () (circleTimesSphereGenerator 1 0)
+      (circleTimesSphereGenerator 1 1) : ℚ ⧸ AddSubgroup.zmultiples (2 : ℚ)) = (1 : ℚ) := by
+  rw [← periodicMaslovIndices_circleTimesSphere_one 0,
+    (isDomainBetween_circleTimesSphere_single_two 1).coe_relativeGrading_eq () (by decide),
+    maslovIndex_circleTimesSphere_single_two]
+  simp
 
 /-- Every generator of `circleTimesSphere r` is the generator at its intersection point. -/
 @[simp]

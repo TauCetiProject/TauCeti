@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Convex.Basic
 public import Mathlib.Topology.Algebra.ContinuousAffineMap
+public import Mathlib.Topology.Algebra.Ring.Real
 public import Mathlib.Topology.MetricSpace.Pseudo.Lemmas
 
 /-!
@@ -21,6 +22,10 @@ the preimage of one under a continuous affine map is one.
 Those last two are exactly what makes the cells of a piecewise-affine decomposition composable:
 composing two piecewise-affine maps refines the source decomposition by pulling the target cells
 back along the affine pieces, and both operations must stay inside the class of cells.
+
+Near each of its points a convex polyhedron is a translate of a polyhedral cone, cut out by the
+inequalities that are equalities at the point. This is what makes the germ of a piecewise-affine
+map at a point conical.
 
 The name is deliberately *not* `IsPolyhedron`. In piecewise-linear topology a polyhedron is a
 much weaker notion — a subset that is locally a cone, so a locally finite union of simplices,
@@ -40,11 +45,13 @@ polyhedron is assembled.
 * `TauCeti.IsConvexPolyhedron.inter`: an intersection of two convex polyhedra is one.
 * `TauCeti.IsConvexPolyhedron.preimage`: the preimage of a convex polyhedron under a continuous
   affine map is one.
+* `TauCeti.IsConvexPolyhedron.exists_cone`: near each of its points, a convex polyhedron is the
+  translate of a polyhedral cone.
 -/
 
 public section
 
-open Set
+open Set Topology
 
 namespace TauCeti
 
@@ -117,5 +124,36 @@ theorem IsConvexPolyhedron.preimage {u : Set F} (hu : IsConvexPolyhedron u) (A :
     IsConvexPolyhedron (A ⁻¹' u) := by
   obtain ⟨n, g, rfl⟩ := hu
   exact ⟨n, fun i => (g i).comp A, by ext x; simp⟩
+
+/-- **A convex polyhedron is a cone near each of its points.** For a point `x` of a convex
+polyhedron `s` there is a convex polyhedron `K` which is a cone (closed under multiplication by
+nonnegative scalars) such that `s` lies in the translate `x + K`, and agrees with it near `x`.
+The cone is cut out by the linear parts of the inequalities of `s` that are equalities at `x`;
+the other inequalities are strict at `x`, so they still hold near `x`. -/
+theorem IsConvexPolyhedron.exists_cone [IsTopologicalAddGroup E] {x : E}
+    (hs : IsConvexPolyhedron s) (hx : x ∈ s) :
+    ∃ K : Set E, IsConvexPolyhedron K ∧ (∀ c : ℝ, 0 ≤ c → ∀ v ∈ K, c • v ∈ K) ∧
+      (∀ y ∈ s, y - x ∈ K) ∧ ∀ᶠ y in 𝓝 x, y - x ∈ K → y ∈ s := by
+  obtain ⟨n, g, rfl⟩ := hs
+  -- The inequalities that are equalities at `x`, read through their linear parts.
+  let ℓ (i : {i // g i x = 0}) : E →ᴬ[ℝ] ℝ := (g i).contLinear.toContinuousAffineMap
+  have hℓ (i : {i // g i x = 0}) (y : E) : ℓ i (y - x) = g i y := by
+    have h := (g i).contLinear_apply_vsub y x
+    rw [vsub_eq_sub, vsub_eq_sub, i.2, sub_zero] at h
+    simpa [ℓ] using h
+  refine ⟨{v | ∀ i, ℓ i v ≤ 0}, isConvexPolyhedron_setOf_forall ℓ, fun c hc v hv i => ?_,
+    fun y hy i => (hℓ i y).symm ▸ hy i, ?_⟩
+  · simpa [ℓ] using mul_nonpos_of_nonneg_of_nonpos hc (hv i)
+  -- The remaining inequalities are strict at `x`, hence near `x`.
+  have hstrict : ∀ᶠ y in 𝓝 x, ∀ i, g i x ≠ 0 → g i y < 0 := by
+    refine Filter.eventually_all.2 fun i => ?_
+    by_cases hi : g i x = 0
+    · exact Filter.Eventually.of_forall fun _ h => (h hi).elim
+    · exact ((g i).continuous.continuousAt.eventually (gt_mem_nhds
+        (lt_of_le_of_ne (hx i) hi))).mono fun _ hy _ => hy
+  filter_upwards [hstrict] with y hy hyK i
+  by_cases hi : g i x = 0
+  · exact hℓ ⟨i, hi⟩ y ▸ hyK ⟨i, hi⟩
+  · exact (hy i hi).le
 
 end TauCeti

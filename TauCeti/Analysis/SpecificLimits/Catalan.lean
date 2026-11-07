@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Ring.InfiniteSum
-public import Mathlib.Combinatorics.Enumerative.Catalan.Basic
+public import TauCeti.Combinatorics.Enumerative.Catalan
 import Mathlib.Analysis.Normed.Group.InfiniteSum
 import Mathlib.Analysis.SpecificLimits.Basic
 
@@ -38,9 +38,6 @@ variable {R : Type*} [NormedRing R] {q : R}
 /-- The Catalan generating series converges absolutely inside the disc of radius `1 / 4`. -/
 theorem summable_norm_catalan_mul_pow (hq : ‖q‖ < 4⁻¹) :
     Summable fun n ↦ ‖(catalan n : R) * q ^ n‖ := by
-  have hle (n : ℕ) : catalan n ≤ 4 ^ n :=
-    (Nat.le_mul_of_pos_left _ n.succ_pos).trans_eq (succ_mul_catalan_eq_centralBinom n)
-      |>.trans (Nat.centralBinom_le_four_pow n)
   refine Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun n ↦ ?_)
     ((summable_geometric_of_lt_one (by positivity) (by linarith : 4 * ‖q‖ < 1)).mul_left
       ‖(1 : R)‖)
@@ -49,7 +46,7 @@ theorem summable_norm_catalan_mul_pow (hq : ‖q‖ < 4⁻¹) :
   calc ‖(catalan n : R) * q ^ n‖ ≤ catalan n * ‖(1 : R)‖ * ‖q‖ ^ n :=
         (norm_mul_le _ _).trans (mul_le_mul (Nat.norm_cast_le _) (norm_pow_le' _ hn)
           (by positivity) (by positivity))
-    _ ≤ 4 ^ n * ‖(1 : R)‖ * ‖q‖ ^ n := by gcongr; exact_mod_cast hle n
+    _ ≤ 4 ^ n * ‖(1 : R)‖ * ‖q‖ ^ n := by gcongr; exact_mod_cast Nat.catalan_le_four_pow n
     _ = ‖(1 : R)‖ * (4 * ‖q‖) ^ n := by ring
 
 variable [CompleteSpace R]

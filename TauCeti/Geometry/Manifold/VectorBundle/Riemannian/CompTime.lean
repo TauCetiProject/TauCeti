@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 public import TauCeti.Geometry.Manifold.VectorBundle.NondegenerateMetric.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
+import TauCeti.Geometry.Manifold.ExtChartAt
 
 /-!
 # Composing a metric on `M × ℝ` with a map of the time coordinate
@@ -115,10 +116,10 @@ theorem chartMetric_compTime (hφ : ContDiff ℝ ∞ φ) (x₀ : M) (t₀ s : �
     (G.compTime hφ).toNondegenerateMetric.chartMetric (x₀, t₀) (z, τ) =
       G.toNondegenerateMetric.chartMetric (x₀, s) (z, φ τ) := by
   have hz₁ : (z, τ) ∈ (extChartAt (I.prod 𝓘(ℝ)) (x₀, t₀)).target := by
-    rw [extChartAt_prod, PartialEquiv.prod_target]
+    rw [TauCeti.extChartAt_prod_target]
     exact ⟨hz, by simp⟩
   have hz₂ : (z, φ τ) ∈ (extChartAt (I.prod 𝓘(ℝ)) (x₀, s)).target := by
-    rw [extChartAt_prod, PartialEquiv.prod_target]
+    rw [TauCeti.extChartAt_prod_target]
     exact ⟨hz, by simp⟩
   set y := (extChartAt (I.prod 𝓘(ℝ)) (x₀, t₀)).symm (z, τ)
   have hy : y = ((extChartAt I x₀).symm z, τ) := by

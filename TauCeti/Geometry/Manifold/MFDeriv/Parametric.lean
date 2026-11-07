@@ -35,6 +35,8 @@ boundary points.
 
 ## Main results
 
+* `TauCeti.Manifold.contDiffAt_extChartAt_family`: a jointly `C^n` family of maps of `M` fixing
+  `x` is jointly `C^n` when read in the chart at `x`.
 * `TauCeti.Manifold.contMDiffAt_deriv_of_contMDiffAt_uncurry`: the parameter derivative of a
   jointly `C^n` family is `C^m` for `m + 1 ≤ n`.
 * `ContMDiffAt.contMDiffAt_curveVelocity_snd`: for a jointly `C^n` map `f : 𝕜 → 𝕜 → M`, the
@@ -44,6 +46,8 @@ boundary points.
   jointly `C²` family is the differential of its parameter derivative.
 * `TauCeti.Manifold.contMDiffAt_mvfderiv_of_contMDiffAt_uncurry`: the differential at a fixed point
   of a jointly `C^n` family parametrized by a manifold is `C^m` in the parameter for `m + 1 ≤ n`.
+* `TauCeti.Manifold.contMDiff_mfderiv_apply_one_zero`: the velocity `q ↦ dΓ_q (1, 0)` of a `C^n`
+  map `Γ` out of `𝕜 × M` is a `C^m` section along it for `m + 1 ≤ n`.
 -/
 
 public section
@@ -72,6 +76,25 @@ private theorem contDiffWithinAt_extChartAt_symm_of_contMDiffAt_uncurry
     (contMDiffAt_iff.mp hF).2
   rw [ModelWithCorners.range_prod] at h
   simpa [extChartAt_prod] using h
+
+/-- A family of maps `ψᵤ` of `M` which is jointly `C^n` at `(t, x)` and fixes `x` at time `t` is,
+read in the chart at `x`, a jointly `C^n` map of `𝕜 × E` at `(t, extChartAt I x x)`. -/
+theorem contDiffAt_extChartAt_family [I.Boundaryless] {ψ : 𝕜 → M → M} (hid : ψ t x = x)
+    (hψ : ContMDiffAt (𝓘(𝕜).prod I) I n (uncurry ψ) (t, x)) :
+    ContDiffAt 𝕜 n (fun p : 𝕜 × E ↦ extChartAt I x (ψ p.1 ((extChartAt I x).symm p.2)))
+      (t, extChartAt I x x) := by
+  have hsymm : ContMDiffAt 𝓘(𝕜, E) I n (extChartAt I x).symm (extChartAt I x x) := by
+    have h := contMDiffWithinAt_extChartAt_symm_range_self (I := I) (n := n) x
+    rwa [I.range_eq_univ, contMDiffWithinAt_univ] at h
+  have hpair : ContMDiffAt (𝓘(𝕜).prod 𝓘(𝕜, E)) (𝓘(𝕜).prod I) n
+      (fun p : 𝕜 × E ↦ (p.1, (extChartAt I x).symm p.2)) (t, extChartAt I x x) :=
+    contMDiffAt_fst.prodMk (ContMDiffAt.comp (t, extChartAt I x x) hsymm contMDiffAt_snd)
+  have hcomp := (contMDiffAt_extChartAt (I := I) (n := n) (x := x)).comp_of_eq
+    (hψ.comp_of_eq hpair (Prod.ext rfl (extChartAt_to_inv x))) (by
+      simp only [Function.comp_apply, uncurry_apply_pair, extChartAt_to_inv]
+      exact hid)
+  rw [← modelWithCornersSelf_prod, chartedSpaceSelf_prod, contMDiffAt_iff_contDiffAt] at hcomp
+  exact hcomp
 
 variable [IsManifold I 1 M]
 
@@ -178,5 +201,29 @@ theorem contMDiffAt_mvfderiv_of_contMDiffAt_uncurry
   rfl
 
 end ManifoldParameter
+
+section Velocity
+
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] {H' : Type*} [TopologicalSpace H']
+  {J : ModelWithCorners 𝕜 E' H'} {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
+  [IsManifold J 1 N] {Γ : 𝕜 × M → N}
+
+/-- The velocity `q ↦ dΓ_q (1, 0)` of a `C^n` map out of `𝕜 × M` is a `C^m` section along it when
+`m + 1 ≤ n`. -/
+theorem contMDiff_mfderiv_apply_one_zero
+    (hΓ : ContMDiff (𝓘(𝕜, 𝕜).prod I) J n Γ) (hmn : m + 1 ≤ n) :
+    ContMDiff (𝓘(𝕜, 𝕜).prod I) J.tangent m fun q =>
+      TotalSpace.mk' E' (Γ q) (mfderiv (𝓘(𝕜, 𝕜).prod I) J Γ q ((1 : 𝕜), (0 : E))) := by
+  have hclock : ContMDiff 𝓘(𝕜, 𝕜) 𝓘(𝕜, 𝕜).tangent m
+      (fun s : 𝕜 => (⟨s, (1 : 𝕜)⟩ : TangentBundle 𝓘(𝕜, 𝕜) 𝕜)) :=
+    contMDiff_vectorSpace_iff_contDiff.2 contDiff_const
+  have hunit : ContMDiff (𝓘(𝕜, 𝕜).prod I) (𝓘(𝕜, 𝕜).prod I).tangent m
+      (fun q : 𝕜 × M => (⟨q, ((1 : 𝕜), (0 : E))⟩ : TangentBundle (𝓘(𝕜, 𝕜).prod I) (𝕜 × M))) :=
+    (contMDiff_equivTangentBundleProd_symm (I := 𝓘(𝕜, 𝕜)) (M := 𝕜) (I' := I) (M' := M)).comp
+      ((hclock.comp contMDiff_fst).prodMk
+        ((Bundle.contMDiff_zeroSection 𝕜 (TangentSpace I : M → Type _)).comp contMDiff_snd))
+  exact (hΓ.contMDiff_tangentMap hmn).comp hunit
+
+end Velocity
 
 end TauCeti.Manifold

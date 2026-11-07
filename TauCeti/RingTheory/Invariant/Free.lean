@@ -67,6 +67,8 @@ The invariant tensor identity `mul_tmul_eq_tmul_mul` also allows a noncommutativ
 
 * `TauCeti.MulSemiringAction.tensorToPi_baseChange`: `tensorToPi` commutes with base change, for
   `G` acting on `A' ⊗[R] A` through the right factor.
+* `TauCeti.MulSemiringAction.bijective_tensorToPi_baseChange_iff`: for a finite monoid and a
+  faithfully flat `R → A'`, `tensorToPi` for `A' ⊗[R] A` is bijective exactly when it is for `A`.
 * `TauCeti.MulSemiringAction.tensorToPi_surjective_iff`: `tensorToPi` is surjective exactly when
   the action is free.
 * `TauCeti.MulSemiringAction.tensorToPi_bijective`: for a free action with invariant ring `R`,
@@ -154,6 +156,38 @@ theorem tensorToPi_baseChange (A' : Type*) [CommSemiring A'] [Algebra R A']
       simp [Algebra.TensorProduct.piRightHom, TensorProduct.piRightHom_tmul]
 
 end Semiring
+
+section FaithfullyFlat
+
+variable {R A G : Type*} [CommRing R] [CommRing A] [Algebra R A] [Monoid G] [Finite G]
+  [MulSemiringAction G A] [SMulCommClass G R A]
+
+attribute [local instance] Algebra.TensorProduct.rightMulSemiringAction in
+/-- Bijectivity of `tensorToPi` descends along a faithfully flat extension of the base: for
+`R → A'` faithfully flat, the map for `A' ⊗[R] A` is bijective exactly when the map for `A` is. -/
+theorem bijective_tensorToPi_baseChange_iff (A' : Type*) [CommRing A'] [Algebra R A']
+    [Module.FaithfullyFlat R A'] :
+    Function.Bijective (tensorToPi A' (A' ⊗[R] A) G) ↔
+      Function.Bijective (tensorToPi R A G) := by
+  classical
+  have := Fintype.ofFinite G
+  let γ : A ⊗[R] A →ₗ[R] (G → A) := ((tensorToPi R A G).restrictScalars R).toLinearMap
+  let e := TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv R A' A A
+  let π := Algebra.TensorProduct.piRight R A' A' fun _ : G ↦ A
+  -- Read through `e` and `π`, the map `tensorToPi` for `A' ⊗[R] A` is `id ⊗ γ`.
+  have hcomp : ⇑(tensorToPi A' (A' ⊗[R] A) G) ∘ ⇑e = ⇑π ∘ ⇑(γ.lTensor A') := by
+    funext z
+    rw [Function.comp_apply, Function.comp_apply, tensorToPi_baseChange]
+    induction z using TensorProduct.inductionOn with
+    | add x y hx hy => simp only [map_add, hx, hy]
+    | tmul a w =>
+      simp [π, γ, Algebra.TensorProduct.piRightHom, TensorProduct.piRightHom_tmul]
+  rw [← Function.Bijective.of_comp_iff _ e.bijective, hcomp,
+    Function.Bijective.of_comp_iff' π.bijective,
+    Module.FaithfullyFlat.lTensor_bijective_iff_bijective]
+  simp [γ]
+
+end FaithfullyFlat
 
 section InvariantTensor
 

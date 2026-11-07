@@ -15,7 +15,8 @@ public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 This file computes the formal composition of two scalar series in an arbitrary algebra. The
 algebra need not be commutative: variables retain their original order inside every composition
 block. It also identifies the iterated derivatives at zero of a convergent scalar series over a
-complete nontrivially normed field.
+complete nontrivially normed field, and computes the scalar series of `z ↦ f (z ^ m)` on a ball of
+radius at most `1` from that of `f`.
 -/
 
 public section
@@ -155,5 +156,42 @@ theorem _root_.HasFPowerSeriesOnBall.iteratedDeriv_eq_tsum_descFactorial_mul_pow
     simpa only [hprefix, add_zero] using h
   rw [← hderiv]
   exact hsum_desc.tsum_eq.symm
+
+/-- **Substituting `z ^ m` into a scalar power series.** If `f` is the sum of the scalar power
+series `∑ c k • z ^ k` on the ball of radius `r ≤ 1` about `0`, then for `0 < m` the function
+`z ↦ f (z ^ m)` is the sum on the same ball of the scalar power series with coefficient `c k` at
+the exponent `m * k`, and coefficient `0` at the exponents not divisible by `m`. -/
+theorem _root_.HasFPowerSeriesOnBall.comp_pow_ofScalars {𝕂 : Type*} [NontriviallyNormedField 𝕂]
+    {f : 𝕂 → 𝕂} {c : ℕ → 𝕂} {r : ℝ≥0∞} (hf : HasFPowerSeriesOnBall f (ofScalars 𝕂 c) 0 r)
+    (hr : r ≤ 1) {m : ℕ} (hm : 0 < m) :
+    HasFPowerSeriesOnBall (fun z ↦ f (z ^ m))
+      (ofScalars 𝕂 fun n ↦ if m ∣ n then c (n / m) else 0) 0 r := by
+  have hinj : Function.Injective fun k : ℕ ↦ m * k := fun _ _ e ↦ Nat.eq_of_mul_eq_mul_left hm e
+  refine ⟨ENNReal.le_of_forall_nnreal_lt fun ρ hρ ↦ ?_, hf.r_pos, fun {y} hy ↦ ?_⟩
+  · -- the expanded series is dominated termwise by the original one, as `ρ < r ≤ 1`
+    obtain ⟨C, -, hC⟩ := (ofScalars 𝕂 c).norm_mul_pow_le_of_lt_radius (hρ.trans_le hf.r_le)
+    have hρ1 : (ρ : ℝ) ≤ 1 := by exact_mod_cast (hρ.trans_le hr).le
+    refine le_radius_of_bound _ C fun n ↦ ?_
+    rw [ofScalars_norm]
+    split_ifs with hn
+    · obtain ⟨k, rfl⟩ := hn
+      have hk := hC k
+      rw [ofScalars_norm] at hk
+      rw [Nat.mul_div_cancel_left _ hm]
+      exact (mul_le_mul_of_nonneg_left (pow_le_pow_of_le_one ρ.2 hρ1 (Nat.le_mul_of_pos_left k hm))
+        (norm_nonneg _)).trans hk
+    · simpa using (mul_nonneg (norm_nonneg _) (pow_nonneg ρ.2 0)).trans (hC 0)
+  · -- the series of `f` at `y ^ m`, reindexed along the multiples of `m`
+    have hy1 : ‖y‖ₑ ≤ 1 := (mem_eball_zero_iff.mp hy).le.trans hr
+    have hym : y ^ m ∈ Metric.eball (0 : 𝕂) r := by
+      rw [mem_eball_zero_iff, enorm_pow]
+      exact (pow_le_of_le_one zero_le hy1 hm.ne').trans_lt (mem_eball_zero_iff.mp hy)
+    have hs := hf.hasSum hym
+    simp only [ofScalars_apply_eq, zero_add] at hs ⊢
+    refine (hinj.hasSum_iff fun n hn ↦ ?_).mp (hs.congr_fun fun k ↦ ?_)
+    · split_ifs with h
+      · exact absurd ⟨n / m, Nat.mul_div_cancel' h⟩ hn
+      · exact zero_smul _ _
+    · simp [Nat.mul_div_cancel_left _ hm, ← pow_mul]
 
 end FormalMultilinearSeries
