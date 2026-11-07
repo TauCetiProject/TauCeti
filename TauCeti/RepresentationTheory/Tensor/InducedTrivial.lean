@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.Algebra.Algebra.ULift
 public import TauCeti.RingTheory.PiTensorProduct.Surjective
 public import TauCeti.RepresentationTheory.Tensor.Induction.Basic
 
@@ -37,12 +38,6 @@ namespace Subgroup
 
 variable {G : Type v} [Group G] (n : ℕ)
 
-/-- Every element of the universe-lifted coefficient `ULift (ZMod n)` is the image of an
-integer. -/
-private theorem surjective_algebraMap_int_ulift_zmod :
-    Function.Surjective (algebraMap ℤ (ULift.{v} (ZMod n))) := fun y ↦
-  (ZMod.intCast_surjective y.down).imp fun _ hk ↦ ULift.ext (by simpa using hk)
-
 /-- The tensor-induced trivial `ZMod n`-representation is equivalent to the trivial `ZMod n`
 representation.  The chosen transversal affects the tensor-induced action, but not this
 coefficient identification. -/
@@ -52,7 +47,7 @@ noncomputable def tensorInducedTrivialZModEquiv (U : Subgroup G) (s : U.LeftTran
       (Representation.trivial ℤ U (ULift.{v} (ZMod n)))).Equiv
       (Representation.trivial ℤ G (ULift.{v} (ZMod n))) :=
   Representation.Equiv.mk (PiTensorProduct.constantAlgEquivOfSurjective
-      (surjective_algebraMap_int_ulift_zmod n)).toLinearEquiv fun g ↦ by
+      (ULift.algebraMap_surjective (ZMod.ringHom_surjective _))).toLinearEquiv fun g ↦ by
     apply PiTensorProduct.ext
     apply MultilinearMap.ext
     intro x

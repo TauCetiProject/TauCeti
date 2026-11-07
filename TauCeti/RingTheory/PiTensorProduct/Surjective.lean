@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.PiTensorProduct
+public import TauCeti.RingTheory.PiTensorProduct.FiberwiseMul
 
 /-!
 # Tensor powers of an algebra with surjective structure map
@@ -19,14 +19,17 @@ used when tensor induction is applied to the trivial `ZMod n`-representation.
 
 ## Main definitions
 
-* `PiTensorProduct.constantAlgEquivOfSurjective`: multiplication of the tensor factors as an
-  algebra equivalence from a nonempty finite tensor power of `A` to `A`.
+* `PiTensorProduct.constantAlgEquivOfSurjective`: multiplication of the tensor factors,
+  `PiTensorProduct.mulAlgHom`, as an algebra equivalence from a nonempty finite tensor power of
+  `A` to `A`.
 
 ## Main results
 
 * `PiTensorProduct.singleAlgHom_eq_of_surjective`: the factor embeddings all agree.
 * `PiTensorProduct.constantAlgEquivOfSurjective_tprod`: the equivalence multiplies the factors of
   a pure tensor.
+* `PiTensorProduct.constantAlgEquivOfSurjective_symm_apply`: its inverse is the embedding of `A` as
+  any one of the tensor factors.
 -/
 
 public section
@@ -46,21 +49,7 @@ theorem singleAlgHom_eq_of_surjective [Semiring A] [Algebra R A] [DecidableEq ι
     obtain ⟨r, rfl⟩ := h a
     simp only [AlgHom.commutes]
 
-variable [CommSemiring A] [Algebra R A] [Fintype ι]
-
-/-- Multiplication of the tensor factors, as an algebra map from a finite tensor power. -/
-private noncomputable def mulAlgHom : (⨂[R] _ : ι, A) →ₐ[R] A :=
-  liftAlgHom (MultilinearMap.mkPiAlgebra R ι A) (by simp) fun x y ↦ by
-    simp [Finset.prod_mul_distrib]
-
-private theorem mulAlgHom_tprod (x : ι → A) : mulAlgHom (R := R) (tprod R x) = ∏ i, x i := by
-  simp [mulAlgHom, liftAlgHom]
-
-private theorem mulAlgHom_singleAlgHom [DecidableEq ι] (i : ι) (a : A) :
-    mulAlgHom (R := R) (ι := ι) (singleAlgHom i a) = a := by
-  simp [mulAlgHom_tprod]
-
-variable [Nonempty ι]
+variable [CommSemiring A] [Algebra R A] [Fintype ι] [Nonempty ι]
 
 /-- If `algebraMap R A` is surjective, then a nonempty finite tensor power of `A` over `R` is
 canonically `A`, by multiplying the tensor factors. -/
@@ -78,6 +67,13 @@ noncomputable def constantAlgEquivOfSurjective (h : Function.Surjective (algebra
 @[simp]
 theorem constantAlgEquivOfSurjective_tprod (h : Function.Surjective (algebraMap R A))
     (x : ι → A) : constantAlgEquivOfSurjective h (tprod R x) = ∏ i, x i := by
-  simp [constantAlgEquivOfSurjective, mulAlgHom_tprod]
+  simp [constantAlgEquivOfSurjective]
+
+/-- The inverse of the tensor-power equivalence embeds `A` as any one of the tensor factors. -/
+theorem constantAlgEquivOfSurjective_symm_apply [DecidableEq ι]
+    (h : Function.Surjective (algebraMap R A)) (i : ι) (a : A) :
+    (constantAlgEquivOfSurjective h).symm a = singleAlgHom i a := by
+  rw [AlgEquiv.symm_apply_eq]
+  exact (mulAlgHom_singleAlgHom i a).symm
 
 end PiTensorProduct

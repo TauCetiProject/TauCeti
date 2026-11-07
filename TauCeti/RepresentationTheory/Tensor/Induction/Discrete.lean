@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Tensor.Induction.Basic
+import TauCeti.Algebra.Algebra.ULift
 import TauCeti.RingTheory.PiTensorProduct.Surjective
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Basic
 public import TauCeti.Topology.Algebra.Group.WreathProduct.Monomial
@@ -163,8 +164,8 @@ example {G : Type v} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
   refine ⟨A, z, ?_, fun g ↦ ?_⟩
   · intro hz
     let e : (⨂[ℤ] _ : G ⧸ U, M) ≃ₗ[ℤ] M :=
-      (PiTensorProduct.constantAlgEquivOfSurjective fun y ↦ (ZMod.intCast_surjective y.down).imp
-        fun _ hk ↦ ULift.ext (by simpa using hk)).toLinearEquiv
+      (PiTensorProduct.constantAlgEquivOfSurjective
+        (ULift.algebraMap_surjective (ZMod.ringHom_surjective _))).toLinearEquiv
     -- State zero in the tensor carrier, rather than in the bundled object's opaque projection.
     have hz0 : z = (0 : ⨂[ℤ] _ : G ⧸ U, M) := hz
     have hz' : e z = 0 := (congrArg e hz0).trans e.map_zero
