@@ -90,53 +90,6 @@ open scoped nonZeroDivisors
 
 namespace TauCeti
 
-/-! ### The induced map on a linear image -/
-
-section Kernel
-
-variable {A : Type*} [CommRing A]
-
-/-- The kernel of the map `M → eM ⧸ a·eM` induced by a linear endomorphism `e` is
-`aM ⊔ (M ⊓ ker e)`. -/
-private theorem ker_mkQ_comp_codRestrict {V : Type*} [AddCommGroup V] [Module A V]
-    (e : V →ₗ[A] V) (M : Submodule A V) (a : A) :
-    LinearMap.ker ((LinearMap.range (LinearMap.lsmul A ↥(M.map e) a)).mkQ ∘ₗ
-        LinearMap.codRestrict (M.map e) (e ∘ₗ M.subtype) (fun y => Submodule.mem_map_of_mem y.2))
-      = LinearMap.range (LinearMap.lsmul A ↥M a) ⊔ Submodule.comap M.subtype (LinearMap.ker e) := by
-  set g : ↥M →ₗ[A] ↥(M.map e) :=
-    LinearMap.codRestrict (M.map e) (e ∘ₗ M.subtype) (fun y => Submodule.mem_map_of_mem y.2)
-  have hg : Function.Surjective g := LinearMap.submoduleMap_surjective e M
-  have hmap : LinearMap.range (LinearMap.lsmul A ↥(M.map e) a) =
-      (LinearMap.range (LinearMap.lsmul A ↥M a)).map g := by
-    ext y
-    constructor
-    · rintro ⟨z, rfl⟩
-      obtain ⟨w, rfl⟩ := hg z
-      exact ⟨a • w, ⟨w, rfl⟩, by simp⟩
-    · rintro ⟨_, ⟨w, rfl⟩, rfl⟩
-      exact ⟨g w, by simp⟩
-  rw [LinearMap.ker_comp, Submodule.ker_mkQ, hmap, Submodule.comap_map_eq,
-    LinearMap.ker_codRestrict, LinearMap.ker_comp]
-
-/-- **The length of the quotient by the kernel of the projected map.** For `e : V → V`, the
-quotient of `M` by `aM ⊔ (M ⊓ ker e)` has the length of `e M ⧸ a·e M`. -/
-private theorem length_quotient_sup_comap_ker {V : Type*} [AddCommGroup V] [Module A V]
-    (e : V →ₗ[A] V) (M : Submodule A V) (a : A) :
-    Module.length A (↥M ⧸ (LinearMap.range (LinearMap.lsmul A ↥M a) ⊔
-        Submodule.comap M.subtype (LinearMap.ker e))) =
-      Module.length A (↥(M.map e) ⧸ LinearMap.range (LinearMap.lsmul A ↥(M.map e) a)) := by
-  set g : ↥M →ₗ[A] ↥(M.map e) :=
-    LinearMap.codRestrict (M.map e) (e ∘ₗ M.subtype) (fun y => Submodule.mem_map_of_mem y.2)
-  set Q : Submodule A ↥(M.map e) := LinearMap.range (LinearMap.lsmul A ↥(M.map e) a)
-  have hgsurj : Function.Surjective g := LinearMap.submoduleMap_surjective e M
-  have hker : LinearMap.ker (Q.mkQ ∘ₗ g) = LinearMap.range (LinearMap.lsmul A ↥M a) ⊔
-      Submodule.comap M.subtype (LinearMap.ker e) := ker_mkQ_comp_codRestrict e M a
-  rw [← hker]
-  exact (LinearMap.quotKerEquivOfSurjective (Q.mkQ ∘ₗ g)
-    ((Submodule.mkQ_surjective Q).comp hgsurj)).length_eq
-
-end Kernel
-
 /-! ### The rank-one case over the fraction field -/
 
 section Domain
