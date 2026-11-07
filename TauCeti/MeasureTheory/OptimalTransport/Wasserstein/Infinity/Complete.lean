@@ -50,6 +50,29 @@ noncomputable section
 open Filter MeasureTheory ProbabilityTheory
 open scoped ENNReal Topology
 
+namespace MeasureTheory
+
+/-- An extended-real function whose `L^∞` norm is at most `c` is almost everywhere at most `c`. -/
+theorem ae_le_of_eLpNorm_top_le {α : Type*} [MeasurableSpace α] {P : Measure α}
+    {f : α → ℝ≥0∞} (hf : AEMeasurable f P) {c : ℝ≥0∞} (h : eLpNorm f ∞ P ≤ c) :
+    ∀ᵐ x ∂P, f x ≤ c := by
+  have hess : eLpNormEssSup f P ≤ c := by
+    rwa [← eLpNorm_exponent_top hf.aestronglyMeasurable]
+  filter_upwards [enorm_ae_le_eLpNormEssSup f P] with x hx
+  exact hx.trans hess
+
+/-- The `L^p` norm of the distance between two measurable maps is the `L^p` norm of the distance
+on the pushforward of the pair map. -/
+theorem eLpNorm_edist_map_prodMk {Ω X : Type*} [MeasurableSpace Ω] [MeasurableSpace X]
+    [PseudoEMetricSpace X] [OpensMeasurableSpace X] [SecondCountableTopology X] {P : Measure Ω}
+    {f g : Ω → X} (hf : Measurable f) (hg : Measurable g) (p : ℝ≥0∞) :
+    eLpNorm (fun z : X × X ↦ edist z.1 z.2) p (P.map fun x ↦ (f x, g x)) =
+      eLpNorm (fun x ↦ edist (f x) (g x)) p P := by
+  rw [eLpNorm_map_measure measurable_edist.aestronglyMeasurable (hf.prodMk hg).aemeasurable]
+  rfl
+
+end MeasureTheory
+
 namespace TauCeti
 
 universe u
@@ -80,28 +103,10 @@ theorem exists_isProbabilityMeasure_wassersteinEDist_top_le_tsum
   have hev : ∀ n, Measurable fun x : ℕ → X ↦ x n := fun n ↦ measurable_pi_apply n
   have hadj : ∀ n, P.map (fun x ↦ (x n, x (n + 1))) = π n :=
     TauCeti.Measure.map_adjacent_chainMeasure_of_isCoupling hπ
-  have hjumpNorm : ∀ n,
-      eLpNorm (fun x : ℕ → X ↦ edist (x n) (x (n + 1))) ∞ P ≤ b n := fun n ↦ by
-    calc
-      eLpNorm (fun x : ℕ → X ↦ edist (x n) (x (n + 1))) ∞ P
-          = eLpNorm (fun z : X × X ↦ edist z.1 z.2) ∞ (π n) := by
-            rw [← hadj n, eLpNorm_map_measure measurable_edist.aestronglyMeasurable
-              ((hev n).prodMk (hev (n + 1))).aemeasurable]
-            rfl
-      _ = wassersteinEDist ∞ (μ n) (μ (n + 1)) := hπopt n
-      _ ≤ b n := hμ n
-  have hjump : ∀ n, ∀ᵐ x ∂P, edist (x n) (x (n + 1)) ≤ b n := fun n ↦ by
-    have hm : AEStronglyMeasurable (fun x : ℕ → X ↦ edist (x n) (x (n + 1))) P :=
-      ((hev n).edist (hev (n + 1))).aestronglyMeasurable
-    have hess : eLpNormEssSup (fun x : ℕ → X ↦ edist (x n) (x (n + 1))) P ≤ b n := by
-      rw [← eLpNorm_exponent_top hm]
-      exact hjumpNorm n
-    filter_upwards [ae_le_eLpNormEssSup
-      (f := fun x : ℕ → X ↦ edist (x n) (x (n + 1)))] with x hx
-    have hx' : edist (x n) (x (n + 1)) ≤
-        eLpNormEssSup (fun x : ℕ → X ↦ edist (x n) (x (n + 1))) P := by
-      simpa using hx
-    exact hx'.trans hess
+  have hjump : ∀ n, ∀ᵐ x ∂P, edist (x n) (x (n + 1)) ≤ b n := fun n ↦
+    ae_le_of_eLpNorm_top_le ((hev n).edist (hev (n + 1))).aemeasurable <| by
+      rw [← eLpNorm_edist_map_prodMk (hev n) (hev (n + 1)), hadj n, hπopt n]
+      exact hμ n
   have hcauchy : ∀ᵐ x ∂P, CauchySeq fun n ↦ x n := by
     filter_upwards [ae_all_iff.2 hjump] with x hx
     exact cauchySeq_of_edist_le_of_tsum_ne_top b
@@ -114,10 +119,7 @@ theorem exists_isProbabilityMeasure_wassersteinEDist_top_le_tsum
     wassersteinEDist ∞ (μ n) (P.map Z)
         ≤ eLpNorm (fun z : X × X ↦ edist z.1 z.2) ∞ (P.map fun x ↦ (x n, Z x)) :=
       wassersteinEDist_le (hcoupling n) ∞
-    _ = eLpNorm (fun x : ℕ → X ↦ edist (x n) (Z x)) ∞ P := by
-      rw [eLpNorm_map_measure measurable_edist.aestronglyMeasurable
-        ((hev n).prodMk hZ).aemeasurable]
-      rfl
+    _ = eLpNorm (fun x : ℕ → X ↦ edist (x n) (Z x)) ∞ P := eLpNorm_edist_map_prodMk (hev n) hZ _
     _ ≤ ∑' k, b (n + k) := by
       have hm : AEStronglyMeasurable (fun x : ℕ → X ↦ edist (x n) (Z x)) P :=
         ((hev n).edist hZ).aestronglyMeasurable
