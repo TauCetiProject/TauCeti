@@ -149,7 +149,7 @@ theorem integrableOn_deriv_Ioc [FiniteDimensional ℝ F]
 /-- Correcting a step approximation `s` of the velocity of `γ` by the average defect `D` costs at
 most the `L¹` approximation error. -/
 theorem norm_sub_integral_le [FiniteDimensional ℝ F]
-    (hγ : AbsolutelyContinuousOnInterval γ a b) (hab : a < b) {s : ℝ → F}
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hab : a ≤ b) {s : ℝ → F}
     (hsi : IntervalIntegrable s volume a b) {ε : ℝ}
     (hg : (∫ t in Ioc a b, ‖s t - deriv γ t‖) ≤ ε) :
     ‖γ b - γ a - ∫ t in a..b, s t‖ ≤ ε := by
@@ -157,8 +157,8 @@ theorem norm_sub_integral_le [FiniteDimensional ℝ F]
   have hEq : γ b - γ a - ∫ t in a..b, s t = ∫ t in a..b, deriv γ t - s t := by
     rw [intervalIntegral.integral_sub hγi hsi, hγ.integral_deriv_eq_sub_of_finiteDimensional]
   rw [hEq]
-  apply (intervalIntegral.norm_integral_le_integral_norm hab.le).trans
-  simpa only [intervalIntegral.integral_of_le hab.le, norm_sub_rev] using hg
+  apply (intervalIntegral.norm_integral_le_integral_norm hab).trans
+  simpa only [intervalIntegral.integral_of_le hab, norm_sub_rev] using hg
 
 end AbsolutelyContinuousOnInterval
 

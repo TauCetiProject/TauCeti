@@ -126,7 +126,7 @@ private theorem exists_polygonal_error_le [FiniteDimensional ℝ E] {γ : ℝ �
   let v := fun t ↦ s t + c
   let p := fun t ↦ γ a + ∫ t in a..t, v t
   have hpa : p a = γ a := by simp [p]
-  have hpb : p b = γ b := TauCeti.add_integral_add_inv_smul_eq hab hsi (γ a) (γ b)
+  have hpb : p b = γ b := TauCeti.add_integral_add_inv_smul_eq hab.ne hsi (γ a) (γ b)
   have hpPoly : TauCeti.IsPolygonalOnInterval p a b := polygonal_primitive hab N hN g (γ a) c
   have hvi : IntervalIntegrable v volume a b := by
     rw [intervalIntegrable_iff, uIoc_of_le hab.le]
@@ -134,7 +134,7 @@ private theorem exists_polygonal_error_le [FiniteDimensional ℝ E] {γ : ℝ �
   have hpderiv : deriv p =ᵐ[volume.restrict (Ioc a b)] v :=
     ae_deriv_const_add_integral hvi hab.le (γ a)
   -- The mean correction costs at most the original velocity approximation error.
-  have hD : ‖D‖ ≤ ε := norm_sub_integral_le hγ hab hsi hg
+  have hD : ‖D‖ ≤ ε := norm_sub_integral_le hγ hab.le hsi hg
   have herror : (∫ t in Ioc a b, ‖v t - deriv γ t‖) ≤ 2 * ε := by
     refine (TauCeti.integral_norm_add_const_sub_le c measure_Ioc_lt_top.ne hsi' hγi').trans ?_
     rw [TauCeti.setIntegral_norm_inv_smul hab D]

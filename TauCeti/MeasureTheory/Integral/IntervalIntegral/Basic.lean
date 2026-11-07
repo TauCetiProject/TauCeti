@@ -133,11 +133,11 @@ end intervalIntegral
 /-- The primitive of a step velocity corrected by its average defect reaches the prescribed
 endpoint. -/
 theorem add_integral_add_inv_smul_eq {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [CompleteSpace E] {a b : ℝ} (hab : a < b) {s : ℝ → E} (hsi : IntervalIntegrable s volume a b)
+    [CompleteSpace E] {a b : ℝ} (hab : a ≠ b) {s : ℝ → E} (hsi : IntervalIntegrable s volume a b)
     (x y : E) :
     x + ∫ t in a..b, (s t + (b - a)⁻¹ • (y - x - ∫ t in a..b, s t)) = y := by
   rw [_root_.intervalIntegral.integral_add hsi (intervalIntegrable_const),
-    _root_.intervalIntegral.integral_const, smul_smul, mul_inv_cancel₀ (sub_pos.mpr hab).ne',
+    _root_.intervalIntegral.integral_const, smul_smul, mul_inv_cancel₀ (sub_ne_zero.mpr hab.symm),
     one_smul]
   abel
 
