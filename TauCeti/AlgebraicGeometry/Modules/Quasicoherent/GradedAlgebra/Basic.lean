@@ -172,6 +172,12 @@ theorem degree_map_hom {A B : GradedQuasicoherentAlgebra X} (f : A ⟶ B) (n : �
   -- As for `toGradedModules_map`, eliminate the object equations before the identity laws.
   exact ((Category.id_comp _).trans (Category.comp_id _)).symm
 
+/-- A morphism of graded quasicoherent algebras is an epimorphism in degree `n` when its image
+under the degree-`n` functor is an epimorphism of the underlying modules. -/
+theorem epi_hom_hom_of_epi_degree_map {A B : GradedQuasicoherentAlgebra X} (f : A ⟶ B) (n : ℕ)
+    (h : Epi ((degree (X := X) n).map f).hom) : Epi (f.hom.hom.hom n) :=
+  h
+
 /-- Extract the degree-one component of a graded quasicoherent algebra. This is the component
 that generates a free graded algebra and therefore the coefficient sheaf of a linear scheme. -/
 abbrev degreeOne : GradedQuasicoherentAlgebra X ⥤ QuasicoherentSheaf X :=
