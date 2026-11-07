@@ -36,6 +36,7 @@ pair-of-pants perturbation pulls back to its components in the end coordinates.
 
 * `TauCeti.Floer.contDiffAt_uncurry_pairOfPantsPerturbation`: in real coordinates, the
   components of the perturbation are `Cⁿ` on `S × V` for `Cⁿ` Hamiltonians.
+  `TauCeti.Floer.contMDiffAt_uncurry_pairOfPantsPerturbation` is the same for a manifold target.
 * `TauCeti.Floer.endChart_mem_thricePuncturedSphereReal`, `TauCeti.Floer.re_endCoord_endChart`:
   the end chart sends the part `±s > 0` of the end into `S` and preserves the longitudinal
   coordinate.
@@ -96,6 +97,28 @@ theorem contDiffAt_uncurry_pairOfPantsPerturbation {n : ℕ∞} (hH : ∀ q, Per
     (f := fun p : (ℝ × ℝ) × V ↦ (Complex.equivRealProdCLM.symm p.1, p.2)) (z, x)
     ((Complex.equivRealProdCLM.symm.contDiff.comp contDiff_fst).prodMk
       contDiff_snd).contDiffAt).clm_apply contDiffAt_const
+
+section Manifold
+
+variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
+  {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
+  {H : Puncture → ℝ → M → ℝ}
+
+/-- In the real coordinates of `S`, the components of the pair-of-pants perturbation are `Cⁿ`
+jointly in the domain point and the point of a manifold target, for `Cⁿ` Hamiltonians. -/
+theorem contMDiffAt_uncurry_pairOfPantsPerturbation {n : ℕ∞} (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) n (uncurry (H q))) {z : ℝ × ℝ}
+    (hz : z ∈ thricePuncturedSphereReal) (x : M) (v : ℂ) :
+    ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) n
+      (uncurry fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x v)
+      (z, x) := by
+  have hK := contMDiffAt_pairOfPantsPerturbation (n := n) hH hHs ⟨_, hz⟩ x
+  have hg : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) (𝓘(ℝ, ℂ).prod I) n
+      (fun p : (ℝ × ℝ) × M ↦ (Complex.equivRealProdCLM.symm p.1, p.2)) :=
+    (Complex.equivRealProdCLM.symm.contDiff.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd
+  exact (hK.comp (z, x) hg.contMDiffAt).clm_apply contMDiffAt_const
+
+end Manifold
 
 /-- The end lift of `q`, in the real coordinates `ℝ × ℝ ≃ ℂ`. -/
 noncomputable def endChart (q : Puncture) (z : ℝ × ℝ) : ℝ × ℝ :=

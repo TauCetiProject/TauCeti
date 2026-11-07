@@ -104,6 +104,13 @@ theorem perturbationPullback_apply (φ : ℝ × ℝ → ℝ × ℝ) (Ks Kt : ℝ
       (fderiv ℝ φ w v).1 * Ks (φ w) x + (fderiv ℝ φ w v).2 * Kt (φ w) x :=
   (rfl)
 
+/-- The pullback of the zero datum is zero. -/
+@[simp]
+theorem perturbationPullback_zero (φ : ℝ × ℝ → ℝ × ℝ) (v : ℝ × ℝ) :
+    perturbationPullback φ (fun (_ : ℝ × ℝ) (_ : X) ↦ (0 : ℝ)) (fun _ _ ↦ 0) v = fun _ _ ↦ 0 := by
+  funext w x
+  simp [perturbationPullback_apply]
+
 /-- The `ds` component of the pullback along the identity is `K_s`. -/
 @[simp]
 theorem perturbationPullback_id_stdComplexLineReal (Ks Kt : ℝ × ℝ → X → ℝ) :
