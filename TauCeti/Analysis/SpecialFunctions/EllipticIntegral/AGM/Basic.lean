@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.ArithmeticGeometricMean
 public import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Analysis.SpecialFunctions.Sqrt
 import Mathlib.MeasureTheory.Function.JacobianOneDim
 
 /-!
@@ -113,36 +114,6 @@ theorem agmIntegral_self (ha : 0 ≤ a) : agmIntegral a a = π / 2 / a := by
   rw [integral_const_mul, integral_Ioi_inv_one_add_sq, arctan_zero]
   ring
 
-private lemma add_sqrt_sq_add_pos {p : ℝ} (hp : 0 < p) (t : ℝ) : 0 < t + √(t ^ 2 + p) := by
-  rcases le_or_gt 0 t with ht | ht; · positivity
-  rw [← neg_lt_iff_pos_add']
-  nth_rw 1 [← abs_of_nonpos ht.le, ← sqrt_sq_eq_abs, ← add_zero (t ^ 2)]
-  gcongr
-
-private lemma hasDerivAt_add_sqrt_sq_add {p : ℝ} (hp : 0 < p) (t : ℝ) :
-    HasDerivAt (fun t : ℝ ↦ t + √(t ^ 2 + p)) ((t + √(t ^ 2 + p)) / √(t ^ 2 + p)) t := by
-  rw [← div_add_one (by positivity), add_comm]
-  apply (hasDerivAt_id' _).fun_add
-  rw [← mul_div_mul_left _ _ two_ne_zero]
-  refine ((HasDerivAt.add_const _) ?_).sqrt (by positivity)
-  convert hasDerivAt_pow 2 t using 1
-  ring
-
-private lemma image_add_sqrt_sq_add_eq_Ioi {p : ℝ} (hp : 0 < p) :
-    (fun t : ℝ ↦ t + √(t ^ 2 + p)) '' Set.univ = Set.Ioi 0 := by
-  ext x
-  rw [Set.image_univ, Set.mem_range, Set.mem_Ioi]
-  refine ⟨fun ⟨t, ht⟩ ↦ ht.symm ▸ add_sqrt_sq_add_pos hp t, fun hx ↦ ?_⟩
-  use (x ^ 2 - p) / (2 * x)
-  have hradicand : ((x ^ 2 - p) / (2 * x)) ^ 2 + p = ((x ^ 2 + p) / (2 * x)) ^ 2 := by
-    field_simp
-    ring
-  have hsqrt : √(((x ^ 2 - p) / (2 * x)) ^ 2 + p) = (x ^ 2 + p) / (2 * x) := by
-    rw [hradicand, sqrt_sq (by positivity)]
-  rw [hsqrt]
-  field_simp
-  ring
-
 /-- The change of variables `x = t + √(t² + ab)` turns the Landen integrand into half the
 integrand with arguments `√(ab)` and `(a + b) / 2`. -/
 private lemma landen_integrand_eq {a b : ℝ} (ha : 0 < a) (hb : 0 < b) (t : ℝ) :
@@ -163,7 +134,7 @@ private lemma landen_integrand_eq {a b : ℝ} (ha : 0 < a) (hb : 0 < b) (t : ℝ
   have hsqrt : √((f t ^ 2 + a ^ 2) * (f t ^ 2 + b ^ 2)) =
       2 * f t * √(t ^ 2 + ((a + b) / 2) ^ 2) := by
     rw [rearr₃, sqrt_mul (sq_nonneg _), sqrt_sq (by positivity [pf])]
-  change f t / √(t ^ 2 + a * b) * (√((f t ^ 2 + a ^ 2) * (f t ^ 2 + b ^ 2)))⁻¹ = _
+  simp only [f] at pf hsqrt
   rw [hsqrt, sqrt_mul (by positivity : 0 ≤ t ^ 2 + a * b)]
   field_simp [pf.ne']
 

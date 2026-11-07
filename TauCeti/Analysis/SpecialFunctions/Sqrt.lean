@@ -6,6 +6,9 @@ Authors: Claude Fable 5, Claude Opus 4.8, Claude Opus 5
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
+import Mathlib.Analysis.Calculus.Deriv.Add
+import Mathlib.Analysis.Calculus.Deriv.Pow
+import Mathlib.Tactic.FieldSimp
 
 /-!
 # Square-root displacement estimates and limits at zero
@@ -30,6 +33,9 @@ function supported in `(0, ∞)` is `C^k`.
 * `Real.tendsto_mul_sqrt_nhds_zero`: `c √u → 0` as `u → 0`.
 * `Real.tendsto_mul_sqrt_nhdsGT_zero`, `Real.tendsto_sqrt_nhdsGT_zero`: for `c > 0`,
   `c √u → 0⁺` as `u → 0⁺`.
+* `Real.add_sqrt_sq_add_pos`, `Real.hasDerivAt_add_sqrt_sq_add`,
+  `Real.image_add_sqrt_sq_add_eq_Ioi`: the substitution `t ↦ t + √(t² + p)`
+  is positive, has an explicit derivative, and maps `ℝ` onto `(0, ∞)` for `p > 0`.
 * `Real.contDiff_div_sqrt_pow`: if `ψ` is `C^k` with support in `(0, ∞)`, then
   `t ↦ ψ (√t) / (√t) ^ n` is `C^k`.
 
@@ -157,6 +163,39 @@ lemma contDiff_div_sqrt_pow {k : WithTop ℕ∞} {ψ : ℝ → ℝ} (hψ : ContD
       filter_upwards [this] with s hs
       simp [image_eq_zero_of_notMem_tsupport hs]
     exact (contDiffAt_const (c := (0 : ℝ))).congr_of_eventuallyEq hev
+
+/-- For `0 < p`, `t + √(t² + p)` is positive. -/
+theorem add_sqrt_sq_add_pos {p : ℝ} (hp : 0 < p) (t : ℝ) : 0 < t + √(t ^ 2 + p) := by
+  rcases le_or_gt 0 t with ht | ht; · positivity
+  rw [← neg_lt_iff_pos_add']
+  nth_rw 1 [← abs_of_nonpos ht.le, ← sqrt_sq_eq_abs, ← add_zero (t ^ 2)]
+  gcongr
+
+/-- The derivative of `t ↦ t + √(t² + p)` for `0 < p`. -/
+theorem hasDerivAt_add_sqrt_sq_add {p : ℝ} (hp : 0 < p) (t : ℝ) :
+    HasDerivAt (fun t : ℝ ↦ t + √(t ^ 2 + p)) ((t + √(t ^ 2 + p)) / √(t ^ 2 + p)) t := by
+  rw [← div_add_one (by positivity), add_comm]
+  apply (hasDerivAt_id' _).fun_add
+  rw [← mul_div_mul_left _ _ two_ne_zero]
+  refine ((HasDerivAt.add_const _) ?_).sqrt (by positivity)
+  convert hasDerivAt_pow 2 t using 1
+  ring
+
+/-- For `0 < p`, the map `t ↦ t + √(t² + p)` sends `ℝ` onto `(0, ∞)`. -/
+theorem image_add_sqrt_sq_add_eq_Ioi {p : ℝ} (hp : 0 < p) :
+    (fun t : ℝ ↦ t + √(t ^ 2 + p)) '' Set.univ = Set.Ioi 0 := by
+  ext x
+  rw [Set.image_univ, Set.mem_range, Set.mem_Ioi]
+  refine ⟨fun ⟨t, ht⟩ ↦ ht.symm ▸ add_sqrt_sq_add_pos hp t, fun hx ↦ ?_⟩
+  use (x ^ 2 - p) / (2 * x)
+  have hradicand : ((x ^ 2 - p) / (2 * x)) ^ 2 + p = ((x ^ 2 + p) / (2 * x)) ^ 2 := by
+    field_simp
+    ring
+  have hsqrt : √(((x ^ 2 - p) / (2 * x)) ^ 2 + p) = (x ^ 2 + p) / (2 * x) := by
+    rw [hradicand, Real.sqrt_sq (by positivity)]
+  rw [hsqrt]
+  field_simp
+  ring
 
 end Real
 
