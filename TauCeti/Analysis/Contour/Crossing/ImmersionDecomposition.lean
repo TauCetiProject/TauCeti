@@ -150,7 +150,7 @@ private theorem exitCapWindows_geometry {γ : ℝ → ℂ} {a b : ℝ} {s : ℂ}
 /-- **Local contributions of the exit windows.** The Cauchy principal values over the windows of
 `TauCeti.Contour.exitCapWindows` exist, and their local contributions sum to the crossing angles
 divided by `2π`. -/
-private theorem exitCapWindows_localContribution_sum {γ : ℝ → ℂ} {a b : ℝ} {s : ℂ}
+private theorem exitCapWindows_localContribution_sum {γ : ℝ → ℂ} {s : ℂ}
     {T : Finset ℝ} {δ ε : ℝ} {L_R L_L : ℝ → ℂ} (hδ : 0 < δ) (hε : 0 < ε)
     (hat : ∀ t ∈ T, γ t = s) (hγ_window : ∀ t ∈ T, ContinuousOn γ (Icc (t - δ) (t + δ)))
     (hεends : ∀ t ∈ T, ε ≤ ‖γ (t - δ) - s‖ ∧ ε ≤ ‖γ (t + δ) - s‖)
@@ -160,8 +160,7 @@ private theorem exitCapWindows_localContribution_sum {γ : ℝ → ℂ} {a b : �
       HasCauchyPVAt γ W.lower W.upper (fun z ↦ (z - s)⁻¹) s
         (((((-L_L t) / (γ W.lower - s)).arg + ((γ W.upper - s) / L_R t).arg : ℝ) : ℂ) *
           Complex.I))
-    (hinside : ∀ W ∈ exitCapWindows γ s T δ ε L_R L_L,
-      a < W.lower ∧ W.lower < W.upper ∧ W.upper < b)
+    (hinside : ∀ W ∈ exitCapWindows γ s T δ ε L_R L_L, W.lower < W.upper)
     (hradius : ∀ W ∈ exitCapWindows γ s T δ ε L_R L_L, W.radius ≠ 0) :
     (∀ W ∈ exitCapWindows γ s T δ ε L_R L_L,
       CauchyPVExistsAt γ W.lower W.upper (fun z => (z - s)⁻¹) s) ∧
@@ -177,7 +176,7 @@ private theorem exitCapWindows_localContribution_sum {γ : ℝ → ℂ} {a b : �
       have hW : exitCapWindow γ s t δ ε (L_R t) (L_L t) ∈ exitCapWindows γ s T δ ε L_R L_L :=
         mem_exitCapWindows_iff.mpr ⟨t, ht, rfl⟩
       rw [CircularCapWindow.localContribution_eq_sub_windingNumber_cap _ γ s (hradius _ hW)
-        (hinside _ hW).2.1.ne]
+        (hinside _ hW).ne]
       exact windingNumber_sub_cap_exitCapWindow_eq_crossingAngle_div_two_pi hδ hε
         (hat t ht) (hγ_window t ht) (hεends t ht).1 (hεends t ht).2 (hlim t ht).1
         (hlim t ht).2.1 (hlim t ht).2.2.1 (hlim t ht).2.2.2 (hpv t ht _ rfl)
@@ -216,7 +215,7 @@ theorem IsPwC1ImmersionOn.exists_crossingDecomposition
   obtain ⟨hordered, hinside, hradius, havoid⟩ := exitCapWindows_geometry hδ hε hat hcomplete hend
     hsep hγ_window hεends hcrossing_inside
   obtain ⟨hpv_exists, hlocal_sum⟩ := exitCapWindows_localContribution_sum hδ hε hat hγ_window
-    hεends hlim hpv hinside hradius
+    hεends hlim hpv (fun W hW => (hinside W hW).2.1) hradius
   set windows := exitCapWindows γ s T δ ε L_R L_L with hwindows
   have hεL : ∀ t ∈ T, ε ≤ ‖γ (t - δ) - s‖ := fun t ht => (hεends t ht).1
   have hεR : ∀ t ∈ T, ε ≤ ‖γ (t + δ) - s‖ := fun t ht => (hεends t ht).2
