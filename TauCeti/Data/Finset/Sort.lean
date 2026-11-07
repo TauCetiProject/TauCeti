@@ -9,6 +9,7 @@ public import Mathlib.Algebra.BigOperators.Group.List.Basic
 public import Mathlib.Data.Finset.Sort
 public import Mathlib.Data.List.Rotate
 public import Mathlib.Logic.Equiv.Fin.Rotate
+public import Mathlib.Order.Fin.Tuple
 import Mathlib.Data.List.Chain
 import Mathlib.Order.Interval.Finset.Fin
 
@@ -38,6 +39,9 @@ Moving the points of a finset `B` of `Fin n` along the rotation `finRotate n` (`
 last position going to `0`) commutes with sorting up to a cyclic rotation of the list.
 
 The `i`-th smallest element of `s` has exactly `i` elements of `s` below it.
+
+Removing the position of `i` from the increasing enumeration of `s` gives the increasing
+enumeration of `s.erase i`.
 -/
 
 public section
@@ -197,6 +201,22 @@ theorem isRotated_sort_map_finRotate {n : ℕ} (B : Finset (Fin n)) :
       rw [hBC, hBC']
       simpa using List.isRotated_append (l := C.sort.map (finRotate (n + 1))) (l' := [0])
     · rw [hsort hB]
+
+/-- Removing the position of `i` from the increasing enumeration of `s` gives the increasing
+enumeration of `s.erase i`. -/
+theorem removeNth_orderEmbOfFin_symm_eq {I : Type*} [LinearOrder I]
+    (i : I) (s : Finset I) (hi : i ∈ s) (hsCard : s.card = (s.erase i).card + 1) :
+    ((s.orderIsoOfFin hsCard).symm ⟨i, hi⟩).removeNth (fun j ↦ s.orderEmbOfFin hsCard j) =
+      (s.erase i).orderEmbOfFin rfl := by
+  let e : Fin ((s.erase i).card + 1) ↪o I := s.orderEmbOfFin hsCard
+  let k : Fin ((s.erase i).card + 1) := (s.orderIsoOfFin hsCard).symm ⟨i, hi⟩
+  have hek : e k = i :=
+    congrArg Subtype.val ((s.orderIsoOfFin hsCard).apply_symm_apply ⟨i, hi⟩)
+  apply Finset.orderEmbOfFin_unique
+  · intro j
+    exact Finset.mem_erase.mpr ⟨fun h ↦ k.succAbove_ne j (e.injective (h.trans hek.symm)),
+      Finset.orderEmbOfFin_mem s hsCard _⟩
+  · exact e.strictMono.comp (Fin.strictMono_succAbove k)
 
 end LinearOrder
 
