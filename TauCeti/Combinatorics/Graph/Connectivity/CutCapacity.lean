@@ -267,21 +267,23 @@ theorem mem_toOfSimpleGraphFinset {S : Finset V} {x : V} :
 theorem image_val_toOfSimpleGraphFinset (S : Finset V) :
     Subtype.val '' (G.toOfSimpleGraphFinset S : Set (Graph.ofSimpleGraph G).vertexSet) =
       (S : Set V) := by
-  ext x
-  constructor
-  · rintro ⟨y, hy, rfl⟩
-    exact G.mem_toOfSimpleGraphFinset.mp hy
-  · intro hx
-    exact ⟨G.toOfSimpleGraphVertex x, G.mem_toOfSimpleGraphFinset.mpr hx, rfl⟩
+  rw [toOfSimpleGraphFinset, Finset.coe_map, Set.image_image]
+  change (fun x : V ↦ (G.toOfSimpleGraphVertex x).1) '' (S : Set V) = S
+  rw [show (fun x : V ↦ (G.toOfSimpleGraphVertex x).1) = id from rfl, Set.image_id]
 
 @[simp]
 theorem toOfSimpleGraphFinset_map_val
     (S : Finset (Graph.ofSimpleGraph G).vertexSet) :
     G.toOfSimpleGraphFinset (S.map ⟨Subtype.val, Subtype.val_injective⟩) = S := by
-  ext x
-  have hx : G.toOfSimpleGraphVertex x.1 = x := Subtype.ext rfl
-  rw [← hx, mem_toOfSimpleGraphFinset]
-  simp [hx]
+  rw [toOfSimpleGraphFinset, Finset.map_map]
+  have h :
+      (⟨Subtype.val, Subtype.val_injective⟩ :
+          (Graph.ofSimpleGraph G).vertexSet ↪ V).trans
+        ⟨G.toOfSimpleGraphVertex, fun _ _ h ↦ congrArg Subtype.val h⟩ =
+          Function.Embedding.refl _ := by
+    ext x
+    rfl
+  rw [h, Finset.map_refl]
 
 /-- The multigraph cut capacity of `Graph.ofSimpleGraph G` agrees with pair cut capacity when
 capacities vanish away from the edges of `G`. -/

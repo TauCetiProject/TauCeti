@@ -110,12 +110,12 @@ theorem exists_flow_val_eq_pairCutCapacity_mem [Fintype V]
     (Graph.ofSimpleGraph G).exists_flow_val_eq_edgeCutCapacity_mem hst' hcap A hcapA
   let S : Finset V := T.map ⟨Subtype.val, Subtype.val_injective⟩
   refine ⟨f, hfacyc, hfA, S, ?_, ?_, ?_⟩
-  · exact Finset.mem_map.mpr ⟨G.toOfSimpleGraphVertex s, hsT, by simp⟩
-  · intro htS
-    obtain ⟨x, hxT, hxt⟩ := Finset.mem_map.mp htS
-    apply htT
-    have hx : x = G.toOfSimpleGraphVertex t := Subtype.ext (by simpa using hxt)
-    exact hx ▸ hxT
+  · simpa [S] using
+      (Finset.mem_map' (⟨Subtype.val, Subtype.val_injective⟩ :
+        (Graph.ofSimpleGraph G).vertexSet ↪ V)).mpr hsT
+  · simpa [S] using
+      mt (Finset.mem_map' (⟨Subtype.val, Subtype.val_injective⟩ :
+        (Graph.ofSimpleGraph G).vertexSet ↪ V)).mp htT
   · have hcut := G.edgeCutCapacity_eq_pairCutCapacity c hsupport S
     rw [toOfSimpleGraphFinset_map_val] at hcut
     exact hval.trans hcut
