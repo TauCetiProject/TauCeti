@@ -116,35 +116,23 @@ theorem inter_preimage_spliceAtMeeting_succ_inter_exists (n : ℕ) (B : Set (ℕ
     B ∩ (fun ω => spliceAtMeeting ω (n + 1)) ⁻¹' C ∩ {ω | ∃ k ≤ n, (ω k).1 = (ω k).2} =
       B ∩ {ω | ∃ k ≤ n, (ω k).1 = (ω k).2} ∩
         (fun ω : ℕ → α × α => ω (n + 1)) ⁻¹' (Prod.snd ⁻¹' C) := by
-  ext ω
-  simp only [mem_inter_iff, mem_preimage]
-  constructor
-  · rintro ⟨⟨hb, hc⟩, hm⟩
-    refine ⟨⟨hb, hm⟩, ?_⟩
-    rwa [← spliceAtMeeting_of_exists (Exists.imp (fun k hk => ⟨hk.1.trans n.le_succ, hk.2⟩) hm)]
-  · rintro ⟨⟨hb, hm⟩, hc⟩
-    refine ⟨⟨hb, ?_⟩, hm⟩
-    rwa [← spliceAtMeeting_of_exists
-      (Exists.imp (fun k hk => ⟨hk.1.trans n.le_succ, hk.2⟩) hm)] at hc
+  rw [inter_right_comm]
+  exact (show EqOn (fun ω : ℕ → α × α => spliceAtMeeting ω (n + 1)) (fun ω => (ω (n + 1)).2)
+    (B ∩ {ω | ∃ k ≤ n, (ω k).1 = (ω k).2}) from fun ω hω =>
+      spliceAtMeeting_of_exists (Exists.imp (fun k hk => ⟨hk.1.trans n.le_succ, hk.2⟩) hω.2)
+    ).inter_preimage_eq C
 
 /-- Not having met by time `n`, the event that the splice at time `n + 1` lies in `C` is the event
 that the first coordinate at time `n + 1` does. -/
-theorem inter_preimage_spliceAtMeeting_succ_diff_exists (n : ℕ) (B : Set (ℕ → α × α))
+theorem inter_preimage_spliceAtMeeting_succ_sdiff_exists (n : ℕ) (B : Set (ℕ → α × α))
     (C : Set α) :
     (B ∩ (fun ω => spliceAtMeeting ω (n + 1)) ⁻¹' C) \ {ω | ∃ k ≤ n, (ω k).1 = (ω k).2} =
       (B \ {ω | ∃ k ≤ n, (ω k).1 = (ω k).2}) ∩
         (fun ω : ℕ → α × α => ω (n + 1)) ⁻¹' (Prod.fst ⁻¹' C) := by
-  ext ω
-  simp only [mem_inter_iff, mem_sdiff, mem_preimage]
-  constructor
-  · rintro ⟨⟨hb, hc⟩, hm⟩
-    have hne : ∀ k ≤ n, (ω k).1 ≠ (ω k).2 := fun k hk he => hm ⟨k, hk, he⟩
-    refine ⟨⟨hb, hm⟩, ?_⟩
-    rwa [← spliceAtMeeting_succ_of_forall_ne hne]
-  · rintro ⟨⟨hb, hm⟩, hc⟩
-    have hne : ∀ k ≤ n, (ω k).1 ≠ (ω k).2 := fun k hk he => hm ⟨k, hk, he⟩
-    refine ⟨⟨hb, ?_⟩, hm⟩
-    rwa [← spliceAtMeeting_succ_of_forall_ne hne] at hc
+  rw [sdiff_eq, inter_right_comm, ← sdiff_eq]
+  exact (show EqOn (fun ω : ℕ → α × α => spliceAtMeeting ω (n + 1)) (fun ω => (ω (n + 1)).1)
+    (B \ {ω | ∃ k ≤ n, (ω k).1 = (ω k).2}) from fun ω hω =>
+      spliceAtMeeting_succ_of_forall_ne fun k hk he => hω.2 ⟨k, hk, he⟩).inter_preimage_eq C
 
 variable [MeasurableSpace α] [MeasurableEq α]
 
@@ -237,7 +225,7 @@ theorem markovChainLaw_map_spliceAtMeeting [MeasurableEq α] [IsMarkovKernel κ]
     inter_preimage_spliceAtMeeting_succ_inter_exists n B C
   have hout : (B ∩ Z (n + 1) ⁻¹' C) \ M =
       (B \ M) ∩ (fun ω : ℕ → α × α => ω (n + 1)) ⁻¹' (Prod.fst ⁻¹' C) :=
-    inter_preimage_spliceAtMeeting_succ_diff_exists n B C
+    inter_preimage_spliceAtMeeting_succ_sdiff_exists n B C
   rw [prefixLaw_compProd_apply_prod κ hZ n hA hC, Measure.map_apply
     ((measurable_pi_iff.2 fun i => hZ i.1).prodMk (hZ _)) (hA.prod hC), hfib,
     ← measure_inter_add_sdiff _ hM, hin, hout,
