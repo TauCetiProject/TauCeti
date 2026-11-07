@@ -214,6 +214,17 @@ theorem mongeAmpereMeasure_ite_mul_of_pos {Ω : Set E} [DecidablePred (· ∈ Ω
     split_ifs <;> simp only [EReal.coe_mul, EReal.coe_mul_top_of_pos hc]
   rw [← hscale, mongeAmpereMeasure_mul_of_pos μ _ hc]
 
+/-- Positive scaling and a constant shift of a real potential on a set, extended by `⊤` off that
+set: the Monge–Ampère measure is multiplied by `c ^ finrank ℝ E`. -/
+theorem mongeAmpereMeasure_ite_mul_add_of_pos {Ω : Set E} [DecidablePred (· ∈ Ω)] {u : E → ℝ}
+    {c : ℝ} (hc : 0 < c) (b : ℝ) :
+    mongeAmpereMeasure μ (fun x => if x ∈ Ω then ((c * u x + b : ℝ) : EReal) else ⊤) =
+      ENNReal.ofReal (c ^ finrank ℝ E) •
+        mongeAmpereMeasure μ (fun x => if x ∈ Ω then (u x : EReal) else ⊤) := by
+  have hshift := mongeAmpereMeasure_ite_add_linearMap μ (U := Ω) (fun y => c * u y) 0 b
+  rw [mongeAmpereMeasure_ite_mul_of_pos μ hc] at hshift
+  simpa only [LinearMap.zero_apply, add_zero] using hshift
+
 /-- **Change of variables for the Aleksandrov Monge–Ampère measure.** For an affine equivalence
 `A` of `E` with linear part `L` and a measurable set `s`,
 `MA_{f ∘ A}(s) = |det L| MA_f(A '' s)` for the Monge–Ampère measures with respect to an additive
