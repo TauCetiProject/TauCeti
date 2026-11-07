@@ -62,7 +62,6 @@ public section
 
 open NumberField NumberField.mixedEmbedding NumberField.mixedEmbedding.fundamentalCone
   NumberField.Units Ideal Submodule TauCeti.GlobalNumberFields
-  TauCeti.NumberField.mixedEmbedding.fundamentalCone
 open scoped nonZeroDivisors
 
 namespace TauCeti.LFunctions
