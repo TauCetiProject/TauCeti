@@ -65,13 +65,13 @@ variable {M : DGBimoduleCat.{uR, uA, uB, uM} hA hB} {N : DGBimoduleCat.{uR, uB, 
   {P : DGBimoduleCat.{uR, uA, uC, max uM uN} hA hC}
 
 -- Transport the graded actions to the internal gradings used by balanced tensors.
-local instance (M : DGBimoduleCat.{uR, uA, uB, uM} hA hB) :
+local instance tensorLiftGradedSMulModuleRight (M : DGBimoduleCat.{uR, uA, uB, uM} hA hB) :
     SetLike.GradedSMul (InternalGrading.ofDecomposition ℬ).opposite.piece
       (InternalGrading.ofDecomposition M.grading).piece := by
   rw [InternalGrading.ofDecomposition_piece]
   infer_instance
 
-local instance (N : DGBimoduleCat.{uR, uB, uC, uN} hB hC) :
+local instance tensorLiftGradedSMulModuleLeft (N : DGBimoduleCat.{uR, uB, uC, uN} hB hC) :
     SetLike.GradedSMul ℬ (InternalGrading.ofDecomposition N.grading).piece := by
   rw [InternalGrading.ofDecomposition_piece]
   infer_instance
