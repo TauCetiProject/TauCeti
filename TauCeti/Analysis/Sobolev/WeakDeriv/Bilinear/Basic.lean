@@ -102,6 +102,32 @@ private theorem hasLineDerivAt_bilin_self_convolution {B : V →L[ℝ] V →L[�
     rw [← ContinuousLinearMap.flip_apply B, hB]
   simp [hkx, hsymm, two_mul]
 
+/-- **The mollified quadratic form is weakly differentiable on a subdomain.** Let `U` be locally
+integrable and `U'` locally integrable, let `y ↦ B (U y)` have weak derivative `U'` on `Ω`, and let
+`ρ` be a normalized bump kernel with `x - tsupport ρ ⊆ Ω` for every `x ∈ W`. Then
+`y ↦ B (g y) (g y)` has weak derivative `2 (ρ ⋆ U')(g)` on `W`, where `g = ρ ⋆ U`. -/
+private theorem hasWeakLineDerivOn_bilin_self_convolution {B : V →L[ℝ] V →L[ℝ] ℝ}
+    (hB : B.flip = B) {U : E → V} {U' : E → StrongDual ℝ V}
+    (hind : HasWeakLineDerivOn μ Ω (fun y ↦ B (U y)) U' v)
+    (hUloc : LocallyIntegrable U μ) (hU'loc : LocallyIntegrable U' μ) {W : Opens E}
+    {ρ : ContDiffBump (0 : E)}
+    (hsupp : ∀ x ∈ (W : Set E), ∀ y ∈ tsupport (ρ.normed μ), x - y ∈ Ω) :
+    HasWeakLineDerivOn μ W
+      (fun y ↦ B ((ρ.normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] U) y)
+        ((ρ.normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] U) y))
+      (fun y ↦ 2 * (ρ.normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] U') y
+        ((ρ.normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] U) y)) v := by
+  have hgc : Continuous (ρ.normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] U) :=
+    ρ.hasCompactSupport_normed.continuous_convolution_left _ ρ.continuous_normed hUloc
+  have hkc : Continuous (ρ.normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] U') :=
+    ρ.hasCompactSupport_normed.continuous_convolution_left _ ρ.continuous_normed hU'loc
+  refine hasWeakLineDerivOn_of_hasLineDerivAt ?_ ?_ fun x hx ↦
+    hasLineDerivAt_bilin_self_convolution hB hind hUloc ρ.contDiff_normed
+      ρ.hasCompactSupport_normed (hsupp x hx)
+  · exact (B.continuous₂.comp (hgc.prodMk hgc)).locallyIntegrable.locallyIntegrableOn _
+  · exact (continuous_const.mul ((ContinuousLinearMap.id ℝ (StrongDual ℝ V)).continuous₂.comp
+      (hkc.prodMk hgc))).locallyIntegrable.locallyIntegrableOn _
+
 /-- **The weak product rule for a quadratic form.** Let `B` be a continuous symmetric bilinear
 form on `V`, and let `u ∈ L²(Ω; V)`. If the `V*`-valued function `x ↦ B (u x)` has weak derivative
 `u' ∈ L²(Ω; V*)` in the direction `v` on `Ω`, then `x ↦ B (u x) (u x)` has weak derivative
@@ -141,18 +167,8 @@ theorem HasWeakLineDerivOn.bilin_self {B : V →L[ℝ] V →L[ℝ] ℝ} (hB : B.
   set k : ℕ → E → StrongDual ℝ V := fun n ↦
     (φ n).normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] U'
   have hweak (n : ℕ) : HasWeakLineDerivOn μ W (fun y ↦ B (g n y) (g n y))
-      (fun y ↦ 2 * k n y (g n y)) v := by
-    have hgc : Continuous (g n) :=
-      (φ n).hasCompactSupport_normed.continuous_convolution_left _ (φ n).continuous_normed hUloc
-    have hkc : Continuous (k n) :=
-      (φ n).hasCompactSupport_normed.continuous_convolution_left _ (φ n).continuous_normed
-        hU'loc
-    refine hasWeakLineDerivOn_of_hasLineDerivAt ?_ ?_ fun x hx ↦
-      hasLineDerivAt_bilin_self_convolution hB hind hUloc (φ n).contDiff_normed
-        (φ n).hasCompactSupport_normed (hsupp n x hx)
-    · exact (B.continuous₂.comp (hgc.prodMk hgc)).locallyIntegrable.locallyIntegrableOn _
-    · exact (continuous_const.mul ((ContinuousLinearMap.id ℝ (StrongDual ℝ V)).continuous₂.comp
-        (hkc.prodMk hgc))).locallyIntegrable.locallyIntegrableOn _
+      (fun y ↦ 2 * k n y (g n y)) v :=
+    hasWeakLineDerivOn_bilin_self_convolution hB hind hUloc hU'loc (hsupp n)
   -- The mollifications converge in `L²`, so the forms and their derivatives converge in `L¹(W)`.
   have hgLp (n : ℕ) : normedBumpLp ENNReal.ofNat_ne_top (φ n) μ (hU.toLp U) =ᵐ[μ] g n :=
     normedBumpLp_ae_eq_convolution ENNReal.ofNat_ne_top (φ n) hU

@@ -34,3 +34,20 @@ theorem IsSeparatedMap.t2Space (sep : IsSeparatedMap f) (hf : Continuous f) : T2
 /-- The total space of a covering of a Hausdorff space is Hausdorff. -/
 theorem IsCoveringMap.t2Space (hf : IsCoveringMap f) : T2Space X :=
   hf.isSeparatedMap.t2Space hf.continuous
+
+section LeftInvOn
+
+open Set
+
+variable {E X : Type*} [TopologicalSpace E] [TopologicalSpace X] {p : E → X}
+
+/-- Two sections of `p` over a preconnected set `S` that are continuous on `S` and agree at one
+point of `S` agree on `S`, when `p` is locally injective and the total space is Hausdorff. -/
+theorem IsLocallyInjective.eqOn_of_leftInvOn [T2Space E] (hinj : IsLocallyInjective p)
+    {S : Set X} {s s' : X → E} (hS : IsPreconnected S) (hs : ContinuousOn s S)
+    (hs' : ContinuousOn s' S) (hl : LeftInvOn p s S) (hl' : LeftInvOn p s' S) {y : X} (hy : y ∈ S)
+    (hee' : s y = s' y) : EqOn s s' S :=
+  (T2Space.isSeparatedMap p).eqOn_of_comp_eqOn hinj hS hs hs'
+    (fun z hz ↦ by simp only [Function.comp_apply, hl hz, hl' hz]) hy hee'
+
+end LeftInvOn
