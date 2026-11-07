@@ -9,7 +9,6 @@ public import Mathlib.Analysis.CStarAlgebra.ApproximateUnit
 public import Mathlib.RingTheory.TwoSidedIdeal.Instances
 public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit
 public import TauCeti.Topology.Algebra.Ring.TwoSidedIdeal
-import Mathlib.Algebra.Order.Interval.Set.Group
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
 
 /-!
