@@ -91,8 +91,8 @@ jobs:
   # The two used to fail together for no better reason than sharing a job: an unrelated Verso
   # error in Site.Front meant nothing deployed, so a perfectly good pipeline-health.json derived
   # ninety minutes earlier in that same job was thrown away. Separating them means a site that
-  # will not compile can no longer make the published data stale by itself, and a data outage
-  # shows up in minutes rather than after the whole site build has run.
+  # will not compile cannot discard the prepared data cache and artifact; generation and
+  # publication failures are reported separately.
   build-data:
     # Data and publication must not wait behind the hosted build backlog.
     runs-on:
@@ -101,7 +101,7 @@ jobs:
     env:
       REFRESH_SITE_DATA: ${{ github.event_name != 'push' }}
     outputs:
-      # Which of the generated data assets could not be regenerated this run. The steps that
+      # Which generated data assets could not be regenerated or retained this run. The steps that
       # produce them are deliberately non-fatal -- a GitHub hiccup should cost a stale chart, not
       # the whole site deploy -- but "non-fatal" turned into "invisible": the PR statistics step
       # failed on every run from 2026-09-04, so the snapshot it dumps was never written, so
@@ -130,7 +130,7 @@ jobs:
       # committed fallback and never will -- it is derived state, not a checked-in asset -- so
       # without this there is nothing for a failed generator to leave behind, and the run would
       # publish a static tree with no pipeline-health.json at all, DELETING the live endpoint
-      # that the rest of this change exists to keep fresh. Restoring the last published set
+      # that the rest of this change exists to keep fresh. Restoring the retained generated set
       # first makes "keep the previous one" true for the generated data too.
       - name: Prepare pinned shared tools
         uses: TauCetiProject/TauCetiTools/.github/actions/setup@18285517f50cf43fdf748e3fd0e858a812a68c65
@@ -143,8 +143,8 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: ${{ github.workspace }}/web/static_files
-          # Always a miss, so the save below always writes a fresh entry; the prefix restores
-          # the newest previous set.
+          # The run-specific key is normally a miss; the prefix restores the newest generated
+          # set. Only refresh runs save a new entry; push deploys retain the original data.
           key: site-data-v1-${{ github.run_id }}
           restore-keys: site-data-v1-
 
@@ -212,7 +212,9 @@ jobs:
       # Overwrites the checked-in SVGs in the runner only (never committed back). The
       # versions tracked in web/static_files/ are just fallback snapshots so a local
       # `cd web && lake exe web` renders something; refresh them by running these same
-      # two commands. The deployed charts always come from this step, not from the repo.
+      # two commands on a schedule or manual dispatch. Refresh runs replace them when the
+      # generators succeed. Push deploys reuse cached charts, or the committed fallbacks on
+      # a cache miss; failed refreshes likewise retain whatever assets remain available.
       - name: Regenerate the lines-of-code charts into static_files
         if: env.REFRESH_SITE_DATA == 'true'
         working-directory: ${{ github.workspace }}
@@ -239,16 +241,16 @@ jobs:
       # carried between runs: a pull request whose `updatedAt` has not moved keeps its recorded
       # timeline, and only what actually changed in the last three hours is fetched.
       #
-      # A restore miss is not a failure. The generator falls back to the full walk and waits out
-      # a depleted budget rather than giving up, so a cold start (first run, or an evicted entry)
-      # still completes; it just costs an hour of waiting instead of three minutes.
+      # A restore miss is not a failure. During a refresh, the generator attempts the full walk
+      # and may wait for a depleted GitHub budget. That cold path can be expensive; push deploys
+      # skip this scan rather than depending on its runtime.
       - name: Restore the previous pull-request snapshot
         if: env.REFRESH_SITE_DATA == 'true'
         uses: actions/cache/restore@v4
         with:
           path: ${{ runner.temp }}/pr-snapshot.json
-          # Always a miss, so the save below always writes a fresh entry; the prefix is what
-          # actually restores the newest previous snapshot.
+          # A run-specific key lets a refresh save its snapshot; the prefix restores the newest
+          # previous snapshot. This restore and the corresponding save do not run on pushes.
           key: pr-snapshot-${{ github.run_id }}
           restore-keys: pr-snapshot-
 
@@ -303,7 +305,7 @@ jobs:
           fi
 
       - name: Save the pull-request snapshot for the next run
-        # Saved even when the step above failed: an older or partial snapshot still spares the
+        # Refresh runs save even when generation failed: an older or partial snapshot spares the
         # next run most of the walk, and the alternative is that one bad run condemns every later
         # one to a cold start.
         if: always() && steps.snapshot.outputs.present == 'true' && env.REFRESH_SITE_DATA == 'true'
@@ -377,7 +379,7 @@ jobs:
             --out web/static_files/progress.json \
           || {
             echo "roadmap progress" >> "$RUNNER_TEMP/data-failures"
-            # What is in static_files now is the last published snapshot, restored from the cache
+            # What is in static_files now is the retained snapshot, restored from the cache
             # above. Keep it only if it validates in the current topic scheme: one from before the switch
             # to arXiv categories carries the old hand-assigned topics, and the board would show
             # them under its "by arXiv category" label. Otherwise publish the committed fallback.
@@ -783,13 +785,14 @@ jobs:
           name: github-pages-primary
           path: web/_out
 
-  # Publish the freshly generated DATA even when the site itself will not compile.
+  # Publish the available generated-data artifact even when the site itself will not compile.
   #
   # A Pages deployment replaces the entire site, so there is no way to push a new
   # pipeline-health.json without publishing a whole site alongside it. What this job publishes is
   # therefore the last site that built successfully, with this run's data laid over the top. The
-  # prose and the API docs are then as old as the last good build, while everything anyone polls
-  # -- pipeline-health.json, the charts -- is current.
+  # prose and API docs are then as old as the last good build. A refresh artifact contains the
+  # newly generated or retained data; a push artifact contains retained data. The original
+  # timestamps and coverage in pipeline-health.json and the charts remain authoritative.
   #
   # This is the same bargain the data steps already make in build-data ("a GitHub hiccup should
   # cost a stale chart, not the whole deploy"), applied one level up: a Verso error should cost
@@ -840,8 +843,9 @@ jobs:
           # from /static, so that is where they have to land in the built tree.
           path: web/_out/static
 
-      # Both halves stale is not worth a deploy: it would republish the cached site unchanged and
-      # report success, which is indistinguishable from having done something useful.
+      # Without a data artifact this path has nothing to overlay on the cached site. Refuse
+      # that unchanged republish. Artifact presence does not establish data freshness; push
+      # deploys intentionally retain data, as reported by report-data-freshness below.
       - name: Refuse to publish a fallback with no fresh data
         if: steps.overlay.outcome != 'success'
         run: |
@@ -905,7 +909,7 @@ jobs:
           # what guarantees that at least one did.
           artifact_name: ${{ needs.build-site.result == 'success' && 'github-pages-primary' || 'github-pages-fallback' }}
 
-  # Fail the run when a generated data asset could not be regenerated, without having stopped the
+  # Fail the run when a generated data asset could not be regenerated or restored, without stopping the
   # deploy. The two are genuinely different questions and were previously collapsed into one: the
   # steps that build the charts and pipeline-health.json swallow their failures on purpose, so
   # that a GitHub hiccup costs a stale chart rather than a whole missed site publish. What was
@@ -919,6 +923,7 @@ jobs:
   # four consecutive runs and discarded each time because Site.Front would not compile, so the
   # published copy aged past twenty-four hours while each of those runs reported only a warning. The
   # remedies differ -- a broken generator versus a broken publish path -- so they are separate errors.
+  # Intentional reuse on push is announced separately and never represented as regenerated data.
   report-data-freshness:
     needs: [build-data, build-site, fallback-site, deploy]
     # ALWAYS, unconditionally. The previous `always() && ...data-failures != ''` reads like "always"
