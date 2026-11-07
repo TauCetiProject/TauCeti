@@ -19,6 +19,8 @@ Interval integrals of elementary functions in closed form or as series, continui
 
 ## Main declarations
 
+* `TauCeti.intervalIntegrable_sub_const_rpow`, `TauCeti.integral_sub_const_rpow`:
+  the weight `(x - a)^r` singular at the left endpoint, for `r > -1`;
 * `TauCeti.intervalIntegrable_sub_rpow`, `TauCeti.integral_sub_rpow`:
   `∫ x in a..b, (b - x)^r = (b - a)^(r + 1) / (r + 1)` for `r > -1`.
 * `TauCeti.integral_sub_rpow_le_of_lt_neg_one`: `∫ x in a..b - c, (b - x)^r ≤ c^(r + 1) / -(r + 1)`
@@ -54,6 +56,18 @@ public section
 open scoped Nat
 
 namespace TauCeti
+
+/-- The weight `(x - a)^r`, singular at `x = a`, is interval integrable between `a` and `b` for
+`r > -1`. -/
+theorem intervalIntegrable_sub_const_rpow {r : ℝ} (hr : -1 < r) (a b : ℝ) :
+    IntervalIntegrable (fun x => (x - a) ^ r) MeasureTheory.volume a b := by
+  simpa using (intervalIntegral.intervalIntegrable_rpow' hr (a := 0) (b := b - a)).comp_sub_right a
+
+/-- `∫ x in a..b, (x - a)^r = (b - a)^(r + 1) / (r + 1)` for `r > -1`. -/
+theorem integral_sub_const_rpow {r : ℝ} (hr : -1 < r) (a b : ℝ) :
+    ∫ x in a..b, (x - a) ^ r = (b - a) ^ (r + 1) / (r + 1) := by
+  rw [intervalIntegral.integral_comp_sub_right (fun x => x ^ r), sub_self,
+    integral_rpow (Or.inl hr), Real.zero_rpow (by linarith : r + 1 ≠ 0), sub_zero]
 
 /-- The weight `(b - x)^r`, singular at `x = b`, is interval integrable between `a` and `b` for
 `r > -1`. -/

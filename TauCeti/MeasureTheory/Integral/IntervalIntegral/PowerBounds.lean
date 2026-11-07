@@ -21,11 +21,12 @@ The endpoint-singular form `TauCeti.norm_integral_le_of_ae_norm_le_rpow` reverse
 specializes the scale to obtain a bound proportional to the spatial separation to the Hölder
 exponent.
 
-The one-sided estimates `intervalIntegral.intervalIntegrable_of_norm_le_mul_rpow_sub_right` and
-`intervalIntegral.norm_integral_le_of_norm_le_mul_rpow_sub_right` treat a function with values
+The one-sided estimates `intervalIntegral.intervalIntegrable_of_norm_le_mul_sub_rpow_right` and
+`intervalIntegral.norm_integral_le_of_norm_le_mul_sub_rpow_right` treat a function with values
 in a normed group whose norm is bounded almost everywhere on `(a, b]` by `K * (s - a) ^ u` with
 `-1 < u`: it is interval integrable, with integral of norm at most
-`K * ((b - a) ^ (u + 1) / (u + 1))`. The `_left` forms treat the singularity at `b`, with bound
+`K * ((b - a) ^ (u + 1) / (u + 1))`, using `TauCeti.intervalIntegrable_sub_const_rpow` and
+`TauCeti.integral_sub_const_rpow`. The `_left` forms treat the singularity at `b`, with bound
 `K * (b - s) ^ u`, using `TauCeti.intervalIntegrable_sub_rpow` and `TauCeti.integral_sub_rpow`.
 -/
 
@@ -37,47 +38,39 @@ open MeasureTheory Set
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-private theorem intervalIntegrable_mul_rpow_sub_right {a b K u : ℝ} (hu : -1 < u) :
-    IntervalIntegrable (fun s : ℝ => K * (s - a) ^ u) volume a b := by
-  have h := (intervalIntegrable_rpow' (a := 0) (b := b - a) hu).comp_sub_right a
-  simpa using h.const_mul K
-
 omit [NormedSpace ℝ E] in
 /-- A function whose norm is bounded almost everywhere on `(a, b]` by `K * (s - a) ^ u` with
 `-1 < u` is interval integrable on `[a, b]`, given that it is a.e. strongly measurable there. -/
-theorem intervalIntegrable_of_norm_le_mul_rpow_sub_right {f : ℝ → E} {a b K u : ℝ}
+theorem intervalIntegrable_of_norm_le_mul_sub_rpow_right {f : ℝ → E} {a b K u : ℝ}
     (hu : -1 < u) (hab : a ≤ b) (hmeas : AEStronglyMeasurable f (volume.restrict (Ioc a b)))
     (hbound : ∀ᵐ s ∂volume.restrict (Ioc a b), ‖f s‖ ≤ K * (s - a) ^ u) :
     IntervalIntegrable f volume a b := by
   rw [← uIoc_of_le hab] at hmeas hbound
-  exact (intervalIntegrable_mul_rpow_sub_right hu).mono_fun' hmeas hbound
+  exact ((TauCeti.intervalIntegrable_sub_const_rpow hu a b).const_mul K).mono_fun' hmeas hbound
 
 /-- A function whose norm is bounded almost everywhere on `(a, b]` by `K * (s - a) ^ u` with
 `-1 < u` has integral over `[a, b]` of norm at most `K * ((b - a) ^ (u + 1) / (u + 1))`. -/
-theorem norm_integral_le_of_norm_le_mul_rpow_sub_right {f : ℝ → E} {a b K u : ℝ}
+theorem norm_integral_le_of_norm_le_mul_sub_rpow_right {f : ℝ → E} {a b K u : ℝ}
     (hu : -1 < u) (hab : a ≤ b)
     (hbound : ∀ᵐ s ∂volume.restrict (Ioc a b), ‖f s‖ ≤ K * (s - a) ^ u) :
     ‖∫ s in a..b, f s‖ ≤ K * ((b - a) ^ (u + 1) / (u + 1)) := by
-  have hu1 : (0 : ℝ) < u + 1 := by linarith
   refine (norm_integral_le_of_norm_le hab ((ae_restrict_iff' measurableSet_Ioc).mp hbound)
-    (intervalIntegrable_mul_rpow_sub_right hu)).trans_eq ?_
-  rw [integral_const_mul, integral_comp_sub_right (fun x : ℝ => x ^ u) a, sub_self,
-    integral_rpow (Or.inl hu), Real.zero_rpow hu1.ne']
-  ring
+    ((TauCeti.intervalIntegrable_sub_const_rpow hu a b).const_mul K)).trans_eq ?_
+  rw [integral_const_mul, TauCeti.integral_sub_const_rpow hu]
 
 omit [NormedSpace ℝ E] in
-/-- The mirror image of `intervalIntegral.intervalIntegrable_of_norm_le_mul_rpow_sub_right`: the
+/-- The mirror image of `intervalIntegral.intervalIntegrable_of_norm_le_mul_sub_rpow_right`: the
 singularity is at the right endpoint `b`. -/
-theorem intervalIntegrable_of_norm_le_mul_rpow_sub_left {f : ℝ → E} {a b K u : ℝ}
+theorem intervalIntegrable_of_norm_le_mul_sub_rpow_left {f : ℝ → E} {a b K u : ℝ}
     (hu : -1 < u) (hab : a ≤ b) (hmeas : AEStronglyMeasurable f (volume.restrict (Ioc a b)))
     (hbound : ∀ᵐ s ∂volume.restrict (Ioc a b), ‖f s‖ ≤ K * (b - s) ^ u) :
     IntervalIntegrable f volume a b := by
   rw [← uIoc_of_le hab] at hmeas hbound
   exact ((TauCeti.intervalIntegrable_sub_rpow hu a b).const_mul K).mono_fun' hmeas hbound
 
-/-- The mirror image of `intervalIntegral.norm_integral_le_of_norm_le_mul_rpow_sub_right`: the
+/-- The mirror image of `intervalIntegral.norm_integral_le_of_norm_le_mul_sub_rpow_right`: the
 singularity is at the right endpoint `b`. -/
-theorem norm_integral_le_of_norm_le_mul_rpow_sub_left {f : ℝ → E} {a b K u : ℝ}
+theorem norm_integral_le_of_norm_le_mul_sub_rpow_left {f : ℝ → E} {a b K u : ℝ}
     (hu : -1 < u) (hab : a ≤ b)
     (hbound : ∀ᵐ s ∂volume.restrict (Ioc a b), ‖f s‖ ≤ K * (b - s) ^ u) :
     ‖∫ s in a..b, f s‖ ≤ K * ((b - a) ^ (u + 1) / (u + 1)) := by
@@ -109,7 +102,7 @@ theorem norm_intervalIntegral_le_of_rpow_bounds {f : ℝ → F} {a b A B d t : �
       ‖∫ r in 0..s, f r‖ ≤ A / a * s ^ a := by
     have hr : -1 < a - 1 := by linarith
     have hsub : Ioc 0 s ⊆ Ioc 0 t := Ioc_subset_Ioc_right hst
-    have h := intervalIntegral.norm_integral_le_of_norm_le_mul_rpow_sub_right (f := f) (a := 0)
+    have h := intervalIntegral.norm_integral_le_of_norm_le_mul_sub_rpow_right (f := f) (a := 0)
       (b := s) (K := A) hr hs
       ((ae_restrict_iff' measurableSet_Ioc).mpr
         (hnear'.mono fun r hr hrs => by simpa using hr (hsub hrs)))
