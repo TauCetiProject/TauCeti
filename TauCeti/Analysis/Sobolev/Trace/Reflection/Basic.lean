@@ -79,7 +79,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set TopologicalSpace Filter
-open scoped ContDiff Topology Distributions Gradient
+open scoped ContDiff Topology Distributions Gradient InnerProductSpace
 
 namespace TauCeti
 
@@ -127,6 +127,33 @@ theorem normalLinearReflection_symm : (normalLinearReflection E).symm = normalLi
 theorem inner_normalLinearReflection_left_eq_right (x y : WithLp 2 (ℝ × E)) :
     inner ℝ (normalLinearReflection E x) y = inner ℝ x (normalLinearReflection E y) := by
   rw [← (normalLinearReflection E).inner_map_map, normalLinearReflection_normalLinearReflection]
+
+/-- The reflection `R` reverses the normal direction `ν = (1, 0)`. -/
+theorem normalLinearReflection_toLp_one_zero :
+    normalLinearReflection E (WithLp.toLp 2 ((1 : ℝ), (0 : E))) =
+      -WithLp.toLp 2 ((1 : ℝ), (0 : E)) := by
+  simp [normalLinearReflection_apply, ← WithLp.toLp_neg]
+
+/-- The reflection `R` fixes every tangential direction `τ y = (0, y)`. -/
+theorem normalLinearReflection_toLp_zero (y : E) :
+    normalLinearReflection E (WithLp.toLp 2 ((0 : ℝ), y)) = WithLp.toLp 2 ((0 : ℝ), y) := by
+  simp [normalLinearReflection_apply]
+
+/-- Pairing `w - R w'` with the normal direction `ν = (1, 0)` adds the normal components of `w`
+and `w'`. -/
+theorem inner_sub_normalLinearReflection_normal (w w' : WithLp 2 (ℝ × E)) :
+    ⟪w - normalLinearReflection E w', WithLp.toLp 2 ((1 : ℝ), (0 : E))⟫_ℝ =
+      ⟪w, WithLp.toLp 2 ((1 : ℝ), (0 : E))⟫_ℝ + ⟪w', WithLp.toLp 2 ((1 : ℝ), (0 : E))⟫_ℝ := by
+  rw [inner_sub_left, inner_normalLinearReflection_left_eq_right,
+    normalLinearReflection_toLp_one_zero, inner_neg_right, sub_neg_eq_add]
+
+/-- Pairing `w - R w'` with a tangential direction `τ y = (0, y)` subtracts the tangential
+components of `w'` from those of `w`. -/
+theorem inner_sub_normalLinearReflection_tangent (w w' : WithLp 2 (ℝ × E)) (y : E) :
+    ⟪w - normalLinearReflection E w', WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ =
+      ⟪w, WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ - ⟪w', WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ := by
+  rw [inner_sub_left, inner_normalLinearReflection_left_eq_right,
+    normalLinearReflection_toLp_zero]
 
 variable (E) in
 /-- The reflection `(t, y) ↦ (2a - t, y)` of the Euclidean product `ℝ × E` in the hyperplane
@@ -321,6 +348,38 @@ theorem setIntegral_eq_two_smul_setIntegral_inter_normalHalfSpace {a : ℝ}
     integral_congr_ae (indicator_ae_eq_add_indicator_comp_normalReflection hU hg),
     integral_add h1 h2, integral_comp_normalReflection a,
     integral_indicator (hUm.inter (normalHalfSpace a).isOpen.measurableSet), two_smul]
+
+omit [BorelSpace E] in
+/-- Two continuous linear endomorphisms agree as soon as their pairings agree with the normal
+direction on every vector and with the tangential directions on the normal and tangential
+directions. -/
+theorem ae_clm_eq_of_forall_inner_normal_tangent
+    {Φ Ψ : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)}
+    {μ : Measure (WithLp 2 (ℝ × E))}
+    (h1 : ∀ v, ∀ᵐ x ∂μ, ⟪Φ x v, WithLp.toLp 2 ((1 : ℝ), (0 : E))⟫_ℝ =
+      ⟪Ψ x v, WithLp.toLp 2 ((1 : ℝ), (0 : E))⟫_ℝ)
+    (h2 : ∀ y : E, ∀ᵐ x ∂μ, ⟪Φ x (WithLp.toLp 2 ((1 : ℝ), (0 : E))), WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ =
+      ⟪Ψ x (WithLp.toLp 2 ((1 : ℝ), (0 : E))), WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ)
+    (h3 : ∀ y z : E, ∀ᵐ x ∂μ, ⟪Φ x (WithLp.toLp 2 ((0 : ℝ), z)), WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ =
+      ⟪Ψ x (WithLp.toLp 2 ((0 : ℝ), z)), WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ) :
+    ∀ᵐ x ∂μ, Φ x = Ψ x := by
+  set b := (OrthonormalBasis.singleton Unit ℝ).prod (stdOrthonormalBasis ℝ E)
+  have hb_inl : b (Sum.inl ()) = WithLp.toLp 2 ((1 : ℝ), (0 : E)) := by simp [b]
+  have hb_inr (j : Fin (Module.finrank ℝ E)) :
+      b (Sum.inr j) = WithLp.toLp 2 ((0 : ℝ), stdOrthonormalBasis ℝ E j) := by simp [b]
+  have hentry (i j : Unit ⊕ Fin (Module.finrank ℝ E)) :
+      ∀ᵐ x ∂μ, ⟪Φ x (b i), b j⟫_ℝ = ⟪Ψ x (b i), b j⟫_ℝ := by
+    rcases j with ⟨⟩ | j
+    · rw [hb_inl]
+      exact h1 _
+    · rcases i with ⟨⟩ | i
+      · rw [hb_inl, hb_inr]
+        exact h2 _
+      · rw [hb_inr, hb_inr]
+        exact h3 _ _
+  filter_upwards [ae_all_iff.2 fun i => ae_all_iff.2 fun j => hentry i j] with x hx
+  exact ContinuousLinearMap.coe_injective (b.toBasis.ext fun i =>
+    InnerProductSpace.ext_inner_right_basis b.toBasis fun j => by simpa using hx i j)
 
 end Reflection
 
