@@ -179,9 +179,10 @@ private theorem sum_measure_levelSet_mul_le (μ : Measure Ω) (φ : 𝓓^{n}(Ω,
         exact add_le_add (setLIntegral_le_lintegral _ _) le_rfl
 
 omit [FiniteDimensional ℝ E] in
-/-- The open sets used to dominate `T φ`: the neighbourhood `W` of the support where `‖φ‖ < ε`, and,
-for each level set of index `j < N`, the points of `W` in a given neighbourhood `G j` of it where
-`‖φ‖ < (j + 2) * ε`, cover the support of `φ`. -/
+/-- The sets used to dominate `T φ`: a set `W` containing the support, truncated to where
+`‖φ‖ < ε`, and, for each level set of index `j < N`, the points of `W` in a given set `G j`
+containing that level set where `‖φ‖ < (j + 2) * ε`, cover the support of `φ`. The cover is open
+when `W` and every `G j` are open. -/
 private theorem tsupport_subset_iUnion_levelSetCover (φ : 𝓓^{n}(Ω, F)) {W : Set E}
     (hφW : tsupport φ ⊆ W) {ε : ℝ} (hε : 0 < ε) {N : ℕ} (hN : ⌈‖(φ : E →ᵇ F)‖ / ε⌉₊ ≤ N)
     {G : Fin N → Set Ω} (hEG : ∀ j : Fin N, levelSet φ ε j ⊆ G j) :
