@@ -7,7 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Function.CurveAction.Basic
 import TauCeti.Algebra.Order.Floor.Semifield
-import TauCeti.Topology.EMetricSpace.BoundedVariation
+import TauCeti.Topology.EMetricSpace.Basic
 import TauCeti.Topology.Instances.ENNReal
 
 /-!
@@ -99,18 +99,6 @@ private lemma edist_ceil_div_rpow_le (hp : 1 ≤ p) {s t : ℝ} (hst : s ≤ t) 
         exact ENNReal.ofReal_le_ofReal
           (natCast_ceil_div_sub_ceil_div_lt (NNReal.coe_nonneg τ) hst).le
 
-/-- The distance between the piecewise constant interpolant at times `a` and `b` is at most the
-sum of the steps taken between them. -/
-private lemma edist_ceil_div_le_sum_Ico_edist (U : ℕ → X) (a b : ℝ) :
-    edist (U ⌈a / τ⌉₊) (U ⌈b / τ⌉₊) ≤
-      ∑ n ∈ Finset.Ico ⌈min a b / τ⌉₊ ⌈max a b / τ⌉₊, edist (U n) (U (n + 1)) := by
-  have hmono : Monotone fun x : ℝ ↦ ⌈x / τ⌉₊ := fun x y hxy ↦
-    Nat.ceil_mono (div_le_div_of_nonneg_right hxy (NNReal.coe_nonneg τ))
-  have hmin : ⌈min a b / τ⌉₊ = min ⌈a / τ⌉₊ ⌈b / τ⌉₊ := hmono.map_min
-  have hmax : ⌈max a b / τ⌉₊ = max ⌈a / τ⌉₊ ⌈b / τ⌉₊ := hmono.map_max
-  rw [hmin, hmax]
-  exact edist_le_sum_Ico_min_max_edist U _ _
-
 /-- **Discrete Hölder estimate** for a disjoint family of intervals `(sᵢ, tᵢ]` in `[0, T]`: the
 `p`-th power of the sum of the distances between the piecewise constant interpolant at times `sᵢ`
 and `tᵢ` is at most `(|⋃ (sᵢ, tᵢ]| + k τ) ^ (p - 1)` times the discrete `p`-action up to time `T`,
@@ -132,7 +120,7 @@ theorem sum_edist_ceil_div_rpow_le (hp : 1 ≤ p) (hτ : 0 < τ) {T : ℝ} (hT :
     rw [uIcc_of_le hT] at h₁ h₂
     exact ⟨min_le_max, max_le h₁.2 h₂.2⟩
   have hedist i (_ : i ∈ Finset.range k) :=
-    edist_ceil_div_le_sum_Ico_edist (τ := τ) U (I i).1 (I i).2
+    edist_ceil_div_le_sum_Ico_edist (NNReal.coe_nonneg τ) U (I i).1 (I i).2
   -- The index sets of disjoint intervals are disjoint.
   have hdisj : (Finset.range k : Set ℕ).PairwiseDisjoint J :=
     pairwiseDisjoint_Ico_ceil_div hτr hE.2
