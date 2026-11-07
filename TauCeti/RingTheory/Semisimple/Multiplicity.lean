@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
-public import TauCeti.Data.Nat.Pow
+public import TauCeti.Algebra.Order.BigOperators.GroupWithZero.Finset
 public import TauCeti.LinearAlgebra.End.Basic
 public import TauCeti.RingTheory.SimpleModule.Isotypic
 public import TauCeti.RingTheory.CompositionSeries.Additivity
