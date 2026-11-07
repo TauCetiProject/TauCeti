@@ -326,6 +326,17 @@ end InnerProductSpace
 
 namespace ContinuousLinearMap
 
+/-- Pullback of a positive metric by an injective linear map is positive in finite
+dimension. No preservation of the reference inner products is needed. -/
+theorem isStrictlyPositive_continuousLinearMapOfBilin_bilinearComp
+    [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
+    (h : F →L[ℝ] F →L[ℝ] ℝ) (f : E →L[ℝ] F) (hH : IsStrictlyPositive h♯)
+    (hf : Function.Injective f) : IsStrictlyPositive (h.bilinearComp f f)♯ := by
+  obtain ⟨hsym, hpos⟩ := isStrictlyPositive_continuousLinearMapOfBilin_iff.1 hH
+  exact isStrictlyPositive_continuousLinearMapOfBilin_iff.2
+    ⟨fun u v ↦ hsym (f u) (f v), fun u hu ↦ hpos (f u) (by simpa only [map_zero] using
+      (hf.ne hu : f u ≠ f 0))⟩
+
 variable [CompleteSpace E]
 
 /-- **Continuity of the metric change transport.** The metric change transport depends
