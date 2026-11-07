@@ -82,6 +82,29 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 variable [FiniteDimensional ℝ E]
 
+omit [FiniteDimensional ℝ E] in
+/-- The intrinsic frontier of a simplex of `K` outside the subcomplex `A` is covered by the
+subdivided subcomplex together with the other simplices of `K` outside `A` that it contains. -/
+private lemma IsSubdivision.intrinsicFrontier_subset_space_union (h : L.IsSubdivision A)
+    (s : {s : K.faces // s.1 ∉ A.faces}) :
+    intrinsicFrontier ℝ (convexHull ℝ (s.1.1 : Set E)) ⊆
+      L.space ∪ ⋃ (t : {s : K.faces // s.1 ∉ A.faces})
+        (_ : t ≠ s ∧ convexHull ℝ (t.1.1 : Set E) ⊆ convexHull ℝ (s.1.1 : Set E)),
+        convexHull ℝ (t.1.1 : Set E) := by
+  intro x hx
+  obtain ⟨t, ht, hts, hxt⟩ := exists_mem_faces_subset_mem_intrinsicInterior s.1.2
+    (intrinsicFrontier_subset (s.1.1.finite_toSet.isCompact_convexHull (𝕜 := ℝ)).isClosed hx)
+  by_cases htA : t ∈ A.faces
+  · exact .inl (h.space_eq.symm ▸ convexHull_subset_space htA (intrinsicInterior_subset hxt))
+  · let j : {s : K.faces // s.1 ∉ A.faces} := ⟨⟨t, ht⟩, htA⟩
+    refine .inr (mem_iUnion₂.mpr ⟨j, ⟨?_, convexHull_mono (Finset.coe_subset.mpr hts)⟩,
+      intrinsicInterior_subset hxt⟩)
+    intro hjs
+    have hxi : x ∉ intrinsicInterior ℝ (convexHull ℝ (s.1.1 : Set E)) := by
+      rw [← intrinsicClosure_sdiff_intrinsicInterior] at hx
+      exact hx.2
+    exact hxi (hjs ▸ hxt)
+
 /-- In a finite-dimensional real normed space, a locally finite subdivision of a subcomplex
 of a locally finite complex extends to a locally finite subdivision of the whole complex.
 Its restriction to the original subcomplex is exactly the prescribed subdivision, so no new
@@ -105,20 +128,7 @@ theorem IsSubdivision.exists_extension (h : L.IsSubdivision A) (hAK : A ≤ K)
       (intrinsicInterior ℝ (P t)) :=
     K.pairwise_disjoint_intrinsicInterior.comp_of_injective Subtype.val_injective
   have hfr (s : J) : intrinsicFrontier ℝ (P s) ⊆
-      L.space ∪ ⋃ (t : J) (_ : t ≠ s ∧ P t ⊆ P s), P t := by
-    intro x hx
-    obtain ⟨t, ht, hts, hxt⟩ := exists_mem_faces_subset_mem_intrinsicInterior s.1.2
-      (intrinsicFrontier_subset (hPc s).isClosed hx)
-    by_cases htA : t ∈ A.faces
-    · exact .inl (h.space_eq.symm ▸ convexHull_subset_space htA (intrinsicInterior_subset hxt))
-    · let j : J := ⟨⟨t, ht⟩, htA⟩
-      refine .inr (mem_iUnion₂.mpr ⟨j, ⟨?_, convexHull_mono (Finset.coe_subset.mpr hts)⟩,
-        intrinsicInterior_subset hxt⟩)
-      intro hjs
-      have hxi : x ∉ intrinsicInterior ℝ (P s) := by
-        rw [← intrinsicClosure_sdiff_intrinsicInterior] at hx
-        exact hx.2
-      exact hxi (hjs ▸ hxt)
+      L.space ∪ ⋃ (t : J) (_ : t ≠ s ∧ P t ⊆ P s), P t := h.intrinsicFrontier_subset_space_union s
   have hLi (s : J) : Disjoint (intrinsicInterior ℝ (P s)) L.space := by
     rw [h.space_eq]
     exact disjoint_intrinsicInterior_space_of_not_mem hAK s.1.2 s.2
