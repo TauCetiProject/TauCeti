@@ -166,13 +166,6 @@ theorem _root_.ContinuousLinearMap.nondegenerate_toBilinForm_iff_injective
   ⟨fun h ↦ L.separatingLeft_toBilinForm_iff_injective.1 h.1, fun h ↦
     .ofSeparatingLeft (L.separatingLeft_toBilinForm_iff_injective.2 h)⟩
 
-variable (𝕜 E) in
-/-- In finite dimensions, the continuous bilinear forms that are nondegenerate form an open set. -/
-theorem isOpen_setOfPred_nondegenerate_toBilinForm :
-    IsOpen {L : E →L[𝕜] E →L[𝕜] 𝕜 | L.toBilinForm.Nondegenerate} := by
-  simpa only [ContinuousLinearMap.nondegenerate_toBilinForm_iff_injective] using
-    ContinuousLinearMap.isOpen_injective
-
 /-- Contraction with a bilinear form on a finite-dimensional space is an invertible
 continuous linear map to the continuous dual exactly when the form is left-separating. -/
 @[simp low]
