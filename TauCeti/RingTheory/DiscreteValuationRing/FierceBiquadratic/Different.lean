@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.DiscreteValuationRing.FierceBiquadratic.Basic
 public import TauCeti.RingTheory.DedekindDomain.Different.Monogenic
+import TauCeti.FieldTheory.Separable.SimpleRoot
 import TauCeti.RingTheory.AdjoinRoot.Minpoly
 import TauCeti.RingTheory.DedekindDomain.Different.Length
 
@@ -48,21 +49,18 @@ even if the residue-field extension is inseparable. -/
 theorem isSeparable_fractionRing_ringY [IsDomain (RingY t s)] (ht : t ≠ 0) :
     Algebra.IsSeparable (FractionRing A) (FractionRing (RingY t s)) := by
   let x := algebraMap (RingY t s) (FractionRing (RingY t s)) (AdjoinRoot.root (quadratic t s))
-  have hsep : ((quadratic t s).map (algebraMap A (FractionRing A))).Separable := by
-    rw [Polynomial.separable_def, Polynomial.derivative_map, derivative_quadratic,
-      Polynomial.map_C]
-    refine ⟨0, C ((algebraMap A (FractionRing A) t)⁻¹), ?_⟩
-    rw [zero_mul, zero_add, ← C_mul,
-      inv_mul_cancel₀ (by simpa using (IsFractionRing.injective A (FractionRing A)).ne ht), C_1]
-  have hx : IsSeparable (FractionRing A) x :=
-    hsep.of_dvd (minpoly.dvd _ x (by
-      simp only [x, aeval_map_algebraMap, aeval_algebraMap_apply,
-        AdjoinRoot.aeval_eq, AdjoinRoot.mk_self, map_zero]))
+  have hp : aeval x ((quadratic t s).map (algebraMap A (FractionRing A))) = 0 := by
+    simp only [x, aeval_map_algebraMap, aeval_algebraMap_apply,
+      AdjoinRoot.aeval_eq, AdjoinRoot.mk_self, map_zero]
+  have hd : aeval x (((quadratic t s).map (algebraMap A (FractionRing A))).derivative) ≠ 0 := by
+    rw [Polynomial.derivative_map, derivative_quadratic, Polynomial.map_C, aeval_C]
+    simpa only [Function.comp_apply, ← IsScalarTower.algebraMap_apply, map_zero] using
+      ((IsFractionRing.injective (RingY t s) (FractionRing (RingY t s))).comp
+        (FaithfulSMul.algebraMap_injective A (RingY t s))).ne ht
   have hgen := TauCeti.IntermediateField.adjoin_eq_top_of_algebra_adjoin_eq_top
     (R := A) (K := FractionRing A) (L := FractionRing (RingY t s))
     (AdjoinRoot.adjoinRoot_eq_top (f := quadratic t s))
-  rw [← IntermediateField.isSeparable_top, ← hgen]
-  exact (IntermediateField.isSeparable_adjoin_simple_iff_isSeparable _ _).mpr hx
+  exact (TauCeti.finiteDimensional_and_isSeparable_of_aeval_derivative_ne_zero hgen hp hd).2
 
 variable [IsIntegrallyClosed A] [IsDedekindDomain (RingY t s)]
 
@@ -120,13 +118,14 @@ end Tower
 section Regression
 
 variable [IsDomain A] [IsDiscreteValuationRing A] {t s u : A}
-  [IsDedekindDomain (RingYZ t s u)] [IsLocalRing (RingYZ t s u)]
+  [IsDomain (RingYZ t s u)] [IsLocalRing (RingYZ t s u)]
 variable (ht : Irreducible t) (hs : ∀ a : ResidueField A, a ^ 2 ≠ residue A s)
   (hu : ∀ a b : ResidueField A, a ^ 2 + residue A s * b ^ 2 ≠ residue A u)
 include ht hs hu
 
 /-- The different exponent is two in the fierce biquadratic extension, not three. -/
 theorem multiplicity_differentIdeal_ringYZ :
+    letI := isDiscreteValuationRing_ringYZ ((mem_maximalIdeal t).mpr ht.not_isUnit) hs hu
     multiplicity (maximalIdeal (RingYZ t s u)) (differentIdeal A (RingYZ t s u)) = 2 := by
   have hmem := (mem_maximalIdeal t).mpr ht.not_isUnit
   have hred := irreducible_map_residue_quadratic hmem hs
@@ -146,6 +145,7 @@ theorem multiplicity_differentIdeal_ringYZ :
 /-- The quotient by the different has length eight over the base DVR: the full
 residue degree four multiplies the different exponent two. -/
 theorem length_quotient_differentIdeal_ringYZ :
+    letI := isDiscreteValuationRing_ringYZ ((mem_maximalIdeal t).mpr ht.not_isUnit) hs hu
     Module.length A (RingYZ t s u ⧸ differentIdeal A (RingYZ t s u)) = 8 := by
   have hmem := (mem_maximalIdeal t).mpr ht.not_isUnit
   have := isDiscreteValuationRing_ringYZ hmem hs hu
@@ -179,7 +179,7 @@ theorem length_traceDual_quotient_ringYZ :
   rw [TauCeti.length_traceDual_quotient_eq_length_quotient_differentIdeal,
     length_quotient_differentIdeal_ringYZ ht hs hu]
 
-omit [IsDedekindDomain (RingYZ t s u)] in
+omit [IsDomain (RingYZ t s u)] in
 /-- The classical lower-group sum is three in this extension. It does not compute
 the different exponent, because the residue-field extension is inseparable. -/
 theorem finsum_card_ramificationGroup_sub_one_ringYZ :
@@ -204,6 +204,7 @@ theorem finsum_card_ramificationGroup_sub_one_ringYZ :
 /-- Hilbert's lower-ramification-group formula fails without separability of the
 residue extension, even for this finite free extension of DVRs. -/
 theorem multiplicity_differentIdeal_ne_finsum_ringYZ :
+    letI := isDiscreteValuationRing_ringYZ ((mem_maximalIdeal t).mpr ht.not_isUnit) hs hu
     multiplicity (maximalIdeal (RingYZ t s u)) (differentIdeal A (RingYZ t s u)) ≠
       ∑ᶠ i : ℕ, (Nat.card (IsLocalRing.ramificationGroup
         (RingYZ t s u ≃ₐ[A] RingYZ t s u) (RingYZ t s u) i) - 1) := by
