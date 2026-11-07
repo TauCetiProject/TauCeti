@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Quadratic
 import TauCeti.Algebra.BigOperators.Finset.Fiber
+import TauCeti.Analysis.Complex.HorizontalStrip
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.ExteriorPoint
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.SimpleBoundary
 
@@ -112,64 +113,10 @@ theorem exists_mem_image_schwarzChristoffelPrimitive_iff_of_sum_eq_one
   have hline (w : ℂ) (hw : R < w.re) : w ∈ frontier U ↔ w.im = hi ∨ w.im = lo := by
     rw [hfrontier]
     exact hboundary w ((le_max_left _ _).trans_lt hw)
-  -- A preconnected region off the two lines lies in the open image once it meets it.
-  have hfill (s : Set ℂ) (hs : IsPreconnected s)
-      (havoid : ∀ w ∈ s, R < w.re ∧ w.im ≠ hi ∧ w.im ≠ lo) (hmeet : (s ∩ U).Nonempty) :
-      s ⊆ U := by
-    refine hs.subset_of_closure_inter_subset hUo hmeet fun w ⟨hwcl, hws⟩ => ?_
-    by_contra hwU
-    have hwfr : w ∈ frontier U := by
-      rw [hUo.frontier_eq]
-      exact ⟨hwcl, hwU⟩
-    obtain ⟨hwR, hne, hne'⟩ := havoid w hws
-    exact ((hline w hwR).mp hwfr).elim hne hne'
-  -- The band between the lines misses the image, since it contains an exterior point.
-  have hmid (w : ℂ) (hwR : R < w.re) (hwlo : lo < w.im) (hwhi : w.im < hi) : w ∉ U := by
-    intro hwU
-    have hS := hfill {w : ℂ | R < w.re ∧ lo < w.im ∧ w.im < hi}
-      ((convex_halfSpace_re_gt R).inter ((convex_halfSpace_im_gt lo).inter
-        (convex_halfSpace_im_lt hi))).isPreconnected
-      (fun w hw => ⟨hw.1, hw.2.2.ne, hw.2.1.ne'⟩) ⟨w, ⟨hwR, hwlo, hwhi⟩, hwU⟩
-    -- The midpoint of the band far to the right is an exterior point.
-    have hq : (⟨R + 1, (lo + hi) / 2⟩ : ℂ) ∈ U :=
-      hS ⟨lt_add_one R, by dsimp only; linarith, by dsimp only; linarith⟩
-    exact hband _ ((le_max_right R₁ R₂).trans_lt (lt_add_one R)) (by dsimp only; linarith)
-      (by dsimp only; linarith) (subset_closure hq)
-  -- To the right of `R`, image points avoid both the lines, which lie in the frontier of the
-  -- open image, and the band.
-  have hout {w : ℂ} (hwR : R < w.re) (hwU : w ∈ U) : w.im < lo ∨ hi < w.im := by
-    have hne : w ∉ frontier U := by
-      rw [hUo.frontier_eq]
-      exact fun h => h.2 hwU
-    rw [hline w hwR, not_or] at hne
-    by_contra! hw
-    exact hmid w hwR (lt_of_le_of_ne hw.1 (Ne.symm hne.2)) (lt_of_le_of_ne hw.2 hne.1) hwU
-  -- Each line lies in the closure of the image, so image points come close to it.
-  have hnear (h : ℝ) (hh : h = hi ∨ h = lo) :
-      ∃ u ∈ U, R < u.re ∧ |u.im - h| < (hi - lo) / 2 := by
-    have hw₀ : (⟨R + 1, h⟩ : ℂ) ∈ closure U :=
-      frontier_subset_closure ((hline _ (lt_add_one R)).mpr hh)
-    obtain ⟨u, huU, hu⟩ := Metric.mem_closure_iff.mp hw₀ (min 1 ((hi - lo) / 2))
-      (lt_min one_pos (by linarith))
-    rw [dist_eq_norm] at hu
-    have hre := (abs_lt.mp ((abs_re_le_norm _).trans_lt (hu.trans_le (min_le_left _ _)))).2
-    have him := (abs_im_le_norm _).trans_lt (hu.trans_le (min_le_right _ _))
-    simp only [sub_re, sub_im] at hre him
-    rw [abs_sub_comm] at him
-    exact ⟨u, huU, by linarith, him⟩
-  have habove : {w : ℂ | R < w.re ∧ hi < w.im} ⊆ U := by
-    obtain ⟨u, huU, huR, hu⟩ := hnear hi (Or.inl rfl)
-    refine hfill _ ((convex_halfSpace_re_gt R).inter (convex_halfSpace_im_gt hi)).isPreconnected
-      (fun w hw => ⟨hw.1, hw.2.ne', (hgap.trans hw.2).ne'⟩)
-      ⟨u, ⟨huR, (hout huR huU).resolve_left fun h => ?_⟩, huU⟩
-    linarith [(abs_lt.mp hu).1]
-  have hbelow : {w : ℂ | R < w.re ∧ w.im < lo} ⊆ U := by
-    obtain ⟨u, huU, huR, hu⟩ := hnear lo (Or.inr rfl)
-    refine hfill _ ((convex_halfSpace_re_gt R).inter (convex_halfSpace_im_lt lo)).isPreconnected
-      (fun w hw => ⟨hw.1, (hw.2.trans hgap).ne, hw.2.ne⟩)
-      ⟨u, ⟨huR, (hout huR huU).resolve_right fun h => ?_⟩, huU⟩
-    linarith [(abs_lt.mp hu).2]
-  exact ⟨R, fun w hwR => ⟨hout hwR,
-    fun hw => hw.elim (fun h => hbelow ⟨hwR, h⟩) (fun h => habove ⟨hwR, h⟩)⟩⟩
+  -- The midpoint of the band far to the right is an exterior point.
+  have hext : (⟨R + 1, (lo + hi) / 2⟩ : ℂ) ∉ closure U :=
+    hband _ ((le_max_right R₁ R₂).trans_lt (lt_add_one R)) (by dsimp only; linarith)
+      (by dsimp only; linarith)
+  exact ⟨R, fun w hwR => mem_iff_im_lt_or_lt_im_of_frontier_eq hUo hgap hline hext hwR⟩
 
 end TauCeti
