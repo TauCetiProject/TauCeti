@@ -45,6 +45,20 @@ variable {ι L : Type*} [Finite ι] [LieRing L] [LieAlgebra ℚ L]
   (ρ : UniversalEnvelopingAlgebra ℚ L →ₐ[ℚ] Module.End ℚ V)
   {v : V} {wt : ι → ℤ}
 
+/-- The weight sublattices of the Kostant orbit of a highest weight vector form an internal
+direct sum. -/
+private theorem isInternal_weightSublattice_orbitOfRep [DecidableEq (ι → ℤ)]
+    (hv : IsCartanWeightVector b.h ρ wt v)
+    (hve : ∀ i, ρ (UniversalEnvelopingAlgebra.ι ℚ (b.e i)) v = 0) :
+    DirectSum.IsInternal
+      (weightSublattice b.h ρ (Subring.orbitOfRep b.kostantForm ρ {v}).toAddSubgroup) := by
+  apply isInternal_weightSublattice b.rootGenerator b.h ρ
+  · intro u hu x hx
+    rw [← b.kostantForm_def] at hu
+    exact Subring.apply_mem_orbitOfRep_of_mem _ _ _ hu hx
+  · intro x
+    exact b.orbitOfRep_kostantForm_le_iSup_jointWeightSpace hv hve x.property
+
 /-- The integral highest-weight coefficient on the Kostant orbit is uniquely characterized by
 its value one on the chosen highest vector and its vanishing on all other weight sublattices. -/
 theorem existsUnique_highestWeightCoordinate
@@ -72,13 +86,7 @@ theorem existsUnique_highestWeightCoordinate
       exact ⟨n, Subtype.ext (Subtype.ext hn.symm)⟩
   let c := (LinearEquiv.ofBijective s hs).symm
   have hc (n : ℤ) : c (n • vW) = n := c.apply_symm_apply n
-  have hM : DirectSum.IsInternal W := by
-    apply isInternal_weightSublattice b.rootGenerator b.h ρ M
-    · intro u hu x hx
-      rw [← b.kostantForm_def] at hu
-      exact Subring.apply_mem_orbitOfRep_of_mem _ _ _ hu hx
-    · intro x
-      exact b.orbitOfRep_kostantForm_le_iSup_jointWeightSpace hv hve x.property
+  have hM : DirectSum.IsInternal W := b.isInternal_weightSublattice_orbitOfRep ρ hv hve
   -- Project the integral weight decomposition onto that line and read its coefficient.
   let d := (LinearEquiv.ofBijective (DirectSum.coeLinearMap W) hM).symm
   let f : M →ₗ[ℤ] ℤ := c.toLinearMap.comp
