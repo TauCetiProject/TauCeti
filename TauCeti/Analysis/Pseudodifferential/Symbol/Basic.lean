@@ -199,7 +199,7 @@ instance : Neg (Symbol n V W m) where
       exists_bound := fun K hK α β => by
         obtain ⟨C, hC, ha⟩ := a.exists_bound K hK α β
         exact ⟨C, hC, fun x hx ξ => by
-          rw [mixedDeriv_neg a.contDiff_coefficient, norm_neg]
+          rw [mixedDeriv_neg, norm_neg]
           exact ha x hx ξ⟩ }
 
 instance : Sub (Symbol n V W m) where

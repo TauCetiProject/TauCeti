@@ -357,8 +357,7 @@ private theorem valuation_le_valuation_sub_sq {a : Kˣ}
   have hne : valuation K (ξ ^ 2) ≠ valuation K (a : K) := fun h => ha <| by
     have e : (normalizedValuation K (Units.mk0 ξ hξ ^ 2)).toAdd =
         (normalizedValuation K a).toAdd :=
-      le_antisymm ((toAdd_normalizedValuation_le_iff_valuation_le _ _).mpr (by simpa using h.ge))
-        ((toAdd_normalizedValuation_le_iff_valuation_le _ _).mpr (by simpa using h.le))
+      (toAdd_normalizedValuation_eq_iff_valuation_eq _ _).mpr (by simpa using h)
     rw [← e, map_pow, toAdd_pow]
     exact ⟨_, two_nsmul _⟩
   rcases hne.lt_or_gt with h | h

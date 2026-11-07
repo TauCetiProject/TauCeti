@@ -141,6 +141,27 @@ private theorem squareStripsOfContext_comp :
 
 end Context
 
+/-! ## Measurability of the pair layer -/
+
+/-- The hidden entries of the array, together with the codings of the entries of the off-diagonal
+pairs in `V₂`, depend measurably on the array and the uniform variables. -/
+theorem measurable_restrict_pairCoding (H V₂ : Set (ℕ × ℕ)) (e : ℕ → ℕ)
+    {G : ((((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α)) × (((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α))) ×
+      (α × α) → I → α × α} (hG : Measurable (Function.uncurry G)) :
+    Measurable fun q : (ℕ × ℕ → α) × (V₂ → I) =>
+      (H.domRestrict q.1,
+        fun p : V₂ => G (offDiagonalPairSquareContext e p.1.1 p.1.2 q.1) (q.2 p)) :=
+  ((Set.measurable_restrict H).comp measurable_fst).prodMk (Measurable.of_eval fun p =>
+    hG.comp (((measurable_offDiagonalPairSquareContext e p.1.1 p.1.2).comp
+      measurable_fst).prodMk ((measurable_pi_apply p).comp measurable_snd)))
+
+/-- The hidden entries of the array, together with the entries of the pairs in `V₂`, depend
+measurably on the array. -/
+theorem measurable_restrict_pairs (H V₂ : Set (ℕ × ℕ)) :
+    Measurable fun x : ℕ × ℕ → α => (H.domRestrict x, fun p : V₂ => (x p.1, x p.1.swap)) :=
+  (Set.measurable_restrict H).prodMk (Measurable.of_eval fun p =>
+    (measurable_pi_apply p.1).prodMk (measurable_pi_apply p.1.swap))
+
 /-! ## Conditional independence -/
 
 variable [StandardBorelSpace α] {ρ : Measure (ℕ × ℕ → α)} [IsFiniteMeasure ρ]
@@ -605,16 +626,8 @@ theorem JointlyExchangeable.exists_common_offDiagonalArray_coding
   obtain ⟨g, hg, hswap, hF⟩ := hρ.exists_common_offDiagonalPairs_coding he hO
   refine ⟨g, hg, hswap, ?_⟩
   have hZ : Measurable (H.domRestrict (π := fun _ : ℕ × ℕ => α)) := Set.measurable_restrict H
-  have hcode : Measurable fun q : (ℕ × ℕ → α) × (V₂ → I) =>
-      (H.domRestrict q.1,
-        fun p : V₂ => g (offDiagonalPairSquareContext e p.1.1 p.1.2 q.1) (q.2 p)) :=
-    (hZ.comp measurable_fst).prodMk (Measurable.of_eval fun p => hg.comp
-      (((measurable_offDiagonalPairSquareContext e p.1.1 p.1.2).comp measurable_fst).prodMk
-        ((measurable_pi_apply p).comp measurable_snd)))
-  have hread : Measurable fun x : ℕ × ℕ → α =>
-      (H.domRestrict x, fun p : V₂ => (x p.1, x p.1.swap)) :=
-    hZ.prodMk (Measurable.of_eval fun p =>
-      (measurable_pi_apply p.1).prodMk (measurable_pi_apply p.1.swap))
+  have hcode := measurable_restrict_pairCoding H V₂ e hg
+  have hread := measurable_restrict_pairs (α := α) H V₂
   -- Jointly with the crossing strips and the diagonal, the finite-dimensional marginals in the
   -- pairs are those of `exists_common_offDiagonalPairs_coding`, which determine the law.
   refine TauCeti.MeasureTheory.Measure.ext_prod_pi_of_forall_finset_map_restrict_eq fun F => ?_

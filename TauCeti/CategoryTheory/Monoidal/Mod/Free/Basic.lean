@@ -190,4 +190,12 @@ lemma freeMod_map_desc {X Y : C} (M : Mod C A) (f : X ⟶ Y) (g : Y ⟶ M.X) :
   rw [Mod.comp_hom', ← Category.assoc, ← freeModι_naturality, Category.assoc,
     freeModι_desc, freeModι_desc]
 
+/-- Inserting the free generators commutes with tensoring on the right. -/
+@[reassoc (attr := simp)]
+lemma freeModι_tensor (V K : C) :
+    freeModι A (V ⊗ K) ≫ (α_ A V K).inv = freeModι A V ▷ K := by
+  rw [freeModι_def, freeModι_def, comp_whiskerRight, Category.assoc,
+    associator_inv_naturality_left]
+  monoidal
+
 end TauCeti
