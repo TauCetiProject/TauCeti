@@ -8,6 +8,7 @@ module
 public import TauCeti.NoncommutativeGeometry.SmoothTorus.Derivation
 public import TauCeti.NoncommutativeGeometry.SmoothTorus.Topology
 public import TauCeti.RingTheory.CyclicCohomology.Continuous.Cohomology
+public import TauCeti.RingTheory.CyclicCohomology.Continuous.Derivation
 
 /-!
 # Continuous cyclic cocycles of the smooth noncommutative torus
@@ -85,20 +86,16 @@ theorem continuous_derivation₂ :
 theorem continuous_oddCocycle₁ :
     Continuous ((oddCocycle₁ θ).1 :
       MultilinearMap ℂ (fun _ : Fin 2 ↦ SmoothNoncommutativeTorus θ) ℂ) := by
-  apply (continuous_congr fun a ↦ by
-    rw [coe_oddCocycle₁, traceDerivationCochain_apply]).2
-  exact continuous_trace.comp ((continuous_apply 0).mul
-    (continuous_derivation₁.comp (continuous_apply 1)))
+  simpa only [coe_oddCocycle₁] using
+    continuous_traceDerivationCochain continuous_trace continuous_derivation₁
 
 /-- Joint continuity of the second odd cocycle. -/
 @[fun_prop]
 theorem continuous_oddCocycle₂ :
     Continuous ((oddCocycle₂ θ).1 :
       MultilinearMap ℂ (fun _ : Fin 2 ↦ SmoothNoncommutativeTorus θ) ℂ) := by
-  apply (continuous_congr fun a ↦ by
-    rw [coe_oddCocycle₂, traceDerivationCochain_apply]).2
-  exact continuous_trace.comp ((continuous_apply 0).mul
-    (continuous_derivation₂.comp (continuous_apply 1)))
+  simpa only [coe_oddCocycle₂] using
+    continuous_traceDerivationCochain continuous_trace continuous_derivation₂
 
 /-- Joint continuity of the oriented fundamental cocycle, with its `(2πi)⁻¹` factor. -/
 @[fun_prop]
@@ -106,13 +103,9 @@ theorem continuous_fundamentalCocycle :
     Continuous ((fundamentalCocycle θ).1 :
       MultilinearMap ℂ (fun _ : Fin 3 ↦ SmoothNoncommutativeTorus θ) ℂ) := by
   apply (continuous_congr fun a ↦ fundamentalCocycle_apply a).2
-  have hc (i : Fin 3) : Continuous fun a : Fin 3 → SmoothNoncommutativeTorus θ ↦ a i :=
-    continuous_apply i
-  exact ((continuous_trace (θ := θ)).comp ((hc 0).mul
-    ((((continuous_derivation₁ (θ := θ)).comp (hc 1)).mul
-      ((continuous_derivation₂ (θ := θ)).comp (hc 2))).sub
-      (((continuous_derivation₂ (θ := θ)).comp (hc 1)).mul
-        ((continuous_derivation₁ (θ := θ)).comp (hc 2)))))).const_mul _
+  simpa only [traceDerivationPairCochain_apply] using
+    (continuous_traceDerivationPairCochain continuous_trace
+      continuous_derivation₁ continuous_derivation₂).const_mul ((2 * π * I)⁻¹)
 
 variable (θ) in
 /-- The continuous cyclic cocycle `τ(a₀ δ₁(a₁))`. -/
@@ -153,7 +146,7 @@ theorem toMultilinearMap_continuousFundamentalCocycle :
 theorem continuousOddCocycle₁_apply (a : Fin 2 → SmoothNoncommutativeTorus θ) :
     (continuousOddCocycle₁ θ).1.1 a =
       trace θ (a 0 * (derivation₁ θ : Module.End ℂ _) (a 1)) := by
-  rw [← ContinuousMultilinearMap.coe_coe, toMultilinearMap_continuousOddCocycle₁,
+  rw [continuousOddCocycle₁, cyclicCocycles.toContinuous_apply,
     coe_oddCocycle₁, traceDerivationCochain_apply]
 
 /-- Evaluation of the second continuous odd cocycle. -/
@@ -161,13 +154,13 @@ theorem continuousOddCocycle₁_apply (a : Fin 2 → SmoothNoncommutativeTorus �
 theorem continuousOddCocycle₂_apply (a : Fin 2 → SmoothNoncommutativeTorus θ) :
     (continuousOddCocycle₂ θ).1.1 a =
       trace θ (a 0 * (derivation₂ θ : Module.End ℂ _) (a 1)) := by
-  rw [← ContinuousMultilinearMap.coe_coe, toMultilinearMap_continuousOddCocycle₂,
+  rw [continuousOddCocycle₂, cyclicCocycles.toContinuous_apply,
     coe_oddCocycle₂, traceDerivationCochain_apply]
 
 /-- Evaluation of the continuous fundamental cocycle agrees with the algebraic one. -/
 @[simp]
 theorem continuousFundamentalCocycle_apply (a : Fin 3 → SmoothNoncommutativeTorus θ) :
     (continuousFundamentalCocycle θ).1.1 a = (fundamentalCocycle θ).1.1 a := by
-  rw [← ContinuousMultilinearMap.coe_coe, toMultilinearMap_continuousFundamentalCocycle]
+  rw [continuousFundamentalCocycle, cyclicCocycles.toContinuous_apply]
 
 end TauCeti.SmoothNoncommutativeTorus

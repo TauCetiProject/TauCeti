@@ -115,6 +115,23 @@ theorem cyclicCocycles.toMultilinearMap_toContinuous {n : ℕ} (φ : cyclicCocyc
     (hφ : Continuous (φ.1 : MultilinearMap 𝕜 (fun _ : Fin (n + 1) ↦ A) M)) :
     (cyclicCocycles.toContinuous φ hφ).1.1.toMultilinearMap = φ.1.1 := (rfl)
 
+variable {𝕜 A M} in
+/-- Forgetting continuity of the lift recovers the original cyclic cochain. -/
+@[simp]
+theorem cyclicCocycles.toCyclicCochains_toContinuous {n : ℕ} (φ : cyclicCocycles 𝕜 A M n)
+    (hφ : Continuous (φ.1 : MultilinearMap 𝕜 (fun _ : Fin (n + 1) ↦ A) M)) :
+    continuousCyclicCochains.toCyclicCochains 𝕜 A M n
+      (cyclicCocycles.toContinuous φ hφ).1 = φ.1 := by
+  apply Subtype.ext
+  simp
+
+variable {𝕜 A M} in
+/-- Evaluation of the continuous lift agrees with the original cocycle. -/
+@[simp]
+theorem cyclicCocycles.toContinuous_apply {n : ℕ} (φ : cyclicCocycles 𝕜 A M n)
+    (hφ : Continuous (φ.1 : MultilinearMap 𝕜 (fun _ : Fin (n + 1) ↦ A) M))
+    (a : Fin (n + 1) → A) : (cyclicCocycles.toContinuous φ hφ).1.1 a = φ.1.1 a := (rfl)
+
 /-- Continuous cyclic zero-cocycles are precisely continuous traces. -/
 theorem mem_continuousCyclicCocycles_zero_iff {φ : continuousCyclicCochains 𝕜 A M 0} :
     φ ∈ continuousCyclicCocycles 𝕜 A M 0 ↔
