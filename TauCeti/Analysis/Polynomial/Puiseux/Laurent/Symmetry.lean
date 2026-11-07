@@ -133,7 +133,7 @@ theorem exists_analyticOnNhd_nonmonic_laurent_conj
     ⟨(x₀, t₀), x₀.2, t₀.2⟩
   have hgfull (i : Fin d) : EqOn (g (σ i)) (fun b ↦ conj (g i (κ b))) T :=
     TauCeti.eqOn_conj_extension (τ := τ) (fun i ↦ (hg i).1.continuousOn) (fun i ↦ (hg i).2) hσ
-      hκ hκT hκS i
+      hκ hκT i
   -- Compare units at `x` and `τ x`; a fixed point of `τ` is unnecessary.
   have hcompat (x : U) (i : Fin d) : e (σ i) = e i ∧
       ∀ᶠ b in 𝓝 (x.1, (0 : ℂ)),

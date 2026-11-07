@@ -11,7 +11,7 @@ public import TauCeti.Analysis.Polynomial.Conjugation
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 import TauCeti.Analysis.Normed.Module.Connected
-import TauCeti.Analysis.Analytic.Laurent.Conjugation
+import TauCeti.Analysis.Complex.RemovableSingularity
 
 /-!
 # Conjugation-compatible nonmonic Puiseux branches
@@ -121,7 +121,7 @@ theorem exists_analyticOnNhd_nonmonic_powerSubstitution_conj
     hSc subset_rfl subset_closure (fun i ↦ (hra i).continuousOn)
     (fun b hb ↦ (hfac b hb).1) hroot (hκ.mono hST) hκS hκS hκκ hsymm b₀
   have hgfull := fun i ↦ TauCeti.eqOn_conj_extension (fun i ↦ (hga i).1.continuousOn)
-    (fun i ↦ (hga i).2) hσ hκ hκT hκS i
+    (fun i ↦ (hga i).2) hσ hκ hκT i
   refine ⟨r, g, hra, hga, hfac, σ, ⟨hσσ, hσ, hgfull⟩, ?_⟩
   intro σ' hσ'
   exact huniq σ' ⟨hσ'.1, hσ'.2.1⟩
