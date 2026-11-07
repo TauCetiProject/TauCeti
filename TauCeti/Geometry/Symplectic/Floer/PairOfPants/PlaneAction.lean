@@ -69,16 +69,6 @@ open Floer
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {H : ℝ → V → ℝ}
 
-/-- The loop of the end at `∞` at `-s = R` runs backwards around the circle of radius
-`2 exp (2πR)` about `0`. -/
-private theorem cylindricalEndLift_inf_neg_add (R t : ℝ) :
-    inf.cylindricalEndLift (-R + t * Complex.I) =
-      circleMap 0 (2 * Real.exp (2 * π * R)) (0 - 2 * π * t) := by
-  rw [cylindricalEndLift_inf, circleMap, zero_add, Complex.ofReal_mul, Complex.ofReal_exp,
-    mul_assoc, ← Complex.exp_add]
-  push_cast
-  ring_nf
-
 /-- The discs of the negative plane, in real coordinates, are measurable. -/
 private theorem measurableSet_preimage_closedBall (R : ℝ) :
     MeasurableSet (Complex.equivRealProdCLM.symm ⁻¹'
@@ -114,7 +104,9 @@ theorem integral_symplecticForm_fderiv_closedBall_eq_neg_loopArea (ω : Symplect
   simp only [v, Function.comp_apply] at hloop
   have hℓ : (fun t : ℝ ↦ u (Complex.equivRealProdCLM (inf.cylindricalEndLift (-R + t * Complex.I))))
       = fun t ↦ u (Complex.equivRealProdCLM (circleMap 0 b (0 - 2 * π * t))) :=
-    funext fun t ↦ by rw [cylindricalEndLift_inf_neg_add]
+    funext fun t ↦ by
+      rw [← Complex.ofReal_neg, cylindricalEndLift_ofReal_add_ofReal_mul_I, endCenter_inf,
+        endScale_inf, Complex.norm_two, Complex.ofNat_arg, mul_neg, neg_neg]
   -- Transport the integral to `ℂ`.
   have hpre : Complex.measurableEquivRealProd ⁻¹'
       (Complex.equivRealProdCLM.symm ⁻¹' Metric.closedBall 0 b) = Metric.closedBall 0 b := by
