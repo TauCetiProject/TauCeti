@@ -10,7 +10,7 @@ public import TauCeti.LinearAlgebra.Projectivization.HermitianProjector
 public import TauCeti.RepresentationTheory.SU2.Adjoint
 public import TauCeti.Topology.Compactification.OnePoint.Antipode
 import Mathlib.LinearAlgebra.Matrix.Action
-import TauCeti.Algebra.Ring.Idempotent
+import TauCeti.Algebra.Ring.Idempotent.Basic
 import TauCeti.Algebra.Star.SelfAdjoint
 import TauCeti.Analysis.InnerProductSpace.PiL2
 import TauCeti.Geometry.Manifold.Instances.OnePoint.Projectivization
@@ -119,7 +119,8 @@ theorem dotProduct_sphereCoords_self (x : OnePoint ℂ) :
   have h3 := (mem_hermitianProjectorLocus.mp hP).1.isIdempotentElem.two_mul_sub_one_mul_self
   have h := trace_pauli_mul_pauli (sphereCoords x) (sphereCoords x)
   rw [pauli_sphereCoords, h3, trace_one, Fintype.card_fin] at h
-  exact_mod_cast (mul_left_cancel₀ two_ne_zero (h.symm.trans (mul_one 2).symm) :)
+  have h' : ((sphereCoords x ⬝ᵥ sphereCoords x : ℝ) : ℂ) = 1 := by linear_combination -h / 2
+  exact_mod_cast h'
 
 /-- Distinct points of the Riemann sphere go to distinct points of the round sphere. -/
 theorem sphereCoords_injective : Function.Injective sphereCoords := by
