@@ -149,22 +149,24 @@ theorem exists_isCompleteBernsteinFunction_eqOn_of_eq_integral_reflected_nevanli
         2 / (1 + (y : ℝ)) := by
       field_simp
       ring
-    rw [NNReal.smul_def, smul_eq_mul, stieltjesWeight_apply, hdcoe, Real.norm_eq_abs,
-      abs_of_nonneg (by positivity), Pi.add_apply, ← sub_nonneg, hsub]
+    simp only [Pi.add_apply, NNReal.smul_def, smul_eq_mul, stieltjesWeight_apply, hdcoe,
+      Real.norm_eq_abs]
+    rw [abs_of_nonneg (by positivity), ← sub_nonneg, hsub]
     positivity
   -- The reflected Nevanlinna integral in terms of the weighted measure.
   refine ⟨stieltjesBernsteinTransform μ (c - ∫ y : ℝ≥0, ((y : ℝ))⁻¹ ∂ν).toNNReal b.toNNReal,
     isCompleteBernsteinFunction_stieltjesBernsteinTransform hμ0 hμw, fun t ht => ?_⟩
   have ht := mem_Ioi.mp ht
+  have hkey : ∫ y : ℝ≥0, d y • (t / (t + y)) ∂ν =
+      ∫ y : ℝ≥0, (y : ℝ)⁻¹ ∂ν + ∫ y : ℝ≥0, (t * y - 1) / (t + y) ∂ν := by
+    rw [← integral_add hyint (integrable_reflected_nevanlinnaKernel ν ht)]
+    refine integral_congr_ae ?_
+    filter_upwards [hane] with y hy
+    rw [NNReal.smul_def, smul_eq_mul, hdcoe,
+      one_add_sq_div_mul_div_add_eq t (NNReal.coe_ne_zero.2 hy) (by positivity)]
   rw [stieltjesBernsteinTransform_apply, hf t ht, Real.coe_toNNReal _ (sub_nonneg.mpr hIc),
-    Real.coe_toNNReal _ hb, hμdef, integral_withDensity_eq_integral_smul (by fun_prop),
-    integral_congr_ae (f := fun y : ℝ≥0 => d y • (t / (t + y)))
-      (g := fun y : ℝ≥0 => (y : ℝ)⁻¹ + (t * y - 1) / (t + y)),
-    integral_add hyint (integrable_reflected_nevanlinnaKernel ν ht)]
-  · ring
-  filter_upwards [hane] with y hy
-  rw [NNReal.smul_def, smul_eq_mul, hdcoe,
-    one_add_sq_div_mul_div_add_eq t (NNReal.coe_ne_zero.2 hy) (by positivity)]
+    Real.coe_toNNReal _ hb, hμdef, integral_withDensity_eq_integral_smul (by fun_prop), hkey]
+  ring
 
 /-- The reflection `x = -y` transporting the Nevanlinna kernel to `ℝ≥0`: negating numerator and
 denominator turns the reflected kernel back into `(1 + x t) / (x - t)`. -/
