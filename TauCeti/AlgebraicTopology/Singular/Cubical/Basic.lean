@@ -89,11 +89,6 @@ def point (x : X) : SingularCube X 0 := ContinuousMap.const _ x
 theorem point_apply (x : X) (t : Fin 0 → I) : point x t = x :=
   (rfl)
 
-/-- The image of the `0`-cube at `x` under a map `f` is the `0`-cube at `f x`. -/
-@[simp]
-theorem comp_point (f : C(X, Y)) (x : X) : f.comp (point x) = point (f x) :=
-  ContinuousMap.comp_const f x
-
 /-- Every `0`-cube is the constant cube at its value. -/
 theorem eq_point (c : SingularCube X 0) : c = point (c fun i ↦ i.elim0) :=
   ContinuousMap.ext fun t ↦ by

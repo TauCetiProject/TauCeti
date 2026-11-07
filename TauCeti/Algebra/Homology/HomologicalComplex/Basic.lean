@@ -30,7 +30,8 @@ nonzero differential into it, the identification of the homology with the cycles
 `Zᵢ ⟶ Kᵢ ⟶ Zⱼ` of cycles is exact when `j = c.next i`
 (`HomologicalComplex.cyclesShortComplex_exact`). For adjacent degrees `i` and `j`, the cycles of a
 complex exact in degree `j` fit into a short exact sequence `0 ⟶ Zᵢ ⟶ Kᵢ ⟶ Zⱼ ⟶ 0`
-(`HomologicalComplex.cyclesShortComplex_shortExact`), which stays short exact when its outer terms
+(`HomologicalComplex.cyclesShortComplex_shortExact`, written out as
+`HomologicalComplex.shortExact_mk_iCycles_toCycles`), which stays short exact when its outer terms
 are replaced by isomorphic objects
 (`HomologicalComplex.cyclesShortComplex_shortExact_of_iso`), and whose second map `Kᵢ ⟶ Zⱼ` is an
 isomorphism when `Zᵢ` vanishes (`HomologicalComplex.isIso_toCycles_of_isZero_cycles`); in
@@ -244,6 +245,15 @@ lemma cyclesShortComplex_shortExact (i j : ι) [K.HasHomology i] [K.HasHomology 
   rw [cyclesShortComplex_def] at hE ⊢
   exact ShortComplex.ShortExact.mk' hE
     inferInstance (epi_toCycles_of_exactAt hK (c.prev_eq' hij))
+
+/-- `HomologicalComplex.cyclesShortComplex_shortExact` with the short complex written out as
+`ShortComplex.mk (K.iCycles i) (K.toCycles i j) _`, so that its terms are the cycles and the term
+of `K` themselves. -/
+lemma shortExact_mk_iCycles_toCycles (i j : ι) [K.HasHomology i] [K.HasHomology j]
+    [(K.cyclesShortComplex i j).HasHomology] (hij : c.Rel i j) (hK : K.ExactAt j) :
+    (ShortComplex.mk (K.iCycles i) (K.toCycles i j) (K.iCycles_toCycles i j)).ShortExact := by
+  have := K.cyclesShortComplex_shortExact i j hij hK
+  rwa [cyclesShortComplex_def] at this
 
 /-- The map `Kᵢ ⟶ Zⱼ(K)` onto the cycles is an isomorphism when `i` and `j` are adjacent, `K` is
 exact in degree `j` and the cycles of `K` in degree `i` vanish. -/

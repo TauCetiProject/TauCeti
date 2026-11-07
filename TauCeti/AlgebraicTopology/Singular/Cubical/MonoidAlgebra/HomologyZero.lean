@@ -118,7 +118,17 @@ theorem loopZeroChainToGroupAlgebra_ofCube (c : SingularCube (MooreLoopSpace X x
             (((normalizedCubicalChainComplex R).obj T).cycles₀Iso.inv
               ((normalizedCubicalChainComplexXEquiv T 0).symm
                 (NormalizedCubicalChain.ofCube T R (SingularCube.point γ)))))) = _
-    rw [singularCubicalHomologyIso_inv_homologyπ_ofCube_point]
+    -- The zero-cycle of the point chain is the point cycle `cubicalCycleOfPoint R γ`.
+    have hz : ((normalizedCubicalChainComplex R).obj T).cycles₀Iso.inv
+        ((normalizedCubicalChainComplexXEquiv T 0).symm
+          (NormalizedCubicalChain.ofCube T R (SingularCube.point γ))) =
+        cubicalCycleOfPoint R γ := by
+      apply HomologicalComplex.moduleCat_iCycles_injective
+      rw [iCycles_cubicalCycleOfPoint, ← ModuleCat.comp_apply,
+        HomologicalComplex.iCyclesIso_inv_hom_id, ModuleCat.id_apply]
+    rw [hz, ← singularCubicalHomologyIso_hom_singularHomology₀Section]
+    refine (congrArg (T.singularHomology₀Iso (ModuleCat.of R R)).hom.hom
+      (Iso.hom_inv_id_apply (singularCubicalHomologyIso R T 0) _)).trans ?_
     exact ConcreteCategory.congr_hom
       (singularHomology₀Section_singularHomology₀Iso_hom (X := T) (ModuleCat.of R R) γ) 1
   -- Next reindex the component coproduct by fundamental-group classes and realize it

@@ -12,6 +12,7 @@ import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.Analysis.Convex.Integral
+import Mathlib.MeasureTheory.Integral.DominatedConvergence
 
 /-!
 # Norms of averages
@@ -105,6 +106,10 @@ exponent restrictions `1 ≤ p < ∞` or `1 ≤ q`.
 * `TauCeti.tendsto_measureReal_inter_of_monotone`, `TauCeti.tendsto_setAverage_inter_of_monotone`:
   along an increasing sequence of sets covering `s`, the measures of and averages over the pieces
   of `s` converge to those over `s`.
+* `TauCeti.integrable_and_average_rpow_le`: if `(f + δ) ^ s` is integrable then so is `f ^ s`, with
+  a smaller average.
+* `TauCeti.tendsto_average_add_rpow`: dominated convergence for the averages of
+  `(f + δ k) ^ p` for `f` in `Lᵖ` on a finite measure space and `δ k ≥ 0` tending to `0`.
 -/
 
 public section
@@ -695,5 +700,58 @@ theorem tendsto_setAverage_inter_of_monotone (hV : Monotone V) (hsV : s ⊆ ⋃ 
     (fun m n hmn ↦ Set.inter_subset_inter_right s (hV hmn)) (by rwa [hunion])
 
 end Exhaustion
+
+section Rpow
+
+/-- If `f ≥ 0` and `(f + δ)^s` is integrable, with `δ ≥ 0` and `s > 0`, then so is `f^s`, and its
+average is at most that of `(f + δ)^s`. -/
+theorem integrable_and_average_rpow_le {α : Type*} [MeasurableSpace α]
+    {μ : Measure α} {f : α → ℝ} {δ s : ℝ} (hs : 0 < s) (hδ : 0 ≤ δ)
+    (hf : AEStronglyMeasurable f μ) (hf0 : ∀ᵐ y ∂μ, 0 ≤ f y)
+    (hint' : Integrable (fun y => (f y + δ) ^ s) μ) :
+    Integrable (fun y => f y ^ s) μ ∧ ⨍ y, f y ^ s ∂μ ≤ ⨍ y, (f y + δ) ^ s ∂μ := by
+  have hle : ∀ᵐ y ∂μ, f y ^ s ≤ (f y + δ) ^ s :=
+    hf0.mono fun y hy => Real.rpow_le_rpow hy (by linarith) hs.le
+  have hint : Integrable (fun y => f y ^ s) μ := by
+    refine hint'.mono' (hf.aemeasurable.pow_const s).aestronglyMeasurable ?_
+    filter_upwards [hf0, hle] with y hy hyle
+    rwa [Real.norm_of_nonneg (Real.rpow_nonneg hy _)]
+  refine ⟨hint, ?_⟩
+  rw [average_eq, average_eq]
+  exact smul_le_smul_of_nonneg_left (integral_mono_ae hint hint' hle) (by positivity)
+
+/-- Dominated convergence for the averages of `(f + δ k)^p`, for `f ≥ 0` in `Lᵖ` on a finite
+measure space, `0 < p` and `δ k ≥ 0` tending to `0`: `⨍ (f + δ k)^p → ⨍ f^p`. -/
+theorem tendsto_average_add_rpow {α : Type*} [MeasurableSpace α]
+    {μ : Measure α} [IsFiniteMeasure μ] {f : α → ℝ} {p : ℝ} {δ : ℕ → ℝ} (hp : 0 < p)
+    (hf : MemLp f (ENNReal.ofReal p) μ) (hf0 : ∀ᵐ y ∂μ, 0 ≤ f y)
+    (hδ0 : ∀ k, 0 ≤ δ k) (hδ : Filter.Tendsto δ Filter.atTop (nhds 0)) :
+    Filter.Tendsto (fun k : ℕ => ⨍ y, (f y + δ k) ^ p ∂μ)
+      Filter.atTop (nhds (⨍ y, f y ^ p ∂μ)) := by
+  -- Eventually `0 ≤ δ ≤ 1`, so `(f + δ)^p ≤ (f + 1)^p`, which is integrable since `f ∈ Lᵖ`.
+  have hbound : Integrable (fun y => (f y + 1) ^ p) μ := by
+    have hmem : MemLp (fun y => f y + 1) (ENNReal.ofReal p) μ := hf.add (memLp_const 1)
+    refine (hmem.integrable_norm_rpow (ENNReal.ofReal_pos.2 hp).ne'
+      ENNReal.ofReal_ne_top).congr ?_
+    filter_upwards [hf0] with y hy
+    rw [ENNReal.toReal_ofReal hp.le, Real.norm_of_nonneg (by linarith)]
+  have hlim : Filter.Tendsto (fun k : ℕ => ∫ y, (f y + δ k) ^ p ∂μ)
+      Filter.atTop (nhds (∫ y, f y ^ p ∂μ)) := by
+    refine tendsto_integral_filter_of_dominated_convergence _
+      (Filter.Eventually.of_forall fun k => ?_) ?_ hbound ?_
+    · exact ((hf.aestronglyMeasurable.aemeasurable.add_const _).pow_const p).aestronglyMeasurable
+    · filter_upwards [hδ.eventually (ge_mem_nhds one_pos)] with k hk
+      filter_upwards [hf0] with y hy
+      have := hδ0 k
+      rw [Real.norm_of_nonneg (Real.rpow_nonneg (by positivity) _)]
+      exact Real.rpow_le_rpow (by positivity) (by linarith) hp.le
+    · refine Filter.Eventually.of_forall fun y => ?_
+      have hδ' := (tendsto_const_nhds (x := f y)).add hδ
+      rw [add_zero] at hδ'
+      exact (Real.continuousAt_rpow_const _ p (Or.inr hp.le)).tendsto.comp hδ'
+  simp only [average_eq, smul_eq_mul]
+  exact hlim.const_mul _
+
+end Rpow
 
 end TauCeti
