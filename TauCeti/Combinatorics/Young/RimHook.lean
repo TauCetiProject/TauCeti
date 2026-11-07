@@ -10,6 +10,7 @@ public import Mathlib.GroupTheory.Perm.Fin
 public import Mathlib.Order.Interval.Finset.Nat
 public import TauCeti.Combinatorics.Young.BetaNumbers
 public import TauCeti.Combinatorics.Young.Corner
+public import TauCeti.Combinatorics.Young.Partitions
 import TauCeti.Combinatorics.Young.OfRowLens
 
 /-!
@@ -77,7 +78,8 @@ counts the beads the moving bead jumps over.  Both statements are proved here:
 * `YoungDiagram.IsRimHook.update_betaNumber_eq_comp_cycleIcc`: the beta-numbers of `ν` with the
   bead of the bottom row raised are those of `μ`, rearranged by the cycle of the rows the hook
   meets, whose sign is `(-1)` to the height.
-* `YoungDiagram.exists_isRimHook_rimHookRows_eq_Icc`,
+* `YoungDiagram.exists_isRimHook_rimHookRows_eq_Icc` (and its partition-valued form
+  `YoungDiagram.exists_isRimHook_rimHookRows_eq_Icc_of_betaNumber_ne`),
   `YoungDiagram.IsRimHook.betaNumber_ne_betaNumber_add` and
   `YoungDiagram.IsRimHook.eq_of_card_eq_of_rimHookRows_eq_Icc`: conversely, raising a bead of `ν`
   to a free position adds a rim hook with that bottom row, every rim hook arises this way, and it is
@@ -647,5 +649,19 @@ theorem exists_isRimHook_rimHookRows_eq_Icc {s : ℕ} (hν : ν.colLen 0 ≤ r) 
   have hcard := hrim.card_add_betaNumber hμrows hjr
   rw [betaNumber_def, hμ, hg_a] at hcard
   omega
+
+/-- If no beta-number of `ν` equals `β j + r`, moving the bead `j` up by `r` adds a rim hook
+of `r` cells to `ν`, given as a partition of `ν.card + r` with at most `N` rows, whose rows form an
+interval ending at row `j`. -/
+theorem exists_isRimHook_rimHookRows_eq_Icc_of_betaNumber_ne {N : ℕ} {ν : YoungDiagram}
+    (hν : ν.colLen 0 ≤ N) (r : ℕ) (j : Fin N)
+    (hj : ∀ i : Fin N, ν.betaNumber N i ≠ ν.betaNumber N j + r) :
+    ∃ μ : (ν.card + r).Partition,
+      ((ofPartition μ).IsRimHook ν ∧ (ofPartition μ).colLen 0 ≤ N) ∧
+        ∃ a, (ofPartition μ).rimHookRows ν = Finset.Icc a (j : ℕ) := by
+  obtain ⟨μ, hμ, hμN, hcard, a, hab⟩ :=
+    exists_isRimHook_rimHookRows_eq_Icc hν j.isLt fun i hi => hj ⟨i, hi⟩
+  exact ⟨μ.toPartition hcard, by rw [ofPartition_toPartition]; exact ⟨hμ, hμN⟩, a,
+    by rw [ofPartition_toPartition, hab]⟩
 
 end YoungDiagram
