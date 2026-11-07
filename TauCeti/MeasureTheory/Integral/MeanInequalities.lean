@@ -55,8 +55,8 @@ theorem lintegral_mul_le_of_inv_add_inv_eq {k g : β → ℝ≥0∞} (hk : AEMea
   have hb : 0 ≤ 1 - p⁻¹ := sub_nonneg.2 (inv_le_one_of_one_le₀ hp)
   have hc : 0 ≤ p⁻¹ - q⁻¹ := sub_nonneg.2 (inv_anti₀ hp0 hpq)
   have hr0 : 0 < r := inv_pos.1 (by linarith [inv_pos.2 hq0])
-  have hkr : r * (q⁻¹ + (1 - p⁻¹)) = 1 := by
-    rw [show q⁻¹ + (1 - p⁻¹) = r⁻¹ by linarith, mul_inv_cancel₀ hr0.ne']
+  have hr' : q⁻¹ + (1 - p⁻¹) = r⁻¹ := by linarith
+  have hkr : r * (q⁻¹ + (1 - p⁻¹)) = 1 := by rw [hr', mul_inv_cancel₀ hr0.ne']
   have hgp : p * (q⁻¹ + (p⁻¹ - q⁻¹)) = 1 := by rw [add_sub_cancel, mul_inv_cancel₀ hp0.ne']
   -- Hölder's inequality with the three exponents `1/q`, `1 - 1/p` and `1/p - 1/q`, which add up
   -- to `1`, applied to the factorization
@@ -73,11 +73,16 @@ theorem lintegral_mul_le_of_inv_add_inv_eq {k g : β → ℝ≥0∞} (hk : AEMea
     (fun i _ => by fin_cases i <;> [exact ha; exact hb; exact hc])
   simp only [Fin.prod_univ_three, Matrix.cons_val] at h
   refine le_trans (lintegral_mono fun y => le_of_eq ?_) h
-  -- The pointwise factorization: collect the powers of `k y` and of `g y`.
+  -- The pointwise factorization: expand the powers, split the exponents of `k y` and `g y`
+  -- with `hkr` and `hgp`, and regroup.
   rw [ENNReal.mul_rpow_of_nonneg _ _ ha, ← ENNReal.rpow_mul, ← ENNReal.rpow_mul,
-    ← ENNReal.rpow_mul, ← ENNReal.rpow_mul, mul_right_comm _ (g y ^ _),
-    ← ENNReal.rpow_add_of_nonneg _ _ (by positivity) (mul_nonneg hr0.le hb), mul_assoc,
-    ← ENNReal.rpow_add_of_nonneg _ _ (by positivity) (mul_nonneg hp0.le hc), ← mul_add,
-    ← mul_add, hkr, hgp, ENNReal.rpow_one, ENNReal.rpow_one]
+    ← ENNReal.rpow_mul, ← ENNReal.rpow_mul]
+  calc k y * g y = k y ^ (r * (q⁻¹ + (1 - p⁻¹))) * g y ^ (p * (q⁻¹ + (p⁻¹ - q⁻¹))) := by
+        rw [hkr, hgp, ENNReal.rpow_one, ENNReal.rpow_one]
+    _ = _ := by
+        rw [mul_add, mul_add,
+          ENNReal.rpow_add_of_nonneg _ _ (mul_nonneg hr0.le ha) (mul_nonneg hr0.le hb),
+          ENNReal.rpow_add_of_nonneg _ _ (mul_nonneg hp0.le ha) (mul_nonneg hp0.le hc)]
+        ring
 
 end TauCeti
