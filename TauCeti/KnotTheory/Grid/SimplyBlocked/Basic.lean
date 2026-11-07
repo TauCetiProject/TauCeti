@@ -145,6 +145,15 @@ noncomputable def simplyBlockedRenameEquiv {n m : ℕ} (R : Type*) [CommSemiring
       MvPolynomial {c : Fin m // c ≠ e i} R :=
   renameEquiv R (e.subtypeEquiv fun _ => not_congr e.injective.eq_iff.symm)
 
+/-- Renaming the surviving variables is polynomial renaming along the induced equivalence
+of complements of the blocked columns. This expansion is for support computations;
+simplification instead uses the variable-level formula `simplyBlockedRenameEquiv_X`. -/
+theorem simplyBlockedRenameEquiv_apply {n m : ℕ} (R : Type*) [CommSemiring R]
+    (e : Fin n ≃ Fin m) (i : Fin n) (p : MvPolynomial {c : Fin n // c ≠ i} R) :
+    simplyBlockedRenameEquiv R e i p =
+      rename (e.subtypeEquiv fun _ => not_congr e.injective.eq_iff.symm) p :=
+  (rfl)
+
 /-- Renaming the surviving variables and its inverse form a `RingHomInvPair`, so that maps
 semilinear along the renaming can be inverted. -/
 noncomputable instance simplyBlockedRenameRingHomInvPair {n m : ℕ} (R : Type*)
