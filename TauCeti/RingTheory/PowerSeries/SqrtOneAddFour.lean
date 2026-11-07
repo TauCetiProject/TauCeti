@@ -43,9 +43,7 @@ theorem constantCoeff_sqrtOneAddFour : constantCoeff sqrtOneAddFour = 1 := by
 @[simp]
 theorem coeff_succ_sqrtOneAddFour (n : ℕ) :
     coeff (n + 1) sqrtOneAddFour = 2 * (-1 : ℤ) ^ n * catalan n := by
-  rw [sqrtOneAddFour, map_add, coeff_one, ite_eq_right (Nat.succ_ne_zero n), zero_add,
-    mul_assoc, mul_comm X, ← mul_assoc, coeff_succ_mul_X]
-  simp [mul_assoc]
+  simp [sqrtOneAddFour, mul_assoc, coeff_rescale]
 
 /-- The Catalan series gives a square root of `1 + 4X` over the integers. -/
 @[simp]
