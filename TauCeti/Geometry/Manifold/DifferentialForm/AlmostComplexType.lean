@@ -520,13 +520,6 @@ variable {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [Topolo
   {J : SmoothAlmostComplexStructure I M} {J' : SmoothAlmostComplexStructure I' M'} {u : M → M'}
   {p q : ℕ}
 
-omit [IsManifold I ∞ M] [IsManifold I' ∞ M'] in
-/-- At every point, the pullback of a rough form composes its value with the derivative. -/
-private theorem mpullback_eq_compContinuousLinearMap (φ : RoughForm I' M' F k) (x : M) :
-    mpullback I I' u φ x = (φ (u x)).compContinuousLinearMap (mfderiv I I' u x) := by
-  ext v
-  simp [Function.comp_def]
-
 /-- Pullback of smooth forms along a smooth pseudoholomorphic map commutes with the type
 projections. -/
 theorem SmoothAlmostComplexStructure.mpullback_typeProjection (hu : ContMDiff I I' ∞ u)
@@ -534,7 +527,8 @@ theorem SmoothAlmostComplexStructure.mpullback_typeProjection (hu : ContMDiff I 
     SmoothForm.mpullback u hu (J'.typeProjection p q φ) =
       J.typeProjection p q (SmoothForm.mpullback u hu φ) :=
   Subtype.ext <| funext fun x ↦ by
-    simp only [SmoothForm.coe_mpullback, coe_typeProjection, mpullback_eq_compContinuousLinearMap]
+    simp only [SmoothForm.coe_mpullback, coe_typeProjection,
+      mpullback_eq_compContinuousLinearMap_mfderiv]
     exact (ContinuousLinearMap.typeProjection_compContinuousLinearMap
       (fun w ↦ ((isPseudoholomorphic_iff.1 hJ x).mfderiv_apply_commute w).symm) _).symm
 
@@ -543,7 +537,7 @@ theorem SmoothForm.IsOfType.mpullback {φ : SmoothForm I' M' F k} (hu : ContMDif
     (hJ : IsPseudoholomorphic J J' u) (h : φ.IsOfType J' p q) :
     (SmoothForm.mpullback u hu φ).IsOfType J p q :=
   SmoothForm.isOfType_iff_forall.2 ⟨h.1, fun x ↦ by
-    rw [SmoothForm.coe_mpullback, mpullback_eq_compContinuousLinearMap]
+    rw [SmoothForm.coe_mpullback, mpullback_eq_compContinuousLinearMap_mfderiv]
     exact (h.apply (u x)).compContinuousLinearMap fun w ↦
       ((isPseudoholomorphic_iff.1 hJ x).mfderiv_apply_commute w).symm⟩
 

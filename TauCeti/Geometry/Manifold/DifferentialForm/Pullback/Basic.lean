@@ -249,6 +249,16 @@ theorem mpullback_apply (f : M → M') (ω : RoughForm I' M' F k)
     mpullback I I' f ω x v = ω (f x) (fun i ↦ mfderiv I I' f x (v i)) :=
   bundleMpullback_apply f ω x v
 
+/-- At each point, the pullback of a form is its value at the image point composed with the
+derivative. The tangent spaces are the model spaces only up to unfolding, so this states the
+identification once for proofs that act on pulled-back forms by operators on model-space
+alternating maps. -/
+theorem mpullback_eq_compContinuousLinearMap_mfderiv (f : M → M') (ω : RoughForm I' M' F k)
+    (x : M) : mpullback I I' f ω x = (ω (f x)).compContinuousLinearMap (mfderiv I I' f x) := by
+  ext v
+  rw [mpullback_apply]
+  rfl
+
 /-- Pullback within the whole manifold is ordinary pullback. -/
 @[simp]
 theorem mpullbackWithin_univ (f : M → M') (ω : RoughForm I' M' F k) :
