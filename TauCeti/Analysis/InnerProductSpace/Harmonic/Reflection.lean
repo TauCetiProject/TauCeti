@@ -97,18 +97,6 @@ private theorem reflectTestFunction_apply (hU : MapsTo (normalReflection E a) U 
     reflectTestFunction hU φ x = φ (normalReflection E a x) :=
   rfl
 
-/-- If `G` cut off to a set `K` is integrable, then pairing `G` with the derivative of a smooth
-compactly supported function `χ` with `tsupport χ ⊆ K` is integrable. -/
-private theorem integrable_fderiv_apply_of_tsupport_subset {K : Set (WithLp 2 (ℝ × E))}
-    (hGK : Integrable (K.indicator G)) {χ : WithLp 2 (ℝ × E) → ℝ} (hχ : ContDiff ℝ ∞ χ)
-    (hχc : HasCompactSupport χ) (hχK : tsupport χ ⊆ K) :
-    Integrable fun x => fderiv ℝ χ x (G x) :=
-  (integrable_fderiv_apply (hχ.of_le (by simp)) hχc aestronglyMeasurable_id hGK).congr
-    (Eventually.of_forall fun x => by
-      by_cases hxK : x ∈ K
-      · simp [hxK]
-      · simp [hxK, fderiv_of_notMem_tsupport ℝ fun h => hxK (hχK h)])
-
 /-- The pairing of the weak gradient with the gradient of a test function on `U` vanishing on the
 hyperplane `{a} × E` is zero, when `w` is weakly harmonic on `U ∩ H` and `G` vanishes off `H`. -/
 private theorem integral_fderiv_apply_eq_zero
@@ -140,7 +128,8 @@ private theorem integral_fderiv_apply_eq_zero
       hθ] at h
     simpa only [inner_gradient_left] using h
   have I1 : Integrable fun x => fderiv ℝ ψ x (G x) :=
-    integrable_fderiv_apply_of_tsupport_subset hGK hψ hψc subset_rfl
+    integrable_fderiv_apply_of_tsupport_subset (hψ.of_le (by simp)) hψc subset_rfl
+      aestronglyMeasurable_id hGK
   have I2 (n : ℕ) : Integrable fun x => η n x * fderiv ℝ ψ x (G x) :=
     I1.bdd_mul (contDiff_normalCutoff a _).continuous.aestronglyMeasurable
       (Eventually.of_forall fun x => by
@@ -155,9 +144,10 @@ private theorem integral_fderiv_apply_eq_zero
         (hψ.differentiable (by simp) x)]
       simp only [FunLike.coe_add, Pi.add_apply, FunLike.coe_smul, Pi.smul_apply, smul_eq_mul]
       ring
-    rw [hfun, integral_sub (integrable_fderiv_apply_of_tsupport_subset hGK (hηψ n) hψc.mul_left
-        tsupport_mul_subset_right) (I2 n), key n,
-      zero_sub]
+    have I3 : Integrable fun x => fderiv ℝ (η n * ψ) x (G x) :=
+      integrable_fderiv_apply_of_tsupport_subset ((hηψ n).of_le (by simp)) hψc.mul_left
+        tsupport_mul_subset_right aestronglyMeasurable_id hGK
+    rw [hfun, integral_sub I3 (I2 n), key n, zero_sub]
   -- The boundary-layer term tends to zero.
   have hlayer := tendsto_integral_mul_fderiv_normalCutoff_apply hGK.locallyIntegrable
     hψ hψc hψa
