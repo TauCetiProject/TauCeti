@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.LineBundle.Effective
+public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.PicZero
 
 /-!
 # Line bundles on curves of genus zero
@@ -13,8 +14,9 @@ public import TauCeti.AlgebraicGeometry.LineBundle.Effective
 On a proper regular integral curve of genus zero with constant global functions, degree
 classifies line bundles up to isomorphism. No rational point is needed for injectivity:
 Riemann–Roch makes a degree-zero line bundle effective, and positivity of residue degrees
-forces its effective divisor to be zero. A rational point is needed to ensure that every
-integer occurs as a degree; without one the image of degree may be a proper subgroup of `ℤ`.
+forces its effective divisor to be zero. A degree-one line bundle identifies the Picard
+group with `ℤ`; a rational point supplies such a bundle. Without one the image of degree
+may be a proper subgroup of `ℤ`.
 
 ## References
 
@@ -72,5 +74,43 @@ theorem eulerDegree_injective_of_genus_eq_zero :
   have h : eulerDegree k (a * b⁻¹) = 0 := by
     rw [eulerDegree_mul k hdim, eulerDegree_inv k hdim, hab, add_neg_cancel]
   exact mul_inv_eq_one.mp ((eulerDegree_eq_zero_iff_of_genus_eq_zero hdim hφ hg _).mp h)
+
+variable [IsNoetherian X] [hX : Fact (∀ x : X, coheight x ≤ 1)]
+
+include hφ hg in
+/-- The degree-zero Picard group of a proper regular integral genus-zero curve with constant
+global functions is trivial, without any rational-point hypothesis. -/
+theorem picZero_eq_bot_of_genus_eq_zero : picZero k X = ⊥ :=
+  (picZero_eq_ker k X).trans ((AddMonoidHom.ker_eq_bot_iff _).mpr fun _ _ h ↦
+    Additive.toMul.injective (eulerDegree_injective_of_genus_eq_zero hX.out hφ hg
+      (by simpa only [eulerDegreeHom_apply] using h)))
+
+/-- Degree identifies the Picard group of a proper regular integral genus-zero curve with
+constant global functions with `ℤ`, provided it has a line-bundle class `a` of degree one.
+A rational point supplies such a class via its divisor. -/
+noncomputable def picardDegreeEquivOfGenusZero
+    (a : LineBundleClass X) (ha : eulerDegree k a = 1) :
+    Additive (LineBundleClass X) ≃+ ℤ :=
+  AddEquiv.ofBijective (eulerDegreeHom k X) ⟨
+    fun _ _ h ↦ Additive.toMul.injective (eulerDegree_injective_of_genus_eq_zero hX.out hφ hg
+      (by simpa only [eulerDegreeHom_apply] using h)),
+    fun n ↦ ⟨Additive.ofMul (a ^ n), by
+      simp only [eulerDegreeHom_apply, toMul_ofMul, eulerDegree_zpow k hX.out, ha, mul_one]⟩⟩
+
+/-- The genus-zero Picard-group identification evaluates to Euler-characteristic degree. -/
+@[simp]
+lemma picardDegreeEquivOfGenusZero_apply (a : LineBundleClass X)
+    (ha : eulerDegree k a = 1) (b : Additive (LineBundleClass X)) :
+    picardDegreeEquivOfGenusZero hφ hg a ha b = eulerDegree k b.toMul :=
+  eulerDegreeHom_apply k b
+
+/-- The inverse genus-zero Picard-group identification sends `n` to the `n`th tensor power
+of the chosen degree-one line-bundle class. -/
+@[simp]
+lemma picardDegreeEquivOfGenusZero_symm_apply (a : LineBundleClass X)
+    (ha : eulerDegree k a = 1) (n : ℤ) :
+    (picardDegreeEquivOfGenusZero hφ hg a ha).symm n = Additive.ofMul (a ^ n) := by
+  apply (picardDegreeEquivOfGenusZero hφ hg a ha).injective
+  simp [eulerDegree_zpow k hX.out, ha]
 
 end TauCeti.AlgebraicGeometry.LineBundleClass

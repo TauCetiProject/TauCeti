@@ -11,7 +11,6 @@ public import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveLine.Basic
 public import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.HigherCohomology
 public import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.TwistingSheaf
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.TensorProduct
-public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.PicZero
 
 /-!
 # The Picard group of the projective line over a field
@@ -87,18 +86,16 @@ theorem eulerDegree_twistingSheaf (n : ℤ) : InvertibleSheaf.eulerDegree k (ℒ
 /-- **`Pic(ℙ¹_k) ≃ ℤ`**, via degree; tensor product is written additively on the source.
 The inverse sends an integer `n` to the class of the twisting sheaf `𝒪(n)`. -/
 def picardDegreeEquiv : Additive (LineBundleClass (projectiveLine k)) ≃+ ℤ :=
-  AddEquiv.ofBijective (LineBundleClass.eulerDegreeHom k _) ⟨
-    fun _ _ h ↦ Additive.toMul.injective (eulerDegree_injective k
-      (by simpa only [LineBundleClass.eulerDegreeHom_apply] using h)),
-    fun n ↦ ⟨Additive.ofMul (LineBundleClass.mk (ℒ n)), by
-      simpa only [LineBundleClass.eulerDegreeHom_apply, toMul_ofMul,
-        LineBundleClass.eulerDegree_mk] using eulerDegree_twistingSheaf k n⟩⟩
+  LineBundleClass.picardDegreeEquivOfGenusZero
+    (bijective_baseRingToGlobalSections k).surjective (genus_eq_zero k)
+    (LineBundleClass.mk (ℒ 1)) (by
+      simpa only [LineBundleClass.eulerDegree_mk] using eulerDegree_twistingSheaf_one k)
 
 /-- The Picard-group identification with `ℤ` evaluates to the Euler-characteristic degree. -/
 @[simp]
 lemma picardDegreeEquiv_apply (a : Additive (LineBundleClass (projectiveLine k))) :
     picardDegreeEquiv k a = LineBundleClass.eulerDegree k a.toMul :=
-  LineBundleClass.eulerDegreeHom_apply k a
+  LineBundleClass.picardDegreeEquivOfGenusZero_apply _ _ _ _ a
 
 /-- The inverse Picard-group identification sends `n` to `[𝒪(n)]`. -/
 @[simp]
@@ -128,8 +125,8 @@ theorem toLineBundleClass_ofPoint_eq_twistingSheaf_one
 /-- The abstract degree-zero Picard group of the projective line is trivial. -/
 @[simp]
 theorem picZero_eq_bot : LineBundleClass.picZero k (projectiveLine k) = ⊥ :=
-  (LineBundleClass.picZero_eq_ker k _).trans
-    ((AddMonoidHom.ker_eq_bot_iff _).mpr (picardDegreeEquiv k).injective)
+  LineBundleClass.picZero_eq_bot_of_genus_eq_zero
+    (bijective_baseRingToGlobalSections k).surjective (genus_eq_zero k)
 
 end
 
