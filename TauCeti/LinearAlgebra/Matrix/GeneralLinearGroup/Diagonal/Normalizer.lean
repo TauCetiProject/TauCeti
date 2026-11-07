@@ -164,6 +164,19 @@ theorem map_permutationGL {R S : Type*} [CommRing R] [CommRing S] (f : R →+* S
   ext i j
   simp [Equiv.Perm.permMatrix, PEquiv.toMatrix_apply, apply_ite f]
 
+/-- Conjugating a diagonal matrix by a monomial matrix `diagGL d * permutationGL σ` relabels its
+diagonal entries along `σ`: the diagonal factor commutes with the diagonal matrix. -/
+theorem diagGL_mul_permutationGL_mul_diagGL_mul_inv [CommSemiring k] (d : Fin n → kˣ)
+    (σ : Equiv.Perm (Fin n)) (t : Fin n → kˣ) :
+    diagGL d * permutationGL (k := k) σ * diagGL t * (diagGL d * permutationGL (k := k) σ)⁻¹ =
+      diagGL (fun i ↦ t (σ⁻¹ i)) := by
+  calc
+    _ = diagGL d * (permutationGL (k := k) σ * diagGL t * (permutationGL (k := k) σ)⁻¹) *
+          (diagGL d)⁻¹ := by group
+    _ = diagGL (fun i ↦ t (σ⁻¹ i)) := by
+      rw [permutationGL_mul_diagGL_mul_inv, ((Commute.all d _).map diagGL).eq,
+        mul_inv_cancel_right]
+
 /-- In dimensions zero and one, the diagonal normalizer quotient is trivial over any
 semiring. -/
 instance [Semiring k] [Subsingleton (Fin n)] :
@@ -410,20 +423,8 @@ theorem diagonalNormalizer_mul_diagGL_mul_inv
       diagGL (fun i ↦ t ((diagonalNormalizerPerm (k := k) (n := n) g).symm i)) := by
   obtain ⟨d, σ, hg⟩ := mem_normalizer_diagonalTorus_iff_exists.mp g.property
   have hσ := diagonalNormalizerPerm_eq_of_eq_diagGL_mul_permutationGL g d σ hg
-  rw [hσ, hg]
-  calc
-    (diagGL d * permutationGL (k := k) σ) * diagGL t *
-          (diagGL d * permutationGL (k := k) σ)⁻¹ =
-        diagGL d *
-          (permutationGL (k := k) σ * diagGL t *
-            (permutationGL (k := k) σ)⁻¹) * (diagGL d)⁻¹ := by group
-    _ = diagGL d * diagGL (fun i ↦ t (σ⁻¹ i)) * (diagGL d)⁻¹ := by
-      rw [permutationGL_mul_diagGL_mul_inv]
-    _ = diagGL (fun i ↦ t (σ⁻¹ i)) := by
-      have hcomm : Commute (diagGL d) (diagGL (fun i ↦ t (σ⁻¹ i))) :=
-        (Commute.all d (fun i ↦ t (σ⁻¹ i))).map diagGL
-      rw [hcomm.eq]
-      simp
+  rw [hσ, hg, diagGL_mul_permutationGL_mul_diagGL_mul_inv]
+  rfl
 
 /-- Every coordinate permutation is induced by a permutation matrix in the normalizer. -/
 theorem diagonalNormalizerPerm_surjective :

@@ -42,18 +42,11 @@ exactly when it is universally injective
 (`AlgebraicGeometry.FormallyUnramified.mono_iff_universallyInjective`): its diagonal is an open
 immersion, which is an isomorphism exactly when it is surjective.
 
-For `f` formally unramified and locally of finite type, every residue field extension
-`κ(f x) → κ(x)` is finite (`AlgebraicGeometry.FormallyUnramified.finite_residueField`): this is
-Stacks, Lemma 00UW (2), applied to the stalk map of `f` at `x`. It complements Mathlib's instance
-that these extensions are separable, whose proof it adapts.
-
 ## References
 
 * The Stacks Project, Tag 02G8 (the fibre criterion for unramified morphisms).
 * The Stacks Project, Tag 05VH (an unramified universally injective morphism is a
   monomorphism).
-* The Stacks Project, Tag 00UW (2) (residue field extensions of an unramified ring map are
-  finite).
 -/
 
 public section
@@ -209,29 +202,5 @@ theorem FormallyUnramified.mono_iff_universallyInjective (f : X ⟶ Y) [Formally
   -- the diagonal of `f` is an open immersion, and it is surjective as `f` is universally injective
   rw [← pullback.isIso_diagonal_iff, isIso_iff_isOpenImmersion_and_surjective]
   exact ⟨inferInstance, (UniversallyInjective.iff_diagonal f).1 hf⟩
-
-/-- **Residue field extensions of an unramified morphism are finite.** If `f` is formally
-unramified and locally of finite type, then `κ(x)` is a finite extension of `κ(f x)` at every
-point `x`. This is Stacks, Lemma 00UW (2), at the stalks of `f`; Mathlib provides the
-separability of these extensions. The proof is adapted from that of Mathlib's `Algebra.IsSeparable`
-instance for `f.residueFieldMap x` in `Mathlib/AlgebraicGeometry/Morphisms/FormallyUnramified.lean`,
-with finiteness of the residue field extension in place of separability. -/
-instance FormallyUnramified.finite_residueField (f : X ⟶ Y) [FormallyUnramified f]
-    [LocallyOfFiniteType f] (x : X) :
-    letI := (f.residueFieldMap x).hom.toAlgebra
-    Module.Finite (Y.residueField (f x)) (X.residueField x) := by
-  algebraize [(f.stalkMap x).hom]
-  have : IsLocalHom (algebraMap (Y.presheaf.stalk (f x)) (X.presheaf.stalk x)) :=
-    inferInstanceAs <| IsLocalHom (f.stalkMap x).hom
-  have : Algebra.EssFiniteType (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := by
-    rw [← RingHom.essFiniteType_algebraMap, RingHom.algebraMap_toAlgebra]
-    exact LocallyOfFiniteType.stalkMap f x
-  have : Algebra.FormallyUnramified (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := by
-    rw [← RingHom.formallyUnramified_algebraMap, RingHom.algebraMap_toAlgebra]
-    exact FormallyUnramified.stalkMap f x
-  -- `κ(f x) ⟶ κ(x)` is the map of residue fields of the local homomorphism of stalks.
-  exact RingHom.finite_algebraMap.mpr (inferInstance : Module.Finite
-    (IsLocalRing.ResidueField <| Y.presheaf.stalk (f x))
-    (IsLocalRing.ResidueField <| X.presheaf.stalk x))
 
 end AlgebraicGeometry
