@@ -123,7 +123,7 @@ theorem norm_le_of_isSymmetric_of_abs_re_inner_le_of_isCover_sphere
     calc
       |RCLike.re (Inner.inner 𝕜 (T x) x)| =
           |(RCLike.re (Inner.inner 𝕜 (T x) x) - RCLike.re (Inner.inner 𝕜 (T z) z)) +
-            RCLike.re (Inner.inner 𝕜 (T z) z)| := by ring_nf
+            RCLike.re (Inner.inner 𝕜 (T z) z)| := by rw [sub_add_cancel]
       _ ≤ |RCLike.re (Inner.inner 𝕜 (T x) x) - RCLike.re (Inner.inner 𝕜 (T z) z)| +
           |RCLike.re (Inner.inner 𝕜 (T z) z)| := abs_add_le _ _
       _ ≤ 2 * (η : ℝ) * ‖T‖ + M := add_le_add herror' (hM z hzN)
