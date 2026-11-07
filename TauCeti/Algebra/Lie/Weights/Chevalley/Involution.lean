@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Basic
 public import TauCeti.Algebra.Lie.Weights.Chevalley.System
+public import TauCeti.Algebra.Lie.Weights.Dimension
 public import TauCeti.Algebra.Lie.Weights.StructureConstant.Opposite
 
 /-!
@@ -80,16 +81,6 @@ theorem toSubmodule_rootSpace_eq_of_isZero {χ : Weight K H L} (hχ : χ.IsZero)
   have hχcoe : (χ : H → K) = 0 := hχ
   simp only [hχcoe, rootSpace_zero_eq K L H]
   simp
-
-omit [CharZero K] [LieAlgebra.IsKilling K L] in
-/-- The sum of the root spaces is direct and exhausts `L`: the canonical map from the direct sum
-of the root spaces to `L` is bijective. -/
-theorem bijective_coeLinearMap_rootSpace [DecidableEq (Weight K H L)] :
-    Function.Bijective
-      (DirectSum.coeLinearMap fun χ : Weight K H L ↦ (rootSpace H χ).toSubmodule) :=
-  (DirectSum.isInternal_submodule_iff_iSupIndep_and_iSup_eq_top _).2
-    ⟨LieSubmodule.iSupIndep_toSubmodule.mpr (iSupIndep_genWeightSpace' K H L),
-      LieSubmodule.iSup_toSubmodule_eq_top.mpr (iSup_genWeightSpace_eq_top' K H L)⟩
 
 omit [CharZero K] [LieAlgebra.IsKilling K L] [FiniteDimensional K L] in
 /-- A linear map of a Lie algebra that respects the bracket on a pair `(v, w)` respects it on the
@@ -219,7 +210,7 @@ private theorem exists_linearMap_neg_cartan_and_root :
         ω v ∈ rootSpace H (-χ)) := by
   classical
   set A : Weight K H L → Submodule K L := fun χ ↦ (rootSpace H χ).toSubmodule with hA
-  have hbij : Function.Bijective (DirectSum.coeLinearMap A) := bijective_coeLinearMap_rootSpace
+  have hbij : Function.Bijective (DirectSum.coeLinearMap A) := isInternal_rootSpace H
   -- The component of the map on the weight space of `χ`.
   set g : ∀ χ : Weight K H L, A χ →ₗ[K] L := fun χ ↦
     if χ.IsNonZero then
