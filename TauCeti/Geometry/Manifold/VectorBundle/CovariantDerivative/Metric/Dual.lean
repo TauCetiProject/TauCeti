@@ -44,7 +44,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 The covector connection is the native Hom connection to the canonically trivial real line. -/
 theorem hom_trivial_innerSL (hcov : cov.IsMetricCompatible) (hσ : MDiffAt (T% σ) x)
     (v : TangentSpace I x) :
-    cov.hom (CovariantDerivative.trivial I ℝ) (fun y ↦ innerSL ℝ (σ y)) x v =
+    cov.hom (CovariantDerivative.trivial (I := I) ℝ) (fun y ↦ innerSL ℝ (σ y)) x v =
       innerSL ℝ (cov σ x v) := by
   ext w
   let τ := extend F w

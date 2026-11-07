@@ -122,7 +122,7 @@ theorem normalCoframe_self (h : IsNormalDomain I M p U)
 @[simp]
 theorem hom_trivial_normalCoframe_self (h : IsNormalDomain I M p U)
     (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (i : ι) :
-    ((leviCivitaConnection I M).hom (CovariantDerivative.trivial I ℝ))
+    ((leviCivitaConnection I M).hom (CovariantDerivative.trivial (I := I) ℝ))
       (normalCoframe I M p U b i) p = 0 := by
   ext v w
   have hd := (h.contMDiffOn_normalOrthonormalFrame b i).contMDiffAt
@@ -169,7 +169,7 @@ theorem mvfderiv_normalCoframe_component (h : IsNormalDomain I M p U)
       (fun q ↦ TotalSpace.mk' (E →L[ℝ] ℝ) q (α q)) p)
     (i : ι) (v : TangentSpace I p) :
     mvfderiv I (fun q ↦ α q (normalOrthonormalFrame I M p U b i q)) p v =
-      ((leviCivitaConnection I M).hom (CovariantDerivative.trivial I ℝ)) α p v (b i) := by
+      ((leviCivitaConnection I M).hom (CovariantDerivative.trivial (I := I) ℝ)) α p v (b i) := by
   have hX := (h.contMDiffOn_normalOrthonormalFrame b i).contMDiffAt
     (h.isOpen_image.mem_nhds h.self_mem_image)
   rw [← h.normalOrthonormalFrame_self b i,
