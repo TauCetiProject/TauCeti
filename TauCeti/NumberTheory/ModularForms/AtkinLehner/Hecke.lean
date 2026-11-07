@@ -12,6 +12,7 @@ public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Diamond
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Gamma0
 
 import TauCeti.NumberTheory.ModularForms.AtkinLehner.DoubleCoset
+import TauCeti.Data.ZMod.Units
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 import TauCeti.NumberTheory.ModularForms.HeckeSlash.Conjugation
 
@@ -170,34 +171,6 @@ local notation "φ" => Matrix.GeneralLinearGroup.map (n := Fin 2) (algebraMap �
 
 variable {n : ℕ} [NeZero n]
 
-omit [NeZero N] [NeZero n] in
-/-- A class in `Γ₀(N)` whose diamond label is represented by an integer `c` with `c n ≡ 1`
-modulo `Q` has diamond label `n⁻¹` modulo `Q`. -/
-private lemma unitsMap_toHomUnits_eq_inv_unitOfCoprime (hQN : Q ∣ N) (hn : n.Coprime Q)
-    {A : SL(2, ℤ)} (hA : A ∈ Gamma0 N) {c t : ℤ}
-    (hlabel : (((Gamma0Map N).toHomUnits ⟨A, hA⟩ : (ZMod N)ˣ) : ZMod N) = (c : ZMod N))
-    (hc : c * n = 1 + Q * t) :
-    ZMod.unitsMap hQN ((Gamma0Map N).toHomUnits ⟨A, hA⟩) = (ZMod.unitOfCoprime n hn)⁻¹ := by
-  refine eq_inv_of_mul_eq_one_left (Units.ext ?_)
-  rw [Units.val_mul, ZMod.unitsMap_val, hlabel, ZMod.cast_intCast hQN, ZMod.coe_unitOfCoprime,
-    Units.val_one]
-  have := congrArg (Int.cast : ℤ → ZMod Q) hc
-  push_cast [ZMod.natCast_self] at this
-  simpa using this
-
-omit [NeZero N] [NeZero n] in
-/-- A class in `Γ₀(N)` whose diamond label is represented by an integer `c` with `c ≡ 1`
-modulo `N / Q` has trivial diamond label modulo `N / Q`. -/
-private lemma unitsMap_toHomUnits_eq_one_of_label (hQN : Q ∣ N) {A : SL(2, ℤ)}
-    (hA : A ∈ Gamma0 N) {c t : ℤ}
-    (hlabel : (((Gamma0Map N).toHomUnits ⟨A, hA⟩ : (ZMod N)ˣ) : ZMod N) = (c : ZMod N))
-    (hc : c = 1 + ((N / Q : ℕ) : ℤ) * t) :
-    ZMod.unitsMap (Nat.div_dvd_of_dvd hQN) ((Gamma0Map N).toHomUnits ⟨A, hA⟩) = 1 := by
-  refine Units.ext ?_
-  rw [ZMod.unitsMap_val, hlabel, ZMod.cast_intCast (Nat.div_dvd_of_dvd hQN), Units.val_one, hc]
-  simp only [Int.cast_add, Int.cast_mul, Int.cast_natCast, ZMod.natCast_self, zero_mul, add_zero,
-    Int.cast_one]
-
 omit [NeZero N] in
 /-- The integral matrix identity `diag(1, n) · W = W · A · diag(1, n) · B` gives the same identity
 for the corresponding elements of `GL(2, ℝ)`. -/
@@ -284,8 +257,9 @@ private lemma exists_natDiagGL_mul_atkinLehnerGL_eq (h : Q ∥ N) (hn : n.Coprim
   have hmodm : Q * a + j * (Q * m) * b + m * b * l = 1 + m * (b * (j * Q + l - 1)) := by
     linear_combination hred
   exact ⟨W, hW, A, hA,
-    unitsMap_toHomUnits_eq_inv_unitOfCoprime h.dvd (hn.coprime_dvd_right h.dvd) hA hlabel hmodQ,
-    unitsMap_toHomUnits_eq_one_of_label h.dvd hA hlabel hmodm, B,
+    ZMod.unitsMap_eq_inv_unitOfCoprime_of_intCast_mul_eq h.dvd (hn.coprime_dvd_right h.dvd) hlabel
+      hmodQ,
+    ZMod.unitsMap_eq_one_of_intCast_eq (Nat.div_dvd_of_dvd h.dvd) hlabel hmodm, B,
     mem_Gamma1_of_dvd_lowerRow (by simp [B, Bm]) (by simp [B, Bm]),
     natDiagGL_mul_atkinLehnerGL_eq_of_mul_eq h.pos hW key⟩
 
