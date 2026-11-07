@@ -150,6 +150,6 @@ theorem totalCriticalCount_sq_comp_sphereHeight_of_eq_one (hn : n = 1) (v : sphe
   rw [totalCriticalCount_def, criticalPoints_sq_comp_sphereHeight, encard_union_eq hdisj,
     ← hfin.cast_ncard_eq, ncard_setOf_sphereHeight_eq_zero hE,
     encard_pair (ne_neg_of_mem_unit_sphere ℝ v)]
-  rfl
+  norm_num
 
 end TauCeti
