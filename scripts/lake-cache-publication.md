@@ -79,7 +79,9 @@ the installer never chooses an ancestor or changes publication eligibility.
 A content-stable archive may serve different native input identities. In that
 case the private trace receives the selected record's input hash, exactly as stock
 `leantar` writes it; its output hashes remain unchanged. The source trace schema
-and original input binding must match. A candidate change without a corresponding
+and original input binding must match, and the current archive must match the
+seed’s SHA-256. Every other trace byte, including replayed Unicode log messages,
+is preserved. A candidate change without a corresponding
 selected native record still fails normal input validation and rebuilds.
 
 Keep the order: native cache fetch, applicable repair, pre-build publication

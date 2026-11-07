@@ -210,6 +210,19 @@ def install_file(source, target, clone):
     return cloned
 
 
+def rebound_trace(content, original, selected):
+    """Change only stock leantar's input association; preserve all other bytes."""
+    trace = json.loads(content.decode("utf-8"))
+    if (not isinstance(trace, dict) or trace.get("schemaVersion") != TRACE_SCHEMA
+            or trace.get("depHash") != original or not isinstance(trace.get("outputs"), dict)):
+        raise ValueError("unsupported seed trace association")
+    matches = list(re.finditer(rb'"depHash"\s*:\s*"([0-9a-f]{16})"', content))
+    if len(matches) != 1 or matches[0].group(1).decode("ascii") != original:
+        raise ValueError("unsupported seed trace encoding")
+    match = matches[0]
+    return content[:match.start(1)] + selected.encode("ascii") + content[match.end(1):]
+
+
 def assemble(project, records, staging, seed=None):
     """Assemble matching seed modules and one bulk extraction into a private tree."""
     entries = {}
@@ -229,16 +242,12 @@ def assemble(project, records, staging, seed=None):
                 rebound = None
                 if entry["native_input_hash"] != record["hash"]:
                     relative = next(p for _, p in files if p.endswith(".trace"))
-                    trace = json.loads(seed_file(seed, relative).read_text())
-                    if (not isinstance(trace, dict) or trace.get("schemaVersion") != TRACE_SCHEMA
-                            or trace.get("depHash") != entry["native_input_hash"]
-                            or not isinstance(trace.get("outputs"), dict)):
-                        raise ValueError("unsupported seed trace association")
-                    # Stock leantar binds an archive's unchanged output hashes to
-                    # the selected native input record. Do exactly that when one
-                    # content-stable archive serves multiple input identities.
-                    trace["depHash"] = record["hash"]
-                    rebound = (relative, trace)
+                    if file_digest(Path(record["file"])) != entry["archive_sha256"]:
+                        raise ValueError("seed archive digest mismatch")
+                    # Stock leantar binds these exact archive bytes to the
+                    # selected native input; preserve every other trace byte.
+                    rebound = (relative, rebound_trace(seed_file(seed, relative).read_bytes(),
+                                                       entry["native_input_hash"], record["hash"]))
             except (OSError, ValueError) as error:
                 # A damaged optional entry stays in the one native bulk miss set.
                 reason = "unusable seed entry: " + str(error)
@@ -277,9 +286,12 @@ def assemble(project, records, staging, seed=None):
         else:
             target.parent.mkdir(parents=True, exist_ok=True)
             source.rename(target)
-    for relative, trace in trace_updates:
-        (combined / relative).write_text(json.dumps(trace, separators=(",", ":")))
-    return combined, satisfied, dict(seed_hit_modules=len(hits), seed_rebound_traces=len(trace_updates), bulk_archives=len(misses),
+    rebound_count = 0
+    for relative, content in trace_updates:
+        if relative in targets:
+            (combined / relative).write_bytes(content)
+            rebound_count += 1
+    return combined, satisfied, dict(seed_hit_modules=len(hits), seed_rebound_traces=rebound_count, bulk_archives=len(misses),
                                     satisfied_records=len(satisfied), seed_reason=reason,
                                     materialization=sorted(methods))
 

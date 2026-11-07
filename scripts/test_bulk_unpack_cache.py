@@ -276,6 +276,43 @@ class PreparedSeedTests(unittest.TestCase):
         self.assertTrue(self.record.exists())
         self.assertTrue((self.root / ".lake/build/lib/lean/TauCeti/Seeded.olean").is_file())
 
+    def test_rebound_trace_preserves_unicode_logs_and_every_other_byte(self):
+        original = self.record.stem
+        selected = "1" * 16
+        content = json.dumps(dict(schemaVersion=bulk.TRACE_SCHEMA, depHash=original,
+                                  outputs={"m": True}, log=["α → β"]), ensure_ascii=False).encode("utf-8")
+        self.assertEqual(bulk.rebound_trace(content, original, selected),
+                         content.replace(original.encode(), selected.encode()))
+
+    def test_rebinding_rejects_wrong_digest_and_unsupported_trace_into_bulk(self):
+        old_input = "1" * 16
+        entry = self.manifest["modules"]["TauCeti.Seeded"]
+        entry["native_input_hash"] = old_input
+        trace = dict(schemaVersion=bulk.TRACE_SCHEMA, depHash=old_input, outputs={"m": True})
+        for case in ("digest", "schema", "input", "missing-identity"):
+            candidate = json.loads(json.dumps(trace))
+            entry["native_input_hash"] = old_input
+            entry["archive_sha256"] = bulk.file_digest(self.archive)
+            if case == "digest":
+                entry["archive_sha256"] = "0" * 64
+            elif case == "schema":
+                candidate["schemaVersion"] = "future"
+            elif case == "input":
+                candidate["depHash"] = "2" * 16
+            else:
+                entry.pop("native_input_hash")
+            self.write_manifest()
+            path = self.seed / "build" / self.files[0]
+            path.chmod(0o644)
+            path.write_text(json.dumps(candidate))
+            path.chmod(0o444)
+            with self.subTest(case=case), tempfile.TemporaryDirectory(dir=self.root / ".lake") as tmp:
+                with patch.object(bulk, "extract_records", return_value=[]) as extract:
+                    _, satisfied, result = bulk.assemble(self.root, bulk.selected_records(self.root), Path(tmp), self.seed)
+                self.assertEqual(len(extract.call_args.args[0]), 1)
+                self.assertEqual(satisfied, [])
+                self.assertEqual(result["seed_rebound_traces"], 0)
+
     def test_permission_and_space_errors_are_not_unsupported_capabilities(self):
         for code in (errno.EACCES, errno.ENOSPC):
             with self.subTest(code=code), patch.object(bulk.fcntl, "ioctl", side_effect=OSError(code, "resource failure")):
@@ -406,7 +443,8 @@ class PreparedSeedNativeTests(unittest.TestCase):
                     '[[lean_lib]]\nname = "TauCeti"\nglobs = ["TauCeti.*"]\n')
                 (project / "TauCeti").mkdir()
                 for i in range(20):
-                    (project / f"TauCeti/M{i}.lean").write_text(f"module\npublic def m{i} : Nat := {i}\n")
+                    text = f"module\npublic def m{i} : Nat := {i}\n"
+                    (project / f"TauCeti/M{i}.lean").write_text(text)
                 (project / "TauCeti.lean").write_text("module\n" + "\n".join(
                     f"public import TauCeti.M{i}" for i in range(20)) + "\n")
                 return project
@@ -463,6 +501,7 @@ class PreparedSeedNativeTests(unittest.TestCase):
                 available = {r["archive"] for r in bulk.selected_records(project)}
                 eligible = [(m, entry) for m, entry in manifest["modules"].items()
                             if entry["archive"] in available and bulk.source_present(project, m)]
+                eligible.sort(key=lambda pair: pair[0] != "TauCeti.M17")
                 reduced = dict(manifest, modules=dict(eligible[:limit]))
                 (selected_seed / "manifest.json").write_text(json.dumps(reduced))
                 shutil.copytree(seed / "build", selected_seed / "build")
