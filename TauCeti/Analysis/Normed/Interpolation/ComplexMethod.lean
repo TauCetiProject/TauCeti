@@ -212,6 +212,14 @@ theorem stripFunction_eq_zero (g : C.stripTraces) {z : ℂ} (hz : z ∉ vertical
     C.stripFunction g z = 0 :=
   indicator_of_notMem hz _
 
+@[simp]
+theorem stripFunction_zero : C.stripFunction 0 = 0 := by
+  ext z
+  by_cases hz : z ∈ verticalClosedStrip 0 1
+  · exact stripFunction_eq IsStripFunction.zero hz
+  · exact C.stripFunction_eq_zero _ hz
+
+@[simp]
 theorem stripFunction_add (g h : C.stripTraces) :
     C.stripFunction (g + h) = C.stripFunction g + C.stripFunction h := by
   ext z
@@ -220,6 +228,7 @@ theorem stripFunction_add (g h : C.stripTraces) :
       ((C.isStripFunction_stripFunction g).add (C.isStripFunction_stripFunction h)) hz
   · simp [C.stripFunction_eq_zero _ hz]
 
+@[simp]
 theorem stripFunction_smul (c : ℂ) (g : C.stripTraces) :
     C.stripFunction (c • g) = c • C.stripFunction g := by
   ext z
@@ -234,7 +243,8 @@ theorem norm_stripFunction_le (g : C.stripTraces) (z : ℂ) : ‖C.stripFunction
   · simp [C.stripFunction_eq_zero _ hz]
 
 /-- Evaluation `g ↦ F z` of the admissible function with traces `g` at a point `z`, a continuous
-linear map of norm at most one. It vanishes for `z` off the closed strip. -/
+linear map of norm at most one. It vanishes for `z` off the closed strip
+(`CompatibleCouple.stripEval_eq_zero`). -/
 def stripEval (z : ℂ) : C.stripTraces →L[ℂ] C.SumSpace :=
   LinearMap.mkContinuous
     { toFun g := C.stripFunction g z
@@ -245,6 +255,10 @@ def stripEval (z : ℂ) : C.stripTraces →L[ℂ] C.SumSpace :=
 @[simp]
 theorem stripEval_apply (z : ℂ) (g : C.stripTraces) : C.stripEval z g = C.stripFunction g z :=
   (rfl)
+
+/-- Evaluation off the closed strip vanishes. -/
+theorem stripEval_eq_zero {z : ℂ} (hz : z ∉ verticalClosedStrip 0 1) : C.stripEval z = 0 :=
+  ContinuousLinearMap.ext fun g => C.stripFunction_eq_zero g hz
 
 theorem norm_stripEval_le (z : ℂ) : ‖C.stripEval z‖ ≤ 1 :=
   ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun g => by
@@ -321,7 +335,8 @@ vanishing at `θ`, with the quotient norm
 `‖u‖_θ = inf {‖g‖ | F θ = u for the admissible function F with traces g}`
 (`ComplexMethodSpace.norm_lt_iff`). It is a Banach space when `X₀` and `X₁` are, and it embeds
 injectively into the sum space by `ComplexMethodSpace.toSum`. For `θ` outside `[0, 1]` the
-evaluation `stripEval θ` vanishes, so the space is zero. -/
+evaluation `stripEval θ` vanishes, so the space is zero
+(`ComplexMethodSpace.eq_zero_of_notMem`). -/
 def ComplexMethodSpace (θ : ℝ) : Type _ :=
   C.stripTraces ⧸ (C.stripEval θ).ker
 
@@ -373,6 +388,17 @@ theorem toSum_injective : Function.Injective (toSum : C.ComplexMethodSpace θ �
   obtain ⟨g, rfl⟩ := mk_surjective u
   obtain ⟨h, rfl⟩ := mk_surjective v
   exact mk_eq_mk_iff.2 (by simpa using huv)
+
+/-- Elements of `[X₀, X₁]_θ` are determined by their images in the sum space. -/
+@[ext]
+theorem ext {u v : C.ComplexMethodSpace θ} (h : toSum u = toSum v) : u = v :=
+  toSum_injective h
+
+/-- For `θ` outside `[0, 1]`, the space `[X₀, X₁]_θ` is zero. -/
+theorem eq_zero_of_notMem (hθ : θ ∉ Icc 0 1) (u : C.ComplexMethodSpace θ) : u = 0 := by
+  ext
+  obtain ⟨g, rfl⟩ := mk_surjective u
+  rw [toSum_mk, C.stripEval_eq_zero (by simpa using hθ), map_zero, zero_apply]
 
 /-- The inclusion of `[X₀, X₁]_θ` into the sum space does not increase norms. -/
 theorem norm_toSum_le (u : C.ComplexMethodSpace θ) : ‖toSum u‖ ≤ ‖u‖ := by
@@ -520,6 +546,7 @@ private theorem ofInter_eq_mk {δ : ℝ} (hδ : 0 < δ) {θ : ℝ} (hθ : θ ∈
 
 /-- For `0 ≤ θ ≤ 1`, the inclusion of the intersection into `[X₀, X₁]_θ` lies over its inclusion
 into the sum space. -/
+@[simp]
 theorem toSum_ofInter {θ : ℝ} (hθ : θ ∈ Icc 0 1) (x : C.inter) :
     toSum (ofInter θ x) = C.fstToSum (C.interFst x) := by
   rw [ofInter_eq_mk one_pos hθ, toSum_mk, C.stripEval_gaussianTrace one_pos hθ]
@@ -596,7 +623,7 @@ variable {C} {θ : ℝ}
 /-- Multiplying the composite of an admissible function with a map of sum spaces by an entire
 function `c` bounded on the strip gives an admissible function, whose traces are those of the
 original one transformed pointwise by the restrictions `A₀`, `A₁` and multiplied by `c`. -/
-private theorem exists_isStripFunction_smul_comp (A : C.SumSpace →L[ℂ] D.SumSpace)
+theorem exists_isStripFunction_smul_comp (A : C.SumSpace →L[ℂ] D.SumSpace)
     (A₀ : X₀ →L[ℂ] Y₀) (A₁ : X₁ →L[ℂ] Y₁) (hA₀ : ∀ x, A (C.fstToSum x) = D.fstToSum (A₀ x))
     (hA₁ : ∀ x, A (C.sndToSum x) = D.sndToSum (A₁ x)) {c : ℂ → ℂ} (hc : Differentiable ℂ c)
     {K : ℝ} (hK : ∀ z ∈ verticalClosedStrip 0 1, ‖c z‖ ≤ K) {F : ℂ → C.SumSpace}
@@ -775,7 +802,7 @@ the class of `x ∈ X₀ ∩ X₁` to the class of the element `y ∈ Y₀ ∩ Y
 `T₀ x`. -/
 theorem map_ofInter (hθ : θ ∈ Icc 0 1) {x : C.inter} {y : D.inter}
     (hy : D.interFst y = T₀ (C.interFst x)) : map θ T₀ T₁ h (ofInter θ x) = ofInter θ y := by
-  refine toSum_injective ?_
+  ext
   rw [toSum_map, toSum_ofInter hθ, toSum_ofInter hθ, hy]
   exact C.sumLift_fstToSum _ _ h _
 
@@ -791,7 +818,7 @@ private theorem norm_scaleFactor_smul_map_mk_le (hθ : θ ∈ Icc 0 1) {M₀ M�
     (differentiable_scaleFactor M₀ M₁) (fun z hz => norm_scaleFactor_le hz)
     (C.isStripFunction_stripFunction g)
   have hv : mk θ ⟨g', _, hg'⟩ = scaleFactor M₀ M₁ θ • map θ T₀ T₁ h (mk θ g) :=
-    toSum_injective <| by
+    ComplexMethodSpace.ext <| by
       rw [map_smul, toSum_map, toSum_mk, toSum_mk, stripEval_apply, stripEval_apply,
         stripFunction_eq hg' (by simpa using hθ)]
   have hg'g : ‖g'‖ ≤ ‖g‖ := norm_prod_le_iff.2
