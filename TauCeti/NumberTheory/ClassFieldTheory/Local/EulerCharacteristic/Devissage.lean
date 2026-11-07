@@ -91,6 +91,58 @@ theorem localEulerCharacteristic_eq_localCardNorm_of_nsmul_eq_zero {n ℓ : ℕ}
   rw [hcard 0, hcard 1, hcard 2]
   exact hχ
 
+omit [CharZero F] [ValuativeRel F] [TopologicalSpace F] [IsNonarchimedeanLocalField F] in
+/-- Multiplication by `ℓ` on a `GalRep` acts on the carrier as `a ↦ ℓ • a`. -/
+private lemma hom_natCast_smul_id_apply {n : ℕ} (A : GalRep n F) (ℓ : ℕ) (a : A.V) :
+    ((ℓ : ZMod n) • 𝟙 A : A ⟶ A).hom a = ℓ • a := by
+  rw [TopRep.hom_smul, ContIntertwiningMap.smul_apply, Nat.cast_smul_eq_nsmul]
+  -- the underlying map of `𝟙 A` is the identity of the carrier
+  rfl
+
+omit [CharZero F] [ValuativeRel F] [TopologicalSpace F] [IsNonarchimedeanLocalField F] in
+/-- The `ℓ`-torsion `A[ℓ]` is strictly smaller than `A` when `ℓ` does not kill `A`. -/
+private lemma card_ker_natCast_smul_id_lt {n : ℕ} (A : GalRep n F) [Finite A.V] (ℓ : ℕ)
+    (x : A.V) (hx : ℓ • x ≠ 0) :
+    Nat.card (TopRep.ker ((ℓ : ZMod n) • 𝟙 A)).V < Nat.card A.V := by
+  have : Fintype A.V := Fintype.ofFinite _
+  have hι := TopRep.kerι_injective ((ℓ : ZMod n) • 𝟙 A)
+  have : Finite (TopRep.ker ((ℓ : ZMod n) • 𝟙 A)).V := .of_injective _ hι
+  have : Fintype (TopRep.ker ((ℓ : ZMod n) • 𝟙 A)).V := Fintype.ofFinite _
+  rw [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card]
+  refine Fintype.card_lt_of_injective_not_surjective _ hι fun hsurj ↦ hx ?_
+  obtain ⟨z, hz⟩ := hsurj x
+  have hz' := z.2
+  rw [LinearMap.mem_ker] at hz'
+  rw [← hz, ← hom_natCast_smul_id_apply, show (TopRep.kerι ((ℓ : ZMod n) • 𝟙 A)).hom z = z.1 from
+    TopRep.kerι_apply _ z]
+  exact hz'
+
+omit [CharZero F] [ValuativeRel F] [TopologicalSpace F] [IsNonarchimedeanLocalField F] in
+/-- The quotient `A / A[ℓ]` is strictly smaller than `A` when `ℓ` is a prime dividing its order. -/
+private lemma card_coker_kerι_natCast_smul_id_lt {n : ℕ} (A : GalRep n F) [Finite A.V] {ℓ : ℕ}
+    (hℓ : ℓ.Prime) (y : A.V) (hy : addOrderOf y = ℓ) :
+    Nat.card (TopRep.coker (TopRep.kerι ((ℓ : ZMod n) • 𝟙 A))).V < Nat.card A.V := by
+  have : Fintype A.V := Fintype.ofFinite _
+  set f : A ⟶ A := (ℓ : ZMod n) • 𝟙 A
+  set ι := TopRep.kerι f
+  have hπ : Function.Surjective (TopRep.cokerπ ι).hom := TopRep.cokerπ_surjective ι
+  have hιπ : Function.Exact ι.hom (TopRep.cokerπ ι).hom := TopRep.exact_cokerπ ι
+  have : Finite (TopRep.coker ι).V := .of_surjective _ hπ
+  have : Fintype (TopRep.coker ι).V := Fintype.ofFinite _
+  rw [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card]
+  refine Fintype.card_lt_of_surjective_not_injective _ hπ fun hinj ↦ ?_
+  have hy0 : y ≠ 0 := by
+    rintro rfl
+    simp only [addOrderOf_zero] at hy
+    exact hℓ.one_lt.ne hy
+  have hyker : y ∈ LinearMap.ker (f.hom : A.V →ₗ[ZMod n] A.V) := by
+    rw [LinearMap.mem_ker]
+    exact (hom_natCast_smul_id_apply A ℓ y).trans (by rw [← hy, addOrderOf_nsmul_eq_zero])
+  have hyι : (TopRep.cokerπ ι).hom y = (TopRep.cokerπ ι).hom 0 := by
+    rw [map_zero]
+    exact (hιπ y).2 ⟨⟨y, hyker⟩, TopRep.kerι_apply f _⟩
+  exact hy0 (hinj hyι)
+
 /-- **Reduction of Tate's local Euler characteristic formula to prime coefficients.** If
 `χ_F = φ_F` holds for every finite smooth discrete module with coefficients in a prime field, it
 holds for every finite smooth discrete `A : GalRep n F`. -/
@@ -121,10 +173,6 @@ theorem localEulerCharacteristic_eq_localCardNorm_of_forall_prime
     (by rwa [← Nat.card_eq_fintype_card])
   -- `A[ℓ]` is the kernel `K` of multiplication by `ℓ`, and `C = A / A[ℓ]`.
   let f : A ⟶ A := (ℓ : ZMod n) • 𝟙 A
-  have hf (a : A.V) : f.hom a = ℓ • a := by
-    rw [TopRep.hom_smul, ContIntertwiningMap.smul_apply, Nat.cast_smul_eq_nsmul]
-    -- the underlying map of `𝟙 A` is the identity of the carrier
-    rfl
   let ι := TopRep.kerι f
   let π := TopRep.cokerπ ι
   have hι : Function.Injective ι.hom := TopRep.kerι_injective f
@@ -137,31 +185,9 @@ theorem localEulerCharacteristic_eq_localCardNorm_of_forall_prime
   have : Fact (IsSmoothDiscrete (ZMod n) (TopRep.ker f)) := ⟨.of_injective ι hι Fact.out⟩
   have : Fact (IsSmoothDiscrete (ZMod n) (TopRep.coker ι)) :=
     ⟨.of_surjective π hπ (IsSmoothDiscrete.stabilizer_isOpen Fact.out)⟩
-  have : Fintype (TopRep.ker f).V := Fintype.ofFinite _
-  have : Fintype (TopRep.coker ι).V := Fintype.ofFinite _
   -- `A[ℓ] ≠ A` because `ℓ • x ≠ 0`, and `A[ℓ] ≠ 0` by Cauchy's theorem.
-  have hK : Nat.card (TopRep.ker f).V < N := by
-    rw [← hN, Nat.card_eq_fintype_card, Nat.card_eq_fintype_card]
-    refine Fintype.card_lt_of_injective_not_surjective _ hι fun hsurj ↦ hx ?_
-    obtain ⟨z, hz⟩ := hsurj x
-    have hz' := z.2
-    rw [LinearMap.mem_ker] at hz'
-    rw [← hz, ← hf, show ι.hom z = z.1 from TopRep.kerι_apply f z]
-    exact hz'
-  have hC : Nat.card (TopRep.coker ι).V < N := by
-    rw [← hN, Nat.card_eq_fintype_card, Nat.card_eq_fintype_card]
-    refine Fintype.card_lt_of_surjective_not_injective _ hπ fun hinj ↦ ?_
-    have hy0 : y ≠ 0 := by
-      rintro rfl
-      simp only [addOrderOf_zero] at hy
-      exact hℓ.one_lt.ne hy
-    have hyι : π.hom y = π.hom 0 := by
-      have hyker : y ∈ LinearMap.ker (f.hom : A.V →ₗ[ZMod n] A.V) := by
-        rw [LinearMap.mem_ker]
-        exact (hf y).trans (by rw [← hy, addOrderOf_nsmul_eq_zero])
-      rw [map_zero]
-      exact (hιπ y).2 ⟨⟨y, hyker⟩, TopRep.kerι_apply f _⟩
-    exact hy0 (hinj hyι)
+  have hK : Nat.card (TopRep.ker f).V < N := hN ▸ card_ker_natCast_smul_id_lt A ℓ x hx
+  have hC : Nat.card (TopRep.coker ι).V < N := hN ▸ card_coker_kerι_natCast_smul_id_lt A hℓ y hy
   -- Both invariants are multiplicative along the sequence, and the ends satisfy the formula.
   have hn : IsUnit (n : F) := (Nat.cast_ne_zero.2 (NeZero.ne n)).isUnit
   rw [localEulerCharacteristic_mul_of_exact hn ι π hι hιπ hπ,
