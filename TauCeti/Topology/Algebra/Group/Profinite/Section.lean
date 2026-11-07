@@ -238,18 +238,8 @@ theorem exists_continuous_section [CompactSpace G] [TotallyDisconnectedSpace G]
     QuotientGroup.continuous_mk.comp continuous_subtype_val
   let e : C ≃ₜ G ⧸ H :=
     Continuous.homeoOfEquivCompactToT2 (f := hC.leftQuotientEquiv.symm) hcont
-  set s₀ : G ⧸ H → G := fun q => ((e.symm q : C) : G)
-  have hs₀sec : ∀ q, (QuotientGroup.mk (s₀ q) : G ⧸ H) = q :=
-    hC.quotientGroupMk_leftQuotientEquiv
-  have hmem : s₀ (QuotientGroup.mk 1) ∈ H := by
-    have := hs₀sec (QuotientGroup.mk 1)
-    rw [QuotientGroup.eq, mul_one] at this
-    simpa using H.inv_mem this
-  refine ⟨fun q => s₀ q * (s₀ (QuotientGroup.mk 1))⁻¹,
-    (continuous_subtype_val.comp e.symm.continuous).mul continuous_const, fun q => ?_, by simp⟩
-  calc (QuotientGroup.mk (s₀ q * (s₀ (QuotientGroup.mk 1))⁻¹) : G ⧸ H)
-      = QuotientGroup.mk (s₀ q) := (QuotientGroup.eq.mpr (by simpa using H.inv_mem hmem)).symm
-    _ = q := hs₀sec q
+  exact H.exists_continuous_section_one_eq_one_of_section (fun q => ((e.symm q : C) : G))
+    (continuous_subtype_val.comp e.symm.continuous) hC.quotientGroupMk_leftQuotientEquiv
 
 /-- **The continuous section of a projection between quotients of a profinite group.** For subgroups
 `K ≤ H` of a profinite group with `H` closed, the projection `G ⧸ K → G ⧸ H` has a continuous
