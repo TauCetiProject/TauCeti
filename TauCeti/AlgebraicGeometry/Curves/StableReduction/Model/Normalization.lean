@@ -173,10 +173,7 @@ theorem isIso_normalizationHom_iff : IsIso M.normalizationHom ↔
       ∀ s, (M.genericι.app U).hom.IsIntegralElem s → s ∈ (M.genericι.app U).hom.range := by
   -- The restriction maps to the scheme-theoretically dense generic fibre are injective.
   rw [isIso_iff_isIso_hom, normalizationHom_hom, Scheme.Hom.isIso_fromNormalization_iff]
-  refine forall₂_congr fun U hU ↦ and_iff_right ?_
-  rw [RingHom.injective_iff_ker_eq_bot, ← M.genericι.ker_apply ⟨U, hU⟩,
-    IsSchemeTheoreticallyDominant.ker_eq_bot M.genericι, Scheme.IdealSheafData.ideal_bot,
-    Pi.bot_apply]
+  exact forall₂_congr fun U _ ↦ and_iff_right (M.genericι.app_injective U)
 
 variable {M} {N : Model R K C toK}
 
