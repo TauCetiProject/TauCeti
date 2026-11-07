@@ -7,8 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Representation.UnipotentPoint.Variety
-public import TauCeti.Algebra.Polynomial.Laurent.Augmentation
-public import Mathlib.Algebra.DualNumber
+public import TauCeti.Algebra.DualNumber.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.GroupLike
 public import TauCeti.RingTheory.Nilpotent.Log
 import TauCeti.Algebra.AlgebraicGroup.Representation.UnipotentPoint.Character
@@ -51,10 +50,7 @@ variable {k : Type u} [Field k]
 theorem unipotentVarietyIdeal_eq_span :
     HopfAlgebra.unipotentVarietyIdeal k k[T;T⁻¹] = Ideal.span {(T 1 - 1 : k[T;T⁻¹])} := by
   apply le_antisymm
-  · have heq : Bialgebra.counitAlgHom k k[T;T⁻¹] = laurentEval (1 : kˣ) := by
-      apply laurentEval_unique
-      simp
-    simpa only [heq, ker_laurentEval_one] using
+  · simpa only [ker_counitAlgHom] using
       (HopfAlgebra.unipotentVarietyIdeal_le_ker_counitAlgHom (k := k) (H := k[T;T⁻¹]))
   · rw [Ideal.span_singleton_le_iff_mem, HopfAlgebra.mem_unipotentVarietyIdeal_iff]
     intro g hg
@@ -128,29 +124,43 @@ theorem radical_contentIdeal_charpoly_paired_eq_unipotentVarietyIdeal :
   rw [radical_contentIdeal_charpoly_paired, ← unipotentVarietyIdeal_eq_span,
     HopfAlgebra.radical_unipotentVarietyIdeal]
 
+section Comodules
+
+variable (R : Type*) [CommRing R]
+
+/-- The rank-one comodule of the standard character of the multiplicative group. -/
+abbrev standardComodule : Comodule R R[T;T⁻¹] (Fin 1 → R) :=
+  Comodule.ofGroupLike (Pi.basisFun R (Fin 1)) (fun _ ↦ (T 1 : R[T;T⁻¹]))
+    (fun _ ↦ by simpa using (groupLikeT R).isGroupLikeElem_val)
+
+/-- The rank-two comodule of the characters `T` and `T⁻¹` of the multiplicative group. -/
+abbrev pairedComodule : Comodule R R[T;T⁻¹] (Fin 2 → R) :=
+  Comodule.ofGroupLike (Pi.basisFun R (Fin 2)) ![(T 1 : R[T;T⁻¹]), T (-1)]
+    (fun i ↦ ⟨by fin_cases i <;> simp, by fin_cases i <;> simp [LaurentPolynomial.comul_T]⟩)
+
+variable {R} [Nontrivial R]
+
 /-- For the native rank-one comodule with character `T`, the unipotence ideal is `(T - 1)`. -/
 theorem unipotenceIdeal_standard :
-    letI := Comodule.ofGroupLike (Pi.basisFun k (Fin 1)) (fun _ ↦ (T 1 : k[T;T⁻¹]))
-      (fun _ ↦ by simpa using (groupLikeT k).isGroupLikeElem_val)
-    Comodule.unipotenceIdeal k k[T;T⁻¹] (Fin 1 → k) = Ideal.span {(T 1 - 1 : k[T;T⁻¹])} := by
-  let := Comodule.ofGroupLike (Pi.basisFun k (Fin 1)) (fun _ ↦ (T 1 : k[T;T⁻¹]))
-    (fun _ ↦ by simpa using (groupLikeT k).isGroupLikeElem_val)
-  rw [Comodule.unipotenceIdeal_eq_contentIdeal_coefficientMatrix_charpoly (Pi.basisFun k (Fin 1)),
+    letI := standardComodule R
+    Comodule.unipotenceIdeal R R[T;T⁻¹] (Fin 1 → R) = Ideal.span {(T 1 - 1 : R[T;T⁻¹])} := by
+  let := standardComodule R
+  rw [Comodule.unipotenceIdeal_eq_contentIdeal_coefficientMatrix_charpoly (Pi.basisFun R (Fin 1)),
     Comodule.coefficientMatrix_ofGroupLike, Module.finrank_fin_fun]
   exact contentIdeal_charpoly_standard
 
 /-- For the native comodule with characters `T` and `T⁻¹`, the unipotence ideal is
 `((T - 1)²)`. In particular the unreduced ideal really depends on the representation. -/
 theorem unipotenceIdeal_paired :
-    letI := Comodule.ofGroupLike (Pi.basisFun k (Fin 2)) ![(T 1 : k[T;T⁻¹]), T (-1)]
-      (fun i ↦ ⟨by fin_cases i <;> simp, by fin_cases i <;> simp [LaurentPolynomial.comul_T]⟩)
-    Comodule.unipotenceIdeal k k[T;T⁻¹] (Fin 2 → k) =
-      Ideal.span {((T 1 - 1 : k[T;T⁻¹]) ^ 2)} := by
-  let := Comodule.ofGroupLike (Pi.basisFun k (Fin 2)) ![(T 1 : k[T;T⁻¹]), T (-1)]
-    (fun i ↦ ⟨by fin_cases i <;> simp, by fin_cases i <;> simp [LaurentPolynomial.comul_T]⟩)
-  rw [Comodule.unipotenceIdeal_eq_contentIdeal_coefficientMatrix_charpoly (Pi.basisFun k (Fin 2)),
+    letI := pairedComodule R
+    Comodule.unipotenceIdeal R R[T;T⁻¹] (Fin 2 → R) =
+      Ideal.span {((T 1 - 1 : R[T;T⁻¹]) ^ 2)} := by
+  let := pairedComodule R
+  rw [Comodule.unipotenceIdeal_eq_contentIdeal_coefficientMatrix_charpoly (Pi.basisFun R (Fin 2)),
     Comodule.coefficientMatrix_ofGroupLike, Module.finrank_fin_fun]
   exact contentIdeal_charpoly_paired
+
+end Comodules
 
 /-- The infinitesimal point `1 + ε` of the multiplicative group. -/
 def dualNumberUnit (R : Type u) [CommRing R] : (DualNumber R)ˣ where
@@ -170,9 +180,10 @@ theorem coe_dualNumberUnit_inv (R : Type*) [CommRing R] :
     (((dualNumberUnit R)⁻¹ : (DualNumber R)ˣ) : DualNumber R) = 1 - DualNumber.eps := (rfl)
 
 /-- The infinitesimal point satisfies the unsaturated equations of the paired representation. -/
-theorem paired_equations_dualNumberUnit :
-    ((Matrix.diagonal ![(T 1 : k[T;T⁻¹]), T (-1)]).charpoly -
-      (Polynomial.X - 1) ^ 2).contentIdeal ≤ RingHom.ker (laurentEval (dualNumberUnit k)) := by
+theorem contentIdeal_charpoly_paired_le_ker_laurentEval_dualNumberUnit
+    {R : Type*} [CommRing R] :
+    ((Matrix.diagonal ![(T 1 : R[T;T⁻¹]), T (-1)]).charpoly -
+      (Polynomial.X - 1) ^ 2).contentIdeal ≤ RingHom.ker (laurentEval (dualNumberUnit R)) := by
   rw [contentIdeal_charpoly_paired, Ideal.span_singleton_le_iff_mem, RingHom.mem_ker]
   simp [pow_two]
 
@@ -183,9 +194,7 @@ theorem not_unipotentVarietyIdeal_le_ker_dualNumberUnit :
   rw [unipotentVarietyIdeal_eq_span, Ideal.span_singleton_le_iff_mem, RingHom.mem_ker]
   simp only [map_sub, map_one, laurentEval_T, zpow_one, coe_dualNumberUnit,
     add_sub_cancel_left]
-  intro h
-  have := congrArg TrivSqZeroExt.snd h
-  simp at this
+  exact DualNumber.eps_ne_zero
 
 section Log
 
@@ -202,9 +211,7 @@ theorem log_dualNumberUnit :
 theorem log_dualNumberUnit_ne_zero [Nontrivial R] :
     IsNilpotent.log (dualNumberUnit R : DualNumber R) ≠ 0 := by
   rw [log_dualNumberUnit]
-  intro h
-  have := congrArg TrivSqZeroExt.snd h
-  simp at this
+  exact DualNumber.eps_ne_zero
 
 end Log
 

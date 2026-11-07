@@ -25,6 +25,17 @@ out of them are determined by their values on `1` and `ε`.
 
 public section
 
+namespace DualNumber
+
+/-- The infinitesimal parameter of dual numbers over a nontrivial semiring is nonzero. -/
+@[simp]
+theorem eps_ne_zero {R : Type*} [Semiring R] [Nontrivial R] : (eps : DualNumber R) ≠ 0 := by
+  intro h
+  have := congrArg TrivSqZeroExt.snd h
+  simp at this
+
+end DualNumber
+
 namespace TauCeti
 
 variable {R B : Type*} [CommSemiring R] [Semiring B] [Algebra R B]
