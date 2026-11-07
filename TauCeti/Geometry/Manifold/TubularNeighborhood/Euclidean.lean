@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.LocalCoordinates
-public import TauCeti.Geometry.Manifold.MFDeriv.Chart
+public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.Basic
 public import TauCeti.Topology.MetricSpace.Lebesgue
 
