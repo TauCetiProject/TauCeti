@@ -83,14 +83,7 @@ theorem _root_.Subgroup.profiniteOrder_apply_eq_add_profiniteIndex (H : Subgroup
           ← Subgroup.relIndex_ker H (QuotientGroup.mk' K.toSubgroup),
           QuotientGroup.ker_mk', QuotientGroup.ker_mk']
         exact Subgroup.relIndex_dvd_of_le_left _ inf_le_left
-      · simp only [Nat.padicValNat_def]
-        rw [multiplicity_eq_emultiplicity Subgroup.index_ne_zero_of_finite,
-          multiplicity_eq_emultiplicity Subgroup.index_ne_zero_of_finite]
-        apply emultiplicity_le_emultiplicity_of_dvd_right
-        rw [H.index_map_mk'_eq_index_sup M.toSubgroup,
-          H.index_map_mk'_eq_index_sup K.toSubgroup]
-        apply Subgroup.index_dvd_of_le
-        exact sup_le_sup_left inf_le_right H
+      · exact H.padicValNat_index_map_mk'_mono ℓ inf_le_right
 
 /-- **Lagrange's theorem for profinite groups**: the supernatural order of the ambient group
 is the order of a closed subgroup times its supernatural index. -/
