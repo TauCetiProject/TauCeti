@@ -153,6 +153,27 @@ theorem mem_hull_natCast_relations_iff_of_liftBaseChange_injective
         (by simpa [neg_smul] using hkv) (fun j h ↦ by simp [hk j h]) ⟨j₀, by simpa using hlt⟩
     · exact mem_hull_natCast_relations_of_int_relation hc hcv step hkv hk ⟨j₀, hgt⟩
 
+/-- A natural-number relation between the generators of two cones, read on the generators of the
+first cone, gives a lattice vector of the intersection of the two cones when it is also read on
+the generators of the second cone. -/
+private theorem hull_image_image_le_inf [DecidableEq N] (s t : Finset N) (K : Finset (s ⊕ t → ℕ))
+    (hrel : ∀ k ∈ K, ∑ a : s, k (.inl a) • (a : N) = ∑ b : t, k (.inr b) • (b : N)) :
+    PointedCone.hull ℝ
+        (i '' ((K.image fun k ↦ ∑ a : s, k (.inl a) • (a : N) : Finset N) : Set N)) ≤
+      PointedCone.hull ℝ (i '' (s : Set N)) ⊓ PointedCone.hull ℝ (i '' (t : Set N)) := by
+  refine Submodule.span_le.2 ?_
+  rintro _ ⟨_, hu, rfl⟩
+  obtain ⟨k, hk, rfl⟩ := Finset.mem_image.1 hu
+  refine ⟨?_, ?_⟩
+  · rw [SetLike.mem_coe, map_sum]
+    exact Submodule.sum_mem _ fun a _ ↦ by
+      rw [map_nsmul]
+      exact Submodule.smul_of_tower_mem _ _ (PointedCone.subset_hull ⟨a, a.2, rfl⟩)
+  · rw [SetLike.mem_coe, hrel k hk, map_sum]
+    exact Submodule.sum_mem _ fun b _ ↦ by
+      rw [map_nsmul]
+      exact Submodule.smul_of_tower_mem _ _ (PointedCone.subset_hull ⟨b, b.2, rfl⟩)
+
 /-- **Intersections of lattice-rational cones.** When the real-linear map `ℝ ⊗[ℤ] N →ₗ[ℝ] V`
 induced by `i` is injective (for instance when `i` is an integral lattice, or more generally
 extends scalars from `ℤ` to `ℝ`), the intersection of two lattice-rational cones is lattice
@@ -207,19 +228,7 @@ theorem IsLatticeRational.inf {σ τ : PointedCone ℝ V}
       simp [hL, p, ← Nat.cast_smul_eq_nsmul ℝ]
     rw [← hL]
     exact hmap hcG
-  · refine Submodule.span_le.2 ?_
-    rintro _ ⟨_, hu, rfl⟩
-    obtain ⟨k, hk, rfl⟩ := Finset.mem_image.1 hu
-    rw [hGfin.mem_toFinset] at hk
-    refine ⟨?_, ?_⟩
-    · rw [SetLike.mem_coe, map_sum]
-      exact Submodule.sum_mem _ fun a _ ↦ by
-        rw [map_nsmul]
-        exact Submodule.smul_of_tower_mem _ _ (PointedCone.subset_hull ⟨a, a.2, rfl⟩)
-    · rw [SetLike.mem_coe, hrel k hk, map_sum]
-      exact Submodule.sum_mem _ fun b _ ↦ by
-        rw [map_nsmul]
-        exact Submodule.smul_of_tower_mem _ _ (PointedCone.subset_hull ⟨b, b.2, rfl⟩)
+  · exact hull_image_image_le_inf s t hGfin.toFinset fun k hk ↦ hrel k (hGfin.mem_toFinset.1 hk)
 
 /-- **Intersections of toric cones.** When the real-linear map `ℝ ⊗[ℤ] N →ₗ[ℝ] V` induced by `i`
 is injective, the intersection of two toric cones is a toric cone. For an integral lattice `hi`,
