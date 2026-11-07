@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Order.LeftRightNhds
+public import Mathlib.Topology.Algebra.Order.Group
+public import Mathlib.Topology.Algebra.Ring.Real
 
 /-!
 # Right-continuous functions on dense subsets
@@ -21,6 +23,7 @@ countable, this replaces a supremum over uncountably many times by a countable o
   by a value above `a` at `T` or at a point of `D ∩ (-∞, T]`.
 * `TopologicalSpace.exists_countable_subset_Iic_exists_mem_lt`: in a separable space, one
   countable set of times `≤ T` serves for every function right-continuous before `T`.
+* `eventually_nhdsGT_pos_and_mul_abs_lt`: as `h → 0⁺`, eventually `0 < h` and `c * |h| < r`.
 -/
 
 public section
@@ -54,3 +57,13 @@ theorem TopologicalSpace.exists_countable_subset_Iic_exists_mem_lt [SeparableSpa
   ⟨insert T (D ∩ Iic T), (hDc.mono inter_subset_left).insert T,
     insert_subset_iff.2 ⟨le_rfl, inter_subset_right⟩,
     fun _ hg _ htT _ ha ↦ hD.exists_mem_insert_inter_Iic_lt hg htT ha⟩
+
+open Filter Topology in
+/-- Along `h → 0⁺`, eventually `0 < h` and `c * |h| < r`, for any `c` and positive `r`. -/
+theorem eventually_nhdsGT_pos_and_mul_abs_lt (c : ℝ) {r : ℝ} (hr : 0 < r) :
+    ∀ᶠ h : ℝ in 𝓝[>] 0, 0 < h ∧ c * |h| < r := by
+  have hlt : ∀ᶠ h : ℝ in 𝓝 (0 : ℝ), c * |h| < r := by
+    have : Continuous fun h : ℝ ↦ c * |h| := continuous_const.mul continuous_abs
+    exact this.continuousAt.eventually_lt continuousAt_const (by simpa using hr)
+  exact (eventually_mem_nhdsWithin.and (hlt.filter_mono nhdsWithin_le_nhds)).mono fun h hh ↦
+    ⟨hh.1, hh.2⟩

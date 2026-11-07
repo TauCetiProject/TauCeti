@@ -10,6 +10,7 @@ public import Mathlib.Topology.LocallyConstant.Basic
 public import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On
 import TauCeti.Analysis.Contour.Curve.Distance
 import TauCeti.Analysis.Contour.Winding.Continuity
+import TauCeti.Analysis.Contour.Winding.Integer
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Basic
 
 /-!
@@ -176,5 +177,29 @@ theorem exists_ball_windingNumber_zero {γ : ℝ → ℂ} {w : ℂ} {a b : ℝ} 
   · obtain ⟨p, hpV, hpeq⟩ := hball₂ (Metric.ball_subset_ball (min_le_right _ _) hw')
     rw [← hpeq, hV_const p hpV]
     exact hw_zero
+
+/-- A closed piecewise-`C¹` curve whose winding numbers about two points off the curve differ by
+less than `1 / 2` from `1` has winding numbers differing by exactly `1`. -/
+theorem windingNumber_eq_add_one_of_dist_lt {Γ : ℝ → ℂ} {w₁ w₂ : ℂ}
+    (hΓ : IsPiecewiseC1On Γ a c) (hclosed : Γ a = Γ c)
+    (h₁ : w₁ ∉ Γ '' uIcc a c) (h₂ : w₂ ∉ Γ '' uIcc a c)
+    (hdist : dist (windingNumber Γ a c w₁ - windingNumber Γ a c w₂) (1 : ℂ) < 1 / 2) :
+    windingNumber Γ a c w₁ = windingNumber Γ a c w₂ + 1 := by
+  obtain ⟨m, hm⟩ := hΓ.exists_int_windingNumber hclosed fun t ht heq ↦ h₁ ⟨t, ht, heq⟩
+  obtain ⟨n, hn⟩ := hΓ.exists_int_windingNumber hclosed fun t ht heq ↦ h₂ ⟨t, ht, heq⟩
+  have hcast : ((n + 1 : ℤ) : ℂ) = (n : ℂ) + 1 := by
+    push_cast
+    ring
+  have hmn : m = n + 1 :=
+    eq_of_dist_intCast_lt_one (n := n + 1) (by
+      rw [hm, hn] at hdist
+      rw [hcast]
+      have : dist ((m : ℂ) - (n : ℂ)) 1 = dist (m : ℂ) ((n : ℂ) + 1) := by
+        simp only [dist_eq_norm]
+        ring_nf
+      linarith)
+  rw [hm, hn, hmn]
+  push_cast
+  ring
 
 end TauCeti.Contour
