@@ -84,6 +84,63 @@ section Representation
 variable {μ : Measure Ω} {X : ℕ → Ω → α} {Y : α × ℕ → Ω → α} {a₀ : α}
   {lam : Ω → ProbabilityMeasure (α → α)}
 
+/-- The law of the first `n + 1` states at a single finite path is the measure of the event
+that the process follows any sequence extending that path. -/
+theorem prefixLaw_singleton_eq_measure_setOf [MeasurableSingletonClass α]
+    (hX : ∀ i, AEMeasurable (X i) μ) {n : ℕ} (w : Fin (n + 1) → α) (w' : ℕ → α)
+    (hfin : ∀ (j : ℕ) (hj : j < n + 1), w' j = w ⟨j, hj⟩) :
+    prefixLaw μ X (n + 1) {w} = μ {ω | ∀ j ≤ n, X j ω = w' j} := by
+  rw [prefixLaw_def, blockLaw_apply_of_measurable μ X (fun i : Fin (n + 1) => i.val)
+    (fun i => hX i.val) (measurableSet_singleton w)]
+  congr 1
+  ext ω
+  simp only [Set.mem_preimage, Set.mem_singleton_iff, Set.mem_ofPred_eq, funext_iff]
+  constructor
+  · intro h j hj
+    rw [hfin j (Nat.lt_succ_of_le hj)]
+    exact h ⟨j, Nat.lt_succ_of_le hj⟩
+  · intro h i
+    rw [← hfin i.val i.isLt]
+    exact h i.val (Nat.lt_succ_iff.1 i.isLt)
+
+/-- The path event for a path starting at `a₀` is an array event, whose measure is the integral
+of the product of the row marginals of the mixing representative along the path. -/
+private theorem measure_setOf_forall_le_eq_lintegral_of_start [Countable α]
+    [MeasurableSingletonClass α] [IsProbabilityMeasure μ]
+    (h0 : ∀ᵐ ω ∂μ, X 0 ω = a₀)
+    (hY : ∀ᵐ ω ∂μ, ∀ n, Y (visitCell (fun j => X j ω) n) ω = X (n + 1) ω)
+    (hrow : RowExchangeable μ Y) (hlam : MixedIIDWith μ (arrayCol Y) lam) {n : ℕ}
+    (w : Fin (n + 1) → α) (w' : ℕ → α) (hw0 : w' 0 = w 0)
+    (hwc : ∀ t : Fin n, w' t.val = w t.castSucc) (hws : ∀ t : Fin n, w' (t.val + 1) = w t.succ)
+    (hstart : w 0 = a₀) :
+    μ {ω | ∀ j ≤ n, X j ω = w' j} =
+      ∫⁻ ω, ((diracProba a₀ : ProbabilityMeasure α) : Measure α) {w 0} *
+        ∏ i : Fin n, (((lam ω).map fun x => x (w i.castSucc) : ProbabilityMeasure α) :
+          Measure α) {w i.succ} ∂μ := by
+  classical
+  have hdirac : ((diracProba a₀ : ProbabilityMeasure α) : Measure α) {w 0} = 1 :=
+    diracProba_toMeasure_apply_of_mem (by simp [hstart])
+  have hae : {ω | ∀ j ≤ n, X j ω = w' j} =ᵐ[μ]
+      {ω | ∀ t : Fin n, Y (visitCell w' t.val) ω ∈ ({w' (t.val + 1)} : Set α)} := by
+    rw [Filter.eventuallyEqSet_iff]
+    filter_upwards [h0, hY] with ω hω hYω
+    simp only [Set.mem_singleton_iff]
+    rw [eqOn_iff_visitCell_of_apply_visitCell_eq_succ (s := fun a k => Y (a, k) ω) hYω w' n]
+    exact ⟨fun h t => h.2 t.val t.isLt,
+      fun h => ⟨by rw [hω, hw0, hstart], fun j hj => h ⟨j, hj⟩⟩⟩
+  rw [measure_congr hae,
+    hrow.measure_setOf_forall_mem_eq_lintegral_prod hlam
+      (c := fun t : Fin n => visitCell w' t.val)
+      (fun s t hst => Fin.val_injective ((visitCell_injective w') hst))
+      (B := fun t : Fin n => ({w' (t.val + 1)} : Set α))
+      fun t => measurableSet_singleton _]
+  refine lintegral_congr fun ω => ?_
+  rw [hdirac, one_mul]
+  refine Finset.prod_congr rfl fun t _ => ?_
+  rw [ProbabilityMeasure.map_apply' (lam ω) (measurable_pi_apply (w t.castSucc)).aemeasurable
+    (measurableSet_singleton (w t.succ)), ← hwc t, ← hws t, visitCell_def]
+  rfl
+
 /-- **The change of variables from a row exchangeable successor array back to the path law.** Let
 `Y` be an array that almost surely records, at each cell the process consumes, the state the
 process moves to next — as `TauCeti.Probability.successorProcess X` and
@@ -119,44 +176,10 @@ theorem mixedMarkovChainWith_of_rowExchangeable [Countable α]
     rw [hfin (t.val + 1) (Nat.succ_lt_succ t.isLt)]
     exact congrArg w (Fin.ext rfl)
   -- The finite path event, read on the reference sequence.
-  have hpref : prefixLaw μ X (n + 1) {w} = μ {ω | ∀ j ≤ n, X j ω = w' j} := by
-    rw [prefixLaw_def, blockLaw_apply_of_measurable μ X (fun i : Fin (n + 1) => i.val)
-      (fun i => hX i.val) (measurableSet_singleton w)]
-    congr 1
-    ext ω
-    simp only [Set.mem_preimage, Set.mem_singleton_iff, Set.mem_ofPred_eq, funext_iff]
-    constructor
-    · intro h j hj
-      rw [hfin j (Nat.lt_succ_of_le hj)]
-      exact h ⟨j, Nat.lt_succ_of_le hj⟩
-    · intro h i
-      rw [← hfin i.val i.isLt]
-      exact h i.val (Nat.lt_succ_iff.1 i.isLt)
-  rw [hpref]
+  rw [prefixLaw_singleton_eq_measure_setOf hX w w' hfin]
   by_cases hstart : w 0 = a₀
   · -- The initial condition is almost surely automatic, and what is left is an array event.
-    have hdirac : ((diracProba a₀ : ProbabilityMeasure α) : Measure α) {w 0} = 1 :=
-      diracProba_toMeasure_apply_of_mem (by simp [hstart])
-    have hae : {ω | ∀ j ≤ n, X j ω = w' j} =ᵐ[μ]
-        {ω | ∀ t : Fin n, Y (visitCell w' t.val) ω ∈ ({w' (t.val + 1)} : Set α)} := by
-      rw [Filter.eventuallyEqSet_iff]
-      filter_upwards [h0, hY] with ω hω hYω
-      simp only [Set.mem_singleton_iff]
-      rw [eqOn_iff_visitCell_of_apply_visitCell_eq_succ (s := fun a k => Y (a, k) ω) hYω w' n]
-      exact ⟨fun h t => h.2 t.val t.isLt,
-        fun h => ⟨by rw [hω, hw0, hstart], fun j hj => h ⟨j, hj⟩⟩⟩
-    rw [measure_congr hae,
-      hrow.measure_setOf_forall_mem_eq_lintegral_prod hlam
-        (c := fun t : Fin n => visitCell w' t.val)
-        (fun s t hst => Fin.val_injective ((visitCell_injective w') hst))
-        (B := fun t : Fin n => ({w' (t.val + 1)} : Set α))
-        fun t => measurableSet_singleton _]
-    refine lintegral_congr fun ω => ?_
-    rw [hdirac, one_mul]
-    refine Finset.prod_congr rfl fun t _ => ?_
-    rw [ProbabilityMeasure.map_apply' (lam ω) (measurable_pi_apply (w t.castSucc)).aemeasurable
-      (measurableSet_singleton (w t.succ)), ← hwc t, ← hws t, visitCell_def]
-    rfl
+    exact measure_setOf_forall_le_eq_lintegral_of_start h0 hY hrow hlam w w' hw0 hwc hws hstart
   · -- A path with the wrong initial state is null, and so is its Dirac weight.
     have hnull : μ {ω | ∀ j ≤ n, X j ω = w' j} = 0 := by
       refine measure_mono_null ?_ (ae_iff.1 h0)
