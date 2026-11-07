@@ -25,7 +25,9 @@ it: `λ c ∈ Λ_{s c}`. This file proves that the **period one-form** `∑ⱼ �
 values of `F` is closed, that is, the derivative of `λ` is symmetric with respect to the dot product
 (`TauCeti.SmoothTwoForm.IsSymplectic.fderiv_dotProduct_comm_of_mem_hamiltonianFlowStabilizer`).
 This comes from differentiating `λ(c) • s(c) = s(c)` and using that the derivative of the action of
-a period `λ(c)` at the fixed point `s(c)` is a linear symplectic map.
+a period `λ(c)` at the fixed point `s(c)` is a linear symplectic map
+(`eval₂_mfderiv_hamiltonianFlowAction_of_mem_hamiltonianFlowStabilizer`, in the namespace
+`TauCeti.SmoothTwoForm.IsSymplectic`).
 
 By the Poincaré lemma for one-forms on convex sets
 (`Convex.exists_forall_hasFDerivAt_of_fderiv_symmetric`), a period family on a convex open set
@@ -50,8 +52,6 @@ treated here.
 
 All in the namespace `TauCeti.SmoothTwoForm.IsSymplectic`:
 
-* `eval₂_mfderiv_hamiltonianFlowAction_of_mem_hamiltonianFlowStabilizer`: the derivative of the
-  action of a period of `y` at `y` is a linear symplectic map of `T_y M`.
 * `fderiv_dotProduct_comm_of_mem_hamiltonianFlowStabilizer`: the period one-forms are closed.
 * `exists_forall_hasFDerivAt_of_mem_hamiltonianFlowStabilizer`: on a convex open set, a period
   family has an action function.
@@ -90,25 +90,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   {s : (ι → ℝ) → M} {p : (ι → ℝ) → ι → ℝ} {c : ι → ℝ}
 
 include hσ hF hcomm hc
-
-/-- **The linearized return map of a period is symplectic.** If `v` is a period of `y`, the action
-of `v` fixes `y`, and its derivative at `y` is a linear symplectic map of `T_y M`. -/
-theorem eval₂_mfderiv_hamiltonianFlowAction_of_mem_hamiltonianFlowStabilizer {y : M}
-    {v : ι → ℝ} (hv : v ∈ hσ.hamiltonianFlowStabilizer hF hcomm hc y) (a b : TangentSpace I y) :
-    SmoothBundleForm.eval₂ σ y
-        (mfderiv I I (hσ.hamiltonianFlowAction hF hcomm hc v).toMul y a)
-        (mfderiv I I (hσ.hamiltonianFlowAction hF hcomm hc v).toMul y b) =
-      SmoothBundleForm.eval₂ σ y a b := by
-  have hφ := SmoothForm.eval₂_mpullback _ (hσ.hamiltonianFlowAction hF hcomm hc v).toMul.contMDiff
-    σ y a b
-  rw [hσ.mpullback_hamiltonianFlowAction] at hφ
-  rw [hφ]
-  -- The derivative lands in `T_{v • y} M`, which is `T_y M` since `v • y = y`.
-  have key : ∀ z, z = y → ∀ a' b' : E,
-      SmoothBundleForm.eval₂ σ z a' b' = SmoothBundleForm.eval₂ σ y a' b' := by
-    rintro _ rfl _ _
-    rfl
-  exact (key _ ((hσ.mem_hamiltonianFlowStabilizer hF hcomm hc).1 hv) _ _).symm
 
 /-- Differentiating `λ(c) • s(c) = s(c)`: the derivative `P` of the action of `λ(c)` at `s(c)`
 satisfies `P (ds u) = ds u - ∑ᵢ (Dλ u)ᵢ X_{Fᵢ}(s c)`. -/
