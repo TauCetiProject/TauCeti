@@ -55,6 +55,14 @@ point `y`, then by the mean value inequality applied to their difference they st
 `2 ε ‖x - y‖` of each other (`Convex.norm_sub_le_of_norm_hasFDerivWithin_sub_le`).
 This compares a map to a model agreeing with it to first order before splicing them together
 (`TauCeti.Analysis.Calculus.Splice`).
+
+## Invariance along a direction
+
+Over `ℝ` or `ℂ`, a map whose derivative kills a vector `v` at every point `z + t • v` with
+`‖t‖ ≤ 1` takes the same value at `z` and `z + v`
+(`TauCeti.apply_add_eq_of_fderiv_apply_eq_zero`). Unlike Mathlib's
+`Convex.is_const_of_fderivWithin_eq_zero`, only the derivative in the direction `v` is assumed to
+vanish, so the map need not be constant near the segment.
 -/
 
 public section
@@ -199,6 +207,33 @@ theorem norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivAt {F : Type*} [NormedAddCom
   calc ‖u b - u a‖ ≤ D * (a / 2) ^ (β - 1) * |b - a| := hmv
     _ ≤ D * (2 * a ^ (β - 1)) * |b - a| := by gcongr
     _ = _ := by ring
+
+section Direction
+
+variable {𝕂 : Type*} [RCLike 𝕂] {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕂 F]
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕂 G]
+
+/-- If `g` is differentiable at every point `z + t • v` with `‖t‖ ≤ 1` and its derivative kills `v`
+there, then `g` takes the same value at `z` and at `z + v`. -/
+theorem apply_add_eq_of_fderiv_apply_eq_zero {g : F → G} {z v : F}
+    (hg : ∀ t : 𝕂, ‖t‖ ≤ 1 → DifferentiableAt 𝕂 g (z + t • v))
+    (hv : ∀ t : 𝕂, ‖t‖ ≤ 1 → fderiv 𝕂 g (z + t • v) v = 0) : g (z + v) = g z := by
+  -- The restriction of `g` to the line through `z` in direction `v` has zero derivative on the
+  -- closed unit disc, which is convex and contains `0` and `1`.
+  have hq : ∀ t ∈ Metric.closedBall (0 : 𝕂) 1, HasFDerivWithinAt (fun t : 𝕂 ↦ g (z + t • v))
+      ((fderiv 𝕂 g (z + t • v)).comp ((ContinuousLinearMap.id 𝕂 𝕂).smulRight v))
+      (Metric.closedBall 0 1) t := fun t ht ↦
+    ((hg t (by simpa using ht)).hasFDerivAt.comp t
+      ((hasFDerivAt_id t).smul_const v |>.const_add z)).hasFDerivWithinAt
+  have h := (convex_closedBall (0 : 𝕂) 1).norm_image_sub_le_of_norm_hasFDerivWithin_le hq
+    (C := 0) (fun t ht ↦ by
+      rw [norm_le_zero_iff]
+      ext
+      simp [hv t (by simpa using ht)])
+    (Metric.mem_closedBall_self zero_le_one) (show (1 : 𝕂) ∈ Metric.closedBall 0 1 by simp)
+  simpa [sub_eq_zero] using h
+
+end Direction
 
 end TauCeti
 

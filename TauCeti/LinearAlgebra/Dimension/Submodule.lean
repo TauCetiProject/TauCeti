@@ -28,8 +28,9 @@ The rank of a product `V.prod W` of free submodules is the sum of their ranks ov
 semiring satisfying the strong rank condition. Consequently, the rank of a product map
 `f.prodMap g` with free ranges is the sum of the ranks of `f` and `g`. The dimension of the range
 of a linear map is unchanged by composing on the left with an injective map and on the right with a
-surjective one. Conjugating an endomorphism by a linear equivalence preserves the dimension of its
-kernel.
+surjective one, and composing on the left with a map that does not lower the dimension of the range
+does not enlarge the kernel. Conjugating an endomorphism by a linear equivalence preserves the
+dimension of its kernel.
 -/
 
 public section
@@ -175,6 +176,17 @@ theorem finrank_range_comp_comp {V : Type*} [AddCommMonoid V] [Module 𝕜 V] (A
     finrank 𝕜 (range (A ∘ₗ L ∘ₗ B)) = finrank 𝕜 (range L) := by
   rw [range_comp, range_comp_of_range_eq_top _ (range_eq_top.2 hB)]
   exact (Submodule.equivMapOfInjective _ hA _).finrank_eq.symm
+
+/-- If composing `A` on the left with `P` does not lower the dimension of its range, then it does
+not enlarge its kernel: `ker (P ∘ A) = ker A`. -/
+theorem ker_comp_eq_of_finrank_range_le {K V V₂ V₃ : Type*} [DivisionRing K] [AddCommGroup V]
+    [Module K V] [AddCommGroup V₂] [Module K V₂] [AddCommGroup V₃] [Module K V₃]
+    [FiniteDimensional K V] (A : V →ₗ[K] V₂) (P : V₂ →ₗ[K] V₃)
+    (h : finrank K (range A) ≤ finrank K (range (P ∘ₗ A))) : ker (P ∘ₗ A) = ker A := by
+  refine (Submodule.eq_of_le_of_finrank_le (ker_le_ker_comp A P) ?_).symm
+  have hA := A.finrank_range_add_finrank_ker
+  have hPA := (P ∘ₗ A).finrank_range_add_finrank_ker
+  omega
 
 end LinearMap
 
