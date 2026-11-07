@@ -68,10 +68,7 @@ def zigzagAffineE8Coloring : zigzagAffineE8Graph.Coloring Bool :=
     zigzagAffineE8Coloring i = decide ((i : ℕ) ∈ [1, 2, 4, 6, 8]) := by
   simp [zigzagAffineE8Coloring, SimpleGraph.Coloring.mk]
 
-/-- The neighbors of a vertex in a finite graph form a finite type. -/
-noncomputable local instance zigzagNeighborSetFintype {V : Type*} [Finite V]
-    (G : SimpleGraph V) (i : V) :
-    Fintype (G.neighborSet i) := Fintype.ofFinite _
+attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite
 
 /-! ### The three signed preprojective presentations -/
 

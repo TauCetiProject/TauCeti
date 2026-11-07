@@ -48,10 +48,7 @@ open _root_.Quiver PathAlgebra DoubledQuiver
 
 universe u w
 
-/-- Neighbor sets in a graph on a finite vertex type are finite. -/
-noncomputable local instance inducedSubgraphNeighborSetFintype
-    {V : Type u} [Finite V] (G : SimpleGraph V) (v : V) : Fintype (G.neighborSet v) :=
-  Fintype.ofFinite _
+attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite
 
 section PathAlgebra
 

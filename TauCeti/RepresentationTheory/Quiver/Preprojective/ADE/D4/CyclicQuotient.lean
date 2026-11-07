@@ -37,7 +37,7 @@ namespace TauCeti
 
 open PathAlgebra DoubledQuiver
 
-attribute [local instance] d4NeighborSetFintype
+attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite
 
 variable (k : Type*)
 
@@ -101,7 +101,8 @@ private theorem d4Path_mem_commutatorSubmodule (h2 : IsUnit (2 : k))
         0 < x.2.2.length → signlessPreprojectiveMk k _ (ofPath x) ∈
           commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) := by
     rintro G rfl inst
-    have hi : inst = forkNeighborSetFintype (diagramGraph (DynkinType.D 4).cartanMatrix) :=
+    have hi : inst =
+        SimpleGraph.neighborSetFintypeOfFinite (diagramGraph (DynkinType.D 4).cartanMatrix) :=
       Subsingleton.elim _ _
     cases hi
     exact signlessPreprojectiveMk_D_ofPath_mem_commutatorSubmodule k h2
