@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.Basic
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Turning
+import TauCeti.Analysis.Complex.Angle
+import TauCeti.Analysis.Complex.PlaneSeparation.Segment
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.ClosedEdge
 import TauCeti.Data.Fin.Basic
@@ -241,31 +243,6 @@ theorem im_exp_neg_mul_schwarzChristoffelVertex_sub_pos_of_short_turn
     simpa only [u, hVk, hVksucc] using hkpos
   · exact Finset.nonempty_Ico.mpr hij
 
-/-- Rotating a real multiple of `exp (θ I)` by `exp (-θ I)` gives a real number. -/
-private lemma im_exp_neg_mul_mul_ofReal_mul_exp (θ r : ℝ) :
-    (Complex.exp (-θ * Complex.I) * ((r : ℂ) * Complex.exp (θ * Complex.I))).im = 0 := by
-  rw [mul_left_comm, ← Complex.exp_add, neg_mul, neg_add_cancel, Complex.exp_zero, mul_one,
-    Complex.ofReal_im]
-
-/-- The imaginary part of a rotated real scalar multiple scales by that scalar. -/
-private lemma im_mul_real_smul (u w : ℂ) (c : ℝ) : (u * (c • w)).im = c * (u * w).im := by
-  rw [mul_smul_comm, Complex.smul_im, smul_eq_mul]
-
-/-- A point on a later side lies strictly on the positive side of the line through an earlier side,
-when the rotated first side is real, the intermediate chord is strictly positive and the later
-side is nonnegative. -/
-private lemma im_mul_lineMap_sub_pos (u Vi Vi' Vj Vj' : ℂ) (s t : ℝ) (ht : 0 ≤ t)
-    (hfirst : (u * (Vi' - Vi)).im = 0) (hmiddle : 0 < (u * (Vj - Vi')).im)
-    (hlast : 0 ≤ (u * (Vj' - Vj)).im) :
-    0 < (u * (AffineMap.lineMap Vj Vj' t - AffineMap.lineMap Vi Vi' s)).im := by
-  have hdecomp : AffineMap.lineMap Vj Vj' t - AffineMap.lineMap Vi Vi' s =
-      (1 - s) • (Vi' - Vi) + (Vj - Vi') + t • (Vj' - Vj) := by
-    simp only [AffineMap.lineMap_apply_module']
-    module
-  rw [hdecomp, mul_add, mul_add, Complex.add_im, Complex.add_im, im_mul_real_smul,
-    im_mul_real_smul, hfirst, mul_zero, zero_add]
-  exact add_pos_of_pos_of_nonneg hmiddle (mul_nonneg ht hlast)
-
 /-- Two nonadjacent bounded sides of a Schwarz--Christoffel polygon are disjoint when their edge
 angles are strictly ordered along the intervening chain and the directions from the first through
 the last side turn through less than `π`.  The index condition excludes adjacent sides and the
@@ -306,7 +283,7 @@ theorem disjoint_schwarzChristoffelPolygon_edgeSet_of_short_turn
     rw [schwarzChristoffelVertex_succ_sub_eq_norm_mul a e z₀ ha i
       (hfinite _ ⟨le_rfl, Fin.mk_le_mk.mpr (by omega)⟩)
       (hfinite _ ⟨Fin.mk_le_mk.mpr (by omega), Fin.mk_le_mk.mpr (by omega)⟩)]
-    exact im_exp_neg_mul_mul_ofReal_mul_exp _ _
+    exact Complex.im_exp_neg_mul_mul_ofReal_mul_exp _ _
   have hlast : 0 ≤ (u * (Vj' - Vj)).im := by
     have hij' : i < j := Fin.mk_lt_mk.mpr (by omega)
     have hmemi : i.castSucc ∈ Icc i.castSucc j.castSucc := by
