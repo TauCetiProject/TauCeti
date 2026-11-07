@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Polynomial.Conjugation
 public import TauCeti.Analysis.Analytic.Laurent.Conjugation
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Normed.Module.Connected
-import TauCeti.Analysis.Polynomial.Puiseux.Nonmonic.Conjugation
 
 /-!
 # Global conjugation symmetry of nonmonic root differences
@@ -126,7 +125,8 @@ theorem exists_analyticOnNhd_nonmonic_root_sub_eq_zpow_mul_unit_conj
     (fun b hb ↦ by simpa only [q, κ, map_pow] using hconj _ (hq hb))
     ⟨(x₀, t₀), x₀.2, t₀.2⟩
   have hgfull (i : Fin d) : EqOn (g (σ i)) (fun b ↦ conj (g i (κ b))) T :=
-    eqOn_conj_extension (τ := τ) hg hσ hκ hκT hκS i
+    TauCeti.eqOn_conj_extension (τ := τ) (fun i ↦ (hg i).1.continuousOn) (fun i ↦ (hg i).2) hσ
+      hκ hκT hκS i
   -- Compare Laurent forms at x₀ and τ x₀. Neither parameter must be fixed by τ.
   have heq (i j : Fin d) (hij : i ≠ j) (b : E × ℂ) (hb : b ∈ S) :
       b.2 ^ e (σ i) (σ j) (σ.injective.ne hij) * w (σ i) (σ j) (σ.injective.ne hij) b =
