@@ -46,15 +46,6 @@ public section
 
 variable {α ι : Type*} [Fintype ι] {U : ι → Set α} {m : ι → ℕ} {n : ℕ}
 
-namespace TauCeti
-
-/-- A sigma type of finite sets whose cardinalities add up to `n` is equivalent to `Fin n`. -/
-theorem nonempty_sigmaFinEquiv (hn : ∑ i, m i = n) :
-    Nonempty ((Σ i, Fin (m i)) ≃ Fin n) :=
-  ⟨Fintype.equivFinOfCardEq (by simpa using hn)⟩
-
-end TauCeti
-
 namespace Sym
 
 /-! ### Ordered tuples and multiplicities -/

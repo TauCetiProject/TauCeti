@@ -39,9 +39,7 @@ orbits of the permutation action, by `Sym.ofFn_eq_ofFn_iff`. Nothing here is top
 * `Sym.count_coe_ofFn`: the multiplicity of a value in an unordered tuple is the number of entries
   of the ordered tuple taking that value.
 * `Sym.sum_single_eq_sum_single_iff`: two ordered tuples have the same letter counts
-  `∑ₜ single (f t) 1` exactly when they have the same underlying unordered tuple, and
-  `Finsupp.exists_sum_single_eq_iff`: the letter counts of ordered `n`-tuples are exactly the
-  exponent vectors of total degree `n`.
+  `∑ₜ single (f t) 1` exactly when they have the same underlying unordered tuple.
 * `Sym.basepointDivisor` is the set of unordered tuples containing a fixed point;
   `Sym.range_cons` identifies it with the range of adjoining that point.
 * `TauCeti.symFinTwoEquiv`: an unordered `d`-tuple over `Fin 2` is determined by how many of its
@@ -188,27 +186,6 @@ theorem range_cons (a : α) :
     fun hs => (Sym.exists_cons_of_mem hs).imp fun _ => Eq.symm⟩
 
 end Sym
-
-namespace Finsupp
-
-variable {α : Type*} {n : ℕ}
-
-/-- The letter counts of ordered `n`-tuples are exactly the exponent vectors of total degree
-`n`. -/
-theorem exists_sum_single_eq_iff (l : α →₀ ℕ) :
-    (∃ f : Fin n → α, ∑ t, single (f t) 1 = l) ↔ (l.sum fun _ k => k) = n := by
-  classical
-  refine ⟨?_, fun hl => ?_⟩
-  · rintro ⟨f, rfl⟩
-    rw [← sum_finsetSum_index (fun _ => rfl) fun _ _ _ => rfl]
-    simp
-  · obtain ⟨f, hf⟩ := Sym.ofFn_surjective (α := α) (n := n)
-      ⟨toMultiset l, by rw [card_toMultiset]; exact hl⟩
-    refine ⟨f, ext fun a => ?_⟩
-    simpa only [Sym.count_coe_ofFn, sum_single_one_apply, Sym.coe_mk, count_toMultiset]
-      using congrArg (fun s : Sym α n => Multiset.count a (s : Multiset α)) hf
-
-end Finsupp
 
 namespace TauCeti
 

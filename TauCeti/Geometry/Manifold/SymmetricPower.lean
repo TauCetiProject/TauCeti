@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.ChartedSpace
 public import TauCeti.Analysis.Polynomial.SymmetricPower
 public import TauCeti.Topology.OpenPartialHomeomorph.Constructions
 public import TauCeti.Topology.Sym.Family
+import TauCeti.Data.Fin.Sum
 
 /-!
 # A charted-space structure on a symmetric power

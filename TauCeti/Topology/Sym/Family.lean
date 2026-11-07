@@ -8,6 +8,7 @@ module
 public import TauCeti.Data.Sym.Family
 public import TauCeti.Topology.PiCurry
 public import TauCeti.Topology.Sym.Basic
+import TauCeti.Data.Fin.Sum
 
 /-!
 # The symmetric power is locally a product, along a family

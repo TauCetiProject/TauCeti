@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
 public import TauCeti.Geometry.Manifold.SymmetricPower.Manifold
 import TauCeti.Analysis.Polynomial.SymmetricPower.Cons
+import TauCeti.Data.Fin.Sum
 import TauCeti.Geometry.Manifold.Immersion.Differential
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 import TauCeti.Topology.Algebra.Module.Equiv.Pi
