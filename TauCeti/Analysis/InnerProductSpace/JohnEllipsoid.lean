@@ -16,8 +16,6 @@ public import TauCeti.Topology.Algebra.Module.Determinant
 
 import Mathlib.Analysis.InnerProductSpace.Trace
 import Mathlib.Analysis.LocallyConvex.Separation
-import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
-import Mathlib.Topology.Algebra.Polynomial
 import TauCeti.Analysis.Convex.Caratheodory
 import TauCeti.Analysis.InnerProductSpace.Contraction
 
@@ -247,78 +245,6 @@ open scoped InnerProductSpace
 variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 E] {T : E ≃L[𝕜] F}
 
-/-- A second-order lower bound for `‖det (1 - δ H)‖` on `0 ≤ δ ≤ 1`, from the expansion
-`det (1 + r M) = 1 + r trace M + O(r²)` of `Matrix.det_one_add_smul`. -/
-private theorem exists_le_norm_det_id_sub_smul (H : E →L[𝕜] E) :
-    ∃ P : ℝ, ∀ δ ∈ Icc (0 : ℝ) 1,
-      1 - δ * re (LinearMap.trace 𝕜 E H) - P * δ ^ 2 ≤
-        ‖(ContinuousLinearMap.id 𝕜 E - (δ : 𝕜) • H).det‖ := by
-  classical
-  let b := Module.finBasis 𝕜 E
-  set M := LinearMap.toMatrix b b (H : E →ₗ[𝕜] E)
-  set q := (Matrix.det (1 + (Polynomial.X : Polynomial 𝕜) • M.map Polynomial.C)).divX.divX
-  obtain ⟨P, hP⟩ := (isCompact_Icc (a := (-1 : ℝ)) (b := 0)).exists_bound_of_continuousOn
-    ((q.continuous.comp RCLike.continuous_ofReal).continuousOn)
-  refine ⟨P, fun δ hδ ↦ ?_⟩
-  have hM : LinearMap.toMatrix b b
-      ((ContinuousLinearMap.id 𝕜 E - (δ : 𝕜) • H : E →L[𝕜] E) : E →ₗ[𝕜] E) =
-        1 + (-(δ : 𝕜)) • M := by
-    simp [M, sub_eq_add_neg]
-  have hdet : (ContinuousLinearMap.id 𝕜 E - (δ : 𝕜) • H).det =
-      1 + LinearMap.trace 𝕜 E H * (-(δ : 𝕜)) + q.eval (-(δ : 𝕜)) * ((δ ^ 2 : ℝ) : 𝕜) := by
-    rw [ContinuousLinearMap.det, ← LinearMap.det_toMatrix b, hM, Matrix.det_one_add_smul,
-      LinearMap.trace_eq_matrix_trace 𝕜 b]
-    push_cast
-    ring
-  have hq : ‖q.eval (-(δ : 𝕜))‖ ≤ P := by
-    have := hP (-δ) ⟨neg_le_neg hδ.2, neg_nonpos.2 hδ.1⟩
-    simpa only [Function.comp_apply, ofReal_neg] using this
-  have hre : -(P * δ ^ 2) ≤ re (q.eval (-(δ : 𝕜)) * ((δ ^ 2 : ℝ) : 𝕜)) := by
-    rw [mul_comm (q.eval _), re_ofReal_mul]
-    nlinarith [abs_le.1 ((abs_re_le_norm _).trans hq), sq_nonneg δ]
-  have htr : re (LinearMap.trace 𝕜 E H * (-(δ : 𝕜))) = -δ * re (LinearMap.trace 𝕜 E H) := by
-    rw [mul_comm, ← ofReal_neg, re_ofReal_mul]
-  calc 1 - δ * re (LinearMap.trace 𝕜 E H) - P * δ ^ 2
-      ≤ re ((ContinuousLinearMap.id 𝕜 E - (δ : 𝕜) • H).det) := by
-        rw [hdet, AddMonoidHom.map_add re, AddMonoidHom.map_add re, htr, one_re]
-        linarith
-    _ ≤ ‖(ContinuousLinearMap.id 𝕜 E - (δ : 𝕜) • H).det‖ := re_le_norm _
-
-omit [FiniteDimensional 𝕜 E] in
-/-- The perturbation estimate behind John's theorem: if a contraction `S` has norm at most `1 - r`
-on the unit vectors `x` with `re ⟪x, H x⟫ ≤ s`, then `S ∘ (1 - δ H)` has norm at most
-`1 - δ s / 2` for small `δ > 0`. Near the remaining unit vectors `1 - δ H` itself shrinks the norm,
-since `‖x - δ H x‖² = 1 - 2 δ re ⟪x, H x⟫ + δ² ‖H x‖²`. -/
-private theorem norm_comp_id_sub_smul_le {S : E →L[𝕜] F} (hS : ‖S‖ ≤ 1) (H : E →L[𝕜] E)
-    {s r δ : ℝ} (hδ : 0 < δ) (hc : 0 < 1 - δ * (s / 2))
-    (hr : ∀ x, ‖x‖ = 1 → re ⟪x, H x⟫_𝕜 ≤ s → ‖S x‖ ≤ 1 - r)
-    (h₁ : δ * ‖H‖ ^ 2 < s) (h₂ : δ * (‖H‖ + s / 2) < r) :
-    ‖S.comp (ContinuousLinearMap.id 𝕜 E - (δ : 𝕜) • H)‖ ≤ 1 - δ * (s / 2) := by
-  refine ContinuousLinearMap.opNorm_le_of_unit_norm hc.le fun x hx ↦ ?_
-  have hHx : ‖H x‖ ≤ ‖H‖ := by simpa [hx] using H.le_opNorm x
-  rw [ContinuousLinearMap.comp_apply, _root_.sub_apply, ContinuousLinearMap.id_apply,
-    _root_.smul_apply]
-  by_cases hxs : re ⟪x, H x⟫_𝕜 ≤ s
-  · have hSHx : ‖S (H x)‖ ≤ ‖H‖ := by
-      simpa using (S.le_of_opNorm_le hS (H x)).trans (by simpa using hHx)
-    calc ‖S (x - (δ : 𝕜) • H x)‖ = ‖S x - (δ : 𝕜) • S (H x)‖ := by simp
-      _ ≤ ‖S x‖ + δ * ‖S (H x)‖ := by
-        refine (norm_sub_le _ _).trans ?_
-        rw [norm_smul, norm_ofReal, abs_of_pos hδ]
-      _ ≤ (1 - r) + δ * ‖H‖ := by gcongr; exact hr x hx hxs
-      _ ≤ 1 - δ * (s / 2) := by nlinarith
-  · rw [not_le] at hxs
-    have hsq : ‖x - (δ : 𝕜) • H x‖ ^ 2 ≤ (1 - δ * (s / 2)) ^ 2 := by
-      rw [norm_sub_sq (𝕜 := 𝕜), inner_smul_right, re_ofReal_mul, norm_smul, norm_ofReal,
-        abs_of_pos hδ, hx, mul_pow]
-      have : δ ^ 2 * ‖H x‖ ^ 2 ≤ δ ^ 2 * ‖H‖ ^ 2 := by gcongr
-      have h₃ : δ * s < δ * re ⟪x, H x⟫_𝕜 := mul_lt_mul_of_pos_left hxs hδ
-      have h₄ : δ * (δ * ‖H‖ ^ 2) < δ * s := mul_lt_mul_of_pos_left h₁ hδ
-      nlinarith [sq_nonneg (δ * (s / 2))]
-    calc ‖S (x - (δ : 𝕜) • H x)‖ ≤ ‖x - (δ : 𝕜) • H x‖ := by
-          simpa using S.le_of_opNorm_le hS (x - (δ : 𝕜) • H x)
-      _ ≤ 1 - δ * (s / 2) := (pow_le_pow_iff_left₀ (norm_nonneg _) hc.le two_ne_zero).1 hsq
-
 /-- If a continuous function `φ` exceeds `s` at every contact point, then away from the contact
 points, where `φ ≤ s`, the norm `‖T x‖` of a unit vector is bounded by `1 - r` for some `r > 0`. -/
 private theorem exists_norm_apply_le_one_sub (hT : T.IsMaxVolumeEllipsoid) {φ : E → ℝ}
@@ -365,7 +291,7 @@ theorem exists_contact_re_inner_apply_nonpos [Nontrivial E] (hT : T.IsMaxVolumeE
   obtain ⟨r, hr, hrK⟩ := hT.exists_norm_apply_le_one_sub hφ (s := s) fun x hx hTx ↦ by
     have : φ v ≤ φ x := hvmin ⟨mem_sphere_zero_iff_norm.2 hx, hTx⟩
     linarith
-  obtain ⟨P, hP⟩ := exists_le_norm_det_id_sub_smul H
+  obtain ⟨P, hP⟩ := ContinuousLinearMap.exists_le_norm_det_id_sub_smul H
   -- Choose `δ > 0` small enough for all the estimates below.
   have hsmall (K L : ℝ) (hL : 0 < L) : ∀ᶠ δ in 𝓝[>] (0 : ℝ), δ * K < L :=
     nhdsWithin_le_nhds (((continuous_id.mul continuous_const).tendsto' 0 0
@@ -376,7 +302,7 @@ theorem exists_contact_re_inner_apply_nonpos [Nontrivial E] (hT : T.IsMaxVolumeE
   replace h₄ : δ < 1 := by simpa using h₄
   set c := 1 - δ * (s / 2) with hc_def
   have hc : 0 < c := by linarith
-  have hTA := norm_comp_id_sub_smul_le hT.norm_le_one H hδ hc hrK h₁ h₂
+  have hTA := (T : E →L[𝕜] F).norm_comp_id_sub_smul_le hT.norm_le_one H hδ hc hrK h₁ h₂
   -- Rescaling `T ∘ (1 - δ H)` by `c⁻¹` gives a contraction, whose volume ratio is
   -- `c⁻ⁿ ‖det (1 - δ H)‖ ≥ c⁻ⁿ (1 - P δ²) > c⁻ⁿ c ≥ 1`.
   have hS : ‖((c⁻¹ : ℝ) : 𝕜) •
