@@ -1,11 +1,12 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Codex
+Authors: Codex, The Tau Ceti contributors
 -/
 module
 
 public import Mathlib.Probability.Kernel.Composition.CompMap
+public import Mathlib.Probability.Kernel.Invariance
 
 /-!
 # Powers of s-finite, finite and Markov kernels
@@ -13,7 +14,9 @@ public import Mathlib.Probability.Kernel.Composition.CompMap
 Iterating an s-finite kernel remains s-finite; iterating a uniformly finite kernel remains
 uniformly finite. The latter permits taking finite transition masses, and thus nonnegative real
 transition matrices, for every iterate.
-Iterating a Markov kernel also preserves the probability normalization of every row.
+Iterating a Markov kernel also preserves the probability normalization of every row, and any
+measure invariant under a kernel remains invariant under all its powers, as well as under scalar
+multiples and binary sums.
 
 The powers of a deterministic kernel are the deterministic kernels of the iterates. Restricting
 the Chapman–Kolmogorov integral to one intermediate state bounds `(κ ^ (m + n)) x s` below by
@@ -22,6 +25,8 @@ along paths of states.
 -/
 
 public section
+
+open scoped ENNReal
 
 namespace ProbabilityTheory
 
@@ -60,6 +65,36 @@ variable {α : Type*} [MeasurableSpace α]
 
 /-- The unit of the monoid of kernels `Kernel α α` is the identity kernel. -/
 theorem one_def : (1 : Kernel α α) = Kernel.id := (rfl)
+
+/-- Every measure is invariant under the identity kernel. -/
+@[simp]
+theorem Invariant.id (μ : Measure α) : Kernel.id.Invariant μ :=
+  Measure.id_comp
+
+/-- A measure invariant under `κ` is invariant under every natural power `κ ^ n`. -/
+theorem Invariant.pow {κ : Kernel α α} {μ : Measure α} (h : κ.Invariant μ) (n : ℕ) :
+    (κ ^ n).Invariant μ := by
+  induction n with
+  | zero => simp [one_def]
+  | succ n ih =>
+    rw [pow_add, pow_one]
+    exact ih.comp h
+
+/-- The zero measure is invariant under every kernel. -/
+@[simp]
+theorem Invariant.zero (κ : Kernel α α) : κ.Invariant 0 :=
+  Measure.bind_zero_left κ
+
+/-- Scalar multiples of an invariant measure remain invariant. -/
+theorem Invariant.smul {κ : Kernel α α} {μ : Measure α} (h : κ.Invariant μ) (c : ℝ≥0∞) :
+    κ.Invariant (c • μ) := by
+  rw [Invariant, Measure.comp_smul, h.def]
+
+/-- The sum of two invariant measures is invariant. -/
+theorem Invariant.add {κ : Kernel α α} {μ ν : Measure α}
+    (hμ : κ.Invariant μ) (hν : κ.Invariant ν) :
+    κ.Invariant (μ + ν) := by
+  rw [Invariant, Measure.comp_add, hμ.def, hν.def]
 
 /-- A kernel intertwining two one-step kernels also intertwines all their powers. -/
 theorem comp_pow_eq_pow_comp_of_comp_eq {β : Type*} [MeasurableSpace β]

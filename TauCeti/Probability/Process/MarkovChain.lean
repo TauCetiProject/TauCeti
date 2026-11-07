@@ -74,6 +74,11 @@ along it, so no canonical sample space is imposed on users.
 * `MeasureTheory.Measure.eq_markovChainLaw` — for a finite initial measure `ν`, the path law is the
   only measure on path space with initial law `ν` satisfying the Markov recursion for its prefix
   laws.
+* `TauCeti.Probability.markovChainLaw_dirac_deterministic`,
+  `ProbabilityTheory.Kernel.markovChainKernel_deterministic`,
+  `TauCeti.Probability.markovChainLaw_deterministic` — for a deterministic kernel
+  `deterministic f hf`, the path law pushes the initial law forward along the orbit map
+  `a ↦ (n ↦ f^[n] a)`.
 * `TauCeti.Probability.hasLaw_markovChainLaw_iff` — a process on an arbitrary measure space has
   path law `markovChainLaw ν κ` exactly when it starts from `ν` and its prefix laws satisfy the
   Markov recursion.
@@ -479,6 +484,46 @@ theorem _root_.MeasureTheory.Measure.eq_markovChainLaw [IsFiniteMeasure ν]
     simp
   rw [hc]
   exact map_comp_eq_of_map_eq (by fun_prop) (by fun_prop) (hpre n).symm
+
+/-- Started at `a`, the Markov chain with deterministic transition kernel `deterministic f hf` is
+the point mass on the orbit `n ↦ f^[n] a`. -/
+@[simp]
+theorem markovChainLaw_dirac_deterministic {f : α → α} (hf : Measurable f) (a : α) :
+    markovChainLaw (Measure.dirac a) (Kernel.deterministic f hf) =
+      Measure.dirac (fun n => f^[n] a) := by
+  symm
+  refine Measure.eq_markovChainLaw (Measure.dirac a) (Kernel.deterministic f hf) ?_ fun n => ?_
+  · simp [Measure.map_dirac' (measurable_pi_apply 0)]
+  · have hcomap : (Kernel.deterministic f hf).comap
+        (fun w : Fin (n + 1) → α => w (Fin.last n)) (measurable_pi_apply (Fin.last n)) =
+        Kernel.deterministic (fun w : Fin (n + 1) → α => f (w (Fin.last n)))
+          (hf.comp (measurable_pi_apply (Fin.last n))) := by
+      ext1 w
+      simp [Kernel.comap_apply, Kernel.deterministic_apply]
+    have hpre : Measurable fun x : ℕ → α => fun i : Fin (n + 1) => x i.1 := by fun_prop
+    have hpair : Measurable fun x : ℕ → α => ((fun i : Fin (n + 1) => x i.1), x (n + 1)) :=
+      by fun_prop
+    have hstep_m : Measurable fun u : Fin (n + 1) → α => (u, f (u (Fin.last n))) := by fun_prop
+    rw [hcomap, Measure.compProd_deterministic, Measure.map_dirac' hpair, Measure.map_dirac' hpre,
+      Measure.map_dirac' hstep_m, Fin.val_last, Function.iterate_succ_apply']
+
+/-- The path-law kernel of `deterministic f hf` is the deterministic kernel sending each starting
+state `a` to its orbit `n ↦ f^[n] a`. -/
+@[simp]
+theorem _root_.ProbabilityTheory.Kernel.markovChainKernel_deterministic
+    {f : α → α} (hf : Measurable f) :
+    (Kernel.deterministic f hf).markovChainKernel =
+      Kernel.deterministic (fun a n => f^[n] a) (measurable_pi_iff.2 fun n => hf.iterate n) := by
+  ext1 a
+  rw [Kernel.markovChainKernel_apply, markovChainLaw_dirac_deterministic,
+    Kernel.deterministic_apply]
+
+/-- For every initial measure `ν`, the Markov chain with deterministic transition kernel
+`deterministic f hf` is the pushforward of `ν` along the orbit map `a ↦ (n ↦ f^[n] a)`. -/
+theorem markovChainLaw_deterministic (ν : Measure α) {f : α → α} (hf : Measurable f) :
+    markovChainLaw ν (Kernel.deterministic f hf) = ν.map (fun a n => f^[n] a) := by
+  rw [Measure.markovChainLaw_eq_comp, Kernel.markovChainKernel_deterministic,
+    Measure.deterministic_comp_eq_map]
 
 section Process
 
