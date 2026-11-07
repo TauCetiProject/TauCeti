@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Morse.Generic.Relative
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Evaluation
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Strong
 import TauCeti.Algebra.Order.BigOperators.Sum.Telescoping
+import TauCeti.Algebra.Order.Group.Bounds
 import TauCeti.Analysis.SpecificLimits.HalfPowSucc
 import TauCeti.Geometry.Manifold.ContMDiffMap.CompactExhaustion
 import TauCeti.Geometry.Manifold.Exhaustion
@@ -25,8 +26,10 @@ neighbourhood `c.ball f` of `f` and every continuous positive tolerance `ε`, th
 function `g ∈ c.ball f` with `|g - f| < ε` everywhere; if `f` is already Morse on an open
 neighbourhood of a closed set `C`, then `g` can be chosen equal to `f` near `C`
 (`ContMDiffMap.exists_isMorse_mem_ball_sub_compl`). With `ε = 1` the approximation keeps a proper
-function proper (`ContMDiffMap.exists_isMorse_isProperMap_mem_ball`), and so every such manifold
-carries a proper Morse function bounded below (`TauCeti.exists_isMorse_isProperMap_bddBelow`).
+function proper, with no separate sigma-compactness hypothesis needed because a proper map into
+`ℝ` already makes `M` sigma-compact (`ContMDiffMap.exists_isMorse_isProperMap_mem_ball`), and so
+every boundaryless finite-dimensional Hausdorff sigma-compact manifold carries a proper Morse
+function bounded below (`TauCeti.exists_isMorse_isProperMap_bddBelow`).
 
 The proof runs the relative compact approximation
 `ContMDiffMap.exists_isMorseOn_hasCompactSupport_sub_compl` along a compact exhaustion
@@ -305,8 +308,7 @@ theorem exists_isMorse_isProperMap_bddBelow [SigmaCompactSpace M] :
   obtain ⟨g, -, hgm, hgp, hgf, -⟩ :=
     f.exists_isMorse_isProperMap_mem_ball ContMDiffMap.StrongCkControl.empty hf
       isClosed_empty isOpen_empty (subset_refl _) isMorseOn_empty
-  refine ⟨g, hgm, hgp, ⟨-1, ?_⟩⟩
-  rintro _ ⟨x, rfl⟩
-  linarith [(abs_lt.mp (hgf x)).1, hf₀ x]
+  exact ⟨g, hgm, hgp,
+    BddBelow.range_of_abs_sub_le ⟨0, forall_mem_range.2 hf₀⟩ fun x ↦ (hgf x).le⟩
 
 end TauCeti
