@@ -117,13 +117,9 @@ theorem exists_holderOnWith_iteratedFDeriv_two_planarNewtonianKernel_convolution
   obtain ⟨hHS, hDS⟩ := hC (hχ.mul hu) hcχ.mul_right hcutN hΔ
   have hEq (x : ℂ) (hx : x ∈ closedBall c R) :
       iteratedFDeriv ℝ 2 (fun y ↦ χ y * u y) x = iteratedFDeriv ℝ 2 u x := by
-    have hb : χ =ᶠ[𝓝 x] 1 := b.eventuallyEq_one_of_mem_ball
+    exact (b.eventuallyEq_one_of_mem_ball
       (by exact lt_of_le_of_lt (mem_closedBall.mp hx) (by dsimp [b]; linarith))
-    have hxu : (fun y ↦ χ y * u y) =ᶠ[𝓝 x] u := by
-      filter_upwards [hb] with y hy
-      simp only [Pi.one_apply] at hy
-      rw [hy, one_mul]
-    exact (hxu.iteratedFDeriv ℝ 2).eq_of_nhds
+      ).iteratedFDeriv_mul_eq
   have hconst : C * (A * (H + M) + C₀ * J * M) ≤
       C * (A + C₀ * J) * (H + M) := by
     calc
