@@ -40,17 +40,6 @@ variable {X : Scheme.{u}} [IsIntegral X] [IsNoetherian X]
 
 noncomputable section
 
-omit [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))] in
-/-- If `f` is a local equation of `D` on `V`, then the coefficient of the Weil divisor of `D` at a
-codimension-one point of `V` is the order of `f` there. -/
-private lemma coeff_toWeilDivisor_eq_ord (D : CartierDivisor X) (y : CodimensionOnePoint X)
-    {V : X.Opens} [Nonempty V] (hyV : (y : X) ∈ V) (f : X.functionFieldˣ)
-    (hV : rationalUnitClass X V (Additive.ofMul f) = D |_ V) :
-    WeilDivisor.coeff D.toWeilDivisor y = X.ord (f : X.functionField) y := by
-  rw [coeff_toWeilDivisor,
-    orderAt_eq_of_restrict_eq_rationalUnitClass D y V hyV (Additive.ofMul f) hV.symm]
-  simp
-
 /-- A section of the Cartier divisor sheaf of `D` over `U` satisfies the Weil condition. -/
 private lemma sections_subset_toWeilDivisor (D : CartierDivisor X) (U : X.Opens) :
     D.sections U ≤ SchemeWeilDivisor.sections D.toWeilDivisor U := by
