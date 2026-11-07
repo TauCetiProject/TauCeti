@@ -81,7 +81,6 @@ theorem exists_continuous_add_eq_smul_eqOn {d c : ℝ} (hd : 0 < d) (hc : c ≠ 
 
 variable (V) in
 /-- The continuous functions `g : ℝ → V` with `g (t + d) = c • g t`. -/
-@[expose]
 def twistedPeriodicContinuous (d c : ℝ) : Submodule ℝ C(ℝ, V) where
   carrier := {g | ∀ t, g (t + d) = c • g t}
   add_mem' {f g} hf hg t := by simp [hf t, hg t, smul_add]
@@ -95,7 +94,6 @@ theorem mem_twistedPeriodicContinuous {d c : ℝ} {g : C(ℝ, V)} :
 
 variable (V) in
 /-- The continuously differentiable functions `x : ℝ → V` with `x (t + d) = c • x t`. -/
-@[expose]
 def twistedPeriodicContDiff (d c : ℝ) : Submodule ℝ (ℝ → V) where
   carrier := {x | ContDiff ℝ 1 x ∧ ∀ t, x (t + d) = c • x t}
   add_mem' {x y} hx hy := ⟨hx.1.add hy.1, fun t => by simp [hx.2 t, hy.2 t, smul_add]⟩
