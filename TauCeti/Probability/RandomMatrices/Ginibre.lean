@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.MeasureTheory.Integral.Pi
 public import Mathlib.Probability.Distributions.Gaussian.Real
 public import TauCeti.Analysis.Matrix.MeasurableSpace
+public import TauCeti.Analysis.Matrix.Frobenius
 public import TauCeti.Probability.Distributions.Gaussian.ProperComplex.Modulus
 public import TauCeti.Probability.Distributions.Gaussian.ProperComplex.Moments
 public import TauCeti.Probability.Distributions.MatrixNormal.Basic
@@ -82,34 +83,6 @@ def ginibreReal (m n : ℕ) : Measure (Matrix (Fin m) (Fin n) ℝ) :=
 /-- The real Ginibre law is the standard matrix normal law. -/
 theorem ginibreReal_def (m n : ℕ) : ginibreReal m n = matrixNormalMeasure 0 1 1 :=
   (rfl)
-
-/-- The standard scalar proper complex Gaussian law, obtained as a coordinate of the proper
-complex Gaussian with unit covariance. -/
-def properComplexGaussianScalar : Measure ℂ :=
-  (properComplexGaussianMeasure (fun _ : Unit ↦ (0 : ℂ)) 1).map fun z ↦ z ()
-
-instance : IsProbabilityMeasure properComplexGaussianScalar := by
-  unfold properComplexGaussianScalar
-  infer_instance
-
-/-- The squared modulus of a standard scalar proper complex Gaussian is integrable. -/
-theorem integrable_norm_sq_properComplexGaussianScalar :
-    Integrable (fun z : ℂ ↦ ‖z‖ ^ 2) properComplexGaussianScalar := by
-  rw [properComplexGaussianScalar]
-  have hcont : Continuous (fun z : ℂ ↦ ‖z‖ ^ 2) := by fun_prop
-  apply (integrable_map_measure (f := fun z : Unit → ℂ ↦ z ())
-    (g := fun z : ℂ ↦ ‖z‖ ^ 2) hcont.aestronglyMeasurable
-    (measurable_pi_apply ()).aemeasurable).2
-  simpa [Function.comp_def] using integrable_norm_sq_sub_eval_properComplexGaussianMeasure
-    (fun _ : Unit ↦ (0 : ℂ)) 1 ()
-
-/-- The expected squared modulus of a standard scalar proper complex Gaussian is `1`. -/
-theorem integral_norm_sq_properComplexGaussianScalar :
-    ∫ z : ℂ, ‖z‖ ^ 2 ∂properComplexGaussianScalar = 1 := by
-  rw [properComplexGaussianScalar,
-    integral_map (measurable_pi_apply ()).aemeasurable (by fun_prop)]
-  simpa using integral_norm_sq_sub_eval_properComplexGaussianMeasure
-    (fun _ : Unit ↦ (0 : ℂ)) Matrix.PosSemidef.one ()
 
 /-- The complex Ginibre law on `m × n` matrices: a product of standard proper complex Gaussian
 entry laws, arranged as a matrix. -/
@@ -290,17 +263,6 @@ theorem iIndepFun_apply_ginibreComplex (m n : ℕ) :
       funext p
       rw [map_apply_ginibreComplex]
 
-/-- A standard scalar proper complex Gaussian has independent real and imaginary parts, each
-`N(0, 1/2)`. -/
-theorem map_re_im_properComplexGaussianScalar :
-    properComplexGaussianScalar.map (fun z ↦ (z.re, z.im)) =
-      (gaussianReal 0 (1 / 2)).prod (gaussianReal 0 (1 / 2)) := by
-  have h := map_re_im_sub_eval_properComplexGaussianMeasure
-    (fun _ : Unit ↦ (0 : ℂ)) (Matrix.PosSemidef.one : (1 : Matrix Unit Unit ℂ).PosSemidef) ()
-  rw [properComplexGaussianScalar,
-    Measure.map_map (by fun_prop) (by fun_prop)]
-  simpa [Function.comp_def, Matrix.one_apply_eq, Real.toNNReal_inv] using h
-
 /-- The real and imaginary parts of a complex Ginibre entry have their joint product Gaussian
 law. -/
 theorem map_re_im_apply_ginibreComplex (m n : ℕ) (i : Fin m) (j : Fin n) :
@@ -372,7 +334,7 @@ theorem integral_trace_re_gaussianGramComplex (m n : ℕ) :
         hscalar_int.aestronglyMeasurable, hscalar_val]
   have he : ∀ X : Matrix (Fin m) (Fin n) ℂ,
       (X * Xᴴ).trace.re = ∑ i, ∑ j, ‖X i j‖ ^ 2 := fun X ↦ by
-    simpa using re_trace_mul_conjTranspose_self X
+    simpa using X.re_trace_mul_conjTranspose_self
   have hreshape : Measurable
       (fun z : Fin m × Fin n → ℂ ↦ Matrix.of fun i j ↦ z (i, j)) :=
     (Matrix.ofMeasurableEquiv (Fin m) (Fin n) ℂ).measurable.comp measurable_curry
@@ -386,11 +348,18 @@ theorem integral_trace_re_gaussianGramComplex (m n : ℕ) :
   simp_rw [integral_finsetSum _ fun j _ ↦ hint _ j, hval]
   simp
 
+private theorem isClosed_posSemidef {𝕜 : Type*} [RCLike 𝕜] {m : Type*}
+    [Fintype m] [DecidableEq m] : IsClosed {A : Matrix m m 𝕜 | A.PosSemidef} := by
+  open scoped MatrixOrder in
+    simpa only [Matrix.nonneg_iff_posSemidef, id_eq] using
+      (isClosed_le (continuous_const : Continuous (fun _ : Matrix m m 𝕜 ↦ (0 : Matrix m m 𝕜)))
+        continuous_id)
+
 /-- The real Gaussian Gram law is supported on positive semidefinite matrices. -/
 theorem ae_posSemidef_gaussianGramReal (m n : ℕ) :
     ∀ᵐ A ∂(gaussianGramReal m n), A.PosSemidef := by
   rw [gaussianGramReal, ae_map_iff measurable_subtype_coe.aemeasurable
-      isClosed_setOfPred_posSemidef.measurableSet]
+      isClosed_posSemidef.measurableSet]
   exact ae_posSemidef_wishartGramMeasure n 1
 
 open scoped ComplexOrder in
@@ -398,7 +367,7 @@ open scoped ComplexOrder in
 theorem ae_posSemidef_gaussianGramComplex (m n : ℕ) :
     ∀ᵐ A ∂(gaussianGramComplex m n), A.PosSemidef := by
   rw [gaussianGramComplex, ae_map_iff measurable_matrix_mul_conjTranspose.aemeasurable
-      isClosed_setOfPred_posSemidef.measurableSet]
+      isClosed_posSemidef.measurableSet]
   exact Filter.Eventually.of_forall fun X ↦ posSemidef_self_mul_conjTranspose X
 
 end Probability

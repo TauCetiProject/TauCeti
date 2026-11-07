@@ -129,6 +129,21 @@ instance isProbabilityMeasure_properComplexGaussianMeasure (m : ι → ℂ) (C :
   rw [properComplexGaussianMeasure_def]
   infer_instance
 
+/-- The standard scalar proper complex Gaussian law, obtained as a coordinate of the proper
+complex Gaussian with unit covariance. -/
+def properComplexGaussianScalar : Measure ℂ :=
+  (properComplexGaussianMeasure (fun _ : Unit ↦ (0 : ℂ)) 1).map fun z ↦ z ()
+
+/-- The scalar law is the coordinate law of the one-dimensional proper complex Gaussian. -/
+theorem properComplexGaussianScalar_def :
+    properComplexGaussianScalar =
+      (properComplexGaussianMeasure (fun _ : Unit ↦ (0 : ℂ)) 1).map (fun z ↦ z ()) :=
+  (rfl)
+
+instance : IsProbabilityMeasure properComplexGaussianScalar := by
+  unfold properComplexGaussianScalar
+  infer_instance
+
 /-- A proper complex Gaussian is Gaussian when its carrier is regarded as a real vector
 space. This includes its invalid-covariance fallback. -/
 instance isGaussian_properComplexGaussianMeasure (m : ι → ℂ) (C : Matrix ι ι ℂ) :

@@ -83,6 +83,17 @@ theorem map_re_im_sub_eval_properComplexGaussianMeasure (m : ι → ℂ)
   rw [properComplexGaussianMeasure_def, Measure.map_map (by fun_prop) (by fun_prop)]
   simpa [μ, Function.comp_def, Complex.sub_re, Complex.sub_im] using hprod.map_eq
 
+/-- A standard scalar proper complex Gaussian has independent real and imaginary parts, each
+`N(0, 1/2)`. -/
+theorem map_re_im_properComplexGaussianScalar :
+    properComplexGaussianScalar.map (fun z ↦ (z.re, z.im)) =
+      (gaussianReal 0 (1 / 2)).prod (gaussianReal 0 (1 / 2)) := by
+  have h := map_re_im_sub_eval_properComplexGaussianMeasure
+    (fun _ : Unit ↦ (0 : ℂ)) (Matrix.PosSemidef.one : (1 : Matrix Unit Unit ℂ).PosSemidef) ()
+  rw [properComplexGaussianScalar_def,
+    Measure.map_map (by fun_prop) (by fun_prop)]
+  simpa [Function.comp_def, Matrix.one_apply_eq, Real.toNNReal_inv] using h
+
 /-- The centered real and imaginary coordinates, indexed by `Fin 2`, have the product
 Gaussian law with variance half the complex variance, including zero variance. -/
 @[simp]

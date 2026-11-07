@@ -95,13 +95,6 @@ theorem measurable_matrix_mul_conjTranspose {𝕜 : Type*} [RCLike 𝕜] [Measur
   exact Finset.measurable_sum _ fun k _ ↦
     measurable_id.eval_matrix.mul (continuous_star.measurable.comp measurable_id.eval_matrix)
 
-/-- The real part of the trace of `X * X.conjTranspose` is the sum of the squared entry norms. -/
-theorem re_trace_mul_conjTranspose_self {𝕜 : Type*} [RCLike 𝕜] {m n : Type*}
-    [Fintype m] [Fintype n] (X : Matrix m n 𝕜) :
-    RCLike.re (Matrix.trace (X * X.conjTranspose)) = ∑ i, ∑ j, ‖X i j‖ ^ 2 := by
-  simp [Matrix.trace, Matrix.diag, Matrix.mul_apply, Matrix.conjTranspose_apply,
-    RCLike.star_def, RCLike.mul_conj]
-
 /-- Square matrices inherit `MeasurableMul₂` from the measurability of matrix multiplication, which
 makes the generic `Measurable.mul` dot notation available for matrix-valued maps. -/
 instance {m R : Type*} [Fintype m] [MeasurableSpace R] [Mul R] [AddCommMonoid R]
