@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Combinatorics.SimpleGraph.Finite
 public import Mathlib.GroupTheory.GroupAction.Basic
+import Mathlib.Data.Fin.VecNotation
+import Mathlib.Tactic.FinCases
 
 /-!
 # Vertex degrees and graph actions
@@ -24,6 +26,8 @@ set is finite, without requiring a finite vertex set.
 * `SimpleGraph.degree_eq_of_pretransitive`: a pretransitive graph action preserves degrees.
 * `SimpleGraph.exists_adj_adj_ne_of_three_le_degree`: a vertex of degree at least three has two
   distinct neighbours, both different from any given vertex.
+* `SimpleGraph.exists_injective_adj_ne_of_three_le_degree`: the same, as an injective
+  `Fin 2`-indexed family.
 -/
 
 public section
@@ -43,6 +47,20 @@ theorem _root_.SimpleGraph.exists_adj_adj_ne_of_three_le_degree {V : Type*}
   obtain ⟨a, ha, b, hb, hab⟩ := Finset.one_lt_card.mp hcard
   rw [Finset.mem_erase, SimpleGraph.mem_neighborFinset] at ha hb
   exact ⟨a, b, ha.2, hb.2, hab, ha.1, hb.1⟩
+
+/-- **Two distinct neighbours of `v` other than a given vertex `x`, indexed by `Fin 2`, from a
+degree of at least three.** -/
+theorem _root_.SimpleGraph.exists_injective_adj_ne_of_three_le_degree {V : Type*}
+    {G : SimpleGraph V} {v : V} [Fintype (G.neighborSet v)] (hv : 3 ≤ G.degree v) (x : V) :
+    ∃ c : Fin 2 → V, Function.Injective c ∧ (∀ i, G.Adj v (c i)) ∧ ∀ i, c i ≠ x := by
+  obtain ⟨a, b, ha, hb, hab, hax, hbx⟩ := G.exists_adj_adj_ne_of_three_le_degree hv x
+  refine ⟨![a, b], ?_, ?_, ?_⟩
+  · intro i j hij
+    fin_cases i <;> fin_cases j <;> simp_all
+  · intro i
+    fin_cases i <;> simpa
+  · intro i
+    fin_cases i <;> simpa
 
 /-- A pretransitive action preserving adjacency gives equal degrees in a locally finite graph. -/
 theorem _root_.SimpleGraph.degree_eq_of_pretransitive

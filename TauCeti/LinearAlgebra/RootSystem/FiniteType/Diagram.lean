@@ -205,6 +205,14 @@ theorem card_edgeFinset_add_one_eq_card [Fintype B] [DecidableEq B] (h : IsFinit
     (diagramGraph A).edgeFinset.card + 1 = Fintype.card B :=
   (h.isTree_diagramGraph hconn).card_edgeFinset
 
+/-- In the diagram of a finite-type matrix, two distinct neighbours of a vertex are not adjacent.
+-/
+theorem not_adj_of_adj_of_adj (h : IsFiniteType A) {x a b : B}
+    (hxa : (diagramGraph A).Adj x a) (hxb : (diagramGraph A).Adj x b) (hab : a ≠ b) :
+    ¬(diagramGraph A).Adj a b := fun hadj ↦
+  (h.diagramGraph_adj_iff.mp hadj).2 (h.apply_eq_zero_of_apply_ne_zero hxa.ne hxb.ne hab
+    (h.diagramGraph_adj_iff.mp hxa).2 (h.diagramGraph_adj_iff.mp hxb).2)
+
 end IsFiniteType
 
 section RootPairing

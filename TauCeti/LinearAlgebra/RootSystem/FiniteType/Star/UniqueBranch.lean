@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.AffineD
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
+import TauCeti.Combinatorics.SimpleGraph.Degree
 
 /-!
 # A simply-laced finite-type diagram has at most one branch vertex
@@ -64,36 +65,6 @@ private lemma matrix_apply_eq_neg_one_iff_adj (h : IsFiniteType A) {i j : B} (hi
     · exact (hij' hij0).elim
     · exact hij1
 
-private lemma not_adj_getVert_of_adj_start {V : Type*} {G : SimpleGraph V} {u v x : V}
-    {p : G.Walk u v} (hG : G.IsAcyclic) (hp : p.IsPath) (hux : G.Adj u x)
-    (hx : x ≠ p.snd) {i : ℕ} (hi0 : 0 < i) (hi : i ≤ p.length) :
-    ¬G.Adj x (p.getVert i) := by
-  have hx_support : x ∉ p.support := fun hxmem ↦ hx (hG.eq_snd_of_adj_start hp hux hxmem)
-  intro hxy
-  let q : G.Walk u (p.getVert i) := p.take i
-  have hq : q.IsPath := hp.take i
-  have hxq : x ∉ q.support := by
-    simp only [q, SimpleGraph.Walk.support_take]
-    exact fun hxmem ↦ hx_support (List.take_subset _ _ hxmem)
-  let q' : G.Walk x (p.getVert i) := q.cons hux.symm
-  have hq' : q'.IsPath := hq.cons hxq
-  have heq := hG.subsingleton_path x (p.getVert i) |>.elim
-    (⟨q', hq'⟩ : G.Path x (p.getVert i)) (SimpleGraph.Path.singleton hxy)
-  have hlen := congrArg (fun r : G.Path x (p.getVert i) ↦ r.val.length) heq
-  simp only [q', SimpleGraph.Walk.length_cons, q, SimpleGraph.Walk.take_length,
-    Nat.min_eq_left hi, SimpleGraph.Path.singleton_coe, hxy.length_toWalk] at hlen
-  omega
-
-private lemma not_adj_getVert_of_adj_end {V : Type*} {G : SimpleGraph V} {u v x : V}
-    {p : G.Walk u v} (hG : G.IsAcyclic) (hp : p.IsPath) (hvx : G.Adj v x)
-    (hx : x ≠ p.penultimate) {i : ℕ} (hi : i < p.length) :
-    ¬G.Adj x (p.getVert i) := by
-  have hget : p.reverse.getVert (p.length - i) = p.getVert i := by
-    rw [p.getVert_reverse, Nat.sub_sub_self hi.le]
-  rw [← hget]
-  exact not_adj_getVert_of_adj_start hG hp.reverse hvx
-    (by simpa using hx) (Nat.sub_pos_of_lt hi) (by simp)
-
 private lemma adj_getVert_iff_succ {V : Type*} {G : SimpleGraph V} {u v : V}
     {p : G.Walk u v} (hG : G.IsAcyclic) (hp : p.IsPath) {i j : ℕ}
     (hi : i ≤ p.length) (hj : j ≤ p.length) (hij : i ≠ j) :
@@ -143,41 +114,6 @@ private lemma doubleForkEmbedding_injective {V : Type*} {G : SimpleGraph V} {u v
   · exact congrArg (Sum.inr ∘ Sum.inr) (hright_inj hij)
 
 omit [DecidableEq B] in
-private lemma not_adj_of_adj_of_adj (h : IsFiniteType A) {x a b : B}
-    (hxa : (diagramGraph A).Adj x a) (hxb : (diagramGraph A).Adj x b) (hab : a ≠ b) :
-    ¬(diagramGraph A).Adj a b := fun hadj ↦
-  (h.diagramGraph_adj_iff.mp hadj).2 (h.apply_eq_zero_of_apply_ne_zero hxa.ne hxb.ne hab
-    (h.diagramGraph_adj_iff.mp hxa).2 (h.diagramGraph_adj_iff.mp hxb).2)
-
-private lemma adj_getVert_iff_eq_zero {V : Type*} {G : SimpleGraph V} {u v x : V}
-    {p : G.Walk u v} (hG : G.IsAcyclic) (hp : p.IsPath) (hux : G.Adj u x) (hx : x ≠ p.snd)
-    {j : ℕ} (hj : j ≤ p.length) : G.Adj x (p.getVert j) ↔ j = 0 := by
-  rcases Nat.eq_zero_or_pos j with rfl | hj0
-  · simpa using hux.symm
-  · exact iff_of_false (not_adj_getVert_of_adj_start hG hp hux hx hj0 hj) hj0.ne'
-
-private lemma adj_getVert_iff_eq_length {V : Type*} {G : SimpleGraph V} {u v x : V}
-    {p : G.Walk u v} (hG : G.IsAcyclic) (hp : p.IsPath) (hvx : G.Adj v x)
-    (hx : x ≠ p.penultimate) {j : ℕ} (hj : j ≤ p.length) :
-    G.Adj x (p.getVert j) ↔ j = p.length := by
-  rcases hj.eq_or_lt with rfl | hlt
-  · simpa using hvx.symm
-  · exact iff_of_false (not_adj_getVert_of_adj_end hG hp hvx hx hlt) hlt.ne
-
-/-- A vertex of degree three has two distinct further neighbours besides any given neighbour. -/
-private lemma exists_injective_adj_ne {V : Type*} [Fintype V] {G : SimpleGraph V}
-    [DecidableRel G.Adj] {x y : V} (hxy : G.Adj x y) (hx : G.degree x = 3) :
-    ∃ c : Fin 2 → V, Function.Injective c ∧ (∀ i, G.Adj x (c i)) ∧ ∀ i, c i ≠ y := by
-  classical
-  have hmem : y ∈ G.neighborFinset x := (G.mem_neighborFinset x y).mpr hxy
-  have hcard : ((G.neighborFinset x).erase y).card = 2 := by
-    simp [Finset.card_erase_of_mem hmem, hx]
-  let f := (Finset.equivFinOfCardEq hcard).symm
-  exact ⟨fun i ↦ f i, fun _ _ hij ↦ f.injective (Subtype.ext hij),
-    fun i ↦ (G.mem_neighborFinset x _).mp (Finset.mem_of_mem_erase (f i).property),
-    fun i ↦ (Finset.mem_erase.mp (f i).property).1⟩
-
-omit [DecidableEq B] in
 /-- The matrix on a double-fork embedding is the affine-`D` Cartan matrix when the entries along
 the embedding are simply laced and the leaves have exactly the endpoint adjacencies and no
 cross-edge. -/
@@ -223,22 +159,22 @@ private lemma submatrix_doubleForkEmbedding_eq (h : IsFiniteType A)
   · have hij' : i ≠ j := fun h' ↦ hij (congrArg Sum.inl h')
     simp only [hij', not_adj_of_adj_of_adj h (hleft_adj i) (hleft_adj j)
       fun heq ↦ hij' (hleft_inj heq), ↓reduceIte]
-  · exact if_congr (adj_getVert_iff_eq_zero h.isAcyclic_diagramGraph hq (hleft_adj i)
+  · exact if_congr (h.isAcyclic_diagramGraph.adj_getVert_iff_eq_zero hq (hleft_adj i)
       (hleft_ne_snd i) (hlen j)) rfl rfl
   · simp only [hleft_right_not_adj i j, ↓reduceIte]
   · exact if_congr ((SimpleGraph.adj_comm _ _ _).trans
-      (adj_getVert_iff_eq_zero h.isAcyclic_diagramGraph hq (hleft_adj j)
+      (h.isAcyclic_diagramGraph.adj_getVert_iff_eq_zero hq (hleft_adj j)
         (hleft_ne_snd j) (hlen i))) rfl rfl
   · have hij' : i ≠ j := fun h' ↦ hij (congrArg (Sum.inr ∘ Sum.inl) h')
     simp only [hij', ↓reduceIte]
     exact if_congr (adj_getVert_iff_succ h.isAcyclic_diagramGraph hq (hlen i) (hlen j)
       fun h' ↦ hij' (Fin.ext h')) rfl rfl
   · refine if_congr ((SimpleGraph.adj_comm _ _ _).trans
-      ((adj_getVert_iff_eq_length h.isAcyclic_diagramGraph hq (hright_adj j)
+      ((h.isAcyclic_diagramGraph.adj_getVert_iff_eq_length hq (hright_adj j)
         (hright_ne_penultimate j) (hlen i)).trans ?_)) rfl rfl
     omega
   · simp only [mt SimpleGraph.Adj.symm (hleft_right_not_adj j i), ↓reduceIte]
-  · refine if_congr ((adj_getVert_iff_eq_length h.isAcyclic_diagramGraph hq (hright_adj i)
+  · refine if_congr ((h.isAcyclic_diagramGraph.adj_getVert_iff_eq_length hq (hright_adj i)
       (hright_ne_penultimate i) (hlen j)).trans ?_) rfl rfl
     omega
   · have hij' : i ≠ j := fun h' ↦ hij (congrArg (Sum.inr ∘ Sum.inr) h')
@@ -272,9 +208,9 @@ theorem exists_doubleFork_submatrix [Fintype B] (h : IsFiniteType A) {u v : B}
   obtain ⟨n, hn⟩ : ∃ n, q.length = n + 1 := by
     exact Nat.exists_eq_succ_of_ne_zero (SimpleGraph.Walk.length_eq_zero_iff.not.mpr hqnil)
   obtain ⟨leftVertex, hleft_inj, hleft_adj, hleft_ne_snd⟩ :=
-    exists_injective_adj_ne (q.adj_snd hqnil) hu
+    (diagramGraph A).exists_injective_adj_ne_of_three_le_degree hu.ge q.snd
   obtain ⟨rightVertex, hright_inj, hright_adj, hright_ne_penultimate⟩ :=
-    exists_injective_adj_ne (q.adj_penultimate hqnil).symm hv
+    (diagramGraph A).exists_injective_adj_ne_of_three_le_degree hv.ge q.penultimate
   have hleft_not_mem (i : Fin 2) : leftVertex i ∉ q.support := fun hi ↦
     hleft_ne_snd i (h.isAcyclic_diagramGraph.eq_snd_of_adj_start hq (hleft_adj i) hi)
   have hright_not_mem (i : Fin 2) : rightVertex i ∉ q.support := fun hi ↦
