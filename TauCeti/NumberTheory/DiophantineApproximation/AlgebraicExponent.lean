@@ -139,15 +139,14 @@ theorem algebraicApproximationExponent_zero (ξ : ℝ) : algebraicApproximationE
 /-! ### Comparison with Mahler's exponent -/
 
 /-- The estimate for a single approximation: if `α` is algebraic of degree at most `n`, is not a
-conjugate of `ξ`, has height above `R`, and approximates `ξ` with exponent `w`, where
-`(n + 1) (2 + |ξ|) ^ n ≤ H ^ (w - w')` for all `H ≥ R`, then the coefficient vector of its
-primitive minimal polynomial is a `w'`-approximation of the linear form in `ξ, ξ², …, ξⁿ`. -/
-private theorem coeffVec_primitiveMinpoly_mem_linearFormApproximations {n : ℕ} {ξ w w' R : ℝ}
+conjugate of `ξ`, and approximates `ξ` with exponent `w`, where
+`(n + 1) (2 + |ξ|) ^ n ≤ H(α) ^ (w - w')`, then the coefficient vector of its primitive minimal
+polynomial is a `w'`-approximation of the linear form in `ξ, ξ², …, ξⁿ`. -/
+private theorem coeffVec_primitiveMinpoly_mem_linearFormApproximations {n : ℕ} {ξ w w' : ℝ}
     {α : ℂ} (hw' : 0 ≤ w') (hww' : w' < w) (halg : IsAlgebraic ℚ α)
     (hdeg : (minpoly ℚ α).natDegree ≤ n)
     (hle : ‖(ξ : ℂ) - α‖ ≤ naiveHeight α ^ (-w - 1)) (hconj : α ∉ (minpoly ℚ ξ).rootSet ℂ)
-    (hH : R < naiveHeight α)
-    (hR : ∀ H, R ≤ H → (n + 1) * (2 + |ξ|) ^ n ≤ H ^ (w - w')) :
+    (hR : (n + 1) * (2 + |ξ|) ^ n ≤ naiveHeight α ^ (w - w')) :
     coeffVec n (primitiveMinpoly α) ∈
       linearFormApproximations (fun j : Fin n ↦ ξ ^ (j.val + 1)) w' := by
   set K : ℝ := (n + 1) * (2 + |ξ|) ^ n
@@ -184,7 +183,6 @@ private theorem coeffVec_primitiveMinpoly_mem_linearFormApproximations {n : ℕ}
         field_simp
     _ ≤ H ^ (w - w') * H ^ (-w) := by
         gcongr
-        exact hR H hH.le
     _ = H ^ (-w') := by
         rw [← Real.rpow_add hH₀]
         ring_nf
@@ -221,7 +219,7 @@ private theorem infinite_linearFormApproximations_of_infinite {n : ℕ} {ξ w w'
   simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_and, not_le] at hα
   obtain ⟨hconj, hR'⟩ := hα
   exact coeffVec_primitiveMinpoly_mem_linearFormApproximations hw' hww' halg hdeg hle hconj
-    (hR' halg hdeg) fun H hH ↦ hR H hH
+    (hR _ (hR' halg hdeg).le)
 
 /-- **Approximation by algebraic numbers versus small polynomial values** (Bugeaud,
 Theorem 2.5). For every real `ξ` and every `n`, Koksma's exponent is at most Mahler's exponent:
