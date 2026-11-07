@@ -135,11 +135,18 @@ theorem rootMultiplicity_derivative_lenstraPolynomial_eq_iff {α : K}
 change the parameter of Lenstra's polynomial or its two normalized critical points. -/
 theorem lenstraPolynomial_comp_affine_eq_iff {α β a b c d : K}
     (hα0 : α ≠ 0) (hα1 : α ≠ 1) (hβ0 : β ≠ 0) (hβ1 : β ≠ 1)
-    (ha : a ≠ 0) (hc : c ≠ 0) :
+    (hc : c ≠ 0) :
     (lenstraPolynomial α).comp (C a * X + C b) = C c * lenstraPolynomial β + C d ↔
       a = 1 ∧ b = 0 ∧ α = β ∧ c = 1 ∧ d = 0 := by
   refine ⟨fun h ↦ ?_, ?_⟩
-  · -- Differentiation transports multiplicities through the affine source map;
+  · -- A zero scaling `a` would make the left side constant, but the right side has degree `7`.
+    have ha : a ≠ 0 := by
+      rintro rfl
+      have := congrArg natDegree h
+      rw [map_zero, zero_mul, zero_add, comp_C, natDegree_C, natDegree_add_C,
+        natDegree_C_mul hc, natDegree_lenstraPolynomial] at this
+      omega
+    -- Differentiation transports multiplicities through the affine source map;
     -- nonzero scalings on either side do not affect them.
     have hd := congrArg derivative h
     simp only [derivative_comp, derivative_add, derivative_mul, derivative_C,

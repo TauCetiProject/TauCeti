@@ -43,9 +43,8 @@ No connectedness assumption is needed. -/
 theorem mgradient_eq_zero_of_laplaceBeltrami_eq_zero {u : M → ℝ}
     (hu : ContMDiff I 𝓘(ℝ) 2 u) (hΔ : ∀ x, laplaceBeltrami I u x = 0) (x : M) :
     mgradient I u x = 0 := by
-  have hcont : Continuous fun y ↦ ‖mgradient I u y‖ ^ 2 := by
-    simpa only [real_inner_self_eq_norm_sq] using
-      continuous_inner_mgradient (hu.of_le one_le_two) (hu.of_le one_le_two)
+  have hcont : Continuous fun y ↦ ‖mgradient I u y‖ ^ 2 :=
+    continuous_norm_sq_mgradient (hu.of_le one_le_two)
   have hint := integral_mul_laplaceBeltrami (hu.of_le one_le_two)
     (HasCompactSupport.of_compactSpace u) hu
   simp only [hΔ, mul_zero, integral_zero, real_inner_self_eq_norm_sq, zero_eq_neg] at hint

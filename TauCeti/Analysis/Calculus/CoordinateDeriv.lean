@@ -152,12 +152,15 @@ theorem coordinateDeriv_const_smul {R : Type*} [Semiring R] [Module R A] [SMulCo
     coordinateDeriv_eq_iteratedFDeriv α hf, iteratedFDeriv_const_smul_apply hf.contDiffAt,
     smul_apply]
 
-theorem coordinateDeriv_neg (α : List (Fin n)) {f : CoordinateSpace n → A}
-    (hf : ContDiff ℝ α.length f) :
+@[simp]
+theorem coordinateDeriv_neg (α : List (Fin n)) (f : CoordinateSpace n → A) :
     coordinateDeriv α (-f) = -coordinateDeriv α f := by
-  funext x
-  rw [Pi.neg_apply, coordinateDeriv_eq_iteratedFDeriv α (f := -f) hf.neg,
-    coordinateDeriv_eq_iteratedFDeriv α hf, iteratedFDeriv_neg_apply, neg_apply]
+  induction α with
+  | nil => rfl
+  | cons j js ih =>
+    funext x
+    rw [coordinateDeriv_cons, ih, fderiv_neg, neg_apply, Pi.neg_apply,
+      coordinateDeriv_cons]
 
 @[simp]
 theorem coordinateDeriv_zero (α : List (Fin n)) :
@@ -374,16 +377,15 @@ theorem mixedDeriv_const_smul {R : Type*} [Semiring R] [Module R A] [SMulCommCla
   rw [h, coordinateDeriv_const_smul α
     (contDiff_infty.1 (contDiff_coordinateDeriv_slice ha β ξ) _), Pi.smul_apply]
 
-theorem mixedDeriv_neg (ha : ContDiff ℝ ∞ a) (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
+@[simp]
+theorem mixedDeriv_neg (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
     mixedDeriv α β (-a) x ξ = -mixedDeriv α β a x ξ := by
   have h : (fun y => coordinateDeriv β (fun η => (-a) (y, η)) ξ) =
       -fun y => coordinateDeriv β (fun η => a (y, η)) ξ := by
     funext y
-    exact congrFun
-      (coordinateDeriv_neg β (contDiff_infty.1 (ha.comp (contDiff_prodMk_right y)) _)) ξ
+    exact congrFun (coordinateDeriv_neg β _) ξ
   simp only [mixedDeriv_def]
-  rw [h, coordinateDeriv_neg α
-    (contDiff_infty.1 (contDiff_coordinateDeriv_slice ha β ξ) _), Pi.neg_apply]
+  rw [h, coordinateDeriv_neg α, Pi.neg_apply]
 
 @[simp]
 theorem mixedDeriv_zero (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
