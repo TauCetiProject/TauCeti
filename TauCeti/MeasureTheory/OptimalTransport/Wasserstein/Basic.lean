@@ -73,8 +73,9 @@ gluing lemma consumes.
   space, measures at `W_∞` distance below the separation scale agree;
 * `TauCeti.wassersteinEDist_self`, `TauCeti.wassersteinEDist_comm` and
   `TauCeti.wassersteinEDist_triangle` — the three axioms of an extended pseudodistance;
-* `TauCeti.wassersteinEDist_le_ofReal_dist_add_two_mul_of_wassersteinEDist_dirac_le` — measures
-  within `W_p`-distance `r` of Diracs at `x₀`, `x₁` are within `d(x₀, x₁) + 2 r` of each other;
+* `TauCeti.wassersteinEDist_le_add_edist_add_of_wassersteinEDist_dirac_le` — measures
+  within `W_p`-distance `a`, `b` of Diracs at `x₀`, `x₁` are within `a + d(x₀, x₁) + b` of each
+  other;
 * `TauCeti.wassersteinEDist_mono_exponent` — monotonicity in `p` when the first marginal is a
   probability measure;
 * `TauCeti.wassersteinEDist_dirac_left`, `TauCeti.wassersteinEDist_dirac_right` and
@@ -621,36 +622,29 @@ theorem wassersteinEDist_triangle (hd : Measurable fun z : X × X ↦ edist z.1 
     (MeasureTheory.eLpNorm_map_prodMap_id_snd_le hp hγπ hγσ hd hd hd fun x y z ↦
       edist_triangle x y z)
 
-end Triangle
-
-end Measurable
-
-section DiracTriangle
-
-variable [MetricSpace X] [BorelSpace X] [SecondCountableTopology X] [StandardBorelSpace X]
-
-/-- Two measures within `W_p`-distance `r` of Dirac masses at `x₀` and `x₁` are within
-`W_p`-distance `d(x₀, x₁) + 2 r` of each other. -/
-theorem wassersteinEDist_le_ofReal_dist_add_two_mul_of_wassersteinEDist_dirac_le (hp : 1 ≤ p)
-    {x₀ x₁ : X} {μ₀ μ₁ : Measure X} {r : ℝ} (hr : 0 ≤ r)
-    (h₀ : wassersteinEDist p (Measure.dirac x₀) μ₀ ≤ ENNReal.ofReal r)
-    (h₁ : wassersteinEDist p (Measure.dirac x₁) μ₁ ≤ ENNReal.ofReal r) :
-    wassersteinEDist p μ₀ μ₁ ≤ ENNReal.ofReal (dist x₀ x₁ + 2 * r) := by
+/-- Two measures within `W_p`-distance `a` and `b` of Dirac masses at `x₀` and `x₁` are within
+`W_p`-distance `a + edist x₀ x₁ + b` of each other. -/
+theorem wassersteinEDist_le_add_edist_add_of_wassersteinEDist_dirac_le
+    (hd : Measurable fun z : X × X ↦ edist z.1 z.2) (hp : 1 ≤ p)
+    {x₀ x₁ : X} {μ₀ μ₁ : Measure X} {a b : ℝ≥0∞}
+    (h₀ : wassersteinEDist p (Measure.dirac x₀) μ₀ ≤ a)
+    (h₁ : wassersteinEDist p (Measure.dirac x₁) μ₁ ≤ b) :
+    wassersteinEDist p μ₀ μ₁ ≤ a + edist x₀ x₁ + b := by
   calc wassersteinEDist p μ₀ μ₁
       ≤ wassersteinEDist p μ₀ (Measure.dirac x₀) +
         (wassersteinEDist p (Measure.dirac x₀) (Measure.dirac x₁) +
           wassersteinEDist p (Measure.dirac x₁) μ₁) :=
-        (wassersteinEDist_triangle measurable_edist hp _ _ _).trans
-          (add_le_add le_rfl (wassersteinEDist_triangle measurable_edist hp _ _ _))
-    _ ≤ ENNReal.ofReal r + (ENNReal.ofReal (dist x₀ x₁) + ENNReal.ofReal r) := by
-        rw [wassersteinEDist_comm measurable_edist,
-          wassersteinEDist_dirac_dirac (zero_lt_one.trans_le hp).ne', edist_dist]
+        (wassersteinEDist_triangle hd hp _ _ _).trans
+          (add_le_add le_rfl (wassersteinEDist_triangle hd hp _ _ _))
+    _ ≤ a + (edist x₀ x₁ + b) := by
+        rw [wassersteinEDist_comm hd p μ₀ (Measure.dirac x₀),
+          wassersteinEDist_dirac_dirac (zero_lt_one.trans_le hp).ne']
         gcongr
-    _ = ENNReal.ofReal (dist x₀ x₁ + 2 * r) := by
-        rw [← ENNReal.ofReal_add dist_nonneg hr, ← ENNReal.ofReal_add hr (by positivity)]
-        ring_nf
+    _ = a + edist x₀ x₁ + b := (add_assoc _ _ _).symm
 
-end DiracTriangle
+end Triangle
+
+end Measurable
 
 section EMetricMoment
 

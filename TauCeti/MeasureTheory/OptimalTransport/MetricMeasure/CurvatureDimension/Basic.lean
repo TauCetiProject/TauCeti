@@ -255,8 +255,13 @@ theorem CurvatureDimensionInfinity.exists_dist_sq_add_dist_sq_le
   -- `W₂(μ₀, μ₁) ≤ d + 2 r`, so the midpoint is within `d / 2 + 2 r` of both `δ_{x₀}` and `δ_{x₁}`.
   have hW : dist μ₀ μ₁ ≤ d + 2 * r := by
     rw [← edist_le_ofReal (by positivity), WassersteinSpace.edist_def]
-    exact wassersteinEDist_le_ofReal_dist_add_two_mul_of_wassersteinEDist_dirac_le one_le_two hr.le
-      hW₀ hW₁
+    refine (wassersteinEDist_le_add_edist_add_of_wassersteinEDist_dirac_le measurable_edist
+      one_le_two hW₀ hW₁).trans_eq ?_
+    rw [edist_dist, ← ENNReal.ofReal_add hr.le dist_nonneg,
+      ← ENNReal.ofReal_add (by positivity) hr.le]
+    congr 1
+    simp only [d]
+    ring
   have hmid (x : X) (μ : WassersteinSpace 2 X)
       (hx : wassersteinEDist 2 (Measure.dirac x) ((μ : ProbabilityMeasure X) : Measure X) ≤
         ENNReal.ofReal r) (hμ : dist μ (γ (1 / 2)) = 1 / 2 * dist μ₀ μ₁) :
