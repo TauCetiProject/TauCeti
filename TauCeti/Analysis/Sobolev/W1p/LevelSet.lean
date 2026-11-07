@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.W1p.ChainRule
 
 import Mathlib.Algebra.Order.Group.PosPart
+import TauCeti.MeasureTheory.Function.EssSup
 
 /-!
 # Weak gradients on level sets
@@ -117,34 +118,9 @@ private theorem W1p.exists_tendsto_measure_of_monotone_levels (u : W1p mu Omega 
     ⟨i, ne_top_of_le_ne_top (hfin _ hi) (measure_mono fun _ hx ↦ hx.1)⟩
   rwa [hnull] at this
 
-omit [FiniteDimensional ℝ E] in
-/-- If `u` is essentially bounded above on the set of admissible levels `l ≥ k`, with supremum
-`M`, then `u ≤ M` almost everywhere and `k < M`. -/
-private theorem W1p.ae_value_le_csSup_of_bddAbove (u : W1p mu Omega p) {k : ℝ}
-    (hk : ¬ ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ k)
-    (hbdd : BddAbove {l : ℝ | k ≤ l ∧ ¬ ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ l}) :
-    (∀ᵐ x ∂mu.restrict Omega,
-      W1p.value u x ≤ sSup {l : ℝ | k ≤ l ∧ ¬ ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ l}) ∧
-    k < sSup {l : ℝ | k ≤ l ∧ ¬ ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ l} := by
-  set μ := mu.restrict Omega
-  set L : Set ℝ := {l | k ≤ l ∧ ¬ ∀ᵐ x ∂μ, W1p.value u x ≤ l}
-  have hkL : k ∈ L := ⟨le_rfl, hk⟩
-  set M := sSup L
-  have hle : ∀ᵐ x ∂μ, W1p.value u x ≤ M := by
-    have hj : ∀ j : ℕ, ∀ᵐ x ∂μ, W1p.value u x ≤ M + 1 / ((j : ℝ) + 1) := by
-      intro j
-      by_contra hj
-      have hmemL : M + 1 / ((j : ℝ) + 1) ∈ L :=
-        ⟨(le_csSup hbdd hkL).trans (le_add_of_nonneg_right (by positivity)), hj⟩
-      linarith [le_csSup hbdd hmemL, (by positivity : (0 : ℝ) < 1 / ((j : ℝ) + 1))]
-    filter_upwards [ae_all_iff.2 hj] with x hx
-    refine le_of_forall_pos_le_add fun ε hε ↦ ?_
-    obtain ⟨j, hjε⟩ := exists_nat_one_div_lt hε
-    linarith [hx j]
-  exact ⟨hle, lt_of_not_ge fun hMk ↦ hk (hle.mono fun x hx ↦ hx.trans hMk)⟩
-
 /-- The bounded case of `W1p.exists_tendsto_measure_lt_value_and_gradient_ne_zero`: `u` is
-essentially bounded above, and the levels approach its essential supremum `M` from below. -/
+essentially bounded above, so there are admissible levels `lⱼ ≥ k` along which the measure of
+`{u > lⱼ, ∇u ≠ 0}` tends to zero. -/
 private theorem W1p.exists_tendsto_measure_of_bddAbove (hp : p ≠ ∞) (u : W1p mu Omega p) {k : ℝ}
     (hfin : ∀ l, k < l → mu.restrict Omega {x | l < W1p.value u x} ≠ ∞)
     (hk : ¬ ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ k)
@@ -155,7 +131,7 @@ private theorem W1p.exists_tendsto_measure_of_bddAbove (hp : p ≠ ∞) (u : W1p
   set μ := mu.restrict Omega
   set L : Set ℝ := {l | k ≤ l ∧ ¬ ∀ᵐ x ∂μ, W1p.value u x ≤ l}
   have hkL : k ∈ L := ⟨le_rfl, hk⟩
-  obtain ⟨hle, hkM⟩ := W1p.ae_value_le_csSup_of_bddAbove u hk hbdd
+  obtain ⟨hle, hkM⟩ := ae_le_csSup_of_bddAbove (W1p.value u) hk hbdd
   set M := sSup L
   refine W1p.exists_tendsto_measure_of_monotone_levels u hfin (fun j ↦ M - 1 / ((j : ℝ) + 1))
     (fun i j hij ↦ ?_) ?_ ?_ fun j ↦ ?_
