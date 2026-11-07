@@ -66,6 +66,8 @@ the ambiguous class number formula and its narrow form.
 * `NumberField.NarrowClassGroup.natCard_stronglyAmbiguousClassSubgroup_mul_natCard_ker`: the
   number of strongly ambiguous classes times the narrow defect is the number of `2`-torsion
   narrow classes.
+* `NumberField.NarrowClassGroup.prod_mk0_eq_one_of_prod_eq_span`: a product of primes that generates
+  a principal ideal `(γ)` with `σγ = εγ` for a totally positive unit `ε` has trivial narrow class.
 * `NumberField.NarrowClassGroup.mk0_mem_closure_of_map_eq_self`: the narrow class of an ambiguous
   ideal is a product of narrow classes of primes above ramified rational primes.
 * `NumberField.NarrowClassGroup.mem_closure_of_sq_eq_one`: every `2`-torsion narrow class is such a
@@ -280,6 +282,35 @@ theorem natCard_stronglyAmbiguousClassSubgroup_mul_natCard_ker
     Subgroup.card_mul_index]
 
 variable {Q : ℕ → (Ideal (𝓞 K))⁰}
+
+/-- If an ambiguous principal ideal `(γ)` with `σγ = εγ` for a totally positive unit `ε` is a
+product of the primes `Q p`, `p ∈ S`, then the product of their narrow classes is trivial: `γ / σγ`
+is totally positive, so `γ` or `-γ` is. -/
+theorem prod_mk0_eq_one_of_prod_eq_span
+    (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
+    {ε : (𝓞 K)ˣ} (hpos : IsTotallyPositive ((ε : 𝓞 K) : K)) {γ : 𝓞 K} (hγ0 : γ ≠ 0)
+    (hσγ : ringOfIntegersQuadraticConj hmin hgen γ = (ε : 𝓞 K) * γ) {S : Finset ℕ}
+    (hprodeq : (∏ p ∈ S, (Q p : Ideal (𝓞 K))) = Ideal.span {γ}) :
+    ∏ p ∈ S, NarrowClassGroup.mk0 (Q p) = 1 := by
+  have hσγK : quadraticConj hmin hgen (γ : K) = ((ε : 𝓞 K) : K) * (γ : K) := by
+    rw [← coe_ringOfIntegersQuadraticConj hmin hgen γ, hσγ]
+    push_cast
+    ring
+  have hγK : (γ : K) ≠ 0 := RingOfIntegers.coe_ne_zero_iff.mpr hγ0
+  have hposratio : IsTotallyPositive ((γ : K) / quadraticConj hmin hgen (γ : K)) := by
+    rw [hσγK, div_mul_eq_div_div_swap, div_self hγK]
+    simpa using hpos.inv
+  have hcoe : ((∏ p ∈ S, Q p : (Ideal (𝓞 K))⁰) : Ideal (𝓞 K)) = Ideal.span {γ} := by
+    rw [Submonoid.coe_finsetProd]
+    exact hprodeq
+  rw [← map_prod]
+  rcases isTotallyPositive_or_isTotallyPositive_neg_of_isTotallyPositive_div_quadraticConj
+    hmin hgen hposratio with h | h
+  · exact NarrowClassGroup.mk0_eq_one_of_isTotallyPositive hγ0 h hcoe
+  · refine NarrowClassGroup.mk0_eq_one_of_isTotallyPositive (a := -γ) (neg_ne_zero.mpr hγ0)
+      (by push_cast; exact h) ?_
+    rw [Ideal.span_singleton_neg]
+    exact hcoe
 
 /-- **The narrow class of an ambiguous ideal is a product of narrow classes of ramified primes.**
 Let `K` be a quadratic number field with quadratic conjugation `σ`, and let `Q p` be a prime of
