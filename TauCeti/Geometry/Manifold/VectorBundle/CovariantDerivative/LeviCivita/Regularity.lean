@@ -222,6 +222,55 @@ section Finite
 variable {n m k : ℕ∞ω} [IsManifold I m M]
   [IsContMDiffRiemannianBundle I k E (fun x : M ↦ TangentSpace I x)]
 
+/-- The Levi-Civita connection differentiates a `C^(n+1)` vector field along a `C^(n+1)` vector
+field `Z` with one derivative lost, on an open subset `s` of a chart domain. Each direction of the
+connection is the Riesz dual of half the Koszul functional. -/
+private theorem contMDiffOn_leviCivitaConnection_apply [IsManifold I (n + 1) M]
+    [IsManifold I (n + 1 + 1) M]
+    [IsContMDiffRiemannianBundle I n E (fun x : M ↦ TangentSpace I x)] {s : Set M} {a : M}
+    (hs : IsOpen s) (hsub : s ⊆ (chartAt H a).source) (hm : n + 2 ≤ m) (hk : n + 1 ≤ k)
+    {σ Z : Π x : M, TangentSpace I x}
+    (hσ : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (n + 1) (fun y ↦ TotalSpace.mk' E y (σ y)) s)
+    (hZ : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (n + 1) (fun y ↦ TotalSpace.mk' E y (Z y)) s) :
+    ContMDiffOn I (I.prod 𝓘(ℝ, E)) n
+      (fun y ↦ TotalSpace.mk' E y (leviCivitaConnection I M σ y (Z y))) s := by
+  have hσd {y : M} (hy : y ∈ s) : MDiffAt (T% σ) y :=
+    (hσ.mdifferentiableOn (by simp)).mdifferentiableAt (hs.mem_nhds hy)
+  have hZd {y : M} (hy : y ∈ s) : MDiffAt (T% Z) y :=
+    (hZ.mdifferentiableOn (by simp)).mdifferentiableAt (hs.mem_nhds hy)
+  have hrepr (y : M) : rieszDual (I := I) y ((rieszDual (I := I) y).symm
+      (leviCivitaConnection I M σ y (Z y))) = leviCivitaConnection I M σ y (Z y) :=
+    LinearIsometryEquiv.apply_symm_apply _ _
+  have hval (y : M) (w : TangentSpace I y) :
+      ((rieszDual (I := I) y).symm (leviCivitaConnection I M σ y (Z y))) w =
+        inner ℝ (leviCivitaConnection I M σ y (Z y)) w := by
+    conv_rhs => rw [← hrepr y]
+    exact (inner_rieszDual _ w).symm
+  have heval (l : Fin (finrank ℝ E)) : ContMDiffOn I 𝓘(ℝ) n
+      (fun y ↦ ((rieszDual (I := I) y).symm (leviCivitaConnection I M σ y (Z y)))
+        (chartLocalFrame (I := I) a l y)) s := by
+    have hframe : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (n + 1)
+        (fun y ↦ TotalSpace.mk' E y (chartLocalFrame (I := I) a l y)) s :=
+      (contMDiffOn_chartLocalFrame (I := I) (n := n + 1) a l).mono
+        (by rw [TangentBundle.trivializationAt_baseSet]; exact hsub)
+    have hmul : ContMDiffOn I 𝓘(ℝ) n (fun y ↦ (2 : ℝ)⁻¹ *
+        koszul I Z σ (chartLocalFrame (I := I) a l) y) s :=
+      contMDiffOn_const.mul (contMDiffOn_koszul hs hm hk hZ hσ hframe)
+    refine hmul.congr fun y hy ↦ ?_
+    have h := two_inner_leviCivitaConnection_eq_koszul (I := I) (M := M) (hZd hy) (hσd hy)
+      (((hframe.mdifferentiableOn (by simp)).mdifferentiableAt (hs.mem_nhds hy)))
+    rw [hval y]
+    linarith
+  have hfun : (fun y : M ↦ TotalSpace.mk' E y (leviCivitaConnection I M σ y (Z y))) =
+      fun y : M ↦ TotalSpace.mk' E y (rieszDual (I := I) y
+        ((rieszDual (I := I) y).symm (leviCivitaConnection I M σ y (Z y)))) := by
+    funext y
+    rw [hrepr y]
+  rw [hfun]
+  exact fun y hy ↦ (contMDiffAt_rieszDual (I := I) (n := n) a (hsub hy)
+    (Φ := fun y ↦ (rieszDual (I := I) y).symm (leviCivitaConnection I M σ y (Z y)))
+    fun l ↦ (heval l).contMDiffAt (hs.mem_nhds hy)).contMDiffWithinAt
+
 /-- **The Levi-Civita connection differentiates with one derivative lost.** On an open set `u`, a
 section of the tangent bundle which is `C^(n+1)` on `u` has a covariant derivative which is `C^n`
 on `u` as a section of `Hom(TM, TM)`. -/
@@ -253,50 +302,10 @@ theorem contMDiffOn_leviCivitaConnection {u : Set M} (hu : IsOpen u) (hm : n + 2
       (fun y ↦ TotalSpace.mk' E y (chartLocalFrame (I := I) x i y)) s :=
     (contMDiffOn_chartLocalFrame (I := I) (n := n + 1) x i).mono
       (by rw [TangentBundle.trivializationAt_baseSet]; exact hsub)
-  have hσd {y : M} (hy : y ∈ s) : MDiffAt (T% σ) y :=
-    (hσs.mdifferentiableOn (by simp)).mdifferentiableAt (hsopen.mem_nhds hy)
-  have hframed (i : Fin (finrank ℝ E)) {y : M} (hy : y ∈ s) :
-      MDiffAt (T% (chartLocalFrame (I := I) x i)) y :=
-    ((hframe i).mdifferentiableOn (by simp)).mdifferentiableAt (hsopen.mem_nhds hy)
-  -- Each direction of the connection is the Riesz dual of half the Koszul functional.
   have hdir (j : Fin (finrank ℝ E)) : ContMDiffOn I (I.prod 𝓘(ℝ, E)) n
       (fun y ↦ TotalSpace.mk' E y
-        (leviCivitaConnection I M σ y (chartLocalFrame (I := I) x j y))) s := by
-    have hrepr (y : M) : rieszDual (I := I) y ((rieszDual (I := I) y).symm
-        (leviCivitaConnection I M σ y (chartLocalFrame (I := I) x j y))) =
-        leviCivitaConnection I M σ y (chartLocalFrame (I := I) x j y) :=
-      LinearIsometryEquiv.apply_symm_apply _ _
-    have hval (y : M) (w : TangentSpace I y) :
-        ((rieszDual (I := I) y).symm
-          (leviCivitaConnection I M σ y (chartLocalFrame (I := I) x j y))) w =
-          inner ℝ (leviCivitaConnection I M σ y (chartLocalFrame (I := I) x j y)) w := by
-      conv_rhs => rw [← hrepr y]
-      exact (inner_rieszDual _ w).symm
-    have heval (l : Fin (finrank ℝ E)) : ContMDiffOn I 𝓘(ℝ) n
-        (fun y ↦ ((rieszDual (I := I) y).symm
-          (leviCivitaConnection I M σ y (chartLocalFrame (I := I) x j y)))
-            (chartLocalFrame (I := I) x l y)) s := by
-      have hmul : ContMDiffOn I 𝓘(ℝ) n (fun y ↦ (2 : ℝ)⁻¹ *
-          koszul I (chartLocalFrame (I := I) x j) σ (chartLocalFrame (I := I) x l) y) s :=
-        contMDiffOn_const.mul
-          (contMDiffOn_koszul hsopen hm hk (hframe j) hσs (hframe l))
-      refine hmul.congr fun y hy ↦ ?_
-      have h := two_inner_leviCivitaConnection_eq_koszul (I := I) (M := M)
-        (hframed j hy) (hσd hy) (hframed l hy)
-      rw [hval y]
-      linarith
-    have hfun : (fun y : M ↦ TotalSpace.mk' E y
-        (leviCivitaConnection I M σ y (chartLocalFrame (I := I) x j y))) =
-        fun y : M ↦ TotalSpace.mk' E y (rieszDual (I := I) y
-          ((rieszDual (I := I) y).symm
-            (leviCivitaConnection I M σ y (chartLocalFrame (I := I) x j y)))) := by
-      funext y
-      rw [hrepr y]
-    rw [hfun]
-    exact fun y hy ↦ (contMDiffAt_rieszDual (I := I) (n := n) x (hsub hy)
-      (Φ := fun y ↦ (rieszDual (I := I) y).symm
-        (leviCivitaConnection I M σ y (chartLocalFrame (I := I) x j y)))
-      fun l ↦ (heval l).contMDiffAt (hsopen.mem_nhds hy)).contMDiffWithinAt
+        (leviCivitaConnection I M σ y (chartLocalFrame (I := I) x j y))) s :=
+    contMDiffOn_leviCivitaConnection_apply hsopen hsub hm hk hσs (hframe j)
   -- Testing the hom-bundle section on the chart-local frame gives smoothness at `x`.
   have hhom := contMDiffOn_hom_of_localFrame (I := I) (n := n) (u := s)
     (e := trivializationAt E (TangentSpace I) x) (e' := trivializationAt E (TangentSpace I) x)

@@ -17,7 +17,7 @@ as time followed by initial point.  The domain and value are adapters for
 domain-aware group law records both the value equation and the condition that the composite time
 remains in the interval of existence.
 
-For finite-dimensional model spaces, the existing smooth-dependence theorem for maximal integral
+For complete normed model spaces, the existing smooth-dependence theorem for maximal integral
 curves gives joint openness of the domain and joint smoothness of the flow, so flowing a `C^n`
 family of points for a `C^n` family of times is again `C^n`.  At time zero, the derivative of the
 flow is the field in the time direction and the identity in the space directions, so flowing for a
@@ -30,8 +30,8 @@ compact set.
 
 * `TauCeti.flowDomain`: the domain of the maximal flow, in `(time, point)` order.
 * `TauCeti.flowOf`: the maximal flow, total with junk values outside `flowDomain`.
-* `TauCeti.isOpen_flowDomain`: openness of the domain in finite dimensions.
-* `TauCeti.contMDiffOn_flowOf`: joint regularity of the flow in finite dimensions.
+* `TauCeti.isOpen_flowDomain`: openness of the domain for complete model spaces.
+* `TauCeti.contMDiffOn_flowOf`: joint regularity of the flow for complete model spaces.
 * `TauCeti.contMDiffAt_flowOf_comp`: flowing `C^n` families of points for `C^n` families of times.
 * `TauCeti.hasDerivAt_comp_flowOf`: the time derivative of a function along a trajectory.
 * `TauCeti.mfderiv_flowOf_zero_apply`: the derivative of the flow at time zero.
@@ -147,18 +147,28 @@ theorem curveVelocity_flowOf [IsManifold I 1 M] {v : (x : M) → TangentSpace I 
       hc.hasMFDerivAt.hasMFDerivWithinAt uniqueDiffWithinAt_univ
 
 omit [CompleteSpace E] in
-/-- In finite dimensions, the domain of the maximal flow is jointly open in time and initial
-point. -/
-theorem isOpen_flowDomain [FiniteDimensional ℝ E] [IsManifold I 1 M]
+/-- A maximal-flow trajectory is differentiable at every time in its domain. -/
+theorem mdifferentiableAt_flowOf [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {t : ℝ} {x : M}
+    (ht : (t, x) ∈ flowDomain v) :
+    MDifferentiableAt 𝓘(ℝ) I (fun s ↦ flowOf v s x) t := by
+  have hdom : {s | (s, x) ∈ flowDomain v} ∈ 𝓝 t := by
+    simpa only [mem_flowDomain, ofPred_mem_eq] using
+      isOpen_maximalIntegralCurveInterval.mem_nhds (mem_flowDomain.mp ht)
+  exact ((isMIntegralCurveOn_flowOf hv x).isMIntegralCurveAt hdom).hasMFDerivAt.mdifferentiableAt
+
+/-- On a complete normed model space, the domain of the maximal flow is jointly open in time
+and initial point. -/
+theorem isOpen_flowDomain [IsManifold I 1 M]
     {v : (x : M) → TangentSpace I x}
     (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) :
     IsOpen (flowDomain v) := by
   simpa only [flowDomain] using
     (isOpen_maximalIntegralCurveFlowDomain hv).preimage continuous_swap
 
-omit [CompleteSpace E] in
-/-- In finite dimensions, a `C^n` vector field has a jointly `C^n` maximal flow on its domain. -/
-theorem contMDiffOn_flowOf [FiniteDimensional ℝ E] {n : ℕ∞} (hn : 1 ≤ n)
+/-- On a complete normed model space, a `C^n` vector field has a jointly `C^n` maximal flow on
+its domain. -/
+theorem contMDiffOn_flowOf {n : ℕ∞} (hn : 1 ≤ n)
     [IsManifold I 1 M] [IsManifold I n M] {v : (x : M) → TangentSpace I x}
     (hv : CMDiff n (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) :
     ContMDiffOn (𝓘(ℝ, ℝ).prod I) I n (fun p : ℝ × M ↦ flowOf v p.1 p.2)
@@ -176,10 +186,9 @@ theorem contMDiffOn_flowOf [FiniteDimensional ℝ E] {n : ℕ∞} (hn : 1 ≤ n)
   rw [hfun, hdomain] at h
   exact h
 
-omit [CompleteSpace E] in
-/-- In finite dimensions, flowing a `C^n` family of initial points for a `C^n` family of times is
-`C^n`, wherever the flow is defined. -/
-theorem contMDiffAt_flowOf_comp [FiniteDimensional ℝ E] {n : ℕ∞} (hn : 1 ≤ n)
+/-- On a complete normed model space, flowing a `C^n` family of initial points for a `C^n` family
+of times is `C^n`, wherever the flow is defined. -/
+theorem contMDiffAt_flowOf_comp {n : ℕ∞} (hn : 1 ≤ n)
     [IsManifold I 1 M] [IsManifold I n M] {v : (x : M) → TangentSpace I x}
     (hv : CMDiff n (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
     {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
@@ -204,11 +213,10 @@ theorem hasDerivAt_comp_flowOf [IsManifold I 1 M] {v : (x : M) → TangentSpace 
   exact Manifold.hasDerivAt_comp_curve hg
     (((isMIntegralCurveOn_flowOf hv x).isMIntegralCurveAt hopen).hasMFDerivAt)
 
-omit [CompleteSpace E] in
 /-- **The derivative of the flow at time zero.** At `(0, x)`, the derivative of
 `(t, y) ↦ flowOf v t y` sends the time direction to the field at `x` and is the identity in the
 space direction. -/
-theorem mfderiv_flowOf_zero_apply [FiniteDimensional ℝ E] [IsManifold I 1 M]
+theorem mfderiv_flowOf_zero_apply [IsManifold I 1 M]
     {v : (x : M) → TangentSpace I x}
     (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) (x : M) (a : ℝ)
     (w : TangentSpace I x) :
@@ -237,10 +245,9 @@ theorem mfderiv_flowOf_zero_apply [FiniteDimensional ℝ E] [IsManifold I 1 M]
   -- space at `flowOf v 0 x`, which is `E` by definition, so it composes with `h1` and `h2`.
   exact (mfderiv_prod_eq_add_apply hG).trans (congrArg₂ (· + ·) h1 h2)
 
-omit [CompleteSpace E] in
 /-- **Flowing for a time that vanishes at a point.** If `τ x = 0`, the map
 `z ↦ flowOf v (τ z) z` has derivative `w ↦ w + dτ_x(w) • v x` at `x`. -/
-theorem hasMFDerivAt_flowOf_comp_of_eq_zero [FiniteDimensional ℝ E] [IsManifold I 1 M]
+theorem hasMFDerivAt_flowOf_comp_of_eq_zero [IsManifold I 1 M]
     {v : (x : M) → TangentSpace I x}
     (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {x : M} {τ : M → ℝ}
     {dτ : TangentSpace I x →L[ℝ] ℝ} (hτ : HasMFDerivAt I 𝓘(ℝ) τ x dτ) (hτx : τ x = 0) :

@@ -50,9 +50,6 @@ intersections with the section are not excluded.
 * `TauCeti.eventually_eq_flowHittingTime_iff`: local uniqueness of the hitting time.
 * `TauCeti.eventuallyEq_flowHittingTime`: uniqueness of the germ of continuous hitting times.
 * `TauCeti.contMDiffAt_flowTransition`: the transition map to the level is `C^n`.
-* `TauCeti.mdifferentiableAt_flowHittingTime_of_eq`,
-  `TauCeti.mdifferentiableAt_flowTransition_of_eq`: differentiability at `p`, for a section
-  through a point `q` with `flowOf v T p = q`.
 
 ## References
 
@@ -292,29 +289,15 @@ theorem continuousAt_flowHittingTime : ContinuousAt (flowHittingTime v g T p) p 
 theorem continuousAt_flowTransition : ContinuousAt (flowTransition v g T p) p :=
   (contMDiffAt_flowTransition le_rfl hv hT hg hgv).continuousAt
 
+/-- The hitting time of a transverse section is differentiable at `p`. -/
+theorem mdifferentiableAt_flowHittingTime :
+    MDifferentiableAt I 𝓘(ℝ) (flowHittingTime v g T p) p :=
+  (contMDiffAt_flowHittingTime le_rfl hv hT hg hgv).mdifferentiableAt one_ne_zero
+
+/-- The transition to a transverse section is differentiable at `p`. -/
+theorem mdifferentiableAt_flowTransition : MDifferentiableAt I I (flowTransition v g T p) p :=
+  (contMDiffAt_flowTransition le_rfl hv hT hg hgv).mdifferentiableAt one_ne_zero
+
 end Continuous
-
-section Differentiable
-
-variable {q : M} (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
-  (hT : (T, p) ∈ flowDomain v) (hq : flowOf v T p = q) (hg : ContMDiffAt I 𝓘(ℝ) 1 g q)
-  (hgv : mvfderiv I g q (v q) ≠ 0)
-include hv hT hq hg hgv
-
-/-- The hitting time of a section through `q = flowOf v T p` transverse to `v` is differentiable
-at `p`. -/
-theorem mdifferentiableAt_flowHittingTime_of_eq :
-    MDifferentiableAt I 𝓘(ℝ) (flowHittingTime v g T p) p := by
-  subst hq
-  exact (contMDiffAt_flowHittingTime le_rfl hv hT hg hgv).mdifferentiableAt one_ne_zero
-
-/-- The transition to a section through `q = flowOf v T p` transverse to `v` is differentiable
-at `p`. -/
-theorem mdifferentiableAt_flowTransition_of_eq :
-    MDifferentiableAt I I (flowTransition v g T p) p := by
-  subst hq
-  exact (contMDiffAt_flowTransition le_rfl hv hT hg hgv).mdifferentiableAt one_ne_zero
-
-end Differentiable
 
 end TauCeti

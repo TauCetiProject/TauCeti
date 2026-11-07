@@ -210,7 +210,7 @@ private theorem tendsto_mul_logDeriv_deriv_of_tendsto_of_side {ι : Type*} {a : 
     hside p hpU fun i h => hpf ⟨(a i : ℂ), by simp, (hfv i).trans h.symm⟩
   obtain ⟨r, hr, g, hgf, hgcont, hgreal, hgupper, hginj⟩ :=
     exists_eqOn_neg_inv_of_tendsto hfc hfi hfU hp hpf hpU hρ hb hU
-  exact tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_neg_inv hr hb hgf hgcont
+  exact tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_neg_inv hr hgf hgcont
     (differentiableOn_of_eqOn_neg_inv hf hgf) hgreal hgupper hginj
 
 /-- **Condition at a vertex at infinity.**  If `f` tends to infinity at infinity, and far from `c`
