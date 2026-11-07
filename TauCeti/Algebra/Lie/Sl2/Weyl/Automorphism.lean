@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.Weights.Killing
 public import TauCeti.Algebra.Lie.AdjointAction.InnerAutomorphismGroup
+public import TauCeti.Algebra.Lie.Sl2.Basic
 public import TauCeti.RingTheory.Nilpotent.Exp
 
 /-!
@@ -351,14 +352,9 @@ theorem _root_.LieHom.map_weylAut (ω : L →ₗ⁅K⁆ L) (t : IsSl2Triple h e 
     (hf z).imp fun _ ↦ ad_neg_pow_apply_eq_zero
   have he' : ∀ z, ∃ k, ((ad K L (-e)) ^ k) z = 0 := fun z ↦
     (he z).imp fun _ ↦ ad_neg_pow_apply_eq_zero
-  have t' : IsSl2Triple (-h) (-f) (-e) :=
-    { h_ne_zero := neg_ne_zero.mpr t.h_ne_zero
-      lie_e_f := by simp only [neg_lie, lie_neg, t.symm.lie_e_f, neg_neg]
-      lie_h_e_nsmul := by simp only [lie_neg, t.symm.lie_h_e_nsmul, smul_neg]
-      lie_h_f_nsmul := by simp only [lie_neg, t.symm.lie_h_f_nsmul, smul_neg, neg_neg] }
   simpa only [weylAut_apply, neg_neg,
     ← weylAut_apply_eq_expAd_neg_expAd_expAd_neg he hf hf' t] using
-    ω.map_weylAut_of_eq t t' he hf hf' he' hωe hωf y
+    ω.map_weylAut_of_eq t t.neg_symm he hf hf' he' hωe hωf y
 
 end CommRing
 
