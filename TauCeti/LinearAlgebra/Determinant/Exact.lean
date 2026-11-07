@@ -251,6 +251,18 @@ variable {B' C' W : Type*} [AddCommGroup B'] [Module K B'] [AddCommGroup C'] [Mo
   (hπg : Function.Surjective (π ∘ₗ g')) (hι : Function.Injective ι)
   (hιπ : Function.Exact ι π) (hπ : Function.Surjective π)
 
+include hf hfg hf' hfg' hj hjπ hπg in
+omit [FiniteDimensional K A] [FiniteDimensional K C] [FiniteDimensional K C'] in
+/-- In the situation of `TauCeti.detLineFourTermEquiv_detLineShortExactCancelEquiv`, the image of
+`g'` has the dimension of the image of `g` plus that of `W`. -/
+private theorem finrank_range_eq_add :
+    finrank K (LinearMap.range g') = finrank K (LinearMap.range g) + finrank K W := by
+  have : FiniteDimensional K B' := finiteDimensional_of_exact hjπ
+  have e₁ := hfg.rangeRestrict.finrank_eq_add hf g.surjective_rangeRestrict
+  have e₂ := hfg'.rangeRestrict.finrank_eq_add hf' g'.surjective_rangeRestrict
+  have e₃ := hjπ.finrank_eq_add hj hπg
+  omega
+
 include hf hfg hgh hh hf' hfg' hgh' hh' hj hjπ hπg hι hιπ hπ in
 /-- `TauCeti.detLineFourTermEquiv_detLineShortExactCancelEquiv` on exterior products. Let `z` be
 `dim D` vectors of `C` mapping to a basis of `D`. Both four-term isomorphisms put the directions
@@ -288,11 +300,7 @@ private theorem detLineFourTermEquiv_detLineShortExactCancelEquiv_ιMulti
       (exteriorPower.ιMulti K _ (g.rangeRestrict ∘ v) ⊗ₜ exteriorPower.ιMulti K _ (h ∘ z)) :
         ExteriorAlgebra K C) = ExteriorAlgebra.ιMulti K _ (Fin.append (g ∘ v) z) :=
     coe_detLineShortExactEquiv_tmul _ _ _ _ _
-  have hr : finrank K (LinearMap.range g') = finrank K (LinearMap.range g) + finrank K W := by
-    have e₁ := hfg.rangeRestrict.finrank_eq_add hf g.surjective_rangeRestrict
-    have e₂ := hfg'.rangeRestrict.finrank_eq_add hf' g'.surjective_rangeRestrict
-    have e₃ := hjπ.finrank_eq_add hj hπg
-    omega
+  have hr := finrank_range_eq_add hf hfg hf' hfg' hj hjπ hπg
   have hjfu : ⇑j ∘ (⇑f ∘ u) = ⇑f' ∘ u := funext fun i ↦ LinearMap.congr_fun hjf (u i)
   have hgjv : ⇑g' ∘ (⇑j ∘ v) = ⇑ι ∘ (⇑g ∘ v) := funext fun i ↦ LinearMap.congr_fun hgj (v i)
   have hz' : ⇑h' ∘ (⇑ι ∘ z) = ⇑h ∘ z := funext fun i ↦ LinearMap.congr_fun hhι (z i)
