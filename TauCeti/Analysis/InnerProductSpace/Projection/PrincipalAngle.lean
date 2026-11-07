@@ -703,4 +703,77 @@ theorem adjoint_apply_leftSingularVector_starProjection_orthogonal_comp
     _ = ⟪((S.singularValues i : ℝ) : 𝕜) •
           LinearMap.rightSingularBasis S i, z⟫_𝕜 := by rw [hSadj]
 
+/-- Each Ritz vector `X vᵢ` is orthogonal to the unnormalized residual direction
+`y_j - σ_j • X v_j`. -/
+theorem inner_map_sub_leftSingularVector_eq_zero
+    (U : Submodule 𝕜 E) [U.HasOrthogonalProjection] (X : F →ₗᵢ[𝕜] E)
+    (i j : Fin (finrank 𝕜 F)) :
+    ⟪X.toLinearMap (LinearMap.rightSingularBasis
+        (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i),
+      LinearMap.leftSingularVector (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) j -
+        (((Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues j : ℝ) : 𝕜) •
+          X.toLinearMap (LinearMap.rightSingularBasis
+            (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) j)⟫_𝕜 = 0 := by
+  have hadj := Submodule.adjoint_apply_leftSingularVector_starProjection_orthogonal_comp
+    U X.toLinearMap (i := j)
+  have hXX : ⟪X.toLinearMap (LinearMap.rightSingularBasis
+        (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i),
+      X.toLinearMap (LinearMap.rightSingularBasis
+        (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) j)⟫_𝕜 = _ := X.inner_map_map _ _
+  rw [inner_sub_right, inner_smul_right, hXX, ← LinearMap.adjoint_inner_right, hadj,
+    inner_smul_right, sub_self]
+
+/-- For nonzero sines, the unnormalized residual directions `yᵢ - σᵢ • X vᵢ` are pairwise
+orthogonal, with squared norm `1 - σᵢ²`. -/
+theorem inner_sub_leftSingularVector_eq_ite
+    (U : Submodule 𝕜 E) [U.HasOrthogonalProjection] (X : F →ₗᵢ[𝕜] E)
+    {i j : Fin (finrank 𝕜 F)}
+    (hi : (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues i ≠ 0)
+    (hj : (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues j ≠ 0) :
+    ⟪LinearMap.leftSingularVector (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i -
+        (((Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues i : ℝ) : 𝕜) •
+          X.toLinearMap (LinearMap.rightSingularBasis
+            (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i),
+      LinearMap.leftSingularVector (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) j -
+        (((Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues j : ℝ) : 𝕜) •
+          X.toLinearMap (LinearMap.rightSingularBasis
+            (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) j)⟫_𝕜 =
+      if i = j then
+        (((1 - ((Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues i) ^ 2 : ℝ)) : 𝕜)
+      else 0 := by
+  classical
+  have hadji := Submodule.adjoint_apply_leftSingularVector_starProjection_orthogonal_comp
+    U X.toLinearMap (i := i)
+  have hadjj := Submodule.adjoint_apply_leftSingularVector_starProjection_orthogonal_comp
+    U X.toLinearMap (i := j)
+  have hvv := (LinearMap.rightSingularBasis
+    (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap)).inner_eq_ite i j
+  set S := (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) with hS
+  have hyy : ⟪LinearMap.leftSingularVector S i, LinearMap.leftSingularVector S j⟫_𝕜 =
+      if i = j then 1 else 0 := by
+    simpa using orthonormal_iff_ite.mp (LinearMap.orthonormal_leftSingularVector S)
+      ⟨i, hi⟩ ⟨j, hj⟩
+  have hyX : ⟪LinearMap.leftSingularVector S i,
+      X.toLinearMap (LinearMap.rightSingularBasis S j)⟫_𝕜 =
+      ((S.singularValues i : ℝ) : 𝕜) * ⟪LinearMap.rightSingularBasis S i,
+        LinearMap.rightSingularBasis S j⟫_𝕜 := by
+    rw [← LinearMap.adjoint_inner_left, hadji, inner_smul_left, RCLike.conj_ofReal]
+  have hXy : ⟪X.toLinearMap (LinearMap.rightSingularBasis S i),
+      LinearMap.leftSingularVector S j⟫_𝕜 =
+      ((S.singularValues j : ℝ) : 𝕜) * ⟪LinearMap.rightSingularBasis S i,
+        LinearMap.rightSingularBasis S j⟫_𝕜 := by
+    rw [← LinearMap.adjoint_inner_right, hadjj, inner_smul_right]
+  have hXX : ⟪X.toLinearMap (LinearMap.rightSingularBasis S i),
+      X.toLinearMap (LinearMap.rightSingularBasis S j)⟫_𝕜 =
+      ⟪LinearMap.rightSingularBasis S i, LinearMap.rightSingularBasis S j⟫_𝕜 :=
+    X.inner_map_map _ _
+  simp only [inner_sub_left, inner_sub_right, inner_smul_left, inner_smul_right,
+    RCLike.conj_ofReal, hyy, hyX, hXy, hXX, hvv]
+  by_cases hij : i = j
+  · subst hij
+    simp only [ite_true]
+    push_cast
+    ring
+  · simp [hij]
+
 end Submodule

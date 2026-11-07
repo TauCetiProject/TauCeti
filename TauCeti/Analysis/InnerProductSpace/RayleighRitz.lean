@@ -184,4 +184,13 @@ theorem adjoint_comp_ritzResidual_eq_zero (A : E →ₗ[𝕜] E)
     LinearMap.coe_toContinuousLinearMap, ContinuousLinearMap.toLinearMap_zero] using congrArg
       ContinuousLinearMap.toLinearMap h
 
+/-- **Galerkin orthogonality, pointwise.** The Ritz residual of `v` is orthogonal to the vector
+`X v` of the trial space. -/
+theorem inner_map_ritzResidual_eq_zero (A : E →ₗ[𝕜] E) (X : F →ₗᵢ[𝕜] E) (v : F) :
+    ⟪X.toLinearMap v,
+      (A ∘ₗ X.toLinearMap - X.toLinearMap ∘ₗ (X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap)) v⟫_𝕜 =
+      0 := by
+  rw [← LinearMap.adjoint_inner_right, ← LinearMap.comp_apply, adjoint_comp_ritzResidual_eq_zero]
+  simp
+
 end LinearMap
