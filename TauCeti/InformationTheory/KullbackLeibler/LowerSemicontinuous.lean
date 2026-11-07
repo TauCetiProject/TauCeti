@@ -19,7 +19,7 @@ densities.
 ## Main results
 
 * `TauCeti.klDiv_withDensity_le_liminf`: if the densities of measures `p n ≪ ρ` converge
-  `ρ`-almost everywhere to a measurable `g`, then `klDiv (ρ.withDensity g) ρ` is at most
+  `ρ`-almost everywhere to `g`, then `klDiv (ρ.withDensity g) ρ` is at most
   `liminf (klDiv (p n) ρ)`.
 -/
 
@@ -31,24 +31,26 @@ open scoped ENNReal
 namespace TauCeti
 
 /-- **Lower semicontinuity of relative entropy along density convergence.** If the densities of
-measures `p n` absolutely continuous with respect to `ρ` converge `ρ`-almost everywhere to a
-measurable `g`, then the measure with density `g` has relative entropy at most the `liminf` of
+measures `p n` absolutely continuous with respect to `ρ` converge `ρ`-almost everywhere to `g`,
+then the measure with density `g` has relative entropy at most the `liminf` of
 the relative entropies `klDiv (p n) ρ`, by Fatou's lemma. -/
 theorem klDiv_withDensity_le_liminf {α : Type*} [MeasurableSpace α] {ρ : Measure α}
     {p : ℕ → Measure α} {g : α → ℝ}
     [IsFiniteMeasure ρ] [IsFiniteMeasure (ρ.withDensity fun z ↦ ENNReal.ofReal (g z))]
     [∀ n, IsFiniteMeasure (p n)]
-    (hac : ∀ n, p n ≪ ρ) (hgm : Measurable g)
+    (hac : ∀ n, p n ≪ ρ)
     (hlim : ∀ᵐ z ∂ρ, Tendsto (fun n ↦ ((p n).rnDeriv ρ z).toReal) atTop (𝓝 (g z))) :
     klDiv (ρ.withDensity fun z ↦ ENNReal.ofReal (g z)) ρ ≤
       liminf (fun n ↦ klDiv (p n) ρ) atTop := by
   set F : ℕ → α → ℝ := fun n z ↦ ((p n).rnDeriv ρ z).toReal
+  have hg : AEMeasurable g ρ := aemeasurable_of_tendsto_metrizable_ae'
+    (fun n ↦ (Measure.measurable_rnDeriv _ _).ennreal_toReal.aemeasurable) hlim
   have hg0 : 0 ≤ᵐ[ρ] g := hlim.mono fun z hz ↦ ge_of_tendsto' hz fun n ↦ ENNReal.toReal_nonneg
   calc klDiv (ρ.withDensity fun z ↦ ENNReal.ofReal (g z)) ρ
       = ∫⁻ z, ENNReal.ofReal (klFun (g z)) ∂ρ := by
         rw [klDiv_eq_lintegral_klFun_of_ac (withDensity_absolutelyContinuous _ _)]
         refine lintegral_congr_ae ?_
-        filter_upwards [Measure.rnDeriv_withDensity ρ hgm.ennreal_ofReal, hg0]
+        filter_upwards [Measure.rnDeriv_withDensity₀ ρ hg.ennreal_ofReal, hg0]
           with z hz hz0
         rw [hz, ENNReal.toReal_ofReal hz0]
     _ = ∫⁻ z, liminf (fun n ↦ ENNReal.ofReal (klFun (F n z))) atTop ∂ρ := by
