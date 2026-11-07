@@ -254,7 +254,7 @@ theorem finrank_pow_mul_volume_ball_mul_volume_pow_eq_ofReal {s : Set E}
       ENNReal.ofReal ((finrank ℝ E * volume.real (ball (0 : E) 1) ^ (finrank ℝ E : ℝ)⁻¹ *
         volume.real s ^ (1 - (finrank ℝ E : ℝ)⁻¹)) ^ finrank ℝ E) := by
   rw [mul_pow, mul_pow, Real.rpow_inv_natCast_pow measureReal_nonneg hn,
-    Real.rpow_one_sub_inv_natCast_pow measureReal_nonneg hn]
+    Real.rpow_one_sub_inv_natCast_pow measureReal_nonneg]
   rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_mul (by positivity)]
   simp [ENNReal.ofReal_pow, measure_ball_lt_top.ne, hs]
 

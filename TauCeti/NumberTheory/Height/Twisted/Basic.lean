@@ -245,7 +245,7 @@ theorem twistedHeight_shift_of_hasFiniteMulSupport (hQ : 0 < Q) {θ : Place K �
     twistedHeight L (fun v i ↦ c v i - θ v) Q x = Q ^ (∑ᶠ v, θ v) * twistedHeight L c Q x := by
   rcases eq_or_ne x 0 with rfl | hx0
   · simp
-  rw [twistedHeight_of_ne_zero hx0, twistedHeight_of_ne_zero hx0, Real.rpow_finsum_of_pos hQ hθ,
+  rw [twistedHeight_of_ne_zero hx0, twistedHeight_of_ne_zero hx0, Real.rpow_finsum_of_pos hQ,
     ← finprod_mul_distrib (hθ.hasFiniteMulSupport_fun_rpow fun _ ↦ Q) hx]
   exact finprod_congr fun v ↦ twistedLocalHeight_shift hQ θ v x
 
