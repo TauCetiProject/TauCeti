@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Montgomery.Basic
-import TauCeti.AlgebraicGeometry.EllipticCurve.PointCount
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.WorkedExamples
 import Mathlib.Algebra.Field.ZMod
 import Mathlib.GroupTheory.SpecificGroups.Cyclic
 
@@ -78,6 +78,8 @@ example : model (3 : ℚ) 2 = model (-3) (-2) :=
 
 /-! ### The running example over `𝔽₇` -/
 
+-- The affine solution count is adapted from the proof of
+-- `TauCeti.WorkedExamples.pointCount_curveX3AddX` in `Isogeny/Frobenius/WorkedExamples.lean`.
 private theorem card_point_seven : Nat.card (model (0 : ZMod 7) 1).toAffine.Point = 8 := by
   have : (model (0 : ZMod 7) 1).IsElliptic :=
     isElliptic_model_iff_ne_zero.mpr ⟨by decide, one_ne_zero, by decide⟩
@@ -116,14 +118,13 @@ private theorem two_nsmul_three_three :
 
 private theorem addOrderOf_three_three :
     addOrderOf (Affine.Point.some 3 3 nonsingular_three_three) = 8 := by
-  have h4 : (4 : ℕ) • (Affine.Point.some 3 3 nonsingular_three_three) =
+  have h4 : (2 * 2 : ℕ) • (Affine.Point.some 3 3 nonsingular_three_three) =
       twoTorsionPoint 0 one_ne_zero := by
-    rw [show (4 : ℕ) = 2 * 2 from rfl, mul_nsmul, two_nsmul_three_three, two_nsmul,
-      add_self_eq_twoTorsionPoint_iff one_ne_zero]
+    rw [mul_nsmul, two_nsmul_three_three, two_nsmul, add_self_eq_twoTorsionPoint_iff one_ne_zero]
   refine addOrderOf_eq_prime_pow (p := 2) (n := 2) ?_ ?_
-  · rw [show 2 ^ 2 = 4 from rfl, h4]
+  · rw [pow_two, h4]
     exact twoTorsionPoint_ne_zero 0 one_ne_zero
-  · rw [show 2 ^ (2 + 1) = 4 * 2 from rfl, mul_nsmul, h4, two_nsmul, twoTorsionPoint_add_self]
+  · rw [pow_succ, pow_two, mul_nsmul, h4, two_nsmul, twoTorsionPoint_add_self]
 
 -- The point `(3, 3)` has order eight and generates the native group, which is therefore cyclic.
 example : addOrderOf (Affine.Point.some 3 3 nonsingular_three_three) = 8 := addOrderOf_three_three
@@ -142,13 +143,12 @@ example : IsAddCyclic (model (0 : ZMod 7) 1).toAffine.Point := by
 
 /-! ### The running example over `𝔽₅` -/
 
+-- Over `𝔽₅` the model is `TauCeti.WorkedExamples.curveX3AddX`, whose points are counted in
+-- `Isogeny/Frobenius/WorkedExamples.lean`.
 private theorem card_point_five : Nat.card (model (0 : ZMod 5) 1).toAffine.Point = 4 := by
-  have : (model (0 : ZMod 5) 1).IsElliptic :=
-    isElliptic_model_iff_ne_zero.mpr ⟨by decide, one_ne_zero, by decide⟩
-  rw [← pointCount_eq_card_point, pointCount_def, Nat.card_congr (Equiv.subtypeEquivRight
-    (q := fun P : ZMod 5 × ZMod 5 ↦ P.2 ^ 2 = P.1 ^ 3 + P.1) fun P ↦ by
-      rw [Affine.equation_iff]; simp), Nat.card_eq_fintype_card]
-  decide
+  have h : model (0 : ZMod 5) 1 = WorkedExamples.curveX3AddX := by
+    ext <;> simp
+  rw [h, ← pointCount_eq_card_point, WorkedExamples.pointCount_curveX3AddX]
 
 -- Over `𝔽₅` with `(A, B) = (0, 1)` the native group has four elements.
 example : Nat.card (model (0 : ZMod 5) 1).toAffine.Point = 4 := card_point_five
