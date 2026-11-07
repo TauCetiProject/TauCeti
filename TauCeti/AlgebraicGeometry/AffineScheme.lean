@@ -53,6 +53,9 @@ be injective. This is the local reason why an affine blowup changes nothing away
   `Spec Γ(X, U) ⟶ X`.
 * `AlgebraicGeometry.Scheme.Opens.ΓSpecIso_inv_comp_toSpecΓ_appLE`: on an open `U` of `X`, the
   morphism `U ⟶ Spec Γ(X, U)` induces restriction of functions on the sections over opens of `U`.
+* `AlgebraicGeometry.Scheme.Hom.ΓSpecIso_inv_comp_resLE_isoSpec_appLE`: the map `Γ(B, V) ⟶ Γ(U, T)`
+  induced by the structure morphism of an open subscheme `U` of `Z` over an affine open `V` of `B`
+  is `k.appLE` followed by restriction to `T`.
 * `AlgebraicGeometry.Scheme.Hom.isBasis_range_affineOpens_le_preimage`: for `g : S' ⟶ S`, the
   affine opens of `S'` lying over affine opens of `S` form a basis.
 * `AlgebraicGeometry.Scheme.toSpecΓ_apply_asIdeal_eq_smul`: for this action, the prime ideal of
@@ -144,6 +147,23 @@ theorem Scheme.Opens.ΓSpecIso_inv_comp_toSpecΓ_appLE {X : Scheme.{u}} (U : X.O
     -- Both sides restrict along the equality `U.ι ''ᵁ ⊤ = U`; morphisms of opens are unique.
     rfl
   rw [h₁, h₂, Scheme.Opens.toSpecΓ_appTop, Iso.inv_hom_id_assoc]
+
+/-- The map `Γ(B, V) ⟶ Γ(U, T)` induced by the structure morphism `U ⟶ Spec Γ(B, V)` of an open
+subscheme `U` of `Z` over the affine open `V` of `B` is `k.appLE` followed by restriction to `T`. -/
+lemma Scheme.Hom.ΓSpecIso_inv_comp_resLE_isoSpec_appLE {Z B : Scheme.{u}} (k : Z ⟶ B) {V : B.Opens}
+    (hV : IsAffineOpen V) (U : Z.Opens) (e : U ≤ k ⁻¹ᵁ V) (T : U.toScheme.Opens) :
+    (Scheme.ΓSpecIso Γ(B, V)).inv ≫ (k.resLE V U e ≫ hV.isoSpec.hom).appLE ⊤ T le_top =
+      k.appLE V U e ≫ U.ι.appLE U T (by simp) := by
+  calc (Scheme.ΓSpecIso Γ(B, V)).inv ≫ (k.resLE V U e ≫ hV.isoSpec.hom).appLE ⊤ T le_top
+      _ = (Scheme.ΓSpecIso Γ(B, V)).inv ≫
+          (U.toSpecΓ ≫ Spec.map (k.appLE V U e)).appLE ⊤ T (by simp) := by
+        simp only [IsAffineOpen.isoSpec_hom, ← Scheme.Opens.toSpecΓ_SpecMap_appLE]
+      _ = (Scheme.ΓSpecIso Γ(B, V)).inv ≫ (Spec.map (k.appLE V U e)).appTop ≫
+          U.toSpecΓ.appLE ⊤ T (by simp) :=
+        congrArg _ (Scheme.Hom.comp_appLE _ _ _ _ _)
+      _ = k.appLE V U e ≫ U.ι.appLE U T (by simp) := by
+        rw [← Category.assoc, ← Scheme.ΓSpecIso_inv_naturality, Category.assoc,
+          Scheme.Opens.ΓSpecIso_inv_comp_toSpecΓ_appLE]
 
 /-- For a morphism `g : S' ⟶ S`, the affine opens of `S'` contained in the preimage of an affine
 open of `S` form a basis of the topology of `S'`. -/
