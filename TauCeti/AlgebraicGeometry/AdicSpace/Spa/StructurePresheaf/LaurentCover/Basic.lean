@@ -298,6 +298,10 @@ theorem isClosedEmbedding_presentationLimitMap_laurentCoverOpen_of_isClosedEmbed
       (eqToIso (completionLocObj_obj P (p b).num (p b).den _ (p b).hasDenominatorPower))))
   -- After these changes of coordinates, the desired restriction map is the ring-level map in
   -- `hemb`; it remains to verify that the resulting square commutes.
+  -- The `cast` below only changes the function underlying the embedding.  The two functions agree
+  -- by `rfl` after unfolding `Function.comp`, `Homeomorph.prodCongr`, `Homeomorph.trans`,
+  -- `TopCat.homeoOfIso` applied to `Functor.mapIso`, and `RingHom.prod_apply`; `E b z` is
+  -- definitionally `(eqToHom _).1 ((presentationLimitRationalIso ..).hom.hom.1 z)`.
   refine ((E true).prodCongr (E false)).isClosedEmbedding.of_comp_iff.mp
     (cast (congrArg IsClosedEmbedding (funext fun x ↦ ?_))
       ((hemb (p false).hasDenominatorPower).comp d.isClosedEmbedding))
@@ -308,6 +312,9 @@ theorem isClosedEmbedding_presentationLimitMap_laurentCoverOpen_of_isClosedEmbed
     Function.RightInverse.surjective
       (asIso (toPresentationLimit (P := P) Aplus ⊤)).inv_hom_id_apply x
   -- The source comparison cancels on `c`; the target comparisons are `rationalIso_map_top_apply`.
+  -- `d` unfolds definitionally to the composite `(eqToHom _).1 ∘ (presentationLimitTopIso ..).hom`,
+  -- so `hd` is `congrArg (eqToHom _).1` of the identity `inv_hom_id_apply` for
+  -- `toPresentationLimit`.
   have hd : d ((toPresentationLimit (P := P) Aplus ⊤).hom.1 c) =
       (eqToHom (CompleteSeparatedTopCommRingCat.of_obj A)).1 c := by
     have h := (presentationLimitTopIso (P := P) Aplus hAplus).inv_hom_id_apply c
@@ -533,6 +540,10 @@ theorem surjective_presentationLimitMap_sub_laurentCoverOpen
   simp only [Function.comp_apply, map_sub, presentationLimitMap_apply_presentationLimitMap_apply,
     rationalIso_map_apply hAplus (p true) q (hp true) hq f rfl hT₁,
     rationalIso_map_apply hAplus (p false) q (hp false) hq 1 (mul_comm 1 f) hT₂]
+  -- `huv` is the same statement up to definitional unfolding: the pointwise difference
+  -- `restrictionRingHom .. u - restrictionRingHom .. v` is `AddMonoidHom.sub_apply` of the
+  -- compositions with `AddMonoidHom.fst`/`snd` of `RingHom.toAddMonoidHom`, and the localisations
+  -- `Localization.Away (1 * f)` and `{f * f, f, 1}` agree with `q.den`/`q.num` by `rfl`.
   exact huv
 
 end TauCeti.ValuationSpectrum
