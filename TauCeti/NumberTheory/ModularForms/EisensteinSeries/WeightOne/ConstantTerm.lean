@@ -9,10 +9,7 @@ public import TauCeti.NumberTheory.DirichletCharacter.LValues
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightOne.Bernoulli
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightOne.Normalized
 public import TauCeti.NumberTheory.ModularForms.Cusps.LevelRaise
-import TauCeti.Analysis.Fourier.ZMod
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Cotangent
-import TauCeti.Data.ZMod.Count
-import TauCeti.Data.ZMod.Divisibility
 import TauCeti.NumberTheory.ModularForms.Cusps.Basic
 
 /-!
@@ -34,12 +31,12 @@ transform at `j (a, c)` (`TauCeti.EisensteinSeries.constantTermAt_weightedE1MF`)
 
 For the character weight of primitive `ψ` modulo `u` and `φ` modulo `v` at the natural level
 `u v`, the Fourier transform is the character weight with the two characters exchanged, scaled by
-Gauss sums. Hence the constant term of `E₁^{ψ,φ}` at the cusp `a / c` has two terms: the term
-`ψ(-c / v) φ⁻¹(a) Λ(ψ, φ⁻¹)` when `v ∣ c`, as in weight `k ≥ 3`, and a term
+Gauss sums. Hence the constant term of `E₁^{ψ,φ}` at the cusp `a / c` is a difference of two
+terms: the term `ψ(-c / v) φ⁻¹(a) Λ(ψ, φ⁻¹)` when `v ∣ c`, as in weight `k ≥ 3`, minus the term
 `φ(c / u) ψ⁻¹(a) g(ψ) g(φ⁻¹) Λ(ψ⁻¹, φ) / v` when `u ∣ c`, where `Λ(ψ, φ⁻¹)` is a cotangent sum
-equal to `2 L(1, ψ φ⁻¹)` when `ψ φ⁻¹` is odd. These are the constant-term vectors that separate
-the weight-one Eisenstein series from the cusp forms in the decomposition
-`M₁(N, χ) = S₁(N, χ) ⊕ E₁(N, χ)`; the cotangent sums are nonzero
+equal to `2 L(1, ψ φ⁻¹)` when `ψ φ⁻¹` is odd. These constant-term vectors are the input for
+proving directness in the decomposition `M₁(N, χ) = S₁(N, χ) ⊕ E₁(N, χ)`, which is not proved
+here. For characters of opposite parity, `ψ(-1) φ(-1) = -1`, the cotangent sums are nonzero
 (`DirichletCharacter.sum_mul_inv_mul_pi_mul_cot_ne_zero`).
 
 ## Main results
@@ -194,50 +191,16 @@ private lemma charWeight_row (j : ZMod (u * v)) (a c : ℤ) :
       (if (v : ℤ) ∣ c then ψ ((-(c / v) : ℤ) : ZMod u) * φ⁻¹ (a : ZMod v) else 0) *
         (ψ (j.val : ZMod u) * φ⁻¹ (j.val : ZMod v)) := by
   have hx : ![-(j * (c : ZMod (u * v))), j * (a : ZMod (u * v))] =
-      (↑) ∘ ![-((j.val : ℤ) * c), (j.val : ℤ) * a] := by
+      (↑) ∘ ((j.val : ℤ) • ![-c, a]) := by
     ext i
     fin_cases i <;> simp
-  rw [hx, charWeight_intCast ψ φ dvd_rfl]
-  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
-  split_ifs with h₁ h₂ h₂
-  · obtain ⟨c', rfl⟩ := h₂
-    have hv : (v : ℤ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne v)
-    rw [show -((j.val : ℤ) * (v * c')) / v = (j.val : ℤ) * -c' by
-      rw [show -((j.val : ℤ) * (v * c')) = v * ((j.val : ℤ) * -c') by ring,
-        Int.mul_ediv_cancel_left _ hv], Int.mul_ediv_cancel_left _ hv]
-    push_cast
-    simp only [map_mul]
+  rw [hx, charWeight_intCast_smul ψ φ dvd_rfl, charWeight_intCast ψ φ dvd_rfl]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one, dvd_neg,
+    Int.cast_natCast]
+  split_ifs with hc
+  · rw [Int.neg_ediv_of_dvd hc]
     ring
-  · have hj : ¬IsUnit ((j.val : ℕ) : ZMod v) := fun hu ↦ h₂ <|
-      ((ZMod.isUnit_intCast_iff_isCoprime _ _).mp (by rwa [Int.cast_natCast])).dvd_of_dvd_mul_left
-        (dvd_neg.mp h₁)
-    rw [Int.cast_mul, Int.cast_natCast, map_mul, MulChar.map_nonunit _ hj]
-    simp
-  · exact absurd (dvd_neg.mpr (h₂.mul_left _)) h₁
   · simp
-
-/-- The first-coordinate factor of the Fourier transform of the character weight: a Gauss sum of
-`ψ`. -/
-private lemma sum_ite_dvd_val_mul_stdAddChar (hψ : ψ.IsPrimitive) (m : ZMod (u * v)) :
-    ∑ y : ZMod (u * v), (if v ∣ y.val then ψ ((y.val / v : ℕ) : ZMod u) else 0) *
-      stdAddChar (y * m) = ψ⁻¹ ((m.val : ℕ) : ZMod u) * gaussSum ψ stdAddChar := by
-  have hsum := ZMod.sum_ite_dvd_val (m := u) (n := u * v) (dvd_mul_right u v)
-    (fun q ↦ ψ (q : ZMod u) * stdAddChar (((v * q : ℕ) : ZMod (u * v)) * m))
-  rw [Nat.mul_div_cancel_left v (NeZero.pos u)] at hsum
-  convert hsum using 1
-  · refine Finset.sum_congr rfl fun y _ ↦ ?_
-    split_ifs with h
-    · rw [Nat.mul_div_cancel' h, ZMod.natCast_zmod_val]
-    · rw [zero_mul]
-  · -- the additive character modulo `u v` at `v k m` is the one modulo `u` at `k m`
-    have hchar (k : ℕ) : stdAddChar (((v * k : ℕ) : ZMod (u * v)) * m) =
-        stdAddChar ((k : ZMod u) * ((m.val : ℕ) : ZMod u)) := by
-      have h := ZMod.stdAddChar_intCast_natCast_mul (m := u) (n := v) ((k : ℤ) * m.val)
-      push_cast at h
-      rw [Nat.cast_mul]
-      rwa [ZMod.natCast_zmod_val, ← mul_assoc] at h
-    simp_rw [hchar, ZMod.natCast_zmod_val, ← gaussSum_mulShift_of_isPrimitive _ hψ, gaussSum,
-      AddChar.mulShift_apply, mul_comm]
 
 /-- **The Fourier transform of the character weight** at `j (a, c)`: the pairs `y` are weighted
 by `e(j (y₀ a + y₁ c) / u v)`. It is a product of Gauss sums of `ψ` and of `φ⁻¹`, and vanishes
@@ -264,37 +227,25 @@ private lemma sum_charWeight_mul_stdAddChar (hψ : ψ.IsPrimitive) (hφ : φ.IsP
     split_ifs <;> ring
   rw [← (piFinTwoEquiv fun _ ↦ ZMod (u * v)).symm.sum_comp, Fintype.sum_prod_type,
     Finset.sum_congr rfl fun y₀ _ ↦ Finset.sum_congr rfl fun y₁ _ ↦ hsplit y₀ y₁]
-  rw [← Finset.sum_mul_sum, sum_ite_dvd_val_mul_stdAddChar ψ hψ,
+  rw [← Finset.sum_mul_sum, hψ.sum_ite_dvd_val_mul_stdAddChar,
     hφ.sum_inv_mul_stdAddChar (dvd_mul_left v u), Nat.mul_div_cancel u (NeZero.pos v)]
-  -- read the residues `j a` and `j c` as integers
-  have hint (x : ℤ) : ((x : ZMod (u * v)).val : ZMod u) = (x : ZMod u) := by
-    rw [ZMod.natCast_val, ZMod.cast_intCast (dvd_mul_right u v)]
-  have hdvd (x : ℤ) : u ∣ (x : ZMod (u * v)).val ↔ (u : ℤ) ∣ x := by
-    rw [← ZMod.natCast_eq_zero_iff, hint, ZMod.intCast_zmod_eq_zero_iff_dvd]
-  have hja : j * (a : ZMod (u * v)) = (((j.val : ℤ) * a : ℤ) : ZMod (u * v)) := by
-    push_cast
-    rw [ZMod.natCast_zmod_val]
-  have hjc : j * (c : ZMod (u * v)) = (((j.val : ℤ) * c : ℤ) : ZMod (u * v)) := by
-    push_cast
-    rw [ZMod.natCast_zmod_val]
-  rw [hja, hjc, hint]
-  simp only [hdvd]
-  split_ifs with h₁ h₂ h₂
-  · obtain ⟨c', rfl⟩ := h₂
-    have hu : (u : ℤ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne u)
-    rw [ZMod.natCast_val_div_eq_intCast_div (mul_comm v u).dvd h₁,
-      show (j.val : ℤ) * (u * c') = u * ((j.val : ℤ) * c') by ring,
-      Int.mul_ediv_cancel_left _ hu, Int.mul_ediv_cancel_left _ hu]
-    push_cast
-    simp only [map_mul]
-    ring
-  · have hj : ¬IsUnit ((j.val : ℕ) : ZMod u) := fun hu ↦ h₂ <|
-      ((ZMod.isUnit_intCast_iff_isCoprime _ _).mp (by rwa [Int.cast_natCast])).dvd_of_dvd_mul_left
-        h₁
-    rw [Int.cast_mul, Int.cast_natCast, map_mul, MulChar.map_nonunit _ hj]
-    simp
-  · exact absurd (h₂.mul_left _) h₁
-  · simp
+  -- the remaining factor is the weight with the characters exchanged at `j (c, a)`
+  have hW : (if u ∣ (j * (c : ZMod (u * v))).val then
+        φ (((j * (c : ZMod (u * v))).val / u : ℕ) : ZMod v) else 0) *
+          ψ⁻¹ ((j * (a : ZMod (u * v))).val : ZMod u) =
+      charWeight (u * v) φ ψ ((↑) ∘ ((j.val : ℤ) • ![c, a])) := by
+    simp [charWeight_def, ite_mul]
+  rw [charWeight_intCast_smul φ ψ (mul_comm v u).dvd, charWeight_intCast φ ψ (mul_comm v u).dvd]
+    at hW
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one,
+    Int.cast_natCast] at hW
+  trans u * (gaussSum ψ stdAddChar * gaussSum φ⁻¹ stdAddChar) *
+    ((if u ∣ (j * (c : ZMod (u * v))).val then
+      φ (((j * (c : ZMod (u * v))).val / u : ℕ) : ZMod v) else 0) *
+        ψ⁻¹ ((j * (a : ZMod (u * v))).val : ZMod u))
+  · split_ifs <;> ring
+  rw [hW]
+  ring
 
 /-- **The constant term of the weight-one Eisenstein series with character at every cusp.** For
 primitive `ψ` modulo `u` and `φ` modulo `v`, at the natural level `u v`, and
