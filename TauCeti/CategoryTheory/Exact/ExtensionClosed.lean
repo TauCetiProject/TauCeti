@@ -352,7 +352,7 @@ theorem isConflationExact_congrFullSubcategory_functor
       (e.congrFullSubcategory h).functor := by
   apply (E.isConflationExact_lift hP hQ e.functor hF
     (fun ⟨X, hX⟩ ↦ by rwa [← h] at hX)).of_iso
-  exact eqToIso (e.congrFullSubcategory_functor_eq_lift h).symm
+  exact eqToIso (e.congrFullSubcategory_functor h).symm
 
 /-- The inverse functor of an exact equivalence restricts to a conflation-exact functor between
 corresponding extension-closed full subcategories. -/
@@ -368,7 +368,7 @@ theorem isConflationExact_congrFullSubcategory_inverse
   apply (E'.isConflationExact_lift hQ hP e.inverse hG (fun ⟨Y, hY⟩ ↦ by
       rw [← h]
       exact Q.prop_of_iso (e.counitIso.app Y).symm hY)).of_iso
-  exact eqToIso (e.congrFullSubcategory_inverse_eq_lift h).symm
+  exact eqToIso (e.congrFullSubcategory_inverse h).symm
 
 /-- The inclusion of an extension-closed full subcategory reflects conflations: a short complex
 of the subcategory whose image is a conflation of `E` is a conflation of the induced structure. -/

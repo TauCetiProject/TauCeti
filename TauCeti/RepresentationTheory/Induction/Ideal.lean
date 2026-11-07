@@ -56,7 +56,7 @@ What is proved here is the form in which that membership is established:
 asking, one prime `p` at a time, for a multiple `m • 1` with `p ∤ m` that is a combination of
 induced virtual characters with coefficients in a ring such as `ℤ[ζ]`. The coefficients descend to
 `ℤ` by `TauCeti.mem_of_mem_span_of_mem_virtualCharacters`, and the primes are assembled by
-`AddSubgroup.mem_of_forall_prime_exists_nsmul_mem`.
+`TauCeti.mem_of_forall_prime_exists_nsmul_mem`.
 
 ## Main definitions
 
@@ -446,7 +446,7 @@ theorem indVirtualCharacters_eq_virtualCharacters_iff_forall_prime [IsAlgClosed 
         m • (1 : G → k) ∈ Submodule.span A (indVirtualCharacters k G P : Set (G → k)) := by
   rw [indVirtualCharacters_eq_virtualCharacters_iff]
   refine ⟨fun h1 p hp => ⟨1, hp.not_dvd_one, by simpa using Submodule.subset_span h1⟩,
-    fun h => AddSubgroup.mem_of_forall_prime_exists_nsmul_mem fun p hp => ?_⟩
+    fun h => TauCeti.mem_of_forall_prime_exists_nsmul_mem fun p hp => ?_⟩
   obtain ⟨m, hm, hmA⟩ := h p hp
   exact ⟨m, hm, mem_of_mem_span_of_mem_virtualCharacters A t ht
     indVirtualCharacters_le_virtualCharacters

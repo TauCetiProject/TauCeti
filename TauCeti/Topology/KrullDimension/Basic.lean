@@ -172,6 +172,23 @@ theorem GeneralizingMap.topologicalKrullDim_le_of_surjective {X Y : Type*}
   exact (WithBot.coe_le_coe.mpr (hf.coheight_apply_le_coheight hcont x)).trans
     (TauCeti.coheight_le_topologicalKrullDim x)
 
+attribute [local instance] specializationPreorder in
+/-- Along an open embedding `f`, the coheight of a point `x` of a subset `T` of the source, in the
+specialization order of `T`, is the coheight of `f x` in a subset `F` of the target with
+`v ∈ T ↔ f v ∈ F`: open sets are closed under generization, so chains of generizations in `F` lift
+to `T`. For `T = f ⁻¹' F` this is the subset version of `Topology.IsOpenEmbedding.coheight_eq`. -/
+theorem Topology.IsOpenEmbedding.coheight_subtype_eq {X Y : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] {f : X → Y} (hf : IsOpenEmbedding f) {T : Set X} {F : Set Y}
+    (hTF : ∀ v, v ∈ T ↔ f v ∈ F) {x : X} (hx : x ∈ T) :
+    coheight (⟨x, hx⟩ : T) = coheight (⟨f x, (hTF x).1 hx⟩ : F) := by
+  have hlt {a b : X} : f a < f b ↔ a < b :=
+    and_congr hf.isInducing.specializes_iff (not_congr hf.isInducing.specializes_iff)
+  refine coheight_eq_of_strictMono (fun v : T ↦ (⟨f v, (hTF v).1 v.2⟩ : F))
+    (fun _ _ h ↦ Subtype.coe_lt_coe.mp (hlt.mpr h)) (fun v b h ↦ ?_) _
+  obtain ⟨v', hv'⟩ : (b : Y) ∈ Set.range f :=
+    h.le.mem_open hf.isOpen_range ⟨v, rfl⟩
+  exact ⟨⟨v', (hTF v').2 (hv' ▸ b.2)⟩, hlt.mp (by rw [hv']; exact h), Subtype.ext hv'⟩
+
 namespace Topology.IsEmbedding
 
 /-- The preimage of a set `Z` under an embedding `e` is homeomorphic to the part of `Z` in the
