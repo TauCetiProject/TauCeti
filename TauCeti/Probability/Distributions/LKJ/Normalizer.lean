@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Analysis.SpecialFunctions.Beta
+public import TauCeti.Analysis.Matrix.PartialCorrelation.Basic
 import TauCeti.Probability.Distributions.Beta.Measurability
 
 /-!
@@ -33,6 +34,8 @@ used by the independent-beta construction of LKJ partial correlations.
 * `TauCeti.Probability.lkjNormalizer_succ` — the recurrence in the matrix dimension.
 * `TauCeti.Probability.lkjNormalizer_eq_prod_beta_self` — the symmetric-beta form of the
   product.
+* `TauCeti.Probability.lkjNormalizer_eq_prod_strictLowerTriangle` — one factor for each partial
+  correlation.
 
 ## References
 
@@ -141,5 +144,43 @@ theorem lkjNormalizer_eq_prod_beta_self {p : ℕ} {η : ℝ} (hη : 0 < η) :
   intro k hk
   rw [ProbabilityTheory.beta_one_half_left_eq_two_rpow_mul_beta_self
     (lkj_betaParameter_pos hη hk)]
+
+/-- The strictly lower positions in zero-based column `j` are the rows below it, so there are
+`p - 1 - j` of them. -/
+private theorem card_filter_strictLowerTriangle_snd_eq (j : Fin p) :
+    (Finset.univ.filter fun ij : strictLowerTriangle p ↦ ij.1.2 = j).card = p - 1 - j := by
+  rw [← Fin.card_Ioi j]
+  refine Finset.card_bij (fun ij _ ↦ ij.1.1) (fun ij hij ↦ ?_) (fun ij hij kl hkl h ↦ ?_)
+    fun i hi ↦ ⟨⟨(i, j), Finset.mem_Ioi.1 hi⟩, by simp, rfl⟩
+  · rw [(Finset.mem_filter.1 hij).2.symm]
+    exact Finset.mem_Ioi.2 ij.2
+  · exact Subtype.ext
+      (Prod.ext h ((Finset.mem_filter.1 hij).2.trans (Finset.mem_filter.1 hkl).2.symm))
+
+/-- The LKJ normalizer has one beta factor for each partial correlation: the coordinate in
+zero-based column `j` contributes `B(1 / 2, η + (p - j - 2) / 2)`. Dimensions are cast to the
+reals before subtraction and division. -/
+theorem lkjNormalizer_eq_prod_strictLowerTriangle (p : ℕ) (η : ℝ) :
+    lkjNormalizer p η = ∏ ij : strictLowerTriangle p,
+      ProbabilityTheory.beta (1 / 2) (η + ((p : ℝ) - ij.1.2.val - 2) / 2) := by
+  set f : ℕ → ℝ := fun j ↦ ProbabilityTheory.beta (1 / 2) (η + ((p : ℝ) - j - 2) / 2)
+  calc
+    _ = ∏ j ∈ Finset.range p, f j ^ (p - 1 - j) := by
+      rcases p with _ | p
+      · simp
+      rw [Finset.prod_range_succ, Nat.add_sub_cancel, Nat.sub_self, pow_zero, mul_one,
+        lkjNormalizer_eq_prod_columns, Finset.prod_Ico_eq_prod_range]
+      refine Finset.prod_congr (by simp) fun j hj ↦ ?_
+      have hj : j < p := Finset.mem_range.1 hj
+      rw [show p + 1 - (1 + j) = p - j by omega]
+      congr 3
+      push_cast [Nat.cast_sub hj.le]
+      ring
+    _ = ∏ j : Fin p, ∏ ij : strictLowerTriangle p with ij.1.2 = j, f ij.1.2 := by
+      rw [← Fin.prod_univ_eq_prod_range]
+      refine Finset.prod_congr rfl fun j _ ↦ ?_
+      rw [Finset.prod_congr rfl fun ij hij ↦ by rw [(Finset.mem_filter.1 hij).2],
+        Finset.prod_const, card_filter_strictLowerTriangle_snd_eq]
+    _ = _ := Finset.prod_fiberwise _ _ _
 
 end TauCeti.Probability

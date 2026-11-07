@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Probability.Distributions.Beta.Square
 import TauCeti.Probability.Distributions.Beta.Reflection
+import TauCeti.Probability.Distributions.Affine
+import TauCeti.Analysis.SpecialFunctions.Beta
 import TauCeti.MeasureTheory.Integral.OddSymmetric
 import Mathlib.MeasureTheory.Integral.Pi
 
@@ -43,6 +45,41 @@ open MeasureTheory ProbabilityTheory Real
 namespace TauCeti.Probability
 
 variable {a q r : ℝ}
+
+/-- A centered symmetric Beta variable of positive shape `a` has density
+`(1 - z ^ 2) ^ (a - 1) / B(1 / 2, a)` on `(-1, 1)`. -/
+theorem betaMeasure_map_centered_eq_withDensity (ha : 0 < a) :
+    (betaMeasure a a).map (fun x ↦ -1 + 2 * x) =
+      volume.withDensity ((Set.Ioo (-1) 1).indicator fun z ↦
+        ENNReal.ofReal ((1 - z ^ 2) ^ (a - 1) / beta (1 / 2) a)) := by
+  rw [betaMeasure, map_affine_withDensity_volume _ (by norm_num : (2 : ℝ) ≠ 0)]
+  congr 1
+  funext z
+  rw [affineDensity_apply, betaPDF, sub_neg_eq_add]
+  by_cases hz : z ∈ Set.Ioo (-1) 1
+  · have hx : 0 < (z + 1) / 2 ∧ (z + 1) / 2 < 1 := by
+      constructor <;> linarith [hz.1, hz.2]
+    have hprod : ((z + 1) / 2) ^ (a - 1) * (1 - (z + 1) / 2) ^ (a - 1) =
+        (1 - z ^ 2) ^ (a - 1) / (2 : ℝ) ^ (2 * a - 2) := by
+      rw [← mul_rpow hx.1.le (by linarith)]
+      have hid : (z + 1) / 2 * (1 - (z + 1) / 2) = (1 - z ^ 2) / 2 ^ 2 := by ring
+      rw [hid, div_rpow (by nlinarith [hz.1, hz.2]) (by norm_num),
+        ← rpow_natCast 2 2, ← rpow_mul (by norm_num)]
+      congr 2
+      ring
+    have hpow : (2 : ℝ) ^ (2 * a - 1) = 2 * (2 : ℝ) ^ (2 * a - 2) := by
+      rw [show 2 * a - 1 = (2 * a - 2) + 1 by ring, rpow_add (by norm_num)]
+      simp [mul_comm]
+    rw [Set.indicator_of_mem hz, ← ENNReal.ofReal_mul (by norm_num), betaPDFReal,
+      ite_eq_left hx, mul_assoc (1 / beta a a), hprod,
+      beta_one_half_left_eq_two_rpow_mul_beta_self ha, hpow]
+    congr 1
+    have := (beta_pos ha ha).ne'
+    field_simp
+    ring
+  · have hx : ¬ (0 < (z + 1) / 2 ∧ (z + 1) / 2 < 1) := fun h ↦
+      hz ⟨by linarith [h.1], by linarith [h.2]⟩
+    rw [Set.indicator_of_notMem hz, betaPDFReal, ite_eq_right hx, ENNReal.ofReal_zero, mul_zero]
 
 /-- The sharp integrability criterion for mixed absolute and residual powers of a centered
 symmetric Beta variable. Both endpoint equalities belong to the divergent side. -/
