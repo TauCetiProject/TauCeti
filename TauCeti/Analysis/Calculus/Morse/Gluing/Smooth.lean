@@ -43,31 +43,17 @@ variable {Eₛ Eᵤ : Type*} [NormedAddCommGroup Eₛ] [NormedSpace ℝ Eₛ]
   [NormedAddCommGroup Eᵤ] [NormedSpace ℝ Eᵤ] [CompleteSpace Eᵤ]
   {g : Eᵤ → Eₛ} {k : Eₛ → Eᵤ} {s : Set Eᵤ} {t : Set Eₛ} {n : ℕ∞ω}
 
-/-- Smooth local solutions of the split-box matching equation, including all solutions
-near the broken exit coordinate. Smoothness holds on one open neighbourhood, also at
-infinite regularity. Only the expanding factor needs to be complete. -/
-theorem exists_contDiffOn_splitGluing_fixedPoint
-    (hg : ContDiffOn ℝ n g s) (hs : IsOpen s) (hₛ : (0 : Eᵤ) ∈ s)
-    (hk : ContDiffOn ℝ n k t) (ht : IsOpen t) (hₜ : (0 : Eₛ) ∈ t) (hn : n ≠ 0) :
-    ∃ (U : Set ℝ) (w : ℝ → Eᵤ), IsOpen U ∧ 0 ∈ U ∧ ContDiffOn ℝ n w U ∧
-      w 0 = k 0 ∧ (∀ r ∈ U, k (r • g (r • w r)) = w r) ∧
-      (∀ᶠ q : ℝ × Eᵤ in 𝓝 (0, k 0),
-        k (q.1 • g (q.1 • q.2)) = q.2 ↔ w q.1 = q.2) := by
+omit [CompleteSpace Eᵤ] in
+/-- At the broken parameter, the derivative in the second variable of the residual
+`q ↦ q.2 - k (q.1 • g (q.1 • q.2))` of the split-box matching equation is the identity,
+hence invertible. -/
+private theorem isInvertible_fderiv_comp_inr_splitMatching
+    (hg₀ : DifferentiableAt ℝ g 0) (hk₀ : DifferentiableAt ℝ k 0) :
+    ((fderiv ℝ (fun q : ℝ × Eᵤ ↦ q.2 - k (q.1 • g (q.1 • q.2))) (0, k 0)).comp
+      (ContinuousLinearMap.inr ℝ ℝ Eᵤ)).IsInvertible := by
   let a : ℝ × Eᵤ → Eᵤ := fun q ↦ q.1 • q.2
   let b : ℝ × Eᵤ → Eₛ := fun q ↦ q.1 • g (a q)
-  let D : Set (ℝ × Eᵤ) := a ⁻¹' s ∩ b ⁻¹' t
   let F : ℝ × Eᵤ → Eᵤ := fun q ↦ q.2 - k (b q)
-  have ha : ContDiff ℝ n a := contDiff_fst.smul contDiff_snd
-  have hb : ContDiffOn ℝ n b (a ⁻¹' s) :=
-    contDiffOn_fst.smul (hg.comp ha.contDiffOn fun _ hq ↦ hq)
-  have hD : IsOpen D := hb.continuousOn.isOpen_inter_preimage
-    (hs.preimage ha.continuous) ht
-  have hbase : (0, k 0) ∈ D := by simp [D, a, b, hₛ, hₜ]
-  have hF : ContDiffOn ℝ n F D := contDiffOn_snd.sub
-    (hk.comp (hb.mono inter_subset_left) fun _ hq ↦ hq.2)
-  have hF₀ : ContDiffAt ℝ n F (0, k 0) := hF.contDiffAt (hD.mem_nhds hbase)
-  have hg₀ := (hg.contDiffAt (hs.mem_nhds hₛ)).differentiableAt hn
-  have hk₀ := (hk.contDiffAt (ht.mem_nhds hₜ)).differentiableAt hn
   -- At the broken parameter, both scalar factors kill the spatial derivative.
   have ha₀ : HasFDerivAt a
       ((ContinuousLinearMap.fst ℝ ℝ Eᵤ).smulRight (k 0)) (0, k 0) := by
@@ -97,6 +83,36 @@ theorem exists_contDiffOn_splitGluing_fixedPoint
       (ContinuousLinearMap.inr ℝ ℝ Eᵤ)).IsInvertible := by
     rw [hvertical]
     exact ⟨ContinuousLinearEquiv.refl ℝ Eᵤ, rfl⟩
+  exact hinv
+
+/-- Smooth local solutions of the split-box matching equation, including all solutions
+near the broken exit coordinate. Smoothness holds on one open neighbourhood, also at
+infinite regularity. Only the expanding factor needs to be complete. -/
+theorem exists_contDiffOn_splitGluing_fixedPoint
+    (hg : ContDiffOn ℝ n g s) (hs : IsOpen s) (hₛ : (0 : Eᵤ) ∈ s)
+    (hk : ContDiffOn ℝ n k t) (ht : IsOpen t) (hₜ : (0 : Eₛ) ∈ t) (hn : n ≠ 0) :
+    ∃ (U : Set ℝ) (w : ℝ → Eᵤ), IsOpen U ∧ 0 ∈ U ∧ ContDiffOn ℝ n w U ∧
+      w 0 = k 0 ∧ (∀ r ∈ U, k (r • g (r • w r)) = w r) ∧
+      (∀ᶠ q : ℝ × Eᵤ in 𝓝 (0, k 0),
+        k (q.1 • g (q.1 • q.2)) = q.2 ↔ w q.1 = q.2) := by
+  let a : ℝ × Eᵤ → Eᵤ := fun q ↦ q.1 • q.2
+  let b : ℝ × Eᵤ → Eₛ := fun q ↦ q.1 • g (a q)
+  let D : Set (ℝ × Eᵤ) := a ⁻¹' s ∩ b ⁻¹' t
+  let F : ℝ × Eᵤ → Eᵤ := fun q ↦ q.2 - k (b q)
+  have ha : ContDiff ℝ n a := contDiff_fst.smul contDiff_snd
+  have hb : ContDiffOn ℝ n b (a ⁻¹' s) :=
+    contDiffOn_fst.smul (hg.comp ha.contDiffOn fun _ hq ↦ hq)
+  have hD : IsOpen D := hb.continuousOn.isOpen_inter_preimage
+    (hs.preimage ha.continuous) ht
+  have hbase : (0, k 0) ∈ D := by simp [D, a, b, hₛ, hₜ]
+  have hF : ContDiffOn ℝ n F D := contDiffOn_snd.sub
+    (hk.comp (hb.mono inter_subset_left) fun _ hq ↦ hq.2)
+  have hF₀ : ContDiffAt ℝ n F (0, k 0) := hF.contDiffAt (hD.mem_nhds hbase)
+  have hg₀ := (hg.contDiffAt (hs.mem_nhds hₛ)).differentiableAt hn
+  have hk₀ := (hk.contDiffAt (ht.mem_nhds hₜ)).differentiableAt hn
+  have hinv : ((fderiv ℝ F (0, k 0)).comp
+      (ContinuousLinearMap.inr ℝ ℝ Eᵤ)).IsInvertible :=
+    isInvertible_fderiv_comp_inr_splitMatching hg₀ hk₀
   -- Extract one smooth neighbourhood, then restrict it to the matching-equation germ.
   let w := hF₀.implicitFunction hn hinv
   obtain ⟨V, hV, hV₀, hwV⟩ :=
@@ -178,45 +194,7 @@ theorem exists_contDiffOn_splitGluingPairs
     exact hr.2.trans_lt ((min_le_right r₀ (d / 2)).trans_lt (half_lt_self hd))
   have heqδ {r : ℝ} (hr : r ∈ Icc 0 δ) : w r = v r :=
     hWsub ⟨(hsmall hr).2, ⟨hr.1, hr.2.trans hδr⟩⟩
-  have hvnorm {r : ℝ} (hr : r ∈ Icc 0 δ) : ‖v r‖ = ε := by
-    rw [← heqδ hr]
-    exact hwnorm r ⟨hr.1, hr.2.trans hδr⟩
-  have hpass {r : ℝ} (hr : r ∈ Ioc 0 δ) :
-      (F r).2 = splitPassage ε (F r).1 :=
-    (splitPassage_toLp_smul (g (r • v r)) (hvnorm (Ioc_subset_Icc_self hr)) hε hr.1).symm
-  have hentry {r : ℝ} (hr : r ∈ Ioc 0 δ) :
-      (F r).1 ∈ {z | z ∈ (splitPassage ε).source ∧ ‖z.snd‖ ≤ r₀ * ε ∧
-        z.fst = g z.snd ∧ (splitPassage ε z).snd = k (splitPassage ε z).fst} := by
-    rw [himage]
-    exact ⟨r, ⟨hr.1, hr.2.trans hδr⟩, by simp only [F, heqδ (Ioc_subset_Icc_self hr)]⟩
-  have himageδ : F '' Ioc 0 δ = splitGluingPairs ε δ g k := by
-    ext p
-    rw [mem_splitGluingPairs]
-    constructor
-    · rintro ⟨r, hr, rfl⟩
-      have hrentry := hentry hr
-      refine ⟨hrentry.1, ?_, hrentry.2.2.1, hpass hr, ?_⟩
-      · simp only [F, WithLp.toLp_snd, norm_smul, Real.norm_of_nonneg hr.1.le,
-          hvnorm (Ioc_subset_Icc_self hr)]
-        exact mul_le_mul_of_nonneg_right hr.2 hε.le
-      · rw [hpass hr]
-        exact hrentry.2.2.2
-    · rintro ⟨hsrc, hbound, hgraph, hexit, hkgraph⟩
-      have hentry' : p.1 ∈ {z | z ∈ (splitPassage ε).source ∧ ‖z.snd‖ ≤ r₀ * ε ∧
-          z.fst = g z.snd ∧ (splitPassage ε z).snd = k (splitPassage ε z).fst} :=
-        ⟨hsrc, hbound.trans (mul_le_mul_of_nonneg_right hδr hε.le), hgraph,
-          by rwa [← hexit]⟩
-      rw [himage] at hentry'
-      obtain ⟨r, hr, hre⟩ := hentry'
-      have hnormr : r * ε = ‖p.1.snd‖ := by
-        simpa only [WithLp.toLp_snd, norm_smul, Real.norm_of_nonneg hr.1.le,
-          hwnorm r (Ioc_subset_Icc_self hr)] using congrArg (fun z ↦ ‖z.snd‖) hre
-      have hrδ : r ∈ Ioc 0 δ := ⟨hr.1, (mul_le_mul_iff_left₀ hε).mp
-        (by simpa only [mul_comm ε] using hnormr.trans_le hbound)⟩
-      have hFe : (F r).1 = p.1 := by
-        simpa only [F, heqδ (Ioc_subset_Icc_self hrδ)] using hre
-      refine ⟨r, hrδ, Prod.ext hFe ?_⟩
-      rw [hpass hrδ, hFe, ← hexit]
+  have himageδ := image_pairs_eq_splitGluingPairs hε hδr hwnorm himage (fun _ hr ↦ heqδ hr)
   have hderiv : HasDerivAt (fun r ↦ r • v r) (k 0) 0 := by
     convert (hasDerivAt_id (0 : ℝ)).smul
       ((hUv.contDiffAt (hU.mem_nhds hU₀)).differentiableAt hn).hasDerivAt using 1 <;>
