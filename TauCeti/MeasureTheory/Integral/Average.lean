@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import Mathlib.Analysis.Convex.Continuous
 import Mathlib.Analysis.Convex.Integral
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 
@@ -755,3 +756,33 @@ theorem tendsto_average_add_rpow {α : Type*} [MeasurableSpace α]
 end Rpow
 
 end TauCeti
+
+namespace ConvexOn
+
+open MeasureTheory Set
+
+/-- **Jensen's inequality for a monotone function convex on the half-line.** For a finite nonzero
+measure `μ`, an almost everywhere nonnegative `g`, and a function `Φ` that is convex and monotone
+on `[0, ∞)`, if `g` and `Φ ∘ g` are integrable then `Φ` of the average of `g` is at most the
+average of `Φ ∘ g`. -/
+theorem map_average_le_of_monotoneOn_Ici {α : Type*} [MeasurableSpace α] {μ : Measure α}
+    [IsFiniteMeasure μ] [NeZero μ] {g : α → ℝ} {Φ : ℝ → ℝ}
+    (hΦ : ConvexOn ℝ (Ici 0) Φ) (hΦm : MonotoneOn Φ (Ici 0)) (hg : ∀ᵐ x ∂μ, 0 ≤ g x)
+    (hgi : Integrable g μ) (hΦi : Integrable (fun x ↦ Φ (g x)) μ) :
+    Φ (⨍ x, g x ∂μ) ≤ ⨍ x, Φ (g x) ∂μ := by
+  -- Extend `Φ` constantly to the left, so Jensen applies to a continuous convex function on a
+  -- closed set.
+  have himage : (fun t : ℝ ↦ max t 0) '' univ = Ici 0 :=
+    ext fun s ↦ ⟨fun ⟨_, _, h⟩ ↦ h ▸ le_max_right _ _, fun h ↦ ⟨s, trivial, max_eq_left h⟩⟩
+  have hmax : ConvexOn ℝ univ (fun t : ℝ ↦ max t 0) :=
+    (convexOn_id convex_univ).sup (convexOn_const 0 convex_univ)
+  have hΦmax := ConvexOn.comp (himage ▸ hΦ) hmax (himage ▸ hΦm)
+  have hc : ContinuousOn (fun t : ℝ ↦ Φ (max t 0)) univ := by
+    simpa [Function.comp_def] using hΦmax.continuousOn_interior
+  have hJ := hΦmax.map_average_le hc isClosed_univ (ae_of_all _ fun _ ↦ mem_univ _) hgi
+    (hΦi.congr (hg.mono fun x hx ↦ by simp [Function.comp_def, max_eq_left hx]))
+  have hr : ⨍ x, Φ (max (g x) 0) ∂μ = ⨍ x, Φ (g x) ∂μ :=
+    average_congr (hg.mono fun x hx ↦ by simp only [max_eq_left hx])
+  simpa only [Function.comp_apply, max_eq_left (average_nonneg_of_ae hg), hr] using hJ
+
+end ConvexOn
