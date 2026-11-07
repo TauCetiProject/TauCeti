@@ -8,17 +8,19 @@ module
 public import Mathlib.Algebra.MvPolynomial.Funext
 public import Mathlib.RingTheory.MvPolynomial.Basic
 import Mathlib.RingTheory.Artinian.Module
+import Mathlib.RingTheory.Localization.FractionRing
+import Mathlib.RingTheory.MvPolynomial.Tower
 
 /-!
-# Finite evaluation tests for polynomial subspaces
+# Finite evaluation tests for polynomial submodules
 
-A finite-dimensional subspace of multivariate polynomials over a field is separated by
-finitely many evaluations. The evaluation points can be chosen in any box with infinite
-sides. In particular, one finite set tests all polynomials with a prescribed total degree
-bound, rather than depending on the coefficients of the polynomial being tested.
+A finitely generated submodule of multivariate polynomials over an integral domain is
+separated by finitely many evaluations. The evaluation points can be chosen in any box with
+infinite sides. In particular, one finite set tests all polynomials with a prescribed total
+degree bound, rather than depending on the coefficients of the polynomial being tested.
 
-Applied to homogeneous Taylor components, these tests give finitely many fixed directions
-that detect ambient order at every center.
+The proof passes to the fraction field, where the span of the submodule is
+finite-dimensional, so the kernels of the evaluation maps have a finite subintersection.
 -/
 
 public section
@@ -27,45 +29,50 @@ open MvPolynomial
 
 namespace Submodule
 
-variable {σ K : Type*} [Field K]
+variable {σ R : Type*} [CommRing R] [IsDomain R]
 
 /-- Finitely many evaluations in a box with infinite sides detect zero in a
-finite-dimensional polynomial subspace. -/
-theorem exists_finset_eq_zero_iff_forall_eval_eq_zero (V : Submodule K (MvPolynomial σ K))
-    [Module.Finite K V] (s : σ → Set K) (hs : ∀ i, (s i).Infinite) :
-    ∃ T : Finset (σ → K), (↑T : Set (σ → K)) ⊆ Set.pi Set.univ s ∧
+finitely generated submodule of polynomials over an integral domain. -/
+theorem exists_finset_eq_zero_iff_forall_eval_eq_zero (V : Submodule R (MvPolynomial σ R))
+    [Module.Finite R V] (s : σ → Set R) (hs : ∀ i, (s i).Infinite) :
+    ∃ T : Finset (σ → R), (↑T : Set (σ → R)) ⊆ Set.pi Set.univ s ∧
       ∀ p ∈ V, p = 0 ↔ ∀ v ∈ T, eval v p = 0 := by
   classical
-  let e (v : Set.pi Set.univ s) : V →ₗ[K] K :=
-    (aeval v.1).toLinearMap.comp V.subtype
+  obtain ⟨K, _, _, _⟩ : ∃ (K : Type _) (_ : Field K) (_ : Algebra R K), FaithfulSMul R K :=
+    ⟨FractionRing R, inferInstance, inferInstance, inferInstance⟩
+  let φ : MvPolynomial σ R →ₗ[R] MvPolynomial σ K :=
+    (MvPolynomial.mapAlgHom (Algebra.ofId R K)).toLinearMap
+  let W := span K (V.map φ : Set (MvPolynomial σ K))
+  have : Module.Finite K W :=
+    Module.Finite.iff_fg.mpr ((Module.Finite.iff_fg.mp ‹_›).map φ).span
+  let e (v : Set.pi Set.univ s) : W →ₗ[K] K :=
+    (aeval (algebraMap R K ∘ v.1)).toLinearMap.comp W.subtype
+  have he (v : σ → R) (p : MvPolynomial σ R) :
+      eval (algebraMap R K ∘ v) (φ p) = algebraMap R K (eval v p) := by
+    simp [φ, eval_map, ← aeval_def, aeval_algebraMap_apply]
   obtain ⟨t, ht⟩ := Finset.exists_inf_le fun v ↦ LinearMap.ker (e v)
-  refine ⟨t.image Subtype.val, ?_, fun p hp ↦ ⟨?_, ?_⟩⟩
-  · intro v hv
-    obtain ⟨w, _, rfl⟩ := Finset.mem_image.mp hv
-    exact w.2
-  · rintro rfl v _
-    exact map_zero _
-  · intro h
-    have hmem : (⟨p, hp⟩ : V) ∈ t.inf (fun v ↦ LinearMap.ker (e v)) := by
-      refine Submodule.mem_finsetInf.mpr fun v hv ↦ ?_
-      exact h v.1 (Finset.mem_image.mpr ⟨v, hv, rfl⟩)
-    exact funext_set s hs fun v hv ↦ ht ⟨v, hv⟩ hmem
+  refine ⟨t.image Subtype.val, by simp, fun p hp ↦ ⟨by rintro rfl; simp, fun h ↦ ?_⟩⟩
+  have hmem : (⟨φ p, subset_span (mem_map_of_mem hp)⟩ : W) ∈
+      t.inf fun v ↦ LinearMap.ker (e v) :=
+    mem_finsetInf.mpr fun v hv ↦ by
+      simp [e, he, h v.1 (Finset.mem_image.mpr ⟨v, hv, rfl⟩)]
+  exact funext_set s hs fun v hv ↦ by simpa [e, he] using ht ⟨v, hv⟩ hmem
 
 end Submodule
 
 namespace TauCeti
 
-variable {σ K : Type*} [Field K] [Finite σ]
+variable {σ R : Type*} [CommRing R] [IsDomain R] [Finite σ]
 
 /-- A fixed finite set in a box with infinite sides tests zero for every polynomial
-of total degree at most `D`. -/
+of total degree at most `D` over an integral domain. -/
 theorem exists_finset_eq_zero_iff_forall_eval_eq_zero_of_totalDegree_le (D : ℕ)
-    (s : σ → Set K) (hs : ∀ i, (s i).Infinite) :
-    ∃ T : Finset (σ → K), (↑T : Set (σ → K)) ⊆ Set.pi Set.univ s ∧
-      ∀ p : MvPolynomial σ K, p.totalDegree ≤ D →
+    (s : σ → Set R) (hs : ∀ i, (s i).Infinite) :
+    ∃ T : Finset (σ → R), (↑T : Set (σ → R)) ⊆ Set.pi Set.univ s ∧
+      ∀ p : MvPolynomial σ R, p.totalDegree ≤ D →
         (p = 0 ↔ ∀ v ∈ T, eval v p = 0) := by
   obtain ⟨T, hT, h⟩ :=
-    (restrictTotalDegree σ K D).exists_finset_eq_zero_iff_forall_eval_eq_zero s hs
+    (restrictTotalDegree σ R D).exists_finset_eq_zero_iff_forall_eval_eq_zero s hs
   exact ⟨T, hT, fun p hp ↦ h p ((mem_restrictTotalDegree σ D p).2 hp)⟩
 
 end TauCeti
