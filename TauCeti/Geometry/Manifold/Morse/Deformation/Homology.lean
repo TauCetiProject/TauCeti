@@ -12,7 +12,7 @@ public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 public import TauCeti.Geometry.Manifold.Morse.Deformation
 
 /-!
-# Relative homology across a band without critical points
+# Relative homology of bands: without critical points, and above a regular level
 
 Let `f` be a smooth real function on a boundaryless finite-dimensional manifold `M`, and let
 `a ≤ b` be such that the band `f⁻¹[a, b]` is compact and contains no critical point of `f`. The
