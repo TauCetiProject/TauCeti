@@ -456,11 +456,8 @@ private theorem exists_map_pairCoding_visible_eq [Nonempty α] [IsFiniteMeasure 
       (Measurable.of_eval fun k => hdatum (d k))).prodMk (Measurable.of_eval fun i => hdatum (g i))
   -- The visible increasing pairs, as visible off-diagonal pairs of the array.
   set ι : {t : ℕ × ℕ // t.1 < t.2} → V₂ := fun t => ⟨(g t.1.1, g t.1.2), hge _, hge _, hg t.2⟩
-  have hι : Function.Injective ι := by
-    intro t t' h
-    have h' := congrArg Subtype.val h
-    simp only [ι, Prod.mk.injEq] at h'
-    exact Subtype.ext (Prod.ext (hg.injective h'.1) (hg.injective h'.2))
+  have hι : Function.Injective ι := fun _ _ h =>
+    Subtype.ext ((hg.injective.prodMap hg.injective) (congrArg Subtype.val h))
   set M : (H → α) × (V₂ → α × α) → _ := fun r => (read r.1, fun t => r.2 (ι t))
   have hM : Measurable M :=
     (hread.comp measurable_fst).prodMk (Measurable.of_eval fun _ =>
@@ -473,16 +470,6 @@ private theorem exists_map_pairCoding_visible_eq [Nonempty α] [IsFiniteMeasure 
     hread.comp (Set.measurable_restrict H)
   have hsel : Measurable fun (c : V₂ → I) (t : {t : ℕ × ℕ // t.1 < t.2}) => c (ι t) :=
     Measurable.of_eval fun _ => measurable_pi_apply _
-  have hcodeP : Measurable fun q : (ℕ × ℕ → α) × (V₂ → I) =>
-      (H.domRestrict q.1,
-        fun p : V₂ => G (offDiagonalPairSquareContext e p.1.1 p.1.2 q.1) (q.2 p)) :=
-    ((Set.measurable_restrict H).comp measurable_fst).prodMk (Measurable.of_eval fun p =>
-      hG.comp (((measurable_offDiagonalPairSquareContext e p.1.1 p.1.2).comp
-        measurable_fst).prodMk ((measurable_pi_apply p).comp measurable_snd)))
-  have hpairs : Measurable fun x : ℕ × ℕ → α =>
-      (H.domRestrict x, fun p : V₂ => (x p.1, x p.1.swap)) :=
-    (Set.measurable_restrict H).prodMk (Measurable.of_eval fun p =>
-      (measurable_pi_apply p.1).prodMk (measurable_pi_apply p.1.swap))
   -- Reading the vertex data and the visible pairs off the pair coding.
   have hfac : M ∘ (fun q : (ℕ × ℕ → α) × (V₂ → I) => (H.domRestrict q.1,
         fun p : V₂ => G (offDiagonalPairSquareContext e p.1.1 p.1.2 q.1) (q.2 p))) =
@@ -494,12 +481,11 @@ private theorem exists_map_pairCoding_visible_eq [Nonempty α] [IsFiniteMeasure 
       simp [datum, vertexDatum]
     simp only [Function.comp_apply, Prod.map, M, Λ, ι, read, visibleSquareContext, hdatum,
       Set.domRestrict_apply, squareContextOfVertexData_vertexDatum]
-  have hunif : (Measure.infinitePi fun _ : V₂ => (volume : Measure I)).map (fun c t => c (ι t)) =
-      Measure.infinitePi fun _ : {t : ℕ × ℕ // t.1 < t.2} => (volume : Measure I) :=
-    Measure.map_infinitePi_infinitePi_of_inj hι
   have hP' := congrArg (Measure.map M) hP
-  rw [Measure.map_map hM hcodeP, Measure.map_map hM hpairs, hfac,
-    ← Measure.map_map hΛ (hV.prodMap hsel), ← Measure.map_prod_map _ _ hV hsel, hunif] at hP'
+  rw [Measure.map_map hM (measurable_restrict_pairCoding H V₂ e hG),
+    Measure.map_map hM (measurable_restrict_pairs H V₂), hfac,
+    ← Measure.map_map hΛ (hV.prodMap hsel), ← Measure.map_prod_map _ _ hV hsel,
+    Measure.map_infinitePi_infinitePi_of_inj hι] at hP'
   exact hP'
 
 omit [StandardBorelSpace α] in
