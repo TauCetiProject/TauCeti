@@ -300,11 +300,13 @@ theorem coeFn_schrodingerPropagator_toLp_gaussian (t : ℝ) :
   have h1 : (1 + 4 * π * t * I : ℂ).arg ≠ π :=
     (mem_slitPlane_iff_arg.1 (mem_slitPlane_iff.2 (Or.inl (by simp)))).1
   have h0 : (1 + 4 * π * t * I : ℂ) ≠ 0 := fun h ↦ by simpa using congrArg re h
+  -- The coefficient `π / b` of the inverse-Fourier Gaussian is `(1 + 4πit)⁻¹`.
+  have hcoeff : (π : ℂ) / b = (1 + 4 * π * t * I)⁻¹ := by
+    simp only [b]
+    field_simp
   rw [hx, SchwartzMap.fourierInv_gaussian]
   congr 1
-  · rw [show (π : ℂ) / b = (1 + 4 * π * t * I)⁻¹ by
-        simp only [b]
-        field_simp, inv_cpow _ _ h1, ← cpow_neg, neg_div]
+  · rw [hcoeff, inv_cpow _ _ h1, ← cpow_neg, neg_div]
   · congr 1
     simp only [b]
     field_simp
