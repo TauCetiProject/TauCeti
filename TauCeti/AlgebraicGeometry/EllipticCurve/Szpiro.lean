@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Reduced
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Reduction.Conductor
 public import TauCeti.NumberTheory.AbcConjecture
+import TauCeti.Algebra.Order.Ring.MaxPow
 import TauCeti.AlgebraicGeometry.EllipticCurve.Weierstrass
 import TauCeti.Data.Nat.Prime.Basic
 import TauCeti.RingTheory.Radical.NatInt
@@ -372,6 +373,23 @@ private theorem exists_isCoprime_of_c_relation {c₄ c₆ Δ : ℤ} (hrel : 1728
   · rw [hrel]
     linear_combination hc - ha
 
+/-- For the coprime triple `a + b = c` of `c₆² + 1728 Δ = c₄³` after dividing by `g`, the radical
+of `a b c` is at most the radical of `6 c₄ c₆ Δ`. -/
+private theorem radical_mul_le_radical_six_mul {a b c c₄ c₆ Δ : ℤ} {g : ℕ} (h₄ : c₄ ≠ 0)
+    (h₆ : c₆ ≠ 0) (hΔ : Δ ≠ 0) (ha : c₆ ^ 2 = g * a) (hb : 1728 * Δ = g * b)
+    (hc : c₄ ^ 3 = g * c) :
+    radical (a * b * c).natAbs ≤ radical (6 * c₄.natAbs * c₆.natAbs * Δ.natAbs) := by
+  have : a * b * c ∣ (6 * c₄ * c₆ * Δ) ^ 6 := ⟨g ^ 3 * 27 * Δ ^ 5 * c₄ ^ 3 * c₆ ^ 4, by
+    linear_combination (27 * Δ ^ 5 * c₄ ^ 3 * c₆ ^ 4 * (g * b) * (g * c)) * ha
+      + (27 * Δ ^ 5 * c₄ ^ 3 * c₆ ^ 4 * c₆ ^ 2 * (g * c)) * hb
+      + (27 * Δ ^ 5 * c₄ ^ 3 * c₆ ^ 4 * c₆ ^ 2 * (1728 * Δ)) * hc⟩
+  have h₀ : 6 * c₄.natAbs * c₆.natAbs * Δ.natAbs ≠ 0 := by
+    simp [h₄, h₆, hΔ]
+  refine Nat.le_of_dvd (Nat.radical_pos _) ?_
+  rw [← radical_pow (6 * c₄.natAbs * c₆.natAbs * Δ.natAbs) (by norm_num : 6 ≠ 0)]
+  refine radical_dvd_radical ?_ (pow_ne_zero 6 h₀)
+  simpa [Int.natAbs_mul, Int.natAbs_pow] using Int.natAbs_dvd_natAbs.2 this
+
 /-- **The case `c₄ c₆ ≠ 0`**: abc, with constant `C₀` at the exponent `1 + ε₀`, applied to the
 coprime triple of `c₆² + 1728 Δ = c₄³`, together with the bookkeeping of
 `gcd_mul_radical_dvd`, bounds `max (|c₄|³, c₆²)` by a constant times `N ^ (6 + ε)`. -/
@@ -391,18 +409,7 @@ private theorem le_of_abc_of_ne_zero {ε ε₀ C₀ : ℝ} (hε₀ : 0 < ε₀) 
     simp [g, Int.gcd_eq_natAbs, Int.natAbs_pow]
   set R := radical (6 * c₄.natAbs * c₆.natAbs * Δ.natAbs)
   set M := max (c₄.natAbs ^ 3) (c₆.natAbs ^ 2)
-  have hR : (radical (a * b * c).natAbs) ≤ R := by
-    have : a * b * c ∣ (6 * c₄ * c₆ * Δ) ^ 6 := ⟨g ^ 3 * 27 * Δ ^ 5 * c₄ ^ 3 * c₆ ^ 4, by
-      linear_combination (27 * Δ ^ 5 * c₄ ^ 3 * c₆ ^ 4 * (g * b) * (g * c)) * ha
-        + (27 * Δ ^ 5 * c₄ ^ 3 * c₆ ^ 4 * c₆ ^ 2 * (g * c)) * hb
-        + (27 * Δ ^ 5 * c₄ ^ 3 * c₆ ^ 4 * c₆ ^ 2 * (1728 * Δ)) * hc⟩
-    have h₀ : 6 * c₄.natAbs * c₆.natAbs * Δ.natAbs ≠ 0 := by
-      simp [h₄, h₆, hΔ]
-    refine Nat.le_of_dvd (Nat.radical_pos _) ?_
-    rw [show R = radical ((6 * c₄.natAbs * c₆.natAbs * Δ.natAbs) ^ 6) from
-      (radical_pow _ (by norm_num)).symm]
-    refine radical_dvd_radical ?_ (pow_ne_zero 6 h₀)
-    simpa [Int.natAbs_mul, Int.natAbs_pow] using Int.natAbs_dvd_natAbs.2 this
+  have hR : (radical (a * b * c).natAbs) ≤ R := radical_mul_le_radical_six_mul h₄ h₆ hΔ ha hb hc
   have hc' : c₄.natAbs ^ 3 = g * c.natAbs := by
     simpa [Int.natAbs_mul, Int.natAbs_pow] using congrArg Int.natAbs hc
   have ha' : c₆.natAbs ^ 2 = g * a.natAbs := by
@@ -423,16 +430,8 @@ private theorem le_of_abc_of_ne_zero {ε ε₀ C₀ : ℝ} (hε₀ : 0 < ε₀) 
     exact_mod_cast hc₀.trans_lt' zero_lt_one |>.trans_le (le_max_right _ _)
   -- the product `g · rad (6 c₄ c₆ Δ)` is at most `432 |c₄ c₆| N`, whose sixth power is at most
   -- `432⁶ M⁵ N⁶`
-  have hy : (g * R) ^ 6 ≤ 432 ^ 6 * M ^ 5 * N ^ 6 := by
-    have h₁ : g * R ≤ 432 * (c₄.natAbs * c₆.natAbs * N) := Nat.le_of_dvd (by positivity) (hg ▸ hdvd)
-    have h₂ : (c₄.natAbs * c₆.natAbs) ^ 6 ≤ M ^ 5 :=
-      calc (c₄.natAbs * c₆.natAbs) ^ 6 = (c₄.natAbs ^ 3) ^ 2 * (c₆.natAbs ^ 2) ^ 3 := by ring
-        _ ≤ M ^ 2 * M ^ 3 := Nat.mul_le_mul (Nat.pow_le_pow_left (le_max_left _ _) 2)
-          (Nat.pow_le_pow_left (le_max_right _ _) 3)
-        _ = M ^ 5 := by ring
-    calc (g * R) ^ 6 ≤ (432 * (c₄.natAbs * c₆.natAbs * N)) ^ 6 := Nat.pow_le_pow_left h₁ 6
-      _ = 432 ^ 6 * (c₄.natAbs * c₆.natAbs) ^ 6 * N ^ 6 := by ring
-      _ ≤ 432 ^ 6 * M ^ 5 * N ^ 6 := by gcongr
+  have hy : (g * R) ^ 6 ≤ 432 ^ 6 * M ^ 5 * N ^ 6 :=
+    pow_six_le_of_le_mul (K := 432) (Nat.le_of_dvd (by positivity) (hg ▸ hdvd))
   refine le_mul_rpow_of_le_mul_rpow hε₀ hεε₀ (y := ((g * R : ℕ) : ℝ)) ?_ ?_ ?_ ?_
     (by exact_mod_cast hy)
   · exact_mod_cast (Nat.one_le_pow _ _ (by omega)).trans (le_max_left _ _)
