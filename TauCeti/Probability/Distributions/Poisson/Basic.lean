@@ -51,6 +51,18 @@ theorem poissonMeasure_singleton_zero_eq_one_iff {r : ℝ≥0} : Po(r) {0} = 1 �
   rw [poissonMeasure_singleton, ENNReal.ofReal_eq_one]
   simp
 
+/-- A Poisson singleton has nonzero mass exactly when the rate is positive or the count is zero. -/
+theorem poissonMeasure_singleton_ne_zero_iff (r : ℝ≥0) (n : ℕ) :
+    poissonMeasure r {n} ≠ 0 ↔ r ≠ 0 ∨ n = 0 := by
+  by_cases hr : r = 0
+  · subst r
+    cases n <;> simp [poissonMeasure_zero]
+  · rw [poissonMeasure_singleton, ENNReal.ofReal_ne_zero_iff]
+    constructor
+    · exact fun _ ↦ Or.inl hr
+    · intro _
+      positivity
+
 /-- The probability-generating series of a Poisson law: weighted by the Poisson masses, the powers
 `z ^ k` sum to `exp ((z - 1) * r)`. -/
 theorem hasSum_pow_poissonMeasure (r : ℝ≥0) (z : ℝ) :
