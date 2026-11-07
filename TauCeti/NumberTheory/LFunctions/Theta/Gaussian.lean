@@ -104,6 +104,11 @@ theorem archGaussian_one_archGaussianDilation (y : realSpace K) (hy : ∀ w, 0 <
     (x : mixedSpace K) : archGaussian 1 (archGaussianDilation y hy x) = archGaussian y x := by
   simp only [archGaussian_apply, normAtPlace_archGaussianDilation_sq, Pi.one_apply, one_mul]
 
+/-- At a constant parameter, the Gaussian uses the Euclidean mixed-space pairing. -/
+theorem archGaussian_const (t : ℝ) (x : mixedSpace K) :
+    archGaussian (fun _ ↦ t) x = ↑(Real.exp (-Real.pi * (t * mixedInner K x x))) := by
+  rw [archGaussian_apply, ← Finset.mul_sum, ← mixedInner_self_eq_sum]
+
 /-- At the constant parameter `1`, the Gaussian uses the Euclidean mixed-space pairing. -/
 theorem archGaussian_one (x : mixedSpace K) :
     archGaussian (1 : realSpace K) x = ↑(Real.exp (-Real.pi * mixedInner K x x)) := by

@@ -144,7 +144,7 @@ theorem mixedInner_self_eq_sum (x : mixedSpace K) :
 
 open scoped Classical in
 open NumberField.InfinitePlace in
-/-- The squared product norm is at most the Euclidean squared length, since the product norm
+/-- The squared sup norm is at most the Euclidean squared length, since the sup norm
 is the maximum of the absolute values at the infinite places. -/
 theorem norm_sq_le_mixedInner_self (x : mixedSpace K) : ‖x‖ ^ 2 ≤ mixedInner K x x := by
   classical
@@ -152,6 +152,16 @@ theorem norm_sq_le_mixedInner_self (x : mixedSpace K) : ‖x‖ ^ 2 ≤ mixedInn
     (fun w ↦ normAtPlace w x)
   rw [norm_eq_sup'_normAtPlace, hw, mixedInner_self_eq_sum]
   exact Finset.single_le_sum (fun v _ ↦ sq_nonneg (normAtPlace v x)) (Finset.mem_univ w)
+
+open scoped Classical in
+/-- The squared Euclidean length of a mixed-space vector is nonnegative. -/
+theorem mixedInner_self_nonneg (x : mixedSpace K) : 0 ≤ mixedInner K x x :=
+  (sq_nonneg ‖x‖).trans (norm_sq_le_mixedInner_self K x)
+
+open scoped Classical in
+/-- A nonzero mixed-space vector has positive squared Euclidean length. -/
+theorem mixedInner_self_pos {x : mixedSpace K} (hx : x ≠ 0) : 0 < mixedInner K x x :=
+  (sq_pos_of_pos (norm_pos_iff.mpr hx)).trans_le (norm_sq_le_mixedInner_self K x)
 
 variable {K} in
 open NumberField.InfinitePlace in
