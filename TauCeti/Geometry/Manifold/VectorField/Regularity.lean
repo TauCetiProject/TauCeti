@@ -410,7 +410,7 @@ theorem eventuallyEq_fderivWithin_chart_apply_mpullbackWithin
       (mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm U (Set.range I) z)) =ᶠ[
       𝓝[Set.range I] (extChartAt I x x)]
     (fun y ↦ mvfderiv I f y (U y)) ∘ (extChartAt I x).symm := by
-  have hf_eventually := hf.eventually_mdifferentiableAt hn
+  have hf_eventually := hf.eventually_mdifferentiableAt (ENat.one_le_iff_ne_zero_withTop.1 hn)
   have hsymm_tendsto : Tendsto (extChartAt I x).symm
       (𝓝[Set.range I] (extChartAt I x x)) (𝓝 x) := by
     simpa only [extChartAt_to_inv] using
