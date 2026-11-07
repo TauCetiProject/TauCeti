@@ -202,6 +202,46 @@ private theorem abs_integral_prod_mul_sub_le (E : Finset (Sym2 V)) (G : Sym2 V �
     have hab : a ≠ b := fun h => he₀ (Sym2.mk_isDiag_iff.2 h)
     simpa only [edgeFactor_mk] using abs_integral_prod_mul_sub_le_aux E G U W hab
 
+/-- **One swap.** Adding the edge `e₀ ∈ E` to the set `D'` of edges taken from `U` changes the
+integral of the edge product by at most `‖U - W‖□`. -/
+private theorem abs_integral_hybrid_insert_sub_le (E : Finset (Sym2 V))
+    (hE : ∀ e ∈ E, ¬ e.IsDiag) (U W : Graphon Ω μ) (e₀ : Sym2 V) (D' : Finset (Sym2 V))
+    (he₀E : e₀ ∈ E) (he₀D' : e₀ ∉ D') :
+    |(∫ x, ∏ e ∈ E, edgeFactor (if e ∈ insert e₀ D' then U else W) x e
+          ∂(Measure.pi fun _ : V => μ))
+        - ∫ x, ∏ e ∈ E, edgeFactor (if e ∈ D' then U else W) x e
+          ∂(Measure.pi fun _ : V => μ)|
+      ≤ cutNorm μ (U.toSymmKernel - W.toSymmKernel) := by
+  have key : ∀ x : V → Ω,
+      (∏ e ∈ E, edgeFactor (if e ∈ insert e₀ D' then U else W) x e)
+        - (∏ e ∈ E, edgeFactor (if e ∈ D' then U else W) x e)
+      = (∏ e ∈ E.erase e₀, edgeFactor (if e ∈ D' then U else W) x e)
+          * (edgeFactor U x e₀ - edgeFactor W x e₀) := by
+    intro x
+    rw [← Finset.prod_erase_mul E
+        (fun e => edgeFactor (if e ∈ insert e₀ D' then U else W) x e) he₀E,
+      ← Finset.prod_erase_mul E (fun e => edgeFactor (if e ∈ D' then U else W) x e) he₀E]
+    have hcongr : ∀ e ∈ E.erase e₀,
+        edgeFactor (if e ∈ insert e₀ D' then U else W) x e
+          = edgeFactor (if e ∈ D' then U else W) x e := by
+      intro e he
+      have hmem : (e ∈ insert e₀ D') ↔ e ∈ D' := by
+        simp [Finset.mem_insert, Finset.ne_of_mem_erase he]
+      simp only [hmem]
+    rw [Finset.prod_congr rfl hcongr]
+    have h1 : (if e₀ ∈ insert e₀ D' then U else W) = U := by simp
+    have h2 : (if e₀ ∈ D' then U else W) = W := by simp [he₀D']
+    rw [h1, h2]
+    ring
+  rw [← integral_sub (integrable_prod_edgeFactor E _) (integrable_prod_edgeFactor E _)]
+  have hfun : (fun x : V → Ω =>
+        (∏ e ∈ E, edgeFactor (if e ∈ insert e₀ D' then U else W) x e)
+          - ∏ e ∈ E, edgeFactor (if e ∈ D' then U else W) x e)
+      = fun x : V → Ω => (∏ e ∈ E.erase e₀, edgeFactor (if e ∈ D' then U else W) x e)
+          * (edgeFactor U x e₀ - edgeFactor W x e₀) := funext key
+  rw [hfun]
+  exact abs_integral_prod_mul_sub_le E _ U W e₀ (hE e₀ he₀E)
+
 /-- **The telescope.** Swapping the edges in a subset `D` of `E` from `W` to `U`, one edge at a
 time, costs at most `‖U - W‖□` per swap. -/
 private theorem abs_integral_hybrid_sub_le (E : Finset (Sym2 V)) (hE : ∀ e ∈ E, ¬ e.IsDiag)
@@ -215,41 +255,7 @@ private theorem abs_integral_hybrid_sub_le (E : Finset (Sym2 V)) (hE : ∀ e ∈
     intro hsub
     have he₀E : e₀ ∈ E := hsub (Finset.mem_insert_self e₀ D')
     have hD'E : D' ⊆ E := (Finset.subset_insert _ _).trans hsub
-    have key : ∀ x : V → Ω,
-        (∏ e ∈ E, edgeFactor (if e ∈ insert e₀ D' then U else W) x e)
-          - (∏ e ∈ E, edgeFactor (if e ∈ D' then U else W) x e)
-        = (∏ e ∈ E.erase e₀, edgeFactor (if e ∈ D' then U else W) x e)
-            * (edgeFactor U x e₀ - edgeFactor W x e₀) := by
-      intro x
-      rw [← Finset.prod_erase_mul E
-          (fun e => edgeFactor (if e ∈ insert e₀ D' then U else W) x e) he₀E,
-        ← Finset.prod_erase_mul E (fun e => edgeFactor (if e ∈ D' then U else W) x e) he₀E]
-      have hcongr : ∀ e ∈ E.erase e₀,
-          edgeFactor (if e ∈ insert e₀ D' then U else W) x e
-            = edgeFactor (if e ∈ D' then U else W) x e := by
-        intro e he
-        have hmem : (e ∈ insert e₀ D') ↔ e ∈ D' := by
-          simp [Finset.mem_insert, Finset.ne_of_mem_erase he]
-        simp only [hmem]
-      rw [Finset.prod_congr rfl hcongr]
-      have h1 : (if e₀ ∈ insert e₀ D' then U else W) = U := by simp
-      have h2 : (if e₀ ∈ D' then U else W) = W := by simp [he₀D']
-      rw [h1, h2]
-      ring
-    have hstep :
-        |(∫ x, ∏ e ∈ E, edgeFactor (if e ∈ insert e₀ D' then U else W) x e
-              ∂(Measure.pi fun _ : V => μ))
-            - ∫ x, ∏ e ∈ E, edgeFactor (if e ∈ D' then U else W) x e
-              ∂(Measure.pi fun _ : V => μ)|
-          ≤ cutNorm μ (U.toSymmKernel - W.toSymmKernel) := by
-      rw [← integral_sub (integrable_prod_edgeFactor E _) (integrable_prod_edgeFactor E _)]
-      have hfun : (fun x : V → Ω =>
-            (∏ e ∈ E, edgeFactor (if e ∈ insert e₀ D' then U else W) x e)
-              - ∏ e ∈ E, edgeFactor (if e ∈ D' then U else W) x e)
-          = fun x : V → Ω => (∏ e ∈ E.erase e₀, edgeFactor (if e ∈ D' then U else W) x e)
-              * (edgeFactor U x e₀ - edgeFactor W x e₀) := funext key
-      rw [hfun]
-      exact abs_integral_prod_mul_sub_le E _ U W e₀ (hE e₀ he₀E)
+    have hstep := abs_integral_hybrid_insert_sub_le E hE U W e₀ D' he₀E he₀D'
     have htri := abs_sub_le
       (∫ x, ∏ e ∈ E, edgeFactor (if e ∈ insert e₀ D' then U else W) x e
         ∂(Measure.pi fun _ : V => μ))
