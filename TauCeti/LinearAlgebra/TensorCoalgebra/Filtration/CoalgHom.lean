@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.TensorCoalgebra.CoalgHom
 public import TauCeti.LinearAlgebra.TensorCoalgebra.Coderivation
+import TauCeti.LinearAlgebra.TensorProduct.Basic
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -91,31 +92,6 @@ theorem coalgHom_letter_add_apply_eq_self_of_mem_filtration
     (fun w hw ↦ by rw [letter_coalgHom_letter_add_apply, hφ w hw, add_zero, LinearMap.id_apply])
     hz
 
-/-- Splitting `F ⊗ F - id - (D ⊗ id + id ⊗ D)` into the terms in which one factor is the defect
-`F - id - D` and the term `(F - id) ⊗ (F - id)` in which both factors move. -/
-private theorem map_sub_sub_add_eq (F D : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M)
-    (w : ReducedTensorWords R M ⊗[R] ReducedTensorWords R M) :
-    TensorProduct.map F F w - w - (LinearMap.rTensor _ D w + LinearMap.lTensor _ D w) =
-      TensorProduct.map (F - LinearMap.id - D) LinearMap.id w +
-        TensorProduct.map LinearMap.id (F - LinearMap.id - D) w +
-        TensorProduct.map (F - LinearMap.id) (F - LinearMap.id) w := by
-  have hr : TensorProduct.map (F - LinearMap.id) (LinearMap.id (M := ReducedTensorWords R M)) =
-      TensorProduct.map (F - LinearMap.id - D) LinearMap.id + TensorProduct.map D LinearMap.id := by
-    rw [← TensorProduct.map_add_left]
-    congr 1
-    abel
-  have hl : TensorProduct.map (LinearMap.id (M := ReducedTensorWords R M)) (F - LinearMap.id) =
-      TensorProduct.map LinearMap.id (F - LinearMap.id - D) + TensorProduct.map LinearMap.id D := by
-    rw [← TensorProduct.map_add_right]
-    congr 1
-    abel
-  conv_lhs => rw [← add_sub_cancel LinearMap.id F]
-  rw [TensorProduct.map_add_left, TensorProduct.map_add_right, TensorProduct.map_add_right,
-    TensorProduct.map_id, hr, hl]
-  simp only [LinearMap.add_apply, LinearMap.id_apply, LinearMap.rTensor_def,
-    LinearMap.lTensor_def]
-  abel
-
 /- The proof below does not expand `coalgHom`.  It shows by induction along the conilpotence
 filtration that `F - id - coderiv φ` vanishes on the words of length at most `2 e + 1`, where
 `F = coalgHom (letter + φ)`.  The letter component of `F - id - coderiv φ` is zero, and the
@@ -152,7 +128,7 @@ theorem coalgHom_letter_add_apply_of_mem_filtration {φ : ReducedTensorWords R M
     -- induction, and `(F - id) ⊗ (F - id)` since every cut of a word of length at most `2 e + 1`
     -- has a half of length at most `e`.
     generalize coalgHom R (letter R M + φ) = F at hF hX ih ⊢
-    have h := map_sub_sub_add_eq F (coderiv R φ) (deconcatenation R M z)
+    have h := TensorProduct.map_sub_sub_add_eq F (coderiv R φ) (deconcatenation R M z)
     rw [map_deconcatenation_eq_zero_of_mem_filtration R M ih
         (apply_eq_zero_of_mem_filtration_zero R M _) (by simpa using hz),
       map_deconcatenation_eq_zero_of_mem_filtration R M
