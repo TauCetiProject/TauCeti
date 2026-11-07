@@ -64,15 +64,13 @@ namespace TauCeti
 variable {α β γ 𝕜 E F G : Type*} [RCLike 𝕜]
   [MeasurableSpace α] [MeasurableSpace β] [MeasurableSpace γ]
   {μ : Measure α} {ν : Measure β} {ρ : Measure γ}
-  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
-  [NormedAddCommGroup G] [InnerProductSpace 𝕜 G]
+  [NormedAddCommGroup E] [NormedAddCommGroup F] [NormedAddCommGroup G] [InnerProductSpace 𝕜 G]
 
 local notation "⟪" x ", " y "⟫" => inner 𝕜 x y
 
 section AdjointKernel
 
-variable [CompleteSpace F] [CompleteSpace G] {K : α → β → F →L[𝕜] G}
+variable [InnerProductSpace 𝕜 F] [CompleteSpace F] [CompleteSpace G] {K : α → β → F →L[𝕜] G}
 
 /-- The adjoint kernel `(y, x) ↦ (K x y)†` of an a.e. strongly measurable kernel is a.e. strongly
 measurable for the swapped product measure. -/
@@ -92,7 +90,7 @@ end AdjointKernel
 
 section Pairing
 
-variable [SFinite μ] [SFinite ν] {K : α → β → F →L[𝕜] G}
+variable [NormedSpace 𝕜 F] [SFinite μ] [SFinite ν] {K : α → β → F →L[𝕜] G}
 
 /-- For a kernel with bounded row and column integrals and `u ∈ L²(ν)`, `v ∈ L²(μ)`, the function
 `(x, y) ↦ ⟪K x y (u y), v x⟫` is integrable on `μ.prod ν`. -/
@@ -145,8 +143,9 @@ end Pairing
 
 section Adjoint
 
-variable [SFinite μ] [SFinite ν] [CompleteSpace F] [CompleteSpace G] [NormedSpace ℝ F]
-  [SMulCommClass ℝ 𝕜 F] [NormedSpace ℝ G] [SMulCommClass ℝ 𝕜 G] {K : α → β → F →L[𝕜] G}
+variable [InnerProductSpace 𝕜 F] [SFinite μ] [SFinite ν] [CompleteSpace F] [CompleteSpace G]
+  [NormedSpace ℝ F] [SMulCommClass ℝ 𝕜 F] [NormedSpace ℝ G] [SMulCommClass ℝ 𝕜 G]
+  {K : α → β → F →L[𝕜] G}
 
 /-- The adjoint of the integral operator with kernel `K : α → β → (F →L[𝕜] G)` on `L²` is the
 integral operator with the adjoint kernel `(y, x) ↦ (K x y)†`. The row and column bounds swap
@@ -166,7 +165,8 @@ end Adjoint
 
 section Composition
 
-variable [SFinite μ] [SFinite ν] [SFinite ρ] [CompleteSpace E] [CompleteSpace G]
+variable [InnerProductSpace 𝕜 E] [InnerProductSpace 𝕜 F] [SFinite μ] [SFinite ν] [SFinite ρ]
+  [CompleteSpace E] [CompleteSpace G]
 
 section AdjointComp
 
