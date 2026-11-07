@@ -41,6 +41,9 @@ larger order (`VertexOperator.IsLocalOfOrder.mono`), and it is symmetric in `A` 
 * `VertexOperator.ext_ncoeff`: vertex operators with the same normalized coefficients are equal.
 * `VertexOperator.IsLocalOfOrder.mono`, `VertexOperator.IsLocalOfOrder.symm`: locality is
   monotone in the order and symmetric.
+* `VertexOperator.IsLocalOfOrder.ncoeff_apply_ncoeff_neg_one_eq_zero`: Goddard's argument. If
+  `A` is local with `B` and kills a vector `v` on which `B(w)` has no negative powers of `w`, then
+  `A` also kills `B₍₋₁₎ v`.
 
 ## References
 
@@ -143,6 +146,37 @@ theorem symm (h : A.IsLocalOfOrder B N) : B.IsLocalOfOrder A N := by
     rw [Prod.fst_swap, Prod.snd_swap, Nat.choose_symm_of_eq_add (mem_antidiagonal.1 hij).symm, hN]
     module
   rw [sum_congr rfl e, ← smul_sum, h m n, smul_zero]
+
+/-- Locality with a fixed field is preserved by differences of the first field. -/
+theorem sub_left {A' : VertexOperator R V} (h : A.IsLocalOfOrder B N)
+    (h' : A'.IsLocalOfOrder B N) : (A - A').IsLocalOfOrder B N := by
+  intro m n
+  have e : ∀ ij ∈ antidiagonal N, N.choose ij.1 • (-1 : ℤ) ^ ij.2 •
+      ((A - A')[[m + ij.1]] * B[[n + ij.2]] - B[[n + ij.2]] * (A - A')[[m + ij.1]]) =
+      N.choose ij.1 • (-1 : ℤ) ^ ij.2 •
+        (A[[m + ij.1]] * B[[n + ij.2]] - B[[n + ij.2]] * A[[m + ij.1]]) -
+      N.choose ij.1 • (-1 : ℤ) ^ ij.2 •
+        (A'[[m + ij.1]] * B[[n + ij.2]] - B[[n + ij.2]] * A'[[m + ij.1]]) := by
+    intro ij _
+    rw [map_sub, Pi.sub_apply, sub_mul, mul_sub]
+    module
+  rw [sum_congr rfl e, sum_sub_distrib, h m n, h' m n, sub_zero]
+
+/-- **Goddard's argument.** Let `A` be local of order `N` with `B`, and let `v` be a vector
+killed by every mode of `A` and by the nonnegative modes of `B`. Then every mode of `A` also
+kills `B₍₋₁₎ v`. Indeed, applied to `v`, the locality relation at `(m - N, -1)` reduces to
+`A₍ₘ₎ B₍₋₁₎ v = 0`. -/
+theorem ncoeff_apply_ncoeff_neg_one_eq_zero (h : A.IsLocalOfOrder B N) {v : V}
+    (hA : ∀ k : ℤ, (A[[k]]) v = 0) (hB : ∀ j : ℤ, 0 ≤ j → (B[[j]]) v = 0) (m : ℤ) :
+    (A[[m]]) ((B[[-1]]) v) = 0 := by
+  have hv := LinearMap.congr_fun (h (m - N) (-1)) v
+  rw [LinearMap.sum_apply, sum_eq_single (N, 0)] at hv
+  · simpa [hA] using hv
+  · rintro ⟨i, j⟩ hij hne
+    have hij' : i + j = N := mem_antidiagonal.1 hij
+    have hj : 0 < j := Nat.pos_of_ne_zero fun hj ↦ hne (by subst hj; simp [← hij'])
+    simp [hA, hB (-1 + j) (by omega)]
+  · simp
 
 end IsLocalOfOrder
 
