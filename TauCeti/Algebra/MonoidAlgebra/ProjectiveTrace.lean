@@ -61,6 +61,15 @@ variable {A : Type*} [CommRing A] [IsLocalRing A] {p : ℕ} [Fact p.Prime] {G : 
   [IsScalarTower A (MonoidAlgebra A G) X] [Module.Finite (MonoidAlgebra A G) X]
   [Module.Projective (MonoidAlgebra A G) X]
 
+/-- A finitely generated projective module over a local ring is free. This is
+`Module.free_of_flat_of_isLocalRing`, once the module carries the additive group structure that
+it asks for. -/
+private theorem free_of_projective_of_isLocalRing {R M : Type*} [CommRing R] [IsLocalRing R]
+    [AddCommMonoid M] [Module R M] [Module.Finite R M] [Module.Projective R M] :
+    Module.Free R M :=
+  let _ := Module.addCommMonoidToAddCommGroup R (M := M)
+  Module.free_of_flat_of_isLocalRing
+
 /-- **Characters of projective modules vanish at `p`-singular elements.** Let `A` be a local ring
 in which the prime `p` is not a unit and `G` a finite group. If `p` divides the order of `g ∈ G`,
 then `g` acts with trace zero on every finitely generated projective `A[G]`-module. -/
@@ -72,14 +81,12 @@ theorem trace_ofModule'_eq_zero_of_dvd_orderOf (hp : ¬IsUnit (p : A)) {g : G}
   classical
   let s := pFreePart p g
   let q := pPart p g
-  let m := orderOf s
   have hmul : s * q = g := pFreePart_mul_pPart p g
   have hsq : Commute s q := commute_pFreePart_pPart p g
   have hq1 : q ≠ 1 := pPart_ne_one_of_dvd_orderOf Fact.out (orderOf_pos g).ne' hg
   have hQ : IsPGroup p (Subgroup.zpowers q) :=
     isPGroup_zpowers_pPart Fact.out (orderOf_pos g).ne'
-  have hpm : ¬p ∣ m := not_dvd_orderOf_pFreePart Fact.out (orderOf_pos g).ne'
-  have hsm : s ^ m = 1 := pow_orderOf_eq_one s
+  have hpm : ¬p ∣ orderOf s := not_dvd_orderOf_pFreePart Fact.out (orderOf_pos g).ne'
   rw [← hmul]
   -- Restrict `X` to the local group algebra `A[Q]` of `Q = ⟨q⟩`.
   let Q := Subgroup.zpowers q
@@ -102,38 +109,12 @@ theorem trace_ofModule'_eq_zero_of_dvd_orderOf (hp : ¬IsUnit (p : A)) {g : G}
   have : IsLocalRing (MonoidAlgebra A Q) := TauCeti.MonoidAlgebra.isLocalRing_of_isPGroup hp hQ
   have : IsLocalHom (MonoidAlgebra.lift A A Q 1) :=
     TauCeti.MonoidAlgebra.isLocalHom_lift_one_of_isPGroup hp hQ
-  -- `X` is a module over the ring `A[Q]`, so it carries the additive group structure that
-  -- `Module.free_of_flat_of_isLocalRing` asks for.
-  have : Module.Free (MonoidAlgebra A Q) X :=
-    let _ := Module.addCommMonoidToAddCommGroup (MonoidAlgebra A Q) (M := X)
-    Module.free_of_flat_of_isLocalRing
+  have : Module.Free (MonoidAlgebra A Q) X := free_of_projective_of_isLocalRing
   -- The element `s` commutes with `Q`, so it acts `A[Q]`-linearly.
-  have hcomm : ∀ r : MonoidAlgebra A Q, φ r * single s 1 = single s 1 * φ r := by
-    intro r
-    induction r using MonoidAlgebra.induction_linear with
-    | zero => simp
-    | add x y hx hy => rw [map_add, add_mul, mul_add, hx, hy]
-    | single c a =>
-      obtain ⟨c, hc⟩ := c
-      obtain ⟨j, rfl⟩ := Subgroup.mem_zpowers_iff.mp hc
-      simp [φ, single_mul_single, ((hsq.zpow_right j).eq).symm]
-  let S : X →ₗ[MonoidAlgebra A Q] X :=
-    { toFun := fun x ↦ (single s (1 : A) : MonoidAlgebra A G) • x
-      map_add' := smul_add _
-      map_smul' := fun r x ↦ by
-        -- Unfold the composed `A[Q]`-action and `S` to expose equality in the ambient group
-        -- algebra.
-        change single s (1 : A) • (φ r • x) = φ r • (single s (1 : A) • x)
-        rw [← mul_smul, ← mul_smul, hcomm] }
-  have hSpow : ∀ k : ℕ, ∀ x, (S ^ k) x = (single (s ^ k) (1 : A) : MonoidAlgebra A G) • x := by
-    intro k x
-    induction k with
-    | zero => simp [← one_def]
-    | succ k ih =>
-      rw [pow_succ', mul_apply_eq_comp, ih, pow_succ']
-      exact (mul_smul _ _ x).symm.trans (by rw [single_mul_single, one_mul])
-  have hS : S ^ m = 1 := LinearMap.ext fun x ↦ by
-    rw [hSpow, hsm, ← one_def, one_smul, one_apply_eq_self]
+  obtain ⟨S, hSapply⟩ := MonoidHom.exists_linearMap_apply_eq_single_smul (A := A) Q.subtype
+    (by rintro ⟨_, j, rfl⟩; exact hsq.zpow_right j) X fun _ _ ↦ rfl
+  have hS : S ^ orderOf s = 1 :=
+    Module.End.pow_eq_one_of_apply_eq_single_smul S hSapply (pow_orderOf_eq_one s)
   -- The element `g = s * q` acts as the scalar `q ∈ A[Q]` times `S`.
   let q' : Q := ⟨q, Subgroup.mem_zpowers q⟩
   have hg' : Representation.ofModule' X (s * q) =
@@ -141,15 +122,16 @@ theorem trace_ofModule'_eq_zero_of_dvd_orderOf (hp : ¬IsUnit (p : A)) {g : G}
     ext x
     -- Unfold both constructed actions; the `A[Q]`-action on `X` is the `A[G]`-action through `φ`.
     change (single (s * q) (1 : A) : MonoidAlgebra A G) • x =
-      φ (single q' (1 : A)) • (single s (1 : A) : MonoidAlgebra A G) • x
+      (single q' (1 : A) : MonoidAlgebra A Q) • S x
+    rw [hSapply]
+    change _ = φ (single q' (1 : A)) • (single s (1 : A) : MonoidAlgebra A G) • x
     rw [← mul_smul]
     simp [φ, q', single_mul_single, hsq.eq]
-  have hm : IsUnit (m : A) :=
+  have hm : IsUnit (orderOf s : A) :=
     (Nat.coprime_comm.mp ((Nat.Prime.coprime_iff_not_dvd Fact.out).mpr hpm)).isUnit_natCast hp
-  have hq' : q' ≠ 1 := fun h ↦ hq1 (congrArg Subtype.val h)
   have : Fintype Q := Fintype.ofFinite Q
   rw [hg', LinearMap.trace_restrictScalars_smul_of_pow_eq_one S (MonoidAlgebra.lift A A Q 1) hm hS,
     Algebra.trace_eq_matrix_trace (MonoidAlgebra.basis Q A), trace_leftMulMatrix]
-  simp [hq'.symm]
+  simp [Ne.symm (show q' ≠ 1 from fun h ↦ hq1 (congrArg Subtype.val h))]
 
 end TauCeti
