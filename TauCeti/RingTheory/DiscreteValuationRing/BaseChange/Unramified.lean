@@ -79,6 +79,43 @@ variable {A K L A' K' L' : Type*}
   [IsFractionRing A' K'] [Algebra A A'] [Algebra A K'] [Algebra K K'] [IsScalarTower A A' K']
   [IsScalarTower A K K'] [Field L'] [Algebra K' L'] [Algebra A' L'] [IsScalarTower A' K' L']
 
+omit [IsDiscreteValuationRing A] [FiniteDimensional K L] in
+/-- Every element of a field quotient `L'` of `K' ⊗[K] L` is a `K'`-linear combination of the
+images of the elements of the integral closure of `A` in `L`: every element of `L` is an element
+of the integral closure divided by an element of `A`. -/
+private theorem span_range_integralClosure_eq_top (φ : K' ⊗[K] L →ₐ[K'] L')
+    (hφ : Function.Surjective φ) :
+    Submodule.span K' (Set.range fun b : integralClosure A L => φ ((1 : K') ⊗ₜ[K] (b : L))) =
+      ⊤ := by
+  rw [eq_top_iff]
+  rintro y -
+  obtain ⟨t, rfl⟩ := hφ y
+  induction t using TensorProduct.inductionOn with
+  | add t₁ t₂ h₁ h₂ => rw [map_add]; exact Submodule.add_mem _ h₁ h₂
+  | tmul k l =>
+    have hl : IsAlgebraic A l :=
+      (IsFractionRing.isAlgebraic_iff A K L).mpr (Algebra.IsAlgebraic.isAlgebraic l)
+    obtain ⟨a, ha, hint⟩ := hl.exists_integral_multiple
+    have ha' : algebraMap A K' a ≠ 0 := by
+      rw [IsScalarTower.algebraMap_apply A K K']
+      exact (_root_.map_ne_zero _).mpr
+        ((map_ne_zero_iff _ (IsFractionRing.injective A K)).mpr ha)
+    let b : integralClosure A L := ⟨a • l, hint⟩
+    have hbl : (b : L) = algebraMap A K a • l := (algebraMap_smul K a l).symm
+    have hb : (1 : K') ⊗ₜ[K] (b : L) = algebraMap A K' a • ((1 : K') ⊗ₜ[K] l) := by
+      rw [hbl, TensorProduct.tmul_smul, TensorProduct.smul_tmul', IsScalarTower.algebraMap_smul]
+      simp [Algebra.smul_def, IsScalarTower.algebraMap_apply A K K']
+    have hφb : φ (1 ⊗ₜ b) = algebraMap K' L' (algebraMap A K' a) * φ (1 ⊗ₜ l) := by
+      rw [hb, map_smul, Algebra.smul_def]
+    have hφk : φ (k ⊗ₜ l) = algebraMap K' L' k * φ (1 ⊗ₜ l) := by
+      rw [← Algebra.smul_def, ← map_smul, TensorProduct.smul_tmul', smul_eq_mul, mul_one]
+    have := (map_ne_zero (algebraMap K' L')).mpr ha'
+    have key : φ (k ⊗ₜ l) = (k * (algebraMap A K' a)⁻¹) • φ (1 ⊗ₜ (b : L)) := by
+      rw [Algebra.smul_def, hφk, hφb, map_mul, map_inv₀]
+      field_simp
+    rw [key]
+    exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨b, rfl⟩)
+
 /-- Unramified extensions of a discrete valuation ring are stable under base change: if `L` is
 unramified with respect to `A`, then every factor `L'` of `K' ⊗[K] L`, given by a surjective
 `K'`-algebra map `φ : K' ⊗[K] L → L'`, is unramified with respect to `A'`. -/
@@ -117,35 +154,11 @@ theorem IsUnramifiedWRT.baseChange (h : IsUnramifiedWRT A L) (φ : K' ⊗[K] L �
     Algebra.TensorProduct.lift (Algebra.ofId K' L') ψ fun _ _ ↦ .all _ _
   -- `χ` is surjective: every element of `L` is an element of `B` divided by an element of `A`.
   have hχ : Function.Surjective χ := by
-    intro y
-    obtain ⟨t, rfl⟩ := hφ y
-    induction t using TensorProduct.inductionOn with
-    | add t₁ t₂ h₁ h₂ =>
-      obtain ⟨x₁, hx₁⟩ := h₁
-      obtain ⟨x₂, hx₂⟩ := h₂
-      exact ⟨x₁ + x₂, by rw [map_add, map_add, hx₁, hx₂]⟩
-    | tmul k l =>
-      have hl : IsAlgebraic A l :=
-        (IsFractionRing.isAlgebraic_iff A K L).mpr (Algebra.IsAlgebraic.isAlgebraic l)
-      obtain ⟨a, ha, hint⟩ := hl.exists_integral_multiple
-      have ha' : algebraMap A K' a ≠ 0 := by
-        rw [IsScalarTower.algebraMap_apply A K K']
-        exact (_root_.map_ne_zero _).mpr
-          ((map_ne_zero_iff _ (IsFractionRing.injective A K)).mpr ha)
-      let b : B := ⟨a • l, hint⟩
-      have hbl : (b : L) = algebraMap A K a • l := (algebraMap_smul K a l).symm
-      have hb : (1 : K') ⊗ₜ[K] (b : L) = algebraMap A K' a • ((1 : K') ⊗ₜ[K] l) := by
-        rw [hbl, TensorProduct.tmul_smul, TensorProduct.smul_tmul', IsScalarTower.algebraMap_smul]
-        simp [Algebra.smul_def, IsScalarTower.algebraMap_apply A K K']
-      have hφb : φ (1 ⊗ₜ b) = algebraMap K' L' (algebraMap A K' a) * φ (1 ⊗ₜ l) := by
-        rw [hb, map_smul, Algebra.smul_def]
-      have hφk : φ (k ⊗ₜ l) = algebraMap K' L' k * φ (1 ⊗ₜ l) := by
-        rw [← Algebra.smul_def, ← map_smul, TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-      refine ⟨(k * (algebraMap A K' a)⁻¹) ⊗ₜ (1 ⊗ₜ b), ?_⟩
-      simp only [χ, Algebra.TensorProduct.lift_tmul, Algebra.ofId_apply, hψ, hφb, hφk, map_mul,
-        map_inv₀]
-      have := (map_ne_zero (algebraMap K' L')).mpr ha'
-      field_simp
+    refine (LinearMap.range_eq_top (f := χ.toLinearMap)).mp ?_
+    rw [eq_top_iff, ← span_range_integralClosure_eq_top (A := A) φ hφ,
+      Submodule.span_le]
+    rintro _ ⟨b, rfl⟩
+    exact ⟨1 ⊗ₜ (1 ⊗ₜ b), by simp [χ, hψ]⟩
   exact χ.isUnramifiedWRT_of_surjective hχ
 
 end BaseChange
