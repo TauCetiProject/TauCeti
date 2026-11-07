@@ -355,21 +355,39 @@ open scoped Topology
 variable {V : (x : M) → TangentSpace I x} {s : Set M} {x : M}
 
 /-- On a boundaryless model of a `C^n` manifold, the pullback along an inverse extended chart of a
-vector field which is `C^m` on an open set `U`, with `m + 1 ≤ n`, is `C^m` on the part of the
+vector field which is `C^m` on a set `U`, with `m + 1 ≤ n`, is `C^m` on the part of the
 chart target which the inverse chart maps into `U`. -/
-theorem ContMDiffOn.contDiffOn_mpullback_extChartAt_symm [CompleteSpace E] [I.Boundaryless]
+theorem ContMDiffOn.contDiffOn_mpullback_extChartAt_symm [I.Boundaryless]
     [IsManifold I n M] {U : Set M}
-    (hV : ContMDiffOn I I.tangent m (fun y ↦ (⟨y, V y⟩ : TangentBundle I M)) U) (hU : IsOpen U)
+    (hV : ContMDiffOn I I.tangent m (fun y ↦ (⟨y, V y⟩ : TangentBundle I M)) U)
     (hmn : m + 1 ≤ n) :
     ContDiffOn 𝕜 m (VectorField.mpullback 𝓘(𝕜, E) I (extChartAt I x).symm V)
       ((extChartAt I x).target ∩ (extChartAt I x).symm ⁻¹' U) := fun z hz ↦ by
-  have hf : ContMDiffAt 𝓘(𝕜, E) I n (extChartAt I x).symm z :=
-    (contMDiffOn_extChartAt_symm x).contMDiffAt ((isOpen_extChartAt_target x).mem_nhds hz.1)
-  have hf' := isInvertible_mfderivWithin_extChartAt_symm hz.1
-  rw [I.range_eq_univ, mfderivWithin_univ] at hf'
-  have hVz := hV.contMDiffAt (hU.mem_nhds hz.2)
-  exact (contMDiffAt_vectorSpace_iff_contDiffAt.1
-    (hVz.mpullback_vectorField_preimage hf hf' hmn)).contDiffWithinAt
+  have : IsManifold I (m + 1) M := IsManifold.of_le hmn
+  have := TangentBundle.contMDiffVectorBundle (I := I) (M := M) (n := m)
+  have hy : (extChartAt I x).symm z ∈ (chartAt H x).source := by
+    simpa only [extChartAt_source] using (extChartAt I x).map_target hz.1
+  have hmem : (⟨(extChartAt I x).symm z, V ((extChartAt I x).symm z)⟩ : TangentBundle I M) ∈
+      (trivializationAt E (TangentSpace I) x).source := by
+    simpa using hy
+  have h1 := ((Bundle.Trivialization.contMDiffWithinAt_iff
+    (e := trivializationAt E (TangentSpace I) x)
+    (f := fun y ↦ (⟨y, V y⟩ : TangentBundle I M)) hmem).mp (hV _ hz.2)).2
+  have hf : ContMDiffAt 𝓘(𝕜, E) I m (extChartAt I x).symm z :=
+    ((contMDiffOn_extChartAt_symm x).contMDiffAt
+      ((isOpen_extChartAt_target x).mem_nhds hz.1)).of_le ((le_self_add).trans hmn)
+  have hmaps : MapsTo (extChartAt I x).symm
+      ((extChartAt I x).target ∩ (extChartAt I x).symm ⁻¹' U) U := fun w hw ↦ hw.2
+  have h2 := h1.comp z hf.contMDiffWithinAt hmaps
+  refine (contMDiffWithinAt_iff_contDiffWithinAt.1 h2).congr (fun w hw ↦ ?_) ?_
+  · have hw' := VectorField.mpullbackWithin_extChartAt_symm_apply V
+      ((extChartAt I x).map_target hw.1)
+    rw [(extChartAt I x).right_inv hw.1, I.range_eq_univ, VectorField.mpullbackWithin_univ] at hw'
+    exact hw'
+  · have hw' := VectorField.mpullbackWithin_extChartAt_symm_apply V
+      ((extChartAt I x).map_target hz.1)
+    rw [(extChartAt I x).right_inv hz.1, I.range_eq_univ, VectorField.mpullbackWithin_univ] at hw'
+    exact hw'
 
 /-- Differentiability of a vector field as a tangent-bundle section implies differentiability
 of its inverse-chart pullback within the corresponding chart set. No completeness of the model
