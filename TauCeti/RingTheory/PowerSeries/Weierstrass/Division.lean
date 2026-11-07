@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.PowerSeries.GaussNorm.Estimates
 public import TauCeti.RingTheory.PowerSeries.MulDistinguished
 import Mathlib.Algebra.Polynomial.Degree.IsMonicOfDegree
 import Mathlib.Algebra.Polynomial.Div
@@ -148,15 +149,8 @@ theorem IsDistinguished.gaussNorm_le_gaussNorm_mul_add (hf : IsDistinguished c s
     (gaussNorm_mul_le hc.le (hasGaussNorm_of_isRestricted hq) hf.hasGaussNorm :
       (q * f).gaussNorm norm c ≤ _).trans
       (hf.le_gaussNorm_mul_add hc hmul hq hr)
-  have hbneg : (-(q * f)).HasGaussNorm norm c := by
-    simpa only [PowerSeries.HasGaussNorm, map_neg, norm_neg] using hbqf
-  have hbound := PowerSeries.gaussNorm_add_le_max norm c (q * f + r) (-(q * f)) hc.le
-    norm_nonneg IsUltrametricDist.isNonarchimedean_norm hbsum hbneg
-  have hcancel : q * f + r + -(q * f) = r := by abel
-  have hneg : (-(q * f)).gaussNorm norm c = (q * f).gaussNorm norm c :=
-    MvPowerSeries.gaussNorm_neg norm (fun _ : Unit ↦ c) norm_neg _
-  rw [hcancel, hneg] at hbound
-  exact hbound.trans (max_le le_rfl hqf)
+  have hsub := gaussNorm_sub_le_of_le hc.le hbsum hbqf le_rfl hqf
+  rwa [add_sub_cancel_left] at hsub
 
 /-- **The Weierstrass division estimate** (Bosch–Güntzer–Remmert §5.2.1, Theorem 2). If `f` is
 distinguished of degree `s` at the radius `c`, right multiplication by its coefficient in degree
@@ -261,6 +255,32 @@ theorem IsMulDistinguished.eq_and_eq_of_mul_add_eq_mul_add (hg : IsMulDistinguis
   exact hg.toIsDistinguished.eq_and_eq_of_mul_add_eq_mul_add hc
     hg.norm_mul_coeff hq hq' hr hr' h
 
+omit [IsUltrametricDist R] in
+/-- Division of a polynomial `P` by the polynomial part `g⁻` of a multiplicatively distinguished
+series `g` of degree `s`: `g⁻` has degree `s` and a unit leading coefficient, so after scaling by
+the inverse of that unit it is monic. -/
+private theorem exists_trunc_mul_add_of_isMulDistinguished (hg : IsMulDistinguished c s g)
+    (P : Polynomial R) :
+    ∃ Qp rp : Polynomial R, P = (g.trunc (s + 1) : Polynomial R) * Qp + rp ∧
+      rp.degree < (s : WithBot ℕ) := by
+  have hPs : (g.trunc (s + 1) : Polynomial R).coeff s = g.coeff s := by
+    rw [PowerSeries.coeff_trunc, ite_eq_left (Nat.lt_succ_self s)]
+  obtain ⟨u, hu⟩ := hg.isNormMulUnit_coeff.isUnit
+  have : Nontrivial R := nontrivial_of_ne _ _ hg.coeff_ne_zero
+  have hPm : (Polynomial.C (u⁻¹ : Rˣ).val * (g.trunc (s + 1) : Polynomial R)).IsMonicOfDegree
+      s := (Polynomial.isMonicOfDegree_iff _ s).mpr
+    ⟨(Polynomial.natDegree_C_mul_le _ _).trans
+        (Nat.lt_succ_iff.mp (PowerSeries.natDegree_trunc_lt g s)),
+      by rw [Polynomial.coeff_C_mul, hPs, ← hu, Units.inv_mul]⟩
+  refine ⟨Polynomial.C (u⁻¹ : Rˣ).val * (P /ₘ
+      (Polynomial.C (u⁻¹ : Rˣ).val * (g.trunc (s + 1) : Polynomial R))),
+    P %ₘ
+      (Polynomial.C (u⁻¹ : Rˣ).val * (g.trunc (s + 1) : Polynomial R)), ?_, ?_⟩
+  · linear_combination (Polynomial.modByMonic_add_div P
+      (Polynomial.C (u⁻¹ : Rˣ).val * (g.trunc (s + 1) : Polynomial R))).symm
+  · have hlt := Polynomial.degree_modByMonic_lt P hPm.monic
+    rwa [Polynomial.degree_eq_natDegree hPm.ne_zero, hPm.natDegree_eq] at hlt
+
 /-- One step of the Weierstrass division algorithm. Dividing a sufficiently long truncation of
 `f` by the polynomial part of `g` — an ordinary division of polynomials by one whose leading
 coefficient is a unit — leaves a defect whose Gauss norm has shrunk by the factor `θ` measuring
@@ -291,57 +311,14 @@ private theorem exists_gaussNorm_sub_mul_add_le (hg : IsMulDistinguished c s g) 
       hf0 ((PowerSeries.gaussNorm_eq_zero_iff norm c f norm_zero norm_nonneg
         (fun _ ↦ norm_eq_zero.mp) hc (hasGaussNorm_of_isRestricted hf)).mp h.symm)
   -- Truncate `f` past the degree where its weighted coefficients have dropped below `θ‖f‖`.
-  obtain ⟨N, hN⟩ : ∃ N, ∀ m, N ≤ m → ‖f.coeff m‖ * c ^ m ≤ θ * f.gaussNorm norm c := by
-    obtain ⟨N, hN⟩ := Filter.eventually_atTop.mp
-      (((PowerSeries.isRestricted_iff' c f).mp hf).eventually
-        (gt_mem_nhds (mul_pos hθ hfpos)))
-    exact ⟨N, fun m hm ↦ (hN m hm).le⟩
-  have hfcoeff (m : ℕ) : ((f.trunc N : Polynomial R) : PowerSeries R).coeff m =
-      if m < N then f.coeff m else 0 := by
-    rw [Polynomial.coeff_coe, PowerSeries.coeff_trunc]
-  have hFn : ((f.trunc N : Polynomial R) : PowerSeries R).gaussNorm norm c
-      ≤ f.gaussNorm norm c := by
-    rw [PowerSeries.gaussNorm_eq]
-    refine ciSup_le fun m ↦ ?_
-    rw [hfcoeff m]
-    split_ifs
-    · exact PowerSeries.le_gaussNorm norm c f (hasGaussNorm_of_isRestricted hf) m
-    · simpa using PowerSeries.gaussNorm_nonneg norm c f norm_nonneg
-  have hsmall : (f - ((f.trunc N : Polynomial R) : PowerSeries R)).gaussNorm norm c
-      ≤ θ * f.gaussNorm norm c := by
-    rw [PowerSeries.gaussNorm_eq]
-    refine ciSup_le fun m ↦ ?_
-    rw [map_sub, hfcoeff m]
-    split_ifs with hm
-    · simp only [sub_self, norm_zero, zero_mul]
-      exact mul_nonneg hθ.le hfpos.le
-    · rw [sub_zero]
-      exact hN m (by omega)
+  obtain ⟨N, hFn, hsmall⟩ := exists_gaussNorm_trunc_sub_le hf hθ hfpos
   have hsmallr : (f - ((f.trunc N : Polynomial R) : PowerSeries R)).IsRestricted c := by
     rw [sub_eq_add_neg]
     exact hf.add (isRestricted_polynomial _).neg
   -- Divide that truncation by `g⁻`, a polynomial of degree `s` whose leading coefficient is a
   -- unit: after scaling by the inverse of that unit it is monic, so division by it is possible.
-  have hPs : (g.trunc (s + 1) : Polynomial R).coeff s = g.coeff s := by
-    rw [PowerSeries.coeff_trunc, ite_eq_left (Nat.lt_succ_self s)]
-  obtain ⟨Qp, rp, hdiv, hrdeg⟩ : ∃ Qp rp : Polynomial R,
-      (f.trunc N : Polynomial R) = (g.trunc (s + 1) : Polynomial R) * Qp + rp ∧
-        rp.degree < (s : WithBot ℕ) := by
-    obtain ⟨u, hu⟩ := hg.isNormMulUnit_coeff.isUnit
-    have : Nontrivial R := nontrivial_of_ne _ _ hg.coeff_ne_zero
-    have hPm : (Polynomial.C (u⁻¹ : Rˣ).val * (g.trunc (s + 1) : Polynomial R)).IsMonicOfDegree
-        s := (Polynomial.isMonicOfDegree_iff _ s).mpr
-      ⟨(Polynomial.natDegree_C_mul_le _ _).trans
-          (Nat.lt_succ_iff.mp (PowerSeries.natDegree_trunc_lt g s)),
-        by rw [Polynomial.coeff_C_mul, hPs, ← hu, Units.inv_mul]⟩
-    refine ⟨Polynomial.C (u⁻¹ : Rˣ).val * ((f.trunc N : Polynomial R) /ₘ
-        (Polynomial.C (u⁻¹ : Rˣ).val * (g.trunc (s + 1) : Polynomial R))),
-      (f.trunc N : Polynomial R) %ₘ
-        (Polynomial.C (u⁻¹ : Rˣ).val * (g.trunc (s + 1) : Polynomial R)), ?_, ?_⟩
-    · linear_combination (Polynomial.modByMonic_add_div (f.trunc N : Polynomial R)
-        (Polynomial.C (u⁻¹ : Rˣ).val * (g.trunc (s + 1) : Polynomial R))).symm
-    · have hlt := Polynomial.degree_modByMonic_lt (f.trunc N : Polynomial R) hPm.monic
-      rwa [Polynomial.degree_eq_natDegree hPm.ne_zero, hPm.natDegree_eq] at hlt
+  obtain ⟨Qp, rp, hdiv, hrdeg⟩ :=
+    exists_trunc_mul_add_of_isMulDistinguished hg (f.trunc N : Polynomial R)
   have hrpz : ∀ m, s ≤ m → ((rp : Polynomial R) : PowerSeries R).coeff m = 0 := fun m hm ↦ by
     rw [Polynomial.coeff_coe]
     exact Polynomial.coeff_eq_zero_of_degree_lt (hrdeg.trans_le (by exact_mod_cast hm))
@@ -363,65 +340,28 @@ private theorem exists_gaussNorm_sub_mul_add_le (hg : IsMulDistinguished c s g) 
   -- submultiplicativity of the Gauss norm is needed to bound the latter.
   have hdefect : f - (g * (Qp : PowerSeries R) + (rp : PowerSeries R))
       = (f - ((f.trunc N : Polynomial R) : PowerSeries R))
-        + -((g - ((g.trunc (s + 1) : Polynomial R) : PowerSeries R))
-            * (Qp : PowerSeries R)) := by
+        - (g - ((g.trunc (s + 1) : Polynomial R) : PowerSeries R)) * (Qp : PowerSeries R) := by
     rw [hdivPS]; ring
-  have hmulr : ((g - ((g.trunc (s + 1) : Polynomial R) : PowerSeries R))
-      * (Qp : PowerSeries R)).IsRestricted c :=
-    htailr.mul hQr
-  have hmulbound : ((g - ((g.trunc (s + 1) : Polynomial R) : PowerSeries R))
-      * (Qp : PowerSeries R)).gaussNorm norm c ≤ θ * f.gaussNorm norm c := by
-    calc ((g - ((g.trunc (s + 1) : Polynomial R) : PowerSeries R))
-          * (Qp : PowerSeries R)).gaussNorm norm c
-        ≤ (g - ((g.trunc (s + 1) : Polynomial R) : PowerSeries R)).gaussNorm norm c
-          * (Qp : PowerSeries R).gaussNorm norm c :=
-          gaussNorm_mul_le hc.le (hasGaussNorm_of_isRestricted htailr)
-            (hasGaussNorm_of_isRestricted hQr)
-      _ ≤ θ * g.gaussNorm norm c * (Qp : PowerSeries R).gaussNorm norm c :=
-          mul_le_mul_of_nonneg_right hθg (PowerSeries.gaussNorm_nonneg norm c _ norm_nonneg)
-      _ = θ * (g.gaussNorm norm c * (Qp : PowerSeries R).gaussNorm norm c) := by ring
-      _ ≤ θ * f.gaussNorm norm c :=
-          mul_le_mul_of_nonneg_left ((le_max_left _ _).trans hmax) hθ.le
   rw [hdefect]
-  refine le_trans (PowerSeries.gaussNorm_add_le_max norm c _ _ hc.le norm_nonneg
-    IsUltrametricDist.isNonarchimedean_norm (hasGaussNorm_of_isRestricted hsmallr)
-    (hasGaussNorm_of_isRestricted hmulr.neg))
-    (max_le hsmall ?_)
-  have hneg : (-((g - ((g.trunc (s + 1) : Polynomial R) : PowerSeries R))
-      * (Qp : PowerSeries R))).gaussNorm norm c
-      = ((g - ((g.trunc (s + 1) : Polynomial R) : PowerSeries R))
-        * (Qp : PowerSeries R)).gaussNorm norm c :=
-    MvPowerSeries.gaussNorm_neg norm (fun _ ↦ c) (fun x ↦ norm_neg x) _
-  rw [hneg]
-  exact hmulbound
+  refine gaussNorm_sub_le_of_le hc.le (hasGaussNorm_of_isRestricted hsmallr)
+    (hasGaussNorm_of_isRestricted (htailr.mul hQr)) hsmall ?_
+  refine (gaussNorm_mul_le_of_le hc.le htailr hQr hθg).trans ?_
+  rw [mul_assoc]
+  exact mul_le_mul_of_nonneg_left ((le_max_left _ _).trans hmax) hθ.le
 
-/-- **Weierstrass division over a Banach ring** (Martin, Proposition 1.27). Over a complete
-ultrametric normed commutative ring, a restricted series `g` multiplicatively distinguished of
-degree `s` at a positive radius `c` divides every restricted series `f`:
-
-```text
-f = g * q + r,    q restricted,    r a polynomial of degree less than s.
-```
-
-The norm of the coefficient ring need not be multiplicative, and the ring may have nilpotents:
-only the distinguished coefficient of `g` is asked to scale norms exactly. The decomposition is
-unique by `TauCeti.PowerSeries.IsMulDistinguished.eq_and_eq_of_mul_add_eq_mul_add`, and its
-quotient and remainder obey the norm identity
-`TauCeti.PowerSeries.IsMulDistinguished.gaussNorm_mul_add_eq_max`. -/
-theorem IsMulDistinguished.exists_mul_add_eq [CompleteSpace R] (hg : IsMulDistinguished c s g)
-    (hc : 0 < c) (hgr : g.IsRestricted c) (hf : f.IsRestricted c) :
-    ∃ q r : PowerSeries R, q.IsRestricted c ∧ (∀ m, s ≤ m → r.coeff m = 0) ∧
-      g * q + r = f := by
-  have hgpos : 0 < g.gaussNorm norm c := hg.gaussNorm_pos
-  obtain ⟨θ, hθ0, hθ1, hθg⟩ : ∃ θ : ℝ, 0 < θ ∧ θ < 1 ∧
-      (g - ((g.trunc (s + 1) : Polynomial R) : PowerSeries R)).gaussNorm norm c
-        ≤ θ * g.gaussNorm norm c := by
-    refine ⟨max (1 / 2) ((g - ((g.trunc (s + 1) : Polynomial R) : PowerSeries R)).gaussNorm
-      norm c / g.gaussNorm norm c), lt_of_lt_of_le (by norm_num) (le_max_left _ _),
-      max_lt (by norm_num) ((div_lt_one hgpos).mpr
-        (hg.toIsDistinguished.gaussNorm_sub_trunc_lt hc hgr)), ?_⟩
-    rw [← div_le_iff₀ hgpos]
-    exact le_max_right _ _
+/-- The successive defects of Weierstrass division steps. Starting from a restricted series `f`,
+repeated division steps give quotients `Q n` and remainders `Rr n` and defects `G n` with
+`G (n + 1) = G n - (g * Q n + Rr n)`, whose Gauss norms contract by the factor `θ` at every
+step. -/
+private theorem exists_defect_sequence (hg : IsMulDistinguished c s g) (hc : 0 < c)
+    (hgr : g.IsRestricted c) {θ : ℝ} (hθ0 : 0 < θ)
+    (hθg : (g - ((g.trunc (s + 1) : Polynomial R) : PowerSeries R)).gaussNorm norm c
+      ≤ θ * g.gaussNorm norm c) (hf : f.IsRestricted c) :
+    ∃ Q Rr G : ℕ → PowerSeries R, G 0 = f ∧ (∀ n, G (n + 1) = G n - (g * Q n + Rr n)) ∧
+      ∀ n, (G n).IsRestricted c ∧ (Q n).IsRestricted c ∧ (∀ m, s ≤ m → (Rr n).coeff m = 0) ∧
+        g.gaussNorm norm c * (Q n).gaussNorm norm c ≤ (G n).gaussNorm norm c ∧
+        (Rr n).gaussNorm norm c ≤ (G n).gaussNorm norm c ∧
+        (G n).gaussNorm norm c ≤ θ ^ n * f.gaussNorm norm c := by
   -- A choice of one division step at every restricted series, with contraction factor `θ`.
   have hstep : ∀ h : PowerSeries R, ∃ p : PowerSeries R × PowerSeries R, h.IsRestricted c →
       p.1.IsRestricted c ∧ (∀ m, s ≤ m → p.2.coeff m = 0) ∧
@@ -457,44 +397,48 @@ theorem IsMulDistinguished.exists_mul_add_eq [CompleteSpace R] (hg : IsMulDistin
       refine ((hF (G n) (hGr n)).2.2.2.2).trans ?_
       rw [pow_succ', mul_assoc]
       exact mul_le_mul_of_nonneg_left ih hθ0.le
-  -- The quotients and remainders produced along the way have geometrically small Gauss norms.
-  have hgeo : Summable fun k : ℕ ↦ θ ^ k * f.gaussNorm norm c :=
-    (summable_geometric_of_lt_one hθ0.le hθ1).mul_right _
-  have hsQ : Summable fun k ↦ ((F (G k)).1).gaussNorm norm c := by
-    refine Summable.of_nonneg_of_le
-      (fun k ↦ PowerSeries.gaussNorm_nonneg norm c _ norm_nonneg) (fun k ↦ ?_)
-      (hgeo.div_const (g.gaussNorm norm c))
-    rw [le_div_iff₀ hgpos, mul_comm]
-    exact ((hF (G k) (hGr k)).2.2.1).trans (hGn k)
-  have hsr : Summable fun k ↦ ((F (G k)).2).gaussNorm norm c :=
-    Summable.of_nonneg_of_le (fun k ↦ PowerSeries.gaussNorm_nonneg norm c _ norm_nonneg)
-      (fun k ↦ ((hF (G k) (hGr k)).2.2.2.1).trans (hGn k)) hgeo
-  -- Sum them coefficientwise; the defects tend to zero, so the sums telescope to `f`.
-  set q : PowerSeries R := PowerSeries.mk fun i ↦ ∑' k, ((F (G k)).1).coeff i with hqdef
-  set rr : PowerSeries R := PowerSeries.mk fun i ↦ ∑' k, ((F (G k)).2).coeff i with hrdef
-  have hsumQ : ∀ i, HasSum (fun k ↦ ((F (G k)).1).coeff i) (q.coeff i) := fun i ↦ by
+  refine ⟨fun n ↦ (F (G n)).1, fun n ↦ (F (G n)).2, G, rfl, hGsucc, fun n ↦ ?_⟩
+  obtain ⟨h1, h2, h3, h4, -⟩ := hF (G n) (hGr n)
+  exact ⟨hGr n, h1, h2, h3, h4, hGn n⟩
+
+/-- Summing a sequence of Weierstrass division steps coefficientwise. If the defects `G n` satisfy
+`G (n + 1) = G n - (g * Q n + Rr n)`, with restricted quotients `Q n`, remainders `Rr n` vanishing
+in degrees `≥ s`, summable Gauss norms of both, and coefficients of `G n` tending to zero, then
+`G 0 = g * q + r` for the coefficientwise sums `q` of the quotients and `r` of the remainders. -/
+private theorem exists_mul_add_eq_of_tendsto [CompleteSpace R] (hc : 0 < c)
+    (Q Rr G : ℕ → PowerSeries R) (hQ : ∀ k, (Q k).IsRestricted c)
+    (hRr : ∀ k m, s ≤ m → (Rr k).coeff m = 0) (hsQ : Summable fun k ↦ (Q k).gaussNorm norm c)
+    (hsr : Summable fun k ↦ (Rr k).gaussNorm norm c)
+    (hGsucc : ∀ n, G (n + 1) = G n - (g * Q n + Rr n))
+    (hGlim : ∀ n, Filter.Tendsto (fun m ↦ (G m).coeff n) Filter.atTop (nhds 0)) :
+    ∃ q r : PowerSeries R, q.IsRestricted c ∧ (∀ m, s ≤ m → r.coeff m = 0) ∧
+      g * q + r = G 0 := by
+  -- Sum them coefficientwise; the defects tend to zero, so the sums telescope to `G 0`.
+  set q : PowerSeries R := PowerSeries.mk fun i ↦ ∑' k, (Q k).coeff i with hqdef
+  set rr : PowerSeries R := PowerSeries.mk fun i ↦ ∑' k, (Rr k).coeff i with hrdef
+  have hsumQ : ∀ i, HasSum (fun k ↦ (Q k).coeff i) (q.coeff i) := fun i ↦ by
     rw [hqdef, PowerSeries.coeff_mk]
     exact (summable_coeff_of_summable_gaussNorm (R := R) hc
-      (fun k ↦ hasGaussNorm_of_isRestricted (hF (G k) (hGr k)).1) hsQ i).hasSum
-  have hsumr : ∀ i, HasSum (fun k ↦ ((F (G k)).2).coeff i) (rr.coeff i) := fun i ↦ by
+      (fun k ↦ hasGaussNorm_of_isRestricted (hQ k)) hsQ i).hasSum
+  have hsumr : ∀ i, HasSum (fun k ↦ (Rr k).coeff i) (rr.coeff i) := fun i ↦ by
     rw [hrdef, PowerSeries.coeff_mk]
     exact (summable_coeff_of_summable_gaussNorm (R := R) hc
       (fun k ↦ hasGaussNorm_of_isRestricted
-        (isRestricted_of_forall_coeff_eq_zero (hF (G k) (hGr k)).2.1)) hsr i).hasSum
-  refine ⟨q, rr, isRestricted_mk_tsum_coeff hc (fun k ↦ (hF (G k) (hGr k)).1) hsQ,
+        (isRestricted_of_forall_coeff_eq_zero (hRr k))) hsr i).hasSum
+  refine ⟨q, rr, isRestricted_mk_tsum_coeff hc hQ hsQ,
     fun m hm ↦ ?_, ?_⟩
-  · have hz : (fun k ↦ ((F (G k)).2).coeff m) = fun _ : ℕ ↦ (0 : R) :=
-      funext fun k ↦ (hF (G k) (hGr k)).2.1 m hm
+  · have hz : (fun k ↦ (Rr k).coeff m) = fun _ : ℕ ↦ (0 : R) :=
+      funext fun k ↦ hRr k m hm
     exact (hasSum_zero.unique (hz ▸ hsumr m)).symm
   · refine PowerSeries.ext fun n ↦ ?_
-    have hmul : HasSum (fun k ↦ (g * (F (G k)).1).coeff n) ((g * q).coeff n) := by
+    have hmul : HasSum (fun k ↦ (g * Q k).coeff n) ((g * q).coeff n) := by
       have h := hasSum_sum (s := Finset.antidiagonal n)
-        (f := fun p : ℕ × ℕ ↦ fun k ↦ g.coeff p.1 * ((F (G k)).1).coeff p.2)
+        (f := fun p : ℕ × ℕ ↦ fun k ↦ g.coeff p.1 * (Q k).coeff p.2)
         (a := fun p : ℕ × ℕ ↦ g.coeff p.1 * q.coeff p.2)
         (fun p _ ↦ (hsumQ p.2).mul_left (g.coeff p.1))
       simpa only [← PowerSeries.coeff_mul] using h
     have heq : (fun k ↦ (G k).coeff n - (G (k + 1)).coeff n)
-        = fun k ↦ (g * (F (G k)).1).coeff n + ((F (G k)).2).coeff n := by
+        = fun k ↦ (g * Q k).coeff n + (Rr k).coeff n := by
       funext k
       rw [hGsucc k, map_sub, map_add]
       ring
@@ -502,22 +446,64 @@ theorem IsMulDistinguished.exists_mul_add_eq [CompleteSpace R] (hg : IsMulDistin
         ((g * q + rr).coeff n) := by
       rw [heq, map_add]
       exact hmul.add (hsumr n)
-    have hbound : ∀ m : ℕ, ‖(G m).coeff n‖ ≤ θ ^ m * f.gaussNorm norm c / c ^ n := fun m ↦ by
-      rw [le_div_iff₀ (pow_pos hc n)]
-      exact (PowerSeries.le_gaussNorm norm c _
-        (hasGaussNorm_of_isRestricted (hGr m)) n).trans (hGn m)
-    have hzero : Filter.Tendsto (fun m ↦ (G m).coeff n) Filter.atTop (nhds 0) :=
-      squeeze_zero_norm hbound (by
-        simpa using ((tendsto_pow_atTop_nhds_zero_of_lt_one hθ0.le hθ1).mul_const
-          (f.gaussNorm norm c)).div_const (c ^ n))
-    have htel : HasSum (fun k ↦ (G k).coeff n - (G (k + 1)).coeff n) (f.coeff n) := by
+    have htel : HasSum (fun k ↦ (G k).coeff n - (G (k + 1)).coeff n) ((G 0).coeff n) := by
       rw [hstepSum.summable.hasSum_iff_tendsto_nat]
       have hpartial : ∀ m : ℕ, (∑ k ∈ Finset.range m, ((G k).coeff n - (G (k + 1)).coeff n))
-          = f.coeff n - (G m).coeff n := fun m ↦ by
-        rw [Finset.sum_range_sub' (fun k ↦ (G k).coeff n) m, hG0]
+          = (G 0).coeff n - (G m).coeff n := fun m ↦ by
+        rw [Finset.sum_range_sub' (fun k ↦ (G k).coeff n) m]
       simp only [hpartial]
-      simpa using tendsto_const_nhds.sub hzero
+      simpa using tendsto_const_nhds.sub (hGlim n)
     exact hstepSum.unique htel
+
+/-- **Weierstrass division over a Banach ring** (Martin, Proposition 1.27). Over a complete
+ultrametric normed commutative ring, a restricted series `g` multiplicatively distinguished of
+degree `s` at a positive radius `c` divides every restricted series `f`:
+
+```text
+f = g * q + r,    q restricted,    r a polynomial of degree less than s.
+```
+
+The norm of the coefficient ring need not be multiplicative, and the ring may have nilpotents:
+only the distinguished coefficient of `g` is asked to scale norms exactly. The decomposition is
+unique by `TauCeti.PowerSeries.IsMulDistinguished.eq_and_eq_of_mul_add_eq_mul_add`, and its
+quotient and remainder obey the norm identity
+`TauCeti.PowerSeries.IsMulDistinguished.gaussNorm_mul_add_eq_max`. -/
+theorem IsMulDistinguished.exists_mul_add_eq [CompleteSpace R] (hg : IsMulDistinguished c s g)
+    (hc : 0 < c) (hgr : g.IsRestricted c) (hf : f.IsRestricted c) :
+    ∃ q r : PowerSeries R, q.IsRestricted c ∧ (∀ m, s ≤ m → r.coeff m = 0) ∧
+      g * q + r = f := by
+  have hgpos : 0 < g.gaussNorm norm c := hg.gaussNorm_pos
+  obtain ⟨θ, hθ0, hθ1, hθg⟩ : ∃ θ : ℝ, 0 < θ ∧ θ < 1 ∧
+      (g - ((g.trunc (s + 1) : Polynomial R) : PowerSeries R)).gaussNorm norm c
+        ≤ θ * g.gaussNorm norm c := by
+    refine ⟨max (1 / 2) ((g - ((g.trunc (s + 1) : Polynomial R) : PowerSeries R)).gaussNorm
+      norm c / g.gaussNorm norm c), lt_of_lt_of_le (by norm_num) (le_max_left _ _),
+      max_lt (by norm_num) ((div_lt_one hgpos).mpr
+        (hg.toIsDistinguished.gaussNorm_sub_trunc_lt hc hgr)), ?_⟩
+    rw [← div_le_iff₀ hgpos]
+    exact le_max_right _ _
+  obtain ⟨Q, Rr, G, hG0, hGsucc, hG⟩ := exists_defect_sequence hg hc hgr hθ0 hθg hf
+  -- The quotients and remainders produced along the way have geometrically small Gauss norms.
+  have hgeo : Summable fun k : ℕ ↦ θ ^ k * f.gaussNorm norm c :=
+    (summable_geometric_of_lt_one hθ0.le hθ1).mul_right _
+  have hsQ : Summable fun k ↦ (Q k).gaussNorm norm c := by
+    refine Summable.of_nonneg_of_le
+      (fun k ↦ PowerSeries.gaussNorm_nonneg norm c _ norm_nonneg) (fun k ↦ ?_)
+      (hgeo.div_const (g.gaussNorm norm c))
+    rw [le_div_iff₀ hgpos, mul_comm]
+    exact (hG k).2.2.2.1.trans (hG k).2.2.2.2.2
+  have hsr : Summable fun k ↦ (Rr k).gaussNorm norm c :=
+    Summable.of_nonneg_of_le (fun k ↦ PowerSeries.gaussNorm_nonneg norm c _ norm_nonneg)
+      (fun k ↦ (hG k).2.2.2.2.1.trans (hG k).2.2.2.2.2) hgeo
+  have hGlim (n : ℕ) : Filter.Tendsto (fun m ↦ (G m).coeff n) Filter.atTop (nhds 0) := by
+    refine squeeze_zero_norm (a := fun m ↦ θ ^ m * f.gaussNorm norm c / c ^ n) (fun m ↦ ?_) ?_
+    · rw [le_div_iff₀ (pow_pos hc n)]
+      exact (PowerSeries.le_gaussNorm norm c _
+        (hasGaussNorm_of_isRestricted (hG m).1) n).trans (hG m).2.2.2.2.2
+    · simpa using ((tendsto_pow_atTop_nhds_zero_of_lt_one hθ0.le hθ1).mul_const
+        (f.gaussNorm norm c)).div_const (c ^ n)
+  simpa only [hG0] using exists_mul_add_eq_of_tendsto hc Q Rr G (fun k ↦ (hG k).2.1)
+    (fun k ↦ (hG k).2.2.1) hsQ hsr hGsucc hGlim
 
 /-- **Weierstrass division over a Banach ring** (Martin, Proposition 1.27), in its
 unique-existence form: over a complete ultrametric normed commutative ring, a restricted series
