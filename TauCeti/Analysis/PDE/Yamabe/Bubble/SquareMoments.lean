@@ -39,35 +39,6 @@ open Filter InnerProductSpace MeasureTheory Metric Module ProbabilityTheory Real
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
-private lemma squareMoment_rescale (μ : Measure E) [μ.IsAddHaarMeasure]
-    (χ : E → ℝ) (p : ℝ) {t : ℝ} (ht : 0 < t) (b : E) :
-    (∫ x, χ x * (‖x - b‖ ^ p * bubble t b x ^ 2) ∂μ) / t ^ (p + 2) =
-      ∫ z, χ (b + t • z) * (‖z‖ ^ p * bubble 1 0 z ^ 2) ∂μ := by
-  let f : E → ℝ := fun x ↦ χ x * (‖x - b‖ ^ p * bubble t b x ^ 2)
-  have htrans : ∫ x, f x ∂μ = ∫ y, f (b + y) ∂μ :=
-    (integral_add_left_eq_self f b).symm
-  have hscale : ∫ y, f (b + y) ∂μ = t ^ finrank ℝ E * ∫ z, f (b + t • z) ∂μ := by
-    have h := Measure.integral_comp_smul_of_nonneg μ (fun y ↦ f (b + y)) t (hR := ht.le)
-    rw [smul_eq_mul] at h
-    rw [h]
-    field_simp
-  have hpoint (z : E) : f (b + t • z) =
-      t ^ (p - ((finrank ℝ E : ℝ) - 2)) *
-        (χ (b + t • z) * (‖z‖ ^ p * bubble 1 0 z ^ 2)) := by
-    have hnorm : ‖t • z‖ ^ p = t ^ p * ‖z‖ ^ p := by
-      simp only [norm_smul, Real.norm_of_nonneg ht.le, Real.mul_rpow ht.le (norm_nonneg _)]
-    have hpower : t ^ (p - ((finrank ℝ E : ℝ) - 2)) =
-        t ^ p * t ^ (-((finrank ℝ E : ℝ) - 2)) := by
-      rw [sub_eq_add_neg, Real.rpow_add ht]
-    simp only [f, add_sub_cancel_left, hnorm, bubble_sq_add_smul ht, hpower]
-    ring
-  have hpower : t ^ finrank ℝ E * t ^ (p - ((finrank ℝ E : ℝ) - 2)) = t ^ (p + 2) := by
-    rw [← Real.rpow_natCast, ← Real.rpow_add ht]
-    congr 1
-    ring
-  rw [htrans, hscale, integral_congr_ae (.of_forall hpoint), integral_const_mul,
-    ← mul_assoc, hpower, mul_div_cancel_left₀ _ (Real.rpow_pos_of_pos ht _).ne']
-
 omit [FiniteDimensional ℝ E] in
 /-- Outside a ball on which a bounded measurable cutoff equals one, its error in a finite
 square moment is bounded by `(C + 1) * (2 * t / r) ^ (n - 2)` times the moment at scale `r`,
@@ -140,12 +111,17 @@ theorem tendsto_integral_mul_norm_sub_rpow_mul_bubble_sq_div
         have h : ContinuousAt (fun t : ℝ ↦ b + t • z) 0 := by fun_prop
         simpa only [zero_smul, add_zero] using h.tendsto.mono_left nhdsWithin_le_nhds
       exact (hχb.tendsto.comp ht).mul_const _
-  have hmoment := integral_norm_sub_rpow_mul_bubble_sq μ hp hpn zero_lt_one (0 : E)
-  simp only [sub_zero, Real.one_rpow, mul_one] at hmoment
-  rw [integral_const_mul, show (∫ z, J z ∂μ) = _ from hmoment] at hlim
+  have hmoment : (∫ z, J z ∂μ) =
+      (finrank ℝ E : ℝ) * μ.real (ball (0 : E) 1) *
+        (2 ^ (finrank ℝ E - 3) *
+          beta (((finrank ℝ E : ℝ) + p) / 2) (((finrank ℝ E : ℝ) - p - 4) / 2)) := by
+    simpa only [J, sub_zero, Real.one_rpow, mul_one] using
+      integral_norm_sub_rpow_mul_bubble_sq μ hp hpn zero_lt_one (0 : E)
+  rw [integral_const_mul, hmoment] at hlim
   apply hlim.congr'
   filter_upwards [self_mem_nhdsWithin] with t ht
-  exact (squareMoment_rescale μ χ p ht b).symm
+  rw [integral_mul_norm_sub_rpow_mul_bubble_sq_eq_mul μ χ p ht b,
+    mul_div_cancel_left₀ _ (Real.rpow_pos_of_pos ht _).ne']
 
 omit [FiniteDimensional ℝ E] in
 /-- A bounded measurable cutoff equal to one near the centre preserves the leading coefficient

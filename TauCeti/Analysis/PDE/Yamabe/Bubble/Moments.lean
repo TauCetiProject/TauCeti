@@ -47,6 +47,8 @@ and the second moment of `U²`, which grow like `t⁴ log (1 / t)` as `t → 0`.
 * `TauCeti.Yamabe.integrable_norm_sub_rpow_mul_norm_fderiv_bubble_sq` and
   `TauCeti.Yamabe.integral_norm_sub_rpow_mul_norm_fderiv_bubble_sq`: moments of the energy
   density.
+* `TauCeti.Yamabe.integral_mul_norm_sub_rpow_mul_bubble_sq_eq_mul`: scaling of square moments
+  against arbitrary real weights.
 * `TauCeti.Yamabe.integrable_norm_sub_rpow_mul_bubble_sq` and
   `TauCeti.Yamabe.integral_norm_sub_rpow_mul_bubble_sq`: the finite moments of `U²`.
 * `TauCeti.Yamabe.tendsto_integral_norm_sub_rpow_mul_bubble_rpow_criticalExponent` and
@@ -218,6 +220,38 @@ theorem tendsto_integral_norm_sub_rpow_mul_norm_fderiv_bubble_sq
 
 /-! ### Finite moments of the square -/
 
+/-- The square moment against an arbitrary real weight rescales by `t ^ (p + 2)`, with the
+weight pulled back along `z ↦ b + t • z`. No integrability or restriction on the moment order or
+dimension is required for this identity of totalized integrals. -/
+theorem integral_mul_norm_sub_rpow_mul_bubble_sq_eq_mul (μ : Measure E) [μ.IsAddHaarMeasure]
+    (χ : E → ℝ) (p : ℝ) {t : ℝ} (ht : 0 < t) (b : E) :
+    (∫ x, χ x * (‖x - b‖ ^ p * bubble t b x ^ 2) ∂μ) =
+      t ^ (p + 2) * ∫ z, χ (b + t • z) * (‖z‖ ^ p * bubble 1 0 z ^ 2) ∂μ := by
+  let f : E → ℝ := fun x ↦ χ x * (‖x - b‖ ^ p * bubble t b x ^ 2)
+  have htrans : ∫ x, f x ∂μ = ∫ y, f (b + y) ∂μ :=
+    (integral_add_left_eq_self f b).symm
+  have hscale : ∫ y, f (b + y) ∂μ = t ^ finrank ℝ E * ∫ z, f (b + t • z) ∂μ := by
+    have h := Measure.integral_comp_smul_of_nonneg μ (fun y ↦ f (b + y)) t (hR := ht.le)
+    rw [smul_eq_mul] at h
+    rw [h]
+    field_simp
+  have hpoint (z : E) : f (b + t • z) =
+      t ^ (p - ((finrank ℝ E : ℝ) - 2)) *
+        (χ (b + t • z) * (‖z‖ ^ p * bubble 1 0 z ^ 2)) := by
+    have hnorm : ‖t • z‖ ^ p = t ^ p * ‖z‖ ^ p := by
+      simp only [norm_smul, Real.norm_of_nonneg ht.le, Real.mul_rpow ht.le (norm_nonneg _)]
+    have hpower : t ^ (p - ((finrank ℝ E : ℝ) - 2)) =
+        t ^ p * t ^ (-((finrank ℝ E : ℝ) - 2)) := by
+      rw [sub_eq_add_neg, Real.rpow_add ht]
+    simp only [f, add_sub_cancel_left, hnorm, bubble_sq_add_smul ht, hpower]
+    ring
+  have hpower : t ^ finrank ℝ E * t ^ (p - ((finrank ℝ E : ℝ) - 2)) = t ^ (p + 2) := by
+    rw [← Real.rpow_natCast, ← Real.rpow_add ht]
+    congr 1
+    ring
+  rw [htrans, hscale, integral_congr_ae (.of_forall hpoint), integral_const_mul,
+    ← mul_assoc, hpower]
+
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 private lemma squareMoment_profile {p : ℝ} {t : ℝ} (ht : 0 < t)
     (hn : 2 ≤ finrank ℝ E) (b x : E) :
@@ -286,30 +320,22 @@ theorem integral_norm_sub_rpow_mul_bubble_sq
   let _ : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
   let J : E → ℝ := fun z ↦ ‖z‖ ^ p *
     (1 + ‖z‖ ^ 2) ^ (-(2 * ((finrank ℝ E : ℝ) - 2)) / 2)
-  have hpoint (x : E) : ‖x - b‖ ^ p * bubble t b x ^ 2 =
-      ((2 / t) ^ (finrank ℝ E - 2) * t ^ p) * J (t⁻¹ • (x - b)) :=
-    squareMoment_profile ht (by omega) b x
+  have hscale : (∫ x, ‖x - b‖ ^ p * bubble t b x ^ 2 ∂μ) =
+      t ^ (p + 2) * ∫ z, ‖z‖ ^ p * bubble 1 0 z ^ 2 ∂μ := by
+    simpa only [one_mul] using
+      integral_mul_norm_sub_rpow_mul_bubble_sq_eq_mul μ (fun _ ↦ 1) p ht b
+  have hpoint (x : E) : ‖x‖ ^ p * bubble 1 0 x ^ 2 =
+      2 ^ (finrank ℝ E - 2) * J x := by
+    simpa only [sub_zero, div_one, Real.one_rpow, mul_one, inv_one, one_smul] using
+      squareMoment_profile (p := p) zero_lt_one (by omega) (0 : E) x
   have hexp : 2 * ((finrank ℝ E : ℝ) - 2) - finrank ℝ E - p =
       finrank ℝ E - p - 4 := by ring
-  rw [integral_congr_ae (.of_forall hpoint), integral_const_mul,
-    integral_sub_right_eq_self (fun y ↦ J (t⁻¹ • y)) b,
-    Measure.integral_comp_inv_smul_of_nonneg μ J ht.le,
-    integral_norm_rpow_mul_rpow_neg_one_add_norm_sq μ hp (by linarith), smul_eq_mul, hexp]
+  rw [hscale, integral_congr_ae (.of_forall hpoint), integral_const_mul,
+    integral_norm_rpow_mul_rpow_neg_one_add_norm_sq μ hp (by linarith), hexp]
   have htwo : (2 : ℝ) ^ (finrank ℝ E - 2) = 2 * 2 ^ (finrank ℝ E - 3) := by
     rw [← pow_succ', show finrank ℝ E - 3 + 1 = finrank ℝ E - 2 by omega]
-  have hpower : t ^ finrank ℝ E = t ^ (finrank ℝ E - 2) * t ^ 2 := by
-    rw [← pow_add]
-    congr 1
-    omega
-  have hscale : (2 / t) ^ (finrank ℝ E - 2) * t ^ finrank ℝ E =
-      2 * 2 ^ (finrank ℝ E - 3) * t ^ 2 := by
-    rw [hpower, ← mul_assoc, ← mul_pow, div_mul_cancel₀ 2 ht.ne', htwo]
-  rw [Real.rpow_add ht, Real.rpow_two]
-  calc
-    _ = ((2 / t) ^ (finrank ℝ E - 2) * t ^ finrank ℝ E) *
-        (t ^ p * ((finrank ℝ E : ℝ) * μ.real (ball (0 : E) 1) *
-          beta (((finrank ℝ E : ℝ) + p) / 2) (((finrank ℝ E : ℝ) - p - 4) / 2)) / 2) := by ring
-    _ = _ := by rw [hscale]; ring
+  rw [htwo]
+  ring
 
 /-! ### Truncated moments at the logarithmic endpoint
 
