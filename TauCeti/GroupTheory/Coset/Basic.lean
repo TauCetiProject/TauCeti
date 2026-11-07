@@ -162,6 +162,7 @@ theorem card_fiber_quotientMapOfLE {G : Type*} [Group G] {H K : Subgroup G}
     Nat.card_congr (Equiv.prodSubtypeFstEquivSubtypeProd
       (β := K ⧸ H.subgroupOf K) (p := fun a ↦ a = q)),
     Nat.card_prod, Nat.card_unique, one_mul]
+  -- Relative index is the cardinality of the quotient by the subgroup inside `K`.
   rfl
 
 /-- **Transversals multiply along a tower.** For subgroups `K ≤ H` of `G`, the products
