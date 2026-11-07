@@ -154,8 +154,8 @@ private lemma exists_tendsto_moments {ι : Type*} {U : Ultrafilter ι} {R : ℝ}
 
 /-- The root counting measure of the Newton polynomial of the moments of `μ - ν` has total mass
 `m`, and moments of order at most `m` equal those of `μ - ν`. -/
-private lemma integral_pow_sum_roots_newtonPolynomial {μ ν : Measure ℂ} [IsFiniteMeasure μ]
-    [IsFiniteMeasure ν] {m : ℕ} (hmass : μ.real univ - ν.real univ = m) {k : ℕ} (hk : k ≤ m) :
+private lemma integral_pow_sum_roots_newtonPolynomial {μ ν : Measure ℂ}
+    {m : ℕ} (hmass : μ.real univ - ν.real univ = m) {k : ℕ} (hk : k ≤ m) :
     ∫ w, w ^ k ∂((newtonPolynomial (fun k => ∫ w, w ^ k ∂μ - ∫ w, w ^ k ∂ν) m).roots.map
       Measure.dirac).sum = ∫ w, w ^ k ∂μ - ∫ w, w ^ k ∂ν := by
   rw [Multiset.integral_sum_map_dirac]
