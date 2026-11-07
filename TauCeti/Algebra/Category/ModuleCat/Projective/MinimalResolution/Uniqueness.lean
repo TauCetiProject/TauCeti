@@ -14,8 +14,8 @@ public import TauCeti.Algebra.Homology.HomologicalComplex.Minimal
 
 Two minimal projective resolutions with finite terms of the same module are isomorphic as
 augmented complexes. The isomorphism is the forward map of Mathlib's comparison homotopy
-equivalence; it need not be unique. In particular the ranks and periodicity of a minimal
-finite-free resolution do not depend on its construction.
+equivalence; it need not be unique. Invariants of the terms and differentials are therefore
+independent of the chosen minimal resolution.
 
 Minimality means that each differential lands in the Jacobson radical times its target,
 which over a local ring is the usual maximal-ideal criterion. Projectivity is supplied by

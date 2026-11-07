@@ -58,8 +58,7 @@ variable {R : Type u} [CommRing R] {M : ModuleCat.{v} R}
 resolution with finite terms. -/
 theorem hasPeriodicTail_iff_of_isMinimal
     (hP : P.complex.IsMinimal) (hQ : Q.complex.IsMinimal) (n p : ℕ) :
-    P.complex.HasPeriodicTail n p ↔ Q.complex.HasPeriodicTail n p := by
-  exact ⟨fun h ↦ h.of_iso (P.isoOfMinimal Q hP hQ),
-    fun h ↦ h.of_iso (P.isoOfMinimal Q hP hQ).symm⟩
+    P.complex.HasPeriodicTail n p ↔ Q.complex.HasPeriodicTail n p :=
+  (P.homotopyEquiv Q).hasPeriodicTail_iff_of_isMinimal hP hQ n p
 
 end CategoryTheory.ProjectiveResolution

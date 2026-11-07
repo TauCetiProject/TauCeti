@@ -91,7 +91,7 @@ theorem IsMinimal.sub_mem_of_homotopy (hK : K.IsMinimal) (hL : L.IsMinimal)
   exact Submodule.add_mem _ hm hp
 
 /-- A self-map homotopic to the identity on a minimal complex of finite modules is an
-isomorphism. Nakayama's lemma is applied separately in each degree. -/
+isomorphism. -/
 theorem IsMinimal.isIso_of_homotopy_id (hK : K.IsMinimal) [∀ i, Module.Finite R (K.X i)]
     {f : K ⟶ K} (h : Homotopy f (𝟙 K)) : IsIso f := by
   have hsurj (i : ι) : Function.Surjective (f.f i).hom := by
