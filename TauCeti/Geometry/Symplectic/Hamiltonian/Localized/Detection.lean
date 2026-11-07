@@ -56,7 +56,7 @@ include hσ hη
 omit [T2Space M] [FiniteDimensional ℝ Q] [T2Space P] [IsManifold J ∞ P] in
 /-- A continuous covector along a continuous map pairs continuously with the Hamiltonian
 vector field of a jointly `C¹` family. -/
-theorem IsNondegenerate.continuous_apply_hamiltonianVectorField_comp [IsManifold J 1 P]
+theorem IsNondegenerate.continuous_apply_hamiltonianVectorField [IsManifold J 1 P]
     {K : P → M → ℝ} (hK : ContMDiff (J.prod I) 𝓘(ℝ) 1 (Function.uncurry K)) :
     Continuous (fun p ↦ η p (σ.hamiltonianVectorField (K p) (u p))) := by
   have hu : Continuous u :=
@@ -84,7 +84,7 @@ private theorem exists_cutoff_integral_pos {K : P → M → ℝ}
       0 < ∫ q, η q (σ.hamiltonianVectorField (L q) (u q)) ∂μ := by
   let f : P → ℝ := fun q ↦ η q (σ.hamiltonianVectorField (K q) (u q))
   have hf : Continuous f :=
-    hσ.continuous_apply_hamiltonianVectorField_comp hη (hK.of_le (by simp))
+    hσ.continuous_apply_hamiltonianVectorField hη (hK.of_le (by simp))
   obtain ⟨b, -, hb⟩ := (SmoothBumpFunction.nhds_basis_tsupport (I := J) p).mem_iff.1
     (hf.continuousAt.preimage_mem_nhds (Ioi_mem_nhds hp))
   let L : P → M → ℝ := fun q ↦ b q • K q
