@@ -95,6 +95,36 @@ variable {V : Type u} {G : SimpleGraph V} {H : G.Subgraph}
 
 /-! ### Soundness: open ears preserve `2`-vertex-connectivity -/
 
+/-- If a path `p` with both ends in `H` lies in `K ≥ H` and at most one vertex `s` of `K` is
+deleted, every remaining vertex of `p` is still joined in `K` to a remaining vertex of `H`. -/
+private theorem reachable_induce_compl_of_mem_verts_toSubgraph_of_encard_le_one {K : G.Subgraph}
+    {u v : V} {p : G.Walk u v} (hp : p.IsPath) (hpK : p.toSubgraph ≤ K) (hu : u ∈ H.verts)
+    (hv : v ∈ H.verts) (hHK : H ≤ K) {s : Set K.verts} (hs1 : s.encard ≤ 1) {w : K.verts}
+    (hws : w ∉ s) (hwp : w.1 ∈ p.toSubgraph.verts) :
+    ∃ z : H.verts, ∃ hz : (⟨z.1, hHK.1 z.2⟩ : K.verts) ∉ s,
+      (K.coe.induce sᶜ).Reachable ⟨w, hws⟩ ⟨⟨z.1, hHK.1 z.2⟩, hz⟩ := by
+  classical
+  rw [Walk.mem_verts_toSubgraph] at hwp
+  obtain ⟨q, r, -, -, hqr⟩ := hp.mem_support_iff_exists_append.mp hwp
+  have hqK : q.toSubgraph ≤ K :=
+    le_trans le_sup_left (by rw [← Walk.toSubgraph_append, ← hqr]; exact hpK)
+  have hrK : r.toSubgraph ≤ K :=
+    le_trans le_sup_right (by rw [← Walk.toSubgraph_append, ← hqr]; exact hpK)
+  by_cases hqs : ∃ x₀ : K.verts, x₀.1 ∈ q.support ∧ x₀ ∈ s
+  · obtain ⟨x₀, hx₀q, hx₀s⟩ := hqs
+    have hrs : ∀ z : K.verts, z.1 ∈ r.support → z ∉ s := by
+      intro z hzr hzs
+      have hzx₀ : z = x₀ := Set.encard_le_one_iff.mp hs1 z x₀ hzs hx₀s
+      have hx₀w : x₀.1 ≠ w.1 := fun heq ↦ hws (Subtype.ext heq.symm ▸ hx₀s)
+      exact (hqr ▸ hp).ne_of_mem_support_of_append hx₀w hx₀q (hzx₀ ▸ hzr) rfl
+    have hvs : (⟨v, hHK.1 hv⟩ : K.verts) ∉ s := hrs _ r.end_mem_support
+    exact ⟨⟨v, hv⟩, hvs,
+      r.reachable_induce_coe_of_mem_support hrK hrs r.start_mem_support r.end_mem_support⟩
+  · push Not at hqs
+    have hus : (⟨u, hHK.1 hu⟩ : K.verts) ∉ s := hqs _ q.start_mem_support
+    exact ⟨⟨u, hu⟩, hus,
+      q.reachable_induce_coe_of_mem_support hqK hqs q.end_mem_support q.start_mem_support⟩
+
 /-- Adjoining an open ear to a `2`-vertex-connected subgraph preserves `2`-vertex-connectivity,
 with no finiteness assumption. -/
 theorem Ear.isVertexConnected_two_adjoin (hH : H.coe.IsVertexConnected 2) {e : G.Ear H}
@@ -130,27 +160,9 @@ theorem Ear.isVertexConnected_two_adjoin (hH : H.coe.IsVertexConnected 2) {e : G
           simpa [K, e₀] using w.1.2
         rcases hwK with hwH | hwp
         · exact ⟨⟨⟨w.1.1, hwH⟩, w.2⟩, .rfl⟩
-        · classical
-          rw [Walk.mem_verts_toSubgraph] at hwp
-          obtain ⟨q, r, -, -, hqr⟩ := hp.mem_support_iff_exists_append.mp hwp
-          have hqK : q.toSubgraph ≤ K :=
-            le_trans le_sup_left (by rw [← Walk.toSubgraph_append, ← hqr]; exact hpK)
-          have hrK : r.toSubgraph ≤ K :=
-            le_trans le_sup_right (by rw [← Walk.toSubgraph_append, ← hqr]; exact hpK)
-          by_cases hqs : ∃ x₀ : K.verts, x₀.1 ∈ q.support ∧ x₀ ∈ s
-          · obtain ⟨x₀, hx₀q, hx₀s⟩ := hqs
-            have hrs : ∀ z : K.verts, z.1 ∈ r.support → z ∉ s := by
-              intro z hzr hzs
-              have hzx₀ : z = x₀ := Set.encard_le_one_iff.mp hs1 z x₀ hzs hx₀s
-              have hx₀w : x₀.1 ≠ w.1.1 := fun heq ↦ w.2 (Subtype.ext heq.symm ▸ hx₀s)
-              exact (hqr ▸ hp).ne_of_mem_support_of_append hx₀w hx₀q (hzx₀ ▸ hzr) rfl
-            have hvs : (⟨v, hHK.1 hv⟩ : K.verts) ∉ s := hrs _ r.end_mem_support
-            exact ⟨⟨⟨v, hv⟩, hvs⟩,
-              r.reachable_induce_coe_of_mem_support hrK hrs r.start_mem_support r.end_mem_support⟩
-          · push Not at hqs
-            have hus : (⟨u, hHK.1 hu⟩ : K.verts) ∉ s := hqs _ q.start_mem_support
-            exact ⟨⟨⟨u, hu⟩, hus⟩,
-              q.reachable_induce_coe_of_mem_support hqK hqs q.end_mem_support q.start_mem_support⟩
+        · obtain ⟨z, hz, hr⟩ := reachable_induce_compl_of_mem_verts_toSubgraph_of_encard_le_one
+            hp hpK hu hv hHK hs1 w.2 hwp
+          exact ⟨⟨z, hz⟩, hr⟩
       intro a b
       obtain ⟨za, hra⟩ := h_to_H a
       obtain ⟨zb, hrb⟩ := h_to_H b
@@ -197,77 +209,91 @@ end EarDecomposition
 
 /-! ### Completeness: constructing open ears and open ear decompositions -/
 
+/-- A spanning proper subgraph admits an open ear: a single missing edge. -/
+private theorem exists_open_ear_of_spanning {H : G.Subgraph} (hH : H ≠ ⊤)
+    (hspan : ∀ x : V, x ∈ H.verts) : ∃ e : G.Ear H, e.kind = .«open» := by
+  classical
+  -- `H` is spanning and `H ≠ ⊤`, so some edge of `G` is missing from `H`.
+  have hex : ∃ u v : V, G.Adj u v ∧ ¬H.Adj u v := by
+    by_contra! hall
+    apply hH
+    ext x y
+    · simp [hspan x]
+    · exact ⟨fun h ↦ by simp [H.adj_sub h], fun h ↦ hall x y (by simpa using h)⟩
+  obtain ⟨u, v, hadj, hnotH⟩ := hex
+  refine ⟨Ear.«open» hadj.toWalk (Walk.IsPath.cons .nil (by simp [hadj.ne]))
+    (hspan u) (hspan v) hadj.ne ?_ ?_, Ear.kind_open ..⟩
+  · intro w hw hwu hwv
+    simp only [Adj.toWalk, Walk.support_cons, Walk.support_nil, List.mem_cons,
+      List.not_mem_nil, or_false] at hw
+    exact (hw.elim hwu hwv).elim
+  · intro e he
+    simp only [Adj.toWalk, Walk.edges_cons, Walk.edges_nil, List.mem_cons,
+      List.not_mem_nil, or_false] at he
+    subst he
+    rwa [Subgraph.mem_edgeSet]
+
+/-- A `2`-vertex-connected finite graph has an open ear on any subgraph with at least two
+vertices that misses a vertex. -/
+private theorem IsVertexConnected.exists_open_ear_of_not_mem_verts [Finite V]
+    (hG : G.IsVertexConnected 2) {H : G.Subgraph} (hverts : H.verts.Nontrivial) {x : V}
+    (hx : x ∉ H.verts) : ∃ e : G.Ear H, e.kind = .«open» := by
+  classical
+  cases nonempty_fintype V
+  -- `H` misses a vertex `x`; join `x` to `H.verts` by a `2`-fan and concatenate the two paths.
+  let U : Finset V := H.verts.toFinset
+  have hxU : x ∉ U := by simpa [U] using hx
+  have hU : 2 ≤ #U := by
+    obtain ⟨a, ha, b, hb, hab⟩ := hverts
+    exact Finset.one_lt_card.mpr ⟨a, Set.mem_toFinset.mpr ha, b, Set.mem_toFinset.mpr hb, hab⟩
+  obtain ⟨u, P, hu_inj, huU, hP_path, hP_int, hP_disj⟩ := hG.exists_fan hxU hU
+  let p : G.Walk (u 0) (u 1) := (P 0).reverse.append (P 1)
+  have h01 : (0 : Fin 2) ≠ 1 := by decide
+  have hp : p.IsPath := by
+    refine (Walk.isPath_append _ _).mpr
+      ⟨(hP_path 0).reverse, (hP_path 1).tail, fun w hw0 hw1 ↦ ?_⟩
+    rw [Walk.support_reverse, List.mem_reverse] at hw0
+    have hwx : w = x := hP_disj h01 w hw0 (List.mem_of_mem_tail hw1)
+    exact (hP_path 1).start_notMem_tail_support (hwx ▸ hw1)
+  have hu0 : u 0 ∈ H.verts := Set.mem_toFinset.mp (huU 0)
+  have hu1 : u 1 ∈ H.verts := Set.mem_toFinset.mp (huU 1)
+  have huv : u 0 ≠ u 1 := fun h ↦ h01 (hu_inj h)
+  refine ⟨Ear.«open» p hp hu0 hu1 huv ?_ ?_, Ear.kind_open ..⟩
+  · intro w hw hwu0 hwu1
+    rw [Walk.mem_support_append_iff, Walk.support_reverse, List.mem_reverse] at hw
+    rcases hw with hw0 | hw1
+    · exact Set.mem_toFinset.not.mp (hP_int 0 w hw0 hwu0)
+    · exact Set.mem_toFinset.not.mp (hP_int 1 w hw1 hwu1)
+  · -- No edge of `P i` has both endpoints in `H`, since `u i` is its unique vertex in `H`.
+    have hno_edge : ∀ (i : Fin 2) {e : Sym2 V}, e ∈ (P i).edges → e ∉ H.edgeSet := by
+      intro i e he heH
+      induction e using Sym2.ind with
+      | _ a b =>
+        rw [Subgraph.mem_edgeSet] at heH
+        have haU : a ∈ U := Set.mem_toFinset.mpr (H.edge_vert heH)
+        have hbU : b ∈ U := Set.mem_toFinset.mpr (H.edge_vert heH.symm)
+        have hau : a = u i := by_contra fun h ↦ hP_int i a
+          ((P i).fst_mem_support_of_mem_edges he) h haU
+        have hbu : b = u i := by_contra fun h ↦ hP_int i b
+          ((P i).snd_mem_support_of_mem_edges he) h hbU
+        exact heH.ne (hau.trans hbu.symm)
+    intro e he
+    rw [Walk.edges_append, List.mem_append, Walk.edges_reverse, List.mem_reverse] at he
+    rcases he with he0 | he1
+    · exact hno_edge 0 he0
+    · exact hno_edge 1 he1
+
 /-- **Single-step open ear existence.** In a `2`-vertex-connected simple graph on a finite vertex
 type, every proper subgraph `H ≠ ⊤` with at least two vertices admits an open ear. -/
 theorem IsVertexConnected.exists_open_ear [Finite V] (hG : G.IsVertexConnected 2)
     {H : G.Subgraph} (hH : H ≠ ⊤) (hverts : H.verts.Nontrivial) :
     ∃ e : G.Ear H, e.kind = .«open» := by
   classical
-  cases nonempty_fintype V
   by_cases hspan : ∀ x : V, x ∈ H.verts
-  · -- `H` is spanning and `H ≠ ⊤`, so some edge of `G` is missing from `H`.
-    have hex : ∃ u v : V, G.Adj u v ∧ ¬H.Adj u v := by
-      by_contra! hall
-      apply hH
-      ext x y
-      · simp [hspan x]
-      · exact ⟨fun h ↦ by simp [H.adj_sub h], fun h ↦ hall x y (by simpa using h)⟩
-    obtain ⟨u, v, hadj, hnotH⟩ := hex
-    refine ⟨Ear.«open» hadj.toWalk (Walk.IsPath.cons .nil (by simp [hadj.ne]))
-      (hspan u) (hspan v) hadj.ne ?_ ?_, Ear.kind_open ..⟩
-    · intro w hw hwu hwv
-      simp only [Adj.toWalk, Walk.support_cons, Walk.support_nil, List.mem_cons,
-        List.not_mem_nil, or_false] at hw
-      exact (hw.elim hwu hwv).elim
-    · intro e he
-      simp only [Adj.toWalk, Walk.edges_cons, Walk.edges_nil, List.mem_cons,
-        List.not_mem_nil, or_false] at he
-      subst he
-      rwa [Subgraph.mem_edgeSet]
-  · -- `H` misses a vertex `x`; join `x` to `H.verts` by a `2`-fan and concatenate the two paths.
-    push Not at hspan
+  · exact exists_open_ear_of_spanning hH hspan
+  · push Not at hspan
     obtain ⟨x, hx⟩ := hspan
-    let U : Finset V := H.verts.toFinset
-    have hxU : x ∉ U := by simpa [U] using hx
-    have hU : 2 ≤ #U := by
-      obtain ⟨a, ha, b, hb, hab⟩ := hverts
-      exact Finset.one_lt_card.mpr ⟨a, Set.mem_toFinset.mpr ha, b, Set.mem_toFinset.mpr hb, hab⟩
-    obtain ⟨u, P, hu_inj, huU, hP_path, hP_int, hP_disj⟩ := hG.exists_fan hxU hU
-    let p : G.Walk (u 0) (u 1) := (P 0).reverse.append (P 1)
-    have h01 : (0 : Fin 2) ≠ 1 := by decide
-    have hp : p.IsPath := by
-      refine (Walk.isPath_append _ _).mpr
-        ⟨(hP_path 0).reverse, (hP_path 1).tail, fun w hw0 hw1 ↦ ?_⟩
-      rw [Walk.support_reverse, List.mem_reverse] at hw0
-      have hwx : w = x := hP_disj h01 w hw0 (List.mem_of_mem_tail hw1)
-      exact (hP_path 1).start_notMem_tail_support (hwx ▸ hw1)
-    have hu0 : u 0 ∈ H.verts := Set.mem_toFinset.mp (huU 0)
-    have hu1 : u 1 ∈ H.verts := Set.mem_toFinset.mp (huU 1)
-    have huv : u 0 ≠ u 1 := fun h ↦ h01 (hu_inj h)
-    refine ⟨Ear.«open» p hp hu0 hu1 huv ?_ ?_, Ear.kind_open ..⟩
-    · intro w hw hwu0 hwu1
-      rw [Walk.mem_support_append_iff, Walk.support_reverse, List.mem_reverse] at hw
-      rcases hw with hw0 | hw1
-      · exact Set.mem_toFinset.not.mp (hP_int 0 w hw0 hwu0)
-      · exact Set.mem_toFinset.not.mp (hP_int 1 w hw1 hwu1)
-    · -- No edge of `P i` has both endpoints in `H`, since `u i` is its unique vertex in `H`.
-      have hno_edge : ∀ (i : Fin 2) {e : Sym2 V}, e ∈ (P i).edges → e ∉ H.edgeSet := by
-        intro i e he heH
-        induction e using Sym2.ind with
-        | _ a b =>
-          rw [Subgraph.mem_edgeSet] at heH
-          have haU : a ∈ U := Set.mem_toFinset.mpr (H.edge_vert heH)
-          have hbU : b ∈ U := Set.mem_toFinset.mpr (H.edge_vert heH.symm)
-          have hau : a = u i := by_contra fun h ↦ hP_int i a
-            ((P i).fst_mem_support_of_mem_edges he) h haU
-          have hbu : b = u i := by_contra fun h ↦ hP_int i b
-            ((P i).snd_mem_support_of_mem_edges he) h hbU
-          exact heH.ne (hau.trans hbu.symm)
-      intro e he
-      rw [Walk.edges_append, List.mem_append, Walk.edges_reverse, List.mem_reverse] at he
-      rcases he with he0 | he1
-      · exact hno_edge 0 he0
-      · exact hno_edge 1 he1
+    exact hG.exists_open_ear_of_not_mem_verts hverts hx
 
 /-- Given an open ear decomposition of a subgraph `H` in a finite `2`-vertex-connected simple
 graph, there exists an open ear decomposition of `⊤` with the same initial subgraph. -/
