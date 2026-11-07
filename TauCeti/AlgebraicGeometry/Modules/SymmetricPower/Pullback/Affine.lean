@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Category.ModuleCat.Sheaf.SymmetricPower.Pullback
 public import TauCeti.Algebra.Category.ModuleCat.SymmetricPower.BaseChange
 public import TauCeti.AlgebraicGeometry.Modules.SymmetricPower.Affine
 public import TauCeti.AlgebraicGeometry.Modules.SymmetricPower.Pullback.Basic
+public import TauCeti.AlgebraicGeometry.Modules.Pullback.Sections
 public import TauCeti.AlgebraicGeometry.Modules.Tilde.Basic
 
 /-!
@@ -125,28 +126,6 @@ private lemma symmetricPower_map_pullbackSymmetricPowerComparison_app_val_app_un
   rw [TauCeti.SymmetricAlgebra.coe_homogeneousSubmoduleMapₛₗ_apply, ← RingHom.comp_apply,
     SymmetricAlgebra.mapₛₗ_comp_mapₛₗ] <;> intro <;> rfl
 
-/-- Naturality of the pullback-pushforward adjunction unit, evaluated on a section: applying a
-morphism of modules before the unit is the same as applying its pullback after the unit. -/
-theorem pullbackPushforwardAdjunction_unit_val_app_naturality {X Y : Scheme.{u}} (f : X ⟶ Y)
-    {A B : Y.Modules} (g : A ⟶ B) (U : Y.Opensᵒᵖ) (a : A.val.obj U) :
-    ((Scheme.Modules.pullbackPushforwardAdjunction f).unit.app B).val.app U (g.val.app U a) =
-      ((Scheme.Modules.pullback f).map g).val.app ((TopologicalSpace.Opens.map f.base).op.obj U)
-        (((Scheme.Modules.pullbackPushforwardAdjunction f).unit.app A).val.app U a) :=
-  ConcreteCategory.congr_hom (congrArg (fun h ↦ h.val.app U)
-    ((Scheme.Modules.pullbackPushforwardAdjunction f).unit.naturality g)) a
-
-/-- A mapped associated-sheaf morphism `tilde.map e` out of the scalar extension, composed with the
-affine pullback comparison, sends the image of the associated section of `m` under the
-pullback adjunction unit to the associated section of `e (1 ⊗ m)`. -/
-theorem tilde_map_tildeFunctorCompPullbackIso_hom_app_unit_toOpen (M : ModuleCat.{u} R)
-    {N : ModuleCat.{u} S} (e : (ModuleCat.extendScalars φ.hom).obj M ⟶ N) (m : M) :
-    (tilde.map e).val.app (.op ⊤)
-      (((tildeFunctorCompPullbackIso φ).hom.app M).val.app (.op ⊤)
-        (((Scheme.Modules.pullbackPushforwardAdjunction (Spec.map φ)).unit.app (tilde M)).val.app
-          (.op ⊤) (tilde.toOpen M ⊤ m))) = tilde.toOpen N ⊤ (e ((1 : S) ⊗ₜ[R,φ.hom] m)) := by
-  rw [tildeFunctorCompPullbackIso_hom_app_unit_toOpen]
-  exact ConcreteCategory.congr_hom (tilde.toOpen_map_app e ⊤) _
-
 /-- Under the affine identifications `tildeSymmetricPowerIso` and `tildeFunctorCompPullbackIso`,
 the canonical symmetric-power pullback comparison along `Spec φ` is the scalar-extension
 isomorphism `S ⊗_R Symⁿ M ≅ Symⁿ (S ⊗_R M)`. -/
@@ -188,8 +167,18 @@ theorem pullback_tildeSymmetricPowerIso_hom (n : ℕ) (M : ModuleCat.{u} R) :
           ((adj.unit.app (tilde (M.symmetricPower l.length))).val.app (op ⊤)
             (tilde.toOpen (M.symmetricPower l.length) ⊤ x))))
   -- Naturality of the unit moves the affine comparison past it.
-  have hunit := pullbackPushforwardAdjunction_unit_val_app_naturality (Spec.map φ)
-    (tildeSymmetricPowerIso l.length M).hom (op ⊤) (tilde.toOpen (M.symmetricPower l.length) ⊤ x)
+  have hunit : (adj.unit.app ((SheafOfModules.symmetricPower (Spec R).sheaf l.length).obj
+      (tilde M))).val.app (op ⊤)
+      ((tildeSymmetricPowerIso l.length M).hom.val.app (op ⊤)
+        (tilde.toOpen (M.symmetricPower l.length) ⊤ x)) =
+      (P.map (tildeSymmetricPowerIso l.length M).hom).val.app (op ⊤)
+        ((adj.unit.app (tilde (M.symmetricPower l.length))).val.app (op ⊤)
+          (tilde.toOpen (M.symmetricPower l.length) ⊤ x)) := by
+    have h := (Scheme.Hom.pullbackSections_naturality (Spec.map φ) _ ⊤
+      (tildeSymmetricPowerIso l.length M).hom
+      (tilde.toOpen (M.symmetricPower l.length) ⊤ x)).symm
+    erw [Scheme.Hom.pullbackSections_apply, Scheme.Hom.pullbackSections_apply] at h
+    exact h
   let C := ((SheafOfModules.symmetricPower (Spec S).sheaf l.length).map
     ((tildeFunctorCompPullbackIso φ).hom.app M)).val.app (op ⊤)
   let K := ((Scheme.Modules.pullbackSymmetricPowerComparison (Spec.map φ) l.length).app
@@ -207,8 +196,15 @@ theorem pullback_tildeSymmetricPowerIso_hom (n : ℕ) (M : ModuleCat.{u} R) :
   refine Eq.symm ?_
   refine (congrArg ((tildeSymmetricPowerIso l.length
       ((ModuleCat.extendScalars φ.hom).obj M)).hom.val.app (op ⊤))
-    (tilde_map_tildeFunctorCompPullbackIso_hom_app_unit_toOpen φ (M.symmetricPower l.length)
-      (φ.hom.extendScalarsSymmetricPowerIso.{u, u, u} l.length M).hom x)).trans ?_
+    (by
+      rw [tildeFunctorCompPullbackIso_hom_app_unit_toOpen]
+      exact ConcreteCategory.congr_hom (tilde.toOpen_map_app _ ⊤) _ :
+      (tilde.map (φ.hom.extendScalarsSymmetricPowerIso.{u, u, u} l.length M).hom).val.app (op ⊤)
+        (((tildeFunctorCompPullbackIso φ).hom.app (M.symmetricPower l.length)).val.app (op ⊤)
+          ((adj.unit.app (tilde (M.symmetricPower l.length))).val.app (op ⊤)
+            (tilde.toOpen (M.symmetricPower l.length) ⊤ x))) =
+        tilde.toOpen _ ⊤ ((φ.hom.extendScalarsSymmetricPowerIso.{u, u, u} l.length M).hom
+          ((1 : S) ⊗ₜ[R,φ.hom] x)))).trans ?_
   refine tildeSymmetricPowerIso_hom_toOpen_of_eq_prod _ ⊤
     (l.map fun m ↦ (1 : S) ⊗ₜ[R,φ.hom] m) (List.length_map _) _ ?_ _ ?_
   · exact (φ.hom.coe_extendScalarsSymmetricPowerIso_hom_one_tmul_prod M l hx).trans
