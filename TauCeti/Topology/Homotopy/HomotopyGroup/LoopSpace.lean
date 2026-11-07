@@ -105,6 +105,13 @@ theorem map_eq_congrEquiv_symm_comp {Y : Type*} [TopologicalSpace Y] {y : Y} (f 
   funext a
   rw [Function.comp_apply, Function.comp_apply, map_congrEquiv, Equiv.symm_apply_apply]
 
+/-- Reindexing the cube directions along `e : M ≃ N` does not change whether a based map induces
+a bijection on homotopy groups. -/
+theorem bijective_map_iff_of_equiv {Y : Type*} [TopologicalSpace Y] {y : Y} (f : C(X, Y))
+    (hf : f x = y) (e : M ≃ N) :
+    Function.Bijective (map (N := M) f hf) ↔ Function.Bijective (map (N := N) f hf) := by
+  rw [map_eq_congrEquiv_symm_comp f hf e, Equiv.comp_bijective, Equiv.bijective_comp]
+
 /-- In positive dimensions, reindexing the cube directions along `e : M ≃ N` is an isomorphism
 of homotopy groups. The target index type inherits its nonemptiness, hence its group structure,
 from `e`; that is what the `letI` in the statement records. -/
@@ -190,6 +197,14 @@ theorem _root_.homotopyGroupEquivZerothHomotopyOfIsEmpty_mk [IsEmpty N] (p : Ω^
     homotopyGroupEquivZerothHomotopyOfIsEmpty N x (⟦p⟧ : HomotopyGroup N X x) =
       ZerothHomotopy.mk (p 0) :=
   rfl
+
+/-- The image under a based map of the class of a zero-dimensional generalized loop is the path
+component of the image of its value. -/
+theorem _root_.homotopyGroupEquivZerothHomotopyOfIsEmpty_map_mk [IsEmpty N] {Y : Type*}
+    [TopologicalSpace Y] {y : Y} (f : C(X, Y)) (hf : f x = y) (p : Ω^ N X x) :
+    homotopyGroupEquivZerothHomotopyOfIsEmpty N y (map f hf (⟦p⟧ : HomotopyGroup N X x)) =
+      ZerothHomotopy.mk (f (p 0)) := by
+  rw [map_mk, homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, GenLoop.map_apply]
 
 /-- **Two loops at `x` are joined by a path in the loop space exactly when they are homotopic.**
 This is `GenLoop.homotopic_iff_joined` for a singleton index type, carried across the

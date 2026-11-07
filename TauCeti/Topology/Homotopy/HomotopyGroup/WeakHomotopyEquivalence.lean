@@ -89,9 +89,8 @@ namespace IsWeakHomotopyEquivalence
 /-- A weak homotopy equivalence induces a bijection on the homotopy groups indexed by any finite
 type of cube directions, not only on the groups `π_n` indexed by `Fin n`. -/
 theorem map_bijective (hf : f.IsWeakHomotopyEquivalence) (N : Type*) [Finite N] (x : X) :
-    Function.Bijective (HomotopyGroup.map (N := N) f (rfl : f x = f x)) := by
-  rw [HomotopyGroup.map_eq_congrEquiv_symm_comp f rfl (Finite.equivFin N)]
-  exact (Equiv.bijective _).comp ((hf.bijective _ x).comp (Equiv.bijective _))
+    Function.Bijective (HomotopyGroup.map (N := N) f (rfl : f x = f x)) :=
+  (HomotopyGroup.bijective_map_iff_of_equiv f rfl (Finite.equivFin N)).2 (hf.bijective _ x)
 
 /-- A weak homotopy equivalence is injective on path components: two points of `X` are joined by
 a path exactly when their images are. -/
@@ -111,8 +110,7 @@ theorem joined_iff (hf : f.IsWeakHomotopyEquivalence) {a b : X} :
   have hφX (c : X) : φX (pt c) = ZerothHomotopy.mk c := by
     rw [homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, hpt]
   have hmap (c : X) : φY (HomotopyGroup.map f rfl (pt c)) = ZerothHomotopy.mk (f c) := by
-    rw [HomotopyGroup.map_mk, homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, GenLoop.map_apply,
-      hpt]
+    rw [homotopyGroupEquivZerothHomotopyOfIsEmpty_map_mk, hpt]
   have hab : HomotopyGroup.map f rfl (pt a) = HomotopyGroup.map f rfl (pt b) :=
     φY.injective <| by rw [hmap, hmap]; exact ZerothHomotopy.sound h.somePath
   have := congrArg φX ((hf.bijective 0 a).injective hab)
