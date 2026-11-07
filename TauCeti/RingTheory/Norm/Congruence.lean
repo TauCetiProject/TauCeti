@@ -14,10 +14,10 @@ public import Mathlib.Data.ZMod.Basic
 
 Let `S` be a possibly noncommutative algebra that is free of finite rank over a commutative ring
 `R`, and `I` an ideal of `R`. Elements of `S` congruent modulo the extended ideal `IS` have norms
-congruent modulo `I`; the norms are the determinants of left multiplication. Consequently `IS` is
-the unit ideal only when `I` is. Over `R = ℤ` and `I = (m)` this gives congruences of integer
-norms modulo `m`, which supply congruences for absolute norms of principal ideals when the integer
-norms have nonnegative product.
+congruent modulo `I`; the norms are the determinants of left multiplication. Consequently, if `S`
+is nontrivial, then `IS` is the unit ideal only when `I` is. Over `R = ℤ` and `I = (m)` this gives
+congruences of integer norms modulo `m`, which supply congruences for absolute norms of principal
+ideals when the integer norms have nonnegative product.
 
 ## Main results
 
