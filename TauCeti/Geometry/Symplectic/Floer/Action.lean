@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Symplectic.Area.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Energy
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
-import Mathlib.Topology.Algebra.IsUniformGroup.Order
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
 
@@ -335,48 +334,40 @@ theorem tendsto_hamiltonianAction (ω : SymplecticForm V) (hH : Continuous (uncu
     (hlim : TendstoUniformlyOn x x₀ l (Icc 0 1))
     (hdlim : TendstoUniformlyOn (fun i ↦ deriv (x i)) (deriv x₀) l (Icc 0 1)) :
     Tendsto (fun i ↦ ω.hamiltonianAction H (x i)) l (𝓝 (ω.hamiltonianAction H x₀)) := by
-  have hI : uIoc (0 : ℝ) 1 ⊆ Icc 0 1 := by
-    rw [uIoc_of_le zero_le_one]
-    exact Ioc_subset_Icc_self
   rcases l.eq_or_neBot with rfl | hl
   · simp
-  -- Uniform limits of continuous functions are continuous, so the loops and their derivatives
-  -- are eventually bounded on `[0, 1]`.
-  have hbound {y : ι → ℝ → V} {y₀ : ℝ → V} (hy : ∀ᶠ i in l, ContinuousOn (y i) (Icc 0 1))
-      (hlim : TendstoUniformlyOn y y₀ l (Icc 0 1)) :
-      ∃ C, ∀ᶠ i in l, ∀ t ∈ Icc (0 : ℝ) 1, ‖y i t‖ ≤ C := by
-    obtain ⟨C, hC⟩ := isCompact_Icc.bddAbove_image (hlim.continuousOn hy.frequently).norm
-    exact ⟨C + 1, (uniformContinuous_norm.comp_tendstoUniformlyOn hlim).eventually_forall_le
-      (lt_add_one C) fun t ht ↦ hC (mem_image_of_mem _ ht)⟩
-  obtain ⟨C, hC⟩ := hbound hx hlim
-  obtain ⟨D, hD⟩ := hbound hdx hdlim
-  obtain ⟨M, hM⟩ := (isCompact_Icc.prod (isCompact_closedBall (0 : V) C))
-    |>.exists_bound_of_continuousOn hH.continuousOn
-  set B := ω.toBilinForm.toContinuousBilinearMap
+  -- The triples `(t, x(t), x'(t))` converge uniformly on `[0, 1]`, so they eventually lie in a
+  -- compact neighbourhood `K` of the image of the limit, on which both integrands are uniformly
+  -- continuous.
+  have hid : TendstoUniformlyOn (fun (_ : ι) (t : ℝ) ↦ t) id l (Icc 0 1) :=
+    fun u hu ↦ .of_forall fun _ _ _ ↦ refl_mem_uniformity hu
+  have hxx : TendstoUniformlyOn (fun i t ↦ (x i t, deriv (x i) t)) (fun t ↦ (x₀ t, deriv x₀ t)) l
+      (Icc 0 1) := fun u hu ↦ tendsto_diag.eventually (hlim.prodMk hdlim u hu)
+  have hP : TendstoUniformlyOn (fun i t ↦ (t, x i t, deriv (x i) t))
+      (fun t ↦ (t, x₀ t, deriv x₀ t)) l (Icc 0 1) := fun u hu ↦
+    tendsto_diag.eventually (hid.prodMk hxx u hu)
+  have hPc : ∀ᶠ i in l, ContinuousOn (fun t ↦ (t, x i t, deriv (x i) t)) (Icc 0 1) :=
+    (hx.and hdx).mono fun i hi ↦ continuousOn_id.prodMk (hi.1.prodMk hi.2)
+  set K := Metric.cthickening 1 ((fun t ↦ (t, x₀ t, deriv x₀ t)) '' Icc 0 1)
+  have hK : IsCompact K := (isCompact_Icc.image_of_continuousOn (hP.continuousOn hPc.frequently))
+    |>.cthickening
+  have hPK : ∀ᶠ i in l, ∀ t ∈ Icc (0 : ℝ) 1, (t, x i t, deriv (x i) t) ∈ K :=
+    (Metric.tendstoUniformlyOn_iff.1 hP 1 one_pos).mono fun _ hi t ht ↦
+      Metric.mem_cthickening_of_dist_le _ _ _ _ (mem_image_of_mem _ ht)
+        (by rw [dist_comm]; exact (hi t ht).le)
+  have hconv (g : ℝ × V × V → ℝ) (hg : Continuous g) :
+      Tendsto (fun i ↦ ∫ t in (0 : ℝ)..1, g (t, x i t, deriv (x i) t)) l
+        (𝓝 (∫ t in (0 : ℝ)..1, g (t, x₀ t, deriv x₀ t))) := by
+    refine TendstoUniformlyOn.tendsto_intervalIntegral_of_continuousOn ?_ ?_ <;>
+      rw [uIcc_of_le zero_le_one]
+    · exact hPc.mono fun _ hi ↦ hg.comp_continuousOn hi
+    · exact (hK.uniformContinuousOn_of_continuous hg.continuousOn)
+        |>.comp_tendstoUniformlyOn_eventually hPK
+          (fun t ht ↦ Metric.self_subset_cthickening _ (mem_image_of_mem _ ht)) hP
   simp only [hamiltonianAction_def, loopArea_def]
-  -- Both integrals converge by dominated convergence, with constant bounds.
-  refine (tendsto_const_nhds.mul ?_).add ?_
-  · refine intervalIntegral.tendsto_integral_filter_of_dominated_convergence (fun _ ↦ ‖B‖ * C * D)
-      ((hx.and hdx).mono fun i hi ↦ ((ω.continuousOn_apply_comp hi.1 hi.2).mono hI)
-        |>.aestronglyMeasurable measurableSet_uIoc)
-      ((hC.and hD).mono fun i hi ↦ ae_of_all _ fun t ht ↦ ?_) intervalIntegrable_const
-      (ae_of_all _ fun t ht ↦
-        ((ω.continuous_apply_comp continuous_fst continuous_snd).tendsto _).comp
-          ((hlim.tendsto_at (hI ht)).prodMk_nhds (hdlim.tendsto_at (hI ht))))
-    have h := B.le_opNorm₂ (x i t) (deriv (x i) t)
-    simp only [B, LinearMap.toContinuousBilinearMap_apply] at h
-    refine h.trans ?_
-    have hCt := hi.1 t (hI ht)
-    have hDt := hi.2 t (hI ht)
-    have hC0 : 0 ≤ C := (norm_nonneg _).trans hCt
-    gcongr
-  · refine intervalIntegral.tendsto_integral_filter_of_dominated_convergence (fun _ ↦ M)
-      (hx.mono fun i hi ↦ ((hH.comp_continuousOn (continuousOn_id.prodMk hi)).mono hI)
-        |>.aestronglyMeasurable measurableSet_uIoc)
-      (hC.mono fun i hi ↦ ae_of_all _ fun t ht ↦
-        hM (t, x i t) ⟨hI ht, mem_closedBall_zero_iff.2 (hi t (hI ht))⟩) intervalIntegrable_const
-      (ae_of_all _ fun t ht ↦ (hH.tendsto (t, x₀ t)).comp
-        (tendsto_const_nhds.prodMk_nhds (hlim.tendsto_at (hI ht))))
+  exact (tendsto_const_nhds.mul (hconv (fun p : ℝ × V × V ↦ ω p.2.1 p.2.2)
+    (ω.continuous_apply_comp continuous_snd.fst continuous_snd.snd))).add
+    (hconv (fun p : ℝ × V × V ↦ H p.1 p.2.1) (hH.comp (continuous_fst.prodMk continuous_snd.fst)))
 
 end Continuity
 
