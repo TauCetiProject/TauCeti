@@ -119,7 +119,7 @@ theorem equivRealProdCLM_symm_endChart (q : Puncture) (z : ℝ × ℝ) :
 theorem re_endCoord_endChart (q : Puncture) (z : ℝ × ℝ) :
     (q.endCoord (Complex.equivRealProdCLM.symm (endChart q z))).re = z.1 := by
   rw [equivRealProdCLM_symm_endChart, re_endCoord_cylindricalEndLift]
-  rfl
+  simp [Complex.equivRealProdCLM_symm_apply]
 
 /-- The end chart sends the part `±s > 0` of the end into `S`. -/
 theorem endChart_mem_thricePuncturedSphereReal {q : Puncture} {z : ℝ × ℝ}
@@ -216,21 +216,9 @@ with the same image differ by an integer multiple of `i`. -/
 theorem injOn_endChart_univ_prod_Ico (q : Puncture) (t₀ : ℝ) :
     InjOn (endChart q) (univ ×ˢ Ico t₀ (t₀ + 1)) := by
   intro a ha b hb hab
-  rw [endChart_apply, endChart_apply] at hab
-  obtain ⟨k, hk⟩ := q.exists_endCoord_cylindricalEndLift (Complex.equivRealProdCLM.symm a)
-  obtain ⟨l, hl⟩ := q.exists_endCoord_cylindricalEndLift (Complex.equivRealProdCLM.symm b)
-  rw [Complex.equivRealProdCLM.injective hab, hl] at hk
-  -- The real parts agree, and the imaginary parts differ by the integer `l - k`.
-  have hre := congrArg Complex.re hk
-  have him := congrArg Complex.im hk
-  simp [Complex.equivRealProdCLM_symm_apply] at hre him
-  have hlt : |((l - k : ℤ) : ℝ)| < 1 := by
-    rw [abs_lt]
-    push_cast
-    constructor <;> linarith [ha.2.1, ha.2.2, hb.2.1, hb.2.2]
-  rw [← Int.cast_abs, ← Int.cast_one, Int.cast_lt, Int.abs_lt_one_iff, sub_eq_zero] at hlt
-  subst hlt
-  exact Prod.ext hre.symm (by linarith)
+  have h := q.injOn_cylindricalEndLift t₀ (by simpa using ha.2) (by simpa using hb.2)
+    (Complex.equivRealProdCLM.injective hab)
+  exact Complex.equivRealProdCLM.symm.injective h
 
 /-- The end lift is injective on the strip `endStrip q`, whose angular coordinate ranges over one
 period. -/

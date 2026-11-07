@@ -185,15 +185,10 @@ theorem integral_floerEnergyDensity_eq_hamiltonianAction_sub_sub_integral (ω : 
       ω.hamiltonianAction (fun t ↦ H (b, t)) (fun t ↦ u (b, t)) -
         ω.hamiltonianAction (fun t ↦ H (a, t)) (fun t ↦ u (a, t)) -
         ∫ z in Icc a b ×ˢ Icc 0 1, fderiv ℝ (fun w ↦ H w (u z)) z stdComplexLineReal := by
-  have hR : Icc a b ×ˢ Icc (0 : ℝ) 1 = Icc (a, 0) (b, 1) := Icc_prod_Icc _ _ _ _
-  have h := ω.integral_floerEnergyDensity (Ks := fun _ _ ↦ 0) (Kt := H) hU
-    (hu.of_le one_le_two) contDiffOn_const hH.contDiffOn (Prod.mk_le_mk.2 ⟨hab, zero_le_one⟩)
-    (hR ▸ hRU)
-  simp only [hamiltonianCurvature_zero_left, intervalIntegral.integral_zero, ← hR] at h
-  rw [h, ω.integral_symplecticForm_fderiv_eq_loopArea_sub hab
-      (fun z hz ↦ hu.contDiffAt (hU.mem_nhds (hRU hz))) hper,
-    hamiltonianAction_def, hamiltonianAction_def]
-  ring
+  simpa only [hamiltonianCurvature_zero_left] using
+    ω.integral_floerEnergyDensity_eq_hamiltonianAction_sub_sub_integral_hamiltonianCurvature
+      (Ks := fun _ _ ↦ 0) (Kt := H) (Ha := fun t ↦ H (a, t)) (Hb := fun t ↦ H (b, t)) hU hu
+      contDiffOn_const hH.contDiffOn hab hRU hper (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
 
 /-- **The action estimate along a continuation cylinder.** Under the hypotheses of
 `TauCeti.SymplecticForm.integral_floerEnergyDensity_eq_hamiltonianAction_sub_sub_integral`, if `u`

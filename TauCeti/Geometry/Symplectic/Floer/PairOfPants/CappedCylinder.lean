@@ -354,12 +354,10 @@ theorem abs_integral_floerEnergyDensity_cappedCylinderComponent_sub_le (ω : Sym
   have hsub (x y : ℝ) : x - y - x = -y := by ring
   rw [integral_floerEnergyDensity_cappedCylinderComponent ω hHb hHbs hL hU hu ha hb hRU hper,
     hsub, abs_neg]
-  have hB : 0 ≤ Bb one + ∑ r, Bb r := add_nonneg ((abs_nonneg _).trans (hBb one 0 0))
-    (Finset.sum_nonneg fun r _ ↦ (abs_nonneg _).trans (hBb r 0 0))
-  rw [← ENNReal.ofReal_le_ofReal_iff hB, ← Real.enorm_eq_ofReal_abs,
-    ENNReal.ofReal_add ((abs_nonneg _).trans (hBb one 0 0))
-      (Finset.sum_nonneg fun r _ ↦ (abs_nonneg _).trans (hBb r 0 0)),
-    ENNReal.ofReal_sum_of_nonneg fun r _ ↦ (abs_nonneg _).trans (hBb r 0 0)]
+  have hB0 (r : Puncture) : 0 ≤ Bb r := (abs_nonneg _).trans (hBb r 0 0)
+  have hsum : 0 ≤ ∑ r, Bb r := Finset.sum_nonneg fun r _ ↦ hB0 r
+  rw [← ENNReal.ofReal_le_ofReal_iff (add_nonneg (hB0 one) hsum), ← Real.enorm_eq_ofReal_abs,
+    ENNReal.ofReal_add (hB0 one) hsum, ENNReal.ofReal_sum_of_nonneg fun r _ ↦ hB0 r]
   have hcurv := lintegral_enorm_hamiltonianCurvature_cappedCylinderComponent_le ω hHb hHbs hL hBb
     0 u
   -- The rectangle lies in `ℝ × [0, 1]`, which is `ℝ × [0, 1)` up to a null set.
