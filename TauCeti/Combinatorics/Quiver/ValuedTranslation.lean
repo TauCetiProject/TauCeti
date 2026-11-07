@@ -318,7 +318,7 @@ example :
   rw [isValuedTranslationQuiver_op_iff, isValuedTranslationQuiver_single_iff]
   decide
 
-/-- Giving the translated arrow `0 ⟶ 1` the same valuation `(1, 2)` as the arrow `1 ⟶ 2`, instead
+/-- Giving the arrow `1 ⟶ 2` the same valuation `(1, 2)` as the translated arrow `0 ⟶ 1`, instead
 of the exchanged pair `(2, 1)`, violates the condition. -/
 example :
     ¬ IsValuedTranslationQuiver
