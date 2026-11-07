@@ -140,6 +140,59 @@ private theorem projectedBivectorSum_neg
       Finset.sum_congr rfl fun i _ ↦ bivector_swap _ _ _
     _ = _ := by rw [← Finset.sum_neg_distrib]
 
+omit [Invertible (2 : K)] in
+/-- Regrouping a weighted sum over all weights, for an odd function `c` of the weight, as a sum
+over the positive roots: the weights outside the roots contribute zero, and the terms at a root and
+its negative agree. -/
+private theorem inv_four_smul_sum_weight_eq_inv_two_smul_sum_posRoots
+    {A : Type*} [AddCommGroup A] [Module K A] (c : Weight K H L → A)
+    (hcneg : ∀ chi : Weight K H L, c (-chi) = -c chi)
+    (base : (LieAlgebra.IsKilling.rootSystem H).Base) (h : H) :
+    (4 : K)⁻¹ • ∑ chi : Weight K H L, chi h • c chi =
+      (2 : K)⁻¹ • ∑ a ∈ TauCeti.posRootsFinset (LieAlgebra.IsKilling.rootSystem H) base,
+        ((a : Weight K H L) h • c (a : Weight K H L)) := by
+  classical
+  rw [← Finset.sum_sdiff (Finset.subset_univ H.root)]
+  have hzero : ∑ chi ∈ Finset.univ \ H.root, chi h • c chi = 0 := by
+    refine Finset.sum_eq_zero fun chi hchi ↦ ?_
+    have hz : chi.IsZero := not_not.mp (by simpa [LieSubalgebra.root] using
+      (Finset.mem_sdiff.mp hchi).2)
+    rw [hz.eq]
+    simp
+  rw [hzero, zero_add, ← Finset.sum_coe_sort H.root,
+    TauCeti.sum_root_eq_sum_posRootsFinset (H := H) base]
+  have hpair : ∀ a : H.root,
+      ((a : Weight K H L) h • c a + ((-a : H.root) : Weight K H L) h •
+        c ((-a : H.root) : Weight K H L)) =
+        (2 : K) • ((a : Weight K H L) h • c a) := by
+    intro a
+    -- `val_neg_root` is the named interface exposing the definitional compatibility between
+    -- root-subtype negation and weight negation; evaluation compatibility follows from it.
+    have hneg_coe : ((-a : H.root) : Weight K H L) = -(a : Weight K H L) :=
+      LieAlgebra.IsKilling.val_neg_root
+    have hneg_apply : ((-a : H.root) : Weight K H L) h = -((a : Weight K H L) h) := by
+      exact congrArg (fun chi : Weight K H L ↦ chi h) hneg_coe
+    rw [hneg_apply, hneg_coe, hcneg]
+    simp only [smul_neg]
+    module
+  have hsum :
+      ∑ a ∈ TauCeti.posRootsFinset (LieAlgebra.IsKilling.rootSystem H) base,
+          ((a : Weight K H L) h • c (a : Weight K H L) +
+            ((-a : H.root) : Weight K H L) h •
+              c ((-a : H.root) : Weight K H L)) =
+        (2 : K) • ∑ a ∈ TauCeti.posRootsFinset (LieAlgebra.IsKilling.rootSystem H) base,
+          ((a : Weight K H L) h • c (a : Weight K H L)) := by
+    rw [Finset.sum_congr rfl fun a _ ↦ hpair a, ← Finset.smul_sum]
+  calc
+    _ = (4 : K)⁻¹ • ((2 : K) •
+        ∑ a ∈ TauCeti.posRootsFinset (LieAlgebra.IsKilling.rootSystem H) base,
+          ((a : Weight K H L) h • c (a : Weight K H L))) :=
+      congrArg ((4 : K)⁻¹ • ·) hsum
+    _ = _ := by
+      rw [smul_smul]
+      congr 1
+      norm_num
+
 /-- The Cartan adjoint Clifford lift, regrouped over the positive roots. The terms at a root and
 its negative agree: negating the weight scalar and swapping the projected bivector each contribute
 one sign. Hence the two terms turn the quadratic coefficient `1 / 4` into `1 / 2`. -/
@@ -161,53 +214,8 @@ theorem adjointCliffordHom_cartan_eq_sum_posRoots
       (TauCeti.genWeightSpaceProjection K H L (-chi) (TauCeti.killingDualBasis b i))
   have hcneg (chi : Weight K H L) : c (-chi) = -c chi := by
     simpa only [c, neg_neg] using projectedBivectorSum_neg H b chi
-  have hregroup :
-      (4 : K)⁻¹ • ∑ chi : Weight K H L, chi h • c chi =
-        (2 : K)⁻¹ • ∑ a ∈
-          TauCeti.posRootsFinset (LieAlgebra.IsKilling.rootSystem H) base,
-          ((a : Weight K H L) h • c (a : Weight K H L)) := by
-    rw [← Finset.sum_sdiff (Finset.subset_univ H.root)]
-    have hzero : ∑ chi ∈ Finset.univ \ H.root, chi h • c chi = 0 := by
-      refine Finset.sum_eq_zero fun chi hchi ↦ ?_
-      have hz : chi.IsZero := not_not.mp (by simpa [LieSubalgebra.root] using
-        (Finset.mem_sdiff.mp hchi).2)
-      rw [hz.eq]
-      simp
-    rw [hzero, zero_add, ← Finset.sum_coe_sort H.root,
-      TauCeti.sum_root_eq_sum_posRootsFinset (H := H) base]
-    have hpair : ∀ a : H.root,
-        ((a : Weight K H L) h • c a + ((-a : H.root) : Weight K H L) h •
-          c ((-a : H.root) : Weight K H L)) =
-          (2 : K) • ((a : Weight K H L) h • c a) := by
-      intro a
-      -- `val_neg_root` is the named interface exposing the definitional compatibility between
-      -- root-subtype negation and weight negation; evaluation compatibility follows from it.
-      have hneg_coe : ((-a : H.root) : Weight K H L) = -(a : Weight K H L) :=
-        LieAlgebra.IsKilling.val_neg_root
-      have hneg_apply : ((-a : H.root) : Weight K H L) h = -((a : Weight K H L) h) := by
-        exact congrArg (fun chi : Weight K H L ↦ chi h) hneg_coe
-      rw [hneg_apply, hneg_coe, hcneg]
-      simp only [smul_neg]
-      module
-    have hsum :
-        ∑ a ∈ TauCeti.posRootsFinset (LieAlgebra.IsKilling.rootSystem H) base,
-            ((a : Weight K H L) h • c (a : Weight K H L) +
-              ((-a : H.root) : Weight K H L) h •
-                c ((-a : H.root) : Weight K H L)) =
-          (2 : K) • ∑ a ∈ TauCeti.posRootsFinset (LieAlgebra.IsKilling.rootSystem H) base,
-            ((a : Weight K H L) h • c (a : Weight K H L)) := by
-      rw [Finset.sum_congr rfl fun a _ ↦ hpair a, ← Finset.smul_sum]
-    calc
-      _ = (4 : K)⁻¹ • ((2 : K) •
-          ∑ a ∈ TauCeti.posRootsFinset (LieAlgebra.IsKilling.rootSystem H) base,
-            ((a : Weight K H L) h • c (a : Weight K H L))) :=
-        congrArg ((4 : K)⁻¹ • ·) hsum
-      _ = _ := by
-        rw [smul_smul]
-        congr 1
-        norm_num
   rw [adjointCliffordHom_cartan_eq_sum_weight H b h]
-  simpa only [c] using hregroup
+  simpa only [c] using inv_four_smul_sum_weight_eq_inv_two_smul_sum_posRoots H c hcneg base h
 
 open scoped CliffordAlgebra in
 /-- If `y` is a root vector of weight `χ` and `c` is a simultaneous eigenvector of weight `μ`,
