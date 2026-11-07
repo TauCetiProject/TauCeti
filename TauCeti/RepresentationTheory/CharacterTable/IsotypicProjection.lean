@@ -32,8 +32,9 @@ Over `ℂ` this projection is orthogonal as soon as `σ` is unitary on an inner 
 Inversion conjugates character values, so the coefficients of `e_ρ` satisfy
 `e_ρ(g⁻¹) = conj (e_ρ(g))`, and such a group-algebra element acts on a unitary representation by a
 symmetric operator (`Representation.isSymmetric_asAlgebraHom`). A symmetric idempotent operator is
-the orthogonal projection onto its range, so the orthogonal projection onto the `ρ`-isotypic
-component of a finite-dimensional unitary representation is the explicit operator
+the orthogonal projection onto its range, so the `ρ`-isotypic component of a unitary
+representation has an orthogonal projection, even in infinite dimensions, and that projection is
+the explicit operator
 
 `(χ(1)/|G|) ∑_g conj (χ(g)) σ(g)`.
 
@@ -49,15 +50,23 @@ component of a finite-dimensional unitary representation is the explicit operato
   `e_ρ` are conjugate-symmetric.
 * `Representation.isSymmetricProjection_asAlgebraHom_primitiveCentralIdempotent`: over `ℂ`,
   `e_ρ` acts on a unitary representation by a symmetric projection.
+* `Representation.hasOrthogonalProjection_isotypicComponent`: the `ρ`-isotypic component of a
+  unitary representation has an orthogonal projection.
 * `Representation.asAlgebraHom_primitiveCentralIdempotent_eq_starProjection`: **`e_ρ` acts
-  on a finite-dimensional unitary representation as the orthogonal projection onto its
-  `ρ`-isotypic component**, and `Representation.starProjection_isotypicComponent_apply`
+  on a unitary representation as the orthogonal projection onto its `ρ`-isotypic component**,
+  and `Representation.starProjection_isotypicComponent_apply`
   writes that projection as `(χ(1)/|G|) ∑_g conj (χ(g)) σ(g)`.
 
 ## References
 
 See J.-P. Serre, *Linear Representations of Finite Groups*, Section 2.6, Theorem 8, or
 I. M. Isaacs, *Character Theory of Finite Groups*, Theorem 2.12.
+
+The proof of `Representation.range_asAlgebraHom_primitiveCentralIdempotent` adapts the range
+argument of `ContRepresentation.range_isotypicProjector` in
+`TauCeti/RepresentationTheory/Compact/Character/IsotypicProjection.lean`: there the isotypic
+projector of a compact group is a Haar integral, while here it is the action of the group-algebra
+element `e_ρ`, and the argument is carried out algebraically, simple submodule by simple submodule.
 -/
 
 public section
@@ -191,11 +200,25 @@ theorem isSymmetricProjection_asAlgebraHom_primitiveCentralIdempotent
   σ.isSymmetricProjection_asAlgebraHom hσ (primitiveCentralIdempotent_coeff_inv ρ)
     (isIdempotentElem_primitiveCentralIdempotent ρ)
 
-variable [FiniteDimensional ℂ W]
+omit [Fintype G] in
+/-- **The isotypic component of a unitary representation has an orthogonal projection**, namely
+the action of the primitive central idempotent. No finiteness or completeness is asked of the
+carrier of `σ`; in finite dimensions this instance is also found automatically. -/
+theorem hasOrthogonalProjection_isotypicComponent [Finite G]
+    (hσ : ∀ g v w, ⟪σ g v, σ g w⟫_ℂ = ⟪v, w⟫_ℂ) :
+    (((isotypicComponent ℂ[G] σ.asModule ρ.asModule).restrictScalars ℂ).comap
+      σ.asModuleEquiv.symm.toLinearMap).HasOrthogonalProjection := by
+  have := Fintype.ofFinite G
+  rw [← range_asAlgebraHom_primitiveCentralIdempotent]
+  exact (isSymmetricProjection_asAlgebraHom_primitiveCentralIdempotent ρ σ hσ)
+    |>.hasOrthogonalProjection_range
 
-/-- **A primitive central idempotent acts on a finite-dimensional unitary representation as the
-orthogonal projection onto the isotypic component**: `σ(e_ρ)` is the orthogonal projection of the
-carrier of `σ` onto its `ρ`-isotypic component. -/
+variable [(((isotypicComponent ℂ[G] σ.asModule ρ.asModule).restrictScalars ℂ).comap
+  σ.asModuleEquiv.symm.toLinearMap).HasOrthogonalProjection]
+
+/-- **A primitive central idempotent acts on a unitary representation as the orthogonal projection
+onto the isotypic component**: `σ(e_ρ)` is the orthogonal projection of the carrier of `σ` onto its
+`ρ`-isotypic component. That projection exists by `hasOrthogonalProjection_isotypicComponent`. -/
 theorem asAlgebraHom_primitiveCentralIdempotent_eq_starProjection
     (hσ : ∀ g v w, ⟪σ g v, σ g w⟫_ℂ = ⟪v, w⟫_ℂ) :
     σ.asAlgebraHom (primitiveCentralIdempotent ρ) =
@@ -207,8 +230,8 @@ theorem asAlgebraHom_primitiveCentralIdempotent_eq_starProjection
   obtain ⟨_, h⟩ := h
   exact h
 
-/-- **The orthogonal projection onto an isotypic component, explicitly.** In a finite-dimensional
-unitary representation `σ`, the orthogonal projection onto the `ρ`-isotypic component is
+/-- **The orthogonal projection onto an isotypic component, explicitly.** In a unitary
+representation `σ`, the orthogonal projection onto the `ρ`-isotypic component is
 `w ↦ ∑_g (χ(1)/|G|) conj (χ(g)) σ(g) w`, where `χ` is the character of `ρ`. -/
 theorem starProjection_isotypicComponent_apply (hσ : ∀ g v w, ⟪σ g v, σ g w⟫_ℂ = ⟪v, w⟫_ℂ)
     (w : W) :
