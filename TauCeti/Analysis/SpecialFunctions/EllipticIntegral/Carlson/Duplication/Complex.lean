@@ -42,20 +42,16 @@ open Set
 namespace Complex
 
 private noncomputable def duplicationRHS (x y z : ℂ) : ℂ :=
-  let l := sqrt x * sqrt y + sqrt y * sqrt z + sqrt z * sqrt x
+  let l := carlsonDuplicationLambda x y z
   carlsonRF ((x + l) / 4) ((y + l) / 4) ((z + l) / 4)
 
 private theorem duplicationRHS_comm_left (x y z : ℂ) :
     duplicationRHS x y z = duplicationRHS y x z := by
-  have hl : sqrt x * sqrt y + sqrt y * sqrt z + sqrt z * sqrt x =
-      sqrt y * sqrt x + sqrt x * sqrt z + sqrt z * sqrt y := by ring
-  simp only [duplicationRHS, ← hl, carlsonRF_comm_left]
+  simp only [duplicationRHS, carlsonDuplicationLambda_comm_left x y z, carlsonRF_comm_left]
 
 private theorem duplicationRHS_comm_right (x y z : ℂ) :
     duplicationRHS x y z = duplicationRHS x z y := by
-  have hl : sqrt x * sqrt y + sqrt y * sqrt z + sqrt z * sqrt x =
-      sqrt x * sqrt z + sqrt z * sqrt y + sqrt y * sqrt x := by ring
-  simp only [duplicationRHS, ← hl, carlsonRF_comm_right]
+  simp only [duplicationRHS, carlsonDuplicationLambda_comm_right x y z, carlsonRF_comm_right]
 
 private theorem analyticOnNhd_duplicationRHS_right {x y : ℂ}
     (hxy : x ∈ slitPlane ∨ y ∈ slitPlane) :
@@ -63,8 +59,8 @@ private theorem analyticOnNhd_duplicationRHS_right {x y : ℂ}
   intro z hz
   have hs : AnalyticAt ℂ sqrt z :=
     (differentiableOn_sqrt.analyticOnNhd isOpen_slitPlane) z hz
-  have hl : AnalyticAt ℂ (fun w =>
-      sqrt x * sqrt y + sqrt y * sqrt w + sqrt w * sqrt x) z := by
+  have hl : AnalyticAt ℂ (fun w => carlsonDuplicationLambda x y w) z := by
+    simp only [carlsonDuplicationLambda_def]
     fun_prop
   have hx' := carlson_duplication_node_mem_slitPlane x hxy (Or.inr hz)
   have hy' := carlson_duplication_node_mem_slitPlane y hxy.symm (Or.inr hz)
@@ -73,7 +69,6 @@ private theorem analyticOnNhd_duplicationRHS_right {x y : ℂ}
   rw [carlsonDuplicationLambda_comm_left y x z] at hy'
   rw [carlsonDuplicationLambda_comm_left z x y,
     carlsonDuplicationLambda_comm_right x z y] at hz'
-  simp only [carlsonDuplicationLambda_def] at hx' hy' hz'
   exact ((analyticAt_const.add hl).div_const (c := 4)).carlsonRF
     ((analyticAt_const.add hl).div_const (c := 4))
     ((analyticAt_id.add hl).div_const (c := 4)) hx' hy' hz'
@@ -82,8 +77,8 @@ private theorem duplication_ofReal {x y z : ℝ} (hx : 0 ≤ x) (hy : 0 ≤ y) (
     carlsonRF x y z = duplicationRHS x y z := by
   have hs (t : ℝ) (ht : 0 ≤ t) : sqrt (t : ℂ) = (Real.sqrt t : ℂ) := by
     simpa using sqrt_of_nonneg (a := (t : ℂ)) (by exact_mod_cast ht)
-  simpa only [duplicationRHS, hs x hx, hs y hy, hs z hz, ofReal_div, ofReal_add,
-    ofReal_mul, ofReal_ofNat] using carlsonRF_ofReal_duplication hx hy hz
+  simpa only [duplicationRHS, carlsonDuplicationLambda_def, hs x hx, hs y hy, hs z hz,
+    ofReal_div, ofReal_add, ofReal_mul, ofReal_ofNat] using carlsonRF_ofReal_duplication hx hy hz
 
 private theorem duplication_of_two_real {x y : ℝ} (hx : 0 ≤ x) (hy : 0 < y)
     {z : ℂ} (hz : z ∈ slitPlane) : carlsonRF x y z = duplicationRHS x y z := by
@@ -121,8 +116,9 @@ At most one input may be zero; every transformed node lies strictly in the slit 
 theorem carlsonRF_duplication {x y z : ℂ} (hx : x ∈ slitPlane ∪ {0})
     (hy : y ∈ slitPlane ∪ {0}) (hz : z ∈ slitPlane ∪ {0})
     (hxy : x ≠ 0 ∨ y ≠ 0) (hxz : x ≠ 0 ∨ z ≠ 0) (hyz : y ≠ 0 ∨ z ≠ 0) :
-    let l := sqrt x * sqrt y + sqrt y * sqrt z + sqrt z * sqrt x
-    carlsonRF x y z = carlsonRF ((x + l) / 4) ((y + l) / 4) ((z + l) / 4) := by
+    carlsonRF x y z = carlsonRF ((x + carlsonDuplicationLambda x y z) / 4)
+      ((y + carlsonDuplicationLambda x y z) / 4)
+      ((z + carlsonDuplicationLambda x y z) / 4) := by
   -- Use the local right-hand side so its permutation lemmas apply before unfolding it.
   suffices h : carlsonRF x y z = duplicationRHS x y z from h
   have hzero {y z : ℂ} (hy : y ∈ slitPlane) (hz : z ∈ slitPlane) :
