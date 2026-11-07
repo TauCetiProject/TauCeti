@@ -103,52 +103,22 @@ theorem index_dedekindOrder_sq_mul_discr
   classical
   let hrel := dedekindCubic_relation hmin
   let c := dedekindOrderBasis hmin
-  have hcard : Fintype.card (Free.ChooseBasisIndex ℤ (𝓞 K)) = Fintype.card (Fin 3) := by
-    rw [Fintype.card_fin, ← finrank_eq_card_chooseBasisIndex,
-      _root_.NumberField.RingOfIntegers.rank K, dedekindCubic_finrank_eq_three hmin hgen]
-  let b : Basis (Fin 3) ℤ (𝓞 K) :=
-    (_root_.NumberField.RingOfIntegers.basis K).reindex (Fintype.equivOfCardEq hcard)
-  let u : Fin 3 → 𝓞 K := fun i ↦ c i
-  let P : Matrix (Fin 3) (Fin 3) ℤ := b.toMatrix u
-  -- `natAbs_det_basis_change` is stated using the basis's alternating determinant,
-  -- while the discriminant calculation below uses its coordinate matrix.
-  have hdet_toMatrix : P.det = b.det u := by rfl
-  have hdet : P.det.natAbs = dedekindOrderIndex hrel := by
-    rw [hdet_toMatrix]
-    rw [dedekindOrderIndex_def]
-    have h := Submodule.natAbs_det_basis_change b (dedekindOrder hrel).toSubmodule
-      (c.map (Subalgebra.toSubmoduleEquiv _).symm)
-    have hcoe : (Subtype.val ∘ ⇑(c.map (Subalgebra.toSubmoduleEquiv _).symm)) = u := by
-      funext i
-      simp only [Function.comp_apply, Basis.map_apply, u, c, Subalgebra.toSubmoduleEquiv]
-      rw [LinearEquiv.ofEq_symm]
-      exact LinearEquiv.coe_ofEq_apply _ _
-    rw [hcoe] at h
-    exact h
-  let q : Basis (Fin 3) ℚ K := dedekindCubicFieldBasis hmin hgen
-  let w : Fin 3 → K := fun i ↦ algebraMap (𝓞 K) K (b i)
-  have hw_discr : Algebra.discr ℚ w = (NumberField.discr K : ℚ) :=
-    _root_.NumberField.discr_eq_of_integralBasis b
-  have hv : (fun i ↦ algebraMap (𝓞 K) K (u i)) =
-      w ᵥ* (P.map (algebraMap ℤ ℚ)).map (algebraMap ℚ K) := by
-    have h := b.toMatrix_map_vecMul u
-    have hP : b.toMatrix u = P := rfl
-    rw [hP] at h
-    funext j
-    rw [← congrFun h j]
-    simp [P, Matrix.vecMul, dotProduct, w, map_sum, algebraMap_int_eq, map_intCast]
-  have hdiscr_u : Algebra.discr ℚ (fun i ↦ algebraMap (𝓞 K) K (u i)) =
-      ((P.det : ℤ) : ℚ) ^ 2 * (NumberField.discr K : ℚ) := by
-    rw [hv, Algebra.discr_of_matrix_vecMul, hw_discr, ← RingHom.mapMatrix_apply,
-      ← RingHom.map_det, algebraMap_int_eq, eq_intCast]
-  have hqu : ⇑q = (fun i ↦ algebraMap (𝓞 K) K (u i)) := by
+  have hcard : Fintype.card (Fin 3) = finrank ℤ (𝓞 K) := by
+    rw [Fintype.card_fin, _root_.NumberField.RingOfIntegers.rank K,
+      dedekindCubic_finrank_eq_three hmin hgen]
+  have h := _root_.NumberField.discr_eq_cardQuot_sq_mul_discr (dedekindOrder hrel).toSubmodule
+    (c.map (Subalgebra.toSubmoduleEquiv _).symm) hcard
+  have hqu : (fun i ↦ algebraMap (𝓞 K) K
+      ((c.map (Subalgebra.toSubmoduleEquiv _).symm i : (dedekindOrder hrel).toSubmodule) : 𝓞 K)) =
+      ⇑(dedekindCubicFieldBasis hmin hgen) := by
     funext i
-    simp only [q, coe_dedekindCubicFieldBasis, u, c, coe_dedekindOrderBasis]
-  apply Int.cast_injective (α := ℚ)
-  rw [Int.cast_neg, Int.cast_ofNat, ← discr_dedekindCubicFieldBasis hmin hgen, hqu,
-    hdiscr_u, ← hdet]
-  push_cast
-  rw [sq_abs]
+    rw [coe_dedekindCubicFieldBasis]
+    exact congrArg (algebraMap (𝓞 K) K) (coe_dedekindOrderBasis hmin i)
+  have hidx : dedekindOrderIndex hrel = (dedekindOrder hrel).toSubmodule.cardQuot :=
+    (dedekindOrderIndex_def hrel).trans (Submodule.cardQuot_apply _).symm
+  rw [hqu, discr_dedekindCubicFieldBasis hmin hgen] at h
+  rw [hidx]
+  exact_mod_cast h
 
 /-- Dedekind's cubic order has index one in the full ring of integers. -/
 @[simp] theorem dedekindOrderIndex_eq_one
