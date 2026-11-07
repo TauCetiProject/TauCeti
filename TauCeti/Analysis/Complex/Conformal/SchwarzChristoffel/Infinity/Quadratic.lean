@@ -8,9 +8,11 @@ module
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.EdgeIntersection
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Primitive
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Asymptotic
+import TauCeti.Analysis.Calculus.DSlope.Continuous
 import TauCeti.Analysis.Complex.UpperHalfPlane.Primitive
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 import Mathlib.Analysis.Complex.RemovableSingularity
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import TauCeti.Analysis.Complex.HasPrimitives
@@ -55,6 +57,30 @@ namespace TauCeti
 
 variable {ι : Type*} [Fintype ι]
 
+/-- The remainder of the Schwarz--Christoffel primitive in the reciprocal coordinate. In
+`w = -1 / z` the primitive minus the quadratic, linear and logarithmic comparison terms has
+derivative `-(q w - 1 - M * w - C * w ^ 2) / w ^ 3`, where `q` is the normalized integrand
+(`schwarzChristoffelIntegrand a e (-w⁻¹) = -w⁻¹ * q w`). -/
+private theorem hasDerivAt_schwarzChristoffelPrimitive_sub_comp_neg_inv (a e : ι → ℝ)
+    (z₀ : UpperHalfPlane) (q : ℂ → ℂ) (M C : ℂ) {w : ℂ} (hw : w ∈ upperHalfPlaneSet)
+    (hint : schwarzChristoffelIntegrand a e (-w⁻¹) = -w⁻¹ * q w) :
+    HasDerivAt (fun w => schwarzChristoffelPrimitive a e z₀ (-w⁻¹) -
+        ((-w⁻¹) ^ 2 / 2 - M * (-w⁻¹) + C * log (-w⁻¹)))
+      (-((q w - 1 - M * w - C * w ^ 2) / w ^ 3)) w := by
+  have hw0 : w ≠ 0 := fun h => by simp [h] at hw
+  have hwinv : -w⁻¹ ∈ upperHalfPlaneSet := im_neg_inv_pos.mpr hw
+  have hslit : -w⁻¹ ∈ slitPlane := mem_slitPlane_iff.mpr (Or.inr (ne_of_gt hwinv))
+  have hinv := (hasDerivAt_inv hw0).neg
+  have hf := (hasDerivAt_schwarzChristoffelPrimitive a e z₀ hwinv).comp w hinv
+  have hp := ((((hasDerivAt_pow 2 (-w⁻¹)).div_const 2).sub
+    ((hasDerivAt_id (-w⁻¹)).const_mul M)).add ((hasDerivAt_log hslit).const_mul C)).comp w hinv
+  convert hf.fun_sub hp using 1
+  · rfl -- Unfold the compositions from `HasDerivAt.comp`.
+  · rw [hint]
+    norm_num
+    field_simp
+    ring
+
 /-- If the total exponent is one, subtracting the quadratic, linear and logarithmic terms from
 the Schwarz--Christoffel primitive gives a holomorphic function of `-1 / z` near infinity in the
 upper half-plane. -/
@@ -86,55 +112,32 @@ private theorem exists_differentiableOn_eq_schwarzChristoffelPrimitive_sub_comp_
     (differentiableOn_dslope hball).mpr hD₁
   have hD₃ : DifferentiableOn ℂ (dslope (dslope (dslope q 0) 0) 0) (ball 0 r) :=
     (differentiableOn_dslope hball).mpr hD₂
-  have hD₁w (w : ℂ) (hw : w ≠ 0) : dslope q 0 w = (q w - 1) / w := by
-    rw [dslope_of_ne _ hw, slope_def_field, hq0, sub_zero]
-  have hD₂w (w : ℂ) (hw : w ≠ 0) : dslope (dslope q 0) 0 w = (dslope q 0 w - M) / w := by
-    rw [dslope_of_ne _ hw, slope_def_field, dslope_same, hq'.deriv, sub_zero]
-  -- The second divided difference at zero is the second-order coefficient `C`.
-  have hD₂0 : dslope (dslope q 0) 0 0 = C := by
-    have hcont : Tendsto (dslope (dslope q 0) 0) (𝓝[≠] 0)
-        (𝓝 (dslope (dslope q 0) 0 0)) :=
-      ((hD₂ 0 (mem_ball_self hr)).differentiableAt hball).continuousAt.tendsto.mono_left
-        nhdsWithin_le_nhds
-    have hneg : ∑ i, (e i : ℂ) * -(a i : ℂ) = -M := by simp [M, Finset.sum_neg_distrib]
-    have hlim : Tendsto (fun w => (q w - 1 + (∑ i, (e i : ℂ) * -(a i : ℂ)) * w) / w ^ 2)
-        (𝓝[≠] 0)
-        (𝓝 (((∑ i, (e i : ℂ) * -(a i : ℂ)) ^ 2 - ∑ i, (e i : ℂ) * (-(a i : ℂ)) ^ 2) / 2)) :=
-      tendsto_prod_one_sub_mul_cpow_sub_linear_div_sq (fun i => -(a i : ℂ)) (fun i => (e i : ℂ))
-    simp only [hneg, neg_sq, ← hC] at hlim
-    refine tendsto_nhds_unique hcont (hlim.congr' ?_)
-    filter_upwards [self_mem_nhdsWithin] with w hw
-    have hw0 : w ≠ 0 := hw
-    rw [hD₂w w hw0, hD₁w w hw0]
-    field_simp
-    ring
-  have hD₃w (w : ℂ) (hw : w ≠ 0) :
-      dslope (dslope (dslope q 0) 0) 0 w = (dslope (dslope q 0) 0 w - C) / w := by
-    rw [dslope_of_ne _ hw, slope_def_field, hD₂0, sub_zero]
+  have hneg : ∑ i, (e i : ℂ) * -(a i : ℂ) = -M := by simp [M, Finset.sum_neg_distrib]
+  have hlim : Tendsto (fun w => (q w - 1 + (∑ i, (e i : ℂ) * -(a i : ℂ)) * w) / w ^ 2)
+      (𝓝[≠] 0) (𝓝 (((∑ i, (e i : ℂ) * -(a i : ℂ)) ^ 2 - ∑ i, (e i : ℂ) * (-(a i : ℂ)) ^ 2) / 2)) :=
+    tendsto_prod_one_sub_mul_cpow_sub_linear_div_sq (fun i => -(a i : ℂ)) (fun i => (e i : ℂ))
+  simp only [hneg, neg_sq, ← hC] at hlim
+  -- The third divided difference at `w ≠ 0` has the closed form `(q w - 1 - M w - C w²) / w³`.
+  have hD₃w (w : ℂ) (hw : w ≠ 0) : dslope (dslope (dslope q 0) 0) 0 w =
+      (q w - 1 - M * w - C * w ^ 2) / w ^ 3 := by
+    simpa only [hq0] using dslope_dslope_dslope_zero_apply hq'
+      (hlim.congr fun w => by rw [hq0]; ring) hw
   -- Match the remainder of the primitive with a primitive of `-dslope³ q` on the half-disc.
+  have hint (w : ℂ) (hw : w ∈ upperHalfPlaneSet) :
+      schwarzChristoffelIntegrand a e (-w⁻¹) = -w⁻¹ * q w := by
+    have hw0 : w ≠ 0 := fun h => by simp [h] at hw
+    have h := schwarzChristoffelIntegrand_div_cpow_eq_prod a e (im_neg_inv_pos.mpr hw)
+    simp only [hsum, ofReal_one, cpow_one, inv_neg, inv_inv] at h
+    rw [div_eq_iff (neg_ne_zero.mpr (inv_ne_zero hw0))] at h
+    rw [h, mul_comm]
+    simp [q]
   have hderiv (w : ℂ) (hw : w ∈ ball (0 : ℂ) r ∩ upperHalfPlaneSet) : HasDerivAt
       (fun w => schwarzChristoffelPrimitive a e z₀ (-w⁻¹) -
         ((-w⁻¹) ^ 2 / 2 - M * (-w⁻¹) + C * log (-w⁻¹)))
       (-dslope (dslope (dslope q 0) 0) 0 w) w := by
-    have hw0 : w ≠ 0 := fun h => by simpa [h] using hw.2
-    have hwinv : -w⁻¹ ∈ upperHalfPlaneSet := im_neg_inv_pos.mpr hw.2
-    have hslit : -w⁻¹ ∈ slitPlane := mem_slitPlane_iff.mpr (Or.inr (ne_of_gt hwinv))
-    have hinv := (hasDerivAt_inv hw0).neg
-    have hf := (hasDerivAt_schwarzChristoffelPrimitive a e z₀ hwinv).comp w hinv
-    have hp := ((((hasDerivAt_pow 2 (-w⁻¹)).div_const 2).sub
-      ((hasDerivAt_id (-w⁻¹)).const_mul M)).add ((hasDerivAt_log hslit).const_mul C)).comp w hinv
-    have heq : schwarzChristoffelIntegrand a e (-w⁻¹) = -w⁻¹ * q w := by
-      have h := schwarzChristoffelIntegrand_div_cpow_eq_prod a e hwinv
-      simp only [hsum, ofReal_one, cpow_one, inv_neg, inv_inv] at h
-      rw [div_eq_iff (neg_ne_zero.mpr (inv_ne_zero hw0))] at h
-      rw [h, mul_comm]
-      simp [q]
-    convert hf.fun_sub hp using 1
-    · rfl -- Unfold the compositions from `HasDerivAt.comp`.
-    · rw [heq, hD₃w w hw0, hD₂w w hw0, hD₁w w hw0]
-      norm_num
-      field_simp
-      ring
+    rw [hD₃w w (fun h => by simpa [h] using hw.2)]
+    exact hasDerivAt_schwarzChristoffelPrimitive_sub_comp_neg_inv a e z₀ q M C hw.2
+      (hint w hw.2)
   obtain ⟨H, hH, heq⟩ :=
     hD₃.neg.exists_hasDerivAt_eqOn_ball_inter (convex_halfSpace_im_gt 0) hderiv
   refine ⟨H, r, hr, fun w hw => (hH w hw).differentiableAt.differentiableWithinAt, ?_⟩
@@ -491,6 +494,55 @@ theorem schwarzChristoffelBoundary_injective_of_edge_intersections_of_sum_eq_one
     hS hinter (hright := hright) (houter := houter)
   simpa [hsum, Complex.exp_pi_mul_I] using hleft
 
+/-- The real part of the quadratic comparison function `z ^ 2 / 2 - M * z + C * log z`. -/
+private theorem re_quadratic_log (M C : ℝ) (z : ℂ) :
+    (z ^ 2 / 2 - (M : ℂ) * z + (C : ℂ) * log z).re =
+      ((z.re - M) ^ 2 - z.im ^ 2) / 2 - M ^ 2 / 2 + C * Real.log ‖z‖ := by
+  simp [sq, Complex.mul_re, log_re]
+  ring
+
+/-- The imaginary part of the quadratic comparison function `z ^ 2 / 2 - M * z + C * log z`. -/
+private theorem im_quadratic_log (M C : ℝ) (z : ℂ) :
+    (z ^ 2 / 2 - (M : ℂ) * z + (C : ℂ) * log z).im = (z.re - M) * z.im + C * arg z := by
+  simp [sq, Complex.mul_im, log_im]
+  ring
+
+/-- Near the positive real axis the imaginary part of the comparison function stays above the
+band: the linear term `(re z - M) * im z` is positive and `C * arg z` is within `η` of `0`. -/
+private theorem neg_le_im_quadratic_log_of_re_nonneg {M C η : ℝ} {z : ℂ} (hC : C < 0)
+    (hz : 0 < z.im) (hx : 0 ≤ z.re) (hnorm : ‖z‖ ≤ |z.re| + z.im)
+    (h2 : -(Real.pi * C) + |M| + 1 ≤ ‖z‖) (hy : z.im < -(Real.pi * C))
+    (hratio : -C * (Real.pi / 2 * (z.im / ‖z‖)) < η) :
+    -η ≤ (z ^ 2 / 2 - (M : ℂ) * z + (C : ℂ) * log z).im := by
+  rw [im_quadratic_log]
+  have hJ := le_pi_div_two_mul_of_sin_eq (arg_nonneg_iff.mpr hz.le)
+    (arg_le_pi_div_two_iff.mpr (Or.inl hx)) (sin_arg z)
+  have hsx : 0 < z.re - M := by
+    rw [abs_of_nonneg hx] at hnorm
+    linarith [le_abs_self M]
+  nlinarith [mul_pos hsx hz, mul_le_mul_of_nonneg_left hJ (neg_nonneg.mpr hC.le)]
+
+/-- Near the negative real axis the imaginary part of the comparison function stays below the
+band: the linear term is negative and `C * arg z` is within `η` of `π * C`. -/
+private theorem im_quadratic_log_le_of_re_neg {M C η : ℝ} {z : ℂ} (hC : C < 0)
+    (hz : 0 < z.im) (hx : z.re < 0) (hnorm : ‖z‖ ≤ |z.re| + z.im)
+    (h2 : -(Real.pi * C) + |M| + 1 ≤ ‖z‖) (hy : z.im < -(Real.pi * C))
+    (hratio : -C * (Real.pi / 2 * (z.im / ‖z‖)) < η) :
+    (z ^ 2 / 2 - (M : ℂ) * z + (C : ℂ) * log z).im ≤ Real.pi * C + η := by
+  rw [im_quadratic_log]
+  have hhalf : Real.pi / 2 ≤ arg z := by
+    by_contra! h
+    rcases arg_lt_pi_div_two_iff.mp h with h | h | h
+    · linarith
+    · linarith
+    · simp [h] at hz
+  have hJ := le_pi_div_two_mul_of_sin_eq (by linarith [arg_le_pi z]) (by linarith)
+    (by rw [Real.sin_pi_sub, sin_arg] : Real.sin (Real.pi - arg z) = z.im / ‖z‖)
+  have hsx : z.re - M < 0 := by
+    rw [abs_of_neg hx] at hnorm
+    linarith [neg_abs_le M]
+  nlinarith [mul_neg_of_neg_of_pos hsx hz, mul_le_mul_of_nonneg_left hJ (neg_nonneg.mpr hC.le)]
+
 /-- **The band omitted by the quadratic comparison function.** For real `M` and `C < 0`, far out
 in the upper half-plane, the comparison function `z ^ 2 / 2 - M * z + C * log z` takes no value
 with real part greater than `1 / 2` and height strictly between `π * C + η` and `-η`. Its imaginary
@@ -502,17 +554,11 @@ theorem exists_forall_im_quadratic_log_notMem_Ioo {M C η : ℝ} (hC : C < 0) (h
         (z ^ 2 / 2 - (M : ℂ) * z + (C : ℂ) * log z).im ∉ Ioo (Real.pi * C + η) (-η) := by
   refine ⟨max 1 (max (-(Real.pi * C) + |M| + 1) (Real.pi ^ 2 * C ^ 2 / η + 1)),
     fun z hz hzR hre => ?_⟩
-  have hQre : (z ^ 2 / 2 - (M : ℂ) * z + (C : ℂ) * log z).re =
-      ((z.re - M) ^ 2 - z.im ^ 2) / 2 - M ^ 2 / 2 + C * Real.log ‖z‖ := by
-    simp [sq, Complex.mul_re, log_re]
-    ring
-  have hQim : (z ^ 2 / 2 - (M : ℂ) * z + (C : ℂ) * log z).im =
-      (z.re - M) * z.im + C * arg z := by
-    simp [sq, Complex.mul_im, log_im]
-    ring
-  rw [hQre] at hre
-  rw [hQim]
-  rintro ⟨hlo, hhi⟩
+  rw [re_quadratic_log] at hre
+  intro hband
+  have hlo := hband.1
+  have hhi := hband.2
+  rw [im_quadratic_log] at hlo hhi
   have h1 : 1 ≤ ‖z‖ := (le_max_left _ _).trans hzR
   have h2 : -(Real.pi * C) + |M| + 1 ≤ ‖z‖ :=
     ((le_max_left _ _).trans (le_max_right _ _)).trans hzR
@@ -546,31 +592,8 @@ theorem exists_forall_im_quadratic_log_notMem_Ioo {M C η : ℝ} (hC : C < 0) (h
       have := mul_le_mul_of_nonneg_left h3 hη.le
       rwa [mul_add, mul_div_cancel₀ _ hη.ne', mul_one] at this
     nlinarith [mul_pos (neg_pos.mpr hC) hpi]
-  have hjordan (θ : ℝ) (h0 : 0 ≤ θ) (h1 : θ ≤ Real.pi / 2) (hsin : Real.sin θ = z.im / ‖z‖) :
-      θ ≤ Real.pi / 2 * (z.im / ‖z‖) := by
-    have h := Real.mul_le_sin h0 h1
-    rw [hsin, div_mul_eq_mul_div, div_le_iff₀ hpi] at h
-    nlinarith
   rcases le_or_gt 0 z.re with hx | hx
-  · -- Near the positive real axis, `C * arg z` is close to `0` and the linear term is positive.
-    have hJ := hjordan (arg z) harg0 (arg_le_pi_div_two_iff.mpr (Or.inl hx)) (sin_arg z)
-    have hsx : 0 < z.re - M := by
-      rw [abs_of_nonneg hx] at hnorm
-      linarith [le_abs_self M]
-    nlinarith [mul_pos hsx hz, mul_le_mul_of_nonneg_left hJ (neg_nonneg.mpr hC.le)]
-  · -- Near the negative real axis, `C * arg z` is close to `π * C` and the linear term is
-    -- negative.
-    have hhalf : Real.pi / 2 ≤ arg z := by
-      by_contra! h
-      rcases arg_lt_pi_div_two_iff.mp h with h | h | h
-      · linarith
-      · linarith
-      · simp [h] at hz
-    have hJ := hjordan (Real.pi - arg z) (by linarith) (by linarith)
-      (by rw [Real.sin_pi_sub, sin_arg])
-    have hsx : z.re - M < 0 := by
-      rw [abs_of_neg hx] at hnorm
-      linarith [neg_abs_le M]
-    nlinarith [mul_neg_of_neg_of_pos hsx hz, mul_le_mul_of_nonneg_left hJ (neg_nonneg.mpr hC.le)]
+  · exact (neg_le_im_quadratic_log_of_re_nonneg hC hz hx hnorm h2 hy hratio).not_gt hband.2
+  · exact (im_quadratic_log_le_of_re_neg hC hz hx hnorm h2 hy hratio).not_gt hband.1
 
 end TauCeti

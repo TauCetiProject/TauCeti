@@ -81,12 +81,14 @@ theorem isCharacterMap_geckFrobenius (p k : ℕ) (A : Type v) [CommRing A] [ExpC
 whose units are divisible, for instance an algebraically closed field, if `φ` is a character map
 of an endomorphism `F` with `φ ^ n = p ^ r • 1` for some `r > 0`, then every point of the weight
 torus is `T u * (F (T u))⁻¹` for some `u`. -/
-theorem exists_geckWeightTorusPoints_eq_mul_inv {K : Type v} [CommRing K] [Nontrivial K]
+theorem exists_geckWeightTorusPoints_eq_mul_inv {K : Type v} [CommRing K]
     [RootableBy Kˣ ℕ] (p : ℕ) [CharP K p] {F : t.geckPoints ht K →* t.geckPoints ht K}
     {φ : Module.End ℤ (Fin t.rank → ℤ)} (hF : IsCharacterMap (t.geckWeightTorusPoints ht K) F φ)
     {n r : ℕ} (hr : 0 < r) (hφ : φ ^ n = (p ^ r : ℕ) • 1) (s : Fin t.rank → Kˣ) :
     ∃ u, t.geckWeightTorusPoints ht K s =
       t.geckWeightTorusPoints ht K u * (F (t.geckWeightTorusPoints ht K u))⁻¹ := by
+  obtain hK | _ := subsingleton_or_nontrivial K
+  · exact ⟨s, Subsingleton.elim _ _⟩
   have hpr : ((p ^ r : ℕ) : ℤ) ≠ 1 := by
     rw [Nat.cast_ne_one, Ne, pow_eq_one_iff, not_or]
     exact ⟨CharP.char_ne_one K p, hr.ne'⟩
@@ -98,7 +100,7 @@ theorem exists_geckWeightTorusPoints_eq_mul_inv {K : Type v} [CommRing K] [Nontr
 point of the weight torus of the Geck carrier is `T u * (F (T u))⁻¹` for the `p ^ k`-power
 Frobenius `F`: the equation `s = u * u ^ (-p ^ k)` is solvable coordinatewise. -/
 theorem exists_geckWeightTorusPoints_eq_mul_inv_geckFrobenius {K : Type v} [CommRing K]
-    [Nontrivial K] [RootableBy Kˣ ℕ] (p : ℕ) [Fact p.Prime] [CharP K p] {k : ℕ} (hk : 0 < k)
+    [RootableBy Kˣ ℕ] (p : ℕ) [Fact p.Prime] [CharP K p] {k : ℕ} (hk : 0 < k)
     (s : Fin t.rank → Kˣ) :
     ∃ u, t.geckWeightTorusPoints ht K s =
       t.geckWeightTorusPoints ht K u *
@@ -146,7 +148,7 @@ characteristic `p` whose units are divisible, for instance an algebraically clos
 graph-twisted `p ^ k`-power Frobenius `F`. Its character map raised to the order `e` of `σ` is
 `p ^ (k * e) • 1`. -/
 theorem exists_geckWeightTorusPoints_eq_mul_inv_geckTwistedFrobenius {K : Type v} [CommRing K]
-    [Nontrivial K] [RootableBy Kˣ ℕ] (p : ℕ) [Fact p.Prime] [CharP K p] {k : ℕ} (hk : 0 < k)
+    [RootableBy Kˣ ℕ] (p : ℕ) [Fact p.Prime] [CharP K p] {k : ℕ} (hk : 0 < k)
     (s : Fin t.rank → Kˣ) :
     ∃ u, t.geckWeightTorusPoints ht K s =
       t.geckWeightTorusPoints ht K u *
