@@ -15,15 +15,20 @@ public import TauCeti.LinearAlgebra.Complex.Conjugation
 involution and complex-linear maps commuting with it. A native complex star module gives
 an object of this category. No Hermitian pairing or finite-dimensionality is required.
 
-Complexification and taking fixed points give mutually inverse functors between this
-category and real modules. The counit is the canonical scalar multiplication map
+Complexification and taking fixed points are quasi-inverse functors forming an equivalence
+between this category and real modules. The counit is the canonical scalar multiplication map
 `z ⊗ w ↦ z • w` supplied by `TauCeti.realPointsEquiv`; the unit is `w ↦ 1 ⊗ w`.
-This makes descent natural in the module, supplying the linear comparison that can be
-transported through polynomial constructions on field generators.
+This makes descent natural in the module.
 
 The fixed-point decomposition follows Serre, *Linear Representations of Finite Groups*,
 §13.2. The linear equivalence and tensor conjugation are imported from
 `TauCeti.LinearAlgebra.Complex.Conjugation`.
+
+## Implementation notes
+
+The functor abbreviations keep the subtype and tensor carriers available to dependent
+constructions. The equivalence body is exposed so the dependent types of its unit and
+counit compute to these functors.
 -/
 
 public section
@@ -87,9 +92,8 @@ theorem hom_comp {V W Z : ConjugateModuleCat} (f : V ⟶ W) (g : W ⟶ Z) :
 noncomputable def isoMk {V W : ConjugateModuleCat.{u}} (e : V ≃ₗ[ℂ] W)
     (he : ∀ x, e (V.conj x) = W.conj (e x)) : V ≅ W where
   hom := ⟨e.toLinearMap, he⟩
-  inv := ⟨e.symm.toLinearMap, fun x => e.injective (by
-    simp only [LinearEquiv.coe_coe]
-    rw [he, LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply])⟩
+  inv := ⟨e.symm.toLinearMap,
+    Function.Semiconj.inverse_left he e.symm_apply_apply e.apply_symm_apply⟩
   hom_inv_id := by ext x; exact e.symm_apply_apply x
   inv_hom_id := by ext x; exact e.apply_symm_apply x
 
@@ -103,16 +107,14 @@ theorem isoMk_inv_hom {V W : ConjugateModuleCat.{u}} (e : V ≃ₗ[ℂ] W)
     (he : ∀ x, e (V.conj x) = W.conj (e x)) :
     (isoMk e he).inv.hom = e.symm.toLinearMap := (rfl)
 
-/-- The fixed-point functor, acting on morphisms by restriction.
-The abbreviation keeps its subtype carrier available to dependent constructions. -/
+/-- The fixed-point functor, acting on morphisms by restriction. -/
 noncomputable abbrev fixedPoints : ConjugateModuleCat.{u} ⥤ ModuleCat.{u} ℝ where
   obj V := ModuleCat.of ℝ (realPoints V.conj)
   map f := ModuleCat.ofHom ((f.hom.restrictScalars ℝ).restrict
     (p := realPoints _) (q := realPoints _) fun x hx => mem_realPoints.mpr (by
       rw [LinearMap.coe_restrictScalars, ← f.commutes, mem_realPoints.mp hx]))
 
-/-- Complexification with tensor conjugation, lifting scalar extension on real modules.
-The abbreviation keeps its tensor carrier available to dependent constructions. -/
+/-- Complexification with tensor conjugation, lifting scalar extension on real modules. -/
 noncomputable abbrev complexification : ModuleCat.{u} ℝ ⥤ ConjugateModuleCat.{u} where
   obj W := ⟨ModuleCat.of ℂ (ℂ ⊗[ℝ] W), tmulConj W, tmulConj_involutive W⟩
   map f := ⟨f.hom.baseChange ℂ, fun x => (tmulConj_baseChange f.hom x).symm⟩
@@ -159,10 +161,7 @@ noncomputable def descentCounit : fixedPoints ⋙ complexification ≅ 𝟭 Conj
       apply Hom.ext
       apply TensorProduct.AlgebraTensorModule.ext
       intro z w
-      simp only [hom_comp, LinearMap.comp_apply, Functor.comp_map, Functor.id_map,
-        isoMk_hom_hom, LinearEquiv.coe_coe]
-      rw [LinearMap.baseChange_tmul, realPointsEquiv_tmul, realPointsEquiv_tmul]
-      exact (map_smul f.hom z w.val).symm)
+      simp [LinearMap.baseChange_tmul])
 
 @[simp]
 theorem descentCounit_hom_tmul (V : ConjugateModuleCat)
@@ -176,8 +175,7 @@ theorem descentCounit_inv_hom (V : ConjugateModuleCat) :
     (descentCounit.inv.app V).hom = (realPointsEquiv V.involutive).symm.toLinearMap := (rfl)
 
 /-- Real modules are equivalent to complex modules with conjugation. Both functors and the
-unit and counit are the canonical tensor and fixed-point constructions.
-The body is exposed so the dependent types of its unit and counit compute to these functors. -/
+unit and counit are the canonical tensor and fixed-point constructions. -/
 @[expose] noncomputable def realDescentEquivalence : ModuleCat.{u} ℝ ≌ ConjugateModuleCat.{u} where
   functor := complexification
   inverse := fixedPoints
@@ -187,9 +185,11 @@ The body is exposed so the dependent types of its unit and counit compute to the
     apply Hom.ext
     apply TensorProduct.AlgebraTensorModule.ext
     intro z w
-    simp only [hom_comp, LinearMap.comp_apply, LinearMap.baseChange_tmul, hom_id,
-      LinearMap.id_apply]
-    rw [descentCounit_hom_tmul, descentUnit_hom_apply]
+    -- Normalize the composition and base-change wrappers without unfolding the object carrier:
+    -- unrestricted simp unfolds complexification, preventing the counit formula from matching.
+    change (descentCounit.hom.app (complexification.obj W)).hom
+      (z ⊗ₜ[ℝ] (descentUnit.hom.app W).hom w) = z ⊗ₜ[ℝ] w
+    rw [descentCounit_hom_tmul, descentUnit_hom_apply W w]
     simp [TensorProduct.smul_tmul']
 
 @[simp]
