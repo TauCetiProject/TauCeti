@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Analytic.Rotation
 public import TauCeti.Analysis.Polynomial.Puiseux.Multiplicity
+import TauCeti.Analysis.Normed.Module.Ball
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Topology.Connected.FiniteFamily
 import TauCeti.Analysis.Normed.Module.Connected
@@ -37,14 +38,6 @@ open Filter Function Metric Polynomial Set Topology
 
 namespace TauCeti
 
-/-- Rotation by a unit complex number maps the product of a set with a disc to itself. -/
-private theorem mapsTo_prodMk_mul_ball {E : Type*} {U : Set E} {R : ℝ} {ζ : ℂ}
-    (hζnorm : ‖ζ‖ = 1) :
-    MapsTo (fun b : E × ℂ ↦ (b.1, ζ * b.2)) (U ×ˢ ball 0 R) (U ×ˢ ball 0 R) := by
-  intro b hb
-  refine ⟨hb.1, ?_⟩
-  simpa only [mem_ball_zero_iff, norm_mul, hζnorm, one_mul] using hb.2
-
 /-- The first half of `existsUnique_root_rotation_perm`: on the punctured product, rotation
 permutes the labels of the splitting, by a permutation `σ` of `Fin n`. -/
 private theorem exists_perm_root_rotation_of_punctured
@@ -64,7 +57,7 @@ private theorem exists_perm_root_rotation_of_punctured
   let κ : E × ℂ → E × ℂ := fun b ↦ (b.1, ζ * b.2)
   have hζ0 : ζ ≠ 0 := by intro hz; simp [hz] at hζnorm
   have hκ : Continuous κ := by fun_prop
-  have hκT : MapsTo κ T T := mapsTo_prodMk_mul_ball hζnorm
+  have hκT : MapsTo κ T T := mapsTo_prodMk_smul_ball hζnorm
   have hκS : MapsTo κ S S := fun b hb ↦
     ⟨(hκT ⟨hb.1, hb.2.1⟩).1, (hκT ⟨hb.1, hb.2.1⟩).2, mul_ne_zero hζ0 hb.2.2⟩
   let := isPathConnected_iff_pathConnectedSpace.1
@@ -120,7 +113,7 @@ theorem existsUnique_root_rotation_perm {E : Type*} [TopologicalSpace E]
   let T := U ×ˢ ball (0 : ℂ) R
   let κ : E × ℂ → E × ℂ := fun b ↦ (b.1, ζ * b.2)
   have hκ : Continuous κ := by fun_prop
-  have hκT : MapsTo κ T T := mapsTo_prodMk_mul_ball hζnorm
+  have hκT : MapsTo κ T T := mapsTo_prodMk_smul_ball hζnorm
   -- Continuity extends the label identities through collisions at the hyperplane.
   have hdense : T ⊆ closure S := by
     rw [closure_prod_eq, Set.sdiff_eq]
