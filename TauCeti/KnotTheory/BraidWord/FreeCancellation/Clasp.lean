@@ -150,26 +150,6 @@ private theorem readClosingClasp_halfEdge :
       have h1 : j.succ.succ ≠ (1 : Fin (v.length + 2)) := by simp [Fin.ext_iff]
       simp [crossing_apply, readClasp, closingClasp, h0, h1]
 
-/-- An old outgoing half-edge which is neither closing endpoint on the two clasp strands does
-not lie on one of the two clasp positions at the crossing whose successor wraps around to the
-first crossing there. -/
-private theorem not_nextCrossing_eq_head_of_ne_closingHalfEdge
-    {j : Fin v.length} {p : Fin n} (hjold : j ∈ v.crossingsAt p)
-    (hxp : v.closure.crossing j (v.outgoingSlot j p) ≠ v.closingHalfEdge (strand i) hp)
-    (hxq : v.closure.crossing j (v.outgoingSlot j p) ≠ v.closingHalfEdge (strandSucc i) hq) :
-    ¬ ((p = strand i ∨ p = strandSucc i) ∧
-      v.nextCrossing p j = (v.crossingsAt p).head (List.ne_nil_of_mem hjold)) := by
-  rintro ⟨hpos, hn⟩
-  rcases hpos with rfl | rfl
-  · apply hxp
-    apply (crossing_outgoingSlot_eq_closingHalfEdge_iff v hjold hp).mpr
-    refine ⟨rfl, (v.nextCrossing (strand i)).injective ?_⟩
-    simpa using hn
-  · apply hxq
-    apply (crossing_outgoingSlot_eq_closingHalfEdge_iff v hjold hq).mpr
-    refine ⟨rfl, (v.nextCrossing (strandSucc i)).injective ?_⟩
-    simpa using hn
-
 private theorem readClosingClasp_edgePair_old {j : Fin v.length} {p : Fin n}
     (hjold : j ∈ v.crossingsAt p) :
     (closure ((i, ε) :: (i, -ε) :: v)).edgePair.val
@@ -218,7 +198,7 @@ private theorem readClosingClasp_edgePair_old {j : Fin v.length} {p : Fin n}
       rw [edgePair_closure_outgoingSlot v hjold, crossing_closure,
         claspHalf_old_crossing] at hmatch
       -- All other outgoing arcs retain their old successor.
-      have hc := not_nextCrossing_eq_head_of_ne_closingHalfEdge v i hp hq hjold hxp hxq
+      have hc := v.not_nextCrossing_eq_head_of_ne_closingHalfEdge i hp hq hjold hxp hxq
       have h := edgePair_closure_cons_cons_of_mem v i ε (-ε) hjold
       simp only [hc, ite_false, crossing_closure, List.length_cons] at h
       simpa only [D, closingClasp] using h.trans hmatch.symm
