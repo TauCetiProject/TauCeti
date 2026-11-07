@@ -61,9 +61,9 @@ incompatible, so no relation exists.
 As in `TauCeti.FieldTheory.FunctionField.Place.Degree`, the relation is taken over the
 polynomial subalgebra `k[x] = Algebra.adjoin k {x}` and upgraded by
 `LinearIndependent.iff_fractionRing`; the common power of `x` is cleared by
-`TauCeti.Polynomial.exists_common_X_pow_factor`. Orders are compared in the multiplicative form
-`P.valuation`, which is free of the junk value `ord_P 0 = 0`, so no term of a sum has to be
-proved nonzero.
+`TauCeti.Polynomial.exists_polynomial_relation_of_sum_smul_eq_zero`. Orders are compared in the
+multiplicative form `P.valuation`, which is free of the junk value `ord_P 0 = 0`, so no term of a
+sum has to be proved nonzero.
 
 ## Provenance
 
@@ -99,9 +99,10 @@ variable {P : Place k F}
 
 /-! ### The order of a two-parameter polynomial combination at a single place
 
-The two lemmas of this section are the local computations of Stichtenoth's Proposition 1.3.3:
-the value of `P` on `∑ a, ∑ j, p_{a,j}(x) · u_j · t ^ a` when `P` is the place the family
-belongs to, and when it is one of the others. -/
+The local computation of Stichtenoth's Proposition 1.3.3 is `valuation_sum_eq_exp_neg`: the
+value of `P` on `∑ a, ∑ j, p_{a,j}(x) · u_j · t ^ a` when `P` is the place the family belongs to.
+The lemma `valuation_sum_le` gives a general bound on this combination. The auxiliary lemmas
+compute the value of `t ^ a` and bound the value of a single block `∑ j, c_j(x) · u_j`. -/
 
 /-- A crude bound: if `x` and `t` are integral at `P` and every `u j` has value at most `γ`,
 then so does any polynomial combination `∑ a, ∑ j, p_{a,j}(x) · u_j · t ^ a`. -/
@@ -118,6 +119,80 @@ private theorem valuation_sum_le {x t : F} (hx : x ∈ P.integers) (ht : P.valua
         rw [map_mul, map_mul, map_pow]
     _ ≤ 1 * (γ * 1) := mul_le_mul' h1 (mul_le_mul' (hu j) (pow_le_one' ht _))
     _ = γ := by rw [mul_one, one_mul]
+
+/-- A prime element `t` at `P` has `P.valuation (t ^ a) = exp (-a)`. -/
+private theorem valuation_pow_eq_exp_neg {t : F} (ht : P.ord t = 1) (a : ℕ) :
+    P.valuation (t ^ a) = WithZero.exp (-(a : ℤ)) := by
+  have ht0 : t ≠ 0 := by rintro rfl; simp at ht
+  rw [P.valuation_eq_exp_neg_ord (pow_ne_zero a ht0), P.ord_pow, ht, mul_one]
+
+/-- A `k[X]`-combination of integral elements, evaluated at an integral `x`, is integral. -/
+private theorem valuation_sum_aeval_mul_le_one {x : F} (hx : x ∈ P.integers) {N : ℕ}
+    {u : Fin N → F} (humem : ∀ j, u j ∈ P.integers) (c : Fin N → k[X]) :
+    P.valuation (∑ j, aeval x (c j) * u j) ≤ 1 := by
+  refine P.valuation.map_sum_le fun j _ ↦ ?_
+  rw [map_mul]
+  exact mul_le_one' (P.valuation.aeval_le_one
+    (fun c ↦ P.mem_integers_iff.mp (P.algebraMap_mem_integers c)) (P.mem_integers_iff.mp hx) _)
+    (P.mem_integers_iff.mp (humem j))
+
+/-- If `x` has positive order at `P` and every coefficient `c j` has constant term zero, then the
+combination `∑ j, c_j(x) · u_j` of integral elements has value at most that of `x`. -/
+private theorem valuation_sum_aeval_mul_le_of_coeff_zero {x : F} (hx : 0 < P.ord x) {N : ℕ}
+    {u : Fin N → F} (humem : ∀ j, u j ∈ P.integers) (c : Fin N → k[X])
+    (hc : ∀ j, (c j).coeff 0 = 0) :
+    P.valuation (∑ j, aeval x (c j) * u j) ≤ WithZero.exp (-P.ord x) := by
+  have hx0 : x ≠ 0 := by rintro rfl; simp at hx
+  have hxmem : x ∈ P.integers := P.mem_integers_iff_ord_nonneg.mpr hx.le
+  have hone : ∀ c : k, P.valuation (algebraMap k F c) ≤ 1 := fun c ↦
+    P.mem_integers_iff.mp (P.algebraMap_mem_integers c)
+  refine P.valuation.map_sum_le fun j _ ↦ ?_
+  obtain ⟨q', hq'⟩ := Polynomial.X_dvd_iff.mpr (hc j)
+  rw [map_mul, hq', map_mul, aeval_X, map_mul, P.valuation_eq_exp_neg_ord hx0]
+  calc WithZero.exp (-P.ord x) * P.valuation (aeval x q') * P.valuation (u j)
+      ≤ WithZero.exp (-P.ord x) * 1 * 1 :=
+        mul_le_mul' (mul_le_mul' le_rfl (P.valuation.aeval_le_one hone
+          (P.mem_integers_iff.mp hxmem) q')) (P.mem_integers_iff.mp (humem j))
+    _ = WithZero.exp (-P.ord x) := by rw [mul_one, mul_one]
+
+/-- If `x` has positive order at `P`, the residues of the integral elements `u j` are linearly
+independent over `k` and some coefficient `c j` has nonzero constant term, then the combination
+`∑ j, c_j(x) · u_j` is a unit at `P`. -/
+private theorem valuation_sum_aeval_mul_eq_one {x : F} (hx : 0 < P.ord x) {N : ℕ} {u : Fin N → F}
+    (humem : ∀ j, u j ∈ P.integers)
+    (hu : LinearIndependent k fun j ↦ IsLocalRing.residue P.integers ⟨u j, humem j⟩)
+    (c : Fin N → k[X]) (hc : ∃ j, (c j).coeff 0 ≠ 0) :
+    P.valuation (∑ j, aeval x (c j) * u j) = 1 := by
+  have hx0 : x ≠ 0 := by rintro rfl; simp at hx
+  have hxmem : x ∈ P.integers := P.mem_integers_iff_ord_nonneg.mpr hx.le
+  -- The block, read inside `𝒪_P`.
+  set Y : P.integers := ∑ j, aeval (⟨x, hxmem⟩ : P.integers) (c j) * ⟨u j, humem j⟩ with hY
+  have hYcoe : (Y : F) = ∑ j : Fin N, aeval x (c j) * u j := by
+    rw [hY]
+    push_cast
+    simp
+  have hres0 : IsLocalRing.residue P.integers (⟨x, hxmem⟩ : P.integers) = 0 :=
+    (P.residue_eq_zero_iff_ord_pos hx0).mpr hx
+  have hresY : IsLocalRing.residue P.integers Y
+      = ∑ j, (c j).coeff 0 • IsLocalRing.residue P.integers ⟨u j, humem j⟩ := by
+    rw [hY, map_sum]
+    exact Finset.sum_congr rfl fun j _ ↦ by
+      rw [map_mul, residue_aeval_of_residue_eq_zero hres0, Algebra.smul_def]
+  have hresYne : IsLocalRing.residue P.integers Y ≠ 0 := by
+    rw [hresY]
+    intro h
+    obtain ⟨j, hj⟩ := hc
+    exact hj (Fintype.linearIndependent_iff.mp hu _ h j)
+  have hYne : (Y : F) ≠ 0 := fun h ↦ hresYne (by
+    have hYzero : Y = 0 := Subtype.ext h
+    rw [hYzero]
+    exact map_zero _)
+  rw [← hYcoe]
+  have h1 : 0 ≤ P.ord (Y : F) := P.mem_integers_iff_ord_nonneg.mp Y.2
+  have h2 : ¬ 0 < P.ord (Y : F) := fun h ↦ hresYne ((P.residue_eq_zero_iff_ord_pos hYne).mpr h)
+  have hordY : P.ord (Y : F) = 0 := by omega
+  rw [P.valuation_eq_exp_neg_ord hYne, hordY]
+  simp
 
 /-- **The local computation of Stichtenoth, Proposition 1.3.3.** Let `x` have positive order at
 `P`, let `t` be a prime element at `P`, and let `u_1, …, u_N` be elements of `𝒪_P` whose
@@ -138,87 +213,56 @@ private theorem valuation_sum_eq_exp_neg {x t : F} (hx : 0 < P.ord x) (ht : P.or
     P.valuation (∑ a : Fin E, ∑ j : Fin N, aeval x (q a j) * (u j * t ^ (a : ℕ)))
       = WithZero.exp (-((A : ℕ) : ℤ)) := by
   classical
-  have hx0 : x ≠ 0 := by rintro rfl; simp at hx
-  have hxmem : x ∈ P.integers := P.mem_integers_iff_ord_nonneg.mpr hx.le
-  have hvx : P.valuation x = WithZero.exp (-P.ord x) := P.valuation_eq_exp_neg_ord hx0
-  have ht0 : t ≠ 0 := by rintro rfl; simp at ht
-  have hvt : ∀ a : ℕ, P.valuation (t ^ a) = WithZero.exp (-(a : ℤ)) := fun a ↦ by
-    rw [P.valuation_eq_exp_neg_ord (pow_ne_zero a ht0), P.ord_pow, ht, mul_one]
-  have hone : ∀ c : k, P.valuation (algebraMap k F c) ≤ 1 := fun c ↦
-    P.mem_integers_iff.mp (P.algebraMap_mem_integers c)
-  -- The coefficient block at an exponent `a`, read inside `𝒪_P`.
-  set Y : Fin E → P.integers :=
-    fun a ↦ ∑ j, aeval (⟨x, hxmem⟩ : P.integers) (q a j) * ⟨u j, humem j⟩ with hY
-  have hYcoe : ∀ a : Fin E, (Y a : F) = ∑ j : Fin N, aeval x (q a j) * u j := by
-    intro a
-    rw [hY]
-    push_cast
-    rfl
-  -- Regrouping: the `a`-th slice of the family is the block `Y a` times `t ^ a`.
+  have hvt := valuation_pow_eq_exp_neg (P := P) ht
+  have hvA := valuation_sum_aeval_mul_eq_one hx humem hu (q A) hA
+  -- Regrouping: the `a`-th slice of the family is the block `∑ j, q_{a,j}(x) · u_j` times `t ^ a`.
   have hslice : ∀ a : Fin E, ∑ j : Fin N, aeval x (q a j) * (u j * t ^ (a : ℕ))
-      = (Y a : F) * t ^ (a : ℕ) := by
-    intro a
-    rw [hYcoe a, Finset.sum_mul]
+      = (∑ j : Fin N, aeval x (q a j) * u j) * t ^ (a : ℕ) := fun a ↦ by
+    rw [Finset.sum_mul]
     exact Finset.sum_congr rfl fun j _ ↦ by ring
-  -- At the exponent `A` the block is a unit, because the residues are independent.
-  have hres0 : IsLocalRing.residue P.integers (⟨x, hxmem⟩ : P.integers) = 0 :=
-    (P.residue_eq_zero_iff_ord_pos hx0).mpr hx
-  have hresY : IsLocalRing.residue P.integers (Y A)
-      = ∑ j, (q A j).coeff 0 • IsLocalRing.residue P.integers ⟨u j, humem j⟩ := by
-    rw [hY, map_sum]
-    exact Finset.sum_congr rfl fun j _ ↦ by
-      rw [map_mul, residue_aeval_of_residue_eq_zero hres0, Algebra.smul_def]
-  have hresYne : IsLocalRing.residue P.integers (Y A) ≠ 0 := by
-    rw [hresY]
-    intro h
-    obtain ⟨j, hj⟩ := hA
-    exact hj (Fintype.linearIndependent_iff.mp hu _ h j)
-  have hYne : (Y A : F) ≠ 0 := fun h ↦ hresYne (by
-    have hYzero : Y A = 0 := Subtype.ext h
-    rw [hYzero]
-    exact map_zero _)
-  have hvY : P.valuation (Y A : F) = 1 := by
-    have h1 : 0 ≤ P.ord (Y A : F) := P.mem_integers_iff_ord_nonneg.mp (Y A).2
-    have h2 : ¬ 0 < P.ord (Y A : F) := fun h ↦ hresYne ((P.residue_eq_zero_iff_ord_pos hYne).mpr h)
-    have hordY : P.ord (Y A : F) = 0 := by omega
-    rw [P.valuation_eq_exp_neg_ord hYne, hordY]
-    simp
-  -- Every other exponent contributes strictly less.
+  -- Every exponent other than `A` contributes strictly less.
   have hsmall : ∀ a ∈ Finset.univ \ {A},
-      P.valuation ((Y a : F) * t ^ (a : ℕ)) < P.valuation ((Y A : F) * t ^ (A : ℕ)) := by
+      P.valuation ((∑ j : Fin N, aeval x (q a j) * u j) * t ^ (a : ℕ)) <
+        P.valuation ((∑ j : Fin N, aeval x (q A j) * u j) * t ^ (A : ℕ)) := by
     intro a ha
     have hane : (a : ℕ) ≠ (A : ℕ) := fun h ↦ by
       simp only [Finset.mem_sdiff, Finset.mem_singleton] at ha
       exact ha.2 (Fin.ext h)
-    rw [map_mul, map_mul, hvY, hvt, hvt, one_mul]
+    rw [map_mul, map_mul, hvA, hvt, hvt, one_mul]
     rcases lt_or_gt_of_ne hane with hlt | hgt
     · -- Below `A` every coefficient is divisible by `X`, so the block is divisible by `x`.
-      have hblock : P.valuation (Y a : F) ≤ WithZero.exp (-P.ord x) := by
-        rw [hYcoe a]
-        refine P.valuation.map_sum_le fun j _ ↦ ?_
-        obtain ⟨q', hq'⟩ := Polynomial.X_dvd_iff.mpr (hmin a hlt j)
-        rw [map_mul, hq', map_mul, aeval_X, map_mul, hvx]
-        calc WithZero.exp (-P.ord x) * P.valuation (aeval x q') * P.valuation (u j)
-            ≤ WithZero.exp (-P.ord x) * 1 * 1 :=
-              mul_le_mul' (mul_le_mul' le_rfl (P.valuation.aeval_le_one hone
-                (P.mem_integers_iff.mp hxmem) q')) (P.mem_integers_iff.mp (humem j))
-          _ = WithZero.exp (-P.ord x) := by rw [mul_one, mul_one]
-      calc P.valuation (Y a : F) * WithZero.exp (-((a : ℕ) : ℤ))
+      calc P.valuation (∑ j : Fin N, aeval x (q a j) * u j) * WithZero.exp (-((a : ℕ) : ℤ))
           ≤ WithZero.exp (-P.ord x) * WithZero.exp (-((a : ℕ) : ℤ)) :=
-            mul_le_mul' hblock le_rfl
+            mul_le_mul' (valuation_sum_aeval_mul_le_of_coeff_zero hx humem (q a)
+              (hmin a hlt)) le_rfl
         _ = WithZero.exp (-P.ord x + -((a : ℕ) : ℤ)) := (WithZero.exp_add _ _).symm
         _ ≤ WithZero.exp (-P.ord x) := WithZero.exp_le_exp.mpr (by omega)
         _ < WithZero.exp (-((A : ℕ) : ℤ)) := WithZero.exp_lt_exp.mpr (by omega)
     · -- Above `A` the factor `t ^ a` alone already forces a strictly larger order.
-      calc P.valuation (Y a : F) * WithZero.exp (-((a : ℕ) : ℤ))
+      calc P.valuation (∑ j : Fin N, aeval x (q a j) * u j) * WithZero.exp (-((a : ℕ) : ℤ))
           ≤ 1 * WithZero.exp (-((a : ℕ) : ℤ)) :=
-            mul_le_mul' (P.mem_integers_iff.mp (Y a).2) le_rfl
+            mul_le_mul' (valuation_sum_aeval_mul_le_one
+              (P.mem_integers_iff_ord_nonneg.mpr hx.le) humem (q a)) le_rfl
         _ = WithZero.exp (-((a : ℕ) : ℤ)) := one_mul _
         _ < WithZero.exp (-((A : ℕ) : ℤ)) := WithZero.exp_lt_exp.mpr (by omega)
   rw [Finset.sum_congr rfl fun a _ ↦ hslice a,
-    P.valuation.map_sum_eq_of_lt (Finset.mem_univ A) hsmall, map_mul, hvY, hvt, one_mul]
+    P.valuation.map_sum_eq_of_lt (Finset.mem_univ A) hsmall, map_mul, hvA, hvt, one_mul]
 
 /-! ### Proposition 1.3.3 -/
+
+/-- If `x` has positive order at `Q`, `t` has order zero and every `u j` is nonzero of the same
+order as `x`, then any polynomial combination `∑ a, ∑ j, p_{a,j}(x) · u_j · t ^ a` has value at
+most that of `x`. -/
+private theorem valuation_sum_le_exp_neg_ord {Q : Place k F} {x t : F} (hx : 0 < Q.ord x)
+    (ht : Q.ord t = 0) {E N : ℕ} {u : Fin N → F} (hu0 : ∀ j, u j ≠ 0)
+    (hu : ∀ j, Q.ord (u j) = Q.ord x) (q : Fin E → Fin N → k[X]) :
+    Q.valuation (∑ a : Fin E, ∑ j : Fin N, aeval x (q a j) * (u j * t ^ (a : ℕ)))
+      ≤ WithZero.exp (-Q.ord x) := by
+  refine valuation_sum_le ?_ ?_ ?_ _
+  · exact Q.mem_integers_iff_ord_nonneg.mpr hx.le
+  · exact Q.mem_integers_iff.mp (Q.mem_integers_iff_ord_nonneg.mpr (by rw [ht]))
+  · intro j
+    rw [Q.valuation_eq_exp_neg_ord (hu0 j), hu j]
 
 /-- **The products `u P j * t P ^ a` are linearly independent over `k⟮x⟯`.** Given
 uniformizers `t P` at each place of `S` that are units at the other places of `S`, and lifts
@@ -263,88 +307,37 @@ private theorem linearIndependent_mul_pow_of_linearIndependent_residue {x : F}
     Fintype.linearIndependent_iff]
   intro g hsum i₁
   by_contra hg0
-  -- Write the coefficients as polynomials in `x` and clear the common power of `x`.
-  have hrange : ∀ y : F, y ∈ Algebra.adjoin k ({x} : Set F) → ∃ p : k[X], aeval x p = y := by
-    intro y hy
-    rwa [Algebra.adjoin_singleton_eq_range_aeval, AlgHom.mem_range] at hy
-  choose p hp using fun i ↦ hrange ((g i : Algebra.adjoin k ({x} : Set F)) : F) (g i).2
-  have hpne : p i₁ ≠ 0 := by
-    intro h
-    exact hg0 (Subtype.ext (by simpa [h] using (hp i₁).symm))
-  obtain ⟨m, q, hfactor, i₂, -, hq₂⟩ :=
-    TauCeti.Polynomial.exists_common_X_pow_factor Set.univ p ⟨i₁, Set.mem_univ _, hpne⟩
-  have hsumF : ∑ i, aeval x (q i) * (u i.1 i.2.2 * t i.1 ^ (i.2.1 : ℕ)) = 0 := by
-    refine mul_left_cancel₀ (pow_ne_zero m hx0) ?_
-    rw [Finset.mul_sum, mul_zero, ← hsum]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [Algebra.smul_def, Subalgebra.algebraMap_apply, ← hp i,
-      hfactor i (Set.mem_univ i), map_mul, map_pow, aeval_X]
-    ring
+  obtain ⟨q, hsumF, ⟨P₀, a₂, j₂⟩, -, hq₂⟩ :=
+    TauCeti.Polynomial.exists_polynomial_relation_of_sum_smul_eq_zero hx0 Finset.univ _ g hsum
+      (Finset.mem_univ i₁) hg0
   rw [← Finset.univ_sigma_univ, Finset.sum_sigma] at hsumF
   simp only [Fintype.sum_prod_type] at hsumF
-  -- Split the relation into the block at `P₀ := i₂.1` and the remaining blocks.
-  set P₀ := i₂.1
-  have hmem₂ : i₂.2.1 ∈ Finset.univ.filter
-      (fun a : Fin ((P₀ : Place k F).ord x).toNat ↦ ∃ j, (q ⟨P₀, a, j⟩).coeff 0 ≠ 0) := by
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and]
-    exact ⟨i₂.2.2, hq₂⟩
-  set A := (Finset.univ.filter
-    (fun a : Fin ((P₀ : Place k F).ord x).toNat ↦ ∃ j, (q ⟨P₀, a, j⟩).coeff 0 ≠ 0)).min'
-      ⟨i₂.2.1, hmem₂⟩ with hAdef
-  have hAex : ∃ j, (q ⟨P₀, A, j⟩).coeff 0 ≠ 0 := by
-    have := Finset.min'_mem _ (⟨i₂.2.1, hmem₂⟩ :
-      (Finset.univ.filter (fun a : Fin ((P₀ : Place k F).ord x).toNat ↦
-        ∃ j, (q ⟨P₀, a, j⟩).coeff 0 ≠ 0)).Nonempty)
-    simpa [← hAdef] using this
-  have hAmin : ∀ a : Fin ((P₀ : Place k F).ord x).toNat, (a : ℕ) < (A : ℕ) →
-      ∀ j, (q ⟨P₀, a, j⟩).coeff 0 = 0 := by
-    intro a ha j
-    by_contra h
-    have hle : A ≤ a := Finset.min'_le _ a (by
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and]
-      exact ⟨j, h⟩)
-    exact absurd (Fin.le_def.mp hle) (by omega)
+  -- The least exponent at `P₀` carrying a nonzero constant term.
+  obtain ⟨A, ⟨j₀, hAex⟩, hAmin⟩ :=
+    (wellFounded_lt (α := Fin ((P₀ : Place k F).ord x).toNat)).has_min
+      {a | ∃ j, (q ⟨P₀, a, j⟩).coeff 0 ≠ 0} ⟨a₂, j₂, hq₂⟩
   have hAlt : ((A : ℕ) : ℤ) < (P₀ : Place k F).ord x := by
     have _ := A.isLt
     have h2 := hS (P₀ : Place k F) P₀.2
     omega
-  have hkey : (P₀ : Place k F).valuation
-      (∑ a : Fin ((P₀ : Place k F).ord x).toNat,
+  have hkey := valuation_sum_eq_exp_neg (hS (P₀ : Place k F) P₀.2) (ht1 P₀) (humem P₀) (hlib P₀) _
+    ⟨j₀, hAex⟩ (fun a ha j ↦ by_contra fun h ↦ hAmin a ⟨j, h⟩ ha) hAlt
+  have hother : ∀ P ∈ Finset.univ \ {P₀},
+      (P₀ : Place k F).valuation (∑ a : Fin ((P : Place k F).ord x).toNat,
+        ∑ j : Fin (Module.finrank k (P : Place k F).ResidueField),
+          aeval x (q ⟨P, a, j⟩) * (u P j * t P ^ (a : ℕ))) <
+      (P₀ : Place k F).valuation (∑ a : Fin ((P₀ : Place k F).ord x).toNat,
         ∑ j : Fin (Module.finrank k (P₀ : Place k F).ResidueField),
-          aeval x (q ⟨P₀, a, j⟩) * (u P₀ j * t P₀ ^ (a : ℕ)))
-      = WithZero.exp (-((A : ℕ) : ℤ)) :=
-    valuation_sum_eq_exp_neg (hS (P₀ : Place k F) P₀.2) (ht1 P₀) (humem P₀) (hlib P₀) _
-      hAex hAmin hAlt
-  have hother : ∀ P : {P : Place k F // P ∈ S}, P ≠ P₀ →
-      (P₀ : Place k F).valuation
-        (∑ a : Fin ((P : Place k F).ord x).toNat,
-          ∑ j : Fin (Module.finrank k (P : Place k F).ResidueField),
-            aeval x (q ⟨P, a, j⟩) * (u P j * t P ^ (a : ℕ)))
-        ≤ WithZero.exp (-(P₀ : Place k F).ord x) := by
+          aeval x (q ⟨P₀, a, j⟩) * (u P₀ j * t P₀ ^ (a : ℕ))) := by
     intro P hP
-    have hne : (P₀ : Place k F) ≠ (P : Place k F) := fun h ↦ hP (Subtype.ext h.symm)
-    refine valuation_sum_le ?_ ?_ ?_ _
-    · exact (P₀ : Place k F).mem_integers_iff_ord_nonneg.mpr (hS _ P₀.2).le
-    · exact (P₀ : Place k F).mem_integers_iff.mp
-        ((P₀ : Place k F).mem_integers_iff_ord_nonneg.mpr
-          (by rw [ht0 P (P₀ : Place k F) P₀.2 hne]))
-    · intro j
-      rw [(P₀ : Place k F).valuation_eq_exp_neg_ord (hune P j),
-        huord P j (P₀ : Place k F) P₀.2 hne]
-  have hsplit : (∑ a : Fin ((P₀ : Place k F).ord x).toNat,
-      ∑ j : Fin (Module.finrank k (P₀ : Place k F).ResidueField),
-        aeval x (q ⟨P₀, a, j⟩) * (u P₀ j * t P₀ ^ (a : ℕ)))
-      = -∑ P ∈ Finset.univ.erase P₀, ∑ a : Fin ((P : Place k F).ord x).toNat,
-          ∑ j : Fin (Module.finrank k (P : Place k F).ResidueField),
-            aeval x (q ⟨P, a, j⟩) * (u P j * t P ^ (a : ℕ)) := by
-    rw [eq_neg_iff_add_eq_zero, add_comm, Finset.sum_erase_add _ _ (Finset.mem_univ P₀)]
-    exact hsumF
-  rw [hsplit, Valuation.map_neg] at hkey
-  have hle : WithZero.exp (-((A : ℕ) : ℤ)) ≤ WithZero.exp (-(P₀ : Place k F).ord x) := by
-    rw [← hkey]
-    exact Valuation.map_sum_le _ fun P hP ↦ hother P (Finset.ne_of_mem_erase hP)
-  have := WithZero.exp_le_exp.mp hle
-  omega
+    have hne : (P₀ : Place k F) ≠ (P : Place k F) := fun h ↦
+      (Finset.notMem_singleton.1 (Finset.mem_sdiff.1 hP).2) (Subtype.ext h.symm)
+    rw [hkey]
+    exact (valuation_sum_le_exp_neg_ord (hS _ P₀.2) (ht0 P _ P₀.2 hne) (hune P)
+      (fun j ↦ huord P j _ P₀.2 hne) _).trans_lt (WithZero.exp_lt_exp.mpr (by omega))
+  have hsum0 := (P₀ : Place k F).valuation.map_sum_eq_of_lt (Finset.mem_univ P₀) hother
+  rw [hsumF, map_zero, hkey] at hsum0
+  exact WithZero.exp_ne_zero hsum0.symm
 
 /-- The natural-number form of Stichtenoth, Proposition 1.3.3, which is what the linear
 independence of Stichtenoth's family says on the nose. -/
