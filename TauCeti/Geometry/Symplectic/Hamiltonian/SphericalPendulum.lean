@@ -744,10 +744,13 @@ private theorem exists_zeroFibreSheet_eq {h : ℝ}
     (hx : x ∈ sphericalPendulumPhaseSpace ∩ sphericalPendulumEnergyMomentum ⁻¹' {(h, 0)}) :
     ∃ s, (s = 1 ∨ s = -1) ∧ ∃ z ∈ Icc (-1 : ℝ) 1, z ≤ h ∧ ∃ φ, zeroFibreSheet h s (z, φ) = x := by
   obtain ⟨hx, hF⟩ := hx
+  rw [mem_preimage, mem_singleton_iff] at hF
+  have hw := sq_snd_two_eq_of_mem_sphericalPendulumPhaseSpace hx
+  rw [hF] at hw
   obtain ⟨φ, r, z, a, b, w, hr, rfl, hpole⟩ := exists_eq_cylindricalPoint x
+  change w ^ 2 = 2 * (h - z) * (1 - z ^ 2) - 0 ^ 2 at hw
   obtain ⟨hx1, hx2⟩ := mem_sphericalPendulumPhaseSpace_cylindricalPoint_iff.1 hx
-  rw [mem_preimage, mem_singleton_iff, sphericalPendulumEnergyMomentum_cylindricalPoint,
-    Prod.mk.injEq] at hF
+  rw [sphericalPendulumEnergyMomentum_cylindricalPoint, Prod.mk.injEq] at hF
   obtain ⟨hF1, hF2⟩ := hF
   have hz : z ∈ Icc (-1 : ℝ) 1 := ⟨by nlinarith, by nlinarith⟩
   have hrz : √(1 - z ^ 2) = r := by
@@ -771,7 +774,7 @@ private theorem exists_zeroFibreSheet_eq {h : ℝ}
   · -- Away from the poles `b = 0`, and `w / r` is a square root of `2 (h - z)`.
     obtain rfl : b = 0 := (mul_eq_zero.1 hF2).resolve_left hr0.ne'
     have hw2 : w ^ 2 = 2 * (h - z) * r ^ 2 := by
-      linear_combination (-w ^ 2) * hx1 + (z * w - r * a) * hx2 + 2 * r ^ 2 * hF1
+      linear_combination hw - 2 * (h - z) * hx1
     have hu2 : (w / r) ^ 2 = 2 * (h - z) := by
       rw [div_pow, hw2]
       field_simp
@@ -814,10 +817,13 @@ private theorem exists_fibreSheet_eq {h j : ℝ} (hj : j ≠ 0)
     ∃ s, (s = 1 ∨ s = -1) ∧ ∃ z ∈ Ioo (-1 : ℝ) 1, j ^ 2 ≤ 2 * (h - z) * (1 - z ^ 2) ∧
       ∃ φ, fibreSheet h j s (z, φ) = x := by
   obtain ⟨hx, hF⟩ := hx
+  rw [mem_preimage, mem_singleton_iff] at hF
+  have hw2 := sq_snd_two_eq_of_mem_sphericalPendulumPhaseSpace hx
+  rw [hF] at hw2
   obtain ⟨φ, r, z, a, b, w, hr, rfl, -⟩ := exists_eq_cylindricalPoint x
+  change w ^ 2 = 2 * (h - z) * (1 - z ^ 2) - j ^ 2 at hw2
   obtain ⟨hx1, hx2⟩ := mem_sphericalPendulumPhaseSpace_cylindricalPoint_iff.1 hx
-  rw [mem_preimage, mem_singleton_iff, sphericalPendulumEnergyMomentum_cylindricalPoint,
-    Prod.mk.injEq] at hF
+  rw [sphericalPendulumEnergyMomentum_cylindricalPoint, Prod.mk.injEq] at hF
   obtain ⟨hF1, hF2⟩ := hF
   -- Since `r b = j ≠ 0`, the point is off the axis.
   have hr0 : 0 < r := hr.lt_of_ne fun h0 ↦ hj (by rw [← hF2, ← h0, zero_mul])
@@ -826,9 +832,6 @@ private theorem exists_fibreSheet_eq {h j : ℝ} (hj : j ≠ 0)
     rw [← Real.sqrt_sq hr]
     congr 1
     linarith
-  have hw2 : w ^ 2 = 2 * (h - z) * (1 - z ^ 2) - j ^ 2 := by
-    linear_combination (-w ^ 2 + 2 * (h - z)) * hx1 + (z * w - r * a) * hx2 + 2 * r ^ 2 * hF1 -
-      (j + r * b) * hF2
   have hzj : j ^ 2 ≤ 2 * (h - z) * (1 - z ^ 2) := by nlinarith [sq_nonneg w]
   have hW : √(2 * (h - z) * (1 - z ^ 2) - j ^ 2) ^ 2 = 2 * (h - z) * (1 - z ^ 2) - j ^ 2 :=
     Real.sq_sqrt (by linarith)
