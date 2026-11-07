@@ -475,33 +475,20 @@ theorem exists_pair_perm_fixed {α : Type*} {s : Set α}
     exact Equiv.swap_apply_of_ne_of_ne hτji'.symm hi'j'
   · rw [Equiv.trans_apply, Equiv.swap_apply_left]
 
-/-- Two points lie in the same orbit of an involution exactly when they are equal or one is the
-image of the other. -/
-theorem sameCycle_toPerm_iff {α : Type*} (f : α → α) (hf : Function.Involutive f) (a b : α) :
-    (hf.toPerm f).SameCycle a b ↔ a = b ∨ a = f b := by
-  constructor
-  · intro h
-    obtain ⟨i, hi⟩ := h.symm
-    rcases Equiv.Perm.zpow_apply_eq_of_apply_apply_eq_self
-      (f := hf.toPerm f) (x := b) (hf b) i with h | h
-    · exact Or.inl (hi.symm.trans h)
-    · exact Or.inr (hi.symm.trans h)
-  · rintro (rfl | h)
-    · exact Equiv.Perm.SameCycle.rfl
-    · refine ⟨1, ?_⟩
-      have : f a = b := by
-        calc
-          f a = f (f b) := congrArg f h
-          _ = b := hf b
-      simpa using this
-
 /-- Two points of an involutive permutation lie in one cycle exactly when they coincide or
 one is the image of the other. -/
 theorem _root_.Function.Involutive.sameCycle_iff {α : Type*} {f : Equiv.Perm α}
     (hf : Function.Involutive f) (x y : α) :
     f.SameCycle x y ↔ x = y ∨ x = f y := by
-  have he : Function.Involutive.toPerm f hf = f := Equiv.ext fun _ ↦ rfl
-  exact he ▸ sameCycle_toPerm_iff _ hf x y
+  constructor
+  · intro h
+    obtain ⟨i, hi⟩ := h.symm
+    rcases Equiv.Perm.zpow_apply_eq_of_apply_apply_eq_self (f := f) (x := y) (hf y) i with h | h
+    · exact Or.inl (hi.symm.trans h)
+    · exact Or.inr (hi.symm.trans h)
+  · rintro (rfl | rfl)
+    · exact Equiv.Perm.SameCycle.rfl
+    · exact ⟨1, by simpa using hf y⟩
 
 variable {α : Type*} [Fintype α] [DecidableEq α]
 

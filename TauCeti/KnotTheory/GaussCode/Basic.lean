@@ -436,7 +436,8 @@ private def unorientedSetoid : Setoid (BasedOrientedGaussCode n) :=
 
 private theorem unorientedSetoid_apply (D E : BasedOrientedGaussCode n) :
     unorientedSetoid D E ↔ D = E ∨ D = E.reverse :=
-  TauCeti.sameCycle_toPerm_iff reverse reverse_reverse D E
+  Function.Involutive.sameCycle_iff
+    (f := Function.Involutive.toPerm reverse reverse_reverse) reverse_reverse D E
 
 end BasedOrientedGaussCode
 

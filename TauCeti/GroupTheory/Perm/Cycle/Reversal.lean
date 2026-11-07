@@ -116,11 +116,7 @@ theorem sameCycle_cycleReversal_mk_mk_iff (hf : Function.Involutive f)
     (hg : Function.Involutive g) {x y : α} :
     (hf.cycleReversal hg).SameCycle ⟦x⟧ ⟦y⟧ ↔
       (f * g).SameCycle x y ∨ (f * g).SameCycle (g x) y := by
-  have h := TauCeti.sameCycle_toPerm_iff _ (hf.cycleReversal_involutive hg) ⟦x⟧ ⟦y⟧
-  -- `Function.Involutive.toPerm` rebuilds a permutation from the underlying function of
-  -- `cycleReversal`, using that function as its own inverse, so the two agree pointwise by `rfl`.
-  rw [show (hf.cycleReversal_involutive hg).toPerm _ = hf.cycleReversal hg from
-    Equiv.ext fun _ ↦ rfl] at h
+  have h := (hf.cycleReversal_involutive hg).sameCycle_iff (f := hf.cycleReversal hg) ⟦x⟧ ⟦y⟧
   rw [h, cycleReversal_mk, Quotient.eq, Quotient.eq]
   have h' := hf.sameCycle_apply_apply_iff hg (x := x) (y := g y)
   rw [hg y] at h'

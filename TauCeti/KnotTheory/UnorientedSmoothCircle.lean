@@ -67,7 +67,8 @@ private def unorientedSetoid : Setoid (SmoothCircleEmbedding I M) :=
 
 private theorem unorientedSetoid_apply (f g : SmoothCircleEmbedding I M) :
     unorientedSetoid f g ↔ f = g ∨ f = g.reverse :=
-  TauCeti.sameCycle_toPerm_iff reverse reverse_reverse f g
+  Function.Involutive.sameCycle_iff
+    (f := Function.Involutive.toPerm reverse reverse_reverse) reverse_reverse f g
 
 end SmoothCircleEmbedding
 
