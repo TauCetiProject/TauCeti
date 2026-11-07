@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Data.List.Sublists
+import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.ParametricFDeriv
 
 /-!
@@ -46,6 +47,8 @@ symbol calculus.
 * `TauCeti.CoordinateSpace n`: the Euclidean space `ℝⁿ = EuclideanSpace ℝ (Fin n)`.
 * `TauCeti.coordinateDeriv`: the iterated coordinate derivative along a word of indices.
 * `TauCeti.coordinateDeriv_eq_iteratedFDeriv`: its comparison with `iteratedFDeriv`.
+* `TauCeti.norm_iteratedFDeriv_succ_le_sum_coordinateDeriv`: the converse estimate, bounding a
+  Fréchet derivative by those of the first partial derivatives.
 * `ContDiff.coordinateDeriv_snd`: joint smoothness of partial derivatives in the second variable.
 * `TauCeti.coordinateDeriv_coordinateDeriv_comm`: partial derivatives in different variables
   commute.
@@ -134,6 +137,30 @@ theorem norm_coordinateDeriv_le (α : List (Fin n)) {f : CoordinateSpace n → A
   rw [coordinateDeriv_eq_iteratedFDeriv α hf]
   refine ((iteratedFDeriv ℝ α.length f x).le_opNorm _).trans (le_of_eq ?_)
   simp
+
+/-- The `(k + 1)`-st Fréchet derivative of a smooth function is bounded by the `k`-th Fréchet
+derivatives of its first partial derivatives: `‖D^(k+1) f x‖ ≤ ∑ⱼ ‖D^k (∂ⱼ f) x‖`. -/
+theorem norm_iteratedFDeriv_succ_le_sum_coordinateDeriv {k : ℕ} {f : CoordinateSpace n → A}
+    (hf : ContDiff ℝ (k + 1) f) (x : CoordinateSpace n) :
+    ‖iteratedFDeriv ℝ (k + 1) f x‖ ≤ ∑ j, ‖iteratedFDeriv ℝ k (coordinateDeriv [j] f) x‖ := by
+  set b := EuclideanSpace.basisFun (Fin n) ℝ
+  set T : Fin n → A →L[ℝ] CoordinateSpace n →L[ℝ] A := fun j ↦
+    ContinuousLinearMap.smulRightL ℝ (CoordinateSpace n) A (innerSL ℝ (b j))
+  have hfd : fderiv ℝ f = ∑ j, T j ∘ coordinateDeriv [j] f := by
+    funext y
+    ext h
+    conv_lhs => rw [← b.sum_repr' h]
+    simp [T, coordinateDeriv_cons, b]
+  have hT (j : Fin n) : ‖T j‖ ≤ 1 :=
+    ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun w ↦ by
+      simp [T, ContinuousLinearMap.norm_smulRight_apply, innerSL_apply_norm, b.orthonormal.1 j]
+  have hdf (j : Fin n) : ContDiff ℝ k (coordinateDeriv [j] f) :=
+    hf.coordinateDeriv_of_le [j] (by simp)
+  rw [← norm_iteratedFDeriv_fderiv, hfd,
+    iteratedFDeriv_sum_apply fun j _ ↦ ((T j).contDiff.comp (hdf j)).contDiffAt]
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun j _ ↦ ?_)
+  refine ((T j).norm_iteratedFDeriv_comp_left (hdf j).contDiffAt le_rfl).trans ?_
+  exact mul_le_of_le_one_left (norm_nonneg _) (hT j)
 
 theorem coordinateDeriv_add (α : List (Fin n)) {f g : CoordinateSpace n → A}
     (hf : ContDiff ℝ α.length f) (hg : ContDiff ℝ α.length g) :
