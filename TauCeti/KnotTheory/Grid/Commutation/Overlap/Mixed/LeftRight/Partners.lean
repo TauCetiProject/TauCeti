@@ -129,6 +129,35 @@ namespace TauCeti.GridDiagram
 
 variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n) {x z : GridState n}
 
+/-- A rectangle--pentagon domain with empty pieces, whose squares (the rectangle read after
+exchanging the two columns next to the replaced line) are those of a counted pentagon--rectangle
+domain, is counted. -/
+private theorem mem_rectanglePentagonDecompositions_of_coveredSquares_eq
+    {D : GridRectanglePentagonDecomposition C.column C.turnRow x z}
+    {E : GridPentagonRectangleDecomposition C.column C.turnRow x z}
+    (hE : E ∈ G.pentagonRectangleDecompositions C x z)
+    (hDr : D.rectangle.IsEmpty) (hDp : D.pentagon.IsEmpty)
+    (hsquares : E.pentagon.coveredSquares.val +
+        (E.rectangle.toGridRectangle.coveredSquares.map
+          ((Equiv.swap C.column (finRotate n C.column)).prodCongr
+            (Equiv.refl (Fin n))).toEmbedding).val =
+      D.rectangle.toGridRectangle.coveredSquares.val + D.pentagon.coveredSquares.val) :
+    D ∈ G.rectanglePentagonDecompositions C x z := by
+  -- Use the forward square identity backwards: every square of the inverse domain avoids X.
+  rw [mem_pentagonRectangleDecompositions, mem_pentagons,
+    (G.swapColumns C.column (finRotate n C.column)).mem_unblockedRectangles,
+    ← G.disjoint_map_swapColumns_XSet_iff] at hE
+  have hX (p : Fin n × Fin n)
+      (hp : p ∈ D.rectangle.toGridRectangle.coveredSquares.val + D.pentagon.coveredSquares.val) :
+      p ∉ G.XSet := by
+    rw [← hsquares] at hp
+    rcases Multiset.mem_add.mp hp with hp | hp
+    · exact Finset.disjoint_left.mp hE.1.2 hp
+    · exact Finset.disjoint_left.mp hE.2.2 hp
+  rw [mem_rectanglePentagonDecompositions, mem_unblockedRectangles, mem_pentagons]
+  exact ⟨⟨hDr, Finset.disjoint_left.mpr fun p hp => hX p (Multiset.mem_add.mpr (Or.inl hp))⟩,
+    hDp, Finset.disjoint_left.mpr fun p hp => hX p (Multiset.mem_add.mpr (Or.inr hp))⟩
+
 /-- A counted common-initial-side pentagon--rectangle domain whose pentagon ends strictly inside
 its rectangle's column interval is the recut of a counted mixed `left = right` source. -/
 theorem mem_leftRightOverlapPartners_of_left_eq_left
@@ -174,21 +203,7 @@ theorem mem_leftRightOverlapPartners_of_left_eq_left
       (D.isRecut_recutLeftEqRight hDcommon hDr hDp hturn) hback
   have hsquares := D.coveredSquares_val_add_val_recutLeftEqRight hDcommon hDr hDp hturn
   rw [hEq] at hsquares
-  -- Use the forward square identity backwards: every square of the inverse domain avoids X.
-  rw [mem_pentagonRectangleDecompositions, mem_pentagons,
-    (G.swapColumns C.column (finRotate n C.column)).mem_unblockedRectangles,
-    ← G.disjoint_map_swapColumns_XSet_iff] at hE
-  have hX (p : Fin n × Fin n)
-      (hp : p ∈ D.rectangle.toGridRectangle.coveredSquares.val + D.pentagon.coveredSquares.val) :
-      p ∉ G.XSet := by
-    rw [← hsquares] at hp
-    rcases Multiset.mem_add.mp hp with hp | hp
-    · exact Finset.disjoint_left.mp hE.1.2 hp
-    · exact Finset.disjoint_left.mp hE.2.2 hp
-  have hD : D ∈ G.rectanglePentagonDecompositions C x z := by
-    rw [mem_rectanglePentagonDecompositions, mem_unblockedRectangles, mem_pentagons]
-    exact ⟨⟨hDr, Finset.disjoint_left.mpr fun p hp => hX p (Multiset.mem_add.mpr (Or.inl hp))⟩,
-      hDp, Finset.disjoint_left.mpr fun p hp => hX p (Multiset.mem_add.mpr (Or.inr hp))⟩
+  have hD := G.mem_rectanglePentagonDecompositions_of_coveredSquares_eq C hE hDr hDp hsquares
   exact (G.mem_leftRightOverlapPartners C E).2
     ⟨D, (G.mem_leftRightOverlapSources C D).2 ⟨hD, hDcommon, hturn⟩, hback⟩
 
