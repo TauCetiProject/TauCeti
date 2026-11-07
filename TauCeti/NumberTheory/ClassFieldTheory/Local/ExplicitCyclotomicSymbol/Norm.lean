@@ -135,7 +135,6 @@ theorem cyclotomicSymbol_norm_fixes (p : ℕ) [Fact p.Prime] (m : ℕ) [NeZero m
   obtain ⟨Y, hY, hYy, hYp, hYL, hYinf⟩ := GlobalNumberFields.exists_approx_of_le_adjoin p K M hMK hL
     (Finset.notMem_erase p _) (y : M) y.ne_zero (ρ := (m : ℝ)⁻¹)
     (inv_pos.mpr (by exact_mod_cast Nat.pos_of_ne_zero (NeZero.ne m)))
-    (inv_le_one_of_one_le₀ (by exact_mod_cast NeZero.one_le))
   set aU : ℚˣ := Units.mk0 (Algebra.norm ℚ (Y : K)) (Algebra.norm_ne_zero_iff.mpr hY)
   obtain ⟨hpsym, hdvd, hpos⟩ := cyclotomicSymbol_norm_approx p m K M (fun x hx ↦ hx.2) hMK y Y hY
     aU rfl hYy hYp hYL hYinf
