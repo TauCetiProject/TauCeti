@@ -200,8 +200,9 @@ theorem cubeLiftDeform_zero_one_snd_mem_boundary {z : N → I} (hz : 1 / 2 < cub
   rw [cubeRadius_cubeScale hs (by simp [hr]), one_div_mul_cancel hr]
 
 omit [Fintype N] in
-/-- On the bottom face and over the boundary of `I^(Option N)`, either the homotopy parameter is
-`0` or `1`, or the point lies over the boundary of the cube. -/
+/-- For `x` in `{0} × I^(Option N) ∪ I × ∂I^(Option N)`, either `x.2 none ∈ {0, 1}`, or the point
+obtained from `x.2` by replacing its `none` coordinate with `x.1` (via
+`piOptionEquivProdHomeomorph`, after dropping `x.2 none`) lies in `∂I^(Option N)`. -/
 theorem cases_of_mem_cylinderExtensionDomain_boundary
     {x : I × (Option N → I)} (hx : x ∈ cylinderExtensionDomain (Cube.boundary (Option N))) :
     (x.2 none = 0 ∨ x.2 none = 1) ∨
