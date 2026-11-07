@@ -211,7 +211,7 @@ theorem exists_nat_weights_wassersteinEDist_le
   have hMtop : (M : ℝ≥0∞) ≠ ∞ := ENNReal.natCast_ne_top M
   -- the rounded multiplicities, and their comparison with the original weights
   obtain ⟨m, hm_sum, hfloor_le, hlt_floor⟩ :=
-    exists_nat_weights_of_sum_eq_one hx₀ ha_sum hMpos
+    exists_nat_weights_of_sum_eq_one hx₀ ha_sum M
   refine ⟨m, by rw [hm_sum]; exact hMpos, ?_⟩
   set b : X → ℝ≥0∞ := fun x ↦ (M : ℝ≥0∞)⁻¹ * m x with hb_def
   have hsm : ∑ x ∈ s, ((m x : ℕ) : ℝ≥0∞) = (M : ℝ≥0∞) := by rw [← Nat.cast_sum, hm_sum]
