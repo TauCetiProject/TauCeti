@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Continuation
-public import TauCeti.LinearAlgebra.Finsupp.LinearCombination
 
 /-!
 # Attaching free generators to a row-finite twisted module along cycles
@@ -191,6 +190,15 @@ theorem attach_m_eq_zero_of_le (hm : ∀ x y, ind x ≤ ind y → m.m x y = 0)
 theorem attach_m_apply_inr (z : P ⊕ Q) (q : Q) : (m.attach a ha hca).m z (Sum.inr q) = 0 := by
   rcases z with x | q' <;> simp [mapDomain_of_notMem_range]
 
+/-- On the coefficients of the new generators, the differential of the attached free module is the
+coefficient differential: the attaching rows only reach the old generators. -/
+@[simp]
+theorem attach_differential_apply_inr (v : P ⊕ Q →₀ A) (q : Q) :
+    rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) (m.attach a ha hca).m v (Sum.inr q) =
+      d (v (Sum.inr q)) := by
+  rw [rowFiniteTwistedDifferential_apply, Finsupp.add_apply, Finsupp.sum_apply]
+  simp
+
 /-! ### The short exact sequence of the attachment -/
 
 section Exact
@@ -262,18 +270,10 @@ theorem linearCombination_attachProjection_apply (v : P ⊕ Q →₀ A) (q : Q) 
   · simp
   · rintro (x | q') _ hne
     · simp
-    · simp [show q' ≠ q from fun h ↦ hne (h ▸ rfl)]
+    · have hne' : q' ≠ q := fun h ↦ hne (h ▸ rfl)
+      simp [hne']
   · intro h
     simp [notMem_support_iff.mp h]
-
-include hA in
-/-- On the coefficients of the new generators, the differential of the attached free module is the
-coefficient differential: the attaching rows only reach the old generators. -/
-theorem attach_differential_apply_inr (v : P ⊕ Q →₀ A) (q : Q) :
-    rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) (m.attach a ha hca).m v (Sum.inr q) =
-      d (v (Sum.inr q)) := by
-  have h := congrArg (· q) ((m.attachProjection ha hca hA).linearCombination_differential hA v)
-  simpa using h.symm
 
 /-- The projection onto the new generators is onto. -/
 theorem linearCombination_attachProjection_surjective :
