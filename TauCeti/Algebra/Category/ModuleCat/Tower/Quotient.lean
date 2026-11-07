@@ -143,10 +143,12 @@ def quotientsLiftEquiv {P : Type*} [AddCommGroup P] [Module R P] (n : ℕ) (f : 
 @[simp]
 theorem quotientsLiftEquiv_quotientsπ {P : Type*} [AddCommGroup P] [Module R P] (n : ℕ)
     (f : M →ₗ[R] P) (hf : LinearMap.ker f = J n) (hs : Function.Surjective f) (x : M) :
-    quotientsLiftEquiv J hJ n f hf hs (quotientsπ J hJ n x) = f x :=
-  -- `quotientsπ` is the quotient map `Submodule.mkQ`, on which both factors of the equivalence
-  -- are the identity on representatives.
-  (rfl)
+    quotientsLiftEquiv J hJ n f hf hs (quotientsπ J hJ n x) = f x := by
+  -- `quotientsπ` is `Submodule.mkQ`; this only unfolds the composite equivalence on a
+  -- representative, after which the Mathlib lemmas for each factor apply.
+  change f.quotKerEquivOfSurjective hs
+    (Submodule.quotEquivOfEq _ _ hf.symm (Submodule.Quotient.mk x)) = f x
+  rw [Submodule.quotEquivOfEq_mk, LinearMap.quotKerEquivOfSurjective_apply_mk]
 
 @[simp]
 theorem transitionOfLE_quotientsπ {n k : ℕ} (h : n ≤ k) (x : M) :
