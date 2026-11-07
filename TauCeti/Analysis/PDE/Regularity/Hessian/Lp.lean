@@ -272,7 +272,7 @@ private theorem eLpNorm_lineDerivOp_lineDerivOp_le_of_succ (v w : EuclideanSpace
     set S := ENNReal.ofReal (R ^ ((Module.finrank ℝ ℝ : ℝ) / p.toReal))
     have hD_norm (f : 𝓢(ℝ, ℝ)) : eLpNorm (⇑(D f)) p volume = S * eLpNorm (⇑f) p volume := by
       have h : ⇑(D f) = fun t => f (R⁻¹ • t) := funext fun t => by simp [D, δ, mul_comm]
-      rw [h, Measure.eLpNorm_comp_inv_smul volume f hR p]
+      rw [h, Measure.eLpNorm_comp_inv_smul volume f hR.ne' p, abs_of_pos hR]
     have hD_deriv (f : 𝓢(ℝ, ℝ)) : ∂_{(1 : ℝ)} (D f) = R⁻¹ • D (∂_{(1 : ℝ)} f) := by
       have h : δ 1 = R⁻¹ • (1 : ℝ) := by simp [δ]
       rw [lineDerivOp_compCLMOfContinuousLinearEquiv, ← map_smul, h,

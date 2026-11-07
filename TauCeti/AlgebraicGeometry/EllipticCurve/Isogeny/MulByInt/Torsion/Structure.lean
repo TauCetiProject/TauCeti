@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.IsSepClosed
 public import Mathlib.LinearAlgebra.Basis.Fin
-import TauCeti.GroupTheory.FiniteAbelian.RankTwo
+import TauCeti.GroupTheory.FiniteAbelian.PrimePowerRank
 import TauCeti.Algebra.Group.Equiv.Pi
 import TauCeti.Algebra.Module.Torsion.Basic
 import TauCeti.Algebra.Module.Torsion.Decomposition
