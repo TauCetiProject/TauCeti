@@ -206,6 +206,31 @@ theorem transpose_isogenySource_map (l : Fin 7) :
   Matrix.transpose_map_of_transpose_eq_neg (Int.castRingHom R)
     (by revert l; decide +kernel)
 
+/-- The seven coordinates of the cross-product contraction of a matrix, in the form used to
+split the Lie algebra in characteristic three. -/
+private theorem crossMap_coordinates_eq_zero {W : Matrix (Fin 7) (Fin 7) R}
+    (hc : ∀ m, g2CrossMap W m = 0) :
+    -(2 * W 0 3) + 2 * W 1 2 + -(2 * W 2 1) + 2 * W 3 0 = 0 ∧
+      -(2 * W 0 4) + 2 * W 1 3 + -(2 * W 3 1) + 2 * W 4 0 = 0 ∧
+      -(2 * W 0 5) + 2 * W 2 3 + -(2 * W 3 2) + 2 * W 5 0 = 0 ∧
+      -W 0 6 + -W 1 5 + W 2 4 + -W 4 2 + W 5 1 + W 6 0 = 0 ∧
+      -(2 * W 1 6) + 2 * W 3 4 + -(2 * W 4 3) + 2 * W 6 1 = 0 ∧
+      -(2 * W 2 6) + 2 * W 3 5 + -(2 * W 5 3) + 2 * W 6 2 = 0 ∧
+      -(2 * W 3 6) + 2 * W 4 5 + -(2 * W 5 4) + 2 * W 6 3 = 0 := by
+  have e0 := (g2CrossMap_apply W 0).symm.trans (hc 0)
+  have e1 := (g2CrossMap_apply W 1).symm.trans (hc 1)
+  have e2 := (g2CrossMap_apply W 2).symm.trans (hc 2)
+  have e3 := (g2CrossMap_apply W 3).symm.trans (hc 3)
+  have e4 := (g2CrossMap_apply W 4).symm.trans (hc 4)
+  have e5 := (g2CrossMap_apply W 5).symm.trans (hc 5)
+  have e6 := (g2CrossMap_apply W 6).symm.trans (hc 6)
+  simp only [crossOperator_def, Nat.succ_eq_add_one, Nat.reduceAdd, Int.reduceNeg, Fin.isValue,
+    Fin.sum_univ_seven, Matrix.cons_val_zero, Matrix.of_apply, Matrix.cons_val',
+    Matrix.cons_val_fin_one, Int.cast_zero, zero_mul, Matrix.cons_val_one, add_zero,
+    Matrix.cons_val, Int.cast_neg, Int.cast_ofNat, neg_mul, zero_add, Int.cast_one, one_mul]
+    at e0 e1 e2 e3 e4 e5 e6
+  exact ⟨e0, e1, e2, e3, e4, e5, e6⟩
+
 /-- **The splitting of the Lie algebra in characteristic three.** An alternating matrix killed by
 the cross-product contraction is the sum of its `isogenySource` part, read by the functionals
 `isogenyProjection`, and its short-root part, read by the coordinates `isogenyKernelCoeff`. So in
@@ -222,14 +247,7 @@ private theorem eq_sum_isogenySource_add_sum_crossBivector [CharP R 3]
     rw [Matrix.transpose_apply, Matrix.neg_apply] at h
     rw [h]
     ring
-  have e0 := (g2CrossMap_apply W 0).symm.trans (hc 0)
-  have e1 := (g2CrossMap_apply W 1).symm.trans (hc 1)
-  have e2 := (g2CrossMap_apply W 2).symm.trans (hc 2)
-  have e3 := (g2CrossMap_apply W 3).symm.trans (hc 3)
-  have e4 := (g2CrossMap_apply W 4).symm.trans (hc 4)
-  have e5 := (g2CrossMap_apply W 5).symm.trans (hc 5)
-  have e6 := (g2CrossMap_apply W 6).symm.trans (hc 6)
-  simp [Fin.sum_univ_seven, crossOperator_def] at e0 e1 e2 e3 e4 e5 e6
+  obtain ⟨e0, e1, e2, e3, e4, e5, e6⟩ := crossMap_coordinates_eq_zero hc
   have hsum : ((∑ k, isogenyProjection k W • (isogenySource k).map (Int.cast : ℤ → R)) +
       ∑ a, isogenyKernelCoeff a W • (crossBivector a).map (Int.cast : ℤ → R))ᵀ =
       -((∑ k, isogenyProjection k W • (isogenySource k).map (Int.cast : ℤ → R)) +
