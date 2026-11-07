@@ -646,8 +646,8 @@ theorem qExpansion_coeff_of_coe_eq_weightedEisensteinSeries {𝒢 : Subgroup (GL
   -- the double series over `ℤ × ℤ` converges absolutely
   set F : ℤ × ℤ → ℂ := fun p ↦
     W ![(p.1 : ZMod N), (p.2 : ZMod N)] * eisSummand k ![p.1, p.2] τ with hF
-  have hcomp (x y : ℤ) : ((↑) : ℤ → ZMod N) ∘ ![x, y] = ![(x : ZMod N), (y : ZMod N)] :=
-    (FinVec.map_eq _ _).symm
+  have hcomp (x y : ℤ) : ((↑) : ℤ → ZMod N) ∘ ![x, y] = ![(x : ZMod N), (y : ZMod N)] := by
+    ext i; fin_cases i <;> rfl
   have hFs : Summable F := ((finTwoArrowEquiv ℤ).symm.summable_iff.mpr
     (summable_norm_weightedEisensteinSummand W (by exact_mod_cast hk : (3 : ℤ) ≤ k) τ).of_norm
     ).congr fun p ↦ by simp only [Function.comp_apply, finTwoArrowEquiv_symm_apply, hcomp, hF]
