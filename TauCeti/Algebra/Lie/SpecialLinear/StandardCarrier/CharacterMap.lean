@@ -54,7 +54,7 @@ theorem isCharacterMap_graphAutomorphismPoints :
 variable (p k : ℕ) [ExpChar A p]
 
 /-- The character pullback of the `p ^ k`-power Frobenius is multiplication by `p ^ k`. -/
-theorem isCharacterMap_frobenius :
+theorem isCharacterMap_frobenius (A : Type*) [CommRing A] (p k : ℕ) [ExpChar A p] :
     IsCharacterMap (weightTorusPoints r A) (frobenius r p k A) ((p ^ k : ℕ) • 1) :=
   isCharacterMap_iff.mpr fun s => by
     rw [frobenius_weightTorusPoints, torusPointMap_nsmul, torusPointMap_one,
