@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Area.Basic
 public import TauCeti.Analysis.Complex.ThricePuncturedSphere.EndCoordinate
-import TauCeti.Geometry.Symplectic.Duality
+import TauCeti.Analysis.Normed.Group.Annulus
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 
@@ -122,19 +122,6 @@ private theorem truncation_eq_union {R r ρ : ℝ} (hr : r = Real.exp (-(2 * π 
     · exact ⟨⟨h₁, by linarith [not_lt.1 h]⟩, h₃⟩
     · exact ⟨⟨by linarith, h₂⟩, by linarith⟩
 
-/-- A point within distance `1` of `1` is not `0`. -/
-private theorem ne_zero_of_norm_sub_one_lt {z : ℂ} (hz : ‖z - 1‖ < 1) : z ≠ 0 := by
-  rintro rfl
-  norm_num at hz
-
-/-- A point of an annulus about `0` with positive inner radius is not `0`. -/
-private theorem ne_zero_of_mem_annulus {r ρ : ℝ} (hr : 0 < r) {z : ℂ}
-    (hz : z ∈ {z : ℂ | r ≤ ‖z - 0‖ ∧ ‖z - 0‖ ≤ ρ}) : z ≠ 0 := by
-  rintro rfl
-  have := hz.1
-  simp only [sub_self, norm_zero] at this
-  linarith
-
 /-- A point of an annulus about `1` with positive inner radius and outer radius `3/4` is neither
 `0` nor `1`. -/
 private theorem ne_zero_ne_one_of_mem_annulus {r : ℝ} (hr : 0 < r) {z : ℂ}
@@ -144,14 +131,6 @@ private theorem ne_zero_ne_one_of_mem_annulus {r : ℝ} (hr : 0 < r) {z : ℂ}
   have := hz.1
   simp only [sub_self, norm_zero] at this
   linarith
-
-/-- A closed annulus is compact. -/
-private theorem isCompact_annulus (c : ℂ) (a b : ℝ) :
-    IsCompact {z : ℂ | a ≤ ‖z - c‖ ∧ ‖z - c‖ ≤ b} :=
-  (isCompact_closedBall c b).of_isClosed_subset
-    ((isClosed_le continuous_const (continuous_id.sub continuous_const).norm).inter
-      (isClosed_le (continuous_id.sub continuous_const).norm continuous_const))
-    fun z hz ↦ by rw [mem_closedBall, dist_eq_norm]; exact hz.2
 
 /-- The sphere of radius `3/4` about `1` is almost nowhere. -/
 private theorem ae_notMem_sphere : ∀ᵐ z ∂(volume : Measure ℂ), z ∉ sphere (1 : ℂ) (3 / 4) :=
@@ -205,7 +184,7 @@ private theorem integral_cutoff_sdiff (ω : SymplecticForm V) {u uc : ℂ → V}
     refine ⟨?_, ?_⟩ <;> simp only [sub_zero] <;> linarith
   have hI₀ : ∫ z in A₀, ω (fderiv ℝ uc z 1) (fderiv ℝ uc z I) =
       ω.circleArea u 0 ρ - ω.circleArea u 0 r := by
-    rw [integral_annulus ω 0 hr₀ (by linarith) fun z hz ↦ huc (ne_zero_of_mem_annulus hr₀ hz)]
+    rw [integral_annulus ω 0 hr₀ (by linarith) fun z hz ↦ huc (Metric.ne_of_mem_annulus hr₀ hz)]
     congr 1 <;> refine circleArea_congr ω fun θ ↦ huc_eq ?_
     · have := norm_sub_norm_le (circleMap 0 ρ θ) 1
       rw [norm_circleMap_zero, abs_of_nonneg (by linarith), norm_one] at this
@@ -226,7 +205,7 @@ private theorem integral_cutoff_sdiff (ω : SymplecticForm V) {u uc : ℂ → V}
     conv_lhs => rw [← sdiff_union_of_subset hballA₀]
     exact setIntegral_union disjoint_sdiff_left measurableSet_ball
       (integrableOn_fderiv_apply_of_contDiffAt ω hA fun z hz ↦
-        (huc (ne_zero_of_mem_annulus hr₀ hz.1)).of_le (by norm_num))
+        (huc (Metric.ne_of_mem_annulus hr₀ hz.1)).of_le (by norm_num))
       ((integrableOn_fderiv_apply_of_contDiffAt ω (isCompact_closedBall 1 (3 / 4))
         fun z hz ↦ (huc (ne_zero_of_norm_sub_one_lt
           (by rw [mem_closedBall, dist_eq_norm] at hz; linarith))).of_le (by norm_num)).mono_set
@@ -295,7 +274,7 @@ private theorem integral_truncation_eq (ω : SymplecticForm V) {u : ℂ → V} {
       (hzB : z ∈ B ∩ ball (1 : ℂ) (3 / 4)) ↦ hzA.2 hzB.2)
       (hB.measurableSet.inter measurableSet_ball)
       (integrableOn_fderiv_apply_of_contDiffAt ω hA fun z hz ↦
-        (hu z (ne_zero_of_mem_annulus hr₀ hz.1) fun h ↦ by
+        (hu z (Metric.ne_of_mem_annulus hr₀ hz.1) fun h ↦ by
           subst h
           have := hAfar hz
           norm_num at this).of_le (by norm_num))
