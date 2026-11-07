@@ -177,6 +177,7 @@ noncomputable instance elementsLaxMonoidal : (elements S).LaxMonoidal :=
 
 /-- The unit comparison `V → (𝟙_)_*` of almost elements sends `1` to the almost element
 `V^a → 𝟙_` given by the monoidal structure of `M ↦ M^a`. -/
+@[simp]
 theorem elements_ε_hom_apply_one : (ε (elements S)).hom (1 : V) = η (toAlmost S) := by
   rw [elementsLaxMonoidal, Adjunction.rightAdjointLaxMonoidal_ε,
     adjElements_homEquiv_apply_hom_apply]
@@ -189,6 +190,7 @@ theorem elements_ε_hom_apply_one : (ε (elements S)).hom (1 : V) = η (toAlmost
 
 /-- The tensor comparison `M_* ⊗[V] N_* → (M ⊗ N)_*` of almost elements sends `x ⊗ y` to the
 almost element `V^a ≅ V^a ⊗ V^a → M ⊗ N` given by `x ⊗ y`. -/
+@[simp]
 theorem elements_μ_hom_tmul (M N : Module S) (x : (toAlmost S).obj (ModuleCat.of V V) ⟶ M)
     (y : (toAlmost S).obj (ModuleCat.of V V) ⟶ N) :
     (μ (elements S) M N).hom (x ⊗ₜ[V] y) =
