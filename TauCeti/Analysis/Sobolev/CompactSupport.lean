@@ -56,6 +56,58 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
   {μ : Measure E} {Ω V : Opens E} {u u' : E → F} {v : E} {K : Set E}
 
+omit [FiniteDimensional ℝ E] in
+/-- Replacing a test function `φ` on `V` by its localization `ψ = χ φ` leaves the pairing of
+`φ`'s directional derivative with the extension by zero unchanged, where `χ` is `1` near
+`tsupport φ ∩ K` and `ψ` is a test function on `Ω`. -/
+private theorem indicator_lineDeriv_smul_ae_eq (hKV : (V : Set E) ∩ K ⊆ Ω)
+    (hu : ∀ᵐ x ∂μ.restrict Ω, x ∉ K → u x = 0) {φ : 𝓓(V, ℝ)} {ψ : 𝓓(Ω, ℝ)} {χ : E → ℝ}
+    (hψ : (ψ : E → ℝ) = χ * (φ : E → ℝ))
+    (hone : ∀ x ∈ tsupport (φ : E → ℝ) ∩ K, χ =ᶠ[nhds x] fun _ => (1 : ℝ)) :
+    (fun x => lineDeriv ℝ (φ : E → ℝ) x v • (Ω : Set E).indicator u x) =ᵐ[μ]
+      fun x => lineDeriv ℝ (ψ : E → ℝ) x v • u x := by
+  filter_upwards [(ae_restrict_iff' Ω.isOpen.measurableSet).1 hu] with x hx
+  by_cases hxφ : x ∈ tsupport (φ : E → ℝ)
+  · by_cases hxK : x ∈ K
+    · have hxΩ := hKV ⟨φ.tsupport_subset hxφ, hxK⟩
+      have heq : (ψ : E → ℝ) =ᶠ[nhds x] (φ : E → ℝ) := by
+        filter_upwards [hone x ⟨hxφ, hxK⟩] with y hy
+        simp [hψ, hy]
+      rw [indicator_of_mem hxΩ, heq.lineDeriv_eq]
+    · by_cases hxΩ : x ∈ (Ω : Set E)
+      · simp [indicator_of_mem hxΩ, hx hxΩ hxK]
+      · rw [indicator_of_notMem hxΩ]
+        have hxψ : x ∉ tsupport (ψ : E → ℝ) := fun hxψ =>
+          hxΩ (ψ.tsupport_subset hxψ)
+        simp [lineDeriv_of_notMem_tsupport hxψ v]
+  · have hxψ : x ∉ tsupport (ψ : E → ℝ) := fun hxψ =>
+      hxφ (tsupport_mul_subset_right (by rw [hψ, Pi.mul_def] at hxψ; exact hxψ))
+    simp [lineDeriv_of_notMem_tsupport hxφ v,
+      lineDeriv_of_notMem_tsupport hxψ v]
+
+omit [FiniteDimensional ℝ E] in
+/-- Replacing a test function `φ` on `V` by its localization `ψ = χ φ` leaves the pairing of
+`φ` with the extension by zero unchanged, where `χ` is `1` near `tsupport φ ∩ K` and supported
+in `Ω`, and `ψ` is a test function on `Ω`. -/
+private theorem indicator_smul_ae_eq (hKV : (V : Set E) ∩ K ⊆ Ω)
+    (hu' : ∀ᵐ x ∂μ.restrict Ω, x ∉ K → u' x = 0) {φ : 𝓓(V, ℝ)} {ψ : 𝓓(Ω, ℝ)} {χ : E → ℝ}
+    (hψ : (ψ : E → ℝ) = χ * (φ : E → ℝ))
+    (hone : ∀ x ∈ tsupport (φ : E → ℝ) ∩ K, χ =ᶠ[nhds x] fun _ => (1 : ℝ))
+    (hχΩ : tsupport χ ⊆ Ω) :
+    (fun x => (φ : E → ℝ) x • (Ω : Set E).indicator u' x) =ᵐ[μ]
+      fun x => (ψ : E → ℝ) x • u' x := by
+  filter_upwards [(ae_restrict_iff' Ω.isOpen.measurableSet).1 hu'] with x hx
+  by_cases hxφ : x ∈ tsupport (φ : E → ℝ)
+  · by_cases hxK : x ∈ K
+    · simp [hψ, (hone x ⟨hxφ, hxK⟩).eq_of_nhds,
+        indicator_of_mem (hKV ⟨φ.tsupport_subset hxφ, hxK⟩)]
+    · by_cases hxΩ : x ∈ (Ω : Set E)
+      · simp [hψ, indicator_of_mem hxΩ, hx hxΩ hxK]
+      · have hχzero : χ x = 0 := image_eq_zero_of_notMem_tsupport
+          (fun hxχ => hxΩ (hχΩ hxχ))
+        simp [hψ, indicator_of_notMem hxΩ, hχzero]
+  · simp [hψ, image_eq_zero_of_notMem_tsupport hxφ]
+
 /-- Weak directional derivatives extend by zero to `V` if the value and derivative vanish
 almost everywhere off a closed `K` whose intersection with `V` lies in `Ω`. No boundary
 condition on the part of `∂Ω` outside `V` is required. -/
@@ -84,39 +136,8 @@ theorem HasWeakLineDerivOn.indicator_of_isClosed (h : HasWeakLineDerivOn μ Ω u
     have hy' : y ∈ χ ⁻¹' ({1} : Set ℝ) := interior_subset hy
     exact hy'
   -- The cutoff leaves both test pairings unchanged where the jet can be nonzero.
-  have hleft : (fun x => lineDeriv ℝ (φ : E → ℝ) x v • (Ω : Set E).indicator u x) =ᵐ[μ]
-      fun x => lineDeriv ℝ (ψ : E → ℝ) x v • u x := by
-    filter_upwards [(ae_restrict_iff' Ω.isOpen.measurableSet).1 hu] with x hx
-    by_cases hxφ : x ∈ tsupport (φ : E → ℝ)
-    · by_cases hxK : x ∈ K
-      · have hxΩ := hKV ⟨φ.tsupport_subset hxφ, hxK⟩
-        have heq : (ψ : E → ℝ) =ᶠ[nhds x] (φ : E → ℝ) := by
-          filter_upwards [hone x ⟨hxφ, hxK⟩] with y hy
-          simp [hψ, hy]
-        rw [indicator_of_mem hxΩ, heq.lineDeriv_eq]
-      · by_cases hxΩ : x ∈ (Ω : Set E)
-        · simp [indicator_of_mem hxΩ, hx hxΩ hxK]
-        · rw [indicator_of_notMem hxΩ]
-          have hxψ : x ∉ tsupport (ψ : E → ℝ) := fun hxψ =>
-            hxΩ (ψ.tsupport_subset hxψ)
-          simp [lineDeriv_of_notMem_tsupport hxψ v]
-    · have hxψ : x ∉ tsupport (ψ : E → ℝ) := fun hxψ =>
-        hxφ (tsupport_mul_subset_right (by rw [hψ, Pi.mul_def] at hxψ; exact hxψ))
-      simp [lineDeriv_of_notMem_tsupport hxφ v,
-        lineDeriv_of_notMem_tsupport hxψ v]
-  have hright : (fun x => (φ : E → ℝ) x • (Ω : Set E).indicator u' x) =ᵐ[μ]
-      fun x => (ψ : E → ℝ) x • u' x := by
-    filter_upwards [(ae_restrict_iff' Ω.isOpen.measurableSet).1 hu'] with x hx
-    by_cases hxφ : x ∈ tsupport (φ : E → ℝ)
-    · by_cases hxK : x ∈ K
-      · simp [hψ, (hone x ⟨hxφ, hxK⟩).eq_of_nhds,
-          indicator_of_mem (hKV ⟨φ.tsupport_subset hxφ, hxK⟩)]
-      · by_cases hxΩ : x ∈ (Ω : Set E)
-        · simp [hψ, indicator_of_mem hxΩ, hx hxΩ hxK]
-        · have hχzero : χ x = 0 := image_eq_zero_of_notMem_tsupport
-            (fun hxχ => hxΩ (hχΩ hxχ))
-          simp [hψ, indicator_of_notMem hxΩ, hχzero]
-    · simp [hψ, image_eq_zero_of_notMem_tsupport hxφ]
+  have hleft := indicator_lineDeriv_smul_ae_eq (v := v) hKV hu hψ hone
+  have hright := indicator_smul_ae_eq hKV hu' hψ hone hχΩ
   rw [integral_congr_ae hleft, integral_congr_ae hright]
   exact h.integral_lineDeriv_smul_eq_neg_integral_smul ψ
 
