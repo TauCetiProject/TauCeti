@@ -450,57 +450,6 @@ private theorem ofReal_two_rpow_mul_two_pow_mul_ofReal_two_rpow (n : ℕ) (p : �
 
 variable [NormedSpace ℝ F] [CompleteSpace F]
 
-/-- The rescaling step of the truncated Fefferman–Stein estimate. If `m (2 s)` is bounded by the
-good-`λ` inequality `K γ m s + σ (γ s)`, with `2^p K γ = 1 / 2` and `σ` antitone, then substituting
-`t = 2 s` bounds `∫₀ᴺ m(t) t^(p-1) dt` by half of itself plus `2^p γ^(-p) J`, where `J` is the
-layer cake integral of `σ`. -/
-private theorem setLIntegral_Ioo_mul_rpow_le_inv_two_mul_add
-    {m σ : ℝ → ℝ≥0∞} {p γ N : ℝ} (hγ : 0 < γ)
-    (hN : 0 ≤ N) {K J : ℝ≥0∞} (hK : K ≠ ∞) (hσ : Antitone σ)
-    (hlevel : ∀ s : ℝ, 0 < s → m (2 * s) ≤ K * ENNReal.ofReal γ * m s + σ (γ * s))
-    (hJ : ∫⁻ s in Ioi (0 : ℝ), σ (γ * s) * ENNReal.ofReal (s ^ (p - 1)) =
-      ENNReal.ofReal (γ ^ (-p)) * J)
-    (hconst : ENNReal.ofReal (2 ^ p) * (K * ENNReal.ofReal γ) = 2⁻¹) :
-    ∫⁻ t in Ioo 0 N, m t * ENNReal.ofReal (t ^ (p - 1)) ≤
-      2⁻¹ * (∫⁻ t in Ioo 0 N, m t * ENNReal.ofReal (t ^ (p - 1))) +
-        ENNReal.ofReal (2 ^ p) * (ENNReal.ofReal (γ ^ (-p)) * J) := by
-  set w : ℝ → ℝ≥0∞ := fun t => ENNReal.ofReal (t ^ (p - 1))
-  set I : ℝ → ℝ≥0∞ := fun N => ∫⁻ t in Ioo 0 N, m t * w t
-  have hw : Measurable w := ENNReal.measurable_ofReal.comp (measurable_id.pow_const _)
-  have hscale := setLIntegral_comp_mul_left_mul_rpow m two_pos measurableSet_Ioo
-    (S := Ioo 0 N) (T := Ioo 0 (N / 2)) (fun s => by
-      simp only [mem_Ioo]
-      constructor <;> rintro ⟨h1, h2⟩ <;> constructor <;> linarith)
-    (fun s hs => le_of_lt hs.1) (p - 1)
-  rw [sub_add_cancel] at hscale
-  have h2p : ENNReal.ofReal (2 ^ p) * ENNReal.ofReal (2 ^ (-p)) = 1 := by
-    rw [← ENNReal.ofReal_mul (by positivity), ← Real.rpow_add two_pos]
-    simp
-  have hσw : Measurable fun s => σ (γ * s) * w s :=
-    ((hσ.comp_monotone fun _ _ h => mul_le_mul_of_nonneg_left h hγ.le).measurable).mul hw
-  -- fold the `set` abbreviations `I`, `w` in the goal; `set` cannot abstract under the binder
-  change I N ≤ 2⁻¹ * I N + ENNReal.ofReal (2 ^ p) * (ENNReal.ofReal (γ ^ (-p)) * J)
-  calc I N = ENNReal.ofReal (2 ^ p) * ∫⁻ s in Ioo 0 (N / 2), m (2 * s) * w s := by
-        rw [hscale, ← mul_assoc, h2p, one_mul]
-    _ ≤ ENNReal.ofReal (2 ^ p) * ∫⁻ s in Ioo 0 (N / 2),
-          (K * ENNReal.ofReal γ * (m s * w s) + σ (γ * s) * w s) := by
-        refine mul_le_mul' le_rfl (setLIntegral_mono' measurableSet_Ioo fun s hs => ?_)
-        rw [← mul_assoc, ← add_mul]
-        gcongr
-        exact hlevel s hs.1
-    _ = ENNReal.ofReal (2 ^ p) * (K * ENNReal.ofReal γ * I (N / 2) +
-          ∫⁻ s in Ioo 0 (N / 2), σ (γ * s) * w s) := by
-        rw [lintegral_add_right' _ hσw.aemeasurable,
-          lintegral_const_mul' _ _ (ENNReal.mul_ne_top hK ENNReal.ofReal_ne_top)]
-    _ ≤ ENNReal.ofReal (2 ^ p) * (K * ENNReal.ofReal γ * I N +
-          ∫⁻ s in Ioi (0 : ℝ), σ (γ * s) * w s) := by
-        gcongr
-        · exact lintegral_mono_set (Ioo_subset_Ioo_right (by linarith))
-        · exact Ioo_subset_Ioi_self
-    _ = 2⁻¹ * I N + ENNReal.ofReal (2 ^ p) * (ENNReal.ofReal (γ ^ (-p)) * J) := by
-        rw [hJ, mul_add, ← mul_assoc, ← mul_assoc, ← hconst]
-        ring
-
 /-- **The truncated Fefferman–Stein estimate.** For integrable `f`, `p > 1`, `N ≥ 0` and
 `γ = 2^(-(p + 2n + 2))`,
 
