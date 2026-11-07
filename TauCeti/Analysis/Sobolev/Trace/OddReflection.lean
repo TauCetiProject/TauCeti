@@ -95,37 +95,6 @@ private theorem inner_sub_normalLinearReflection_eq (w w' v : WithLp 2 (ℝ × E
   obtain ⟨⟨t, z⟩⟩ := v
   simp [WithLp.prod_inner_apply, inner_sub_left, ← WithLp.toLp_sub]
 
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- The reflection `R` reverses the normal direction `ν = (1, 0)`. -/
-private theorem normalLinearReflection_toLp_one_zero :
-    normalLinearReflection E (WithLp.toLp 2 ((1 : ℝ), (0 : E))) =
-      -WithLp.toLp 2 ((1 : ℝ), (0 : E)) := by
-  simp [normalLinearReflection_apply, ← WithLp.toLp_neg]
-
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- The reflection `R` fixes every tangential direction `τ y = (0, y)`. -/
-private theorem normalLinearReflection_toLp_zero (y : E) :
-    normalLinearReflection E (WithLp.toLp 2 ((0 : ℝ), y)) = WithLp.toLp 2 ((0 : ℝ), y) := by
-  simp [normalLinearReflection_apply]
-
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- Pairing `w - R w'` with the normal direction `ν = (1, 0)` adds the normal components of `w`
-and `w'`. -/
-private theorem inner_sub_normalLinearReflection_normal (w w' : WithLp 2 (ℝ × E)) :
-    ⟪w - normalLinearReflection E w', WithLp.toLp 2 ((1 : ℝ), (0 : E))⟫_ℝ =
-      ⟪w, WithLp.toLp 2 ((1 : ℝ), (0 : E))⟫_ℝ + ⟪w', WithLp.toLp 2 ((1 : ℝ), (0 : E))⟫_ℝ := by
-  rw [inner_sub_left, inner_normalLinearReflection_left_eq_right,
-    normalLinearReflection_toLp_one_zero, inner_neg_right, sub_neg_eq_add]
-
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- Pairing `w - R w'` with a tangential direction `τ y = (0, y)` subtracts the tangential
-components of `w'` from those of `w`. -/
-private theorem inner_sub_normalLinearReflection_tangent (w w' : WithLp 2 (ℝ × E)) (y : E) :
-    ⟪w - normalLinearReflection E w', WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ =
-      ⟪w, WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ - ⟪w', WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ := by
-  rw [inner_sub_left, inner_normalLinearReflection_left_eq_right,
-    normalLinearReflection_toLp_zero]
-
 /-- The odd reflection `f - f ∘ ρ` of a function `f` with weak gradient `G` has weak gradient
 `G - R (G ∘ ρ)`. -/
 private theorem hasWeakFDerivOn_sub_comp_normalReflection_innerSL {a : ℝ}
@@ -345,38 +314,6 @@ private theorem hasWeakLineDerivOn_inner_iteratedGradient_one {a : ℝ}
   rw [ae_restrict_top]
   filter_upwards [hg] with x hx
   rw [hx]
-
-omit [BorelSpace E] in
-/-- Two continuous linear endomorphisms agree as soon as their pairings agree with the normal
-direction on every vector and with the tangential directions on the normal and tangential
-directions. -/
-private theorem ae_clm_eq_of_forall_inner_normal_tangent
-    {Φ Ψ : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)}
-    {μ : Measure (WithLp 2 (ℝ × E))}
-    (h1 : ∀ v, ∀ᵐ x ∂μ, ⟪Φ x v, WithLp.toLp 2 ((1 : ℝ), (0 : E))⟫_ℝ =
-      ⟪Ψ x v, WithLp.toLp 2 ((1 : ℝ), (0 : E))⟫_ℝ)
-    (h2 : ∀ y : E, ∀ᵐ x ∂μ, ⟪Φ x (WithLp.toLp 2 ((1 : ℝ), (0 : E))), WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ =
-      ⟪Ψ x (WithLp.toLp 2 ((1 : ℝ), (0 : E))), WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ)
-    (h3 : ∀ y z : E, ∀ᵐ x ∂μ, ⟪Φ x (WithLp.toLp 2 ((0 : ℝ), z)), WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ =
-      ⟪Ψ x (WithLp.toLp 2 ((0 : ℝ), z)), WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ) :
-    ∀ᵐ x ∂μ, Φ x = Ψ x := by
-  set b := (OrthonormalBasis.singleton Unit ℝ).prod (stdOrthonormalBasis ℝ E)
-  have hb_inl : b (Sum.inl ()) = WithLp.toLp 2 ((1 : ℝ), (0 : E)) := by simp [b]
-  have hb_inr (j : Fin (Module.finrank ℝ E)) :
-      b (Sum.inr j) = WithLp.toLp 2 ((0 : ℝ), stdOrthonormalBasis ℝ E j) := by simp [b]
-  have hentry (i j : Unit ⊕ Fin (Module.finrank ℝ E)) :
-      ∀ᵐ x ∂μ, ⟪Φ x (b i), b j⟫_ℝ = ⟪Ψ x (b i), b j⟫_ℝ := by
-    rcases j with ⟨⟩ | j
-    · rw [hb_inl]
-      exact h1 _
-    · rcases i with ⟨⟩ | i
-      · rw [hb_inl, hb_inr]
-        exact h2 _
-      · rw [hb_inr, hb_inr]
-        exact h3 _ _
-  filter_upwards [ae_all_iff.2 fun i => ae_all_iff.2 fun j => hentry i j] with x hx
-  exact ContinuousLinearMap.coe_injective (b.toBasis.ext fun i =>
-    InnerProductSpace.ext_inner_right_basis b.toBasis fun j => by simpa using hx i j)
 
 /-- The normal-direction entries of the weak Hessian of the odd reflection. -/
 private theorem ae_inner_iteratedGradient_normal_eq {a : ℝ}
