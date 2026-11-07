@@ -29,11 +29,12 @@ into the target of `L`. This is what identifies the transition maps of charts pu
 `p` with deck transformations.
 
 The fibers of a local homeomorphism are discrete, so their compact subsets are finite
-(`IsLocallyInjective.finite_preimage_singleton_inter` in `TauCeti.Topology.SeparatedMap`). If the
-support of `f : E → M` meets the preimage of each compact set in a compact set, then summing `f`
-over the fibers of `p` gives a function on `B` which near each point is a finite sum of `f`
-composed with local sections of `p`. This is how the regularity of such fiber sums is controlled,
-as for the source map of an étale groupoid.
+(`IsLocallyInjective.finite_preimage_singleton_inter` in `TauCeti.Topology.SeparatedMap`). Let
+`E` and `B` be Hausdorff with `B` weakly locally compact. If the support of `f : E → M` meets the
+preimage of each compact set in a compact set, then summing `f` over the fibers of `p` gives a
+function on `B` which near each point is a finite sum of `f` composed with local sections of `p`.
+This is how the regularity of such fiber sums is controlled, as for the source map of an étale
+groupoid.
 
 ## Main results
 

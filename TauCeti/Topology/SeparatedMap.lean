@@ -8,7 +8,7 @@ module
 public import Mathlib.Topology.Covering.Basic
 
 /-!
-# Hausdorff spaces over Hausdorff spaces
+# Separated and locally injective maps
 
 A continuous separated map `f : X → Y` separates the points of each fibre by disjoint open sets,
 and continuity pulls back the separation of points with distinct images when `Y` is Hausdorff.
@@ -17,8 +17,9 @@ separated (`IsCoveringMap.isSeparatedMap`), so the total space of a covering of 
 is Hausdorff.
 
 The fibers of a locally injective map are discrete, so a compact subset of one fiber is finite
-(`IsLocallyInjective.finite_preimage_singleton_inter`). Sections of a locally injective map to a
-Hausdorff space that agree at one point of a preconnected set agree on all of it
+(`IsLocallyInjective.finite_preimage_singleton_inter`); this needs no topology on the codomain.
+If the total space of a locally injective map is Hausdorff, two sections of it over a preconnected
+set that are continuous on that set and agree at one of its points agree on all of it
 (`IsLocallyInjective.eqOn_of_leftInvOn`).
 -/
 
