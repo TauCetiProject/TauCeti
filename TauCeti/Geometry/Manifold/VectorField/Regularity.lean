@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import Mathlib.Geometry.Manifold.VectorField.Pullback
 public import TauCeti.Geometry.Manifold.ContMDiff.Defs
 public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
@@ -53,6 +54,9 @@ manifold differential of a function to tangent vectors whose base point varies.
   pullback of a `C^m` vector field is `C^m` on the chart target, when `m + 1 ≤ n`.
 * `MDifferentiableWithinAt.differentiableWithinAt_mpullbackWithin_extChartAt_symm`:
   differentiability of these coordinate expressions without a completeness assumption.
+* `TauCeti.eventually_hasDerivAt_extChartAt_family`: read in the chart at `y`, the points near `y`
+  of a family of maps which is the identity at time `t` move with the coordinate velocity of the
+  field.
 * `TauCeti.fderivWithin_chart_apply_mpullbackWithin`: the chain rule identifies coordinate
   directional derivatives with manifold directional derivatives.
 * `TauCeti.eventuallyEq_fderivWithin_chart_apply_mpullbackWithin`: this identification holds near
@@ -496,5 +500,44 @@ theorem mdifferentiableAt_mvfderiv_apply
   rfl
 
 end DirectionalDerivative
+
+section ChartVelocity
+
+open Filter
+open scoped Topology
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+
+/-- Read in the chart at `y`, the points near `y` move at time `t` with the coordinate velocity
+of `V`, the pullback of `V` to the chart. -/
+theorem eventually_hasDerivAt_extChartAt_family [I.Boundaryless] {ψ : 𝕜 → M → M}
+    {V : (x : M) → TangentSpace I x} {t : 𝕜} {y : M} (hid : ∀ᶠ x in 𝓝 y, ψ t x = x)
+    (hvel : ∀ᶠ x in 𝓝 y,
+      HasMFDerivAt 𝓘(𝕜, 𝕜) I (fun u ↦ ψ u x) t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight (V (ψ t x)))) :
+    ∀ᶠ z in 𝓝 (extChartAt I y y), HasDerivAt
+      (fun u ↦ extChartAt I y (ψ u ((extChartAt I y).symm z)))
+      (VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I y).symm V (range I) z) t := by
+  have h : ∀ᶠ z in 𝓝 (extChartAt I y y),
+      HasMFDerivAt 𝓘(𝕜, 𝕜) I (fun u ↦ ψ u ((extChartAt I y).symm z)) t
+          ((1 : 𝕜 →L[𝕜] 𝕜).smulRight (V (ψ t ((extChartAt I y).symm z)))) ∧
+        ψ t ((extChartAt I y).symm z) = (extChartAt I y).symm z :=
+    (continuousAt_extChartAt_symm y).tendsto.eventually
+      (p := fun x ↦ HasMFDerivAt 𝓘(𝕜, 𝕜) I (fun u ↦ ψ u x) t
+        ((1 : 𝕜 →L[𝕜] 𝕜).smulRight (V (ψ t x))) ∧ ψ t x = x)
+      (by rw [extChartAt_to_inv]; exact hvel.and hid)
+  filter_upwards [extChartAt_target_mem_nhds y, h] with z hz ⟨hzv, hzid⟩
+  have hsrc : ψ t ((extChartAt I y).symm z) ∈ (extChartAt I y).source :=
+    hzid.symm ▸ (extChartAt I y).map_target hz
+  refine (hzv.hasDerivAt_extChartAt_comp hsrc).congr_deriv ?_
+  conv_rhs => rw [← (extChartAt I y).right_inv hz, ← hzid]
+  rw [VectorField.mpullbackWithin_extChartAt_symm_apply V hsrc]
+  -- `tangentCoordChange` is by definition this fibre coordinate of the trivialization
+  -- (`TangentBundle.trivializationAt_apply`, `tangentCoordChange_def`).
+  rfl
+
+end ChartVelocity
 
 end TauCeti

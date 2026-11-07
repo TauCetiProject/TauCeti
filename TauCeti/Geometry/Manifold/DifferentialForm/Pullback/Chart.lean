@@ -21,6 +21,9 @@ Pulling a flat form back along a preferred chart and reading it in the same char
 flat form on the chart target, which is how flat constructions in a chart are moved to the
 manifold; conversely, evaluating a form `φ` on the chart source agrees with evaluating
 `φ.inChartAt α` on `mvfderiv I (extChartAt I α)` (`TauCeti.RoughForm.apply_eq_inChartAt_mvfderiv`).
+Near time `t`, the pullback along a family of maps which is the identity near `y` at time `t` is the
+flat pullback along the family read in the chart at `y`
+(`TauCeti.RoughForm.eventuallyEq_mpullback_compContinuousLinearMap`).
 -/
 
 public section
@@ -115,6 +118,36 @@ theorem mpullback_eq_compContinuousLinearMap (ω : RoughForm I' M' F k) {f : M �
   ext v
   rw [mpullbackWithin_apply, ContinuousAlternatingMap.compContinuousLinearMap_apply]
   -- The two sides differ only by unfolding `Function.comp`.
+  rfl
+
+/-- Near time `t`, the pullback of a form at `y` along a family of maps `ψᵤ` which is the identity
+near `y` at time `t` and is jointly `C²` at `(t, y)` is the flat pullback of its chart expression
+along the family read in the chart at `y`. -/
+theorem eventuallyEq_mpullback_compContinuousLinearMap [I.Boundaryless] [IsManifold I 2 M]
+    (α : RoughForm I M F k) {ψ : ℝ → M → M} {t : ℝ} {y : M} (hid : ∀ᶠ x in 𝓝 y, ψ t x = x)
+    (hsmooth : ContMDiffAt (𝓘(ℝ, ℝ).prod I) I 2 (fun p : ℝ × M ↦ ψ p.1 p.2) (t, y)) :
+    (fun u ↦ mpullback I I (ψ u) α y) =ᶠ[𝓝 t] fun u ↦
+      (α.inChartAt y (extChartAt I y (ψ u ((extChartAt I y).symm (extChartAt I y y))))
+        ).compContinuousLinearMap
+        (fderiv ℝ (fun z ↦ extChartAt I y (ψ u ((extChartAt I y).symm z))) (extChartAt I y y)) := by
+  -- Near time `t`, the maps `ψᵤ` are differentiable at `y` and keep `y` in the chart at `y`.
+  have hψ : ∀ᶠ u in 𝓝 t, MDifferentiableAt I I (ψ u) y := by
+    have h := ((continuous_id.prodMk continuous_const).tendsto t).eventually
+      ((contMDiffAt_iff_contMDiffAt_nhds (by simp)).1 hsmooth)
+    filter_upwards [h] with u hu
+    exact (hu.comp_of_eq (contMDiffAt_const.prodMk contMDiffAt_id) rfl).mdifferentiableAt
+      (by norm_num)
+  have hcont : ContinuousAt (fun u ↦ ψ u y) t :=
+    hsmooth.continuousAt.comp (f := fun u : ℝ ↦ (u, y))
+      (continuous_id.prodMk continuous_const).continuousAt
+  have hsrc : ∀ᶠ u in 𝓝 t, ψ u y ∈ (extChartAt I y).source :=
+    hcont.preimage_mem_nhds (by
+      rw [hid.self_of_nhds]
+      exact (isOpen_extChartAt_source y).mem_nhds (mem_extChartAt_source y))
+  filter_upwards [hsrc, hψ] with u hu hψu
+  rw [extChartAt_to_inv, RoughForm.mpullback_eq_compContinuousLinearMap α y hψu hu,
+    I.range_eq_univ, fderivWithin_univ]
+  -- The two coordinate expressions of `ψᵤ` differ only by unfolding `Function.comp`.
   rfl
 
 end TauCeti.RoughForm
