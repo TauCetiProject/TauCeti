@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Nil.Curvature
 -- The private coordinate calculation uses Nil's model-space implementation.
 import all TauCeti.Geometry.Manifold.Riemannian.Nil.Basic
+import TauCeti.Analysis.Calculus.FDeriv.ConstantDirection
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Topology.Connected.TotallyDisconnected
@@ -99,36 +100,6 @@ theorem exists_mfderiv_central_eq (Φ : Isom J Nil) :
   exact Prod.ext (central_derivative Φ (toProd p)).1
     (Prod.ext (central_derivative Φ (toProd p)).2.1 (hconst (toProd p)))
 
-private theorem coordinates_central_eq (Φ : Isom J Nil) {ε : ℝ}
-    (hd : ∀ p : Nil, tangentSpaceCastModel J (Φ p)
-      (mfderiv J J Φ p ((tangentSpaceCastModel J p).symm (0, 0, 1))) = (0, 0, ε))
-    (p : Nil) (t : ℝ) :
-    toProd (Φ (mk p.x p.y (p.z + t))) = ((Φ p).x, (Φ p).y, (Φ p).z + ε * t) := by
-  let f : P → P := toProd ∘ Φ ∘ toProd.symm
-  have hf := (contDiff_coordinates Φ).differentiable (by simp)
-  have hcurve (s : ℝ) : HasDerivAt (fun t : ℝ => (p.x, p.y, p.z + t)) (0, 0, 1) s :=
-    (hasDerivAt_const s p.x).prodMk
-      ((hasDerivAt_const s p.y).prodMk ((hasDerivAt_id s).const_add p.z))
-  have hleft (s : ℝ) : HasDerivAt (fun t => f (p.x, p.y, p.z + t)) (0, 0, ε) s := by
-    have h := hd (mk p.x p.y (p.z + s))
-    rw [← fderiv_coordinates_apply] at h
-    simp only [ContinuousLinearEquiv.apply_symm_apply, toProd_mk] at h
-    exact h ▸ (hf _).hasFDerivAt.comp_hasDerivAt s (hcurve s)
-  have hright (s : ℝ) :
-      HasDerivAt (fun t : ℝ => ((Φ p).x, (Φ p).y, (Φ p).z + ε * t)) (0, 0, ε) s := by
-    have hz : HasDerivAt (fun t : ℝ => (Φ p).z + ε * t) ε s := by
-      simpa using (((hasDerivAt_id s).const_mul ε).const_add (Φ p).z)
-    exact HasDerivAt.prodMk (hasDerivAt_const s (Φ p).x)
-      (HasDerivAt.prodMk (hasDerivAt_const s (Φ p).y) hz)
-  have heq := eq_of_fderiv_eq (fun s => (hleft s).differentiableAt)
-    (fun s => (hright s).differentiableAt)
-    (fun s => (hleft s).hasFDerivAt.fderiv.trans (hright s).hasFDerivAt.fderiv.symm)
-    0 (by
-      simp only [f, Function.comp_apply, mul_zero, add_zero]
-      rw [← toProd_mk, Equiv.symm_apply_apply, mk_x_y_z]
-      exact Prod.ext (fst_toProd _) (Prod.ext (fst_snd_toProd _) (snd_snd_toProd _)))
-  simpa only [f, Function.comp_apply, ← toProd_mk, Equiv.symm_apply_apply] using congrFun heq t
-
 /-- Every Nil isometry acts affinely along all central fibres, with one common
 sign `ε = ±1`. Its horizontal coordinates are constant along each fibre. -/
 theorem exists_central_eq (Φ : Isom J Nil) :
@@ -136,8 +107,18 @@ theorem exists_central_eq (Φ : Isom J Nil) :
       Φ (mk p.x p.y (p.z + t)) = mk (Φ p).x (Φ p).y ((Φ p).z + ε * t) := by
   obtain ⟨ε, hε, hd⟩ := exists_mfderiv_central_eq Φ
   refine ⟨ε, hε, fun p t => toProd.injective ?_⟩
-  rw [toProd_mk]
-  exact coordinates_central_eq Φ hd p t
+  have hder (q : P) : fderiv ℝ (toProd ∘ Φ ∘ toProd.symm) q (0, 0, 1) = (0, 0, ε) := by
+    have h := hd (toProd.symm q)
+    rw [← fderiv_coordinates_apply] at h
+    simpa only [ContinuousLinearEquiv.apply_symm_apply, Equiv.apply_symm_apply] using h
+  have h := apply_add_smul_eq_of_fderiv_apply_eq
+    ((contDiff_coordinates Φ).differentiable (by simp)) hder (toProd p) t
+  have hq : toProd.symm (toProd p + t • ((0, 0, 1) : P)) = mk p.x p.y (p.z + t) := by
+    rw [Equiv.symm_apply_eq, toProd_mk]
+    ext <;> simp [fst_toProd, fst_snd_toProd, snd_snd_toProd]
+  simp only [Function.comp_apply, hq, Equiv.symm_apply_apply] at h
+  rw [h]
+  ext <;> simp [fst_toProd, fst_snd_toProd, snd_snd_toProd, mul_comm]
 
 /-- An isometry of Nil carries an entire central fibre onto the central fibre
 through the image of any one of its points. -/
