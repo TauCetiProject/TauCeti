@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.MvPolynomial.Fin.Two
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Genus.Basic
 public import TauCeti.FieldTheory.IntermediateField.Adjoin.Transcendental
+import TauCeti.Algebra.BigOperators.Intervals
 
 /-!
 # The genus of a plane model
@@ -75,32 +76,6 @@ private theorem sum_range_sub_le_finrank_riemannRochSpace (hF : IsFunctionField 
   simp only [Fintype.card_fin] at hcard
   rwa [Fin.sum_univ_eq_sum_range (fun j ↦ r + 1 - j)] at hcard
 
-/-- Twice the number of pairs `(j, i)` with `j < e` and `i + j ≤ r`. -/
-private theorem sum_range_sub_mul_two (r e : ℕ) (he : e ≤ r + 1) :
-    (∑ j ∈ Finset.range e, ((r + 1 - j : ℕ) : ℤ)) * 2 = e * (2 * r + 3 - e) := by
-  induction e with
-  | zero => simp
-  | succ e ih =>
-    rw [Finset.sum_range_succ, add_mul, ih (by omega), Nat.cast_sub (by omega)]
-    push_cast
-    ring
-
-/-- Dividing a plane relation `φ(x, y) = 0` by `y ^ totalDegree φ` gives a vanishing sum in the
-variables `x / y` and `y⁻¹`. -/
-private theorem sum_coeff_mul_div_pow_mul_inv_pow_eq_zero {φ : MvPolynomial (Fin 2) k} {x y : F}
-    (hφxy : MvPolynomial.aeval ![x, y] φ = 0) (hy0 : y ≠ 0) :
-    ∑ s ∈ φ.support, algebraMap k F (φ.coeff s) * (x / y) ^ s 0 *
-      y⁻¹ ^ (φ.totalDegree - (s 0 + s 1)) = 0 := by
-  have : ∑ s ∈ φ.support, algebraMap k F (φ.coeff s) * (x / y) ^ s 0 *
-      y⁻¹ ^ (φ.totalDegree - (s 0 + s 1)) = y⁻¹ ^ φ.totalDegree * MvPolynomial.aeval ![x, y] φ := by
-    rw [MvPolynomial.aeval_fin_two_eq_sum, Finset.mul_sum]
-    refine Finset.sum_congr rfl fun s hs ↦ ?_
-    obtain ⟨d, hd⟩ := Nat.exists_eq_add_of_le (MvPolynomial.add_le_totalDegree_of_mem_support hs)
-    have hyy : y⁻¹ ^ s 1 * y ^ s 1 = 1 := by rw [← mul_pow, inv_mul_cancel₀ hy0, one_pow]
-    simp only [hd, Nat.add_sub_cancel_left, div_eq_mul_inv, mul_pow, pow_add]
-    linear_combination -(algebraMap k F (φ.coeff s) * x ^ s 0 * y⁻¹ ^ s 0 * y⁻¹ ^ d) * hyy
-  rw [this, hφxy, mul_zero]
-
 /-- **A genus bound from a function with controlled poles**: if `F / k` has exact constants,
 `F = k(u, y)` with `u` transcendental, and the poles of `y` are bounded by those of `u`, then
 `g ≤ (m - 1) (m - 2) / 2` for `m = [F : k(u)]`. -/
@@ -151,7 +126,7 @@ theorem genus_le_finrank_sub_one_mul_finrank_sub_two_div_two (hF : IsFunctionFie
     have hcard' : (∑ j ∈ Finset.range d, ((r + 1 - j : ℕ) : ℤ)) ≤ Divisor.dim D := by
       rw [Divisor.dim_def]
       exact_mod_cast hcard
-    have h2 := sum_range_sub_mul_two r d (by omega)
+    have h2 := Finset.sum_range_sub_mul_two r d (by omega)
     rw [hRR, hdegD, hm] at hcard'
     rw [hm] at h2
     nlinarith
@@ -205,7 +180,8 @@ private theorem valuation_le_max_one_valuation_sub (P : Place k F) {φ : MvPolyn
     algebraMap k F (φ.coeff s) * w ^ s 0 * y⁻¹ ^ (n - (s 0 + s 1))
   let e : (Fin 2 →₀ ℕ) → F := fun s ↦
     if s 0 + s 1 = n then algebraMap k F (φ.coeff s) * c' ^ s 0 else 0
-  have ht : ∑ s ∈ φ.support, t s = 0 := sum_coeff_mul_div_pow_mul_inv_pow_eq_zero hφxy hy0
+  have ht : ∑ s ∈ φ.support, t s = 0 :=
+    MvPolynomial.sum_coeff_mul_div_pow_mul_inv_pow_eq_zero hφxy hy0
   have he : ∑ s ∈ φ.support, e s =
       algebraMap k F (∑ s ∈ φ.support with s 0 + s 1 = n, φ.coeff s * c ^ s 0) := by
     rw [map_sum, Finset.sum_filter]
