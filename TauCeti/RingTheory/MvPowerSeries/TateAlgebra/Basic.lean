@@ -640,6 +640,12 @@ theorem norm_algebraMap_isRestrictedSubring (r : R) :
     Subtype.ext (coe_algebraMap_isRestrictedSubring r)
   rw [h, norm_C]
 
+/-- The coefficient ring acts boundedly for the Gauss norm, without a field hypothesis. -/
+instance : IsBoundedSMul R (IsRestricted.subring (R := R) c) :=
+  IsBoundedSMul.of_norm_smul_le fun a f ↦ by
+    simpa only [Algebra.smul_def, norm_algebraMap_isRestrictedSubring] using
+      norm_mul_le (algebraMap R (IsRestricted.subring (R := R) c) a) f
+
 /-- The constant-series embedding is an isometry. -/
 theorem isometry_algebraMap_isRestrictedSubring :
     Isometry (algebraMap R (IsRestricted.subring (R := R) c)) :=
