@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Group.Subgroup.Pointwise
 public import Mathlib.GroupTheory.Commutator.Basic
 public import Mathlib.GroupTheory.Coset.Basic
 public import Mathlib.LinearAlgebra.RootSystem.Defs
+public import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 /-!
 # Root data in a group in the sense of Bruhat–Tits
@@ -57,14 +58,6 @@ The last three rest on `RootDatum.eq_one_of_mem_normalizer`: an element of `U a`
 public section
 
 open scoped Pointwise
-
-/-- Negating a root index twice gives it back: the root of index `P.reflectionPerm j j` for
-`j = P.reflectionPerm i i` is `-(-P.root i) = P.root i`. -/
-@[simp]
-theorem RootPairing.reflectionPerm_reflectionPerm_self {ι R M N : Type*} [CommRing R]
-    [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] (P : RootPairing ι R M N)
-    (i : ι) : P.reflectionPerm (P.reflectionPerm i i) (P.reflectionPerm i i) = i :=
-  P.indexNeg.neg_neg i
 
 namespace TauCeti.BruhatTits
 
@@ -363,19 +356,12 @@ theorem reflectionCoset_reflectionPerm_self (i : ι) :
   have hz : m * y * m⁻¹ ∈ D.U j := D.mul_mul_inv_mem_U_neg_of_mem_reflectionCoset hm hy
   have hxinv : x⁻¹ ∈ (D.U (P.reflectionPerm j j) : Set G) \ {1} :=
     ⟨by rw [hji]; exact inv_mem hx, inv_ne_one.mpr hx₁⟩
-  obtain ⟨_, ⟨p, hp, n, hn, rfl⟩, q, hq, hpq⟩ := D.bruhat j hxinv
-  -- Membership in a pointwise product states `p * n * q` through unreduced lambdas, which
-  -- `rw [hpq]` below cannot match, so restate it in beta-reduced form.
-  replace hpq : p * n * q = x⁻¹ := hpq
   -- So `m ∈ U (-a) M (-a) U (-a)` exchanges `U a` and `U (-a)`, hence `m ∈ M (-a)`.
   have hmj : m ∈ D.reflectionCoset j := by
     refine D.mem_reflectionCoset_of_mem_mul ?_ ?_ ?_
-    · refine ⟨(m * y * m⁻¹)⁻¹ * p * n, ⟨(m * y * m⁻¹)⁻¹ * p, mul_mem (inv_mem hz) hp, n, hn,
-        rfl⟩, q * (x * m * y), mul_mem hq hu, ?_⟩
-      have hxm : x⁻¹ = m * y * m⁻¹ * m * (x * m * y)⁻¹ := by group
-      calc (m * y * m⁻¹)⁻¹ * p * n * (q * (x * m * y))
-          = (m * y * m⁻¹)⁻¹ * (p * n * q) * (x * m * y) := by group
-        _ = m := by rw [hpq, hxm]; group
+    · have := D.mul_mul_mem_mul (inv_mem hz) hu (D.bruhat j hxinv)
+      convert this using 1
+      group
     · rw [hji, D.conj_smul_U_neg hm]
     · rw [hji, hmi]
   ext g

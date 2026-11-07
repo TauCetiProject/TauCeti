@@ -11,6 +11,7 @@ public import Mathlib.Data.Set.Card
 public import Mathlib.GroupTheory.GroupAction.Defs
 public import TauCeti.Algebra.Order.AddGroupWithTop
 public import TauCeti.GroupTheory.BruhatTits.RootDatum
+public import TauCeti.GroupTheory.GroupAction.ConjAct
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 /-!
@@ -136,6 +137,8 @@ variable (φ : Valuation D) {i : ι}
 
 /-! ### Values -/
 
+attribute [simp] apply_eq_top_iff
+
 @[simp]
 theorem apply_one (i : ι) : φ i 1 = ⊤ :=
   (φ.apply_eq_top_iff i 1).mpr rfl
@@ -169,7 +172,8 @@ theorem mem_filtration_iff {k : ℝ} {g : G} :
     g ∈ φ.filtration i k ↔ ∃ h : g ∈ D.U i, (k : WithTop ℝ) ≤ φ i ⟨g, h⟩ :=
   Iff.rfl
 
-/-- Not `@[simp]`: `simp` proves it from `mem_filtration_iff` and `Subtype.coe_eta`. -/
+/-- An element `u` of `U a` lies in `U (a, k)` iff `k ≤ φ a u`. -/
+-- Not `@[simp]`: `simp` proves it from `mem_filtration_iff` and `Subtype.coe_eta`.
 theorem coe_mem_filtration_iff {k : ℝ} (u : D.U i) :
     (u : G) ∈ φ.filtration i k ↔ (k : WithTop ℝ) ≤ φ i u :=
   ⟨fun ⟨_, h⟩ ↦ h, fun h ↦ ⟨u.2, h⟩⟩
@@ -223,6 +227,7 @@ theorem commutator_filtration_le {j : ι} (hij : ∀ c : R, 0 < c → P.root j �
 def valueSet (i : ι) : Set ℝ :=
   {k | ∃ u : D.U i, φ i u = k}
 
+@[simp]
 theorem mem_valueSet_iff {k : ℝ} : k ∈ φ.valueSet i ↔ ∃ u : D.U i, φ i u = k :=
   Iff.rfl
 
@@ -264,7 +269,7 @@ theorem bruhat_value_ne_top (u : D.U i) (u' u'' : D.U (P.reflectionPerm i i))
   rw [φ.apply_ne_top_iff, Ne, ← Subtype.coe_inj]
   exact D.ne_one_of_mul_mul_mem_reflectionCoset u'.2 u''.2 h
 
-/-- A value `k` of `φ a` gives the value `-k` of `φ (-a)`, by (DR4) and (V5). -/
+/-- A value `k` of `φ a` gives the value `-k` of `φ (-a)`. -/
 theorem neg_mem_valueSet_neg {k : ℝ} (hk : k ∈ φ.valueSet i) :
     -k ∈ φ.valueSet (P.reflectionPerm i i) := by
   obtain ⟨u, hu⟩ := hk
@@ -343,7 +348,7 @@ def shift (v : N) : Valuation D where
   apply_le_apply_inv i u := by
     gcongr
     exact φ.apply_le_apply_inv i u
-  apply_eq_top_iff i u := by simp [φ.apply_eq_top_iff]
+  apply_eq_top_iff i u := by simp
   exists_apply_eq_apply_conj_add i m hm := by
     obtain ⟨c, hc⟩ := φ.exists_apply_eq_apply_conj_add i m hm
     refine ⟨c - 2 * P.root' i v, fun u hu ↦ ?_⟩
@@ -415,8 +420,8 @@ instance : AddAction N (Valuation D) where
   vadd v φ := φ.shift v
   zero_vadd := shift_zero
   add_vadd v w φ := by
-    change φ.shift (v + w) = (φ.shift w).shift v
-    rw [shift_shift, add_comm]
+    rw [add_comm]
+    exact (φ.shift_shift w v).symm
 
 @[simp]
 theorem vadd_eq_shift (v : N) : v +ᵥ φ = φ.shift v :=
@@ -467,10 +472,19 @@ def IsCompatible (ν : D.T → N) : Prop :=
   ∀ (i : ι) (z : D.T) (u : D.U i),
     φ i ⟨z * u * (z : G)⁻¹, D.mul_mul_inv_mem_U z.2 u.2⟩ = φ i u - (P.root' i (ν z) : WithTop ℝ)
 
-private theorem mem_conjAct_smul_filtration_iff {z g : G} {k : ℝ} :
-    g ∈ ConjAct.toConjAct z • φ.filtration i k ↔ z⁻¹ * g * z ∈ φ.filtration i k := by
-  rw [Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ← ConjAct.toConjAct_inv,
-    ConjAct.toConjAct_smul, inv_inv]
+/-- Compatibility with `ν`, elementwise: `φ a (z u z⁻¹) = φ a u - a (ν z)` for `z ∈ T`. -/
+theorem isCompatible_iff {ν : D.T → N} :
+    φ.IsCompatible ν ↔ ∀ (i : ι) (z : D.T) (u : D.U i),
+      φ i ⟨z * u * (z : G)⁻¹, D.mul_mul_inv_mem_U z.2 u.2⟩ =
+        φ i u - (P.root' i (ν z) : WithTop ℝ) :=
+  Iff.rfl
+
+variable {φ} in
+/-- If `φ` is compatible with `ν`, conjugation by `z ∈ T` lowers `φ a` by `a (ν z)`. -/
+theorem IsCompatible.apply_conj {ν : D.T → N} (h : φ.IsCompatible ν) (z : D.T) (u : D.U i) :
+    φ i ⟨z * u * (z : G)⁻¹, D.mul_mul_inv_mem_U z.2 u.2⟩ =
+      φ i u - (P.root' i (ν z) : WithTop ℝ) :=
+  h i z u
 
 /-- A valuation is compatible with `ν` if and only if each `z ∈ T` conjugates the filtration
 subgroup `U (a, k)` onto `U (a, k - a (ν z))`. -/
@@ -480,10 +494,10 @@ theorem isCompatible_iff_filtration {ν : D.T → N} :
   constructor
   · intro h i z k
     ext g
-    rw [mem_conjAct_smul_filtration_iff]
+    rw [Subgroup.mem_conjAct_smul_iff]
     by_cases hg : g ∈ D.U i
     · have hu : (z : G)⁻¹ * g * z ∈ D.U i := D.inv_mul_mul_mem_U z.2 hg
-      have hc := h i z ⟨_, hu⟩
+      have hc := h.apply_conj z ⟨_, hu⟩
       rw [show (⟨z * ((z : G)⁻¹ * g * z) * (z : G)⁻¹, _⟩ : D.U i) = ⟨g, hg⟩ from
         Subtype.ext (by group)] at hc
       have e₁ : (z : G)⁻¹ * g * z ∈ φ.filtration i k ↔ (k : WithTop ℝ) ≤ φ i ⟨_, hu⟩ :=
@@ -494,13 +508,13 @@ theorem isCompatible_iff_filtration {ν : D.T → N} :
       rw [e₁, e₂, hc, WithTop.coe_sub_le_sub_coe_iff]
     · refine iff_of_false (fun hk ↦ hg ?_) fun hk ↦ hg (φ.filtration_le_U i _ hk)
       simpa [mul_assoc] using D.mul_mul_inv_mem_U z.2 (φ.filtration_le_U i k hk)
-  · intro h i z u
+  · refine fun h ↦ φ.isCompatible_iff.mpr fun i z u ↦ ?_
     refine WithTop.eq_of_forall_coe_le_iff fun k ↦ ?_
     have key : (z * u * (z : G)⁻¹ : G) ∈ φ.filtration i k ↔
         (u : G) ∈ φ.filtration i (k + P.root' i (ν z)) := by
       have := h i z (k + P.root' i (ν z))
       rw [add_sub_cancel_right] at this
-      rw [← this, mem_conjAct_smul_filtration_iff,
+      rw [← this, Subgroup.mem_conjAct_smul_iff,
         show (z : G)⁻¹ * (z * u * (z : G)⁻¹) * z = u by group]
     have e : (z * u * (z : G)⁻¹ : G) ∈ φ.filtration i k ↔
         (k : WithTop ℝ) ≤ φ i ⟨z * u * (z : G)⁻¹, D.mul_mul_inv_mem_U z.2 u.2⟩ :=
@@ -523,9 +537,9 @@ every root vanishes on every `ν z`. -/
 theorem IsCompatible.root'_eq_zero_of_neg {ν : D.T → N} (h : φ.IsCompatible ν)
     (h' : φ.IsCompatible (-ν)) (i : ι) (z : D.T) : P.root' i (ν z) = 0 := by
   obtain ⟨k, u, hu⟩ := (φ.valueSet_nontrivial i).nonempty
-  have e := (h i z u).symm.trans (h' i z u)
-  rw [hu, Pi.neg_apply, map_neg, ← WithTop.LinearOrderedAddCommGroup.coe_sub,
-    ← WithTop.LinearOrderedAddCommGroup.coe_sub, WithTop.coe_inj] at e
+  have e := (h.apply_conj z u).symm.trans (h'.apply_conj z u)
+  rw [hu, Pi.neg_apply, map_neg] at e
+  norm_cast at e
   linarith
 
 end Valuation
