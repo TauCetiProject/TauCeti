@@ -191,7 +191,7 @@ theorem weylElement_def (γ : Fin t.numRoots) (A : Type v) [CommRing A] (s : Aˣ
 
 /-- At a simple root, the Weyl element `n_{αᵢ}(1)` is the Weyl element of the Kostant data, written
 in the weight basis. -/
-private theorem coe_weylElement_simpleIndex_one (i : Fin t.rank) (A : Type v) [CommRing A] :
+theorem coe_weylElement_simpleIndex_one (i : Fin t.rank) (A : Type v) [CommRing A] :
     (D.weylElement (t.simpleIndex ht i) A 1 : Matrix.GeneralLinearGroup (Fin D.dim) A) =
       Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMulEquiv
         (kostantWeylGL (t.lieBasis ht).rootGenerator (t.lieBasis ht).h D.representation D.lattice
