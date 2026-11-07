@@ -43,7 +43,7 @@ by. The functions pulled back from `X(1)` are fixed by this action.
 
 Conversely, a function fixed by `SL(2, ℤ)` has a value at the orbit of `τ` depending only on the
 `SL(2, ℤ)`-orbit of `τ`, so it is pulled back from `X(1)`
-(`TauCeti.ModularGroup.exists_compactifiedQuotientComap_eq_iff`). Hence the fixed field of
+(`Subgroup.exists_compactifiedQuotientComap_eq_iff`). Hence the fixed field of
 `SL(2, ℤ/Nℤ)` is the function field of `X(1)`, and the functions in `F_N` fixed by `SL(2, ℤ/Nℤ)`
 are those pulled back from level-one functions with coefficients in `ℚ(ζ_N)`, which form the field
 `ℚ(ζ_N)(j)` by `TauCeti.ModularGroup.coeffSubfield_cuspDatumInfty_eq_closure`.
@@ -375,7 +375,7 @@ theorem forall_unop_modularFunctionAction_apply_eq_iff
       ∃ G : MeromorphicFunction psl2zToPSL2R.range.CompactifiedQuotient,
         Subgroup.compactifiedQuotientComap (Gamma N).map_sl2zToPSL2R_le_range_psl2zToPSL2R G =
           F := by
-  refine ⟨fun hF ↦ (ModularGroup.exists_compactifiedQuotientComap_eq_iff (Gamma N)).mpr
+  refine ⟨fun hF ↦ (Gamma N).exists_compactifiedQuotientComap_eq_iff.mpr
     fun γ τ ↦ by rw [← modularFunctionAction_apply_ofQuotient, hF], ?_⟩
   rintro ⟨G, rfl⟩ γ
   exact unop_modularFunctionAction_compactifiedQuotientComap γ G

@@ -46,7 +46,7 @@ rational Fourier coefficients (`TauCeti.ModularGroup.coeffSubfield_cuspDatumInft
 Finally, for a finite-index subgroup `H` of `SL(2, ℤ)`, a meromorphic function `F` on the
 compactified quotient `X_H` is pulled back from `X(1)` exactly when its value at the orbit of `τ`
 depends only on the `SL(2, ℤ)`-orbit of `τ`
-(`TauCeti.ModularGroup.exists_compactifiedQuotientComap_eq_iff`). Composing the map `X_H → X(1)`
+(`Subgroup.exists_compactifiedQuotientComap_eq_iff`). Composing the map `X_H → X(1)`
 with `j` gives a finite holomorphic map `β : X_H → ℙ¹(ℂ)` whose fibres over the finite points are
 these orbits, so `F` is constant along all but one fibre of `β`, and is therefore the pullback of
 its trace along `β` divided by `deg β`
@@ -68,7 +68,7 @@ its trace along `β` divided by `deg β`
 * `TauCeti.ModularGroup.coeffSubfield_cuspDatumInfty_eq_closure`: the functions with coefficients
   in `K` form the field `K(j)`.
 * `TauCeti.ModularGroup.coeffSubfield_cuspDatumInfty_bot`: `F₁ = ℚ(j)`.
-* `TauCeti.ModularGroup.exists_compactifiedQuotientComap_eq_iff`: the meromorphic functions on
+* `Subgroup.exists_compactifiedQuotientComap_eq_iff`: the meromorphic functions on
   `X_H` pulled back from `X(1)` are those invariant under `SL(2, ℤ)`.
 
 ## References
@@ -290,7 +290,8 @@ theorem coeffSubfield_cuspDatumInfty_bot :
 meromorphic function `F` on the compactified quotient `X_H` is the pullback along `X_H → X(1)` of
 a meromorphic function on `X(1)` exactly when its value at the orbit of `τ` depends only on the
 `SL(2, ℤ)`-orbit of `τ`. -/
-theorem exists_compactifiedQuotientComap_eq_iff (H : _root_.Subgroup SL(2, ℤ)) [H.FiniteIndex]
+theorem _root_.Subgroup.exists_compactifiedQuotientComap_eq_iff (H : _root_.Subgroup SL(2, ℤ))
+    [H.FiniteIndex]
     {F : MeromorphicFunction (H.map sl2zToPSL2R).CompactifiedQuotient} :
     (∃ G : MeromorphicFunction psl2zToPSL2R.range.CompactifiedQuotient,
         _root_.Subgroup.compactifiedQuotientComap H.map_sl2zToPSL2R_le_range_psl2zToPSL2R G = F) ↔
