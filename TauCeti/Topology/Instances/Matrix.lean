@@ -211,18 +211,18 @@ theorem Continuous.matrix_kronecker {X R l m n p : Type*} [TopologicalSpace X]
 
 namespace Matrix
 
-variable {R m n : Type*} [CommSemiring R] [StarRing R] [Fintype m] [DecidableEq m] [Fintype n]
-  [DecidableEq n] [TopologicalSpace R] [ContinuousMul R]
+variable {R α m n : Type*} [CommSemiring R] [CommSemiring α] [StarRing α] [Algebra R α]
+  [Fintype m] [DecidableEq m] [Fintype n] [DecidableEq n] [TopologicalSpace α] [ContinuousMul α]
 
 @[continuity, fun_prop]
 theorem continuous_kroneckerOneStarAlgHom :
-    Continuous (kroneckerOneStarAlgHom R (m := m) n) :=
+    Continuous (kroneckerOneStarAlgHom R (α := α) (m := m) n) :=
   (continuous_id.matrix_kronecker continuous_const).congr fun A ↦
     (kroneckerOneStarAlgHom_apply A).symm
 
 @[continuity, fun_prop]
 theorem continuous_oneKroneckerStarAlgHom :
-    Continuous (oneKroneckerStarAlgHom R (m := m) n) :=
+    Continuous (oneKroneckerStarAlgHom R (α := α) (m := m) n) :=
   (continuous_const.matrix_kronecker continuous_id).congr fun B ↦
     (oneKroneckerStarAlgHom_apply B).symm
 
