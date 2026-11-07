@@ -137,6 +137,44 @@ theorem f4Modular_lie_rootVector_eq_zero_of_short_add_short_eq_long (α β γ : 
     exact ZMod.natCast_self 2
   rw [hlie, hzmod, zero_smul]
 
+/-- If two roots of the modular `F₄` algebra have a nonzero sum that is again a root space weight,
+then the pinned root datum has a root index whose root is the sum. -/
+private lemma exists_f4RootIndex_root_eq_add (α β : Fin 48)
+    (hsum : (f4KillingRoot α : (F4.cartanSubalgebra valid_F4) → ℚ) + (f4KillingRoot β) ≠ 0)
+    (hbot : rootSpace (F4.cartanSubalgebra valid_F4)
+      ((f4KillingRoot α : (F4.cartanSubalgebra valid_F4) → ℚ) + (f4KillingRoot β)) ≠ ⊥) :
+    ∃ γ : Fin 48, f4SimplyConnectedRootDatum.root γ =
+      f4SimplyConnectedRootDatum.root β + f4SimplyConnectedRootDatum.root α := by
+  let H := F4.cartanSubalgebra valid_F4
+  have hadd : (f4KillingRoot β : H → ℚ) + (f4KillingRoot α : H → ℚ) =
+      (f4KillingRoot α : H → ℚ) + (f4KillingRoot β : H → ℚ) := add_comm _ _
+  have hroot : rootSpace H
+      ((f4KillingRoot β : H → ℚ) + (f4KillingRoot α : H → ℚ)) ≠ ⊥ := by
+    rw [hadd]
+    exact hbot
+  let δ : Weight ℚ H (F4.lieAlgebra valid_F4) :=
+    ⟨(f4KillingRoot β : H → ℚ) + (f4KillingRoot α : H → ℚ), hroot⟩
+  have hδ : δ.IsNonZero := by
+    intro hz
+    apply hsum
+    -- Nonzero weight means its underlying function is nonzero; δ was defined by this sum.
+    change (f4KillingRoot β : H → ℚ) + (f4KillingRoot α : H → ℚ) = 0 at hz
+    exact hadd.symm.trans hz
+  let r : H.root := ⟨δ, by simpa only [LieSubalgebra.root, Finset.mem_filter,
+    Finset.mem_univ, true_and] using hδ⟩
+  let γ : Fin 48 := f4PinnedRootIndex r
+  have hγweight : f4KillingRoot γ = δ := by
+    exact congrArg
+      (fun s : H.root => (s : Weight ℚ H (F4.lieAlgebra valid_F4)))
+      (f4KillingRootLabel_f4PinnedRootIndex r)
+  have hγ : f4SimplyConnectedRootDatum.root γ =
+      f4SimplyConnectedRootDatum.root β + f4SimplyConnectedRootDatum.root α := by
+    have h := (f4KillingRoot_eq_add_zsmul_iff α β γ 1).mp (by
+      rw [Int.cast_one, one_smul]
+      exact congrArg DFunLike.coe hγweight)
+    simpa only [one_zsmul] using h
+  exact ⟨γ, hγ⟩
+
 /-- Bracketing an arbitrary modular root vector with a short-root vector stays in the modular
 short-root coordinate space. -/
 theorem f4Modular_lie_rootVector_mem_shortRootSubspace (α β : Fin 48)
@@ -154,33 +192,7 @@ theorem f4Modular_lie_rootVector_mem_shortRootSubspace (α β : Fin 48)
       ((f4KillingRoot α : H → ℚ) + (f4KillingRoot β : H → ℚ)) = ⊥
   · rw [f4Modular_lie_rootVector_eq_zero_of_rootSpace_add_eq_bot α β hbot]
     exact Submodule.zero_mem _
-  · have hadd : (f4KillingRoot β : H → ℚ) + (f4KillingRoot α : H → ℚ) =
-        (f4KillingRoot α : H → ℚ) + (f4KillingRoot β : H → ℚ) := add_comm _ _
-    have hroot : rootSpace H
-        ((f4KillingRoot β : H → ℚ) + (f4KillingRoot α : H → ℚ)) ≠ ⊥ := by
-      rw [hadd]
-      exact hbot
-    let δ : Weight ℚ H (F4.lieAlgebra valid_F4) :=
-      ⟨(f4KillingRoot β : H → ℚ) + (f4KillingRoot α : H → ℚ), hroot⟩
-    have hδ : δ.IsNonZero := by
-      intro hz
-      apply hsum
-      -- Nonzero weight means its underlying function is nonzero; δ was defined by this sum.
-      change (f4KillingRoot β : H → ℚ) + (f4KillingRoot α : H → ℚ) = 0 at hz
-      exact hadd.symm.trans hz
-    let r : H.root := ⟨δ, by simpa only [LieSubalgebra.root, Finset.mem_filter,
-      Finset.mem_univ, true_and] using hδ⟩
-    let γ : Fin 48 := f4PinnedRootIndex r
-    have hγweight : f4KillingRoot γ = δ := by
-      exact congrArg
-        (fun s : H.root => (s : Weight ℚ H (F4.lieAlgebra valid_F4)))
-        (f4KillingRootLabel_f4PinnedRootIndex r)
-    have hγ : f4SimplyConnectedRootDatum.root γ =
-        f4SimplyConnectedRootDatum.root β + f4SimplyConnectedRootDatum.root α := by
-      have h := (f4KillingRoot_eq_add_zsmul_iff α β γ 1).mp (by
-        rw [Int.cast_one, one_smul]
-        exact congrArg DFunLike.coe hγweight)
-      simpa only [one_zsmul] using h
+  · obtain ⟨γ, hγ⟩ := exists_f4RootIndex_root_eq_add α β hsum hbot
     rcases f4Length_eq_one_or_eq_two γ with hγshort | hγlong
     · obtain ⟨z, _, hlie⟩ := exists_f4Modular_lie_rootVector_eq_smul_of_add α β γ hγ
       rw [hlie]
