@@ -67,31 +67,6 @@ namespace TauCeti
 
 variable {K : Type*} [Field K] {ι : Type*} [Fintype ι]
 
-/-- Counting the equations: if `2 D ≤ exp (ε² n / 2)`, then `2 D` times the number of points `d`
-of the box `∏ᵢ {0, …, rᵢ}` with `∑ᵢ dᵢ / rᵢ ≤ (n / 2) (1 - ε)` is at most the number
-`∏ᵢ (rᵢ + 1)` of all points of the box. -/
-private theorem two_mul_mul_card_filter_le [DecidableEq ι] {r : ι → ℕ} (hr : ∀ i, r i ≠ 0)
-    {ε : ℝ} (hε : 0 ≤ ε) {D : ℕ} (hDε : 2 * (D : ℝ) ≤ exp (ε ^ 2 * Fintype.card ι / 2)) :
-    2 * (D * #{d ∈ Fintype.piFinset fun i ↦ range (r i + 1) |
-        ∑ i, (d i : ℝ) / r i ≤ Fintype.card ι / 2 * (1 - ε)}) ≤
-      #(Fintype.piFinset fun i ↦ range (r i + 1)) := by
-  have hcount := card_filter_sum_div_le_mul_one_sub_le hr hε
-  have hN : (#(Fintype.piFinset fun i ↦ range (r i + 1)) : ℝ) = ∏ i, ((r i : ℝ) + 1) := by
-    exact_mod_cast card_piFinset_range r
-  rw [← Nat.cast_le (α := ℝ), hN]
-  push_cast
-  calc 2 * ((D : ℝ) * #{d ∈ Fintype.piFinset fun i ↦ range (r i + 1) |
-        ∑ i, (d i : ℝ) / r i ≤ Fintype.card ι / 2 * (1 - ε)})
-      ≤ 2 * D * ((∏ i, ((r i : ℝ) + 1)) * exp (-(ε ^ 2 * Fintype.card ι / 2))) := by
-        rw [← mul_assoc]
-        gcongr
-    _ = (∏ i, ((r i : ℝ) + 1)) * (2 * D / exp (ε ^ 2 * Fintype.card ι / 2)) := by
-        rw [exp_neg]
-        ring
-    _ ≤ ∏ i, ((r i : ℝ) + 1) := by
-        refine mul_le_of_le_one_right (by positivity) ?_
-        rwa [div_le_one (exp_pos _)]
-
 /-- The bound of Siegel's lemma for the linear system of Roth's auxiliary polynomial: if
 `2 D ≤ N ≤ 2 ^ R` and `R ≥ 1`, then `(3 N (2 b H) ^ R) ^ (D / (N - D)) ≤ (12 b H) ^ R`. -/
 private theorem rpow_div_sub_le {N R b : ℕ} {D H : ℝ} (hb : 0 < b) (hH : 1 ≤ H) (hN : 0 < N)
@@ -112,18 +87,6 @@ private theorem rpow_div_sub_le {N R b : ℕ} {D H : ℝ} (hb : 0 < b) (hH : 1 �
         · exact le_self_pow₀ (by norm_num) (by omega)
         · exact_mod_cast hNR
     _ = (12 * b * H) ^ R := by rw [← mul_pow, ← mul_pow]; ring_nf
-
-/-- If the number `n` of variables satisfies `2 D ≤ exp (ε² n / 2)` for some `D > 0`, then `n` is
-positive, so the total degree `∑ᵢ rᵢ` is at least one when every `rᵢ` is nonzero. -/
-private theorem one_le_sum_of_le_exp {r : ι → ℕ} (hr : ∀ i, r i ≠ 0) {ε : ℝ} {D : ℕ} (hD : 0 < D)
-    (hDε : 2 * (D : ℝ) ≤ exp (ε ^ 2 * Fintype.card ι / 2)) : 1 ≤ ∑ i, r i := by
-  have hι : Fintype.card ι ≠ 0 := by
-    intro hι
-    rw [hι] at hDε
-    norm_num at hDε
-    linarith [show (1 : ℝ) ≤ D by exact_mod_cast hD]
-  obtain ⟨i⟩ := Fintype.card_pos_iff.mp (Nat.pos_of_ne_zero hι)
-  exact (Nat.one_le_iff_ne_zero.mpr (hr i)).trans (single_le_sum (by simp) (mem_univ i))
 
 /-- The linear system of Roth's auxiliary polynomial, over `𝓞 K`: for every finite set `rows` of
 jet orders, the equation for `d` multiplied by `b ^ R`, with `R = ∑ᵢ rᵢ`, has integral coefficients
