@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.RegularValue
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Analysis.Calculus.ImplicitFunctionTheorem
 import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.LinearAlgebra.Pi
 
 /-!
 # Split differentials and submersion normal forms
@@ -145,10 +146,8 @@ omit [FiniteDimensional 𝕜 F] [I.Boundaryless] in
 standard space of the complementary dimension. -/
 private theorem nonempty_continuousLinearEquiv_ker_fin (D : E →L[𝕜] F) (hD : D.range = ⊤) :
     Nonempty (D.ker ≃L[𝕜] (Fin (Module.finrank 𝕜 E - Module.finrank 𝕜 F) → 𝕜)) := by
-  have hd := D.toLinearMap.finrank_range_add_finrank_ker
-  rw [hD, finrank_top] at hd
-  exact ⟨(LinearEquiv.ofFinrankEq _ _ (by simpa using (by omega :
-    Module.finrank 𝕜 D.ker = Module.finrank 𝕜 E - Module.finrank 𝕜 F))).toContinuousLinearEquiv⟩
+  have hd := D.toLinearMap.finrank_ker_eq_sub_of_surjective (LinearMap.range_eq_top.1 hD)
+  exact ⟨(LinearEquiv.ofFinrankEq _ _ (by simpa using hd)).toContinuousLinearEquiv⟩
 
 omit [I.Boundaryless] in
 /-- The coordinate map `y ↦ L.symm (c (f y), P (e y))` from the implicit coordinates of a split
@@ -174,9 +173,6 @@ theorem _root_.ContMDiffOn.isSubmersionAtOfComplement_of_surjective_mfderiv {U :
   have := FiniteDimensional.complete 𝕜 E
   have := FiniteDimensional.complete 𝕜 F
   have hf := hfU.contMDiffAt (hU.mem_nhds hxU)
-  have hn0 : n ≠ 0 := ne_of_gt (zero_lt_one.trans_le hn)
-  have : IsManifold I 1 M := .of_le hn
-  have : IsManifold J 1 N := .of_le hn
   -- Split the derivative into target and kernel coordinates.
   let D : E →L[𝕜] F := mfderiv I J f x
   have hD : D.range = ⊤ := LinearMap.range_eq_top.2 hs
