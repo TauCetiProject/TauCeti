@@ -7,6 +7,8 @@ module
 
 public import Mathlib.RingTheory.Flat.Basic
 
+import Mathlib.LinearAlgebra.Basis.VectorSpace
+
 /-!
 # Scalar extensions of modules
 
@@ -40,6 +42,10 @@ this compares base change to the fibre ring `B ⊗[R] κ(p)` with base change to
 * `TensorProduct.free_range_mk_one`: the unit-tensor image of a free module is free.
 * `TensorProduct.cancelBaseChangeRight` and `TensorProduct.cancelBaseChangeLeft`: cancelling
   a scalar-extended algebra identifies two iterated scalar extensions.
+* `TensorProduct.exists_rTensor_section`, `TensorProduct.exists_smul_linearMap_eq_self`: after
+  tensoring over `R` with a field `Q` that is an `R`-algebra, a surjection has an `R`-linear
+  section and multiplication by an element with nonzero image in `Q` has an `R`-linear right
+  inverse.
 * `TensorProduct.AlgebraTensorModule.cancelBaseChangeTensor`: tensoring with two
   scalar-extended modules cancels both copies of the extended coefficient ring.
 -/
@@ -264,5 +270,46 @@ instance free_range_mk_one [Module.Free R M] :
   Module.Free.of_equiv (unitTmulEquiv R K M)
 
 end CommSemiring
+
+end TensorProduct
+
+namespace TensorProduct
+
+section FieldSections
+
+variable {R : Type*} [CommRing R] (Q : Type*) [Field Q] [Algebra R Q]
+
+/-- A surjection of `R`-modules has an `R`-linear section after tensoring with a field `Q`
+over `R`, because `P ⊗[R] Q` is a `Q`-vector space. -/
+theorem exists_rTensor_section {N P : Type*} [AddCommGroup N] [Module R N]
+    [AddCommGroup P] [Module R P] {g : N →ₗ[R] P} (hg : Function.Surjective g) :
+    ∃ s : P ⊗[R] Q →ₗ[R] N ⊗[R] Q,
+      ∀ x, TensorProduct.AlgebraTensorModule.rTensor R Q g (s x) = x := by
+  obtain ⟨s₀, hs₀⟩ := Module.projective_lifting_property
+    (TensorProduct.AlgebraTensorModule.lTensor Q Q g) LinearMap.id
+    (LinearMap.lTensor_surjective Q hg)
+  refine ⟨(TensorProduct.comm R Q N).toLinearMap ∘ₗ
+    s₀.restrictScalars R ∘ₗ (TensorProduct.comm R P Q).toLinearMap, fun x ↦ ?_⟩
+  have hcomm (y : Q ⊗[R] N) : TensorProduct.AlgebraTensorModule.rTensor R Q g
+      (TensorProduct.comm R Q N y) = TensorProduct.comm R Q P
+        (TensorProduct.AlgebraTensorModule.lTensor Q Q g y) :=
+    LinearMap.rTensor_comm (g : N →ₗ[R] P) y
+  rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, hcomm,
+    LinearMap.restrictScalars_apply, ← LinearMap.comp_apply, hs₀, LinearMap.id_apply,
+    LinearEquiv.coe_coe, TensorProduct.comm_comm]
+
+/-- If the image of `n : R` in the field `Q` is nonzero, multiplication by `n` on `P ⊗[R] Q`
+has an `R`-linear right inverse. -/
+theorem exists_smul_linearMap_eq_self {P : Type*} [AddCommGroup P] [Module R P]
+    {n : R} (hn : algebraMap R Q n ≠ 0) :
+    ∃ u : P ⊗[R] Q →ₗ[R] P ⊗[R] Q, ∀ x, n • u x = x := by
+  refine ⟨(LinearMap.mulLeft R (algebraMap R Q n)⁻¹).lTensor P, fun x ↦ ?_⟩
+  induction x using TensorProduct.inductionOn with
+  | tmul p q =>
+    rw [LinearMap.lTensor_tmul, TensorProduct.smul_tmul', TensorProduct.smul_tmul,
+      LinearMap.mulLeft_apply, _root_.Algebra.smul_def, ← mul_assoc, mul_inv_cancel₀ hn, one_mul]
+  | add x y hx hy => simp_all
+
+end FieldSections
 
 end TensorProduct
