@@ -149,7 +149,7 @@ since that is where all the slack goes.
 
 The conclusion is stated multiplicatively, as `m x ≤ M * f x` and `M * f x ≤ m x + 1`, so that it
 holds with no inequality between `M` and the size of the weights. -/
-theorem exists_nat_weights_of_sum_eq_one (hx₀ : x₀ ∈ s) (hf : ∑ x ∈ s, f x = 1) {M : ℕ} :
+theorem exists_nat_weights_of_sum_eq_one (hx₀ : x₀ ∈ s) (hf : ∑ x ∈ s, f x = 1) (M : ℕ) :
     ∃ m : X → ℕ, ∑ x ∈ s, m x = M ∧ (∀ x ∈ s, x ≠ x₀ → (m x : ℝ≥0∞) ≤ M * f x) ∧
       ∀ x ∈ s, x ≠ x₀ → (M : ℝ≥0∞) * f x ≤ (m x : ℝ≥0∞) + 1 := by
   classical
