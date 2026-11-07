@@ -207,6 +207,7 @@ theorem reindex_orientation (ω : SymplecticForm V) {k' : ℕ} (hk : finrank ℝ
 /-- The symplectic orientation of the standard symplectic form
 `ω₀((s₁, t₁), (s₂, t₂)) = s₁ t₂ - t₁ s₂` on the plane `ℝ × ℝ` is the orientation of the standard
 basis `((1, 0), (0, 1))`. -/
+@[simp]
 theorem orientation_stdSymplecticForm_real (hk : finrank ℝ (ℝ × ℝ) = 2) :
     (stdSymplecticForm (V := ℝ)).orientation hk = (Basis.finTwoProd ℝ).orientation := by
   have h : 1 * 2 = 2 := rfl
