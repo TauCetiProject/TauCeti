@@ -206,8 +206,6 @@ theorem exists_projective_reduction_linearEquiv (N : Type v) [AddCommGroup N] [M
   have : IsAdicComplete (Ideal.span {(p : ℤ_[p])}) ℤ_[p] := by
     rw [← PadicInt.maximalIdeal_eq_span_p]
     infer_instance
-  have : Module.Finite ℤ_[p] (Module.End (MonoidAlgebra ℤ_[p] G) N) :=
-    .linearMap_of_isNoetherian
   have : IsAdicComplete (Ideal.span {(p : ℤ_[p])}) (Module.End (MonoidAlgebra ℤ_[p] G) N) :=
     .of_finite _ _
   have : IsNoetherian (MonoidAlgebra ℤ_[p] G) N := isNoetherian_of_tower ℤ_[p] inferInstance

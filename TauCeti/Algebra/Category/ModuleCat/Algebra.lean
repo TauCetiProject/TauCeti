@@ -24,7 +24,7 @@ the Hom-finiteness that dimension and length counts in the module category of su
 on.
 
 The morphism space is identified with the `A`-linear maps by `ModuleCat.homLinearEquiv`, and
-those embed in maps into a power of the target by `Module.Finite.linearMap_of_isNoetherian`.
+those embed in maps into a power of the target by `isNoetherian_linearMap_of_finite`.
 -/
 
 public section
@@ -45,7 +45,6 @@ finitely generated module over the base ring. -/
 instance finite_hom_of_finite (M N : ModuleCat.{w} A) [Module.Finite A M]
     [Module.Finite A N] : Module.Finite R (M ⟶ N) := by
   have : Module.Finite R N := Module.Finite.trans A N
-  have : Module.Finite R (M →ₗ[A] N) := Module.Finite.linearMap_of_isNoetherian
   exact Module.Finite.equiv (ModuleCat.homLinearEquiv (S := R)).symm
 
 end ModuleCat

@@ -143,7 +143,6 @@ theorem IsProjectiveCover.finrank_linearMap_eq_jordanHolderMultiplicity_mul_finr
     have : Subsingleton (P →ₗ[A] M) := ⟨fun _ _ => LinearMap.ext fun _ => Subsingleton.elim _ _⟩
     exact Module.finrank_zero_of_subsingleton
   · intro M _ _ N _ _ ih _ _ _ _ _
-    have : FiniteDimensional k (P →ₗ[A] M) := Module.Finite.linearMap_of_isNoetherian
     have : FiniteDimensional k N :=
       Module.Finite.of_injective ((N.subtype).restrictScalars k) N.injective_subtype
     have : FiniteDimensional k (M ⧸ N) :=
