@@ -45,7 +45,7 @@ Multiplying one `n`-th root of a nonzero `a` by the powers of a primitive `n`-th
 * `IsPrimitiveRoot.cast_autToPow_eq_natCast`: modulo a divisor `d` of the level, the cyclotomic
   character is read off from the action on a primitive `d`-th root of unity.
 * `IsPrimitiveRoot.cast_autToPow_restrictNormalHom_eq`: the same for the restriction of an
-  automorphism of the algebraic closure to a normal subfield containing the root.
+  automorphism of an extension field to a normal intermediate field containing the root.
 * `AlgEquiv.apply_eq_apply_of_abelianization_of_eq`: two automorphisms with the same image in the
   abelianization agree on every root of unity.
 * `IsPrimitiveRoot.exists_algEquiv_apply_eq_pow_of_coprime`: every coprime power of a primitive
@@ -169,15 +169,14 @@ theorem _root_.IsPrimitiveRoot.cast_autToPow_eq_natCast {K M : Type*} [CommRing 
     ht.coe_autToPow_eq_natCast (K := K) (k := (hζ.autToPow K x : ZMod m).val)]
   rw [map_pow, ← hζ.autToPow_spec K x, ← pow_mul, ← pow_mul, mul_comm]
 
-/-- **The cyclotomic character of a restriction.** Let `E` be a normal subfield of the algebraic
-closure of `K` containing a primitive `m`-th root of unity `ζ'`, and `d ∣ m`. If an automorphism `κ`
-of the algebraic closure raises the `d`-th roots of unity to the `c`-th power, then the cyclotomic
+/-- **The cyclotomic character of a restriction.** Let `E` be a normal intermediate field of a field
+extension `L / K` containing a primitive `m`-th root of unity `ζ'`, and `d ∣ m`. If an automorphism
+`κ` of `L` over `K` raises the `d`-th roots of unity to the `c`-th power, then the cyclotomic
 character of its restriction to `E` is congruent to `c` modulo `d`. -/
-theorem _root_.IsPrimitiveRoot.cast_autToPow_restrictNormalHom_eq {K : Type*} [Field K] {m : ℕ}
-    [NeZero m] {E : IntermediateField K (AlgebraicClosure K)} [Normal K E] {ζ' : E}
-    (hζ' : IsPrimitiveRoot ζ' m) {d c : ℕ} (hd : d ∣ m)
-    (κ : AlgebraicClosure K ≃ₐ[K] AlgebraicClosure K)
-    (hκ : ∀ t : AlgebraicClosure K, t ^ d = 1 → κ t = t ^ c) :
+theorem _root_.IsPrimitiveRoot.cast_autToPow_restrictNormalHom_eq {K L : Type*} [Field K] [Field L]
+    [Algebra K L] {m : ℕ} [NeZero m] {E : IntermediateField K L} [Normal K E] {ζ' : E}
+    (hζ' : IsPrimitiveRoot ζ' m) {d c : ℕ} (hd : d ∣ m) (κ : L ≃ₐ[K] L)
+    (hκ : ∀ t : L, t ^ d = 1 → κ t = t ^ c) :
     ((hζ'.autToPow K (AlgEquiv.restrictNormalHom E κ) : ZMod m).cast : ZMod d) = c :=
   hζ'.cast_autToPow_eq_natCast hd <| Subtype.ext <|
     (AlgEquiv.restrictNormalHom_apply E κ _).trans <| by
