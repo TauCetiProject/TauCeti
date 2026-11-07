@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.Oscillation
 public import TauCeti.Analysis.Sobolev.W1p.PreciseRepresentative
+import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Hölder continuity of weak solutions (De Giorgi)
@@ -71,36 +73,6 @@ namespace PDE
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure] {lam Lam : ℝ}
 
-/-- The oscillation bound of the Hölder estimate: if `X ≤ N` and `C = C₀ N R^(-α) / 2`, then
-`C₀ (r / R)^α X ≤ 2 C r^α`. -/
-private lemma mul_rpow_div_mul_le_two_mul {α C₀ N R r X C : ℝ} (hC₀ : 0 ≤ C₀) (hr : 0 < r)
-    (hR : 0 < R) (hX : X ≤ N) (hC : C = C₀ * N / R ^ α / 2) :
-    C₀ * (r / R) ^ α * X ≤ 2 * (C * r ^ α) :=
-  calc _ ≤ C₀ * (r / R) ^ α * N := by gcongr
-    _ = 2 * (C * r ^ α) := by rw [hC, Real.div_rpow hr.le hR.le]; field_simp
-
-/-- The constant of the Hölder estimate: with `C = C₀ N R^(-α) / 2`, `M = D N` and `ρ = R / 2`, the
-constant `max (2 C) (2 M / ρ^α)` is at most `max C₀ (4 D) R^(-α) N`. -/
-private lemma max_two_mul_le_toNNReal {α C M ρ : ℝ≥0} {C₀ D N R : ℝ} (hα1 : (α : ℝ) ≤ 1)
-    (hR : 0 < R) (hC₀ : 0 ≤ C₀) (hD : 0 ≤ D) (hN : 0 ≤ N) (hC : (C : ℝ) = C₀ * N / R ^ (α : ℝ) / 2)
-    (hM : (M : ℝ) = D * N) (hρ : (ρ : ℝ) = R / 2) :
-    max (2 * C) (2 * M / ρ ^ (α : ℝ)) ≤ (max C₀ (4 * D) * R ^ (-(α : ℝ)) * N).toNNReal := by
-  have h2α : (2 : ℝ) ^ (α : ℝ) ≤ 2 := by
-    simpa using Real.rpow_le_rpow_of_exponent_le one_le_two hα1
-  rw [Real.le_toNNReal_iff_coe_le (by positivity)]
-  push_cast
-  rw [hC, hM, hρ, Real.div_rpow hR.le zero_le_two, Real.rpow_neg hR.le]
-  refine max_le ?_ ?_
-  · calc 2 * (C₀ * N / R ^ (α : ℝ) / 2) = C₀ * (R ^ (α : ℝ))⁻¹ * N := by field_simp
-      _ ≤ _ := by gcongr; exact le_max_left _ _
-  · calc 2 * (D * N) / (R ^ (α : ℝ) / 2 ^ (α : ℝ))
-        = 2 * 2 ^ (α : ℝ) * D * (R ^ (α : ℝ))⁻¹ * N := by field_simp
-      _ ≤ 2 * 2 * D * (R ^ (α : ℝ))⁻¹ * N := by gcongr
-      _ ≤ _ := by
-        rw [show (2 : ℝ) * 2 * D = 4 * D by ring]
-        gcongr
-        exact le_max_right _ _
-
 /-- **De Giorgi's theorem with a drift: Hölder continuity of weak solutions.** Let `n ≥ 1` be
 the dimension, and fix a bound `σ` for `βR/λ`. There are `α ∈ (0, 1]` and `C > 0`, depending only
 on `λ`, `Λ`, `σ`, the dimension and the normalization of the additive Haar measure `mu`, such that
@@ -160,7 +132,7 @@ theorem exists_holderOnWith_preciseRepresentative_drift [Nonempty ι] (σ : ℝ)
     (fun x hx r hr hrR => ?_) (fun x hx => ?_)).mono_const ?_
   · -- Oscillation: `u` lies in an interval of length `L ≤ 2 C r^α` on `B(x, r)`.
     obtain ⟨m', hm'⟩ := hosc h ha hb hb_bound hu hr (hρ ▸ hrR) (hball x hx) hβR
-    have hL := mul_rpow_div_mul_le_two_mul hC₀.le hr hR (hN x hx) hC
+    have hL := Real.mul_rpow_div_mul_le_two_mul hC₀.le hr hR (hN x hx) hC
     refine ⟨m' + C * r ^ (α : ℝ), hm'.mono fun y hy => ?_⟩
     rw [mem_closedBall, Real.dist_eq, abs_le]
     constructor <;> linarith [hy.1, hy.2]
@@ -178,7 +150,7 @@ theorem exists_holderOnWith_preciseRepresentative_drift [Nonempty ι] (σ : ℝ)
         ((div_le_iff₀ h.pos).2 hβR) 2
     · exact hN x hx
   · -- The constant: `2 C = C₀ N R^(-α)` and `2 M / ρ^α = 2^(1+α) D N R^(-α) ≤ 4 D N R^(-α)`.
-    exact max_two_mul_le_toNNReal hα1 hR hC₀.le (by positivity) (by positivity) hC hM hρ
+    exact NNReal.max_two_mul_le_toNNReal hα1 hR hC₀.le (by positivity) (by positivity) hC hM hρ
 
 /-- **De Giorgi's theorem: Hölder continuity of weak solutions.** Let `n ≥ 1` be the
 dimension. There are `α ∈ (0, 1]` and `C > 0`, depending only on `λ`, `Λ`, the dimension and the
