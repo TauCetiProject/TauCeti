@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 public import TauCeti.Analysis.ODE.InitialCondition
 public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 import Mathlib.Analysis.Calculus.Deriv.Prod

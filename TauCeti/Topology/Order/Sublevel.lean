@@ -24,9 +24,18 @@ needed only on the one compact sublevel, not on the entire space. Similarly, if 
 `{w ≥ -δ}` of a continuous `w` is compact, a closed set avoiding the zero level of `w` avoids a
 whole band `{|w| ≤ η}` around it (`TauCeti.exists_forall_abs_le_notMem`).
 
+The local counterpart concerns a strict local minimum `x` of a function `f` continuous near `x`
+on a locally compact Hausdorff space: for every neighbourhood `U` of `x`, a preconnected set
+through a point `y` close to `x`, on which `f` stays at most `f y`, lies in `U`
+(`TauCeti.eventually_forall_isPreconnected_subset_of_strictLocalMin`). The trajectories of a
+dynamical system along which `f` does not increase are such sets, so this is the topological core
+of Lyapunov stability.
+
 Conversely, restricting a function to a set `S` which is not closed can destroy compactness of
 sublevels: if `S` accumulates at a point `p ∉ S` with `f p < r`, then `{x ∈ S | f x ≤ r}` is not
-compact (`TauCeti.not_isCompact_inter_preimage_Iic`).
+compact (`TauCeti.not_isCompact_inter_preimage_Iic`). A compact sublevel `{f ≤ b}`, on which `f`
+is continuous, lies strictly above some value `a ≤ b`, whose sublevel is then empty
+(`TauCeti.exists_le_forall_lt_of_isCompact_sublevel`).
 
 If a continuous motion of the space lowers `f` at unit speed through the band `a ≤ f ≤ b`, then
 following it until the level `a` is reached retracts the sublevel `{f ≤ b}` onto `{f ≤ a}`, by a
@@ -36,7 +45,8 @@ homotopy fixing `{f ≤ a}` pointwise (`TauCeti.exists_sublevelDeformation_of_ap
 of the deformation of sublevels across a band without critical points, where the motion is the
 flow of a vector field `X` with `df(X) = -1` on the band. The sublevels form the topological pair
 `TauCeti.sublevelPair f : ({f ≤ b}, {f ≤ a})`, whose relative homology measures the change in
-topology across the band.
+topology across the band. All sublevels together form the functor `TauCeti.sublevelFunctor f` from
+the levels to spaces, with the cocone `TauCeti.sublevelCocone f` of their inclusions into `X`.
 
 If the motion is a flow along whose lines `f` never increases, then its time-`(b - a)` map carries
 `{f ≤ b}` exactly onto `{f ≤ a}` (`Flow.apply_le_iff_of_apply_eq_sub`), and, when `f`
@@ -55,6 +65,8 @@ band pulls back to the band of `F ∘ j` (`Topology.IsInducing.isCompact_comp_pr
 public section
 
 open Set
+
+universe u
 
 namespace TauCeti
 
@@ -87,6 +99,39 @@ theorem exists_pos_sublevel_subset_of_unique_min {X : Type*} [TopologicalSpace X
     by_contra hyU
     exact hne ⟨y, ⟨by dsimp at hy ⊢; linarith, hyU⟩⟩
 
+open Filter Topology in
+/-- **Stability of a strict local minimum.** Let `x` be a strict local minimum of a real function
+`f` on a locally compact Hausdorff space, with `f` continuous on a neighbourhood of `x`. For every
+neighbourhood `U` of `x`, every point `y` close enough to `x` has the following property: every
+preconnected set containing `y` on which `f` stays at most `f y` lies in `U`.
+
+Applied to the trajectories of a dynamical system along which `f` does not increase, such as the
+energy of a Hamiltonian system, this is the Lyapunov stability of `x`. -/
+theorem eventually_forall_isPreconnected_subset_of_strictLocalMin {X : Type*}
+    [TopologicalSpace X] [T2Space X] [LocallyCompactSpace X] {f : X → ℝ} {x : X} {s : Set X}
+    (hs : s ∈ 𝓝 x) (hf : ContinuousOn f s) (hmin : ∀ᶠ y in 𝓝[≠] x, f x < f y) {U : Set X}
+    (hU : U ∈ 𝓝 x) :
+    ∀ᶠ y in 𝓝 x, ∀ S : Set X, IsPreconnected S → y ∈ S → (∀ z ∈ S, f z ≤ f y) → S ⊆ U := by
+  rw [eventually_nhdsWithin_iff] at hmin
+  -- A compact neighbourhood `K` of `x` inside `s ∩ U` on which `x` is the strict minimum.
+  obtain ⟨K, hK, hxK, hKsub⟩ := exists_compact_subset isOpen_interior
+    (mem_interior_iff_mem_nhds.2 (inter_mem (inter_mem hs hU) hmin))
+  have hKsub' := hKsub.trans interior_subset
+  -- On the compact rim `K \ interior K`, `f` is bounded below by some `c > f x`.
+  obtain ⟨c, hxc, hc⟩ := (hK.diff isOpen_interior).exists_forall_le'
+    (hf.mono fun z hz ↦ (hKsub' hz.1).1.1) fun z hz ↦
+      (hKsub' hz.1).2 fun hzx ↦ hz.2 (hzx ▸ hxK)
+  filter_upwards [isOpen_interior.mem_nhds hxK,
+    (hf.continuousAt hs).eventually (eventually_lt_nhds hxc)] with y hyK hyc S hS hyS hSy
+  -- `S` misses the rim, so it lies in the open set `interior K` or in the open set `Kᶜ`.
+  have hrim : S ⊆ interior K ∪ Kᶜ := fun z hz ↦ by
+    by_contra h
+    simp only [mem_union, mem_compl_iff, not_or, not_not] at h
+    exact (hSy z hz).not_gt (hyc.trans_le (hc z ⟨h.2, h.1⟩))
+  exact (hS.subset_left_of_subset_union isOpen_interior hK.isClosed.isOpen_compl
+    (disjoint_compl_right.mono_left interior_subset) hrim ⟨y, hyS, hyK⟩).trans
+      (interior_subset.trans fun z hz ↦ (hKsub' hz).1.2)
+
 /-- If the superlevel `{w ≥ -δ}` of a continuous real function `w` is compact, then a closed set
 avoiding the zero level of `w` also avoids the band `{|w| ≤ η}` for some `0 < η ≤ δ`. -/
 theorem exists_forall_abs_le_notMem {X : Type*} [TopologicalSpace X] {w : X → ℝ}
@@ -114,6 +159,20 @@ theorem not_isCompact_inter_preimage_Iic {X β : Type*} [TopologicalSpace X] [T2
     exact (hpS.and_eventually (hf.eventually (eventually_lt_nhds hr))).mono
       fun x hx ↦ ⟨hx.1, hx.2.le⟩
   exact hp (hK.isClosed.closure_eq ▸ hmem).1
+
+/-- If a sublevel `{f ≤ b}` is compact and `f` is continuous on it, then `f` is bounded below by
+a value `a ≤ b` which it never attains, so the sublevel `{f ≤ a}` is empty. -/
+theorem exists_le_forall_lt_of_isCompact_sublevel {X β : Type*} [TopologicalSpace X]
+    [TopologicalSpace β] [LinearOrder β] [ClosedIicTopology β] [NoMinOrder β] {f : X → β} {b : β}
+    (hcompact : IsCompact {x | f x ≤ b}) (hf : ContinuousOn f {x | f x ≤ b}) :
+    ∃ a ≤ b, ∀ x, a < f x := by
+  have : Nonempty β := ⟨b⟩
+  obtain ⟨m, hm⟩ := hcompact.bddBelow_image hf
+  obtain ⟨a, ha⟩ := exists_lt (min m b)
+  refine ⟨a, (ha.trans_le (min_le_right m b)).le, fun x ↦ ?_⟩
+  rcases le_or_gt (f x) b with hx | hx
+  · exact ha.trans_le ((min_le_left m b).trans (hm (mem_image_of_mem f hx)))
+  · exact (ha.trans_le (min_le_right m b)).trans hx
 
 /-- The sublevels `{f ≤ a}` of `f` increase with `a`. -/
 theorem sublevel_mono {X β : Type*} [Preorder β] (f : X → β) :
@@ -149,6 +208,28 @@ of `X`. -/
 abbrev sublevelPair {X : Type*} [TopologicalSpace X] {β : Type*} [Preorder β] (f : X → β)
     {a b : β} (hab : a ≤ b) : TopPair :=
   TopPair.ofInclusion (X := TopCat.of X) (sublevel_mono f hab)
+
+section Functor
+
+open CategoryTheory Limits
+
+variable {X : Type u} [TopologicalSpace X] {β : Type*} [Preorder β] (f : X → β)
+
+/-- The sublevels `{f ≤ b}` of `f` as a functor from the levels to topological spaces. The map
+for `a ≤ b` is the embedding of the sublevel pair `TauCeti.sublevelPair f : ({f ≤ b}, {f ≤ a})`. -/
+@[expose, simps]
+def sublevelFunctor : β ⥤ TopCat.{u} where
+  obj b := TopCat.of {x | f x ≤ b}
+  map h := (sublevelPair f (leOfHom h)).map
+
+/-- The cocone over `TauCeti.sublevelFunctor f` with apex `X`, whose legs are the inclusions of
+the sublevels into `X`. -/
+@[expose, simps]
+def sublevelCocone : Cocone (sublevelFunctor f) where
+  pt := TopCat.of X
+  ι := { app b := TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ }
+
+end Functor
 
 /-- **Deformation of sublevels along a unit-speed descent.** Let `φ t` be a continuous motion of
 `X`, with `φ 0` the identity, which lowers `f` at unit speed through the band `a ≤ f ≤ b`: if

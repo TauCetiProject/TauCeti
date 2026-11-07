@@ -278,8 +278,8 @@ theorem degree_smul (g : G) (c : IsoClass k) : (g • c).degree = c.degree := by
 of characteristic zero: the number of isomorphism classes in its orbit under `Gal(k/ℚ)`, the group
 of all field automorphisms of `k`. For `k = AlgebraicClosure ℚ` this is the size of the Galois
 orbit of the Belyi map; it is attached to the class, not to any field of definition. As a
-`Nat.card` it is `0` on an infinite orbit; that orbits are finite for `k = AlgebraicClosure ℚ` is
-not proved here. -/
+`Nat.card` it is `0` on an infinite orbit; over a field algebraic over `ℚ`, such as
+`AlgebraicClosure ℚ`, orbits are finite (`TauCeti.AlgebraicBelyiPair.IsoClass.finite_orbit`). -/
 noncomputable def trueOrbitSize (c : IsoClass k) : ℕ :=
   Nat.card (MulAction.orbit (k ≃ₐ[ℚ] k) c)
 

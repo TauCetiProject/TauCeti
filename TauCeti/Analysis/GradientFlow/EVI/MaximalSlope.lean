@@ -310,6 +310,38 @@ theorem descendingSlope_ne_top (h : IsEVISolution lam φ u) (hφ : LowerSemicont
     (ht : 0 < t) : descendingSlope φ (u t) ≠ ⊤ :=
   ne_top_of_le_ne_top (h.metricDerivative_ne_top hφ ht) (h.descendingSlope_le_metricDerivative ht)
 
+/-- **The evolution variational inequality, tested at `u s`.** At a positive time `s`, if the energy
+drops by at most `(D + ε / 2) (σ - s)` and the curve moves by at most `(m + 1) (σ - s)` on
+`(s, s + δ]`, where `(|λ| + 1) (m + 1)² δ ≤ ε`, then the squared distance `d(u σ, u s)² / 2` has
+right difference quotients below any `r > (D + ε) (x - s)` at every `x ∈ [s, s + δ)`. -/
+private theorem frequently_slope_dist_sq_lt (h : IsEVISolution lam φ u) (hs : 0 < s)
+    {m D ε δ : ℝ} (hδε : (|lam| + 1) * (m + 1) ^ 2 * δ ≤ ε)
+    (hbd : ∀ σ ∈ Ioc s (s + δ), (φ (u s)).toReal - (φ (u σ)).toReal ≤ (D + ε / 2) * (σ - s) ∧
+      dist (u σ) (u s) ≤ (m + 1) * (σ - s)) :
+    ∀ x ∈ Ico s (s + δ), ∀ r : ℝ, (D + ε) * (x - s) < r →
+      ∃ᶠ z in 𝓝[>] x, slope (fun σ ↦ dist (u σ) (u s) ^ 2 / 2) x z < r := by
+  set F := fun t ↦ (φ (u t)).toReal
+  intro x hx r hr
+  rcases eq_or_lt_of_le hx.1 with rfl | hsx
+  · refine (h.eventually_slope_lt (y := u s) (h.apply_ne_top hs) hs (c := 0) ?_ ?_).frequently
+    · rw [← h.coe_toReal hs, ← EReal.coe_sub, sub_self, EReal.coe_zero]
+    · simpa using hr
+  · have hx0 : 0 < x := hs.trans hsx
+    obtain ⟨h₁, h₂⟩ := hbd x ⟨hsx, hx.2.le⟩
+    refine (h.eventually_slope_lt (y := u s) (h.apply_ne_top hs) hx0
+      (c := F s - F x) ?_ ?_).frequently
+    · rw [← h.coe_toReal hs, ← h.coe_toReal hx0, ← EReal.coe_sub]
+    · have hd2 : dist (u x) (u s) ^ 2 ≤ ((m + 1) * (x - s)) ^ 2 :=
+        pow_le_pow_left₀ dist_nonneg h₂ 2
+      have hxδ : x - s ≤ δ := by linarith [hx.2]
+      have h₃ : |lam| * ((m + 1) ^ 2 * (x - s)) ≤ ε := by
+        have := mul_le_mul_of_nonneg_left hxδ (by positivity : (0 : ℝ) ≤ (m + 1) ^ 2)
+        nlinarith [abs_nonneg lam]
+      have h₄ : -lam * (dist (u x) (u s) ^ 2 / 2) ≤ ε / 2 * (x - s) := by
+        nlinarith [mul_le_mul_of_nonneg_right (neg_le_abs lam) (sq_nonneg (dist (u x) (u s))),
+          mul_le_mul_of_nonneg_left hd2 (abs_nonneg lam)]
+      linarith
+
 /-- **The speed is at most the dissipation rate.** At a positive time `s`, if the right difference
 quotients of the curve tend to `m` and the rates of decrease of the energy tend to `D`, then
 `m² ≤ D`: the evolution variational inequality tested at `u s` bounds `d(u σ, u s)² / 2` by
@@ -355,28 +387,7 @@ private theorem sq_le_of_tendsto (h : IsEVISolution lam φ u) (hs : 0 < s) {m D 
     have := hcmp ⟨hσ.1.le, hσ.2.le⟩
     rw [div_pow, div_le_iff₀ (pow_pos hσs 2)]
     linarith
-  · -- The evolution variational inequality at `x`, tested at `u s`.
-    intro x hx r hr
-    rcases eq_or_lt_of_le hx.1 with rfl | hsx
-    · refine (h.eventually_slope_lt (y := u s) (h.apply_ne_top hs) hs (c := 0) ?_ ?_).frequently
-      · rw [← h.coe_toReal hs, ← EReal.coe_sub, sub_self, EReal.coe_zero]
-      · simpa using hr
-    · have hx0 : 0 < x := hs.trans hsx
-      obtain ⟨h₁, h₂⟩ := hbd x ⟨hsx, hx.2.le⟩
-      refine (h.eventually_slope_lt (y := u s) (h.apply_ne_top hs) hx0 (c := F s - F x) ?_
-        ?_).frequently
-      · rw [← h.coe_toReal hs, ← h.coe_toReal hx0, ← EReal.coe_sub]
-      · have hxs := sub_pos.2 hsx
-        have hd2 : dist (u x) (u s) ^ 2 ≤ ((m + 1) * (x - s)) ^ 2 :=
-          pow_le_pow_left₀ dist_nonneg h₂ 2
-        have hxδ : x - s ≤ δ := by linarith [hx.2]
-        have h₃ : |lam| * ((m + 1) ^ 2 * (x - s)) ≤ ε := by
-          have := mul_le_mul_of_nonneg_left hxδ (by positivity : (0 : ℝ) ≤ (m + 1) ^ 2)
-          nlinarith [abs_nonneg lam]
-        have h₄ : -lam * (dist (u x) (u s) ^ 2 / 2) ≤ ε / 2 * (x - s) := by
-          nlinarith [mul_le_mul_of_nonneg_right (neg_le_abs lam) (sq_nonneg (dist (u x) (u s))),
-            mul_le_mul_of_nonneg_left hd2 (abs_nonneg lam)]
-        linarith
+  · exact frequently_slope_dist_sq_lt h hs hδε hbd
 
 /-- **The dissipation rate is at most slope times speed.** At a positive time `s` with finite
 descending slope, if the right difference quotients of the curve tend to `m` and the rates of

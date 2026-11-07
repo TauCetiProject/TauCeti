@@ -20,6 +20,8 @@ with `F`, so one vanishes exactly when the other does.
 
 * `TauCeti.mvfderiv_comp_apply_of_differentiableAt`: the chain rule when the outer map is
   between normed spaces.
+* `ContinuousLinearMap.mvfderiv_comp_apply`: the chain rule when the outer map is continuous
+  linear.
 * `MDifferentiableAt.mvfderiv_prod_eq_add_apply`: the vector-valued derivative on a product
   is the sum of its partial derivatives.
 * `TauCeti.fderiv_comp_graph_apply_of_mdifferentiableAt`: the chain rule along the graph of a
@@ -32,6 +34,8 @@ with `F`, so one vanishes exactly when the other does.
   differentiability hypothesis.
 * `Filter.EventuallyEq.mvfderiv_eq`: `mvfderiv` depends only on the germ of the function.
 * `TauCeti.mvfderiv_eq_zero_iff`: `mvfderiv I g x = 0 ↔ mfderiv I 𝓘(𝕜, F) g x = 0`.
+* `TauCeti.injective_mvfderiv_iff`:
+  `Function.Injective (mvfderiv I g x) ↔ Function.Injective (mfderiv I 𝓘(𝕜, F) g x)`.
 * `TauCeti.mdifferentiableAt_of_mvfderiv_apply_ne_zero`: a function whose `mvfderiv` is nonzero on
   some tangent vector is differentiable there.
 * `TauCeti.mfderiv_neg_eq_zero_iff`: `mfderiv I 𝓘(𝕜, F) (-g) x = 0 ↔ mfderiv I 𝓘(𝕜, F) g x = 0`.
@@ -86,6 +90,13 @@ theorem mvfderiv_comp_apply_of_differentiableAt {g : M → F} {φ : F → F'} {x
   rw [mvfderiv_comp_apply x hφ.mdifferentiableAt hg, mvfderiv_eq_fderiv,
     ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
     NormedSpace.fromTangentSpace_apply, mvfderiv_apply_eq_mfderiv_apply]
+
+/-- The chain rule for a vector-valued function on a manifold followed by a continuous linear map,
+evaluated on a tangent vector: the derivative of `L ∘ g` is `L` applied to the derivative of `g`. -/
+theorem _root_.ContinuousLinearMap.mvfderiv_comp_apply (L : F →L[𝕜] F') {g : M → F} {x : M}
+    (hg : MDiffAt g x) (v : TangentSpace I x) :
+    mvfderiv I (L ∘ g) x v = L (mvfderiv I g x v) := by
+  rw [mvfderiv_comp_apply_of_differentiableAt L.differentiableAt hg, ContinuousLinearMap.fderiv]
 
 /-- The vector-valued derivative on a product is the sum of its partial derivatives. -/
 theorem _root_.MDifferentiableAt.mvfderiv_prod_eq_add_apply
@@ -177,6 +188,14 @@ theorem mvfderiv_eq_zero_iff {g : M → F} {x : M} :
   refine ⟨fun h ↦ ?_, fun h ↦ by simp [mvfderiv, h]⟩
   ext u
   simpa [mvfderiv] using congrArg (fun L ↦ L u) h
+
+/-- The derivative of a vector-valued function, read in the target space, is injective if and only
+if its manifold derivative is. -/
+theorem injective_mvfderiv_iff {g : M → F} {x : M} :
+    Function.Injective (mvfderiv I g x) ↔ Function.Injective (mfderiv I 𝓘(𝕜, F) g x) := by
+  refine ⟨fun h v w hvw ↦ h (by rwa [mvfderiv_apply_eq_mfderiv_apply,
+    mvfderiv_apply_eq_mfderiv_apply]), fun h v w hvw ↦ h ?_⟩
+  rwa [← mvfderiv_apply_eq_mfderiv_apply, ← mvfderiv_apply_eq_mfderiv_apply]
 
 /-- A vector-valued function whose derivative does not vanish on some tangent vector is
 differentiable there. -/

@@ -46,7 +46,7 @@ bound on the number of critical points of a smooth function.
 
 ## Main declarations
 
-* `TauCeti.exists_flow_apply_eq_sub_of_isCompact`: a flow by diffeomorphisms along which `f` never
+* `TauCeti.exists_flow_apply_eq_sub_of_isCompact`: a smooth flow along which `f` never
   increases, lowering `f` at unit speed near a compact set without critical points.
 * `TauCeti.exists_flow_apply_eq_sub`: such a flow lowering `f` at unit speed through a compact band
   without critical points.
@@ -86,14 +86,14 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [IsManifold I ∞ M] {f : M → ℝ} {a b : ℝ}
 
 /-- **A descending flow lowering `f` at unit speed near a compact set of regular points.** If `f`
-is smooth and the compact set `K` contains no critical point of `f`, there is a flow `φ` on `M` by
-smooth maps along which `f` never increases, and an open neighbourhood `U` of `K` such that `f`
-decreases at unit speed along every orbit segment lying in `U`: if `φ s x ∈ U` for all
-`s ∈ [r, t]`, then `f (φ t x) = f (φ r x) - (t - r)`. -/
+is smooth and the compact set `K` contains no critical point of `f`, there is a flow `φ` on `M`,
+jointly smooth in time and space, along which `f` never increases, and an open neighbourhood `U`
+of `K` such that `f` decreases at unit speed along every orbit segment lying in `U`: if
+`φ s x ∈ U` for all `s ∈ [r, t]`, then `f (φ t x) = f (φ r x) - (t - r)`. -/
 theorem exists_flow_apply_eq_sub_of_isCompact (hf : ContMDiff I 𝓘(ℝ) ∞ f) {K : Set M}
     (hK : IsCompact K) (hreg : ∀ x ∈ K, mfderiv I 𝓘(ℝ) f x ≠ 0) :
-    ∃ φ : Flow ℝ M, (∀ t, ContMDiff I I ∞ (φ t)) ∧ (∀ x, Antitone fun t ↦ f (φ t x)) ∧
-      ∃ U, IsOpen U ∧ K ⊆ U ∧
+    ∃ φ : Flow ℝ M, ContMDiff (𝓘(ℝ, ℝ).prod I) I ∞ (fun p : ℝ × M ↦ φ p.1 p.2) ∧
+      (∀ x, Antitone fun t ↦ f (φ t x)) ∧ ∃ U, IsOpen U ∧ K ⊆ U ∧
         ∀ x r t, r ≤ t → (∀ s ∈ Icc r t, φ s x ∈ U) → f (φ t x) = f (φ r x) - (t - r) := by
   -- Work on the self-modelled copy `M'` of `M`, which has the same topology.
   set e := BoundarylessModel.homeomorph I M with he
@@ -119,15 +119,15 @@ theorem exists_flow_apply_eq_sub_of_isCompact (hf : ContMDiff I 𝓘(ℝ) ∞ f)
   -- Conjugate the flow on `M'` back to `M`.
   have hφ : ∀ t x, f (e.symm.conjFlow ψ t x) = f' (ψ t (e x)) := fun t x ↦ by
     rw [Homeomorph.conjFlow_apply, Homeomorph.symm_symm, hf'_def, comp_apply]
-  refine ⟨e.symm.conjFlow ψ, fun t ↦ ?_, fun x ↦ ?_, e ⁻¹' U, hUo.preimage e.continuous,
+  refine ⟨e.symm.conjFlow ψ, ?_, fun x ↦ ?_, e ⁻¹' U, hUo.preimage e.continuous,
     fun x hx ↦ hKU ⟨x, hx, rfl⟩, fun x r t hrt hU ↦ ?_⟩
   · have h := (BoundarylessModel.diffeomorph I (M := M) ∞).symm.contMDiff.comp
-      ((contMDiff_globalFlow_apply hcomplete le_top hX t).comp
-        (BoundarylessModel.diffeomorph I (M := M) ∞).contMDiff)
+      ((contMDiff_globalFlow_uncurry hcomplete le_top hX).comp (contMDiff_fst.prodMk
+        ((BoundarylessModel.diffeomorph I (M := M) ∞).contMDiff.comp contMDiff_snd)))
     rw [BoundarylessModel.coe_diffeomorph_symm, BoundarylessModel.coe_diffeomorph, ← he] at h
     convert h using 1
-    ext x
-    rw [Homeomorph.conjFlow_apply, Homeomorph.symm_symm, comp_apply, comp_apply]
+    ext p
+    rw [Homeomorph.conjFlow_apply, Homeomorph.symm_symm, comp_apply, comp_apply, comp_apply]
   · simp only [hφ]
     exact (isMIntegralCurve_globalFlow hX1 hcomplete (e x)).antitone_comp (fun _ ↦ hfd _)
       fun _ ↦ hXle _
@@ -147,15 +147,15 @@ theorem exists_flow_apply_eq_sub_of_isCompact (hf : ContMDiff I 𝓘(ℝ) ∞ f)
     t ⟨hrt, le_rfl⟩
 
 /-- **A unit-speed descending flow across a band without critical points.** If `f` is smooth and
-the band `f⁻¹[a, b]` is compact and contains no critical point of `f`, there is a flow `φ` on `M`
-by smooth maps along which `f` never increases, strictly decreases from every point of the band,
-and decreases at unit speed through the band: if `f x ≤ b`, `t ≥ 0` and `f x - t ≥ a`, then
-`f (φ t x) = f x - t`. -/
+the band `f⁻¹[a, b]` is compact and contains no critical point of `f`, there is a flow `φ` on `M`,
+jointly smooth in time and space, along which `f` never increases, strictly decreases from every
+point of the band, and decreases at unit speed through the band: if `f x ≤ b`, `t ≥ 0` and
+`f x - t ≥ a`, then `f (φ t x) = f x - t`. -/
 theorem exists_flow_apply_eq_sub (hf : ContMDiff I 𝓘(ℝ) ∞ f)
     (hcompact : IsCompact (f ⁻¹' Icc a b))
     (hreg : ∀ x, a ≤ f x → f x ≤ b → mfderiv I 𝓘(ℝ) f x ≠ 0) :
-    ∃ φ : Flow ℝ M, (∀ t, ContMDiff I I ∞ (φ t)) ∧ (∀ x, Antitone fun t ↦ f (φ t x)) ∧
-      (∀ x t, a ≤ f x → f x ≤ b → 0 < t → f (φ t x) < f x) ∧
+    ∃ φ : Flow ℝ M, ContMDiff (𝓘(ℝ, ℝ).prod I) I ∞ (fun p : ℝ × M ↦ φ p.1 p.2) ∧
+      (∀ x, Antitone fun t ↦ f (φ t x)) ∧ (∀ x t, a ≤ f x → f x ≤ b → 0 < t → f (φ t x) < f x) ∧
       ∀ x t, 0 ≤ t → a ≤ f x - t → f x ≤ b → f (φ t x) = f x - t := by
   obtain ⟨φ, hφs, hanti, U, hU, hKU, hφU⟩ :=
     exists_flow_apply_eq_sub_of_isCompact hf hcompact fun x hx ↦ hreg x hx.1 hx.2
@@ -237,7 +237,8 @@ theorem exists_diffeomorph_sublevel (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hab : a 
   have hanti' : ∀ x, AntitoneOn (fun t ↦ f (φ t x)) (Ici 0) := fun x ↦ (hanti x).antitoneOn _
   have hφa : ∀ x t, f x = a → 0 < t → f (φ t x) < a := fun x t hx ht ↦
     (hlt x t hx.ge (hx.trans_le hab) ht).trans_eq hx
-  refine ⟨⟨(φ.toHomeomorph (b - a)).toEquiv, hφs (b - a), hφs (-(b - a))⟩, fun x ↦
+  refine ⟨⟨(φ.toHomeomorph (b - a)).toEquiv, hφs.comp (contMDiff_const.prodMk contMDiff_id),
+    hφs.comp (contMDiff_const.prodMk contMDiff_id)⟩, fun x ↦
     ⟨φ.apply_le_iff_of_apply_eq_sub hf.continuous hab hanti' hφ x,
       φ.apply_eq_iff_of_apply_eq_sub hf.continuous hab hanti' hφ hφa x⟩⟩
 
