@@ -259,44 +259,6 @@ private theorem exists_linearEquiv_dual_spinPlus_conj [NeZero (2 : K)]
     LinearEquiv.conjAlgEquiv_apply] at h
   simpa using h.symm
 
-/-- Reversal inverts the even part of a Spin element. -/
-private theorem reverseEven_spinGroupToEven_inv (g : spinGroup Q) :
-    reverseEven Q (spinGroupToEven Q g⁻¹) = spinGroupToEven Q g := by
-  apply Subtype.ext
-  rw [coe_reverseEven_apply, coe_spinGroupToEven_apply, coe_spinGroupToEven_apply]
-  calc
-    reverse ((g⁻¹ : spinGroup Q) : CliffordAlgebra Q) =
-        reverse (((spinGroupToEvenUnitary Q g⁻¹ : evenUnitaryGroup Q) :
-          (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) := by
-            rw [coe_spinGroupToEvenUnitary_apply]
-            rfl
-    _ = ((((spinGroupToEvenUnitary Q g⁻¹ : evenUnitaryGroup Q) :
-          (CliffordAlgebra Q)ˣ)⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) :=
-      evenUnitaryGroup.reverse_eq_inv Q (spinGroupToEvenUnitary Q g⁻¹)
-    _ = (g : CliffordAlgebra Q) := by simp
-
-/-- The even half-spin subrepresentation acts as the even half-spin action of the even part. -/
-private theorem spinPlusSubrep_toRepresentation_apply_eq_spinPlusAction
-    (P : SpinPolarizationData Q) (hline : P.line = ⊥) (g : spinGroup Q) (p : spinPlus Q P) :
-    (LinearEquiv.ofEq _ _ (toSubmodule_spinPlusSubrep P hline).symm).symm
-      ((spinPlusSubrep P hline).toRepresentation g
-        (LinearEquiv.ofEq _ _ (toSubmodule_spinPlusSubrep P hline).symm p)) =
-      spinPlusAction Q P hline (spinGroupToEven Q g) p := by
-  apply Subtype.ext
-  exact (coe_spinPlusAction_spinGroupToEven_apply P hline g p).symm
-
-/-- The odd half-spin subrepresentation acts as the odd half-spin action of the even part. -/
-private theorem spinMinusSubrep_toRepresentation_apply_eq_spinMinusAction
-    (P : SpinPolarizationData Q) (hline : P.line = ⊥) (g : spinGroup Q)
-    (s : (spinMinusSubrep P hline).toSubmodule) :
-    (LinearEquiv.ofEq _ _ (toSubmodule_spinMinusSubrep P hline).symm).symm
-      ((spinMinusSubrep P hline).toRepresentation g s) =
-      spinMinusAction Q P hline (spinGroupToEven Q g)
-        ((LinearEquiv.ofEq _ _ (toSubmodule_spinMinusSubrep P hline).symm).symm s) := by
-  apply Subtype.ext
-  simpa using (coe_spinMinusAction_spinGroupToEven_apply P hline g
-    ((LinearEquiv.ofEq _ _ (toSubmodule_spinMinusSubrep P hline).symm).symm s)).symm
-
 /-- In a polarized six-dimensional quadratic space, the odd half-spin representation is
 equivalent to the dual of the even half-spin representation. The equivalence is noncanonical:
 it is obtained from the anti-isomorphism between the two simple factors of the even Clifford
