@@ -13,6 +13,7 @@ import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.MeasureTheory.Measure.OpenPos
 import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Basic
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # Local integral and L² bounds for holomorphic functions
@@ -43,7 +44,7 @@ theorem norm_le_ball_integral {f : ℂ → F} (hf : DifferentiableOn ℂ f U)
   have hh : HarmonicOnNhd f (closedBall x r) := fun y hy ↦
     (hf.analyticAt (U.isOpen.mem_nhds (hball hy))).harmonicAt
   have hpos : 0 < volume.real (ball x r) :=
-    ENNReal.toReal_pos (measure_ball_pos volume x hr).ne' measure_ball_lt_top.ne
+    Metric.measureReal_ball_pos volume x hr
   have heq := hh.setIntegral_ball_eq (μ := volume)
   calc
     ‖f x‖ = (volume.real (ball x r))⁻¹ * ‖∫ y in ball x r, f y‖ := by

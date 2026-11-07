@@ -12,6 +12,7 @@ import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.MeasureTheory.Measure.Real
 import Mathlib.RingTheory.Norm.Transitivity
+import TauCeti.MeasureTheory.Measure.OpenPos
 import TauCeti.RingTheory.Norm.RCLike
 
 /-!
@@ -162,7 +163,7 @@ theorem _root_.MeasureTheory.Measure.addHaar_real_ball_mul_diam_ball_pow_div_le
     mu.real (ball 0 1) * diam (ball x r) ^ (finrank ℝ E + 1) / mu.real (ball x r) ≤
       2 ^ (finrank ℝ E + 1) * r := by
   have homega : 0 < mu.real (ball (0 : E) 1) :=
-    ENNReal.toReal_pos (measure_ball_pos mu 0 one_pos).ne' measure_ball_lt_top.ne
+    Metric.measureReal_ball_pos mu 0 one_pos
   rw [mu.addHaar_real_ball_of_pos x hr, div_le_iff₀ (by positivity)]
   calc mu.real (ball (0 : E) 1) * diam (ball x r) ^ (finrank ℝ E + 1)
       ≤ mu.real (ball (0 : E) 1) * (2 * r) ^ (finrank ℝ E + 1) := by
@@ -184,7 +185,7 @@ theorem _root_.MeasureTheory.Measure.addHaar_real_ball_rpow_mul_diam_ball_pow_di
   set n := finrank ℝ E
   set ω := mu.real (ball (0 : E) 1)
   have homega : 0 < ω :=
-    ENNReal.toReal_pos (measure_ball_pos mu 0 one_pos).ne' measure_ball_lt_top.ne
+    Metric.measureReal_ball_pos mu 0 one_pos
   rw [mu.addHaar_real_ball_of_pos x hr]
   calc ω ^ (1 - (n : ℝ)⁻¹) * diam (ball x r) ^ n / (r ^ n * ω)
       ≤ ω ^ (1 - (n : ℝ)⁻¹) * (2 * r) ^ n / (r ^ n * ω) := by
@@ -298,7 +299,7 @@ theorem _root_.MeasureTheory.Measure.addHaar_real_closedBall_div_le
     (x y : E) {c r R : ℝ} (hr : 0 < r) (hR : 0 ≤ R) (hRr : R ≤ c * r) :
     mu.real (closedBall x R) / mu.real (closedBall y r) ≤ c ^ finrank ℝ E := by
   have hball : 0 < mu.real (ball (0 : E) 1) :=
-    ENNReal.toReal_pos (measure_ball_pos mu 0 one_pos).ne' measure_ball_lt_top.ne
+    Metric.measureReal_ball_pos mu 0 one_pos
   rw [mu.addHaar_real_closedBall x hR, mu.addHaar_real_closedBall y hr.le,
     mul_div_mul_right _ _ hball.ne', div_le_iff₀ (by positivity), ← mul_pow]
   exact pow_le_pow_left₀ hR hRr _
