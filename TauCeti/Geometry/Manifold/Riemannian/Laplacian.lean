@@ -299,6 +299,18 @@ theorem contMDiff_laplaceBeltrami {n m k : ℕ∞ω}
   rw [hEq]
   exact hdiv
 
+/-- For a `C¹` Riemannian metric, the Laplace--Beltrami operator of a `C²` function is
+continuous. -/
+theorem continuous_laplaceBeltrami
+    {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+    [IsManifold I 2 M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f) :
+    Continuous (laplaceBeltrami I f) :=
+  (contMDiff_laplaceBeltrami (n := 0) (m := 2) (k := 1) (by simp) (by simp)
+    (by simpa using hf)).continuous
+
 section OperatorLaws
 
 variable (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
@@ -429,7 +441,7 @@ theorem hessian_smul (c : ℝ) {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
     hessian I (c • f) x v w = c * hessian I f x v w := by
   let : IsManifold I ((1 : ℕ∞ω) + 1) M := by
     simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
-  simp only [hessian, mgradient_smul c (hf.mdifferentiable (by simp)),
+  simp only [hessian, mgradient_smul,
     (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv.smul_const c
       (mdifferentiable_mgradient (I := I) hf x),
     smul_apply, real_inner_smul_left]
@@ -501,7 +513,7 @@ theorem laplaceBeltrami_smul (c : ℝ) {f : M → ℝ} (hf : ContMDiff I 𝓘(�
     laplaceBeltrami I (c • f) x = c * laplaceBeltrami I f x := by
   let : IsManifold I ((1 : ℕ∞ω) + 1) M := by
     simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
-  simp only [laplaceBeltrami, mgradient_smul c (hf.mdifferentiable (by simp))]
+  simp only [laplaceBeltrami, mgradient_smul]
   exact divergence_smul I c _ x
     (mdifferentiable_mgradient (I := I) hf x)
 
