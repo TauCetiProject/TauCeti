@@ -48,7 +48,9 @@ theorem prod_comp_ofFinEmbEquiv_symm {n : ℕ} (s : powersetCard I n)
     ∏ a, f (ofFinEmbEquiv.symm s a) = ∏ i ∈ (s : Finset I), f i := by
   -- Both sides enumerate the subset using its order isomorphism with `Fin n`.
   exact (Fintype.prod_equiv (orderIsoOfFin s).toEquiv
-    (fun a ↦ f (ofFinEmbEquiv.symm s a)) (fun i ↦ f i.val) fun _ ↦ rfl).trans
+    (fun a ↦ f (ofFinEmbEquiv.symm s a)) (fun i ↦ f i.val) (fun a ↦ by
+      rw [ofFinEmbEquiv_symm_apply]
+      exact congrArg f (Finset.coe_orderIsoOfFin_apply s.1 s.2 a).symm)).trans
     (Finset.prod_coe_sort s.val f)
 
 /-- An increasing triple, as an order embedding of `Fin 3`. -/

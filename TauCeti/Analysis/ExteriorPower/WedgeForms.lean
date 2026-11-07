@@ -46,8 +46,8 @@ variable {R : Type*} [CommRing R] [Nontrivial R]
 
 omit [Nontrivial R] in
 /-- Evertse's entrywise estimate passes to each permutation product in the wedge determinant,
-retaining the gain on the top block. -/
-private theorem prod_apply_le_jump_mul_prod (v : AbsoluteValue R ℝ)
+retaining the gain on the top block and the nonnegativity of the common bound. -/
+private theorem prod_apply_le_ite_div_mul_prod (v : AbsoluteValue R ℝ)
     (l : ι → Dual R (ι → R)) (σ : Fin (Fintype.card ι) ≃ ι)
     {μ : ℕ → ℝ} (hμm : MonotoneOn μ (Set.Iio (Fintype.card ι)))
     (hμp : ∀ j < Fintype.card ι, 0 < μ j) {ν : ι → ℝ} (hν : ∀ i, 0 ≤ ν i)
@@ -55,6 +55,9 @@ private theorem prod_apply_le_jump_mul_prod (v : AbsoluteValue R ℝ)
     (hy : ∀ i j, v (l (σ i) (y j)) ≤ C * ν (σ i) * min (μ i) (μ j))
     {k p : ℕ} (J : powersetCard (Fin (Fintype.card ι)) p)
     (hJ : ∃ j ∈ J, (j : ℕ) < k) (T : powersetCard ι p) (τ : Equiv.Perm (Fin p)) :
+    0 ≤ (∏ t ∈ (T : Finset ι), ν t) *
+      ((if ∀ t ∈ (T : Finset ι), k ≤ (σ.symm t : ℕ) then μ (k - 1) / μ k else 1) *
+        ∏ t ∈ (T : Finset ι), μ (σ.symm t)) ∧
     ∏ b, v (l (ofFinEmbEquiv.symm T (τ b)) (y (ofFinEmbEquiv.symm J b))) ≤
       C ^ p * ((∏ t ∈ (T : Finset ι), ν t) *
         ((if ∀ t ∈ (T : Finset ι), k ≤ (σ.symm t : ℕ) then μ (k - 1) / μ k else 1) *
@@ -66,12 +69,16 @@ private theorem prod_apply_le_jump_mul_prod (v : AbsoluteValue R ℝ)
     (Equiv.prod_comp τ fun a ↦ g (eT a)).trans (prod_comp_ofFinEmbEquiv_symm T g)
   obtain ⟨j₀, hj₀J, hj₀k⟩ := hJ
   obtain ⟨b₀, hb₀⟩ := (mem_range_ofFinEmbEquiv_symm_iff_mem J j₀).2 hj₀J
-  have hmin := prod_min_le_jump_mul_prod hμm hμp
+  have hmin := prod_min_le_ite_div_mul_prod hμm hμp
     (i := fun b ↦ (σ.symm (eT (τ b)) : ℕ)) (j := fun b ↦ (eJ b : ℕ))
     (fun _ ↦ Fin.is_lt _) (fun _ ↦ Fin.is_lt _)
     ⟨b₀, by simpa [eJ, hb₀] using hj₀k⟩
     (∀ t ∈ (T : Finset ι), k ≤ (σ.symm t : ℕ))
     (fun h b ↦ h _ ((mem_range_ofFinEmbEquiv_symm_iff_mem T _).1 ⟨τ b, rfl⟩))
+  have hmin0 : 0 ≤ ∏ b, min (μ (σ.symm (eT (τ b)))) (μ (eJ b)) :=
+    prod_nonneg fun b _ ↦ le_min (hμp _ (Fin.is_lt _)).le (hμp _ (Fin.is_lt _)).le
+  refine ⟨mul_nonneg (prod_nonneg fun t _ ↦ hν t) ?_, ?_⟩
+  · simpa only [hperm (fun t ↦ μ (σ.symm t))] using hmin0.trans hmin
   calc
     _ ≤ ∏ b, C * ν (eT (τ b)) * min (μ (σ.symm (eT (τ b)))) (μ (eJ b)) := by
       refine prod_le_prod₀ (fun _ _ ↦ v.nonneg _) fun b _ ↦ ?_
@@ -105,9 +112,10 @@ theorem apply_wedgeForms_plucker_le (v : AbsoluteValue R ℝ) (l : ι → Dual R
             ∏ t ∈ (T : Finset ι), μ (σ.symm t))) := by
   classical
   rw [wedgeForms_plucker]
-  have hterm := prod_apply_le_jump_mul_prod v l σ hμm hμp hν hC hy J hJ T
+  have hterm := prod_apply_le_ite_div_mul_prod v l σ hμm hμp hν hC hy J hJ T
   have hdet := Matrix.abv_det_le_factorial_mul_of_forall_perm
-    (Matrix.of fun a b ↦ l (ofFinEmbEquiv.symm T a) ((y ∘ ofFinEmbEquiv.symm J) b)) v hterm
+    (Matrix.of fun a b ↦ l (ofFinEmbEquiv.symm T a) ((y ∘ ofFinEmbEquiv.symm J) b)) v
+    (fun τ ↦ (hterm τ).2)
   rw [Fintype.card_fin] at hdet
   have hpN : p ≤ Fintype.card ι := by
     simpa using (Finset.card_le_univ (T : Finset ι))
@@ -116,22 +124,7 @@ theorem apply_wedgeForms_plucker_le (v : AbsoluteValue R ℝ) (l : ι → Dual R
     refine mul_le_mul (by exact_mod_cast Nat.factorial_le hpN) ?_ (pow_nonneg hC _) (by positivity)
     exact (pow_le_pow_left₀ hC (le_max_right _ _) p).trans
       (pow_le_pow_right₀ (le_max_left _ _) hpN)
-  have hB : 0 ≤ (∏ t ∈ (T : Finset ι), ν t) *
-      ((if ∀ t ∈ (T : Finset ι), k ≤ (σ.symm t : ℕ) then μ (k - 1) / μ k else 1) *
-        ∏ t ∈ (T : Finset ι), μ (σ.symm t)) := by
-    have hμT : 0 ≤ ∏ t ∈ (T : Finset ι), μ (σ.symm t) :=
-      prod_nonneg fun t _ ↦ (hμp _ (σ.symm t).isLt).le
-    have hρ : 0 ≤ if ∀ t ∈ (T : Finset ι), k ≤ (σ.symm t : ℕ)
-        then μ (k - 1) / μ k else 1 := by
-      split_ifs with ht
-      · obtain ⟨j, hj, hjk⟩ := hJ
-        obtain ⟨b, -⟩ := (mem_range_ofFinEmbEquiv_symm_iff_mem J j).2 hj
-        have hk := ht _ ((mem_range_ofFinEmbEquiv_symm_iff_mem T _).1 ⟨b, rfl⟩)
-        have hkN : k < Fintype.card ι :=
-          hk.trans_lt (σ.symm (ofFinEmbEquiv.symm T b)).isLt
-        exact div_nonneg (hμp _ (by omega)).le (hμp _ hkN).le
-      · exact zero_le_one
-    exact mul_nonneg (prod_nonneg fun t _ ↦ hν t) (mul_nonneg hρ hμT)
+  have hB := (hterm (Equiv.refl _)).1
   exact hdet.trans (by simpa [mul_assoc] using mul_le_mul_of_nonneg_right hfac hB)
 
 /-- At a nonarchimedean absolute value, row bounds pass to the wedge forms with no factorial

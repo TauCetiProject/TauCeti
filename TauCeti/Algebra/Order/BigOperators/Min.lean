@@ -36,7 +36,7 @@ namespace TauCeti
 /-- A product of pairwise minima gains the ratio across the first `k` indices when every
 first index is above the cut and some second index is below it. The proposition `P` controls
 whether the stronger bound is used. -/
-theorem prod_min_le_jump_mul_prod {N k p : ℕ} {μ : ℕ → ℝ}
+theorem prod_min_le_ite_div_mul_prod {N k p : ℕ} {μ : ℕ → ℝ}
     (hμm : MonotoneOn μ (Set.Iio N)) (hμp : ∀ j < N, 0 < μ j)
     {i j : Fin p → ℕ} (hi : ∀ b, i b < N) (hj : ∀ b, j b < N)
     (hk : ∃ b, j b < k) (P : Prop) [Decidable P] (hP : P → ∀ b, k ≤ i b) :
