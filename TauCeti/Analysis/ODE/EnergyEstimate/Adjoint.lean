@@ -19,9 +19,10 @@ with `D_A^* v = -v' + A v`.  This file proves the identity on compactly supporte
 differentiable paths.  It also proves the same global and tail coercive estimates for the formal
 adjoint that are available for `D_A` itself.
 
-The adjoint estimates are the cokernel input for the Fredholm property of the Sobolev realization
-of `D_A`: after identifying vectors orthogonal to its range with weak solutions of the adjoint
-equation, the estimates control those solutions by the same compact error used for the kernel.
+These are statements about classical test paths for symmetric coefficients. The cokernel of the
+Sobolev realization of `D_A`, for coefficients that need not be symmetric, is identified with the
+kernel of the formal adjoint through weak derivatives in
+`TauCeti.Analysis.ODE.EnergyEstimate.Cokernel`.
 
 ## References
 

@@ -53,6 +53,8 @@ open arc.
   where the argument is at most `a` in absolute value.
 * `Circle.closure_path_image_Ioo` — the closure of the open arc traced by Mathlib's
   `Circle.path x y` on `(0, 1)` is the closed arc, its whole range.
+* `TauCeti.exists_centeredArc_subset_of_mem_nhds` — every neighbourhood of `1` contains an arc
+  about `1` of half-width at most `π`.
 -/
 
 public section
@@ -60,6 +62,7 @@ public section
 namespace TauCeti
 
 open Real Set
+open scoped Topology
 
 /-! The statements below are about a *closed arc* `Circle.exp '' Set.Icc a b`. Nothing ties the
 angles to a period, so a consumer may translate them by any multiple of `2 * π`. -/
@@ -161,5 +164,17 @@ theorem _root_.Circle.closure_path_image_Ioo (x y : Circle) :
     rw [closure_Ioo zero_ne_one, unitInterval.univ_eq_Icc]
   rw [← image_univ, ← h]
   exact image_closure_subset_closure_image (x.path y).continuous
+
+/-- Every neighbourhood of `1` in the circle contains an arc `|arg z| < r` with `0 < r ≤ π`. -/
+theorem exists_centeredArc_subset_of_mem_nhds {V : Set Circle} (hV : V ∈ 𝓝 1) :
+    ∃ r, 0 < r ∧ r ≤ Real.pi ∧ Circle.centeredArc r ⊆ V := by
+  have hV' : Circle.exp ⁻¹' V ∈ 𝓝 0 :=
+    Circle.exp.continuous.continuousAt.preimage_mem_nhds (by rwa [Circle.exp_zero])
+  obtain ⟨r', hr', hball⟩ := Metric.mem_nhds_iff.1 hV'
+  have hmem {t : ℝ} (ht : |t| < min r' Real.pi) : t ∈ Metric.ball 0 r' := by
+    simpa [Real.dist_eq] using ht.trans_le (min_le_left _ _)
+  refine ⟨min r' Real.pi, lt_min hr' Real.pi_pos, min_le_right _ _, ?_⟩
+  rintro _ ⟨t, ht, rfl⟩
+  exact hball (hmem ht)
 
 end TauCeti
