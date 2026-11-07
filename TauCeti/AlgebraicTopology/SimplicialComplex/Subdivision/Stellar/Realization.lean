@@ -210,9 +210,13 @@ theorem surjOn_stellarSubdivisionLinearMap (hσ : σ ∈ K) (hv : ({v} : Finset 
     obtain ⟨a, ha, hmin⟩ := (σ : Set ι).exists_min_image (fun i => x i)
       σ.finite_toSet hσne
     have haσ : a ∈ σ := ha
-    obtain ⟨y, hy, hycoord, hypos, hya, hyne⟩ :=
+    obtain ⟨y, hy, hycoord, hypos, hya, hysum⟩ :=
       Finsupp.exists_transfer_vector hvσ hxpos hxsum hxv haσ hmin
     -- The least coordinate vanishes, and every other old coordinate stays in the old face.
+    have hyne : y.support.Nonempty := by
+      apply Finsupp.support_nonempty_iff.mpr
+      intro hz
+      simp [hz] at hysum
     have hysub : y.support.erase v ⊆ x.support := by
       intro i hi
       obtain ⟨hiv, hiy⟩ := Finset.mem_erase.mp hi
@@ -234,11 +238,9 @@ theorem surjOn_stellarSubdivisionLinearMap (hσ : σ ∈ K) (hv : ({v} : Finset 
           (by simpa [Finset.erase_eq_of_notMem hvy] using hysub) hyne
     have hyimage : stellarSubdivisionLinearMap σ v y = x :=
       hy ▸ stellarSubdivisionLinearMap_lift hσne hvσ hxv (x a)
-    -- The linear map undoes the transfer; mass preservation supplies the final normalization.
-    refine ⟨y, Geometry.SimplicialComplex.mem_space_onFinsupp_iff.mpr
-      ⟨hypos, ?_, hyface⟩, hyimage⟩
-    rw [← sum_stellarSubdivisionLinearMap hσne y, hyimage]
-    exact hxsum
+    -- The linear map undoes the transfer, and the transfer preserves total mass.
+    exact ⟨y, Geometry.SimplicialComplex.mem_space_onFinsupp_iff.mpr ⟨hypos, hysum, hyface⟩,
+      hyimage⟩
   · refine ⟨x, Geometry.SimplicialComplex.mem_space_onFinsupp_iff.mpr
       ⟨hxpos, hxsum, (mem_stellarSubdivision_iff_of_notMem hvx).mpr ⟨hxface, hsub⟩⟩, hfix⟩
 
