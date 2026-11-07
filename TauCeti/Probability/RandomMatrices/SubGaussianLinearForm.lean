@@ -55,7 +55,9 @@ theorem measureReal_abs_sum_mul_ge_le_of_iIndepFun
     exact hsum
   have hset : {ω | t ≤ |S ω|} =
       {ω | t ≤ S ω} ∪ {ω | t ≤ -S ω} := by
-    by ext ω; exact le_abs
+    ext ω
+    change t ≤ |S ω| ↔ t ≤ S ω ∨ t ≤ -S ω
+    exact le_abs
   have hset' : {ω | t ≤ |∑ i, a i * X i ω|} =
       {ω | t ≤ S ω} ∪ {ω | t ≤ -S ω} := hset
   calc
