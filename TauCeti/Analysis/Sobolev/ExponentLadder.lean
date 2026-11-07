@@ -31,6 +31,105 @@ public section
 
 namespace TauCeti
 
+/-- For a nonnegative `t` and positive `a`, some positive multiple `N a` lies in `(t, t + a]`. -/
+private theorem exists_pos_nat_mul_bounds {t a : ℝ} (ht : 0 ≤ t) (ha : 0 < a) :
+    ∃ N : ℕ, 1 ≤ N ∧ t < N * a ∧ N * a ≤ t + a := by
+  refine ⟨⌊t / a⌋₊ + 1, by omega, ?_, ?_⟩
+  · have h := Nat.lt_floor_add_one (t / a)
+    have h' : t / a < ((⌊t / a⌋₊ + 1 : ℕ) : ℝ) := by
+      simpa only [Nat.cast_add, Nat.cast_one] using h
+    exact (div_lt_iff₀ ha).mp h'
+  · have h := Nat.floor_le (show 0 ≤ t / a by positivity)
+    have h' := (le_div_iff₀ ha).mp h
+    push_cast
+    nlinarith
+
+/-- The initial exponent of the ladder lies in `(p / (p - 1), p]` when its reciprocal `b` lies
+in `[1 / p, (p - 1) / p)`, with strict inequality at the left end. -/
+private theorem ladder_initial_exponent {p b : ℝ} (hp : 2 < p) (hb0 : 0 < b)
+    (hb1 : 1 / p < b) (hb2 : b < (p - 1) / p) : p / (p - 1) < 1 / b ∧ 1 / b ≤ p := by
+  have hp0 : 0 < p := by linarith
+  have hp1 : 0 < p - 1 := by linarith
+  refine ⟨?_, ?_⟩
+  · apply (div_lt_div_iff₀ hp1 hb0).2
+    have h := (lt_div_iff₀ hp0).mp hb2
+    nlinarith
+  · apply (div_le_iff₀ hb0).2
+    have h := (div_lt_iff₀ hp0).mp hb1
+    linarith
+
+/-- The product exponent of `p` and `1 / b` has reciprocal `1 / p + b`. -/
+private theorem ladder_product_exponent {p b : ℝ} (hp : 0 < p) (hb : 0 < b) :
+    p * (1 / b) / (p + 1 / b) = 1 / (1 / p + b) := by
+  field_simp [hp.ne', hb.ne']
+  ring
+
+/-- One step of the ladder: if `b' = b - a` with `a = 1 / 2 - 1 / p`, the exponent `1 / b'` is
+the two-dimensional Sobolev exponent of the product exponent of `p` and `1 / b`. -/
+private theorem ladder_step_eq {p a b b' : ℝ} (hp : 0 < p) (hae : a = 1 / 2 - 1 / p)
+    (hb : 0 < b) (hb' : 0 < b') (hbb : b' = b - a) (hr : p * (1 / b) / (p + 1 / b) < 2) :
+    1 / b' = 2 * (p * (1 / b) / (p + 1 / b)) / (2 - p * (1 / b) / (p + 1 / b)) := by
+  apply (eq_div_iff (sub_pos.mpr hr).ne').2
+  rw [ladder_product_exponent hp hb]
+  have hd : 1 / p + b ≠ 0 := (add_pos (one_div_pos.mpr hp) hb).ne'
+  field_simp [hb'.ne', hd]
+  rw [hbb, hae]
+  have hd' : 1 + p * b ≠ 0 := (add_pos zero_lt_one (mul_pos hp hb)).ne'
+  field_simp [hp.ne', hd']
+  ring
+
+/-- The last two ladder exponents straddle the critical exponent `2 p / (p - 2)`, and the last
+product exponent exceeds two. Here `a = (p - 2) / (2 p)` and the last two reciprocals are
+`3 a / 2` and `a / 2`. -/
+private theorem ladder_final_exponents {p a : ℝ} (hp : 2 < p) (ha : a = (p - 2) / (2 * p)) :
+    1 / (3 * a / 2) < 2 * p / (p - 2) ∧ 2 * p / (p - 2) < 1 / (a / 2) ∧
+      2 < p * (1 / (a / 2)) / (p + 1 / (a / 2)) := by
+  have hp0 : 0 < p := by linarith
+  have hapos : 0 < a := ha ▸ div_pos (by linarith) (by positivity)
+  have hae : a = 1 / 2 - 1 / p := by
+    rw [ha]
+    field_simp
+  have hthreshold : 2 * p / (p - 2) = 1 / a := by
+    rw [ha]
+    field_simp
+  rw [hthreshold]
+  refine ⟨one_div_lt_one_div_of_lt hapos (by linarith),
+    one_div_lt_one_div_of_lt (by positivity) (by linarith), ?_⟩
+  rw [ladder_product_exponent hp0 (by positivity)]
+  apply (lt_div_iff₀ (by positivity : 0 < 1 / p + a / 2)).2
+  rw [hae]
+  have h := (one_div_lt_one_div_of_lt (by norm_num : (0 : ℝ) < 2) hp)
+  linarith
+
+/-- The reciprocal of the initial exponent lies strictly between `1 / p` and `(p - 1) / p`. -/
+private theorem ladder_initial_reciprocal {p a : ℝ} {N : ℕ} (hp : p ≠ 0) (hae : a = 1 / 2 - 1 / p)
+    (ha : 0 < a) (hNlow : 1 / p < N * a) (hNhigh : N * a ≤ 1 / p + a) :
+    1 / p < ((N : ℝ) + 1 / 2 - ((0 : ℕ) : ℝ)) * a ∧
+      ((N : ℝ) + 1 / 2 - ((0 : ℕ) : ℝ)) * a < (p - 1) / p := by
+  have hfrac : (p - 1) / p = 1 / p + 2 * a := by
+    rw [hae]
+    field_simp
+    ring
+  push_cast
+  rw [hfrac]
+  constructor <;> nlinarith
+
+/-- A product exponent of `p` with an exponent above `p / (p - 1)` exceeds one. -/
+private theorem one_lt_product_exponent {p q : ℝ} (hp : 2 < p) (hq0 : 0 < q)
+    (hq : p / (p - 1) < q) : 1 < p * q / (p + q) := by
+  have hp1 : 0 < p - 1 := by linarith
+  have h := (div_lt_iff₀ hp1).mp hq
+  apply (lt_div_iff₀ (by linarith)).2
+  nlinarith
+
+/-- The product exponent of `p` and `1 / b` is below two when `b > a = 1 / 2 - 1 / p`. -/
+private theorem product_exponent_lt_two {p a b : ℝ} (hp : 0 < p) (hae : a = 1 / 2 - 1 / p)
+    (hb : 0 < b) (hab : a < b) : p * (1 / b) / (p + 1 / b) < 2 := by
+  rw [ladder_product_exponent hp hb]
+  apply (div_lt_iff₀ (add_pos (one_div_pos.mpr hp) hb)).2
+  rw [hae] at hab
+  linarith
+
 /-- For every finite real `p > 2`, there is a finite strict ladder for the two-dimensional
 Sobolev iteration. The final product exponent is greater than two, so the iteration reaches
 an exponent with a bounded continuous representative without passing through the critical case.
@@ -51,19 +150,7 @@ theorem exists_finite_sobolev_exponent_ladder {p : ℝ} (hp : 2 < p) :
   have hae : a = 1 / 2 - 1 / p := by
     dsimp only [a]
     field_simp
-  let N : ℕ := ⌊(1 / p) / a⌋₊ + 1
-  have hN : 1 ≤ N := by dsimp only [N]; omega
-  have hNlow : 1 / p < (N : ℝ) * a := by
-    have h := Nat.lt_floor_add_one ((1 / p) / a)
-    have h' : (1 / p) / a < (N : ℝ) := by simpa only [N, Nat.cast_add,
-      Nat.cast_one] using h
-    exact (div_lt_iff₀ ha).mp h'
-  have hNhigh : (N : ℝ) * a ≤ 1 / p + a := by
-    have h := Nat.floor_le (show 0 ≤ (1 / p) / a by positivity)
-    have h' := (le_div_iff₀ ha).mp h
-    dsimp only [N]
-    push_cast
-    nlinarith
+  obtain ⟨N, hN, hNlow, hNhigh⟩ := exists_pos_nat_mul_bounds (one_div_pos.mpr hp0).le ha
   let b : ℕ → ℝ := fun j => ((N : ℝ) + 1 / 2 - j) * a
   let q : ℕ → ℝ := fun j => 1 / b j
   have hb : ∀ j ≤ N, 0 < b j := by
@@ -79,84 +166,32 @@ theorem exists_finite_sobolev_exponent_ladder {p : ℝ} (hp : 2 < p) :
     have hcast : (i : ℝ) < j := by exact_mod_cast hij
     have hbij : b j < b i := by dsimp only [b]; nlinarith
     exact one_div_lt_one_div_of_lt (hb j hj) hbij
-  have hb0 : 1 / p < b 0 ∧ b 0 < (p - 1) / p := by
-    have hfrac : (p - 1) / p = 1 / p + 2 * a := by
-      rw [hae]
-      field_simp
-      ring
-    dsimp only [b]
-    push_cast
-    rw [hfrac]
-    constructor <;> nlinarith
-  have hq0 : p / (p - 1) < q 0 := by
-    dsimp only [q]
-    apply (div_lt_div_iff₀ hp1 (hb 0 (by omega))).2
-    have h := (lt_div_iff₀ hp0).mp hb0.2
-    nlinarith
-  have hq0p : q 0 ≤ p := by
-    apply (div_le_iff₀ (hb 0 (by omega))).2
-    have h := (div_lt_iff₀ hp0).mp hb0.1
-    linarith
+  have hb0 := ladder_initial_reciprocal hp0.ne' hae ha hNlow hNhigh
+  obtain ⟨hq0, hq0p⟩ := ladder_initial_exponent hp (hb 0 (by omega)) hb0.1 hb0.2
   have hqpos (j : ℕ) (hj : j ≤ N) : 0 < q j := one_div_pos.mpr (hb j hj)
-  have hrone (j : ℕ) (hj : j ≤ N) : 1 < p * q j / (p + q j) := by
-    have hq : p / (p - 1) < q j :=
-      hq0.trans_le (hmono.monotoneOn (by simp) hj (Nat.zero_le j))
-    have h := (div_lt_iff₀ hp1).mp hq
-    apply (lt_div_iff₀ (by linarith [hqpos j hj])).2
-    nlinarith
-  have hr (j : ℕ) (hj : j ≤ N) :
-      p * q j / (p + q j) = 1 / (1 / p + b j) := by
-    dsimp only [q]
-    field_simp [hp0.ne', (hb j hj).ne']
-    ring
-  have hbefore (j : ℕ) (hj : j < N) : a < b j := by
-    have hcast : (j : ℝ) + 1 ≤ N := by exact_mod_cast hj
-    dsimp only [b]
-    nlinarith
+  have hrone (j : ℕ) (hj : j ≤ N) : 1 < p * q j / (p + q j) :=
+    one_lt_product_exponent hp (hqpos j hj)
+      (hq0.trans_le (hmono.monotoneOn (by simp) hj (Nat.zero_le j)))
+  have hr (j : ℕ) (hj : j ≤ N) : p * q j / (p + q j) = 1 / (1 / p + b j) :=
+    ladder_product_exponent hp0 (hb j hj)
   have hrtwo (j : ℕ) (hj : j < N) : p * q j / (p + q j) < 2 := by
-    rw [hr j hj.le]
-    apply (div_lt_iff₀ (add_pos (one_div_pos.mpr hp0) (hb j hj.le))).2
-    have h := hbefore j hj
-    rw [hae] at h
-    linarith
+    have hcast : (j : ℝ) + 1 ≤ N := by exact_mod_cast hj
+    exact product_exponent_lt_two hp0 hae (hb j hj.le) (by dsimp only [b]; nlinarith)
   have hlast : b N = a / 2 := by dsimp only [b]; ring
   have hprev : b (N - 1) = 3 * a / 2 := by
     dsimp only [b]
     rw [Nat.cast_sub hN]
     push_cast
     ring
-  have hthreshold : 2 * p / (p - 2) = 1 / a := by
-    dsimp only [a]
-    field_simp
+  obtain ⟨hf1, hf2, hf3⟩ := ladder_final_exponents hp (rfl : a = (p - 2) / (2 * p))
   refine ⟨N, hN, q, hq0, hq0p, hmono, fun j hj => ⟨hqpos j hj, hrone j hj⟩,
-    ?_, ?_, ?_, ?_⟩
-  · intro j hj
-    refine ⟨hrtwo j hj, ?_, ?_⟩
-    · apply (eq_div_iff (sub_pos.mpr (hrtwo j hj)).ne').2
-      rw [hr j hj.le]
-      dsimp only [q]
-      have hbn : b (j + 1) ≠ 0 := (hb (j + 1) (by omega)).ne'
-      have hd : 1 / p + b j ≠ 0 := (add_pos (one_div_pos.mpr hp0) (hb j hj.le)).ne'
-      field_simp [hbn, hd]
-      rw [hbstep j, hae]
-      have hd' : 1 + p * b j ≠ 0 := (add_pos zero_lt_one (mul_pos hp0 (hb j hj.le))).ne'
-      field_simp [hp0.ne', hd']
-      ring
-    · dsimp only [q]
-      rw [one_div_one_div, one_div_one_div, hbstep j, hae]
-      ring
-  · rw [hthreshold]
-    dsimp only [q]
-    rw [hprev]
-    exact one_div_lt_one_div_of_lt ha (by linarith)
-  · rw [hthreshold]
-    dsimp only [q]
-    rw [hlast]
-    exact one_div_lt_one_div_of_lt (by positivity) (by linarith)
-  · rw [hr N le_rfl, hlast]
-    apply (lt_div_iff₀ (by positivity : 0 < 1 / p + a / 2)).2
-    rw [hae]
-    have h := (one_div_lt_one_div_of_lt (by norm_num : (0 : ℝ) < 2) hp)
-    linarith
+    fun j hj => ⟨hrtwo j hj, ?_, ?_⟩, ?_, ?_, ?_⟩
+  · exact ladder_step_eq hp0 hae (hb j hj.le) (hb (j + 1) hj) (hbstep j) (hrtwo j hj)
+  · dsimp only [q]
+    rw [one_div_one_div, one_div_one_div, hbstep j, hae]
+    ring
+  · simpa only [q, hprev] using hf1
+  · simpa only [q, hlast] using hf2
+  · simpa only [q, hr N le_rfl, hlast, ladder_product_exponent hp0 (hb N le_rfl)] using hf3
 
 end TauCeti
