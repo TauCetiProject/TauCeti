@@ -9,6 +9,7 @@ public import Mathlib.Combinatorics.Enumerative.DyckWord
 import Mathlib.Algebra.BigOperators.Group.Finset.Piecewise
 import Mathlib.Algebra.BigOperators.Intervals
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
+import Mathlib.Data.Nat.Count
 public import Mathlib.Data.Sym.Sym2
 public import Mathlib.SetTheory.Cardinal.Finite
 public import TauCeti.Combinatorics.Enumerative.DyckWord
@@ -158,16 +159,13 @@ end WalkOf
 /-- The number of up steps in a prefix after one more step. -/
 theorem ups_succ (s : ℕ → Bool) (n : ℕ) :
     ups s (n + 1) = ups s n + if s n then 1 else 0 := by
-  unfold ups
-  rw [range_add_one, filter_insert]
-  split_ifs with h
-  · rw [card_insert_of_notMem (by simp)]
-  · simp
+  simpa only [Nat.count_eq_card_filter_range, ups] using
+    (Nat.count_succ (fun i ↦ s i = true) n)
 
 /-- A prefix of length `n` contains at most `n` up steps. -/
 theorem ups_le (s : ℕ → Bool) (n : ℕ) : ups s n ≤ n := by
-  unfold ups
-  exact (card_filter_le _ _).trans (by simp)
+  simpa only [Nat.count_eq_card_filter_range, ups] using
+    (Nat.count_le (p := fun i ↦ s i = true) (n := n))
 
 /-- A Boolean sequence of up and down steps forms a Dyck path of semilength `k`. -/
 structure IsDyckPattern (k : ℕ) (s : ℕ → Bool) : Prop where
