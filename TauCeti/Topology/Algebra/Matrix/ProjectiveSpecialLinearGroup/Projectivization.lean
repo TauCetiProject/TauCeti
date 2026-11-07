@@ -24,7 +24,8 @@ quadric in `ℂℙ³`.
 The inverse sends the line of an invertible matrix `A` to the class of `c⁻¹ • A`, where
 `c ^ n = det A`. There is no continuous `n`-th root on all of `ℂˣ`, so near a matrix `A₀` we use
 the local branch `A ↦ c₀ * (det A / det A₀) ^ (1 / n)` of the principal power, which is continuous
-because `det A / det A₀` stays in the slit plane near `A₀` (`TauCeti.exists_continuousAt_pow_eq`).
+because `det A / det A₀` stays in the slit plane near `A₀`
+(`TauCeti.exists_differentiableAt_pow_eq`).
 Different choices of root differ by an `n`-th root of unity, which is central in `SL(n, ℂ)`, so
 they give the same element of `PSL(n, ℂ)`. This shows that the map is open.
 
@@ -97,11 +98,11 @@ theorem isOpenMap_toProjectivization : IsOpenMap (toProjectivization n ℂ) := b
     rw [mul_comm, ← det_smul, ← Units.smul_def, ha, A.det_coe]
   have hv0 : v.det ≠ 0 := left_ne_zero_of_mul_eq_one hdetv
   -- A local branch `f` of the `k`-th root at `det v`, inverse to the scaling `a` at `v`.
-  obtain ⟨f, hf, hfv, hfk⟩ := TauCeti.exists_continuousAt_pow_eq hk hv0
+  obtain ⟨f, hf, hfv, hfk⟩ := TauCeti.exists_differentiableAt_pow_eq hk hv0
     (by rw [inv_pow, inv_eq_of_mul_eq_one_left hdetv] : ((a : ℂ)⁻¹) ^ k = v.det)
   have hcont : Continuous fun w : Matrix n n ℂ ↦ w.det := continuous_id.matrix_det
   have hF : ContinuousAt (fun w ↦ (f w.det)⁻¹ • w) v :=
-    ((hf.comp hcont.continuousAt).inv₀ (by simp [hfv])).smul continuousAt_id
+    ((hf.continuousAt.comp hcont.continuousAt).inv₀ (by simp [hfv])).smul continuousAt_id
   -- The preimage of `U` in `SL(n, ℂ)` is cut out by an open set `O` of matrices.
   obtain ⟨O, hO, hOU⟩ := isOpen_induced_iff.1 (hU.preimage QuotientGroup.continuous_mk)
   have hAO : (A : Matrix n n ℂ) ∈ O := (Set.ext_iff.1 hOU A).2 hgU

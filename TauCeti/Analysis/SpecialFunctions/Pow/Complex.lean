@@ -28,8 +28,8 @@ applied.  For a positive real exponent `r` that range is reached exactly on the 
 `-(r * π) < arg u ≤ r * π`.
 
 Rescaling the principal `k`-th root, `z ↦ c * (z / z₀) ^ (k⁻¹ : ℂ)`, gives a `k`-th root
-function that is continuous at a nonzero `z₀` and takes there any prescribed `k`-th root `c` of
-`z₀`, since `z / z₀` stays in the slit plane near `z₀`.
+function that is complex differentiable at a nonzero `z₀` and takes there any prescribed `k`-th
+root `c` of `z₀`, since `z / z₀` stays in the slit plane near `z₀`.
 
 Products `∏ i, (1 - a i * w) ^ e i` are holomorphic near zero, with derivative
 `-∑ i, e i * a i` and second derivative
@@ -58,8 +58,8 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
 * `TauCeti.ofReal_exp_cpow` -- a principal power of a positive real exponential is an exponential.
 * `TauCeti.cpow_inv_cpow_of_arg_mem_Ioc` -- raising an inverse principal power recovers its
   base on a suitable sector.
-* `TauCeti.exists_continuousAt_pow_eq` -- near a nonzero point, a prescribed `k`-th root extends
-  to a `k`-th root function continuous at that point.
+* `TauCeti.exists_differentiableAt_pow_eq` -- near a nonzero point, a prescribed `k`-th root
+  extends to a `k`-th root function complex differentiable at that point.
 * `TauCeti.cpow_mul_inv`, `TauCeti.cpow_add_one'` -- multiplying a principal power by `w⁻¹` or `w`
   lowers or raises the exponent by one, including at the base `0`.
 * `TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow`, `TauCeti.exists_norm_ofReal_add_cpow_le`,
@@ -145,14 +145,14 @@ theorem cpow_inv_cpow_of_arg_mem_Ioc {u : ℂ} {r : ℝ} (hr : 0 < r)
       u.arg * r⁻¹ ≤ (r * Real.pi) * r⁻¹ := mul_le_mul_of_nonneg_right harg.2 (inv_nonneg.mpr hr.le)
       _ = Real.pi := by field_simp
 
-/-- **A local continuous branch of the `k`-th root.** Near a nonzero `z₀` with a chosen `k`-th
-root `c`, there is a `k`-th root function which is continuous at `z₀` and takes the value `c`
-there, namely `z ↦ c * (z / z₀) ^ (k⁻¹ : ℂ)`. -/
-theorem exists_continuousAt_pow_eq {z₀ c : ℂ} {k : ℕ} (hk : k ≠ 0) (hz₀ : z₀ ≠ 0)
-    (hc : c ^ k = z₀) : ∃ f : ℂ → ℂ, ContinuousAt f z₀ ∧ f z₀ = c ∧ ∀ z, f z ^ k = z := by
+/-- **A local holomorphic branch of the `k`-th root.** Near a nonzero `z₀` with a chosen `k`-th
+root `c`, there is a `k`-th root function which is complex differentiable at `z₀` and takes the
+value `c` there, namely `z ↦ c * (z / z₀) ^ (k⁻¹ : ℂ)`. -/
+theorem exists_differentiableAt_pow_eq {z₀ c : ℂ} {k : ℕ} (hk : k ≠ 0) (hz₀ : z₀ ≠ 0)
+    (hc : c ^ k = z₀) :
+    ∃ f : ℂ → ℂ, DifferentiableAt ℂ f z₀ ∧ f z₀ = c ∧ ∀ z, f z ^ k = z := by
   refine ⟨fun z ↦ c * (z / z₀) ^ (k⁻¹ : ℂ), ?_, by simp [div_self hz₀], fun z ↦ ?_⟩
-  · exact continuousAt_const.mul <| (continuousAt_cpow_const (by simp [div_self hz₀])).comp
-      (continuousAt_id.div_const _)
+  · exact ((differentiableAt_id.div_const _).cpow_const (by simp [div_self hz₀])).const_mul c
   · rw [mul_pow, cpow_nat_inv_pow _ hk, hc, mul_div_cancel₀ _ hz₀]
 
 /-- The reciprocal-coordinate product of principal powers is holomorphic at zero,
