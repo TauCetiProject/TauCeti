@@ -236,12 +236,13 @@ private theorem measureReal_le_cutDist_comap_le_of_factorsThrough {κ : Type*} [
     rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul] at hlt
     have := cutDist_comap_le_of_factorsThrough U hg hfac y
     simp only [Set.mem_ofPred_eq] at hy
-    linarith [show c * (η / (2 * c)) = η / 2 by field_simp]
+    have hcη : c * (η / (2 * c)) = η / 2 := by field_simp
+    linarith
   -- Each deviation is controlled by the weak law of large numbers.
   have hdev : ∀ k, (Measure.pi fun _ : Fin n => μ).real {y | η / (2 * c) ≤
       |(∑ i, f k (y i)) / Fintype.card (Fin n) - ∫ x, f k x ∂μ|} ≤ c ^ 2 / (n * η ^ 2) :=
-    fun k => (measureReal_pi_deviation_le (ν := μ) (ι := Fin n) (hfm k) (hf01 k)
-      (by positivity)).trans_eq (by rw [Fintype.card_fin]; field_simp; ring)
+    fun k => (measureReal_pi_deviation_le (ν := μ) (ι := Fin n) (hfm k).aemeasurable
+      (ae_of_all μ (hf01 k)) (by positivity)).trans_eq (by rw [Fintype.card_fin]; field_simp; ring)
   calc (Measure.pi fun _ : Fin n => μ).real _
       ≤ (Measure.pi fun _ : Fin n => μ).real (⋃ k, {y | η / (2 * c) ≤
           |(∑ i, f k (y i)) / Fintype.card (Fin n) - ∫ x, f k x ∂μ|}) := measureReal_mono hsub
