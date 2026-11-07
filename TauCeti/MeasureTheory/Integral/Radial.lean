@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.Uniform.Sphere.Moments
+public import TauCeti.MeasureTheory.Group.Integral
 
 /-!
 # Quadratic forms against radial weights
@@ -56,13 +57,10 @@ theorem setIntegral_ball_bilinear_self_mul_radial (μ : Measure E) [μ.IsAddHaar
     ∫ x in ball a R, B (x - a) (x - a) * w ‖x - a‖ ∂μ =
       ((∑ i, B (b i) (b i)) / (finrank ℝ E : ℝ)) *
         ∫ x in ball a R, ‖x - a‖ ^ 2 * w ‖x - a‖ ∂μ := by
-  have hshift (f : E → ℝ) :
-      ∫ x in ball a R, f (x - a) ∂μ = ∫ x in ball 0 R, f x ∂μ := by
-    have h := (measurePreserving_add_right μ a).setIntegral_preimage_emb
-      (Homeomorph.addRight a).measurableEmbedding (fun x ↦ f (x - a)) (ball a R)
-    simpa [dist_eq_norm] using h.symm
-  rw [hshift (fun x ↦ B x x * w ‖x‖), hshift (fun x ↦ ‖x‖ ^ 2 * w ‖x‖),
-    Measure.isAddLeftInvariant_eq_smul μ volume]
+  rw [setIntegral_ball_eq_setIntegral_ball_zero_add _ a R,
+    setIntegral_ball_eq_setIntegral_ball_zero_add _ a R]
+  simp only [add_sub_cancel_right]
+  rw [Measure.isAddLeftInvariant_eq_smul μ volume]
   simp only [Measure.restrict_smul, integral_smul_nnreal_measure, NNReal.smul_def,
     smul_eq_mul]
   suffices h : ∫ x in ball (0 : E) R, B x x * w ‖x‖ =

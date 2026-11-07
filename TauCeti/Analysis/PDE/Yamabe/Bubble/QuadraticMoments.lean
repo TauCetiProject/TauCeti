@@ -63,10 +63,7 @@ theorem setIntegral_ball_bilinear_self_mul_bubble_sq_of_finrank_eq_six
         (log (1 + (R / t) ^ 2) - ∑ k ∈ Finset.range 3,
           (R ^ 2 / (t ^ 2 + R ^ 2)) ^ (k + 1) / (k + 1)) := by
   rw [setIntegral_ball_bilinear_self_mul_bubble_sq μ (by omega) e B ht a R]
-  have h := setIntegral_ball_norm_sub_rpow_mul_bubble_sq μ (by omega) ht hR a
-  simp only [hn, Nat.cast_ofNat, Nat.reduceSub] at h
-  norm_num only [Real.rpow_two, Nat.reducePow] at h
-  rw [h, hn]
+  rw [setIntegral_ball_norm_sub_sq_mul_bubble_sq_of_finrank_eq_six μ hn ht hR a, hn]
   push_cast
   ring
 
@@ -80,19 +77,20 @@ theorem abs_setIntegral_ball_bilinear_self_mul_bubble_sq_sub_mul_log_le
         8 * μ.real (ball (0 : E) 1) * (∑ i, B (e i) (e i)) * t ^ 4 *
           log (1 + (R / t) ^ 2)| ≤
       8 * μ.real (ball (0 : E) 1) * |∑ i, B (e i) (e i)| * t ^ 4 * harmonic 3 := by
-  have h := abs_setIntegral_ball_norm_sub_rpow_mul_bubble_sq_sub_mul_log_le μ
-    (by omega) ht hR a
-  simp only [hn, Nat.cast_ofNat, Nat.reduceSub] at h
-  norm_num only [Real.rpow_two, Nat.reducePow] at h
-  rw [setIntegral_ball_bilinear_self_mul_bubble_sq μ (by omega) e B ht a R, hn]
-  have heq : 8 * μ.real (ball (0 : E) 1) * (∑ i, B (e i) (e i)) * t ^ 4 *
-      log (1 + (R / t) ^ 2) =
-      ((∑ i, B (e i) (e i)) / 6) *
-        (6 * μ.real (ball (0 : E) 1) * (8 * t ^ 4 * log (1 + (R / t) ^ 2))) := by ring
-  norm_num only [Nat.cast_ofNat] at ⊢
-  rw [heq, ← mul_sub, abs_mul]
-  have hbound := mul_le_mul_of_nonneg_left h (abs_nonneg ((∑ i, B (e i) (e i)) / 6))
-  norm_num only [abs_div, abs_of_nonneg (by norm_num : (0 : ℝ) ≤ 6)] at hbound ⊢
-  convert hbound using 1; ring
+  have h := abs_setIntegral_ball_norm_sub_sq_mul_bubble_sq_sub_mul_log_le_of_finrank_eq_six
+    μ hn ht hR a
+  calc
+    _ = |(∑ i, B (e i) (e i)) / 6| *
+        |(∫ x in ball a R, ‖x - a‖ ^ 2 * bubble t a x ^ 2 ∂μ) -
+          48 * μ.real (ball (0 : E) 1) * t ^ 4 * log (1 + (R / t) ^ 2)| := by
+      rw [setIntegral_ball_bilinear_self_mul_bubble_sq μ (by omega) e B ht a R, hn,
+        ← abs_mul]
+      congr 1
+      push_cast
+      ring
+    _ ≤ |(∑ i, B (e i) (e i)) / 6| *
+        (48 * μ.real (ball (0 : E) 1) * t ^ 4 * harmonic 3) :=
+      mul_le_mul_of_nonneg_left h (abs_nonneg _)
+    _ = _ := by rw [abs_div, abs_of_pos (by norm_num : (0 : ℝ) < 6)]; ring
 
 end TauCeti.Yamabe
