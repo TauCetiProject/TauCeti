@@ -23,12 +23,11 @@ The compatibility formulas relate every real digamma value to the logarithmic de
 of real Gamma and identify the derivative of its real logarithm at each regular point.
 They provide real-parameter bounds for archimedean factors of L-functions.
 
-## API provenance
+## References
 
-The real digamma definition, recurrence, coercion and bound signatures follow Terence Tao's
-Mathlib PR [#43556](https://github.com/leanprover-community/mathlib4/pull/43556).
-The proofs here use native complex recurrences and the derivative/secant inequalities for
-`Real.convexOn_log_Gamma`, with the explicit norm-error consequence above.
+* T. Tao, [Mathlib PR #43556](https://github.com/leanprover-community/mathlib4/pull/43556),
+  for the real digamma definition, recurrence, coercion and bound statements.
+* The positive-axis bounds are consequences of the log-convexity of Gamma (Bohr–Mollerup).
 -/
 
 public section
@@ -38,11 +37,10 @@ open Complex Filter Set Topology
 namespace Real
 
 /-- The real digamma function is the logarithmic derivative of real Gamma. -/
-@[expose]
 noncomputable def digamma : ℝ → ℝ := logDeriv Gamma
 
 /-- The defining logarithmic-derivative formula for real digamma. -/
-theorem digamma_def : digamma = logDeriv Gamma := rfl
+theorem digamma_def : digamma = logDeriv Gamma := (rfl)
 
 end Real
 

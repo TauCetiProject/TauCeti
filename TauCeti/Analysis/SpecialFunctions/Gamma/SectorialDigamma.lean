@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.Gamma.GaussSeries
 public import Mathlib.NumberTheory.AbelSummation
-public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+public import TauCeti.Analysis.SpecialFunctions.Integrals.Reciprocal
+public import TauCeti.Analysis.Complex.SectorBounds
+public import TauCeti.Analysis.Complex.SlitPlane
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 public import Mathlib.MeasureTheory.Function.Floor
 
@@ -33,43 +35,6 @@ open Complex Real Filter Set Topology MeasureTheory intervalIntegral Asymptotics
 
 namespace Complex
 
-private theorem slit_add_nonneg {s : ℂ} (hs : s ∈ slitPlane) {t : ℝ} (ht : 0 ≤ t) :
-    s + t ∈ slitPlane := by
-  rw [mem_slitPlane_iff] at hs ⊢
-  simp only [add_re, ofReal_re, add_im, ofReal_im, add_zero]
-  rcases hs with hs | hs
-  · exact Or.inl (by linarith)
-  · exact Or.inr hs
-
-private theorem norm_add_nonneg_lower {s : ℂ} {c t : ℝ}
-    (hc : 0 ≤ c) (hc1 : c ≤ 1) (ht : 0 ≤ t)
-    (hs : (2 * c - 1) * ‖s‖ ≤ s.re) :
-    c * (‖s‖ + t) ≤ ‖s + t‖ := by
-  have hsq : ‖s + t‖ ^ 2 = ‖s‖ ^ 2 + 2 * t * s.re + t ^ 2 := by
-    simp only [Complex.sq_norm, normSq_apply, add_re, ofReal_re, add_im, ofReal_im, add_zero]
-    ring
-  have h : c * (‖s‖ + t) ^ 2 ≤ ‖s + t‖ ^ 2 := by
-    nlinarith [mul_nonneg (sub_nonneg.mpr hc1) (sq_nonneg (‖s‖ - t)),
-      mul_le_mul_of_nonneg_left hs (by positivity : 0 ≤ 2 * t)]
-  have hc2 : c ^ 2 ≤ c := by nlinarith
-  have h2 : (c * (‖s‖ + t)) ^ 2 ≤ ‖s + t‖ ^ 2 := by
-    nlinarith [mul_le_mul_of_nonneg_right hc2 (sq_nonneg (‖s‖ + t))]
-  nlinarith [norm_nonneg (s + t)]
-
-private theorem norm_add_sector_lower {s : ℂ} {δ t : ℝ}
-    (hδ : 0 < δ) (hs : |s.arg| ≤ Real.pi - δ) (ht : 0 ≤ t) :
-    ((1 - Real.cos δ) / 2) * (‖s‖ + t) ≤ ‖s + t‖ := by
-  apply norm_add_nonneg_lower
-  · linarith [Real.cos_le_one δ]
-  · linarith [Real.neg_one_le_cos δ]
-  · exact ht
-  · have hcos := Real.cos_le_cos_of_nonneg_of_le_pi (abs_nonneg s.arg)
-      (by linarith : Real.pi - δ ≤ Real.pi) hs
-    rw [Real.cos_abs, Real.cos_pi_sub] at hcos
-    have h := mul_le_mul_of_nonneg_left hcos (norm_nonneg s)
-    rw [norm_mul_cos_arg] at h
-    nlinarith
-
 private theorem reciprocal_deriv {s : ℂ} {t : ℝ} (hs : s + t ≠ 0) :
     HasDerivAt (fun u : ℝ ↦ (s + (u : ℂ))⁻¹) (-1 / (s + t) ^ 2) t := by
   simpa using (((hasDerivAt_id (t : ℂ)).const_add s).inv hs).comp_ofReal
@@ -83,7 +48,8 @@ private theorem reciprocal_sq_continuousOn {s : ℂ} (hs : s ∈ slitPlane) (N :
     ContinuousOn (fun t : ℝ ↦ ((s + (t : ℂ)) ^ 2)⁻¹) (Icc 0 (N : ℝ)) := by
   apply ((continuousOn_const.add continuous_ofReal.continuousOn).pow 2).inv₀
   intro t ht
-  exact pow_ne_zero _ (slitPlane_ne_zero (slit_add_nonneg hs ht.1))
+  exact pow_ne_zero _ (slitPlane_ne_zero (by
+    simpa only [add_comm, Pi.add_apply] using TauCeti.ofReal_add_mem_slitPlane hs ht.1))
 
 private theorem fract_reciprocal_intervalIntegrable {s : ℂ} (hs : s ∈ slitPlane) (N : ℕ) :
     IntervalIntegrable (fun t : ℝ ↦ ((Int.fract t : ℝ) : ℂ) / (s + t) ^ 2) volume 0 N := by
@@ -99,12 +65,14 @@ private theorem smooth_reciprocal_integral {s : ℂ} (hs : s ∈ slitPlane) (N :
     ∫ t : ℝ in 0..(N : ℝ), ((t : ℂ) + 1) / (s + t) ^ 2 =
       Complex.log (s + N) + (s - 1) / (s + N) - (Complex.log s + (s - 1) / s) := by
   have hd (t : ℝ) (ht : t ∈ Icc 0 (N : ℝ)) :=
-    slitPlane_ne_zero (slit_add_nonneg hs ht.1)
+    slitPlane_ne_zero (by
+    simpa only [add_comm, Pi.add_apply] using TauCeti.ofReal_add_mem_slitPlane hs ht.1)
   have hderiv (t : ℝ) (ht : t ∈ uIcc 0 (N : ℝ)) :
       HasDerivAt (fun u : ℝ ↦ Complex.log (s + (u : ℂ)) + (s - 1) / (s + u))
         (((t : ℂ) + 1) / (s + t) ^ 2) t := by
     rw [uIcc_of_le (Nat.cast_nonneg N)] at ht
-    have h := (log_shift_deriv (slit_add_nonneg hs ht.1)).add
+    have h := (log_shift_deriv (by
+      simpa only [add_comm, Pi.add_apply] using TauCeti.ofReal_add_mem_slitPlane hs ht.1)).add
       ((reciprocal_deriv (hd t ht)).const_mul (s - 1))
     convert h using 1
     · ext u
@@ -127,7 +95,8 @@ theorem sum_reciprocal_eq_log_sub_fract_integral {s : ℂ}
   let f : ℝ → ℂ := fun t ↦ (s + (t : ℂ))⁻¹
   have hd (t : ℝ) (ht : t ∈ Icc 0 (N : ℝ)) :
       HasDerivAt f (-1 / (s + t) ^ 2) t :=
-    reciprocal_deriv (slitPlane_ne_zero (slit_add_nonneg hs ht.1))
+    reciprocal_deriv (slitPlane_ne_zero (by
+    simpa only [add_comm, Pi.add_apply] using TauCeti.ofReal_add_mem_slitPlane hs ht.1))
   have hc : ContinuousOn (fun t : ℝ ↦ -1 / (s + t) ^ 2) (Icc 0 (N : ℝ)) := by
     simpa only [div_eq_mul_inv] using (reciprocal_sq_continuousOn hs N).const_mul (-1)
   have hdi : IntegrableOn (deriv f) (Icc 0 (N : ℝ)) :=
@@ -155,35 +124,20 @@ theorem sum_reciprocal_eq_log_sub_fract_integral {s : ℂ}
           (Icc 0 (N : ℝ)) :=
         (continuous_ofReal.continuousOn.add continuousOn_const).div
           ((continuousOn_const.add continuous_ofReal.continuousOn).pow 2)
-          (fun t ht ↦ pow_ne_zero _ (slitPlane_ne_zero (slit_add_nonneg hs ht.1)))
+          (fun t ht ↦ pow_ne_zero _ (slitPlane_ne_zero (by
+            simpa only [add_comm, Pi.add_apply] using TauCeti.ofReal_add_mem_slitPlane hs ht.1)))
       exact (hc.intervalIntegrable_of_Icc (Nat.cast_nonneg N)).neg
     · exact fract_reciprocal_intervalIntegrable hs N
   rw [hint, smooth_reciprocal_integral hs N] at hA
   dsimp [f] at hA
   rw [hA]
   have hN : s + (N : ℂ) ≠ 0 := by
-    simpa using slitPlane_ne_zero (slit_add_nonneg hs (Nat.cast_nonneg N))
+    simpa only [add_comm, ofReal_natCast] using
+      slitPlane_ne_zero (TauCeti.ofReal_add_mem_slitPlane hs (Nat.cast_nonneg N))
   have hrat : (s + N)⁻¹ * (N + 1) + (s - 1) / (s + N) - (s - 1) / s = s⁻¹ := by
     field_simp [slitPlane_ne_zero hs, hN]
     ring
   linear_combination hrat
-
-private theorem integral_reciprocal_add_sq {a : ℝ} (ha : 0 < a) (N : ℕ) :
-    ∫ t : ℝ in 0..(N : ℝ), 1 / (a + t) ^ 2 = a⁻¹ - (a + N)⁻¹ := by
-  have hd (t : ℝ) (ht : t ∈ uIcc 0 (N : ℝ)) :
-      HasDerivAt (fun u : ℝ ↦ -(a + u)⁻¹) (1 / (a + t) ^ 2) t := by
-    rw [uIcc_of_le (Nat.cast_nonneg N)] at ht
-    have h := (((hasDerivAt_id t).const_add a).inv
-      (by linarith [ht.1] : a + t ≠ 0)).neg
-    convert h using 1
-    · ext u
-      rfl
-    · simp [neg_div]
-  have hc : ContinuousOn (fun t : ℝ ↦ 1 / (a + t) ^ 2) (Icc 0 (N : ℝ)) :=
-    continuousOn_const.div ((continuousOn_const.add continuousOn_id).pow 2)
-      (fun t ht ↦ pow_ne_zero _ (by linarith [ht.1] : a + t ≠ 0))
-  simpa [sub_eq_add_neg, add_comm] using integral_eq_sub_of_hasDerivAt hd
-    (hc.intervalIntegrable_of_Icc (Nat.cast_nonneg N))
 
 private theorem norm_fract_remainder_le {s : ℂ} (hs : s ∈ slitPlane) {c : ℝ}
     (hc : 0 < c) (hden : ∀ t : ℝ, 0 ≤ t → c * (‖s‖ + t) ≤ ‖s + t‖) (N : ℕ) :
@@ -216,7 +170,8 @@ private theorem norm_fract_remainder_le {s : ℂ} (hs : s ∈ slitPlane) {c : �
     funext t
     simp only [mul_inv_rev, one_div]
     ring
-  rw [heq, intervalIntegral.integral_const_mul, integral_reciprocal_add_sq hs0]
+  rw [heq, intervalIntegral.integral_const_mul,
+    Real.integral_one_div_add_sq hs0 (Nat.cast_nonneg N)]
   have hN : 0 ≤ (‖s‖ + (N : ℝ))⁻¹ := by positivity
   calc
     (c ^ 2)⁻¹ * (‖s‖⁻¹ - (‖s‖ + (N : ℝ))⁻¹) ≤ (c ^ 2)⁻¹ * ‖s‖⁻¹ := by
@@ -250,7 +205,9 @@ private theorem tendsto_log_shift_sub_log_nat {s : ℂ} (hs : s ∈ slitPlane) :
     ring
   have hnz (N : ℕ) : z N ≠ 0 := by
     intro h
-    have h0 := slitPlane_ne_zero (slit_add_nonneg hs (Nat.cast_nonneg N))
+    have h0 : s + (N : ℝ) ≠ 0 := by
+      simpa only [add_comm] using
+        slitPlane_ne_zero (TauCeti.ofReal_add_mem_slitPlane hs (Nat.cast_nonneg N))
     apply h0
     simpa only [ofReal_natCast] using (heq N).trans (by rw [h, zero_mul])
   convert hl using 1
@@ -347,7 +304,7 @@ theorem norm_digamma_sub_log_le_of_abs_arg_le {s : ℂ} {δ : ℝ}
     simpa using h
   have hc : 0 < (1 - Real.cos δ) / 2 := by linarith
   have h := norm_digamma_sub_log_le_of_denominator hslit hc
-    (fun t ht ↦ norm_add_sector_lower hδ hs ht)
+    (fun t ht ↦ norm_add_ofReal_lower_bound_of_abs_arg_le hδ hs ht)
   convert h using 1
   have heq : (((1 - Real.cos δ) / 2) ^ 2)⁻¹ = 4 / (1 - Real.cos δ) ^ 2 := by
     field_simp

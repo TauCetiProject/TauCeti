@@ -25,12 +25,11 @@ and its explicit logarithmic asymptotic. Local uniform convergence extends the i
 through the right half-plane by the identity theorem. Recurrences for the sum and digamma
 then extend it to every regular complex point.
 
-## References and API provenance
+## References
 
 * [NIST DLMF, equation 5.7.6](https://dlmf.nist.gov/5.7.E6).
-* The public theorem names and statements follow Terence Tao's active
-  [Mathlib PR #43556](https://github.com/leanprover-community/mathlib4/pull/43556).
-  The auxiliary series and the right-half-plane continuation argument are private.
+* T. Tao, [Mathlib PR #43556](https://github.com/leanprover-community/mathlib4/pull/43556),
+  for the real and complex Gauss series theorem statements.
 -/
 
 public section
@@ -161,8 +160,7 @@ private theorem tendsto_log_nat_shift_diff {x : ℝ} (hx : 0 < x) :
   have hl := (Real.continuousAt_log (by norm_num : (1 : ℝ) ≠ 0)).tendsto.comp hr
   convert hl using 1
   · ext N
-    change Real.log ((N : ℝ) + 1) - Real.log ((N : ℝ) + x) =
-      Real.log (((N : ℝ) + 1) / ((N : ℝ) + x))
+    dsimp only [Function.comp_apply]
     exact (Real.log_div (by positivity) (by positivity)).symm
   · simp
 
@@ -227,7 +225,7 @@ private theorem digamma_eq_gaussSeries_of_re_pos {s : ℂ} (hs : 0 < s.re) :
     simpa only [Function.comp_def, ofReal_one] using continuous_ofReal.continuousAt.tendsto.comp hv
   have hvp : Tendsto (fun n ↦ (v n : ℂ)) atTop (𝓝[≠] (1 : ℂ)) := by
     refine tendsto_nhdsWithin_iff.mpr ⟨hvc, Eventually.of_forall fun n ↦ ?_⟩
-    change (v n : ℂ) ≠ 1
+    simp only [Set.mem_compl_iff, Set.mem_singleton_iff]
     intro h
     have hr := congrArg Complex.re h
     simp only [ofReal_re, one_re, v] at hr
@@ -296,7 +294,7 @@ private theorem digamma_eq_gaussSeries_regular {s : ℂ} (hs : ∀ m : ℕ, s �
   have hpos : 0 < (s + N).re := by
     simp only [add_re, natCast_re]
     have hN := Nat.le_ceil (1 - s.re)
-    change 0 < s.re + (⌈1 - s.re⌉₊ : ℝ)
+    dsimp only [N]
     linarith
   have h := digamma_eq_gaussSeries_of_re_pos hpos
   rw [digamma_apply_add_nat hs N, gaussSeries_add_nat hs N] at h
