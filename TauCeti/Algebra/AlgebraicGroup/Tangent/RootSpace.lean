@@ -418,23 +418,15 @@ theorem lie_mem_adjointWeightSpace_mul {π : H →ₐc[R] MonoidAlgebra R M} {α
   have hq : q.toLinearMap =
       ((π : H →ₗc[R] MonoidAlgebra R M).toLinearMap ∘ₗ
         (ULift.algEquiv (R := R) : U ≃ₐ[R] H).toLinearMap) := by
-    -- Unfold `q`: `AlgHom.comp` has no theorem exposing its underlying linear map.
-    change
-      ((π : H →ₐ[R] MonoidAlgebra R M).toLinearMap ∘ₗ
-          (ULift.algEquiv (R := R) : U ≃ₐ[R] H).toLinearMap) = _
-    rw [hπ]
-  have hx' :
-      TensorProduct.map q.toLinearMap LinearMap.id
-          ((adjointAction A g).val (1 ⊗ₜ[R] x)) =
-        MonoidAlgebra.single α 1 ⊗ₜ[R] x := by
-    rw [hq]
-    exact map_universalAdjointAction_eq_single_of_mem_adjointWeightSpace hx
-  have hy' :
-      TensorProduct.map q.toLinearMap LinearMap.id
-          ((adjointAction A g).val (1 ⊗ₜ[R] y)) =
-        MonoidAlgebra.single β 1 ⊗ₜ[R] y := by
-    rw [hq]
-    exact map_universalAdjointAction_eq_single_of_mem_adjointWeightSpace hy
+    rw [← hπ]
+    exact AlgHom.comp_toLinearMap _ _
+  have key : ∀ {a : M} {z : Module.Dual R (Bialgebra.CotangentSpace R H)},
+      z ∈ adjointWeightSpace π a →
+        TensorProduct.map q.toLinearMap LinearMap.id
+            ((adjointAction A g).val (1 ⊗ₜ[R] z)) = MonoidAlgebra.single a 1 ⊗ₜ[R] z :=
+    fun hz ↦ by
+      rw [hq]
+      exact map_universalAdjointAction_eq_single_of_mem_adjointWeightSpace hz
   have hbracket := adjointAction_bracket A g (1 ⊗ₜ[R] x) (1 ⊗ₜ[R] y)
   have hmapped := congrArg
     (LieAlgebra.ExtendScalars.map q
@@ -450,7 +442,7 @@ theorem lie_mem_adjointWeightSpace_mul {π : H →ₐc[R] MonoidAlgebra R M} {α
           ((adjointAction A g).val (1 ⊗ₜ[R] x)),
         TensorProduct.map q.toLinearMap LinearMap.id
           ((adjointAction A g).val (1 ⊗ₜ[R] y))⁆ at hmapped
-  rw [hx', hy'] at hmapped
+  rw [key hx, key hy] at hmapped
   simp only [LieAlgebra.ExtendScalars.bracket_tmul,
     MonoidAlgebra.single_mul_single, one_mul] at hmapped
   rw [adjointComodule_coact_apply, adjointPointRepresentation_action]
