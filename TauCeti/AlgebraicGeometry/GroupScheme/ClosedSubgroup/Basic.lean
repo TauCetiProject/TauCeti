@@ -30,7 +30,8 @@ specialized constructions that import this generic API.
 * `TauCeti.ClosedSubgroupScheme.mkIso`: the canonical isomorphism of that closed subgroup with the
   source of the immersion.
 * `TauCeti.ClosedSubgroupScheme.mapIso`: transport of closed subgroups along an isomorphism of
-  ambient group schemes.
+  ambient group schemes, compatible with composition of isomorphisms
+  (`TauCeti.ClosedSubgroupScheme.mapIso_trans`).
 -/
 
 public section
@@ -73,6 +74,12 @@ abbrev ClosedSubgroupScheme {X : Scheme.{u}} (G : Grp (Over X)) : Type _ :=
 namespace ClosedSubgroupScheme
 
 variable {X : Scheme.{u}} {G : Grp (Over X)}
+
+/-- The representative arrow of a closed subgroup scheme is a closed immersion on underlying
+schemes. -/
+instance isClosedImmersion_arrow (P : ClosedSubgroupScheme G) :
+    IsClosedImmersion P.1.arrow.hom.hom.left :=
+  (closedSubgroupMorphismProperty_iff X P.1.arrow).1 P.2
 
 /-- Construct a closed subgroup scheme from a morphism whose underlying scheme morphism is a
 closed immersion. -/
@@ -141,6 +148,13 @@ noncomputable def mapIso {H : Grp (Over X)} (e : G ≅ H) :
 @[simp]
 lemma coe_mapIso {H : Grp (Over X)} (e : G ≅ H) (P : ClosedSubgroupScheme G) :
     (mapIso e P).1 = (Subobject.map e.hom).obj P.1 := (rfl)
+
+/-- Transporting closed subgroups along a composite of isomorphisms transports along each in
+turn. -/
+@[simp]
+lemma mapIso_trans {H K : Grp (Over X)} (e : G ≅ H) (e' : H ≅ K) (P : ClosedSubgroupScheme G) :
+    mapIso (e ≪≫ e') P = mapIso e' (mapIso e P) :=
+  Subtype.ext (Subobject.map_comp e.hom e'.hom P.1)
 
 /-- Postcomposing a closed immersion with an isomorphism of group schemes gives a closed
 immersion. -/
