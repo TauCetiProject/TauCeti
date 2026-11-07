@@ -146,13 +146,15 @@ private lemma tensorFreeIso_hom_homEquiv (M : Mod C A) (V : C) :
   simp only [Equiv.trans_apply] at h
   rw [freeModAdjunction_homEquiv, internalHomAdjunction_homEquiv,
     ← Adjunction.homEquiv_id, ihomAdjunction_homEquiv] at h
+  -- The composite adjunction retains the forgetful functor's hom-type and EquivLike
+  -- instances; normalize both so the generator-restriction equation matches.
   dsimp +instances only [Mod.forget] at h
   rw [freeModHomEquiv_apply] at h
   exact h
 
 /-- On generators, the free balanced tensor comparison is the identity on `M.X ⊗ V`. -/
 @[simp↓, reassoc (attr := simp↓)]
-lemma tensorFreeIso_hom_generators (M : Mod C A) (V : C) :
+lemma freeModι_tensorπ_tensorFreeIso_hom (M : Mod C A) (V : C) :
     M.X ◁ freeModι A V ≫ tensorπ M ((freeMod A).obj V) ≫
       ((tensorFreeIso M).hom.app V).hom = 𝟙 (M.X ⊗ V) := by
   apply curry_injective
@@ -176,13 +178,18 @@ lemma tensorFreeIso_hom_generators (M : Mod C A) (V : C) :
 lemma tensorFreeIso_inv_app_hom (M : Mod C A) (V : C) :
     ((tensorFreeIso M).inv.app V).hom =
       M.X ◁ freeModι A V ≫ tensorπ M ((freeMod A).obj V) := by
-  let e := (Mod.forget A).mapIso ((tensorFreeIso M).app V)
-  have h : (M.X ◁ freeModι A V ≫ tensorπ M ((freeMod A).obj V)) ≫ e.hom = 𝟙 _ := by
-    dsimp +instances only [e, Mod.forget, Functor.mapIso]
-    simpa only [Category.assoc, Iso.app_hom] using tensorFreeIso_hom_generators M V
-  have h' := ((e.eq_comp_inv).2 h).symm
-  dsimp +instances only [e, Mod.forget, Functor.mapIso] at h'
-  simpa only [Category.id_comp, Iso.app_inv] using h'
+  have h : ((tensorFreeIso M).hom.app V).hom ≫
+      ((tensorFreeIso M).inv.app V).hom = 𝟙 _ := by
+    simpa only [comp_hom', id_hom'] using
+      congrArg Hom.hom ((tensorFreeIso M).hom_inv_id_app V)
+  calc
+    _ = (M.X ◁ freeModι A V ≫ tensorπ M ((freeMod A).obj V) ≫
+        ((tensorFreeIso M).hom.app V).hom) ≫
+        ((tensorFreeIso M).inv.app V).hom := by
+      rw [freeModι_tensorπ_tensorFreeIso_hom, Category.id_comp]
+    _ = _ := by
+      rw [Category.assoc, Category.assoc, h]
+      simp only [Functor.comp_obj, curriedTensor_obj_obj, Category.comp_id]
 
 /-- The balanced free comparison is natural in the other module as well. -/
 noncomputable def tensorRightFreeIso (V : C) :
@@ -194,12 +201,20 @@ noncomputable def tensorRightFreeIso (V : C) :
     simp only [comp_hom', tensorFreeIso_inv_app_hom, Functor.flip_obj_map,
       curriedTensor_map_app, Category.assoc, tensorπ_whiskerRight_hom_assoc,
       Hom.mk'_hom, Iso.app_hom]
-    rw [whisker_exchange_assoc, tensorFreeIso_hom_generators,
-      tensorFreeIso_hom_generators_assoc]
+    rw [whisker_exchange_assoc, freeModι_tensorπ_tensorFreeIso_hom,
+      freeModι_tensorπ_tensorFreeIso_hom_assoc]
     simp)
 
-/-- The free comparison in the module variable has the previously constructed components. -/
-lemma tensorRightFreeIso_app (V : C) (M : Mod C A) :
-    (tensorRightFreeIso (A := A) V).app M = (tensorFreeIso M).app V := by rfl
+/-- The forward free comparison in the module variable is the forward comparison
+constructed by fixing the module. -/
+@[simp]
+lemma tensorRightFreeIso_hom_app (V : C) (M : Mod C A) :
+    (tensorRightFreeIso (A := A) V).hom.app M = (tensorFreeIso M).hom.app V := by rfl
+
+/-- The inverse free comparison in the module variable is the inverse comparison
+constructed by fixing the module. -/
+@[simp]
+lemma tensorRightFreeIso_inv_app (V : C) (M : Mod C A) :
+    (tensorRightFreeIso (A := A) V).inv.app M = (tensorFreeIso M).inv.app V := by rfl
 
 end CategoryTheory.Mod

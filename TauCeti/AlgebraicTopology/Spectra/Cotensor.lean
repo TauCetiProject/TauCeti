@@ -53,6 +53,18 @@ private noncomputable abbrev pointwiseSmash (K : PointedSSet.{0}) :
       (MonoidalCategory.tensorLeft K) ⋙
     (DayFunctor.equiv FiniteBijection PointedSSet.{0}).inverse
 
+private lemma pointwiseSmash_obj_obj (K : PointedSSet.{0}) (X : SymmetricSequence.{0})
+    (c : FiniteBijection) :
+    ((pointwiseSmash K).obj X).functor.obj c = K ⊗ X.functor.obj c := rfl
+
+private lemma pointwiseSmash_obj_map (K : PointedSSet.{0}) (X : SymmetricSequence.{0})
+    {c d : FiniteBijection} (σ : c ⟶ d) :
+    ((pointwiseSmash K).obj X).functor.map σ = K ◁ X.functor.map σ := rfl
+
+private lemma pointwiseSmash_map_app (K : PointedSSet.{0})
+    {X Y : SymmetricSequence.{0}} (f : X ⟶ Y) (c : FiniteBijection) :
+    ((pointwiseSmash K).map f).natTrans.app c = K ◁ f.natTrans.app c := rfl
+
 private noncomputable def pointwiseSmashAdjunction (K : PointedSSet.{0}) :
     pointwiseSmash K ⊣ levelwiseIhom K :=
   (DayFunctor.equiv FiniteBijection PointedSSet.{0}).toAdjunction |>.comp
@@ -65,20 +77,25 @@ private noncomputable def pointwiseSmashι (K : PointedSSet.{0}) (X : SymmetricS
     { app c := (β_ K (X.functor.obj c)).hom ≫ tensorFreeZeroι X K c.len
       naturality := by
         rintro ⟨n⟩ ⟨m⟩ σ
-        -- Identify the literal pointwise functor carrier before using monoidal naturality.
-        change K ◁ X.functor.map σ ≫ (β_ K _).hom ≫ tensorFreeZeroι X K m =
-          ((β_ K _).hom ≫ tensorFreeZeroι X K n) ≫ _
+        simp only [pointwiseSmash_obj_obj, pointwiseSmash_obj_map]
         rw [Category.assoc, ← map_whiskerRight_comp_tensorFreeZeroι,
           BraidedCategory.braiding_naturality_right_assoc] }
 
+private lemma pointwiseSmashι_app (K : PointedSSet.{0}) (X : SymmetricSequence.{0})
+    (c : FiniteBijection) :
+    (pointwiseSmashι K X).natTrans.app c =
+      (β_ K (X.functor.obj c)).hom ≫ tensorFreeZeroι X K c.len := rfl
+
 private instance (K : PointedSSet.{0}) (X : SymmetricSequence.{0}) :
     IsIso (pointwiseSmashι K X) := by
-  have h : ∀ c : FiniteBijection, IsIso ((pointwiseSmashι K X).natTrans.app c) := by
+  have : ∀ c : FiniteBijection,
+      IsIso (((DayFunctor.equiv FiniteBijection PointedSSet.{0}).functor.map
+        (pointwiseSmashι K X)).app c) := by
     rintro ⟨n⟩
     exact IsIso.comp_isIso' (β_ K (X.functor.obj (FiniteBijection.mk n))).isIso_hom
       (isIso_tensorFreeZeroι X K n)
   have : IsIso ((DayFunctor.equiv FiniteBijection PointedSSet.{0}).functor.map
-      (pointwiseSmashι K X)) := @NatIso.isIso_of_isIso_app _ _ _ _ _ _ _ h
+      (pointwiseSmashι K X)) := NatIso.isIso_of_isIso_app _
   exact isIso_of_reflects_iso _ (DayFunctor.equiv FiniteBijection PointedSSet.{0}).functor
 
 private noncomputable def pointwiseSmashRightIso (K : PointedSSet.{0}) :
@@ -91,17 +108,31 @@ private noncomputable def pointwiseSmashRightIso (K : PointedSSet.{0}) :
       apply NatTrans.ext
       funext c
       rcases c with ⟨n⟩
-      -- The equivalence with ordinary functors preserves the pointwise tensor carrier.
-      change K ◁ f.natTrans.app _ ≫ (β_ K _).hom ≫ tensorFreeZeroι Y K n =
-        ((β_ K _).hom ≫ tensorFreeZeroι X K n) ≫
-          (f ▷ (free 0).obj K).natTrans.app _
+      simp only [pointwiseSmash_obj_obj, DayFunctor.comp_natTrans, NatTrans.comp_app,
+        pointwiseSmash_map_app,
+        asIso_hom, pointwiseSmashι_app, Functor.flip_obj_map, curriedTensor_map_app]
       rw [Category.assoc, ← tensorFreeZeroι_naturality_left,
         BraidedCategory.braiding_naturality_right_assoc])
+
+private lemma pointwiseSmashRightIso_hom_app (K : PointedSSet.{0})
+    (X : SymmetricSequence.{0}) (c : FiniteBijection) :
+    ((pointwiseSmashRightIso K).hom.app X).natTrans.app c =
+      (β_ K (X.functor.obj c)).hom ≫ tensorFreeZeroι X K c.len := rfl
 
 private noncomputable def pointwiseSmashIso (K : PointedSSet.{0}) :
     pointwiseSmash K ≅ MonoidalCategory.tensorLeft ((free 0).obj K) :=
   pointwiseSmashRightIso K ≪≫
     (BraidedCategory.tensorLeftIsoTensorRight ((free 0).obj K)).symm
+
+private lemma pointwiseSmashIso_hom_app (K : PointedSSet.{0})
+    (X : SymmetricSequence.{0}) (c : FiniteBijection) :
+    ((pointwiseSmashIso K).hom.app X).natTrans.app c =
+      (β_ K (X.functor.obj c)).hom ≫ tensorFreeZeroι X K c.len ≫
+        ((β_ ((free 0).obj K) X).inv).natTrans.app c := by
+  simp only [pointwiseSmash_obj_obj, pointwiseSmashIso, Iso.trans_hom,
+    NatTrans.comp_app, Iso.symm_hom,
+    BraidedCategory.tensorLeftIsoTensorRight_inv_app, DayFunctor.comp_natTrans,
+    NatTrans.comp_app, pointwiseSmashRightIso_hom_app, Category.assoc]
 
 private noncomputable def pointwiseSmashMap {K L : PointedSSet.{0}} (f : K ⟶ L) :
     pointwiseSmash K ⟶ pointwiseSmash L :=
@@ -110,6 +141,10 @@ private noncomputable def pointwiseSmashMap {K L : PointedSSet.{0}} (f : K ⟶ L
       ((Functor.whiskeringRight FiniteBijection PointedSSet.{0} PointedSSet.{0}).map
         ((tensoringLeft PointedSSet.{0}).map f))
       (DayFunctor.equiv FiniteBijection PointedSSet.{0}).inverse)
+
+private lemma pointwiseSmashMap_app {K L : PointedSSet.{0}} (f : K ⟶ L)
+    (X : SymmetricSequence.{0}) (c : FiniteBijection) :
+    ((pointwiseSmashMap f).app X).natTrans.app c = f ▷ X.functor.obj c := rfl
 
 private lemma pointwiseSmashRightIso_naturality {K L : PointedSSet.{0}} (f : K ⟶ L) :
     pointwiseSmashMap f ≫ (pointwiseSmashRightIso L).hom =
@@ -121,10 +156,9 @@ private lemma pointwiseSmashRightIso_naturality {K L : PointedSSet.{0}} (f : K �
   apply NatTrans.ext
   funext c
   rcases c with ⟨n⟩
-  -- Evaluate the postcomposition and Day-functor wrappers before applying naturality.
-  change f ▷ X.functor.obj _ ≫ (β_ L _).hom ≫ tensorFreeZeroι X L n =
-    ((β_ K _).hom ≫ tensorFreeZeroι X K n) ≫
-      (X ◁ (free 0).map f).natTrans.app _
+  simp only [pointwiseSmash_obj_obj, NatTrans.comp_app, DayFunctor.comp_natTrans,
+    NatTrans.comp_app, pointwiseSmashMap_app, pointwiseSmashRightIso_hom_app,
+    Functor.flip_map_app, curriedTensor_obj_map]
   rw [Category.assoc, ← tensorFreeZeroι_naturality_right,
     BraidedCategory.braiding_naturality_left_assoc]
 
@@ -166,15 +200,11 @@ private lemma pointwiseIhomPre_app_natTrans_app {K L : PointedSSet.{0}} (f : K �
   have h := conjugateEquiv_counit (pointwiseSmashAdjunction L)
     (pointwiseSmashAdjunction K) (pointwiseSmashMap f) X
   have hc := congrArg (fun g ↦ g.natTrans.app (FiniteBijection.mk n)) h
-  simp only [DayFunctor.comp_natTrans, NatTrans.comp_app,
-    pointwiseSmashAdjunction_counit_app] at hc
-  have heval :
-      K ◁ ((pointwiseIhomPre f).app X).natTrans.app (FiniteBijection.mk n) ≫
-          (CategoryTheory.ihom.ev K).app (X.functor.obj (FiniteBijection.mk n)) =
-        f ▷ (CategoryTheory.ihom L).obj (X.functor.obj (FiniteBijection.mk n)) ≫
-          (CategoryTheory.ihom.ev L).app (X.functor.obj (FiniteBijection.mk n)) := hc
+  simp only [pointwiseSmash_obj_obj, DayFunctor.comp_natTrans, NatTrans.comp_app,
+    pointwiseSmash_map_app,
+    pointwiseSmashMap_app, pointwiseSmashAdjunction_counit_app] at hc
   exact MonoidalClosed.uncurry_injective
-    (heval.trans (MonoidalClosed.uncurry_pre f _).symm)
+    (hc.trans (MonoidalClosed.uncurry_pre f _).symm)
 
 /-- In each level, the Day internal hom out of `G₀ K` is the pointed mapping object out of `K`.
 The symmetric action on the mapping object is induced by postcomposition. -/
@@ -206,10 +236,10 @@ lemma whiskerLeft_freeZeroIhomLevelIso_hom_comp_ev (K : PointedSSet.{0})
     DayFunctor.ihom_ev_app ((free 0).obj K) X
   rw [hday] at h
   have hc := congrArg (fun g ↦ g.natTrans.app (FiniteBijection.mk n)) h
-  simp only [DayFunctor.comp_natTrans, NatTrans.comp_app,
-    pointwiseSmashAdjunction_counit_app] at hc
-  -- Evaluate the pointwise functor and the identity-shuffle comparison on their literal carriers.
-  exact hc.trans (by rfl)
+  simp only [pointwiseSmash_obj_obj, DayFunctor.comp_natTrans, NatTrans.comp_app,
+    pointwiseSmash_map_app, pointwiseSmashAdjunction_counit_app,
+    pointwiseSmashIso_hom_app, Category.assoc] at hc
+  exact hc
 
 /-- The level comparison is natural in the target symmetric sequence. -/
 @[simp↓, reassoc (attr := simp↓)]
@@ -297,11 +327,22 @@ lemma levelSmashCotensorAdjunction_homEquiv_apply (K : PointedSSet.{0})
     Mod.internalHomAdjunction_homEquiv]
   congr 1
   simp only [Iso.trans_hom, NatTrans.comp_app,
-    BraidedCategory.tensorLeftIsoTensorRight_hom_app,
+    BraidedCategory.tensorLeftIsoTensorRight_hom_app, Mod.tensorRightFreeIso_hom_app,
     Category.assoc]
-  have h := congrArg Iso.hom (Mod.tensorRightFreeIso_app
-    (A := SymmetricSequence.sphere) ((SymmetricSequence.free 0).obj K) E)
-  exact congrArg (fun g ↦ (β_ ((free 0).obj K) E).hom ≫ g ≫ f) h
+
+/-- The inverse cotensor adjunction identifies levelwise smash with balanced smash by the free
+spectrum, exchanges the factors, and applies the uncurried map. -/
+lemma levelSmashCotensorAdjunction_homEquiv_symm_apply (K : PointedSSet.{0})
+    {E F : SymmetricSpectrum} (f : E ⟶ (cotensor K).obj F) :
+    ((levelSmashCotensorAdjunction K).homEquiv E F).symm f =
+      (Mod.tensorFreeIso E).inv.app ((SymmetricSequence.free 0).obj K) ≫
+        (β_ ((free 0).obj K) E).inv ≫
+        (Mod.tensorHomEquiv ((free 0).obj K) E F).symm f := by
+  rw [levelSmashCotensorAdjunction, Adjunction.homEquiv_ofNatIsoLeft_symm_apply,
+    Mod.internalHomAdjunction_homEquiv]
+  simp only [Iso.trans_inv, NatTrans.comp_app,
+    BraidedCategory.tensorLeftIsoTensorRight_inv_app, Mod.tensorRightFreeIso_inv_app,
+    Category.assoc]
 
 /-- Forgetting the sphere action on a cotensor gives the levelwise pointed mapping sequence. -/
 noncomputable def cotensorUnderlyingIso (K : PointedSSet.{0}) :
