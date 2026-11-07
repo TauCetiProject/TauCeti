@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Order.Group.MinMax
 public import TauCeti.MeasureTheory.OptimalTransport.CTransform.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.CyclicalMonotonicity
 public import TauCeti.MeasureTheory.OptimalTransport.Duality.Basic
+import TauCeti.Data.Real.Truncation
 
 /-!
 # Complementary slackness, optimality certificates, and `c`-cyclical monotonicity
@@ -382,36 +383,6 @@ end Certificate
 
 /-! ### Contact potentials without integrability -/
 
-section Truncation
-
-/-- Truncating two reals to `[-r, r]` does not increase the positive part of their sum. -/
-theorem ofReal_max_neg_min_add_max_neg_min_le {r : ℝ} (hr : 0 ≤ r) (a b : ℝ) :
-    ENNReal.ofReal (max (-r) (min a r) + max (-r) (min b r)) ≤ ENNReal.ofReal (a + b) := by
-  rw [ENNReal.ofReal_le_ofReal_iff']
-  rcases le_total 0 (a + b) with h | h
-  · left
-    simp only [max_def, min_def]
-    split_ifs <;> linarith
-  · right
-    simp only [max_def, min_def]
-    split_ifs <;> linarith
-
-/-- Truncating two reals with nonnegative sum to `[-r, r]` leaves a nonnegative sum. -/
-theorem add_max_neg_min_nonneg {r : ℝ} (hr : 0 ≤ r) {a b : ℝ} (h : 0 ≤ a + b) :
-    0 ≤ max (-r) (min a r) + max (-r) (min b r) := by
-  simp only [max_def, min_def]
-  split_ifs <;> linarith
-
-/-- A real number is eventually unchanged by truncation to `[-n, n]`. -/
-theorem eventually_max_neg_min_eq (a : ℝ) :
-    ∀ᶠ n : ℕ in Filter.atTop, max (-(n : ℝ)) (min a n) = a := by
-  obtain ⟨N, hN⟩ := exists_nat_ge |a|
-  filter_upwards [Filter.eventually_ge_atTop N] with n hn
-  have hle : |a| ≤ n := hN.trans (Nat.cast_le.2 hn)
-  simp only [min_eq_left (abs_le.1 hle).2, max_eq_right (abs_le.1 hle).1]
-
-end Truncation
-
 section ContactPotential
 
 variable [MeasurableSpace X] [MeasurableSpace Y] {μ : Measure X} {ν : Measure Y}
@@ -461,21 +432,22 @@ theorem IsCoupling.isOptimalCoupling_of_ae_mem_dualContactSet [IsFiniteMeasure �
     refine TauCeti.MeasureTheory.ofReal_integral_le_lintegral_ofReal.trans
       (lintegral_mono_ae ?_)
     filter_upwards [hAσ, hBσ] with z hzA hzB
-    exact (ofReal_max_neg_min_add_max_neg_min_le n.cast_nonneg _ _).trans (hfeas z.1 hzA z.2 hzB)
+    exact (ENNReal.ofReal_max_neg_min_add_max_neg_min_le n.cast_nonneg _ _).trans
+      (hfeas z.1 hzA z.2 hzB)
   -- Along `π` the truncated split sums are nonnegative, so they integrate to the same value.
   have hπeq n : ∫⁻ z, ENNReal.ofReal (T n (φ z.1) + T n (ψ z.2)) ∂π =
       ENNReal.ofReal (kantorovichDualValue μ ν (fun x ↦ T n (φ x)) (fun y ↦ T n (ψ y))) := by
     rw [kantorovichDualValue_eq_integral hπ (hfint n) (hgint n),
       ofReal_integral_eq_lintegral_ofReal (hπ.integrable_add_split (hfint n) (hgint n))
         (hae.mono fun z hz ↦
-          add_max_neg_min_nonneg n.cast_nonneg (add_nonneg_of_mem_dualContactSet hz))]
+          add_max_neg_min_nonneg (add_nonneg_of_mem_dualContactSet hz))]
   -- Along `π` the truncated split sums are eventually the cost, so Fatou's lemma concludes.
   have hlim : ∀ᵐ z ∂π,
       c z = Filter.liminf (fun n ↦ ENNReal.ofReal (T n (φ z.1) + T n (ψ z.2))) Filter.atTop := by
     filter_upwards [hae] with z hz
     rw [← ofReal_eq_of_mem_dualContactSet hz]
     refine (Filter.Tendsto.liminf_eq (tendsto_const_nhds.congr' ?_)).symm
-    filter_upwards [eventually_max_neg_min_eq (φ z.1), eventually_max_neg_min_eq (ψ z.2)]
+    filter_upwards [Real.eventually_max_neg_min_eq (φ z.1), Real.eventually_max_neg_min_eq (ψ z.2)]
       with n h₁ h₂
     simp only [hT, h₁, h₂]
   calc ∫⁻ z, c z ∂π
