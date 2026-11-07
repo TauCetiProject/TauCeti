@@ -63,21 +63,6 @@ theorem diagonalOracleInBasis_apply {n : ℕ} (U T : Matrix (Fin n) (Fin n) ℂ)
     diagonalOracleInBasis U T i = ((Uᴴ * T * U) i i).re := by
   simp [diagonalOracleInBasis, diagonalOracle, matrixInBasis]
 
-/-- Congruence by `U` preserves Hermitianity. -/
-theorem isHermitian_matrixInBasis {n : ℕ} {U T : Matrix (Fin n) (Fin n) ℂ}
-    (hT : T.IsHermitian) : (matrixInBasis U T).IsHermitian := by
-  change (Uᴴ * T * U)ᴴ = Uᴴ * T * U
-  simp [Matrix.conjTranspose_mul, hT.eq, mul_assoc]
-
-private theorem hermitian_diagonal_eq_re {n : ℕ} {T : Matrix (Fin n) (Fin n) ℂ}
-    (hT : T.IsHermitian) (i : Fin n) : T i i = (T i i).re := by
-  have h := hT.apply i i
-  have him : (T i i).im = 0 := by
-    have h' := congrArg Complex.im h
-    simp only [Complex.star_def, Complex.conj_im] at h'
-    linarith
-  exact Complex.ext (by simp) (by simp [him])
-
 private theorem diagonalOracleLoss_eq_offDiagonal_add {n : ℕ}
     (T : Matrix (Fin n) (Fin n) ℂ) (hT : T.IsHermitian) (d : Fin n → ℝ) :
     diagonalOracleLoss T d =
@@ -105,7 +90,7 @@ private theorem diagonalOracleLoss_eq_offDiagonal_add {n : ℕ}
   have hest : realDiagonalEstimator d i i = (d i : ℂ) := by
     simp [realDiagonalEstimator]
   rw [hest]
-  conv_lhs => rw [hermitian_diagonal_eq_re hT]
+  conv_lhs => rw [(Complex.conj_eq_iff_re.mp (hT.apply i i)).symm]
   rw [← Complex.ofReal_sub, Complex.normSq_ofReal]
   ring
 
@@ -126,16 +111,6 @@ theorem diagonalOracleLoss_eq_oracle_add {n : ℕ} {T : Matrix (Fin n) (Fin n) �
   intro i hi
   ring
 
-private theorem sum_sq_eq_zero_iff {n : ℕ} (f : Fin n → ℝ) :
-    (∑ i, f i ^ 2) = 0 ↔ ∀ i, f i = 0 := by
-  constructor
-  · intro h i
-    have hle : f i ^ 2 ≤ ∑ j, f j ^ 2 :=
-      Finset.single_le_sum (fun j hj => sq_nonneg (f j)) (Finset.mem_univ i)
-    nlinarith [sq_nonneg (f i)]
-  · intro h
-    simp [h]
-
 /-- The basis-diagonal oracle is the unique minimizer of squared Frobenius loss. -/
 theorem diagonalOracleLoss_unique_minimizer {n : ℕ} {T : Matrix (Fin n) (Fin n) ℂ}
     (hT : T.IsHermitian) :
@@ -147,7 +122,7 @@ theorem diagonalOracleLoss_unique_minimizer {n : ℕ} {T : Matrix (Fin n) (Fin n
   constructor
   · exact le_add_of_nonneg_right (Finset.sum_nonneg fun i hi => sq_nonneg _)
   · rw [add_eq_left]
-    rw [sum_sq_eq_zero_iff]
+    simp only [Finset.sum_sq_eq_zero_iff, Finset.mem_univ, true_implies]
     constructor
     · intro h
       funext i
@@ -166,7 +141,8 @@ theorem diagonalOracleLoss_unique_minimizer_inBasis {n : ℕ}
             diagonalOracleLoss (matrixInBasis U T) (diagonalOracleInBasis U T) ↔
           d = diagonalOracleInBasis U T) := by
   simpa [diagonalOracleInBasis] using
-    (diagonalOracleLoss_unique_minimizer (isHermitian_matrixInBasis hT))
+    (diagonalOracleLoss_unique_minimizer
+      (show (matrixInBasis U T).IsHermitian from Matrix.isHermitian_conjTranspose_mul_mul U hT))
 
 /-- The average target diagonal on a nonempty spectral block. For a Hermitian target and an
 eigenspace, this is the trace of the compression divided by its dimension. -/
