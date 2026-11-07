@@ -25,6 +25,11 @@ A continuous injection on a compact set into a Hausdorff space is a closed embed
 so preconnectedness of the image is equivalent to preconnectedness of the set
 (`IsCompact.isPreconnected_image_iff_of_injOn`).
 
+A continuous function on a preconnected set that is locally constant near each point where it
+takes a given value `f z`, for some `z` in the set, is constant
+(`IsPreconnected.eqOn_const_of_eventually_eq`). This is how a strong maximum principle spreads
+from a neighbourhood of a maximum point to the whole domain.
+
 In a `T₁` space, the connected component `connectedComponentIn s x` of a point isolated in `s` is
 the point itself (`TauCeti.connectedComponentIn_eq_singleton`): the component is covered by the
 open sets `{x}ᶜ` and a neighbourhood of `x` meeting `s` only at `x`, whose intersection misses `s`.
@@ -49,6 +54,25 @@ theorem IsPreconnected.subset_of_subset_iUnion {s : Set α} {u : ι → Set α}
   by_cases hji : j = i
   · exact Or.inl (hji ▸ hj)
   · exact Or.inr (mem_iUnion₂.2 ⟨j, hji, hj⟩)
+
+/-- **Local constancy at a value spreads over a preconnected set.** Let `f` be continuous at each
+point of a preconnected set `U` and `z ∈ U`. If `f` is identically `f z` near every point of `U`
+at which it takes the value `f z`, then `f = f z` on all of `U`. -/
+theorem IsPreconnected.eqOn_const_of_eventually_eq {β : Type*} [TopologicalSpace β] [T1Space β]
+    {U : Set α} {f : α → β} {z : α} (hU : IsPreconnected U) (hz : z ∈ U)
+    (hf : ∀ x ∈ U, ContinuousAt f x) (hlocal : ∀ x ∈ U, f x = f z → ∀ᶠ y in 𝓝 x, f y = f z) :
+    EqOn f (const α (f z)) U := by
+  -- The points near which `f` is identically `f z` form an open set, which is relatively closed
+  -- in `U` by continuity and `hlocal`, and contains `z`.
+  have hsubset : U ⊆ {x | ∀ᶠ y in 𝓝 x, f y = f z} := by
+    refine hU.subset_of_closure_inter_subset isOpen_setOfPred_eventually_nhds
+      ⟨z, hz, hlocal z hz rfl⟩ ?_
+    rintro x ⟨hxcl, hxU⟩
+    refine hlocal x hxU (by_contra fun hxz ↦ ?_)
+    obtain ⟨y, hy, hyO⟩ := mem_closure_iff_nhds.mp hxcl _
+      ((hf x hxU).preimage_mem_nhds (isOpen_ne.mem_nhds hxz))
+    exact hy hyO.self_of_nhds
+  exact fun x hx ↦ (hsubset hx).self_of_nhds
 
 namespace TauCeti
 

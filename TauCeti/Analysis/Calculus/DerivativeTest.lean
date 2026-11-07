@@ -28,7 +28,9 @@ It also records the one-sided first-derivative tests at an endpoint: a function 
 maximum on `Iic a` at `a` (a maximum *from the left*) has nonnegative left derivative there, and
 dually for minima and for maxima and minima from the right on `Ici a`. The maximum from the left
 is the time-direction step of the parabolic maximum principle, where the maximum may sit on the
-top of the space-time cylinder.
+top of the space-time cylinder. The same test along the inward ray `t ↦ x - t • e` turns a lower
+bound on difference quotients into a lower bound on a directional derivative, which is the last
+step of Hopf's boundary-point lemma.
 
 ## Main declarations
 
@@ -46,6 +48,9 @@ top of the space-time cylinder.
 * `TauCeti.fderiv_fderiv_self_nonpos_of_isLocalMax` /
   `TauCeti.fderiv_fderiv_self_nonneg_of_isLocalMin`: the Hessian is negative (resp. positive)
   semidefinite on the diagonal at a local maximum (resp. minimum).
+* `TauCeti.le_fderiv_of_le_sub`, `TauCeti.le_fderiv_of_mul_le_sub`: a lower bound on the
+  difference quotients `(f x - f (x - t • e)) / t` for small `t > 0` bounds the directional
+  derivative `fderiv ℝ f x e` below.
 -/
 
 public section
@@ -195,6 +200,37 @@ theorem fderiv_fderiv_self_nonneg_of_isLocalMin (hf : ContDiffAt ℝ 2 f x) (hmi
     ((by simpa using hmin : IsLocalMin f (x + (0 : ℝ) • w)).comp_continuous
       (g := fun t : ℝ => x + t • w) hline)
   rwa [Function.comp_def, hf'.deriv_deriv_comp_add_smul, zero_smul, add_zero] at h
+
+/-- **Difference quotients bound the directional derivative.** Let `f` be differentiable at `x`,
+and let `g` vanish at `0` and have right derivative `κ` there. If `g t ≤ f x - f (x - t • e)` for
+`0 < t ≤ δ`, then `κ ≤ fderiv ℝ f x e`. -/
+theorem le_fderiv_of_le_sub {g : ℝ → ℝ} {e : E} {κ δ : ℝ} (hδ : 0 < δ)
+    (hf : DifferentiableAt ℝ f x) (hg : HasDerivWithinAt g κ (Set.Ici 0) 0) (hg0 : g 0 = 0)
+    (hle : ∀ t ∈ Set.Ioc 0 δ, g t ≤ f x - f (x - t • e)) :
+    κ ≤ fderiv ℝ f x e := by
+  have hline : HasDerivAt (fun t : ℝ ↦ x - t • e) (-e) 0 := by
+    simpa using ((hasDerivAt_id (0 : ℝ)).smul_const e).const_sub x
+  have hray : HasDerivAt (fun t : ℝ ↦ f (x - t • e)) (-fderiv ℝ f x e) 0 := by
+    have h := hf.hasFDerivAt.comp_hasDerivAt_of_eq (x := 0) hline (by simp)
+    rwa [map_neg] at h
+  -- The difference `f x - f (x - t • e) - g t` has a minimum from the right at `t = 0`.
+  have hmin : IsLocalMinOn (fun t ↦ f x - f (x - t • e) - g t) (Set.Ici 0) 0 := by
+    filter_upwards [Icc_mem_nhdsGE hδ] with t ht
+    rcases ht.1.eq_or_lt with rfl | ht0
+    · exact le_rfl
+    · simp only [zero_smul, sub_zero, sub_self, hg0]
+      linarith [hle t ⟨ht0, ht.2⟩]
+  have h := hmin.hasDerivWithinAt_Ici_nonneg ((hray.const_sub (f x)).hasDerivWithinAt.sub hg)
+  linarith
+
+/-- **A linear lower bound on difference quotients bounds the directional derivative.** If `f` is
+differentiable at `x` and `κ t ≤ f x - f (x - t • e)` for `0 < t ≤ δ`, then
+`κ ≤ fderiv ℝ f x e`. -/
+theorem le_fderiv_of_mul_le_sub {e : E} {κ δ : ℝ} (hδ : 0 < δ) (hf : DifferentiableAt ℝ f x)
+    (hκ : ∀ t ∈ Set.Ioc 0 δ, κ * t ≤ f x - f (x - t • e)) :
+    κ ≤ fderiv ℝ f x e :=
+  le_fderiv_of_le_sub (g := fun t ↦ κ * t) hδ hf
+    (by simpa using (hasDerivWithinAt_id (0 : ℝ) (Set.Ici 0)).const_mul κ) (mul_zero κ) hκ
 
 end NormedSpace
 

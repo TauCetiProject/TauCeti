@@ -68,9 +68,15 @@ compares `u` with `m + (F / λ) (exp (α d) - exp (α (⟪e, ·⟫ - s)))`, wher
 * `TauCeti.PDE.mul_exp_le_sum_mul_fderiv_fderiv_add_fderiv_exp_inner`: the exponential barrier is
   a strict subsolution of `L`, with an explicit lower bound for `L w`.
 * `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_add_smul`,
-  `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_neg`: linearity of `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v`.
+  `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_neg`,
+  `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_sub_const`: linearity of `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v`, which
+  moreover ignores constants.
 * `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_norm_sq`: the operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v`
   applied to `‖x‖²` is `2 tr A + 2 ⟪x, v⟫`.
+* `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_exp_neg_mul_norm_sub_sq`: the operator applied to
+  the Gaussian `exp (-α ‖x - y‖²)`, from its first and second derivatives
+  `TauCeti.hasFDerivAt_exp_neg_mul_norm_sub_sq` and
+  `TauCeti.fderiv_fderiv_exp_neg_mul_norm_sub_sq_apply`; this is the barrier of Hopf's lemma.
 * `TauCeti.PDE.le_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier`: **the weak maximum
   principle** for `-L + c`, `c ≥ 0`.
 * `TauCeti.PDE.ge_of_sum_mul_fderiv_fderiv_add_fderiv_le_mul_ge_frontier`: the weak minimum
@@ -245,6 +251,16 @@ theorem sum_mul_fderiv_fderiv_add_fderiv_neg (A : Matrix ι ι ℝ)
   have h : fderiv ℝ (-f) = -fderiv ℝ f := funext fun _ ↦ fderiv_neg
   simp only [h, fderiv_neg, _root_.neg_apply, mul_neg, Finset.sum_neg_distrib, neg_add]
 
+/-- Subtracting a constant does not change the value of `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v`. -/
+theorem sum_mul_fderiv_fderiv_add_fderiv_sub_const (A : Matrix ι ι ℝ)
+    (f : EuclideanSpace ℝ ι → ℝ) (k : ℝ) (x v : EuclideanSpace ℝ ι) :
+    ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ fun z ↦ f z - k) x (EuclideanSpace.single i 1)
+        (EuclideanSpace.single j 1) + fderiv ℝ (fun z ↦ f z - k) x v =
+      ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ f) x (EuclideanSpace.single i 1)
+        (EuclideanSpace.single j 1) + fderiv ℝ f x v := by
+  have h : fderiv ℝ (fun z ↦ f z - k) = fderiv ℝ f := funext fun _ ↦ fderiv_sub_const k
+  rw [h]
+
 /-- The operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v` applied to the squared norm `‖x‖²` is `2 tr A + 2 ⟪x, v⟫`. -/
 theorem sum_mul_fderiv_fderiv_add_fderiv_norm_sq {A : Matrix ι ι ℝ}
     {x v : EuclideanSpace ℝ ι} :
@@ -253,6 +269,35 @@ theorem sum_mul_fderiv_fderiv_add_fderiv_norm_sq {A : Matrix ι ι ℝ}
       fderiv ℝ (fun y : EuclideanSpace ℝ ι ↦ ‖y‖ ^ 2) x v = 2 * A.trace + 2 * ⟪x, v⟫ := by
   simp only [fderiv_fderiv_norm_sq_apply]
   simp [EuclideanSpace.inner_single_left, Matrix.trace, Finset.mul_sum, mul_comm]
+
+/-- The operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v` applied to the Gaussian `x ↦ exp (-α ‖x - y‖²)` is
+`exp (-α ‖x - y‖²) (4 α² (x - y)ᵀ A (x - y) - 2 α tr A - 2 α ⟪x - y, v⟫)`. -/
+theorem sum_mul_fderiv_fderiv_add_fderiv_exp_neg_mul_norm_sub_sq (A : Matrix ι ι ℝ) (α : ℝ)
+    (y x v : EuclideanSpace ℝ ι) :
+    ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ fun z : EuclideanSpace ℝ ι ↦
+        Real.exp (-α * ‖z - y‖ ^ 2)) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) +
+      fderiv ℝ (fun z : EuclideanSpace ℝ ι ↦ Real.exp (-α * ‖z - y‖ ^ 2)) x v =
+    Real.exp (-α * ‖x - y‖ ^ 2) *
+      (4 * α ^ 2 * A.toQuadraticForm' (x - y) - 2 * α * A.trace - 2 * α * ⟪x - y, v⟫) := by
+  have hQ : ∑ i, ∑ j, A i j * (⟪x - y, EuclideanSpace.single i 1⟫ *
+      ⟪x - y, EuclideanSpace.single j 1⟫) = A.toQuadraticForm' (x - y) := by
+    simp only [EuclideanSpace.inner_single_right, conj_trivial, one_mul, toQuadraticForm'_apply,
+      dotProduct, mulVec, Finset.mul_sum, WithLp.ofLp_sub]
+    exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by ring
+  have hT : ∑ i, ∑ j, A i j * ⟪(EuclideanSpace.single i 1 : EuclideanSpace ℝ ι),
+      EuclideanSpace.single j 1⟫ = A.trace := by
+    simp [EuclideanSpace.inner_single_right, PiLp.single_apply, Matrix.trace]
+  have hsplit : ∀ (E : ℝ) i j, A i j * (E * (4 * α ^ 2 * ⟪x - y, EuclideanSpace.single i 1⟫ *
+      ⟪x - y, EuclideanSpace.single j 1⟫ - 2 * α *
+        ⟪(EuclideanSpace.single i 1 : EuclideanSpace ℝ ι), EuclideanSpace.single j 1⟫)) =
+      E * (4 * α ^ 2) * (A i j * (⟪x - y, EuclideanSpace.single i 1⟫ *
+        ⟪x - y, EuclideanSpace.single j 1⟫)) - E * (2 * α) *
+        (A i j * ⟪(EuclideanSpace.single i 1 : EuclideanSpace ℝ ι), EuclideanSpace.single j 1⟫) :=
+    fun _ _ _ ↦ by ring
+  simp only [fderiv_fderiv_exp_neg_mul_norm_sub_sq_apply,
+    (hasFDerivAt_exp_neg_mul_norm_sub_sq α y x).fderiv, _root_.smul_apply, innerSL_apply_apply,
+    smul_eq_mul, hsplit, Finset.sum_sub_distrib, ← Finset.mul_sum, hQ, hT]
+  ring
 
 variable [Nonempty ι]
 
