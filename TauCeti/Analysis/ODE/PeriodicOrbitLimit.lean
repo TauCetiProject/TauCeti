@@ -11,12 +11,11 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.Topology.UniformSpace.UniformConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.MeasureTheory.Integral.Prod
-import Mathlib.Topology.ContinuousMap.Bounded.ArzelaAscoli
-import TauCeti.Algebra.Order.Floor.Ring
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.CauchySchwarz
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Topology.ContinuousMap.Ascoli
 
 /-!
 # Loops with square-integrable defect accumulate at periodic orbits
@@ -274,48 +273,6 @@ theorem sub_eq_integral_of_tendsto_integral_norm_sq_sliceDefect [CompleteSpace V
   have hL : Tendsto (fun i ↦ u (φ i, t) - u (φ i, 0)) l (𝓝 (x t - x 0)) := (hx t).sub (hx 0)
   simp_rw [hsplit] at hL
   simpa using (tendsto_nhds_unique (hA.add hD) hL).symm
-
-/-- **Periodic Arzelà–Ascoli.** A sequence of continuous `1`-periodic loops in a compact set `K`,
-sharing a modulus of continuity `ρ` with `ρ(h) → 0` as `h → 0` on `[0, 1]`, has a subsequence
-converging uniformly on `ℝ` to a continuous `1`-periodic loop. -/
-theorem exists_tendstoUniformly_subseq_of_periodic_of_modulus {M : Type*} [MetricSpace M]
-    {K : Set M} (hK : IsCompact K) {y : ℕ → ℝ → M} (hy : ∀ n, Continuous (y n))
-    (hper : ∀ n, Periodic (y n) 1) (hyK : ∀ n t, y n t ∈ K) {ρ : ℝ → ℝ}
-    (hρ : Tendsto ρ (𝓝 0) (𝓝 0))
-    (hmod : ∀ n, ∀ t₁ ∈ Icc (0 : ℝ) 1, ∀ t₂ ∈ Icc (0 : ℝ) 1, t₁ ≤ t₂ →
-      dist (y n t₂) (y n t₁) ≤ ρ (t₂ - t₁)) :
-    ∃ ψ : ℕ → ℕ, StrictMono ψ ∧ ∃ x : ℝ → M, Periodic x 1 ∧ Continuous x ∧
-      TendstoUniformly (fun n ↦ y (ψ n)) x atTop := by
-  -- Arzelà–Ascoli on `C([0, 1], M)`.
-  let G : ℕ → BoundedContinuousFunction (Icc (0 : ℝ) 1) M := fun n ↦
-    BoundedContinuousFunction.mkOfCompact ⟨fun t ↦ y n t, (hy n).comp continuous_subtype_val⟩
-  have hGK : ∀ f x, f ∈ range G → f x ∈ K := by
-    rintro _ x ⟨n, rfl⟩
-    exact hyK n x
-  have hGeq : Equicontinuous ((↑) : range G → Icc (0 : ℝ) 1 → M) := by
-    refine Metric.equicontinuous_of_continuity_modulus ρ hρ _ ?_
-    rintro t₁ t₂ ⟨_, n, rfl⟩
-    rw [Subtype.dist_eq, Real.dist_eq]
-    rcases le_total (t₁ : ℝ) t₂ with h | h
-    · rw [dist_comm, abs_sub_comm, abs_of_nonneg (sub_nonneg.2 h)]
-      exact hmod n t₁ t₁.2 t₂ t₂.2 h
-    · rw [abs_of_nonneg (sub_nonneg.2 h)]
-      exact hmod n t₂ t₂.2 t₁ t₁.2 h
-  obtain ⟨g, -, ψ, hψ, hlim⟩ :=
-    (BoundedContinuousFunction.arzela_ascoli K hK (range G) hGK hGeq).tendsto_subseq
-      (fun n ↦ subset_closure (mem_range_self n))
-  have hunif := BoundedContinuousFunction.tendsto_iff_tendstoUniformly.1 hlim
-  -- The limit loop, extended periodically.
-  let p : ℝ → Icc (0 : ℝ) 1 := fun t ↦ ⟨Int.fract t, Int.fract_nonneg t, (Int.fract_lt_one t).le⟩
-  set x : ℝ → M := fun t ↦ g (p t)
-  have hxper : Periodic x 1 := fun t ↦ by simp only [x, p, Int.fract_add_one]
-  have hux : TendstoUniformly (fun n ↦ y (ψ n)) x atTop := by
-    have heq : (fun n ↦ y (ψ n)) = fun n ↦ ⇑((G ∘ ψ) n) ∘ p := by
-      funext n t
-      exact ((hper (ψ n)).apply_fract t).symm
-    rw [heq]
-    exact hunif.comp p
-  exact ⟨ψ, hψ, x, hxper, hux.continuous (Frequently.of_forall fun n ↦ hy _), hux⟩
 
 /-- **Loops with small defect converge to periodic orbits.** Let `X` be a continuous,
 `1`-periodic time-dependent vector field and let `u` be `C¹` on the half-cylinder `s > a`, with

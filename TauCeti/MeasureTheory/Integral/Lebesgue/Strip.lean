@@ -11,6 +11,7 @@ import Mathlib.Algebra.Order.ToIntervalMod
 import Mathlib.MeasureTheory.Group.MeasurableEquiv
 import Mathlib.MeasureTheory.Measure.WithDensity
 import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
+import TauCeti.MeasureTheory.Integral.Lebesgue.Exhaustion
 
 /-!
 # Lebesgue integrals over a strip by exhaustion
@@ -54,15 +55,6 @@ namespace TauCeti
 open Function MeasureTheory Set Filter Topology
 open scoped ENNReal
 
-/-- The integrals of `f` over an increasing sequence of sets tend to its integral over their
-union. -/
-private theorem tendsto_setLIntegral_iUnion_of_monotone {α : Type*} [MeasurableSpace α]
-    {μ : Measure α} {f : α → ℝ≥0∞} {R : ℕ → Set α} (hR : Monotone R) :
-    Tendsto (fun n ↦ ∫⁻ z in R n, f z ∂μ) atTop (𝓝 (∫⁻ z in ⋃ n, R n, f z ∂μ)) := by
-  rw [setLIntegral_iUnion_of_directed _ hR.directed_le]
-  exact tendsto_atTop_iSup fun m n hmn ↦ lintegral_mono' (Measure.restrict_mono (hR hmn) le_rfl)
-    le_rfl
-
 /-- The rectangles `[-n, n] × T` increase with `n`. -/
 theorem monotone_Icc_neg_prod {β : Type*} (T : Set β) :
     Monotone fun n : ℕ ↦ Icc (-(n : ℝ)) n ×ˢ T := fun _ _ hmn ↦
@@ -82,7 +74,7 @@ theorem tendsto_setLIntegral_Icc_neg_prod {β : Type*} [MeasurableSpace β]
     Tendsto (fun n : ℕ ↦ ∫⁻ z in Icc (-(n : ℝ)) n ×ˢ T, f z ∂μ) atTop
       (𝓝 (∫⁻ z in (univ : Set ℝ) ×ˢ T, f z ∂μ)) := by
   rw [← iUnion_Icc_neg_prod]
-  exact tendsto_setLIntegral_iUnion_of_monotone (monotone_Icc_neg_prod T)
+  exact tendsto_setLIntegral_of_monotone (monotone_Icc_neg_prod T)
 
 /-- **Integrals over a strip by exhaustion.** If the integral of `f` over each rectangle
 `[-n, n] × T` is `ENNReal.ofReal (F(n) - F(-n))`, where `F` tends to `A₁` at `-∞` and to `A₂` at
@@ -116,7 +108,7 @@ theorem setLIntegral_Ici_prod_eq_ofReal_of_tendsto {β : Type*} [MeasurableSpace
     obtain ⟨n, hn⟩ := exists_nat_ge (z.1 - b)
     exact mem_iUnion.2 ⟨n, ⟨hz.1, by linarith⟩, hz.2⟩
   -- The integrals over the rectangles increase to the integral over the half-strip.
-  have hlim := tendsto_setLIntegral_iUnion_of_monotone (μ := μ) (f := f) hmono
+  have hlim := tendsto_setLIntegral_of_monotone (μ := μ) (f := f) hmono
   rw [hunion] at hlim
   refine tendsto_nhds_unique hlim ?_
   simp only [R, hE]

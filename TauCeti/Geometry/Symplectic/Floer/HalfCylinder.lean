@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.ODE.PeriodicOrbitLimit
 public import TauCeti.Geometry.Symplectic.Floer.Action
-import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 import Mathlib.Topology.Order.MonotoneConvergence
 import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
@@ -185,28 +184,6 @@ theorem monotoneOn_hamiltonianAction_of_floer (hH : ContDiff ℝ 1 (uncurry H))
     (isOpen_Ioi.prod isOpen_univ) hu hs (hR.trans (Set.prod_mono le_rfl (subset_univ _)))
     (fun s h ↦ by simpa using hper s (hs₁.trans_le h.1) 0) fun z hz ↦ by
       simpa using (ω.isComplexLinearMap_perturbedFDeriv_iff _ _ _ u z).1 (hfloer z (hR hz))
-
-/-- **Pairing with functions of vanishing mean norm.** If the loops `y_i` are bounded by `R` and the
-integrals over `[0, 1]` of the norms of the continuous `d_i` tend to `0`, then so do the integrals
-`∫₀¹ ω(y_i(t), d_i(t)) dt`. -/
-theorem tendsto_integral_apply_of_tendsto_integral_norm {ι : Type*} {l : Filter ι}
-    {y d : ι → ℝ → V} {R : ℝ} (hy : ∀ i t, ‖y i t‖ ≤ R) (hd : ∀ i, Continuous (d i))
-    (hdl : Tendsto (fun i ↦ ∫ t in (0 : ℝ)..1, ‖d i t‖) l (𝓝 0)) :
-    Tendsto (fun i ↦ ∫ t in (0 : ℝ)..1, ω (y i t) (d i t)) l (𝓝 0) := by
-  set Bω := ω.toBilinForm.toContinuousBilinearMap
-  have hω : ∀ v w, |ω v w| ≤ ‖Bω‖ * ‖v‖ * ‖w‖ := fun v w ↦ by
-    simpa only [Bω, LinearMap.toContinuousBilinearMap_apply, Real.norm_eq_abs] using
-      Bω.le_opNorm₂ v w
-  have hlim := hdl.const_mul (‖Bω‖ * R)
-  rw [mul_zero] at hlim
-  refine squeeze_zero_norm (fun i ↦ ?_) hlim
-  rw [← intervalIntegral.integral_const_mul]
-  refine intervalIntegral.norm_integral_le_of_norm_le zero_le_one
-    (Eventually.of_forall fun t _ ↦ ?_) ((continuous_const.mul (hd i).norm).intervalIntegrable _ _)
-  rw [Real.norm_eq_abs]
-  refine (hω _ _).trans ?_
-  gcongr
-  exact hy i t
 
 /-- **The action along loops with vanishing defect.** Let `H` be a `C¹` Hamiltonian and let `u` be
 `C¹` on the half-cylinder `s > a`, with loops in a compact set `K`. If the loops at `s_i > a`
