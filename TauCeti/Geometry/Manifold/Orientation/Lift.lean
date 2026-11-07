@@ -384,8 +384,8 @@ theorem signBasis_mul_signAt_mul_abs_det_eq [DecidableEq ι]
   have h := _root_.Orientation.signBasis_mul_det_div_abs (l.chartOrientation α ⟨x, hx⟩) b
     (b.map L)
   have hdet : b.det (b.map L) = L.toLinearMap.det := by
-    change b.det (L.toLinearMap ∘ b) = _
-    simp only [Module.Basis.det_comp, Module.Basis.det_self, mul_one]
+    rw [Module.Basis.coe_map, ← LinearEquiv.coe_coe, Module.Basis.det_comp,
+      Module.Basis.det_self, mul_one]
   have hne : |L.toLinearMap.det| ≠ 0 :=
     abs_ne_zero.2 (LinearEquiv.isUnit_det' L).ne_zero
   rw [hsB, Units.val_one, Int.cast_one, one_mul, hdet, hsign] at h
