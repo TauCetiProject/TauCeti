@@ -36,33 +36,51 @@ open scoped Manifold ContDiff
 namespace TauCeti
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   [I.Boundaryless] [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
   {α : RoughForm I M ℝ 1} {f : M → ℝ} {U : Set M} {x : M}
 
+/-- At a zero of a locally exact one-form, its section linearization is surjective exactly
+when the Hessian of a `C²` local primitive is surjective. This comparison needs no finite
+dimensionality assumption. -/
+theorem IsPrimitiveOn.surjective_sectionLinearization_iff_surjective_criticalHessian
+    (hf : IsPrimitiveOn α f U) (hxU : x ∈ U) (hf₂ : ContMDiffAt I 𝓘(ℝ) 2 f x)
+    (hx : α x = 0) :
+    Surjective (sectionLinearization (F := E [⋀^Fin 1]→L[ℝ] ℝ)
+      (E := fun y : M ↦ TangentSpace I y [⋀^Fin 1]→L[ℝ] ℝ) I id α x) ↔
+      Surjective (criticalHessian I f x) := by
+  have hD := hf.hasFDerivAt_inChartAt hxU hf₂
+  have hsurj : Surjective (fderiv ℝ (α.inChartAt x) (extChartAt I x x)) ↔
+      Surjective (fderiv ℝ (fderiv ℝ (f ∘ (extChartAt I x).symm)) (extChartAt I x x)) := by
+    rw [hD.fderiv, ContinuousLinearMap.coe_comp, ContinuousLinearEquiv.coe_coe,
+      LinearIsometryEquiv.coe_toContinuousLinearEquiv]
+    exact Surjective.of_comp_iff' (ContinuousAlternatingMap.ofSubsingletonLIE
+      (𝕜 := ℝ) (E := E) (F := ℝ) (0 : Fin 1)).bijective _
+  have hs := (mdifferentiableAt_section I α).mp
+    (mdifferentiableAt_form_of_differentiableWithinAt_inChartAt_self
+      hD.differentiableAt.differentiableWithinAt)
+  rw [surjective_sectionLinearization_iff continuousAt_id
+    (mem_baseSet_trivializationAt _ _ x) hs hx]
+  simp only [id_eq]
+  rw [RoughForm.mvfderiv_trivializationAt_eq_fderiv_inChartAt hD.differentiableAt]
+  -- The tangent space is the model space; use the Hessian's defining equality explicitly.
+  convert! hsurj using 1
+  exact iff_of_eq (congrArg (fun A : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ ↦
+    Surjective A) criticalHessian_def)
+
 /-- At a zero of a locally exact one-form, its intrinsic section linearization is surjective
 if and only if the zero is a nondegenerate critical point of a `C²` local primitive. -/
-theorem IsPrimitiveOn.surjective_sectionLinearization_iff
+theorem IsPrimitiveOn.surjective_sectionLinearization_iff [FiniteDimensional ℝ E]
     (hf : IsPrimitiveOn α f U) (hxU : x ∈ U) (hf₂ : ContMDiffAt I 𝓘(ℝ) 2 f x)
     (hx : α x = 0) :
     Surjective (sectionLinearization (F := E [⋀^Fin 1]→L[ℝ] ℝ)
       (E := fun y : M ↦ TangentSpace I y [⋀^Fin 1]→L[ℝ] ℝ) I id α x) ↔
       IsManifoldNondegenerateCriticalPoint I f x := by
-  have hD := hf.hasFDerivAt_inChartAt hxU hf₂
-  rw [RoughForm.surjective_sectionLinearization_iff hD.differentiableAt]
-  have hsurj : Surjective (fderiv ℝ (α.inChartAt x) (extChartAt I x x)) ↔
-      Surjective (criticalHessian I f x) := by
-    rw [hD.fderiv]
-    -- The tangent space is the model space; the critical Hessian is its second derivative.
-    convert! Surjective.of_comp_iff' (ContinuousAlternatingMap.ofSubsingletonLIE
-      (𝕜 := ℝ) (E := E) (F := ℝ) (0 : Fin 1)).bijective
-        (fderiv ℝ (fderiv ℝ (f ∘ (extChartAt I x).symm)) (extChartAt I x x)) using 1
-    rw [criticalHessian_def]
-    rfl
-  rw [hsurj, isManifoldNondegenerateCriticalPoint_iff_criticalHessian]
+  rw [hf.surjective_sectionLinearization_iff_surjective_criticalHessian hxU hf₂ hx,
+    isManifoldNondegenerateCriticalPoint_iff_criticalHessian]
   have hcrit : mvfderiv I f x = 0 := by
     have hd := mextDeriv_ofFunction_apply_eq_zero_iff.mp ((hf.mextDeriv_eq x hxU).trans hx)
-    simp only [mvfderiv, hd, ContinuousLinearMap.comp_zero]
+    exact mvfderiv_eq_zero_iff.mpr hd
   exact ⟨fun h ↦ ⟨hf₂, hcrit, ContinuousLinearMap.isInvertible_of_surjective (E := E) h⟩,
     fun h ↦ h.2.2.surjective⟩
 
@@ -72,11 +90,14 @@ theorem IsMorseOneForm.surjective_sectionLinearization (hα : IsMorseOneForm α)
     Surjective (sectionLinearization (F := E [⋀^Fin 1]→L[ℝ] ℝ)
       (E := fun y : M ↦ TangentSpace I y [⋀^Fin 1]→L[ℝ] ℝ) I id α x) := by
   obtain ⟨f, U, hxU, hf, hcrit⟩ := hα.exists_nondegenerate_primitive x hx
-  exact (hf.surjective_sectionLinearization_iff hxU hcrit.contMDiffAt hx).2 hcrit
+  exact (hf.surjective_sectionLinearization_iff_surjective_criticalHessian hxU
+    hcrit.contMDiffAt hx).2
+      (isManifoldNondegenerateCriticalPoint_iff_criticalHessian.mp hcrit).2.2.surjective
 
 /-- A smooth closed real one-form is Morse exactly when it is regular at every zero as a
 section of the alternating cotangent bundle. -/
-theorem isMorseOneForm_iff_surjective_sectionLinearization [T2Space M] [IsManifold I ∞ M]
+theorem isMorseOneForm_iff_surjective_sectionLinearization [FiniteDimensional ℝ E]
+    [T2Space M] [IsManifold I ∞ M]
     (hα : IsSmoothForm I ∞ α) (hclosed : mextDeriv α = 0) :
     IsMorseOneForm α ↔ ∀ x, α x = 0 →
       Surjective (sectionLinearization (F := E [⋀^Fin 1]→L[ℝ] ℝ)
