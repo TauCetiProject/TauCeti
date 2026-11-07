@@ -95,13 +95,16 @@ theorem _root_.Matrix.mulVec_cross_add_cross_mulVec_of_trace_eq_zero
     (M *ᵥ u) ⨯₃ w + u ⨯₃ (M *ᵥ w) = -(Mᵀ *ᵥ (u ⨯₃ w)) := by
   rw [Matrix.mulVec_cross_add_cross_mulVec, hM, zero_smul, zero_sub]
 
-/-- **A matrix preserving the cross product with unit determinant has determinant one.** By the
-Cauchy--Binet identity such a matrix agrees with its transposed adjugate on cross products, and
-cross products of basis vectors span, so `M = (adj M)ᵀ`. Taking determinants gives
-`det M = (det M)²`, so `det M = 1`. In particular the orthogonal matrices preserving the cross
-product are rotations. -/
+/-- **A matrix preserving the cross product with unit determinant has determinant one**: if
+`M (x ⨯₃ y) = (M x) ⨯₃ (M y)` for all `x`, `y` and `det M` is a unit, then `det M = 1`. The unit
+hypothesis cannot be dropped, since the zero matrix preserves the cross product. Orthogonal
+matrices have unit determinant, so an orthogonal matrix preserving the cross product is a rotation;
+this is the converse of `Matrix.mulVec_cross_mulVec_of_mem_specialOrthogonalGroup`. -/
 theorem _root_.Matrix.det_eq_one_of_mulVec_cross {M : Matrix (Fin 3) (Fin 3) R}
     (hM : IsUnit M.det) (h : ∀ x y, M *ᵥ (x ⨯₃ y) = (M *ᵥ x) ⨯₃ (M *ᵥ y)) : M.det = 1 := by
+  -- By Cauchy--Binet, `M` agrees with `(adj M)ᵀ` on cross products, and each basis vector is a
+  -- cross product of basis vectors, so `M = (adj M)ᵀ`. Taking determinants gives
+  -- `det M = (det M)²`, and cancelling the unit `det M` gives `det M = 1`.
   have hadj : M = M.adjugateᵀ := by
     refine ext_of_mulVec_single fun i ↦ ?_
     have hi : Pi.single i 1 = Pi.single (i + 1) 1 ⨯₃ Pi.single (i + 2) (1 : R) := by
