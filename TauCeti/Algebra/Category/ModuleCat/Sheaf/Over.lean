@@ -22,7 +22,8 @@ Since `𝟙 X` is a terminal object of the slice over `X`, a global section of t
 
 * `SheafOfModules.overSectionModule`: the original commutative-ring action on sections of
   a sheaf of modules restricted to a slice site;
-* `SheafOfModules.overSectionsEquiv`: global sections of `M.over X` are sections of `M` over `X`.
+* `SheafOfModules.overSectionsEquiv`: global sections of `M.over X` are sections of `M` over `X`;
+* `PresheafOfModules.map_sum_smul_map`: restriction of a linear combination of restricted sections.
 -/
 
 public section
@@ -83,6 +84,28 @@ theorem _root_.SheafOfModules.overSectionsEquiv_symm_apply_eval (s : M.val.obj (
   (rfl)
 
 end Sections
+
+section Restriction
+
+variable {R : Cᵒᵖ ⥤ RingCat.{u}} (N : PresheafOfModules.{v} R)
+
+/-- Restricting a linear combination of restricted sections along `h₀` gives the corresponding
+combination with the composite restriction maps. -/
+theorem _root_.PresheafOfModules.map_sum_smul_map {U V₀ V : C} (f₀ : V₀ ⟶ U) (h₀ : V ⟶ V₀)
+    {ι : Type*} [Fintype ι] {W : ι → C} (g₀ : ∀ k, V₀ ⟶ W k) (n : ∀ k, N.obj (op (W k)))
+    (a : ι → R.obj (op U)) :
+    N.map h₀.op (∑ k, R.map f₀.op (a k) • N.map (g₀ k).op (n k)) =
+      ∑ k, R.map (h₀ ≫ f₀).op (a k) • N.map (h₀ ≫ g₀ k).op (n k) := by
+  refine (map_sum _ _ _).trans (Finset.sum_congr rfl fun k _ ↦ ?_)
+  refine (PresheafOfModules.map_smul N h₀.op _ _).trans ?_
+  have er : R.map (h₀ ≫ f₀).op (a k) = R.map h₀.op (R.map f₀.op (a k)) := by
+    rw [show (h₀ ≫ f₀).op = f₀.op ≫ h₀.op from rfl, Functor.map_comp]
+    -- A composite of ring maps applied to `a k` is the iterated application.
+    rfl
+  rw [er]
+  exact congrArg _ (PresheafOfModules.map_comp_apply N (g₀ k).op h₀.op (n k)).symm
+
+end Restriction
 
 end SheafOfModules
 

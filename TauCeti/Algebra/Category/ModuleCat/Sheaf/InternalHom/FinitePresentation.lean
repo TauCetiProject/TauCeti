@@ -261,30 +261,6 @@ private theorem germ_sum_smul_eq_zero {U V₀ : Opens X} (P : (M.over U).Present
   exact (congrArg (fun y ↦ φ (TopCat.Presheaf.germ M.val.presheaf U x hx y)) hrel).trans
     ((congrArg φ (map_zero _)).trans (map_zero φ))
 
-/- Restricting a vanishing sum of scalar multiples of restricted sections along `h₀` gives the
-corresponding sum with the composite restriction maps. -/
-private theorem sum_map_comp_smul_eq_zero {U V₀ V : Opens X} (f₀ : V₀ ⟶ U) (h₀ : V ⟶ V₀)
-    {ι : Type*} [Fintype ι] {W : ι → Opens X} (g₀ : ∀ k, V₀ ⟶ W k)
-    (n : ∀ k, N.val.obj (op (W k)))
-    (a : ι → ((ringCatSheaf R).over U).obj.obj (op (Over.mk (𝟙 U))))
-    (h : N.val.map h₀.op
-      (∑ k, (ringCatSheaf R).obj.map f₀.op (a k) • N.val.map (g₀ k).op (n k)) = 0) :
-    ∑ k, (ringCatSheaf R).obj.map (h₀ ≫ f₀).op (a k) • N.val.map (h₀ ≫ g₀ k).op (n k) = 0 := by
-  refine Eq.trans ?_ h
-  refine Eq.trans ?_ (map_sum _ _ _).symm
-  refine Finset.sum_congr rfl fun k _ ↦ ?_
-  refine Eq.trans ?_ (PresheafOfModules.map_smul N.val h₀.op
-    ((ringCatSheaf R).obj.map f₀.op (a k)) (N.val.map (g₀ k).op (n k))).symm
-  have er : (ringCatSheaf R).obj.map (h₀ ≫ f₀).op (a k) =
-      (ringCatSheaf R).obj.map h₀.op
-        ((ringCatSheaf R).obj.map f₀.op (a k)) := by
-    rw [show (h₀ ≫ f₀).op = f₀.op ≫ h₀.op from rfl, Functor.map_comp]
-    -- A composite of ring maps applied to `a k` is the iterated application.
-    rfl
-  have en := PresheafOfModules.map_comp_apply N.val (g₀ k).op h₀.op (n k)
-  rw [er]
-  exact congrArg _ en
-
 /- A linear map between stalks at a point of `U` lifts to a germ of a local morphism, given a
 finite presentation of `M` on `U`. -/
 private theorem ihomStalkComparison_surjective_of_presentation {U : Opens X}
@@ -335,7 +311,7 @@ private theorem ihomStalkComparison_surjective_of_presentation {U : Opens X}
       refine (PresheafOfModules.map_comp_apply N.val (i₁ j).op k₁.op (t j)).trans ?_
       exact (congrArg (fun y ↦ N.val.map k₁.op y) (heq j)).trans
         ((congrArg (fun y ↦ N.val.map k₁.op y) (map_zero _)).trans (map_zero _))
-    exact sum_map_comp_smul_eq_zero f₀ h₀ g₀ n (a j) h2
+    exact (PresheafOfModules.map_sum_smul_map N.val f₀ h₀ g₀ n (a j)).symm.trans h2
   -- These sections define a morphism `ψ : M|_V ⟶ N|_V`. Its germ agrees with `φ` on the germs
   -- of the generators, which span the stalk of `M`.
   obtain ⟨ψ, hψ⟩ := exists_hom_of_presentation f P a ha _ hn'
