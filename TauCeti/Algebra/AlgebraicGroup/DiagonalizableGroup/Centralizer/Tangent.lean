@@ -73,6 +73,33 @@ universe u
 
 variable {R H X : Type u} [CommRing R] [CommRing H] [HopfAlgebra R H] [CommGroup X]
 
+/-- The first and second components of the dual-number tangent point of a derivation `d` are the
+counit and `d`. -/
+private theorem fst_snd_comp_tangentPoint {B : Type*} [CommRing B] [Algebra R B]
+    (d : Derivation R H (Bialgebra.CounitAlgebra R H B)) :
+    (fstHom R (Bialgebra.CounitAlgebra R H B) (Bialgebra.CounitAlgebra R H B)).toLinearMap ∘ₗ
+        (derivationMulEquivTangentKer R H B (Multiplicative.ofAdd d)).val.ofConv.toLinearMap =
+      (1 : WithConv (H →ₗ[R] Bialgebra.CounitAlgebra R H B)).ofConv ∧
+    (sndHom (Bialgebra.CounitAlgebra R H B) (Bialgebra.CounitAlgebra R H B)).restrictScalars R ∘ₗ
+        (derivationMulEquivTangentKer R H B (Multiplicative.ofAdd d)).val.ofConv.toLinearMap =
+      (toConv (↑d : H →ₗ[R] Bialgebra.CounitAlgebra R H B)).ofConv := by
+  refine ⟨?_, ?_⟩ <;> ext x
+  · exact fst_apply_of_mem_tangentKer
+      (derivationMulEquivTangentKer R H B (Multiplicative.ofAdd d)).2 x
+  · exact derivationMulEquivTangentKer_apply_snd (Multiplicative.ofAdd d) x
+
+/-- The first and second components of the inclusion of a point `g` into the dual-number points
+are `g` and `0`. -/
+private theorem fst_snd_comp_mapValue_inlAlgHom {B : Type*} [CommRing B] [Algebra R B]
+    (g : WithConv (H →ₐ[R] Bialgebra.CounitAlgebra R H B)) :
+    (fstHom R (Bialgebra.CounitAlgebra R H B) (Bialgebra.CounitAlgebra R H B)).toLinearMap ∘ₗ
+        (AlgHom.mapValue (H := H) (inlAlgHom R (Bialgebra.CounitAlgebra R H B)
+          (Bialgebra.CounitAlgebra R H B)) g).ofConv.toLinearMap = g.ofConv.toLinearMap ∧
+    (sndHom (Bialgebra.CounitAlgebra R H B) (Bialgebra.CounitAlgebra R H B)).restrictScalars R ∘ₗ
+        (AlgHom.mapValue (H := H) (inlAlgHom R (Bialgebra.CounitAlgebra R H B)
+          (Bialgebra.CounitAlgebra R H B)) g).ofConv.toLinearMap = 0 := by
+  refine ⟨?_, ?_⟩ <;> ext x <;> simp [AlgHom.mapValue_apply]
+
 /-- Conjugating a point by the dual-number tangent point of a tangent vector: the infinitesimal
 coefficient of the conjugate is the convolution commutator of the tangent vector with the point.
 This mirrors `Derivation.snd_conjugate_tangentPoint`, which conjugates the tangent point by the
@@ -95,30 +122,13 @@ private theorem snd_tangentPoint_conjugate {B : Type*} [CommRing B] [Algebra R B
     (Bialgebra.CounitAlgebra R H B)).restrictScalars R
   let D := toConv (↑d : H →ₗ[R] Bialgebra.CounitAlgebra R H B)
   let G := toConv g.ofConv.toLinearMap
-  have hqF : F ∘ₗ q.ofConv.toLinearMap = g.ofConv.toLinearMap := by
-    ext x
-    simp [F, q, AlgHom.mapValue_apply]
-  have hqS : S ∘ₗ q.ofConv.toLinearMap = 0 := by
-    ext x
-    simp [S, q, AlgHom.mapValue_apply]
-  have hpF : F ∘ₗ p.ofConv.toLinearMap = (1 : WithConv (H →ₗ[R] _)).ofConv := by
-    ext x
-    exact fst_apply_of_mem_tangentKer
-      (derivationMulEquivTangentKer R H B (Multiplicative.ofAdd d)).2 x
-  have hpS : S ∘ₗ p.ofConv.toLinearMap = D.ofConv := by
-    ext x
-    exact derivationMulEquivTangentKer_apply_snd (Multiplicative.ofAdd d) x
+  obtain ⟨hqF, hqS⟩ := fst_snd_comp_mapValue_inlAlgHom g
+  obtain ⟨hpF, hpS⟩ := fst_snd_comp_tangentPoint d
   have hpinv : p⁻¹ = (derivationMulEquivTangentKer R H B (Multiplicative.ofAdd (-d))).val := by
     rw [ofAdd_neg, map_inv, Subgroup.coe_inv]
-  have hpinvF : F ∘ₗ (p⁻¹).ofConv.toLinearMap = (1 : WithConv (H →ₗ[R] _)).ofConv := by
-    rw [hpinv]
-    ext x
-    exact fst_apply_of_mem_tangentKer
-      (derivationMulEquivTangentKer R H B (Multiplicative.ofAdd (-d))).2 x
-  have hpinvS : S ∘ₗ (p⁻¹).ofConv.toLinearMap = -D.ofConv := by
-    rw [hpinv]
-    ext x
-    exact derivationMulEquivTangentKer_apply_snd (Multiplicative.ofAdd (-d)) x
+  obtain ⟨hpinvF, hpinvS⟩ := fst_snd_comp_tangentPoint (-d)
+  rw [← hpinv] at hpinvF hpinvS
+  replace hpinvS : S ∘ₗ (p⁻¹).ofConv.toLinearMap = -D.ofConv := hpinvS
   -- Negation passes through convolution; `mul_neg` does not apply because the convolution ring
   -- and the pointwise additive group of `WithConv` expose different negation instances.
   have hneg : G * -D = -(G * D) := by
@@ -235,6 +245,36 @@ private theorem lid_map_conjugationAlgHom (d : Derivation R H (Bialgebra.CounitA
     rfl
   exact LinearMap.congr_fun hmaps _
 
+/-- A derivation kills the coefficients of the conjugation defect of `h` exactly when the
+convolution commutator of its scalar extension with the universal point of `D(X)` vanishes at
+`h`. -/
+private theorem forall_map_centralizerCoefficient_eq_zero_iff
+    (d : Derivation R H (Bialgebra.CounitAlgebra R H R)) (h : H) :
+    (∀ χ, d (centralizerCoefficient π h χ) = 0) ↔
+      (toConv (↑(Derivation.mapValue (Algebra.ofId R (CommAlgCat.of R (MonoidAlgebra R X))) d) :
+            H →ₗ[R] Bialgebra.CounitAlgebra R H (CommAlgCat.of R (MonoidAlgebra R X))) *
+          toConv (Derivation.pointInCounitAlgebra (CommAlgCat.of R (MonoidAlgebra R X))
+            (toConv π.toAlgHom)).ofConv.toLinearMap -
+        toConv (Derivation.pointInCounitAlgebra (CommAlgCat.of R (MonoidAlgebra R X))
+            (toConv π.toAlgHom)).ofConv.toLinearMap *
+          toConv (↑(Derivation.mapValue (Algebra.ofId R
+            (CommAlgCat.of R (MonoidAlgebra R X))) d) :
+            H →ₗ[R] Bialgebra.CounitAlgebra R H (CommAlgCat.of R (MonoidAlgebra R X)))).ofConv h
+        = 0 := by
+  have hcoeff : (∀ χ, d (centralizerCoefficient π h χ) = 0) ↔
+      TensorProduct.map ((Bialgebra.CounitAlgebra.algEquivSelf R H R).toLinearMap ∘ₗ
+          (d : H →ₗ[R] Bialgebra.CounitAlgebra R H R)) LinearMap.id
+        (centralizerDefect π h) = 0 := by
+    rw [map_centralizerDefect_eq_zero_iff]
+    simp only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, Derivation.coeFn_coe,
+      EmbeddingLike.map_eq_zero_iff]
+  rw [hcoeff, ← (TensorProduct.lid R (MonoidAlgebra R X)).map_eq_zero_iff,
+    centralizerDefect_def, map_sub, map_sub, TensorProduct.map_algebraTensorProduct_map,
+    AlgHom.toLinearMap_id, LinearMap.comp_id, LinearMap.id_comp, lid_map_conjugationAlgHom,
+    TensorProduct.map_tmul]
+  simp only [LinearMap.comp_apply, Derivation.coeFn_coe, Derivation.map_one_eq_zero, map_zero,
+    TensorProduct.zero_tmul, sub_zero, EmbeddingLike.map_eq_zero_iff]
+
 variable [Module.Finite R (Bialgebra.CotangentSpace R H)]
 variable [Module.Projective R (Bialgebra.CotangentSpace R H)]
 
@@ -270,20 +310,8 @@ theorem cotangentLinearEquiv_mem_lieSubalgebra_centralizerHopfIdeal_iff
   -- Killing the coefficients of the conjugation defect is vanishing of the commutator of `d`
   -- with the universal point of `D(X)`.
   have hgen (h : H) :
-      (∀ χ, d (centralizerCoefficient π h χ) = 0) ↔ (D * P - P * D).ofConv h = 0 := by
-    have hcoeff : (∀ χ, d (centralizerCoefficient π h χ) = 0) ↔
-        TensorProduct.map ((Bialgebra.CounitAlgebra.algEquivSelf R H R).toLinearMap ∘ₗ
-            (d : H →ₗ[R] Bialgebra.CounitAlgebra R H R)) LinearMap.id
-          (centralizerDefect π h) = 0 := by
-      rw [map_centralizerDefect_eq_zero_iff]
-      simp only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, Derivation.coeFn_coe,
-        EmbeddingLike.map_eq_zero_iff]
-    rw [hcoeff, ← (TensorProduct.lid R (MonoidAlgebra R X)).map_eq_zero_iff,
-      centralizerDefect_def, map_sub, map_sub, TensorProduct.map_algebraTensorProduct_map,
-      AlgHom.toLinearMap_id, LinearMap.comp_id, LinearMap.id_comp, lid_map_conjugationAlgHom,
-      TensorProduct.map_tmul]
-    simp only [LinearMap.comp_apply, Derivation.coeFn_coe, Derivation.map_one_eq_zero, map_zero,
-      TensorProduct.zero_tmul, sub_zero, EmbeddingLike.map_eq_zero_iff, D, P, d', p, A]
+      (∀ χ, d (centralizerCoefficient π h χ) = 0) ↔ (D * P - P * D).ofConv h = 0 :=
+    forall_map_centralizerCoefficient_eq_zero_iff π d h
   rw [forall_congr' hgen]
   have hPP' : P * P' = 1 := by
     rw [← AlgHom.toLinearMap_convMul, mul_inv_cancel, AlgHom.toLinearMap_convOne]
