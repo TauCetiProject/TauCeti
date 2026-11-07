@@ -102,13 +102,6 @@ private theorem frame_orientation : (o.frame).toBasis.orientation = o :=
 
 include hQ
 
-/-- The volume element of the plane is `c(e₀) c(e₁)` for every positively oriented orthonormal
-basis. -/
-private theorem volumeElement_eq_ι_mul_ι {b : OrthonormalBasis (Fin 2) ℝ V}
-    (hb : b.toBasis.orientation = o) : volumeElement Q o = ι Q (b 0) * ι Q (b 1) := by
-  rw [volumeElement_eq o b hb (b.isOrthoᵢ_associated hQ)]
-  simp [List.finRange_succ]
-
 /-- **The circle subgroup of the Spin group of an oriented Euclidean plane**, for
 `Q v = -‖v‖²`: the unit complex number `z` maps to `Re z + Im z · ω`, where `ω` is the volume
 element (`Orientation.coe_spinCircle`). In a positively oriented orthonormal basis `(e₀, e₁)` this
@@ -124,7 +117,8 @@ the orientation. -/
 theorem coe_spinCircle (z : Circle) :
     (o.spinCircle hQ z : CliffordAlgebra Q) =
       algebraMap ℝ _ (z : ℂ).re + (z : ℂ).im • volumeElement Q o := by
-  rw [spinCircle, CliffordAlgebra.coe_spinCircle, volumeElement_eq_ι_mul_ι o hQ o.frame_orientation]
+  rw [spinCircle, CliffordAlgebra.coe_spinCircle,
+    volumeElement_eq_ι_mul_ι o _ o.frame_orientation (o.frame.isOrthoᵢ_associated hQ)]
 
 /-- **Frame formula**: for every positively oriented orthonormal basis `(e₀, e₁)`, the circle
 subgroup of the orientation is the circle subgroup `z ↦ Re z + Im z c(e₀) c(e₁)` of the pair
@@ -134,7 +128,8 @@ theorem spinCircle_eq_spinCircle {b : OrthonormalBasis (Fin 2) ℝ V}
     o.spinCircle hQ = CliffordAlgebra.spinCircle Q (b 0) (b 1) (b.isOrtho_apply hQ (by decide))
       (b.map_apply_mul_map_apply hQ 0 1) := by
   ext z
-  rw [coe_spinCircle, CliffordAlgebra.coe_spinCircle, volumeElement_eq_ι_mul_ι o hQ hb]
+  rw [coe_spinCircle, CliffordAlgebra.coe_spinCircle,
+    volumeElement_eq_ι_mul_ι o b hb (b.isOrthoᵢ_associated hQ)]
 
 /-- Reversing the orientation inverts the parameter of the circle subgroup. -/
 @[simp]
@@ -181,23 +176,16 @@ theorem spinVectorAction_spinCircle_exp (θ : ℝ) (v : V) :
 variable {E : Type*} [AddCommGroup E] [Module ℂ E] [Module (CliffordAlgebra (Q.baseChange ℂ)) E]
   [IsScalarTower ℂ (CliffordAlgebra (Q.baseChange ℂ)) E]
 
-omit hQ in
-/-- In the complexified Clifford algebra the volume element is `-i Γ`. -/
-private theorem ofBaseChangeAux_volumeElement :
-    ofBaseChangeAux ℂ Q (volumeElement Q o) = -(Complex.I • complexVolume Q o) := by
-  rw [complexVolume_def, show (2 + 1) / 2 = 1 by rfl, pow_one, smul_smul, Complex.I_mul_I,
-    neg_one_smul, neg_neg]
-
 /-- In the complexified Clifford algebra the circle element `z` is `Re z - i Im z Γ`, with `Γ`
 the chirality element of the orientation. -/
 theorem ofBaseChangeAux_spinCircle (z : Circle) :
     ofBaseChangeAux ℂ Q (o.spinCircle hQ z) =
       ((z : ℂ).re : ℂ) • 1 - (Complex.I * (z : ℂ).im) • complexVolume Q o := by
   rw [coe_spinCircle, map_add, map_smul, AlgHom.commutes, ofBaseChangeAux_volumeElement,
-    Algebra.algebraMap_eq_smul_one]
+    show (2 + 1) / 2 = 1 by rfl, pow_one, Algebra.algebraMap_eq_smul_one]
   -- Real scalars act on the complexified algebra through `ℝ → ℂ`.
   refine (congrArg₂ (· + ·) (algebraMap_smul ℂ (z : ℂ).re (1 : CliffordAlgebra (Q.baseChange ℂ)))
-    (algebraMap_smul ℂ (z : ℂ).im (-(Complex.I • complexVolume Q o)))).symm.trans ?_
+    (algebraMap_smul ℂ (z : ℂ).im ((-Complex.I) • complexVolume Q o))).symm.trans ?_
   rw [Complex.coe_algebraMap]
   module
 
@@ -244,7 +232,7 @@ theorem coe_spinGroupEquivNeg_spinCircle (z : Circle) :
   -- The circle element is the product of `e₀` with `-Re z e₀ + Im z e₁`.
   have hx : (o.spinCircle hQ z : CliffordAlgebra Q) =
       ι Q (b 0) * ι Q (-((z : ℂ).re • b 0) + (z : ℂ).im • b 1) := by
-    rw [coe_spinCircle, volumeElement_eq_ι_mul_ι o hQ hb]
+    rw [coe_spinCircle, volumeElement_eq_ι_mul_ι o b hb (b.isOrthoᵢ_associated hQ)]
     simp only [map_add, map_neg, map_smul, mul_add, mul_neg, mul_smul_comm, ι_sq_scalar, hQb]
     simp [Algebra.algebraMap_eq_smul_one]
   have hneg : (QuadraticMap.associated (-Q)).IsOrthoᵢ b.toBasis :=
@@ -257,43 +245,13 @@ theorem coe_spinGroupEquivNeg_spinCircle (z : Circle) :
 
 /-! ### The isomorphism with the circle -/
 
-omit hQ in
-/-- The coordinates of `r + s ω` in the Clifford basis of a positively oriented orthonormal basis
-are `r` and `s`; in particular `r + s ω` determines `r` and `s`. -/
-private theorem eq_of_algebraMap_add_smul_volumeElement_eq {r s r' s' : ℝ}
-    (h : algebraMap ℝ (CliffordAlgebra Q) r + s • volumeElement Q o =
-      algebraMap ℝ _ r' + s' • volumeElement Q o) : r = r' ∧ s = s' := by
-  let B := basis Q o.frame.toBasis
-  have hω : volumeElement Q o = B Finset.univ := volumeElement_eq_basis o _ o.frame_orientation
-  have h₁ : (algebraMap ℝ (CliffordAlgebra Q) : ℝ → _) = fun t ↦ t • B ∅ := by
-    ext t
-    simp [B, Algebra.algebraMap_eq_smul_one]
-  have hne : (∅ : Finset (Fin 2)) ≠ Finset.univ := Finset.univ_nonempty.ne_empty.symm
-  have h' := congrArg B.repr h
-  rw [hω, h₁] at h'
-  constructor
-  · simpa [Finsupp.single_apply, hne] using congrArg (· ∅) h'
-  · simpa [Finsupp.single_apply, hne] using congrArg (· Finset.univ) h'
-
 /-- The circle subgroup is injective. -/
 theorem spinCircle_injective : Function.Injective (o.spinCircle hQ) := by
   intro z z' h
   have h' := congrArg ((↑) : spinGroup Q → CliffordAlgebra Q) h
   rw [coe_spinCircle, coe_spinCircle] at h'
-  obtain ⟨hre, him⟩ := eq_of_algebraMap_add_smul_volumeElement_eq o h'
+  obtain ⟨hre, him⟩ := (algebraMap_add_smul_volumeElement_inj o two_ne_zero).1 h'
   exact Circle.ext (Complex.ext hre him)
-
-/-- Since `ω² = -1`, the elements `r + s ω` multiply as the complex numbers `r + s i`. -/
-private theorem algebraMap_add_smul_volumeElement_mul (a b c d : ℝ) :
-    (algebraMap ℝ (CliffordAlgebra Q) a + b • volumeElement Q o) *
-        (algebraMap ℝ _ c + d • volumeElement Q o) =
-      algebraMap ℝ _ (a * c - b * d) + (a * d + b * c) • volumeElement Q o := by
-  have hsq : volumeElement Q o * volumeElement Q o = -1 := by
-    rw [volumeElement_mul_self o hQ]
-    norm_num
-  simp only [Algebra.algebraMap_eq_smul_one, add_mul, mul_add, smul_mul_assoc, mul_smul_comm,
-    one_mul, mul_one, hsq]
-  module
 
 /-- Every element of the Spin group of the plane is `r + s ω` with `r² + s² = 1`. -/
 private theorem exists_coe_eq_algebraMap_add_smul_volumeElement (x : spinGroup Q) :
@@ -309,21 +267,15 @@ private theorem exists_coe_eq_algebraMap_add_smul_volumeElement (x : spinGroup Q
   have hxω : (x : CliffordAlgebra Q) =
       algebraMap ℝ _ (-⟪b 0, w⟫_ℝ) + ⟪b 1, w⟫_ℝ • volumeElement Q o := by
     conv_lhs => rw [hw, ← b.sum_repr' w, Fin.sum_univ_two]
-    rw [volumeElement_eq_ι_mul_ι o hQ hb]
+    rw [volumeElement_eq_ι_mul_ι o b hb (b.isOrthoᵢ_associated hQ)]
     simp only [map_add, map_smul, mul_add, mul_smul_comm, ι_sq_scalar, hQb]
     simp [Algebra.algebraMap_eq_smul_one]
   refine ⟨-⟪b 0, w⟫_ℝ, ⟪b 1, w⟫_ℝ, ?_, hxω⟩
   -- The spinor norm `x x⋆ = r² + s²` is one.
   have hn := spinGroup.mul_star_self_of_mem x.2
-  have hstar : star (volumeElement Q o) = -volumeElement Q o := by
-    rw [star_volumeElement]
-    norm_num
-  rw [hxω, star_add, CliffordAlgebra.star_smul, hstar, star_algebraMap, smul_neg, ← neg_smul,
-    algebraMap_add_smul_volumeElement_mul o hQ, ← map_one (algebraMap ℝ (CliffordAlgebra Q)),
-    ← zero_add (algebraMap ℝ (CliffordAlgebra Q) 1), ← zero_smul ℝ (volumeElement Q o),
-    add_comm (0 • _)] at hn
-  have h := (eq_of_algebraMap_add_smul_volumeElement_eq o hn).1
-  linear_combination h
+  rw [hxω, algebraMap_add_smul_volumeElement_mul_star_self o hQ (by decide),
+    ← map_one (algebraMap ℝ (CliffordAlgebra Q))] at hn
+  exact (algebraMap ℝ (CliffordAlgebra Q)).injective hn
 
 /-- The circle subgroup is onto the Spin group of the plane. -/
 theorem spinCircle_surjective : Function.Surjective (o.spinCircle hQ) := by
