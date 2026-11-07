@@ -148,16 +148,24 @@ theorem coeff_formalCharacter_one_tensor_one_prod_zero_mul_weylDenominator (p : 
         weylDenominator (IsKilling.rootSystem (slTwoDiagonalCartan K))
           (slTwoPositiveBase K)).coeff (slTwoWeight (p : K)) =
       if p = 0 then 2 else if p = 2 then 1 else 0 := by
-  rw [formalCharacter_one_tensor_one_prod_zero, weylDenominator_slTwoPositiveBase, mul_sub,
-    mul_one, AddMonoidAlgebra.coeff_sub, Finsupp.sub_apply, AddMonoidAlgebra.coeff_mul_single_apply,
-    ← sub_eq_add_neg, ← slTwoWeight_sub]
-  rw [show (p : K) - -2 = ((p + 2 : ℤ) : K) by push_cast; ring,
-    show (p : K) = ((p : ℤ) : K) by norm_num, show (-2 : K) = ((-2 : ℤ) : K) by norm_num,
-    show (2 : K) = ((2 : ℤ) : K) by norm_num, show (0 : K) = ((0 : ℤ) : K) by norm_num]
   classical
+  -- Every weight that occurs is `slTwoWeight` of an integer, and such weights compare in `ℤ`.
+  have hch : formalCharacter K (slTwoDiagonalCartan K)
+      ((Sl2Std K 1 ⊗[K] Sl2Std K 1) × Sl2Std K 0) =
+        AddMonoidAlgebra.single (slTwoWeight ((2 : ℤ) : K)) 1 +
+          AddMonoidAlgebra.single (slTwoWeight ((0 : ℤ) : K)) 3 +
+            AddMonoidAlgebra.single (slTwoWeight ((-2 : ℤ) : K)) 1 := by
+    push_cast
+    exact formalCharacter_one_tensor_one_prod_zero
+  have hΔ : weylDenominator (IsKilling.rootSystem (slTwoDiagonalCartan K)) (slTwoPositiveBase K) =
+      1 - AddMonoidAlgebra.single (slTwoWeight ((-2 : ℤ) : K)) 1 := by
+    push_cast
+    exact weylDenominator_slTwoPositiveBase
+  rw [hch, hΔ, ← Int.cast_natCast, mul_sub, mul_one, AddMonoidAlgebra.coeff_sub, Finsupp.sub_apply,
+    AddMonoidAlgebra.coeff_mul_single_apply, ← sub_eq_add_neg, ← slTwoWeight_sub, ← Int.cast_sub]
   simp only [AddMonoidAlgebra.coeff_add, AddMonoidAlgebra.coeff_single, Finsupp.add_apply,
     Finsupp.single_apply, slTwoWeight_inj, Int.cast_inj]
-  split_ifs <;> norm_num at * <;> omega
+  grind
 
 end Character
 
