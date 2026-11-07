@@ -132,10 +132,17 @@ theorem exists_enorm_integral_lineDeriv_smul_le_of_integral_conjWirtingerDeriv_e
   have hδ : 0 < δ := by positivity
   let V : Opens ℂ := ⟨thickening δ K, isOpen_thickening⟩
   let Q := cthickening δ K
-  let W := thickening (2 * δ) K
+  let W : Opens ℂ := ⟨thickening (2 * δ) K, isOpen_thickening⟩
   have hVQ : (V : Set ℂ) ⊆ Q := thickening_subset_cthickening δ K
   have hQU : Q ⊆ U := (cthickening_mono (by dsimp [δ]; linarith) K).trans hRU
   have hQW : Q ⊆ W := cthickening_subset_thickening' (by positivity) (by linarith) K
+  have hWc : IsCompact (closure (W : Set ℂ)) :=
+    hK.cthickening.of_isClosed_subset isClosed_closure
+      (closure_thickening_subset_cthickening (2 * δ) K)
+  have hWU : closure (W : Set ℂ) ⊆ U :=
+    (closure_thickening_subset_cthickening (2 * δ) K).trans
+      ((cthickening_mono (by dsimp [δ]; linarith) K).trans hRU)
+  obtain ⟨ρ, hρ, hshift⟩ := ContDiffBump.exists_seq_sub_tsupport_subset (μ := volume) hWc hWU
   obtain ⟨C, hC⟩ :=
     exists_eLpNorm_fderiv_le_eLpNorm_conjWirtingerDeriv_add_eLpNorm (F := F) hp hp_top
       (U := W) (K := Q) isOpen_thickening hK.cthickening hQW
@@ -147,23 +154,7 @@ theorem exists_enorm_integral_lineDeriv_smul_le_of_integral_conjWirtingerDeriv_e
   let u₀ := (U : Set ℂ).indicator u
   have hu₀ : MemLp u₀ p volume :=
     (memLp_indicator_iff_restrict U.isOpen.measurableSet.nullMeasurableSet).2 hu
-  let ρ : ℕ → ContDiffBump (0 : ℂ) := ContDiffBump.shrinking hδ
   let uε : ℕ → ℂ → F := fun n => (ρ n).normed volume ⋆[lsmul ℝ ℝ] u₀
-  have hr (n : ℕ) : (ρ n).rOut ≤ δ := by
-    rw [ContDiffBump.rOut_shrinking]
-    exact div_le_self hδ.le (by have : 0 ≤ (n : ℝ) := Nat.cast_nonneg n; linarith)
-  have hshift (n : ℕ) (x : ℂ) (hx : x ∈ W) (y : ℂ)
-      (hy : y ∈ tsupport ((ρ n).normed volume)) : x - y ∈ U := by
-    obtain ⟨z, hz, hxz⟩ := mem_thickening_iff.1 hx
-    have hyδ : ‖y‖ ≤ δ := by
-      rw [(ρ n).tsupport_normed_eq, mem_closedBall_zero_iff] at hy
-      exact hy.trans (hr n)
-    apply hRU
-    apply mem_cthickening_of_dist_le (x - y) z R K hz
-    calc dist (x - y) z ≤ dist (x - y) x + dist x z := dist_triangle _ _ _
-      _ = ‖y‖ + dist x z := by simp [dist_eq_norm]
-      _ ≤ δ + 2 * δ := add_le_add hyδ hxz.le
-      _ ≤ R := by dsimp [δ]; linarith
   have hbound (n : ℕ) : eLpNorm (fderiv ℝ (uε n)) p (volume.restrict Q) ≤
       C * (eLpNorm f p (volume.restrict U) + eLpNorm u p (volume.restrict U)) :=
     eLpNorm_fderiv_indicator_convolution_le hp_top hC hu hf h (ρ n)
@@ -189,7 +180,7 @@ theorem exists_enorm_integral_lineDeriv_smul_le_of_integral_conjWirtingerDeriv_e
       (p := q) (μ := (volume : Measure ℂ))
     simpa only [ψ, TestFunction.coe_lineDerivCLM] using hψ
   have hlim := tendsto_integral_smul_normed_convolution hp_top
-    (ContDiffBump.tendsto_rOut_shrinking hδ) hψ hu₀
+    hρ hψ hu₀
   have hnormlim := (continuous_enorm.tendsto _).comp hlim
   have hfinal := le_of_tendsto hnormlim (Filter.Eventually.of_forall htest)
   have heq : (∫ z, lineDeriv ℝ (φ : ℂ → ℝ) z v • u₀ z) =
