@@ -1,0 +1,22 @@
+{
+  "revision": "8141cbdbc65d735bdc032deb6b579783113ae282",
+  "toolchain": "leanprover/lean4:v4.36.0-rc2",
+  "map_url": "https://cache.taucetiproject.org/revisions/TauCetiProject/TauCeti/tc/leanprover--lean4---v4.36.0-rc2/8141cbdbc65d735bdc032deb6b579783113ae282.jsonl",
+  "map_sha256": "dc3265b4952bd533376a64652d3ab86d0b3df20cd8444c1191906974ce23dff3",
+  "map_bytes": 1226083,
+  "map_lines": 27247,
+  "sequence": [
+    "current",
+    "bounds",
+    "http1_bounds",
+    "http1_bounds",
+    "bounds",
+    "current"
+  ],
+  "diagnostic_attempt_watchdog_s": 240,
+  "connect_timeout_s": 10,
+  "no_progress_bytes_per_s": 1024,
+  "no_progress_s": 30,
+  "transfer_max_s": 90,
+  "retry_budget_s": 120
+}

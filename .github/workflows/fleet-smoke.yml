@@ -1,23 +1,39 @@
-name: Fleet smoke test
+name: Frozen full-cache transport comparison
 on:
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
-  smoke:
+  full-cache-namespace:
+    timeout-minutes: 45
     runs-on:
-      group: TauCetiFleet
-      labels: [self-hosted, linux, x64, tauceti-fleet]
-    timeout-minutes: 5
+      - nscloud-ubuntu-24.04-amd64-8x16-with-features;job.priority=1
+      - namespace-features:container.privileged=true
     steps:
-      - name: Verify unprivileged guest execution
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          path: experiment
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /scripts/cache-full-canary.py
+            /scripts/curl_observer.py
+            /scripts/cache-frozen-input.json
+      - name: Install stock official Lean toolchain
+        shell: bash
         run: |
-          test "$(id -u)" -ne 0
-          test -f /etc/os-release
-          gh --version
-          git --version
-          jq --version
-          sudo -n dpkg --version
-          sudo -n apparmor_parser --version
-          GH_TOKEN="${{ github.token }}" gh api repos/TauCetiProject/TauCeti --jq .full_name
-          python3 -c 'import json,os; print(json.dumps(dict(cpus=os.cpu_count(), guest_user=os.getuid())))'
+          set -euo pipefail
+          curl -fLsS --connect-timeout 10 --max-time 60 https://github.com/leanprover/elan/releases/download/v4.2.3/elan-x86_64-unknown-linux-gnu.tar.gz -o "$RUNNER_TEMP/elan.tar.gz"
+          echo "df0b2b3a439961ffcbb3985214365ffe40f49bc871df04dff268c7d8e21ca8b2  $RUNNER_TEMP/elan.tar.gz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/elan.tar.gz" -C "$RUNNER_TEMP" elan-init
+          "$RUNNER_TEMP/elan-init" -y --default-toolchain none --no-modify-path
+          "$HOME/.elan/bin/elan" toolchain install leanprover/lean4:v4.36.0-rc2
+      - name: Compare cold full-cache fetch and offline native builds
+        run: python3 -u experiment/scripts/cache-full-canary.py --provider namespace --work "$RUNNER_TEMP/cache-full-canary"
+      - name: Retain bounded diagnostic results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: cache-full-namespace
+          path: ${{ runner.temp }}/cache-full-canary/results
+          retention-days: 7
