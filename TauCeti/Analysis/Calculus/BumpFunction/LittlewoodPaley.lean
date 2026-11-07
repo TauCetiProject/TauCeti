@@ -29,6 +29,9 @@ Keeping `φ` itself as a low-frequency piece and discarding the cutoffs with `j 
 are `∑_{j ≤ N} ψⱼ = φ (2^{-N} ·)`, each `ψ_{j+1}` is the rescaling `ψ₁ (2^{-j} ·)`, and pieces whose
 indices differ by at least a fixed `L` have disjoint supports. This is the partition used to
 decompose a tempered distribution into frequency blocks for Besov and Bessel-potential spaces.
+The sum `Ψⱼ` of the pieces with indices within `L` of `j` is then a smooth cutoff, equal to `1` on
+the support of `ψⱼ` and supported in a slightly larger ball or annulus, with the same rescaled
+derivative bounds; it localizes operators to the frequencies of a single block.
 
 ## Main declarations
 
@@ -41,6 +44,11 @@ decompose a tempered distribution into frequency blocks for Besov and Bessel-pot
 * `ContDiffBump.exists_inhomogeneousLittlewoodPaley_mul_eq_zero`: finite overlap of the pieces.
 * `ContDiffBump.exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_le`: the uniform rescaled
   derivative bounds for the inhomogeneous partition.
+* `ContDiffBump.enlargedLittlewoodPaley`: the enlarged cutoffs `Ψⱼ`, sums of the neighbouring
+  pieces.
+* `ContDiffBump.enlargedLittlewoodPaley_mul_inhomogeneousLittlewoodPaley`: `Ψⱼ ψⱼ = ψⱼ`.
+* `ContDiffBump.exists_norm_iteratedFDeriv_enlargedLittlewoodPaley_le`: the uniform rescaled
+  derivative bounds for the enlarged cutoffs.
 
 ## References
 
@@ -311,6 +319,92 @@ theorem exists_inhomogeneousLittlewoodPaley_mul_eq_zero :
       _ ≤ 2 ^ k * φ.rIn :=
           mul_le_mul_of_nonneg_right (pow_le_pow_right₀ one_le_two (by omega)) φ.rIn_pos.le
 
+/-- The **enlarged Littlewood–Paley cutoff** `Ψⱼ = ∑_{j + 1 - L ≤ k < j + L} ψₖ`, the sum of the
+pieces of the inhomogeneous partition whose indices are within `L` of `j`. It is supported in the
+ball of radius `2^{j+L} φ.rOut`, and for `j ≥ L` outside the ball of radius `2^{j-L} φ.rIn`. When
+the pieces whose indices differ by at least `L` have disjoint supports, as for the `L` of
+`exists_inhomogeneousLittlewoodPaley_mul_eq_zero`, it equals `1` on the support of `ψⱼ`
+(`enlargedLittlewoodPaley_mul_inhomogeneousLittlewoodPaley`), so that the Fourier multiplier
+`Δ'ⱼ` by `Ψⱼ` satisfies `Δ'ⱼ Δⱼ = Δⱼ`. -/
+noncomputable def enlargedLittlewoodPaley (L j : ℕ) (ξ : E) : ℝ :=
+  ∑ k ∈ Finset.Ico (j + 1 - L) (j + L), φ.inhomogeneousLittlewoodPaley k ξ
+
+/-- Unfolding `ContDiffBump.enlargedLittlewoodPaley`. -/
+theorem enlargedLittlewoodPaley_apply (L j : ℕ) (ξ : E) :
+    φ.enlargedLittlewoodPaley L j ξ =
+      ∑ k ∈ Finset.Ico (j + 1 - L) (j + L), φ.inhomogeneousLittlewoodPaley k ξ :=
+  (rfl)
+
+/-- **The enlarged cutoff is `1` on the support of `ψⱼ`.** If the pieces of the inhomogeneous
+partition whose indices differ by at least `L` have disjoint supports, then `Ψⱼ ψⱼ = ψⱼ`. -/
+theorem enlargedLittlewoodPaley_mul_inhomogeneousLittlewoodPaley {L : ℕ}
+    (hL : ∀ j k : ℕ, j + L ≤ k → ∀ ξ : E,
+      φ.inhomogeneousLittlewoodPaley j ξ * φ.inhomogeneousLittlewoodPaley k ξ = 0)
+    (j : ℕ) (ξ : E) :
+    φ.enlargedLittlewoodPaley L j ξ * φ.inhomogeneousLittlewoodPaley j ξ =
+      φ.inhomogeneousLittlewoodPaley j ξ := by
+  -- Multiply the partition of unity `∑ₖ ψₖ ξ = 1` by `ψⱼ ξ`: the terms with `k` at distance at
+  -- least `L` from `j` vanish.
+  have hsum := (φ.hasSum_inhomogeneousLittlewoodPaley ξ).mul_right
+    (φ.inhomogeneousLittlewoodPaley j ξ)
+  rw [one_mul] at hsum
+  have hzero : ∀ k ∉ Finset.Ico (j + 1 - L) (j + L),
+      φ.inhomogeneousLittlewoodPaley k ξ * φ.inhomogeneousLittlewoodPaley j ξ = 0 := by
+    intro k hk
+    rw [Finset.mem_Ico, not_and_or, not_le, not_lt] at hk
+    rcases hk with hk | hk
+    · exact hL k j (by omega) ξ
+    · rw [mul_comm]
+      exact hL j k hk ξ
+  rw [enlargedLittlewoodPaley_apply, Finset.sum_mul]
+  exact (hasSum_sum_of_ne_finset_zero hzero).unique hsum
+
+/-- Each enlarged cutoff is smooth. -/
+@[fun_prop]
+theorem contDiff_enlargedLittlewoodPaley {n : ℕ∞} (L j : ℕ) :
+    ContDiff ℝ n (φ.enlargedLittlewoodPaley L j) := by
+  simp_rw [funext (φ.enlargedLittlewoodPaley_apply L j)]
+  exact ContDiff.sum fun k _ ↦ φ.contDiff_inhomogeneousLittlewoodPaley k
+
+/-- The enlarged cutoff `Ψⱼ` vanishes outside the open ball of radius `2^{j+L} φ.rOut`. -/
+theorem enlargedLittlewoodPaley_eq_zero_of_le_norm {L j : ℕ} {ξ : E}
+    (hξ : 2 ^ (j + L) * φ.rOut ≤ ‖ξ‖) : φ.enlargedLittlewoodPaley L j ξ = 0 := by
+  rw [enlargedLittlewoodPaley_apply]
+  refine Finset.sum_eq_zero fun k hk ↦ φ.inhomogeneousLittlewoodPaley_eq_zero_of_le_norm ?_
+  refine le_trans ?_ hξ
+  gcongr
+  · exact φ.rOut_pos.le
+  · exact one_le_two
+  · exact (Finset.mem_Ico.1 hk).2.le
+
+/-- For `j ≥ L`, the enlarged cutoff `Ψⱼ` vanishes on the closed ball of radius
+`2^{j-L} φ.rIn`. -/
+theorem enlargedLittlewoodPaley_eq_zero_of_norm_le {L j : ℕ} (hLj : L ≤ j) {ξ : E}
+    (hξ : ‖ξ‖ ≤ 2 ^ (j - L) * φ.rIn) : φ.enlargedLittlewoodPaley L j ξ = 0 := by
+  rw [enlargedLittlewoodPaley_apply]
+  refine Finset.sum_eq_zero fun k hk ↦ ?_
+  obtain ⟨k, rfl⟩ : ∃ k', k = k' + 1 :=
+    Nat.exists_eq_add_one.2 (by have := (Finset.mem_Ico.1 hk).1; omega)
+  refine φ.inhomogeneousLittlewoodPaley_succ_eq_zero_of_norm_le (hξ.trans ?_)
+  gcongr
+  · exact φ.rIn_pos.le
+  · exact one_le_two
+  · have := (Finset.mem_Ico.1 hk).1
+    omega
+
+/-- The enlarged cutoff `Ψⱼ` is supported in the closed ball of radius `2^{j+L} φ.rOut`. -/
+theorem tsupport_enlargedLittlewoodPaley_subset (L j : ℕ) :
+    tsupport (φ.enlargedLittlewoodPaley L j) ⊆ closedBall 0 (2 ^ (j + L) * φ.rOut) :=
+  closure_minimal (fun _ hξ ↦ mem_closedBall_zero_iff.2 (not_lt.1 fun h ↦
+    hξ (φ.enlargedLittlewoodPaley_eq_zero_of_le_norm h.le))) isClosed_closedBall
+
+/-- For `j ≥ L`, the enlarged cutoff `Ψⱼ` is supported where `2^{j-L} φ.rIn ≤ ‖ξ‖`. -/
+theorem tsupport_enlargedLittlewoodPaley_subset_of_le {L j : ℕ} (hLj : L ≤ j) :
+    tsupport (φ.enlargedLittlewoodPaley L j) ⊆ {ξ | 2 ^ (j - L) * φ.rIn ≤ ‖ξ‖} :=
+  closure_minimal (fun _ hξ ↦ not_lt.1 fun h ↦
+    hξ (φ.enlargedLittlewoodPaley_eq_zero_of_norm_le hLj h.le))
+    (isClosed_le continuous_const continuous_norm)
+
 end HasContDiffBump
 
 section FiniteDimensional
@@ -382,6 +476,39 @@ theorem exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_le (k : ℕ) :
     refine (hB _ ξ).trans ?_
     rw [zpow_natCast]
     exact div_le_div_of_nonneg_right (le_max_left B M) (by positivity)
+
+/-- Each enlarged cutoff is compactly supported. -/
+theorem hasCompactSupport_enlargedLittlewoodPaley (L j : ℕ) :
+    HasCompactSupport (φ.enlargedLittlewoodPaley L j) :=
+  (isCompact_closedBall _ _).of_isClosed_subset (isClosed_tsupport _)
+    (φ.tsupport_enlargedLittlewoodPaley_subset L j)
+
+/-- **Derivative bounds for the enlarged cutoffs.** The `k`-th derivative of `Ψⱼ` is bounded by
+`B / 2^{jk}`, with `B` independent of `j`. -/
+theorem exists_norm_iteratedFDeriv_enlargedLittlewoodPaley_le (L k : ℕ) :
+    ∃ B, 0 ≤ B ∧ ∀ (j : ℕ) (ξ : E),
+      ‖iteratedFDeriv ℝ k (φ.enlargedLittlewoodPaley L j) ξ‖ ≤ B / (2 ^ j) ^ k := by
+  obtain ⟨B, hB0, hB⟩ := φ.exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_le k
+  refine ⟨2 * L * (B * (2 ^ L) ^ k), by positivity, fun j ξ ↦ ?_⟩
+  -- Each of the at most `2L` pieces `ψₘ` has index `m ≥ j + 1 - L`, so `2^{-mk} ≤ 2^{Lk} 2^{-jk}`.
+  have hterm : ∀ m ∈ Finset.Ico (j + 1 - L) (j + L),
+      ‖iteratedFDeriv ℝ k (φ.inhomogeneousLittlewoodPaley m) ξ‖ ≤
+        B * (2 ^ L) ^ k / (2 ^ j) ^ k := by
+    intro m hm
+    refine (hB m ξ).trans ?_
+    rw [div_le_div_iff₀ (by positivity) (by positivity), mul_assoc, ← mul_pow, ← pow_add]
+    gcongr
+    · exact one_le_two
+    · have := (Finset.mem_Ico.1 hm).1
+      omega
+  have hcard : ((Finset.Ico (j + 1 - L) (j + L)).card : ℝ) ≤ 2 * L := by
+    rw [Nat.card_Ico]
+    exact_mod_cast (by omega : j + L - (j + 1 - L) ≤ 2 * L)
+  rw [funext (φ.enlargedLittlewoodPaley_apply L j), iteratedFDeriv_fun_sum_apply fun m _ ↦
+    (φ.contDiff_inhomogeneousLittlewoodPaley m).contDiffAt]
+  refine (norm_sum_le _ _).trans ((Finset.sum_le_sum hterm).trans ?_)
+  rw [Finset.sum_const, nsmul_eq_mul, mul_div_assoc', div_le_div_iff_of_pos_right (by positivity)]
+  exact mul_le_mul_of_nonneg_right hcard (by positivity)
 
 end FiniteDimensional
 
