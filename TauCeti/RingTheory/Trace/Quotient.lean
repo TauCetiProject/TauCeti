@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Trace.Basic
-public import TauCeti.LinearAlgebra.Trace.Idempotent
 public import Mathlib.RingTheory.TensorProduct.Quotient
+public import TauCeti.LinearAlgebra.Trace.Idempotent
+public import TauCeti.RingTheory.Ideal.Quotient.Operations
 
 /-!
 # The trace modulo an ideal
@@ -59,16 +60,6 @@ theorem Algebra.trace_mem_of_mem_map {I : Ideal R} {x : S} (hx : x ∈ I.map (al
   rw [← Ideal.Quotient.eq_zero_iff_mem, ← trace_quotient_map_mk,
     Ideal.Quotient.eq_zero_iff_mem.mpr hx, map_zero]
 
-omit [Module.Free R S] [Module.Finite R S] in
-/-- The linear combination, with coefficients in `R ⧸ I`, of the classes in `S ⧸ IS` of elements
-`b j` of `S`, evaluated at the classes of `c j`, is the class of `∑ j, c j * b j`. -/
-private theorem linearCombination_quotient_mk_apply {ι : Type*} [Fintype ι] (I : Ideal R)
-    (b : ι → S) (c : ι → R) :
-    Fintype.linearCombination (R ⧸ I) (fun j ↦ Ideal.Quotient.mk (I.map (algebraMap R S)) (b j))
-        (fun j ↦ Ideal.Quotient.mk I (c j)) =
-      Ideal.Quotient.mk (I.map (algebraMap R S)) (∑ j, algebraMap R S (c j) * b j) := by
-  simp [Fintype.linearCombination_apply, map_sum, Algebra.smul_def]
-
 /-- **The trace on a summand with a known basis, modulo an ideal.** Let `J = IS`. Suppose that
 modulo `J`, multiplication by `w` maps `S` onto the span of `b j`, fixes every `b j`, and that the
 `b j` are linearly independent over `R ⧸ I`: every `w * s` is congruent to some `∑ c j * b j`, and
@@ -98,7 +89,7 @@ theorem Algebra.trace_sub_sum_mem_of_forall_mul_sub_sum_mem {ι : Type*} [Fintyp
     Fintype.linearCombination (R ⧸ I) fun j ↦ Ideal.Quotient.mk J (b j)
   have hφ (c : ι → R) : φ (fun j ↦ Ideal.Quotient.mk I (c j)) =
       Ideal.Quotient.mk J (∑ j, algebraMap R S (c j) * b j) :=
-    linearCombination_quotient_mk_apply I b c
+    Ideal.Quotient.linearCombination_mk_map_apply I b c
   have hlift : Function.Surjective fun (c : ι → R) j ↦ Ideal.Quotient.mk I (c j) :=
     .piMap fun _ ↦ Ideal.Quotient.mk_surjective
   have hφinj : Function.Injective φ := by
