@@ -86,6 +86,68 @@ private theorem hasWeakLineDerivOn_bilin_convolution (B : F →L[ℝ] G →L[ℝ
   rw [convolution_flip, convolution_flip] at hud hwd
   exact hud.clm_bilin B hwd
 
+omit [CompleteSpace H] in
+/-- Mollifying both factors of a product by a shrinking normalized bump converges in `L¹(W)` to
+the product of their limits, when the limits are represented on `W` by the classes of `U` and
+`V`. -/
+private theorem tendsto_setLIntegral_enorm_bilin_normedBump_sub (B : F →L[ℝ] G →L[ℝ] H)
+    {p q r : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] [Fact (1 ≤ r)]
+    [ENNReal.HolderTriple p q r] (hp : p ≠ ⊤) (hq : q ≠ ⊤) [CompleteSpace F] [CompleteSpace G]
+    {U : E → F} {V : E → G} (hU : MemLp U p μ) (hV : MemLp V q μ)
+    {φ : ℕ → ContDiffBump (0 : E)} (hφ : Tendsto (fun n => (φ n).rOut) atTop (𝓝 0))
+    {W : Set E} (hWμ : μ W < ⊤) {f : E → F} {g : E → G}
+    (hUae : hU.toLp U =ᵐ[μ.restrict W] f) (hVae : hV.toLp V =ᵐ[μ.restrict W] g) :
+    Tendsto (fun n => ∫⁻ x in W,
+      ‖B (((φ n).normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] U) x)
+        ((((φ n).normed μ) ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] V) x) - B (f x) (g x)‖ₑ ∂μ)
+      atTop (𝓝 0) :=
+  tendsto_setLIntegral_enorm_bilin_sub (r := r) B hWμ
+    (tendsto_normedBumpLp (mu := μ) hp hφ (hU.toLp U))
+    (tendsto_normedBumpLp (mu := μ) hq hφ (hV.toLp V))
+    (fun n => normedBumpLp_ae_eq_convolution hp (φ n) hU)
+    hUae (fun n => normedBumpLp_ae_eq_convolution hq (φ n) hV) hVae
+
+omit [CompleteSpace H] in
+/-- Mollifying all four factors of the Leibniz sum by a shrinking normalized bump converges in
+`L¹(W)` to the Leibniz sum of the limits, when the limits are represented on `W` by the classes
+of the unmollified factors. -/
+private theorem tendsto_setLIntegral_enorm_bilin_leibniz_normedBump_sub
+    (B : F →L[ℝ] G →L[ℝ] H)
+    {p q r : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] [Fact (1 ≤ r)]
+    [ENNReal.HolderTriple p q r] (hp : p ≠ ⊤) (hq : q ≠ ⊤) [CompleteSpace F] [CompleteSpace G]
+    {U U' : E → F} {V V' : E → G} (hU : MemLp U p μ) (hU' : MemLp U' p μ)
+    (hV : MemLp V q μ) (hV' : MemLp V' q μ)
+    {φ : ℕ → ContDiffBump (0 : E)} (hφ : Tendsto (fun n => (φ n).rOut) atTop (𝓝 0))
+    {W : Set E} (hWμ : μ W < ⊤) {f f' : E → F} {g g' : E → G}
+    (hUae : hU.toLp U =ᵐ[μ.restrict W] f) (hU'ae : hU'.toLp U' =ᵐ[μ.restrict W] f')
+    (hVae : hV.toLp V =ᵐ[μ.restrict W] g) (hV'ae : hV'.toLp V' =ᵐ[μ.restrict W] g') :
+    Tendsto (fun n => ∫⁻ x in W,
+      ‖(B ((((φ n).normed μ) ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] U') x)
+          ((((φ n).normed μ) ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] V) x) +
+        B ((((φ n).normed μ) ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] U) x)
+          ((((φ n).normed μ) ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] V') x)) -
+        (B (f' x) (g x) + B (f x) (g' x))‖ₑ ∂μ) atTop (𝓝 0) := by
+  have hA := tendsto_normedBumpLp (mu := μ) hp hφ (hU.toLp U)
+  have hA' := tendsto_normedBumpLp (mu := μ) hp hφ (hU'.toLp U')
+  have hC := tendsto_normedBumpLp (mu := μ) hq hφ (hV.toLp V)
+  have hC' := tendsto_normedBumpLp (mu := μ) hq hφ (hV'.toLp V')
+  have hAae (n : ℕ) := normedBumpLp_ae_eq_convolution hp (φ n) hU
+  have hA'ae (n : ℕ) := normedBumpLp_ae_eq_convolution hp (φ n) hU'
+  have hCae (n : ℕ) := normedBumpLp_ae_eq_convolution hq (φ n) hV
+  have hC'ae (n : ℕ) := normedBumpLp_ae_eq_convolution hq (φ n) hV'
+  let T := B.holderL μ p q r
+  have hT₁ := (T.continuous₂.tendsto (hU'.toLp U', hV.toLp V)).comp (hA'.prodMk_nhds hC)
+  have hT₂ := (T.continuous₂.tendsto (hU.toLp U, hV'.toLp V')).comp (hA.prodMk_nhds hC')
+  refine tendsto_setLIntegral_enorm_sub_of_tendsto_Lp hWμ (hT₁.add hT₂) ?_ ?_
+  · intro n
+    exact (Lp.coeFn_add _ _).trans
+      ((B.holderL_ae_eq_of_measure_le le_rfl _ _ (hA'ae n) (hCae n)).add
+        (B.holderL_ae_eq_of_measure_le le_rfl _ _ (hAae n) (hC'ae n)))
+  · refine Filter.EventuallyEq.trans (ae_restrict_of_ae (Lp.coeFn_add
+        (T (hU'.toLp U') (hV.toLp V)) (T (hU.toLp U) (hV'.toLp V')))) ?_
+    exact (B.holderL_ae_eq_of_measure_le (r := r) Measure.restrict_le_self _ _ hU'ae hVae).add
+      (B.holderL_ae_eq_of_measure_le (r := r) Measure.restrict_le_self _ _ hUae hV'ae)
+
 /-- The bilinear weak Leibniz rule at finite Hölder exponents. Neither factor is assumed
 classically differentiable. The exponent conditions include the integrable target `r = 1`. -/
 private theorem hasWeakLineDerivOn_bilin_of_memLp (B : F →L[ℝ] G →L[ℝ] H)
@@ -133,41 +195,18 @@ private theorem hasWeakLineDerivOn_bilin_of_memLp (B : F →L[ℝ] G →L[ℝ] H
       (fun x => B (u' n x) (w n x) + B (u n x) (w' n x)) v :=
     hasWeakLineDerivOn_bilin_convolution B hf.indicator hg.indicator
       hUloc hU'loc hVloc hV'loc (φ n).contDiff_normed (φ n).hasCompactSupport_normed (hsupp n)
-  -- Approximate identities converge in the input spaces. Hölder makes both Leibniz
-  -- terms converge in the target space; restriction turns this into L1 convergence.
-  let A := fun n => normedBumpLp hp (φ n) μ (hU.toLp U)
-  let A' := fun n => normedBumpLp hp (φ n) μ (hU'.toLp U')
-  let C := fun n => normedBumpLp hq (φ n) μ (hV.toLp V)
-  let C' := fun n => normedBumpLp hq (φ n) μ (hV'.toLp V')
-  have hA := tendsto_normedBumpLp (mu := μ) hp hφ (hU.toLp U)
-  have hA' := tendsto_normedBumpLp (mu := μ) hp hφ (hU'.toLp U')
-  have hC := tendsto_normedBumpLp (mu := μ) hq hφ (hV.toLp V)
-  have hC' := tendsto_normedBumpLp (mu := μ) hq hφ (hV'.toLp V')
-  let T := B.holderL μ p q r
-  have hAae (n : ℕ) : A n =ᵐ[μ] u n := normedBumpLp_ae_eq_convolution hp (φ n) hU
-  have hA'ae (n : ℕ) : A' n =ᵐ[μ] u' n := normedBumpLp_ae_eq_convolution hp (φ n) hU'
-  have hCae (n : ℕ) : C n =ᵐ[μ] w n := normedBumpLp_ae_eq_convolution hq (φ n) hV
-  have hC'ae (n : ℕ) : C' n =ᵐ[μ] w' n := normedBumpLp_ae_eq_convolution hq (φ n) hV'
   have hUae := hU.coeFn_toLp_indicator_restrict W.isOpen.measurableSet hWΩ'
   have hU'ae := hU'.coeFn_toLp_indicator_restrict W.isOpen.measurableSet hWΩ'
   have hVae := hV.coeFn_toLp_indicator_restrict W.isOpen.measurableSet hWΩ'
   have hV'ae := hV'.coeFn_toLp_indicator_restrict W.isOpen.measurableSet hWΩ'
-  have hT₁ := (T.continuous₂.tendsto (hU'.toLp U', hV.toLp V)).comp
-    (hA'.prodMk_nhds hC)
-  have hT₂ := (T.continuous₂.tendsto (hU.toLp U, hV'.toLp V')).comp
-    (hA.prodMk_nhds hC')
-  refine hasWeakLineDerivOn_of_tendsto_lintegral_enorm_sub (IntegrableOn.locallyIntegrableOn hlim)
+  -- Hölder makes both Leibniz terms converge in the target space; restriction turns this into
+  -- L1 convergence.
+  exact hasWeakLineDerivOn_of_tendsto_lintegral_enorm_sub (IntegrableOn.locallyIntegrableOn hlim)
     (IntegrableOn.locallyIntegrableOn hlim') hweak
-    (tendsto_setLIntegral_enorm_bilin_sub (r := r) B hWμ hA hC hAae hUae hCae hVae)
-    (tendsto_setLIntegral_enorm_sub_of_tendsto_Lp hWμ (hT₁.add hT₂) ?_ ?_)
-  · intro n
-    exact (Lp.coeFn_add _ _).trans
-      ((B.holderL_ae_eq_of_measure_le le_rfl (A' n) (C n) (hA'ae n) (hCae n)).add
-        (B.holderL_ae_eq_of_measure_le le_rfl (A n) (C' n) (hAae n) (hC'ae n)))
-  · refine Filter.EventuallyEq.trans (ae_restrict_of_ae (Lp.coeFn_add
-        (T (hU'.toLp U') (hV.toLp V)) (T (hU.toLp U) (hV'.toLp V')))) ?_
-    exact (B.holderL_ae_eq_of_measure_le (r := r) Measure.restrict_le_self _ _ hU'ae hVae).add
-      (B.holderL_ae_eq_of_measure_le (r := r) Measure.restrict_le_self _ _ hUae hV'ae)
+    (tendsto_setLIntegral_enorm_bilin_normedBump_sub (r := r) B hp hq hU hV hφ hWμ hUae hVae)
+    (tendsto_setLIntegral_enorm_bilin_leibniz_normedBump_sub (r := r) B hp hq hU hU' hV hV' hφ
+      hWμ hUae hU'ae hVae hV'ae)
+
 
 /-- The local bilinear weak Leibniz rule at finite Hölder exponents. Values and derivatives
 need only belong to their input `Lp` spaces on compact subsets of the open domain. -/
