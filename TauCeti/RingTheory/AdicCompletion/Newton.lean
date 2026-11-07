@@ -125,7 +125,8 @@ private theorem exists_eq_zero_of_newton_iterates (A : (ι → R) → (ι → R)
     (u : ℕ → ι → R) (key : ∀ k, (∀ i, π ∣ u k i - u₀ i) ∧ ∀ i, π ^ (k + 1) ∣ A (u k) i)
     (hconsec : ∀ k i, π ^ (k + 1) ∣ u (k + 1) i - u k i) :
     ∃ L : ι → R, (∀ i, π ∣ L i - u₀ i) ∧ A L = 0 := by
-  obtain ⟨L, hL'⟩ := exists_forall_pow_dvd_sub π u hconsec
+  obtain ⟨L, hL'⟩ := exists_forall_pow_dvd_sub π u
+    fun m i ↦ (pow_dvd_pow π (Nat.le_succ m)).trans (hconsec m i)
   have hLclass : ∀ i, π ∣ L i - u₀ i := fun i ↦ by
     have h1 : π ∣ L i - u 1 i := by simpa only [pow_one] using hL' 1 i
     simpa only [sub_add_sub_cancel] using dvd_add h1 ((key 1).1 i)
