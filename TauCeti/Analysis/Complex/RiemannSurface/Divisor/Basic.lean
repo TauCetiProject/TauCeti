@@ -88,14 +88,12 @@ theorem coeff_divisorPullback (f : FiniteHolomorphicMap X Y) (D : WeilDivisor Y)
   (rfl)
 
 /-- Pullback preserves effective divisors. -/
-theorem _root_.TauCeti.AlgebraicGeometry.WeilDivisor.IsEffective.divisorPullback
-    {D : WeilDivisor Y}
-    (hD : WeilDivisor.IsEffective D) (f : FiniteHolomorphicMap X Y) :
-    WeilDivisor.IsEffective (divisorPullback f D) := by
-  rw [WeilDivisor.isEffective_iff] at hD ⊢
+theorem divisorPullback_nonneg {D : WeilDivisor Y} (hD : 0 ≤ D) (f : FiniteHolomorphicMap X Y) :
+    0 ≤ divisorPullback f D := by
+  rw [WeilDivisor.nonneg_iff]
   intro x
   rw [coeff_divisorPullback]
-  exact mul_nonneg (Int.natCast_nonneg _) (hD (f x))
+  exact mul_nonneg (Int.natCast_nonneg _) (WeilDivisor.coeff_nonneg hD (f x))
 
 /-- Pulling back a point divisor gives the fibre, with each point weighted by its local
 multiplicity. -/
@@ -112,9 +110,9 @@ theorem divisorPullback_ofPoint (f : FiniteHolomorphicMap X Y) (y : Y) :
   · simp [hxy, f.finite_fiber y |>.mem_toFinset]
   · simp [hxy, WeilDivisor.coeff_ofPoint_of_ne hxy, f.finite_fiber y |>.mem_toFinset]
 
-section Connected
+section Manifold
 
-variable [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y] [PreconnectedSpace X]
+variable [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
 
 /-- The support of a pulled-back divisor is the preimage of the original support. -/
 @[simp]
@@ -168,7 +166,7 @@ theorem degree_divisorPullback (f : FiniteHolomorphicMap X Y)
 
 end Compact
 
-end Connected
+end Manifold
 
 end TauCeti.RiemannSurface
 

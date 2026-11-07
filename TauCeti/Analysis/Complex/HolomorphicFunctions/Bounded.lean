@@ -11,6 +11,8 @@ public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.ContinuousMap.Bounded.Normed
 public import Mathlib.Topology.Sets.Opens
+public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
+import Mathlib.MeasureTheory.Integral.IntegrableOn
 import Mathlib.Analysis.Analytic.Uniqueness
 import Mathlib.Analysis.Complex.Schwarz
 import Mathlib.Topology.ContinuousMap.Bounded.ArzelaAscoli
@@ -56,6 +58,7 @@ public section
 namespace TauCeti
 
 open Filter Metric Set Topology TopologicalSpace BoundedContinuousFunction
+open scoped ENNReal
 
 variable {V E : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup E]
   [NormedSpace ℂ E]
@@ -163,6 +166,17 @@ theorem norm_extend_apply_le (f : boundedHolomorphicFunctions E U) (z : V) :
     exact norm_coe_le_norm (f : U →ᵇ E) ⟨z, hz⟩
   · rw [extend_apply_of_notMem f hz, norm_zero]
     exact norm_nonneg _
+
+/-- Bounded holomorphic functions on a finite-measure open set have an `Lᵖ` zero extension
+for every exponent, including infinity. The range need not be complete or finite-dimensional. -/
+theorem memLp_extend [MeasurableSpace V] [OpensMeasurableSpace V]
+    [SecondCountableTopologyEither V E]
+    {μ : MeasureTheory.Measure V} [MeasureTheory.IsFiniteMeasure (μ.restrict (U : Set V))]
+    (p : ℝ≥0∞) (f : boundedHolomorphicFunctions E U) :
+    MeasureTheory.MemLp (extend f) p (μ.restrict (U : Set V)) := by
+  exact MeasureTheory.MemLp.of_bound
+    ((differentiableOn_extend f).continuousOn.aestronglyMeasurable U.isOpen.measurableSet)
+    ‖f‖ (Filter.Eventually.of_forall (norm_extend_apply_le f))
 
 /-- Recovering a bounded holomorphic map from its zero extension does not change it. -/
 @[simp]
