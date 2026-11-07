@@ -9,13 +9,9 @@ public import Mathlib.MeasureTheory.Constructions.Polish.Basic
 public import Mathlib.MeasureTheory.Measure.NullMeasurable
 public import Mathlib.MeasureTheory.Measure.Typeclasses.SFinite
 
-import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Basic.ENNReal.Inv
-import Mathlib.Tactic.Finiteness
 import Mathlib.Tactic.GCongr
-import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.Positivity
-import Mathlib.Tactic.Ring
+import TauCeti.MeasureTheory.Constructions.Polish.Capacitability
 
 /-!
 # Analytic sets are universally measurable
@@ -25,20 +21,13 @@ space is measurable after completing any s-finite measure defined on a measurabl
 the Borel sets. Equivalently, it differs from a measurable set by a null set. It also records the
 generated-measurable-space consequence used by measurable selection.
 
-The core proof is the capacity argument for finite measures. Write an analytic set as the range of
-a continuous map from Baire space. Successively bound the coordinates in the source while spending
-a geometric error budget; the image of the resulting compact product captures the range up to
-arbitrary outer-measure error. A countable union of these inner compact approximations then differs
-from the analytic set by a null set. For an s-finite measure, apply this construction to each finite
-component and take the union of the resulting measurable subsets.
-
-The theorem is classically stated for Polish ambient spaces, but neither second countability nor
-completeness is used. An analytic set is by definition empty or a continuous image of Baire space,
-so it carries its own separability, and the ambient space is never completed: the argument needs
-only a metric, to extract a convergent subsequence of approximating points and to identify its
-limit. Accordingly the three universal-measurability statements below assume just
-`TopologicalSpace.MetrizableSpace`. `analyticSet_setOf_iInf_lt` keeps `PolishSpace`, which its
-appeal to measurable projection genuinely needs.
+Every finite Borel-compatible measure is a Choquet capacity (`TauCeti.IsChoquetCapacity.measure`),
+so Choquet's capacitability theorem (`TauCeti.IsChoquetCapacity.exists_isCompact_subset_le_add`)
+supplies inner compact approximations of arbitrary outer-measure accuracy on any metrizable space.
+A countable union of these inner compact approximations differs from the analytic set by a null set;
+for an s-finite measure, applying this construction to each finite component and taking the union of
+the resulting measurable subsets completes the proof. `analyticSet_setOf_iInf_lt` keeps
+`PolishSpace`, which its appeal to measurable projection genuinely needs.
 
 ## Main results
 
@@ -56,8 +45,8 @@ appeal to measurable projection genuinely needs.
 
 The proof is adapted from Daniel Lyng's Apache-2.0 Econlib development,
 `Econlib/Math/MeasureTheory/AnalyticNullMeasurable.lean`, commit
-`003655ccf010cdf44c4f67d6675167b54ce0e9df`. The implementation is reorganized so that proof-only
-capacity lemmas are private, while the three reusable consequences remain public.
+`003655ccf010cdf44c4f67d6675167b54ce0e9df`, with the inner compact approximation factored out to
+general Choquet capacities in `TauCeti.MeasureTheory.Constructions.Polish.Capacitability`.
 
 ## References
 
@@ -67,7 +56,7 @@ capacity lemmas are private, while the three reusable consequences remain public
 
 public section
 
-open Filter Set Topology
+open Set
 
 open scoped ENNReal
 
@@ -99,171 +88,6 @@ theorem analyticSet_setOf_iInf_lt
     exact ⟨x, y, hx, rfl⟩
   · rintro ⟨x, y', hxy, rfl⟩
     exact ⟨x, hxy⟩
-
-/-- For continuous `f` on Baire space and coordinate bounds `N`, a point in all the finite-stage
-image closures is already the image of a point satisfying every coordinate bound. -/
-private theorem iInter_closure_image_bounded_subset
-    {X : Type*} [MetricSpace X] {f : (ℕ → ℕ) → X} (hf : Continuous f) (N : ℕ → ℕ) :
-    ⋂ n, closure (f '' {β | ∀ k < n, β k ≤ N k}) ⊆ f '' {β | ∀ k, β k ≤ N k} := by
-  intro x hx
-  simp only [Set.mem_iInter] at hx
-  have happrox : ∀ n : ℕ, ∃ β : ℕ → ℕ, (∀ k < n, β k ≤ N k) ∧
-      dist x (f β) < 1 / (n + 1) := by
-    intro n
-    have hpos : (0 : ℝ) < 1 / (n + 1) := by positivity
-    obtain ⟨y, hy_mem, hy_dist⟩ := Metric.mem_closure_iff.mp (hx n) _ hpos
-    obtain ⟨β, hβ, rfl⟩ := hy_mem
-    exact ⟨β, hβ, hy_dist⟩
-  choose β hβ_bdd hβ_dist using happrox
-  have hC_compact : IsCompact (Set.pi univ fun k => Set.Iic (N k)) :=
-    isCompact_univ_pi fun k => (Set.finite_Iic (N k)).isCompact
-  have hθ_mem : ∀ n, (fun k => min (β n k) (N k)) ∈ Set.pi univ fun k => Set.Iic (N k) :=
-    fun n k _ => Set.mem_Iic.mpr (min_le_right _ _)
-  obtain ⟨βlim, hβlim_mem, φ, hφ_mono, hφ_tendsto⟩ := hC_compact.tendsto_subseq hθ_mem
-  have hβφ_tendsto : Tendsto (fun j => β (φ j)) atTop (𝓝 βlim) := by
-    rw [tendsto_pi_nhds]
-    intro k
-    have hθk : Tendsto (fun j => min (β (φ j) k) (N k)) atTop (𝓝 (βlim k)) :=
-      (continuous_apply k).continuousAt.tendsto.comp hφ_tendsto
-    have hsingleton : {βlim k} ∈ 𝓝 (βlim k) := by simp [nhds_discrete]
-    have hev_trunc_eq : ∀ᶠ j in atTop, min (β (φ j) k) (N k) = βlim k := hθk hsingleton
-    have hev_no_trunc : ∀ᶠ j in atTop, min (β (φ j) k) (N k) = β (φ j) k := by
-      filter_upwards [Filter.eventually_gt_atTop k] with j hj
-      exact min_eq_left (hβ_bdd (φ j) k (hj.trans_le (hφ_mono.le_apply)))
-    refine Tendsto.congr' ?_ tendsto_const_nhds
-    filter_upwards [hev_trunc_eq, hev_no_trunc] with j h1 h2
-    rw [← h2, h1]
-  have hf_tendsto : Tendsto (fun j => f (β (φ j))) atTop (𝓝 (f βlim)) :=
-    (hf.tendsto βlim).comp hβφ_tendsto
-  have hx_tendsto : Tendsto (fun j => f (β (φ j))) atTop (𝓝 x) := by
-    rw [tendsto_iff_dist_tendsto_zero]
-    have hbound : ∀ j : ℕ, dist (f (β (φ j))) x ≤ 1 / ((j : ℝ) + 1) := by
-      intro j
-      have hφj : (j : ℝ) + 1 ≤ (φ j : ℝ) + 1 := by
-        have hle : j ≤ φ j := hφ_mono.le_apply
-        have : (j : ℝ) ≤ (φ j : ℝ) := Nat.cast_le.mpr hle
-        linarith
-      calc
-        dist (f (β (φ j))) x = dist x (f (β (φ j))) := dist_comm _ _
-        _ ≤ 1 / ((φ j : ℝ) + 1) := (hβ_dist (φ j)).le
-        _ ≤ 1 / ((j : ℝ) + 1) := one_div_le_one_div_of_le (by positivity) hφj
-    exact squeeze_zero (fun j => dist_nonneg) hbound tendsto_one_div_add_atTop_nhds_zero_nat
-  exact ⟨βlim, fun k => hβlim_mem k (Set.mem_univ k),
-    tendsto_nhds_unique hf_tendsto hx_tendsto⟩
-
-/-- If a finite value lies below a countable supremum, some term is within any positive error of
-that value. -/
-private lemma exists_le_add_of_le_iSup {g : ℕ → ℝ≥0∞} {a δ : ℝ≥0∞} (ha : a ≠ ∞)
-    (hδ : δ ≠ 0) (h : a ≤ ⨆ M, g M) : ∃ M, a ≤ g M + δ := by
-  rcases le_or_gt a δ with haδ | hδa
-  · exact ⟨0, haδ.trans le_add_self⟩
-  have ha0 : a ≠ 0 := fun h0 => by simp [h0] at hδa
-  have hsub_lt : a - δ < a := ENNReal.sub_lt_self ha ha0 hδ
-  obtain ⟨M, hM⟩ := lt_iSup_iff.mp (hsub_lt.trans_le h)
-  exact ⟨M, tsub_le_iff_right.mp hM.le⟩
-
-/-- The partial geometric error budget `∑ k < n, ε / 2^(k+1)` is at most `ε`. -/
-private lemma sum_div_two_pow_succ_le_self (ε : ℝ≥0∞) (n : ℕ) :
-    ∑ k ∈ Finset.range n, ε / 2 ^ (k + 1) ≤ ε := by
-  have hle_tsum : ∑ k ∈ Finset.range n, ε / 2 ^ (k + 1) ≤
-      ∑' k : ℕ, ε / 2 ^ (k + 1) := _root_.sum_le_tsum _
-  refine hle_tsum.trans ?_
-  simp_rw [div_eq_mul_inv, ENNReal.inv_pow]
-  rw [ENNReal.tsum_mul_left, ENNReal.tsum_geometric_add_one, ENNReal.one_sub_inv_two, inv_inv,
-    ENNReal.inv_mul_cancel (by simp) (by simp), mul_one]
-
-/-- The range of a continuous map from Baire space admits inner compact approximations in outer
-measure. -/
-private lemma exists_isCompact_subset_range_measure_le
-    {X : Type*} [MetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
-    {μ : Measure X} [IsFiniteMeasure μ] {f : (ℕ → ℕ) → X} (hf : Continuous f)
-    {ε : ℝ≥0∞} (hε : ε ≠ 0) :
-    ∃ K : Set X, IsCompact K ∧ K ⊆ range f ∧ μ (range f) ≤ μ K + ε := by
-  -- At stage `n`, bound one more Baire-space coordinate while spending the `n`th error term.
-  have hstep : ∀ (n : ℕ) (T : Set (ℕ → ℕ)),
-      ∃ M : ℕ, μ (f '' T) ≤ μ (f '' (T ∩ {β | β n ≤ M})) + ε / 2 ^ (n + 1) := by
-    intro n T
-    have hmono : Monotone fun M : ℕ => f '' (T ∩ {β | β n ≤ M}) := fun M M' hMM' =>
-      Set.image_mono (Set.inter_subset_inter_right _ fun _ hβ => hβ.trans hMM')
-    have hunion : ⋃ M : ℕ, f '' (T ∩ {β | β n ≤ M}) = f '' T := by
-      rw [← Set.image_iUnion]
-      congr 1
-      ext β
-      simp only [Set.mem_iUnion, Set.mem_inter_iff, Set.mem_ofPred_eq]
-      exact ⟨fun ⟨_, hβ, _⟩ => hβ, fun hβ => ⟨β n, hβ, le_rfl⟩⟩
-    have hsup : μ (f '' T) ≤ ⨆ M, μ (f '' (T ∩ {β | β n ≤ M})) := by
-      rw [← hmono.measure_iUnion, hunion]
-    exact exists_le_add_of_le_iSup (measure_ne_top μ _)
-      (ENNReal.div_pos hε (by finiteness)).ne' hsup
-  choose Mof hMof using hstep
-  -- Recursively choose the coordinate bounds and identify the resulting finite-stage sets.
-  set F : ℕ → Set (ℕ → ℕ) :=
-    fun n => Nat.rec Set.univ (fun n Fn => Fn ∩ {β | β n ≤ Mof n Fn}) n
-  set N : ℕ → ℕ := fun n => Mof n (F n)
-  have hF_succ : ∀ n, F (n + 1) = F n ∩ {β | β n ≤ N n} := fun _ => rfl
-  have hF_eq : ∀ n, F n = {β | ∀ k < n, β k ≤ N k} := by
-    intro n
-    induction n with
-    | zero => ext β; simp [F]
-    | succ n ih =>
-      rw [hF_succ, ih]
-      ext β
-      simp only [Set.mem_inter_iff, Set.mem_ofPred_eq]
-      constructor
-      · rintro ⟨hpre, hn⟩ k hk
-        rcases Nat.lt_succ_iff_lt_or_eq.mp hk with hk' | hk'
-        · exact hpre k hk'
-        · subst k
-          exact hn
-      · intro h
-        exact ⟨fun k hk => h k (hk.trans (Nat.lt_succ_self n)), h n (Nat.lt_succ_self n)⟩
-  -- The accumulated loss stays within the geometric error budget.
-  have hinv : ∀ n, μ (range f) ≤
-      μ (f '' F n) + ∑ k ∈ Finset.range n, ε / 2 ^ (k + 1) := by
-    intro n
-    induction n with
-    | zero => simp [F]
-    | succ n ih =>
-      calc
-        μ (range f) ≤ μ (f '' F n) + ∑ k ∈ Finset.range n, ε / 2 ^ (k + 1) := ih
-        _ ≤ (μ (f '' F (n + 1)) + ε / 2 ^ (n + 1)) +
-            ∑ k ∈ Finset.range n, ε / 2 ^ (k + 1) := by
-              gcongr
-              exact hMof n (F n)
-        _ = μ (f '' F (n + 1)) + ∑ k ∈ Finset.range (n + 1), ε / 2 ^ (k + 1) := by
-              rw [Finset.sum_range_succ]
-              ring
-  have hinv' : ∀ n, μ (range f) ≤ μ (f '' F n) + ε := fun n =>
-    (hinv n).trans (by gcongr; exact sum_div_two_pow_succ_le_self ε n)
-  -- Compactness of the bounded product and the diagonal lemma finish the approximation.
-  have hC_compact : IsCompact {β : ℕ → ℕ | ∀ k, β k ≤ N k} := by
-    have : {β : ℕ → ℕ | ∀ k, β k ≤ N k} = Set.pi univ fun k => Set.Iic (N k) := by
-      ext β
-      simp [Pi.le_def]
-    rw [this]
-    exact isCompact_univ_pi fun k => (Set.finite_Iic (N k)).isCompact
-  refine ⟨f '' {β | ∀ k, β k ≤ N k}, hC_compact.image hf, Set.image_subset_range f _, ?_⟩
-  have hD_anti : Antitone fun n => closure (f '' F n) := by
-    intro m n hmn
-    refine closure_mono (Set.image_mono ?_)
-    rw [hF_eq m, hF_eq n]
-    exact fun _ hβ k hk => hβ k (hk.trans_le hmn)
-  have hD_meas : ∀ n, NullMeasurableSet (closure (f '' F n)) μ :=
-    fun n => isClosed_closure.measurableSet.nullMeasurableSet
-  have hiInter_meas : μ (⋂ n, closure (f '' F n)) = ⨅ n, μ (closure (f '' F n)) :=
-    Directed.measure_iInter (fun n => hD_meas n) (hD_anti.directed_ge)
-      ⟨0, measure_ne_top μ _⟩
-  have hsubset : ⋂ n, closure (f '' F n) ⊆ f '' {β | ∀ k, β k ≤ N k} := by
-    simpa only [← hF_eq] using iInter_closure_image_bounded_subset hf N
-  calc
-    μ (range f) ≤ (⨅ n, μ (closure (f '' F n))) + ε := by
-      rw [ENNReal.iInf_add]
-      refine le_iInf fun n => (hinv' n).trans ?_
-      gcongr
-      exact subset_closure
-    _ = μ (⋂ n, closure (f '' F n)) + ε := by rw [hiInter_meas]
-    _ ≤ μ (f '' {β | ∀ k, β k ≤ N k}) + ε :=
-      add_le_add_left (measure_mono hsubset) ε
 
 /-- A set with inner compact approximations of arbitrary outer-measure accuracy contains a
 measurable subset whose complement within it is null. -/
@@ -313,17 +137,10 @@ theorem AnalyticSet.nullMeasurableSet
     {S : Set X} (hS : AnalyticSet S) (μ : Measure X) [SFinite μ] :
     NullMeasurableSet S μ := by
   have hG : ∀ n : ℕ, ∃ G : Set X, MeasurableSet G ∧ G ⊆ S ∧
-      sfiniteSeq μ n (S \ G) = 0 := by
-    intro n
-    obtain ⟨Z, _, _, f, hf_cont, rfl⟩ := analyticSet_iff_exists_polishSpace_range.mp hS
-    rcases isEmpty_or_nonempty Z with _ | _
-    · rw [range_eq_empty]
-      exact ⟨∅, MeasurableSet.empty, Subset.rfl, by simp⟩
-    · obtain ⟨g, hg, hsurj⟩ := PolishSpace.exists_nat_nat_continuous_surjective Z
-      rw [← hsurj.range_comp f]
-      let := TopologicalSpace.metrizableSpaceMetric X
-      exact exists_measurableSet_subset_measure_sdiff_eq_zero_of_forall_exists_isCompact
-        (fun ε hε => exists_isCompact_subset_range_measure_le (hf_cont.comp hg) hε)
+      sfiniteSeq μ n (S \ G) = 0 := fun n =>
+    exists_measurableSet_subset_measure_sdiff_eq_zero_of_forall_exists_isCompact fun _ hε =>
+      (IsChoquetCapacity.measure (sfiniteSeq μ n)).exists_isCompact_subset_le_add hS
+        (measure_ne_top _ _) hε
   choose G hG_meas hG_sub hG_null using hG
   set B : Set X := ⋃ n, G n
   have hB_meas : MeasurableSet B := MeasurableSet.iUnion hG_meas
