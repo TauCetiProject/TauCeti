@@ -269,10 +269,6 @@ instance t2Space_diskBoundary (n : ℕ) : T2Space (TopCat.diskBoundary.{u} n) :=
   -- Expose the carrier once here, so consumers need not unfold the `TopCat` wrapper.
   inferInstanceAs (T2Space (ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1)))
 
-/-- A disk boundary is compact, as the lifted Euclidean unit sphere. -/
-instance compactSpace_diskBoundary (n : ℕ) : CompactSpace (TopCat.diskBoundary.{u} n) :=
-  inferInstanceAs (CompactSpace (ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1)))
-
 /-- The boundary of the `0`-disk is empty. -/
 instance isEmpty_diskBoundary_zero : IsEmpty (TopCat.diskBoundary.{u} 0) :=
   have : Subsingleton (EuclideanSpace ℝ (ULift.{u} (Fin 0))) :=
