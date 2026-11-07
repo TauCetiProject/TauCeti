@@ -33,6 +33,8 @@ matrices can be decided on the linear maps, for instance through Jordan-chain ba
   determinant is invariant under conjugation by `GL n R`.
 * `Matrix.GeneralLinearGroup.forall_conj_eq_iff_exists_scalar_mul_eq`: two elements of `GL n R`
   induce the same conjugation of `GL n R` exactly when they differ by a unit scalar.
+* `Matrix.GeneralLinearGroup.inv_mulVec_mulVec_of_eq_mul_mul_inv`: if `A = g * B * g⁻¹` then
+  `g⁻¹ *ᵥ (A *ᵥ v) = B *ᵥ (g⁻¹ *ᵥ v)`.
 * `Matrix.GeneralLinearGroup.scalar_injective`: for nonempty `n`, the scalar embedding
   `Rˣ → GL n R` is injective.
 * `Matrix.mem_orbit_conjAct_iff_exists_linearEquiv_conj`: matrices are conjugate under `GL n R`
@@ -50,6 +52,15 @@ theorem scalar_injective [Semiring R] [Nonempty n] :
     Function.Injective (scalar n : Rˣ →* GL n R) :=
   fun u v h ↦
     Units.ext (Matrix.scalar_inj.mp (by simpa only [coe_scalar] using congrArg Units.val h))
+
+/-- Conjugating a matrix by `g` and applying it to a vector is the same as applying the original
+matrix to the vector moved by `g⁻¹`: if `A = g * B * g⁻¹` then
+`g⁻¹ *ᵥ (A *ᵥ v) = B *ᵥ (g⁻¹ *ᵥ v)`. -/
+theorem inv_mulVec_mulVec_of_eq_mul_mul_inv [Semiring R] (g : GL n R)
+    {A B : Matrix n n R} (h : A = (g : Matrix n n R) * B * (g⁻¹ : GL n R)) (v : n → R) :
+    (g⁻¹ : GL n R) *ᵥ (A *ᵥ v) = B *ᵥ ((g⁻¹ : GL n R) *ᵥ v) := by
+  rw [mulVec_mulVec, mulVec_mulVec, h, ← Matrix.mul_assoc, ← Matrix.mul_assoc,
+    Units.inv_mul, Matrix.one_mul]
 
 variable [CommRing R]
 
