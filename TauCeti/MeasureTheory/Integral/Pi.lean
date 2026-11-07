@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Exp
 public import Mathlib.MeasureTheory.Integral.Pi
 public import Mathlib.MeasureTheory.Integral.Prod
 public import TauCeti.MeasureTheory.Constructions.Pi
+import Mathlib.Probability.HasLaw
 
 /-!
 # Integrals over finite product measures
@@ -91,16 +92,7 @@ theorem integral_integral_update_pi {E : Type*} [NormedAddCommGroup E] [NormedSp
   have hmp := measurePreserving_update_prod_pi μ i
   have hint := hmp.integrable_comp_of_integrable hh
   refine (integral_prod _ hint).symm.trans ?_
-  have hae : AEStronglyMeasurable h
-      (Measure.map (fun q : (∀ j, α j) × α i => Function.update q.1 i q.2)
-        ((Measure.pi μ).prod (μ i))) := by
-    rw [hmp.map_eq]
-    exact hh.aestronglyMeasurable
-  calc
-    ∫ q : (∀ j, α j) × α i, h (Function.update q.1 i q.2) ∂((Measure.pi μ).prod (μ i)) =
-        ∫ x, h x ∂(Measure.map (fun q : (∀ j, α j) × α i => Function.update q.1 i q.2)
-          ((Measure.pi μ).prod (μ i))) := (integral_map hmp.measurable.aemeasurable hae).symm
-    _ = ∫ x, h x ∂Measure.pi μ := by rw [hmp.map_eq]
+  exact hmp.hasLaw.integral_comp hh.aestronglyMeasurable
 
 /-- The product formula for a `Fin n`-indexed product measure, by induction on `n`. -/
 private theorem lintegral_fin_nat_prod_eq_prod {n : ℕ} {α : Fin n → Type*}

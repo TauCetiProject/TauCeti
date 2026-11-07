@@ -14,6 +14,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.Deriv.Pi
 import Mathlib.Probability.Distributions.Gaussian.Fernique
 import Mathlib.Analysis.Calculus.ParametricIntegral
+import Mathlib.Probability.HasLaw
 
 /-!
 # The Gaussian Poincaré inequality
@@ -192,7 +193,9 @@ private theorem integral_interp_deriv (hf : ContDiff ℝ 1 f) (hA : ∀ x, |f x|
     rw [show c * (c * p.1 + s * p.2) + s * (s * p.1 - c * p.2) = p.1 by
       linear_combination p.1 * hcs]
     ring
-  rw [e1, MeasurePreserving.integral_comp_of_aestronglyMeasurable hmp hHc.aestronglyMeasurable,
+  have hchange := hmp.hasLaw.integral_comp hHc.aestronglyMeasurable
+  simp only [Function.comp_def] at hchange
+  rw [e1, hchange,
     integral_prod _ hHint]
   have hinner : ∀ u : ℝ, ∫ v, H (u, v) ∂γ = -s * (deriv f u * ∫ v, deriv f (c * u + s * v) ∂γ) := by
     intro u
@@ -231,15 +234,12 @@ private theorem integral_deriv_mul_deriv_rot_le {f : ℝ → ℝ} {B : ℝ}
   have hg : Continuous fun x => deriv f x ^ 2 := by fun_prop
   have e1 : ∫ p, deriv f p.1 ^ 2 ∂(Measure.prod γ γ) = D := by
     rw [hD]
-    exact MeasurePreserving.integral_comp_of_aestronglyMeasurable
-      (T := Prod.fst) (measurePreserving_fst) (g := fun x => deriv f x ^ 2)
+    exact (measurePreserving_fst (μ := γ) (ν := γ)).hasLaw.integral_comp
       hg.aestronglyMeasurable
   have e2 : ∫ p, deriv f (cos θ * p.1 + sin θ * p.2) ^ 2 ∂(Measure.prod γ γ) = D := by
     rw [hD]
-    exact MeasurePreserving.integral_comp_of_aestronglyMeasurable
-      (T := fun p : ℝ × ℝ => cos θ * p.1 + sin θ * p.2)
-      ((measurePreserving_fst (μ := γ) (ν := γ)).comp hmp)
-      (g := fun x => deriv f x ^ 2) hg.aestronglyMeasurable
+    exact ((measurePreserving_fst (μ := γ) (ν := γ)).comp hmp).hasLaw.integral_comp
+      hg.aestronglyMeasurable
   have hint : Integrable (fun x => deriv f x ^ 2) γ :=
     Integrable.of_bound hg.aestronglyMeasurable (B ^ 2)
       (ae_of_all _ fun x => by
@@ -302,9 +302,8 @@ theorem variance_le_integral_deriv_sq_gaussianReal {f : ℝ → ℝ} (hf : ContD
   -- The endpoints are the second moment and the square of the mean.
   have h0 : ψ 0 = ∫ x, f x * f x ∂γ := by
     simp only [ψ, cos_zero, sin_zero, one_mul, zero_mul, add_zero]
-    exact MeasurePreserving.integral_comp_of_aestronglyMeasurable
-      (T := Prod.fst) (measurePreserving_fst) (g := fun x => f x * f x)
-      (by fun_prop : Continuous _).aestronglyMeasurable
+    exact (measurePreserving_fst (μ := γ) (ν := γ)).hasLaw.integral_comp
+      (by fun_prop : Continuous (fun x : ℝ => f x * f x)).aestronglyMeasurable
   have h1 : ψ (π / 2) = (∫ x, f x ∂γ) * ∫ x, f x ∂γ := by
     simp only [ψ, cos_pi_div_two, sin_pi_div_two, zero_mul, one_mul, zero_add]
     exact integral_prod_mul (μ := γ) (ν := γ) (fun x => f x) (fun x => f x)
