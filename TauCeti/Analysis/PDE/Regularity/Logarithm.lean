@@ -10,6 +10,8 @@ public import TauCeti.Analysis.Sobolev.W1p.ChainRule
 public import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.W1p
 import Mathlib.Analysis.Convex.Integral
 import Mathlib.Analysis.Convex.Mul
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # The logarithm of a positive weak supersolution
@@ -111,33 +113,6 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_div_value_sq_le
   · simp only [Real.rpow_zero, mul_one]
 
 omit [DecidableEq ι] in
-/-- A function whose gradient is at most `K` on a closed ball and vanishes off it has
-`∫_s ‖∇ψ‖² ≤ K² |B|` over every set `s`, where `B` is the closed ball. -/
-private lemma setIntegral_norm_gradient_sq_le_of_tsupport_subset_closedBall
-    {s : Set (EuclideanSpace ℝ ι)} {ψ : EuclideanSpace ℝ ι → ℝ} {x₀ : EuclideanSpace ℝ ι}
-    {R K : ℝ} (hψts : tsupport ψ ⊆ Metric.closedBall x₀ R)
-    (hψg : ∀ x ∈ Metric.closedBall x₀ R, ‖∇ ψ x‖ ≤ K) :
-    ∫ x in s, ‖∇ ψ x‖ ^ 2 ∂mu ≤ K ^ 2 * mu.real (Metric.closedBall x₀ R) := by
-  have hmeasB : MeasurableSet (Metric.closedBall x₀ R) := measurableSet_closedBall
-  calc ∫ x in s, ‖∇ ψ x‖ ^ 2 ∂mu
-      ≤ ∫ x in s, (Metric.closedBall x₀ R).indicator (fun _ => K ^ 2) x ∂mu := by
-        refine integral_mono_of_nonneg (Filter.Eventually.of_forall fun x => by positivity)
-          ((integrableOn_const measure_closedBall_lt_top.ne).integrable_indicator
-            hmeasB).restrict
-          (Filter.Eventually.of_forall fun x => ?_)
-        by_cases hx : x ∈ Metric.closedBall x₀ R
-        · rw [indicator_of_mem hx]
-          exact pow_le_pow_left₀ (norm_nonneg _) (hψg x hx) 2
-        · have hfd : fderiv ℝ ψ x = 0 := Function.notMem_support.1 fun hx' =>
-            hx (hψts (support_fderiv_subset ℝ hx'))
-          simp [indicator_of_notMem hx, _root_.gradient, hfd]
-    _ ≤ K ^ 2 * mu.real (Metric.closedBall x₀ R) := by
-        rw [integral_indicator_const _ hmeasB, smul_eq_mul, mul_comm]
-        gcongr
-        rw [measureReal_restrict_apply hmeasB]
-        exact measureReal_mono inter_subset_left measure_closedBall_lt_top.ne
-
-omit [DecidableEq ι] in
 /-- Poincaré–Wirtinger for `log u` on a ball inside `Ω`, given `w ∈ H¹(Ω)` representing `log u`
 with gradient `u⁻¹ ∇u`: the mean oscillation of `log u` is controlled by `‖∇u‖ / u`. -/
 private lemma setIntegral_log_sub_setAverage_sq_le {u w : W1p mu Omega 2} {ε : ℝ} (hε : 0 < ε)
@@ -164,19 +139,6 @@ private lemma setIntegral_log_sub_setAverage_sq_le {u w : W1p mu Omega 2} {ε : 
           ae_restrict_of_ae_restrict_of_subset hBsub hεu] with x h1 h2
         rw [h1, norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos (hε.trans_le h2),
           inv_mul_eq_div]
-
-omit [DecidableEq ι] in
-/-- The closed ball of radius `3r/2` has `(3/2)ⁿ` times the Haar measure of the open ball of
-radius `r`, where `n` is the dimension. -/
-private lemma real_closedBall_three_halves_eq (mu : Measure (EuclideanSpace ℝ ι))
-    [mu.IsAddHaarMeasure] (x₀ : EuclideanSpace ℝ ι) {r : ℝ} (hr : 0 < r) :
-    mu.real (Metric.closedBall x₀ (3 * r / 2)) =
-      (3 / 2) ^ Fintype.card ι * mu.real (Metric.ball x₀ r) := by
-  have hb : mu.real (Metric.ball x₀ r) = r ^ Fintype.card ι * mu.real (Metric.ball 0 1) := by
-    rw [measureReal_def, Measure.addHaar_ball_of_pos mu x₀ hr, ENNReal.toReal_mul,
-      ENNReal.toReal_ofReal (by positivity), measureReal_def, finrank_euclideanSpace]
-  rw [Measure.addHaar_real_closedBall mu x₀ (by positivity), hb, finrank_euclideanSpace]
-  ring
 
 /-- **The gradient of `log u` on balls.** There is a constant `C ≥ 0`, depending only on the
 dimension, with the following property. Let `a` be measurable and uniformly elliptic on `Ω` with
@@ -240,7 +202,11 @@ theorem exists_setIntegral_ball_norm_gradient_div_value_sq_le :
       _ ≤ ∫ x in Omega, ψ x ^ 2 * (‖W1p.gradient u x‖ / W1p.value u x) ^ 2 ∂mu :=
           setIntegral_mono_set hweighted (Filter.Eventually.of_forall fun x => by positivity)
             ((Metric.ball_subset_ball (by linarith)).trans hball).eventuallyLE
-  have hvol := real_closedBall_three_halves_eq mu x₀ hr
+  have hvol : mu.real (Metric.closedBall x₀ (3 * r / 2)) =
+      (3 / 2) ^ Fintype.card ι * mu.real (Metric.ball x₀ r) := by
+    rw [show 3 * r / 2 = 3 / 2 * r by ring,
+      mu.addHaar_real_closedBall_mul_eq_pow_mul_addHaar_real_ball x₀ (by norm_num) hr,
+      finrank_euclideanSpace]
   calc ∫ x in Metric.ball x₀ r, (‖W1p.gradient u x‖ / W1p.value u x) ^ 2 ∂mu
       ≤ (2 * Lam / lam) ^ 2 * ((2 * c / r) ^ 2 * mu.real (Metric.closedBall x₀ (3 * r / 2))) :=
         hleft.trans (hcacc.trans (by gcongr))

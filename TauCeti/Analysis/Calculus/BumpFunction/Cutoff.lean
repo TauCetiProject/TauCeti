@@ -42,7 +42,10 @@ universal constant `c`, the quantitative form needed by iteration arguments over
 with shrinking gaps. On the line, a smooth cutoff of the identity equals `s` on `[-r, r]` and
 vanishes outside `(-R, R)` (`TauCeti.exists_contDiff_cutoff_id`), and smooth plateaus supported
 in `[c - r - 1, c + r + 1]` have `L²` mass at least `2 r` and derivative energy bounded
-independently of `c` and `r` (`TauCeti.exists_forall_contDiff_plateau`).
+independently of `c` and `r` (`TauCeti.exists_forall_contDiff_plateau`). The squared gradient of a
+function supported in a closed ball with bounded gradient there has integral at most the squared
+bound times the volume of the ball
+(`TauCeti.setIntegral_norm_gradient_sq_le_of_tsupport_subset_closedBall`).
 
 ## References
 
@@ -546,5 +549,32 @@ theorem exists_forall_contDiff_plateau : ∃ C : ℝ, ∀ (c : ℝ) {r : ℝ}, 0
             Real.volume_real_closedBall (by linarith), measureReal_def, Real.volume_ball,
             ENNReal.toReal_ofReal (by positivity), smul_eq_mul]
           ring
+
+open MeasureTheory Metric in
+/-- A function whose gradient is at most `K` on a closed ball and vanishes off it has
+`∫_s ‖∇ψ‖² ≤ K² |B|` over every set `s`, where `B` is the closed ball. -/
+theorem setIntegral_norm_gradient_sq_le_of_tsupport_subset_closedBall
+    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    {mu : Measure E} [IsFiniteMeasureOnCompacts mu] {s : Set E} {ψ : E → ℝ} {x₀ : E} {R K : ℝ}
+    (hψts : tsupport ψ ⊆ closedBall x₀ R) (hψg : ∀ x ∈ closedBall x₀ R, ‖∇ ψ x‖ ≤ K) :
+    ∫ x in s, ‖∇ ψ x‖ ^ 2 ∂mu ≤ K ^ 2 * mu.real (closedBall x₀ R) := by
+  have hmeasB : MeasurableSet (closedBall x₀ R) := measurableSet_closedBall
+  calc ∫ x in s, ‖∇ ψ x‖ ^ 2 ∂mu
+      ≤ ∫ x in s, (closedBall x₀ R).indicator (fun _ => K ^ 2) x ∂mu := by
+        refine integral_mono_of_nonneg (Filter.Eventually.of_forall fun x => by positivity)
+          ((integrableOn_const measure_closedBall_lt_top.ne).integrable_indicator
+            hmeasB).restrict
+          (Filter.Eventually.of_forall fun x => ?_)
+        by_cases hx : x ∈ closedBall x₀ R
+        · rw [indicator_of_mem hx]
+          exact pow_le_pow_left₀ (norm_nonneg _) (hψg x hx) 2
+        · have hfd : fderiv ℝ ψ x = 0 := Function.notMem_support.1 fun hx' =>
+            hx (hψts (support_fderiv_subset ℝ hx'))
+          simp [indicator_of_notMem hx, _root_.gradient, hfd]
+    _ ≤ K ^ 2 * mu.real (closedBall x₀ R) := by
+        rw [integral_indicator_const _ hmeasB, smul_eq_mul, mul_comm]
+        gcongr
+        rw [measureReal_restrict_apply hmeasB]
+        exact measureReal_mono inter_subset_left measure_closedBall_lt_top.ne
 
 end TauCeti
