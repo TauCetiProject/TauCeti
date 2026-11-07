@@ -164,6 +164,40 @@ theorem sum_singularValues_mul_le_kyFanSum (A : E →ₗ[𝕜] F) {k : ℕ} {c :
     rw [← h1, Nat.cast_min]
     exact le_min hck hcard
 
+/-- The expansion step of `LinearMap.norm_sum_inner_add_inner_le_kyFanSum`: writing `A` in its
+singular system and bounding each coefficient by the arithmetic-geometric mean inequality, the sum
+is at most the singular values weighted by the averages of the weights `a` and `b` that the pairs
+place on the right and left singular vectors. -/
+private theorem norm_sum_inner_add_inner_le_sum_singularValues_mul {ι : Type*} [Fintype ι]
+    (A : E →ₗ[𝕜] F) {P₁ Q₁ : F →ₗ[𝕜] F} {P₂ Q₂ : E →ₗ[𝕜] E} {u : ι → F} {v : ι → E}
+    (a b : Fin (finrank 𝕜 E) → ℝ)
+    (ha : a = fun j ↦
+      ∑ i, (‖⟪A.rightSingularBasis j, P₂ (v i)⟫‖ ^ 2 + ‖⟪A.rightSingularBasis j, Q₂ (v i)⟫‖ ^ 2))
+    (hb : b = fun j ↦
+      ∑ i, (‖⟪A.leftSingularVector j, P₁ (u i)⟫‖ ^ 2 +
+        ‖⟪A.leftSingularVector j, Q₁ (u i)⟫‖ ^ 2)) :
+    ‖∑ i, (⟪P₁ (u i), A (P₂ (v i))⟫ + ⟪Q₁ (u i), A (Q₂ (v i))⟫)‖ ≤
+      ∑ j : Fin (finrank 𝕜 E), A.singularValues j * ((a j + b j) / 2) := by
+  calc ‖∑ i, (⟪P₁ (u i), A (P₂ (v i))⟫ + ⟪Q₁ (u i), A (Q₂ (v i))⟫)‖
+      = ‖∑ j : Fin (finrank 𝕜 E), (A.singularValues j : 𝕜) *
+          ∑ i, (⟪A.rightSingularBasis j, P₂ (v i)⟫ * ⟪P₁ (u i), A.leftSingularVector j⟫ +
+            ⟪A.rightSingularBasis j, Q₂ (v i)⟫ * ⟪Q₁ (u i), A.leftSingularVector j⟫)‖ := by
+        congr 1
+        simp_rw [A.apply_eq_sum_singularValues_smul, inner_sum, inner_smul_right,
+          ← sum_add_distrib, mul_sum]
+        rw [sum_comm]
+        exact sum_congr rfl fun j _ ↦ sum_congr rfl fun i _ ↦ by ring
+    _ ≤ ∑ j : Fin (finrank 𝕜 E), A.singularValues j * ((a j + b j) / 2) := by
+        refine (norm_sum_le _ _).trans (sum_le_sum fun j _ ↦ ?_)
+        rw [norm_mul, RCLike.norm_ofReal, abs_of_nonneg (A.singularValues_nonneg _)]
+        refine mul_le_mul_of_nonneg_left ((norm_sum_le _ _).trans ?_) (A.singularValues_nonneg _)
+        simp only [ha, hb, ← sum_add_distrib, sum_div]
+        refine sum_le_sum fun i _ ↦ (norm_add_le _ _).trans ?_
+        rw [norm_mul, norm_mul, norm_inner_symm (P₁ (u i)), norm_inner_symm (Q₁ (u i))]
+        nlinarith [two_mul_le_add_sq ‖⟪A.rightSingularBasis j, P₂ (v i)⟫‖
+          ‖⟪A.leftSingularVector j, P₁ (u i)⟫‖, two_mul_le_add_sq
+          ‖⟪A.rightSingularBasis j, Q₂ (v i)⟫‖ ‖⟪A.leftSingularVector j, Q₁ (u i)⟫‖]
+
 /-- **Ky Fan's maximum principle for pairs of contractions.** Let `P₁, Q₁` be symmetric operators
 on `F` with `‖P₁ y‖² + ‖Q₁ y‖² ≤ ‖y‖²` for every `y`, and `P₂, Q₂` symmetric operators on `E` with
 `‖P₂ x‖² + ‖Q₂ x‖² ≤ ‖x‖²` for every `x`. For orthonormal families `(uᵢ)` in `F` and `(vᵢ)` in `E`
@@ -221,29 +255,11 @@ theorem norm_sum_inner_add_inner_le_kyFanSum {ι : Type*} [Fintype ι] (A : E �
           linarith [A.sum_norm_inner_leftSingularVector_sq_le (P₁ (u i)),
             A.sum_norm_inner_leftSingularVector_sq_le (Q₁ (u i))]
       _ = Fintype.card ι := by simp
-  refine le_trans ?_ (A.sum_singularValues_mul_le_kyFanSum (c := fun j ↦ (a j + b j) / 2)
+  refine le_trans (norm_sum_inner_add_inner_le_sum_singularValues_mul A a b ha hb)
+    (A.sum_singularValues_mul_le_kyFanSum (c := fun j ↦ (a j + b j) / 2)
     (fun j ↦ by rw [ha, hb]; positivity) (fun j ↦ by linarith [ha1 j, hb1 j])
     (by rw [← sum_div, sum_add_distrib]; linarith))
-  -- Expand `A` in its singular system and bound each coefficient by AM-GM.
-  calc ‖∑ i, (⟪P₁ (u i), A (P₂ (v i))⟫ + ⟪Q₁ (u i), A (Q₂ (v i))⟫)‖
-      = ‖∑ j : Fin (finrank 𝕜 E), (A.singularValues j : 𝕜) *
-          ∑ i, (⟪A.rightSingularBasis j, P₂ (v i)⟫ * ⟪P₁ (u i), A.leftSingularVector j⟫ +
-            ⟪A.rightSingularBasis j, Q₂ (v i)⟫ * ⟪Q₁ (u i), A.leftSingularVector j⟫)‖ := by
-        congr 1
-        simp_rw [A.apply_eq_sum_singularValues_smul, inner_sum, inner_smul_right,
-          ← sum_add_distrib, mul_sum]
-        rw [sum_comm]
-        exact sum_congr rfl fun j _ ↦ sum_congr rfl fun i _ ↦ by ring
-    _ ≤ ∑ j : Fin (finrank 𝕜 E), A.singularValues j * ((a j + b j) / 2) := by
-        refine (norm_sum_le _ _).trans (sum_le_sum fun j _ ↦ ?_)
-        rw [norm_mul, RCLike.norm_ofReal, abs_of_nonneg (A.singularValues_nonneg _)]
-        refine mul_le_mul_of_nonneg_left ((norm_sum_le _ _).trans ?_) (A.singularValues_nonneg _)
-        simp only [ha, hb, ← sum_add_distrib, sum_div]
-        refine sum_le_sum fun i _ ↦ (norm_add_le _ _).trans ?_
-        rw [norm_mul, norm_mul, norm_inner_symm (P₁ (u i)), norm_inner_symm (Q₁ (u i))]
-        nlinarith [two_mul_le_add_sq ‖⟪A.rightSingularBasis j, P₂ (v i)⟫‖
-          ‖⟪A.leftSingularVector j, P₁ (u i)⟫‖, two_mul_le_add_sq
-          ‖⟪A.rightSingularBasis j, Q₂ (v i)⟫‖ ‖⟪A.leftSingularVector j, Q₁ (u i)⟫‖]
+
 
 /-- **Ky Fan's maximum principle**, the upper bound: for orthonormal families `(uᵢ)` in `F` and
 `(vᵢ)` in `E` with `k` members, `‖∑ᵢ ⟪uᵢ, A vᵢ⟫‖` is at most the Ky Fan `k`-sum of `A`. -/

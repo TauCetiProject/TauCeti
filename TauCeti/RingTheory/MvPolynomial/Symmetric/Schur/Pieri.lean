@@ -42,7 +42,7 @@ Both computations happen on alternants, and in both the exponents are taken to b
 
 `TauCeti.hsymm_mul_alternant` expands `h_r · a_β` as the sum of `a_{β + γ}` over the exponent
 vectors `γ` of total degree `r`.  Those shifted vectors are no longer decreasing, so each must be
-sorted back (`Function.Injective.exists_strictAnti_comp`, uniquely by `StrictAnti.perm_eq`) at the
+sorted back (`Function.Injective.strictAnti_sortDesc`, uniquely by `StrictAnti.perm_eq`) at the
 cost of the sign of the sorting permutation; a strictly decreasing result is again a vector of
 beta-numbers (`YoungDiagram.exists_eq_betaNumber_of_strictAnti`), and a repeated exponent kills the
 alternant.  Grouping the shifts by the shape they sort to leaves, for each shape `μ`, the signed
@@ -194,7 +194,8 @@ theorem hsymm_mul_alternant_betaNumber {N : ℕ} (ν : YoungDiagram) (hν : ν.c
     · -- Every shift of total degree `r` with distinct exponents sorts to such a pair.
       intro γ hγ
       obtain ⟨hγmem, hγinj⟩ := Finset.mem_filter.mp hγ
-      obtain ⟨τ₀, hτ₀⟩ := hγinj.exists_strictAnti_comp
+      obtain ⟨τ₀, hτ₀⟩ : ∃ τ : Equiv.Perm (Fin N), StrictAnti (_ ∘ τ) :=
+        ⟨_, hγinj.strictAnti_sortDesc⟩
       obtain ⟨μ₀, hμ₀col, hμ₀beta⟩ := YoungDiagram.exists_eq_betaNumber_of_strictAnti hτ₀
       have hsumγ : ∑ i : Fin N, γ i = r := (Finset.mem_piAntidiag.mp hγmem).1
       have hcard : μ₀.card = ν.card + r := by

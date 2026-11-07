@@ -14,22 +14,21 @@ import Mathlib.Topology.Metrizable.ContinuousMap
 # Polish spaces of continuous homomorphisms
 
 The compact-open space of continuous homomorphisms from a second-countable locally compact
-monoid to a Polish topological monoid is Polish. In particular, this supplies the regularity
-of spaces of characters needed for uniqueness of Fourier–Stieltjes measures.
+monoid to a Polish topological monoid is Polish, and likewise for additive monoids. In particular,
+this supplies the regularity of spaces of characters needed for uniqueness of Fourier–Stieltjes
+measures.
 -/
 
 public section
 
-namespace TauCeti
-
 /-- Continuous homomorphisms from a second-countable locally compact monoid to a Polish
 topological monoid form a Polish space in the compact-open topology. -/
-instance _root_.ContinuousMonoidHom.instPolishSpace {A B : Type*}
+@[to_additive /-- Continuous additive homomorphisms from a second-countable locally compact
+additive monoid to a Polish topological additive monoid form a Polish space in the compact-open
+topology. -/]
+instance ContinuousMonoidHom.instPolishSpace {A B : Type*}
     [Monoid A] [TopologicalSpace A] [LocallyCompactSpace A] [SecondCountableTopology A]
     [Monoid B] [TopologicalSpace B] [ContinuousMul B] [PolishSpace B] :
-    PolishSpace (A →ₜ* B) := by
+    PolishSpace (A →ₜ* B) :=
   let := TopologicalSpace.upgradeIsCompletelyMetrizable B
-  have : PolishSpace C(A, B) := inferInstance
-  exact (ContinuousMonoidHom.isClosedEmbedding_toContinuousMap A B).polishSpace
-
-end TauCeti
+  (isClosedEmbedding_toContinuousMap A B).polishSpace

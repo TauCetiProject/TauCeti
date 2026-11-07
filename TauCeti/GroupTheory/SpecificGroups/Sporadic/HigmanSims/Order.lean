@@ -14,6 +14,9 @@ The exact ATLAS model `TauCeti.Sporadic.HS` has order `44352000`. Its stabilizer
 along `0, 1, 2, 3, 4` has basic-orbit lengths `100, 77, 60, 32, 3` and trivial final
 stabilizer. The order theorem combines these established orbit and rigidity results;
 it concerns the permutation model, not the abstract group given by the presentation.
+Through the surjection `exists_surjective_HS`, the group presented by the transcribed
+Higman--Sims presentation has at least that many elements whenever it is finite
+(`TauCeti.Sporadic.le_natCard_group_HS`).
 
 ## References
 
@@ -33,5 +36,14 @@ namespace TauCeti.Sporadic
 theorem card_HS : Nat.card HS = 44352000 := by
   rw [HS.card_eq_462000_mul_card_stabilizerChain, HS.card_stabilizerChain_three_eq,
     HS.card_stabilizerChain_four]
+
+/-- The group presented by the transcribed Higman--Sims presentation, when finite, has at least
+`44352000` elements, since it maps onto the model `HS`. Finiteness is a hypothesis: with the junk
+value `Nat.card = 0` for infinite types, a surjection alone gives no lower bound. -/
+theorem le_natCard_group_HS (h : 0 < Nat.card SporadicName.HS.Group) :
+    44352000 ≤ Nat.card SporadicName.HS.Group := by
+  have := Nat.finite_of_card_ne_zero h.ne'
+  obtain ⟨f, hf⟩ := exists_surjective_HS
+  exact card_HS ▸ Nat.card_le_card_of_surjective f hf
 
 end TauCeti.Sporadic

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Extend
-public import TauCeti.Analysis.Calculus.IteratedDerivWithin
+public import TauCeti.Analysis.Calculus.IteratedDeriv.Within
 
 /-!
 # Continuous derivative jets on a closed interval
