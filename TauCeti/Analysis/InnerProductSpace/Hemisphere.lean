@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Group.BallSphere
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.Normed.Module.Ball.Radial.Extension
+import TauCeti.Data.Set.InjOnUnion
 import TauCeti.Topology.ContinuousMap.GlueClosedEmbeddings
 
 /-!
@@ -262,21 +263,6 @@ private theorem exists_eq_hemisphereHomeomorph_symm_or_neg (y : sphere (0 : E) 1
 
 variable [FiniteDimensional ℝ E] {X : Type*} [TopologicalSpace X] {A B : Set X}
 
-omit [TopologicalSpace X] in
-/-- A map on `X = A ∪ B` that is injective on `A` and on `B`, and which sends exactly the points
-of `A` to values satisfying a predicate `P`, is injective. -/
-private theorem injective_of_union_eq_univ {Y : Type*} {g : X → Y} {P : Y → Prop}
-    (hAB : A ∪ B = univ) (hP : ∀ x, P (g x) ↔ x ∈ A)
-    (hA : ∀ x y, x ∈ A → y ∈ A → g x = g y → x = y)
-    (hB : ∀ x y, x ∈ B → y ∈ B → g x = g y → x = y) : Function.Injective g := by
-  intro x y hxy
-  have hxy' : x ∈ A ↔ y ∈ A := by rw [← hP, ← hP, hxy]
-  by_cases hx : x ∈ A
-  · exact hA x y hx (hxy'.1 hx) hxy
-  · exact hB x y (Set.compl_subset_iff_union.mpr hAB hx)
-      (Set.compl_subset_iff_union.mpr hAB (hxy'.not.1 hx)) hxy
-
-
 /-- `TauCeti.nonempty_homeomorph_sphere_of_union_closedBall` for discs in the orthogonal
 complement of a unit vector `p`. The first disc is carried onto the closed hemisphere around `p`
 by the inverse of `TauCeti.hemisphereHomeomorph p`. The second is carried onto the closed
@@ -330,10 +316,11 @@ private theorem nonempty_homeomorph_sphere_of_union_closedBall_orthogonal
     exact eB.injective (Subtype.ext (H.injective (neg_injective
       (congrArg Subtype.val (e.symm.injective (Subtype.val_injective h'))))))
   have hinj : Function.Injective g :=
-    injective_of_union_eq_univ (P := fun y : sphere (0 : E) 1 ↦ 0 ≤ ⟪(y : E), (p : E)⟫) hAB hupper
-      (fun x y hx hy h ↦ congrArg Subtype.val
+    injective_of_injOn_of_union_eq_univ
+      (P := fun y : sphere (0 : E) 1 ↦ 0 ≤ ⟪(y : E), (p : E)⟫) hAB hupper
+      (fun x hx y hy h ↦ congrArg Subtype.val
         (hinjA ((hg_A ⟨x, hx⟩).symm.trans (h.trans (hg_A ⟨y, hy⟩)))))
-      (fun x y hx hy h ↦ congrArg Subtype.val
+      (fun x hx y hy h ↦ congrArg Subtype.val
         (hinjB ((hg_B ⟨x, hx⟩).symm.trans (h.trans (hg_B ⟨y, hy⟩)))))
   -- Surjectivity: the closed hemispheres around `p` and `-p` cover the sphere.
   have hsurj : Function.Surjective g := by
