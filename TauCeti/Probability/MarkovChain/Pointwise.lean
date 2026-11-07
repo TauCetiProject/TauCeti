@@ -20,7 +20,7 @@ public import TauCeti.Analysis.SpecificLimits.MovingAverage
 For an irreducible aperiodic countable-state chain, an infinite extended mean positive
 return time at `y` implies that the time-`n` mass of `y` tends to zero from every initial
 probability law. This includes null recurrent states and states with a positive chance
-of never returning. The inverse mean is not computed using a real integral.
+of never returning: the hypothesis uses an `ℝ≥0∞`-valued mean, with infinity on nonreturn.
 
 The independent square chain gives two alternatives. Transience of `(y, y)` already
 implies decay by summability of squared transition masses. In the recurrent case,
@@ -71,8 +71,10 @@ theorem tendsto_pow_comp_real_singleton_of_parallelComp_isRecurrent
     (fun _ => measureReal_nonneg) hshift hb
     (fun n k _ => κ.sum_range_pow_comp_real_singleton_div_le ν y n k)
 
-/-- **Pointwise decay at an infinite-mean state.** In an irreducible aperiodic chain,
-no recurrence assumption is needed: the extended mean retains infinity on nonreturn. -/
+/-- **Pointwise decay at an infinite-mean state.** For a countable-state irreducible
+aperiodic Markov kernel, if the expected first positive return time to `y` is infinite,
+then the time-`n` mass of `{y}` tends to zero from every initial probability law `ν`.
+The mean assigns infinity to nonreturn, so no recurrence assumption is needed. -/
 theorem tendsto_pow_comp_real_singleton_of_isAperiodic_of_lintegral_return_eq_top
     [Countable α] [IsIrreducible Measure.count κ] (hκ : κ.IsAperiodic) {y : α}
     (hy : (∫⁻ x, (hittingAfter (fun n x => x n) {y} 1 x).recTopCoe ⊤
@@ -84,19 +86,9 @@ theorem tendsto_pow_comp_real_singleton_of_isAperiodic_of_lintegral_return_eq_to
     have hret := κ.return_eq_one_of_parallelComp_return_eq_one κ (isRecurrent_iff.mp hr)
     have hlim := HasLaw.tendsto_integral_visitCount_div_of_return_eq_one
       (HasLaw.id (μ := markovChainLaw (Measure.dirac y) κ)) hret
-    have heq (k : ℕ) :
-        (∫ x, (visitCount (fun i => x (i + 1)) y k : ℝ) / k
-          ∂markovChainLaw (Measure.dirac y) κ) =
-        (∑ i ∈ Finset.range k, ((κ ^ (i + 1)) y).real {y}) / k := by
-      rw [integral_div, integral_visitCount (fun i (x : ℕ → α) => x (i + 1))
-        (fun i => measurable_pi_apply (i + 1))]
-      congr 1
-      apply Finset.sum_congr rfl
-      intro i hi
-      simp only [Measure.real, Measure.markovChainLaw_setOf_apply_eq_comp,
-        Measure.dirac_bind (κ ^ (i + 1)).measurable]
     apply κ.tendsto_pow_comp_real_singleton_of_parallelComp_isRecurrent hr _ ν
-    simpa only [id_eq, heq, hy, ENNReal.inv_top, ENNReal.toReal_zero] using hlim
+    simpa only [id_eq, integral_div, κ.integral_visitCount_succ_markovChainLaw_dirac,
+      hy, ENNReal.inv_top, ENNReal.toReal_zero] using hlim
   · exact κ.tendsto_pow_comp_apply_singleton_of_parallelComp_return_lt_one ν
       (isTransient_iff_return_probability_lt_one.mp (isTransient_iff.mpr hr))
 
