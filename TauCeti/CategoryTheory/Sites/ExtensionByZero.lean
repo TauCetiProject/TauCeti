@@ -89,7 +89,8 @@ private def presheaf (F : (Over U)ᵒᵖ ⥤ D) : Pᵒᵖ ⥤ D where
   map_id V := by
     by_cases h : V.unop ≤ U
     · have hi : (Over.homMk (U := Over.mk (homOfLE h))
-          (V := Over.mk (homOfLE h)) (𝟙 V.unop)).op = 𝟙 _ := rfl
+          (V := Over.mk (homOfLE h)) (𝟙 V.unop)).op = 𝟙 _ :=
+        Quiver.Hom.unop_inj (Over.OverMorphism.ext (by simp))
       simp [map, objIso, obj, h, hi]
     · exact (isZero_obj U F h).eq_of_src _ _
   map_comp {V W Z} f g := by
@@ -101,7 +102,8 @@ private def presheaf (F : (Over U)ᵒᵖ ⥤ D) : Pᵒᵖ ⥤ D where
           (Over.homMk (U := Over.mk (homOfLE hW))
             (V := Over.mk (homOfLE h)) f.unop).op ≫
           (Over.homMk (U := Over.mk (homOfLE hZ))
-            (V := Over.mk (homOfLE hW)) g.unop).op := rfl
+            (V := Over.mk (homOfLE hW)) g.unop).op := by
+        rw [← op_comp, ← Over.homMk_comp]
       simp [map, objIso, obj, h, hW, hc]
     · simp [map, h]
 
