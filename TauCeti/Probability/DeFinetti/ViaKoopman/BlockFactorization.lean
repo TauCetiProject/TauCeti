@@ -71,6 +71,31 @@ namespace Probability
 
 variable {α : Type*} [MeasurableSpace α]
 
+/-- A finite product of `{0, 1}`-valued indicators of coordinates has absolute value at most
+one. -/
+theorem abs_prod_indicator_le_one {ι β : Type*} (s : Finset ι) (f : ι → β) (B : ι → Set β) :
+    |∏ i ∈ s, (B i).indicator (fun _ => (1 : ℝ)) (f i)| ≤ 1 := by
+  have h0 : (0 : ℝ) ≤ ∏ i ∈ s, (B i).indicator (fun _ => (1 : ℝ)) (f i) :=
+    Finset.prod_nonneg fun i _ => Set.indicator_apply_nonneg fun _ => zero_le_one
+  rw [abs_of_nonneg h0]
+  exact Finset.prod_le_one₀ (fun i _ => Set.indicator_apply_nonneg fun _ => zero_le_one)
+    fun i _ => Set.indicator_apply_le' (fun _ => le_rfl) fun _ => zero_le_one
+
+/-- Multiplying an almost surely bounded weight by the conditional expectation of a coordinate
+indicator keeps the bound `1`. -/
+private theorem ae_abs_mul_condExp_indicator_le_one {ρ : Measure (ℕ → α)}
+    {w : (ℕ → α) → ℝ} (hw_bdd : ∀ᵐ x ∂ρ, |w x| ≤ 1) (S : Set α) (j : ℕ) :
+    ∀ᵐ x ∂ρ, |w x * ρ[fun y : ℕ → α => S.indicator (fun _ => (1 : ℝ)) (y j) |
+      MeasurableSpace.invariants (shift α)] x| ≤ 1 := by
+  have hE_bdd : ∀ᵐ x ∂ρ, ‖ρ[fun y : ℕ → α => S.indicator (fun _ => (1 : ℝ)) (y j) |
+      MeasurableSpace.invariants (shift α)] x‖ ≤ 1 :=
+    ae_bdd_norm_condExp_of_ae_bdd_norm (Filter.Eventually.of_forall fun y => by
+      simpa only [norm_one] using norm_indicator_le_norm_self (fun _ => (1 : ℝ)) (y j))
+  filter_upwards [hw_bdd, hE_bdd] with x hwx hEx
+  rw [abs_mul]
+  exact (mul_le_mul hwx ((Real.norm_eq_abs _) ▸ hEx) (abs_nonneg _)
+    zero_le_one).trans_eq (one_mul 1)
+
 namespace ContractableLaw
 
 /-- **A block factorizes over an invariant event**, in conditional-expectation form.
@@ -102,27 +127,12 @@ theorem setIntegral_weight_mul_blockIndicatorProd_prefix_eq_prod_condExp
     have hg_meas : Measurable g :=
       Finset.measurable_prod _ fun i _ =>
         (measurable_const.indicator (hB _)).comp (measurable_pi_apply i)
-    have hg_bdd : ∀ y, |g y| ≤ 1 := by
-      intro y
-      have h0 : (0 : ℝ) ≤ ∏ i : Fin r, (B i.castSucc).indicator (fun _ => (1 : ℝ)) (y i) :=
-        Finset.prod_nonneg fun i _ => Set.indicator_apply_nonneg fun _ => zero_le_one
-      have h1 : ∏ i : Fin r, (B i.castSucc).indicator (fun _ => (1 : ℝ)) (y i) ≤ 1 :=
-        Finset.prod_le_one₀ (fun i _ => Set.indicator_apply_nonneg fun _ => zero_le_one)
-          fun i _ => Set.indicator_apply_le' (fun _ => le_rfl) fun _ => zero_le_one
-      rw [hgdef, abs_of_nonneg h0]
-      exact h1
+    have hg_bdd : ∀ y, |g y| ≤ 1 := fun y => abs_prod_indicator_le_one _ _ _
     -- The weight for the inductive step: the peeled factor joins it.
     have hwE : Measurable[MeasurableSpace.invariants (shift α)] fun x => w x * E x :=
       hw.mul (stronglyMeasurable_condExp).measurable
-    have hE_bdd : ∀ᵐ x ∂ρ, ‖E x‖ ≤ 1 :=
-      ae_bdd_norm_condExp_of_ae_bdd_norm (Filter.Eventually.of_forall fun y => by
-        simpa only [norm_one] using
-          norm_indicator_le_norm_self (fun _ => (1 : ℝ)) (y r))
-    have hwE_bdd : ∀ᵐ x ∂ρ, |w x * E x| ≤ 1 := by
-      filter_upwards [hw_bdd, hE_bdd] with x hwx hEx
-      rw [abs_mul]
-      exact (mul_le_mul hwx ((Real.norm_eq_abs _) ▸ hEx) (abs_nonneg _)
-        zero_le_one).trans_eq (one_mul 1)
+    have hwE_bdd : ∀ᵐ x ∂ρ, |w x * E x| ≤ 1 :=
+      ae_abs_mul_condExp_indicator_le_one hw_bdd (B (Fin.last r)) r
     calc ∫ x in A, w x * ∏ i : Fin (r + 1),
           (B i).indicator (fun _ => (1 : ℝ)) (x (i : ℕ)) ∂ρ
         = ∫ x in A, w x * (g (prefixProj α r x)
