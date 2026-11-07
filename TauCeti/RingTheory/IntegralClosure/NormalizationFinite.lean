@@ -96,6 +96,14 @@ section Kernel
 
 variable {A : Type*} [CommRing A]
 
+/-- The corestriction of a linear endomorphism `e` to `M → e M` is surjective. -/
+private theorem surjective_codRestrict_map {V : Type*} [AddCommGroup V] [Module A V]
+    (e : V →ₗ[A] V) (M : Submodule A V) :
+    Function.Surjective (LinearMap.codRestrict (M.map e) (e ∘ₗ M.subtype)
+      (fun y => Submodule.mem_map_of_mem y.2)) := by
+  rintro ⟨_, y, hy, rfl⟩
+  exact ⟨⟨y, hy⟩, rfl⟩
+
 /-- The kernel of the map `M → eM ⧸ a·eM` induced by a linear endomorphism `e` is
 `aM ⊔ (M ⊓ ker e)`. -/
 private theorem ker_mkQ_comp_codRestrict {V : Type*} [AddCommGroup V] [Module A V]
@@ -105,9 +113,7 @@ private theorem ker_mkQ_comp_codRestrict {V : Type*} [AddCommGroup V] [Module A 
       = LinearMap.range (LinearMap.lsmul A ↥M a) ⊔ Submodule.comap M.subtype (LinearMap.ker e) := by
   set g : ↥M →ₗ[A] ↥(M.map e) :=
     LinearMap.codRestrict (M.map e) (e ∘ₗ M.subtype) (fun y => Submodule.mem_map_of_mem y.2)
-  have hg : Function.Surjective g := by
-    rintro ⟨_, y, hy, rfl⟩
-    exact ⟨⟨y, hy⟩, rfl⟩
+  have hg : Function.Surjective g := surjective_codRestrict_map e M
   have hmap : LinearMap.range (LinearMap.lsmul A ↥(M.map e) a) =
       (LinearMap.range (LinearMap.lsmul A ↥M a)).map g := by
     ext y
@@ -130,9 +136,7 @@ private theorem length_quotient_sup_comap_ker {V : Type*} [AddCommGroup V] [Modu
   set g : ↥M →ₗ[A] ↥(M.map e) :=
     LinearMap.codRestrict (M.map e) (e ∘ₗ M.subtype) (fun y => Submodule.mem_map_of_mem y.2)
   set Q : Submodule A ↥(M.map e) := LinearMap.range (LinearMap.lsmul A ↥(M.map e) a)
-  have hgsurj : Function.Surjective g := by
-    rintro ⟨_, y, hy, rfl⟩
-    exact ⟨⟨y, hy⟩, rfl⟩
+  have hgsurj : Function.Surjective g := surjective_codRestrict_map e M
   have hker : LinearMap.ker (Q.mkQ ∘ₗ g) = LinearMap.range (LinearMap.lsmul A ↥M a) ⊔
       Submodule.comap M.subtype (LinearMap.ker e) := ker_mkQ_comp_codRestrict e M a
   rw [← hker]
@@ -255,7 +259,7 @@ private theorem length_quotient_lsmul_le_mul_ord_of_finrank_le [IsNoetherianRing
         omega
       -- Phase 2: split `length (M ⧸ aM)` along `N = M ⊓ K ∙ x`.
       set P : Submodule A ↥M := LinearMap.range (LinearMap.lsmul A ↥M a)
-      set N : Submodule A ↥M := Submodule.comap M.subtype ((K ∙ x).restrictScalars A) with hNdef
+      set N : Submodule A ↥M := Submodule.comap M.subtype ((K ∙ x).restrictScalars A)
       -- Phase 3: `N` lives on the line `K ∙ x`, so the rank-one bound applies to it.
       have hterm1 : Module.length A (N.map P.mkQ) ≤ Ring.ord A a :=
         length_map_mkQ_comap_le_ord a ha x M hfg
