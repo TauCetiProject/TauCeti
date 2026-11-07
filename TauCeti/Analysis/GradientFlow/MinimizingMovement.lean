@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.GradientFlow.MoreauYosida.Existence
 public import TauCeti.Topology.EMetricSpace.Ascoli
-public import Mathlib.Topology.MetricSpace.Holder
+public import TauCeti.Topology.MetricSpace.Holder
 import Mathlib.Algebra.Order.Chebyshev
 import TauCeti.Data.EReal.Operations
 import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
@@ -245,6 +245,27 @@ theorem le_apply_of_forall_mem_moreauYosidaResolvent
   rw [he, EReal.coe_le_coe_iff]
   nlinarith
 
+/-- The multi-step estimate of
+`TauCeti.apply_add_edist_sq_div_le_of_forall_mem_moreauYosidaResolvent` in real numbers:
+`d(u m, u n)² ≤ 2 (n - m) τ (φ (u m) - φ (u n))` when the energies are real. -/
+private theorem toReal_edist_sq_le_mul_sub
+    (hu : ∀ n, u (n + 1) ∈ moreauYosidaResolvent φ τ (u n)) (hτ : 0 < τ) {m n : ℕ} (hmn : m < n)
+    (hfmn : edist (u m) (u n) ≠ ⊤) {em en : ℝ} (hem : φ (u m) = em) (hen : φ (u n) = en) :
+    (edist (u m) (u n)).toReal ^ 2 ≤ 2 * ((n - m : ℕ) * τ) * (em - en) := by
+  have hC1 := apply_add_edist_sq_div_le_of_forall_mem_moreauYosidaResolvent hu hmn.le
+  have hk : (0 : ℝ) < (n - m : ℕ) := by exact_mod_cast Nat.sub_pos_of_lt hmn
+  have hk0 : ((n - m : ℕ) : ℝ≥0∞) ≠ 0 := by exact_mod_cast (Nat.sub_pos_of_lt hmn).ne'
+  have hP : edist (u m) (u n) ^ 2 / (2 * ((n - m : ℕ) * τ)) ≠ ⊤ :=
+    ENNReal.div_ne_top (ENNReal.pow_ne_top hfmn)
+      (mul_ne_zero two_ne_zero (mul_ne_zero hk0 (ENNReal.coe_ne_zero.2 hτ.ne')))
+  rw [hem, hen, ← EReal.coe_ennreal_toReal hP, ← EReal.coe_add, EReal.coe_le_coe_iff] at hC1
+  simp only [ENNReal.toReal_div, ENNReal.toReal_pow, ENNReal.toReal_mul, ENNReal.toReal_ofNat,
+    ENNReal.toReal_natCast, ENNReal.coe_toReal] at hC1
+  have hτr : (0 : ℝ) < τ := NNReal.coe_pos.2 hτ
+  have := (div_le_iff₀ (by positivity)).1
+    (by linarith : (edist (u m) (u n)).toReal ^ 2 / (2 * ((n - m : ℕ) * τ)) ≤ em - en)
+  linarith
+
 /-- **Hölder estimate for the piecewise constant interpolant.** Under the hypotheses of
 `TauCeti.edist_sq_le_of_forall_mem_moreauYosidaResolvent`, the piecewise constant interpolant
 `t ↦ u ⌈t / τ⌉₊` of a minimizing movement sequence satisfies, for `0 ≤ s ≤ t`,
@@ -270,21 +291,9 @@ theorem edist_ceil_sq_le_of_forall_mem_moreauYosidaResolvent
   rcases hmn.eq_or_lt with hmn' | hmn'
   · rw [hmn', edist_self, zero_pow two_ne_zero]
     exact zero_le
-  -- The multi-step estimate, in real numbers: `d² ≤ 2 (n - m) τ (φ (u m) - φ (u n))`.
-  have hC1 := apply_add_edist_sq_div_le_of_forall_mem_moreauYosidaResolvent hu hmn
   have hk : (0 : ℝ) < (n - m : ℕ) := by exact_mod_cast Nat.sub_pos_of_lt hmn'
-  have hk0 : ((n - m : ℕ) : ℝ≥0∞) ≠ 0 := by exact_mod_cast (Nat.sub_pos_of_lt hmn').ne'
-  have hP : edist (u m) (u n) ^ 2 / (2 * ((n - m : ℕ) * τ)) ≠ ⊤ :=
-    ENNReal.div_ne_top (ENNReal.pow_ne_top hfmn)
-      (mul_ne_zero two_ne_zero (mul_ne_zero hk0 (ENNReal.coe_ne_zero.2 hτ.ne')))
-  rw [hem, hen, ← EReal.coe_ennreal_toReal hP, ← EReal.coe_add, EReal.coe_le_coe_iff] at hC1
-  simp only [ENNReal.toReal_div, ENNReal.toReal_pow, ENNReal.toReal_mul, ENNReal.toReal_ofNat,
-    ENNReal.toReal_natCast, ENNReal.coe_toReal] at hC1
+  have hD := toReal_edist_sq_le_mul_sub hu hτ hmn' hfmn hem hen
   set D := (edist (u m) (u n)).toReal
-  have hD : D ^ 2 ≤ 2 * ((n - m : ℕ) * τ) * (em - en) := by
-    have := (div_le_iff₀ (by positivity)).1
-      (by linarith : D ^ 2 / (2 * ((n - m : ℕ) * τ)) ≤ em - en)
-    linarith
   -- `(n - m) τ ≤ t - s + τ`, `φ (u m) ≤ E`, and the a priori lower bound on `φ (u n)`.
   have hkτ : ((n - m : ℕ) : ℝ) * τ ≤ t - s + τ := by
     have h := (natCast_ceil_div_sub_ceil_div_lt hτr.le hst).le
@@ -414,28 +423,76 @@ theorem exists_eventually_forall_le_apply_and_edist_le_of_forall_mem_moreauYosid
   refine ⟨Amin - (S - Amin) * B, 1 + ENNReal.ofReal (2 * τ' * (S - Amin) * B) ^ (2⁻¹ : ℝ),
     by finiteness, ?_⟩
   filter_upwards [hev] with k ⟨hk1, hkD, hk4⟩ n hn
-  have hxk : edist (U k 0) x₁ ≠ ⊤ := ne_top_of_le_ne_top ENNReal.ofReal_ne_top hkD
-  have hA : (Amin : EReal) ≤ moreauYosida φ τ' (U k 0) := by
-    have hQ : edist (U k 0) x₁ ^ 2 / (2 * ((τ₀ : ℝ≥0∞) - τ')) ≠ ⊤ :=
-      ENNReal.div_ne_top (ENNReal.pow_ne_top hxk)
-        (by simp [(tsub_pos_of_lt (ENNReal.coe_lt_coe.2 hτ'τ₀)).ne'])
-    have hQD : (edist (U k 0) x₁ ^ 2 / (2 * ((τ₀ : ℝ≥0∞) - τ'))).toReal ≤
-        D ^ 2 / (2 * (τ₀ - τ')) := by
-      simp only [ENNReal.toReal_div, ENNReal.toReal_pow, ENNReal.toReal_mul, ENNReal.toReal_ofNat,
-        ENNReal.toReal_sub_of_le (ENNReal.coe_le_coe.2 hτ'τ₀.le) ENNReal.coe_ne_top,
-        ENNReal.coe_toReal]
-      gcongr
-      exact ENNReal.toReal_le_of_le_ofReal (by positivity) hkD
-    have hcoer := moreauYosida_le_moreauYosida_add (φ := φ) hτ'τ₀ hxk
-    rw [hm, ← EReal.coe_ennreal_toReal hQ] at hcoer
-    rw [EReal.coe_sub, EReal.sub_le_iff_le_add (.inl (EReal.coe_ne_bot _))
-      (.inl (EReal.coe_ne_top _))]
-    exact hcoer.trans (add_le_add le_rfl (EReal.coe_le_coe_iff.2 hQD))
+  have hA : (Amin : EReal) ≤ moreauYosida φ τ' (U k 0) :=
+    coe_sub_div_le_moreauYosida hτ'τ₀ hm (by positivity) hkD
   obtain ⟨h₁, h₂⟩ :=
     le_apply_and_edist_le_of_forall_mem_moreauYosidaResolvent (hU k) (hτ k) hk4 hA (hS k) hT hn
   refine ⟨h₁, (edist_triangle _ _ _).trans (add_le_add ?_ h₂)⟩
   rw [edist_comm]
   exact hk1
+
+/-- A priori bounds for the interpolant of one minimizing movement sequence at time `t ≥ 0`: the
+energy is at most `E`, and the distance from `u 0` is at most `(2 τ' (E - A) B) ^ (1 / 2)`, where
+`B` bounds `exp (8 (t + τ) / τ')`. -/
+private theorem apply_le_and_edist_le_rpow_of_forall_mem_moreauYosidaResolvent
+    (hu : ∀ n, u (n + 1) ∈ moreauYosidaResolvent φ τ (u n)) (hτ : 0 < τ) (hττ' : 4 * τ ≤ τ')
+    {A E : ℝ} (hA : moreauYosida φ τ' (u 0) = A) (hE : φ (u 0) = E) (hEA : 0 ≤ E - A)
+    {t B : ℝ} (ht : 0 ≤ t) (hB : Real.exp (8 * (t + τ) / τ') ≤ B) :
+    φ (u ⌈t / τ⌉₊) ≤ E ∧
+      edist (u 0) (u ⌈t / τ⌉₊) ≤ ENNReal.ofReal (2 * τ' * (E - A) * B) ^ (2⁻¹ : ℝ) := by
+  have hτ'r : (0 : ℝ) < τ' :=
+    lt_of_lt_of_le (by positivity : (0 : ℝ) < 4 * τ) (by exact_mod_cast hττ')
+  refine ⟨?_, (ENNReal.le_rpow_inv_iff two_pos).2 ?_⟩
+  · simpa only [Function.comp_apply, hE] using
+      antitone_comp_of_forall_mem_moreauYosidaResolvent hu (Nat.zero_le ⌈t / τ⌉₊)
+  · rw [ENNReal.rpow_two]
+    refine (edist_sq_le_of_forall_mem_moreauYosidaResolvent hu hτ hττ' hA hE _).trans
+      (ENNReal.ofReal_le_ofReal (mul_le_mul_of_nonneg_left ?_
+        (mul_nonneg (by positivity) hEA)))
+    have := one_add_mul_pow_ceil_div_le_exp (a := 8 / τ') (by positivity)
+      (NNReal.coe_pos.2 hτ) ht
+    rw [div_mul_eq_mul_div, div_mul_eq_mul_div] at this
+    exact this.trans hB
+
+/-- The a priori Hölder-type bound for the interpolant of one minimizing movement sequence:
+`d(u ⌈s / τ⌉₊, u ⌈t / τ⌉₊) ≤ (2 (t - s + τ) (E - A) (1 + B)) ^ (1 / 2)` for `0 ≤ s ≤ t`, where
+`B` bounds `exp (8 (t + τ) / τ')`. -/
+private theorem edist_ceil_le_rpow_of_forall_mem_moreauYosidaResolvent
+    (hu : ∀ n, u (n + 1) ∈ moreauYosidaResolvent φ τ (u n)) (hτ : 0 < τ) (hττ' : 4 * τ ≤ τ')
+    {A E : ℝ} (hA : moreauYosida φ τ' (u 0) = A) (hE : φ (u 0) = E) (hEA : 0 ≤ E - A)
+    {s t B : ℝ} (hs : 0 ≤ s) (hst : s ≤ t) (hB : Real.exp (8 * (t + τ) / τ') ≤ B) :
+    edist (u ⌈s / τ⌉₊) (u ⌈t / τ⌉₊) ≤
+      ENNReal.ofReal (2 * (t - s + τ) * (E - A) * (1 + B)) ^ (2⁻¹ : ℝ) := by
+  refine (ENNReal.le_rpow_inv_iff two_pos).2 ?_
+  rw [ENNReal.rpow_two]
+  refine (edist_ceil_sq_le_of_forall_mem_moreauYosidaResolvent hu hτ hττ' hA hE hs hst).trans
+    (ENNReal.ofReal_le_ofReal ?_)
+  have : 0 ≤ t - s + τ := by have := NNReal.coe_nonneg τ; linarith
+  exact mul_le_mul_of_nonneg_left (by linarith)
+    (mul_nonneg (mul_nonneg zero_le_two this) hEA)
+
+/-- The interpolants `t ↦ U k ⌈t / τ k⌉₊` of minimizing movement sequences with time steps
+`τ k → 0` satisfy, for `0 ≤ s ≤ t`, the asymptotic Hölder bound
+`limsup d(U k ⌈s / τ k⌉₊, U k ⌈t / τ k⌉₊) ≤ (2 (t - s) (E - A) (1 + B)) ^ (1 / 2)`, where `B`
+bounds `exp (8 (t + τ k) / τ')` for all `k`. -/
+private theorem limsup_edist_ceil_le_rpow_of_forall_mem_moreauYosidaResolvent
+    {τ : ℕ → ℝ≥0} {U : ℕ → ℕ → X} (hτ : ∀ k, 0 < τ k) (hττ' : ∀ k, 4 * τ k ≤ τ')
+    (hτ0 : Tendsto τ atTop (𝓝 0)) (hU : ∀ k n, U k (n + 1) ∈ moreauYosidaResolvent φ (τ k) (U k n))
+    {A E : ℝ} (hA : ∀ k, moreauYosida φ τ' (U k 0) = A) (hE : ∀ k, φ (U k 0) = E)
+    (hEA : 0 ≤ E - A) {s t B : ℝ} (hs : 0 ≤ s) (hst : s ≤ t)
+    (hB : ∀ k, Real.exp (8 * (t + τ k) / τ') ≤ B) :
+    limsup (fun k ↦ edist (U k ⌈s / τ k⌉₊) (U k ⌈t / τ k⌉₊)) atTop ≤
+      ENNReal.ofReal (2 * (t - s) * (E - A) * (1 + B)) ^ (2⁻¹ : ℝ) := by
+  set g : ℝ → ℝ≥0∞ := fun x ↦ ENNReal.ofReal (2 * (t - s + x) * (E - A) * (1 + B)) ^ (2⁻¹ : ℝ)
+  have hg : Continuous g :=
+    ENNReal.continuous_rpow_const.comp (ENNReal.continuous_ofReal.comp (by fun_prop))
+  have hle k : edist (U k ⌈s / τ k⌉₊) (U k ⌈t / τ k⌉₊) ≤ g (τ k) :=
+    edist_ceil_le_rpow_of_forall_mem_moreauYosidaResolvent (hU k) (hτ k) (hττ' k) (hA k) (hE k)
+      hEA hs hst (hB k)
+  calc limsup (fun k ↦ edist (U k ⌈s / τ k⌉₊) (U k ⌈t / τ k⌉₊)) atTop
+      ≤ limsup (fun k ↦ g (τ k)) atTop := limsup_le_limsup (Eventually.of_forall hle)
+    _ = g 0 := ((hg.tendsto 0).comp (NNReal.tendsto_coe.2 hτ0)).limsup_eq
+    _ = _ := by simp [g]
 
 end PseudoEMetricSpace
 
@@ -527,49 +584,21 @@ theorem tendsto_subseq_of_forall_mem_moreauYosidaResolvent
     fun t ↦ {y | φ y ≤ E ∧ edist x₀ y ≤ ENNReal.ofReal (2 * τ' * (E - A) * B t) ^ (2⁻¹ : ℝ)}
     with hK_def
   have hvK k t : v k t ∈ K t := by
-    refine ⟨?_, (ENNReal.le_rpow_inv_iff two_pos).2 ?_⟩
-    · have := antitone_comp_of_forall_mem_moreauYosidaResolvent (hU k)
-        (Nat.zero_le ⌈(t : ℝ) / τ k⌉₊)
-      simpa only [Function.comp_apply, hEk] using this
-    · have h1 := edist_sq_le_of_forall_mem_moreauYosidaResolvent (hU k) (hτ k) (hττ' k) (hAk k)
-        (hEk k) ⌈(t : ℝ) / τ k⌉₊
-      rw [hU0] at h1
-      rw [ENNReal.rpow_two]
-      refine h1.trans (ENNReal.ofReal_le_ofReal (mul_le_mul_of_nonneg_left ?_
-        (mul_nonneg (by positivity) hEA)))
-      have := one_add_mul_pow_ceil_div_le_exp (a := 8 / τ') (by positivity)
-        (NNReal.coe_pos.2 (hτ k)) t.2
-      rw [div_mul_eq_mul_div, div_mul_eq_mul_div] at this
-      exact this.trans (hexpk k t)
+    have := apply_le_and_edist_le_rpow_of_forall_mem_moreauYosidaResolvent (hU k) (hτ k) (hττ' k)
+      (hAk k) (hEk k) hEA t.2 (hexpk k t)
+    rwa [hU0] at this
   have hK t ⦃w : ℕ → X⦄ (hw : ∀ n, w n ∈ K t) :
-      ∃ y, ∃ ψ : ℕ → ℕ, StrictMono ψ ∧ Tendsto (w ∘ ψ) atTop (l y) := by
-    refine hcpt E (ne_top_of_le_ne_top (b := ENNReal.ofReal (2 * τ' * (E - A) * B t) ^ (2⁻¹ : ℝ) +
-      ENNReal.ofReal (2 * τ' * (E - A) * B t) ^ (2⁻¹ : ℝ)) (by finiteness) (Metric.ediam_le ?_))
-      fun n ↦ (hw n).1
-    rintro _ ⟨i, rfl⟩ _ ⟨j, rfl⟩
-    exact (edist_triangle_left _ _ x₀).trans (add_le_add (hw i).2 (hw j).2)
+      ∃ y, ∃ ψ : ℕ → ℕ, StrictMono ψ ∧ Tendsto (w ∘ ψ) atTop (l y) :=
+    exists_strictMono_tendsto_of_edist_le hcpt (by finiteness) hw
   -- The asymptotic modulus `ω s t = (2 |t - s| (E - A) (1 + B (max s t))) ^ (1 / 2)`.
   set ω : ℝ≥0 → ℝ≥0 → ℝ≥0∞ := fun s t ↦
     ENNReal.ofReal (2 * |(t : ℝ) - s| * (E - A) * (1 + B (max (s : ℝ) t))) ^ (2⁻¹ : ℝ)
     with hω_def
   have hvω_le s t (hst : s ≤ t) : limsup (fun k ↦ edist (v k s) (v k t)) atTop ≤ ω s t := by
     have hst' : (s : ℝ) ≤ t := hst
-    set g : ℝ → ℝ≥0∞ :=
-      fun x ↦ ENNReal.ofReal (2 * ((t : ℝ) - s + x) * (E - A) * (1 + B t)) ^ (2⁻¹ : ℝ)
-    have hg : Continuous g :=
-      ENNReal.continuous_rpow_const.comp (ENNReal.continuous_ofReal.comp (by fun_prop))
-    have hle k : edist (v k s) (v k t) ≤ g (τ k) := by
-      refine (ENNReal.le_rpow_inv_iff two_pos).2 ?_
-      rw [ENNReal.rpow_two]
-      refine (edist_ceil_sq_le_of_forall_mem_moreauYosidaResolvent (hU k)
-        (hτ k) (hττ' k) (hAk k) (hEk k) s.2 hst').trans (ENNReal.ofReal_le_ofReal ?_)
-      have : 0 ≤ (t : ℝ) - s + τ k := by positivity
-      exact mul_le_mul_of_nonneg_left (by linarith [hexpk k t])
-        (mul_nonneg (mul_nonneg zero_le_two this) hEA)
-    calc limsup (fun k ↦ edist (v k s) (v k t)) atTop
-        ≤ limsup (fun k ↦ g (τ k)) atTop := limsup_le_limsup (Eventually.of_forall hle)
-      _ = g 0 := ((hg.tendsto 0).comp (NNReal.tendsto_coe.2 hτ0)).limsup_eq
-      _ = ω s t := by simp [g, hω_def, abs_of_nonneg (sub_nonneg.2 hst'), max_eq_right hst']
+    refine (limsup_edist_ceil_le_rpow_of_forall_mem_moreauYosidaResolvent hτ hττ' hτ0 hU
+      hAk hEk hEA s.2 hst' (hexpk · t)).trans_eq ?_
+    simp [hω_def, abs_of_nonneg (sub_nonneg.2 hst'), max_eq_right hst']
   have hvω s t : limsup (fun k ↦ edist (v k s) (v k t)) atTop ≤ ω s t := by
     rcases le_total s t with h | h
     · exact hvω_le s t h
@@ -664,16 +693,7 @@ theorem exists_isGeneralizedMinimizingMovement (hl : ∀ y, pure y ≤ l y)
       Real.exp_le_exp.2 (by gcongr; exact ht.2)
     nlinarith [mul_le_mul_of_nonneg_left hB (mul_nonneg (mul_nonneg zero_le_two hEA)
       (sub_nonneg.2 hst))]
-  refine ⟨c.toNNReal ^ (2⁻¹ : ℝ), fun s hs t ht ↦
-    ((ENNReal.le_rpow_inv_iff (y := ENNReal.ofReal (c * |s - t|)) two_pos).2 ?_).trans_eq ?_⟩
-  · rw [ENNReal.rpow_two]
-    rcases le_total s t with hst | hst
-    · exact hsq s hs t ht hst
-    · rw [edist_comm, abs_sub_comm]
-      exact hsq t ht s hs hst
-  · rw [ENNReal.coe_rpow_of_nonneg _ (by norm_num), ENNReal.ofNNReal_toNNReal, edist_dist,
-      Real.dist_eq, show ((1 / 2 : ℝ≥0) : ℝ) = 2⁻¹ by norm_num, ENNReal.ofReal_mul hc0,
-      ENNReal.mul_rpow_of_nonneg _ _ (by norm_num)]
+  exact ⟨_, HolderOnWith.of_edist_sq_le hc0 hsq⟩
 
 end EMetricSpace
 

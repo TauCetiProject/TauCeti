@@ -334,3 +334,21 @@ theorem eHolderNorm_eq_iSup_dist {X Y : Type*} [MetricSpace X] [PseudoMetricSpac
   refine iSup_congr fun x => iSup_congr fun y => iSup_congr fun hxy => ?_
   rw [ENNReal.ofReal_div_of_pos (Real.rpow_pos_of_pos (dist_pos.2 hxy) _), edist_dist,
     edist_dist, ENNReal.ofReal_rpow_of_nonneg dist_nonneg r.coe_nonneg]
+
+/-- A curve on a set `S` of times with `d(u s, u t)² ≤ c |s - t|` is `1/2`-Hölder continuous on `S`
+with constant `c ^ (1 / 2)`. -/
+theorem HolderOnWith.of_edist_sq_le {u : ℝ → X} {S : Set ℝ} {c : ℝ} (hc0 : 0 ≤ c)
+    (hsq : ∀ s ∈ S, ∀ t ∈ S, s ≤ t → edist (u s) (u t) ^ 2 ≤ ENNReal.ofReal (c * |s - t|)) :
+    HolderOnWith (c.toNNReal ^ (2⁻¹ : ℝ)) (1 / 2) u S := by
+  refine fun s hs t ht ↦
+    ((ENNReal.le_rpow_inv_iff (y := ENNReal.ofReal (c * |s - t|)) two_pos).2 ?_).trans_eq ?_
+  · rw [ENNReal.rpow_two]
+    rcases le_total s t with hst | hst
+    · exact hsq s hs t ht hst
+    · rw [edist_comm, abs_sub_comm]
+      exact hsq t ht s hs hst
+  · -- the exponent `1 / 2 : ℝ≥0` is coerced to `ℝ` here and must become `2⁻¹`
+    have hhalf : ((1 / 2 : ℝ≥0) : ℝ) = 2⁻¹ := by norm_num
+    rw [ENNReal.coe_rpow_of_nonneg _ (by norm_num), ENNReal.ofNNReal_toNNReal, edist_dist,
+      Real.dist_eq, hhalf, ENNReal.ofReal_mul hc0,
+      ENNReal.mul_rpow_of_nonneg _ _ (by norm_num)]

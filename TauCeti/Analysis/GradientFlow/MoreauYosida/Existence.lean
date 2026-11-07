@@ -207,6 +207,28 @@ theorem moreauYosida_ne_bot_of_lt (hττ₀ : τ < τ₀) (hx : edist x x₀ ≠
   rw [h, EReal.bot_add, le_bot_iff] at this
   exact h₀ this
 
+/-- **Propagation of coercivity**, real form. If `φ_{τ₀}(x₀) = m` is a real number, `τ < τ₀`,
+and `x` lies within the real distance `D` of `x₀`, then `m - D² / (2 (τ₀ - τ)) ≤ φ_τ(x)`. -/
+theorem coe_sub_div_le_moreauYosida {m D : ℝ} (hττ₀ : τ < τ₀) (hm : moreauYosida φ τ₀ x₀ = m)
+    (hD : 0 ≤ D) (hxD : edist x x₀ ≤ ENNReal.ofReal D) :
+    ((m - D ^ 2 / (2 * (τ₀ - τ)) : ℝ) : EReal) ≤ moreauYosida φ τ x := by
+  have hx : edist x x₀ ≠ ⊤ := ne_top_of_le_ne_top ENNReal.ofReal_ne_top hxD
+  have hQ : edist x x₀ ^ 2 / (2 * ((τ₀ : ℝ≥0∞) - τ)) ≠ ⊤ :=
+    ENNReal.div_ne_top (ENNReal.pow_ne_top hx)
+      (by simp [(tsub_pos_of_lt (ENNReal.coe_lt_coe.2 hττ₀)).ne'])
+  have hτ₀τ : (0 : ℝ) < τ₀ - τ := sub_pos.2 (NNReal.coe_lt_coe.2 hττ₀)
+  have hQD : (edist x x₀ ^ 2 / (2 * ((τ₀ : ℝ≥0∞) - τ))).toReal ≤ D ^ 2 / (2 * (τ₀ - τ)) := by
+    simp only [ENNReal.toReal_div, ENNReal.toReal_pow, ENNReal.toReal_mul, ENNReal.toReal_ofNat,
+      ENNReal.toReal_sub_of_le (ENNReal.coe_le_coe.2 hττ₀.le) ENNReal.coe_ne_top,
+      ENNReal.coe_toReal]
+    gcongr
+    exact ENNReal.toReal_le_of_le_ofReal hD hxD
+  have hcoer := moreauYosida_le_moreauYosida_add (φ := φ) hττ₀ hx
+  rw [hm, ← EReal.coe_ennreal_toReal hQ] at hcoer
+  rw [EReal.coe_sub, EReal.sub_le_iff_le_add (.inl (EReal.coe_ne_bot _))
+    (.inl (EReal.coe_ne_top _))]
+  exact hcoer.trans (add_le_add le_rfl (EReal.coe_le_coe_iff.2 hQD))
+
 /-- A point `v` at finite distance from `x` whose penalized energy with time step `τ` is at most
 `B` lies at distance `d` from `x` with `d² (τ' - τ) ≤ (B - A) 2ττ'`, where `A = φ_{τ'}(x)` for a
 larger time step `τ'`: subtract `A ≤ φ v + d² / (2τ')` from `φ v + d² / (2τ) ≤ B`. -/
@@ -240,6 +262,24 @@ private theorem toReal_edist_sq_mul_le (hτ : 0 < τ) (hττ' : τ < τ') {A B :
       field_simp
     linarith
   rwa [div_le_iff₀ (by positivity)] at key
+
+/-- A sequence at distance at most `R ≠ ⊤` from a point has range of finite diameter. -/
+theorem ediam_range_ne_top_of_edist_le {R : ℝ≥0∞} (hR : R ≠ ⊤) {w : ℕ → X}
+    (hw : ∀ n, edist x (w n) ≤ R) : Metric.ediam (range w) ≠ ⊤ := by
+  refine ne_top_of_le_ne_top (b := R + R) (by finiteness) (Metric.ediam_le ?_)
+  rintro _ ⟨i, rfl⟩ _ ⟨j, rfl⟩
+  exact (edist_triangle_left _ _ x).trans (add_le_add (hw i) (hw j))
+
+/-- A sequence of energy at most `c` at distance at most `R ≠ ⊤` from a point `x` has a
+subsequence converging for the auxiliary convergence `l`, if `l` has compactness for sequences of
+finite diameter. -/
+theorem exists_strictMono_tendsto_of_edist_le {l : X → Filter X}
+    (hcpt : ∀ (c : ℝ) ⦃v : ℕ → X⦄, Metric.ediam (range v) ≠ ⊤ → (∀ n, φ (v n) ≤ c) →
+      ∃ y, ∃ ψ : ℕ → ℕ, StrictMono ψ ∧ Tendsto (v ∘ ψ) atTop (l y))
+    {c : ℝ} {R : ℝ≥0∞} (hR : R ≠ ⊤) {w : ℕ → X}
+    (hw : ∀ n, φ (w n) ≤ c ∧ edist x (w n) ≤ R) :
+    ∃ y, ∃ ψ : ℕ → ℕ, StrictMono ψ ∧ Tendsto (w ∘ ψ) atTop (l y) :=
+  hcpt c (ediam_range_ne_top_of_edist_le hR fun n ↦ (hw n).2) fun n ↦ (hw n).1
 
 /-- **Existence of resolvent steps** (Ambrosio–Gigli–Savaré, Corollary 2.2.2). Let `l y` be the
 filter of an auxiliary convergence `y_n ⇀ y` on `X`, possibly weaker than that of the metric (for
@@ -293,11 +333,8 @@ theorem moreauYosidaResolvent_nonempty {l : X → Filter X}
     refine (le_abs_self _).trans (Real.abs_le_sqrt ?_)
     rw [le_div_iff₀ (sub_pos.2 (NNReal.coe_lt_coe.2 hττ'))]
     exact toReal_edist_sq_mul_le hτ hττ' hA (hvx n) (hle n)
-  have hdiam : Metric.ediam (range v) ≠ ⊤ := by
-    refine ne_top_of_le_ne_top (b := ENNReal.ofReal √C + ENNReal.ofReal √C) (by finiteness)
-      (Metric.ediam_le ?_)
-    rintro _ ⟨i, rfl⟩ _ ⟨j, rfl⟩
-    exact (edist_triangle_left _ _ x).trans (add_le_add (hR i) (hR j))
+  have hdiam : Metric.ediam (range v) ≠ ⊤ :=
+    ediam_range_ne_top_of_edist_le ENNReal.ofReal_ne_top hR
   obtain ⟨y, ψ, hψ, hy⟩ := hcpt (M + 1) hdiam fun n ↦
     (le_add_of_nonneg_right (EReal.coe_ennreal_nonneg _)).trans (hle n)
   -- The limit `y` is at finite distance from `x`.
