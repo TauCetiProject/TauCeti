@@ -134,17 +134,6 @@ variable {A B C : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
   [T0Space C] [IsHuberRing C] {S : Pair A} {U : Pair B} {V : Pair C}
 
 omit [IsUniformAddGroup C] [CompleteSpace C] [T0Space C] in
-/-- A weighted quotient presentation of `g ∘ f` commutes with the evaluation of constants:
-the underlying ring homomorphisms agree on `A`. -/
-private theorem toRingHom_comp_algebraMap_weightedRestrictedSubring_eq {k : ℕ}
-    {T : Fin k → Set A} {hT : IsWeightFamily T} {f : Hom S U} {g : Hom U V}
-    {π : Hom (S.weighted hT).completion V}
-    (hcomm : π.comp (S.weightedCompletionHom hT) = g.comp f) :
-    π.toRingHom.comp (algebraMap A (Completion (weightedRestrictedSubring T hT))) =
-      g.toRingHom.comp f.toRingHom := by
-  rw [← Hom.toRingHom_weightedCompletionHom, ← Hom.toRingHom_comp, hcomm, Hom.toRingHom_comp]
-
-omit [IsUniformAddGroup C] [CompleteSpace C] [T0Space C] in
 /-- Enlarge the coefficientwise images of the weights by small generators of open ideals, so that
 they are admissible over the intermediate Huber ring and bounded for the evaluated variables. -/
 private theorem exists_weightFamily_isWeightBounded_of_comp {k : ℕ} {T : Fin k → Set A}
@@ -157,7 +146,8 @@ private theorem exists_weightFamily_isWeightBounded_of_comp {k : ℕ} {T : Fin k
       IsWeightBounded g.toRingHom T' (fun i ↦ π.toRingHom (weightedX T hT i)) := by
   classical
   let b : Fin k → C := fun i ↦ π.toRingHom (weightedX T hT i)
-  have hcomm' := toRingHom_comp_algebraMap_weightedRestrictedSubring_eq hcomm
+  have hcomm' := congrArg Hom.toRingHom hcomm
+  simp only [Hom.toRingHom_comp, Hom.toRingHom_weightedCompletionHom] at hcomm'
   have hgen (i : Fin k) (t : A) (ht : t ∈ T i) :
       g.toRingHom (f.toRingHom t) * b i ∈ V.plus := by
     have hx := π.map_mem_plus _
@@ -201,7 +191,8 @@ private theorem exists_isQuotientMapping_of_comp {k : ℕ} {T : Fin k → Set A}
   classical
   obtain ⟨T', hT'fin, hT', hTT', hplus, hb⟩ :=
     exists_weightFamily_isWeightBounded_of_comp hTfin hT hcomm
-  have hcomm' := toRingHom_comp_algebraMap_weightedRestrictedSubring_eq hcomm
+  have hcomm' := congrArg Hom.toRingHom hcomm
+  simp only [Hom.toRingHom_comp, Hom.toRingHom_weightedCompletionHom] at hcomm'
   obtain ⟨ρ, hρ, hρg, hρπ⟩ := exists_isOpenQuotientMap_comp_weightedMapCompletion_eq
     hT hT' hTT' hπ.isOpenQuotientMap hcomm' f.continuous_toRingHom g.continuous_toRingHom hb
   -- Evaluation respects the plus rings because it respects their constants and weighted variables.
