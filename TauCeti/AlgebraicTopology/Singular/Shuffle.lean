@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialSet.Shuffle
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
-public import TauCeti.AlgebraicTopology.Singular.AlexanderWhitney
+public import TauCeti.AlgebraicTopology.Singular.AlexanderWhitney.Basic
 
 /-!
 # The shuffle map on singular chains

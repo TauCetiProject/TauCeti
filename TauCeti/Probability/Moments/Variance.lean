@@ -7,10 +7,13 @@ module
 
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Integral.Prod
-import Mathlib.Probability.Moments.Variance
+public import Mathlib.MeasureTheory.Constructions.Pi
+public import Mathlib.Probability.Moments.Variance
+public import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
+public import TauCeti.Probability.Moments.Mixture
 
 /-!
-# The mean squared distance between two independent copies
+# The mean squared distance between two independent copies and nonzero-variance bounds
 
 Let `f` be a square-integrable function, with values in a real Hilbert space, on a finite measure
 space `(α, μ)`. Then
@@ -27,7 +30,10 @@ transport plan, an integral over pairs of transported pairs, into the variance o
 displacement.
 
 The file also records the elementary bound of the mean of a real function by the square root of
-its second moment, which is the nonnegativity of its variance.
+its second moment (the nonnegativity of its variance), together with two consequences of nonzero
+variance `Var[X; μ] ≠ 0`: strict positivity of the expectation of an `ℝ≥0`-valued random variable
+on a finite measure space, and nondegeneracy `μ {ω | X ω = 0} < 1` of a real-valued random
+variable on a probability space.
 
 ## Main statements
 
@@ -37,12 +43,20 @@ its second moment, which is the nonnegativity of its variance.
 * `MeasureTheory.integral_le_sqrt_integral_sq`: on a probability space, the mean of a real
   square-integrable function is at most the square root of its second moment, which is the
   nonnegativity of its variance.
+* `MeasureTheory.MeasurePreserving.evariance_fun_comp`: the variance is invariant under
+  composition with a measure-preserving measurable embedding.
+* `TauCeti.Probability.evariance_integral_prod_le` and
+  `TauCeti.Probability.evariance_prod_le`: product-variance bounds for averages and products.
+* `TauCeti.integral_coe_pos_of_variance_ne_zero`: on a finite measure space, an `ℝ≥0`-valued
+  random variable with nonzero variance has strictly positive expectation.
+* `TauCeti.measure_setOf_eq_zero_lt_one_of_variance_ne_zero`: on a probability space, a
+  real-valued random variable with nonzero variance satisfies `μ {ω | X ω = 0} < 1`.
 -/
 
 public section
 
-open MeasureTheory Set
-open scoped RealInnerProductSpace
+open MeasureTheory ProbabilityTheory Set
+open scoped NNReal RealInnerProductSpace
 
 namespace MeasureTheory.MemLp
 
@@ -73,6 +87,8 @@ theorem integral_le_sqrt_integral_sq {Ω : Type*} [MeasurableSpace Ω] {μ : Mea
 end MeasureTheory
 
 namespace TauCeti
+
+section InnerProductSpace
 
 variable {α E : Type*} {mα : MeasurableSpace α} {μ : Measure α} [NormedAddCommGroup E]
   [InnerProductSpace ℝ E] [CompleteSpace E]
@@ -109,4 +125,116 @@ theorem integral_norm_sub_sq_prod [IsFiniteMeasure μ] {f : α → E} (hf : MemL
     integral_fun_fst (fun x ↦ ‖f x‖ ^ 2), integral_fun_snd (fun x ↦ ‖f x‖ ^ 2)]
   ring
 
+end InnerProductSpace
+
+section VarianceNeZero
+
+variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+
+/-- A nonnegative random variable on a finite measure space with nonzero variance has strictly
+positive real expectation. -/
+theorem integral_coe_pos_of_variance_ne_zero [IsFiniteMeasure μ] {X : Ω → ℝ≥0}
+    (hX : AEMeasurable X μ) (hvar : Var[fun ω ↦ (X ω : ℝ); μ] ≠ 0) :
+    0 < ∫ ω, (X ω : ℝ) ∂μ := by
+  have hint := (memLp_two_of_variance_ne_zero
+    (measurable_coe_nnreal_real.comp_aemeasurable hX).aestronglyMeasurable hvar).integrable
+    one_le_two
+  refine lt_of_le_of_ne (integral_nonneg fun ω ↦ (X ω).coe_nonneg) fun heq ↦ hvar ?_
+  have hz : (fun ω ↦ (X ω : ℝ)) =ᵐ[μ] 0 :=
+    (integral_eq_zero_iff_of_nonneg (fun ω ↦ (X ω).coe_nonneg) hint).1 heq.symm
+  rw [variance_congr hz, variance_zero]
+
+/-- On a probability space, a real-valued random variable with nonzero variance is not almost
+surely zero. -/
+theorem measure_setOf_eq_zero_lt_one_of_variance_ne_zero [IsProbabilityMeasure μ] {X : Ω → ℝ}
+    (hX : AEMeasurable X μ) (hvar : Var[X; μ] ≠ 0) :
+    μ {ω | X ω = 0} < 1 := by
+  refine lt_of_le_of_ne prob_le_one fun hfull ↦ hvar ?_
+  have hnull : NullMeasurableSet {ω | X ω = 0} μ :=
+    hX.nullMeasurable (measurableSet_singleton (0 : ℝ))
+  have hae : X =ᵐ[μ] 0 := (ae_mem_iff_measure_eq hnull).2 (hfull.trans measure_univ.symm)
+  rw [variance_congr hae, variance_zero]
+
+end VarianceNeZero
+
 end TauCeti
+
+namespace MeasureTheory.MeasurePreserving
+
+open ProbabilityTheory
+open scoped ENNReal
+
+/-- The variance is invariant under composition with a measure-preserving measurable embedding. -/
+theorem evariance_fun_comp {Ω Ω' : Type*} [MeasurableSpace Ω] [MeasurableSpace Ω']
+    {μ : Measure Ω} {ν : Measure Ω'} {e : Ω → Ω'} (he : MeasurePreserving e μ ν)
+    (hem : MeasurableEmbedding e) (f : Ω' → ℝ) :
+    ProbabilityTheory.evariance (fun x => f (e x)) μ = ProbabilityTheory.evariance f ν := by
+  rw [evariance, evariance, he.integral_comp hem f]
+  exact he.lintegral_comp_emb hem fun y => ‖f y - ∫ y', f y' ∂ν‖ₑ ^ 2
+
+end MeasureTheory.MeasurePreserving
+
+namespace TauCeti.Probability
+
+variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β] {ν : Measure α} {π : Measure β}
+  [SFinite ν] [IsProbabilityMeasure π] {F : α × β → ℝ}
+
+/-- Jensen's inequality for the variance of an average: the variance of the average over the
+second coordinate is at most the average over the second coordinate of the variances in the first
+coordinate. -/
+theorem evariance_integral_prod_le (hF : Measurable F) (hint : Integrable F (ν.prod π)) :
+    evariance (fun a => ∫ w, F (a, w) ∂π) ν ≤
+      ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π := by
+  have hmm : StronglyMeasurable (fun w => ∫ a, F (a, w) ∂ν) :=
+    (hF.comp measurable_swap).stronglyMeasurable.integral_prod_right'
+  have hmint : Integrable (fun w => ∫ a, F (a, w) ∂ν) π := hint.integral_prod_right
+  have hm_eq : ∫ w, ∫ a, F (a, w) ∂ν ∂π = ∫ a, ∫ w, F (a, w) ∂π ∂ν := by
+    rw [← integral_prod_symm _ hint, integral_prod _ hint]
+  have hae : ∀ᵐ a ∂ν, ‖(∫ w, F (a, w) ∂π) - ∫ a', ∫ w, F (a', w) ∂π ∂ν‖ₑ ^ 2 ≤
+      ∫⁻ w, ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ ^ 2 ∂π := by
+    filter_upwards [hint.prod_right_ae] with a ha
+    have hsub : (∫ w, F (a, w) ∂π) - ∫ a', ∫ w, F (a', w) ∂π ∂ν =
+        ∫ w, (F (a, w) - ∫ a', F (a', w) ∂ν) ∂π := by
+      rw [integral_sub ha hmint, hm_eq]
+    rw [hsub]
+    calc ‖∫ w, (F (a, w) - ∫ a', F (a', w) ∂ν) ∂π‖ₑ ^ 2
+        ≤ (∫⁻ w, ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ ∂π) ^ 2 := by
+          gcongr
+          exact enorm_integral_le_lintegral_enorm _
+      _ ≤ _ := by
+          simpa [ENNReal.rpow_two] using rpow_lintegral_le_measure_univ_rpow_mul
+            (μ := π) (u := fun w => ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ)
+            (((hF.comp measurable_prodMk_left).sub hmm.measurable).enorm.aemeasurable)
+            one_le_two
+  calc evariance (fun a => ∫ w, F (a, w) ∂π) ν
+      ≤ ∫⁻ a, ∫⁻ w, ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ ^ 2 ∂π ∂ν := lintegral_mono_ae hae
+    _ = ∫⁻ w, ∫⁻ a, ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ ^ 2 ∂ν ∂π :=
+        lintegral_lintegral_swap
+          ((hF.sub (hmm.measurable.comp measurable_snd)).enorm.pow_const 2).aemeasurable
+    _ = ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π := rfl
+
+/-- The two-factor Efron--Stein inequality. -/
+theorem evariance_prod_le [IsProbabilityMeasure ν] (hF : Measurable F)
+    (hL : MemLp F 2 (ν.prod π)) :
+    evariance F (ν.prod π) ≤ ∫⁻ a, evariance (fun w => F (a, w)) π ∂ν +
+      ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π := by
+  rw [evariance_prod_eq hL]
+  gcongr
+  exact evariance_integral_prod_le hF (hL.integrable one_le_two)
+
+/-- The variance of `f` in coordinate `i`, with the other coordinates frozen at `x`, is a
+measurable function of `x`. -/
+theorem measurable_evariance_update {ι : Type*} [DecidableEq ι] {α : ι → Type*}
+    [∀ i, MeasurableSpace (α i)] (μ : ∀ i, Measure (α i)) (i : ι) [SFinite (μ i)]
+    {f : (∀ i, α i) → ℝ} (hf : Measurable f) :
+    Measurable fun x => evariance (fun y => f (Function.update x i y)) (μ i) := by
+  have hu : Measurable fun p : (∀ i, α i) × α i => f (Function.update p.1 i p.2) :=
+    hf.comp measurable_update'
+  have hm : StronglyMeasurable fun x => ∫ y, f (Function.update x i y) ∂μ i :=
+    hu.stronglyMeasurable.integral_prod_right'
+  exact Measurable.lintegral_prod_right'
+    (f := fun p : (∀ i, α i) × α i =>
+      ‖f (Function.update p.1 i p.2) - ∫ y, f (Function.update p.1 i y) ∂μ i‖ₑ ^ 2)
+    ((hu.sub (hm.measurable.comp measurable_fst)).enorm.pow_const 2)
+
+end TauCeti.Probability

@@ -31,10 +31,21 @@ No inner product instance on the algebraic dual is installed.
 
 * `InnerProductSpace.toDual_symm_innerSL`: `(toDual 𝕜 E).symm (innerSL 𝕜 w) = w`.
 * `InnerProductSpace.innerSL_toDual_symm`: `innerSL 𝕜 ((toDual 𝕜 E).symm q) = q`.
+* `InnerProductSpace.apply_toDual_symm_eq_conj`: `β(α♯) = conj (α(β♯))`, writing `α♯` for
+  `(toDual 𝕜 E).symm α`.
+* `InnerProductSpace.apply_toDual_symm_self`: `q(q♯) = ‖q‖²`.
+* `InnerProductSpace.toDualSymmL`: over `ℝ`, the inverse Riesz map `q ↦ q♯` as a continuous
+  linear map.
+* `InnerProductSpace.isInvertible_of_apply_apply_eq_mul_inner`: over `ℝ`, a bilinear form that is
+  a nonzero multiple of the inner product is invertible as a map to the dual.
 * `InnerProductSpace.continuousLinearMapOfBilin_innerSL`: the Riesz operator of the real inner
   product is the identity.
 * `InnerProductSpace.continuous_continuousLinearMapOfBilin`: the Riesz operator depends
   continuously on the sesquilinear form.
+* `InnerProductSpace.ker_continuousLinearMapOfBilin`: the Riesz operator of a form has the kernel
+  of the form.
+* `InnerProductSpace.adjoint_continuousLinearMapOfBilin`: over `ℝ`, the adjoint of the Riesz
+  operator represents the transposed form.
 * `ContinuousLinearMap.continuousLinearMapOfBilin_bilinearComp`: pulling a real bilinear form back
   along a linear isometry equivalence conjugates its Riesz operator.
 * `InnerProductSpace.dualMetric`: the Hermitian form on the algebraic dual transported by Riesz.
@@ -91,6 +102,59 @@ theorem continuous_continuousLinearMapOfBilin :
     Continuous (continuousLinearMapOfBilin (𝕜 := 𝕜) (E := E)) :=
   (ContinuousLinearMap.compSL _ _ _ _ _
     (toDual 𝕜 E).symm.toContinuousLinearEquiv.toContinuousLinearMap).continuous
+
+/-- The Fréchet–Riesz operator of a bounded sesquilinear form has the same kernel as the form:
+`u` lies in it exactly when `B(u, v) = 0` for every `v`. -/
+@[simp]
+theorem ker_continuousLinearMapOfBilin (B : E →L⋆[𝕜] E →L[𝕜] 𝕜) :
+    (continuousLinearMapOfBilin B).ker = B.ker := by
+  ext u
+  simp [continuousLinearMapOfBilin]
+
+/-- Evaluating functionals at each other's Riesz representatives is conjugate-symmetric:
+`β(α♯) = conj (α(β♯))`. Over `ℝ` this says `β(α♯) = α(β♯)`. -/
+theorem apply_toDual_symm_eq_conj (α β : StrongDual 𝕜 E) :
+    β ((toDual 𝕜 E).symm α) = starRingEnd 𝕜 (α ((toDual 𝕜 E).symm β)) := by
+  rw [← toDual_symm_apply (y := β), ← toDual_symm_apply (y := α), inner_conj_symm]
+
+/-- A functional evaluated at its own Riesz representative is its squared norm. -/
+theorem apply_toDual_symm_self (q : StrongDual 𝕜 E) :
+    q ((toDual 𝕜 E).symm q) = (‖q‖ : 𝕜) ^ 2 := by
+  rw [← toDual_symm_apply, inner_self_eq_norm_sq_to_K, LinearIsometryEquiv.norm_map]
+
+section Real
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [CompleteSpace F]
+
+/-- On a real Hilbert space the inverse Riesz isomorphism `q ↦ q♯ = (toDual ℝ F).symm q` is
+linear; this is it as a continuous linear map. -/
+noncomputable def toDualSymmL : StrongDual ℝ F →L[ℝ] F :=
+  (toDual ℝ F).symm.toContinuousLinearEquiv.toContinuousLinearMap
+
+@[simp]
+theorem toDualSymmL_apply (q : StrongDual ℝ F) : toDualSymmL q = (toDual ℝ F).symm q :=
+  (rfl)
+
+/-- On a real Hilbert space, a bounded bilinear form `B(b, a) = c ⟪b, a⟫` with `c ≠ 0`, viewed as
+a map to the dual, is invertible: it is `c` times the Riesz isomorphism. -/
+theorem isInvertible_of_apply_apply_eq_mul_inner {c : ℝ} (hc : c ≠ 0)
+    {B : F →L[ℝ] StrongDual ℝ F} (hB : ∀ b a, B b a = c * inner ℝ b a) : B.IsInvertible := by
+  let e : F ≃L[ℝ] StrongDual ℝ F := (toDual ℝ F).toContinuousLinearEquiv
+  refine ⟨(Units.mk0 c hc) • e,
+    ContinuousLinearMap.ext fun b ↦ ContinuousLinearMap.ext fun a ↦ ?_⟩
+  simpa [e] using (hB b a).symm
+
+/-- The adjoint of the Fréchet–Riesz operator of a real bilinear form represents the transposed
+form. -/
+@[simp]
+theorem adjoint_continuousLinearMapOfBilin (B : F →L[ℝ] F →L[ℝ] ℝ) :
+    ContinuousLinearMap.adjoint (continuousLinearMapOfBilin B) =
+      continuousLinearMapOfBilin B.flip := by
+  refine ((ContinuousLinearMap.eq_adjoint_iff _ _).mpr fun w v => ?_).symm
+  rw [continuousLinearMapOfBilin_apply, real_inner_comm, continuousLinearMapOfBilin_apply,
+    ContinuousLinearMap.flip_apply]
+
+end Real
 
 end Complete
 

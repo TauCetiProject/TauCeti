@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Orientation
 public import TauCeti.Geometry.Symplectic.Darboux.Basis
 public import TauCeti.Geometry.Symplectic.Rescale
+public import TauCeti.Geometry.Symplectic.StandardCompatible
 public import TauCeti.LinearAlgebra.Orientation.Prod
 
 import TauCeti.Geometry.Symplectic.Complex.Module.Basic
@@ -35,7 +36,9 @@ orientation of its source to that of its target
 it by the sign of `cⁿ` (`TauCeti.SymplecticForm.orientation_rescale`), so positive rescaling
 preserves it, while `-ω` has the opposite orientation exactly when `n` is odd. The symplectic
 orientation of a direct sum `ω₁ ⊕ ω₂` is the product of the symplectic orientations of the
-summands (`TauCeti.SymplecticForm.orientation_prod`).
+summands (`TauCeti.SymplecticForm.orientation_prod`). On the plane `ℝ × ℝ`, the standard
+symplectic form `ds ∧ dt` induces the orientation of the standard basis `(∂_s, ∂_t)`
+(`TauCeti.SymplecticForm.orientation_stdSymplecticForm_real`).
 
 The symplectic orientation is also determined by any almost complex structure `J` that `ω` tames,
 `ω(v, J v) > 0` for `v ≠ 0`: every `J`-adapted basis `(v₁, J v₁, …, vₙ, J vₙ)` is positive
@@ -58,6 +61,12 @@ space, and the product law computes the orientation of a product such as
 
 ## Main results
 
+* `TauCeti.SymplecticForm.orientation_prod`: the symplectic orientation of a direct sum is the
+  product of the symplectic orientations.
+* `TauCeti.SymplecticForm.orientation_stdSymplecticForm_real`: the standard symplectic form on
+  `ℝ × ℝ` induces the orientation of the standard basis.
+* `TauCeti.SymplecticForm.orientation_transport_prodAssoc_stdSymplecticForm_prod`: the symplectic
+  orientation of `ds ∧ dt + ω` on `ℝ × (ℝ × V)` is `∂_s`, then `∂_t`, then that of `ω`.
 * `TauCeti.SymplecticForm.Tames.orientation_reindex`: if `ω` tames `J`, every `J`-adapted basis is
   positive for the symplectic orientation.
 * `TauCeti.SymplecticForm.Tames.orientation_eq`: symplectic forms taming a common almost complex
@@ -186,6 +195,56 @@ theorem orientation_prod [FiniteDimensional ℝ W] (ω₁ : SymplecticForm V) (�
   conv_lhs => rw [Basis.reindex_apply, Basis.reindex_apply, hF, Equiv.symm_apply_apply,
     Equiv.symm_apply_apply]
   rcases p with p | p <;> simp [F, Basis.reindex_apply, Basis.prod_apply]
+
+/-- The symplectic orientations of `ω` indexed by `Fin k` and by `Fin k'`, for `k = k'`, correspond
+under the identification `finCongr` of the index types. -/
+@[simp]
+theorem reindex_orientation (ω : SymplecticForm V) {k' : ℕ} (hk : finrank ℝ V = k) (h : k = k') :
+    Orientation.reindex ℝ V (finCongr h) (ω.orientation hk) = ω.orientation (hk.trans h) := by
+  subst h
+  simp
+
+/-- The symplectic orientation of the standard symplectic form
+`ω₀((s₁, t₁), (s₂, t₂)) = s₁ t₂ - t₁ s₂` on the plane `ℝ × ℝ` is the orientation of the standard
+basis `((1, 0), (0, 1))`. -/
+@[simp]
+theorem orientation_stdSymplecticForm_real (hk : finrank ℝ (ℝ × ℝ) = 2) :
+    (stdSymplecticForm (V := ℝ)).orientation hk = (Basis.finTwoProd ℝ).orientation := by
+  have h : 1 * 2 = 2 := rfl
+  let e : Fin 1 × Fin 2 ≃ Fin 2 := finProdFinEquiv.trans (finCongr h)
+  have hb : (stdSymplecticForm (V := ℝ)).IsDarbouxBasis ((Basis.finTwoProd ℝ).reindex e.symm) := by
+    -- The Darboux pair is `q = (1, 0)` and `p = (0, 1)`.
+    have h₀ : finProdFinEquiv ((0 : Fin 1), (0 : Fin 2)) = 0 := rfl
+    have h₁ : finProdFinEquiv ((0 : Fin 1), (1 : Fin 2)) = 1 := rfl
+    refine ⟨fun i j ↦ ?_, fun i j ↦ ?_, fun i j ↦ ?_⟩ <;> fin_cases i <;> fin_cases j <;>
+      simp [e, stdSymplecticForm_apply, h₀, h₁]
+  rw [← hb.orientation_reindex hk h]
+  congr 1
+  exact Basis.eq_of_apply_eq fun i ↦ by simp [e]
+
+/-- The symplectic orientation of `ds ∧ dt + ω` on `ℝ × (ℝ × V)`, the direct sum of the standard
+symplectic form of the plane `ℝ²_(s,t)` with `ω`, reassociated, is the product of the standard
+orientation of `ℝ` (the `s`-direction), the standard orientation of `ℝ` (the `t`-direction) and the
+symplectic orientation of `ω`. -/
+theorem orientation_transport_prodAssoc_stdSymplecticForm_prod (ω : SymplecticForm V) {m : ℕ}
+    (hm : finrank ℝ V = m) (hk : finrank ℝ (ℝ × (ℝ × V)) = 1 + (1 + m)) :
+    (((stdSymplecticForm (V := ℝ)).prod ω).transport
+        (LinearEquiv.prodAssoc ℝ ℝ ℝ V)).orientation hk =
+      Orientation.prod (Basis.singleton (Fin 1) ℝ).orientation
+        (Orientation.prod (Basis.singleton (Fin 1) ℝ).orientation (ω.orientation hm)
+          (finrank_self ℝ) hm)
+        (finrank_self ℝ) (by rw [finrank_prod, finrank_self, hm]) := by
+  have h₂ : finrank ℝ (ℝ × ℝ) = 1 + 1 := by rw [finrank_prod, finrank_self]
+  have hk' : finrank ℝ ((ℝ × ℝ) × V) = 1 + 1 + m := by rw [finrank_prod, h₂, hm]
+  -- Reassociating carries `ds ∧ dt ⊕ ω` to `ds ∧ dt + ω`, and its orientation to theirs.
+  have h := (isSymplectomorphism_iff_transport_eq.2 rfl :
+    IsSymplectomorphism ((stdSymplecticForm (V := ℝ)).prod ω) _
+      (LinearEquiv.prodAssoc ℝ ℝ ℝ V)).map_orientation hk'
+  rw [orientation_prod _ _ h₂ hm hk', orientation_stdSymplecticForm_real h₂,
+    ← Orientation.prod_singleton_orientation, Orientation.map_prodAssoc_prod] at h
+  have hk'' : finrank ℝ (ℝ × (ℝ × V)) = 1 + 1 + m := hk.trans (add_assoc 1 1 m).symm
+  rw [← reindex_orientation _ hk'' (add_assoc 1 1 m), ← h,
+    ← finCongr_symm (add_assoc 1 1 m).symm, ← Orientation.reindex_symm, Equiv.symm_apply_apply]
 
 /-! ### Tamed almost complex structures -/
 

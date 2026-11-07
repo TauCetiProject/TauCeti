@@ -133,23 +133,25 @@ private theorem exists_ae_apply_eq_energyFormH1 {ν : Measure ℝ} (hcoeff : ∀
 
 section StandingHypotheses
 
-variable [DecidableEq ι]
+variable [DecidableEq ι] (ht : t₀ < t₁)
+  (ha : AEStronglyMeasurable (Function.uncurry a)
+    ((volume.restrict (Ioo t₀ t₁)).prod (mu.restrict Omega)))
+  (hb : AEStronglyMeasurable (Function.uncurry b)
+    ((volume.restrict (Ioo t₀ t₁)).prod (mu.restrict Omega)))
+  (hc : AEStronglyMeasurable (Function.uncurry c)
+    ((volume.restrict (Ioo t₀ t₁)).prod (mu.restrict Omega)))
+  (hell : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁),
+    UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) (a t) lam Lam)
+  (hb_bound : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁),
+    ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b t x‖ ≤ beta)
+  (hc_bound : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁),
+    ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c t x‖ ≤ gamma)
+
+include ha hb hc hell hb_bound hc_bound
 
 /-- Under the standing hypotheses on the coefficients, the energy densities of `L(t)` are
 essentially bounded for almost every `t`. -/
-private theorem ae_memLp_energyIntegrand
-    (ha : AEStronglyMeasurable (Function.uncurry a)
-      ((volume.restrict (Ioo t₀ t₁)).prod (mu.restrict Omega)))
-    (hb : AEStronglyMeasurable (Function.uncurry b)
-      ((volume.restrict (Ioo t₀ t₁)).prod (mu.restrict Omega)))
-    (hc : AEStronglyMeasurable (Function.uncurry c)
-      ((volume.restrict (Ioo t₀ t₁)).prod (mu.restrict Omega)))
-    (hell : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁),
-      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) (a t) lam Lam)
-    (hb_bound : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁),
-      ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b t x‖ ≤ beta)
-    (hc_bound : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁),
-      ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c t x‖ ≤ gamma) :
+private theorem ae_memLp_energyIntegrand :
     ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁),
       MemLp (fun x => energyIntegrand (a t x) (b t x) (c t x)) ⊤ (mu.restrict Omega) := by
   filter_upwards [ha.prodMk_left, hb.prodMk_left, hc.prodMk_left, hell, hb_bound, hc_bound]
@@ -157,15 +159,10 @@ private theorem ae_memLp_energyIntegrand
   exact memLp_energyIntegrand_of_bounds hellt.upper_nonneg hat hbt hct
     (fun _x hx eta xi => hellt.upper_bound hx eta xi) hbt' hct'
 
+omit ha hb hc in
 /-- Under the standing hypotheses on the coefficients, the energy forms of `L(t)` are bounded on
 `H¹₀(Ω)` by `Λ + |β| + |γ|` for almost every `t`. -/
-private theorem ae_norm_energyFormH1_le
-    (hell : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁),
-      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) (a t) lam Lam)
-    (hb_bound : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁),
-      ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b t x‖ ≤ beta)
-    (hc_bound : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁),
-      ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c t x‖ ≤ gamma) :
+private theorem ae_norm_energyFormH1_le :
     ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁), ∀ u v : W1p0 mu Omega 2,
       ‖energyFormH1 (a t) (b t) (c t) (u : W1p mu Omega 2) (v : W1p mu Omega 2)‖ ≤
         (Lam + |beta| + |gamma|) * (‖u‖ * ‖v‖) := by
@@ -177,19 +174,7 @@ private theorem ae_norm_energyFormH1_le
 /-- Under the standing hypotheses on the coefficients, the energy forms of `L(t)` satisfy
 Gårding's inequality on `H¹₀(Ω)` with the constants `λ/2` and `λ/2 + |γ| + β²/(2λ)` for almost
 every `t`. -/
-private theorem ae_garding_energyFormH1
-    (ha : AEStronglyMeasurable (Function.uncurry a)
-      ((volume.restrict (Ioo t₀ t₁)).prod (mu.restrict Omega)))
-    (hb : AEStronglyMeasurable (Function.uncurry b)
-      ((volume.restrict (Ioo t₀ t₁)).prod (mu.restrict Omega)))
-    (hc : AEStronglyMeasurable (Function.uncurry c)
-      ((volume.restrict (Ioo t₀ t₁)).prod (mu.restrict Omega)))
-    (hell : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁),
-      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) (a t) lam Lam)
-    (hb_bound : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁),
-      ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b t x‖ ≤ beta)
-    (hc_bound : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁),
-      ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c t x‖ ≤ gamma) :
+private theorem ae_garding_energyFormH1 :
     ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁), ∀ v : W1p0 mu Omega 2,
       lam / 2 * ‖v‖ ^ 2 - (lam / 2 + |gamma| + beta ^ 2 / (2 * lam)) * ‖W1p0.valueL v‖ ^ 2 ≤
         energyFormH1 (a t) (b t) (c t) (v : W1p mu Omega 2) (v : W1p mu Omega 2) := by
@@ -199,22 +184,11 @@ private theorem ae_garding_energyFormH1
   exact hellt.garding_energyFormH1_self_norm_of_norm_le hat hbt hct hbt'
     (fun x hx => (hct' x hx).trans (le_abs_self _)) _
 
+include ht in
 /-- Under the standing hypotheses on the coefficients on a nondegenerate interval, the ellipticity
 constants satisfy `0 < λ` and `0 ≤ Λ`, and the energy forms of `L(t)` are the values of a single
 family of bounded operators `H¹₀(Ω) → H⁻¹(Ω)` for almost every `t`. -/
-private theorem exists_ae_apply_eq_energyFormH1_of_lt (ht : t₀ < t₁)
-    (ha : AEStronglyMeasurable (Function.uncurry a)
-      ((volume.restrict (Ioo t₀ t₁)).prod (mu.restrict Omega)))
-    (hb : AEStronglyMeasurable (Function.uncurry b)
-      ((volume.restrict (Ioo t₀ t₁)).prod (mu.restrict Omega)))
-    (hc : AEStronglyMeasurable (Function.uncurry c)
-      ((volume.restrict (Ioo t₀ t₁)).prod (mu.restrict Omega)))
-    (hell : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁),
-      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) (a t) lam Lam)
-    (hb_bound : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁),
-      ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b t x‖ ≤ beta)
-    (hc_bound : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁),
-      ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c t x‖ ≤ gamma) :
+private theorem exists_ae_apply_eq_energyFormH1_of_lt :
     0 < lam ∧ 0 ≤ Lam ∧ ∃ A : ℝ → W1p0 mu Omega 2 →L[ℝ] StrongDual ℝ (W1p0 mu Omega 2),
       ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁), ∀ u v : W1p0 mu Omega 2,
         A t u v = energyFormH1 (a t) (b t) (c t) (u : W1p mu Omega 2) (v : W1p mu Omega 2) := by
@@ -223,8 +197,7 @@ private theorem exists_ae_apply_eq_energyFormH1_of_lt (ht : t₀ < t₁)
   exact exists_ae_apply_eq_energyFormH1 (mu := mu) (Omega := Omega) (a := a) (b := b) (c := c)
     (ae_memLp_energyIntegrand ha hb hc hell hb_bound hc_bound)
 
-end StandingHypotheses
-
+include ht in
 /-- **Existence for the parabolic Dirichlet problem.** Let the coefficients `a, b, c` of
 `L(t) u = -∂ᵢ(aⁱʲ(t, ·) ∂ⱼu) + bⁱ(t, ·) ∂ᵢu + c(t, ·) u` be jointly a.e. strongly measurable on
 `(t₀, t₁) × Ω`, and for almost every `t ∈ (t₀, t₁)` let `a(t, ·)` be uniformly elliptic on `Ω`
@@ -237,19 +210,7 @@ with constants `λ, Λ`, `‖b(t, ·)‖ ≤ β` and `‖c(t, ·)‖ ≤ γ` on 
 for every `C¹` curve `φ` in `H¹₀(Ω)` with `φ(t₁) = 0`. This is the variational form of
 `∂ₜu + L(t) u = f` in `(t₀, t₁) × Ω`, `u = 0` on `(t₀, t₁) × ∂Ω`, `u(t₀) = u₀`. No sign
 condition on `c` and no regularity or boundedness of `Ω` is assumed. -/
-theorem exists_memLp_forall_setIntegral_energyFormH1_eq_add_inner [DecidableEq ι] (ht : t₀ < t₁)
-    (ha : AEStronglyMeasurable (Function.uncurry a)
-      ((volume.restrict (Ioo t₀ t₁)).prod (mu.restrict Omega)))
-    (hb : AEStronglyMeasurable (Function.uncurry b)
-      ((volume.restrict (Ioo t₀ t₁)).prod (mu.restrict Omega)))
-    (hc : AEStronglyMeasurable (Function.uncurry c)
-      ((volume.restrict (Ioo t₀ t₁)).prod (mu.restrict Omega)))
-    (hell : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁),
-      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) (a t) lam Lam)
-    (hb_bound : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁),
-      ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b t x‖ ≤ beta)
-    (hc_bound : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁),
-      ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c t x‖ ≤ gamma)
+theorem exists_memLp_forall_setIntegral_energyFormH1_eq_add_inner
     {f : ℝ → StrongDual ℝ (W1p0 mu Omega 2)} (hf : MemLp f 2 (volume.restrict (Ioo t₀ t₁)))
     (u₀ : Lp ℝ 2 (mu.restrict Omega)) :
     ∃ u : ℝ → W1p0 mu Omega 2, MemLp u 2 (volume.restrict (Ioo t₀ t₁)) ∧
@@ -270,6 +231,7 @@ theorem exists_memLp_forall_setIntegral_energyFormH1_eq_add_inner [DecidableEq �
     (ae_norm_energyFormH1_le (mu := mu) hell hb_bound hc_bound)
     (half_pos hlam) (by exact ae_garding_energyFormH1 ha hb hc hell hb_bound hc_bound) hf u₀
 
+include ht in
 /-- **Weak solutions of the parabolic Dirichlet problem.** Under the hypotheses of
 `TauCeti.PDE.exists_memLp_forall_setIntegral_energyFormH1_eq_add_inner`, for every forcing term
 `f ∈ L²(t₀, t₁; H⁻¹(Ω))` and initial value `u₀ ∈ L²(Ω)` there is a weak solution of
@@ -282,19 +244,7 @@ theorem exists_memLp_forall_setIntegral_energyFormH1_eq_add_inner [DecidableEq �
 and such that `t ↦ u(t) ∈ L²(Ω)` has a representative `w` continuous on `[t₀, t₁]` with
 `w(t₀) = u₀`. By `TauCeti.PDE.ae_eq_of_hasWeakLineDerivOn_gelfandDual_energyFormH1` this weak
 solution is unique. -/
-theorem exists_hasWeakLineDerivOn_gelfandDual_energyFormH1 [DecidableEq ι] (ht : t₀ < t₁)
-    (ha : AEStronglyMeasurable (Function.uncurry a)
-      ((volume.restrict (Ioo t₀ t₁)).prod (mu.restrict Omega)))
-    (hb : AEStronglyMeasurable (Function.uncurry b)
-      ((volume.restrict (Ioo t₀ t₁)).prod (mu.restrict Omega)))
-    (hc : AEStronglyMeasurable (Function.uncurry c)
-      ((volume.restrict (Ioo t₀ t₁)).prod (mu.restrict Omega)))
-    (hell : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁),
-      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) (a t) lam Lam)
-    (hb_bound : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁),
-      ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b t x‖ ≤ beta)
-    (hc_bound : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁),
-      ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c t x‖ ≤ gamma)
+theorem exists_hasWeakLineDerivOn_gelfandDual_energyFormH1
     {f : ℝ → StrongDual ℝ (W1p0 mu Omega 2)} (hf : MemLp f 2 (volume.restrict (Ioo t₀ t₁)))
     (u₀ : Lp ℝ 2 (mu.restrict Omega)) :
     ∃ u : ℝ → W1p0 mu Omega 2, ∃ u' : ℝ → StrongDual ℝ (W1p0 mu Omega 2),
@@ -321,24 +271,13 @@ theorem exists_hasWeakLineDerivOn_gelfandDual_energyFormH1 [DecidableEq ι] (ht 
     (half_pos hlam)
     (ae_garding_energyFormH1 ha hb hc hell hb_bound hc_bound) hf u₀
 
+include ht in
 /-- Two weak solutions of the parabolic Dirichlet problem, in the form of
 `TauCeti.PDE.exists_hasWeakLineDerivOn_gelfandDual_energyFormH1`, satisfy the hypotheses of the
 abstract uniqueness theorems `TauCeti.HasWeakLineDerivOn.eqOn_of_gelfandDual` and
 `TauCeti.HasWeakLineDerivOn.ae_eq_of_gelfandDual` for operators `A(t)` representing the energy
 forms, with the Gårding constants `λ/2 > 0` and `λ/2 + |γ| + β²/(2λ) ≥ 0`. -/
-private theorem exists_garding_and_eq_of_energyFormH1 [DecidableEq ι] (ht : t₀ < t₁)
-    (ha : AEStronglyMeasurable (Function.uncurry a)
-      ((volume.restrict (Ioo t₀ t₁)).prod (mu.restrict Omega)))
-    (hb : AEStronglyMeasurable (Function.uncurry b)
-      ((volume.restrict (Ioo t₀ t₁)).prod (mu.restrict Omega)))
-    (hc : AEStronglyMeasurable (Function.uncurry c)
-      ((volume.restrict (Ioo t₀ t₁)).prod (mu.restrict Omega)))
-    (hell : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁),
-      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) (a t) lam Lam)
-    (hb_bound : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁),
-      ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b t x‖ ≤ beta)
-    (hc_bound : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁),
-      ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c t x‖ ≤ gamma)
+private theorem exists_garding_and_eq_of_energyFormH1
     {f : ℝ → StrongDual ℝ (W1p0 mu Omega 2)} {u₁ u₂ : ℝ → W1p0 mu Omega 2}
     {u₁' u₂' : ℝ → StrongDual ℝ (W1p0 mu Omega 2)}
     (heq₁ : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁), ∀ v : W1p0 mu Omega 2,
@@ -374,19 +313,7 @@ coefficients of `TauCeti.PDE.exists_hasWeakLineDerivOn_gelfandDual_energyFormH1`
 solutions of `∂ₜu + L(t) u = f`, `u = 0` on `(t₀, t₁) × ∂Ω`, whose continuous `L²(Ω)`-valued
 representatives agree at `t₀` have the same continuous representative on all of `[t₀, t₁]`. No
 sign condition on `c` is needed. -/
-theorem eqOn_of_hasWeakLineDerivOn_gelfandDual_energyFormH1 [DecidableEq ι]
-    (ha : AEStronglyMeasurable (Function.uncurry a)
-      ((volume.restrict (Ioo t₀ t₁)).prod (mu.restrict Omega)))
-    (hb : AEStronglyMeasurable (Function.uncurry b)
-      ((volume.restrict (Ioo t₀ t₁)).prod (mu.restrict Omega)))
-    (hc : AEStronglyMeasurable (Function.uncurry c)
-      ((volume.restrict (Ioo t₀ t₁)).prod (mu.restrict Omega)))
-    (hell : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁),
-      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) (a t) lam Lam)
-    (hb_bound : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁),
-      ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b t x‖ ≤ beta)
-    (hc_bound : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁),
-      ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c t x‖ ≤ gamma)
+theorem eqOn_of_hasWeakLineDerivOn_gelfandDual_energyFormH1
     {f : ℝ → StrongDual ℝ (W1p0 mu Omega 2)} {u₁ u₂ : ℝ → W1p0 mu Omega 2}
     {u₁' u₂' : ℝ → StrongDual ℝ (W1p0 mu Omega 2)} {w₁ w₂ : ℝ → Lp ℝ 2 (mu.restrict Omega)}
     (h₁ : HasWeakLineDerivOn volume ⟨Ioo t₀ t₁, isOpen_Ioo⟩
@@ -424,19 +351,7 @@ of `TauCeti.PDE.exists_hasWeakLineDerivOn_gelfandDual_energyFormH1`, two weak so
 `∂ₜu + L(t) u = f`, `u = 0` on `(t₀, t₁) × ∂Ω`, whose continuous `L²(Ω)`-valued representatives
 agree at `t₀` agree as elements of `H¹₀(Ω)` for almost every `t ∈ (t₀, t₁)`. No sign condition on
 `c` is needed. -/
-theorem ae_eq_of_hasWeakLineDerivOn_gelfandDual_energyFormH1 [DecidableEq ι]
-    (ha : AEStronglyMeasurable (Function.uncurry a)
-      ((volume.restrict (Ioo t₀ t₁)).prod (mu.restrict Omega)))
-    (hb : AEStronglyMeasurable (Function.uncurry b)
-      ((volume.restrict (Ioo t₀ t₁)).prod (mu.restrict Omega)))
-    (hc : AEStronglyMeasurable (Function.uncurry c)
-      ((volume.restrict (Ioo t₀ t₁)).prod (mu.restrict Omega)))
-    (hell : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁),
-      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) (a t) lam Lam)
-    (hb_bound : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁),
-      ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b t x‖ ≤ beta)
-    (hc_bound : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁),
-      ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c t x‖ ≤ gamma)
+theorem ae_eq_of_hasWeakLineDerivOn_gelfandDual_energyFormH1
     {f : ℝ → StrongDual ℝ (W1p0 mu Omega 2)} {u₁ u₂ : ℝ → W1p0 mu Omega 2}
     {u₁' u₂' : ℝ → StrongDual ℝ (W1p0 mu Omega 2)} {w₁ w₂ : ℝ → Lp ℝ 2 (mu.restrict Omega)}
     (h₁ : HasWeakLineDerivOn volume ⟨Ioo t₀ t₁, isOpen_Ioo⟩
@@ -467,6 +382,8 @@ theorem ae_eq_of_hasWeakLineDerivOn_gelfandDual_energyFormH1 [DecidableEq ι]
     exists_garding_and_eq_of_energyFormH1 ht ha hb hc hell hb_bound hc_bound heq₁ heq₂
   exact HasWeakLineDerivOn.ae_eq_of_gelfandDual h₁ h₂ hu₁ hu₁' hu₂ hu₂' hα hβ hA hA₁ hA₂ hw₁ hae₁
     hw₂ hae₂ h₀
+
+end StandingHypotheses
 
 end PDE
 

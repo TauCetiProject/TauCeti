@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Finsupp.Supported
+public import Mathlib.RingTheory.Finiteness.Defs
 
 /-!
 # Filtering finitely supported functions supported on a set
@@ -16,6 +17,12 @@ every point of `s` satisfying `p` lies in `t`. This file packages this operation
 between the submodules `Finsupp.supported M R s` and `Finsupp.supported M R t`; Mathlib's
 `Finsupp.restrictDom` is the case of the predicate `(· ∈ t)` on the whole space.
 
+A linear map from a finitely generated module into `α →₀ M` takes values in the functions supported
+on one finite set (`LinearMap.exists_finset_support_subset`).
+
+A finitely generated submodule of `ℕ →₀ M` consists of functions supported on an initial segment
+`{i | i < n}`, since its finitely many generators have finite supports.
+
 ## Main definitions
 
 * `TauCeti.Finsupp.filterSupported`: `Finsupp.filter p` as a linear map
@@ -23,9 +30,13 @@ between the submodules `Finsupp.supported M R s` and `Finsupp.supported M R t`; 
 
 ## Main results
 
+* `LinearMap.exists_finset_support_subset`: the values of a linear map from a finitely
+  generated module into `α →₀ M` have their supports in one finite set.
 * `TauCeti.Finsupp.filterSupported_comp_inclusion`,
   `TauCeti.Finsupp.inclusion_comp_filterSupported`: the filter commutes with the inclusions
   `Finsupp.supported M R s ≤ Finsupp.supported M R s'` given by enlarging the support.
+* `Submodule.FG.exists_le_supported_Iio`: a finitely generated submodule of `ℕ →₀ M` is
+  supported on some initial segment.
 -/
 
 public section
@@ -74,4 +85,37 @@ theorem inclusion_comp_filterSupported {s t t' : Set α} (p : α → Prop) [Deci
       filterSupported p fun a ha hp ↦ ht (h a ha hp) :=
   LinearMap.ext fun _ ↦ Subtype.ext (by simp)
 
+/-- **A finitely generated module maps into finitely many coordinates**: the values of a linear
+map from a finitely generated module into `α →₀ M` are all supported on one finite set, the union
+of the supports of the images of finitely many generators
+(Mathlib's `Finsupp.span_le_supported_biUnion_support`). -/
+theorem _root_.LinearMap.exists_finset_support_subset {N : Type*} [AddCommMonoid N] [Module R N]
+    [Module.Finite R N] (f : N →ₗ[R] α →₀ M) : ∃ T : Finset α, ∀ y, (f y).support ⊆ T := by
+  classical
+  obtain ⟨m, x, hx⟩ := Module.Finite.exists_fin (R := R) (M := N)
+  refine ⟨Finset.univ.biUnion fun a ↦ (f (x a)).support, fun y t ht ↦ ?_⟩
+  -- `f y` lies in the span of the images of the generators.
+  have hy : f y ∈ Submodule.span R (Set.range (f ∘ x)) := by
+    rw [Set.range_comp, ← Submodule.map_span, hx, Submodule.map_top]
+    exact LinearMap.mem_range_self f y
+  have hsupp := (Finsupp.mem_supported R _).1 (Finsupp.span_le_supported_biUnion_support R _ hy) ht
+  simp only [Set.mem_iUnion, Set.mem_range, Function.comp_apply, exists_prop] at hsupp
+  obtain ⟨_, ⟨a, rfl⟩, hta⟩ := hsupp
+  exact Finset.mem_biUnion.2 ⟨a, Finset.mem_univ _, hta⟩
+
 end TauCeti.Finsupp
+
+namespace Submodule.FG
+
+variable {M R : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+
+/-- A finitely generated submodule of `ℕ →₀ M` consists of functions vanishing from some
+coordinate on. -/
+theorem exists_le_supported_Iio {V : Submodule R (ℕ →₀ M)} (hV : V.FG) :
+    ∃ n, V ≤ Finsupp.supported M R (Set.Iio n) := by
+  obtain ⟨S, hS, rfl⟩ := Submodule.fg_def.1 hV
+  obtain ⟨b, hb⟩ := (hS.biUnion fun x _ ↦ x.support.finite_toSet).bddAbove
+  exact ⟨b + 1, (Finsupp.span_le_supported_biUnion_support R S).trans
+    (Finsupp.supported_mono fun i hi ↦ Nat.lt_succ_of_le (hb hi))⟩
+
+end Submodule.FG
