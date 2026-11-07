@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Weights.RootSystem
+import TauCeti.Algebra.Lie.Basic
 import TauCeti.Algebra.Lie.Submodule.Finrank
 
 /-!
@@ -39,6 +40,13 @@ weight-space theory. The transport and finrank identities hold over any commutat
   generalized weight space with its intersection with the ambient generalized weight space.
 * `LieSubmodule.finrank_inf_genWeightSpace`: that intersection has the dimension of the
   submodule's generalized weight space.
+* `TauCeti.toSubmodule_rootSpace_eq_of_isZero`: the root space of a zero weight is the Cartan
+  subalgebra.
+* `LinearMap.map_lie_eq_of_forall_mem_rootSpace`, `LinearMap.involutive_of_forall_mem_rootSpace`:
+  a linear map respects the bracket, respectively is an involution, as soon as it does so on root
+  spaces.
+* `LinearMap.map_lie_eq_of_isZero_of_isNonZero`: bracket compatibility on a zero-weight vector
+  and a root vector.
 * `TauCeti.Weight.coe_neg_eq_add_of_coe_eq_add`: reading a vanishing sum of four weights as an
   equation between opposite pair sums.
 * `LieModuleHom.exists_mem_weight_of_injective`: if the weights of `N` lie in a set of linear
@@ -270,6 +278,72 @@ theorem Weight.coe_neg_eq_add_of_coe_eq_add {μ : Weight K H L} {a b c d : H →
   have hy := congrFun hsum y
   simp only [Weight.coe_neg, hμ, Pi.add_apply, Pi.neg_apply, Pi.zero_apply] at hy ⊢
   linear_combination -hy
+
+omit [LieAlgebra.IsKilling K L] [LieModule.IsTriangularizable K H L] in
+/-- The root space of a zero weight is the Cartan subalgebra. -/
+theorem toSubmodule_rootSpace_eq_of_isZero {χ : Weight K H L} (hχ : χ.IsZero) :
+    (rootSpace H χ).toSubmodule = H.toSubmodule := by
+  -- `Weight.IsZero` is the vanishing of the coercion, but only up to unfolding the definition.
+  have hχcoe : (χ : H → K) = 0 := hχ
+  simp only [hχcoe, rootSpace_zero_eq K L H]
+  simp
+
+omit [LieAlgebra.IsKilling K L] in
+/-- A linear map from `L` to a Lie algebra respects the bracket as soon as it does so on every
+pair of root vectors, since the root spaces span `L`. -/
+theorem _root_.LinearMap.map_lie_eq_of_forall_mem_rootSpace {M : Type*} [LieRing M]
+    [LieAlgebra K M] (f : L →ₗ[K] M)
+    (h : ∀ (χ₁ χ₂ : Weight K H L) (v : L), v ∈ rootSpace H χ₁ → ∀ w : L, w ∈ rootSpace H χ₂ →
+      f ⁅v, w⁆ = ⁅f v, f w⁆) (v w : L) : f ⁅v, w⁆ = ⁅f v, f w⁆ := by
+  have htop : ⨆ χ : Weight K H L, (rootSpace H χ).toSubmodule = ⊤ :=
+    LieSubmodule.iSup_toSubmodule_eq_top.mpr (iSup_genWeightSpace_eq_top' K H L)
+  -- Extend from weight vectors by linearity in each argument.
+  have hright : ∀ (χ₁ : Weight K H L) (v : L), v ∈ rootSpace H χ₁ → ∀ w : L,
+      f ⁅v, w⁆ = ⁅f v, f w⁆ := by
+    intro χ₁ v hv w
+    have hle : (⊤ : Submodule K L) ≤
+        LinearMap.eqLocus (f.comp (LieAlgebra.ad K L v)) ((LieAlgebra.ad K M (f v)).comp f) := by
+      rw [← htop]
+      exact iSup_le fun χ₂ u hu ↦ h χ₁ χ₂ v hv u hu
+    exact hle trivial
+  have hle : (⊤ : Submodule K L) ≤
+      LinearMap.eqLocus (f.comp (LieAlgebra.ad K L w)) ((LieAlgebra.ad K M (f w)).comp f) := by
+    rw [← htop]
+    exact iSup_le fun χ₁ u hu ↦ LinearMap.map_lie_swap (hright χ₁ u hu w)
+  exact LinearMap.map_lie_swap (hle trivial)
+
+omit [LieAlgebra.IsKilling K L] in
+/-- A linear map of `L` that squares to the identity on each root space is an involution. -/
+theorem _root_.LinearMap.involutive_of_forall_mem_rootSpace (f : L →ₗ[K] L)
+    (h : ∀ (χ : Weight K H L) (v : L), v ∈ rootSpace H χ → f (f v) = v) :
+    Function.Involutive f := by
+  have htop : ⨆ χ : Weight K H L, (rootSpace H χ).toSubmodule = ⊤ :=
+    LieSubmodule.iSup_toSubmodule_eq_top.mpr (iSup_genWeightSpace_eq_top' K H L)
+  intro v
+  have hle : (⊤ : Submodule K L) ≤ LinearMap.eqLocus (f.comp f) LinearMap.id := by
+    rw [← htop]
+    exact iSup_le fun χ u hu ↦ h χ u hu
+  exact hle trivial
+
+/-- A linear map that negates the Cartan subalgebra and sends each nonzero root space into its
+opposite root space respects the bracket of a zero-weight vector with a root vector: a Cartan
+element brackets with a weight vector through its weight. -/
+theorem _root_.LinearMap.map_lie_eq_of_isZero_of_isNonZero [PerfectField K] (ω : L →ₗ[K] L)
+    (hzero : ∀ χ : Weight K H L, χ.IsZero → ∀ v : L, v ∈ rootSpace H χ → ω v = -v)
+    (hωmem : ∀ χ : Weight K H L, χ.IsNonZero → ∀ v : L, v ∈ rootSpace H χ →
+      ω v ∈ rootSpace H (-χ))
+    {χ₁ χ₂ : Weight K H L} (hχ₁ : χ₁.IsZero) (hχ₂ : χ₂.IsNonZero) {v : L}
+    (hv : v ∈ rootSpace H χ₁) {w : L} (hw : w ∈ rootSpace H χ₂) :
+    ω ⁅v, w⁆ = ⁅ω v, ω w⁆ := by
+  have hvH : v ∈ H := by
+    have := toSubmodule_rootSpace_eq_of_isZero (K := K) (L := L) (H := H) hχ₁
+    exact (SetLike.ext_iff.mp this v).mp hv
+  have hlie : ⁅v, w⁆ = (χ₂ : H → K) ⟨v, hvH⟩ • w :=
+    lie_eq_smul_of_mem_rootSpace hw ⟨v, hvH⟩
+  have hstep : ⁅v, ω w⁆ = ((-χ₂ : Weight K H L) : H → K) ⟨v, hvH⟩ • ω w :=
+    lie_eq_smul_of_mem_rootSpace (hωmem χ₂ hχ₂ w hw) ⟨v, hvH⟩
+  rw [hlie, map_smul, hzero χ₁ hχ₁ v hv, neg_lie, hstep]
+  simp
 
 end TauCeti
 
