@@ -78,6 +78,8 @@ operator and Stokes' formula on a rectangle; no Stokes theorem on a manifold wit
   map depending on only one coordinate vanishes.
 * `TauCeti.rectangleIntegral_add_adjacent`: additivity over adjacent rectangles.
 * `TauCeti.rectangleIntegral_comp_prodMap`: reparametrization invariance in the first coordinate.
+* `TauCeti.hasDerivAt_rectangleIntegral`: the derivative of the integral in its upper first
+  coordinate, the integral of `φ(∂_s u, ∂_t u)` along the moving edge.
 * `TauCeti.rectangleIntegral_mextDeriv`: Stokes' formula for the integral of an exact form, in
   terms of line integrals along the edges.
 * `TauCeti.rectangleIntegral_sub_rectangleIntegral_eq_sides`: Stokes' formula for a homotopy of
@@ -121,29 +123,31 @@ theorem rectangleIntegral_def (φ : RoughForm I M F 2) (u : ℝ × ℝ → M) (a
       ∫ s in a.1..b.1, ∫ t in a.2..b.2, mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (s, t) ![(1, 0), (0, 1)] :=
   (rfl)
 
+/-- The integrand of `TauCeti.rectangleIntegral` is `φ` on the partial derivatives of `u`. -/
+private theorem mpullback_apply_coord (φ : RoughForm I M F 2) (u : ℝ × ℝ → M) (z : ℝ × ℝ) :
+    mpullback 𝓘(ℝ, ℝ × ℝ) I u φ z ![(1, 0), (0, 1)] =
+      φ (u z) ![mfderiv 𝓘(ℝ, ℝ × ℝ) I u z (1, 0), mfderiv 𝓘(ℝ, ℝ × ℝ) I u z (0, 1)] := by
+  simp only [mpullback_apply]
+  congr 1
+  funext i
+  fin_cases i <;> rfl
+
 /-- The integral over a map `u` is the iterated integral of `φ` on the partial derivatives
 of `u`. -/
 theorem rectangleIntegral_eq (φ : RoughForm I M F 2) (u : ℝ × ℝ → M) (a b : ℝ × ℝ) :
     rectangleIntegral φ u a b = ∫ s in a.1..b.1, ∫ t in a.2..b.2,
       φ (u (s, t)) ![mfderiv 𝓘(ℝ, ℝ × ℝ) I u (s, t) (1, 0),
-        mfderiv 𝓘(ℝ, ℝ × ℝ) I u (s, t) (0, 1)] := by
-  refine intervalIntegral.integral_congr fun s _ ↦ intervalIntegral.integral_congr fun t _ ↦ ?_
-  simp only [mpullback_apply]
-  congr 1
-  funext i
-  fin_cases i <;> rfl
+        mfderiv 𝓘(ℝ, ℝ × ℝ) I u (s, t) (0, 1)] :=
+  intervalIntegral.integral_congr fun s _ ↦ intervalIntegral.integral_congr fun t _ ↦
+    mpullback_apply_coord φ u (s, t)
 
 /-- For a continuous form `φ` and a `C¹` map `u` of the plane, the integrand
 `φ_{u(z)}(∂_s u, ∂_t u)` of the integral over `u` is continuous. -/
 theorem IsSmoothForm.continuous_apply_mfderiv [IsManifold I 1 M] {φ : RoughForm I M F 2}
     (hφ : IsSmoothForm I 0 φ) {u : ℝ × ℝ → M} (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) :
     Continuous fun z ↦ φ (u z) ![mfderiv 𝓘(ℝ, ℝ × ℝ) I u z (1, 0),
-      mfderiv 𝓘(ℝ, ℝ × ℝ) I u z (0, 1)] := by
-  refine (hφ.continuous_mpullback_apply hu ![(1, 0), (0, 1)]).congr fun z ↦
-    (mpullback_apply u φ z _).trans ?_
-  congr 1
-  funext i
-  fin_cases i <;> rfl
+      mfderiv 𝓘(ℝ, ℝ × ℝ) I u z (0, 1)] :=
+  (hφ.continuous_mpullback_apply hu ![(1, 0), (0, 1)]).congr fun z ↦ mpullback_apply_coord φ u z
 
 /-- For a continuous form `φ` and a `C¹` map `u`, the integral over `u` on a rectangle is, by
 Fubini, the integral of `φ_{u(z)}(∂_s u, ∂_t u)` over the rectangle. -/
@@ -301,6 +305,19 @@ private theorem continuous_integral_mpullback_apply {φ : RoughForm I M F 2}
   have hG : Continuous fun z ↦ mpullback 𝓘(ℝ, ℝ × ℝ) I u φ z ![(1, 0), (0, 1)] :=
     (ContinuousAlternatingMap.apply ℝ (ℝ × ℝ) F ![(1, 0), (0, 1)]).continuous.comp h.continuous
   exact intervalIntegral.continuous_parametric_intervalIntegral_of_continuous' (by exact hG) c d
+
+/-- **The derivative of the integral over a rectangle in its upper first coordinate.** For a
+continuous form `φ` and a `C¹` map `u` of the plane, moving the edge `s = b.1` of the rectangle
+changes the integral at the rate of the integral of `φ_{u(b.1, t)}(∂_s u, ∂_t u)` along that
+edge. -/
+theorem hasDerivAt_rectangleIntegral [CompleteSpace F] {φ : RoughForm I M F 2}
+    (hφ : IsSmoothForm I 0 φ) {u : ℝ × ℝ → M} (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) (a : ℝ × ℝ)
+    (d s : ℝ) :
+    HasDerivAt (fun s ↦ rectangleIntegral φ u a (s, d))
+      (∫ t in a.2..d, φ (u (s, t)) ![mfderiv 𝓘(ℝ, ℝ × ℝ) I u (s, t) (1, 0),
+        mfderiv 𝓘(ℝ, ℝ × ℝ) I u (s, t) (0, 1)]) s :=
+  ((continuous_integral_mpullback_apply hφ hu a.2 d).integral_hasStrictDerivAt a.1 s).hasDerivAt
+    |>.congr_deriv (intervalIntegral.integral_congr fun t _ ↦ mpullback_apply_coord φ u (s, t))
 
 /-- Integrals over adjacent rectangles `[a.1, b] × [a.2, c.2]` and `[b, c.1] × [a.2, c.2]` add
 up, for a continuous form and a `C¹` map of the plane. -/

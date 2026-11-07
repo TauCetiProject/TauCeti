@@ -46,8 +46,11 @@ form `ω = dλ` it is `A_H(γ) = -∫_γ λ - ∫₀¹ H(t, γ(t)) dt`
 (`TauCeti.contractibleLoopAction_mextDeriv`). These signs
 are chosen so that, with the convention `ι_{X_H} ω = dH` for Hamiltonian vector fields, the first
 variation of the action is `dA_H(γ) ξ = ∫₀¹ ω(γ' - X_H(γ), ξ) dt`, whose zeros for a
-nondegenerate `ω` are the `1`-periodic orbits of `X_H`; this variational formula is not proved
-in this file.
+nondegenerate `ω` are the `1`-periodic orbits of `X_H`. This formula is
+`TauCeti.SmoothTwoForm.hasDerivAt_contractibleLoopAction_of_isHamiltonianVectorField`, and that
+the `1`-periodic orbits are critical points is
+`TauCeti.SmoothTwoForm.hasDerivAt_contractibleLoopAction_of_mem_periodicSolutions`, both in
+`TauCeti.Geometry.Symplectic.Hamiltonian.ContractibleAction.FirstVariation`.
 
 Weak exactness is the area half of symplectic asphericity, which also asks the first Chern class
 to vanish on spheres; the area condition alone is what the action functional needs. The spheres
