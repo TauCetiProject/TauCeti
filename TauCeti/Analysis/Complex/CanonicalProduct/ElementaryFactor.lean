@@ -128,4 +128,25 @@ theorem log_norm_weierstrassFactorOne_le (z : ℂ) :
   have hr := re_le_norm z
   linarith
 
+/-- Composing the elementary factor with a nonzero slope preserves its simple root. -/
+theorem analyticOrderAt_weierstrassFactorOne_mul {c z : ℂ} (h : c * z = 1) :
+    analyticOrderAt (fun w ↦ weierstrassFactorOne (c * w)) z = 1 := by
+  have hc : c ≠ 0 := by intro hc; simp [hc] at h
+  have hd : HasDerivAt (fun w ↦ c * w) c z := by
+    simpa using (hasDerivAt_id z).const_mul c
+  have hg : AnalyticAt ℂ (fun w ↦ c * w) z := by fun_prop
+  have heq : (fun w ↦ weierstrassFactorOne (c * w)) =
+      weierstrassFactorOne ∘ (fun w ↦ c * w) := rfl
+  rw [heq, analyticOrderAt_comp_of_deriv_ne_zero hg (by rwa [hd.deriv]), h]
+  exact analyticOrderAt_weierstrassFactorOne_one
+
+/-- The paired rational logarithmic derivative of an elementary factor with a complex slope. -/
+theorem logDeriv_weierstrassFactorOne_mul (a z : ℂ) :
+    logDeriv (fun w ↦ weierstrassFactorOne (a * w)) z = -a ^ 2 * z / (1 - a * z) := by
+  have hd : HasDerivAt (fun w : ℂ ↦ a * w) a z := by
+    simpa using (hasDerivAt_id z).const_mul a
+  rw [logDeriv_fun_comp (differentiable_weierstrassFactorOne _) hd.differentiableAt,
+    logDeriv_weierstrassFactorOne, hd.deriv]
+  ring
+
 end Complex
