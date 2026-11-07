@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Generic.Relative
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Evaluation
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Strong
-import TauCeti.Algebra.Order.BigOperators.Sum.Telescoping
 import TauCeti.Algebra.Order.Group.Bounds
 import TauCeti.Analysis.SpecificLimits.HalfPowSucc
 import TauCeti.Geometry.Manifold.ContMDiffMap.CompactExhaustion
