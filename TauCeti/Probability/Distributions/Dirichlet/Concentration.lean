@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Probability.Distributions.Dirichlet.Moments
-public import TauCeti.Probability.Distributions.Categorical
+public import TauCeti.Probability.Distributions.Categorical.Basic
 public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Concentration
 import TauCeti.Analysis.InnerProductSpace.PiL2
 import Mathlib.Topology.Order.AtTopBotIxx
@@ -95,10 +95,11 @@ theorem tendsto_dirichletMeasure_concentration_atBot [MeasurableSpace ι]
     rw [integral_mul_const, integral_eval_dirichletMeasure (ha c), p.sum_mul_coe_weights,
       mul_div_cancel_left₀ _ c.2.ne', smul_eq_mul]
   · simp only [ProbabilityMeasure.coe_mk]
-    filter_upwards [ae_pos_dirichletMeasure (ha c), ae_sum_eq_one_dirichletMeasure (ha c)]
-      with x hx0 hx1
+    filter_upwards [ae_pos_dirichletMeasure (a := fun i ↦ (c : ℝ) * (p.weights i : ℝ)),
+      ae_sum_eq_one_dirichletMeasure (a := fun i ↦ (c : ℝ) * (p.weights i : ℝ))] with x hx0 hx1
     exact EuclideanSpace.abs_sub_sum_mul_basisFun_le_sqrt (fun i ↦ (hx0 i).le) hx1 hK
 
+omit [Nonempty ι] in
 /-- The mean squared distance from the fixed mean of a Dirichlet law is the sum of its
 coordinate variances. It decays inversely with one plus the total concentration. -/
 theorem integral_norm_sub_sq_dirichletMeasure_smul (p : Convexity.StdSimplex ℝ ι)
@@ -106,6 +107,7 @@ theorem integral_norm_sub_sq_dirichletMeasure_smul (p : Convexity.StdSimplex ℝ
     ∫ x, ‖x - (EuclideanSpace.equiv ι ℝ).symm p.weights‖ ^ 2
       ∂dirichletMeasure (fun i ↦ c * p.weights i) =
         (1 - ∑ i, p.weights i ^ 2) / (c + 1) := by
+  have := p.nonempty
   have ha (i : ι) : 0 < c * p.weights i := mul_pos hc (hp i)
   let _ := isProbabilityMeasure_dirichletMeasure ha
   have hsum : ∑ i, c * p.weights i = c := by simp [← Finset.mul_sum]

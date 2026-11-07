@@ -18,8 +18,9 @@ import Mathlib.Tactic.LinearCombination
 
 A root `ω` of `X² + X + 1` labels the four elements as `0, 1, ω, ω²`.
 The explicit enumeration supports finite calculations over this alphabet without choosing
-another model of the field. Such a root is a cube root of unity, a field of order four has
-characteristic two, and squaring exchanges the two roots in characteristic two.
+another model of the field. In a field of order four the roots are exactly the elements other
+than `0` and `1`. Such a root is a cube root of unity, a field of order four has characteristic
+two, and squaring exchanges the two roots in characteristic two.
 
 Additively, a field of four elements is the Klein four-group: `zmodTwoProdAddEquiv` sends
 `(a, b) : ZMod 2 × ZMod 2` to `a + bω`, so that the three nonzero elements `1, ω, ω²` correspond
@@ -32,10 +33,22 @@ namespace TauCeti
 
 variable {F : Type*} [Field F] [Finite F]
 
-/-- Every element other than zero and one in a field of order four is a root of
-`X² + X + 1`. -/
-theorem sq_add_self_add_one_eq_zero (hF : Nat.card F = 4) {ω : F}
-    (h0 : ω ≠ 0) (h1 : ω ≠ 1) : ω ^ 2 + ω + 1 = 0 := by
+/-- A field of order four has characteristic two. -/
+theorem two_eq_zero_of_natCard_eq_four (hF : Nat.card F = 4) : (2 : F) = 0 := by
+  let := Fintype.ofFinite F
+  let := charP_of_card_eq_prime_pow (Nat.card_eq_fintype_card.symm.trans hF : _ = 2 ^ 2)
+  exact CharTwo.two_eq_zero
+
+/-- In a field of order four, the roots of `X² + X + 1` are exactly the elements other than zero
+and one. -/
+@[simp]
+theorem sq_add_self_add_one_eq_zero_iff_of_natCard_eq_four (hF : Nat.card F = 4) {ω : F} :
+    ω ^ 2 + ω + 1 = 0 ↔ ω ≠ 0 ∧ ω ≠ 1 := by
+  refine ⟨fun hω ↦ ⟨?_, ?_⟩, fun ⟨h0, h1⟩ ↦ ?_⟩
+  · rintro rfl
+    simp at hω
+  · rintro rfl
+    exact one_ne_zero (by linear_combination hω - two_eq_zero_of_natCard_eq_four hF)
   let := Fintype.ofFinite F
   have hcard : Fintype.card F = 4 := by simpa only [Nat.card_eq_fintype_card] using hF
   have hpow : ω ^ 3 = 1 := by simpa [hcard] using FiniteField.pow_card_sub_one_eq_one ω h0
@@ -54,14 +67,8 @@ theorem pow_three_eq_one_of_sq_add_self_add_one_eq_zero {R : Type*} [CommRing R]
     (hω : ω ^ 2 + ω + 1 = 0) : ω ^ 3 = 1 := by
   linear_combination (ω - 1) * hω
 
-/-- A field of order four has characteristic two. -/
-theorem two_eq_zero_of_natCard_eq_four (hF : Nat.card F = 4) : (2 : F) = 0 := by
-  let := Fintype.ofFinite F
-  let := charP_of_card_eq_prime_pow (Nat.card_eq_fintype_card.symm.trans hF : _ = 2 ^ 2)
-  exact CharTwo.two_eq_zero
-
 /-- Every field of order four contains a root of `X² + X + 1`. -/
-theorem exists_sq_add_self_add_one_eq_zero_of_card_eq_four (hF : Nat.card F = 4) :
+theorem exists_sq_add_self_add_one_eq_zero_of_natCard_eq_four (hF : Nat.card F = 4) :
     ∃ ω : F, ω ^ 2 + ω + 1 = 0 := by
   classical
   let := Fintype.ofFinite F
@@ -69,21 +76,13 @@ theorem exists_sq_add_self_add_one_eq_zero_of_card_eq_four (hF : Nat.card F = 4)
   obtain ⟨ω, _, hω⟩ := Finset.exists_mem_notMem_of_card_lt_card
     (s := ({0, 1} : Finset F)) (t := Finset.univ) (by simp [hcard])
   simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hω
-  exact ⟨ω, sq_add_self_add_one_eq_zero hF hω.1 hω.2⟩
+  exact ⟨ω, (sq_add_self_add_one_eq_zero_iff_of_natCard_eq_four hF).mpr hω⟩
 
 /-! ### The additive group of a field of order four -/
 
-/-- In a field of order four every element has additive order dividing two. -/
-private theorem two_zsmul_eq_zero_of_natCard_eq_four (hF : Nat.card F = 4) (x : F) :
-    (2 : ℤ) • x = 0 := by
-  let := Fintype.ofFinite F
-  have hcard : Fintype.card F = 2 ^ 2 := Nat.card_eq_fintype_card.symm.trans hF
-  let := charP_of_card_eq_prime_pow hcard
-  rw [two_zsmul, CharTwo.add_self_eq_zero]
-
 /-- The additive homomorphism `ℤ/2 → F` sending `1` to `x`. -/
 private noncomputable def zmodTwoHom (hF : Nat.card F = 4) (x : F) : ZMod 2 →+ F :=
-  ZMod.lift 2 ⟨zmultiplesHom F x, by simpa using two_zsmul_eq_zero_of_natCard_eq_four hF x⟩
+  ZMod.lift 2 ⟨zmultiplesHom F x, by simp [two_eq_zero_of_natCard_eq_four hF]⟩
 
 private theorem zmodTwoHom_apply (hF : Nat.card F = 4) (x : F) (a : ZMod 2) :
     zmodTwoHom hF x a = (a.val : F) * x := by
@@ -110,9 +109,7 @@ noncomputable def zmodTwoProdAddEquiv (hF : Nat.card F = 4) {ω : F}
       mul_one, add_zero, zero_add, one_ne_zero] at hx
   · rfl
   · exact absurd hx h0
-  · have hω' : ω = -1 := eq_neg_of_add_eq_zero_right hx
-    have : (1 : F) = 0 := by rw [← hω]; rw [hω']; ring
-    exact absurd this one_ne_zero
+  · exact absurd (by linear_combination hω - ω * hx) (one_ne_zero (α := F))
 
 /-- The additive identification sends `(a, b)` to `a + bω`, using the canonical
 representatives of `a` and `b`. -/
@@ -140,11 +137,8 @@ theorem zmodTwoProdAddEquiv_apply_zero_one (hF : Nat.card F = 4) {ω : F}
 @[simp]
 theorem zmodTwoProdAddEquiv_apply_one_one (hF : Nat.card F = 4) {ω : F}
     (hω : ω ^ 2 + ω + 1 = 0) : zmodTwoProdAddEquiv hF hω (1, 1) = ω ^ 2 := by
-  let := Fintype.ofFinite F
-  have hcard : Fintype.card F = 2 ^ 2 := Nat.card_eq_fintype_card.symm.trans hF
-  let := charP_of_card_eq_prime_pow hcard
   rw [zmodTwoProdAddEquiv_apply, ZMod.val_one, Nat.cast_one, one_mul]
-  linear_combination hω - ω ^ 2 * CharTwo.two_eq_zero (R := F)
+  linear_combination hω - ω ^ 2 * two_eq_zero_of_natCard_eq_four hF
 
 /-- The inverse additive identification sends `1` to the first generator. -/
 @[simp]
@@ -176,6 +170,22 @@ theorem finFourEquiv_apply (hF : Nat.card F = 4) {ω : F}
     (hω : ω ^ 2 + ω + 1 = 0) (i : Fin 4) :
     finFourEquiv hF hω i = ![0, 1, ω, ω ^ 2] i := by
   fin_cases i <;> simp [finFourEquiv]
+
+/-- **Every unit of a field of four elements is a power of `ω²`.** Labelling the field as
+`0, 1, ω, ω²` by `finFourEquiv`, the unit with label `i` is `(ω²)ᵏ` for the exponent `k = 0, 2, 1`
+displayed at positions `1, 2, 3`. -/
+theorem sq_pow_finFourEquiv_symm (hF : Nat.card F = 4) {ω : F} (hω : ω ^ 2 + ω + 1 = 0)
+    (a : Fˣ) : (ω ^ 2) ^ ![0, 0, 2, 1] ((finFourEquiv hF hω).symm a) = a := by
+  have h3 := pow_three_eq_one_of_sq_add_self_add_one_eq_zero hω
+  obtain ⟨i, hi⟩ := (finFourEquiv hF hω).surjective a
+  rw [← hi, Equiv.symm_apply_apply, finFourEquiv_apply]
+  rw [finFourEquiv_apply] at hi
+  fin_cases i
+  · exact absurd hi.symm (by simp)
+  · simp
+  · simp only [Fin.reduceFinMk, Matrix.cons_val]
+    linear_combination ω * h3
+  · simp
 
 omit [Finite F] in
 /-- The four elements of a field of order four, labelled by a root of `X² + X + 1`. -/

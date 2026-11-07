@@ -14,7 +14,8 @@ public import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 
 Over a complete nontrivially normed field, evaluation on a basis identifies the space of
 top-degree forms with the scalar field as a continuous linear equivalence. Its inverse
-multiplies the continuous determinant form of that basis. This construction needs only a
+multiplies the continuous determinant form of that basis, so these forms make up a line
+(`Module.Basis.finrank_continuousAlternatingMap_eq_one`). This construction needs only a
 Hausdorff topological vector space, with no choice of norm or inner product.
 -/
 
@@ -73,5 +74,14 @@ theorem _root_.Module.Basis.topFormEquiv_symm_eq_smul (b : Module.Basis ι 𝕜 
 theorem _root_.Module.Basis.topFormEquiv_symm_apply (b : Module.Basis ι 𝕜 E)
     (c : 𝕜) (v : ι → E) : b.topFormEquiv.symm c v = c * b.det v := by
   simp [Module.Basis.topFormEquiv_symm_eq_smul]
+
+omit [Fintype ι] [DecidableEq ι] in
+/-- The top-degree scalar-valued continuous alternating forms on a space with a finite basis form
+a line. -/
+theorem _root_.Module.Basis.finrank_continuousAlternatingMap_eq_one [Finite ι]
+    (b : Module.Basis ι 𝕜 E) : Module.finrank 𝕜 (E [⋀^ι]→L[𝕜] 𝕜) = 1 := by
+  classical
+  have := Fintype.ofFinite ι
+  exact b.topFormEquiv.toLinearEquiv.finrank_eq.trans (Module.finrank_self 𝕜)
 
 end TauCeti

@@ -32,7 +32,8 @@ an isomorphism of schemes induces an equivalence of their quasicoherent-sheaf ca
 * `TauCeti.AlgebraicGeometry.QuasicoherentSheaf.exactPairingFree`: finite free quasicoherent
   sheaves are self-dual;
 * `TauCeti.AlgebraicGeometry.QuasicoherentSheaf.pullback f`: the pullback of quasicoherent
-  sheaves along a morphism of schemes `f`.
+  sheaves along a morphism of schemes `f`, which commutes with the inclusion into all modules
+  (`TauCeti.AlgebraicGeometry.QuasicoherentSheaf.pullbackCompιIso`).
 -/
 
 -- The pullback comparisons follow the full-subcategory construction in
@@ -180,6 +181,27 @@ lemma pullback_map_hom {Y : Scheme.{u}} (f : X ⟶ Y) {E F : QuasicoherentSheaf 
   -- `X.Modules` and of `SheafOfModules X.ringCatSheaf`, which `simp` does not identify. The
   -- remaining equation is the defining equation of the lifted functor `pullback f` on morphisms.
   exact ((Category.id_comp _).trans (Category.comp_id _)).symm
+
+variable {X} in
+/-- Pullback of quasicoherent sheaves commutes with the inclusion into all modules. This is
+Mathlib's `ObjectProperty.liftCompιIso` for the lift defining `pullback f`; its components are
+identities (`pullbackCompιIso_hom_app`). -/
+def pullbackCompιIso {Y : Scheme.{u}} (f : X ⟶ Y) :
+    pullback f ⋙ (_root_.SheafOfModules.isQuasicoherent X.ringCatSheaf).ι ≅
+      (_root_.SheafOfModules.isQuasicoherent Y.ringCatSheaf).ι ⋙ Scheme.Modules.pullback f :=
+  ObjectProperty.liftCompιIso _ _ _
+
+variable {X} in
+@[simp]
+lemma pullbackCompιIso_hom_app {Y : Scheme.{u}} (f : X ⟶ Y) (E : QuasicoherentSheaf Y) :
+    (pullbackCompιIso f).hom.app E = eqToHom (pullback_obj_obj f E) :=
+  (rfl)
+
+variable {X} in
+@[simp]
+lemma pullbackCompιIso_inv_app {Y : Scheme.{u}} (f : X ⟶ Y) (E : QuasicoherentSheaf Y) :
+    (pullbackCompιIso f).inv.app E = eqToHom (pullback_obj_obj f E).symm :=
+  (rfl)
 
 /-- Pullback of quasi-coherent modules along the identity is naturally the identity. -/
 noncomputable def pullbackId (X : Scheme.{u}) :

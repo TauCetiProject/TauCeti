@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.TensorProduct.Associator
+public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
+public import Mathlib.LinearAlgebra.TensorProduct.Lift
 public import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
+public import Mathlib.RingTheory.TensorProduct.Basic
 
 /-!
 # Tensor-product naturality, contractions and trace identities
@@ -16,7 +19,8 @@ contraction against a linear functional on the right factor, bundled as a linear
 functional, and records its behavior on pure tensors and under tensor-product maps.
 Such contractions extract coordinates and test tensor identities, supporting componentwise
 arguments about coactions and weight spaces. The file also proves the tensor identity that makes
-the Casimir element of a trace commute with multiplication.
+the Casimir element of a trace commute with multiplication, and writes every tensor as a sum of
+pure tensors over a finite spanning family of the right factor.
 
 ## Main declarations
 
@@ -25,14 +29,20 @@ the Casimir element of a trace commute with multiplication.
 * `LinearMap.injective_rTensor_congr`: injectivity of `f ⊗ 𝟙 M` is invariant under isomorphisms
   of `M`.
 * `LinearMap.tensorComponent`: contraction against the right factor of a tensor product.
+* `LinearMap.sum_tensorComponent_tmul`: reconstruct a tensor from a dual family.
+* `LinearMap.tensorComponent_eq_liftBaseChange`: contraction as scalar-linear extension.
 * `LinearMap.tensorComponent_map`: naturality of contraction under `TensorProduct.map`.
 * `LinearMap.tensorComponent_assoc_symm`: contraction commutes with reassociation.
 * `LinearMap.comp_tensorComponent`: contraction commutes with a functional on the left.
 * `LinearMap.tensorComponent_comp_tensorComponent`: successive contractions combine after
   reassociation.
+* `LinearMap.tensorComponent_mul`: contracting a product in an algebra tensor product against a
+  functional which splits on products splits the contraction accordingly.
 * `LinearMap.rid_rTensor_apply`: naturality of the right tensor unitor.
 * `LinearMap.sum_mul_tmul_eq_sum_tmul_mul`: the Casimir element of a trace commutes with
   multiplication.
+* `TensorProduct.exists_eq_sum_tmul_of_span_eq_top`: over a finite spanning family of the right
+  factor, every tensor is a sum of pure tensors with those right factors.
 
 ## References
 
@@ -98,6 +108,27 @@ theorem tensorComponent_tmul (phi : N →ₗ[R] R) (m : M) (n : N) :
     tensorComponent (R := R) (M := M) phi (m ⊗ₜ[R] n) = phi n • m := by
   simp [tensorComponent]
 
+/-- A family of vectors and functionals that reconstructs each vector also reconstructs
+any tensor, by contracting its second factor. The family need not be linearly independent. -/
+theorem sum_tensorComponent_tmul {ι : Type*} [Fintype ι]
+    (b : ι → N) (φ : ι → N →ₗ[R] R)
+    (hb : ∀ x, ∑ i, φ i x • b i = x) (z : M ⊗[R] N) :
+    ∑ i, tensorComponent (φ i) z ⊗ₜ[R] b i = z := by
+  induction z using TensorProduct.inductionOn with
+  | tmul m n =>
+    simpa only [tensorComponent_tmul, smul_tmul, ← tmul_sum] using
+      congrArg (fun n ↦ m ⊗ₜ[R] n) (hb n)
+  | add z w hz hw => simp [add_tmul, Finset.sum_add_distrib, hz, hw]
+
+/-- Over an algebra, contraction is the scalar-linear extension of the functional followed
+by the algebra map. This expresses contraction as a linear map over the larger scalar ring. -/
+theorem tensorComponent_eq_liftBaseChange {S : Type*} [CommSemiring S] [Algebra R S]
+    (φ : N →ₗ[R] R) (z : S ⊗[R] N) :
+    tensorComponent φ z = ((Algebra.linearMap R S).comp φ).liftBaseChange S z := by
+  induction z using TensorProduct.inductionOn with
+  | tmul s n => simp [Algebra.smul_def, mul_comm]
+  | add z w hz hw => simp only [map_add, hz, hw]
+
 /-- Taking a right tensor component commutes with a map on both tensor factors. -/
 @[simp]
 theorem tensorComponent_map {M' : Type x} {N' : Type y}
@@ -159,6 +190,28 @@ theorem comp_tensorComponent (psi : M →ₗ[R] R) (phi : N →ₗ[R] R) :
   simp only [LinearMap.comp_apply, LinearMap.tensorComponent_tmul, map_smul,
     smul_eq_mul, LinearMap.rTensor_tmul, LinearEquiv.coe_coe, TensorProduct.lid_tmul,
     mul_comm]
+
+/-- Contracting the coefficient of a product in an algebra tensor product `A ⊗ C` against a
+functional which splits on products as `θ (a * b) = φ a * ψ b + φ' a * ψ' b` splits the
+contraction accordingly. For a comodule algebra this computes the contraction of the coaction of
+a product. -/
+theorem tensorComponent_mul {A C : Type*} [Semiring A] [Algebra R A] [Semiring C] [Algebra R C]
+    {θ φ ψ φ' ψ' : C →ₗ[R] R} (hθ : ∀ a b, θ (a * b) = φ a * ψ b + φ' a * ψ' b)
+    (x y : A ⊗[R] C) :
+    tensorComponent θ (x * y) =
+      tensorComponent φ x * tensorComponent ψ y + tensorComponent φ' x * tensorComponent ψ' y := by
+  induction x using TensorProduct.inductionOn with
+  | add x x' hx hx' =>
+    simp only [add_mul, map_add, hx, hx']
+    abel
+  | tmul a c =>
+    induction y using TensorProduct.inductionOn with
+    | add y y' hy hy' =>
+      simp only [mul_add, map_add, hy, hy']
+      abel
+    | tmul b c' =>
+      simp only [Algebra.TensorProduct.tmul_mul_tmul, tensorComponent_tmul, hθ, add_smul,
+        smul_mul_smul_comm]
 
 end
 
@@ -225,3 +278,25 @@ theorem sum_mul_tmul_eq_sum_tmul_mul {ι : Type*} [Fintype ι] (φ : A →ₗ[k]
 end Casimir
 
 end LinearMap
+
+namespace TensorProduct
+
+variable {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+  [AddCommMonoid N] [Module R N]
+
+/-- If a finite family `n` spans `N`, then every element of `M ⊗[R] N` is `∑ j, mⱼ ⊗ nⱼ` for some
+family `m` of elements of `M`. -/
+theorem exists_eq_sum_tmul_of_span_eq_top {κ : Type*} [Fintype κ] {n : κ → N}
+    (hn : Submodule.span R (Set.range n) = ⊤) (x : M ⊗[R] N) :
+    ∃ m : κ → M, x = ∑ j, m j ⊗ₜ[R] n j := by
+  induction x with
+  | tmul a y =>
+    obtain ⟨c, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun R).1
+      (hn ▸ Submodule.mem_top : y ∈ Submodule.span R (Set.range n))
+    exact ⟨fun j ↦ c j • a, by simp [tmul_sum, smul_tmul]⟩
+  | add x y hx hy =>
+    obtain ⟨m, rfl⟩ := hx
+    obtain ⟨m', rfl⟩ := hy
+    exact ⟨m + m', by simp [add_tmul, Finset.sum_add_distrib]⟩
+
+end TensorProduct

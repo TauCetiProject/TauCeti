@@ -21,7 +21,9 @@ scalar ring: two nonzero vectors give the same point exactly when one is a unit 
 other (`Projectivization.mk'_eq_mk'_iff`), so the saturation of a set of nonzero vectors is the
 union of its unit translates (`Projectivization.preimage_image_mk'`). These two lemmas are
 from Zayn Blore's Mathlib pull request
-[mathlib4#44117](https://github.com/leanprover-community/mathlib4/pull/44117).
+[mathlib4#44117](https://github.com/leanprover-community/mathlib4/pull/44117). Equivalently,
+two nonzero vectors give the same point exactly when the first lies on the line spanned by the
+second (`Projectivization.mk_eq_mk_iff_mem_span`).
 
 A linear map `G : V →ₗ[K] W` induces the map `Projectivization.linearProjection G`, sending
 `[v]` to `[G v]` on the set `Projectivization.linearProjectionDomain G` of points where `G` does
@@ -53,6 +55,13 @@ theorem coe_equivSubmodule (p : Projectivization K V) :
     (equivSubmodule K V p).1 = p.submodule :=
   -- Mathlib has no equivSubmodule_apply lemma; its forward map is definitionally submodule.
   (rfl)
+
+variable {K} in
+/-- Two nonzero vectors give the same projective point exactly when the first lies on the line
+spanned by the second. -/
+theorem mk_eq_mk_iff_mem_span {v w : V} (hv : v ≠ 0) (hw : w ≠ 0) :
+    mk K v hv = mk K w hw ↔ v ∈ K ∙ w := by
+  rw [mk_eq_mk_iff', Submodule.mem_span_singleton]
 
 variable {K} in
 /-- The projectivization of a vector space of dimension at most one has at most one point: all

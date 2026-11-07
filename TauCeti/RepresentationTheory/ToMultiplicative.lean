@@ -21,36 +21,30 @@ namespace Representation
 
 variable {R G M : Type*} [Semiring R] [Group G] [AddCommMonoid M] [Module R M]
 
-/-- A representation, acting by automorphisms in multiplicative notation. -/
-noncomputable def toMulAut (rho : Representation R G M) :
-    G →* MulAut (Multiplicative M) where
+/-- A representation, acting by automorphisms in multiplicative notation: `g` acts on
+`Multiplicative M` by `ofAdd m ↦ ofAdd (ρ g m)`. -/
+def toMulAut (ρ : Representation R G M) : G →* MulAut (Multiplicative M) where
   toFun g :=
-    (LinearMap.GeneralLinearGroup.generalLinearEquiv R M
-      ((MonoidHom.toHomUnits rho) g)).toAddEquiv.toMultiplicative
-  map_one' := by
-    ext m
-    exact congrArg
-      (fun f : M →ₗ[R] M => Multiplicative.ofAdd (f m.toAdd)) (map_one rho)
-  map_mul' g h := by
-    ext m
-    exact congrArg
-      (fun f : M →ₗ[R] M => Multiplicative.ofAdd (f m.toAdd)) (map_mul rho g h)
+    { toFun m := .ofAdd (ρ g m.toAdd)
+      invFun m := .ofAdd (ρ g⁻¹ m.toAdd)
+      left_inv m := by simp
+      right_inv m := by simp
+      map_mul' m n := map_add (ρ g) m.toAdd n.toAdd }
+  map_one' := by ext; simp
+  -- `simp` reduces the left side to `ofAdd (ρ g (ρ h m.toAdd))`; the right side is the
+  -- composite of the two automorphisms just built, which agrees with it by definition.
+  map_mul' g h := by ext; simp; rfl
 
 /-- The multiplicative automorphism acts by the representation on the underlying module. -/
 @[simp]
-theorem toMulAut_apply (rho : Representation R G M) (g : G)
-    (m : Multiplicative M) :
-    toMulAut rho g m = Multiplicative.ofAdd (rho g m.toAdd) := by
-  exact congrArg (fun f : M →ₗ[R] M => Multiplicative.ofAdd (f m.toAdd))
-    (MonoidHom.coe_toHomUnits rho g)
+theorem toMulAut_apply (ρ : Representation R G M) (g : G) (m : Multiplicative M) :
+    toMulAut ρ g m = .ofAdd (ρ g m.toAdd) :=
+  (rfl)
 
 /-- The inverse multiplicative automorphism acts by the representation of the inverse element. -/
 @[simp]
-theorem toMulAut_symm_apply (rho : Representation R G M)
-    (g : G) (m : Multiplicative M) :
-    (toMulAut rho g).symm m = Multiplicative.ofAdd (rho g⁻¹ m.toAdd) := by
-  have hinv : (↑(((MonoidHom.toHomUnits rho) g)⁻¹) : M →ₗ[R] M) = rho g⁻¹ := by
-    rw [← map_inv, MonoidHom.coe_toHomUnits]
-  exact congrArg (fun f : M →ₗ[R] M => Multiplicative.ofAdd (f m.toAdd)) hinv
+theorem toMulAut_symm_apply (ρ : Representation R G M) (g : G) (m : Multiplicative M) :
+    (toMulAut ρ g).symm m = .ofAdd (ρ g⁻¹ m.toAdd) :=
+  (rfl)
 
 end Representation

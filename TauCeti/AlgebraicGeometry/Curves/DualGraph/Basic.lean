@@ -296,6 +296,11 @@ def numMarkings [Fintype ι] (v : G.Vertex) : ℕ :=
 lemma numMarkings_def [Fintype ι] (v : G.Vertex) : G.numMarkings v = #{i : ι | G.marking i = v} :=
   (rfl)
 
+/-- A vertex carries no markings exactly when every marking lies elsewhere. -/
+lemma numMarkings_eq_zero_iff [Fintype ι] {v : G.Vertex} :
+    G.numMarkings v = 0 ↔ ∀ i, G.marking i ≠ v := by
+  simp [numMarkings_def, filter_eq_empty_iff]
+
 /-- Every marking lies on exactly one component. -/
 theorem sum_numMarkings [Fintype ι] : ∑ v, G.numMarkings v = Fintype.card ι := by
   have := card_eq_sum_card_fiberwise (s := (univ : Finset ι)) (t := univ) (f := G.marking)
@@ -329,6 +334,12 @@ def arithmeticGenus : ℕ :=
 
 lemma arithmeticGenus_def : G.arithmeticGenus = ∑ v, G.genus v + G.firstBetti :=
   (rfl)
+
+/-- A component's genus is at most the arithmetic genus of the whole graph. -/
+theorem genus_le_arithmeticGenus (v : G.Vertex) : G.genus v ≤ G.arithmeticGenus := by
+  rw [arithmeticGenus_def]
+  exact (Finset.single_le_sum (fun x _ ↦ Nat.zero_le (G.genus x)) (Finset.mem_univ v)).trans
+    (Nat.le_add_right _ _)
 
 /-- The arithmetic genus in terms of the numbers of vertices and edges. -/
 theorem arithmeticGenus_add_card_vertex :
@@ -516,9 +527,7 @@ theorem isRationalTail_or_isRationalBridge_of_logCanonicalDegree_nonpos [Fintype
     interval_cases h : G.valence v
     · exact absurd rfl hval₀
     · exact .inl ⟨G.isRationalTail_iff.mpr ⟨hg, h⟩, by omega⟩
-    · have hm : ∀ i, G.marking i ≠ v := by
-        have : G.numMarkings v = 0 := by omega
-        simpa [numMarkings_def, filter_eq_empty_iff] using this
+    · have hm : ∀ i, G.marking i ≠ v := G.numMarkings_eq_zero_iff.mp (by omega)
       by_cases hloop : ∃ e, G.endpoint e 0 = v ∧ G.endpoint e 1 = v
       · obtain ⟨e, he₀, he₁⟩ := hloop
         have := endpoint_eq_iff_eq_of_valence_eq_two h he₀ he₁

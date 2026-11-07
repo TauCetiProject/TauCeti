@@ -37,8 +37,9 @@ statements about `H⁰(F)`.
 
 ## Main results
 
-* `CategoryTheory.EnrichedFunctor.dgMap_dgDifferential`: a DG functor commutes with the
-  differential.
+* `CategoryTheory.EnrichedFunctor.dgMap_dgDifferential` and
+  `CategoryTheory.EnrichedFunctor.dgMap_d`: a DG functor commutes with the differential.
+* `CategoryTheory.EnrichedFunctor.dgMap_castDeg`: a DG functor commutes with degree transport.
 * `CategoryTheory.EnrichedFunctor.dgMap_dgId` and `CategoryTheory.EnrichedFunctor.dgMap_dgComp`:
   a DG functor preserves identities and composition of homogeneous morphisms.
 * `CategoryTheory.EnrichedFunctor.mapDGHomotopyCategory_map_homOf`: `H⁰(F)` sends the class of a
@@ -83,6 +84,19 @@ theorem dgMap_apply {X Y : C} {n : ℤ} (f : DGHom R n X Y) :
 theorem dgMap_dgDifferential {X Y : C} {n : ℤ} (f : DGHom R n X Y) :
     F.dgMap (n + 1) (dgDifferential R n f) = dgDifferential R n (F.dgMap n f) := by
   simp only [dgMap_apply, ← ModuleCat.comp_apply, (F.map X Y).comm]
+
+/-- A DG functor commutes with the differential of the Hom complexes between arbitrary indices. -/
+theorem dgMap_d {X Y : C} (a b : ℤ) (f : DGHom R a X Y) :
+    F.dgMap b (((dgHomComplex R X Y).d a b).hom f) =
+      ((dgHomComplex R (F.obj X) (F.obj Y)).d a b).hom (F.dgMap a f) := by
+  simp only [dgMap_apply, ← ModuleCat.comp_apply, (F.map X Y).comm]
+
+/-- A DG functor commutes with degree transport. -/
+@[simp]
+theorem dgMap_castDeg {X Y : C} {p p' : ℤ} (hp : p = p') (f : DGHom R p X Y) :
+    F.dgMap p' (castDeg R hp f) = castDeg R hp (F.dgMap p f) := by
+  subst hp
+  simp only [castDeg_self]
 
 /-- A DG functor preserves identities. -/
 @[simp]

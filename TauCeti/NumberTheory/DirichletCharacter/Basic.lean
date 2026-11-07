@@ -9,7 +9,9 @@ public import Mathlib.NumberTheory.DirichletCharacter.Basic
 import TauCeti.Data.ZMod.Units
 
 /-!
-# Factoring a Dirichlet character through a divisor
+# Basic facts about Dirichlet characters
+
+A nonprincipal character has sum zero over a full period of natural-number representatives.
 
 Facts about when a Dirichlet character `χ` mod `N` factors through a divisor of `N`, stated for
 characters valued in any `CommMonoidWithZero`, which is the generality of
@@ -27,6 +29,7 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
 
 ## Main results
 
+* `DirichletCharacter.sum_range_eq_zero_of_ne_one`: cancellation over a full period.
 * `DirichletCharacter.exists_alt_unit_in_coset_with_char_separation`: character separation within
   a fibre of the reduction map.
 * `DirichletCharacter.factorsThrough_gcd_of_changeLevel_factorsThrough`: a factorisation of the
@@ -81,6 +84,18 @@ divides `gcd (N, L N / p) = N / p` — stated once for characters valued in any
 public section
 
 namespace DirichletCharacter
+
+/-- A nonprincipal Dirichlet character sums to zero over a full period. -/
+theorem sum_range_eq_zero_of_ne_one {R : Type*} [CommRing R] [IsDomain R] {N : ℕ}
+    [NeZero N] (χ : DirichletCharacter R N) (hχ : χ ≠ 1) :
+    ∑ n ∈ Finset.range N, χ n = 0 := by
+  calc
+    _ = ∑ a : ZMod N, χ a := by
+      exact Finset.sum_nbij' (Nat.cast : ℕ → ZMod N) ZMod.val
+        (by simp) (fun a _ ↦ Finset.mem_range.mpr a.val_lt)
+        (fun n hn ↦ ZMod.val_natCast_of_lt (Finset.mem_range.mp hn))
+        (fun a _ ↦ ZMod.natCast_zmod_val a) (by intros; rfl)
+    _ = 0 := χ.sum_eq_zero_of_ne_one hχ
 
 /-- A character which factors through `d` takes the same value on level-units congruent modulo
 `d`. -/

@@ -159,11 +159,9 @@ private theorem isSmoothEmbedding_torusKnotSphereMap {p q : ℤ} (h : IsCoprime 
     (contMDiff_torusKnotMap p q).codRestrict_sphere _
   have hinj : Injective (torusKnotSphereMap p q) := fun z w hzw ↦
     torusKnotMap_injective h (congrArg Subtype.val hzw)
-  refine ⟨isImmersion_iff_forall_isImmersionAt.2 fun z ↦ ?_,
+  refine ⟨hsmooth.isImmersion_of_injective_mfderiv (by simp) fun z ↦ ?_,
     (hsmooth.continuous.isClosedEmbedding hinj).isEmbedding⟩
   obtain ⟨t, rfl⟩ := Circle.exp_surjective z
-  refine (hsmooth.contMDiffOn (s := univ).isImmersionAt_iff_injective_mfderiv isOpen_univ
-    (mem_univ _) (by simp)).2 ?_
   -- The derivative of the curve in `ℝ⁴` is that of the curve in the sphere followed by the
   -- injective derivative of the inclusion, so injectivity of the former suffices.
   have hcomp := mfderiv_comp (Circle.exp t)

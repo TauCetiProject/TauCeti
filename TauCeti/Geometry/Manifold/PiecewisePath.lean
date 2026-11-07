@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.ContMDiff.Basic
+public import Mathlib.Geometry.Manifold.ContMDiff.Constructions
 
 /-!
 # Piecewise smooth paths in a manifold
@@ -31,6 +31,10 @@ bundled paths carrying irrelevant partition data.
 * `TauCeti.Manifold.IsPiecewiseContMDiffOn.trans_contMDiffOn` and
   `TauCeti.Manifold.IsPiecewiseContMDiffOn.mono`: appending a `C^n` piece and restricting to a
   nondegenerate subinterval preserve piecewise `C^n` regularity.
+
+* `TauCeti.Manifold.IsPiecewiseContMDiffOn.trans`: glue adjacent piecewise restrictions.
+* `TauCeti.Manifold.IsPiecewiseContMDiffOn.prodMk`: pair curves with possibly different
+  witnessing partitions, obtaining a common smooth partition for both.
 
 This is a metric-independent finite-partition regularity API for curves in a manifold: it only
 involves the differentiable structure, so that Riemannian length and distance comparisons can be
@@ -209,5 +213,82 @@ theorem IsPiecewiseContMDiffOn.mono (h : IsPiecewiseContMDiffOn I n γ a b) {s t
     (has : a ≤ s) (hst : s < t) (htb : t ≤ b) : IsPiecewiseContMDiffOn I n γ s t := by
   obtain ⟨k, τ, hτa, hτb, hτ, hγ⟩ := h
   exact isPiecewiseContMDiffOn_of_partition_of_subset τ hτ hγ (hτa ▸ has) hst (hτb ▸ htb)
+
+/-- Induction over the smooth pieces of a piecewise `C^n` curve. The property may depend
+on the interval, and the gluing step has strictly ordered endpoints. -/
+@[elab_as_elim]
+theorem IsPiecewiseContMDiffOn.induction_on {P : ℝ → ℝ → Prop}
+    (h : IsPiecewiseContMDiffOn I n γ a b)
+    (single : ∀ u v, u < v → ContMDiffOn 𝓘(ℝ, ℝ) I n γ (Icc u v) → P u v)
+    (join : ∀ u v w, u < v → v < w → P u v → P v w → P u w) : P a b := by
+  obtain ⟨k, τ, rfl, rfl, hτ, hγ⟩ := h
+  suffices ∀ (k : ℕ) (τ : Fin (k + 2) → ℝ),
+      (∀ i : Fin (k + 1), τ i.castSucc < τ i.succ) →
+      (∀ i : Fin (k + 1), ContMDiffOn 𝓘(ℝ, ℝ) I n γ
+        (Icc (τ i.castSucc) (τ i.succ))) → P (τ 0) (τ (Fin.last (k + 1))) from
+    this k τ hτ hγ
+  intro k
+  induction k with
+  | zero =>
+      intro τ hτ hγ
+      exact single _ _ (hτ 0) (hγ 0)
+  | succ k ih =>
+      intro τ hτ hγ
+      have hmono := Fin.strictMono_iff_lt_succ.mpr hτ
+      have hfirst : τ 0 < τ (Fin.last (k + 1)).castSucc :=
+        hmono (by simp only [Fin.lt_def, Fin.val_zero, Fin.val_castSucc, Fin.val_last]; omega)
+      apply join _ (τ (Fin.last (k + 1)).castSucc) _
+        hfirst (by simpa using hτ (Fin.last (k + 1)))
+      · apply ih (fun i ↦ τ i.castSucc)
+        · intro i
+          simpa only [Fin.succ_castSucc] using hτ i.castSucc
+        · intro i
+          simpa only [Fin.succ_castSucc] using hγ i.castSucc
+      · exact single _ _ (hτ (Fin.last (k + 1))) (hγ (Fin.last (k + 1)))
+
+/-- Concatenating adjacent piecewise `C^n` restrictions of the same curve preserves
+piecewise `C^n` regularity. The witnessing partitions may be different. -/
+theorem IsPiecewiseContMDiffOn.trans {c : ℝ} (h : IsPiecewiseContMDiffOn I n γ a b)
+    (h' : IsPiecewiseContMDiffOn I n γ b c) : IsPiecewiseContMDiffOn I n γ a c := by
+  exact h'.induction_on
+    (P := fun u v ↦ IsPiecewiseContMDiffOn I n γ a u → IsPiecewiseContMDiffOn I n γ a v)
+    (fun _ _ huv hγ h ↦ h.trans_contMDiffOn huv hγ)
+    (fun _ _ _ _ _ ih₁ ih₂ h ↦ ih₂ (ih₁ h)) h
+
+variable
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] {η : ℝ → N}
+
+/-- Pairing a `C^n` curve with a piecewise `C^n` curve gives a piecewise `C^n` curve. -/
+private theorem IsPiecewiseContMDiffOn.prodMk_of_contMDiffOn
+    (hη : IsPiecewiseContMDiffOn J n η a b)
+    (hγ : ContMDiffOn 𝓘(ℝ, ℝ) I n γ (Icc a b)) :
+    IsPiecewiseContMDiffOn (I.prod J) n (fun t ↦ (γ t, η t)) a b := by
+  have h : ContMDiffOn 𝓘(ℝ, ℝ) I n γ (Icc a b) →
+      IsPiecewiseContMDiffOn (I.prod J) n (fun t ↦ (γ t, η t)) a b := by
+    refine hη.induction_on (P := fun u v ↦
+      ContMDiffOn 𝓘(ℝ, ℝ) I n γ (Icc u v) →
+        IsPiecewiseContMDiffOn (I.prod J) n (fun t ↦ (γ t, η t)) u v) ?_ ?_
+    · exact fun _ _ huv hη hγ ↦ .of_contMDiffOn huv (hγ.prodMk hη)
+    · intro u v w huv hvw ih₁ ih₂ hγ
+      exact (ih₁ (hγ.mono (Icc_subset_Icc le_rfl hvw.le))).trans
+        (ih₂ (hγ.mono (Icc_subset_Icc huv.le le_rfl)))
+  exact h hγ
+
+/-- Pairing piecewise `C^n` curves preserves piecewise regularity, without requiring their
+original partitions to agree. The paired curve supplies a common smooth partition. -/
+theorem IsPiecewiseContMDiffOn.prodMk (hγ : IsPiecewiseContMDiffOn I n γ a b)
+    (hη : IsPiecewiseContMDiffOn J n η a b) :
+    IsPiecewiseContMDiffOn (I.prod J) n (fun t ↦ (γ t, η t)) a b := by
+  have h : IsPiecewiseContMDiffOn J n η a b →
+      IsPiecewiseContMDiffOn (I.prod J) n (fun t ↦ (γ t, η t)) a b := by
+    refine hγ.induction_on (P := fun u v ↦ IsPiecewiseContMDiffOn J n η u v →
+      IsPiecewiseContMDiffOn (I.prod J) n (fun t ↦ (γ t, η t)) u v) ?_ ?_
+    · exact fun _ _ _ hγ hη ↦ hη.prodMk_of_contMDiffOn hγ
+    · intro u v w huv hvw ih₁ ih₂ hη
+      exact (ih₁ (hη.mono le_rfl huv hvw.le)).trans
+        (ih₂ (hη.mono huv.le hvw le_rfl))
+  exact h hη
 
 end TauCeti.Manifold

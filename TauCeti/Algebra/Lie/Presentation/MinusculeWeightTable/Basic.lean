@@ -59,6 +59,12 @@ coroots, so the reflection equation reads `wt (s_i a) j = wt a j - wt a i * CM j
 * `TauCeti.MinusculeWeightTable.raisingMatrix_map_mulVec_reflection` and
   `loweringMatrix_map_mulVec_reflection`: at the reflection of a weight of coordinate `-1` or `1`,
   the raising or lowering matrix applied to a vector reads off that vector at the weight.
+* `TauCeti.MinusculeWeightTable.simpleWeyl_map_mulVec`: the simple Weyl word
+  `(1 + eᵢ) (1 - fᵢ) (1 + eᵢ)` acts by a signed simple reflection over any coefficient ring.
+* `TauCeti.MinusculeWeightTable.simpleWeyl_map_commute_of_cartanMatrix_eq_zero`: these words
+  commute at orthogonal nodes.
+* `TauCeti.MinusculeWeightTable.simpleWeyl_map_braid_of_cartanMatrix_eq_neg_one`: these words
+  satisfy the length-three braid relation when both Cartan entries are `-1`.
 * `TauCeti.MinusculeWeightTable.raisingMatrix_pow_two` and `loweringMatrix_pow_two`: the raising
   and lowering matrices square to zero.
 * `TauCeti.MinusculeWeightTable.isSl2Triple`: the three matrices at a node are an `sl₂` triple when
@@ -531,6 +537,113 @@ theorem loweringMatrix_map_mulVec_reflection [Fintype ι] {R : Type*} [NonAssocR
     T.matrix_map_row_reflection i 1 _ (T.loweringMatrix_apply i) a ha,
     single_one_dotProduct]
 
+private theorem matrix_map_mulVec [Fintype ι] {R : Type*} [NonAssocRing R]
+    (i : B) (c : ℤ) (M : Matrix ι ι ℤ)
+    (hM : ∀ a b, M a b = if T.weight b i = c ∧ a = T.reflection i b then 1 else 0)
+    (v : ι → R) (a : ι) :
+    (M.map (Int.cast : ℤ → R) *ᵥ v) a =
+      if -T.weight a i = c then v (T.reflection i a) else 0 := by
+  classical
+  by_cases h : -T.weight a i = c
+  · have hr := T.matrix_map_row_reflection (R := R) i c M hM (T.reflection i a)
+      (by simpa only [T.weight_reflection_self] using h)
+    rw [T.reflection_apply_apply] at hr
+    rw [Matrix.mulVec_apply, hr, single_one_dotProduct, ite_eq_left h]
+  · have hr : (M.map (Int.cast : ℤ → R)).row a = 0 := by
+      funext b
+      by_cases hab : a = T.reflection i b
+      · subst a
+        simp only [T.weight_reflection_self, neg_neg] at h
+        simp [Matrix.row_apply, hM, h]
+      · simp [Matrix.row_apply, hM, hab]
+    rw [Matrix.mulVec_apply, hr, zero_dotProduct, ite_eq_right h]
+
+/-- The Weyl word formed from the raising and lowering matrices acts by the simple reflection,
+with a minus sign in rows of coroot coordinate `-1`, over any coefficient ring. -/
+theorem simpleWeyl_map_mulVec [Fintype ι] {R : Type*} [Ring R]
+    (i : B) (v : ι → R) (a : ι) :
+    (((1 + (T.raisingMatrix i).map (Int.cast : ℤ → R)) *
+        (1 - (T.loweringMatrix i).map (Int.cast : ℤ → R)) *
+        (1 + (T.raisingMatrix i).map (Int.cast : ℤ → R))) *ᵥ v) a =
+      (if T.weight a i = -1 then -1 else 1) * v (T.reflection i a) := by
+  simp only [← Matrix.mulVec_mulVec, Matrix.add_mulVec, Matrix.sub_mulVec,
+    Matrix.one_mulVec, Pi.add_apply, Pi.sub_apply,
+    T.matrix_map_mulVec i (-1) _ (T.raisingMatrix_apply i),
+    T.matrix_map_mulVec i 1 _ (T.loweringMatrix_apply i),
+    T.weight_reflection_self, T.reflection_apply_apply]
+  rcases T.weight_eq_neg_one_or_eq_zero_or_eq_one a i with h | h | h
+  · simp [h]
+  · have hs : T.reflection i a = a := (T.reflection_eq_self_iff i a).mpr h
+    simp [h, hs]
+  · simp [h]
+
+/-- Weyl words at orthogonal nodes of a minuscule weight table commute over any coefficient
+ring. -/
+theorem simpleWeyl_map_commute_of_cartanMatrix_eq_zero [Fintype ι] {R : Type*} [Ring R]
+    (i j : B) (hij : T.cartanMatrix i j = 0) :
+    Commute
+      ((1 + (T.raisingMatrix i).map (Int.cast : ℤ → R)) *
+        (1 - (T.loweringMatrix i).map (Int.cast : ℤ → R)) *
+        (1 + (T.raisingMatrix i).map (Int.cast : ℤ → R)))
+      ((1 + (T.raisingMatrix j).map (Int.cast : ℤ → R)) *
+        (1 - (T.loweringMatrix j).map (Int.cast : ℤ → R)) *
+        (1 + (T.raisingMatrix j).map (Int.cast : ℤ → R))) := by
+  have hji := (T.cartanMatrix_zero_comm i j).mp hij
+  apply Matrix.ext_iff_mulVec.mpr
+  intro v
+  funext a
+  conv_lhs => rw [← Matrix.mulVec_mulVec]
+  conv_rhs => rw [← Matrix.mulVec_mulVec]
+  simp only [T.simpleWeyl_map_mulVec,
+    T.weight_reflection_of_cartanMatrix_eq_zero i j a hij,
+    T.weight_reflection_of_cartanMatrix_eq_zero j i a hji,
+    T.reflection_comm_of_cartanMatrix_eq_zero i j a hij]
+  by_cases hi : T.weight a i = -1 <;> by_cases hj : T.weight a j = -1 <;>
+    simp [hi, hj]
+
+/-- Weyl words of a minuscule weight table satisfy the length-three braid relation when both
+Cartan entries are `-1`, over any coefficient ring. -/
+theorem simpleWeyl_map_braid_of_cartanMatrix_eq_neg_one [Fintype ι] {R : Type*} [Ring R]
+    (i j : B) (hij : T.cartanMatrix i j = -1) (hji : T.cartanMatrix j i = -1) :
+    ((1 + (T.raisingMatrix i).map (Int.cast : ℤ → R)) *
+        (1 - (T.loweringMatrix i).map (Int.cast : ℤ → R)) *
+        (1 + (T.raisingMatrix i).map (Int.cast : ℤ → R))) *
+      ((1 + (T.raisingMatrix j).map (Int.cast : ℤ → R)) *
+        (1 - (T.loweringMatrix j).map (Int.cast : ℤ → R)) *
+        (1 + (T.raisingMatrix j).map (Int.cast : ℤ → R))) *
+      ((1 + (T.raisingMatrix i).map (Int.cast : ℤ → R)) *
+        (1 - (T.loweringMatrix i).map (Int.cast : ℤ → R)) *
+        (1 + (T.raisingMatrix i).map (Int.cast : ℤ → R))) =
+      ((1 + (T.raisingMatrix j).map (Int.cast : ℤ → R)) *
+        (1 - (T.loweringMatrix j).map (Int.cast : ℤ → R)) *
+        (1 + (T.raisingMatrix j).map (Int.cast : ℤ → R))) *
+      ((1 + (T.raisingMatrix i).map (Int.cast : ℤ → R)) *
+        (1 - (T.loweringMatrix i).map (Int.cast : ℤ → R)) *
+        (1 + (T.raisingMatrix i).map (Int.cast : ℤ → R))) *
+      ((1 + (T.raisingMatrix j).map (Int.cast : ℤ → R)) *
+        (1 - (T.loweringMatrix j).map (Int.cast : ℤ → R)) *
+        (1 + (T.raisingMatrix j).map (Int.cast : ℤ → R))) := by
+  have href (a : ι) :
+      T.reflection i (T.reflection j (T.reflection i a)) =
+        T.reflection j (T.reflection i (T.reflection j a)) := by
+    apply T.weight_injective
+    funext k
+    simp only [T.weight_reflection, T.cartanMatrix_diag, hij, hji]
+    ring
+  apply Matrix.ext_iff_mulVec.mpr
+  intro v
+  funext a
+  have hsum := T.weight_eq_neg_one_or_eq_zero_or_eq_one (T.reflection i a) j
+  simp only [T.weight_reflection, hji, mul_neg_one, sub_neg_eq_add] at hsum
+  conv_lhs => rw [← Matrix.mulVec_mulVec, ← Matrix.mulVec_mulVec]
+  conv_rhs => rw [← Matrix.mulVec_mulVec, ← Matrix.mulVec_mulVec]
+  simp only [T.simpleWeyl_map_mulVec, href,
+    T.weight_reflection, T.cartanMatrix_diag, hij, hji]
+  -- `hsum` excludes the cases where both coordinates are nonzero with the same sign.
+  rcases T.weight_eq_neg_one_or_eq_zero_or_eq_one a i with hi | hi | hi <;>
+    rcases T.weight_eq_neg_one_or_eq_zero_or_eq_one a j with hj | hj | hj <;>
+    norm_num [hi, hj] at hsum <;> norm_num [hi, hj]
+
 /-- The entry formula for a simple Cartan generator matrix. -/
 @[simp]
 theorem cartanGeneratorMatrix_apply (i : B) (a b : ι) :
@@ -620,6 +733,22 @@ theorem loweringMatrix_pow_two (i : B) : T.loweringMatrix i ^ 2 = 0 := by
   by_cases hb : T.weight b i = 1
   · simp [hb, T.weight_reflection_self]
   · simp [hb]
+
+/-- The raising matrix cast into any ring squares to zero. -/
+theorem raisingMatrix_map_mul_self {R : Type*} [Ring R] (i : B) :
+    (T.raisingMatrix i).map (Int.cast : ℤ → R) * (T.raisingMatrix i).map (Int.cast : ℤ → R) =
+      0 := by
+  have h := congrArg (RingHom.mapMatrix (Int.castRingHom R)) (T.raisingMatrix_pow_two i)
+  rw [map_pow, map_zero] at h
+  simpa only [RingHom.mapMatrix_apply, Int.coe_castRingHom, pow_two] using h
+
+/-- The lowering matrix cast into any ring squares to zero. -/
+theorem loweringMatrix_map_mul_self {R : Type*} [Ring R] (i : B) :
+    (T.loweringMatrix i).map (Int.cast : ℤ → R) * (T.loweringMatrix i).map (Int.cast : ℤ → R) =
+      0 := by
+  have h := congrArg (RingHom.mapMatrix (Int.castRingHom R)) (T.loweringMatrix_pow_two i)
+  rw [map_pow, map_zero] at h
+  simpa only [RingHom.mapMatrix_apply, Int.coe_castRingHom, pow_two] using h
 
 
 

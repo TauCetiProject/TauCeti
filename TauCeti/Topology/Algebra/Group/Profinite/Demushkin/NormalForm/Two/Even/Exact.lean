@@ -113,6 +113,48 @@ private theorem demushkinWordNeTwo_mul_prod_tail_eq (a : Fin (k + 2) → ℤ_[2]
     map_succ_map_succ_freeProPGen, map_succ_padicPow, List.finRange_succ, List.map_cons,
     List.drop_succ_cons, List.drop_zero]
 
+/-- **Extending the tail normalisation to the first two generators.** Let `e'` be an automorphism
+of the free pro-`2` group on `k` generators carrying the tail relator `w₀ · T` to `w_q`. Then an
+automorphism `E` of the free pro-`2` group on `k + 2` generators fixes the head
+`x₁^{2+α} (x₁, x₂)` and carries the embedded tail relator to `x₃^{q} (x₃, x₄) ⋯ (x_{n-1}, x_n)`,
+so it carries their product to the product of the head with that word. -/
+private theorem exists_continuousMulEquiv_apply_head_mul_map_succ_succ (α : ℤ_[2])
+    (T : freeProP 2 (Fin k)) (q : ℕ) (e' : freeProP 2 (Fin k) ≃ₜ* freeProP 2 (Fin k))
+    (he' : e' (demushkinWordNeTwo 0 k (freeProPGen 2 k) * T) =
+      demushkinWordNeTwo q k (freeProPGen 2 k)) :
+    ∃ E : freeProP 2 (Fin (k + 2)) ≃ₜ* freeProP 2 (Fin (k + 2)),
+      E ((isProP_freeProP 2 (Fin (k + 2))).padicPow (freeProPGen 2 (k + 2) 0) (2 + α) *
+        labuteComm (freeProPGen 2 (k + 2) 0) (freeProPGen 2 (k + 2) 1) *
+        map (Fin.succ : Fin (k + 1) → Fin (k + 2)) (map (Fin.succ : Fin k → Fin (k + 1))
+          (demushkinWordNeTwo 0 k (freeProPGen 2 k) * T))) =
+      (isProP_freeProP 2 (Fin (k + 2))).padicPow (freeProPGen 2 (k + 2) 0) (2 + α) *
+        labuteComm (freeProPGen 2 (k + 2) 0) (freeProPGen 2 (k + 2) 1) *
+        demushkinWordNeTwo q k fun i ↦ freeProPGen 2 (k + 2) (i + 2) := by
+  have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
+  set E : freeProP 2 (Fin (k + 2)) ≃ₜ* freeProP 2 (Fin (k + 2)) :=
+    finSuccExtend (finSuccExtend e') with hE_def
+  have hE0 : E (freeProPGen 2 (k + 2) 0) = freeProPGen 2 (k + 2) 0 :=
+    finSuccExtend_freeProPGen_zero _
+  have hE1 : E (freeProPGen 2 (k + 2) 1) = freeProPGen 2 (k + 2) 1 := by
+    have h1 : freeProPGen 2 (k + 2) 1 = map Fin.succ (freeProPGen 2 (k + 1) 0) :=
+      (map_succ_freeProPGen 0).symm
+    rw [h1, hE_def, finSuccExtend_map_succ, finSuccExtend_freeProPGen_zero]
+  have hEhead : E ((isProP_freeProP 2 (Fin (k + 2))).padicPow (freeProPGen 2 (k + 2) 0) (2 + α) *
+        labuteComm (freeProPGen 2 (k + 2) 0) (freeProPGen 2 (k + 2) 1)) =
+      (isProP_freeProP 2 (Fin (k + 2))).padicPow (freeProPGen 2 (k + 2) 0) (2 + α) *
+        labuteComm (freeProPGen 2 (k + 2) 0) (freeProPGen 2 (k + 2) 1) := by
+    have hmap := (isProP_freeProP 2 (Fin (k + 2))).map_padicPow (isProP_freeProP 2 (Fin (k + 2)))
+      (E : freeProP 2 (Fin (k + 2)) →* freeProP 2 (Fin (k + 2))) E.continuous
+      (freeProPGen 2 (k + 2) 0) (2 + α)
+    rw [MonoidHom.coe_ofClass] at hmap
+    simp only [map_mul, map_labuteComm, hmap, hE0, hE1]
+  have hEtail : E (map (Fin.succ : Fin (k + 1) → Fin (k + 2))
+        (map (Fin.succ : Fin k → Fin (k + 1)) (demushkinWordNeTwo 0 k (freeProPGen 2 k) * T))) =
+      demushkinWordNeTwo q k fun i ↦ freeProPGen 2 (k + 2) (i + 2) := by
+    rw [hE_def, finSuccExtend_map_succ, finSuccExtend_map_succ, he']
+    simp only [map_demushkinWordNeTwo, Function.comp_def, map_succ_map_succ_freeProPGen]
+  exact ⟨E, by rw [map_mul, hEhead, hEtail]⟩
+
 /-- **The exact form of the dyadic relators of even rank.** Let `n ≥ 2` be even and let
 `r ∈ λ_1(F)` be a relator of the free pro-`2` group `F` on `n` generators with the class of
 `x₁² (x₁, x₂) (x₃, x₄) ⋯ (x_{n-1}, x_n)` in `gr_1(F)`. Then a continuous automorphism of `F` carries
@@ -159,38 +201,10 @@ theorem exists_continuousMulEquiv_apply_eq_padicPow_mul_labuteComm_mul_demushkin
       exact (padicPow_mem_pLowerCentralSeries_iff j _ 2).2 (h4 ▸ ha _)
   obtain ⟨e', q, hq', he'⟩ :=
     exists_continuousMulEquiv_apply_demushkinWordNeTwo_zero_mul_eq hk hkpos.ne' hT
-  -- The extension `E` of its normalising automorphism by `x₁ ↦ x₁` and `x₂ ↦ x₂` fixes the head
-  -- `x₁^{2+α} (x₁, x₂)` and carries the embedded tail relator to
-  -- `x₃^{q} (x₃, x₄) ⋯ (x_{n-1}, x_n)`.
-  set E : freeProP 2 (Fin (k + 2)) ≃ₜ* freeProP 2 (Fin (k + 2)) :=
-    finSuccExtend (finSuccExtend e') with hE_def
-  have hE0 : E (freeProPGen 2 (k + 2) 0) = freeProPGen 2 (k + 2) 0 :=
-    finSuccExtend_freeProPGen_zero _
-  have hE1 : E (freeProPGen 2 (k + 2) 1) = freeProPGen 2 (k + 2) 1 := by
-    have h1 : freeProPGen 2 (k + 2) 1 = map Fin.succ (freeProPGen 2 (k + 1) 0) :=
-      (map_succ_freeProPGen 0).symm
-    rw [h1, hE_def, finSuccExtend_map_succ, finSuccExtend_freeProPGen_zero]
-  have hEhead : E ((isProP_freeProP 2 (Fin (k + 2))).padicPow (freeProPGen 2 (k + 2) 0) (2 + α) *
-        labuteComm (freeProPGen 2 (k + 2) 0) (freeProPGen 2 (k + 2) 1)) =
-      (isProP_freeProP 2 (Fin (k + 2))).padicPow (freeProPGen 2 (k + 2) 0) (2 + α) *
-        labuteComm (freeProPGen 2 (k + 2) 0) (freeProPGen 2 (k + 2) 1) := by
-    have hmap := (isProP_freeProP 2 (Fin (k + 2))).map_padicPow (isProP_freeProP 2 (Fin (k + 2)))
-      (E : freeProP 2 (Fin (k + 2)) →* freeProP 2 (Fin (k + 2))) E.continuous
-      (freeProPGen 2 (k + 2) 0) (2 + α)
-    rw [MonoidHom.coe_ofClass] at hmap
-    simp only [map_mul, map_labuteComm, hmap, hE0, hE1]
-  have hEtail : E (map (Fin.succ : Fin (k + 1) → Fin (k + 2))
-        (map (Fin.succ : Fin k → Fin (k + 1)) (demushkinWordNeTwo 0 k (freeProPGen 2 k) * T))) =
-      demushkinWordNeTwo q k fun i ↦ freeProPGen 2 (k + 2) (i + 2) := by
-    rw [hE_def, finSuccExtend_map_succ, finSuccExtend_map_succ, he']
-    simp only [map_demushkinWordNeTwo, Function.comp_def, map_succ_map_succ_freeProPGen]
-  have he : E (e₁ r) =
-      (isProP_freeProP 2 (Fin (k + 2))).padicPow (freeProPGen 2 (k + 2) 0) (2 + α) *
-        labuteComm (freeProPGen 2 (k + 2) 0) (freeProPGen 2 (k + 2) 1) *
-        demushkinWordNeTwo q k fun i ↦ freeProPGen 2 (k + 2) (i + 2) := by
-    rw [he₁, demushkinWordNeTwo_mul_prod_tail_eq a, map_mul, hEhead, hEtail]
+  obtain ⟨E, hE⟩ := exists_continuousMulEquiv_apply_head_mul_map_succ_succ α T q e' he'
   refine ⟨e₁.trans E, α, q, hα, hq', ?_⟩
-  rw [ContinuousMulEquiv.trans_apply, he]
+  rw [ContinuousMulEquiv.trans_apply, he₁, demushkinWordNeTwo_mul_prod_tail_eq a]
+  exact hE
 
 end freeProP
 

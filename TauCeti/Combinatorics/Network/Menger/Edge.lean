@@ -130,6 +130,18 @@ theorem card_le_card_of_not_reachableWithout {ι : Type*} [Fintype ι] {P : ι �
     (b := fun _ ↦ t) (P := P) (fun _ ↦ Set.mem_singleton s) (fun _ ↦ Set.mem_singleton t) hP
     (by simpa using hF)
 
+/-- Any arrow set containing all arrows leaving an admissible terminal cut separates its sink
+terminals from its source terminals. -/
+theorem TerminalCut.IsAdmissible.not_reachableWithout_of_cut_subset {A B S : Finset V}
+    (hS : TerminalCut.IsAdmissible A B S) {F : Set (Σ x y, Q x y)}
+    (hF : ∀ ⦃v w : V⦄ (e : Q v w), v ∈ S → w ∉ S → ⟨v, w, e⟩ ∈ F)
+    (a : V) (ha : a ∈ A) (b : V) (hb : b ∈ B) : ¬ReachableWithout F a b := by
+  intro h
+  exact disjoint_left.1 hS.disjoint
+    (h.mem_of_mem (C := (S : Set V)) (hS.subset ha) fun v w e hv he ↦ by
+      by_contra hw
+      exact he (hF e hv hw)) hb
+
 /-- **Menger's theorem for arrow-disjoint directed paths.** For distinct vertices `s` and `t` of a
 finite arrow family, some family of directed `s`–`t` paths, no two of which traverse a common
 arrow, has as many members as some set of arrows whose deletion leaves `t` unreachable from `s`.
@@ -146,7 +158,7 @@ theorem exists_paths_arrowSeparator_card_eq [Finite V] [∀ x y, Finite (Q x y)]
   -- `S`, which separate `t` from `s`.
   obtain ⟨f, S, hs, ht, hval⟩ :=
     Flow.exists_val_eq_arrowSum hst (cap := (1 : Assignment Q ℤ)) fun _ _ _ ↦ zero_le_one
-  obtain ⟨k, P, hk, hP, -, hdisj⟩ := f.exists_paths_card_eq_val hst fun _ _ e ↦ f.le_upper e
+  obtain ⟨k, P, hk, hP, -, hdisj⟩ := f.exists_paths_card_eq_val fun _ _ e ↦ f.le_upper e
   refine ⟨k, P, ({a : Σ x y, Q x y | a.1 ∈ S ∧ a.2.1 ∈ Sᶜ} : Finset _), hP, hdisj,
     fun h ↦ ht ?_, ?_⟩
   · refine h.mem_of_mem (C := (S : Set V)) hs fun v w e hv he ↦ ?_
@@ -168,20 +180,23 @@ theorem forall_reachableWithout_iff_exists_paths [Finite V] [∀ x y, Finite (Q 
     obtain ⟨m, P, F, hP, hdisj, hF, hFm⟩ := exists_paths_arrowSeparator_card_eq (Q := Q) hst
     have hkm : k ≤ m := hFm ▸ not_lt.1 fun hlt ↦ hF (h F hlt)
     exact ⟨fun i ↦ P (Fin.castLE hkm i), fun i ↦ hP _,
-      fun i j hij ↦ hdisj fun h ↦ hij (Fin.castLE_injective hkm h)⟩
+      hdisj.comp_of_injective (Fin.castLE_injective hkm)⟩
   · by_contra h
     exact hF.not_ge (by simpa using card_le_card_of_not_reachableWithout hP h)
 
 /-! ### Arrow-disjoint paths between vertex sets -/
 
 /-- An integer `A`–`B` flow carrying at most one unit on every arrow carries as many directed paths
-as its value, each from a vertex of `A` to a vertex of `B`, no two of which traverse a common
-arrow. -/
+as its value, each from a vertex of `A` to a vertex of `B`, with no internal vertex in either
+terminal set and no arrow shared by two paths. Every arrow of an extracted path carries exactly
+one unit of the flow. -/
 theorem SetFlow.exists_paths_card_eq_val [Fintype V] [∀ x y, Fintype (Q x y)]
     {cap : Assignment Q ℤ} {A B : Finset V} (f : SetFlow cap A B)
     (hf : ∀ ⦃x y : V⦄ (e : Q x y), f.toFun e ≤ 1) :
     ∃ (k : ℕ) (a b : Fin k → V) (P : ∀ i, ArrowWalk Q (a i) (b i)), (k : ℤ) = f.val ∧
       (∀ i, a i ∈ A) ∧ (∀ i, b i ∈ B) ∧ (∀ i, (P i).IsPath) ∧
+      (∀ i, ∀ v ∈ (P i).vertices, v ≠ a i → v ≠ b i → v ∉ A ∧ v ∉ B) ∧
+      (∀ i, ∀ e ∈ (P i).arrows, f.toFun e.2.2 = 1) ∧
       Pairwise fun i j ↦ (P i).arrows.Disjoint (P j).arrows := by
   classical
   obtain ⟨D⟩ := nonempty_pathCycleDecomposition (f := f.toFun) fun _ _ e ↦ f.nonneg e
@@ -199,10 +214,18 @@ theorem SetFlow.exists_paths_card_eq_val [Fintype V] [∀ x y, Fintype (Q x y)]
     by_cases hA : p.target ∈ A
     · exact f.excessAt_nonpos _ hA
     · exact (f.conserve _ hA hB).le
-  refine ⟨D.paths.length, fun i ↦ D.paths[(i : ℕ)].source, fun i ↦ D.paths[(i : ℕ)].target,
-    fun i ↦ D.paths[(i : ℕ)].walk, ?_, fun i ↦ (hsource _ (List.getElem_mem _)).1,
-    fun i ↦ htarget _ (List.getElem_mem _), fun i ↦ D.isPath_walk _ (List.getElem_mem _),
-    D.pairwise_disjoint_arrows hf⟩
+  let P (i : Fin D.paths.length) := D.paths[(i : ℕ)].walk
+  have htrim (i : Fin D.paths.length) :
+      ∃ a ∈ A, ∃ b ∈ B, ∃ q : ArrowWalk Q a b, q.IsPath ∧ q.arrows ⊆ (P i).arrows ∧
+        ∀ v ∈ q.vertices, v ≠ a → v ≠ b → v ∉ A ∧ v ∉ B := by
+    obtain ⟨a, ha, b, hb, q, hq, -, hsub, hint⟩ :=
+      ArrowWalk.exists_isPath_interior_notMem (A := (A : Set V)) (B := (B : Set V)) (P i)
+        (hsource _ (List.getElem_mem _)).1 (htarget _ (List.getElem_mem _))
+    exact ⟨a, ha, b, hb, q, hq, hsub, by simpa using hint⟩
+  choose a ha b hb P' hP' hsub hint using htrim
+  refine ⟨D.paths.length, a, b, P', ?_, ha, hb, hP', hint,
+    fun i e he ↦ D.apply_eq_one_of_mem_arrows hf (List.getElem_mem _) (hsub i he),
+    fun i j hij e hei hej ↦ D.pairwise_disjoint_arrows hf hij (hsub i hei) (hsub j hej)⟩
   -- The value is the total weight of the paths ending in `B`, each of weight one.
   have hval := WeightedWalk.sum_excessAt_sum_map_assignment D.paths B
   rw [← D.pathAssignment_def, List.filter_eq_self.2 fun p hp ↦ decide_eq_true (htarget p hp),
@@ -231,22 +254,12 @@ theorem exists_paths_setArrowSeparator_card_eq [Finite V] [∀ x y, Finite (Q x 
   -- arrows leaving `S`, which separate `B` from `A`.
   obtain ⟨f, S, hS, hval⟩ :=
     SetFlow.exists_val_eq_arrowSum hAB (cap := (1 : Assignment Q ℤ)) fun _ _ _ ↦ zero_le_one
-  obtain ⟨k, a, b, P, hk, ha, hb, -, hdisj⟩ := f.exists_paths_card_eq_val fun _ _ e ↦ f.le_cap e
-  -- Trim every path to an `A`–`B` path, which traverses only arrows of the original path.
-  have h (i : Fin k) : ∃ a' ∈ A, ∃ b' ∈ B, ∃ q : ArrowWalk Q a' b', q.IsPath ∧
-      q.arrows ⊆ (P i).arrows ∧ ∀ v ∈ q.vertices, v ≠ a' → v ≠ b' → v ∉ A ∧ v ∉ B := by
-    obtain ⟨a', ha', b', hb', q, hq, -, hsub, hint⟩ :=
-      ArrowWalk.exists_isPath_interior_notMem (A := (A : Set V)) (B := (B : Set V)) (P i) (ha i)
-        (hb i)
-    exact ⟨a', ha', b', hb', q, hq, hsub, by simpa using hint⟩
-  choose a' ha' b' hb' P' hP' hsub hint using h
-  refine ⟨k, a', b', P', ({e : Σ x y, Q x y | e.1 ∈ S ∧ e.2.1 ∈ Sᶜ} : Finset _), ha', hb', hP',
-    hint, fun i j hij e hei hej ↦ hdisj hij (hsub i hei) (hsub j hej), fun a ha b hb h ↦ ?_, ?_⟩
-  · refine disjoint_left.1 hS.disjoint
-      (h.mem_of_mem (C := (S : Set V)) (hS.subset ha) fun v w e hv he ↦ ?_) hb
-    by_contra hw
-    exact he (by simpa using ⟨hv, hw⟩)
-  · rw [← Nat.cast_inj (R := ℤ), hk, hval, arrowSum_one]
+  obtain ⟨k, a, b, P, hk, ha, hb, hP, hint, -, hdisj⟩ :=
+    f.exists_paths_card_eq_val fun _ _ e ↦ f.le_cap e
+  refine ⟨k, a, b, P, ({e : Σ x y, Q x y | e.1 ∈ S ∧ e.2.1 ∈ Sᶜ} : Finset _), ha, hb,
+    hP, hint, hdisj, fun a ha b hb ↦ hS.not_reachableWithout_of_cut_subset
+      (by intro v w e hv hw; simpa using ⟨hv, hw⟩) a ha b hb, ?_⟩
+  rw [← Nat.cast_inj (R := ℤ), hk, hval, arrowSum_one]
 
 /-- **Menger's theorem for arrow-disjoint directed paths between vertex sets, predicate form.** Let
 `A` and `B` be sets of vertices of a finite arrow family. After deleting any fewer than
@@ -275,7 +288,7 @@ theorem forall_exists_reachableWithout_iff_exists_paths [Finite V] [∀ x y, Fin
       hF a ha b hb hab
     exact ⟨fun i ↦ a (Fin.castLE hkm i), fun i ↦ b (Fin.castLE hkm i),
       fun i ↦ P (Fin.castLE hkm i), fun i ↦ ha _, fun i ↦ hb _, fun i ↦ hP _,
-      fun i ↦ hint _, fun i j hij ↦ hdisj fun h ↦ hij (Fin.castLE_injective hkm h)⟩
+      fun i ↦ hint _, hdisj.comp_of_injective (Fin.castLE_injective hkm)⟩
   · by_contra h
     push Not at h
     exact hF.not_ge (by simpa using card_le_card_of_forall_not_reachableWithout ha hb hP h)

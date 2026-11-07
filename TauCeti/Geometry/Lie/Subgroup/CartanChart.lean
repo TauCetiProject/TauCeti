@@ -23,6 +23,9 @@ the embedded Lie-subgroup chart.
 * `TauCeti.Lie.isOpen_subgroupOf_of_lieSubalgebraOfSubgroup_le`: a closed subgroup of a closed
   subgroup `K` whose Lie algebra contains that of `K` is open in `K`.
 
+* `TauCeti.Lie.le_of_lieSubalgebraOfSubgroup_le`: a closed connected subgroup lies in any
+  closed subgroup whose Lie algebra contains its own.
+
 ## References
 
 * J. M. Lee, *Introduction to Smooth Manifolds*, 2nd edition (2013), Theorem 20.12.
@@ -159,5 +162,19 @@ theorem isOpen_subgroupOf_of_lieSubalgebraOfSubgroup_le [T2Space G] {T K : Subgr
   obtain ⟨X, hX, hXk⟩ := (hUK k hk).mp k.2
   rw [SetLike.mem_coe, Subgroup.mem_subgroupOf, ← hXk]
   exact lieExp_mem_of_mem_lieSubalgebraOfSubgroup hT (h hX)
+
+/-- A closed connected subgroup lies in any closed subgroup containing its Lie algebra. -/
+theorem le_of_lieSubalgebraOfSubgroup_le [T2Space G] {K L : Subgroup G}
+    (hK : IsClosed (K : Set G)) (hconn : IsPreconnected (K : Set G))
+    (hL : IsClosed (L : Set G))
+    (h : lieSubalgebraOfSubgroup (I := I) K ≤ lieSubalgebraOfSubgroup (I := I) L) :
+    K ≤ L := by
+  let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
+  let _ : PreconnectedSpace K := isPreconnected_iff_preconnectedSpace.mp hconn
+  have hopen := isOpen_subgroupOf_of_lieSubalgebraOfSubgroup_le hL hK h
+  have huniv := IsClopen.eq_univ
+    ⟨(L.subgroupOf K).isClosed_of_isOpen hopen, hopen⟩ ⟨1, (L.subgroupOf K).one_mem⟩
+  intro k hk
+  exact Subgroup.mem_subgroupOf.mp (Set.eq_univ_iff_forall.mp huniv (⟨k, hk⟩ : K))
 
 end TauCeti.Lie

@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.IntegralLattice.Localization.Operations
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Unimodular
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Cardinality
 public import TauCeti.LinearAlgebra.IntegralLattice.Signature
+public import TauCeti.LinearAlgebra.IntegralLattice.Ideals
 public import Mathlib.Data.Nat.PrimeFin
 import Mathlib.Data.Int.Associated
 import TauCeti.NumberTheory.IntegralLattice.Localization.Ideals
@@ -31,6 +32,10 @@ since the signed determinant is `(-1) ^ n₋` times the absolute determinant. Fo
 lattices the absolute determinant is the order of the discriminant group `Lᵛ / L`, so the genus
 also determines that order.
 
+The scale and norm ideals are genus invariants in the same way: their extensions to `ℤ_p` are
+the scale and norm ideals of the localization, and an ideal of `ℤ` is determined by its extensions
+to all `ℤ_p`.
+
 For lattices with equal nonzero signed determinants, the local tests reduce to the finite set
 of prime factors of twice the absolute determinant. Outside that set, the local determinants
 are units at an odd prime, so the rank and determinant classification gives an isometry. The
@@ -50,6 +55,9 @@ localizations alone.
 * `TauCeti.IntegralLattice.SameGenus.natCard_discriminantGroup_eq`: lattices in one genus have
   discriminant groups of the same order.
 * `TauCeti.IntegralLattice.SameGenus.isEven_iff`: lattices in one genus are even together.
+* `TauCeti.IntegralLattice.SameGenus.scaleIdeal_eq` and
+  `TauCeti.IntegralLattice.SameGenus.normIdeal_eq`: lattices in one genus have the same scale and
+  norm ideals.
 * `TauCeti.IntegralLattice.SameGenus.completedRationalForm_equivalent`: lattices in one genus have
   isometric completed rational spaces at every prime.
 * `TauCeti.IntegralLattice.sameGenus_iff_localIntegralForm_equivalent_primeFactors`: for equal
@@ -143,6 +151,21 @@ theorem isEven_iff (h : L.SameGenus M) : L.IsEven ↔ M.IsEven := by
     isEven_iff_forall_two_dvd_localIntegralForm_apply_self]
   exact (h.localIntegralForm_equivalent 2).forall_two_dvd_apply_self_iff
 
+/-- **The scale ideal is a genus invariant.** -/
+theorem scaleIdeal_eq (h : L.SameGenus M) : L.scaleIdeal = M.scaleIdeal :=
+  -- Localization at `p` extends the scale ideal to `ℤ_[p]`, isometric localizations have equal
+  -- scale ideals, and an ideal of `ℤ` is determined by its extensions to all `ℤ_[p]`.
+  Int.ideal_eq_iff_forall_map_padicInt_eq.mpr fun p _ ↦ by
+    rw [← localScaleIdeal_eq_map, ← localScaleIdeal_eq_map]
+    exact (h.localIntegralForm_equivalent p).scaleIdeal_eq
+
+/-- **The norm ideal is a genus invariant.** -/
+theorem normIdeal_eq (h : L.SameGenus M) : L.normIdeal = M.normIdeal :=
+  -- The same localization argument as for `scaleIdeal_eq`.
+  Int.ideal_eq_iff_forall_map_padicInt_eq.mpr fun p _ ↦ by
+    rw [← localNormIdeal_eq_map, ← localNormIdeal_eq_map]
+    exact (h.localIntegralForm_equivalent p).normIdeal_eq
+
 /-- Every integral lattice belongs to its own genus. -/
 @[refl, simp]
 theorem refl (L : IntegralLattice V) : L.SameGenus L :=
@@ -176,8 +199,10 @@ theorem determinant_eq (h : L.SameGenus M) : L.determinant = M.determinant := by
     discriminant_def, habs]
 
 /-- Lattices in one genus have discriminant groups of the same order. -/
-theorem natCard_discriminantGroup_eq [L.IsNondegenerate] [M.IsNondegenerate]
-    (h : L.SameGenus M) : Nat.card L.DiscriminantGroup = Nat.card M.DiscriminantGroup := by
+theorem natCard_discriminantGroup_eq [L.IsNondegenerate] (h : L.SameGenus M) :
+    Nat.card L.DiscriminantGroup = Nat.card M.DiscriminantGroup := by
+  have : M.IsNondegenerate := ⟨M.determinant_ne_zero_iff.mp
+    (h.determinant_eq ▸ L.determinant_ne_zero_iff.mpr L.form_nondegenerate)⟩
   rw [natCard_discriminantGroup, natCard_discriminantGroup, discriminant_def, discriminant_def,
     h.determinant_eq]
 

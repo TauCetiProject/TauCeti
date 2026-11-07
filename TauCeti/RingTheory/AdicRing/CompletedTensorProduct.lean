@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.AdicCompletion.LocalRing
 public import Mathlib.RingTheory.TensorProduct.Maps
 public import Mathlib.Topology.Algebra.UniformRing
 public import TauCeti.RingTheory.AdicCompletion.Algebra
+public import TauCeti.RingTheory.AdicCompletion.IdealIndependence
 public import TauCeti.RingTheory.AdicRing.Basic
 
 /-!
@@ -31,7 +32,12 @@ and `B ⊗̂_A C` is the coordinate ring of the fibre product `Spf B ×_{Spf A} 
 and the results of this file use no topology on `A`.
 
 The completion is formed with the chosen ideals of definition `TauCeti.IsAdicRing.ideal B` and
-`TauCeti.IsAdicRing.ideal C`.
+`TauCeti.IsAdicRing.ideal C`. The comparison `CompletedTensorProduct.idealEquiv` identifies it
+bicontinuously with the completion formed using any other finitely generated ideals of definition,
+fixing every ordinary tensor. Thus the completed tensor product depends only on the topologies
+of its factors, not on the chosen ideals. It uses `IsAdic.adicCompletionEquiv`: the tensor ideals
+have the same radical, so their adic completions are the uniform completion of the same
+topological ring.
 
 ## Main definitions
 
@@ -45,6 +51,8 @@ The completion is formed with the chosen ideals of definition `TauCeti.IsAdicRin
   `B ⊗̂_A C → D` induced by continuous `A`-algebra homomorphisms `B → D` and `C → D`.
 * `TauCeti.AdicRing.CompletedTensorProduct.mapRingHom`: the continuous ring homomorphism
   `B ⊗̂_A C → B' ⊗̂_{A'} C'` induced by continuous homomorphisms `B → B'`, `C → C'` over `A → A'`.
+* `TauCeti.AdicRing.CompletedTensorProduct.idealEquiv`: the comparison with the completion
+  formed using any two finitely generated ideals of definition of the factors.
 * `TauCeti.AdicRing.CompletedTensorProduct.truncation`: the truncation homomorphism
   `B ⊗̂_A C → (B ⊗[A] C) ⧸ J ^ n`.
 * `TauCeti.AdicRing.CompletedTensorProduct.quotientPowEquiv`: the isomorphism
@@ -129,6 +137,14 @@ noncomputable instance : Algebra A (CompletedTensorProduct A B C) :=
 
 instance : IsScalarTower A (B ⊗[A] C) (CompletedTensorProduct A B C) :=
   inferInstanceAs (IsScalarTower A (B ⊗[A] C) (AdicCompletion (tensorIdeal A B C) (B ⊗[A] C)))
+
+/-- The identity `B ⊗[A] C`-algebra equivalence between the completed tensor product and its
+defining `tensorIdeal A B C`-adic completion of `B ⊗[A] C`. It transports completion-level maps,
+such as `AdicCompletion.toQuotient`, to the completed tensor product. -/
+noncomputable def adicCompletionEquiv :
+    CompletedTensorProduct A B C ≃ₐ[B ⊗[A] C]
+      AdicCompletion (tensorIdeal A B C) (B ⊗[A] C) :=
+  AlgEquiv.refl
 
 /-- The completed tensor product carries the adic topology of the extension of the ideal
 `I_B ⊗ 1 + 1 ⊗ I_C`. -/
@@ -490,6 +506,87 @@ theorem quotientPowEquiv_mk (n : ℕ) (x : CompletedTensorProduct A B C) :
   AdicCompletion.quotientMapPowAlgEquiv_mk (tensorIdeal_fg A B C) n x
 
 end Quotient
+
+section IdealIndependence
+
+variable (A B C) (J : Ideal B) (K : Ideal C) (hJ : IsAdic J) (hK : IsAdic K)
+
+include hJ hK
+
+/-- Replacing the ideals of definition of the factors does not change the radical of the
+ideal defining the tensor topology. -/
+theorem tensorIdeal_radical_eq :
+    (tensorIdeal A B C).radical =
+      (J.map (Algebra.TensorProduct.includeLeft : B →ₐ[A] B ⊗[A] C) ⊔
+        K.map (Algebra.TensorProduct.includeRight : C →ₐ[A] B ⊗[A] C)).radical := by
+  calc
+    (tensorIdeal A B C).radical =
+        (((IsAdicRing.ideal B).radical.map
+          (Algebra.TensorProduct.includeLeft : B →ₐ[A] B ⊗[A] C)) ⊔
+          ((IsAdicRing.ideal C).radical.map
+            (Algebra.TensorProduct.includeRight : C →ₐ[A] B ⊗[A] C))).radical := by
+      conv_lhs => rw [tensorIdeal_def, Ideal.radical_sup]
+      conv_rhs => rw [Ideal.radical_sup]
+      simp only [Ideal.radical_map_radical]
+    _ = (J.radical.map (Algebra.TensorProduct.includeLeft : B →ₐ[A] B ⊗[A] C) ⊔
+        K.radical.map (Algebra.TensorProduct.includeRight : C →ₐ[A] B ⊗[A] C)).radical := by
+      rw [(IsAdicRing.ideal_spec B).2.1.radical_eq hJ,
+        (IsAdicRing.ideal_spec C).2.1.radical_eq hK]
+    _ = _ := by
+      conv_lhs => rw [Ideal.radical_sup]
+      conv_rhs => rw [Ideal.radical_sup]
+      simp only [Ideal.radical_map_radical]
+
+variable (hJfg : J.FG) (hKfg : K.FG)
+
+include hJfg hKfg
+
+/-- The tensor ideal built from any two finitely generated ideals of definition defines the
+same topology on the ordinary tensor product as the tensor ideal built from the chosen ones. -/
+theorem isAdic_tensorIdeal :
+    letI := (tensorIdeal A B C).adicTopology
+    IsAdic (J.map (Algebra.TensorProduct.includeLeft : B →ₐ[A] B ⊗[A] C) ⊔
+      K.map (Algebra.TensorProduct.includeRight : C →ₐ[A] B ⊗[A] C)) := by
+  let := (tensorIdeal A B C).adicTopology
+  exact IsAdic.of_radical_eq rfl (tensorIdeal_fg A B C)
+    (Submodule.FG.sup (hJfg.map _) (hKfg.map _)) (tensorIdeal_radical_eq A B C J K hJ hK)
+
+/-- The canonical comparison with the completion formed using any other finitely generated
+ideals of definition of the factors. It fixes the ordinary tensor product. -/
+noncomputable def idealEquiv :
+    CompletedTensorProduct A B C ≃ₐ[B ⊗[A] C]
+      AdicCompletion (J.map (Algebra.TensorProduct.includeLeft : B →ₐ[A] B ⊗[A] C) ⊔
+        K.map (Algebra.TensorProduct.includeRight : C →ₐ[A] B ⊗[A] C)) (B ⊗[A] C) := by
+  letI : WithIdeal (B ⊗[A] C) := ⟨tensorIdeal A B C⟩
+  exact IsAdic.adicCompletionEquiv rfl (isAdic_tensorIdeal A B C J K hJ hK hJfg hKfg)
+    (tensorIdeal_fg A B C) (Submodule.FG.sup (hJfg.map _) (hKfg.map _))
+
+/-- The change of ideals preserves the left factor. -/
+@[simp]
+theorem idealEquiv_inl (b : B) :
+    idealEquiv A B C J K hJ hK hJfg hKfg (inl A B C b) =
+      algebraMap (B ⊗[A] C) _ (b ⊗ₜ[A] (1 : C)) := by
+  rw [inl_apply, AlgEquiv.commutes]
+
+/-- The change of ideals preserves the right factor. -/
+@[simp]
+theorem idealEquiv_inr (c : C) :
+    idealEquiv A B C J K hJ hK hJfg hKfg (inr A B C c) =
+      algebraMap (B ⊗[A] C) _ ((1 : B) ⊗ₜ[A] c) := by
+  rw [inr_apply, AlgEquiv.commutes]
+
+/-- The comparison is bicontinuous for the adic topologies of the extended tensor ideals. -/
+theorem isHomeomorph_idealEquiv :
+    let L := J.map (Algebra.TensorProduct.includeLeft : B →ₐ[A] B ⊗[A] C) ⊔
+      K.map (Algebra.TensorProduct.includeRight : C →ₐ[A] B ⊗[A] C)
+    @IsHomeomorph _ _ _ (L.map (algebraMap (B ⊗[A] C) (AdicCompletion L (B ⊗[A] C)))).adicTopology
+      (idealEquiv A B C J K hJ hK hJfg hKfg) := by
+  let : WithIdeal (B ⊗[A] C) := ⟨tensorIdeal A B C⟩
+  exact IsAdic.isHomeomorph_adicCompletionEquiv (I := tensorIdeal A B C) rfl
+    (isAdic_tensorIdeal A B C J K hJ hK hJfg hKfg)
+    (tensorIdeal_fg A B C) (Submodule.FG.sup (hJfg.map _) (hKfg.map _))
+
+end IdealIndependence
 
 end CompletedTensorProduct
 

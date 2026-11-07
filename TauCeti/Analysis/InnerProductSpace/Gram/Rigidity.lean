@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.LinearAlgebra.Isomorphisms
+public import TauCeti.Analysis.InnerProductSpace.LinearCombination
 
 /-!
 # Gram rigidity
@@ -93,9 +94,8 @@ def spanEquivOfInnerEq {v : ι → E} {w : ι → F}
     Submodule.span 𝕜 (Set.range v) ≃ₗᵢ[𝕜] Submodule.span 𝕜 (Set.range w) :=
   (LinearIsometryEquiv.ofEq _ _ (Finsupp.range_linearCombination (v := v) 𝕜).symm).trans
     ((rangeEquivOfInnerEq (S := Finsupp.linearCombination 𝕜 v)
-      (T := Finsupp.linearCombination 𝕜 w) fun a b => by
-        simp only [Finsupp.linearCombination_apply, Finsupp.sum_inner, Finsupp.inner_sum,
-          inner_smul_left, inner_smul_right, h]).trans
+      (T := Finsupp.linearCombination 𝕜 w)
+        fun a b => Finsupp.inner_linearCombination_eq_of_inner_eq a b h).trans
       (LinearIsometryEquiv.ofEq _ _ (Finsupp.range_linearCombination (v := w) 𝕜)))
 
 /-- The canonical span isometry sends corresponding family vectors to each other. -/

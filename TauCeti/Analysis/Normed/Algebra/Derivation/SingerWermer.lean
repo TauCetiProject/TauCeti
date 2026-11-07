@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Algebra.Character
+public import TauCeti.Analysis.Normed.Algebra.Character.Basic
 public import TauCeti.Analysis.Normed.Algebra.Derivation.Exponential
 import Mathlib.Analysis.Complex.Liouville
 import TauCeti.Analysis.Normed.Algebra.SeparatingIdeal.Derivation
@@ -26,9 +26,10 @@ commutative semisimple complex Banach algebra has no nonzero bounded derivations
 * `ContinuousLinearMap.apply_mem_jacobson_of_derivation`: the unital form.
 * `ContinuousLinearMap.eq_zero_of_derivation_of_nonUnitalJacobson_eq_bot`: a bounded derivation
   of a commutative semisimple complex Banach algebra, possibly without unit, is zero.
-* `LinearMap.eq_zero_of_derivation_of_jacobson_eq_bot`: combined with the Johnson–Sinclair
-  automatic continuity theorem, every derivation of a commutative semisimple unital complex
-  Banach algebra is zero, with no continuity assumption.
+* `LinearMap.eq_zero_of_derivation_of_nonUnitalJacobson_eq_bot`: combined with the
+  Johnson–Sinclair automatic continuity theorem, every derivation of a commutative semisimple
+  complex Banach algebra, possibly without unit, is zero, with no continuity assumption.
+* `LinearMap.eq_zero_of_derivation_of_jacobson_eq_bot`: the unital form.
 
 ## References
 
@@ -118,6 +119,18 @@ theorem apply_mem_jacobson_of_derivation (D : A →L[ℂ] A)
 end ContinuousLinearMap
 
 namespace LinearMap
+
+/-- **Commutative semisimple Banach algebras have no nonzero derivations**, nonunital form. A
+linear map `D : B → B` on a commutative complex Banach algebra, possibly without unit, with zero
+Jacobson radical that satisfies the Leibniz rule is zero. No continuity is assumed. -/
+theorem eq_zero_of_derivation_of_nonUnitalJacobson_eq_bot {B : Type*} [NonUnitalNormedCommRing B]
+    [NormedSpace ℂ B] [IsScalarTower ℂ B B] [SMulCommClass ℂ B B] [CompleteSpace B]
+    (D : B →ₗ[ℂ] B) (hD : ∀ x y, D (x * y) = x * D y + D x * y)
+    (hB : TauCeti.nonUnitalJacobson ℂ B = ⊥) : D = 0 := by
+  -- `D` is continuous by the Johnson–Sinclair theorem, and then zero by Singer–Wermer.
+  let D' : B →L[ℂ] B := ⟨D, D.continuous_of_derivation_of_nonUnitalJacobson_eq_bot hD hB⟩
+  ext a
+  exact congr($(D'.eq_zero_of_derivation_of_nonUnitalJacobson_eq_bot hD hB) a)
 
 variable {A : Type*} [NormedCommRing A] [NormedAlgebra ℂ A] [CompleteSpace A]
 

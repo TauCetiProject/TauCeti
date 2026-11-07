@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.PL.Map
 public import TauCeti.Analysis.Convex.Polyhedron.Pi.Neighborhood
+public import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Topology.Compactness.Compact
 
 /-!
@@ -14,7 +15,9 @@ import Mathlib.Topology.Compactness.Compact
 
 A PL map on a compact subset of a real coordinate product admits a finite
 piecewise-affine decomposition. Compactness thus lets one use finitely many
-affine pieces to describe a map given by local PL data.
+affine pieces to describe a map given by local PL data. The same holds on a
+compact subset of a finite-dimensional real normed space, read in linear
+coordinates.
 
 In particular, coning a PL map with compact base can use a finite decomposition
 at the apex, even though `IsPLOn` is defined using local decompositions.
@@ -61,5 +64,21 @@ theorem IsPLOn.isPiecewiseAffineOn_of_isCompact (hf : IsPLOn f s) (hs : IsCompac
     exact mem_iUnion.mpr ⟨⟨⟨x, hx⟩, j⟩, hj, hxy⟩
   · rintro ⟨x, j⟩ y ⟨hy, hyC, hyCneigh⟩
     exact heq x j ⟨⟨hy, hyCneigh⟩, hyC⟩
+
+/-- A PL map on a compact subset of a finite-dimensional real normed space admits a finite
+piecewise-affine decomposition on that set. -/
+theorem IsPLOn.isPiecewiseAffineOn_of_isCompact_of_finiteDimensional {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] {f : E → F} {s : Set E}
+    (hf : IsPLOn f s) (hs : IsCompact s) : IsPiecewiseAffineOn f s := by
+  -- Read `f` in linear coordinates `e : E ≃L[ℝ] ℝⁿ`, decompose there, and pull the cells back.
+  let e : E ≃L[ℝ] (Fin (Module.finrank ℝ E) → ℝ) := ContinuousLinearEquiv.ofFinrankEq (by simp)
+  let A : E →ᴬ[ℝ] (Fin (Module.finrank ℝ E) → ℝ) := (e : E →L[ℝ] _).toContinuousAffineMap
+  let B : (Fin (Module.finrank ℝ E) → ℝ) →ᴬ[ℝ] E := (e.symm : _ →L[ℝ] E).toContinuousAffineMap
+  have hBA : ∀ x, B (A x) = x := fun x => e.symm_apply_apply x
+  have hfB : IsPLOn (f ∘ B) (A '' s) :=
+    hf.comp (isPLOn_continuousAffineMap B _) (by rintro _ ⟨x, hx, rfl⟩; simpa [hBA] using hx)
+  have hdec := (hfB.isPiecewiseAffineOn_of_isCompact (hs.image A.continuous)).comp
+    (isPiecewiseAffineOn_continuousAffineMap A s) (mapsTo_image A s)
+  exact hdec.congr fun x _ => by simp [hBA]
 
 end TauCeti

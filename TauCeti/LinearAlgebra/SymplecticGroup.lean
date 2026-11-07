@@ -42,11 +42,17 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
 * `Matrix.J_apply_swap` and `Matrix.sum_J_mul_J`: the two entrywise identities for `J`, its
   antisymmetry and the pairing of a row with itself; `Matrix.sum_sum_J_mul_J` is the double sum of
   the latter, `tr (J * Jᵀ) = 2 * card l`.
+* `Matrix.J_apply_eq_zero_of_ne_swap` and `Matrix.J_apply_swap_ne_zero`: the nonzero entries of
+  `J` are exactly those at the pairs `(x, x.swap)`.
 * `Matrix.sum_J_mul_J_eq_ite`: the columns of `J` are orthonormal, `Jᵀ * J = 1` read entrywise.
 * `Matrix.eq_J_conj_iff_mul_J_eq`: cancelling a conjugation by `J`.
 * `Matrix.J_mul_mul_J_mul_J`: sandwiching twice by `J` is the identity.
+* `Matrix.transpose_mul_J_mul_transpose` and `Matrix.mul_J_mul_transpose_apply_self`: the
+  congruence transform `C * J * Cᵀ` of `J` by a rectangular matrix is alternating, that is
+  antisymmetric with zero diagonal, in every characteristic.
 * `SymplecticGroup.transpose_eq_J_conj_inv`: the transpose of a symplectic matrix is the
-  `J`-conjugate of its inverse.
+  `J`-conjugate of its inverse; `SymplecticGroup.mem_of_J_conj_eq_transpose` is its converse, a
+  matrix whose `J`-conjugate is its inverse transpose is symplectic.
 * `SymplecticGroup.mem_iff_neg_J_mul_transpose_mul_J_mul_eq_one`: the symplectic matrices are the
   unitary elements for the symplectic adjoint `A ↦ -(J * Aᵀ * J)`.
 * `SymplecticGroup.mem_iff_mem_orthogonalGroup_of_commute` and
@@ -109,6 +115,18 @@ theorem J_apply_swap (x y : l ⊕ l) : J l R y x = -J l R x y := by
   have h := congrFun (congrFun (J_transpose l R) x) y
   simpa only [transpose_apply, Matrix.neg_apply] using h
 
+omit [Fintype l] in
+/-- An entry of `J` vanishes unless its two indices are the two members `x` and `x.swap` of one
+pair. -/
+theorem J_apply_eq_zero_of_ne_swap {x y : l ⊕ l} (h : y ≠ x.swap) : J l R x y = 0 := by
+  rcases x with i | i <;> rcases y with j | j <;> simp_all [Matrix.J, eq_comm]
+
+omit [Fintype l] in
+/-- The entries of `J` at the two members `x` and `x.swap` of a pair are `-1` or `1`, in
+particular nonzero. -/
+theorem J_apply_swap_ne_zero [Nontrivial R] (x : l ⊕ l) : J l R x x.swap ≠ 0 := by
+  rcases x with i | i <;> simp [Matrix.J]
+
 /-- Each row of `J` pairs with itself to `1`, because `J * Jᵀ = 1`. -/
 theorem sum_J_mul_J (x : l ⊕ l) : ∑ y : l ⊕ l, J l R x y * J l R x y = 1 := by
   have hJ : J l R * (J l R)ᵀ = 1 := by
@@ -153,6 +171,18 @@ theorem J_mul_mul_J_mul_J (M : Matrix (l ⊕ l) (l ⊕ l) R) :
         noncomm_ring
     _ = M := by simp [J_squared]
 
+/-- The congruence transform `C * J * Cᵀ` of `J` by a rectangular matrix `C` is antisymmetric. -/
+theorem transpose_mul_J_mul_transpose {m : Type*} (C : Matrix m (l ⊕ l) R) :
+    (C * J l R * Cᵀ)ᵀ = -(C * J l R * Cᵀ) := by
+  simp [transpose_mul, Matrix.mul_assoc]
+
+/-- The congruence transform `C * J * Cᵀ` of `J` has zero diagonal, in every characteristic: its
+entries are the values of the standard alternating form on pairs of rows of `C`. -/
+@[simp]
+theorem mul_J_mul_transpose_apply_self {m : Type*} (C : Matrix m (l ⊕ l) R) (i : m) :
+    (C * J l R * Cᵀ) i i = 0 := by
+  simp [J, Matrix.mul_apply, Fintype.sum_sum_type, Matrix.one_apply, mul_comm]
+
 end Matrix
 
 namespace SymplecticGroup
@@ -167,6 +197,15 @@ theorem transpose_eq_J_conj_inv {A : Matrix (l ⊕ l) (l ⊕ l) R}
   rw [eq_J_conj_iff_mul_J_eq, inv_eq_symplectic_inv A hA]
   calc Aᵀ * J l R = J l R * (-J l R) * (Aᵀ * J l R) := by rw [J_mul_neg_J, one_mul]
     _ = J l R * (-J l R * Aᵀ * J l R) := by noncomm_ring
+
+/-- **A matrix whose `J`-conjugate is its inverse transpose is symplectic.** If `Y * X = 1` and
+`J * X * J⁻¹ = Yᵀ`, that is `(X⁻¹)ᵀ = J * X * J⁻¹`, then `X` is symplectic. This is a converse of
+`SymplecticGroup.transpose_eq_J_conj_inv`, with the left inverse `Y` supplied explicitly. -/
+theorem mem_of_J_conj_eq_transpose {X Y : Matrix (l ⊕ l) (l ⊕ l) R} (hYX : Y * X = 1)
+    (h : J l R * X * (J l R)⁻¹ = Yᵀ) : X ∈ symplecticGroup l R := by
+  have hJ : Yᵀ * J l R = J l R * X := (eq_J_conj_iff_mul_J_eq _ _).1 h.symm
+  rw [mem_iff', Matrix.mul_assoc, ← hJ, ← Matrix.mul_assoc, ← transpose_mul, hYX, transpose_one,
+    Matrix.one_mul]
 
 /-- **Symplectic matrices are the unitary elements for the symplectic adjoint**
 `A ↦ J⁻¹ * Aᵀ * J = -(J * Aᵀ * J)`: a matrix is symplectic exactly when its adjoint is a left
@@ -212,5 +251,57 @@ theorem fromBlocks_diagonal_mem {A D : Matrix l l R} (hAD : Aᵀ * D = 1) :
     fromBlocks A 0 0 D ∈ symplecticGroup l R := by
   rw [fromBlocks_mem_iff]
   simp [hAD]
+
+/-- For a symplectic matrix with invertible upper-left block `A` with inverse `A⁻¹`, the blocks
+`C A⁻¹` and `A⁻¹ B` are symmetric, and `D = (C A⁻¹) A (A⁻¹ B) + A⁻ᵀ`. -/
+theorem symm_and_toBlocks₂₂_of_mem_symplecticGroup {n R : Type*} [Fintype n] [DecidableEq n]
+    [CommRing R] {M : Matrix (n ⊕ n) (n ⊕ n) R} (hM : M ∈ Matrix.symplecticGroup n R)
+    {Ainv : Matrix n n R} (hleft : Ainv * M.toBlocks₁₁ = 1) (hright : M.toBlocks₁₁ * Ainv = 1) :
+    (M.toBlocks₂₁ * Ainv).IsSymm ∧ (Ainv * M.toBlocks₁₂).IsSymm ∧
+      M.toBlocks₂₂ = M.toBlocks₂₁ * Ainv * M.toBlocks₁₁ * (Ainv * M.toBlocks₁₂) + Ainvᵀ := by
+  set A := M.toBlocks₁₁
+  set B := M.toBlocks₁₂
+  set C := M.toBlocks₂₁
+  set D := M.toBlocks₂₂
+  have hMblocks : Matrix.fromBlocks A B C D = M := M.fromBlocks_toBlocks
+  have hblocks : Aᵀ * C = Cᵀ * A ∧ Bᵀ * D = Dᵀ * B ∧ Aᵀ * D - Cᵀ * B = 1 :=
+    (SymplecticGroup.fromBlocks_mem_iff).mp (hMblocks ▸ hM)
+  have hS : (C * Ainv).IsSymm := by
+    rw [Matrix.IsSymm, Matrix.transpose_mul]
+    calc
+      Ainvᵀ * Cᵀ = Ainvᵀ * Cᵀ * (A * Ainv) := by rw [hright, mul_one]
+      _ = Ainvᵀ * (Cᵀ * A) * Ainv := by simp only [mul_assoc]
+      _ = Ainvᵀ * (Aᵀ * C) * Ainv := by rw [hblocks.1]
+      _ = (Ainvᵀ * Aᵀ) * C * Ainv := by simp only [mul_assoc]
+      _ = C * Ainv := by rw [← Matrix.transpose_mul, hright, Matrix.transpose_one, one_mul]
+  have hdual : A * Bᵀ = B * Aᵀ := by
+    have hMt : Matrix.fromBlocks Aᵀ Cᵀ Bᵀ Dᵀ ∈ Matrix.symplecticGroup n R := by
+      rw [← Matrix.fromBlocks_transpose, hMblocks]
+      exact SymplecticGroup.transpose_mem hM
+    simpa only [Matrix.transpose_transpose] using
+      (SymplecticGroup.fromBlocks_mem_iff.mp hMt).1
+  refine ⟨hS, ?_, ?_⟩
+  · rw [Matrix.IsSymm, Matrix.transpose_mul]
+    calc
+      Bᵀ * Ainvᵀ = (Ainv * A) * Bᵀ * Ainvᵀ := by rw [hleft, one_mul]
+      _ = Ainv * (A * Bᵀ) * Ainvᵀ := by simp only [mul_assoc]
+      _ = Ainv * (B * Aᵀ) * Ainvᵀ := by rw [hdual]
+      _ = Ainv * B * (Aᵀ * Ainvᵀ) := by simp only [mul_assoc]
+      _ = Ainv * B := by rw [← Matrix.transpose_mul, hleft, Matrix.transpose_one, mul_one]
+  · have hAD : Aᵀ * D = 1 + Cᵀ * B := sub_eq_iff_eq_add.mp hblocks.2.2
+    have hAinvC : Ainvᵀ * Cᵀ = C * Ainv := by
+      calc
+        Ainvᵀ * Cᵀ = (C * Ainv)ᵀ := by simp only [Matrix.transpose_mul]
+        _ = C * Ainv := hS.eq
+    calc
+      D = (Ainvᵀ * Aᵀ) * D := by rw [← Matrix.transpose_mul, hright,
+        Matrix.transpose_one, one_mul]
+      _ = Ainvᵀ * (Aᵀ * D) := by rw [mul_assoc]
+      _ = Ainvᵀ * (1 + Cᵀ * B) := by rw [hAD]
+      _ = Ainvᵀ + (Ainvᵀ * Cᵀ) * B := by noncomm_ring
+      _ = Ainvᵀ + C * Ainv * B := by rw [hAinvC]
+      _ = Ainvᵀ + C * Ainv * A * (Ainv * B) := by
+        rw [← mul_assoc (C * Ainv * A) Ainv B, mul_assoc (C * Ainv) A Ainv, hright, mul_one]
+      _ = C * Ainv * A * (Ainv * B) + Ainvᵀ := add_comm _ _
 
 end SymplecticGroup

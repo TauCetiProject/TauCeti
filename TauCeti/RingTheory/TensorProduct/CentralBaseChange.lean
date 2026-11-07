@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.IsTensorProduct
 public import Mathlib.RingTheory.TensorProduct.Maps
 import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
 import Mathlib.LinearAlgebra.StdBasis
+import Mathlib.LinearAlgebra.TensorProduct.Prod
 import Mathlib.RingTheory.Flat.IsBaseChange
 import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
 import TauCeti.LinearAlgebra.Exact
@@ -47,6 +48,10 @@ together here as an `S`-algebra map `TauCeti.CentralBaseChange.lsmul` into
 * `TauCeti.CentralBaseChange.map`: the `S ⊗[A] Λ`-linear map `S ⊗[A] M → S ⊗[A] N` induced by a
   `Λ`-linear map `M → N`, and `TauCeti.CentralBaseChange.mapHom`, the same as an `A`-linear map
   of `Hom` modules.
+* `TauCeti.CentralBaseChange.congr`: the `S ⊗[A] Λ`-linear equivalence induced by a `Λ`-linear
+  equivalence, and `TauCeti.CentralBaseChange.prodRight`, the compatibility with binary products.
+* `TauCeti.CentralBaseChange.freeHomEquiv`: an `S ⊗[A] Λ`-linear map out of `S ⊗[A] (ι → Λ)` is
+  the same as a family of values on the basis vectors `1 ⊗ Pi.single i 1`.
 * `TauCeti.CentralBaseChange.homEquiv`: for flat `S` and finitely presented `M`, the `S`-linear
   equivalence `S ⊗[A] (M →ₗ[Λ] N) ≃ₗ[S] (S ⊗[A] M →ₗ[S ⊗[A] Λ] S ⊗[A] N)`.
 
@@ -60,6 +65,9 @@ together here as an `S`-algebra map `TauCeti.CentralBaseChange.lsmul` into
 * `TauCeti.CentralBaseChange.projective_of_forall_projective`: projectivity descends along a
   family of flat `A`-algebras that jointly detects the vanishing of finitely generated
   `A`-modules, when `A` is noetherian and `M` is finite over `A`.
+* `TauCeti.CentralBaseChange.projective_of_forall_projective_of_forall_subsingleton`: the same
+  along a family that jointly detects the vanishing of all `A`-modules, with no finiteness over
+  `A`.
 
 ## Implementation notes
 
@@ -179,6 +187,46 @@ theorem map_surjective {φ : M →ₗ[Λ] N} (hφ : Function.Surjective φ) :
   rw [coe_map]
   exact LinearMap.lTensor_surjective S hφ
 
+variable (S) in
+/-- The `S ⊗[A] Λ`-linear equivalence `S ⊗[A] M ≃ S ⊗[A] N`, `s ⊗ m ↦ s ⊗ φ m`, induced by a
+`Λ`-linear equivalence `φ : M ≃ N`. -/
+noncomputable def congr (φ : M ≃ₗ[Λ] N) : S ⊗[A] M ≃ₗ[S ⊗[A] Λ] S ⊗[A] N :=
+  .ofLinearMap (map S φ.toLinearMap) (map S φ.symm.toLinearMap)
+    (by rw [← map_comp, φ.comp_symm, map_id]) (by rw [← map_comp, φ.symm_comp, map_id])
+
+@[simp]
+theorem congr_tmul (φ : M ≃ₗ[Λ] N) (s : S) (m : M) : congr S φ (s ⊗ₜ[A] m) = s ⊗ₜ φ m := (rfl)
+
+@[simp]
+theorem congr_symm_tmul (φ : M ≃ₗ[Λ] N) (s : S) (n : N) :
+    (congr S φ).symm (s ⊗ₜ[A] n) = s ⊗ₜ φ.symm n := (rfl)
+
+/-- `TensorProduct.prodRight` is `S ⊗[A] Λ`-linear. -/
+private theorem prodRight_smul (t : S ⊗[A] Λ) (x : S ⊗[A] (M × N)) :
+    TensorProduct.prodRight A S S M N (t • x) = t • TensorProduct.prodRight A S S M N x := by
+  induction t using TensorProduct.inductionOn with
+  | tmul s l =>
+    induction x using TensorProduct.inductionOn with
+    | tmul s' m => simp
+    | add x y hx hy => simp only [smul_add, map_add, hx, hy]
+  | add t t' ht ht' => simp only [add_smul, map_add, ht, ht']
+
+variable (A S Λ M N) in
+/-- Central base change commutes with binary products: the `S ⊗[A] Λ`-linear equivalence
+`S ⊗[A] (M × N) ≃ (S ⊗[A] M) × (S ⊗[A] N)` of `TensorProduct.prodRight`. -/
+noncomputable def prodRight : S ⊗[A] (M × N) ≃ₗ[S ⊗[A] Λ] (S ⊗[A] M) × (S ⊗[A] N) where
+  __ := TensorProduct.prodRight A S S M N
+  map_smul' := prodRight_smul
+
+@[simp]
+theorem prodRight_tmul (s : S) (x : M × N) :
+    prodRight A S Λ M N (s ⊗ₜ[A] x) = (s ⊗ₜ x.1, s ⊗ₜ x.2) := (rfl)
+
+@[simp]
+theorem prodRight_symm_tmul (s : S) (m : M) (n : N) :
+    (prodRight A S Λ M N).symm (s ⊗ₜ[A] m, s ⊗ₜ[A] n) = s ⊗ₜ (m, n) := by
+  rw [LinearEquiv.symm_apply_eq, prodRight_tmul]
+
 variable (A S Λ M N) in
 /-- `TauCeti.CentralBaseChange.map` as an `A`-linear map
 `Hom_Λ(M, N) → Hom_{S ⊗[A] Λ}(S ⊗[A] M, S ⊗[A] N)`. For flat `S` and finitely presented `M` it
@@ -224,7 +272,7 @@ private theorem sum_piRightHom_smul (x : S ⊗[A] (ι → Λ)) :
 variable (A S Λ N ι) in
 /-- An `S ⊗[A] Λ`-linear map out of `S ⊗[A] (ι → Λ)` is determined by its values on the basis
 vectors `1 ⊗ Pi.single i 1`, and these values are arbitrary. -/
-private noncomputable def freeHomEquiv :
+noncomputable def freeHomEquiv :
     (S ⊗[A] (ι → Λ) →ₗ[S ⊗[A] Λ] S ⊗[A] N) ≃ₗ[S] (ι → S ⊗[A] N) where
   toFun ψ i := ψ ((1 : S) ⊗ₜ Pi.single i 1)
   map_add' _ _ := rfl
@@ -242,6 +290,15 @@ private noncomputable def freeHomEquiv :
     simp only [LinearMap.coe_mk, AddHom.coe_mk, TensorProduct.piRightHom_tmul]
     rw [Finset.sum_eq_single j (fun i _ hij ↦ by simp [Pi.single_eq_of_ne hij]) (by simp),
       Pi.single_eq_same, ← Algebra.TensorProduct.one_def, one_smul]
+
+@[simp]
+theorem freeHomEquiv_apply (ψ : S ⊗[A] (ι → Λ) →ₗ[S ⊗[A] Λ] S ⊗[A] N) (i : ι) :
+    freeHomEquiv A S Λ N ι ψ i = ψ ((1 : S) ⊗ₜ Pi.single i 1) := (rfl)
+
+@[simp]
+theorem freeHomEquiv_symm_apply_tmul_single (v : ι → S ⊗[A] N) (i : ι) :
+    (freeHomEquiv A S Λ N ι).symm v ((1 : S) ⊗ₜ Pi.single i 1) = v i :=
+  congrFun ((freeHomEquiv A S Λ N ι).apply_symm_apply v) i
 
 omit [Fintype ι] [DecidableEq ι] in
 /-- The comparison map is a base change for a finite free module: under evaluation at the
@@ -345,6 +402,20 @@ theorem projective_of_faithfullyFlat [Module.FaithfullyFlat A S] [Module.FiniteP
     (surjective_lTensor_compRight (S := S) hπ) LinearMap.id
   exact Module.Projective.of_split σ π hσ
 
+/-- If every `S i ⊗[A] M` is projective and `π : Λⁿ → M` is onto, then the cokernel of composition
+with `π`, as a map `Hom_Λ(M, Λⁿ) → Hom_Λ(M, M)`, vanishes after every base change `S i ⊗[A] -`. -/
+private theorem subsingleton_lTensor_cokernel_compRight {ι : Type*} (S : ι → Type*)
+    [∀ i, CommRing (S i)] [∀ i, Algebra A (S i)] [∀ i, Module.Flat A (S i)]
+    [Module.FinitePresentation Λ M] [∀ i, Module.Projective (S i ⊗[A] Λ) (S i ⊗[A] M)]
+    {n : ℕ} {π : (Fin n → Λ) →ₗ[Λ] M} (hπ : Function.Surjective π) (i : ι) :
+    Subsingleton (S i ⊗[A] ((M →ₗ[Λ] M) ⧸ LinearMap.range (LinearMap.compRight A π :
+      (M →ₗ[Λ] (Fin n → Λ)) →ₗ[A] (M →ₗ[Λ] M)))) := by
+  refine subsingleton_of_forall_eq 0 fun y ↦ ?_
+  obtain ⟨x, rfl⟩ := LinearMap.lTensor_surjective (S i) (Submodule.mkQ_surjective _) y
+  obtain ⟨z, rfl⟩ := surjective_lTensor_compRight (S := S i) hπ x
+  rw [← LinearMap.comp_apply, ← LinearMap.lTensor_comp, LinearMap.range_mkQ_comp,
+    LinearMap.lTensor_zero, LinearMap.zero_apply]
+
 universe v in
 /-- **Descent of projectivity along a detecting family.** Let `A` be noetherian, and let `S i`
 be flat `A`-algebras that jointly detect the vanishing of finitely generated `A`-modules: a
@@ -362,20 +433,34 @@ theorem projective_of_forall_projective {M : Type v} [AddCommGroup M] [Module A 
     [IsNoetherianRing A] [Module.Finite A M] [Module.FinitePresentation Λ M]
     [∀ i, Module.Projective (S i ⊗[A] Λ) (S i ⊗[A] M)] : Module.Projective Λ M := by
   obtain ⟨n, π, hπ⟩ := Module.Finite.exists_fin' Λ M
-  let c : (M →ₗ[Λ] (Fin n → Λ)) →ₗ[A] (M →ₗ[Λ] M) := LinearMap.compRight A π
   -- `M →ₗ[Λ] M` embeds into the finitely generated `A`-module `(Fin n → Λ) →ₗ[Λ] M`.
   have : IsNoetherian A (M →ₗ[Λ] M) :=
     isNoetherian_of_injective (LinearMap.lcomp A M π) (LinearMap.lcomp_injective_of_surjective π hπ)
-  -- The cokernel of `c` is finitely generated and vanishes after every base change, since `c`
-  -- becomes onto there.
-  have hc : LinearMap.range c = ⊤ := by
-    refine Submodule.Quotient.subsingleton_iff.mp (hS _ fun i ↦ ?_)
-    refine subsingleton_of_forall_eq 0 fun y ↦ ?_
-    obtain ⟨x, rfl⟩ := LinearMap.lTensor_surjective (S i) (LinearMap.range c).mkQ_surjective y
-    obtain ⟨z, rfl⟩ := surjective_lTensor_compRight (S := S i) hπ x
-    rw [← LinearMap.comp_apply, ← LinearMap.lTensor_comp, LinearMap.range_mkQ_comp,
-      LinearMap.lTensor_zero, LinearMap.zero_apply]
-  obtain ⟨σ, hσ⟩ := LinearMap.range_eq_top.mp hc LinearMap.id
+  -- The cokernel of composition with `π` is finitely generated and vanishes after every base
+  -- change, so it vanishes.
+  obtain ⟨σ, hσ⟩ := LinearMap.range_eq_top.mp (Submodule.Quotient.subsingleton_iff.mp
+    (hS _ (subsingleton_lTensor_cokernel_compRight S hπ))) LinearMap.id
+  exact Module.Projective.of_split σ π hσ
+
+universe v in
+/-- **Descent of projectivity along a family detecting all modules.** Let `S i` be flat
+`A`-algebras that jointly detect the vanishing of arbitrary `A`-modules: an `A`-module `C`
+vanishes as soon as every `S i ⊗[A] C` does. A finitely presented `Λ`-module `M` is projective
+if every `S i ⊗[A] M` is a projective `S i ⊗[A] Λ`-module. Unlike
+`TauCeti.CentralBaseChange.projective_of_forall_projective`, no finiteness over `A` is needed.
+
+The detection hypothesis is only used for `A`-modules in the universe of `M`. -/
+theorem projective_of_forall_projective_of_forall_subsingleton {M : Type v} [AddCommGroup M]
+    [Module A M] [Module Λ M] [IsScalarTower A Λ M] {ι : Type*} (S : ι → Type*)
+    [∀ i, CommRing (S i)] [∀ i, Algebra A (S i)] [∀ i, Module.Flat A (S i)]
+    (hS : ∀ (C : Type v) [AddCommGroup C] [Module A C],
+      (∀ i, Subsingleton (S i ⊗[A] C)) → Subsingleton C)
+    [Module.FinitePresentation Λ M] [∀ i, Module.Projective (S i ⊗[A] Λ) (S i ⊗[A] M)] :
+    Module.Projective Λ M := by
+  obtain ⟨n, π, hπ⟩ := Module.Finite.exists_fin' Λ M
+  -- The cokernel of composition with `π` vanishes after every base change, so it vanishes.
+  obtain ⟨σ, hσ⟩ := LinearMap.range_eq_top.mp (Submodule.Quotient.subsingleton_iff.mp
+    (hS _ (subsingleton_lTensor_cokernel_compRight S hπ))) LinearMap.id
   exact Module.Projective.of_split σ π hσ
 
 end TauCeti.CentralBaseChange

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Fin.Tuple.Basic
 import Mathlib.Algebra.NeZero
+import Mathlib.Data.Set.Image
 import Mathlib.Data.Set.Insert
 
 /-!
@@ -30,6 +31,8 @@ A tuple of length three is determined by its three entries.
   appending and then reindexing along the extension of `g` that fixes the last position.
 * `Fin.tail_contractNth_succ`, `Fin.init_contractNth_castSucc`: contracting two adjacent entries
   away from the first (last) one commutes with dropping the first (last) entry.
+* `Fin.snoc_comp_swap_castSucc`: exchanging two entries other than the last one commutes with
+  appending.
 * `Fin.tail_snoc`: dropping the first entry commutes with appending a last one.
 * `Fin.snoc_tail_comp_rev`: appending the first entry to the reversed tail reverses the tuple.
 * `Fin.forall_snoc_eq_iff_snoc_eq`: appending one entry to each of two tuples gives the same
@@ -54,6 +57,9 @@ A tuple of length three is determined by its three entries.
   the corresponding entry of `a`.
 * `Fin.insertNth_one_ne_zero`: inserting the entry `1` gives a nonzero tuple.
 * `Fin.injective_apply_zero_one_two`: a tuple of length three is determined by its entries.
+* `Fin.injective_comp_succAbove_of_eq` and `Fin.range_comp_succAbove_of_eq`: if `b p = b q`,
+  deleting the entry at `p` or at `q` gives an injective tuple in the same cases, and does not
+  change the set of entries.
 -/
 
 public section
@@ -97,6 +103,16 @@ theorem snoc_comp_snoc_castSucc_comp {n : ℕ} (c : Fin n → α) (z : α) (g : 
     snoc c z ∘ snoc (castSucc ∘ g) (last n) = snoc (c ∘ g) z := by
   funext i
   exact lastCases (by simp) (fun j => by simp) i
+
+/-- Exchanging the entries `j` and `k` of `Fin.snoc c z` is appending `z` to `c` with the entries
+`j` and `k` exchanged. -/
+theorem snoc_comp_swap_castSucc {n : ℕ} (c : Fin n → α) (z : α) (j k : Fin n) :
+    snoc c z ∘ Equiv.swap j.castSucc k.castSucc = snoc (c ∘ Equiv.swap j k) z := by
+  funext i
+  refine lastCases ?_ (fun i ↦ ?_) i
+  · simp [Equiv.swap_apply_of_ne_of_ne, (castSucc_lt_last j).ne.symm, (castSucc_lt_last k).ne.symm]
+  · rw [Function.comp_apply, ← (castSucc_injective n).map_swap j k i]
+    simp
 
 /-- Dropping the first entry of `Fin.snoc a x` is appending `x` to the tail of `a`. -/
 theorem tail_snoc {n : ℕ} (a : Fin (n + 1) → α) (x : α) :
@@ -269,5 +285,48 @@ theorem injective_apply_zero_one_two {α : Type*} :
   | 0 => exact h.1
   | 1 => exact h.2.1
   | 2 => exact h.2.2
+
+
+/-- If deleting the entry at `q` leaves an injective tuple, two positions other than `q` holding
+the same entry are equal. -/
+theorem eq_of_injective_comp_succAbove {n : ℕ} {b : Fin (n + 1) → α} {q : Fin (n + 1)}
+    (hq : Function.Injective (b ∘ q.succAbove)) {i j : Fin (n + 1)} (hi : i ≠ q) (hj : j ≠ q)
+    (h : b i = b j) : i = j := by
+  obtain ⟨i, rfl⟩ := exists_succAbove_eq hi
+  obtain ⟨j, rfl⟩ := exists_succAbove_eq hj
+  exact congrArg _ (hq h)
+
+/-- If `b p = b q` for `p ≠ q`, deleting the entry at `p` leaves an injective tuple exactly when
+deleting the entry at `q` does. -/
+theorem injective_comp_succAbove_of_eq {n : ℕ} {b : Fin (n + 1) → α} {p q : Fin (n + 1)}
+    (hpq : p ≠ q) (h : b p = b q) (hp : Function.Injective (b ∘ p.succAbove)) :
+    Function.Injective (b ∘ q.succAbove) := by
+  intro x y hxy
+  have key (z : Fin (n + 1)) (hz : z ≠ q) :
+      (if z = p then q else z) ≠ p ∧ b (if z = p then q else z) = b z := by
+    split_ifs with hzp
+    · exact ⟨hpq.symm, hzp ▸ h.symm⟩
+    · exact ⟨hzp, rfl⟩
+  have hx := key _ (succAbove_ne q x)
+  have hy := key _ (succAbove_ne q y)
+  have := eq_of_injective_comp_succAbove hp hx.1 hy.1 (hx.2.trans (hxy.trans hy.2.symm))
+  refine succAbove_right_injective (p := q) ?_
+  split_ifs at this with h₁ h₂ h₂
+  · exact h₁.trans h₂.symm
+  · exact absurd this.symm (succAbove_ne q y)
+  · exact absurd this (succAbove_ne q x)
+  · exact this
+
+/-- If `b p = b q` for `p ≠ q`, deleting the entry at `p` does not change the set of entries. -/
+theorem range_comp_succAbove_of_eq {α : Type*} {n : ℕ} {b : Fin (n + 1) → α}
+    {p q : Fin (n + 1)} (hpq : p ≠ q) (h : b p = b q) :
+    Set.range (b ∘ p.succAbove) = Set.range b := by
+  refine (Set.range_comp_subset_range _ _).antisymm ?_
+  rintro _ ⟨i, rfl⟩
+  by_cases hi : i = p
+  · obtain ⟨z, hz⟩ := exists_succAbove_eq hpq.symm
+    exact ⟨z, by simp [hz, hi, h]⟩
+  · obtain ⟨z, hz⟩ := exists_succAbove_eq hi
+    exact ⟨z, by simp [hz]⟩
 
 end Fin

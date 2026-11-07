@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.AGM
+public import TauCeti.Analysis.Real.Sqrt
+public import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.AGM.Basic
 public import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.Legendre
 import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.Trigonometric
 
@@ -17,6 +18,9 @@ identifies `legendreK k` with the trigonometric AGM integral of the axes `1` and
 evaluation of that integral by the arithmetic-geometric mean then gives **Gauss's theorem**
 
 `legendreK k = π / (2 * agm 1 √(1 - k²))`  for `k ^ 2 < 1`.
+
+Rescaling the axes, `agmIntegral_eq_legendreK_div` expresses the AGM integral of any axes
+`0 < a ≤ b` as `K(k) / b` with `k = √(1 - (a / b)²)`.
 
 Since the AGM is unchanged by replacing its arguments with their geometric and arithmetic means,
 the same identification gives **Landen's transformation** of `K` (DLMF 19.8.12):
@@ -62,21 +66,31 @@ theorem legendreK_eq_pi_div_two_mul_agm {k : ℝ} (hk : k ^ 2 < 1) :
   simpa [coe_toNNReal _ (sqrt_nonneg _)] using
     agmIntegral_eq_pi_div_two_div_agm (a := 1) (b := (√(1 - k ^ 2)).toNNReal)
 
+/-- For axes `0 < a ≤ b`, the AGM integral is `K(k) / b`, where the modulus
+`k = √(1 - (a / b)²)` has complementary modulus `a / b`. -/
+theorem agmIntegral_eq_legendreK_div {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
+    agmIntegral a b = legendreK √(1 - (a / b) ^ 2) / b := by
+  have hb : 0 < b := ha.trans_le hab
+  have hr : 0 < a / b := div_pos ha hb
+  have hr1 : a / b ≤ 1 := (div_le_one hb).2 hab
+  have hk : (√(1 - (a / b) ^ 2)) ^ 2 < 1 := by
+    rw [sq_sqrt (by nlinarith)]
+    nlinarith
+  rw [legendreK_eq_agmIntegral hk, sq_sqrt (by nlinarith), sub_sub_cancel, sqrt_sq hr.le]
+  have hscale := agmIntegral_mul_left b 1 (a / b)
+  rw [mul_one, mul_div_cancel₀ _ hb.ne', abs_of_pos hb] at hscale
+  rw [agmIntegral_comm, hscale]
+
 /-- **Landen's transformation** of the complete integral of the first kind, ascending form
 (DLMF 19.8.12): for `0 ≤ k < 1`, `K(2√k / (1 + k)) = (1 + k) K(k)`. -/
 theorem legendreK_two_mul_sqrt_div_one_add {k : ℝ} (hk₀ : 0 ≤ k) (hk₁ : k < 1) :
     legendreK (2 * √k / (1 + k)) = (1 + k) * legendreK k := by
   have hp : 0 < 1 + k := by linarith
   have hm : 0 < 1 - k := by linarith
-  -- The complementary modulus of `2√k / (1 + k)` is `(1 - k) / (1 + k)`.
-  have hsq : 1 - (2 * √k / (1 + k)) ^ 2 = ((1 - k) / (1 + k)) ^ 2 := by
-    field_simp
-    rw [sq_sqrt hk₀]
-    ring
-  have hlt : (2 * √k / (1 + k)) ^ 2 < 1 := by
-    nlinarith [sq_pos_of_pos (div_pos hm hp)]
+  have hlt := sq_two_mul_sqrt_div_one_add_lt_one hk₀ hk₁.ne
   have hk : k ^ 2 < 1 := by nlinarith
-  rw [legendreK_eq_agmIntegral hlt, legendreK_eq_agmIntegral hk, hsq,
+  rw [legendreK_eq_agmIntegral hlt, legendreK_eq_agmIntegral hk,
+    one_sub_sq_two_mul_sqrt_div_one_add hk₀,
     sqrt_sq (div_pos hm hp).le]
   -- Scale both axes by `1 + k`, then take one AGM step from `(1 + k, 1 - k)`.
   have hscale := agmIntegral_mul_left (1 + k)⁻¹ (1 + k) (1 - k)
@@ -96,21 +110,11 @@ theorem legendreK_eq_one_add_mul_legendreK {k : ℝ} (hk : k ^ 2 < 1) :
   set k' := √(1 - k ^ 2)
   have hk'0 : 0 < k' := sqrt_pos.2 (by linarith)
   have hk'1 : k' ≤ 1 := sqrt_le_one.2 (by nlinarith)
-  have hk'sq : k' ^ 2 = 1 - k ^ 2 := sq_sqrt (by linarith)
   have h₀ : 0 ≤ (1 - k') / (1 + k') := div_nonneg (by linarith) (by linarith)
   have h₁ : (1 - k') / (1 + k') < 1 := (div_lt_one (by linarith)).2 (by linarith)
   rw [← legendreK_two_mul_sqrt_div_one_add h₀ h₁]
   -- The ascending transformation of `k₁` returns the modulus `|k|`, and `K` is even.
-  have habs : 2 * √((1 - k') / (1 + k')) / (1 + (1 - k') / (1 + k')) = |k| := by
-    have hnn : 0 ≤ 2 * √((1 - k') / (1 + k')) / (1 + (1 - k') / (1 + k')) := by
-      have : 0 ≤ 1 + (1 - k') / (1 + k') := by linarith
-      positivity
-    rw [← sqrt_sq_eq_abs, ← sqrt_sq hnn]
-    congr 1
-    rw [div_pow, mul_pow, sq_sqrt h₀]
-    field_simp
-    linear_combination (-4 : ℝ) * hk'sq
-  rw [habs]
-  rcases abs_choice k with h | h <;> simp [h]
+  rw [two_mul_sqrt_div_one_add_eq_abs hk.le]
+  exact (legendreK_abs k).symm
 
 end TauCeti.Real

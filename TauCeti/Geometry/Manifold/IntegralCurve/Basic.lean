@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 import Mathlib.Analysis.ODE.ExistUnique
+import Mathlib.Geometry.Manifold.IntegralCurve.Transform
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 
 /-!
@@ -17,7 +18,8 @@ This file records the correspondence between an integral curve and the solution 
 coordinate equation it becomes when read in one fixed extended chart, in both directions, and the
 uniqueness statement that comes with it: two integral curves on an open interval which agree once
 agree throughout, as soon as one of them stays in a fixed chart over which the coordinate field is
-continuously differentiable.
+continuously differentiable. It also identifies the constant integral curves with the zeros of
+the field.
 
 ## Main results
 
@@ -26,9 +28,14 @@ continuously differentiable.
 * `IsMIntegralCurveAt.map_of_mfderiv_eq`: the corresponding result for local integral curves.
 * `IsMIntegralCurveOn.congr`: being an integral curve on a set only depends on the values of the
   curve on that set.
+* `isMIntegralCurve_const_iff`: a constant curve is an integral curve exactly at a zero of the
+  field.
+* `TauCeti.isMIntegralCurve_congr_vectorField`: being an integral curve only depends on the values
+  of the vector field along the curve.
 * `IsMIntegralCurveAt.of_extChartAt_symm`: a coordinate solution gives a manifold integral curve.
-* `IsMIntegralCurveOn.hasDerivAt_extChartAt`: conversely, an integral curve read in a fixed
-  extended chart solves the coordinate equation there.
+  Conversely, `HasMFDerivAt.hasDerivAt_extChartAt_comp` shows that a curve read in a fixed
+  extended chart has the coordinate expression of its velocity as velocity, so an integral curve
+  solves the coordinate equation there.
 * `IsMIntegralCurveOn.eqOn_of_contDiffOn_extChartAt`: uniqueness of integral curves on an open
   interval, with the field regular in one fixed chart only.
 
@@ -91,6 +98,19 @@ theorem congr {V : (x : M) → TangentSpace I x} {γ γ' : ℝ → M} {s : Set �
 
 end IsMIntegralCurveOn
 
+/-- **Constant integral curves are the zeros of the field.** The constant curve at `x` is an
+integral curve of `v` exactly when `v x = 0`. -/
+@[simp]
+theorem isMIntegralCurve_const_iff {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+    {v : (x : M) → TangentSpace I x} {x : M} :
+    IsMIntegralCurve (fun _ ↦ x) v ↔ v x = 0 := by
+  refine ⟨fun h ↦ ?_, isMIntegralCurve_const⟩
+  -- The derivative of the constant curve is `0`, and evaluating `1 ↦ v x` at `1` gives `v x`.
+  have h₀ := (h 0).mfderiv
+  rw [mfderiv_const] at h₀
+  have h₁ : v x = ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (v x) 1 := by simp
+  exact h₁.trans (ContinuousLinearMap.ext_iff.1 h₀ (1 : ℝ)).symm
+
 namespace IsMIntegralCurveAt
 
 variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
@@ -115,6 +135,18 @@ theorem map_of_mfderiv_eq {f : M → M'} {V : (x : M) → TangentSpace I x}
     (fun t ht ↦ hf t ht.1.2) (fun t ht ↦ hVW t ht.2)
 
 end IsMIntegralCurveAt
+
+namespace TauCeti
+
+/-- **Being an integral curve only depends on the vector field along the curve.** If two vector
+fields agree at every point of a curve, it is an integral curve of one exactly when it is an
+integral curve of the other. -/
+theorem isMIntegralCurve_congr_vectorField {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+    {γ : ℝ → M} {v w : (x : M) → TangentSpace I x} (hvw : ∀ t, v (γ t) = w (γ t)) :
+    IsMIntegralCurve γ v ↔ IsMIntegralCurve γ w :=
+  ⟨fun hγ t ↦ hvw t ▸ hγ t, fun hγ t ↦ (hvw t).symm ▸ hγ t⟩
+
+end TauCeti
 
 /-- Convert an ordinary derivative into the model-space derivative expected inside a manifold
 derivative. This is the single boundary where the tangent spaces of the self model on `ℝ` and of
@@ -177,24 +209,60 @@ theorem IsMIntegralCurveAt.of_extChartAt_symm
   rw [ContinuousLinearMap.smulRight_one_eq_toSpanSingleton]
   exact hasFDerivWithinAt_model_tangent_spaces hd'
 
-/-- An integral curve, read in any fixed extended chart containing its value, solves the
-corresponding coordinate ODE. This is the converse direction of
-`IsMIntegralCurveAt.of_extChartAt_symm`. -/
-theorem IsMIntegralCurveOn.hasDerivAt_extChartAt
+/-- **Local step of fixed-chart uniqueness.** Near a time of `Ioo a b` where two integral curves
+agree, they agree, provided one of them stays in a fixed extended chart, over an open set on which
+the coordinate expression of the field is continuously differentiable: both are then solutions of
+the same locally Lipschitz coordinate equation with the same initial value. -/
+private theorem IsMIntegralCurveOn.eventuallyEq_of_contDiffOn_extChartAt
     {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
-    {v : (x : M) → TangentSpace I x} {γ : ℝ → M} {s : Set ℝ} {x : M} {t : ℝ}
-    (hγ : IsMIntegralCurveOn γ v s) (ht : t ∈ s) (hs : s ∈ 𝓝 t)
-    (hsrc : γ t ∈ (extChartAt I x).source) :
-    HasDerivAt ((extChartAt I x) ∘ γ)
-      (tangentCoordChange I (γ t) x (γ t) (v (γ t))) t := by
-  replace hsrc := extChartAt_source I x ▸ hsrc
-  have hderiv := TauCeti.Manifold.hasDerivAt_comp_curve
-    (mdifferentiableAt_extChartAt (I := I) hsrc) ((hγ t ht).hasMFDerivAt hs)
-  convert hderiv using 1
-  simp only [mvfderiv]
-  rw [(hasMFDerivAt_extChartAt (I := I) hsrc).mfderiv,
-    mfderiv_chartAt_eq_tangentCoordChange hsrc]
-  rfl
+    {v : (x : M) → TangentSpace I x} {x₀ : M} {a b t : ℝ} {γ δ : ℝ → M} {u : Set E}
+    (hu : IsOpen u)
+    (hv : ContDiffOn ℝ 1 (fun z ↦ tangentCoordChange I ((extChartAt I x₀).symm z) x₀
+      ((extChartAt I x₀).symm z) (v ((extChartAt I x₀).symm z))) u)
+    (hγ : IsMIntegralCurveOn γ v (Ioo a b)) (hδ : IsMIntegralCurveOn δ v (Ioo a b))
+    (hγsrc : ∀ t ∈ Ioo a b, γ t ∈ (extChartAt I x₀).source)
+    (hγu : ∀ t ∈ Ioo a b, extChartAt I x₀ (γ t) ∈ u)
+    (htmem : t ∈ Ioo a b) (hteq : γ t = δ t) : ∀ᶠ r in 𝓝 t, γ r = δ r := by
+  let φ := extChartAt I x₀
+  let w : E → E := fun z ↦
+    tangentCoordChange I (φ.symm z) x₀ (φ.symm z) (v (φ.symm z))
+  have hJ : Ioo a b ∈ 𝓝 t := Ioo_mem_nhds htmem.1 htmem.2
+  have hγat := hγ.isMIntegralCurveAt hJ
+  have hδat := hδ.isMIntegralCurveAt hJ
+  have hγst := hγsrc t htmem
+  have hδst : δ t ∈ φ.source := hteq ▸ hγst
+  have hγut := hγu t htmem
+  have hvat : ContDiffAt ℝ 1 w (φ (γ t)) :=
+    (hv (φ (γ t)) hγut).contDiffAt (hu.mem_nhds hγut)
+  obtain ⟨K, z, hz, hlip⟩ : ∃ K, ∃ z ∈ 𝓝 (φ (γ t)), LipschitzOnWith K w z :=
+    hvat.exists_lipschitzOnWith
+  have hγz : ∀ᶠ r in 𝓝 t, φ (γ r) ∈ z :=
+    ((continuousAt_extChartAt' hγst).comp hγat.continuousAt).eventually hz
+  have hδz : ∀ᶠ r in 𝓝 t, φ (δ r) ∈ z :=
+    ((continuousAt_extChartAt' hδst).comp hδat.continuousAt).eventually (by
+      rw [Function.comp_apply]
+      rw [← hteq]
+      exact hz)
+  have hδsrc : ∀ᶠ r in 𝓝 t, δ r ∈ φ.source :=
+    hδat.continuousAt.eventually_mem ((isOpen_extChartAt_source x₀).mem_nhds hδst)
+  have hγderiv : ∀ᶠ r in 𝓝 t, HasDerivAt (φ ∘ γ) (w ((φ ∘ γ) r)) r := by
+    filter_upwards [hJ] with r hr
+    have hd := ((hγ r hr).hasMFDerivAt (Ioo_mem_nhds hr.1 hr.2)).hasDerivAt_extChartAt_comp
+      (hγsrc r hr)
+    convert hd using 1
+    simp only [w, Function.comp_apply]
+    rw [φ.left_inv (hγsrc r hr)]
+  have hδderiv : ∀ᶠ r in 𝓝 t, HasDerivAt (φ ∘ δ) (w ((φ ∘ δ) r)) r := by
+    filter_upwards [hJ, hδsrc] with r hr hrsrc
+    have hd := ((hδ r hr).hasMFDerivAt (Ioo_mem_nhds hr.1 hr.2)).hasDerivAt_extChartAt_comp hrsrc
+    convert hd using 1
+    simp only [w, Function.comp_apply]
+    rw [φ.left_inv hrsrc]
+  have hcoord : (φ ∘ γ) =ᶠ[𝓝 t] (φ ∘ δ) :=
+    ODE_solution_unique_of_eventually (.of_forall fun _ ↦ hlip)
+      (hγderiv.and hγz) (hδderiv.and hδz) (congrArg φ hteq)
+  filter_upwards [hcoord, hJ, hδsrc] with r hr hrJ hrδsrc
+  exact φ.injOn (hγsrc r hrJ) hrδsrc hr
 
 /-- **Fixed-chart uniqueness of integral curves.** Two integral curves on an open interval which
 take the same value at one time of that interval agree on it, as soon as one of them stays in a
@@ -211,9 +279,6 @@ theorem IsMIntegralCurveOn.eqOn_of_contDiffOn_extChartAt
     (hγsrc : ∀ t ∈ Ioo a b, γ t ∈ (extChartAt I x₀).source)
     (hγu : ∀ t ∈ Ioo a b, extChartAt I x₀ (γ t) ∈ u)
     (ht₀ : t₀ ∈ Ioo a b) (heq : γ t₀ = δ t₀) : EqOn γ δ (Ioo a b) := by
-  let φ := extChartAt I x₀
-  let w : E → E := fun z ↦
-    tangentCoordChange I (φ.symm z) x₀ (φ.symm z) (v (φ.symm z))
   -- The times of `Ioo a b` where the curves agree form a nonempty subset which is both open and
   -- relatively closed there, so connectedness of the interval makes it everything.
   set q := {t | γ t = δ t} ∩ Ioo a b
@@ -236,41 +301,5 @@ theorem IsMIntegralCurveOn.eqOn_of_contDiffOn_extChartAt
     -- Lipschitz coordinate equation with the same value, so they agree there too.
     rw [isOpen_iff_mem_nhds]
     intro t ht
-    have hJ : Ioo a b ∈ 𝓝 t := Ioo_mem_nhds ht.2.1 ht.2.2
-    have hγat := hγ.isMIntegralCurveAt hJ
-    have hδat := hδ.isMIntegralCurveAt hJ
-    have hγst := hγsrc t ht.2
-    have hδst : δ t ∈ φ.source := ht.1 ▸ hγst
-    have hγut := hγu t ht.2
-    have hvat : ContDiffAt ℝ 1 w (φ (γ t)) :=
-      (hv (φ (γ t)) hγut).contDiffAt (hu.mem_nhds hγut)
-    obtain ⟨K, z, hz, hlip⟩ : ∃ K, ∃ z ∈ 𝓝 (φ (γ t)), LipschitzOnWith K w z :=
-      hvat.exists_lipschitzOnWith
-    have hγz : ∀ᶠ r in 𝓝 t, φ (γ r) ∈ z :=
-      ((continuousAt_extChartAt' hγst).comp hγat.continuousAt).eventually hz
-    have hδz : ∀ᶠ r in 𝓝 t, φ (δ r) ∈ z :=
-      ((continuousAt_extChartAt' hδst).comp hδat.continuousAt).eventually (by
-        rw [Function.comp_apply]
-        rw [← ht.1]
-        exact hz)
-    have hδsrc : ∀ᶠ r in 𝓝 t, δ r ∈ φ.source :=
-      hδat.continuousAt.eventually_mem ((isOpen_extChartAt_source x₀).mem_nhds hδst)
-    have hγderiv : ∀ᶠ r in 𝓝 t, HasDerivAt (φ ∘ γ) (w ((φ ∘ γ) r)) r := by
-      filter_upwards [hJ] with r hr
-      have hd := hγ.hasDerivAt_extChartAt hr (Ioo_mem_nhds hr.1 hr.2) (hγsrc r hr)
-      convert hd using 1
-      simp only [w, Function.comp_apply]
-      rw [φ.left_inv (hγsrc r hr)]
-    have hδderiv : ∀ᶠ r in 𝓝 t, HasDerivAt (φ ∘ δ) (w ((φ ∘ δ) r)) r := by
-      filter_upwards [hJ, hδsrc] with r hr hrsrc
-      have hd := hδ.hasDerivAt_extChartAt hr (Ioo_mem_nhds hr.1 hr.2) hrsrc
-      convert hd using 1
-      simp only [w, Function.comp_apply]
-      rw [φ.left_inv hrsrc]
-    have hcoord : (φ ∘ γ) =ᶠ[𝓝 t] (φ ∘ δ) :=
-      ODE_solution_unique_of_eventually (.of_forall fun _ ↦ hlip)
-        (hγderiv.and hγz) (hδderiv.and hδz) (congrArg φ ht.1)
-    have hlocal : γ =ᶠ[𝓝 t] δ := by
-      filter_upwards [hcoord, hJ, hδsrc] with r hr hrJ hrδsrc
-      exact φ.injOn (hγsrc r hrJ) hrδsrc hr
-    exact (hlocal.and hJ).mono fun _ hr ↦ ⟨hr.1, hr.2⟩
+    exact ((eventuallyEq_of_contDiffOn_extChartAt hu hv hγ hδ hγsrc hγu ht.2 ht.1).and
+      (Ioo_mem_nhds ht.2.1 ht.2.2)).mono fun _ hr ↦ ⟨hr.1, hr.2⟩
