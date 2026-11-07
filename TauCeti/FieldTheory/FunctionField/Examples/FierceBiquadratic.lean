@@ -79,17 +79,8 @@ theorem coe_u : (u : RatFunc Constants) = RatFunc.C (RatFunc.X : Constants) := b
   simp [u, RatFunc.algebraMap_eq_C]
 
 /-- The parameter `t` is a uniformizer of the base ring. -/
-theorem irreducible_t : Irreducible t := by
-  have : IsDiscreteValuationRing basePlace.valuation.valuationSubring :=
-    Valuation.valuationSubring_isDiscreteValuationRing_of_surjective
-      basePlace.valuation basePlace.valuation_surjective
-  let e := RingEquiv.subringCongr
-    (congrArg ValuationSubring.toSubring basePlace.integers_def)
-  have he : e t = (Valuation.Uniformizer.mk' uniformizer_X).val := by
-    exact Subtype.ext (RingEquiv.coe_subringCongr_apply _ t)
-  apply (MulEquiv.irreducible_iff e).mp
-  rw [he, IsDiscreteValuationRing.irreducible_iff_uniformizer]
-  exact (Valuation.Uniformizer.mk' uniformizer_X).is_generator
+theorem irreducible_t : Irreducible t :=
+  basePlace.irreducible_of_isUniformizer (by simpa only [coe_t] using uniformizer_X)
 
 private theorem t_mem_maximalIdeal : t ∈ maximalIdeal BaseRing :=
   (mem_maximalIdeal t).mpr irreducible_t.not_isUnit

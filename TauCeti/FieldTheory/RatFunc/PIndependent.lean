@@ -55,9 +55,7 @@ theorem pow_add_C_mul_pow_ne_X (p : ℕ) [CharP k p] (a b : RatFunc k) (c : k) :
     a ^ p + RatFunc.C c * b ^ p ≠ RatFunc.X := by
   intro h
   have hd := congrArg (KaehlerDifferential.D k (RatFunc k)) h
-  have hX := (kaehlerBasisRatFunc k).ne_zero ()
-  simp only [kaehlerBasisRatFunc_apply] at hX
-  exact hX (by
+  exact RatFunc.D_X_ne_zero k (by
     simpa [Derivation.leibniz_pow, ← RatFunc.algebraMap_eq_C,
       ← Nat.cast_smul_eq_nsmul (RatFunc k), CharP.cast_eq_zero (RatFunc k) p] using hd.symm)
 
@@ -94,9 +92,7 @@ theorem isPIndependentPair_ratFunc_C_X_X :
     simpa [Finset.sum_range_succ] using hc
   have hd := congrArg (KaehlerDifferential.D (RatFunc k) (RatFunc (RatFunc k))) hsum
   have he : c 0 1 ^ 2 + RatFunc.C (RatFunc.X : RatFunc k) * c 1 1 ^ 2 = 0 := by
-    have hX := (kaehlerBasisRatFunc (RatFunc k)).ne_zero ()
-    simp only [kaehlerBasisRatFunc_apply] at hX
-    apply (smul_left_injective (RatFunc (RatFunc k)) hX)
+    apply (smul_left_injective (RatFunc (RatFunc k)) (RatFunc.D_X_ne_zero (RatFunc k)))
     simpa [Derivation.leibniz_pow, ← RatFunc.algebraMap_eq_C, two_nsmul,
       add_self_eq_zero_of_charTwo (RatFunc (RatFunc k)), add_smul, mul_smul, mul_comm] using hd
   obtain ⟨h01, h11⟩ := RatFunc.eq_zero_of_sq_add_C_X_mul_sq_eq_zero he
