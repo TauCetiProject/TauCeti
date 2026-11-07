@@ -79,7 +79,6 @@ theorem quantile_map_cast_geometricMeasure_zero {u : ℝ} (hu : u ∈ Ioo 0 1) :
   simp [geometricMeasure_zero, Measure.quantile_dirac 0 hu.1 hu.2.le]
 
 /-- At success probability one there are no failures, so the geometric quantile is zero. -/
-@[simp]
 theorem quantile_map_cast_geometricMeasure_one {u : ℝ} (hu : u ∈ Ioo 0 1) :
     ((geometricMeasure (1 : unitInterval)).map (Nat.cast : ℕ → ℝ)).quantile u = 0 := by
   rw [geometricMeasure_eq_negativeBinomialMeasure_one _ (by norm_num)]
@@ -118,7 +117,9 @@ theorem tendsto_quantile_map_cast_geometricMeasure_nhdsLT_one (p : unitInterval)
   · rw [ite_eq_left hp]
     apply tendsto_const_nhds.congr'
     filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with u hu
-    rcases hp with rfl | rfl <;> simp [hu]
+    rcases hp with rfl | rfl
+    · simp only [quantile_map_cast_geometricMeasure_zero hu, EReal.coe_zero]
+    · simp only [quantile_map_cast_geometricMeasure_one hu, EReal.coe_zero]
   · rw [ite_eq_right hp]
     have hp0 : p ≠ 0 := fun h ↦ hp (Or.inl h)
     have hp1 : (p : ℝ) < 1 :=
