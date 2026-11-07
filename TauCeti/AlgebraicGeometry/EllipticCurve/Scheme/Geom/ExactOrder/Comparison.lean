@@ -33,13 +33,37 @@ namespace TauCeti.AlgebraicGeometry.EllipticCurveGeom
 
 variable {S : Scheme.{u}} {E : EllipticCurveGeom S}
 
-variable {N : ℕ} [NeZero N]
+variable {N : ℕ}
+
+/-- Over an empty base every object of `Over S` is terminal, so every such object is a group
+object and every morphism to a group object is a monoid homomorphism. -/
+private theorem isOfExactOrder_of_isEmpty [IsEmpty S]
+    {P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap} : E.IsOfExactOrder P N := by
+  have ht (X : Over S) : IsTerminal X := by
+    refine IsTerminal.ofUniqueHom (fun Y ↦ ?_) fun Y m ↦ ?_
+    · have : IsEmpty Y.left := ⟨fun y ↦ isEmptyElim (Y.hom y)⟩
+      exact Over.homMk (isInitialOfIsEmpty.to X.left) (isInitialOfIsEmpty.hom_ext _ _)
+    · exact Over.OverMorphism.ext (by
+        have : IsEmpty Y.left := ⟨fun y ↦ isEmptyElim (Y.hom y)⟩
+        exact isInitialOfIsEmpty.hom_ext _ _)
+  rw [isOfExactOrder_def]
+  let X := Over.mk ((E.multiplesDivisor P N).subschemeι ≫ E.structureMap)
+  let _ : MonObj X :=
+    { one := (ht _).from _, mul := (ht _).from _, one_mul := (ht _).hom_ext _ _,
+      mul_one := (ht _).hom_ext _ _, mul_assoc := (ht _).hom_ext _ _ }
+  let _ : GrpObj X :=
+    { inv := (ht _).from _, left_inv := (ht _).hom_ext _ _, right_inv := (ht _).hom_ext _ _ }
+  exact ⟨inferInstance, { one_hom := (ht _).hom_ext _ _, mul_hom := (ht _).hom_ext _ _ }⟩
 
 /-- A naive point of exact order is a Drinfeld point of exact order where the level is invertible.
 This implication is valid over arbitrary, possibly nonreduced base schemes. -/
 theorem IsOfNaiveExactOrder.isOfExactOrder
     {P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap} (hP : E.IsOfNaiveExactOrder P N)
     (hN : ∀ s : S, (N : S.residueField s) ≠ 0) : E.IsOfExactOrder P N := by
+  rcases eq_or_ne N 0 with rfl | hN0
+  · have : IsEmpty S := ⟨fun s ↦ hN s (by simp)⟩
+    exact isOfExactOrder_of_isEmpty
+  have : NeZero N := ⟨hN0⟩
   let φ := (zmodMonoidHomEquiv N _).symm ⟨P, hP.pow_eq_one⟩
   have hφ1 : φ (.ofAdd 1) = P := zmodMonoidHomEquiv_symm_apply_ofAdd_one _
   have hφ : E.IsFiberwiseInjective φ :=
@@ -69,6 +93,8 @@ theorem IsOfNaiveExactOrder.isOfExactOrder
       IsMonHom (Over.homMk I.subschemeι : Over.mk (I.subschemeι ≫ E.structureMap) ⟶
         Over.mk E.structureMap)
   exact isOfExactOrder_def.mpr ((congrArg H hI).mpr hgrp)
+
+variable [NeZero N]
 
 /-- Drinfeld and naive exact order agree where the level is invertible. -/
 @[simp]
