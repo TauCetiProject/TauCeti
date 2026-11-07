@@ -621,6 +621,7 @@ theorem contMDiff_conormalInclusion {i : Q → M} (hi : ContMDiff J I m i) (hmn 
     conormalContMDiffVectorBundle hi hmn hinj hk
   have : MemTrivializationAtlas (hX.isSubbundleFrameOn.trivialization hU) :=
     ⟨(htriv ▸ he : hX.trivialization ic hU ∈ _)⟩
+  have : ∀ q, IsScalarTower 𝕜 𝕜 ((i *ᵖ T') q) := fun _ ↦ ⟨mul_smul⟩
   exact hX.isSubbundleFrameOn.contMDiffAt_totalSpace_subbundle hU (hX.contMDiffOn_pullback ic hU)
     (p := ⟨z.proj, z.2⟩) hzU
 
