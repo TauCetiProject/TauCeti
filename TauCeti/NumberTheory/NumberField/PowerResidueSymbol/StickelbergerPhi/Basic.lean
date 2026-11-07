@@ -392,7 +392,7 @@ theorem stickelbergerPhi_modEq_neg_one_pow [Fact m.Prime] {A : Ideal (𝓞 K)}
 section SecondPrime
 
 /-- The `q`-th power of the inverse power residue symbol of `P`, pushed along ring homomorphisms
-`f` and `π` into the coefficients, is itself when `m` divides `q - 1`. -/
+`f` and `π` into the coefficients, is itself when `q` is positive and `m` divides `q - 1`. -/
 private theorem ringHomComp_inv_powerResidueSymbol_pow_eq_self (P : Ideal (𝓞 K)) [P.IsMaximal]
     (hP : (absNorm P).Coprime m) {R S : Type*} [CommRing R] [CommRing S] (f : 𝓞 K →+* R)
     (π : R →+* S) {q : ℕ} (hmq : m ∣ q - 1) (hq : 0 < q) :
@@ -400,9 +400,10 @@ private theorem ringHomComp_inv_powerResidueSymbol_pow_eq_self (P : Ideal (𝓞 
       ((powerResidueSymbol P m)⁻¹.ringHomComp f).ringHomComp π := by
   have h0 : powerResidueSymbol P m ^ m = 1 := by
     simpa [orderOf_powerResidueSymbol hP] using pow_orderOf_eq_one (powerResidueSymbol P m)
-  refine MulChar.pow_eq_self_of_pow_eq_one ?_ hmq hq
-  rw [MulChar.ringHomComp_pow, MulChar.ringHomComp_pow, inv_pow, h0, inv_one,
-    MulChar.ringHomComp_one, MulChar.ringHomComp_one]
+  have h1 : (((powerResidueSymbol P m)⁻¹.ringHomComp f).ringHomComp π) ^ m = 1 := by
+    rw [MulChar.ringHomComp_pow, MulChar.ringHomComp_pow, inv_pow, h0, inv_one,
+      MulChar.ringHomComp_one, MulChar.ringHomComp_one]
+  simpa only [pow_one] using (pow_eq_pow_of_modEq ((Nat.modEq_iff_dvd' hq).2 hmq) h1).symm
 
 /-- The image of the Gauss sum of the inverse power residue symbol of a maximal ideal `P`, in the
 residue field of a prime `I` of a domain `R` containing `𝓞 K` and the values of a primitive
