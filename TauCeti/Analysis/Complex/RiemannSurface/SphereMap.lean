@@ -60,6 +60,35 @@ open Filter Function OnePoint Set Topology
 
 open scoped Manifold
 
+namespace OnePoint
+
+/-- The affine coordinate of the Riemann sphere is meromorphic, including at infinity,
+where its expression in the inverted chart is `w⁻¹`. -/
+theorem meromorphicAt_affineChart (x : OnePoint ℂ) :
+    TauCeti.RiemannSurface.MeromorphicAt (affineChart : OnePoint ℂ → ℂ) x := by
+  induction x using OnePoint.rec with
+  | coe z =>
+    rw [TauCeti.RiemannSurface.meromorphicAt_def]
+    simpa only [chartAt_coe, affineChart_coe, affineChart_symm_apply, comp_def,
+      Function.id_def] using
+      (analyticAt_id (𝕜 := ℂ) (z := z)).meromorphicAt
+  | infty =>
+    rw [TauCeti.RiemannSurface.meromorphicAt_def, chartAt_infty, invChart_infty,
+      affineChart_comp_invChart_symm]
+    exact (_root_.MeromorphicAt.id 0).inv
+
+/-- The affine coordinate has a simple pole at infinity. -/
+@[simp]
+theorem meromorphicOrderAt_affineChart_infty :
+    TauCeti.RiemannSurface.meromorphicOrderAt (affineChart : OnePoint ℂ → ℂ) ∞ = (-1 : ℤ) := by
+  rw [TauCeti.RiemannSurface.meromorphicOrderAt_def, chartAt_infty, invChart_infty,
+    affineChart_comp_invChart_symm]
+  have h := _root_.meromorphicOrderAt_inv (f := (id : ℂ → ℂ)) (x := 0)
+  rw [_root_.meromorphicOrderAt_id] at h
+  convert h using 1 <;> simp [Pi.inv_def, Function.id_def]
+
+end OnePoint
+
 namespace TauCeti.RiemannSurface
 
 variable {X : Type*} [TopologicalSpace X] {f : X → ℂ} {x : X}
