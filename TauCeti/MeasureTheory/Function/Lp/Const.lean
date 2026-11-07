@@ -48,16 +48,19 @@ theorem eLpNorm_sub_const_eq_enorm (a : F) (f : Lp F p μ) :
 omit [IsFiniteMeasure μ] in
 /-- The `Lᵖ` seminorm of `f - b` on `Ω` is at most the `liminf` of the `Lᵖ` seminorms of `f - aₙ`
 on an exhaustion `Vₙ ↑ Ω` by measurable sets, when `aₙ → b` (Fatou). -/
-theorem eLpNorm_sub_const_restrict_le_liminf {f : α → F} (hf : AEStronglyMeasurable f μ)
-    {Ω : Set α} {V : ℕ → Set α} (hV : ∀ n, MeasurableSet (V n))
+theorem eLpNorm_sub_const_restrict_le_liminf {Ω : Set α} {f : α → F}
+    (hf : AEStronglyMeasurable f (μ.restrict Ω))
+    {V : ℕ → Set α} (hV : ∀ n, MeasurableSet (V n))
     (hVmono : Monotone V) (hVunion : ⋃ n, V n = Ω) {a : ℕ → F} {b : F}
     (ha : Tendsto a atTop (𝓝 b)) :
     eLpNorm (fun x ↦ f x - b) p (μ.restrict Ω) ≤
       atTop.liminf fun n ↦ eLpNorm (fun x ↦ f x - a n) p (μ.restrict (V n)) := by
   have hΩ : MeasurableSet Ω := hVunion ▸ MeasurableSet.iUnion hV
   set g : ℕ → α → F := fun n ↦ (V n).indicator fun x ↦ f x - a n with hgdef
+  have hVsub : ∀ n, V n ⊆ Ω := fun n ↦ hVunion ▸ Set.subset_iUnion V n
   have hgmeas : ∀ n, AEStronglyMeasurable (g n) μ := fun n ↦
-    (hf.sub aestronglyMeasurable_const).indicator (hV n)
+    (aestronglyMeasurable_indicator_iff (hV n)).2
+      ((hf.mono_measure (Measure.restrict_mono (hVsub n) le_rfl)).sub aestronglyMeasurable_const)
   have hgval : ∀ n x, x ∈ V n → g n x = f x - a n := fun n x hx ↦ by
     simp only [hgdef]
     exact Set.indicator_of_mem hx _
@@ -77,7 +80,7 @@ theorem eLpNorm_sub_const_restrict_le_liminf {f : α → F} (hf : AEStronglyMeas
         (hgzero n x fun hmem ↦ hx (hVunion ▸ Set.mem_iUnion.2 ⟨n, hmem⟩)).symm
   rw [← eLpNorm_indicator_eq_eLpNorm_restrict hΩ.nullMeasurableSet]
   refine (Lp.eLpNorm_lim_le_liminf_eLpNorm hgmeas (Ω.indicator fun x ↦ f x - b)
-    ((hf.sub aestronglyMeasurable_const).indicator hΩ)
+    ((aestronglyMeasurable_indicator_iff hΩ).2 (hf.sub aestronglyMeasurable_const))
     (ae_of_all _ hptw)).trans_eq ?_
   simp only [hgdef, eLpNorm_indicator_eq_eLpNorm_restrict (hV _).nullMeasurableSet]
 
