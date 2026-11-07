@@ -125,8 +125,12 @@ private theorem _root_.IsCoveringMap.mapOfNatTrans_eq_of_path_in_sheets
   have hα := α.naturality_apply (Path.Homotopic.Quotient.mk γ) e'
   have hαe : α.app (FundamentalGroupoid.mk (p e)) e' = fe' := by
     simpa only [e', fe', f] using IsCoveringMap.mapOfNatTrans_apply hp hq α e
-  rw [show hp.monodromyFunctor.map (Path.Homotopic.Quotient.mk γ) e' = z' from hpmono, hαe,
-    show hq.monodromyFunctor.map (Path.Homotopic.Quotient.mk γ) fe' = gz' from hqmono] at hα
+  -- By definition, `monodromyFunctor.map γ` is `monodromy γ` on each fibre. Mathlib's simp lemma
+  -- `monodromyFunctor_map` does not fire through the `TypeCat` coercion, so the two functor-map
+  -- equations are obtained from the monodromy equations by definitional unfolding.
+  have hpmap : hp.monodromyFunctor.map (Path.Homotopic.Quotient.mk γ) e' = z' := hpmono
+  have hqmap : hq.monodromyFunctor.map (Path.Homotopic.Quotient.mk γ) fe' = gz' := hqmono
+  rw [hpmap, hαe, hqmap] at hα
   exact congrArg Subtype.val hα
 
 /-- The map forced by a natural transformation of monodromy functors is continuous when the
