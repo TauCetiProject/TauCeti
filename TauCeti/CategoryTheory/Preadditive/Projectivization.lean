@@ -110,18 +110,21 @@ noncomputable def preadditiveCoyonedaObjBiproductIso (n : ℕ) :
     (preadditiveCoyonedaObj M).obj (⨁ fun _ : Fin n ↦ M) ≅
       ModuleCat.of (End M)ᵐᵒᵖ (Fin n → (End M)ᵐᵒᵖ) :=
   LinearEquiv.toModuleIso
-    { toFun f j := .op (.of (f ≫ biproduct.π _ j))
-      invFun v := biproduct.lift fun j ↦ (v j).unop.asHom
+    { toFun f j := Preadditive.homSelfLinearEquivEndMulOpposite M (f ≫ biproduct.π _ j)
+      invFun v := biproduct.lift fun j ↦ (Preadditive.homSelfLinearEquivEndMulOpposite M).symm (v j)
       map_add' f g := funext fun j ↦ by
-        rw [Preadditive.add_comp]
-        exact (Preadditive.homSelfLinearEquivEndMulOpposite M).map_add _ _
+        simp only [Pi.add_apply, Preadditive.add_comp, map_add]
       map_smul' r f := funext fun j ↦ by
         have : (r • f) ≫ biproduct.π _ j = r • (f ≫ biproduct.π _ j) := by
           simp only [End.smul_left, Category.assoc]
-        rw [this]
-        exact (Preadditive.homSelfLinearEquivEndMulOpposite M).map_smul _ _
-      left_inv f := by ext j; simp
-      right_inv v := funext fun j ↦ by simp only [biproduct.lift_π]; rfl }
+        simp only [Pi.smul_apply, RingHom.id_apply, this, map_smul]
+      left_inv f := by ext j; simp only [biproduct.lift_π, LinearEquiv.symm_apply_apply]
+      right_inv v := funext fun j ↦ by simp only [biproduct.lift_π, LinearEquiv.apply_symm_apply] }
+
+/- Mathlib's `@[simps]` lemmas for `Preadditive.homSelfLinearEquivEndMulOpposite` state it with
+the raw `MulOpposite` constructor and a match on it, so `simp` cannot reach the `op`/`unop` forms
+below. They hold by `rfl` because that equivalence is `f ↦ op (End.of f)` with inverse
+`v ↦ v.unop.asHom` by definition. -/
 
 /-- `TauCeti.preadditiveCoyonedaObjBiproductIso` sends `f : M ⟶ Mⁿ` to its components
 `f ≫ biproduct.π _ j`, viewed in `Γᵐᵒᵖ`. -/
