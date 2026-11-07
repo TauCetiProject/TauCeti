@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Borel
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Elementary
 public import Mathlib.GroupTheory.Complement
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.OppositeBorel
 
@@ -23,8 +23,9 @@ parametrization is assumed. In particular, using weights in the full weight latt
 adjoint representation does not assert that its torus image is the full group of points of the
 adjoint torus. To describe that full torus, use coordinates in the actual character lattice.
 
-This file combines the normalization theorem in `RootSubgroup.Borel` and the trivial-intersection
-theorem in `RootSubgroup.OppositeBorel` with Mathlib's subgroup-complement quotient equivalence.
+This file combines the factorization theorem in `RootSubgroup.Torus.Elementary` and the
+trivial-intersection theorem in `RootSubgroup.OppositeBorel` with Mathlib's subgroup-complement
+quotient equivalence.
 The results hold over every commutative value ring, including nonreduced rings.
 
 ## References
@@ -58,24 +59,6 @@ variable (hα : ∀ i ∈ S, ∀ j, ⁅h j, e i⁆ = (α i j : ℚ) • e i)
 -- Match tensor products to the module instance stored by the value algebra.
 attribute [local instance high] Algebra.toModule
 
-include hwt hα in
-/-- An element of a torus subsystem subgroup is a root-generated element times a torus point.
-No positivity assumption is required for existence of this factorization. -/
-theorem mem_kostantTorusSubsystemSubgroup_iff_exists_mul (A : CommAlgCat.{w} ℤ)
-    (g : LinearMap.GeneralLinearGroup A (A ⊗[ℤ] M)) :
-    g ∈ kostantTorusSubsystemSubgroup e h ρ M hM hnil b wt S A ↔
-      ∃ u ∈ kostantSubsystemSubgroup e h ρ M hM hnil S A,
-        ∃ s : κ → Aˣ, u * kostantTorusPoints M b wt A s = g := by
-  have hnorm : (kostantTorusPoints M b wt A).range ≤
-      Subgroup.normalizer (kostantSubsystemSubgroup e h ρ M hM hnil S A : Set _) := by
-    rintro _ ⟨s, rfl⟩
-    exact kostantTorusPoints_mem_normalizer_kostantSubsystemSubgroup
-      e h ρ M hM hnil b wt hwt α S hα A s
-  rw [kostantTorusSubsystemSubgroup_eq_sup, ← SetLike.mem_coe,
-    Subgroup.coe_mul_of_right_le_normalizer_left _ _ hnorm]
-  simp only [Set.mem_mul]
-  aesop
-
 variable [LinearOrder η] [Finite η]
 variable (hpos : ∀ i ∈ S, ∀ {r s : η} {m : ℕ},
   0 < m → wt r = wt s + m • α i → r < s)
@@ -99,15 +82,15 @@ theorem isComplement'_kostantSubsystemSubgroup_range_kostantTorusPoints :
       e h ρ M hM hnil b wt α hwt S hα hpos A) ▸ ⟨hg.1, hg.2⟩
   · apply Set.eq_univ_of_forall
     intro g
-    obtain ⟨u, hu, s, hmul⟩ :=
-      (mem_kostantTorusSubsystemSubgroup_iff_exists_mul e h ρ M hM hnil b wt hwt α S hα
+    obtain ⟨u, hu, t, ht, hmul⟩ :=
+      (mem_kostantTorusSubsystemSubgroup_iff e h ρ M hM hnil b wt hwt α S hα
         (CommAlgCat.of ℤ A) g).mp g.property
+    rw [kostantTorusSubgroup_eq_range] at ht
     exact Set.mem_mul.mpr ⟨⟨u,
       kostantSubsystemSubgroup_le_kostantTorusSubsystemSubgroup
         e h ρ M hM hnil b wt S _ hu⟩, hu,
-      ⟨kostantTorusPoints M b wt _ s,
-        kostantTorusPoints_mem_kostantTorusSubsystemSubgroup e h ρ M hM hnil b wt S _ s⟩,
-      ⟨s, rfl⟩, Subtype.ext hmul⟩
+      ⟨t, range_kostantTorusPoints_le_kostantTorusSubsystemSubgroup
+        e h ρ M hM hnil b wt S _ ht⟩, ht, Subtype.ext hmul⟩
 
 /-- Quotienting a positive torus subsystem subgroup by its root-generated subgroup leaves exactly
 the torus image. The normality instance is the one supplied by torus normalization. -/
@@ -122,9 +105,8 @@ noncomputable def kostantTorusSubsystemQuotientEquiv :
     e h ρ M hM hnil b wt hwt α S hα (CommAlgCat.of ℤ A)
   exact ((isComplement'_kostantSubsystemSubgroup_range_kostantTorusPoints
     e h ρ M hM hnil b wt hwt α S hα hpos A).symm.QuotientMulEquiv).trans
-    (Subgroup.subgroupOfEquivOfLe (by
-      rw [kostantTorusSubsystemSubgroup_eq_sup]
-      exact le_sup_right))
+    (Subgroup.subgroupOfEquivOfLe
+      (range_kostantTorusPoints_le_kostantTorusSubsystemSubgroup e h ρ M hM hnil b wt S _))
 
 /-- The inverse quotient comparison sends a torus point to its class in the Borel-type group. -/
 @[simp]
@@ -133,14 +115,18 @@ theorem kostantTorusSubsystemQuotientEquiv_symm_apply
     letI := kostantSubsystemSubgroup_normal_subgroupOf_kostantTorusSubsystemSubgroup
       e h ρ M hM hnil b wt hwt α S hα (CommAlgCat.of ℤ A)
     (kostantTorusSubsystemQuotientEquiv e h ρ M hM hnil b wt hwt α S hα hpos A).symm t =
-      QuotientGroup.mk ⟨t.val, (by
-        rw [kostantTorusSubsystemSubgroup_eq_sup]
-        exact Subgroup.mem_sup_right t.property)⟩ := by
+      QuotientGroup.mk ⟨t.val, range_kostantTorusPoints_le_kostantTorusSubsystemSubgroup
+        e h ρ M hM hnil b wt S _ t.property⟩ := by
   let := kostantSubsystemSubgroup_normal_subgroupOf_kostantTorusSubsystemSubgroup
     e h ρ M hM hnil b wt hwt α S hα (CommAlgCat.of ℤ A)
   rw [kostantTorusSubsystemQuotientEquiv, MulEquiv.symm_trans_apply,
     Subgroup.IsComplement'.QuotientMulEquiv_symm_apply]
-  rfl
+  -- The inverse complement map takes the quotient class of the included torus element.
+  change QuotientGroup.mk ((Subgroup.subgroupOfEquivOfLe
+    (range_kostantTorusPoints_le_kostantTorusSubsystemSubgroup
+      e h ρ M hM hnil b wt S _)).symm t).val = _
+  exact congrArg QuotientGroup.mk
+    (Subtype.ext (Subgroup.subgroupOfEquivOfLe_symm_apply_coe_coe _ t))
 
 /-- The class of a torus point is sent back to that same torus point. -/
 @[simp]
@@ -149,12 +135,38 @@ theorem kostantTorusSubsystemQuotientEquiv_apply_mk
     letI := kostantSubsystemSubgroup_normal_subgroupOf_kostantTorusSubsystemSubgroup
       e h ρ M hM hnil b wt hwt α S hα (CommAlgCat.of ℤ A)
     kostantTorusSubsystemQuotientEquiv e h ρ M hM hnil b wt hwt α S hα hpos A
-      (QuotientGroup.mk ⟨t.val, (by
-        rw [kostantTorusSubsystemSubgroup_eq_sup]
-        exact Subgroup.mem_sup_right t.property)⟩) = t := by
+      (QuotientGroup.mk ⟨t.val, range_kostantTorusPoints_le_kostantTorusSubsystemSubgroup
+        e h ρ M hM hnil b wt S _ t.property⟩) = t := by
   let := kostantSubsystemSubgroup_normal_subgroupOf_kostantTorusSubsystemSubgroup
     e h ρ M hM hnil b wt hwt α S hα (CommAlgCat.of ℤ A)
   rw [← kostantTorusSubsystemQuotientEquiv_symm_apply e h ρ M hM hnil b wt hwt α S hα hpos A,
     MulEquiv.apply_symm_apply]
+
+/-- The quotient comparison extracts the torus factor of a product `u * t`. -/
+@[simp]
+theorem kostantTorusSubsystemQuotientEquiv_mk_mul
+    (u : LinearMap.GeneralLinearGroup A (A ⊗[ℤ] M))
+    (hu : u ∈ kostantSubsystemSubgroup e h ρ M hM hnil S (CommAlgCat.of ℤ A))
+    (t : (kostantTorusPoints M b wt (CommAlgCat.of ℤ A)).range) :
+    letI := kostantSubsystemSubgroup_normal_subgroupOf_kostantTorusSubsystemSubgroup
+      e h ρ M hM hnil b wt hwt α S hα (CommAlgCat.of ℤ A)
+    kostantTorusSubsystemQuotientEquiv e h ρ M hM hnil b wt hwt α S hα hpos A
+      (QuotientGroup.mk ⟨u * t.val, mul_mem
+        (kostantSubsystemSubgroup_le_kostantTorusSubsystemSubgroup
+          e h ρ M hM hnil b wt S _ hu)
+        (range_kostantTorusPoints_le_kostantTorusSubsystemSubgroup
+          e h ρ M hM hnil b wt S _ t.property)⟩) = t := by
+  let := kostantSubsystemSubgroup_normal_subgroupOf_kostantTorusSubsystemSubgroup
+    e h ρ M hM hnil b wt hwt α S hα (CommAlgCat.of ℤ A)
+  let u' : kostantTorusSubsystemSubgroup e h ρ M hM hnil b wt S (CommAlgCat.of ℤ A) :=
+    ⟨u, kostantSubsystemSubgroup_le_kostantTorusSubsystemSubgroup
+      e h ρ M hM hnil b wt S _ hu⟩
+  let t' : kostantTorusSubsystemSubgroup e h ρ M hM hnil b wt S (CommAlgCat.of ℤ A) :=
+    ⟨t.val, range_kostantTorusPoints_le_kostantTorusSubsystemSubgroup
+      e h ρ M hM hnil b wt S _ t.property⟩
+  change kostantTorusSubsystemQuotientEquiv e h ρ M hM hnil b wt hwt α S hα hpos A
+    (QuotientGroup.mk (u' * t')) = t
+  rw [QuotientGroup.mk_mul, (QuotientGroup.eq_one_iff u').mpr hu, one_mul]
+  exact kostantTorusSubsystemQuotientEquiv_apply_mk e h ρ M hM hnil b wt hwt α S hα hpos A t
 
 end TauCeti.UniversalEnvelopingAlgebra
