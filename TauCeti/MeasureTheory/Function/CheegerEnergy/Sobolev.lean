@@ -198,9 +198,12 @@ private theorem lowerSemicontinuous_enorm_sq_add_cheegerEnergy :
 and satisfies the same bound. The convergence filter may be arbitrary and nontrivial. -/
 theorem exists_toLp_eq_norm_le_of_tendsto {ι : Type*} {l : Filter ι} [l.NeBot]
     {u : ι → CheegerSobolevSpace m} {f : Lp ℝ 2 m} {r : ℝ}
-    (hu : Tendsto (fun i ↦ toLp m (u i)) l (𝓝 f)) (hr : 0 ≤ r)
+    (hu : Tendsto (fun i ↦ toLp m (u i)) l (𝓝 f))
     (hbound : ∀ᶠ i in l, ‖u i‖ ≤ r) :
     ∃ g : CheegerSobolevSpace m, toLp m g = f ∧ ‖g‖ ≤ r := by
+  have hr : 0 ≤ r := by
+    obtain ⟨i, hi⟩ := hbound.exists
+    exact (norm_nonneg _).trans hi
   have hclosed := lowerSemicontinuous_enorm_sq_add_cheegerEnergy (m := m)
     |>.isClosed_preimage (ENNReal.ofReal (r ^ 2))
   have hlim : ‖f‖ₑ ^ 2 + 2 * cheegerEnergy m f ≤ ENNReal.ofReal (r ^ 2) := by
@@ -260,15 +263,14 @@ instance instCompleteSpace : CompleteSpace (CheegerSobolevSpace m) := by
     (toLpCLM (m := m)).uniformContinuous.comp_cauchySeq hu
   obtain ⟨f, hf⟩ := cauchySeq_tendsto_of_complete huc
   obtain ⟨r, hr⟩ := hu.norm_bddAbove
-  have hr0 : 0 ≤ r := (norm_nonneg (u 0)).trans (hr (mem_range_self 0))
-  obtain ⟨g, hg, -⟩ := exists_toLp_eq_norm_le_of_tendsto hf hr0
+  obtain ⟨g, hg, -⟩ := exists_toLp_eq_norm_le_of_tendsto hf
     (Eventually.of_forall fun n ↦ hr (mem_range_self n))
   refine ⟨g, Metric.tendsto_atTop.2 fun ε hε ↦ ?_⟩
   obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.1 hu (ε / 2) (half_pos hε)
   refine ⟨N, fun n hn ↦ ?_⟩
   have hlim : Tendsto (fun k ↦ toLp m (u n - u k)) atTop (𝓝 (toLp m (u n - g))) := by
     simpa only [map_sub, hg] using tendsto_const_nhds.sub hf
-  obtain ⟨w, hw, hwr⟩ := exists_toLp_eq_norm_le_of_tendsto hlim (half_pos hε).le
+  obtain ⟨w, hw, hwr⟩ := exists_toLp_eq_norm_le_of_tendsto hlim
     (eventually_atTop.2 ⟨N, fun k hk ↦ by
       simpa only [dist_eq_norm] using (hN n hn k hk).le⟩)
   have hw' : w = u n - g := toLp_injective hw
