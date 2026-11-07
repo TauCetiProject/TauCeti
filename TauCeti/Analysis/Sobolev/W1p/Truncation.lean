@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.W1p.CompactSupport
 public import TauCeti.Analysis.Sobolev.W1p.LevelSet
 
-import Mathlib.MeasureTheory.Function.UnifTight
+public import Mathlib.MeasureTheory.Function.UnifTight
 
 /-!
 # Continuity of positive truncation
@@ -121,6 +121,32 @@ private theorem posPartAbove_coe_ae (hp : p ≠ ∞) {k : ℝ} (hk : 0 ≤ k)
     by_cases hx : k < W1p.value u x <;>
       simp [posPartAboveJet, posPartJet, ← huv, ← hug, sub_pos, hx]
 
+/-- Uniform tightness passes to families dominated almost everywhere in norm by a uniformly
+tight family. -/
+protected theorem _root_.MeasureTheory.UnifTight.ae_mono {α β ι : Type*} {m : MeasurableSpace α}
+    [NormedAddCommGroup β] {μ : Measure α} {p : ℝ≥0∞} {f g : ι → α → β}
+    (hg : UnifTight g p μ) (hf_meas : ∀ i, AEStronglyMeasurable (f i) μ)
+    (hfg : ∀ i, (‖f i ·‖ₑ) ≤ᵐ[μ] (‖g i ·‖ₑ)) : UnifTight f p μ := by
+  intro ε hε
+  obtain ⟨s, hs, hfinite, hbound⟩ := hg.exists_measurableSet_indicator hε.ne'
+  refine ⟨s, hfinite.ne, fun n ↦ (eLpNorm_mono_enorm_ae
+    ((hf_meas n).indicator hs.compl) ?_).trans (hbound n)⟩
+  filter_upwards [hfg n] with x hx
+  by_cases hxs : x ∈ sᶜ
+  · simpa only [Set.indicator_of_mem hxs] using hx
+  · simp only [Set.indicator_of_notMem hxs, enorm_zero, le_refl]
+
+/-- At a level `k`, the jet of a Sobolev function has zero gradient almost everywhere on the
+level set of its value. -/
+private theorem W1p.snd_ae_eq_zero_of_fst_eq (hp : p ≠ ∞) (u : W1p mu Omega p) (k : ℝ) :
+    ∀ᵐ x ∂mu.restrict Omega, ((u : Sobolev1JetLp mu Omega p) x).fst = k →
+      ((u : Sobolev1JetLp mu Omega p) x).snd = 0 := by
+  filter_upwards [W1p.value_apply_ae u, W1p.gradient_apply_ae u,
+    W1p.gradient_ae_eq_zero_on_level_set hp u k] with x hv hg hz
+  intro hx
+  rw [← hg]
+  exact hz (hv.trans hx)
+
 /-- Truncation above a nonnegative level is continuous in the Sobolev norm for finite
 exponents. -/
 theorem W1p.continuous_posPartAbove (hp : p ≠ ∞) {k : ℝ} (hk : 0 ≤ k) :
@@ -151,24 +177,12 @@ theorem W1p.continuous_posPartAbove (hp : p ≠ ∞) {k : ℝ} (hk : 0 ≤ k) :
     hvitali.2.1.ae_mono (fun n ↦ (Lp.memLp (g n)).aestronglyMeasurable) fun n ↦
       (hnorm n).mono fun x hx ↦ by
         simpa only [ofReal_norm] using ENNReal.ofReal_le_ofReal hx
-  have hut : UnifTight (fun n x ↦ g n x) p (mu.restrict Omega) := by
-    intro ε hε
-    obtain ⟨s, hs, hfinite, hbound⟩ := hvitali.2.2.exists_measurableSet_indicator hε.ne'
-    refine ⟨s, hfinite.ne, fun n ↦ (eLpNorm_mono_ae
-      ((Lp.memLp (g n)).aestronglyMeasurable.indicator hs.compl) ?_).trans (hbound n)⟩
-    filter_upwards [hnorm n] with x hx
-    by_cases hxs : x ∈ sᶜ
-    · simpa only [Set.indicator_of_mem hxs] using hx
-    · simp only [Set.indicator_of_notMem hxs, norm_zero, le_refl]
+  have hut : UnifTight (fun n x ↦ g n x) p (mu.restrict Omega) :=
+    hvitali.2.2.ae_mono (fun n ↦ (Lp.memLp (g n)).aestronglyMeasurable) fun n ↦
+      (hnorm n).mono fun x hx ↦ by
+        simpa only [ofReal_norm] using ENNReal.ofReal_le_ofReal hx
   -- The only discontinuity of the jet truncation disappears on Sobolev level sets.
-  have hzero : ∀ᵐ x ∂mu.restrict Omega,
-      ((u : Sobolev1JetLp mu Omega p) x).fst = k →
-        ((u : Sobolev1JetLp mu Omega p) x).snd = 0 := by
-    filter_upwards [W1p.value_apply_ae u, W1p.gradient_apply_ae u,
-      W1p.gradient_ae_eq_zero_on_level_set hp u k] with x hv hg hz
-    intro hx
-    rw [← hg]
-    exact hz (hv.trans hx)
+  have hzero := W1p.snd_ae_eq_zero_of_fst_eq hp u k
   apply (Lp.tendsto_Lp_iff_tendsto_eLpNorm' _ _).mpr
   apply tendsto_Lp_of_tendsto_ae (Fact.out : 1 ≤ p) hp
     (fun n ↦ (Lp.memLp (g n)).aestronglyMeasurable)
