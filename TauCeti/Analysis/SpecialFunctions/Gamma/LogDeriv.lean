@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Digamma
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Deligne
-import Mathlib.Topology.MetricSpace.ProperSpace.Real
 
 /-!
 # Logarithmic derivatives of the archimedean gamma factors
@@ -19,9 +18,9 @@ The identities hold away from the corresponding poles. The factor two in Mathlib
 complex-place normalization contributes no logarithmic derivative.
 
 The logarithmic derivatives are analytic wherever the factors are nonzero. On every
-compact positive real interval they have a uniform norm bound. Taking the interval
-`[1,3]` for the real-place factor controls both Dirichlet parity shifts at real
-arguments in `[1,2]`, as needed in real-zero estimates for Dirichlet L-functions.
+compact subset of the positive half-plane they have a uniform norm bound. Taking the
+complex image of `[1,3]` for the real-place factor controls both Dirichlet parity shifts
+at real arguments in `[1,2]`, as needed in real-zero estimates for Dirichlet L-functions.
 
 ## References
 
@@ -46,9 +45,16 @@ theorem logDeriv_Gammaℝ {s : ℂ} (hs : ∀ n : ℕ, s ≠ -(2 * n)) :
   have hne : (Real.pi : ℂ) ^ (-s / 2) ≠ 0 := by simp [Real.pi_ne_zero]
   have hlog : logDeriv (fun z : ℂ ↦ (Real.pi : ℂ) ^ (-z / 2)) s =
       -(Real.log Real.pi : ℂ) / 2 := by
-    rw [logDeriv_apply, hp.deriv, ← ofReal_log Real.pi_pos.le]
-    field_simp [hne]
-  change logDeriv (fun z : ℂ ↦ (Real.pi : ℂ) ^ (-z / 2) * Gamma (z / 2)) s = _
+    have hg := (hasDerivAt_id' s).neg.div_const 2
+    simp only [Pi.neg_apply] at hg
+    rw [logDeriv_fun_comp (f := fun w : ℂ ↦ (Real.pi : ℂ) ^ w)
+      (g := fun z : ℂ ↦ -z / 2)
+      (by fun_prop (disch := exact Or.inl (ofReal_ne_zero.mpr Real.pi_ne_zero)))
+      (by fun_prop), logDeriv_const_cpow (ofReal_ne_zero.mpr Real.pi_ne_zero),
+      hg.deriv, ← ofReal_log Real.pi_pos.le]
+    ring
+  rw [show Gammaℝ = fun z : ℂ ↦ (Real.pi : ℂ) ^ (-z / 2) * Gamma (z / 2) from
+    funext Gammaℝ_def]
   rw [logDeriv_fun_mul (f := fun z : ℂ ↦ (Real.pi : ℂ) ^ (-z / 2))
     (g := fun z ↦ Gamma (z / 2)) s hne (Gamma_ne_zero hh) hp.differentiableAt
     ((differentiableAt_Gamma _ hh).comp s (by fun_prop)), hlog,
@@ -64,11 +70,10 @@ theorem logDeriv_Gammaℂ {s : ℂ} (hs : ∀ n : ℕ, s ≠ -(n : ℂ)) :
   have hne : ((2 : ℂ) * Real.pi) ^ (-s) ≠ 0 := by simp [hb]
   have hlog : logDeriv (fun z : ℂ ↦ ((2 : ℂ) * Real.pi) ^ (-z)) s =
       -(Real.log (2 * Real.pi) : ℂ) := by
-    rw [logDeriv_apply, hp.deriv]
+    rw [logDeriv_const_cpow_neg hb]
     have hreal : Complex.log ((2 : ℂ) * Real.pi) = (Real.log (2 * Real.pi) : ℂ) := by
       rw [← ofReal_ofNat, ← ofReal_mul, ← ofReal_log (by positivity)]
-    rw [hreal]
-    field_simp [hne]
+    exact congrArg Neg.neg hreal
   have heq : Gammaℂ = fun z : ℂ ↦ 2 * (((2 : ℂ) * Real.pi) ^ (-z) * Gamma z) := by
     ext z
     rw [Gammaℂ_def]
@@ -84,8 +89,8 @@ theorem analyticAt_logDeriv_Gammaℝ {s : ℂ} (hs : Gammaℝ s ≠ 0) :
     AnalyticAt ℂ (logDeriv Gammaℝ) s := by
   have ha : AnalyticAt ℂ Gammaℝ s := by
     have h := (differentiable_Gammaℝ_inv.analyticAt s).inv (inv_ne_zero hs)
-    change AnalyticAt ℂ (fun z ↦ ((Gammaℝ z)⁻¹)⁻¹) s at h
-    simpa only [inv_inv] using h
+    rw [show (fun z ↦ (Gammaℝ z)⁻¹)⁻¹ = Gammaℝ from funext (fun z ↦ inv_inv _)] at h
+    exact h
   exact ha.deriv.div ha hs
 
 /-- The logarithmic derivative is analytic off the poles of the complex-place gamma factor. -/
@@ -93,41 +98,42 @@ theorem analyticAt_logDeriv_Gammaℂ {s : ℂ} (hs : Gammaℂ s ≠ 0) :
     AnalyticAt ℂ (logDeriv Gammaℂ) s := by
   have ha : AnalyticAt ℂ Gammaℂ s := by
     have h := (differentiable_Gammaℂ_inv.analyticAt s).inv (inv_ne_zero hs)
-    change AnalyticAt ℂ (fun z ↦ ((Gammaℂ z)⁻¹)⁻¹) s at h
-    simpa only [inv_inv] using h
+    rw [show (fun z ↦ (Gammaℂ z)⁻¹)⁻¹ = Gammaℂ from funext (fun z ↦ inv_inv _)] at h
+    exact h
   exact ha.deriv.div ha hs
 
-/-- The real-place logarithmic derivative is continuous on the positive real axis. -/
-theorem continuousOn_logDeriv_Gammaℝ_ofReal :
-    ContinuousOn (fun x : ℝ ↦ logDeriv Gammaℝ x) (Set.Ioi 0) := by
-  intro x hx
-  have h := analyticAt_logDeriv_Gammaℝ (s := (x : ℂ))
-    (Gammaℝ_ne_zero_of_re_pos (by simpa using hx))
-  exact (h.continuousAt.comp continuous_ofReal.continuousAt).continuousWithinAt
+/-- The complex-place gamma factor is nonzero on the positive half-plane. -/
+theorem Gammaℂ_ne_zero_of_re_pos {s : ℂ} (hs : 0 < s.re) : Gammaℂ s ≠ 0 := by
+  rw [Gammaℂ_def]
+  exact mul_ne_zero (mul_ne_zero (by norm_num) (by simp [Real.pi_ne_zero]))
+    (Gamma_ne_zero_of_re_pos hs)
 
-/-- The complex-place logarithmic derivative is continuous on the positive real axis. -/
-theorem continuousOn_logDeriv_Gammaℂ_ofReal :
-    ContinuousOn (fun x : ℝ ↦ logDeriv Gammaℂ x) (Set.Ioi 0) := by
-  intro x hx
-  have hne : Gammaℂ x ≠ 0 := by
-    rw [Gammaℂ_def]
-    exact mul_ne_zero (mul_ne_zero (by norm_num) (by simp [Real.pi_ne_zero]))
-      (Gamma_ne_zero_of_re_pos (by simpa using hx))
-  exact ((analyticAt_logDeriv_Gammaℂ hne).continuousAt.comp
-    continuous_ofReal.continuousAt).continuousWithinAt
+/-- The real-place logarithmic derivative is continuous on the positive half-plane. -/
+theorem continuousOn_logDeriv_Gammaℝ :
+    ContinuousOn (logDeriv Gammaℝ) {s : ℂ | 0 < s.re} := by
+  intro s hs
+  exact (analyticAt_logDeriv_Gammaℝ (Gammaℝ_ne_zero_of_re_pos hs)).continuousAt.continuousWithinAt
 
-/-- The real-place logarithmic derivative is bounded on a compact positive real interval. -/
-theorem exists_norm_logDeriv_Gammaℝ_le (a b : ℝ) (ha : 0 < a) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ x ∈ Set.Icc a b, ‖logDeriv Gammaℝ (x : ℂ)‖ ≤ C := by
-  obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn
-    (continuousOn_logDeriv_Gammaℝ_ofReal.mono (fun x hx ↦ lt_of_lt_of_le ha hx.1))
-  exact ⟨max C 0, le_max_right _ _, fun x hx ↦ (hC x hx).trans (le_max_left _ _)⟩
+/-- The complex-place logarithmic derivative is continuous on the positive half-plane. -/
+theorem continuousOn_logDeriv_Gammaℂ :
+    ContinuousOn (logDeriv Gammaℂ) {s : ℂ | 0 < s.re} := by
+  intro s hs
+  exact (analyticAt_logDeriv_Gammaℂ (Gammaℂ_ne_zero_of_re_pos hs)).continuousAt.continuousWithinAt
 
-/-- The complex-place logarithmic derivative is bounded on a compact positive real interval. -/
-theorem exists_norm_logDeriv_Gammaℂ_le (a b : ℝ) (ha : 0 < a) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ x ∈ Set.Icc a b, ‖logDeriv Gammaℂ (x : ℂ)‖ ≤ C := by
-  obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn
-    (continuousOn_logDeriv_Gammaℂ_ofReal.mono (fun x hx ↦ lt_of_lt_of_le ha hx.1))
-  exact ⟨max C 0, le_max_right _ _, fun x hx ↦ (hC x hx).trans (le_max_left _ _)⟩
+/-- The real-place logarithmic derivative is bounded on compact subsets of the
+positive half-plane. -/
+theorem exists_norm_logDeriv_Gammaℝ_le (K : Set ℂ) (hK : IsCompact K)
+    (hKre : K ⊆ {s : ℂ | 0 < s.re}) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ s ∈ K, ‖logDeriv Gammaℝ s‖ ≤ C := by
+  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn (continuousOn_logDeriv_Gammaℝ.mono hKre)
+  exact ⟨max C 0, le_max_right _ _, fun s hs ↦ (hC s hs).trans (le_max_left _ _)⟩
+
+/-- The complex-place logarithmic derivative is bounded on compact subsets of the
+positive half-plane. -/
+theorem exists_norm_logDeriv_Gammaℂ_le (K : Set ℂ) (hK : IsCompact K)
+    (hKre : K ⊆ {s : ℂ | 0 < s.re}) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ s ∈ K, ‖logDeriv Gammaℂ s‖ ≤ C := by
+  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn (continuousOn_logDeriv_Gammaℂ.mono hKre)
+  exact ⟨max C 0, le_max_right _ _, fun s hs ↦ (hC s hs).trans (le_max_left _ _)⟩
 
 end Complex
