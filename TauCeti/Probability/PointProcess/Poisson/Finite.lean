@@ -44,13 +44,17 @@ not necessarily a probability measure. -/
 noncomputable def finitePoissonLaw (r : ℝ≥0) (Q : Measure X) : Measure (Measure X) :=
   compoundPoissonMeasure r (Q.map Measure.dirac)
 
+/-- The finite Poisson law is the compound Poisson law with Dirac-measure jumps. -/
+theorem finitePoissonLaw_eq_compoundPoissonMeasure (r : ℝ≥0) (Q : Measure X) :
+    finitePoissonLaw r Q = compoundPoissonMeasure r (Q.map Measure.dirac) := (rfl)
+
 instance (r : ℝ≥0) (Q : Measure X) [IsProbabilityMeasure Q] :
     IsProbabilityMeasure (finitePoissonLaw r Q) := by
   rw [finitePoissonLaw]
   infer_instance
 
 /-- The sampling representation of the finite Poisson law. -/
-theorem finitePoissonLaw_def (r : ℝ≥0) (Q : Measure X) [IsProbabilityMeasure Q] :
+theorem finitePoissonLaw_eq_map_prod_infinitePi (r : ℝ≥0) (Q : Measure X) [IsProbabilityMeasure Q] :
     finitePoissonLaw r Q =
       ((poissonMeasure r).prod (Measure.infinitePi fun _ : ℕ => Q)).map
         (fun p : ℕ × (ℕ → X) => ∑ i ∈ Finset.range p.1, Measure.dirac (p.2 i)) := by
@@ -73,7 +77,7 @@ theorem lintegral_finitePoissonLaw (r : ℝ≥0) (Q : Measure X) [IsProbabilityM
   have hm : Measurable fun p : ℕ × (ℕ → X) =>
       ∑ i ∈ Finset.range p.1, Measure.dirac (p.2 i) :=
     measurable_from_prod_countable_right fun n => measurable_sum_dirac n
-  rw [finitePoissonLaw_def, lintegral_map hg hm]
+  rw [finitePoissonLaw_eq_map_prod_infinitePi, lintegral_map hg hm]
   exact lintegral_prod _ (hg.comp hm).aemeasurable
 
 /-- The total number of occurrences has the Poisson law, even when locations coincide. -/
