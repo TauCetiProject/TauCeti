@@ -155,6 +155,12 @@ jobs:
           path: gate
           persist-credentials: false
           fetch-depth: 1
+          # Trusted setup consumes project configuration, scripts, and local actions.
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /.github/
+            /scripts/
+            /tauceti.toml
 
       - name: Prepare pinned shared tools
         uses: TauCetiProject/TauCetiTools/.github/actions/setup@6376197e008e488d673e482a44f4a2cf921c50e0
@@ -505,6 +511,13 @@ jobs:
           path: mergebase
           persist-credentials: false
           fetch-depth: 1
+          # Preserve both lakefile spellings for config attestation and bump checks.
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /lakefile.toml
+            /lakefile.lean
+            /lake-manifest.json
+            /lean-toolchain
 
       # `.lake` sits inside a checkout whose contents the candidate controls, and a symlink
       # committed there gets followed by everything that later writes to that path, each of
