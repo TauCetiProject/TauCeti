@@ -131,6 +131,173 @@ private lemma end_multiplicities (hf : T.IsSelfIntersectionMinusTwoFork t c bran
     nlinarith [hforkRel, hpenultimate, hlast]
   exact ⟨hpenultimate, hlast, hprevious⟩
 
+/-- In an exhaustive fork with all interior weights and intersections equal to `W`, the
+multiplicities satisfy the discrete Laplace recurrence along the chain, as long as the left edge
+of the triple has intersection `W`. -/
+private lemma multiplicity_add_add_two_eq (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
+    (hcard : Fintype.card T.Component = t + 1) {W : ℤ} (hW : 0 < W)
+    (hw : ∀ i, 0 < i → i < t → (T.weight (c i) : ℤ) = W)
+    (hedge : ∀ i, 0 < i → i + 1 < t → T.intersection (c i) (c (i + 1)) = W)
+    (i : ℕ) (hi : i + 3 < t) (hedgeLeft : T.intersection (c i) (c (i + 1)) = W) :
+    (T.multiplicity (c i) : ℤ) + T.multiplicity (c (i + 2)) =
+      2 * T.multiplicity (c (i + 1)) := by
+  have h := hf.interior_fiber_relation hcard (i := i + 1) (by omega) (by omega) (by omega)
+  rw [Nat.add_sub_cancel, T.intersection_comm (c (i + 1)) (c i), hedgeLeft,
+    hf.intersection_self (i + 1) (by omega), hw (i + 1) (by omega) (by omega),
+    hedge (i + 1) (by omega) (by omega)] at h
+  nlinarith only [h, hW]
+
+/-- Equal endpoint weights would force linearly increasing multiplicities, contradicting the equal
+last two interior multiplicities imposed by the forked end. -/
+private lemma false_of_weight_zero_eq
+    (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
+    (hcard : Fintype.card T.Component = t + 1) (ht : 4 < t) {W : ℤ} (hW : 0 < W)
+    (hw : ∀ i, 0 < i → i < t → (T.weight (c i) : ℤ) = W)
+    (hedge : ∀ i, 0 < i → i + 1 < t → T.intersection (c i) (c (i + 1)) = W)
+    (hedge0 : T.intersection (c 0) (c 1) = max (T.weight (c 0) : ℤ) W)
+    (hleft : (T.weight (c 0) : ℤ) = W)
+    (hpenultimate : (T.multiplicity (c (t - 2)) : ℤ) = 2 * T.multiplicity branch)
+    (hprevious : (T.multiplicity (c (t - 3)) : ℤ) = 2 * T.multiplicity branch) : False := by
+  have hleftRel := hf.left_fiber_relation hcard
+  have hrec := hf.multiplicity_add_add_two_eq hcard hW hw hedge
+  have hedge0' : T.intersection (c 0) (c 1) = W := by
+    rw [hedge0, hleft, max_self]
+  have hm1 : (T.multiplicity (c 1) : ℤ) = 2 * T.multiplicity (c 0) := by
+    rw [hf.intersection_self 0 (by omega), hleft, hedge0'] at hleftRel
+    nlinarith only [hleftRel, hW]
+  have haffine := eq_add_nsmul_sub_of_add_eq_two_nsmul
+    (N := t - 1) (f := fun i ↦ (T.multiplicity (c i) : ℤ))
+    (fun i hi ↦ hrec i (by omega) (by
+      by_cases hi0 : i = 0
+      · simpa only [hi0] using hedge0'
+      · exact hedge i (by omega) (by omega)))
+  have hmPrev := haffine (t - 3) (by omega)
+  have hmPen := haffine (t - 2) (by omega)
+  rw [hm1, hprevious] at hmPrev
+  rw [hm1, hpenultimate] at hmPen
+  have htstep : t - 2 = (t - 3) + 1 := by omega
+  rw [htstep, add_nsmul, one_nsmul] at hmPen
+  have hm0pos : (0 : ℤ) < T.multiplicity (c 0) := by simp
+  have hm0zero : (2 * (T.multiplicity (c 0) : ℤ) - T.multiplicity (c 0)) = 0 := by
+    omega
+  exfalso
+  omega
+
+/-- A double-weight left endpoint gives case (29) of Stacks, Tag 0C8T. -/
+private lemma isGenusOneLongForkShape_of_weight_zero_eq_two_mul
+    (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
+    (hcard : Fintype.card T.Component = t + 1) (ht : 4 < t) {W : ℤ} (hW : 0 < W)
+    (hw : ∀ i, 0 < i → i < t → (T.weight (c i) : ℤ) = W)
+    (hedge : ∀ i, 0 < i → i + 1 < t → T.intersection (c i) (c (i + 1)) = W)
+    (hbranchWeight' : (T.weight branch : ℤ) = W)
+    (hbranchEdge' : T.intersection (c (t - 2)) branch = W)
+    (hedge0 : T.intersection (c 0) (c 1) = max (T.weight (c 0) : ℤ) W)
+    (hpenultimate : (T.multiplicity (c (t - 2)) : ℤ) = 2 * T.multiplicity branch)
+    (hlast : (T.multiplicity (c (t - 1)) : ℤ) = T.multiplicity branch)
+    (hleft : (T.weight (c 0) : ℤ) = 2 * W) : T.IsGenusOneLongForkShape t c branch := by
+  have hleftRel := hf.left_fiber_relation hcard
+  have hrec := hf.multiplicity_add_add_two_eq hcard hW hw hedge
+  have hedge0' : T.intersection (c 0) (c 1) = 2 * W := by
+    rw [hedge0, hleft, max_eq_left (by omega)]
+  have hm1 : (T.multiplicity (c 1) : ℤ) = 2 * T.multiplicity (c 0) := by
+    rw [hf.intersection_self 0 (by omega), hleft, hedge0'] at hleftRel
+    nlinarith only [hleftRel, hW]
+  have hm2 : (T.multiplicity (c 2) : ℤ) = 2 * T.multiplicity (c 0) := by
+    have h := hf.interior_fiber_relation hcard (i := 1) (by omega) (by omega) (by omega)
+    rw [Nat.sub_self, T.intersection_comm (c 1) (c 0), hedge0',
+      hf.intersection_self 1 (by omega), hw 1 (by omega) (by omega),
+      hedge 1 (by omega) (by omega), hm1] at h
+    nlinarith only [h, hW]
+  have hconst (i : ℕ) (hi : 0 < i) (hit : i < t - 1) :
+      (T.multiplicity (c i) : ℤ) = 2 * T.multiplicity (c 0) := by
+    have h := eq_add_nsmul_sub_of_add_eq_two_nsmul
+      (N := t - 2) (f := fun j ↦ (T.multiplicity (c (j + 1)) : ℤ))
+      (fun j hj ↦ hrec (j + 1) (by omega) (hedge (j + 1) (by omega) (by omega)))
+      (i - 1) (by omega)
+    simp only [Nat.sub_add_cancel hi, Nat.zero_add, hm1, hm2,
+      sub_self, smul_zero, add_zero] at h
+    exact h
+  have hm0 : (T.multiplicity (c 0) : ℤ) = T.multiplicity branch := by
+    nlinarith only [hconst (t - 2) (by omega) (by omega), hpenultimate]
+  refine ⟨W, T.multiplicity branch, hW, by simp, .inl ⟨?_, hbranchWeight', ?_, rfl, ?_,
+    hbranchEdge'⟩⟩
+  · intro i hi
+    by_cases hi0 : i = 0
+    · simp [hi0, hleft]
+    · simp only [hi0, ↓reduceIte]
+      exact hw i (by omega) hi
+  · intro i hi
+    by_cases hend : i = 0 ∨ i + 1 = t
+    · simp only [hend, ↓reduceIte]
+      rcases hend with rfl | hend
+      · exact hm0
+      · obtain rfl : i = t - 1 := by omega
+        exact hlast
+    · simp only [hend, ↓reduceIte]
+      rw [hconst i (by omega) (by omega), hm0]
+  · intro i hi
+    by_cases hi0 : i = 0
+    · simpa only [hi0, ↓reduceIte] using hedge0'
+    · simp only [hi0, ↓reduceIte]
+      exact hedge i (by omega) hi
+
+/-- A half-weight left endpoint gives case (30) of Stacks, Tag 0C8T. -/
+private lemma isGenusOneLongForkShape_of_two_mul_weight_zero_eq
+    (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
+    (hcard : Fintype.card T.Component = t + 1) (ht : 4 < t) {W : ℤ} (hW : 0 < W)
+    (hw : ∀ i, 0 < i → i < t → (T.weight (c i) : ℤ) = W)
+    (hedge : ∀ i, 0 < i → i + 1 < t → T.intersection (c i) (c (i + 1)) = W)
+    (hbranchWeight' : (T.weight branch : ℤ) = W)
+    (hbranchEdge' : T.intersection (c (t - 2)) branch = W)
+    (hedge0 : T.intersection (c 0) (c 1) = max (T.weight (c 0) : ℤ) W)
+    (hpenultimate : (T.multiplicity (c (t - 2)) : ℤ) = 2 * T.multiplicity branch)
+    (hlast : (T.multiplicity (c (t - 1)) : ℤ) = T.multiplicity branch)
+    (hleft : 2 * (T.weight (c 0) : ℤ) = W) : T.IsGenusOneLongForkShape t c branch := by
+  have hleftRel := hf.left_fiber_relation hcard
+  have hrec := hf.multiplicity_add_add_two_eq hcard hW hw hedge
+  have hedge0' : T.intersection (c 0) (c 1) = W := by
+    rw [hedge0, max_eq_right]
+    omega
+  have hm1 : (T.multiplicity (c 1) : ℤ) = T.multiplicity (c 0) := by
+    rw [hf.intersection_self 0 (by omega), hedge0'] at hleftRel
+    nlinarith only [hleftRel, hleft, hW]
+  have hconst (i : ℕ) (hi : i < t - 1) :
+      (T.multiplicity (c i) : ℤ) = T.multiplicity (c 0) := by
+    have h := eq_add_nsmul_sub_of_add_eq_two_nsmul
+      (N := t - 1) (f := fun j ↦ (T.multiplicity (c j) : ℤ))
+      (fun j hj ↦ hrec j (by omega) (by
+        by_cases hj0 : j = 0
+        · simpa only [hj0] using hedge0'
+        · exact hedge j (by omega) (by omega))) i hi
+    rw [hm1, sub_self, smul_zero, add_zero] at h
+    exact h
+  have hm0 : (T.multiplicity (c 0) : ℤ) = 2 * T.multiplicity branch := by
+    nlinarith only [hconst (t - 2) (by omega), hpenultimate]
+  refine ⟨T.weight (c 0), T.multiplicity branch, by simp, by simp, .inr ⟨?_, ?_, ?_, rfl,
+    ?_, ?_⟩⟩
+  · intro i hi
+    by_cases hi0 : i = 0
+    · simp [hi0]
+    · simp only [hi0, ↓reduceIte]
+      rw [hw i (by omega) hi]
+      exact hleft.symm
+  · rw [hbranchWeight']
+    exact hleft.symm
+  · intro i hi
+    by_cases hilast : i + 1 = t
+    · simp only [hilast, ↓reduceIte]
+      obtain rfl : i = t - 1 := by omega
+      exact hlast
+    · simp only [hilast, ↓reduceIte]
+      rw [hconst i (by omega), hm0]
+  · intro i hi
+    by_cases hi0 : i = 0
+    · simpa only [hi0] using hedge0'.trans hleft.symm
+    · rw [hedge i (by omega) hi]
+      exact hleft.symm
+  · rw [hbranchEdge']
+    exact hleft.symm
+
 /-- An exhaustive fork of at least five chain components has one of the two arbitrary-length
 fork shapes in cases (29) and (30) of Stacks, Tag 0C8T. -/
 theorem isGenusOneLongForkShape (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
@@ -166,130 +333,15 @@ theorem isGenusOneLongForkShape (hf : T.IsSelfIntersectionMinusTwoFork t c branc
     exact T.intersection_eq_max_weight (by rw [hcard]; omega)
       (hf.intersection_self 0 (by omega)) (hf.intersection_self 1 (by omega))
       (hf.intersection_succ_pos 0 (by omega))
-  have hleftRel := hf.left_fiber_relation hcard
   obtain ⟨hpenultimate, hlast, hprevious⟩ :=
     hf.end_multiplicities hcard ht hW hw hedge hbranchWeight' hbranchEdge'
-  have hrec (i : ℕ) (hi : i + 3 < t)
-      (hedgeLeft : T.intersection (c i) (c (i + 1)) = W) :
-      (T.multiplicity (c i) : ℤ) + T.multiplicity (c (i + 2)) =
-        2 * T.multiplicity (c (i + 1)) := by
-    have h := hf.interior_fiber_relation hcard (i := i + 1) (by omega) (by omega) (by omega)
-    rw [Nat.add_sub_cancel, T.intersection_comm (c (i + 1)) (c i), hedgeLeft,
-      hf.intersection_self (i + 1) (by omega), hw (i + 1) (by omega) (by omega),
-      hedge (i + 1) (by omega) (by omega)] at h
-    nlinarith only [h, hW]
   rcases hleft with hleft | hleft | hleft
-  · -- Equal endpoint weights would force linearly increasing multiplicities, contradicting
-    -- the equal last two interior multiplicities imposed by the forked end.
-    have hedge0' : T.intersection (c 0) (c 1) = W := by
-      rw [hedge0, hleft, max_self]
-    have hm1 : (T.multiplicity (c 1) : ℤ) = 2 * T.multiplicity (c 0) := by
-      rw [hf.intersection_self 0 (by omega), hleft, hedge0'] at hleftRel
-      nlinarith only [hleftRel, hW]
-    have haffine := eq_add_nsmul_sub_of_add_eq_two_nsmul
-      (N := t - 1) (f := fun i ↦ (T.multiplicity (c i) : ℤ))
-      (fun i hi ↦ hrec i (by omega) (by
-        by_cases hi0 : i = 0
-        · simpa only [hi0] using hedge0'
-        · exact hedge i (by omega) (by omega)))
-    have hmPrev := haffine (t - 3) (by omega)
-    have hmPen := haffine (t - 2) (by omega)
-    rw [hm1, hprevious] at hmPrev
-    rw [hm1, hpenultimate] at hmPen
-    have htstep : t - 2 = (t - 3) + 1 := by omega
-    rw [htstep, add_nsmul, one_nsmul] at hmPen
-    have hm0pos : (0 : ℤ) < T.multiplicity (c 0) := by simp
-    have hm0zero : (2 * (T.multiplicity (c 0) : ℤ) - T.multiplicity (c 0)) = 0 := by
-      omega
-    exfalso
-    omega
-  · -- A double-weight endpoint gives case (29).
-    have hedge0' : T.intersection (c 0) (c 1) = 2 * W := by
-      rw [hedge0, hleft, max_eq_left (by omega)]
-    have hm1 : (T.multiplicity (c 1) : ℤ) = 2 * T.multiplicity (c 0) := by
-      rw [hf.intersection_self 0 (by omega), hleft, hedge0'] at hleftRel
-      nlinarith only [hleftRel, hW]
-    have hm2 : (T.multiplicity (c 2) : ℤ) = 2 * T.multiplicity (c 0) := by
-      have h := hf.interior_fiber_relation hcard (i := 1) (by omega) (by omega) (by omega)
-      rw [Nat.sub_self, T.intersection_comm (c 1) (c 0), hedge0',
-        hf.intersection_self 1 (by omega), hw 1 (by omega) (by omega),
-        hedge 1 (by omega) (by omega), hm1] at h
-      nlinarith only [h, hW]
-    have hconst (i : ℕ) (hi : 0 < i) (hit : i < t - 1) :
-        (T.multiplicity (c i) : ℤ) = 2 * T.multiplicity (c 0) := by
-      have h := eq_add_nsmul_sub_of_add_eq_two_nsmul
-        (N := t - 2) (f := fun j ↦ (T.multiplicity (c (j + 1)) : ℤ))
-        (fun j hj ↦ hrec (j + 1) (by omega) (hedge (j + 1) (by omega) (by omega)))
-        (i - 1) (by omega)
-      simp only [Nat.sub_add_cancel hi, Nat.zero_add, hm1, hm2,
-        sub_self, smul_zero, add_zero] at h
-      exact h
-    have hm0 : (T.multiplicity (c 0) : ℤ) = T.multiplicity branch := by
-      nlinarith only [hconst (t - 2) (by omega) (by omega), hpenultimate]
-    refine ⟨W, T.multiplicity branch, hW, by simp, .inl ⟨?_, hbranchWeight', ?_, rfl, ?_,
-      hbranchEdge'⟩⟩
-    · intro i hi
-      by_cases hi0 : i = 0
-      · simp [hi0, hleft]
-      · simp only [hi0, ↓reduceIte]
-        exact hw i (by omega) hi
-    · intro i hi
-      by_cases hend : i = 0 ∨ i + 1 = t
-      · simp only [hend, ↓reduceIte]
-        rcases hend with rfl | hend
-        · exact hm0
-        · obtain rfl : i = t - 1 := by omega
-          exact hlast
-      · simp only [hend, ↓reduceIte]
-        rw [hconst i (by omega) (by omega), hm0]
-    · intro i hi
-      by_cases hi0 : i = 0
-      · simpa only [hi0, ↓reduceIte] using hedge0'
-      · simp only [hi0, ↓reduceIte]
-        exact hedge i (by omega) hi
-  · -- A half-weight endpoint gives case (30).
-    have hedge0' : T.intersection (c 0) (c 1) = W := by
-      rw [hedge0, max_eq_right]
-      omega
-    have hm1 : (T.multiplicity (c 1) : ℤ) = T.multiplicity (c 0) := by
-      rw [hf.intersection_self 0 (by omega), hedge0'] at hleftRel
-      nlinarith only [hleftRel, hleft, hW]
-    have hconst (i : ℕ) (hi : i < t - 1) :
-        (T.multiplicity (c i) : ℤ) = T.multiplicity (c 0) := by
-      have h := eq_add_nsmul_sub_of_add_eq_two_nsmul
-        (N := t - 1) (f := fun j ↦ (T.multiplicity (c j) : ℤ))
-        (fun j hj ↦ hrec j (by omega) (by
-          by_cases hj0 : j = 0
-          · simpa only [hj0] using hedge0'
-          · exact hedge j (by omega) (by omega))) i hi
-      rw [hm1, sub_self, smul_zero, add_zero] at h
-      exact h
-    have hm0 : (T.multiplicity (c 0) : ℤ) = 2 * T.multiplicity branch := by
-      nlinarith only [hconst (t - 2) (by omega), hpenultimate]
-    refine ⟨T.weight (c 0), T.multiplicity branch, by simp, by simp, .inr ⟨?_, ?_, ?_, rfl,
-      ?_, ?_⟩⟩
-    · intro i hi
-      by_cases hi0 : i = 0
-      · simp [hi0]
-      · simp only [hi0, ↓reduceIte]
-        rw [hw i (by omega) hi]
-        exact hleft.symm
-    · rw [hbranchWeight']
-      exact hleft.symm
-    · intro i hi
-      by_cases hilast : i + 1 = t
-      · simp only [hilast, ↓reduceIte]
-        obtain rfl : i = t - 1 := by omega
-        exact hlast
-      · simp only [hilast, ↓reduceIte]
-        rw [hconst i (by omega), hm0]
-    · intro i hi
-      by_cases hi0 : i = 0
-      · simpa only [hi0] using hedge0'.trans hleft.symm
-      · rw [hedge i (by omega) hi]
-        exact hleft.symm
-    · rw [hbranchEdge']
-      exact hleft.symm
+  · exact (hf.false_of_weight_zero_eq hcard ht hW hw hedge hedge0 hleft hpenultimate
+      hprevious).elim
+  · exact hf.isGenusOneLongForkShape_of_weight_zero_eq_two_mul hcard ht hW hw hedge
+      hbranchWeight' hbranchEdge' hedge0 hpenultimate hlast hleft
+  · exact hf.isGenusOneLongForkShape_of_two_mul_weight_zero_eq hcard ht hW hw hedge
+      hbranchWeight' hbranchEdge' hedge0 hpenultimate hlast hleft
 
 end IsSelfIntersectionMinusTwoFork
 

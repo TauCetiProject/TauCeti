@@ -6,129 +6,138 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Computability.AutomaticSequence.ReadingDirection
-import TauCeti.Computability.AutomaticSequence.LocalPeriod
 import TauCeti.Combinatorics.Pigeonhole.RepeatedRepresentatives
-import TauCeti.NumberTheory.ExponentialEquation.ClosePowers
-import TauCeti.Data.Nat.Periodic.RadixWindows
+import TauCeti.Computability.AutomaticSequence.LocalPeriod
 import TauCeti.Data.Nat.Digits
+import TauCeti.Data.Nat.Periodic.RadixWindows
+import TauCeti.NumberTheory.ExponentialEquation.ClosePowers
 
 /-!
-# Cobham's base-independence theorem
+# Cobham's theorem
 
-A sequence is automatic in two multiplicatively independent bases if and only if it is
-eventually periodic. The output type is arbitrary: finite state spaces already force the
-used output range to be finite. Multiplicative independence is expressed by inequality of
-all positive powers; unequal bases alone do not suffice.
+Two bases `k, l ≥ 2` are multiplicatively independent if `k ^ m ≠ l ^ n` for all `m, n ≥ 1`.
+Cobham's theorem says that a sequence which is both `k`-automatic and `l`-automatic for
+multiplicatively independent `k` and `l` is eventually periodic. Conversely, an eventually
+periodic sequence is automatic in every base, so for independent bases the sequences automatic
+in both are exactly the eventually periodic ones. Without independence this fails: the
+sequence that is `1` at the powers of `2` and `0` elsewhere is `2`-automatic and `4`-automatic,
+but not eventually periodic.
 
-The key automaton comparison is `IsAutomatic.exists_prefix_coloring`: equal prefix colours
-give equal blocks of length `2 * k ^ n + 1`, uniformly in every positive exponent `n`.
-Redundant most-significant-first digits allow such blocks to cross canonical radix boundaries.
-Repeated prefix colours and close powers then give local periods on overlapping windows;
-interval gluing retains the first period on the entire tail.
+The proof follows Krebs. A `k`-automatic sequence `a` admits a colouring of `ℕ` by finitely many
+colours such that equally coloured `x` and `y` give equal blocks
+`a (x k ^ n + z) = a (y k ^ n + z)` for every `n ≥ 1` and every `z ≤ 2 k ^ n`: colour `x` by the
+state an automaton reading redundant digits up to `2k`, most significant digit first, reaches on
+the canonical word of `x`. Comparing the colourings in both bases at close powers `A = k ^ m` and
+`B = l ^ n` gives a positive period on each window `[xB + B/3, xB + 5B/3]`, and these local periods
+glue into a single period of a tail.
+
+## Main results
+
+* `TauCeti.IsAutomatic.exists_fin_apply_mul_pow_add_eq_of_eq`: finitely many prefix colours
+  control all the blocks of length `2 k ^ n + 1` at the scales `k ^ n`.
+* `TauCeti.IsAutomatic.exists_periodic_tail`: **Cobham's theorem**, a sequence automatic in two
+  multiplicatively independent bases is eventually periodic.
+* `TauCeti.isAutomatic_and_isAutomatic_iff`: for multiplicatively independent bases, automaticity
+  in both bases is equivalent to eventual periodicity.
 
 ## References
 
-* Thijmen J. P. Krebs, *A more reasonable proof of Cobham's theorem* (2018),
-  arXiv:1801.06704, Theorem 1 and Section 3, especially equation (1).
+* Alan Cobham, *On the base-dependence of sets of numbers recognizable by finite automata*,
+  Math. Systems Theory 3 (1969), 186–192.
+* Thijmen J. P. Krebs, *A more reasonable proof of Cobham's theorem*, 2018, arXiv:1801.06704,
+  Theorem 1 and its proof in §3, equation (1).
 -/
 
 public section
 
+universe u
+
 namespace TauCeti
 
-variable {Δ : Type*} {f : ℕ → Δ} {a b k : ℕ}
+variable {k l : ℕ} [NeZero k] [NeZero l] {Δ : Type u} {a : ℕ → Δ}
 
-/-- A finite prefix colouring of an automatic sequence controls all doubled radix blocks.
-The same colouring works for every positive exponent, including the suffix value `2 * k ^ n`.
-Equality of colours means equality of reached states, not merely equality of outputs. -/
-theorem IsAutomatic.exists_prefix_coloring [NeZero k] (hf : IsAutomatic k f) (hk : 2 ≤ k) :
-    ∃ q : ℕ, 0 < q ∧ ∃ C : ℕ → Fin q,
-      ∀ x y, C x = C y → ∀ n, 0 < n → ∀ z, z ≤ 2 * k ^ n →
-        f (x * k ^ n + z) = f (y * k ^ n + z) := by
-  classical
+/-- **Finite prefix colours control wide radix blocks.** For `2 ≤ k`, a `k`-automatic sequence `a`
+admits a colouring `C : ℕ → Fin q` such that `C x = C y` implies
+`a (x * k ^ n + z) = a (y * k ^ n + z)` for every `n ≥ 1` and every `z ≤ 2 * k ^ n`. The same
+colouring serves all the lengths `n` and all the offsets `z`. -/
+theorem IsAutomatic.exists_fin_apply_mul_pow_add_eq_of_eq (hk : 2 ≤ k) (ha : IsAutomatic k a) :
+    ∃ (q : ℕ) (C : ℕ → Fin q), ∀ x y, C x = C y → ∀ n, 0 < n → ∀ z ≤ 2 * k ^ n,
+      a (x * k ^ n + z) = a (y * k ^ n + z) := by
   obtain ⟨σ, _, M, hM⟩ :=
-    (isAutomatic_iff_exists_dfao_output_eval_eq_ofDigits_reverse (d := 2 * k) hk
-      (by omega)).mp hf
-  let word (x : ℕ) : List (Fin (2 * k + 1)) :=
-    (((Nat.digits k x).map (Fin.ofNat k)).map (Fin.castLE (by omega))).reverse
-  have hword (x : ℕ) : Nat.ofDigits k ((word x).map Fin.val).reverse = x := by
-    simp only [word, List.map_reverse, List.reverse_reverse, List.map_map,
-      Function.comp_def, Fin.val_castLE]
-    simpa only [List.map_map, Function.comp_def, Nat.ofDigits_digits] using
-      congrArg (Nat.ofDigits k) (Nat.map_val_map_ofNat_digits hk x)
-  let : Nonempty σ := ⟨M.start⟩
-  refine ⟨Fintype.card σ, Fintype.card_pos, fun x ↦ Fintype.equivFin σ (M.eval (word x)), ?_⟩
+    (isAutomatic_iff_exists_dfao_output_eval_eq_ofDigits_reverse (d := 2 * k) hk (by omega)).mp ha
+  -- Every `x` is the value of its canonical digits, written most significant digit first.
+  have hword (x : ℕ) : ∃ w : List (Fin (2 * k + 1)), Nat.ofDigits k (w.map Fin.val).reverse = x :=
+    ⟨(((Nat.digits k x).map (Fin.ofNat k)).map (Fin.castLE (by omega))).reverse, by
+      rw [List.map_reverse, List.reverse_reverse, List.map_map]
+      simp only [Function.comp_def, Fin.val_castLE]
+      rw [Nat.map_val_map_ofNat_digits hk, Nat.ofDigits_digits]⟩
+  choose w hw using hword
+  refine ⟨Fintype.card σ, fun x ↦ Fintype.equivFin σ (M.eval (w x)), ?_⟩
   intro x y hxy n hn z hz
-  have hstate : M.eval (word x) = M.eval (word y) := (Fintype.equivFin σ).injective hxy
-  obtain ⟨w, hw, hv⟩ := Nat.exists_list_fin_two_mul_length_ofDigits_eq (by omega : 0 < k) hn hz
-  have hvalue (x : ℕ) :
-      Nat.ofDigits k (((word x ++ w.reverse).map Fin.val).reverse) = x * k ^ n + z := by
-    simp only [List.map_append, List.reverse_append, List.map_reverse, List.reverse_reverse,
-      Nat.ofDigits_append, hv, List.length_map, hw, hword]
-    ac_rfl
-  calc
-    f (x * k ^ n + z) = M.output (M.eval (word x ++ w.reverse)) := by rw [hM, hvalue]
-    _ = M.output (M.eval (word y ++ w.reverse)) := by rw [M.eval_append, M.eval_append, hstate]
-    _ = f (y * k ^ n + z) := by rw [hM, hvalue]
+  -- Append to both prefixes a common suffix of length `n` and value `z`.
+  obtain ⟨s, hs, hsz⟩ := Nat.exists_length_eq_ofDigits_eq_of_le_two_mul_pow hn hz
+  have hval (x : ℕ) : Nat.ofDigits k ((w x ++ s.reverse).map Fin.val).reverse = x * k ^ n + z := by
+    simp [Nat.ofDigits_append, hsz, hs, hw]
+    ring
+  have hstate : M.eval (w x) = M.eval (w y) := (Fintype.equivFin σ).injective hxy
+  rw [← hval x, ← hval y, ← hM, ← hM, DFAO.eval_append, DFAO.eval_append, hstate]
 
-/-- **Cobham's theorem**, forward direction: a sequence automatic in two multiplicatively
-independent bases has a positive period after a finite exceptional prefix. -/
-theorem IsAutomatic.exists_eventually_periodic_of_forall_pow_ne_pow [NeZero a] [NeZero b]
-    (hf : IsAutomatic a f) (hg : IsAutomatic b f) (ha : 2 ≤ a) (hb : 2 ≤ b)
-    (hab : ∀ m n : ℕ, 0 < m → 0 < n → a ^ m ≠ b ^ n) :
-    ∃ N p : ℕ, 0 < p ∧ ∀ t, N ≤ t → f (t + p) = f t := by
-  obtain ⟨r, _, A, hA⟩ := hf.exists_prefix_coloring ha
-  obtain ⟨s, _, B, hB⟩ := hg.exists_prefix_coloring hb
-  obtain ⟨N, ξ, _, hrep⟩ := exists_uniform_repeated_representatives A B
-  obtain ⟨m, n, hm, hn, hclose⟩ := Nat.exists_pos_mul_abs_pow_sub_pow_le a b (6 * ξ) ha hb
-  have hclose' : 6 * (ξ : ℤ) * |(a ^ m : ℕ) - (b ^ n : ℤ)| ≤ b ^ n := by
-    simpa only [Nat.cast_mul, Nat.cast_ofNat, Nat.cast_pow] using hclose
-  have hlocal : ∀ x, N ≤ x → ∃ p, 0 < p ∧ 6 * p ≤ b ^ n ∧
-      ∀ t, 3 * (x * b ^ n) + b ^ n ≤ 3 * t →
-        3 * (t + p) ≤ 3 * (x * b ^ n) + 5 * b ^ n → f (t + p) = f t := by
-    intro x hx
-    obtain ⟨u, hu, v, hv, huv, hux, hvx, huvA⟩ := hrep x hx
-    exact ⟨_, natAbs_sub_mul_sub_period_on_radix_window hu hv huv (hab m n hm hn)
-      hclose' rfl (hB x u hux.symm n hn) (hB x v hvx.symm n hn) (hA u v huvA m hm)⟩
-  obtain ⟨p, hp, _, htail⟩ := Nat.exists_periodic_tail_of_period_on_radix_windows hlocal
-  exact ⟨(N + 1) * b ^ n, p, hp, htail⟩
+/-- **Cobham's theorem.** Let `k, l ≥ 2` be multiplicatively independent, that is,
+`k ^ m ≠ l ^ n` for all `m, n ≥ 1`. A sequence that is both `k`-automatic and `l`-automatic is
+eventually periodic: there are `N` and `p > 0` with `a (t + p) = a t` for every `t ≥ N`. -/
+theorem IsAutomatic.exists_periodic_tail (hk : 2 ≤ k) (hl : 2 ≤ l)
+    (hind : ∀ m n, 0 < m → 0 < n → k ^ m ≠ l ^ n) (hak : IsAutomatic k a)
+    (hal : IsAutomatic l a) :
+    ∃ N p, 0 < p ∧ ∀ t, N ≤ t → a (t + p) = a t := by
+  obtain ⟨_, Ck, hCk⟩ := hak.exists_fin_apply_mul_pow_add_eq_of_eq hk
+  obtain ⟨_, Cl, hCl⟩ := hal.exists_fin_apply_mul_pow_add_eq_of_eq hl
+  -- Every tail `l`-colour has two bounded representatives with the same `k`-colour.
+  obtain ⟨N, ξ, -, hrep⟩ := exists_uniform_repeated_representatives Ck Cl
+  obtain ⟨m, n, hm, hn, hclose⟩ := Nat.exists_pos_mul_abs_pow_sub_pow_le k l (6 * ξ) hk hl
+  have hclose' : 6 * ξ * |((k ^ m : ℕ) : ℤ) - ((l ^ n : ℕ) : ℤ)| ≤ ((l ^ n : ℕ) : ℤ) := by
+    push_cast at hclose ⊢
+    exact hclose
+  -- Each radix window at the scale `l ^ n` carries a positive period at most `l ^ n / 6`.
+  obtain ⟨p, hp, -, hper⟩ := Nat.exists_periodic_tail_of_period_on_radix_windows
+    (f := a) (B := l ^ n) (N := N) fun x hx ↦ by
+      obtain ⟨u, hu, v, hv, huv, hux, hvx, huv'⟩ := hrep x hx
+      exact ⟨_, natAbs_sub_mul_sub_period_on_radix_window hu hv huv (hind m n hm hn) hclose' rfl
+        (hCl x u hux.symm n hn) (hCl x v hvx.symm n hn) (hCk u v huv' m hm)⟩
+  exact ⟨(N + 1) * l ^ n, p, hp, hper⟩
 
-/-- **Cobham's base-independence theorem.** For two bases at least two with no equal positive
-powers, simultaneous automaticity is equivalent to eventual periodicity. -/
-theorem isAutomatic_and_isAutomatic_iff_eventually_periodic [NeZero a] [NeZero b]
-    (ha : 2 ≤ a) (hb : 2 ≤ b)
-    (hab : ∀ m n : ℕ, 0 < m → 0 < n → a ^ m ≠ b ^ n) :
-    IsAutomatic a f ∧ IsAutomatic b f ↔
-      ∃ N p : ℕ, 0 < p ∧ ∀ t, N ≤ t → f (t + p) = f t := by
-  constructor
-  · rintro ⟨hf, hg⟩
-    exact hf.exists_eventually_periodic_of_forall_pow_ne_pow hg ha hb hab
-  · rintro ⟨N, p, hp, h⟩
-    exact ⟨isAutomatic_of_eventually_periodic hp h, isAutomatic_of_eventually_periodic hp h⟩
+/-- **Cobham's theorem**, as an equivalence. For multiplicatively independent bases `k, l ≥ 2`,
+a sequence is both `k`-automatic and `l`-automatic exactly when it is eventually periodic. -/
+theorem isAutomatic_and_isAutomatic_iff (hk : 2 ≤ k) (hl : 2 ≤ l)
+    (hind : ∀ m n, 0 < m → 0 < n → k ^ m ≠ l ^ n) :
+    IsAutomatic k a ∧ IsAutomatic l a ↔ ∃ N p, 0 < p ∧ ∀ t, N ≤ t → a (t + p) = a t :=
+  ⟨fun h ↦ h.1.exists_periodic_tail hk hl hind h.2,
+    fun ⟨_, _, hp, h⟩ ↦ ⟨isAutomatic_of_eventually_periodic hp h,
+      isAutomatic_of_eventually_periodic hp h⟩⟩
 
 /-! ### Checks -/
 
--- Distinct bases need not be multiplicatively independent.
-example : (2 : ℕ) ≠ 4 ∧ (2 : ℕ) ^ 2 = 4 ^ 1 := by decide
+/-- The bases `2` and `3` are multiplicatively independent, since their powers are coprime. -/
+example : ∀ m n : ℕ, 0 < m → 0 < n → 2 ^ m ≠ 3 ^ n := fun m n _ hn h ↦ by
+  have := Nat.Coprime.pow m n (by decide : Nat.Coprime 2 3)
+  rw [h, Nat.coprime_self] at this
+  exact (Nat.one_lt_pow hn.ne' (by norm_num)).ne' this
 
--- The concrete independent pair 2, 3 gives eventual, not necessarily global, periodicity.
-example (hf : IsAutomatic 2 f) (hg : IsAutomatic 3 f) :
-    ∃ N p : ℕ, 0 < p ∧ ∀ t, N ≤ t → f (t + p) = f t := by
-  apply hf.exists_eventually_periodic_of_forall_pow_ne_pow hg (by decide) (by decide)
-  intro m n hm _ heq
-  have hmod := congrArg (· % 2) heq
-  norm_num [Nat.pow_mod, hm.ne'] at hmod
+/-- The distinct bases `2` and `4` are not multiplicatively independent. -/
+example : ¬ ∀ m n : ℕ, 0 < m → 0 < n → 2 ^ m ≠ 4 ^ n :=
+  fun h ↦ h 2 1 two_pos one_pos rfl
 
--- The finite exceptional prefix is retained: this sequence is not periodic from zero.
-example (ha : 2 ≤ a) (hb : 2 ≤ b) [NeZero a] [NeZero b]
-    (hab : ∀ m n : ℕ, 0 < m → 0 < n → a ^ m ≠ b ^ n) :
-    IsAutomatic a (fun t ↦ if t = 0 then 7 else t % 2) ∧
-      IsAutomatic b (fun t ↦ if t = 0 then 7 else t % 2) := by
-  apply (isAutomatic_and_isAutomatic_iff_eventually_periodic ha hb hab).mpr
-  refine ⟨1, 2, by decide, ?_⟩
-  intro t ht
-  simp [show t ≠ 0 by omega]
+/-- The sequence equal to `7` at zero and to the parity of `t` elsewhere is both `2`-automatic and
+`3`-automatic: its tail from `1` has period `2`. -/
+example : IsAutomatic 2 (fun t : ℕ ↦ if t = 0 then 7 else t % 2) ∧
+    IsAutomatic 3 (fun t : ℕ ↦ if t = 0 then 7 else t % 2) := by
+  refine (isAutomatic_and_isAutomatic_iff (by norm_num) (by norm_num) fun m n _ hn h ↦ ?_).mpr
+    ⟨1, 2, two_pos, fun t ht ↦ by simp [show t ≠ 0 by omega]⟩
+  have := Nat.Coprime.pow m n (by decide : Nat.Coprime 2 3)
+  rw [h, Nat.coprime_self] at this
+  exact (Nat.one_lt_pow hn.ne' (by norm_num)).ne' this
 
+/-- The finite exceptional prefix cannot be dropped: this sequence has no positive period
+valid from zero. -/
 example : ¬ ∃ p : ℕ, 0 < p ∧ ∀ t,
     (if t + p = 0 then 7 else (t + p) % 2) = (if t = 0 then 7 else t % 2) := by
   rintro ⟨p, hp, h⟩

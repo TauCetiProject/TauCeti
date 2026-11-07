@@ -203,7 +203,8 @@ theorem ae_eq_of_lintegral_norm_sub_sq_div_two_le [IsFiniteMeasure m] (hUρ : m.
     rw [Prod.fst_swap, Prod.snd_swap, norm_sub_rev]
   have hfin' : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) (m.map U) P
       ≠ ∞ := by
-    rwa [← hsymm, transportCost_comp_swap hc]
+    rwa [← hsymm,
+      transportCost_comp_swap (c := fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))]
   -- The plan of `(t, U)` for a map `t` of law `P` at most as far from `U` as `s` is optimal, so
   -- the plan of `(U, t)` is optimal out of the law of `U`.
   have hopt : ∀ {t : α → E}, HasLaw t P m →
@@ -219,7 +220,7 @@ theorem ae_eq_of_lintegral_norm_sub_sq_div_two_le [IsFiniteMeasure m] (hUρ : m.
       rw [lintegral_map' hc.aemeasurable (ht.aemeasurable.prodMk hU),
         ← lintegral_eq_transportCost_of_ae_eq_comp hc hT hs h]
       exact hle
-    exact hsymm ▸ hopt.swap hc
+    exact hsymm ▸ hopt.swap
   -- That optimal plan is the graph plan of a gradient `∇v`, so `s` and `s'` are both `∇v ∘ U`.
   obtain ⟨v, -, -, -, -, hgraph⟩ := (hopt hs le_rfl).exists_eq_graphPlan_gradient hUρ hfin'
   have hS := measurable_gradient fun y => (v y).toReal
