@@ -269,9 +269,8 @@ private theorem projAlong_edgePath_ne (hπ : poly.IsRegularProjection ℝ (projA
   refine ⟨fun h ↦ ha (hπ.eq_vertex_of_apply_eq i hb h ▸ hpj),
     fun h ↦ ha' (hπ.eq_vertex_of_apply_eq _ hb h ▸ hpj), fun h ↦ ?_⟩
   -- Edge `j` is an edge of the new polygon, of which `c` is a vertex.
-  have hjq : poly.edgeSet ℝ j ⊆ (poly.insertVertex i c).boundary ℝ := by
-    rw [← edgeSet_insertVertex_succAbove poly i c hji]
-    exact subset_iUnion ((poly.insertVertex i c).edgeSet ℝ) _
+  have hjq : poly.edgeSet ℝ j ⊆ (poly.insertVertex i c).boundary ℝ :=
+    edgeSet_subset_boundary_insertVertex poly i c hji
   have hc := hπ'.eq_vertex_of_apply_eq i.succ (hjq hpj)
   rw [insertVertex_apply_succ_self] at hc
   rcases hΔ.edgeSet_inter_closedInterior_subset hji
@@ -620,12 +619,10 @@ private theorem eq_of_mem_union_of_apply_eq {i j : Fin n} {c : P}
     (h : projAlong ℝ p₀ d w = projAlong ℝ p₀ d z) : z = y ∧ w = poly.edgePath ℝ j s₁ := by
   have hND := union_subset hΔ.affineSegment_left_subset_closedInterior
     hΔ.affineSegment_right_subset_closedInterior
-  have hzq : z ∈ (poly.insertVertex i c).boundary ℝ := by
-    rw [boundary_insertVertex]
-    exact .inr hz
-  rw [boundary_insertVertex] at hw
-  obtain ⟨k, hki, hk⟩ :=
-    mem_iUnion₂.1 (hw.resolve_right fun hw ↦ hne (hinjD (hND hw) (hND hz) h))
+  have hzq : z ∈ (poly.insertVertex i c).boundary ℝ :=
+    affineSegment_union_subset_boundary_insertVertex poly i c hz
+  obtain ⟨k, hki, hk⟩ := exists_mem_edgeSet_of_mem_boundary_insertVertex poly i c hw
+    fun hw ↦ hne (hinjD (hND hw) (hND hz) h)
   by_cases hkj : k = j
   · rw [hkj] at hk
     obtain ⟨s, hs, rfl⟩ := hk
@@ -689,12 +686,10 @@ private theorem exists_slide (hs : poly.IsSimple ℝ)
   have hyy' : y ≠ poly.edgePath ℝ j s₁ := fun h ↦ by
     rcases hΔ.edgeSet_inter_closedInterior_subset hji ⟨hy'j, h ▸ hyD⟩ with h' | h'
     exacts [ha (h' ▸ hy'j), ha' (h' ▸ hy'j)]
-  have hyq : y ∈ (poly.insertVertex i c).boundary ℝ := by
-    rw [boundary_insertVertex]
-    exact .inr hyN
-  have hy'q : poly.edgePath ℝ j s₁ ∈ (poly.insertVertex i c).boundary ℝ := by
-    rw [← edgeSet_insertVertex_succAbove poly i c hji] at hy'j
-    exact subset_iUnion ((poly.insertVertex i c).edgeSet ℝ) _ hy'j
+  have hyq : y ∈ (poly.insertVertex i c).boundary ℝ :=
+    affineSegment_union_subset_boundary_insertVertex poly i c hyN
+  have hy'q : poly.edgePath ℝ j s₁ ∈ (poly.insertVertex i c).boundary ℝ :=
+    edgeSet_subset_boundary_insertVertex poly i c hji hy'j
   refine ⟨s₁, hs₁, hs₁₀, y, τy, L, hL, hyD, hπy, hyy',
     fun h ↦ hy'i ⟨y, hΔ.closedInterior_inter_boundary ▸ ⟨hyD, h⟩, hπy⟩,
     mem_doublePoints.2 ⟨hyq, _, hy'q, hyy'.symm, hπy.symm⟩,
@@ -702,8 +697,8 @@ private theorem exists_slide (hs : poly.IsSimple ℝ)
     fun s hsu ↦ eq_of_mem_uIcc_of_mem_doublePoints hs hπ hΔ hprism hji hr hs₀ hs₁ hπx hin hsu,
     fun z hz w ↦ eq_of_mem_union_of_apply_eq hπ' hΔ hprism hinjD hyD hπy huniq hz⟩
   -- `x` lies neither on the new edges nor on another edge of `poly`, as it is not a vertex.
-  rw [boundary_insertVertex] at h
-  obtain ⟨k, hki, hk⟩ := mem_iUnion₂.1 (h.resolve_right fun h ↦ hxN ⟨_, h, rfl⟩)
+  obtain ⟨k, hki, hk⟩ :=
+    exists_mem_edgeSet_of_mem_boundary_insertVertex poly i c h fun h ↦ hxN ⟨_, h, rfl⟩
   rcases hs.eq_vertex_of_mem_edgeSet (Ne.symm hki) ⟨r, Ioo_subset_Icc_self hr, rfl⟩ hk with
     ⟨-, h'⟩ | ⟨-, h'⟩ <;>
     exact hπ.apply_notMem_doublePoints _ (h' ▸ hxDP)
@@ -731,8 +726,7 @@ private theorem mapsTo_doublePoints_insertVertex {i : Fin n} {c : P} {g : P → 
   have hoff {u : P} (hu : u ∈ poly.boundary ℝ) (hui : u ∉ poly.edgeSet ℝ i) :
       u ∈ (poly.insertVertex i c).boundary ℝ := by
     obtain ⟨k, hk⟩ := mem_iUnion.1 hu
-    rw [boundary_insertVertex]
-    exact .inl (mem_iUnion₂.2 ⟨k, fun h ↦ hui (h ▸ hk), hk⟩)
+    exact edgeSet_subset_boundary_insertVertex poly i c (fun h ↦ hui (h ▸ hk)) hk
   have hwi : w ∉ poly.edgeSet ℝ i := fun h ↦ by
     have hwx := hDPi w h (mem_doublePoints.2 ⟨hw, z, hzb, hne.symm, hπeq.symm⟩)
     rw [hwx] at hπeq
@@ -768,8 +762,7 @@ private theorem exists_mem_doublePoints_eq {i : Fin n} {c : P}
   have hpoly {u : P} (hu : u ∈ (poly.insertVertex i c).boundary ℝ)
       (huN : u ∉ affineSegment ℝ (poly i) c ∪ affineSegment ℝ c (poly (finRotate n i))) :
       u ∈ poly.boundary ℝ := by
-    rw [boundary_insertVertex] at hu
-    obtain ⟨k, -, hk⟩ := mem_iUnion₂.1 (hu.resolve_right huN)
+    obtain ⟨k, -, hk⟩ := exists_mem_edgeSet_of_mem_boundary_insertVertex poly i c hu huN
     exact mem_iUnion.2 ⟨k, hk⟩
   refine ⟨z, mem_doublePoints.2 ⟨hpoly hzb hzN, w, hpoly hw hwN, hne, hπeq⟩,
     hgo z (fun h ↦ hxq (h ▸ hzb)) fun h ↦ ?_⟩
