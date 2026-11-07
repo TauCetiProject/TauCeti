@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Convex.MongeAmpere.Basic
+import TauCeti.Analysis.Convex.EffectiveDomain
 import TauCeti.Analysis.InnerProductSpace.Adjoint
 
 /-!
@@ -138,35 +139,6 @@ theorem mongeAmpereMeasure_ite_add_linearMap {U : Set E} [DecidablePred (· ∈ 
   funext y
   split_ifs <;> simp [hq, add_assoc]
 
-/-- Multiplication by a positive real number `c` preserves and reflects the order of `EReal`. -/
-private theorem coe_mul_le_coe_mul_iff {c : ℝ} (hc : 0 < c) (a b : EReal) :
-    (c : EReal) * a ≤ (c : EReal) * b ↔ a ≤ b := by
-  have hc' : 0 < (c : EReal) := EReal.coe_pos.2 hc
-  rw [← EReal.div_le_iff_le_mul hc' (EReal.coe_ne_top c), ← EReal.mul_div,
-    EReal.mul_div_cancel (EReal.coe_ne_bot c) (EReal.coe_ne_top c) hc'.ne']
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [μ.IsAddHaarMeasure] in
-/-- Scaling an extended-real potential by a positive real number `c` does not change convexity of
-its real epigraph: the two epigraphs differ by the linear map scaling the height coordinate. -/
-private theorem convex_epigraph_coe_mul_iff {c : ℝ} (hc : 0 < c) (f : E → EReal) :
-    Convex ℝ {p : E × ℝ | (c : EReal) * f p.1 ≤ p.2} ↔ Convex ℝ {p : E × ℝ | f p.1 ≤ p.2} := by
-  let scaleHeight (a : ℝ) : E × ℝ →ₗ[ℝ] E × ℝ :=
-    LinearMap.prodMap LinearMap.id (a • LinearMap.id)
-  have hheight (x : E) (t : ℝ) :
-      (c : EReal) * f x ≤ ((c * t : ℝ) : EReal) ↔ f x ≤ (t : EReal) := by
-    simp only [EReal.coe_mul, coe_mul_le_coe_mul_iff hc]
-  have hpreimage : scaleHeight c ⁻¹' {p : E × ℝ | (c : EReal) * f p.1 ≤ p.2} =
-      {p : E × ℝ | f p.1 ≤ p.2} :=
-    Set.ext fun p ↦ hheight p.1 p.2
-  have hpreimageInv : scaleHeight c⁻¹ ⁻¹' {p : E × ℝ | f p.1 ≤ p.2} =
-      {p : E × ℝ | (c : EReal) * f p.1 ≤ p.2} := by
-    ext p
-    simp only [mem_preimage, mem_ofPred_eq, scaleHeight, LinearMap.prodMap_apply,
-      LinearMap.id_apply, LinearMap.smul_apply, smul_eq_mul]
-    rw [← hheight, mul_inv_cancel_left₀ hc.ne']
-  exact ⟨fun h ↦ hpreimage ▸ h.linear_preimage (scaleHeight c),
-    fun h ↦ hpreimageInv ▸ h.linear_preimage (scaleHeight c⁻¹)⟩
-
 /-- Multiplying an extended-real potential by a positive scalar `c` multiplies its Aleksandrov
 Monge–Ampère measure with respect to additive Haar measure by `c ^ finrank ℝ E`. -/
 theorem mongeAmpereMeasure_mul_of_pos (f : E → EReal) {c : ℝ} (hc : 0 < c) :
@@ -174,7 +146,7 @@ theorem mongeAmpereMeasure_mul_of_pos (f : E → EReal) {c : ℝ} (hc : 0 < c) :
       ENNReal.ofReal (c ^ finrank ℝ E) • mongeAmpereMeasure μ f := by
   set g : E → EReal := fun x ↦ (c : EReal) * f x
   have hc' : 0 < (c : EReal) := EReal.coe_pos.2 hc
-  have hle := coe_mul_le_coe_mul_iff hc
+  have hle := EReal.coe_mul_le_coe_mul_iff hc
   have heq (a b : EReal) : (c : EReal) * a = (c : EReal) * b ↔ a = b := by
     simp only [le_antisymm_iff, hle]
   have hbot (x : E) : g x ≠ ⊥ ↔ f x ≠ ⊥ := by
