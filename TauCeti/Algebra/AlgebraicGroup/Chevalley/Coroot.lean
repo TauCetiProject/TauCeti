@@ -88,6 +88,14 @@ def simpleCorootPoints (i : Fin t.rank) (A : Type v) [CommRing A] : Aˣ →* D.p
     ((kostantTorusMatrix D.lattice D.basis D.coordinateWeight).comp (D.simpleCorootParameter i A))
     (D.points A) (fun _ => D.kostantTorusMatrix_mem_points A _)
 
+/-- The simple coroot is the actual torus evaluated at its coroot parameter. -/
+theorem simpleCorootPoints_eq_torusPoints (i : Fin t.rank) (A : Type v) [CommRing A]
+    (s : Aˣ) :
+    D.simpleCorootPoints i A s = D.torusPoints A (D.simpleCorootParameter i A s) := by
+  apply Subtype.ext
+  rw [coe_torusPoints]
+  rfl
+
 /-- The simple coroot is a point of the datum's torus with the specified lattice coordinates. -/
 theorem coe_simpleCorootPoints_eq_kostantTorusMatrix (i : Fin t.rank) (A : Type v) [CommRing A]
     (s : Aˣ) :
