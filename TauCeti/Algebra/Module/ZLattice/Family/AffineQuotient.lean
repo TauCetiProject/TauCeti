@@ -30,7 +30,10 @@ The projection of `X` to `Y` does not in general descend to `Q`, but its composi
 of every point of `X` whose base point is a point at which `f` is a local diffeomorphism
 (`TauCeti.isSubmersionAtOfComplement_torusFamilyAffineQuotientLift`): through the orbit map, a
 local diffeomorphism, it is the projection of the family, a submersion with complement `E`,
-followed by `f`.
+followed by `f`. Every chart of the quotient atlas reads the induced map through its first
+coordinate alone: a chart of `X/Γ` is the inverse of a chart of `X` followed by the orbit map, and
+the first coordinate of a chart of `X` is a chart coordinate of `Y`
+(`TauCeti.exists_torusFamilyAffineQuotientLift_symm_eq_of_mem_atlas`).
 
 ## Main definitions
 
@@ -46,6 +49,8 @@ followed by `f`.
 * `TauCeti.contMDiff_torusFamilyAffineQuotientLift`: the induced map is `C^n` when `f` is.
 * `TauCeti.isSubmersionAtOfComplement_torusFamilyAffineQuotientLift`: the induced map is a
   submersion with complement `E` over every point at which `f` is a local diffeomorphism.
+* `TauCeti.exists_torusFamilyAffineQuotientLift_symm_eq_of_mem_atlas`: every chart of the
+  quotient atlas reads the induced map as `(u, v) ↦ f (c.symm u)` for a chart `c` of `Y`.
 
 ## References
 
@@ -101,6 +106,18 @@ theorem torusFamilyAffineQuotientLift_mk {Z : Type*} (f : Y → Z)
       f (torusFamilyProjection P x) :=
   (rfl)
 
+/-- The affine quotient projection induced by a continuous invariant base map is continuous. -/
+theorem continuous_torusFamilyAffineQuotientLift [TopologicalSpace Y] [TopologicalSpace E]
+    {Z : Type*} [TopologicalSpace Z] {f : Y → Z}
+    {hf : ∀ (g : Γ) y, f (g • y) = f y} (hfc : Continuous f) :
+    letI := periodAddAction P
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+    Continuous (torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbone hbmul f hf) := by
+  apply isQuotientMap_quot_mk.continuous_iff.2
+  convert hfc.comp (continuous_torusFamilyProjection P) using 1
+  funext x
+  exact torusFamilyAffineQuotientLift_mk P R ρ hequiv b hb hone hmul hbone hbmul f hf x
+
 end Lift
 
 section Topology
@@ -121,6 +138,45 @@ variable {Y : Type*} [TopologicalSpace Y] [T2Space Y] [LocallyCompactSpace Y]
   (hmul : ∀ (g h : Γ) (y : Y) (v : E), R (g * h) y v = R g (h • y) (R h y v))
   (hbone : ∀ y : Y, b 1 y = Quotient.mk _ (y, 0))
   (hbmul : ∀ (g h : Γ) (y : Y), b (g * h) y = torusFamilyAffineMap R P ρ hequiv b hb g (b h y))
+
+/-- **Charts of the quotient read the induced map on the base coordinate.** For a `Γ`-invariant
+map `f : Y → Z`, every chart `e` of the quotient atlas of `X/Γ` reads the induced map
+`X/Γ → Z` through the first coordinate and the inverse of a chart of `Y`: there is a point `y`
+such that the induced map sends `e.symm (u, v)` to `f ((chartAt H y).symm u)` on the target of
+`e`. Its value does not depend on the fibre coordinate `v`. -/
+theorem exists_torusFamilyAffineQuotientLift_symm_eq_of_mem_atlas {Z : Type*} (f : Y → Z)
+    (hf : ∀ (g : Γ) y, f (g • y) = f y) (hRc : ∀ g : Γ, Continuous fun p : Y × E ↦ R g p.1 p.2)
+    (hbc : letI := periodAddAction P; ∀ g, Continuous (b g))
+    (hfree : letI := periodAddAction P
+      letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+      IsCancelSMul Γ (AddAction.orbitRel.Quotient Λ (Y × E)))
+    {e : letI := periodAddAction P
+      letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+      OpenPartialHomeomorph (MulAction.orbitRel.Quotient Γ (AddAction.orbitRel.Quotient Λ (Y × E)))
+        (ModelProd H E)}
+    (he : letI := periodAddAction P
+      letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+      letI := torusFamilyAffineQuotientChartedSpace (H := H) P hinj R ρ hequiv b hb hone hmul
+        hbone hbmul hcont hRc hbc hfree
+      e ∈ atlas (ModelProd H E)
+        (MulAction.orbitRel.Quotient Γ (AddAction.orbitRel.Quotient Λ (Y × E)))) :
+    ∃ y : Y, ∀ w ∈ e.target, w.1 ∈ (chartAt H y).target ∧
+      torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbone hbmul f hf (e.symm w) =
+        f ((chartAt H y).symm w.1) := by
+  let _ := periodAddAction P
+  let _ := torusFamilyChartedSpace (H := H) P hcont hinj
+  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+  -- A chart of `X/Γ` is the inverse of a chart of `X` followed by the orbit map, and a chart of
+  -- `X` reads the projection to `Y` through a chart of `Y`.
+  obtain ⟨x, hx⟩ := exists_symm_eq_mk_of_mem_atlas_torusFamilyAffineQuotient P hinj R ρ hequiv b
+    hb hone hmul hbone hbmul hcont hRc hbc hfree he
+  obtain ⟨y, hy⟩ := exists_torusFamilyProjection_symm_eq_of_mem_atlas P hcont hinj
+    (chart_mem_atlas (ModelProd H E) x)
+  refine ⟨y, fun w hw ↦ ?_⟩
+  obtain ⟨hwx, hw⟩ := hx w hw
+  obtain ⟨hwy, hwp⟩ := hy w hwx
+  rw [hw, torusFamilyAffineQuotientLift_mk, hwp]
+  exact ⟨hwy, rfl⟩
 
 end Topology
 

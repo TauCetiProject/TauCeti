@@ -148,7 +148,6 @@ theorem absNorm_eq_pow_finrank_of_primesOver_eq_singleton {p : ℕ} (𝔭 : Idea
     [𝔭.IsPrime] [𝔭.LiesOver (span {(p : ℤ)})]
     (hT : (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K) = {𝔭}) (he : 𝔭.ramificationIdx ℤ = 1) :
     absNorm 𝔭 = p ^ Module.finrank ℚ K := by
-  have : (span {(p : ℤ)} : Ideal ℤ).IsPrime := over_def 𝔭 (span {(p : ℤ)}) ▸ inferInstance
   rw [← pow_inertiaDeg p 𝔭, ← _root_.NumberField.RingOfIntegers.rank K,
     RamificationInertia.inertiaDeg_eq_finrank_of_ncard_primesOver_eq_one (span {(p : ℤ)}) 𝔭
       (by simp [hT]) he]
