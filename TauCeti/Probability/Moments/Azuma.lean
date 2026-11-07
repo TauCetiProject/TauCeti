@@ -18,6 +18,9 @@ inequality then controls the sum.
 
 ## Main results
 
+* `MeasureTheory.Measure.integral_exp_mul_sub_integral_le_of_abs_sub_le` — Hoeffding's lemma in
+  oscillation form: a real function of oscillation at most `C` on a probability space has centered
+  exponential moment at most `exp ((C / 2) ^ 2 * t ^ 2 / 2)`;
 * `TauCeti.Probability.hasCondSubgaussianMGF_of_mem_Icc_of_condExp_eq_zero` — conditional
   Hoeffding's lemma for an arbitrary interval;
 * `TauCeti.Probability.measureReal_sum_range_ge_le_of_mem_Icc_martingale_differences` — the
@@ -46,6 +49,41 @@ open scoped ENNReal NNReal
 namespace TauCeti.Probability
 
 variable {Ω : Type*} [mΩ : MeasurableSpace Ω] {μ : Measure Ω}
+
+/-- **Hoeffding's lemma, oscillation form.** If an almost everywhere measurable real function on a
+probability space has oscillation at most `C`, then its centered exponential moment is at most
+`exp ((C / 2) ^ 2 * t ^ 2 / 2)`. -/
+theorem _root_.MeasureTheory.Measure.integral_exp_mul_sub_integral_le_of_abs_sub_le
+    {β : Type*} [MeasurableSpace β] (ν : Measure β) [IsProbabilityMeasure ν] {X : β → ℝ}
+    (hX : AEMeasurable X ν) {C : ℝ} (hosc : ∀ a a', |X a - X a'| ≤ C) (t : ℝ) :
+    ∫ a, Real.exp (t * (X a - ∫ a', X a' ∂ν)) ∂ν ≤ Real.exp ((C / 2) ^ 2 * t ^ 2 / 2) := by
+  have : Nonempty β := nonempty_of_isProbabilityMeasure ν
+  have hC : 0 ≤ C := (abs_nonneg _).trans (hosc (Classical.arbitrary β) (Classical.arbitrary β))
+  set A : ℝ := sInf (Set.range X)
+  have hbdd : BddBelow (Set.range X) := by
+    refine ⟨X (Classical.arbitrary β) - C, ?_⟩
+    rintro _ ⟨a, rfl⟩
+    have := hosc (Classical.arbitrary β) a
+    rw [abs_sub_le_iff] at this
+    linarith [this.1]
+  have hmem : ∀ a, X a ∈ Set.Icc A (A + C) := by
+    intro a
+    refine ⟨csInf_le hbdd ⟨a, rfl⟩, ?_⟩
+    have hle : A ≥ X a - C := by
+      apply le_csInf (Set.range_nonempty X)
+      rintro _ ⟨a', rfl⟩
+      have := hosc a a'
+      rw [abs_sub_le_iff] at this
+      linarith [this.1]
+    linarith
+  have hml := (ProbabilityTheory.hasSubgaussianMGF_of_mem_Icc (μ := ν)
+    hX (ae_of_all _ hmem)).mgf_le t
+  have hexp : ((((‖(A + C) - A‖₊ / 2) ^ 2 : NNReal) : ℝ)) = (C / 2) ^ 2 := by
+    rw [add_sub_cancel_left, Real.nnnorm_of_nonneg hC]
+    push_cast
+    ring
+  rw [ProbabilityTheory.mgf, hexp] at hml
+  exact hml
 
 /-- A conditionally centered random variable whose values lie in `[a, b]` is conditionally
 sub-Gaussian with parameter `((‖b - a‖₊ / 2) ^ 2)`. -/
