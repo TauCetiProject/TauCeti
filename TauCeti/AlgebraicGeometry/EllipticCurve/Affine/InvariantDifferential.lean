@@ -124,6 +124,21 @@ theorem invariantDifferentialDenom_sq :
     aeval_X, aeval_C, map_ofNat]
   linear_combination h
 
+/-- **The denominator rescaled by `x⁻²`**: for `t ∈ L` with image `x⁻¹` in `F(W)`,
+`2 (y / x²) + a₁ t + a₃ t²` is `(2y + a₁x + a₃) / x²`. -/
+theorem two_mul_genericY_mul_add_algebraMap_eq (L : Type*) [Field L] [Algebra F L]
+    [Algebra L E.FunctionField] [IsScalarTower F L E.FunctionField] {t : L}
+    (ht : algebraMap L E.FunctionField t = (genericX E)⁻¹) (hx : genericX E ≠ 0) :
+    2 * (genericY E * (genericX E)⁻¹ ^ 2) + algebraMap L E.FunctionField
+        (algebraMap F L E.a₁ * t + algebraMap F L E.a₃ * t ^ 2) =
+      invariantDifferentialDenom E * (genericX E ^ 2)⁻¹ := by
+  have hC (c : F) : algebraMap L E.FunctionField (algebraMap F L c) =
+      algebraMap F E.FunctionField c :=
+    (IsScalarTower.algebraMap_apply F L E.FunctionField c).symm
+  simp only [map_add, map_mul, map_pow, ht, hC, invariantDifferentialDenom_def]
+  field_simp
+  ring
+
 /-! ### The invariant differential -/
 
 /-- The invariant differential `ω = dx / (2y + a₁x + a₃)`, as an element of `Ω[K(E)/F]`. -/
