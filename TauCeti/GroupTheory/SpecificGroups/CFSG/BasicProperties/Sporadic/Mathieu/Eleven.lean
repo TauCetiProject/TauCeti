@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Coset.Enumeration
+public import TauCeti.GroupTheory.GroupAction.Simple.Basic
 public import TauCeti.GroupTheory.SpecificGroups.Sporadic.Mathieu.Eleven
 
 /-!
-# Recognition of the presented group of `M₁₁`
+# Recognition and simplicity of the presented group of `M₁₁`
 
 The classification list carries the Mathieu group `M₁₁` as the group `SporadicName.M11.Group`
 defined by the transcribed presentation
@@ -28,7 +29,13 @@ the relators also shows `b ^ 11 = 1`. Hence `[G : ⟨b⟩] ≤ 720` and `|⟨b�
 The bound is derived from the two relators alone. Comparing it with the order of the canonical
 permutation model upgrades `TauCeti.Sporadic.M11.presentationHom` to an explicit multiplicative
 equivalence with that model, and proves that the presented group has exactly `7920` elements.
-This recognition does not establish simplicity of either group.
+
+Simplicity is proved for the permutation model and then transported along this equivalence. The
+model acts faithfully and transitively on `11` points, and `11 ^ 2` does not divide `7920`, so a
+nontrivial normal subgroup is transitive and contains every element of order `11`
+(`TauCeti.isSimpleGroup_of_normalClosure_eq_top_of_prime_card`). It remains to see that the
+`11`-cycle `a * b` of the ATLAS generators normally generates the model: the involution `a` is a
+product of two conjugates of `(a * b) ^ 3`, checked in the kernel, and then `b = a⁻¹ * (a * b)`.
 
 The certificate was produced outside Lean by a Felsch-style enumeration with preferred
 definitions, which tracks the power of `b` attached to every edge, and was then pruned to the
@@ -40,6 +47,8 @@ steps that change the table; only its replay is trusted.
 * `TauCeti.SporadicName.natCard_group_M11_le`: it has at most `7920` elements.
 * `TauCeti.Sporadic.M11.presentationEquiv`: recognition by the canonical presentation map.
 * `TauCeti.SporadicName.natCard_group_M11`: the presented group has `7920` elements.
+* `TauCeti.Sporadic.isSimpleGroup_M11`: the permutation model is simple.
+* `TauCeti.SporadicName.isSimpleGroup_group_M11`: the presented group is simple.
 
 ## References
 
@@ -293,5 +302,59 @@ namespace TauCeti.SporadicName
 /-- The group defined by the transcribed presentation of `M₁₁` has exactly `7920` elements. -/
 theorem natCard_group_M11 : Nat.card M11.Group = 7920 :=
   (Nat.card_congr Sporadic.M11.presentationEquiv.toEquiv).trans Sporadic.card_M11
+
+end TauCeti.SporadicName
+
+namespace TauCeti.Sporadic
+
+namespace M11
+
+/-- The involution `a` is a product of two conjugates of `(a * b) ^ 3`. -/
+private theorem a_eq_conj_mul_conj :
+    a = b⁻¹ * a * b * a * (a * b) ^ 3 * (b⁻¹ * a * b * a)⁻¹ *
+      (b⁻¹ * a * b * a * b * a * (a * b) ^ 3 * (b⁻¹ * a * b * a * b * a)⁻¹) := by
+  rw [a_def, b_def]
+  decide +kernel
+
+/-- The `11`-cycle `a * b` normally generates the permutation model of `M₁₁`. -/
+private theorem normalClosure_a_mul_b_eq_top :
+    Subgroup.normalClosure {(⟨a * b, mul_mem a_mem b_mem⟩ : M11)} = ⊤ := by
+  set A : M11 := ⟨a, a_mem⟩
+  set B : M11 := ⟨b, b_mem⟩
+  set N := Subgroup.normalClosure {A * B}
+  have hN : N.Normal := Subgroup.normalClosure_normal
+  have hAB : A * B ∈ N := Subgroup.subset_normalClosure rfl
+  have hA : A ∈ N := by
+    have h : A = B⁻¹ * A * B * A * (A * B) ^ 3 * (B⁻¹ * A * B * A)⁻¹ *
+        (B⁻¹ * A * B * A * B * A * (A * B) ^ 3 * (B⁻¹ * A * B * A * B * A)⁻¹) :=
+      Subtype.ext a_eq_conj_mul_conj
+    rw [h]
+    exact mul_mem (hN.conj_mem _ (pow_mem hAB 3) _) (hN.conj_mem _ (pow_mem hAB 3) _)
+  have hB : B ∈ N := by simpa using mul_mem (inv_mem hA) hAB
+  have hclosure : Subgroup.closure (((↑) : M11 → Equiv.Perm (Fin 11)) ⁻¹' {a, b}) = ⊤ :=
+    M11_def ▸ Subgroup.closure_closure_coe_preimage
+  rw [eq_top_iff, ← hclosure, Subgroup.closure_le]
+  rintro ⟨x, hx⟩ (rfl | rfl : x = a ∨ x = b)
+  exacts [hA, hB]
+
+end M11
+
+/-- **The permutation model of `M₁₁` is simple.** -/
+instance isSimpleGroup_M11 : IsSimpleGroup M11 :=
+  isSimpleGroup_of_normalClosure_eq_top_of_prime_card (X := Fin 11)
+    (by rw [Nat.card_fin]; decide) (by rw [card_M11, Nat.card_fin]; decide) _
+    (Subtype.ext <| by
+      rw [Nat.card_fin, Subgroup.coe_pow, Subgroup.coe_one, ← orderOf_dvd_iff_pow_eq_one,
+        M11.orderOf_a_mul_b])
+    M11.normalClosure_a_mul_b_eq_top
+
+end TauCeti.Sporadic
+
+namespace TauCeti.SporadicName
+
+/-- **The presented group of `M₁₁` is simple**, being isomorphic to the simple permutation
+model. -/
+instance isSimpleGroup_group_M11 : IsSimpleGroup M11.Group :=
+  Sporadic.M11.presentationEquiv.isSimpleGroup
 
 end TauCeti.SporadicName

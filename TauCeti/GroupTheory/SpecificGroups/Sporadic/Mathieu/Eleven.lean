@@ -24,7 +24,7 @@ a = (2,10)(4,11)(5,7)(8,9),   b = (1,4,3,8)(2,5,6,9).
 ```
 
 The generator orders `2`, `4` and `11` of `a`, `b` and `a * b` are recorded as a check on the
-transcription.
+transcription. The powers of the `11`-cycle `a * b` make the model transitive on its `11` points.
 
 It then shows that the presentation of `M₁₁` carried by `TauCeti.SporadicName.presentation`
 (Campbell–Havas–Ramsay–Robertson, relators `b A³ b A b³` and `b a B A B A b a B a`) holds in the
@@ -55,6 +55,7 @@ points.
 ## Main declarations
 
 * `TauCeti.Sporadic.M11`: the permutation model of `M₁₁` on `11` points.
+* `TauCeti.Sporadic.M11.instIsPretransitive`: the model is transitive on its `11` points.
 * `TauCeti.Sporadic.M11.presentationImage`: the images of the presentation generators.
 * `TauCeti.Sporadic.M11.lift_presentationImage_toFreeGroup_eq_one`: every transcribed relator of
   the presentation of `M₁₁` evaluates to `1` at these images.
@@ -119,6 +120,21 @@ theorem orderOf_b : orderOf b = 4 :=
 theorem orderOf_a_mul_b : orderOf (a * b) = 11 :=
   have : Fact (Nat.Prime 11) := ⟨by decide⟩
   orderOf_eq_prime (by decide +kernel) (by decide +kernel)
+
+/-! ### Transitivity -/
+
+/-- Every point of `Fin 11` is the image of `0` under a power of the `11`-cycle `a * b`. -/
+private theorem exists_pow_a_mul_b_apply_zero_eq :
+    ∀ x : Fin 11, ∃ k : Fin 11, ((a * b) ^ (k : ℕ)) 0 = x := by
+  decide +kernel
+
+/-- The permutation model of `M₁₁` acts transitively on its `11` points: the powers of the
+`11`-cycle `a * b` already do. -/
+instance instIsPretransitive : MulAction.IsPretransitive M11 (Fin 11) :=
+  (MulAction.isPretransitive_iff_base (0 : Fin 11)).mpr fun x => by
+    obtain ⟨k, hk⟩ := exists_pow_a_mul_b_apply_zero_eq x
+    exact ⟨⟨a * b, mul_mem a_mem b_mem⟩ ^ (k : ℕ), by
+      simpa only [Subgroup.smul_def, Subgroup.coe_pow, Equiv.Perm.smul_def] using hk⟩
 
 /-! ### The presentation of `M₁₁` holds in the model -/
 
