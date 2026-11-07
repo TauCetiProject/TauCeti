@@ -10,8 +10,8 @@ public import TauCeti.Analysis.Contour.Winding.Number.Basic
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Path
 public import Mathlib.MeasureTheory.Integral.CurveIntegral.Basic
 public import Mathlib.Topology.Homotopy.Path
+import TauCeti.Analysis.Calculus.ContDiff.Approximation
 import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
-import TauCeti.Analysis.Contour.Curve.Approximation
 import TauCeti.Analysis.Contour.NullHomologous
 import TauCeti.Analysis.Contour.Winding.Proximity
 import Mathlib.Analysis.SpecialFunctions.Bernstein
@@ -35,9 +35,10 @@ the resulting smooth paths with proximity invariance of the winding number.
 
 ## Provenance
 
-The regularization step is `exists_contDiff_eq_endpoints_dist_lt`, which reuses Mathlib's
-`bernsteinApproximation_uniform`. No formal source is vendored. Homotopy invariance of the
-classical winding number is standard complex analysis; see L. Ahlfors, *Complex Analysis*, Ch. 4.
+The regularization step is `ContinuousMap.exists_contDiff_eq_endpoints_dist_lt`, which reuses
+Mathlib's `bernsteinApproximation_uniform`. No formal source is vendored. Homotopy invariance of
+the classical winding number is standard complex analysis; see L. Ahlfors, *Complex Analysis*,
+Ch. 4.
 -/
 
 public section
@@ -113,7 +114,7 @@ theorem windingNumber_eq_of_pathHomotopy {x y w : ℂ} {p q : Path x y} (φ : p.
     (0 : ℝ) < 5))
   let slice : Fin (N + 1) → C(I, ℂ) := fun k => (φ.eval (bernstein.z k)).toContinuousMap
   choose γ hγ using fun k : Fin (N + 1) =>
-    exists_contDiff_eq_endpoints_dist_lt (slice k) (ε := ρ / 5) (div_pos hρ (by norm_num))
+    (slice k).exists_contDiff_eq_endpoints_dist_lt (ε := ρ / 5) (div_pos hρ (by norm_num))
   have hγpw (k : Fin (N + 1)) : IsPiecewiseC1On (γ k) 0 1 :=
     IsPiecewiseC1On.of_contDiffOn ((hγ k).1.contDiffOn.of_le (by norm_num))
   have hγclose (k : Fin (N + 1)) (t : I) : dist (γ k t) (φ (bernstein.z k, t)) < ρ / 5 := by

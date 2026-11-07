@@ -14,6 +14,7 @@ public import Mathlib.Data.Fin.VecNotation
 public import Mathlib.FieldTheory.Minpoly.Field
 public import Mathlib.SetTheory.Cardinal.ENat
 public import TauCeti.RingTheory.MvPolynomial.Dehomogenization
+import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 import TauCeti.Algebra.MvPolynomial.Monomial
 
 /-!
@@ -57,6 +58,9 @@ largest `s 0 + s 1` over its support.  These are the forms in which a plane curv
   of degree `n`.
 * `Polynomial.Bivariate.isAlgebraic_of_aeval_algebraMap_eq_zero`: if `φ(a, T) ≠ 0` and
   `φ(a, y) = 0` for a constant `a ∈ k`, then `y` is algebraic over `k`.
+* `Polynomial.Bivariate.isAlgebraic_of_isAlgebraic_of_aeval_eq_zero`: if `φ` has coefficient `1`
+  on `X₁ ^ (total degree)`, `φ(u, y) = 0` and `u` is algebraic over `k`, then `y` is algebraic
+  over `k`.
 
 ## The chart at infinity
 
@@ -493,5 +497,24 @@ theorem isAlgebraic_of_aeval_algebraMap_eq_zero {k F : Type*} [CommRing k] [Comm
   rw [aeval_def] at h
   convert h.symm using 2
   refine ringHom_ext (fun r ↦ ?_) ?_ <;> simp [RingHom.algebraMap_toAlgebra]
+
+open scoped IntermediateField in
+/-- If `φ ∈ k[X₀, X₁]` has coefficient `1` on `X₁ ^ φ.totalDegree` (so it is monic in `X₁` over
+`k[X₀]`), `φ(u, y) = 0` and `u` is algebraic over `k`, then `y` is algebraic over `k`. -/
+theorem isAlgebraic_of_isAlgebraic_of_aeval_eq_zero {k F : Type*} [Field k] [Field F]
+    [Algebra k F] {φ : MvPolynomial (Fin 2) k}
+    (hlead : φ.coeff (Finsupp.single 1 φ.totalDegree) = 1) {u y : F}
+    (hu : IsAlgebraic k u) (hroot : MvPolynomial.aeval ![u, y] φ = 0) : IsAlgebraic k y := by
+  have := IntermediateField.isAlgebraic_adjoin_simple hu.isIntegral
+  have hdegL : (φ.map (algebraMap k k⟮u⟯)).totalDegree ≤ φ.totalDegree :=
+    Finset.sup_mono (MvPolynomial.support_map_subset _ _)
+  have hmonL := monic_equivMvPolynomial_symm hdegL
+    (by rw [MvPolynomial.coeff_map, hlead, map_one])
+  have hyL : IsAlgebraic k⟮u⟯ y :=
+    isAlgebraic_of_aeval_algebraMap_eq_zero
+      (a := IntermediateField.AdjoinSimple.gen k u) (hmonL.map _).ne_zero
+      (by rw [IntermediateField.AdjoinSimple.algebraMap_gen, MvPolynomial.aeval_map_algebraMap];
+          exact hroot)
+  exact hyL.restrictScalars_of_isIntegral k
 
 end Polynomial.Bivariate

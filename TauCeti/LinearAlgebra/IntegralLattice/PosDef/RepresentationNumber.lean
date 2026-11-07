@@ -54,6 +54,8 @@ expands; that identification is not made here.
   `TauCeti.IntegralLattice.Isometry.span_vectorsOfNorm_eq_top_iff`: isometries carry the span of a
   shell onto the span of the corresponding shell, so whether a shell spans the lattice is an
   isometry invariant.
+* `TauCeti.IntegralLattice.Isometry.index_span_vectorsOfNorm_eq`: the index of the span of a shell
+  is an isometry invariant.
 
 ## References
 
@@ -186,6 +188,14 @@ says that the root sublattice is the whole lattice. -/
 theorem span_vectorsOfNorm_eq_top_iff (e : Isometry L M) (n : ℚ) :
     Submodule.span ℤ (L.vectorsOfNorm n) = ⊤ ↔ Submodule.span ℤ (M.vectorsOfNorm n) = ⊤ := by
   rw [← e.map_span_vectorsOfNorm, Submodule.map_eq_top_iff]
+
+/-- The index of the sublattice spanned by the vectors of a given norm is an isometry invariant.
+For norm two this is the index of the root sublattice. -/
+theorem index_span_vectorsOfNorm_eq (e : Isometry L M) (n : ℚ) :
+    (Submodule.span ℤ (L.vectorsOfNorm n)).toAddSubgroup.index =
+      (Submodule.span ℤ (M.vectorsOfNorm n)).toAddSubgroup.index := by
+  rw [← e.map_span_vectorsOfNorm, Submodule.map_toAddSubgroup]
+  exact (AddSubgroup.index_map_equiv _ e.carrierEquiv.toAddEquiv).symm
 
 /-- Representation numbers are isometry invariants. -/
 theorem representationNumber_eq (e : Isometry L M) (n : ℚ) :
