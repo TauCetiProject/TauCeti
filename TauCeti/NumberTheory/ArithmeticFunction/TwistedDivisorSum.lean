@@ -315,24 +315,18 @@ theorem linearIndependent_twistedDivisorSum {e : ℕ} (he : e ≠ 0)
   · exact sum_mul_mul_eq_zero_of_prime_mul_prime hsum hp₂ hq₁ (by omega) hp₂x hq₁y
   · exact sum_mul_mul_eq_zero_of_prime_mul_prime hsum hp₂ hq₂ (by omega) hp₂x hq₂y
 
-/-- **Independence of twisted divisor sums at exponent zero.** The sums
-`n ↦ ∑_{d ∣ n} psi (n / d) phi d` are symmetric in `psi` and `phi`
-(`twistedDivisorSum_zero_comm`); attached to pairs of Dirichlet characters of level `N` that are
-pairwise distinct as unordered pairs, they are linearly independent as functions on the positive
-integers prime to `N`. -/
-theorem linearIndependent_twistedDivisorSum_zero {psi phi : ι → DirichletCharacter R N}
-    (h : Function.Injective fun i ↦ s(psi i, phi i)) :
-    LinearIndependent R fun i (n : {n : ℕ // n.Coprime N}) ↦
-      twistedDivisorSum 0 (psi i) (phi i) n := by
+/-- If a combination of the symmetrised character sums `psi i x + phi i x` vanishes against every
+pair of units, then the coefficients of the combination vanish against every pair of
+multiplicities `(if psi i = χ then 1 else 0) + if phi i = χ then 1 else 0`. This extracts the
+`χ ⊗ χ'`-coefficient by orthogonality of the Dirichlet characters. -/
+private theorem sum_mul_eq_zero_of_forall_units [DecidableEq (DirichletCharacter R N)]
+    {psi phi : ι → DirichletCharacter R N} {g : ι → R}
+    (hunits : ∀ x y : (ZMod N)ˣ,
+      ∑ i ∈ s, g i * ((psi i x + phi i x) * (psi i y + phi i y)) = 0)
+    (χ χ' : DirichletCharacter R N) :
+    ∑ i ∈ s, g i * (((if psi i = χ then 1 else 0) + if phi i = χ then 1 else 0) *
+      ((if psi i = χ' then 1 else 0) + if phi i = χ' then 1 else 0)) = 0 := by
   classical
-  rw [linearIndependent_iff']
-  intro s g hsum
-  -- The vanishing combination at `p q`, for primes `p ≡ x` and `q ≡ y` modulo `N`.
-  have hunits (x y : (ZMod N)ˣ) :
-      ∑ i ∈ s, g i * ((psi i x + phi i x) * (psi i y + phi i y)) = 0 := by
-    obtain ⟨q, -, hq, hqy⟩ := Nat.forall_exists_prime_gt_and_eq_mod y.isUnit 0
-    obtain ⟨p, hqp, hp, hpx⟩ := Nat.forall_exists_prime_gt_and_eq_mod x.isUnit q
-    simpa using sum_mul_mul_eq_zero_of_prime_mul_prime (e := 0) hsum hp hq hqp.ne' hpx hqy
   -- The multiplicity `ε i χ` of `χ` in the pair `(psi i, phi i)`.
   let ε (i : ι) (χ : DirichletCharacter R N) : R :=
     (if psi i = χ then 1 else 0) + if phi i = χ then 1 else 0
@@ -373,6 +367,32 @@ theorem linearIndependent_twistedDivisorSum_zero {psi phi : ι → DirichletChar
       rw [hε, hε]
       ring
     exact (mul_eq_zero.mp key').resolve_left (pow_ne_zero 2 hc)
+  exact hcoeff χ χ'
+
+/-- **Independence of twisted divisor sums at exponent zero.** The sums
+`n ↦ ∑_{d ∣ n} psi (n / d) phi d` are symmetric in `psi` and `phi`
+(`twistedDivisorSum_zero_comm`); attached to pairs of Dirichlet characters of level `N` that are
+pairwise distinct as unordered pairs, they are linearly independent as functions on the positive
+integers prime to `N`. -/
+theorem linearIndependent_twistedDivisorSum_zero {psi phi : ι → DirichletCharacter R N}
+    (h : Function.Injective fun i ↦ s(psi i, phi i)) :
+    LinearIndependent R fun i (n : {n : ℕ // n.Coprime N}) ↦
+      twistedDivisorSum 0 (psi i) (phi i) n := by
+  classical
+  rw [linearIndependent_iff']
+  intro s g hsum
+  -- The vanishing combination at `p q`, for primes `p ≡ x` and `q ≡ y` modulo `N`.
+  have hunits (x y : (ZMod N)ˣ) :
+      ∑ i ∈ s, g i * ((psi i x + phi i x) * (psi i y + phi i y)) = 0 := by
+    obtain ⟨q, -, hq, hqy⟩ := Nat.forall_exists_prime_gt_and_eq_mod y.isUnit 0
+    obtain ⟨p, hqp, hp, hpx⟩ := Nat.forall_exists_prime_gt_and_eq_mod x.isUnit q
+    simpa using sum_mul_mul_eq_zero_of_prime_mul_prime (e := 0) hsum hp hq hqp.ne' hpx hqy
+  -- The multiplicity `ε i χ` of `χ` in the pair `(psi i, phi i)`.
+  let ε (i : ι) (χ : DirichletCharacter R N) : R :=
+    (if psi i = χ then 1 else 0) + if phi i = χ then 1 else 0
+  -- Summing against `χ⁻¹ ⊗ χ'⁻¹` extracts the coefficient of `χ ⊗ χ'`.
+  have hcoeff (χ χ' : DirichletCharacter R N) : ∑ i ∈ s, g i * (ε i χ * ε i χ') = 0 :=
+    sum_mul_eq_zero_of_forall_units hunits χ χ'
   -- A pair of distinct characters has coefficient `1` at its own `χ ⊗ χ'`.
   have hoff (i : ι) (hi : i ∈ s) (hne : psi i ≠ phi i) : g i = 0 := by
     have H := hcoeff (psi i) (phi i)
