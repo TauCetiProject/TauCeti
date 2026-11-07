@@ -215,7 +215,8 @@ theorem exists_partialDiffeomorph_comp_extChartAt (x₀ : M) {V₀ : Set E} (hV�
   have hx_chart : x ∈ (chartAt H x₀).source := by
     simpa only [extChartAt_source] using (hchart_src ▸ hx : x ∈ S).1
   have : IsManifold I 1 M := IsManifold.of_le hn
-  rw [show ⇑chart = ⇑Φ ∘ ⇑(extChartAt I x₀) from funext hchart_coe,
+  have hcomp : ⇑chart = ⇑Φ ∘ ⇑(extChartAt I x₀) := funext hchart_coe
+  rw [hcomp,
     mvfderiv_comp_apply_of_differentiableAt (Φ.differentiable (zero_lt_one.trans_le hn).ne' _)
       (mdifferentiableAt_extChartAt hx_chart)]
 
