@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Addition.Points
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.FormalPoint
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Assoc
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.PairSubst
+import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Point
 import TauCeti.AlgebraicGeometry.EllipticCurve.Universal
 
 /-!
@@ -121,41 +122,6 @@ private theorem toAffine_algebraMap_comp_eq_thetaPoint (hΔ : (fracCurve W σ KK
 
 end FractionField
 
-/-- If two triples `D` and `(F, -1, w)` over `A` have proportional images in a domain `K`, in the
-sense that the cross products `D₀ * w = F * D₂` and `D₁ * w = -D₂` hold after applying an injective
-ring map `ρ : A →+* K` with `ρ w ≠ 0`, then `D = -D₁ • (F, -1, w)`. -/
-private theorem eq_neg_smul_of_mul_eq {A K : Type*} [CommRing A] [CommRing K] [IsDomain K]
-    (ρ : A →+* K) (hρ : Function.Injective ρ) {D : Fin 3 → A} {F w : A} (hw : ρ w ≠ 0)
-    (h₀ : ρ (D 0) * ρ w = ρ F * ρ (D 2)) (h₁ : ρ (D 1) * ρ w = -1 * ρ (D 2)) :
-    D = -D 1 • ![F, -1, w] := by
-  have e₂ : D 2 = -D 1 * w := hρ <| by
-    rw [map_mul, map_neg]
-    linear_combination h₁
-  have e₀ : D 0 = -D 1 * F := hρ <| mul_right_cancel₀ hw <| by
-    rw [map_mul, map_neg]
-    linear_combination h₀ + ρ F * h₁
-  funext k
-  fin_cases k <;> simp [e₀, e₂]
-
-/-- If a point `[D]` of a Weierstrass curve over a domain `K` has the same affine point as
-`[(F, -1, w)]` and `ρ w ≠ 0`, where `ρ : A →+* K` is injective, then `D = -D₁ • (F, -1, w)`. -/
-private theorem eq_neg_smul_of_toAffine_eq {A K : Type*} [CommRing A] [Field K] (ρ : A →+* K)
-    (hρ : Function.Injective ρ) {W' : WeierstrassCurve K} {D : Fin 3 → A} {F w : A}
-    (hDN : W'.toProjective.Nonsingular (ρ ∘ D))
-    (hFN : W'.toProjective.Nonsingular (ρ ∘ ![F, -1, w])) (hwF : (ρ ∘ ![F, -1, w]) 2 ≠ 0)
-    (hsum : Projective.Point.toAffine W'.toProjective (ρ ∘ D) =
-      Projective.Point.toAffine W'.toProjective (ρ ∘ ![F, -1, w])) :
-    D = -D 1 • ![F, -1, w] := by
-  rw [Projective.Point.toAffine_of_Z_ne_zero hFN hwF] at hsum
-  have hDz : (ρ ∘ D) 2 ≠ 0 := fun hz ↦ by
-    rw [Projective.Point.toAffine_of_Z_eq_zero hz] at hsum
-    cases hsum
-  rw [Projective.Point.toAffine_of_Z_ne_zero hDN hDz, Affine.Point.some.injEq,
-    div_eq_div_iff hDz hwF, div_eq_div_iff hDz hwF] at hsum
-  obtain ⟨h₀, h₁⟩ := hsum
-  simp only [Function.comp_apply, Matrix.cons_val, map_neg, map_one] at h₀ h₁ hwF
-  exact eq_neg_smul_of_mul_eq ρ hρ hwF h₀ h₁
-
 -- Over a domain, with nonzero discriminant, the identity is read off the group law of the curve
 -- over a fraction field `KK` of `O⟦z₁, z₂⟧`, where `dblAddXYZ` represents the sum of the two
 -- points, which is the point with parameter `F`.
@@ -211,16 +177,21 @@ private theorem dblAddXYZ_formalW_eq_smul_of_Δ_ne_zero {O : Type*} [CommRing O]
       W.toAffine_algebraMap_comp_eq_thetaPoint hΔ' hz₂ hz₂0,
       W.toAffine_algebraMap_comp_eq_thetaPoint hΔ' hFc hF0]
     exact W.thetaPoint_add_of_subst_separates hΔ' hχ hz₁ hz₂ hz₁0 hz₂0 hχ₁ hχ₂ hFc hF0
-  -- so the `Z`-coordinate of `ρ ∘ D` is nonzero, and its affine coordinates are those of `θ(F)`
-  have hwF : (ρ ∘ ![F, -1, PowerSeries.subst F W.formalW]) 2 ≠ 0 :=
-    W.algebraMap_subst_formalW_ne_zero hFc hF0
   have hDN : W'.toProjective.Nonsingular (ρ ∘ D) :=
     (Projective.equation_iff_nonsingular_of_Δ_ne_zero_of_ne_zero hΔ' hD0).mp
       (hD ▸ hN₁.left.dblAddXYZ hN₂.left)
+  -- equal affine points are projectively equivalent: `ρ ∘ D = u • ρ ∘ (F, -1, w(F))`
+  obtain ⟨u, hu⟩ := (Projective.Point.toAffine_eq_toAffine_iff hDN
+    (W.nonsingular_algebraMap_comp hΔ' hFc)).mp hsum
+  have h₁ : ρ (D 1) = -u := by simpa [Units.smul_def] using (congrFun hu 1).symm
   rw [← hF, ← Projective.dblAddXYZ_Y, ← hDdef]
   clear_value D
-  exact eq_neg_smul_of_toAffine_eq ρ (IsFractionRing.injective _ KK) hDN
-    (W.nonsingular_algebraMap_comp hΔ' hFc) hwF hsum
+  funext k
+  refine IsFractionRing.injective _ KK ?_
+  have hk : ρ (D k) = u * ρ (![F, -1, PowerSeries.subst F W.formalW] k) := by
+    simpa [Units.smul_def] using (congrFun hu k).symm
+  simp only [Pi.smul_apply, smul_eq_mul, map_mul, map_neg]
+  linear_combination hk + ρ (![F, -1, PowerSeries.subst F W.formalW] k) * h₁
 
 /-- **The Bosma–Lenstra addition law at the formal points.** Let `z₁` and `z₂` be the two variables
 of `R⟦z₁, z₂⟧`. At the points `[z₁ : -1 : w(z₁)]` and `[z₂ : -1 : w(z₂)]`, where `w` is the
