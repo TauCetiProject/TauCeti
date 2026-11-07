@@ -157,6 +157,26 @@ variable [CommRing R] [Ring A] [Algebra R A]
   [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ]
   (mP : P → P → A) (mQ : Q → Q → A) (ν₀ ν₁ : P → Q → A) (dM : M →ₗ[R] M)
 
+omit [Algebra R A] [IsScalarTower R Aᵐᵒᵖ M] in
+/-- The chain homotopy identity follows from its value on homogeneous elementary tensors. -/
+private theorem homotopyMap_twistedDifferential_of_single [DecidableEq P]
+    (key : ∀ (x : P) {q : ℤ} {α : M}, α ∈ ℳ q →
+      continuationMap R M ν₁ (Pi.single x α) - continuationMap R M ν₀ (Pi.single x α) =
+        twistedDifferential mQ ℳ dM (homotopyMap h ℳ (Pi.single x α)) +
+          homotopyMap h ℳ (twistedDifferential mP ℳ dM (Pi.single x α)))
+    (f : P → M) :
+    continuationMap R M ν₁ f - continuationMap R M ν₀ f =
+      twistedDifferential mQ ℳ dM (homotopyMap h ℳ f) +
+        homotopyMap h ℳ (twistedDifferential mP ℳ dM f) := by
+  have hlin : continuationMap R M ν₁ - continuationMap R M ν₀ =
+      twistedDifferential mQ ℳ dM ∘ₗ homotopyMap h ℳ +
+        homotopyMap h ℳ ∘ₗ twistedDifferential mP ℳ dM := by
+    refine LinearMap.pi_ext' fun x ↦ ?_
+    refine DirectSum.decompose_lhom_ext ℳ fun i ↦ ?_
+    refine LinearMap.ext fun α ↦ ?_
+    simpa using key x α.2
+  simpa using LinearMap.congr_fun hlin f
+
 /-- **The chain homotopy identity**: for a matrix `h` with homogeneous entries which satisfies the
 parametrized equation between the continuation cocycles `ν₀` and `ν₁`, and a differential graded
 right module `(ℳ, dM)`, `Ψ¹ - Ψ⁰ = D⁻ ∘ 𝔥 + 𝔥 ∘ D⁺`. -/
@@ -169,24 +189,8 @@ theorem homotopyMap_twistedDifferential (hh : ∀ x y, h x y ∈ 𝒜 (indQ y - 
       twistedDifferential mQ ℳ dM (homotopyMap h ℳ f) +
         homotopyMap h ℳ (twistedDifferential mP ℳ dM f) := by
   classical
-  suffices key : ∀ (x : P) {q : ℤ} {α : M}, α ∈ ℳ q →
-      continuationMap R M ν₁ (Pi.single x α) - continuationMap R M ν₀ (Pi.single x α) =
-        twistedDifferential mQ ℳ dM (homotopyMap h ℳ (Pi.single x α)) +
-          homotopyMap h ℳ (twistedDifferential mP ℳ dM (Pi.single x α)) by
-    rw [← Finset.univ_sum_single f]
-    simp only [map_sum, ← Finset.sum_sub_distrib, ← Finset.sum_add_distrib]
-    refine Finset.sum_congr rfl fun x _ ↦ ?_
-    generalize f x = α
-    induction α using DirectSum.Decomposition.inductionOn ℳ with
-    | zero => simp
-    | @homogeneous i α => exact key x α.2
-    | add a b ha hb =>
-      simp only [Pi.single_add, map_add] at ha hb ⊢
-      rw [add_sub_add_comm, ha, hb]
-      abel
-  intro x q α hα
+  refine homotopyMap_twistedDifferential_of_single h mP mQ ν₀ ν₁ dM (fun x q α hα ↦ ?_) f
   funext w
-  have hdα : dM α ∈ ℳ (q + 1) := hM.isHomogeneous.map_mem hα
   have hγ : ∀ y, q.negOnePow • (op (h x y) • α) ∈ ℳ (q + (indQ y - ind x - 1)) := fun y ↦
     Submodule.smul_of_tower_mem _ _ (op_smul_mem_of_mem_graded (hh x y) hα)
   have hδ : ∀ z, q.negOnePow • (op (mP x z) • α) ∈ ℳ (q + (ind z - ind x + 1)) := fun z ↦
@@ -209,28 +213,20 @@ theorem homotopyMap_twistedDifferential (hh : ∀ x y, h x y ∈ 𝒜 (indQ y - 
         ∑ z, (q + (ind z - ind x + 1)).negOnePow •
           (op (h z w) • (q.negOnePow • (op (mP x z) • α))) := by
     rw [twistedDifferential_single mP dM x hα, map_add, map_sum, Pi.add_apply, Finset.sum_apply,
-      homotopyMap_single_apply h x hdα w]
+      homotopyMap_single_apply h x (hM.isHomogeneous.map_mem hα) w]
     simp only [fun z ↦ homotopyMap_single_apply h z (hδ z) w]
   set SQ := ∑ y, (ind x - indQ y).negOnePow • (op (h x y * mQ y w) • α) with hSQ_def
   set SP := ∑ z, (ind x - ind z).negOnePow • (op (mP x z * h z w) • α) with hSP_def
   have hSQ : ∑ y, (q + (indQ y - ind x - 1)).negOnePow •
       (op (mQ y w) • (q.negOnePow • (op (h x y) • α))) = -SQ := by
     rw [hSQ_def, ← Finset.sum_neg_distrib]
-    refine Finset.sum_congr rfl fun y _ ↦ ?_
-    have hsign : (q + (indQ y - ind x - 1)).negOnePow * q.negOnePow =
-        -(ind x - indQ y).negOnePow := by
-      rw [← Int.negOnePow_succ]
-      exact negOnePow_mul_negOnePow_of_even ⟨indQ y - ind x - 1 + q, by ring⟩
-    rw [smul_comm (op (mQ y w)) q.negOnePow, smul_smul, hsign, op_mul, mul_smul, Units.neg_smul]
+    exact Finset.sum_congr rfl fun y _ ↦
+      negOnePow_smul_op_smul_negOnePow_smul_op_smul ⟨-1, by ring⟩ _ _ α
   have hSP : ∑ z, (q + (ind z - ind x + 1)).negOnePow •
       (op (h z w) • (q.negOnePow • (op (mP x z) • α))) = -SP := by
     rw [hSP_def, ← Finset.sum_neg_distrib]
-    refine Finset.sum_congr rfl fun z _ ↦ ?_
-    have hsign : (q + (ind z - ind x + 1)).negOnePow * q.negOnePow =
-        -(ind x - ind z).negOnePow := by
-      rw [← Int.negOnePow_succ]
-      exact negOnePow_mul_negOnePow_of_even ⟨ind z - ind x + q, by ring⟩
-    rw [smul_comm (op (h z w)) q.negOnePow, smul_smul, hsign, op_mul, mul_smul, Units.neg_smul]
+    exact Finset.sum_congr rfl fun z _ ↦
+      negOnePow_smul_op_smul_negOnePow_smul_op_smul ⟨0, by ring⟩ _ _ α
   have hd : dM (q.negOnePow • (op (h x w) • α)) =
       q.negOnePow • (op (h x w) • dM α) + op (d (h x w)) • α := by
     rw [LinearMap.map_smul_of_tower, hM.leibniz hα (h x w), smul_add, smul_smul, Int.units_mul_self,
