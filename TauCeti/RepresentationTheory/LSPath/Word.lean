@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.LSPath.OrbitStable
-import Mathlib.LinearAlgebra.Basis.VectorSpace
+public import TauCeti.RepresentationTheory.LSPath.PartialInverse
+import TauCeti.LinearAlgebra.RootSystem.Height
 import Mathlib.Algebra.Order.Archimedean.Basic
 
 /-!
@@ -90,6 +91,21 @@ theorem raiseWord_append (v w : List ι) (π : PLPath 𝕜 V) :
   | nil => simp
   | cons i v ih => simp only [List.cons_append, raiseWord_cons, ih, Option.bind_assoc]
 
+/-- Lowering along a word and raising along its reversal are partial inverses. -/
+theorem lowerWord_eq_some_iff (hx : ∀ i, F i (x i) = 2) :
+    lowerWord F x w π = some ρ ↔ raiseWord F x w.reverse ρ = some π := by
+  induction w generalizing π ρ with
+  | nil => simp [eq_comm]
+  | cons i w ih =>
+    simp only [lowerWord_cons, List.reverse_cons, raiseWord_append, raiseWord_singleton,
+      Option.bind_eq_some_iff, ih, lower_eq_some_iff (hx i)]
+    exact exists_congr fun _ ↦ and_comm
+
+/-- Raising along a word and lowering along its reversal are partial inverses. -/
+theorem raiseWord_eq_some_iff (hx : ∀ i, F i (x i) = 2) :
+    raiseWord F x w π = some ρ ↔ lowerWord F x w.reverse ρ = some π := by
+  simpa using (lowerWord_eq_some_iff hx (w := w.reverse) (π := ρ) (ρ := π)).symm
+
 /-- A lowering word subtracts the sum of its roots from the endpoint. -/
 theorem endpoint_of_lowerWord_eq_some (h : lowerWord F x w π = some ρ) :
     ρ.endpoint = π.endpoint - (w.map x).sum := by
@@ -114,7 +130,7 @@ theorem endpoint_of_raiseWord_eq_some (h : raiseWord F x w π = some ρ) :
     rw [ih hρ, endpoint_of_raise_eq_some hσ, List.map_cons, List.sum_cons, add_assoc]
 
 /-- A defined lowering word preserves a reflection-stable set of velocities. -/
-theorem HasDistinguished.of_lowerWord_eq_some {S : Set V} (hπ : HasDistinguished S π)
+theorem hasDistinguished_of_lowerWord_eq_some {S : Set V} (hπ : HasDistinguished S π)
     (hS : ∀ i, Set.MapsTo (preReflection (x i) (F i)) S S)
     (h : lowerWord F x w π = some ρ) : HasDistinguished S ρ := by
   induction w generalizing π with
@@ -124,7 +140,7 @@ theorem HasDistinguished.of_lowerWord_eq_some {S : Set V} (hπ : HasDistinguishe
     exact ih (hasDistinguished_of_lower_eq_some hπ (hS i) hσ) hρ
 
 /-- A defined raising word preserves a reflection-stable set of velocities. -/
-theorem HasDistinguished.of_raiseWord_eq_some {S : Set V} (hπ : HasDistinguished S π)
+theorem hasDistinguished_of_raiseWord_eq_some {S : Set V} (hπ : HasDistinguished S π)
     (hS : ∀ i, Set.MapsTo (preReflection (x i) (F i)) S S)
     (h : raiseWord F x w π = some ρ) : HasDistinguished S ρ := by
   induction w generalizing π with
@@ -162,7 +178,8 @@ variable {N : Type*} [AddCommGroup N] [Module 𝕜 N]
   (P : RootPairing ι 𝕜 V N) (b : P.Base)
 
 /-- There is a uniform bound for all defined pure raising and pure lowering words on
-paths with velocities in a fixed finite Weyl orbit. The bound is independent of the path and
+duration-one paths with velocities in a fixed finite Weyl orbit (that is, having a distinguished
+presentation for the orbit). The bound is independent of the path and
 its number of segments. The roots need not span, and the shape need not be dominant. -/
 theorem exists_bound_path_word_length [Finite P.weylGroup] [Archimedean 𝕜] (lam : V) :
     ∃ n : ℕ, ∀ (π ρ : PLPath 𝕜 V) (w : List b.support),
@@ -171,46 +188,28 @@ theorem exists_bound_path_word_length [Finite P.weylGroup] [Archimedean 𝕜] (l
         w.length ≤ n) ∧
       (raiseWord (fun i : b.support ↦ P.coroot' i) (fun i : b.support ↦ P.root i) w π = some ρ →
         w.length ≤ n) := by
-  -- Extend the simple roots rather than assuming that they span the whole weight space.
-  let hli := b.linearIndepOn_root.linearIndependent.linearIndepOn_id
-  let B := Module.Basis.extend hli
-  let g : Dual 𝕜 V := B.sumCoords
-  have hg (i : b.support) : g (P.root i) = 1 := by
-    have hi := Module.Basis.subset_extend hli ⟨i, rfl⟩
-    simpa only [g, B, Module.Basis.coe_extend] using
-      B.sumCoords_self_apply (i := ⟨P.root i, hi⟩)
-  have hS (i : b.support) : Set.MapsTo (preReflection (P.root i) (P.coroot' i))
-      (MulAction.orbit P.weylGroup lam) (MulAction.orbit P.weylGroup lam) := by
-    rintro _ ⟨w, rfl⟩
-    refine ⟨weylGroup.ofIdx P i * w, ?_⟩
-    simp [mul_smul, weylGroup.ofIdx_smul, Equiv.reflection_smul,
-      reflection_apply, preReflection_apply]
+  obtain ⟨g, hg⟩ := b.exists_dual_eq_one_on_root
+  have hS := fun i : b.support ↦ P.mapsTo_preReflection_orbit_weylGroup i lam
   -- The same bounds hold on the convex hull, hence at every endpoint under consideration.
   obtain ⟨L, hL⟩ := (Set.finite_range fun w : P.weylGroup ↦ g (w • lam)).bddBelow
   obtain ⟨U, hU⟩ := (Set.finite_range fun w : P.weylGroup ↦ g (w • lam)).bddAbove
   have hb {π : PLPath 𝕜 V} (hπ : HasDistinguished (MulAction.orbit P.weylGroup lam) π) :
       L ≤ g π.endpoint ∧ g π.endpoint ≤ U := by
-    have hsub : convexHull 𝕜 (MulAction.orbit P.weylGroup lam) ⊆
-        {v | L ≤ g v} ∩ {v | g v ≤ U} := by
-      apply convexHull_min
-      · rintro v ⟨w, rfl⟩
-        exact ⟨hL ⟨w, rfl⟩, hU ⟨w, rfl⟩⟩
-      · exact (convex_halfSpace_ge g.isLinear L).inter (convex_halfSpace_le g.isLinear U)
-    exact hsub hπ.endpoint_mem_convexHull
+    exact hπ.apply_endpoint_mem_Icc g fun _ ⟨w, hw⟩ ↦
+      hw ▸ ⟨hL ⟨w, rfl⟩, hU ⟨w, rfl⟩⟩
   obtain ⟨n, hn⟩ := exists_nat_ge (U - L)
-  refine ⟨n, fun π ρ w hπ ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩⟩
-  · have hρ := hπ.of_lowerWord_eq_some hS h
-    have heq := apply_endpoint_of_lowerWord_eq_some hg h
+  refine ⟨n, fun π ρ w hπ ↦ ?_⟩
+  have hbound (hρ : HasDistinguished (MulAction.orbit P.weylGroup lam) ρ)
+      (heq : g ρ.endpoint = g π.endpoint - (w.length : 𝕜) ∨
+        g ρ.endpoint = g π.endpoint + (w.length : 𝕜)) : w.length ≤ n := by
     have hπb := hb hπ
     have hρb := hb hρ
-    have : (w.length : 𝕜) ≤ n := by linarith
+    have : (w.length : 𝕜) ≤ n := by rcases heq with heq | heq <;> linarith
     exact_mod_cast this
-  · have hρ := hπ.of_raiseWord_eq_some hS h
-    have heq := apply_endpoint_of_raiseWord_eq_some hg h
-    have hπb := hb hπ
-    have hρb := hb hρ
-    have : (w.length : 𝕜) ≤ n := by linarith
-    exact_mod_cast this
+  exact ⟨fun h ↦ hbound (hasDistinguished_of_lowerWord_eq_some hπ hS h)
+      (Or.inl (apply_endpoint_of_lowerWord_eq_some hg h)),
+    fun h ↦ hbound (hasDistinguished_of_raiseWord_eq_some hπ hS h)
+      (Or.inr (apply_endpoint_of_raiseWord_eq_some hg h))⟩
 
 end WeylOrbit
 

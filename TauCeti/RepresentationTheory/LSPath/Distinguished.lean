@@ -209,6 +209,17 @@ theorem HasDistinguished.endpoint_mem_convexHull (h : HasDistinguished S π) :
     endpoint_ofSegments_mem_smul_convexHull hp.isTimed hp.slope_mem
       (hp.duration_eq_one ▸ zero_lt_one)
 
+/-- Bounds on a linear form over the velocities also bound its value at the endpoint of a
+path with a duration-one distinguished presentation. -/
+theorem HasDistinguished.apply_endpoint_mem_Icc (h : HasDistinguished S π)
+    (g : Module.Dual 𝕜 V) {L U : 𝕜} (hS : ∀ v ∈ S, g v ∈ Set.Icc L U) :
+    g π.endpoint ∈ Set.Icc L U := by
+  have hsub : convexHull 𝕜 S ⊆ {v | L ≤ g v} ∩ {v | g v ≤ U} := by
+    apply convexHull_min
+    · exact hS
+    · exact (convex_halfSpace_ge g.isLinear L).inter (convex_halfSpace_le g.isLinear U)
+  exact hsub h.endpoint_mem_convexHull
+
 open scoped Classical in
 variable (S π) in
 /-- The distinguished presentation of `π` for `S`, when `π` has one; it is unique when no two
