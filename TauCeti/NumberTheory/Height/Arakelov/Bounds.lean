@@ -123,6 +123,21 @@ namespace Matrix
 
 open TauCeti
 
+/-- If the entries of a matrix product are not all zero, then the inner index type is nonempty and
+the entries of neither factor are all zero. -/
+private theorem nonempty_and_entries_ne_zero_of_mul {K : Type*} [Field K] {m n p : Type*}
+    [Fintype n] (A : Matrix m n K) (B : Matrix n p K)
+    (hc : (fun q : m × p ↦ (A * B) q.1 q.2) ≠ 0) :
+    Nonempty n ∧ (fun q : m × n ↦ A q.1 q.2) ≠ 0 ∧ (fun q : n × p ↦ B q.1 q.2) ≠ 0 := by
+  refine ⟨?_, fun ha ↦ hc ?_, fun hb ↦ hc ?_⟩
+  · by_contra hn
+    have := not_nonempty_iff.mp hn
+    exact hc (funext fun q ↦ by simp [Matrix.mul_apply])
+  · have hA : A = 0 := Matrix.ext fun i j ↦ congrFun ha (i, j)
+    exact funext fun q ↦ by simp [hA]
+  · have hB : B = 0 := Matrix.ext fun i j ↦ congrFun hb (i, j)
+    exact funext fun q ↦ by simp [hB]
+
 variable {K : Type*} [Field K] [NumberField K] {m n p : Type*} [Finite m] [Fintype n] [Finite p]
 
 /-- The relative Arakelov height of the entries of a matrix product is at most the product of
@@ -145,32 +160,7 @@ theorem arakelovMulHeight_mul_le (A : Matrix m n K) (B : Matrix n p K) :
   rcases eq_or_ne c 0 with hc | hc
   · rw [hc, arakelovMulHeight_zero]
     exact hbase
-  have hn : Nonempty n := by
-    by_contra hn
-    let _ := not_nonempty_iff.mp hn
-    apply hc
-    ext q
-    simp [c, Matrix.mul_apply]
-  have ha : a ≠ 0 := by
-    intro ha
-    apply hc
-    ext q
-    simp only [c, Matrix.mul_apply]
-    apply Finset.sum_eq_zero
-    intro j _
-    have hAj := congrFun ha (q.1, j)
-    simp only [a, Pi.zero_apply] at hAj
-    simp [hAj]
-  have hb : b ≠ 0 := by
-    intro hb
-    apply hc
-    ext q
-    simp only [c, Matrix.mul_apply]
-    apply Finset.sum_eq_zero
-    intro j _
-    have hBj := congrFun hb (j, q.2)
-    simp only [b, Pi.zero_apply] at hBj
-    simp [hBj]
+  obtain ⟨hn, ha, hb⟩ := nonempty_and_entries_ne_zero_of_mul A B hc
   rw [arakelovMulHeight_eq hc, arakelovMulHeight_eq ha, arakelovMulHeight_eq hb,
     mul_mul_mul_comm]
   apply mul_le_mul
