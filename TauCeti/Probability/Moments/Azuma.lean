@@ -122,12 +122,12 @@ theorem chord_le_exp {a b : ℝ} (ha : a ≤ 0) (hb : 0 ≤ b) (hab : a < b) (t 
 /-- Conditional Hoeffding's lemma without regular conditional distributions: the conditional
 exponential moment of a conditionally centered random variable with values in `[a, b]`. -/
 theorem condExp_exp_mul_le [IsProbabilityMeasure μ] {m : MeasurableSpace Ω} (hm : m ≤ mΩ)
-    {X : Ω → ℝ} {a b : ℝ} (hX : Measurable[mΩ] X) (hbound : ∀ᵐ ω ∂μ, X ω ∈ Set.Icc a b)
+    {X : Ω → ℝ} {a b : ℝ} (hX : AEMeasurable X μ) (hbound : ∀ᵐ ω ∂μ, X ω ∈ Set.Icc a b)
     (hmean : μ[X | m] =ᵐ[μ] 0) (t : ℝ) :
     μ[fun ω ↦ exp (t * X ω) | m] ≤ᵐ[μ] fun _ ↦ exp ((‖b - a‖₊ / 2) ^ 2 * t ^ 2 / 2) := by
-  have hX_int : Integrable X μ := Integrable.of_mem_Icc a b hX.aemeasurable hbound
+  have hX_int : Integrable X μ := Integrable.of_mem_Icc a b hX hbound
   have hint : Integrable (fun ω ↦ exp (t * X ω)) μ :=
-    integrable_exp_mul_of_mem_Icc hX.aemeasurable hbound
+    integrable_exp_mul_of_mem_Icc hX hbound
   have hzero : ∫ ω, X ω ∂μ = 0 := by
     rw [← integral_condExp hm, integral_congr_ae hmean]; simp
   obtain ⟨ha, hb⟩ := nonpos_nonneg_of_mem_Icc_of_integral_eq_zero (mΩ := mΩ) hX_int hbound hzero
@@ -160,13 +160,13 @@ theorem condExp_exp_mul_le [IsProbabilityMeasure μ] {m : MeasurableSpace Ω} (h
 sub-Gaussian `m`-measurable random variable. -/
 theorem hasSubgaussianMGF_add_of_condExp_eq_zero [IsProbabilityMeasure μ] {m : MeasurableSpace Ω}
     (hm : m ≤ mΩ) {S X : Ω → ℝ} {c : ℝ≥0} {a b : ℝ} (hS : HasSubgaussianMGF S c μ)
-    (hSm : StronglyMeasurable[m] S) (hX : Measurable[mΩ] X)
+    (hSm : AEStronglyMeasurable[m] S μ) (hX : AEMeasurable X μ)
     (hbound : ∀ᵐ ω ∂μ, X ω ∈ Set.Icc a b) (hmean : μ[X | m] =ᵐ[μ] 0) :
     HasSubgaussianMGF (fun ω ↦ S ω + X ω) (c + (‖b - a‖₊ / 2) ^ 2) μ := by
-  have hZ (t : ℝ) : StronglyMeasurable[m] fun ω ↦ exp (t * S ω) :=
-    Real.continuous_exp.comp_stronglyMeasurable (hSm.const_mul t)
+  have hZ (t : ℝ) : AEStronglyMeasurable[m] (fun ω ↦ exp (t * S ω)) μ :=
+    Real.continuous_exp.comp_aestronglyMeasurable (hSm.const_mul t)
   have hWint (t : ℝ) : Integrable (fun ω ↦ exp (t * X ω)) μ :=
-    integrable_exp_mul_of_mem_Icc hX.aemeasurable hbound
+    integrable_exp_mul_of_mem_Icc hX hbound
   have hZW (t : ℝ) : Integrable (fun ω ↦ exp (t * S ω) * exp (t * X ω)) μ := by
     refine (hS.integrable_exp_mul t).mul_bdd (c := exp (|t| * (|a| + |b|)))
       (hX.const_mul t).exp.aestronglyMeasurable ?_
@@ -213,8 +213,8 @@ theorem hasSubgaussianMGF_sum_range_of_mem_Icc [IsProbabilityMeasure μ] {ℱ : 
         Finset.stronglyMeasurable_fun_sum _ fun i hi ↦
           (h_adapted i).mono (ℱ.mono (by simpa [Nat.lt_succ_iff] using hi))
       simp_rw [Finset.sum_range_succ _ (n + 1)]
-      exact hasSubgaussianMGF_add_of_condExp_eq_zero (mΩ := mΩ) (ℱ.le n) hS hSm
-        ((h_adapted (n + 1)).mono (ℱ.le (n + 1))).measurable (hbound (n + 1) (by lia))
+      exact hasSubgaussianMGF_add_of_condExp_eq_zero (mΩ := mΩ) (ℱ.le n) hS hSm.aestronglyMeasurable
+        ((h_adapted (n + 1)).mono (ℱ.le (n + 1))).measurable.aemeasurable (hbound (n + 1) (by lia))
         (hmean n (by lia))
 
 /-- **Azuma-Hoeffding inequality for interval-bounded martingale differences.** Let `Y i` be a

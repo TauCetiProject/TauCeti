@@ -38,8 +38,8 @@ import Mathlib.MeasureTheory.Function.ConditionalExpectation.Real
   integrability hypothesis.
 - `lintegral_ofReal_posPart_condExp_sub_le`: the positive part of `μ[f | m] - a` integrates to at
   most `‖f‖₁ + ‖a‖ₑ · μ univ`, uniformly in the σ-algebra `m`.
-- `integral_mul_le_of_condExp_le`: if `Z ≥ 0` is `m`-measurable and the conditional mean of `W` is
-  at most `K`, then `∫ Z * W ≤ K * ∫ Z`.
+- `integral_mul_le_of_condExp_le`: if `Z ≥ 0` is a.e. `m`-measurable and the conditional mean of
+  `W` is at most `K`, then `∫ Z * W ≤ K * ∫ Z`.
 - `condExpLp`: for a finite measure and `1 ≤ p ≤ ∞`, conditional expectation as a contractive
   continuous linear operator on `Lᵖ`.
 
@@ -296,16 +296,16 @@ theorem lintegral_ofReal_posPart_condExp_sub_le {Ω : Type*} {m m₀ : Measurabl
     _ ≤ eLpNorm f 1 μ + ‖a‖ₑ * μ Set.univ := by
         grw [eLpNorm_condExp_le_eLpNorm f le_rfl]
 
-/-- Pulling out a measurable factor: if `Z ≥ 0` almost everywhere is `m`-measurable and the
+/-- Pulling out an a.e. `m`-measurable factor: if `Z ≥ 0` almost everywhere and the
 conditional mean of `W` is at most `K`, then `∫ Z * W ≤ K * ∫ Z`. -/
 theorem integral_mul_le_of_condExp_le {Ω : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
     {m : MeasurableSpace Ω} (hm : m ≤ mΩ) [SigmaFinite (μ.trim hm)] {Z W : Ω → ℝ} {K : ℝ}
-    (hZ : StronglyMeasurable[m] Z) (hZ0 : 0 ≤ᵐ[μ] Z)
+    (hZ : AEStronglyMeasurable[m] Z μ) (hZ0 : 0 ≤ᵐ[μ] Z)
     (hZint : Integrable Z μ) (hWint : Integrable W μ) (hZW : Integrable (fun ω ↦ Z ω * W ω) μ)
     (hW : μ[W | m] ≤ᵐ[μ] fun _ ↦ K) :
     ∫ ω, Z ω * W ω ∂μ ≤ K * ∫ ω, Z ω ∂μ := by
   have hpull : μ[Z * W | m] =ᵐ[μ] Z * μ[W | m] :=
-    condExp_mul_of_stronglyMeasurable_left hZ hZW hWint
+    condExp_mul_of_aestronglyMeasurable_left hZ hZW hWint
   have hint : Integrable (Z * μ[W | m]) μ := integrable_condExp.congr hpull
   calc ∫ ω, Z ω * W ω ∂μ = ∫ ω, μ[Z * W | m] ω ∂μ := (integral_condExp hm).symm
     _ = ∫ ω, (Z * μ[W | m]) ω ∂μ := integral_congr_ae hpull
