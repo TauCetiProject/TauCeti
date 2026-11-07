@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.CochainComplex.DegreewiseSplit
 public import TauCeti.Algebra.Homology.ShortComplex.Splitting
 public import TauCeti.Algebra.Homology.TotallyAcyclic.Basic
 public import TauCeti.CategoryTheory.Exact.ExtensionClosed
@@ -48,79 +49,6 @@ namespace CochainComplex.IsTotallyAcyclic
 variable {A : Type u} [Ring A]
   {S : ShortComplex (CochainComplex (ModuleCat.{v} A) ℤ)}
 
-/-- Restricting a functional that kills the image of the middle differential to the first complex
-along the inclusion gives a functional that kills the image of the first differential. -/
-private theorem comp_f_comp_d_eq_zero {i j : ℤ} {φ : S.X₂.X j →ₗ[A] A}
-    (hφ : φ.comp (S.X₂.d i j).hom = 0) :
-    (φ.comp (S.f.f j).hom).comp (S.X₁.d i j).hom = 0 := by
-  ext x
-  have hx := LinearMap.congr_fun (congrArg ModuleCat.Hom.hom (S.f.comm i j)) x
-  have hz := congrArg (fun f ↦ f ((S.f.f i).hom x)) hφ
-  simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at hx ⊢
-  simp only [LinearMap.comp_apply, LinearMap.zero_apply] at hz
-  simp only [LinearMap.zero_apply]
-  rw [← hx, hz]
-
-/-- The residual functional `φ - ψ₁ ∘ r ∘ d` vanishes on the first complex, where `ψ₁` is a
-primitive of the restriction of `φ` to the first complex. -/
-private theorem residual_comp_f_eq_zero
-    (s : ∀ n, (ShortComplex.mk (S.f.f n) (S.g.f n)
-      (by rw [← HomologicalComplex.comp_f, S.zero, HomologicalComplex.zero_f])).Splitting)
-    {j k : ℤ} {φ : S.X₂.X j →ₗ[A] A}
-    {ψ₁ : S.X₁.X k →ₗ[A] A}
-    (hψ₁ : ψ₁.comp (S.X₁.d j k).hom = φ.comp (S.f.f j).hom) :
-    (φ - (ψ₁.comp (s k).r.hom).comp (S.X₂.d j k).hom).comp (S.f.f j).hom = 0 := by
-  ext x
-  have hx := LinearMap.congr_fun (congrArg ModuleCat.Hom.hom (S.f.comm j k)) x
-  have hrx := LinearMap.congr_fun (congrArg ModuleCat.Hom.hom (s k).f_r) ((S.X₁.d j k).hom x)
-  have hrx' : (s k).r.hom ((S.f.f k).hom ((S.X₁.d j k).hom x)) = (S.X₁.d j k).hom x := by
-    simpa only [ModuleCat.hom_comp, ModuleCat.hom_id, LinearMap.comp_apply,
-      LinearMap.id_apply] using hrx
-  have hψx := LinearMap.congr_fun hψ₁ x
-  simp only [LinearMap.sub_apply, LinearMap.comp_apply, ModuleCat.hom_comp,
-    LinearMap.zero_apply] at hx hψx ⊢
-  rw [hx, hrx', hψx]
-  simp
-
-/-- Subtracting a functional of the form `ψ₀ ∘ d` from one killing the image of the middle
-differential into degree `j` keeps it killing that image, as `d ∘ d = 0`. -/
-private theorem residual_comp_d_eq_zero {i j k : ℤ} {φ : S.X₂.X j →ₗ[A] A}
-    (hφ : φ.comp (S.X₂.d i j).hom = 0) (ψ₀ : S.X₂.X k →ₗ[A] A) :
-    (φ - ψ₀.comp (S.X₂.d j k).hom).comp (S.X₂.d i j).hom = 0 := by
-  ext x
-  have hdx := LinearMap.congr_fun (congrArg ModuleCat.Hom.hom (S.X₂.d_comp_d i j k)) x
-  have hφx := congrArg (fun f ↦ f x) hφ
-  simp only [LinearMap.sub_apply, LinearMap.comp_apply, ModuleCat.hom_comp, ModuleCat.hom_zero,
-    LinearMap.zero_apply] at hdx hφx ⊢
-  rw [hφx, hdx]
-  simp
-
-/-- A functional on the middle complex that vanishes on the first complex and on the image of the
-differential into degree `j` descends along the section to a functional on the third complex that
-vanishes on the image of its differential. -/
-private theorem comp_s_comp_d_eq_zero
-    (s : ∀ n, (ShortComplex.mk (S.f.f n) (S.g.f n)
-      (by rw [← HomologicalComplex.comp_f, S.zero, HomologicalComplex.zero_f])).Splitting)
-    {i j : ℤ} {ρ : S.X₂.X j →ₗ[A] A}
-    (hρf : ρ.comp (S.f.f j).hom = 0) (hρ : ρ.comp (S.X₂.d i j).hom = 0) :
-    (ρ.comp (s j).s.hom).comp (S.X₃.d i j).hom = 0 := by
-  apply LinearMap.ext
-  intro x
-  have hx := LinearMap.congr_fun (congrArg ModuleCat.Hom.hom (S.g.comm i j)) ((s i).s.hom x)
-  have hsx := LinearMap.congr_fun (congrArg ModuleCat.Hom.hom (s i).s_g) x
-  have hsx' : (S.g.f i).hom ((s i).s.hom x) = x := by
-    simpa only [ModuleCat.hom_comp, ModuleCat.hom_id, LinearMap.comp_apply,
-      LinearMap.id_apply] using hsx
-  have hz := LinearMap.congr_fun hρ ((s i).s.hom x)
-  have hx' : (S.X₃.d i j).hom ((S.g.f i).hom ((s i).s.hom x)) =
-      (S.g.f j).hom ((S.X₂.d i j).hom ((s i).s.hom x)) := by
-    simpa only [ModuleCat.hom_comp, LinearMap.comp_apply] using hx
-  simp only [LinearMap.comp_apply, LinearMap.zero_apply] at hz ⊢
-  rw [← hsx', hx']
-  have hρ_eqx := LinearMap.congr_fun ((s j).comp_s_hom_comp_g_hom_of_comp_f_hom_eq_zero ρ hρf)
-    ((S.X₂.d i j).hom ((s i).s.hom x))
-  simpa only [LinearMap.comp_apply] using hρ_eqx.trans hz
-
 /-- The forward direction of exactness of the dual of the middle complex of a degreewise split
 extension of totally acyclic complexes. -/
 private theorem exists_dual_primitive
@@ -132,16 +60,16 @@ private theorem exists_dual_primitive
     ∃ ψ : S.X₂.X k →ₗ[A] A, ψ.comp (S.X₂.d j k).hom = φ := by
   -- Extend the left primitive across the split inclusion.
   obtain ⟨ψ₁, hψ₁⟩ := (h₁.exact_dual i j k hij hjk (φ.comp (S.f.f j).hom)).mp
-    (comp_f_comp_d_eq_zero hφ)
+    (ShortComplex.comp_f_comp_d_eq_zero hφ)
   let ψ₀ : S.X₂.X k →ₗ[A] A := ψ₁.comp (s k).r.hom
   -- Descend the residual functional through the split projection.
-  have hρf := residual_comp_f_eq_zero s hψ₁
-  have hρ := residual_comp_d_eq_zero hφ ψ₀
+  have hρf := ShortComplex.residual_comp_f_eq_zero s hψ₁
+  have hρ := ShortComplex.residual_comp_d_eq_zero hφ ψ₀
   set ρ : S.X₂.X j →ₗ[A] A := φ - ψ₀.comp (S.X₂.d j k).hom with hρdef
   have hρ_eq := (s j).comp_s_hom_comp_g_hom_of_comp_f_hom_eq_zero ρ hρf
   -- Lift the right primitive and combine it with the extended left primitive.
   obtain ⟨ψ₃, hψ₃⟩ := (h₃.exact_dual i j k hij hjk (ρ.comp (s j).s.hom)).mp
-    (comp_s_comp_d_eq_zero s hρf hρ)
+    (ShortComplex.comp_s_comp_d_eq_zero s hρf hρ)
   refine ⟨ψ₀ + ψ₃.comp (S.g.f k).hom, ?_⟩
   apply LinearMap.ext
   intro x
