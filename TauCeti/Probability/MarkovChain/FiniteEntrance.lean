@@ -40,13 +40,6 @@ namespace ProbabilityTheory.Kernel
 
 variable {S : Type*} [MeasurableSpace S] {κ : Kernel S S} [IsMarkovKernel κ]
 
-/-- The set of paths that never visit a measurable set is measurable. -/
-private theorem measurableSet_forall_notMem {A : Set S} (hA : MeasurableSet A) :
-    MeasurableSet {w : ℕ → S | ∀ n, w n ∉ A} := by
-  convert MeasurableSet.iInter (fun n : ℕ => hA.compl.preimage (measurable_pi_apply n)) using 1
-  ext w
-  simp
-
 /-- Starting in the target rules out never entering it, since entrance includes time zero. -/
 private theorem markovChainKernel_forall_notMem_eq_zero_of_mem {A : Set S} (hA : MeasurableSet A)
     {x : S} (hx : x ∈ A) : κ.markovChainKernel x {w : ℕ → S | ∀ n, w n ∉ A} = 0 := by
@@ -65,7 +58,8 @@ private theorem markovChainKernel_forall_notMem_le_lintegral {A : Set S}
     (hA : MeasurableSet A) (x : S) (n : ℕ) :
     κ.markovChainKernel x {w : ℕ → S | ∀ n, w n ∉ A} ≤
       ∫⁻ y, κ.markovChainKernel y {w : ℕ → S | ∀ n, w n ∉ A} ∂(κ ^ n) x := by
-  have hB := measurableSet_forall_notMem hA
+  have hB : MeasurableSet {w : ℕ → S | ∀ n, w n ∉ A} :=
+    MeasurableSet.univ_pi' fun _ : ℕ => hA.compl
   calc _ ≤ markovChainLaw (Measure.dirac x) κ
         ((shift S)^[n] ⁻¹' {w : ℕ → S | ∀ n, w n ∉ A}) := by
         rw [← markovChainKernel_apply]
@@ -75,11 +69,14 @@ private theorem markovChainKernel_forall_notMem_le_lintegral {A : Set S}
           Measure.markovChainLaw_map_shift_iterate, Measure.dirac_bind (Kernel.measurable _),
           Measure.markovChainLaw_eq_comp, Measure.bind_apply hB (Kernel.aemeasurable _)]
 
-/-- At a maximizer, positive mass entering the target forces a strict decrease unless
-the maximum is zero. Finiteness is used only to obtain this maximizer. -/
+/-- On a finite state space, if a measurable target is accessible with positive probability
+from every state, then from every starting state the chain almost surely enters it, i.e. the
+probability of never visiting it is zero. -/
 private theorem markovChainKernel_forall_notMem_eq_zero [Finite S] {A : Set S}
     (hA : MeasurableSet A) (hreach : ∀ x, ∃ n, 0 < (κ ^ n) x A) (x : S) :
     κ.markovChainKernel x {w : ℕ → S | ∀ n, w n ∉ A} = 0 := by
+  -- Take a maximizer of the failure probability `q`: positive mass entering the target forces a
+  -- strict decrease unless the maximum is zero. Finiteness is used only to obtain the maximizer.
   set q : S → ℝ≥0∞ := fun x => κ.markovChainKernel x {w : ℕ → S | ∀ n, w n ∉ A} with hqdef
   have hzero : ∀ x ∈ A, q x = 0 := fun x hx => markovChainKernel_forall_notMem_eq_zero_of_mem hA hx
   have hq : ∀ x, q x = 0 := by
@@ -114,7 +111,8 @@ theorem ae_hittingAfter_ne_top_of_finite [Finite S] (κ : Kernel S S) [IsMarkovK
     {A : Set S} (hA : MeasurableSet A) (hreach : ∀ x, ∃ n, 0 < (κ ^ n) x A)
     (ν : Measure S) :
     ∀ᵐ w ∂markovChainLaw ν κ, hittingAfter (fun n w => w n) A 0 w ≠ ⊤ := by
-  have hB := measurableSet_forall_notMem hA
+  have hB : MeasurableSet {w : ℕ → S | ∀ n, w n ∉ A} :=
+    MeasurableSet.univ_pi' fun _ : ℕ => hA.compl
   -- Mix the point-started conclusions over the arbitrary initial measure.
   rw [Measure.markovChainLaw_eq_comp]
   apply Measure.ae_comp_of_ae_ae
