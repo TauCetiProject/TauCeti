@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Piecewise
 public import TauCeti.Geometry.Manifold.Instances.Icc
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.ProdIcc
 
 /-!
 # Concordance of metrics of positive scalar curvature
