@@ -101,6 +101,40 @@ private theorem exists_mul_eq_comp_and_isCoprime [Nontrivial R] (I : Ideal R) [H
     rw [hφ, Equiv.apply_symm_apply] at hc
     exact (congrArg Subtype.val hc).symm
 
+/-- The congruence half of idempotent lifting: if `g` and `h` reduce modulo `I` to `X ^ (m + 1)` and
+`(X - 1) ^ (m + 1)` and `u * g + v * h = 1`, then `(u * g)(a)` is congruent to `a` modulo `IT`
+whenever `a * (a - 1) ∈ IT`. -/
+private theorem aeval_mul_sub_mem_map (I : Ideal R) {T : Type*} [CommRing T] [Algebra R T] {a : T}
+    (ha : a * (a - 1) ∈ I.map (algebraMap R T)) {g h u v : R[X]} {m : ℕ}
+    (huv : u * g + v * h = 1) (hg_map : g.map (algebraMap R (R ⧸ I)) = X ^ (m + 1))
+    (hh_map : h.map (algebraMap R (R ⧸ I)) = (X - 1) ^ (m + 1)) :
+    aeval a (u * g) - a ∈ I.map (algebraMap R T) := by
+  let π : T →+* T ⧸ I.map (algebraMap R T) := Ideal.Quotient.mk (I.map (algebraMap R T))
+  let ψ : R ⧸ I →+* T ⧸ I.map (algebraMap R T) :=
+    Ideal.quotientMap _ (algebraMap R T) Ideal.le_comap_map
+  have hπψ (p : R[X]) : π (aeval a p) = eval₂ ψ (π a) (p.map (algebraMap R (R ⧸ I))) := by
+    rw [aeval_def, hom_eval₂, eval₂_map]
+    rfl
+  have ha₀ : π a * (π a - 1) = 0 := by
+    rw [← map_one π, ← map_sub, ← map_mul]
+    exact Ideal.Quotient.eq_zero_iff_mem.mpr ha
+  have hg₀ : π (aeval a g) = π a ^ (m + 1) := by
+    rw [hπψ, hg_map, eval₂_X_pow]
+  have hh₀ : π (aeval a h) = (π a - 1) ^ (m + 1) := by
+    rw [hπψ, hh_map, eval₂_pow, eval₂_sub, eval₂_X, eval₂_one]
+  have h1 : (π a - 1) * π (aeval a (u * g)) = 0 := by
+    simp only [map_mul, hg₀, pow_succ]
+    linear_combination π (aeval a u) * π a ^ m * ha₀
+  have h2 : π a * (1 - π (aeval a (u * g))) = 0 := by
+    have huv1 : π (aeval a (u * g + v * h)) = 1 := by rw [huv, map_one, map_one]
+    have hvh : 1 - π (aeval a (u * g)) = π (aeval a v) * (π a - 1) ^ (m + 1) := by
+      simp only [map_add, map_mul, hh₀] at huv1 ⊢
+      linear_combination -huv1
+    rw [hvh, pow_succ]
+    linear_combination π (aeval a v) * (π a - 1) ^ m * ha₀
+  apply Ideal.Quotient.eq.mp
+  linear_combination -(h1 + h2)
+
 /-- **Lifting idempotents in integral algebras over a Henselian pair.** Let `(R, I)` be a Henselian
 pair and `T` an integral `R`-algebra (for instance, a module-finite `R`-algebra). Every element
 `a : T` with `a * (a - 1) ∈ IT` lifts to an idempotent `e ∈ T` congruent to `a` modulo `IT`. -/
@@ -137,33 +171,9 @@ theorem exists_isIdempotentElem_of_mul_sub_one_mem (I : Ideal R) [HenselianRing 
       linear_combination aeval a u * aeval a v * hprod0
     rw [IsIdempotentElem]
     linear_combination e * hsum1 - he1
-  · let π : T →+* T ⧸ I.map (algebraMap R T) := Ideal.Quotient.mk (I.map (algebraMap R T))
-    let ψ : R ⧸ I →+* T ⧸ I.map (algebraMap R T) :=
-      Ideal.quotientMap _ (algebraMap R T) Ideal.le_comap_map
-    have hπψ (p : R[X]) : π (aeval a p) = eval₂ ψ (π a) (p.map (algebraMap R (R ⧸ I))) := by
-      rw [aeval_def, hom_eval₂, eval₂_map]
-      rfl
-    have ha₀ : π a * (π a - 1) = 0 := by
-      rw [← map_one π, ← map_sub, ← map_mul]
-      exact Ideal.Quotient.eq_zero_iff_mem.mpr ha
-    have hg₀ : π (aeval a g) = π a ^ q.natDegree := by
-      rw [hπψ, hg_map, eval₂_X_pow]
-    have hh₀ : π (aeval a h) = (π a - 1) ^ q.natDegree := by
-      rw [hπψ, hh_map, eval₂_pow, eval₂_sub, eval₂_X, eval₂_one]
-    obtain ⟨m, hm⟩ := Nat.exists_eq_succ_of_ne_zero hd_pos.ne'
-    rw [hm] at hg₀ hh₀
-    have h1 : (π a - 1) * π e = 0 := by
-      simp only [e, map_mul, hg₀, pow_succ]
-      linear_combination π (aeval a u) * π a ^ m * ha₀
-    have h2 : π a * (1 - π e) = 0 := by
-      have huv1 : π (aeval a (u * g + v * h)) = 1 := by rw [huv, map_one, map_one]
-      have hvh : 1 - π e = π (aeval a v) * (π a - 1) ^ m.succ := by
-        simp only [e, map_add, map_mul, hh₀] at huv1 ⊢
-        linear_combination -huv1
-      rw [hvh, pow_succ]
-      linear_combination π (aeval a v) * (π a - 1) ^ m * ha₀
-    apply Ideal.Quotient.eq.mp
-    linear_combination -(h1 + h2)
+  · obtain ⟨m, hm⟩ := Nat.exists_eq_succ_of_ne_zero hd_pos.ne'
+    rw [hm] at hg_map hh_map
+    exact aeval_mul_sub_mem_map I ha huv hg_map hh_map
 
 /-- **Unique lifting of idempotents in integral algebras.** Over a Henselian pair `(R, I)` and an
 integral `R`-algebra `T`, every idempotent of `T ⧸ IT` is the image of a unique idempotent of
