@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.CochainComplex.DegreewiseSplit
-public import TauCeti.Algebra.Homology.ShortComplex.Splitting
 public import TauCeti.Algebra.Homology.TotallyAcyclic.Basic
 public import TauCeti.CategoryTheory.Exact.ExtensionClosed
 public import TauCeti.CategoryTheory.Exact.HomologicalComplex
@@ -63,13 +62,13 @@ private theorem exists_dual_primitive
     (ShortComplex.comp_f_comp_d_eq_zero hφ)
   let ψ₀ : S.X₂.X k →ₗ[A] A := ψ₁.comp (s k).r.hom
   -- Descend the residual functional through the split projection.
-  have hρf := ShortComplex.residual_comp_f_eq_zero s hψ₁
+  have hρf := ShortComplex.residual_comp_f_eq_zero (s k) hψ₁
   have hρ := ShortComplex.residual_comp_d_eq_zero hφ ψ₀
   set ρ : S.X₂.X j →ₗ[A] A := φ - ψ₀.comp (S.X₂.d j k).hom with hρdef
   have hρ_eq := (s j).comp_s_hom_comp_g_hom_of_comp_f_hom_eq_zero ρ hρf
   -- Lift the right primitive and combine it with the extended left primitive.
   obtain ⟨ψ₃, hψ₃⟩ := (h₃.exact_dual i j k hij hjk (ρ.comp (s j).s.hom)).mp
-    (ShortComplex.comp_s_comp_d_eq_zero s hρf hρ)
+    (ShortComplex.comp_s_comp_d_eq_zero (s i) (s j) hρf hρ)
   refine ⟨ψ₀ + ψ₃.comp (S.g.f k).hom, ?_⟩
   apply LinearMap.ext
   intro x
