@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.MvPolynomial.DirectionalOrder
-public import TauCeti.Analysis.Polynomial.Order
+public import TauCeti.Analysis.MvPolynomial.DirectionalOrder
+import TauCeti.Algebra.MvPolynomial.Fin.Two
 
 /-!
 # Generic lines detecting the order of a plane polynomial
@@ -24,57 +24,6 @@ open Filter Topology
 namespace MvPolynomial
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-
-/-- A nonzero plane polynomial does not vanish at some point whose first coordinate is nonzero
-and whose slope `v 1 / v 0` avoids a given finite set. -/
-private lemma exists_eval_ne_zero_and_div_notMem {H : MvPolynomial (Fin 2) 𝕜} (hH : H ≠ 0)
-    (s : Finset 𝕜) : ∃ v : Fin 2 → 𝕜, eval v H ≠ 0 ∧ v 0 ≠ 0 ∧ v 1 / v 0 ∉ s := by
-  classical
-  have hlinear (b : 𝕜) : (X 1 - C b * X 0 : MvPolynomial (Fin 2) 𝕜) ≠ 0 := by
-    intro hzero
-    have := congrArg (fun q : MvPolynomial (Fin 2) 𝕜 ↦ q.coeff (Finsupp.single 1 1)) hzero
-    simp [coeff_X, coeff_C_mul, Finsupp.single_left_inj one_ne_zero] at this
-  have hQ : H * X 0 * ∏ b ∈ s, (X 1 - C b * X 0) ≠ 0 :=
-    mul_ne_zero (mul_ne_zero hH (X_ne_zero 0))
-      (Finset.prod_ne_zero_iff.2 fun b _ ↦ hlinear b)
-  obtain ⟨v, hv⟩ : ∃ v, eval v (H * X 0 * ∏ b ∈ s, (X 1 - C b * X 0)) ≠ 0 := by
-    by_contra h
-    apply hQ
-    exact MvPolynomial.funext fun v ↦ by
-      simpa only [map_zero] using (not_exists.mp h v |> not_not.mp)
-  simp only [map_mul, eval_X, map_prod, map_sub, eval_C, mul_ne_zero_iff,
-    Finset.prod_ne_zero_iff] at hv
-  have hv0 : v 0 ≠ 0 := hv.1.2
-  refine ⟨v, hv.1.1, hv0, fun hmem ↦ hv.2 _ hmem (by rw [div_mul_cancel₀ _ hv0, sub_self])⟩
-
-/-- Along a direction `v` on which the lowest-degree Taylor component of `p` at `a` does not
-vanish, the line `t ↦ a + t • v` is analytic at `0` and detects the ambient order of `p`
-at `a`. -/
-private lemma analyticAt_and_analyticOrderAt_eval_add_smul (p : MvPolynomial (Fin 2) 𝕜)
-    (a v : Fin 2 → 𝕜) {m : ℕ} (hm : (m : ℕ∞) = p.orderAt a)
-    (hv : eval v (homogeneousComponent m (taylor a p)) ≠ 0) :
-    AnalyticAt 𝕜 (fun t : 𝕜 ↦ eval (a + t • v) p) 0 ∧
-      analyticOrderAt (fun t : 𝕜 ↦ eval (a + t • v) p) 0 = m := by
-  let q := aeval (fun i ↦ Polynomial.C (a i) + Polynomial.C (v i) * Polynomial.X) p
-  have hqm : q.coeff m ≠ 0 := by
-    simpa only [q, coeff_aeval_C_add_C_mul_X] using hv
-  have hq : q ≠ 0 := fun hzero ↦ hqm (by simp [hzero])
-  have hdegree : q.natTrailingDegree = m := by
-    apply le_antisymm (Polynomial.natTrailingDegree_le_of_ne_zero hqm)
-    apply Polynomial.le_natTrailingDegree hq
-    intro k hk
-    simpa [q] using p.coeff_aeval_C_add_C_mul_X_eq_zero a v (by simpa [← hm] using hk)
-  have heval := p.eval_aeval_C_add_C_mul_X a v
-  have heq : (fun t : 𝕜 ↦ eval (a + t • v) p) = fun t ↦ q.eval t := by
-    funext t
-    exact (heval t).symm
-  have horder : analyticOrderAt (fun t : 𝕜 ↦ eval (a + t • v) p) 0 = m := by
-    rw [heq, Polynomial.analyticOrderAt_eval_zero,
-      Polynomial.trailingDegree_eq_natTrailingDegree hq, hdegree]
-  have ha : AnalyticAt 𝕜 (fun t : 𝕜 ↦ eval (a + t • v) p) 0 := by
-    rw [heq]
-    exact (AnalyticOnNhd.eval_polynomial q) 0 (Set.mem_univ _)
-  exact ⟨ha, horder⟩
 
 /-- A nonzero plane polynomial admits a line of slope outside any finite forbidden set
 that detects its ambient order at a specified point. -/
