@@ -118,10 +118,6 @@ variable {n : ℕ}
 
 section Dominance
 
--- The multiplication of the Hecke ring needs the arithmetic Hecke triple, whose instance carries
--- `NeZero n`.
-variable [NeZero n]
-
 /-- A coset occurring in `T(a) · T(b)` has a nonzero structure constant there. -/
 private lemma structureConstants_ne_zero_of_diagElem_mul_apply_ne_zero {a b : Fin n → ℕ}
     {D : HeckeCoset (posDetInt n) (SLnZ n) (SLnZ n)} (h : (diagElem a * diagElem b) D ≠ 0) :
