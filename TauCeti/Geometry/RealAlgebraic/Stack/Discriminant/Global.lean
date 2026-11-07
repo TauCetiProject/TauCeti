@@ -12,6 +12,7 @@ public import TauCeti.Geometry.RealAlgebraic.Stack.Discriminant.Basic
 public import TauCeti.Geometry.RealAlgebraic.Stack.Chart
 public import TauCeti.Geometry.RealAlgebraic.Stack.Analytic
 public import TauCeti.Geometry.RealAlgebraic.Stack.Product
+import TauCeti.Algebra.Polynomial.BigOperators
 
 /-!
 # Analytic delineability from constant discriminant order
@@ -50,26 +51,6 @@ namespace TauCeti.IsAnalyticChart
 variable {n d : ℕ} {κ : Type*} [Fintype κ] {P : κ → Polynomial (MvPolynomial (Fin n) ℝ)}
   {S : Set (Fin n → ℝ)} {e : OpenPartialHomeomorph (Fin n → ℝ) (Fin n → ℝ)} {x : Fin n → ℝ}
 
-/-- The product of a family with nonzero fibers has nonzero fibers. -/
-private lemma prod_map_eval_ne_zero {y : Fin n → ℝ}
-    (hfiber : ∀ k, (P k).map (MvPolynomial.eval y) ≠ 0) :
-    (∏ k, P k).map (MvPolynomial.eval y) ≠ 0 := by
-  rw [Polynomial.map_prod]
-  exact Finset.prod_ne_zero_iff.mpr fun k _ ↦ hfiber k
-
-/-- The product of a family with nonzero fibers of constant degree has fibers of constant
-degree. -/
-private lemma natDegree_prod_map_eval_eq {y z : Fin n → ℝ}
-    (hy : ∀ k, (P k).map (MvPolynomial.eval y) ≠ 0)
-    (hz : ∀ k, (P k).map (MvPolynomial.eval z) ≠ 0)
-    (hdegree : ∀ k, ((P k).map (MvPolynomial.eval y)).natDegree =
-      ((P k).map (MvPolynomial.eval z)).natDegree) :
-    ((∏ k, P k).map (MvPolynomial.eval y)).natDegree =
-      ((∏ k, P k).map (MvPolynomial.eval z)).natDegree := by
-  rw [Polynomial.map_prod, Polynomial.map_prod, natDegree_prod _ _ fun k _ ↦ hy k,
-    natDegree_prod _ _ fun k _ ↦ hz k]
-  exact Finset.sum_congr rfl fun k _ ↦ hdegree k
-
 /-- The local delineation of the product family at a chart point, expressed over a ball in the
 chart coordinates. -/
 private lemma exists_delineation_ball_prod (he : IsAnalyticChart d S e) (hxe : x ∈ e.source)
@@ -93,14 +74,15 @@ private lemma exists_delineation_ball_prod (he : IsAnalyticChart d S e) (hxe : x
     RingHom.ext fun q ↦ by rw [MvPolynomial.coe_eval₂Hom, MvPolynomial.eval₂_id]
   have hp0 : p.map (MvPolynomial.eval₂Hom (RingHom.id ℝ) (φ a)) ≠ 0 := by
     rw [heval]
-    exact prod_map_eval_ne_zero fun k ↦ hfiber k _ hφaS
+    exact prod_map_ne_zero _ _ _ fun k _ ↦ hfiber k _ hφaS
   have hd : ∀ᶠ u in 𝓝 a,
       (p.map (MvPolynomial.eval₂Hom (RingHom.id ℝ) (φ u))).natDegree =
         (p.map (MvPolynomial.eval₂Hom (RingHom.id ℝ) (φ a))).natDegree := by
     filter_upwards [hmem] with u hu
     rw [heval, heval]
-    exact natDegree_prod_map_eval_eq (fun k ↦ hfiber k _ hu.2) (fun k ↦ hfiber k _ hφaS)
-      fun k ↦ hdegree k _ hu.2 _ hφaS
+    exact (natDegree_prod_map _ _ _ fun k _ ↦ hfiber k _ hu.2).trans
+      ((Finset.sum_congr rfl fun k _ ↦ hdegree k _ hu.2 _ hφaS).trans
+        (natDegree_prod_map _ _ _ fun k _ ↦ hfiber k _ hφaS).symm)
   obtain ⟨m, hm⟩ := ENat.ne_top_iff_exists.mp
     (MvPolynomial.orderAt_eq_top_iff.not.mpr hdiscr_ne : p.discr.orderAt (φ a) ≠ ⊤)
   have hm' : ∀ᶠ u in 𝓝 a, p.discr.orderAt (φ u) = (m : ℕ∞) := by
@@ -171,7 +153,7 @@ private lemma exists_delineation_orderAt_prod_eq_ball {a : Fin d → ℝ} {r : �
     (MvPolynomial.orderAt_eq_top_iff.not.mpr hdiscr_ne : p.discr.orderAt (φ a) ≠ ⊤)
   simpa only [hθ u, hθ v] using
     p.orderAt_root_eq_of_orderAt_discr_eq isOpen_ball (convex_ball a r).isPreconnected hφr
-      (fun z hz ↦ prod_map_eval_ne_zero fun k ↦ hfiber k _ (hrmem ⟨z, hz⟩))
+      (fun z hz ↦ prod_map_ne_zero _ _ _ fun k _ ↦ hfiber k _ (hrmem ⟨z, hz⟩))
       (fun z hz ↦ (hdiscr _ (hrmem ⟨z, hz⟩) _ hφaS).trans hm.symm) hθcont hroot u.2 v.2
 
 /-- **Chart-local lifting of a non-nullified family.** Let `e` be an analytic chart of `S` around
