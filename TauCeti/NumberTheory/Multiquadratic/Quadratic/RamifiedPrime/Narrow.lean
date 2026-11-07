@@ -134,7 +134,11 @@ theorem exists_nonempty_prod_narrowMk0_eq_one_of_unit
     refine mul_right_cancel₀ hm0' ?_
     rw [mul_assoc]
     exact h
-  have hone := NarrowClassGroup.prod_mk0_eq_one_of_prod_eq_span hmin hgen hpos hγ0 hσγ hprodeq
+  have hone : ∏ p ∈ S, NarrowClassGroup.mk0 (Q p) = 1 := by
+    rw [← map_prod]
+    refine NarrowClassGroup.mk0_eq_one_of_eq_span hmin hgen hpos hγ0 hσγ ?_
+    rw [Submonoid.coe_finsetProd]
+    exact hprodeq
   refine ⟨S, ?_, hS, hone⟩
   rcases S.eq_empty_or_nonempty with rfl | hSne
   · rw [Finset.prod_empty, Ideal.one_eq_top, eq_comm, Ideal.span_singleton_eq_top] at hprodeq
