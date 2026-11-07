@@ -231,21 +231,8 @@ theorem quantumComplexDirectSumIso_inv_f_ι_basis (i j : ℤ) (e : D.EnhancedSta
     ((D.quantumComplexDirectSumIso hD R).inv.f i).hom
       (((Sigma.ι (D.khovanovComplex hD R) j).f i).hom
         (D.khovanovEnhancedBasis hD R j i e)) =
-      Finsupp.single (D.totalEnhancedStateAtEquiv i ⟨j, e⟩) 1 := by
-  have h := congrArg (fun f ↦ (f.f i).hom (D.khovanovEnhancedBasis hD R j i e))
-    (D.quantumComplexDirectSumIso_ι hD R j)
-  simp only [comp_f, khovanovEnhancedComplexIso_hom_f,
-    khovanovTotalEnhancedComplexι_f] at h
-  -- Identify the bundled coefficient terms to let the basis representation simplify.
-  change ((D.quantumComplexDirectSumIso hD R).inv.f i).hom
-    (((Sigma.ι (D.khovanovComplex hD R) j).f i).hom
-      (D.khovanovEnhancedBasis hD R j i e)) =
-    Finsupp.lmapDomain R R
-      (fun e : D.EnhancedStateAt i j ↦ D.totalEnhancedStateAtEquiv i ⟨j, e⟩)
-      ((D.khovanovEnhancedBasis hD R j i).repr
-        (D.khovanovEnhancedBasis hD R j i e)) at h
-  simpa only [Module.Basis.repr_self,
-    Finsupp.lmapDomain_apply, Finsupp.mapDomain_single] using h
+      Finsupp.single (D.totalEnhancedStateAtEquiv i ⟨j, e⟩) 1 :=
+  D.quantumComplexDirectSumXIso_hom_ι_basis hD R i j e
 
 /-- On coefficient basis vectors the cochain comparison is the homogeneous state inclusion. -/
 @[simp↓]
@@ -253,10 +240,8 @@ theorem quantumComplexDirectSumIso_hom_f_single (i j : ℤ) (e : D.EnhancedState
     ((D.quantumComplexDirectSumIso hD R).hom.f i).hom
       (Finsupp.single (D.totalEnhancedStateAtEquiv i ⟨j, e⟩) 1) =
         ((Sigma.ι (D.khovanovComplex hD R) j).f i).hom
-          (D.khovanovEnhancedBasis hD R j i e) := by
-  rw [← D.quantumComplexDirectSumIso_inv_f_ι_basis hD R i j e,
-    quantumComplexDirectSumIso_inv_f, quantumComplexDirectSumIso_hom_f]
-  exact ModuleCat.inv_hom_apply _ _
+          (D.khovanovEnhancedBasis hD R j i e) :=
+  D.quantumComplexDirectSumXIso_inv_single hD R i j e
 
 /-- The differential on a homogeneous ordinary basis vector is the original quantum-component
 differential, included in the quantum total and then expressed in ordinary coordinates. -/
