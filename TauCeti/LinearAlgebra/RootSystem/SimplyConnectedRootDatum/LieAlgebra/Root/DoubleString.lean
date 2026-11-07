@@ -7,8 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Subgroup
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.StructureConstant
-import TauCeti.RingTheory.Nilpotent.RootString.Basic
-import TauCeti.RingTheory.Nilpotent.ChevalleyCommutator
+import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Commutator.Basic
 
 /-!
 # Chevalley commutators along a double root string
@@ -47,7 +46,7 @@ variable {t : DynkinType} {ht : t.Valid} {α β γ δ : Fin t.numRoots}
 
 /-- Along a root string starting at `β`, the bracket at its next step has even structure
 constant. Division by two here is in `ℤ`, not in a value ring. -/
-theorem two_mul_structureConstant_div_two_of_chainBotCoeff_eq_zero
+theorem two_mul_structureConstant_ediv_two_of_chainBotCoeff_eq_zero
     (hγ : (t.simplyConnectedRootDatum ht).root γ =
       (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
     (hδ : (t.simplyConnectedRootDatum ht).root δ =
@@ -77,8 +76,41 @@ theorem lie_lie_chevalleySystem_of_chainBotCoeff_eq_zero
   rw [lie_chevalleySystem_eq_structureConstant_zsmul hγ, lie_zsmul,
     lie_chevalleySystem_eq_structureConstant_zsmul hδ, smul_smul]
   congr 1
-  have := two_mul_structureConstant_div_two_of_chainBotCoeff_eq_zero hγ hδ hbot
+  have := two_mul_structureConstant_ediv_two_of_chainBotCoeff_eq_zero hγ hδ hbot
   linear_combination -t.structureConstant ht α β * this
+
+/-- If the `α`-string through `β` starts at `β` and has two further roots, the reverse
+`β`-string through `α` has top coefficient one. -/
+theorem chainTopCoeff_eq_one_of_chainBotCoeff_eq_zero_of_chainTopCoeff_eq_two
+    (hγ : (t.simplyConnectedRootDatum ht).root γ =
+      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
+    (hbot : (t.simplyConnectedRootDatum ht).chainBotCoeff α β = 0)
+    (htop : (t.simplyConnectedRootDatum ht).chainTopCoeff α β = 2) :
+    (t.simplyConnectedRootDatum ht).chainTopCoeff β α = 1 := by
+  let P := t.simplyConnectedRootDatum ht
+  let : P.IsReduced := t.isReduced_simplyConnectedRootDatum ht
+  have hli : LinearIndependent ℤ ![P.root α, P.root β] :=
+    P.linearIndependent_of_add_mem_range_root' ⟨γ, hγ⟩
+  have hli' : LinearIndependent ℤ ![P.root β, P.root α] :=
+    LinearIndependent.pair_symm_iff.mp hli
+  have hbot' : P.chainBotCoeff β α = 0 := by
+    apply P.chainBotCoeff_eq_zero_iff.mpr
+    right
+    rw [← P.neg_mem_range_root_iff, neg_sub]
+    exact (P.chainBotCoeff_eq_zero_iff.mp hbot).resolve_left (not_not.mpr hli)
+  have hne : P.root α ≠ P.root β := by
+    intro h
+    exact one_ne_zero (hli.eq_zero_of_pair' (s := 1) (t := 1) (by simpa using h)).1
+  have hneg : P.root α ≠ -P.root β := by
+    intro h
+    exact one_ne_zero (hli.eq_zero_of_pair' (s := 1) (t := -1) (by simpa using h)).1
+  have hpair := P.pairingIn_pairingIn_mem_set_of_isCrystal_of_isRed' α β hne hneg
+  have hp := P.chainBotCoeff_sub_chainTopCoeff hli
+  have hp' := P.chainTopCoeff_sub_chainBotCoeff hli'
+  simp only [Set.mem_insert_iff, Set.mem_singleton_iff, Prod.mk.injEq] at hpair
+  rw [hbot, htop] at hp
+  rw [hbot'] at hp'
+  omega
 
 private theorem doubleString_brackets
     (hγ : (t.simplyConnectedRootDatum ht).root γ =
@@ -96,25 +128,9 @@ private theorem doubleString_brackets
     P.linearIndependent_of_add_mem_range_root' ⟨γ, hγ⟩
   have hli' : LinearIndependent ℤ ![P.root β, P.root α] :=
     LinearIndependent.pair_symm_iff.mp hli
-  have hrev : P.chainTopCoeff β α = 1 := by
-    have hbot' : P.chainBotCoeff β α = 0 := by
-      apply P.chainBotCoeff_eq_zero_iff.mpr
-      right
-      rw [← P.neg_mem_range_root_iff, neg_sub]
-      exact (P.chainBotCoeff_eq_zero_iff.mp hbot).resolve_left (not_not.mpr hli)
-    have hne : P.root α ≠ P.root β := by
-      intro h
-      exact one_ne_zero (hli.eq_zero_of_pair' (s := 1) (t := 1) (by simpa using h)).1
-    have hneg : P.root α ≠ -P.root β := by
-      intro h
-      exact one_ne_zero (hli.eq_zero_of_pair' (s := 1) (t := -1) (by simpa using h)).1
-    have hpair := P.pairingIn_pairingIn_mem_set_of_isCrystal_of_isRed' α β hne hneg
-    have hp := P.chainBotCoeff_sub_chainTopCoeff hli
-    have hp' := P.chainTopCoeff_sub_chainBotCoeff hli'
-    simp only [Set.mem_insert_iff, Set.mem_singleton_iff, Prod.mk.injEq] at hpair
-    rw [hbot, htop] at hp
-    rw [hbot'] at hp'
-    omega
+  -- The two string bounds and reducedness exclude the three unwanted root sums.
+  have hrev := chainTopCoeff_eq_one_of_chainBotCoeff_eq_zero_of_chainTopCoeff_eq_two
+    hγ hbot htop
   have hn (a b : ℤ) (hb : b ≠ 0) : a • P.root α + b • P.root β ≠ 0 :=
     fun hz ↦ hb (LinearIndependent.pair_iff.mp hli a b hz).2
   have hthree : P.root β + 3 • P.root α ∉ Set.range P.root := by
@@ -134,6 +150,7 @@ private theorem doubleString_brackets
     rw [hγ]; module
   have hbd : P.root β + P.root δ = P.root γ + P.root γ := by
     rw [hδ, hγ]; module
+  -- Expand the local datum abbreviation to apply the root-vector bracket API.
   dsimp only [P] at had hbg hbd hn hthree htwo hdouble
   refine ⟨lie_chevalleySystem_eq_zero ?_ ?_, lie_chevalleySystem_eq_zero ?_ ?_,
     lie_chevalleySystem_eq_zero ?_ ?_⟩
@@ -181,42 +198,30 @@ theorem chevalleyRootSubgroup_mul_of_doubleString
               (u ^ 2 * v)))) *
         chevalleyRootSubgroup ρ M hM hnil α A (Multiplicative.ofAdd u) := by
   obtain ⟨had, hbg, _⟩ := doubleString_brackets hγ hδ hbot htop
-  let x (k : Fin t.numRoots) := ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ
-    (t.chevalleySystem ht k))
-  let c := t.structureConstant ht α β
-  let d := c * (t.structureConstant ht α γ / 2)
-  have hij := lie_chevalleySystem_eq_structureConstant_zsmul hγ
-  have hiij := lie_lie_chevalleySystem_of_chainBotCoeff_eq_zero hγ hδ hbot
-  have hxy := mul_eq_mul_add_zsmul_of_lie_eq ρ hij
-  have hxz : x α * (c • x γ) = c • x γ * x α + 2 • (d • x δ) := by
-    rw [hij, lie_zsmul] at hiij
-    simpa only [one_zsmul, one_mul] using
-      (zsmul_mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq ρ
-        (p := 1) (q := c) (r := d) (n := 2) (by simpa [c, d] using hiij))
-  -- Form the two scaled root vectors integrally, before extending scalars to the value ring.
-  have hscaled (z : ℤ) (k : Fin t.numRoots) (n : ℕ) :
-      ∀ w ∈ M, Associative.dividedPower n (z • x k) • w ∈ M := by
-    intro w hw
-    rw [Associative.dividedPower_zsmul, smul_assoc]
-    exact M.zsmul_mem (dividedPower_chevalleySystem_smul_mem ρ M hM hnil k n w hw) _
-  have hMc := hscaled c γ
-  have hMd := hscaled d δ
-  have hmul := baseChangeExp_mul_baseChangeExp_of_commutator_eq_two_nsmul M hxy hxz
-    ((commute_of_lie_eq_zero ρ had).smul_right d)
-    ((commute_of_lie_eq_zero ρ hbg).smul_right c)
+  -- All-root divided-power stability lets us use the existing Kostant relation.
+  have hMall : ∀ z ∈ kostantForm (t.chevalleySystem ht) (t.lieBasis ht).h,
+      ∀ w ∈ M, ρ z w ∈ M := by
+    intro z hz w hw
+    apply kostantForm_apply_mem (t.chevalleySystem ht) (t.lieBasis ht).h ρ
+      M.toIntSubmodule ?_ ?_ z hz hw
+    · intro k n w hw
+      rw [Associative.map_dividedPower]
+      exact dividedPower_chevalleySystem_smul_mem ρ M hM hnil k n w hw
+    · intro k n w hw
+      exact hM _ (ringChoose_mem_kostantForm _ _ k n) w hw
+  have hmul := kostantRootSubgroupPoints_mul_of_lie_lie_eq'
+    (t.chevalleySystem ht) (t.lieBasis ht).h ρ M hMall
+    (lie_chevalleySystem_eq_structureConstant_zsmul hγ)
+    (lie_lie_chevalleySystem_of_chainBotCoeff_eq_zero hγ hδ hbot) had hbg
     (isNilpotent_apply_ι_chevalleySystem ρ hnil α)
     (isNilpotent_apply_ι_chevalleySystem ρ hnil β)
-    ((isNilpotent_apply_ι_chevalleySystem ρ hnil γ).smul c)
-    (dividedPower_chevalleySystem_smul_mem ρ M hM hnil α)
-    (dividedPower_chevalleySystem_smul_mem ρ M hM hnil β) hMc hMd u v
-  rw [baseChangeExp_zsmul c M
-      (dividedPower_chevalleySystem_smul_mem ρ M hM hnil γ) hMc
-      (isNilpotent_apply_ι_chevalleySystem ρ hnil γ),
-    baseChangeExp_zsmul d M
-      (dividedPower_chevalleySystem_smul_mem ρ M hM hnil δ) hMd
-      (isNilpotent_apply_ι_chevalleySystem ρ hnil δ)] at hmul
+    (isNilpotent_apply_ι_chevalleySystem ρ hnil γ)
+    (isNilpotent_apply_ι_chevalleySystem ρ hnil δ)
+    ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm (Multiplicative.ofAdd u))
+    ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm (Multiplicative.ofAdd v))
   apply Units.ext
-  simpa only [Units.val_mul, chevalleyRootSubgroup_val, toAdd_ofAdd, mul_assoc] using hmul
+  simpa only [Units.val_mul, chevalleyRootSubgroup_val, kostantRootSubgroupPoints_val,
+    MulEquiv.apply_symm_apply, toAdd_ofAdd, mul_assoc] using congrArg Units.val hmul
 
 /-- The Chevalley element-commutator formula for a double string. Its root-string conditions
 specify the positive rank-two combinations `α + β` and `2α + β`; no Lie-bracket conditions or
