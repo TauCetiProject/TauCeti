@@ -39,6 +39,8 @@ their additive homomorphisms to `ZMod n`.
   `n`-th roots of unity.
 * `TauCeti.hasEnoughRootsOfUnity_multiplicative_zmod_exponent`: `Multiplicative (ZMod n)` has
   enough `e`-th roots of unity for the exponent `e` of any additive monoid killed by `n`.
+* `IsPrimitiveRoot.natCard_rootsOfUnity_of_isCyclic`: a cyclic `μ_k` containing a primitive `k`-th
+  root has `k` elements.
 * `IsPrimitiveRoot.zpowers_eq_of_isCyclic`: a primitive `k`-th root generates `μ_k` once `μ_k` is
   cyclic.
 * `IsPrimitiveRoot.zmodEquivRootsOfUnity`: `ℤ/k ≃+ Additive (μ_k)`, given a primitive `k`-th root
@@ -58,9 +60,9 @@ that it reads like `IsPrimitiveRoot.zmodEquivZPowers` which it extends; the base
 a field to any commutative monoid whose `k`-th roots of unity form a cyclic group, which is all
 `zpowers_eq_of_isCyclic` asks for; and the four characterising lemmas below — the equivalence and
 its inverse, each at an integer and at a natural exponent — are added, none of which the source
-has. The remaining declarations of this file — `zpowers_eq_of_isCyclic`, the `ZMod k`-module
-structure on `μ_k` written additively and the roots of unity of `Multiplicative (ZMod n)` — have no
-counterpart in that source.
+has. The remaining declarations of this file — `natCard_rootsOfUnity_of_isCyclic`,
+`zpowers_eq_of_isCyclic`, the `ZMod k`-module structure on `μ_k` written additively and the roots
+of unity of `Multiplicative (ZMod n)` — have no counterpart in that source.
 -/
 
 public section
@@ -116,14 +118,23 @@ namespace IsPrimitiveRoot
 
 variable {M : Type*} [CommMonoid M] {k : ℕ} [NeZero k] [IsCyclic (rootsOfUnity k M)] {ζ : Mˣ}
 
+/-- **`μ_k` has exactly `k` elements once it is cyclic and contains a primitive `k`-th root**.
+This extends Mathlib's `IsPrimitiveRoot.card_rootsOfUnity'` from domains, where `μ_k` is always
+cyclic, to any commutative monoid. -/
+theorem natCard_rootsOfUnity_of_isCyclic (h : IsPrimitiveRoot ζ k) :
+    Nat.card (rootsOfUnity k M) = k :=
+  have : HasEnoughRootsOfUnity M k := ⟨⟨ζ, coe_units_iff.2 h⟩, ‹_›⟩
+  HasEnoughRootsOfUnity.natCard_rootsOfUnity M k
+
 /-- **A primitive `k`-th root of unity generates `μ_k` once `μ_k` is cyclic**. This extends
 Mathlib's `IsPrimitiveRoot.zpowers_eq` from domains, where `μ_k` is always cyclic, to any
 commutative monoid. -/
 theorem zpowers_eq_of_isCyclic (h : IsPrimitiveRoot ζ k) :
     Subgroup.zpowers ζ = rootsOfUnity k M := by
-  have : HasEnoughRootsOfUnity M k := ⟨⟨ζ, coe_units_iff.2 h⟩, ‹_›⟩
+  have hcard := h.natCard_rootsOfUnity_of_isCyclic
+  have : Finite (rootsOfUnity k M) := Nat.finite_of_card_ne_zero (hcard.trans_ne (NeZero.ne k))
   refine Subgroup.eq_of_le_of_card_ge (Subgroup.zpowers_le_of_mem h.pow_eq_one) ?_
-  rw [HasEnoughRootsOfUnity.natCard_rootsOfUnity, Nat.card_zpowers, h.eq_orderOf]
+  rw [hcard, Nat.card_zpowers, h.eq_orderOf]
 
 /-- **`ℤ/k` is the group of `k`-th roots of unity**, written additively, once a primitive `k`-th
 root of unity is chosen and `μ_k` is cyclic (as it is over a domain): that root then generates
@@ -134,15 +145,15 @@ noncomputable def zmodEquivRootsOfUnity (h : IsPrimitiveRoot ζ k) :
     (fun x => by
       obtain ⟨i, hi⟩ := Subgroup.mem_zpowers_iff.1 (h.zpowers_eq_of_isCyclic.ge x.toMul.2)
       exact ⟨i, Additive.toMul.injective (Subtype.ext hi)⟩)
-    (by rw [Nat.card_congr Additive.toMul, ← h.zpowers_eq_of_isCyclic, Nat.card_zpowers,
-      h.eq_orderOf])
+    ((Nat.card_congr Additive.toMul).trans h.natCard_rootsOfUnity_of_isCyclic)
 
 /-- **The equivalence sends the class of an integer `i` to `ζ ^ i`**, which determines it on all
 of `ZMod k` since every class is the class of an integer. -/
 @[simp]
 theorem coe_zmodEquivRootsOfUnity_apply_intCast (h : IsPrimitiveRoot ζ k) (i : ℤ) :
     ((h.zmodEquivRootsOfUnity (i : ZMod k)).toMul : Mˣ) = ζ ^ i := by
-  simp [zmodEquivRootsOfUnity]
+  rw [zmodEquivRootsOfUnity, zmodAddEquivOfGenerator_apply_intCast, toMul_zsmul,
+    Subgroup.coe_zpow, toMul_ofMul]
 
 /-- **The equivalence sends the class of a natural number `i` to `ζ ^ i`**, the natural-exponent
 reading of `coe_zmodEquivRootsOfUnity_apply_intCast`. -/
