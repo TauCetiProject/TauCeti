@@ -189,17 +189,6 @@ theorem lower_ofSegments_append_append {l₁ l₂ l₃ : List V}
   rw [hr₁, hr₃]
   simp only [ofSegments_append, hr₂, mul_assoc]
 
-/-- Cutting a segment `v` of a path at the fraction `θ ∈ [0, 1]`, in the middle of the segments
-`a ++ m ++ v :: r`, does not change the path presented by the segments. -/
-theorem ofSegments_append_cut_eq {a m r : List V} {v : V} {θ : 𝕜} (hθ₀ : 0 ≤ θ) (hθ₁ : θ ≤ 1) :
-    ofSegments 𝕜 (a ++ (m ++ [θ • v]) ++ ((1 - θ) • v :: r)) =
-      ofSegments 𝕜 (a ++ m ++ v :: r) := by
-  have hr : a ++ (m ++ [θ • v]) ++ ((1 - θ) • v :: r) =
-      (a ++ m) ++ (θ • v :: (1 - θ) • v :: r) := by
-    simp only [List.append_assoc, List.singleton_append]
-  rw [hr, ofSegments_append (a ++ m), ofSegments_append (a ++ m),
-    ofSegments_smul_cons_smul_cons hθ₀ (sub_nonneg.mpr hθ₁), add_sub_cancel, one_smul]
-
 /-- **Lowering a path whose height rises strictly from a minimum.** Let `h` be the minimal height of
 the path presented by `l`, attained at the vertex `k₀`. Suppose the height rises strictly from the
 vertex `k₀` to the vertex `k₁`, is at most `h + 1` at the vertex `k₁ - 1`, and is at least
