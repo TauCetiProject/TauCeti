@@ -484,6 +484,21 @@ theorem tendsto_ofReal_add_cpow_neg (x : ℂ) {s : ℝ} (hs : 0 < s) :
   simp only [← Complex.ofReal_neg, Complex.norm_cpow_real]
   exact (tendsto_rpow_neg_atTop hs).comp hnorm
 
+/-- The principal power of a nonzero complex number by a positive real exponent `r` has positive
+imaginary part when the argument `θ` of the number satisfies `0 < θ` and `θ * r < π`. -/
+theorem im_cpow_ofReal_pos {u : ℂ} {r : ℝ} (hr : 0 < r) (hu : u ≠ 0) (h0 : 0 < arg u)
+    (hπ : arg u * r < Real.pi) : 0 < (u ^ (r : ℂ)).im := by
+  rw [cpow_ofReal_im]
+  exact mul_pos (Real.rpow_pos_of_pos (norm_pos_iff.mpr hu) _)
+    (Real.sin_pos_of_pos_of_lt_pi (mul_pos h0 hr) hπ)
+
+/-- The principal power of a complex number by a real exponent `r` is real when `arg u * r` is `0`
+or `π`. -/
+theorem im_cpow_ofReal_eq_zero {u : ℂ} {r : ℝ} (h : arg u * r = 0 ∨ arg u * r = Real.pi) :
+    (u ^ (r : ℂ)).im = 0 := by
+  rw [cpow_ofReal_im]
+  rcases h with h | h <;> rw [h] <;> simp
+
 /-- The function `t ↦ -2 (t + x)^(1/2) (t + y)⁻¹` is continuous at `0` from the right, even when
 `x = 0` (as `re (1/2) > 0`). -/
 theorem continuousWithinAt_neg_two_cpow_half_mul_inv {x y : ℂ}
