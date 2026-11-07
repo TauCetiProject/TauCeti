@@ -59,10 +59,13 @@ theorem existsUnique_framedGauge_of_forall_section_eq_mul
     have hz := hα z
     simp only [sectionValue_apply] at hz
     linear_combination hz / 2
+  -- A common unit end phase supplies both modulus limits used by the maximum principle.
+  have hphase' : Tendsto (fun z ↦ ‖phase z‖) (cocompact ℂ) (𝓝 1) :=
+    tendsto_const_nhds.congr' (hphase.mono fun _ h ↦ h.symm)
   obtain ⟨f, hf, hfactor, hfields⟩ :=
     exists_eq_phaseGauge_of_forall_section_eq_mul hxb₁ hxb₂ hxp hxq hyb₁ hyb₂ hyp hyq
-      hxsol hysol (tendsto_normSq_of_tendsto_sectionValue_mul hphase hxlim)
-      (tendsto_normSq_of_tendsto_sectionValue_mul hphase hylim) (hh.of_le (by simp)) hh₀ hα'
+      hxsol hysol (tendsto_normSq_of_tendsto_sectionValue_mul hphase' hxlim)
+      (tendsto_normSq_of_tendsto_sectionValue_mul hphase' hylim) (hh.of_le (by simp)) hh₀ hα'
       hdense
   let u : ℂ → Circle := fun z ↦ Circle.exp (f z)
   have hucoe (z : ℂ) : (u z : ℂ) = h z := (hfactor z).symm
