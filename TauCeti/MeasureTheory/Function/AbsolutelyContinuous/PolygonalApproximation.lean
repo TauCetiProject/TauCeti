@@ -65,11 +65,7 @@ private theorem polygonal_primitive (hab : a < b) (N : ℕ) (hN : 0 < N)
     rw [intervalIntegrable_iff, uIoc_of_le hab.le]
     exact (integrableOn_intervalStep a b δ g).add (integrable_const c)
   refine ⟨N, hN, s, hs, by simp [s], hlast, fun i t ht ↦ ?_⟩
-  have hnode (j : Fin (N + 1)) : s j ∈ uIcc a b := by
-    rw [uIcc_of_le hab.le]
-    constructor
-    · simpa only [show s 0 = a from by simp [s]] using hs.monotone (Fin.zero_le _)
-    · simpa only [hlast] using hs.monotone (Fin.le_last _)
+  have hnode := TauCeti.subdivision_mem_uIcc hs.monotone (show s 0 = a by simp [s]) hlast
   have hleft := hnode i.castSucc
   have hright := hnode i.succ
   have heq (u : ℝ) (hu : u ∈ Icc (s i.castSucc) (s i.succ)) :

@@ -79,8 +79,7 @@ theorem integral_circulationFun_eq_polygon {γ : ℝ → ℂ} {a b : ℝ} {N : �
   have hγ := AbsolutelyContinuousOnInterval.of_affine_subdivision hs ha hb hsegments
   have hab : a ≤ b := by rw [← ha, ← hb]; exact hs.monotone (Fin.zero_le _)
   have hmem (i : Fin (N + 1)) : s i ∈ Icc a b := by
-    rw [← ha, ← hb]
-    exact ⟨hs.monotone (Fin.zero_le _), hs.monotone (Fin.le_last _)⟩
+    simpa only [uIcc_of_le hab] using TauCeti.subdivision_mem_uIcc hs.monotone ha hb i
   have hint := hγ.intervalIntegrable_circulationFun hP hQ
   let t : ℕ → ℝ := fun k ↦ s (Fin.ofNat (N + 1) k)
   have ht (i : Fin (N + 1)) : t i = s i := by simp [t]
