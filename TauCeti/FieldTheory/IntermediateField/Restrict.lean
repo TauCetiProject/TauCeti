@@ -43,14 +43,18 @@ variable {K L : Type*} [Field K] [Field L] [Algebra K L] (E : IntermediateField 
 to `E`. -/
 noncomputable def restrictAlgEquivHom : (L ≃ₐ[K] L) →* (E ≃ₐ[K] E) where
   toFun σ := (E.equivMap σ.toAlgHom).trans (equivOfEq (hE σ))
-  map_one' := AlgEquiv.ext fun _ ↦ rfl
-  map_mul' _ _ := AlgEquiv.ext fun _ ↦ rfl
+  map_one' := by
+    ext y
+    simp [coe_equivMap_apply, equivOfEq_apply]
+  map_mul' σ τ := by
+    ext y
+    simp [coe_equivMap_apply, equivOfEq_apply]
 
 /-- The restriction of `σ` to `E` acts as `σ`. -/
 @[simp]
 theorem coe_restrictAlgEquivHom_apply (σ : L ≃ₐ[K] L) (y : E) :
-    (restrictAlgEquivHom E hE σ y : L) = σ y :=
-  (rfl)
+    (restrictAlgEquivHom E hE σ y : L) = σ y := by
+  simp [restrictAlgEquivHom, coe_equivMap_apply, equivOfEq_apply]
 
 /-- The inverse of the restriction of `σ` to `E` acts as `σ⁻¹`. -/
 @[simp]
