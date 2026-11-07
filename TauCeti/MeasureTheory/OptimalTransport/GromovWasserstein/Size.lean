@@ -81,7 +81,7 @@ theorem edist_gromovWassersteinSize_le_gromovWassersteinEDist
 /-- Finite `p`-size about `z₀` transfers across finite Gromov–Wasserstein distance, for every
 exponent `1 ≤ p ≤ ∞` and any pseudo-extended-metric target `Z`. -/
 theorem memLp_edist_of_gromovWassersteinEDist_ne_top
-    [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] {p : ℝ≥0∞} {z₀ : Z} (hp : 1 ≤ p)
+    [IsProbabilityMeasure μ] {p : ℝ≥0∞} {z₀ : Z} (hp : 1 ≤ p)
     (hωX : AEStronglyMeasurable ωX (μ.prod μ)) (hωY : AEStronglyMeasurable ωY (ν.prod ν))
     (hmem : MemLp (fun q ↦ edist (ωX q) z₀) p (μ.prod μ))
     (hd : gromovWassersteinEDist p μ ωX ν ωY ≠ ∞) :
