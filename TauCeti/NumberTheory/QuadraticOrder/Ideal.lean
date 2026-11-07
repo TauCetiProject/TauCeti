@@ -46,21 +46,6 @@ private theorem generators_neg_left (D : ℤ) [Fact (¬ IsSquare D)]
   · rintro ⟨m, n, hmn⟩
     exact (hgen z).mpr ⟨-m, n, by simpa using hmn⟩
 
-/-- Two elements of a quadratic algebra whose rational span is everything cannot both have
-vanishing imaginary coordinate. -/
-theorem im_ne_zero_or_im_ne_zero_of_span_range_eq_top (D : ℤ)
-    (a : Fin 2 → QuadraticAlgebra ℚ (D : ℚ) 0) (hspan : Submodule.span ℚ (Set.range a) = ⊤) :
-    (a 0).im ≠ 0 ∨ (a 1).im ≠ 0 := by
-  by_contra! hzero
-  have hω : (omega : QuadraticAlgebra ℚ (D : ℚ) 0) ∈ Submodule.span ℚ (Set.range a) := by
-    rw [hspan]
-    exact Submodule.mem_top
-  obtain ⟨t, ht⟩ := (Submodule.mem_span_range_iff_exists_fun ℚ).mp hω
-  have him := congrArg QuadraticAlgebra.im ht
-  simp only [Fin.sum_univ_two, im_add, im_smul, im_omega, smul_eq_mul, hzero.1, hzero.2,
-    mul_zero, add_zero] at him
-  norm_num at him
-
 /-- Independent sign changes of the two generators of an ideal, one of which is real and nonzero
 and the other of which has nonzero imaginary coordinate, give a positive rational generator and a
 generator of positive imaginary coordinate. -/
@@ -118,7 +103,7 @@ theorem exists_rational_axis_generators (D : ℤ) [Fact (¬ IsSquare D)]
   let r₀ := (b 0 : QuadraticAlgebra ℚ (D : ℚ) 0).im
   let r₁ := (b 1 : QuadraticAlgebra ℚ (D : ℚ) 0).im
   have hrat : r₀ ≠ 0 ∨ r₁ ≠ 0 :=
-    im_ne_zero_or_im_ne_zero_of_span_range_eq_top D (fun i ↦ (b i : QuadraticAlgebra ℚ (D : ℚ) 0))
+    im_ne_zero_or_im_ne_zero_of_span_range_eq_top (fun i ↦ (b i : QuadraticAlgebra ℚ (D : ℚ) 0))
       (GlobalNumberFields.NumberFieldOrder.span_rat_range_basis hI b)
   -- A reduced rational ratio gives a primitive integral relation on imaginary coordinates.
   obtain ⟨u, v, huv, hprim⟩ := Rat.exists_isCoprime_intCast_mul_add_intCast_mul_eq_zero r₀ r₁
