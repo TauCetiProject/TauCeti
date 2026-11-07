@@ -25,9 +25,11 @@ Markov's inequality.
 
 * `TauCeti.isTightMeasureSet_of_finite`: a finite set of finite measures is tight.
 * `TauCeti.isTightMeasureSet_range_of_finite`: a family of finite measures indexed by a finite type
-  has tight range;
+  has tight range.
 * `TauCeti.isTightProbabilityMeasureSet_of_integral_sq_le`: a set of real probability measures
   with uniformly bounded second moments is tight.
+* `TauCeti.isTightMeasureSet_image_map_of_eventually_eq`: images under a map of finite measures that
+  are eventually equal to a fixed finite measure form a tight family.
 
 ## References
 
@@ -93,6 +95,25 @@ theorem isTightProbabilityMeasureSet_of_integral_sq_le
   refine (ENNReal.le_ofReal_iff_toReal_le (measure_ne_top _ _) hε'.le).2 ?_ |>.trans_eq
     (ENNReal.ofReal_toReal hεtop)
   exact hreal.trans hR1.le
+
+/-- **Eventually constant images of finite measures are tight.** If the images of finite measures
+`η n` under a map `f` are eventually equal to a finite measure `ν`, then the family of images is
+tight: it is a finite set together with the constant tail. -/
+theorem isTightMeasureSet_image_map_of_eventually_eq {Y : Type*} [MeasurableSpace Y]
+    (η : ℕ → Measure Y) [∀ n, IsFiniteMeasure (η n)] (f : Y → α) (ν : Measure α)
+    [IsFiniteMeasure ν] (m : ℕ) (h : ∀ n ≥ m, (η n).map f = ν) :
+    IsTightMeasureSet ((fun P : Measure Y ↦ P.map f) '' range η) := by
+  refine (isTightMeasureSet_of_finite (((finite_Iio m).image fun n ↦ (η n).map f).insert ν)
+    ?_).subset ?_
+  · rintro ρ (rfl | ⟨n, -, rfl⟩)
+    · infer_instance
+    · infer_instance
+  · rintro _ ⟨_, ⟨n, rfl⟩, rfl⟩
+    rcases lt_or_ge n m with hn | hn
+    · exact mem_insert_of_mem _ ⟨n, hn, rfl⟩
+    · dsimp only
+      rw [h n hn]
+      exact mem_insert _ _
 
 end TauCeti
 
