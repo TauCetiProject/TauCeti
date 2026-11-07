@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.RingHom.Etale
 public import Mathlib.RingTheory.Flat.TorsionFree
-public import Mathlib.RingTheory.TensorProduct.Quotient
 public import TauCeti.RingTheory.MvPolynomial.Squarefree
 public import TauCeti.RingTheory.Smooth.GeometricallyReduced
 
@@ -35,7 +34,6 @@ public section
 namespace TauCeti.SmoothPair
 
 open _root_.MvPolynomial
-open scoped TensorProduct
 
 variable (K : Type*) [Field K]
 
@@ -143,12 +141,7 @@ theorem isRadical (c : AlgebraicChart K σ I) : I.IsRadical := by
   let _ : IsReduced (A ⧸ J) := (Ideal.isRadical_iff_quotient_reduced J).mp hJ
   let _ := c.coord.toAlgebra
   let _ : Algebra.Etale A R := c.etale
-  have hred : IsReduced ((A ⧸ J) ⊗[A] R) :=
-    isReduced_of_smooth (A ⧸ J) ((A ⧸ J) ⊗[A] R)
-  let e := (Algebra.TensorProduct.quotIdealMapEquivTensorQuot R J).toRingEquiv.trans
-    (Algebra.TensorProduct.comm A R (A ⧸ J)).toRingEquiv
-  have hquot : IsReduced (R ⧸ J.map (algebraMap A R)) :=
-    isReduced_of_injective e e.injective
+  have hquot : IsReduced (R ⧸ J.map (algebraMap A R)) := isReduced_quotient_map_of_smooth A R J
   have hmap : J.map (algebraMap A R) = I := by
     rw [c.coord.algebraMap_toAlgebra]
     simp only [J, Ideal.map_span, Set.image_singleton]

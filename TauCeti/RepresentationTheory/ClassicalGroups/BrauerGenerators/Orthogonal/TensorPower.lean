@@ -479,82 +479,18 @@ theorem orthogonalCupCapAt_mul_mul_self {i j l : Fin d} (hij : i ≠ j) (hjl : j
     (hil : i ≠ l) :
     orthogonalCupCapAt k n d i j * orthogonalCupCapAt k n d j l * orthogonalCupCapAt k n d i j =
       orthogonalCupCapAt k n d i j := by
-  refine PiTensorProduct.ext ?_
-  ext v
-  -- The middle generator replaces the slots `j` and `l` by the `e`-th basis vector, at the cost of
-  -- the `c`-th coordinate of `v l`.
-  have hmid : ∀ c : Fin n, orthogonalCupCapAt k n d j l (PiTensorProduct.tprod k
-        (Function.update (Function.update v i (Pi.single c (1 : k))) j (Pi.single c 1))) =
-      v l c • ∑ e : Fin n, PiTensorProduct.tprod k (Function.update (Function.update
-        (Function.update (Function.update v i (Pi.single c (1 : k))) j (Pi.single c 1))
-        j (Pi.single e (1 : k))) l (Pi.single e 1)) := by
-    intro c
-    rw [orthogonalCupCapAt_tprod hjl]
-    simp only [Function.update_self, Function.update_of_ne (Ne.symm hil),
-      Function.update_of_ne (Ne.symm hjl), single_dotProduct, one_mul]
-  -- The outer generator then contracts the `c`-th against the `e`-th basis vector, so only the
-  -- diagonal term `e = c` survives, and it restores the slots `i` and `j` to the variable `f`.
-  have hout : ∀ c e : Fin n, orthogonalCupCapAt k n d i j (PiTensorProduct.tprod k
-        (Function.update (Function.update
-          (Function.update (Function.update v i (Pi.single c (1 : k))) j (Pi.single c 1))
-          j (Pi.single e (1 : k))) l (Pi.single e 1))) =
-      (if c = e then (1 : k) else 0) • ∑ f : Fin n, PiTensorProduct.tprod k (Function.update
-        (Function.update (Function.update v i (Pi.single f (1 : k))) j (Pi.single f 1))
-        l (Pi.single e 1)) := by
-    intro c e
-    have hi' : Function.update (Function.update
-        (Function.update (Function.update v i (Pi.single c (1 : k))) j (Pi.single c 1))
-        j (Pi.single e (1 : k))) l (Pi.single e 1) i = Pi.single c (1 : k) := by
-      simp [hij, hil]
-    have hj' : Function.update (Function.update
-        (Function.update (Function.update v i (Pi.single c (1 : k))) j (Pi.single c 1))
-        j (Pi.single e (1 : k))) l (Pi.single e 1) j = Pi.single e (1 : k) := by
-      rw [Function.update_of_ne hjl, Function.update_self]
-    have hplug : ∀ f : Fin n, Function.update (Function.update (Function.update
-          (Function.update (Function.update (Function.update v i (Pi.single c (1 : k))) j
-            (Pi.single c 1)) j (Pi.single e (1 : k))) l (Pi.single e 1))
-          i (Pi.single f (1 : k))) j (Pi.single f 1) =
-        Function.update (Function.update (Function.update v i (Pi.single f (1 : k))) j
-          (Pi.single f 1)) l (Pi.single e 1) := by
-      intro f
-      funext t
-      by_cases h1 : t = i <;> by_cases h2 : t = j <;> by_cases h3 : t = l <;> simp_all
-    rw [orthogonalCupCapAt_tprod hij, hi', hj', single_dotProduct, one_mul, Pi.single_apply,
-      Finset.sum_congr rfl fun f _ => congrArg _ (hplug f)]
-  -- Summing the surviving diagonal over `c` rebuilds the slot `l`.
-  have hrestore : ∀ f : Fin n, ∑ c : Fin n, v l c • PiTensorProduct.tprod k (Function.update
-        (Function.update (Function.update v i (Pi.single f (1 : k))) j (Pi.single f 1))
-        l (Pi.single c (1 : k))) =
-      PiTensorProduct.tprod k
-        (Function.update (Function.update v i (Pi.single f (1 : k))) j (Pi.single f 1)) := by
-    intro f
-    -- The slot `l` is untouched by the plug at `i` and `j`, so rewriting `v l` backwards along
-    -- this identity turns the reassembled sum into a plug of the tuple's own `l`-th entry.
-    have hplugged : Function.update (Function.update v i (Pi.single f (1 : k))) j
-        (Pi.single f 1) l = v l := by simp [Ne.symm hil, Ne.symm hjl]
-    rw [Finset.sum_congr rfl fun c _ => ((PiTensorProduct.tprod k).map_update_smul
-        (Function.update (Function.update v i (Pi.single f (1 : k))) j (Pi.single f 1)) l (v l c)
-        (Pi.single c (1 : k))).symm,
-      ← (PiTensorProduct.tprod k).map_update_sum, ← pi_eq_sum_univ' (v l), ← hplugged,
-      Function.update_eq_self]
-  have hfull : ∀ c : Fin n, orthogonalCupCapAt k n d i j (orthogonalCupCapAt k n d j l
-        (PiTensorProduct.tprod k
-          (Function.update (Function.update v i (Pi.single c (1 : k))) j (Pi.single c 1)))) =
-      ∑ f : Fin n, v l c • PiTensorProduct.tprod k (Function.update
-        (Function.update (Function.update v i (Pi.single f (1 : k))) j (Pi.single f 1))
-        l (Pi.single c (1 : k))) := by
-    intro c
-    rw [hmid c, map_smul, map_sum, Finset.sum_congr rfl fun e _ => hout c e]
-    simp only [ite_smul, one_smul, zero_smul]
-    rw [Finset.sum_ite_eq]
-    simp only [Finset.mem_univ, reduceIte]
-    rw [Finset.smul_sum]
-  rw [LinearMap.compMultilinearMap_apply, LinearMap.compMultilinearMap_apply,
-    mul_apply_eq_comp, mul_apply_eq_comp, orthogonalCupCapAt_tprod hij]
-  simp only [map_smul, map_sum]
-  refine congrArg _ ?_
-  rw [Finset.sum_congr rfl fun c _ => hfull c, Finset.sum_comm]
-  exact Finset.sum_congr rfl fun f _ => hrestore f
+  refine (tensorPowerBasis k n d).ext fun f => ?_
+  simp only [mul_apply_eq_comp, orthogonalCupCapAt_tensorPowerBasis hij]
+  by_cases hf : f i = f j
+  · -- The arc on `j, l` keeps only the label `f l` of the first cup, the outer arc only the label
+    -- `f l` of the second, and the result is the first cup again.
+    simp only [hf, ite_true, map_sum, orthogonalCupCapAt_tensorPowerBasis hjl,
+      orthogonalCupCapAt_tensorPowerBasis hij, Function.update_self, Function.update_of_ne hil,
+      Function.update_of_ne hjl, Function.update_of_ne hij, Function.update_of_ne hil.symm,
+      Function.update_of_ne hjl.symm, Finset.mem_univ, Finset.sum_ite_eq, Finset.sum_ite_eq']
+    refine Finset.sum_congr rfl fun c _ => congrArg _ (funext fun t => ?_)
+    by_cases hti : t = i <;> by_cases htj : t = j <;> by_cases htl : t = l <;> simp_all
+  · simp [hf]
 
 /-! ### The arc as an intertwiner -/
 

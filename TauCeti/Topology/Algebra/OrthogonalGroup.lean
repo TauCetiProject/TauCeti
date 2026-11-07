@@ -15,6 +15,7 @@ import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Generation
 public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Reflection
 import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
+import TauCeti.LinearAlgebra.OrthogonalGroup
 
 /-!
 # Closedness and path components of matrix orthogonal groups
@@ -35,6 +36,10 @@ to `r_u r_u = 1` by moving `w` to `u`: along the segment from `w` to `u` when it
 and directly otherwise, since then `w` is a multiple of `u` and `r_w = r_u`. The products joined to
 the identity form a submonoid, which therefore contains every special orthogonal matrix.
 
+Read through the action of orthogonal matrices on Euclidean space, two linear isometries of
+`EuclideanSpace ℝ ι` with the same determinant are joined by a path of linear isometries,
+continuous in the operator-norm topology.
+
 ## Main results
 
 * `TauCeti.Matrix.isClosed_orthogonalGroup` and `TauCeti.Matrix.isClosed_specialOrthogonalGroup`:
@@ -50,6 +55,8 @@ the identity form a submonoid, which therefore contains every special orthogonal
   followed by the reflection in `b + y`, a rotation taking `b` to `y`
   (`TauCeti.sphereRotation_mulVec`) that depends continuously on `y`
   (`TauCeti.continuousOn_sphereRotation`).
+* `TauCeti.exists_path_linearIsometryEquiv_of_det_eq`: two linear isometries of Euclidean space
+  with the same determinant are joined by an operator-norm-continuous path of linear isometries.
 
 The closedness statements identify the topological input supplied by these carriers for later
 constructions of Lie-group structures and continuity arguments on the corresponding subgroups.
@@ -305,5 +312,33 @@ theorem continuousOn_sphereRotation (b : sphere (0 : EuclideanSpace ℝ (Fin N))
   exact hM.congr fun y hy ↦ coe_sphereRotation_of_ne hy
 
 end Rotation
+
+/-! ### Paths of linear isometries -/
+
+open unitInterval
+
+variable {ι : Type*} [Fintype ι]
+
+/-- **Linear isometries of Euclidean space with the same determinant are joined by a path.** Two
+linear isometries `g` and `g'` of `EuclideanSpace ℝ ι` with the same determinant are joined by a
+path of linear isometries, continuous in the operator-norm topology. -/
+theorem exists_path_linearIsometryEquiv_of_det_eq
+    {g g' : EuclideanSpace ℝ ι ≃ₗᵢ[ℝ] EuclideanSpace ℝ ι}
+    (h : LinearMap.det g.toLinearMap = LinearMap.det g'.toLinearMap) :
+    ∃ γ : I → (EuclideanSpace ℝ ι ≃ₗᵢ[ℝ] EuclideanSpace ℝ ι),
+      Continuous (fun t ↦ ((γ t).toContinuousLinearEquiv :
+        EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι)) ∧
+      γ 0 = g ∧ γ 1 = g' := by
+  classical
+  obtain ⟨A, rfl⟩ := orthogonalGroupToLinearIsometryEquiv_surjective g
+  obtain ⟨B, rfl⟩ := orthogonalGroupToLinearIsometryEquiv_surjective g'
+  have hAB : (A : _root_.Matrix ι ι ℝ).det = (B : _root_.Matrix ι ι ℝ).det := by
+    rw [← det_orthogonalGroupToLinearIsometryEquiv, ← det_orthogonalGroupToLinearIsometryEquiv]
+    exact h
+  obtain ⟨p⟩ := Matrix.joined_orthogonalGroup_iff_det_eq.2 hAB
+  exact ⟨fun t ↦ orthogonalGroupToLinearIsometryEquiv (p t),
+    continuous_orthogonalGroupToLinearIsometryEquiv.comp p.continuous,
+    congrArg orthogonalGroupToLinearIsometryEquiv p.source,
+    congrArg orthogonalGroupToLinearIsometryEquiv p.target⟩
 
 end TauCeti

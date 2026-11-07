@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.Modules.GradedAlgebra.Sections
 public import Mathlib.Algebra.Category.Ring.Constructions
 public import Mathlib.RingTheory.RingHom.FiniteType
 public import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
+public import TauCeti.RingTheory.IsTensorProduct.Pushout
 
 /-!
 # Graded rings of sections over nested affine opens
@@ -131,29 +132,11 @@ theorem _root_.CategoryTheory.CommMon.adjoin_gradedSectionsGrading_zero_union_on
   have : IsScalarTower Γ(X, U) Γ(X, V) (⨁ n, Γ(A.X n, V)) := .of_algebraMap_eq fun _ ↦ rfl
   have : IsScalarTower Γ(X, U) (⨁ n, Γ(A.X n, U)) (⨁ n, Γ(A.X n, V)) :=
     .of_algebraMap_eq fun r ↦ (A.restrictGradedSections_algebraMap (homOfLE hVU) r).symm
-  have hpo : Algebra.IsPushout Γ(X, U) Γ(X, V) (⨁ n, Γ(A.X n, U)) (⨁ n, Γ(A.X n, V)) :=
-    CommRingCat.isPushout_iff_isPushout.mp (A.isPushout_restrictGradedSections hU hV hVU)
-  let T := (A.gradedSectionsGrading V 0 : Set (⨁ n, Γ(A.X n, V))) ∪ A.gradedSectionsGrading V 1
-  -- Restriction maps the generators of degrees `0` and `1` over `U` into those over `V`, hence the
-  -- whole graded ring over `U` into the subalgebra they generate over `V`.
-  have hle : Algebra.adjoin Γ(X, U)
-      ((A.gradedSectionsGrading U 0 : Set (⨁ n, Γ(A.X n, U))) ∪ A.gradedSectionsGrading U 1) ≤
-      ((Algebra.adjoin Γ(X, V) T).restrictScalars Γ(X, U)).comap
-        (IsScalarTower.toAlgHom Γ(X, U) (⨁ n, Γ(A.X n, U)) (⨁ n, Γ(A.X n, V))) :=
-    Algebra.adjoin_le_iff.mpr fun y hy ↦ by
-      rw [SetLike.mem_coe, Subalgebra.mem_comap, Subalgebra.mem_restrictScalars,
-        IsScalarTower.toAlgHom_apply, RingHom.algebraMap_toAlgebra,
-        ← CommMon.restrictGradedSectionsGradedHom_apply]
-      exact Algebra.subset_adjoin <| hy.imp
-        (A.restrictGradedSectionsGradedHom (homOfLE hVU)).map_mem
-        (A.restrictGradedSectionsGradedHom (homOfLE hVU)).map_mem
-  have hmap (y : ⨁ n, Γ(A.X n, U)) :
-      A.restrictGradedSections (homOfLE hVU) y ∈ Algebra.adjoin Γ(X, V) T :=
-    hle (h ▸ Algebra.mem_top)
-  -- The graded ring over `V` is spanned over `Γ(X, V)` by restrictions of sections over `U`.
-  refine eq_top_iff.mpr fun x _ ↦ hpo.out.inductionOn x (fun y ↦ hmap y) (fun s z hz ↦ ?_)
-    fun _ _ h₁ h₂ ↦ add_mem h₁ h₂
-  exact Subalgebra.smul_mem _ hz s
+  have : Algebra.IsPushout Γ(X, U) (⨁ n, Γ(A.X n, U)) Γ(X, V) (⨁ n, Γ(A.X n, V)) :=
+    (CommRingCat.isPushout_iff_isPushout.mp (A.isPushout_restrictGradedSections hU hV hVU)).symm
+  exact Algebra.IsPushout.adjoin_zero_union_one_eq_top
+    (A.restrictGradedSectionsGradedHom (homOfLE hVU))
+    (A.restrictGradedSectionsGradedHom_apply (homOfLE hVU)) h
 
 end
 
