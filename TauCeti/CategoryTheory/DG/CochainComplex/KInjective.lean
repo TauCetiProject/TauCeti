@@ -78,6 +78,16 @@ namespace KInjectiveDGCategory
 
 variable [Linear R C]
 
+/-- A chain map between K-injective complexes gives a closed degree-zero morphism in their
+full DG subcategory. -/
+theorem ofHom_mem_dgCycles {K L : CochainComplex C ℤ} [K.IsKInjective]
+    [L.IsKInjective] (f : K ⟶ L) :
+    CochainComplex.HomComplex.Cochain.ofHom f ∈
+      dgCycles R (⟨K, ‹_›⟩ : KInjectiveDGCategory C) ⟨L, ‹_›⟩ := by
+  apply (mem_dgCycles R).2
+  rw [DGFullSubcategory.dgDifferential_eq, dgDifferential_linearHomComplex]
+  exact CochainComplex.HomComplex.δ_ofHom f
+
 variable [HasDerivedCategory.{w} C]
 
 /-- The comparison functor from the homotopy category `H⁰` of the K-injective complexes to the
@@ -199,14 +209,13 @@ complexes is not required. -/
 theorem isEquivalence_edgeMk_iff_quasiIso {K L : CochainComplex C ℤ} [K.IsKInjective]
     [L.IsKInjective] (f : K ⟶ L)
     (hf : CochainComplex.HomComplex.Cochain.ofHom f ∈
-      dgCycles R (⟨K, ‹_›⟩ : KInjectiveDGCategory C) ⟨L, ‹_›⟩ := by
-        apply (mem_dgCycles R).2
-        rw [DGFullSubcategory.dgDifferential_eq, dgDifferential_linearHomComplex]
-        exact CochainComplex.HomComplex.δ_ofHom f) :
+      dgCycles R (⟨K, ‹_›⟩ : KInjectiveDGCategory C) ⟨L, ‹_›⟩ := ofHom_mem_dgCycles R C f) :
     (dgNerve.edgeMk R (KInjectiveDGCategory C) ⟨_, hf⟩).IsEquivalence ↔ QuasiIso f := by
   let := HasDerivedCategory.standard C
   rw [dgNerve.isEquivalence_edgeMk_iff]
   refine (isIso_iff_of_reflects_iso _ (toDerivedCategory R C)).symm.trans ?_
+  -- Rewriting the map leaves IsIso's implicit endpoints in the comparison functor's image.
+  -- Transport the predicate as a whole to avoid an ill-typed intermediate rewrite target.
   have h := congrArg (fun g ↦ IsIso g) (toDerivedCategory_map_homOf R C f hf)
   exact (Iff.of_eq h).trans ((DerivedCategory.isIso_Qh_map_iff _).trans
     ((HomotopyCategory.quotient_map_mem_quasiIso_iff f).trans
@@ -218,10 +227,7 @@ cohomology object; there is no boundedness restriction. -/
 theorem isEquivalence_edgeMk_iff_isIso_homologyMap {K L : CochainComplex C ℤ}
     [K.IsKInjective] [L.IsKInjective] (f : K ⟶ L)
     (hf : CochainComplex.HomComplex.Cochain.ofHom f ∈
-      dgCycles R (⟨K, ‹_›⟩ : KInjectiveDGCategory C) ⟨L, ‹_›⟩ := by
-        apply (mem_dgCycles R).2
-        rw [DGFullSubcategory.dgDifferential_eq, dgDifferential_linearHomComplex]
-        exact CochainComplex.HomComplex.δ_ofHom f) :
+      dgCycles R (⟨K, ‹_›⟩ : KInjectiveDGCategory C) ⟨L, ‹_›⟩ := ofHom_mem_dgCycles R C f) :
     (dgNerve.edgeMk R (KInjectiveDGCategory C) ⟨_, hf⟩).IsEquivalence ↔
       ∀ n : ℤ, IsIso (HomologicalComplex.homologyMap f n) := by
   rw [isEquivalence_edgeMk_iff_quasiIso R C f hf, quasiIso_iff]

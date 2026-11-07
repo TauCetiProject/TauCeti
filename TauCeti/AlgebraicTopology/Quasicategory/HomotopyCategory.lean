@@ -140,7 +140,7 @@ variable {X : SSet.{u}} [Quasicategory X] {x y : X _⦋0⦌}
 
 /-- An edge of a quasicategory is an equivalence exactly when its class in the
 generators-and-relations homotopy category is an isomorphism. -/
-lemma isEquivalence_iff_isIso_homMk (e : X.Edge x y) :
+lemma isEquivalence_iff_isIso_homotopyCategoryHomMk (e : X.Edge x y) :
     e.IsEquivalence ↔ IsIso (HomotopyCategory.homMk e) := by
   rw [isEquivalence_iff_isIso,
     ← isIso_iff_of_reflects_iso _ (Truncated.HomotopyCategory₂.toHomotopyCategory _),

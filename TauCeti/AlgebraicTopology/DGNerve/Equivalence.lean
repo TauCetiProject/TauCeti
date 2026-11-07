@@ -43,7 +43,7 @@ theorem isEquivalence_edgeMk_iff {X Y : C} (f : dgCycles R X Y) :
   have : (fromHomotopyCategory R C).IsEquivalence := by
     rw [← homotopyCategoryEquiv_inverse]
     infer_instance
-  rw [SSet.Edge.isEquivalence_iff_isIso_homMk,
+  rw [SSet.Edge.isEquivalence_iff_isIso_homotopyCategoryHomMk,
     ← isIso_iff_of_reflects_iso _ (fromHomotopyCategory R C),
     fromHomotopyCategory_map_homMk_edgeMk]
   simp
