@@ -34,6 +34,30 @@ universe u
 variable {A σ : Type u} [CommRing A] [SetLike σ A] [AddSubgroupClass σ A]
 variable (𝒜 : ℕ → σ) [GradedRing 𝒜] {X : Scheme.{u}}
 
+/-- Restricting the canonical map to the spectrum of global sections to the basic open of `f t`
+and identifying the spectrum of a localization with the basic open is the map induced by
+any ring map out of the localization that extends the restriction of global sections. -/
+private lemma isoOfEq_inv_comp_morphismRestrict_comp_basicOpenIsoSpecAway_hom
+    (f : A →+* Γ(X, ⊤)) (t : A) (l : Localization.Away (f t) →+* Γ(X, X.basicOpen (f t)))
+    (hl : l.comp (algebraMap Γ(X, ⊤) (Localization.Away (f t))) =
+      (X.presheaf.map (homOfLE (le_top : X.basicOpen (f t) ≤ ⊤)).op).hom) :
+    (X.isoOfEq (X.toSpecΓ_preimage_basicOpen (f t))).inv ≫
+        X.toSpecΓ ∣_ PrimeSpectrum.basicOpen (f t) ≫
+        (basicOpenIsoSpecAway (f t)).hom =
+      (X.basicOpen (f t)).toSpecΓ ≫ Spec.map (CommRingCat.ofHom l) := by
+  rw [← cancel_mono (Spec.map (CommRingCat.ofHom
+    (algebraMap Γ(X, ⊤) (Localization.Away (f t)))))]
+  simp only [Category.assoc, basicOpenIsoSpecAway_hom_SpecMap]
+  have hrest := congrArg
+    (fun e ↦ (X.isoOfEq (X.toSpecΓ_preimage_basicOpen (f t))).inv ≫ e)
+    (morphismRestrict_ι X.toSpecΓ
+      (PrimeSpectrum.basicOpen (f t) : (Spec Γ(X, ⊤)).Opens))
+  simp only [Scheme.isoOfEq_inv_ι_assoc] at hrest
+  refine hrest.trans ?_
+  rw [← Spec.map_comp, ← CommRingCat.ofHom_comp]
+  rw [hl]
+  exact (Scheme.Opens.toSpecΓ_SpecMap_presheaf_map_top (X.basicOpen (f t))).symm
+
 /-- On a standard open, global homogeneous coordinates give the degree-zero localization
 map of their restrictions to that open. -/
 theorem toBasicOpenOfGlobalSections_eq (f : A →+* Γ(X, ⊤))
@@ -69,20 +93,8 @@ theorem toBasicOpenOfGlobalSections_eq (f : A →+* Γ(X, ⊤))
           X.toSpecΓ ∣_ PrimeSpectrum.basicOpen (f t) ≫
           (basicOpenIsoSpecAway (f t)).hom =
         U.toSpecΓ ≫ Spec.map (CommRingCat.ofHom l) := by
-    rw [← cancel_mono (Spec.map (CommRingCat.ofHom
-      (algebraMap Γ(X, ⊤) (Localization.Away (f t)))))]
-    simp only [Category.assoc, basicOpenIsoSpecAway_hom_SpecMap]
-    have hrest := congrArg
-      (fun e ↦ (X.isoOfEq (X.toSpecΓ_preimage_basicOpen (f t))).inv ≫ e)
-      (morphismRestrict_ι X.toSpecΓ
-        (PrimeSpectrum.basicOpen (f t) : (Spec Γ(X, ⊤)).Opens))
-    simp only [Scheme.isoOfEq_inv_ι_assoc] at hrest
-    refine hrest.trans ?_
-    rw [← Spec.map_comp, ← CommRingCat.ofHom_comp]
-    have hl : l.comp (algebraMap Γ(X, ⊤) (Localization.Away (f t))) = r :=
-      IsLocalization.Away.lift_comp (f t) hu
-    rw [hl]
-    exact (Scheme.Opens.toSpecΓ_SpecMap_presheaf_map_top U).symm
+    exact isoOfEq_inv_comp_morphismRestrict_comp_basicOpenIsoSpecAway_hom f t l
+      (IsLocalization.Away.lift_comp (f t) hu)
   rw [← Category.assoc, ← Category.assoc, Category.assoc
     (X.isoOfEq (X.toSpecΓ_preimage_basicOpen (f t))).inv, hlocal]
   simp only [Category.assoc, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
