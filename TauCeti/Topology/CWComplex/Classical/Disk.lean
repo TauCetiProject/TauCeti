@@ -193,6 +193,7 @@ def diskRelCWComplexTopCell :
 
 /-- The characteristic map of the top cell of the disk is the inverse of the radial comparison
 `TauCeti.diskHomeomorphClosedBall` on the closed unit ball of the sup norm. -/
+@[simp]
 theorem diskRelCWComplex_map_apply (x : closedBall (0 : Fin n → ℝ) 1) :
     letI := diskRelCWComplex n
     map n (diskRelCWComplexTopCell n) x = (diskHomeomorphClosedBall n).symm x :=
@@ -223,11 +224,8 @@ def sigmaDiskRelCWComplexCellEquiv (m : ℕ) :
     cell (univ.sigma fun i ↦ (univ : Set (TopCat.disk.{u} (n i)))) m ≃ {i // n i = m} :=
   letI := fun i ↦ diskRelCWComplex (n i)
   (RelCWComplex.sigmaCellEquiv _ _ m).trans
-    { toFun c := ⟨c.1, (diskRelCWComplexCellEquiv (n c.1) m c.2).down.symm⟩
-      invFun i := ⟨i.1, (diskRelCWComplexCellEquiv (n i.1) m).symm ⟨i.2.symm⟩⟩
-      left_inv c := Sigma.ext rfl (heq_of_eq ((diskRelCWComplexCellEquiv (n c.1) m).injective
-        (Subsingleton.elim _ _)))
-      right_inv _ := rfl }
+    ((Equiv.sigmaULiftPLiftEquivSubtype fun i ↦ m = n i).trans
+      (Equiv.subtypeEquivRight fun _ ↦ eq_comm))
 
 /-- The cell of the disjoint union of disks given by the `i`-th disk, of dimension `n i`. -/
 def sigmaDiskRelCWComplexCell (i : ι) :
@@ -247,6 +245,7 @@ theorem sigmaDiskRelCWComplexCellEquiv_cell (i : ι) :
 
 /-- The characteristic map of the cell of the `i`-th disk in the disjoint union is the
 characteristic map of that disk followed by the summand inclusion. -/
+@[simp]
 theorem sigmaDiskRelCWComplex_map_apply (i : ι) (x : closedBall (0 : Fin (n i) → ℝ) 1) :
     letI := sigmaDiskRelCWComplex n
     map (n i) (sigmaDiskRelCWComplexCell n i) x =
