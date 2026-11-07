@@ -251,7 +251,7 @@ private theorem homogeneousComponent_homDefect_eq_zero_of_pow (hF : F.height p =
 
 /-- Let `f` be a homomorphism from `F` to `G` up to degree `N`, with `N + 1` not a power of `p`.
 Then some multiple of `(X + Y)ᴹ - Xᴹ - Yᴹ` cancels the degree-`M = N + 1` part of the
-homomorphism defect: it is `r C_M` with `d_M` prime to `p`. -/
+homomorphism defect: since `M` is not a power of `p`, `lazardGcd M` is invertible in `K`. -/
 private theorem exists_smul_add_homogeneousComponent_homDefect_eq_zero
     {f : PowerSeries K} (hf : PowerSeries.constantCoeff f = 0) {N : ℕ}
     (hpow : ¬∃ k, N + 1 = p ^ k) (hΦ : ((N + 1 : ℕ) : ℕ∞) ≤ (F.homDefect G f).order) :
