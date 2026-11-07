@@ -7,9 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.VariableCoefficient
 
-import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 import TauCeti.Analysis.Normed.Module.Ball.Retraction
-import TauCeti.MeasureTheory.Function.LpSeminorm.Support
 
 /-!
 # Schauder estimates with compactly supported Hessian
@@ -136,25 +134,5 @@ theorem exists_holderWith_iteratedFDeriv_two_of_support_subset_closedBall
     simpa only [hε] using ha'_close x i j
   exact hS (A := a x₀) (a := a') hlam hEll hEll' (L := L * 2 ^ (α : ℝ))
     (K := K) (ε := ε) hr hsmall' ha'_close' ha'_holder hu hH hH2 hf'
-
-/-- The `L²` norm of the second derivative of a `C²` function supported in a closed ball is bounded
-by the volume of the ball and the bound on its second partial derivatives. -/
-theorem toReal_eLpNorm_iteratedFDeriv_two_le {w : E → ℝ} (hw : ContDiff ℝ 2 w) {x₀ : E} {R B : ℝ}
-    (hsupp : Function.support (iteratedFDeriv ℝ 2 w) ⊆ closedBall x₀ R) (hB₀ : 0 ≤ B)
-    (hB : ∀ x i j,
-      |fderiv ℝ (fderiv ℝ w) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)| ≤ B) :
-    (eLpNorm (iteratedFDeriv ℝ 2 w) 2 volume).toReal ≤
-      (volume (closedBall (0 : E) R)).toReal ^ (2⁻¹ : ℝ) * (((n : ℝ) + 1) ^ 2 * B) := by
-  have hnorm (x : E) : ‖iteratedFDeriv ℝ 2 w x‖ ≤ ((n : ℝ) + 1) ^ 2 * B := by
-    refine ((iteratedFDeriv ℝ 2 w x).opNorm_le_card_sq_mul_of_norm_apply_le
-      (EuclideanSpace.basisFun _ ℝ) (B := B) fun i j => ?_).trans_eq (by simp)
-    simpa [iteratedFDeriv_two_apply] using hB x i j
-  refine (ENNReal.toReal_mono (ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg (by positivity)
-    measure_closedBall_lt_top.ne) ENNReal.ofReal_ne_top) (eLpNorm_le_of_ae_bound_of_support_subset
-    (hw.continuous_iteratedFDeriv le_rfl).aestronglyMeasurable hsupp (ae_of_all _ hnorm))).trans
-    (le_of_eq ?_)
-  rw [ENNReal.toReal_mul, ← ENNReal.toReal_rpow, ENNReal.toReal_ofReal (by positivity),
-    Measure.addHaar_closedBall_center]
-  simp only [ENNReal.toReal_ofNat]
 
 end TauCeti.PDE
