@@ -63,6 +63,17 @@ No assumption on the characteristic of the coefficient ring is needed. -/
 theorem mul_eq_negOnePow_smul_mul {p q : ℤ} {a b : SignedSym G}
     (ha : a ∈ signedSymPiece G p) (hb : b ∈ signedSymPiece G q) :
     a * b = ((p * q).negOnePow : ℤ) • (b * a) := by
+  -- Share the product step between the ring and its opposite.
+  have hmul {A : Type (max u v)} [Ring A] {x b c : A} {s t : ℤ}
+      (hb : x * b = s • (b * x)) (hc : x * c = t • (c * x)) :
+      x * (b * c) = (s * t) • ((b * c) * x) := by
+    calc
+      x * (b * c) = (x * b) * c := (mul_assoc _ _ _).symm
+      _ = s • (b * (x * c)) := by rw [hb]; simp only [smul_mul_assoc, mul_assoc]
+      _ = (s * t) • ((b * c) * x) := by
+        rw [hc]
+        simp only [mul_smul_comm, smul_smul, mul_assoc]
+  -- First commute a generator past a homogeneous expression, then induct on the other factor.
   have hgen : ∀ (p : ℤ) (x : V), x ∈ G.piece p →
       ∀ (q : ℤ) (b : SignedSym G), b ∈ signedSymPiece G q →
         generator G x * b = ((p * q).negOnePow : ℤ) • (b * generator G x) := by
@@ -73,8 +84,7 @@ theorem mul_eq_negOnePow_smul_mul {p q : ℤ} {a b : SignedSym G}
     · simp
     · exact fun q y hy => generator_mul_generator G hx hy
     · intro q r b c hb hc
-      rw [← mul_assoc, hb, smul_mul_assoc, mul_assoc, hc, mul_smul_comm, smul_smul]
-      simp only [Int.mul_add, Int.negOnePow_add, Units.val_mul, mul_assoc]
+      simpa [Int.mul_add, Int.negOnePow_add] using hmul hb hc
     · simp
     · intro q b c hb hc
       simp only [mul_add, add_mul, zsmul_add, hb, hc]
@@ -85,9 +95,17 @@ theorem mul_eq_negOnePow_smul_mul {p q : ℤ} {a b : SignedSym G}
   · simp
   · exact fun p x hx => hgen p x hx q b hb
   · intro p r a c ha hc
-    rw [mul_assoc, hc, mul_smul_comm, ← mul_assoc, ha, smul_mul_assoc, smul_smul]
-    simp only [Int.add_mul, Int.negOnePow_add, Units.val_mul, mul_assoc]
-    rw [mul_comm (↑(r * q).negOnePow : ℤ)]
+    -- The same product rule in the opposite ring handles multiplication on the left.
+    simpa only [MulOpposite.unop_mul, MulOpposite.unop_smul, MulOpposite.unop_op,
+      Int.add_mul, Int.mul_add, Int.negOnePow_add, Units.val_mul, mul_comm] using
+      congrArg MulOpposite.unop
+      (hmul (x := MulOpposite.op b)
+        (b := MulOpposite.op c) (c := MulOpposite.op a)
+        (s := ((r * q).negOnePow : ℤ)) (t := ((p * q).negOnePow : ℤ))
+        (by simpa only [MulOpposite.op_mul, MulOpposite.op_smul] using
+          congrArg MulOpposite.op hc)
+        (by simpa only [MulOpposite.op_mul, MulOpposite.op_smul] using
+          congrArg MulOpposite.op ha))
   · simp
   · intro p a c ha hc
     simp only [add_mul, mul_add, zsmul_add, ha, hc]
