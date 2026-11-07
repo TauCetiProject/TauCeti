@@ -65,16 +65,10 @@ private theorem lift_eq_of_rank_one {α : Type v}
       simpa only [presentedForm_eq_weightedSumSquares] using h
     have := isSquare_prod_mul_prod_of_equivalent (R := K) (w := w) (v := v) hprUnit
     simpa using this
-  have hp : (⟨1, w⟩ : RegularFormPresentation K) = ⟨1, fun _ => w 0⟩ := by
-    apply RegularFormPresentation.ext (p := ⟨1, w⟩) (q := ⟨1, fun _ => w 0⟩) rfl
-    intro i
-    fin_cases i
-    rfl
-  have hv : (⟨1, v⟩ : RegularFormPresentation K) = ⟨1, fun _ => v 0⟩ := by
-    apply RegularFormPresentation.ext (p := ⟨1, v⟩) (q := ⟨1, fun _ => v 0⟩) rfl
-    intro i
-    fin_cases i
-    rfl
+  have hp : (⟨1, w⟩ : RegularFormPresentation K) = ⟨1, fun _ => w 0⟩ :=
+    congrArg (fun t => (⟨1, t⟩ : RegularFormPresentation K)) (eq_const_of_unique w)
+  have hv : (⟨1, v⟩ : RegularFormPresentation K) = ⟨1, fun _ => v 0⟩ :=
+    congrArg (fun t => (⟨1, t⟩ : RegularFormPresentation K)) (eq_const_of_unique v)
   rw [hp, hv]
   exact hone _ _ hsq
 
