@@ -29,8 +29,7 @@ namespace MeasureTheory.Measure
 private theorem sub_le_mul_log_sub_mul_log {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b)
     (hzero : b = 0 → a = 0) : a - b ≤ a * Real.log a - a * Real.log b := by
   rcases eq_or_lt_of_le ha with rfl | ha
-  · simp
-    exact hb
+  · simpa only [zero_sub, zero_mul, sub_zero] using neg_nonpos.mpr hb
   have hb' : 0 < b := lt_of_le_of_ne hb (Ne.symm (fun h ↦ ha.ne' (hzero h)))
   have h := mul_le_mul_of_nonneg_left (Real.log_le_sub_one_of_pos (div_pos hb' ha)) ha.le
   rw [Real.log_div hb'.ne' ha.ne'] at h
@@ -188,7 +187,8 @@ private theorem ae_section_eq_zero_of_marginal_eq_zero {α β : Type*}
       intro hbz
       exact False.elim (hz (hby.trans hbz))
   have hmeas : MeasurableSet {p : α × β | bm p.2 = 0 → gm p = 0} := by
-    have hbm : Measurable bm := hg.integral_prod_right.aestronglyMeasurable.stronglyMeasurable_mk.measurable
+    have hbm : Measurable bm :=
+      hg.integral_prod_right.aestronglyMeasurable.stronglyMeasurable_mk.measurable
     have hgm : Measurable gm := hg.aestronglyMeasurable.stronglyMeasurable_mk.measurable
     have h1 : MeasurableSet {p : α × β | bm p.2 = 0} :=
       measurableSet_eq_fun (hbm.comp measurable_snd) measurable_const
@@ -231,7 +231,8 @@ private theorem integrable_marginal_cross_log {α β : Type*}
     filter_upwards [ae_ae_of_ae_prod hswap] with y hy
     have hb : 0 ≤ b y := integral_nonneg_of_ae hy
     calc
-      ‖b y * Real.log (b y)‖ = b y * ‖Real.log (b y)‖ := by rw [norm_mul, Real.norm_eq_abs, abs_of_nonneg hb]
+      ‖b y * Real.log (b y)‖ = b y * ‖Real.log (b y)‖ := by
+        rw [norm_mul, Real.norm_eq_abs, abs_of_nonneg hb]
       _ = ∫ x, g (x, y) * ‖Real.log (b y)‖ ∂μ := (integral_mul_const _ _).symm
       _ = ∫ x, ‖g (x, y) * Real.log (b y)‖ ∂μ := by
         apply integral_congr_ae
