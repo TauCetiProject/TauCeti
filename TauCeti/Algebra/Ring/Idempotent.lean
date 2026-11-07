@@ -27,7 +27,6 @@ variable {R : Type*} [Ring R] {p : R}
 /-- For an idempotent `p`, `2 p - 1` squares to `1`. -/
 theorem two_mul_sub_one_mul_self (hp : IsIdempotentElem p) : (2 * p - 1) * (2 * p - 1) = 1 := by
   rw [two_mul, mul_sub, sub_mul, sub_mul, add_mul, mul_add, mul_add, hp.eq, one_mul, mul_one,
-    one_mul]
-  abel
+    one_mul, add_sub_cancel_right, sub_sub_cancel]
 
 end IsIdempotentElem
