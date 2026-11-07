@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Conformal.Rouche
 public import TauCeti.Analysis.Complex.IsolatedZero
 import Mathlib.Data.Set.Card.Arithmetic
+import TauCeti.Analysis.Analytic.IsolatedZeros
 
 /-!
 # The open-mapping degree
@@ -43,6 +44,9 @@ converse is Mathlib's inverse function theorem
 
 * `TauCeti.localDegree` — the count form, with the radius supplied by the caller.
 * `TauCeti.localDegree_card` — the distinct-and-simple form.
+* `TauCeti.exists_finset_finsum_ball_analyticOrderNatAt_eq_sum` — a function analytic on a closed
+  disc and nonzero somewhere on it has finitely many zeros in the open disc, which carry the whole
+  sum of orders of vanishing.
 * `TauCeti.exists_localDegree` — the textbook form: if `z₀` is an isolated solution of `f z = f z₀`,
   suitable radii exist.
 * `TauCeti.not_injOn_of_deriv_eq_zero` — a critical point destroys injectivity on *every*
@@ -62,6 +66,25 @@ public section
 open Complex Metric Filter Topology
 
 namespace TauCeti
+
+/-- If `g` is analytic on a closed disc and does not vanish at some point of it, then it has
+finitely many zeros in the open disc, and the sum over the open disc of the orders of vanishing of
+`g` is the sum of those orders over the finite set `S` of zeros. -/
+theorem exists_finset_finsum_ball_analyticOrderNatAt_eq_sum {g : ℂ → ℂ} {c a : ℂ} {r : ℝ}
+    (hg : AnalyticOnNhd ℂ g (closedBall c r)) (ha : a ∈ closedBall c r) (hga : g a ≠ 0) :
+    ∃ S : Finset ℂ, (∀ z, z ∈ S ↔ z ∈ ball c r ∧ g z = 0) ∧
+      (∑ᶠ z ∈ ball c r, analyticOrderNatAt g z) = ∑ z ∈ S, analyticOrderNatAt g z := by
+  classical
+  have hfin : {z | z ∈ ball c r ∧ g z = 0}.Finite :=
+    (hg.finite_setOf_mem_and_eq_zero_of_isCompact (convex_closedBall _ _).isPreconnected
+      ha hga (isCompact_closedBall _ _) subset_rfl).subset
+      fun z hz => ⟨ball_subset_closedBall hz.1, hz.2⟩
+  refine ⟨hfin.toFinset, fun z => by simp only [Set.Finite.mem_toFinset, Set.mem_ofPred_eq],
+    finsum_mem_eq_sum_of_subset _ (fun z hz => ?_) fun z hz => ?_⟩
+  · exact (hfin.mem_toFinset (a := z)).2
+      ⟨hz.1, apply_eq_zero_of_analyticOrderNatAt_ne_zero (Function.mem_support.1 hz.2)⟩
+  · exact (Finset.mem_coe.1 hz |> hfin.mem_toFinset.1).1
+
 
 /-- If `z₀` is the only zero of `f` in the open disc, the total zero count collapses to the order
 of vanishing at `z₀`. -/

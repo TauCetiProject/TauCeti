@@ -15,7 +15,9 @@ An open partial homeomorphism `φ : M → E` into a pseudometric space pulls clo
 back to `M` through `φ.symm`. This file proves that a compact subset `A` of the source of `φ` is
 covered by finitely many such balls centred at points of `A`, all lying in the target of `φ` and
 pulling back into a given neighbourhood of `A`
-(`OpenPartialHomeomorph.exists_finset_closedBall_cover`).
+(`OpenPartialHomeomorph.exists_finset_closedBall_cover`). It also identifies the fibre of a map `f`
+over `f x`, inside a chart ball about `x` on which `x` is the only point over `f x`, with `{x}`
+(`OpenPartialHomeomorph.preimage_singleton_inter_symm_image_ball`).
 -/
 
 public section
@@ -50,5 +52,23 @@ theorem exists_finset_closedBall_cover (φ : OpenPartialHomeomorph M E) {A U : S
   · obtain ⟨hxs, a, ha, hxb⟩ : x ∈ φ.source ∧ ∃ a ∈ t, φ x ∈ ball (φ a) (r a) := by
       simpa using hAt hx
     exact ⟨φ x, mem_biUnion ha (ball_subset_closedBall hxb), φ.left_inv hxs⟩
+
+/-- The fibre of `f` over `f x` inside a chart ball about `x` on which `x` is the only point over
+`f x` is `{x}`. -/
+theorem preimage_singleton_inter_symm_image_ball {N : Type*} {f : M → N} {x : M}
+    (e : OpenPartialHomeomorph M E) (hx : x ∈ e.source) {r : ℝ} (hr : 0 < r)
+    (hisol : ∀ z ∈ closedBall (e x) r, z ≠ e x → f (e.symm z) ≠ f x) :
+    f ⁻¹' {f x} ∩ e.symm '' ball (e x) r = {x} := by
+  have hxmem : x ∈ e.symm '' ball (e x) r := ⟨e x, mem_ball_self hr, e.left_inv hx⟩
+  ext b
+  refine ⟨fun ⟨hbf, hbU⟩ => ?_, fun hb => ?_⟩
+  · obtain ⟨z, hz, rfl⟩ := hbU
+    by_cases hze : z = e x
+    · rw [hze]
+      exact e.left_inv hx
+    · exact ((hisol z (ball_subset_closedBall hz) hze) hbf).elim
+  · rw [mem_singleton_iff] at hb
+    subst hb
+    exact ⟨rfl, hxmem⟩
 
 end OpenPartialHomeomorph
