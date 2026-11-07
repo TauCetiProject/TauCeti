@@ -83,13 +83,17 @@ theorem continuousOn_weightedLogSpotPrice (u : ParabolicC2HolderSpace α ℝ ℝ
     (hc.continuousAt.comp (continuous_snd.continuousAt.prodMk
       ((continuousAt_log (ne_of_gt hp.1)).comp continuous_fst.continuousAt)))
 
+private theorem contDiffOn_spatialSlice_comp_log (u : ParabolicC2HolderSpace α ℝ ℝ hab)
+    (t : Icc a b) : ContDiffOn ℝ 2 (fun x => u (slabMk (log x) t)) (Ioi 0) :=
+  (u.contDiff_spatialSlice t).comp_contDiffOn
+    (contDiffOn_log.mono (fun _ hx => ne_of_gt hx))
+
 /-- Every spatial slice of the price is twice continuously differentiable at positive spot. -/
 theorem contDiffOn_weightedLogSpotPrice (u : ParabolicC2HolderSpace α ℝ ℝ hab)
     (t : Icc a b) : ContDiffOn ℝ 2 (fun s => weightedLogSpotPrice u s t) (Ioi 0) := by
   simp_rw [weightedLogSpotPrice_of_mem]
   exact (contDiffOn_const.add contDiffOn_id).mul
-    ((u.contDiff_spatialSlice t).comp_contDiffOn
-      (contDiffOn_log.mono (fun _ hx => ne_of_gt hx)))
+    (contDiffOn_spatialSlice_comp_log u t)
 
 /-- The spot derivative, expressed through the bounded spatial gradient in log spot. -/
 theorem hasDerivAt_weightedLogSpotPrice_spot (u : ParabolicC2HolderSpace α ℝ ℝ hab)
@@ -97,7 +101,7 @@ theorem hasDerivAt_weightedLogSpotPrice_spot (u : ParabolicC2HolderSpace α ℝ 
     HasDerivAt (fun x => weightedLogSpotPrice u x t)
       (u (slabMk (log s) t) + (1 + s) / s *
         spatialFDerivL u (slabMk (log s) t) 1) s := by
-  have h := (u.hasSpatialFDerivAt t (log s)).hasDerivAt.comp s (hasDerivAt_log hs.ne')
+  have h := (u.hasDerivAt_spatialSlice t (log s)).comp s (hasDerivAt_log hs.ne')
   convert ((hasDerivAt_id s).const_add 1).mul h using 1
   · ext x
     simp [weightedLogSpotPrice_of_mem]
@@ -118,40 +122,35 @@ theorem deriv_deriv_weightedLogSpotPrice_spot (u : ParabolicC2HolderSpace α ℝ
         (1 + s) * spatialSecondFDerivL u (slabMk (log s) t) 1 1) / s ^ 2 := by
   let v : ℝ → ℝ := fun y => u (slabMk y t)
   let f : ℝ → ℝ := fun x => v (log x)
-  have hv (y : ℝ) := (u.hasSpatialFDerivAt t y).hasDerivAt
   have hv' : deriv v = fun y => spatialFDerivL u (slabMk y t) 1 :=
-    funext fun y => (hv y).deriv
-  have hv'' : HasDerivAt (fun y => spatialFDerivL u (slabMk y t) 1)
-      (spatialSecondFDerivL u (slabMk (log s) t) 1 1) (log s) := by
-    simpa using (u.hasSpatialSecondFDerivAt t (log s)).hasDerivAt.clm_apply
-      (hasDerivAt_const (log s) (1 : ℝ))
-  have h₁ := mul_deriv_comp_log (hv (log s)).differentiableAt hs.ne'
+    funext (u.deriv_spatialSlice t)
+  have h₁ {x : ℝ} (hx : 0 < x) :
+      x * deriv f x = spatialFDerivL u (slabMk (log x) t) 1 := by
+    simpa only [u.deriv_spatialSlice] using
+      mul_deriv_comp_log (u.hasDerivAt_spatialSlice t (log x)).differentiableAt hx.ne'
   have h₂ := sq_mul_deriv_deriv_comp_log (Eventually.of_forall fun y =>
-    (hv y).differentiableAt) (by rw [hv']; exact hv''.differentiableAt) hs.ne'
-  rw [hv', hv''.deriv] at h₂
-  rw [hv'] at h₁
-  have hf : ContDiffOn ℝ 2 f (Ioi 0) :=
-    (u.contDiff_spatialSlice t).comp_contDiffOn
-      (contDiffOn_log.mono (fun _ hx => ne_of_gt hx))
-  have hd : DifferentiableAt ℝ (deriv f) s :=
-    ((hf.deriv_of_isOpen isOpen_Ioi (m := 1) (by norm_num)).differentiableOn
-      one_ne_zero s hs).differentiableAt (Ioi_mem_nhds hs)
+    (u.hasDerivAt_spatialSlice t y).differentiableAt)
+    (by rw [hv']; exact (u.hasDerivAt_spatialFDerivL_apply t (log s) 1).differentiableAt)
+    hs.ne'
+  rw [hv', u.deriv_spatialFDerivL_apply] at h₂
+  have hf : ContDiffOn ℝ 2 f (Ioi 0) := contDiffOn_spatialSlice_comp_log u t
+  have hfs := hf.contDiffAt (Ioi_mem_nhds hs)
+  have hd := (hfs.derivWithin (m := 1) (by norm_num)).differentiableAt one_ne_zero
   have heq : (deriv fun x => weightedLogSpotPrice u x t) =ᶠ[𝓝 s]
       fun x => f x + (1 + x) * deriv f x := by
     filter_upwards [Ioi_mem_nhds hs] with x hx
-    have hfd := (hf.differentiableOn two_ne_zero x hx).differentiableAt (Ioi_mem_nhds hx)
-    simpa only [weightedLogSpotPrice_of_mem, f, v, one_mul, id_eq] using
-      (((hasDerivAt_id x).const_add 1).fun_mul hfd.hasDerivAt).deriv
+    rw [deriv_weightedLogSpotPrice_spot u hx t, ← h₁ hx]
+    dsimp only [f, v]
+    field_simp [ne_of_gt hx]
   have hprod : HasDerivAt (fun x => f x + (1 + x) * deriv f x)
       (deriv f s + (deriv f s + (1 + s) * deriv (deriv f) s)) s := by
     simpa only [id_eq, one_mul] using
-      ((hf.differentiableOn two_ne_zero s hs).differentiableAt
-        (Ioi_mem_nhds hs)).hasDerivAt.fun_add
+      (hfs.differentiableAt two_ne_zero).hasDerivAt.fun_add
           (((hasDerivAt_id s).const_add 1).fun_mul hd.hasDerivAt)
   rw [heq.deriv_eq, hprod.deriv]
   apply (eq_div_iff (pow_ne_zero 2 hs.ne')).2
   dsimp only [f, v]
-  linear_combination (1 + s) * h₂ + 2 * s * h₁
+  linear_combination (1 + s) * h₂ + 2 * s * h₁ hs
 
 /-- The dollar delta has linear growth with an explicit bound from the value and gradient
 norms. This bound is suitable for moment-based integrability criteria. -/
@@ -217,7 +216,7 @@ theorem pde_weightedLogSpotPrice (u : ParabolicC2HolderSpace α ℝ ℝ hab)
           spatialFDerivL u (slabMk (log s) t) 1 -
         r / (1 + s) * u (slabMk (log s) t)) := by
   have hC := contDiffOn_weightedLogSpotPrice u t
-  have hC' := hC.deriv_of_isOpen isOpen_Ioi (m := 1) (by norm_num)
+  have hCs := hC.contDiffAt (Ioi_mem_nhds hs)
   -- Freeze time: the existing identity supplies the spatial operator without imposing
   -- ordinary time differentiability on the clamped extension at the slab endpoints.
   have h := pde_comp_exp_div_one_add_exp
@@ -225,19 +224,15 @@ theorem pde_weightedLogSpotPrice (u : ParabolicC2HolderSpace α ℝ ℝ hab)
     (by
       rw [exp_log hs]
       filter_upwards [Ioi_mem_nhds hs] with x hx
-      exact (hC.differentiableOn two_ne_zero x hx).differentiableAt (Ioi_mem_nhds hx))
+      exact (hC.contDiffAt (Ioi_mem_nhds hx)).differentiableAt two_ne_zero)
     (by
       rw [exp_log hs]
-      exact (hC'.differentiableOn one_ne_zero s hs).differentiableAt (Ioi_mem_nhds hs))
+      exact (hCs.derivWithin (m := 1) (by norm_num)).differentiableAt one_ne_zero)
   simp_rw [weightedLogSpotPrice_exp_div, timeExtension_of_mem] at h
   have hv : deriv (fun y => u (slabMk y t)) =
       fun y => spatialFDerivL u (slabMk y t) 1 :=
-    funext fun y => (u.hasSpatialFDerivAt t y).hasDerivAt.deriv
-  have hv' : deriv (fun y => spatialFDerivL u (slabMk y t) 1) (log s) =
-      spatialSecondFDerivL u (slabMk (log s) t) 1 1 := by
-    simpa using ((u.hasSpatialSecondFDerivAt t (log s)).hasDerivAt.clm_apply
-      (hasDerivAt_const (log s) (1 : ℝ))).deriv
-  rw [hv, hv'] at h
+    funext (u.deriv_spatialSlice t)
+  rw [hv, u.deriv_spatialFDerivL_apply] at h
   simp only [deriv_const, zero_add, exp_log hs] at h
   rw [derivWithin_weightedLogSpotPrice_time]
   have hw : (1 + s) ≠ 0 := by positivity
