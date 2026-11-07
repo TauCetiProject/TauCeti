@@ -9,6 +9,7 @@ public import TauCeti.FieldTheory.FunctionField.Hyperelliptic.Genus.Basic
 -- Proof-only: the action of `Aut(F / k(x))` on places, and the fundamental inequality.
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Fibre
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Galois
+import TauCeti.FieldTheory.FunctionField.Place.Extension.RatFunc
 -- Proof-only: the involution `y ↦ -y` of `F / k(x)`.
 import TauCeti.FieldTheory.Galois.SquareRoot
 
@@ -49,35 +50,6 @@ variable {k F : Type*} [Field k] [Field F] [Algebra (RatFunc k) F] [Algebra k F]
 
 section Helpers
 
-/-- A polynomial `f` with `f(a) = b² ≠ 0` is not divisible by `x - a`. -/
-private theorem not_X_sub_C_dvd_of_sq_eq {f : k[X]} {a b : k} (hb : b ≠ 0)
-    (hab : b ^ 2 = f.eval a) : ¬X - C a ∣ f := by
-  rw [dvd_iff_isRoot, IsRoot, ← hab]
-  exact pow_ne_zero 2 hb
-
-variable [FiniteDimensional (RatFunc k) F]
-
-/-- At a place over `x = a`, a nonzero polynomial in `x` has order `e` times its multiplicity at
-`a`, where `e` is the ramification index over `k(x)`. -/
-private theorem ord_algebraMap_eq_of_restrict_eq (a : k) {P : Place k F}
-    (hP : P.restrict k (RatFunc k) = adicOfIrreducible (irreducible_X_sub_C a)) {p : k[X]}
-    (hp : p ≠ 0) :
-    P.ord (algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) p)) =
-      ramificationIdx (RatFunc k) P * multiplicity (X - C a) p := by
-  rw [ord_algebraMap_restrict k (RatFunc k) P, hP, ord_adicOfIrreducible_algebraMap _ hp]
-
-/-- A nonzero polynomial in `x` divisible by `x - a` has positive order at a place over
-`x = a`. -/
-private theorem ord_algebraMap_pos_of_restrict_eq (a : k) {P : Place k F}
-    (hP : P.restrict k (RatFunc k) = adicOfIrreducible (irreducible_X_sub_C a)) {p : k[X]}
-    (hp : p ≠ 0) (hdvd : X - C a ∣ p) :
-    0 < P.ord (algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) p)) := by
-  rw [ord_algebraMap_eq_of_restrict_eq a hP hp]
-  exact mul_pos (by exact_mod_cast ramificationIdx_pos (RatFunc k) P)
-    (by exact_mod_cast (multiplicity_pos_of_dvd hdvd
-      (.of_not_isUnit (irreducible_X_sub_C a).not_isUnit hp)))
-
-omit [FiniteDimensional (RatFunc k) F] in
 /-- On the curve `y² = f(x)`, `(y - b)(y + b) = f(x) - b²`. -/
 private theorem sub_mul_add_eq_algebraMap {f : k[X]} {y : F}
     (hy : y ^ 2 = algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) f)) (b : k) :
@@ -90,17 +62,22 @@ private theorem sub_mul_add_eq_algebraMap {f : k[X]} {y : F}
   simp only [map_sub, hb2, ← hy]
   ring
 
+variable [FiniteDimensional (RatFunc k) F]
+
 /-- At a place over `x = a`, on a point `(a, b)` of `y² = f(x)` with `b ≠ 0` and `2 ≠ 0`, exactly
 one of `y - b` and `y + b` vanishes. -/
 private theorem ord_sub_pos_iff_not_ord_add_pos (h2 : (2 : k) ≠ 0) {f : k[X]}
-    (hf : Squarefree f) (hdeg : 0 < f.natDegree) {y : F}
+    (hdeg : 0 < f.natDegree) {y : F}
     (hy : y ^ 2 = algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) f)) {a b : k}
     (hb : b ≠ 0) (hab : b ^ 2 = f.eval a) {P : Place k F}
     (hP : P.restrict k (RatFunc k) = adicOfIrreducible (irreducible_X_sub_C a)) :
     0 < P.ord (y - algebraMap k F b) ↔ ¬0 < P.ord (y + algebraMap k F b) := by
-  have hfa := not_X_sub_C_dvd_of_sq_eq hb hab
+  have hfa : ¬X - C a ∣ f := by
+    rw [dvd_iff_isRoot, IsRoot, ← hab]
+    exact pow_ne_zero 2 hb
+  have hf0 : f ≠ 0 := fun h ↦ hfa (h ▸ dvd_zero _)
   have hg : X - C a ∣ f - C (b ^ 2) := by
-    rw [dvd_iff_isRoot, IsRoot, eval_sub, eval_C, hab, sub_self]
+    simpa only [← hab] using X_sub_C_dvd_sub_C_eval (p := f) (a := a)
   have hg0 : f - C (b ^ 2) ≠ 0 := fun h ↦ by
     rw [sub_eq_zero.mp h, natDegree_C] at hdeg
     exact lt_irrefl 0 hdeg
@@ -110,7 +87,7 @@ private theorem ord_sub_pos_iff_not_ord_add_pos (h2 : (2 : k) ≠ 0) {f : k[X]}
   obtain ⟨hD0, hS0⟩ := mul_ne_zero_iff.mp (hfac ▸ hG0)
   have hy0 : P.ord y = 0 := by
     have h := congrArg P.ord hy
-    rw [ord_pow, ord_algebraMap_eq_of_restrict_eq a hP hf.ne_zero,
+    rw [ord_pow, ord_algebraMap_eq_of_restrict_eq a hP hf0,
       multiplicity_eq_zero_of_not_dvd hfa] at h
     push_cast at h
     omega
@@ -140,15 +117,6 @@ private theorem ord_sub_pos_iff_not_ord_add_pos (h2 : (2 : k) ≠ 0) {f : k[X]}
   · intro hSpos
     omega
 
-omit [FiniteDimensional (RatFunc k) F] in
-/-- The involution `y ↦ -y` exchanges the orders of `y - b` and `y + b`. -/
-private theorem ord_smul_sub_eq_ord_add {y : F} (σ : F ≃ₐ[RatFunc k] F) (hσ : σ y = -y) (b : k)
-    (P : Place k F) :
-    (σ • P).ord (y - algebraMap k F b) = P.ord (y + algebraMap k F b) := by
-  have hσsymm : σ.symm y = -y := by rw [AlgEquiv.symm_apply_eq, map_neg, hσ, neg_neg]
-  rw [ord_smul, map_sub, hσsymm, IsScalarTower.algebraMap_apply k (RatFunc k),
-    AlgEquiv.commutes, ← IsScalarTower.algebraMap_apply, ← neg_add', ord_neg]
-
 end Helpers
 
 section Helpers
@@ -171,22 +139,6 @@ private theorem ramificationIdx_eq_one_of_restrict_eq (h2 : (2 : k) ≠ 0) {f : 
   have := ramificationIdx_pos (RatFunc k) P
   omega
 
-/-- A place over `x = a` of a quadratic extension of `k(x)` which is unramified and not fixed by
-an automorphism of `F / k(x)` has degree one: it and its conjugate are two places over the
-rational place `x = a`. -/
-private theorem degree_eq_one_of_smul_ne (hrank : Module.finrank (RatFunc k) F = 2) (a : k)
-    (σ : F ≃ₐ[RatFunc k] F) {P : Place k F}
-    (hP : P.restrict k (RatFunc k) = adicOfIrreducible (irreducible_X_sub_C a))
-    (he : ramificationIdx (RatFunc k) P = 1) (hne : σ • P ≠ P) : P.degree = 1 := by
-  classical
-  have hsum := sum_ramificationIdx_mul_relativeDegree_le_finrank k (RatFunc k)
-    (adicOfIrreducible (irreducible_X_sub_C a)) {P, σ • P} (by simp [hP])
-  rw [Finset.sum_pair hne.symm, ramificationIdx_smul, relativeDegree_smul, he, hrank] at hsum
-  have := one_le_relativeDegree k (RatFunc k) P
-  rw [degree_eq_degree_restrict_mul_relativeDegree k (RatFunc k) P, hP,
-    degree_adicOfIrreducible_X_sub_C]
-  omega
-
 /-- Away from the branch locus, a point `(a, b)` of `y² = f(x)` has a place over `x = a` at which
 `y - b` vanishes and which is not fixed by the involution `y ↦ -y`. -/
 private theorem exists_smul_ne_ord_sub_pos (h2 : (2 : k) ≠ 0) {f : k[X]} (hf : Squarefree f)
@@ -199,7 +151,7 @@ private theorem exists_smul_ne_ord_sub_pos (h2 : (2 : k) ≠ 0) {f : k[X]} (hf :
   classical
   have hF : IsFunctionField k F := isFunctionField_iff_functionField.mpr inferInstance
   have hexact := fun P : Place k F ↦
-    ord_sub_pos_iff_not_ord_add_pos h2 hf hdeg hy hb hab (P := P)
+    ord_sub_pos_iff_not_ord_add_pos h2 hdeg hy hb hab (P := P)
   obtain ⟨σ, hσ⟩ := TauCeti.exists_algEquiv_apply_eq_neg_of_sq_eq
     (finrank_ratFunc_eq_two_of_sq_eq hf hdeg hgen hy) hgen hy
   obtain ⟨P₀, hP₀⟩ := restrict_surjective_of_finiteDimensional (IsFunctionField.ratFunc k) hF
@@ -211,11 +163,11 @@ private theorem exists_smul_ne_ord_sub_pos (h2 : (2 : k) ≠ 0) {f : k[X]} (hf :
     by_cases h : 0 < P₀.ord (y - algebraMap k F b)
     · exact ⟨P₀, hP₀, h⟩
     · refine ⟨σ • P₀, by rw [restrict_smul, hP₀], ?_⟩
-      rw [ord_smul_sub_eq_ord_add σ hσ]
+      rw [ord_smul_sub_eq_ord_add σ P₀ hσ]
       by_contra hS
       exact h ((hexact P₀ hP₀).mpr hS)
   refine ⟨σ, P, hPQ, hPD, fun h ↦ (hexact P hPQ).mp hPD ?_⟩
-  rw [← ord_smul_sub_eq_ord_add σ hσ, h]
+  rw [← ord_smul_sub_eq_ord_add σ P hσ, h]
   exact hPD
 
 end Helpers
@@ -236,10 +188,12 @@ theorem exists_ord_sub_pos_of_sq_eq (h2 : (2 : k) ≠ 0) {f : k[X]} (hf : Square
       0 < P.ord (y - algebraMap k F b) := by
   obtain ⟨_, _⟩ := finiteDimensional_and_isSeparable_of_sq_eq h2 hf hdeg hgen hy
   obtain ⟨σ, P, hPQ, hPD, hne⟩ := exists_smul_ne_ord_sub_pos h2 hf hdeg hgen hy hb hab
-  have he := ramificationIdx_eq_one_of_restrict_eq h2 hf hgen hy
-    (not_X_sub_C_dvd_of_sq_eq hb hab) hPQ
-  refine ⟨P, hPQ, degree_eq_one_of_smul_ne (finrank_ratFunc_eq_two_of_sq_eq hf hdeg hgen hy) a σ
-    hPQ he hne, he, ?_, hPD⟩
+  have hfa : ¬X - C a ∣ f := by
+    rw [dvd_iff_isRoot, IsRoot, ← hab]
+    exact pow_ne_zero 2 hb
+  have he := ramificationIdx_eq_one_of_restrict_eq h2 hf hgen hy hfa hPQ
+  refine ⟨P, hPQ, degree_eq_one_of_smul_ne (finrank_ratFunc_eq_two_of_sq_eq hf hdeg hgen hy)
+    (degree_adicOfIrreducible_X_sub_C a) σ hPQ he hne, he, ?_, hPD⟩
   have hxa : algebraMap (RatFunc k) F RatFunc.X - algebraMap k F a =
       algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) (X - C a)) := by
     rw [map_sub, map_sub, RatFunc.algebraMap_X, RatFunc.algebraMap_C, ← RatFunc.algebraMap_eq_C,
