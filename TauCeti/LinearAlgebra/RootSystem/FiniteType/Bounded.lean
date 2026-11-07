@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Basic
+import TauCeti.LinearAlgebra.Matrix.PosDef.Basic
 
 /-!
 # A finite-type Cartan inequality has finitely many natural solutions
@@ -65,56 +66,6 @@ open scoped Matrix
 namespace TauCeti
 
 variable {B : Type*} [Fintype B] {A : Matrix B B ℤ}
-/-- **Cauchy-Schwarz against a majorant.** If `F` is a symmetric positive semidefinite bilinear
-form and `F x x ≤ F x z`, then `F x v ^ 2 ≤ F z z * F v v` for every `v`. The hypothesis first
-bounds `F x x` by `F z z`, and then Cauchy-Schwarz bounds `F x v`. -/
-theorem _root_.LinearMap.BilinForm.apply_sq_le_mul_of_apply_le_apply {K V : Type*} [Field K]
-    [LinearOrder K] [IsStrictOrderedRing K] [AddCommGroup V] [Module K V]
-    (F : LinearMap.BilinForm K V) (hnonneg : ∀ x, 0 ≤ F x x) (hsymm : LinearMap.IsSymm F)
-    {x z : V} (hle : F x x ≤ F x z) (v : V) : F x v ^ 2 ≤ F z z * F v v := by
-  have hbound : F x x ≤ F z z := by
-    rcases eq_or_lt_of_le (hnonneg x) with h0 | h0
-    · exact h0 ▸ hnonneg z
-    · refine le_of_mul_le_mul_left ?_ h0
-      refine (mul_self_le_mul_self h0.le hle).trans ?_
-      rw [← pow_two]
-      exact F.apply_sq_le_of_symm hnonneg hsymm _ z
-  exact (F.apply_sq_le_of_symm hnonneg hsymm x v).trans
-    (mul_le_mul_of_nonneg_right hbound (hnonneg v))
-
-/-- Every vector of `B → ℚ` is `S *ᵥ z` for a positive definite matrix `S`. -/
-theorem _root_.Matrix.PosDef.exists_mulVec_eq {S : Matrix B B ℚ} (hS : S.PosDef) (w : B → ℚ) :
-    ∃ z, S *ᵥ z = w := by
-  classical
-  have hdet : IsUnit S.det := (Matrix.isUnit_iff_isUnit_det S).mp hS.isUnit
-  exact ⟨S⁻¹ *ᵥ w, by rw [Matrix.mulVec_mulVec, Matrix.mul_nonsing_inv S hdet, Matrix.one_mulVec]⟩
-
-/-- **A positive definite quadratic inequality bounds every coordinate.** For a positive definite
-matrix `S` and a linear functional `w`, the vectors `c` with `c ⬝ᵥ S *ᵥ c ≤ c ⬝ᵥ w` have squared
-coordinates bounded independently of `c`. -/
-theorem _root_.Matrix.PosDef.exists_sq_le_of_dotProduct_mulVec_le {S : Matrix B B ℚ}
-    (hS : S.PosDef) (w : B → ℚ) :
-    ∃ M : ℚ, ∀ c : B → ℚ, c ⬝ᵥ S *ᵥ c ≤ c ⬝ᵥ w → ∀ k, c k ^ 2 ≤ M := by
-  classical
-  set F : LinearMap.BilinForm ℚ (B → ℚ) := Matrix.toBilin' S with hFdef
-  have hFapply : ∀ u v : B → ℚ, F u v = u ⬝ᵥ S *ᵥ v := fun u v ↦ Matrix.toBilin'_apply' S u v
-  have hST : Sᵀ = S := by
-    ext p q
-    simpa using hS.isHermitian.apply p q
-  have hnonneg : ∀ u : B → ℚ, 0 ≤ F u u := fun u ↦ by
-    simpa [hFapply] using hS.posSemidef.dotProduct_mulVec_nonneg u
-  have hsymmB : F.IsSymm := LinearMap.BilinForm.isSymm_def.mpr fun u v ↦ by
-    rw [hFapply, hFapply, Matrix.dotProduct_mulVec, ← Matrix.mulVec_transpose, hST]
-    exact dotProduct_comm _ _
-  have hsymm : LinearMap.IsSymm F := LinearMap.BilinForm.isSymm_iff.mp hsymmB
-  obtain ⟨z, hz⟩ := hS.exists_mulVec_eq w
-  choose u hu using fun k : B ↦ hS.exists_mulVec_eq (Pi.single k 1)
-  refine ⟨F z z * ∑ k, F (u k) (u k), fun c hc k ↦ ?_⟩
-  have hle : F c c ≤ F c z := by rwa [hFapply, hFapply, hz]
-  calc c k ^ 2 = F c (u k) ^ 2 := by rw [hFapply, hu, dotProduct_single_one]
-    _ ≤ F z z * F (u k) (u k) := F.apply_sq_le_mul_of_apply_le_apply hnonneg hsymm hle _
-    _ ≤ F z z * ∑ k, F (u k) (u k) := mul_le_mul_of_nonneg_left
-        (Finset.single_le_sum (fun j _ ↦ hnonneg (u j)) (Finset.mem_univ k)) (hnonneg z)
 
 /-- **A positively symmetrized matrix inequality has finitely many natural solutions.** Let `d` be
 a positive rational vector such that the matrix with entries `d i * A i j` is positive definite.
