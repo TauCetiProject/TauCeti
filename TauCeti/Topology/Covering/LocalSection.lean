@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Covering.Basic
 public import Mathlib.Topology.Connected.LocallyConnected
 public import Mathlib.Topology.MetricSpace.Pseudo.Defs
+public import TauCeti.Topology.SeparatedMap
 
 /-!
 # Covering maps from local sections of uniform radius
@@ -30,9 +31,6 @@ and `E` is Hausdorff. Every point `e'` over `V` lies on its own section, whose b
 
 ## Main results
 
-* `IsLocallyInjective.eqOn_of_leftInvOn`: two sections of a locally injective map over a
-  preconnected set, continuous there, that agree at one point agree on the set, when the total
-  space is Hausdorff.
 * `IsCoveringMap.of_forall_exists_section`: a continuous map with local sections of uniform
   radius and open image, from a Hausdorff space to a locally connected pseudometric space, is a
   covering map.
@@ -50,33 +48,21 @@ namespace TauCeti
 
 variable {E X : Type*} [TopologicalSpace E] [PseudoMetricSpace X] {p : E → X}
 
-/-- Two sections of `p` over a preconnected set `S` that are continuous on `S` and agree at one
-point of `S` agree on `S`, when `p` is locally injective and the total space is Hausdorff. -/
-theorem _root_.IsLocallyInjective.eqOn_of_leftInvOn [T2Space E] (hinj : IsLocallyInjective p)
-    {S : Set X} {s s' : X → E} (hS : IsPreconnected S) (hs : ContinuousOn s S)
-    (hs' : ContinuousOn s' S) (hl : LeftInvOn p s S) (hl' : LeftInvOn p s' S) {y : X} (hy : y ∈ S)
-    (hee' : s y = s' y) : EqOn s s' S :=
-  (T2Space.isSeparatedMap p).eqOn_of_comp_eqOn hinj hS hs hs'
-    (fun z hz ↦ by simp only [Function.comp_apply, hl hz, hl' hz]) hy hee'
-
 /-- The trivialisation step: if the fibre `p ⁻¹' {x}` is nonempty, and `V` is a connected open
 neighbourhood of `x` lying in the ball of every point of the fibre over `x` (`hfib`), with every
 point over `V` on the sheet `s e '' V` through some point `e` of the fibre (`hmem`), then `x` is
 evenly covered by `p`. -/
-private lemma isEvenlyCovered_of_sections [T2Space E] (hp : Continuous p) {ε : ℝ} (hε : 0 < ε)
+private lemma isEvenlyCovered_of_sections [T2Space E] (hp : Continuous p) {ε : ℝ}
     {s : E → X → E} (hsc : ∀ e, ContinuousOn (s e) (ball (p e) ε))
     (hso : ∀ e, IsOpen (s e '' ball (p e) ε)) (hps : ∀ e, ∀ x ∈ ball (p e) ε, p (s e x) = x)
-    (hse : ∀ e, s e (p e) = e) (hinj : IsLocallyInjective p) {x : X} {V : Set X} (hVo : IsOpen V)
+    (hinj : IsLocallyInjective p) {x : X} {V : Set X} (hVo : IsOpen V)
     (hxV : x ∈ V) (hVc : IsConnected V) (hF : (p ⁻¹' {x}).Nonempty)
     (hfib : ∀ e ∈ p ⁻¹' {x}, V ⊆ ball (p e) ε) (hsx : ∀ e ∈ p ⁻¹' {x}, s e x = e)
     (hmem : ∀ e', p e' ∈ V → s e' x ∈ p ⁻¹' {x} ∧ e' ∈ s (s e' x) '' V) :
     IsEvenlyCovered p x (p ⁻¹' {x}) := by
-  have : DiscreteTopology (p ⁻¹' {x}) := isDiscrete_iff_discreteTopology.1 <|
-    isDiscrete_iff_forall_mem_exists_isOpen.2 fun e he ↦ ⟨s e '' ball (p e) ε, hso e, by
-      refine subset_antisymm ?_ (singleton_subset_iff.2 ⟨⟨p e, mem_ball_self hε, hse e⟩, he⟩)
-      rintro _ ⟨⟨y, hy, rfl⟩, hy'⟩
-      rw [mem_preimage, hps e y hy, mem_singleton_iff] at hy'
-      rw [hy', hsx e he, mem_singleton_iff]⟩
+  have : DiscreteTopology (p ⁻¹' {x}) := (discreteTopology_iff_locallyInjective x).2 <| by
+    convert hinj.comp_right continuous_subtype_val Subtype.val_injective using 1
+    exact funext fun e ↦ (mem_singleton_iff.1 e.2).symm
   have : Nonempty (X → E) := ⟨fun _ ↦ hF.some⟩
   have : Nonempty (p ⁻¹' {x}) := hF.to_subtype
   refine .of_trivialization (t := hVo.trivializationDiscrete (fun e : p ⁻¹' {x} ↦ s e '' V) V
@@ -147,7 +133,7 @@ theorem _root_.IsCoveringMap.of_forall_exists_section [T2Space E] [LocallyConnec
       ((hsc _).mono (hVball e' he')) (fun y hy ↦ hps _ y (hfib _ hfx hy))
       (fun y hy ↦ hps _ y (hVball e' he' hy)) hxV (hsx _ hfx) he', hse]
   by_cases hF : (p ⁻¹' {x}).Nonempty
-  · exact isEvenlyCovered_of_sections hp hε hsc hso hps hse hinj hVo hxV hVc hF hfib hsx hmem
+  · exact isEvenlyCovered_of_sections hp hsc hso hps hinj hVo hxV hVc hF hfib hsx hmem
   · have : IsEmpty (p ⁻¹' {x}) := isEmpty_coe_sort.2 (not_nonempty_iff_eq_empty.1 hF)
     exact .of_preimage_eq_empty _ (hVo.mem_nhds hxV)
       (eq_empty_of_forall_notMem fun e' he' ↦ hF ⟨_, (hmem e' he').1⟩)
