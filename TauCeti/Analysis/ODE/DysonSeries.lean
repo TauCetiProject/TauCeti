@@ -56,6 +56,8 @@ one-parameter automorphism groups of C⋆-algebras.
   time-dependent linear equation `w' t = M t (w t)` is `w t = dysonSeriesLeft M t (w 0)`.
 * `TauCeti.periodic_dysonSeriesLeft_apply_iff`: for a periodic path of bounded operators, such a
   solution is periodic exactly when its initial value is fixed by the propagator over one period.
+* `TauCeti.apply_dysonSeriesLeft_apply_dysonSeriesLeft`: the propagator of a continuous path
+  that is skew for a continuous bilinear map `B` preserves `B`.
 * `TauCeti.contDiff_dysonSeriesLeft`: the left series of a `Cⁿ` path is `Cⁿ⁺¹`.
 * `TauCeti.dysonSeries_neg_mul_dysonSeriesLeft`, `TauCeti.dysonSeriesLeft_mul_dysonSeries_neg`:
   the Dyson series of `-p` is the inverse of the left Dyson series of `p`.
@@ -438,6 +440,20 @@ theorem periodic_dysonSeriesLeft_apply_iff {M : ℝ → X →L[ℝ] X} (hM : Con
     Function.Periodic (fun t => dysonSeriesLeft M t x) d ↔ dysonSeriesLeft M d x = x := by
   refine ⟨fun h => by simpa [dysonSeriesLeft_zero] using h 0, fun h t => ?_⟩
   simp only [dysonSeriesLeft_add_of_periodic hM hper t, mul_apply_eq_comp, h]
+
+/-- **The propagator of a skew path preserves the bilinear form.** If `M` is a continuous path of
+bounded operators with `B (M r u) w + B u (M r w) = 0`, then the propagator of
+`w' t = M t (w t)` preserves `B`. -/
+theorem apply_dysonSeriesLeft_apply_dysonSeriesLeft {M : ℝ → X →L[ℝ] X} (hM : Continuous M)
+    {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W] (B : X →L[ℝ] X →L[ℝ] W)
+    (hskew : ∀ r u w, B (M r u) w + B u (M r w) = 0) (t : ℝ) (u w : X) :
+    B (dysonSeriesLeft M t u) (dysonSeriesLeft M t w) = B u w := by
+  have hd (r : ℝ) : HasDerivAt (fun q => B (dysonSeriesLeft M q u) (dysonSeriesLeft M q w)) 0 r :=
+    (B.hasDerivAt_of_bilinear (fun _ => hasDerivAt_dysonSeriesLeft_apply hM u r)
+      (fun _ => hasDerivAt_dysonSeriesLeft_apply hM w r)).congr_deriv (by rw [add_comm, hskew])
+  have hc := is_const_of_deriv_eq_zero (fun r => (hd r).differentiableAt)
+    (fun r => (hd r).deriv) t 0
+  simpa [dysonSeriesLeft_zero] using hc
 
 /-- **Variation of constants.** For continuous `M` and `f`, the map
 `w t = Ψ t (x + ∫₀ᵗ Ψ(s)⁻¹ (f s) ds)`, where `Ψ = dysonSeriesLeft M` and
