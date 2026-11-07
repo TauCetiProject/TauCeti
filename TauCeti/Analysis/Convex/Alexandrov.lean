@@ -224,7 +224,7 @@ theorem isLittleO_of_forall_mem_subdifferential_norm_sub_le {x y : E} {A : E →
     nlinarith [A.le_opNorm h, norm_nonneg h]
   -- Along the segment, `⟪h, Y (p k)⟫` follows the expansion up to `(c / 2) * ‖h‖ ^ 2`.
   have hY' : ∀ k ≤ n, |⟪h, Y (p k)⟫_ℝ - ⟪h, y⟫_ℝ - k * a * X| ≤ c / 2 * ‖h‖ ^ 2 :=
-    fun k hk => abs_inner_sub_inner_sub_mul_le (by positivity)
+    fun k hk => abs_inner_sub_inner_sub_mul_le (A := A.toLinearMap) (by positivity)
       (by simp only [p, add_sub_cancel_left]) (hpx k hk) ((hball (hp k hk)).2 _ (hY _ (hp k hk)))
   have hstep : ∀ k < n, |F (p (k + 1)) - F (p k) - (a * ⟪h, y⟫_ℝ + (k * a + a / 2) * a * X)| ≤
       ‖A‖ * ‖h‖ ^ 2 * a ^ 2 / 2 + c / 2 * ‖h‖ ^ 2 * a := fun k hk => by

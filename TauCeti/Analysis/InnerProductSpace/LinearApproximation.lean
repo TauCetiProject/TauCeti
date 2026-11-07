@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Basic
-public import Mathlib.Analysis.Normed.Operator.Basic
 
 /-!
 # Inner products along a linear approximation
@@ -31,7 +30,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 /-- Along the segment `x + t • h`, a vector `y'` which follows the expansion
 `y + A (z - x)` up to `ε * ‖z - x‖` satisfies `⟪h, y'⟫ = ⟪h, y⟫ + t * ⟪h, A h⟫` up to
 `ε * ‖h‖ ^ 2`. -/
-theorem abs_inner_sub_inner_sub_mul_le {z x y y' h : E} {A : E →L[ℝ] E} {t ε : ℝ}
+theorem abs_inner_sub_inner_sub_mul_le {z x y y' h : E} {A : E →ₗ[ℝ] E} {t ε : ℝ}
     (hε : 0 ≤ ε) (hz : z - x = t • h) (hzh : ‖z - x‖ ≤ ‖h‖)
     (hb : ‖y' - y - A (z - x)‖ ≤ ε * ‖z - x‖) :
     |⟪h, y'⟫_ℝ - ⟪h, y⟫_ℝ - t * ⟪h, A h⟫_ℝ| ≤ ε * ‖h‖ ^ 2 := by
