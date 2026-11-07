@@ -259,6 +259,8 @@ theorem IsCharacterMap.comp (hF : IsCharacterMap T F φ) (hF' : IsCharacterMap T
 /-- The pullback of an iterate is the corresponding power of the character map. -/
 theorem IsCharacterMap.pow {F : Monoid.End G} (hF : IsCharacterMap T F φ) (n : ℕ) :
     IsCharacterMap T (HPow.hPow (α := Monoid.End G) F n) (φ ^ n) := by
+  -- In `Monoid.End G`, the unit is `MonoidHom.id` and multiplication is `MonoidHom.comp`
+  -- by definition, so the identity and composition lemmas apply directly in both cases.
   induction n with
   | zero => exact isCharacterMap_id T
   | succ n ih =>

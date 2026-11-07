@@ -31,11 +31,9 @@ namespace TauCeti.SuzukiLieIndex
 /-- The represented Suzuki Steinberg map pulls characters back by the weight map of the native
 root-datum Steinberg map. Both maps use the valid index's own field exponent. -/
 theorem isCharacterMap_steinberg_suzuki (m : ℕ) (hv : (LieTypeIndex.suzuki m).Valid) :
-    let d : SuzukiLieIndex := ⟨⟨.suzuki m, hv⟩, by simp⟩
-    IsCharacterMap (SpStd.b2WeightTorusPoints d.1.Closure) d.steinberg
-      d.toSuzukiReeIndex.datumSteinberg.weightMap := by
-  dsimp only
-  let d : SuzukiLieIndex := ⟨⟨.suzuki m, hv⟩, by simp⟩
+    IsCharacterMap (SpStd.b2WeightTorusPoints (of m hv).1.Closure) (of m hv).steinberg
+      (of m hv).toSuzukiReeIndex.datumSteinberg.weightMap := by
+  let d := of m hv
   have : CharP d.1.Closure 2 := by
     rw [← d.characteristic_eq_two]
     infer_instance
