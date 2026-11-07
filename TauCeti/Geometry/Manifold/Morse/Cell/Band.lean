@@ -87,7 +87,7 @@ theorem IsMorse.isZero_singularHomology_sublevelPair_of_manifoldMorseIndex_le [H
     (fun _ _ hst hcompact hcrit ↦ isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero
       hf.contMDiff hst hcompact
         (fun x hx₁ hx₂ hx ↦ hcrit x (mem_criticalPoints_iff_mfderiv_eq_zero.2 hx) ⟨hx₁, hx₂⟩) R n)
-    (fun p hp hap hpb _ hδ hcompact ↦ by
+    (fun p hp hap hpb _ hδ hcompact _ ↦ by
       obtain ⟨ε, hε, hεδ, hzero⟩ :=
         hf.exists_isZero_singularHomology_sublevelPair_of_manifoldMorseIndex_le
           (fun q hq ↦ hd q ⟨hq.1, by

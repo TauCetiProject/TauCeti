@@ -116,7 +116,7 @@ theorem IsMorse.free_singularHomology_sublevelPair_of_manifoldMorseIndex_le (hf 
     have := ModuleCat.isZero_iff_subsingleton.1 (h d)
     exact ⟨h (d + 1), inferInstance⟩
   · -- One critical level: the cell pair has no `(d + 1)`-cells.
-    intro p _ hap hpb δ hδ hcompact'
+    intro p _ hap hpb δ hδ hcompact' _
     obtain ⟨ε, hε, hεδ, C, _, _, hC, hcell, hiso⟩ :=
       hf.exists_relCWComplex_isIso_singularHomologyMap_sublevelPair hδ hcompact'
     refine ⟨ε, hε, hεδ, ?_⟩

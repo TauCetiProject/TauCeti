@@ -463,7 +463,8 @@ theorem IsMorse.exists_criticalPoints_inter_preimage_Icc_subset (hf : IsMorse I 
 `a ≤ b` regular values of `f` with compact band `f⁻¹[a, b]`. A property `P s t` of intervals holds
 for `[a, b]` if it holds across every compact band `f⁻¹[s, t]` without critical points, across
 some `[c - ε, c + ε]` inside any compact band `f⁻¹[c - δ, c + δ]` around a critical value
-`c ∈ (a, b)`, and passes from `[s, m]` and `[m, t]` to `[s, t]` when `f⁻¹[s, t]` is compact.
+`c ∈ (a, b)` whose critical points all lie on the level `c`, and passes from `[s, m]` and `[m, t]`
+to `[s, t]` when `f⁻¹[s, t]` is compact.
 
 The proof cuts the band just above its lowest critical value and inducts on the number of critical
 points in it. This is the induction along which Milnor's cell attachments across single critical
@@ -475,7 +476,8 @@ theorem IsMorse.band_induction (hf : IsMorse I f) {P : ∀ s t : ℝ, s ≤ t �
       (∀ x ∈ criticalPoints I f, f x ∉ Icc s t) → P s t hst)
     (hlevel : ∀ p ∈ criticalPoints I f, a < f p → f p < b → ∀ δ, 0 < δ →
       IsCompact (f ⁻¹' Icc (f p - δ) (f p + δ)) →
-        ∃ ε, ∃ hε : 0 < ε, ε ≤ δ ∧ P (f p - ε) (f p + ε) (by linarith))
+        criticalPoints I f ∩ f ⁻¹' Icc (f p - δ) (f p + δ) ⊆ f ⁻¹' {f p} →
+          ∃ ε, ∃ hε : 0 < ε, ε ≤ δ ∧ P (f p - ε) (f p + ε) (by linarith))
     (htrans : ∀ s m t (hsm : s ≤ m) (hmt : m ≤ t), IsCompact (f ⁻¹' Icc s t) → P s m hsm →
       P m t hmt → P s t (hsm.trans hmt)) :
     P a b hab := by
@@ -511,7 +513,7 @@ theorem IsMorse.band_induction (hf : IsMorse I f) {P : ∀ s t : ℝ, s ≤ t �
   obtain ⟨δ', hδ', hδ'δ, hsub⟩ :=
     hf.exists_criticalPoints_inter_preimage_Icc_subset hδ (hcompact' hδa.le hδb.le)
   obtain ⟨ε, hε, hεδ', hmid⟩ :=
-    hlevel p hp haa' hac hcb δ' hδ' (hcompact' (by linarith) (by linarith))
+    hlevel p hp haa' hac hcb δ' hδ' (hcompact' (by linarith) (by linarith)) hsub
   -- Below `c - ε` the band holds no critical point, since `c` is the lowest critical value.
   have hlow : P a' (f p - ε) (by linarith) :=
     hregular _ _ _ (hcompact' le_rfl (by linarith)) fun x hx hxI ↦ by
