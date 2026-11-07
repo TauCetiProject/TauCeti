@@ -141,28 +141,6 @@ private theorem norm_gradient_le_toReal_eLpNorm_iteratedFDeriv_two {U : Set E} {
   filter_upwards [self_mem_ae_restrict V.isOpen.measurableSet] with z hz
   simpa [he] using norm_gradient_fderiv_apply_le (hdiff z (hVU hz)) e
 
-/-- If the gradients of the partial derivatives `∂ᵢu` of a `C²` function are `α`-Hölder on `S`
-with constant `D`, then `D²u` is `α`-Hölder on `S` with constant `(n + 1) D`. -/
-private theorem holderOnWith_iteratedFDeriv_two_of_dist_gradient_le {α : ℝ≥0} {S : Set E}
-    {u : E → ℝ} {D : ℝ} (hD : 0 ≤ D) (hdiff : ∀ x ∈ S, DifferentiableAt ℝ (fderiv ℝ u) x)
-    (hdir : ∀ i, ∀ x ∈ S, ∀ y ∈ S,
-      dist (∇ (fun z => fderiv ℝ u z (EuclideanSpace.basisFun (Fin (n + 1)) ℝ i)) x)
-        (∇ (fun z => fderiv ℝ u z (EuclideanSpace.basisFun (Fin (n + 1)) ℝ i)) y) ≤
-        D * dist x y ^ (α : ℝ)) :
-    HolderOnWith (((n : ℝ) + 1) * D).toNNReal α (iteratedFDeriv ℝ 2 u) S := by
-  refine HolderOnWith.of_dist_le fun x hx y hy => ?_
-  rw [Real.coe_toNNReal _ (by positivity), dist_eq_norm]
-  calc ‖iteratedFDeriv ℝ 2 u x - iteratedFDeriv ℝ 2 u y‖
-      ≤ ∑ i, ‖∇ (fun z => fderiv ℝ u z (EuclideanSpace.basisFun (Fin (n + 1)) ℝ i)) x -
-          ∇ (fun z => fderiv ℝ u z (EuclideanSpace.basisFun (Fin (n + 1)) ℝ i)) y‖ :=
-        norm_iteratedFDeriv_two_sub_le_sum _ (hdiff x hx) (hdiff y hy)
-    _ ≤ ∑ _i : Fin (n + 1), D * dist x y ^ (α : ℝ) :=
-        Finset.sum_le_sum fun i _ => by simpa only [dist_eq_norm] using hdir i x hx y hy
-    _ = _ := by
-        rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
-        push_cast
-        ring
-
 /-- **Interior Schauder estimate for Poisson's equation, classical form.** Let `0 < α < 1`. There
 is a constant `C`, depending only on `n` and `α`, such that the following holds. Let `u` be of
 class `C²` on an open set `U ⊆ ℝ^{n+1}`, let `S` be bounded, `R > 0`, and suppose that the closed
@@ -231,8 +209,9 @@ theorem exists_holderOnWith_iteratedFDeriv_two_of_laplacian {α : ℝ≥0} (hα 
     gcongr
     simp
   rw [mul_assoc]
-  exact holderOnWith_iteratedFDeriv_two_of_dist_gradient_le (by positivity)
+  have hHol := holderOnWith_iteratedFDeriv_two_of_dist_gradient_le b (α := α) (by positivity)
     (fun x hx => hdiff x (hVU (hSV hx))) hdir
+  rwa [Fintype.card_fin, Nat.cast_add, Nat.cast_one] at hHol
 
 /-- **Local `C^{2,α}` regularity for Poisson's equation.** Let `0 < α < 1`, and let `u` be of class
 `C²` on an open set `U ⊆ ℝ^{n+1}` whose Laplacian is locally `α`-Hölder on `U`. Then `D²u` is
@@ -416,14 +395,13 @@ theorem exists_holderOnWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv {α : �
   have hlip : LipschitzWith (√Lam).toNNReal e := LipschitzWith.of_dist_le_mul fun y y' => by
     rw [Real.coe_toNNReal _ (Real.sqrt_nonneg _), dist_eq_norm, dist_eq_norm, ← map_sub]
     exact he' _
-  have hsqrt : (0 : ℝ≥0) < (√Lam).toNNReal := Real.toNNReal_pos.2 (Real.sqrt_pos.2 hLam)
   have hthick : thickening R' (e ⁻¹' S) ⊆ e ⁻¹' thickening R S := by
     simpa only [Real.coe_toNNReal _ (Real.sqrt_nonneg _)] using
       TauCeti.thickening_preimage_subset_preimage_thickening hlip S (R := R)
   have hcthick : cthickening R' (e ⁻¹' S) ⊆ e ⁻¹' U := by
     refine (?_ : cthickening R' (e ⁻¹' S) ⊆ e ⁻¹' cthickening R S).trans (preimage_mono hSU)
     simpa only [Real.coe_toNNReal _ (Real.sqrt_nonneg _)] using
-      TauCeti.cthickening_preimage_subset_preimage_cthickening hlip hsqrt S
+      TauCeti.cthickening_preimage_subset_preimage_cthickening hlip S
   have hS' : Bornology.IsBounded (e ⁻¹' S) := by
     rw [← e.image_symm_eq_preimage]
     exact (e.symm : E →L[ℝ] E).lipschitzWith.isBounded_image hS
