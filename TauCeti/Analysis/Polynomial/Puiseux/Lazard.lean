@@ -72,20 +72,13 @@ private lemma analyticOnNhd_coeff_map_eval₂Hom {σ ι : Type*} [Fintype σ] [F
       (analyticAt_snd.pow (c j))) ((p.coeff i).map Complex.ofRealHom)
   simpa only [MvPolynomial.aeval_eq_eval] using h
 
-/-- A nonvanishing evaluated leading coefficient preserves the degree of the complexified
-polynomial. -/
-private lemma natDegree_map_eval₂Hom_eq {σ : Type*} (p : Polynomial (MvPolynomial σ ℝ))
-    {x : σ → ℂ} (h : MvPolynomial.eval₂ Complex.ofRealHom x p.leadingCoeff ≠ 0) :
-    (p.map (MvPolynomial.eval₂Hom Complex.ofRealHom x)).natDegree = p.natDegree :=
-  natDegree_map_of_leadingCoeff_ne_zero _ h
-
 /-- If the leading coefficient and the discriminant of `p` do not vanish at `x`, neither does
 the discriminant of the complexified polynomial. -/
 private lemma discr_map_eval₂Hom_ne_zero {σ : Type*} (p : Polynomial (MvPolynomial σ ℝ))
     {x : σ → ℂ} (hl : MvPolynomial.eval₂ Complex.ofRealHom x p.leadingCoeff ≠ 0)
     (hd : MvPolynomial.eval₂ Complex.ofRealHom x p.discr ≠ 0) :
     (p.map (MvPolynomial.eval₂Hom Complex.ofRealHom x)).discr ≠ 0 := by
-  rw [discr_map_of_natDegree_eq _ (natDegree_map_eval₂Hom_eq p hl)]
+  rw [discr_map_of_natDegree_eq _ (natDegree_map_of_leadingCoeff_ne_zero _ hl)]
   exact hd
 
 variable {σ ι : Type*} [LinearOrder σ] [Fintype σ] [Fintype ι]
@@ -174,7 +167,7 @@ theorem exists_complexification_isLazardEvaluator_nonmonic_laurent
     exact mul_ne_zero (pow_ne_zero _ hb.2.2) (hforms b ⟨hb.1, hb.2.1⟩ k).1
   have hdeg (b) (hb : b ∈ ball (fun j ↦ (a j : ℂ)) ρ ×ˢ (ball 0 ρ \ {0})) :
       (F b).natDegree = p.natDegree :=
-    natDegree_map_eval₂Hom_eq p (hnz b hb 0)
+    natDegree_map_of_leadingCoeff_ne_zero _ (hnz b hb 0)
   have hD (b) (hb : b ∈ ball (fun j ↦ (a j : ℂ)) ρ ×ˢ (ball 0 ρ \ {0})) :
       (F b).discr ≠ 0 :=
     discr_map_eval₂Hom_ne_zero p (hnz b hb 0) (hnz b hb 2)
