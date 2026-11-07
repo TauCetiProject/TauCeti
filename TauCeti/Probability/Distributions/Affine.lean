@@ -47,7 +47,7 @@ Mathlib's `ProbabilityTheory.variance_id_map`, `ProbabilityTheory.variance_const
 ## Main results
 
 * `TauCeti.Probability.map_affine_map_affine` — affine pushforwards compose;
-* `TauCeti.Probability.support_map_affine` — a nonconstant affine pushforward transports the
+* `TauCeti.Probability.support_map_affine` — an affine pushforward transports the
   topological support;
 * `TauCeti.Probability.measurable_map_affine` — affine pushforward is jointly measurable in the
   probability law, intercept, and slope;
@@ -99,16 +99,30 @@ theorem map_affine_map_affine (a b c d : ℝ) :
   simp only [Function.comp_apply]
   ring
 
-/-- **Support of an affine image.** A nonconstant affine pushforward has support equal to the
-affine image of the original support. -/
-theorem support_map_affine (hb : b ≠ 0) :
+/-- **Support of an affine image.** An affine pushforward has support equal to the affine image of
+the original support, for every slope: at slope zero both sides are the singleton `{a}` (or both
+are empty when `μ = 0`). -/
+theorem support_map_affine :
     (μ.map fun x ↦ a + b * x).support = (fun x ↦ a + b * x) '' μ.support := by
-  let e : ℝ ≃ₜ ℝ := (Homeomorph.smulOfNeZero b hb).trans (Homeomorph.addLeft a)
-  have he : (e : ℝ → ℝ) = fun x ↦ a + b * x := by
-    funext x
-    simp [e, smul_eq_mul]
-  rw [← he]
-  exact μ.support_map_homeomorph e
+  rcases eq_or_ne b 0 with rfl | hb
+  · rcases eq_or_ne μ 0 with rfl | hμ
+    · simp
+    · simp only [zero_mul, add_zero, Measure.map_const]
+      rw [Measure.support_smul_measure _ _ (by simpa using hμ),
+        (Measure.nonempty_support hμ).image_const]
+      ext x
+      simp only [Measure.mem_support_iff_forall, mem_singleton_iff]
+      refine ⟨fun h => ?_, fun h U hU => ?_⟩
+      · by_contra hxa
+        have := h {a}ᶜ (isOpen_compl_singleton.mem_nhds hxa)
+        simp at this
+      · subst h; simp [mem_of_mem_nhds hU]
+  · let e : ℝ ≃ₜ ℝ := (Homeomorph.smulOfNeZero b hb).trans (Homeomorph.addLeft a)
+    have he : (e : ℝ → ℝ) = fun x ↦ a + b * x := by
+      funext x
+      simp [e, smul_eq_mul]
+    rw [← he]
+    exact μ.support_map_homeomorph e
 
 /-- Affine pushforward is jointly measurable in the probability law, intercept, and slope. -/
 @[fun_prop]
