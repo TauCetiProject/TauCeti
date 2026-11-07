@@ -211,7 +211,7 @@ theorem abelianizationHom_ofAdd_eq_one_iff (u : X → ℤ_[p]) :
       (mk_surjective p {r}), ker_mk] at hmem
     obtain ⟨y, hy, hyu⟩ := hmem
     obtain ⟨l, hl⟩ := MonoidHom.mem_range.mp (Subgroup.mem_comap.mp
-      (freeProP.normalClosure_topologicalClosure_le_comap_range_padicPowHom p X r hy))
+      ((isProP_freeProP p X).normalClosure_topologicalClosure_le_comap_range_padicPowHom r hy))
     refine Submodule.mem_span_singleton.mpr ⟨l.toAdd, ?_⟩
     have h' := congrArg (freeProP.abelianizationEquiv p X) hyu
     rw [ContinuousMulEquiv.apply_symm_apply, ← hl, MonoidHom.coe_ofClass, hF.padicPowHom_apply,
