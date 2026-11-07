@@ -286,16 +286,6 @@ theorem IsLattice.exists_forall_pow_smul_mem (p : ℕ) [Fact p.Prime] {W : Type*
 
 variable {N : Submodule ℤ V} [N.IsLattice ℚ]
 
-/-- Scalar multiplication by a `p`-adic integer is scalar multiplication by its image in `ℚ_p`. -/
-private theorem padicInt_smul_eq_smul (q : Nat.Primes) (c : ℤ_[q]) (x : ℚ_[q] ⊗[ℚ] V) :
-    c • x = (c : ℚ_[q]) • x :=
-  (algebraMap_smul ℚ_[q] c x).symm
-
-/-- Tensoring `1` with a natural multiple of `v` multiplies `1 ⊗ v` by the same `p`-adic integer. -/
-private theorem one_tmul_nsmul (p : Nat.Primes) (c : ℕ) (v : V) :
-    (1 : ℚ_[p]) ⊗ₜ[ℚ] (c • v) = (c : ℤ_[p]) • (1 : ℚ_[p]) ⊗ₜ[ℚ] v := by
-  rw [tmul_smul, Nat.cast_smul_eq_nsmul]
-
 /-- At each prime a power `p ^ k p` multiplies `X p` into `N_p` and `N_p` into `X p`, and `k p`
 vanishes at almost every prime. -/
 private theorem exists_pow_smul_mem_padicLocalization
@@ -389,7 +379,8 @@ private theorem one_tmul_smul_mem {X : ∀ p : Nat.Primes, Submodule ℤ_[p] (�
       push_cast
       ring
     have h : (1 : ℚ_[q]) ⊗ₜ[ℚ] (r • w) = (q : ℤ_[q]) ^ k q • c • (1 : ℚ_[q]) ⊗ₜ[ℚ] w := by
-      rw [padicInt_smul_eq_smul q c, padicInt_smul_eq_smul q, tmul_smul,
+      rw [algebra_compatible_smul ℚ_[q] ((q : ℤ_[q]) ^ k q), algebra_compatible_smul ℚ_[q] c,
+        PadicInt.algebraMap_apply, PadicInt.algebraMap_apply, tmul_smul,
         ← algebraMap_smul ℚ_[q] r, eq_ratCast, hrq, smul_smul]
       simp
     rw [h]
@@ -415,7 +406,10 @@ private theorem exists_forall_one_tmul_mem_add
       rw [hr, Rat.cast_div, Rat.cast_pow, Rat.cast_natCast, Rat.cast_natCast,
         div_mul_cancel₀ _ (pow_ne_zero _ (Nat.cast_ne_zero.mpr p.2.ne_zero))]
     rw [tmul_smul, ← algebraMap_smul ℚ_[p] r, eq_sub_of_add_eq hwt.symm, eq_ratCast]
-    simp only [padicInt_smul_eq_smul, PadicInt.coe_pow, PadicInt.coe_natCast, ← hrp]
+    simp only [algebra_compatible_smul ℚ_[p] (D' p : ℤ_[p]),
+      algebra_compatible_smul ℚ_[p] ((p : ℤ_[p]) ^ k p),
+      algebra_compatible_smul ℚ_[p] ((p : ℤ_[p]) ^ (2 * k p)), PadicInt.algebraMap_apply,
+      PadicInt.coe_pow, PadicInt.coe_natCast, ← hrp]
     module
   refine ⟨r • w, one_tmul_smul_mem hkN hD'q hr hw ?_, t, ht, hy'⟩
   rw [eq_sub_of_add_eq hy'.symm]
@@ -440,11 +434,11 @@ private theorem exists_isLattice_padicLocalization_eq
       zero_mem' := fun p ↦ by simp
       smul_mem' := fun n v hv p ↦ by simpa only [tmul_smul] using zsmul_mem (hv p) n }
   have hNM {v : V} (hv : v ∈ N) : D • v ∈ M := fun p ↦ by
-    rw [one_tmul_nsmul, hDsmul]
+    rw [tmul_smul, ← Nat.cast_smul_eq_nsmul ℤ_[p], hDsmul]
     exact smul_mem _ _ (hkN p (one_tmul_mem_padicLocalization hv))
   have hMN {v : V} (hv : v ∈ M) : D • v ∈ N := by
     refine (mem_iff_forall_one_tmul_mem_padicLocalization _).mpr fun p ↦ ?_
-    rw [one_tmul_nsmul, hDsmul]
+    rw [tmul_smul, ← Nat.cast_smul_eq_nsmul ℤ_[p], hDsmul]
     exact smul_mem _ _ (hkX p (hv p))
   refine ⟨M, isLattice_of_nsmul_mem_of_nsmul_mem hD0 (fun v hv ↦ hNM hv) fun v hv ↦ hMN hv,
     fun p ↦ le_antisymm (padicLocalization_le_iff.mpr fun v hv ↦ hv p) fun y hy ↦ ?_⟩
@@ -454,7 +448,7 @@ private theorem exists_isLattice_padicLocalization_eq
     have hle : N.padicLocalization p ≤
         (M.padicLocalization p).comap (DistribSMul.toLinearMap ℤ_[p] _ (D : ℤ_[p])) :=
       padicLocalization_le_iff.mpr fun v hv ↦ by
-        rw [mem_comap, DistribSMul.toLinearMap_apply, ← one_tmul_nsmul]
+        rw [mem_comap, DistribSMul.toLinearMap_apply, Nat.cast_smul_eq_nsmul, ← tmul_smul]
         exact one_tmul_mem_padicLocalization (hNM hv)
     have h := hle hx
     rw [mem_comap, DistribSMul.toLinearMap_apply, hDsmul] at h
