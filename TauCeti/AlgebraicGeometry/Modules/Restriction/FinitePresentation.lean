@@ -25,11 +25,11 @@ open CategoryTheory AlgebraicGeometry
 
 universe u
 
-namespace TauCeti.AlgebraicGeometry
+namespace AlgebraicGeometry.Scheme.Modules
 
 /-- The restriction of a finitely presented module along an open immersion is finitely
 presented: it is isomorphic to the pullback, which is finitely presented. -/
-instance _root_.AlgebraicGeometry.Scheme.Modules.isFinitePresentation_restrict
+instance isFinitePresentation_restrict
     {X U : Scheme.{u}} (j : U ⟶ X) [IsOpenImmersion j] (M : X.Modules)
     [M.IsFinitePresentation] : (M.restrict j).IsFinitePresentation :=
   (SheafOfModules.isFinitePresentation U.ringCatSheaf).prop_of_iso
@@ -62,10 +62,6 @@ theorem isFinitePresentation_of_isFinitePresentation_restrict {X : Scheme.{u}} {
   obtain ⟨V, hV, hxV, hVU⟩ := exists_isAffineOpen_mem_and_subset (x := x) (U := U i) hi
   exact TopologicalSpace.Opens.mem_iSup.mpr ⟨⟨⟨V, hV⟩, i, hVU⟩, hxV⟩
 
-end TauCeti.AlgebraicGeometry
-
-namespace AlgebraicGeometry.Scheme.Modules
-
 /-- A module is finitely presented on a union of opens if it is finitely presented on each
 member. -/
 theorem isFinitePresentation_restrict_iSup {X : Scheme.{u}} (M : X.Modules) {ι : Type*}
@@ -73,8 +69,7 @@ theorem isFinitePresentation_restrict_iSup {X : Scheme.{u}} (M : X.Modules) {ι 
     (M.restrict (⨆ i, U i).ι).IsFinitePresentation := by
   let V := ⨆ i, U i
   let W (i : ι) := V.ι ⁻¹ᵁ U i
-  apply TauCeti.AlgebraicGeometry.isFinitePresentation_of_isFinitePresentation_restrict
-    (M.restrict V.ι) W
+  apply isFinitePresentation_of_isFinitePresentation_restrict (M.restrict V.ι) W
   · apply top_unique
     intro x _
     obtain ⟨i, hi⟩ := TopologicalSpace.Opens.mem_iSup.mp x.property
