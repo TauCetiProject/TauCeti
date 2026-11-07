@@ -25,6 +25,12 @@ the images of the `F j` in the colimit meet.
   the images of the `F k` mapping to both `F i` and `F j`.
 * `AlgebraicGeometry.Scheme.range_pushout_inl_union_range_pushout_inr`: a pushout of two open
   immersions is covered by the images of its two pieces.
+* `AlgebraicGeometry.Scheme.isPullback_pushout_of_isOpenImmersion`: those two pieces intersect
+  in precisely the common open along which they were glued.
+
+## References
+
+* The Stacks Project, Section 26.14, *Gluing schemes* (Tag 01JA).
 -/
 
 public section
@@ -80,5 +86,25 @@ theorem range_pushout_inl_union_range_pushout_inr {W X Z : Scheme.{u}} (g : W �
     rfl
   · exact Or.inl ⟨q, rfl⟩
   · exact Or.inr ⟨q, rfl⟩
+
+/-- The square defining the pushout of two open immersions is also cartesian: the two
+pieces intersect in precisely the open subscheme along which they were glued. -/
+theorem isPullback_pushout_of_isOpenImmersion {W X Y : Scheme.{u}} (i : W ⟶ X)
+    (j : W ⟶ Y) [IsOpenImmersion i] [IsOpenImmersion j] :
+    IsPullback i j (pushout.inl i j) (pushout.inr i j) := by
+  refine IsOpenImmersion.isPullback _ _ _ _ (pushout.condition (f := i) (g := j)).symm
+    (le_antisymm ?_ ?_)
+  · rintro y ⟨x, hx⟩
+    -- The two legs of the span can only meet through its apex.
+    have hx' : colimit.ι (span i j) WalkingSpan.left x =
+        colimit.ι (span i j) WalkingSpan.right y := hx
+    obtain ⟨k, fx, fy, z, rfl, rfl⟩ := (IsLocallyDirected.ι_eq_ι_iff _).mp hx'
+    rcases k with _ | _ | _
+    · cases fy
+      exact ⟨z, rfl⟩
+    · cases fy
+    · cases fx
+  · rintro _ ⟨w, rfl⟩
+    exact ⟨i w, by rw [← Hom.comp_apply, pushout.condition, Hom.comp_apply]⟩
 
 end AlgebraicGeometry.Scheme
