@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Collapse.Basic
-import Mathlib.Data.Set.Card
 import Mathlib.Order.Preorder.Finite
 
 /-!
