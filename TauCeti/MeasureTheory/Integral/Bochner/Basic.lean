@@ -686,6 +686,25 @@ theorem measure_eq_zero_of_integral_eq_zero_of_ae_pos {α : Type*} [MeasurableSp
   rw [← ae_eq_bot]
   exact Filter.eventually_false_iff_eq_bot.1 ((h1.and hg).mono fun x hx => hx.2.ne' hx.1)
 
+/-- If `|u - g| ≤ W` almost everywhere for a finite measure `ν`, then
+`∫ g² ≤ 2 ∫ u² + 2 W² ν(univ)`, since `g² ≤ 2 u² + 2 (u - g)²`. -/
+theorem integral_sq_le_two_mul_integral_sq_add {α : Type*} [MeasurableSpace α] {ν : Measure α}
+    [IsFiniteMeasure ν] {u g : α → ℝ} {W : ℝ} (hu : Integrable (fun x => u x ^ 2) ν)
+    (h : ∀ᵐ x ∂ν, |u x - g x| ≤ W) :
+    ∫ x, g x ^ 2 ∂ν ≤ 2 * ∫ x, u x ^ 2 ∂ν + 2 * W ^ 2 * ν.real Set.univ := by
+  have hrhs : ∫ x, (2 * u x ^ 2 + 2 * W ^ 2) ∂ν =
+      2 * ∫ x, u x ^ 2 ∂ν + 2 * W ^ 2 * ν.real Set.univ := by
+    rw [integral_add (hu.const_mul 2) (integrable_const _), integral_const_mul, integral_const,
+      smul_eq_mul]
+    ring
+  rw [← hrhs]
+  refine integral_mono_of_nonneg (Eventually.of_forall fun _ => sq_nonneg _)
+    ((hu.const_mul 2).add (integrable_const _)) ?_
+  filter_upwards [h] with x hx
+  have habs : |u x - g x| ^ 2 ≤ W ^ 2 := pow_le_pow_left₀ (abs_nonneg _) hx 2
+  rw [sq_abs] at habs
+  nlinarith [sq_nonneg (u x + (u x - g x))]
+
 end MeasureTheory
 
 end TauCeti
