@@ -124,6 +124,15 @@ theorem _root_.IsSl2Triple.eq_two_of_lie_h_e_eq_smul {S H : Type*} [CommRing S] 
   exact sub_eq_zero.mp
     ((NoZeroSMulDivisors.eq_zero_or_eq_zero_of_smul_eq_zero hzero).resolve_right t.e_ne_zero)
 
+/-- Negating and swapping the raising and lowering elements, and negating the Cartan element,
+preserves an `sl₂` triple. -/
+theorem _root_.IsSl2Triple.neg_symm {L : Type*} [LieRing L] {h e f : L}
+    (t : IsSl2Triple h e f) : IsSl2Triple (-h) (-f) (-e) where
+  h_ne_zero := neg_ne_zero.mpr t.h_ne_zero
+  lie_e_f := by simp only [neg_lie, lie_neg, t.symm.lie_e_f, neg_neg]
+  lie_h_e_nsmul := by simp only [lie_neg, t.symm.lie_h_e_nsmul, smul_neg]
+  lie_h_f_nsmul := by simp only [lie_neg, t.symm.lie_h_f_nsmul, smul_neg, neg_neg]
+
 /-- **Rescaling an `sl₂` triple by a unit of the base ring.** Scaling the raising element by `c`
 and the lowering element by `c⁻¹` leaves their bracket, hence the Cartan element, unchanged. -/
 theorem _root_.IsSl2Triple.rescale {S L : Type*} [CommRing S] [LieRing L] [LieAlgebra S L]

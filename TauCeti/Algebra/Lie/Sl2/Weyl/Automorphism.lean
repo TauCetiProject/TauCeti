@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.Weights.Killing
 public import TauCeti.Algebra.Lie.AdjointAction.InnerAutomorphismGroup
+public import TauCeti.Algebra.Lie.Sl2.Basic
 public import TauCeti.RingTheory.Nilpotent.Exp
 
 /-!
@@ -78,6 +79,8 @@ statement above then reads as a relation in the group of units rather than in th
 * `TauCeti.lie_weylAut_apply`: the reflected weight of the image of an eigenvector.
 * `TauCeti.weylAut_apply_eq_expAd_neg_expAd_expAd_neg`: the Weyl automorphism is also
   `exp (ad (-f)) ∘ exp (ad e) ∘ exp (ad (-f))`.
+* `LieHom.map_weylAut_of_eq`: a Lie homomorphism carrying the raising and lowering elements of
+  one triple to those of another intertwines their Weyl automorphisms.
 * `LieHom.map_weylAut`: a Lie endomorphism exchanging `e` with `-f` and `f` with `-e` commutes with
   the Weyl automorphism.
 * `IsSl2Triple.ofLinearEquiv_weylAut_mem_intLieAlgebra`: when `ad e` and `ad f` are nilpotent, not
@@ -314,6 +317,28 @@ lemma weylAut_apply_eq_expAd_neg_expAd_expAd_neg (t : IsSl2Triple h e f) (y : L)
     rw [hW, ← expAd_symm e he, LieEquiv.apply_symm_apply, LieEquiv.symm_apply_apply]
   rw [hD (expAd e he _), hEi, hD y, hA, hB, hC]
 
+/-- A Lie homomorphism carrying the raising and lowering elements of one `sl₂` triple to
+those of another intertwines their Weyl automorphisms. -/
+theorem _root_.LieHom.map_weylAut_of_eq {L' : Type*} [LieRing L'] [LieAlgebra K L']
+    [LieAlgebra ℚ L'] (ω : L →ₗ⁅K⁆ L') {h' e' f' : L'}
+    (t : IsSl2Triple h e f) (t' : IsSl2Triple h' e' f')
+    (he : ∀ z, ∃ k, ((ad K L e) ^ k) z = 0)
+    (hf : ∀ z, ∃ k, ((ad K L f) ^ k) z = 0)
+    (he' : ∀ z, ∃ k, ((ad K L' e') ^ k) z = 0)
+    (hf' : ∀ z, ∃ k, ((ad K L' f') ^ k) z = 0)
+    (hωe : ω e = e') (hωf : ω f = f') (y : L) :
+    ω (weylAut t he hf y) = weylAut t' he' hf' (ω y) := by
+  have hnf : ∀ z, ∃ k, ((ad K L (-f)) ^ k) z = 0 := fun z ↦
+    (hf z).imp fun _ ↦ ad_neg_pow_apply_eq_zero
+  have hnf' : ∀ z, ∃ k, ((ad K L' (-f')) ^ k) z = 0 := fun z ↦
+    (hf' z).imp fun _ ↦ ad_neg_pow_apply_eq_zero
+  have hωnf : ω (-f) = -f' := by simp only [map_neg, hωf]
+  have hE (z : L) : ω (expAd e he z) = expAd e' he' (ω z) := by
+    simpa only [hωe] using ω.map_expAd he (by rwa [hωe]) z
+  have hF (z : L) : ω (expAd (-f) hnf z) = expAd (-f') hnf' (ω z) := by
+    simpa only [hωnf] using ω.map_expAd hnf (by rwa [hωnf]) z
+  simp only [weylAut_apply, hE, hF]
+
 /-- **A Lie endomorphism exchanging `e` with `-f` commutes with the Weyl automorphism.** If
 `ω e = -f` and `ω f = -e`, as for a Chevalley involution and the triple of a root, then `ω` carries
 `exp (ad e) ∘ exp (ad (-f)) ∘ exp (ad e)` to `exp (ad (-f)) ∘ exp (ad e) ∘ exp (ad (-f))`, which is
@@ -325,12 +350,11 @@ theorem _root_.LieHom.map_weylAut (ω : L →ₗ⁅K⁆ L) (t : IsSl2Triple h e 
     ω (weylAut t he hf y) = weylAut t he hf (ω y) := by
   have hf' : ∀ z, ∃ k, ((ad K L (-f)) ^ k) z = 0 := fun z ↦
     (hf z).imp fun _ ↦ ad_neg_pow_apply_eq_zero
-  have hωf' : ω (-f) = e := by rw [map_neg, hωf, neg_neg]
-  have hE (z : L) : ω (expAd e he z) = expAd (-f) hf' (ω z) := by
-    simpa [hωe] using ω.map_expAd he (by rwa [hωe]) z
-  have hF (z : L) : ω (expAd (-f) hf' z) = expAd e he (ω z) := by
-    simpa [hωf'] using ω.map_expAd hf' (by rwa [hωf']) z
-  rw [weylAut_apply he hf t, hE, hF, hE, weylAut_apply_eq_expAd_neg_expAd_expAd_neg he hf hf' t]
+  have he' : ∀ z, ∃ k, ((ad K L (-e)) ^ k) z = 0 := fun z ↦
+    (he z).imp fun _ ↦ ad_neg_pow_apply_eq_zero
+  simpa only [weylAut_apply, neg_neg,
+    ← weylAut_apply_eq_expAd_neg_expAd_expAd_neg he hf hf' t] using
+    ω.map_weylAut_of_eq t t.neg_symm he hf hf' he' hωe hωf y
 
 end CommRing
 
