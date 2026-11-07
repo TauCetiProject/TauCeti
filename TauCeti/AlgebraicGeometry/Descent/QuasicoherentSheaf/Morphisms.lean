@@ -7,7 +7,6 @@ module
 
 public import Mathlib.CategoryTheory.Sites.Descent.DescentData
 public import TauCeti.AlgebraicGeometry.Descent.QuasicoherentSheaf.Affine
-public import TauCeti.AlgebraicGeometry.Descent.QuasicoherentSheaf.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.BaseChange
 
 /-!

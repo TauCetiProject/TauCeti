@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Descent
 public import TauCeti.AlgebraicGeometry.Descent.QuasicoherentSheaf.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Affine
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.Basic
