@@ -123,25 +123,6 @@ theorem pairOfPantsPerturbation_single (q : Puncture) (G : ℝ → M → ℝ) (w
   rw [pairOfPantsPerturbation_def, Fintype.sum_eq_single q fun r hr => by
     simp [Pi.single_eq_of_ne hr], Pi.single_eq_same]
 
-/-- The pair-of-pants datum whose only nonzero Hamiltonian is the one at the input `0` vanishes
-off the disc `‖w‖ < exp (-2π) / 2`, where the longitudinal coordinate of that end is at most
-`1`. -/
-theorem pairOfPantsPerturbation_single_zero_eq_zero_of_le_norm {G : ℝ → M → ℝ} {w : ℂ}
-    (hw : Real.exp (-(2 * π)) / 2 ≤ ‖w‖) (x : M) :
-    pairOfPantsPerturbation (Pi.single zero G) w x = 0 := by
-  have hpos : 0 < ‖w / (1 / 2 : ℂ)‖ := by
-    rw [norm_div]
-    exact div_pos ((by positivity : (0 : ℝ) < Real.exp (-(2 * π)) / 2).trans_le hw) (by simp)
-  have hlog : -(2 * π) ≤ Real.log ‖w / (1 / 2 : ℂ)‖ := by
-    rw [Real.le_log_iff_exp_le hpos, norm_div]
-    rw [le_div_iff₀ (by simp)]
-    simpa [div_eq_mul_inv, mul_comm] using hw
-  have h : (zero.endCoord w).re ≤ 1 := by
-    rw [re_endCoord, endCenter_zero, endScale_zero, sub_zero, div_le_one (by positivity)]
-    linarith
-  rw [pairOfPantsPerturbation_single, endSign_zero, one_mul,
-    smoothTransition.zero_of_nonpos (by linarith), zero_mul, zero_smul]
-
 /-- The perturbation vanishes at the center of every end. The centers are the punctures `0` and
 `1`, where every signed longitudinal coordinate is at most `0`. -/
 theorem pairOfPantsPerturbation_endCenter (q : Puncture) (x : M) :

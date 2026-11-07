@@ -107,7 +107,8 @@ theorem inputEndPerturbation_eq_zero_of_le_norm_sub {w : ℂ}
   rcases eq_or_ne a 0 with rfl | ha
   · ext v
     simp [inputEndPerturbation_apply]
-  · rw [inputEndPerturbation, pairOfPantsPerturbation_single_zero_eq_zero_of_le_norm ?_ x,
+  · rw [inputEndPerturbation, pairOfPantsPerturbation_single_zero,
+      positivePlanePerturbation_eq_zero_of_le_norm ?_ x,
       ContinuousLinearMap.zero_comp]
     rw [norm_div, le_div_iff₀ (norm_pos_iff.2 ha)]
     linarith
@@ -320,7 +321,8 @@ theorem contMDiffAt_inputEndPerturbation {n : ℕ∞} {H : ℝ → M → ℝ} (h
   · -- Off the support of the datum it vanishes on a neighborhood.
     refine (contMDiffAt_const (c := (0 : ℂ →L[ℝ] ℝ))).congr_of_eventuallyEq ?_
     filter_upwards [hcoordM.continuousAt.norm.eventually (lt_mem_nhds hlt)] with p hp
-    rw [inputEndPerturbation, pairOfPantsPerturbation_single_zero_eq_zero_of_le_norm hp.le,
+    rw [inputEndPerturbation, pairOfPantsPerturbation_single_zero,
+      positivePlanePerturbation_eq_zero_of_le_norm hp.le,
       ContinuousLinearMap.zero_comp]
   · -- On its support the rescaled point lies in the pair of pants.
     have hw₀ : (w - c) / a ≠ 0 := div_ne_zero (sub_ne_zero.2 hw) ha
