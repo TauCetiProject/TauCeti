@@ -309,7 +309,7 @@ private theorem exists_pos_addHaar_image_criticalPoints_inter_closedBall_eq_zero
     (hk : (k : ℕ∞ω) ≠ 0) (hU : IsOpen U) {a : E} (haU : a ∈ U)
     (hf : ∀ x ∈ U, ContDiffAt ℝ (k : ℕ∞ω) f x) {φ : F →L[ℝ] ℝ} {v₀ : E}
     (hφ : φ (fderiv ℝ f a v₀) = 1) {G₁ G₂ : Type*} [NormedAddCommGroup G₁] [NormedSpace ℝ G₁]
-    [FiniteDimensional ℝ G₁] [NormedAddCommGroup G₂] [NormedSpace ℝ G₂] [FiniteDimensional ℝ G₂]
+    [NormedAddCommGroup G₂] [NormedSpace ℝ G₂] [FiniteDimensional ℝ G₂]
     [MeasurableSpace G₂] [BorelSpace G₂] (π : E →L[ℝ] G₁) (ρ : F →L[ℝ] G₂)
     (eE : E ≃L[ℝ] ℝ × G₁) (eF : F ≃L[ℝ] ℝ × G₂) (heE : ∀ x, eE x = (φ (fderiv ℝ f a x), π x))
     (heF : ∀ w, eF w = (φ w, ρ w))
