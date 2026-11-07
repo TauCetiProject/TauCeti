@@ -68,11 +68,12 @@ For the product, the constant `B_K` is computed from the behaviour of the prime 
 `P(s) = (s - 1) ∫_1^∞ t ^ (-s) (∑_{N𝔭 ≤ t} 1 / N𝔭) dt`. The second theorem and the Abelian
 limit `TauCeti.tendsto_smul_integral_Ioi_rpow_smul_nhdsGT_zero` handle the part
 `∑_{N𝔭 ≤ t} 1 / N𝔭 - log log t → B_K`. Mathlib's
-`Real.eulerMascheroniConstant_eq_neg_integral_log_log` evaluates the integral of `log log t`
-exactly to `-γ - log (s - 1)`. Together they give `P(s) = log (1 / (s - 1)) + B_K - γ + o(1)`. On
-the other side, the Euler product writes `log ζ_K(s)` as `P(s)` plus the sum of the remainders
-`-log (1 - N𝔭 ^ (-s)) - N𝔭 ^ (-s)`. That sum is continuous at `s = 1` by dominated convergence
-against `∑_𝔭 N𝔭 ^ (-2)`, and the residue gives `log ζ_K(s) = log (1 / (s - 1)) + log κ_K + o(1)`.
+`Real.eulerMascheroniConstant_eq_neg_integral_log_log` evaluates the `log log t` part exactly:
+`(s - 1) ∫_1^∞ log (log t) t ^ (-s) dt = -γ - log (s - 1)`. Together they give
+`P(s) = log (1 / (s - 1)) + B_K - γ + o(1)`. On the other side, the Euler product writes
+`log ζ_K(s)` as `P(s)` plus the sum of the remainders `-log (1 - N𝔭 ^ (-s)) - N𝔭 ^ (-s)`. That
+sum is continuous at `s = 1` (`TauCeti.tendsto_tsum_neg_log_one_sub_sub_absNorm_rpow`), and the
+residue gives `log ζ_K(s) = log (1 / (s - 1)) + log κ_K + o(1)`.
 Comparing the two expansions gives `B_K = γ + log κ_K + ∑_𝔭 (log (1 - N𝔭⁻¹) + N𝔭⁻¹)`. Adding the
 convergent sum of the remainders at `s = 1` to the second theorem then gives the logarithm of the
 product.
@@ -775,34 +776,6 @@ theorem tendsto_primeIdealZetaSum_univ_sub_log_one_div_sub_one :
     one_div, Real.log_inv]
   linear_combination (-1 : ℝ) * hγ
 
-/-- As `s → 1⁺`, the sum over the primes of the quadratic remainders
-`-log (1 - N𝔭 ^ (-s)) - N𝔭 ^ (-s)` of the Euler factors tends to its value at `s = 1`, by
-dominated convergence against `∑_𝔭 N𝔭 ^ (-2)`. -/
-private theorem tendsto_tsum_neg_log_one_sub_sub_absNorm_rpow :
-    Tendsto (fun s : ℝ ↦ ∑' v : HeightOneSpectrum (𝓞 K),
-        (-Real.log (1 - (Ideal.absNorm v.asIdeal : ℝ) ^ (-s)) -
-          (Ideal.absNorm v.asIdeal : ℝ) ^ (-s))) (𝓝[>] 1)
-      (𝓝 (∑' v : HeightOneSpectrum (𝓞 K),
-        (-Real.log (1 - (Ideal.absNorm v.asIdeal : ℝ)⁻¹) - (Ideal.absNorm v.asIdeal : ℝ)⁻¹))) := by
-  refine tendsto_tsum_of_dominated_convergence
-    (bound := fun v ↦ (Ideal.absNorm v.asIdeal : ℝ) ^ (-(2 : ℝ)))
-    (summable_absNorm_rpow_primes_of_one_lt one_lt_two) (fun v ↦ ?_) ?_
-  · have h2 := two_le_absNorm_asIdeal_real v
-    have hN : (Ideal.absNorm v.asIdeal : ℝ) ≠ 0 := (zero_lt_two.trans_le h2).ne'
-    have hpos : 1 - (Ideal.absNorm v.asIdeal : ℝ) ^ (-(1 : ℝ)) ≠ 0 := by
-      rw [Real.rpow_neg_one]
-      exact (sub_pos.mpr (inv_lt_one_of_one_lt₀ (one_lt_two.trans_le h2))).ne'
-    have hr : ContinuousAt (fun s : ℝ ↦ (Ideal.absNorm v.asIdeal : ℝ) ^ (-s)) 1 :=
-      (Real.continuousAt_const_rpow hN).comp continuousAt_neg
-    have hc : ContinuousAt (fun s : ℝ ↦ -Real.log (1 - (Ideal.absNorm v.asIdeal : ℝ) ^ (-s)) -
-        (Ideal.absNorm v.asIdeal : ℝ) ^ (-s)) 1 :=
-      ((continuousAt_const.sub hr).log hpos).neg.sub hr
-    simpa only [Real.rpow_neg_one] using hc.tendsto.mono_left nhdsWithin_le_nhds
-  · filter_upwards [self_mem_nhdsWithin] with s (hs : 1 < s) v
-    rw [Real.norm_of_nonneg (Real.neg_log_one_sub_rpow_sub_nonneg
-      (one_lt_two.trans_le (two_le_absNorm_asIdeal_real v)) (zero_lt_one.trans hs))]
-    exact Real.neg_log_one_sub_rpow_sub_le (two_le_absNorm_asIdeal_real v) hs.le
-
 /-- **Mertens' constant of a number field in closed form** (Rosen; Lebacque, Proposition 3):
 `B_K = γ + log κ_K + ∑_𝔭 (log (1 - N𝔭⁻¹) + N𝔭⁻¹)`, with `γ` Euler's constant and
 `κ_K = dedekindZeta_residue K` the residue of `ζ_K` at `s = 1`. Over `ℚ` this is the classical
@@ -813,7 +786,7 @@ theorem mertensConstant_eq :
         (Real.log (1 - (Ideal.absNorm v.asIdeal : ℝ)⁻¹) + (Ideal.absNorm v.asIdeal : ℝ)⁻¹) := by
   -- Near `s = 1⁺`, `log ζ_K(s)` is the prime zeta sum plus the sum of the quadratic remainders.
   have hlim := (tendsto_primeIdealZetaSum_univ_sub_log_one_div_sub_one K).add
-    (tendsto_tsum_neg_log_one_sub_sub_absNorm_rpow K)
+    (tendsto_tsum_neg_log_one_sub_sub_absNorm_rpow (K := K))
   have heq := tendsto_nhds_unique (hlim.congr' ?_)
     (tendsto_log_dedekindZeta_re_sub_log_one_div_sub_one (K := K))
   · have hE : ∑' v : HeightOneSpectrum (𝓞 K),

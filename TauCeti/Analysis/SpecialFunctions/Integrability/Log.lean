@@ -68,9 +68,9 @@ theorem locallyIntegrable_log_norm {E : Type*} [NormedAddCommGroup E] [NormedSpa
   rw [abs_le]
   constructor <;> linarith [norm_nonneg x]
 
-/-- `t ↦ log (log t)` is locally integrable on `[1, ∞)`: on a compact subset it is
-`log (log t) t ^ (-2)`, integrable on `(1, ∞)` by Mathlib's `Real.integrableOn_log_log_mul_rpow`,
-times the continuous function `t ^ 2`. -/
+/-- `t ↦ log (log t)` is locally integrable on `[1, ∞)`: its logarithmic singularity at `t = 1`
+is integrable. This lets Abelian integrals `∫_1^∞ t ^ (-s) f(t) dt` treat `log (log t)` like any
+other locally integrable weight up to the endpoint `t = 1`. -/
 theorem locallyIntegrableOn_log_log :
     LocallyIntegrableOn (fun t : ℝ ↦ Real.log (Real.log t)) (Set.Ici 1) := by
   rw [locallyIntegrableOn_iff isClosed_Ici.isLocallyClosed]
