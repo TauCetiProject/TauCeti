@@ -20,7 +20,7 @@ total mass one, and vanishes at `a`.
 ## Main declarations
 
 * `Finsupp.exists_transfer_vector`: the transferred vector, with its coordinate formula,
-  nonnegativity, vanishing at `a`, and nonempty support.
+  nonnegativity, vanishing at `a`, and total mass one.
 -/
 
 public section
@@ -30,7 +30,7 @@ namespace Finsupp
 variable {ι : Type*} [DecidableEq ι] {σ : Finset ι} {v : ι}
 
 /-- Moving the mass `x a` of a least coordinate `a` on the starred face `σ` to the new vertex `v`
-gives a nonnegative vector with nonempty support, whose coordinate at `a` is zero. -/
+gives a nonnegative vector of total mass one whose coordinate at `a` is zero. -/
 theorem exists_transfer_vector (hvσ : v ∉ σ) {x : ι →₀ ℝ} (hxpos : ∀ i, 0 ≤ x i)
     (hxsum : x.sum (fun _ r => r) = 1) (hxv : x v = 0) {a : ι} (haσ : a ∈ σ)
     (hmin : ∀ i ∈ σ, x a ≤ x i) :
@@ -38,7 +38,7 @@ theorem exists_transfer_vector (hvσ : v ∉ σ) {x : ι →₀ ℝ} (hxpos : �
         ∑ i ∈ σ, Finsupp.single i 1) ∧
       (∀ i, y i = x i + x a *
         ((if i = v then (σ.card : ℝ) else 0) - if i ∈ σ then 1 else 0)) ∧
-      (∀ i, 0 ≤ y i) ∧ y a = 0 ∧ y.support.Nonempty := by
+      (∀ i, 0 ≤ y i) ∧ y a = 0 ∧ y.sum (fun _ r => r) = 1 := by
   have hav : a ≠ v := fun h => hvσ (h ▸ haσ)
   let c : ι →₀ ℝ := ∑ i ∈ σ, Finsupp.single i 1
   let y : ι →₀ ℝ := x + x a • ((σ.card : ℝ) • Finsupp.single v 1 - c)
@@ -58,17 +58,13 @@ theorem exists_transfer_vector (hvσ : v ∉ σ) {x : ι →₀ ℝ} (hxpos : �
         linarith [hmin i his]
       · simpa [hiv, his] using hxpos i
   have hya : y a = 0 := by simp [hycoord, haσ, hav]
-  have hyne : y.support.Nonempty := by
-    have hsum : y.sum (fun _ r => r) = 1 := by
-      let S := Finsupp.linearCombination ℝ (fun _ : ι => (1 : ℝ))
-      have hS (z : ι →₀ ℝ) : S z = z.sum (fun _ r => r) := by
-        simp [S, Finsupp.linearCombination_apply]
-      rw [← hS]
-      have hSx : S x = 1 := (hS x).trans hxsum
-      simp [y, c, map_add, map_smul, map_sub, map_sum, hSx, S]
-    apply Finsupp.support_nonempty_iff.mpr
-    intro hz
-    simp [hz] at hsum
-  exact ⟨y, rfl, hycoord, hypos, hya, hyne⟩
+  have hsum : y.sum (fun _ r => r) = 1 := by
+    let S := Finsupp.linearCombination ℝ (fun _ : ι => (1 : ℝ))
+    have hS (z : ι →₀ ℝ) : S z = z.sum (fun _ r => r) := by
+      simp [S, Finsupp.linearCombination_apply]
+    rw [← hS]
+    have hSx : S x = 1 := (hS x).trans hxsum
+    simp [y, c, map_add, map_smul, map_sub, map_sum, hSx, S]
+  exact ⟨y, rfl, hycoord, hypos, hya, hsum⟩
 
 end Finsupp
