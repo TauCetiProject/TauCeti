@@ -334,9 +334,9 @@ variable [OpensMeasurableSpace X] [LocallyCompactSpace X] [T2Space X]
   {f : X → F} {s t K : Set X}
 
 /-- Extension by zero preserves local integrability on `t` when the function vanishes off a
-closed set `K` and `t ∩ K` lies in its original measurable domain `s`. The support may meet the
-boundary of `t`; it need not be compact. -/
-theorem indicator_of_isClosed (hf : LocallyIntegrableOn f s μ) (hs : MeasurableSet s)
+closed set `K` and `t ∩ K` lies in its original domain `s`, which is null-measurable. The support
+may meet the boundary of `t`; it need not be compact. -/
+theorem indicator_of_isClosed (hf : LocallyIntegrableOn f s μ) (hs : NullMeasurableSet s μ)
     (ht : IsLocallyClosed t) (hK : IsClosed K) (hKs : t ∩ K ⊆ s)
     (hzero : ∀ᵐ x ∂μ.restrict s, x ∉ K → f x = 0) :
     LocallyIntegrableOn (s.indicator f) t μ := by
@@ -347,7 +347,7 @@ theorem indicator_of_isClosed (hf : LocallyIntegrableOn f s μ) (hs : Measurable
     (hC.isClosed.measurableSet.inter hK.measurableSet)
   refine (hi.mono_measure Measure.restrict_le_self).congr ?_
   filter_upwards [ae_restrict_mem hC.isClosed.measurableSet,
-    ((ae_restrict_iff' hs).1 hzero).filter_mono
+    ((ae_restrict_iff'₀ hs).1 hzero).filter_mono
       (ae_mono Measure.restrict_le_self)] with x hxC hx
   by_cases hxK : x ∈ K
   · simp [hxC, hxK, hCK ⟨hxC, hxK⟩]
@@ -380,10 +380,16 @@ theorem indicator₀ {F : Type*} [TopologicalSpace F] [ESeminormedAddMonoid F] {
   (hg.indicator (measurableSet_toMeasurable μ s)).congr
     (indicator_ae_eq_of_ae_eq_set hs.toMeasurable_ae_eq)
 
+end MeasureTheory.LocallyIntegrable
+
+namespace MeasureTheory.LocallyIntegrable
+
+variable {X : Type*} [MeasurableSpace X] [TopologicalSpace X] {μ : Measure X}
+
 /-- The product of a locally integrable function with an almost everywhere strongly measurable,
 almost everywhere bounded one is locally integrable, the analogue of Mathlib's
 `MeasureTheory.Integrable.mul_bdd`. -/
-theorem mul_bdd {u v : X → 𝕜} {C : ℝ} (hu : LocallyIntegrable u μ)
+theorem mul_bdd {𝕜 : Type*} [NormedRing 𝕜] {u v : X → 𝕜} {C : ℝ} (hu : LocallyIntegrable u μ)
     (hv : AEStronglyMeasurable v μ) (hvC : ∀ᵐ x ∂μ, ‖v x‖ ≤ C) :
     LocallyIntegrable (fun x => u x * v x) μ := fun x => by
   obtain ⟨s, hs, hus⟩ := hu x
