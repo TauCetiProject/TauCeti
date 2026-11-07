@@ -326,16 +326,13 @@ derived here. -/
 noncomputable def tetrahedronSpringMatrix : Matrix (Fin 4 × Fin 3) (Fin 4 × Fin 3) ℝ :=
   -∑ i, ∑ j ∈ Finset.Ioi i, vecMulVec (tetrahedronEdgeVector i j) (tetrahedronEdgeVector i j)
 
-private theorem sum_Ioi_fin_four {M : Type*} [AddCommMonoid M] (f : Fin 4 → Fin 4 → M) :
-    ∑ i, ∑ j ∈ Finset.Ioi i, f i j = f 0 1 + f 0 2 + f 0 3 + f 1 2 + f 1 3 + f 2 3 := by
-  simp [Fin.sum_univ_succ, Fin.sum_Ioi_succ, add_assoc]
-
 /-- Summing over ordered pairs counts each edge twice: `2 H = -∑_{i,j} z_{ij} z_{ij}ᵀ`. -/
 theorem two_smul_tetrahedronSpringMatrix :
     (2 : ℝ) • tetrahedronSpringMatrix =
       -∑ i, ∑ j, vecMulVec (tetrahedronEdgeVector i j) (tetrahedronEdgeVector i j) := by
-  rw [tetrahedronSpringMatrix, sum_Ioi_fin_four]
-  simp only [Fin.sum_univ_four, tetrahedronEdgeVector_self, vecMulVec_zero, zero_add, add_zero]
+  rw [tetrahedronSpringMatrix]
+  simp only [Fin.sum_univ_succ, Fin.sum_Ioi_zero, Fin.sum_Ioi_succ, Fin.sum_univ_zero,
+    Fin.reduceSucc, tetrahedronEdgeVector_self, vecMulVec_zero, zero_add, add_zero]
   rw [tetrahedronEdgeVector_comm 1 0, tetrahedronEdgeVector_comm 2 0,
     tetrahedronEdgeVector_comm 3 0, tetrahedronEdgeVector_comm 2 1,
     tetrahedronEdgeVector_comm 3 1, tetrahedronEdgeVector_comm 3 2]
@@ -425,7 +422,9 @@ theorem tetrahedronSpringMatrix_mulVec_affineFieldEquiv (t : Fin 3 → ℝ)
       tetrahedronAffineFieldEquiv
         (0, (-2 : ℝ) • (A + Aᵀ) + (2 : ℝ) • diagonal A.diag - (2 * A.trace) • 1) := by
   ext ⟨m, k⟩
-  rw [tetrahedronSpringMatrix, sum_Ioi_fin_four]
+  rw [tetrahedronSpringMatrix]
+  simp only [Fin.sum_univ_succ, Fin.sum_Ioi_zero, Fin.sum_Ioi_succ, Fin.sum_univ_zero,
+    Fin.reduceSucc]
   fin_cases m <;> fin_cases k <;>
     simp [tetrahedronAffineFieldEquiv_apply, tetrahedronEdgeVector, tetrahedronCenteredVertex_eq,
       tetrahedronVertex, mulVec, dotProduct, Fintype.sum_prod_type, Fin.sum_univ_four,
