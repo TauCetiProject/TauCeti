@@ -242,4 +242,13 @@ theorem pow_apply_eq_single_pow_smul {A : Type*} [Semiring A] {G : Type*} [Monoi
   rw [pow_apply_eq_iterate, show ⇑S = fun x ↦ (single s (1 : A) : MonoidAlgebra A G) • x from
     funext hS, smul_iterate_apply, single_pow, one_pow]
 
+/-- An endomorphism acting as `single s 1` is killed by `S ^ k - 1` whenever `s ^ k = 1`. -/
+theorem pow_eq_one_of_apply_eq_single_smul {A : Type*} [Semiring A] {G : Type*} [Monoid G]
+    {R X : Type*} [Semiring R] [AddCommMonoid X] [Module R X] [Module (MonoidAlgebra A G) X]
+    {s : G} (S : Module.End R X)
+    (hS : ∀ x, S x = (single s (1 : A) : MonoidAlgebra A G) • x) {k : ℕ} (hk : s ^ k = 1) :
+    S ^ k = 1 :=
+  LinearMap.ext fun x ↦ by
+    rw [pow_apply_eq_single_pow_smul S hS, hk, ← one_def, one_smul, one_apply_eq_self]
+
 end Module.End
