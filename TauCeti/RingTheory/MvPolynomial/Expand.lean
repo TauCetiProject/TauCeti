@@ -35,7 +35,8 @@ over `R[x]`" and that the purely inseparable half of normalization-finiteness re
 
 Also here is the coefficient-level Frobenius computation behind Stacks' "some details omitted":
 if every coefficient of `g` acquires a `q`-th root in `S`, then `g(X ^ q)` becomes a `q`-th power
-in `S[X_i]`.
+in `S[X_i]`. Over `ℤ`, expansion by a prime lifts Frobenius modulo that prime,
+providing the coefficient congruence for Hazewinkel's functional equation.
 
 ## Main results
 
@@ -46,6 +47,8 @@ in `S[X_i]`.
   `p ^ n`-th power once the coefficients of `g` have `p ^ n`-th roots in `S`.
 * `MvPolynomial.expand_eq_map_frobeniusEquiv_symm_pow`: over a perfect ring, `expand p g`
   is the `p`-th power of the inverse Frobenius twist of `g`.
+* `MvPolynomial.natCast_dvd_expand_sub_pow`: over `ℤ`, `expand p f ≡ f ^ p` modulo a prime
+  `p`, the integrality input for Hazewinkel's functional equation.
 * `TauCeti.MvPolynomial.basisExpand`: the monomials with exponents below `n` are a basis of
   `R[X_i]` over itself along `expand n`, for `0 < n`.
 * `MvPolynomial.coeff_basisExpand_repr`: the coordinate of `f` at `β` in that basis has

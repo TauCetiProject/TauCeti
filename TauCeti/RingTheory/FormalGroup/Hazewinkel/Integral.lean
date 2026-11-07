@@ -36,13 +36,11 @@ noncomputable section
 
 namespace TauCeti
 
-namespace Hazewinkel
-
 variable (p : ℕ) [hp : Fact p.Prime]
 
 /-- Every coefficient of the rational universal Hazewinkel law is an integer polynomial
 in its generators. -/
-theorem coeff_formalGroup_mem_range (d : Fin 2 →₀ ℕ) :
+private theorem coeff_hazewinkelFormalGroup_X_mem_range (d : Fin 2 →₀ ℕ) :
     MvPowerSeries.coeff d
       (hazewinkelFormalGroup p (MvPolynomial.X : ℕ+ → MvPolynomial ℕ+ ℚ)).toPowerSeries ∈
         (MvPolynomial.map (Int.castRingHom ℚ) :
@@ -62,49 +60,49 @@ theorem coeff_formalGroup_mem_range (d : Fin 2 →₀ ℕ) :
 
 /-- Coefficientwise descent of the rational universal law. -/
 private def integralSeries : MvPowerSeries (Fin 2) (MvPolynomial ℕ+ ℤ) :=
-  fun d ↦ (coeff_formalGroup_mem_range p d).choose
+  fun d ↦ (coeff_hazewinkelFormalGroup_X_mem_range p d).choose
 
 private theorem map_integralSeries :
     (integralSeries p).map (MvPolynomial.map (Int.castRingHom ℚ)) =
       (hazewinkelFormalGroup p (MvPolynomial.X : ℕ+ → MvPolynomial ℕ+ ℚ)).toPowerSeries := by
   ext1 d
-  exact (coeff_formalGroup_mem_range p d).choose_spec
+  exact (coeff_hazewinkelFormalGroup_X_mem_range p d).choose_spec
 
 /-- Hazewinkel's commutative formal group law over the integer polynomial ring
 on the generators `v₁, v₂, …`. -/
-def integralFormalGroup : FormalGroup (MvPolynomial ℕ+ ℤ) :=
+def universalHazewinkelIntegralFormalGroup : FormalGroup (MvPolynomial ℕ+ ℤ) :=
   FormalGroup.ofMap (MvPolynomial.map (Int.castRingHom ℚ))
     (MvPolynomial.map_injective (Int.castRingHom ℚ) Int.cast_injective)
     (integralSeries p) (hazewinkelFormalGroup p MvPolynomial.X) (map_integralSeries p)
 
 /-- Extending the integral polynomial law to rational coefficients recovers the law
 defined by Hazewinkel's logarithm. -/
-@[simp]
-theorem map_integralFormalGroup :
-    (integralFormalGroup p).map (MvPolynomial.map (Int.castRingHom ℚ)) =
+@[simp high] -- Prefer the rational comparison to the general specialization rule.
+theorem map_universalHazewinkelIntegralFormalGroup :
+    (universalHazewinkelIntegralFormalGroup p).map (MvPolynomial.map (Int.castRingHom ℚ)) =
       hazewinkelFormalGroup p (MvPolynomial.X : ℕ+ → MvPolynomial ℕ+ ℚ) := by
   apply FormalGroup.map_ofMap
 
-instance : (integralFormalGroup p).IsComm := by
-  have : ((integralFormalGroup p).map (MvPolynomial.map (Int.castRingHom ℚ))).IsComm := by
-    rw [map_integralFormalGroup]
+instance : (universalHazewinkelIntegralFormalGroup p).IsComm := by
+  have : ((universalHazewinkelIntegralFormalGroup p).map
+      (MvPolynomial.map (Int.castRingHom ℚ))).IsComm := by
+    rw [map_universalHazewinkelIntegralFormalGroup]
     infer_instance
   exact FormalGroup.isComm_of_map
     (MvPolynomial.map_injective (Int.castRingHom ℚ) Int.cast_injective)
-
-end Hazewinkel
 
 variable {R S : Type*} [CommRing R] [CommRing S] (p : ℕ) [Fact p.Prime]
 
 /-- The integral Hazewinkel formal group law specialized at a family of generators in
 an arbitrary commutative ring. -/
 def hazewinkelIntegralFormalGroup (v : ℕ+ → R) : FormalGroup R :=
-  (Hazewinkel.integralFormalGroup p).map (MvPolynomial.eval₂Hom (Int.castRingHom R) v)
+  (universalHazewinkelIntegralFormalGroup p).map (MvPolynomial.eval₂Hom (Int.castRingHom R) v)
 
 /-- Specialization of the integral polynomial law is coefficient evaluation. -/
 theorem hazewinkelIntegralFormalGroup_def (v : ℕ+ → R) :
     hazewinkelIntegralFormalGroup p v =
-      (Hazewinkel.integralFormalGroup p).map (MvPolynomial.eval₂Hom (Int.castRingHom R) v) :=
+      (universalHazewinkelIntegralFormalGroup p).map
+        (MvPolynomial.eval₂Hom (Int.castRingHom R) v) :=
   (rfl)
 
 instance (v : ℕ+ → R) : (hazewinkelIntegralFormalGroup p v).IsComm := by
@@ -126,22 +124,30 @@ theorem map_hazewinkelIntegralFormalGroup (v : ℕ+ → R) (f : R →+* S) :
 @[simp]
 theorem hazewinkelIntegralFormalGroup_X :
     hazewinkelIntegralFormalGroup p (MvPolynomial.X : ℕ+ → MvPolynomial ℕ+ ℤ) =
-      Hazewinkel.integralFormalGroup p := by
+      universalHazewinkelIntegralFormalGroup p := by
   rw [hazewinkelIntegralFormalGroup_def]
   have h : MvPolynomial.eval₂Hom (Int.castRingHom (MvPolynomial ℕ+ ℤ)) MvPolynomial.X =
       RingHom.id (MvPolynomial ℕ+ ℤ) := by ext <;> simp
   rw [h, FormalGroup.map_id]
 
+/-- Mapping the integral polynomial law is specialization at the images of its generators. -/
+@[simp]
+theorem map_universalHazewinkelIntegralFormalGroup_eq_hazewinkelIntegralFormalGroup
+    (f : MvPolynomial ℕ+ ℤ →+* S) :
+    (universalHazewinkelIntegralFormalGroup p).map f =
+      hazewinkelIntegralFormalGroup p (f ∘ MvPolynomial.X) := by
+  rw [← hazewinkelIntegralFormalGroup_X, map_hazewinkelIntegralFormalGroup]
+
 /-- Over a rational algebra, integral specialization agrees with the formal group law
 defined using Hazewinkel's logarithm. -/
 @[simp]
-theorem hazewinkelIntegralFormalGroup_eq [Algebra ℚ R] (v : ℕ+ → R) :
+theorem hazewinkelIntegralFormalGroup_eq_hazewinkelFormalGroup [Algebra ℚ R] (v : ℕ+ → R) :
     hazewinkelIntegralFormalGroup p v = hazewinkelFormalGroup p v := by
   have h : (MvPolynomial.eval₂Hom (algebraMap ℚ R) v).comp
       (MvPolynomial.map (Int.castRingHom ℚ)) = MvPolynomial.eval₂Hom (Int.castRingHom R) v := by
     ext <;> simp
   rw [hazewinkelIntegralFormalGroup_def, ← h, ← FormalGroup.map_comp,
-    Hazewinkel.map_integralFormalGroup, map_hazewinkelFormalGroup]
+    map_universalHazewinkelIntegralFormalGroup, map_hazewinkelFormalGroup]
   congr 1
   funext j
   exact MvPolynomial.eval₂_X _ _ _
