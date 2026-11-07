@@ -242,7 +242,8 @@ private theorem span_pair_pow_succ_le_span_quarticWords (hx : x ^ 2 = 0) (hy : y
     exacts [h.1, h.2]
 
 /-- The reduced words `quarticWords x y` of lengths one to three lie in the commutator submodule,
-given the rewriting rules for `x x` and `y y y` and the expansion of `(x + y) ^ 4`. -/
+given `x x = 0`, the reduced expansion of `(x + y) ^ 3`, that `2` and `3` are units, and that `x`,
+`y`, `y ^ 2`, `(x + y) ^ 2` and `(x + y) ^ 3` lie in the commutator submodule. -/
 private theorem forall_mem_commutatorSubmodule_quarticWords_lengths_one_to_three {k : Type*}
     [Semiring k] [Module k A] (hxx : x * x = 0)
     (hcube : (x + y) ^ 3 = x * y * x + x * y * y + y * x * y + y * y * x) (h2 : IsUnit (2 : k))
@@ -287,8 +288,9 @@ private theorem forall_mem_commutatorSubmodule_quarticWords_lengths_one_to_three
       exact mul_mem_commutatorSubmodule_comm.2 hxyy
     · exact mul_mem_commutatorSubmodule_comm.2 (by rw [← mul_assoc]; exact hxyy)
 
-/-- The reduced words `quarticWords x y` of length four lie in the commutator submodule, given the
-rewriting rules for `x x` and `y y y` and the expansion of `(x + y) ^ 4`. -/
+/-- The reduced words `quarticWords x y` of length four lie in the commutator submodule, given `x x
+= 0`, `a y y y = 0` for every `a`, the vanishing of the sum `hT` of the reduced words of length four
+(the expansion of `(x + y) ^ 4`), and that `2` is a unit. -/
 private theorem forall_mem_commutatorSubmodule_quarticWords_length_four {k : Type*} [Semiring k]
     [Module k A] (hxx : x * x = 0) (r₁ : ∀ a : A, a * y * y * y = 0)
     (hT : x * y * x * y + x * y * y * x + y * x * y * x + y * x * y * y + y * y * x * y = 0)
@@ -320,7 +322,8 @@ private theorem forall_mem_commutatorSubmodule_quarticWords_length_four {k : Typ
   exact ⟨hxyyx, hyxyx, hyxyy, hyyxy⟩
 
 /-- The reduced words `quarticWords x y` of lengths five and six lie in the commutator submodule,
-given the rewriting rules for `x x` and `y y y` and the expansion of `(x + y) ^ 4`. -/
+given `x x = 0`, `y y y = 0`, `a x x = 0` and `a y y y = 0` for every `a`, and the vanishing of the
+sum `hT` of the reduced words of length four (the expansion of `(x + y) ^ 4`). -/
 private theorem forall_mem_commutatorSubmodule_quarticWords_lengths_five_six {k : Type*}
     [Semiring k] [Module k A] (hxx : x * x = 0) (hyyy : y * y * y = 0) (r₀ : ∀ a : A, a * x * x = 0)
     (r₁ : ∀ a : A, a * y * y * y = 0)
@@ -365,7 +368,9 @@ private theorem forall_mem_commutatorSubmodule_quarticWords_lengths_five_six {k 
       mul_mem_commutatorSubmodule_comm.2 (by simpa only [mul_assoc] using hyyxyyx), hyyxyyx⟩
 
 /-- The reduced words `quarticWords x y` of lengths seven and eight lie in the commutator submodule,
-given the rewriting rules for `x x` and `y y y` and the expansion of `(x + y) ^ 4`. -/
+given `x x = 0`, `y y y = 0`, `a x x = 0` and `a y y y = 0` for every `a`, the vanishing of the sum
+`hT` of the reduced words of length four (the expansion of `(x + y) ^ 4`), and that `2` is a unit.
+-/
 private theorem forall_mem_commutatorSubmodule_quarticWords_lengths_seven_eight {k : Type*}
     [Semiring k] [Module k A] (hxx : x * x = 0) (hyyy : y * y * y = 0) (r₀ : ∀ a : A, a * x * x = 0)
     (r₁ : ∀ a : A, a * y * y * y = 0)
@@ -523,6 +528,25 @@ private theorem quintic_rewriting_rules (hx : x ^ 2 = 0) (hy : y ^ 3 = 0)
   simp only [add_mul, neg_mul, ← mul_assoc, r₁, zero_add, add_zero]
   noncomm_ring
 
+/-- The rewriting rules of `quintic_rewriting_rules` with no left factor. -/
+private theorem quintic_rewriting_rules_one (hx : x ^ 2 = 0) (hy : y ^ 3 = 0)
+    (hxy : (x + y) ^ 5 = 0) :
+    x * x = 0 ∧ y * y * y = 0 ∧
+    x * y * x * y * x = -(x * y * x * y * y + x * y * y * x * y + y * x * y * x * y +
+      y * x * y * y * x + y * y * x * y * x + y * y * x * y * y) ∧
+    x * y * x * y * y * x = -(x * y * y * x * y * x) +
+      y * x * y * x * y * y + y * x * y * y * x * y + y * y * x * y * x * y ∧
+    x * y * y * x * y * y * x * y * x * y =
+      -(x * y * y * x * y * y * x * y * y * x + y * x * y * y * x * y * y * x * y * x +
+        y * x * y * y * x * y * y * x * y * y + y * y * x * y * y * x * y * y * x * y) ∧
+    x * y * y * x * y * y * x * y * y * x * y * y =
+      y * x * y * y * x * y * y * x * y * y * x * y -
+        y * y * x * y * y * x * y * y * x * y * y * x := by
+  obtain ⟨r₀, r₁, r₂, r₃, r₄, r₅⟩ := quintic_rewriting_rules hx hy hxy
+  exact ⟨by simpa only [one_mul] using r₀ 1, by simpa only [one_mul] using r₁ 1,
+    by simpa only [one_mul] using r₂ 1, by simpa only [one_mul] using r₃ 1,
+    by simpa only [one_mul] using r₄ 1, by simpa only [one_mul] using r₅ 1⟩
+
 /-- The reduced words of length `t + 1` for the rewriting rules of
 `quintic_rewriting_rules`: the words containing none of the six leading words `x x`, `y y y`,
 `x y x y x`, `x y x y y x`, `x y y x y y x y x y` and `x y y x y y x y y x y y`. There are none
@@ -616,9 +640,8 @@ theorem span_pair_pow_fifteen_eq_bot (hx : x ^ 2 = 0) (hy : y ^ 3 = 0) (hxy : (x
   rwa [h15, mem_bot] at hw'
 
 /-- The reduced words `quinticWords x y` of lengths one to three are killed by an additive map `f`
-that is invariant under rotation, given the cancellation property of `f` and the values of `f`
-listed in the hypotheses; the proof applies the rewriting rules of `quintic_rewriting_rules` to the
-rotation relations `f (a * v) = f (v * a)`. -/
+that is invariant under rotation, given `x ^ 2 = 0`, `y ^ 3 = 0` and `(x + y) ^ 5 = 0`, that `2` and
+`3` cancel in `f`, and that `f` vanishes on `x`, `y`, `y * y`, `(x + y) ^ 2` and `(x + y) ^ 3`. -/
 private theorem map_quinticWords_eq_zero_lengths_one_to_three {Q : Type*} [AddCommGroup Q]
     (f : A →+ Q) (hx : x ^ 2 = 0) (hy : y ^ 3 = 0) (hxy : (x + y) ^ 5 = 0)
     (hrot : ∀ a b : A, f (a * b) = f (b * a)) (hdiv₂ : ∀ {a : A}, ((2 : ℕ) : ℤ) • f a = 0 → f a = 0)
@@ -627,11 +650,8 @@ private theorem map_quinticWords_eq_zero_lengths_one_to_three {Q : Type*} [AddCo
     (∀ b ∈ quinticWords x y 0, f b = 0) ∧
     (∀ b ∈ quinticWords x y 1, f b = 0) ∧
     (∀ b ∈ quinticWords x y 2, f b = 0) := by
-  obtain ⟨r₀, r₁, _, _, _, _⟩ :=
-    quintic_rewriting_rules hx hy hxy
-  have r₀' := r₀ 1
-  have r₁' := r₁ 1
-  simp only [one_mul] at r₀' r₁'
+  obtain ⟨r₀, r₁, _, _, _, _⟩ := quintic_rewriting_rules hx hy hxy
+  obtain ⟨r₀', r₁', -, -, -, -⟩ := quintic_rewriting_rules_one hx hy hxy
   -- Length 1.
   have l₁ : ∀ b ∈ quinticWords x y 0, f b = 0 := by
     have w₁ : f x = 0 := hx₀
@@ -667,21 +687,16 @@ private theorem map_quinticWords_eq_zero_lengths_one_to_three {Q : Type*} [AddCo
   exact ⟨l₁, l₂, l₃⟩
 
 /-- The reduced words `quinticWords x y` of lengths four and five are killed by an additive map `f`
-that is invariant under rotation, given the cancellation property of `f` and the values of `f`
-listed in the hypotheses; the proof applies the rewriting rules of `quintic_rewriting_rules` to the
-rotation relations `f (a * v) = f (v * a)`. -/
+that is invariant under rotation, given `x ^ 2 = 0`, `y ^ 3 = 0` and `(x + y) ^ 5 = 0`, that `2` and
+`5` cancel in `f`, and that `f` vanishes on `(x + y) ^ 4`. -/
 private theorem map_quinticWords_eq_zero_lengths_four_five {Q : Type*} [AddCommGroup Q] (f : A →+ Q)
     (hx : x ^ 2 = 0) (hy : y ^ 3 = 0) (hxy : (x + y) ^ 5 = 0)
     (hrot : ∀ a b : A, f (a * b) = f (b * a)) (hdiv₂ : ∀ {a : A}, ((2 : ℕ) : ℤ) • f a = 0 → f a = 0)
     (hdiv₅ : ∀ {a : A}, ((5 : ℕ) : ℤ) • f a = 0 → f a = 0) (hq : f ((x + y) ^ 4) = 0) :
     (∀ b ∈ quinticWords x y 3, f b = 0) ∧
     (∀ b ∈ quinticWords x y 4, f b = 0) := by
-  obtain ⟨r₀, r₁, r₂, _, _, _⟩ :=
-    quintic_rewriting_rules hx hy hxy
-  have r₀' := r₀ 1
-  have r₁' := r₁ 1
-  have r₂' := r₂ 1
-  simp only [one_mul] at r₀' r₁' r₂'
+  obtain ⟨r₀, r₁, r₂, _, _, _⟩ := quintic_rewriting_rules hx hy hxy
+  obtain ⟨r₀', r₁', r₂', -, -, -⟩ := quintic_rewriting_rules_one hx hy hxy
   -- Length 4.
   have l₄ : ∀ b ∈ quinticWords x y 3, f b = 0 := by
     have e₁ := hrot x (x * y * y)
@@ -720,21 +735,15 @@ private theorem map_quinticWords_eq_zero_lengths_four_five {Q : Type*} [AddCommG
   exact ⟨l₄, l₅⟩
 
 /-- The reduced words `quinticWords x y` of lengths six and seven are killed by an additive map `f`
-that is invariant under rotation, given the cancellation property of `f` and the values of `f`
-listed in the hypotheses; the proof applies the rewriting rules of `quintic_rewriting_rules` to the
-rotation relations `f (a * v) = f (v * a)`. -/
+that is invariant under rotation, given `x ^ 2 = 0`, `y ^ 3 = 0` and `(x + y) ^ 5 = 0`; no
+cancellation property or value of `f` is needed. -/
 private theorem map_quinticWords_eq_zero_lengths_six_seven {Q : Type*} [AddCommGroup Q] (f : A →+ Q)
     (hx : x ^ 2 = 0) (hy : y ^ 3 = 0) (hxy : (x + y) ^ 5 = 0)
     (hrot : ∀ a b : A, f (a * b) = f (b * a)) :
     (∀ b ∈ quinticWords x y 5, f b = 0) ∧
     (∀ b ∈ quinticWords x y 6, f b = 0) := by
-  obtain ⟨r₀, r₁, r₂, r₃, _, _⟩ :=
-    quintic_rewriting_rules hx hy hxy
-  have r₀' := r₀ 1
-  have r₁' := r₁ 1
-  have r₂' := r₂ 1
-  have r₃' := r₃ 1
-  simp only [one_mul] at r₀' r₁' r₂' r₃'
+  obtain ⟨r₀, r₁, r₂, r₃, _, _⟩ := quintic_rewriting_rules hx hy hxy
+  obtain ⟨r₀', r₁', r₂', r₃', -, -⟩ := quintic_rewriting_rules_one hx hy hxy
   -- Length 6.
   have l₆ : ∀ b ∈ quinticWords x y 5, f b = 0 := by
     have e₁ := hrot x (x * y * y * x * y)
@@ -776,19 +785,15 @@ private theorem map_quinticWords_eq_zero_lengths_six_seven {Q : Type*} [AddCommG
   exact ⟨l₆, l₇⟩
 
 /-- The reduced words `quinticWords x y` of length eight are killed by an additive map `f` that is
-invariant under rotation, given the cancellation property of `f` and the values of `f` listed in the
-hypotheses; the proof applies the rewriting rules of `quintic_rewriting_rules` to the rotation
-relations `f (a * v) = f (v * a)`. -/
+invariant under rotation, given `x ^ 2 = 0`, `y ^ 3 = 0` and `(x + y) ^ 5 = 0`, and that `2` cancels
+in `f`; no value of `f` is needed. -/
 private theorem map_quinticWords_eq_zero_length_eight {Q : Type*} [AddCommGroup Q] (f : A →+ Q)
     (hx : x ^ 2 = 0) (hy : y ^ 3 = 0) (hxy : (x + y) ^ 5 = 0)
     (hrot : ∀ a b : A, f (a * b) = f (b * a))
     (hdiv₂ : ∀ {a : A}, ((2 : ℕ) : ℤ) • f a = 0 → f a = 0) :
     (∀ b ∈ quinticWords x y 7, f b = 0) := by
-  obtain ⟨r₀, r₁, r₂, r₃, _, _⟩ :=
-    quintic_rewriting_rules hx hy hxy
-  have r₀' := r₀ 1
-  have r₁' := r₁ 1
-  simp only [one_mul] at r₀' r₁'
+  obtain ⟨r₀, r₁, r₂, r₃, _, _⟩ := quintic_rewriting_rules hx hy hxy
+  obtain ⟨r₀', r₁', -, -, -, -⟩ := quintic_rewriting_rules_one hx hy hxy
   -- Length 8.
   have l₈ : ∀ b ∈ quinticWords x y 7, f b = 0 := by
     have e₁ := hrot y (y * x * y * y * x * y * y)
@@ -815,20 +820,15 @@ private theorem map_quinticWords_eq_zero_length_eight {Q : Type*} [AddCommGroup 
   exact l₈
 
 /-- The reduced words `quinticWords x y` of length nine are killed by an additive map `f` that is
-invariant under rotation, given the cancellation property of `f` and the values of `f` listed in the
-hypotheses; the proof applies the rewriting rules of `quintic_rewriting_rules` to the rotation
-relations `f (a * v) = f (v * a)`. -/
+invariant under rotation, given `x ^ 2 = 0`, `y ^ 3 = 0` and `(x + y) ^ 5 = 0`, and that `3` cancels
+in `f`; no value of `f` is needed. -/
 private theorem map_quinticWords_eq_zero_length_nine {Q : Type*} [AddCommGroup Q] (f : A →+ Q)
     (hx : x ^ 2 = 0) (hy : y ^ 3 = 0) (hxy : (x + y) ^ 5 = 0)
     (hrot : ∀ a b : A, f (a * b) = f (b * a))
     (hdiv₃ : ∀ {a : A}, ((3 : ℕ) : ℤ) • f a = 0 → f a = 0) :
     (∀ b ∈ quinticWords x y 8, f b = 0) := by
-  obtain ⟨r₀, r₁, r₂, r₃, _, _⟩ :=
-    quintic_rewriting_rules hx hy hxy
-  have r₀' := r₀ 1
-  have r₁' := r₁ 1
-  have r₃' := r₃ 1
-  simp only [one_mul] at r₀' r₁' r₃'
+  obtain ⟨r₀, r₁, r₂, r₃, _, _⟩ := quintic_rewriting_rules hx hy hxy
+  obtain ⟨r₀', r₁', -, r₃', -, -⟩ := quintic_rewriting_rules_one hx hy hxy
   -- Length 9.
   have l₉ : ∀ b ∈ quinticWords x y 8, f b = 0 := by
     have e₁ := hrot x (x * y * y * x * y * x * y * y)
@@ -855,22 +855,16 @@ private theorem map_quinticWords_eq_zero_length_nine {Q : Type*} [AddCommGroup Q
   exact l₉
 
 /-- The reduced words `quinticWords x y` of lengths ten and eleven are killed by an additive map `f`
-that is invariant under rotation, given the cancellation property of `f` and the values of `f`
-listed in the hypotheses; the proof applies the rewriting rules of `quintic_rewriting_rules` to the
-rotation relations `f (a * v) = f (v * a)`. -/
+that is invariant under rotation, given `x ^ 2 = 0`, `y ^ 3 = 0` and `(x + y) ^ 5 = 0`, and that `2`
+cancels in `f`; no value of `f` is needed. -/
 private theorem map_quinticWords_eq_zero_lengths_ten_eleven {Q : Type*} [AddCommGroup Q]
     (f : A →+ Q) (hx : x ^ 2 = 0) (hy : y ^ 3 = 0) (hxy : (x + y) ^ 5 = 0)
     (hrot : ∀ a b : A, f (a * b) = f (b * a))
     (hdiv₂ : ∀ {a : A}, ((2 : ℕ) : ℤ) • f a = 0 → f a = 0) :
     (∀ b ∈ quinticWords x y 9, f b = 0) ∧
     (∀ b ∈ quinticWords x y 10, f b = 0) := by
-  obtain ⟨r₀, r₁, r₂, r₃, r₄, _⟩ :=
-    quintic_rewriting_rules hx hy hxy
-  have r₀' := r₀ 1
-  have r₁' := r₁ 1
-  have r₃' := r₃ 1
-  have r₄' := r₄ 1
-  simp only [one_mul] at r₀' r₁' r₃' r₄'
+  obtain ⟨r₀, r₁, r₂, r₃, r₄, _⟩ := quintic_rewriting_rules hx hy hxy
+  obtain ⟨r₀', r₁', -, r₃', r₄', -⟩ := quintic_rewriting_rules_one hx hy hxy
   -- Length 10.
   have l₁₀ : ∀ b ∈ quinticWords x y 9, f b = 0 := by
     have e₁ := hrot x (x * y * y * x * y * y * x * y * y)
@@ -913,9 +907,8 @@ private theorem map_quinticWords_eq_zero_lengths_ten_eleven {Q : Type*} [AddComm
   exact ⟨l₁₀, l₁₁⟩
 
 /-- The reduced words `quinticWords x y` of lengths twelve to fourteen are killed by an additive map
-`f` that is invariant under rotation, given the cancellation property of `f` and the values of `f`
-listed in the hypotheses; the proof applies the rewriting rules of `quintic_rewriting_rules` to the
-rotation relations `f (a * v) = f (v * a)`. -/
+`f` that is invariant under rotation, given `x ^ 2 = 0`, `y ^ 3 = 0` and `(x + y) ^ 5 = 0`, and that
+`2` cancels in `f`; no value of `f` is needed. -/
 private theorem map_quinticWords_eq_zero_lengths_twelve_to_fourteen {Q : Type*} [AddCommGroup Q]
     (f : A →+ Q) (hx : x ^ 2 = 0) (hy : y ^ 3 = 0) (hxy : (x + y) ^ 5 = 0)
     (hrot : ∀ a b : A, f (a * b) = f (b * a))
@@ -923,12 +916,8 @@ private theorem map_quinticWords_eq_zero_lengths_twelve_to_fourteen {Q : Type*} 
     (∀ b ∈ quinticWords x y 11, f b = 0) ∧
     (∀ b ∈ quinticWords x y 12, f b = 0) ∧
     (∀ b ∈ quinticWords x y 13, f b = 0) := by
-  obtain ⟨r₀, r₁, _, _, r₄, r₅⟩ :=
-    quintic_rewriting_rules hx hy hxy
-  have r₀' := r₀ 1
-  have r₁' := r₁ 1
-  have r₅' := r₅ 1
-  simp only [one_mul] at r₀' r₁' r₅'
+  obtain ⟨r₀, r₁, _, _, r₄, r₅⟩ := quintic_rewriting_rules hx hy hxy
+  obtain ⟨r₀', r₁', -, -, -, r₅'⟩ := quintic_rewriting_rules_one hx hy hxy
   -- Length 12.
   have l₁₂ : ∀ b ∈ quinticWords x y 11, f b = 0 := by
     have e₁ := hrot x (x * y * y * x * y * y * x * y * y * x * y)
