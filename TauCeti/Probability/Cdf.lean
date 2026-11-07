@@ -35,6 +35,8 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
 * `MeasureTheory.Measure.continuousAt_cdf_iff` characterizes continuity of a real probability
   law's cdf at a point by vanishing singleton mass;
 * `MeasureTheory.Measure.continuous_cdf_of_noAtoms` proves continuity for atomless real laws;
+* `MeasureTheory.Measure.measure_Ioo_eq_zero_of_cdf_eq` shows that an open interval on which the
+  cdf is constant is null;
 * `MeasureTheory.Measure.cdf_eq_zero_of_measure_Iio_eq_zero` shows that an atomless law with no
   mass below a point has cdf zero there;
 * `TauCeti.Probability.one_sub_cdf_zero_eq_one` and
@@ -288,6 +290,17 @@ probability measure on `ℝ` is continuous when every singleton has measure zero
 theorem continuous_cdf_of_noAtoms (ν : Measure ℝ) [IsProbabilityMeasure ν]
     [NullSingletonClass ν] : Continuous (cdf ν) :=
   continuous_iff_continuousAt.2 fun x ↦ (continuousAt_cdf_iff ν x).2 (measure_singleton x)
+
+/-- A real probability law gives no mass to an open interval on which its cumulative distribution
+function is constant. -/
+theorem measure_Ioo_eq_zero_of_cdf_eq (ν : Measure ℝ) [IsProbabilityMeasure ν] {y b : ℝ}
+    (h : ∀ z ∈ Ioo y b, cdf ν z = cdf ν y) : ν (Ioo y b) = 0 := by
+  rcases le_or_gt b y with hby | hyb
+  · rw [Ioo_eq_empty (not_lt.2 hby), measure_empty]
+  have hlim : leftLim (cdf ν) b = cdf ν y :=
+    leftLim_eq_of_tendsto <| tendsto_const_nhds.congr'
+      (Filter.eventually_of_mem (Ioo_mem_nhdsLT hyb) fun z hz ↦ (h z hz).symm)
+  rw [← measure_cdf ν, StieltjesFunction.measure_Ioo, hlim, sub_self, ENNReal.ofReal_zero]
 
 /-- The left limit of the cumulative distribution function of a real probability law at a point is
 the mass of the open ray to the left of that point. -/
