@@ -34,54 +34,10 @@ namespace TauCeti
 
 variable {n : ℕ}
 
-/-- Every point of the boundary arc over the bounded parameter interval lies on one of the
-finite sides. -/
-theorem exists_mem_edgeSet_schwarzChristoffelBoundary_of_mem_Icc
-    (a e : Fin (n + 2) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
-    (hfinite : ∀ k, -1 < ∑ l with a l = a k, e l) {x : ℝ}
-    (hx : x ∈ Icc (a 0) (a (Fin.last (n + 1)))) :
-    ∃ i : Fin (n + 1), schwarzChristoffelBoundary a e z₀ x ∈
-      (schwarzChristoffelPolygon a e z₀).edgeSet ℝ i.castSucc.castSucc := by
-  obtain ⟨i, hi⟩ := exists_mem_Icc_castSucc_succ a (Nat.succ_ne_zero n) hx
-  refine ⟨i, ?_⟩
-  rw [schwarzChristoffelPolygon_edgeSet_castSucc_castSucc,
-    ← schwarzChristoffelBoundary_image_Icc_prevertex a e z₀
-      (ha i.castSucc_lt_succ).le (fun k _ ↦ not_mem_Ioo_castSucc_succ a ha.monotone i k)
-      (hfinite _) (hfinite _)]
-  exact ⟨x, hi, rfl⟩
-
-/-- Parameters left of the first prevertex are sent to the closing side at infinity. -/
-theorem schwarzChristoffelBoundary_mem_edgeSet_last_of_le
-    (a e : Fin (n + 2) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
-    (hfinite : ∀ k, -1 < ∑ l with a l = a k, e l) (hsum : ∑ k, e k = -2) {x : ℝ}
-    (hx : x ≤ a 0) :
-    schwarzChristoffelBoundary a e z₀ x ∈
-      (schwarzChristoffelPolygon a e z₀).edgeSet ℝ (Fin.last (n + 2)) := by
-  rw [schwarzChristoffelPolygon_edgeSet_last]
-  have hm : schwarzChristoffelBoundary a e z₀ x ∈
-      schwarzChristoffelBoundary a e z₀ '' Iic (a 0) := ⟨x, hx, rfl⟩
-  rw [schwarzChristoffelBoundary_image_Iic_prevertex a e z₀ 0 (hfinite 0)
-    (fun k _ ↦ ha.monotone k.zero_le) (by rw [hsum]; norm_num)] at hm
-  rw [segment_symm]
-  exact hm.1
-
-/-- Parameters right of the last prevertex are sent to the closing side at the last vertex. -/
-theorem schwarzChristoffelBoundary_mem_edgeSet_last_prevertex_of_ge
-    (a e : Fin (n + 2) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
-    (hfinite : ∀ k, -1 < ∑ l with a l = a k, e l) (hsum : ∑ k, e k = -2) {x : ℝ}
-    (hx : a (Fin.last (n + 1)) ≤ x) :
-    schwarzChristoffelBoundary a e z₀ x ∈
-      (schwarzChristoffelPolygon a e z₀).edgeSet ℝ (Fin.last (n + 1)).castSucc := by
-  rw [schwarzChristoffelPolygon_edgeSet_last_prevertex]
-  have hm : schwarzChristoffelBoundary a e z₀ x ∈
-      schwarzChristoffelBoundary a e z₀ '' Ici (a (Fin.last (n + 1))) := ⟨x, hx, rfl⟩
-  rw [schwarzChristoffelBoundary_image_Ici_prevertex a e z₀ (Fin.last (n + 1)) (hfinite _)
-    (fun k _ ↦ ha.monotone k.le_last) (by rw [hsum]; norm_num)] at hm
-  exact hm.1
-
-/-- The finite boundary map is injective under the side-intersection hypotheses: the left ray,
-bounded interval and right ray are separated, and equality at their shared endpoints is
-excluded by injectivity on the bounded interval. -/
+/-- **Injectivity of the finite boundary map from side intersections.** For strictly ordered
+prevertices with integrable exponents and total exponent `-2`, the finite boundary map is injective
+when the bounded sides meet only at consecutive vertices and each closing side meets the bounded
+sides only at its finite endpoint. -/
 theorem schwarzChristoffelBoundary_injective_of_polygon_edge_intersections
     (a e : Fin (n + 2) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
     (hfinite : ∀ k, -1 < ∑ l with a l = a k, e l)
@@ -100,6 +56,7 @@ theorem schwarzChristoffelBoundary_injective_of_polygon_edge_intersections
         z = schwarzChristoffelVertex a e z₀ (Fin.last (n + 1))) :
     Function.Injective (schwarzChristoffelBoundary a e z₀) := by
   let B := schwarzChristoffelBoundary a e z₀
+  have hS : ∑ k, e k < -1 := by rw [hsum]; norm_num
   have hbounded : InjOn B (Icc (a 0) (a (Fin.last (n + 1)))) :=
     schwarzChristoffelBoundary_injOn_prevertex_interval_of_edge_intersections
       a e z₀ ha.monotone hfinite hinter
@@ -107,6 +64,8 @@ theorem schwarzChristoffelBoundary_injective_of_polygon_edge_intersections
     schwarzChristoffelBoundary_injOn_Iic a e z₀ (hfinite 0) fun k _ ↦ ha.monotone k.zero_le
   have hrightInj : InjOn B (Ici (a (Fin.last (n + 1)))) :=
     schwarzChristoffelBoundary_injOn_Ici a e z₀ (hfinite _) fun k _ ↦ ha.monotone k.le_last
+  -- The left ray, bounded interval and right ray are separated; equality at their shared
+  -- endpoints is excluded by injectivity on the bounded interval.
   suffices h : ∀ x y, x < y → B x ≠ B y by
     intro x y hxy
     rcases lt_trichotomy x y with hlt | heq | hgt
@@ -123,21 +82,24 @@ theorem schwarzChristoffelBoundary_injective_of_polygon_edge_intersections
     · have hd := disjoint_schwarzChristoffelBoundary_unbounded_images a e z₀ ha
         (fun k ↦ by simpa [ha.injective.eq_iff, Finset.filter_eq'] using hfinite k) hsum
       exact Set.disjoint_left.mp hd ⟨x, hx₀, rfl⟩ ⟨y, hyn, heq.symm⟩
-    · obtain ⟨i, hi⟩ := exists_mem_edgeSet_schwarzChristoffelBoundary_of_mem_Icc a e z₀ ha hfinite
+    · obtain ⟨i, hi⟩ := exists_mem_edgeSet_schwarzChristoffelBoundary_of_mem_Icc a e z₀
+        ha.monotone hfinite
         (x := y) ⟨(lt_of_not_ge hy₀).le, (lt_of_not_ge hyn).le⟩
       have hyL := hleft i (B y) hi
-        (heq ▸ schwarzChristoffelBoundary_mem_edgeSet_last_of_le a e z₀ ha hfinite hsum hx₀)
+        (heq ▸ schwarzChristoffelBoundary_mem_edgeSet_last_of_le a e z₀ ha.monotone hfinite hS
+          hx₀)
       have hya : y = a 0 := hbounded
         ⟨(lt_of_not_ge hy₀).le, (lt_of_not_ge hyn).le⟩
         ⟨le_rfl, ha.monotone (Fin.zero_le _)⟩
         (hyL.trans (schwarzChristoffelBoundary_apply_prevertex a e z₀ 0 (hfinite 0)).symm)
       exact (lt_of_not_ge hy₀).ne' hya
   · by_cases hyn : a (Fin.last (n + 1)) ≤ y
-    · obtain ⟨i, hi⟩ := exists_mem_edgeSet_schwarzChristoffelBoundary_of_mem_Icc a e z₀ ha hfinite
+    · obtain ⟨i, hi⟩ := exists_mem_edgeSet_schwarzChristoffelBoundary_of_mem_Icc a e z₀
+        ha.monotone hfinite
         (x := x) ⟨(lt_of_not_ge hx₀).le, (lt_of_not_ge hxn).le⟩
       have hxR := hright i (B x) hi
-        (heq ▸ schwarzChristoffelBoundary_mem_edgeSet_last_prevertex_of_ge a e z₀ ha hfinite hsum
-          hyn)
+        (heq ▸ schwarzChristoffelBoundary_mem_edgeSet_last_prevertex_of_ge a e z₀ ha.monotone
+          hfinite hS hyn)
       have hxa : x = a (Fin.last (n + 1)) := hbounded
         ⟨(lt_of_not_ge hx₀).le, (lt_of_not_ge hxn).le⟩
         ⟨ha.monotone (Fin.zero_le _), le_rfl⟩
@@ -147,23 +109,24 @@ theorem schwarzChristoffelBoundary_injective_of_polygon_edge_intersections
         ⟨(lt_of_not_ge hx₀).le, (lt_of_not_ge hxn).le⟩
         ⟨(lt_of_not_ge hy₀).le, (lt_of_not_ge hyn).le⟩ heq)
 
-/-- No boundary point over a finite parameter is the vertex at infinity: the unbounded left
-side's image excludes it, and a bounded point attaining it would violate the left-side
-intersection condition. -/
+/-- **The finite boundary avoids the vertex at infinity.** For ordered prevertices with integrable
+exponents and total exponent below `-1`, if the left closing side meets each bounded side only at
+its finite endpoint, then no finite parameter is sent to the vertex at infinity. -/
 theorem schwarzChristoffelBoundary_ne_vertexAtInfinity_of_left_edge_intersection
-    (a e : Fin (n + 2) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
+    (a e : Fin (n + 2) → ℝ) (z₀ : UpperHalfPlane) (ha : Monotone a)
     (hfinite : ∀ k, -1 < ∑ l with a l = a k, e l)
-    (hsum : ∑ k, e k = -2)
+    (hS : ∑ k, e k < -1)
     (hleft : ∀ (i : Fin (n + 1)) (z : ℂ),
       z ∈ (schwarzChristoffelPolygon a e z₀).edgeSet ℝ i.castSucc.castSucc →
       z ∈ (schwarzChristoffelPolygon a e z₀).edgeSet ℝ (Fin.last (n + 2)) →
         z = schwarzChristoffelVertex a e z₀ 0)
     (x : ℝ) :
     schwarzChristoffelBoundary a e z₀ x ≠ schwarzChristoffelVertexAtInfinity a e z₀ := by
-  have hS : ∑ k, e k < -1 := by rw [hsum]; norm_num
-  have hfirst : ∀ k, e k ≠ 0 → a 0 ≤ a k := fun k _ ↦ ha.monotone k.zero_le
+  -- The left unbounded side omits the vertex at infinity; a bounded parameter attaining it
+  -- would put it on a bounded side and the left closing side, contradicting `hleft`.
+  have hfirst : ∀ k, e k ≠ 0 → a 0 ≤ a k := fun k _ ↦ ha k.zero_le
   have hlast : ∀ k, e k ≠ 0 → a k ≤ a (Fin.last (n + 1)) :=
-    fun k _ ↦ ha.monotone k.le_last
+    fun k _ ↦ ha k.le_last
   have hleftImage := schwarzChristoffelBoundary_image_Iic_prevertex a e z₀ 0 (hfinite 0) hfirst hS
   have hrightImage := schwarzChristoffelBoundary_image_Ici_prevertex a e z₀ (Fin.last (n + 1))
     (hfinite _) hlast hS
@@ -216,7 +179,7 @@ theorem schwarzChristoffelCompactifiedBoundary_injective_of_edge_intersections
   (schwarzChristoffelCompactifiedBoundary_injective_iff a e z₀).2
     ⟨schwarzChristoffelBoundary_injective_of_polygon_edge_intersections a e z₀ ha hfinite hsum
       hinter hleft hright,
-      schwarzChristoffelBoundary_ne_vertexAtInfinity_of_left_edge_intersection a e z₀ ha hfinite
-        hsum hleft⟩
+      schwarzChristoffelBoundary_ne_vertexAtInfinity_of_left_edge_intersection a e z₀ ha.monotone
+        hfinite (by rw [hsum]; norm_num) hleft⟩
 
 end TauCeti
