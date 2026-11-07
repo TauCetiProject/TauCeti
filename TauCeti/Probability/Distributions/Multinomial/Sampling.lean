@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.BigOperators.Pi
 public import TauCeti.Probability.Distributions.Categorical.Basic
 public import TauCeti.Probability.Distributions.Multinomial.Poisson
 public import TauCeti.Probability.Distributions.Multinomial.Transforms
@@ -85,39 +86,30 @@ theorem iIndepFun.hasLaw_card_filter_multinomialMeasure {X : J → Ω → ι}
   let := isProbabilityMeasure_multinomialMeasure 1 p
   let Y (j : J) (ω : Ω) : ι → ℕ := Pi.single (X j ω) 1
   have hsingle : HasLaw (fun i : ι => Pi.single i (1 : ℕ))
-      (multinomialMeasure 1 p) (categoricalMeasure p) := by
-    refine ⟨(measurable_of_countable _).aemeasurable, ?_⟩
-    -- The existing one-hot identity fixes its own classical equality decision.
-    rw [← map_piSingle_categoricalMeasure p]
-    congr 1
-    funext i j
-    by_cases h : j = i <;> simp [h]
+      (multinomialMeasure 1 p) (categoricalMeasure p) :=
+    ⟨(measurable_of_countable _).aemeasurable, map_piSingle_categoricalMeasure p⟩
   have hY (j : J) : HasLaw (Y j) (multinomialMeasure 1 p) P := hsingle.comp (hX j)
   have hsum := (hind.comp (fun _ i => Pi.single i (1 : ℕ))
     (fun _ => measurable_of_countable _)).hasLaw_finset_sum_convolutionPower hY s
   rw [convolutionPower_multinomialMeasure_one] at hsum
   convert hsum using 1
-  ext ω i
-  simp [Finset.sum_apply, Pi.single_apply, eq_comm]
+  funext ω
+  simpa only [Finset.sum_apply, Function.comp_def] using
+    (s.sum_pi_single_one_eq_card_filter (fun j => X j ω)).symm
 
-/-- Counts in an i.i.d. categorical sequence stopped at an independent Poisson sample size
-have the product of Poisson laws. Zero rates and zero-weight categories are allowed. -/
-theorem iIndepFun.hasLaw_card_filter_poissonMeasure {X : ℕ → Ω → ι} {N : Ω → ℕ}
-    {r : ℝ≥0} (hind : iIndepFun X P)
+/-- Counts in an i.i.d. categorical sequence stopped at an independent natural-valued
+sample size have the corresponding mixture of multinomial laws. -/
+theorem iIndepFun.hasLaw_card_filter_bind_multinomialMeasure
+    {X : ℕ → Ω → ι} {N : Ω → ℕ} {ρ : Measure ℕ} (hind : iIndepFun X P)
     (hX : ∀ j, HasLaw (X j) (categoricalMeasure p) P)
-    (hN : HasLaw N (poissonMeasure r) P) (hNX : IndepFun N (fun ω j => X j ω) P) :
+    (hN : HasLaw N ρ P) (hNX : IndepFun N (fun ω j => X j ω) P) :
     HasLaw (fun ω i => ((Finset.range (N ω)).filter fun j => X j ω = i).card)
-      (Measure.pi fun i => poissonMeasure (r * p.weights i)) P := by
+      (ρ.bind fun n => multinomialMeasure n p) P := by
   classical
   let Y (j : ℕ) (ω : Ω) : ι → ℕ := Pi.single (X j ω) 1
   have hsingle : HasLaw (fun i : ι => Pi.single i (1 : ℕ))
-      (multinomialMeasure 1 p) (categoricalMeasure p) := by
-    refine ⟨(measurable_of_countable _).aemeasurable, ?_⟩
-    -- The existing one-hot identity fixes its own classical equality decision.
-    rw [← map_piSingle_categoricalMeasure p]
-    congr 1
-    funext i j
-    by_cases h : j = i <;> simp [h]
+      (multinomialMeasure 1 p) (categoricalMeasure p) :=
+    ⟨(measurable_of_countable _).aemeasurable, map_piSingle_categoricalMeasure p⟩
   have hY (j : ℕ) : HasLaw (Y j) (multinomialMeasure 1 p) P := hsingle.comp (hX j)
   have hNY : IndepFun N (fun ω j => Y j ω) P :=
     hNX.comp measurable_id (measurable_pi_iff.2 fun j =>
@@ -128,23 +120,28 @@ theorem iIndepFun.hasLaw_card_filter_poissonMeasure {X : ℕ → Ω → ι} {N :
   have hpowers : (multinomialMeasure 1 p).convolutionPower =
       fun n => multinomialMeasure n p :=
     funext fun n => convolutionPower_multinomialMeasure_one n p
-  rw [hpowers, bind_poissonMeasure_multinomialMeasure] at hsum
-  convert hsum using 1
-  ext ω i
-  simp [Finset.sum_apply, Pi.single_apply, eq_comm]
+  rw [hpowers] at hsum
+  simpa only [Function.comp_def, Finset.sum_pi_single_one_eq_card_filter] using hsum
+
+/-- Counts in an i.i.d. categorical sequence stopped at an independent Poisson sample size
+have the product of Poisson laws. Zero rates and zero-weight categories are allowed. -/
+theorem iIndepFun.hasLaw_card_filter_pi_poissonMeasure {X : ℕ → Ω → ι} {N : Ω → ℕ}
+    {r : ℝ≥0} (hind : iIndepFun X P)
+    (hX : ∀ j, HasLaw (X j) (categoricalMeasure p) P)
+    (hN : HasLaw N (poissonMeasure r) P) (hNX : IndepFun N (fun ω j => X j ω) P) :
+    HasLaw (fun ω i => ((Finset.range (N ω)).filter fun j => X j ω = i).card)
+      (Measure.pi fun i => poissonMeasure (r * p.weights i)) P := by
+  simpa only [bind_poissonMeasure_multinomialMeasure] using
+    hind.hasLaw_card_filter_bind_multinomialMeasure hX hN hNX
 
 /-- Poisson sampling makes all category counts jointly independent, even for categories
 with zero probability. -/
-theorem iIndepFun.iIndepFun_card_filter_poisson {X : ℕ → Ω → ι} {N : Ω → ℕ}
+theorem iIndepFun.iIndepFun_card_filter_of_hasLaw_poissonMeasure {X : ℕ → Ω → ι} {N : Ω → ℕ}
     {r : ℝ≥0} (hind : iIndepFun X P)
     (hX : ∀ j, HasLaw (X j) (categoricalMeasure p) P)
     (hN : HasLaw N (poissonMeasure r) P) (hNX : IndepFun N (fun ω j => X j ω) P) :
     iIndepFun (fun i ω => ((Finset.range (N ω)).filter fun j => X j ω = i).card) P := by
-  have hlaw := hind.hasLaw_card_filter_poissonMeasure hX hN hNX
-  have := hlaw.isProbabilityMeasure
-  exact (iIndepFun_iff_hasLaw_pi_pi (fun i =>
-    (measurePreserving_eval (fun i => poissonMeasure (r * p.weights i)) i).hasLaw.comp
-      hlaw)).2 hlaw
+  exact (hind.hasLaw_card_filter_bind_multinomialMeasure hX hN hNX).iIndepFun_of_poisson_multinomial
 
 end ProbabilityTheory
 
@@ -172,25 +169,15 @@ theorem map_card_filter_prod_poissonMeasure (r : ℝ≥0) (p : StdSimplex ℝ≥
     ((poissonMeasure r).prod (Measure.infinitePi fun _ : ℕ => categoricalMeasure p)).map
       (fun z i => ((Finset.range z.1).filter fun j => z.2 j = i).card) =
         Measure.pi (fun i => poissonMeasure (r * p.weights i)) := by
-  let C (z : ℕ × (ℕ → ι)) (i : ι) :=
-    ((Finset.range z.1).filter fun j => z.2 j = i).card
-  have hC : Measurable C := by
-    refine measurable_from_prod_countable_right fun n => measurable_pi_iff.2 fun i => ?_
-    simp only [C, Finset.card_filter]
-    exact Finset.measurable_sum _ fun j _ => Measurable.ite
-      (measurableSet_eq_fun (measurable_pi_apply j) measurable_const)
-      measurable_const measurable_const
-  rw [Measure.prod_eq_of_sfinite,
-    Measure.map_bind Measurable.map_prodMk_left.aemeasurable hC.aemeasurable]
-  have hfixed (n : ℕ) :
-      ((Measure.infinitePi fun _ : ℕ => categoricalMeasure p).map (Prod.mk n)).map C =
-        multinomialMeasure n p := by
-    rw [Measure.map_map hC measurable_prodMk_left]
-    simpa [C, Function.comp_def] using
-      ((iIndepFun_infinitePi (P := fun _ : ℕ => categoricalMeasure p)
-        (fun _ => measurable_id)).hasLaw_card_filter_multinomialMeasure
-          (fun j => (measurePreserving_eval_infinitePi
-            (fun _ : ℕ => categoricalMeasure p) j).hasLaw) (Finset.range n)).map_eq
-  simpa only [hfixed] using bind_poissonMeasure_multinomialMeasure r p
+  let μ := Measure.infinitePi fun _ : ℕ => categoricalMeasure p
+  have hsnd := (measurePreserving_snd (μ := poissonMeasure r) (ν := μ)).hasLaw
+  have hX (j : ℕ) :=
+    (measurePreserving_eval_infinitePi (fun _ : ℕ => categoricalMeasure p) j).hasLaw.comp hsnd
+  have hind : iIndepFun (fun j (z : ℕ × (ℕ → ι)) => z.2 j)
+      ((poissonMeasure r).prod μ) :=
+    (iIndepFun_iff_hasLaw_Pi_infinitePi hX measurable_snd.aemeasurable).2 hsnd
+  exact (hind.hasLaw_card_filter_pi_poissonMeasure hX
+    (measurePreserving_fst (μ := poissonMeasure r) (ν := μ)).hasLaw
+    (indepFun_prod measurable_id measurable_id)).map_eq
 
 end TauCeti.Probability
