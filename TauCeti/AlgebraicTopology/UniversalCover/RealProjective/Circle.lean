@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Topology.Homeomorph.Lemmas
 public import TauCeti.AlgebraicTopology.UniversalCover.RealProjective.Basic
+public import TauCeti.AlgebraicTopology.UniversalCover.RealProjective.Projectivization
 public import TauCeti.Geometry.Sphere.Circle
 
 /-!
@@ -30,6 +31,8 @@ continuous bijection from a compact space to a Hausdorff space, hence a homeomor
 * `TauCeti.RealProjectiveSpace.Line.basepoint`: the natural basepoint of `RP¹` corresponding
   to `1 : Circle`.
 * `TauCeti.RealProjectiveSpace.Line.toCircle_basepoint`: `toCircle` sends `basepoint` to `1`.
+* `Projectivization.lineHomeomorphCircle`: the projective line `ℙ ℝ (Fin 2 → ℝ)` as the circle,
+  `[x : y] ↦ (x + i y)² / (x² + y²)`.
 
 ## References
 
@@ -131,3 +134,38 @@ end
 end Line
 end RealProjectiveSpace
 end TauCeti
+
+namespace Projectivization
+
+open TauCeti
+open scoped LinearAlgebra.Projectivization
+
+noncomputable section
+
+/-- The projective line `ℙ ℝ (Fin 2 → ℝ)` is homeomorphic to the circle, by
+`[x : y] ↦ ((x + i y) / ‖(x, y)‖)²`: the homeomorphism
+`TauCeti.RealProjectiveSpace.Line.homeomorphCircle` read in homogeneous coordinates. -/
+def lineHomeomorphCircle : ℙ ℝ (Fin 2 → ℝ) ≃ₜ Circle :=
+  (RealProjectiveSpace.homeomorphProjectivization 1).symm.trans
+    RealProjectiveSpace.Line.homeomorphCircle
+
+/-- The homeomorphism of the projective line with the circle in homogeneous coordinates:
+`[x : y] ↦ (x + i y)² / (x² + y²)`. -/
+theorem coe_lineHomeomorphCircle_mk (w : Fin 2 → ℝ) (hw : w ≠ 0) :
+    (lineHomeomorphCircle (mk ℝ w hw) : ℂ) =
+      (w 0 + w 1 * Complex.I) ^ 2 / (w 0 ^ 2 + w 1 ^ 2 : ℝ) := by
+  have hn : ‖WithLp.toLp 2 w‖ ^ 2 = w 0 ^ 2 + w 1 ^ 2 := by
+    rw [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_two]
+  have hn0 : ‖WithLp.toLp 2 w‖ ≠ 0 := by simpa using hw
+  simp only [lineHomeomorphCircle, Homeomorph.trans_apply,
+    RealProjectiveSpace.homeomorphProjectivization_symm_mk_eq_normalize,
+    RealProjectiveSpace.Line.homeomorphCircle_apply, RealProjectiveSpace.Line.toCircle_apply_mk,
+    Circle.coe_pow, EuclideanSpace.coe_sphereHomeomorphCircle_apply,
+    Complex.orthonormalBasisOneI_repr_symm_apply, PiLp.smul_apply, smul_eq_mul]
+  rw [← hn]
+  push_cast
+  field_simp
+
+end
+
+end Projectivization

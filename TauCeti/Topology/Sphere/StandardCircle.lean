@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import TauCeti.Analysis.SpecialFunctions.Trigonometric.Angle
 public import TauCeti.Geometry.Sphere.Circle
 public import TauCeti.Topology.Homotopy.Cube.Basic
@@ -22,6 +23,8 @@ the point `(1, 0)` and is injective elsewhere, so it is a quotient map of `I¹` 
 * `TauCeti.circleLoop_eq_east_iff`, `TauCeti.circleLoop_surjective` and
   `TauCeti.eq_or_of_circleLoop_eq`: it collapses exactly the boundary to `(1, 0)`, is surjective,
   and is injective elsewhere.
+* `TauCeti.diskBoundaryTwoLoop`: the same counterclockwise parametrization as a loop of the
+  boundary circle `∂D²`, based at `(1, 0)`.
 -/
 
 public section
@@ -159,5 +162,48 @@ theorem circleLoop_surjective : Function.Surjective circleLoop := by
     rw [mul_div_cancel₀ _ hp.ne', hrc]
   · simp only [Fin.mk_one, circleLoop_apply_one]
     rw [mul_div_cancel₀ _ hp.ne', hrs]
+
+/-! ### The counterclockwise loop of `∂D²` -/
+
+/-- The point `(1, 0)` of the boundary circle `∂D²`. -/
+def diskBoundaryTwoBase : TopCat.diskBoundary.{0} 2 :=
+  ⟨EuclideanSpace.sphereHomeomorphCircle.symm 1⟩
+
+/-- The counterclockwise loop `t ↦ (cos 2πt, sin 2πt)` of the boundary circle `∂D²`, based at
+`(1, 0)`: the loop `t ↦ exp(2πit)` of `Circle` carried to `∂D²` by
+`TauCeti.EuclideanSpace.sphereHomeomorphCircle`. -/
+def diskBoundaryTwoLoop : Path diskBoundaryTwoBase diskBoundaryTwoBase where
+  toFun t := ⟨EuclideanSpace.sphereHomeomorphCircle.symm (Circle.exp (2 * π * t))⟩
+  continuous_toFun := continuous_uliftUp.comp
+    (EuclideanSpace.sphereHomeomorphCircle.symm.continuous.comp (by fun_prop))
+  source' := by
+    rw [Set.Icc.coe_zero, mul_zero, Circle.exp_zero]
+    rfl
+  target' := by
+    rw [Set.Icc.coe_one, mul_one, Circle.exp_two_pi]
+    rfl
+
+/-- The loop `TauCeti.diskBoundaryTwoLoop` at time `t` is the point of `∂D²` corresponding to
+`exp(2πit)`. -/
+theorem diskBoundaryTwoLoop_down_apply (t : I) :
+    (diskBoundaryTwoLoop t).down =
+      EuclideanSpace.sphereHomeomorphCircle.symm (Circle.exp (2 * π * t)) :=
+  (rfl)
+
+/-- The first coordinate of `TauCeti.diskBoundaryTwoLoop` at time `t` is `cos 2πt`. -/
+@[simp]
+theorem diskBoundaryTwoLoop_apply_zero (t : I) :
+    ((diskBoundaryTwoLoop t).down : EuclideanSpace ℝ (Fin 2)) 0 = cos (2 * π * t) := by
+  rw [diskBoundaryTwoLoop_down_apply, EuclideanSpace.coe_sphereHomeomorphCircle_symm_apply,
+    Circle.coe_exp, Complex.orthonormalBasisOneI_repr_apply]
+  exact Complex.exp_ofReal_mul_I_re _
+
+/-- The second coordinate of `TauCeti.diskBoundaryTwoLoop` at time `t` is `sin 2πt`. -/
+@[simp]
+theorem diskBoundaryTwoLoop_apply_one (t : I) :
+    ((diskBoundaryTwoLoop t).down : EuclideanSpace ℝ (Fin 2)) 1 = sin (2 * π * t) := by
+  rw [diskBoundaryTwoLoop_down_apply, EuclideanSpace.coe_sphereHomeomorphCircle_symm_apply,
+    Circle.coe_exp, Complex.orthonormalBasisOneI_repr_apply]
+  exact Complex.exp_ofReal_mul_I_im _
 
 end TauCeti
