@@ -25,7 +25,7 @@ plus half of itself is at most `2 b`.
 
 * `ENNReal.toReal_one_sub_div`: `(1 - a / b).toReal = 1 - a.toReal / b.toReal` for `a ≤ b`.
 * `ENNReal.toNNReal_one_sub_div_pos`: `0 < (1 - a / b).toNNReal` for `a < b`.
-* `ENNReal.exists_nnreal_two_le_inv_sub_lt_and_inv_add_le_one`: for `r > 1` and `n ≥ 1` with
+* `ENNReal.exists_nnreal_two_le_inv_sub_lt_and_inv_add_le_one`: for `r > 1` and `n > 0` with
   `n (2 - r) < 2 r`, a finite exponent `t ≥ 2` with `1/2 - 1/t < 1/n` and `1/r + 1/t ≤ 1`.
 * `ENNReal.le_mul_two_of_le_add_div_two`: the absorption step `a ≤ b + a / 2 → a ≤ 2 b` for
   finite `a`, as used in elliptic estimates.
@@ -55,10 +55,10 @@ theorem le_mul_two_of_le_add_div_two {a b : ℝ≥0∞} (ha : a ≠ ∞) (h : a 
   rw [← ENNReal.div_le_iff_le_mul (Or.inl two_ne_zero) (Or.inl ofNat_ne_top)]
   exact (ENNReal.add_le_add_iff_right (div_ne_top ha two_ne_zero)).1 h'
 
-/-- **A finite exponent `t ≥ 2` complementing `r`.** For `n ≥ 1` and `r > 1` with
+/-- **A finite exponent `t ≥ 2` complementing `r`.** For `n > 0` and `r > 1` with
 `n (2 - r) < 2 r`, there is a finite exponent `t ≥ 2` with `1/2 - 1/t < 1/n` and `1/r + 1/t ≤ 1`:
 take `1/t = min (1/2) (1 - 1/r)`. -/
-theorem exists_nnreal_two_le_inv_sub_lt_and_inv_add_le_one {n : ℝ} (hn : 1 ≤ n) {r : ℝ≥0}
+theorem exists_nnreal_two_le_inv_sub_lt_and_inv_add_le_one {n : ℝ} (hn : 0 < n) {r : ℝ≥0}
     (hr : 1 < r) (hrn : n * (2 - r) < 2 * r) :
     ∃ t : ℝ≥0, 0 < t ∧ (2 : ℝ≥0∞) ≤ t ∧ 2⁻¹ - (t : ℝ)⁻¹ < n⁻¹ ∧
       (r : ℝ)⁻¹ + (t : ℝ)⁻¹ ≤ 1 := by
@@ -69,7 +69,7 @@ theorem exists_nnreal_two_le_inv_sub_lt_and_inv_add_le_one {n : ℝ} (hn : 1 ≤
   have hτ2 : τ ≤ 2⁻¹ := min_le_left _ _
   have hτr : τ ≤ 1 - (r : ℝ)⁻¹ := min_le_right _ _
   have hτn : 2⁻¹ - τ < n⁻¹ := by
-    have hn0 : 0 < n⁻¹ := inv_pos.2 (by linarith)
+    have hn0 : 0 < n⁻¹ := inv_pos.2 hn
     have h2r : (r : ℝ)⁻¹ < 2⁻¹ + n⁻¹ := by
       rw [← sub_pos, show (2⁻¹ + n⁻¹ - (r : ℝ)⁻¹) = (2 * r - n * (2 - r)) / (2 * n * r) by
         field_simp; ring]

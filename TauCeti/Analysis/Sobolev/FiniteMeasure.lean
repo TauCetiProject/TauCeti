@@ -296,7 +296,7 @@ theorem W1p0.exists_strongDual_apply_eq_setIntegral_of_memLp [Nontrivial E]
   set ν := mu.restrict (Omega : Set E)
   have : IsFiniteMeasure ν := isFiniteMeasure_restrict.2 hOmega
   obtain ⟨t, ht0, h2t, hτn, hrt⟩ :=
-    ENNReal.exists_nnreal_two_le_inv_sub_lt_and_inv_add_le_one hn hr hrn
+    ENNReal.exists_nnreal_two_le_inv_sub_lt_and_inv_add_le_one (zero_lt_one.trans_le hn) hr hrn
   -- The Sobolev inequality `‖v‖_{Lᵗ} ≤ S ‖∇v‖_{L²}` on `W^{1,2}_0(Ω)`.
   obtain ⟨S, hSfin, hS⟩ : ∃ S : ℝ≥0∞, S ≠ ∞ ∧ ∀ v : W1p0 mu Omega 2,
       eLpNorm (W1p.value (v : W1p mu Omega 2)) t ν ≤ S * ‖W1p.gradient (v : W1p mu Omega 2)‖ₑ :=
