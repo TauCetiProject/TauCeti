@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.TensorCoalgebra.CoalgHom
 public import TauCeti.LinearAlgebra.TensorCoalgebra.GradedCoderivation
 import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.Data.Nat.Choose.Cast
+import TauCeti.LinearAlgebra.BilinearMap.Sum
 import TauCeti.LinearAlgebra.End.TensorProduct
 
 /-!
@@ -231,13 +232,11 @@ theorem map_expCoderiv_deconcatenation_eq_sum (hφ : φ ∘ₗ ofLetter R M = 0)
     | add u v hu hv => simp only [map_add, hu, hv]
   -- The tensor square of `S` expands into the summands.
   rw [hS]
-  generalize deconcatenation R M z = w
-  induction w using TensorProduct.inductionOn with
-  | tmul u v =>
-      simp only [S, c, TensorProduct.map_tmul, LinearMap.sum_apply, LinearMap.smul_apply,
-        TensorProduct.sum_tmul, TensorProduct.tmul_sum, TensorProduct.smul_tmul_smul]
-      exact Finset.sum_comm
-  | add u v hu hv => simp only [map_add, hu, hv, smul_add, Finset.sum_add_distrib]
+  have hmap : TensorProduct.map S S = TensorProduct.mapBilinear (RingHom.id R) _ _ _ _ S S := rfl
+  rw [hmap, show S = ∑ r ∈ Finset.range N, c r • coderiv R φ ^ r from rfl,
+    LinearMap.apply_sum_smul_sum_smul]
+  simp only [LinearMap.sum_apply, LinearMap.smul_apply, TensorProduct.mapBilinear_apply,
+    smul_smul, c]
 
 /-- **The exponential of a coderivation is a coalgebra morphism**, when the coderivation has no
 unary Taylor component.  This is the binomial theorem for the commuting endomorphisms `D ⊗ 1` and
