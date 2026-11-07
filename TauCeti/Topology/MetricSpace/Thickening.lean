@@ -41,7 +41,7 @@ constants (`IsOpen.exists_tube_subset`).
 
 Under a `K`-Lipschitz map, the `R / K`-thickening of a preimage lies in the preimage of the
 `R`-thickening (`TauCeti.thickening_preimage_subset_preimage_thickening`), and likewise for closed
-thickenings when `K > 0` (`TauCeti.cthickening_preimage_subset_preimage_cthickening`).
+thickenings (`TauCeti.cthickening_preimage_subset_preimage_cthickening`).
 -/
 
 public section
@@ -96,22 +96,34 @@ theorem thickening_preimage_subset_preimage_thickening {X Y : Type*} [PseudoMetr
   calc (K : ℝ) * dist y z < K * (R / K) := by gcongr
     _ = R := by field_simp
 
-/-- Under a `K`-Lipschitz map, with `K > 0`, the closed `R / K`-thickening of a preimage lies in
-the preimage of the closed `R`-thickening. -/
+/-- Under a `K`-Lipschitz map, the closed `R / K`-thickening of a preimage lies in the preimage of
+the closed `R`-thickening. -/
 theorem cthickening_preimage_subset_preimage_cthickening {X Y : Type*} [PseudoMetricSpace X]
-    [PseudoMetricSpace Y] {f : X → Y} {K : ℝ≥0} {R : ℝ} (hf : LipschitzWith K f) (hK : 0 < K)
+    [PseudoMetricSpace Y] {f : X → Y} {K : ℝ≥0} {R : ℝ} (hf : LipschitzWith K f)
     (S : Set Y) : cthickening (R / K) (f ⁻¹' S) ⊆ f ⁻¹' cthickening R S := by
   intro x hx
+  rcases eq_or_ne K 0 with rfl | hK
+  · -- `f` is constant, so `f x ∈ S` as soon as the preimage of `S` is nonempty.
+    obtain ⟨y, hy⟩ : (f ⁻¹' S).Nonempty := by
+      by_contra h
+      rw [not_nonempty_iff_eq_empty] at h
+      simp [h] at hx
+    have h0 : f x ∈ cthickening 0 S :=
+      mem_cthickening_of_dist_le (f x) (f y) 0 S hy (by simpa using hf.dist_le_mul x y)
+    rcases le_total 0 R with hR | hR
+    · exact cthickening_mono hR S h0
+    · rw [cthickening_zero] at h0
+      rwa [mem_preimage, cthickening_of_nonpos hR]
   rw [mem_cthickening_iff] at hx
   rw [mem_preimage, mem_cthickening_iff]
-  have hK0 : (K : ℝ≥0∞) ≠ 0 := by simpa using hK.ne'
+  have hK0 : (K : ℝ≥0∞) ≠ 0 := by simpa using hK
   have hle : infEDist (f x) S ≤ K * infEDist x (f ⁻¹' S) := by
     simp only [infEDist, ENNReal.mul_iInf_of_ne hK0 ENNReal.coe_ne_top]
     refine le_iInf₂ fun y hy ↦ ?_
     exact (infEDist_le_edist_of_mem (mem_preimage.1 hy)).trans (hf.edist_le_mul x y)
   refine hle.trans ((mul_le_mul' le_rfl hx).trans ?_)
   rw [← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul K.coe_nonneg,
-    mul_div_cancel₀ _ (by simpa using hK.ne')]
+    mul_div_cancel₀ _ (by simpa using hK)]
 
 end TauCeti
 

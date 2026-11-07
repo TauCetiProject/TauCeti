@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Comp
 public import Mathlib.Analysis.Calculus.FDeriv.Measurable
 public import Mathlib.Analysis.InnerProductSpace.Symmetric
 public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
+public import TauCeti.Topology.MetricSpace.Holder
 -- Private: the derivative sum and scalar rules and the symmetry of second derivatives are used
 -- only inside the proofs below.
 import Mathlib.Analysis.Calculus.FDeriv.Add
@@ -62,6 +63,8 @@ theorem about `‖Dφ‖`.
 * `TauCeti.norm_gradient_fderiv_apply_le`: `‖∇ (∂ᵥ f) x‖ ≤ ‖v‖ ‖D²f x‖`.
 * `TauCeti.norm_iteratedFDeriv_two_sub_le_sum`: the operator norm of `D²f x - D²f y` is at most
   the sum, over an orthonormal basis `(bᵢ)`, of `‖∇ (∂_{bᵢ} f) x - ∇ (∂_{bᵢ} f) y‖`.
+* `TauCeti.holderOnWith_iteratedFDeriv_two_of_dist_gradient_le`: if the gradients of the
+  directional derivatives along an orthonormal basis are `α`-Hölder, so is `D²f`.
 -/
 
 public section
@@ -267,5 +270,27 @@ theorem norm_iteratedFDeriv_two_sub_le_sum {E ι : Type*} [NormedAddCommGroup E]
         · exact (PiLp.norm_apply_le (b.repr (m 1)) i).trans_eq (b.repr.norm_map (m 1))
         · exact norm_inner_le_norm _ _
     _ = _ := by ring
+
+/-- If the gradients of the directional derivatives `∂_{bᵢ} u` of a function `u`, along an
+orthonormal basis `b`, are `α`-Hölder on `S` with constant `D`, then `D²u` is `α`-Hölder on `S` with
+constant `(card ι) D`, wherever `fderiv ℝ u` is differentiable on `S`. -/
+theorem holderOnWith_iteratedFDeriv_two_of_dist_gradient_le {E ι : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [CompleteSpace E] [Fintype ι] (b : OrthonormalBasis ι ℝ E)
+    {α : NNReal} {S : Set E} {u : E → ℝ} {D : ℝ} (hD : 0 ≤ D)
+    (hdiff : ∀ x ∈ S, DifferentiableAt ℝ (fderiv ℝ u) x)
+    (hdir : ∀ i, ∀ x ∈ S, ∀ y ∈ S,
+      dist (∇ (fun z => fderiv ℝ u z (b i)) x) (∇ (fun z => fderiv ℝ u z (b i)) y) ≤
+        D * dist x y ^ (α : ℝ)) :
+    HolderOnWith ((Fintype.card ι : ℝ) * D).toNNReal α (iteratedFDeriv ℝ 2 u) S := by
+  refine HolderOnWith.of_dist_le fun x hx y hy => ?_
+  rw [Real.coe_toNNReal _ (by positivity), dist_eq_norm]
+  calc ‖iteratedFDeriv ℝ 2 u x - iteratedFDeriv ℝ 2 u y‖
+      ≤ ∑ i, ‖∇ (fun z => fderiv ℝ u z (b i)) x - ∇ (fun z => fderiv ℝ u z (b i)) y‖ :=
+        norm_iteratedFDeriv_two_sub_le_sum b (hdiff x hx) (hdiff y hy)
+    _ ≤ ∑ _i : ι, D * dist x y ^ (α : ℝ) :=
+        Finset.sum_le_sum fun i _ => by simpa only [dist_eq_norm] using hdir i x hx y hy
+    _ = _ := by
+        rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
+        ring
 
 end TauCeti
