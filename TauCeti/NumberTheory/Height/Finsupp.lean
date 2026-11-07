@@ -21,11 +21,16 @@ allow polynomial coefficient heights to use the finite-tuple height estimates in
 `Height.mulHeight_fun_mul_eq` to finitely supported vectors: a vector whose nonzero entries are
 exactly the products `x a * y b`, each occurring once, has the product of the heights of `x` and
 `y`. The coefficients of a product of polynomials in disjoint sets of variables have this form.
+More generally, `Finsupp.mulHeight_le_of_forall_exists_eq` and
+`Finsupp.logHeight_le_of_forall_exists_eq` bound the height of `y` by that of `x` whenever every
+nonzero entry of `y` occurs in `x`.
 
 ## References
 
 * The multiplication-table height follows `DiophantineApproximation/DisjointVariables.lean` in
-  Ralf Stephan's `rwst/Subspace-Theorems`, snapshot `c26d909dc48cf7fe` (Apache 2.0).
+  Ralf Stephan's `rwst/Subspace-Theorems`, snapshot `c26d909dc48cf7fe` (Apache 2.0), and the
+  subfamily height bound follows `DiophantineApproximation/GeneralizedRothLemma.lean` of the same
+  repository, commit `09835cb23557ae5ae0cf55a9c4ab9055f5d60338` (Apache 2.0).
 -/
 
 public section
@@ -180,5 +185,28 @@ theorem logHeight_eq_add_of_injOn {γ : Type*} {x : α →₀ K} {y : β →₀ 
   rw [logHeight_eq_log_mulHeight_support, logHeight_eq_log_mulHeight_support,
     logHeight_eq_log_mulHeight_support, mulHeight_eq_mul_of_injOn he hz hsupp hx hy,
     Real.log_mul (mulHeight_pos x).ne' (mulHeight_pos y).ne']
+
+/-- If every nonzero entry of `y` occurs among the entries of `x`, then
+`y.mulHeight ≤ x.mulHeight`. -/
+theorem mulHeight_le_of_forall_exists_eq {x : α →₀ K} {y : β →₀ K}
+    (h : ∀ b ∈ y.support, ∃ a, y b = x a) :
+    y.mulHeight ≤ x.mulHeight := by
+  classical
+  have h' : ∀ b : y.support, ∃ a : x.support, y b.1 = x a.1 := fun ⟨b, hb⟩ ↦ by
+    obtain ⟨a, ha⟩ := h b hb
+    exact ⟨⟨a, mem_support_iff.mpr (ha ▸ mem_support_iff.mp hb)⟩, ha⟩
+  choose f hf using h'
+  have hcomp : (fun b : y.support ↦ y b.1) = (fun a : x.support ↦ x a.1) ∘ f := funext hf
+  rw [mulHeight_eq_of_support_subset y y.support subset_rfl,
+    mulHeight_eq_of_support_subset x x.support subset_rfl, hcomp]
+  exact Height.mulHeight_comp_le f _
+
+/-- If every nonzero entry of `y` occurs among the entries of `x`, then
+`y.logHeight ≤ x.logHeight`. -/
+theorem logHeight_le_of_forall_exists_eq {x : α →₀ K} {y : β →₀ K}
+    (h : ∀ b ∈ y.support, ∃ a, y b = x a) :
+    y.logHeight ≤ x.logHeight := by
+  rw [logHeight_eq_log_mulHeight_support, logHeight_eq_log_mulHeight_support]
+  exact Real.log_le_log (mulHeight_pos y) (mulHeight_le_of_forall_exists_eq h)
 
 end Finsupp
