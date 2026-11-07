@@ -114,7 +114,7 @@ theorem exists_analyticOnNhd_ordered_roots_of_reflect
       (F x).rootMultiplicity (f i x) = (F x₀).rootMultiplicity (f i x₀) := by
     filter_upwards [hF, hzeroRoots, hmult] with x hx hzr hmx i
     have hi : r i x ≠ 0 := (hzr i).not.2 i.property
-    change (F x).rootMultiplicity (r i x)⁻¹ = (F x₀).rootMultiplicity (r i x₀)⁻¹
+    simp only [f]
     rw [← (F x).rootMultiplicity_reflect_eq_inv (hx.2 ▸ hdN) hi,
       ← (F x₀).rootMultiplicity_reflect_eq_inv (hF.self_of_nhds.2 ▸ hdN) i.property]
     exact hmx i i.property
