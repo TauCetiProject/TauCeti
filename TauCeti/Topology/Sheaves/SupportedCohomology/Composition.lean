@@ -48,9 +48,7 @@ theorem isIso_supportedSubmoduleFunctor_map_ι (hZS : Z ≤ S) :
       IsIso (((supportedSubmoduleFunctor Z).map (F.supportedSubmoduleι S)).hom.app W) := by
     apply (ConcreteCategory.isIso_iff_bijective _).2
     refine ⟨?_, fun s ↦ ?_⟩
-    · have := (Sheaf.Hom.mono_iff_presheaf_mono _ _
-        ((supportedSubmoduleFunctor Z).map (F.supportedSubmoduleι S))).1 inferInstance
-      exact (ModuleCat.mono_iff_injective _).1 inferInstance
+    · exact injective_app_of_mono ((supportedSubmoduleFunctor Z).map (F.supportedSubmoduleι S)) W
     · refine ⟨⟨⟨s.1, F.supportedSubmodule_mono hZS W.unop s.2⟩, ?_⟩, ?_⟩
       · exact (F.mem_supportedSubmodule_supportedSubmoduleSheaf_iff S Z W.unop _).2 s.2
       · exact Subtype.ext (F.coe_supportedSubmoduleFunctor_map_ι_hom_app_apply Z S W _)
