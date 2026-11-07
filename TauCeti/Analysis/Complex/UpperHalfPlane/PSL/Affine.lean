@@ -21,9 +21,10 @@ records its action, the action of its inverse, and its derivative.
 
 Conversely, every element of `PSL(2, ℝ)` fixing the ideal point `∞` acts on `ℍ` as an affine map
 `z ↦ μ * z + c` with `μ > 0` (`TauCeti.UpperHalfPlane.exists_coe_smul_eq_mul_add_of_smul_infty`).
-Its powers act by `z ↦ x₀ + μ ^ k * (z - x₀)`
-(`TauCeti.UpperHalfPlane.coe_pow_smul_eq_of_coe_smul_eq`), so for `0 < μ < 1` they contract towards
-the fixed point (`TauCeti.UpperHalfPlane.tendsto_pow_smul_of_coe_smul_eq`).
+For `μ ≠ 1` its powers act by `z ↦ x₀ + μ ^ k * (z - x₀)` with `x₀ = c / (1 - μ)`
+(`TauCeti.UpperHalfPlane.coe_pow_smul_eq_of_coe_smul_eq`). For `0 < μ < 1`, the `k`-th power sends
+the point at real part `u` and height `μ⁻¹ ^ k` to a point converging to the point at height `1`
+above the fixed point `x₀` (`TauCeti.UpperHalfPlane.tendsto_pow_smul_of_coe_smul_eq`).
 -/
 
 public section
