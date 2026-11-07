@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Polynomial.Monic
 public import Mathlib.Algebra.Polynomial.Smeval
 public import Mathlib.Data.Int.Interval
-public import Mathlib.Data.Nat.Factorial.BigOperators
 public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.RingTheory.Binomial
 
