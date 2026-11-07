@@ -6,6 +6,7 @@ Authors: OpenAI Codex
 module
 
 public import TauCeti.Analysis.Complex.GrowthOrder
+public import TauCeti.Analysis.Meromorphic.Divisor
 public import Mathlib.Analysis.Complex.JensenFormula
 
 /-!
@@ -36,7 +37,8 @@ namespace TauCeti
 
 variable {f : ℂ → ℂ} {A B : ℝ}
 
-private theorem OrderLE.eventually_sum_divisor_le (h : OrderLE f A) (hf : Differentiable ℂ f)
+private theorem OrderLE.eventually_sum_divisor_le_of_nonneg (h : OrderLE f A)
+    (hf : Differentiable ℂ f)
     (hf0 : f 0 ≠ 0) (hAB : A < B) (hB : 0 ≤ B) :
     ∃ C > 0, ∀ᶠ R : ℝ in atTop,
       ((∑ᶠ z, MeromorphicOn.divisor f (closedBall 0 R) z : ℤ) : ℝ) ≤ C * R ^ B := by
@@ -51,6 +53,7 @@ private theorem OrderLE.eventually_sum_divisor_le (h : OrderLE f A) (hf : Differ
   have hR1 : 1 ≤ R := (le_max_right _ _).trans hR
   have hR0 : 0 < R := lt_of_lt_of_le zero_lt_one hR1
   have hRL : L ≤ R := (le_max_left _ _).trans hR
+  -- Apply the growth estimate on the outer circle of radius 2R.
   let M : ℝ := c' * Real.exp ((2 * R) ^ B)
   have hM : 1 ≤ M := by
     exact one_le_mul_of_one_le_of_one_le (le_max_right _ _)
@@ -64,6 +67,7 @@ private theorem OrderLE.eventually_sum_divisor_le (h : OrderLE f A) (hf : Differ
     have hbz : ‖f z‖ ≤ c * Real.exp ((2 * R) ^ B) := by
       simpa only [Set.mem_ofPred_eq, Real.norm_eq_abs, Real.abs_exp, hzR] using hL hzL
     exact hbz.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (Real.exp_pos _).le)
+  -- Jensen bounds the zero count on the inner disk.
   have hj := AnalyticOnNhd.sum_divisor_le (r := R) (R := 2 * R)
     (by simpa only [abs_of_pos hR0] using hR0)
     (by rw [abs_of_pos hR0, abs_of_pos (by positivity : 0 < 2 * R)]; linarith)
@@ -75,6 +79,7 @@ private theorem OrderLE.eventually_sum_divisor_le (h : OrderLE f A) (hf : Differ
     rw [Real.log_div (by positivity : M ≠ 0) hfnorm,
       Real.log_mul hc'.ne' (Real.exp_ne_zero _), Real.log_exp]
     ring
+  -- Absorb the constant logarithmic term into the power bound.
   have hpow : 1 ≤ R ^ B := Real.one_le_rpow hR1 hB
   calc
     _ ≤ Real.log (M / ‖f 0‖) / Real.log 2 := hj
@@ -86,28 +91,36 @@ private theorem OrderLE.eventually_sum_divisor_le (h : OrderLE f A) (hf : Differ
       nlinarith
     _ = C * R ^ B := by dsimp [C]; ring
 
+/-- An eventual power bound for the zero count of an entire function of order at most `A`,
+valid for every exponent `B > A` when the function is nonzero at the origin. -/
+theorem OrderLE.eventually_sum_divisor_le (h : OrderLE f A) (hf : Differentiable ℂ f)
+    (hf0 : f 0 ≠ 0) (hAB : A < B) :
+    ∃ C > 0, ∀ᶠ R : ℝ in atTop,
+      ((∑ᶠ z, MeromorphicOn.divisor f (closedBall 0 R) z : ℤ) : ℝ) ≤ C * R ^ B := by
+  rcases le_or_gt 0 B with hB | hB
+  · exact h.eventually_sum_divisor_le_of_nonneg hf hf0 hAB hB
+  · have hc := h.isConst hf (hAB.trans hB)
+    have heq : f = fun _ : ℂ ↦ f 0 := funext fun z ↦ hc z 0
+    refine ⟨1, zero_lt_one, ?_⟩
+    filter_upwards [eventually_ge_atTop (0 : ℝ)] with R hR
+    rw [heq]
+    simp only [MeromorphicOn.divisor_const, Function.locallyFinsuppWithin.coe_zero, Pi.zero_apply,
+      finsum_zero, Int.cast_zero, one_mul]
+    exact Real.rpow_nonneg hR B
+
 /-- The zero count, with multiplicity, of an entire function of order at most `A`
 is `O(R ^ B)` for every `B > A`, provided the function is nonzero at the origin. -/
 theorem OrderLE.isBigO_sum_divisor (h : OrderLE f A) (hf : Differentiable ℂ f)
     (hf0 : f 0 ≠ 0) (hAB : A < B) :
     (fun R : ℝ ↦ ((∑ᶠ z, MeromorphicOn.divisor f (closedBall 0 R) z : ℤ) : ℝ))
       =O[atTop] (fun R : ℝ ↦ R ^ B) := by
-  rcases le_or_gt 0 B with hB | hB
-  · obtain ⟨C, _, hC⟩ := h.eventually_sum_divisor_le hf hf0 hAB hB
-    apply Asymptotics.IsBigO.of_bound C
-    filter_upwards [hC, eventually_ge_atTop (0 : ℝ)] with R hR hR0
-    have hfa : AnalyticOnNhd ℂ f (closedBall 0 R) := fun z _ ↦ hf.analyticAt z
-    have hn : 0 ≤ (∑ᶠ z, MeromorphicOn.divisor f (closedBall 0 R) z : ℤ) :=
-      finsum_nonneg (MeromorphicOn.AnalyticOnNhd.divisor_nonneg hfa)
-    have hn' : 0 ≤ ((∑ᶠ z, MeromorphicOn.divisor f (closedBall 0 R) z : ℤ) : ℝ) := by
-      exact_mod_cast hn
-    simpa only [Real.norm_eq_abs, abs_of_nonneg hn',
-      abs_of_nonneg (Real.rpow_nonneg hR0 B)] using hR
-  · have hc := h.isConst hf (hAB.trans hB)
-    have heq : f = fun _ : ℂ ↦ f 0 := funext fun z ↦ hc z 0
-    rw [heq]
-    simp only [MeromorphicOn.divisor_const, Function.locallyFinsuppWithin.coe_zero, Pi.zero_apply,
-      finsum_zero, Int.cast_zero]
-    exact Asymptotics.isBigO_zero _ _
+  obtain ⟨C, _, hC⟩ := h.eventually_sum_divisor_le hf hf0 hAB
+  apply Asymptotics.IsBigO.of_bound C
+  filter_upwards [hC, eventually_ge_atTop (0 : ℝ)] with R hR hR0
+  have hfa : AnalyticOnNhd ℂ f (closedBall 0 R) := fun z _ ↦ hf.analyticAt z
+  have hn : 0 ≤ ((∑ᶠ z, MeromorphicOn.divisor f (closedBall 0 R) z : ℤ) : ℝ) :=
+    by exact_mod_cast hfa.sum_divisor_nonneg
+  simpa only [Real.norm_eq_abs, abs_of_nonneg hn,
+    abs_of_nonneg (Real.rpow_nonneg hR0 B)] using hR
 
 end TauCeti
