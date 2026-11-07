@@ -131,9 +131,12 @@ theorem level_one_eq_univ (hF : IsProP p F) (x : Fin r → F) (u : ℤ_[p]) :
   let _ := hF.gradedPieceModule 0 0
   simp [defect_def, cusp_def, List.sum_ofFn, ← Finset.smul_sum]
 
-/-- Modulo `γ_{m+2}`, correcting the conjugators of the defect by elements of `γ_{m+1}`
-multiplies the defect by the product of the correction commutators `⁅(w i)⁻¹, (c' i)⁻¹⁆`, where
-`w i` is the conjugated power of the `i`-th entry. -/
+/-- Modulo `γ_{m+2}`, correcting the conjugators `c i` and `d` of the defect by `c' i` and `d'`
+multiplies the defect by the product `(∏ i, b' i) * bz'` of the correction commutators
+`b' i = ⁅(w i)⁻¹, (c' i)⁻¹⁆`, where `w i` is the conjugated power of the `i`-th entry, and the
+cusp commutator `bz' = ⁅wz⁻¹, d'⁻¹⁆`, where `wz` is the conjugated power of the cusp. The
+correction commutators `b' i` and `bz'` are assumed to lie in `γ_{m+1}`, which makes them central
+modulo `γ_{m+2}`. -/
 private theorem mk_defect_mul_correction (hF : IsProP p F) (x : Fin r → F) (u : ℤ_[p]) (m : ℕ)
     (c c' : Fin r → F) (d d' : F)
     (b' : Fin r → pLowerCentralSeries 0 F (0 + m + 1))
@@ -161,10 +164,15 @@ private theorem mk_defect_mul_correction (hF : IsProP p F) (x : Fin r → F) (u 
   let N := pLowerCentralSeries 0 F ((0 + m + 1) + 1)
   have hBcoe : ((((List.ofFn b').prod * bz' : pLowerCentralSeries 0 F (0 + m + 1))) : F) =
       (List.ofFn fun i ↦ (b' i : F)).prod * bz' := by
+    -- The coercion of an element of the subgroup `γ_{m+1}` to `F` is its subtype homomorphism;
+    -- exposing it lets `map_mul` and `map_list_prod` push the coercion through the product.
     change (pLowerCentralSeries 0 F (0 + m + 1)).subtype ((List.ofFn b').prod * bz') = _
     rw [map_mul, map_list_prod, List.map_ofFn]
     rfl
   rw [hBcoe]
+  -- Unfold the local abbreviation of the quotient subgroup and restate the goal as the equality
+  -- in `F ⧸ N` of `∏ (w i * b' i) * (wz * bz')` with `((∏ w i) * wz) * ((∏ b' i) * bz')`, the
+  -- shape to which the quotient multiplication lemmas below apply.
   change (((List.ofFn fun i ↦ w i * (b' i : F)).prod * (wz * bz') : F) : F ⧸ N) =
     ((((List.ofFn w).prod * wz) * ((List.ofFn fun i ↦ (b' i : F)).prod * bz') : F) : F ⧸ N)
   have hcen : ∀ i, (((b' i : F)) : F ⧸ N) ∈ Submonoid.center _ := fun i ↦
