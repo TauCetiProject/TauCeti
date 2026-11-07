@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Analysis.Matrix.PartialCorrelation
+public import TauCeti.Analysis.Matrix.PartialCorrelation.Basic
 public import TauCeti.Probability.Distributions.Beta.Symmetric
 
 /-!
