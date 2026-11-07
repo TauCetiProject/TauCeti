@@ -60,10 +60,15 @@ theorem galoisLatticeProperty_ofMulDistribMulAction_iff (k : Type u) [Field k]
       (Module.Free ℤ (Additive G) ∧ Module.Finite ℤ (Additive G)) ∧
         ∀ x : G, IsOpen (MulAction.stabilizer (Field.absoluteGaloisGroup k) x :
           Set (Field.absoluteGaloisGroup k)) := by
-  refine and_congr Iff.rfl ((Additive.toMul : Additive G ≃ G).forall_congr' fun x ↦ ?_)
-  convert Iff.rfl using 3
-  ext sigma
-  exact Additive.ofMul.injective.eq_iff.symm
+  rw [galoisLatticeProperty_iff, Module.Free.iff_of_equiv Rep.toAdditive.toIntLinearEquiv,
+    Module.Finite.equiv_iff Rep.toAdditive.toIntLinearEquiv]
+  refine and_congr_right fun _ ↦
+    (Rep.toAdditive.toEquiv.trans Additive.toMul).forall_congr fun x ↦ ?_
+  refine Iff.of_eq (congrArg IsOpen (Set.ext fun sigma ↦ ?_))
+  rw [Set.mem_ofPred_eq, SetLike.mem_coe, MulAction.mem_stabilizer_iff,
+    Rep.ofMulDistribMulAction_ρ_apply_apply (G := G) sigma x]
+  simp only [AddEquiv.toEquiv_eq_coe, Equiv.trans_apply, EquivLike.coe_coe, Rep.toAdditive_apply]
+  exact Additive.ofMul.eq_symm_apply.symm
 
 /-- Being a Galois lattice is invariant under equivariant integral-linear isomorphisms. -/
 instance (k : Type u) [Field k] :
