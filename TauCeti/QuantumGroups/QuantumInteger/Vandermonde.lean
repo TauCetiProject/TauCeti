@@ -34,17 +34,6 @@ open Finset
 
 variable {K : Type*} [Semifield K] {q : K}
 
-private lemma quantumBinomial_succ_succ_zpow (q : K) (n k : ℕ) :
-    quantumBinomial q (n + 1) (k + 1) =
-      q ^ ((n : ℤ) - k) * quantumBinomial q n k +
-        q ^ (-((k : ℤ) + 1)) * quantumBinomial q n (k + 1) := by
-  rw [quantumBinomial_succ_succ]
-  congr 1
-  · by_cases hk : k ≤ n
-    · rw [← Nat.cast_sub hk, zpow_natCast]
-    · simp [quantumBinomial_eq_zero_of_lt q (by omega : n < k)]
-  · rw [zpow_neg, ← Nat.cast_add_one, zpow_natCast, inv_pow]
-
 private lemma vandermonde_step (hq : q ≠ 0) (m n a b : ℕ) {r : ℕ}
     (hab : a + b = r) :
     q ^ ((n : ℤ) * (a + 1) - (m + 1) * b) *
@@ -64,7 +53,7 @@ private lemma vandermonde_step (hq : q ≠ 0) (m n a b : ℕ) {r : ℕ}
 /-- **Quantum Vandermonde convolution**, in the symmetric normalization. The exponent is
 `n*a-m*b`, and the formula remains valid at roots of unity because it involves no division
 by quantum integers. -/
-theorem quantumBinomial_add (hq : q ≠ 0) (m n r : ℕ) :
+theorem quantumBinomial_add_left_eq (hq : q ≠ 0) (m n r : ℕ) :
     quantumBinomial q (m + n) r =
       ∑ p ∈ antidiagonal r, q ^ ((n : ℤ) * p.1 - (m : ℤ) * p.2) *
         quantumBinomial q m p.1 * quantumBinomial q n p.2 := by
