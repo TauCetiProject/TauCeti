@@ -29,7 +29,9 @@ on homogeneous polynomials of degree `n`.
 * `Polynomial.dickson_two_sq_eval_two_mul`: `(dickson 2 (x ^ 2) n).eval (2 * x) = (n + 1) * x ^ n`,
   the repeated-root case `t² = 4 a`, where the quotient formula says nothing.
 * `Polynomial.dickson_sq_mul_eval_mul`: for every kind `k`,
-  `(dickson k (s ^ 2 * a) n).eval (s * t) = s ^ n * (dickson k a n).eval t`.
+  `(dickson k (s ^ 2 * a) n).eval (s * t) = s ^ n * (dickson k a n).eval t`; at `s = -1` this gives
+  the parity relation `Polynomial.dickson_eval_neg`,
+  `(dickson k a n).eval (-t) = (-1) ^ n * (dickson k a n).eval t`.
 * `Polynomial.dickson_two_sq_eval_mul`:
   `(dickson 2 (s ^ 2) n).eval (s * t) = s ^ n * (Chebyshev.S R n).eval t`, the division-free form
   of `P_k(t, s²) = s ^ (k - 2) * U_{k-2}(t / (2 s))`.
@@ -119,11 +121,24 @@ theorem dickson_sq_mul_eval_mul (k : ℕ) (s t a : R) (n : ℕ) :
     simp only [dickson_add_two, eval_sub, eval_mul, eval_X, eval_C, ih₀, ih₁]
     ring
 
-/-- A Dickson polynomial with even index has the same value at opposite arguments. -/
+/-- **Parity of Dickson values**: negating the evaluation point multiplies `dickson k a n` by
+`(-1) ^ n`, for every kind `k`. -/
+theorem dickson_eval_neg (k : ℕ) (a t : R) (n : ℕ) :
+    (dickson k a n).eval (-t) = (-1) ^ n * (dickson k a n).eval t := by
+  have h := dickson_sq_mul_eval_mul k (-1) t a n
+  rwa [neg_one_sq, one_mul, neg_one_mul] at h
+
+/-- An even-degree Dickson polynomial takes the same value at `-t` and `t`. -/
 @[simp]
 theorem dickson_eval_neg_of_even (k : ℕ) (a t : R) {n : ℕ} (hn : Even n) :
     (dickson k a n).eval (-t) = (dickson k a n).eval t := by
-  simpa [hn.neg_one_pow] using dickson_sq_mul_eval_mul k (-1 : R) t a n
+  rw [dickson_eval_neg, hn.neg_one_pow, one_mul]
+
+/-- An odd-degree Dickson polynomial negates when its argument is negated. -/
+@[simp]
+theorem dickson_eval_neg_of_odd (k : ℕ) (a t : R) {n : ℕ} (hn : Odd n) :
+    (dickson k a n).eval (-t) = -(dickson k a n).eval t := by
+  rw [dickson_eval_neg, hn.neg_one_pow, neg_one_mul]
 
 /-- **The Dickson polynomial of the second kind with square parameter is a rescaled Chebyshev
 polynomial**.

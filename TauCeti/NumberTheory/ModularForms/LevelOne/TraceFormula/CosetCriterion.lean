@@ -55,6 +55,8 @@ anti-involution `(a b; c d) ↦ (d b; c a)`, which exchanges the left and right 
 
 ## Main results
 
+* `TauCeti.TraceFormulaMatrixModule.sum_coeff_of_mapDomain_orbitRel_mk_eq`: if every right coset
+  sum of `ξ ∈ k[ℳₙ]` (`n ≠ 0`) equals `c`, then the coefficients of `ξ` sum to `σ₁(|n|) • c`.
 * `ExchangeRelations.periodRelation_iff_mapDomain_orbitRel_mk_coeff_eq_neg_one`: §3 Theorem 2(b),
   for `n > 0` and `2`, `3` invertible in `k`.
 
@@ -155,6 +157,30 @@ private theorem mapDomain_coeff_flipSum_apply [Semiring k] (hn : n ≠ 0) (x : �
     rw [mem_image_flip_iff] at hx hg
     rw [key, flip_flip] at hg
     rw [key, smul_eq_self_of_mem_upperTriangularReps hx hg, flip_flip]
+
+/-- The coefficients of `ν` sum to `σ₁(|n|)`, the number of right cosets of `PSL(2, ℤ)` in `ℳₙ`. -/
+private theorem linearCombination_coeff_flipSum [Semiring k] :
+    Finsupp.linearCombination k (Function.const _ (1 : k)) (flipSum k n).coeff =
+      (ArithmeticFunction.sigma 1 n.natAbs : k) := by
+  classical
+  have hinj : Function.Injective (flip (n := n)) := Function.Involutive.injective flip_flip
+  simp [flipSum, coeff_sum, Finset.card_image_of_injective _ hinj,
+    ← Set.ncard_eq_toFinset_card _ (upperTriangularReps n).toFinite, ncard_upperTriangularReps]
+
+/-- If every right coset sum of `ξ ∈ k[ℳₙ]` (`n ≠ 0`) equals `c`, then the coefficients of `ξ` sum
+to `σ₁(|n|) • c`, since `ℳₙ` decomposes into `σ₁(|n|)` right cosets. -/
+theorem sum_coeff_of_mapDomain_orbitRel_mk_eq [Semiring k] (hn : n ≠ 0) {ξ : k[ℳ n]} {c : k}
+    (hξ : ∀ x : ℳ n, ξ.coeff.mapDomain qR ⟦x⟧ = c) :
+    (ξ.coeff.sum fun _ a ↦ a) = ArithmeticFunction.sigma 1 n.natAbs • c := by
+  have hmap : ξ.coeff.mapDomain qR = c • (flipSum k n).coeff.mapDomain qR := by
+    ext K
+    obtain ⟨x, rfl⟩ := Quotient.mk_surjective K
+    rw [hξ, Finsupp.smul_apply, mapDomain_coeff_flipSum_apply hn, smul_eq_mul, mul_one]
+  have hlin := congrArg (Finsupp.linearCombination k (Function.const _ (1 : k))) hmap
+  rw [Finsupp.linearCombination_mapDomain, Function.const_comp, map_smul,
+    Finsupp.linearCombination_mapDomain, Function.const_comp, linearCombination_coeff_flipSum,
+    smul_eq_mul, (Nat.commute_cast c _).eq, ← nsmul_eq_mul] at hlin
+  simpa [Finsupp.linearCombination_apply] using hlin
 
 /-- Membership of `mk A` in `ℳₙ^∞` in terms of the entries `(a b; c d)` of `A`. -/
 private theorem mk_mem_upperTriangularReps_iff_of_val_eq {A : TraceFormulaMatrix n}
