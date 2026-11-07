@@ -572,6 +572,19 @@ section Restriction
 
 variable (L : Type*) [Field L] [Algebra K L] (σ : L →ₐ[K] SeparableClosure K)
 
+variable {K n L} in
+/-- If `s ^ n = b` in `L`, then the image of `s` under a `K`-embedding `ι : L → Kˢ` is the
+underlying element of a unit of `Kˢ` whose `n`-th power is `b`. -/
+theorem exists_unit_pow_eq_map [NeZero n] (ι : L →ₐ[K] SeparableClosure K) (b : Kˣ) {s : L}
+    (hs : s ^ n = algebraMap K L b) :
+    ∃ β : (SeparableClosure K)ˣ, (β : SeparableClosure K) = ι s ∧
+      β ^ n = Units.map (algebraMap K (SeparableClosure K)).toMonoidHom b := by
+  have hs0 : ι s ≠ 0 := (map_ne_zero_iff _ ι.injective).2 <| by
+    rintro rfl
+    rw [zero_pow (NeZero.ne n), eq_comm, map_eq_zero] at hs
+    exact b.ne_zero hs
+  exact ⟨Units.mk0 (ι s) hs0, rfl, Units.ext <| by simp [← map_pow, hs]⟩
+
 /-- **The Kummer coefficients of `K` as Kummer coefficients of `L`**, along a `K`-embedding
 `σ : L →ₐ[K] Kˢ`: the chosen identification `separableClosureRingEquiv K L σ : Lˢ ≃+* Kˢ`
 extending `σ`, read backwards on the `n`th roots of unity. It is equivariant for the action of
