@@ -7,6 +7,8 @@ module
 
 public import TauCeti.NumberTheory.LFunctions.Data.Basic
 public import Mathlib.Analysis.Complex.CauchyIntegral
+public import TauCeti.Analysis.Calculus.FDeriv.Multiset
+public import TauCeti.Analysis.SpecialFunctions.Gamma.Archimedean
 
 /-!
 # Analytic reciprocals of archimedean factors
@@ -17,9 +19,16 @@ canonical entire reciprocal. This module supplies that reciprocal for every
 analytic L-function record, without assuming a functional equation or any
 properties of its completed function.
 
-The construction uses `Complex.differentiable_Gammaℝ_inv` and
-`Complex.differentiable_Gammaℂ_inv` from Mathlib's gamma-factor theory.
-The order comparison is Mathlib's `meromorphicOrderAt_inv`.
+## Main results
+
+* `invGammaFactor_eq_prod` expresses the reciprocal as a finite product.
+* `differentiable_invGammaFactor` gives entirety; `meromorphic_gammaFactor` and
+  `analyticAt_gammaFactor` give meromorphy and analyticity off exceptional values.
+* `gammaFactor_eq_zero_iff` and `invGammaFactor_eq_zero_iff_exists` identify the shifted
+  pole lattices.
+* `invGammaFactor_eq_zero_iff_meromorphicOrderAt_pos` characterizes zeros by positive order.
+* `meromorphicOrderAt_invGammaFactor` negates orders, and `invGammaFactor_dual` describes
+  compatibility with duality.
 
 ## References
 
@@ -37,7 +46,11 @@ variable (d : AnalyticLFunctionData)
 /-- The entire reciprocal of the archimedean gamma factor, including its pole values. -/
 noncomputable def invGammaFactor (s : ℂ) : ℂ := (d.gammaFactor s)⁻¹
 
+/-- The defining pointwise reciprocal formula. -/
 theorem invGammaFactor_def (s : ℂ) : d.invGammaFactor s = (d.gammaFactor s)⁻¹ := (rfl)
+
+/-- The reciprocal identity as an equality of functions. -/
+theorem invGammaFactor_eq_inv : d.invGammaFactor = d.gammaFactor⁻¹ := (rfl)
 
 /-- The reciprocal is the product of the shifted reciprocal gamma factors. -/
 theorem invGammaFactor_eq_prod (s : ℂ) :
@@ -46,7 +59,7 @@ theorem invGammaFactor_eq_prod (s : ℂ) :
   simp only [invGammaFactor_def, gammaFactor_def, mul_inv, Multiset.prod_map_inv]
 
 /-- A degree-zero record has no gamma factors, so its analytic reciprocal is one. -/
-theorem invGammaFactor_of_degree_eq_zero (hd : d.degree = 0) (s : ℂ) :
+theorem invGammaFactor_eq_one_of_degree_eq_zero (hd : d.degree = 0) (s : ℂ) :
     d.invGammaFactor s = 1 := by
   have hR : d.gammaR = 0 := by
     apply Multiset.card_eq_zero.mp
@@ -58,26 +71,15 @@ theorem invGammaFactor_of_degree_eq_zero (hd : d.degree = 0) (s : ℂ) :
     omega
   simp [invGammaFactor_eq_prod, hR, hC]
 
-private theorem differentiable_multiset_prod {ι : Type*} (m : Multiset ι)
-    (f : ι → ℂ → ℂ) (hf : ∀ i ∈ m, Differentiable ℂ (f i)) :
-    Differentiable ℂ (fun s ↦ (m.map fun i ↦ f i s).prod) := by
-  induction m using Multiset.induction_on with
-  | empty => simp
-  | cons i m ih =>
-    simp only [Multiset.map_cons, Multiset.prod_cons]
-    apply Differentiable.mul
-    · exact hf i (by simp)
-    · exact ih (fun j hj ↦ hf j (by simp [hj]))
-
 /-- The analytic reciprocal is entire, including at all shifted gamma poles. -/
 @[fun_prop]
 theorem differentiable_invGammaFactor : Differentiable ℂ d.invGammaFactor := by
   rw [funext (d.invGammaFactor_eq_prod)]
   apply Differentiable.mul
-  · apply differentiable_multiset_prod
+  · apply Differentiable.fun_multisetProd
     intro μ _
     exact differentiable_Gammaℝ_inv.comp (differentiable_id.add_const μ)
-  · apply differentiable_multiset_prod
+  · apply Differentiable.fun_multisetProd
     intro ν _
     exact differentiable_Gammaℂ_inv.comp (differentiable_id.add_const ν)
 
@@ -95,14 +97,14 @@ theorem inv_invGammaFactor (s : ℂ) : (d.invGammaFactor s)⁻¹ = d.gammaFactor
 theorem meromorphic_gammaFactor : Meromorphic d.gammaFactor := by
   intro s
   have h := (d.analyticAt_invGammaFactor s).meromorphicAt.inv
-  rw [show (d.invGammaFactor)⁻¹ = d.gammaFactor from funext (d.inv_invGammaFactor)] at h
+  rw [invGammaFactor_eq_inv, inv_inv] at h
   exact h
 
 /-- The gamma factor is analytic wherever its total value is nonzero. -/
 theorem analyticAt_gammaFactor {s : ℂ} (hs : d.gammaFactor s ≠ 0) :
     AnalyticAt ℂ d.gammaFactor s := by
   have h := (d.analyticAt_invGammaFactor s).inv (by simpa [invGammaFactor_def] using hs)
-  rw [show (d.invGammaFactor)⁻¹ = d.gammaFactor from funext (d.inv_invGammaFactor)] at h
+  rw [invGammaFactor_eq_inv, inv_inv] at h
   exact h
 
 @[simp]
@@ -116,14 +118,11 @@ theorem gammaFactor_eq_zero_iff (s : ℂ) :
     d.gammaFactor s = 0 ↔
       (∃ μ ∈ d.gammaR, ∃ n : ℕ, s + μ = -(2 * (n : ℂ))) ∨
       (∃ ν ∈ d.gammaC, ∃ n : ℕ, s + ν = -(n : ℂ)) := by
-  have hC : ∀ z : ℂ, Gammaℂ z = 0 ↔ ∃ n : ℕ, z = -(n : ℂ) := by
-    intro z
-    simp [Gammaℂ_def, Real.pi_ne_zero, Gamma_eq_zero_iff]
   simp only [gammaFactor_def, mul_eq_zero, Multiset.prod_eq_zero_iff, Multiset.mem_map,
-    Gammaℝ_eq_zero_iff, hC]
+    Gammaℝ_eq_zero_iff, Gammaℂ_eq_zero_iff]
 
 /-- The analytic reciprocal vanishes precisely on the shifted gamma pole lattices. -/
-theorem invGammaFactor_eq_zero_iff_shift (s : ℂ) :
+theorem invGammaFactor_eq_zero_iff_exists (s : ℂ) :
     d.invGammaFactor s = 0 ↔
       (∃ μ ∈ d.gammaR, ∃ n : ℕ, s + μ = -(2 * (n : ℂ))) ∨
       (∃ ν ∈ d.gammaC, ∃ n : ℕ, s + ν = -(n : ℂ)) := by
@@ -137,8 +136,17 @@ theorem invGammaFactor_mul_gammaFactor {s : ℂ} (hs : d.gammaFactor s ≠ 0) :
 /-- Taking the analytic reciprocal negates the meromorphic order. -/
 theorem meromorphicOrderAt_invGammaFactor (s : ℂ) :
     meromorphicOrderAt d.invGammaFactor s = -meromorphicOrderAt d.gammaFactor s := by
-  rw [show d.invGammaFactor = (d.gammaFactor)⁻¹ from funext (d.invGammaFactor_def)]
+  rw [invGammaFactor_eq_inv]
   exact meromorphicOrderAt_inv
+
+/-- The analytic reciprocal vanishes exactly when its meromorphic order is positive. -/
+theorem invGammaFactor_eq_zero_iff_meromorphicOrderAt_pos (s : ℂ) :
+    d.invGammaFactor s = 0 ↔ 0 < meromorphicOrderAt d.invGammaFactor s := by
+  have ha := d.analyticAt_invGammaFactor s
+  rw [← ha.analyticOrderAt_ne_zero, ha.meromorphicOrderAt_eq]
+  cases ho : analyticOrderAt d.invGammaFactor s with
+  | top => simp
+  | coe n => simp [ENat.map_natCast, Nat.pos_iff_ne_zero]
 
 /-- Duality commutes with the analytic reciprocal. -/
 theorem invGammaFactor_dual (s : ℂ) :
