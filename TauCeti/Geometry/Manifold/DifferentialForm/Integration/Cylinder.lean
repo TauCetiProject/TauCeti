@@ -59,6 +59,8 @@ line integrals of `α` along its two boundary loops.
 * `TauCeti.rectangleIntegral_rectangleTrans`: the integral over a concatenation.
 * `TauCeti.IsSmoothCylinder.trans`: the concatenation of two smooth cylinders is a smooth
   cylinder.
+* `TauCeti.isSmoothCylinder_comp_prodMap_affine`: rescaling a smooth map, `1`-periodic in `t`,
+  from `[a, b]` to `[0, 1]` in the first coordinate gives a smooth cylinder.
 * `TauCeti.rectangleIntegral_mextDeriv`: Green's formula for an exact form.
 
 ## References
@@ -116,6 +118,13 @@ theorem rectangleIntegral_comp_prodMap_one_sub {φ : RoughForm I M F 2} (hφ : I
   rw [rectangleIntegral_comp_prodMap hφ hu (σ' := fun _ ↦ -1)
     (fun s _ ↦ by simpa using (hasDerivAt_id s).const_sub 1) continuousOn_const]
   simpa using rectangleIntegral_symm_fst φ u 0 a₂ 1 b₂
+
+/-- The affine rescaling `(s, t) ↦ (a + (b - a) s, t)` of the plane, carrying `[0, 1]` onto
+`[a, b]` in the first coordinate, is smooth. -/
+theorem contMDiff_prodMap_affine {n : WithTop ℕ∞} (a b : ℝ) :
+    ContMDiff 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ) n
+      (Prod.map (fun s : ℝ ↦ a + (b - a) * s) (id : ℝ → ℝ)) :=
+  ((contDiff_const.add (contDiff_const.mul contDiff_id)).prodMap contDiff_id).contMDiff
 
 /-- Rescaling the first coordinate affinely from `[0, 1]` to `[a, b]` does not change the
 integral. -/
@@ -264,6 +273,18 @@ theorem IsSmoothCylinder.trans {γ γ' γ₀ : ℝ → M} {u₁ u₂ : ℝ × �
     have hβ (r : ℝ) : Real.smoothTransition r ∈ Icc (0 : ℝ) 1 :=
       ⟨Real.smoothTransition.nonneg r, Real.smoothTransition.le_one r⟩
     simp only [rectangleTrans, h₁.periodic _ (hβ _), h₂.periodic _ (hβ _)]
+
+/-- Rescaling the first coordinate from `[0, 1]` to `[a, b]` turns a smooth map `u : ℝ × ℝ → M`,
+`1`-periodic in `t`, into a smooth cylinder from the loop `u(a, ·)` to the loop `u(b, ·)`. -/
+theorem isSmoothCylinder_comp_prodMap_affine {u : ℝ × ℝ → M}
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I ∞ u) (hper : ∀ z : ℝ × ℝ, u (z.1, z.2 + 1) = u z)
+    (a b : ℝ) :
+    IsSmoothCylinder I (fun t ↦ u (a, t)) (fun t ↦ u (b, t))
+      (u ∘ Prod.map (fun s ↦ a + (b - a) * s) id) where
+  contMDiff := hu.comp (contMDiff_prodMap_affine a b)
+  apply_zero t := by simp
+  apply_one t _ := by simp
+  periodic s _ := by simpa using hper (a + (b - a) * s, 0)
 
 /-- A two-form `φ` **vanishes on spheres** when its integral over the unit square vanishes for
 every smooth map `u : ℝ × ℝ → M` that is constant on each of the two vertical edges of the square

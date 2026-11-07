@@ -110,28 +110,6 @@ theorem IsNondegenerate.floerEnergyDensity_cylindrical_nonneg (hω : ω.IsNondeg
   floerEnergyDensity_nonneg hω hJ <|
     (ω.isComplexLinearMap_perturbedMFDeriv_iff _ _ u z J).2 (by simpa using hfloer)
 
-/-! ### Rescaling the first coordinate -/
-
-/-- The affine rescaling `(s, t) ↦ (a + (b - a) s, t)` of the plane, carrying `[0, 1]` onto
-`[a, b]` in the first coordinate, is smooth. -/
-private theorem contMDiff_prodMap_affine {n : WithTop ℕ∞} (a b : ℝ) :
-    ContMDiff 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ) n
-      (Prod.map (fun s : ℝ ↦ a + (b - a) * s) (id : ℝ → ℝ)) :=
-  ((contDiff_const.add (contDiff_const.mul contDiff_id)).prodMap contDiff_id).contMDiff
-
-omit [IsManifold I (⊤ : ℕ∞) M] in
-/-- Rescaling the first coordinate from `[0, 1]` to `[a, b]` turns a smooth map `u : ℝ × ℝ → M`,
-`1`-periodic in `t`, into a smooth cylinder from the loop `u(a, ·)` to the loop `u(b, ·)`. -/
-private theorem isSmoothCylinder_comp_prodMap_affine
-    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I (⊤ : ℕ∞) u) (hper : ∀ z : ℝ × ℝ, u (z.1, z.2 + 1) = u z)
-    (a b : ℝ) :
-    IsSmoothCylinder I (fun t ↦ u (a, t)) (fun t ↦ u (b, t))
-      (u ∘ Prod.map (fun s ↦ a + (b - a) * s) id) where
-  contMDiff := hu.comp (contMDiff_prodMap_affine a b)
-  apply_zero t := by simp
-  apply_one t _ := by simp
-  periodic s _ := by simpa using hper (a + (b - a) * s, 0)
-
 /-! ### The energy identity for cylindrical perturbations -/
 
 section Energy
