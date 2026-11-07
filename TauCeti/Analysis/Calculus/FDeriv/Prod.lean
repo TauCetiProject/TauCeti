@@ -44,6 +44,8 @@ variable vanishes everywhere is constant along every horizontal line.
   derivatives of a first partial derivative.
 * `TauCeti.apply_eq_apply_zero_of_fderiv_fst_eq_zero`: a function with vanishing partial
   derivative in its real first variable is constant along horizontal lines.
+* `TauCeti.eq_zero_of_fderiv_fst_eq_zero_of_tendsto`: such a function which decays as `|s| → ∞`
+  vanishes.
 * `TauCeti.fderiv_comp_fst_add_comp_snd`: the same for the totalized derivative.
 * `TauCeti.fderiv_comp_fst_add_comp_snd_eq_zero_iff`: a separated sum of differentiable functions
   is critical at `(a, b)` exactly when both summands are critical at `a` and `b`.
@@ -269,6 +271,24 @@ theorem apply_eq_apply_zero_of_fderiv_fst_eq_zero {F G : Type*} [NormedAddCommGr
   have hl (s : ℝ) : HasDerivAt (fun s ↦ u (s, b)) 0 s := by
     simpa [h] using hasDerivAt_slice_left (hu (s, b))
   exact is_const_of_deriv_eq_zero (fun s ↦ (hl s).differentiableAt) (fun s ↦ (hl s).deriv) s 0
+
+/-- A differentiable function on `ℝ × F` whose partial derivative in the first variable vanishes
+everywhere and which tends to `0` as `|s| → ∞` vanishes identically. -/
+theorem eq_zero_of_fderiv_fst_eq_zero_of_tendsto {F G : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [NormedAddCommGroup G] [NormedSpace ℝ G] {u : ℝ × F → G}
+    (hu : Differentiable ℝ u) (h : ∀ z, fderiv ℝ u z (1, 0) = 0)
+    (hdecay : Filter.Tendsto u (Filter.comap Prod.fst (Filter.cocompact ℝ)) (nhds 0)) :
+    u = 0 := by
+  funext ⟨s, t⟩
+  have hc := apply_eq_apply_zero_of_fderiv_fst_eq_zero hu h
+  have hlim : Filter.Tendsto (fun r ↦ u (r, t)) Filter.atTop (nhds 0) := by
+    have hF : Filter.Tendsto (fun r : ℝ ↦ (r, t)) Filter.atTop
+        (Filter.comap Prod.fst (Filter.cocompact ℝ)) :=
+      Filter.tendsto_comap_iff.2 (Filter.tendsto_id.mono_left atTop_le_cocompact)
+    exact hdecay.comp hF
+  simp only [hc] at hlim
+  rw [Pi.zero_apply, hc s t]
+  exact tendsto_nhds_unique tendsto_const_nhds hlim
 
 section FstClmApplySnd
 
