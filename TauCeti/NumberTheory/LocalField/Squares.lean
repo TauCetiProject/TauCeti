@@ -287,9 +287,7 @@ private theorem toAdd_normalizedValuation_eq_of_valuation_sub_eq_two (h2 : (2 : 
     exact (valuation K).map_add_eq_of_lt_left (by
       rw [hab]
       simpa using lt_of_not_ge hnle)
-  exact le_antisymm
-    ((toAdd_normalizedValuation_le_iff_valuation_le a b).mpr hvab.le)
-    ((toAdd_normalizedValuation_le_iff_valuation_le b a).mpr hvab.ge)
+  exact (toAdd_normalizedValuation_eq_iff_valuation_eq a b).mpr hvab.symm
 
 /-- Below twice the valuation of two, a square cannot differ from one to exact odd order. -/
 theorem valuation_sq_sub_one_ne_pow_odd (h2 : (2 : K) ≠ 0) {π : 𝒪[K]}
