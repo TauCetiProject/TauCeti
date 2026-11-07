@@ -29,8 +29,6 @@ isomorphism between the points of `C • W` and of `W` is a homeomorphism.
 
 ## Main results
 
-* `WeierstrassCurve.Projective.Point.isOpenQuotientMap_mk`: the map from nonsingular
-  representatives to points is an open quotient map.
 * `WeierstrassCurve.Projective.Point.instIsTopologicalAddGroup`: the points form a topological
   group.
 * `WeierstrassCurve.Projective.Point.continuousAddEquivVariableChange`: the change of variables
@@ -89,29 +87,6 @@ private theorem exists_mk_eq_mk_add_mk {P Q R : Fin 3 → F} (hP : W.Nonsingular
   exact Quotient.sound hR
 
 variable [TopologicalSpace F] [IsTopologicalRing F]
-
-/-- The native points are the quotient of the nonsingular homogeneous representatives: the map
-sending a representative to its point is an open quotient map. Continuity of a map out of the
-points, or out of a product of copies of them, can therefore be checked on representatives. -/
-theorem isOpenQuotientMap_mk :
-    IsOpenQuotientMap fun P : {P : Fin 3 → F // W.Nonsingular P} ↦
-      (Point.mk ((nonsingularLift_iff P.1).mpr P.2) : W.Point) := by
-  refine ⟨fun Q ↦ ?_, continuous_mk continuous_subtype_val Subtype.prop, fun U hU ↦ ?_⟩
-  · refine ⟨⟨Q.point.out, (nonsingularLift_iff _).mp ?_⟩, Point.ext (Quotient.out_eq _)⟩
-    simpa only [Quotient.out_eq] using Q.nonsingular
-  -- An open set of representatives is cut out by an open set `V` of coordinate vectors. Its
-  -- image is the set of points whose line meets `V`, which is open in projective space.
-  obtain ⟨V, hV, rfl⟩ := isOpen_induced_iff.mp hU
-  refine isEmbedding_toProjectivization.isOpen_iff.mpr
-    ⟨Projectivization.mk' F '' (Subtype.val ⁻¹' V),
-      Projectivization.isOpenMap_mk' _ (hV.preimage continuous_subtype_val), ?_⟩
-  ext Q
-  constructor
-  · rintro ⟨⟨P, hP₀⟩, hPV, hPQ⟩
-    have hP : W.Nonsingular P := (exists_toProjectivization_eq_mk_iff P hP₀).mp ⟨Q, hPQ.symm⟩
-    exact ⟨⟨P, hP⟩, hPV, toProjectivization_injective ((toProjectivization_mk _).trans hPQ)⟩
-  · rintro ⟨⟨P, hP⟩, hPV, rfl⟩
-    exact ⟨⟨P, ne_zero_of_nonsingular hP⟩, hPV, (toProjectivization_mk _).symm⟩
 
 /-- Negation of points is continuous: on homogeneous coordinates it is a linear map. -/
 instance : ContinuousNeg W.Point := by
