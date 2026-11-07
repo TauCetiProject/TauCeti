@@ -8,6 +8,8 @@ module
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.RingTheory.Coprime.Basic
 import Mathlib.Algebra.EuclideanDomain.Int
+import Mathlib.FieldTheory.Finite.Basic
+public import Mathlib.Data.Nat.Totient
 public import Mathlib.Data.ZMod.Units
 public import TauCeti.Data.Nat.GCD
 
@@ -295,3 +297,24 @@ theorem orderOf_unitOfCoprime_pow_sub_one (q N : ℕ) (hq : 1 < q) (hN : N ≠ 0
 end ZMod
 
 end TauCeti
+
+/-- Two units `a`, `r` of `ℤ/mℤ`, with `r` a power of `a`, which both reduce to the class of `p`
+modulo `N = p ^ f - 1`, where `f = φ(pⁿ)`, agree modulo `pⁿ`: modulo `N` the class of `p` has
+order exactly `f`, and `a ^ f = 1` modulo `pⁿ`. -/
+theorem ZMod.unitsMap_eq_of_zpow_of_unitsMap_eq {p m n : ℕ} (hp : 1 < p)
+    (hf : (p ^ n).totient ≠ 0) (hpN : p.Coprime (p ^ (p ^ n).totient - 1))
+    (hdN : p ^ (p ^ n).totient - 1 ∣ m) (hdP : p ^ n ∣ m) {r a : (ZMod m)ˣ} {k : ℤ}
+    (hra : r = a ^ k) (hqN : (a : ZMod m).cast = (p : ZMod (p ^ (p ^ n).totient - 1)))
+    (hqN' : (r : ZMod m).cast = (p : ZMod (p ^ (p ^ n).totient - 1))) :
+    ZMod.unitsMap hdP r = ZMod.unitsMap hdP a := by
+  have hqN₁ : ZMod.unitsMap hdN a = ZMod.unitOfCoprime p hpN :=
+    Units.ext (by rw [ZMod.unitsMap_val, hqN, ZMod.coe_unitOfCoprime])
+  have hqN₂ : ZMod.unitsMap hdN r = ZMod.unitOfCoprime p hpN :=
+    Units.ext (by rw [ZMod.unitsMap_val, hqN', ZMod.coe_unitOfCoprime])
+  obtain ⟨j, hj⟩ : ((p ^ n).totient : ℤ) ∣ k - 1 := by
+    rw [← TauCeti.ZMod.orderOf_unitOfCoprime_pow_sub_one p _ hp hf,
+      orderOf_dvd_iff_zpow_eq_one, zpow_sub_one, mul_inv_eq_one]
+    convert (hqN₂.symm.trans (by rw [hra, map_zpow, hqN₁])).symm
+  have hkj : k = (p ^ n).totient * j + 1 := by omega
+  rw [hra, map_zpow, hkj, zpow_add_one, zpow_mul, zpow_natCast, ZMod.pow_totient, one_zpow,
+    one_mul]

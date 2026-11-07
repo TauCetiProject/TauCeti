@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
+public import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 public import Mathlib.FieldTheory.Normal.Defs
 public import Mathlib.GroupTheory.Abelianization.Defs
 import Mathlib.FieldTheory.Minpoly.IsConjRoot
@@ -42,6 +43,8 @@ Multiplying one `n`-th root of a nonzero `a` by the powers of a primitive `n`-th
   `k`-th power has cyclotomic character `k`.
 * `IsPrimitiveRoot.cast_autToPow_eq_natCast`: modulo a divisor `d` of the level, the cyclotomic
   character is read off from the action on a primitive `d`-th root of unity.
+* `IsPrimitiveRoot.cast_autToPow_restrictNormalHom_eq`: the same for the restriction of an
+  automorphism of the algebraic closure to a normal subfield containing the root.
 * `AlgEquiv.apply_eq_apply_of_abelianization_of_eq`: two automorphisms with the same image in the
   abelianization agree on every root of unity.
 * `IsPrimitiveRoot.exists_algEquiv_apply_eq_pow_of_coprime`: every coprime power of a primitive
@@ -163,6 +166,22 @@ theorem _root_.IsPrimitiveRoot.cast_autToPow_eq_natCast {K M : Type*} [CommRing 
   rw [ZMod.cast_eq_val, ← ht.coe_autToPow_eq_natCast (K := K) hx,
     ht.coe_autToPow_eq_natCast (K := K) (k := (hζ.autToPow K x : ZMod m).val)]
   rw [map_pow, ← hζ.autToPow_spec K x, ← pow_mul, ← pow_mul, mul_comm]
+
+/-- **The cyclotomic character of a restriction.** Let `E` be a normal subfield of the algebraic
+closure of `K` containing a primitive `m`-th root of unity `ζ'`, and `d ∣ m`. If an automorphism `κ`
+of the algebraic closure raises the `d`-th roots of unity to the `c`-th power, then the cyclotomic
+character of its restriction to `E` is congruent to `c` modulo `d`. -/
+theorem _root_.IsPrimitiveRoot.cast_autToPow_restrictNormalHom_eq {K : Type*} [Field K] {m : ℕ}
+    [NeZero m] {E : IntermediateField K (AlgebraicClosure K)} [Normal K E] {ζ' : E}
+    (hζ' : IsPrimitiveRoot ζ' m) {d c : ℕ} (hd : d ∣ m)
+    (κ : AlgebraicClosure K ≃ₐ[K] AlgebraicClosure K)
+    (hκ : ∀ t : AlgebraicClosure K, t ^ d = 1 → κ t = t ^ c) :
+    ((hζ'.autToPow K (AlgEquiv.restrictNormalHom E κ) : ZMod m).cast : ZMod d) = c :=
+  hζ'.cast_autToPow_eq_natCast hd <| Subtype.ext <|
+    (AlgEquiv.restrictNormalHom_apply E κ _).trans <| by
+      rw [IntermediateField.coe_pow, IntermediateField.coe_pow]
+      exact hκ _ (by rw [← pow_mul, Nat.div_mul_cancel hd,
+        (IsPrimitiveRoot.coe_submonoidClass_iff.2 hζ').pow_eq_one])
 
 /-- **Roots of unity only see the abelianization.** Two automorphisms with the same image in the
 abelianization agree on every root of unity: on the roots of unity of order `d` they act through
