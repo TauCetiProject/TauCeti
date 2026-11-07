@@ -30,9 +30,13 @@ homotopy inverse of a based map, such as the one given by Whitehead's theorem, t
 For a map of pairs the inverse can be prescribed on the subspaces. If `h : X ≃ₕ Y` restricts to
 a homotopy equivalence `h₀ : A ≃ₕ B`, then any `g₀ : B → A` with a homotopy `H₀ : g₀ ∘ h₀ ≃ id`
 extends to a homotopy inverse `g` of `h` with a homotopy `g ∘ h ≃ id` which is `H₀` on `A`
-(`TauCeti.HasHomotopyExtensionProperty.exists_inverse_extending_homotopy`). Applied stage by stage,
-this produces strictly compatible inverses and compatible left-inverse homotopies `g ∘ h ≃ id`
-along a tower of closed cofibrations, as needed to compare mapping telescopes with colimits.
+(`TauCeti.HasHomotopyExtensionProperty.exists_inverse_extending_homotopy`). The same holds for
+subspaces given as images of embeddings `i : X₀ → X₁` and `j : Y₀ → Y₁` intertwining homotopy
+equivalences `f₀ : X₀ ≃ₕ Y₀` and `f₁ : X₁ ≃ₕ Y₁`
+(`TauCeti.HasHomotopyExtensionProperty.exists_inverse_extending_homotopy_of_isEmbedding`). Applied
+stage by stage, this produces strictly compatible inverses and compatible left-inverse homotopies
+`g ∘ f ≃ id` along a tower of cofibrations, as used in
+`TauCeti.Topology.Homotopy.Extension.Tower` to compare the colimits of two such towers.
 
 ## Proof
 
@@ -70,6 +74,8 @@ tail is removed by
 * `TauCeti.HasHomotopyExtensionProperty.exists_inverse_extending_homotopy`: a homotopy inverse
   of the restriction `A ≃ₕ B`, with a homotopy `g₀ ∘ h₀ ≃ id`, extends to a homotopy inverse of
   `h` with a homotopy `g ∘ h ≃ id` extending the given one.
+* `TauCeti.HasHomotopyExtensionProperty.exists_inverse_extending_homotopy_of_isEmbedding`: the
+  same for a commutative square of homotopy equivalences along two embeddings.
 
 ## References
 
@@ -266,5 +272,47 @@ theorem HasHomotopyExtensionProperty.exists_inverse_extending_homotopy
   have := (Homotopic.refl h.toFun).comp (hψ.comp hg₁h.symm)
   simp only [ContinuousMap.id_comp] at this
   exact this.trans h.right_inv
+
+/-- **Extending a homotopy inverse along two embeddings.** Let `i : X₀ → X₁` and `j : Y₀ → Y₁` be
+embeddings whose images have the homotopy extension property, and let `f₀ : X₀ ≃ₕ Y₀` and
+`f₁ : X₁ ≃ₕ Y₁` be homotopy equivalences with `j ∘ f₀ = f₁ ∘ i`. Given a left homotopy inverse `g₀`
+of `f₀` together with a homotopy `H₀ : g₀ ∘ f₀ ≃ id`, there is a left homotopy inverse `g₁` of
+`f₁` with `g₁ ∘ j = i ∘ g₀`, together with a homotopy `H₁ : g₁ ∘ f₁ ≃ id` with
+`H₁ (t, i x) = i (H₀ (t, x))`; `g₁` is also a right homotopy inverse of `f₁`. -/
+theorem HasHomotopyExtensionProperty.exists_inverse_extending_homotopy_of_isEmbedding
+    {X₀ X₁ Y₀ Y₁ : Type u} [TopologicalSpace X₀] [TopologicalSpace X₁] [TopologicalSpace Y₀]
+    [TopologicalSpace Y₁] {i : C(X₀, X₁)} {j : C(Y₀, Y₁)} (hi : Topology.IsEmbedding i)
+    (hj : Topology.IsEmbedding j) (hiA : HasHomotopyExtensionProperty (Set.range i))
+    (hjB : HasHomotopyExtensionProperty (Set.range j)) (f₀ : X₀ ≃ₕ Y₀) (f₁ : X₁ ≃ₕ Y₁)
+    (hf : ∀ x, j (f₀ x) = f₁ (i x)) (g₀ : C(Y₀, X₀))
+    (H₀ : (g₀.comp f₀.toFun).Homotopy (ContinuousMap.id X₀)) :
+    ∃ (g₁ : C(Y₁, X₁)) (H₁ : (g₁.comp f₁.toFun).Homotopy (ContinuousMap.id X₁)),
+      (∀ y, g₁ (j y) = i (g₀ y)) ∧ (∀ (t : I) (x : X₀), H₁ (t, i x) = i (H₀ (t, x))) ∧
+        (f₁.toFun.comp g₁).Homotopic (ContinuousMap.id Y₁) := by
+  -- Transport `f₀`, `g₀` and `H₀` to the images of `i` and `j`.
+  let eX := hi.toHomeomorph
+  let eY := hj.toHomeomorph
+  let h₀ : Set.range i ≃ₕ Set.range j :=
+    (eX.symm.toHomotopyEquiv.trans f₀).trans eY.toHomotopyEquiv
+  -- `simp` normalizes `eX.symm.toHomotopyEquiv` to `eX.toHomotopyEquiv.symm`; read it back.
+  have hX (a : Set.range i) : eX.toHomotopyEquiv.symm.toFun a = eX.symm a := rfl
+  have hh₀ (a : Set.range i) : (h₀ a : Y₁) = f₁ a := by
+    obtain ⟨_, x, rfl⟩ := a
+    simp [h₀, eX, eY, hX, hf]
+  let g₀' : C(Set.range j, Set.range i) :=
+    (eX : C(X₀, Set.range i)).comp (g₀.comp (eY.symm : C(Set.range j, Y₀)))
+  let H₀' : (g₀'.comp h₀.toFun).Homotopy (ContinuousMap.id (Set.range i)) :=
+    { toFun := fun p => eX (H₀ (p.1, eX.symm p.2))
+      continuous_toFun := by fun_prop
+      map_zero_left := fun a => by simp [g₀', h₀, hX]
+      map_one_left := fun a => by simp }
+  have hH₀' (p : I × Set.range i) : H₀' p = eX (H₀ (p.1, eX.symm p.2)) := rfl
+  obtain ⟨g₁, H₁, hg₁, hH₁, hf₁g₁⟩ :=
+    hiA.exists_inverse_extending_homotopy hjB f₁ h₀ hh₀ g₀' H₀'
+  refine ⟨g₁, H₁, fun y => ?_, fun t x => ?_, hf₁g₁⟩
+  · rw [hg₁ ⟨j y, y, rfl⟩]
+    simp [g₀', eX, eY]
+  · rw [hH₁ t ⟨i x, x, rfl⟩, hH₀']
+    simp [eX]
 
 end TauCeti
