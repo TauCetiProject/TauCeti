@@ -136,7 +136,7 @@ theorem _root_.MeasurableEquiv.piFinSuccAbove_zero_symm_apply_eq_cons {β : Type
 
 /-- Composing a measurable function on `Fin (n + 1) → β` with `Fin.cons` is measurable on the
 product of the head and the tail. -/
-theorem measurable_comp_finCons {β γ : Type*} [MeasurableSpace β] [MeasurableSpace γ] {n : ℕ}
+theorem _root_.Measurable.comp_finCons {β γ : Type*} [MeasurableSpace β] [MeasurableSpace γ] {n : ℕ}
     {F : (Fin (n + 1) → β) → γ} (hF : Measurable F) :
     Measurable (fun p : β × (Fin n → β) => F (Fin.cons p.1 p.2)) := by
   convert hF.comp (MeasurableEquiv.piFinSuccAbove (fun _ : Fin (n + 1) => β) 0).symm.measurable

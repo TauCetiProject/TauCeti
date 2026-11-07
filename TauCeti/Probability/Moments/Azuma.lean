@@ -50,11 +50,11 @@ namespace TauCeti.Probability
 
 variable {Ω : Type*} [mΩ : MeasurableSpace Ω] {μ : Measure Ω}
 
-/-- **Hoeffding's lemma, oscillation form.** If a measurable real function on a probability space
-has oscillation at most `C`, then its centered exponential moment is at most
+/-- **Hoeffding's lemma, oscillation form.** If an almost everywhere measurable real function on a
+probability space has oscillation at most `C`, then its centered exponential moment is at most
 `exp ((C / 2) ^ 2 * t ^ 2 / 2)`. -/
 theorem integral_exp_mul_sub_integral_le_of_abs_sub_le {β : Type*} [MeasurableSpace β]
-    (ν : Measure β) [IsProbabilityMeasure ν] {X : β → ℝ} (hX : Measurable X) {C : ℝ}
+    (ν : Measure β) [IsProbabilityMeasure ν] {X : β → ℝ} (hX : AEMeasurable X ν) {C : ℝ}
     (hosc : ∀ a a', |X a - X a'| ≤ C) (t : ℝ) :
     ∫ a, Real.exp (t * (X a - ∫ a', X a' ∂ν)) ∂ν ≤ Real.exp ((C / 2) ^ 2 * t ^ 2 / 2) := by
   have : Nonempty β := nonempty_of_isProbabilityMeasure ν
@@ -77,7 +77,7 @@ theorem integral_exp_mul_sub_integral_le_of_abs_sub_le {β : Type*} [MeasurableS
       linarith [this.1]
     linarith
   have hml := (ProbabilityTheory.hasSubgaussianMGF_of_mem_Icc (μ := ν)
-    hX.aemeasurable (ae_of_all _ hmem)).mgf_le t
+    hX (ae_of_all _ hmem)).mgf_le t
   have hexp : ((((‖(A + C) - A‖₊ / 2) ^ 2 : NNReal) : ℝ)) = (C / 2) ^ 2 := by
     rw [add_sub_cancel_left, Real.nnnorm_of_nonneg hC]
     push_cast

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Probability.Moments.SubGaussian
 public import Mathlib.MeasureTheory.Constructions.Pi
+import TauCeti.Analysis.SpecialFunctions.Exp.Shift
 import TauCeti.MeasureTheory.Integral.Pi
 import TauCeti.Probability.Moments.Azuma
 import TauCeti.Algebra.Order.BigOperators.BoundedDifferences
@@ -30,8 +31,9 @@ and the induction hypothesis controls the function obtained by averaging over it
 
 The proof uses Hoeffding's lemma in oscillation form
 (`TauCeti.Probability.integral_exp_mul_sub_integral_le_of_abs_sub_le`) and the decomposition of a
-product measure along `Fin.cons` (`TauCeti.integral_pi_fin_succ_eq_integral_integral_finCons`,
-`TauCeti.measurable_comp_finCons`, `TauCeti.integrable_comp_finCons_of_abs_le`).
+product measure along `Fin.cons`
+(`MeasureTheory.Measure.integral_pi_fin_succ_eq_integral_integral_finCons`,
+`Measurable.comp_finCons`, `MeasureTheory.Measure.integrable_comp_finCons_of_abs_le`).
 
 ## References
 
@@ -99,24 +101,9 @@ theorem abs_integral_finCons_sub_le {β : Type*} [MeasurableSpace β]
       simp only [Fin.cons_succ]
       exact hww' l hli
   rw [← integral_sub (hint w) (hint w')]
-  calc
-    |∫ a, (f (Fin.cons a w) - f (Fin.cons a w')) ∂ν|
-        ≤ ∫ a, |f (Fin.cons a w) - f (Fin.cons a w')| ∂ν := abs_integral_le_integral_abs
-    _ ≤ ∫ _a, c i.succ ∂ν := integral_mono ((hint w).sub (hint w')).abs
-      (integrable_const (c i.succ)) hpt
-    _ = c i.succ := by simp
-
-/-- A bound on `f` bounds the shifted exponential `exp (t * (f x - I))` for any shift `I`. -/
-theorem abs_exp_mul_sub_le_exp {α : Type*} {f : α → ℝ} {M : ℝ} (hMf : ∀ x, |f x| ≤ M)
-    (I t : ℝ) (x : α) : |Real.exp (t * (f x - I))| ≤ Real.exp (|t| * (M + |I|)) := by
-  rw [Real.abs_exp]
-  apply Real.exp_le_exp.mpr
-  calc
-    t * (f x - I) ≤ |t * (f x - I)| := le_abs_self _
-    _ = |t| * |f x - I| := abs_mul _ _
-    _ ≤ |t| * (M + |I|) :=
-      mul_le_mul_of_nonneg_left ((abs_sub (f x) I).trans (by linarith [hMf x]))
-        (abs_nonneg t)
+  simpa only [Real.norm_eq_abs, probReal_univ, mul_one] using
+    norm_integral_le_of_norm_le_const
+      (ae_of_all ν fun a => (Real.norm_eq_abs _).trans_le (hpt a))
 
 /-- The peeled-coordinate step of McDiarmid's inequality: Hoeffding's lemma in the first
 coordinate, integrated over the remaining coordinates, bounds the shifted exponential moment
@@ -135,15 +122,15 @@ private theorem integral_integral_exp_finCons_le {β : Type*} [MeasurableSpace �
   set πn := Measure.pi (fun _ : Fin n => ν)
   set g : (Fin n → β) → ℝ := fun w => ∫ a, f (Fin.cons a w) ∂ν with hg_def
   have hg_meas : Measurable g :=
-    (measurable_comp_finCons hf).stronglyMeasurable.integral_prod_left.measurable
+    hf.comp_finCons.stronglyMeasurable.integral_prod_left.measurable
   have hsec_meas : ∀ w : Fin n → β, Measurable (fun a => f (Fin.cons a w)) := fun w =>
-    (measurable_comp_finCons hf).comp (measurable_id.prodMk measurable_const)
+    hf.comp_finCons.comp (measurable_id.prodMk measurable_const)
   have hg_bd : ∀ (i : Fin n) (w w' : Fin n → β), (∀ l, l ≠ i → w l = w' l) →
       |g w - g w'| ≤ c i.succ := fun i w w' hww' =>
     abs_integral_finCons_sub_le ν hint hbd i w w' hww'
   have hHoeff : ∀ w, ∫ a, Real.exp (t * (f (Fin.cons a w) - g w)) ∂ν
       ≤ Real.exp ((c 0 / 2) ^ 2 * t ^ 2 / 2) := fun w =>
-    integral_exp_mul_sub_integral_le_of_abs_sub_le ν (hsec_meas w)
+    integral_exp_mul_sub_integral_le_of_abs_sub_le ν (hsec_meas w).aemeasurable
       (fun a a' => hbd 0 _ _ (fun l hl => by
         rcases Fin.eq_zero_or_eq_succ l with rfl | ⟨m, rfl⟩
         · exact absurd rfl hl
@@ -164,7 +151,7 @@ private theorem integral_integral_exp_finCons_le {β : Type*} [MeasurableSpace �
     (integrable_exp_mul_sub_of_bounded_differences (fun i => c i.succ) hg_meas.aemeasurable
       hg_bd I t).const_mul _
   have hLmeas : Measurable (fun w => ∫ a, Real.exp (t * (f (Fin.cons a w) - I)) ∂ν) :=
-    ((((measurable_comp_finCons hf).sub_const I).const_mul t).exp
+    (((hf.comp_finCons.sub_const I).const_mul t).exp
       ).stronglyMeasurable.integral_prod_left.measurable
   have hL_int : Integrable
       (fun w => ∫ a, Real.exp (t * (f (Fin.cons a w) - I)) ∂ν) πn := by
@@ -201,14 +188,14 @@ private theorem integral_exp_mul_centered_le_pi_fin_succ {β : Type*} [Measurabl
     exact abs_le_sum_add_abs_of_bounded_differences c f hbd x₀ x
   have hint : ∀ w : Fin n → β, Integrable (fun a => f (Fin.cons a w)) ν := fun w =>
     (integrable_const M).mono'
-      ((measurable_comp_finCons hf).comp (measurable_id.prodMk measurable_const)
+      (hf.comp_finCons.comp (measurable_id.prodMk measurable_const)
         ).aestronglyMeasurable (ae_of_all _ fun a => by simpa using hMf (Fin.cons a w))
   set g : (Fin n → β) → ℝ := fun w => ∫ a, f (Fin.cons a w) ∂ν with hg_def
   have hgf : I = ∫ w, g w ∂πn := by
-    rw [hI_def, integral_pi_fin_succ_eq_integral_integral_finCons ν f
-      (integrable_comp_finCons_of_abs_le ν hf hMf)]
-  rw [integral_pi_fin_succ_eq_integral_integral_finCons ν (fun x => Real.exp (t * (f x - I)))
-    (integrable_comp_finCons_of_abs_le ν (((hf.sub_const I).const_mul t).exp)
+    rw [hI_def, ν.integral_pi_fin_succ_eq_integral_integral_finCons f
+      (ν.integrable_comp_finCons_of_abs_le hf hMf)]
+  rw [ν.integral_pi_fin_succ_eq_integral_integral_finCons (fun x => Real.exp (t * (f x - I)))
+    (ν.integrable_comp_finCons_of_abs_le (((hf.sub_const I).const_mul t).exp)
       (abs_exp_mul_sub_le_exp hMf I t))]
   calc
     _ ≤ Real.exp ((c 0 / 2) ^ 2 * t ^ 2 / 2) * ∫ w, Real.exp (t * (g w - I)) ∂πn :=
@@ -217,7 +204,7 @@ private theorem integral_exp_mul_centered_le_pi_fin_succ {β : Type*} [Measurabl
         Real.exp ((∑ i : Fin n, (c i.succ / 2) ^ 2) * t ^ 2 / 2) := by
       apply mul_le_mul_of_nonneg_left _ (Real.exp_nonneg _)
       rw [hgf]
-      exact ih g (measurable_comp_finCons hf).stronglyMeasurable.integral_prod_left.measurable
+      exact ih g hf.comp_finCons.stronglyMeasurable.integral_prod_left.measurable
         (fun i w w' hww' => abs_integral_finCons_sub_le ν hint hbd i w w' hww')
     _ = Real.exp ((∑ i : Fin (n + 1), (c i / 2) ^ 2) * t ^ 2 / 2) := by
       rw [← Real.exp_add]
