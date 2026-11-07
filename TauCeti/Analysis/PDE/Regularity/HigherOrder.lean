@@ -191,24 +191,6 @@ theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_and_energyFormH1_eq_neg_se
 
 /-! ### Differentiating the equation with smooth coefficients -/
 
-/-- Almost everywhere, the value of `Fe + ∑ᵢⱼ (M₁ᵢⱼ + M₂ᵢⱼ)` is the value of `Fe` plus the sum
-of the values of the `M₁ᵢⱼ` and `M₂ᵢⱼ`, which are given almost everywhere by `c₁` and `c₂`. -/
-private lemma ae_value_add_sum_eq {k : ℕ} (Fe : Wkp mu Omega 2 k)
-    (M₁ M₂ : ι → ι → Wkp mu Omega 2 k) {c₁ c₂ : ι → ι → EuclideanSpace ℝ ι → ℝ}
-    (h₁ : ∀ᵐ x ∂mu.restrict Omega, ∀ i j, Wkp.value k (M₁ i j) x = c₁ i j x)
-    (h₂ : ∀ᵐ x ∂mu.restrict Omega, ∀ i j, Wkp.value k (M₂ i j) x = c₂ i j x) :
-    ∀ᵐ x ∂mu.restrict Omega, Wkp.value k (Fe + ∑ i, ∑ j, (M₁ i j + M₂ i j)) x =
-      Wkp.value k Fe x + ∑ i, ∑ j, (c₁ i j x + c₂ i j x) := by
-  rw [Wkp.value_add]
-  filter_upwards [Lp.coeFn_add (Wkp.value k Fe) _,
-    Wkp.value_finsetSum_ae k Finset.univ fun i => ∑ j, (M₁ i j + M₂ i j),
-    Filter.eventually_all.2 fun i => Wkp.value_finsetSum_ae k Finset.univ fun j => M₁ i j + M₂ i j,
-    Filter.eventually_all.2 fun i => Filter.eventually_all.2 fun j =>
-      Lp.coeFn_add (Wkp.value k (M₁ i j)) (Wkp.value k (M₂ i j)), h₁, h₂]
-    with x h₃ h₄ h₅ h₆ h₇ h₈
-  rw [h₃, Pi.add_apply, h₄]
-  simp only [h₅, Wkp.value_add, h₆, Pi.add_apply, h₇, h₈]
-
 /-- **The derivative of a weak solution with smooth coefficients.** Let the entries of `a` be
 smooth on an open set `U`, let `Ω` have compact closure contained in `U`, let `F ∈ W^{k+1,2}(Ω)`,
 and let `u ∈ H^{k+2}(Ω)` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = F` in `Ω`, in the sense that
@@ -285,7 +267,7 @@ theorem exists_hasWeakLineDerivOn_and_energyFormH1_eq_setIntegral_of_contDiffOn
     rw [Wkp.value_firstOrder] at h
     filter_upwards [hM₂ i j, (hE i j).ae_eq h] with x h₁ h₂
     rw [h₁, h₂, innerSL_apply_apply]
-  filter_upwards [ae_value_add_sum_eq Fe M₁ M₂ hu₁ hu₂] with x hx
+  filter_upwards [Wkp.ae_value_add_sum_eq Fe M₁ M₂ hu₁ hu₂] with x hx
   rw [hx]
 
 /-! ### Interior `H^{k+2}` regularity -/
