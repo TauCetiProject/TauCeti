@@ -11,6 +11,7 @@ public import Mathlib.RepresentationTheory.Maschke
 public import Mathlib.RingTheory.Localization.FractionRing
 import Mathlib.LinearAlgebra.TensorProduct.Prod
 import Mathlib.RingTheory.Flat.Localization
+import TauCeti.LinearAlgebra.TensorProduct.ScalarExtension
 
 /-!
 # Exact sequences of group-algebra modules split over the field of fractions
@@ -73,22 +74,9 @@ theorem nonempty_tensor_linearEquiv_prod_of_exact [NeZero (Nat.card G : R)]
     Module.Flat.rTensor_preserves_injective_linearMap (f.restrictScalars R) hf
   have hfg' : Function.Exact f' g' :=
     rTensor_exact Q (f := f.restrictScalars R) (g := g.restrictScalars R) hfg hg
-  -- An `R`-linear section `s` of `g ⊗ 𝟙 Q`, from a `Q`-linear section of `𝟙 Q ⊗ g`.
-  obtain ⟨s₀, hs₀⟩ := Module.projective_lifting_property
-    (TensorProduct.AlgebraTensorModule.lTensor Q Q (g.restrictScalars R)) LinearMap.id
-    (LinearMap.lTensor_surjective Q (g := g.restrictScalars R) hg)
-  let s : P ⊗[R] Q →ₗ[R] N ⊗[R] Q := (TensorProduct.comm R Q N).toLinearMap ∘ₗ
-    s₀.restrictScalars R ∘ₗ (TensorProduct.comm R P Q).toLinearMap
-  have hs' (x : P ⊗[R] Q) : g' (s x) = x := by
-    have hcomm (y : Q ⊗[R] N) : g' (TensorProduct.comm R Q N y) =
-        TensorProduct.comm R Q P (TensorProduct.AlgebraTensorModule.lTensor Q Q
-          (g.restrictScalars R) y) := by
-      induction y using TensorProduct.inductionOn with
-      | tmul q n => rfl
-      | add y z hy hz => simp_all
-    rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, hcomm,
-      LinearMap.restrictScalars_apply, ← LinearMap.comp_apply, hs₀, LinearMap.id_apply,
-      LinearEquiv.coe_coe, TensorProduct.comm_comm]
+  -- An `R`-linear section `s` of `g ⊗ 𝟙 Q`.
+  obtain ⟨s, hs'⟩ : ∃ s : P ⊗[R] Q →ₗ[R] N ⊗[R] Q, ∀ x, g' (s x) = x :=
+    TensorProduct.exists_rTensor_section Q (g := g.restrictScalars R) hg
   -- Averaging `s` over `G` gives an `R[G]`-linear map `t` with `g' ∘ t = #G`.
   let t := s.sumOfConjugatesEquivariant G
   have ht (x : P ⊗[R] Q) : g' (t x) = (Nat.card G : R) • x := by
@@ -98,16 +86,9 @@ theorem nonempty_tensor_linearEquiv_prod_of_exact [NeZero (Nat.card G : R)]
       Finset.card_univ, Fintype.card_eq_nat_card, ← Nat.cast_smul_eq_nsmul R]
     rw [← MonoidAlgebra.one_def, one_smul]
   -- Multiplication by `#G` is invertible on `P ⊗ Q`.
-  let u : P ⊗[R] Q →ₗ[R] P ⊗[R] Q :=
-    (LinearMap.mulLeft R (algebraMap R Q (Nat.card G))⁻¹).lTensor P
-  have hu (x : P ⊗[R] Q) : (Nat.card G : R) • u x = x := by
-    have hc : algebraMap R Q (Nat.card G) ≠ 0 :=
-      (map_ne_zero_iff _ (IsFractionRing.injective R Q)).mpr (NeZero.ne _)
-    induction x using TensorProduct.inductionOn with
-    | tmul p q =>
-      rw [LinearMap.lTensor_tmul, TensorProduct.smul_tmul', TensorProduct.smul_tmul,
-        LinearMap.mulLeft_apply, Algebra.smul_def, ← mul_assoc, mul_inv_cancel₀ hc, one_mul]
-    | add x y hx hy => simp_all
+  obtain ⟨u, hu⟩ : ∃ u : P ⊗[R] Q →ₗ[R] P ⊗[R] Q, ∀ x, (Nat.card G : R) • u x = x :=
+    TensorProduct.exists_smul_linearMap_eq_self Q
+      ((map_ne_zero_iff _ (IsFractionRing.injective R Q)).mpr (NeZero.ne _))
   -- So `(m, x) ↦ f' m + t x` is bijective.
   let Φ : (M ⊗[R] Q) × (P ⊗[R] Q) →ₗ[MonoidAlgebra R G] N ⊗[R] Q :=
     f' ∘ₗ LinearMap.fst _ _ _ + t ∘ₗ LinearMap.snd _ _ _
