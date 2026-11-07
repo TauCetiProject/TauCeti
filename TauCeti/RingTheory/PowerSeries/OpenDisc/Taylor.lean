@@ -44,9 +44,11 @@ radius `r` with `‖a‖ ≤ r < R₀`.
 * `PowerSeries.OnOpenDisc.evalAt_taylor` and `PowerSeries.OnOpenDisc.hasSum_taylor`: the Taylor
   identity `(taylor a f)(b) = f(b + a)` at points of the base ring and the convergent Taylor
   expansion `f(b + a) = ∑ₖ (Δᵏ f)(a) bᵏ` on the open disc.
-* `PowerSeries.OnOpenDisc.rescale_taylor` and `PowerSeries.OnOpenDisc.evalAt_rescale_taylor`: the
-  affine change of coordinates `X ↦ a + uX` carries the open disc of radius `R₀` to the open disc
-  of radius `S₀` when `‖a‖ < R₀` and `‖u‖ S₀ ≤ R₀`, and evaluates as `f(ub + a)`.
+* `PowerSeries.OnOpenDisc.rescale_taylor` and `PowerSeries.OnOpenDisc.evalAt_rescale_taylor`:
+  when `‖a‖ < R₀` and `‖u‖ S₀ ≤ R₀`, the affine map `X ↦ a + uX` sends the open disc of radius
+  `S₀` into the open disc of radius `R₀`, so pulling back along it carries series on the open disc
+  of radius `R₀` to series on the open disc of radius `S₀`; the pullback `f(a + uX)` evaluates
+  at `b` as `f(ub + a)`.
 * `TauCeti.PowerSeries.OnOpenDisc.continuous_taylorHom`: translation is continuous.
 * `TauCeti.PowerSeries.OnOpenDisc.taylorHom_taylorHom`: translations compose by addition.
 * `TauCeti.PowerSeries.OnOpenDisc.taylorHom_polynomialHom`: translation agrees with polynomial
@@ -85,19 +87,6 @@ theorem OnOpenDisc.taylor (hf : f.OnOpenDisc R₀) (ha : ‖a‖ < R₀) :
       (le_max_right r ‖a‖ |>.trans hs.le))).onOpenDisc.isRestricted
         (by rw [abs_of_pos hr]; exact (le_max_left _ _).trans_lt hs)
 
-omit [IsUltrametricDist R] in
-/-- A series on the open disc of radius `R₀` is restricted at the larger of a nonnegative radius
-`s < R₀` and a radius `t < R₀`. -/
-private theorem OnOpenDisc.isRestricted_max (hf : f.OnOpenDisc R₀) {s t : ℝ} (hs : 0 ≤ s)
-    (hsR : s < R₀) (htR : t < R₀) : f.IsRestricted (max s t) :=
-  hf.isRestricted (by rw [abs_of_nonneg (le_max_of_le_left hs)]; exact max_lt hsR htR)
-
-omit [IsUltrametricDist R] in
-/-- A series on the open disc of radius `R₀` is restricted at the norm of a point of that disc. -/
-private theorem OnOpenDisc.isRestricted_norm (hf : f.OnOpenDisc R₀) (ha : ‖a‖ < R₀) :
-    f.IsRestricted ‖a‖ :=
-  hf.isRestricted (by rwa [abs_norm])
-
 /-- **Affine changes of coordinates.** If `f` lies on the open disc of radius `R₀`, `‖a‖ < R₀` and
 `‖u‖ S₀ ≤ R₀`, then `f(a + uX)`, the rescaling by `u` of the translate of `f` by `a`, lies on the
 open disc of radius `S₀`. -/
@@ -123,16 +112,24 @@ theorem OnOpenDisc.taylor_mul (hf : f.OnOpenDisc R₀) (hg : g.OnOpenDisc R₀)
   taylor_mul_of_summable_norm (fun n ↦ (hf.hasseDeriv n).summable_norm_smul_pow ha)
     (fun n ↦ (hg.hasseDeriv n).summable_norm_smul_pow ha)
 
+omit [IsUltrametricDist R] in
 /-- Translation by a point of the open disc commutes with scalar multiplication. -/
 theorem OnOpenDisc.taylor_smul (hf : f.OnOpenDisc R₀) (c : R) (ha : ‖a‖ < R₀) :
-    PowerSeries.taylor a (c • f) = c • PowerSeries.taylor a f :=
-  (hf.isRestricted_norm ha).taylor_smul c le_rfl
+    PowerSeries.taylor a (c • f) = c • PowerSeries.taylor a f := by
+  ext n
+  rw [coeff_taylor, map_smul, (hf.hasseDeriv n).evalAt_smul c ha, coeff_smul, coeff_taylor,
+    smul_eq_mul]
 
+omit [IsUltrametricDist R] in
 /-- **Hasse derivatives commute with translation** of series on an open disc. -/
 theorem OnOpenDisc.hasseDeriv_taylor (hf : f.OnOpenDisc R₀) (ha : ‖a‖ < R₀) (k : ℕ) :
     PowerSeries.hasseDeriv k (PowerSeries.taylor a f) =
-      PowerSeries.taylor a (PowerSeries.hasseDeriv k f) :=
-  (hf.isRestricted_norm ha).hasseDeriv_taylor le_rfl k
+      PowerSeries.taylor a (PowerSeries.hasseDeriv k f) := by
+  ext n
+  have h := LinearMap.congr_fun (hasseDeriv_comp (R := R) n k) f
+  rw [LinearMap.comp_apply, LinearMap.smul_apply, ← Nat.cast_smul_eq_nsmul R] at h
+  rw [coeff_hasseDeriv, coeff_taylor, coeff_taylor, h, (hf.hasseDeriv _).evalAt_smul _ ha,
+    smul_eq_mul, Nat.choose_symm_add]
 
 /-- **The Taylor identity on an open disc** at a point of the base ring: if `f` lies on the open
 disc of radius `R₀` and `‖a‖ < R₀`, `‖b‖ < R₀`, then the expansion of `f` at `a` evaluated at `b`

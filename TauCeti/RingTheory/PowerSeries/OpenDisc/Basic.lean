@@ -61,7 +61,8 @@ on the open unit disc (`PowerSeries.onOpenDisc_log`).
   `PowerSeries.OnOpenDisc.summable_coeff_mul_pow`: absolute summability at points inside the
   disc, and summability when the coefficient ring is complete.
 * `PowerSeries.OnOpenDisc.isRestricted`: a series on the open disc of radius `R₀` is restricted
-  at every radius `r` with `|r| < R₀`.
+  at every radius `r` with `|r| < R₀`; `PowerSeries.OnOpenDisc.isRestricted_max` is the form for
+  the larger of two radii below `R₀`, one of them nonnegative.
 * `PowerSeries.onOpenDisc_iff_of_tendsto`: the condition can be tested along radii tending
   to `R₀` from below.
 * `PowerSeries.onOpenDisc_iff_forall_hasGaussNorm`: the condition amounts to bounded weighted
@@ -114,6 +115,12 @@ theorem OnOpenDisc.isRestricted (hf : f.OnOpenDisc R₀) {r : ℝ} (hr : |r| < R
   have hs : 0 < s := (abs_nonneg r).trans_lt hrs
   exact TauCeti.PowerSeries.isRestricted_of_abs_le (hf s hs hsR)
     (hrs.le.trans_eq (abs_of_pos hs).symm)
+
+/-- A series on the open disc of radius `R₀` is restricted at the larger of a nonnegative radius
+`s < R₀` and a radius `t < R₀`. -/
+theorem OnOpenDisc.isRestricted_max (hf : f.OnOpenDisc R₀) {s t : ℝ} (hs : 0 ≤ s)
+    (hsR : s < R₀) (htR : t < R₀) : f.IsRestricted (max s t) :=
+  hf.isRestricted (by rw [abs_of_nonneg (le_max_of_le_left hs)]; exact max_lt hsR htR)
 
 /-- Inside its open disc, the weighted coefficient norms of a power series are summable.
 No completeness or ultrametric hypothesis is needed. -/
