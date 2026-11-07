@@ -40,9 +40,7 @@ variable (d : TypeE7LieIndex)
 Bourbaki-numbered fundamental-weight coordinates. -/
 def weightTorus : (Fin d.1.rank → d.1.Closureˣ) →* d.AmbientGroup :=
   (E7Minuscule.weightTorusPoints d.1.Closure).comp
-    (MonoidHom.pi fun i : Fin 7 =>
-      Pi.evalMonoidHom (fun _ : Fin d.1.rank => d.1.Closureˣ)
-        ((finCongr d.rank_eq_seven).symm i))
+    (MulEquiv.arrowCongr (finCongr d.rank_eq_seven) (MulEquiv.refl _)).toMonoidHom
 
 /-- The indexed torus is the represented torus with unchanged coordinate values. -/
 theorem weightTorus_apply (s : Fin d.1.rank → d.1.Closureˣ) :
@@ -55,19 +53,15 @@ theorem weightTorus_apply (s : Fin d.1.rank → d.1.Closureˣ) :
 theorem steinberg_weightTorus (s : Fin d.1.rank → d.1.Closureˣ) :
     d.steinberg (d.weightTorus s) = d.weightTorus (s ^ d.1.fieldOrder) := by
   rw [weightTorus_apply, steinberg_weightTorusPoints, weightTorus_apply]
-  rfl
+  simp only [Pi.pow_def]
 
 /-- The uniform datum Steinberg map is the character pullback of the represented
 E₇ Steinberg map on its full-weight torus. -/
 theorem isCharacterMap_steinberg :
     IsCharacterMap d.weightTorus d.steinberg d.1.datumSteinberg.weightMap := by
-  have hdatum : d.1.datumSteinberg = d.1.datumFrobenius :=
-    (d.1.datumSteinberg_eq_datumFrobenius_iff_of_not_usesHalfFrobenius
-      d.toGraphTwistedIndex.2).mpr d.diagramPerm_toGraphTwistedIndex
-  rw [hdatum, ValidLieTypeIndex.datumFrobenius_weightMap, isCharacterMap_iff]
-  intro s
-  simpa only [torusPointMap_nsmul, torusPointMap_id, MonoidHom.pow_apply,
-    MonoidHom.id_apply] using d.steinberg_weightTorus s
+  rw [d.1.datumSteinberg_weightMap_of_diagramPerm_eq_one
+    d.toGraphTwistedIndex.2 d.diagramPerm_toGraphTwistedIndex]
+  exact IsCharacterMap.of_map_eq_pow d.steinberg_weightTorus
 
 end
 
