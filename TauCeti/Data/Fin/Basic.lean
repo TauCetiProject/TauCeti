@@ -46,6 +46,7 @@ range, so the value is a `dite` rather than a plain application.
   backward rotation and conversely.
 * `Fin.finRotate_rev_finRotate_rev`: negation modulo `n`, written as `i ↦ finRotate n i.rev`, is
   an involution.
+* `Fin.finRotate_neg_finRotate`: negation modulo `n` reverses the rotation, `-(i + 1) + 1 = -i`.
 * `Fin.coe_finRotate_pow`: a power of the rotation `finRotate n` adds its exponent modulo `n`;
   `Fin.coe_finRotate_of_add_one_lt` is the step away from the last index, where no wrapping occurs.
 * `Fin.coe_finRotate_eq_ite`: the value of `finRotate n` on any `Fin n`, with wrap-around
@@ -300,6 +301,11 @@ theorem finRotate_rev_finRotate_rev {n : ℕ} (i : Fin n) :
     ext
     simp only [coe_finRotate, Fin.ext_iff, Fin.val_last, Fin.val_rev]
     split_ifs <;> omega
+
+/-- Negation modulo `n` reverses the cyclic rotation: `-(i + 1) + 1 = -i`. -/
+theorem finRotate_neg_finRotate {n : ℕ} (i : Fin n) : finRotate n (-finRotate n i) = -i := by
+  have := i.neZero
+  rw [finRotate_apply, finRotate_apply, neg_add, neg_add_cancel_right]
 
 /-- The value of a power of the cyclic permutation `finRotate n`: it adds `k` modulo `n`. -/
 theorem coe_finRotate_pow {n : ℕ} (k : ℕ) (c : Fin n) :

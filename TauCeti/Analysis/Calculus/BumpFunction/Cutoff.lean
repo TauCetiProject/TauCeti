@@ -135,6 +135,46 @@ theorem _root_.ContDiff.exists_abs_le_and_norm_gradient_le [InnerProductSpace �
   · rw [_root_.gradient, LinearIsometryEquiv.norm_map]
     exact (hD ⟨x, rfl⟩).trans ((le_max_right _ _).trans (le_max_right _ _))
 
+/-- A bilinear product is globally `C^k` when both factors are locally `C^k` on an open set
+containing the topological support of the second factor. The first factor is unrestricted
+outside that open set. -/
+theorem _root_.ContinuousLinearMap.contDiff_of_tsupport_subset_right {𝕜 A B G : Type*}
+    [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E]
+    [NormedAddCommGroup A] [NormedSpace 𝕜 A] [NormedAddCommGroup B] [NormedSpace 𝕜 B]
+    [NormedAddCommGroup G] [NormedSpace 𝕜 G] {k : WithTop ℕ∞}
+    (L : A →L[𝕜] B →L[𝕜] G) {f : E → A} {g : E → B} {s : Set E}
+    (hf : ContDiffOn 𝕜 k f s) (hg : ContDiffOn 𝕜 k g s) (hs : IsOpen s)
+    (hgs : tsupport g ⊆ s) : ContDiff 𝕜 k (fun x => L (f x) (g x)) := by
+  refine contDiff_iff_contDiffAt.2 fun x => ?_
+  by_cases hx : x ∈ s
+  · exact L.isBoundedBilinearMap.contDiff.contDiffAt.comp x
+      ((hf.contDiffAt (hs.mem_nhds hx)).prodMk (hg.contDiffAt (hs.mem_nhds hx)))
+  · have h0 : (fun x => L (f x) (g x)) =ᶠ[𝓝 x] 0 := by
+      filter_upwards [notMem_tsupport_iff_eventuallyEq.1 fun h => hx (hgs h)] with y hy
+      simp [hy]
+    exact contDiffAt_const.congr_of_eventuallyEq h0
+
+/-- The usual bilinear derivative rule holds globally when the second factor is supported
+inside the open set where the first factor is differentiable. Outside this set all terms vanish. -/
+theorem _root_.ContinuousLinearMap.fderiv_of_tsupport_subset_right {𝕜 A B G : Type*}
+    [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E]
+    [NormedAddCommGroup A] [NormedSpace 𝕜 A] [NormedAddCommGroup B] [NormedSpace 𝕜 B]
+    [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+    (L : A →L[𝕜] B →L[𝕜] G) {f : E → A} {g : E → B} {s : Set E}
+    (hf : DifferentiableOn 𝕜 f s) (hg : Differentiable 𝕜 g) (hs : IsOpen s)
+    (hgs : tsupport g ⊆ s) (x : E) :
+    fderiv 𝕜 (fun y => L (f y) (g y)) x =
+      L.precompR E (f x) (fderiv 𝕜 g x) + L.precompL E (fderiv 𝕜 f x) (g x) := by
+  by_cases hx : x ∈ s
+  · exact L.fderiv_of_bilinear ((hf x hx).differentiableAt (hs.mem_nhds hx)) (hg x)
+  · have hnot : x ∉ tsupport g := fun h => hx (hgs h)
+    have h0 : (fun y => L (f y) (g y)) =ᶠ[𝓝 x] 0 := by
+      filter_upwards [notMem_tsupport_iff_eventuallyEq.1 hnot] with y hy
+      simp [hy]
+    rw [h0.fderiv_eq, fderiv_of_notMem_tsupport 𝕜 hnot,
+      image_eq_zero_of_notMem_tsupport hnot]
+    simp
+
 /-- A product `ψ • g` is `C^k` on the whole space when `ψ` and `g` are `C^k` on an open set `s`
 containing the topological support of `ψ`: this is how a cutoff `ψ` globalizes a function given
 on `s`. -/
@@ -143,13 +183,8 @@ theorem _root_.ContDiffOn.contDiff_smul_of_tsupport_subset {𝕜 F : Type*}
     {k : WithTop ℕ∞} {ψ : E → 𝕜} {g : E → F} {s : Set E}
     (hg : ContDiffOn 𝕜 k g s) (hs : IsOpen s) (hψ : ContDiffOn 𝕜 k ψ s)
     (hψs : tsupport ψ ⊆ s) : ContDiff 𝕜 k (fun x => ψ x • g x) := by
-  refine contDiff_iff_contDiffAt.2 fun x => ?_
-  by_cases hx : x ∈ s
-  · exact (hψ.contDiffAt (hs.mem_nhds hx)).smul (hg.contDiffAt (hs.mem_nhds hx))
-  · have h0 : (fun x => ψ x • g x) =ᶠ[𝓝 x] 0 := by
-      filter_upwards [notMem_tsupport_iff_eventuallyEq.1 fun h => hx (hψs h)] with y hy
-      simp [hy]
-    exact contDiffAt_const.congr_of_eventuallyEq h0
+  let L := (ContinuousLinearMap.lsmul 𝕜 𝕜 : 𝕜 →L[𝕜] F →L[𝕜] F).flip
+  exact L.contDiff_of_tsupport_subset_right hg hψ hs hψs
 
 /-- A function `C^k` on `U ×ˢ univ`, for an open set `U`, agrees with a function `C^k` on the
 whole product at every point `(y, η)` with `y` near a compact set `K ⊆ U`, for all `η`. -/
