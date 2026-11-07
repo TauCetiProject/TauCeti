@@ -23,6 +23,8 @@ off the skew cells, so that it is determined by its entries on those cells
 (`TauCeti.SkewSemistandardYoungTableau.ext`). Containment `λ ≤ ν` is part of the data: there are no
 skew tableaux of shape `ν / λ` unless `λ ≤ ν`. The straight shapes `ν / ⊥` are exactly Mathlib's
 semistandard tableaux of shape `ν` (`TauCeti.SkewSemistandardYoungTableau.botEquiv`).
+Bounding the entries gives the finite type `TauCeti.BoundedSkewSSYT`, with alphabet enlargement
+and a straight-shape equivalence to `TauCeti.BoundedSSYT`.
 
 The **reading word** of a skew tableau lists its entries row by row from the top, each row from
 right to left. It contains each letter as often as the tableau does
@@ -644,3 +646,103 @@ theorem apply_lt_colLen_zero_of_rowLen_add_content_eq
     (by rw [YoungDiagram.rowLen_bot]; exact Nat.zero_le c) (YoungDiagram.mem_iff_lt_rowLen.mp hc)
 
 end SemistandardYoungTableau
+
+namespace TauCeti
+
+/-- Semistandard tableaux of skew shape `outer / inner` with entries in `Fin n`.
+Only entries on the skew cells are bounded; entries elsewhere are zero by definition. -/
+abbrev BoundedSkewSSYT (n : ℕ) (inner outer : YoungDiagram) : Type :=
+  {T : SkewSemistandardYoungTableau inner outer //
+    ∀ i j, (i, j) ∈ outer.cells \ inner.cells → T i j < n}
+
+namespace BoundedSkewSSYT
+
+variable {n m : ℕ} {inner outer : YoungDiagram}
+
+/-- Every entry on a skew cell belongs to the bounded alphabet. -/
+theorem entry_lt (T : BoundedSkewSSYT n inner outer) {i j : ℕ}
+    (h : (i, j) ∈ outer.cells \ inner.cells) : T.1 i j < n :=
+  T.2 i j h
+
+/-- A bounded skew tableau is determined by its entries on the skew cells. -/
+@[ext]
+theorem ext {T U : BoundedSkewSSYT n inner outer}
+    (h : ∀ i j, (i, j) ∈ outer.cells \ inner.cells → T.1 i j = U.1 i j) : T = U := by
+  refine Subtype.ext (SkewSemistandardYoungTableau.ext fun i j => ?_)
+  by_cases hc : (i, j) ∈ outer.cells \ inner.cells
+  · exact h i j hc
+  · rw [T.1.zeros_of_notMem_sdiff hc, U.1.zeros_of_notMem_sdiff hc]
+
+/-- There are finitely many skew tableaux in a finite alphabet. -/
+instance finite (n : ℕ) (inner outer : YoungDiagram) :
+    Finite (BoundedSkewSSYT n inner outer) := by
+  refine Finite.of_injective (β := ↥(outer.cells \ inner.cells) → Fin n)
+    (fun T c => ⟨T.1 c.1.1 c.1.2, T.entry_lt c.2⟩) ?_
+  intro T U h
+  exact ext fun i j hc => congrArg Fin.val (congrFun h ⟨(i, j), hc⟩)
+
+noncomputable instance (n : ℕ) (inner outer : YoungDiagram) :
+    Fintype (BoundedSkewSSYT n inner outer) := .ofFinite _
+
+/-- Enlarge the alphabet without changing any entry. -/
+def castLE (h : n ≤ m) (T : BoundedSkewSSYT n inner outer) :
+    BoundedSkewSSYT m inner outer :=
+  ⟨T.1, fun _ _ hc => (T.entry_lt hc).trans_le h⟩
+
+/-- Enlarging the alphabet leaves the underlying skew tableau unchanged. -/
+@[simp]
+theorem coe_castLE (h : n ≤ m) (T : BoundedSkewSSYT n inner outer) :
+    (castLE h T).1 = T.1 :=
+  (rfl)
+
+/-- Enlargement of the alphabet is injective. -/
+theorem castLE_injective (h : n ≤ m) :
+    Function.Injective (castLE (inner := inner) (outer := outer) h) := by
+  intro T U hTU
+  exact Subtype.ext (by simpa only [coe_castLE] using congrArg Subtype.val hTU)
+
+/-- A letter outside the alphabet has multiplicity zero. -/
+theorem content_eq_zero (T : BoundedSkewSSYT n inner outer) {k : ℕ} (hk : n ≤ k) :
+    T.1.content k = 0 := by
+  rw [SkewSemistandardYoungTableau.content_apply, Finset.card_eq_zero,
+    Finset.filter_eq_empty_iff]
+  intro c hc he
+  have := T.entry_lt hc
+  omega
+
+/-- Straight bounded skew tableaux are precisely the native bounded semistandard tableaux. -/
+def botEquiv (n : ℕ) (outer : YoungDiagram) :
+    BoundedSkewSSYT n ⊥ outer ≃ BoundedSSYT n outer where
+  toFun T := ⟨SkewSemistandardYoungTableau.botEquiv outer T.1,
+    fun i j hc => T.entry_lt (by simpa using hc)⟩
+  invFun T := ⟨(SkewSemistandardYoungTableau.botEquiv outer).symm T.1,
+    fun i j hc => T.entry_lt (by simpa using hc)⟩
+  left_inv T := Subtype.ext (Equiv.symm_apply_apply _ _)
+  right_inv T := Subtype.ext (Equiv.apply_symm_apply _ _)
+
+/-- The straight-shape comparison preserves every entry. -/
+@[simp]
+theorem botEquiv_apply (T : BoundedSkewSSYT n ⊥ outer) (i j : ℕ) :
+    (botEquiv n outer T).1 i j = T.1 i j :=
+  SkewSemistandardYoungTableau.botEquiv_apply T.1 i j
+
+/-- The inverse straight-shape comparison preserves every entry. -/
+@[simp]
+theorem botEquiv_symm_apply (T : BoundedSSYT n outer) (i j : ℕ) :
+    ((botEquiv n outer).symm T).1 i j = T.1 i j :=
+  SkewSemistandardYoungTableau.botEquiv_symm_apply T.1 i j
+
+/-- The empty skew shape has exactly one bounded tableau, even in the empty alphabet. -/
+instance (n : ℕ) (μ : YoungDiagram) : Unique (BoundedSkewSSYT n μ μ) where
+  default := ⟨{
+    entry := fun _ _ => 0
+    le := le_rfl
+    row_weak' := fun _ _ _ => le_rfl
+    col_strict' := fun hi hn hm => False.elim (hn (μ.up_left_mem hi.le le_rfl hm))
+    zeros_inner' := fun _ => rfl
+    zeros' := fun _ => rfl }, by simp⟩
+  uniq T := ext fun _ _ hc => by simp at hc
+
+end BoundedSkewSSYT
+
+end TauCeti
