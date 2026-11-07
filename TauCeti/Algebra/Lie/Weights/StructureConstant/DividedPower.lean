@@ -53,29 +53,6 @@ variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebr
   (α β : Weight K H L) (hα : α.IsNonZero) (hβ : β.IsNonZero)
   (hab : (α : H → K) + β ≠ 0)
 
-include hx hα hβ hab in
-/-- Every divided iterated bracket at a root of a nonopposite root string has an
-integer coefficient. -/
-theorem exists_int_inv_factorial_smul_ad_pow_eq_zsmul
-    (γ : Weight K H L) (n : ℕ) (hγ : (γ : H → K) = (β : H → K) + (n : K) • (α : H → K)) :
-    ∃ z : ℤ, (n.factorial : K)⁻¹ • ((ad K L (x α)) ^ n) (x β) = z • x γ := by
-  rcases hx.ad_pow_rootVector_eq_zero_or_exists hα hβ hab n with
-    hzero | ⟨δ, hδ, -, z, hz, hpow⟩
-  · exact ⟨0, by simp [hzero]⟩
-  have hδγ : δ = γ := by
-    apply DFunLike.coe_injective
-    exact hδ.trans hγ.symm
-  subst δ
-  obtain ⟨w, hw⟩ : (n.factorial : ℤ) ∣ z := by
-    apply Int.dvd_natAbs.1
-    rw [hz]
-    exact Int.natCast_dvd_natCast.2 (Nat.factorial_dvd_ascFactorial _ _)
-  refine ⟨w, ?_⟩
-  rw [hpow, hw, smul_smul, ← Int.cast_smul_eq_zsmul K]
-  congr 1
-  push_cast
-  exact inv_mul_cancel_left₀ (Nat.cast_ne_zero.2 n.factorial_ne_zero) _
-
 /-- The integer coefficient `M_{α,β,n}` of the divided iterated bracket at the root
 `γ = β + n α`. The source roots are nonzero and nonopposite. -/
 noncomputable def intDividedStructureConstant
@@ -96,9 +73,7 @@ theorem eq_intDividedStructureConstant_iff
     (z : ℤ) :
     z = hx.intDividedStructureConstant α β hα hβ hab γ n hγ ↔
       (n.factorial : K)⁻¹ • ((ad K L (x α)) ^ n) (x β) = z • x γ := by
-  have hγnz : γ.IsNonZero := by
-    rw [Weight.IsNonZero, Weight.IsZero, hγ]
-    exact coe_add_natCast_smul_ne_zero hα hβ hab n
+  have hγnz := γ.isNonZero_of_coe_eq_add_natCast_smul hα hβ hab hγ
   rw [hx.inv_factorial_smul_ad_pow_eq_intDividedStructureConstant_zsmul α β hα hβ hab γ n hγ]
   constructor
   · rintro rfl
@@ -122,12 +97,14 @@ theorem intDividedStructureConstant_one
     (γ : Weight K H L) (hγ : (γ : H → K) = (α : H → K) + β) :
     hx.intDividedStructureConstant α β hα hβ hab γ 1 (by simpa [add_comm] using hγ) =
       hx.intStructureConstant α β γ
-        (by rw [Weight.IsNonZero, Weight.IsZero, hγ]; exact hab) hγ := by
+        (γ.isNonZero_of_coe_eq_add_natCast_smul hα hβ hab (n := 1)
+          (by simpa [add_comm] using hγ)) hγ := by
   symm
   apply (hx.eq_intDividedStructureConstant_iff α β hα hβ hab γ 1 _ _).2
   simpa only [Nat.factorial_one, Nat.cast_one, inv_one, one_smul, pow_one, ad_apply] using
     hx.lie_eq_intStructureConstant_zsmul α β γ
-      (by rw [Weight.IsNonZero, Weight.IsZero, hγ]; exact hab) hγ
+      (γ.isNonZero_of_coe_eq_add_natCast_smul hα hβ hab (n := 1)
+        (by simpa [add_comm] using hγ)) hγ
 
 /-- Consecutive divided root-string coefficients satisfy
 `(n + 1) M_{α,β,n+1} = M_{α,β,n} N_{α,γ}`, with `γ = β + n α`.
@@ -139,16 +116,13 @@ theorem succ_mul_intDividedStructureConstant
     (n + 1 : ℤ) * hx.intDividedStructureConstant α β hα hβ hab δ (n + 1) hδ =
       hx.intDividedStructureConstant α β hα hβ hab γ n hγ *
         hx.intStructureConstant α γ δ
-          (by rw [Weight.IsNonZero, Weight.IsZero, hδ]
-              exact coe_add_natCast_smul_ne_zero hα hβ hab (n + 1))
-          (by rw [hδ, hγ]; push_cast; module) := by
-  have hδnz : δ.IsNonZero := by
-    rw [Weight.IsNonZero, Weight.IsZero, hδ]
-    exact coe_add_natCast_smul_ne_zero hα hβ hab (n + 1)
-  have hstep : (δ : H → K) = (α : H → K) + γ := by
-    rw [hδ, hγ]
-    push_cast
-    module
+          (δ.isNonZero_of_coe_eq_add_natCast_smul hα hβ hab hδ)
+          (δ.coe_eq_add_of_coe_eq_add_natCast_smul_succ hγ hδ) := by
+  have hδnz := δ.isNonZero_of_coe_eq_add_natCast_smul hα hβ hab hδ
+  have hstep := δ.coe_eq_add_of_coe_eq_add_natCast_smul_succ hγ hδ
+  have hpow : ((ad K L (x α)) ^ (n + 1)) (x β) =
+      ⁅x α, ((ad K L (x α)) ^ n) (x β)⁆ := by
+    simp [pow_succ', mul_apply_eq_comp, ad_apply]
   apply Int.cast_injective (α := K)
   apply smul_left_injective K (hx.toIsSl2System.ne_zero δ hδnz)
   simp only [Int.cast_mul, Int.cast_add, Int.cast_natCast, Int.cast_one, mul_smul,
@@ -157,10 +131,9 @@ theorem succ_mul_intDividedStructureConstant
       α β hα hβ hab δ (n + 1) hδ,
     ← hx.lie_eq_intStructureConstant_zsmul α γ δ hδnz hstep, ← lie_zsmul,
     ← hx.inv_factorial_smul_ad_pow_eq_intDividedStructureConstant_zsmul α β hα hβ hab γ n hγ]
-  rw [lie_smul, ← ad_apply (R := K), pow_succ', mul_apply_eq_comp, smul_smul,
-    Nat.factorial_succ]
+  simp only [hpow, lie_smul, smul_smul, Nat.factorial_succ, Nat.cast_mul,
+    Nat.cast_add, Nat.cast_one]
   congr 1
-  push_cast
   field_simp
 
 /-- Along a finite root string, the product of the successive integral bracket
@@ -181,28 +154,16 @@ theorem factorial_mul_intDividedStructureConstant_eq_prod
   | succ n ih =>
     have hγn := hγ n (by omega)
     have hγs := hγ (n + 1) le_rfl
-    have hnz : (γ (n + 1)).IsNonZero := by
-      rw [Weight.IsNonZero, Weight.IsZero, hγs]
-      exact coe_add_natCast_smul_ne_zero hα hβ hab (n + 1)
-    have hstep : (γ (n + 1) : H → K) = (α : H → K) + γ n := by
-      rw [hγs, hγn]
-      push_cast
-      module
+    have hnz := (γ (n + 1)).isNonZero_of_coe_eq_add_natCast_smul hα hβ hab hγs
+    have hstep := (γ (n + 1)).coe_eq_add_of_coe_eq_add_natCast_smul_succ hγn hγs
     have hconst := (hx.eq_intStructureConstant_iff α (γ n) (γ (n + 1)) hnz hstep (N n)).2
       (hN n (by omega))
     have hrec := hx.succ_mul_intDividedStructureConstant α β hα hβ hab
       (γ n) (γ (n + 1)) n hγn hγs
     rw [← hconst] at hrec
     have hprod := ih (fun k hk => hγ k (by omega)) (fun k hk => hN k (by omega))
-    rw [Finset.prod_range_succ, Nat.factorial_succ, Nat.cast_mul, Nat.cast_add, Nat.cast_one]
-    calc
-      (↑n + 1) * ↑n.factorial *
-          hx.intDividedStructureConstant α β hα hβ hab (γ (n + 1)) (n + 1) hγs =
-          ↑n.factorial * ((↑n + 1) *
-            hx.intDividedStructureConstant α β hα hβ hab (γ (n + 1)) (n + 1) hγs) := by ring
-      _ = (↑n.factorial * hx.intDividedStructureConstant α β hα hβ hab (γ n) n hγn) * N n := by
-        rw [hrec]
-        ring
-      _ = (∏ k ∈ Finset.range n, N k) * N n := by rw [hprod]
+    rw [Finset.prod_range_succ, Nat.factorial_succ]
+    push_cast
+    linear_combination (n.factorial : ℤ) * hrec + N n * hprod
 
 end TauCeti.IsChevalleySystem
