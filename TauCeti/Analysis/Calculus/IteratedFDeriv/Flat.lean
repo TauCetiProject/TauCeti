@@ -15,10 +15,14 @@ If the derivatives of order `1 ≤ i ≤ k` of a `C^{k+1}` function `f` vanish a
 the mean value inequality down the tower of derivatives bounds how far each derivative of order at
 most `k` moves away from `x`: on a convex set where `‖D^{k+1} f‖ ≤ M`, the derivative of order
 `k - j` moves by at most `M * ‖y - x‖ ^ (j + 1)`
-(`TauCeti.norm_iteratedFDeriv_sub_le_of_iteratedFDeriv_eq_zero`).
+(`TauCeti.norm_iteratedFDeriv_sub_le_of_iteratedFDeriv_eq_zero`). For `j = k` this is the
+Taylor-type estimate `‖f y - f x‖ ≤ M * ‖y - x‖ ^ (k + 1)`
+(`TauCeti.norm_sub_le_pow_of_iteratedFDeriv_eq_zero`).
 -/
 
 public section
+
+open Function
 
 namespace TauCeti
 
@@ -67,5 +71,21 @@ theorem norm_iteratedFDeriv_sub_le_of_iteratedFDeriv_eq_zero {M : ℝ} {x : E}
     calc ‖iteratedFDeriv ℝ (k - (j + 1)) f y - iteratedFDeriv ℝ (k - (j + 1)) f x‖
         ≤ M * ‖y - x‖ ^ (j + 1) * ‖y - x‖ := this
       _ = M * ‖y - x‖ ^ (j + 1 + 1) := by rw [mul_assoc, ← pow_succ]
+
+/-- **The Taylor-type estimate at a flat point.** If `f` is `C^{k+1}` on a convex set `s` whose
+`(k+1)`-st derivative is bounded by `M`, and if all iterated derivatives of order `1 ≤ i ≤ k`
+vanish at `x ∈ s`, then `f` moves points of `s` by at most `M * ‖y - x‖ ^ (k + 1)`.
+
+No factorials appear because the bound is obtained by applying the mean value inequality `k + 1`
+times rather than by integrating a Taylor remainder. -/
+theorem norm_sub_le_pow_of_iteratedFDeriv_eq_zero {M : ℝ} {x y : E}
+    (hf : ∀ z ∈ s, ContDiffAt ℝ (k + 1 : ℕ) f z) (hs : Convex ℝ s) (hx : x ∈ s) (hy : y ∈ s)
+    (hM : ∀ z ∈ s, ‖iteratedFDeriv ℝ (k + 1) f z‖ ≤ M)
+    (hzero : ∀ i, 1 ≤ i → i ≤ k → iteratedFDeriv ℝ i f x = 0) :
+    ‖f y - f x‖ ≤ M * ‖y - x‖ ^ (k + 1) := by
+  have key := norm_iteratedFDeriv_sub_le_of_iteratedFDeriv_eq_zero hf hs hx hM hzero k le_rfl y hy
+  rw [Nat.sub_self] at key
+  rwa [iteratedFDeriv_zero_eq_comp, comp_apply, comp_apply, ← LinearIsometryEquiv.map_sub,
+    LinearIsometryEquiv.norm_map] at key
 
 end TauCeti

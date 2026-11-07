@@ -11,6 +11,7 @@ import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Calculus.SmoothSeries
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
+import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Cutoff
 
 /-!
@@ -72,6 +73,23 @@ variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 namespace LinearMap
 
 variable {U : Set E}
+
+/-- A local operator gives the same value at `x ∈ U` to functions that agree near `x`. -/
+private theorem apply_eq_apply_of_eventuallyEq (P : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, F), F⟯ →ₗ[ℝ] E → G)
+    (hloc : ∀ u : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, F), F⟯, ∀ x ∈ U, (u : E → F) =ᶠ[𝓝 x] 0 → P u x = 0)
+    {x : E} (hx : x ∈ U) {u v : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, F), F⟯} (h : (u : E → F) =ᶠ[𝓝 x] v) :
+    P u x = P v x := by
+  have h' := hloc (u - v) x hx (by
+    filter_upwards [h] with z hz
+    rw [ContMDiffMap.coe_sub, Pi.sub_apply, hz, sub_self, Pi.zero_apply])
+  rwa [map_sub, Pi.sub_apply, sub_eq_zero] at h'
+
+/-- The iterated derivatives of a difference of smooth functions. -/
+private theorem iteratedFDeriv_coe_sub (u v : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, F), F⟯) (i : ℕ) (z : E) :
+    iteratedFDeriv ℝ i ⇑(u - v) z = iteratedFDeriv ℝ i u z - iteratedFDeriv ℝ i v z := by
+  rw [ContMDiffMap.coe_sub, iteratedFDeriv_sub_apply
+    (u.contMDiff.contDiff.contDiffAt.of_le (by exact_mod_cast le_top))
+    (v.contMDiff.contDiff.contDiffAt.of_le (by exact_mod_cast le_top))]
 
 /-! ### The estimate on punctured balls -/
 
@@ -156,15 +174,11 @@ private theorem false_of_tendsto [CompleteSpace F]
   -- Near `Y k` the sum agrees with `Ψ k`, so locality gives `‖(P Ψs) (Y k)‖ > 2ᵏ`.
   have hPY' : ∀ k, 2 ^ k < ‖P Ψs (Y k)‖ := by
     intro k
-    have hloc' : ((Ψs - Ψ k : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, F), F⟯) : E → F) =ᶠ[𝓝 (Y k)] 0 := by
-      filter_upwards [(hA k).mem_nhds (hYA k)] with z hz
-      rw [ContMDiffMap.coe_sub, Pi.sub_apply, Pi.zero_apply, sub_eq_zero]
-      exact tsum_eq_single k fun j hj ↦ image_eq_zero_of_notMem_tsupport fun hz' ↦
-        Set.disjoint_left.1 (hdisj hj) (hΨs j hz') hz
-    have h := hloc _ (Y k) (hAU k (hYA k)) hloc'
-    rw [map_sub, Pi.sub_apply, sub_eq_zero] at h
-    rw [h]
-    exact hPY k
+    rw [apply_eq_apply_of_eventuallyEq P hloc (hAU k (hYA k)) (v := Ψ k) ?_]
+    · exact hPY k
+    filter_upwards [(hA k).mem_nhds (hYA k)] with z hz
+    exact tsum_eq_single k fun j hj ↦ image_eq_zero_of_notMem_tsupport fun hz' ↦
+      Set.disjoint_left.1 (hdisj hj) (hΨs j hz') hz
   -- But `P Ψs` is continuous at `x₀`, so it is bounded near `x₀`.
   have hcontx : Tendsto (fun k ↦ ‖P Ψs (Y k)‖) atTop (𝓝 ‖P Ψs x₀‖) :=
     (((hcont Ψs).continuousAt (hU.mem_nhds hx₀)).tendsto.comp hY).norm
@@ -273,16 +287,8 @@ private theorem cutoff_eventuallyEq {y : E} {ε : ℝ} (hε : 0 < ε)
   rw [coe_cutoff]
   dsimp only
   rw [unitBump.one_of_mem_closedBall, one_smul]
-  rw [mem_ball, dist_eq_norm] at hz
-  rw [unitBump_rIn, mem_closedBall, dist_zero_right, norm_smul, norm_inv,
-    Real.norm_of_nonneg hε.le, inv_mul_le_iff₀ hε]
-  linarith
-
-/-- Letting `δ → 0⁺`: if `a ≤ c * δ` for every `δ ∈ Ioc 0 δ₀`, then `a ≤ 0`. -/
-private theorem le_zero_of_forall_mem_Ioc_le_mul {a c δ₀ : ℝ} (hδ₀ : 0 < δ₀)
-    (h : ∀ δ ∈ Ioc 0 δ₀, a ≤ c * δ) : a ≤ 0 :=
-  ge_of_tendsto (((continuous_const_mul c).tendsto' 0 0 (mul_zero _)).mono_left
-    (nhdsWithin_le_nhds (s := Ioi 0))) (eventually_of_mem (Ioc_mem_nhdsGT hδ₀) h)
+  rw [unitBump_rIn, TauCeti.inv_smul_sub_mem_closedBall_zero_iff hε]
+  exact ball_subset_closedBall (by rwa [mul_one_div])
 
 /-- The cut-offs of a function that is flat to order `r` at `y` are `O(ε)` in `C^r`. -/
 private theorem exists_norm_iteratedFDeriv_cutoff_le {u : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, F), F⟯} {y : E}
@@ -296,12 +302,8 @@ private theorem exists_norm_iteratedFDeriv_cutoff_le {u : C^∞⟮𝓘(ℝ, E), 
 private theorem apply_cutoff (P : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, F), F⟯ →ₗ[ℝ] E → G)
     (hloc : ∀ u : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, F), F⟯, ∀ x ∈ U, (u : E → F) =ᶠ[𝓝 x] 0 → P u x = 0)
     {y : E} (hy : y ∈ U) {ε : ℝ} (hε : 0 < ε) (u : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, F), F⟯) :
-    P (cutoff y ε u) y = P u y := by
-  have h := hloc (u - cutoff y ε u) y hy (by
-    filter_upwards [cutoff_eventuallyEq hε u] with z hz
-    rw [ContMDiffMap.coe_sub, Pi.sub_apply, hz, sub_self, Pi.zero_apply])
-  rw [map_sub, Pi.sub_apply, sub_eq_zero] at h
-  exact h.symm
+    P (cutoff y ε u) y = P u y :=
+  apply_eq_apply_of_eventuallyEq P hloc hy (cutoff_eventuallyEq hε u)
 
 /-- Given the estimate of `LinearMap.exists_norm_apply_le_of_tsupport_subset` on
 `ball x₀ ρ \ {x₀}`, it also holds at the points `y' ≠ x₀` of the ball for functions `w` supported in
@@ -319,18 +321,18 @@ private theorem norm_apply_le_of_iteratedFDeriv_eq_zero
     (hne : y' ≠ x₀) : ‖P w y'‖ ≤ C * M := by
   obtain ⟨Kw, hKw⟩ := exists_norm_iteratedFDeriv_cutoff_le hwflat
   have hd : 0 < dist y' x₀ := dist_pos.mpr hne
-  suffices ‖P w y'‖ - C * M ≤ 0 by linarith
-  -- Let `δ → 0⁺` in `‖P w y'‖ - C * M ≤ C * Kw * δ`.
-  refine le_zero_of_forall_mem_Ioc_le_mul (c := C * Kw)
+  -- Let `δ → 0⁺` in `‖P w y'‖ ≤ C * M + δ * (C * Kw)`.
+  refine TauCeti.le_of_forall_mem_Ioc_mul_le (C := C * Kw)
     (show (0 : ℝ) < min 1 (dist y' x₀ / 2) by positivity) fun δ ⟨hδ, hδle⟩ ↦ ?_
   have hδ1 : δ ≤ 1 := hδle.trans (min_le_left _ _)
   have hδd : δ < dist y' x₀ := by linarith [min_le_right 1 (dist y' x₀ / 2)]
   set v := w - cutoff x₀ δ w
   -- Removing the cut-off near `x₀` does not change the value at `y'`.
   have hPv : P v y' = P w y' := by
-    have h := hloc (cutoff x₀ δ w) y' (hρU hy') (notMem_tsupport_iff_eventuallyEq.mp
-      fun h ↦ (mem_closedBall.mp (tsupport_cutoff_subset_closedBall hδ w h)).not_gt hδd)
-    rw [map_sub, Pi.sub_apply, h, sub_zero]
+    refine apply_eq_apply_of_eventuallyEq P hloc (hρU hy') ?_
+    filter_upwards [notMem_tsupport_iff_eventuallyEq.mp fun h ↦
+      (mem_closedBall.mp (tsupport_cutoff_subset_closedBall hδ w h)).not_gt hδd] with z hz
+    rw [ContMDiffMap.coe_sub, Pi.sub_apply, hz, Pi.zero_apply, sub_zero]
   have hvs : tsupport (v : E → F) ⊆ ball x₀ ρ \ {x₀} := by
     intro z hz
     refine ⟨?_, fun hzx ↦ ?_⟩
@@ -344,13 +346,11 @@ private theorem norm_apply_le_of_iteratedFDeriv_eq_zero
       rw [ContMDiffMap.coe_sub, Pi.sub_apply, hz, sub_self, Pi.zero_apply]
   have hvM : ∀ i ≤ r, ∀ z, ‖iteratedFDeriv ℝ i v z‖ ≤ M + Kw * δ := by
     intro i hi z
-    rw [ContMDiffMap.coe_sub, iteratedFDeriv_sub_apply
-      (w.contMDiff.contDiff.contDiffAt.of_le (by exact_mod_cast le_top))
-      ((cutoff x₀ δ w).contMDiff.contDiff.contDiffAt.of_le (by exact_mod_cast le_top))]
+    rw [iteratedFDeriv_coe_sub]
     exact (norm_sub_le _ _).trans (add_le_add (hwM i hi z) (hKw δ hδ hδ1 i hi z))
   have := hC v hvs (M + Kw * δ) hvM y' (hρU hy')
   rw [hPv] at this
-  linarith
+  exact this.trans_eq (by ring)
 
 variable [CompleteSpace F]
 
@@ -375,8 +375,8 @@ theorem exists_forall_mem_ball_apply_eq_zero (P : C^∞⟮𝓘(ℝ, E), E; 𝓘(
         simpa [norm_iteratedFDeriv_zero] using congrArg norm (hflat 0 (Nat.zero_le r))
       have hu : u = 0 := ContMDiffMap.ext fun z ↦ by simpa [Subsingleton.elim z y] using h0
       simp [hu]
-    -- Let `ε → 0⁺` in `‖(P u) y‖ ≤ C * K * ε`.
-    refine norm_le_zero_iff.mp (le_zero_of_forall_mem_Ioc_le_mul (c := C * K)
+    -- Let `ε → 0⁺` in `‖(P u) y‖ ≤ ε * (C * K)`.
+    refine norm_le_zero_iff.mp (TauCeti.le_of_forall_mem_Ioc_mul_le (m := 0) (C := C * K)
       (show (0 : ℝ) < min 1 (ρ / 2) by positivity) fun ε ⟨hε, hεle⟩ ↦ ?_)
     have hε1 : ε ≤ 1 := hεle.trans (min_le_left _ _)
     have hερ : ε < ρ := by linarith [min_le_right 1 (ρ / 2)]
@@ -394,12 +394,12 @@ theorem exists_forall_mem_ball_apply_eq_zero (P : C^∞⟮𝓘(ℝ, E), E; 𝓘(
     calc ‖P (cutoff y ε u) y'‖ ≤ C * (K * ε) :=
           norm_apply_le_of_iteratedFDeriv_eq_zero P hloc hρU hC hws hwflat (hK ε hε hε1)
             hy'.2 hne'
-      _ = C * K * ε := by ring
+      _ = 0 + ε * (C * K) := by ring
   · -- Away from the centre, the cut-offs themselves are supported in the punctured ball.
     have hd : 0 < dist y x₀ := dist_pos.mpr hne
     have hd' : 0 < ρ - dist y x₀ := sub_pos.mpr (mem_ball.mp hy)
-    -- Let `ε → 0⁺` in `‖(P u) y‖ ≤ C * K * ε`.
-    refine norm_le_zero_iff.mp (le_zero_of_forall_mem_Ioc_le_mul (c := C * K)
+    -- Let `ε → 0⁺` in `‖(P u) y‖ ≤ ε * (C * K)`.
+    refine norm_le_zero_iff.mp (TauCeti.le_of_forall_mem_Ioc_mul_le (m := 0) (C := C * K)
       (show (0 : ℝ) < min 1 (min (dist y x₀) (ρ - dist y x₀) / 2) by positivity)
       fun ε ⟨hε, hεle⟩ ↦ ?_)
     have hε1 : ε ≤ 1 := hεle.trans (min_le_left _ _)
@@ -420,7 +420,7 @@ theorem exists_forall_mem_ball_apply_eq_zero (P : C^∞⟮𝓘(ℝ, E), E; 𝓘(
         linarith
     rw [← apply_cutoff P hloc (hρU hy) hε u]
     calc ‖P (cutoff y ε u) y‖ ≤ C * (K * ε) := hC _ hws _ (hK ε hε hε1) y (hρU hy)
-      _ = C * K * ε := by ring
+      _ = 0 + ε * (C * K) := by ring
 
 /-- **Peetre's theorem.** Let `P` be a linear map from smooth functions `E → F` to functions
 `E → G`, local on the open set `U` (`(P u) x = 0` whenever `u` vanishes near `x ∈ U`) and with
@@ -452,10 +452,7 @@ theorem exists_apply_eq_apply_of_iteratedFDeriv_eq
       (∀ i ≤ r, iteratedFDeriv ℝ i u x = iteratedFDeriv ℝ i v x) → P u x = P v x := by
   obtain ⟨r, hr⟩ := exists_apply_eq_zero_of_iteratedFDeriv_eq_zero P hU hloc hcont hK hKU
   refine ⟨r, fun x hx u v huv ↦ ?_⟩
-  have h := hr x hx (u - v) fun i hi ↦ by
-    rw [ContMDiffMap.coe_sub, iteratedFDeriv_sub_apply
-      (u.contMDiff.contDiff.contDiffAt.of_le (by exact_mod_cast le_top))
-      (v.contMDiff.contDiff.contDiffAt.of_le (by exact_mod_cast le_top)), huv i hi, sub_self]
+  have h := hr x hx (u - v) fun i hi ↦ by rw [iteratedFDeriv_coe_sub, huv i hi, sub_self]
   rwa [map_sub, Pi.sub_apply, sub_eq_zero] at h
 
 end Cutoff

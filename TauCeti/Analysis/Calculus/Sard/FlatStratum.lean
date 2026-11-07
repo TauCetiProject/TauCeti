@@ -28,7 +28,9 @@ differentiable), neither says anything when the source dimension exceeds the tar
 The argument is the classical one, but the covering estimate is replaced by Hausdorff dimension.
 Iterating the mean value inequality down the tower of derivatives turns the vanishing hypothesis
 into the Taylor-type bound `‖f y - f x‖ ≤ M * ‖y - x‖ ^ (k + 1)`, valid for `x` in the stratum and
-`y` in a convex set on which `‖D^{k+1} f‖ ≤ M`. On the stratum this bound *is* a Hölder condition
+`y` in a convex set on which `‖D^{k+1} f‖ ≤ M`
+(`TauCeti.norm_sub_le_pow_of_iteratedFDeriv_eq_zero`, in
+`TauCeti.Analysis.Calculus.IteratedFDeriv.Flat`). On the stratum this bound *is* a Hölder condition
 with exponent `k + 1`, so Mathlib's `dimH_image_le_of_locally_holder_on` divides the Hausdorff
 dimension of the source by `k + 1`, and `addHaar_eq_zero_of_dimH_lt_finrank` finishes.
 
@@ -50,8 +52,6 @@ the Morse--Sard theorem requires.
 
 ## Main results
 
-* `TauCeti.norm_sub_le_pow_of_iteratedFDeriv_eq_zero`: the Taylor-type estimate obtained from the
-  vanishing of the derivatives of order `1 ≤ i ≤ k` at a point.
 * `TauCeti.holderOnWith_of_iteratedFDeriv_eq_zero`: a map is Hölder of exponent `k + 1` on any set
   of such points inside a convex set with bounded `(k+1)`-st derivative.
 * `TauCeti.dimH_image_le_of_iteratedFDeriv_eq_zero`: such a set has its Hausdorff dimension divided
@@ -88,22 +88,6 @@ variable {E F : Type*}
   [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
   {f : E → F} {k : ℕ} {s : Set E}
-
-/-- **The Taylor-type estimate on the flat stratum.** If `f` is `C^{k+1}` on a convex set `s` whose
-`(k+1)`-st derivative is bounded by `M`, and if all iterated derivatives of order `1 ≤ i ≤ k`
-vanish at `x ∈ s`, then `f` moves points of `s` by at most `M * ‖y - x‖ ^ (k + 1)`.
-
-No factorials appear because the bound is obtained by applying the mean value inequality `k + 1`
-times rather than by integrating a Taylor remainder. -/
-theorem norm_sub_le_pow_of_iteratedFDeriv_eq_zero {M : ℝ} {x y : E}
-    (hf : ∀ z ∈ s, ContDiffAt ℝ (k + 1 : ℕ) f z) (hs : Convex ℝ s) (hx : x ∈ s) (hy : y ∈ s)
-    (hM : ∀ z ∈ s, ‖iteratedFDeriv ℝ (k + 1) f z‖ ≤ M)
-    (hzero : ∀ i, 1 ≤ i → i ≤ k → iteratedFDeriv ℝ i f x = 0) :
-    ‖f y - f x‖ ≤ M * ‖y - x‖ ^ (k + 1) := by
-  have key := norm_iteratedFDeriv_sub_le_of_iteratedFDeriv_eq_zero hf hs hx hM hzero k le_rfl y hy
-  rw [Nat.sub_self] at key
-  rwa [iteratedFDeriv_zero_eq_comp, comp_apply, comp_apply, ← LinearIsometryEquiv.map_sub,
-    LinearIsometryEquiv.norm_map] at key
 
 /-- **The flat stratum is a Hölder set of exponent `k + 1`.** On a set `A` of points at which all
 iterated derivatives of order `1 ≤ i ≤ k` vanish, sitting inside a convex set `V` on which `f` is

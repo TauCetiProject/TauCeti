@@ -20,9 +20,10 @@ let `χ` be a `C^r` function supported in the closed unit ball. The localization
 `z ↦ χ (ε⁻¹ • (z - y)) • u z` of `u` to the balls `closedBall y ε` are small in `C^r`: their
 derivatives of order at most `r` are bounded by `C * ε` for `0 < ε ≤ 1`
 (`TauCeti.exists_norm_iteratedFDeriv_smul_le_mul`). The rescaled cut-off is supported in
-`closedBall y ε` (`TauCeti.tsupport_comp_inv_smul_sub_subset_closedBall`) and each of its
-derivatives of order `l` costs `ε⁻ˡ`, while on `closedBall y ε` the derivative of order `j ≤ r` of
-`u` is `O(ε ^ (r + 1 - j))`; the Leibniz rule balances these.
+`closedBall y ε` (`TauCeti.tsupport_comp_inv_smul_sub_subset_closedBall`, from the rescaling
+`TauCeti.inv_smul_sub_mem_closedBall_zero_iff`) and each of its derivatives of order `l` costs
+`ε⁻ˡ`, while on `closedBall y ε` the derivative of order `j ≤ r` of `u` is `O(ε ^ (r + 1 - j))`;
+the Leibniz rule balances these.
 
 This is the estimate behind Peetre's theorem on local operators: an operator that sees only the
 `C^r` size of its input near a point cannot see a function that is flat to order `r` there.
@@ -41,6 +42,12 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 namespace TauCeti
 
+/-- For `0 < ε`, the rescaled point `ε⁻¹ • (z - y)` lies in `closedBall 0 R` exactly when `z` lies
+in `closedBall y (ε * R)`. -/
+theorem inv_smul_sub_mem_closedBall_zero_iff {ε : ℝ} (hε : 0 < ε) {R : ℝ} {y z : E} :
+    ε⁻¹ • (z - y) ∈ closedBall (0 : E) R ↔ z ∈ closedBall y (ε * R) := by
+  simp [norm_smul, abs_of_pos hε, dist_eq_norm, inv_mul_le_iff₀ hε]
+
 /-- Rescaling a function supported in the closed unit ball to `z ↦ χ (ε⁻¹ • (z - y))` gives a
 function supported in `closedBall y ε`. -/
 theorem tsupport_comp_inv_smul_sub_subset_closedBall {α : Type*} [Zero α] {χ : E → α}
@@ -48,9 +55,7 @@ theorem tsupport_comp_inv_smul_sub_subset_closedBall {α : Type*} [Zero α] {χ 
     tsupport (fun z ↦ χ (ε⁻¹ • (z - y))) ⊆ closedBall y ε := by
   intro z hz
   have h := hχs (tsupport_comp_subset_preimage χ (f := fun z ↦ ε⁻¹ • (z - y)) (by fun_prop) hz)
-  rw [mem_closedBall, dist_zero_right, norm_smul, norm_inv, Real.norm_of_nonneg hε.le,
-    inv_mul_le_iff₀ hε, mul_one] at h
-  rwa [mem_closedBall, dist_eq_norm]
+  rwa [inv_smul_sub_mem_closedBall_zero_iff hε, mul_one] at h
 
 /-- Cut-offs of a function that is flat to order `r` at `y` are small in `C^r`: if the derivatives
 of the `C^{r+1}` function `u` of order at most `r` vanish at `y` and `χ` is a `C^r` function
