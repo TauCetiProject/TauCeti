@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Morphisms.ElementaryEtale.Basic
+import TauCeti.AlgebraicGeometry.Pullback.OpenImmersion
 import TauCeti.AlgebraicGeometry.ResidueField
 
 /-!
@@ -56,14 +57,7 @@ theorem Scheme.Hom.exists_finite_open_baseChange {X S U U' : Scheme.{u}}
       ∀ w : W.toScheme, (W.ι ≫ pullback.snd f (ψ ≫ φ)) w = u' → w = v' := by
   let g := V.ι ≫ pullback.snd f φ
   -- The pullback of `V` is an open in the new fibre product by pullback pasting.
-  let a := pullback.map g ψ (pullback.snd f φ) ψ V.ι (𝟙 U') (𝟙 U)
-    (by simp [g]) (by simp)
-  have : IsOpenImmersion a := Scheme.pullback_map_isOpenImmersion ..
-  let j := a ≫ (pullbackLeftPullbackSndIso f φ ψ).hom
-  have : IsOpenImmersion j := inferInstance
-  have hjfst : j ≫ pullback.fst f (ψ ≫ φ) =
-      pullback.fst g ψ ≫ V.ι ≫ pullback.fst f φ := by simp [j, a]
-  have hjsnd : j ≫ pullback.snd f (ψ ≫ φ) = pullback.snd g ψ := by simp [j, a]
+  obtain ⟨j, hj, hjfst, hjsnd⟩ := Scheme.Pullback.exists_isOpenImmersion_pullback_opens f φ V ψ
   obtain ⟨z, hzv, hzu⟩ := Scheme.Pullback.exists_preimage_pullback (f := g) (g := ψ)
     v u' (hv.trans hu'.symm)
   have : IsIso (ψ.residueFieldMap (pullback.snd g ψ z)) := hzu ▸ inferInstance
