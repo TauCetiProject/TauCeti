@@ -40,8 +40,7 @@ multiplies it by the factor at `c` exactly when `c ∈ s`. -/
 theorem _root_.Finset.prod_filter_or_eq_of_not {ι M : Type*} [DecidableEq ι] [CommMonoid M]
     (s : Finset ι) (f : ι → M) (P : ι → Prop) [DecidablePred P] {c : ι} (hc : ¬P c) :
     ∏ i ∈ s with P i ∨ i = c, f i = (∏ i ∈ s with P i, f i) * if c ∈ s then f c else 1 := by
-  rw [Finset.filter_or, Finset.prod_union (Finset.disjoint_filter.mpr fun i _ hi (hic : i = c) =>
-    hc (hic ▸ hi)), Finset.filter_eq']
+  rw [Finset.filter_or, Finset.prod_union (by grind [Finset.disjoint_filter]), Finset.filter_eq']
   split_ifs <;> simp
 
 /-- If `s` contains every element satisfying `p` and `f` equals `1` on `s` outside `p`, then the
@@ -55,9 +54,8 @@ theorem _root_.Finset.prod_subtype_eq_prod_of_mem {ι M : Type*} [CommMonoid M]
     (hs : ∀ x, p x → x ∈ s) (f : ι → M) (hf : ∀ x ∈ s, ¬p x → f x = 1) :
     (∏ x : Subtype p, f x) = ∏ x ∈ s, f x := by
   classical
-  rw [← Finset.prod_subtype (s.filter p) fun x => by
-    simp only [Finset.mem_filter]; exact ⟨And.right, fun hx => ⟨hs x hx, hx⟩⟩]
-  exact Finset.prod_filter_of_ne fun x hx hfx => by by_contra hp; exact hfx (hf x hx hp)
+  rw [← Finset.prod_subtype (s.filter p) (by grind)]
+  exact Finset.prod_filter_of_ne fun x hx hfx => by_contra (hfx <| hf x hx ·)
 
 /-- If `u i ^ 2 = 1` whenever `0 < k i`, and `∏_{i ∈ s} u i ^ (k i - j) = 1` for every `j`, then
 the product of the `u i` with `k i = m` is `1` for every `m ≥ 1`. -/
@@ -65,24 +63,18 @@ theorem _root_.Finset.prod_filter_eq_one_of_forall_prod_pow_tsub_eq_one {ι M : 
     [CommMonoid M] (s : Finset ι) (k : ι → ℕ) (u : ι → M) (hu : ∀ i ∈ s, 0 < k i → u i ^ 2 = 1)
     (h : ∀ j, ∏ i ∈ s, u i ^ (k i - j) = 1) {m : ℕ} (hm : 0 < m) :
     ∏ i ∈ s with k i = m, u i = 1 := by
-  -- Multiplying the identities at `j = m - 1` and `j = m` isolates the product over `k i ≥ m`,
-  -- and the product over `k i = m` is a quotient of two such.
-  have hT (m : ℕ) (hm : 0 < m) : ∏ i ∈ s with m ≤ k i, u i = 1 := by
-    calc ∏ i ∈ s with m ≤ k i, u i = ∏ i ∈ s, u i ^ ((k i - (m - 1)) + (k i - m)) := by
-          rw [Finset.prod_filter]
-          refine Finset.prod_congr rfl fun i hi ↦ ?_
-          split_ifs with hmi
-          · rw [show k i - (m - 1) + (k i - m) = 2 * (k i - m) + 1 by omega, pow_succ, pow_mul,
-              hu i hi (by omega), one_pow, one_mul]
-          · rw [show k i - (m - 1) + (k i - m) = 0 by omega, pow_zero]
-      _ = 1 := by simp only [pow_add, Finset.prod_mul_distrib, h, one_mul]
-  have h₁ : (s.filter (m ≤ k ·)).filter (k · = m) = s.filter (k · = m) := by
-    rw [Finset.filter_filter]
-    exact Finset.filter_congr fun i _ ↦ by omega
-  have h₂ : (s.filter (m ≤ k ·)).filter (fun i ↦ ¬k i = m) = s.filter (m + 1 ≤ k ·) := by
-    rw [Finset.filter_filter]
-    exact Finset.filter_congr fun i _ ↦ by omega
-  have hsplit := Finset.prod_filter_mul_prod_filter_not (s.filter (m ≤ k ·)) (k · = m) u
-  rwa [h₁, h₂, hT m hm, hT (m + 1) m.succ_pos, mul_one] at hsplit
+  -- The exponent below is `1` when `k i = m`, `0` when `k i < m`, and a multiple of `4` when
+  -- `k i > m`, so it isolates the factors with `k i = m`.
+  calc ∏ i ∈ s with k i = m, u i
+      = ∏ i ∈ s, u i ^ (k i - (m - 1) + (k i - m) + (k i - m) + (k i - (m + 1))) := by
+        rw [Finset.prod_filter]
+        refine Finset.prod_congr rfl fun i hi ↦ ?_
+        split_ifs with hki
+        · rw [hki, show m - (m - 1) + (m - m) + (m - m) + (m - (m + 1)) = 1 by omega, pow_one]
+        obtain hlt | hgt := lt_or_gt_of_ne hki
+        · rw [show k i - (m - 1) + (k i - m) + (k i - m) + (k i - (m + 1)) = 0 by omega, pow_zero]
+        · rw [show k i - (m - 1) + (k i - m) + (k i - m) + (k i - (m + 1)) = 2 * (2 * (k i - m))
+            by omega, pow_mul, hu i hi (by omega), one_pow]
+    _ = 1 := by simp only [pow_add, Finset.prod_mul_distrib, h, one_mul]
 
 end TauCeti
