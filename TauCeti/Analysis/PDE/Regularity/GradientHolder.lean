@@ -420,7 +420,7 @@ private theorem norm_preciseRepresentative_gradient_le {α : ℝ≥0} (hα : 0 <
     _ = _ := by ring
 
 /-- If `∇u` lies in `L²(Ω)` and `ball z R ⊆ Ω`, then `∇u` is integrable on `closedBall z t` for
-`t ≤ R`; for `t = R` because `closedBall z R` and `ball z R` differ by a null set. -/
+`t ≤ R`. -/
 private theorem integrableOn_closedBall_gradient {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
     (u : W1p volume Omega 2) {z : EuclideanSpace ℝ (Fin (n + 1))} {R t : ℝ}
     (hball : ball z R ⊆ Omega) (ht : t ≤ R) :
@@ -428,15 +428,19 @@ private theorem integrableOn_closedBall_gradient {Omega : Opens (EuclideanSpace 
   rcases ht.lt_or_eq with ht | ht
   · exact (Lp.memLp (W1p.gradient u)).integrableOn_of_subset one_le_two
       ((closedBall_subset_ball ht).trans hball) measure_closedBall_lt_top.ne
-  · rw [ht]
+  · -- `closedBall z R` and `ball z R` differ by a null set.
+    rw [ht]
     exact ((Lp.memLp (W1p.gradient u)).integrableOn_of_subset one_le_two hball
       measure_ball_lt_top.ne).congr_set_ae (volume.addHaar_closedBall_ae_eq_ball z R)
 
-/-- Two vectors of norm at most `A R^a`, with `R ≤ 2 d`, are at distance at most `2 · 2^a A d^a`. -/
-theorem dist_le_two_mul_two_rpow_mul_rpow_of_norm_le {E : Type*} [SeminormedAddCommGroup E]
-    {p q : E} {A R d a : ℝ} (hA : 0 ≤ A) (ha : 0 ≤ a) (hR : 0 < R) (hd : R ≤ 2 * d)
-    (hp : ‖p‖ ≤ A * R ^ a) (hq : ‖q‖ ≤ A * R ^ a) :
+/-- For `0 ≤ a` and `0 < R ≤ 2 d`, two vectors of norm at most `A R^a` are at distance at most
+`2 · 2^a A d^a`. -/
+private theorem dist_le_two_mul_two_rpow_mul_rpow_of_norm_le {E : Type*}
+    [SeminormedAddCommGroup E] {p q : E} {A R d a : ℝ} (ha : 0 ≤ a) (hR : 0 < R)
+    (hd : R ≤ 2 * d) (hp : ‖p‖ ≤ A * R ^ a) (hq : ‖q‖ ≤ A * R ^ a) :
     dist p q ≤ 2 * 2 ^ a * A * d ^ a := by
+  have hA : 0 ≤ A :=
+    nonneg_of_mul_nonneg_left ((norm_nonneg p).trans hp) (Real.rpow_pos_of_pos hR a)
   have hRd : R ^ a ≤ 2 ^ a * d ^ a := by
     rw [← Real.mul_rpow zero_le_two (by linarith)]
     exact Real.rpow_le_rpow hR.le hd ha
@@ -520,7 +524,7 @@ theorem exists_holderOnWith_preciseRepresentative_gradient {α : ℝ≥0} (hα :
       rw [← hcαdef, ← hω, ← ha]
       refine mul_le_mul_of_nonneg_right ?_ (by positivity)
       nlinarith [mul_nonneg (inv_nonneg.2 (Real.sqrt_nonneg ω)) hK]
-    have h := dist_le_two_mul_two_rpow_mul_rpow_of_norm_le (by positivity) hα'.le hR hd.le
+    have h := dist_le_two_mul_two_rpow_mul_rpow_of_norm_le hα'.le hR hd.le
       (hbound x hx) (hbound y hy)
     nlinarith [(by positivity : 0 ≤ 2 * 2 ^ (α : ℝ) * cα * C₀ * (K + a) * dist x y ^ (α : ℝ))]
 
