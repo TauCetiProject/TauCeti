@@ -17,18 +17,18 @@ Let `B` be a bilinear map on pairs of smooth functions on the tori `UnitAddTorus
 norms: `‖B f g‖ ≤ C * M₁ * M₂` whenever `DerivBound N M₁ f` and `DerivBound N M₂ g`. This file
 proves that `B` has a unique kernel: a linear map `K` on the smooth functions on the product torus
 `UnitAddTorus (a ⊕ b)`, continuous for some `C^N'` norm, with `K (f ⊗ g) = B f g` for all smooth
-`f` and `g`. Here `(f ⊗ g)(x, y) = f x * g y` is `TauCeti.UnitAddTorus.tensor f g`.
+`f` and `g`. Here `(f ⊗ g)(x, y) = f x * g y` is `UnitAddTorus.tensor f g`.
 
 The kernel `TauCeti.UnitAddTorus.schwartzKernel B` is the double Fourier pairing
 
-`K h = ∑ (k, l), ĥ(k, l) • B (mFourier k) (mFourier l)`.
+`K h = ∑ (k, l), mFourierCoeff h (Sum.elim k l) • B (mFourier k) (mFourier l)`.
 
 Continuity of `B` bounds its values on the Fourier monomials polynomially in `(k, l)`, while the
 Fourier coefficients of a smooth `h` decay rapidly, so the series converges absolutely, with a
-bound by a `C^N'` norm of `h`. The coefficients of `f ⊗ g` are the products `f̂ k * ĝ l`, and
-expanding `f` and `g` in their Fourier series inside `B` gives `K (f ⊗ g) = B f g`. Uniqueness
-holds because a continuous linear map is determined by its values on the monomials, and
-`mFourier (k, l) = mFourier k ⊗ mFourier l`.
+bound by a `C^N'` norm of `h`. The coefficients of `f ⊗ g` are the products
+`mFourierCoeff f k * mFourierCoeff g l`, and expanding `f` and `g` in their Fourier series inside
+`B` gives `K (f ⊗ g) = B f g`. Uniqueness holds because a continuous linear map is determined by
+its values on the monomials, and `mFourier (k, l) = mFourier k ⊗ mFourier l`.
 
 Smooth functions supported in a compact coordinate box are smooth functions on a torus after
 periodic extension, so this periodic statement is the local step of the Fourier-series proof of
@@ -36,13 +36,13 @@ the Schwartz kernel theorem for distributions.
 
 ## Main definitions
 
-* `TauCeti.UnitAddTorus.tensor f g`: the function `(x, y) ↦ f x * g y` on the product torus.
+* `UnitAddTorus.tensor f g`: the function `(x, y) ↦ f x * g y` on the product torus.
 * `TauCeti.UnitAddTorus.schwartzKernel B hB`: the kernel of a continuous bilinear map `B`.
 
 ## Main results
 
-* `TauCeti.UnitAddTorus.tensor_mFourier`: `mFourier k ⊗ mFourier l = mFourier (k, l)`.
-* `TauCeti.UnitAddTorus.mFourierCoeff_tensor`: the Fourier coefficients of `f ⊗ g` are the
+* `UnitAddTorus.tensor_mFourier`: `mFourier k ⊗ mFourier l = mFourier (k, l)`.
+* `UnitAddTorus.mFourierCoeff_tensor`: the Fourier coefficients of `f ⊗ g` are the
   products of those of `f` and `g`.
 * `TauCeti.UnitAddTorus.exists_norm_schwartzKernel_le`: the kernel is continuous for a `C^N'`
   norm.
@@ -64,9 +64,7 @@ noncomputable section
 open MeasureTheory Filter
 open scoped Real
 
-namespace TauCeti.UnitAddTorus
-
-open _root_.UnitAddTorus
+namespace UnitAddTorus
 
 variable {a b : Type*}
 
@@ -84,13 +82,6 @@ theorem tensor_apply (f : UnitAddTorus a → ℂ) (g : UnitAddTorus b → ℂ) (
 
 variable [Fintype a] [Fintype b]
 
-theorem tensor_mem_smoothFunctions {f : UnitAddTorus a → ℂ} {g : UnitAddTorus b → ℂ}
-    (hf : f ∈ smoothFunctions a) (hg : g ∈ smoothFunctions b) :
-    tensor f g ∈ smoothFunctions (a ⊕ b) := by
-  rw [mem_smoothFunctions] at *
-  exact (hf.comp (contDiff_pi.2 fun i ↦ by fun_prop)).mul
-    (hg.comp (contDiff_pi.2 fun i ↦ by fun_prop))
-
 /-- The tensor product of two Fourier monomials is a Fourier monomial. -/
 @[simp]
 theorem tensor_mFourier (k : a → ℤ) (l : b → ℤ) :
@@ -105,12 +96,27 @@ theorem mFourierCoeff_tensor (f : UnitAddTorus a → ℂ) (g : UnitAddTorus b �
     (n : a ⊕ b → ℤ) :
     mFourierCoeff (tensor f g) n =
       mFourierCoeff f (fun i ↦ n (.inl i)) * mFourierCoeff g (fun i ↦ n (.inr i)) := by
-  simp only [mFourierCoeff_eq_integral_volume]
+  simp only [TauCeti.UnitAddTorus.mFourierCoeff_eq_integral_volume]
   rw [← (volume_measurePreserving_sumPiEquivProdPi_symm fun _ : a ⊕ b ↦ UnitAddCircle).integral_comp
     (MeasurableEquiv.measurableEmbedding _), Measure.volume_eq_prod, ← integral_prod_mul]
   congr 1 with p
   simp [tensor, mFourier, Fintype.prod_sum_type, MeasurableEquiv.sumPiEquivProdPi]
   ring
+
+end UnitAddTorus
+
+namespace TauCeti.UnitAddTorus
+
+open _root_.UnitAddTorus
+
+variable {a b : Type*} [Fintype a] [Fintype b]
+
+theorem tensor_mem_smoothFunctions {f : UnitAddTorus a → ℂ} {g : UnitAddTorus b → ℂ}
+    (hf : f ∈ smoothFunctions a) (hg : g ∈ smoothFunctions b) :
+    tensor f g ∈ smoothFunctions (a ⊕ b) := by
+  rw [mem_smoothFunctions] at *
+  exact (hf.comp (contDiff_pi.2 fun i ↦ by fun_prop)).mul
+    (hg.comp (contDiff_pi.2 fun i ↦ by fun_prop))
 
 /-! ### The kernel of a continuous bilinear map -/
 
@@ -176,7 +182,7 @@ private theorem summable_schwartzKernel (h : smoothFunctions (a ⊕ b)) :
 
 /-- The kernel of a bilinear map `B` on smooth functions on two tori which is continuous for the
 `C^N` norms: the linear map on smooth functions on the product torus given by the double Fourier
-pairing `h ↦ ∑ (k, l), ĥ(k, l) • B (mFourier k) (mFourier l)`. -/
+pairing `h ↦ ∑ (k, l), mFourierCoeff h (Sum.elim k l) • B (mFourier k) (mFourier l)`. -/
 def schwartzKernel : smoothFunctions (a ⊕ b) →ₗ[ℂ] F where
   toFun h := ∑' n, mFourierCoeff (h : UnitAddTorus (a ⊕ b) → ℂ) n •
     B (mFourierSmooth fun i ↦ n (.inl i)) (mFourierSmooth fun i ↦ n (.inr i))
