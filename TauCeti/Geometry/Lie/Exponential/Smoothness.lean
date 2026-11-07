@@ -41,6 +41,8 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
+namespace TauCeti
+
 /-- Continuity, the rescaled ODE, and the initial value for the second coordinate of a product
 flow. This packages the chain-rule calculation used to compare a canonical coordinate path with a
 Picard path. -/
@@ -120,41 +122,6 @@ private theorem continuousMap_terminal_eq_of_ode_unique
     (show (1 : ℝ) ∈ Set.Icc 0 1 from ⟨zero_le_one, le_rfl⟩)] at hone
   exact hone
 
-/-- A map into a normed space that is `C^n` after precomposition with a nonzero scalar
-multiplication is `C^n` at zero. -/
-theorem contDiffAt_zero_of_comp_smul {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {n : WithTop ℕ∞} {f : E → F} {c : ℝ} (hc : c ≠ 0)
-    (h : ContDiffAt ℝ n (fun p : E => f (c • p)) 0) : ContDiffAt ℝ n f 0 := by
-  have hrescale : ContDiffAt ℝ n (fun p : E => c⁻¹ • p) 0 := by fun_prop
-  have h' : ContDiffAt ℝ n (fun p : E => f (c • p)) (c⁻¹ • (0 : E)) := by
-    simpa only [smul_zero] using h
-  refine (h'.comp 0 hrescale).congr_of_eventuallyEq (Filter.Eventually.of_forall fun p => ?_)
-  simp only [Function.comp_apply, smul_smul, mul_inv_cancel₀ hc, one_smul]
-
-/-- For a field that is `C^1` at `(p₀, x₀)` and a family of paths in `[0, 1]` that is continuous at
-`p₀` with constant value `x₀` there, there are a Lipschitz set `S` around `x₀` and a neighbourhood
-`P` of `p₀` such that `F (p, ·)` is Lipschitz on `S` for `p ∈ P`, and nearby paths stay in `S`. -/
-theorem ODE.exists_lipschitzOnWith_eventually_path_mem
-    {F : E × E → E} {p₀ x₀ : E} (hF : ContDiffAt ℝ 1 F (p₀, x₀))
-    {γ : E → C(Set.Icc (0 : ℝ) 1, E)} (hγ : ContinuousAt γ p₀)
-    (hγ₀ : γ p₀ = ContinuousMap.const _ x₀) :
-    ∃ (K : NNReal) (S P : Set E), S ∈ 𝓝 x₀ ∧ P ∈ 𝓝 p₀ ∧
-      (∀ p ∈ P, LipschitzOnWith K (fun y => F (p, y)) S) ∧
-      ∀ᶠ p in 𝓝 p₀, ∀ t : Set.Icc (0 : ℝ) 1, γ p t ∈ S := by
-  obtain ⟨K, W, hW, hFlip⟩ := hF.exists_lipschitzOnWith
-  rw [nhds_prod_eq] at hW
-  obtain ⟨P, hP, S, hS, hPS⟩ := Filter.mem_prod_iff.mp hW
-  have hfixed (p : E) (hp : p ∈ P) : LipschitzOnWith K (fun y => F (p, y)) S := by
-    intro y hy z hz
-    have h := hFlip (x := (p, y)) (y := (p, z)) (hPS ⟨hp, hy⟩) (hPS ⟨hp, hz⟩)
-    simpa only [Prod.edist_eq, edist_self, zero_max] using h
-  obtain ⟨U, hUS, hUopen, hUcenter⟩ := mem_nhds_iff.mp hS
-  refine ⟨K, S, P, hS, hP, hfixed, ?_⟩
-  filter_upwards [hγ.eventually
-    (ContinuousMap.eventually_mapsTo isCompact_univ hUopen fun t _ ↦ by
-      simpa [hγ₀] using hUcenter)] with p hp t
-  exact hUS (hp (Set.mem_univ t))
-
 /-- A point of the interior of the chart target that is the coordinate expression of an invariant
 integral curve is the coordinate of the exponential of the corresponding multiple. -/
 private theorem eq_extChartAt_mulInvariantExp_smul
@@ -190,6 +157,7 @@ private theorem eventually_extChartAt_mulInvariantExp_smul_mem
   have hcoordS : (fun v : E => extChartAt I (1 : G)
       (mulInvariantExp (I := I) (G := G) (v : GroupLieAlgebra I G))) ⁻¹' S ∈ 𝓝 (0 : E) :=
     hexpCoord.preimage_mem_nhds (by
+      -- expose the value at zero, so that `mulInvariantExp_zero` can rewrite it
       change S ∈ 𝓝 (extChartAt I (1 : G)
         (mulInvariantExp (I := I) (G := G) (0 : GroupLieAlgebra I G)))
       rwa [mulInvariantExp_zero])
@@ -289,7 +257,7 @@ private theorem contDiffAt_extChartAt_mulInvariantExp_zero
     hF (Filter.Eventually.of_forall fun y => by
       simp only [F, mulInvariantCoordinateVectorField_zero, smul_zero])
   -- Compare it with the canonical invariant path by ODE uniqueness in a Lipschitz neighbourhood.
-  obtain ⟨K, S, P, hS, hP, hfixed, hγS⟩ := ODE.exists_lipschitzOnWith_eventually_path_mem
+  obtain ⟨K, S, P, hS, hP, hfixed, hγS⟩ := TauCeti.ODE.exists_lipschitzOnWith_eventually_path_mem
     (hF.of_le (by exact_mod_cast Nat.succ_le_succ (Nat.zero_le n))) hγsmooth.continuousAt hγzero
   have hEq : ∀ᶠ p in 𝓝 (0 : E),
       γ p ⟨1, zero_le_one, le_rfl⟩ = extChartAt I (1 : G)
@@ -302,8 +270,17 @@ private theorem contDiffAt_extChartAt_mulInvariantExp_zero
   have heval : ContDiffAt ℝ (n + 1) (fun p => γ p ⟨1, zero_le_one, le_rfl⟩) 0 := by
     simpa only [Function.comp_def, ContinuousMap.evalCLM_apply] using
       hγsmooth.continuousLinearMap_comp (ContinuousMap.evalCLM ℝ ⟨1, zero_le_one, le_rfl⟩)
-  exact (contDiffAt_zero_of_comp_smul hc.ne' ((heval.congr_of_eventuallyEq
-    (hEq.mono fun p hp => hp.symm)))).of_le (by exact_mod_cast Nat.le_succ n)
+  -- Undo the time rescaling by the linear equivalence `p ↦ c • p`.
+  let e : E ≃L[ℝ] E := ContinuousLinearEquiv.smulLeft (Units.mk0 c hc.ne')
+  have hcomp : ContDiffAt ℝ (n + 1) (fun p : E => extChartAt I (1 : G)
+      (mulInvariantExp (I := I) (G := G) ((e p : E) : GroupLieAlgebra I G))) 0 :=
+    heval.congr_of_eventuallyEq (hEq.mono fun p hp => by simpa [e] using hp.symm)
+  have hcomp' := (e.contDiffAt_comp_iff (x := (0 : E)) (f := fun v : E => extChartAt I (1 : G)
+      (mulInvariantExp (I := I) (G := G) (v : GroupLieAlgebra I G)))).1
+    (by rw [map_zero]; exact hcomp)
+  exact hcomp'.of_le (by exact_mod_cast Nat.le_succ n)
+
+end TauCeti
 
 /-- The tangent-space exponential of a finite-dimensional smooth Lie group is smooth at zero. -/
 theorem contMDiffAt_mulInvariantExp_modelSpace_zero
@@ -319,7 +296,7 @@ theorem contMDiffAt_mulInvariantExp_modelSpace_zero
     exact mulInvariantExp_zero)]
   refine ⟨continuousAt_mulInvariantExp_modelSpace_zero (I := I) (G := G), ?_⟩
   simpa only [Function.comp_def] using
-    (contDiffAt_extChartAt_mulInvariantExp_zero (I := I) (G := G) n).contMDiffAt
+    (TauCeti.contDiffAt_extChartAt_mulInvariantExp_zero (I := I) (G := G) n).contMDiffAt
 
 /-- The tangent-space exponential of a finite-dimensional smooth Lie group is smooth. -/
 theorem contMDiff_mulInvariantExp
