@@ -16,8 +16,7 @@ import Mathlib.Topology.LocallyFinite
 
 Values prescribed at the vertices of a locally finite geometric simplicial complex extend to a
 continuous function on its support which is affine on each closed simplex. The extension is unique
-on the support. In particular, affine interpolation of graph heights on incident simplices agrees
-on their common faces, even when a height gap collapses on a face.
+on the support.
 
 The local affine maps are allowed to be defined on the whole ambient space, but only their
 restrictions to the simplices are used: no compatibility away from those simplices is required.
