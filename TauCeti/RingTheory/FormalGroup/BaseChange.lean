@@ -15,7 +15,7 @@ coefficient. This file supplies its basic functorial API: identity and compositi
 preservation of commutativity, and compatibility with the additive and multiplicative formal
 group laws.
 
-## Main results
+## Main definitions and results
 
 * `FormalGroup.map_id` and `FormalGroup.map_comp`: base change is functorial.
 * `FormalGroup.map_injective`: base change along an injective homomorphism is injective.
@@ -23,6 +23,8 @@ group laws.
 * `FormalGroup.map_𝔾ₐ` and `FormalGroup.map_𝔾ₘ`: the standard laws are stable under base change.
 * `FormalGroup.subst_map_toPowerSeries_map`: a power series additive along `F` stays additive along
   `F` after base change.
+* `FormalGroup.mapPointHom`: base change of power-series points as an additive monoid homomorphism
+  `F.Point σ →+ (F.map f).Point σ`.
 -/
 
 public section
@@ -92,5 +94,23 @@ theorem subst_map_toPowerSeries_map (F : FormalGroup R) (f : R →+* S) {g : Pow
   rwa [map_add, PowerSeries.map_subst (.of_constantCoeff_zero F.zero_constantCoeff),
     PowerSeries.map_subst (.X 0), PowerSeries.map_subst (.X 1), map_X, map_X,
     ← map_toPowerSeries] at this
+
+/-- Base change of power-series points along a ring homomorphism `f : R →+* S`. -/
+noncomputable def mapPointHom (F : FormalGroup R) (f : R →+* S) (σ : Type*) :
+    F.Point σ →+ (F.map f).Point σ where
+  toFun x := ⟨MvPowerSeries.map f x.val, by
+    rw [PowerSeries.HasSubst, constantCoeff_map]
+    exact x.prop.map f⟩
+  map_zero' := Subtype.ext (by simp)
+  map_add' x y := Subtype.ext <| by
+    have hxy : HasSubst ![x.val, y.val] :=
+      hasSubst_of_constantCoeff_nilpotent (Fin.forall_fin_two.mpr ⟨x.prop, y.prop⟩)
+    simp only [add_apply, MvPowerSeries.map_subst hxy]
+    congr 1
+    exact funext <| Fin.forall_fin_two.mpr ⟨rfl, rfl⟩
+
+@[simp]
+theorem val_mapPointHom (F : FormalGroup R) (f : R →+* S) {σ : Type*} (x : F.Point σ) :
+    (F.mapPointHom f σ x).val = MvPowerSeries.map f x.val := (rfl)
 
 end FormalGroup
