@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.Commutator.Basic
 public import Mathlib.GroupTheory.OrderOfElement
 public import TauCeti.GroupTheory.CSA
 public import TauCeti.GroupTheory.GroupAlgGeom.Discrimination
+public import TauCeti.GroupTheory.Torsion
 
 /-!
 # The big powers property
@@ -203,16 +204,10 @@ theorem exists_prod_map_pow_mul_ne_one (hBP : IsBP G) (hG : IsCSA G) {u : G} (hu
     exact hconj1 he
   rcases Hs with _ | ⟨H₁, _ | ⟨H₂, rest⟩⟩
   · exact absurd rfl hne
-  · -- A single conjugate: `H₁ ^ k = z⁻¹` holds for at most one `k`, by torsion-freeness.
-    by_cases hk : ∃ k : ℕ, H₁ ^ k * z = 1
-    · obtain ⟨k₀, hk₀⟩ := hk
-      refine ⟨k₀ + 1, fun k hk h => ?_⟩
-      simp only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one] at h
-      have := (IsMulTorsionFree.pow_right_inj (hne1 H₁ (by simp))).1
-        ((mul_eq_one_iff_eq_inv.1 h).trans (mul_eq_one_iff_eq_inv.1 hk₀).symm)
-      omega
-    · push Not at hk
-      exact ⟨0, fun k _ => by simpa using hk k⟩
+  · -- A single conjugate.
+    obtain ⟨N, hN⟩ := exists_forall_pow_ne_of_not_isOfFinOrder
+      (not_isOfFinOrder_of_isMulTorsionFree (hne1 H₁ (by simp))) z⁻¹
+    exact ⟨N, fun k hk h ↦ hN k hk (by simpa [mul_eq_one_iff_eq_inv] using h)⟩
   · -- Several conjugates: if `P = H₁ ^ k ⋯ Hₘ ^ k` equals `z⁻¹`, then
     -- `P * Y ^ k * P⁻¹ * Z ^ k = 1` for `Y = W * u * W⁻¹` and `Z = z⁻¹ * Y⁻¹ * z`, which the big
     -- powers property excludes once `W` is chosen so that `Y` commutes with neither `Hₘ` nor
@@ -418,16 +413,15 @@ takes each value for at most one `k`. -/
 private theorem exists_forall_conjProd_singleton_ne [IsMulTorsionFree G] {u : G} (hu : u ≠ 1)
     {p : G × ℤ} (hp : p.2 ≠ 0) (a : G) :
     ∃ N : ℕ, ∀ k : ℕ, N ≤ k → conjProd u k [p] ≠ a := by
-  by_cases h : ∃ k₀, conjProd u k₀ [p] = a
-  · obtain ⟨k₀, hk₀⟩ := h
-    refine ⟨k₀ + 1, fun k hk hka => ?_⟩
-    rw [← hk₀] at hka
-    have h : (k : ℤ) * p.2 = k₀ * p.2 := by
-      simpa [conjProd, IsMulTorsionFree.zpow_right_inj hu] using hka
-    have := mul_right_cancel₀ hp h
-    omega
-  · push Not at h
-    exact ⟨0, fun k _ => h k⟩
+  have hH : p.1 * u ^ p.2 * p.1⁻¹ ≠ 1 := fun h => hp <|
+    (IsMulTorsionFree.zpow_eq_one_iff_right hu).1 (by simpa using h)
+  obtain ⟨N, hN⟩ := exists_forall_pow_ne_of_not_isOfFinOrder
+    (not_isOfFinOrder_of_isMulTorsionFree hH) a
+  refine ⟨N, fun k hk h => hN k hk ?_⟩
+  have hk' : (p.1 * u ^ p.2 * p.1⁻¹) ^ k = conjProd u k [p] := by
+    simp only [conjProd, List.map_singleton, List.prod_singleton, ← zpow_natCast, conj_zpow]
+    group
+  rw [hk', h]
 
 /-- A product `∏ᵢ aᵢ * u ^ (k * eᵢ) * aᵢ⁻¹` in which factors with conjugators in one coset of
 `C_G(u)` have exponents of the same sign avoids any given element `a` for all large `k`. -/
