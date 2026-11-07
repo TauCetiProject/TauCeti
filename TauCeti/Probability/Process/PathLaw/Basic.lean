@@ -134,6 +134,24 @@ theorem prefixLaw_singleton_eq_measure [MeasurableSingletonClass α] {μ : Measu
     (fun i => hX i.val) (measurableSet_singleton w)]
   exact congrArg μ (Set.ext fun ω => by simp [funext_iff, eq_comm])
 
+/-- The law of the first `n + 1` states at a single finite path is the measure of the event
+that the process follows any sequence extending that path. -/
+theorem prefixLaw_singleton_eq_measure_setOf [MeasurableSingletonClass α] {μ : Measure Ω}
+    {X : ℕ → Ω → α} (hX : ∀ i, AEMeasurable (X i) μ) {n : ℕ} (w : Fin (n + 1) → α) (w' : ℕ → α)
+    (hfin : ∀ (j : ℕ) (hj : j < n + 1), w' j = w ⟨j, hj⟩) :
+    prefixLaw μ X (n + 1) {w} = μ {ω | ∀ j ≤ n, X j ω = w' j} := by
+  rw [prefixLaw_singleton_eq_measure hX w]
+  congr 1
+  ext ω
+  simp only [Set.mem_ofPred_eq]
+  constructor
+  · intro h j hj
+    rw [hfin j (Nat.lt_succ_of_le hj)]
+    exact h ⟨j, Nat.lt_succ_of_le hj⟩
+  · intro h i
+    rw [← hfin i.val i.isLt]
+    exact h i.val (Nat.lt_succ_iff.1 i.isLt)
+
 open Classical ProbabilityTheory in
 /-- The mass of a finite path after conditioning on an initial-state event. Paths whose initial
 state lies outside the conditioning set have zero mass, including when the conditioning event

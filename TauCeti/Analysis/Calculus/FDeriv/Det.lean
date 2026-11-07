@@ -6,13 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.Deriv.Comp
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.FDeriv.Analytic
 public import Mathlib.Analysis.Matrix.Normed
 public import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
+import Mathlib.Analysis.Calculus.ContDiff.CPolynomial
+import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.Analysis.Calculus.Deriv.Mul
 
 /-!
-# The derivative of the determinant
+# Smoothness and derivatives of the determinant
 
 The determinant of a square matrix over a nontrivially normed field is a continuous multilinear
 map of its rows. Its differential at every matrix, including singular matrices, is the sum of
@@ -21,7 +24,9 @@ row replacements, or equivalently Jacobi's adjugate formula:
 `D det (A) H = trace (adjugate A * H)`.
 
 At an invertible matrix this is `det A * trace (A⁻¹ * H)`, and at the identity it is `trace H`.
-The matrix index may be empty, and the field need not be complete.
+The matrix determinant is smooth, the matrix index may be empty, and none of the matrix
+results require the field to be complete. The determinant of a continuous linear endomorphism
+of a finite-dimensional normed space is also smooth; this result assumes a complete field.
 
 The multilinear proof generalizes the real determinant calculus in the
 [KLS formalization](https://github.com/human-ai-mathematics/kls-lean/blob/9cde7938fc09cd017519c7c8a498bee99c12f717/formalization/FunctionalInequalities/Analysis/Matrix/DeterminantDerivative.lean).
@@ -33,6 +38,9 @@ The normed structure on matrices is Mathlib's `L∞` operator norm, available th
 
 ## Main results
 
+* `Matrix.contDiff_det`: the matrix determinant is smooth without scalar completeness.
+* `ContinuousLinearMap.contDiff_det`: the determinant of a continuous linear endomorphism
+  of a finite-dimensional normed space is smooth over a complete field.
 * `Matrix.differentiable_det`: the determinant is differentiable at every matrix.
 * `Matrix.fderiv_det_eq_sum_updateRow`: its differential is the sum of row replacements.
 * `Matrix.fderiv_det_apply_adjugate`: Jacobi's formula, including singular matrices.
@@ -43,7 +51,7 @@ The normed structure on matrices is Mathlib's `L∞` operator norm, available th
 
 public section
 
-open scoped Matrix Matrix.Norms.Operator
+open scoped Matrix Matrix.Norms.Operator ContDiff
 
 namespace Matrix
 
@@ -57,6 +65,14 @@ private noncomputable def detMultilinear :
       change Continuous (fun M : n → n → 𝕜 => (Matrix.of M).det)
       simp only [det_apply, Matrix.of_apply]
       fun_prop }
+
+/-- The determinant is smooth, including at singular matrices. -/
+@[fun_prop]
+theorem contDiff_det {r : ℕ∞ω} : ContDiff 𝕜 r (det : Matrix n n 𝕜 → 𝕜) := by
+  -- The underlying function of this row-family map is definitionally the identity.
+  let L : Matrix n n 𝕜 →L[𝕜] (n → n → 𝕜) :=
+    { (Matrix.ofLinearEquiv 𝕜).symm.toLinearMap with cont := by exact continuous_id }
+  exact (detMultilinear (n := n) (𝕜 := 𝕜)).contDiff.comp L.contDiff
 
 /-- The determinant is differentiable at every matrix over a nontrivially normed field. -/
 theorem differentiable_det : Differentiable 𝕜 (det : Matrix n n 𝕜 → 𝕜) :=
@@ -76,18 +92,6 @@ theorem fderiv_det_apply_adjugate (A H : Matrix n n 𝕜) :
     fderiv 𝕜 det A H = trace (A.adjugate * H) := by
   rw [fderiv_det_eq_sum_updateRow, sum_det_updateRow_eq_trace_adjugate_mul]
 
-/-- The determinant along the line through the identity in the direction `B` has derivative
-`trace B` at the identity. -/
-theorem hasDerivAt_det_one_add_smul (B : Matrix n n 𝕜) :
-    HasDerivAt (fun t : 𝕜 => det (1 + t • B)) (trace B) 0 := by
-  have h := (differentiable_det (𝕜 := 𝕜) (n := n) 1).hasFDerivAt.comp_hasDerivAt_of_eq
-    (0 : 𝕜) (((hasDerivAt_id (0 : 𝕜)).smul_const B).const_add 1) (by simp)
-  simp only [id_eq, one_smul] at h
-  -- Restate the composite with matrix operations so the differential formula matches.
-  have h' : HasDerivAt (fun t : 𝕜 => det (1 + t • B))
-      (fderiv 𝕜 det (1 : Matrix n n 𝕜) B) 0 := h
-  simpa only [fderiv_det_apply_adjugate, adjugate_one, one_mul] using h'
-
 /-- **Jacobi's inverse formula**, evaluated on a direction at an invertible matrix. -/
 theorem fderiv_det_apply {A : Matrix n n 𝕜} (hA : IsUnit A.det) (H : Matrix n n 𝕜) :
     fderiv 𝕜 det A H = A.det * trace (A⁻¹ * H) := by
@@ -98,12 +102,22 @@ theorem fderiv_det_apply {A : Matrix n n 𝕜} (hA : IsUnit A.det) (H : Matrix n
 /-- The Fréchet derivative of the determinant at the identity is the trace. -/
 theorem hasFDerivAt_det_one :
     HasFDerivAt (det : Matrix n n 𝕜 → 𝕜)
-      ⟨traceLinearMap n 𝕜 𝕜, continuous_id.matrix_trace⟩ 1 := by
-  refine ((differentiable_det (𝕜 := 𝕜) (n := n) 1).hasFDerivAt).congr_fderiv ?_
-  ext H
-  rw [fderiv_det_apply_adjugate, adjugate_one, one_mul]
-  exact ((congrFun (ContinuousLinearMap.coe_mk' (traceLinearMap n 𝕜 𝕜)
-    continuous_id.matrix_trace) H).trans (traceLinearMap_apply n 𝕜 𝕜 H)).symm
+      ⟨traceLinearMap n 𝕜 𝕜, continuous_id.matrix_trace⟩ 1 :=
+  (differentiable_det 1).hasFDerivAt.congr_fderiv <| by
+    ext H
+    rw [fderiv_det_apply_adjugate, adjugate_one, one_mul]
+    exact ((congrFun (ContinuousLinearMap.coe_mk' (traceLinearMap n 𝕜 𝕜)
+      continuous_id.matrix_trace) H).trans (traceLinearMap_apply n 𝕜 𝕜 H)).symm
+
+/-- The determinant along the line through the identity in the direction `B` has derivative
+`trace B` at the identity. -/
+theorem hasDerivAt_det_one_add_smul (B : Matrix n n 𝕜) :
+    HasDerivAt (fun t : 𝕜 => det (1 + t • B)) (trace B) 0 := by
+  have h := hasFDerivAt_det_one.comp_hasDerivAt_of_eq (0 : 𝕜)
+    (((hasDerivAt_id (0 : 𝕜)).smul_const B).const_add 1) (by simp)
+  rw [one_smul] at h
+  -- The continuous trace map is built from `traceLinearMap`, so it applies to `B` as `trace B`.
+  exact h
 
 /-- **Jacobi's inverse formula.** At a matrix with invertible determinant, the differential is
 `H ↦ det A * trace (A⁻¹ * H)`. -/
@@ -117,3 +131,29 @@ theorem hasFDerivAt_det {A : Matrix n n 𝕜} (hA : IsUnit A.det) :
   exact fderiv_det_apply hA H
 
 end Matrix
+
+namespace ContinuousLinearMap
+
+variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E] [CompleteSpace 𝕜]
+
+/-- The determinant of an endomorphism of a finite-dimensional normed space is smooth. -/
+@[fun_prop]
+theorem contDiff_det {r : ℕ∞ω} :
+    ContDiff 𝕜 r (fun f : E →L[𝕜] E ↦ LinearMap.det (f : E →ₗ[𝕜] E)) := by
+  let b := Module.finBasis 𝕜 E
+  let L : (E →L[𝕜] E) →L[𝕜] Matrix (Fin (Module.finrank 𝕜 E))
+      (Fin (Module.finrank 𝕜 E)) 𝕜 :=
+    { (LinearMap.toMatrix b b).toLinearMap.comp (ContinuousLinearMap.coeLM 𝕜) with
+      cont := ((LinearMap.toMatrix b b).toLinearMap.comp
+        (ContinuousLinearMap.coeLM 𝕜)).continuous_of_finiteDimensional }
+  have h := (Matrix.contDiff_det (𝕜 := 𝕜) (n := Fin (Module.finrank 𝕜 E)) (r := r)).comp
+    L.contDiff
+  have hL (f : E →L[𝕜] E) : L f = LinearMap.toMatrix b b (f : E →ₗ[𝕜] E) := (rfl)
+  have hfun : Matrix.det ∘ (L : (E →L[𝕜] E) → _) =
+      (fun f : E →L[𝕜] E ↦ LinearMap.det (f : E →ₗ[𝕜] E)) := by
+    funext f
+    exact (congrArg Matrix.det (hL f)).trans (LinearMap.det_toMatrix b _)
+  exact hfun ▸ h
+
+end ContinuousLinearMap

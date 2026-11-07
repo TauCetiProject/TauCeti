@@ -37,7 +37,7 @@ Layer 2 target on dimension tools through `Lie(G)`.
 * `TauCeti.CommHopfAlgCat.kernelLieEquiv`: the Lie algebra of the scheme-theoretic kernel is
   canonically Lie-equivalent to the kernel of the differential.
 * `TauCeti.CommHopfAlgCat.finrank_kernelLie`: the resulting equality of Lie algebra dimensions over
-  a field.
+  a commutative ring.
 
 ## References
 
@@ -212,9 +212,9 @@ theorem derivationCompLieHom_comp_quotientLieHom_kernelHopfIdeal_eq_zero (f : H 
   rw [LieHom.mem_ker, kernelLieEquiv_apply_coe] at hd
   exact hd
 
-section Field
+section Finrank
 
-variable {k : Type u} [Field k]
+variable {k : Type u} [CommRing k]
 variable {H K : _root_.CommHopfAlgCat.{v} k}
 
 /-- The Lie algebra dimension of a scheme-theoretic kernel is the dimension of the kernel of the
@@ -226,7 +226,7 @@ theorem finrank_kernelLie (f : H ⟶ K) :
       Module.finrank k (LieHom.ker (derivationCompLieHom (B := k) f.hom)) :=
   (kernelLieEquiv (B := k) f).toLinearEquiv.finrank_eq
 
-end Field
+end Finrank
 
 end CommHopfAlgCat
 

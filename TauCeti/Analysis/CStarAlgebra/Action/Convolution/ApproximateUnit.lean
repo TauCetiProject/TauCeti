@@ -110,7 +110,7 @@ private theorem norm_sub_le_of_forall_mem_tsupport [OpensMeasurableSpace G]
       (hae.mono fun r hr hrU => hr.trans (image_eq_zero_of_notMem_tsupport hrU))
       ((((map_continuous φ).smul (hX s)).integrable_of_hasCompactSupport
         φ.hasCompactSupport.smul_right).aestronglyMeasurable.congr
-          (hae.mono fun r hr => by simp only [hr, Pi.smul_apply'])) (hε s)
+          (hae.mono fun r hr => by simp only [hr, Pi.smul_apply'])) (ae_of_all _ (hε s))
     rwa [hint, hnorm, mul_one, ← hu] at h
   -- Outside `C` the difference vanishes, and on `C` it is at most `ε`.
   rw [norm_eq_integral_norm, ← setIntegral_eq_integral_of_forall_compl_eq_zero (s := C)
@@ -201,46 +201,34 @@ theorem tendsto_mul_smulRight [BorelSpace G] [μ.IsHaarMeasure] {ι : Type*} {l 
     Tendsto (fun p : ι × A => f * smulRight (φ p.1) p.2) (l ×ˢ lA) (𝓝 f) := by
   set g := f.ofConv
   set c : G → ℝ := fun t => (Measure.modularCharacter t : ℝ)
-  have hc : Continuous c := NNReal.continuous_coe.comp continuous_modularCharacter
   -- All the products live in the compact set `C = K * V₀`, with `K` the support of `g`.
   obtain ⟨V₀, hV₀c, hV₀⟩ := exists_compact_mem_nhds (1 : G)
   set C := tsupport g * V₀
   have hC : IsCompact C := g.hasCompactSupport.mul hV₀c
   have hgC (s : G) (hs : s ∉ C) (t : G) (ht : t ∈ V₀) : g (s * t⁻¹) = 0 :=
     image_eq_zero_of_notMem_tsupport fun h => hs ⟨s * t⁻¹, h, t, ht, inv_mul_cancel_right s t⟩
-  have hgC' (s : G) (hs : s ∉ C) : g s = 0 := by
-    simpa using hgC s hs 1 (mem_of_mem_nhds hV₀)
-  rw [Metric.tendsto_nhds]
-  intro ε hε
+  have hgC' (s : G) (hs : s ∉ C) : g s = 0 := by simpa using hgC s hs 1 (mem_of_mem_nhds hV₀)
+  refine Metric.tendsto_nhds.2 fun ε hε => ?_
   set δ := ε / (3 * (μ.real C + 1))
   have hδ : 0 < δ := by positivity
   -- Near the identity, `c t • g (s * t⁻¹)` is uniformly close to `g s`, and `c t < 2`.
   obtain ⟨V, hV, hVδ⟩ := hC.mem_uniformity_of_prod (q := (1 : G)) (s := univ)
-    (f := fun t s => c t • g (s * t⁻¹)) (by fun_prop) (mem_univ _)
-    (Metric.dist_mem_uniformity hδ)
-  rw [nhdsWithin_univ] at hV
+    (f := fun t s => c t • g (s * t⁻¹)) (by fun_prop) (mem_univ _) (Metric.dist_mem_uniformity hδ)
   have hunif (t : G) (ht : t ∈ V ∩ V₀) (s : G) : ‖c t • g (s * t⁻¹) - g s‖ ≤ δ := by
     by_cases hs : s ∈ C
     · -- Membership in the entourage `{p | dist p.1 p.2 < δ}` unfolds to a distance bound.
-      have h : dist (c t • g (s * t⁻¹)) (c 1 • g (s * 1⁻¹)) < δ := hVδ t ht.1 s hs
-      simpa [c, dist_eq_norm] using h.le
+      simpa [c, dist_eq_norm] using (Set.mem_ofPred.1 (hVδ t ht.1 s hs)).le
     · simp [hgC s hs t ht.2, hgC' s hs, hδ.le]
-  have hc2 : ∀ᶠ t in 𝓝 (1 : G), c t < 2 :=
-    (hc.tendsto 1).eventually (eventually_lt_nhds (by norm_num [c]))
+  have hc2 : ∀ᶠ t in 𝓝 (1 : G), c t < 2 := ((NNReal.continuous_coe.comp
+    continuous_modularCharacter).tendsto 1).eventually (eventually_lt_nhds (by norm_num [c]))
   -- Eventually `g x * α x e = α x (b x * e)` is uniformly close to `g x = α x (b x)`, where
   -- `b x = α x⁻¹ (g x)` ranges over a compact set.
   set b : G → A := fun x => α x⁻¹ (g x)
-  have hb : HasCompactSupport b :=
-    g.hasCompactSupport.mono fun x hx h0 => hx (by simp [b, h0])
+  have hb : HasCompactSupport b := g.hasCompactSupport.mono fun x hx h0 => hx (by simp [b, h0])
   have he := Metric.tendstoUniformlyOn_iff.1
     (hlA.tendstoUniformlyOn_mul_left (hb.isCompact_range (by fun_prop))) δ hδ
-  have hge (e : A) (he' : ∀ a ∈ range b, dist a (a * e) < δ) (x : G) :
-      ‖g x * α x e - g x‖ ≤ δ := by
-    have h := (he' (b x) (mem_range_self x)).le
-    rwa [dist_eq_norm, norm_sub_rev, ← StarAlgEquiv.norm_map (α x), map_sub, map_mul,
-      α.apply_inv_apply] at h
-  filter_upwards [tendsto_fst.eventually (hφ.and (hφ1.and
-      (tendsto_smallSets_iff.1 hφs _ (inter_mem (inter_mem hV hV₀) hc2)))),
+  filter_upwards [tendsto_fst.eventually (hφ.and (hφ1.and (tendsto_smallSets_iff.1 hφs _
+      (inter_mem (inter_mem (nhdsWithin_univ (1 : G) ▸ hV) hV₀) hc2)))),
     tendsto_snd.eventually he] with ⟨i, e⟩ ⟨hi0, hi1, hiV⟩ hie
   rw [dist_eq_norm]
   refine lt_of_le_of_lt ?_ (three_mul_mul_lt (m := μ.real C) hε measureReal_nonneg)
@@ -254,16 +242,17 @@ theorem tendsto_mul_smulRight [BorelSpace G] [μ.IsHaarMeasure] {ι : Type*} {l 
     exact ⟨r, subset_tsupport _ hr, t,
       (hiV (subset_tsupport _ fun h0 => ht (by simp [h0]))).1.2, rfl⟩
   · -- `c t • (g x * α x e) - g s = c t • (g x * α x e - g x) + (c t • g x - g s)`, `x = s t⁻¹`.
-    obtain ⟨⟨htV, htV₀⟩, htc⟩ := hiV ht
-    have hct : 0 ≤ c t := NNReal.coe_nonneg _
+    -- With `b x = α x⁻¹ (g x)`, `‖g x * α x e - g x‖ = ‖b x * e - b x‖ ≤ δ`.
+    have hge := (hie (b (s * t⁻¹)) (mem_range_self _)).le
+    rw [id, dist_eq_norm, norm_sub_rev, ← StarAlgEquiv.norm_map (α (s * t⁻¹)), map_sub, map_mul,
+      α.apply_inv_apply] at hge
     have h1 : ‖c t • (g (s * t⁻¹) * α (s * t⁻¹) e - g (s * t⁻¹))‖ ≤ 2 * δ := by
-      rw [norm_smul, Real.norm_of_nonneg hct]
-      exact mul_le_mul htc.le (hge e hie _) (norm_nonneg _) zero_le_two
+      rw [norm_smul, Real.norm_of_nonneg (NNReal.coe_nonneg _)]
+      exact mul_le_mul (hiV ht).2.le hge (norm_nonneg _) zero_le_two
     calc ‖c t • (g (s * t⁻¹) * α (s * t⁻¹) e) - g s‖
         = ‖c t • (g (s * t⁻¹) * α (s * t⁻¹) e - g (s * t⁻¹)) + (c t • g (s * t⁻¹) - g s)‖ := by
           rw [smul_sub, sub_add_sub_cancel]
-      _ ≤ 2 * δ + δ := (norm_add_le _ _).trans (add_le_add h1 (hunif t ⟨htV, htV₀⟩ s))
-      _ = 3 * δ := by ring
+      _ ≤ 3 * δ := (norm_add_le _ _).trans (by linarith [hunif t (hiV ht).1 s])
 
 /-! ### Approximate units -/
 

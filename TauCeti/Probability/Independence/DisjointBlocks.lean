@@ -34,7 +34,9 @@ independence in both σ-algebras.
 * `TauCeti.Probability.indepFun_of_measurable_blockSigma` — two random elements measurable for the
   σ-algebras of disjoint blocks of an independent family are independent;
 * `ProbabilityTheory.iIndepFun.indepFun_prefix` — the finite prefix of an independent sequence
-  is independent of the next coordinate.
+  is independent of the next coordinate;
+* `ProbabilityTheory.iIndepFun.indepFun_fun_sumElim` — if `Sum.elim X X'` is independent, the
+  vectors `(Xᵢ)ᵢ` and `(X'ᵢ)ᵢ` are independent.
 -/
 
 public section
@@ -141,5 +143,26 @@ theorem iIndepFun.indepFun_prefix {Ω : Type*} [MeasurableSpace Ω] {μ : Measur
   exact h.comp
     (by fun_prop : Measurable (fun (z : ∀ i : Set.Iio n, β i) (i : Fin n) ↦ z ⟨i, i.isLt⟩))
     (by fun_prop : Measurable (fun (z : ∀ i : ({n} : Set ℕ), β i) ↦ z ⟨n, by simp⟩))
+
+variable {Ω ι E : Type*} [MeasurableSpace Ω] [MeasurableSpace E] {μ : Measure Ω}
+  {X X' : ι → Ω → E}
+
+/-- If the family `Sum.elim X X'` is independent, the vectors `(Xᵢ)ᵢ` and `(X'ᵢ)ᵢ` are independent.
+The index type may be infinite. -/
+theorem iIndepFun.indepFun_fun_sumElim (hind : iIndepFun (Sum.elim X X') μ)
+    (hX : ∀ i, Measurable (X i)) (hX' : ∀ i, Measurable (X' i)) :
+    IndepFun (fun ω i ↦ X i ω) (fun ω i ↦ X' i ω) μ := by
+  have hZ : ∀ j, Measurable (Sum.elim X X' j) := by
+    rintro (i | i)
+    exacts [hX i, hX' i]
+  have hdisj : Disjoint (Set.range (Sum.inl : ι → ι ⊕ ι)) (Set.range Sum.inr) := by
+    rw [Set.disjoint_left]
+    rintro _ ⟨i, rfl⟩ ⟨j, hj⟩
+    cases hj
+  have h := hind.indepFun_set _ _ hdisj hZ
+  exact h.comp
+    (φ := fun z i ↦ z ⟨Sum.inl i, Set.mem_range_self i⟩)
+    (ψ := fun z i ↦ z ⟨Sum.inr i, Set.mem_range_self i⟩)
+    (by fun_prop) (by fun_prop)
 
 end ProbabilityTheory
