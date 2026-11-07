@@ -107,12 +107,18 @@ private theorem projective_of_injective_transpose [FiniteDimensional k A] [Small
     (e : Q ≃ₗ[k] Module.Dual k N)
     (he : ∀ (a : A) (q : Q) (x : N), e (a • q) x = e q (MulOpposite.op a • x))
     {n : ℕ} (b : Module.Basis (Fin n) k Q) (j : N →ₗ[Aᵐᵒᵖ] (Fin n → Module.Dual k A))
-    (hj_apply : ∀ (x : N) (y : A) (i : Fin n), j x i y = e (b i) (MulOpposite.op y • x))
-    (hj : Function.Injective j) :
+    (hj_apply : ∀ (x : N) (y : A) (i : Fin n), j x i y = e (b i) (MulOpposite.op y • x)) :
     Module.Projective A Q := by
   -- The free presentation `p : Aⁿ → Q` given by a `k`-basis of `Q`.
   let p : (Fin n → A) →ₗ[A] Q := Fintype.linearCombination A b
   have hp (a : Fin n → A) : p a = ∑ i, a i • b i := Fintype.linearCombination_apply A b a
+  have hj : Function.Injective j := by
+    refine (injective_iff_map_eq_zero j).2 fun x hx ↦ ?_
+    have h (i : Fin n) : e (b i) x = 0 := by
+      simpa [hj_apply] using congr($hx i 1)
+    refine (Module.forall_dual_apply_eq_zero_iff k x).1 fun φ ↦ ?_
+    rw [← (b.map e).sum_repr φ]
+    simp [LinearMap.sum_apply, h]
   -- Injectivity of the right module splits the transposed free presentation.
   obtain ⟨r, hr⟩ := Module.Injective.extension_property Aᵐᵒᵖ N _ _ j hj LinearMap.id
   have hrj (x : N) : r (j x) = x := LinearMap.congr_fun hr x
@@ -180,14 +186,7 @@ theorem moduleProjective_of_dual_injective [FiniteDimensional k A] [FiniteDimens
       map_add' := fun _ _ ↦ by ext; simp
       map_smul' := fun _ _ ↦ by ext; simp [hsmul, mul_smul] }
   have hj_apply (x : N) (y : A) (i : Fin n) : j x i y = e (b i) (MulOpposite.op y • x) := rfl
-  have hj : Function.Injective j := by
-    refine (injective_iff_map_eq_zero j).2 fun x hx ↦ ?_
-    have h (i : Fin n) : e (b i) x = 0 := by
-      simpa [hj_apply] using congr($hx i 1)
-    refine (Module.forall_dual_apply_eq_zero_iff k x).1 fun φ ↦ ?_
-    rw [← (b.map e).sum_repr φ]
-    simp [LinearMap.sum_apply, h]
-  exact projective_of_injective_transpose hsmul e he b j hj_apply hj
+  exact projective_of_injective_transpose hsmul e he b j hj_apply
 
 /-- Over a finite-dimensional algebra, a finite-dimensional right module is projective
 exactly when its left scalar dual is injective. The dual action is specified by the pairing. -/
