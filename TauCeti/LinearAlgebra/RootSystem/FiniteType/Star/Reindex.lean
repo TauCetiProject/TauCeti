@@ -201,7 +201,7 @@ private theorem apply_eq_chainEntry_of_component_iso {B : Type*}
 /-- Among the vertices of a path component `C` of the diagram with the centre `c` deleted, the
 neighbours of `c` are the vertices sent to an end `0` of the path, when the unique neighbour of `c`
 in `C` is `q` and `f` sends `q` to `0`. -/
-private theorem adj_centre_iff_of_component_iso {B : Type*} {G : SimpleGraph B} {c : B}
+private theorem adj_center_iff_of_component_iso {B : Type*} {G : SimpleGraph B} {c : B}
     {C : (G.induce ({c}ᶜ : Set B)).ConnectedComponent}
     (f : C.toSimpleGraph ≃g pathGraph (Nat.card ↑C.supp)) (q : ↑C.supp) (hfq : (f q : ℕ) = 0)
     (hcq : G.Adj c q.1.1) (hnb : ∀ y : ↑C.supp, G.Adj c y.1.1 → y = q)
@@ -240,7 +240,8 @@ variable {B : Type*} [Fintype B] {A : Matrix B B ℤ}
 omit [Fintype B] in
 /-- A simply-laced matrix with diagonal entries `2` is the star Cartan matrix on the reindexing of
 its diagram by three path components of the diagram with the centre `c` deleted, provided the
-neighbours of `c` are the path ends (`hcenter`) and distinct components are not adjacent. -/
+neighbours of `c` in each component are exactly the vertices sent to index `0` by `f`
+(`hcenter`). -/
 private theorem apply_eq_starCartanMatrix_of_components (hdiag : ∀ i, A i i = 2)
     (hadj : ∀ i j, (diagramGraph A).Adj i j ↔ i ≠ j ∧ A i j ≠ 0) (hsl : A.IsSimplyLaced) (c : B)
     (eC : Fin 3 ≃ ((diagramGraph A).induce ({c}ᶜ : Set B)).ConnectedComponent)
@@ -341,7 +342,7 @@ theorem exists_equiv_forall_eq_starCartanMatrix_of_isTree_of_isSimplyLaced [Deci
     exact Subtype.ext (Subtype.ext (congrArg (fun z : ↑(G.neighborSet c) ↦ z.1) hzn))
   have hcenter (i : Fin 3) (t : Fin (ℓ i)) :
       G.Adj c ((f i).symm t).1.1 ↔ (t : ℕ) = 0 :=
-    adj_centre_iff_of_component_iso (f i) (q i) (hfq i) (hcn i) (hnb i) t
+    adj_center_iff_of_component_iso (f i) (q i) (hfq i) (hcn i) (hnb i) t
   refine ⟨ℓ, (starVertexEquiv c G eC f).symm, ?_,
     (starVertexEquiv c G eC f).symm_apply_eq.mpr (starVertexEquiv_none c G eC f),
     apply_eq_starCartanMatrix_of_components hdiag hGadj hsl c eC f hcenter⟩
