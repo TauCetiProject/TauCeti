@@ -132,6 +132,9 @@ theorem algSpecHomEquivAlgHom_eq_appTop
         (p.left.appTop ((Scheme.ΓSpecIso (CommRingCat.of A)).inv a)) := by
   obtain ⟨φ, rfl⟩ := (algSpecHomEquivAlgHom A B).symm.surjective p
   rw [Equiv.apply_symm_apply, algSpecHomEquivAlgHom_symm_apply, algSpec_map_left]
+  -- `algSpec_map_left` leaves the ring map as `Under.Hom.right` through
+  -- `commAlgCatEquivUnder`. No public computation lemma reduces that projection, so
+  -- unfold the equivalence here to expose the underlying ring map of `φ` for naturality.
   simp only [commAlgCatEquivUnder, Quiver.Hom.unop_op, CommAlgCat.hom_ofHom,
     AlgHom.toUnder, Under.homMk_right]
   have h := ConcreteCategory.congr_hom

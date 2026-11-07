@@ -257,6 +257,9 @@ theorem specSymmetricAlgebraPointsMap_add_of_smul
 theorem specSymmetricAlgebraOver_forget (M : ModuleCat.{u} R) :
     (MorphismProperty.Over.forget _ _ (Spec R)).obj (specSymmetricAlgebraOver M) =
       (algSpec R).obj (op (CommAlgCat.of R (SymmetricAlgebra R M))) :=
+  -- Forgetting the affine-morphism property leaves `Over.mk` of `Spec.map` of the
+  -- algebra map, exactly the defining object of `algSpec`. Its public object lemma
+  -- computes only the structure morphism, so this bundled identification is definitional.
   (rfl)
 
 /-- The affine-spectrum isomorphism induced by a linear equivalence agrees with the
