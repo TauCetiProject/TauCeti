@@ -70,9 +70,11 @@ theorem range_schwarzChristoffelCompactifiedBoundary (a e : Fin (n + 1) → ℝ)
   rw [schwarzChristoffelPolygon_boundary]
   exact (range_subset_union_segments a _ _ _ _
     (schwarzChristoffelCompactifiedBoundary_infty a e z₀)
-    (schwarzChristoffelCompactifiedBoundary_coe a e z₀) hb hr hl).antisymm
+    (schwarzChristoffelCompactifiedBoundary_coe a e z₀) (fun i ↦ (hb i).subset)
+    (hr.subset.trans sdiff_subset) (hl.subset.trans sdiff_subset)).antisymm
     (union_segments_subset_range a _ _ _ _
       (schwarzChristoffelCompactifiedBoundary_infty a e z₀)
-      (schwarzChristoffelCompactifiedBoundary_coe a e z₀) hb hr hl)
+      (schwarzChristoffelCompactifiedBoundary_coe a e z₀) (fun i ↦ (hb i).superset)
+      hr.superset hl.superset)
 
 end TauCeti

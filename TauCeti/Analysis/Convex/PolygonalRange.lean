@@ -17,7 +17,8 @@ A map from the projective line `OnePoint ℝ` into a real vector space, which ag
 on the reals, sends `∞` to a vertex `V`, and whose restrictions to the intervals cut out by finitely
 many ordered points trace consecutive sides of a polygonal chain, has range exactly the union of
 the sides. The bounded intervals map onto the sides between consecutive vertices, and the two
-unbounded intervals onto the two sides at `V` with `V` omitted.
+unbounded intervals onto the two sides at `V` with `V` omitted. Each inclusion needs only one
+direction of this description.
 
 ## Main results
 
@@ -33,16 +34,16 @@ open scoped OnePoint
 namespace TauCeti
 
 /-- Let `g` be a map from the projective line to a real vector space `E` with `g ∞ = V` that
-agrees with `B` on the reals.  If `B` carries each interval between consecutive `a i` onto the side
-between consecutive vertices `P`, and the two unbounded intervals onto the two sides at `V` with `V`
-omitted, then the range of `g` lies in the union of the sides. -/
+agrees with `B` on the reals.  If `B` carries each interval between consecutive `a i` into the side
+between consecutive vertices `P`, and the two unbounded intervals into the two sides at `V`, then
+the range of `g` lies in the union of the sides. -/
 theorem range_subset_union_segments {E : Type*} [AddCommGroup E] [Module ℝ E] {n : ℕ}
     (a : Fin (n + 1) → ℝ) (g : OnePoint ℝ → E)
     (B : ℝ → E) (P : Fin (n + 1) → E) (V : E) (hinfty : g ∞ = V) (hcoe : ∀ x : ℝ, g x = B x)
     (hbounded : ∀ i : Fin n,
-      B '' Icc (a i.castSucc) (a i.succ) = segment ℝ (P i.castSucc) (P i.succ))
-    (hright : B '' Ici (a (Fin.last n)) = segment ℝ (P (Fin.last n)) V \ {V})
-    (hleft : B '' Iic (a 0) = segment ℝ (P 0) V \ {V}) :
+      B '' Icc (a i.castSucc) (a i.succ) ⊆ segment ℝ (P i.castSucc) (P i.succ))
+    (hright : B '' Ici (a (Fin.last n)) ⊆ segment ℝ (P (Fin.last n)) V)
+    (hleft : B '' Iic (a 0) ⊆ segment ℝ (P 0) V) :
     Set.range g ⊆ (⋃ i : Fin n, segment ℝ (P i.castSucc) (P i.succ)) ∪
       segment ℝ (P (Fin.last n)) V ∪ segment ℝ V (P 0) := by
   rintro _ ⟨x, rfl⟩
@@ -54,41 +55,40 @@ theorem range_subset_union_segments {E : Type*} [AddCommGroup E] [Module ℝ E] 
       rw [hcoe]
       by_cases hxleft : x ≤ a 0
       · have himage : B x ∈ B '' Iic (a 0) := ⟨x, hxleft, rfl⟩
-        rw [hleft] at himage
-        exact Or.inr (segment_symm ℝ (P 0) V ▸ himage.1)
+        exact Or.inr (segment_symm ℝ (P 0) V ▸ hleft himage)
       · by_cases hxright : a (Fin.last n) ≤ x
         · have himage : B x ∈ B '' Ici (a (Fin.last n)) := ⟨x, hxright, rfl⟩
-          rw [hright] at himage
-          exact Or.inl (Or.inr himage.1)
+          exact Or.inl (Or.inr (hright himage))
         · have hn : n ≠ 0 := by
             rintro rfl
             exact hxright (lt_of_not_ge hxleft).le
           obtain ⟨i, hi⟩ := exists_mem_Icc_castSucc_succ a hn
             ⟨(lt_of_not_ge hxleft).le, (lt_of_not_ge hxright).le⟩
           have himage : B x ∈ B '' Icc (a i.castSucc) (a i.succ) := ⟨x, hi, rfl⟩
-          rw [hbounded i] at himage
-          exact Or.inl (Or.inl (Set.mem_iUnion.mpr ⟨i, himage⟩))
+          exact Or.inl (Or.inl (Set.mem_iUnion.mpr ⟨i, hbounded i himage⟩))
 
-/-- Under the hypotheses of `range_subset_union_segments`, the union of the sides lies in the
-range of `g`, the vertex at infinity being `g ∞`. -/
+/-- Let `g` and `B` be as in `range_subset_union_segments`. If each side between consecutive
+vertices lies in the image under `B` of the corresponding interval, and the two sides at `V`, with
+`V` omitted, lie in the images of the two unbounded intervals, then the union of the sides lies in
+the range of `g`, the vertex at infinity being `g ∞`. -/
 theorem union_segments_subset_range {E : Type*} [AddCommGroup E] [Module ℝ E] {n : ℕ}
     (a : Fin (n + 1) → ℝ) (g : OnePoint ℝ → E)
     (B : ℝ → E) (P : Fin (n + 1) → E) (V : E) (hinfty : g ∞ = V) (hcoe : ∀ x : ℝ, g x = B x)
     (hbounded : ∀ i : Fin n,
-      B '' Icc (a i.castSucc) (a i.succ) = segment ℝ (P i.castSucc) (P i.succ))
-    (hright : B '' Ici (a (Fin.last n)) = segment ℝ (P (Fin.last n)) V \ {V})
-    (hleft : B '' Iic (a 0) = segment ℝ (P 0) V \ {V}) :
+      segment ℝ (P i.castSucc) (P i.succ) ⊆ B '' Icc (a i.castSucc) (a i.succ))
+    (hright : segment ℝ (P (Fin.last n)) V \ {V} ⊆ B '' Ici (a (Fin.last n)))
+    (hleft : segment ℝ (P 0) V \ {V} ⊆ B '' Iic (a 0)) :
     (⋃ i : Fin n, segment ℝ (P i.castSucc) (P i.succ)) ∪
       segment ℝ (P (Fin.last n)) V ∪ segment ℝ V (P 0) ⊆ Set.range g := by
-  have hside {s : Set ℝ} {S : Set E} (hs : B '' s = S \ {V}) {z : E} (hz : z ∈ S) :
+  have hside {s : Set ℝ} {S : Set E} (hs : S \ {V} ⊆ B '' s) {z : E} (hz : z ∈ S) :
       z ∈ Set.range g := by
     by_cases hzeq : z = V
     · exact ⟨∞, hzeq ▸ hinfty⟩
-    · obtain ⟨x, _, rfl⟩ : z ∈ B '' s := hs ▸ ⟨hz, hzeq⟩
+    · obtain ⟨x, _, rfl⟩ : z ∈ B '' s := hs ⟨hz, hzeq⟩
       exact ⟨x, hcoe x⟩
   rintro z ((hz | hzright) | hzleft)
   · obtain ⟨i, hi⟩ := Set.mem_iUnion.mp hz
-    obtain ⟨x, _, rfl⟩ : z ∈ B '' Icc (a i.castSucc) (a i.succ) := (hbounded i).symm ▸ hi
+    obtain ⟨x, _, rfl⟩ : z ∈ B '' Icc (a i.castSucc) (a i.succ) := hbounded i hi
     exact ⟨x, hcoe x⟩
   · exact hside hright hzright
   · exact hside hleft (segment_symm ℝ V (P 0) ▸ hzleft)
