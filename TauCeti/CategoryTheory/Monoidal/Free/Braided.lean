@@ -32,7 +32,7 @@ monoidal, and both the lift and its uniqueness are deduced from those of
 * `TauCeti.TensorSignature.withCrossings S`: the signature `S` with crossing coupons adjoined.
 * `TauCeti.TensorSignature.FreeBraided S`: the free braided monoidal category on `S`, with
   `FreeBraided.of` and `FreeBraided.coupon` for the generators.
-* `FreeBraided.homMk`, `FreeBraided.homMk_eq_homMk_iff` and `FreeBraided.Hom.inductionOn`: every
+* `FreeBraided.homMk`, `FreeBraided.homMk_eq_homMk_iff` and `FreeBraided.hom_induction`: every
   morphism is represented by a morphism of the free monoidal category on `S.withCrossings`, and
   two representatives give the same morphism exactly when they are related by the braiding axioms.
 * `FreeBraided.quotientFunctor`: the strict monoidal quotient functor
@@ -173,7 +173,7 @@ theorem homMk_eq_homMk_iff {X Y : S.FreeBraided} {f g : X.as ⟶ Y.as} :
 /-- Induction principle for morphisms of the free braided monoidal category: every morphism is
 represented by a morphism of the free monoidal category on `S.withCrossings`. -/
 @[elab_as_elim]
-theorem Hom.inductionOn {X Y : S.FreeBraided} {motive : (X ⟶ Y) → Prop} (t : X ⟶ Y)
+theorem hom_induction {X Y : S.FreeBraided} {motive : (X ⟶ Y) → Prop} (t : X ⟶ Y)
     (h : ∀ f, motive (homMk f)) : motive t :=
   Quotient.inductionOn t h
 
@@ -457,20 +457,20 @@ theorem lift_map_coupon (g : S.Coupon) : (lift fo fc).map (coupon g) = fc g := b
 @[simp]
 theorem lift_map_whiskerLeft (X : S.FreeBraided) {Y₁ Y₂ : S.FreeBraided} (f : Y₁ ⟶ Y₂) :
     (lift fo fc).map (X ◁ f) = (lift fo fc).obj X ◁ (lift fo fc).map f := by
-  induction f using Hom.inductionOn with | h f
+  induction f using hom_induction with | h f
   exact FreeMonoidal.lift_map_whiskerLeft _ _ X.as f
 
 @[simp]
 theorem lift_map_whiskerRight {X₁ X₂ : S.FreeBraided} (f : X₁ ⟶ X₂) (Y : S.FreeBraided) :
     (lift fo fc).map (f ▷ Y) = (lift fo fc).map f ▷ (lift fo fc).obj Y := by
-  induction f using Hom.inductionOn with | h f
+  induction f using hom_induction with | h f
   exact FreeMonoidal.lift_map_whiskerRight _ _ f Y.as
 
 @[simp]
 theorem lift_map_tensorHom {X₁ Y₁ X₂ Y₂ : S.FreeBraided} (f : X₁ ⟶ Y₁) (g : X₂ ⟶ Y₂) :
     (lift fo fc).map (f ⊗ₘ g) = (lift fo fc).map f ⊗ₘ (lift fo fc).map g := by
-  induction f using Hom.inductionOn with | h f
-  induction g using Hom.inductionOn with | h g
+  induction f using hom_induction with | h f
+  induction g using hom_induction with | h g
   exact FreeMonoidal.lift_map_tensorHom _ _ f g
 
 @[simp]
@@ -636,7 +636,7 @@ theorem map_comp_wordIso_hom
       (wordIso F G e ⟨⟨S.src g⟩⟩).hom ≫ G.map (coupon g))
     {X Y : S.FreeBraided} (f : X ⟶ Y) :
     F.map f ≫ (wordIso F G e Y).hom = (wordIso F G e X).hom ≫ G.map f := by
-  induction f using Hom.inductionOn with | h f
+  induction f using hom_induction with | h f
   refine FreeMonoidal.map_comp_wordIso_hom (F := quotientFunctor ⋙ F) (G := quotientFunctor ⋙ G)
     (fun g ↦ ?_) f
   cases g with
