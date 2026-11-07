@@ -39,7 +39,7 @@ boundary point it flows out of.
 ## Main results
 
 * `TauCeti.IsLiouvilleDomain.isTransverseAlong`: the Liouville field is transverse along every
-  smooth map into the boundary.
+  differentiable map into the boundary.
 * `TauCeti.IsLiouvilleDomain.isLocalDiffeomorph_flowOf_comp`: the Liouville flow-out of an
   immersed boundary is a local diffeomorphism.
 * `TauCeti.IsLiouvilleDomain.isOpenEmbedding_flowOf_comp`: the flow-out of an injectively
@@ -109,12 +109,12 @@ variable [TopologicalSpace S] [ChartedSpace H' S]
 namespace IsLiouvilleDomain
 
 omit [FiniteDimensional ℝ E] [T2Space M] in
-/-- **The Liouville field is transverse to the boundary.** If `ι : S → M` is a smooth map into
-the boundary of a Liouville domain, then the Liouville field is transverse along `ι`: at every
-point of `S` it does not lie in the image of the differential of `ι`, since it crosses the
+/-- **The Liouville field is transverse to the boundary.** If `ι : S → M` is a differentiable map
+into the boundary of a Liouville domain, then the Liouville field is transverse along `ι`: at
+every point of `S` it does not lie in the image of the differential of `ι`, since it crosses the
 boundary strictly outwards. -/
 theorem isTransverseAlong (h : IsLiouvilleDomain ω α W) (hZ : RoughForm.interior Z ω.1 = α.1)
-    (hι : ContMDiff J I (⊤ : ℕ∞) ι) (hιW : ∀ s, ι s ∈ frontier W) :
+    (hι : MDifferentiable J I ι) (hιW : ∀ s, ι s ∈ frontier W) :
     IsTransverseAlong J Z ι := by
   obtain ⟨f, c, hf, rfl, hfc⟩ := h.exists_sublevel_of_interior_eq hZ
   rw [frontier_setOf_le_eq_of_mvfderiv_pos hf fun y hy ↦ (hfc y hy).2] at hιW
@@ -125,7 +125,7 @@ theorem isTransverseAlong (h : IsLiouvilleDomain ω α W) (hZ : RoughForm.interi
   have hfι : f ∘ ι = fun _ ↦ c := funext hιW
   have h0 : mvfderiv I f (ι s) (Z (ι s)) = 0 := by
     rw [mvfderiv_apply_eq_mfderiv_apply, ← hw, ← mfderiv_comp_apply (I' := I) s
-      (((hfc _ (hιW s)).1).mdifferentiableAt (by simp)) (hι.mdifferentiableAt (by simp)) w,
+      (((hfc _ (hιW s)).1).mdifferentiableAt (by simp)) (hι s) w,
       hfι, mfderiv_const]
     -- The zero map applied to `w`, read in the tangent space of `ℝ` at `c`.
     rfl
@@ -145,7 +145,7 @@ theorem isLocalDiffeomorph_flowOf_comp (h : IsLiouvilleDomain ω α W)
   have hZs := h.contMDiff_of_interior_eq hZ
   rw [flowOf_eq_globalFlow (hZs.of_le (by simp)) hc]
   exact isLocalDiffeomorph_globalFlow_comp hc hZs hι himm
-    (h.isTransverseAlong hZ hι hιW) hdim
+    (h.isTransverseAlong hZ (hι.mdifferentiable (by simp)) hιW) hdim
 
 /-- **The symplectization of the boundary embeds along the Liouville flow.** Let `W` be a
 Liouville domain whose Liouville field is complete, with flow `ψ`, and let `ι : S → M` be a smooth
