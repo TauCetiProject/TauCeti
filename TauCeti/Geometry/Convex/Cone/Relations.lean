@@ -130,4 +130,27 @@ theorem exists_nonneg_relation_of_mem_inf_hull_range
     rw [hcσ', hcτ', add_neg_cancel]
   · simpa only [Sum.elim_inl] using hcσ'.symm
 
+/-- A natural-number relation between the generators of two cones, read on the generators of the
+first cone, gives a vector of the intersection of the two cones when it is also read on the
+generators of the second cone. -/
+theorem hull_image_image_le_inf
+    {R N V : Type*} [Semiring R] [PartialOrder R] [IsOrderedRing R]
+    [AddCommMonoid N] [AddCommMonoid V] [Module R V] [DecidableEq N] (i : N →+ V)
+    (s t : Finset N) (K : Finset (s ⊕ t → ℕ))
+    (hrel : ∀ k ∈ K, ∑ a : s, k (.inl a) • (a : N) = ∑ b : t, k (.inr b) • (b : N)) :
+    hull R (i '' ((K.image fun k ↦ ∑ a : s, k (.inl a) • (a : N) : Finset N) : Set N)) ≤
+      hull R (i '' (s : Set N)) ⊓ hull R (i '' (t : Set N)) := by
+  refine Submodule.span_le.2 ?_
+  rintro _ ⟨_, hu, rfl⟩
+  obtain ⟨k, hk, rfl⟩ := Finset.mem_image.1 hu
+  refine ⟨?_, ?_⟩
+  · rw [SetLike.mem_coe, map_sum]
+    exact Submodule.sum_mem _ fun a _ ↦ by
+      rw [map_nsmul]
+      exact Submodule.smul_of_tower_mem _ _ (subset_hull ⟨a, a.2, rfl⟩)
+  · rw [SetLike.mem_coe, hrel k hk, map_sum]
+    exact Submodule.sum_mem _ fun b _ ↦ by
+      rw [map_nsmul]
+      exact Submodule.smul_of_tower_mem _ _ (subset_hull ⟨b, b.2, rfl⟩)
+
 end PointedCone

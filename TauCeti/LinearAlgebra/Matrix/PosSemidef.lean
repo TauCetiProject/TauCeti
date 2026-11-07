@@ -19,6 +19,7 @@ conversion of quadratic forms to nonnegative reals.
 It also gives block matrix-vector constraints over commutative star-ordered rings with a
 proper star: a null vector of a diagonal block is a null vector of the block above or below it.
 In particular, a zero lower-right diagonal block forces both off-diagonal blocks to vanish.
+Over the same rings, `0 ≤ A ≤ B` forces every null vector of `B` to be a null vector of `A`.
 
 The results apply in particular to positive-definite kernels, represented directly as matrices,
 but do not depend on Tau Ceti's positive-definite-function theory.
@@ -39,6 +40,8 @@ but do not depend on Tau Ceti's positive-definite-function theory.
 * `Matrix.PosSemidef.toBlocks₁₂_eq_zero_of_toBlocks₂₂_eq_zero` and
   `Matrix.PosSemidef.toBlocks₂₁_eq_zero_of_toBlocks₂₂_eq_zero`: zero off-diagonal blocks
   when the lower-right diagonal block is zero.
+* `Matrix.PosSemidef.mulVec_eq_zero_of_posSemidef_sub`: null vectors of `B` are null vectors of
+  `A` when `A` and `B - A` are positive semidefinite.
 
 ## References
 
@@ -302,5 +305,13 @@ theorem toBlocks₂₁_mulVec_eq_zero [Fintype ι] [Finite κ] (hS : S.PosSemide
   rw [← fromBlocks_toBlocks S, fromBlocks_submatrix_sum_swap_sum_swap,
     toBlocks_fromBlocks₂₂, toBlocks_fromBlocks₁₂] at h
   exact h hx
+
+/-- If `A` and `B - A` are positive semidefinite, that is `0 ≤ A ≤ B` in the Loewner order, then
+every null vector of `B` is a null vector of `A`. -/
+theorem mulVec_eq_zero_of_posSemidef_sub [Fintype ι] {A B : Matrix ι ι R} (hA : A.PosSemidef)
+    (hBA : (B - A).PosSemidef) {x : ι → R} (hx : B *ᵥ x = 0) : A *ᵥ x = 0 := by
+  have h := hBA.dotProduct_mulVec_nonneg x
+  rw [sub_mulVec, dotProduct_sub, hx, dotProduct_zero, zero_sub, neg_nonneg] at h
+  exact hA.dotProduct_mulVec_zero_iff.1 (le_antisymm h (hA.dotProduct_mulVec_nonneg x))
 
 end Matrix.PosSemidef
