@@ -123,11 +123,11 @@ private theorem exists_injective_monoidHom_apply_div_self (hs0 : s ≠ 0)
         have h : σ (τ s) = σ (τ s / s) * σ s := by rw [← map_mul, div_mul_cancel₀ _ hs0]
         simp only [AlgEquiv.mul_apply, Units.val_mk0, Units.val_mul, h, hfix]
         field_simp }
-  refine ⟨ψ, fun σ τ h ↦ ?_, fun σ ↦ rfl⟩
+  have hψ (σ : L ≃ₐ[K] L) : (ψ σ : L) = σ s / s := rfl
+  refine ⟨ψ, fun σ τ h ↦ ?_, hψ⟩
   have h' : σ s = τ s := by
     have := congrArg Units.val h
-    rwa [show (ψ σ : L) = σ s / s from rfl, show (ψ τ : L) = τ s / s from rfl,
-      div_left_inj' hs0] at this
+    rwa [hψ, hψ, div_left_inj' hs0] at this
   have htop : Algebra.adjoin K {s} = ⊤ := by
     rw [← IntermediateField.adjoin_simple_toSubalgebra_of_isAlgebraic
       (IsIntegral.of_pow (NeZero.pos n) (hs ▸ isIntegral_algebraMap)).isAlgebraic, hgen,
