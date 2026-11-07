@@ -71,12 +71,16 @@ namespace TauCeti
 
 namespace GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (s : Fin n) (R : Type*) [CommRing R]
+variable {n : ℕ} (G : GridDiagram n) (s : Fin n) (R : Type*)
 
 local notation "A" => MvPolynomial (Fin n) R
 local notation "S" => MvPolynomial (Fin (n + 1)) R
 
 /-! ### The chain map as a semilinear map -/
+
+section ChainMap
+
+variable [CommSemiring R]
 
 /-- **The chain map of an `X`-stabilization, as a semilinear map.** On a chain `c` of `GC⁻(G')`
 it is `H_I^N` of the off-center part of `c`, followed by renaming every coefficient along
@@ -93,7 +97,9 @@ theorem stabilizeXChainMap_apply (c : GridChainMinus R (n + 1)) :
       (G.stabilizeXOffCenterToCenter s R (G.stabilizeXOffCenterProjection s R c)) :=
   (rfl)
 
-variable [CharP R 2]
+end ChainMap
+
+variable [CommRing R] [CharP R 2]
 
 /-- `GC⁻(G')` with scalars restricted to `A`, with its object and differential spelled out. -/
 private noncomputable abbrev stabilizeXSourceComplex :
