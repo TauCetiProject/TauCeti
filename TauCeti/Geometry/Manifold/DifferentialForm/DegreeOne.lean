@@ -28,6 +28,8 @@ derivative applies.
 
 ## Main declarations
 
+* `TauCeti.mdifferentiableAt_ofSubsingleton_iff`: a family of linear maps is differentiable
+  at a point as a section of the linear-map bundle exactly when its degree-one form is.
 * `TauCeti.contMDiffAt_ofSubsingleton_iff`, `TauCeti.isSmoothBundleForm_ofSubsingleton_iff`: a
   family of linear maps has `C^n` graph in the linear-map bundle, at a point or everywhere, exactly
   when the corresponding degree-one form does.

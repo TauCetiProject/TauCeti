@@ -24,15 +24,13 @@ It gives the scalar torsion comparison in Cartan's first structure equation. In 
 for a torsion-free connection the exterior derivative is the antisymmetric covariant derivative;
 a parallel one-form is closed. No metric or regularity of the connection is required.
 
-The form and the induced connection use the existing alternating-map and Hom bundles.
-There is no new covector carrier or exterior derivative.
+The one-form is a section of the alternating-map bundle; its induced connection is
+`cov.hom (trivial F)`.
 
 ## References
 
 * J. M. Lee, *Introduction to Riemannian Manifolds*, second edition, Chapters 4 and 7
   (induced connections and torsion).
-* The calculation combines `TauCeti.mextDeriv_apply_one` with
-  `CovariantDerivative.hom_apply` and Mathlib's torsion evaluation formula.
 -/
 
 public noncomputable section
