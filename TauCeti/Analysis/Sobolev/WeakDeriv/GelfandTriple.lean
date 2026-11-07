@@ -206,8 +206,9 @@ theorem HasWeakLineDerivOn.exists_continuousOn_ae_eq_of_gelfandDual [CompleteSpa
     exact ht.2 (subset_toMeasurable _ _ fun h' ↦ hc (h' ht.1))
   have hS₀sub : S₀ ⊆ Ioo a b := sdiff_subset
   obtain ⟨hdense, hL4⟩ := dense_and_dist_lt_of_oscillation (f := fun t ↦ ι (u t)) hab hS₀sub
-    (hu'2.add (hu2.const_mul 4)) fun α β haα hαβ hβb ↦
-    exists_mem_inter_norm_sub_sq_le hp hu'i hu2 hu'2 ht₀ hN hS₀ haα hαβ hβb
+    (hu'2.add (hu2.const_mul 4)) fun α β haα hαβ hβb ↦ by
+    simp only [dist_eq_norm]
+    exact exists_mem_inter_norm_sub_sq_le hp hu'i hu2 hu'2 ht₀ hN hS₀ haα hαβ hβb
   -- Hence `ι ∘ u` has a limit along `S₀` at every point of `[a, b]`; extend it from `S₀`.
   have hlim (x : ℝ) (hx : x ∈ Icc a b) : ∃ y, Tendsto (fun t ↦ ι (u t)) (𝓝[S₀] x) (𝓝 y) := by
     have := mem_closure_iff_nhdsWithin_neBot.1 (hdense hx)

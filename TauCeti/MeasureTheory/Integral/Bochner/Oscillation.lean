@@ -12,15 +12,15 @@ public import Mathlib.Topology.MetricSpace.Pseudo.Defs
 /-!
 # Oscillation control from small integrals
 
-Let `f : ℝ → E` be a function into a normed space, `S` a subset of an interval `(a, b)`, and `G`
-an integrable function on `(a, b)`. Suppose that on every subinterval `(α, β)` some point `s'` of
-`S ∩ (α, β)` has `‖f s - f s'‖² ≤ ∫_{(α, β)} G` for all `s ∈ S ∩ (α, β)`. Since the integral of
-`G` over a short interval is small, `S` is dense in `[a, b]` and the oscillation of `f` on `S`
-near every point of `[a, b]` tends to zero. Consequently, when `E` is complete, `f` has a limit
-along `S` at each point of `[a, b]`, and extends continuously from `S` to `[a, b]`. The file
-proves the density and the vanishing oscillation, which hold in any normed space. This is the step
-that produces a continuous representative of a function known only almost everywhere, for example
-for the time-continuity of functions in a Gelfand triple.
+Let `f : ℝ → E` be a function into a pseudometric space, `S` a subset of an interval `(a, b)`,
+and `G` an integrable function on `(a, b)`. Suppose that on every subinterval `(α, β)` some point
+`s'` of `S ∩ (α, β)` has `dist (f s) (f s') ^ 2 ≤ ∫_{(α, β)} G` for all `s ∈ S ∩ (α, β)`. Since
+the integral of `G` over a short interval is small, `S` is dense in `[a, b]` and the oscillation
+of `f` on `S` near every point of `[a, b]` tends to zero. Consequently, when `E` is complete, `f`
+has a limit along `S` at each point of `[a, b]`, and extends continuously from `S` to `[a, b]`.
+The file proves the density and the vanishing oscillation, which hold in any pseudometric space.
+This is the step that produces a continuous representative of a function known only almost
+everywhere, for example for the time-continuity of functions in a Gelfand triple.
 
 ## Main results
 
@@ -61,13 +61,13 @@ theorem exists_pos_setIntegral_Ioo_lt {a b : ℝ} {g : ℝ → ℝ} (hg : Integr
 
 /-- **Oscillation control along a set.** Let `a < b`, let `S ⊆ (a, b)`, and suppose that on every
 subinterval `(α, β)` with `a ≤ α < β ≤ b` some `s' ∈ S ∩ (α, β)` satisfies
-`‖f s - f s'‖² ≤ ∫_{(α, β)} G` for all `s ∈ S ∩ (α, β)`, where `G` is integrable on `(a, b)`. Then
-`S` is dense in `[a, b]`, and for every `x ∈ [a, b]` the oscillation of `f` on `S` near `x` tends
-to zero. -/
-theorem dense_and_dist_lt_of_oscillation {E : Type*} [NormedAddCommGroup E] {a b : ℝ} {f : ℝ → E}
+`dist (f s) (f s') ^ 2 ≤ ∫_{(α, β)} G` for all `s ∈ S ∩ (α, β)`, where `G` is integrable on
+`(a, b)`. Then `S` is dense in `[a, b]`, and for every `x ∈ [a, b]` the oscillation of `f` on `S`
+near `x` tends to zero. -/
+theorem dense_and_dist_lt_of_oscillation {E : Type*} [PseudoMetricSpace E] {a b : ℝ} {f : ℝ → E}
     {S : Set ℝ} {G : ℝ → ℝ} (hab : a < b) (hS : S ⊆ Ioo a b) (hG : IntegrableOn G (Ioo a b))
     (hosc : ∀ α β : ℝ, a ≤ α → α < β → β ≤ b → ∃ s' ∈ S ∩ Ioo α β,
-      ∀ s ∈ S ∩ Ioo α β, ‖f s - f s'‖ ^ 2 ≤ ∫ r in Ioo α β, G r) :
+      ∀ s ∈ S ∩ Ioo α β, dist (f s) (f s') ^ 2 ≤ ∫ r in Ioo α β, G r) :
     Icc a b ⊆ closure S ∧ ∀ x ∈ Icc a b, ∀ ε > 0, ∃ δ > 0, ∀ s ∈ S, ∀ r ∈ S,
       dist s x < δ → dist r x < δ → dist (f s) (f r) < ε := by
   refine ⟨?_, ?_⟩
@@ -92,7 +92,6 @@ theorem dense_and_dist_lt_of_oscillation {E : Type*} [NormedAddCommGroup E] {a b
       rw [Real.dist_eq, abs_lt] at hd
       have htK : t ∈ S ∩ Ioo ((x - δ) ⊔ a) ((x + δ) ⊓ b) :=
         ⟨ht, by rw [← Ioo_inter_Ioo]; exact ⟨⟨by linarith, by linarith⟩, hS ht⟩⟩
-      rw [dist_eq_norm]
       exact lt_of_pow_lt_pow_left₀ 2 (by positivity) ((hs' t htK).trans_lt hsm)
     refine ⟨δ, hδ, fun s hs r hr hsd hrd ↦ ?_⟩
     calc dist (f s) (f r) ≤ dist (f s) (f s') + dist (f r) (f s') :=
