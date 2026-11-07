@@ -19,6 +19,10 @@ assignment on `κ` to the coordinates in the image of `e` has the corresponding 
 `ι`. This is the finite-family form of the fact that a subfamily of independent coordinates is
 still independent.
 
+**Splitting off the first coordinate.** `MeasurableEquiv.piFinSuccAbove` at `0` is `Fin.cons` in
+the reverse direction; composing a measurable function with `Fin.cons` is measurable on the product
+of the head and the tail.
+
 **Currying.** A product measure over the pairs `⟨i, j⟩` of a sigma type is the product over `i`
 of the product measures over `j`: `MeasurableEquiv.piCurry` carries one to the other. Mathlib has
 this for products of probability measures (`MeasureTheory.Measure.infinitePi_map_piCurry`); here
@@ -123,6 +127,21 @@ open scoped ENNReal
 namespace TauCeti
 
 open ProbabilityTheory
+
+/-- The inverse of `MeasurableEquiv.piFinSuccAbove` at `0` on a constant family is `Fin.cons`. -/
+theorem _root_.MeasurableEquiv.piFinSuccAbove_zero_symm_apply_eq_cons {β : Type*}
+    [MeasurableSpace β] {n : ℕ} (a : β) (w : Fin n → β) :
+    (MeasurableEquiv.piFinSuccAbove (fun _ : Fin (n + 1) => β) 0).symm (a, w) = Fin.cons a w := by
+  simp [MeasurableEquiv.piFinSuccAbove_symm_apply, Fin.insertNthEquiv_zero]
+
+/-- Composing a measurable function on `Fin (n + 1) → β` with `Fin.cons` is measurable on the
+product of the head and the tail. -/
+theorem _root_.Measurable.comp_finCons {β γ : Type*} [MeasurableSpace β] [MeasurableSpace γ] {n : ℕ}
+    {F : (Fin (n + 1) → β) → γ} (hF : Measurable F) :
+    Measurable (fun p : β × (Fin n → β) => F (Fin.cons p.1 p.2)) := by
+  convert hF.comp (MeasurableEquiv.piFinSuccAbove (fun _ : Fin (n + 1) => β) 0).symm.measurable
+    using 1
+  exact funext fun p => congrArg F (MeasurableEquiv.piFinSuccAbove_zero_symm_apply_eq_cons ..).symm
 
 /-- Restricting a finite product-distributed assignment along an embedding of index types is
 measure preserving. The target product uses exactly the marginals selected by the embedding. -/
