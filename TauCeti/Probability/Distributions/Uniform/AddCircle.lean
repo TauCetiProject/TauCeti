@@ -50,7 +50,7 @@ theorem map_coe_uniformMeasure (a : ℝ) :
     Measure.map_map AddCircle.measurable_mk' hm]
   simp [Function.comp_def]
 
-local instance : Fact (0 < 2 * π) := ⟨two_pi_pos⟩
+local instance uniformAddCirclePeriodPos : Fact (0 < 2 * π) := ⟨two_pi_pos⟩
 
 /-- The Haar-uniform angle representative in `[-π, π)` has the uniform law on `(-π, π]`.
 The two choices at the seam do not change the real measure. -/
