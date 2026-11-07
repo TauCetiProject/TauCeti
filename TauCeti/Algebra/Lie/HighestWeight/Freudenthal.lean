@@ -293,6 +293,75 @@ private theorem exists_int_apply_coroot_of_genWeightSpace_add_zsmul_ne_bot
   push_cast
   linear_combination hm'
 
+/-- If no rung of the `α`-string through `μ` can be a weight because `⟨μ, α^∨⟩` is not an integer,
+then all the weight spaces along the string are trivial. -/
+private theorem genWeightSpace_add_zsmul_eq_bot_of_not_int {alpha : Weight K H L}
+    (halpha : alpha.IsNonZero) {mu : Dual K H}
+    (hint : ¬∃ n : ℤ, mu (IsKilling.coroot alpha) = (n : K)) (i : ℤ) :
+    genWeightSpace M ((mu + i • (alpha : Dual K H) : Dual K H) : H → K) = ⊥ := by
+  by_contra hne
+  exact hint (exists_int_apply_coroot_of_genWeightSpace_add_zsmul_ne_bot halpha hne)
+
+omit [IsAlgClosed K] in
+/-- The `α`-string sum as a sum of `stringTerm` over an initial segment, when the string stops
+before the rung `N`. -/
+private theorem sum_range_stringTerm_natCast {alpha : Weight K H L}
+    (halphaD : (alpha : Dual K H) ≠ 0) (mu : Dual K H) {N : ℕ}
+    (hbotPos : ∀ j : ℕ, N ≤ j →
+      genWeightSpace M ((mu + j • (alpha : Dual K H) : Dual K H) : H → K) = ⊥) :
+    ∑ j ∈ Finset.range (N + 1), stringTerm M mu (alpha : Dual K H) (j : ℤ) =
+      (∑ j ∈ (weightString M halphaD mu).erase 0,
+        (finrank K (genWeightSpace M
+          ((mu + j • (alpha : Dual K H) : Dual K H) : H → K)) : K) *
+          invForm (mu + j • (alpha : Dual K H)) (alpha : Dual K H)) +
+        stringTerm M mu (alpha : Dual K H) 0 := by
+  rw [Finset.sum_congr rfl fun j _ ↦ stringTerm_natCast mu (alpha : Dual K H) j,
+    sum_weightString_erase_eq_sum_range halphaD mu hbotPos,
+    ← Finset.add_sum_erase _ _ (Finset.mem_range.mpr (Nat.succ_pos N)), stringTerm_zero,
+    zero_smul, add_zero]
+  ring
+
+omit [IsAlgClosed K] in
+/-- The `-α`-string sum as a sum of `stringTerm` over an initial segment, when the string stops
+before the rung `N`. -/
+private theorem sum_range_stringTerm_neg_natCast {alpha : Weight K H L}
+    (halphaD : (alpha : Dual K H) ≠ 0) (mu : Dual K H) {N : ℕ}
+    (hbotNeg : ∀ j : ℕ, N ≤ j →
+      genWeightSpace M ((mu + j • (-(alpha : Dual K H)) : Dual K H) : H → K) = ⊥) :
+    ∑ j ∈ Finset.range (N + 1), stringTerm M mu (alpha : Dual K H) (-(j : ℤ)) =
+      stringTerm M mu (alpha : Dual K H) 0 -
+        ∑ j ∈ (weightString M (neg_ne_zero.mpr halphaD) mu).erase 0,
+          (finrank K (genWeightSpace M
+            ((mu + j • (-(alpha : Dual K H)) : Dual K H) : H → K)) : K) *
+            invForm (mu + j • (-(alpha : Dual K H))) (-(alpha : Dual K H)) := by
+  rw [Finset.sum_congr rfl fun j _ ↦ stringTerm_neg_natCast mu (alpha : Dual K H) j,
+    Finset.sum_neg_distrib,
+    sum_weightString_erase_eq_sum_range (neg_ne_zero.mpr halphaD) mu hbotNeg,
+    ← Finset.add_sum_erase _ _ (Finset.mem_range.mpr (Nat.succ_pos N)), stringTerm_zero,
+    zero_smul, add_zero, map_neg]
+  ring
+
+/-- The two-sided `α`-string sum over `[-N, N]` vanishes when `⟨μ, α^∨⟩` is an integer and all
+the weight spaces beyond the rung `N` are trivial. -/
+private theorem sum_Icc_stringTerm_eq_zero_of_eq_bot {alpha : Weight K H L} {mu : Dual K H}
+    {n : ℤ} (hn : mu (IsKilling.coroot alpha) = (n : K)) {N : ℕ}
+    (hN : ∀ i : ℤ, N ≤ i.natAbs →
+      genWeightSpace M ((mu + i • (alpha : Dual K H) : Dual K H) : H → K) = ⊥) :
+    ∑ i ∈ Finset.Icc (-(N : ℤ)) N, stringTerm M mu (alpha : Dual K H) i = 0 := by
+  have hsub : Finset.Icc (-(N : ℤ)) N ⊆ Finset.Icc (-n - ((N : ℤ) + |n|)) ((N : ℤ) + |n|) := by
+    intro i hi
+    rw [Finset.mem_Icc] at hi ⊢
+    rcases abs_cases n with ⟨h, hs⟩ | ⟨h, hs⟩ <;> omega
+  have hcancel : ∀ i ∈ Finset.Icc (-n - ((N : ℤ) + |n|)) ((N : ℤ) + |n|),
+      i ∉ Finset.Icc (-(N : ℤ)) N → stringTerm M mu (alpha : Dual K H) i = 0 := by
+    intro i _ hnot
+    have hfar : N ≤ i.natAbs := by
+      by_contra hlt
+      exact hnot (Finset.mem_Icc.mpr (by omega))
+    rw [stringTerm, LieSubmodule.finrank_eq_zero_of_eq_bot (hN i hfar), Nat.cast_zero, zero_mul]
+  rw [Finset.sum_subset hsub hcancel]
+  exact sum_Icc_stringTerm_eq_zero hn (by ring)
+
 /-- **The two directions of a root string differ by the summand at its foot.** For a root `α` of
 the Cartan subalgebra `H` and any linear form `μ` on `H`, the Freudenthal string sum in the
 direction `-α` exceeds the one in the direction `α` by `dim Mμ · ⟨μ, α⟩`.
@@ -329,10 +398,7 @@ theorem sum_weightString_neg_eq_add {alpha : Weight K H L} (halpha : alpha.IsNon
   by_cases hint : ∃ n : ℤ, mu (IsKilling.coroot alpha) = (n : K)
   case neg =>
     -- No rung of the string is a weight at all, so every term in sight vanishes.
-    have hbot : ∀ i : ℤ,
-        genWeightSpace M ((mu + i • (alpha : Dual K H) : Dual K H) : H → K) = ⊥ := fun i ↦ by
-      by_contra hne
-      exact hint (exists_int_apply_coroot_of_genWeightSpace_add_zsmul_ne_bot halpha hne)
+    have hbot := genWeightSpace_add_zsmul_eq_bot_of_not_int (M := M) halpha hint
     have hemptyPos : weightString M halphaD mu = ∅ := by
       rw [weightString_eq_empty_iff]
       intro j
@@ -350,59 +416,9 @@ theorem sum_weightString_neg_eq_add {alpha : Weight K H L} (halpha : alpha.IsNon
     simp
   case pos =>
     obtain ⟨n, hn⟩ := hint
-    -- The `α`-string sum, as a sum of `stringTerm` over an initial segment.
-    have hposCast : ∀ j ∈ Finset.range (N + 1),
-        stringTerm M mu (alpha : Dual K H) (j : ℤ) =
-          (finrank K (genWeightSpace M
-            ((mu + j • (alpha : Dual K H) : Dual K H) : H → K)) : K) *
-            invForm (mu + j • (alpha : Dual K H)) (alpha : Dual K H) :=
-      fun j _ ↦ stringTerm_natCast mu (alpha : Dual K H) j
-    have hpos : ∑ j ∈ Finset.range (N + 1), stringTerm M mu (alpha : Dual K H) (j : ℤ) =
-        (∑ j ∈ (weightString M halphaD mu).erase 0,
-          (finrank K (genWeightSpace M
-            ((mu + j • (alpha : Dual K H) : Dual K H) : H → K)) : K) *
-            invForm (mu + j • (alpha : Dual K H)) (alpha : Dual K H)) +
-          stringTerm M mu (alpha : Dual K H) 0 := by
-      rw [Finset.sum_congr rfl hposCast, sum_weightString_erase_eq_sum_range halphaD mu hbotPos,
-        ← Finset.add_sum_erase _ _ (Finset.mem_range.mpr (Nat.succ_pos N)), stringTerm_zero,
-        zero_smul, add_zero]
-      ring
-    -- and the `-α`-string sum, in the same form.
-    have hnegCast : ∀ j ∈ Finset.range (N + 1),
-        stringTerm M mu (alpha : Dual K H) (-(j : ℤ)) =
-          -((finrank K (genWeightSpace M
-            ((mu + j • (-(alpha : Dual K H)) : Dual K H) : H → K)) : K) *
-            invForm (mu + j • (-(alpha : Dual K H))) (-(alpha : Dual K H))) :=
-      fun j _ ↦ stringTerm_neg_natCast mu (alpha : Dual K H) j
-    have hneg : ∑ j ∈ Finset.range (N + 1), stringTerm M mu (alpha : Dual K H) (-(j : ℤ)) =
-        stringTerm M mu (alpha : Dual K H) 0 -
-          ∑ j ∈ (weightString M (neg_ne_zero.mpr halphaD) mu).erase 0,
-            (finrank K (genWeightSpace M
-              ((mu + j • (-(alpha : Dual K H)) : Dual K H) : H → K)) : K) *
-              invForm (mu + j • (-(alpha : Dual K H))) (-(alpha : Dual K H)) := by
-      rw [Finset.sum_congr rfl hnegCast, Finset.sum_neg_distrib,
-        sum_weightString_erase_eq_sum_range (neg_ne_zero.mpr halphaD) mu hbotNeg,
-        ← Finset.add_sum_erase _ _ (Finset.mem_range.mpr (Nat.succ_pos N)), stringTerm_zero,
-        zero_smul, add_zero, map_neg]
-      ring
-    -- The two-sided sum vanishes.
-    have hzero : ∑ i ∈ Finset.Icc (-(N : ℤ)) N, stringTerm M mu (alpha : Dual K H) i = 0 := by
-      have hsub : Finset.Icc (-(N : ℤ)) N ⊆ Finset.Icc (-n - ((N : ℤ) + |n|)) ((N : ℤ) + |n|) := by
-        intro i hi
-        rw [Finset.mem_Icc] at hi ⊢
-        rcases abs_cases n with ⟨h, hs⟩ | ⟨h, hs⟩ <;> omega
-      have hcancel : ∀ i ∈ Finset.Icc (-n - ((N : ℤ) + |n|)) ((N : ℤ) + |n|),
-          i ∉ Finset.Icc (-(N : ℤ)) N → stringTerm M mu (alpha : Dual K H) i = 0 := by
-        intro i _ hnot
-        have hfar : N ≤ i.natAbs := by
-          by_contra hlt
-          exact hnot (Finset.mem_Icc.mpr (by omega))
-        rw [stringTerm, LieSubmodule.finrank_eq_zero_of_eq_bot (hN i hfar), Nat.cast_zero,
-          zero_mul]
-      rw [Finset.sum_subset hsub hcancel]
-      exact sum_Icc_stringTerm_eq_zero hn (by ring)
     have hsplit := sum_Icc_eq_add_sum_range (stringTerm M mu (alpha : Dual K H)) N
-    rw [hzero, hpos, hneg, zero_add, stringTerm_zero] at hsplit
+    rw [sum_Icc_stringTerm_eq_zero_of_eq_bot hn hN, sum_range_stringTerm_natCast halphaD mu hbotPos,
+      sum_range_stringTerm_neg_natCast halphaD mu hbotNeg, zero_add, stringTerm_zero] at hsplit
     linear_combination hsplit
 
 /-! ### The recursion -/

@@ -164,18 +164,16 @@ theorem equivDivisor_symm_le_iff (hxt : Transcendental k x) {D E : Divisor k F} 
 
 /-- `equivDivisor` preserves effective divisors. -/
 @[simp]
-theorem isEffective_equivDivisor_iff (hxt : Transcendental k x)
+theorem equivDivisor_nonneg_iff (hxt : Transcendental k x)
     {D : SchemeWeilDivisor (twoChartModel hF hx)} :
-    WeilDivisor.IsEffective (equivDivisor hxt D) ↔ WeilDivisor.IsEffective D := by
-  rw [WeilDivisor.isEffective_iff_zero_le, WeilDivisor.isEffective_iff_zero_le,
-    ← map_zero (equivDivisor hxt), equivDivisor_le_iff]
+    0 ≤ equivDivisor hxt D ↔ 0 ≤ D := by
+  rw [← map_zero (equivDivisor hxt), equivDivisor_le_iff]
 
 /-- `(equivDivisor hxt).symm` preserves effective divisors. -/
 @[simp]
-theorem isEffective_equivDivisor_symm_iff (hxt : Transcendental k x) {D : Divisor k F} :
-    WeilDivisor.IsEffective ((equivDivisor (hF := hF) (hx := hx) hxt).symm D) ↔
-      WeilDivisor.IsEffective D := by
-  rw [← isEffective_equivDivisor_iff (hF := hF) (hx := hx) hxt, AddEquiv.apply_symm_apply]
+theorem equivDivisor_symm_nonneg_iff (hxt : Transcendental k x) {D : Divisor k F} :
+    0 ≤ (equivDivisor (hF := hF) (hx := hx) hxt).symm D ↔ 0 ≤ D := by
+  rw [← equivDivisor_nonneg_iff (hF := hF) (hx := hx) hxt, AddEquiv.apply_symm_apply]
 
 /-! ### Degrees, principal divisors, and linear equivalence -/
 
