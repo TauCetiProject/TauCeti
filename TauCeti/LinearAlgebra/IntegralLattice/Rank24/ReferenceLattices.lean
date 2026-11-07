@@ -163,6 +163,7 @@ theorem representationNumber_lattice_two :
       rootCount_leech]
 
 /-- **The Leech row is the only row without roots.** -/
+@[simp]
 theorem vectorsOfNorm_two_lattice_eq_empty_iff {n : NiemeierType} :
     n.lattice.vectorsOfNorm 2 = ∅ ↔ n = leech := by
   rw [← rootCount_eq_zero_iff, ← representationNumber_lattice_two,
@@ -171,6 +172,7 @@ theorem vectorsOfNorm_two_lattice_eq_empty_iff {n : NiemeierType} :
 /-- **The 24 Niemeier lattices are pairwise non-isometric.**  An isometry preserves the number of
 roots, which separates the Leech row from the rootful rows, and two rootful rows are separated by
 `TauCeti.RootfulNiemeierType.nonempty_isometry_lattice_iff`. -/
+@[simp]
 theorem nonempty_isometry_lattice_iff {m n : NiemeierType} :
     Nonempty (Isometry m.lattice n.lattice) ↔ m = n := by
   refine ⟨fun ⟨e⟩ ↦ ?_, fun h ↦ h ▸ ⟨Isometry.refl _⟩⟩

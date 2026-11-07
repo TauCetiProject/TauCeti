@@ -286,6 +286,7 @@ theorem representationNumber_lattice_two (r : RootfulNiemeierType) :
 
 /-- **The root sublattice of `N_r` has index `|H|`**: the sublattice of `N_r` spanned by its
 norm-`2` vectors is `R_r`, of index the displayed glue order of the row. -/
+@[simp]
 theorem index_span_vectorsOfNorm_two_lattice (r : RootfulNiemeierType) :
     (Submodule.span ℤ (r.lattice.vectorsOfNorm 2)).toAddSubgroup.index = r.glueOrder := by
   have hmap : (Submodule.span ℤ (r.lattice.vectorsOfNorm 2)).map r.lattice.carrier.subtype =
@@ -303,6 +304,7 @@ theorem index_span_vectorsOfNorm_two_lattice (r : RootfulNiemeierType) :
 /-- **The 23 lattices are pairwise non-isometric.**  An isometry `N_r ≅ N_s` preserves the number
 of roots and the index of the root sublattice, and these two numbers, the displayed root count and
 glue order, already separate the rows. -/
+@[simp]
 theorem nonempty_isometry_lattice_iff {r s : RootfulNiemeierType} :
     Nonempty (Isometry r.lattice s.lattice) ↔ r = s := by
   refine ⟨fun ⟨e⟩ ↦ ?_, fun h ↦ h ▸ ⟨Isometry.refl _⟩⟩
