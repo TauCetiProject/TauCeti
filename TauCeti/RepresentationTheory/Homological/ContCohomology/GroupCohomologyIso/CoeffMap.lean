@@ -88,6 +88,16 @@ theorem explicitH2AddEquivGroupCohomology_explicitCoeff2 (x : H2 G M) :
 
 include hψ hχ hF
 
+/-- The naturality square of `explicitH2AddEquivGroupCohomology_explicitCoeff2`, for any
+second-cohomology comparisons equal to the generic ones. This is how it is used for comparisons
+whose construction is kept opaque. -/
+theorem apply_explicitCoeff2_of_eq {eM : H2 G M ≃+ groupCohomology B 2}
+    {eN : H2 G N ≃+ groupCohomology C 2} (heM : eM = explicitH2AddEquivGroupCohomology φ ψ hψ)
+    (heN : eN = explicitH2AddEquivGroupCohomology φ χ hχ) (x : H2 G M) :
+    eN (explicitCoeff2 G M f hf x) = groupCohomology.map (MonoidHom.id H) F 2 (eM x) := by
+  subst heM heN
+  exact explicitH2AddEquivGroupCohomology_explicitCoeff2 φ ψ χ hψ hχ f hf F hF x
+
 /-- An explicit continuous coefficient map is bijective on second cohomology exactly when the
 same coefficient map in algebraic representation coordinates is bijective. -/
 theorem explicitCoeff2_bijective_iff :

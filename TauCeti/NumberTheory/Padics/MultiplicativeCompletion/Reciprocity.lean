@@ -277,6 +277,25 @@ theorem padicCompletionUnitsEquivAbelianizationProP_symm_galois_smul
   rw [e.apply_symm_apply] at h
   exact e.injective ((e.apply_symm_apply _).trans h.symm)
 
+/-- Inverse reciprocity intertwines the Galois action on the pro-`p` class module with the
+group-algebra action on the completed units, after reading the latter additively. -/
+theorem ofMul_symm_galois_smul_eq_single_smul
+    (j : L →ₐ[K] SeparableClosure K) (t : L ≃ₐ[K] L)
+    (x : Additive (abelianizationProP p (AbsoluteGaloisGroup K)
+      (galoisSubgroup K L j).toSubgroup))
+    [Algebra ℚ_[p] K] [Algebra ℚ_[p] L] [IsScalarTower ℚ_[p] K L]
+    [Module.Finite ℚ_[p] L] [ValuativeExtension ℚ_[p] L] :
+    letI := galoisClassModuleAction p K L j
+    letI := continuousSMul_galoisClassModuleAction p K L j
+    Additive.ofMul ((padicCompletionUnitsEquivAbelianizationProP p K L j).symm (t • x.toMul)) =
+      MonoidAlgebra.single t (1 : ℤ_[p]) •
+        Additive.ofMul ((padicCompletionUnitsEquivAbelianizationProP p K L j).symm x.toMul) := by
+  let := galoisClassModuleAction p K L j
+  let := continuousSMul_galoisClassModuleAction p K L j
+  rw [padicCompletionUnits_single_smul, one_smul]
+  exact congrArg Additive.ofMul
+    (padicCompletionUnitsEquivAbelianizationProP_symm_galois_smul p K L j t x.toMul)
+
 open CategoryTheory ContCohomology _root_.Rep in
 /-- Explicit second cohomology of the arithmetic pro-`p` class module, with the finite
 Galois group's conjugation action, is second cohomology of the completed-units representation.
@@ -305,9 +324,7 @@ def explicitH2EquivPadicCompletionUnits
       -- equivalence leaves the additive carrier unchanged.
       change Additive.ofMul (e.symm (t • x.toMul)) =
         MonoidAlgebra.single t (1 : ℤ_[p]) • Additive.ofMul (e.symm x.toMul)
-      rw [padicCompletionUnits_single_smul, one_smul]
-      exact congrArg Additive.ofMul
-        (padicCompletionUnitsEquivAbelianizationProP_symm_galois_smul p K L j t x.toMul))
+      exact ofMul_symm_galois_smul_eq_single_smul p K L j t x)
 
 open Additive CategoryTheory ContCohomology _root_.Rep in
 /-- The arithmetic comparison is the generic comparison in any equal inverse-reciprocity
