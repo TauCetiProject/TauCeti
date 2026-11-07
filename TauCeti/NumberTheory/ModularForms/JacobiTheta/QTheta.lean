@@ -9,6 +9,7 @@ public import TauCeti.Analysis.SpecialFunctions.QPochhammer
 import Mathlib.Analysis.Complex.Liouville
 import Mathlib.Analysis.Complex.RemovableSingularity
 import TauCeti.Analysis.Complex.UpperHalfPlane.PeriodPair
+import TauCeti.Analysis.SpecialFunctions.Elliptic.PeriodPair
 import TauCeti.NumberTheory.ModularForms.DedekindEta
 
 /-!
@@ -218,8 +219,8 @@ private theorem thetaInv_eq (hτ : 0 < τ.im) (z : ℂ) :
     rw [hω₁, hω₂]
     exact (hperτ.int_mul m).add_period (hper₁.int_mul n)
   have hH₀ : DifferentiableAt ℂ H 0 :=
-    L.differentiableAt_zero_ite_div hA hB hA₀ hB₀ (hasDerivAt_thetaInv_zero hτ)
-      (hasDerivAt_thetaExp_zero hτ) hb
+    L.differentiableAt_zero_ite_div (hA.analyticAt 0) (hB.analyticAt 0) hA₀ hB₀
+      (hasDerivAt_thetaInv_zero hτ) (hasDerivAt_thetaExp_zero hτ) hb
   have hH : Differentiable ℂ H := L.differentiable_of_periodic hperL hH₀ fun x hx ↦
     ((hA x).div (hB x) (hne hx)).congr_of_eventuallyEq <| by
       filter_upwards [L.isClosed_lattice.isOpen_compl.mem_nhds hx] with y hy
