@@ -280,6 +280,48 @@ theorem exists_rankAtStalk_tensorProduct_eq {R T' M : Type*} [CommRing R] [CommR
 
 end TauCeti.Module
 
+namespace Submodule
+
+variable {A : Type*} [CommRing A]
+
+/-- The free locus of the quotient of `P` by the preimage of `F` under `φ` is the free locus of the
+subquotient `G ⧸ F`, where `G = F ⊔ range φ`: the map `φ` induces an isomorphism between them. -/
+theorem freeLocus_quotient_comap_eq_subquotient {R : Type*} [CommRing R] [Algebra A R]
+    {P M : Type*} [AddCommGroup P] [Module R P] [Module A P] [IsScalarTower A R P]
+    [AddCommGroup M] [Module R M] [Module A M] [IsScalarTower A R M]
+    (F G : Submodule R M) (φ : P →ₗ[R] M) (hG : G = F ⊔ LinearMap.range φ) :
+    Module.freeLocus A (P ⧸ F.comap φ) =
+      Module.freeLocus A (G.restrictScalars A ⧸
+        (F.restrictScalars A).submoduleOf (G.restrictScalars A)) := by
+  have hNsucc : G.restrictScalars A =
+      F.restrictScalars A ⊔ LinearMap.range (φ.restrictScalars A) := by
+    simp only [hG, LinearMap.range_restrictScalars, Submodule.restrictScalars_sup]
+  have hmem (c : P) : φ.restrictScalars A c ∈ G.restrictScalars A := by
+    rw [hNsucc]
+    exact Submodule.mem_sup_right ⟨c, rfl⟩
+  let ψ : P →ₗ[A] G.restrictScalars A ⧸ (F.restrictScalars A).submoduleOf (G.restrictScalars A) :=
+    ((F.restrictScalars A).submoduleOf (G.restrictScalars A)).mkQ ∘ₗ
+      (φ.restrictScalars A).codRestrict _ hmem
+  have hψ : Function.Surjective ψ := by
+    apply LinearMap.range_eq_top.mp
+    simp only [ψ, LinearMap.range_comp, Submodule.map_mkQ_eq_top,
+      LinearMap.range_codRestrict]
+    exact
+      (Submodule.submoduleOf_sup_of_le (Submodule.restrictScalars_mono A (hG ▸ le_sup_left))
+        (le_sup_right.trans_eq hNsucc.symm)).symm.trans
+        (Submodule.submoduleOf_eq_top.mpr hNsucc.le)
+  have hker : LinearMap.ker ψ = (F.comap φ).restrictScalars A := by
+    ext c
+    simp only [LinearMap.mem_ker, ψ, LinearMap.comp_apply, Submodule.mkQ_apply,
+      Submodule.Quotient.mk_eq_zero]
+    simp only [Submodule.restrictScalars_mem, Submodule.submoduleOf,
+      Submodule.mem_comap, LinearMap.codRestrict_apply, LinearMap.restrictScalars_apply,
+      Submodule.coe_subtype]
+  exact Module.freeLocus_congr ((Submodule.Quotient.restrictScalarsEquiv A (F.comap φ)).symm ≪≫ₗ
+    Submodule.quotEquivOfEq _ _ hker.symm ≪≫ₗ ψ.quotKerEquivOfSurjective hψ)
+
+end Submodule
+
 namespace PrimeSpectrum
 
 open Module
