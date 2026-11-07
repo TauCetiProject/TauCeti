@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.FunctionField
 public import Mathlib.AlgebraicGeometry.Morphisms.QuasiCompact
+public import Mathlib.AlgebraicGeometry.Morphisms.Separated
 public import Mathlib.AlgebraicGeometry.Stalk
 public import TauCeti.Topology.NoetherianSpace.ClosedPoints
 
@@ -267,6 +268,59 @@ theorem algEquivAppPreimageSpecExtension_apply {X : Scheme.{u}} [IsIntegral X] (
           X.fromSpecStalk (genericPoint X)) ⁻¹ᵁ U ≤ ⊤)).op
         ((Scheme.ΓSpecIso (.of L)).inv a) :=
   RingHom.congr_fun (algEquivAppPreimageSpecExtension_toRingHom L) a
+
+open CategoryTheory in
+/-- On a separated integral scheme, the canonical maps from the spectra of two stalks agree along
+any ring homomorphism of the stalks compatible with the function-field maps. -/
+theorem _root_.AlgebraicGeometry.Scheme.fromSpecStalk_eq_specMap_comp_fromSpecStalk
+    {X : Scheme.{u}} [IsIntegral X] [X.IsSeparated] {x y : X}
+    (e : X.presheaf.stalk y →+* X.presheaf.stalk x)
+    (he : ∀ a : X.presheaf.stalk y,
+      algebraMap (X.presheaf.stalk x) X.functionField (e a) =
+        algebraMap (X.presheaf.stalk y) X.functionField a) :
+    X.fromSpecStalk x = Spec.map (CommRingCat.ofHom e) ≫ X.fromSpecStalk y := by
+  have hg (z : X) :
+      Spec.map (CommRingCat.ofHom (algebraMap (X.presheaf.stalk z) X.functionField)) ≫
+        X.fromSpecStalk z = X.fromSpecStalk (genericPoint X) :=
+    X.SpecMap_stalkSpecializes_fromSpecStalk ((genericPoint_spec X).specializes trivial)
+  set ι := Spec.map (CommRingCat.ofHom (algebraMap (X.presheaf.stalk x) X.functionField))
+  have hdom : IsDominant ι :=
+    ⟨(PrimeSpectrum.denseRange_comap_iff_ker_le_nilRadical _).mpr (by
+      rw [CommRingCat.hom_ofHom, (RingHom.injective_iff_ker_eq_bot _).mp
+        (IsFractionRing.injective (X.presheaf.stalk x) X.functionField)]
+      exact bot_le)⟩
+  refine ext_of_isDominant (f := X.fromSpecStalk x)
+    (g := Spec.map (CommRingCat.ofHom e) ≫ X.fromSpecStalk y) ι ?_
+  have hr : CommRingCat.ofHom e ≫
+      CommRingCat.ofHom (algebraMap (X.presheaf.stalk x) X.functionField) =
+      CommRingCat.ofHom (algebraMap (X.presheaf.stalk y) X.functionField) := by
+    ext a
+    exact he a
+  have hcomp : Spec.map (CommRingCat.ofHom (algebraMap (X.presheaf.stalk x) X.functionField)) ≫
+      Spec.map (CommRingCat.ofHom e) =
+      Spec.map (CommRingCat.ofHom (algebraMap (X.presheaf.stalk y) X.functionField)) := by
+    rw [← Spec.map_comp, hr]
+  exact (hg x).trans ((hg y).symm.trans
+    ((congrArg (· ≫ X.fromSpecStalk y) hcomp).symm.trans (Category.assoc _ _ _)))
+
+open CategoryTheory in
+/-- If the canonical maps from the spectra of two stalks agree along a local ring homomorphism of
+the stalks, then the two points coincide: both are the image of the closed point. -/
+theorem _root_.AlgebraicGeometry.Scheme.eq_of_fromSpecStalk_eq_specMap_comp
+    {X : Scheme.{u}} {x y : X} (e : X.presheaf.stalk y →+* X.presheaf.stalk x) [IsLocalHom e]
+    (hl : X.fromSpecStalk x = Spec.map (CommRingCat.ofHom e) ≫ X.fromSpecStalk y) :
+    x = y := by
+  have hp := congrArg (fun f : Spec (X.presheaf.stalk x) ⟶ X ↦
+    f (IsLocalRing.closedPoint (X.presheaf.stalk x))) hl
+  calc
+    x = (Spec.map (CommRingCat.ofHom e) ≫ X.fromSpecStalk y)
+        (IsLocalRing.closedPoint (X.presheaf.stalk x)) :=
+      Scheme.fromSpecStalk_closedPoint.symm.trans hp
+    _ = X.fromSpecStalk y (Spec.map (CommRingCat.ofHom e)
+        (IsLocalRing.closedPoint (X.presheaf.stalk x))) := Scheme.Hom.comp_apply _ _ _
+    _ = y := (congrArg (X.fromSpecStalk y)
+      (Spec_closedPoint (f := CommRingCat.ofHom e))).trans
+        Scheme.fromSpecStalk_closedPoint
 
 end Scheme
 
