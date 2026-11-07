@@ -48,14 +48,14 @@ theorem eulerDegree_eq_zero_iff_of_genus_eq_zero (a : LineBundleClass X) :
   rw [eulerDegree_mk] at ha
   have : IsNoetherian X := isNoetherian_of_finiteType (X ↘ Spec (.of k))
   obtain ⟨D, hD, -, hdeg, hclass⟩ :=
-    InvertibleSheaf.exists_isEffective_iso_sheaf_of_genus_le_eulerDegree hdim hφ L
+    InvertibleSheaf.exists_nonneg_iso_sheaf_of_genus_le_eulerDegree hdim hφ L
       (by simp only [← Scheme.genus_def, hg, ha, Nat.cast_zero, le_refl])
   have hzero : WeilDivisor.weightedDegree
       (fun x : CodimensionOnePoint X ↦ ((X ↘ Spec (.of k)).residueDegree x : ℤ)) D = 0 := by
     rw [WeilDivisor.weightedDegree_apply, ← SchemeWeilDivisor.relativeDegree_apply]
     exact hdeg.trans ha
   have hD0 : D = 0 := by
-    apply (hD.weightedDegree_eq_zero_iff_of_pos_on_support ?_).mp hzero
+    apply (WeilDivisor.weightedDegree_eq_zero_iff_of_pos_on_support hD ?_).mp hzero
     intro x _
     exact_mod_cast Nat.pos_of_ne_zero
       (Scheme.Hom.residueDegree_ne_zero_of_isClosed (X ↘ Spec (.of k))
