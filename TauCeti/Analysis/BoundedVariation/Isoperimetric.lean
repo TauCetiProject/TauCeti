@@ -189,7 +189,7 @@ private theorem div_mul_le_integral_mul_indicator {w : E → ℝ} (hw : ContDiff
   have hDint : Integrable fun x => |divergenceCLM ψ x| :=
     ((divergenceCLM ψ).continuous.integrable_of_hasCompactSupport
       (divergenceCLM ψ).hasCompactSupport).abs
-  have hSlim := tendsto_setIntegral_preimage_Ioo_zero hDint hw.continuous.measurable hηanti hηlim
+  have hSlim := tendsto_setIntegral_preimage_Ioo_zero hDint hw.continuous.measurable hηlim
   have hlhs : Tendsto (fun k => (1 - ε) / (1 + ε) * (n * volume.real (ball (0 : E) 1) ^ (n : ℝ)⁻¹ *
       (volume.real (G k) ^ (n : ℝ)⁻¹) ^ (n - 1))) atTop
       (𝓝 ((1 - ε) / (1 + ε) * (n * volume.real (ball (0 : E) 1) ^ (n : ℝ)⁻¹ *
