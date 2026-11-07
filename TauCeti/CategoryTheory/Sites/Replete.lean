@@ -40,7 +40,6 @@ open CategoryTheory Limits
 namespace TauCeti
 
 variable {C : Type u} [Category.{v} C] (J : GrothendieckTopology C) [IsReplete (Sheaf J (Type w))]
-  [HasSheafify J (Type w)]
 
 /-- **Sheaves on a replete topos form a replete category.** If the topos `Sheaf J (Type w)` is
 replete, then so is the category of sheaves with values in a concrete category `A` whose forgetful
