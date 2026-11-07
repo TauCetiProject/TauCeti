@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.RingTheory.Flat.Equalizer
 public import Mathlib.RingTheory.Flat.EquationalCriterion
 public import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
+public import TauCeti.Algebra.Homology.Embedding.CochainComplex
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import TauCeti.Algebra.Homology.HomotopyCategory.Bounded.Basic
 public import TauCeti.Algebra.Homology.HomotopyCategory.MappingCone
@@ -69,9 +70,9 @@ public section
 
 open CategoryTheory Limits HomologicalComplex
 
-universe u
+universe u v
 
-variable {R S : Type u} [CommRing R] [CommRing S] (f : R →+* S)
+variable {R : Type u} {S : Type v} [CommRing R] [CommRing S] (f : R →+* S)
 
 namespace CategoryTheory.ShortComplex.ShortExact
 
@@ -80,16 +81,19 @@ namespace CategoryTheory.ShortComplex.ShortExact
 `0 ⟶ S ⊗ X₁ ⟶ S ⊗ X₂ ⟶ S ⊗ X₃ ⟶ 0` is short exact for every `f : R →+* S`. -/
 theorem map_extendScalars {X : ShortComplex (ModuleCat.{u} R)} (hX : X.ShortExact)
     [Module.Flat R X.X₃] : (X.map (ModuleCat.extendScalars f)).ShortExact := by
-  have := hX.epi_g
-  refine ShortComplex.ShortExact.mk' (hX.exact.map_of_epi_of_preservesCokernel _ hX.epi_g
-    inferInstance) ?_ (by dsimp; infer_instance)
-  rw [ModuleCat.mono_iff_injective]
-  -- By definition of `ModuleCat.extendScalars`, the image of `X.f` is the map `S ⊗ X₁ ⟶ S ⊗ X₂`
-  -- induced by `X.f` on the right factor.
-  exact LinearMap.lTensor_injective_of_exact_of_flat X.g.hom
-    ((ModuleCat.epi_iff_surjective _).1 hX.epi_g) X.f.hom hX.moduleCat_injective_f
-    ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1 hX.exact)
-    ((ModuleCat.restrictScalars f).obj (ModuleCat.of S S))
+  -- By definition of `ModuleCat.extendScalars`, the images of `X.f` and `X.g` are the maps
+  -- `S ⊗ X₁ ⟶ S ⊗ X₂ ⟶ S ⊗ X₃` induced by `X.f` and `X.g` on the right factor.
+  let Q := (ModuleCat.restrictScalars f).obj (ModuleCat.of S S)
+  have hg := (ModuleCat.epi_iff_surjective _).1 hX.epi_g
+  have hfg := (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1 hX.exact
+  refine ShortComplex.ShortExact.mk' ?_ ?_ ?_
+  · rw [ShortComplex.ShortExact.moduleCat_exact_iff_function_exact]
+    exact lTensor_exact Q hfg hg
+  · rw [ModuleCat.mono_iff_injective]
+    exact LinearMap.lTensor_injective_of_exact_of_flat X.g.hom hg X.f.hom
+      hX.moduleCat_injective_f hfg Q
+  · rw [ModuleCat.epi_iff_surjective]
+    exact LinearMap.lTensor_surjective Q hg
 
 end CategoryTheory.ShortComplex.ShortExact
 
@@ -127,7 +131,10 @@ theorem acyclic_mapHomologicalComplex_extendScalars (E : CochainComplex (ModuleC
   let ψ : T ⟶ ((F.mapHomologicalComplex (.up ℤ)).obj E).sc' (i - 1) i (i + 1) :=
     { τ₁ := 𝟙 _, τ₂ := 𝟙 _, τ₃ := F.map (E.iCycles (i + 1))
       comm₂₃ := by simp [T, ← F.map_comp] }
-  have : Epi φ.τ₁ := F.map_epi _
+  -- `F` preserves epimorphisms, as tensor products are right exact.
+  have : Epi φ.τ₁ := (ModuleCat.epi_iff_surjective _).2
+    (LinearMap.lTensor_surjective ((ModuleCat.restrictScalars f).obj (ModuleCat.of S S))
+      ((ModuleCat.epi_iff_surjective _).1 inferInstance))
   have : Mono ψ.τ₃ := (hS (i + 1)).mono_f
   exact (ShortComplex.exact_iff_of_epi_of_isIso_of_mono ψ).1
     ((ShortComplex.exact_iff_of_epi_of_isIso_of_mono φ).2 (hS i).exact)
@@ -192,20 +199,12 @@ theorem exists_quasiIso_finite_projective [IsNoetherianRing R]
     (hflat : ∀ i, Module.Flat R (K.X i)) (hK : ∀ i, Module.Finite R (K.homology i)) :
     ∃ (P : CochainComplex (ModuleCat.{u} R) ℤ) (ψ : P ⟶ K), P.IsStrictlyGE a ∧
       P.IsStrictlyLE b ∧ (∀ i, Module.Finite R (P.X i) ∧ Module.Projective R (P.X i)) ∧
-      QuasiIso ψ ∧ ∀ (S : Type u) [CommRing S] (f : R →+* S),
+      QuasiIso ψ ∧ ∀ (S : Type v) [CommRing S] (f : R →+* S),
         QuasiIso (((ModuleCat.extendScalars f).mapHomologicalComplex (.up ℤ)).map ψ) := by
   obtain ⟨L, g, _, _, hL⟩ := exists_quasiIso_finite_free K b hK
   let P := L.truncGE a
   let ψ : P ⟶ K := truncGEMap g a ≫ inv (K.πTruncGE a)
   have : QuasiIso (truncGEMap g a) := (quasiIso_truncGEMap_iff g a).2 fun i _ ↦ inferInstance
-  have : P.IsStrictlyLE b := by
-    rw [isStrictlyLE_iff]
-    intro i hi
-    rcases lt_trichotomy a i with h | rfl | h
-    · exact (L.isZero_of_isStrictlyLE b i).of_iso (L.truncGEXIso a i)
-    · exact ((L.isZero_of_isStrictlyLE b a).of_epi (L.pOpcycles a)).of_iso
-        (L.truncGEXIsoOpcycles a)
-    · exact P.isZero_of_isStrictlyGE a i
   -- Above degree `a`, the truncation agrees with the finite free complex `L`.
   have hfree (i : ℤ) (hi : a < i) : Module.Free R (P.X i) ∧ Module.Finite R (P.X i) :=
     have := (hL i).1
