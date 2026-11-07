@@ -239,12 +239,7 @@ private theorem contDiff_form : ContDiff ℝ ω fun r : ℝ × ℝ × ℝ ↦ fo
 
 private theorem isCoercive_form (t : ℝ) : IsCoercive (form t) := by
   refine ⟨(2 + 2 * t ^ 2)⁻¹, by positivity, fun v ↦ ?_⟩
-  -- The sup norm of `v` is at most its Euclidean norm.
-  have hv : ‖v‖ ≤ √(v.1 ^ 2 + v.2.1 ^ 2 + v.2.2 ^ 2) := by
-    refine norm_prod_le_iff.2 ⟨?_, norm_prod_le_iff.2 ⟨?_, ?_⟩⟩ <;>
-      refine Real.abs_le_sqrt ?_ <;> nlinarith [sq_nonneg v.1, sq_nonneg v.2.1, sq_nonneg v.2.2]
-  have hv' : ‖v‖ * ‖v‖ ≤ v.1 ^ 2 + v.2.1 ^ 2 + v.2.2 ^ 2 :=
-    (mul_self_le_mul_self (norm_nonneg v) hv).trans (Real.mul_self_sqrt (by positivity)).le
+  have hv' := norm_mul_self_le_sq_add_sq_add_sq v
   rw [mul_assoc, inv_mul_le_iff₀ (by positivity), form_apply]
   nlinarith [sq_nonneg (t * v.2.1 - (v.2.2 - t * v.2.1)), sq_nonneg v.1, sq_nonneg v.2.1,
     sq_nonneg (v.2.2 - t * v.2.1), mul_nonneg (sq_nonneg t) (sq_nonneg v.1),
