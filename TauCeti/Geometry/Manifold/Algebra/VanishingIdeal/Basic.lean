@@ -391,18 +391,23 @@ theorem exists_toCotangent_eq_smoothCotangentBasis {x : M} (hx : I.IsInteriorPoi
   exact ⟨c, hc, (smoothCotangentBasis_eq_toCotangent hx b i c hc).symm⟩
 
 /-- **Zero-dimensional manifolds.** When the model space is zero, the algebraic cotangent space
-at an interior point vanishes. -/
-theorem subsingleton_smoothCotangent [Subsingleton E] {x : M} (hx : I.IsInteriorPoint x) :
+at every point vanishes. -/
+theorem subsingleton_smoothCotangent [Subsingleton E] (x : M) :
     Subsingleton (smoothVanishingIdeal I x).Cotangent :=
+  -- In the zero space the nonempty set `range I` is everything, so every point is interior.
+  have hx : I.IsInteriorPoint x := by
+    rw [ModelWithCorners.IsInteriorPoint,
+      Set.Nonempty.eq_univ ⟨_, Set.mem_range_self (f := I) (chartAt H x x)⟩, interior_univ]
+    exact Set.mem_univ _
   -- A continuous linear functional on the zero space `TangentSpace I x = E` is zero.
   have : Subsingleton (TangentSpace I x) := ‹Subsingleton E›
   (smoothCotangentEquiv hx).toEquiv.subsingleton
 
-/-- When the model space is zero, the vanishing ideal at an interior point equals its square:
-every smooth function vanishing at `x` is a finite sum of products of such functions. -/
-theorem smoothVanishingIdeal_sq_eq_self [Subsingleton E] {x : M} (hx : I.IsInteriorPoint x) :
+/-- When the model space is zero, the vanishing ideal at every point equals its square: every
+smooth function vanishing at `x` is a finite sum of products of such functions. -/
+theorem smoothVanishingIdeal_sq_eq_self [Subsingleton E] (x : M) :
     smoothVanishingIdeal I x ^ 2 = smoothVanishingIdeal I x := by
-  have := subsingleton_smoothCotangent hx
+  have := subsingleton_smoothCotangent (I := I) x
   rw [sq]
   exact (Ideal.cotangent_subsingleton_iff _).mp this
 
@@ -461,6 +466,13 @@ def smoothCotangentRestrictEquiv (U : Opens M) {x : U} (hx : I.IsInteriorPoint (
     (smoothCotangentMap_bijective _ _ hx (I.isInteriorPoint_iff_isInteriorPoint_val.mpr hx)
       ⟨Manifold.tangentSpaceOpenEquiv x, (Manifold.mfderiv_subtype_val x).symm⟩)
 
+/-- Restriction to an open set is the pullback of cotangent classes along the inclusion of `U`. -/
+theorem coe_smoothCotangentRestrictEquiv (U : Opens M) {x : U} (hx : I.IsInteriorPoint (x : M)) :
+    ⇑(smoothCotangentRestrictEquiv U hx) =
+      smoothCotangentMap (⟨Subtype.val, contMDiff_subtype_val⟩ : C^∞⟮I, U; I, M⟯) (y := x)
+        (by simp) :=
+  funext (LinearEquiv.ofBijective_apply _)
+
 /-- Restriction to an open set sends the class of `f` to the class of its restriction. -/
 @[simp]
 theorem smoothCotangentRestrictEquiv_toCotangent (U : Opens M) {x : U}
@@ -468,18 +480,9 @@ theorem smoothCotangentRestrictEquiv_toCotangent (U : Opens M) {x : U}
     smoothCotangentRestrictEquiv U hx ((smoothVanishingIdeal I (x : M)).toCotangent f) =
       (smoothVanishingIdeal I x).toCotangent
         ⟨(f : C^∞⟮I, M; ℝ⟯).comp (⟨Subtype.val, contMDiff_subtype_val⟩ : C^∞⟮I, U; I, M⟯),
-          comp_mem_smoothVanishingIdeal _ (by simp) f.2⟩ :=
-  smoothCotangentMap_toCotangent _ (by simp) f
-
-/-- Restriction to an open set is the pullback of cotangent classes along the inclusion of `U`. -/
-theorem coe_smoothCotangentRestrictEquiv (U : Opens M) {x : U} (hx : I.IsInteriorPoint (x : M)) :
-    ⇑(smoothCotangentRestrictEquiv U hx) =
-      smoothCotangentMap (⟨Subtype.val, contMDiff_subtype_val⟩ : C^∞⟮I, U; I, M⟯) (y := x)
-        (by simp) := by
-  funext u
-  obtain ⟨f, rfl⟩ := Ideal.toCotangent_surjective _ u
-  rw [smoothCotangentRestrictEquiv_toCotangent]
-  exact (smoothCotangentMap_toCotangent _ _ f).symm
+          comp_mem_smoothVanishingIdeal _ (by simp) f.2⟩ := by
+  rw [coe_smoothCotangentRestrictEquiv]
+  exact smoothCotangentMap_toCotangent _ (by simp) f
 
 /-- Restriction to an open set is compatible with the identifications of the algebraic cotangent
 spaces with the cotangent space, the tangent spaces of `U` and `M` at `x` being identified by

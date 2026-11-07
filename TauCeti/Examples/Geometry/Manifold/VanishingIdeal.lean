@@ -43,7 +43,7 @@ example (t : C^∞⟮𝓘(ℝ), ℝ; ℝ⟯) (ht : ∀ s, t s = s)
       ((smoothVanishingIdeal 𝓘(ℝ) (0 : ℝ)).toCotangent ⟨t, h₀⟩) (3 : ℝ) = 3 := by
   rw [smoothCotangentEquiv_toCotangent_of_eventuallyEq _ _ (ContinuousLinearMap.id ℝ ℝ)
     (Filter.Eventually.of_forall fun s ↦ by simp [ht])]
-  rfl
+  exact ContinuousLinearMap.id_apply _
 
 -- The class of `t²` is zero, so it evaluates to `0` on the tangent vector `3`.
 example (t : C^∞⟮𝓘(ℝ), ℝ; ℝ⟯) (ht : ∀ s, t s = s)

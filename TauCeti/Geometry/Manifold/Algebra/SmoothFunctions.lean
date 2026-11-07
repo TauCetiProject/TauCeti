@@ -53,7 +53,9 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
   {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners 𝕜 E' H'}
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
-  {P : Type*} [TopologicalSpace P] [ChartedSpace H P] {n : ℕ∞ω}
+  {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
+  {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners 𝕜 E'' H''}
+  {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P] {n : ℕ∞ω}
   (A : Type*) [NormedRing A] [NormedAlgebra 𝕜 A] [ContMDiffRing 𝓘(𝕜, A) n A]
 
 variable (𝕜) in
@@ -79,7 +81,7 @@ theorem compRightAlgHom_id :
     compRightAlgHom 𝕜 A (ContMDiffMap.id : C^n⟮I, M; I, M⟯) = AlgHom.id 𝕜 _ :=
   (rfl)
 
-theorem compRightAlgHom_comp (φ : C^n⟮J, N; I, M⟯) (ψ : C^n⟮I, P; J, N⟯) :
+theorem compRightAlgHom_comp (φ : C^n⟮J, N; I, M⟯) (ψ : C^n⟮K, P; J, N⟯) :
     compRightAlgHom 𝕜 A (φ.comp ψ) = (compRightAlgHom 𝕜 A ψ).comp (compRightAlgHom 𝕜 A φ) :=
   (rfl)
 
