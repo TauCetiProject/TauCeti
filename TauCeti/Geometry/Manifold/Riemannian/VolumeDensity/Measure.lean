@@ -325,8 +325,7 @@ private theorem ofReal_chartVolumeDensity_eq_mul_abs_det (α β : M) {x : M}
 /-- Coordinate form of the cocycle condition: on a measurable subset `t` of the overlap of two
 chart sources, the `α` and `β` coordinate integrals of the chart densities over the images of `t`
 agree. -/
-private theorem setLIntegral_chartVolumeDensity_image_eq
-    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] (α β : M) {t : Set M}
+private theorem setLIntegral_chartVolumeDensity_image_eq (α β : M) {t : Set M}
     (ht : MeasurableSet t)
     (htα : t ⊆ (extChartAt I α).source) (htβ : t ⊆ (extChartAt I β).source) :
     ∫⁻ y in (extChartAt I α) '' t,
