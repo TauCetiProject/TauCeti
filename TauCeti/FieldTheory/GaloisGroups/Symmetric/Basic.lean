@@ -86,7 +86,7 @@ theorem hasFullSymmetricGaloisGroup_iff_separable_and_surjective_galActionHom
 points as its degree. No numbering of its roots is fixed globally. -/
 theorem HasFullSymmetricGaloisGroup.nonempty_mulEquiv (hf : HasFullSymmetricGaloisGroup f) :
     Nonempty (f.Gal ≃* Equiv.Perm (Fin f.natDegree)) := by
-  obtain ⟨e⟩ := TauCeti.nonempty_rootSet_equiv_fin hf.separable (SplittingField.splits f)
+  obtain ⟨e⟩ := nonempty_rootSet_equiv_fin hf.separable (SplittingField.splits f)
   exact ⟨(MulEquiv.ofBijective (Gal.galActionHom f f.SplittingField)
     ⟨Gal.galActionHom_injective f _, hf.surjective_galActionHom⟩).trans (Equiv.permCongrHom e)⟩
 

@@ -28,22 +28,20 @@ therefore solvable.
 
 ## Main results
 
-* `TauCeti.nonempty_rootSet_equiv_fin`: a separable polynomial's roots in an extension over which
+* `Polynomial.nonempty_rootSet_equiv_fin`: a separable polynomial's roots in an extension over which
   it splits can be numbered by `Fin p.natDegree`.
-* `TauCeti.natCard_galActionHom_range`: the faithful Galois image has the order of the polynomial
+* `Polynomial.natCard_galActionHom_range`: the faithful Galois image has the order of the polynomial
   Galois group.
-* `TauCeti.natCard_gal_dvd_factorial_card_rootSet`: the Galois-group order divides the factorial
+* `Polynomial.natCard_gal_dvd_factorial_card_rootSet`: the Galois-group order divides the factorial
   of the number of distinct roots in any splitting extension.
-* `TauCeti.natCard_gal_dvd_factorial_natDegree`: the order of a polynomial's Galois group divides
+* `Polynomial.natCard_gal_dvd_factorial_natDegree`: the order of a polynomial's Galois group divides
   the factorial of its degree.
-* `TauCeti.isSolvable_gal_of_natDegree_le_four`: a polynomial of degree at most four has a
+* `Polynomial.isSolvable_gal_of_natDegree_le_four`: a polynomial of degree at most four has a
   solvable Galois group.
 -/
 public section
 
-namespace TauCeti
-
-open Polynomial
+namespace Polynomial
 
 universe u v
 
@@ -99,4 +97,4 @@ theorem isSolvable_gal_of_natDegree_le_four {p : F[X]} (hp : p.natDegree ≤ 4) 
       (ncard_rootSet_le p p.SplittingField).trans hp
   exact Group.isSolvable_of_isSolvable_injective (Gal.galActionHom_injective p p.SplittingField)
 
-end TauCeti
+end Polynomial
