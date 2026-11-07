@@ -59,6 +59,7 @@ theorem mapDomain_mapDomain (f : M → N) (g : N → O) (x : MonoidAlgebra R M) 
   ext <| by rw [coeff_mapDomain, coeff_mapDomain, coeff_mapDomain, Finsupp.mapDomain_comp]
 
 /-- Pushing the coefficients forward along a surjection is surjective. -/
+@[to_additive /-- Pushing the coefficients forward along a surjection is surjective. -/]
 theorem mapDomain_surjective {f : M → N} (hf : Function.Surjective f) :
     Function.Surjective (mapDomain (R := R) f) := fun y ↦ by
   obtain ⟨x, hx⟩ := Finsupp.mapDomain_surjective hf y.coeff

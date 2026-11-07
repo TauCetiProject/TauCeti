@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Subgroup.Lattice
 public import Mathlib.GroupTheory.Subgroup.Saturated
 
 /-!
@@ -13,7 +14,14 @@ public import Mathlib.GroupTheory.Subgroup.Saturated
 Given a submonoid `s` of a commutative monoid `M`, its *saturation* is the submonoid of all
 elements whose positive power lies in `s`, that is `{x : M | ∃ n, 0 < n ∧ x ^ n ∈ s}`. This is the
 least `PowSaturated` submonoid containing `s` (a submonoid `t` is `PowSaturated` when `x ^ n ∈ t`
-forces `n = 0` or `x ∈ t`). Applying saturation to an already `PowSaturated` submonoid is a no-op.
+forces `n = 0` or `x ∈ t`). Applying saturation to an already `PowSaturated` submonoid is a no-op,
+and saturation commutes with pullbacks along monoid homomorphisms and with binary intersections.
+
+For a submonoid `s` of a commutative group `G`, saturating `s` inside the subgroup it generates
+yields `s.powSaturation ⊓ (Subgroup.closure (s : Set G)).toSubmonoid`, which generates the same
+subgroup as `s`, is canonically isomorphic to
+`(s.comap (Subgroup.closure s).subtype).powSaturation`, and characterizes when the pullback of `s`
+to its generated subgroup is saturated.
 
 All declarations are stated multiplicatively and translated with `@[to_additive]` to their
 additive counterparts, e.g. `Submonoid.powSaturation` becomes `AddSubmonoid.nsmulSaturation` and
@@ -28,14 +36,19 @@ additive counterparts, e.g. `Submonoid.powSaturation` becomes `AddSubmonoid.nsmu
 * `Submonoid.powSaturated_powSaturation`: the saturation is `PowSaturated`.
 * `Submonoid.powSaturation_le_iff_le`: the saturation is the least `PowSaturated` submonoid
   containing `s`.
-* `Submonoid.powSaturation_eq_self`: saturating an already `PowSaturated` submonoid is a no-op.
+* `Submonoid.powSaturation_eq_self` and `Submonoid.powSaturated_iff_powSaturation_eq`: a submonoid
+  is `PowSaturated` iff it equals its saturation.
+* `Submonoid.powSaturation_comap` and `Submonoid.powSaturation_inf`: saturation commutes with
+  `comap` and `⊓`.
+* `Submonoid.closure_powSaturation_inf_closure`, `Submonoid.powSaturationInfClosureEquiv`, and
+  `Submonoid.powSaturated_comap_subtype_closure_iff`: saturation inside the generated subgroup.
 -/
 
 public section
 
 namespace Submonoid
 
-variable {M : Type*} [CommMonoid M]
+variable {M N : Type*} [CommMonoid M] [CommMonoid N]
 
 /-- The saturation of a submonoid `s` is the submonoid of elements whose positive power lies in
 `s`, `{x | ∃ n, 0 < n ∧ x ^ n ∈ s}`. It is the least `PowSaturated` submonoid containing `s`. -/
@@ -107,5 +120,100 @@ theorem powSaturation_eq_self {s : Submonoid M} (hs : PowSaturated s) : s.powSat
   · exact (powSaturation_le_iff_le (s := s) (t := s) hs).mpr (le_refl s)
   · exact le_powSaturation
 
-end Submonoid
+/-- A submonoid is `PowSaturated` if and only if it equals its own saturation. -/
+@[to_additive /-- An additive submonoid is `NSMulSaturated` if and only if it equals its own
+saturation. -/]
+theorem powSaturated_iff_powSaturation_eq {s : Submonoid M} :
+    PowSaturated s ↔ s.powSaturation = s :=
+  ⟨powSaturation_eq_self, fun h => h ▸ powSaturated_powSaturation⟩
 
+/-- Saturation commutes with pullback along a monoid homomorphism. -/
+@[to_additive (attr := simp) /-- Saturation commutes with pullback along an additive monoid
+homomorphism. -/]
+theorem powSaturation_comap (s : Submonoid M) (f : N →* M) :
+    (s.comap f).powSaturation = s.powSaturation.comap f := by
+  ext x
+  simp [map_pow]
+
+/-- Saturation commutes with binary intersections of submonoids. -/
+@[to_additive (attr := simp) /-- Saturation commutes with binary intersections of additive
+submonoids. -/]
+theorem powSaturation_inf (s t : Submonoid M) :
+    (s ⊓ t).powSaturation = s.powSaturation ⊓ t.powSaturation := by
+  refine le_antisymm (le_inf (powSaturation_mono inf_le_left) (powSaturation_mono inf_le_right)) ?_
+  rintro x ⟨⟨n, hn, hns⟩, ⟨m, hm, hmt⟩⟩
+  refine ⟨n * m, Nat.mul_pos hn hm, ?_, ?_⟩
+  · rw [pow_mul]
+    exact pow_mem hns m
+  · rw [Nat.mul_comm, pow_mul]
+    exact pow_mem hmt n
+
+section Group
+
+variable {G : Type*} [CommGroup G] (s : Submonoid G)
+
+/-- Saturating `s` inside the subgroup it generates does not change the generated subgroup. -/
+@[to_additive /-- Saturating `s` inside the additive subgroup it generates does not
+change the generated additive subgroup. -/]
+theorem closure_powSaturation_inf_closure :
+    Subgroup.closure
+        ((s.powSaturation ⊓ (Subgroup.closure (s : Set G)).toSubmonoid : Submonoid G) : Set G) =
+      Subgroup.closure (s : Set G) :=
+  le_antisymm
+    ((Subgroup.closure_le _).mpr fun _ hx => (Submonoid.mem_inf.mp hx).2)
+    (Subgroup.closure_mono <| le_inf s.le_powSaturation Subgroup.subset_closure)
+
+/-- The pullback of `s` to the subgroup it generates is `PowSaturated` if and only if the
+saturation of `s` meets `Subgroup.closure s` in `s`. -/
+@[to_additive /-- The pullback of `s` to the additive subgroup it generates is `NSMulSaturated`
+if and only if the saturation of `s` meets `AddSubgroup.closure s` in `s`. -/]
+theorem powSaturated_comap_subtype_closure_iff :
+    PowSaturated (s.comap (Subgroup.closure (s : Set G)).subtype) ↔
+      s.powSaturation ⊓ (Subgroup.closure (s : Set G)).toSubmonoid = s := by
+  rw [powSaturated_iff_powSaturation_eq, powSaturation_comap]
+  refine ⟨fun h => le_antisymm (fun x hx => ?_) (le_inf s.le_powSaturation Subgroup.subset_closure),
+    fun h => ?_⟩
+  · obtain ⟨hx1, hx2⟩ := Submonoid.mem_inf.mp hx
+    exact (SetLike.ext_iff.mp h ⟨x, hx2⟩).mp hx1
+  · ext ⟨x, hx⟩
+    exact ⟨fun hx' => (SetLike.ext_iff.mp h x).mp (Submonoid.mem_inf.mpr ⟨hx', hx⟩),
+      fun hx' => s.le_powSaturation hx'⟩
+
+/-- The canonical multiplicative equivalence identifying the saturation of `s` inside
+`Subgroup.closure (s : Set G)` with the saturation of the pullback of `s` to
+`Subgroup.closure (s : Set G)`. -/
+@[to_additive /-- The canonical additive equivalence identifying the saturation of `s` inside
+`AddSubgroup.closure (s : Set G)` with the saturation of the pullback of `s` to
+`AddSubgroup.closure (s : Set G)`. -/]
+def powSaturationInfClosureEquiv :
+    ↥(s.powSaturation ⊓ (Subgroup.closure (s : Set G)).toSubmonoid) ≃*
+      ↥(s.comap (Subgroup.closure (s : Set G)).subtype).powSaturation where
+  toFun x := ⟨⟨x.1, x.2.2⟩, by rw [powSaturation_comap]; exact x.2.1⟩
+  invFun z := ⟨z.1.1, Submonoid.mem_inf.mpr
+    ⟨(SetLike.ext_iff.mp (s.powSaturation_comap (Subgroup.closure (s : Set G)).subtype) z.1).mp
+      z.2, z.1.2⟩⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_mul' _ _ := rfl
+
+/-- `powSaturationInfClosureEquiv` preserves the underlying element of the ambient group. -/
+@[to_additive (attr := simp) /-- `nsmulSaturationInfClosureEquiv` preserves the underlying element
+of the ambient additive group. -/]
+theorem coe_coe_powSaturationInfClosureEquiv_apply
+    (x : ↥(s.powSaturation ⊓ (Subgroup.closure (s : Set G)).toSubmonoid)) :
+    (((s.powSaturationInfClosureEquiv x :
+        ↥(s.comap (Subgroup.closure (s : Set G)).subtype).powSaturation) :
+      Subgroup.closure (s : Set G)) : G) = x :=
+  (rfl)
+
+/-- `powSaturationInfClosureEquiv.symm` preserves the underlying element of the ambient group. -/
+@[to_additive (attr := simp) /-- `nsmulSaturationInfClosureEquiv.symm` preserves the underlying
+element of the ambient additive group. -/]
+theorem coe_powSaturationInfClosureEquiv_symm_apply
+    (z : ↥(s.comap (Subgroup.closure (s : Set G)).subtype).powSaturation) :
+    (s.powSaturationInfClosureEquiv.symm z : G) = z :=
+  (rfl)
+
+end Group
+
+end Submonoid
