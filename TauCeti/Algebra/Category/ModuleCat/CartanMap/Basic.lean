@@ -13,6 +13,8 @@ public import Mathlib.RingTheory.Finiteness.Prod
 public import Mathlib.RingTheory.SimpleModule.InjectiveProjective
 public import TauCeti.CategoryTheory.GrothendieckGroup.ProjectiveResolution
 public import TauCeti.Algebra.Category.FGModuleCat.Basic
+public import TauCeti.Algebra.Module.Projective.Complement
+public import TauCeti.Algebra.Module.Submodule.Finite
 
 /-!
 # The Cartan map of a ring
@@ -405,19 +407,6 @@ noncomputable def finiteProjectiveModulesExactK0Equiv :
 theorem finiteProjectiveModulesExactK0Equiv_of (X : (finiteProjectiveModules R).FullSubcategory) :
     finiteProjectiveModulesExactK0Equiv R (ExactK0.of.{u} X) = ExactK0.of.{u} X :=
   ExactK0.ofLEEquiv_of.{u} _ X
-
-/-- A complement of a submodule of a finitely generated module is finitely generated: it is the
-image of the finitely generated module under the projection onto it. -/
-theorem _root_.Module.Finite.of_isCompl {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
-    [Module.Finite R M] {T T' : Submodule R M} (hcompl : IsCompl T T') : Module.Finite R T :=
-  Module.Finite.of_surjective (T.projectionOnto T' hcompl) (T.projectionOnto_surjective hcompl)
-
-/-- A submodule with a complement in a projective module is projective: the inclusion is split by
-the projection onto it. -/
-theorem _root_.Module.Projective.of_isCompl {R M : Type*} [Ring R] [AddCommGroup M]
-    [Module R M] [Module.Projective R M] {T T' : Submodule R M} (hcompl : IsCompl T T') :
-    Module.Projective R T :=
-  Module.Projective.of_split T.subtype (T.projectionOnto T' hcompl) (by ext x; simp)
 
 variable {R} in
 /-- The class of a finitely generated projective module is the sum of the classes of two
