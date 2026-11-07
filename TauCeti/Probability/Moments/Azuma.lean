@@ -6,6 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Moments.SubGaussian
+import Mathlib.Probability.Distributions.Bernoulli
+import TauCeti.Analysis.SpecialFunctions.Exp.Chord
+import TauCeti.MeasureTheory.Function.ConditionalExpectation
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Measure.Tail
 
 /-!
@@ -48,6 +52,8 @@ open scoped ENNReal NNReal
 
 namespace TauCeti.Probability
 
+open MeasureTheory
+
 variable {Ω : Type*} [mΩ : MeasurableSpace Ω] {μ : Measure Ω}
 
 /-- A conditionally centered random variable whose values lie in `[a, b]` is conditionally
@@ -87,50 +93,22 @@ theorem hasCondSubgaussianMGF_of_mem_Icc_of_condExp_eq_zero [StandardBorelSpace 
       hX.aemeasurable hω hzero
     exact hsub.mgf_le q
 
-/-- The chord of the exponential lies above it on `[a, b]`. -/
-theorem exp_mul_le_add_mul {a b x : ℝ} (hab : a < b) (hx : x ∈ Set.Icc a b) (t : ℝ) :
-    exp (t * x) ≤ (b * exp (t * a) - a * exp (t * b)) / (b - a) +
-      (exp (t * b) - exp (t * a)) / (b - a) * x := by
-  have hba : 0 < b - a := sub_pos.2 hab
-  have hconv := convexOn_exp.2 (Set.mem_univ (t * a)) (Set.mem_univ (t * b))
-    (div_nonneg (sub_nonneg.2 hx.2) hba.le) (div_nonneg (sub_nonneg.2 hx.1) hba.le)
-    (by field_simp; ring)
-  simp only [smul_eq_mul] at hconv
-  have h1 : (b - x) / (b - a) * (t * a) + (x - a) / (b - a) * (t * b) = t * x := by
-    field_simp; ring
-  rw [h1] at hconv
-  refine hconv.trans_eq ?_
-  field_simp; ring
-
 /-- The chord value `(b e^{ta} - a e^{tb}) / (b - a)` is at most `exp (((b - a) / 2) ^ 2 t ^ 2 / 2)`
 for `a ≤ 0 ≤ b`, by Hoeffding's lemma applied to the mean-zero two-point law on `{a, b}`. -/
 theorem chord_le_exp {a b : ℝ} (ha : a ≤ 0) (hb : 0 ≤ b) (hab : a < b) (t : ℝ) :
     (b * exp (t * a) - a * exp (t * b)) / (b - a) ≤ exp ((‖b - a‖₊ / 2) ^ 2 * t ^ 2 / 2) := by
   have hba : 0 < b - a := sub_pos.2 hab
-  set ν : Measure ℝ := ENNReal.ofReal (b / (b - a)) • Measure.dirac a +
-    ENNReal.ofReal (-a / (b - a)) • Measure.dirac b with hν
-  have hp : IsProbabilityMeasure ν := by
-    constructor
-    simp only [hν, add_apply, smul_apply, measure_univ, smul_eq_mul, mul_one]
-    rw [← ENNReal.ofReal_add (div_nonneg hb hba.le) (div_nonneg (neg_nonneg.2 ha) hba.le)]
-    rw [show b / (b - a) + -a / (b - a) = 1 by field_simp; ring]
-    simp
-  have hint (f : ℝ → ℝ) : ∀ c : ℝ, Integrable f (ENNReal.ofReal c • Measure.dirac a) ∧
-      Integrable f (ENNReal.ofReal c • Measure.dirac b) := fun c =>
-    ⟨(integrable_dirac (by simp)).smul_measure ENNReal.ofReal_ne_top,
-      (integrable_dirac (by simp)).smul_measure ENNReal.ofReal_ne_top⟩
-  have hI (f : ℝ → ℝ) : ∫ x, f x ∂ν = b / (b - a) * f a + -a / (b - a) * f b := by
-    rw [hν, integral_add_measure (hint f _).1 (hint f _).2, integral_smul_measure,
-      integral_smul_measure]
-    simp only [integral_dirac, ENNReal.toReal_ofReal (div_nonneg hb hba.le),
-      ENNReal.toReal_ofReal (div_nonneg (neg_nonneg.2 ha) hba.le), smul_eq_mul]
-  have hae : ∀ᵐ x ∂ν, id x ∈ Set.Icc a b := by
-    rw [hν, ae_add_measure_iff]
-    exact ⟨Measure.ae_smul_measure ((ae_dirac_iff measurableSet_Icc).2 ⟨le_rfl, hab.le⟩) _,
-      Measure.ae_smul_measure ((ae_dirac_iff measurableSet_Icc).2 ⟨hab.le, le_rfl⟩) _⟩
-  have hsub := hasSubgaussianMGF_of_mem_Icc_of_integral_eq_zero (μ := ν) (X := id) (a := a)
-    (b := b) aemeasurable_id hae (by
-      show ∫ x, id x ∂ν = 0
+  have hp : b / (b - a) ∈ unitInterval :=
+    ⟨div_nonneg hb hba.le, (div_le_one hba).2 (by linarith)⟩
+  have hq : 1 - b / (b - a) = -a / (b - a) := by field_simp; ring
+  have hI (f : ℝ → ℝ) : ∫ x, f x ∂bernoulliMeasure a b ⟨b / (b - a), hp⟩ =
+      b / (b - a) * f a + -a / (b - a) * f b := by
+    rw [integral_bernoulliMeasure, smul_eq_mul, smul_eq_mul, hq]
+  have hae : ∀ᵐ x ∂bernoulliMeasure a b ⟨b / (b - a), hp⟩, id x ∈ Set.Icc a b :=
+    ae_iff.2 (bernoulliMeasure_apply_of_notMem_of_notMem _ measurableSet_Icc.compl
+      (by simp [ha.trans hb]) (by simp [hab.le]))
+  have hsub := hasSubgaussianMGF_of_mem_Icc_of_integral_eq_zero (X := id) (a := a) (b := b)
+    aemeasurable_id hae (by
       rw [hI id]
       simp only [id]
       field_simp
@@ -140,14 +118,6 @@ theorem chord_le_exp {a b : ℝ} (ha : a ≤ 0) (hb : 0 ≤ b) (hab : a < b) (t 
   convert this using 2
   · field_simp; ring_nf
   · push_cast; rfl
-
-/-- A mean zero random variable with values in `[a, b]` lies in `[a, b]` with `a ≤ 0 ≤ b`. -/
-theorem nonpos_nonneg_of_mem_Icc_of_integral_eq_zero [IsProbabilityMeasure μ] {X : Ω → ℝ}
-    {a b : ℝ} (hX : Integrable X μ) (hbound : ∀ᵐ ω ∂μ, X ω ∈ Set.Icc a b)
-    (hmean : ∫ ω, X ω ∂μ = 0) : a ≤ 0 ∧ 0 ≤ b := by
-  constructor
-  · simpa [hmean] using integral_mono_ae (integrable_const a) hX (hbound.mono fun ω h => h.1)
-  · simpa [hmean] using integral_mono_ae hX (integrable_const b) (hbound.mono fun ω h => h.2)
 
 /-- Conditional Hoeffding's lemma without regular conditional distributions: the conditional
 exponential moment of a conditionally centered random variable with values in `[a, b]`. -/
@@ -186,24 +156,6 @@ theorem condExp_exp_mul_le [IsProbabilityMeasure μ] {m : MeasurableSpace Ω} (h
     rw [Pi.add_apply, h3', h4]
     simp
 
-/-- Pulling out a measurable factor: if `Z ≥ 0` is `m`-measurable and the conditional mean of `W`
-is at most `K`, then `∫ Z * W ≤ K * ∫ Z`. -/
-theorem integral_mul_le_of_condExp_le [IsProbabilityMeasure μ] {m : MeasurableSpace Ω}
-    (hm : m ≤ mΩ) {Z W : Ω → ℝ} {K : ℝ} (hZ : StronglyMeasurable[m] Z) (hZ0 : 0 ≤ Z)
-    (hZint : Integrable Z μ) (hWint : Integrable W μ) (hZW : Integrable (fun ω ↦ Z ω * W ω) μ)
-    (hW : μ[W | m] ≤ᵐ[μ] fun _ ↦ K) :
-    ∫ ω, Z ω * W ω ∂μ ≤ K * ∫ ω, Z ω ∂μ := by
-  have hpull : μ[Z * W | m] =ᵐ[μ] Z * μ[W | m] :=
-    condExp_mul_of_stronglyMeasurable_left hZ hZW hWint
-  have hint : Integrable (Z * μ[W | m]) μ := integrable_condExp.congr hpull
-  calc ∫ ω, Z ω * W ω ∂μ = ∫ ω, μ[Z * W | m] ω ∂μ := (integral_condExp hm).symm
-    _ = ∫ ω, (Z * μ[W | m]) ω ∂μ := integral_congr_ae hpull
-    _ ≤ ∫ ω, K * Z ω ∂μ := by
-      refine integral_mono_ae hint (hZint.const_mul K) ?_
-      filter_upwards [hW] with ω hω
-      simpa [mul_comm] using mul_le_mul_of_nonneg_left hω (hZ0 ω)
-    _ = K * ∫ ω, Z ω ∂μ := integral_const_mul _ _
-
 /-- A conditionally centered bounded increment adds its Hoeffding variance proxy to a
 sub-Gaussian `m`-measurable random variable. -/
 theorem hasSubgaussianMGF_add_of_condExp_eq_zero [IsProbabilityMeasure μ] {m : MeasurableSpace Ω}
@@ -232,8 +184,9 @@ theorem hasSubgaussianMGF_add_of_condExp_eq_zero [IsProbabilityMeasure μ] {m : 
       simp [mgf, mul_add, exp_add]
     rw [hmul]
     calc _ ≤ exp ((‖b - a‖₊ / 2) ^ 2 * t ^ 2 / 2) * ∫ ω, exp (t * S ω) ∂μ :=
-          integral_mul_le_of_condExp_le (mΩ := mΩ) hm (hZ t) (fun ω ↦ (exp_pos _).le)
-            (hS.integrable_exp_mul t) (hWint t) (hZW t)
+          integral_mul_le_of_condExp_le hm (hZ t)
+            (Filter.Eventually.of_forall fun ω ↦ (exp_pos _).le) (hS.integrable_exp_mul t)
+            (hWint t) (hZW t)
             (condExp_exp_mul_le (mΩ := mΩ) hm hX hbound hmean t)
       _ ≤ exp ((‖b - a‖₊ / 2) ^ 2 * t ^ 2 / 2) * exp (c * t ^ 2 / 2) :=
           mul_le_mul_of_nonneg_left (hS.mgf_le t) (exp_pos _).le
