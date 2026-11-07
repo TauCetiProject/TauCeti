@@ -204,6 +204,20 @@ theorem sign_re_rotation_smul_mk_of_one_lt (θ : ℝ) {y : ℝ} (hy₀ : 0 < y) 
   rw [re_rotation_smul_mk, h, Left.sign_neg, sign_mul (Real.sin θ * Real.cos θ),
     sign_pos (div_pos (by linarith) hN), mul_one]
 
+/-- A point of the rotated imaginary axis above `I`, that is `rotation θ • i·y` with `1 < y`, and
+with nonzero real part has `sin θ cos θ` of the sign opposite to that of its real part. -/
+theorem sin_mul_cos_mul_re_rotation_smul_mk_neg (θ : ℝ) {y : ℝ} (hy₀ : 0 < y) (hy : 1 < y)
+    (hz : (rotation θ • UpperHalfPlane.mk ⟨0, y⟩ hy₀).re ≠ 0) :
+    Real.sin θ * Real.cos θ * (rotation θ • UpperHalfPlane.mk ⟨0, y⟩ hy₀).re < 0 := by
+  have hsign := sign_re_rotation_smul_mk_of_one_lt θ hy₀ hy
+  have hα0 : Real.sin θ * Real.cos θ ≠ 0 := fun h0 ↦
+    hz (sign_eq_zero_iff.1 (by rw [hsign, h0, sign_zero, neg_zero]))
+  rcases hα0.lt_or_gt with h | h
+  · rw [sign_neg h, neg_neg] at hsign
+    exact mul_neg_of_neg_of_pos h (sign_eq_one_iff.1 hsign)
+  · rw [sign_pos h] at hsign
+    exact mul_neg_of_pos_of_neg h (sign_eq_neg_one_iff.1 hsign)
+
 /-- The semicircle case: the geodesic from `P` to `Q` is `toPoint P` followed by a rotation
 by an angle `θ`, whose sign is opposite to that of `Q.re - P.re`, and the centre of the
 semicircle through `P` and `Q` is `P.re - cos 2θ / sin 2θ · P.im`. -/
@@ -237,16 +251,9 @@ theorem exists_rotation_of_re_ne {P Q : ℍ} (hPQ : P.re ≠ Q.re) :
     have hz : Q'.re ≠ 0 := by
       rw [hQ're]
       exact div_ne_zero (sub_ne_zero.2 (Ne.symm hPQ)) P.im_pos.ne'
-    have hsign := sign_re_rotation_smul_mk_of_one_lt θ (Real.exp_pos (dist UpperHalfPlane.I Q'))
-      (Real.one_lt_exp_iff.2 (dist_pos.2 hne))
-    rw [← hd, ← hα] at hsign
-    have hα0 : α ≠ 0 := fun h0 ↦ hz (sign_eq_zero_iff.1 (by rw [hsign, h0, sign_zero, neg_zero]))
-    have h : α * Q'.re < 0 := by
-      rcases hα0.lt_or_gt with h | h
-      · rw [sign_neg h, neg_neg] at hsign
-        exact mul_neg_of_neg_of_pos h (sign_eq_one_iff.1 hsign)
-      · rw [sign_pos h] at hsign
-        exact mul_neg_of_pos_of_neg h (sign_eq_neg_one_iff.1 hsign)
+    have h := sin_mul_cos_mul_re_rotation_smul_mk_neg θ (Real.exp_pos (dist UpperHalfPlane.I Q'))
+      (Real.one_lt_exp_iff.2 (dist_pos.2 hne)) (hd ▸ hz)
+    rw [← hd] at h
     rw [hQ're, ← mul_div_assoc, div_neg_iff] at h
     have := (h.resolve_left fun h ↦ P.im_pos.not_gt h.2).1
     linarith
