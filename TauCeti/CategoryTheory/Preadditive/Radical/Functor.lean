@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Preadditive.Radical.Basic
-public import TauCeti.CategoryTheory.Preadditive.MorphismIdeal.Functor
-public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
+public import TauCeti.CategoryTheory.Preadditive.MorphismIdeal.Equivalence
 
 /-!
 # The radical under fully faithful functors and equivalences
@@ -23,25 +22,26 @@ pullback along an equivalence commutes with products of arbitrary ideals
 
 ## Main results
 
-* `TauCeti.map_mem_jacobsonRadical_iff`: a fully faithful additive functor preserves and reflects
-  radical morphisms.
-* `TauCeti.jacobsonRadicalIdeal_comap`: the radical ideal is the pullback of the radical ideal of
-  the target along a fully faithful additive functor.
-* `TauCeti.jacobsonRadicalIdeal_pow_comap`: an equivalence carries each power of the radical
-  ideal to the corresponding power, by
+* `CategoryTheory.Functor.map_mem_jacobsonRadical_iff`: a fully faithful additive functor
+  preserves and reflects radical morphisms.
+* `CategoryTheory.Functor.jacobsonRadicalIdeal_comap`: the radical ideal is the pullback of the
+  radical ideal of the target along a fully faithful additive functor.
+* `CategoryTheory.Equivalence.jacobsonRadicalIdeal_pow_comap`: an equivalence carries each power
+  of the radical ideal to the corresponding power, by
   `TauCeti.MorphismIdeal.comap_mul_of_equivalence` for products of arbitrary ideals.
 -/
 
 public section
 
-namespace TauCeti
+namespace CategoryTheory
 
-open CategoryTheory
+open TauCeti
 
 variable {C D : Type*} [Category* C] [Category* D] [Preadditive C] [Preadditive D]
 
 /-- **A fully faithful additive functor preserves and reflects the radical.** -/
-theorem map_mem_jacobsonRadical_iff (F : C ⥤ D) [F.Additive] [F.Full] [F.Faithful] {X Y : C}
+@[simp]
+theorem Functor.map_mem_jacobsonRadical_iff (F : C ⥤ D) [F.Additive] [F.Full] [F.Faithful] {X Y : C}
     (f : X ⟶ Y) : F.map f ∈ jacobsonRadical (F.obj X) (F.obj Y) ↔ f ∈ jacobsonRadical X Y := by
   simp only [mem_jacobsonRadical_iff_isIso_id_sub_comp_right]
   refine ⟨fun h g ↦ ?_, fun h g ↦ ?_⟩
@@ -54,15 +54,16 @@ theorem map_mem_jacobsonRadical_iff (F : C ⥤ D) [F.Additive] [F.Full] [F.Faith
 
 /-- The radical ideal is the pullback of the radical ideal of the target along a fully faithful
 additive functor. -/
-theorem jacobsonRadicalIdeal_comap (F : C ⥤ D) [F.Additive] [F.Full] [F.Faithful] :
+@[simp]
+theorem Functor.jacobsonRadicalIdeal_comap (F : C ⥤ D) [F.Additive] [F.Full] [F.Faithful] :
     (jacobsonRadicalIdeal D).comap F = jacobsonRadicalIdeal C := by
   ext X Y f
   rw [MorphismIdeal.mem_comap_hom, jacobsonRadicalIdeal_hom, jacobsonRadicalIdeal_hom,
-    map_mem_jacobsonRadical_iff]
+    F.map_mem_jacobsonRadical_iff]
 
 /-- **An equivalence carries each power of the radical ideal to the corresponding power.** -/
-theorem jacobsonRadicalIdeal_pow_comap [Limits.HasBinaryBiproducts D] (e : C ≌ D)
-    [e.functor.Additive] (n : ℕ) :
+@[simp]
+theorem Equivalence.jacobsonRadicalIdeal_pow_comap (e : C ≌ D) [e.functor.Additive] (n : ℕ) :
     (jacobsonRadicalIdeal D ^ n).comap e.functor = jacobsonRadicalIdeal C ^ n := by
   induction n with
   | zero =>
@@ -70,6 +71,6 @@ theorem jacobsonRadicalIdeal_pow_comap [Limits.HasBinaryBiproducts D] (e : C ≌
     simp [MorphismIdeal.one_eq_top, MorphismIdeal.mem_comap_hom]
   | succ n ih =>
     rw [pow_succ, pow_succ, MorphismIdeal.comap_mul_of_equivalence, ih,
-      jacobsonRadicalIdeal_comap]
+      e.functor.jacobsonRadicalIdeal_comap]
 
-end TauCeti
+end CategoryTheory

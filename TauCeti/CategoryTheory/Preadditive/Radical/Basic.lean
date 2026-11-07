@@ -147,6 +147,9 @@ the radical would be everything.
   ("the radical of a category").
 * I. Assem, D. Simson, A. Skowroński, *Elements of the Representation Theory of Associative
   Algebras, Vol. 1*, LMS Student Texts 65, CUP (2006), A.3 and IV.1.
+* H. Krause, *Krull-Schmidt categories and projective covers*, Expo. Math. 33 (2015), 535–549,
+  Section 4 (arXiv:1410.2822), for the matrix description of the radical along decompositions
+  into objects with local endomorphism rings.
 -/
 
 public section
@@ -404,7 +407,8 @@ open Limits in
 /-- **The matrix description of the radical**: between two finite biproducts of objects with local
 endomorphism rings, a morphism is radical exactly when none of its components is an isomorphism.
 This combines the matrix criterion for any ideal, `TauCeti.MorphismIdeal.mem_biproduct_iff`, with
-`TauCeti.mem_jacobsonRadical_iff_not_isIso`. -/
+`TauCeti.mem_jacobsonRadical_iff_not_isIso`; see Krause, *Krull-Schmidt categories and projective
+covers*, Section 4. -/
 theorem mem_jacobsonRadical_biproduct_iff {I J : Type*} [Finite I] [Finite J] (P : I → C)
     (Q : J → C) [HasBiproduct P] [HasBiproduct Q] (hP : ∀ i, IsLocalRing (End (P i)))
     (hQ : ∀ j, IsLocalRing (End (Q j))) {f : ⨁ P ⟶ ⨁ Q} :
