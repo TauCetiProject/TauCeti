@@ -198,11 +198,11 @@ theorem IsMorseSmale.manifoldMorseIndex_lt_of_mem_closure_stableSet_inter_stable
 
 omit hX in
 /-- **The Morse index decreases along a broken backward limit.** Under the Morse–Smale condition, if
-the closure of the unstable manifold of a critical point `p` meets the unstable manifold of a
-different critical point `a`, then `ind a < ind p`. -/
+the closure of the unstable manifold of a point `p` meets the unstable manifold of a different
+critical point `a`, then `ind a < ind p`. -/
 theorem IsMorseSmale.manifoldMorseIndex_lt_of_mem_closure_unstableSet_inter_unstableSet
     {hX : IsAdaptedPseudoGradient f X} (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f) {a p : M}
-    (ha : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f a = 0) (hp : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0) (hap : a ≠ p)
+    (ha : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f a = 0) (hap : a ≠ p)
     (hne : (closure (hX.flow.unstableSet p) ∩ hX.flow.unstableSet a).Nonempty) :
     manifoldMorseIndex 𝓘(ℝ, E) f a < manifoldMorseIndex 𝓘(ℝ, E) f p := by
   have hdf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f := hf.contMDiff.mdifferentiable (by simp)
@@ -260,7 +260,7 @@ theorem IsMorseSmale.isClosed_unstableSet_inter_stableSet_inter_level
   -- `b = q`: any other configuration forces a constant trajectory through `y` at `p` or `q`.
   have hap : a = p ∨ manifoldMorseIndex 𝓘(ℝ, E) f a < manifoldMorseIndex 𝓘(ℝ, E) f p :=
     or_iff_not_imp_left.2 fun hap ↦
-      h.manifoldMorseIndex_lt_of_mem_closure_unstableSet_inter_unstableSet hf ha hp hap
+      h.manifoldMorseIndex_lt_of_mem_closure_unstableSet_inter_unstableSet hf ha hap
         ⟨y, hyU, hya⟩
   have hbq : b = q ∨ manifoldMorseIndex 𝓘(ℝ, E) f q < manifoldMorseIndex 𝓘(ℝ, E) f b :=
     or_iff_not_imp_left.2 fun hbq ↦
