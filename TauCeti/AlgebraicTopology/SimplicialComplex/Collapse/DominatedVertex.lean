@@ -66,24 +66,6 @@ private theorem exists_isFreePair_incident {K : PreAbstractSimplicialComplex ι}
     exact Or.inr (by rw [← heq, Finset.insert_erase hwτ])
   · exact Or.inl (hmax.eq_of_ge ⟨hτ, hστ hvσ, hwτ⟩ hστ)
 
-/-- Domination of `v` by `w ∉ σ` survives deleting a face `σ` containing `v`, and a subsequent
-deletion of `v` is unchanged. -/
-private theorem deletion_dominated_of_notMem {K : PreAbstractSimplicialComplex ι} {v w : ι}
-    {σ : Finset ι} (hwσ : w ∉ σ) (hvσ : v ∈ σ) (hdom : ∀ τ ∈ K, v ∈ τ → insert w τ ∈ K) :
-    (∀ τ ∈ deletion K σ, v ∈ τ → insert w τ ∈ deletion K σ) ∧
-      deletion (deletion K σ) {v} = deletion K {v} := by
-  refine ⟨fun τ hτ hvτ => ?_, ?_⟩
-  · obtain ⟨hτK, hστ⟩ := mem_deletion.mp hτ
-    refine mem_deletion.mpr ⟨hdom τ hτK hvτ, fun hsub => hστ fun a ha => ?_⟩
-    exact (Finset.mem_insert.mp (hsub ha)).resolve_left (fun haw => hwσ (haw ▸ ha))
-  · apply SetLike.ext
-    intro τ
-    simp only [mem_deletion, Finset.singleton_subset_iff]
-    constructor
-    · exact fun h => ⟨h.1.1, h.2⟩
-    · rintro ⟨hτ, hvτ⟩
-      exact ⟨⟨hτ, fun hστ => hvτ (hστ hvσ)⟩, hvτ⟩
-
 /-- A finite collection of faces containing `v` and missing `w` can be removed by free-pair
 collapses, pairing each such face with the face obtained by adjoining `w`. -/
 private theorem collapsesTo_deletion_vertex_aux (v w : ι) (hwv : w ≠ v) :
@@ -106,9 +88,9 @@ private theorem collapsesTo_deletion_vertex_aux (v w : ι) (hwv : w ≠ v) :
     have hT : {τ : Finset ι | τ ∈ deletion K σ ∧ v ∈ τ}.Finite :=
       hfin.subset (fun _ h => ⟨deletion_le h.1, h.2⟩)
     have hTlt := (ncard_incident_deletion_lt hσ hvσ hfin).trans_le hcard
-    obtain ⟨hdom', hend⟩ := deletion_dominated_of_notMem hwσ hvσ hdom
-    rw [← hend]
-    exact CollapsesTo.head hstep (ih _ hTlt (deletion K σ) hT le_rfl hdom')
+    rw [← deletion_deletion_singleton_of_mem (K := K) hvσ]
+    exact CollapsesTo.head hstep
+      (ih _ hTlt (deletion K σ) hT le_rfl (insert_mem_deletion_of_notMem hwσ hdom))
 
 /-- A vertex dominated by a different vertex can be removed by a finite sequence of elementary
 collapses, retaining every face that avoids the removed vertex. Only the faces incident to the
