@@ -51,6 +51,8 @@ order `m` (`TauCeti.Symbol.spatialDeriv`), so iterating this rule shows that `Op
   growth bounds locally uniform in `x`.
 * `TauCeti.quantizeSchwartzCLM`: for continuous `a` with growth bounds uniform in `x`, the
   quantization is a continuous linear map from Schwartz space to bounded continuous functions.
+  `TauCeti.continuous_quantizeSchwartzValue_input` is the pointwise version: `u ↦ Op(a) u (x)`
+  is continuous when `ξ ↦ a(x, ξ)` is continuous with a growth bound at the single point `x`.
 * `TauCeti.quantizeSchwartzValue_id`, `TauCeti.quantizeSchwartzValue_comp_fst`,
   `TauCeti.quantizeSchwartzValue_eq_fourierMultiplierCLM` and
   `TauCeti.quantizeSchwartzValue_inner_eq_lineDerivOp`: the quantization of `1` is the
@@ -101,6 +103,13 @@ def quantizeSchwartzValue (a : E × E → V →L[ℂ] W) (u : 𝓢(E, V)) (x : E
 theorem quantizeSchwartzValue_def (a : E × E → V →L[ℂ] W) (u : 𝓢(E, V)) (x : E) :
     quantizeSchwartzValue a u x = ∫ ζ, 𝐞 ⟪ζ, x⟫ • a (x, (2 * π) • ζ) (𝓕 u ζ) :=
   (rfl)
+
+/-- The quantization at `x` only depends on the frequency slice `ξ ↦ a (x, ξ)` of the coefficient
+at `x`. -/
+theorem quantizeSchwartzValue_congr_left {a b : E × E → V →L[ℂ] W} {x : E}
+    (h : ∀ ξ, a (x, ξ) = b (x, ξ)) (u : 𝓢(E, V)) :
+    quantizeSchwartzValue a u x = quantizeSchwartzValue b u x := by
+  simp only [quantizeSchwartzValue_def, h]
 
 /-- The quantization is the inverse Fourier transform of the rescaled coefficient applied to the
 Fourier transform of the input. -/
@@ -602,6 +611,21 @@ theorem quantizeSchwartzCLM_apply (ha : Continuous a)
     (hbound : ∃ C m : ℝ, ∀ x ξ, ‖a (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) (u : 𝓢(E, V))
     (x : E) : quantizeSchwartzCLM ha hbound u x = quantizeSchwartzValue a u x :=
   (rfl)
+
+/-- **Continuity in the input at a point.** If `ξ ↦ a(x, ξ)` is continuous with a growth bound
+`‖a(x, ξ)‖ ≤ C ⟨ξ⟩ ^ m` at the point `x`, then `u ↦ Op(a) u (x)` is continuous on Schwartz
+space. No regularity in the position is needed. -/
+theorem continuous_quantizeSchwartzValue_input {x : E} (hcont : Continuous fun ξ ↦ a (x, ξ))
+    {C m : ℝ} (hC : ∀ ξ, ‖a (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) :
+    Continuous fun u : 𝓢(E, V) ↦ quantizeSchwartzValue a u x := by
+  -- Freeze the position at `x`: the frozen coefficient satisfies the global hypotheses of
+  -- `quantizeSchwartzCLM` and has the same quantization at `x`.
+  have hfrozen : Continuous fun p : E × E ↦ a (x, p.2) := hcont.comp continuous_snd
+  refine ((BoundedContinuousFunction.evalCLM ℂ x).comp
+    (quantizeSchwartzCLM hfrozen ⟨C, m, fun _ ↦ hC⟩)).continuous.congr fun u ↦ ?_
+  simp only [ContinuousLinearMap.comp_apply, BoundedContinuousFunction.evalCLM_apply,
+    quantizeSchwartzCLM_apply]
+  exact quantizeSchwartzValue_congr_left (fun _ ↦ rfl) u
 
 end CLM
 
