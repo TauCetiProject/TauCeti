@@ -288,7 +288,7 @@ theorem exists_isCoupling_klDiv_eq_schroedingerValue [IsFiniteMeasure μ] [IsFin
         (by norm_num : (2⁻¹ : ℝ≥0) < 1)).pow 2
       rwa [zero_pow two_ne_zero] at h0
     simpa using tendsto_const_nhds.add (ENNReal.tendsto_coe.2 h0)
-  exact (klDiv_withDensity_le_liminf hac hgm.measurable hlim).trans
+  exact (klDiv_withDensity_le_liminf hac hlim).trans
     ((liminf_le_liminf (Eventually.of_forall fun n ↦ (hπS n).le)).trans_eq hεlim.liminf_eq)
 
 /-- **Existence and uniqueness of the Schrödinger minimizer.** For a finite reference measure and
