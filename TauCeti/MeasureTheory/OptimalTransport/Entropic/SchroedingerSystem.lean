@@ -580,7 +580,7 @@ theorem IsCoupling.exists_eq_withDensity_exp_add_of_klDiv_eq_schroedingerValue
   have : IsFiniteMeasure ν := hπ.snd_eq ▸ inferInstance
   obtain ⟨φ, ψ, C, hφ, hψ, hφC, hψC, hσ⟩ :=
     exists_isCoupling_withDensity_exp_add_of_eq_withDensity hπ.measure_univ_eq hg hgM hR
-  have : IsFiniteMeasure R := hR ▸ isFiniteMeasure_withDensity_ofReal_exp hg.aemeasurable
+  have : IsFiniteMeasure R := hR ▸ isFiniteMeasure_withDensity_ofReal_exp
     (ae_of_all _ fun z ↦ (abs_le.1 (hgM z)).2)
   have hφi : Integrable φ μ :=
     Integrable.of_bound hφ.aestronglyMeasurable C (ae_of_all _ fun x ↦ hφC x)
