@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Trace.Extension
+import TauCeti.Analysis.Calculus.FDeriv.Integrable
 import TauCeti.Analysis.Calculus.FDeriv.WithLp
-import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
+import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import Mathlib.MeasureTheory.Function.Holder
@@ -68,21 +69,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 
 /-! ### The smooth divergence theorem on a half-space -/
 
-/-- The directional derivative of a compactly supported `C¹` function is integrable on the
-product of `Ioi a` with `E`. -/
-private theorem integrable_fderiv_apply_prod {g : WithLp 2 (ℝ × E) → ℝ} (hg : ContDiff ℝ 1 g)
-    (hgc : HasCompactSupport g) (a : ℝ) (d : WithLp 2 (ℝ × E)) :
-    Integrable (fun z : ℝ × E ↦ fderiv ℝ g (WithLp.toLp 2 z) d)
-      ((volume.restrict (Ioi a)).prod volume) := by
-  have hdc : Continuous fun x ↦ fderiv ℝ g x d :=
-    (hg.continuous_fderiv one_ne_zero).clm_apply continuous_const
-  have h : Integrable (fun x ↦ fderiv ℝ g x d) volume :=
-    hdc.integrable_of_hasCompactSupport (hgc.fderiv_apply (𝕜 := ℝ) d)
-  have hprod :=
-    (WithLp.volume_preserving_toLp ℝ E).integrable_comp h.aestronglyMeasurable |>.mpr h
-  rw [Measure.restrict_prod_eq_prod_univ]
-  exact hprod.integrableOn
-
 /-- The normal part of the divergence theorem on a half-space: the fundamental theorem of calculus
 on each normal line. -/
 private theorem integral_prod_fderiv_normal {g : WithLp 2 (ℝ × E) → ℝ} (hg : ContDiff ℝ 1 g)
@@ -121,16 +107,8 @@ private theorem integral_prod_fderiv_tangent {g : WithLp 2 (ℝ × E) → ℝ} (
     hg.comp (((WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm.contDiff).comp
       (contDiff_const.prodMk contDiff_id))
   have hsc := hgc.comp_isClosedEmbedding he
-  have hibp := integral_mul_fderiv_eq_neg_fderiv_mul_of_integrable (μ := volume)
-    (f := fun _ : E ↦ (1 : ℝ)) (g := fun y : E ↦ g (WithLp.toLp 2 (t, y))) (v := w)
-    (by simp) (by simpa using ((hslice.continuous_fderiv one_ne_zero).clm_apply
-      continuous_const).integrable_of_hasCompactSupport (hsc.fderiv_apply (𝕜 := ℝ) w))
-    (by simpa using hslice.continuous.integrable_of_hasCompactSupport hsc)
-    (fun _ _ ↦ differentiableAt_const _)
-    (fun y _ ↦ hslice.differentiable one_ne_zero y)
-  simp only [one_mul] at hibp
   simp only [← fderiv_comp_toLp_snd (hgd _)]
-  simpa using hibp
+  exact integral_fderiv_apply_eq_zero_of_hasCompactSupport hslice hsc w
 
 /-- **The divergence theorem on a half-space.** For a compactly supported `C¹` function `g` on
 `ℝ × E` and a direction `v`, the integral of the directional derivative `∂_v g` over the half-space
