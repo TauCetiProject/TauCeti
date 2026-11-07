@@ -41,17 +41,6 @@ namespace TauCeti
 variable {ι κ R : Type*} [Finite ι] [Fintype κ] [DecidableEq ι]
 variable [CommRing R] (φ : (ι → ℤ) →ₗ[ℤ] (κ → ℤ))
 
-/-- A point lies in the kernel precisely when every character in the image of the character
-map evaluates to one. -/
-theorem mem_ker_torusPointMap_iff (s : κ → Rˣ) :
-    s ∈ (torusPointMap φ).ker ↔ ∀ χ, torusCharacter s (φ χ) = 1 := by
-  let := Fintype.ofFinite ι
-  constructor
-  · intro hs χ
-    rw [← torusCharacter_torusPointMap, MonoidHom.mem_ker.mp hs, torusCharacter_one]
-  · intro hs
-    exact MonoidHom.mem_ker.mpr <| funext fun i => by simp [hs]
-
 /-- Each coordinate of a kernel point is killed by the index of the character image. When
 the index is zero this is the usual identity `s ^ 0 = 1`; the useful case is finite index. -/
 theorem pow_index_eq_one_of_mem_ker_torusPointMap {s : κ → Rˣ}
