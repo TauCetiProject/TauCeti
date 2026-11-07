@@ -8,6 +8,9 @@ module
 public import Mathlib.CategoryTheory.Monoidal.NaturalTransformation
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Tannaka.PointFaithful
 public import TauCeti.Algebra.Coalgebra.Comodule.Finite.ScalarExtension.Monoidal
+public import TauCeti.CategoryTheory.Monoidal.Conjugation
+
+import TauCeti.Algebra.Category.ModuleCat.Monoidal.Tmul
 
 /-!
 # Tensor automorphisms from algebraic-group points
@@ -224,29 +227,13 @@ theorem scalarExtensionComponent_tensor
     SemimoduleCat.ofHom
       (TensorProduct.AlgebraTensorModule.distribBaseChange R A M N).symm.toLinearMap
   have hmon :
-      (((iM.hom ⊗ₘ iN.hom) ≫ d ≫ iMN.inv) ≫ aMN) =
+      (iM.hom ⊗ₘ iN.hom) ≫ d ≫ iMN.inv ≫ aMN =
+        (aM ⊗ₘ aN) ≫ (iM.hom ⊗ₘ iN.hom) ≫ d ≫ iMN.inv := by
+    have hmon' : ((iM.hom ⊗ₘ iN.hom) ≫ d ≫ iMN.inv) ≫ aMN =
         (aM ⊗ₘ aN) ≫ ((iM.hom ⊗ₘ iN.hom) ≫ d ≫ iMN.inv) := by
-    simpa only [iM, iN, iMN, d, eqToIso.hom, eqToIso.inv] using htensor
-  -- Next cancel the object transports, leaving only explicit scalar-extension components.
-  have he :
-      (iM.hom ⊗ₘ iN.hom) ≫
-          ((iM.inv ≫ aM ≫ iM.hom) ⊗ₘ (iN.inv ≫ aN ≫ iN.hom)) =
-        ((aM ≫ iM.hom) ⊗ₘ (aN ≫ iN.hom)) := by
-    rw [MonoidalCategory.tensorHom_comp_tensorHom]
-    simp only [Iso.hom_inv_id_assoc]
-  have he' :
-      (aM ⊗ₘ aN) ≫ (iM.hom ⊗ₘ iN.hom) =
-        ((aM ≫ iM.hom) ⊗ₘ (aN ≫ iN.hom)) :=
-    MonoidalCategory.tensorHom_comp_tensorHom _ _ _ _
-  have hcat :
-      d ≫ (iMN.inv ≫ aMN ≫ iMN.hom) =
-        ((iM.inv ≫ aM ≫ iM.hom) ⊗ₘ (iN.inv ≫ aN ≫ iN.hom)) ≫ d := by
-    rw [← cancel_epi (iM.hom ⊗ₘ iN.hom)]
-    rw [← cancel_mono iMN.inv]
-    simp only [Category.assoc, Iso.hom_inv_id, Category.comp_id]
-    conv_rhs => rw [← Category.assoc]
-    rw [he, ← he']
-    simpa only [Category.assoc] using hmon
+      simpa only [iM, iN, iMN, d, eqToIso.hom, eqToIso.inv] using htensor
+    simpa only [Category.assoc] using hmon'
+  have hcat := comp_conj_eq_tensorHom_conj_comp iM iN iMN d aM aN aMN hmon
   -- Use the same bridge to replace all three transported maps before passing to linear maps.
   have hcat' :
       d ≫ SemimoduleCat.ofHom
@@ -258,25 +245,7 @@ theorem scalarExtensionComponent_tensor
       ofHom_scalarExtensionComponent R H A η N hN]
     convert hcat using 1 <;>
       simp only [iM, iN, iMN, aM, aN, aMN, eqToIso.inv, eqToIso.hom] <;> rfl
-  have hlin := congrArg SemimoduleCat.Hom.hom hcat'
-  simp only [SemimoduleCat.hom_comp, SemimoduleCat.hom_ofHom] at hlin
-  rw [SemimoduleCat.hom_tensorHom] at hlin
-  -- Finally evaluate the linear-map equality on a pure tensor.
-  have happ := LinearMap.congr_fun hlin (x ⊗ₜ[A] y)
-  -- No carrier-level rewrite theorem unfolds these two categorical applications, so display
-  -- their underlying linear maps before evaluating `TensorProduct.map`.
-  change scalarExtensionComponent R H A η (M ⊗ N : FGComoduleCat R H)
-      (d.hom (x ⊗ₜ[A] y)) =
-    d.hom (TensorProduct.map (scalarExtensionComponent R H A η M)
-      (scalarExtensionComponent R H A η N) (x ⊗ₜ[A] y)) at happ
-  rw [TensorProduct.map_tmul] at happ
-  change scalarExtensionComponent R H A η (M ⊗ N : FGComoduleCat R H)
-      ((TensorProduct.AlgebraTensorModule.distribBaseChange R A M N).symm
-        (x ⊗ₜ[A] y)) =
-    (TensorProduct.AlgebraTensorModule.distribBaseChange R A M N).symm
-      (scalarExtensionComponent R H A η M x ⊗ₜ[A]
-        scalarExtensionComponent R H A η N y) at happ
-  exact happ
+  exact SemimoduleCat.apply_tmul_of_comp_eq d hcat' x y
 
 -- Conjugating by an object transport turns the identity into the identity. Stated for a
 -- variable object so that the transport can be substituted away.
