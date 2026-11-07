@@ -159,21 +159,12 @@ private theorem mfderiv_val_unitDiskBoundaryLoop_one {t : ℝ} (ht₀ : 0 < t) (
         ((show ℝ →L[ℝ] EuclideanSpace ℝ (Fin 1) from
           mfderiv 𝓘(ℝ) (𝓡 1) unitDiskBoundaryLoop.extend t) 1) =
       (2 * π : ℝ) • (Complex.I * (unitDiskBoundaryLoop.extend t).val.val) := by
-  have hh := mfderiv_comp t hA hq
-  rw [mfderiv_eq_fderiv] at hh
-  have he := congrArg (fun T : ℝ →L[ℝ] ℂ ↦ T 1) hh
-  -- Evaluate the derivative chain rule at the real unit vector and expose the model tangent map.
-  change fderiv ℝ (fun s ↦ (unitDiskBoundaryLoop.extend s).val.val) t 1 =
-    (show EuclideanSpace ℝ (Fin 1) →L[ℝ] ℂ from
-      mfderiv (𝓡 1) 𝓘(ℝ, ℂ) (fun x : B ↦ x.val.val) (unitDiskBoundaryLoop.extend t))
-        ((show ℝ →L[ℝ] EuclideanSpace ℝ (Fin 1) from
-          mfderiv 𝓘(ℝ) (𝓡 1) unitDiskBoundaryLoop.extend t) 1) at he
-  rw [(hasDerivAt_unitDiskBoundaryLoop_val ⟨ht₀, ht₁⟩).hasFDerivAt.fderiv] at he
-  -- The real unit vector acts by unit scalar multiplication on the complex velocity.
-  change (1 : ℝ) • ((2 * π : ℝ) • (Complex.I * (unitDiskBoundaryLoop.extend t).val.val)) = _
-    at he
-  rw [one_smul] at he
-  exact he.symm
+  have h := mfderiv_comp_apply t hA hq (1 : ℝ)
+  rw [mfderiv_eq_fderiv] at h
+  -- Expose the ambient derivative of the composite, a scalar derivative at the unit vector.
+  change fderiv ℝ (fun s ↦ (unitDiskBoundaryLoop.extend s).val.val) t 1 = _ at h
+  rw [fderiv_apply_one_eq_deriv, (hasDerivAt_unitDiskBoundaryLoop_val ⟨ht₀, ht₁⟩).deriv] at h
+  exact h.symm
 
 /-- At every interior parameter, the actual boundary derivative is an isomorphism and its
 ambient image is the counterclockwise circle velocity. -/
