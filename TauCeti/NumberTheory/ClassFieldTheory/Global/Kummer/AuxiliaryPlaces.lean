@@ -51,34 +51,6 @@ namespace TauCeti.ClassFieldTheory
 
 variable {K E : Type} [Field K] [NumberField K] [Field E] [Algebra K E]
 
-/-- Every place of `K` has a prime of a number field extension `M` lying over it. -/
-private theorem exists_isPrime_liesOver {M : Type} [Field M] [Algebra K M]
-    (v : HeightOneSpectrum (𝓞 K)) :
-    ∃ Q : Ideal (𝓞 M), Q.IsPrime ∧ Q.LiesOver v.asIdeal := by
-  obtain ⟨Q, hQ, hQv⟩ := Ideal.exists_maximal_ideal_liesOver_of_isIntegral (S := 𝓞 M) v.asIdeal
-  exact ⟨Q, hQ.isPrime, hQv⟩
-
-omit [NumberField K] in
-/-- The `p`-th roots of the elements of `Δ` in `E` lie in the Kummer field `K(Δ^{1/p})`. -/
-private theorem exists_pow_eq_kummerField {p : ℕ} {Δ : Subgroup Kˣ}
-    (hroots : ∀ a ∈ Δ, ∃ x : E, x ^ p = algebraMap K E (a : K)) :
-    ∀ a ∈ Δ, ∃ x : kummerField E p Δ, x ^ p = algebraMap K (kummerField E p Δ) (a : K) := by
-  intro a ha
-  obtain ⟨x, hx⟩ := hroots a ha
-  exact ⟨⟨x, mem_kummerField_of_pow_eq ha hx⟩, Subtype.ext (by simpa using hx)⟩
-
-/-- The Kummer field of the `S`-units is unramified at every place outside `S`, when `S`
-contains the places above `p`. -/
-private theorem isUnramifiedAt_kummerField_of_notMem {p : ℕ} [NeZero p]
-    [HasEnoughRootsOfUnity K p] (S : Finset (HeightOneSpectrum (𝓞 K)))
-    (hpS : ∀ v : HeightOneSpectrum (𝓞 K), (p : 𝓞 K) ∈ v.asIdeal → v ∈ S)
-    (v : HeightOneSpectrum (𝓞 K)) (hv : v ∉ S)
-    (Q : Ideal (𝓞 (kummerField E p ((S : Set (HeightOneSpectrum (𝓞 K))).unit K))))
-    [Q.IsPrime] [Q.LiesOver v.asIdeal] :
-    Algebra.IsUnramifiedAt (𝓞 K) Q :=
-  isUnramifiedAway_ramifiedSupport (K := K) (L := kummerField E p _) v
-    (fun hvram ↦ hv (ramifiedSupport_kummerField_sUnits_subset S hpS hvram)) Q
-
 /-- **Auxiliary places for the Kummer second inequality.** Let `p` be prime, let `S` contain all
 finite places above `p`, and let `M = K(U_S^{1/p})` in an ambient field containing the required
 radicals. For every intermediate field `L/K` in `M`, there is a finite set `T`, disjoint from
@@ -109,7 +81,7 @@ theorem exists_auxiliaryPlaces_unitLocalPowerClassMap_surjective
   let M := kummerField E p Δ
   let _ : (powMonoidHom p : Kˣ →* Kˣ).range.IsFiniteRelIndex Δ :=
     ⟨by rw [relIndex_range_powMonoidHom_sUnits_numberField]; exact pow_ne_zero _ hp.ne_zero⟩
-  have hur := isUnramifiedAt_kummerField_of_notMem (E := E) (p := p) S hpS
+  have hur := isUnramifiedAt_kummerField_sUnits_of_notMem (E := E) (n := p) S hpS
   have hab : ∀ σ τ : M ≃ₐ[K] M, Commute σ τ := fun σ τ ↦
     (commute_iff_eq σ τ).2 (IsMulCommutative.is_comm.comm σ τ)
   have hgen : Subgroup.closure {τ : M ≃ₐ[L] M | ∃ v ∉ S,
@@ -119,18 +91,21 @@ theorem exists_auxiliaryPlaces_unitLocalPowerClassMap_surjective
   obtain ⟨T, hST, hclosure, hcard, hsplit⟩ :=
     exists_finset_closure_artinElementAway_eq_range_restrictScalarsHom hp
       exponent_algEquiv_kummerField_dvd hab S hur hgen
-  have hST' : Disjoint (S : Set (HeightOneSpectrum (𝓞 K))) (T : Set _) :=
-    Finset.disjoint_coe.mpr hST
-  choose Q hQprime hQover using fun v : T ↦ exists_isPrime_liesOver (K := K) (M := M) v.1
+  have hST' := Finset.disjoint_coe.mpr hST
+  -- Choose, for each place in `T`, a prime of `M` above it.
+  choose Q hQprime hQover using fun v : T ↦
+    nonempty_subtype.1 (Ideal.nonempty_primesOver (S := 𝓞 M) v.1.asIdeal)
   let σ (v : T) : M ≃ₐ[K] M := artinElementAway hab S hur v.1
   have hσ (v : T) : IsArithFrobAt (𝓞 K) (σ v) (Q v) := by
     let _ : (Q v).IsPrime := hQprime v
     let _ : (Q v).LiesOver v.1.asIdeal := hQover v
     exact isArithFrobAt_artinElementAway hab S hur
       (fun hvS ↦ Set.disjoint_left.mp hST' hvS v.2) (Q v)
+  -- The range of `σ` is the image of `T` under `artinElementAway`, as `σ` is defined from it.
+  have hrange : Set.range σ = artinElementAway hab S hur '' (T : Set _) :=
+    (Set.image_eq_range (artinElementAway hab S hur) (T : Set _)).symm
   have hfix : L.fixingSubgroup = Subgroup.closure (Set.range σ) := by
-    rw [show Set.range σ = _ from (Set.image_eq_range (artinElementAway hab S hur) _).symm,
-      hclosure, AlgEquiv.range_restrictScalarsHom_eq_ker_restrictNormalHom,
+    rw [hrange, hclosure, AlgEquiv.range_restrictScalarsHom_eq_ker_restrictNormalHom,
       L.restrictNormalHom_ker]
   have havoid (v : T) : (p : 𝓞 K) ∉ v.1.asIdeal := fun hpv ↦
     Set.disjoint_left.mp hST' (hpS v.1 hpv) v.2
