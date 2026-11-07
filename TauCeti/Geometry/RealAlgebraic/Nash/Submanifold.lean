@@ -12,6 +12,7 @@ public import TauCeti.Geometry.RealAlgebraic.Nash.Graph
 public import TauCeti.Geometry.RealAlgebraic.Nash.Relation
 public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.PartialEquiv
 import Mathlib.Analysis.Analytic.Polynomial
+import TauCeti.Analysis.Analytic.Constructions
 
 /-!
 # Nash maps on semialgebraic analytic submanifolds
@@ -86,14 +87,6 @@ structure NashOnSubmanifold (d : ℕ) (f : (Fin n → ℝ) → τ → ℝ) (S : 
 theorem nashOnSubmanifold_iff :
     NashOnSubmanifold d f S ↔ AnalyticOnSubmanifold d f S ∧ IsSemialgebraicOn f S :=
   ⟨fun h ↦ ⟨h.1, h.2⟩, fun h ↦ ⟨h.1, h.2⟩⟩
-
-/-- The pairing `p ↦ Sum.elim p.1 p.2` of two finite coordinate vectors is analytic. -/
-private theorem analyticOnNhd_sumElim :
-    AnalyticOnNhd ℝ (fun p : (τ → ℝ) × (τ' → ℝ) ↦ Sum.elim p.1 p.2) univ := by
-  refine fun _ _ ↦ analyticAt_pi_iff.2 fun i ↦ ?_
-  cases i with
-  | inl i => exact (analyticAt_pi_iff.mp analyticAt_fst) i
-  | inr i => exact (analyticAt_pi_iff.mp analyticAt_snd) i
 
 namespace NashOnSubmanifold
 
@@ -309,13 +302,13 @@ theorem of_leftInvOn {T : Set (Fin m → ℝ)} {f : (Fin n → ℝ) → Fin m �
 
 variable {n' : ℕ} {φ : OpenPartialHomeomorph (Fin n → ℝ) (Fin n' → ℝ)}
 
-/-- The inverse of an open partial homeomorphism which is a Nash map on its source, and whose
-inverse is analytic, is a Nash map on its target. -/
+/-- The inverse of an open partial homeomorphism whose graph over its source is semialgebraic,
+and whose inverse is analytic, is a Nash map on its target. In particular this applies to Nash
+maps on their source with analytic inverse. -/
 theorem _root_.OpenPartialHomeomorph.nashOnSubmanifold_symm
-    (φ : OpenPartialHomeomorph (Fin n → ℝ) (Fin n' → ℝ)) (hφ : NashOnSubmanifold n φ φ.source)
+    (φ : OpenPartialHomeomorph (Fin n → ℝ) (Fin n' → ℝ)) (hφ : IsSemialgebraicOn φ φ.source)
     (hφs : AnalyticOnNhd ℝ φ.symm φ.target) : NashOnSubmanifold n' φ.symm φ.target :=
-  ⟨φ.open_target.analyticOnSubmanifold_iff.2 hφs,
-    φ.toPartialEquiv.isSemialgebraicOn_symm hφ.isSemialgebraicOn⟩
+  ⟨φ.open_target.analyticOnSubmanifold_iff.2 hφs, φ.toPartialEquiv.isSemialgebraicOn_symm hφ⟩
 
 /-- **Chart transport.** Precomposing a Nash map on `T` with an open partial homeomorphism `φ`
 which is a Nash map on its source with analytic inverse gives a Nash map on `S`, when
@@ -339,7 +332,8 @@ theorem comp_openPartialHomeomorph {T : Set (Fin n' → ℝ)} {f : (Fin n' → �
 theorem comp_symm_openPartialHomeomorph (hf : NashOnSubmanifold d f S)
     (hφ : NashOnSubmanifold n φ φ.source) (hφs : AnalyticOnNhd ℝ φ.symm φ.target) :
     NashOnSubmanifold d (f ∘ φ.symm) (φ '' (S ∩ φ.source)) := by
-  refine hf.comp_openPartialHomeomorph (φ := φ.symm) (φ.nashOnSubmanifold_symm hφ hφs)
+  refine hf.comp_openPartialHomeomorph (φ := φ.symm)
+    (φ.nashOnSubmanifold_symm hφ.isSemialgebraicOn hφs)
     (hφ.analyticOnSubmanifold.analyticOnNhd_of_isOpen φ.open_source) ?_ fun y hy ↦ ?_
   · rintro _ ⟨x, ⟨_, hx⟩, rfl⟩
     exact φ.map_source hx
