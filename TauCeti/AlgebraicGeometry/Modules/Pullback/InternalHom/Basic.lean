@@ -110,8 +110,9 @@ theorem pullback_map_pre_app_comp_pullbackIhomComparison_app {M₁ M₂ : Y.Modu
     id_tensor_pre_app_comp_ev, δ_natural_left_assoc, IsIso.hom_inv_id_assoc,
     Functor.map_comp]
 
-/-- If the pullback of a pairing `D ⊗ M ⟶ 𝟙` is given by the pullback of the evaluation, then the
-comparison `f* 𝓗om(M, -) ≅ 𝓗om(f* M, f* -)` built from `D` is compatible with evaluation. -/
+/-- If the evaluation `f* M ⊗ f* D ⟶ 𝟙` of the pulled-back exact pairing is the transported
+evaluation `M ⊗ D ⟶ 𝟙`, then the comparison `f* 𝓗om(M, -) ≅ 𝓗om(f* M, f* -)` built from `D`
+is compatible with evaluation. -/
 private theorem ev_comp_pullbackIhomIso_hom_app (D : Y.Modules) [D.IsQuasicoherent]
     [ExactPairing D M]
     [ExactPairing ((Scheme.Modules.pullback f).obj D) ((Scheme.Modules.pullback f).obj M)]
