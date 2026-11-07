@@ -172,20 +172,10 @@ private theorem contMDiff_piecewise_scale {α β : ℝ → M} {x y : M}
     simpa only [contMDiff_iff_contDiff] using
       (show ContDiff ℝ 1 (fun t : ℝ ↦ 2 * t - 1) by fun_prop)
   have hf_const : (fun t : ℝ ↦ α (2 * t)) =ᶠ[𝓝 (1 / 2 : ℝ)] (fun _ ↦ x) := by
-    apply hα₁.comp_tendsto
-    have h : ContinuousAt (fun t : ℝ ↦ 2 * t) (1 / 2) := by fun_prop
-    -- Expose the value hidden in `ContinuousAt` so `norm_num` can identify the target filter.
-    change Tendsto (fun t : ℝ ↦ 2 * t) (𝓝 (1 / 2)) (𝓝 (2 * (1 / 2))) at h
-    norm_num at h
-    exact h
+    exact hα₁.comp_tendsto ((by fun_prop : Continuous fun t : ℝ ↦ 2 * t).tendsto' _ _ (by norm_num))
   have hg_const : (fun t : ℝ ↦ β (2 * t - 1)) =ᶠ[𝓝 (1 / 2 : ℝ)] (fun _ ↦ y) := by
-    apply hβ₀.comp_tendsto
-    have h : ContinuousAt (fun t : ℝ ↦ 2 * t - 1) (1 / 2) := by fun_prop
-    -- Expose the value hidden in `ContinuousAt` so `norm_num` can identify the target filter.
-    change Tendsto (fun t : ℝ ↦ 2 * t - 1) (𝓝 (1 / 2))
-      (𝓝 (2 * (1 / 2) - 1)) at h
-    norm_num at h
-    exact h
+    exact hβ₀.comp_tendsto <|
+      (by fun_prop : Continuous fun t : ℝ ↦ 2 * t - 1).tendsto' _ _ (by norm_num)
   exact hf.piecewise_Iic hg (hf_const.trans <| (hxy ▸ hg_const.symm))
 
 /-- The path obtained by gluing `α` and `β`, rescaled to `[0, 1 / 2]` and `[1 / 2, 1]`, has length
@@ -232,13 +222,8 @@ private theorem piecewise_scale_eventuallyEq_nhds_zero {α β : ℝ → M} {x : 
     (hα₀ : α =ᶠ[𝓝 0] (fun _ ↦ x)) :
     piecewise (Iic (1 / 2 : ℝ)) (fun t ↦ α (2 * t)) (fun t ↦ β (2 * t - 1)) =ᶠ[𝓝 0]
       (fun _ ↦ x) := by
-  have hmap : Tendsto (fun t : ℝ ↦ 2 * t) (𝓝 0) (𝓝 0) := by
-    have h : ContinuousAt (fun t : ℝ ↦ 2 * t) 0 := by fun_prop
-    -- Expose the value hidden in `ContinuousAt` so `norm_num` can identify the target filter.
-    change Tendsto (fun t : ℝ ↦ 2 * t) (𝓝 0) (𝓝 (2 * 0)) at h
-    norm_num at h
-    exact h
-  filter_upwards [hα₀.comp_tendsto hmap,
+  filter_upwards [hα₀.comp_tendsto (
+    (by fun_prop : Continuous fun t : ℝ ↦ 2 * t).tendsto' _ _ (by norm_num)),
     Iio_mem_nhds (show (0 : ℝ) < 1 / 2 by norm_num)] with t htα ht
   have ht' : t < 1 / 2 := ht
   rw [(Iic (1 / 2 : ℝ)).piecewise_eq_of_mem _ _ ht'.le]
@@ -251,13 +236,8 @@ private theorem piecewise_scale_eventuallyEq_nhds_one {α β : ℝ → M} {y : M
     (hβ₁ : β =ᶠ[𝓝 1] (fun _ ↦ y)) :
     piecewise (Iic (1 / 2 : ℝ)) (fun t ↦ α (2 * t)) (fun t ↦ β (2 * t - 1)) =ᶠ[𝓝 1]
       (fun _ ↦ y) := by
-  have hmap : Tendsto (fun t : ℝ ↦ 2 * t - 1) (𝓝 1) (𝓝 1) := by
-    have h : ContinuousAt (fun t : ℝ ↦ 2 * t - 1) 1 := by fun_prop
-    -- Expose the value hidden in `ContinuousAt` so `norm_num` can identify the target filter.
-    change Tendsto (fun t : ℝ ↦ 2 * t - 1) (𝓝 1) (𝓝 (2 * 1 - 1)) at h
-    norm_num at h
-    exact h
-  filter_upwards [hβ₁.comp_tendsto hmap,
+  filter_upwards [hβ₁.comp_tendsto (
+    (by fun_prop : Continuous fun t : ℝ ↦ 2 * t - 1).tendsto' _ _ (by norm_num)),
     Ioi_mem_nhds (show (1 / 2 : ℝ) < 1 by norm_num)] with t htβ ht
   have ht' : 1 / 2 < t := ht
   rw [(Iic (1 / 2 : ℝ)).piecewise_eq_of_notMem _ _ (not_le_of_gt ht')]
