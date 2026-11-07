@@ -308,6 +308,63 @@ theorem supportingValue_newtonPolygon_eq_of_isUnit_mul {f : K⟦X⟧} {σ τ : �
   rw [← hmul, supportingValue_newtonPolygon_mul v hcu hiu hcP hiP,
     supportingValue_newtonPolygon_eq_of_isUnit_subring v hb hv hτσ hu, P.newtonPolygon_coe]
 
+/-- The upper bound in `newtonPolygon_eq_add_of_isUnit_mul`, stated for the constant term `c₀` of
+the unit. -/
+private theorem newtonPolygon_le_add_of_isUnit_mul {f : K⟦X⟧} {σ : ℝ} {j : ℕ}
+    (hf : TauCeti.PowerSeries.IsDistinguished (b ^ σ) j f)
+    {u : IsRestricted.subring (R := K) (b ^ σ)} (hu : IsUnit u) {P : Polynomial K} (hP0 : P ≠ 0)
+    (hmul : (u : K⟦X⟧) * (P : K⟦X⟧) = f) {n : ℕ} (hn : n ≤ j) {c₀ : ℝ}
+    (hc₀ : v ((u : K⟦X⟧).coeff 0) = (c₀ : WithTop ℝ)) :
+    (f.newtonPolygon v n).toEReal ≤ (P.newtonPolygon v n + (c₀ : WithTop ℝ)).toEReal := by
+  rw [← (f.isConvexSeq_newtonPolygon v).iSup_supportingValue_add n]
+  have hstep (τ : ℝ) (hτσ : τ ≤ σ) :
+      supportingValue (f.newtonPolygon v) τ + ((τ * n : ℝ) : EReal) ≤
+        (P.newtonPolygon v n + (c₀ : WithTop ℝ)).toEReal := by
+    rw [supportingValue_newtonPolygon_eq_of_isUnit_mul v hb hv hτσ hu hP0 hmul, hc₀,
+      WithTop.toEReal_coe, add_assoc]
+    refine (add_le_add le_rfl (EReal.add_le_of_le_sub
+      (supportingValue_le (P.newtonPolygon v) τ n))).trans ?_
+    induction P.newtonPolygon v n using WithTop.recTopCoe with
+    | top => simp
+    | coe r =>
+      rw [← WithTop.coe_add, WithTop.toEReal_coe, WithTop.toEReal_coe, ← EReal.coe_add,
+        add_comm c₀ r]
+  exact iSup_le fun τ => (le_or_gt τ σ).elim (hstep τ) fun hστ =>
+    (supportingValue_add_le_of_isDistinguished_of_lt v hb hv hf hστ hn).trans (hstep σ le_rfl)
+
+/-- The lower bound in `newtonPolygon_eq_add_of_isUnit_mul`, stated for the constant term `c₀` of
+the unit. -/
+private theorem add_le_newtonPolygon_of_isUnit_mul {f : K⟦X⟧} {σ : ℝ} {j : ℕ}
+    {u : IsRestricted.subring (R := K) (b ^ σ)} (hu : IsUnit u) {P : Polynomial K} (hP0 : P ≠ 0)
+    (hPd : TauCeti.PowerSeries.IsDistinguished (b ^ σ) j (P : K⟦X⟧)) (hdeg : P.natDegree = j)
+    (hmul : (u : K⟦X⟧) * (P : K⟦X⟧) = f) {n : ℕ} (hn : n ≤ j) {c₀ : ℝ}
+    (hc₀ : v ((u : K⟦X⟧).coeff 0) = (c₀ : WithTop ℝ)) :
+    (P.newtonPolygon v n + (c₀ : WithTop ℝ)).toEReal ≤ (f.newtonPolygon v n).toEReal := by
+  by_cases han : P.natTrailingDegree ≤ n
+  · have hPn : P.newtonPolygon v n ≠ ⊤ :=
+      (P.newtonPolygon_ne_top_iff v (fun _ => v.top_iff.mp) hP0).mpr ⟨han, hn.trans_eq hdeg.symm⟩
+    obtain ⟨τ, hτσ, hline⟩ := exists_le_and_isSupportingLine_of_isDistinguished v hb hv
+      (hdeg ▸ hPd) han (hn.trans_eq hdeg.symm)
+    have hSP : supportingValue (P.newtonPolygon v) τ =
+        (((P.newtonPolygon v n).untop₀ - τ * n : ℝ) : EReal) :=
+      supportingValue_eq_coe_of_mem_supportingFace hline
+        (by rw [mem_supportingFace, sub_add_cancel, WithTop.coe_untop₀_of_ne_top hPn])
+    have hle_f := EReal.add_le_of_le_sub (supportingValue_le (f.newtonPolygon v) τ n)
+    rw [supportingValue_newtonPolygon_eq_of_isUnit_mul v hb hv hτσ hu hP0 hmul, hc₀,
+      WithTop.toEReal_coe, hSP] at hle_f
+    rw [← WithTop.coe_untop₀_of_ne_top hPn, ← WithTop.coe_add, WithTop.toEReal_coe]
+    refine le_trans ?_ hle_f
+    rw [← EReal.coe_add, ← EReal.coe_add]
+    exact EReal.coe_le_coe (by linarith)
+  · have hordP : (P.natTrailingDegree : ℕ∞) ≤ (P : K⟦X⟧).order :=
+      nat_le_order _ _ fun k hk => by
+        rw [Polynomial.coeff_coe, Polynomial.coeff_eq_zero_of_lt_natTrailingDegree hk]
+    have hlt : (n : ℕ∞) < f.order :=
+      (Nat.cast_lt.mpr (lt_of_not_ge han)).trans_le
+        (hordP.trans (le_add_self.trans (hmul ▸ le_order_mul _ _)))
+    rw [f.newtonPolygon_eq_top_of_lt_order v hlt, WithTop.toEReal_top]
+    exact le_top
+
 /-- **Newton polygon of a prepared polynomial factor.** Suppose `f` is distinguished of degree `j`
 at `b ^ σ`, `u` is a unit of the ring of series restricted at `b ^ σ`, and `u * P = f` for a
 polynomial `P` of degree at most `j`. Then for every `n ≤ j`,
@@ -330,45 +387,8 @@ theorem newtonPolygon_eq_add_of_isUnit_mul {f : K⟦X⟧} {σ : ℝ} {j : ℕ}
   rw [hc₀]
   refine le_antisymm (WithTop.toEReal_le_toEReal_iff.mp ?_)
     (WithTop.toEReal_le_toEReal_iff.mp ?_)
-  · rw [← (f.isConvexSeq_newtonPolygon v).iSup_supportingValue_add n]
-    have hstep (τ : ℝ) (hτσ : τ ≤ σ) :
-        supportingValue (f.newtonPolygon v) τ + ((τ * n : ℝ) : EReal) ≤
-          (P.newtonPolygon v n + (c₀ : WithTop ℝ)).toEReal := by
-      rw [supportingValue_newtonPolygon_eq_of_isUnit_mul v hb hv hτσ hu hP0 hmul, hc₀,
-        WithTop.toEReal_coe, add_assoc]
-      refine (add_le_add le_rfl (EReal.add_le_of_le_sub
-        (supportingValue_le (P.newtonPolygon v) τ n))).trans ?_
-      induction P.newtonPolygon v n using WithTop.recTopCoe with
-      | top => simp
-      | coe r =>
-        rw [← WithTop.coe_add, WithTop.toEReal_coe, WithTop.toEReal_coe, ← EReal.coe_add,
-          add_comm c₀ r]
-    exact iSup_le fun τ => (le_or_gt τ σ).elim (hstep τ) fun hστ =>
-      (supportingValue_add_le_of_isDistinguished_of_lt v hb hv hf hστ hn).trans (hstep σ le_rfl)
-  · by_cases han : P.natTrailingDegree ≤ n
-    · have hPn : P.newtonPolygon v n ≠ ⊤ :=
-        (P.newtonPolygon_ne_top_iff v (fun _ => v.top_iff.mp) hP0).mpr ⟨han, hn.trans_eq hdeg.symm⟩
-      obtain ⟨τ, hτσ, hline⟩ := exists_le_and_isSupportingLine_of_isDistinguished v hb hv
-        (hdeg ▸ hPd) han (hn.trans_eq hdeg.symm)
-      have hSP : supportingValue (P.newtonPolygon v) τ =
-          (((P.newtonPolygon v n).untop₀ - τ * n : ℝ) : EReal) :=
-        supportingValue_eq_coe_of_mem_supportingFace hline
-          (by rw [mem_supportingFace, sub_add_cancel, WithTop.coe_untop₀_of_ne_top hPn])
-      have hle_f := EReal.add_le_of_le_sub (supportingValue_le (f.newtonPolygon v) τ n)
-      rw [supportingValue_newtonPolygon_eq_of_isUnit_mul v hb hv hτσ hu hP0 hmul, hc₀,
-        WithTop.toEReal_coe, hSP] at hle_f
-      rw [← WithTop.coe_untop₀_of_ne_top hPn, ← WithTop.coe_add, WithTop.toEReal_coe]
-      refine le_trans ?_ hle_f
-      rw [← EReal.coe_add, ← EReal.coe_add]
-      exact EReal.coe_le_coe (by linarith)
-    · have hordP : (P.natTrailingDegree : ℕ∞) ≤ (P : K⟦X⟧).order :=
-        nat_le_order _ _ fun k hk => by
-          rw [Polynomial.coeff_coe, Polynomial.coeff_eq_zero_of_lt_natTrailingDegree hk]
-      have hlt : (n : ℕ∞) < f.order :=
-        (Nat.cast_lt.mpr (lt_of_not_ge han)).trans_le
-          (hordP.trans (le_add_self.trans (hmul ▸ le_order_mul _ _)))
-      rw [f.newtonPolygon_eq_top_of_lt_order v hlt, WithTop.toEReal_top]
-      exact le_top
+  · exact newtonPolygon_le_add_of_isUnit_mul v hb hv hf hu hP0 hmul hn hc₀
+  · exact add_le_newtonPolygon_of_isUnit_mul v hb hv hu hP0 hPd hdeg hmul hn hc₀
 
 /-- The finite unit edges of `P` are precisely the finite unit edges of `f` strictly below `j`. -/
 theorem mem_finiteEdges_newtonPolygon_iff_of_isUnit_mul {f : K⟦X⟧} {σ : ℝ} {j : ℕ}

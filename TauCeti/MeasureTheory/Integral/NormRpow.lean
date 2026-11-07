@@ -6,6 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Integral
+public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
+import Mathlib.MeasureTheory.Constructions.HaarToSphere
+import Mathlib.MeasureTheory.Function.LpSeminorm.SMul
+import Mathlib.MeasureTheory.Function.L1Space.Integrable
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
@@ -33,7 +37,8 @@ at most `|x - Re e| ^ s`.
 
 ## Main declarations
 
-* `TauCeti.integrableOn_norm_rpow_ball`: integrability on a centred ball.
+* `TauCeti.integrableOn_norm_rpow_ball`: integrability on a centred ball, and
+  `TauCeti.integrableOn_norm_rpow_ball_iff`: its converse on a nontrivial space.
 * `TauCeti.integral_norm_rpow_ball`: the exact radial integral.
 * `TauCeti.integrableOn_norm_sub_rpow_ball`: integrability after translation.
 * `TauCeti.integral_norm_sub_rpow_ball`: the exact integral with any centre.
@@ -77,6 +82,50 @@ theorem integrableOn_norm_rpow_ball {s : ℝ} (hs : -(Module.finrank ℝ E : ℝ
   · filter_upwards with x
     rw [neg_neg, one_mul, Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg x) _)]
   · exact (by fun_prop : Measurable fun x : E => ‖x‖ ^ s).aestronglyMeasurable
+
+/-- On a nontrivial space, the kernel `x ↦ ‖x‖ ^ s` is integrable on a ball of positive radius
+centred at the origin exactly when `-dim E < s`. -/
+theorem integrableOn_norm_rpow_ball_iff [Nontrivial E] {s R : ℝ} (hR : 0 < R) :
+    IntegrableOn (fun x : E => ‖x‖ ^ s) (ball 0 R) mu ↔ -(Module.finrank ℝ E : ℝ) < s := by
+  have hd : 1 ≤ Module.finrank ℝ E := Module.finrank_pos
+  have hcongr : IntegrableOn (fun y : ℝ => y ^ (Module.finrank ℝ E - 1) • y ^ s) (Ioo 0 R) ↔
+      IntegrableOn (fun y : ℝ => y ^ ((Module.finrank ℝ E : ℝ) - 1 + s)) (Ioo 0 R) :=
+    integrableOn_congr_fun (fun y hy => by
+      rw [smul_eq_mul, Real.rpow_add hy.1, ← Real.rpow_natCast, Nat.cast_sub hd, Nat.cast_one])
+      measurableSet_Ioo
+  rw [integrableOn_fun_norm_addHaar mu (f := fun r : ℝ => r ^ s), hcongr,
+    intervalIntegral.integrableOn_Ioo_rpow_iff hR]
+  constructor <;> intro h <;> linarith
+
+/-- A norm power is integrable outside a positive-radius closed ball exactly below the
+negative dimension. This includes divergence at the logarithmic borderline. -/
+theorem integrableOn_norm_rpow_compl_closedBall_iff [Nontrivial E] {s R : ℝ} (hR : 0 < R) :
+    IntegrableOn (fun x : E => ‖x‖ ^ s) (closedBall 0 R)ᶜ mu ↔
+      s < -(Module.finrank ℝ E : ℝ) := by
+  let d := Module.finrank ℝ E
+  have hd : 1 ≤ d := Module.finrank_pos
+  let f : ℝ → ℝ := (Ioi R).indicator (fun r => r ^ s)
+  have hnorm : (fun x : E => f ‖x‖) =
+      (closedBall (0 : E) R)ᶜ.indicator (fun x => ‖x‖ ^ s) := by
+    funext x
+    simp [f, Set.indicator, mem_closedBall, not_le]
+  have hrad := integrable_fun_norm_addHaar mu (f := f)
+  rw [hnorm, integrable_indicator_iff isClosed_closedBall.measurableSet.compl] at hrad
+  have heq : EqOn (fun r : ℝ => r ^ (d-1) • f r)
+      ((Ioi R).indicator (fun r => r ^ ((d : ℝ)-1+s))) (Ioi 0) := by
+    intro r hr
+    have hr0 : 0 < r := hr
+    by_cases h : R < r
+    · have hrmem : r ∈ Ioi R := h
+      simp only [f, indicator_of_mem hrmem, smul_eq_mul]
+      rw [← Real.rpow_natCast, Nat.cast_sub hd, Nat.cast_one, ← Real.rpow_add hr0]
+    · simp [f, h]
+  have hsupp : Function.support ((Ioi R).indicator (fun r : ℝ => r ^ ((d : ℝ)-1+s))) ⊆ Ioi 0 :=
+    (support_indicator_subset).trans (Ioi_subset_Ioi hR.le)
+  rw [integrableOn_congr_fun heq measurableSet_Ioi,
+    integrableOn_iff_integrable_of_support_subset hsupp,
+    integrable_indicator_iff measurableSet_Ioi, integrableOn_Ioi_rpow_iff hR] at hrad
+  exact hrad.trans (by dsimp [d]; constructor <;> intro h <;> linarith)
 
 /-- The exact integral of the kernel `x ↦ ‖x‖ ^ s` on a ball centred at the origin, for
 `-dim E < s`. The coefficient is stated using the chosen additive Haar measure, so the result
@@ -265,3 +314,35 @@ theorem setLIntegral_closedBall_enorm_ofReal_sub_rpow_lt_top (e : ℂ) {s : ℝ}
             measure_closedBall_lt_top
 
 end Complex
+
+namespace TauCeti
+
+open MeasureTheory Metric Set
+open scoped ENNReal
+
+/-- A nonzero multiple of an inverse power has a finite positive `Lp` tail precisely when
+its decay order times the exponent exceeds the real dimension two. -/
+theorem memLp_div_pow_compl_closedBall_iff {a : ℂ} (ha : a ≠ 0) {R : ℝ} (hR : 0 < R)
+    (m : ℕ) {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp_top : p ≠ ∞) :
+    MemLp (fun z : ℂ => a/z^m) p (volume.restrict (closedBall 0 R)ᶜ) ↔
+      2 < (m : ℝ)*p.toReal := by
+  have hscale : MemLp (fun z : ℂ => a/z^m) p (volume.restrict (closedBall 0 R)ᶜ) ↔
+      MemLp (fun z : ℂ => (z^m)⁻¹) p (volume.restrict (closedBall 0 R)ᶜ) := by
+    constructor
+    · intro h
+      have hi := h.const_mul a⁻¹
+      simpa only [div_eq_mul_inv, ← mul_assoc, inv_mul_cancel₀ ha, one_mul] using hi
+    · intro h
+      simpa only [div_eq_mul_inv] using h.const_mul a
+  rw [hscale, ← integrable_norm_rpow_iff (by fun_prop) hp0 hp_top]
+  have heq : (fun z : ℂ => ‖(z^m)⁻¹‖ ^ p.toReal) =
+      (fun z => ‖z‖ ^ (-((m : ℝ)*p.toReal))) := by
+    funext z
+    rw [norm_inv, norm_pow, Real.inv_rpow (by positivity),
+      ← Real.rpow_natCast_mul (norm_nonneg z), Real.rpow_neg (norm_nonneg z)]
+  rw [heq]
+  simpa only [IntegrableOn, Complex.finrank_real_complex, Nat.cast_ofNat, neg_lt_neg_iff] using
+    (TauCeti.integrableOn_norm_rpow_compl_closedBall_iff (E := ℂ) (mu := volume)
+      (s := -((m : ℝ)*p.toReal)) hR)
+
+end TauCeti

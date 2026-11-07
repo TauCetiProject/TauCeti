@@ -111,7 +111,7 @@ private theorem integrable_and_integral_divergenceCLM_mul_indicator_preimage
           ∫ y, ⟪ψ y, outerNormal μ Ω s y⟫ ∂variationMeasure μ Ω (s.indicator 1) := by
   set k : E → ℝ := fun w => divergenceCLM ψ w * s.indicator 1 w
   have hk : Integrable k μ := by
-    simpa only [smul_eq_mul] using integrable_smul_of_locallyIntegrableOn hu (divergenceCLM ψ)
+    simpa only [smul_eq_mul] using TestFunction.integrable_smul (divergenceCLM ψ) hu
   have hpt (y : E) : divergenceCLM φ y * ((fun y => x + r • y) ⁻¹' s).indicator 1 y =
       r * k (x + r • y) := by
     simp only [k, hψ, add_sub_cancel_left, inv_smul_smul₀ hr.ne']
@@ -228,8 +228,8 @@ theorem integral_divergenceCLM_mul_indicator_nonneg_of_tendsto_measure_symmDiff_
     obtain ⟨ψ, -, hdiv⟩ := TestFunction.exists_eq_comp φ hri.ne' hΩ
     exact (integrable_and_integral_divergenceCLM_mul_indicator_preimage hu hfin φ hri hdiv).1
   have hJ : Integrable (fun y => g y * F.indicator 1 y) μ := by
-    refine (integrable_smul_of_locallyIntegrableOn
-      (locallyIntegrableOn_indicator_const (hF.mono Measure.restrict_le_self) 1) g).congr
+    refine (g.integrable_smul
+      (locallyIntegrableOn_indicator_const (hF.mono Measure.restrict_le_self) 1)).congr
       (.of_forall fun y => ?_)
     simp [Pi.one_def]
   -- The pairings converge, since `|∫ g (χ_{S i} - χ_F)| ≤ C μ ((S i ∆ F) ∩ tsupport g)`.

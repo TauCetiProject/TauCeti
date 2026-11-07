@@ -9,10 +9,10 @@ public import Mathlib.RingTheory.RegularLocalRing.Defs
 public import Mathlib.RingTheory.RingHom.FaithfullyFlat
 public import TauCeti.RingTheory.AdicCompletion.AlgHom
 public import TauCeti.RingTheory.Dagger.DaggerAlgebra.Completion
+public import TauCeti.RingTheory.Dagger.FaithfullyFlat
 
 import TauCeti.RingTheory.Affinoid.FiniteQuotient
 import TauCeti.RingTheory.Affinoid.MaximalSpectrum
-import TauCeti.RingTheory.Dagger.FaithfullyFlat
 import TauCeti.RingTheory.Dagger.NoetherNormalization
 import TauCeti.RingTheory.Dagger.Noetherian
 import TauCeti.RingTheory.Flat.IntegrallyClosed
@@ -112,20 +112,6 @@ private theorem map_ker_le_map_comap (J : Ideal A) :
       (J.comap (presentation K A)).map (washnitzerAlgebra.toTate _ K) :=
   Ideal.map_mono (Ideal.ker_le_comap _)
 
-/-- Up to the isomorphism `A ≅ W_n ⧸ I` of the chosen presentation, the completion map is the map
-`W_n ⧸ I → T_n ⧸ I T_n` induced by `W_n → T_n`. -/
-private theorem toRingHom_toCompletion_eq :
-    (toCompletion K A).toRingHom =
-      (Ideal.quotientMap _ (washnitzerAlgebra.toTate (Fin (presentationDim K A)) K).toRingHom
-        Ideal.le_comap_map).comp
-        (Ideal.quotientKerAlgEquivOfSurjective
-          (presentation_surjective K A)).symm.toRingEquiv.toRingHom := by
-  ext a
-  obtain ⟨f, rfl⟩ := presentation_surjective K A a
-  -- Both sides send `p f` to the class of `f` modulo `I T_n`.
-  exact (toCompletion_presentation f).trans <| congrArg (Ideal.quotientMap _ _ Ideal.le_comap_map)
-    (Ideal.quotientKerAlgEquivOfSurjective_symm_apply (presentation_surjective K A) f).symm
-
 end Presentation
 
 variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
@@ -168,24 +154,29 @@ theorem quotientMap_map_toCompletion_bijective (J : Ideal A) [Module.Finite K (A
     Ideal.mem_quotient_iff_mem (map_ker_le_map_comap J)]
   simpa using hx
 
-/-- **The completion of a dagger algebra is faithfully flat**: the completion map `τ : A → Â` is
-faithfully flat. -/
+/-- The completion map of a dagger algebra is faithfully flat. -/
 theorem faithfullyFlat_toCompletion : (toCompletion K A).toRingHom.FaithfullyFlat := by
-  refine RingHom.FaithfullyFlat.of_flat_of_forall_isMaximal_mem_range_comap ?_ fun m _ ↦ ?_
-  · -- Modulo `I`, the flat map `W_n → T_n` becomes `W_n ⧸ I → T_n ⧸ I T_n`.
-    rw [toRingHom_toCompletion_eq]
-    have h := RingHom.Flat.isStableUnderBaseChange.quotientMap RingHom.Flat.respectsIso
-      (washnitzerAlgebra.toTate (Fin (presentationDim K A)) K).toRingHom
-      (RingHom.ker (presentation K A)) washnitzerAlgebra.faithfullyFlat_toTate.flat
-    have he : RingHom.Flat (Ideal.quotientKerAlgEquivOfSurjective
-        (presentation_surjective K A)).symm.toRingEquiv.toRingHom :=
-      .of_bijective (RingEquiv.bijective _)
-    exact he.comp h
-  · obtain ⟨m', ⟨hm', hm'm⟩, -⟩ := completion_existsUnique_isMaximal_comap K m
-    exact ⟨⟨m', hm'.isPrime⟩, PrimeSpectrum.ext hm'm⟩
+  have h := RingHom.FaithfullyFlat.isStableUnderBaseChange.quotientMap
+    RingHom.FaithfullyFlat.respectsIso
+    (washnitzerAlgebra.toTate (Fin (presentationDim K A)) K).toRingHom
+    (RingHom.ker (presentation K A)) washnitzerAlgebra.faithfullyFlat_toTate
+  let e := (Ideal.quotientKerAlgEquivOfSurjective (presentation_surjective K A)).symm
+  let q := Ideal.quotientMap
+    ((RingHom.ker (presentation K A)).map
+      (washnitzerAlgebra.toTate (Fin (presentationDim K A)) K))
+    (washnitzerAlgebra.toTate (Fin (presentationDim K A)) K).toRingHom Ideal.le_comap_map
+  have he : e.toRingHom.FaithfullyFlat := RingHom.FaithfullyFlat.of_bijective e.bijective
+  -- `Ideal.map` uses the same underlying function for an algebra hom and its ring hom;
+  -- the coercion equalities are `AlgHom.toRingHom_eq_coe` and `Ideal.map_coe`.
+  have hq : q.FaithfullyFlat := h
+  have hmap : (toCompletion K A).toRingHom = q.comp e.toRingHom := by
+    ext a
+    obtain ⟨f, rfl⟩ := presentation_surjective K A a
+    simp [q, e]
+  rw [hmap]
+  exact he.comp hq
 
-variable (K A) in
-/-- **A dagger algebra embeds into its completion.** -/
+/-- A dagger algebra embeds in its affinoid completion, including when it has nilpotents. -/
 theorem toCompletion_injective : Function.Injective (toCompletion K A) :=
   faithfullyFlat_toCompletion.injective
 
