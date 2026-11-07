@@ -51,6 +51,30 @@ open YoungDiagram (ofPartition card_ofPartition)
 
 variable {R : Type*} [CommRing R]
 
+/-- If no beta-number of `ν` equals `β j + r`, moving the bead `j` up by `r` adds a rim hook
+of `r` cells to `ν` with at most `N` rows, whose rows form an interval ending at row `j`. -/
+private theorem exists_isRimHook_rimHookRows_eq_Icc_of_betaNumber_ne {N : ℕ} {ν : YoungDiagram}
+    (hν : ν.colLen 0 ≤ N) (r : ℕ) (j : Fin N)
+    (hj : ∀ i : Fin N, ν.betaNumber N i ≠ ν.betaNumber N j + r) :
+    ∃ μ : (ν.card + r).Partition,
+      ((ofPartition μ).IsRimHook ν ∧ (ofPartition μ).colLen 0 ≤ N) ∧
+        ∃ a, (ofPartition μ).rimHookRows ν = Icc a (j : ℕ) := by
+  obtain ⟨μ, hμ, hμN, hcard, a, hab⟩ :=
+    YoungDiagram.exists_isRimHook_rimHookRows_eq_Icc hν j.isLt fun i hi => hj ⟨i, hi⟩
+  exact ⟨μ.toPartition hcard, by rw [YoungDiagram.ofPartition_toPartition]; exact ⟨hμ, hμN⟩, a,
+    by rw [YoungDiagram.ofPartition_toPartition, hab]⟩
+
+/-- Moving the bead `j` of `ν` up by `r` gives the beta-numbers of a rim hook `μ / ν` composed
+with the cycle `(a a+1 ⋯ j)`. -/
+private theorem update_betaNumber_eq_comp_cycleIcc_of_isRimHook {N : ℕ} (ν : YoungDiagram)
+    (r : ℕ) (μ : (ν.card + r).Partition) (a : ℕ) (j : Fin N)
+    (hμ : (ofPartition μ).IsRimHook ν) (hab : (ofPartition μ).rimHookRows ν = Icc a (j : ℕ)) :
+    Function.update (fun i : Fin N => ν.betaNumber N i) j (ν.betaNumber N j + r) =
+      (fun i : Fin N => (ofPartition μ).betaNumber N i) ∘
+        Fin.cycleIcc ⟨a, (hμ.le_of_rimHookRows_eq_Icc hab).trans_lt j.isLt⟩ j := by
+  have hu := hμ.update_betaNumber_eq_comp_cycleIcc hab j.isLt
+  rwa [card_ofPartition, Nat.add_sub_cancel_left] at hu
+
 open scoped Classical in
 /-- **The Murnaghan–Nakayama rule for alternants.**  Let `ν` be a Young diagram with at most `N`
 rows and `β` its beta-numbers relative to `N`, so that `a_β = s_ν · a_δ`.  For `r > 0`, multiplying
@@ -79,24 +103,11 @@ theorem psum_mul_alternant_betaNumber {N : ℕ} (ν : YoungDiagram) (hν : ν.co
     refine hj (alternant_eq_zero_of_not_injective fun hinj => hij (hinj ?_))
     rw [Function.update_of_ne hij, Function.update_self, hi]]
   -- Every other bead move adds a rim hook meeting rows `a ≤ i ≤ j`, with `j` its bottom row.
-  have hex : ∀ j : Fin N, (∀ i, β i ≠ β j + r) → ∃ μ : (ν.card + r).Partition,
-      ((ofPartition μ).IsRimHook ν ∧ (ofPartition μ).colLen 0 ≤ N) ∧
-        ∃ a, (ofPartition μ).rimHookRows ν = Icc a (j : ℕ) := by
-    intro j hj
-    obtain ⟨μ, hμ, hμN, hcard, a, hab⟩ :=
-      YoungDiagram.exists_isRimHook_rimHookRows_eq_Icc hν j.isLt fun i hi => hj ⟨i, hi⟩
-    exact ⟨μ.toPartition hcard, by rw [YoungDiagram.ofPartition_toPartition]; exact ⟨hμ, hμN⟩, a,
-      by rw [YoungDiagram.ofPartition_toPartition, hab]⟩
+  have hex := exists_isRimHook_rimHookRows_eq_Icc_of_betaNumber_ne hν r
   choose! f hfS hfrows using hex
   -- The resulting beta-numbers differ by the cycle `(a a+1 ⋯ j)`, whose sign is the
   -- rim hook weight `(-1) ^ (j - a)`.
-  have hterm : ∀ (μ : (ν.card + r).Partition) (a : ℕ) (j : Fin N)
-      (hμ : (ofPartition μ).IsRimHook ν) (hab : (ofPartition μ).rimHookRows ν = Icc a (j : ℕ)),
-      Function.update β j (β j + r) = (fun i : Fin N => (ofPartition μ).betaNumber N i) ∘
-        Fin.cycleIcc ⟨a, (hμ.le_of_rimHookRows_eq_Icc hab).trans_lt j.isLt⟩ j := by
-    intro μ a j hμ hab
-    have hu := hμ.update_betaNumber_eq_comp_cycleIcc hab j.isLt
-    rwa [card_ofPartition, Nat.add_sub_cancel_left] at hu
+  have hterm := update_betaNumber_eq_comp_cycleIcc_of_isRimHook (N := N) ν r
   refine sum_bij (fun j _ => f j)
     (fun j hj => mem_filter.mpr ⟨mem_univ _, hfS j (mem_filter.mp hj).2⟩) ?_ ?_ ?_
   · -- Distinct bead moves give distinct rim hooks: the bottom row of the hook is the moved row.
