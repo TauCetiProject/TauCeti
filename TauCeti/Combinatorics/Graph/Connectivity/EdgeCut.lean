@@ -195,16 +195,8 @@ theorem mem_edgeCut_ofSimpleGraph_iff_crosses (he : e ∈ G.edgeSet) :
     e ∈ (Graph.ofSimpleGraph G).edgeCut S ↔ e.Crosses S := by
   induction e using Sym2.inductionOn with
   | _ x y =>
-    rw [Graph.mem_edgeCut_iff, Sym2.crosses_mk_iff]
-    constructor
-    · rintro ⟨a, b, hab, ha, hb⟩
-      rw [Graph.ofSimpleGraph_isLink] at hab
-      rcases hab with ⟨hxy, -⟩
-      rcases Sym2.eq_iff.mp hxy with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
-      · exact Or.inl ⟨ha, hb⟩
-      · exact Or.inr ⟨ha, hb⟩
-    · rintro (⟨hx, hy⟩ | ⟨hy, hx⟩)
-      · exact ⟨x, y, by simpa using he, hx, hy⟩
-      · exact ⟨y, x, by simpa [Sym2.eq_swap] using he, hy, hx⟩
+    have hlink : (Graph.ofSimpleGraph G).IsLink s(x, y) x y := by
+      simpa using he
+    simpa only [Sym2.crosses_mk_iff] using hlink.mem_edgeCut_iff
 
 end SimpleGraph
