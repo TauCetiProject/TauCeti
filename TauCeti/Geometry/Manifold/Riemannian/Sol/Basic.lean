@@ -239,16 +239,8 @@ private theorem isCoercive_form (t : ℝ) : IsCoercive (form t) := by
   have h₁ : exp (-2 * |t|) ≤ exp (2 * t) := exp_le_exp.2 (by linarith [neg_abs_le t])
   have h₂ : exp (-2 * |t|) ≤ exp (-2 * t) := exp_le_exp.2 (by linarith [le_abs_self t])
   have h₃ : exp (-2 * |t|) ≤ 1 := exp_le_one_iff.2 (by linarith [abs_nonneg t])
-  -- The square of the sup norm of `ℝ³` is at most the sum of the squares of the coordinates.
   have hv : ‖v‖ * ‖v‖ ≤ v.1 * v.1 + v.2.1 * v.2.1 + v.2.2 * v.2.2 := by
-    rw [Prod.norm_def, Prod.norm_def, Real.norm_eq_abs, Real.norm_eq_abs, Real.norm_eq_abs]
-    have h1 := abs_mul_abs_self v.1
-    have h2 := abs_mul_abs_self v.2.1
-    have h3 := abs_mul_abs_self v.2.2
-    rcases max_choice |v.1| (max |v.2.1| |v.2.2|) with h | h <;> rw [h]
-    · nlinarith [mul_self_nonneg v.2.1, mul_self_nonneg v.2.2]
-    · rcases max_choice |v.2.1| |v.2.2| with h' | h' <;> rw [h'] <;>
-        nlinarith [mul_self_nonneg v.1, mul_self_nonneg v.2.1, mul_self_nonneg v.2.2]
+    simpa only [sq] using norm_mul_self_le_sq_add_sq_add_sq v
   rw [form_apply, mul_assoc]
   calc exp (-2 * |t|) * (‖v‖ * ‖v‖)
       ≤ exp (-2 * |t|) * (v.1 * v.1 + v.2.1 * v.2.1 + v.2.2 * v.2.2) :=
