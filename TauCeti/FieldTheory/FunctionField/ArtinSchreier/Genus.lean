@@ -86,6 +86,35 @@ variable {k : Type u} {k' : Type u'} {F : Type v} {F' : Type v'}
 variable [Field k] [Field k'] [Field F] [Field F']
 variable [Algebra k k'] [Algebra k F] [Algebra k' F'] [Algebra F F'] [Algebra k F']
 variable [IsScalarTower k k' F'] [IsScalarTower k F F']
+/-- If a finite extension of a function field has a place over `k'`, then it is a function field
+over `k'`: the existence of a place forces `k'` to be algebraic over `k`. -/
+private theorem isFunctionField_of_place [FiniteDimensional F F'] (hF : IsFunctionField k F)
+    (P' : Place k' F') : IsFunctionField k' F' := by
+  have hFk : IsFunctionField k F' := hF.finite_extension
+  have hnot : ¬ Algebra.IsAlgebraic k' F' := fun h ↦ by
+    obtain ⟨t, ht⟩ := P'.valuation_surjective (WithZero.exp (-1))
+    have ht0 : t ≠ 0 := by
+      rintro rfl
+      rw [map_zero] at ht
+      exact WithZero.exp_ne_zero ht.symm
+    have h1 := P'.valuation_eq_one_of_isAlgebraic (h.isAlgebraic t) ht0
+    rw [ht] at h1
+    simp at h1
+  have hadd := _root_.lift_trdeg_add_eq k k' F'
+  rw [hFk.trdeg_eq_one, Cardinal.lift_one] at hadd
+  have hb : 1 ≤ Cardinal.lift.{u', v'} (Algebra.trdeg k' F') := by
+    rw [Cardinal.one_le_iff_ne_zero, Ne, Cardinal.lift_eq_zero, trdeg_eq_zero_iff]
+    exact hnot
+  have ha : Algebra.trdeg k k' = 0 := by
+    by_contra ha
+    have ha' : 1 ≤ Cardinal.lift.{v', u'} (Algebra.trdeg k k') := by
+      rwa [Cardinal.one_le_iff_ne_zero, Ne, Cardinal.lift_eq_zero]
+    have := add_le_add ha' hb
+    rw [hadd] at this
+    norm_num at this
+  have : Algebra.IsAlgebraic k k' := trdeg_eq_zero_iff.1 ha
+  exact hFk.of_isAlgebraic (k' := k')
+
 variable (hF : IsFunctionField k F) (hF' : IsFunctionField k' F')
 variable (p : ℕ) [Fact p.Prime] [CharP F p]
 variable {y : F'} {u : F} (hgen : F⟮y⟯ = ⊤) (hy : y ^ p - y = algebraMap F F' u)
@@ -96,6 +125,7 @@ variable (hreg : ∀ P ∉ S, ∃ w : F, u - (w ^ p - w) ∈ P.integers)
 
 include hF hF' hgen hy hpole hreg
 
+omit hF' in
 /-- The different of an Artin--Schreier extension is computed by the conorm of its reduced
 conductor divisor. This is a divisor identity, before taking degrees or imposing exact constants.
 The supplied pole orders are necessarily positive because they are not divisible by `p`. -/
@@ -113,6 +143,7 @@ theorem Divisor.nsmul_different_eq_zsmul_conorm_of_pow_sub_self_eq :
   let _ := ArtinSchreier.isGalois hy hgen
   let _ : Algebra.IsIntegral F F' := Algebra.IsIntegral.of_finite F F'
   refine WeilDivisor.ext fun P' ↦ ?_
+  have hF' := isFunctionField_of_place hF P'
   rw [WeilDivisor.coeff_nsmul, Divisor.coeff_different, WeilDivisor.coeff_zsmul,
     Divisor.coeff_conorm, WeilDivisor.coeff_ofFinsetWithMultiplicity]
   by_cases hP : P'.restrict k F ∈ S
@@ -151,8 +182,8 @@ theorem Divisor.finrank_mul_degree_different_of_pow_sub_self_eq :
   let _ : FiniteDimensional k k' := hF.finiteDimensional_baseExtension hF'
   let _ : Algebra.IsIntegral k k' := Algebra.IsIntegral.of_finite k k'
   have h := congrArg Divisor.degree
-    (Divisor.nsmul_different_eq_zsmul_conorm_of_pow_sub_self_eq
-      hF hF' p hgen hy S m hpole hreg)
+    (Divisor.nsmul_different_eq_zsmul_conorm_of_pow_sub_self_eq (k' := k') (F' := F')
+      hF p hgen hy S m hpole hreg)
   rw [map_nsmul, Divisor.degree_zsmul, nsmul_eq_mul] at h
   have hp : (p : ℤ) ≠ 0 := by exact_mod_cast (Fact.out : p.Prime).ne_zero
   rcases S.eq_empty_or_nonempty with hS | hS
