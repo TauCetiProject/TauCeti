@@ -13,8 +13,9 @@ name: Pages
 # newest of those, so a site deploy never waits for doc-gen4, and the docs a deploy carries are
 # at most one api-docs.yml run old.
 #
-# The Statistics page's "lines of code by date" charts are regenerated here, at deploy
-# time, straight from git history (see scripts/loc_graph.py) — they are not committed
+# Scheduled and workflow_dispatch runs regenerate the Statistics page's "lines of code by date"
+# charts straight from git history (see scripts/loc_graph.py). Push-triggered deploys reuse the
+# cached generated data instead, preserving its embedded timestamps and coverage. The charts are not committed
 # state. The per-roadmap chart (scripts/loc_roadmap_graph.py) is regenerated the same
 # way, but from the PR labels rather than git, since roadmap attribution lives in the
 # `roadmap/<Area>` labels; it reuses the bors-aware PR snapshot below. The
@@ -86,6 +87,7 @@ jobs:
   # cache. Pushes need not repeat those scans, including generator/workflow changes; use a
   # manual dispatch to refresh those immediately. Existing Pages serialization
   # still lets an already-running refresh finish before that code deploy starts.
+  # Data preparation runs in build-data, without Lean; build-site elaborates and compiles the site.
   # The two used to fail together for no better reason than sharing a job: an unrelated Verso
   # error in Site.Front meant nothing deployed, so a perfectly good pipeline-health.json derived
   # ninety minutes earlier in that same job was thrown away. Separating them means a site that
