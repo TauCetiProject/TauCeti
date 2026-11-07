@@ -494,6 +494,11 @@ the index set of the variables occurring in the rectangle's weight. -/
 noncomputable def OColumns (r : GridRectangle n) : Finset (Fin n) :=
   G.OColumnsOfSquares r.coveredSquares
 
+/-- The `O`-columns of a rectangle are those of the squares it covers. -/
+theorem OColumns_def (r : GridRectangle n) :
+    G.OColumns r = G.OColumnsOfSquares r.coveredSquares :=
+  (rfl)
+
 /-- A column is a covered `O`-column exactly when its `O`-marking is a covered square. -/
 @[simp]
 theorem mem_OColumns {r : GridRectangle n} {c : Fin n} :
@@ -610,6 +615,11 @@ theorem OMonomial_eq_OMonomialOfSquares (r : GridRectangle n) :
     G.OMonomial R r = G.OMonomialOfSquares R r.coveredSquares :=
   (rfl)
 
+/-- The weight of a rectangle is the product of the variables of its `O`-columns. -/
+theorem OMonomial_eq_prod_OColumns (r : GridRectangle n) :
+    G.OMonomial R r = ∏ c ∈ G.OColumns r, MvPolynomial.X c :=
+  (rfl)
+
 /-- The rectangle monomial of a column-swapped diagram renames the variables of the original
 monomial by the same swap, provided the rectangle either covers both columns or covers
 neither. -/
@@ -617,7 +627,7 @@ theorem OMonomial_swapColumns_eq_rename_of_coveredColumns (r : GridRectangle n) 
     (h : a ∈ r.coveredColumns ↔ b ∈ r.coveredColumns) :
     (G.swapColumns a b).OMonomial R r =
       MvPolynomial.rename (Equiv.swap a b) (G.OMonomial R r) := by
-  rw [OMonomial, OMonomial, OMonomialOfSquares_def, OMonomialOfSquares_def, ← OColumns, ← OColumns,
+  rw [OMonomial_eq_prod_OColumns, OMonomial_eq_prod_OColumns,
     G.OColumns_swapColumns_eq_image_of_coveredColumns r h, map_prod]
   simp only [MvPolynomial.rename_X, Finset.prod_image (Equiv.swap a b).injective.injOn]
 
@@ -629,8 +639,8 @@ theorem OMonomial_eq_one_of_disjoint {r : GridRectangle n}
 
 /-- The weight of a rectangle, written as a monomial with an explicit exponent vector. -/
 theorem OMonomial_eq_monomial (r : GridRectangle n) :
-    G.OMonomial R r = monomial (∑ c ∈ G.OColumns r, Finsupp.single c 1) (1 : R) :=
-  G.OMonomialOfSquares_eq_monomial R _
+    G.OMonomial R r = monomial (∑ c ∈ G.OColumns r, Finsupp.single c 1) (1 : R) := by
+  rw [OMonomial_eq_OMonomialOfSquares, G.OMonomialOfSquares_eq_monomial R, OColumns_def]
 
 /-- Every monomial of a sum of rectangle weights is the weight of one of the summed rectangles. -/
 theorem exists_mem_of_mem_support_sum_OMonomial {x y : GridState n}
@@ -665,8 +675,8 @@ With each variable `V_c` in Maslov degree `-2` and Alexander degree `-1`, this s
 weight shifts the two gradings of the target generator by `-2` and `-1` times the number of
 covered `O`-markings. -/
 theorem totalDegree_OMonomial [Nontrivial R] (r : GridRectangle n) :
-    (G.OMonomial R r).totalDegree = (G.OColumns r).card :=
-  G.totalDegree_OMonomialOfSquares R _
+    (G.OMonomial R r).totalDegree = (G.OColumns r).card := by
+  rw [OMonomial_eq_OMonomialOfSquares, G.totalDegree_OMonomialOfSquares R, OColumns_def]
 
 /-! ### The rectangles the unblocked differential counts -/
 
