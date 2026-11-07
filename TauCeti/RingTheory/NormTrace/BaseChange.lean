@@ -29,6 +29,8 @@ noncommutative algebras.
   norm form.
 * `TauCeti.Algebra.norm_sum_X_tmul_tensorProductBasis`: the generic norm form of `T ⊗[K] B` over
   `T` is the image of that of `B` over `K`.
+* `TauCeti.Algebra.norm_sum_tmul_eq_aeval`: the norm of `∑ j, xⱼ ⊗ bⱼ` over `T` is the generic norm
+  form of `B` evaluated at `x`.
 * `TauCeti.Algebra.charpoly_lmul_eq_norm`: the characteristic polynomial of multiplication by
   `x ∈ T ⊗[K] B` over `T` is the norm of `X - x` over `T[X]`.
 * `TauCeti.Algebra.trace_baseChange_tmul_of_isScalarTower`: for a tower `R → S → T` and an
@@ -143,6 +145,17 @@ theorem Algebra.norm_sum_X_tmul_tensorProductBasis {ι : Type*} [Fintype ι]
   refine Eq.trans ?_ (Algebra.norm_rTensor (MvPolynomial.mapAlgHom (Algebra.ofId K T)) _)
   rw [← Algebra.norm_eq_of_algEquiv e]
   simp [e]
+
+/-- The norm of `∑ j, xⱼ ⊗ bⱼ` in `T ⊗[K] B` over `T` is the generic norm form of `B` in the basis
+`b`, evaluated at `x`. -/
+theorem Algebra.norm_sum_tmul_eq_aeval {ι : Type*} [Fintype ι] (b : Module.Basis ι K B)
+    (x : ι → T) :
+    Algebra.norm T (∑ j, x j ⊗ₜ[K] b j) = MvPolynomial.aeval x
+      (Algebra.norm (MvPolynomial ι K) (∑ j, (MvPolynomial.X j : MvPolynomial ι K) ⊗ₜ[K] b j)) := by
+  let := Module.Free.of_basis b
+  let := Module.Finite.of_basis b
+  rw [← Algebra.norm_rTensor]
+  simp
 
 end GenericNorm
 
