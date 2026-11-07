@@ -93,10 +93,6 @@ theorem eq_inv_mean_of_tendsto_renewalMeasure_Ioc
   filter_upwards [ht.eventually (eventually_ge_atTop u)] with n hn
   congr 1
   ext s
-  simp only [mem_ofPred_eq, mem_Ioc]
-  have hiff : t n - u < s ↔ t n < s + u := by
-    rw [tsub_lt_iff_left hn]
-    simp [add_comm]
-  exact and_comm.trans (and_congr_right fun _ ↦ hiff)
+  simp only [mem_ofPred_eq, mem_Ioc, tsub_lt_iff_left hn, add_comm, and_comm]
 
 end MeasureTheory.Measure

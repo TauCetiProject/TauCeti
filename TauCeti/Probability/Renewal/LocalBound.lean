@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Independence.DisjointBlocks
 public import TauCeti.Probability.Renewal.Measure
-public import Mathlib.Algebra.Order.Floor.Semifield
+import Mathlib.Algebra.Order.Floor.Semiring
 import TauCeti.Probability.Independence.InfinitePi
 
 /-!

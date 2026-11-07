@@ -408,17 +408,16 @@ theorem lintegral_tail_renewalMeasure (hF : F {0} < 1) (t : ℝ≥0) :
 The set formulation also covers windows extending to the left of time zero. -/
 theorem lintegral_renewalMeasure_backwardWindow (hF : F {0} < 1) (t : ℝ≥0) :
     ∫⁻ u, F.renewalMeasure {s | s ≤ t ∧ t < s + u} ∂F = 1 := by
-  have hmeas : Measurable (fun p : ℝ≥0 × ℝ≥0 ↦
-      ({p | p.1 ≤ t ∧ t < p.1 + p.2} : Set (ℝ≥0 × ℝ≥0)).indicator
-        (fun _ ↦ (1 : ℝ≥0∞)) p) := by measurability
+  let S : Set (ℝ≥0 × ℝ≥0) := {p | p.1 ≤ t ∧ t < p.1 + p.2}
+  have hmeas : Measurable (S.indicator (fun _ ↦ (1 : ℝ≥0∞))) := by
+    dsimp [S]
+    measurability
   have hswap := lintegral_lintegral_swap (μ := F.renewalMeasure) (ν := F)
-    (f := fun s u ↦ ({p | p.1 ≤ t ∧ t < p.1 + p.2} : Set (ℝ≥0 × ℝ≥0)).indicator
-      (fun _ ↦ (1 : ℝ≥0∞)) (s, u)) hmeas.aemeasurable
+    (f := fun s u ↦ S.indicator (fun _ ↦ (1 : ℝ≥0∞)) (s, u)) hmeas.aemeasurable
   have hsection (u : ℝ≥0) :
-      ∫⁻ s, ({p | p.1 ≤ t ∧ t < p.1 + p.2} : Set (ℝ≥0 × ℝ≥0)).indicator
-        (fun _ ↦ (1 : ℝ≥0∞)) (s, u) ∂F.renewalMeasure =
+      ∫⁻ s, S.indicator (fun _ ↦ (1 : ℝ≥0∞)) (s, u) ∂F.renewalMeasure =
       F.renewalMeasure {s | s ≤ t ∧ t < s + u} := by
-    simpa [indicator_apply] using
+    simpa [S, indicator_apply] using
       lintegral_indicator_one (μ := F.renewalMeasure)
         (by measurability : MeasurableSet {s : ℝ≥0 | s ≤ t ∧ t < s + u})
   rw [← F.lintegral_tail_renewalMeasure hF t]
@@ -427,9 +426,8 @@ theorem lintegral_renewalMeasure_backwardWindow (hF : F {0} < 1) (t : ℝ≥0) :
   apply lintegral_congr
   intro s
   by_cases hs : s ≤ t
-  · have hsub : ∀ u : ℝ≥0, t < s + u ↔ t - s < u := fun u ↦ by
-      exact (tsub_lt_iff_left hs).symm
-    simp [indicator_apply, hs, hsub, ← lintegral_indicator_one measurableSet_Ioi]
-  · simp [hs]
+  · simp [S, indicator_apply, hs, ← tsub_lt_iff_left hs,
+      ← lintegral_indicator_one measurableSet_Ioi]
+  · simp [S, hs]
 
 end MeasureTheory.Measure
