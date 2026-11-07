@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Connected.Basic
+public import Mathlib.Topology.Instances.Real.Lemmas
 
 /-!
 # Elementary frontier lemmas
@@ -14,6 +15,11 @@ Facts about `frontier` that carry no structure of their own: straddling, splitti
 two, clinging to it from inside, and the frontier of an image.
 Each is the topological core of a step that a boundary argument would otherwise carry out inside
 a concrete space. The list is open-ended; nothing below depends on how many entries it has.
+
+Also recorded here is the sublevel-set lemma `TauCeti.exists_isOpen_subset_pos_forall_frontier_le`:
+if a continuous `w` lies below `u` on the frontier of an open set `Ω` and above it at a point of
+`Ω`, then `{u < w}` is an open subset of `Ω` whose closure lies in `Ω` and on whose frontier
+`w ≤ u`.
 
 ## A connected set that straddles a set meets its frontier
 
@@ -224,5 +230,37 @@ theorem frontier_image_subset_of_closure_subset (hf : IsOpenMap f) (hfi : Functi
   exact Set.union_subset_union_right _ Set.sdiff_subset
 
 end OpenInjectiveImage
+
+section SublevelBetween
+
+variable {X : Type*} [TopologicalSpace X] {Ω : Set X} {u : X → ℝ}
+
+/-- Let `u` and `w` be continuous on the closure of an open set `Ω` with `w < u` on its frontier,
+and `u x₀ < w x₀` at some `x₀ ∈ Ω`. Then `{u < w}` is an open subset `G` of `Ω` containing `x₀`,
+and the closure of `G` lies in `Ω` and `w ≤ u` on the frontier of `G`. -/
+theorem exists_isOpen_subset_pos_forall_frontier_le (hΩo : IsOpen Ω) {w : X → ℝ}
+    (huc : ContinuousOn u (closure Ω)) (hwc : ContinuousOn w (closure Ω))
+    (hfrw : ∀ y ∈ frontier Ω, w y < u y) {x₀ : X} (hx₀ : x₀ ∈ Ω) (hlt : u x₀ < w x₀) :
+    ∃ G, IsOpen G ∧ G ⊆ Ω ∧ closure G ⊆ Ω ∧ x₀ ∈ G ∧ (∀ y ∈ G, 0 < w y - u y) ∧
+      ∀ y ∈ frontier G, w y ≤ u y := by
+  set G := Ω ∩ (fun y => w y - u y) ⁻¹' Ioi 0
+  have hGo : IsOpen G := ((hwc.sub huc).mono subset_closure).isOpen_inter_preimage hΩo isOpen_Ioi
+  have hGc : closure G ⊆ Ω := by
+    have hT : closure G ⊆ closure Ω ∩ (fun y => w y - u y) ⁻¹' Ici 0 :=
+      closure_minimal (fun y hy => ⟨subset_closure hy.1, le_of_lt hy.2⟩)
+        ((hwc.sub huc).preimage_isClosed_of_isClosed isClosed_closure isClosed_Ici)
+    intro y hy
+    obtain ⟨hy₁, hy₂⟩ := hT hy
+    by_contra hyΩ
+    have := hfrw y (by rw [hΩo.frontier_eq]; exact ⟨hy₁, hyΩ⟩)
+    simp only [mem_preimage, mem_Ici] at hy₂
+    linarith
+  refine ⟨G, hGo, inter_subset_left, hGc, ⟨hx₀, sub_pos.2 hlt⟩, fun y hy => hy.2,
+    fun y hy => ?_⟩
+  rw [hGo.frontier_eq] at hy
+  have : ¬0 < w y - u y := fun h => hy.2 ⟨hGc hy.1, h⟩
+  linarith [not_lt.1 this]
+
+end SublevelBetween
 
 end TauCeti
