@@ -80,7 +80,7 @@ theorem isCompletelyMonotoneOnIoi_div_of_isCompletelyMonotoneOnIoi_deriv
     ge_of_tendsto (hcont.continuousAt.tendsto.mono_left nhdsWithin_le_nhds)
       (eventually_of_mem (Ioo_mem_nhdsGT ht) fun ε hε => (hnonneg ε hε.1).trans (hle ε hε))
   have hsq : ((-1 : ℝ) ^ n) * (-1) ^ n = 1 := by rw [← mul_pow]; norm_num
-  rw [iteratedDeriv_div_id isOpen_Ioi ht ht.ne'
+  rw [iteratedDeriv_div_id isOpen_Ioi.uniqueDiffOn ht ht.ne'
       ((hsmooth.contDiffAt (isOpen_Ioi.mem_nhds ht)).of_le (by exact_mod_cast le_top)),
     ← mul_assoc, ← mul_assoc, ← mul_assoc, hsq, one_mul]
   positivity

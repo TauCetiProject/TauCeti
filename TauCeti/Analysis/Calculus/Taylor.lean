@@ -97,25 +97,25 @@ theorem le_taylorWithinEval_of_neg_one_pow_mul_iteratedDerivWithin_nonneg {f : �
         _ = _ := by rw [smul_eq_mul, ← neg_sub z x, neg_pow (z - x)]; ring
   simpa using hmono (left_mem_Icc.mpr hxy) (right_mem_Icc.mpr hxy) hxy
 
-/-- **The derivatives of `f(t) / t`.** If `f` is `C^n` at `t ≠ 0` and `s` is an open set
-containing `t`, then `dⁿ/dtⁿ (f(t) / t) = (-1)ⁿ n! t⁻ⁿ⁻¹ · T(0)`, where `T` is the Taylor
-polynomial of order `n` of `f` expanded at `t` (within `s`). -/
-theorem iteratedDeriv_div_id {f : ℝ → ℝ} {s : Set ℝ} {n : ℕ} {t : ℝ} (hs : IsOpen s)
-    (ht : t ∈ s) (ht0 : t ≠ 0) (hf : ContDiffAt ℝ n f t) :
+/-- **The derivatives of `f(t) / t`.** If `f` is `C^n` at `t ≠ 0` and `s` is a set of unique
+differentiability containing `t` (for instance an open set, or an interval with `t` an endpoint),
+then `dⁿ/dtⁿ (f(t) / t) = (-1)ⁿ n! t⁻ⁿ⁻¹ · T(0)`, where `T` is the Taylor polynomial of order `n`
+of `f` expanded at `t` (within `s`). -/
+theorem iteratedDeriv_div_id {f : ℝ → ℝ} {s : Set ℝ} {n : ℕ} {t : ℝ}
+    (hs : UniqueDiffOn ℝ s) (ht : t ∈ s) (ht0 : t ≠ 0) (hf : ContDiffAt ℝ n f t) :
     iteratedDeriv n (fun x => f x / x) t =
       (-1) ^ n * n ! * (t ^ (n + 1))⁻¹ * taylorWithinEval f n s t 0 := by
   have hfun : (fun x => f x / x) = f * Inv.inv := by
     funext x
     simp [div_eq_mul_inv]
-  have hinv : ContDiffWithinAt ℝ n (Inv.inv : ℝ → ℝ) s t :=
-    (contDiffAt_inv ℝ ht0).contDiffWithinAt
-  rw [hfun, ← iteratedDerivWithin_of_isOpen hs ht,
-    iteratedDerivWithin_mul ht hs.uniqueDiffOn hf.contDiffWithinAt hinv,
+  have hinv {m : ℕ} : ContDiffAt ℝ m (Inv.inv : ℝ → ℝ) t := contDiffAt_inv ℝ ht0
+  rw [hfun, ← iteratedDerivWithin_eq_iteratedDeriv (f := f * Inv.inv) hs (hf.mul hinv) ht,
+    iteratedDerivWithin_mul ht hs hf.contDiffWithinAt hinv.contDiffWithinAt,
     taylor_within_apply, Finset.mul_sum]
   refine Finset.sum_congr rfl fun k hk => ?_
   obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le (Nat.lt_succ_iff.mp (Finset.mem_range.mp hk))
   rw [Nat.add_sub_cancel_left,
-    iteratedDerivWithin_of_isOpen (f := (Inv.inv : ℝ → ℝ)) (n := m) hs ht, iteratedDeriv_eq_iterate,
+    iteratedDerivWithin_eq_iteratedDeriv hs hinv ht, iteratedDeriv_eq_iterate,
     iter_deriv_inv, smul_eq_mul]
   have hz : (-1 - (m : ℤ)) = -((m + 1 : ℕ) : ℤ) := by push_cast; ring
   have hchoose : ((k + m).choose k : ℝ) * k ! * m ! = (k + m)! := by
