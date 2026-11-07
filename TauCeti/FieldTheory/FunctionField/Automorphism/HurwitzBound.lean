@@ -16,6 +16,7 @@ public import TauCeti.FieldTheory.FunctionField.RiemannRoch.Genus
 -- `F` a finite Galois extension of the fixed field, which the tameness hypothesis of the statements
 -- below needs in order to elaborate at all.
 public import TauCeti.FieldTheory.Galois.FixedField
+import Mathlib.FieldTheory.Galois.IsGaloisGroup
 -- Non-public, all three in the proofs only: the numerical bound on the deficit of branch data, the
 -- branch-data form of the tame different, and the tame Hurwitz genus formula.
 import TauCeti.Data.Rat.BranchDeficit
@@ -89,7 +90,7 @@ theorem natCard_le_eighty_four_mul_genus_sub_one (hF : IsFunctionField k F)
   set E := IntermediateField.fixedField G with hE
   have hcard : Module.finrank ↥E F = Nat.card G := by
     rw [hE]
-    exact IntermediateField.finrank_fixedField_eq_natCard G
+    exact (IsGaloisGroup.card_eq_finrank G (FixedPoints.subfield G F) F).symm
   have hGpos : 0 < Nat.card G := Nat.card_pos
   have hFE : IsFunctionField k ↥E := hF.fixedField G
   have hexE : IsIntegrallyClosedIn k ↥E := E.val.isIntegrallyClosedIn E.val.injective hex
@@ -150,7 +151,9 @@ theorem natCard_le_eighty_four_mul_genus_sub_one_of_not_dvd [PerfectField k] (p 
   refine ⟨{Q : Place k F | Q.restrict k ↥(IntermediateField.fixedField G) =
       P.restrict k ↥(IntermediateField.fixedField G)}.ncard *
       Place.relativeDegree k ↥(IntermediateField.fixedField G) P, ?_⟩
-  rw [← IntermediateField.finrank_fixedField_eq_natCard G, ← hfund]
+  have hcard : Nat.card G = Module.finrank ↥(IntermediateField.fixedField G) F :=
+    IsGaloisGroup.card_eq_finrank G (FixedPoints.subfield G F) F
+  rw [hcard, ← hfund]
   ring
 
 /-- **The Hurwitz bound in characteristic zero** (Stichtenoth, Exercise 3.18): a finite group of
