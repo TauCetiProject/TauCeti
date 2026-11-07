@@ -21,8 +21,9 @@ entries crossing a retained cut below the diagonal.
 The resulting ideals form an order embedding of the subsets of `Fin n`, with the ideal
 order reversed. In particular distinct labels give distinct subgroup schemes over any
 nontrivial commutative base ring. The empty label gives the upper-triangular subgroup,
-and the full label gives the whole general linear group. These statements identify the
-labels independently of any classification of closed subgroups.
+which is contained in every standard block subgroup, and the full label gives the whole
+general linear group. These statements identify the labels independently of any
+classification of closed subgroups.
 
 ## References
 
@@ -174,6 +175,14 @@ theorem weightParabolicDefiningHopfIdeal_standardWeight_empty :
     intro i j hij
     simpa only [standardWeight_empty, UpperTriangular.weights_lt_weights_iff,
       neg_lt_neg_iff, Nat.cast_lt, Fin.lt_def] using hij
+
+/-- Standard block subgroups contain the upper-triangular subgroup. -/
+theorem weightParabolicDefiningHopfIdeal_standardWeight_le_upperTriangular
+    (J : Finset (Fin n)) :
+    weightParabolicDefiningHopfIdeal R (standardWeight J) ≤
+      UpperTriangular.definingHopfIdeal R (n + 1) := by
+  simpa only [weightParabolicDefiningHopfIdeal_standardWeight_empty] using
+    weightParabolicDefiningHopfIdeal_standardWeight_antitone R (Finset.empty_subset J)
 
 /-- The full label imposes no equations, so it defines the whole general linear group. -/
 @[simp]

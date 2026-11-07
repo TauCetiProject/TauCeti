@@ -35,20 +35,6 @@ universe u
 
 variable {n : ℕ}
 
-section Ring
-
-variable (R : Type u) [CommRing R]
-
-/-- Standard block subgroups contain the upper-triangular subgroup. -/
-theorem weightParabolicDefiningHopfIdeal_standardWeight_le_upperTriangular
-    (J : Finset (Fin n)) :
-    weightParabolicDefiningHopfIdeal R (standardWeight J) ≤
-      UpperTriangular.definingHopfIdeal R (n + 1) :=
-  weightParabolicDefiningHopfIdeal_le_upperTriangular_definingHopfIdeal R
-    (standardWeight_antitone J)
-
-end Ring
-
 section AlgebraicallyClosed
 
 variable (k : Type u) [Field k] [IsAlgClosed k]
