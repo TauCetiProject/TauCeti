@@ -50,6 +50,9 @@ computation in this file is the split model of that torsor.
 ## Main results
 
 * `TauCeti.Algebra.FrameAlgebra.mk_tensorPowDiagonal`: distinct slots carry distinct points.
+* `TauCeti.Algebra.FrameAlgebra.lift`, `TauCeti.Algebra.FrameAlgebra.eq_lift_iff`: the universal
+  property, algebra maps out of the tensor power separating every two distinct slots factor
+  uniquely through the frame algebra.
 * `TauCeti.Algebra.FrameAlgebra.smul_mk`: permutations act by permuting tensor factors.
 * `TauCeti.Algebra.FrameAlgebra.etale`, `TauCeti.Algebra.FrameAlgebra.finite`: the frame algebra
   of a finite étale algebra is finite étale.
@@ -155,6 +158,16 @@ theorem distinctIdempotent_mul_tensorPowDiagonal {i j : ι} (hij : i ≠ j) :
     ⟨Finset.mem_univ i, Finset.mem_univ j, hij⟩), mul_right_comm,
     (isIdempotentElem_tensorPowDiagonal i j).one_sub_mul_self, zero_mul]
 
+/-- An algebra map out of the tensor power which separates every two distinct slots sends `ε`
+to `1`. -/
+theorem map_distinctIdempotent {T : Type*} [Semiring T] [Algebra R T]
+    (φ : (⨂[R] _ : ι, S) →ₐ[R] T) (hφ : ∀ i j, i ≠ j → φ (tensorPowDiagonal R S i j) = 0) :
+    φ (distinctIdempotent R S ι) = 1 :=
+  Finset.prod_induction _ (fun x ↦ φ x = 1) (fun a b ha hb ↦ by rw [map_mul, ha, hb, mul_one])
+    (map_one φ) fun p hp ↦ by
+      have h := congrArg φ (sub_add_cancel 1 (tensorPowDiagonal R S p.1 p.2))
+      rwa [map_add, hφ _ _ (Finset.mem_offDiag.mp hp).2.2, add_zero, map_one] at h
+
 /-- Tuples indexed by a type with at most one element have no pairs of slots to separate. -/
 @[simp]
 theorem distinctIdempotent_of_subsingleton [Subsingleton ι] :
@@ -207,6 +220,51 @@ theorem mk_distinctIdempotent :
   rw [eq_comm, ← sub_eq_zero, ← map_one (Ideal.Quotient.mk _), ← map_sub,
     Ideal.Quotient.eq_zero_iff_mem]
   exact Ideal.mem_span_singleton_self _
+
+section Lift
+
+variable {T : Type*} [Semiring T] [Algebra R T]
+
+/-- The universal property of the frame algebra: an algebra map out of the tensor power which
+separates every two distinct slots, i.e. kills `δᵢⱼ` for `i ≠ j`, factors through the frame
+algebra. -/
+noncomputable def lift (φ : (⨂[R] _ : ι, S) →ₐ[R] T)
+    (hφ : ∀ i j, i ≠ j → φ (tensorPowDiagonal R S i j) = 0) : FrameAlgebra R S ι →ₐ[R] T :=
+  Ideal.Quotient.liftₐ _ φ fun x hx ↦ by
+    obtain ⟨a, rfl⟩ := Ideal.mem_span_singleton'.mp hx
+    rw [map_mul, ← mul_one (φ (1 - _)), ← map_distinctIdempotent φ hφ, ← map_mul,
+      isIdempotentElem_distinctIdempotent.one_sub_mul_self, map_zero, mul_zero]
+
+/-- `TauCeti.Algebra.FrameAlgebra.lift φ hφ` sends the class of `x` to `φ x`. -/
+@[simp]
+theorem lift_mk (φ : (⨂[R] _ : ι, S) →ₐ[R] T)
+    (hφ : ∀ i j, i ≠ j → φ (tensorPowDiagonal R S i j) = 0) (x : ⨂[R] _ : ι, S) :
+    lift φ hφ (Ideal.Quotient.mk _ x) = φ x := (rfl)
+
+/-- `TauCeti.Algebra.FrameAlgebra.lift φ hφ` restricts to `φ` along the quotient map. -/
+@[simp]
+theorem lift_comp_mkₐ (φ : (⨂[R] _ : ι, S) →ₐ[R] T)
+    (hφ : ∀ i j, i ≠ j → φ (tensorPowDiagonal R S i j) = 0) :
+    (lift φ hφ).comp (Ideal.Quotient.mkₐ R _) = φ :=
+  Ideal.Quotient.liftₐ_comp ..
+
+/-- `TauCeti.Algebra.FrameAlgebra.lift φ hφ` is the unique algebra map out of the frame algebra
+restricting to `φ` along the quotient map. -/
+theorem eq_lift_iff (φ : (⨂[R] _ : ι, S) →ₐ[R] T)
+    (hφ : ∀ i j, i ≠ j → φ (tensorPowDiagonal R S i j) = 0) (ψ : FrameAlgebra R S ι →ₐ[R] T) :
+    ψ = lift φ hφ ↔ ψ.comp (Ideal.Quotient.mkₐ R _) = φ :=
+  ⟨fun h ↦ h ▸ lift_comp_mkₐ φ hφ,
+    fun h ↦ Ideal.Quotient.algHom_ext R (h.trans (lift_comp_mkₐ φ hφ).symm)⟩
+
+/-- Every algebra map out of the frame algebra is the lift of its restriction to the tensor
+power. -/
+@[simp]
+theorem lift_comp_mkₐ_self (ψ : FrameAlgebra R S ι →ₐ[R] T) :
+    lift (ψ.comp (Ideal.Quotient.mkₐ R _)) (fun i j hij ↦ by
+      rw [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk, mk_tensorPowDiagonal hij, map_zero]) = ψ :=
+  ((eq_lift_iff _ _ ψ).mpr rfl).symm
+
+end Lift
 
 variable (R S ι) in
 /-- The permutations of `ι` act on the frame algebra by permuting the tensor factors. -/
