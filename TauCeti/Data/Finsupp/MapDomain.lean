@@ -35,6 +35,14 @@ theorem coe_mapDomain_eq_extend {α β M : Type*} [AddCommMonoid M]
     simp [he]
   · simp [mapDomain_of_notMem_range _ _ hj, Function.extend_apply' _ _ _ hj]
 
+/-- A finitely supported function supported on a set `s` is the push-forward along the inclusion
+of its restriction to `s`. -/
+theorem mapDomain_subtypeDomain_subtype {α M : Type*} [AddCommMonoid M] {s : Set α} {f : α →₀ M}
+    (hf : ↑f.support ⊆ s) : (f.subtypeDomain (· ∈ s)).mapDomain Subtype.val = f := by
+  classical
+  have h := extendDomain_subtypeDomain f (P := (· ∈ s)) fun _ ha ↦ hf ha
+  rwa [extendDomain_eq_embDomain_subtype, embDomain_eq_mapDomain] at h
+
 /-- Pushing forward along a strictly monotone map of indices preserves and reflects the strict
 lexicographic order: the first position at which two relabeled functions differ is the image of
 the first position at which the original functions differ. -/

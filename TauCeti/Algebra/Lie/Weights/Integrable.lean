@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Lie.Sl2.Spectrum
 public import TauCeti.Algebra.Lie.Sl2.WeightMultiplicity
 public import TauCeti.Algebra.Lie.Submodule.LocallyFinite
-public import TauCeti.LinearAlgebra.Eigenspace.Semisimple
 public import TauCeti.LinearAlgebra.Eigenspace.Separation
 public import Mathlib.Algebra.Lie.Weights.Killing
 
@@ -89,6 +88,74 @@ variable {K : Type u} {L : Type v} [Field K] [CharZero K]
   {M : Type w} [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
   {α : Weight K H L} {χ : H → K} {h e f : L}
 
+omit [CharZero K] [IsKilling K L] [FiniteDimensional K L] [IsTriangularizable K H L] in
+/-- A root vector `x` that preserves a subspace `N` and shifts the `α`-string of `χ` by a multiple
+of `α` preserves the sum `⨆ k, P k` of the pieces `M_{k α + χ} ⊓ N` of the string. -/
+private theorem lie_mem_iSup_of_mem_rootSpace {N : Submodule K M} (P : ℤ → Submodule K M)
+    (hP : ∀ k : ℤ, P k = (genWeightSpace M (k • ⇑α + χ)).toSubmodule ⊓ N)
+    {x : L} {β : H → K} (hx : x ∈ rootSpace H β) (hNx : ∀ w ∈ N, ⁅x, w⁆ ∈ N)
+    (hjump : ∀ k : ℤ, ∃ j : ℤ, β + (k • ⇑α + χ) = j • ⇑α + χ) {u : M}
+    (hu : u ∈ ⨆ k : ℤ, P k) : ⁅x, u⁆ ∈ ⨆ k : ℤ, P k := by
+  have hle : (⨆ k : ℤ, P k) ≤ (⨆ k : ℤ, P k).comap (toEnd K L M x) := by
+    refine iSup_le fun k w hw ↦ ?_
+    obtain ⟨j, hj⟩ := hjump k
+    rw [hP] at hw
+    have hmapped := mapsTo_toEnd_genWeightSpace_add_of_mem_rootSpace K L H M β
+      (k • ⇑α + χ) hx hw.1
+    rw [hj] at hmapped
+    exact le_iSup P j (by rw [hP]; exact ⟨hmapped, hNx w hw.2⟩)
+  simpa using hle hu
+
+/-- The pieces `M_{k α + χ} ⊓ N` of the `α`-string of `χ` lie in the eigenspaces `χ(α^∨) + 2 k`
+of the coroot, provided generalized eigenvectors of the coroot in a subspace `W` containing them
+are honest eigenvectors. -/
+private theorem string_inf_le_eigenspace (hα : α.IsNonZero) {N W : Submodule K M}
+    (hPW : ∀ k : ℤ, (genWeightSpace M (k • ⇑α + χ)).toSubmodule ⊓ N ≤ W)
+    (hhonest : ∀ (c : K) {u : M}, u ∈ W →
+      u ∈ (toEnd K H M (IsKilling.coroot α)).maxGenEigenspace c →
+        toEnd K H M (IsKilling.coroot α) u = c • u) (k : ℤ) :
+    (genWeightSpace M (k • ⇑α + χ)).toSubmodule ⊓ N ≤
+      (toEnd K H M (IsKilling.coroot α)).eigenspace (χ (IsKilling.coroot α) + 2 * k) := by
+  intro u hu
+  have hval : (k • ⇑α + χ) (IsKilling.coroot α) = χ (IsKilling.coroot α) + 2 * k := by
+    simp only [Pi.add_apply, Pi.smul_apply, IsKilling.root_apply_coroot hα]
+    push_cast [zsmul_eq_mul]
+    ring
+  have hgen : u ∈ (toEnd K H M (IsKilling.coroot α)).maxGenEigenspace
+      (χ (IsKilling.coroot α) + 2 * k) := by
+    obtain ⟨j, hj⟩ := (mem_genWeightSpace M (k • ⇑α + χ) u).1 hu.1 (IsKilling.coroot α)
+    exact (Module.End.mem_maxGenEigenspace _ _ _).2 ⟨j, by rwa [hval] at hj⟩
+  exact Module.End.mem_eigenspace_iff.2 (hhonest _ (hPW k hu) hgen)
+
+omit [IsTriangularizable K H L] in
+/-- A nonzero vector of `⨆ k, (M_{k α + χ} ⊓ N)` on which the coroot acts by `-χ(α^∨)` lies in the
+`(-m)`-th piece, where `χ(α^∨) = m`, because the coroot acts on the `k`-th piece by
+`χ(α^∨) + 2 k` and these scalars are distinct. So `-m α + χ` is a weight. -/
+private theorem genWeightSpace_neg_zsmul_add_ne_bot (P : ℤ → Submodule K M) {N : Submodule K M}
+    (hP : ∀ k : ℤ, P k = (genWeightSpace M (k • ⇑α + χ)).toSubmodule ⊓ N)
+    (hPeig : ∀ k : ℤ, P k ≤
+      (toEnd K H M (IsKilling.coroot α)).eigenspace (χ (IsKilling.coroot α) + 2 * k))
+    {m : ℤ} (hm : χ (IsKilling.coroot α) = (m : K)) {u : M} (huW : u ∈ ⨆ k : ℤ, P k) (hu0 : u ≠ 0)
+    (huA : toEnd K H M (IsKilling.coroot α) u = (-χ (IsKilling.coroot α)) • u) :
+    genWeightSpace M ((-m : ℤ) • ⇑α + χ) ≠ ⊥ := by
+  have hginj : Function.Injective fun k : ℤ ↦ χ (IsKilling.coroot α) + 2 * k := by
+    intro k k' hkk'
+    have : (2 : K) * k = 2 * k' := by simpa only [add_right_inj] using hkk'
+    exact_mod_cast mul_left_cancel₀ (two_ne_zero (α := K)) this
+  have hloc := biSup_inf_eigenspace_eq_self (s := (Set.univ : Set ℤ)) _ P
+    (fun k ↦ χ (IsKilling.coroot α) + 2 * k) (fun j _ ↦ hPeig j) (Set.mem_univ (-m))
+    fun j _ hj hcon ↦ hj (hginj hcon)
+  have huP : u ∈ P (-m) := by
+    rw [← hloc]
+    refine ⟨by simpa using huW, Module.End.mem_eigenspace_iff.2 ?_⟩
+    rw [huA, hm]
+    push_cast
+    module
+  intro hbot
+  have : u ∈ (genWeightSpace M ((-m : ℤ) • ⇑α + χ)).toSubmodule := ((hP _).le huP).1
+  rw [hbot] at this
+  exact hu0 (by simpa using this)
+
 /-- Both statements of this file at once: for a module integrable along a nonzero root `α`, the
 value of a weight `χ` on the coroot `α^∨` is an integer `m`, and `-m • α + χ` is again a weight.
 
@@ -110,128 +177,40 @@ private theorem exists_int_apply_coroot_and_genWeightSpace_zsmul_add_ne_bot (hα
     rw [hlf]; trivial
   obtain ⟨N, hNfg, hNst, hvN⟩ := mem_locallyFiniteSubmodule.1 hvlf
   -- the `α`-string of `χ`, truncated to `N`
-  set A : Module.End K M := toEnd K H M (IsKilling.coroot α) with hAdef
-  set n : K := χ (IsKilling.coroot α) with hndef
-  set g : ℤ → K := fun k ↦ n + 2 * k with hgdef
   set P : ℤ → Submodule K M := fun k ↦ (genWeightSpace M (k • ⇑α + χ)).toSubmodule ⊓ N
   set W : Submodule K M := ⨆ k : ℤ, P k with hWdef
   have hWN : W ≤ N := iSup_le fun _ ↦ inf_le_right
-  have hvW : v ∈ W := le_iSup P 0 ⟨by simpa using hvmem, hvN⟩
+  have hvP : v ∈ P 0 := ⟨by simpa using hvmem, hvN⟩
   -- a root vector shifts the string by its own root and preserves `N`, hence preserves `W`
-  have hshift : ∀ (x : L) (β : H → K), x ∈ rootSpace H β → x ∈ (t.toLieSubalgebra K : Set L) →
-      (∀ k : ℤ, ∃ j : ℤ, β + (k • ⇑α + χ) = j • ⇑α + χ) → ∀ u ∈ W, ⁅x, u⁆ ∈ W := by
-    intro x β hx hxt hjump u hu
-    have hle : W ≤ W.comap (toEnd K L M x) := by
-      rw [hWdef]
-      refine iSup_le fun k w hw ↦ ?_
-      obtain ⟨j, hj⟩ := hjump k
-      have hmapped := mapsTo_toEnd_genWeightSpace_add_of_mem_rootSpace K L H M β
-        (k • ⇑α + χ) hx hw.1
-      rw [hj] at hmapped
-      exact le_iSup P j ⟨hmapped, hNst x hxt w hw.2⟩
-    simpa using hle hu
-  have hWe : ∀ u ∈ W, ⁅e, u⁆ ∈ W :=
-    hshift e ⇑α he t.e_mem_toLieSubalgebra fun k ↦ ⟨k + 1, by rw [add_zsmul, one_zsmul]; abel⟩
-  have hWf : ∀ u ∈ W, ⁅f, u⁆ ∈ W :=
-    hshift f (-⇑α) hf t.f_mem_toLieSubalgebra fun k ↦ ⟨k - 1, by rw [sub_zsmul, one_zsmul]; abel⟩
+  have hWe : ∀ u ∈ W, ⁅e, u⁆ ∈ W := fun u hu ↦
+    lie_mem_iSup_of_mem_rootSpace P (fun _ ↦ rfl) he (hNst e t.e_mem_toLieSubalgebra)
+      (fun k ↦ ⟨k + 1, by rw [add_zsmul, one_zsmul]; abel⟩) hu
+  have hWf : ∀ u ∈ W, ⁅f, u⁆ ∈ W := fun u hu ↦
+    lie_mem_iSup_of_mem_rootSpace P (fun _ ↦ rfl) hf (hNst f t.f_mem_toLieSubalgebra)
+      (fun k ↦ ⟨k - 1, by rw [sub_zsmul, one_zsmul]; abel⟩) hu
   -- `W` as a finite-dimensional module over the subalgebra generated by the triple
   set 𝒲 : LieSubmodule K (t.toLieSubalgebra K) M := t.lieSubmoduleOfStable W hWe hWf
-  have h𝒲W : 𝒲.toSubmodule = W := t.lieSubmoduleOfStable_toSubmodule W hWe hWf
-  have hmem𝒲 : ∀ {u : M}, u ∈ 𝒲 ↔ u ∈ W := by
-    intro u; rw [← LieSubmodule.mem_toSubmodule, h𝒲W]
+  have hmem𝒲 : ∀ {u : M}, u ∈ 𝒲 ↔ u ∈ W := t.mem_lieSubmoduleOfStable W hWe hWf
   have : FiniteDimensional K N := (Submodule.fg_iff_finiteDimensional N).1 hNfg
   -- `LieSubmodule.mem_toSubmodule` is definitional, so the two subtypes below are the same type.
   have : FiniteDimensional K 𝒲 := by
     have : FiniteDimensional K (𝒲.toSubmodule : Submodule K M) := by
-      rw [h𝒲W]; exact Submodule.finiteDimensional_of_le hWN
+      rw [t.lieSubmoduleOfStable_toSubmodule W hWe hWf]
+      exact Submodule.finiteDimensional_of_le hWN
     exact this
-  -- the action of the Cartan element of the triple on `𝒲`, and its comparison with `A`
-  set B : Module.End K 𝒲 :=
-    toEnd K (t.toLieSubalgebra K) 𝒲 ⟨h, t.h_mem_toLieSubalgebra⟩ with hBdef
-  have hcoeB : ∀ u : 𝒲, ((B u : 𝒲) : M) = A (u : M) := by
-    intro u
-    simp only [hBdef, hAdef, toEnd_apply_apply, LieSubmodule.coe_bracket,
-      LieSubalgebra.coe_bracket_of_module, hh]
-  have hcoeStep : ∀ (c : K) (u : 𝒲), (((B - c • 1) u : 𝒲) : M) = (A - c • 1) (u : M) := by
-    intro c u
-    simp [hcoeB]
-  have hcoePow : ∀ (c : K) (k : ℕ) (u : 𝒲),
-      ((((B - c • 1) ^ k) u : 𝒲) : M) = ((A - c • 1) ^ k) (u : M) := by
-    intro c k
-    induction k with
-    | zero => intro u; simp
-    | succ k ih =>
-      intro u
-      rw [pow_succ, pow_succ, mul_apply_eq_comp, mul_apply_eq_comp, ih, hcoeStep]
-  -- generalized eigenvectors of `A` inside `W` are honest eigenvectors of `A`
-  have hdiag : ⨆ c : K, B.eigenspace c = ⊤ :=
-    iSup_eigenspace_toEnd_eq_top (M := 𝒲) t.isSl2Triple_restrict
-  have hss : B.IsFinitelySemisimple :=
-    (isSemisimple_of_iSup_eigenspace_eq_top hdiag).isFinitelySemisimple
-  have hhonest : ∀ (c : K) (u : M) (_ : u ∈ W), u ∈ A.maxGenEigenspace c → A u = c • u := by
-    intro c u hu hgen
-    obtain ⟨k, hk⟩ := (Module.End.mem_maxGenEigenspace _ _ _).1 hgen
-    have hmem : (⟨u, hmem𝒲.2 hu⟩ : 𝒲) ∈ B.maxGenEigenspace c :=
-      (Module.End.mem_maxGenEigenspace _ _ _).2
-        ⟨k, Subtype.ext (by rw [hcoePow c k]; simpa using hk)⟩
-    rw [hss.maxGenEigenspace_eq_eigenspace c, Module.End.mem_eigenspace_iff] at hmem
-    have := congrArg (fun w : 𝒲 ↦ (w : M)) hmem
-    simpa [hcoeB] using this
-  -- the coroot acts on the `k`-th summand of the string by `2 k + n`
-  have hval : ∀ k : ℤ, (k • ⇑α + χ) (IsKilling.coroot α) = g k := by
-    intro k
-    simp only [hgdef, hndef, Pi.add_apply, Pi.smul_apply, IsKilling.root_apply_coroot hα]
-    push_cast [zsmul_eq_mul]
-    ring
-  have hPeig : ∀ k : ℤ, P k ≤ A.eigenspace (g k) := by
-    intro k u hu
-    have hgen : u ∈ A.maxGenEigenspace (g k) := by
-      obtain ⟨j, hj⟩ := (mem_genWeightSpace M (k • ⇑α + χ) u).1 hu.1 (IsKilling.coroot α)
-      exact (Module.End.mem_maxGenEigenspace _ _ _).2 ⟨j, by rwa [hval k] at hj⟩
-    exact Module.End.mem_eigenspace_iff.2 (hhonest _ u (le_iSup P k hu) hgen)
-  -- the eigenvalue `n` is attained on `𝒲`, hence so is `-n`
-  have hvB : (⟨v, hmem𝒲.2 hvW⟩ : 𝒲) ∈ B.eigenspace n := by
-    refine Module.End.mem_eigenspace_iff.2 (Subtype.ext ?_)
-    rw [hcoeB]
-    have := Module.End.mem_eigenspace_iff.1 (hPeig 0 ⟨by simpa using hvmem, hvN⟩)
-    simpa [hgdef] using this
-  have hnB : B.eigenspace n ≠ ⊥ := fun hbot ↦ hv0 (by
-    have := (Submodule.eq_bot_iff _).1 hbot _ hvB
-    simpa [Subtype.ext_iff] using this)
-  obtain ⟨m, hm⟩ := exists_int_of_hasEigenvalue (M := 𝒲) t.isSl2Triple_restrict
-    (Module.End.hasEigenvalue_iff.2 hnB)
-  have hsym := finrank_eigenspace_toEnd_neg (L := ↥(t.toLieSubalgebra K)) (M := 𝒲)
-    t.isSl2Triple_restrict n
-  have hnegB : B.eigenspace (-n) ≠ ⊥ := by
-    intro hbot
-    rw [hbot, finrank_bot] at hsym
-    exact hnB (Submodule.finrank_eq_zero.1 hsym)
-  obtain ⟨u, humem, hu0⟩ := (Submodule.ne_bot_iff _).1 hnegB
-  -- an eigenvector of eigenvalue `-n` lies in the `(-m)`-th summand of the string
-  have hginj : Function.Injective g := by
-    intro k k' hkk'
-    have : (2 : K) * k = 2 * k' := by
-      simpa only [hgdef, add_right_inj] using hkk'
-    exact_mod_cast mul_left_cancel₀ (two_ne_zero (α := K)) this
-  have hgm : g (-m) = -n := by
-    rw [hgdef, hm]
-    push_cast
-    ring
-  have huA : A (u : M) = g (-m) • (u : M) := by
-    have := congrArg (fun w : 𝒲 ↦ (w : M)) (Module.End.mem_eigenspace_iff.1 humem)
-    rw [hgm]
-    simpa [hcoeB] using this
-  have huP : (u : M) ∈ P (-m) := by
-    have hloc := biSup_inf_eigenspace_eq_self (s := (Set.univ : Set ℤ)) A P g
-      (fun j _ ↦ hPeig j) (Set.mem_univ (-m)) fun j _ hj hcon ↦ hj (hginj hcon)
-    rw [← hloc]
-    refine ⟨?_, Module.End.mem_eigenspace_iff.2 huA⟩
-    have huW : (u : M) ∈ W := hmem𝒲.1 u.2
-    simpa [hWdef] using huW
-  refine ⟨m, hm, fun hbot ↦ hu0 (Subtype.ext ?_)⟩
-  have : (u : M) ∈ (genWeightSpace M ((-m : ℤ) • ⇑α + χ)).toSubmodule := huP.1
-  rw [hbot] at this
-  simpa using this
+  have hhonest : ∀ (c : K) {u : M}, u ∈ W →
+      u ∈ (toEnd K H M (IsKilling.coroot α)).maxGenEigenspace c →
+        toEnd K H M (IsKilling.coroot α) u = c • u := fun c _ hu hgen ↦
+    t.toEnd_apply_eq_smul_of_mem_maxGenEigenspace (x := IsKilling.coroot α) hh 𝒲 c (hmem𝒲.2 hu)
+      hgen
+  have hPeig := string_inf_le_eigenspace (χ := χ) (N := N) hα
+    (fun k ↦ le_iSup P k) hhonest
+  -- the eigenvalue `χ(α^∨)` is attained on `𝒲`, hence so is its negative
+  obtain ⟨m, hm, u, humem, hu0, huA⟩ :=
+    t.exists_int_and_toEnd_apply_eq_neg_smul (x := IsKilling.coroot α) hh 𝒲
+    (hmem𝒲.2 (le_iSup P 0 hvP)) hv0 (by simpa using Module.End.mem_eigenspace_iff.1 (hPeig 0 hvP))
+  exact ⟨m, hm, genWeightSpace_neg_zsmul_add_ne_bot P (fun _ ↦ rfl) hPeig hm (hmem𝒲.1 humem) hu0
+    huA⟩
 
 /-- **A weight of an integrable module is integral on the coroot.** If a module `M` is integrable
 along a nonzero root `α`, in the sense that every vector lies in a finitely generated subspace
