@@ -80,7 +80,7 @@ theorem IsNormalDomain.pathELength_escape
   obtain ⟨t₀, ht₀, ht₀V⟩ := hexV
   -- The first time the path leaves `V`.
   obtain ⟨T, hT01, hTpos, hTV, hTcl, hbefore⟩ :=
-    exists_first_exit hVopen hγ.continuousOn h0 ⟨t₀, ht₀, ht₀V⟩
+    hVopen.exists_first_exit hγ.continuousOn h0 ⟨t₀, ht₀, ht₀V⟩
   -- Continuity from the left puts the first exit in the closed exponential image.
   have hγT_K : γ T ∈ K := hKclosed.closure_subset_iff.2 hVK hTcl
   simp only [K] at hγT_K
