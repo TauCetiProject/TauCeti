@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Basic
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.Analysis.Real.QuadraticLocalBound
 import TauCeti.MeasureTheory.Integral.NormRpow
 
 /-!
@@ -111,16 +112,7 @@ theorem mul_le_setIntegral_ball_add_of_neg_le_laplacian {w : E → ℝ} {x₀ : 
     linarith [hΔ x hx]
   have hsub := mul_le_setIntegral_ball_of_laplacian_nonneg (μ := μ) hv hvc hΔv
   -- The integral of the correction over the ball.
-  have hqint : ∫ x in ball x₀ R, ‖x - x₀‖ ^ 2 ∂μ =
-      Module.finrank ℝ E / (Module.finrank ℝ E + 2) * R ^ 2 * μ.real (ball x₀ R) := by
-    have h := integral_norm_sub_rpow_ball (mu := μ) (s := 2) (by linarith) hR.le x₀
-    simp_rw [norm_sub_rev x₀, Real.rpow_two] at h
-    have hball : μ.real (ball x₀ R) = R ^ Module.finrank ℝ E * μ.real (ball (0 : E) 1) := by
-      rw [measureReal_def, Measure.addHaar_ball μ _ hR.le, ENNReal.toReal_mul,
-        ENNReal.toReal_ofReal (by positivity), measureReal_def]
-    rw [h, hball, Real.rpow_add hR, Real.rpow_two,
-      Real.rpow_natCast]
-    field_simp
+  have hqint := integral_norm_sub_sq_ball (mu := μ) (R := R) x₀
   have hwint : IntegrableOn w (ball x₀ R) μ :=
     (hwc.integrableOn_compact (isCompact_closedBall _ _)).mono_set ball_subset_closedBall
   have hqint' : IntegrableOn (fun x : E ↦ ‖x - x₀‖ ^ 2) (ball x₀ R) μ :=
@@ -185,6 +177,33 @@ private lemma local_estimate (hE : Module.finrank ℝ E = 2) {w : E → ℝ} {z 
   calc δ ^ 2 * μ.real (ball (0 : E) 1) * w z ≤ _ := hK
     _ = _ := by push_cast; ring
 
+/-- **The local bound on small balls around the centre.** In the situation of
+`exists_center`, with `w ≥ 0` and `Δ w ≥ -A w²` on `ball x₀ r`, every `ball z δ` with
+`δ ≤ ε` satisfies the local estimate with `c = w z`. -/
+private lemma local_bound (hE : Module.finrank ℝ E = 2) {w : E → ℝ} {x₀ z : E} {r ε A : ℝ}
+    (hε : 0 < ε) (hA : 0 ≤ A) (hw : ContDiffOn ℝ 2 w (ball x₀ r))
+    (hwc : ContinuousOn w (closedBall x₀ r)) (hw0 : ∀ x ∈ ball x₀ r, 0 ≤ w x)
+    (hΔ : ∀ x ∈ ball x₀ r, -(A * w x ^ 2) ≤ Δ w x)
+    (hsub : ∀ δ ≤ ε, closedBall z δ ⊆ ball x₀ r)
+    (hw4 : ∀ y ∈ closedBall z ε, ε ^ 2 * w y ≤ 4 * ε ^ 2 * w z) :
+    ∀ δ, 0 < δ → δ ≤ ε → δ ^ 2 * μ.real (ball (0 : E) 1) * w z ≤
+      ∫ x in ball x₀ r, w x ∂μ +
+        2 * A * w z ^ 2 * δ ^ 2 * (δ ^ 2 * μ.real (ball (0 : E) 1)) := by
+  intro δ hδ hδε
+  have h := local_estimate (μ := μ) (c := w z) hE hδ.le hA
+    (hw.mono (ball_subset_closedBall.trans (hsub δ hδε)))
+    (hwc.mono ((hsub δ hδε).trans ball_subset_closedBall))
+    (fun y hy ↦ hw0 y (hsub δ hδε (ball_subset_closedBall hy)))
+    (fun y hy ↦ by
+      have := hw4 y (closedBall_subset_closedBall hδε (ball_subset_closedBall hy))
+      nlinarith [sq_pos_of_pos hε])
+    fun y hy ↦ hΔ y (hsub δ hδε (ball_subset_closedBall hy))
+  have hint : ∫ x in ball z δ, w x ∂μ ≤ ∫ x in ball x₀ r, w x ∂μ :=
+    setIntegral_mono_set ((hwc.integrableOn_compact (isCompact_closedBall _ _)).mono_set
+      ball_subset_closedBall) (ae_restrict_of_forall_mem measurableSet_ball hw0)
+      (ball_subset_closedBall.trans (hsub δ hδε)).eventuallyLE
+  linarith
+
 /-- **The mean-value inequality.** Let `E` be two-dimensional, and let `w` be `C²` on the ball
 `ball x₀ r`, continuous on its closure, nonnegative on the ball, with `Δ w ≥ -A w²` there. If
 `8 A ∫ w < μ (ball 0 1)` over the ball, then `μ (ball x₀ r) * w x₀ ≤ 8 ∫ w`. For Lebesgue measure
@@ -230,22 +249,7 @@ theorem mul_le_eight_mul_setIntegral_ball_of_neg_mul_sq_le_laplacian
   -- Every ball `ball z δ` with `δ ≤ ε` lies in `ball x₀ r`, and `w ≤ 4 c` on it.
   have hsub : ∀ δ ≤ ε, closedBall z δ ⊆ ball x₀ r := fun δ hδ y hy ↦
     mem_ball.mpr ((dist_triangle y z x₀).trans_lt (by linarith [mem_closedBall.mp hy]))
-  have hloc : ∀ δ, 0 < δ → δ ≤ ε →
-      δ ^ 2 * V * w z ≤ I + 2 * A' * w z ^ 2 * δ ^ 2 * (δ ^ 2 * V) := by
-    intro δ hδ hδε
-    have h := local_estimate (μ := μ) (c := w z) hE hδ.le hA'
-      (hw.mono (ball_subset_closedBall.trans (hsub δ hδε)))
-      (hwc.mono ((hsub δ hδε).trans ball_subset_closedBall))
-      (fun y hy ↦ hw0 y (hsub δ hδε (ball_subset_closedBall hy)))
-      (fun y hy ↦ by
-        have := hw4 y (closedBall_subset_closedBall hδε (ball_subset_closedBall hy))
-        nlinarith [sq_pos_of_pos hε])
-      fun y hy ↦ hΔ' y (hsub δ hδε (ball_subset_closedBall hy))
-    have hint : ∫ x in ball z δ, w x ∂μ ≤ I :=
-      setIntegral_mono_set ((hwc.integrableOn_compact (isCompact_closedBall _ _)).mono_set
-        ball_subset_closedBall) (ae_restrict_of_forall_mem measurableSet_ball hw0)
-        (ball_subset_closedBall.trans (hsub δ hδε)).eventuallyLE
-    linarith
+  have hloc := local_bound (μ := μ) hE hε hA' hw hwc hw0 hΔ' hsub hw4
   rcases le_or_gt (4 * A' * w z * ε ^ 2) 1 with hcase | hcase
   · -- Take `δ = ε`: then `ε ^ 2 * V * c ≤ 2 I`, and the claim follows from the centre bound.
     have h := hloc ε hε le_rfl
@@ -256,27 +260,6 @@ theorem mul_le_eight_mul_setIntegral_ball_of_neg_mul_sq_le_laplacian
       ENNReal.toReal_ofReal (by positivity), hE, ← measureReal_def]
     nlinarith
   · -- Otherwise `δ ^ 2 = 1 / (4 A' c) < ε ^ 2` gives `V ≤ 8 A' I`, contradicting smallness.
-    exfalso
-    have hA'pos : 0 < A' := by
-      by_contra h
-      rw [le_antisymm (not_lt.mp h) hA'] at hcase
-      linarith
-    set δ := Real.sqrt (1 / (4 * A' * w z))
-    have hδ2 : δ ^ 2 = 1 / (4 * A' * w z) := Real.sq_sqrt (by positivity)
-    have hδ : 0 < δ := Real.sqrt_pos.mpr (by positivity)
-    have hδε : δ ≤ ε := by
-      refine (pow_le_pow_iff_left₀ hδ.le hε.le two_ne_zero).mp ?_
-      rw [hδ2, div_le_iff₀ (by positivity), mul_comm (ε ^ 2)]
-      exact hcase.le
-    have hAcδ : 4 * A' * w z * δ ^ 2 = 1 := by
-      rw [hδ2]; field_simp
-    have h := hloc δ hδ hδε
-    have hhalf : 2 * A' * w z ^ 2 * δ ^ 2 * (δ ^ 2 * V) = δ ^ 2 * V * w z / 2 := by
-      linear_combination (δ ^ 2 * V * w z / 2) * hAcδ
-    have _ : δ ^ 2 * V * w z ≤ 2 * I := by linarith
-    have h3 : V ≤ 8 * A' * I := by
-      have : δ ^ 2 * V * w z * (4 * A') = V := by linear_combination V * hAcδ
-      nlinarith
-    linarith
+    exact (false_of_quadratic_local_bound hA' hc hε hloc hcase hsmall').elim
 
 end TauCeti

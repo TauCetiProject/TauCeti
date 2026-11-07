@@ -16,7 +16,7 @@ on and above the diagonal, then reflect invertibility of the determinant along t
 homomorphism.
 
 The entrywise construction follows
-`Matrix.SpecialLinearGroup.exists_isUpperTriangular_map_eq_of_isNilpotent` in
+`Matrix.SpecialLinearGroup.exists_isUpperTriangular_map_eq` in
 `TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Lift`.
 -/
 

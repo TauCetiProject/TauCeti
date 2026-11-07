@@ -223,6 +223,134 @@ private theorem exists_isRepartition_complementary_col_cut {a b d : Fin n}
 
 /-! ### The recut of a decomposition sharing its initial side column -/
 
+/-- The recut of two empty rectangles with a common initial side column in the configuration where
+the terminal side of the first rectangle lies inside the column span of the second one: the new
+cut runs along that column. -/
+private theorem exists_unique_isRepartition_of_col_cut (D : GridRectangleDecomposition x z)
+    (hleft : D.first.left = D.second.left) (hright : D.first.right ≠ D.second.right)
+    (hz : z = (x.swapColumns D.first.left D.first.right).swapColumns D.first.left
+      D.second.right)
+    (hcol : D.first.right ∈ Grid.cIoo D.first.left D.second.right)
+    (hrow : x D.first.right ∈ Grid.cIoo (x D.first.left) (x D.second.right))
+    (hfirst' : ∀ c ∈ Grid.cIoo D.first.left D.first.right,
+      x c ∉ Grid.cIoo (x D.first.left) (x D.first.right))
+    (hsecond' : ∀ c ∈ Grid.cIoo D.first.left D.second.right, c ≠ D.first.left →
+      c ≠ D.first.right → x c ∉ Grid.cIoo (x D.first.right) (x D.second.right))
+    (hDdisj : Disjoint D.first.toGridRectangle.coveredSquares
+      D.second.toGridRectangle.coveredSquares)
+    (hcol_exclusive : ¬(D.first.right ∈ Grid.cIoo D.first.left D.second.right ∧
+      D.second.right ∈ Grid.cIoo D.first.left D.first.right)) :
+    ∃! E : GridRectangleDecomposition x z,
+      D.IsRepartition E ∧ E.middle ≠ D.middle ∧ E.first.IsEmpty ∧ E.second.IsEmpty ∧
+        E.first.right = D.second.right ∧ E.second.right = D.first.right ∧
+          ((D.first.right ∈ Grid.cIoo D.first.left D.second.right ∧
+              E.middle = x.swapColumns D.first.right D.second.right ∧
+                E.first.left = D.first.right ∧ E.second.left = D.first.left) ∨
+            (D.second.right ∈ Grid.cIoo D.first.left D.first.right ∧
+              E.middle = x.swapColumns D.first.left D.second.right ∧
+                E.first.left = D.first.left ∧ E.second.left = D.second.right)) := by
+  have hab : D.first.left ≠ D.first.right := D.first.left_ne_right
+  have had := D.first_left_ne_second_right_of_left_eq_left hleft
+  obtain ⟨hmid_first, -⟩ := D.middle_apply_of_left_eq_left hleft hright
+  have hD1 := D.first.toGridRectangle_eq
+  have hD2 := D.toGridRectangle_second_of_left_eq_left hleft hright
+  obtain ⟨E, ⟨hmidE, hE1left, hE1right, hE2left, hE2right⟩, hE1, hE2, hEfirst, hEsecond⟩ :=
+    exists_isRepartition_col_cut hab had hright hz hcol hrow hfirst' hsecond'
+  have hmiddle : E.middle ≠ D.middle := by
+    intro h
+    have hval : E.middle D.first.left = D.middle D.first.left := by rw [h]
+    rw [hmidE, hmid_first] at hval
+    simp only [GridState.swapColumns_apply, Equiv.swap_apply_of_ne_of_ne hab had] at hval
+    exact hab (x.toPerm.injective hval)
+  have hEdisj : Disjoint E.first.toGridRectangle.coveredSquares
+      E.second.toGridRectangle.coveredSquares := by
+    rw [hE1, hE2]
+    exact (GridRectangle.disjoint_coveredSquares_of_col_cut hcol).symm
+  have hunion : E.first.toGridRectangle.coveredSquares ∪
+      E.second.toGridRectangle.coveredSquares =
+        D.first.toGridRectangle.coveredSquares ∪
+          D.second.toGridRectangle.coveredSquares := by
+    rw [hE1, hE2, hD1, hD2]
+    exact (GridRectangle.coveredSquares_union_eq_of_mem_cIoo hcol hrow).symm
+  refine ⟨E, ⟨⟨hDdisj, hEdisj, hunion⟩, hmiddle, hEfirst, hEsecond, hE1right,
+    hE2right, Or.inl ⟨hcol, hmidE, hE1left, hE2left⟩⟩, ?_⟩
+  intro E' hE'
+  rcases hE' with ⟨_, _, _, _, hE1right', hE2right', hcols'⟩
+  have hlefts : E'.first.left = D.first.right ∧
+      E'.second.left = D.first.left := by
+    rcases hcols' with ⟨_, _, hE1left', hE2left'⟩ |
+        ⟨hcol', _, _, _⟩
+    · exact ⟨hE1left', hE2left'⟩
+    · exact (hcol_exclusive ⟨hcol, hcol'⟩).elim
+  exact GridRectangleDecomposition.ext (hlefts.1.trans hE1left.symm)
+    (hE1right'.trans hE1right.symm) (hlefts.2.trans hE2left.symm)
+    (hE2right'.trans hE2right.symm)
+
+/-- The recut of two empty rectangles with a common initial side column in the configuration where
+the terminal side of the second rectangle lies inside the column span of the first one: the new
+cut runs along that column instead. -/
+private theorem exists_unique_isRepartition_of_complementary_col_cut
+    (D : GridRectangleDecomposition x z)
+    (hleft : D.first.left = D.second.left) (hright : D.first.right ≠ D.second.right)
+    (hz : z = (x.swapColumns D.first.left D.first.right).swapColumns D.first.left
+      D.second.right)
+    (hcol : D.second.right ∈ Grid.cIoo D.first.left D.first.right)
+    (hrow : x D.first.right ∈ Grid.cIoo (x D.first.left) (x D.second.right))
+    (hfirst' : ∀ c ∈ Grid.cIoo D.first.left D.first.right,
+      x c ∉ Grid.cIoo (x D.first.left) (x D.first.right))
+    (hsecond' : ∀ c ∈ Grid.cIoo D.first.left D.second.right, c ≠ D.first.left →
+      c ≠ D.first.right → x c ∉ Grid.cIoo (x D.first.right) (x D.second.right))
+    (hDdisj : Disjoint D.first.toGridRectangle.coveredSquares
+      D.second.toGridRectangle.coveredSquares)
+    (hcol_exclusive : ¬(D.first.right ∈ Grid.cIoo D.first.left D.second.right ∧
+      D.second.right ∈ Grid.cIoo D.first.left D.first.right)) :
+    ∃! E : GridRectangleDecomposition x z,
+      D.IsRepartition E ∧ E.middle ≠ D.middle ∧ E.first.IsEmpty ∧ E.second.IsEmpty ∧
+        E.first.right = D.second.right ∧ E.second.right = D.first.right ∧
+          ((D.first.right ∈ Grid.cIoo D.first.left D.second.right ∧
+              E.middle = x.swapColumns D.first.right D.second.right ∧
+                E.first.left = D.first.right ∧ E.second.left = D.first.left) ∨
+            (D.second.right ∈ Grid.cIoo D.first.left D.first.right ∧
+              E.middle = x.swapColumns D.first.left D.second.right ∧
+                E.first.left = D.first.left ∧ E.second.left = D.second.right)) := by
+  have hab : D.first.left ≠ D.first.right := D.first.left_ne_right
+  have had := D.first_left_ne_second_right_of_left_eq_left hleft
+  obtain ⟨hmid_first, -⟩ := D.middle_apply_of_left_eq_left hleft hright
+  have hD1 := D.first.toGridRectangle_eq
+  have hD2 := D.toGridRectangle_second_of_left_eq_left hleft hright
+  obtain ⟨E, ⟨hmidE, hE1left, hE1right, hE2left, hE2right⟩, hE1, hE2, hEfirst, hEsecond⟩ :=
+    exists_isRepartition_complementary_col_cut hab had hright hz hcol hrow hfirst' hsecond'
+  have hmiddle : E.middle ≠ D.middle := by
+    intro h
+    have hval : E.middle D.first.right = D.middle D.first.right := by rw [h]
+    rw [hmidE, D.first.map_right] at hval
+    simp only [GridState.swapColumns_apply, Equiv.swap_apply_of_ne_of_ne hab.symm hright] at hval
+    exact hab (x.toPerm.injective hval).symm
+  have hEdisj : Disjoint E.first.toGridRectangle.coveredSquares
+      E.second.toGridRectangle.coveredSquares := by
+    rw [hE1, hE2]
+    exact GridRectangle.disjoint_coveredSquares_of_col_cut hcol
+  have hunion : E.first.toGridRectangle.coveredSquares ∪
+      E.second.toGridRectangle.coveredSquares =
+        D.first.toGridRectangle.coveredSquares ∪
+          D.second.toGridRectangle.coveredSquares := by
+    rw [hE1, hE2, hD1, hD2]
+    exact (GridRectangle.coveredSquares_union_eq_of_mem_cIoo_complementary_col_cut hcol
+      hrow).symm
+  refine ⟨E, ⟨⟨hDdisj, hEdisj, hunion⟩, hmiddle, hEfirst, hEsecond, hE1right,
+    hE2right, Or.inr ⟨hcol, hmidE, hE1left, hE2left⟩⟩, ?_⟩
+  intro E' hE'
+  rcases hE' with ⟨_, _, _, _, hE1right', hE2right', hcols'⟩
+  have hlefts : E'.first.left = D.first.left ∧
+      E'.second.left = D.second.right := by
+    rcases hcols' with ⟨hcol', _, _, _⟩ |
+        ⟨_, _, hE1left', hE2left'⟩
+    · exact (hcol_exclusive ⟨hcol', hcol⟩).elim
+    · exact ⟨hE1left', hE2left'⟩
+  exact GridRectangleDecomposition.ext (hlefts.1.trans hE1left.symm)
+    (hE1right'.trans hE1right.symm) (hlefts.2.trans hE2left.symm)
+    (hE2right'.trans hE2right.symm)
+
 /-- Two composable empty rectangles that share their initial side column and no other side admit
 a *recut*: the L-shaped union of their domains has a second decomposition into two empty
 rectangles, through a different intermediate grid state.
@@ -280,73 +408,10 @@ theorem exists_isRepartition_of_isEmpty_of_left_eq_left (D : GridRectangleDecomp
     rintro ⟨⟨_, hfirstRight⟩, ⟨_, hsecondRight⟩⟩
     split_ifs at hfirstRight hsecondRight <;> omega
   rcases hcolcase with hcol | hcol
-  -- The terminal side of the first rectangle lies inside the column span of the second one: the
-  -- new cut runs along that column.
-  · obtain ⟨E, ⟨hmidE, hE1left, hE1right, hE2left, hE2right⟩, hE1, hE2, hEfirst, hEsecond⟩ :=
-      exists_isRepartition_col_cut hab had hright hz hcol hrow hfirst' hsecond'
-    have hmiddle : E.middle ≠ D.middle := by
-      intro h
-      have hval : E.middle D.first.left = D.middle D.first.left := by rw [h]
-      rw [hmidE, hmid_first] at hval
-      simp only [GridState.swapColumns_apply, Equiv.swap_apply_of_ne_of_ne hab had] at hval
-      exact hab (x.toPerm.injective hval)
-    have hEdisj : Disjoint E.first.toGridRectangle.coveredSquares
-        E.second.toGridRectangle.coveredSquares := by
-      rw [hE1, hE2]
-      exact (GridRectangle.disjoint_coveredSquares_of_col_cut hcol).symm
-    have hunion : E.first.toGridRectangle.coveredSquares ∪
-        E.second.toGridRectangle.coveredSquares =
-          D.first.toGridRectangle.coveredSquares ∪
-            D.second.toGridRectangle.coveredSquares := by
-      rw [hE1, hE2, hD1, hD2]
-      exact (GridRectangle.coveredSquares_union_eq_of_mem_cIoo hcol hrow).symm
-    refine ⟨E, ⟨⟨hDdisj, hEdisj, hunion⟩, hmiddle, hEfirst, hEsecond, hE1right,
-      hE2right, Or.inl ⟨hcol, hmidE, hE1left, hE2left⟩⟩, ?_⟩
-    intro E' hE'
-    rcases hE' with ⟨_, _, _, _, hE1right', hE2right', hcols'⟩
-    have hlefts : E'.first.left = D.first.right ∧
-        E'.second.left = D.first.left := by
-      rcases hcols' with ⟨_, _, hE1left', hE2left'⟩ |
-          ⟨hcol', _, _, _⟩
-      · exact ⟨hE1left', hE2left'⟩
-      · exact (hcol_exclusive ⟨hcol, hcol'⟩).elim
-    exact GridRectangleDecomposition.ext (hlefts.1.trans hE1left.symm)
-      (hE1right'.trans hE1right.symm) (hlefts.2.trans hE2left.symm)
-      (hE2right'.trans hE2right.symm)
-  -- The terminal side of the second rectangle lies inside the column span of the first one: the
-  -- new cut runs along that column instead.
-  · obtain ⟨E, ⟨hmidE, hE1left, hE1right, hE2left, hE2right⟩, hE1, hE2, hEfirst, hEsecond⟩ :=
-      exists_isRepartition_complementary_col_cut hab had hright hz hcol hrow hfirst' hsecond'
-    have hmiddle : E.middle ≠ D.middle := by
-      intro h
-      have hval : E.middle D.first.right = D.middle D.first.right := by rw [h]
-      rw [hmidE, D.first.map_right] at hval
-      simp only [GridState.swapColumns_apply, Equiv.swap_apply_of_ne_of_ne hab.symm hright] at hval
-      exact hab (x.toPerm.injective hval).symm
-    have hEdisj : Disjoint E.first.toGridRectangle.coveredSquares
-        E.second.toGridRectangle.coveredSquares := by
-      rw [hE1, hE2]
-      exact GridRectangle.disjoint_coveredSquares_of_col_cut hcol
-    have hunion : E.first.toGridRectangle.coveredSquares ∪
-        E.second.toGridRectangle.coveredSquares =
-          D.first.toGridRectangle.coveredSquares ∪
-            D.second.toGridRectangle.coveredSquares := by
-      rw [hE1, hE2, hD1, hD2]
-      exact (GridRectangle.coveredSquares_union_eq_of_mem_cIoo_complementary_col_cut hcol
-        hrow).symm
-    refine ⟨E, ⟨⟨hDdisj, hEdisj, hunion⟩, hmiddle, hEfirst, hEsecond, hE1right,
-      hE2right, Or.inr ⟨hcol, hmidE, hE1left, hE2left⟩⟩, ?_⟩
-    intro E' hE'
-    rcases hE' with ⟨_, _, _, _, hE1right', hE2right', hcols'⟩
-    have hlefts : E'.first.left = D.first.left ∧
-        E'.second.left = D.second.right := by
-      rcases hcols' with ⟨hcol', _, _, _⟩ |
-          ⟨_, _, hE1left', hE2left'⟩
-      · exact (hcol_exclusive ⟨hcol', hcol⟩).elim
-      · exact ⟨hE1left', hE2left'⟩
-    exact GridRectangleDecomposition.ext (hlefts.1.trans hE1left.symm)
-      (hE1right'.trans hE1right.symm) (hlefts.2.trans hE2left.symm)
-      (hE2right'.trans hE2right.symm)
+  · exact D.exists_unique_isRepartition_of_col_cut hleft hright hz hcol hrow hfirst' hsecond'
+      hDdisj hcol_exclusive
+  · exact D.exists_unique_isRepartition_of_complementary_col_cut hleft hright hz hcol hrow hfirst'
+      hsecond' hDdisj hcol_exclusive
 
 end GridRectangleDecomposition
 
