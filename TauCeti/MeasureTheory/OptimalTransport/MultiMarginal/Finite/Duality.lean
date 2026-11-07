@@ -434,9 +434,9 @@ private theorem neg_le_of_toReal_ne_zero {M B : ℝ} (hM0 : 0 ≤ M) {ψ : ∀ i
   nlinarith
 
 omit [Nonempty ι] [∀ i, Fintype (X i)] in
-/-- Dual feasibility survives replacing a feasible family `ψ` by a family `χ` bounded above by `M`
-that agrees with `ψ` at the points of positive weight and equals `-B` at those of zero weight,
-once `(card ι + 1) * M ≤ B`. -/
+/-- For a cost bounded in absolute value by `M`, dual feasibility survives replacing a feasible
+family `ψ` by a family `χ` bounded above by `M` that agrees with `ψ` at the points of positive
+weight and equals `-B` at those of zero weight, once `(card ι + 1) * M ≤ B`. -/
 private theorem finiteMultiDualFeasible_of_replace {c : (∀ i, X i) → ℝ} {M B : ℝ}
     (hM : ∀ z, |c z| ≤ M) (hM0 : 0 ≤ M) (hB : ((Fintype.card ι : ℝ) + 1) * M ≤ B)
     {ψ χ : ∀ i, X i → ℝ} (hψfeas : FiniteMultiDualFeasible c ψ) (hχ_le : ∀ i x, χ i x ≤ M)
@@ -541,8 +541,9 @@ private theorem isCompact_dualFeasible_box (c : (∀ i, X i) → ℝ) (μ : ∀ 
   intro φ hφ i _ x _
   exact abs_le.1 (hφ.2.2 i x)
 
-/-- There is a dual-feasible family with dual value `-M` lying in the box of radius `B`, once
-`M ≤ B` (for example `-M` at one index and `0` at the others). -/
+/-- For a cost bounded in absolute value by `M`, there is a dual-feasible family with dual value
+`-M` lying in the box of radius `B`, once `M ≤ B` (for example `-M` at one index and `0` at the
+others). -/
 private theorem exists_dualFeasible_value_eq_neg {c : (∀ i, X i) → ℝ} {M B : ℝ}
     (hM : ∀ z, |c z| ≤ M) (hM0 : 0 ≤ M) (hMB : M ≤ B) :
     ∃ base : ∀ i, X i → ℝ, FiniteMultiDualFeasible c base ∧
