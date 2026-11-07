@@ -7,8 +7,10 @@ module
 
 public import TauCeti.Analysis.PDE.Perron.Barrier
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.Basic
+import TauCeti.Analysis.PDE.DirichletProblem
 import TauCeti.Analysis.PDE.Regularity.Hessian.Classical
 import TauCeti.Analysis.PDE.Regularity.Inhomogeneous
+import TauCeti.MeasureTheory.Function.Lp.Indicator
 
 /-!
 # The Dirichlet problem for Poisson's equation
@@ -73,50 +75,6 @@ variable {n : ℕ}
 
 local notation "E" => EuclideanSpace ℝ (Fin (n + 1))
 
-/-- The closed `1`-thickening of the closure of a bounded set lies in a ball about the origin. -/
-lemma exists_cthickening_closure_subset_ball {Ω : Set E} (hb : Bornology.IsBounded Ω) :
-    ∃ R : ℝ, cthickening 1 (closure Ω) ⊆ ball (0 : E) R := by
-  obtain ⟨r, hr, hΩr⟩ := hb.subset_closedBall_lt 0 0
-  refine ⟨r + 2, ?_⟩
-  refine (cthickening_subset_of_subset 1 (isClosed_closedBall.closure_subset_iff.2 hΩr)).trans ?_
-  rw [cthickening_closedBall zero_le_one hr.le]
-  exact closedBall_subset_ball (by linarith)
-
-/-- The negative of a bounded function that is continuous on an open set `Ω`, extended by zero
-outside `Ω`, lies in every `L^p` space of a ball. -/
-private lemma memLp_indicator_neg_restrict_ball {Ω : Set E} (hΩ : IsOpen Ω) {f : E → ℝ}
-    (hfc : ContinuousOn f Ω) (hfb : Bornology.IsBounded (f '' Ω)) (R : ℝ) (p : ENNReal) :
-    MemLp (Ω.indicator fun x => -f x) p (volume.restrict (ball (0 : E) R)) := by
-  obtain ⟨M, hM⟩ := isBounded_iff_forall_norm_le.1 hfb
-  have hbound : ∀ x, ‖Ω.indicator (fun x => -f x) x‖ ≤ max M 0 := fun x => by
-    by_cases hx : x ∈ Ω
-    · rw [indicator_of_mem hx, norm_neg]
-      exact (hM _ (mem_image_of_mem f hx)).trans (le_max_left _ _)
-    · rw [indicator_of_notMem hx, norm_zero]
-      exact le_max_right _ _
-  have hmeas : AEStronglyMeasurable (Ω.indicator fun x => -f x) volume :=
-    (aestronglyMeasurable_indicator_iff hΩ.measurableSet).2
-      (hfc.neg.aestronglyMeasurable hΩ.measurableSet)
-  have : IsFiniteMeasure (volume.restrict (ball (0 : E) R)) :=
-    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-  exact MemLp.of_bound hmeas.restrict _ (ae_of_all _ hbound)
-
-/-- The weak solution in `H¹₀(B)` of `-Δw = h`, for a ball `B` and a right-hand side `h` in every
-`L^p` space of `B`, tested against `H¹₀(B)`. -/
-private lemma exists_energyFormH1_eq_integral {R : ℝ} (B : Opens E) (hB : (B : Set E) = ball 0 R)
-    {h : E → ℝ} (hLp : ∀ p, MemLp h p (volume.restrict (B : Set E))) :
-    ∃ u : W1p0 volume B 2, ∀ v : W1p0 volume B 2,
-      energyFormH1 (fun _ => 1) 0 0 (u : W1p volume B 2) (v : W1p volume B 2) =
-        ∫ x in B, h x * W1p.value (v : W1p volume B 2) x := by
-  have hsub : (B : Set E) ⊆ ball (0 : E) R := hB.subset
-  obtain ⟨u, hu, -⟩ := existsUnique_isWeakSolutionDirichlet_laplacian_of_subset_ball (Omega := B)
-    (z := 0) hsub ((hLp 2).toLp h)
-  refine ⟨u, fun v => ?_⟩
-  have h1 := (isWeakSolutionDirichlet_iff _ _).1 hu v
-  refine h1.trans (integral_congr_ae ?_)
-  filter_upwards [(hLp 2).coeFn_toLp] with x hx
-  rw [hx]
-
 /-- **A particular solution of Poisson's equation.** Let `0 < α < 1`, let `Ω ⊆ ℝ^{n+1}` be a
 bounded open set, and let `f` be bounded and locally `α`-Hölder in `Ω`. Then there is a function
 `w` of class `C²` in `Ω` and continuous on `closure Ω` with `Δw = f` in `Ω`. -/
@@ -131,15 +89,20 @@ theorem exists_contDiffOn_continuousOn_closure_laplacian_eq {α : ℝ≥0} (hα 
   -- The right-hand side `h = -f` on `Ω`, extended by zero: `-Δw = h` is `Δw = f` in `Ω`.
   set h : E → ℝ := Ω.indicator fun x => -f x with hh
   -- A ball `B` containing the closed `1`-thickening of `closure Ω`.
-  obtain ⟨R, hclB⟩ := exists_cthickening_closure_subset_ball hb
+  obtain ⟨R, hclB⟩ := hb.closure.cthickening.subset_ball (0 : E)
   let B : Opens E := ⟨ball 0 R, isOpen_ball⟩
   have hclB' : cthickening 1 (closure Ω) ⊆ (B : Set E) := hclB
   have hΩB : Ω ⊆ (B : Set E) :=
     subset_closure.trans ((self_subset_cthickening _).trans hclB')
-  have hLp : ∀ p, MemLp h p (volume.restrict (B : Set E)) :=
-    memLp_indicator_neg_restrict_ball hΩ hfc hfb R
+  have hLp : ∀ p, MemLp h p (volume.restrict (B : Set E)) := fun p => by
+    obtain ⟨M, hM⟩ := isBounded_iff_forall_norm_le.1 hfb
+    have : IsFiniteMeasure (volume.restrict (B : Set E)) :=
+      isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
+    exact memLp_indicator_of_continuousOn_of_norm_le hΩ.measurableSet hfc.neg
+      (fun x hx => by simpa using hM _ (mem_image_of_mem f hx))
   -- The weak solution of `-Δw = h` in `H¹₀(B)`.
-  obtain ⟨u, hu'⟩ := exists_energyFormH1_eq_integral B rfl hLp
+  obtain ⟨u, hu'⟩ := exists_energyFormH1_eq_integral_of_subset_ball (z := 0) (R := R) subset_rfl
+    (hLp 2)
   -- De Giorgi's theorem: the precise representative `w` of the weak solution is Hölder
   -- continuous on `closure Ω`.
   obtain ⟨β, C, hβ, -, -, hDG⟩ := exists_holderOnWith_preciseRepresentative_of_memLp

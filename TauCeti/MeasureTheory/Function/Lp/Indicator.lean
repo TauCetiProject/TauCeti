@@ -122,6 +122,27 @@ theorem eq_sum_indicatorConstLp_fiber {F : Type*} {G : SimpleFunc α F} {φ : F 
 
 end Disjoint
 
+section IndicatorContinuousOn
+
+variable [TopologicalSpace α] [OpensMeasurableSpace α] [SecondCountableTopologyEither α E]
+  [IsFiniteMeasure μ]
+
+/-- A function that is continuous and bounded on a measurable set, extended by zero outside it,
+lies in every `L^p` space of a finite measure. -/
+theorem memLp_indicator_of_continuousOn_of_norm_le (hs : MeasurableSet s) {g : α → E}
+    (hg : ContinuousOn g s) {M : ℝ} (hM : ∀ x ∈ s, ‖g x‖ ≤ M) :
+    MemLp (s.indicator g) p μ := by
+  have hbound : ∀ x, ‖s.indicator g x‖ ≤ max M 0 := fun x => by
+    by_cases hx : x ∈ s
+    · rw [Set.indicator_of_mem hx]
+      exact (hM x hx).trans (le_max_left _ _)
+    · rw [Set.indicator_of_notMem hx, norm_zero]
+      exact le_max_right _ _
+  exact MemLp.of_bound ((aestronglyMeasurable_indicator_iff hs).2 (hg.aestronglyMeasurable hs))
+    _ (ae_of_all _ hbound)
+
+end IndicatorContinuousOn
+
 end TauCeti
 
 noncomputable section
