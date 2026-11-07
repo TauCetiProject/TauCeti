@@ -13,6 +13,7 @@ import TauCeti.Analysis.BoundedVariation.Compactness
 import TauCeti.Analysis.BoundedVariation.Convex
 import TauCeti.MeasureTheory.Measure.InterBall
 import TauCeti.MeasureTheory.OuterMeasure.SymmDiff
+import TauCeti.Order.Monotone.Splice
 
 /-!
 # Convergence of successive Steiner symmetrizations to a ball
@@ -206,22 +207,6 @@ theorem antitone_volume_iterateSteinerSymmetrization_symmDiff_ball {s : Set E}
   rwa [steinerSymmetrization_ball_zero, ← iterateSteinerSymmetrization_succ] at h
 
 /-! ### Concatenating finitely many symmetrizations -/
-
-/-- **Diagonal splicing.** If the stages `σ j` are sequences such that `σ (j + 1)` agrees with
-`σ j` on its first `N j` terms, and `N` is strictly increasing, then a single sequence agrees with
-every stage `σ j` on its first `N j` terms. -/
-private theorem exists_forall_lt_eq_of_strictMono {α : Type*} (σ : ℕ → ℕ → α) {N : ℕ → ℕ}
-    (hN : StrictMono N) (hσ : ∀ j, ∀ k < N j, σ (j + 1) k = σ j k) :
-    ∃ e : ℕ → α, ∀ j, ∀ k < N j, e k = σ j k := by
-  -- Later stages keep the terms of earlier stages.
-  have hstable {j j' : ℕ} (hjj' : j ≤ j') {k : ℕ} (hk : k < N j) : σ j' k = σ j k := by
-    induction j', hjj' using Nat.le_induction with
-    | base => rfl
-    | succ j' hjj' ih => exact (hσ j' k (hk.trans_le (hN.monotone hjj'))).trans ih
-  refine ⟨fun k => σ (k + 1) k, fun j k hk => ?_⟩
-  rcases le_total (k + 1) j with hkj | hjk
-  · exact (hstable hkj ((Nat.lt_succ_self k).trans_le (hN.id_le (k + 1)))).symm
-  · exact hstable hjk hk
 
 /-- **Concatenation of finite approximations.** Suppose that from every successive Steiner
 symmetral of a null-measurable set `s`, finitely many further symmetrizations reach sets
