@@ -68,6 +68,7 @@ theorem factors_iff_forall_mem_range :
 omit S in
 /-- In each degree, the subcomplex `Subobject.mk f` of a monomorphism of complexes of modules is
 the range of the component of `f`. -/
+@[simp]
 theorem range_mk_arrow_f (f : K ⟶ L) [Mono f] (i : ι) :
     LinearMap.range ((Subobject.mk f).arrow.f i).hom = LinearMap.range (f.f i).hom := by
   rw [← Subobject.underlyingIso_hom_comp_eq_mk, HomologicalComplex.comp_f, ModuleCat.hom_comp,
