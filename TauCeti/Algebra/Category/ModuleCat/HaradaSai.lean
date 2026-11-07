@@ -92,12 +92,7 @@ theorem bijective_of_length_range_le_length_range_comp (hX : IsIndecomposableMod
   have hle : Module.length A V ≤ Module.length A (LinearMap.range h) :=
     Module.length_le_of_injective _ (Submodule.inclusion_injective hVh)
   have hVh_len := le_antisymm hle hh
-  have hincl := surjective_of_injective_of_length_eq (Submodule.inclusion_injective hVh) hfin
-    hVh_len
-  have hhV : LinearMap.range h ≤ V := fun y hy ↦ by
-    obtain ⟨⟨v, hv⟩, hv'⟩ := hincl ⟨y, hy⟩
-    obtain rfl : v = y := congrArg Subtype.val hv'
-    exact hv
+  have hhV : LinearMap.range h ≤ V := (Submodule.eq_of_le_of_length_eq hVh hfin hVh_len).ge
   -- So `h ∘ₗ f` maps `U` onto the image of `h`, and the lengths force this map to be injective.
   let θ := h.rangeRestrict ∘ₗ f ∘ₗ U.subtype
   have hθs : Function.Surjective θ := by
@@ -145,13 +140,15 @@ theorem length_range_map_le (hF : ∀ i, Indecomposable (F.obj i))
     have hpow : 2 ^ (n + 1) = 2 ^ n + 2 ^ n := by rw [pow_succ, mul_two]
     have hpos := Nat.one_le_two_pow (n := n)
     by_cases hbn : b ≤ n
-    · exact (ih φ (by omega)).trans (by rw [Nat.sub_eq_zero_of_le hbn,
-        Nat.sub_eq_zero_of_le (by omega)])
+    · exact (ih φ (by omega)).trans (Nat.cast_le.mpr (by omega))
     -- Split the composite as `g`, then the link at `a`, then `h`, with `g` and `h` composites of
     -- `2 ^ n - 1` links, and argue by contradiction that the link at `a` is an isomorphism.
     set a := i + (2 ^ n - 1)
-    have hφ : φ = homOfLE (Nat.le_add_right i _) ≫ homOfLE (Nat.le_add_right a 1) ≫
-        homOfLE (by omega : a + 1 ≤ j) := Subsingleton.elim _ _
+    have hφ : (F.map φ).hom = (F.map (homOfLE (by omega : a + 1 ≤ j))).hom ∘ₗ
+        (F.map (homOfLE (Nat.le_add_right a 1))).hom ∘ₗ
+        (F.map (homOfLE (Nat.le_add_right i _ : i ≤ a))).hom := by
+      simp only [← ModuleCat.hom_comp, ← Functor.map_comp]
+      congr 2
     by_contra hcon
     have hc : ((b - n : ℕ) : ℕ∞) ≤ Module.length A (LinearMap.range (F.map φ).hom) := by
       rw [show b - n = b - (n + 1) + 1 by omega, Nat.cast_add, Nat.cast_one]
@@ -159,15 +156,15 @@ theorem length_range_map_le (hF : ∀ i, Indecomposable (F.obj i))
     have hg := ih (homOfLE (Nat.le_add_right i (2 ^ n - 1))) le_rfl
     have hh := ih (homOfLE (by omega : a + 1 ≤ j)) (by omega)
     have hfin := (hrange φ).trans_lt (WithTop.coe_lt_top b)
-    rw [hφ, Functor.map_comp, Functor.map_comp, ModuleCat.hom_comp, ModuleCat.hom_comp,
-      LinearMap.comp_assoc] at hc hfin
+    rw [hφ] at hc hfin
     refine hf a ((ConcreteCategory.isIso_iff_bijective _).mpr ?_)
     refine bijective_of_length_range_le_length_range_comp
       ((indecomposable_iff_isIndecomposableModule _).mp (hF a))
       ((indecomposable_iff_isIndecomposableModule _).mp (hF (a + 1))) ?_ hfin.ne (hg.trans hc)
       (hh.trans hc)
     intro hbot
-    rw [hbot, Module.length_bot, nonpos_iff_eq_zero, Nat.cast_eq_zero] at hc
+    rw [hbot, Module.length_bot] at hc
+    have : b - n ≤ 0 := by exact_mod_cast hc
     omega
 
 /-- **The Harada–Sai lemma.** Let `F : ℕ ⥤ ModuleCat A` be a chain of modules whose links

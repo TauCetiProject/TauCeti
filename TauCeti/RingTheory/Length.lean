@@ -81,6 +81,8 @@ applies to the quotients appearing here without any further appeal to defeq.
   at `𝔭` has length one over `A_𝔭`, being its residue field.
 * `TauCeti.isFiniteLength_quotient_maximalIdeal_pow`: `A ⧸ 𝔪 ⁿ` has finite length for every `n`
   over a noetherian local ring.
+* `Submodule.eq_of_le_of_length_eq`: a submodule contained in another of the same finite length
+  is equal to it.
 * `LinearMap.length_eq_of_bijective`: a bijective semilinear map along a surjective ring
   homomorphism preserves length.
 * `LinearEquiv.length_localizedModule_comap`: for a ring isomorphism `σ : A → B` and a
@@ -485,6 +487,20 @@ theorem length_self_eq_top_of_ringKrullDim_pos (hpos : 0 < ringKrullDim A) :
 end PositiveKrullDimension
 
 end TauCeti
+
+namespace Submodule
+
+variable {A M : Type*} [Ring A] [AddCommGroup M] [Module A M]
+
+/-- A submodule contained in another of the same finite length is equal to it: the inclusion is
+an injective map between modules of the same finite length, hence surjective. -/
+theorem eq_of_le_of_length_eq {N P : Submodule A M} (h : N ≤ P) (hN : Module.length A N ≠ ⊤)
+    (hlen : Module.length A N = Module.length A P) : N = P := by
+  have hs := TauCeti.surjective_of_injective_of_length_eq (inclusion_injective h) hN hlen
+  rw [← LinearMap.range_eq_top, range_inclusion, comap_subtype_eq_top] at hs
+  exact le_antisymm h hs
+
+end Submodule
 
 namespace LinearMap
 
