@@ -116,8 +116,16 @@ theorem torusRestriction_trans (h : E.weightLattice ≤ D.weightLattice)
     (k : F.weightLattice ≤ E.weightLattice) :
     D.torusRestriction F (A := A) (k.trans h) =
       (E.torusRestriction F k).comp (D.torusRestriction E h) := by
-  rw [torusRestriction_def, weightLatticeInclusion_trans, torusPointMap_comp]
-  rfl
+  simp only [torusRestriction_def, D.weightLatticeInclusion_trans E F h k,
+    torusPointMap_comp]
+
+/-- Successive restrictions agree with restriction along the composite lattice inclusion. -/
+@[simp]
+theorem torusRestriction_torusRestriction (h : E.weightLattice ≤ D.weightLattice)
+    (k : F.weightLattice ≤ E.weightLattice) (s : Fin t.rank → Aˣ) :
+    E.torusRestriction F k (D.torusRestriction E h s) =
+      D.torusRestriction F (k.trans h) s :=
+  (DFunLike.congr_fun (D.torusRestriction_trans E F h k) s).symm
 
 /-- Restriction commutes with changing the value ring. -/
 @[simp]
@@ -136,15 +144,13 @@ theorem torusRestriction_cocharacter (h : E.weightLattice ≤ D.weightLattice)
     D.torusRestriction E h (fun j => a ^ ψ (D.weightLatticeBasis j)) =
       fun i => a ^ ψ (E.weightLatticeBasis i) := by
   funext i
-  rw [torusRestriction_def, torusPointMap_apply, torusCharacter_def]
-  simp_rw [← zpow_mul]
-  rw [Finset.prod_zpow_eq_zpow_sum, weightLatticeInclusion_single]
+  rw [torusRestriction_def, torusPointMap_apply, torusCharacter_zpow,
+    weightLatticeInclusion_single]
   congr 1
-  have hi := congrArg (fun x : D.weightLattice => ψ x)
-    (D.weightLatticeBasis.sum_repr (Submodule.inclusion h (E.weightLatticeBasis i)))
-  simp only [Submodule.coe_sum, Submodule.coe_smul, map_sum, map_smul,
-    smul_eq_mul, Submodule.coe_inclusion] at hi
-  simpa only [mul_comm] using hi
+  simpa only [Submodule.coe_sum, Submodule.coe_smul, map_sum, map_smul,
+    smul_eq_mul, Submodule.coe_inclusion, mul_comm] using
+    congrArg (fun x : D.weightLattice => ψ x)
+      (D.weightLatticeBasis.sum_repr (Submodule.inclusion h (E.weightLatticeBasis i)))
 
 /-- If the value ring has divisible units, every torus point of the smaller lattice extends
 to the larger lattice. No such assertion holds for general fields. -/
@@ -155,16 +161,10 @@ theorem torusRestriction_surjective [RootableBy Aˣ ℕ]
 
 /-- Equal weight lattices give equivalent tori, even when their chosen bases differ. -/
 noncomputable def torusEquivOfWeightLatticeEq (h : D.weightLattice = E.weightLattice) :
-    (Fin t.rank → Aˣ) ≃* (Fin t.rank → Aˣ) where
-  toFun := D.torusRestriction E h.ge
-  invFun := E.torusRestriction D h.le
-  left_inv s := by
-    have e := D.torusRestriction_trans E D (A := A) h.ge h.le
-    simpa using (DFunLike.congr_fun e s).symm
-  right_inv s := by
-    have e := E.torusRestriction_trans D E (A := A) h.le h.ge
-    simpa using (DFunLike.congr_fun e s).symm
-  map_mul' := (D.torusRestriction E h.ge).map_mul
+    (Fin t.rank → Aˣ) ≃* (Fin t.rank → Aˣ) :=
+  (D.torusRestriction E h.ge).toMulEquiv (E.torusRestriction D h.le)
+    (by rw [← torusRestriction_trans, torusRestriction_refl])
+    (by rw [← torusRestriction_trans, torusRestriction_refl])
 
 /-- The equal-lattice equivalence is restriction in the forward direction. -/
 @[simp]
@@ -174,9 +174,24 @@ theorem torusEquivOfWeightLatticeEq_apply (h : D.weightLattice = E.weightLattice
   (rfl)
 
 /-- The inverse equivalence restricts in the reverse direction. -/
+@[simp]
 theorem torusEquivOfWeightLatticeEq_symm_apply (h : D.weightLattice = E.weightLattice)
     (s : Fin t.rank → Aˣ) :
     (D.torusEquivOfWeightLatticeEq E h).symm s = E.torusRestriction D h.le s :=
   (rfl)
+
+/-- Reversing the lattice equality gives the inverse torus equivalence. -/
+theorem torusEquivOfWeightLatticeEq_symm (h : D.weightLattice = E.weightLattice) :
+    (D.torusEquivOfWeightLatticeEq E (A := A) h).symm =
+      E.torusEquivOfWeightLatticeEq D h.symm := by
+  ext s i
+  simp only [torusEquivOfWeightLatticeEq_symm_apply, torusEquivOfWeightLatticeEq_apply]
+
+/-- The torus equivalence associated to reflexive lattice equality is the identity. -/
+@[simp]
+theorem torusEquivOfWeightLatticeEq_refl :
+    D.torusEquivOfWeightLatticeEq D (A := A) rfl = MulEquiv.refl _ := by
+  ext s i
+  simp
 
 end TauCeti.DynkinType.ChevalleyDatum

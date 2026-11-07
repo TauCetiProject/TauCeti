@@ -166,6 +166,12 @@ theorem torusCharacter_zsmul (s : κ → Rˣ) (μ : κ → ℤ) (z : ℤ) :
   refine prod_congr rfl fun j _ => ?_
   rw [mul_comm, _root_.zpow_mul]
 
+/-- Evaluating a character on a one-parameter subgroup pairs its exponents with those of the
+subgroup. -/
+theorem torusCharacter_zpow (a : Rˣ) (f μ : κ → ℤ) :
+    torusCharacter (fun j => a ^ f j) μ = a ^ ∑ j, f j * μ j := by
+  simp only [torusCharacter_def, ← _root_.zpow_mul, Finset.prod_zpow_eq_zpow_sum]
+
 /-- Every character takes the value one at the identity point. -/
 @[simp] theorem torusCharacter_one (μ : κ → ℤ) : torusCharacter (1 : κ → Rˣ) μ = 1 := by
   simp [torusCharacter]
