@@ -45,7 +45,7 @@ theorem schwarzChristoffelBoundary_injOn_prevertex_interval
     (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
     (he : ∀ k, e k ∈ Ioo (-1 : ℝ) 0) (hsum : ∑ k, e k = -2) :
     InjOn (schwarzChristoffelBoundary a e z₀) (Icc (a 0) (a (Fin.last n))) := by
-  have hfinite := neg_one_lt_exponent_sum_at a e ha fun k ↦ (he k).1
+  have hfinite := neg_one_lt_sum_filter_apply_eq_apply a e ha.injective fun k ↦ (he k).1
   apply schwarzChristoffelBoundary_injOn_prevertex_interval_of_edge_intersections
     a e z₀ ha.monotone hfinite
   intro i j hij z hzi hzj
@@ -71,7 +71,7 @@ theorem schwarzChristoffelCompactifiedBoundary_injective
     Function.Injective (schwarzChristoffelCompactifiedBoundary a e z₀) := by
   let B := schwarzChristoffelBoundary a e z₀
   let V := schwarzChristoffelVertexAtInfinity a e z₀
-  have hfinite := neg_one_lt_exponent_sum_at a e ha fun k ↦ (he k).1
+  have hfinite := neg_one_lt_sum_filter_apply_eq_apply a e ha.injective fun k ↦ (he k).1
   have hS : ∑ k, e k < -1 := by rw [hsum]; norm_num
   have hfirst : ∀ k, e k ≠ 0 → a 0 ≤ a k := fun k _ ↦ ha.monotone k.zero_le
   have hlast : ∀ k, e k ≠ 0 → a k ≤ a (Fin.last n) := fun k _ ↦ ha.monotone k.le_last
@@ -141,7 +141,7 @@ theorem isJordanCurve_schwarzChristoffelPolygon_boundary
     (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
     (he : ∀ k, e k ∈ Ioo (-1 : ℝ) 0) (hsum : ∑ k, e k = -2) :
     IsJordanCurve ((schwarzChristoffelPolygon a e z₀).boundary ℝ) := by
-  have hfinite := neg_one_lt_exponent_sum_at a e ha fun k ↦ (he k).1
+  have hfinite := neg_one_lt_sum_filter_apply_eq_apply a e ha.injective fun k ↦ (he k).1
   have hS : ∑ k, e k < -1 := by rw [hsum]; norm_num
   rw [← range_schwarzChristoffelCompactifiedBoundary a e z₀ ha.monotone hfinite hS]
   exact isJordanCurve_range_schwarzChristoffelCompactifiedBoundary a e z₀ hfinite hS

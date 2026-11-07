@@ -83,7 +83,7 @@ theorem bijOn_schwarzChristoffelPrimitive_interior_closedConvexHull
     (he : ∀ k, e k ∈ Ioo (-1 : ℝ) 0) (hsum : ∑ k, e k = -2) :
     BijOn (schwarzChristoffelPrimitive a e z₀) upperHalfPlaneSet
       (interior (closedConvexHull ℝ ((schwarzChristoffelPolygon a e z₀).boundary ℝ))) := by
-  have hfinite := neg_one_lt_exponent_sum_at a e ha fun k ↦ (he k).1
+  have hfinite := neg_one_lt_sum_filter_apply_eq_apply a e ha.injective fun k ↦ (he k).1
   have hinfty : ∑ k, e k < -1 := by rw [hsum]; norm_num
   let W := interior (closedConvexHull ℝ ((schwarzChristoffelPolygon a e z₀).boundary ℝ))
   have hFW : schwarzChristoffelPrimitive a e z₀ '' upperHalfPlaneSet ⊆ W := by

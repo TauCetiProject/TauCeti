@@ -57,7 +57,7 @@ theorem schwarzChristoffelBoundary_injOn_prevertex_interval_of_vertex_separation
         ((c * (v - u)).im < 0 ∧ (c * (w - u)).im < 0)) :
     InjOn (schwarzChristoffelBoundary a e z₀)
       (Icc (a 0) (a (Fin.last n))) := by
-  have hfinite := neg_one_lt_exponent_sum_at a e ha he
+  have hfinite := neg_one_lt_sum_filter_apply_eq_apply a e ha.injective he
   apply schwarzChristoffelBoundary_injOn_prevertex_interval_of_edge_intersections
     a e z₀ ha.monotone hfinite
   intro i j hij z hzi hzj

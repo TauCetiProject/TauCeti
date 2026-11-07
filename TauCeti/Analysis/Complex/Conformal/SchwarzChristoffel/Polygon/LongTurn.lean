@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.GlobalTurnin
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.ShortTurn
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.UnboundedEdge
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.ExponentSum
-import TauCeti.Analysis.SpecialFunctions.Complex.ExpRotation
+import TauCeti.Analysis.SpecialFunctions.Complex.Exp.Rotation
 
 /-!
 # Separation of bounded Schwarz--Christoffel sides
@@ -95,7 +95,7 @@ private lemma vertexAtInfinity_sub_last_eq_norm
     schwarzChristoffelVertexAtInfinity a e z₀ - schwarzChristoffelVertex a e z₀ (Fin.last n) =
       (‖schwarzChristoffelVertexAtInfinity a e z₀ -
         schwarzChristoffelVertex a e z₀ (Fin.last n)‖ : ℂ) := by
-  have hfinite := neg_one_lt_exponent_sum_at a e ha fun k ↦ (he k).1
+  have hfinite := neg_one_lt_sum_filter_apply_eq_apply a e ha.injective fun k ↦ (he k).1
   have hsumlt : ∑ k, e k < -1 := by rw [hsum]; norm_num
   have h := schwarzChristoffelVertexAtInfinity_sub_boundary_eq_norm_mul
     a e z₀ (hfinite (Fin.last n)) (fun k _ ↦ ha.monotone k.le_last) hsumlt
@@ -113,7 +113,7 @@ private lemma vertex_zero_sub_vertexAtInfinity_eq_norm
     (he : ∀ k, e k ∈ Ioo (-1 : ℝ) 0) (hsum : ∑ k, e k = -2) :
     schwarzChristoffelVertex a e z₀ 0 - schwarzChristoffelVertexAtInfinity a e z₀ =
       (‖schwarzChristoffelVertex a e z₀ 0 - schwarzChristoffelVertexAtInfinity a e z₀‖ : ℂ) := by
-  have hfinite := neg_one_lt_exponent_sum_at a e ha fun k ↦ (he k).1
+  have hfinite := neg_one_lt_sum_filter_apply_eq_apply a e ha.injective fun k ↦ (he k).1
   have hsumlt : ∑ k, e k < -1 := by rw [hsum]; norm_num
   have h := schwarzChristoffelBoundary_sub_vertexAtInfinity_eq_norm_mul
     a e z₀ (hfinite 0) (fun k _ ↦ ha.monotone k.zero_le) hsumlt
@@ -139,11 +139,12 @@ private lemma im_exp_neg_mul_closing_pos
       ((schwarzChristoffelVertex a e z₀ 0 - schwarzChristoffelVertexAtInfinity a e z₀) +
         (schwarzChristoffelVertexAtInfinity a e z₀ -
           schwarzChristoffelVertex a e z₀ (Fin.last n)))).im := by
-  have hfinite := neg_one_lt_exponent_sum_at a e ha fun k ↦ (he k).1
+  have hfinite := neg_one_lt_sum_filter_apply_eq_apply a e ha.injective fun k ↦ (he k).1
   have hsumlt : ∑ k, e k < -1 := by rw [hsum]; norm_num
   rw [vertex_zero_sub_vertexAtInfinity_eq_norm a e z₀ ha he hsum,
     vertexAtInfinity_sub_last_eq_norm a e z₀ ha he hsum, mul_add, Complex.add_im,
-    im_exp_neg_mul_ofReal, im_exp_neg_mul_ofReal, ← add_mul]
+    ← Complex.ofReal_neg θ, im_exp_ofReal_mul_I_mul_ofReal, im_exp_ofReal_mul_I_mul_ofReal,
+    ← add_mul]
   apply mul_pos
   · have hfirstNe := schwarzChristoffelBoundary_ne_vertexAtInfinity_of_forall_ge
       a e z₀ (hfinite 0) (fun k _ ↦ ha.monotone k.zero_le) hsumlt
@@ -162,7 +163,7 @@ chord from `p` to `q`, rotated by `-θ`, is nonnegative as soon as every side in
 nonnegative height, that is, `sin (edge angle - θ) ≥ 0`. -/
 private lemma im_exp_neg_mul_vertex_sub_nonneg
     (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
-    (he : ∀ k, e k ∈ Ioo (-1 : ℝ) 0) (θ : ℝ) (p q : Fin (n + 1)) (hpq : p ≤ q)
+    (he : ∀ k, -1 < e k) (θ : ℝ) (p q : Fin (n + 1)) (hpq : p ≤ q)
     (hsin : ∀ k : Fin n, p ≤ k.castSucc → k.succ ≤ q →
       0 ≤ Real.sin (schwarzChristoffelEdgeAngle a e (a k.castSucc) - θ)) :
     0 ≤ (Complex.exp (-θ * Complex.I) *
@@ -186,8 +187,8 @@ private lemma im_exp_neg_mul_vertex_sub_nonneg
       schwarzChristoffelVertex a e z₀ k'.succ - schwarzChristoffelVertex a e z₀ k'.castSucc :=
     congrArg₂ (· - ·) (hVeval k'.succ) (hVeval k'.castSucc)
   have him := im_exp_neg_mul_schwarzChristoffelVertex_succ_sub_eq
-    a e z₀ ha θ k' (neg_one_lt_exponent_sum_at a e ha (fun k ↦ (he k).1) _)
-    (neg_one_lt_exponent_sum_at a e ha (fun k ↦ (he k).1) _)
+    a e z₀ ha θ k' (neg_one_lt_sum_filter_apply_eq_apply a e ha.injective he _)
+    (neg_one_lt_sum_filter_apply_eq_apply a e ha.injective he _)
   simp only [Complex.imCLM_apply, hV]
   rw [him]
   exact mul_nonneg (norm_nonneg _) (hsin k' (Fin.le_def.mpr hk.1) (Fin.le_def.mpr hk.2))
@@ -225,7 +226,8 @@ private lemma im_exp_neg_mul_vertex_sub_nonneg_of_long_turn
       schwarzChristoffelEdgeAngle a e (a j.castSucc)) :
     0 ≤ (Complex.exp (-schwarzChristoffelEdgeAngle a e (a j.castSucc) * Complex.I) *
       (schwarzChristoffelVertex a e z₀ i.castSucc - schwarzChristoffelVertex a e z₀ 0)).im := by
-  refine im_exp_neg_mul_vertex_sub_nonneg a e z₀ ha he _ 0 i.castSucc (Fin.zero_le _) ?_
+  refine im_exp_neg_mul_vertex_sub_nonneg a e z₀ ha (fun k ↦ (he k).1) _ 0 i.castSucc
+    (Fin.zero_le _) ?_
   intro k _ hki
   exact sin_edgeAngle_sub_nonneg_of_long_turn a e ha he hsum k i j
     (Fin.mk_le_mk.mpr (Nat.le_of_succ_le (Fin.le_def.mp hki))) hij hlong
@@ -272,7 +274,7 @@ theorem im_exp_neg_mul_schwarzChristoffelVertex_sub_pos_of_long_turn
   -- The late bounded edges have their actual angles in `(θj, θj + π)`.
   have hright : 0 ≤ (u * (schwarzChristoffelVertex a e z₀ (Fin.last n) -
         schwarzChristoffelVertex a e z₀ j.succ)).im := by
-    refine im_exp_neg_mul_vertex_sub_nonneg a e z₀ ha he θj j.succ (Fin.last n)
+    refine im_exp_neg_mul_vertex_sub_nonneg a e z₀ ha (fun k ↦ (he k).1) θj j.succ (Fin.last n)
       (Fin.le_last _) ?_
     intro k hjk _
     have hjk' : j < k := Fin.mk_lt_mk.mpr (Nat.lt_of_succ_le (Fin.le_def.mp hjk))
@@ -307,8 +309,8 @@ private lemma im_exp_neg_mul_vertex_succ_sub_nonneg_of_long_turn
         schwarzChristoffelVertex a e z₀ i.castSucc)).im := by
   let θj := schwarzChristoffelEdgeAngle a e (a j.castSucc)
   have him := im_exp_neg_mul_schwarzChristoffelVertex_succ_sub_eq
-    a e z₀ ha θj i (neg_one_lt_exponent_sum_at a e ha (fun k ↦ (he k).1) _)
-    (neg_one_lt_exponent_sum_at a e ha (fun k ↦ (he k).1) _)
+    a e z₀ ha θj i (neg_one_lt_sum_filter_apply_eq_apply a e ha.injective (fun k ↦ (he k).1) _)
+    (neg_one_lt_sum_filter_apply_eq_apply a e ha.injective (fun k ↦ (he k).1) _)
   rw [him]
   exact mul_nonneg (norm_nonneg _)
     (sin_edgeAngle_sub_nonneg_of_long_turn a e ha he hsum i i j le_rfl hij hlong)
@@ -341,8 +343,8 @@ theorem disjoint_schwarzChristoffelPolygon_edgeSet_of_long_turn
       a e z₀ ha he hsum i j hij hlong
   have hjzero : (u * (Vj' - Vj)).im = 0 := by
     have him := im_exp_neg_mul_schwarzChristoffelVertex_succ_sub_eq
-      a e z₀ ha θj j (neg_one_lt_exponent_sum_at a e ha (fun k ↦ (he k).1) _)
-      (neg_one_lt_exponent_sum_at a e ha (fun k ↦ (he k).1) _)
+      a e z₀ ha θj j (neg_one_lt_sum_filter_apply_eq_apply a e ha.injective (fun k ↦ (he k).1) _)
+      (neg_one_lt_sum_filter_apply_eq_apply a e ha.injective (fun k ↦ (he k).1) _)
     simpa only [u, θj, sub_self, Real.sin_zero, mul_zero, Vi, Vi', Vj, Vj'] using him
   have hi_nonneg : 0 ≤ (u * (Vi' - Vi)).im :=
     im_exp_neg_mul_vertex_succ_sub_nonneg_of_long_turn a e z₀ ha he hsum i j hij hlong
@@ -388,9 +390,7 @@ theorem disjoint_schwarzChristoffelPolygon_bounded_edgeSet
       a e z₀ ha i j
     · exact fun _ _ _ _ hkl ↦
         schwarzChristoffelEdgeAngle_comp_strictMono a e ha (fun k ↦ (he k).2) hkl
-    · intro k _
-      rw [exponent_sum_at_eq a e ha]
-      exact (he k).1
+    · exact fun k _ ↦ neg_one_lt_sum_filter_apply_eq_apply a e ha.injective (fun k ↦ (he k).1) k
     · exact hij
     · exact hshort
   · exact disjoint_schwarzChristoffelPolygon_edgeSet_of_long_turn

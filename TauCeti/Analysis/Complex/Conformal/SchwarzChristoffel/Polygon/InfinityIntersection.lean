@@ -65,7 +65,7 @@ neither finite ray attains. -/
     Disjoint
       (schwarzChristoffelBoundary a e z₀ '' Iic (a 0))
       (schwarzChristoffelBoundary a e z₀ '' Ici (a (Fin.last n))) := by
-  have hfinite := neg_one_lt_exponent_sum_at a e ha he
+  have hfinite := neg_one_lt_sum_filter_apply_eq_apply a e ha.injective he
   have hS : ∑ k, e k < -1 := by rw [hsum]; norm_num
   have hleft := schwarzChristoffelBoundary_image_Iic_prevertex a e z₀ 0
     (hfinite 0) (fun k _ ↦ ha.monotone k.zero_le) hS
