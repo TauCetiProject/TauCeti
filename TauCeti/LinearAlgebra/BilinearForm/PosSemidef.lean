@@ -71,7 +71,7 @@ theorem IsPosSemidef.apply_sum_sum_le_card_mul_sum {B : LinearMap.BilinForm R M}
 
 /-- **Cauchy-Schwarz against a majorant.** If `F` is a symmetric positive semidefinite bilinear
 form and `F x x ≤ F x z`, then `F x v ^ 2 ≤ F z z * F v v` for every `v`. -/
-theorem apply_sq_le_mul_of_apply_le_apply {K V : Type*} [Field K] [LinearOrder K]
+theorem apply_sq_le_mul_of_apply_le_apply {K V : Type*} [CommRing K] [LinearOrder K]
     [IsStrictOrderedRing K] [AddCommGroup V] [Module K V]
     (F : LinearMap.BilinForm K V) (hnonneg : ∀ x, 0 ≤ F x x) (hsymm : LinearMap.IsSymm F)
     {x z : V} (hle : F x x ≤ F x z) (v : V) : F x v ^ 2 ≤ F z z * F v v := by
