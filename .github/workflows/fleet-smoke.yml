@@ -1,23 +1,29 @@
-name: Fleet smoke test
+name: Bounded cache transport investigation
 on:
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
-  smoke:
+  cache-transport:
+    timeout-minutes: 12
     runs-on:
-      group: TauCetiFleet
-      labels: [self-hosted, linux, x64, tauceti-fleet]
-    timeout-minutes: 5
+      - nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=1
     steps:
-      - name: Verify unprivileged guest execution
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /scripts/cache-transport-probe.py
+            /scripts/cache-probe-urls.json
+      - name: Probe public cache transport with bounded anonymous reads
         run: |
-          test "$(id -u)" -ne 0
-          test -f /etc/os-release
-          gh --version
-          git --version
-          jq --version
-          sudo -n dpkg --version
-          sudo -n apparmor_parser --version
-          GH_TOKEN="${{ github.token }}" gh api repos/TauCetiProject/TauCeti --jq .full_name
-          python3 -c 'import json,os; print(json.dumps(dict(cpus=os.cpu_count(), guest_user=os.getuid())))'
+          cp scripts/cache-probe-urls.json cache-probe-urls.json
+          python3 scripts/cache-transport-probe.py
+      - name: Retain diagnostic measurements
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cache-transport-investigation
+          path: cache-probe-output/*.json
+          retention-days: 7
