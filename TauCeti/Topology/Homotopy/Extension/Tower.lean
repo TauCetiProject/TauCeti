@@ -43,7 +43,7 @@ The proof has three steps.
 * **Two-sided inverse.** The stages of `g` are homotopy equivalences, so `g` in turn has a left
   homotopy inverse `k` on the colimits. A map with a left homotopy inverse `k` and a right
   homotopy inverse `f` is a homotopy equivalence, as `f ≃ k ∘ g ∘ f ≃ k`
-  (`ContinuousMap.Homotopic.comp_homotopic_id_of_comp_homotopic_id`).
+  (`ContinuousMap.Homotopic.homotopic_of_comp_homotopic_id`).
 
 ## Main results
 
@@ -211,8 +211,9 @@ def cofibrationTowerHomotopyEquiv
         rw [he] at this
         exact ⟨⟨(hg.choose.app n).hom, (f.app n).hom, this, ⟨H n⟩⟩, rfl⟩
       obtain ⟨k, K, hK⟩ := exists_natTrans_homotopy_comp_id hY hYh hX hXh hg.choose hg'
-      exact (hcX.map_comp_map_homotopic_id hcY H hH).comp_homotopic_id_of_comp_homotopic_id
-        (hcY.map_comp_map_homotopic_id hcX K hK) }
+      have hKg := hcY.map_comp_map_homotopic_id hcX K hK
+      exact ((hKg.homotopic_of_comp_homotopic_id (hcX.map_comp_map_homotopic_id hcY H hH)).symm.comp
+        (ContinuousMap.Homotopic.refl _)).trans hKg }
 
 /-- The homotopy equivalence of colimits of towers of cofibrations induced by `f` is the map
 induced by `f`. -/
