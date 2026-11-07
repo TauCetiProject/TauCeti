@@ -208,6 +208,24 @@ def twistCongr {E F : FixedRank X r} {L M : InvertibleSheaf X} (e : E ≅ F) (f 
     (tensorIso ((toFiniteLocallyFree X r).mapIso e)
       ((InvertibleSheaf.toFiniteLocallyFree X).mapIso f))
 
+/-- On underlying sheaves, `twistCongr e f` is the tensor product of the underlying
+isomorphisms. -/
+@[simp]
+theorem twistCongr_hom_hom_hom {E F : FixedRank X r} {L M : InvertibleSheaf X} (e : E ≅ F)
+    (f : L ≅ M) : (twistCongr e f).hom.hom.hom =
+      eqToHom (twist_obj_obj E L) ≫ (e.hom.hom.hom ⊗ₘ f.hom.hom) ≫
+        eqToHom (twist_obj_obj F M).symm :=
+  ((Category.id_comp _).trans (congrArg _ (Category.comp_id _))).symm
+
+/-- On underlying sheaves, the inverse of `twistCongr e f` is the tensor product of the
+underlying inverse isomorphisms. -/
+@[simp]
+theorem twistCongr_inv_hom_hom {E F : FixedRank X r} {L M : InvertibleSheaf X} (e : E ≅ F)
+    (f : L ≅ M) : (twistCongr e f).inv.hom.hom =
+      eqToHom (twist_obj_obj F M) ≫ (e.inv.hom.hom ⊗ₘ f.inv.hom) ≫
+        eqToHom (twist_obj_obj E L).symm :=
+  ((Category.id_comp _).trans (congrArg _ (Category.comp_id _))).symm
+
 /-- Twisting by the trivial line bundle is the identity: `E ⊗ 𝒪_X ≅ E`. -/
 def twistTrivialIso (E : FixedRank X r) : E.twist (InvertibleSheaf.trivial X) ≅ E :=
   ObjectProperty.isoMk _
@@ -217,6 +235,24 @@ def twistTrivialIso (E : FixedRank X r) : E.twist (InvertibleSheaf.trivial X) �
           (InvertibleSheaf.toFiniteLocallyFree X).obj (InvertibleSheaf.trivial X) ≅ 𝟙_ _) ≪≫
       ρ_ E.obj)
 
+/-- On underlying sheaves, `twistTrivialIso E` identifies `𝒪_X` with the monoidal unit and then
+applies the right unitor. -/
+@[simp]
+theorem twistTrivialIso_hom_hom_hom (E : FixedRank X r) :
+    (twistTrivialIso E).hom.hom.hom =
+      eqToHom (twist_obj_obj E _) ≫
+        (E.obj.obj ◁ (InvertibleSheaf.trivialObjIsoUnit X).hom ≫ (ρ_ E.obj.obj).hom) :=
+  (Category.id_comp _).symm
+
+/-- On underlying sheaves, the inverse of `twistTrivialIso E` is the inverse right unitor followed
+by the identification of the monoidal unit with `𝒪_X`. -/
+@[simp]
+theorem twistTrivialIso_inv_hom_hom (E : FixedRank X r) :
+    (twistTrivialIso E).inv.hom.hom =
+      ((ρ_ E.obj.obj).inv ≫ E.obj.obj ◁ (InvertibleSheaf.trivialObjIsoUnit X).inv) ≫
+        eqToHom (twist_obj_obj E _).symm :=
+  (Category.comp_id _).symm
+
 /-- Twisting twice is twisting by the tensor product: `(E ⊗ L) ⊗ M ≅ E ⊗ (L ⊗ M)`. -/
 def twistTensorProductIso (E : FixedRank X r) (L M : InvertibleSheaf X) :
     (E.twist L).twist M ≅ E.twist (InvertibleSheaf.tensorProduct L M) :=
@@ -224,6 +260,28 @@ def twistTensorProductIso (E : FixedRank X r) (L M : InvertibleSheaf X) :
     (α_ _ _ _ ≪≫ whiskerLeftIso E.obj
       (ObjectProperty.isoMk (Scheme.Modules.isFiniteLocallyFree X)
         (InvertibleSheaf.tensorProductObjIso L M).symm))
+
+/-- On underlying sheaves, `twistTensorProductIso E L M` is the associator followed by the
+identification of `L ⊗ M` with the tensor product of line bundles. -/
+@[simp]
+theorem twistTensorProductIso_hom_hom_hom (E : FixedRank X r) (L M : InvertibleSheaf X) :
+    (twistTensorProductIso E L M).hom.hom.hom =
+      eqToHom (by simp only [twist_obj_obj]) ≫
+        ((α_ E.obj.obj L.obj M.obj).hom ≫
+          E.obj.obj ◁ (InvertibleSheaf.tensorProductObjIso L M).inv) ≫
+        eqToHom (twist_obj_obj E _).symm :=
+  ((Category.id_comp _).trans (congrArg _ (Category.comp_id _))).symm
+
+/-- On underlying sheaves, the inverse of `twistTensorProductIso E L M` is the identification of
+the tensor product of line bundles with `L ⊗ M` followed by the inverse associator. -/
+@[simp]
+theorem twistTensorProductIso_inv_hom_hom (E : FixedRank X r) (L M : InvertibleSheaf X) :
+    (twistTensorProductIso E L M).inv.hom.hom =
+      eqToHom (twist_obj_obj E _) ≫
+        (E.obj.obj ◁ (InvertibleSheaf.tensorProductObjIso L M).hom ≫
+          (α_ E.obj.obj L.obj M.obj).inv) ≫
+        eqToHom (by simp only [twist_obj_obj]) :=
+  ((Category.id_comp _).trans (congrArg _ (Category.comp_id _))).symm
 
 end FixedRank
 
