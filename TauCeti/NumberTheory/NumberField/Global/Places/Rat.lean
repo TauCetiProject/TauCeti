@@ -39,6 +39,12 @@ public section
 
 open IsDedekindDomain NumberField Rat.HeightOneSpectrum
 
+/-- The `p`-adic absolute value of `p` is less than `1`. -/
+theorem Rat.AbsoluteValue.padic_natCast_lt_one (p : ℕ) [Fact p.Prime] :
+    Rat.AbsoluteValue.padic p p < 1 := by
+  rw [Rat.AbsoluteValue.padic_eq_padicNorm]
+  exact_mod_cast padicNorm.padicNorm_p_lt_one_of_prime (p := p)
+
 namespace Rat.HeightOneSpectrum
 
 variable (v : HeightOneSpectrum (𝓞 ℚ))

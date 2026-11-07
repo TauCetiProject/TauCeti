@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.TotallyRealComplex
 public import Mathlib.NumberTheory.NumberField.Discriminant.Defs
 public import Mathlib.Algebra.Order.Ring.IsNonarchimedean
+public import TauCeti.NumberTheory.NumberField.Global.Places.Rat
 import Mathlib.Analysis.Complex.Order
 import Mathlib.NumberTheory.NumberField.Discriminant.Basic
 
@@ -320,5 +321,24 @@ theorem InfinitePlace.not_isNonarchimedean (v : InfinitePlace K) : ¬IsNonarchim
   have := h.apply_natCast_le_one (n := 2) (by simp) (by simp)
   rw [← InfinitePlace.coe_apply, v.map_natCast] at this
   norm_num at this
+
+/-- An infinite place restricts on `ℚ` to the real absolute value. -/
+theorem InfinitePlace.apply_ratCast_eq_real (w : InfinitePlace K) (r : ℚ) :
+    w (r : K) = Rat.AbsoluteValue.real r := by
+  rw [InfinitePlace.map_ratCast, Rat.AbsoluteValue.real_eq_abs, Rat.cast_abs,
+    ← Real.norm_eq_abs, Rat.norm_cast_real]
+
+/-- An infinite place and the `p`-adic absolute value differ at the rational prime `p`. -/
+theorem InfinitePlace.apply_ratCast_ne_padic (w : InfinitePlace K) (p : ℕ) [Fact p.Prime] :
+    w.1 (p : ℚ) ≠ Rat.AbsoluteValue.padic p p := by
+  -- The infinite place sends `p` to `|p| ≥ 1`, while the `p`-adic value is below `1`.
+  have h1 : (1 : ℝ) ≤ Rat.AbsoluteValue.real p := by
+    rw [Rat.AbsoluteValue.real_eq_abs]
+    push_cast
+    rw [abs_of_nonneg (Nat.cast_nonneg _)]
+    exact_mod_cast (Fact.out : p.Prime).one_le
+  have hwp : w.1 (p : ℚ) = Rat.AbsoluteValue.real p := w.apply_ratCast_eq_real p
+  rw [hwp]
+  exact ((Rat.AbsoluteValue.padic_natCast_lt_one p).trans_le h1).ne'
 
 end NumberField

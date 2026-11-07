@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.Completion.InfinitePlace
+public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Basic
 public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Completion
 public import TauCeti.Analysis.AbsoluteValue.Equivalence
 public import TauCeti.NumberTheory.NumberField.Units.Signature.Integer
@@ -198,6 +199,20 @@ private theorem exists_mixed_approximation
         simp only [a, mixedAbsoluteValue] at hw
         exact hw.trans_le (Finset.inf'_le ρ (Finset.mem_univ (Sum.inr w)))
 
+/-- A field element that is close to `a` for the normalized valuation of `v` has its image in the
+completion close to that of `a`, in the restricted valuation of the completion. -/
+private theorem restrict_algebraMap_sub_lt (v : HeightOneSpectrum (RingOfIntegers K)) {x a : K}
+    {γ : (Valued.v : Valuation (v.adicCompletion K) ℤᵐ⁰).ValueGroup₀ˣ}
+    (h : v.valuation K (x - a) <
+      MonoidWithZeroHom.ValueGroup₀.embedding
+        (γ : (Valued.v : Valuation (v.adicCompletion K) ℤᵐ⁰).ValueGroup₀)) :
+    Valued.v.restrict (algebraMap K (v.adicCompletion K) x -
+      algebraMap K (v.adicCompletion K) a) < γ := by
+  rw [Valuation.restrict_lt_iff_lt_embedding, ← map_sub]
+  -- The completion algebra map is the canonical coercion on field elements.
+  change Valued.v ((x - a : K) : v.adicCompletion K) < _
+  rwa [v.valuedAdicCompletion_eq_valuation']
+
 /-- **Artin--Whaples weak approximation at mixed places.** For finite sets `Sₑ` of finite
 places and `Sinf` of infinite places, the diagonal image of a number field `K` is dense in the
 product of the corresponding finite and infinite completions.
@@ -220,16 +235,9 @@ theorem weakApproximation_denseRange
   obtain ⟨Vinf, hVinf, hVinfU⟩ := (isOpen_pi_iff'.mp hUinf) y.2 hyinf
   choose aₑ haₑ using fun (v : FinitePlace K Sₑ) =>
     (v.1.denseRange_algebraMap K).exists_mem_open (hVₑ v).1 ⟨y.1 v, (hVₑ v).2⟩
-  have hdenseinf (w : {w : InfinitePlace K // w ∈ Sinf}) :
-      DenseRange (fun x : K => algebraMap K w.1.Completion x) := by
-    simp only [InfinitePlace.Completion.algebraMap_apply]
-    change DenseRange
-      (((↑) : WithAbs w.1.1 → w.1.Completion) ∘ (WithAbs.equiv w.1.1).symm)
-    exact (InfinitePlace.Completion.denseRange_coe (v := w.1)).comp
-      (WithAbs.equiv w.1.1).symm.surjective.denseRange
-      (InfinitePlace.Completion.continuous_coe (v := w.1))
   choose ainf hainf using fun (w : {w : InfinitePlace K // w ∈ Sinf}) =>
-    (hdenseinf w).exists_mem_open (hVinf w).1 ⟨y.2 w, (hVinf w).2⟩
+    (InfinitePlace.Completion.denseRange_algebraMap w.1).exists_mem_open (hVinf w).1
+      ⟨y.2 w, (hVinf w).2⟩
   choose γ hγ using fun (v : FinitePlace K Sₑ) =>
     Valued.mem_nhds.mp ((hVₑ v).1.mem_nhds (haₑ v))
   choose einf heinf hballinf using fun (w : {w : InfinitePlace K // w ∈ Sinf}) =>
@@ -253,17 +261,7 @@ theorem weakApproximation_denseRange
   constructor
   · apply hVₑU
     intro v _
-    apply hγ v
-    -- `Valued.mem_nhds` presents the ball using `restrict`; expose that exact predicate.
-    change Valued.v.restrict
-      (algebraMap K (v.1.adicCompletion K) x -
-        algebraMap K (v.1.adicCompletion K) (aₑ v)) < γ v
-    rw [Valuation.restrict_lt_iff_lt_embedding]
-    rw [← map_sub]
-    -- The completion algebra map is the canonical coercion on field elements.
-    change Valued.v ((x - aₑ v : K) : v.1.adicCompletion K) < εₑ v
-    rw [v.1.valuedAdicCompletion_eq_valuation']
-    exact hxₑ v
+    exact hγ v (restrict_algebraMap_sub_lt v.1 (hxₑ v))
   · apply hVinfU
     intro w _
     apply hballinf w
@@ -274,6 +272,49 @@ theorem weakApproximation_denseRange
       ← (WithAbs.equiv w.1.1).apply_symm_apply (x - ainf w),
       InfinitePlace.Completion.norm_coe]
     exact hxinf w
+
+/-- The absolute values of a number field coming from its embeddings into `AlgebraicClosure ℚ_[p]`,
+into `AlgebraicClosure ℚ_[ℓ]` for the primes `ℓ` of a finite set, and from its infinite places form
+a finite set of absolute values each of which restricts on `ℚ` to a standard one. -/
+private theorem exists_finset_isStandard_restrict (p : ℕ) [Fact p.Prime] {L : Finset ℕ}
+    (hL : ∀ ℓ ∈ L, ℓ.Prime) :
+    ∃ S : Finset (AbsoluteValue K ℝ),
+      (∀ v ∈ S, ∃ a, Rat.AbsoluteValue.IsStandard a ∧ ∀ r : ℚ, v r = a r) ∧
+      (∀ φ : K →ₐ[ℚ] AlgebraicClosure ℚ_[p], place φ.toRingHom ∈ S) ∧
+      (∀ ℓ (hℓ : ℓ ∈ L), haveI : Fact ℓ.Prime := ⟨hL ℓ hℓ⟩
+        ∀ φ : K →ₐ[ℚ] AlgebraicClosure ℚ_[ℓ], place φ.toRingHom ∈ S) ∧
+      ∀ w : InfinitePlace K, w.1 ∈ S := by
+  classical
+  let Sp : Finset (AbsoluteValue K ℝ) :=
+    Finset.univ.image fun φ : K →ₐ[ℚ] AlgebraicClosure ℚ_[p] ↦ place φ.toRingHom
+  let SL : Finset (AbsoluteValue K ℝ) := L.attach.biUnion fun ℓ ↦
+    haveI : Fact ℓ.1.Prime := ⟨hL ℓ.1 ℓ.2⟩
+    Finset.univ.image fun φ : K →ₐ[ℚ] AlgebraicClosure ℚ_[ℓ.1] ↦ place φ.toRingHom
+  let Si : Finset (AbsoluteValue K ℝ) := Finset.univ.image fun w : InfinitePlace K ↦ w.1
+  refine ⟨Sp ∪ SL ∪ Si, ?_, fun φ ↦ ?_, fun ℓ hℓ φ ↦ ?_, fun w ↦ ?_⟩
+  · intro v hv
+    simp only [Sp, SL, Si, Finset.mem_union, Finset.mem_image, Finset.mem_univ, true_and,
+      Finset.mem_biUnion, Finset.mem_attach] at hv
+    rcases hv with (⟨φ, rfl⟩ | ⟨ℓ, φ, rfl⟩) | ⟨w, rfl⟩
+    · exact ⟨_, .padic p, place_ratCast_padicAlgCl p φ⟩
+    · have : Fact ℓ.1.Prime := ⟨hL ℓ.1 ℓ.2⟩
+      exact ⟨_, .padic ℓ.1, place_ratCast_padicAlgCl ℓ.1 φ⟩
+    · exact ⟨_, .real, InfinitePlace.apply_ratCast_eq_real w⟩
+  · simp only [Sp, Finset.mem_union, Finset.mem_image, Finset.mem_univ, true_and]
+    exact Or.inl (Or.inl ⟨φ, rfl⟩)
+  · simp only [SL, Finset.mem_union, Finset.mem_image, Finset.mem_univ, true_and,
+      Finset.mem_biUnion, Finset.mem_attach]
+    exact Or.inl (Or.inr ⟨⟨ℓ, hℓ⟩, φ, rfl⟩)
+  · simp only [Si, Finset.mem_union, Finset.mem_image, Finset.mem_univ, true_and]
+    exact Or.inr ⟨w, rfl⟩
+
+omit [NumberField K] in
+/-- An absolute value restricting to the `p`-adic one at `p` differs from every absolute value
+sending `p` to `1`. -/
+private theorem ne_of_apply_natCast_eq_one {p : ℕ} [Fact p.Prime] {v₀ v : AbsoluteValue K ℝ}
+    (hv₀p : v₀ (p : ℚ) = Rat.AbsoluteValue.padic p p) (hv : v (p : ℚ) = 1) : v ≠ v₀ := by
+  rintro rfl
+  exact (Rat.AbsoluteValue.padic_natCast_lt_one p).ne (hv₀p.symm.trans hv)
 
 /-- **Approximation at Galois `p`-adic embeddings.** Let
 `K ⊆ AlgebraicClosure ℚ_[p]` be a number field Galois over `ℚ`, let `y₀ ∈ K`, and let `L` be a
@@ -291,32 +332,8 @@ theorem exists_galois_padic_approximation (p : ℕ) [Fact p.Prime]
         ∀ φ : K →ₐ[ℚ] AlgebraicClosure ℚ_[ℓ], ‖φ Y - 1‖ < ρ) ∧
       ∀ w : InfinitePlace K, w (Y - 1) < ρ := by
   classical
-  let Sp : Finset (AbsoluteValue K ℝ) :=
-    Finset.univ.image fun φ : K →ₐ[ℚ] AlgebraicClosure ℚ_[p] ↦ place φ.toRingHom
-  let SL : Finset (AbsoluteValue K ℝ) := L.attach.biUnion fun ℓ ↦
-    haveI : Fact ℓ.1.Prime := ⟨hL ℓ.1 ℓ.2⟩
-    Finset.univ.image fun φ : K →ₐ[ℚ] AlgebraicClosure ℚ_[ℓ.1] ↦ place φ.toRingHom
-  let Si : Finset (AbsoluteValue K ℝ) := Finset.univ.image fun w : InfinitePlace K ↦ w.1
-  let S := Sp ∪ SL ∪ Si
-  -- An infinite place restricts on `ℚ` to the real absolute value.
-  have hreal (w : InfinitePlace K) (r : ℚ) : w (r : K) = Rat.AbsoluteValue.real r := by
-    rw [InfinitePlace.map_ratCast, Rat.AbsoluteValue.real_eq_abs, Rat.cast_abs,
-      ← Real.norm_eq_abs, Rat.norm_cast_real]
-  -- Every absolute value of `S` restricts on `ℚ` to a standard one.
-  have hstd : ∀ v ∈ S, ∃ a, Rat.AbsoluteValue.IsStandard a ∧ ∀ r : ℚ, v r = a r := by
-    intro v hv
-    simp only [S, Sp, SL, Si, Finset.mem_union, Finset.mem_image, Finset.mem_univ, true_and,
-      Finset.mem_biUnion, Finset.mem_attach] at hv
-    rcases hv with (⟨φ, rfl⟩ | ⟨ℓ, φ, rfl⟩) | ⟨w, rfl⟩
-    · exact ⟨_, .padic p, place_ratCast_padicAlgCl p φ⟩
-    · have : Fact ℓ.1.Prime := ⟨hL ℓ.1 ℓ.2⟩
-      exact ⟨_, .padic ℓ.1, place_ratCast_padicAlgCl ℓ.1 φ⟩
-    · exact ⟨_, .real, hreal w⟩
+  obtain ⟨S, hstd, hSp, hSL, hSi⟩ := exists_finset_isStandard_restrict (K := K) p hL
   let v₀ : AbsoluteValue K ℝ := place (K.val : K →ₐ[ℚ] AlgebraicClosure ℚ_[p]).toRingHom
-  have hv₀ : v₀ ∈ S := by
-    simp only [S, Sp, Finset.mem_union, Finset.mem_image, Finset.mem_univ, true_and]
-    exact Or.inl (Or.inl ⟨K.val, rfl⟩)
-  -- Only `v₀` restricts to the `p`-adic absolute value at `p` among the other places.
   have hv₀p : v₀ (p : ℚ) = Rat.AbsoluteValue.padic p p := place_ratCast_padicAlgCl p K.val p
   obtain ⟨Y, hY⟩ := exists_forall_apply_sub_lt S
     (fun v hv ↦ by
@@ -329,54 +346,29 @@ theorem exists_galois_padic_approximation (p : ℕ) [Fact p.Prime]
       exact h.eq_of_isStandard ha hb (fun n ↦ by simpa using hva (n : ℚ))
         (fun n ↦ by simpa using hwb (n : ℚ)))
     (fun v ↦ if v = v₀ then y₀ else 1) hρ
-  have hv₀pne : v₀ (p : ℚ) ≠ 1 := by
-    rw [hv₀p, Rat.AbsoluteValue.padic_eq_padicNorm, padicNorm.padicNorm_p_of_prime]
-    have : (1 : ℝ) < p := by exact_mod_cast (Fact.out : p.Prime).one_lt
-    push_cast
-    exact (inv_lt_one_of_one_lt₀ this).ne
-  have hone : ∀ v ∈ S, v (p : ℚ) = 1 → v (Y - 1) < ρ := fun v hv hvp ↦ by
-    have h := hY v hv
-    rwa [ite_eq_right (by rintro rfl; exact hv₀pne hvp)] at h
   refine ⟨Y, ?_, fun φ ↦ ?_, fun ℓ hℓ φ ↦ ?_, fun w ↦ ?_⟩
-  · have h := hY v₀ hv₀
+  · have h := hY v₀ (hSp K.val)
     rw [ite_eq_left rfl] at h
     simpa [v₀] using h
-  · have hφS : place φ.toRingHom ∈ S := by
-      simp only [S, Sp, Finset.mem_union, Finset.mem_image, Finset.mem_univ, true_and]
-      exact Or.inl (Or.inl ⟨φ, rfl⟩)
-    by_cases hφ : place φ.toRingHom = v₀
+  · by_cases hφ : place φ.toRingHom = v₀
     · left
       obtain ⟨h, hh⟩ := exists_algEquiv_apply_eq_of_norm_apply_eq p K φ fun x ↦ by
         simpa [v₀] using congr($hφ x)
       exact ⟨h, fun x ↦ (hh x).symm⟩
     · right
-      have h := hY _ hφS
+      have h := hY _ (hSp φ)
       rw [ite_eq_right hφ] at h
       simpa using h
   · have : Fact ℓ.Prime := ⟨hL ℓ hℓ⟩
-    have hφS : place φ.toRingHom ∈ S := by
-      simp only [S, SL, Finset.mem_union, Finset.mem_image, Finset.mem_univ, true_and,
-        Finset.mem_biUnion, Finset.mem_attach]
-      exact Or.inl (Or.inr ⟨⟨ℓ, hℓ⟩, φ, rfl⟩)
-    have h := hone _ hφS (by
-      rw [place_ratCast_padicAlgCl ℓ φ, Rat.AbsoluteValue.padic_eq_padicNorm]
-      rw [padicNorm.padicNorm_of_prime_of_ne (fun h : ℓ = p ↦ hpL (h ▸ hℓ)), Rat.cast_one])
+    have h := hY _ (hSL ℓ hℓ φ)
+    rw [ite_eq_right (ne_of_apply_natCast_eq_one hv₀p (by
+      rw [place_ratCast_padicAlgCl ℓ φ, Rat.AbsoluteValue.padic_eq_padicNorm,
+        padicNorm.padicNorm_of_prime_of_ne (fun h : ℓ = p ↦ hpL (h ▸ hℓ)), Rat.cast_one]))] at h
     simpa using h
-  · have hwS : w.1 ∈ S := by
-      simp only [S, Si, Finset.mem_union, Finset.mem_image, Finset.mem_univ, true_and]
-      exact Or.inr ⟨w, rfl⟩
-    refine (hY _ hwS).trans_eq' (congrArg _ ?_)
-    rw [ite_eq_right]
-    intro hw
-    have := congr($hw (p : ℚ))
-    have hwp : w.1 (p : ℚ) = Rat.AbsoluteValue.real p := hreal w p
-    rw [hwp, Rat.AbsoluteValue.real_eq_abs, hv₀p,
-      Rat.AbsoluteValue.padic_eq_padicNorm, padicNorm.padicNorm_p_of_prime] at this
-    have h1 : (1 : ℝ) < p := by exact_mod_cast (Fact.out : p.Prime).one_lt
-    have h2 : ((p : ℚ)⁻¹ : ℝ) < 1 := by push_cast; exact inv_lt_one_of_one_lt₀ h1
-    rw [abs_of_pos (by exact_mod_cast (Fact.out : p.Prime).pos)] at this
-    push_cast at this h2
-    linarith
+  · refine (hY _ (hSi w)).trans_eq' (congrArg _ ?_)
+    have hw : w.1 ≠ v₀ := fun h ↦
+      w.apply_ratCast_ne_padic p (by rw [h, hv₀p])
+    rw [ite_eq_right hw]
 
 /-- **Approximation of a local element, with the `p`-adic and global conditions of
 `exists_galois_padic_approximation`.** Let `K ⊆ AlgebraicClosure ℚ_[p]` be a number field Galois
