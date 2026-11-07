@@ -48,6 +48,9 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   `MDifferentiableAt.differentiableAt_comp_extChartAt_symm`: on a boundaryless manifold, the
   coordinate expression of a `C^n` (resp. differentiable) map into a normed space is `C^n` (resp.
   differentiable) at the chart image of the point.
+* `ContMDiffAt.contDiffAt_writtenInExtChartAt` and
+  `MDifferentiableAt.differentiableAt_writtenInExtChartAt`: the same for a map between manifolds,
+  read in the extended charts at the point and at its image.
 * `MDifferentiableAt.tangentSpaceCastModel_mfderiv_apply`: on a boundaryless source, the coordinate
   derivative is the manifold derivative transported by the canonical tangent-to-model casts.
 * `TauCeti.mdifferentiableAt_iff_differentiableAt_comp_extChartAt_symm`: conversely, a map into a
@@ -327,6 +330,24 @@ theorem _root_.MDifferentiableAt.differentiableAt_comp_extChartAt_symm
   rwa [ModelWithCorners.Boundaryless.range_eq_univ, differentiableWithinAt_univ,
     writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
     Function.id_comp] at h
+
+omit [IsManifold I 1 M] [IsManifold I' 1 M'] in
+/-- On a boundaryless source, a map between manifolds which is `C^n` at `x` has a `C^n` coordinate
+expression in the extended charts at `x` and at `f x`. -/
+theorem _root_.ContMDiffAt.contDiffAt_writtenInExtChartAt {n : WithTop ℕ∞} {g : M → M'}
+    (hg : ContMDiffAt I I' n g x) :
+    ContDiffAt 𝕜 n (writtenInExtChartAt I I' x g) (extChartAt I x x) := by
+  simpa only [writtenInExtChartAt, I.range_eq_univ, contDiffWithinAt_univ] using
+    (contMDiffAt_iff.1 hg).2
+
+omit [IsManifold I 1 M] [IsManifold I' 1 M'] in
+/-- On a boundaryless source, a map between manifolds which is differentiable at `x` has a
+differentiable coordinate expression in the extended charts at `x` and at `f x`. -/
+theorem _root_.MDifferentiableAt.differentiableAt_writtenInExtChartAt {g : M → M'}
+    (hg : MDifferentiableAt I I' g x) :
+    DifferentiableAt 𝕜 (writtenInExtChartAt I I' x g) (extChartAt I x x) := by
+  simpa only [writtenInExtChartAt, I.range_eq_univ, differentiableWithinAt_univ] using
+    ((mdifferentiableAt_iff _ _).1 hg).2
 
 omit [IsManifold I 1 M] in
 /-- On a boundaryless manifold, the vector-valued manifold derivative of a map into a normed space
