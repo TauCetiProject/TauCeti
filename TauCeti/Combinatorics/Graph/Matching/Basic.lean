@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Incidence
+public import Mathlib.Combinatorics.Graph.Delete
+public import Mathlib.Combinatorics.Graph.Simple
 
 /-!
 # Matchings in multigraphs
@@ -124,38 +125,37 @@ theorem matchingSupport_empty (G : Graph α β) : G.matchingSupport ∅ = ∅ :=
   simp
 
 /-- The subgraph whose edges are exactly `M` and whose vertices are exactly their endpoints. -/
-def matchingSubgraph (G : Graph α β) (M : Set E(G)) : Graph α β where
-  vertexSet := G.matchingSupport M
-  edgeSet := Subtype.val '' M
-  IsLink e x y := ∃ he : e ∈ E(G), (⟨e, he⟩ : E(G)) ∈ M ∧ G.IsLink e x y
-  isLink_symm e he := ⟨by
-    rintro x y ⟨heG, heM, hxy⟩
-    exact ⟨heG, heM, hxy.symm⟩⟩
-  eq_or_eq_of_isLink_of_isLink _ _ _ _ _ h h' := h.2.2.left_eq_or_eq h'.2.2
-  edge_mem_iff_exists_isLink e := by
-    constructor
-    · rintro ⟨f, hfM, rfl⟩
-      obtain ⟨x, y, hxy⟩ := G.exists_isLink_of_mem_edgeSet f.2
-      exact ⟨x, y, f.2, hfM, hxy⟩
-    · rintro ⟨x, y, heG, heM, -⟩
-      exact ⟨⟨e, heG⟩, heM, rfl⟩
-  left_mem_of_isLink := by
-    rintro e x y ⟨heG, heM, hxy⟩
-    exact ⟨⟨e, heG⟩, heM, hxy.inc_left⟩
+def matchingSubgraph (G : Graph α β) (M : Set E(G)) : Graph α β :=
+  (G.restrict (Subtype.val '' M)).induce (G.matchingSupport M)
 
 @[simp]
 theorem vertexSet_matchingSubgraph : V(G.matchingSubgraph M) = G.matchingSupport M :=
-  by simp only [matchingSubgraph]
+  by rw [matchingSubgraph, Graph.vertexSet_induce]
 
 @[simp]
 theorem edgeSet_matchingSubgraph : E(G.matchingSubgraph M) = Subtype.val '' M :=
-  by simp only [matchingSubgraph]
+  by
+    ext e
+    constructor
+    · rintro ⟨x, y, ⟨⟨heM, -⟩, -, -⟩⟩
+      exact heM
+    · rintro ⟨e, heM, rfl⟩
+      obtain ⟨x, y, hxy⟩ := G.exists_isLink_of_mem_edgeSet e.2
+      exact ⟨x, y, ⟨⟨⟨e, heM, rfl⟩, hxy⟩,
+        ⟨e, heM, hxy.inc_left⟩, ⟨e, heM, hxy.inc_right⟩⟩⟩
 
 @[simp]
 theorem matchingSubgraph_isLink {e : β} {x y : α} :
     (G.matchingSubgraph M).IsLink e x y ↔
       ∃ he : e ∈ E(G), (⟨e, he⟩ : E(G)) ∈ M ∧ G.IsLink e x y :=
-  by simp only [matchingSubgraph]
+  by
+    constructor
+    · rintro ⟨⟨⟨f, hfM, hfe⟩, hxy⟩, -, -⟩
+      subst e
+      exact ⟨f.2, hfM, hxy⟩
+    · rintro ⟨heG, heM, hxy⟩
+      exact ⟨⟨⟨⟨e, heG⟩, heM, rfl⟩, hxy⟩,
+        ⟨⟨e, heG⟩, heM, hxy.inc_left⟩, ⟨⟨e, heG⟩, heM, hxy.inc_right⟩⟩
 
 /-- Incidence in the canonical subgraph is incidence in `G` by a selected edge. -/
 @[simp]
@@ -163,10 +163,11 @@ theorem matchingSubgraph_inc {e : β} {x : α} :
     (G.matchingSubgraph M).Inc e x ↔
       ∃ he : e ∈ E(G), (⟨e, he⟩ : E(G)) ∈ M ∧ G.Inc e x := by
   constructor
-  · rintro ⟨y, heG, heM, hxy⟩
+  · rintro ⟨y, hxy⟩
+    obtain ⟨heG, heM, hxy⟩ := matchingSubgraph_isLink.mp hxy
     exact ⟨heG, heM, hxy.inc_left⟩
   · rintro ⟨heG, heM, y, hxy⟩
-    exact ⟨y, heG, heM, hxy⟩
+    exact ⟨y, matchingSubgraph_isLink.mpr ⟨heG, heM, hxy⟩⟩
 
 /-- A loop of the canonical subgraph is precisely a selected loop of `G`. -/
 @[simp]
@@ -184,15 +185,37 @@ theorem matchingSubgraph_injective (G : Graph α β) :
 
 /-- The canonical graph of selected edges is a subgraph of the original graph. -/
 theorem matchingSubgraph_le (G : Graph α β) (M : Set E(G)) : G.matchingSubgraph M ≤ G := by
-  refine ⟨fun x hx ↦ ?_, fun e x y h ↦ h.2.2⟩
+  refine ⟨fun x hx ↦ ?_, fun e x y h ↦ (matchingSubgraph_isLink.mp h).2.2⟩
   obtain ⟨e, -, hex⟩ := hx
   exact hex.vertex_mem
+
+/-- A subgraph with no isolated vertices is reconstructed from its set of actual edges. -/
+theorem matchingSubgraph_eq_of_le_of_exists_inc {H : Graph α β} (hHG : H ≤ G)
+    (hH : ∀ x ∈ V(H), ∃ e, H.Inc e x) :
+    G.matchingSubgraph {e : E(G) | (e : β) ∈ E(H)} = H := by
+  apply (Compatible.of_le_le (matchingSubgraph_le G _) hHG).ext
+  · ext x
+    constructor
+    · intro hx
+      obtain ⟨e, heH, hex⟩ := hx
+      exact ((hHG.inc_congr heH).mpr hex).vertex_mem
+    · intro hx
+      obtain ⟨e, hex⟩ := hH x hx
+      exact ⟨⟨e, hHG.edgeSet_mono hex.edge_mem⟩, hex.edge_mem, hex.mono hHG⟩
+  · ext e
+    constructor
+    · rw [edgeSet_matchingSubgraph]
+      rintro ⟨f, hf, rfl⟩
+      exact hf
+    · intro he
+      rw [edgeSet_matchingSubgraph]
+      exact ⟨⟨e, hHG.edgeSet_mono he⟩, he, rfl⟩
 
 /-- Enlarging the selected edge set enlarges its canonical subgraph. -/
 theorem matchingSubgraph_mono (hMN : M ⊆ N) : G.matchingSubgraph M ≤ G.matchingSubgraph N := by
   refine ⟨matchingSupport_mono hMN, fun e x y h ↦ ?_⟩
-  obtain ⟨heG, heM, hxy⟩ := h
-  exact ⟨heG, hMN heM, hxy⟩
+  obtain ⟨heG, heM, hxy⟩ := matchingSubgraph_isLink.mp h
+  exact matchingSubgraph_isLink.mpr ⟨heG, hMN heM, hxy⟩
 
 /-- Selecting no edges gives the empty graph. -/
 @[simp]
@@ -205,14 +228,13 @@ theorem matchingSubgraph_empty (G : Graph α β) : G.matchingSubgraph ∅ = ⊥ 
 theorem matchingSubgraph_exists_inc {x : α} (hx : x ∈ V(G.matchingSubgraph M)) :
     ∃ e, (G.matchingSubgraph M).Inc e x := by
   obtain ⟨e, heM, hex⟩ := hx
-  obtain ⟨y, hxy⟩ := hex
-  exact ⟨e, y, ⟨e.2, heM, hxy⟩⟩
+  exact ⟨e, matchingSubgraph_inc.mpr ⟨e.2, heM, hex⟩⟩
 
 /-- A matching gives a loopless canonical subgraph. -/
 theorem IsMatching.matchingSubgraph_loopless (hM : G.IsMatching M) :
     (G.matchingSubgraph M).Loopless where
   not_isLoopAt e x h := by
-    obtain ⟨heG, heM, hG⟩ := h
+    obtain ⟨heG, heM, hG⟩ := matchingSubgraph_isLoopAt.mp h
     exact hM.not_isLoopAt heM x hG
 
 /-- In the canonical subgraph of a matching, every vertex has a unique incident edge. -/
@@ -221,10 +243,10 @@ theorem IsMatching.matchingSubgraph_existsUnique_inc (hM : G.IsMatching M) {x : 
     ∃! e, (G.matchingSubgraph M).Inc e x := by
   obtain ⟨e, hex⟩ := matchingSubgraph_exists_inc hx
   refine ⟨e, hex, fun f hfx ↦ ?_⟩
-  obtain ⟨y, heG, heM, hey⟩ := hex
-  obtain ⟨z, hfG, hfM, hfz⟩ := hfx
+  obtain ⟨heG, heM, hey⟩ := matchingSubgraph_inc.mp hex
+  obtain ⟨hfG, hfM, hfz⟩ := matchingSubgraph_inc.mp hfx
   exact (congrArg Subtype.val <|
-    hM.eq_of_inc heM hfM hey.inc_left hfz.inc_left).symm
+    hM.eq_of_inc heM hfM hey hfz).symm
 
 /-- The edge-set definition of a matching is equivalent to saying that its canonical subgraph is
 loopless and has exactly one incident edge at every vertex. -/
@@ -238,12 +260,14 @@ theorem isMatching_iff_matchingSubgraph :
   · rintro ⟨hloopless, hunique⟩
     constructor
     · intro e he x hex
-      exact hloopless.not_isLoopAt e x ⟨e.2, he, hex⟩
+      exact hloopless.not_isLoopAt e x (matchingSubgraph_isLoopAt.mpr ⟨e.2, he, hex⟩)
     · intro e he f hf hef x hinc
       obtain ⟨y, hey⟩ := hinc.1
       obtain ⟨z, hfz⟩ := hinc.2
-      have he' : (G.matchingSubgraph M).Inc e x := ⟨y, e.2, he, hey⟩
-      have hf' : (G.matchingSubgraph M).Inc f x := ⟨z, f.2, hf, hfz⟩
+      have he' : (G.matchingSubgraph M).Inc e x :=
+        matchingSubgraph_inc.mpr ⟨e.2, he, ⟨y, hey⟩⟩
+      have hf' : (G.matchingSubgraph M).Inc f x :=
+        matchingSubgraph_inc.mpr ⟨f.2, hf, ⟨z, hfz⟩⟩
       have hx : x ∈ V(G.matchingSubgraph M) := he'.vertex_mem
       exact hef (Subtype.ext ((hunique x hx).unique he' hf'))
 
