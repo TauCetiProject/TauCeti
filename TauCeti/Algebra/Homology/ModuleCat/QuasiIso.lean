@@ -58,7 +58,7 @@ theorem moduleCat_quasiIsoAt_iff (φ : K ⟶ L) {n p m : ι} (hp : c.prev n = p)
     rw [M.moduleCat_homologyπ_eq_zero_iff hp]
     refine exists_congr fun b ↦ ?_
     rw [← (M.moduleCat_iCycles_injective n).eq_iff, iCycles_moduleCatCyclesMk,
-      ← ModuleCat.comp_apply, toCycles_i]
+      moduleCat_iCycles_toCycles_apply]
   have hmap (x : K.X n) (hx : K.d n m x = 0) :
       homologyMap φ n (K.homologyπ n (K.moduleCatCyclesMk x m hm hx)) =
         L.homologyπ n (L.moduleCatCyclesMk (φ.f n x) m hm

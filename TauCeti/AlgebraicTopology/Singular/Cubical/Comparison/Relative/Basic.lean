@@ -205,7 +205,7 @@ theorem cyclesMap_cubicalCycleOfCube {P P' : TopPair.{u}} (f : P ⟶ P') {m : �
     HomologicalComplex.cyclesMap (cubicalChainComplexMap k f) (m + 1) (cubicalCycleOfCube k c hc) =
       cubicalCycleOfCube k ((Hom.fst f).hom.comp c) hfc := by
   apply (P'.cubicalChainComplex k).moduleCat_iCycles_injective
-  rw [← ModuleCat.comp_apply, HomologicalComplex.cyclesMap_i, ModuleCat.comp_apply]
+  rw [HomologicalComplex.moduleCat_iCycles_cyclesMap_apply]
   simp
 
 /-! ### The boundary of a relative cube -/
