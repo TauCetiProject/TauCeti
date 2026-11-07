@@ -42,6 +42,11 @@ function supported in `(0, ∞)` is `C^k`.
 
 [AIQ DKPS formalization](https://github.com/AIQ-Kitware/aiq-dkps-formalization),
 `ForTauCeti/Analysis/SpecialFunctions/Sqrt.lean`.
+
+`Real.add_sqrt_sq_add_pos`, `Real.hasDerivAt_add_sqrt_sq_add` and
+`Real.image_add_sqrt_sq_add_eq_Ioi` are extracted from, and their proofs adapted from, Jeremy
+Tan's [Mathlib PR #34397](https://github.com/leanprover-community/mathlib4/pull/34397),
+commit `376352b6e080265bc0380074baaf9aafa0b70a80`.
 -/
 
 public section
