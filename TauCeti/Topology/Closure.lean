@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Neighborhoods
+public import TauCeti.Data.Set.Lattice
 
 /-!
 # Covers by the interiors of a complement and a neighbourhood
@@ -52,12 +53,7 @@ interiors of its first `j₀ + 1` members lies in the intersection of all member
 theorem iInter_mem_range_succ_interior_subset_iInter
     (S : ℕ → Set X) (j₀ : ℕ) (hS : ∀ j, j₀ ≤ j → S j = S j₀) :
     ⋂ j ∈ Finset.range (j₀ + 1), interior (S j) ⊆ ⋂ j, S j := by
-  intro q hq
-  rw [Set.mem_iInter]
-  intro j
-  rcases le_total j j₀ with h | h
-  · exact interior_subset (Set.mem_iInter₂.mp hq j (Finset.mem_range.mpr (by omega)))
-  · rw [hS j h]
-    exact interior_subset (Set.mem_iInter₂.mp hq j₀ (Finset.mem_range.mpr (by omega)))
+  rw [← iInter_mem_range_succ_eq_iInter S j₀ hS]
+  exact iInter₂_mono fun j _ ↦ interior_subset
 
 end TauCeti
