@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Basic
 public import Mathlib.Data.Finset.Powerset
+public import Mathlib.Data.Set.Card
 import Mathlib.Basic.Finite.Prod
 public import TauCeti.AlgebraicTopology.SimplicialComplex.IsCone
 
@@ -55,6 +56,10 @@ simplex need not contain every vertex even when `K` does.
 * `PreAbstractSimplicialComplex.isCone_closedStar` / `isCone_deletion`: the closed star of
   a face is a cone with apex any vertex of that face, and deleting a face missing the apex of a
   cone leaves a cone with the same apex.
+* `PreAbstractSimplicialComplex.deletion_singleton_eq_of_forall_notMem`: deleting a vertex that
+  lies in no face changes nothing.
+* `PreAbstractSimplicialComplex.ncard_incident_deletion_lt`: deleting a face containing `v`
+  strictly shrinks the finite set of faces containing `v`.
 * monotonicity of all three constructions in `K`.
 -/
 
@@ -248,6 +253,28 @@ theorem deletion_mono (h : K ≤ L) : deletion K σ ≤ deletion L σ :=
   fun _ hρ => by
     obtain ⟨hρ, hσ⟩ := mem_deletion.mp hρ
     exact mem_deletion.mpr ⟨h hρ, hσ⟩
+
+omit [DecidableEq ι] in
+/-- If no face contains `v`, deleting `v` changes nothing. -/
+theorem deletion_singleton_eq_of_forall_notMem {v : ι}
+    (hempty : ∀ σ ∈ K, v ∉ σ) : deletion K {v} = K := by
+  apply SetLike.ext
+  intro σ
+  simp only [mem_deletion, Finset.singleton_subset_iff]
+  exact ⟨And.left, fun hσ => ⟨hσ, hempty σ hσ⟩⟩
+
+omit [DecidableEq ι] in
+/-- Deleting a face `σ` containing `v` strictly decreases the set of faces containing `v`. -/
+theorem ncard_incident_deletion_lt {v : ι} (hσ : σ ∈ K) (hvσ : v ∈ σ)
+    (hfin : {τ : Finset ι | τ ∈ K ∧ v ∈ τ}.Finite) :
+    {τ : Finset ι | τ ∈ deletion K σ ∧ v ∈ τ}.ncard < {τ : Finset ι | τ ∈ K ∧ v ∈ τ}.ncard := by
+  refine Set.ncard_lt_ncard (Set.ssubset_iff_subset_ne.mpr
+    ⟨fun _ h => ⟨deletion_le h.1, h.2⟩, ?_⟩) hfin
+  intro heq
+  have hσT : σ ∈ {τ : Finset ι | τ ∈ deletion K σ ∧ v ∈ τ} := by
+    rw [heq]
+    exact ⟨hσ, hvσ⟩
+  exact (mem_deletion.mp hσT.1).2 Finset.Subset.rfl
 
 variable {ρ : Finset ι}
 
