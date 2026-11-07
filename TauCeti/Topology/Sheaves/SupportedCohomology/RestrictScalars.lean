@@ -168,22 +168,20 @@ namespace RingEquiv
 
 variable {X : TopCat.{u}} {R A : Type u} [CommRing R] [CommRing A]
 
+/-- Coefficient change along a ring isomorphism is additive on sheaves. -/
+instance additive_sheafCompose_restrictScalars (e : A ≃+* R) :
+    (sheafCompose (Opens.grothendieckTopology X)
+      (ModuleCat.restrictScalars.{u} e.toRingHom)).Additive :=
+  Functor.additive_of_preserves_binary_products _
+
 /-- A ring isomorphism transports all sheaf-valued right derived supported-section functors.
 The isomorphism is natural in the coefficient sheaf. -/
 def rightDerivedSupportedSubmoduleRestrictScalarsIso (e : A ≃+* R) (S : Closeds X) (n : ℕ) :
     (Sheaf.supportedSubmoduleFunctor (R := R) S).rightDerived n ⋙
         sheafCompose (Opens.grothendieckTopology X) (ModuleCat.restrictScalars.{u} e.toRingHom) ≅
       sheafCompose (Opens.grothendieckTopology X) (ModuleCat.restrictScalars.{u} e.toRingHom) ⋙
-        (Sheaf.supportedSubmoduleFunctor (R := A) S).rightDerived n := by
-  have : (sheafCompose (Opens.grothendieckTopology X)
-      (ModuleCat.restrictScalars.{u} e.toRingHom)).IsEquivalence := by
-    simpa only [Equivalence.sheafCongrRight_functor,
-      ModuleCat.restrictScalarsEquivalenceOfRingEquiv_functor] using
-      ((ModuleCat.restrictScalarsEquivalenceOfRingEquiv.{u} e).sheafCongrRight
-        (Opens.grothendieckTopology X)).isEquivalence_functor
-  have := Functor.additive_of_preserves_binary_products
-    (sheafCompose (Opens.grothendieckTopology X) (ModuleCat.restrictScalars.{u} e.toRingHom))
-  exact Functor.rightDerivedCompIso _ _ _ _
+        (Sheaf.supportedSubmoduleFunctor (R := A) S).rightDerived n :=
+  Functor.rightDerivedCompIso _ _ _ _
     (e.toRingHom.supportedSubmoduleFunctorRestrictScalarsIso S) n
 
 /-- A ring isomorphism transports all module-valued right derived functors of supported
@@ -193,16 +191,8 @@ def rightDerivedSupportedSubmoduleSectionsRestrictScalarsIso (e : A ≃+* R)
     (Sheaf.supportedSubmoduleSectionsFunctor (R := R) S W).rightDerived n ⋙
         ModuleCat.restrictScalars.{u} e.toRingHom ≅
       sheafCompose (Opens.grothendieckTopology X) (ModuleCat.restrictScalars.{u} e.toRingHom) ⋙
-        (Sheaf.supportedSubmoduleSectionsFunctor (R := A) S W).rightDerived n := by
-  have : (sheafCompose (Opens.grothendieckTopology X)
-      (ModuleCat.restrictScalars.{u} e.toRingHom)).IsEquivalence := by
-    simpa only [Equivalence.sheafCongrRight_functor,
-      ModuleCat.restrictScalarsEquivalenceOfRingEquiv_functor] using
-      ((ModuleCat.restrictScalarsEquivalenceOfRingEquiv.{u} e).sheafCongrRight
-        (Opens.grothendieckTopology X)).isEquivalence_functor
-  have := Functor.additive_of_preserves_binary_products
-    (sheafCompose (Opens.grothendieckTopology X) (ModuleCat.restrictScalars.{u} e.toRingHom))
-  exact Functor.rightDerivedCompIso _ _ _ _
+        (Sheaf.supportedSubmoduleSectionsFunctor (R := A) S W).rightDerived n :=
+  Functor.rightDerivedCompIso _ _ _ _
     (e.toRingHom.supportedSubmoduleSectionsFunctorRestrictScalarsIso S W) n
 
 end RingEquiv
