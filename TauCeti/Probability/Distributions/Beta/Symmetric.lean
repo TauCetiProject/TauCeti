@@ -112,19 +112,7 @@ theorem integral_pow_mul_one_sub_sq_rpow_map_centered_betaMeasure (ha : 0 < a) (
   · simpa only [rpow_natCast, hn.pow_abs] using
       integral_abs_rpow_mul_one_sub_sq_rpow_map_centered_betaMeasure ha
         (by have := Nat.cast_nonneg (α := ℝ) n; linarith : (-1 : ℝ) < (n : ℝ)) hr
-  · let ν := (betaMeasure a a).map (fun x ↦ -1 + 2 * x)
-    have hneg : ν.map (fun z ↦ -z) = ν := by
-      calc
-        _ = ((betaMeasure a a).map (fun x ↦ 1 - x)).map (fun x ↦ -1 + 2 * x) := by
-          rw [Measure.map_map (by fun_prop) (by fun_prop)]
-          rw [Measure.map_map (by fun_prop) (by fun_prop)]
-          congr 1
-          funext x
-          dsimp
-          ring
-        _ = _ := by rw [betaMeasure_map_one_sub]
-    let _ : ν.IsNegInvariant := ⟨hneg⟩
-    exact integral_eq_zero_of_odd fun z ↦ by
+  · exact integral_eq_zero_of_odd fun z ↦ by
       simp [(Nat.not_even_iff_odd.1 hn).neg_pow, neg_mul]
 
 /-- Products of weighted natural powers of independent centered symmetric Beta variables
@@ -153,5 +141,22 @@ theorem integral_prod_pow_mul_one_sub_sq_rpow_map_centered_betaMeasure {ι : Typ
   rw [integral_fintype_prod_eq_prod (fun i (z : ℝ) ↦ z ^ n i * (1 - z ^ 2) ^ r i)]
   exact Finset.prod_congr rfl fun i _ ↦
     integral_pow_mul_one_sub_sq_rpow_map_centered_betaMeasure (ha i) (hr i) (n i)
+
+/-- Centered symmetric Beta variables lie in the closed unit cube almost surely. -/
+theorem ae_abs_le_one_pi_centered_betaMeasure {ι : Type*} [Fintype ι]
+    {a : ι → ℝ} (ha : ∀ ij, 0 < a ij) :
+    ∀ᵐ z ∂(Measure.pi fun ij ↦
+      (betaMeasure (a ij) (a ij)).map (fun x ↦ -1 + 2 * x)), ∀ ij, |z ij| ≤ 1 := by
+  have (ij : ι) : IsProbabilityMeasure (betaMeasure (a ij) (a ij)) :=
+    isProbabilityMeasureBeta (ha ij) (ha ij)
+  apply ae_all_iff.2
+  intro ij
+  apply (Measure.tendsto_eval_ae_ae (α := fun _ ↦ ℝ) (μ := fun ij ↦
+    (betaMeasure (a ij) (a ij)).map (fun x ↦ -1 + 2 * x)) (i := ij)).eventually
+      (p := fun x : ℝ ↦ |x| ≤ 1)
+  apply (ae_map_iff (by fun_prop) (by measurability)).2
+  filter_upwards [ae_mem_Ioo_betaMeasure (a ij) (a ij)] with x hx
+  rw [abs_le]
+  constructor <;> linarith [hx.1, hx.2]
 
 end TauCeti.Probability

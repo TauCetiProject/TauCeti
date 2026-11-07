@@ -205,4 +205,24 @@ theorem abs_integral_prod_sub_integral_prod_le_of_ae {ρ : Measure α} [IsProbab
   exact le_trans (norm_integral_le_of_norm_le_const (C := C)
     (by simpa only [Real.norm_eq_abs] using h)) (by simp)
 
+/-- The weighted upper truncated integral of `f ^ q` is measurable in the height. -/
+theorem measurable_rpow_mul_setLIntegral_lt {f : α → ℝ≥0∞} {c : ℝ} [SFinite μ]
+    (hf : Measurable f) (q s : ℝ) :
+    Measurable fun t : ℝ => ENNReal.ofReal (t ^ s) *
+      ∫⁻ x in {x | ENNReal.ofReal (c * t) < f x}, f x ^ q ∂μ :=
+  ((measurable_id.pow measurable_const).ennreal_ofReal).mul
+    (measurable_setLIntegral_of_measurableSet (R := fun t x => ENNReal.ofReal (c * t) < f x)
+      (measurableSet_lt ((measurable_fst.const_mul c).ennreal_ofReal) (hf.comp measurable_snd))
+      (hf.pow_const q).aemeasurable)
+
+/-- The weighted lower truncated integral of `f ^ q` is measurable in the height. -/
+theorem measurable_rpow_mul_setLIntegral_le {f : α → ℝ≥0∞} {c : ℝ} [SFinite μ]
+    (hf : Measurable f) (q s : ℝ) :
+    Measurable fun t : ℝ => ENNReal.ofReal (t ^ s) *
+      ∫⁻ x in {x | f x ≤ ENNReal.ofReal (c * t)}, f x ^ q ∂μ :=
+  ((measurable_id.pow measurable_const).ennreal_ofReal).mul
+    (measurable_setLIntegral_of_measurableSet (R := fun t x => f x ≤ ENNReal.ofReal (c * t))
+      (measurableSet_le (hf.comp measurable_snd) ((measurable_fst.const_mul c).ennreal_ofReal))
+      (hf.pow_const q).aemeasurable)
+
 end TauCeti
