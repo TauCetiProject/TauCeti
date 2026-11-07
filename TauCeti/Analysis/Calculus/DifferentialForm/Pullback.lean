@@ -17,6 +17,10 @@ changes be used only on their chart overlaps, without conditions on their total 
 The source set can have boundary: it need only have unique derivatives and accumulate at the
 point from its interior. The latter condition guarantees symmetry of the second derivative.
 
+Pulling a form back along a continuous linear equivalence `A` preserves regularity
+(`TauCeti.contDiffOn_pullback_continuousLinearEquiv`) and closedness
+(`TauCeti.extDeriv_pullback_continuousLinearEquiv_eq_zero`) on the preimage of the domain.
+
 ## References
 
 * John M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Chapter 14.
@@ -67,5 +71,40 @@ theorem extDerivWithin_pullback_of_preimage_mem_nhdsWithin
     hxc' ⟨hxs, hxu⟩ (fun y hy ↦ hut ⟨hy.2, hy.1⟩)
   rw [extDerivWithin_congr_set heq, fderivWithin_inter hux] at hlocal
   exact hpull.extDerivWithin_eq (by rw [fderivWithin_inter hux]) |>.symm.trans hlocal
+
+end TauCeti
+
+namespace TauCeti
+
+/-- Pulling a `C^r` form on `t` back along a continuous linear equivalence `A` gives a `C^r` form on
+`A ⁻¹' t`. -/
+theorem contDiffOn_pullback_continuousLinearEquiv {E F : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ} {r : WithTop ℕ∞}
+    {ω : F → F [⋀^Fin k]→L[ℝ] ℝ} {t : Set F} (hω : ContDiffOn ℝ r ω t) (A : E ≃L[ℝ] F) :
+    ContDiffOn ℝ r (fun x ↦ (ω (A x)).compContinuousLinearMap (A : E →L[ℝ] F)) (A ⁻¹' t) := by
+  have h := (ContinuousAlternatingMap.compContinuousLinearMapCLM (ι := Fin k) (F := ℝ)
+    (A : E →L[ℝ] F)).contDiff.comp_contDiffOn
+      (hω.comp A.contDiff.contDiffOn fun x (hx : x ∈ A ⁻¹' t) ↦ hx)
+  exact h.congr fun x _ ↦ (ContinuousAlternatingMap.compContinuousLinearMapCLM_apply _ _).symm
+
+/-- Pulling a closed `C^r` form (`r ≥ 1`) on an open set `t` back along a continuous linear
+equivalence `A` gives a closed form on `A ⁻¹' t`. -/
+theorem extDeriv_pullback_continuousLinearEquiv_eq_zero {E F : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ} {r : ℕ∞}
+    {ω : F → F [⋀^Fin k]→L[ℝ] ℝ} {t : Set F} (hr : 1 ≤ r) (ht : IsOpen t)
+    (hω : ContDiffOn ℝ r ω t) (hdω : ∀ x ∈ t, extDeriv ω x = 0) (A : E ≃L[ℝ] F) {x : E}
+    (hx : x ∈ A ⁻¹' t) :
+    extDeriv (fun x ↦ (ω (A x)).compContinuousLinearMap (A : E →L[ℝ] F)) x = 0 := by
+  have hr0 : (r : WithTop ℕ∞) ≠ 0 := by
+    have : (1 : WithTop ℕ∞) ≤ r := by exact_mod_cast hr
+    exact (lt_of_lt_of_le zero_lt_one this).ne'
+  have h : (fun x ↦ (ω (A x)).compContinuousLinearMap (A : E →L[ℝ] F)) =
+      fun x ↦ (ω (A x)).compContinuousLinearMap (fderiv ℝ A x) := by
+    funext x
+    rw [A.fderiv]
+  rw [h, extDeriv_pullback ((hω.differentiableOn hr0).differentiableAt (ht.mem_nhds hx))
+    (A.contDiff (n := ⊤)).contDiffAt le_top, hdω _ hx]
+  ext v
+  simp
 
 end TauCeti

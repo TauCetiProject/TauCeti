@@ -7,10 +7,10 @@ module
 
 public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 public import Mathlib.Geometry.Manifold.Diffeomorph
+import TauCeti.Analysis.Calculus.DifferentialForm.Pullback
 import TauCeti.Analysis.Calculus.DifferentialForm.Relative
 import TauCeti.Geometry.Symplectic.Darboux.Basic
 import TauCeti.Geometry.Symplectic.WittExtension
-import TauCeti.LinearAlgebra.BilinearMap.Multilinear
 
 /-!
 # The relative Darboux theorem in adapted coordinates
@@ -126,85 +126,6 @@ private theorem exists_diffeomorph_fix_zeroSection_of_eq
     (continuous_id.prodMk continuous_const).tendsto q₀
   filter_upwards [hi.eventually hfix] with q hq using hq (hβ0 q)
 
-/-- **Witt's extension theorem for the zero section.** If two alternating forms `a₀`, `a₁` on
-`E × N` are nondegenerate and have the same restriction to `E × {0}`, then some continuous linear
-automorphism `A` of `E × N` fixes `E × {0}` pointwise and carries `a₀` to `a₁`. -/
-private theorem exists_continuousLinearEquiv_fix_inl_of_compContinuousLinearMap_inl_eq
-    {a₀ a₁ : (E × N) [⋀^Fin 2]→L[ℝ] ℝ} (hnd₀ : ∀ v, (∀ w, a₀ ![v, w] = 0) → v = 0)
-    (hnd₁ : ∀ v, (∀ w, a₁ ![v, w] = 0) → v = 0)
-    (htan : a₁.compContinuousLinearMap (.inl ℝ E N) = a₀.compContinuousLinearMap (.inl ℝ E N)) :
-    ∃ A : (E × N) ≃L[ℝ] (E × N),
-      (∀ v w : E × N, a₁ ![A v, A w] = a₀ ![v, w]) ∧ ∀ q : E, A (q, 0) = (q, 0) := by
-  -- The values at `(q₀, 0)` as symplectic forms on `E × N`.
-  let σ (a : (E × N) [⋀^Fin 2]→L[ℝ] ℝ) (ha : ∀ v, (∀ w, a ![v, w] = 0) → v = 0) :
-      SymplecticForm (E × N) :=
-    { toBilinForm := a.toAlternatingMap.toMultilinearMap.toBilinMap
-      isAlt := a.toAlternatingMap.isAlt_toBilinMap
-      nondegenerate :=
-        (LinearMap.IsRefl.nondegenerate_iff_separatingLeft
-          (LinearMap.BilinForm.IsAlt.isRefl a.toAlternatingMap.isAlt_toBilinMap)).2
-          fun v hv ↦ ha v fun w ↦ by simpa using hv w }
-  have hσ (a) (ha) (v w : E × N) : σ a ha v w = a ![v, w] :=
-    MultilinearMap.toBilinMap_apply _ v w
-  -- Witt's extension theorem: the identity of the zero section extends to a linear
-  -- symplectomorphism `A` from `ω₀ (q₀, 0)` to `ω₁ (q₀, 0)`.
-  let S : Submodule ℝ (E × N) := LinearMap.range (LinearMap.inl ℝ E N)
-  obtain ⟨e, he, heS⟩ := SymplecticForm.exists_isSymplectomorphism_extend
-    (σ _ hnd₀) (σ _ hnd₁) rfl S.subtype S.injective_subtype fun x y ↦ by
-      obtain ⟨a, ha⟩ := x.2
-      obtain ⟨b, hb⟩ := y.2
-      have h := congrArg (fun c ↦ c ![a, b]) htan
-      simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply] at h
-      simp only [hσ, Submodule.coe_subtype, ← ha, ← hb]
-      convert h using 2 <;> ext i <;> fin_cases i <;> rfl
-  refine ⟨e.toContinuousLinearEquiv, fun v w ↦ ?_, fun q ↦ heS ⟨(q, 0), q, rfl⟩⟩
-  exact ((hσ _ hnd₁ (e v) (e w)).symm.trans (he.apply v w)).trans (hσ _ hnd₀ v w)
-
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ N] in
-/-- Pulling the second form back along a continuous linear automorphism that fixes the zero
-section pointwise preserves smoothness, closedness and the pullback to the zero section. -/
-private theorem pullback_hypotheses_of_fix_inl
-    {ω₀ ω₁ : E × N → (E × N) [⋀^Fin 2]→L[ℝ] ℝ} {W : Set (E × N)} {r : ℕ∞}
-    (hr : 1 ≤ r) (hW : IsOpen W) (hω₁ : ContDiffOn ℝ r ω₁ W)
-    (hdω₁ : ∀ x ∈ W, extDeriv ω₁ x = 0)
-    (htan : ∀ q : E, (q, (0 : N)) ∈ W →
-      (ω₁ (q, 0)).compContinuousLinearMap (.inl ℝ E N) =
-        (ω₀ (q, 0)).compContinuousLinearMap (.inl ℝ E N))
-    (A : (E × N) ≃L[ℝ] (E × N)) (hAinl : ∀ q : E, A (q, 0) = (q, 0)) :
-    ContDiffOn ℝ r (fun x ↦ (ω₁ (A x)).compContinuousLinearMap (A : (E × N) →L[ℝ] (E × N)))
-        (W ∩ A ⁻¹' W) ∧
-      (∀ x ∈ W ∩ A ⁻¹' W, extDeriv
-        (fun x ↦ (ω₁ (A x)).compContinuousLinearMap (A : (E × N) →L[ℝ] (E × N))) x = 0) ∧
-      ∀ q : E, (q, (0 : N)) ∈ W ∩ A ⁻¹' W →
-        ((ω₁ (A (q, 0))).compContinuousLinearMap
-            (A : (E × N) →L[ℝ] (E × N))).compContinuousLinearMap (.inl ℝ E N) =
-          (ω₀ (q, 0)).compContinuousLinearMap (.inl ℝ E N) := by
-  have hr0 : (r : WithTop ℕ∞) ≠ 0 := by
-    have : (1 : WithTop ℕ∞) ≤ r := by exact_mod_cast hr
-    exact (lt_of_lt_of_le zero_lt_one this).ne'
-  let ω₁' : E × N → (E × N) [⋀^Fin 2]→L[ℝ] ℝ :=
-    fun x ↦ (ω₁ (A x)).compContinuousLinearMap (A : (E × N) →L[ℝ] (E × N))
-  have hω₁'_eq : ω₁' = fun x ↦ (ω₁ (A x)).compContinuousLinearMap (fderiv ℝ A x) := by
-    funext x
-    rw [A.fderiv]
-  refine ⟨?_, fun x hx ↦ ?_, fun q hq ↦ ?_⟩
-  · have h := (ContinuousAlternatingMap.compContinuousLinearMapCLM (ι := Fin 2) (F := ℝ)
-      (A : (E × N) →L[ℝ] (E × N))).contDiff.comp_contDiffOn
-      (hω₁.comp A.contDiff.contDiffOn fun x (hx : x ∈ W ∩ A ⁻¹' W) ↦ hx.2)
-    exact h.congr fun x _ ↦
-      (ContinuousAlternatingMap.compContinuousLinearMapCLM_apply _ _).symm
-  · change extDeriv ω₁' x = 0
-    rw [hω₁'_eq, extDeriv_pullback ((hω₁.differentiableOn hr0).differentiableAt (hW.mem_nhds hx.2))
-      (A.contDiff (n := ⊤)).contDiffAt le_top, hdω₁ _ hx.2]
-    ext v
-    simp
-  · rw [← htan q hq.1]
-    ext v
-    simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply, hAinl]
-    congr 1
-    funext i
-    simp [hAinl]
-
 /-- **The relative Darboux theorem** in adapted coordinates. Let `ω₀`, `ω₁` be closed `C^r`
 two-forms (`r ≥ 1`) on an open subset `W` of `E × N` containing `(q₀, 0)`, both nondegenerate at
 `(q₀, 0)`, with the same pullback to the zero section `E × {0}`. Then some `C^r` diffeomorphism `ψ`
@@ -230,7 +151,16 @@ theorem exists_diffeomorph_fix_zeroSection_eventually_compContinuousLinearMap_fd
   -- The pulled-back form `A^* ω₁` satisfies the hypotheses of the relative Moser step.
   let ω₁' : E × N → (E × N) [⋀^Fin 2]→L[ℝ] ℝ :=
     fun x ↦ (ω₁ (A x)).compContinuousLinearMap (A : (E × N) →L[ℝ] (E × N))
-  obtain ⟨hω₁', hdω₁', htan'⟩ := pullback_hypotheses_of_fix_inl hr hW hω₁ hdω₁ htan A hAinl
+  have hω₁' : ContDiffOn ℝ r ω₁' (W ∩ A ⁻¹' W) :=
+    (contDiffOn_pullback_continuousLinearEquiv hω₁ A).mono inter_subset_right
+  have hdω₁' : ∀ x ∈ W ∩ A ⁻¹' W, extDeriv ω₁' x = 0 := fun x hx ↦
+    extDeriv_pullback_continuousLinearEquiv_eq_zero hr hW hω₁ hdω₁ A hx.2
+  have htan' : ∀ q : E, (q, (0 : N)) ∈ W ∩ A ⁻¹' W →
+      (ω₁' (q, 0)).compContinuousLinearMap (.inl ℝ E N) =
+        (ω₀ (q, 0)).compContinuousLinearMap (.inl ℝ E N) := fun q hq ↦ by
+    rw [← htan q hq.1]
+    exact ContinuousAlternatingMap.compContinuousLinearMap_comp_inl_of_apply_inl_eq
+      (a := ω₁ (A (q, 0))) hAinl |>.trans (by rw [hAinl])
   have hW' : IsOpen (W ∩ A ⁻¹' W) := hW.inter (hW.preimage A.continuous)
   have hq₀' : (q₀, (0 : N)) ∈ W ∩ A ⁻¹' W := ⟨hq₀, by rw [mem_preimage, hAinl]; exact hq₀⟩
   have heq' : ω₁' (q₀, 0) = ω₀ (q₀, 0) := by
@@ -260,6 +190,6 @@ theorem exists_diffeomorph_fix_zeroSection_eventually_compContinuousLinearMap_fd
   · filter_upwards [hψ] with x hx
     rw [← hx, hΦ, A.comp_fderiv]
     ext v
-    simp [Function.comp_def]
+    simp [ω₁', Function.comp_def]
 
 end TauCeti
