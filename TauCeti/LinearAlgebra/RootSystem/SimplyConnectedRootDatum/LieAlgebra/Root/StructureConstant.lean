@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Vector
+import TauCeti.LinearAlgebra.RootSystem.InvariantForm.RootString
 
 /-!
 # The structure constants of the pinned Chevalley system
@@ -42,6 +43,8 @@ to the Chevalley commutator formula for the root subgroups `x_α(u) = Σₙ uⁿ
   `TauCeti.DynkinType.eq_structureConstant_iff`: the defining bracket equation and its uniqueness.
 * `TauCeti.DynkinType.structureConstant_eq_natCast_or_eq_neg_natCast`: `N_{α,β} = ±(r + 1)`.
 * `TauCeti.DynkinType.chainBotCoeff_add_one_dvd_structureConstant`: `r + 1` divides `N_{α,β}`.
+* `TauCeti.DynkinType.structureConstant_eq_two_or_neg_two_of_pairingIn_eq_zero`:
+  `N_{α,β} = ±2` for orthogonal roots whose sum is a root.
 * `TauCeti.DynkinType.structureConstant_ne_zero` and `TauCeti.DynkinType.structureConstant_eq_zero`:
   the constant vanishes exactly when `α + β` is not a root.
 * `TauCeti.DynkinType.structureConstant_skew`: `N_{β,α} = -N_{α,β}`.
@@ -213,6 +216,17 @@ its reflection `reflectionPerm α α` in itself. It holds because the Chevalley 
     rintro ⟨δ, hδ⟩
     refine h ⟨(t.simplyConnectedRootDatum ht).reflectionPerm δ δ, ?_⟩
     rw [hneg, hδ, hneg, hneg, neg_add, neg_neg, neg_neg]
+
+/-- The structure constant of orthogonal roots whose sum is a root is two up to sign. -/
+theorem structureConstant_eq_two_or_neg_two_of_pairingIn_eq_zero {α β : Fin t.numRoots}
+    (hsum : (t.simplyConnectedRootDatum ht).root α +
+      (t.simplyConnectedRootDatum ht).root β ∈ Set.range (t.simplyConnectedRootDatum ht).root)
+    (horth : (t.simplyConnectedRootDatum ht).pairingIn ℤ β α = 0) :
+    t.structureConstant ht α β = 2 ∨ t.structureConstant ht α β = -2 := by
+  have := t.isReduced_simplyConnectedRootDatum ht
+  have hbot := (RootPairing.chainBotCoeff_eq_one_and_chainTopCoeff_eq_one_of_pairingIn_eq_zero
+    (t.simplyConnectedRootDatum ht) hsum horth).1
+  simpa [hbot] using structureConstant_eq_natCast_or_eq_neg_natCast hsum
 
 /-- **Brackets at non-roots vanish.** If `α + β` is neither a root of the pinned datum nor zero,
 then `⁅e_α, e_β⁆ = 0`. -/

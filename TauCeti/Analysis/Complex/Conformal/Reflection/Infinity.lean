@@ -132,7 +132,7 @@ a real segment through `0`, holomorphic and upper half-plane valued above it, an
 `z * f''(z) / f'(z) → -2` as `z` tends to infinity in the upper half-plane. -/
 theorem tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_neg_inv
     {f : ℂ → ℂ} {q b : ℂ} {r : ℝ}
-    (hr : 0 < r) (hb : b ≠ 0)
+    (hr : 0 < r)
     (hgf : EqOn g (fun w => (f (-w⁻¹) - q) / b)
       (Metric.ball 0 r ∩ upperHalfPlaneSet))
     (hcont : ContinuousOn g (Metric.ball 0 r ∩ {z : ℂ | 0 ≤ z.im}))
@@ -142,6 +142,20 @@ theorem tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_neg_inv
     (hinj : InjOn g (Metric.ball 0 r ∩ {z : ℂ | 0 ≤ z.im})) :
     Tendsto (fun z : ℂ => z * logDeriv (deriv f) z)
       (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 (-2)) := by
+  -- `b ≠ 0`: otherwise `g` vanishes on the nonempty set `ball 0 r ∩ upperHalfPlaneSet`,
+  -- while `hupper` sends that set into the upper half-plane.
+  have hb : b ≠ 0 := by
+    rintro rfl
+    have hmem : ((r / 2 : ℝ) : ℂ) * Complex.I ∈ Metric.ball (0 : ℂ) r ∩ upperHalfPlaneSet := by
+      have hr2 : 0 < r / 2 := half_pos hr
+      refine ⟨?_, ?_⟩
+      · simp only [Metric.mem_ball, dist_zero_right, norm_mul, Complex.norm_real, Complex.norm_I,
+          mul_one, Real.norm_eq_abs, abs_of_pos hr2]
+        linarith
+      · simpa [upperHalfPlaneSet] using hr2
+    have h0 := hupper hmem
+    rw [hgf hmem] at h0
+    simp [upperHalfPlaneSet] at h0
   have hball : MapsTo (starRingEnd ℂ) (Metric.ball (0 : ℂ) r) (Metric.ball 0 r) := fun z hz => by
     rw [Metric.mem_ball, ← map_zero (starRingEnd ℂ), Complex.dist_conj_conj]
     exact hz
@@ -178,7 +192,7 @@ This is the form the Schwarz--Christoffel converse uses: `φ` is holomorphic off
 prevertices, so it is automatically continuous near infinity, and the hypotheses on `g` say that
 the point at infinity is an interior point of a side of the polygon. -/
 theorem tendsto_zero_cobounded_of_eqOn_logDeriv_deriv {f φ : ℂ → ℂ} {q b : ℂ} {r : ℝ}
-    (hr : 0 < r) (hb : b ≠ 0)
+    (hr : 0 < r)
     (hgf : EqOn g (fun w => (f (-w⁻¹) - q) / b)
       (Metric.ball 0 r ∩ upperHalfPlaneSet))
     (hcont : ContinuousOn g (Metric.ball 0 r ∩ {z : ℂ | 0 ≤ z.im}))
@@ -193,7 +207,7 @@ theorem tendsto_zero_cobounded_of_eqOn_logDeriv_deriv {f φ : ℂ → ℂ} {q b 
     Tendsto φ (cobounded ℂ) (𝓝 0) := by
   exact tendsto_zero_cobounded_of_tendsto_mul_upperHalfPlaneSet
     (tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_neg_inv
-      hr hb hgf hcont hholo hreal hupper hinj) hφcont hφconj hφf
+      hr hgf hcont hholo hreal hupper hinj) hφcont hφconj hφf
 
 /-- **The pre-Schwarzian of a map with a vertex at infinity.**  Read the map `f` of the upper
 half-plane in the coordinate `w ↦ -1 / w` at infinity and invert the target about `c` by

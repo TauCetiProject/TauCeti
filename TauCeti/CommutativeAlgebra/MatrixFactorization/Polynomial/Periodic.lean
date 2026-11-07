@@ -135,10 +135,10 @@ theorem powerXPeriodicComplex_d_one_zero (hi : i ≤ n) :
     (powerXPeriodicComplex R hi).d 1 0 = rootPowHom R n (n - i) := rfl
 
 /-- The image of multiplication by `x ^ (n - i)` is the annihilator of `x ^ i`. -/
-private theorem range_rootPowHom_sub_eq_ker (hi : i ≤ n) :
+private theorem range_rootPowHom_sub_eq_ker :
     LinearMap.range (rootPowHom R n (n - i)).hom = LinearMap.ker (rootPowHom R n i).hom := by
   ext a
-  simp [rootPowHom, AdjoinRoot.root_X_pow_pow_mul_eq_zero_iff hi, dvd_def, eq_comm]
+  simp [rootPowHom, AdjoinRoot.root_X_pow_pow_mul_eq_zero_iff, dvd_def, eq_comm]
 
 /-- The two-periodic complex with alternating maps `x ^ i` and `x ^ (n - i)` is exact in every
 degree. No field or positivity hypothesis is needed. -/
@@ -156,14 +156,14 @@ theorem powerXPeriodicComplex_acyclic (hi : i ≤ n) :
     -- `rootPowHom R n i` by the `rfl` lemmas `powerXPeriodicComplex_d_one_zero`/`_d_zero_one`;
     -- rewriting with them is blocked because the submodule's carrier `(sc' 1 0 1).X₂` is
     -- not syntactically the regular module.
-    exact range_rootPowHom_sub_eq_ker R hi
+    exact range_rootPowHom_sub_eq_ker R
   · rw [HomologicalComplex.exactAt_iff' _ 0 1 0
         ((ComplexShape.up (ZMod 2)).prev_eq'
           (ComplexShape.up_mk 0 1 (by decide)))
         ((ComplexShape.up (ZMod 2)).next_eq'
           (ComplexShape.up_mk 1 0 (by decide))),
       ShortComplex.moduleCat_exact_iff_range_eq_ker]
-    have h := range_rootPowHom_sub_eq_ker R (Nat.sub_le n i)
+    have h := range_rootPowHom_sub_eq_ker R (n := n) (i := n - i)
     rw [Nat.sub_sub_self hi] at h
     -- As in the even case, the maps of `sc' 0 1 0` are `rootPowHom R n i` and
     -- `rootPowHom R n (n - i)` by `rfl`.
