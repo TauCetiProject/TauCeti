@@ -106,7 +106,7 @@ theorem hasDerivWithinAt_realOperator_apply_realOperator
     HasDerivWithinAt (fun u : ℝ => S.realOperator (f u) (T.realOperator u x))
       (S.realOperator (f s) a + c) (Set.Ici s) s :=
   T.hasDerivWithinAt_apply_realOperator_of_tendsto (fun u => S.realOperator (f u)) x hs
-    (S.tendsto_realOperator_apply hf hf0 (ge_of_tendsto hf hf0) hquot) hslope
+    (S.tendsto_realOperator_apply hf hf0 hquot) hslope
 
 /-- The interpolation `u ↦ S (t - u) (T u x)` between the two semigroups has vanishing right
 derivative at every `u ∈ [0, t)`.
