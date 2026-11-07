@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Primitive
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Quadratic
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Image
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Power
+import TauCeti.Analysis.Normed.Field.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Sector
 
 /-!
@@ -69,24 +70,6 @@ private theorem exists_norm_bound_schwarzChristoffelPrimitive_on_bounded_part
     (differentiableOn_schwarzChristoffelPrimitive a e z₀).continuousOn z hz] at h
   exact h
 
-/-- A uniform bound on the ratio `F / z ^ β` near `β⁻¹` is a relative error bound for the
-leading power `z ^ β / β`. -/
-private theorem norm_sub_cpow_div_le_of_dist_div_cpow_le {F z : ℂ} {β η : ℝ} (hβ : 0 < β)
-    (hpow : z ^ (β : ℂ) ≠ 0) (hz : dist (F / z ^ (β : ℂ)) (β : ℂ)⁻¹ ≤ η / β) :
-    ‖F - z ^ (β : ℂ) / (β : ℂ)‖ ≤ η * ‖z ^ (β : ℂ) / (β : ℂ)‖ := by
-  have hβnorm : ‖(β : ℂ)‖ = β := by simp [abs_of_pos hβ]
-  have hmul := mul_le_mul_of_nonneg_right hz (norm_nonneg (z ^ (β : ℂ)))
-  rw [dist_eq_norm] at hmul
-  have heq : (F / z ^ (β : ℂ) - (β : ℂ)⁻¹) * z ^ (β : ℂ) = F - z ^ (β : ℂ) / (β : ℂ) := by
-    have : (β : ℂ) ≠ 0 := by exact_mod_cast hβ.ne'
-    field_simp
-  rw [← norm_mul, heq] at hmul
-  calc
-    ‖F - z ^ (β : ℂ) / (β : ℂ)‖ ≤ η / β * ‖z ^ (β : ℂ)‖ := hmul
-    _ = η * ‖z ^ (β : ℂ) / (β : ℂ)‖ := by
-      rw [norm_div, hβnorm]
-      ring
-
 /-- In the power regime with opening less than `2π`, a rotation of the primitive eventually
 lies in a closed cone strictly smaller than the full plane. -/
 private theorem exists_eventually_cone_schwarzChristoffelPrimitive
@@ -123,7 +106,8 @@ private theorem exists_eventually_cone_schwarzChristoffelPrimitive
   let F : ℂ := schwarzChristoffelPrimitive a e z₀ z
   have hz0 : z ≠ 0 := fun h => by simp [h] at hzH
   have hpow0 : z ^ (β : ℂ) ≠ 0 := cpow_ne_zero_iff.mpr (Or.inl hz0)
-  have herror : ‖F - P‖ ≤ η * ‖P‖ := norm_sub_cpow_div_le_of_dist_div_cpow_le hβ hpow0 hz
+  have herror : ‖F - P‖ ≤ η * ‖P‖ := norm_sub_div_le_of_dist_div_le (c := (β : ℂ)) hpow0
+    (by rwa [Complex.norm_real, Real.norm_of_nonneg hβ.le])
   have hcone : c * ‖P‖ ≤ (u * P).re := by
     have h : c * ‖z ^ (β : ℂ)‖ ≤ (u * z ^ (β : ℂ)).re :=
       cos_mul_norm_le_re_exp_mul_cpow hβ hβhigh hzH.le
