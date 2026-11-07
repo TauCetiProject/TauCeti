@@ -118,4 +118,16 @@ theorem exists_pos_cosh_mul_sin_mul_sin_eq {α β γ : ℝ} (hα : 0 < α) (hβ 
   refine ⟨arcosh _, arcosh_pos hκ, ?_⟩
   rw [cosh_arcosh hκ.le, div_mul_cancel₀ _ hs.ne']
 
+/-- **The parameters of the hyperbolic law of cosines.** Positive angles `α, β` and `γ ≥ 0` with
+`α + β + γ < π` determine `K` with `K sin α sin β = cos α cos β + cos γ` and `t > 1` with
+`t + t⁻¹ = 2 K`, that is `t ^ 2 + 1 = 2 K t`. Here `t` is the exponential of the positive number
+of `exists_pos_cosh_mul_sin_mul_sin_eq`. -/
+theorem exists_cosine_rule_parameter {α β γ : ℝ} (hα : 0 < α) (hβ : 0 < β) (hγ : 0 ≤ γ)
+    (h : α + β + γ < π) :
+    ∃ K t : ℝ, K * (sin α * sin β) = cos α * cos β + cos γ ∧ 1 < t ∧ t ^ 2 + 1 = 2 * K * t := by
+  obtain ⟨d, hd, hK⟩ := exists_pos_cosh_mul_sin_mul_sin_eq hα hβ hγ h
+  refine ⟨cosh d, exp d, hK, Real.one_lt_exp_iff.2 hd, ?_⟩
+  rw [cosh_eq, exp_neg]
+  field_simp
+
 end TauCeti
