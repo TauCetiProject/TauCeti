@@ -11,6 +11,8 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RealPeriod
 -- Proof-only: `[n]` is `n • id`, it pulls `ω` back to `n ω`, and `deg (n • f) = n² deg f`
 -- (`MulByInt.Separability` re-exports `MulByInt.Hom`).
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Separability
+-- Proof-only: `E[n]` is finite for `n ≠ 0`.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.KernelCard
 
 /-!
 # The cokernel of an isogeny on real points
@@ -116,20 +118,15 @@ theorem degree_mul_index_range_mul_index_range_dual_eq_card_ker_mul_card_ker_dua
       Nat.card f.pointMapHom.ker * Nat.card f.dual.pointMapHom.ker := by
   have hn : f.degree ≠ 0 := f.degree_eq_zero_iff.not.mpr hf
   have hidx := W₁.mul_index_range_nsmul_eq_natCard_torsionBy hn
-  -- `E₁(ℝ)[n]` is finite, as the kernel of the nonzero morphism `n • id`
-  have hnid : (f.degree • id W₁.toAffine).pointMapHom = nsmulAddMonoidHom f.degree := by
-    ext P
-    rw [pointMapHom_apply, nsmul_pointMap, id_pointMap, nsmulAddMonoidHom_apply]
-  have := (f.degree • id W₁.toAffine).finite_ker_pointMapHom fun h ↦ by
-    simpa [hn] using congrArg degree h
   have hker : Nat.card (nsmulAddMonoidHom (α := W₁.toAffine.Point) f.degree).ker =
       Nat.card (Submodule.torsionBy ℤ W₁.toAffine.Point f.degree) :=
     Nat.card_congr (Equiv.subtypeEquivRight fun P ↦ by
       rw [AddMonoidHom.mem_ker, nsmulAddMonoidHom_apply, Submodule.mem_torsionBy_iff,
         natCast_zsmul])
-  have hT : Nat.card (Submodule.torsionBy ℤ W₁.toAffine.Point f.degree) ≠ 0 := by
-    rw [← hker, ← hnid]
-    exact Nat.card_pos.ne'
+  have : Finite (Submodule.torsionBy ℤ W₁.toAffine.Point f.degree) :=
+    W₁.finite_torsionBy (Int.natCast_ne_zero.mpr hn)
+  have hT : Nat.card (Submodule.torsionBy ℤ W₁.toAffine.Point f.degree) ≠ 0 :=
+    Nat.card_pos.ne'
   -- `z(f̂) · z(f) = z([n])`, and `z([n]) = 1 / n`
   have h := f.index_range_nsmul_mul_card_ker_mul_card_ker_dual
   rw [hker] at h
