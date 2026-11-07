@@ -15,7 +15,8 @@ For the group-like coproduct on a monoid algebra, the left and right cointegrals
 are exactly the scalar multiples of the coefficient functional at the identity.
 In particular there is a nonzero cointegral over every nontrivial coefficient
 semiring, even for an infinite monoid. Over a nontrivial coefficient semiring, the
-counit is not a cointegral when the monoid has a nonidentity element.
+counit is not a cointegral when the monoid has a nonidentity element. These results
+only require a distinguished element `1` on the indexing type, not multiplication.
 
 ## References
 
@@ -28,7 +29,7 @@ open scoped TensorProduct
 
 namespace TauCeti
 
-variable {k M : Type*} [CommSemiring k] [Monoid M]
+variable {k M : Type*} [CommSemiring k] [One M]
 
 /-- On a monoid algebra, the right-cointegral equation can be checked on the
 canonical monoid basis. -/
@@ -50,7 +51,7 @@ theorem isRightCointegral_monoidAlgebra_iff (φ : Module.Dual k (MonoidAlgebra k
     intro h
     exact congrArg (fun f : MonoidAlgebra k M →ₗ[k] MonoidAlgebra k M => f h) heq
 
-/-- The cointegral line is spanned by the coefficient functional at the identity. -/
+/-- The right-cointegral line is spanned by the coefficient functional at the identity. -/
 theorem isRightCointegral_monoidAlgebra_iff_eq_smul
     (φ : Module.Dual k (MonoidAlgebra k M)) :
     IsRightCointegral φ ↔ φ = φ 1 • (MonoidAlgebra.basis M k).coord 1 := by
@@ -80,7 +81,20 @@ theorem isRightCointegral_monoidAlgebra_coord_one :
   rw [isRightCointegral_monoidAlgebra_iff_eq_smul]
   simp [MonoidAlgebra.one_def, ← MonoidAlgebra.basis_apply]
 
-/-- The counit of a nontrivial monoid algebra is not a right cointegral. -/
+/-- The left-cointegral line is spanned by the coefficient functional at the identity. -/
+theorem isLeftCointegral_monoidAlgebra_iff_eq_smul
+    (φ : Module.Dual k (MonoidAlgebra k M)) :
+    IsLeftCointegral φ ↔ φ = φ 1 • (MonoidAlgebra.basis M k).coord 1 := by
+  rw [isLeftCointegral_iff_isRightCointegral, isRightCointegral_monoidAlgebra_iff_eq_smul]
+
+/-- The coefficient at the identity is a left cointegral, with no finiteness assumption. -/
+theorem isLeftCointegral_monoidAlgebra_coord_one :
+    IsLeftCointegral ((MonoidAlgebra.basis M k).coord 1) := by
+  rw [isLeftCointegral_iff_isRightCointegral]
+  exact isRightCointegral_monoidAlgebra_coord_one
+
+/-- Over a nontrivial coefficient semiring, the counit is not a right cointegral when the
+indexing type has an element distinct from `1`. -/
 theorem not_isRightCointegral_monoidAlgebra_counit [Nontrivial k]
     {m : M} (hm : m ≠ 1) :
     ¬ IsRightCointegral (Coalgebra.counit (R := k) (A := MonoidAlgebra k M)) := by
@@ -88,5 +102,13 @@ theorem not_isRightCointegral_monoidAlgebra_counit [Nontrivial k]
   have heq := (isRightCointegral_monoidAlgebra_iff _).mp hφ m
   have hcoeff := congrArg (fun x : MonoidAlgebra k M => x.coeff m) heq
   simp [MonoidAlgebra.one_def, hm] at hcoeff
+
+/-- Over a nontrivial coefficient semiring, the counit is not a left cointegral when the
+indexing type has an element distinct from `1`. -/
+theorem not_isLeftCointegral_monoidAlgebra_counit [Nontrivial k]
+    {m : M} (hm : m ≠ 1) :
+    ¬ IsLeftCointegral (Coalgebra.counit (R := k) (A := MonoidAlgebra k M)) := by
+  rw [isLeftCointegral_iff_isRightCointegral]
+  exact not_isRightCointegral_monoidAlgebra_counit hm
 
 end TauCeti

@@ -144,16 +144,16 @@ theorem IsRightCointegral.convMul {φ : Module.Dual k H} (hφ : IsRightCointegra
     (ψ : ConvolutionDual k H) :
     WithConv.toConv φ * ψ = ψ.ofConv 1 • WithConv.toConv φ := by
   ext h
-  have heq := congrArg ψ.ofConv (hφ h)
-  simpa [← (ℛ k h).eq, (ℛ k h).convMul_apply, mul_comm] using heq
+  rw [ConvolutionDual.mul_apply_eq_rTensor, WithConv.ofConv_toConv, hφ h]
+  simp [mul_comm]
 
 /-- A left cointegral satisfies the left integral equation in the convolution algebra. -/
 theorem IsLeftCointegral.convMul {φ : Module.Dual k H} (hφ : IsLeftCointegral φ)
     (ψ : ConvolutionDual k H) :
     ψ * WithConv.toConv φ = ψ.ofConv 1 • WithConv.toConv φ := by
   ext h
-  have heq := congrArg ψ.ofConv (hφ h)
-  simpa [← (ℛ k h).eq, (ℛ k h).convMul_apply, mul_comm] using heq
+  rw [ConvolutionDual.mul_apply_eq_lTensor, WithConv.ofConv_toConv, hφ h]
+  simp [mul_comm]
 
 /-- For a projective underlying module, the right convolution integral equation
 characterizes right cointegrals. Finite generation is not needed. -/
@@ -164,7 +164,8 @@ theorem isRightCointegral_iff_convMul [Module.Projective k H] (φ : Module.Dual 
   apply Module.eval_apply_injective k
   ext ψ
   have heq := congrArg (fun f : ConvolutionDual k H => f h) (hφ (WithConv.toConv ψ))
-  simpa [← (ℛ k h).eq, (ℛ k h).convMul_apply, mul_comm] using heq
+  rw [ConvolutionDual.mul_apply_eq_rTensor] at heq
+  simpa [mul_comm] using heq
 
 /-- For a projective underlying module, the left convolution integral equation
 characterizes left cointegrals. Finite generation is not needed. -/
@@ -175,6 +176,7 @@ theorem isLeftCointegral_iff_convMul [Module.Projective k H] (φ : Module.Dual k
   apply Module.eval_apply_injective k
   ext ψ
   have heq := congrArg (fun f : ConvolutionDual k H => f h) (hφ (WithConv.toConv ψ))
-  simpa [← (ℛ k h).eq, (ℛ k h).convMul_apply, mul_comm] using heq
+  rw [ConvolutionDual.mul_apply_eq_lTensor] at heq
+  simpa [mul_comm] using heq
 
 end TauCeti
