@@ -18,7 +18,7 @@ short–long pair. In particular the mixed term has coefficients `(3, 2)` in the
 orientation and `(2, 3)` in the reverse orientation.
 
 `g2PositiveRootSupport` records these sets using the existing root, length and pairing tables.
-`g2_mem_positiveRootSupport_iff` identifies them with the actual positive combinations for
+`mem_g2PositiveRootSupport_iff` identifies them with the actual positive combinations for
 arbitrary natural coefficients. Thus the finite sets can index a product without overlooking
 higher root terms. No group commutator identity is asserted here.
 
@@ -42,7 +42,7 @@ open Set
 root datum. The first coordinate multiplies the first root. An absent root sum gives empty
 support; a short–long pair has four terms, two short roots with short sum have three, and the
 remaining root sums give one term. Correctness for independent roots is
-`g2_mem_positiveRootSupport_iff`. -/
+`mem_g2PositiveRootSupport_iff`. -/
 def g2PositiveRootSupport (i j : Fin 12) : Finset (ℕ × ℕ) :=
   if g2Root i + g2Root j ∈ range g2Root then
     if g2Length i = 1 ∧ g2Length j = 3 then {(1, 1), (2, 1), (3, 1), (3, 2)}
@@ -123,7 +123,7 @@ private theorem g2PositiveRootSupport_complete_table (i j k : Fin 12) :
 /-- The displayed finite support is exactly the set of strictly positive combinations of an
 independent pair that are roots. Both orientations, including their mixed highest-root term,
 are included. Coefficients are unrestricted natural numbers. -/
-theorem g2_mem_positiveRootSupport_iff (i j : Fin 12)
+theorem mem_g2PositiveRootSupport_iff (i j : Fin 12)
     (h : LinearIndependent ℤ ![g2Root i, g2Root j]) (m n : ℕ) :
     (m, n) ∈ g2PositiveRootSupport i j ↔
       0 < m ∧ 0 < n ∧ m • g2Root i + n • g2Root j ∈ range g2Root := by
