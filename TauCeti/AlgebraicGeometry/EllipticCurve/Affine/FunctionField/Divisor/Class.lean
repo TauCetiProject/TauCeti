@@ -44,14 +44,25 @@ namespace WeierstrassCurve.Affine
 open TauCeti AlgebraicGeometry IsDedekindDomain Polynomial
 
 variable {F : Type*} [Field F] (W : WeierstrassCurve.Affine F)
-  [IsDedekindDomain W.CoordinateRing]
 
 /-- **The place at infinity is the only place infinite on the coordinate ring**, as an equality of
 sets. -/
 theorem setOf_exists_notMem_integers_eq_singleton_infinity :
     {Q : Place F W.FunctionField | ∃ r : W.CoordinateRing,
         algebraMap W.CoordinateRing W.FunctionField r ∉ Q.integers} = {Place.infinity W} :=
-  Set.ext fun _ ↦ by simp
+  Set.ext fun Q ↦ by
+    simp only [Set.mem_ofPred_eq, Set.mem_singleton_iff, Place.mem_integers_iff, not_le]
+    constructor
+    · rintro ⟨r, hr⟩
+      by_contra hQ
+      exact absurd (Place.valuation_algebraMap_le_one_of_ne_infinity hQ r) (not_le.mpr hr)
+    · rintro rfl
+      refine ⟨algebraMap F[X] W.CoordinateRing X, ?_⟩
+      rw [Place.valuation_infinity,
+        ← IsScalarTower.algebraMap_apply F[X] W.CoordinateRing W.FunctionField]
+      exact W.one_lt_infinityPlace_X
+
+variable [IsDedekindDomain W.CoordinateRing]
 
 /-- **The ideal class of a point's place is the class Mathlib's `toClass` takes.** The place of a
 point has the point's ideal `⟨X - x, Y - y⟩` underneath it, and `XYIdeal'` is that ideal as an
