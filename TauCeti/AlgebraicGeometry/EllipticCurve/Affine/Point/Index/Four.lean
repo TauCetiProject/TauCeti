@@ -377,21 +377,19 @@ private theorem add_mem_of_notMem_farPoints {ϖ : v.valuationSubring}
   refine hA₂' ⟨c₁ + c₂ - L ^ 2 - α₁ * L + X₃, mul_left_cancel₀ hp.ne_zero ?_⟩
   linear_combination he₁ + ϖ * hc₁ + ϖ * hc₂
 
-/-- **A point with singular reduction not of the form `(ϖ² X, ϖ² Y)`, plus a point of that form,
-has singular reduction.** The first is `(ϖ X₁, ϖ² Y₁)` with `X₁` a unit and the second is
-`(ϖ² X₂, ϖ² Y₂)`, so the chord has slope `ϖ (Y₁ − Y₂) / (X₁ − ϖ X₂)`, divisible by `ϖ`, and the
-sum has both coordinates in the maximal ideal. -/
-private theorem add_notMem_of_mem_farPoints {ϖ : v.valuationSubring}
-    (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ})
-    (hst : IsTateOddStage ϖ 0 (integralModel v.valuationSubring W)) {P Q : W.Point}
-    (hP : P ∉ W.nonsingularReduction v) (hPF : P ∉ farPoints v ϖ) (hQ : Q ∈ farPoints v ϖ) :
-    P + Q ∉ W.nonsingularReduction v := by
-  obtain ⟨hp, hm₃, hm₄, hm₆, A₂, hA₂, -⟩ := stage_data v hϖ hst
-  obtain ⟨x₁, y₁, h₁, rfl, hx₁, hy₁⟩ :=
-    exists_eq_some_of_notMem_nonsingularReduction v hm₃ hm₄ hm₆ hP
-  obtain ⟨X₁, Y₁, rfl, rfl, hX₁, -⟩ := exists_eq_of_notMem_farPoints v hp hst hA₂ h₁
-    ((mem_maximalIdeal_iff_dvd hϖ).1 hx₁) ((mem_maximalIdeal_iff_dvd hϖ).1 hy₁) hPF
-  obtain ⟨x₂, y₂, h₂, rfl, ⟨X₂, rfl⟩, ⟨Y₂, rfl⟩⟩ := hQ
+omit [IsIntegral v.valuationSubring W] in
+/-- The chord from `(ϖ X₁, ϖ² Y₁)`, with `X₁` a non-multiple of `ϖ`, to `(ϖ² X₂, ϖ² Y₂)` is not
+vertical and its slope is a multiple of `ϖ` in the valuation ring: it is
+`ϖ (Y₁ − Y₂) / (X₁ − ϖ X₂)`, and `X₁ − ϖ X₂` is a unit. -/
+private theorem exists_slope_eq_of_notMem_farPoints {ϖ : v.valuationSubring}
+    (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ}) (hp : Prime ϖ)
+    {X₁ Y₁ X₂ Y₂ : v.valuationSubring} (hX₁ : ¬ ϖ ∣ X₁) :
+    ∃ L : v.valuationSubring, ϖ ∣ L ∧
+      ¬(((ϖ * X₁ : v.valuationSubring) : F) = ((ϖ ^ 2 * X₂ : v.valuationSubring) : F) ∧
+        ((ϖ ^ 2 * Y₁ : v.valuationSubring) : F) =
+          W.negY ((ϖ ^ 2 * X₂ : v.valuationSubring) : F) ((ϖ ^ 2 * Y₂ : v.valuationSubring) : F)) ∧
+      W.slope ((ϖ * X₁ : v.valuationSubring) : F) ((ϖ ^ 2 * X₂ : v.valuationSubring) : F)
+        ((ϖ ^ 2 * Y₁ : v.valuationSubring) : F) ((ϖ ^ 2 * Y₂ : v.valuationSubring) : F) = L := by
   -- `x₁ − x₂ = ϖ u` with `u = X₁ − ϖ X₂` a unit
   have hu : IsUnit (X₁ - ϖ * X₂) := (isUnit_iff_not_dvd hϖ).2 fun hd ↦
     hX₁ (by simpa using dvd_add hd (dvd_mul_right ϖ X₂))
@@ -407,19 +405,34 @@ private theorem add_notMem_of_mem_farPoints {ϖ : v.valuationSubring}
         W.negY ((ϖ ^ 2 * X₂ : v.valuationSubring) : F) ((ϖ ^ 2 * Y₂ : v.valuationSubring) : F)) :=
     fun hn ↦ hx hn.1
   -- the slope is `L = ϖ (Y₁ − Y₂) / u`
-  set L : v.valuationSubring := ϖ * ((Y₁ - Y₂) * i) with hL
-  have hℓ : W.slope ((ϖ * X₁ : v.valuationSubring) : F) ((ϖ ^ 2 * X₂ : v.valuationSubring) : F)
-      ((ϖ ^ 2 * Y₁ : v.valuationSubring) : F) ((ϖ ^ 2 * Y₂ : v.valuationSubring) : F) = L := by
-    rw [slope_of_X_ne hx, div_eq_iff (sub_ne_zero.2 hx), hL]
-    push_cast at hi' ⊢
-    linear_combination (-(ϖ : F) ^ 2 * ((Y₁ : F) - Y₂)) * hi'
+  refine ⟨ϖ * ((Y₁ - Y₂) * i), dvd_mul_right _ _, hxy, ?_⟩
+  rw [slope_of_X_ne hx, div_eq_iff (sub_ne_zero.2 hx)]
+  push_cast at hi' ⊢
+  linear_combination (-(ϖ : F) ^ 2 * ((Y₁ : F) - Y₂)) * hi'
+
+/-- **A point with singular reduction not of the form `(ϖ² X, ϖ² Y)`, plus a point of that form,
+has singular reduction.** The first is `(ϖ X₁, ϖ² Y₁)` with `X₁` a unit and the second is
+`(ϖ² X₂, ϖ² Y₂)`, so the chord has slope `ϖ (Y₁ − Y₂) / (X₁ − ϖ X₂)`, divisible by `ϖ`, and the
+sum has both coordinates in the maximal ideal. -/
+private theorem add_notMem_of_mem_farPoints {ϖ : v.valuationSubring}
+    (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ})
+    (hst : IsTateOddStage ϖ 0 (integralModel v.valuationSubring W)) {P Q : W.Point}
+    (hP : P ∉ W.nonsingularReduction v) (hPF : P ∉ farPoints v ϖ) (hQ : Q ∈ farPoints v ϖ) :
+    P + Q ∉ W.nonsingularReduction v := by
+  obtain ⟨hp, hm₃, hm₄, hm₆, A₂, hA₂, -⟩ := stage_data v hϖ hst
+  obtain ⟨x₁, y₁, h₁, rfl, hx₁, hy₁⟩ :=
+    exists_eq_some_of_notMem_nonsingularReduction v hm₃ hm₄ hm₆ hP
+  obtain ⟨X₁, Y₁, rfl, rfl, hX₁, -⟩ := exists_eq_of_notMem_farPoints v hp hst hA₂ h₁
+    ((mem_maximalIdeal_iff_dvd hϖ).1 hx₁) ((mem_maximalIdeal_iff_dvd hϖ).1 hy₁) hPF
+  obtain ⟨x₂, y₂, h₂, rfl, ⟨X₂, rfl⟩, ⟨Y₂, rfl⟩⟩ := hQ
+  obtain ⟨L, hLd, hxy, hℓ⟩ := exists_slope_eq_of_notMem_farPoints (W := W) v hϖ hp hX₁
   rw [Point.add_some hxy, some_notMem_nonsingularReduction_iff v hm₃ hm₄ hm₆, hℓ]
   set X₃ := L ^ 2 + (integralModel v.valuationSubring W).a₁ * L -
     (integralModel v.valuationSubring W).a₂ - ϖ * X₁ - ϖ ^ 2 * X₂ with hX₃
   have hdX₃ : ϖ ∣ X₃ := by
-    rw [hX₃, hA₂, hL]
-    exact ⟨ϖ * ((Y₁ - Y₂) * i) ^ 2 + (integralModel v.valuationSubring W).a₁ * ((Y₁ - Y₂) * i) -
-      A₂ - X₁ - ϖ * X₂, by ring⟩
+    obtain ⟨l, hl⟩ := hLd
+    rw [hX₃, hA₂, hl]
+    exact ⟨ϖ * l ^ 2 + (integralModel v.valuationSubring W).a₁ * l - A₂ - X₁ - ϖ * X₂, by ring⟩
   have hx₃ : W.addX ((ϖ * X₁ : v.valuationSubring) : F) ((ϖ ^ 2 * X₂ : v.valuationSubring) : F)
       (L : F) = ((X₃ : v.valuationSubring) : F) := by
     rw [addX, ← coe_integralModel_a₁ v, ← coe_integralModel_a₂ v, hX₃]
@@ -437,7 +450,7 @@ private theorem add_notMem_of_mem_farPoints {ϖ : v.valuationSubring}
   refine ⟨hdX₃, ?_⟩
   refine dvd_sub (dvd_sub (dvd_neg.2 (dvd_add ?_ ?_)) (hdX₃.mul_left _))
     ((mem_maximalIdeal_iff_dvd hϖ).1 hm₃)
-  · exact (dvd_mul_right ϖ _).mul_right _
+  · exact hLd.mul_right _
   · exact (dvd_pow_self ϖ two_ne_zero).mul_right _
 
 /-- **Two points of the form `(ϖ² X, ϖ² Y)` do not add to a point of that form.** If they did,
