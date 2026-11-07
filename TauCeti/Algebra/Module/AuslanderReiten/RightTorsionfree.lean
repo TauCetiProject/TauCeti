@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Module.AuslanderReiten.DualPresentation
 public import TauCeti.Algebra.Module.AuslanderReiten.Torsionfree
 public import TauCeti.Algebra.Homology.Ext.Equivalence
-public import TauCeti.Algebra.Category.ModuleCat.RestrictScalarsOpOp
+public import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
 
 /-!
 # `k`-torsionfree right modules are `k`-th syzygies

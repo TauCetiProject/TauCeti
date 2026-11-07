@@ -8,6 +8,7 @@ module
 public import TauCeti.CategoryTheory.Exact.Stable.Basic
 public import TauCeti.CategoryTheory.Exact.Projective
 public import Mathlib.Algebra.Homology.DerivedCategory.Ext.EnoughProjectives
+import TauCeti.Algebra.Homology.Ext.Basic
 
 /-!
 # `Ext` in positive degrees on the projective stable category
@@ -19,7 +20,6 @@ there, then `Ext^{n+1}(X, Z)` vanishes exactly when `Ext^{n+1}(Y, Z)` does.
 
 ## Main results
 
-* `TauCeti.ext_mk₀_sub_comp`: precomposition on `Ext` is additive in the morphism.
 * `TauCeti.ext_mk₀_comp_eq_zero_of_factorsThrough`: precomposition with a morphism factoring
   through a projective object is zero on `Ext` in positive degrees.
 * `TauCeti.ext_eq_zero_of_projectiveStableFunctor_iso`: vanishing of `Ext^{n+1}(-, Z)` is
@@ -35,13 +35,6 @@ open CategoryTheory CategoryTheory.Abelian
 universe w v u
 
 variable {C : Type u} [Category.{v} C] [Abelian C] [HasExt.{w} C]
-
-/-- Precomposition on `Ext` with a difference of morphisms is the difference of the
-precompositions. -/
-theorem ext_mk₀_sub_comp {X Y Z : C} (f f' : X ⟶ Y) {n : ℕ} (x : Ext.{w} Y Z n) :
-    (Ext.mk₀ (f - f')).comp x (zero_add _) =
-      (Ext.mk₀ f).comp x (zero_add _) - (Ext.mk₀ f').comp x (zero_add _) := by
-  rw [sub_eq_add_neg, Ext.mk₀_add, Ext.add_comp, Ext.mk₀_neg, Ext.neg_comp, ← sub_eq_add_neg]
 
 /-- **Maps through projectives vanish on positive `Ext`**: if `f : X ⟶ Y` factors through a
 projective object, then composing with `f` kills `Ext^{n+1}(Y, Z)`. -/
@@ -70,6 +63,6 @@ theorem ext_eq_zero_of_projectiveStableFunctor_iso {X Y : C}
   have h₀ := ext_mk₀_comp_eq_zero_of_factorsThrough hfg x
   have h₁ : (Ext.mk₀ (f ≫ g)).comp x (zero_add _) = 0 := by
     rw [← Ext.mk₀_comp_mk₀_assoc, h ((Ext.mk₀ g).comp x _), Ext.comp_zero]
-  rwa [ext_mk₀_sub_comp, h₁, Ext.mk₀_id_comp, zero_sub, neg_eq_zero] at h₀
+  rwa [Ext.mk₀_sub, Ext.sub_comp, h₁, Ext.mk₀_id_comp, zero_sub, neg_eq_zero] at h₀
 
 end TauCeti
