@@ -170,9 +170,16 @@ theorem exists_natTrans_homotopy_comp_id
   choose next hnext using step
   let s : ∀ n, S n := fun n => Nat.rec ⟨(e 0).invFun, (e 0).left_inv.some.cast (by rw [he]) rfl⟩
     next n
+  -- The defining equation of `Nat.rec` at a successor.
+  have hs (n : ℕ) : s (n + 1) = next n (s n) := rfl
+  -- The components of `NatTrans.ofSequence` are by definition the maps `(s n).1`
+  -- (see `NatTrans.ofSequence_app`), so `(s n).2` are homotopies of the required type. The
+  -- compatibility of these homotopies is `(hnext n (s n)).2`, using `hs` by `rfl`: the homotopy
+  -- types depend on `s (n + 1)`, so it cannot be rewritten.
   refine ⟨NatTrans.ofSequence (fun n => TopCat.ofHom (s n).1) fun n => ?_,
     fun n => (s n).2, fun n => (hnext n (s n)).2⟩
   ext y
+  rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, hs]
   exact (hnext n (s n)).1 y
 
 /-- **Homotopy invariance of colimits of towers of cofibrations.** Let `X` and `Y` be sequences of
