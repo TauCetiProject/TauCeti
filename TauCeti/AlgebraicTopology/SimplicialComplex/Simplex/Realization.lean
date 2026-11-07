@@ -144,7 +144,6 @@ theorem standardSimplexHomeomorph_symm_val (σ : Finset α) (w : Convexity.StdSi
     ((standardSimplexHomeomorph σ).symm w : α →₀ ℝ) = w.weights.mapDomain Subtype.val := (rfl)
 
 /-- The barycentric coordinates of a point of a closed coordinate simplex sum to one. -/
-@[simp]
 theorem sum_standardSimplex_eq_one (y : StandardSimplex σ) : ∑ a : σ, y.1 a = 1 := by
   simpa using (standardSimplexHomeomorph σ y).total_of_fintype
 
