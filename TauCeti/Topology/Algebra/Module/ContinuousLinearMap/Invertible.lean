@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
+public import TauCeti.Topology.Algebra.Module.Equiv.SMul
 import Mathlib.Tactic.Abel
 
 /-!
@@ -93,12 +94,6 @@ section Smul
 variable {𝕜 M M₂ : Type*} [Field 𝕜]
   [TopologicalSpace M] [AddCommMonoid M] [Module 𝕜 M] [ContinuousConstSMul 𝕜 M]
   [TopologicalSpace M₂] [AddCommMonoid M₂] [Module 𝕜 M₂] [ContinuousConstSMul 𝕜 M₂]
-
-omit [ContinuousConstSMul 𝕜 M] in
-/-- Multiplying by a nonzero scalar is composing with the corresponding scalar equivalence. -/
-private theorem smul_eq_smulLeft_comp {c : 𝕜} (hc : c ≠ 0) (f : M →L[𝕜] M₂) :
-    c • f = (ContinuousLinearEquiv.smulLeft (Units.mk0 c hc) : M₂ ≃L[𝕜] M₂) ∘L f := by
-  ext; simp
 
 omit [ContinuousConstSMul 𝕜 M] in
 /-- Multiplying a continuous linear map by a nonzero scalar does not change its
