@@ -270,16 +270,6 @@ theorem eq_pPart (hp : p.Prime) {s u : G} (hsu : Commute s u) (hmul : s * u = x)
     (hs : ¬ p ∣ orderOf s) {k : ℕ} (hu : orderOf u = p ^ k) : u = pPart p x := by
   rw [pPart, ← eq_pFreePart hp hsu hmul hs hu, ← hmul, inv_mul_cancel_left]
 
-/-- Every element `x` of finite order divisible by `p` is a product `s * q` of commuting elements,
-where `q ≠ 1` generates a `p`-group and the order of `s` is prime to `p`. -/
-theorem exists_commute_mul_eq_of_dvd_orderOf (hp : p.Prime) (hx : orderOf x ≠ 0)
-    (hpx : p ∣ orderOf x) :
-    ∃ s q : G, s * q = x ∧ Commute s q ∧ q ≠ 1 ∧ IsPGroup p (Subgroup.zpowers q) ∧
-      ¬p ∣ orderOf s :=
-  ⟨pFreePart p x, pPart p x, pFreePart_mul_pPart p x, commute_pFreePart_pPart p x,
-    pPart_ne_one_of_dvd_orderOf hp hx hpx, isPGroup_zpowers_pPart hp hx,
-    not_dvd_orderOf_pFreePart hp hx⟩
-
 end Order
 
 end TauCeti
