@@ -226,14 +226,8 @@ open scoped ContDiff
 
 variable {x y : ℂ → EuclideanSpace ℝ (Fin 4)}
 
-/-- The squared norm of the complex section value is `4 * (x₂ ^ 2 + x₃ ^ 2)`. -/
-private lemma norm_sectionValue_sq (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
-    ‖sectionValue x z‖ ^ 2 = 4 * (x z 2 ^ 2 + x z 3 ^ 2) := by
-  rw [sectionValue_apply, Complex.sq_norm, normSq_mul, normSq_add_mul_I, normSq_apply]
-  norm_num
-
 /-- The end framing gives `|α| → 1` at infinity, in the form `4 * (x₂ ^ 2 + x₃ ^ 2) → 1`. -/
-private lemma tendsto_four_mul_sq_of_tendsto_sectionValue_mul {phase : ℂ → ℂ}
+lemma tendsto_four_mul_sq_of_tendsto_sectionValue_mul {phase : ℂ → ℂ}
     (hphase : Tendsto (fun z ↦ ‖phase z‖) (cocompact ℂ) (𝓝 1))
     (hfr : Tendsto (fun z ↦ sectionValue x z * phase z) (cocompact ℂ) (𝓝 1)) :
     Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1) := by
@@ -243,13 +237,13 @@ private lemma tendsto_four_mul_sq_of_tendsto_sectionValue_mul {phase : ℂ → �
     refine hdiv.congr' ?_
     filter_upwards [hphase.eventually_ne one_ne_zero] with z hz
     rw [Pi.div_apply, norm_mul, mul_div_cancel_right₀ _ hz]
-  simpa only [norm_sectionValue_sq, one_pow] using hn.pow 2
+  simpa only [sq_norm_sectionValue, one_pow] using hn.pow 2
 
 /-- If the complex section value is nonzero on a dense set, so is `x₂ ^ 2 + x₃ ^ 2`. -/
 private lemma dense_sq_add_sq_ne_zero_of_dense_sectionValue
     (hdense : Dense {z | sectionValue x z ≠ 0}) : Dense {z | x z 2 ^ 2 + x z 3 ^ 2 ≠ 0} :=
   hdense.mono fun z hz ↦ by
-    have h4 := norm_sectionValue_sq x z
+    have h4 := sq_norm_sectionValue x z
     simp only [Set.mem_ofPred_eq] at hz ⊢
     intro h0
     rw [h0, mul_zero] at h4

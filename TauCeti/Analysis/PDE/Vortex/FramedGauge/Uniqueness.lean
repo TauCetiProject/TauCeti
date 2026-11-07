@@ -60,19 +60,13 @@ theorem existsUnique_framedGauge_of_forall_section_eq_mul
     simp only [sectionValue_apply] at hz
     linear_combination hz / 2
   -- A common unit end phase supplies both modulus limits used by the maximum principle.
-  have hmod (v : ℂ → EuclideanSpace ℝ (Fin 4))
-      (hv : Tendsto (fun z ↦ sectionValue v z * phase z) (cocompact ℂ) (𝓝 1)) :
-      Tendsto (fun z ↦ 4 * (v z 2 ^ 2 + v z 3 ^ 2)) (cocompact ℂ) (𝓝 1) := by
-    have hn := hv.norm.pow 2
-    simp only [norm_one, one_pow] at hn
-    apply hn.congr'
-    filter_upwards [hphase] with z hz
-    rw [norm_mul, hz, mul_one, Complex.sq_norm, sectionValue_apply, normSq_mul,
-      normSq_ofNat, normSq_add_mul_I]
-    ring
+  have hphase' : Tendsto (fun z ↦ ‖phase z‖) (cocompact ℂ) (𝓝 1) :=
+    tendsto_const_nhds.congr' (hphase.mono fun _ h ↦ h.symm)
   obtain ⟨f, hf, hfactor, hfields⟩ :=
     exists_eq_phaseGauge_of_forall_section_eq_mul hxb₁ hxb₂ hxp hxq hyb₁ hyb₂ hyp hyq
-      hxsol hysol (hmod x hxlim) (hmod y hylim) (hh.of_le (by simp)) hh₀ hα' hdense
+      hxsol hysol (tendsto_four_mul_sq_of_tendsto_sectionValue_mul hphase' hxlim)
+      (tendsto_four_mul_sq_of_tendsto_sectionValue_mul hphase' hylim) (hh.of_le (by simp)) hh₀ hα'
+      hdense
   let u : ℂ → Circle := fun z ↦ Circle.exp (f z)
   have hucoe (z : ℂ) : (u z : ℂ) = h z := (hfactor z).symm
   -- The ratio of the two framed sections tends to one, independently of a real lift.
