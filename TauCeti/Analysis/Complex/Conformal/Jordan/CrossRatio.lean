@@ -51,34 +51,11 @@ facts say that the prevertices of a polygon are determined up to a real Möbius 
 public section
 
 open Bornology Complex Filter Function Metric Set Topology
-open UpperHalfPlane (upperHalfPlaneSet isOpen_upperHalfPlaneSet)
+open UpperHalfPlane (upperHalfPlaneSet)
 
 namespace TauCeti
 
 /-! ### Transport to the disc -/
-
-/-- **The inverse of the Cayley transform.** The Cayley transform `z ↦ (z - I) / (z + I)` has a
-two-sided inverse `K` from the unit disc onto the upper half-plane, which is injective and
-holomorphic on the disc. -/
-private theorem exists_inverse_sub_I_div_add_I :
-    ∃ K : ℂ → ℂ, MapsTo K (ball 0 1) upperHalfPlaneSet ∧
-      (∀ w ∈ ball (0 : ℂ) 1, (fun z : ℂ => (z - I) / (z + I)) (K w) = w) ∧
-      (∀ z ∈ upperHalfPlaneSet, K ((fun z : ℂ => (z - I) / (z + I)) z) = z) ∧
-      InjOn K (ball 0 1) ∧ DifferentiableOn ℂ K (ball 0 1) ∧ K '' ball 0 1 = upperHalfPlaneSet := by
-  set C : ℂ → ℂ := fun z => (z - I) / (z + I)
-  have hCH : BijOn C upperHalfPlaneSet (ball 0 1) := bijOn_sub_I_div_add_I_upperHalfPlaneSet
-  have hCK : ∀ w ∈ ball (0 : ℂ) 1, C (invFunOn C upperHalfPlaneSet w) = w :=
-    hCH.surjOn.rightInvOn_invFunOn
-  refine ⟨invFunOn C upperHalfPlaneSet, hCH.surjOn.mapsTo_invFunOn, hCK,
-    hCH.injOn.leftInvOn_invFunOn, fun w hw w' hw' h => by rw [← hCK w hw, ← hCK w' hw', h],
-    ?_, ?_⟩
-  · have hCd : DifferentiableOn ℂ C upperHalfPlaneSet :=
-      differentiableOn_sub_I_div_add_I.mono fun z (hz : 0 < z.im) =>
-        add_I_ne_zero_of_im_nonneg hz.le
-    have h := hCd.invFunOn isOpen_upperHalfPlaneSet hCH.injOn
-    rwa [hCH.image_eq] at h
-  · rw [← hCH.image_eq]
-    exact hCH.injOn.invFunOn_image subset_rfl
 
 /-- **The two maps in a common disc picture.** Let `f` and `g` be holomorphic bijections of the
 upper half-plane onto a bounded Jordan domain `U`. Then `g` is `G` after the Cayley transform `C`,

@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Complex.UnitDisc.Basic
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Normed.Field.Lemmas
 import Mathlib.Topology.Bornology.BoundedOperation
+import TauCeti.Analysis.Complex.Conformal.Inverse.Function
 
 /-!
 # The Cayley transform of the closed upper half-plane
@@ -47,6 +48,8 @@ half-plane. The open-half-plane restriction, centred at an arbitrary point of `�
 * `TauCeti.differentiableOn_sub_I_div_add_I`: the transform is holomorphic away from its pole.
 * `TauCeti.differentiableOn_sub_I_div_add_I_im_nonneg`: in particular, it is holomorphic on a
   neighbourhood of the closed upper half-plane.
+* `TauCeti.exists_inverse_sub_I_div_add_I`: a holomorphic injective two-sided inverse of the
+  transform on the open unit disc.
 * `TauCeti.hasDerivAt_I_mul_one_add_div_one_sub`: the derivative of the inverse transform.
 * `TauCeti.logDeriv_deriv_I_mul_one_add_div_one_sub`: its pre-Schwarzian.
 * `TauCeti.cayley_simple_fraction`: transport of a real-boundary simple fraction.
@@ -64,7 +67,8 @@ half-plane. The open-half-plane restriction, centred at an arbitrary point of `�
 
 public section
 
-open Bornology Complex Filter Metric Set Topology
+open Bornology Complex Filter Function Metric Set Topology
+open UpperHalfPlane (upperHalfPlaneSet isOpen_upperHalfPlaneSet)
 
 namespace TauCeti
 
@@ -371,5 +375,29 @@ theorem cayley_simple_fraction {ζ : ℂ} (x : ℝ) (hζ1 : ζ ≠ 1)
   field_simp
   ring
 
+/-- **The inverse of the Cayley transform.** The Cayley transform `z ↦ (z - I) / (z + I)` has a
+two-sided inverse `K` from the unit disc onto the upper half-plane, which is injective and
+holomorphic on the disc. -/
+theorem exists_inverse_sub_I_div_add_I :
+    ∃ K : ℂ → ℂ, MapsTo K (ball 0 1) upperHalfPlaneSet ∧
+      (∀ w ∈ ball (0 : ℂ) 1, (fun z : ℂ => (z - I) / (z + I)) (K w) = w) ∧
+      (∀ z ∈ upperHalfPlaneSet, K ((fun z : ℂ => (z - I) / (z + I)) z) = z) ∧
+      InjOn K (ball 0 1) ∧ DifferentiableOn ℂ K (ball 0 1) ∧
+        K '' ball 0 1 = upperHalfPlaneSet := by
+  set C : ℂ → ℂ := fun z => (z - I) / (z + I)
+  have hCH : BijOn C upperHalfPlaneSet (ball 0 1) :=
+    bijOn_sub_I_div_add_I_upperHalfPlaneSet
+  have hCK : ∀ w ∈ ball (0 : ℂ) 1, C (invFunOn C upperHalfPlaneSet w) = w :=
+    hCH.surjOn.rightInvOn_invFunOn
+  refine ⟨invFunOn C upperHalfPlaneSet, hCH.surjOn.mapsTo_invFunOn, hCK,
+    hCH.injOn.leftInvOn_invFunOn, fun w hw w' hw' h => by rw [← hCK w hw, ← hCK w' hw', h],
+    ?_, ?_⟩
+  · have hCd : DifferentiableOn ℂ C upperHalfPlaneSet :=
+      differentiableOn_sub_I_div_add_I.mono fun z (hz : 0 < z.im) =>
+        add_I_ne_zero_of_im_nonneg hz.le
+    have h := hCd.invFunOn isOpen_upperHalfPlaneSet hCH.injOn
+    rwa [hCH.image_eq] at h
+  · rw [← hCH.image_eq]
+    exact hCH.injOn.invFunOn_image subset_rfl
 
 end TauCeti
