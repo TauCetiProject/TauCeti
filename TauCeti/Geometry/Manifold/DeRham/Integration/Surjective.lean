@@ -83,6 +83,8 @@ private theorem integral_signedInChartAt_pos_of_bump [MeasurableSpace E] [BorelS
   have hcont : ContinuousOn g (extChartAt I x).target :=
     RoughForm.continuousOn_signedInChartAt (I := I) ψ b x _ continuous_const
       (hs.continuousOn_inChartAt x)
+  -- Needed: without it the reverse rewrite below leaves the integrand unfolded and fails to
+  -- match; stating the integral of `g` gives it a definite function.
   change 0 < ∫ z, g z ∂b.addHaar
   rw [← setIntegral_eq_integral_of_forall_compl_eq_zero
     (s := (extChartAt I x).target) (fun z hz ↦ by
