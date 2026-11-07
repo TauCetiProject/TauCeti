@@ -109,19 +109,6 @@ theorem Wkp.norm_ofTestFunctionₗ_monoCLM (hsub : Omega ≤ Omega') (k : ℕ)
         (p := p) (k + 2) (TestFunction.monoCLM ℝ phi)),
         norm_nonneg (Wkp.ofTestFunctionₗ (mu := mu) (p := p) (k + 2) phi)]
 
-/-- The restriction to `Ω` of the `W^{k,p}(Ω')` element of a test function is represented on `Ω`
-by that test function. -/
-theorem Wkp.value_restrictL_ofTestFunctionₗ_ae (hsub : Omega ≤ Omega') (k : ℕ)
-    (phi : 𝓓(Omega', ℝ)) :
-    (Wkp.value k (Wkp.restrictL hsub k (Wkp.ofTestFunctionₗ (mu := mu) (p := p) k phi)) : E → ℝ)
-      =ᵐ[mu.restrict Omega] phi := by
-  have hmono : ae (mu.restrict (Omega : Set E)) ≤ ae (mu.restrict (Omega' : Set E)) :=
-    ae_mono (Measure.restrict_mono (SetLike.coe_subset_coe.mpr hsub) le_rfl)
-  filter_upwards [Wkp.value_restrictL_ae hsub k
-      (Wkp.ofTestFunctionₗ (mu := mu) (p := p) k phi),
-    (testFunctionLp_apply_ae (mu := mu) p phi).filter_mono hmono] with x h1 h2
-  rw [h1, Wkp.value_ofTestFunctionₗ, h2]
-
 /-- Extension by zero to a larger open set, as a linear isometry of zero-boundary
 Sobolev spaces. This preserves the full norm at every order, including at `p = ∞`. -/
 def Wkp0.extendByZeroₗᵢ (hsub : Omega ≤ Omega') (k : ℕ) :
