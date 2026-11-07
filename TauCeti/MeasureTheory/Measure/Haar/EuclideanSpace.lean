@@ -143,7 +143,7 @@ theorem measurableEmbedding_euclideanSpace_proj {ι : Type*} [Unique ι] (i : ι
 
 /-- The image of the preimage of `s` under the unique-coordinate projection, composed with a
 function `g` of that coordinate, is the image of `s` under `g`. -/
-theorem image_comp_euclideanSpace_proj_preimage {ι : Type*} [Unique ι] {α : Type*} (g : ℝ → α)
+theorem image_comp_euclideanSpace_proj_preimage {ι : Type*} {α : Type*} (g : ℝ → α)
     (s : Set ℝ) (i : ι) :
     (fun z : EuclideanSpace ℝ ι ↦ g (z i)) '' (proj (𝕜 := ℝ) i ⁻¹' s) = g '' s := by
   have hsurj : Function.Surjective (proj (𝕜 := ℝ) i : EuclideanSpace ℝ ι → ℝ) := fun t ↦
