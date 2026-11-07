@@ -187,10 +187,10 @@ def unitsInvPart (h : Q ∥ N) : (ZMod N)ˣ ≃* (ZMod N)ˣ :=
   h.isIdempotentElem_exactDivisorIdempotent.unitsInvPart
 
 /-- The value of `unitsInvPart` at a unit `u` is `e_Q u⁻¹ + (1 - e_Q) u`. -/
-theorem coe_unitsInvPart (h : Q ∥ N) (u : (ZMod N)ˣ) :
+theorem val_unitsInvPart (h : Q ∥ N) (u : (ZMod N)ˣ) :
     (h.unitsInvPart u : ZMod N) =
       exactDivisorIdempotent N Q * ↑u⁻¹ + (1 - exactDivisorIdempotent N Q) * u :=
-  IsIdempotentElem.coe_unitsInvPart _ u
+  IsIdempotentElem.val_unitsInvPart _ u
 
 /-- **`unitsInvPart` is an involution**: it is its own inverse. -/
 @[simp]
@@ -209,7 +209,7 @@ theorem unitsMap_unitsInvPart_left (h : Q ∥ N) (u : (ZMod N)ˣ) :
     ZMod.unitsMap h.dvd (h.unitsInvPart u) = (ZMod.unitsMap h.dvd u)⁻¹ := by
   refine Units.ext ?_
   rw [← map_inv, ZMod.unitsMap_val, ZMod.unitsMap_val, ← ZMod.castHom_apply (h := h.dvd),
-    ← ZMod.castHom_apply (h := h.dvd), coe_unitsInvPart, map_add, map_mul, map_mul, map_sub,
+    ← ZMod.castHom_apply (h := h.dvd), val_unitsInvPart, map_add, map_mul, map_mul, map_sub,
     map_one, h.castHom_exactDivisorIdempotent_left, sub_self, zero_mul, add_zero, one_mul]
 
 /-- **`unitsInvPart` fixes the residue modulo `N / Q`.** -/
@@ -219,7 +219,7 @@ theorem unitsMap_unitsInvPart_right (h : Q ∥ N) (u : (ZMod N)ˣ) :
       ZMod.unitsMap (Nat.div_dvd_of_dvd h.dvd) u := by
   refine Units.ext ?_
   rw [ZMod.unitsMap_val, ZMod.unitsMap_val, ← ZMod.castHom_apply (h := Nat.div_dvd_of_dvd h.dvd),
-    ← ZMod.castHom_apply (h := Nat.div_dvd_of_dvd h.dvd), coe_unitsInvPart, map_add, map_mul,
+    ← ZMod.castHom_apply (h := Nat.div_dvd_of_dvd h.dvd), val_unitsInvPart, map_add, map_mul,
     map_mul, map_sub, map_one, h.castHom_exactDivisorIdempotent_right, sub_zero, zero_mul,
     zero_add, one_mul]
 
