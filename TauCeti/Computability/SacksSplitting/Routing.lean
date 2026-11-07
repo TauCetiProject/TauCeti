@@ -132,6 +132,30 @@ theorem step_def (r : List ℕ) (A : Finset ℕ × Finset ℕ) (D : Finset ℕ) 
     step r A D = (A.1 ∪ routedBatch r (D \ (A.1 ∪ A.2)) false,
       A.2 ∪ routedBatch r (D \ (A.1 ∪ A.2)) true) := (rfl)
 
+/-- The first output half retains its old entries and adds the fresh entries routed to it. -/
+@[simp] theorem step_fst (r : List ℕ) (A : Finset ℕ × Finset ℕ) (D : Finset ℕ) :
+    (step r A D).1 = A.1 ∪ routedBatch r (D \ (A.1 ∪ A.2)) false := by
+  rw [step_def]
+
+/-- The second output half retains its old entries and adds the fresh entries routed to it. -/
+@[simp] theorem step_snd (r : List ℕ) (A : Finset ℕ × Finset ℕ) (D : Finset ℕ) :
+    (step r A D).2 = A.2 ∪ routedBatch r (D \ (A.1 ∪ A.2)) true := by
+  rw [step_def]
+
+/-- An entry in the first output half is old or fresh and routed to side zero. -/
+theorem mem_step_fst_iff {r : List ℕ} {A : Finset ℕ × Finset ℕ} {D : Finset ℕ} {x : ℕ} :
+    x ∈ (step r A D).1 ↔ x ∈ A.1 ∨
+      (x ∈ D ∧ x ∉ A.1 ∪ A.2 ∧ route r x = false) := by
+  simp only [step_fst, Finset.mem_union, mem_routedBatch, Finset.mem_sdiff]
+  tauto
+
+/-- An entry in the second output half is old or fresh and routed to side one. -/
+theorem mem_step_snd_iff {r : List ℕ} {A : Finset ℕ × Finset ℕ} {D : Finset ℕ} {x : ℕ} :
+    x ∈ (step r A D).2 ↔ x ∈ A.2 ∨
+      (x ∈ D ∧ x ∉ A.1 ∪ A.2 ∧ route r x = true) := by
+  simp only [step_snd, Finset.mem_union, mem_routedBatch, Finset.mem_sdiff]
+  tauto
+
 /-- The first half never loses an entry. -/
 theorem subset_step_fst (r : List ℕ) (A : Finset ℕ × Finset ℕ) (D : Finset ℕ) :
     A.1 ⊆ (step r A D).1 := by
@@ -152,7 +176,8 @@ theorem disjoint_step {r : List ℕ} {A : Finset ℕ × Finset ℕ} {D : Finset 
   aesop
 
 /-- The union after a transition is exactly the old union together with the supplied batch. -/
-@[simp] theorem step_union (r : List ℕ) (A : Finset ℕ × Finset ℕ) (D : Finset ℕ) :
+-- Simplify the combined union before the projection lemmas expand its halves.
+@[simp↓] theorem step_union (r : List ℕ) (A : Finset ℕ × Finset ℕ) (D : Finset ℕ) :
     (step r A D).1 ∪ (step r A D).2 = A.1 ∪ A.2 ∪ D := by
   rw [step_def]
   ext x
@@ -175,14 +200,14 @@ theorem exists_higher_priority_of_mem_injuriesAt
   apply exists_higher_priority_of_route_eq (hxb.trans_eq hb'.symm)
   have hfirst := congrArg Prod.fst hstep
   have hsecond := congrArg Prod.snd hstep
-  simp only [step] at hfirst hsecond
+  simp only at hfirst hsecond
   cases hk : k.bodd
   · rw [hk] at hx₀
-    rw [hk, ← hfirst] at hx₁
-    exact (mem_routedBatch.1 ((Finset.mem_union.1 hx₁).resolve_left hx₀)).2
+    rw [hk, ← hfirst, mem_step_fst_iff] at hx₁
+    exact (hx₁.resolve_left hx₀).2.2
   · rw [hk] at hx₀
-    rw [hk, ← hsecond] at hx₁
-    exact (mem_routedBatch.1 ((Finset.mem_union.1 hx₁).resolve_left hx₀)).2
+    rw [hk, ← hsecond, mem_step_snd_iff] at hx₁
+    exact (hx₁.resolve_left hx₀).2.2
 
 /-- If every higher-priority restraint is eventually bounded, a routed monotone enumeration
 injures `k` only finitely often. Neither a bound on the number of injuries nor stabilization of
