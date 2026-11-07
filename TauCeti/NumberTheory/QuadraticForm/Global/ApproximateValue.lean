@@ -54,32 +54,18 @@ variable {K X Y : Type*} [Field K] [NumberField K]
   [AddCommGroup X] [Module K X] [FiniteDimensional K X]
   [AddCommGroup Y] [Module K Y] [FiniteDimensional K Y]
 
-/-- Over a field, a regular quadratic form `Q` represents `-c` as soon as, if `Q` is anisotropic,
-`c` lies in the square class of some nonzero `c₀` that is the negative of a value of `Q`. -/
-private theorem represents_neg_of_forall_anisotropic {F V : Type*} [Field F] [AddCommGroup V]
-    [Module F V] (Q : QuadraticForm F V) (hQ : Q.Nondegenerate) (c : F)
-    (h : Q.Anisotropic → ∃ c₀ y, c₀ ≠ 0 ∧ c₀ = -Q y ∧ IsSquare (c / c₀)) :
-    Represents Q (-c) := by
-  by_cases han : Q.Anisotropic
-  · obtain ⟨c₀, y, hc₀, hxy, hsq⟩ := h han
-    have hrep : Represents Q (-c₀) :=
-      (represents_iff _ _).mpr ⟨y, (neg_eq_iff_eq_neg.mpr hxy).symm⟩
-    refine hrep.of_isSquare_div (neg_ne_zero.mpr hc₀) ?_
-    simpa [neg_div_neg_eq] using hsq
-  · exact represents_of_nondegenerate_of_not_anisotropic _ hQ han _
-
 omit [FiniteDimensional K X] in
 /-- If `W` is regular, then `-U x` is represented at a finite place `v` as soon as, where `W_v` is
 anisotropic, the value `U_v (1 ⊗ x)` lies in the square class of a local value of `U_v` that is
 the negative of a local value of `W_v`. -/
-private theorem represents_atFinitePlace_neg_apply
+private theorem _root_.QuadraticForm.represents_atFinitePlace_neg_apply
     (U : QuadraticForm K X) (W : QuadraticForm K Y) (hW : W.Nondegenerate)
     (v : HeightOneSpectrum (𝓞 K)) (x : X)
     (h : (W.atFinitePlace v).Anisotropic →
       ∃ x₀ y, U.atFinitePlace v x₀ ≠ 0 ∧ U.atFinitePlace v x₀ = -W.atFinitePlace v y ∧
         IsSquare (U.atFinitePlace v ((1 : v.adicCompletion K) ⊗ₜ[K] x) / U.atFinitePlace v x₀)) :
     Represents (W.atFinitePlace v) (algebraMap K (v.adicCompletion K) (-U x)) := by
-  simpa using represents_neg_of_forall_anisotropic _
+  simpa using QuadraticForm.represents_neg_of_forall_anisotropic _
     (QuadraticForm.Nondegenerate.atFinitePlace hW v)
     (U.atFinitePlace v ((1 : v.adicCompletion K) ⊗ₜ[K] x)) fun han => by
       obtain ⟨x₀, y, hx₀, hxy, hsq⟩ := h han
@@ -89,7 +75,7 @@ omit [FiniteDimensional K X] in
 /-- If `W` is regular, then `-U x` is represented at a real place `w` as soon as, where `W_w` is
 anisotropic, the value `U_w (1 ⊗ x)` lies in the square class of a local value of `U_w` that is
 the negative of a local value of `W_w`. -/
-private theorem represents_atRealPlace_neg_apply
+private theorem _root_.QuadraticForm.represents_atRealPlace_neg_apply
     (U : QuadraticForm K X) (W : QuadraticForm K Y) (hW : W.Nondegenerate)
     (w : {w : InfinitePlace K // w.IsReal}) (x : X)
     (h : (W.atRealPlace w).Anisotropic →
@@ -98,7 +84,7 @@ private theorem represents_atRealPlace_neg_apply
         IsSquare (U.atRealPlace w ((1 : ℝ) ⊗ₜ[K] x : RealScalarExtension w) / U.atRealPlace w x₀)) :
     Represents (W.atRealPlace w) (embedding_of_isReal w.2 (-U x)) := by
   let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  simpa using represents_neg_of_forall_anisotropic _
+  simpa using QuadraticForm.represents_neg_of_forall_anisotropic _
     (QuadraticForm.Nondegenerate.atRealPlace hW w)
     (U.atRealPlace w ((1 : ℝ) ⊗ₜ[K] x : RealScalarExtension w)) fun han => by
       obtain ⟨x₀, y, hx₀, hxy, hsq⟩ := h han
@@ -145,11 +131,11 @@ theorem _root_.QuadraticForm.exists_apply_ne_zero_locallyRepresentsScalar_neg
         ((1 : ℝ) ⊗ₜ[K] x : RealScalarExtension w.1) ∈ M w) :
       W.LocallyRepresentsScalar (-U x) := by
     refine (QuadraticForm.locallyRepresentsScalar_iff _ _).mpr ⟨fun v => ?_, fun w => ?_⟩
-    · refine represents_atFinitePlace_neg_apply U W hW v x fun han => ?_
+    · refine QuadraticForm.represents_atFinitePlace_neg_apply U W hW v x fun han => ?_
       have hvS : v ∈ S := by simpa [S] using han
       exact ⟨xS ⟨v, hvS⟩, yS ⟨v, hvS⟩, hxS ⟨v, hvS⟩, hxyS ⟨v, hvS⟩,
         (hN ⟨v, hvS⟩ _ (hxS' ⟨v, hvS⟩)).2⟩
-    · refine represents_atRealPlace_neg_apply U W hW w x fun han => ?_
+    · refine QuadraticForm.represents_atRealPlace_neg_apply U W hW w x fun han => ?_
       have hwT : w ∈ T := by simpa [T] using han
       exact ⟨xT ⟨w, hwT⟩, yT ⟨w, hwT⟩, hxT ⟨w, hwT⟩, hxyT ⟨w, hwT⟩,
         (hM ⟨w, hwT⟩ _ (hxT' ⟨w, hwT⟩)).2⟩
