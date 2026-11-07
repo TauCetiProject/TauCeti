@@ -107,6 +107,15 @@ theorem map_comp (g : C(Y, Z)) (f : C(X, Y)) (n : ℕ) :
   refine lhom_ext' fun c ↦ LinearMap.ext_ring ?_
   simp [ContinuousMap.comp_assoc]
 
+/-- The push-forward of a chain supported on `S` is supported on any set `T` containing the
+images of the cubes of `S`. -/
+theorem map_mem_supported (f : C(X, Y)) {n : ℕ} {S : Set (SingularCube X n)}
+    {T : Set (SingularCube Y n)} (hST : ∀ c ∈ S, f.comp c ∈ T) {g : CubicalChain X R n}
+    (hg : g ∈ supported R R S) : map R f n g ∈ supported R R T := by
+  have hmap := Submodule.mem_map_of_mem (f := lmapDomain R R f.comp) hg
+  rw [lmapDomain_supported] at hmap
+  exact supported_mono (Set.image_subset_iff.2 hST) hmap
+
 end Map
 
 section Cast
