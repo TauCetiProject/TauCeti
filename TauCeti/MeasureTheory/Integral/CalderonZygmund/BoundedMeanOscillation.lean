@@ -178,34 +178,6 @@ private theorem exists_ae_enorm_apply_sub_le_of_hormander (T : Lp E 2 μ →L[�
   rw [mem_closedBall] at hyb hxQ hx'Q ⊢
   linarith [dist_triangle y x' c, dist_triangle_right x x' c]
 
-omit [CompleteSpace F] in
-/-- The local part: if `g ∈ L²` agrees with `f` cut off to `closedBall c (5 r)` and the doubling
-bound `μ (closedBall c (5 r)) ≤ D μ (closedBall c r)` holds on a ball of finite positive measure,
-then `∫_{closedBall c r} ‖T g‖ ≤ √D ‖T‖ ‖f‖_∞ μ (closedBall c r)`. -/
-private theorem setLIntegral_closedBall_enorm_apply_le_of_measure_closedBall_le
-    (T : Lp E 2 μ →L[ℝ] Lp F 2 μ) {f g : Lp E 2 μ} {c : X} {r : ℝ} {D : ℝ≥0∞}
-    (hg : g =ᵐ[μ] (closedBall c (5 * r)).indicator f)
-    (hD : μ (closedBall c (5 * r)) ≤ D * μ (closedBall c r))
-    (h0 : μ (closedBall c r) ≠ 0) (htop : μ (closedBall c r) ≠ ∞) :
-    ∫⁻ x in closedBall c r, ‖T g x‖ₑ ∂μ ≤
-      D ^ (2⁻¹ : ℝ) * ‖T‖ₑ * eLpNorm f ∞ μ * μ (closedBall c r) := by
-  have h5 : MeasurableSet (closedBall c (5 * r)) := measurableSet_closedBall
-  have hsq : μ (closedBall c r) ^ (2⁻¹ : ℝ) * μ (closedBall c r) ^ (2⁻¹ : ℝ) =
-      μ (closedBall c r) := by
-    rw [← ENNReal.rpow_add _ _ h0 htop]
-    norm_num
-  calc ∫⁻ x in closedBall c r, ‖T g x‖ₑ ∂μ
-      ≤ ‖T‖ₑ * (eLpNorm f ∞ μ * μ (closedBall c (5 * r)) ^ (2⁻¹ : ℝ)) *
-          μ (closedBall c r) ^ (2⁻¹ : ℝ) :=
-        (setLIntegral_enorm_apply_le_of_ae_eq_indicator T h5 hg _).trans_eq (by norm_num)
-    _ ≤ ‖T‖ₑ * (eLpNorm f ∞ μ * (D * μ (closedBall c r)) ^ (2⁻¹ : ℝ)) *
-          μ (closedBall c r) ^ (2⁻¹ : ℝ) := by gcongr
-    _ = D ^ (2⁻¹ : ℝ) * ‖T‖ₑ * eLpNorm f ∞ μ *
-          (μ (closedBall c r) ^ (2⁻¹ : ℝ) * μ (closedBall c r) ^ (2⁻¹ : ℝ)) := by
-        rw [ENNReal.mul_rpow_of_nonneg _ _ (by norm_num)]
-        ring
-    _ = D ^ (2⁻¹ : ℝ) * ‖T‖ₑ * eLpNorm f ∞ μ * μ (closedBall c r) := by rw [hsq]
-
 /-- **Singular integral operators map `L^∞` to BMO**, on one ball. Let `T` be a bounded linear
 operator on `L²(μ)` such that `T b x = ∫ K x y (b y) dy` for almost every `x` in any ball on
 which `b` vanishes, where the kernel `K` satisfies Hörmander's condition in the first variable,
@@ -253,7 +225,7 @@ theorem setLAverage_enorm_sub_setAverage_le_of_hormander_of_measure_closedBall_l
   obtain ⟨a, ha⟩ := exists_ae_enorm_apply_sub_le_of_hormander T hK hB hrep hM₂ hr hvan h0
   have hloc : ∫⁻ x in closedBall c r, ‖T (f - f₂) x‖ₑ ∂μ ≤
       D ^ (2⁻¹ : ℝ) * ‖T‖ₑ * M * μ (closedBall c r) :=
-    setLIntegral_closedBall_enorm_apply_le_of_measure_closedBall_le T hf₁ hD h0 htop
+    by simpa using T.setLIntegral_enorm_apply_le_of_ae_eq_indicator_of_measure_le h5 hf₁ hD h0 htop
   -- Comparing `T f = T f₁ + T f₂` with the constant `a` bounds its mean oscillation.
   have hconst : ⨍⁻ x in closedBall c r, ‖T f x - a‖ₑ ∂μ ≤ (D ^ (2⁻¹ : ℝ) * ‖T‖ₑ + B) * M := by
     rw [setLAverage_eq, ENNReal.div_le_iff h0 htop]
