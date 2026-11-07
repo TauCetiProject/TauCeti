@@ -106,7 +106,7 @@ theorem congr_trans (ψ : G ≃* G') (hψ : (ψ : G →* G').comp F = F'.comp (�
 @[simp]
 theorem congr_symm (ψ : G ≃* G') (hψ : (ψ : G →* G').comp F = F'.comp (ψ : G →* G')) :
     (FixedPointCandidate.congr ψ hψ).symm =
-      FixedPointCandidate.congr ψ.symm (ψ.symm_comp_eq_comp_symm_of_comp_eq_comp hψ) := by
+      FixedPointCandidate.congr ψ.symm (ψ.symm_comp_eq_comp_symm_iff.2 hψ) := by
   rw [FixedPointCandidate.congr, FixedPointCandidate.congr, DerivedCentralQuotient.congr_symm,
     fixedSubgroupCongr_symm]
 
