@@ -15,6 +15,7 @@ import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 import TauCeti.MeasureTheory.Constructions.HaarToSphere
 import TauCeti.MeasureTheory.Group.Integral
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # The mean-value property and the sub-mean-value inequality
@@ -242,6 +243,26 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.setIntegral_ball_eq {x₀ : E}
     ((harmonicOnNhd_comp_add_right_closedBall_zero_iff x₀ R).mpr hu)
   rw [zero_add] at h
   rw [Measure.addHaar_real_ball_center, ← h, setIntegral_ball_eq_setIntegral_ball_zero_add]
+
+omit [Nontrivial E] in
+/-- A harmonic value is bounded by the `L¹` norm on any containing open set, using a ball
+of fixed radius around the evaluation point. -/
+theorem _root_.InnerProductSpace.HarmonicOnNhd.norm_le_inv_measureReal_mul_integral_norm
+    {s : Set E} (hu : HarmonicOnNhd u s) (hi : IntegrableOn u s μ) {x : E} {ρ : ℝ}
+    (hρ : 0 < ρ) (hx : closedBall x ρ ⊆ s) :
+    ‖u x‖ ≤ (μ.real (ball (0 : E) ρ))⁻¹ * ∫ z in s, ‖u z‖ ∂μ := by
+  have hV : 0 < μ.real (ball (0 : E) ρ) := measureReal_ball_pos μ 0 hρ
+  have hmean := (hu.mono hx).setIntegral_ball_eq (μ := μ)
+  have hbound : μ.real (ball (0 : E) ρ) * ‖u x‖ ≤ ∫ z in s, ‖u z‖ ∂μ := by
+    calc
+      _ = ‖∫ z in ball x ρ, u z ∂μ‖ := by
+        rw [hmean, norm_smul, Real.norm_of_nonneg measureReal_nonneg,
+          Measure.addHaar_real_ball_center μ x ρ]
+      _ ≤ ∫ z in ball x ρ, ‖u z‖ ∂μ := norm_integral_le_integral_norm _
+      _ ≤ ∫ z in s, ‖u z‖ ∂μ := setIntegral_mono_set hi.norm
+        (ae_of_all _ fun _ ↦ norm_nonneg _) (ball_subset_closedBall.trans hx).eventuallyLE
+  rw [inv_mul_eq_div, le_div_iff₀ hV, mul_comm]
+  exact hbound
 
 omit [Nontrivial E] in
 /-- **The mean-value property on balls, average form.** A function harmonic on a neighbourhood
