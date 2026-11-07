@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.StandardComodule
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Basic
+import TauCeti.LinearAlgebra.Dual.Lemmas
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.NonzeroVectors
 import Mathlib.LinearAlgebra.Transvection.Basic
 
 /-!
@@ -270,42 +272,19 @@ private theorem exists_specialLinearGroup_mulVec {v w : Fin m → k} (hm : 2 ≤
     (hv : v ≠ 0) (hw : w ≠ 0) :
     ∃ g : Matrix.SpecialLinearGroup (Fin m) k,
       (g : Matrix (Fin m) (Fin m) k) *ᵥ w = v := by
-  -- First extend the equivalence between the two lines to an arbitrary ambient equivalence.
-  let e : (k ∙ w) ≃ₗ[k] (k ∙ v) :=
-    (LinearEquiv.toSpanNonzeroSingleton k (Fin m → k) w hw).symm.trans
-      (LinearEquiv.toSpanNonzeroSingleton k (Fin m → k) v hv)
-  obtain ⟨φ, hφ⟩ := Submodule.exists_linearEquiv_restrict_eq e
+  obtain ⟨g, hg⟩ := TauCeti.exists_smul_eq_of_ne_zero hw hv
+  let φ : (Fin m → k) ≃ₗ[k] (Fin m → k) := (Matrix.GeneralLinearGroup.toLin g).toLinearEquiv
   have hφw : φ w = v := by
-    have hone := hφ ⟨w, Submodule.mem_span_singleton_self w⟩
-    have he : e ⟨w, Submodule.mem_span_singleton_self w⟩ =
-        ⟨v, Submodule.mem_span_singleton_self v⟩ := by
-      simp only [e, LinearEquiv.trans_apply]
-      rw [LinearEquiv.coord_self k (Fin m → k) w hw]
-      exact LinearEquiv.toSpanNonzeroSingleton_one k (Fin m → k) v hv
-    rw [he] at hone
-    exact hone.symm
+    simpa [φ, Units.smul_def, ← Matrix.mulVecLin_apply, ← Matrix.GeneralLinearGroup.coe_toLin]
+      using hg
   -- A second direction modulo `k · v` gives a rank-one correction that fixes `v` and has
   -- determinant inverse to that of `φ`.
-  have hspan : k ∙ v ≠ ⊤ := by
-    intro htop
-    have hfin := congrArg
-      (fun S : Submodule k (Fin m → k) ↦ Module.finrank k S) htop
-    rw [finrank_span_singleton hv, finrank_top, Module.finrank_pi k] at hfin
-    simp only [Fintype.card_fin] at hfin
-    omega
-  obtain ⟨z, hz⟩ := SetLike.exists_notMem_of_ne_top (k ∙ v) hspan rfl
-  obtain ⟨f, hfz, hfspan⟩ :=
-    Submodule.exists_dual_map_eq_bot_of_notMem hz inferInstance
-  have hfv : f v = 0 := by
-    have hvmap : f v ∈ (k ∙ v).map f :=
-      ⟨v, Submodule.mem_span_singleton_self v, rfl⟩
-    rw [hfspan, Submodule.mem_bot] at hvmap
-    exact hvmap
-  let f' : Module.Dual k (Fin m → k) := (f z)⁻¹ • f
-  have hf'z : f' z = 1 := by
-    simp [f', hfz]
-  have hf'v : f' v = 0 := by
-    simp [f', hfv]
+  obtain ⟨f', z, hf'z, hf'v⟩ :=
+    Submodule.exists_dual_apply_eq_one_apply_eq_zero_of_span_singleton_ne_top
+      (span_lt_top_of_card_lt_finrank (R := k) (s := {v}) (by
+        simp only [Set.toFinset_singleton, Finset.card_singleton, Module.finrank_pi,
+          Fintype.card_fin]
+        omega)).ne
   let d := LinearEquiv.det φ
   let z' : Fin m → k := ((↑d⁻¹ : k) - 1) • z
   have hf'z' : f' z' = (↑d⁻¹ : k) - 1 := by

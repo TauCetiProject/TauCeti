@@ -37,6 +37,8 @@ and so separate points.
   basis of `ker f`.
 * `Submodule.exists_dual_ker_eq_of_finrank_quotient_eq_one`: every codimension-one subspace
   is the kernel of a nonzero functional.
+* `Submodule.exists_dual_apply_eq_one_apply_eq_zero_of_span_singleton_ne_top`: if the line through
+  `v` is not everything, some functional vanishes at `v` and equals one at some vector.
 * `Module.Finite.of_finite_end`: a vector space is finite-dimensional once its endomorphism
   algebra is.
 * `LinearIndependent.exists_dual_forall_apply_eq_ite`: a linearly independent family of vectors
@@ -183,6 +185,18 @@ theorem exists_dual_ker_eq_of_finrank_quotient_eq_one (W : Submodule K V)
     simp [h] at hv
   · ext v
     simp
+
+/-- If the line through `v` is not the whole space, some linear functional vanishes at `v` and
+takes the value `1` at some vector. -/
+theorem exists_dual_apply_eq_one_apply_eq_zero_of_span_singleton_ne_top {v : V}
+    (hspan : K ∙ v ≠ ⊤) : ∃ (f : Module.Dual K V) (z : V), f z = 1 ∧ f v = 0 := by
+  obtain ⟨z, hz⟩ := SetLike.exists_notMem_of_ne_top (K ∙ v) hspan rfl
+  obtain ⟨f, hfz, hfspan⟩ := exists_dual_map_eq_bot_of_notMem hz inferInstance
+  have hfv : f v = 0 := by
+    have hvmap : f v ∈ (K ∙ v).map f := ⟨v, mem_span_singleton_self v, rfl⟩
+    rw [hfspan, mem_bot] at hvmap
+    exact hvmap
+  exact ⟨f, (f z)⁻¹ • z, by simp [hfz], hfv⟩
 
 end Submodule
 
