@@ -27,8 +27,8 @@ namespace MulChar
 
 /-- The zero extension of the inverse of a unit homomorphism is the inverse character. -/
 theorem ofUnitHom_inv {R R' : Type*} [CommMonoid R] [CommMonoidWithZero R'] (χ : Rˣ →* R'ˣ) :
-    ofUnitHom χ⁻¹ = (ofUnitHom χ)⁻¹ :=
-  map_inv mulEquivToUnitHom.symm χ
+    ofUnitHom χ⁻¹ = (ofUnitHom χ)⁻¹ := by
+  simpa [ofUnitHom_eq] using map_inv (mulEquivToUnitHom (R := R) (R' := R')).symm χ
 
 /-- For a unit homomorphism `χ` with values in an `RCLike` field `K` on a ring with finitely
 many units, the zero extension of `χ⁻¹` is the conjugate of the zero extension of `χ`. -/
