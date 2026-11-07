@@ -54,7 +54,8 @@ end variationOnFromTo
 
 namespace LocallyBoundedVariationOn
 
-variable {α X : Type*} [LinearOrder α] [PseudoEMetricSpace X] {f : α → X} {s : Set α}
+variable {α X : Type*} [LinearOrder α] [TopologicalSpace X] [WeakPseudoEMetricSpace X]
+  {f : α → X} {s : Set α}
 
 /-- The extended distance between two values at ordered points of `s` is at most the increase of
 the cumulative signed variation between them. -/
