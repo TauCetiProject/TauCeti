@@ -114,8 +114,8 @@ theorem isDGBimodule_algebraBimodule : IsDGBimodule hA hA Γ D where
 
 /-- A DG algebra under `A` as an `(A,A)`-DG bimodule, with both actions through its base map.
 The abbreviation retains the restriction-of-scalars carrier and its evaluation interface. -/
-abbrev algebraBimodule : DGBimoduleCat.{uR, u, u, u} hA hA := by
-  exact DGBimoduleCat.of (isDGBimodule_algebraBimodule f)
+abbrev algebraBimodule : DGBimoduleCat.{uR, u, u, u} hA hA :=
+  DGBimoduleCat.of (isDGBimodule_algebraBimodule f)
 
 open BalancedTensorProduct
 
@@ -217,9 +217,7 @@ private theorem algebraBimoduleMul_tmul (x y : f.algebraBimodule) :
 private def unitRightLinearMap : DGBimoduleCat.tensorUnit.{u} hA →ₗ[Aᵐᵒᵖ] T where
   toFun a := (E).symm (f a.down)
   map_add' a b := by
-    have hab : (a + b).down = a.down + b.down := by
-      simpa only [DGBimoduleCat.tensorUnitEquiv_symm_apply] using
-        (DGBimoduleCat.tensorUnitEquiv.{u} hA).symm.map_add a b
+    have hab : (a + b).down = a.down + b.down := ULift.add_down
     apply RestrictScalars.ext
     simp only [RestrictScalars.linearEquiv_symm_apply, RestrictScalars.val_add]
     rw [hab, map_add]
@@ -265,8 +263,8 @@ open scoped MonObj
 The monoidal category uses carriers in the universe of `A`. -/
 @[no_expose]
 instance algebraBimoduleMonObj : MonObj f.algebraBimodule where
-  one := by exact algebraBimoduleUnit f
-  mul := by exact algebraBimoduleMul f
+  one := algebraBimoduleUnit f
+  mul := algebraBimoduleMul f
   one_mul := by
     apply DGBimoduleCat.tensorObj_hom_ext
     intro a x
