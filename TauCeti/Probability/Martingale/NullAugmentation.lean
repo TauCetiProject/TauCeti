@@ -40,8 +40,19 @@ variable {Ω E ι : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
 
 section Preorder
 
-variable [Preorder ι] {ℱ : Filtration ι mΩ} {X : ι → Ω → E}
-  [SigmaFiniteFiltration P ℱ]
+variable [Preorder ι]
+
+/-- Conditional expectation on a null-augmented filtration under the completed measure
+agrees almost everywhere with conditional expectation on the original filtration. -/
+theorem Filtration.condExp_nullAugment_completion (ℱ : Filtration ι mΩ) (s : ι)
+    [SigmaFinite (P.trim (ℱ.le s))] {f : Ω → E} (hf : AEStronglyMeasurable f P) :
+    @condExp (NullMeasurableSpace Ω P) E (ℱ.nullAugment P s) _ _ _ P.completion f
+      =ᵐ[P.completion] @condExp Ω E (ℱ s) mΩ _ _ P f := by
+  -- Specify the original ambient space on the right, rather than infer it from the carrier tag.
+  rw [Filtration.nullAugment_apply, P.ae_completion]
+  exact condExp_eventuallyMeasurableSpace_completion (μ := P) (ℱ.le s) hf
+
+variable {ℱ : Filtration ι mΩ} {X : ι → Ω → E} [SigmaFiniteFiltration P ℱ]
 
 /-- A martingale lifts to the null-augmented filtration on the completed ambient space. -/
 theorem Martingale.nullAugment (hX : Martingale X ℱ P) :
@@ -49,10 +60,9 @@ theorem Martingale.nullAugment (hX : Martingale X ℱ P) :
       (fun t (ω : NullMeasurableSpace Ω P) => X t ω) (ℱ.nullAugment P) P.completion := by
   refine ⟨fun t => (hX.stronglyMeasurable t).mono (ℱ.le_nullAugment P t), ?_⟩
   intro s t hst
-  rw [Filtration.nullAugment_apply]
-  -- Transfer the a.e. filter explicitly across the completed-space type tag.
-  convert (condExp_eventuallyMeasurableSpace_completion (ℱ.le s)
-    (hX.integrable t).aestronglyMeasurable).trans (hX.condExp_ae_eq hst) using 1 <;> rfl
+  refine (ℱ.condExp_nullAugment_completion s (hX.integrable t).aestronglyMeasurable).trans ?_
+  rw [P.ae_completion]
+  exact hX.condExp_ae_eq hst
 
 /-- For a process strongly adapted to the original filtration, null augmentation neither
 creates nor destroys the martingale property. Original adaptation is essential to the
@@ -63,13 +73,10 @@ theorem StronglyAdapted.martingale_nullAugment_iff (hX : StronglyAdapted ℱ X) 
       (fun t (ω : NullMeasurableSpace Ω P) => X t ω) (ℱ.nullAugment P) P.completion ↔
       Martingale X ℱ P := by
   refine ⟨fun h => ⟨hX, fun s t hst => ?_⟩, Martingale.nullAugment⟩
-  have heq := h.condExp_ae_eq hst
-  rw [Filtration.nullAugment_apply] at heq
-  have hce := condExp_eventuallyMeasurableSpace_completion (μ := P) (ℱ.le s)
+  have hce := ℱ.condExp_nullAugment_completion (P := P) s
     ((hX t).mono (ℱ.le t)).aestronglyMeasurable
-  apply hce.symm.trans
-  -- The functions agree literally; only the completed a.e. filter changes.
-  convert heq using 1 <;> rfl
+  have heq := hce.symm.trans (h.condExp_ae_eq hst)
+  rwa [P.ae_completion] at heq
 
 end Preorder
 
