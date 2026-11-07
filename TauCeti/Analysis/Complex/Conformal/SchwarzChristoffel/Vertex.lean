@@ -162,6 +162,39 @@ private theorem dist_schwarzChristoffelPrimitive_le (a e : ι → ℝ) (z₀ : U
 
 /-! ### Existence of the vertex -/
 
+/-- A map `F` on a subset `S` of the plane that is Hölder of exponent `s > 0` on `S` near a point
+`p`, with `S` accumulating at `p`, has a limit along `𝓝[S] p`: the image of `S` in a small ball
+about `p` has diameter below any `ε > 0`, so the image filter is Cauchy. -/
+private theorem exists_tendsto_of_dist_le_mul_rpow {F : ℂ → ℂ} {S : Set ℂ} {p : ℂ}
+    {K ρ₀ s : ℝ} (hK : 0 < K) (hρ₀ : 0 < ρ₀) (hs : 0 < s) (hnb : (𝓝[S] p).NeBot)
+    (hF : ∀ z ∈ Metric.ball p ρ₀ ∩ S, ∀ w ∈ Metric.ball p ρ₀ ∩ S,
+      dist (F z) (F w) ≤ K * ‖z - w‖ ^ s) :
+    ∃ v : ℂ, Tendsto F (𝓝[S] p) (𝓝 v) := by
+  refine CompleteSpace.complete (f := map F (𝓝[S] p)) ?_
+  rw [Metric.cauchy_iff]
+  refine ⟨map_neBot, ?_⟩
+  intro ε hε
+  -- `K * (2 * ρ) ^ s → 0` as `ρ → 0⁺`, so some radius `ρ ≤ ρ₀` makes it less than `ε`.
+  have hlim : Tendsto (fun ρ : ℝ => K * (2 * ρ) ^ s) (𝓝[>] 0) (𝓝 0) := by
+    have hc : Continuous fun ρ : ℝ => K * (2 * ρ) ^ s :=
+      continuous_const.mul ((continuous_const.mul continuous_id).rpow_const fun _ => .inr hs.le)
+    simpa [Real.zero_rpow hs.ne'] using (hc.tendsto 0).mono_left nhdsWithin_le_nhds
+  obtain ⟨ρ, hρε, hρpos, hρle⟩ :=
+    ((hlim.eventually (gt_mem_nhds hε)).and (Ioc_mem_nhdsGT hρ₀)).exists
+  refine ⟨F '' (Metric.ball p ρ ∩ S), ?_, ?_⟩
+  · refine mem_map.mpr (mem_of_superset ?_ (subset_preimage_image _ _))
+    exact inter_mem (nhdsWithin_le_nhds (Metric.ball_mem_nhds p hρpos)) self_mem_nhdsWithin
+  rintro x ⟨z, hz, rfl⟩ y ⟨w, hw, rfl⟩
+  have hzw : ‖z - w‖ ≤ 2 * ρ := by
+    rw [← dist_eq_norm]
+    linarith [dist_triangle_right z w p, Metric.mem_ball.mp hz.1, Metric.mem_ball.mp hw.1]
+  have hsub : Metric.ball p ρ ∩ S ⊆ Metric.ball p ρ₀ ∩ S :=
+    inter_subset_inter_left _ (Metric.ball_subset_ball hρle)
+  calc dist (F z) (F w) ≤ K * ‖z - w‖ ^ s := hF z (hsub hz) w (hsub hw)
+    _ ≤ K * (2 * ρ) ^ s :=
+        mul_le_mul_of_nonneg_left (Real.rpow_le_rpow (norm_nonneg _) hzw hs.le) hK.le
+    _ < ε := hρε
+
 /-- The **Schwarz--Christoffel primitive converges at a prevertex** whose total turning exponent
 exceeds `-1`.  The exponent is summed over all indices sitting at the prevertex `a j`, so for a
 family of pairwise distinct prevertices the hypothesis reads `-1 < e j`, which the classical
@@ -194,62 +227,12 @@ private theorem exists_tendsto_schwarzChristoffelPrimitive (a e : ι → ℝ)
       ‖schwarzChristoffelIntegrand a e y‖ ≤ C * dist y p ^ u := by
     intro y hy
     have hyne : y ≠ p := hsub hy.2
-    have hd : 0 < dist y p := dist_pos.mpr hyne
-    have hd1 : dist y p ≤ 1 := by
-      have := Metric.mem_ball.mp hy.1
-      have h2 : ρ₀ ≤ 1 := min_le_right _ _
-      linarith
-    have h1 : ‖schwarzChristoffelIntegrand a e y‖ ≤ C * dist y p ^ T := by
-      refine hr₁sub ⟨?_, hyne⟩
-      exact Metric.mem_ball.mp hy.1 |>.trans_le (min_le_left _ _) |> Metric.mem_ball.mpr
-    have hdecomp : T = (T - u) + u := by ring
-    have h2 : dist y p ^ T ≤ dist y p ^ u := by
-      rw [hdecomp, Real.rpow_add hd]
-      have hle1 : dist y p ^ (T - u) ≤ 1 :=
-        Real.rpow_le_one dist_nonneg hd1 (by simp [hudef])
-      nlinarith [Real.rpow_nonneg (dist_nonneg (x := y) (y := p)) u]
-    exact h1.trans (mul_le_mul_of_nonneg_left h2 hC.le)
-  refine CompleteSpace.complete (f := map (schwarzChristoffelPrimitive a e z₀)
-    (𝓝[upperHalfPlaneSet] p)) ?_
-  rw [Metric.cauchy_iff]
-  refine ⟨map_neBot, ?_⟩
-  intro ε hε
-  set K : ℝ := C * (2 / (u + 1))
-  have hK : 0 < K := by positivity
-  obtain ⟨ρ, hρpos, hρle, hρε⟩ : ∃ ρ, 0 < ρ ∧ ρ ≤ ρ₀ ∧ K * (2 * ρ) ^ (u + 1) < ε := by
-    set τ : ℝ := (ε / (2 * K)) ^ (u + 1)⁻¹ with hτdef
-    refine ⟨min ρ₀ (τ / 2), lt_min hρ₀ (by positivity), min_le_left _ _, ?_⟩
-    have h2ρ : 2 * min ρ₀ (τ / 2) ≤ τ := by
-      have := min_le_right ρ₀ (τ / 2)
-      linarith
-    have hstep : K * (2 * min ρ₀ (τ / 2)) ^ (u + 1) ≤ K * τ ^ (u + 1) :=
-      mul_le_mul_of_nonneg_left
-        (Real.rpow_le_rpow (by positivity) h2ρ hu1.le) hK.le
-    have hval : τ ^ (u + 1) = ε / (2 * K) := by
-      rw [hτdef, Real.rpow_inv_rpow (by positivity) hu1.ne']
-    rw [hval] at hstep
-    have : K * (ε / (2 * K)) = ε / 2 := by field_simp
-    rw [this] at hstep
-    exact hstep.trans_lt (half_lt_self hε)
-  refine ⟨schwarzChristoffelPrimitive a e z₀ '' (Metric.ball p ρ ∩ upperHalfPlaneSet), ?_, ?_⟩
-  · refine mem_map.mpr (mem_of_superset ?_ (subset_preimage_image _ _))
-    exact inter_mem (nhdsWithin_le_nhds (Metric.ball_mem_nhds p hρpos)) self_mem_nhdsWithin
-  rintro x ⟨z, hz, rfl⟩ y ⟨w, hw, rfl⟩
-  have hzw : ‖z - w‖ ≤ 2 * ρ := by
-    have h1 := Metric.mem_ball.mp hz.1
-    have h2 := Metric.mem_ball.mp hw.1
-    have := dist_triangle z p w
-    rw [dist_comm p w] at this
-    rw [← dist_eq_norm]
-    linarith
-  have hzsub : Metric.ball p ρ ∩ upperHalfPlaneSet ⊆ Metric.ball p ρ₀ ∩ upperHalfPlaneSet :=
-    inter_subset_inter_left _ (Metric.ball_subset_ball hρle)
-  calc dist (schwarzChristoffelPrimitive a e z₀ z) (schwarzChristoffelPrimitive a e z₀ w)
-      ≤ K * ‖z - w‖ ^ (u + 1) :=
-        dist_schwarzChristoffelPrimitive_le a e z₀ hu hu0 hC.le hpim hbd (hzsub hz) (hzsub hw)
-    _ ≤ K * (2 * ρ) ^ (u + 1) :=
-        mul_le_mul_of_nonneg_left (Real.rpow_le_rpow (norm_nonneg _) hzw hu1.le) hK.le
-    _ < ε := hρε
+    have hyr := Metric.mem_ball.mp hy.1
+    exact (hr₁sub ⟨Metric.mem_ball.mpr (hyr.trans_le (min_le_left _ _)), hyne⟩).trans
+      (mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_exponent_ge (dist_pos.mpr hyne)
+        (hyr.le.trans (min_le_right _ _)) (min_le_left T 0)) hC.le)
+  exact exists_tendsto_of_dist_le_mul_rpow (by positivity) hρ₀ hu1 hnb fun z hz w hw ↦
+    dist_schwarzChristoffelPrimitive_le a e z₀ hu hu0 hC.le hpim hbd hz hw
 
 /-- The **Schwarz--Christoffel vertex** attached to the prevertex `a j`: the boundary value at
 `a j` of the primitive normalized at `z₀`.  It is a genuine limit when the total turning exponent
