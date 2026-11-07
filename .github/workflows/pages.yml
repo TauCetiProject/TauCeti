@@ -210,12 +210,11 @@ jobs:
             /Mathlib.lean
           sparse-checkout-cone-mode: false
 
-      # Overwrites the checked-in SVGs in the runner only (never committed back). The
-      # versions tracked in web/static_files/ are just fallback snapshots so a local
-      # `cd web && lake exe web` renders something; refresh them by running these same
-      # two commands on a schedule or manual dispatch. Refresh runs replace them when the
-      # generators succeed. Push deploys reuse cached charts, or the committed fallbacks on
-      # a cache miss; failed refreshes likewise retain whatever assets remain available.
+      # Scheduled and manual refreshes generate runner-local SVGs for deployment. The
+      # versions tracked in web/static_files/ provide local-build and cache-miss fallbacks;
+      # update those tracked snapshots by running these commands locally and committing
+      # their output in a PR. Push deploys reuse cached charts, or the committed fallbacks
+      # on a cache miss. Failed refreshes retain whatever assets remain available.
       - name: Regenerate the lines-of-code charts into static_files
         if: env.REFRESH_SITE_DATA == 'true'
         working-directory: ${{ github.workspace }}
