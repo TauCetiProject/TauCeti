@@ -6,13 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Support
+public import Mathlib.MeasureTheory.Constructions.Pi
 
 /-!
-# Topological support under scalar multiplication and continuous maps
+# Topological support under products, scalar multiplication and continuous maps
 
 This file identifies the support of a nonzero scalar multiple of a measure and the support of a
 pushforward by a continuous map. It also shows that pushing a measure forward along a
 homeomorphism transports its topological support onto the image of the original support.
+Finite products have the product of the supports of their factors. A measurable map that is
+continuous at a source support point sends that point into the support of the pushforward;
+global continuity is unnecessary for this inclusion.
 
 ## Main result
 
@@ -29,9 +33,53 @@ homeomorphism transports its topological support onto the image of the original 
 public section
 
 open Set
-open scoped ENNReal
+open scoped ENNReal Topology
 
 namespace MeasureTheory.Measure
+
+/-- The support of a finite product of sigma-finite measures is the product of their supports.
+No compatibility between the topologies and measurable structures is needed. -/
+@[simp]
+theorem support_pi {ι : Type*} [Fintype ι] {α : ι → Type*}
+    [∀ i, TopologicalSpace (α i)] [∀ i, MeasurableSpace (α i)]
+    (μ : ∀ i, Measure (α i)) [∀ i, SigmaFinite (μ i)] :
+    (Measure.pi μ).support = Set.univ.pi (fun i ↦ (μ i).support) := by
+  classical
+  ext x
+  simp only [Set.mem_univ_pi, mem_support_iff_forall]
+  constructor
+  · intro hx i U hU
+    let V : ∀ j, Set (α j) := Function.update (fun _ ↦ Set.univ) i U
+    have hV : ∀ j, V j ∈ 𝓝 (x j) := by
+      intro j
+      by_cases h : j = i
+      · subst j
+        simpa [V] using hU
+      · simp [V, h]
+    have hpos := hx (Set.univ.pi V) (set_pi_mem_nhds Set.finite_univ fun j _ ↦ hV j)
+    rw [Measure.pi_pi] at hpos
+    have hi := Finset.prod_ne_zero_iff.mp hpos.ne' i (Finset.mem_univ i)
+    exact pos_iff_ne_zero.mpr (by simpa [V] using hi)
+  · intro hx U hU
+    rw [nhds_pi] at hU
+    obtain ⟨I, _, V, hV, hsub⟩ := Filter.mem_pi.mp hU
+    have hpos : 0 < Measure.pi μ (Set.univ.pi V) := by
+      rw [Measure.pi_pi]
+      exact pos_iff_ne_zero.mpr <| Finset.prod_ne_zero_iff.mpr fun i _ ↦
+        (hx i (V i) (hV i)).ne'
+    exact hpos.trans_le (measure_mono fun y hy ↦ hsub fun i _ ↦ hy i (Set.mem_univ i))
+
+/-- A measurable map continuous at a source support point sends it into the support of the
+pushforward, even if the map is discontinuous elsewhere. -/
+theorem mem_support_map_of_continuousAt {X Y : Type*}
+    [TopologicalSpace X] [MeasurableSpace X] [TopologicalSpace Y] [MeasurableSpace Y]
+    [OpensMeasurableSpace Y] {μ : Measure X} {f : X → Y} {x : X}
+    (hf : AEMeasurable f μ) (hfx : ContinuousAt f x) (hx : x ∈ μ.support) :
+    f x ∈ (μ.map f).support := by
+  rw [support_eq_forall_isOpen]
+  intro U hxU hU
+  rw [Measure.map_apply_of_aemeasurable hf hU.measurableSet]
+  exact (mem_support_iff_forall x).mp hx _ (hfx (hU.mem_nhds hxU))
 
 /-- Multiplying a measure by a nonzero `ℝ≥0∞` scalar preserves its topological support. -/
 theorem support_smul_measure {X : Type*} [TopologicalSpace X] [MeasurableSpace X]
