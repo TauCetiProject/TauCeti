@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Smooth
 public import TauCeti.AlgebraicGeometry.Curves.Basic
+import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Regular
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
 
 /-!
@@ -18,10 +19,18 @@ moreover integral and proper over `k`, it is a curve over `k`. Its local rings a
 points are discrete valuation rings by
 `TauCeti.AlgebraicGeometry.isDiscreteValuationRing_stalk_of_smooth`.
 
+Conversely, over a perfect field `k` a curve whose local rings at codimension-one points are
+discrete valuation rings is smooth of relative dimension one over `k`: all its local rings are
+then regular (`TauCeti.AlgebraicGeometry.smooth_of_isRegularLocalRing_stalk`). So over a perfect
+field the regular proper curves are exactly the smooth ones. Over an imperfect field a regular
+curve need not be smooth.
+
 ## Main results
 
 * `AlgebraicGeometry.Scheme.IsCurveOver.of_smooth`: an integral proper scheme smooth of relative
   dimension one over `k` is a curve over `k`.
+* `AlgebraicGeometry.Scheme.IsCurveOver.smoothOfRelativeDimension_one_of_perfectField`: a regular
+  curve over a perfect field is smooth of relative dimension one.
 -/
 
 public section
@@ -39,5 +48,21 @@ variable (k X) in
 theorem IsCurveOver.of_smooth [IsIntegral X] [IsProper (X ↘ Spec (.of k))]
     [SmoothOfRelativeDimension 1 (X ↘ Spec (.of k))] : X.IsCurveOver k :=
   ⟨topologicalKrullDim_eq_of_smoothOfRelativeDimension (X ↘ Spec (.of k))⟩
+
+variable (k X) in
+/-- **A regular curve over a perfect field is smooth**: if the local rings of a curve `X` over a
+perfect field `k` at its codimension-one points are discrete valuation rings, then `X` is smooth
+of relative dimension one over `k`. -/
+theorem IsCurveOver.smoothOfRelativeDimension_one_of_perfectField [PerfectField k]
+    [X.IsCurveOver k]
+    [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))] :
+    SmoothOfRelativeDimension 1 (X ↘ Spec (.of k)) := by
+  have : IsLocallyNoetherian X := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
+  have (x : X) : IsRegularLocalRing (X.presheaf.stalk x) := by
+    have := IsCurveOver.valuationRing_stalk k X x
+    infer_instance
+  have := smooth_of_isRegularLocalRing_stalk (X ↘ Spec (.of k))
+  exact smoothOfRelativeDimension_of_topologicalKrullDim_eq _
+    (IsCurveOver.topologicalKrullDim_eq_one k)
 
 end AlgebraicGeometry.Scheme
