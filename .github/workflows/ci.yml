@@ -33,7 +33,11 @@ env:
 jobs:
   # Infrastructure regression suites run separately in infrastructure-tests.yml.
   build:
-    runs-on: ubuntu-latest
+    # Publish fresh dot-notation context before library execution. GitHub's hosted
+    # pool can queue this serialized publisher behind hours of ordinary PR work.
+    runs-on:
+      - nscloud-ubuntu-24.04-amd64-8x16-with-features;job.priority=1
+      - namespace-features:container.privileged=true;github.run-id=${{ github.run_id }}
     # Read by publish-lake-cache below, the only job that ever holds the upload secret.
     # Neither output reveals the secret's value or whether it is set, and neither is trusted
     # there: `staged` only decides whether that job runs at all, and `reported-toolchain` is
@@ -68,10 +72,10 @@ jobs:
           fetch-depth: 0
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@d0bc7f9619c0efbaca6bb88b28cb4e00ab626435
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@dfc117ecae8e22bc38f67961d9063da7a8f2a75a
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: d0bc7f9619c0efbaca6bb88b28cb4e00ab626435
+          tools-ref: dfc117ecae8e22bc38f67961d9063da7a8f2a75a
           project-directory: .
       # Prevent library imports from inheriting sorried roadmap/review declarations.
       - name: Import-boundary guard (TauCeti/ and TauCeti.lean ⊬ roadmap/review)
@@ -153,6 +157,22 @@ jobs:
         with:
           path: ${{ steps.mathlib_ltar_restore.outputs.cache-path }}
           key: ${{ steps.mathlib_ltar_restore.outputs.cache-primary-key }}
+
+      # Main checks from fresh parsing; only PRs consume cached parsing context.
+      # Generate and publish before any candidate Lean code executes. Bump the v1 key
+      # in both workflows to abandon a bad cache snapshot.
+      - name: Dot-notation namespace lint (Mathlib type namespaces stay at root)
+        run: |
+          rm -rf .ci-dot-notation-context
+          python3 scripts/lint-dot-notation.py --context-cache ".ci-dot-notation-context/context.json"
+
+      - name: Save main's dot-notation parsing context
+        if: github.ref_name == github.event.repository.default_branch
+        continue-on-error: true
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: .ci-dot-notation-context
+          key: dot-notation-context-v1-${{ hashFiles('scripts/lean_source.py') }}-${{ github.sha }}
 
       # --- Lake artifact-cache restore (dormant until configured) --------------------
       # Restore TauCeti's OWN oleans before building, exactly as pr-build.yml does. Without
@@ -267,9 +287,6 @@ jobs:
         env:
           LAKE_NO_CACHE: "true"
         run: bash scripts/lint-env.sh
-
-      - name: Dot-notation namespace lint (Mathlib type namespaces stay at root)
-        run: python3 scripts/lint-dot-notation.py
 
       # Source style lint. The wrapper validates one complete TauCeti/** source list, applies
       # Mathlib's copyright/Authors checks directly (the empty TauCeti.lean root is exempt), and
