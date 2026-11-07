@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.List.SignVariations
 public import Mathlib.Data.Nat.Choose.Basic
+import Mathlib.Tactic.LinearCombination
 
 /-! # Permanences minus variations with zero gaps
 
@@ -199,6 +200,41 @@ variations. -/
   · exact List.permanencesMinusVariations_map_of_sign_eq_neg
       (fun x => by simp [sign_mul, sign_neg hc]) l
   · exact List.permanencesMinusVariations_map (fun x => by simp [sign_mul, sign_pos hc]) l
+
+/-- Rescaling the tail by the constant `(-1) ^ (m - n).choose 2 * lc ^ (m - ρ)` of a Euclidean step
+does not change permanences minus variations once the leading entry
+`(-1) ^ (m - n).choose 2 * lc ^ (m - n)` is replaced by `lc`, provided the first entry of the tail
+is nonzero. -/
+theorem _root_.List.permanencesMinusVariations_cons_replicate_zero_append_map_mul
+    {K : Type*} [CommRing K] [LinearOrder K] [IsStrictOrderedRing K] {lc a : K} {l : List K}
+    {m n ρ : ℕ} (hlc : lc ≠ 0) (ha : a ≠ 0) (h : n < m) (hρ : ρ < n) :
+    ((-1 : K) ^ (m - n).choose 2 * lc ^ (m - n) ::
+        (List.replicate (n - (ρ + 1)) 0 ++
+          (a :: l).map fun x ↦ (-1) ^ (m - n).choose 2 * lc ^ (m - ρ) * x)
+        ).permanencesMinusVariations =
+      (lc :: (List.replicate (n - (ρ + 1)) 0 ++ a :: l)).permanencesMinusVariations := by
+  have hc : (-1 : K) ^ (m - n).choose 2 * lc ^ (m - ρ) ≠ 0 := by simp [hlc]
+  rw [List.map_cons, List.permanencesMinusVariations_cons_replicate_zero_append (mul_ne_zero hc ha),
+    ← List.map_cons, List.permanencesMinusVariations_map_mul_left hc,
+    List.permanencesMinusVariations_cons_replicate_zero_append ha]
+  congr 1
+  split_ifs with hk
+  · have hodd : Odd ((m - n) + (m - ρ)) := by
+      obtain ⟨i, hi⟩ := hk
+      exact ⟨m - n + i, by omega⟩
+    have h1 : ((-1 : K) ^ (m - n).choose 2) ^ 2 = 1 := by
+      rw [← pow_mul, mul_comm, pow_mul]
+      simp
+    have hprod : (-1) ^ (m - n).choose 2 * lc ^ (m - n) *
+        ((-1) ^ (m - n).choose 2 * lc ^ (m - ρ)) = lc ^ ((m - n) + (m - ρ)) := by
+      linear_combination (lc ^ (m - n) * lc ^ (m - ρ)) * h1
+    have key : (SignType.sign ((-1 : K) ^ (m - n).choose 2 * lc ^ (m - n)) : ℤ) *
+        SignType.sign ((-1 : K) ^ (m - n).choose 2 * lc ^ (m - ρ)) = SignType.sign lc := by
+      rw [← SignType.coe_mul, ← sign_mul, hprod]
+      simp [sign_pow, SignType.pow_odd _ hodd]
+    simp only [sign_mul, SignType.coe_mul] at key ⊢
+    linear_combination ((-1) ^ (n - (ρ + 1)).choose 2 * (SignType.sign a : ℤ)) * key
+  · rfl
 
 /-- On a list with no zeros, permanences minus variations is the number of
 adjacent pairs minus twice the number of sign changes. -/
