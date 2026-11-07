@@ -11,12 +11,14 @@ public import TauCeti.GroupTheory.SpecificGroups.Dihedral.Basic
 /-!
 # Dihedral spherical triangle groups
 
-For `m` with `2 ≤ m`, `equivDihedral` identifies the spherical triangle group with
-signature `(2, 2, m)` with `DihedralGroup m`.  The reflection generators `x` and `y`
-correspond to `DihedralGroup.sr 1` and `DihedralGroup.sr 0`, respectively, and their product
-corresponds to the rotation `DihedralGroup.r 1`. Such a group is finite, of order `2m`
-(`TauCeti.TriangleGroup.finite_two_two`), the dihedral row of the spherical triangle-group
-classification.
+`equivDihedral` identifies the triangle group with signature `(2, 2, m)` with
+`DihedralGroup m`, for every `m`.  The reflection generators `x` and `y` correspond to
+`DihedralGroup.sr 1` and `DihedralGroup.sr 0`, respectively, and their product corresponds to
+the rotation `DihedralGroup.r 1`. For `2 ≤ m` this is the dihedral row of the spherical
+triangle-group classification: a finite group of order `2m`
+(`TauCeti.TriangleGroup.finite_two_two`). The degenerate signatures are covered as well:
+`(2, 2, 0)` is the infinite dihedral group `DihedralGroup 0`, and `(2, 2, 1)` is the group of
+order two.
 -/
 
 public section
@@ -75,42 +77,41 @@ private theorem y_ne_one_two_two : y 2 2 m ≠ 1 := by
   apply dihedralSr_ne_one
   simpa only [toDihedral_y, map_one] using congrArg (toDihedral m) h
 
-/-- The product of the two distinguished involutions has exact order `m`. -/
-private theorem orderOf_y_mul_x_two_two (m : ℕ) (hm : 2 ≤ m) :
+/-- The product of the two distinguished involutions has exact order `m`: its image in
+`DihedralGroup m` is the rotation `r 1`, of order `m`, and `(y * x) ^ m = 1`. For `m = 0` both
+sides read `0`, the product having infinite order. -/
+private theorem orderOf_y_mul_x_two_two (m : ℕ) :
     orderOf (y 2 2 m * x 2 2 m) = m := by
-  have hm0 : 0 < m := lt_of_lt_of_le (by decide) hm
   have hmap : orderOf (toDihedral m (y 2 2 m * x 2 2 m)) = m := by
     rw [toDihedral_y_mul_x]
     exact DihedralGroup.orderOf_r_one
-  have h₁ : orderOf (toDihedral m (y 2 2 m * x 2 2 m)) ∣
-      orderOf (y 2 2 m * x 2 2 m) :=
+  have h₁ : orderOf (toDihedral m (y 2 2 m * x 2 2 m)) ∣ orderOf (y 2 2 m * x 2 2 m) :=
     orderOf_map_dvd _ _
-  have h₂ : orderOf (y 2 2 m * x 2 2 m) ∣ m :=
-    orderOf_dvd_of_pow_eq_one (y_mul_x_pow 2 2 m)
-  have h₁' := h₁
-  rw [hmap] at h₁'
-  apply Nat.le_antisymm
-  · exact Nat.le_of_dvd hm0 h₂
-  · exact Nat.le_of_dvd (Nat.pos_of_dvd_of_pos h₂ hm0) h₁'
+  rw [hmap] at h₁
+  exact Nat.dvd_antisymm (orderOf_dvd_of_pow_eq_one (y_mul_x_pow 2 2 m)) h₁
 
-private theorem cast_one_of_two_le (m : ℕ) (hm : 2 ≤ m) :
-    (ZMod.cast (1 : ZMod m) : ℤ) = 1 := by
-  have hnz : NeZero m := ⟨Nat.ne_of_gt (lt_of_lt_of_le (by decide) hm)⟩
-  have hf : Fact (1 < m) := ⟨lt_of_lt_of_le (by decide) hm⟩
-  have hv := @ZMod.cast_eq_val m ℤ (inferInstance) hnz (1 : ZMod m)
-  have hw := @ZMod.val_one m hf
-  rw [hv, hw]
-  rfl
+/-- Multiplying `y` by the `(1 : ZMod m)`-th power of `y * x` gives `x`. For `m ≠ 1` the exponent
+is `1` and this is `y * y * x = x`; for `m = 1` the exponent is `0` and `x = y`, as `y * x = 1`. -/
+private theorem y_mul_y_mul_x_zpow_cast_one (m : ℕ) :
+    y 2 2 m * (y 2 2 m * x 2 2 m) ^ (ZMod.cast (1 : ZMod m) : ℤ) = x 2 2 m := by
+  have hyy : y 2 2 m * y 2 2 m = 1 := by simpa only [pow_two] using y_pow 2 2 m
+  rcases m with - | - | m
+  · rw [show (ZMod.cast (1 : ZMod 0) : ℤ) = 1 from rfl, zpow_one, ← mul_assoc, hyy, one_mul]
+  · have hyx : y 2 2 1 * x 2 2 1 = 1 := by simpa only [pow_one] using y_mul_x_pow 2 2 1
+    rw [Subsingleton.elim (1 : ZMod 1) 0, ZMod.cast_zero, zpow_zero, mul_one]
+    rw [← mul_one (y 2 2 1), ← hyx, ← mul_assoc, hyy, one_mul]
+  · have : Fact (1 < m + 2) := ⟨by omega⟩
+    rw [ZMod.cast_eq_val, ZMod.val_one, Nat.cast_one, zpow_one, ← mul_assoc, hyy, one_mul]
 
 /-- The isomorphism from `DihedralGroup m` to the `(2, 2, m)` triangle group. -/
-private noncomputable def dihedralEquiv (m : ℕ) (hm : 2 ≤ m) :
+private noncomputable def dihedralEquiv (m : ℕ) :
     DihedralGroup m ≃* TriangleGroup 2 2 m :=
   TauCeti.dihedralGroupMulEquiv (G := TriangleGroup 2 2 m) (n := m)
     (s := y 2 2 m) (t := x 2 2 m)
     (by simpa only [pow_two] using y_pow 2 2 m)
     (by simpa only [pow_two] using x_pow 2 2 m)
     y_ne_one_two_two x_ne_one_two_two
-    (orderOf_y_mul_x_two_two m hm) (by
+    (orderOf_y_mul_x_two_two m) (by
       have hset : ({y 2 2 m, x 2 2 m} : Set (TriangleGroup 2 2 m)) =
           {x 2 2 m, y 2 2 m} := by
         ext g
@@ -118,83 +119,81 @@ private noncomputable def dihedralEquiv (m : ℕ) (hm : 2 ≤ m) :
       rw [hset]
       exact closure_x_y 2 2 m)
 
-/-- The spherical signature `(2, 2, m)` is the dihedral group of order `2m`. -/
-noncomputable def equivDihedral (m : ℕ) (hm : 2 ≤ m) :
+/-- **The signature `(2, 2, m)` is the dihedral group of order `2m`**, for every `m`: the
+spherical dihedral row when `2 ≤ m`, the infinite dihedral group when `m = 0`, and the group of
+order two when `m = 1`. -/
+noncomputable def equivDihedral (m : ℕ) :
     TriangleGroup 2 2 m ≃* DihedralGroup m :=
-  (dihedralEquiv m hm).symm
+  (dihedralEquiv m).symm
 
 /-- The inverse equivalence sends `DihedralGroup.sr 0` to the generator `y`. -/
 @[simp]
-theorem equivDihedral_symm_sr_zero (m : ℕ) (hm : 2 ≤ m) :
-    (equivDihedral m hm).symm (DihedralGroup.sr 0) = y 2 2 m := by
+theorem equivDihedral_symm_sr_zero (m : ℕ) :
+    (equivDihedral m).symm (DihedralGroup.sr 0) = y 2 2 m := by
   unfold equivDihedral
   simp [dihedralEquiv, TauCeti.dihedralGroupMulEquiv_apply]
 
 /-- The inverse equivalence sends `DihedralGroup.sr 1` to the generator `x`. -/
 @[simp]
-theorem equivDihedral_symm_sr_one (m : ℕ) (hm : 2 ≤ m) :
-    (equivDihedral m hm).symm (DihedralGroup.sr 1) = x 2 2 m := by
+theorem equivDihedral_symm_sr_one (m : ℕ) :
+    (equivDihedral m).symm (DihedralGroup.sr 1) = x 2 2 m := by
   unfold equivDihedral
   simp only [MulEquiv.symm_symm, dihedralEquiv,
     TauCeti.dihedralGroupMulEquiv_apply, TauCeti.dihedralHom_sr]
-  rw [cast_one_of_two_le m hm]
-  simp only [zpow_one]
-  calc
-    y 2 2 m * (y 2 2 m * x 2 2 m) = (y 2 2 m * y 2 2 m) * x 2 2 m := by ac_rfl
-    _ = x 2 2 m := by
-      rw [← pow_two, y_pow 2 2 m, one_mul]
+  exact y_mul_y_mul_x_zpow_cast_one m
 
 /-- `equivDihedral` sends the generator `x` to the reflection `DihedralGroup.sr 1`. -/
 @[simp]
-theorem equivDihedral_x (m : ℕ) (hm : 2 ≤ m) :
-    equivDihedral m hm (x 2 2 m) = DihedralGroup.sr 1 := by
+theorem equivDihedral_x (m : ℕ) :
+    equivDihedral m (x 2 2 m) = DihedralGroup.sr 1 := by
   unfold equivDihedral
-  rw [← equivDihedral_symm_sr_one m hm]
-  exact MulEquiv.symm_apply_apply (dihedralEquiv m hm) _
+  rw [← equivDihedral_symm_sr_one m]
+  exact MulEquiv.symm_apply_apply (dihedralEquiv m) _
 
 /-- `equivDihedral` sends the generator `y` to the reflection `DihedralGroup.sr 0`. -/
 @[simp]
-theorem equivDihedral_y (m : ℕ) (hm : 2 ≤ m) :
-    equivDihedral m hm (y 2 2 m) = DihedralGroup.sr 0 := by
+theorem equivDihedral_y (m : ℕ) :
+    equivDihedral m (y 2 2 m) = DihedralGroup.sr 0 := by
   unfold equivDihedral
-  rw [← equivDihedral_symm_sr_zero m hm]
-  exact MulEquiv.symm_apply_apply (dihedralEquiv m hm) _
+  rw [← equivDihedral_symm_sr_zero m]
+  exact MulEquiv.symm_apply_apply (dihedralEquiv m) _
 
 /-- `equivDihedral` sends the product `y * x` to the rotation `DihedralGroup.r 1`. -/
 @[simp]
-theorem equivDihedral_y_mul_x (m : ℕ) (hm : 2 ≤ m) :
-    equivDihedral m hm (y 2 2 m * x 2 2 m) = DihedralGroup.r 1 := by
+theorem equivDihedral_y_mul_x (m : ℕ) :
+    equivDihedral m (y 2 2 m * x 2 2 m) = DihedralGroup.r 1 := by
   rw [map_mul, equivDihedral_y, equivDihedral_x]
   simp [DihedralGroup.sr_mul_sr]
 
 /-- `equivDihedral` sends the generator `z` to the inverse one-step rotation. -/
 @[simp]
-theorem equivDihedral_z (m : ℕ) (hm : 2 ≤ m) :
-    equivDihedral m hm (z 2 2 m) = DihedralGroup.r (-1 : ZMod m) := by
+theorem equivDihedral_z (m : ℕ) :
+    equivDihedral m (z 2 2 m) = DihedralGroup.r (-1 : ZMod m) := by
   rw [z_eq, map_inv, equivDihedral_y_mul_x]
   exact DihedralGroup.inv_r (n := m) 1
 
 /-- The inverse equivalence sends `DihedralGroup.r 1` to the product `y * x`. -/
 @[simp]
-theorem equivDihedral_symm_r_one (m : ℕ) (hm : 2 ≤ m) :
-    (equivDihedral m hm).symm (DihedralGroup.r 1) = y 2 2 m * x 2 2 m := by
-  apply (equivDihedral m hm).injective
+theorem equivDihedral_symm_r_one (m : ℕ) :
+    (equivDihedral m).symm (DihedralGroup.r 1) = y 2 2 m * x 2 2 m := by
+  apply (equivDihedral m).injective
   rw [MulEquiv.apply_symm_apply, equivDihedral_y_mul_x]
 
-/-- The dihedral triangle group has cardinality `2m`. -/
+/-- The dihedral triangle group has cardinality `2m`; for `m = 0` both sides are `0`, the group
+being infinite. -/
 @[simp]
-theorem natCard_two_two (m : ℕ) (hm : 2 ≤ m) :
+theorem natCard_two_two (m : ℕ) :
     Nat.card (TriangleGroup 2 2 m) = 2 * m := by
   calc
     Nat.card (TriangleGroup 2 2 m) = Nat.card (DihedralGroup m) :=
-      Nat.card_congr (equivDihedral m hm).toEquiv
+      Nat.card_congr (equivDihedral m).toEquiv
     _ = 2 * m := DihedralGroup.nat_card
 
-/-- The dihedral spherical row: a signature `(2, 2, m)` with `2 ≤ m` gives a finite triangle
+/-- The dihedral spherical row: a signature `(2, 2, m)` with `m ≠ 0` gives a finite triangle
 group, the dihedral group of order `2m`. -/
-theorem finite_two_two (m : ℕ) (hm : 2 ≤ m) : Finite (TriangleGroup 2 2 m) := by
+theorem finite_two_two (m : ℕ) (hm : m ≠ 0) : Finite (TriangleGroup 2 2 m) := by
   have hcard : 0 < Nat.card (TriangleGroup 2 2 m) := by
-    rw [natCard_two_two m hm]
+    rw [natCard_two_two m]
     omega
   exact Nat.card_pos_iff.mp hcard |>.2
 
