@@ -40,9 +40,7 @@ by the `a`-th projection of `Y.power α` it is the `a`-th projection of `X.power
 theorem powerMap_π {X Y : FormalCoproduct.{w} C} (φ : X ⟶ Y) (α : Type)
     [HasProductsOfShape α C] (a : α) :
     powerMap φ α ≫ Y.powerπ a = X.powerπ a ≫ φ :=
-  hom_ext rfl fun x ↦ by
-    simp only [category_comp_φ, powerMap_φ, powerπ_φ]
-    exact (Pi.map_π (fun b ↦ φ.φ (x b)) a =≫ _).trans (Category.comp_id _)
+  hom_ext rfl fun x ↦ (Pi.map_π (fun b ↦ φ.φ (x b)) a =≫ _).trans (Category.comp_id _)
 
 variable [HasFiniteProducts C] {T : C} (hT : IsTerminal T)
 
@@ -52,10 +50,9 @@ coproduct with the Čech nerve of its morphism to the terminal object, the map i
 with components `φ` and `𝟙 T`. -/
 theorem cechFunctor_map_comp_cechIsoCechNerve_hom {X Y : FormalCoproduct.{w} C} (φ : X ⟶ Y) :
     cechFunctor.map φ ≫ (Y.cechIsoCechNerve hT).hom = (X.cechIsoCechNerve hT).hom ≫
-      Arrow.mapCechNerve (Arrow.homMk (f := Arrow.mk ((isTerminalIncl _ hT).from X))
-        (g := Arrow.mk ((isTerminalIncl _ hT).from Y)) φ (𝟙 _)
-          ((isTerminalIncl _ hT).hom_ext _ _)) := by
-  refine NatTrans.ext (funext fun n ↦ WidePullback.hom_ext _ _ _ (fun j ↦ ?_) ?_)
+      Arrow.mapCechNerve (Arrow.homMk' φ (𝟙 _)) := by
+  ext n : 1
+  refine WidePullback.hom_ext _ _ _ (fun j ↦ ?_) ?_
   · -- both sides are the `j`-th projection of `X.cech` followed by `φ`
     simp [cechFunctor]
   · exact (isTerminalIncl _ hT).hom_ext _ _
