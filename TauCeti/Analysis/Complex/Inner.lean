@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Basic
+import TauCeti.Analysis.RCLike.Sum
 
 /-!
 # Real inner products with a unit complex number
@@ -19,6 +20,8 @@ lets the level sets `⟪ζ, z⟫_ℝ = t` be read in the rotated coordinate `w =
 * `Complex.mul_conj_eq_one_of_norm_eq_one` -- a unit complex number times its conjugate is `1`.
 * `Complex.inner_mul_left_of_norm_eq_one` -- `⟪ζ, ζ * w⟫_ℝ = w.re` for a unit `ζ`.
 * `Complex.inner_mul_mul_of_norm_eq_one` -- `⟪ζ * a, ζ * b⟫_ℝ = ⟪a, b⟫_ℝ` for a unit `ζ`.
+* `Complex.eq_of_sum_mul_eq_of_norm_eq_one` -- positively weighted unit complex numbers whose
+  weighted sum has the maximal absolute value all equal the common phase.
 * `Complex.real_inner_I_right` -- `⟪z, i⟫_ℝ = z.im`: the height of `z` in the direction of `i`.
 * `LinearIsometry.norm_map_I` -- a linear isometry from the plane maps `i` to a unit vector.
 -/
@@ -33,6 +36,38 @@ variable {ζ : ℂ}
 theorem mul_conj_eq_one_of_norm_eq_one (hζ : ‖ζ‖ = 1) : ζ * (starRingEnd ℂ) ζ = 1 := by
   rw [mul_conj', hζ]
   norm_num
+
+/-- **Weighted unit complex numbers of the maximal sum point the same way.** If the unit complex
+numbers `z i`, `i ∈ s`, with positive weights `d i` adding up to `N`, have weighted sum `μ₀ * N`
+for a unit `μ₀`, then every `z i` equals `μ₀`: after rotating by `conj μ₀`, the weighted sum is
+the sum of the norms, so every rotated term is its own norm. -/
+theorem eq_of_sum_mul_eq_of_norm_eq_one {ι : Type*} {s : Finset ι} {z : ι → ℂ} {d : ι → ℕ}
+    {μ₀ : ℂ} {N : ℕ} (hμ₀ : ‖μ₀‖ = 1) (hd : ∀ i ∈ s, d i ≠ 0) (hz : ∀ i ∈ s, ‖z i‖ = 1)
+    (hdim : ∑ i ∈ s, (d i : ℂ) = N) (hsum : ∑ i ∈ s, (d i : ℂ) * z i = μ₀ * N) :
+    ∀ i ∈ s, z i = μ₀ := by
+  have hkey : ∑ i ∈ s, (d i : ℂ) * ((starRingEnd ℂ) μ₀ * z i) = N := by
+    calc ∑ i ∈ s, (d i : ℂ) * ((starRingEnd ℂ) μ₀ * z i)
+        = (starRingEnd ℂ) μ₀ * ∑ i ∈ s, (d i : ℂ) * z i := by
+          rw [Finset.mul_sum]
+          exact Finset.sum_congr rfl fun _ _ ↦ by ring
+      _ = N := by
+          rw [hsum, ← mul_assoc, mul_comm _ μ₀, mul_conj_eq_one_of_norm_eq_one hμ₀, one_mul]
+  have hnorm : ∀ i ∈ s, ‖(d i : ℂ) * ((starRingEnd ℂ) μ₀ * z i)‖ = d i := fun i hi ↦ by
+    rw [norm_mul, norm_mul, Complex.norm_conj, hμ₀, hz i hi, Complex.norm_natCast]
+    ring
+  intro i hi
+  have h := RCLike.eq_norm_of_sum_eq_sum_norm
+    (z := fun i ↦ (d i : ℂ) * ((starRingEnd ℂ) μ₀ * z i)) (s := s)
+    (by
+      rw [hkey, Finset.sum_congr rfl hnorm, ← hdim]
+      push_cast
+      rfl) hi
+  rw [hnorm i hi] at h
+  have h1 : (starRingEnd ℂ) μ₀ * z i = 1 :=
+    mul_left_cancel₀ (Nat.cast_ne_zero.2 (hd i hi)) (by simpa using h)
+  calc z i = μ₀ * ((starRingEnd ℂ) μ₀ * z i) := by
+        rw [← mul_assoc, mul_conj_eq_one_of_norm_eq_one hμ₀, one_mul]
+    _ = μ₀ := by rw [h1, mul_one]
 
 /-- The real inner product of a unit complex number `ζ` with `ζ * w` is the real part of `w`. -/
 theorem inner_mul_left_of_norm_eq_one (hζ : ‖ζ‖ = 1) (w : ℂ) : inner ℝ ζ (ζ * w) = w.re := by

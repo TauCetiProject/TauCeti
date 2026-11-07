@@ -15,6 +15,7 @@ public import Mathlib.LinearAlgebra.Eigenspace.Minpoly
 public import Mathlib.LinearAlgebra.Eigenspace.Semisimple
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
+import TauCeti.Analysis.Complex.Inner
 
 /-!
 # Endomorphisms of finite order
@@ -211,55 +212,6 @@ theorem conj_trace_eq_trace_pow_sub_one {f : End ℂ V} {n : ℕ} (hn : n ≠ 0)
     exact inv_eq_of_mul_eq_one_right
       (by rw [← pow_succ', Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.2 hn), hμ])
 
-/-- **Weighted unit vectors of the maximal sum point the same way.** If the unit complex numbers
-`μ ∈ E`, with positive weights `d μ` adding up to `N`, have weighted sum `μ₀ * N` for a unit `μ₀`,
-then every `μ ∈ E` equals `μ₀`: after rotating by `μ₀⁻¹`, each term has real part at most its norm
-`1`, and the real parts add up to the total weight, so each is exactly `1`. -/
-private theorem eq_of_sum_mul_eq_of_norm_eq_one {E : Finset ℂ} {d : ℂ → ℕ} {μ₀ : ℂ} {N : ℕ}
-    (hμ₀ : ‖μ₀‖ = 1) (hd : ∀ μ ∈ E, d μ ≠ 0) (hnorm : ∀ μ ∈ E, ‖μ‖ = 1)
-    (hdim : ∑ μ ∈ E, (d μ : ℂ) = N) (htrace : ∑ μ ∈ E, (d μ : ℂ) * μ = μ₀ * N) :
-    ∀ μ ∈ E, μ = μ₀ := by
-  have hμ₀ne : μ₀ ≠ 0 := by
-    intro h0
-    rw [h0, norm_zero] at hμ₀
-    exact zero_ne_one hμ₀
-  have hconj : (starRingEnd ℂ) μ₀ * μ₀ = 1 := by
-    rw [← Complex.inv_eq_conj hμ₀]
-    exact inv_mul_cancel₀ hμ₀ne
-  -- rotating the trace back by that phase recovers the dimension exactly
-  have hkey : ∑ μ ∈ E, (d μ : ℂ) * ((starRingEnd ℂ) μ₀ * μ) = N := by
-    calc ∑ μ ∈ E, (d μ : ℂ) * ((starRingEnd ℂ) μ₀ * μ)
-        = (starRingEnd ℂ) μ₀ * ∑ μ ∈ E, (d μ : ℂ) * μ := by
-          rw [Finset.mul_sum]
-          exact Finset.sum_congr rfl fun _ _ => by ring
-      _ = (starRingEnd ℂ) μ₀ * (μ₀ * N) := by rw [htrace]
-      _ = N := by rw [← mul_assoc, hconj, one_mul]
-  have hzero : ∑ μ ∈ E, (d μ : ℂ) * (1 - (starRingEnd ℂ) μ₀ * μ) = 0 := by
-    simp only [mul_sub, mul_one, Finset.sum_sub_distrib, hdim, hkey, sub_self]
-  have hreal : ∑ μ ∈ E, (d μ : ℝ) * (1 - ((starRingEnd ℂ) μ₀ * μ).re) = 0 := by
-    have := congrArg Complex.re hzero
-    simpa [Complex.re_sum, Complex.mul_re] using this
-  have hnormE : ∀ μ ∈ E, ‖(starRingEnd ℂ) μ₀ * μ‖ = 1 := fun μ hμ => by
-    rw [norm_mul, Complex.norm_conj, hμ₀, hnorm μ hμ, one_mul]
-  -- every summand is nonnegative, a rotated unit vector having real part at most `1`
-  have hnonneg : ∀ μ ∈ E, 0 ≤ (d μ : ℝ) * (1 - ((starRingEnd ℂ) μ₀ * μ).re) := by
-    intro μ hμ
-    have := (Complex.re_le_norm ((starRingEnd ℂ) μ₀ * μ)).trans_eq (hnormE μ hμ)
-    exact mul_nonneg (Nat.cast_nonneg _) (by linarith)
-  intro μ hμ
-  have hz := (Finset.sum_eq_zero_iff_of_nonneg hnonneg).1 hreal μ hμ
-  have hre : ((starRingEnd ℂ) μ₀ * μ).re = 1 := by
-    rcases mul_eq_zero.1 hz with h' | h'
-    · exact absurd h' (Nat.cast_ne_zero.2 (hd μ hμ))
-    · linarith
-  -- a real part of `1` already exhausts the norm `1`, so the imaginary part vanishes
-  have him : ((starRingEnd ℂ) μ₀ * μ).im = 0 :=
-    Complex.abs_re_eq_norm.mp (by rw [hre, hnormE μ hμ, abs_one])
-  have h1 : (starRingEnd ℂ) μ₀ * μ = 1 := Complex.ext (by simpa using hre) (by simpa using him)
-  calc μ = ((starRingEnd ℂ) μ₀ * μ₀) * μ := by rw [hconj, one_mul]
-    _ = μ₀ * ((starRingEnd ℂ) μ₀ * μ) := by ring
-    _ = μ₀ := by rw [h1, mul_one]
-
 /-- **An endomorphism of finite order whose trace has the largest possible absolute value is a
 scalar.** The eigenvalues of `f` are `n`-th roots of unity and the trace is their sum, weighted by
 the dimensions of the eigenspaces, which add up to `finrank ℂ V`. A sum of `finrank ℂ V` many unit
@@ -291,9 +243,9 @@ theorem exists_eq_smul_of_norm_trace_eq_finrank {f : End ℂ V} {n : ℕ}
     rw [hμ₀def, norm_div, h, Complex.norm_natCast]
     exact div_self (Nat.cast_ne_zero.2 hV.ne')
   have hall : ∀ μ ∈ E, μ = μ₀ :=
-    eq_of_sum_mul_eq_of_norm_eq_one (N := finrank ℂ V) hnormμ₀
+    Complex.eq_of_sum_mul_eq_of_norm_eq_one (z := id) (N := finrank ℂ V) hnormμ₀
       (fun μ hμ => by
-        have : f.eigenspace μ ≠ ⊥ := (End.finite_hasEigenvalue f).mem_toFinset.1 hμ
+        have := hasEigenvalue_iff.1 ((End.finite_hasEigenvalue f).mem_toFinset.1 hμ)
         simpa [Submodule.finrank_eq_zero] using this)
       (fun μ hμ => Complex.norm_eq_one_of_pow_eq_one
         (pow_eq_one_of_hasEigenvalue hf ((End.finite_hasEigenvalue f).mem_toFinset.1 hμ)) hn)
