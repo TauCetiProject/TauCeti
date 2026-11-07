@@ -59,7 +59,10 @@ those in degree `n` for `I` and `Q` are.
   (`TauCeti.AlgebraicGeometry.cohomologyBaseChangeLinearEquiv_toLinearMap`);
 * `TauCeti.AlgebraicGeometry.finrank_cohomology_pullback_eq_of_isPullback` and
   `TauCeti.AlgebraicGeometry.finiteDimensional_cohomology_pullback_of_isPullback`: invariance of
-  the dimension and finite-dimensionality of `Hⁿ(X, M)` under extension of the base field, and
+  the dimension and finite-dimensionality of `Hⁿ(X, M)` under extension of the base field,
+  `TauCeti.AlgebraicGeometry.finrank_cohomology_trivial_eq_of_isPullback` and
+  `TauCeti.AlgebraicGeometry.finiteDimensional_cohomology_trivial_of_isPullback`: their
+  specialisation to the structure sheaf, whose pullback is identified with `𝒪_Y`, and
   `TauCeti.AlgebraicGeometry.eulerCharBelow_pullback_eq_of_isPullback`: the same invariance of the
   truncated Euler characteristic `Scheme.Modules.eulerCharBelow`.
 
@@ -291,6 +294,33 @@ theorem finiteDimensional_cohomology_pullback_of_isPullback [CompactSpace X]
     (n : ℕ) [FiniteDimensional k (Cohomology M n)] :
     FiniteDimensional K (Cohomology ((Scheme.Modules.pullback g).obj M) n) :=
   Module.Finite.equiv (cohomologyBaseChangeLinearEquiv H M n)
+
+include H in
+/-- The dimension of `Hⁿ(X, 𝒪_X)` does not change under extension of the base field, on a
+quasi-compact scheme over a field with affine diagonal, for instance a proper one. -/
+theorem finrank_cohomology_trivial_eq_of_isPullback [CompactSpace X]
+    [IsAffineHom (pullback.diagonal (terminal.from X))] (n : ℕ) :
+    Module.finrank K (Cohomology (InvertibleSheaf.trivial Y).obj n) =
+      Module.finrank k (Cohomology (InvertibleSheaf.trivial X).obj n) := by
+  let e : (Scheme.Modules.pullback g).obj (InvertibleSheaf.trivial X).obj ≅
+      (InvertibleSheaf.trivial Y).obj :=
+    (Scheme.Modules.pullback g).mapIso (InvertibleSheaf.trivialObjIsoUnit X) ≪≫
+      Scheme.Modules.pullbackObjUnitIso g ≪≫ (InvertibleSheaf.trivialObjIsoUnit Y).symm
+  rw [← finrank_cohomology_congr K e n, finrank_cohomology_pullback_eq_of_isPullback H]
+
+include H in
+/-- `Hⁿ(X, 𝒪_X)` stays finite-dimensional under extension of the base field, on a quasi-compact
+scheme over a field with affine diagonal, for instance a proper one. -/
+theorem finiteDimensional_cohomology_trivial_of_isPullback [CompactSpace X]
+    [IsAffineHom (pullback.diagonal (terminal.from X))] (n : ℕ)
+    [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial X).obj n)] :
+    FiniteDimensional K (Cohomology (InvertibleSheaf.trivial Y).obj n) := by
+  let e : (Scheme.Modules.pullback g).obj (InvertibleSheaf.trivial X).obj ≅
+      (InvertibleSheaf.trivial Y).obj :=
+    (Scheme.Modules.pullback g).mapIso (InvertibleSheaf.trivialObjIsoUnit X) ≪≫
+      Scheme.Modules.pullbackObjUnitIso g ≪≫ (InvertibleSheaf.trivialObjIsoUnit Y).symm
+  exact (finiteDimensional_cohomology_congr K e n).mp
+    (finiteDimensional_cohomology_pullback_of_isPullback H _ n)
 
 include H in
 /-- The truncated Euler characteristic `∑_{i < n} (-1)ⁱ dim Hⁱ(X, M)` of a quasi-coherent sheaf
