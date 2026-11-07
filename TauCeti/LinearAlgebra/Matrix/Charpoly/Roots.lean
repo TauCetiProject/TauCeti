@@ -8,10 +8,13 @@ module
 public import Mathlib.Data.Multiset.Fintype
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
+public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
 import Mathlib.FieldTheory.IsAlgClosed.Spectrum
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Eigs
+import Mathlib.RingTheory.Polynomial.Vieta
 import TauCeti.Algebra.Polynomial.Reverse
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Resultant
+import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
 
 /-!
 # Characteristic roots of matrices
@@ -53,6 +56,9 @@ evaluating the resultant formulas `Matrix.det_aeval_eq_resultant` and
 * `Matrix.trace_aeval_eq_sum_roots_charpoly_of_splits`: `tr (p(A)) = ∑ p(λ)`; for `p = X ^ k` the
   trace of `A ^ k` is the `k`-th power sum of the characteristic roots.
 * `Matrix.charpolyRev_eq_prod_roots_charpoly_of_splits`: `det (1 - X A) = ∏ (1 - λ X)`.
+* `Matrix.coeff_charpolyRev_eq_esymm_roots_charpoly_of_splits`: Vieta's formula for
+  `det (1 - X A)`, whose `r`-th coefficient is `(-1) ^ r` times the `r`-th elementary symmetric
+  function of the characteristic roots.
 -/
 
 public section
@@ -154,6 +160,20 @@ theorem charpolyRev_eq_prod_roots_charpoly_of_splits (hA : A.charpoly.Splits) :
     Multiset.map_map, roots_multiset_prod_X_sub_C]
   simpa using congrArg Multiset.prod (Multiset.map_congr rfl fun μ _ ↦ by
     simpa using reverse_X_pow_sub_C 1 μ)
+
+/-- **Vieta's formula for `det (1 - X A)`.** If the characteristic polynomial of `A` splits, the
+`r`-th coefficient of `det (1 - X A)` is `(-1) ^ r` times the `r`-th elementary symmetric function
+of the characteristic roots of `A`, counted with algebraic multiplicity. -/
+theorem coeff_charpolyRev_eq_esymm_roots_charpoly_of_splits (hA : A.charpoly.Splits) (r : ℕ) :
+    A.charpolyRev.coeff r = (-1) ^ r * A.charpoly.roots.esymm r := by
+  have hprod := hA.eq_prod_roots_of_monic A.charpoly_monic
+  have hcard : Multiset.card A.charpoly.roots = Fintype.card n := by
+    rw [← charpoly_natDegree_eq_dim A, hprod, natDegree_multiset_prod_X_sub_C_eq_card,
+      ← hprod]
+  rcases le_or_gt r (Fintype.card n) with hr | hr
+  · rw [charpolyRev_eq_reflect, coeff_reflect, revAt_le hr, hprod,
+      Multiset.prod_X_sub_C_coeff _ (by omega), ← hprod, hcard, Nat.sub_sub_self hr]
+  · rw [coeff_charpolyRev_eq_zero A hr, Multiset.esymm_of_card_lt (hcard ▸ hr), mul_zero]
 
 end Splits
 
