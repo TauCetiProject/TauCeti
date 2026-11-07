@@ -73,6 +73,22 @@ theorem pullback_add (ω η : OneForm Y) (f : X → Y) :
   rfl
 
 @[simp]
+theorem pullback_neg (ω : OneForm Y) (f : X → Y) :
+    (-ω).pullback f = -ω.pullback f := by
+  funext x
+  apply ContinuousLinearMap.ext
+  intro v
+  rfl
+
+@[simp]
+theorem pullback_sub (ω η : OneForm Y) (f : X → Y) :
+    (ω - η).pullback f = ω.pullback f - η.pullback f := by
+  funext x
+  apply ContinuousLinearMap.ext
+  intro v
+  rfl
+
+@[simp]
 theorem pullback_smul (a : Y → ℂ) (ω : OneForm Y) (f : X → Y) :
     (a • ω).pullback f = (a ∘ f) • ω.pullback f := by
   funext x
@@ -154,11 +170,12 @@ theorem MeromorphicAt.pullback {ω : OneForm Y} {f : X → Y} {x : X}
     (hω : ω.MeromorphicAt (f x))
     (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f y) :
     (ω.pullback f).MeromorphicAt x := by
+  let g := ((chartAt ℂ (f x) ∘ f) ∘ (chartAt ℂ x).symm)
+  have hg₀ : g (chartAt ℂ x x) = chartAt ℂ (f x) (f x) := by
+    simp only [g, comp_apply, (chartAt ℂ x).left_inv (mem_chart_source ℂ x)]
   have hg := analyticAt_chartAt_comp_comp_chartAt_symm hf
-  have hω' : _root_.MeromorphicAt (ω.coeff (chartAt ℂ (f x)))
-      (((chartAt ℂ (f x) ∘ f) ∘ (chartAt ℂ x).symm) (chartAt ℂ x x)) := by
-    simpa only [comp_apply, (chartAt ℂ x).left_inv (mem_chart_source ℂ x)] using
-      (meromorphicAt_def ω (f x)).mp hω
+  have hω' := (meromorphicAt_def ω (f x)).mp hω
+  rw [← hg₀] at hω'
   apply (meromorphicAt_def _ x).mpr
   exact ((hω'.comp_analyticAt hg).mul hg.deriv.meromorphicAt).congr
     ((coeff_pullback_eventuallyEq ω hf).symm.filter_mono nhdsWithin_le_nhds)
@@ -168,11 +185,12 @@ theorem HolomorphicAt.pullback {ω : OneForm Y} {f : X → Y} {x : X}
     (hω : ω.HolomorphicAt (f x))
     (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f y) :
     (ω.pullback f).HolomorphicAt x := by
+  let g := ((chartAt ℂ (f x) ∘ f) ∘ (chartAt ℂ x).symm)
+  have hg₀ : g (chartAt ℂ x x) = chartAt ℂ (f x) (f x) := by
+    simp only [g, comp_apply, (chartAt ℂ x).left_inv (mem_chart_source ℂ x)]
   have hg := analyticAt_chartAt_comp_comp_chartAt_symm hf
-  have hω' : AnalyticAt ℂ (ω.coeff (chartAt ℂ (f x)))
-      (((chartAt ℂ (f x) ∘ f) ∘ (chartAt ℂ x).symm) (chartAt ℂ x x)) := by
-    simpa only [comp_apply, (chartAt ℂ x).left_inv (mem_chart_source ℂ x)] using
-      (holomorphicAt_def ω (f x)).mp hω
+  have hω' := (holomorphicAt_def ω (f x)).mp hω
+  rw [← hg₀] at hω'
   apply (holomorphicAt_def _ x).mpr
   exact ((hω'.comp hg).mul hg.deriv).congr (coeff_pullback_eventuallyEq ω hf).symm
 
@@ -185,6 +203,8 @@ theorem order_pullback {ω : OneForm Y} {f : X → Y} {x : X}
     (ω.pullback f).order x = ω.order (f x) * localMultiplicity f x +
       (((localMultiplicity f x : ℤ) - 1 : ℤ) : WithTop ℤ) := by
   let g := ((chartAt ℂ (f x) ∘ f) ∘ (chartAt ℂ x).symm)
+  have hg₀ : g (chartAt ℂ x x) = chartAt ℂ (f x) (f x) := by
+    simp only [g, comp_apply, (chartAt ℂ x).left_inv (mem_chart_source ℂ x)]
   have hg : AnalyticAt ℂ g (chartAt ℂ x x) :=
     analyticAt_chartAt_comp_comp_chartAt_symm hf
   have hmult := natCast_localMultiplicity hf hnc
@@ -192,18 +212,16 @@ theorem order_pullback {ω : OneForm Y} {f : X → Y} {x : X}
     exact_mod_cast (Nat.pos_iff_ne_zero.1 ((localMultiplicity_pos_iff hf).2 hnc))
   have hgorder : _root_.meromorphicOrderAt (fun z ↦ g z - g (chartAt ℂ x x))
       (chartAt ℂ x x) = (localMultiplicity f x : ℤ) := by
-    have hg₀ : AnalyticAt ℂ (fun z ↦ g z - g (chartAt ℂ x x)) (chartAt ℂ x x) :=
+    have hgsub : AnalyticAt ℂ (fun z ↦ g z - g (chartAt ℂ x x)) (chartAt ℂ x x) :=
       hg.sub analyticAt_const
-    rw [hg₀.meromorphicOrderAt_eq]
-    simp only [g, comp_apply, (chartAt ℂ x).left_inv (mem_chart_source ℂ x), ← hmult]
-    rfl
+    rw [hgsub.meromorphicOrderAt_eq]
+    simp only [hg₀, g, comp_apply, ← hmult, ENat.map_natCast]
   have hgnc : ¬ EventuallyConst g (𝓝 (chartAt ℂ x x)) := by
     rw [eventuallyConst_iff_analyticOrderAt_sub_eq_top]
-    simp only [g, comp_apply, (chartAt ℂ x).left_inv (mem_chart_source ℂ x), ← hmult]
+    simp only [hg₀, g, comp_apply, ← hmult]
     simp
-  have hω' : _root_.MeromorphicAt (ω.coeff (chartAt ℂ (f x))) (g (chartAt ℂ x x)) := by
-    simpa only [g, comp_apply, (chartAt ℂ x).left_inv (mem_chart_source ℂ x)] using
-      (meromorphicAt_def ω (f x)).mp hω
+  have hω' := (meromorphicAt_def ω (f x)).mp hω
+  rw [← hg₀] at hω'
   have hderiv : _root_.meromorphicOrderAt (deriv g) (chartAt ℂ x x) =
       (((localMultiplicity f x : ℤ) - 1 : ℤ) : WithTop ℤ) := by
     have hd : deriv (fun z ↦ g z - g (chartAt ℂ x x)) = deriv g :=
@@ -214,7 +232,7 @@ theorem order_pullback {ω : OneForm Y} {f : X → Y} {x : X}
     ((coeff_pullback_eventuallyEq ω hf).filter_mono nhdsWithin_le_nhds),
     _root_.meromorphicOrderAt_mul (hω'.comp_analyticAt hg) hg.deriv.meromorphicAt,
     hω'.meromorphicOrderAt_comp hg hgnc, hderiv]
-  simp [g, comp_apply, (chartAt ℂ x).left_inv (mem_chart_source ℂ x), ← hmult, order_def]
+  simp only [hg₀, g, comp_apply, ← hmult, ENat.map_natCast, WithTop.coe_natCast, order_def]
 
 section Compact
 
