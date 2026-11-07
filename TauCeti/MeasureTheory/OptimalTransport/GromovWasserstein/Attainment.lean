@@ -139,6 +139,31 @@ private theorem lowerSemicontinuousOn_lintegral_comp_edist {g : ℝ≥0∞ → �
   · rintro _ ⟨π, hπ, rfl⟩
     exact hgm.comp_aemeasurable (hπ.aestronglyMeasurable_edist hωX hωY).aemeasurable
 
+omit [TopologicalSpace.PseudoMetrizableSpace X] [BorelSpace X]
+  [TopologicalSpace.PseudoMetrizableSpace Y] [BorelSpace Y] [IsFiniteMeasure μ]
+  [IsFiniteMeasure ν] in
+/-- For a coupling, the `∞`-distortion is at most `c` exactly when the indicator of the set where
+the kernel discrepancy exceeds `c` has zero integral against the square of the coupling. -/
+private theorem gromovWassersteinDistortion_top_le_iff
+    (hωX : AEStronglyMeasurable ωX (μ.prod μ)) (hωY : AEStronglyMeasurable ωY (ν.prod ν))
+    {π : ProbabilityMeasure (X × Y)} (hπ : IsCoupling (π : Measure (X × Y)) μ ν) (c : ℝ≥0∞) :
+    gromovWassersteinDistortion ∞ ωX ωY π ≤ c ↔
+      ∫⁻ q, (Ioi c).indicator (fun _ ↦ (1 : ℝ≥0∞))
+        (edist (ωX (q.1.1, q.2.1)) (ωY (q.1.2, q.2.2)))
+        ∂((π : Measure (X × Y)).prod (π : Measure (X × Y))) = 0 := by
+  have hmeas := hπ.aestronglyMeasurable_edist hωX hωY
+  have hind : AEMeasurable (fun q : (X × Y) × (X × Y) ↦ (Ioi c).indicator
+      (fun _ ↦ (1 : ℝ≥0∞)) (edist (ωX (q.1.1, q.2.1)) (ωY (q.1.2, q.2.2))))
+      ((π : Measure (X × Y)).prod (π : Measure (X × Y))) :=
+    (measurable_const.indicator measurableSet_Ioi).comp_aemeasurable hmeas.aemeasurable
+  rw [gromovWassersteinDistortion_def, eLpNorm_exponent_top hmeas, lintegral_eq_zero_iff' hind]
+  refine ⟨fun h ↦ ?_, fun h ↦ eLpNormEssSup_le_of_ae_enorm_bound ?_⟩
+  · filter_upwards [ae_le_eLpNormEssSup (f := fun q : (X × Y) × (X × Y) ↦
+      edist (ωX (q.1.1, q.2.1)) (ωY (q.1.2, q.2.2)))] with q hq
+    simpa using (hq.trans h).not_gt
+  · filter_upwards [h] with q hq
+    simpa using hq
+
 /-- **Lower semicontinuity of the distortion.** On second-countable pseudometrizable carriers, the
 `p`-distortion of a coupling of two fixed finite measures is weakly lower semicontinuous in the
 coupling, for almost-everywhere strongly measurable kernels and every exponent `p`. -/
@@ -160,33 +185,17 @@ theorem lowerSemicontinuousOn_gromovWassersteinDistortion
     -- integral, and that integral is lower semicontinuous.
     intro π₀ hπ₀
     refine lowerSemicontinuousWithinAt_iff.mpr fun c hc ↦ ?_
-    have key : ∀ π : ProbabilityMeasure (X × Y), IsCoupling (π : Measure (X × Y)) μ ν →
-        (gromovWassersteinDistortion ∞ ωX ωY π ≤ c ↔
-          ∫⁻ q, (Ioi c).indicator (fun _ ↦ (1 : ℝ≥0∞))
-            (edist (ωX (q.1.1, q.2.1)) (ωY (q.1.2, q.2.2)))
-            ∂((π : Measure (X × Y)).prod (π : Measure (X × Y))) = 0) := by
-      intro π hπ
-      have hmeas := hπ.aestronglyMeasurable_edist hωX hωY
-      have hind : AEMeasurable (fun q : (X × Y) × (X × Y) ↦ (Ioi c).indicator
-          (fun _ ↦ (1 : ℝ≥0∞)) (edist (ωX (q.1.1, q.2.1)) (ωY (q.1.2, q.2.2))))
-          ((π : Measure (X × Y)).prod (π : Measure (X × Y))) :=
-        (measurable_const.indicator measurableSet_Ioi).comp_aemeasurable hmeas.aemeasurable
-      rw [gromovWassersteinDistortion_def, eLpNorm_exponent_top hmeas, lintegral_eq_zero_iff' hind]
-      refine ⟨fun h ↦ ?_, fun h ↦ eLpNormEssSup_le_of_ae_enorm_bound ?_⟩
-      · filter_upwards [ae_le_eLpNormEssSup (f := fun q : (X × Y) × (X × Y) ↦
-          edist (ωX (q.1.1, q.2.1)) (ωY (q.1.2, q.2.2)))] with q hq
-        simpa using (hq.trans h).not_gt
-      · filter_upwards [h] with q hq
-        simpa using hq
     have h₀ : 0 < ∫⁻ q, (Ioi c).indicator (fun _ ↦ (1 : ℝ≥0∞))
         (edist (ωX (q.1.1, q.2.1)) (ωY (q.1.2, q.2.2)))
           ∂((π₀ : Measure (X × Y)).prod (π₀ : Measure (X × Y))) :=
-      pos_iff_ne_zero.mpr fun h ↦ (not_le_of_gt hc) ((key π₀ hπ₀).mpr h)
+      pos_iff_ne_zero.mpr fun h ↦
+        (not_le_of_gt hc) ((gromovWassersteinDistortion_top_le_iff hωX hωY hπ₀ c).mpr h)
     filter_upwards [lowerSemicontinuousOn_lintegral_comp_edist
       (isOpen_Ioi.lowerSemicontinuous_indicator zero_le_one)
       (measurable_const.indicator measurableSet_Ioi) hωX hωY π₀ hπ₀ 0 h₀,
       self_mem_nhdsWithin] with π hπ hπK
-    exact lt_of_not_ge fun h ↦ hπ.ne' ((key π hπK).mp h)
+    exact lt_of_not_ge fun h ↦
+      hπ.ne' ((gromovWassersteinDistortion_top_le_iff hωX hωY hπK c).mp h)
   · -- For `0 < p < ∞` the distortion is an increasing continuous function of the integral of the
     -- `p`-th power of the discrepancy.
     have hint := lowerSemicontinuousOn_lintegral_comp_edist (μ := μ) (ν := ν)
