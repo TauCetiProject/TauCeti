@@ -107,22 +107,13 @@ theorem map_comp (g : C(Y, Z)) (f : C(X, Y)) (n : ℕ) :
   refine lhom_ext' fun c ↦ LinearMap.ext_ring ?_
   simp [ContinuousMap.comp_assoc]
 
-/-- Pushing forward along a map of cubes `φ` sends a chain supported on `S` to a chain supported
-on any set `T` containing the images of the cubes of `S`. -/
-theorem lmapDomain_mem_supported {n m : ℕ} {φ : SingularCube X n → SingularCube Y m}
-    {S : Set (SingularCube X n)} {T : Set (SingularCube Y m)} (hST : ∀ c ∈ S, φ c ∈ T)
-    {g : CubicalChain X R n} (hg : g ∈ supported R R S) : lmapDomain R R φ g ∈ supported R R T := by
-  have hmap := Submodule.mem_map_of_mem (f := lmapDomain R R φ) hg
-  rw [lmapDomain_supported] at hmap
-  exact supported_mono (Set.image_subset_iff.2 hST) hmap
-
 /-- The push-forward of a chain supported on `S` is supported on any set `T` containing the
 images of the cubes of `S`. -/
 theorem map_mem_supported (f : C(X, Y)) {n : ℕ} {S : Set (SingularCube X n)}
     {T : Set (SingularCube Y n)} (hST : ∀ c ∈ S, f.comp c ∈ T) {g : CubicalChain X R n}
     (hg : g ∈ supported R R S) : map R f n g ∈ supported R R T := by
   rw [map]
-  exact lmapDomain_mem_supported R hST hg
+  exact supported_comap_lmapDomain R R f.comp T (supported_mono (t := f.comp ⁻¹' T) hST hg)
 
 end Map
 
@@ -231,16 +222,6 @@ theorem map_boundary (f : C(X, Y)) (n : ℕ) :
     map R f n ∘ₗ boundary X R n = boundary Y R n ∘ₗ map R f (n + 1) := by
   refine lhom_ext' fun c ↦ LinearMap.ext_ring ?_
   simp [face_comp]
-
-/-- The boundary maps the chains supported on `S` into a submodule `M` as soon as it maps each
-cube of `S`, with coefficient one, into `M`. -/
-theorem boundary_mem_of_mem_supported {n : ℕ} {S : Set (SingularCube X (n + 1))}
-    {M : Submodule R (CubicalChain X R n)} (hS : ∀ c ∈ S, boundary X R n (single c 1) ∈ M)
-    {f : CubicalChain X R (n + 1)} (hf : f ∈ supported R R S) : boundary X R n f ∈ M := by
-  rw [supported_eq_span_single] at hf
-  refine Submodule.span_le (p := M.comap (boundary X R n)) |>.2 ?_ hf
-  rintro _ ⟨c, hc, rfl⟩
-  exact hS c hc
 
 end Boundary
 

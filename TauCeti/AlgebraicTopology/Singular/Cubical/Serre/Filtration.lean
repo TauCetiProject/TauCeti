@@ -177,9 +177,10 @@ variable {R : Type*} [Ring R] {p : E → B}
 /-- The boundary preserves the Serre filtration. -/
 theorem boundary_mem_serreFiltration {s : ℤ} {n : ℕ} {f : CubicalChain E R (n + 1)}
     (hf : f ∈ serreFiltration R p s (n + 1)) : boundary E R n f ∈ serreFiltration R p s n := by
-  refine boundary_mem_of_mem_supported R (fun (c : SingularCube E (n + 1))
-    (hc : c.IsSerreWeightLE p s) ↦ ?_) hf
-  rw [boundary_single]
+  rw [serreFiltration, Finsupp.supported_eq_span_single] at hf
+  refine Submodule.span_le (p := (serreFiltration R p s n).comap (boundary E R n)) |>.2 ?_ hf
+  rintro _ ⟨c, hc, rfl⟩
+  rw [SetLike.mem_coe, Submodule.mem_comap, boundary_single]
   exact Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (Submodule.sub_mem _
     (single_mem_serreFiltration (hc.face i 0) 1) (single_mem_serreFiltration (hc.face i 1) 1))
 
