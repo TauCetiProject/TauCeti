@@ -20,9 +20,11 @@ becomes `x ↦ g x (s (h x))`. Its value and derivative transform by
 
 `ContinuousLinearMap.firstJetPullback` bundles this linear transformation. We prove its
 composition law, invertibility when the value and base maps are invertible, agreement with
-the derivative of an actual section, and smoothness for smoothly varying coefficients.
-The open-set smoothness theorem applies to chart overlaps. These are local coordinate
-results; no global jet bundle or connection is chosen here.
+the derivative of an actual section, and smoothness for smoothly varying coefficients, both of
+the transformation itself as an operator (`ContDiffOn.firstJetPullback`) and of transformed
+jets (`ContDiffOn.firstJetPullback_apply`). The open-set smoothness theorem applies to chart
+overlaps. These are local coordinate results, from which the first-jet bundle of a vector
+bundle is glued.
 
 ## References
 
@@ -97,21 +99,33 @@ theorem _root_.HasFDerivAt.firstJetPullback {g : E' → F →L[𝕜] G} {g' : E'
   simpa only [firstJetPullback_apply, Function.comp_apply, add_comm] using
     hg.clm_apply (hs.comp x hh)
 
-/-- Smooth families of coefficients and jets give smooth transformed first jets. -/
+/-- The first-jet transformation depends smoothly on its coefficients. -/
 theorem _root_.ContDiffOn.firstJetPullback {n : ℕ∞ω} {u : Set X}
+    {a : X → F →L[𝕜] G} {b : X → E' →L[𝕜] F →L[𝕜] G} {c : X → E' →L[𝕜] E}
+    (ha : ContDiffOn 𝕜 n a u) (hb : ContDiffOn 𝕜 n b u) (hc : ContDiffOn 𝕜 n c u) :
+    ContDiffOn 𝕜 n (fun x ↦ (a x).firstJetPullback (b x) (c x)) u := by
+  have hfst : ContDiffOn 𝕜 n (fun x ↦ (a x).comp (fst 𝕜 F (E →L[𝕜] F))) u :=
+    ha.clm_comp contDiffOn_const
+  have hflip : ContDiffOn 𝕜 n (fun x ↦ (b x).flip.comp (fst 𝕜 F (E →L[𝕜] F))) u :=
+    (ContDiff.comp_contDiffOn (g := flipₗᵢ 𝕜 E' F G) (LinearIsometryEquiv.contDiff _)
+      hb).clm_comp contDiffOn_const
+  have hcomp : ContDiffOn 𝕜 n (fun x ↦ (compL 𝕜 E' F G (a x)).comp
+      (((compL 𝕜 E' E F).flip (c x)).comp (snd 𝕜 F (E →L[𝕜] F)))) u :=
+    (ContDiff.comp_contDiffOn (g := compL 𝕜 E' F G) (ContinuousLinearMap.contDiff _) ha).clm_comp
+      ((ContDiff.comp_contDiffOn (g := (compL 𝕜 E' E F).flip) (ContinuousLinearMap.contDiff _)
+        hc).clm_comp contDiffOn_const)
+  refine (ContDiff.comp_contDiffOn (g := prodₗᵢ 𝕜) (LinearIsometryEquiv.contDiff _)
+    (hfst.prodMk (hflip.add hcomp))).congr fun x _ ↦ ContinuousLinearMap.ext fun j ↦ ?_
+  simp [prodₗᵢ, add_comm]
+
+/-- Smooth families of coefficients and jets give smooth transformed first jets. -/
+theorem _root_.ContDiffOn.firstJetPullback_apply {n : ℕ∞ω} {u : Set X}
     {a : X → F →L[𝕜] G} {b : X → E' →L[𝕜] F →L[𝕜] G} {c : X → E' →L[𝕜] E}
     {j : X → F × (E →L[𝕜] F)}
     (ha : ContDiffOn 𝕜 n a u) (hb : ContDiffOn 𝕜 n b u) (hc : ContDiffOn 𝕜 n c u)
     (hj : ContDiffOn 𝕜 n j u) :
-    ContDiffOn 𝕜 n (fun x ↦ (a x).firstJetPullback (b x) (c x) (j x)) u := by
-  have hterm : ContDiffOn 𝕜 n (fun x ↦ (b x).flip (j x).1) u := by
-    refine (((ContinuousLinearMap.apply 𝕜 G).contDiff.comp_contDiffOn hj.fst).clm_comp
-      hb).congr ?_
-    intro x _
-    ext v
-    simp [flip_apply, apply_apply]
-  simpa only [firstJetPullback_apply, Function.comp_apply] using
-    (ha.clm_apply hj.fst).prodMk (hterm.add (ha.clm_comp (hj.snd.clm_comp hc)))
+    ContDiffOn 𝕜 n (fun x ↦ (a x).firstJetPullback (b x) (c x) (j x)) u :=
+  (ha.firstJetPullback hb hc).clm_apply hj
 
 end ContinuousLinearMap
 
@@ -168,7 +182,7 @@ theorem contDiffOn_firstJetPullback_fderiv {n m : ℕ∞ω} {u : Set E'}
     contDiff_fst.contDiffOn
   have hmem : Set.MapsTo (fun p : E' × (F × (E →L[𝕜] F)) ↦ p.1) (u ×ˢ Set.univ) u :=
     fun _ hp ↦ hp.1
-  exact ((hg.of_le (le_trans le_self_add hmn)).comp hfst hmem).firstJetPullback
+  exact ((hg.of_le (le_trans le_self_add hmn)).comp hfst hmem).firstJetPullback_apply
     ((hg.fderiv_of_isOpen hu hmn).comp hfst hmem)
     ((hh.fderiv_of_isOpen hu hmn).comp hfst hmem) contDiff_snd.contDiffOn
 
