@@ -8,7 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Generic.Relative
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Evaluation
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Strong
-import Mathlib.Analysis.SpecificLimits.Basic
+import TauCeti.Algebra.Order.BigOperators.Sum.Telescoping
+import TauCeti.Analysis.SpecificLimits.HalfPowSucc
 import TauCeti.Geometry.Manifold.ContMDiffMap.CompactExhaustion
 import TauCeti.Geometry.Manifold.Exhaustion
 import TauCeti.Topology.Maps.Proper.Basic
@@ -100,34 +101,6 @@ private theorem exists_isMorseOn_tsupport_sub_inter_compl (f φ : C^∞⟮I, M; 
   refine ⟨ψ, hψ𝒰, hψ, hψs.trans ?_⟩
   rw [compl_union, compl_compl, inter_comm]
 
-/-- A telescoping bound. If a subadditive function `q` is small on each step `F (r + 1) - F r` of a
-sequence, relative to weights `w r` summing to at most `1`, then it is small on the total
-displacement `F (N + 1) - F 0`. -/
-theorem lt_of_forall_sub_lt_mul {G : Type*} [AddCommGroup G] (q : G → ℝ) (hq0 : q 0 ≤ 0)
-    (hadd : ∀ a b, q (a + b) ≤ q a + q b) {t : ℝ} (ht : 0 < t) {w : ℕ → ℝ}
-    (hw : ∀ N, ∑ r ∈ Finset.range N, w r ≤ 1) (F : ℕ → G) (N : ℕ)
-    (h : ∀ r ≤ N, q (F (r + 1) - F r) < t * w r) : q (F (N + 1) - F 0) < t :=
-  calc q (F (N + 1) - F 0) = q (∑ r ∈ Finset.range (N + 1), (F (r + 1) - F r)) := by
-        rw [Finset.sum_range_sub]
-    _ ≤ ∑ r ∈ Finset.range (N + 1), q (F (r + 1) - F r) :=
-        Finset.le_sum_of_subadditive _ hq0 hadd _ _
-    _ < ∑ r ∈ Finset.range (N + 1), t * w r :=
-        Finset.sum_lt_sum_of_nonempty ⟨0, by simp⟩ fun r hr ↦
-          h r (Nat.lt_succ_iff.mp (Finset.mem_range.mp hr))
-    _ ≤ t := by
-        rw [← Finset.mul_sum]
-        exact mul_le_of_le_one_right ht.le (hw _)
-
-/-- The weights `2⁻⁽ʳ⁺¹⁾` sum to at most `1`. -/
-private theorem sum_half_pow_succ_le_one (N : ℕ) :
-    ∑ r ∈ Finset.range N, (1 / 2 : ℝ) ^ (r + 1) ≤ 1 := by
-  have h := sum_geometric_two_le N
-  have hw' : ∑ r ∈ Finset.range N, (1 / 2 : ℝ) ^ (r + 1) =
-      1 / 2 * ∑ r ∈ Finset.range N, (1 / 2 : ℝ) ^ r := by
-    rw [Finset.mul_sum]
-    exact Finset.sum_congr rfl fun r _ ↦ pow_succ' _ _
-  linarith
-
 open ContMDiffMap in
 /-- One stage of the strong Morse approximation along a compact exhaustion `L`. The function `φ`,
 Morse on `L r` and equal to `f` near `C`, is made Morse on `L (r + 1)` by a perturbation supported
@@ -199,62 +172,6 @@ private theorem exists_stages_of_step (f : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯) {C :
       exact (hnext_supp r _ ih.1 ih.2).trans inter_subset_right
   exact ⟨F, rfl, fun r ↦ hF r ▸ hnext_Q r _ (hFinv r).1 (hFinv r).2, hFinv,
     fun r ↦ hF r ▸ hnext_supp r _ (hFinv r).1 (hFinv r).2⟩
-
-omit [I.Boundaryless] [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] in
-/-- If the perturbations `F (r + 1) - F r` are supported in `interior (L (r + 2))` and the seminorm
-`q` kills functions which vanish near the compact set `A`, then the limit `g` of the stages is
-within `t` of `f` for `q` as soon as each stage, as long as `A` meets `L (r + 2)`, is within
-`t * w r`. -/
-private theorem seminorm_sub_lt_of_stages (L : CompactExhaustion M)
-    (q : Seminorm ℝ C^∞⟮I, M; 𝓘(ℝ), ℝ⟯) {A : Set M} (hA : IsCompact A)
-    (hq0 : ∀ u : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯, (∀ y ∈ A, (u : M → ℝ) =ᶠ[𝓝 y] 0) → q u = 0) {t : ℝ}
-    (ht : 0 < t) {w : ℕ → ℝ} (hw : ∀ r, 0 < w r) (hwsum : ∀ N, ∑ r ∈ Finset.range N, w r ≤ 1)
-    (F : ℕ → C^∞⟮I, M; 𝓘(ℝ), ℝ⟯) (g : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯)
-    (hgF : ∀ N, EqOn g (F (N + 1)) (L N))
-    (hsupp : ∀ r, tsupport (fun x ↦ F (r + 1) x - F r x) ⊆ interior (L (r + 2)))
-    (hq : ∀ r, (A ∩ L (r + 2)).Nonempty → q (F (r + 1) - F r) < t * w r) :
-    q (g - F 0) < t := by
-  obtain ⟨N, hN⟩ := L.exists_superset_of_isCompact hA
-  have hzero : q (g - F (N + 2)) = 0 := hq0 _ fun y hy ↦ by
-    filter_upwards [mem_interior_iff_mem_nhds.mp (L.subset_interior_succ N (hN hy))] with z hz
-    simp [hgF (N + 1) hz]
-  have hterm : ∀ r ≤ N + 1, q (F (r + 1) - F r) < t * w r := by
-    intro r _
-    by_cases hi : (A ∩ L (r + 2)).Nonempty
-    · exact hq r hi
-    · rw [hq0 _ fun y hy ↦ ?_]
-      · exact mul_pos ht (hw r)
-      · have hy' : y ∉ tsupport fun x ↦ F (r + 1) x - F r x := fun h ↦
-          hi ⟨y, hy, interior_subset (hsupp r h)⟩
-        simpa [Pi.sub_def] using notMem_tsupport_iff_eventuallyEq.mp hy'
-  calc q (g - F 0) = q ((F (N + 1 + 1) - F 0) + (g - F (N + 2))) := by congr 1; abel
-    _ ≤ q (F (N + 1 + 1) - F 0) + q (g - F (N + 2)) := map_add_le_add _ _ _
-    _ < t := by
-      rw [hzero, add_zero]
-      exact lt_of_forall_sub_lt_mul q (map_zero _).le (map_add_le_add _) ht hwsum F (N + 1) hterm
-
-omit [I.Boundaryless] [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] in
-/-- The limit `g` of stages which each change a point `x` by less than `ε x * w r` (and only
-inside `L (r + 2)`) is within `ε x` of `F 0` at `x`. -/
-private theorem abs_sub_lt_of_stages (L : CompactExhaustion M) {ε : M → ℝ} (hε₀ : ∀ x, 0 < ε x)
-    {w : ℕ → ℝ} (hw : ∀ r, 0 < w r) (hwsum : ∀ N, ∑ r ∈ Finset.range N, w r ≤ 1)
-    (F : ℕ → C^∞⟮I, M; 𝓘(ℝ), ℝ⟯) (g : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯)
-    (hgF : ∀ N, EqOn g (F (N + 1)) (L N))
-    (hsupp : ∀ r, tsupport (fun x ↦ F (r + 1) x - F r x) ⊆ interior (L (r + 2)))
-    (hε : ∀ r, ∀ x ∈ L (r + 2), |F (r + 1) x - F r x| < ε x * w r) (x : M) :
-    |g x - F 0 x| < ε x := by
-  obtain ⟨N, hN⟩ := L.exists_mem x
-  have hterm : ∀ r ≤ N, |F (r + 1) x - F r x| < ε x * w r := by
-    intro r _
-    by_cases hx : x ∈ L (r + 2)
-    · exact hε r x hx
-    · have h0 : F (r + 1) x - F r x = 0 := image_eq_zero_of_notMem_tsupport
-        (f := fun y ↦ F (r + 1) y - F r y) fun h ↦ hx (interior_subset (hsupp r h))
-      rw [h0, abs_zero]
-      exact mul_pos (hε₀ x) (hw r)
-  rw [hgF N hN]
-  exact lt_of_forall_sub_lt_mul (fun y : ℝ ↦ |y|) abs_zero.le abs_add_le (hε₀ x)
-    hwsum (fun r ↦ F r x) N hterm
 
 omit [I.Boundaryless] [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] in
 /-- The limit `g` of the stages is Morse and agrees with `f` near `C`. -/
