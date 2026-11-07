@@ -12,8 +12,10 @@ public import TauCeti.Probability.Distributions.Chi.Basic
 
 Real powers of a positive-degree chi variable have finite expectation exactly above minus its
 degrees of freedom. In particular, all natural moments exist. This file computes these moments,
-the mean and variance, and proves finiteness of every exponential moment, without asserting a
-closed form for the moment-generating function. Degree zero is handled by its Dirac law.
+the mean and variance, establishes the two-sided mean bounds
+`s * k / √(k + 1) ≤ ∫ x, x ∂chiMeasure k s ≤ s * √k`, and proves finiteness of every exponential
+moment, without asserting a closed form for the moment-generating function. Degree zero is handled
+by its Dirac law.
 
 The real-power formulas follow from Gamma moments through the defining square-root pushforward.
 
@@ -123,6 +125,107 @@ theorem variance_id_chiMeasure (hk : 0 ≤ k) (hs : 0 < s) :
   simp only [Pi.pow_apply, id_eq, integral_sq_chiMeasure hk hs, integral_id_chiMeasure hk hs]
   rw [div_pow, mul_pow, mul_pow, sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)]
   ring
+
+/-- At positive degrees and positive scale, the chi mean is strictly positive. -/
+theorem integral_id_chiMeasure_pos (hk : 0 < k) (hs : 0 < s) :
+    0 < ∫ x, x ∂chiMeasure k s := by
+  rw [integral_id_chiMeasure hk.le hs]
+  have h1 : 0 < Real.Gamma ((k + 1) / 2) := Real.Gamma_pos_of_pos (by positivity)
+  have h2 : 0 < Real.Gamma (k / 2) := Real.Gamma_pos_of_pos (by positivity)
+  positivity
+
+/-- The chi mean is nonnegative in every parameter regime. -/
+theorem integral_id_chiMeasure_nonneg (k s : ℝ) :
+    0 ≤ ∫ x, x ∂chiMeasure k s := by
+  by_cases hs : 0 < s
+  · rcases lt_trichotomy k 0 with hk | rfl | hk
+    · simp [chiMeasure_of_neg hk]
+    · simp [chiMeasure_zero hs]
+    · exact (integral_id_chiMeasure_pos hk hs).le
+  · simp [chiMeasure_of_scale_nonpos (le_of_not_gt hs)]
+
+/-- The chi mean is bounded above by `s * √k` for every nonnegative scale `s` and degree `k`, by
+nonnegativity of the chi variance in the positive regime. -/
+theorem integral_id_chiMeasure_le {k s : ℝ} (hs : 0 ≤ s) :
+    ∫ x, x ∂chiMeasure k s ≤ s * √k := by
+  rcases hs.eq_or_lt' with rfl | hs
+  · simp
+  rcases lt_or_ge k 0 with hk | hk
+  · simp only [chiMeasure_of_neg hk, integral_zero_measure]
+    positivity
+  let _ := isProbabilityMeasure_chiMeasure hk hs
+  have hLp : MemLp id 2 (chiMeasure k s) :=
+    (memLp_two_iff_integrable_sq aestronglyMeasurable_id).2 (integrable_pow_chiMeasure k s 2)
+  have hvar : 0 ≤ variance id (chiMeasure k s) := variance_nonneg id (chiMeasure k s)
+  rw [variance_eq_sub hLp] at hvar
+  simp only [Pi.pow_apply, id_eq, integral_sq_chiMeasure hk hs] at hvar
+  have hsq : (∫ x, x ∂chiMeasure k s) ^ 2 ≤ (s * √k) ^ 2 := by
+    rw [mul_pow, sq_sqrt hk]
+    linarith
+  calc ∫ x, x ∂chiMeasure k s
+      ≤ |∫ x, x ∂chiMeasure k s| := le_abs_self _
+    _ = √((∫ x, x ∂chiMeasure k s) ^ 2) := (sqrt_sq_eq_abs _).symm
+    _ ≤ √((s * √k) ^ 2) := sqrt_le_sqrt hsq
+    _ = s * √k := sqrt_sq (by positivity)
+
+/-- The chi mean is bounded below by `s * k / √(k + 1)` for nonnegative degrees and scale. -/
+theorem mul_div_sqrt_add_one_le_integral_id_chiMeasure (hk : 0 ≤ k) (hs : 0 ≤ s) :
+    s * k / √(k + 1) ≤ ∫ x, x ∂chiMeasure k s := by
+  rcases hs.eq_or_lt' with rfl | hs
+  · simp
+  rcases hk.eq_or_lt' with rfl | hk
+  · simp [chiMeasure_zero hs]
+  set m := ∫ x, x ∂chiMeasure k s
+  have hm : 0 < m := integral_id_chiMeasure_pos hk hs
+  have h3 : ∫ x, x ^ 3 ∂chiMeasure k s = s ^ 2 * (k + 1) * m := by
+    rw [integral_pow_chiMeasure hk hs 3]
+    have hshift : (k + (3 : ℕ)) / 2 = (k + 1) / 2 + 1 := by push_cast; ring
+    have h2 : (2 : ℝ) ^ ((3 : ℕ) / 2 : ℝ) = 2 * √2 := by
+      rw [show ((3 : ℕ) / 2 : ℝ) = 1 + 1 / 2 by norm_num, rpow_add two_pos, rpow_one,
+        sqrt_eq_rpow]
+    rw [hshift, Real.Gamma_add_one (by positivity), h2]
+    simp only [m, integral_id_chiMeasure hk.le hs]
+    ring
+  -- Integrate the a.e. nonnegative cubic polynomial `x * (x - c) ^ 2` at `c = s ^ 2 * k / m`.
+  set c := s ^ 2 * k / m
+  have hnonneg : 0 ≤ ∫ x, x * (x - c) ^ 2 ∂chiMeasure k s :=
+    integral_nonneg_of_ae ((ae_pos_chiMeasure hk).mono fun x hx ↦ mul_nonneg hx.le (sq_nonneg _))
+  have hpoly : (fun x : ℝ ↦ x * (x - c) ^ 2) =
+      fun x ↦ (x ^ 3 - 2 * c * x ^ 2) + c ^ 2 * x := by
+    funext x
+    ring
+  have hint1 : Integrable (fun x : ℝ ↦ x ^ 3 - 2 * c * x ^ 2) (chiMeasure k s) :=
+    (integrable_pow_chiMeasure k s 3).sub ((integrable_pow_chiMeasure k s 2).const_mul (2 * c))
+  have hint2 : Integrable (fun x : ℝ ↦ c ^ 2 * x) (chiMeasure k s) := by
+    simpa only [pow_one] using (integrable_pow_chiMeasure k s 1).const_mul (c ^ 2)
+  rw [hpoly, integral_add hint1 hint2,
+    integral_sub (integrable_pow_chiMeasure k s 3)
+      ((integrable_pow_chiMeasure k s 2).const_mul (2 * c)),
+    integral_const_mul, integral_const_mul, h3, integral_sq_chiMeasure hk.le hs] at hnonneg
+  have hcm : c * m = s ^ 2 * k := div_mul_cancel₀ _ hm.ne'
+  have hquad : 0 ≤ s ^ 2 * ((k + 1) * m ^ 2 - (s * k) ^ 2) := by
+    have hmul : 0 ≤ m * (s ^ 2 * (k + 1) * m - 2 * c * (s ^ 2 * k) + c ^ 2 * m) :=
+      mul_nonneg hm.le hnonneg
+    nlinarith [hmul, hcm]
+  have hsq : (s * k) ^ 2 ≤ (√(k + 1) * m) ^ 2 := by
+    rw [mul_pow, mul_pow, sq_sqrt (by positivity)]
+    have hs2 : 0 < s ^ 2 := by positivity
+    nlinarith
+  have hle : s * k ≤ √(k + 1) * m := by
+    calc s * k = √((s * k) ^ 2) := (sqrt_sq (by positivity)).symm
+      _ ≤ √((√(k + 1) * m) ^ 2) := sqrt_le_sqrt hsq
+      _ = √(k + 1) * m := sqrt_sq (by positivity)
+  rw [div_le_iff₀ (by positivity)]
+  linarith
+
+/-- For degrees `k ≥ 1` and nonnegative scale `s`, the chi mean is at least `s * √(k / 2)`. -/
+theorem mul_sqrt_div_two_le_integral_id_chiMeasure (hk : 1 ≤ k) (hs : 0 ≤ s) :
+    s * √(k / 2) ≤ ∫ x, x ∂chiMeasure k s := by
+  refine le_trans ?_ (mul_div_sqrt_add_one_le_integral_id_chiMeasure (by positivity) hs)
+  rw [mul_div_assoc]
+  gcongr
+  rw [le_div_iff₀ (by positivity), ← sqrt_mul (by positivity)]
+  exact (sqrt_le_sqrt (y := k ^ 2) (by nlinarith)).trans_eq (sqrt_sq (by positivity))
 
 /-- Every exponential moment of a chi law is integrable in every parameter regime. -/
 theorem integrable_exp_mul_id_chiMeasure (k s t : ℝ) :
