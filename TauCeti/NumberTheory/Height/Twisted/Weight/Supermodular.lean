@@ -88,6 +88,62 @@ private theorem localWeightBasis_card_filter {L : ι → Dual K V} {U : Submodul
   rw [card_eq_finrank_of_mem_localWeightBases hb] at h
   simpa only [not_le, add_comm, t] using h
 
+/-- Telescoping a strictly increasing list `a` expresses `a k` as `a 0` plus the successive gaps
+below `a k`. -/
+theorem eq_add_sum_ite_sub_of_strictMono {n : ℕ} {a : Fin (n + 1) → ℝ} (ha : StrictMono a)
+    (k : Fin (n + 1)) : a k = a 0 +
+      ∑ j : Fin n, if a j.castSucc < a k then a j.succ - a j.castSucc else 0 := by
+  simp_rw [ha.lt_iff_lt]
+  refine Fin.cases ?_ (fun k ↦ ?_) k
+  · simp
+  · simp only [Fin.castSucc_lt_succ_iff]
+    rw [← Finset.sum_filter]
+    have heq : Finset.univ.filter (fun j : Fin n ↦ j ≤ k) = Finset.Iic k := by
+      ext j; simp
+    rw [heq, Fin.sum_Iic_sub]
+    ring
+
+omit [Fintype ι] in
+/-- When a finite strictly increasing list contains all values of `c`, the sum of `c` over a
+finset is `a 0` times its cardinality plus the successive gaps times the number of elements
+above each threshold. -/
+theorem sum_eq_mul_card_add_sum_gap_mul_card_filter {n : ℕ} {a : Fin (n + 1) → ℝ}
+    (ha : StrictMono a) {c : ι → ℝ} (hc : range c ⊆ range a) (b : Finset ι) :
+    (∑ i ∈ b, c i) = a 0 * b.card +
+      ∑ j : Fin n, (a j.succ - a j.castSucc) *
+        (b.filter fun i ↦ a j.castSucc < c i).card := by
+  classical
+  have hci (i : ι) : c i = a 0 +
+      ∑ j : Fin n, if a j.castSucc < c i then a j.succ - a j.castSucc else 0 := by
+    obtain ⟨k, hk⟩ := hc (mem_range_self i)
+    simpa only [hk] using eq_add_sum_ite_sub_of_strictMono ha k
+  calc
+    (∑ i ∈ b, c i) = ∑ i ∈ b, (a 0 +
+        ∑ j : Fin n, if a j.castSucc < c i then a j.succ - a j.castSucc else 0) :=
+      Finset.sum_congr rfl fun i _ ↦ hci i
+    _ = _ := by
+      rw [Finset.sum_add_distrib, Finset.sum_comm]
+      congr 1
+      · simp [mul_comm]
+      · refine Finset.sum_congr rfl fun j _ ↦ ?_
+        rw [← Finset.sum_filter]
+        simp [mul_comm, sub_mul]
+
+/-- Every restricted dual basis has at least as many forms of weight above `r` as the dimension
+of the intersection of `U` with the common kernel of the forms of weight at most `r`. -/
+private theorem finrank_inf_iInf_ker_le_card_filter [Module.Finite K V] {L : ι → Dual K V}
+    {U : Submodule K V} {b : Finset ι} (hb : b ∈ localWeightBases L U) (c : ι → ℝ) (r : ℝ) :
+    finrank K ↥(U ⊓ ⨅ i ∈ {i | c i ≤ r}, LinearMap.ker (L i)) ≤
+      (b.filter fun i ↦ r < c i).card := by
+  have hcard := localWeightBasis_card_filter hb c r
+  have hsubset : {i | i ∈ b ∧ c i ≤ r} ⊆ {i | c i ≤ r} := fun _ hi ↦ hi.2
+  have hspanle : span K ((fun i ↦ (L i).comp U.subtype) '' {i | i ∈ b ∧ c i ≤ r}) ≤
+      span K ((fun i ↦ (L i).comp U.subtype) '' {i | c i ≤ r}) :=
+    span_mono (image_mono hsubset)
+  have hle := Submodule.finrank_mono hspanle
+  have hj := Dual.finrank_span_restrict_add_finrank_inf_iInf_ker L U {i | c i ≤ r}
+  omega
+
 /-- When a finite strictly increasing list contains all form weights, the local weight is a
 linear combination of common-kernel intersection dimensions, with nonnegative successive gaps.
 This is equation (15.4) of Evertse--Ferretti, allowing redundant spanning forms. -/
@@ -102,56 +158,12 @@ theorem localWeight_eq_sum_finrank_inf_iInf_ker {L : ι → Dual K V}
   have : Module.Finite K (Dual K V) := Module.Finite.of_fg_top
     ⟨Finset.univ.image L, by simpa using hL⟩
   have : Module.Finite K V := (Module.finite_dual_iff K).mp inferInstance
-  -- Telescoping the ordered weights expresses each basis sum in terms of sublevel counts.
-  have hpoint (k : Fin (n + 1)) : a k = a 0 +
-      ∑ j : Fin n, if a j.castSucc < a k then a j.succ - a j.castSucc else 0 := by
-    simp_rw [ha.lt_iff_lt]
-    refine Fin.cases ?_ (fun k ↦ ?_) k
-    · simp
-    · simp only [Fin.castSucc_lt_succ_iff]
-      rw [← Finset.sum_filter]
-      have heq : Finset.univ.filter (fun j : Fin n ↦ j ≤ k) = Finset.Iic k := by
-        ext j; simp
-      rw [heq, Fin.sum_Iic_sub]
-      ring
-  have hsum (b : Finset ι) :
-      (∑ i ∈ b, c i) = a 0 * b.card +
-        ∑ j : Fin n, (a j.succ - a j.castSucc) *
-          (b.filter fun i ↦ a j.castSucc < c i).card := by
-    have hci (i : ι) : c i = a 0 +
-        ∑ j : Fin n, if a j.castSucc < c i then a j.succ - a j.castSucc else 0 := by
-      obtain ⟨k, hk⟩ := hc (mem_range_self i)
-      simpa only [hk] using hpoint k
-    calc
-      (∑ i ∈ b, c i) = ∑ i ∈ b, (a 0 +
-          ∑ j : Fin n, if a j.castSucc < c i then a j.succ - a j.castSucc else 0) :=
-        Finset.sum_congr rfl fun i _ ↦ hci i
-      _ = _ := by
-        rw [Finset.sum_add_distrib, Finset.sum_comm]
-        congr 1
-        · simp [mul_comm]
-        · refine Finset.sum_congr rfl fun j _ ↦ ?_
-          rw [← Finset.sum_filter]
-          simp [mul_comm, sub_mul]
   have hgap (j : Fin n) : 0 ≤ a j.succ - a j.castSucc :=
     sub_nonneg.mpr (ha.monotone Fin.castSucc_lt_succ.le)
   have hrank (j : Fin n) :=
     Dual.finrank_span_restrict_add_finrank_inf_iInf_ker L U
       {i | c i ≤ a j.castSucc}
-  -- Every basis has at least the kernel dimension many forms above each threshold.
-  have hbound (b : Finset ι) (hb : b ∈ localWeightBases L U) (j : Fin n) :
-      finrank K ↥(U ⊓ ⨅ i ∈ {i | c i ≤ a j.castSucc}, LinearMap.ker (L i)) ≤
-        (b.filter fun i ↦ a j.castSucc < c i).card := by
-    have hcard := localWeightBasis_card_filter hb c (a j.castSucc)
-    have hsubset : {i | i ∈ b ∧ c i ≤ a j.castSucc} ⊆ {i | c i ≤ a j.castSucc} :=
-      fun _ hi ↦ hi.2
-    have hspanle : span K ((fun i ↦ (L i).comp U.subtype) ''
-        {i | i ∈ b ∧ c i ≤ a j.castSucc}) ≤
-        span K ((fun i ↦ (L i).comp U.subtype) '' {i | c i ≤ a j.castSucc}) :=
-      span_mono (image_mono hsubset)
-    have hle := Submodule.finrank_mono hspanle
-    have hj := hrank j
-    omega
+  have hsum := sum_eq_mul_card_add_sum_gap_mul_card_filter ha hc
   apply le_antisymm
   -- A sublevel-adapted basis attains every lower bound simultaneously.
   · obtain ⟨b, hb, hspan⟩ := exists_localWeightBasis_spanning_sublevels hL c U
@@ -169,7 +181,8 @@ theorem localWeight_eq_sum_finrank_inf_iInf_ker {L : ι → Dual K V}
     intro b hb
     rw [hsum, card_eq_finrank_of_mem_localWeightBases hb]
     exact add_le_add le_rfl (Finset.sum_le_sum fun j _ ↦
-      mul_le_mul_of_nonneg_left (Nat.cast_le.mpr (hbound b hb j)) (hgap j))
+      mul_le_mul_of_nonneg_left
+        (Nat.cast_le.mpr (finrank_inf_iInf_ker_le_card_filter hb c _)) (hgap j))
 
 /-- Local subspace weight is supermodular for any finite spanning family of forms,
 including redundant families and arbitrary real weights. -/
