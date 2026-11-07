@@ -345,7 +345,7 @@ def sameCycleQuotientCongr {α β : Type*} (e : α ≃ β)
     sameCycleQuotientCongr e h (Quotient.mk _ x) = Quotient.mk _ (e x) := (rfl)
 
 /-- Identity conjugacy induces identity transport of cycle quotients. -/
-@[simp] theorem Perm.sameCycleQuotientCongr_refl {α : Type*} (σ : Equiv.Perm α) :
+@[simp] theorem sameCycleQuotientCongr_refl {α : Type*} (σ : Equiv.Perm α) :
     sameCycleQuotientCongr (Equiv.refl α) (σ := σ) (by ext x; simp) =
       Equiv.refl _ := by
   ext q
