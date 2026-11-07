@@ -13,12 +13,18 @@ import Mathlib.Topology.Order.Compact
 /-!
 # Elementary bounds on real powers
 
+If `0 < x`, `x ≤ R` and `x⁻¹ ≤ R`, then `x ^ a ≤ R ^ |a|` for every real `a`. This bounds
+powers of a level confined to an interval bounded away from zero.
+
 A base at least `2` raised to a negative exponent of size at least `1` is at most `1 / 2`. This
 is the shape in which the local ratio of an Euler factor is bounded away from `1`, so that the
 denominator `1 - y ^ (-s)` stays bounded below.
 
 For any `θ < 1` and any exponent `β`, some base `τ ∈ (0, 1)` has `θ < τ ^ β`. This is how a
 geometric ratio is chosen in iteration arguments, such as the absorption lemma.
+
+For `0 < α` and `0 < b`, every multiple `c r ^ α` is at most `b` for some `r ∈ (0, 1]`. This is
+how a small scale is chosen to absorb a term `c r ^ α X` into `X` in a priori estimates.
 
 For `1 ≤ p`, the graph of `u ↦ u ^ p` on `[0, ∞)` lies above each of its tangent lines:
 `v ^ p + p * v ^ (p - 1) * (u - v) ≤ u ^ p`, strictly so when `1 < p` and `u ≠ v`. This is
@@ -36,6 +42,11 @@ For `t > 0` and every natural `k`, `(1 + t ^ 2) ^ (-k / 2) ≤ 1 / t ^ k`: the J
 decays at least as fast as `t ^ (-1)`. This converts symbol estimates of order `0` into Mihlin's
 condition.
 
+For `t ≥ 1` and an exponent `r` of either sign, `t ^ r` and `(1 + t ^ 2) ^ (r / 2)` are
+comparable: each is at most `2 ^ (|r| / 2)` times the other. For `|t| ≤ 2`, the Japanese bracket
+power `(1 + t ^ 2) ^ (r / 2)` is at least `5 ^ (-|r| / 2)`. These compare homogeneous growth
+`‖ξ‖ ^ r` with symbol growth `⟨ξ⟩ ^ r` away from the origin, and bound `⟨ξ⟩ ^ r` below near it.
+
 If `0 < d` and `2 ≤ d ^ (p - 2)`, then `d ^ (-p) ≤ 1 / (2 d ^ 2)`: an approximation of quality
 `d ^ (-p)` meets the hypothesis of Legendre's theorem `Real.exists_rat_eq_convergent`.
 
@@ -52,14 +63,24 @@ For `s ≥ 0` the weight `(1 + ‖x‖) ^ s` on a seminormed group is subadditiv
 `2 ^ s`. This is the weight inequality behind product estimates in weighted sequence spaces. The
 weight `1 + ‖x‖` itself is submultiplicative: `1 + ‖x + y‖ ≤ (1 + ‖x‖) (1 + ‖y‖)`.
 
+The Japanese bracket power `(1 + ‖ξ‖ ^ 2) ^ (r / 2)` is comparable to `‖ξ‖ ^ r` for `1 ≤ ‖ξ‖`, and
+bounded below by `(1 + R ^ 2) ^ (-|r| / 2)` on the ball `‖ξ‖ ≤ R`. These comparisons turn
+homogeneous estimates at large frequencies, and bounds on compact sets, into symbol estimates.
+
 For `1 < q`, the power mean inequality `u ^ q ≤ 2 ^ (q - 1) * (s ^ q + t ^ q)` for
 `0 ≤ u ≤ s + t` improves by a uniform factor `1 - κ` once `u` is also bounded away from `2 * s`,
 say `u ≤ (2 - δ) * s` with `0 ≤ t ≤ s`. Strict convexity of `t ↦ t ^ q` gives the improvement
 for each ratio `t / s`, and compactness of `[0, 1]` makes it uniform. This is the scalar step in
 showing that `q`-th powers of norms on a uniformly convex space are uniformly convex.
 
+If `u : ℝ → F` is constant equal to `c` on `(-∞, 0]` and `‖u r - c‖ ≤ K r ^ β` for `r ≥ 0`, with
+`0 ≤ β ≤ 1`, then its increments satisfy `‖u b - u a‖ ≲ |b - a| |a| ^ (β - 1)` whenever `a < 0`, or
+`a > 0` and `b < a / 2`. This is the part of a time-Lipschitz estimate for a Hölder-in-time
+function that does not need a derivative.
+
 ## Main results
 
+* `Real.rpow_le_rpow_abs`: `x ^ a ≤ R ^ |a|` for `0 < x`, `x ≤ R` and `x⁻¹ ≤ R`.
 * `Real.rpow_neg_le_half`: `y ^ (-s) ≤ 1 / 2` for `2 ≤ y` and `1 ≤ s`.
 * `Real.exists_pos_lt_one_lt_rpow`: for `θ < 1` and any `β`, some `τ ∈ (0, 1)` has `θ < τ ^ β`.
 * `Real.rpow_add_mul_rpow_sub_one_mul_sub_le_rpow` and
@@ -68,6 +89,12 @@ showing that `q`-th powers of norms on a uniformly convex space are uniformly co
 * `Real.floor_mul_add_one_pow_lt`: `(⌊C B⌋₊ + 1) ^ D < (B + 1) ^ n` for `1 ≤ C`, `D < n` and
   `C ^ (D / (n - D)) < B + 1`.
 * `Real.one_add_sq_rpow_neg_le`: `(1 + t ^ 2) ^ (-k / 2) ≤ 1 / t ^ k` for `0 < t`.
+* `Real.rpow_eq_sq_rpow_div_two`: `t ^ r = (t ^ 2) ^ (r / 2)` for `0 ≤ t`.
+* `Real.rpow_le_two_rpow_mul_one_add_sq_rpow` and `Real.one_add_sq_rpow_le_two_rpow_mul_rpow`:
+  `t ^ r ≤ 2 ^ (|r| / 2) (1 + t ^ 2) ^ (r / 2)` and `(1 + t ^ 2) ^ (r / 2) ≤ 2 ^ (|r| / 2) t ^ r`
+  for `1 ≤ t`.
+* `Real.one_le_five_rpow_mul_one_add_sq_rpow`: `1 ≤ 5 ^ (|r| / 2) (1 + t ^ 2) ^ (r / 2)` for
+  `|t| ≤ 2`.
 * `Real.rpow_neg_le_one_div_two_mul_sq`: `d ^ (-p) ≤ 1 / (2 d ^ 2)` for `2 ≤ d ^ (p - 2)`.
 * `Real.rpow_le_two_mul_rpow_of_le_two_mul`: `r ^ p ≤ 2 h ^ p` for `0 ≤ r ≤ 2 h` and
   `0 ≤ p ≤ 1`.
@@ -79,11 +106,30 @@ showing that `q`-th powers of norms on a uniformly convex space are uniformly co
 * `TauCeti.one_add_norm_add_rpow_le`: `(1 + ‖x + y‖) ^ s ≤ 2 ^ s ((1 + ‖x‖) ^ s + (1 + ‖y‖) ^ s)`
   for `0 ≤ s`.
 * `TauCeti.one_add_norm_add_le`: `1 + ‖x + y‖ ≤ (1 + ‖x‖) (1 + ‖y‖)`.
+* `TauCeti.norm_rpow_le_one_add_norm_sq_rpow`: `‖ξ‖ ^ r ≤ 2 ^ (|r| / 2) (1 + ‖ξ‖ ^ 2) ^ (r / 2)`
+  for `1 ≤ ‖ξ‖`.
+* `TauCeti.one_add_sq_rpow_neg_abs_le_one_add_norm_sq_rpow`:
+  `(1 + R ^ 2) ^ (-|r| / 2) ≤ (1 + ‖ξ‖ ^ 2) ^ (r / 2)` for `‖ξ‖ ≤ R`.
+* `TauCeti.norm_sub_le_mul_abs_sub_mul_rpow_of_neg_left` and
+  `TauCeti.norm_sub_le_mul_abs_sub_mul_rpow_of_lt_half`: increment bounds
+  `‖u b - u a‖ ≲ |b - a| |a| ^ (β - 1)` for a function constant on `(-∞, 0]` with
+  `‖u r - c‖ ≤ K r ^ β` for `r ≥ 0`, when `a < 0`, respectively when `0 < a` and `b < a / 2`.
 -/
 
 public section
 
 namespace Real
+
+/-- If both a positive base and its reciprocal are at most `R`, every real power of that
+base is bounded by `R` raised to the absolute value of the exponent. -/
+theorem rpow_le_rpow_abs {x R : ℝ} (hx : 0 < x) (hxR : x ≤ R) (hinvR : x⁻¹ ≤ R)
+    (a : ℝ) : x ^ a ≤ R ^ |a| := by
+  rcases le_or_gt 0 a with ha | ha
+  · rw [abs_of_nonneg ha]
+    exact rpow_le_rpow hx.le hxR ha
+  · calc x ^ a = x⁻¹ ^ (-a) := by rw [← rpow_neg_eq_inv_rpow, neg_neg]
+         _ ≤ R ^ (-a) := rpow_le_rpow (inv_nonneg.mpr hx.le) hinvR (neg_nonneg.mpr ha.le)
+         _ = R ^ |a| := by rw [abs_of_neg ha]
 
 /-- If `2 ≤ y` and `1 ≤ s`, then `y ^ (-s) ≤ 1 / 2`. -/
 theorem rpow_neg_le_half {y s : ℝ} (hy : 2 ≤ y) (hs : 1 ≤ s) : y ^ (-s) ≤ 1 / 2 :=
@@ -103,6 +149,18 @@ theorem exists_pos_lt_one_lt_rpow {θ : ℝ} (hθ : θ < 1) (β : ℝ) :
     refine ⟨c ^ β⁻¹, rpow_pos_of_pos hc0 _, rpow_lt_one hc0.le hc1 (inv_pos.2 hβ), ?_⟩
     rw [← rpow_mul hc0.le, inv_mul_cancel₀ hβ.ne', rpow_one]
     exact lt_max_of_lt_left (by linarith)
+
+/-- For `0 < α` and `0 < b`, every multiple `c r ^ α` is at most `b` for some `r ∈ (0, 1]`, since
+`r ^ α → 0` as `r → 0`. -/
+theorem exists_pos_le_one_mul_rpow_le (c : ℝ) {α b : ℝ} (hα : 0 < α) (hb : 0 < b) :
+    ∃ r : ℝ, 0 < r ∧ r ≤ 1 ∧ c * r ^ α ≤ b := by
+  have ht : Filter.Tendsto (fun r : ℝ => c * r ^ α) (nhds 0) (nhds (c * 0 ^ α)) :=
+    ((continuous_rpow_const hα.le).tendsto 0).const_mul c
+  rw [zero_rpow hα.ne', mul_zero] at ht
+  obtain ⟨r, ⟨hrb, hr1⟩, hr⟩ := ((eventually_nhdsWithin_of_eventually_nhds
+    (s := Set.Ioi 0) ((ht.eventually (eventually_le_nhds hb)).and (eventually_le_nhds one_pos))).and
+    self_mem_nhdsWithin).exists
+  exact ⟨r, hr, hr1, hrb⟩
 
 /-- **The strict tangent-line inequality for real powers.** For `1 < p` and distinct `u, v ≥ 0`,
 `u ↦ u ^ p` lies strictly above its tangent line at `v`. -/
@@ -172,6 +230,60 @@ theorem one_add_sq_rpow_neg_le {t : ℝ} (ht : 0 < t) (k : ℕ) :
       _ ≤ _ := rpow_le_rpow (by positivity) (by linarith) (by positivity)
   rw [neg_div, rpow_neg (by positivity), ← one_div]
   exact one_div_le_one_div_of_le (by positivity) hpow
+
+/-- For `t ≥ 0`, `t ^ r = (t ^ 2) ^ (r / 2)`. -/
+theorem rpow_eq_sq_rpow_div_two {t : ℝ} (ht : 0 ≤ t) (r : ℝ) :
+    t ^ r = (t ^ 2) ^ (r / 2) := by
+  rw [← rpow_natCast_mul ht]
+  ring_nf
+
+/-- For `t ≥ 1` and an exponent `r` of either sign, `t ^ r ≤ 2 ^ (|r| / 2) (1 + t²) ^ (r / 2)`. -/
+theorem rpow_le_two_rpow_mul_one_add_sq_rpow {t : ℝ} (ht : 1 ≤ t) (r : ℝ) :
+    t ^ r ≤ 2 ^ (|r| / 2) * (1 + t ^ 2) ^ (r / 2) := by
+  have hu : 0 < t ^ 2 := by positivity
+  have hs : 0 < 1 + t ^ 2 := by positivity
+  rw [rpow_eq_sq_rpow_div_two (t := t) (by linarith)]
+  rcases le_total 0 r with hr | hr
+  · calc (t ^ 2) ^ (r / 2) ≤ (1 + t ^ 2) ^ (r / 2) :=
+          rpow_le_rpow hu.le (by linarith) (by linarith)
+      _ ≤ 2 ^ (|r| / 2) * (1 + t ^ 2) ^ (r / 2) :=
+          le_mul_of_one_le_left (by positivity) (one_le_rpow (by norm_num) (by positivity))
+  · -- For a nonpositive exponent use `(1 + t²) / 2 ≤ t²`, and `2 ^ (|r| / 2) = 2 ^ (-(r / 2))`.
+    have h2 : (1 + t ^ 2) / 2 ≤ t ^ 2 := by nlinarith
+    calc (t ^ 2) ^ (r / 2) ≤ ((1 + t ^ 2) / 2) ^ (r / 2) :=
+          rpow_le_rpow_of_nonpos (by positivity) h2 (by linarith)
+      _ = 2 ^ (|r| / 2) * (1 + t ^ 2) ^ (r / 2) := by
+          rw [div_rpow hs.le (by norm_num), abs_of_nonpos hr, neg_div, rpow_neg (by norm_num),
+            div_eq_inv_mul]
+
+/-- For `t ≥ 1` and an exponent `r` of either sign, `(1 + t²) ^ (r / 2) ≤ 2 ^ (|r| / 2) t ^ r`. -/
+theorem one_add_sq_rpow_le_two_rpow_mul_rpow {t : ℝ} (ht : 1 ≤ t) (r : ℝ) :
+    (1 + t ^ 2) ^ (r / 2) ≤ 2 ^ (|r| / 2) * t ^ r := by
+  have hu : 0 < t ^ 2 := by positivity
+  rw [rpow_eq_sq_rpow_div_two (t := t) (by linarith)]
+  rcases le_total 0 r with hr | hr
+  · -- For a nonnegative exponent use `1 + t² ≤ 2 t²`.
+    calc (1 + t ^ 2) ^ (r / 2) ≤ (2 * t ^ 2) ^ (r / 2) :=
+          rpow_le_rpow (by positivity) (by nlinarith) (by linarith)
+      _ = 2 ^ (|r| / 2) * (t ^ 2) ^ (r / 2) := by
+          rw [mul_rpow (by norm_num) hu.le, abs_of_nonneg hr]
+  · calc (1 + t ^ 2) ^ (r / 2) ≤ (t ^ 2) ^ (r / 2) :=
+          rpow_le_rpow_of_nonpos hu (by linarith) (by linarith)
+      _ ≤ 2 ^ (|r| / 2) * (t ^ 2) ^ (r / 2) :=
+          le_mul_of_one_le_left (by positivity) (one_le_rpow (by norm_num) (by positivity))
+
+/-- For `|t| ≤ 2` and an exponent `r` of either sign, `(1 + t²) ^ (r / 2)` is at least
+`5 ^ (-|r| / 2)`. -/
+theorem one_le_five_rpow_mul_one_add_sq_rpow {t : ℝ} (ht : |t| ≤ 2) (r : ℝ) :
+    1 ≤ 5 ^ (|r| / 2) * (1 + t ^ 2) ^ (r / 2) := by
+  have hs : 1 ≤ 1 + t ^ 2 := by nlinarith [sq_nonneg t]
+  have hs5 : 1 + t ^ 2 ≤ 5 := by nlinarith [sq_abs t, abs_nonneg t]
+  calc (1 : ℝ) ≤ (1 + t ^ 2) ^ ((|r| + r) / 2) :=
+        one_le_rpow hs (by linarith [neg_abs_le r])
+    _ = (1 + t ^ 2) ^ (|r| / 2) * (1 + t ^ 2) ^ (r / 2) := by
+        rw [← rpow_add (by linarith), add_div]
+    _ ≤ 5 ^ (|r| / 2) * (1 + t ^ 2) ^ (r / 2) := by
+        gcongr
 
 /-- If `0 < d` and `2 ≤ d ^ (p - 2)`, then `d ^ (-p) ≤ 1 / (2 d ^ 2)`. -/
 theorem rpow_neg_le_one_div_two_mul_sq {d p : ℝ} (hd : 0 < d) (h2 : 2 ≤ d ^ (p - 2)) :
@@ -318,5 +430,95 @@ theorem one_add_norm_add_le {E : Type*} [SeminormedAddGroup E] (x y : E) :
     1 + ‖x + y‖ ≤ (1 + ‖x‖) * (1 + ‖y‖) := by
   nlinarith [norm_add_le x y, norm_nonneg x, norm_nonneg y,
     mul_nonneg (norm_nonneg x) (norm_nonneg y)]
+
+/-- Away from the origin, a power `‖ξ‖ ^ r` is bounded by a multiple of the Japanese bracket
+power: for `1 ≤ ‖ξ‖`, `‖ξ‖ ^ r ≤ 2 ^ (|r| / 2) (1 + ‖ξ‖ ^ 2) ^ (r / 2)`. -/
+theorem norm_rpow_le_one_add_norm_sq_rpow {E : Type*} [SeminormedAddGroup E] {ξ : E}
+    (hξ : 1 ≤ ‖ξ‖) (r : ℝ) :
+    ‖ξ‖ ^ r ≤ 2 ^ (|r| / 2) * (1 + ‖ξ‖ ^ 2) ^ (r / 2) := by
+  have hs : 0 < ‖ξ‖ := one_pos.trans_le hξ
+  have hsq : ‖ξ‖ ^ r = (‖ξ‖ ^ 2) ^ (r / 2) := by
+    rw [← Real.rpow_natCast, ← Real.rpow_mul hs.le]
+    ring_nf
+  rw [hsq]
+  rcases le_or_gt 0 r with hr | hr
+  · calc (‖ξ‖ ^ 2) ^ (r / 2) ≤ (1 + ‖ξ‖ ^ 2) ^ (r / 2) :=
+          Real.rpow_le_rpow (by positivity) (by linarith) (by linarith)
+      _ ≤ 2 ^ (|r| / 2) * (1 + ‖ξ‖ ^ 2) ^ (r / 2) :=
+          le_mul_of_one_le_left (by positivity) (Real.one_le_rpow (by norm_num) (by positivity))
+  · have h2 : (1 + ‖ξ‖ ^ 2) ^ (r / 2) ≥ (2 * ‖ξ‖ ^ 2) ^ (r / 2) :=
+      Real.rpow_le_rpow_of_nonpos (by positivity) (by nlinarith) (by linarith)
+    rw [Real.mul_rpow (by norm_num) (by positivity)] at h2
+    have h2r : (2 : ℝ) ^ (|r| / 2) * 2 ^ (r / 2) = 1 := by
+      rw [abs_of_neg hr, ← Real.rpow_add (by norm_num), neg_div, neg_add_cancel,
+        Real.rpow_zero]
+    calc (‖ξ‖ ^ 2) ^ (r / 2) = 2 ^ (|r| / 2) * (2 ^ (r / 2) * (‖ξ‖ ^ 2) ^ (r / 2)) := by
+          rw [← mul_assoc, h2r, one_mul]
+      _ ≤ 2 ^ (|r| / 2) * (1 + ‖ξ‖ ^ 2) ^ (r / 2) :=
+          mul_le_mul_of_nonneg_left h2 (by positivity)
+
+/-- On a ball, the Japanese bracket power is bounded below: for `‖ξ‖ ≤ R`,
+`(1 + R ^ 2) ^ (-|r| / 2) ≤ (1 + ‖ξ‖ ^ 2) ^ (r / 2)`. -/
+theorem one_add_sq_rpow_neg_abs_le_one_add_norm_sq_rpow {E : Type*} [SeminormedAddGroup E]
+    {ξ : E} {R : ℝ} (hξ : ‖ξ‖ ≤ R) (r : ℝ) :
+    (1 + R ^ 2) ^ (-|r| / 2) ≤ (1 + ‖ξ‖ ^ 2) ^ (r / 2) := by
+  have hR : 1 + ‖ξ‖ ^ 2 ≤ 1 + R ^ 2 := by nlinarith [norm_nonneg ξ]
+  rcases le_or_gt 0 r with hr | hr
+  · exact (Real.rpow_le_one_of_one_le_of_nonpos (by nlinarith) (by linarith [abs_nonneg r])).trans
+      (Real.one_le_rpow (by nlinarith [norm_nonneg ξ]) (by linarith))
+  · rw [abs_of_neg hr, neg_neg]
+    exact Real.rpow_le_rpow_of_nonpos (by positivity) hR (by linarith)
+
+open Real in
+/-- If `u` is constant equal to `c` on `(-∞, 0]` and `‖u r - c‖ ≤ K r^β` for `r ≥ 0`, then for
+`a < 0` and every `b`, `‖u b - u a‖ ≤ K |b - a| (-a)^(β - 1)`, where `0 ≤ β ≤ 1`. -/
+theorem norm_sub_le_mul_abs_sub_mul_rpow_of_neg_left {F : Type*} [NormedAddCommGroup F]
+    {u : ℝ → F} {c : F} {β K : ℝ} (hβ₀ : 0 ≤ β) (hβ₁ : β - 1 ≤ 0)
+    (hK : 0 ≤ K) (hneg : ∀ r ≤ 0, u r = c) (hrate : ∀ r, 0 ≤ r → ‖u r - c‖ ≤ K * r ^ β)
+    {a : ℝ} (ha : a < 0) (b : ℝ) : ‖u b - u a‖ ≤ K * (|b - a| * (-a) ^ (β - 1)) := by
+  rw [hneg a ha.le]
+  have hd : 0 < -a := neg_pos.2 ha
+  rcases le_or_gt b 0 with hb | hb
+  · rw [hneg b hb, sub_self, norm_zero]
+    positivity
+  have key : b ^ β ≤ |b - a| * (-a) ^ (β - 1) := by
+    rw [abs_of_pos (by linarith : 0 < b - a)]
+    rcases le_total b (-a) with hba | hba
+    · calc b ^ β ≤ (-a) ^ β := rpow_le_rpow hb.le hba hβ₀
+        _ = -a * (-a) ^ (β - 1) := by
+          simpa only [sub_add_cancel, mul_comm] using (Real.rpow_add_one hd.ne' (β - 1))
+        _ ≤ (b - a) * (-a) ^ (β - 1) := by gcongr; linarith
+    · calc b ^ β = b * b ^ (β - 1) := by
+            simpa only [sub_add_cancel, mul_comm] using
+              (Real.rpow_add_one hb.ne' (β - 1))
+        _ ≤ b * (-a) ^ (β - 1) :=
+          mul_le_mul_of_nonneg_left (rpow_le_rpow_of_nonpos hd hba hβ₁) hb.le
+        _ ≤ (b - a) * (-a) ^ (β - 1) := by gcongr; linarith
+  exact (hrate b hb.le).trans (by gcongr)
+
+open Real in
+/-- If `u` is constant equal to `c` on `(-∞, 0]` and `‖u r - c‖ ≤ K r^β` for `r ≥ 0`, then for
+`a > 0` and `b < a / 2`, `‖u b - u a‖ ≤ 4 K |b - a| a^(β - 1)`. -/
+theorem norm_sub_le_mul_abs_sub_mul_rpow_of_lt_half {F : Type*} [NormedAddCommGroup F]
+    {u : ℝ → F} {c : F} {β K : ℝ} (hβ₀ : 0 ≤ β) (hK : 0 ≤ K)
+    (hneg : ∀ r ≤ 0, u r = c) (hrate : ∀ r, 0 ≤ r → ‖u r - c‖ ≤ K * r ^ β)
+    {a b : ℝ} (ha : 0 < a) (hb : b < a / 2) :
+    ‖u b - u a‖ ≤ 4 * K * (|b - a| * a ^ (β - 1)) := by
+  have h1 : ‖u b - c‖ ≤ K * a ^ β := by
+    rcases le_or_gt b 0 with hb0 | hb0
+    · rw [hneg b hb0, sub_self, norm_zero]
+      positivity
+    · exact (hrate b hb0.le).trans (by gcongr; linarith)
+  have h3 : a ^ β ≤ 2 * (|b - a| * a ^ (β - 1)) := by
+    have hpow : a ^ β = a * a ^ (β - 1) := by
+      simpa only [sub_add_cancel, mul_comm] using (Real.rpow_add_one ha.ne' (β - 1))
+    rw [hpow, abs_of_neg (by linarith : b - a < 0)]
+    have : 0 ≤ a ^ (β - 1) := by positivity
+    nlinarith
+  calc ‖u b - u a‖ = ‖(u b - c) - (u a - c)‖ := by rw [sub_sub_sub_cancel_right]
+    _ ≤ ‖u b - c‖ + ‖u a - c‖ := norm_sub_le _ _
+    _ ≤ 2 * (K * a ^ β) := by linarith [hrate a ha.le]
+    _ ≤ 2 * (K * (2 * (|b - a| * a ^ (β - 1)))) := by gcongr
+    _ = _ := by ring
 
 end TauCeti

@@ -66,7 +66,7 @@ theorem exists_norm_one_add_eq_of_mem_maximalIdeal_pow (hℓ : (Module.finrank K
     have hJ : Ideal.span (MulAction.orbit (L ≃ₐ[K] L) x) ≤ 𝓂[L] ^ m := by
       rw [Ideal.span_le]
       rintro _ ⟨σ, rfl⟩
-      exact TauCeti.IsLocalRing.smul_mem_maximalIdeal_pow σ hx
+      exact (TauCeti.IsLocalRing.smul_mem_maximalIdeal_pow_iff σ).2 hx
     rw [sq] at hy
     rw [two_mul, pow_add]
     exact Ideal.mul_mono hJ hJ hy

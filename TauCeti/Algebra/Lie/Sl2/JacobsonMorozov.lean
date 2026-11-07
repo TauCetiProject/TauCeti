@@ -118,7 +118,7 @@ private theorem expAd_add_sub_mem (hhe : ⁅h, e⁆ = 2 • e) (hh : h ∈ Linea
     {k : ℕ} (hk : 1 ≤ k) {z : L}
     (hz : z ∈ LinearMap.ker (ad K L e) ⊓ LinearMap.range (ad K L e ^ k))
     (hy : IsNilpotent (ad K L ((k : K)⁻¹ • z))) :
-    expAd ((k : K)⁻¹ • z) hy (h + z) - h ∈
+    expAd ((k : K)⁻¹ • z) hy.exists_pow_apply_eq_zero (h + z) - h ∈
       LinearMap.ker (ad K L e) ⊓ LinearMap.range (ad K L e ^ (k + 1)) := by
   set F := fun n : ℕ => LinearMap.ker (ad K L e) ⊓ LinearMap.range (ad K L e ^ n)
   have hk0 : (k : K) ≠ 0 := by exact_mod_cast (by omega : k ≠ 0)
@@ -137,8 +137,9 @@ private theorem expAd_add_sub_mem (hhe : ⁅h, e⁆ = 2 • e) (hh : h ∈ Linea
       (Submodule.smul_mem _ _ (antitone_ker_inf_range_pow e k.le_succ hw))
   have hrest := antitone_ker_inf_range_pow e (by omega : k + 1 ≤ k + k)
     (expAd_apply_sub_sub_mem hy hyk hyvk)
-  have heq : expAd ((k : K)⁻¹ • z) hy (h + z) - h =
-      (expAd ((k : K)⁻¹ • z) hy (h + z) - (h + z) - ⁅(k : K)⁻¹ • z, h + z⁆) -
+  have heq : expAd ((k : K)⁻¹ • z) hy.exists_pow_apply_eq_zero (h + z) - h =
+      (expAd ((k : K)⁻¹ • z) hy.exists_pow_apply_eq_zero (h + z) - (h + z) -
+          ⁅(k : K)⁻¹ • z, h + z⁆) -
         (k : K)⁻¹ • w := by
     rw [hyv]
     abel
@@ -172,7 +173,7 @@ private theorem exists_lieEquiv_apply_eq_of_sub_mem (hhe : ⁅h, e⁆ = 2 • e)
     have hy := isNilpotent_ad_of_mem_ker_inf_range hyU
     obtain ⟨ψ, hψ, hψh⟩ := ih (k + 1) (by omega) (by omega) _
       (expAd_add_sub_mem hhe hh hk hh' hy)
-    refine ⟨ψ.trans (expAd _ hy).symm, ?_, ?_⟩
+    refine ⟨ψ.trans (expAd _ hy.exists_pow_apply_eq_zero).symm, ?_, ?_⟩
     · have hmem := expAd_toLinearEquiv_mem_expAdSubgroup hy hyU
       convert Subgroup.mul_mem _ (Subgroup.inv_mem _ hmem) hψ using 1
       ext x

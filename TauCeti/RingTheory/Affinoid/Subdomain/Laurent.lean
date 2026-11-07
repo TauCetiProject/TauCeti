@@ -7,6 +7,9 @@ module
 
 public import TauCeti.RingTheory.Affinoid.PowerBounded
 public import TauCeti.RingTheory.Affinoid.LaurentFraction
+public import TauCeti.RingTheory.Affinoid.Subdomain.Basic
+
+import TauCeti.RingTheory.Affinoid.QuotientNorm
 
 import TauCeti.RingTheory.Affinoid.Restricted.PointNorm
 
@@ -23,7 +26,9 @@ property of the Laurent fraction algebra `A⟨f, g⁻¹⟩ = A⟨X, Y⟩ ⧸ (X�
 classical points: for an affinoid algebra `B` with a complete ultrametric algebra norm, a
 `K`-algebra map `φ : A → B` factors through `A⟨f, g⁻¹⟩` if and only if the induced map
 `Sp B → Sp A` takes values in `L(f, g⁻¹)`, and the factorisation is then unique. In particular
-every classical point of `A⟨f, g⁻¹⟩` lies over a point of `L(f, g⁻¹)`.
+every classical point of `A⟨f, g⁻¹⟩` lies over a point of `L(f, g⁻¹)`. The structure map
+represents this set as an affinoid subdomain (`LaurentFraction.isAffinoidSubdomainMap`), with
+no norm or topology required on the test algebras in that universal property.
 
 The universal property is the point-free one of `TauCeti.LaurentFraction.existsUnique_algHom`
 (each `φ fᵢ` is power-bounded, each `φ gⱼ` is a unit with power-bounded inverse), translated by
@@ -45,6 +50,8 @@ power-bounded inverse (`TauCeti.IsAffinoidAlgebra.isUnit_and_isPowerBounded_inve
 * `TauCeti.LaurentFraction.pointNorm_algebraMap_le_one` and
   `TauCeti.LaurentFraction.one_le_pointNorm_algebraMap`: `|fᵢ| ≤ 1` and `|gⱼ| ≥ 1` at every
   classical point of `A⟨f, g⁻¹⟩`.
+* `TauCeti.LaurentFraction.isAffinoidSubdomainMap`: the Laurent fraction algebra represents
+  the Laurent domain as an affinoid subdomain, including empty domains and nonreduced algebras.
 * `TauCeti.LaurentFraction.maximalSpectrumComap_mem_laurentDomain`: the map
   `Sp A⟨f, g⁻¹⟩ → Sp A` takes values in `L(f, g⁻¹)`.
 
@@ -143,6 +150,25 @@ theorem maximalSpectrumComap_mem_laurentDomain (x : MaximalSpectrum (LaurentFrac
   simp only [mem_laurentDomain, IsAffinoidAlgebra.pointNorm_maximalSpectrumComap,
     IsScalarTower.coe_toAlgHom']
   exact ⟨pointNorm_algebraMap_le_one hA x, one_le_pointNorm_algebraMap hA x⟩
+
+include hA in
+/-- **Laurent domains are affinoid subdomains.** The structure map
+`A → A⟨f, g⁻¹⟩` represents `L(f, g⁻¹)` among all affinoid test algebras, without choosing
+norms on those test algebras. No unit-ideal condition on `f` and `g` is required. -/
+theorem isAffinoidSubdomainMap :
+    IsAffinoidSubdomainMap (IsScalarTower.toAlgHom K A (LaurentFraction f g))
+      (laurentDomain K f g) where
+  isAffinoidAlgebra := isAffinoidAlgebra hA f g
+  range_maximalSpectrumComap_subset :=
+    Set.range_subset_iff.mpr (maximalSpectrumComap_mem_laurentDomain hA)
+  existsUnique_algHom {C} _ _ hC ψ hψ := by
+    -- The predicate is algebraic; equip the test algebra with a residue norm only here.
+    let := hC.residueNormedCommRing
+    let := hC.residueNormedAlgebra
+    have := hC.isUltrametricDist_residueNormedCommRing
+    have := hC.completeSpace_residueNormedCommRing
+    obtain ⟨χ, hχ, huniq⟩ := (existsUnique_algHom_iff_range_subset hA hC ψ).mpr hψ
+    exact ⟨χ, AlgHom.ext hχ, fun θ hθ ↦ huniq θ (AlgHom.congr_fun hθ)⟩
 
 end LaurentFraction
 

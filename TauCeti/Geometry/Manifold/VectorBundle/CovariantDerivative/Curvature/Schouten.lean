@@ -168,4 +168,17 @@ theorem mdifferentiableAt_schoutenTensor_apply
   exact mdifferentiableAt_const.mul ((cov.mdifferentiableAt_ricciTensor_apply hσ hτ).sub
     ((hS.mul mdifferentiableAt_const).mul (TauCeti.Manifold.mdifferentiableAt_inner hσ hτ)))
 
+/-- For a smooth metric, the Schouten tensor of a smooth connection pairs two vector fields that
+are `C^∞` at `x` to a function that is `C^∞` at `x`. -/
+theorem contMDiffAt_schoutenTensor_apply
+    [IsContMDiffRiemannianBundle I ∞ E (TangentSpace I : M → Type _)]
+    {σ τ : Π x : M, TangentSpace I x} {x : M} (hσ : CMDiffAt ∞ (T% σ) x)
+    (hτ : CMDiffAt ∞ (T% τ) x) :
+    ContMDiffAt I 𝓘(ℝ) ∞ (fun y ↦ cov.schoutenTensor y (σ y) (τ y)) x := by
+  simp only [schoutenTensor_apply, TauCeti.finrank_tangentSpace, div_eq_mul_inv]
+  exact contMDiffAt_const.mul ((cov.contMDiffAt_ricciTensor_apply hσ hτ).sub
+    ((cov.contMDiff_scalarCurvature.contMDiffAt.mul contMDiffAt_const).mul
+      (ContMDiffAt.inner_bundle (IB := I) (F := E) (E := fun x : M ↦ TangentSpace I x)
+        (b := id) hσ hτ)))
+
 end CovariantDerivative

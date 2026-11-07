@@ -263,6 +263,33 @@ theorem isReduced_normalize (l : List V) : IsReduced 𝕜 (normalize 𝕜 l) := 
   | nil => exact isReduced_nil
   | cons v l ih => exact ih.consMerge v
 
+/-- Normalization only merges segments in the same ray and drops stationary ones. So if a set `T`
+contains `v + w` for all `v, w ∈ T` in the same ray, and contains every nonstationary segment of
+`l`, then it contains every segment of `normalize 𝕜 l`. -/
+theorem mem_of_mem_normalize {T : Set V} (hT : ∀ v ∈ T, ∀ w ∈ T, SameRay 𝕜 v w → v + w ∈ T)
+    (hl : ∀ v ∈ l, v ≠ 0 → v ∈ T) {v : V} (hv : v ∈ normalize 𝕜 l) : v ∈ T := by
+  induction l generalizing v with
+  | nil => simp at hv
+  | cons u l ih =>
+    simp only [List.mem_cons, forall_eq_or_imp] at hl
+    have ih' := fun w hw ↦ ih hl.2 (v := w) hw
+    rw [normalize_cons] at hv
+    by_cases hu : u = 0
+    · exact ih' v (by simpa [hu, consMerge_zero] using hv)
+    rcases hm : normalize 𝕜 l with _ | ⟨w, m⟩
+    · rw [hm, consMerge_nil_of_ne_zero hu, List.mem_singleton] at hv
+      exact hv ▸ hl.1 hu
+    rw [hm] at hv ih'
+    by_cases huw : SameRay 𝕜 u w
+    · rw [consMerge_cons_of_sameRay huw, List.mem_cons] at hv
+      rcases hv with rfl | hv
+      · exact hT u (hl.1 hu) w (ih' w (by simp)) huw
+      · exact ih' v (List.mem_cons_of_mem _ hv)
+    · rw [consMerge_cons_of_not_sameRay huw, List.mem_cons] at hv
+      rcases hv with rfl | hv
+      · exact hl.1 hu
+      · exact ih' v hv
+
 theorem IsReduced.normalize_eq (h : IsReduced 𝕜 l) : normalize 𝕜 l = l := by
   induction l with
   | nil => rfl
@@ -452,6 +479,11 @@ theorem ofSegments_cons (v : V) (l : List V) :
     ofSegments 𝕜 (v :: l) = straight 𝕜 v * ofSegments 𝕜 l := by
   rw [straight, ← ofSegments_append, List.singleton_append]
 
+/-- A stationary first segment does not change the presented path. -/
+@[simp]
+theorem ofSegments_zero_cons (l : List V) : ofSegments 𝕜 ((0 : V) :: l) = ofSegments 𝕜 l :=
+  PLPath.ext (by rw [segments_ofSegments, segments_ofSegments, normalize_cons, consMerge_zero])
+
 /-- Every path is the concatenation of the straight paths along its segments. -/
 theorem prod_map_straight (l : List V) : (l.map (straight 𝕜)).prod = ofSegments 𝕜 l := by
   induction l with
@@ -595,6 +627,9 @@ theorem ofSegments_map_normalize (g : V →ₗ[𝕜] W) (l : List V) :
 /-- The linear image of a piecewise-linear path, with any collapsed segments removed. -/
 noncomputable def map (p : PLPath 𝕜 V) (g : V →ₗ[𝕜] W) : PLPath 𝕜 W :=
   ofSegments 𝕜 (p.segments.map g)
+
+theorem map_def (p : PLPath 𝕜 V) (g : V →ₗ[𝕜] W) : p.map g = ofSegments 𝕜 (p.segments.map g) :=
+  (rfl)
 
 /-- A linear image can be computed on any segment presentation. -/
 @[simp]

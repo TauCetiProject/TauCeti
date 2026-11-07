@@ -67,6 +67,19 @@ noncomputable def geckCoordinatePointMulEquiv (A : Type v) [CommRing A] :
       t.geckPoints ht A :=
   (t.geckPointsPresentation ht (CommAlgCat.of ℤ A)).mulEquiv
 
+/-- The coordinate-point equivalence realizes a quotient point by its underlying matrix. -/
+@[simp]
+theorem coe_geckCoordinatePointMulEquiv (A : Type v) [CommRing A]
+    (q : HopfAlgebra.points (R := ℤ) (H := t.geckCoordinateHopfAlgebra ht)
+      (CommAlgCat.of ℤ A)) :
+    (t.geckCoordinatePointMulEquiv ht A q :
+        Matrix.GeneralLinearGroup (Fin (t.geckDim ht)) A) =
+      GeneralLinear.pointsMulEquiv (t.geckDim ht)
+        (CommHopfAlgCat.quotientPointsHom
+          (GeneralLinear.coordinateHopfAlgebra ℤ (t.geckDim ht))
+          (t.geckDefiningIdeal ht) (CommAlgCat.of ℤ A) q) :=
+  (t.geckPointsPresentation ht (CommAlgCat.of ℤ A)).coe_mulEquiv_apply q
+
 /-- The coordinate-point equivalence is natural in the value algebra. -/
 theorem geckCoordinatePointMulEquiv_mapPoints
     {A B : Type v} [CommRing A] [CommRing B] (f : A →ₐ[ℤ] B)

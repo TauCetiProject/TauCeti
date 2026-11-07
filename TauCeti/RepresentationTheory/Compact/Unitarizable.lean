@@ -7,8 +7,11 @@ module
 
 public import TauCeti.RepresentationTheory.Compact.Averaging
 public import TauCeti.RepresentationTheory.Continuous.Unitary.Basic
+public import TauCeti.RepresentationTheory.InvariantForm
 public import Mathlib.Analysis.InnerProductSpace.Positive
+import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+import TauCeti.RepresentationTheory.Continuous.Transport
 
 /-!
 # Weyl's unitarian trick
@@ -45,6 +48,9 @@ of the averaged form is then the operator identity `(π g)† ∘ S ∘ (π g) =
   self-adjoint operator.
 * `ContRepresentation.gramOperator_eq_one`: for an already unitary representation the
   averaging changes nothing.
+* `ContRepresentation.exists_isSymm_bilinForm_invariant`: a finite-dimensional real representation
+  on a normed space, with no inner product given, preserves a symmetric positive-definite bilinear
+  form.
 
 This is the compact-group replacement for the invertibility of `|G|` in Maschke's theorem. The
 invariant-complement and complete-reducibility results of
@@ -93,6 +99,8 @@ theorem exists_pos_mul_norm_le_norm_map (π : ContRepresentation 𝕜 G V) (hπ 
   exact hstep
 
 end NormedField
+
+section Gram
 
 variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
@@ -254,5 +262,32 @@ theorem gramOperator_eq_one (hunitary : ContRepresentation.IsUnitary π) :
   have hconst : gramFamily π hπ = ContinuousMap.const G 1 :=
     ContinuousMap.ext fun g ↦ hunitary.adjoint_comp_self g
   rw [gramOperator, hconst, haarAverage_const]
+
+end Gram
+
+/-- **An invariant inner product on a real representation.** A continuous representation of a
+compact group on a finite-dimensional real normed space, which need not carry an inner product,
+preserves a symmetric positive-definite bilinear form. -/
+theorem exists_isSymm_bilinForm_invariant {G V : Type*} [Group G] [TopologicalSpace G]
+    [IsTopologicalGroup G] [CompactSpace G] [NormedAddCommGroup V] [NormedSpace ℝ V]
+    [FiniteDimensional ℝ V] (π : ContRepresentation ℝ G V) (hπ : Continuous π) :
+    ∃ B : LinearMap.BilinForm ℝ V, B.IsSymm ∧ (∀ v, v ≠ 0 → 0 < B v v) ∧
+      Representation.IsInvariantForm π.toRepresentation B := by
+  borelize G
+  -- Average the inner product transported from Euclidean space along a linear equivalence.
+  let e := toEuclidean (E := V)
+  have hρ := e.continuous_congr hπ
+  let S := gramOperator (e.congr π) hρ
+  refine ⟨.mk₂ ℝ (fun v w ↦ ⟪e v, S (e w)⟫_ℝ) (fun _ _ _ ↦ by simp [inner_add_left])
+    (fun _ _ _ ↦ by simp [inner_smul_left]) (fun _ _ _ ↦ by simp [inner_add_right])
+    (fun _ _ _ ↦ by simp [inner_smul_right]), ⟨fun v w ↦ ?_⟩, fun v hv ↦ ?_,
+      Representation.isInvariantForm_iff.mpr fun g v w ↦ ?_⟩
+  · simpa [real_inner_comm] using (isSymmetric_gramOperator (e.congr π) hρ (e v) (e w)).symm
+  · have h := re_inner_gramOperator_self_pos (e.congr π) hρ (e.map_ne_zero_iff.mpr hv)
+    simpa [real_inner_comm] using h
+  · have h : ⟪e (π g v), S (e (π g w))⟫_ℝ = ⟪e v, S (e w)⟫_ℝ := by
+      simpa [ContinuousLinearEquiv.congr_apply] using
+        inner_gramOperator_map_map (e.congr π) hρ g (e v) (e w)
+    exact h
 
 end ContRepresentation

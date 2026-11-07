@@ -14,7 +14,10 @@ public import Mathlib.NumberTheory.LSeries.RiemannZeta
 Mathlib's `completedRiemannZeta` is `Λ(s) = Λ₀(s) - 1/s - 1/(1 - s)` with `Λ₀` entire
 (`completedRiemannZeta_eq`, `differentiable_completedZeta₀`). This file reads off the
 consequences in the language of meromorphic functions: `Λ` is meromorphic on `ℂ`, analytic away
-from `0` and `1`, and has a simple pole, of order exactly `-1`, at each of `0` and `1`.
+from `0` and `1`, and has a simple pole, of order exactly `-1`, at each of `0` and `1`. Since
+`ζ(s) = Λ(s) / Γ_ℝ(s)` for `s ≠ 0` and `1 / Γ_ℝ` is entire, the Riemann zeta function itself is
+meromorphic on `ℂ` too; this is what lets a factorization through `ζ` serve as a meromorphic
+continuation.
 
 ## Main results
 
@@ -22,6 +25,8 @@ from `0` and `1`, and has a simple pole, of order exactly `-1`, at each of `0` a
 * `TauCeti.analyticAt_completedRiemannZeta`
 * `TauCeti.meromorphicOrderAt_completedRiemannZeta_zero`,
   `TauCeti.meromorphicOrderAt_completedRiemannZeta_one`
+* `TauCeti.meromorphic_riemannZeta`: the uncompleted function `riemannZeta` is meromorphic on `ℂ`
+  as well.
 -/
 
 public section
@@ -69,5 +74,16 @@ theorem meromorphicOrderAt_completedRiemannZeta_one :
   rw [← h]
   congr 1
   exact funext fun z ↦ (completedRiemannZeta_one_sub z).symm
+
+/-- Mathlib's Riemann zeta function is meromorphic on `ℂ`. Away from `1` it is analytic
+(`analyticOn_riemannZeta`); its pole at `1` is that of `completedRiemannZeta`. -/
+theorem meromorphic_riemannZeta : Meromorphic riemannZeta := by
+  intro z
+  rcases eq_or_ne z 1 with rfl | hz
+  · refine ((meromorphic_completedRiemannZeta 1).mul
+      (Complex.differentiable_Gammaℝ_inv.analyticAt 1).meromorphicAt).congr ?_
+    filter_upwards [nhdsWithin_le_nhds (eventually_ne_nhds one_ne_zero)] with s hs
+    rw [riemannZeta_def_of_ne_zero hs, div_eq_mul_inv, Pi.mul_apply]
+  · exact (analyticOn_riemannZeta z hz).meromorphicAt
 
 end TauCeti

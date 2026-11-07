@@ -79,7 +79,8 @@ private theorem coordinateEnvelopingAut_envelopingι_mem (σ : K⟦X⟧ ≃ₐ[K
       coordinateEnvelopingAut Φ hΦ hΦs a σ (envelopingι c a u) ∈
         orderLeftIdeal Φ hΦ hΦs a n :=
   fun _ hu ↦ by
-    simpa using envelopingι_mem_orderLeftIdeal (substLieEquiv_mem_orderSubmodule _ hu)
+    rw [coordinateEnvelopingAut_envelopingι]
+    exact envelopingι_mem_orderLeftIdeal (substLieEquiv_mem_orderSubmodule _ hu)
 
 /-- The inverse of the lift of a coordinate change to `U` carries the currents of order `n` into
 `I_n`. -/
@@ -88,7 +89,9 @@ private theorem coordinateEnvelopingAut_symm_envelopingι_mem (σ : K⟦X⟧ ≃
       (coordinateEnvelopingAut Φ hΦ hΦs a σ).symm (envelopingι c a u) ∈
         orderLeftIdeal Φ hΦ hΦs a n :=
   fun _ hu ↦ (coordinateEnvelopingAut_mem_orderLeftIdeal_iff σ).mp
-    (by simpa using envelopingι_mem_orderLeftIdeal hu)
+    (by
+      rw [AlgEquiv.apply_symm_apply]
+      exact envelopingι_mem_orderLeftIdeal hu)
 
 /-- **Coordinate changes on the completed enveloping algebra.** An algebra automorphism `σ` of
 `K⟦X⟧` acts on the completion `Û = lim_n U / I_n` of `U = U(ĝ) / (ι K - a)` by the continuous

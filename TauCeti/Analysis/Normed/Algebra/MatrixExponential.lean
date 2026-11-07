@@ -29,7 +29,8 @@ laws `exp A * exp (-A) = 1` and `exp (-A) * exp A = 1`, together with their form
 arbitrary factor, for an arbitrary matrix over any complete normed entry ring; the invariance of
 the trace under conjugation by the two exponential weights in either order, which needs
 commutative entries; the half-split identity `exp A = exp (A / 2) * exp (A / 2)`; and, for a
-Hermitian matrix `K`, the positivity of `Tr (exp K)` and of `x ↦ Tr (exp K * x)`.
+Hermitian matrix `K`, the positivity of `Tr (exp K)` and of `x ↦ Tr (exp K * x)`, and the
+criterion `det (exp K) = 1 ↔ trace K = 0`.
 
 ## The argument
 
@@ -52,6 +53,8 @@ constant `1`. Evaluating at `t = 1` gives the identity.
 * `Matrix.exp_eq_mul_exp_half`: the exponential of a matrix is the square of its half.
 * `Matrix.IsHermitian.trace_exp_mul_nonneg` and `Matrix.IsHermitian.trace_exp_pos`: positivity of
   the trace of the exponential of a Hermitian matrix and of the functional `x ↦ Tr (exp K * x)`.
+* `Matrix.IsHermitian.det_exp_eq_one_iff`: the exponential of a Hermitian matrix has determinant
+  one exactly when the matrix is trace-free.
 
 ## References
 
@@ -191,6 +194,17 @@ theorem trace_exp_mul_nonneg (hK : K.IsHermitian) {x : Matrix m m 𝕜}
   refine Matrix.PosSemidef.trace_nonneg (Matrix.nonneg_iff_posSemidef.mp ?_)
   simpa only [hF, Matrix.mul_assoc] using
     star_left_conjugate_nonneg hx (NormedSpace.exp ((1 / 2 : ℝ) • K))
+
+/-- The exponential of a Hermitian matrix `K` has determinant one exactly when `K` is trace-free:
+`det (exp K) = exp (trace K)` and the trace of `K` is real. -/
+theorem det_exp_eq_one_iff (hK : K.IsHermitian) :
+    (NormedSpace.exp K).det = 1 ↔ K.trace = 0 := by
+  have hre : ((RCLike.re K.trace : ℝ) : 𝕜) = K.trace :=
+    RCLike.conj_eq_iff_re.1 (by rw [← RCLike.star_def, ← trace_conjTranspose, hK.eq])
+  rw [det_exp, ← hre, ← RCLike.algebraMap_eq_ofReal, ← NormedSpace.algebraMap_exp_comm,
+    ← Real.exp_eq_exp_ℝ, RCLike.algebraMap_eq_ofReal]
+  norm_cast
+  exact Real.exp_eq_one_iff _
 
 variable [Nonempty m]
 

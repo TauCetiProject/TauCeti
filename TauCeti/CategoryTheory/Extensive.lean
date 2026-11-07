@@ -22,6 +22,9 @@ union of the fibre products.
 
 * `CategoryTheory.Over.preservesColimitsOfShape_discrete_pullback`: in a finitary pre-extensive
   category, `Over.pullback f` preserves finite coproducts.
+* `CategoryTheory.FinitaryPreExtensive.isPullback_sigmaMap_sigmaDesc_id`: in a finitary
+  pre-extensive category, the base change of the fold map `∐_j Y ⟶ Y` along `f : S ⟶ Y` is the
+  fold map `∐_j S ⟶ S`.
 -/
 
 public section
@@ -57,3 +60,26 @@ instance [FinitaryPreExtensive C] : PreservesFiniteCoproducts (Over.pullback f) 
   ⟨fun _ ↦ inferInstance⟩
 
 end CategoryTheory.Over
+
+namespace CategoryTheory.FinitaryPreExtensive
+
+variable {C : Type u} [Category.{v} C] [FinitaryPreExtensive C]
+
+/-- In a finitary pre-extensive category, the base change of the fold map `∐_j Y ⟶ Y` along any
+morphism `f : S ⟶ Y` is the fold map `∐_j S ⟶ S`, with first projection `∐_j f`. -/
+lemma isPullback_sigmaMap_sigmaDesc_id {J : Type*} [Finite J] {S Y : C} (f : S ⟶ Y)
+    [HasPullback (Sigma.desc fun _ : J ↦ 𝟙 Y) f] :
+    IsPullback (Limits.Sigma.map fun _ : J ↦ f) (Sigma.desc fun _ : J ↦ 𝟙 S)
+      (Sigma.desc fun _ : J ↦ 𝟙 Y) f := by
+  have hS := coproductIsCoproduct fun _ : J ↦ S
+  have h₁ : Cofan.IsColimit.desc hS (fun j ↦ f ≫ (Cofan.mk _ (Sigma.ι fun _ : J ↦ Y)).inj j) =
+      Limits.Sigma.map fun _ : J ↦ f :=
+    Cofan.IsColimit.hom_ext hS _ _ fun j ↦ by rw [Cofan.IsColimit.fac]; simp
+  have h₂ : Cofan.IsColimit.desc hS (fun _ ↦ 𝟙 S) = Sigma.desc fun _ : J ↦ 𝟙 S :=
+    Cofan.IsColimit.hom_ext hS _ _ fun j ↦ by rw [Cofan.IsColimit.fac]; simp
+  rw [← h₁, ← h₂]
+  exact IsUniversalColimit.isPullback_of_isColimit_right
+    (isUniversal_finiteCoproducts (coproductIsCoproduct fun _ : J ↦ Y)) (fun _ ↦ 𝟙 _)
+    (Sigma.desc fun _ ↦ 𝟙 Y) f (fun _ ↦ f) (fun _ ↦ 𝟙 _) (fun _ ↦ IsPullback.id_vert f) hS
+
+end CategoryTheory.FinitaryPreExtensive

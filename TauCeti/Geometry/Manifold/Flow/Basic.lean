@@ -17,7 +17,7 @@ as time followed by initial point.  The domain and value are adapters for
 domain-aware group law records both the value equation and the condition that the composite time
 remains in the interval of existence.
 
-For finite-dimensional model spaces, the existing smooth-dependence theorem for maximal integral
+For complete normed model spaces, the existing smooth-dependence theorem for maximal integral
 curves gives joint openness of the domain and joint smoothness of the flow, so flowing a `C^n`
 family of points for a `C^n` family of times is again `C^n`.  Along a trajectory, a function changes
 at the rate of its derivative in the direction of the vector field.  The escape theorem says that a
@@ -27,11 +27,12 @@ maximal trajectory approaching a finite right endpoint eventually leaves every c
 
 * `TauCeti.flowDomain`: the domain of the maximal flow, in `(time, point)` order.
 * `TauCeti.flowOf`: the maximal flow, total with junk values outside `flowDomain`.
-* `TauCeti.isOpen_flowDomain`: openness of the domain in finite dimensions.
-* `TauCeti.contMDiffOn_flowOf`: joint regularity of the flow in finite dimensions.
+* `TauCeti.isOpen_flowDomain`: openness of the domain for complete model spaces.
+* `TauCeti.contMDiffOn_flowOf`: joint regularity of the flow for complete model spaces.
 * `TauCeti.contMDiffAt_flowOf_comp`: flowing `C^n` families of points for `C^n` families of times.
 * `TauCeti.hasDerivAt_comp_flowOf`: the time derivative of a function along a trajectory.
 * `TauCeti.flowOf_add`: the domain-aware group law.
+* `TauCeti.flowOf_neg_flowOf`: flowing backwards undoes flowing forwards.
 * `TauCeti.eventually_flowOf_notMem`: escape from compact sets at a finite right endpoint.
 
 ## References
@@ -110,18 +111,47 @@ theorem flowOf_zero [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
   exact maximalIntegralCurve_zero (mem_flowDomain.mp (mem_flowDomain_zero hv x))
 
 omit [CompleteSpace E] in
-/-- In finite dimensions, the domain of the maximal flow is jointly open in time and initial
-point. -/
-theorem isOpen_flowDomain [FiniteDimensional ℝ E] [IsManifold I 1 M]
+/-- A global integral curve of a `C¹` field is the maximal flow through its initial value.
+No completeness hypothesis is needed on the field or the model space. -/
+theorem flowOf_eq_of_isMIntegralCurve [IsManifold I 1 M]
+    {v : (x : M) → TangentSpace I x}
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
+    {γ : ℝ → M} (hγ : IsMIntegralCurve γ v) (t : ℝ) :
+    flowOf v t (γ 0) = γ t := by
+  have h := (hγ.isMIntegralCurveOn (Ioo (-(|t| + 1)) (|t| + 1))).eqOn_maximalIntegralCurve hv
+    (by constructor <;> linarith [abs_nonneg t]) rfl
+  have ht : t ∈ Ioo (-(|t| + 1)) (|t| + 1) :=
+    ⟨by linarith [neg_abs_le t], by linarith [le_abs_self t]⟩
+  rw [flowOf_apply]
+  exact h ht
+
+omit [CompleteSpace E] in
+/-- The velocity of a maximal-flow trajectory is the vector field at the current point,
+whenever the trajectory is in its domain. -/
+theorem curveVelocity_flowOf [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {t : ℝ} {x : M}
+    (ht : (t, x) ∈ flowDomain v) :
+    Manifold.curveVelocity I (fun s ↦ flowOf v s x) t = v (flowOf v t x) := by
+  have hdom : {s | (s, x) ∈ flowDomain v} ∈ 𝓝 t := by
+    simpa only [mem_flowDomain, ofPred_mem_eq] using
+      isOpen_maximalIntegralCurveInterval.mem_nhds (mem_flowDomain.mp ht)
+  have hc := (isMIntegralCurveOn_flowOf hv x).isMIntegralCurveAt hdom
+  simpa only [Manifold.curveVelocityWithin_univ] using
+    Manifold.curveVelocityWithin_eq_of_hasMFDerivWithinAt
+      hc.hasMFDerivAt.hasMFDerivWithinAt uniqueDiffWithinAt_univ
+
+/-- On a complete normed model space, the domain of the maximal flow is jointly open in time
+and initial point. -/
+theorem isOpen_flowDomain [IsManifold I 1 M]
     {v : (x : M) → TangentSpace I x}
     (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) :
     IsOpen (flowDomain v) := by
   simpa only [flowDomain] using
     (isOpen_maximalIntegralCurveFlowDomain hv).preimage continuous_swap
 
-omit [CompleteSpace E] in
-/-- In finite dimensions, a `C^n` vector field has a jointly `C^n` maximal flow on its domain. -/
-theorem contMDiffOn_flowOf [FiniteDimensional ℝ E] {n : ℕ∞} (hn : 1 ≤ n)
+/-- On a complete normed model space, a `C^n` vector field has a jointly `C^n` maximal flow on
+its domain. -/
+theorem contMDiffOn_flowOf {n : ℕ∞} (hn : 1 ≤ n)
     [IsManifold I 1 M] [IsManifold I n M] {v : (x : M) → TangentSpace I x}
     (hv : CMDiff n (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) :
     ContMDiffOn (𝓘(ℝ, ℝ).prod I) I n (fun p : ℝ × M ↦ flowOf v p.1 p.2)
@@ -139,10 +169,9 @@ theorem contMDiffOn_flowOf [FiniteDimensional ℝ E] {n : ℕ∞} (hn : 1 ≤ n)
   rw [hfun, hdomain] at h
   exact h
 
-omit [CompleteSpace E] in
-/-- In finite dimensions, flowing a `C^n` family of initial points for a `C^n` family of times is
-`C^n`, wherever the flow is defined. -/
-theorem contMDiffAt_flowOf_comp [FiniteDimensional ℝ E] {n : ℕ∞} (hn : 1 ≤ n)
+/-- On a complete normed model space, flowing a `C^n` family of initial points for a `C^n` family
+of times is `C^n`, wherever the flow is defined. -/
+theorem contMDiffAt_flowOf_comp {n : ℕ∞} (hn : 1 ≤ n)
     [IsManifold I 1 M] [IsManifold I n M] {v : (x : M) → TangentSpace I x}
     (hv : CMDiff n (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
     {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
@@ -181,6 +210,51 @@ theorem flowOf_add [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
     (mem_maximalIntegralCurveInterval_maximalIntegralCurve_iff hv hs').mp ht'
   refine ⟨mem_flowDomain.mpr hst, ?_⟩
   simpa only [flowOf_apply] using (maximalIntegralCurve_add hv hs' hst).symm
+
+/-- The flow can be run backwards along a trajectory: if time `t` is defined at `x`, then time
+`-t` is defined at `flowOf v t x`. -/
+theorem neg_mem_flowDomain_flowOf [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {t : ℝ} {x : M}
+    (ht : (t, x) ∈ flowDomain v) : (-t, flowOf v t x) ∈ flowDomain v := by
+  rw [mem_flowDomain, flowOf_apply,
+    mem_maximalIntegralCurveInterval_maximalIntegralCurve_iff hv (mem_flowDomain.mp ht),
+    add_neg_cancel, ← mem_flowDomain]
+  exact mem_flowDomain_zero hv x
+
+/-- Flowing for time `-t` undoes flowing for time `t`. -/
+theorem flowOf_neg_flowOf [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {t : ℝ} {x : M}
+    (ht : (t, x) ∈ flowDomain v) : flowOf v (-t) (flowOf v t x) = x := by
+  rw [(flowOf_add hv ht (neg_mem_flowDomain_flowOf hv ht)).2, add_neg_cancel, flowOf_zero hv]
+
+/-- If `x` returns to itself at time `t`, it does so at every natural multiple of `t`. -/
+theorem flowOf_natCast_mul_of_flowOf_eq [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {t : ℝ} {x : M}
+    (ht : (t, x) ∈ flowDomain v) (hx : flowOf v t x = x) (k : ℕ) :
+    ((k : ℝ) * t, x) ∈ flowDomain v ∧ flowOf v ((k : ℝ) * t) x = x := by
+  induction k with
+  | zero => simpa only [Nat.cast_zero, zero_mul] using ⟨mem_flowDomain_zero hv x, flowOf_zero hv x⟩
+  | succ k ih =>
+    obtain ⟨hk, hkx⟩ := ih
+    obtain ⟨hmem, heq⟩ := flowOf_add hv hk (t := t) (by rwa [hkx])
+    rw [hkx, hx] at heq
+    simpa only [Nat.cast_succ, add_one_mul] using ⟨hmem, heq.symm⟩
+
+omit [CompleteSpace E] in
+/-- If `x` returns to itself at time `s`, then so does every point `flowOf v t x` of its
+trajectory. -/
+theorem flowOf_flowOf_of_flowOf_eq [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {s t : ℝ} {x : M}
+    (ht : (t, x) ∈ flowDomain v) (hs : (s, x) ∈ flowDomain v) (hx : flowOf v s x = x) :
+    (s, flowOf v t x) ∈ flowDomain v ∧ flowOf v s (flowOf v t x) = flowOf v t x := by
+  obtain ⟨hst, heq⟩ := flowOf_add hv hs (hx.symm ▸ ht)
+  have hs' : (s, flowOf v t x) ∈ flowDomain v := by
+    rw [mem_flowDomain, flowOf_apply,
+      mem_maximalIntegralCurveInterval_maximalIntegralCurve_iff hv (mem_flowDomain.mp ht), add_comm,
+      ← mem_flowDomain]
+    exact hst
+  refine ⟨hs', ?_⟩
+  rw [(flowOf_add hv ht hs').2, add_comm, ← heq, hx]
 
 /-- At a finite right endpoint of a maximal interval, the trajectory eventually leaves every
 compact set. -/

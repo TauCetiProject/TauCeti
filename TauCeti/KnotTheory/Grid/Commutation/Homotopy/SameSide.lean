@@ -7,7 +7,7 @@ module
 
 public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.TerminalPair
 public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.InitialPair.Weight
-public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.PentagonPair
+public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.Pentagon.Pair
 import TauCeti.Algebra.BigOperators.Finset.Pairing
 import TauCeti.Algebra.CharP.Two
 

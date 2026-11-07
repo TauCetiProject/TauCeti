@@ -11,6 +11,8 @@ public import TauCeti.RepresentationTheory.Continuous.InvariantComplement
 public import TauCeti.RepresentationTheory.Continuous.Transport
 public import TauCeti.RepresentationTheory.Irreducible
 
+import TauCeti.Order.CompleteLattice.Basic
+
 /-!
 # The orthogonal decomposition of a unitary representation into irreducibles
 
@@ -67,15 +69,6 @@ public section
 open TauCeti
 
 open scoped InnerProductSpace
-
-/-- Splitting the supremum of a family indexed by `Fin (n + 1)` off its first member. -/
-private theorem iSup_fin_succ {α : Type*} [CompleteLattice α] {n : ℕ} (f : Fin (n + 1) → α) :
-    ⨆ i, f i = f 0 ⊔ ⨆ i : Fin n, f i.succ := by
-  refine le_antisymm (iSup_le fun i ↦ ?_)
-    (sup_le (le_iSup f 0) (iSup_le fun j ↦ le_iSup f j.succ))
-  rcases Fin.eq_zero_or_eq_succ i with rfl | ⟨j, rfl⟩
-  · exact le_sup_left
-  · exact le_sup_of_le_right (le_iSup (fun j : Fin n ↦ f j.succ) j)
 
 namespace ContRepresentation
 

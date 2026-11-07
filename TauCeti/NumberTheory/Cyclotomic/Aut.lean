@@ -9,17 +9,21 @@ public import Mathlib.NumberTheory.Cyclotomic.Gal
 public import Mathlib.RingTheory.ZMod.UnitsCyclic
 
 /-!
-# Order and cyclicity of a cyclotomic Galois group
+# Order and cyclicity of a cyclotomic Galois group, and embeddings of cyclotomic extensions
 
 For an `n`-th cyclotomic extension `L / K` whose cyclotomic polynomial `Φ_n` is irreducible over
 `K`, the Galois group has exactly `φ n` elements. Over any base, the Galois group embeds in the unit
 group `(ZMod n)ˣ` through the action on a primitive `n`-th root of unity, so it is cyclic whenever
-`(ZMod n)ˣ` is — for instance whenever `n` is a power of an odd prime.
+`(ZMod n)ˣ` is — for instance whenever `n` is a power of an odd prime. When `Φ_n` is irreducible, a
+primitive `n`-th root of unity in `L` can be sent to any primitive `n`-th root of unity in a domain
+containing `K`.
 
 ## Main results
 
 * `IsCyclotomicExtension.card_aut_eq_totient`: `#Gal(L / K) = φ n` when `Φ_n` is irreducible.
 * `IsCyclotomicExtension.isCyclic_aut`: the group is cyclic when `(ZMod n)ˣ` is.
+* `IsPrimitiveRoot.exists_algHom_apply_eq`: a `K`-algebra map sends a given primitive root to any
+  other when `Φ_n` is irreducible.
 
 ## Implementation notes
 
@@ -62,3 +66,19 @@ theorem isCyclic_aut [IsCyclic (ZMod n)ˣ] : IsCyclic (L ≃ₐ[K] L) :=
   isCyclic_of_injective _ ((zeta_spec n K L).autToPow_injective K)
 
 end IsCyclotomicExtension
+
+namespace IsPrimitiveRoot
+
+variable {n : ℕ} [NeZero n] {K : Type*} [Field K] {L : Type*} [CommRing L] [IsDomain L]
+  [Algebra K L] [IsCyclotomicExtension {n} K L] {ζ : L}
+
+/-- If `Φ_n` is irreducible over `K`, a primitive `n`-th root of unity in an `n`-th cyclotomic
+extension of `K` can be sent to any primitive `n`-th root of unity in a domain containing `K`. -/
+theorem exists_algHom_apply_eq (hζ : IsPrimitiveRoot ζ n) (hirr : Irreducible (cyclotomic n K))
+    {C : Type*} [CommRing C] [IsDomain C] [Algebra K C] {ω : C} (hω : IsPrimitiveRoot ω n) :
+    ∃ ι : L →ₐ[K] C, ι ζ = ω := by
+  let ω' : primitiveRoots n C := ⟨ω, (mem_primitiveRoots (NeZero.pos n)).mpr hω⟩
+  refine ⟨(hζ.embeddingsEquivPrimitiveRoots C hirr).symm ω', ?_⟩
+  rw [← hζ.embeddingsEquivPrimitiveRoots_apply_coe C hirr, Equiv.apply_symm_apply]
+
+end IsPrimitiveRoot

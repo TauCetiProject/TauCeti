@@ -88,14 +88,6 @@ theorem zigzagGradedProjective_shift_piece (i : V) (d p : ℤ) :
   rw [InternalGrading.shift_piece, zigzagGradedProjective_piece,
     zigzagProjectiveShiftGrade_apply, sub_eq_add_neg]
 
-/-- Every internally shifted vertex projective is projective in the graded-module category. -/
-instance projective_zigzagGradedProjective_shift (i : V) (d : ℤ) :
-    Projective ((zigzagGradedProjective k G i).shiftObj d) := by
-  let _ := zigzagIntegerGradedAlgebra k G
-  let _ : Module.Projective (nonisolatedZigzagQuotient k G) (zigzagProjective k G i) :=
-    zigzagProjective_projective k G i
-  exact GradedModuleCat.projective_of_module_projective _
-
 /-- The vertex projective is projective in the graded-module category. -/
 instance projective_zigzagGradedProjective (i : V) :
     Projective (zigzagGradedProjective k G i) := by

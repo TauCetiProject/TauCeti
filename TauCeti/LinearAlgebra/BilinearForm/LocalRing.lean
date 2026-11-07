@@ -159,14 +159,10 @@ theorem IsSymm.exists_basis_orthogonal (hB : B.IsSymm) {m k : ℕ}
       Matrix.fromBlocks G 0 0 ((B.restrict T).toMatrix t) := by
     ext (i | i) (j | j) <;> simp [toMatrix_apply, hcl, hcr, hG, hvT, hTv]
   let e : Fin k ⊕ Fin m ≃ Fin (m + k) := finSumFinEquiv.trans (finCongr (by omega))
-  have hb : (B.toMatrix (b.reindex e.symm)).det = (B.toMatrix b).det := by
-    rw [← Matrix.det_submatrix_equiv_self e (B.toMatrix b)]
-    congr 1
-    ext i j
-    simp [toMatrix_apply]
   let := c.invertibleToMatrix (b.reindex e.symm)
   refine ⟨(c.toMatrix (b.reindex e.symm)).det, Matrix.isUnit_det_of_invertible _, ?_⟩
-  rw [← hb, det_toMatrix_eq_det_sq_mul_det c, hblock, Matrix.det_fromBlocks_zero₂₁]
+  rw [← det_toMatrix_reindex b e.symm, det_toMatrix_eq_det_sq_mul_det c, hblock,
+    Matrix.det_fromBlocks_zero₂₁]
 
 /-- The orthogonal complement of a vector `x` with unit self-pairing, for a symmetric form whose
 Gram determinant in a basis of size `n + 1` is a unit, has a basis of size `n` in which the Gram

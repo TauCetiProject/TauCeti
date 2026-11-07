@@ -6,11 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Constructions
+public import Mathlib.Topology.Algebra.Ring.Real
+
+public import Mathlib.Topology.Separation.Hausdorff
 import Mathlib.Basic.Finite.Prod
 import Mathlib.Basic.Finite.Sigma
 
 /-!
 # Shrinking open sets into dense open sets of finite products
+
+The open unit cube in a finite product of copies of `ℝ` is open.
 
 Given nonempty open sets `V i` in a topological space `X` and a dense open set `U ⊆ κ → X` for a
 finite type `κ`, the sets `V i` can be shrunk to nonempty open subsets so that the box
@@ -21,11 +26,17 @@ in `U c`. Such shrinking steps are the
 basic move in Baire category constructions of perfect sets of independent points, such as the
 proof of Mycielski's theorem.
 
+In a Hausdorff space the injective tuples indexed by a finite type form an open subset of the
+product, such as the ordered triples of distinct points of the Riemann sphere.
+
 ## Main results
 
+* `TauCeti.isOpen_setOf_forall_abs_lt_one`: the finite-dimensional open unit cube is open.
 * `TauCeti.exists_univ_pi_subset`: shrinking along one injective tuple.
 * `TauCeti.exists_forall_univ_pi_subset`: when the index type is finite, shrinking along all
   injective tuples for finitely many dense open sets at once.
+* `TauCeti.isOpen_setOf_injective`: in a Hausdorff space, the injective finite tuples form an open
+  set.
 -/
 
 public section
@@ -34,7 +45,27 @@ open Set Function
 
 namespace TauCeti
 
+/-- The open unit cube in a finite product of copies of `ℝ` is open. -/
+theorem isOpen_setOf_forall_abs_lt_one {ι : Type*} [Finite ι] :
+    IsOpen {z : ι → ℝ | ∀ i, |z i| < 1} := by
+  -- Express the coordinatewise bound as a finite product of open intervals.
+  rw [show {z : ι → ℝ | ∀ i, |z i| < 1} =
+      Set.univ.pi fun _ ↦ Set.Ioo (-1) 1 by ext z; simp [abs_lt]]
+  exact isOpen_set_pi Set.finite_univ fun _ _ ↦ isOpen_Ioo
+
 variable {X : Type*} [TopologicalSpace X]
+
+/-- In a Hausdorff space, the injective tuples indexed by a finite type form an open subset of the
+product: injectivity asks finitely many pairs of coordinates to differ. -/
+theorem isOpen_setOf_injective [T2Space X] {κ : Type*} [Finite κ] :
+    IsOpen {t : κ → X | Injective t} := by
+  have : {t : κ → X | Injective t} = ⋂ (i : κ) (j : κ) (_ : i ≠ j), {t | t i ≠ t j} := by
+    ext t
+    simp only [mem_ofPred_eq, mem_iInter]
+    exact ⟨fun ht i j hij hji ↦ hij (ht hji), fun ht i j hij ↦ by_contra fun h ↦ ht i j h hij⟩
+  rw [this]
+  exact isOpen_iInter_of_finite fun i ↦ isOpen_iInter_of_finite fun j ↦
+    isOpen_iInter_of_finite fun _ ↦ isOpen_ne_fun (continuous_apply i) (continuous_apply j)
 
 /-- Shrinking along one injective tuple: nonempty open sets `V i` can be shrunk to nonempty open
 sets `W i ⊆ V i` so that the box `∏ j, W (t j)` along an injective finite tuple `t` of indices

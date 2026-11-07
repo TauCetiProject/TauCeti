@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import TauCeti.Analysis.Normed.Operator.CompletelyContinuous
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Matrix
+import Mathlib.Algebra.Polynomial.Div
 
 /-!
 # Row-compact operators between model spaces
@@ -39,7 +41,9 @@ row-compact map of rank one can have a row of entries of norm one.
 Row-compact maps form a closed two-sided operator ideal over ultrametric Tate scalars: they are
 stable under sums and scalar multiples, under composition on either side with continuous linear
 maps (`ContinuousLinearMap.IsRowCompact.comp_clm`, `ContinuousLinearMap.IsRowCompact.clm_comp`),
-and under limits in operator norm (`ContinuousLinearMap.isRowCompact_of_tendsto`).
+and under limits in operator norm (`ContinuousLinearMap.isRowCompact_of_tendsto`). In particular
+a polynomial with zero constant coefficient takes row-compact endomorphisms to row-compact
+endomorphisms (`ContinuousLinearMap.IsRowCompact.aeval`).
 
 ## Main definitions
 
@@ -71,7 +75,7 @@ and under limits in operator norm (`ContinuousLinearMap.isRowCompact_of_tendsto`
 
 public section
 
-open Filter Topology ZeroAtInftyContinuousMap
+open Filter Topology ZeroAtInftyContinuousMap Polynomial
 open scoped ZeroAtInfty
 
 variable {I J K L R : Type*} [TopologicalSpace I] [TopologicalSpace J] [DiscreteTopology J]
@@ -471,6 +475,14 @@ theorem IsRowCompact.clm_comp [DiscreteTopology I] {u : C₀(J, R) →L[R] C₀(
             ((u.norm_matrixCoeff_le_rowNorm i j).trans hi'.le) (norm_nonneg _)
             (ringOpNorm_nonneg w)
       _ ≤ ε / 2 := hδ
+
+/-- A polynomial with zero constant coefficient takes row-compact operators to row-compact
+operators, over ultrametric Tate scalars. -/
+theorem IsRowCompact.aeval {u : C₀(J, R) →L[R] C₀(J, R)} (hu : u.IsRowCompact) {B : R[X]}
+    (hB0 : B.coeff 0 = 0) : (Polynomial.aeval u B).IsRowCompact := by
+  obtain ⟨B', rfl⟩ := X_dvd_iff.2 hB0
+  rw [map_mul, aeval_X, mul_def]
+  exact hu.comp_clm _
 
 end Ideal
 

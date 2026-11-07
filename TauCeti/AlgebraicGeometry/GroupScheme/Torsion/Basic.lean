@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.GroupScheme.Kernel
 public import TauCeti.AlgebraicGeometry.GroupScheme.KilledByRank
 public import TauCeti.CategoryTheory.Monoidal.Cartesian.CommGrp
 import TauCeti.CategoryTheory.Preadditive.CoprimeKernels
+import TauCeti.CategoryTheory.Preadditive.NSMul
 
 /-!
 # Torsion of commutative group schemes, transitions, and the coprime splitting
@@ -61,6 +62,7 @@ commutative group schemes.
 
 * `TauCeti.GroupScheme.exists_comp_torsionι_iff`: the points of `G[n]` are the points of `G`
   killed by `n`.
+* `TauCeti.GroupScheme.torsion_zpow_eq_one`: `G[n]` is killed by `n`.
 * `TauCeti.GroupScheme.isPullback_torsionι`: `G[n]` is the fibre of multiplication by `n` over the
   unit section.
 * `TauCeti.GroupScheme.torsionBaseChangeIso_hom_hom_hom_comp_torsionMap`: the base-change
@@ -167,6 +169,13 @@ theorem exists_comp_torsionι_iff (x : Z ⟶ G.X) : (∃ y, y ≫ torsionι G n 
   refine ⟨?_, fun hx ↦ ⟨torsionLift x hx, torsionLift_ι x hx⟩⟩
   rintro ⟨y, rfl⟩
   rw [← GrpObj.comp_zpow, torsionι_zpow, comp_one]
+
+/-- **The `n`-torsion is killed by `n`.** Every point of `G[n]` is killed by `n` in the group of
+points of `G[n]`. -/
+@[simp]
+theorem torsion_zpow_eq_one (y : Z ⟶ (torsion G n).X) : y ^ n = 1 :=
+  torsion_hom_ext G (by rw [GrpObj.zpow_comp, ← GrpObj.comp_zpow, torsionι_zpow, comp_one,
+    MonObj.one_comp])
 
 /-- A homomorphism into `G` killed by `n` factors through the `n`-torsion as a homomorphism. -/
 instance isMonHom_torsionLift {Z : Over S} [MonObj Z] (x : Z ⟶ G.X) [IsMonHom x]
@@ -327,9 +336,7 @@ private theorem forget₂Grp_map_intCast_comp (f : G ⟶ H) (n : ℤ) :
     (CommGrp.forget₂Grp (Over S)).map (n : End G).asHom ≫ (CommGrp.forget₂Grp (Over S)).map f =
       (CommGrp.forget₂Grp (Over S)).map f ≫
         (CommGrp.forget₂Grp (Over S)).map (n : End H).asHom := by
-  rw [← Functor.map_comp, ← Functor.map_comp]
-  refine congrArg _ (CommGrp.hom_ext _ _ ?_)
-  simp [GrpObj.zpow_comp, GrpObj.comp_zpow]
+  rw [← Functor.map_comp, ← Functor.map_comp, End.intCast_asHom_comp]
 
 /-- The homomorphism `G[n] ⟶ H[n]` induced by a homomorphism `f : G ⟶ H` of commutative group
 schemes over `S`, the restriction of `f` to the `n`-torsion. -/
@@ -382,12 +389,8 @@ variable (G)
 the base change of `G`. -/
 private theorem pullback_mapGrp_map_intCast {T : Scheme.{u}} (s : T ⟶ S) (n : ℤ) :
     (Over.pullback s).mapGrp.map ((CommGrp.forget₂Grp (Over S)).map (n : End G).asHom) =
-      (CommGrp.forget₂Grp (Over T)).map (n : End ((Over.pullback s).mapCommGrp.obj G)).asHom := by
-  ext : 2
-  rw [Functor.mapGrp_map_hom_hom, CommGrp.forget₂Grp_map_hom, CommGrp.forget₂Grp_map_hom,
-    CommGrp.intCast_hom_hom_hom, CommGrp.intCast_hom_hom_hom]
-  exact congrArg Over.Hom.left <| (map_zpow (Over.pullback s).homMonoidHom (𝟙 G.X) n).trans
-    (congrArg (· ^ n) ((Over.pullback s).map_id G.X))
+      (CommGrp.forget₂Grp (Over T)).map (n : End ((Over.pullback s).mapCommGrp.obj G)).asHom :=
+  congrArg (CommGrp.forget₂Grp (Over T)).map ((Over.pullback s).mapCommGrp_map_intCast G n)
 
 /-- **Formation of the `n`-torsion commutes with base change.** The canonical isomorphism from the
 base change of `G[n]` along `s : T ⟶ S` to the `n`-torsion of the base change of `G`. -/

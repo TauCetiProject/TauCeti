@@ -20,6 +20,12 @@ has local multiplicity one. The fibre-counting degree theorem gives degree one, 
 `jBiholomorph` is the resulting biholomorphism, normalized by the images of the cusp and the two
 elliptic orbits.
 
+Restricted to the coarse quotient, the biholomorphism shows that `j` is injective there
+(`jQuotient_injective`): two points of the upper half-plane have the same value of `j` exactly
+when they lie in one `SL(2, ℤ)`-orbit (`j_eq_j_iff`). Away from the cusp it is in fact a bijection
+from the coarse quotient onto `ℂ` (`jQuotient_bijective`), so the modular invariant `j : ℍ → ℂ` is
+surjective (`TauCeti.ModularForm.j_surjective`).
+
 ## References
 
 * Fred Diamond and Jerry Shurman, *A First Course in Modular Forms*, §§2.4–2.5.
@@ -197,5 +203,34 @@ theorem jBiholomorph_ρ :
 theorem jBiholomorph_I :
     jBiholomorph (ofQuotient (Quotient.mk _ I)) = ((1728 : ℂ) : OnePoint ℂ) := by
   simp [j_I]
+
+/-- The modular invariant is injective on the coarse level-one quotient. -/
+theorem jQuotient_injective : Function.Injective jQuotient := fun p q h ↦ by
+  have : jBiholomorph (ofQuotient p) = jBiholomorph (ofQuotient q) := by simp [h]
+  exact ofQuotient.inj (jBiholomorph.injective this)
+
+/-- The descended modular invariant is a bijection from the coarse level-one quotient onto `ℂ`:
+these are the points of the Riemann sphere other than the image `∞` of the cusp. -/
+theorem jQuotient_bijective : Bijective jQuotient := by
+  refine ⟨jQuotient_injective, fun w ↦ ?_⟩
+  obtain ⟨x, hx⟩ := jBiholomorph.surjective (w : OnePoint ℂ)
+  cases x with
+  | ofQuotient p => exact ⟨p, by simpa using hx⟩
+  | ofCusp C => simp at hx
+
+/-- **The modular invariant `j : ℍ → ℂ` is surjective.** -/
+theorem _root_.TauCeti.ModularForm.j_surjective : Surjective j := by
+  intro w
+  obtain ⟨p, hp⟩ := jQuotient_bijective.2 w
+  induction p using Quotient.inductionOn with
+  | h z => exact ⟨z, by rwa [jQuotient_mk] at hp⟩
+
+/-- **The modular invariant classifies `SL(2, ℤ)`-orbits**: `j z = j w` exactly when `w` lies in
+the `SL(2, ℤ)`-orbit of `z`. -/
+theorem j_eq_j_iff {z w : ℍ} : j z = j w ↔ ∃ γ : SL(2, ℤ), γ • z = w := by
+  rw [← jQuotient_mk, ← jQuotient_mk, jQuotient_injective.eq_iff, Quotient.eq,
+    orbitRel_psl2zToPSL2RRange_iff_orbitRel_sl, orbitRel_apply, mem_orbit_iff]
+  exact ⟨fun ⟨γ, h⟩ ↦ ⟨γ⁻¹, by rw [← h, inv_smul_smul]⟩,
+    fun ⟨γ, h⟩ ↦ ⟨γ⁻¹, by rw [← h, inv_smul_smul]⟩⟩
 
 end TauCeti.ModularGroup

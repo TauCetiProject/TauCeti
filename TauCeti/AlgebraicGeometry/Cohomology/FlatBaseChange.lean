@@ -59,7 +59,9 @@ those in degree `n` for `I` and `Q` are.
   (`TauCeti.AlgebraicGeometry.cohomologyBaseChangeLinearEquiv_toLinearMap`);
 * `TauCeti.AlgebraicGeometry.finrank_cohomology_pullback_eq_of_isPullback` and
   `TauCeti.AlgebraicGeometry.finiteDimensional_cohomology_pullback_of_isPullback`: invariance of
-  the dimension and finite-dimensionality of `Hⁿ(X, M)` under extension of the base field.
+  the dimension and finite-dimensionality of `Hⁿ(X, M)` under extension of the base field, and
+  `TauCeti.AlgebraicGeometry.eulerCharBelow_pullback_eq_of_isPullback`: the same invariance of the
+  truncated Euler characteristic `Scheme.Modules.eulerCharBelow`.
 
 ## References
 
@@ -85,6 +87,46 @@ variable {R : Type u} [CommRing R] {X : Scheme.{u}} [X.Over (Spec (.of R))]
   {g : Y ⟶ X}
   (H : IsPullback g (Y ↘ Spec (.of R')) (X ↘ Spec (.of R))
     (Spec.map (CommRingCat.ofHom (algebraMap R R'))))
+
+section Aux
+
+variable (M : X.Modules) (U V : X.Opens) [Algebra R Γ(X, ⊤)] [Algebra R' Γ(Y, ⊤)]
+  [∀ W : X.Opens, Module R Γ(M, W)] [∀ W : X.Opens, IsScalarTower R Γ(X, ⊤) Γ(M, W)]
+  [∀ W' : Y.Opens, Module R' Γ((Scheme.Modules.pullback g).obj M, W')]
+  [∀ W' : Y.Opens, IsScalarTower R' Γ(Y, ⊤) Γ((Scheme.Modules.pullback g).obj M, W')]
+  [∀ W' : Y.Opens, Module R Γ((Scheme.Modules.pullback g).obj M, W')]
+  [∀ W' : Y.Opens, IsScalarTower R R' Γ((Scheme.Modules.pullback g).obj M, W')]
+
+/-- Pulling back sections commutes with the restriction of `H⁰` to the two members of a cover. -/
+lemma mayerVietorisSectionsRestrictionLinear_comm_cohomologyPullback
+    [IsScalarTower R Γ(X, ⊤) (Cohomology M 0)]
+    [IsScalarTower R' Γ(Y, ⊤) (Cohomology ((Scheme.Modules.pullback g).obj M) 0)]
+    [Module R (Cohomology ((Scheme.Modules.pullback g).obj M) 0)]
+    [IsScalarTower R R' (Cohomology ((Scheme.Modules.pullback g).obj M) 0)]
+    (σU : Γ(M, U) →ₗ[R] Γ((Scheme.Modules.pullback g).obj M, g ⁻¹ᵁ U))
+    (σV : Γ(M, V) →ₗ[R] Γ((Scheme.Modules.pullback g).obj M, g ⁻¹ᵁ V))
+    (h₁ : Cohomology M 0 →ₗ[R] Cohomology ((Scheme.Modules.pullback g).obj M) 0)
+    (hσU : ∀ s, σU s = g.pullbackSections M U s) (hσV : ∀ s, σV s = g.pullbackSections M V s)
+    (h₁_apply : ∀ x, h₁ x = g.cohomologyPullback M 0 x) :
+    (σU.prodMap σV).comp (((mayerVietorisSectionsRestrictionLinear M U V).comp
+        (cohomologyZeroLinearEquiv M).toLinearMap).restrictScalars R) =
+      ((((mayerVietorisSectionsRestrictionLinear ((Scheme.Modules.pullback g).obj M) (g ⁻¹ᵁ U)
+        (g ⁻¹ᵁ V)).comp (cohomologyZeroLinearEquiv _).toLinearMap).restrictScalars
+          R').restrictScalars R).comp h₁ := by
+  refine LinearMap.ext fun x ↦ ?_
+  -- Pullback lands in sections over `g ⁻¹ᵁ ⊤`, which is `⊤` by definition.
+  have hx := mayerVietorisSectionsRestrictionLinear_apply ((Scheme.Modules.pullback g).obj M)
+    (g ⁻¹ᵁ U) (g ⁻¹ᵁ V) (g.pullbackSections M ⊤ (cohomologyZeroEquiv M x))
+  simp only [LinearMap.comp_apply, LinearMap.restrictScalars_apply, LinearEquiv.coe_coe,
+    LinearMap.prodMap_apply, cohomologyZeroLinearEquiv_apply,
+    mayerVietorisSectionsRestrictionLinear_apply, h₁_apply,
+    g.cohomologyZeroEquiv_cohomologyPullback, hσU, hσV]
+  refine Eq.trans ?_ hx.symm
+  -- Pullback of sections commutes with the restrictions from `⊤` to `U` and to `V`.
+  exact Prod.ext (g.pullbackSections_restrict M ⊤ U.leTop _).symm
+    (g.pullbackSections_restrict M ⊤ V.leTop _).symm
+
+end Aux
 
 include H in
 /-- The pullback map on cohomology along the base change `g` is `R`-linear, for the action of `R`
@@ -289,6 +331,20 @@ theorem finiteDimensional_cohomology_pullback_of_isPullback [CompactSpace X]
     (n : ℕ) [FiniteDimensional k (Cohomology M n)] :
     FiniteDimensional K (Cohomology ((Scheme.Modules.pullback g).obj M) n) :=
   Module.Finite.equiv (cohomologyBaseChangeLinearEquiv H M n)
+
+include H in
+/-- The truncated Euler characteristic `∑_{i < n} (-1)ⁱ dim Hⁱ(X, M)` of a quasi-coherent sheaf
+does not change under extension of the base field, on a quasi-compact scheme over a field with
+affine diagonal. -/
+theorem eulerCharBelow_pullback_eq_of_isPullback [CompactSpace X]
+    [IsAffineHom (pullback.diagonal (terminal.from X))] (M : X.Modules) [M.IsQuasicoherent]
+    (n : ℕ) :
+    eulerCharBelow K Y ((Scheme.Modules.pullback g).obj M) n = eulerCharBelow k X M n := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [eulerCharBelow_succ, eulerCharBelow_succ, ih,
+      finrank_cohomology_pullback_eq_of_isPullback H]
 
 end Field
 
