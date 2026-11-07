@@ -106,20 +106,11 @@ theorem Scheme.Hom.exists_elementaryEtale_finite_of_isolated {X S : Scheme.{u}} 
   -- as primes, so that rewriting with morphisms of schemes applied to them is type correct.
   obtain ⟨u, rfl⟩ : ∃ u : Spec ↧R, u.asIdeal = P := ⟨⟨P, ‹_›⟩, rfl⟩
   obtain ⟨v, rfl⟩ : ∃ v : Spec ↧(R ⊗[Γ(S, U)] Γ(X, V)), v.asIdeal = P' := ⟨⟨P', ‹_›⟩, rfl⟩
-  have hu : (Spec.map φ ≫ hU.fromSpec) u = f x := by
-    rw [Scheme.Hom.comp_apply]
-    refine Eq.trans ?_ (hU.fromSpec_primeIdealOf ⟨f x, hxU⟩)
-    congr 1
-    exact PrimeSpectrum.ext <| (congrArg PrimeSpectrum.asIdeal (Spec.map_apply φ u)).trans
-      (Ideal.over_def u.asIdeal _).symm
+  have hu := hU.spec_algebraMap_comp_fromSpec_apply hxU R u
+  have hκu := hU.isIso_residueFieldMap_spec_algebraMap_comp_fromSpec hxU R u hres
   refine ⟨Spec ↧R, Spec.map φ ≫ hU.fromSpec, u, inferInstance, hu, ?_, W₁,
     ⟨g v, v, heP', rfl⟩, ‹_›, ?_, ?_, ?_, ?_⟩
-  · -- `κ(f x) ≅ κ(u)`: the residue field map of the open immersion `hU.fromSpec`, then 00UJ.
-    have := ((algebraMap Γ(S, U) R).isIso_SpecMap_residueFieldMap_iff u _
-      (u.asIdeal.over_def _)).mpr hres
-    rw [Scheme.residueFieldMap_comp]
-    have h₁ : IsIso (hU.fromSpec.residueFieldMap ((Spec.map φ) u)) := inferInstance
-    exact IsIso.comp_isIso' h₁ this
+  · exact hκu
   · rw [← Scheme.Hom.comp_apply, hgfst, Scheme.Hom.comp_apply]
     refine Eq.trans ?_ (hV.fromSpec_primeIdealOf ⟨x, hxV⟩)
     congr 1
@@ -127,32 +118,16 @@ theorem Scheme.Hom.exists_elementaryEtale_finite_of_isolated {X S : Scheme.{u}} 
   · rw [← Scheme.Hom.comp_apply, hgsnd]
     exact PrimeSpectrum.ext <| (congrArg PrimeSpectrum.asIdeal (Spec.map_apply _ v)).trans
       (Ideal.over_def v.asIdeal u.asIdeal).symm
-  · -- `κ(x) ≅ κ(v)`: compute the residue field map of `g ≫ pullback.fst` along `hgfst`, and
-    -- cancel that of the open immersion `g`.
-    have hb := Ideal.ResidueField.bijective_map_includeRight
-      (hU.primeIdealOf ⟨f x, hxU⟩).asIdeal u.asIdeal (hV.primeIdealOf ⟨x, hxV⟩).asIdeal v.asIdeal
-      hP'.symm hres
-    -- Elaborating the equivalence before applying it to `hb` avoids an expensive unification.
-    have h₂' := RingHom.isIso_SpecMap_residueFieldMap_iff
-      Algebra.TensorProduct.includeRight.toRingHom v _ hP'.symm
-    have h₂ := h₂'.mpr hb
-    have h₃ : IsIso ((g ≫ pullback.fst _ _).residueFieldMap v) := by
-      rw [Scheme.Hom.residueFieldMap_congr hgfst, Scheme.residueFieldMap_comp]
-      have h₁ : IsIso (hV.fromSpec.residueFieldMap
-        ((Spec.map (CommRingCat.ofHom Algebra.TensorProduct.includeRight.toRingHom)) v)) :=
-        inferInstance
-      exact IsIso.comp_isIso' inferInstance (IsIso.comp_isIso' h₁ h₂)
-    rw [Scheme.residueFieldMap_comp] at h₃
-    exact @IsIso.of_isIso_comp_right _ _ _ _ _ _ (g.residueFieldMap v) inferInstance h₃
+  · -- `κ(x) ≅ κ(v)`: base change along `κ(f x) ≅ κ(u)` preserves the residue field above `u`.
+    have hsnd : pullback.snd f _ (g v) = u := by
+      rw [← Scheme.Hom.comp_apply, hgsnd]
+      exact PrimeSpectrum.ext <| (congrArg PrimeSpectrum.asIdeal (Spec.map_apply _ v)).trans
+        (Ideal.over_def v.asIdeal u.asIdeal).symm
+    have : IsIso ((Spec.map φ ≫ hU.fromSpec).residueFieldMap (pullback.snd f _ (g v))) :=
+      hsnd ▸ hκu
+    exact Scheme.Pullback.isIso_residueFieldMap_fst (g v)
   · -- Uniqueness: a point `g z` of `W₁` over `u` has `z` over `P` with `e ∉ z`, so `z = P'`.
-    intro w hw
-    obtain ⟨z, hz, hzw⟩ := w.2
-    have hzu : Spec.map (CommRingCat.ofHom (algebraMap R (R ⊗[Γ(S, U)] Γ(X, V)))) z = u := by
-      rw [← hgsnd, Scheme.Hom.comp_apply]
-      exact hzw.symm ▸ hw
-    have : z.asIdeal.LiesOver u.asIdeal :=
-      ⟨congr(($hzu).asIdeal).symm.trans (congrArg PrimeSpectrum.asIdeal (Spec.map_apply _ z))⟩
-    obtain rfl : z = v := PrimeSpectrum.ext (huniq z.asIdeal z.isPrime this hz)
-    exact Subtype.ext hzw.symm
+    exact Scheme.Hom.eq_of_comp_eq_of_forall_liesOver_eq (pullback.snd f _) g hgsnd e u v huniq
+      ⟨v, heP', rfl⟩
 
 end AlgebraicGeometry

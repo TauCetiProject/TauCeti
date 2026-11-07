@@ -96,5 +96,23 @@ lemma Scheme.Hom.exists_isOpenImmersion_tensor_isFinite {X S : Scheme.{u}} (f : 
     IsFinite.SpecMap_iff]
   exact he
 
+/-- Uniqueness of the point `g v` of `g(D(e))` over `u`: if an open immersion `g` from `Spec A`
+into a scheme `Y` over `Spec R` is compatible with `R → A`, a point `g z` of `g(D(e))` over `u`
+has `z` over the prime `u` with `e ∉ z`, so `z = v` if `v` is the only such prime. -/
+theorem Scheme.Hom.eq_of_comp_eq_of_forall_liesOver_eq {R A : Type u} [CommRing R] [CommRing A]
+    [Algebra R A] {Y : Scheme.{u}} (p : Y ⟶ Spec ↧R) (g : Spec ↧A ⟶ Y) [IsOpenImmersion g]
+    (hgp : g ≫ p = Spec.map (CommRingCat.ofHom (algebraMap R A)))
+    (e : A) (u : Spec ↧R) (v : Spec ↧A)
+    (huniq : ∀ P'' : Ideal A, P''.IsPrime → P''.LiesOver u.asIdeal → e ∉ P'' → P'' = v.asIdeal)
+    (hv : g v ∈ g ''ᵁ PrimeSpectrum.basicOpen e) (w : g ''ᵁ PrimeSpectrum.basicOpen e)
+    (hw : p w.1 = u) : w = ⟨g v, hv⟩ := by
+  obtain ⟨z, hz, hzw⟩ := w.2
+  have hzu : Spec.map (CommRingCat.ofHom (algebraMap R A)) z = u := by
+    rw [← hgp, Scheme.Hom.comp_apply]
+    exact hzw.symm ▸ hw
+  have : z.asIdeal.LiesOver u.asIdeal :=
+    ⟨congr(($hzu).asIdeal).symm.trans (congrArg PrimeSpectrum.asIdeal (Spec.map_apply _ z))⟩
+  obtain rfl : z = v := PrimeSpectrum.ext (huniq z.asIdeal z.isPrime this hz)
+  exact Subtype.ext hzw.symm
 
 end AlgebraicGeometry
