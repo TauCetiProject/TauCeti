@@ -135,17 +135,10 @@ private theorem eq_of_three_le_degree [Fintype V] [DecidableRel G.Adj] (hG : G.I
   let leafVert : Fin 4 → V := ![a₀, a₁, b₀, b₁]
   have hleaf_adj (i : Fin 4) :
       G.Adj (leafVert i) (q.getVert (AffineD.leafTarget q.length i : ℕ)) := by
-    fin_cases i
-    · simpa [leafVert] using ha₀.symm
-    · simpa [leafVert] using ha₁.symm
-    · simpa [leafVert] using hb₀.symm
-    · simpa [leafVert] using hb₁.symm
+    fin_cases i <;> simp [leafVert, ha₀.symm, ha₁.symm, hb₀.symm, hb₁.symm]
   have hleaf_not (i : Fin 4) : leafVert i ∉ q.support := by
-    fin_cases i
-    · exact hnot_u ha₀ ha₀q
-    · exact hnot_u ha₁ ha₁q
-    · exact hnot_w hb₀ hb₀q
-    · exact hnot_w hb₁ hb₁q
+    fin_cases i <;>
+      [exact hnot_u ha₀ ha₀q; exact hnot_u ha₁ ha₁q; exact hnot_w hb₀ hb₀q; exact hnot_w hb₁ hb₁q]
   have hleaf_inj : Function.Injective leafVert := by
     have h₀₀ : a₀ ≠ b₀ := fun h ↦ hne ha₀ (h ▸ hb₀) (hnot_u ha₀ ha₀q)
     have h₀₁ : a₀ ≠ b₁ := fun h ↦ hne ha₀ (h ▸ hb₁) (hnot_u ha₀ ha₀q)
