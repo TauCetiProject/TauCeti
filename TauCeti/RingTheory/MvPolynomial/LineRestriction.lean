@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Polynomial.Basic
 public import TauCeti.Algebra.Polynomial.BigOperators
 public import TauCeti.RingTheory.MvPolynomial.Homogeneous
 
@@ -33,19 +34,13 @@ theorem natDegree_eval₂_C_add_C_mul_X_le (p : MvPolynomial σ R) (f : R →+* 
     (eval₂Hom (Polynomial.C.comp f)
       (fun i ↦ Polynomial.C (a i) + Polynomial.C (v i) * Polynomial.X) p).natDegree ≤
         p.totalDegree := by
-  classical
-  conv_lhs => rw [p.as_sum, map_sum]
-  apply Polynomial.natDegree_sum_le_of_forall_le
-  intro d hd
-  rw [eval₂Hom_monomial, Finsupp.prod]
-  refine (Polynomial.natDegree_mul_le).trans ?_
-  simp only [RingHom.comp_apply, Polynomial.natDegree_C, zero_add]
-  refine (Polynomial.natDegree_prod_le _ _).trans ?_
-  refine (Finset.sum_le_sum fun i _ ↦ (Polynomial.natDegree_pow_le).trans ?_).trans
-    (le_totalDegree hd)
-  simpa only [Polynomial.natDegree_C_add, mul_one] using
-    Nat.mul_le_mul_left (d i)
-      ((Polynomial.natDegree_C_mul_le (v i) Polynomial.X).trans Polynomial.natDegree_X_le)
+  simpa only [aeval_def, Polynomial.algebraMap_eq, eval₂_map, coe_eval₂Hom, mul_one] using
+    aeval_natDegree_le (map f p)
+      (by classical exact Finset.sup_mono (support_map_subset f p))
+      (fun i ↦ Polynomial.C (a i) + Polynomial.C (v i) * Polynomial.X)
+      (n := 1) (fun i ↦ by
+        simpa only [Polynomial.natDegree_C_add] using
+          (Polynomial.natDegree_C_mul_le (v i) Polynomial.X).trans Polynomial.natDegree_X_le)
 
 /-- At any degree bounding the total degree, an affine line restriction has coefficient equal
 to the homogeneous component evaluated at its direction. The starting point does not enter. -/
@@ -114,6 +109,33 @@ theorem shearToPolynomial_C (c : R) (i : Fin (n + 1)) (a : Fin n → R) :
     (C c : MvPolynomial (Fin (n + 1)) R).shearToPolynomial i a = Polynomial.C (C c) := by
   simp [shearToPolynomial_def]
 
+/-- Shearing respects addition. -/
+@[simp]
+theorem shearToPolynomial_add (p q : MvPolynomial (Fin (n + 1)) R)
+    (i : Fin (n + 1)) (a : Fin n → R) :
+    (p + q).shearToPolynomial i a = p.shearToPolynomial i a + q.shearToPolynomial i a := by
+  simp [shearToPolynomial_def]
+
+/-- Shearing respects multiplication. -/
+@[simp]
+theorem shearToPolynomial_mul (p q : MvPolynomial (Fin (n + 1)) R)
+    (i : Fin (n + 1)) (a : Fin n → R) :
+    (p * q).shearToPolynomial i a = p.shearToPolynomial i a * q.shearToPolynomial i a := by
+  simp [shearToPolynomial_def]
+
+/-- The distinguished variable becomes the univariate polynomial variable. -/
+@[simp]
+theorem shearToPolynomial_X (i : Fin (n + 1)) (a : Fin n → R) :
+    (X i : MvPolynomial (Fin (n + 1)) R).shearToPolynomial i a = Polynomial.X := by
+  simp [shearToPolynomial_def]
+
+/-- Each remaining variable acquires its prescribed multiple of the distinguished variable. -/
+@[simp]
+theorem shearToPolynomial_X_succAbove (i : Fin (n + 1)) (a : Fin n → R) (j : Fin n) :
+    (X (i.succAbove j) : MvPolynomial (Fin (n + 1)) R).shearToPolynomial i a =
+      Polynomial.C (X j) + Polynomial.C (C (a j)) * Polynomial.X := by
+  simp [shearToPolynomial_def]
+
 /-- Evaluating the sheared polynomial at a base point and a height is evaluation of the
 original polynomial at the sheared point. -/
 @[simp]
@@ -121,18 +143,19 @@ theorem eval₂_shearToPolynomial (p : MvPolynomial (Fin (n + 1)) R)
     (i : Fin (n + 1)) (a y : Fin n → R) (t : R) :
     Polynomial.eval₂ (eval y) t (p.shearToPolynomial i a) =
       eval (i.insertNth t (y + t • a)) p := by
-  rw [shearToPolynomial_def]
-  induction p using MvPolynomial.induction_on with
-  | C c => simp
-  | add p q hp hq => simp only [map_add, Polynomial.eval₂_add, hp, hq]
-  | mul_X p k hp =>
-    simp only [map_mul, eval₂Hom_X', Polynomial.eval₂_mul, hp, eval_X]
-    congr 1
-    refine Fin.succAboveCases i ?_ (fun j ↦ ?_) k
-    · simp only [Fin.insertNth_apply_same, Polynomial.eval₂_X]
-    · simp only [Fin.insertNth_apply_succAbove, Polynomial.eval₂_add, Polynomial.eval₂_C,
-        Polynomial.eval₂_mul, Polynomial.eval₂_X, eval_X, eval_C, Pi.add_apply,
-        Pi.smul_apply, smul_eq_mul, mul_comm]
+  rw [shearToPolynomial_def, ← Polynomial.coe_eval₂RingHom, map_eval₂Hom]
+  have hC : (Polynomial.eval₂RingHom (eval y) t).comp (Polynomial.C.comp C) =
+      RingHom.id R := by
+    ext c
+    simp
+  rw [hC, coe_eval₂Hom, eval₂_id]
+  congr 2
+  funext k
+  refine Fin.succAboveCases i ?_ (fun j ↦ ?_) k
+  · simp only [Fin.insertNth_apply_same, Polynomial.coe_eval₂RingHom, Polynomial.eval₂_X]
+  · simp only [Fin.insertNth_apply_succAbove, Polynomial.coe_eval₂RingHom,
+      Polynomial.eval₂_add, Polynomial.eval₂_C, Polynomial.eval₂_mul, Polynomial.eval₂_X,
+      eval_X, eval_C, Pi.add_apply, Pi.smul_apply, smul_eq_mul, mul_comm]
 
 private theorem shear_variables (i : Fin (n + 1)) (a : Fin n → R) :
     i.insertNth Polynomial.X
@@ -142,7 +165,8 @@ private theorem shear_variables (i : Fin (n + 1)) (a : Fin n → R) :
   funext k
   refine Fin.succAboveCases i ?_ (fun j ↦ ?_) k <;> simp
 
-/-- Shearing does not increase the degree in the distinguished coordinate. -/
+/-- The degree after shearing in the distinguished coordinate is bounded by the original
+total degree. -/
 theorem natDegree_shearToPolynomial_le (p : MvPolynomial (Fin (n + 1)) R)
     (i : Fin (n + 1)) (a : Fin n → R) :
     (p.shearToPolynomial i a).natDegree ≤ p.totalDegree := by
@@ -150,7 +174,8 @@ theorem natDegree_shearToPolynomial_le (p : MvPolynomial (Fin (n + 1)) R)
   exact p.natDegree_eval₂_C_add_C_mul_X_le C _ _
 
 /-- The coefficient in the original total degree after a shear is constant in the remaining
-variables: it is the top homogeneous part evaluated at the direction `(a,1)`. -/
+variables: it is the top homogeneous part evaluated at the direction `i.insertNth 1 a`,
+with 1 in coordinate `i` and `a` in the remaining coordinates. -/
 theorem coeff_shearToPolynomial_totalDegree (p : MvPolynomial (Fin (n + 1)) R)
     (i : Fin (n + 1)) (a : Fin n → R) :
     (p.shearToPolynomial i a).coeff p.totalDegree =

@@ -13,8 +13,9 @@ public import Mathlib.Topology.Algebra.MvPolynomial
 /-!
 # Generic shears have constant nonzero leading coefficients
 
-For a finite family of polynomials, the directions `(a,1)` on which every nonzero equation's
-top homogeneous component is nonzero form an open dense set. Together with
+For a finite family of polynomials, the directions `i.insertNth 1 a`, with 1 in coordinate `i`
+and `a` in the remaining coordinates, on which every nonzero equation's top homogeneous
+component is nonzero form an open dense set. Together with
 `MvPolynomial.coeff_shearToPolynomial_totalDegree` and
 `MvPolynomial.natDegree_shearToPolynomial_eq_of_eval_ne_zero`, this makes each sheared equation
 a polynomial in the distinguished coordinate with constant nonzero leading coefficient.
