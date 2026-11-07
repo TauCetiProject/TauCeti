@@ -52,6 +52,22 @@ variable (𝕜 : Type*) [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜]
   [∀ x, TopologicalSpace (E x)] [TopologicalSpace (TotalSpace F E)]
   [FiberBundle F E] [VectorBundle 𝕜 F E]
 
+omit [ParacompactSpace B] [∀ x, AddCommMonoid (E x)] [∀ x, TopologicalSpace (E x)]
+  [FiberBundle F E] in
+/-- A section which is continuous on a closed set `s` has, in a trivialization `e`, coordinates
+extending to a continuous map `B → F` on `s ∩ u`, for `u` closed and contained in the base set
+of `e`. -/
+private theorem exists_continuousMap_eq_trivialization_of_continuousOn {s u : Set B}
+    (hs : IsClosed s) {σ : ∀ x, E x}
+    (hσ : ContinuousOn (fun x ↦ TotalSpace.mk' F x (σ x)) s) (e : Trivialization F (π F E))
+    (hu : IsClosed u) (hue : u ⊆ e.baseSet) :
+    ∃ g : C(B, F), ∀ x ∈ s ∩ u, g x = (e ⟨x, σ x⟩).2 := by
+  have hc : ContinuousOn (fun x ↦ (e ⟨x, σ x⟩).2) (s ∩ u) :=
+    continuous_snd.comp_continuousOn <| e.continuousOn.comp (hσ.mono inter_subset_left)
+      fun x hx ↦ e.mem_source.2 (hue hx.2)
+  obtain ⟨g, hg⟩ := ContinuousMap.exists_restrict_eq (hs.inter hu) ⟨_, hc.domRestrict⟩
+  exact ⟨g, fun x hx ↦ congr($hg ⟨x, hx⟩)⟩
+
 include 𝕜 in
 /-- **Tietze extension for sections of a vector bundle.** Over a normal paracompact base, a
 section which is continuous on a closed set agrees there with a continuous global section,
@@ -66,13 +82,9 @@ theorem exists_continuous_section_extension {s : Set B} (hs : IsClosed s) {σ : 
     (fun i ↦ (e i).baseSet) (fun i ↦ (e i).open_baseSet)
     fun x _ ↦ mem_iUnion.2 ⟨x, mem_baseSet_trivializationAt F E x⟩
   -- In the chart `e i`, extend the coordinates of `σ` from `s ∩ tsupport (ρ i)` to `B`.
-  have hext (i : B) : ∃ g : C(B, F), ∀ x ∈ s ∩ tsupport (ρ i), g x = (e i ⟨x, σ x⟩).2 := by
-    have hc : ContinuousOn (fun x ↦ (e i ⟨x, σ x⟩).2) (s ∩ tsupport (ρ i)) :=
-      continuous_snd.comp_continuousOn <| (e i).continuousOn.comp (hσ.mono inter_subset_left)
-        fun x hx ↦ (e i).mem_source.2 (hρ i hx.2)
-    obtain ⟨g, hg⟩ := ContinuousMap.exists_restrict_eq (hs.inter (isClosed_tsupport _))
-      ⟨_, hc.domRestrict⟩
-    exact ⟨g, fun x hx ↦ congr($hg ⟨x, hx⟩)⟩
+  have hext (i : B) : ∃ g : C(B, F), ∀ x ∈ s ∩ tsupport (ρ i), g x = (e i ⟨x, σ x⟩).2 :=
+    exists_continuousMap_eq_trivialization_of_continuousOn hs hσ (e i) (isClosed_tsupport _)
+      (hρ i)
   choose g hg using hext
   -- Glue the local extensions with the partition of unity.
   let w : B → B → 𝕜 := fun i x ↦ algebraMap ℝ 𝕜 (ρ i x)
