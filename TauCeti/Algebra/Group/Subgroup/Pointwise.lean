@@ -11,9 +11,9 @@ public import Mathlib.Algebra.Group.Subgroup.Pointwise
 # Conjugating subgroups and joining with a normalizing subgroup
 
 Mathlib writes the conjugate `sHs⁻¹` of a subgroup `H` of a group `G` as the pointwise scalar
-action `MulAut.conj s • H`.  This file records the membership criterion for that subgroup and the
-laws making `s ↦ MulAut.conj s • (-)` an action of `G` on any type on which `MulAut G` acts, such
-as the subgroups of `G`.
+action `MulAut.conj s • H`.  This file records the membership criterion for that subgroup; the
+laws making `s ↦ MulAut.conj s • (-)` an action of `G`, on subgroups as on any type on which
+`MulAut G` acts, are in `TauCeti.Algebra.Group.Action.End`.
 
 `Subgroup.mem_pointwise_smul_iff_inv_smul_mem` fixes the orientation: membership of `x` in
 `MulAut.conj s • H` is `s⁻¹ * x * s ∈ H`, so `MulAut.conj s • H` is `sHs⁻¹` and not `s⁻¹Hs`.
@@ -29,8 +29,6 @@ form of that computation: every element of `H ⊔ K` is a product `x * t` with `
 ## Main statements
 
 * `TauCeti.mem_conj_smul`: membership in `sHs⁻¹` is `s⁻¹ * x * s ∈ H`.
-* `TauCeti.conj_one_smul`, `TauCeti.conj_mul_smul`, `TauCeti.conj_inv_smul_smul`: conjugation is
-  an action of `G` on any type on which `MulAut G` acts, in particular on the subgroups of `G`.
 * `TauCeti.map_conj_eq_conj_smul`: the image of `H` under the inner automorphism of `s` is
   `MulAut.conj s • H`, which converts Mathlib's statements phrased with `Subgroup.map`, such as
   `MulAction.stabilizer_smul_eq_stabilizer_map_conj` and `Ideal.inertia_smul`, to this convention.
@@ -52,22 +50,6 @@ theorem mem_conj_smul (s : G) (H : Subgroup G) (x : G) :
     x ∈ (MulAut.conj s • H : Subgroup G) ↔ s⁻¹ * x * s ∈ H := by
   rw [Subgroup.mem_pointwise_smul_iff_inv_smul_mem]
   simp
-
-/-- Conjugating by `1` acts trivially, for instance on the subgroups of `G`. -/
-theorem conj_one_smul {α : Type*} [MulAction (MulAut G) α] (a : α) :
-    MulAut.conj (1 : G) • a = a := by
-  simp
-
-/-- Conjugating by `s * t` is conjugating by `t` and then by `s`, for instance on the subgroups
-of `G`. -/
-theorem conj_mul_smul {α : Type*} [MulAction (MulAut G) α] (s t : G) (a : α) :
-    MulAut.conj (s * t) • a = MulAut.conj s • (MulAut.conj t • a) := by
-  rw [map_mul, mul_smul]
-
-/-- Conjugating by `s⁻¹` undoes conjugating by `s`, for instance on the subgroups of `G`. -/
-theorem conj_inv_smul_smul {α : Type*} [MulAction (MulAut G) α] (s : G) (a : α) :
-    MulAut.conj s⁻¹ • (MulAut.conj s • a) = a := by
-  rw [map_inv, inv_smul_smul]
 
 /-- The image of a subgroup under the inner automorphism of `s` is its conjugate
 `MulAut.conj s • H`. -/
