@@ -45,6 +45,8 @@ for set and probability integrals.
   integral one) total extended mass one.
 * `ofReal_integral_add_ofReal_integral_le` adds the positive parts of two integrals whose
   integrands sum, almost everywhere, to at most a third integrable function.
+* `integral_min_le_left` and `integral_le_integral_max` compare the integral of an integrable
+  function with that of its pointwise minimum or maximum with another integrable function.
 * `toReal_lintegral_coe_eq_integral` identifies `(∫⁻ ω, (f ω : ℝ≥0∞) ∂μ).toReal` with
   `∫ ω, (f ω : ℝ) ∂μ` for any almost-everywhere measurable `f : Ω → ℝ≥0`.
 
@@ -362,6 +364,18 @@ theorem ofReal_integral_le_lintegral_ofReal {Ω : Type*} [MeasurableSpace Ω]
       _ = ∫⁻ x, ENNReal.ofReal (f x) ∂μ := by simp
   · rw [integral_undef hf]
     simp
+
+/-- The integral of the pointwise minimum of two integrable functions is at most the integral of
+the first one. -/
+theorem integral_min_le_left {α : Type*} [MeasurableSpace α] {μ : Measure α} {f g : α → ℝ}
+    (hf : Integrable f μ) (hg : Integrable g μ) : ∫ x, min (f x) (g x) ∂μ ≤ ∫ x, f x ∂μ :=
+  integral_mono (hf.inf hg) hf fun _ ↦ min_le_left _ _
+
+/-- The integral of the first of two integrable functions is at most the integral of their
+pointwise maximum. -/
+theorem integral_le_integral_max {α : Type*} [MeasurableSpace α] {μ : Measure α} {f g : α → ℝ}
+    (hf : Integrable f μ) (hg : Integrable g μ) : ∫ x, f x ∂μ ≤ ∫ x, max (f x) (g x) ∂μ :=
+  integral_mono hf (hf.sup hg) fun _ ↦ le_max_left _ _
 
 /-- A probability density `ρ`, almost everywhere nonnegative with `∫ ρ = 1`, has total extended
 mass one: `∫⁻ ofReal (ρ t) dμ = 1`. -/
