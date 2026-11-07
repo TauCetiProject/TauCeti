@@ -174,6 +174,17 @@ open scoped NNReal Topology
 
 variable {g : E → ℝ} {L : ℝ≥0}
 
+omit [FiniteDimensional ℝ E] in
+/-- The directional derivative of a Lipschitz function `g` with compact support lies in every
+`Lq`, being bounded with compact support. -/
+theorem _root_.LipschitzWith.memLp_lineDeriv_of_hasCompactSupport {q : ENNReal} {ν : Measure E}
+    [IsFiniteMeasureOnCompacts ν] (hg : LipschitzWith L g) (hgc : HasCompactSupport g) (v : E) :
+    MemLp (fun x => lineDeriv ℝ g x v) q ν := by
+  have hdgc : HasCompactSupport fun x => lineDeriv ℝ g x v :=
+    hgc.mono' fun x hx => by_contra fun h => hx (lineDeriv_of_notMem_tsupport h v)
+  exact hdgc.memLp_of_bound (aestronglyMeasurable_lineDeriv hg.continuous ν) (L * ‖v‖)
+    (.of_forall fun _ => norm_lineDeriv_le_of_lipschitz ℝ hg)
+
 /-- **Integration by parts against a Lipschitz function.** For an open set `U`, a function `f`
 that is `C¹` on `U`, and a Lipschitz function `g` with compact support in `U`,
 `∫ (∂_v g) f = -∫ g (∂_v f)`, where `∂_v g = lineDeriv ℝ g · v` exists almost everywhere by
