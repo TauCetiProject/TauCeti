@@ -8,7 +8,9 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Deriv
 public import Mathlib.Analysis.Calculus.ContDiff.RCLike
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
+public import TauCeti.Algebra.Order.Floor.UniformMesh
 public import TauCeti.Analysis.Calculus.Deriv.ChordGraph
+public import TauCeti.Analysis.Calculus.MeanValue
 public import TauCeti.Analysis.Convex.CurveChord
 public import TauCeti.Geometry.Polygon.DeltaMove
 public import TauCeti.Geometry.Polygon.Subdivision
@@ -238,6 +240,40 @@ private theorem FineMesh.dist_le (hF : FineMesh γ T δ η h K) {u v : ℝ} (hu 
   (hF.lipschitz.dist_le_mul u hu v hv).trans
     (mul_le_mul_of_nonneg_left (by rwa [Real.dist_eq]) K.2)
 
+/-- Two edges `i < j` of an inscribed polygon which are consecutive across the end of the period
+meet only at their common vertex: `i` is the successor of `j`, and `x` is the vertex `i`. -/
+private theorem FineMesh.eq_finRotate_of_mem_edges_of_wrap {h₀ : ℝ}
+    (hF : FineMesh γ T δ η h₀ K) {n : ℕ} {h : ℝ} (hh : 0 < h)
+    (hnh : (n : ℝ) * h = T) (hhδ : h ≤ δ)
+    {i j : Fin n} {r : ℕ} (hr : (j : ℕ) = i + r + 1) (hrn : r + 1 ≤ n)
+    (hB : ((n - (r + 1) : ℕ) : ℝ) * h ≤ 2 * δ) (hj : (j : ℝ) * h = i * h + (r + 1 : ℕ) * h)
+    (hT' : ((n - (r + 1) : ℕ) : ℝ) * h = T - ((r + 1 : ℕ) : ℝ) * h)
+    (hjv : (j : ℝ) * h ∈ Icc 0 T) {x : E} (hxi : x ∈ segment ℝ (γ (i * h)) (γ (i * h + h)))
+    (hxj : x ∈ segment ℝ (γ (i * h + (r + 1 : ℕ) * h)) (γ (i * h + (r + 1 : ℕ) * h + h))) :
+    i = finRotate n j ∧ x = (inscribed γ T n).vertices i := by
+  have hper := hF.periodic
+  have hjn : (j : ℕ) < n := j.is_lt
+  obtain ⟨φ, hφ⟩ := hF.mono _ hjv
+  -- Read edge `i` one period later, as the edge `n - (r + 1)` steps after edge `j`.
+  have e (s : ℝ) : γ ((i : ℝ) * h + s) = γ ((j : ℝ) * h + ((n - (r + 1) : ℕ) : ℝ) * h + s) := by
+    rw [← hper ((i : ℝ) * h + s), hT', hj]
+    ring_nf
+  have e₀ := e 0
+  rw [add_zero, add_zero] at e₀
+  rw [e₀, e h] at hxi
+  rw [← hj] at hxj
+  obtain ⟨hr1, rfl⟩ := eq_of_mem_segment_of_mem_segment hφ hh (by omega) (by linarith) hxj hxi
+  have hi0 : (i : ℕ) = 0 := by omega
+  have hjn1 : (j : ℕ) + 1 = n := by omega
+  refine ⟨Fin.ext ?_, ?_⟩
+  · simp only [finRotate_apply, Fin.val_add, Fin.val_one', Nat.add_mod_mod]
+    rw [hjn1, Nat.mod_self, hi0]
+  · have : ((j : ℝ) + 1) * h = 0 + T := by
+      rw [zero_add, ← hnh]
+      congr 1
+      exact_mod_cast hjn1
+    rw [inscribed_apply, hi0, Nat.cast_zero, zero_mul, ← add_one_mul, this, hper]
+
 /-- **Fine inscribed polygons are simple.** If a loop satisfies `FineMesh` at mesh `h₀`, then its
 inscribed polygon with `n` vertices is simple as soon as `T / n ≤ h₀`. -/
 private theorem FineMesh.isSimple_inscribed {h₀ : ℝ} (hF : FineMesh γ T δ η h₀ K) (hT : 0 < T)
@@ -283,26 +319,8 @@ private theorem FineMesh.isSimple_inscribed {h₀ : ℝ} (hF : FineMesh γ T δ 
     rw [Nat.cast_sub hrn, sub_mul, hnh]
   by_cases hB : ((n - (r + 1) : ℕ) : ℝ) * h ≤ 2 * δ
   · -- Nearby edges, `i` ahead of `j` across the end of the period: then `i = 0` and `j = n - 1`.
-    obtain ⟨φ, hφ⟩ := hF.mono _ (hval j)
-    -- Read edge `i` one period later, as the edge `n - (r + 1)` steps after edge `j`.
-    have e (s : ℝ) : γ ((i : ℝ) * h + s) = γ ((j : ℝ) * h + ((n - (r + 1) : ℕ) : ℝ) * h + s) := by
-      rw [← hper ((i : ℝ) * h + s), hT', hj]
-      ring_nf
-    have e₀ := e 0
-    rw [add_zero, add_zero] at e₀
-    rw [e₀, e h] at hxi
-    rw [← hj] at hxj
-    obtain ⟨hr1, rfl⟩ := eq_of_mem_segment_of_mem_segment hφ hh (by omega) (by linarith) hxj hxi
-    have hi0 : (i : ℕ) = 0 := by omega
-    have hjn1 : (j : ℕ) + 1 = n := by omega
-    refine .inr ⟨Fin.ext ?_, ?_⟩
-    · simp only [finRotate_apply, Fin.val_add, Fin.val_one', Nat.add_mod_mod]
-      rw [hjn1, Nat.mod_self, hi0]
-    · have : ((j : ℝ) + 1) * h = 0 + T := by
-        rw [zero_add, ← hnh]
-        congr 1
-        exact_mod_cast hjn1
-      rw [inscribed_apply, hi0, Nat.cast_zero, zero_mul, ← add_one_mul, this, hper]
+    exact .inr (hF.eq_finRotate_of_mem_edges_of_wrap hh hnh hhδ hr hrn hB hj hT'
+      (hval j) hxi hxj)
   · -- Distant edges are disjoint.
     rw [not_le] at hA hB
     exact (not_mem_segment_of_mem_segment hF.lipschitz (hval i).1 (by positivity) hh
@@ -327,29 +345,16 @@ private structure FineFamily (Γ : ℝ → ℝ → E) (T δ η lam ρ : ℝ) (K 
 /-- **Uniform constants along a `C¹` isotopy of loops.** For a family `Γ t` of loops of period
 `T`, jointly `C¹` in the time and the loop parameter, such that each `Γ t` with `t ∈ [0, 1]` is
 injective modulo `T` with nowhere vanishing derivative, the constants of `FineFamily` exist. -/
-private theorem exists_fineFamily {Γ : ℝ → ℝ → E} (hT : 0 < T) (hΓ : ContDiff ℝ 1 (uncurry Γ))
+private theorem exists_fineFamily {Γ : ℝ → ℝ → E} (hΓ : ContDiff ℝ 1 (uncurry Γ))
     (hper : ∀ t ∈ Icc (0 : ℝ) 1, Periodic (Γ t) T)
     (hinj : ∀ t ∈ Icc (0 : ℝ) 1, ∀ s s', Γ t s = Γ t s' → ∃ k : ℤ, s = s' + k * T)
     (hderiv : ∀ t ∈ Icc (0 : ℝ) 1, ∀ s, deriv (Γ t) s ≠ 0) :
     ∃ (δ η lam ρ : ℝ) (K : NNReal), 0 < δ ∧ 0 < η ∧ 0 < lam ∧ 0 < ρ ∧
       FineFamily Γ T δ η lam ρ K := by
-  -- The constants come from compactness of `Q = [0, 1] × [0, 2T]`: a bound `B` on the derivative
-  -- of `Γ`, uniform windows of width `δ₀` along which the loops increase, and the least distance
+  -- The constants come from compactness of `[0, 1] × [0, 2T]`: a bound `B` on the derivative of
+  -- `Γ`, uniform windows of width `δ₀` along which the loops increase, and the least distance
   -- `η₀` between points of one loop whose parameters are between `δ` and `T - δ` apart.
-  set Q : Set (ℝ × ℝ) := Icc 0 1 ×ˢ Icc 0 (2 * T) with hQ
-  have hQc : IsCompact Q := isCompact_Icc.prod isCompact_Icc
-  have hQv : Convex ℝ Q := (convex_Icc _ _).prod (convex_Icc _ _)
-  have hQ0 : ((0 : ℝ), (0 : ℝ)) ∈ Q := ⟨⟨le_rfl, zero_le_one⟩, ⟨le_rfl, by positivity⟩⟩
-  have hdiff : Differentiable ℝ (uncurry Γ) := hΓ.differentiable one_ne_zero
-  have hfc : Continuous (fderiv ℝ (uncurry Γ)) := hΓ.continuous_fderiv one_ne_zero
-  -- A bound `B` for the derivative on `Q`, so a Lipschitz bound for `Γ` there.
-  obtain ⟨B, hB⟩ := hQc.exists_bound_of_continuousOn hfc.continuousOn
-  have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB _ hQ0)
-  have hB1 : 0 < B + 1 := by linarith
-  have hlipΓ {t₁ s₁ t₂ s₂ : ℝ} (h₁ : (t₁, s₁) ∈ Q) (h₂ : (t₂, s₂) ∈ Q) :
-      ‖Γ t₁ s₁ - Γ t₂ s₂‖ ≤ B * max |t₁ - t₂| |s₁ - s₂| := by
-    have := hQv.norm_image_sub_le_of_norm_fderiv_le (fun x _ ↦ hdiff x) hB h₂ h₁
-    simpa [Prod.norm_def, Real.norm_eq_abs] using this
+  obtain ⟨B, hlipΓ⟩ := hΓ.exists_norm_sub_le_mul_max_uncurry 0 1 0 (2 * T)
   obtain ⟨δ₀, hδ₀, lam₀, hlam₀, hmono⟩ :=
     hΓ.exists_strictMonoOn_dual_comp_uncurry hderiv 0 (2 * T)
   set δ := δ₀ / 3 with hδ_def
@@ -364,14 +369,11 @@ private theorem exists_fineFamily {Γ : ℝ → ℝ → E} (hT : 0 < T) (hΓ : C
   have hBρ : B * ρ ≤ η₀ / 2 := by
     have h₁ : ρ * (2 * (B + 1)) = η₀ := by rw [hρ_def]; field_simp
     nlinarith [div_pos hη₀ (by positivity : (0 : ℝ) < 2 * (B + 1))]
-  refine ⟨δ, η₀ / 2, lam, ρ, (⟨B, hB0⟩ : NNReal), hδ, by positivity, hlam, by positivity,
+  refine ⟨δ, η₀ / 2, lam, ρ, B, hδ, by positivity, hlam, by positivity,
     ⟨hlam.le, by positivity, ?_⟩⟩
   intro α τ c h hα hc hτ hτI hlip hvar hhδ hη
   have hτ1 (x y : ℝ) : |τ x - τ y| ≤ |x - y| :=
     (hlip x y).trans (mul_le_of_le_one_left (abs_nonneg _) hlam1)
-  have memQ {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) (u : ℝ) (hu₀ : 0 ≤ u) (hu₁ : u ≤ 2 * T) :
-      (t, u) ∈ Q :=
-    ⟨ht, hu₀, hu₁⟩
   refine ⟨fun s ↦ ?_, hhδ, fun a ha ↦ ?_, ?_, fun a ha d hd ↦ ?_, hη⟩
   · rw [hα, hα, hτ s, add_right_comm s T c, hper _ (hτI s)]
   · -- The window `[a, a + 3δ]` of `α` is the window `[a + c, a + c + 3δ]` of `u ↦ Γ (τ' u) u`,
@@ -387,20 +389,19 @@ private theorem exists_fineFamily {Γ : ℝ → ℝ → E} (hT : 0 < T) (hΓ : C
     simpa only [add_sub_cancel_right, ← hα] using h
   · refine LipschitzOnWith.of_dist_le_mul fun x hx y hy ↦ ?_
     rw [dist_eq_norm, hα, hα, Real.dist_eq]
-    refine (hlipΓ (memQ (hτI x) (x + c) (by linarith [hx.1, hc.1]) (by linarith [hx.2, hc.2]))
-      (memQ (hτI y) (y + c) (by linarith [hy.1, hc.1]) (by linarith [hy.2, hc.2]))).trans ?_
+    refine (hlipΓ (hτI x) ⟨by linarith [hx.1, hc.1], by linarith [hx.2, hc.2]⟩ (hτI y)
+      ⟨by linarith [hy.1, hc.1], by linarith [hy.2, hc.2]⟩).trans ?_
     rw [add_sub_add_right_eq_sub]
-    exact mul_le_mul_of_nonneg_left (max_le (hτ1 x y) le_rfl) hB0
+    exact mul_le_mul_of_nonneg_left (max_le (hτ1 x y) le_rfl) B.2
   · -- The time changes by at most `ρ`, which costs at most `B ρ ≤ η₀ / 2`.
     rw [dist_eq_norm, hα, hα]
     have h₁ := hsep (τ (a + d)) (hτI _) (a + c) ⟨by linarith [ha.1, hc.1], by linarith [ha.2, hc.2]⟩
       d hd
     rw [dist_eq_norm] at h₁
-    have h₂ := hlipΓ (memQ (hτI (a + d)) (a + c) (by linarith [ha.1, hc.1])
-      (by linarith [ha.2, hc.2])) (memQ (hτI a) (a + c) (by linarith [ha.1, hc.1])
-      (by linarith [ha.2, hc.2]))
+    have hac : a + c ∈ Icc 0 (2 * T) := ⟨by linarith [ha.1, hc.1], by linarith [ha.2, hc.2]⟩
+    have h₂ := hlipΓ (hτI (a + d)) hac (hτI a) hac
     rw [sub_self, abs_zero, max_eq_left (abs_nonneg _)] at h₂
-    have h₃ : B * |τ (a + d) - τ a| ≤ B * ρ := mul_le_mul_of_nonneg_left (hvar _ _) hB0
+    have h₃ : B * |τ (a + d) - τ a| ≤ B * ρ := mul_le_mul_of_nonneg_left (hvar _ _) B.2
     rw [add_right_comm a d c]
     linarith [norm_sub_le_norm_sub_add_norm_sub (Γ (τ (a + d)) (a + c + d)) (Γ (τ a) (a + c))
       (Γ (τ (a + d)) (a + c)), norm_sub_rev (Γ (τ a) (a + c)) (Γ (τ (a + d)) (a + c))]
@@ -424,7 +425,7 @@ private theorem exists_fineMesh (hT : 0 < T) (hγ : ContDiff ℝ 1 γ) (hper : P
     have e : (uncurry fun _ : ℝ ↦ γ) = γ ∘ Prod.snd := by funext p; simp [uncurry_def]
     rw [e]
     exact hγ.comp contDiff_snd
-  obtain ⟨δ, η, lam, ρ, K, hδ, hη, -, -, hF⟩ := exists_fineFamily hT hΓ (fun _ _ ↦ hper)
+  obtain ⟨δ, η, lam, ρ, K, hδ, hη, -, -, hF⟩ := exists_fineFamily hΓ (fun _ _ ↦ hper)
     (fun _ _ ↦ hinj) (fun _ _ ↦ hderiv)
   set h := min δ (η / (2 * K + 1))
   have hh : 0 < h := lt_min hδ (by positivity)
@@ -451,6 +452,43 @@ theorem eventually_isSimple_inscribed (hT : 0 < T) (hγ : ContDiff ℝ 1 γ) (hp
 
 section Refinement
 
+/-- Under `FineMesh`, the points of `γ` at parameters in `[a, a']`, with `0 ≤ a`, `a' ≤ a + h` and
+`a' ≤ T`, lie within `K * h` of `γ a`. -/
+private theorem FineMesh.dist_le_of_mem_Icc (hF : FineMesh γ T δ η h K) {a a' u : ℝ} (ha : 0 ≤ a)
+    (ha' : a' ≤ a + h) (haT : a' ≤ T) (hu : u ∈ Icc a a') : dist (γ u) (γ a) ≤ K * h :=
+  hF.dist_le ⟨by linarith [hu.1], by linarith [hu.2]⟩ ⟨ha, by linarith [hu.1, hu.2]⟩
+    (abs_le.2 ⟨by linarith [hu.1, hu.2], by linarith [hu.2]⟩)
+
+/-- Under `FineMesh`, the triangle on `γ a`, `γ s`, `γ a'` with `a ≤ s ≤ a' ≤ a + h` lies within
+`K * h` of `γ a`. -/
+private theorem FineMesh.dist_le_of_mem_convexHull (hF : FineMesh γ T δ η h K) {a s a' : ℝ}
+    (ha : 0 ≤ a) (has : a ≤ s) (hsa' : s ≤ a') (ha' : a' ≤ a + h) (haT : a' ≤ T) {x : E}
+    (hx : x ∈ convexHull ℝ {γ a, γ s, γ a'}) : dist x (γ a) ≤ K * h := by
+  refine convexHull_min ?_ (convex_closedBall (γ a) (K * h)) hx
+  rintro _ (rfl | rfl | rfl)
+  exacts [hF.dist_le_of_mem_Icc ha ha' haT ⟨le_rfl, has.trans hsa'⟩,
+    hF.dist_le_of_mem_Icc ha ha' haT ⟨has, hsa'⟩,
+    hF.dist_le_of_mem_Icc ha ha' haT ⟨has.trans hsa', le_rfl⟩]
+
+/-- Under `FineMesh`, the chord from `γ b` to `γ b'` with `b ≤ b' ≤ b + h` lies within `K * h` of
+`γ b`. -/
+private theorem FineMesh.dist_le_of_mem_segment (hF : FineMesh γ T δ η h K) {b b' : ℝ}
+    (hb : 0 ≤ b) (hbb' : b ≤ b') (hb' : b' ≤ b + h) (hbT : b' ≤ T) {x : E}
+    (hx : x ∈ segment ℝ (γ b) (γ b')) : dist x (γ b) ≤ K * h :=
+  (convex_closedBall (γ b) (K * h)).segment_subset
+    (hF.dist_le_of_mem_Icc hb hb' hbT ⟨le_rfl, hbb'⟩)
+    (hF.dist_le_of_mem_Icc hb hb' hbT ⟨hbb', le_rfl⟩) hx
+
+/-- Under `FineMesh`, a point within `K * h` of both `γ a` and `γ b` excludes any two parameters
+`c ∈ [0, T]` and `c + d` with `d ∈ [δ, T - δ]` at which `γ` takes the values `γ a` and `γ b`. -/
+private theorem FineMesh.false_of_dist_le_of_dist_le (hF : FineMesh γ T δ η h K) {a b : ℝ}
+    {x : E} (hxa : dist x (γ a) ≤ K * h) (hxb : dist x (γ b) ≤ K * h) {c d : ℝ}
+    (hc : c ∈ Icc 0 T) (hd : d ∈ Icc δ (T - δ))
+    (hcd : γ (c + d) = γ b ∧ γ c = γ a ∨ γ (c + d) = γ a ∧ γ c = γ b) : False := by
+  have := hF.sep c hc d hd
+  rcases hcd with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩ <;> rw [h₁, h₂] at this <;>
+    linarith [dist_triangle_left (γ b) (γ a) x, dist_comm (γ b) (γ a), hF.lt_sep]
+
 /-- **Chords of a fine mesh meet only at their ends.** Let `[a, a']` and `[b, b']` be parameter
 intervals in `[0, T]` of lengths at most `h`, with disjoint interiors, and `a ≤ s ≤ a'`. Then the
 triangle with vertices `γ a`, `γ s`, `γ a'` meets the chord from `γ b` to `γ b'` at most in
@@ -462,23 +500,11 @@ private theorem FineMesh.eq_of_mem_convexHull_of_mem_segment (hF : FineMesh γ T
     (hx' : x ∈ segment ℝ (γ b) (γ b')) : x = γ a ∨ x = γ a' := by
   have hh := hF.le_delta
   have hT (u : ℝ) : γ (u + T) = γ u := hF.periodic u
-  -- The triangle and the chord lie within `K * h` of their first vertices.
-  have hxa : dist x (γ a) ≤ K * h := by
-    have hd (u : ℝ) (hau : a ≤ u) (hu : u ≤ a') : γ u ∈ Metric.closedBall (γ a) (K * h) :=
-      hF.dist_le ⟨by linarith, by linarith⟩ ⟨ha, by linarith⟩ (abs_le.2 ⟨by linarith, by linarith⟩)
-    refine convexHull_min ?_ (convex_closedBall (γ a) (K * h)) hx
-    rintro _ (rfl | rfl | rfl)
-    exacts [hd a le_rfl (has.trans hsa'), hd s has hsa', hd a' (has.trans hsa') le_rfl]
-  have hxb : dist x (γ b) ≤ K * h := by
-    have hd (u : ℝ) (hbu : b ≤ u) (hu : u ≤ b') : γ u ∈ Metric.closedBall (γ b) (K * h) :=
-      hF.dist_le ⟨by linarith, by linarith⟩ ⟨hb, by linarith⟩ (abs_le.2 ⟨by linarith, by linarith⟩)
-    exact (convex_closedBall (γ b) (K * h)).segment_subset (hd b le_rfl hbb'.le)
-      (hd b' hbb'.le le_rfl) hx'
+  have hxa := hF.dist_le_of_mem_convexHull ha has hsa' ha' haT hx
+  have hxb := hF.dist_le_of_mem_segment hb hbb'.le hb' hbT hx'
   have far (c d : ℝ) (hc : c ∈ Icc 0 T) (hd : d ∈ Icc δ (T - δ))
-      (hcd : γ (c + d) = γ b ∧ γ c = γ a ∨ γ (c + d) = γ a ∧ γ c = γ b) : False := by
-    have := hF.sep c hc d hd
-    rcases hcd with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩ <;> rw [h₁, h₂] at this <;>
-      linarith [dist_triangle_left (γ b) (γ a) x, dist_comm (γ b) (γ a), hF.lt_sep]
+      (hcd : γ (c + d) = γ b ∧ γ c = γ a ∨ γ (c + d) = γ a ∧ γ c = γ b) : False :=
+    hF.false_of_dist_le_of_dist_le hxa hxb hc hd hcd
   rcases hdisj with hab | hba
   · -- The chord comes after the triangle.
     by_cases h₁ : b' ≤ a + 3 * δ
@@ -876,6 +902,34 @@ private theorem abs_cosTime_sub_le_abs (t t' h x y : ℝ) :
       ≤ |t' - t| / 2 * 2 := by gcongr
     _ = |t' - t| := by ring
 
+/-- **Half a step later.** If a loop `γ` and its shift `γ (· + T / n / 2)` by half a step satisfy
+`FineMesh` at mesh `T / n`, their inscribed polygons with `n` vertices are combinatorially
+equivalent: refine to `2 n` vertices, relabel by a rotation and coarsen. -/
+private theorem FineMesh.combinatoriallyEquivalent_inscribed_shift {n : ℕ} [NeZero n]
+    (hF : FineMesh γ T δ η (T / n) K)
+    (hF₂ : FineMesh (fun s ↦ γ (s + T / n / 2)) T δ η (T / n) K) (hT : 0 < T)
+    (hp : (inscribed γ T n).IsSimple ℝ)
+    (hp₂ : (inscribed (fun s ↦ γ (s + T / n / 2)) T n).IsSimple ℝ) :
+    CombinatoriallyEquivalent ⟨n, inscribed γ T n, hp⟩
+      ⟨n, inscribed (fun s ↦ γ (s + T / n / 2)) T n, hp₂⟩ := by
+  have hn₀ : (0 : ℝ) < n := by exact_mod_cast Nat.pos_of_ne_zero (NeZero.ne n)
+  have : NeZero (2 * n) := ⟨by have := NeZero.ne n; omega⟩
+  have h2n : T / ((2 * n : ℕ) : ℝ) = T / n / 2 := by
+    rw [Nat.cast_mul, Nat.cast_two]
+    field_simp
+  have h2nh : T / ((2 * n : ℕ) : ℝ) ≤ T / n := by
+    rw [h2n]
+    linarith [div_pos hT hn₀]
+  have e : (inscribed γ T (2 * n)).rotate = inscribed (fun s ↦ γ (s + T / n / 2)) T (2 * n) := by
+    rw [rotate_inscribed hF.periodic, h2n]
+  have q : CombinatoriallyEquivalent ⟨2 * n, inscribed γ T (2 * n), hF.isSimple_inscribed hT h2nh⟩
+      ⟨2 * n, inscribed (fun s ↦ γ (s + T / n / 2)) T (2 * n),
+        hF₂.isSimple_inscribed hT h2nh⟩ := by
+    simp only [← e]
+    exact combinatoriallyEquivalent_rotate _
+  exact (hF.combinatoriallyEquivalent_inscribed hT le_rfl h2nh _ _).trans
+    (q.trans (hF₂.combinatoriallyEquivalent_inscribed hT h2nh le_rfl _ _))
+
 /-- **One step of an isotopy.** For times `t, t' ∈ [0, 1]` close compared with the mesh
 `h = T / n`, the inscribed polygons of `Γ t` and of `Γ t'` with `n` vertices are combinatorially
 equivalent. -/
@@ -896,11 +950,6 @@ private theorem FineFamily.combinatoriallyEquivalent_inscribed {Γ : ℝ → ℝ
   have hh : 0 < h := div_pos hT hn₀
   have hnh : (n : ℝ) * h = T := by rw [hh_def]; field_simp
   have hhT : h ≤ T := div_le_self hT.le (by exact_mod_cast Nat.one_le_iff_ne_zero.2 (NeZero.ne n))
-  have : NeZero (2 * n) := ⟨by have := NeZero.ne n; omega⟩
-  have h2n : T / ((2 * n : ℕ) : ℝ) = h / 2 := by
-    rw [hh_def, Nat.cast_mul, Nat.cast_two]
-    field_simp
-  have h2nh : T / ((2 * n : ℕ) : ℝ) ≤ h := by rw [h2n]; linarith
   have hc₀ : (0 : ℝ) ∈ Icc 0 T := ⟨le_rfl, hT.le⟩
   have hc₂ : h / 2 ∈ Icc 0 T := ⟨by positivity, by linarith⟩
   -- The oscillating time and its two loops `α` and `α₂ = α (· + h / 2)`.
@@ -922,59 +971,28 @@ private theorem FineFamily.combinatoriallyEquivalent_inscribed {Γ : ℝ → ℝ
   -- The polygons met along the way.
   have e₁ : inscribed (Γ t) T n = inscribed (fun s ↦ Γ (τ s) s) T n :=
     inscribed_congr fun k ↦ by simp only [← hh_def, hτ_def, cosTime_natCast_mul t t' hh.ne']
-  have e₃ : (inscribed (fun s ↦ Γ (τ s) s) T (2 * n)).rotate =
-      inscribed (fun s ↦ Γ (τ (s + h / 2)) (s + h / 2)) T (2 * n) := by
-    rw [rotate_inscribed hFα.periodic, h2n]
   have e₅ : inscribed (fun s ↦ Γ (τ (s + h / 2)) (s + h / 2)) T n =
       inscribed (fun s ↦ Γ t' (s + h / 2)) T n :=
     inscribed_congr fun k ↦ by
       simp only [← hh_def, hτ_def, cosTime_natCast_mul_add_half t t' hh.ne']
-  have e₇ : (inscribed (Γ t') T (2 * n)).rotate = inscribed (fun s ↦ Γ t' (s + h / 2)) T (2 * n) :=
-    by rw [rotate_inscribed hFβ.periodic, h2n]
   -- The chain of equivalences, with explicit endpoints: `n`-gon of `Γ t` = `n`-gon of `α`,
-  -- refined to the `2n`-gon of `α`, relabelled to the `2n`-gon of `α₂`, coarsened to the `n`-gon
-  -- of `α₂` = `n`-gon of `β₂ = Γ t' (· + h / 2)`, refined to the `2n`-gon of `β₂`, relabelled back
-  -- to the `2n`-gon of `Γ t'`, and coarsened to the `n`-gon of `Γ t'`.
+  -- shifted by half a step to the `n`-gon of `α₂` = `n`-gon of `β₂ = Γ t' (· + h / 2)`, shifted
+  -- back by half a step to the `n`-gon of `Γ t'`.
   have q₁ : CombinatoriallyEquivalent ⟨n, inscribed (Γ t) T n, hp⟩
       ⟨n, inscribed (fun s ↦ Γ (τ s) s) T n, hFα.isSimple_inscribed hT le_rfl⟩ := by
     simp only [e₁]
     exact .refl _
-  have q₂ : CombinatoriallyEquivalent
-      ⟨n, inscribed (fun s ↦ Γ (τ s) s) T n, hFα.isSimple_inscribed hT le_rfl⟩
-      ⟨2 * n, inscribed (fun s ↦ Γ (τ s) s) T (2 * n), hFα.isSimple_inscribed hT h2nh⟩ :=
-    hFα.combinatoriallyEquivalent_inscribed hT le_rfl h2nh _ _
-  have q₃ : CombinatoriallyEquivalent
-      ⟨2 * n, inscribed (fun s ↦ Γ (τ s) s) T (2 * n), hFα.isSimple_inscribed hT h2nh⟩
-      ⟨2 * n, inscribed (fun s ↦ Γ (τ (s + h / 2)) (s + h / 2)) T (2 * n),
-        hFα₂.isSimple_inscribed hT h2nh⟩ := by
-    simp only [← e₃]
-    exact combinatoriallyEquivalent_rotate _
-  have q₄ : CombinatoriallyEquivalent
-      ⟨2 * n, inscribed (fun s ↦ Γ (τ (s + h / 2)) (s + h / 2)) T (2 * n),
-        hFα₂.isSimple_inscribed hT h2nh⟩
-      ⟨n, inscribed (fun s ↦ Γ (τ (s + h / 2)) (s + h / 2)) T n,
-        hFα₂.isSimple_inscribed hT le_rfl⟩ :=
-    hFα₂.combinatoriallyEquivalent_inscribed hT h2nh le_rfl _ _
+  have q₂ := hFα.combinatoriallyEquivalent_inscribed_shift hFα₂ hT
+    (hFα.isSimple_inscribed hT le_rfl) (hFα₂.isSimple_inscribed hT le_rfl)
   have q₅ : CombinatoriallyEquivalent
       ⟨n, inscribed (fun s ↦ Γ (τ (s + h / 2)) (s + h / 2)) T n,
         hFα₂.isSimple_inscribed hT le_rfl⟩
       ⟨n, inscribed (fun s ↦ Γ t' (s + h / 2)) T n, hFβ₂.isSimple_inscribed hT le_rfl⟩ := by
     simp only [e₅]
     exact .refl _
-  have q₆ : CombinatoriallyEquivalent
-      ⟨n, inscribed (fun s ↦ Γ t' (s + h / 2)) T n, hFβ₂.isSimple_inscribed hT le_rfl⟩
-      ⟨2 * n, inscribed (fun s ↦ Γ t' (s + h / 2)) T (2 * n), hFβ₂.isSimple_inscribed hT h2nh⟩ :=
-    hFβ₂.combinatoriallyEquivalent_inscribed hT le_rfl h2nh _ _
-  have q₇ : CombinatoriallyEquivalent
-      ⟨2 * n, inscribed (Γ t') T (2 * n), hFβ.isSimple_inscribed hT h2nh⟩
-      ⟨2 * n, inscribed (fun s ↦ Γ t' (s + h / 2)) T (2 * n), hFβ₂.isSimple_inscribed hT h2nh⟩ := by
-    simp only [← e₇]
-    exact combinatoriallyEquivalent_rotate _
-  have q₈ : CombinatoriallyEquivalent
-      ⟨2 * n, inscribed (Γ t') T (2 * n), hFβ.isSimple_inscribed hT h2nh⟩
-      ⟨n, inscribed (Γ t') T n, hp'⟩ :=
-    hFβ.combinatoriallyEquivalent_inscribed hT h2nh le_rfl _ _
-  exact q₁.trans <| q₂.trans <| q₃.trans <| q₄.trans <| q₅.trans <| q₆.trans <| q₇.symm.trans q₈
+  have q₆ := (hFβ.combinatoriallyEquivalent_inscribed_shift hFβ₂ hT hp'
+    (hFβ₂.isSimple_inscribed hT le_rfl)).symm
+  exact q₁.trans <| q₂.trans <| q₅.trans q₆
 
 /-- **Fine inscribed polygons are invariant under isotopy.** Let `Γ : ℝ → ℝ → E` be a family of
 loops of period `T > 0` in a real normed space, jointly `C¹` in the time `t` and the loop
@@ -991,7 +1009,7 @@ theorem exists_combinatoriallyEquivalent_inscribed_of_isotopy {Γ : ℝ → ℝ 
       ∀ (hn : (inscribed (Γ 0) T n).IsSimple ℝ) (hm : (inscribed (Γ 1) T m).IsSimple ℝ),
         TauCeti.SimplePolygon.CombinatoriallyEquivalent ⟨n, inscribed (Γ 0) T n, hn⟩
           ⟨m, inscribed (Γ 1) T m, hm⟩ := by
-  obtain ⟨δ, η, lam, ρ, K, hδ, hη, hlam, hρ, hF⟩ := exists_fineFamily hT hΓ hper hinj hderiv
+  obtain ⟨δ, η, lam, ρ, K, hδ, hη, hlam, hρ, hF⟩ := exists_fineFamily hΓ hper hinj hderiv
   -- A mesh `h₀` below which every loop of the family is fine.
   set h₀ := min δ (η / (2 * K + 1)) with hh₀_def
   have hh₀ : 0 < h₀ := lt_min hδ (by positivity)
@@ -1083,46 +1101,10 @@ private theorem notMem_straightenRegion {n j k : ℕ} (hj : j < n) (hk : k < n) 
       rwa [hc, hshift, add_right_comm, hshift]
   rcases le_or_gt c (k * h + δ) with hnear | hfar
   · -- The piece lies in the window, entirely on one side of the arc being straightened.
-    have hW : Icc c (c + h) ⊆ Icc (k * h - 2 * δ) (k * h + 2 * δ) :=
-      Icc_subset_Icc hc_mem.1 (by linarith)
-    have hk₀ : k * h ∈ Icc (k * h - 2 * δ) (k * h + 2 * δ) := ⟨by linarith, by linarith⟩
-    have hk₁ : k * h + h ∈ Icc (k * h - 2 * δ) (k * h + 2 * δ) := ⟨by linarith, by linarith⟩
-    have hc₀ : c ∈ Icc c (c + h) := left_mem_Icc.2 (by linarith)
-    have hc₁ : c + h ∈ Icc c (c + h) := right_mem_Icc.2 (by linarith)
     -- Distinct steps `j ≠ k < n` stay distinct modulo `n`, so the shifted parameter interval
     -- `[c, c + h]` and `[k h, k h + h]` overlap at most at an endpoint.
-    have hne : (j : ℤ) + m * n ≠ k := fun he ↦ hjk <| by
-      have h0 := Int.eq_zero_of_abs_lt_dvd (m := n) (x := k - j) ⟨m, by rw [← he]; ring⟩
-        (abs_sub_lt_iff.2 ⟨by omega, by omega⟩)
-      omega
-    have hle : c + h ≤ k * h ∨ k * h + h ≤ c := by
-      rw [hc]
-      rcases hne.lt_or_gt with hlt | hlt
-      · left
-        have : ((j : ℝ) + m * n + 1) * h ≤ k * h :=
-          mul_le_mul_of_nonneg_right (by exact_mod_cast hlt) hh.le
-        linarith
-      · right
-        have : ((k : ℝ) + 1) * h ≤ (j + m * n) * h :=
-          mul_le_mul_of_nonneg_right (by exact_mod_cast hlt) hh.le
-        linarith
-    rcases hle with hle | hle
-    · have hbelow : ∀ s ∈ Icc c (c + h), φ (γ s) ≤ φ (γ (k * h)) := fun s hs ↦
-        hφ.monotoneOn (hW hs) hk₀ (by linarith [hs.2])
-      have : φ x ≤ φ (γ (k * h)) := by
-        rcases hx' with ⟨s, hs, rfl⟩ | hx'
-        · exact hbelow s hs
-        · exact (convex_halfSpace_le φ.toLinearMap.isLinear _).segment_subset
-            (hbelow c hc₀) (hbelow (c + h) hc₁) hx'
-      linarith
-    · have habove : ∀ s ∈ Icc c (c + h), φ (γ (k * h + h)) ≤ φ (γ s) := fun s hs ↦
-        hφ.monotoneOn hk₁ (hW hs) (by linarith [hs.1])
-      have : φ (γ (k * h + h)) ≤ φ x := by
-        rcases hx' with ⟨s, hs, rfl⟩ | hx'
-        · exact habove s hs
-        · exact (convex_halfSpace_ge φ.toLinearMap.isLinear _).segment_subset
-            (habove c hc₀) (habove (c + h) hc₁) hx'
-      linarith
+    exact hφ.notMem_between_of_le_or_le hh hhδ hc_mem.1 hnear
+      (TauCeti.add_mul_add_h_le_or_le_of_ne hj hk hjk hh m) hx' ⟨h₁, h₂⟩
   · -- The piece is far from the arc being straightened.
     have hfar' : ∀ s ∈ Icc c (c + h), η ≤ ‖γ s - γ (k * h)‖ := fun s hs ↦ by
       have := hsep (k * h) ⟨by positivity, by linarith⟩ (s - k * h)
@@ -1143,6 +1125,64 @@ private theorem notMem_straightenRegion {n j k : ℕ} (hj : j < n) (hk : k < n) 
       have := norm_sub_le_norm_sub_add_norm_sub (γ c) x (γ (k * h))
       rw [norm_sub_rev (γ c) x] at this
       linarith
+
+/-- Straightening the arc of a `T`-periodic curve `γ` over the step `[k h, k h + h]` of a uniform
+mesh `h = T / n` carries the curve made of the chords over the first `k` steps and of the arcs over
+the remaining ones onto the one with `k + 1` chords. -/
+private theorem exists_ambientIsotopy_final_image_step {n k : ℕ} (hk : k < n) (hT : 0 < T)
+    (hγ : Continuous γ) (hper : Periodic γ T) {h δ η : ℝ} {K : NNReal} (hh : 0 < h)
+    (hnh : n * h = T) (hhδ : h ≤ δ) (hδT : 2 * δ ≤ T) (hKη : 8 * (K * h) ≤ η)
+    (hmono : ∀ a ∈ Icc (-T) T, ∃ φ : StrongDual ℝ E,
+      StrictMonoOn (fun t ↦ φ (γ t)) (Icc a (a + 4 * δ)))
+    (hK : LipschitzOnWith K γ (Icc 0 T))
+    (hsep : ∀ a ∈ Icc 0 T, ∀ d ∈ Icc δ (T - δ), η ≤ dist (γ (a + d)) (γ a)) :
+    ∃ Ψ : TauCeti.AmbientIsotopy E,
+      Ψ.final '' {x | ∃ j < n, (j < k ∧ x ∈ segment ℝ (γ (j * h)) (γ (j * h + h))) ∨
+        (k ≤ j ∧ x ∈ γ '' Icc (j * h) (j * h + h))} =
+      {x | ∃ j < n, (j < k + 1 ∧ x ∈ segment ℝ (γ (j * h)) (γ (j * h + h))) ∨
+        (k + 1 ≤ j ∧ x ∈ γ '' Icc (j * h) (j * h + h))} := by
+  have hkT : k * h + h ≤ T := by
+    have : (k : ℝ) + 1 ≤ n := by exact_mod_cast hk
+    nlinarith
+  have hk0 : 0 ≤ k * h := by positivity
+  obtain ⟨φ, hφ⟩ := hmono (k * h - 2 * δ) ⟨by linarith, by linarith⟩
+  have hφ' : StrictMonoOn (fun t ↦ φ (γ t)) (Icc (k * h - 2 * δ) (k * h + 2 * δ)) :=
+    hφ.mono (Icc_subset_Icc le_rfl (by linarith))
+  obtain ⟨Ψ, himg, hsupp⟩ := TauCeti.AmbientIsotopy.exists_final_image_eq_segment
+    (by linarith : k * h < k * h + h) hγ.continuousOn
+    (hφ'.mono (Icc_subset_Icc (by linarith) (by linarith))) (D := K * h) fun s hs ↦ by
+      have := hK.dist_le_mul s ⟨by linarith [hs.1], by linarith [hs.2]⟩ (k * h) ⟨hk0, by linarith⟩
+      rw [dist_eq_norm, dist_eq_norm, Real.norm_of_nonneg (by linarith [hs.1])] at this
+      exact this.trans (by gcongr; linarith [hs.2])
+  have hfix (j : ℕ) (hj : j < n) (hjk : j ≠ k) (x : E)
+      (hx : x ∈ γ '' Icc (j * h) (j * h + h) ∪ segment ℝ (γ (j * h)) (γ (j * h + h))) :
+      Ψ.final x = x := by
+    by_contra hne
+    exact notMem_straightenRegion hj hk hjk hT hper hh hnh hhδ hKη hK hsep hφ' hx
+      (hsupp 1 x (by rwa [← TauCeti.AmbientIsotopy.final_apply]))
+  refine ⟨Ψ, ?_⟩
+  ext y
+  refine ⟨?_, ?_⟩
+  · rintro ⟨x, ⟨j, hj, hx⟩, rfl⟩
+    rcases eq_or_ne j k with rfl | hjk
+    · rcases hx with ⟨hjj, -⟩ | ⟨-, hx⟩
+      · exact absurd hjj (lt_irrefl j)
+      · exact ⟨j, hj, Or.inl ⟨j.lt_succ_self, himg ▸ mem_image_of_mem _ hx⟩⟩
+    · rcases hx with ⟨hjk', hx⟩ | ⟨hjk', hx⟩
+      · rw [hfix j hj hjk x (Or.inr hx)]
+        exact ⟨j, hj, Or.inl ⟨by omega, hx⟩⟩
+      · rw [hfix j hj hjk x (Or.inl hx)]
+        exact ⟨j, hj, Or.inr ⟨by omega, hx⟩⟩
+  · rintro ⟨j, hj, hy⟩
+    rcases eq_or_ne j k with rfl | hjk
+    · rcases hy with ⟨-, hy⟩ | ⟨hjj, -⟩
+      · rw [← himg] at hy
+        obtain ⟨x, hx, rfl⟩ := hy
+        exact ⟨x, ⟨j, hj, Or.inr ⟨le_rfl, hx⟩⟩, rfl⟩
+      · omega
+    · rcases hy with ⟨hjk', hy⟩ | ⟨hjk', hy⟩
+      · exact ⟨y, ⟨j, hj, Or.inl ⟨by omega, hy⟩⟩, hfix j hj hjk y (Or.inr hy)⟩
+      · exact ⟨y, ⟨j, hj, Or.inr ⟨by omega, hy⟩⟩, hfix j hj hjk y (Or.inl hy)⟩
 
 /-- The inscribed polygon with `n` vertices of a continuous `T`-periodic curve `γ` is ambient
 isotopic to `γ`, provided the mesh `T / n` is fine compared with the window `4 δ` on which some
@@ -1193,49 +1233,8 @@ private theorem exists_ambientIsotopy_image_inscribed_of_mesh {n : ℕ} (hn : 0 
     · rintro ⟨i, hx⟩
       exact ⟨i, i.2, Or.inl ⟨i.2, by rwa [add_mul, one_mul] at hx⟩⟩
   -- Straightening the arc over the step `k` carries `C k` onto `C (k + 1)`.
-  have step (k : ℕ) (hk : k < n) : ∃ Ψ : TauCeti.AmbientIsotopy E, Ψ.final '' C k = C (k + 1) := by
-    have hkT : k * h + h ≤ T := by
-      have : (k : ℝ) + 1 ≤ n := by exact_mod_cast hk
-      nlinarith
-    have hk0 : 0 ≤ k * h := by positivity
-    obtain ⟨φ, hφ⟩ := hmono (k * h - 2 * δ) ⟨by linarith, by linarith⟩
-    have hφ' : StrictMonoOn (fun t ↦ φ (γ t)) (Icc (k * h - 2 * δ) (k * h + 2 * δ)) :=
-      hφ.mono (Icc_subset_Icc le_rfl (by linarith))
-    obtain ⟨Ψ, himg, hsupp⟩ := TauCeti.AmbientIsotopy.exists_final_image_eq_segment
-      (by linarith : k * h < k * h + h) hγ.continuousOn
-      (hφ'.mono (Icc_subset_Icc (by linarith) (by linarith))) (D := K * h) fun s hs ↦ by
-        have := hK.dist_le_mul s ⟨by linarith [hs.1], by linarith [hs.2]⟩ (k * h) ⟨hk0, by linarith⟩
-        rw [dist_eq_norm, dist_eq_norm, Real.norm_of_nonneg (by linarith [hs.1])] at this
-        exact this.trans (by gcongr; linarith [hs.2])
-    have hfix (j : ℕ) (hj : j < n) (hjk : j ≠ k) (x : E)
-        (hx : x ∈ γ '' Icc (j * h) (j * h + h) ∪ segment ℝ (γ (j * h)) (γ (j * h + h))) :
-        Ψ.final x = x := by
-      by_contra hne
-      exact notMem_straightenRegion hj hk hjk hT hper hh hnh hhδ hKη hK hsep hφ' hx
-        (hsupp 1 x (by rwa [← TauCeti.AmbientIsotopy.final_apply]))
-    refine ⟨Ψ, ?_⟩
-    ext y
-    refine ⟨?_, ?_⟩
-    · rintro ⟨x, ⟨j, hj, hx⟩, rfl⟩
-      rcases eq_or_ne j k with rfl | hjk
-      · rcases hx with ⟨hjj, -⟩ | ⟨-, hx⟩
-        · exact absurd hjj (lt_irrefl j)
-        · exact ⟨j, hj, Or.inl ⟨j.lt_succ_self, himg ▸ mem_image_of_mem _ hx⟩⟩
-      · rcases hx with ⟨hjk', hx⟩ | ⟨hjk', hx⟩
-        · rw [hfix j hj hjk x (Or.inr hx)]
-          exact ⟨j, hj, Or.inl ⟨by omega, hx⟩⟩
-        · rw [hfix j hj hjk x (Or.inl hx)]
-          exact ⟨j, hj, Or.inr ⟨by omega, hx⟩⟩
-    · rintro ⟨j, hj, hy⟩
-      rcases eq_or_ne j k with rfl | hjk
-      · rcases hy with ⟨-, hy⟩ | ⟨hjj, -⟩
-        · rw [← himg] at hy
-          obtain ⟨x, hx, rfl⟩ := hy
-          exact ⟨x, ⟨j, hj, Or.inr ⟨le_rfl, hx⟩⟩, rfl⟩
-        · omega
-      · rcases hy with ⟨hjk', hy⟩ | ⟨hjk', hy⟩
-        · exact ⟨y, ⟨j, hj, Or.inl ⟨by omega, hy⟩⟩, hfix j hj hjk y (Or.inr hy)⟩
-        · exact ⟨y, ⟨j, hj, Or.inr ⟨by omega, hy⟩⟩, hfix j hj hjk y (Or.inl hy)⟩
+  have step (k : ℕ) (hk : k < n) : ∃ Ψ : TauCeti.AmbientIsotopy E, Ψ.final '' C k = C (k + 1) :=
+    exists_ambientIsotopy_final_image_step hk hT hγ hper hh hnh hhδ hδT hKη hmono hK hsep
   -- Compose the straightenings of the arcs over all `n` steps.
   have hstage (k : ℕ) (hk : k ≤ n) : ∃ Φ : TauCeti.AmbientIsotopy E, Φ.final '' range γ = C k := by
     induction k with
