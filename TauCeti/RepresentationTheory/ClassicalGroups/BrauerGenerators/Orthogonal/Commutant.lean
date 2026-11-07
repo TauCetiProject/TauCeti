@@ -138,12 +138,6 @@ private theorem apply_comp_perm_eq
   simp only [submatrix_apply, Equiv.symm_apply_apply, id_eq] at h'
   simpa only [hpi] using h'
 
-/-- Any two ordered pairs of distinct indices are related by a permutation. -/
-private theorem exists_perm_apply_eq_of_ne {a b : Fin n} (hab : a ≠ b) (c d : Fin n)
-    (hcd : c ≠ d) : ∃ σ : Equiv.Perm (Fin n), σ a = c ∧ σ b = d :=
-  (exists_pair_perm_fixed (s := ∅) hab hcd (by simp) (by simp) (by simp) (by simp)).imp
-    fun _ h ↦ h.2
-
 /-- A matrix commuting with the Kronecker squares of the permutation matrices takes the same value
 at two pairs of index patterns related by a common renaming of the indices. -/
 private theorem apply_eq_apply_of_perm_apply

@@ -475,6 +475,12 @@ theorem exists_pair_perm_fixed {α : Type*} {s : Set α}
     exact Equiv.swap_apply_of_ne_of_ne hτji'.symm hi'j'
   · rw [Equiv.trans_apply, Equiv.swap_apply_left]
 
+/-- Any two ordered pairs of distinct points are related by a permutation. -/
+theorem exists_perm_apply_eq_of_ne {α : Type*} {a b : α} (hab : a ≠ b) (c d : α)
+    (hcd : c ≠ d) : ∃ σ : Equiv.Perm α, σ a = c ∧ σ b = d :=
+  (exists_pair_perm_fixed (s := ∅) hab hcd (by simp) (by simp) (by simp) (by simp)).imp
+    fun _ h ↦ h.2
+
 /-- Two points lie in the same orbit of an involution exactly when they are equal or one is the
 image of the other. -/
 theorem sameCycle_toPerm_iff {α : Type*} (f : α → α) (hf : Function.Involutive f) (a b : α) :
