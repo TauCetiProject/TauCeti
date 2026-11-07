@@ -83,7 +83,6 @@ private noncomputable def heckeSlashUpperTriModularForm (hpN : p ∣ N)
   toFun := heckeSlashUpperTri k p f
   slash_action_eq' γ hγ := by
     obtain ⟨δ, hδ, rfl⟩ := Subgroup.mem_map.mp hγ
-    let _ : NeZero p := NeZero.of_dvd hpN
     rw [← ModularForm.rat_slash_mapGL]
     exact heckeSlashUpperTri_slash_mapGL_of_mem_Gamma1 k hpN hδ
       fun _ hε ↦ SlashInvariantFormClass.slash_eq_of_mem_map_mapGL f (Subgroup.mem_map_of_mem _ hε)
