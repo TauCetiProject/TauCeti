@@ -128,4 +128,11 @@ theorem integralTopForm_add (o : Manifold.Orientation I M (Fin k))
   exact integralTopForm_add_of_integrable o
     (hφ.integrableTopForm hcφ b) (hψ.integrableTopForm hcψ b)
 
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- On a compact manifold, the oriented integral is additive for C0 top forms. -/
+theorem integralTopForm_add_of_compactSpace [CompactSpace M] (o : Manifold.Orientation I M (Fin k))
+    {ψ : RoughForm I M ℝ k} (hφ : IsSmoothForm I 0 φ) (hψ : IsSmoothForm I 0 ψ) :
+    integralTopForm o (φ + ψ) = integralTopForm o φ + integralTopForm o ψ :=
+  integralTopForm_add o hφ hψ (isClosed_tsupport _).isCompact (isClosed_tsupport _).isCompact
+
 end TauCeti

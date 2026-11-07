@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Projection
 public import TauCeti.Geometry.Manifold.Orientation.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
+public import TauCeti.Geometry.Symplectic.Manifold.Orientation
 public import TauCeti.Geometry.Symplectic.Manifold.Suspension.Basic
 
 /-!
@@ -499,24 +500,9 @@ theorem mpullback_mpullback_snd_fiberForm_apply_basis_nonneg [FiniteDimensional 
         (fiberForm φ σ hσ)) (u c) v (J (u c) v))
     (b : Basis (Fin 2) ℝ (TangentSpace I' c)) (hb : b.orientation = o.orientationAt c) :
     0 ≤ (SmoothForm.mpullback u hu
-      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).1 c b := by
-  set α := (SmoothForm.mpullback u hu
-    (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).1 c
-  -- The frame `b₀ = (b 0, j (b 0))`.
-  set b₀ := basisOfLinearIndependentOfCardEqFinrank
-    ((j.almostComplexStructureAt c).linearIndependent_pair (b.ne_zero 0))
-    (by simpa using (o.finrank_tangentSpace_eq c).symm)
-  have hb₀ : ⇑b₀ = ![b 0, j c (b 0)] := by
-    rw [coe_basisOfLinearIndependentOfCardEqFinrank,
-      SmoothAlmostComplexStructure.almostComplexStructureAt_apply]
-  -- A top form on the plane is its value on the frame `b₀` times `det_{b₀}`.
-  have hα : α b = α b₀ * b₀.det b := by
-    simpa using congrArg (fun f ↦ f b) (α.toAlternatingMap.eq_smul_basis_det b₀)
-  rw [hα]
-  refine mul_nonneg ?_ ((b₀.orientation_eq_iff_det_pos b).1 ?_).le
-  · rw [hb₀, ← SmoothBundleForm.eval₂_apply]
-    exact eval₂_mpullback_mpullback_snd_fiberForm_apply_nonneg hhol hu hS hV htame _
-  · rw [hb, ho c b₀ (by rw [hb₀]; simp)]
+      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).1 c b :=
+  SmoothTwoForm.apply_nonneg_of_eval₂_nonneg _ (ho c)
+    (eval₂_mpullback_mpullback_snd_fiberForm_apply_nonneg hhol hu hS hV htame) b hb
 
 end SmoothMappingTorus
 
