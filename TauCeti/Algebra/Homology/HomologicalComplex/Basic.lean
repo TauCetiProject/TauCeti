@@ -51,7 +51,8 @@ In an abelian category, the map from the opcycles in degree `i` to the cycles in
 isomorphism when the complex is exact in both degrees (`HomologicalComplex.isIso_opcyclesToCycles`).
 For chain complexes indexed by the natural numbers, the identification of zero chains with
 cycles is natural (`ChainComplex.cycles₀Iso_inv_naturality`), and so is the passage from zero
-chains to zeroth homology (`ChainComplex.pOpcycles_comp_isoHomologyι₀_inv_comp_homologyMap`).
+chains to zeroth homology (`ChainComplex.cycles₀Iso_inv_comp_homologyπ_comp_homologyMap` and
+`ChainComplex.pOpcycles_comp_isoHomologyι₀_inv_comp_homologyMap`).
 The isomorphisms `homologyIsoSc'`
 are natural (`HomologicalComplex.homologyMap_comp_homologyIsoSc'_hom`), and exactness in a degree
 is the vanishing of the homology of the short complex `sc'` there
@@ -428,6 +429,14 @@ lemma cycles₀Iso_inv_naturality (φ : K ⟶ L) :
       φ.f 0 ≫ L.cycles₀Iso.inv := by
   apply (cancel_mono (L.iCycles 0)).1
   simp
+
+/-- The passage from degree-zero chains to degree-zero homology, through the identification of
+degree-zero chains with cycles, is natural. -/
+@[reassoc]
+lemma cycles₀Iso_inv_comp_homologyπ_comp_homologyMap (φ : K ⟶ L) :
+    K.cycles₀Iso.inv ≫ K.homologyπ 0 ≫ HomologicalComplex.homologyMap φ 0 =
+      φ.f 0 ≫ L.cycles₀Iso.inv ≫ L.homologyπ 0 := by
+  rw [HomologicalComplex.homologyπ_naturality, reassoc_of% cycles₀Iso_inv_naturality]
 
 /-- The passage from degree-zero chains to degree-zero homology, through the identification of
 the homology with the opcycles, is natural. -/

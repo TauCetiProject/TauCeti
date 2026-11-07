@@ -97,29 +97,6 @@ theorem loopHomologyZeroπ_surjective : Function.Surjective (loopHomologyZeroπ 
   let K := (normalizedCubicalChainComplex R).obj (TopCat.of (MooreLoopSpace X x))
   exact (ModuleCat.epi_iff_surjective (K.cycles₀Iso.inv ≫ K.homologyπ 0)).mp (by infer_instance)
 
-private theorem loopHomologyZeroπ_compare
-    (a : NormalizedCubicalChain (MooreLoopSpace X x) R 0) :
-    (singularCubicalHomologyIso R (TopCat.of (MooreLoopSpace X x)) 0).inv
-        (loopHomologyZeroπ X x R a) =
-      let L := (TopCat.toSSet.obj (TopCat.of (MooreLoopSpace X x))).chainComplex
-        (ModuleCat.of R R)
-      (L.cycles₀Iso.inv ≫ L.homologyπ 0)
-        (((cubicalToSingular R).app (TopCat.of (MooreLoopSpace X x))).f 0 a) := by
-  let K := (normalizedCubicalChainComplex R).obj (TopCat.of (MooreLoopSpace X x))
-  let L := (TopCat.toSSet.obj (TopCat.of (MooreLoopSpace X x))).chainComplex
-        (ModuleCat.of R R)
-  let φ : K ⟶ L := (cubicalToSingular R).app (TopCat.of (MooreLoopSpace X x))
-  let a' : K.X 0 := a
-  rw [singularCubicalHomologyIso_inv, loopHomologyZeroπ]
-  -- Name the actual categorical carriers before rewriting compositions: the zero-chain
-  -- carrier is presented by the cubical chain-complex functor.
-  change (HomologicalComplex.homologyMap φ 0)
-      ((K.cycles₀Iso.inv ≫ K.homologyπ 0) a') =
-    (L.cycles₀Iso.inv ≫ L.homologyπ 0) (φ.f 0 a')
-  rw [← ModuleCat.comp_apply, Category.assoc, HomologicalComplex.homologyπ_naturality,
-    ← Category.assoc, ChainComplex.cycles₀Iso_inv_naturality]
-  rfl
-
 /-- A zero-dimensional cube of a Moore loop projects to its fundamental-group basis element. -/
 @[simp]
 theorem loopZeroChainToGroupAlgebra_ofCube (c : SingularCube (MooreLoopSpace X x) 0) :
@@ -129,25 +106,31 @@ theorem loopZeroChainToGroupAlgebra_ofCube (c : SingularCube (MooreLoopSpace X x
   rw [SingularCube.eq_point c, SingularCube.point_apply]
   let γ := c fun i ↦ i.elim0
   let T := TopCat.of (MooreLoopSpace X x)
-  let L := (TopCat.toSSet.obj T).chainComplex (ModuleCat.of R R)
-  let σ := (TopCat.toSSetObj₀Equiv (X := T)).symm γ
   -- First compute the singular homology class through the cubical comparison.
-  have hv : (TopCat.toSSet.obj T).ιChainComplex (R := ModuleCat.of R R) σ ≫
-      L.cycles₀Iso.inv = L.liftCycles
-        ((TopCat.toSSet.obj T).ιChainComplex (R := ModuleCat.of R R) σ) 0
-        (by simp) (by simp) := by
-    apply (cancel_mono (L.iCycles 0)).1
-    simp only [Category.assoc, HomologicalComplex.iCyclesIso_inv_hom_id,
-      HomologicalComplex.liftCycles_i]
-    exact Category.comp_id _
   have hπ : (T.singularHomology₀Iso (ModuleCat.of R R)).hom
-      ((L.cycles₀Iso.inv ≫ L.homologyπ 0) (simplexChain σ 1)) =
+      ((singularCubicalHomologyIso R T 0).inv
+        (loopHomologyZeroπ X x R (NormalizedCubicalChain.ofCube T R (SingularCube.point γ)))) =
       (Sigma.ι (fun _ : ZerothHomotopy T ↦ ModuleCat.of R R) (.mk γ)) 1 := by
-    have vertex := singularHomology₀Section_singularHomology₀Iso_hom
-      (X := T) (ModuleCat.of R R) γ
-    rw [singularHomology₀Section_def, SSet.ιHomology₀_eq, ← hv] at vertex
-    exact congrArg (fun f : ModuleCat.of R R ⟶
-      ∐ (fun _ : ZerothHomotopy T ↦ ModuleCat.of R R) ↦ f.hom 1) vertex
+    -- Unfold `loopHomologyZeroπ` to the class of the zero-cycle of the point chain.
+    change (T.singularHomology₀Iso (ModuleCat.of R R)).hom
+        ((singularCubicalHomologyIso R T 0).inv
+          (((normalizedCubicalChainComplex R).obj T).homologyπ 0
+            (((normalizedCubicalChainComplex R).obj T).cycles₀Iso.inv
+              ((normalizedCubicalChainComplexXEquiv T 0).symm
+                (NormalizedCubicalChain.ofCube T R (SingularCube.point γ)))))) = _
+    -- The zero-cycle of the point chain is the point cycle `cubicalCycleOfPoint R γ`.
+    have hz : ((normalizedCubicalChainComplex R).obj T).cycles₀Iso.inv
+        ((normalizedCubicalChainComplexXEquiv T 0).symm
+          (NormalizedCubicalChain.ofCube T R (SingularCube.point γ))) =
+        cubicalCycleOfPoint R γ := by
+      apply HomologicalComplex.moduleCat_iCycles_injective
+      rw [iCycles_cubicalCycleOfPoint, ← ModuleCat.comp_apply,
+        HomologicalComplex.iCyclesIso_inv_hom_id, ModuleCat.id_apply]
+    rw [hz, ← singularCubicalHomologyIso_hom_singularHomology₀Section]
+    refine (congrArg (T.singularHomology₀Iso (ModuleCat.of R R)).hom.hom
+      (Iso.hom_inv_id_apply (singularCubicalHomologyIso R T 0) _)).trans ?_
+    exact ConcreteCategory.congr_hom
+      (singularHomology₀Section_singularHomology₀Iso_hom (X := T) (ModuleCat.of R R) γ) 1
   -- Next reindex the component coproduct by fundamental-group classes and realize it
   -- as finitely supported coefficients, using the coproduct universal property.
   have hg : Sigma.ι (fun _ : ZerothHomotopy T ↦ ModuleCat.of R R) (.mk γ) ≫
@@ -162,9 +145,8 @@ theorem loopZeroChainToGroupAlgebra_ofCube (c : SingularCube (MooreLoopSpace X x
   simp only [loopZeroChainToGroupAlgebra, LinearMap.comp_apply,
     loopHomologyZeroIso, Iso.trans_hom, Iso.symm_hom, ModuleCat.hom_comp,
     LinearMap.comp_apply]
-  rw [loopHomologyZeroπ_compare, cubicalToSingular_app_f_zero_ofCube]
-  -- Use the concrete singular complex in the comparison's target; this is the same
-  -- carrier as the simplex class, avoiding instance inference through the functor wrapper.
+  -- Split the composite at the singular homology of `T`, whose carrier is presented by the
+  -- singular homology functor rather than by the singular chain complex.
   change (MonoidAlgebra.coeffLinearEquiv R).symm
       ((IsColimit.coconePointUniqueUpToIso
           (coproductIsCoproduct (fun _ : FundamentalGroup X x ↦ ModuleCat.of R R))
@@ -172,7 +154,9 @@ theorem loopZeroChainToGroupAlgebra_ofCube (c : SingularCube (MooreLoopSpace X x
         (((sigmaConst.obj (ModuleCat.of R R)).map
           (MooreLoopSpace.zerothHomotopyEquivFundamentalGroup x).toIso.hom).hom
           ((T.singularHomology₀Iso (ModuleCat.of R R)).hom
-            ((L.cycles₀Iso.inv ≫ L.homologyπ 0) (simplexChain σ 1))))) = _
+            ((singularCubicalHomologyIso R T 0).inv
+              (loopHomologyZeroπ X x R
+                (NormalizedCubicalChain.ofCube T R (SingularCube.point γ))))))) = _
   rw [hπ, ← ModuleCat.comp_apply, ← ModuleCat.comp_apply, reassoc_of% hg]
   exact congrArg (fun f : ModuleCat.of R R ⟶ ModuleCat.of R (FundamentalGroup X x →₀ R) ↦
     (MonoidAlgebra.coeffLinearEquiv R).symm (f.hom (1 : R)))
@@ -363,11 +347,8 @@ theorem loopHomologyZeroπ_map (f : C(X, Y)) (hf : f x = y)
   let φ : K ⟶ L := (normalizedCubicalChainComplex R).map
     (TopCat.ofHom (MooreLoopSpace.map f hf : C(_, _)))
   let a' : K.X 0 := a
-  have h : K.cycles₀Iso.inv ≫ K.homologyπ 0 ≫ HomologicalComplex.homologyMap φ 0 =
-      φ.f 0 ≫ L.cycles₀Iso.inv ≫ L.homologyπ 0 := by
-    rw [HomologicalComplex.homologyπ_naturality, ← Category.assoc,
-      ChainComplex.cycles₀Iso_inv_naturality, Category.assoc]
-  have h' := congrArg (fun g : K.X 0 ⟶ L.homology 0 ↦ g.hom a') h
+  have h' := congrArg (fun g : K.X 0 ⟶ L.homology 0 ↦ g.hom a')
+    (ChainComplex.cycles₀Iso_inv_comp_homologyπ_comp_homologyMap φ)
   -- Use the actual functor-object carriers when applying categorical composition equations.
   change (L.cycles₀Iso.inv ≫ L.homologyπ 0) (φ.f 0 a') =
     (HomologicalComplex.homologyMap φ 0) ((K.cycles₀Iso.inv ≫ K.homologyπ 0) a')
