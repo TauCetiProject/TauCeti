@@ -15,7 +15,6 @@ import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
-import Mathlib.MeasureTheory.Function.LpSpace.Complete
 
 /-!
 # The Poincaré–Wirtinger inequality on `W^{1,p}(Ω)`
