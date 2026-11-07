@@ -18,9 +18,11 @@ implementation. Likewise, `QuotientGroup.quotientKerEquivRange φ : G ⧸ φ.ker
 built with `MulEquiv.ofBijective` from `QuotientGroup.rangeKerLift`, and Mathlib states no
 evaluation rule for it.
 
-This file records the computation rules on classes, so that users never have to. The first is
-the group-theoretic counterpart of Mathlib's `RingHom.quotientKerEquivOfSurjective_apply_mk`;
-both belong beside their definitions in Mathlib.
+This file records these computation rules on classes, so that users never have to unfold the
+definitions. The first two are the group-theoretic counterparts of Mathlib's
+`RingHom.quotientKerEquivOfSurjective_apply_mk` and
+`RingHom.quotientKerEquivOfSurjective_symm_apply`; all three belong beside their definitions in
+Mathlib.
 
 ## Main statements
 
@@ -49,7 +51,7 @@ variable {G M : Type*} [Group G] [Group M] (φ : G →* M) (hφ : Function.Surje
   /-- The first isomorphism theorem for a surjective additive homomorphism sends the class of
   `g` to `φ g`. -/]
 theorem quotientKerEquivOfSurjective_apply_mk (g : G) :
-    _root_.QuotientGroup.quotientKerEquivOfSurjective φ hφ (_root_.QuotientGroup.mk g) = φ g :=
+    QuotientGroup.quotientKerEquivOfSurjective φ hφ g = φ g :=
   rfl
 
 /-- The inverse of the first isomorphism theorem sends `φ g` to the class of `g`. -/
@@ -57,19 +59,15 @@ theorem quotientKerEquivOfSurjective_apply_mk (g : G) :
   TauCeti.QuotientAddGroup.quotientKerEquivOfSurjective_symm_apply
   /-- The inverse of the additive first isomorphism theorem sends `φ g` to the class of `g`. -/]
 theorem quotientKerEquivOfSurjective_symm_apply (g : G) :
-    (_root_.QuotientGroup.quotientKerEquivOfSurjective φ hφ).symm (φ g) =
-      _root_.QuotientGroup.mk g := by
-  simpa only [quotientKerEquivOfSurjective_apply_mk] using
-    (_root_.QuotientGroup.quotientKerEquivOfSurjective φ hφ).symm_apply_apply
-      (_root_.QuotientGroup.mk g)
+    (QuotientGroup.quotientKerEquivOfSurjective φ hφ).symm (φ g) = (g : G ⧸ φ.ker) :=
+  (MulEquiv.symm_apply_eq _).2 rfl
 
 /-- The first isomorphism theorem onto the range sends the class of `g` to `φ g`. -/
 @[to_additive (attr := simp) TauCeti.QuotientAddGroup.quotientKerEquivRange_apply_mk
   /-- The first isomorphism theorem onto the range of an additive homomorphism sends the class
   of `g` to `φ g`. -/]
 theorem quotientKerEquivRange_apply_mk (g : G) :
-    _root_.QuotientGroup.quotientKerEquivRange φ (_root_.QuotientGroup.mk g) =
-      ⟨φ g, g, rfl⟩ :=
+    QuotientGroup.quotientKerEquivRange φ g = ⟨φ g, g, rfl⟩ :=
   rfl
 
 end QuotientGroup
