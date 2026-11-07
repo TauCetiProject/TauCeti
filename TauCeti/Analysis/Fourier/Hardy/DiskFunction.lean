@@ -108,7 +108,7 @@ theorem diskFunction_add (y : HardySpace) (hw : ‖w‖ < 1) :
   simp only [← hardyBasis_repr, ← add_mul] at h
   simpa only [← hardyBasis_repr, map_add, lp.coeFn_add, Pi.add_apply] using h
 
-/-- The disk function depends linearly on the Hardy function. -/
+/-- The disk function commutes with scalar multiplication at every point. -/
 theorem diskFunction_smul (c : ℂ) :
     (c • x).diskFunction w = c * x.diskFunction w := by
   simp only [diskFunction, ← hardyBasis_repr, map_smul, lp.coeFn_smul, Pi.smul_apply,
