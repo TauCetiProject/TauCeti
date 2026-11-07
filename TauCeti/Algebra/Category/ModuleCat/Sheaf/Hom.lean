@@ -182,24 +182,39 @@ theorem linearHomObjEquiv_map_app {U V W : C} (f : V ⟶ U) (g : W ⟶ V)
         ((linearHomObjEquiv M N U φ).val.app (op (Over.mk (g ≫ f)))) m :=
   M.val.linearHomObjEquiv_map_app N f g φ m
 
+/-- The local section attached to the restriction `φ.over U` is the section of `presheafHom`
+that Mathlib's `presheafHomSectionsEquiv` attaches to `φ`, read over `U`. -/
+private theorem val_linearHomObjEquiv_symm_over (φ : M ⟶ N) (U : Cᵒᵖ) :
+    ((linearHomObjEquiv M N U.unop).symm (φ.over U.unop)).val =
+      ((presheafHomSectionsEquiv M.val.presheaf N.val.presheaf).symm
+        ((PresheafOfModules.toPresheaf _).map φ.val)).val U :=
+  rfl
+
 /-- Global sections of the linear Hom sheaf are morphisms of sheaves of modules. -/
 def linearHomSectionsEquiv : (M.val.linearHom N).obj.sections ≃ (M ⟶ N) where
   toFun s := ⟨PresheafOfModules.homMk
     (presheafHomSectionsEquiv M.val.presheaf N.val.presheaf
       ⟨fun U ↦ (s.val U).val, fun f ↦ congrArg Subtype.val (s.property f)⟩)
     (fun U ↦ (s.val U).property (Over.mk (𝟙 U.unop)))⟩
-  -- The restriction `φ.over U` forgets to the whiskering of `φ` along `Over.forget U`, so
-  -- compatibility is that of the section of `presheafHom` attached to `φ`.
-  invFun φ := ⟨fun U ↦ (linearHomObjEquiv M N U.unop).symm (φ.over U.unop), fun f ↦
-    Subtype.ext (((presheafHomSectionsEquiv M.val.presheaf N.val.presheaf).symm
-      ((PresheafOfModules.toPresheaf _).map φ.val)).property f)⟩
-  left_inv s := Subtype.ext <| funext fun U ↦ Subtype.ext <| congrArg (·.val U)
-    ((presheafHomSectionsEquiv M.val.presheaf N.val.presheaf).left_inv
-      ⟨fun U ↦ (s.val U).val, fun f ↦ congrArg Subtype.val (s.property f)⟩)
+  invFun φ := ⟨fun U ↦ (linearHomObjEquiv M N U.unop).symm (φ.over U.unop), fun {U V} f ↦
+    Subtype.ext <|
+      (congrArg ((presheafHom M.val.presheaf N.val.presheaf).map f)
+        (val_linearHomObjEquiv_symm_over M N φ U)).trans <|
+        (((presheafHomSectionsEquiv M.val.presheaf N.val.presheaf).symm
+          ((PresheafOfModules.toPresheaf _).map φ.val)).property f).trans
+          (val_linearHomObjEquiv_symm_over M N φ V).symm⟩
+  left_inv s := Subtype.ext <| funext fun U ↦ Subtype.ext <|
+    (val_linearHomObjEquiv_symm_over M N _ U).trans <| congrArg (·.val U)
+      ((presheafHomSectionsEquiv M.val.presheaf N.val.presheaf).left_inv
+        ⟨fun U ↦ (s.val U).val, fun f ↦ congrArg Subtype.val (s.property f)⟩)
   right_inv φ := by
     ext U m
-    -- Reading `φ` restricted to the slice over `U` at the identity slice gives `φ`'s component.
-    rfl
+    -- `toFun` reads the section attached to `φ` at the identity slice; by the identification
+    -- lemma that section is Mathlib's, so this is Mathlib's inverse law.
+    exact (congrArg (fun ψ ↦ ψ.app (op (Over.mk (𝟙 U.unop))) m)
+      (val_linearHomObjEquiv_symm_over M N φ U)).trans <| congrArg (fun ψ ↦ ψ.app U m)
+        ((presheafHomSectionsEquiv M.val.presheaf N.val.presheaf).right_inv
+          ((PresheafOfModules.toPresheaf _).map φ.val))
 
 /-- The morphism associated to a global Hom section is read at the identity of each slice. -/
 @[simp]
