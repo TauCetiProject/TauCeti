@@ -140,7 +140,6 @@ theorem exists_homeomorph_morseTrajectoryPairs (hf : MDifferentiable 𝓘(ℝ, E
     ∃ Φ : hX.morseTrajectoryPairs p r c₁ c₂ ≃ₜ
         ↥(hX.flow.unstableSet p ∩ hX.flow.stableSet r ∩ {y | f y = c₁}),
       ∀ w, (Φ w : M) = (w : M × M).1 := by
-  have := Manifold.metrizableSpace 𝓘(ℝ, E) M
   -- The orbit of each point of the slice meets the level `c₂` at a unique time `τ y`.
   have hτ (y : ↥(hX.flow.unstableSet p ∩ hX.flow.stableSet r ∩ {y | f y = c₁})) :
       ∃! t, f (hX.flow t y) = c₂ :=
@@ -148,11 +147,10 @@ theorem exists_homeomorph_morseTrajectoryPairs (hf : MDifferentiable 𝓘(ℝ, E
   choose τ hτ' using fun y ↦ (hτ y).exists
   -- The point of the level `c₂` depends continuously on the point of the level `c₁`.
   have hg : Continuous fun y ↦ hX.flow (τ y) (y : M) := by
-    refine continuous_iff_seqContinuous.2 fun v y hv ↦ tendsto_of_subseq_tendsto fun ns hns ↦ ?_
-    obtain ⟨σ, φ, -, hσ, hlim⟩ := hX.exists_subseq_tendsto_flow_of_tendsto hf y.2.1 hr₂ h₂p
-      ((continuous_subtype_val.tendsto y).comp (hv.comp hns))
-      (s := fun k ↦ τ (v (ns k))) fun k ↦ hτ' _
-    exact ⟨φ, (hτ y).unique hσ (hτ' y) ▸ hlim⟩
+    refine continuous_iff_continuousAt.2 fun y ↦ ?_
+    obtain ⟨σ, hσ, hlim⟩ := hX.exists_tendsto_flow_of_tendsto hf y.2.1 hr₂ h₂p
+      (continuous_subtype_val.tendsto y) (s := τ) hτ'
+    rwa [(hτ y).unique hσ (hτ' y)] at hlim
   refine ⟨
     { toFun w := ⟨w.1.1, w.2.1, w.2.2.1⟩
       invFun y := ⟨(y.1, hX.flow (τ y) y.1), y.2.1, y.2.2, hτ' y, τ y, rfl⟩
@@ -314,10 +312,10 @@ theorem closure_morseTrajectoryPairs_subset {p r : M} (hp : mfderiv 𝓘(ℝ, E)
   obtain rfl : y = w.1 := tendsto_nhds_unique hyv (hv₁w.comp hn.tendsto_atTop)
   rcases hcases with hy | ⟨q, z, t, hq, hpq, hqr, hz, hcases⟩
   · -- The limit is unbroken; its second point is where its orbit meets the level `c₂`.
-    obtain ⟨σ, φ, hφ, hσ, hlim⟩ := hX.exists_subseq_tendsto_flow_of_tendsto hdf hy hr₂
+    obtain ⟨σ, hσ, hlim⟩ := hX.exists_tendsto_flow_of_tendsto hdf hy hr₂
       (h₂₁.trans h₁p) hyv (s := fun k ↦ s (n k)) fun k ↦ (hs (n k)).symm ▸ hv₂ (n k)
     have hw₂ : hX.flow σ w.1 = w.2 := tendsto_nhds_unique hlim (by
-      simpa only [Function.comp_def, hs] using hv₂w.comp (hn.comp hφ).tendsto_atTop)
+      simpa only [Function.comp_def, hs] using hv₂w.comp hn.tendsto_atTop)
     exact Or.inl ⟨hy, hyc, hw₂ ▸ hσ, σ, hw₂⟩
   have hpq' : p ≠ q := by rintro rfl; omega
   have hqr' : q ≠ r := by rintro rfl; omega
@@ -327,12 +325,12 @@ theorem closure_morseTrajectoryPairs_subset {p r : M} (hp : mfderiv 𝓘(ℝ, E)
     have hfy := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hdf hpq' hy
     have hfz := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hdf hqr' hz'
     have hq₂ := (hgap q hqc ⟨hfz.1.trans hfz.2, hfy.2.trans' hfy.1⟩).1
-    obtain ⟨σ, φ, hφ, hσ, hlim⟩ := hX.exists_subseq_tendsto_flow_of_tendsto hdf hz' hr₂ hq₂ hz
+    obtain ⟨σ, hσ, hlim⟩ := hX.exists_tendsto_flow_of_tendsto hdf hz' hr₂ hq₂ hz
       (s := fun k ↦ s (n k) - t k) fun k ↦ by
         rw [← Flow.map_add, sub_add_cancel, hs, hv₂]
     have hw₂ : hX.flow σ z = w.2 := tendsto_nhds_unique hlim (by
       simpa only [Function.comp_def, ← Flow.map_add, sub_add_cancel, hs] using
-        hv₂w.comp (hn.comp hφ).tendsto_atTop)
+        hv₂w.comp hn.tendsto_atTop)
     exact Or.inr ⟨q, hq, hpq, hqr, hy, hyc,
       hw₂ ▸ hX.flow.isInvariant_unstableSet_inter_stableSet q r σ hz', hw₂ ▸ hσ⟩
   · -- A point of the level `c₁` cannot lie after the break at `q`, which is below `c₁`.
