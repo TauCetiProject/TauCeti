@@ -9,6 +9,8 @@ public import Mathlib.Analysis.Fourier.FourierTransform
 public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 public import TauCeti.NumberTheory.LSeries.Continuity
 
+import TauCeti.Analysis.Fourier.RiemannLebesgue
+
 /-!
 # Fourier identities for Wiener--Ikehara
 
@@ -238,13 +240,6 @@ theorem integral_exp_mul_fourier_eq (hpsi : Integrable psi) (hx : 0 < x) (hsigma
 
 /-! ### Subtracting the pole -/
 
-private lemma continuous_cpow_mul_I (hx : 0 < x) : Continuous fun t : ℝ ↦ (x : ℂ) ^ (t * I) :=
-  continuous_const.cpow (continuous_ofReal.mul continuous_const) (by simp [hx])
-
-private lemma norm_cpow_mul_I (hx : 0 < x) (t : ℝ) : ‖(x : ℂ) ^ (t * I)‖ = 1 := by
-  rw [Complex.norm_cpow_eq_rpow_re_of_pos hx]
-  simp
-
 /-- The integrand of the Dirichlet-series side is integrable once `psi` is: the series is bounded
 on the line `Re s = sigma` by its absolutely convergent value. -/
 private lemma integrable_LSeries_mul_mul_cpow (hpsi : Integrable psi) (hx : 0 < x)
@@ -264,28 +259,6 @@ private lemma integrable_LSeries_mul_mul_cpow (hpsi : Integrable psi) (hx : 0 < 
   exact (hpsi.bdd_mul (f := fun t : ℝ ↦ LSeries a ((sigma : ℂ) + t * I) * (x : ℂ) ^ (t * I))
     (hsigmaSum.continuous_LSeries_vertical.mul (continuous_cpow_mul_I hx)).aestronglyMeasurable
     (.of_forall hLbound)).congr (.of_forall fun t ↦ by ring)
-
-/-- The simple-pole integrand `1 / (s - 1) * psi * x ^ (i t)` on the line `Re s = sigma > 1` is
-integrable once `psi` is: the pole factor is bounded by `(sigma - 1)⁻¹`. -/
-private lemma integrable_inv_sub_one_mul_mul_cpow (hpsi : Integrable psi) (hx : 0 < x)
-    (hsigma : 1 < sigma) :
-    Integrable fun t : ℝ ↦ (1 / (sigma + t * I - 1)) * psi t * x ^ (t * I) := by
-  have hdenom (t : ℝ) : (sigma : ℂ) + t * I - 1 ≠ 0 := by
-    intro h
-    have hre := congrArg Complex.re h
-    simp at hre
-    linarith
-  have hpolebound (t : ℝ) :
-      ‖1 / ((sigma : ℂ) + t * I - 1) * (x : ℂ) ^ (t * I)‖ ≤ (sigma - 1)⁻¹ := by
-    rw [norm_mul, norm_cpow_mul_I hx, mul_one, norm_div, norm_one, one_div]
-    refine inv_anti₀ (by linarith) ?_
-    calc
-      sigma - 1 = ((sigma : ℂ) + t * I - 1).re := by simp
-      _ ≤ _ := re_le_norm _
-  exact (hpsi.bdd_mul (f := fun t : ℝ ↦ 1 / ((sigma : ℂ) + t * I - 1) * (x : ℂ) ^ (t * I))
-    ((continuous_const.div (by fun_prop) hdenom).mul
-      (continuous_cpow_mul_I hx)).aestronglyMeasurable (.of_forall hpolebound)).congr
-    (.of_forall fun t ↦ by ring)
 
 /-- Subtracting the simple-pole Fourier identity from the Dirichlet-series identity leaves exactly
 the integral of the pole-subtracted remainder `G`. Only the values of `G` on the vertical line
