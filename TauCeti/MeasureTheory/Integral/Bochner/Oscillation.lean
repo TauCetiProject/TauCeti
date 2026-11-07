@@ -16,10 +16,11 @@ Let `f : ℝ → E` be a function into a normed space, `S` a subset of an interv
 an integrable function on `(a, b)`. Suppose that on every subinterval `(α, β)` some point `s'` of
 `S ∩ (α, β)` has `‖f s - f s'‖² ≤ ∫_{(α, β)} G` for all `s ∈ S ∩ (α, β)`. Since the integral of
 `G` over a short interval is small, `S` is dense in `[a, b]` and the oscillation of `f` on `S`
-near every point of `[a, b]` tends to zero. Consequently `f` has a limit along `S` at each point
-of `[a, b]`, and extends continuously from `S` to `[a, b]`. This is the step that produces a
-continuous representative of a function known only almost everywhere, for example for the
-time-continuity of functions in a Gelfand triple.
+near every point of `[a, b]` tends to zero. Consequently, when `E` is complete, `f` has a limit
+along `S` at each point of `[a, b]`, and extends continuously from `S` to `[a, b]`. The file
+proves the density and the vanishing oscillation, which hold in any normed space. This is the step
+that produces a continuous representative of a function known only almost everywhere, for example
+for the time-continuity of functions in a Gelfand triple.
 
 ## Main results
 
