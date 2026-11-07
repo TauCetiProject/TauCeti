@@ -243,13 +243,14 @@ theorem exists_eq_smul_of_norm_trace_eq_finrank {f : End ℂ V} {n : ℕ}
     rw [hμ₀def, norm_div, h, Complex.norm_natCast]
     exact div_self (Nat.cast_ne_zero.2 hV.ne')
   have hall : ∀ μ ∈ E, μ = μ₀ :=
-    Complex.eq_of_sum_mul_eq_of_norm_eq_one (z := id) (N := finrank ℂ V) hnormμ₀
+    Complex.eq_of_sum_mul_eq_of_norm_eq_one (z := id)
+      (d := fun μ => (finrank ℂ (f.eigenspace μ) : ℝ)) hnormμ₀
       (fun μ hμ => by
         have := hasEigenvalue_iff.1 ((End.finite_hasEigenvalue f).mem_toFinset.1 hμ)
-        simpa [Submodule.finrank_eq_zero] using this)
+        exact Nat.cast_pos.2 (Nat.pos_of_ne_zero (by simpa [Submodule.finrank_eq_zero] using this)))
       (fun μ hμ => Complex.norm_eq_one_of_pow_eq_one
         (pow_eq_one_of_hasEigenvalue hf ((End.finite_hasEigenvalue f).mem_toFinset.1 hμ)) hn)
-      hdim (htrace.trans htμ₀)
+      (by simpa only [Complex.ofReal_natCast, id, hdim] using htrace.trans htμ₀)
   have hEne : E.Nonempty := by
     rcases Finset.eq_empty_or_nonempty E with hEmp | hne
     · rw [hEmp, Finset.sum_empty] at hdim
