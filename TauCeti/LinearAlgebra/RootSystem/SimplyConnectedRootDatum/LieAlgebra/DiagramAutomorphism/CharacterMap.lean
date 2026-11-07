@@ -83,6 +83,26 @@ theorem coe_scToralDiagramAutPoints (hσ : σ ∈ t.diagramSymmetry)
         A)⁻¹ :=
   coe_kostantNumberedSymmetryPoints _ _ _ _ A _ _ g
 
+/-- On matrices, the inverse full-weight diagram action is conjugation by the inverse lattice
+symmetry matrix. -/
+@[simp]
+theorem coe_scToralDiagramAutPoints_symm (hσ : σ ∈ t.diagramSymmetry)
+    (A : Type v) [CommRing A]
+    (g : kostantToralPointsSubgroup (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
+      (representation ℚ (t.lieAlgebra ht) (t.scModule ht)) (t.scLattice ht).toAddSubgroup
+      (t.kostantForm_apply_mem_scLattice ht)
+      (t.isNilpotent_representation_scModule_rootGenerator ht)
+      (t.scWeightBasis ht) (t.scWeight ht) A) :
+    ((t.scToralDiagramAutPoints ht hσ A).symm g :
+        Matrix.GeneralLinearGroup (Fin (t.scWeightBasisCard ht)) A) =
+      (kostantNumberedSymmetryMatrix (t.scLattice ht).toAddSubgroup (t.scWeightBasis ht)
+        (t.scModuleDiagramEquiv ht hσ) (fun _ => t.scModuleDiagramEquiv_mem_scLattice_iff ht hσ)
+        A)⁻¹ * g *
+      kostantNumberedSymmetryMatrix (t.scLattice ht).toAddSubgroup (t.scWeightBasis ht)
+        (t.scModuleDiagramEquiv ht hσ) (fun _ => t.scModuleDiagramEquiv_mem_scLattice_iff ht hσ)
+        A :=
+  coe_kostantNumberedSymmetryPoints_symm _ _ _ _ A _ _ g
+
 /-- On the full-weight toral closure, the pinned diagram action has character pullback equal
 to the weight map of the inverse diagram automorphism of the simply connected root datum. -/
 theorem isCharacterMap_scToralDiagramAutPoints (hσ : σ ∈ t.diagramSymmetry)
