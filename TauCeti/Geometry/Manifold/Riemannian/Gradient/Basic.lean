@@ -160,12 +160,11 @@ theorem mgradient_mul {g : M → ℝ} (hf : MDifferentiable I 𝓘(ℝ) f)
   simp only [add_apply, smul_apply, smul_eq_mul]
 
 /-- The gradient commutes with multiplication by a real constant. -/
-theorem mgradient_smul (c : ℝ) (hf : MDifferentiable I 𝓘(ℝ) f) :
+@[simp]
+theorem mgradient_smul (c : ℝ) :
     mgradient I (c • f) = c • mgradient I f := by
   funext x
-  simpa [mgradient, mvfderiv_const, Pi.smul_def, smul_eq_mul] using
-    congrArg (Riemannian.Tensor.rieszDual (I := I) x)
-      (mvfderiv_fun_smul (a := fun _ : M ↦ c) mdifferentiableAt_const (hf x))
+  simp [mgradient]
 
 /-- The gradient of `-f` is the opposite of the gradient of `f`. -/
 @[simp]
