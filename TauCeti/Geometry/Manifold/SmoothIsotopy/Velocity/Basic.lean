@@ -10,6 +10,8 @@ public import TauCeti.Geometry.Manifold.SmoothEmbedding.Extension
 public import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
+import TauCeti.Topology.Compactness.LocallyCompact
+import TauCeti.Geometry.Manifold.MFDeriv.Parametric
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import Mathlib.Geometry.Manifold.Instances.Icc
 
@@ -72,57 +74,37 @@ private theorem exists_section_eq_velocity {n m : ℕ∞} [IsManifold I n M] {G 
   have hn0 : (n : ℕ∞ω) ≠ 0 := fun h => absurd (hm'.trans hmn') (by simp [h])
   have : IsManifold I m M := .of_le hmn'
   have : IsManifold I 1 M := .of_le (hm'.trans hmn')
-  rcases isEmpty_or_nonempty M with hM | hM
-  · have := hM
-    exact ⟨0, ∅, by simp, fun _ _ => rfl, fun _ _ x _ => isEmptyElim x⟩
+  obtain hM | hM := isEmpty_or_nonempty M
+  · exact ⟨0, ∅, by simp, fun _ _ => rfl, fun _ _ x _ => isEmptyElim x⟩
   obtain ⟨x₀⟩ := hM
   have : FiniteDimensional ℝ E := FiniteDimensional.of_injective
     (mfderiv I J (fun x => G (0, x)) x₀).toLinearMap
     (((hslice 0).isImmersion.isImmersionAt x₀).isDiffImmersionAt hn0).mfderiv_injective
-  have : CompleteSpace E := FiniteDimensional.complete ℝ E
   have : LocallyCompactSpace H := I.locallyCompactSpace
   have : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace H M
   have : T2Space M := (hslice 0).isEmbedding.t2Space
   -- Restrict the injective track to a precompact open neighbourhood of the compact portion.
   let Γ : ℝ × M → ℝ × N := fun q => (q.1, G q)
   have hΓ : ContMDiff (𝓘(ℝ, ℝ).prod I) (𝓘(ℝ, ℝ).prod J) n Γ := contMDiff_fst.prodMk hG
-  have hΓinj : Injective Γ := by
-    rintro ⟨t, x⟩ ⟨s, y⟩ h
+  have hΓinj : Injective Γ := fun ⟨t, x⟩ ⟨s, y⟩ h => by
     obtain rfl : t = s := congrArg Prod.fst h
     exact Prod.ext rfl ((hslice t).isEmbedding.injective (congrArg Prod.snd h))
-  obtain ⟨W₀, hW₀, hAW, -, hcW⟩ := exists_open_between_and_isCompact_closure
-    (isCompact_Icc.prod hA : IsCompact (Icc c d ×ˢ A)) isOpen_univ (subset_univ _)
-  let W : TopologicalSpace.Opens (ℝ × M) := ⟨W₀, hW₀⟩
-  have : CompactSpace (closure W₀) := isCompact_iff_compactSpace.mp hcW
-  have hΓcl : IsEmbedding (fun q : closure W₀ => Γ q) :=
-    ((hΓ.continuous.comp continuous_subtype_val).isClosedEmbedding
-      (hΓinj.comp Subtype.val_injective)).isEmbedding
-  have hΓW : IsEmbedding (fun q : W => Γ q) :=
-    hΓcl.comp (IsEmbedding.inclusion (subset_closure : W₀ ⊆ closure W₀))
-  have hΓimm : ∀ q, IsImmersionAt (𝓘(ℝ, ℝ).prod I) (𝓘(ℝ, ℝ).prod J) m Γ q := fun q => by
-    have hq := ((hslice q.1).isImmersion.isImmersionAt q.2).isDiffImmersionAt hn0
-    exact (hG.of_le hmn').isImmersionAt_fst_prod hm' hq
+  obtain ⟨W, hAW, hΓW⟩ :=
+    hΓ.continuous.exists_opens_isEmbedding_restrict hΓinj (isCompact_Icc.prod hA)
+  have hΓimm : ∀ q, IsImmersionAt (𝓘(ℝ, ℝ).prod I) (𝓘(ℝ, ℝ).prod J) m Γ q := fun q =>
+    (hG.of_le hmn').isImmersionAt_fst_prod hm'
+      (((hslice q.1).isImmersion.isImmersionAt q.2).isDiffImmersionAt hn0)
   -- The velocity of the track: the image of the unit time vector under its differential.
   let v : (q : ℝ × M) → TangentSpace (𝓘(ℝ, ℝ).prod J) (Γ q) := fun q =>
     mfderiv (𝓘(ℝ, ℝ).prod I) (𝓘(ℝ, ℝ).prod J) Γ q ((1 : ℝ), (0 : E))
-  have hclock : ContMDiff 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ).tangent m
-      (fun s : ℝ => (⟨s, (1 : ℝ)⟩ : TangentBundle 𝓘(ℝ, ℝ) ℝ)) :=
-    contMDiff_vectorSpace_iff_contDiff.2 contDiff_const
-  have hunit : ContMDiff (𝓘(ℝ, ℝ).prod I) (𝓘(ℝ, ℝ).prod I).tangent m
-      (fun q : ℝ × M => (⟨q, ((1 : ℝ), (0 : E))⟩ : TangentBundle (𝓘(ℝ, ℝ).prod I) (ℝ × M))) :=
-    (contMDiff_equivTangentBundleProd_symm (I := 𝓘(ℝ, ℝ)) (M := ℝ) (I' := I) (M' := M)).comp
-      ((hclock.comp contMDiff_fst).prodMk
-        ((Bundle.contMDiff_zeroSection ℝ (TangentSpace I : M → Type _)).comp contMDiff_snd))
-  have hv : ContMDiff (𝓘(ℝ, ℝ).prod I) ((𝓘(ℝ, ℝ).prod J).prod 𝓘(ℝ, ℝ × E')) m
-      (fun q => TotalSpace.mk' (ℝ × E') (Γ q) (v q)) :=
-    (hΓ.contMDiff_tangentMap (by exact_mod_cast hmn)).comp hunit
+  have hv := TauCeti.Manifold.contMDiff_mfderiv_apply_one_zero (J := 𝓘(ℝ, ℝ).prod J) (m := m) hΓ
+    (by exact_mod_cast hmn)
   -- Extend the velocity from the compact part of the track over `[c, d]`.
-  have hK : IsCompact (Γ '' (Icc c d ×ˢ A)) :=
-    (isCompact_Icc.prod hA).image hΓ.continuous
+  have hK : IsCompact (Γ '' (Icc c d ×ˢ A)) := (isCompact_Icc.prod hA).image hΓ.continuous
   have himage : (fun q : W => Γ q) '' (Subtype.val ⁻¹' (Icc c d ×ˢ A)) =
       Γ '' (Icc c d ×ˢ A) := by
     rw [← image_image]
-    exact congrArg (image Γ) (image_preimage_eq_of_subset (by simpa [W] using hAW))
+    exact congrArg (image Γ) (image_preimage_eq_of_subset (by simpa using hAW))
   have : LocallyCompactSpace H' := J.locallyCompactSpace
   have : LocallyCompactSpace N := ChartedSpace.locallyCompactSpace H' N
   obtain ⟨U, hU, hKU, -, hcU⟩ :=
@@ -138,8 +120,8 @@ private theorem exists_section_eq_velocity {n m : ℕ∞} [IsManifold I n M] {G 
   have hGd : MDifferentiable (𝓘(ℝ, ℝ).prod I) J G := hG.mdifferentiable hn0
   have hpath : MDifferentiableAt 𝓘(ℝ, ℝ) (𝓘(ℝ, ℝ).prod I) (fun s : ℝ => (s, x)) t :=
     mdifferentiableAt_id.prodMk mdifferentiableAt_const
-  have hcomp : (fun s => G (s, x)) = G ∘ fun s => (s, x) := rfl
-  rw [hYK ⟨(t, x), hAW ⟨ht, hx⟩⟩ ⟨ht, hx⟩, hcomp, mfderiv_comp t (hGd _) hpath, mfderiv_prod_left]
+  rw [hYK ⟨(t, x), hAW ⟨ht, hx⟩⟩ ⟨ht, hx⟩, show (fun s => G (s, x)) = G ∘ fun s => (s, x) from rfl,
+    mfderiv_comp t (hGd _) hpath, mfderiv_prod_left]
   simp only [v, Γ, mfderiv_prodMk mdifferentiableAt_fst (hGd _)]
   -- Both sides are `mfderiv G (t, x) (1, 0)`: `ContinuousLinearMap.prod_apply` and
   -- `ContinuousLinearMap.inl_apply` hold by `rfl`, but do not fire through the instances of the
@@ -181,9 +163,7 @@ theorem exists_ambientVelocityField {n m : ℕ∞} [IsManifold I n M] {G : ℝ �
       (hχ.contMDiff.comp contMDiff_fst).smul_section Y.contMDiff
     exact contMDiff_snd.comp ((contMDiff_equivTangentBundleProd (I := 𝓘(ℝ, ℝ)) (M := ℝ)
       (I' := J) (M' := N)).comp hZ)
-  have hmn' : (m : ℕ∞ω) ≤ n := by exact_mod_cast le_trans le_self_add hmn
-  have hm' : (1 : ℕ∞ω) ≤ m := by exact_mod_cast hm
-  have hn0 : (n : ℕ∞ω) ≠ 0 := fun h => absurd (hm'.trans hmn') (by simp [h])
+  have hn0 : (n : ℕ∞ω) ≠ 0 := by exact_mod_cast (one_pos.trans_le (le_add_self.trans hmn)).ne'
   have hc : MDifferentiableAt 𝓘(ℝ, ℝ) J (fun s => G (s, x)) t :=
     (hG.mdifferentiable hn0 (t, x)).comp t (mdifferentiableAt_id.prodMk mdifferentiableAt_const)
   suffices key : mfderiv 𝓘(ℝ, ℝ) J (fun s => G (s, x)) t 1 = X t (G (t, x)) by
