@@ -10,6 +10,8 @@ public import TauCeti.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.InnerProductSpace.Calculus
+import Mathlib.Analysis.Normed.Module.Connected
+import Mathlib.Topology.Separation.Connected
 import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
@@ -52,6 +54,8 @@ multiple of `x`.
   has index `0`.
 * `TauCeti.criticalPoints_sphereHeight`: the critical points of the height function are the poles.
 * `TauCeti.ncard_setOf_sphereHeight_eq_zero`: the equator of the circle has two points.
+* `TauCeti.infinite_setOf_sphereHeight_eq_zero`: the equator of a sphere of dimension at least `2`
+  is infinite.
 
 ## References
 
@@ -267,6 +271,26 @@ theorem sphereHeight_neg_lt {v x : sphere (0 : E) 1} (hx : x ≠ -v) :
   simpa only [sphereHeight_neg, Pi.neg_apply, neg_lt_neg_iff] using
     sphereHeight_lt_self (v := -v) hx
 
+/-- The height of the north pole is `1`. -/
+theorem sphereHeight_self (v : sphere (0 : E) 1) : sphereHeight v v = 1 := by
+  simp [norm_eq_of_mem_sphere]
+
+/-- The height of the south pole is `-1`. -/
+theorem sphereHeight_neg_self (v : sphere (0 : E) 1) : sphereHeight v (-v) = -1 := by
+  simp [inner_neg_left, norm_eq_of_mem_sphere]
+
+/-- The north pole is the only point of height `1`. -/
+theorem sphereHeight_eq_one_iff {v x : sphere (0 : E) 1} : sphereHeight v x = 1 ↔ x = v := by
+  refine ⟨fun h ↦ by_contra fun hx ↦ ?_, fun h ↦ h ▸ sphereHeight_self v⟩
+  have hlt := sphereHeight_lt_self hx
+  rw [h, sphereHeight_self] at hlt
+  exact lt_irrefl _ hlt
+
+/-- The south pole is the only point of height `-1`. -/
+theorem sphereHeight_eq_neg_one_iff {v x : sphere (0 : E) 1} :
+    sphereHeight v x = -1 ↔ x = -v := by
+  rw [← neg_eq_iff_eq_neg, ← Pi.neg_apply, ← sphereHeight_neg, sphereHeight_eq_one_iff]
+
 /-- In the chart centred at the north pole `v`, the height function in the direction `v` is
 `stereographicHeight`. -/
 theorem sphereHeight_comp_chartAt_symm (v : sphere (0 : E) 1) :
@@ -378,6 +402,38 @@ theorem ncard_setOf_sphereHeight_eq_zero (hE : finrank ℝ E = 2) (v : sphere (0
   · rintro (rfl | rfl)
     · exact hwK
     · simp [u, hwK]
+
+omit [Fact (finrank ℝ E = n + 1)] in
+/-- **The equator is infinite in dimension at least two.** If `E` has dimension at least `3`, the
+points of the unit sphere of height zero in the direction of a unit vector `v` form an infinite
+set. -/
+theorem infinite_setOf_sphereHeight_eq_zero (hE : 3 ≤ finrank ℝ E) (v : sphere (0 : E) 1) :
+    {x | sphereHeight v x = 0}.Infinite := by
+  have : FiniteDimensional ℝ E := .of_finrank_pos (by lia)
+  -- The equator contains the unit sphere of the hyperplane `(ℝ ∙ v)ᗮ`, which is connected
+  -- with more than one point because the hyperplane has dimension at least `2`.
+  have hK : 2 ≤ finrank ℝ (ℝ ∙ (v : E))ᗮ := by
+    have h := Submodule.finrank_add_finrank_orthogonal (ℝ ∙ (v : E))
+    rw [finrank_span_singleton (ne_zero_of_mem_unit_sphere v)] at h
+    omega
+  have hrank : 1 < Module.rank ℝ (ℝ ∙ (v : E))ᗮ := by
+    rw [← Module.finrank_eq_rank]
+    exact_mod_cast hK
+  have : Nontrivial (ℝ ∙ (v : E))ᗮ :=
+    Module.nontrivial_of_finrank_pos (R := ℝ) (two_pos.trans_le hK)
+  obtain ⟨w⟩ : Nonempty (sphere (0 : (ℝ ∙ (v : E))ᗮ) 1) :=
+    (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype
+  have hS : (sphere (0 : (ℝ ∙ (v : E))ᗮ) 1).Infinite :=
+    (isPreconnected_sphere hrank 0 1).infinite_of_nontrivial
+      ⟨w, w.2, ↑(-w), (-w).2, Subtype.coe_injective.ne (ne_neg_of_mem_unit_sphere ℝ w)⟩
+  have := hS.to_subtype
+  refine Set.infinite_of_injective_forall_mem
+    (f := fun y : sphere (0 : (ℝ ∙ (v : E))ᗮ) 1 ↦ (⟨((y : (ℝ ∙ (v : E))ᗮ) : E),
+      mem_sphere_zero_iff_norm.2 ((Submodule.norm_coe _).trans
+        (mem_sphere_zero_iff_norm.1 y.2))⟩ : sphere (0 : E) 1))
+    (fun y z h ↦ Subtype.ext (Subtype.ext congr($h.1))) fun y ↦ ?_
+  rw [mem_ofPred_eq, sphereHeight_apply]
+  exact Submodule.mem_orthogonal_singleton_iff_inner_left.1 (y : (ℝ ∙ (v : E))ᗮ).2
 
 end Sphere
 

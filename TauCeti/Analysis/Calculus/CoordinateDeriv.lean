@@ -396,16 +396,32 @@ theorem mixedDeriv_zero (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
     exact congrFun (coordinateDeriv_zero β) ξ
   rw [mixedDeriv_def, h, coordinateDeriv_zero, Pi.zero_apply]
 
+/-- Mixed derivatives at `x` only depend on the values at positions near `x`: if `a` and `b` agree
+for all frequencies at all positions near `x`, then so do all their mixed derivatives at `x`. -/
+theorem mixedDeriv_congr_of_eventually {x : CoordinateSpace n}
+    (h : ∀ᶠ y in nhds x, ∀ η, a (y, η) = b (y, η)) (α β : List (Fin n)) (ξ : CoordinateSpace n) :
+    mixedDeriv α β a x ξ = mixedDeriv α β b x ξ := by
+  have h' : (fun y => coordinateDeriv β (fun η => a (y, η)) ξ) =ᶠ[nhds x]
+      fun y => coordinateDeriv β (fun η => b (y, η)) ξ := by
+    filter_upwards [h] with y hy
+    rw [show (fun η => a (y, η)) = fun η => b (y, η) from funext hy]
+  rw [mixedDeriv_def, mixedDeriv_def, (h'.coordinateDeriv α).eq_of_nhds]
+
 /-- If `a` vanishes for all frequencies at all positions near `x`, then so do all its mixed
 derivatives at `x`. -/
 theorem mixedDeriv_eq_zero_of_eventually {x : CoordinateSpace n}
     (h : ∀ᶠ y in nhds x, ∀ η, a (y, η) = 0) (α β : List (Fin n)) (ξ : CoordinateSpace n) :
-    mixedDeriv α β a x ξ = 0 := by
-  have h' : (fun y => coordinateDeriv β (fun η => a (y, η)) ξ) =ᶠ[nhds x] 0 := by
-    filter_upwards [h] with y hy
-    have hy' : (fun η => a (y, η)) = 0 := funext hy
-    rw [hy', coordinateDeriv_zero, Pi.zero_apply, Pi.zero_apply]
-  rw [mixedDeriv_def, (h'.coordinateDeriv α).eq_of_nhds, coordinateDeriv_zero, Pi.zero_apply]
+    mixedDeriv α β a x ξ = 0 :=
+  (mixedDeriv_congr_of_eventually (b := 0) h α β ξ).trans (mixedDeriv_zero α β x ξ)
+
+/-- Cutting `a` off outside the positions of an open set `U` does not change its mixed derivatives
+at positions of `U`. -/
+theorem mixedDeriv_indicator_prod_univ_of_mem {U : Set (CoordinateSpace n)} (hU : IsOpen U)
+    {x : CoordinateSpace n} (hx : x ∈ U) (α β : List (Fin n)) (ξ : CoordinateSpace n) :
+    mixedDeriv α β ((U ×ˢ Set.univ).indicator a) x ξ = mixedDeriv α β a x ξ := by
+  refine mixedDeriv_congr_of_eventually ?_ α β ξ
+  filter_upwards [hU.mem_nhds hx] with y hy η
+  exact Set.indicator_of_mem (Set.mk_mem_prod hy (Set.mem_univ η)) _
 
 variable {α β : List (Fin n)} {x ξ : CoordinateSpace n} {C D w : ℝ}
 
