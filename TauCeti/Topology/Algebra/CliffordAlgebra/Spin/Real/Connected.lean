@@ -108,12 +108,6 @@ private theorem exists_mem_pathComponentOne_coe_eq_algebraMap_mul (hQ : Q ≠ 0)
   · exact ⟨spinGroup.negOne Q hQ * z, mul_mem hneg hz, by
       rw [Submonoid.coe_mul, spinGroup.coe_negOne, map_neg, map_one]⟩
 
-/-- The identity path component of the Spin group is closed under joining. -/
-private theorem mem_pathComponentOne_of_joined {x y : spinGroup Q} (h : Joined x y)
-    (hy : y ∈ Subgroup.pathComponentOne (spinGroup Q)) :
-    x ∈ Subgroup.pathComponentOne (spinGroup Q) :=
-  mem_pathComponent_iff.mpr ((mem_pathComponent_iff.mp hy).trans h.symm)
-
 variable [TopologicalSpace V] [IsModuleTopology ℝ V]
 
 /-- The peeling step when the first two factors have the same norm: move `b` to `±a`, after which
@@ -136,8 +130,8 @@ private theorem mem_pathComponentOne_cons_cons_of_apply_eq (hQ : Q ≠ 0)
     rw [hab] at hQl
     linear_combination hQl - (t.map Q).prod * ha2)
   obtain ⟨y, hy, hyc⟩ := exists_mem_pathComponentOne_coe_eq_algebraMap_mul hQ hneg hs hz
-  refine mem_pathComponentOne_of_joined
-    (joined_of_coe_eq_prod_mul_ι_mul_prod (l₁ := [a]) (l₂ := t) ?_ ?_ hpath ?_ ?_) hy
+  refine Joined.mem_pathComponent
+    (joined_of_coe_eq_prod_mul_ι_mul_prod (l₁ := [a]) (l₂ := t) ?_ ?_ hpath ?_ ?_).symm hy
   · convert he using 1
     simp only [List.length_cons, List.length_nil]
     omega
@@ -176,8 +170,8 @@ private theorem mem_pathComponentOne_cons_cons_cons_of_apply_eq_left (hQ : Q ≠
       simp only [List.map_cons, List.prod_cons, hw]
       linear_combination hQl - Q b * (t.map Q).prod * ha2)
   obtain ⟨y, hy, hyc⟩ := exists_mem_pathComponentOne_coe_eq_algebraMap_mul hQ hneg hs hz
-  refine mem_pathComponentOne_of_joined
-    (joined_of_coe_eq_prod_mul_ι_mul_prod hlen hQ₃ hpath hx₃ ?_) hy
+  refine Joined.mem_pathComponent
+    (joined_of_coe_eq_prod_mul_ι_mul_prod hlen hQ₃ hpath hx₃ ?_).symm hy
   simp only [hyc, hzc, List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one]
   rw [haw, mul_assoc]
 
@@ -211,8 +205,8 @@ private theorem mem_pathComponentOne_cons_cons_cons_of_apply_eq_right (hQ : Q �
       simp only [List.map_cons, List.prod_cons]
       linear_combination hQl - Q a * (t.map Q).prod * hb2)
   obtain ⟨y, hy, hyc⟩ := exists_mem_pathComponentOne_coe_eq_algebraMap_mul hQ hneg hs hz
-  refine mem_pathComponentOne_of_joined
-    (joined_of_coe_eq_prod_mul_ι_mul_prod hlen hQ₃ hpath hx₃ ?_) hy
+  refine Joined.mem_pathComponent
+    (joined_of_coe_eq_prod_mul_ι_mul_prod hlen hQ₃ hpath hx₃ ?_).symm hy
   simp only [hyc, hzc, List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one]
   rw [mul_assoc (ι Q a), hbs, ← Algebra.commutes, mul_assoc]
 
