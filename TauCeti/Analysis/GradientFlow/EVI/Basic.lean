@@ -293,6 +293,14 @@ theorem apply_le (h : IsEVISolution lam φ u) (hφ : LowerSemicontinuous φ) (hy
     rw [← EReal.coe_add, EReal.coe_le_coe_iff, ← sub_le_iff_le_add', le_div_iff₀ (by positivity)]
     nlinarith
 
+/-- The map `z ↦ ∫ r in 0..(z - t), exp (lam * r)` has derivative `1` at `t`. -/
+private theorem hasDerivAt_integral_exp_mul_sub (t : ℝ) :
+    HasDerivAt (fun z ↦ ∫ r in 0..(z - t), exp (lam * r)) 1 t := by
+  have hsub : HasDerivAt (fun z : ℝ ↦ z - t) 1 t := (hasDerivAt_id t).sub_const t
+  simpa [Function.comp_def] using ((by fun_prop : Continuous fun r ↦
+    exp (lam * r)).integral_hasStrictDerivAt 0 (t - t)).hasDerivAt.comp (h := fun z ↦ z - t) t
+      hsub
+
 /-- The difference quotients of `d(u ·, v ·)² / 2` for two `EVI_λ` solutions of a lower
 semicontinuous energy are eventually less than any `r > -2λ d(u t, v t)² / 2` from the right of a
 time `t > 0`. -/
@@ -320,11 +328,7 @@ private theorem eventually_slope_dist_sq_lt (hu : IsEVISolution lam φ u)
   have h₂ : ∀ᶠ z in 𝓝[>] t, ((pu - ε : ℝ) : EReal) < φ (u z) :=
     nhdsWithin_le_nhds <| hcu.eventually <| hφ (u t) _ hlt
   -- The first-order behaviour of `E_λ(z - t)` and of `e^{λ(z - t)}` at `z = t`.
-  have hsub : HasDerivAt (fun z : ℝ ↦ z - t) 1 t := (hasDerivAt_id t).sub_const t
-  have hE : HasDerivAt (fun z ↦ ∫ r in 0..(z - t), exp (lam * r)) 1 t := by
-    simpa [Function.comp_def] using ((by fun_prop : Continuous fun r ↦
-      exp (lam * r)).integral_hasStrictDerivAt 0 (t - t)).hasDerivAt.comp (h := fun z ↦ z - t) t
-        hsub
+  have hE := hasDerivAt_integral_exp_mul_sub (lam := lam) t
   have hexp : HasDerivAt (fun z ↦ exp (lam * (z - t))) lam t := by
     simpa using (((hasDerivAt_id t).sub_const t).const_mul lam).exp
   have h₃ : ∀ᶠ z in 𝓝[>] t,
