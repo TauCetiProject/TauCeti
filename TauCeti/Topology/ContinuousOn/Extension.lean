@@ -21,7 +21,7 @@ open Function
 
 /-- A continuous function on a subtype of a space extends to a function that is continuous on the
 subset and agrees with it there. -/
-theorem exists_continuousOn_eq_of_continuous {X Y : Type*} [TopologicalSpace X]
+theorem Continuous.exists_continuousOn_eq {X Y : Type*} [TopologicalSpace X]
     [TopologicalSpace Y] [Nonempty Y] {A : Set X} {s : A → Y} (hs : Continuous s) :
     ∃ r : X → Y, ContinuousOn r A ∧ ∀ a : A, r a = s a := by
   have hr : ∀ a : A, extend Subtype.val s (fun _ => Classical.arbitrary Y) a = s a := fun a =>

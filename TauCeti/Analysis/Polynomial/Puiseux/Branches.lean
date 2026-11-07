@@ -77,7 +77,7 @@ private theorem exists_continuousOn_isRoot_powerSubstitution
   let sub : U ×ˢ (ball (0 : ℂ) R' \ {0}) → U × ↥(ball (0 : ℂ) R' \ {0}) := fun b =>
     (⟨b.1.1, b.2.1⟩, ⟨b.1.2, b.2.2⟩)
   have hsub : Continuous sub := by fun_prop
-  choose r hr hrs using fun i => exists_continuousOn_eq_of_continuous ((s i).continuous.comp hsub)
+  choose r hr hrs using fun i => ((s i).continuous.comp hsub).exists_continuousOn_eq
   refine ⟨r, hr, fun b hb => ?_⟩
   have hrb : ∀ i, r i b = s i (sub ⟨b, hb⟩) := fun i => hrs i ⟨b, hb⟩
   refine ⟨fun i j hij => (hs (sub ⟨b, hb⟩)).1 ((hrb i).symm.trans (hij.trans (hrb j))),
