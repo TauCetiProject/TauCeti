@@ -36,12 +36,14 @@ FICLONE = 0x40049409
 
 
 def regular(path):
+    """Return a regular file path; reject symlinks and special files via lstat."""
     if not stat.S_ISREG(path.lstat().st_mode):
         raise ValueError("expected an ordinary file: " + str(path))
     return path
 
 
 def layout(project):
+    """Reject project/library paths outside the supported TauCeti default layout."""
     import tomllib
     config = tomllib.loads(regular(project / "lakefile.toml").read_text())
     libs = config.get("lean_lib", [])
@@ -56,6 +58,7 @@ def layout(project):
 
 
 def configuration(project):
+    """Describe exact platform, layout, toolchain and Lake configuration identity."""
     layout(project)
     return dict(platform=platform.system() + "-" + platform.machine(),
                 layout="TauCeti-default-v1", toolchain=regular(project / "lean-toolchain").read_text().strip(),
@@ -64,6 +67,11 @@ def configuration(project):
 
 
 def selected_records(project):
+    """Read native archive-only selections and retain original mapping bytes.
+
+    Reject unsupported schemas, unsafe archive names and duplicate archives.
+    This reads existing native selections; it does not select another ancestor.
+    """
     outputs = project / ".lake/cache/outputs/TauCeti"
     artifacts = project / ".lake/cache/artifacts"
     records, archives = [], set()
@@ -86,6 +94,7 @@ def selected_records(project):
 
 
 def module_paths(module):
+    """Return permitted build-relative outputs for a supported TauCeti module."""
     if not isinstance(module, str) or not MODULE.fullmatch(module):
         raise ValueError("unknown module identity")
     parts = module.split(".")
@@ -94,6 +103,7 @@ def module_paths(module):
 
 
 def source_present(project, module):
+    """Check that the candidate has a regular module source without symlink parents."""
     source = project.joinpath(*module.split(".")).with_suffix(".lean")
     # Source symlinks are never evidence that this module belongs to the candidate.
     for parent in source.parents:
@@ -105,6 +115,11 @@ def source_present(project, module):
 
 
 def seed_file(seed, relative):
+    """Find an ordinary seed output through ordinary directories.
+
+    The relative name must already be validated against module_paths. The seed
+    owner must prevent concurrent mutation; these checks are not authentication.
+    """
     path = seed / "build" / relative
     for parent in path.parents:
         if parent == seed:
@@ -115,6 +130,13 @@ def seed_file(seed, relative):
 
 
 def read_seed(seed, project):
+    """Validate seed identity and inventory, returning entries by native archive.
+
+    Reject unsupported schema/configuration, unsafe paths and overlapping or
+    incomplete outputs. A valid manifest does not authenticate its producer or
+    file contents: the caller must supply a trusted, immutable seed and retain
+    that immutability throughout installation.
+    """
     if seed.is_symlink() or not seed.is_dir():
         raise ValueError("seed is not an ordinary directory")
     path = regular(seed / "manifest.json")
@@ -297,6 +319,13 @@ def assemble(project, records, staging, seed=None):
 
 
 def publish(project, combined, satisfied):
+    """Publish a complete private tree, then remove only satisfied mappings.
+
+    Recheck captured mapping bytes before the atomic rename. Archive bytes and
+    publication snapshots remain untouched. If a later unlink fails, the complete
+    tree stays published and remaining mappings permit native Lake restoration;
+    mapping cleanup is not a single atomic transaction with tree publication.
+    """
     # Recheck originals before making any live change. Snapshot/reconnect data
     # and every archive remain intact; only proven satisfied mappings may leave.
     for record in satisfied:
@@ -332,6 +361,7 @@ def unpack(project: Path, seed: Path | None = None) -> int:
 
 
 def file_digest(path):
+    """Hash an ordinary file's bytes with SHA-256; reject nonregular inputs."""
     with regular(path).open("rb") as stream:
         return hashlib.file_digest(stream, "sha256").hexdigest()
 

@@ -1,7 +1,6 @@
 """Bulk restoration must leave stock Lake responsible for current input validity."""
 
 import errno
-import hashlib
 import importlib.util
 import json
 import os
