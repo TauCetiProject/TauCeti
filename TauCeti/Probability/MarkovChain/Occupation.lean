@@ -6,22 +6,24 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.MarkovChain.EntranceLimits
-public import TauCeti.Probability.MarkovChain.Recurrence
+public import TauCeti.Probability.MarkovChain.MeanReturn
 public import TauCeti.Probability.Process.Excursion.MarkovChain
 public import TauCeti.Probability.Renewal.StrongLaw
 
 /-!
-# Occupation frequencies at a recurrent state
+# Occupation frequency from the counted state
 
-For a chain started at a state to which it returns almost surely, the fraction of positive
-times spent at that state converges almost surely to the reciprocal extended mean return time.
-The inverse is taken in `ℝ≥0∞` before conversion to `ℝ`; in particular the frequency is zero
-when the mean return time is infinite.
+For a chain started at `x`, the fraction of times `1, …, n` spent at `x`
+converges almost surely to the reciprocal extended mean positive return time.
+The reciprocal is taken in `ℝ≥0∞` before conversion to `ℝ`. Thus both transient
+states and recurrent states with infinite mean have limiting frequency zero.
+The expectations have the same limit by bounded convergence. These assertions
+also transfer to arbitrary realizations with the specified path law.
 
-The proof consumes the independent-excursion decomposition
-`TauCeti.Probability.iIndepFun_excursionProcess` and the renewal strong law. An excursion
-omits its closing return step, so its length plus one is the renewal increment. Visits at time
-zero are not included in the occupation count.
+The recurrent case consumes the independent-excursion decomposition
+`TauCeti.Probability.iIndepFun_excursionProcess` and the renewal strong law.
+An excursion omits its closing return step, so its length plus one is the
+renewal increment. No integrability of the return time is assumed.
 
 Writing `r_y = (m_y⁻¹).toReal` with `m_y = κ.meanReturnTime y`, the limit holds at every state
 with no recurrence hypothesis: started at `y`, the occupation frequency of `y` converges almost
@@ -47,23 +49,17 @@ open scoped ENNReal NNReal
 namespace ProbabilityTheory.Kernel
 
 variable {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α] [Countable α]
-  (κ : Kernel α α) [IsMarkovKernel κ] {y : α}
+  {κ : Kernel α α} [IsMarkovKernel κ] {y : α}
 
-/-- **The occupation law of large numbers at a recurrent starting state.** The proportion of
-positive times through `n` spent at `y` converges to the reciprocal extended mean first return.
-No integrability assumption is needed: infinite mean gives frequency zero. -/
-theorem ae_tendsto_visitCount_div_of_return_eq_one
-    (hy : markovChainLaw (Measure.dirac y) κ
-      {x | hittingAfter (fun n x => x n) {y} 1 x ≠ ⊤} = 1) :
+private theorem IsRecurrent.ae_tendsto_visitCount_succ_div (hy : κ.IsRecurrent y) :
     ∀ᵐ x ∂markovChainLaw (Measure.dirac y) κ,
       Tendsto (fun n : ℕ => (visitCount (fun k => x (k + 1)) y n : ℝ) / n) atTop
-        (𝓝 (∫⁻ x, (hittingAfter (fun n x => x n) {y} 1 x).recTopCoe ⊤
-          (fun n => (n : ℝ≥0∞)) ∂markovChainLaw (Measure.dirac y) κ)⁻¹.toReal) := by
+        (𝓝 (κ.meanReturnTime y)⁻¹.toReal) := by
   -- Excursion lengths plus their closing return steps form an i.i.d. renewal process.
   let P := markovChainLaw (Measure.dirac y) κ
   let E := excursionProcess (fun n (x : ℕ → α) => x n) y
   let T (k : ℕ) (x : ℕ → α) : ℝ≥0 := (E k x).length + 1
-  have hret := κ.ae_infinite_setOf_eq_markovChainLaw_dirac hy
+  have hret := κ.ae_infinite_setOf_eq_markovChainLaw_dirac (isRecurrent_iff.mp hy)
   have h0 := markovChainLaw_dirac_ae_apply_zero κ y
   have hEm (k : ℕ) : Measurable (E k) := by
     have he : E k = fun x => excursion x y k := funext fun x => excursionProcess_apply _ _ _ _
@@ -99,17 +95,18 @@ theorem ae_tendsto_visitCount_div_of_return_eq_one
     simpa only [arrival_def, T, E, excursionProcess_apply, Nat.cast_sum,
       Nat.cast_add, Nat.cast_one] using congrArg (fun n : ℕ => (n : ℝ≥0)) hs
   -- The first increment is the specified positive return, not the entrance at time zero.
-  have hmean : (∫⁻ x, (T 0 x : ℝ≥0∞) ∂P) =
-      ∫⁻ x, (hittingAfter (fun n x => x n) {y} 1 x).recTopCoe ⊤
-        (fun n => (n : ℝ≥0∞)) ∂P := by
+  have hmean : (∫⁻ x, (T 0 x : ℝ≥0∞) ∂P) = κ.meanReturnTime y := by
+    rw [meanReturnTime_def]
     apply lintegral_congr_ae
     filter_upwards [harr, h0, hret] with x hx hx0 hxret
     have hvisit := successiveVisit_eq_visitTime (X := fun n (x : ℕ → α) => x n)
       (exists_visitCount_of_infinite hxret 1)
     rw [successiveVisit_one_eq_hittingAfter_of_zero hx0] at hvisit
     rw [hvisit]
-    simpa only [arrival_def, Finset.sum_range_one, Nat.cast_withTop,
-      WithTop.recTopCoe_coe, ENNReal.coe_natCast] using congrArg (fun t : ℝ≥0 => (t : ℝ≥0∞)) (hx 1)
+    have hcast (n : ℕ) : ENat.toENNReal (n : WithTop ℕ) = (n : ℝ≥0∞) :=
+      ENat.toENNReal_coe n
+    simpa only [arrival_def, Finset.sum_range_one, hcast, ENNReal.coe_natCast] using
+      congrArg (fun t : ℝ≥0 => (t : ℝ≥0∞)) (hx 1)
   -- Invert the renewal strong law and identify its count with positive-time occupation.
   have hLLN := ae_tendsto_renewalCountNat_div (T := T) (fun _ _ h => hi.indepFun h) hid hz
   rw [hmean] at hLLN
@@ -132,6 +129,34 @@ theorem ae_tendsto_visitCount_div_of_return_eq_one
   simpa only [Function.comp_def, hcount, NNReal.coe_natCast] using
     hx.comp (tendsto_natCast_atTop_atTop (R := ℝ≥0))
 
+/-- **Occupation strong law from the counted state.** The positive-time visit frequency
+converges to the reciprocal extended mean first-return time, without any finite-mean
+assumption. Transient and infinite-mean recurrent states both have frequency zero. -/
+theorem ae_tendsto_visitCount_div_markovChainLaw_dirac (κ : Kernel α α)
+    [IsMarkovKernel κ] (y : α) :
+    ∀ᵐ x ∂markovChainLaw (Measure.dirac y) κ,
+      Tendsto (fun n : ℕ => (visitCount (fun k => x (k + 1)) y n : ℝ) / n)
+        atTop (𝓝 (κ.meanReturnTime y)⁻¹.toReal) := by
+  classical
+  by_cases hy : κ.IsRecurrent y
+  · exact hy.ae_tendsto_visitCount_succ_div
+  · have htrans : κ.IsTransient y := isTransient_iff.mpr hy
+    rw [htrans.meanReturnTime_eq_top, ENNReal.inv_top, ENNReal.toReal_zero]
+    have hfinite : ∀ᵐ x ∂markovChainLaw (Measure.dirac y) κ, {n | x n = y}.Finite := by
+      simpa only [ae_iff, Set.Infinite] using
+        Measure.markovChainLaw_setOf_infinite_setOf_eq_eq_zero (Measure.dirac y) κ
+          (isTransient_iff_return_probability_lt_one.mp htrans)
+    filter_upwards [hfinite] with x hx
+    have hf : {k | x (k + 1) = y}.Finite :=
+      hx.preimage (fun _ _ _ _ hij => Nat.add_right_cancel hij)
+    apply squeeze_zero (fun n => by positivity) _
+      (tendsto_const_div_atTop_nhds_zero_nat (hf.toFinset.card : ℝ))
+    intro n
+    apply div_le_div_of_nonneg_right _ (Nat.cast_nonneg n)
+    exact_mod_cast (by
+      rw [visitCount_eq_count]
+      exact Nat.count_le_card hf n)
+
 end ProbabilityTheory.Kernel
 
 namespace ProbabilityTheory.HasLaw
@@ -140,29 +165,23 @@ variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
   [MeasurableSingletonClass α] [Countable α] {P : Measure Ω}
   {X : Ω → ℕ → α} {κ : Kernel α α} [IsMarkovKernel κ] {y : α}
 
-/-- The recurrent-state occupation limit transfers to every realization with the same path
-law. No topology or canonical-space assumption is imposed on the sample space. -/
-theorem ae_tendsto_visitCount_div_of_return_eq_one
-    (hX : HasLaw X (markovChainLaw (Measure.dirac y) κ) P)
-    (hy : markovChainLaw (Measure.dirac y) κ
-      {x | hittingAfter (fun n x => x n) {y} 1 x ≠ ⊤} = 1) :
+/-- The occupation limit transfers to every realization with the same path law.
+No topology or canonical-space assumption is imposed on the sample space. -/
+theorem ae_tendsto_visitCount_succ_div
+    (hX : HasLaw X (markovChainLaw (Measure.dirac y) κ) P) :
     ∀ᵐ ω ∂P,
       Tendsto (fun n : ℕ => (visitCount (fun k => X ω (k + 1)) y n : ℝ) / n) atTop
-        (𝓝 (∫⁻ x, (hittingAfter (fun n x => x n) {y} 1 x).recTopCoe ⊤
-          (fun n => (n : ℝ≥0∞)) ∂markovChainLaw (Measure.dirac y) κ)⁻¹.toReal) := by
-  have h := κ.ae_tendsto_visitCount_div_of_return_eq_one hy
-  nth_rw 2 [← hX.map_eq] at h
+        (𝓝 (κ.meanReturnTime y)⁻¹.toReal) := by
+  have h := κ.ae_tendsto_visitCount_div_markovChainLaw_dirac y
+  rw [← hX.map_eq] at h
   exact ae_of_ae_map hX.aemeasurable h
 
-/-- Expected occupation fractions have the same recurrent-state limit. Bounded convergence
-applies even when the mean return time is infinite. -/
-theorem tendsto_integral_visitCount_div_of_return_eq_one
-    (hX : HasLaw X (markovChainLaw (Measure.dirac y) κ) P)
-    (hy : markovChainLaw (Measure.dirac y) κ
-      {x | hittingAfter (fun n x => x n) {y} 1 x ≠ ⊤} = 1) :
+/-- Expected occupation fractions have the same limit. Bounded convergence applies
+also to transient states and recurrent states with infinite mean return time. -/
+theorem tendsto_integral_visitCount_succ_div
+    (hX : HasLaw X (markovChainLaw (Measure.dirac y) κ) P) :
     Tendsto (fun n : ℕ => ∫ ω, (visitCount (fun k => X ω (k + 1)) y n : ℝ) / n ∂P) atTop
-      (𝓝 (∫⁻ x, (hittingAfter (fun n x => x n) {y} 1 x).recTopCoe ⊤
-        (fun n => (n : ℝ≥0∞)) ∂markovChainLaw (Measure.dirac y) κ)⁻¹.toReal) := by
+      (𝓝 (κ.meanReturnTime y)⁻¹.toReal) := by
   classical
   let : IsProbabilityMeasure P := hX.isProbabilityMeasure
   have hm (n : ℕ) : Measurable (fun x : ℕ → α =>
@@ -184,47 +203,9 @@ theorem tendsto_integral_visitCount_div_of_return_eq_one
   simpa only [Function.comp_def, integral_const, probReal_univ, one_smul] using
     tendsto_integral_of_dominated_convergence (fun _ => (1 : ℝ))
       (fun n => ((hm n).comp_aemeasurable hX.aemeasurable).aestronglyMeasurable)
-      (integrable_const 1) hb (hX.ae_tendsto_visitCount_div_of_return_eq_one hy)
+      (integrable_const 1) hb hX.ae_tendsto_visitCount_succ_div
 
 end ProbabilityTheory.HasLaw
-
-namespace ProbabilityTheory.Kernel
-
-variable {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α] [Countable α]
-  (κ : Kernel α α) [IsMarkovKernel κ]
-
-/-- **Long-run occupation frequency, started at the state.** Started at `y`,
-the proportion `V_y(n) / n` of the times `1, …, n` spent at `y` converges almost surely to
-`r_y = (m_y⁻¹).toReal`, where `m_y` is the mean return time. In particular the limit is zero when
-`y` is transient or null recurrent. -/
-theorem ae_tendsto_visitCount_div_markovChainLaw_dirac (y : α) :
-    ∀ᵐ x ∂markovChainLaw (Measure.dirac y) κ,
-      Tendsto (fun n : ℕ => (visitCount (fun k => x (k + 1)) y n : ℝ) / n) atTop
-        (𝓝 (κ.meanReturnTime y)⁻¹.toReal) := by
-  by_cases hy : κ.IsRecurrent y
-  · have hm : κ.meanReturnTime y = ∫⁻ x, (hittingAfter (fun n x => x n) {y} 1 x).recTopCoe ⊤
-        (fun n => (n : ℝ≥0∞)) ∂markovChainLaw (Measure.dirac y) κ := by
-      rw [meanReturnTime_def]
-      refine lintegral_congr fun x => ?_
-      cases hittingAfter (fun n x => x n) {y} 1 x <;> rfl
-    rw [hm]
-    exact κ.ae_tendsto_visitCount_div_of_return_eq_one (isRecurrent_iff.mp hy)
-  -- A transient state has infinite mean return time and is visited only finitely often.
-  replace hy : κ.IsTransient y := isTransient_iff.mpr hy
-  rw [hy.meanReturnTime_eq_top, ENNReal.inv_top, ENNReal.toReal_zero]
-  filter_upwards [measure_eq_zero_iff_ae_notMem.1
-    (Measure.markovChainLaw_setOf_infinite_setOf_eq_eq_zero (Measure.dirac y) κ
-      (isTransient_iff_return_probability_lt_one.mp hy))] with x hx
-  have hfin : (Set.ofPred fun k => x (k + 1) = y).Finite :=
-    (Set.not_infinite.1 hx).preimage (fun _ _ _ _ h => Nat.succ_injective h)
-  classical
-  refine squeeze_zero (fun n => by positivity) (fun n => ?_)
-    (tendsto_const_div_atTop_nhds_zero_nat (hfin.toFinset.card : ℝ))
-  gcongr
-  rw [visitCount_eq_count]
-  exact_mod_cast Nat.count_le_card hfin n
-
-end ProbabilityTheory.Kernel
 
 namespace MeasureTheory.Measure
 
