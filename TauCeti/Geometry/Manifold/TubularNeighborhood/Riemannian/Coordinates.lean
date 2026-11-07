@@ -143,7 +143,7 @@ diffeomorphism extending the normal exponential on a neighbourhood of the zero s
 target in `O`, is precomposed with a fibrewise radial compression to give a diffeomorphism
 of the whole normal bundle onto an open subset of `O`. -/
 private theorem exists_diffeomorph_normalBundle_of_partialDiffeomorph
-    [IsManifold I ∞ M] [SecondCountableTopology N] [Nonempty M] [T2Space M]
+    [IsManifold I ∞ M] [T2Space M]
     [SecondCountableTopology M] [LocallyCompactSpace M]
     (f : SmoothEmbedding I J ∞ M N)
     (hdim : Module.finrank ℝ P = Module.finrank ℝ V - Module.finrank ℝ E) {O : Set N} :
