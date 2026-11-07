@@ -26,12 +26,12 @@ splits as `T_p M × T_p M` (the horizontal and vertical summands of
 through `exp_p`, whose differential at the origin is the identity. This differential is
 invertible, so by the inverse function theorem the map is a local diffeomorphism at `0_p`.
 
-Consequently every point `p` has a *uniformly normal* neighbourhood: there are an open
-neighbourhood `W` of `p` and a radius `r > 0` such that, for every `q ∈ W`, the ball of radius `r`
-in `T_q M` is a normal domain at `q` and its exponential image contains all of `W`. The radius
-is uniform in the base point, unlike the radius of `TauCeti.Manifold.exists_isNormalDomain_ball`,
-which depends on the point. On a compact set of base points a single positive radius gives
-normal domains at all of them.
+Consequently every point `p` has a *uniformly normal* neighbourhood: there are a neighbourhood
+`W` of `p` and a radius `r > 0` such that, for every `q ∈ W`, the ball of radius `r` in `T_q M`
+is a normal domain at `q` and its exponential image contains all of `W`. The radius is uniform
+in the base point, unlike the radius of `TauCeti.Manifold.exists_isNormalDomain_ball`, which
+depends on the point. On a compact set of base points a single positive radius gives normal
+domains at all of them.
 
 These neighbourhoods are the starting point for geodesically convex neighbourhoods and for
 coordinates built from the Riemannian distance to finitely many nearby centres.
