@@ -55,11 +55,12 @@ variable {A₀ A₁ A₂ A₃ A₄ A₅ A₆ A₇ A₈ : Type*} [Group A₀] [Gr
 
 /-- **The order of the middle term of an exact sequence.** For groups `A₀ → A₁ → A₂` such that the
 kernel of `A₁ → A₂` lies in the range of `A₀ → A₁` (in particular for an exact sequence), `|A₁|`
-divides `|A₀| * |A₂|`. In particular `A₁` is finite as soon as `A₀` and `A₂` are. -/
+divides `|A₀| * |A₂|`. For an exact sequence with finite outer terms, finiteness of `A₁` is
+`Function.MulExact.finite`. -/
 @[to_additive card_dvd_card_mul_card_of_ker_le_range /-- **The order of the middle term of an exact
 sequence.** For additive groups `A₀ → A₁ → A₂` such that the kernel of `A₁ → A₂` lies in the range
-of `A₀ → A₁` (in particular for an exact sequence), `|A₁|` divides `|A₀| * |A₂|`. In particular
-`A₁` is finite as soon as `A₀` and `A₂` are. -/]
+of `A₀ → A₁` (in particular for an exact sequence), `|A₁|` divides `|A₀| * |A₂|`. For an exact
+sequence with finite outer terms, finiteness of `A₁` is `Function.Exact.finite`. -/]
 theorem card_dvd_card_mul_card_of_ker_le_range (f₀ : A₀ →* A₁) (f₁ : A₁ →* A₂)
     (h : f₁.ker ≤ f₀.range) : Nat.card A₁ ∣ Nat.card A₀ * Nat.card A₂ := by
   rw [← Subgroup.card_ker_mul_card_range f₁]
@@ -117,11 +118,12 @@ variable {A₀ A₁ A₂ : Type*} [Group A₀] [Group A₁] [Group A₂] {F₀ F
   [MonoidHomClass F₀ A₀ A₁] [FunLike F₁ A₁ A₂] [MonoidHomClass F₁ A₁ A₂] {f₀ : F₀} {f₁ : F₁}
 
 /-- **The middle term of an exact sequence of groups with finite outer terms is finite.** If
-`A₀ → A₁ → A₂` is an exact sequence of groups and `A₀`, `A₂` are finite, then `A₁` is finite, of
-order dividing `|A₀| * |A₂|`. -/
+`A₀ → A₁ → A₂` is an exact sequence of groups and `A₀`, `A₂` are finite, then `A₁` is finite. Its
+order divides `|A₀| * |A₂|` by `MonoidHom.card_dvd_card_mul_card_of_ker_le_range`. -/
 @[to_additive /-- **The middle term of an exact sequence of additive groups with finite outer terms
 is finite.** If `A₀ → A₁ → A₂` is an exact sequence of additive groups and `A₀`, `A₂` are finite,
-then `A₁` is finite, of order dividing `|A₀| * |A₂|`. -/]
+then `A₁` is finite. Its order divides `|A₀| * |A₂|` by
+`AddMonoidHom.card_dvd_card_mul_card_of_ker_le_range`. -/]
 theorem finite (h : Function.MulExact f₀ f₁) [Finite A₀] [Finite A₂] : Finite A₁ :=
   Nat.finite_of_card_ne_zero <|
     ne_zero_of_dvd_ne_zero (mul_ne_zero Nat.card_pos.ne' Nat.card_pos.ne') <|
