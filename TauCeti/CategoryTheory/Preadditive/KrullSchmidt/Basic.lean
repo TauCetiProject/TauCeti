@@ -7,6 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.Preadditive.Indecomposable
 public import TauCeti.CategoryTheory.Preadditive.Endomorphism
+import TauCeti.CategoryTheory.Idempotents.Split
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
 public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 import Mathlib.CategoryTheory.Adjunction.Limits
@@ -68,18 +69,6 @@ section Split
 `i : Y ⟶ X`, that is with `i ≫ r = 𝟙 Y`. -/
 private def Splits {X : C} (e : X ⟶ X) : Prop :=
   ∃ (Y : C) (i : Y ⟶ X) (r : X ⟶ Y), i ≫ r = 𝟙 Y ∧ r ≫ i = e
-
-/-- Two orthogonal split idempotents have a split sum, through the biproduct of their images. -/
-private theorem splits_add [HasBinaryBiproducts C] {X : C} {e₁ e₂ : X ⟶ X} (h₁ : Splits e₁)
-    (h₂ : Splits e₂) (h₁₂ : e₁ ≫ e₂ = 0) (h₂₁ : e₂ ≫ e₁ = 0) : Splits (e₁ + e₂) := by
-  obtain ⟨Y₁, i₁, r₁, hi₁, rfl⟩ := h₁
-  obtain ⟨Y₂, i₂, r₂, hi₂, rfl⟩ := h₂
-  have h₁₂' : i₁ ≫ r₂ = 0 := by
-    simpa [reassoc_of% hi₁, hi₂] using i₁ ≫= h₁₂ =≫ r₂
-  have h₂₁' : i₂ ≫ r₁ = 0 := by
-    simpa [reassoc_of% hi₂, hi₁] using i₂ ≫= h₂₁ =≫ r₁
-  refine ⟨Y₁ ⊞ Y₂, biprod.desc i₁ i₂, biprod.lift r₁ r₂, ?_, by simp⟩
-  ext <;> simp [hi₁, hi₂, h₁₂', h₂₁']
 
 /-- **The splitting step.** Let `X = P ⊞ X'` be a biproduct decomposition, given by `i₀, r₀, j, s`,
 in which every idempotent of `X'` splits. If an idempotent `g` of `X` kills a map `α : P ⟶ X` whose
@@ -143,7 +132,7 @@ private theorem splits_of_isLocalRing [HasBinaryBiproducts C] {X P X' : C} {i₀
       abel
     have hsplit := splits_of_comp_eq_zero hj hjr htot hX' hg (α := α)
       (by simp only [Preadditive.comp_sub, hαe, reassoc_of% hαβ, sub_self])
-    simpa using splits_add hq hsplit
+    simpa [Splits] using exists_split_add_of_comp_eq_zero hq hsplit
       (by simp only [Preadditive.comp_sub, Category.assoc, hαe, reassoc_of% hαβ, sub_self])
       (by simp only [Preadditive.sub_comp, Category.assoc, reassoc_of% heβ, reassoc_of% hαβ,
         sub_self])
