@@ -10,6 +10,7 @@ import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 import TauCeti.Analysis.Normed.Operator.Holder
+import TauCeti.MeasureTheory.Function.LpSeminorm.Support
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -360,6 +361,28 @@ private theorem holderWith_translate_cutoff {α Z : ℝ≥0} {ζ₀ : E → ℝ}
   · rw [hD2]
     exact htr (hZ2 i j)
 
+/-- The `L²` norm of the second derivative of a `C²` function supported in a closed ball is bounded
+by the volume of the ball and the bound on its second partial derivatives. -/
+theorem toReal_eLpNorm_iteratedFDeriv_two_le_of_support_subset_closedBall {w : E → ℝ}
+    (hw : ContDiff ℝ 2 w) {x₀ : E} {R B : ℝ}
+    (hsupp : Function.support (iteratedFDeriv ℝ 2 w) ⊆ closedBall x₀ R)
+    (hB : ∀ x i j,
+      |fderiv ℝ (fderiv ℝ w) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)| ≤ B) :
+    (eLpNorm (iteratedFDeriv ℝ 2 w) 2 volume).toReal ≤
+      (volume (closedBall (0 : E) R)).toReal ^ (2⁻¹ : ℝ) * (((n : ℝ) + 1) ^ 2 * B) := by
+  have hB₀ : 0 ≤ B := (abs_nonneg _).trans (hB 0 0 0)
+  have hnorm (x : E) : ‖iteratedFDeriv ℝ 2 w x‖ ≤ ((n : ℝ) + 1) ^ 2 * B := by
+    refine ((iteratedFDeriv ℝ 2 w x).opNorm_le_card_sq_mul_of_norm_apply_le
+      (EuclideanSpace.basisFun _ ℝ) (B := B) fun i j => ?_).trans_eq (by simp)
+    simpa [iteratedFDeriv_two_apply] using hB x i j
+  refine (ENNReal.toReal_mono (ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg (by positivity)
+    measure_closedBall_lt_top.ne) ENNReal.ofReal_ne_top) (eLpNorm_le_of_ae_bound_of_support_subset
+    (hw.continuous_iteratedFDeriv le_rfl).aestronglyMeasurable hsupp (ae_of_all _ hnorm))).trans
+    (le_of_eq ?_)
+  rw [ENNReal.toReal_mul, ← ENNReal.toReal_rpow, ENNReal.toReal_ofReal (by positivity),
+    Measure.addHaar_closedBall_center]
+  simp only [ENNReal.toReal_ofNat]
+
 /-- The cutoff product `ζ u` of a cutoff `ζ` supported in the ball `B_R` and a `C²` function `u`
 on `B_R` with bounds `N` on `u` and its first two derivatives and a Hölder Hessian is a `C²`
 function with Hölder Hessian supported in `closedBall x₀ R`. The operator `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼ` applied
@@ -416,8 +439,8 @@ private theorem cutoff_mul_data {ζ u : E → ℝ} {x₀ : E} {R : ℝ} {α Z N 
     (holderWith_sum_smul_fderiv_fderiv_cutoff_mul isOpen_ball hζ2 hζs hZ0 hZ1 hZ2 hu hN0 hdu hd2u
       hHu hHdu (fun i j => (hL i j).mono hsR) (fun x hx => hM x (hsR hx)) hK).mono
       (le_of_eq (by ring)), hsupp, ?_⟩
-  exact (toReal_eLpNorm_iteratedFDeriv_two_le hw hsupp (B := 4 * Z * N) (by positivity)
-    fun x i j => by simpa using (hWH i j).2 x).trans_eq (by ring)
+  exact (toReal_eLpNorm_iteratedFDeriv_two_le_of_support_subset_closedBall hw hsupp
+    (B := 4 * Z * N) fun x i j => by simpa using (hWH i j).2 x).trans_eq (by ring)
 
 /-- The translate `x ↦ ζ₀ (x - x₀)` of a smooth cutoff, equal to one near `closedBall 0 ρ` and
 supported in `ball 0 R`, is `C²` on `ball x₀ R`, equal to one near `closedBall x₀ ρ`, and supported
@@ -523,8 +546,7 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_of_sum_smul_fderiv_fde
   -- On a neighbourhood of `closedBall x₀ ρ` the cutoff is one, so `D²w = D²u` there.
   have hwu (x : E) (hx : x ∈ closedBall x₀ ρ) :
       iteratedFDeriv ℝ 2 w x = iteratedFDeriv ℝ 2 u x :=
-    iteratedFDeriv_mul_eq_of_eventuallyEq_one
-      (mem_interior_iff_mem_nhds.1 (hζ1 hx))
+    Filter.EventuallyEq.iteratedFDeriv_mul_eq (mem_interior_iff_mem_nhds.1 (hζ1 hx))
   intro x hx y hy
   rw [← hwu x hx, ← hwu y hy]
   refine (key x y).trans ?_
