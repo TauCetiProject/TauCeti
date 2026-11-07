@@ -181,18 +181,4 @@ theorem integral_apply_map_partialCorrelationGram_pi_betaMeasure
   · rw [ite_eq_right hij]
     exact integral_apply_map_partialCorrelationGram_pi_of_ne _ hij
 
-/-- Distinct strictly lower entries of the independent-Beta Gram law have covariance zero.
-Their squares are integrable; the conclusion does not assert independence. -/
-@[simp]
-theorem covariance_apply_map_partialCorrelationGram_pi_betaMeasure
-    {a : strictLowerTriangle p → ℝ} (ha : ∀ ij, 0 < a ij)
-    {ij kl : strictLowerTriangle p} (hne : ij ≠ kl) :
-    cov[fun R : Matrix (Fin p) (Fin p) ℝ ↦ R ij.1.1 ij.1.2,
-        fun R : Matrix (Fin p) (Fin p) ℝ ↦ R kl.1.1 kl.1.2;
-      (Measure.pi fun ij ↦ (betaMeasure (a ij) (a ij)).map
-        (fun x ↦ -1 + 2 * x)).map partialCorrelationGram] = 0 := by
-  have (ij : strictLowerTriangle p) : IsProbabilityMeasure (betaMeasure (a ij) (a ij)) :=
-    isProbabilityMeasureBeta (ha ij) (ha ij)
-  exact covariance_apply_map_partialCorrelationGram_pi _ hne
-
 end TauCeti.Probability
