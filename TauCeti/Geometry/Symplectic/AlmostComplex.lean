@@ -334,6 +334,19 @@ theorem mem_tangentSpace_iff_apply {J : AlmostComplexStructure V} {Y : Module.En
 
 end AlmostComplexStructure
 
+/-- If `J² = -1` and `Y` anticommutes with `J`, then `Z = -(1/2) Y J` satisfies `Z J - J Z = Y`,
+so every tangent vector at `J` is the commutator with `J` of an explicit endomorphism. -/
+theorem neg_half_smul_mul_mul_sub_mul_eq {R : Type*} [Ring R] [Algebra ℝ R] {Jc Y : R}
+    (hJJ : Jc * Jc = -1) (hYJ : Jc * Y = -(Y * Jc)) :
+    (-(1 / 2 : ℝ) • (Y * Jc)) * Jc - Jc * (-(1 / 2 : ℝ) • (Y * Jc)) = Y := by
+  have hZJ : (-(1 / 2 : ℝ) • (Y * Jc)) * Jc = (1 / 2 : ℝ) • Y := by
+    simp [mul_assoc, hJJ]
+  have hJZ : Jc * (-(1 / 2 : ℝ) • (Y * Jc)) = -((1 / 2 : ℝ) • Y) := by
+    simp only [mul_smul_comm, ← mul_assoc, hYJ]
+    simp [mul_assoc, hJJ]
+  rw [hZJ, hJZ]
+  module
+
 section ComplexLinearMap
 
 variable [AddCommGroup V] [Module ℝ V]
@@ -810,6 +823,16 @@ theorem Invariant.mul_mem_tangentSpace_and_isSelfAdjoint (h : ω.Invariant J)
     beta_reduce at h₁ h₂ ⊢
     rw [h₁, map_neg]
     linarith
+
+/-- For a `J`-invariant form, composing a variation in the compatible tangent space with `J`
+gives an endomorphism that is skew-adjoint for `ω`. This is why the exponential paths with
+generator `J Y` stay `ω`-compatible. -/
+theorem Invariant.isSkewAdjoint_mul_of_mem_compatibleTangentSpace (h : ω.Invariant J)
+    (hY : Y ∈ ω.compatibleTangentSpace J) :
+    ω.toBilinForm.IsSkewAdjoint (J.toLinearMap * Y) := by
+  obtain ⟨hT, hS⟩ := h.mul_mem_tangentSpace_and_isSelfAdjoint hY
+  exact (LinearMap.mem_skewAdjointSubmodule _).1
+    (Submodule.mem_inf.1 ((mem_compatibleTangentSpace_iff_isSelfAdjoint hT).2 hS)).2
 
 /-- For `S` self-adjoint for `g = ω(·, J ·)`, the average `S + J S J` lies in the compatible
 tangent space of `J` whenever `ω` is `J`-invariant. -/

@@ -6,7 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
+public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Valuation
+import Mathlib.NumberTheory.NumberField.Cyclotomic.Ideal
+import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 import TauCeti.RingTheory.DedekindDomain.Different.Derivative
+import TauCeti.RingTheory.RootsOfUnity.CyclotomicUnits
 
 /-!
 # The ramified primes of a cyclotomic extension of a number field
@@ -22,6 +26,9 @@ Neither statement constrains `m` against `K`. In that they differ from the degre
 `[M : K] = φ m` of `TauCeti.NumberTheory.NumberField.Cyclotomic.Finrank`, which needs `m` coprime
 to `discr K` and fails outright when `K` already contains a primitive `m`-th root of unity.
 
+Over `ℚ` the ramification at the level is explicit: in `ℚ(ζ_{p k})` with `p ∤ k` the prime `p`
+has ramification index `p - 1`, so `ζ_p - 1` is a uniformizer at every prime above `p`.
+
 ## Main results
 
 * `IsCyclotomicExtension.natCast_mem_differentIdeal`: the level `m` lies in the different ideal
@@ -30,6 +37,8 @@ to `discr K` and fails outright when `K` already contains a primitive `m`-th roo
   containing the level are unramified.
 * `IsCyclotomicExtension.prime_dvd_natAbs_discr_or_dvd_of_dvd_natAbs_discr`: a prime dividing
   `discr M` divides `discr K` or divides `m` — the extension ramifies only below or at the level.
+* `IsCyclotomicExtension.Rat.intValuation_sub_one_eq_exp_neg_one`: in `ℚ(ζ_{p k})` with `p ∤ k`,
+  a primitive `p`-th root of unity `ζ` has `v(ζ - 1) = 1` at every prime above `p`.
 
 ## Implementation notes
 
@@ -96,3 +105,28 @@ theorem prime_dvd_natAbs_discr_or_dvd_of_dvd_natAbs_discr (K M : Type*) [Field K
   · exact Or.inl (hp.dvd_of_dvd_pow h)
 
 end IsCyclotomicExtension
+
+namespace IsCyclotomicExtension.Rat
+
+open IsDedekindDomain Ideal NumberField
+
+/-- **`ζ - 1` is a uniformizer above `p`.** Let `L` be the `p k`-th cyclotomic field with `p`
+prime and `p ∤ k`. At every prime `w` of `L` above `p`, a primitive `p`-th root of unity `ζ`
+satisfies `v_w(ζ - 1) = 1`, because `p` has ramification index `p - 1` in `L`. -/
+theorem intValuation_sub_one_eq_exp_neg_one {L : Type*} [Field L] [NumberField L] {p k : ℕ}
+    [Fact p.Prime] [IsCyclotomicExtension {p * k} ℚ L] (hpk : ¬ p ∣ k)
+    (w : HeightOneSpectrum (𝓞 L)) [w.asIdeal.LiesOver (span {(p : ℤ)})] {ζ : 𝓞 L}
+    (hζ : IsPrimitiveRoot ζ p) : w.intValuation (ζ - 1) = WithZero.exp (-1) := by
+  have hp := (Fact.out : p.Prime)
+  have he : w.asIdeal.ramificationIdx ℤ = p - 1 := by
+    have := ramificationIdx_eq (p * k) L w.asIdeal (k := 0) (by rw [zero_add, pow_one]) hpk
+    rwa [pow_zero, one_mul] at this
+  -- `v(p) = exp(-(p - 1))` and `v(p) = v(ζ - 1) ^ (p - 1)`.
+  have h := w.intValuation_natCast_eq_exp_neg_ramificationIdx (p := p)
+  rw [he, hζ.valuation_natCast_eq_valuation_sub_one_pow w.intValuation
+    w.intValuation_le_one] at h
+  refine (pow_left_inj₀ zero_le zero_le (Nat.sub_ne_zero_of_lt hp.one_lt)).1 (h.trans ?_)
+  rw [← WithZero.exp_nsmul, smul_neg, nsmul_one]
+
+end IsCyclotomicExtension.Rat
+

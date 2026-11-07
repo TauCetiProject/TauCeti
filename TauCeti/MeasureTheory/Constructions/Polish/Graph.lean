@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.Set.Graph
 public import TauCeti.MeasureTheory.Constructions.Polish.Analytic
 public import TauCeti.MeasureTheory.MeasurableSpace.Graph
 
@@ -28,7 +29,11 @@ nonempty, every set `G` with `InjOn Prod.fst G` is of the form `graphOn f (Prod.
 (`Set.exists_eq_graphOn_image_fst`), so this describes all measurable sets with at most one point
 in each vertical section: their domain is measurable (`MeasurableSet.of_graphOn`) and the partial
 function they name is measurable on it (`MeasurableSet.measurable_domRestrict_of_graphOn`). The
-projection embedding above needs no such hypothesis.
+projection embedding above needs no such hypothesis. Without extending outside the domain,
+`Set.InjOn.graphValue` names the partial function even when `Y` is empty;
+`Set.InjOn.measurable_graphValue` proves it measurable. The measurable equivalence
+`MeasurableSet.graphDomainEquiv` identifies `G` with `Prod.fst '' G` by first projection, with
+inverse `x ↦ (x, graphValue x)`.
 
 The analytic form is Souslin's theorem. If the graph of `f` is analytic, the preimage
 `f ⁻¹' t = (Function.graph f).preimage t` of a Borel set is analytic, and so is the preimage of
@@ -40,6 +45,10 @@ its complement; a set that is analytic with analytic complement is Borel.
   most one point above each `x` is a measurable embedding.
 * `MeasurableSet.measurable_iff_measurable_fst`: a map with values in such a set is measurable if
   and only if its first coordinate is.
+* `Set.InjOn.measurable_graphValue`: the function defined by a functional Borel graph is
+  measurable on its domain, with no nonemptiness assumption.
+* `MeasurableSet.graphDomainEquiv`: a functional Borel graph is measurably equivalent to its
+  domain by first projection.
 * `TauCeti.measurableSet_graphOn_iff`: a partial map between standard Borel spaces has
   measurable graph if and only if its domain is measurable and it is measurable on its domain.
 * `TauCeti.measurableSet_graph_iff_measurable`: a map between standard Borel spaces is
@@ -89,6 +98,38 @@ theorem MeasurableSet.measurable_iff_measurable_fst {Z : Type*} [MeasurableSpace
   have hψ : Measurable fun z ↦ (⟨φ z, hφ z⟩ : G) :=
     (hG.measurableEmbedding_domRestrict_fst hinj).measurable_comp_iff.1 h
   exact measurable_subtype_coe.comp hψ
+
+/-- The function defined by a functional Borel graph is measurable on its domain. -/
+@[fun_prop]
+theorem Set.InjOn.measurable_graphValue {G : Set (X × Y)} (hinj : InjOn Prod.fst G)
+    (hG : MeasurableSet G) : Measurable hinj.graphValue := by
+  have hm : Measurable (fun x : Prod.fst '' G ↦ ((x : X), hinj.graphValue x)) :=
+    (hG.measurable_iff_measurable_fst hinj hinj.graphValue_mem).2 measurable_subtype_coe
+  exact hm.snd
+
+/-- First projection identifies a functional Borel graph measurably with its domain. -/
+noncomputable def MeasurableSet.graphDomainEquiv {G : Set (X × Y)} (hG : MeasurableSet G)
+    (hinj : InjOn Prod.fst G) : G ≃ᵐ (Prod.fst '' G) where
+  toFun p := ⟨p.val.1, mem_image_of_mem Prod.fst p.property⟩
+  invFun x := ⟨((x : X), hinj.graphValue x), hinj.graphValue_mem x⟩
+  left_inv p := Subtype.ext (hinj (hinj.graphValue_mem _) p.property rfl)
+  right_inv _ := rfl
+  measurable_toFun := (measurable_fst.comp measurable_subtype_coe).subtype_mk
+  measurable_invFun :=
+    (measurable_subtype_coe.prodMk (hinj.measurable_graphValue hG)).subtype_mk
+
+/-- The domain equivalence is the first projection. -/
+@[simp]
+theorem MeasurableSet.graphDomainEquiv_apply {G : Set (X × Y)} (hG : MeasurableSet G)
+    (hinj : InjOn Prod.fst G) (p : G) :
+    hG.graphDomainEquiv hinj p = ⟨p.val.1, mem_image_of_mem Prod.fst p.property⟩ := (rfl)
+
+/-- The inverse of the domain equivalence evaluates the function defined by the graph. -/
+@[simp]
+theorem MeasurableSet.graphDomainEquiv_symm_apply {G : Set (X × Y)} (hG : MeasurableSet G)
+    (hinj : InjOn Prod.fst G) (x : Prod.fst '' G) :
+    (hG.graphDomainEquiv hinj).symm x =
+      ⟨((x : X), hinj.graphValue x), hinj.graphValue_mem x⟩ := (rfl)
 
 /-- **The domain of a measurable graph is measurable.** If the graph of `f` on `s` is a measurable
 subset of a product of standard Borel spaces, then `s` is measurable. -/
