@@ -63,6 +63,9 @@ makes the monotone rearrangement of two real laws a transport plan between them.
   increasing where its values lie strictly between `0` and `1`; together they give
   `MeasureTheory.Measure.quantile_lt_iff`, `MeasureTheory.Measure.strictMonoOn_quantile` and
   `MeasureTheory.Measure.continuousOn_quantile`;
+* `MeasureTheory.Measure.cdf_quantile_of_noAtoms` and
+  `MeasureTheory.Measure.strictMonoOn_quantile_of_noAtoms` — the same two statements for an
+  atomless law, without a continuity hypothesis;
 * `MeasureTheory.Measure.quantile_eq_of_cdf_eq` and
   `MeasureTheory.Measure.upperQuantile_eq_of_cdf_eq` — invert an interior cdf value under strict
   monotonicity;
@@ -370,6 +373,18 @@ increasing on the levels strictly between `0` and `1`. -/
 theorem strictMonoOn_quantile (μ : Measure ℝ) (hμ : Continuous (cdf μ)) :
     StrictMonoOn μ.quantile (Ioo 0 1) := fun s hs t ht hst => by
   rwa [lt_quantile_iff μ ht.1 ht.2, cdf_quantile μ hμ hs.1 hs.2]
+
+/-- For an atomless law the quantile is an exact right inverse of the cumulative distribution
+function at every level strictly between `0` and `1`. -/
+theorem cdf_quantile_of_noAtoms (μ : Measure ℝ) [IsProbabilityMeasure μ] [NullSingletonClass μ]
+    (h0 : 0 < t) (h1 : t < 1) : cdf μ (μ.quantile t) = t :=
+  cdf_quantile' μ h0 h1 (measure_singleton _)
+
+/-- For an atomless law the quantile function is strictly increasing on the levels strictly
+between `0` and `1`. -/
+theorem strictMonoOn_quantile_of_noAtoms (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    [NullSingletonClass μ] : StrictMonoOn μ.quantile (Ioo 0 1) :=
+  strictMonoOn_quantile μ (continuous_cdf_of_noAtoms μ)
 
 /-- If the cumulative distribution function is strictly increasing where its values lie strictly
 between `0` and `1`, the quantile is a left inverse of it there. -/
@@ -993,7 +1008,7 @@ theorem cdf_quantile_ae (ν : Measure ℝ) [IsProbabilityMeasure ν] [NullSingle
   have hu1 : u ≠ 1 := fun h => hu (by simp [h])
   have h0 : 0 < u := lt_of_le_of_ne huIcc.1 (Ne.symm hu0)
   have h1 : u < 1 := lt_of_le_of_ne huIcc.2 hu1
-  exact cdf_quantile ν (continuous_cdf_of_noAtoms ν) h0 h1
+  exact cdf_quantile_of_noAtoms ν h0 h1
 
 /-- The part of the plateau of `cdf ν` that lies strictly to the right of a point `y` whose
 level `cdf ν y` is still below `1` is null. Equivalently: the atom of a real law sits at the *left*
