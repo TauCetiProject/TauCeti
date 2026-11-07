@@ -17,8 +17,8 @@ The Ree family `²G₂(3^(2m+1))` is built inside the group of algebraic-closure
 the short-root type-`G₂` carrier over the prime field `𝔽₃`. That carrier is the closed subgroup
 scheme of `GL₇` generated over `𝔽₃` by the reductions of the numbered simple root subgroups and
 the weight torus of the Kostant toral closure of the seven-dimensional module `V(ϖ₁)`. This file
-attaches it to a validated Ree index, together with its numbered positive simple root subgroups
-and the two Frobenius endomorphisms used in the fixed-point construction.
+attaches it to a validated Ree index, together with its numbered positive simple root subgroups,
+rank-indexed weight torus, and the two Frobenius endomorphisms used in the fixed-point construction.
 
 The carrier is taken over `𝔽₃`, rather than obtained by base change from its integral toral
 closure, because the characteristic-three exceptional isogeny is constructed on the prime-field
@@ -51,6 +51,7 @@ that any group below is finite, perfect, or simple.
 * `TauCeti.ReeG2LieIndex.AmbientGroup`: the algebraic-closure-valued points of the carrier.
 * `TauCeti.ReeG2LieIndex.simpleRootSubgroup`: its positive simple-root subgroup at a
   Bourbaki-numbered node.
+* `TauCeti.ReeG2LieIndex.weightTorus`: its weight torus in rank-indexed coordinates.
 * `TauCeti.ReeG2LieIndex.frobenius` and `TauCeti.ReeG2LieIndex.primeFrobenius`: the `q`-power and
   `3`-power Frobenius endomorphisms of the ambient group.
 
@@ -114,6 +115,19 @@ the public API. -/
 theorem simpleRootSubgroup_def (i : Fin d.1.rank) :
     d.simpleRootSubgroup i =
       G2ShortRoot.PrimeField.rootSubgroupPoints (.inl (finCongr d.rank_eq_two i)) d.1.Closure :=
+  (rfl)
+
+/-- The represented weight torus in the fundamental-weight coordinates of the validated
+index. The rank-two reindexing preserves the Bourbaki numbering. -/
+def weightTorus : (Fin d.1.rank → d.1.Closureˣ) →* d.AmbientGroup :=
+  (G2ShortRoot.PrimeField.weightTorusPoints d.1.Closure).comp
+    (MulEquiv.arrowCongr (finCongr d.rank_eq_two) (MulEquiv.refl _)).toMonoidHom
+
+/-- The indexed weight torus is the carrier's weight torus after the rank identification.
+Kept as a named rewrite so character-map equations retain the indexed torus. -/
+theorem weightTorus_apply (s : Fin d.1.rank → d.1.Closureˣ) :
+    d.weightTorus s = G2ShortRoot.PrimeField.weightTorusPoints d.1.Closure
+      (fun i => s ((finCongr d.rank_eq_two).symm i)) :=
   (rfl)
 
 /-- **The simple-root subgroups sit at the simple roots of the `G₂` root datum.** The character by

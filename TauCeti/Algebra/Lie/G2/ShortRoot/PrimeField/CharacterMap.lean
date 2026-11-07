@@ -23,7 +23,7 @@ carrier; no identification with a canonical Chevalley–Demazure group is assert
 
 The construction uses the torus equation of
 `TauCeti.G2ShortRoot.PrimeField.specialIsogeny_weightTorusPoints` and the contravariant
-composition law `TauCeti.torusPointMap_mul`.
+composition and power laws `TauCeti.IsCharacterMap.comp` and `TauCeti.IsCharacterMap.pow`.
 
 ## References
 
@@ -58,20 +58,8 @@ power of the root-datum weight map. In particular, odd powers have the Ree chara
 theorem isCharacterMap_specialIsogeny_pow (n : ℕ) :
     IsCharacterMap (weightTorusPoints A)
       (HPow.hPow (α := Monoid.End (points A)) (specialIsogeny A) n)
-      (DynkinType.g2SpecialIsogeny.weightMap ^ n) := by
-  -- Keep the endomorphism type visible: powers here mean composition, not pointwise powers.
-  let τ : Monoid.End (points A) := specialIsogeny A
-  apply isCharacterMap_iff.mpr
-  have hpow (k : ℕ) (s : Fin 2 → Aˣ) :
-      (τ ^ k) (weightTorusPoints A s) =
-        weightTorusPoints A (torusPointMap (DynkinType.g2SpecialIsogeny.weightMap ^ k) s) := by
-    induction k generalizing s with
-    | zero => simp
-    | succ k ih =>
-      rw [pow_succ' τ k, Monoid.End.coe_mul, Function.comp_apply, ih,
-        pow_succ, torusPointMap_mul, MonoidHom.comp_apply]
-      exact (isCharacterMap_specialIsogeny A).map_apply _
-  exact hpow n
+      (DynkinType.g2SpecialIsogeny.weightMap ^ n) :=
+  (isCharacterMap_specialIsogeny A).pow n
 
 end
 

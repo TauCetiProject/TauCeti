@@ -36,19 +36,6 @@ noncomputable section
 
 variable (d : ReeG2LieIndex)
 
-/-- The represented weight torus in the fundamental-weight coordinates of the validated
-index. The rank-two reindexing preserves the Bourbaki numbering. -/
-def weightTorus : (Fin d.1.rank → d.1.Closureˣ) →* d.AmbientGroup :=
-  (G2ShortRoot.PrimeField.weightTorusPoints d.1.Closure).comp
-    (MonoidHom.pi fun i : Fin 2 => Pi.evalMonoidHom _ ((finCongr d.rank_eq_two).symm i))
-
-/-- The indexed weight torus is the carrier's weight torus after the rank identification.
-Kept as a named rewrite so character-map equations retain the indexed torus. -/
-theorem weightTorus_apply (s : Fin d.1.rank → d.1.Closureˣ) :
-    d.weightTorus s = G2ShortRoot.PrimeField.weightTorusPoints d.1.Closure
-      (fun i => s ((finCongr d.rank_eq_two).symm i)) :=
-  (rfl)
-
 /-- The represented Ree G₂ Steinberg map pulls characters back by the native root-datum
 Steinberg map, for every valid Ree parameter. The exponent is the recorded `2 * m + 1`,
 not the field order `3 ^ (2 * m + 1)`. -/
