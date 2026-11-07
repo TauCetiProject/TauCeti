@@ -18,9 +18,9 @@ on the fraction field `F_u`, the image of the formal parameters in `𝔪_u ^ k` 
 For positive `k` these are the usual subgroups `E_k(F_u)`; the level zero here is also `E₁`,
 not the subgroup `E₀` of points with nonsingular reduction.
 
-Write `q = #κ(u)` and let `Ẽ_ns` be the nonsingular points of the reduced equation. Then
+Write `q = #κ(u)` and let `E_ns` be the nonsingular points of the reduced equation. Then
 
-`[E(F_u) : E_(k+1)(F_u)] = q^k · #Ẽ_ns(κ(u)) · [E(F_u) : E₀(F_u)]`.
+`[E(F_u) : E_(k+1)(F_u)] = q^k · #E_ns(κ(u)) · [E(F_u) : E₀(F_u)]`.
 
 For a minimal equation the last factor is the local Tamagawa number. This formula separates
 the formal, reduced, and component-group factors in the index, as needed when comparing the
