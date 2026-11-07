@@ -302,16 +302,6 @@ theorem exists_admissible_range_fderiv_perturbedFlow_sup_span_tangentConeAt_eq_t
   refine Submodule.span_le.2 (Set.singleton_subset_iff.2 ?_)
   simpa using Submodule.neg_mem _ (Submodule.subset_span hmem)
 
-omit [FiniteDimensional ℝ E] in
-/-- A continuous linear map and a vector together span the target exactly when the map extended
-by the line through the vector is surjective. -/
-private theorem surjective_coprod_toSpanSingleton_iff {V : Type*} [NormedAddCommGroup V]
-    [NormedSpace ℝ V] (L : V →L[ℝ] E) (v : E) :
-    Function.Surjective (L.coprod (ContinuousLinearMap.toSpanSingleton ℝ v)) ↔
-      LinearMap.range (L : V →ₗ[ℝ] E) ⊔ (ℝ ∙ v) = ⊤ := by
-  rw [← ContinuousLinearMap.coe_coe, ← LinearMap.range_eq_top, ContinuousLinearMap.range_coprod,
-    ContinuousLinearMap.toLinearMap_toSpanSingleton, LinearMap.range_toSpanSingleton]
-
 /-- **Spanning is an open condition.** For a family `h` of `C²` compactly supported functions, the
 triples `(t, x, s)` of a time, a start point and a parameter at which the range of the parameter
 derivative of the time-`t` map of the perturbed flow and the gradient of `perturb f h s` at the end
@@ -370,7 +360,7 @@ theorem isOpen_setOf_range_fderiv_perturbedFlow_sup_span_eq_top {ι : Type*} [Fi
             EuclideanSpace ℝ ι →ₗ[ℝ] E) ⊔ (ℝ ∙ v q) = ⊤} =
       A ⁻¹' {B | Function.Surjective B} := by
     ext q
-    simp [A, surjective_coprod_toSpanSingleton_iff]
+    simp [A, ContinuousLinearMap.surjective_coprod_toSpanSingleton_iff]
   rw [hset]
   exact isOpen_setOf_surjective.preimage hA
 
