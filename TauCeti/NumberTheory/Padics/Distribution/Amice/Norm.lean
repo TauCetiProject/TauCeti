@@ -67,6 +67,8 @@ families; every statement assumes the relevant boundedness. The disc norm `S_h` 
   `TauCeti.onOpenDisc_iff_forall_bddAbove_norm_coeff_mul_norm_factorial`: all disc norms,
   equivalently all dual stage norms, are finite exactly when the series lies on the open unit
   disc.
+* `TauCeti.memℓp_factorial_mul_coeff_of_onOpenDisc`: on the open unit disc of a normed
+  `ℚ_p`-algebra, the weighted coefficients `⌊n / pʰ⌋! coeff n F` are bounded at every level.
 * `TauCeti.bddAbove_norm_coeff_mul_norm_factorial_zero_exp` and
   `TauCeti.not_bddAbove_norm_coeff_mul_norm_factorial_one_exp`: the exponential series has finite
   dual stage norm at level zero but not at level one.
@@ -326,6 +328,19 @@ theorem onOpenDisc_iff_forall_bddAbove_norm_coeff_mul_norm_factorial :
   rw [onOpenDisc_iff_forall_hasGaussNorm_amiceRadius (p := p)]
   exact ⟨fun hF h ↦ bddAbove_norm_coeff_mul_norm_factorial_of_hasGaussNorm (hF (h + 1)),
     fun hF h ↦ hasGaussNorm_amiceRadius_of_bddAbove (hF h)⟩
+
+open scoped ENNReal in
+variable (p) in
+/-- **Weighted coefficients on the open unit disc are bounded.** If `F` lies on the open unit disc
+of a normed `ℚ_p`-algebra `K` with `‖1‖ = 1`, then at every level `h` the family
+`⌊n / pʰ⌋! coeff n F`, the factorials being taken in `K`, is bounded. -/
+theorem memℓp_factorial_mul_coeff_of_onOpenDisc [NormedAlgebra ℚ_[p] K] [NormOneClass K]
+    (hF : F.OnOpenDisc 1) (h : ℕ) : Memℓp (fun n ↦ ((n / p ^ h)! : K) * F.coeff n) ∞ := by
+  obtain ⟨B, hB⟩ := (onOpenDisc_iff_forall_bddAbove_norm_coeff_mul_norm_factorial (p := p)).mp hF h
+  refine memℓp_infty ⟨B, ?_⟩
+  rintro _ ⟨n, rfl⟩
+  refine (norm_mul_le _ _).trans ?_
+  simpa only [norm_natCast_eq_norm_padic (p := p), mul_comm] using hB ⟨n, rfl⟩
 
 /-! ### Examples: the exponential and the logarithm -/
 
