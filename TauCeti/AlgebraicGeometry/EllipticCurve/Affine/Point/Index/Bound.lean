@@ -110,17 +110,12 @@ private theorem index_nonsingularReduction_bounds_of_isTateTerminal_IStar_zero
   classical
   obtain ⟨-, ⟨A₂, h₂⟩, -, ⟨A₄, h₄⟩, ⟨A₆, h₆⟩, -⟩ := isTateTerminal_IStar_zero.1 h
   rw [index_nonsingularReduction_eq_of_isTateTerminal_IStar_zero v hϖ h h₂ h₄ h₆]
-  set P : Cubic (ResidueField v.valuationSubring) :=
-    ⟨1, residue _ A₂, residue _ A₄, residue _ A₆⟩
-  have hP : {t : ResidueField v.valuationSubring |
-      t ^ 3 + residue _ A₂ * t ^ 2 + residue _ A₄ * t + residue _ A₆ = 0} =
-      ↑P.roots.toFinset := by
-    ext t
-    simp [Cubic.mem_roots_iff (Cubic.ne_zero_of_a_ne_zero (P := P) one_ne_zero), P]
-  have hcard : Nat.card {t : ResidueField v.valuationSubring |
-      t ^ 3 + residue _ A₂ * t ^ 2 + residue _ A₄ * t + residue _ A₆ = 0} ≤ 3 := by
-    rw [hP, Nat.card_coe_set_eq, Set.ncard_coe_finset]
-    exact P.card_roots_le
+  have hϖ0 : ϖ ≠ 0 := h.ne_zero (by simp)
+  have hprime : Prime ϖ := by
+    rw [← Ideal.span_singleton_prime hϖ0, ← hϖ]
+    infer_instance
+  have hcard := h.natCard_tateCubicRoots_le hprime
+  rw [natCard_tateCubicRoots_eq hϖ hϖ0 h₂ h₄ h₆] at hcard
   refine ⟨by omega, ?_, fun _ ↦ by omega⟩
   simp only [TauCeti.ReductionSymbol.componentCount_IStar]
   omega
