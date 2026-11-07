@@ -224,25 +224,6 @@ theorem quantumComplexDirectSumIso_ι (j : ℤ) :
         D.khovanovTotalEnhancedComplexι hD R j := by
   simp [khovanovTotalEnhancedComplexι]
 
-/-- Taking ordinary coordinates of an included homogeneous basis vector gives its single
-coefficient vector. Apply this before expanding the homogeneous circle basis. -/
-@[simp↓]
-theorem quantumComplexDirectSumIso_inv_f_ι_basis (i j : ℤ) (e : D.EnhancedStateAt i j) :
-    ((D.quantumComplexDirectSumIso hD R).inv.f i).hom
-      (((Sigma.ι (D.khovanovComplex hD R) j).f i).hom
-        (D.khovanovEnhancedBasis hD R j i e)) =
-      Finsupp.single (D.totalEnhancedStateAtEquiv i ⟨j, e⟩) 1 :=
-  D.quantumComplexDirectSumXIso_hom_ι_basis hD R i j e
-
-/-- On coefficient basis vectors the cochain comparison is the homogeneous state inclusion. -/
-@[simp↓]
-theorem quantumComplexDirectSumIso_hom_f_single (i j : ℤ) (e : D.EnhancedStateAt i j) :
-    ((D.quantumComplexDirectSumIso hD R).hom.f i).hom
-      (Finsupp.single (D.totalEnhancedStateAtEquiv i ⟨j, e⟩) 1) =
-        ((Sigma.ι (D.khovanovComplex hD R) j).f i).hom
-          (D.khovanovEnhancedBasis hD R j i e) :=
-  D.quantumComplexDirectSumXIso_inv_single hD R i j e
-
 /-- The differential on a homogeneous ordinary basis vector is the original quantum-component
 differential, included in the quantum total and then expressed in ordinary coordinates. -/
 theorem khovanovTotalEnhancedComplex_d_single (i k j : ℤ) (e : D.EnhancedStateAt i j) :
