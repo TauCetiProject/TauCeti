@@ -33,8 +33,8 @@ functor to a finitely presented one is finitely presented: if `p : (-, Y) ⟶ F`
 `G` is presented by `g : X' ⟶ Y'`, lift `p ≫ φ` to `(-, u)` for some `u : Y ⟶ Y'`; then the
 cokernel of `φ` is presented by `g` and `u` together, as a morphism `X' ⊞ Y ⟶ Y'`. Finitely
 presented functors are also closed under binary biproducts. So when `C` is additive, `mod C`
-contains zero and is closed under isomorphisms, cokernels and finite products and coproducts in the
-functor category.
+contains zero (which only needs `C` nonempty) and is closed under isomorphisms, cokernels and
+finite products and coproducts in the functor category.
 
 ## Main declarations
 
@@ -85,6 +85,12 @@ abbrev isFinitelyPresentedFunctor : ObjectProperty (Cᵒᵖ ⥤ AddCommGrpCat.{v
   IsFinitelyPresentedFunctor
 
 variable {F G : Cᵒᵖ ⥤ AddCommGrpCat.{v}}
+
+/-- A functor is finitely generated exactly when it admits an epimorphism from a representable
+functor `(-, Y)`. -/
+theorem isFinitelyGeneratedFunctor_def :
+    IsFinitelyGeneratedFunctor F ↔ ∃ (Y : C) (p : preadditiveYoneda.obj Y ⟶ F), Epi p :=
+  Iff.rfl
 
 /-- A functor is finitely presented exactly when it is the cokernel of `(-, f)` for a morphism
 `f` of `C`. -/
@@ -145,9 +151,14 @@ theorem isFinitelyGeneratedFunctor_preadditiveYoneda_obj (Y : C) :
   (isFinitelyPresentedFunctor_preadditiveYoneda_obj Y).isFinitelyGeneratedFunctor
 
 open ZeroObject in
-instance [HasZeroObject C] : (isFinitelyPresentedFunctor C).ContainsZero where
-  exists_zero := ⟨_, preadditiveYoneda.map_isZero (isZero_zero C),
-    isFinitelyPresentedFunctor_preadditiveYoneda_obj 0⟩
+/-- The zero functor is finitely presented, as the cokernel of `(-, 𝟙 Y)` for any object `Y`. -/
+instance [Nonempty C] : (isFinitelyPresentedFunctor C).ContainsZero where
+  exists_zero := by
+    obtain ⟨Y⟩ := ‹Nonempty C›
+    refine ⟨0, isZero_zero _, isFinitelyPresentedFunctor_iff_exists_isColimit.2
+      ⟨Y, Y, 𝟙 Y, 0, comp_zero, ⟨CokernelCofork.IsColimit.ofEpiOfIsZero _ ?_ (isZero_zero _)⟩⟩⟩
+    rw [preadditiveYoneda.map_id]
+    infer_instance
 
 section Biproducts
 
@@ -221,13 +232,17 @@ instance : (isFinitelyPresentedFunctor C).IsClosedUnderBinaryProducts where
 
 end Biproducts
 
+open ZeroObject in
 instance [HasFiniteBiproducts C] :
     (isFinitelyPresentedFunctor C).IsClosedUnderFiniteCoproducts :=
   have := hasBinaryBiproducts_of_finite_biproducts C
+  have : Nonempty C := ⟨0⟩
   .mk'
 
+open ZeroObject in
 instance [HasFiniteBiproducts C] : (isFinitelyPresentedFunctor C).IsClosedUnderFiniteProducts :=
   have := hasBinaryBiproducts_of_finite_biproducts C
+  have : Nonempty C := ⟨0⟩
   .mk'
 
 end TauCeti
