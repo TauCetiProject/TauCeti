@@ -345,15 +345,9 @@ Iwasawa algebra `O⟦T⟧` of a complete discrete valuation ring `O` with finite
 is a pseudo-isomorphism iff its kernel and cokernel are finite. -/
 theorem isPseudoIsomorphism_iff_finite [IsLocalRing A] [IsNoetherianRing A]
     [Finite (IsLocalRing.ResidueField A)] (hdim : ringKrullDim A = 2) {f : M →ₗ[A] N} :
-    IsPseudoIsomorphism f ↔ Finite (LinearMap.ker f) ∧ Finite (N ⧸ LinearMap.range f) := by
-  -- A pseudo-null module is finitely generated, and so is a finite one.
-  refine ⟨fun hf ↦ ?_, fun ⟨h₁, h₂⟩ ↦ ?_⟩
-  · have := hf.1.finite
-    have := hf.2.finite
-    exact ⟨(isPseudoNull_iff_finite hdim).mp hf.1, (isPseudoNull_iff_finite hdim).mp hf.2⟩
-  · have : Module.Finite A (LinearMap.ker f) := .of_finite
-    have : Module.Finite A (N ⧸ LinearMap.range f) := .of_finite
-    exact ⟨(isPseudoNull_iff_finite hdim).mpr h₁, (isPseudoNull_iff_finite hdim).mpr h₂⟩
+    IsPseudoIsomorphism f ↔ Finite (LinearMap.ker f) ∧ Finite (N ⧸ LinearMap.range f) :=
+  ⟨fun hf ↦ ⟨(isPseudoNull_iff_finite hdim).mp hf.1, (isPseudoNull_iff_finite hdim).mp hf.2⟩,
+    fun ⟨h₁, h₂⟩ ↦ ⟨(isPseudoNull_iff_finite hdim).mpr h₁, (isPseudoNull_iff_finite hdim).mpr h₂⟩⟩
 
 section EulerQuotient
 

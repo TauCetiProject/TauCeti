@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Flat.TorsionFree
+public import Mathlib.RingTheory.Ideal.Quotient.Defs
 
 /-!
 # Nonzerodivisors in flat algebras
@@ -26,6 +27,8 @@ becomes a nonzerodivisor.
   nonzerodivisors.
 * `Module.Flat.of_algebraMap_injective_of_isBezout`: a domain is flat over a Bezout domain mapping
   injectively into it.
+* `Module.Flat.not_quotient_span_singleton`: the quotient `R ⧸ (r)` by a nonzerodivisor `r` that
+  is not a unit is not flat over `R`.
 -/
 
 public section
@@ -60,5 +63,17 @@ theorem of_algebraMap_injective_of_isBezout [IsDomain R] [IsBezout R] [IsDomain 
     (h : Function.Injective (algebraMap R A)) : Flat R A := by
   rwa [flat_iff_torsion_eq_bot_of_isBezout, ← Submodule.isTorsionFree_iff_torsion_eq_bot,
     isTorsionFree_iff_algebraMap_injective]
+
+/-- The quotient `R ⧸ (r)` by a nonzerodivisor `r` that is not a unit is not flat over `R`: the
+nonzerodivisor `r` would map to a nonzerodivisor of `R ⧸ (r)`, but it maps to zero in this nonzero
+ring. -/
+theorem not_quotient_span_singleton {r : R} (hr : r ∈ nonZeroDivisors R) (hr' : ¬ IsUnit r) :
+    ¬ Flat R (R ⧸ Ideal.span {r}) := by
+  intro _
+  have h0 := algebraMap_mem_nonZeroDivisors (A := R ⧸ Ideal.span {r}) hr
+  rw [Ideal.Quotient.algebraMap_eq, Ideal.Quotient.mk_singleton_self] at h0
+  have : Nontrivial (R ⧸ Ideal.span {r}) :=
+    Ideal.Quotient.nontrivial_iff.mpr (by rwa [ne_eq, Ideal.span_singleton_eq_top])
+  exact zero_notMem_nonZeroDivisors h0
 
 end Module.Flat
