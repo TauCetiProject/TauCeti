@@ -43,11 +43,12 @@ variable {F G V : Type*} [Field F] [Group G] [Fintype G] [AddCommGroup V] [Modul
   (p : ℕ) [Fact p.Prime] [CharP F p]
 
 /-- Stage of `id_mem_range_norm_linHom_of_ker_norm_le`: the map `f : (G → W) → V`,
-`w ↦ ∑ g, ρ g (w g)`, from the coinduced module on a complement `W` of the augmentation
-submodule is injective. A fixed vector of its kernel is constant with value of norm zero in `W`. -/
+`w ↦ ∑ g, ρ g (w g)`, from the coinduced module on a submodule `W` that meets the augmentation
+submodule only in zero is injective. A fixed vector of its kernel is constant with value of norm
+zero in `W`. -/
 private theorem injective_of_forall_mem_ker_norm (hG : IsPGroup p G) (ρ : Representation F G V)
     (h : LinearMap.ker ρ.norm ≤ Coinvariants.ker ρ) {W : Submodule F V}
-    (hW : IsCompl (Coinvariants.ker ρ) W) (σ : Representation F G (G → W))
+    (hW : Coinvariants.ker ρ ⊓ W = ⊥) (σ : Representation F G (G → W))
     (hσ : ∀ (h : G) (w : G → W) (g : G), σ h w g = w (h⁻¹ * g)) (f : (G → W) →ₗ[F] V)
     (hf : ∀ w : G → W, f w = ∑ g : G, ρ g (w g))
     (hfσ : ∀ (h : G) (w : G → W), f (σ h w) = ρ h (f w)) :
@@ -70,15 +71,15 @@ private theorem injective_of_forall_mem_ker_norm (hG : IsPGroup p G) (ρ : Repre
     rw [LinearMap.mem_ker, hf] at this
     simpa [Representation.norm, hconst] using this
   have hmem : ((y : G → W) 1 : V) ∈ Coinvariants.ker ρ ⊓ W := ⟨h hnorm, ((y : G → W) 1).2⟩
-  rw [hW.inf_eq_bot, Submodule.mem_bot] at hmem
+  rw [hW, Submodule.mem_bot] at hmem
   exact hy0 (Subtype.ext (funext fun g ↦ Subtype.ext (by simpa [hconst g] using hmem)))
 
 /-- Stage of `id_mem_range_norm_linHom_of_ker_norm_le`: the map `f : (G → W) → V`,
-`w ↦ ∑ g, ρ g (w g)`, from the coinduced module on a complement `W` of the augmentation
-submodule is surjective. A fixed functional on its cokernel kills `W` and the augmentation
-submodule. -/
-private theorem surjective_of_isCompl_coinvariantsKer (hG : IsPGroup p G)
-    (ρ : Representation F G V) {W : Submodule F V} (hW : IsCompl (Coinvariants.ker ρ) W)
+`w ↦ ∑ g, ρ g (w g)`, from the coinduced module on a submodule `W` that together with the
+augmentation submodule spans `V` is surjective. A fixed functional on its cokernel kills `W` and
+the augmentation submodule. -/
+private theorem surjective_of_sup_coinvariantsKer_eq_top (hG : IsPGroup p G)
+    (ρ : Representation F G V) {W : Submodule F V} (hW : Coinvariants.ker ρ ⊔ W = ⊤)
     (σ : Representation F G (G → W)) (f : (G → W) →ₗ[F] V)
     (hf : ∀ w : G → W, f w = ∑ g : G, ρ g (w g))
     (hfσ : ∀ (h : G) (w : G → W), f (σ h w) = ρ h (f w)) :
@@ -106,7 +107,7 @@ private theorem surjective_of_isCompl_coinvariantsKer (hG : IsPGroup p G)
     simp [(Submodule.Quotient.mk_eq_zero _).2 hw']
   refine hl0 (LinearMap.ext fun c ↦ ?_)
   obtain ⟨v, rfl⟩ := Submodule.Quotient.mk_surjective _ c
-  have hv : v ∈ Coinvariants.ker ρ ⊔ W := hW.sup_eq_top ▸ Submodule.mem_top
+  have hv : v ∈ Coinvariants.ker ρ ⊔ W := hW ▸ Submodule.mem_top
   exact sup_le hker hW' hv
 
 /-- **A representation of a `p`-group in characteristic `p` with vanishing degree `-1` Tate
@@ -131,8 +132,8 @@ theorem id_mem_range_norm_linHom_of_ker_norm_le (hG : IsPGroup p G) (ρ : Repres
     rw [hf, hf, map_sum]
     refine Fintype.sum_equiv (Equiv.mulLeft h⁻¹) _ _ fun g ↦ ?_
     simp [hσ, ← mul_apply_eq_comp, ← map_mul]
-  have hinj := injective_of_forall_mem_ker_norm p hG ρ h hW σ hσ f hf hfσ
-  have hsurj := surjective_of_isCompl_coinvariantsKer p hG ρ hW σ f hf hfσ
+  have hinj := injective_of_forall_mem_ker_norm p hG ρ h hW.inf_eq_bot σ hσ f hf hfσ
+  have hsurj := surjective_of_sup_coinvariantsKer_eq_top p hG ρ hW.sup_eq_top σ f hf hfσ
   -- The identity is the norm of the projection onto the summand at `1`.
   let e := LinearEquiv.ofBijective f ⟨hinj, hsurj⟩
   refine ⟨W.subtype ∘ₗ LinearMap.proj 1 ∘ₗ e.symm.toLinearMap, LinearMap.ext fun x ↦ ?_⟩
