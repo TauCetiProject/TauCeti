@@ -51,6 +51,8 @@ dominated convergence.
 * `TauCeti.schrodingerPropagator_ae_eq_integral`: `S(t) f = K_t ⋆ f` for integrable `f ∈ L²`.
 * `TauCeti.norm_schrodingerPropagator_apply_le`, `TauCeti.eLpNorm_schrodingerPropagator_le`: the
   dispersive estimate.
+* `TauCeti.coeFn_schrodingerPropagator_toLp_gaussian`: the evolution of the Gaussian
+  `g(x) = exp(-π ‖x‖²)`, `S(t) g (x) = (1 + 4πit)^(-n/2) exp(-π ‖x‖² / (1 + 4πit))`.
 
 ## References
 
@@ -257,5 +259,54 @@ theorem eLpNorm_schrodingerPropagator_le {t : ℝ} (ht : t ≠ 0)
     ← ofReal_integral_norm_eq_lintegral_enorm hf, ← ENNReal.ofReal_mul (by positivity)]
   · exact eLpNormEssSup_le_of_ae_bound (norm_schrodingerPropagator_apply_le ht f hf)
   all_goals exact Lp.aestronglyMeasurable _
+
+/-! ### The evolution of a Gaussian -/
+
+/-- **The Schrödinger evolution of a Gaussian.** The Gaussian `g(x) = exp(-π ‖x‖²)`, which is its
+own Fourier transform, evolves into the complex Gaussian
+
+`S(t) g (x) = (1 + 4πit)^(-n/2) exp(-π ‖x‖² / (1 + 4πit))`,
+
+with the principal power. -/
+theorem coeFn_schrodingerPropagator_toLp_gaussian (t : ℝ) :
+    schrodingerPropagator ℂ t
+        ((SchwartzMap.gaussian (b := π) (by simpa using pi_pos) : 𝓢(E, ℂ)).toLp 2) =ᵐ[volume]
+      fun x ↦ (1 + 4 * π * t * I) ^ (-(Module.finrank ℝ E : ℂ) / 2) *
+        cexp (-π * ‖x‖ ^ 2 / (1 + 4 * π * t * I)) := by
+  have hπ : 0 < (π : ℂ).re := by simpa using pi_pos
+  set b : ℂ := π * (1 + 4 * π * t * I)
+  have hb : 0 < b.re := by
+    have : b.re = π := by simp [b]
+    rw [this]
+    exact pi_pos
+  have hfourier : ∀ ξ : E, 𝓕 (𝓕⁻ (SchwartzMap.gaussian hb : 𝓢(E, ℂ))) ξ =
+      schrodingerSymbol t ξ • 𝓕 (SchwartzMap.gaussian hπ : 𝓢(E, ℂ)) ξ := fun ξ ↦ by
+    rw [FourierTransform.fourier_fourierInv_eq, SchwartzMap.fourier_coe]
+    have : ⇑(SchwartzMap.gaussian hπ : 𝓢(E, ℂ)) = fun ξ ↦ cexp (-π * ‖ξ‖ ^ 2) :=
+      funext (SchwartzMap.gaussian_apply hπ)
+    rw [this, fourier_gaussian_innerProductSpace hπ]
+    simp only [div_self (ofReal_ne_zero.2 pi_ne_zero), one_cpow, one_mul,
+      SchwartzMap.gaussian_apply, schrodingerSymbol_apply, smul_eq_mul]
+    rw [← Complex.exp_add]
+    congr 1
+    simp only [b]
+    push_cast
+    field_simp
+    ring
+  have h := SchwartzMap.toLp_eq_fourierMultiplierCLM_of_fourier_eq_smul _
+    (memLp_schrodingerSymbol (E := E) t).coeFn_toLp hfourier
+  rw [schrodingerPropagator_def, ← h]
+  filter_upwards [(𝓕⁻ (SchwartzMap.gaussian hb : 𝓢(E, ℂ))).coeFn_toLp 2] with x hx
+  have h1 : (1 + 4 * π * t * I : ℂ).arg ≠ π :=
+    (mem_slitPlane_iff_arg.1 (mem_slitPlane_iff.2 (Or.inl (by simp)))).1
+  have h0 : (1 + 4 * π * t * I : ℂ) ≠ 0 := fun h ↦ by simpa using congrArg re h
+  rw [hx, SchwartzMap.fourierInv_gaussian]
+  congr 1
+  · rw [show (π : ℂ) / b = (1 + 4 * π * t * I)⁻¹ by
+        simp only [b]
+        field_simp, inv_cpow _ _ h1, ← cpow_neg, neg_div]
+  · congr 1
+    simp only [b]
+    field_simp
 
 end TauCeti
