@@ -23,29 +23,23 @@ The braid relation `TauCeti.smul_add_one_sub_smul_braid_relation` compares two w
 three values pairwise by affine combinations. It is the self-distributivity of the Alexander
 quandle, and gives the invariance of the Alexander module of a link diagram under the third
 Reidemeister move.
-
-The scalar rescaling identity `TauCeti.div_mul_smul_smul_cancel_left` cancels a nonzero factor
-in the denominator against a scalar action, including when the remaining denominator is zero.
 -/
 
 public section
 
 namespace TauCeti
 
-/-- Rescaling `k • v` by `a / (k * b)` is rescaling `v` by `a / b`. -/
-theorem div_mul_smul_smul_cancel_left {K M : Type*} [GroupWithZero K] [MulAction K M]
-    {k : K} (hk : k ≠ 0) (a b : K) (v : M) :
-    (a / (k * b)) • k • v = (a / b) • v := by
-  rw [smul_smul, div_mul_eq_div_div_swap, div_mul_cancel₀ _ hk]
-
 /-- If `u` is `M`-regular, then `x = u • y + (1 - u) • x` holds exactly when `x = y`. -/
+@[simp]
 theorem _root_.IsSMulRegular.eq_smul_add_one_sub_smul_iff {R M : Type*} [Ring R]
     [AddCommGroup M] [Module R M] {u : R} (hu : IsSMulRegular M u) {x y : M} :
     x = u • y + (1 - u) • x ↔ x = y := by
   rw [sub_smul, one_smul]
-  refine ⟨fun h ↦ hu (show u • x = u • y by linear_combination (norm := abel) h), ?_⟩
-  rintro rfl
-  rw [add_sub_cancel]
+  refine ⟨fun h ↦ ?_, ?_⟩
+  · have hux : u • x = u • y := by linear_combination (norm := abel) h
+    exact hu hux
+  · rintro rfl
+    rw [add_sub_cancel]
 
 /-- **The braid relation for affine combinations.** Three strands enter a triangle with values
 `a`, `b`, `c` and cross pairwise; at a crossing of two strands with entering values `x` and `y`,
