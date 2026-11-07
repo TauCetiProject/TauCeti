@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.PlaneSeparation.JordanCurve
 import Mathlib.Analysis.Complex.Convex
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Analysis.Complex.LocalLine
 import TauCeti.Analysis.Complex.PlaneSeparation.Inside
 import TauCeti.Analysis.Contour.Winding.Separation
 
@@ -155,47 +156,6 @@ private theorem sub_I_mul_div_mem_ball {v : ℂ} (hv : v ≠ 0) (p : ℂ) {r s :
   · simpa [abs_of_pos hs] using hsr
   · simpa using hs
 
-/-- Near a straight point of a Jordan curve, the curve accumulates at that point from both sides
-of the line, measured in the coordinate `(q - p) / -(I / v)`. -/
-private theorem IsJordanCurve.mem_closure_inter_of_locally_eq_line {C : Set ℂ} {p v : ℂ} {r : ℝ}
-    (hv : v ≠ 0) (hr : 0 < r) (hline : ∀ z ∈ ball p r, z ∈ C ↔ (v * (z - p)).im = 0) :
-    p ∈ closure (C ∩ {q | 0 < ((q - p) / -(I / v)).im}) ∧
-      p ∈ closure (C ∩ {q | ((q - p) / -(I / v)).im < 0}) := by
-  let d : ℂ := -(I / v)
-  let φ : ℝ → ℂ := fun t => p + t / v
-  have hφcont : Continuous φ := by fun_prop
-  have hφ0 : Tendsto φ (𝓝 (0 : ℝ)) (𝓝 p) := by
-    simpa [φ] using hφcont.tendsto 0
-  have hφv (t : ℝ) : v * (φ t - p) = t := by
-    dsimp [φ]
-    field_simp [hv]
-    ring
-  have hφd (t : ℝ) : ((φ t - p) / d).im = t := by
-    have heq : (φ t - p) / d = I * t := by
-      dsimp [φ, d]
-      field_simp [hv, I_ne_zero]
-      simp [Complex.I_sq]
-    rw [heq]
-    simp
-  have hφball : ∀ᶠ t in 𝓝 (0 : ℝ), φ t ∈ ball p r :=
-    hφ0.eventually (ball_mem_nhds p hr)
-  have hφC : ∀ᶠ t in 𝓝 (0 : ℝ), φ t ∈ C := by
-    filter_upwards [hφball] with t ht
-    exact (hline _ ht).mpr (by rw [hφv]; simp)
-  have hleft : p ∈ closure (C ∩ {q | 0 < ((q - p) / d).im}) := by
-    apply mem_closure_of_tendsto (b := 𝓝[>] (0 : ℝ))
-      (hφ0.mono_left nhdsWithin_le_nhds)
-    filter_upwards [hφC.filter_mono nhdsWithin_le_nhds, self_mem_nhdsWithin]
-      with t htC (ht : 0 < t)
-    exact ⟨htC, by simpa [hφd] using ht⟩
-  have hright : p ∈ closure (C ∩ {q | ((q - p) / d).im < 0}) := by
-    apply mem_closure_of_tendsto (b := 𝓝[<] (0 : ℝ))
-      (hφ0.mono_left nhdsWithin_le_nhds)
-    filter_upwards [hφC.filter_mono nhdsWithin_le_nhds, self_mem_nhdsWithin]
-      with t htC (ht : t < 0)
-    exact ⟨htC, by simpa [hφd] using ht⟩
-  exact ⟨hleft, hright⟩
-
 /-- The short normal segment through a straight point of a Jordan curve satisfies the
 segment-crossing criterion. -/
 private theorem IsJordanCurve.notMem_model_connectedComponentIn_of_locally_eq_line {C : Set ℂ}
@@ -221,7 +181,7 @@ private theorem IsJordanCurve.notMem_model_connectedComponentIn_of_locally_eq_li
     by_contra h
     have := mul_nonpos_of_nonpos_of_nonneg (le_of_not_gt h) (norm_nonneg v)
     linarith
-  obtain ⟨hleft, hright⟩ := IsJordanCurve.mem_closure_inter_of_locally_eq_line hv hr hline
+  obtain ⟨hleft, hright⟩ := mem_closure_inter_of_locally_eq_line hv hr hline
   have hstart : d * ((-s : ℝ) : ℂ) + p = p + I * s / v := by
     dsimp [d]
     push_cast
