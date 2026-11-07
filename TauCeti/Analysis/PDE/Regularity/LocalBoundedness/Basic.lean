@@ -280,8 +280,7 @@ theorem setIntegral_sq_mul_max_sub_sq_le_of_caccioppoli {q : ℝ≥0∞} (hq : 2
   -- Chebyshev: on `{u > l}`, the lower truncation `(u - k)⁺` is at least `l - k`.
   have hcheb : mu.real ((Omega : Set (EuclideanSpace ℝ ι)) ∩ A') ≤ I / (l - k) ^ 2 := by
     rw [← inter_assoc]
-    exact MeasureTheory.measureReal_inter_lt_le_setIntegral_max_sub_sq_div (hmeasO.inter hT)
-      (ne_top_of_le_ne_top hTfin (measure_mono inter_subset_right)) hkl
+    exact MeasureTheory.measureReal_inter_lt_le_setIntegral_max_sub_sq_div (hmeasO.inter hT) hkl
       (IntegrableOn.mono_set hwLp.integrable_sq inter_subset_left)
   rw [integral_congr_ae (hz2.mono fun x hx => hx.symm)]
   refine hsob.trans ?_
@@ -1164,8 +1163,9 @@ private theorem toReal_eLpNormEssSup_le_half_add {w : EuclideanSpace ℝ ι → 
     (toReal_eLpNormEssSup_le_and_ae_le hD hw0 hint H hρR le_rfl).2
   -- Interpolation: `∫_{B(x₀, ρ)} w² ≤ F^{2-p} J`.
   have hI : ∫ x in Metric.ball x₀ ρ, w x ^ 2 ∂mu ≤ F ^ (2 - p) * J :=
-    MeasureTheory.setIntegral_sq_le_rpow_mul_setIntegral_rpow hF (Metric.ball_subset_ball hρR.le)
-      hp2 hw0 hintp hwF
+    by simpa only [Real.rpow_two] using
+      MeasureTheory.setIntegral_rpow_le_rpow_mul_setIntegral_rpow hF
+        (Metric.ball_subset_ball hρR.le) hp2 two_ne_zero (Eventually.of_forall hw0) hintp hwF
   have hsqrt : √(F ^ (2 - p) * J) = F ^ (1 - p / 2) * √J := by
     rw [Real.sqrt_mul (Real.rpow_nonneg hF _), Real.sqrt_eq_rpow (F ^ (2 - p)),
       ← Real.rpow_mul hF]
