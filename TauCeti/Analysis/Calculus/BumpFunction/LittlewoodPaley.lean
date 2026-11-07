@@ -29,7 +29,7 @@ Keeping `φ` itself as a low-frequency piece and discarding the cutoffs with `j 
 are `∑_{j ≤ N} ψⱼ = φ (2^{-N} ·)`, each `ψ_{j+1}` is the rescaling `ψ₁ (2^{-j} ·)`, and pieces whose
 indices differ by at least a fixed `L` have disjoint supports. This is the partition used to
 decompose a tempered distribution into frequency blocks for Besov and Bessel-potential spaces.
-The sum `ψ̃ⱼ` of the pieces with indices within `L` of `j` is then a smooth cutoff, equal to `1` on
+The sum `Ψⱼ` of the pieces with indices within `L` of `j` is then a smooth cutoff, equal to `1` on
 the support of `ψⱼ` and supported in a slightly larger ball or annulus, with the same rescaled
 derivative bounds; it localizes operators to the frequencies of a single block.
 
@@ -44,9 +44,9 @@ derivative bounds; it localizes operators to the frequencies of a single block.
 * `ContDiffBump.exists_inhomogeneousLittlewoodPaley_mul_eq_zero`: finite overlap of the pieces.
 * `ContDiffBump.exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_le`: the uniform rescaled
   derivative bounds for the inhomogeneous partition.
-* `ContDiffBump.enlargedLittlewoodPaley`: the enlarged cutoffs `ψ̃ⱼ`, sums of the neighbouring
+* `ContDiffBump.enlargedLittlewoodPaley`: the enlarged cutoffs `Ψⱼ`, sums of the neighbouring
   pieces.
-* `ContDiffBump.enlargedLittlewoodPaley_mul_inhomogeneousLittlewoodPaley`: `ψ̃ⱼ ψⱼ = ψⱼ`.
+* `ContDiffBump.enlargedLittlewoodPaley_mul_inhomogeneousLittlewoodPaley`: `Ψⱼ ψⱼ = ψⱼ`.
 * `ContDiffBump.exists_norm_iteratedFDeriv_enlargedLittlewoodPaley_le`: the uniform rescaled
   derivative bounds for the enlarged cutoffs.
 
@@ -319,13 +319,13 @@ theorem exists_inhomogeneousLittlewoodPaley_mul_eq_zero :
       _ ≤ 2 ^ k * φ.rIn :=
           mul_le_mul_of_nonneg_right (pow_le_pow_right₀ one_le_two (by omega)) φ.rIn_pos.le
 
-/-- The **enlarged Littlewood–Paley cutoff** `ψ̃ⱼ = ∑_{j + 1 - L ≤ k < j + L} ψₖ`, the sum of the
+/-- The **enlarged Littlewood–Paley cutoff** `Ψⱼ = ∑_{j + 1 - L ≤ k < j + L} ψₖ`, the sum of the
 pieces of the inhomogeneous partition whose indices are within `L` of `j`. It is supported in the
 ball of radius `2^{j+L} φ.rOut`, and for `j ≥ L` outside the ball of radius `2^{j-L} φ.rIn`. When
 the pieces whose indices differ by at least `L` have disjoint supports, as for the `L` of
 `exists_inhomogeneousLittlewoodPaley_mul_eq_zero`, it equals `1` on the support of `ψⱼ`
 (`enlargedLittlewoodPaley_mul_inhomogeneousLittlewoodPaley`), so that the Fourier multiplier
-`Δ̃ⱼ` by `ψ̃ⱼ` satisfies `Δ̃ⱼ Δⱼ = Δⱼ`. -/
+`Δ'ⱼ` by `Ψⱼ` satisfies `Δ'ⱼ Δⱼ = Δⱼ`. -/
 noncomputable def enlargedLittlewoodPaley (L j : ℕ) (ξ : E) : ℝ :=
   ∑ k ∈ Finset.Ico (j + 1 - L) (j + L), φ.inhomogeneousLittlewoodPaley k ξ
 
@@ -336,7 +336,7 @@ theorem enlargedLittlewoodPaley_apply (L j : ℕ) (ξ : E) :
   (rfl)
 
 /-- **The enlarged cutoff is `1` on the support of `ψⱼ`.** If the pieces of the inhomogeneous
-partition whose indices differ by at least `L` have disjoint supports, then `ψ̃ⱼ ψⱼ = ψⱼ`. -/
+partition whose indices differ by at least `L` have disjoint supports, then `Ψⱼ ψⱼ = ψⱼ`. -/
 theorem enlargedLittlewoodPaley_mul_inhomogeneousLittlewoodPaley {L : ℕ}
     (hL : ∀ j k : ℕ, j + L ≤ k → ∀ ξ : E,
       φ.inhomogeneousLittlewoodPaley j ξ * φ.inhomogeneousLittlewoodPaley k ξ = 0)
@@ -366,7 +366,7 @@ theorem contDiff_enlargedLittlewoodPaley {n : ℕ∞} (L j : ℕ) :
   simp_rw [funext (φ.enlargedLittlewoodPaley_apply L j)]
   exact ContDiff.sum fun k _ ↦ φ.contDiff_inhomogeneousLittlewoodPaley k
 
-/-- The enlarged cutoff `ψ̃ⱼ` vanishes outside the open ball of radius `2^{j+L} φ.rOut`. -/
+/-- The enlarged cutoff `Ψⱼ` vanishes outside the open ball of radius `2^{j+L} φ.rOut`. -/
 theorem enlargedLittlewoodPaley_eq_zero_of_le_norm {L j : ℕ} {ξ : E}
     (hξ : 2 ^ (j + L) * φ.rOut ≤ ‖ξ‖) : φ.enlargedLittlewoodPaley L j ξ = 0 := by
   rw [enlargedLittlewoodPaley_apply]
@@ -377,7 +377,7 @@ theorem enlargedLittlewoodPaley_eq_zero_of_le_norm {L j : ℕ} {ξ : E}
   · exact one_le_two
   · exact (Finset.mem_Ico.1 hk).2.le
 
-/-- For `j ≥ L`, the enlarged cutoff `ψ̃ⱼ` vanishes on the closed ball of radius
+/-- For `j ≥ L`, the enlarged cutoff `Ψⱼ` vanishes on the closed ball of radius
 `2^{j-L} φ.rIn`. -/
 theorem enlargedLittlewoodPaley_eq_zero_of_norm_le {L j : ℕ} (hLj : L ≤ j) {ξ : E}
     (hξ : ‖ξ‖ ≤ 2 ^ (j - L) * φ.rIn) : φ.enlargedLittlewoodPaley L j ξ = 0 := by
@@ -392,13 +392,13 @@ theorem enlargedLittlewoodPaley_eq_zero_of_norm_le {L j : ℕ} (hLj : L ≤ j) {
   · have := (Finset.mem_Ico.1 hk).1
     omega
 
-/-- The enlarged cutoff `ψ̃ⱼ` is supported in the closed ball of radius `2^{j+L} φ.rOut`. -/
+/-- The enlarged cutoff `Ψⱼ` is supported in the closed ball of radius `2^{j+L} φ.rOut`. -/
 theorem tsupport_enlargedLittlewoodPaley_subset (L j : ℕ) :
     tsupport (φ.enlargedLittlewoodPaley L j) ⊆ closedBall 0 (2 ^ (j + L) * φ.rOut) :=
   closure_minimal (fun _ hξ ↦ mem_closedBall_zero_iff.2 (not_lt.1 fun h ↦
     hξ (φ.enlargedLittlewoodPaley_eq_zero_of_le_norm h.le))) isClosed_closedBall
 
-/-- For `j ≥ L`, the enlarged cutoff `ψ̃ⱼ` is supported where `2^{j-L} φ.rIn ≤ ‖ξ‖`. -/
+/-- For `j ≥ L`, the enlarged cutoff `Ψⱼ` is supported where `2^{j-L} φ.rIn ≤ ‖ξ‖`. -/
 theorem tsupport_enlargedLittlewoodPaley_subset_of_le {L j : ℕ} (hLj : L ≤ j) :
     tsupport (φ.enlargedLittlewoodPaley L j) ⊆ {ξ | 2 ^ (j - L) * φ.rIn ≤ ‖ξ‖} :=
   closure_minimal (fun _ hξ ↦ not_lt.1 fun h ↦
@@ -483,7 +483,7 @@ theorem hasCompactSupport_enlargedLittlewoodPaley (L j : ℕ) :
   (isCompact_closedBall _ _).of_isClosed_subset (isClosed_tsupport _)
     (φ.tsupport_enlargedLittlewoodPaley_subset L j)
 
-/-- **Derivative bounds for the enlarged cutoffs.** The `k`-th derivative of `ψ̃ⱼ` is bounded by
+/-- **Derivative bounds for the enlarged cutoffs.** The `k`-th derivative of `Ψⱼ` is bounded by
 `B / 2^{jk}`, with `B` independent of `j`. -/
 theorem exists_norm_iteratedFDeriv_enlargedLittlewoodPaley_le (L k : ℕ) :
     ∃ B, 0 ≤ B ∧ ∀ (j : ℕ) (ξ : E),

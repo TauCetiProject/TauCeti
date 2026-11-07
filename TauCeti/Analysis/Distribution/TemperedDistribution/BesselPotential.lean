@@ -31,7 +31,7 @@ norms are weighted sequence norms of the `‖Δⱼ u‖_p`.
 * `TemperedDistribution.exists_besselPotential_compL_littlewoodPaleyBlock_eq`: there is `C` such
   that for every `j` the operator `J^s Δⱼ` factors as `T_{σⱼ} Δⱼ`, where `T_{σⱼ}` is the Fourier
   multiplier by a Schwartz symbol `σⱼ` whose kernel satisfies `‖𝓕⁻ σⱼ‖₁ ≤ C 2^{js}`. The symbol
-  is `σⱼ = (1 + ‖ξ‖ ^ 2) ^ (s / 2) ψ̃ⱼ` for the enlarged cutoff `ψ̃ⱼ`
+  is `σⱼ = (1 + ‖ξ‖ ^ 2) ^ (s / 2) Ψⱼ` for the enlarged cutoff `Ψⱼ`
   (`ContDiffBump.enlargedLittlewoodPaley`), which equals `1` on the support of the piece `ψⱼ`.
 
 A Fourier multiplier with Schwartz symbol `σ` is the convolution with `𝓕⁻ σ`, so Young's
@@ -221,7 +221,7 @@ namespace TemperedDistribution
 variable [NormedSpace ℂ F] (φ : ContDiffBump (0 : E))
 
 omit [MeasurableSpace E] [BorelSpace E] in
-/-- On the support of the enlarged cutoff `ψ̃ⱼ`, the Japanese bracket is comparable to `2^j`:
+/-- On the support of the enlarged cutoff `Ψⱼ`, the Japanese bracket is comparable to `2^j`:
 `a 4^j ≤ 1 + ‖ξ‖ ^ 2 ≤ b 4^j` with `a > 0` and `b` independent of `j`. -/
 private theorem exists_one_add_norm_sq_le_of_mem_tsupport_enlargedLittlewoodPaley (L : ℕ) :
     ∃ a b : ℝ, 0 < a ∧ ∀ (j : ℕ), ∀ ξ ∈ tsupport (φ.enlargedLittlewoodPaley L j),
@@ -266,8 +266,8 @@ Fourier multiplier by a Schwartz symbol `σⱼ` applied after `Δⱼ`, where the
 `∫ ‖𝓕⁻ σⱼ x‖ dx ≤ C 2^{js}`.
 
 The symbol `σⱼ` is the Bessel weight `(1 + ‖ξ‖ ^ 2) ^ (s / 2)` cut off to the frequencies of `Δⱼ`
-by the enlarged cutoff `ψ̃ⱼ`, and the factorization `J^s Δⱼ = T_{σⱼ} Δⱼ` holds because
-`ψ̃ⱼ ψⱼ = ψⱼ`. -/
+by the enlarged cutoff `Ψⱼ`, and the factorization `J^s Δⱼ = T_{σⱼ} Δⱼ` holds because
+`Ψⱼ ψⱼ = ψⱼ`. -/
 theorem exists_besselPotential_compL_littlewoodPaleyBlock_eq (s : ℝ) :
     ∃ C, ∀ j : ℕ, ∃ σ : 𝓢(E, ℂ),
       besselPotential E F s ∘L littlewoodPaleyBlock F φ j =
@@ -279,7 +279,7 @@ theorem exists_besselPotential_compL_littlewoodPaleyBlock_eq (s : ℝ) :
   obtain ⟨C, hC⟩ := TauCeti.exists_integral_norm_fourierInv_one_add_norm_sq_rpow_mul_le (E := E)
     s (b := b) ha (N := finrank ℝ E + 1) (by omega) B
   refine ⟨C, fun j ↦ ?_⟩
-  -- The symbol `σⱼ = (1 + ‖ξ‖ ^ 2) ^ (s / 2) ψ̃ⱼ ξ`.
+  -- The symbol `σⱼ = (1 + ‖ξ‖ ^ 2) ^ (s / 2) Ψⱼ ξ`.
   set χ : E → ℝ := φ.enlargedLittlewoodPaley L j
   have hχ : ContDiff ℝ ∞ χ := φ.contDiff_enlargedLittlewoodPaley L j
   have hσs : ContDiff ℝ ∞ (fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) * χ ξ : ℝ) : ℂ)) :=
@@ -290,7 +290,7 @@ theorem exists_besselPotential_compL_littlewoodPaleyBlock_eq (s : ℝ) :
   have hσ : ⇑σ = fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) * χ ξ : ℝ) : ℂ) :=
     funext (HasCompactSupport.toSchwartzMap_toFun _ _)
   refine ⟨σ, ?_, ?_⟩
-  · -- Both sides are Fourier multipliers; their symbols agree since `ψ̃ⱼ ψⱼ = ψⱼ`.
+  · -- Both sides are Fourier multipliers; their symbols agree since `Ψⱼ ψⱼ = ψⱼ`.
     rw [besselPotential, littlewoodPaleyBlock_eq_fourierMultiplierCLM,
       fourierMultiplierCLM_compL_fourierMultiplierCLM
         (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j) (by fun_prop),
