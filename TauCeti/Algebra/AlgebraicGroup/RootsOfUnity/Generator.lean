@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Generator.Basic
 public import TauCeti.Algebra.AlgebraicGroup.RootsOfUnity.AdjoinRoot
-import TauCeti.Algebra.Polynomial.XPowSubC
+import TauCeti.Algebra.Polynomial.XPow.SubC
 import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.RingTheory.Norm.FullSetOfSections.AdjoinRoot
 

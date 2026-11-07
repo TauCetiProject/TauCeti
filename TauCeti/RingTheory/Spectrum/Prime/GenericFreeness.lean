@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.FiniteType
-public import TauCeti.Algebra.Polynomial.XPowSpan
+public import TauCeti.Algebra.Polynomial.XPow.Span
 public import TauCeti.Topology.Closure
 public import TauCeti.RingTheory.Spectrum.Prime.FreeLocus
 public import TauCeti.RingTheory.Spectrum.Prime.Topology
@@ -91,7 +91,7 @@ private theorem freeLocus_mem_nhds_polynomial {R : Type uR} [CommRing R] [Algebr
     rw [← LinearMap.range_comp, ← hφX]
     exact le_iSup₂_of_le (i + 1) (by omega) le_rfl
   have hFtop : ⨆ j, F j = ⊤ :=
-    iSup_iSup_lt_range_linearCombination_X_pow_smul m hm
+    TauCeti.iSup_iSup_lt_range_linearCombination_X_pow_smul m hm
   -- `K j` is the module of relations of the `j`-th subquotient; it increases with `j`.
   let K : ℕ →o Submodule R (Fin t → R) :=
     ⟨fun j ↦ (F j).comap (φ j), monotone_nat_of_le_succ fun j c hc ↦ by
