@@ -53,14 +53,14 @@ open scoped BigOperators
 
 variable (k G : Type) [Field k] [IsAlgClosed k] [Group G] [Finite G]
 
-/-- Every finite group over an algebraically closed field has a finite
-central stem extension with bijective character transgression. In particular, the character
-dual of its kernel is `H²(G, kˣ)`. -/
-theorem exists_finite_stem_factorSet_bijective_characterTransgression :
-    ∃ (M : Type) (_ : CommGroup M) (_ : Finite M) (α : FactorSet G M),
-      (FactorSet.rightHom α).ker ≤ Subgroup.center α.Extension ∧
-      (FactorSet.rightHom α).ker ≤ commutator α.Extension ∧
-      Function.Bijective (α.characterTransgression (A := kˣ)) := by
+/-- The second cohomology `H²(G, kˣ)` of a finite group has cyclic generators `x i` whose orders
+`n i` are nonzero in `k`, and its cardinality is the product of the orders. -/
+private theorem exists_cyclic_generators_schurMultiplier :
+    ∃ (ι : Type) (_ : Fintype ι) (n : ι → ℕ)
+      (x : ι → groupCohomology.H2 (Rep.ofMulDistribMulAction G kˣ)),
+      (∀ i, (n i : k) ≠ 0) ∧ (∀ i, n i • x i = 0) ∧
+      (∀ y, ∃ c : ι → ℕ, y = ∑ i, c i • x i) ∧
+      Nat.card (groupCohomology.H2 (Rep.ofMulDistribMulAction G kˣ)) = ∏ i, n i := by
   classical
   -- Choose cyclic generators of second cohomology, each with its own annihilating order.
   let : Finite (groupCohomology.H2 (Rep.ofMulDistribMulAction G kˣ)) :=
@@ -81,9 +81,54 @@ theorem exists_finite_stem_factorSet_bijective_characterTransgression :
       addOrderOf_injective (AddMonoidHom.single (fun j ↦ ZMod (n j)) i)
         (by simpa only [AddMonoidHom.coe_single] using
           Pi.single_injective (M := fun j ↦ ZMod (n j)) i) (1 : ZMod (n i))
-  have hncast (i : ι) : (n i : k) ≠ 0 := by
-    rw [← horder i]
+  refine ⟨ι, hι, n, x, fun i ↦ ?_, hx, fun y ↦ ⟨fun i ↦ (e y i).val, ?_⟩, ?_⟩
+  · rw [← horder i]
     exact schurMultiplier_natCast_addOrderOf_ne_zero (x i) (horder i ▸ (hne i).out)
+  · apply e.injective
+    simp only [x]
+    rw [map_sum e]
+    simp_rw [map_nsmul e, AddEquiv.apply_symm_apply]
+    simp only [← Pi.single_smul, nsmul_eq_mul, mul_one, ZMod.natCast_zmod_val]
+    exact (Finset.univ_sum_single (e y)).symm
+  · rw [Nat.card_congr e.toEquiv, Nat.card_pi]
+    apply Finset.prod_congr rfl
+    intro i _
+    rw [Nat.card_eq_fintype_card, ZMod.card]
+
+/-- The exponent of the product of the groups of `n i`-th roots of unity is nonzero in `k` when
+each `n i` is. -/
+private theorem exponent_pi_rootsOfUnity_cast_ne_zero {K ι : Type} [Field K] [Finite ι]
+    (n : ι → ℕ) (hncast : ∀ i, (n i : K) ≠ 0) :
+    (Monoid.exponent (∀ i, rootsOfUnity (n i) K) : K) ≠ 0 := by
+  have := Fintype.ofFinite ι
+  -- A common prime-to-characteristic annihilator supplies enough roots for the kernel.
+  have hprodcast : ((∏ i, n i : ℕ) : K) ≠ 0 := by
+    simpa using Finset.prod_ne_zero_iff.mpr (fun i _ ↦ hncast i)
+  have hexp : Monoid.exponent (∀ i, rootsOfUnity (n i) K) ∣ ∏ i, n i := by
+    apply Monoid.exponent_dvd_of_forall_pow_eq_one
+    intro a
+    funext i
+    apply Subtype.ext
+    exact (mem_rootsOfUnity (∏ i, n i) (a i : Kˣ)).mp
+      (rootsOfUnity_le_of_dvd (M := K)
+        (Finset.dvd_prod_of_mem _ (Finset.mem_univ i)) (a i).property)
+  obtain ⟨d, hd⟩ := hexp
+  intro h
+  apply hprodcast
+  simp [hd, h]
+
+omit [Finite G] in
+/-- Elements `x i` of second cohomology killed by `n i`, with `n i` nonzero in `k`, that generate
+it, are the transgressions of the coordinate characters of the central extension of `G` by
+`∏ i, μ_{n i}` built from root-valued representatives. In particular transgression is surjective
+for a suitable factor set with values in `∏ i, μ_{n i}`. -/
+private theorem exists_factorSet_surjective_characterTransgression {ι : Type} [Fintype ι]
+    (n : ι → ℕ) (hncast : ∀ i, (n i : k) ≠ 0)
+    (x : ι → groupCohomology.H2 (Rep.ofMulDistribMulAction G kˣ)) (hx : ∀ i, n i • x i = 0)
+    (hgen : ∀ y, ∃ c : ι → ℕ, y = ∑ i, c i • x i) :
+    ∃ α : FactorSet G (∀ i, rootsOfUnity (n i) k),
+      Function.Surjective (α.characterTransgression (A := kˣ)) := by
+  classical
   let hnroot (i : ι) : NeZero (n i : k) := ⟨hncast i⟩
   choose β hβ hpow using fun i ↦
     (FactorSet.nsmul_eq_zero_iff_exists_factorSet_pow_eq_one (x i)).mp (hx i)
@@ -92,23 +137,6 @@ theorem exists_finite_stem_factorSet_bijective_characterTransgression :
       (fun g h ↦ hpow i (g, h))
   -- Assemble their root-valued representatives into one central extension.
   let M := ∀ i, rootsOfUnity (n i) k
-  -- A common prime-to-characteristic annihilator supplies enough roots for the kernel.
-  have hprodcast : ((∏ i, n i : ℕ) : k) ≠ 0 := by
-    simpa using Finset.prod_ne_zero_iff.mpr (fun i _ ↦ hncast i)
-  have hexp : Monoid.exponent M ∣ ∏ i, n i := by
-    apply Monoid.exponent_dvd_of_forall_pow_eq_one
-    intro a
-    funext i
-    apply Subtype.ext
-    exact (mem_rootsOfUnity (∏ i, n i) (a i : kˣ)).mp
-      (rootsOfUnity_le_of_dvd (M := k)
-        (Finset.dvd_prod_of_mem _ (Finset.mem_univ i)) (a i).property)
-  have hexpcast : (Monoid.exponent M : k) ≠ 0 := by
-    obtain ⟨d, hd⟩ := hexp
-    intro h
-    apply hprodcast
-    simp [hd, h]
-  let : NeZero (Monoid.exponent M : k) := ⟨hexpcast⟩
   let : MulDistribMulAction G M := trivialMulDistribMulAction G M
   -- Use the same action for characters and transgression: otherwise bare scalar-action
   -- inference on the function type M can select the pointwise Pi instance.
@@ -139,35 +167,56 @@ theorem exists_finite_stem_factorSet_bijective_characterTransgression :
     rw [heq]
     exact hβ i
   -- Every cyclic generator is the transgression of its coordinate character.
-  have hsurj : Function.Surjective (α.characterTransgression (A := kˣ)) := by
-    intro y
-    refine ⟨∑ i, (e y i).val • χ i, ?_⟩
-    simp only [map_sum, map_nsmul, hχ]
-    apply e.injective
-    simp only [x]
-    rw [map_sum e]
-    simp_rw [map_nsmul e, AddEquiv.apply_symm_apply]
-    simp only [← Pi.single_smul, nsmul_eq_mul, mul_one, ZMod.natCast_zmod_val]
-    exact Finset.univ_sum_single (e y)
-  -- There are exactly as many kernel characters as cohomology classes.
-  have hcardM : Nat.card M = Nat.card (groupCohomology.H2 (Rep.ofMulDistribMulAction G kˣ)) := by
-    rw [Nat.card_congr e.toEquiv, Nat.card_pi, Nat.card_pi]
+  refine ⟨α, fun y ↦ ?_⟩
+  obtain ⟨c, rfl⟩ := hgen y
+  exact ⟨∑ i, c i • χ i, by simp only [map_sum, map_nsmul, hχ]⟩
+
+omit [Finite G] in
+/-- The character group of the central extension by `∏ i, μ_{n i}` has as many elements as
+the order of the kernel. -/
+private theorem natCard_additive_equivariantCharacterSubgroup_rootsOfUnity {ι : Type} [Fintype ι]
+    (n : ι → ℕ) (hncast : ∀ i, (n i : k) ≠ 0) :
+    Nat.card (Additive (equivariantCharacterSubgroup G (∀ i, rootsOfUnity (n i) k) kˣ)) =
+      ∏ i, n i := by
+  classical
+  let hnroot (i : ι) : NeZero (n i : k) := ⟨hncast i⟩
+  let M := ∀ i, rootsOfUnity (n i) k
+  have hne : ∀ i, NeZero (n i) := fun i ↦ ⟨fun h ↦ hncast i (by simp [h])⟩
+  have : NeZero (Monoid.exponent M : k) := ⟨exponent_pi_rootsOfUnity_cast_ne_zero n hncast⟩
+  let : MulDistribMulAction G M := trivialMulDistribMulAction G M
+  let : SMul G M := (inferInstance : MulDistribMulAction G M).toMulAction.toSMul
+  have hcardM : Nat.card M = ∏ i, n i := by
+    rw [Nat.card_pi]
     apply Finset.prod_congr rfl
     intro i _
-    rw [HasEnoughRootsOfUnity.natCard_rootsOfUnity, Nat.card_eq_fintype_card, ZMod.card]
+    rw [HasEnoughRootsOfUnity.natCard_rootsOfUnity]
   let forget : equivariantCharacterSubgroup G M kˣ ≃ (M →* kˣ) :=
     { toFun := Subtype.val
       invFun f := ⟨f, (mem_equivariantCharacterSubgroup G M kˣ f).mpr (fun _ _ ↦ rfl)⟩
       left_inv _ := rfl
       right_inv _ := rfl }
-  have hcard : Nat.card (Additive (equivariantCharacterSubgroup G M kˣ)) =
-      Nat.card (groupCohomology.H2 (Rep.ofMulDistribMulAction G kˣ)) := by
-    rw [Nat.card_congr Additive.toMul, Nat.card_congr forget,
-      CommGroup.card_monoidHom_of_hasEnoughRootsOfUnity, hcardM]
+  rw [Nat.card_congr Additive.toMul, Nat.card_congr forget,
+    CommGroup.card_monoidHom_of_hasEnoughRootsOfUnity, hcardM]
+
+/-- Every finite group over an algebraically closed field has a finite
+central stem extension with bijective character transgression. In particular, the character
+dual of its kernel is `H²(G, kˣ)`. -/
+theorem exists_finite_stem_factorSet_bijective_characterTransgression :
+    ∃ (M : Type) (_ : CommGroup M) (_ : Finite M) (α : FactorSet G M),
+      (FactorSet.rightHom α).ker ≤ Subgroup.center α.Extension ∧
+      (FactorSet.rightHom α).ker ≤ commutator α.Extension ∧
+      Function.Bijective (α.characterTransgression (A := kˣ)) := by
+  classical
+  obtain ⟨ι, hι, n, x, hncast, hx, hgen, hcardH⟩ := exists_cyclic_generators_schurMultiplier k G
+  have hne : ∀ i, NeZero (n i) := fun i ↦ ⟨fun h ↦ hncast i (by simp [h])⟩
+  have : NeZero (Monoid.exponent (∀ i, rootsOfUnity (n i) k) : k) :=
+    ⟨exponent_pi_rootsOfUnity_cast_ne_zero n hncast⟩
+  obtain ⟨α, hsurj⟩ := exists_factorSet_surjective_characterTransgression k G n hncast x hx hgen
+  have hcard := natCard_additive_equivariantCharacterSubgroup_rootsOfUnity k G n hncast
   have hbij : Function.Bijective (α.characterTransgression (A := kˣ)) :=
-    (Nat.bijective_iff_surjective_and_card _).mpr ⟨hsurj, hcard⟩
+    (Nat.bijective_iff_surjective_and_card _).mpr ⟨hsurj, hcard.trans hcardH.symm⟩
   -- Injectivity of transgression forces the central kernel into the commutator subgroup.
-  refine ⟨M, inferInstance, inferInstance, α, ?_, ?_, hbij⟩
+  refine ⟨_, inferInstance, inferInstance, α, ?_, ?_, hbij⟩
   · rw [← FactorSet.range_inl_eq_ker_rightHom]
     exact α.inl_range_le_center trivialMulDistribMulAction_smul
   · rw [← FactorSet.range_inl_eq_ker_rightHom]
