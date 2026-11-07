@@ -112,10 +112,12 @@ theorem exists_isClosedEmbedding_normalExp_disc
       Φ.toOpenPartialHomeomorph.isClosedEmbedding_domRestrict_norm_le_bundle hrc hD
     have hsphere : IsClosedEmbedding
         ({p : TotalSpace P ν | ‖p.2‖ = r p.proj}.domRestrict Φ) :=
-      Φ.toOpenPartialHomeomorph.isClosedEmbedding_domRestrict_norm_eq_bundle hrc hD
+      Φ.toOpenPartialHomeomorph.isClosedEmbedding_domRestrict_norm_eq_bundle hrc
+        (fun p (hp : ‖p.2‖ = r p.proj) => hD (le_of_eq hp))
     have hopen : IsOpenEmbedding
         ({p : TotalSpace P ν | ‖p.2‖ < r p.proj}.domRestrict Φ) :=
-      Φ.toOpenPartialHomeomorph.isOpenEmbedding_domRestrict_norm_lt_bundle hrc hD
+      Φ.toOpenPartialHomeomorph.isOpenEmbedding_domRestrict_norm_lt_bundle hrc
+        (fun p (hp : ‖p.2‖ < r p.proj) => hD (le_of_lt hp))
     refine ⟨r, hr, hD.trans hdomain, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · rw [← hΦ]
       exact (Φ.toPartialEquiv.mapsTo.mono_left hD).image_subset.trans htarget

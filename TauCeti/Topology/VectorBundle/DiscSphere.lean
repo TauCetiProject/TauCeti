@@ -81,30 +81,30 @@ theorem isClosedEmbedding_domRestrict_norm_le_bundle [CompactSpace B] [FiniteDim
   exact ((e.continuousOn.mono hsource).domRestrict).isClosedEmbedding
     (fun p q hpq => Subtype.ext (e.injOn (hsource p.property) (hsource q.property) hpq))
 
-/-- A partial homeomorphism defined on compact closed fibre discs restricts to a closed
-embedding of the bounding sphere bundle. -/
+/-- A partial homeomorphism defined on the compact bounding sphere bundle restricts to a closed
+embedding of it. -/
 theorem isClosedEmbedding_domRestrict_norm_eq_bundle [CompactSpace B] [FiniteDimensional ℝ F]
     (e : OpenPartialHomeomorph (TotalSpace F V) X) {r : B → ℝ} (hr : Continuous r)
-    (hsource : {p : TotalSpace F V | ‖p.2‖ ≤ r p.proj} ⊆ e.source) :
-    IsClosedEmbedding ({p : TotalSpace F V | ‖p.2‖ = r p.proj}.domRestrict e) :=
-  (e.isClosedEmbedding_domRestrict_norm_le_bundle hr hsource).comp
-    (IsClosedEmbedding.inclusion
-      (fun p (hp : p ∈ {p : TotalSpace F V | ‖p.2‖ = r p.proj}) =>
-        le_of_eq (show ‖p.2‖ = r p.proj from hp))
-      ((isClosed_eq (TauCeti.continuous_norm_bundle F V)
-        (hr.comp (FiberBundle.continuous_proj F V))).preimage continuous_subtype_val))
+    (hsource : {p : TotalSpace F V | ‖p.2‖ = r p.proj} ⊆ e.source) :
+    IsClosedEmbedding ({p : TotalSpace F V | ‖p.2‖ = r p.proj}.domRestrict e) := by
+  have hclosed : IsClosed {p : TotalSpace F V | ‖p.2‖ = r p.proj} :=
+    isClosed_eq (TauCeti.continuous_norm_bundle F V) (hr.comp (FiberBundle.continuous_proj F V))
+  let : CompactSpace {p : TotalSpace F V | ‖p.2‖ = r p.proj} :=
+    isCompact_iff_compactSpace.mp
+      ((TauCeti.isCompact_setOf_norm_le_bundle hr).of_isClosed_subset hclosed
+        fun p hp => le_of_eq hp)
+  exact ((e.continuousOn.mono hsource).domRestrict).isClosedEmbedding
+    (fun p q hpq => Subtype.ext (e.injOn (hsource p.property) (hsource q.property) hpq))
 
 omit [T2Space X] in
-/-- A partial homeomorphism defined on closed fibre discs restricts to an open embedding of
-the open fibre disc bundle. -/
+/-- A partial homeomorphism defined on the open fibre disc bundle restricts to an open embedding
+of it. -/
 theorem isOpenEmbedding_domRestrict_norm_lt_bundle
     (e : OpenPartialHomeomorph (TotalSpace F V) X) {r : B → ℝ} (hr : Continuous r)
-    (hsource : {p : TotalSpace F V | ‖p.2‖ ≤ r p.proj} ⊆ e.source) :
+    (hsource : {p : TotalSpace F V | ‖p.2‖ < r p.proj} ⊆ e.source) :
     IsOpenEmbedding ({p : TotalSpace F V | ‖p.2‖ < r p.proj}.domRestrict e) :=
   e.isOpenEmbedding_restrict.comp
-    (IsOpenEmbedding.inclusion
-      (fun p (hp : p ∈ {p : TotalSpace F V | ‖p.2‖ < r p.proj}) =>
-        hsource (le_of_lt (show ‖p.2‖ < r p.proj from hp)))
+    (IsOpenEmbedding.inclusion hsource
       ((isOpen_lt (TauCeti.continuous_norm_bundle F V)
         (hr.comp (FiberBundle.continuous_proj F V))).preimage continuous_subtype_val))
 
