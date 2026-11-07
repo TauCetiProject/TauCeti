@@ -19,7 +19,8 @@ open MeasureTheory Real
 
 namespace TauCeti
 
-private lemma one_add_abs_pow_le (x : ℝ) (k : ℕ) :
+/-- A polynomial bound on powers of `1 + |x|` with an even power of `x`. -/
+theorem one_add_abs_pow_le_two_pow_mul (x : ℝ) (k : ℕ) :
     (1 + |x|) ^ k ≤ 2 ^ k * (1 + x ^ (2 * k : ℕ)) := by
   have hu : 0 ≤ |x| := abs_nonneg x
   have hsum : 1 + |x| ≤ 2 * max 1 |x| := by
@@ -75,7 +76,7 @@ theorem integrable_one_add_abs_rpow_mul_exp_neg_sq {p a : ℝ}
     have hx : 1 ≤ 1 + |x| := by nlinarith [abs_nonneg x]
     have hsmall : (1 + |x|) ^ p ≤ (1 + |x|) ^ (k : ℝ) :=
       Real.rpow_le_rpow_of_exponent_le hx hpk
-    have hlarge := one_add_abs_pow_le x k
+    have hlarge := one_add_abs_pow_le_two_pow_mul x k
     have hexp : 0 ≤ exp (-a * x ^ 2) := (exp_pos _).le
     have hkcast : (1 + |x|) ^ (k : ℝ) = (1 + |x|) ^ k := by
       rw [Real.rpow_natCast]

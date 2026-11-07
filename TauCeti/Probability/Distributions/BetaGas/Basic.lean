@@ -51,6 +51,16 @@ theorem gaussianBetaGasWeight_nonneg (n : ℕ) (β : ℝ)
   unfold gaussianBetaGasWeight
   positivity
 
+/-- The Gaussian beta-gas weight is positive at configurations with distinct coordinates. -/
+theorem gaussianBetaGasWeight_pos (n : ℕ) (β : ℝ) {x : Fin n → ℝ}
+    (hx : Function.Injective x) : 0 < gaussianBetaGasWeight n β x := by
+  rw [gaussianBetaGasWeight_def]
+  apply mul_pos (exp_pos _)
+  apply Finset.prod_pos
+  intro z hz
+  have hne : z.1 ≠ z.2 := ne_of_lt (Finset.mem_filter.mp hz).2
+  exact Real.rpow_pos_of_pos (abs_pos.mpr (sub_ne_zero.mpr (fun h => hne (hx h)))) β
+
 /-- The partition function, finite and strictly positive for `0 < β`. Outside the integrable
 case, the Bochner integral is defined to be zero. -/
 def gaussianBetaGasPartitionFunction (n : ℕ) (β : ℝ) : ℝ :=
@@ -63,6 +73,12 @@ theorem gaussianBetaGasPartitionFunction_def (n : ℕ) (β : ℝ) :
       ∫ x : Fin n → ℝ, gaussianBetaGasWeight n β x
         ∂Measure.pi fun _ : Fin n => (volume : Measure ℝ) := (rfl)
 
+/-- The partition function is nonnegative, including when the weight is not integrable. -/
+theorem gaussianBetaGasPartitionFunction_nonneg (n : ℕ) (β : ℝ) :
+    0 ≤ gaussianBetaGasPartitionFunction n β := by
+  rw [gaussianBetaGasPartitionFunction_def]
+  exact integral_nonneg (gaussianBetaGasWeight_nonneg n β)
+
 /-- The Gaussian beta-gas density; it integrates to one for `0 < β`. -/
 def gaussianBetaGasDensity (n : ℕ) (β : ℝ) (x : Fin n → ℝ) : ℝ :=
   gaussianBetaGasWeight n β x / gaussianBetaGasPartitionFunction n β
@@ -71,6 +87,13 @@ def gaussianBetaGasDensity (n : ℕ) (β : ℝ) (x : Fin n → ℝ) : ℝ :=
 theorem gaussianBetaGasDensity_def (n : ℕ) (β : ℝ) (x : Fin n → ℝ) :
     gaussianBetaGasDensity n β x =
       gaussianBetaGasWeight n β x / gaussianBetaGasPartitionFunction n β := (rfl)
+
+/-- The Gaussian beta-gas density is nonnegative for every inverse temperature. -/
+theorem gaussianBetaGasDensity_nonneg (n : ℕ) (β : ℝ)
+    (x : Fin n → ℝ) : 0 ≤ gaussianBetaGasDensity n β x := by
+  rw [gaussianBetaGasDensity_def]
+  exact div_nonneg (gaussianBetaGasWeight_nonneg n β x)
+    (gaussianBetaGasPartitionFunction_nonneg n β)
 
 /-- The Gaussian beta-gas measure; it is a probability measure for `0 < β`. -/
 def gaussianBetaGasMeasure (n : ℕ) (β : ℝ) : Measure (Fin n → ℝ) :=

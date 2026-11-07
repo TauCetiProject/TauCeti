@@ -148,16 +148,10 @@ theorem gaussianBetaGasPartitionFunction_pos (n : ℕ) {β : ℝ} (hβ : 0 < β)
     simp [gaussianBetaGasPartitionFunction_def, gaussianBetaGasWeight_def]
   · let x₀ : Fin n → ℝ := fun i => (i : ℝ)
     have hx₀ : 0 < gaussianBetaGasWeight n β x₀ := by
-      rw [gaussianBetaGasWeight_def]
-      apply mul_pos (exp_pos _)
-      apply Finset.prod_pos
-      intro z hz
-      have hz' : z.1 < z.2 := (Finset.mem_filter.mp hz).2
-      have hlt : (z.1 : ℝ) < (z.2 : ℝ) := by exact_mod_cast hz'
-      have hdiff : x₀ z.1 - x₀ z.2 ≠ 0 := by
-        dsimp [x₀]
-        exact (sub_ne_zero.mpr (ne_of_lt hlt))
-      exact Real.rpow_pos_of_pos (abs_pos.mpr hdiff) β
+      apply gaussianBetaGasWeight_pos
+      intro i j hij
+      dsimp [x₀] at hij
+      exact Fin.ext (by exact_mod_cast hij)
     rw [gaussianBetaGasPartitionFunction_def]
     exact integral_pos_of_integrable_nonneg_ne_zero
       (continuous_gaussianBetaGasWeight n hβ.le)
@@ -173,13 +167,6 @@ theorem integrable_gaussianBetaGasDensity (n : ℕ) {β : ℝ} (hβ : 0 < β) :
   funext x
   exact gaussianBetaGasDensity_def n β x
 
-/-- The Gaussian beta-gas density is nonnegative for positive inverse temperature. -/
-theorem gaussianBetaGasDensity_nonneg (n : ℕ) {β : ℝ} (hβ : 0 < β)
-    (x : Fin n → ℝ) : 0 ≤ gaussianBetaGasDensity n β x := by
-  rw [gaussianBetaGasDensity_def]
-  exact div_nonneg (gaussianBetaGasWeight_nonneg n β x)
-    (gaussianBetaGasPartitionFunction_pos n hβ).le
-
 /-- The Gaussian beta-gas density integrates to one for positive inverse temperature. -/
 theorem integral_gaussianBetaGasDensity (n : ℕ) {β : ℝ} (hβ : 0 < β) :
     (∫ x, gaussianBetaGasDensity n β x
@@ -194,7 +181,7 @@ theorem isProbabilityMeasure_gaussianBetaGasMeasure (n : ℕ) {β : ℝ} (hβ : 
   rw [gaussianBetaGasMeasure_def, withDensity_apply _ MeasurableSet.univ,
     Measure.restrict_univ]
   rw [← ofReal_integral_eq_lintegral_ofReal (integrable_gaussianBetaGasDensity n hβ)
-    (ae_of_all _ (gaussianBetaGasDensity_nonneg n hβ))]
+    (ae_of_all _ (gaussianBetaGasDensity_nonneg n β))]
   rw [integral_gaussianBetaGasDensity n hβ]
   norm_num
 
