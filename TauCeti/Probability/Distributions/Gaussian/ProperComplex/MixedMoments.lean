@@ -60,23 +60,58 @@ private def complexGaussianPartIndex (i : ι) : Bool → ι ⊕ ι :=
   | false => Sum.inl i
   | true => Sum.inr i
 
+private theorem complexGaussianPart_eq_coordinate (m : ι → ℂ) [Fintype ι]
+    (i : ι) (a : Bool) (z : ι → ℂ) :
+    complexGaussianPart m i a z =
+      complexToRealEuclidean ι z (complexGaussianPartIndex i a) -
+        complexToRealEuclidean ι m (complexGaussianPartIndex i a) := by
+  cases a <;> simp [complexGaussianPart, complexGaussianPartIndex,
+    complexToRealEuclidean_apply]
+
 private def complexGaussianPartCoeff (conjugated : Bool) : Bool → ℂ :=
   fun
   | false => 1
   | true => if conjugated then -Complex.I else Complex.I
 
-private theorem memLp_complexGaussianPart (m : ι → ℂ) (C : Matrix ι ι ℂ) (i : ι)
-    [Fintype ι] [DecidableEq ι] (a : Bool) :
-    MemLp (complexGaussianPart m i a) 4 (properComplexGaussianMeasure m C) := by
-  have h := (memLp_apply_properComplexGaussianMeasure m C i 4 (by norm_num)).sub
-    (memLp_const (m i))
-  cases a
-  · change MemLp (fun (z : ι → ℂ) ↦ (z i).re - (m i).re) 4
-      (properComplexGaussianMeasure m C)
-    exact h.continuousLinearMap_comp Complex.reCLM
-  · change MemLp (fun (z : ι → ℂ) ↦ (z i).im - (m i).im) 4
-      (properComplexGaussianMeasure m C)
-    exact h.continuousLinearMap_comp Complex.imCLM
+private def complexGaussianPairing (C : Matrix ι ι ℂ) (i j : ι) (x y : Bool) : ℂ :=
+  ∑ a : Bool, ∑ b : Bool, complexGaussianPartCoeff x a * complexGaussianPartCoeff y b *
+    (complexGaussianRealCovariance C (complexGaussianPartIndex i a)
+      (complexGaussianPartIndex j b) : ℂ)
+
+private theorem complexGaussianPairing_values (C : Matrix ι ι ℂ) (i j : ι) :
+    complexGaussianPairing C i j false true = C i j ∧
+    complexGaussianPairing C i j true false = star (C i j) ∧
+    complexGaussianPairing C i j false false = 0 ∧
+    complexGaussianPairing C i j true true = 0 := by
+  simp only [complexGaussianPairing, Fintype.sum_bool, complexGaussianPartCoeff,
+    complexGaussianPartIndex, complexGaussianRealCovariance_inl_inl,
+    complexGaussianRealCovariance_inl_inr, complexGaussianRealCovariance_inr_inl,
+    complexGaussianRealCovariance_inr_inr, Bool.false_eq_true, ite_true, ite_false]
+  repeat' constructor
+  all_goals
+    apply Complex.ext <;> simp [Complex.mul_re, Complex.mul_im]; ring
+
+private theorem complexGaussianPairings_factor (C : Matrix ι ι ℂ) (i j k l : ι) :
+    (∑ a : Bool, ∑ b : Bool, ∑ c : Bool, ∑ d : Bool,
+      complexGaussianPartCoeff false a * complexGaussianPartCoeff true b *
+        complexGaussianPartCoeff false c * complexGaussianPartCoeff true d *
+          ((complexGaussianRealCovariance C (complexGaussianPartIndex i a)
+              (complexGaussianPartIndex j b) *
+            complexGaussianRealCovariance C (complexGaussianPartIndex k c)
+              (complexGaussianPartIndex l d) +
+            complexGaussianRealCovariance C (complexGaussianPartIndex i a)
+              (complexGaussianPartIndex k c) *
+            complexGaussianRealCovariance C (complexGaussianPartIndex j b)
+              (complexGaussianPartIndex l d) +
+            complexGaussianRealCovariance C (complexGaussianPartIndex i a)
+              (complexGaussianPartIndex l d) *
+            complexGaussianRealCovariance C (complexGaussianPartIndex j b)
+              (complexGaussianPartIndex k c) : ℝ) : ℂ)) =
+      complexGaussianPairing C i j false true * complexGaussianPairing C k l false true +
+      complexGaussianPairing C i k false false * complexGaussianPairing C j l true true +
+      complexGaussianPairing C i l false true * complexGaussianPairing C j k true false := by
+  simp only [complexGaussianPairing, Fintype.sum_bool, Complex.ofReal_add, Complex.ofReal_mul]
+  ring
 
 private theorem complexGaussianCoordinate_eq_sum_parts (m : ι → ℂ) (i : ι)
     (z : ι → ℂ) :
@@ -114,12 +149,9 @@ private theorem integral_four_complexGaussianParts (m : ι → ℂ) {C : Matrix 
           (complexGaussianPartIndex l d) *
         complexGaussianRealCovariance C (complexGaussianPartIndex j b)
           (complexGaussianPartIndex k c) := by
-  by_cases ha : a <;> by_cases hb : b <;> by_cases hc : c <;> by_cases hd : d <;>
-    simpa [complexGaussianPart, complexGaussianPartIndex, ha, hb, hc, hd,
-      complexToRealEuclidean_apply] using
-      integral_four_real_coordinates m hC
-        (complexGaussianPartIndex i a) (complexGaussianPartIndex j b)
-        (complexGaussianPartIndex k c) (complexGaussianPartIndex l d)
+  simpa only [complexGaussianPart_eq_coordinate] using integral_four_real_coordinates m hC
+    (complexGaussianPartIndex i a) (complexGaussianPartIndex j b)
+    (complexGaussianPartIndex k c) (complexGaussianPartIndex l d)
 
 private def complexGaussianFourthTerm (m : ι → ℂ) (i j k l : ι)
     (a b c d : Bool) (z : ι → ℂ) : ℂ :=
@@ -143,28 +175,30 @@ private theorem integrable_complexGaussianFourthTerm (m : ι → ℂ) (C : Matri
     [Fintype ι] [DecidableEq ι] (i j k l : ι) (a b c d : Bool) :
     Integrable (fun z ↦ complexGaussianFourthTerm m i j k l a b c d z)
       (properComplexGaussianMeasure m C) := by
-  let F : Fin 4 → (ι → ℂ) → ℂ := ![
-    fun z ↦ (complexGaussianPart m i a z : ℂ),
-    fun z ↦ (complexGaussianPart m j b z : ℂ),
-    fun z ↦ (complexGaussianPart m k c z : ℂ),
-    fun z ↦ (complexGaussianPart m l d z : ℂ)]
-  have hF (q : Fin 4) :
-      MemLp (F q) 4 (properComplexGaussianMeasure m C) := by
-    fin_cases q <;>
-      simpa [F] using
-        (memLp_complexGaussianPart m C _ _).continuousLinearMap_comp Complex.ofRealCLM
-  have hprod := MemLp.fun_prod (s := Finset.univ)
-    (p := fun _ : Fin 4 ↦ (4 : ℝ≥0∞)) (fun q _ ↦ hF q)
-  have hexp :
-      (∑ _q ∈ (Finset.univ : Finset (Fin 4)), (4 : ℝ≥0∞)⁻¹)⁻¹ = 1 := by
-    norm_num [Fin.sum_univ_succ]
-    exact ENNReal.mul_inv_cancel (by norm_num) (by norm_num)
-  rw [hexp] at hprod
-  have hint := memLp_one_iff_integrable.mp hprod
-  simpa [complexGaussianFourthTerm, F, Fin.prod_univ_succ, mul_assoc] using
-    hint.const_mul
+  let indices : Fin 4 → ι ⊕ ι :=
+    ![complexGaussianPartIndex i a, complexGaussianPartIndex j b,
+      complexGaussianPartIndex k c, complexGaussianPartIndex l d]
+  let L : Fin 4 → StrongDual ℝ (ι → ℂ) := fun q ↦
+    (EuclideanSpace.proj (indices q)).comp (complexToRealEuclidean ι).toContinuousLinearMap
+  have hint := IsGaussian.integrable_prod_dual (properComplexGaussianMeasure m C)
+    (Finset.univ : Finset (Fin 4)) L (fun q ↦ -L q m)
+  have hcast := Complex.ofRealCLM.integrable_comp hint
+  simp only [complexGaussianFourthTerm, complexGaussianPart_eq_coordinate]
+  simpa [complexGaussianFourthTerm, L, indices, Fin.prod_univ_succ,
+    complexToRealEuclidean_apply, sub_eq_add_neg, Complex.ofReal_mul, mul_assoc] using
+    hcast.const_mul
     (complexGaussianPartCoeff false a * complexGaussianPartCoeff true b *
       complexGaussianPartCoeff false c * complexGaussianPartCoeff true d)
+
+/-- The fourth centered complex coordinate product is integrable, for any covariance matrix. -/
+theorem integrable_mul_conj_mul_conj_sub_properComplexGaussianMeasure
+    (m : ι → ℂ) (C : Matrix ι ι ℂ) [Fintype ι] [DecidableEq ι] (i j k l : ι) :
+    Integrable (fun z ↦ (z i - m i) * star (z j - m j) *
+      (z k - m k) * star (z l - m l)) (properComplexGaussianMeasure m C) := by
+  simp_rw [complexGaussianFourth_eq_sum_parts]
+  exact integrable_finsetSum _ (fun a _ ↦ integrable_finsetSum _ (fun b _ ↦
+    integrable_finsetSum _ (fun c _ ↦ integrable_finsetSum _ (fun d _ ↦
+      integrable_complexGaussianFourthTerm m C i j k l a b c d))))
 
 private theorem integral_complexGaussianFourthTerm (m : ι → ℂ) {C : Matrix ι ι ℂ}
     [Fintype ι] [DecidableEq ι] (hC : C.PosSemidef) (i j k l : ι)
@@ -193,11 +227,7 @@ private theorem integral_complexGaussianFourthTerm (m : ι → ℂ) {C : Matrix 
           complexGaussianPart m k c z * complexGaussianPart m l d z =
         (f z : ℂ) := by
     simp only [f, Complex.ofReal_mul]
-  change ∫ z, (complexGaussianPartCoeff false a * complexGaussianPartCoeff true b *
-    complexGaussianPartCoeff false c * complexGaussianPartCoeff true d) *
-      ((complexGaussianPart m i a z : ℂ) * complexGaussianPart m j b z *
-        complexGaussianPart m k c z * complexGaussianPart m l d z)
-      ∂properComplexGaussianMeasure m C = _
+  simp only [complexGaussianFourthTerm]
   simp_rw [hcast]
   rw [integral_const_mul]
   apply congrArg (fun x : ℂ ↦
@@ -253,16 +283,13 @@ theorem integral_mul_conj_mul_conj_sub_properComplexGaussianMeasure
           simp_rw [integral_finsetSum _ (fun d _ ↦ hterm _ _ _ d)]
     _ = C i j * C k l + C i l * C k j := by
           simp_rw [T, integral_complexGaussianFourthTerm m hC]
-          simp_rw [Fintype.sum_bool]
-          have hjk : C j k = star (C k j) := (hC.isHermitian.apply j k).symm
-          simp only [complexGaussianPartCoeff, complexGaussianPartIndex,
-            complexGaussianRealCovariance_inl_inl, complexGaussianRealCovariance_inl_inr,
-            complexGaussianRealCovariance_inr_inl, complexGaussianRealCovariance_inr_inr,
-            hjk, Bool.false_eq_true, ite_true, ite_false]
-          apply Complex.ext
-          · simp [Complex.mul_re, Complex.mul_im]
-            ring
-          · simp [Complex.mul_re, Complex.mul_im]
-            ring
+          have hfactor := complexGaussianPairings_factor C i j k l
+          simp only [Complex.ofReal_add, Complex.ofReal_mul] at hfactor
+          rw [hfactor]
+          simp only [(complexGaussianPairing_values C _ _).1,
+            (complexGaussianPairing_values C _ _).2.1,
+            (complexGaussianPairing_values C _ _).2.2.1,
+            (complexGaussianPairing_values C _ _).2.2.2, zero_mul, add_zero]
+          rw [(hC.isHermitian.apply j k).symm, star_star]
 
 end TauCeti.Probability
