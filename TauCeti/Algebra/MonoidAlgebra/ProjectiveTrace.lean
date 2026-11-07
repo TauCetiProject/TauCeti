@@ -56,51 +56,6 @@ namespace TauCeti
 
 open _root_.MonoidAlgebra
 
-/-- Every element `g` of a finite group whose order is divisible by `p` is a product `s * q` of
-commuting elements, where `q ≠ 1` generates a `p`-group and the order of `s` is prime to `p`. -/
-private theorem exists_commute_mul_eq_of_dvd_orderOf {p : ℕ} (hp : p.Prime) {G : Type*} [Group G]
-    [Finite G] {g : G} (hg : p ∣ orderOf g) :
-    ∃ s q : G, s * q = g ∧ Commute s q ∧ q ≠ 1 ∧ IsPGroup p (Subgroup.zpowers q) ∧
-      ¬p ∣ orderOf s :=
-  ⟨pFreePart p g, pPart p g, pFreePart_mul_pPart p g, commute_pFreePart_pPart p g,
-    pPart_ne_one_of_dvd_orderOf hp (orderOf_pos g).ne' hg,
-    isPGroup_zpowers_pPart hp (orderOf_pos g).ne', not_dvd_orderOf_pFreePart hp (orderOf_pos g).ne'⟩
-
-/-- An element `s` commuting with the image of a monoid homomorphism `ι : Q →* G` commutes with the
-image of every element of `A[Q]` in `A[G]`. -/
-theorem mapDomainAlgHom_mul_single_comm {A : Type*} [CommSemiring A] {Q G : Type*} [Monoid Q]
-    [Monoid G] (ι : Q →* G) {s : G} (hs : ∀ c, Commute s (ι c)) (r : MonoidAlgebra A Q) :
-    mapDomainAlgHom A A ι r * single s 1 = single s 1 * mapDomainAlgHom A A ι r := by
-  induction r using MonoidAlgebra.induction_linear with
-  | zero => simp
-  | add x y hx hy => rw [map_add, add_mul, mul_add, hx, hy]
-  | single c a => simp [single_mul_single, (hs c).eq]
-
-/-- If the `A[Q]`-module structure on `X` is the `A[G]`-action through `ι`, then the action of
-`single s 1` for `s` commuting with the image of `ι` is `A[Q]`-linear. -/
-theorem exists_linearMap_apply_eq_single_smul {A : Type*} [CommSemiring A] {Q G : Type*}
-    [Monoid Q] [Monoid G] (ι : Q →* G) {s : G} (hs : ∀ c, Commute s (ι c)) (X : Type*)
-    [AddCommMonoid X] [Module (MonoidAlgebra A G) X] [Module (MonoidAlgebra A Q) X]
-    (hact : ∀ (r : MonoidAlgebra A Q) (x : X), r • x = mapDomainAlgHom A A ι r • x) :
-    ∃ S : X →ₗ[MonoidAlgebra A Q] X, ∀ x, S x = (single s (1 : A) : MonoidAlgebra A G) • x :=
-  ⟨{ toFun := fun x ↦ (single s (1 : A) : MonoidAlgebra A G) • x
-     map_add' := smul_add _
-     map_smul' := fun r x ↦ by
-       rw [RingHom.id_apply, hact, hact, ← mul_smul, ← mul_smul,
-         mapDomainAlgHom_mul_single_comm ι hs] }, fun _ ↦ rfl⟩
-
-/-- The `k`-th power of an endomorphism acting as `single s 1` acts as `single (s ^ k) 1`. -/
-theorem pow_apply_eq_single_pow_smul {A : Type*} [CommSemiring A] {G : Type*} [Monoid G]
-    {R X : Type*} [Semiring R] [AddCommMonoid X] [Module R X] [Module (MonoidAlgebra A G) X]
-    {s : G} (S : Module.End R X)
-    (hS : ∀ x, S x = (single s (1 : A) : MonoidAlgebra A G) • x) (k : ℕ) (x : X) :
-    (S ^ k) x = (single (s ^ k) (1 : A) : MonoidAlgebra A G) • x := by
-  induction k with
-  | zero => simp [← one_def]
-  | succ k ih =>
-    rw [pow_succ', mul_apply_eq_comp, ih, hS, pow_succ']
-    exact (mul_smul _ _ x).symm.trans (by rw [single_mul_single, one_mul])
-
 variable {A : Type*} [CommRing A] [IsLocalRing A] {p : ℕ} [Fact p.Prime] {G : Type*} [Group G]
   [Finite G] (X : Type*) [AddCommMonoid X] [Module A X] [Module (MonoidAlgebra A G) X]
   [IsScalarTower A (MonoidAlgebra A G) X] [Module.Finite (MonoidAlgebra A G) X]
@@ -115,7 +70,16 @@ theorem trace_ofModule'_eq_zero_of_dvd_orderOf (hp : ¬IsUnit (p : A)) {g : G}
   -- which `s` acts linearly with `s ^ m = 1`, and compute the trace of `g = q • s` along
   -- `A[Q] / A` with `LinearMap.trace_restrictScalars_smul_of_pow_eq_one`.
   classical
-  obtain ⟨s, q, hmul, hsq, hq1, hQ, hpm⟩ := exists_commute_mul_eq_of_dvd_orderOf Fact.out hg
+  let s := pFreePart p g
+  let q := pPart p g
+  let m := orderOf s
+  have hmul : s * q = g := pFreePart_mul_pPart p g
+  have hsq : Commute s q := commute_pFreePart_pPart p g
+  have hq1 : q ≠ 1 := pPart_ne_one_of_dvd_orderOf Fact.out (orderOf_pos g).ne' hg
+  have hQ : IsPGroup p (Subgroup.zpowers q) :=
+    isPGroup_zpowers_pPart Fact.out (orderOf_pos g).ne'
+  have hpm : ¬p ∣ m := not_dvd_orderOf_pFreePart Fact.out (orderOf_pos g).ne'
+  have hsm : s ^ m = 1 := pow_orderOf_eq_one s
   rw [← hmul]
   -- Restrict `X` to the local group algebra `A[Q]` of `Q = ⟨q⟩`.
   let Q := Subgroup.zpowers q
@@ -147,10 +111,10 @@ theorem trace_ofModule'_eq_zero_of_dvd_orderOf (hp : ¬IsUnit (p : A)) {g : G}
   have hcomm : ∀ c : Q, Commute s (Q.subtype c) := by
     rintro ⟨_, j, rfl⟩
     exact hsq.zpow_right j
-  obtain ⟨S, hSapply⟩ := exists_linearMap_apply_eq_single_smul (A := A) Q.subtype hcomm X
+  obtain ⟨S, hSapply⟩ := MonoidHom.exists_linearMap_apply_eq_single_smul (A := A) Q.subtype hcomm X
     fun _ _ ↦ rfl
-  have hS : S ^ orderOf s = 1 := LinearMap.ext fun x ↦ by
-    rw [pow_apply_eq_single_pow_smul S hSapply, pow_orderOf_eq_one s, ← one_def, one_smul,
+  have hS : S ^ m = 1 := LinearMap.ext fun x ↦ by
+    rw [Module.End.pow_apply_eq_single_pow_smul S hSapply, hsm, ← one_def, one_smul,
       one_apply_eq_self]
   -- The element `g = s * q` acts as the scalar `q ∈ A[Q]` times `S`.
   let q' : Q := ⟨q, Subgroup.mem_zpowers q⟩
@@ -164,7 +128,7 @@ theorem trace_ofModule'_eq_zero_of_dvd_orderOf (hp : ¬IsUnit (p : A)) {g : G}
     change _ = φ (single q' (1 : A)) • (single s (1 : A) : MonoidAlgebra A G) • x
     rw [← mul_smul]
     simp [φ, q', single_mul_single, hsq.eq]
-  have hm : IsUnit (orderOf s : A) :=
+  have hm : IsUnit (m : A) :=
     (Nat.coprime_comm.mp ((Nat.Prime.coprime_iff_not_dvd Fact.out).mpr hpm)).isUnit_natCast hp
   have hq' : q' ≠ 1 := fun h ↦ hq1 (congrArg Subtype.val h)
   have : Fintype Q := Fintype.ofFinite Q

@@ -110,3 +110,19 @@ theorem coeff_mul_mapDomainRingEquiv_inv_one (x : MonoidAlgebra R G) :
 end Group
 
 end MonoidAlgebra
+
+namespace MonoidHom
+
+open MonoidAlgebra
+
+/-- An element `s` commuting with the image of a monoid homomorphism `ι : Q →* G` commutes with the
+image of every element of `A[Q]` in `A[G]`. -/
+theorem mapDomainAlgHom_mul_single_comm {A : Type*} [CommSemiring A] {Q G : Type*} [Monoid Q]
+    [Monoid G] (ι : Q →* G) {s : G} (hs : ∀ c, Commute s (ι c)) (r : MonoidAlgebra A Q) :
+    mapDomainAlgHom A A ι r * single s 1 = single s 1 * mapDomainAlgHom A A ι r := by
+  induction r using MonoidAlgebra.induction_linear with
+  | zero => simp
+  | add x y hx hy => rw [map_add, add_mul, mul_add, hx, hy]
+  | single c a => simp [single_mul_single, (hs c).eq]
+
+end MonoidHom
