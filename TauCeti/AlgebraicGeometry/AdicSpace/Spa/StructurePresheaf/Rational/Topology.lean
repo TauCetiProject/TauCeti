@@ -138,57 +138,6 @@ private theorem isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_topCommRingCat_o
         hP hAplus hW hU hcov))
     (Topology.IsInducing.of_subsingleton _) E
 
-/-- **Wedhorn's Remark 8.4 as isomorphisms of sections commuting with restriction.** For the
-rational opens `V ⊆ R(T/s)` of `Spa(A, A⁺)`, the presentation-limit sections over `V` are isomorphic
-to those of `Spa(A⟨T/s⟩, A_U⁺)` over `locOpensComap P Aplus T s _ hden V`, and these
-isomorphisms commute with the restriction maps. -/
-private theorem exists_iso_presentationLimitPresheaf_locOpensComap
-    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (T : Finset A) (s : A)
-    (hT : IsOpen (Ideal.span (T : Set A) : Set A))
-    (hden : HasDenominatorPower P (T : Set A) s (Localization.Away s)) :
-    letI := locUniformSpace P T s _ hden
-    haveI := isUniformAddGroup_locUniformSpace P T s _ hden
-    haveI := isTopologicalRing_locUniformSpace P T s _ hden
-    haveI := isHuberRing_completion_locTopology P T s _ hden
-    haveI := isTateRing_completion_locTopology_of_isTateRing P T s _ hden
-    ∃ σ : (∀ V : Opens ↥(spa Aplus), V ∈ spaRationalOpens Aplus → V ≤ spaBasicOpen Aplus T s →
-        Iso ((presentationLimitPresheaf P Aplus).obj (op V))
-          ((presentationLimitPresheaf (completionLocalization P T s _ hden)
-            (completedPlusSubring P Aplus T s _ hden)).obj
-              (op (locOpensComap P Aplus T s _ hden V)))),
-      ∀ {V V' : Opens ↥(spa Aplus)} (hV : V ∈ spaRationalOpens Aplus)
-        (hV' : V' ∈ spaRationalOpens Aplus) (hVT : V ≤ spaBasicOpen Aplus T s) (h : V' ≤ V),
-        (presentationLimitPresheaf P Aplus).map (homOfLE h).op ≫ (σ V' hV' (h.trans hVT)).hom =
-          (σ V hV hVT).hom ≫ (presentationLimitPresheaf (completionLocalization P T s _ hden)
-            (completedPlusSubring P Aplus T s _ hden)).map
-              (homOfLE (locOpensComap_mono P Aplus T s _ hden h)).op := by
-  let _ := locUniformSpace P T s _ hden
-  have _ := isUniformAddGroup_locUniformSpace P T s _ hden
-  have _ := isTopologicalRing_locUniformSpace P T s _ hden
-  have _ := isHuberRing_completion_locTopology P T s _ hden
-  have _ := isTateRing_completion_locTopology_of_isTateRing P T s _ hden
-  let Bplus := completedPlusSubring P Aplus T s _ hden
-  let Q := completionLocalization P T s _ hden
-  let F := presentationLimitPresheaf P Aplus
-  let FB := presentationLimitPresheaf Q Bplus
-  let σ (V : Opens ↥(spa Aplus)) (hV : V ∈ spaRationalOpens Aplus)
-      (hVW : V ≤ spaBasicOpen Aplus T s) :
-      F.obj (op V) ≅ FB.obj (op (locOpensComap P Aplus T s _ hden V)) :=
-    eqToIso (presentationLimitPresheaf_obj P Aplus (op V)) ≪≫
-      presentationLimitLocIso P Aplus T s _ hden hAplus hT V hV hVW ≪≫
-      eqToIso (presentationLimitPresheaf_obj Q Bplus
-        (op (locOpensComap P Aplus T s _ hden V))).symm
-  refine ⟨σ, fun {V V'} hV hV' hVT h ↦ ?_⟩
-  dsimp only [σ]
-  rw [presentationLimitPresheaf_map, presentationLimitPresheaf_map]
-  simp only [Iso.trans_hom]
-  simp only [Category.assoc]
-  simp only [eqToIso.hom, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
-  slice_lhs 2 3 =>
-    rw [presentationLimitMap_comp_presentationLimitLocIso_hom P Aplus T s _ hden hAplus hT
-      hV hV' hVT h]
-  simp only [Category.assoc]
-
 /-- The sheaf condition for rational covers of a rational open, when the cover is indexed by a
 nonempty type. -/
 private theorem isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_topCommRingCat_of_nonempty
@@ -212,7 +161,8 @@ private theorem isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_topCommRingCat_o
   have _ := isTateRing_completion_locTopology_of_isTateRing P T s _ hden
   have hCB : C (UniformSpace.Completion (Localization.Away s)) :=
     hC.completion_localization P T s hT hA
-  obtain ⟨σ, σ_nat⟩ := exists_iso_presentationLimitPresheaf_locOpensComap P hAplus T s hT hden
+  obtain ⟨σ, σ_nat⟩ :=
+    exists_iso_presentationLimitPresheaf_locOpensComap P Aplus T s _ hden hAplus hT
   have hUW (i : ι) : U i ≤ spaBasicOpen Aplus T s := (le_iSup U i).trans_eq hcov
   have hUB (i : ι) : locOpensComap P Aplus T s _ hden (U i) ∈ spaRationalOpens
       (completedPlusSubring P Aplus T s _ hden) :=
