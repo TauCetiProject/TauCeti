@@ -75,8 +75,8 @@ namespace TauCeti.SmoothEmbedding
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 1)] {k : ℕ∞ω}
 
-/-- Rotating `v` to `w` by an isometry `e` that moves the point `x` to `y`, the boost toward `-y`
-of rapidity `log (‖w‖ / ‖v‖)` then carries `e v` at `e x` to `w`. -/
+/-- Rotating the direction of `v` to that of `w` by an isometry `e` that moves the point `x` to `y`,
+the boost toward `-y` of rapidity `log (‖w‖ / ‖v‖)` then carries `e v` at `e x` to `w`. -/
 private lemma fderiv_sphereBoost_log_apply_eq (e : E ≃ₗᵢ[ℝ] E) {x y v w : E} (hy : ‖-y‖ = 1)
     (hv : v ≠ 0) (hw : w ≠ 0) (hex : e x = y) (hxv : ⟪x, v⟫ = 0)
     (hev : e (‖v‖⁻¹ • v) = ‖w‖⁻¹ • w) :
