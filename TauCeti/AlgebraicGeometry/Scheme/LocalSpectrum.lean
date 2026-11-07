@@ -55,7 +55,9 @@ instance isIso_stalkMap_fromSpecStalk (X : Scheme.{u}) (x : X)
     isIso_specMap_stalkMap_localization _ _ _
   rw [Scheme.Hom.stalkMap_comp]
   apply IsIso.comp_isIso'
-  · exact inferInstanceAs (IsIso (hU.fromSpec.stalkMap _))
+  · -- The composition step unfolds stalk-map wrappers; instance search needs the
+    -- scheme-level form to recognize the open immersion `hU.fromSpec`.
+    exact inferInstanceAs (IsIso (hU.fromSpec.stalkMap _))
   · exact IsIso.comp_isIso' hloc inferInstance
 
 /-- The height of a prime in a stalk equals the local dimension of its image in the scheme. -/

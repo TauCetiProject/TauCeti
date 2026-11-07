@@ -75,7 +75,7 @@ theorem formallyUnramified_stalk_codimOne_iff_isUnramifiedAt (f : X ⟶ Y) (x : 
     rw [Scheme.range_fromSpecStalk] at hz
     apply h _ hz
     rw [← Scheme.height_eq_ringKrullDim_fromSpecStalk X x z, hheight]
-    rfl
+    exact WithBot.coe_one
   · intro h z hzx hdim
     obtain ⟨q, rfl⟩ := (show z ∈ Set.range (X.fromSpecStalk x) by
       rw [Scheme.range_fromSpecStalk]
@@ -84,6 +84,6 @@ theorem formallyUnramified_stalk_codimOne_iff_isUnramifiedAt (f : X ⟶ Y) (x : 
     apply h q.asIdeal q.isPrime
     have heq := Scheme.height_eq_ringKrullDim_fromSpecStalk X x q
     rw [hdim] at heq
-    exact WithBot.coe_injective heq
+    exact WithBot.coe_eq_one.mp heq
 
 end AlgebraicGeometry.Scheme.Hom
