@@ -9,6 +9,8 @@ public import Mathlib.MeasureTheory.Constructions.Pi
 public import Mathlib.MeasureTheory.Measure.Support
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.Basic
 
+import TauCeti.MeasureTheory.Measure.Restrict.Basic
+
 /-!
 # Cyclical monotonicity for transport costs
 
@@ -165,47 +167,17 @@ variable [TopologicalSpace X] [TopologicalSpace Y] [MeasurableSpace X] [Measurab
   [OpensMeasurableSpace (X × Y)] {c : X × Y → ℝ≥0∞} {π : Measure (X × Y)} {μ : Measure X}
   {ν : Measure Y}
 
-/-- Scaling the normalized restrictions `(π (W i))⁻¹ • π.restrict (W i)` of a finite measure `π` by
-`π (W j) / n`, where `W j` has minimal mass, and summing over `i : Fin n` stays below `π`. -/
-private theorem smul_sum_inv_smul_restrict_le {α : Type*} [MeasurableSpace α] {π : Measure α}
-    [IsFiniteMeasure π] {n : ℕ} {W : Fin n → Set α} (hW0 : ∀ i, π (W i) ≠ 0) {j : Fin n}
-    (hj : ∀ i, π (W j) ≤ π (W i)) :
-    (π (W j) / n) • Measure.sum (fun i ↦ (π (W i))⁻¹ • π.restrict (W i)) ≤ π := by
-  have hn : n ≠ 0 := by
-    rintro rfl
-    exact j.elim0
-  refine Measure.le_iff.2 fun s hs ↦ ?_
-  have hterm : ∀ i, π (W j) / n * ((π (W i))⁻¹ • π.restrict (W i)) s ≤ (n : ℝ≥0∞)⁻¹ * π s :=
-    fun i ↦ by
-    have hti : π (W j) / n * (π (W i))⁻¹ ≤ (n : ℝ≥0∞)⁻¹ := by
-      calc π (W j) / n * (π (W i))⁻¹ ≤ π (W i) / n * (π (W i))⁻¹ :=
-            mul_le_mul_left (ENNReal.div_le_div_right (hj i) _) _
-        _ = (n : ℝ≥0∞)⁻¹ := by
-            rw [div_eq_mul_inv, mul_right_comm, ENNReal.mul_inv_cancel (hW0 i)
-              (measure_ne_top π _), one_mul]
-    calc π (W j) / n * ((π (W i))⁻¹ • π.restrict (W i)) s
-        = π (W j) / n * (π (W i))⁻¹ * π (s ∩ W i) := by
-          simp [Measure.restrict_apply hs, mul_assoc]
-      _ ≤ (n : ℝ≥0∞)⁻¹ * π s := by gcongr; exact Set.inter_subset_left
-  calc ((π (W j) / n) • Measure.sum (fun i ↦ (π (W i))⁻¹ • π.restrict (W i))) s
-      = ∑ i, π (W j) / n * ((π (W i))⁻¹ • π.restrict (W i)) s := by
-        simp [Finset.mul_sum]
-    _ ≤ ∑ _i : Fin n, (n : ℝ≥0∞)⁻¹ * π s := Finset.sum_le_sum fun i _ ↦ hterm i
-    _ = π s := by
-        rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, ← mul_assoc,
-          ENNReal.mul_inv_cancel (Nat.cast_ne_zero.2 hn) (ENNReal.natCast_ne_top n), one_mul]
-
+omit [TopologicalSpace X] [TopologicalSpace Y] [OpensMeasurableSpace (X × Y)] in
 /-- Removing the mass `t • ∑ ρ i` from `π` and adding back `t • ∑ τ i`, where `τ i` is the law of
 the `σ`-permuted pair `((w i).1, (w (σ i)).2)` of a sample `w` from `∏ ρ i`, strictly lowers the
 cost when the permuted cost of the sample is almost surely smaller. -/
-private theorem lintegral_sub_add_sum_map_lt [IsFiniteMeasure π] (hc : Continuous c) {n : ℕ}
+private theorem lintegral_sub_add_sum_map_lt [IsFiniteMeasure π] (hcm : Measurable c) {n : ℕ}
     (ρ : Fin n → Measure (X × Y)) [∀ i, IsProbabilityMeasure (ρ i)] (σ : Equiv.Perm (Fin n))
     (hGF : ∀ᵐ w ∂Measure.pi ρ,
       ∑ i, c ((w i).1, (w (σ i)).2) < ∑ i, c (w i)) {t : ℝ≥0∞} (ht0 : t ≠ 0) (httop : t ≠ ∞)
     (hκ : t • Measure.sum ρ ≤ π) (hfin : ∫⁻ z, c z ∂π ≠ ∞) :
     ∫⁻ z, c z ∂(π - t • Measure.sum ρ + t • Measure.sum fun i ↦
       (Measure.pi ρ).map fun w ↦ ((w i).1, (w (σ i)).2)) < ∫⁻ z, c z ∂π := by
-  have hcm : Measurable c := hc.measurable
   let F : (Fin n → X × Y) → ℝ≥0∞ := fun w ↦ ∑ i, c ((w i).1, (w (σ i)).2)
   let G : (Fin n → X × Y) → ℝ≥0∞ := fun w ↦ ∑ i, c (w i)
   have hFm : ∀ i, Measurable fun w : Fin n → X × Y ↦ ((w i).1, (w (σ i)).2) := fun i ↦
@@ -214,7 +186,6 @@ private theorem lintegral_sub_add_sum_map_lt [IsFiniteMeasure π] (hc : Continuo
   have hev : ∀ i, MeasurePreserving (Function.eval i) P (ρ i) := measurePreserving_eval ρ
   let τ : Fin n → Measure (X × Y) := fun i ↦ P.map fun w ↦ ((w i).1, (w (σ i)).2)
   let κ := t • Measure.sum ρ
-  change ∫⁻ z, c z ∂(π - κ + t • Measure.sum τ) < _
   have : IsFiniteMeasure κ := isFiniteMeasure_of_le π hκ
   have hlintegral_sum : ∀ ξ : Fin n → Measure (X × Y),
       ∫⁻ z, c z ∂(t • Measure.sum ξ) = t * ∑ i, ∫⁻ z, c z ∂ξ i := fun ξ ↦ by
@@ -298,7 +269,7 @@ private theorem exists_isCoupling_lintegral_lt [IsFiniteMeasure π] (hc : Contin
   have ht0 : t ≠ 0 := ENNReal.div_ne_zero.2 ⟨hW0 j, ENNReal.natCast_ne_top n⟩
   have httop : t ≠ ∞ := ENNReal.div_ne_top (measure_ne_top π _) (Nat.cast_ne_zero.2 hn)
   let κ := t • Measure.sum ρ
-  have hκ : κ ≤ π := smul_sum_inv_smul_restrict_le hW0 hj
+  have hκ : κ ≤ π := Measure.smul_sum_inv_smul_restrict_le hW0 hj
   have : IsFiniteMeasure κ := isFiniteMeasure_of_le π hκ
   have hκ' : IsCoupling κ κ.fst κ.snd := ⟨rfl, rfl⟩
   have hρ' : IsCoupling κ (t • (Measure.sum ρ).fst) (t • (Measure.sum ρ).snd) :=
@@ -306,7 +277,7 @@ private theorem exists_isCoupling_lintegral_lt [IsFiniteMeasure π] (hc : Contin
   refine ⟨π - κ + t • Measure.sum τ, hπ.sub_add hκ ?_, ?_⟩
   · rw [hκ'.fst_eq.symm.trans hρ'.fst_eq, hκ'.snd_eq.symm.trans hρ'.snd_eq]
     exact hτ.smul t
-  exact lintegral_sub_add_sum_map_lt hc ρ σ hGF ht0 httop hκ hfin
+  exact lintegral_sub_add_sum_map_lt hcm ρ σ hGF ht0 httop hκ hfin
 
 /-- **The support of an optimal plan is cyclically monotone** (Gangbo--McCann). For a continuous
 cost `c : X × Y → ℝ≥0∞` and finite measures, the topological support of an optimal coupling of
