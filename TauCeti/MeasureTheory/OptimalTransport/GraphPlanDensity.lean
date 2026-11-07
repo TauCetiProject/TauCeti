@@ -52,6 +52,18 @@ variable {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
   [BorelSpace X] [BorelSpace Y]
   {μ : Measure X} {ν : Measure Y} {π : Measure (X × Y)}
 
+/-- If two measures on a product have the same pushforward under `Prod.map q id`, then they have
+the same pushforward under `Prod.map (u ∘ q) id` for every measurable `u`. -/
+theorem Measure.map_prodMap_comp_id_eq_of_map_eq {A B C W : Type*} [MeasurableSpace A]
+    [MeasurableSpace B] [MeasurableSpace C] [MeasurableSpace W] {u : A → B}
+    (hu : Measurable u) {q : C → A} (hq : Measurable q) {π ρ : Measure (C × W)}
+    (h : π.map (Prod.map q id) = ρ.map (Prod.map q id)) :
+    π.map (Prod.map (u ∘ q) id) = ρ.map (Prod.map (u ∘ q) id) := by
+  have hu' : Measurable (Prod.map u (id : W → W)) := hu.prodMap measurable_id
+  have hcomp : Prod.map (u ∘ q) (id : W → W) = (Prod.map u id) ∘ (Prod.map q id) := rfl
+  rw [hcomp, ← Measure.map_map hu' (hq.prodMap measurable_id),
+    ← Measure.map_map hu' (hq.prodMap measurable_id), h]
+
 section Probability
 
 variable [IsProbabilityMeasure μ] [NullSingletonClass μ]
@@ -82,36 +94,19 @@ theorem exists_graphPlan_levyProkhorovEDist_lt (hπ : IsCoupling π μ ν)
     simpa [F, Prod.edist_eq, edist_dist] using
       (ENNReal.ofReal_le_ofReal (Nat.find_spec (hidx x)).le)
   obtain ⟨T, hT, hqmap⟩ := hπ.exists_measurePreserving_map_graphPlan_eq hq
-  have hmap : π.map F = (graphPlan T μ).map F := by
-    have hu' : Measurable (Prod.map u (id : Y → Y)) :=
-      (Measurable.of_discrete).prodMap measurable_id
-    have hcomp : (Prod.map u (id : Y → Y)) ∘ (Prod.map q id) = F := by
-      funext z
-      rfl
-    calc
-      π.map F = (π.map (Prod.map q id)).map (Prod.map u id) := by
-        rw [Measure.map_map hu' (hq.prodMap measurable_id), hcomp]
-      _ = ((graphPlan T μ).map (Prod.map q id)).map (Prod.map u id) := by
-        rw [hqmap]
-      _ = (graphPlan T μ).map F := by
-        rw [Measure.map_map hu' (hq.prodMap measurable_id), hcomp]
-  have hleft : wassersteinEDist 1 π (π.map F) ≤ ENNReal.ofReal r :=
-    wassersteinEDist_map_le_of_edist_le π hF.aemeasurable (Filter.Eventually.of_forall hdist)
-  have hright : wassersteinEDist 1 (graphPlan T μ) ((graphPlan T μ).map F) ≤
-      ENNReal.ofReal r :=
-    wassersteinEDist_map_le_of_edist_le (graphPlan T μ) hF.aemeasurable
-      (Filter.Eventually.of_forall hdist)
+  have hmap : π.map F = (graphPlan T μ).map F :=
+    Measure.map_prodMap_comp_id_eq_of_map_eq Measurable.of_discrete hq hqmap.symm
   have hrbound : ENNReal.ofReal r < ENNReal.ofReal (ε / 4) * ENNReal.ofReal (ε / 4) := by
     rw [← ENNReal.ofReal_mul (by positivity : 0 ≤ ε / 4)]
     exact (ENNReal.ofReal_lt_ofReal_iff (by positivity : 0 < ε / 4 * (ε / 4))).2
       (by dsimp [r]; nlinarith [sq_pos_of_pos hε])
   have hdistleft : levyProkhorovEDist π (π.map F) ≤ ENNReal.ofReal (ε / 4) :=
-    levyProkhorovEDist_le_of_wassersteinEDist_lt_mul_self measurable_edist
-      (by norm_num : (1 : ℝ≥0∞) ≤ 1) (hleft.trans_lt hrbound)
+    levyProkhorovEDist_map_le_of_edist_le π hF.aemeasurable (Filter.Eventually.of_forall hdist)
+      hrbound
   have hdistright : levyProkhorovEDist (graphPlan T μ) ((graphPlan T μ).map F) ≤
       ENNReal.ofReal (ε / 4) :=
-    levyProkhorovEDist_le_of_wassersteinEDist_lt_mul_self measurable_edist
-      (by norm_num : (1 : ℝ≥0∞) ≤ 1) (hright.trans_lt hrbound)
+    levyProkhorovEDist_map_le_of_edist_le (graphPlan T μ) hF.aemeasurable
+      (Filter.Eventually.of_forall hdist) hrbound
   refine ⟨T, hT, ?_⟩
   calc
     levyProkhorovEDist π (graphPlan T μ) ≤
