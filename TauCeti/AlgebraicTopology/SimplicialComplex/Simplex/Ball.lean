@@ -263,16 +263,17 @@ theorem realizationTopHomeomorphCoordinateSimplex_exists_affine (n : ℕ) :
       (∀ z i, A z i = z i.castSucc) ∧
       ∀ y : coordinateSimplex (Fin (n + 1)),
         B y.1 = ((realizationTopHomeomorphCoordinateSimplex (n + 1)).symm y).1 := by
-  let B₀ : (Fin (n + 1) → ℝ) →L[ℝ] (Fin (n + 2) → ℝ) :=
-    ContinuousLinearMap.pi (Fin.lastCases (-(∑ i, ContinuousLinearMap.proj i))
-      (fun i => ContinuousLinearMap.proj i))
-  refine ⟨ContinuousLinearMap.pi fun i => ContinuousLinearMap.proj i.castSucc,
-    B₀.toContinuousAffineMap + ContinuousAffineMap.const ℝ (Fin (n + 1) → ℝ)
-      (Pi.single (Fin.last (n + 1)) 1 : Fin (n + 2) → ℝ), fun z i => rfl, fun y => ?_⟩
+  let R : (Option (Fin n) → ℝ) →L[ℝ] (Fin (n + 1) → ℝ) :=
+    ContinuousLinearMap.pi fun j => ContinuousLinearMap.proj (finSuccEquivLast j)
+  let R' : (Fin (n + 1) → ℝ) →L[ℝ] (Option (Fin n) → ℝ) :=
+    ContinuousLinearMap.pi fun o => ContinuousLinearMap.proj (finSuccEquivLast.symm o)
+  refine ⟨R.comp (simplexBoundaryCoordinateMap n),
+    (simplexBoundaryCoordinateLift n).comp R'.toContinuousAffineMap, fun z i => by simp [R],
+    fun y => ?_⟩
   funext i
   refine Fin.lastCases ?_ (fun k => ?_) i
-  · simp [B₀, sub_eq_add_neg, add_comm]
-  · simp [B₀]
+  · simp [R', Equiv.sum_comp finSuccEquivLast.symm (fun j => y.1 j)]
+  · simp [R']
 
 /-- A simplex point maps to the geometric frontier exactly when its support is a proper
 face. This includes the empty boundary of the zero-simplex. -/
