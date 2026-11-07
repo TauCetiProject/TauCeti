@@ -33,6 +33,25 @@ namespace TauCeti
 variable {ι : Type*}
 variable [Fintype ι]
 
+/-- At a point of a prevertex-free boundary interval, the continued Schwarz--Christoffel
+integrand times the fixed edge direction does not vanish. -/
+theorem exp_mul_schwarzChristoffelContinuedIntegrand_ne_zero
+    (a e : ι → ℝ) {p q x : ℝ} (ha : ∀ i, e i ≠ 0 → a i ∉ Ioo p q) (hx : x ∈ Ioo p q) :
+    Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I) *
+      schwarzChristoffelContinuedIntegrand a e p x ≠ 0 := by
+  have hapos : ∀ i, e i ≠ 0 → x ≠ a i := by
+    intro i hi hxi
+    exact ha i hi (hxi ▸ hx)
+  have hlo : ∀ i, e i ≠ 0 → a i ≤ p → a i < x :=
+    fun _ _ h => h.trans_lt hx.1
+  have hhi : ∀ i, e i ≠ 0 → p < a i → x < a i := by
+    intro i hi hip
+    have hq : q ≤ a i := le_of_not_gt fun h => ha i hi ⟨hip, h⟩
+    exact hx.2.trans_le hq
+  rw [schwarzChristoffelContinuedIntegrand_ofReal a e hlo hhi]
+  exact mul_ne_zero (Complex.exp_ne_zero _) (by
+    exact_mod_cast (schwarzChristoffelDensity_pos a e hapos).ne')
+
 /-- At a point of a prevertex-free boundary interval, the Schwarz--Christoffel primitive has a
 holomorphic continuation which is injective on a neighbourhood of that point. Its value at the
 point is the canonical boundary value, and its derivative throughout the neighbourhood is the
@@ -49,9 +68,6 @@ theorem exists_injOn_schwarzChristoffelPrimitive_continuation
   let c : ℂ := (((p + q) / 2 : ℝ) : ℂ)
   let r : ℝ := (q - p) / 2
   let B : Set ℂ := Metric.ball c r
-  let g : ℂ → ℂ := fun z =>
-    Complex.exp (schwarzChristoffelEdgeAngle a e p * Complex.I) *
-      schwarzChristoffelContinuedIntegrand a e p z
   have hxB : (x : ℂ) ∈ B := by
     simp only [B, Metric.mem_ball]
     rw [Complex.dist_eq, ← Complex.ofReal_sub, Complex.norm_real,
@@ -59,26 +75,13 @@ theorem exists_injOn_schwarzChristoffelPrimitive_continuation
     constructor <;> dsimp [c, r] <;> norm_num <;> linarith [hx.1, hx.2]
   obtain ⟨G, hGdiff, hGeq⟩ :=
     exists_hasDerivAt_schwarzChristoffelPrimitive_continuation a e z₀ ha
-  have hapos : ∀ i, e i ≠ 0 → x ≠ a i := by
-    intro i hi hxi
-    exact ha i hi (hxi ▸ hx)
-  have hgx : g x ≠ 0 := by
-    have hlo : ∀ i, e i ≠ 0 → a i ≤ p → a i < x :=
-      fun _ _ h => h.trans_lt hx.1
-    have hhi : ∀ i, e i ≠ 0 → p < a i → x < a i := by
-      intro i hi hip
-      have hq : q ≤ a i := le_of_not_gt fun h => ha i hi ⟨hip, h⟩
-      exact hx.2.trans_le hq
-    simp only [g, schwarzChristoffelContinuedIntegrand_ofReal a e hlo hhi]
-    exact mul_ne_zero (Complex.exp_ne_zero _) (by
-      exact_mod_cast (schwarzChristoffelDensity_pos a e hapos).ne')
   have hGdiffOn : DifferentiableOn ℂ G B :=
     fun z hz => (hGdiff z hz).differentiableAt.differentiableWithinAt
   have hGan : AnalyticAt ℂ G x :=
     hGdiffOn.analyticAt (Metric.isOpen_ball.mem_nhds hxB)
   have hGderiv : deriv G x ≠ 0 := by
     rw [(hGdiff x hxB).deriv]
-    exact hgx
+    exact exp_mul_schwarzChristoffelContinuedIntegrand_ne_zero a e ha hx
   obtain ⟨W, hW, hWinj⟩ :=
     (exists_injOn_nhds_iff_deriv_ne_zero hGan).mpr hGderiv
   obtain ⟨U, hUW, hUopen, hxU⟩ := mem_nhds_iff.mp (inter_mem hW
