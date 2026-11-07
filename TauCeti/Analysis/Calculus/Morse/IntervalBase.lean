@@ -94,18 +94,21 @@ theorem hasDerivAt_intervalBasePotential (C t : ℝ) :
   norm_num
   ring
 
+@[simp]
 theorem deriv_intervalBasePotential (C : ℝ) :
     deriv (intervalBasePotential C) = fun t ↦ C * t * (t ^ 2 - 1) :=
   funext fun t ↦ (hasDerivAt_intervalBasePotential C t).deriv
 
 /-- The gradient of the base potential is `C t (t² - 1)`, so its negative gradient is the field
 `C t (1 - t²)`. -/
+@[simp]
 theorem gradient_intervalBasePotential (C t : ℝ) :
     ∇ (intervalBasePotential C) t = C * t * (t ^ 2 - 1) := by
   rw [gradient_eq_deriv', deriv_intervalBasePotential]
 
 /-- The second derivative of the base potential is `C (3 t² - 1)`: it is `-C` at `0` and `2 C` at
 `1`. -/
+@[simp]
 theorem iteratedDeriv_two_intervalBasePotential (C t : ℝ) :
     iteratedDeriv 2 (intervalBasePotential C) t = C * (3 * t ^ 2 - 1) := by
   rw [iteratedDeriv_succ, iteratedDeriv_one, deriv_intervalBasePotential]
@@ -115,6 +118,7 @@ theorem iteratedDeriv_two_intervalBasePotential (C t : ℝ) :
   ring
 
 /-- The Hessian operator of the base potential at `t` is multiplication by `C (3 t² - 1)`. -/
+@[simp]
 theorem hessianOperator_intervalBasePotential (C t : ℝ) :
     hessianOperator (intervalBasePotential C) t =
       (C * (3 * t ^ 2 - 1)) • ContinuousLinearMap.id ℝ ℝ := by
@@ -139,6 +143,7 @@ theorem isNondegenerateCriticalPoint_intervalBasePotential_one (hC : C ≠ 0) :
 
 /-- For `C > 0` the critical point `0` of the base potential is a local maximum: its Morse index
 is `1`. -/
+@[simp]
 theorem morseIndex_intervalBasePotential_zero (hC : 0 < C) :
     morseIndex (intervalBasePotential C) 0 = 1 :=
   (isNondegenerateCriticalPoint_intervalBasePotential_zero hC.ne').morseIndex_real_of_neg
@@ -146,6 +151,7 @@ theorem morseIndex_intervalBasePotential_zero (hC : 0 < C) :
 
 /-- For `C > 0` the critical point `1` of the base potential is a local minimum: its Morse index
 is `0`. -/
+@[simp]
 theorem morseIndex_intervalBasePotential_one (hC : 0 < C) :
     morseIndex (intervalBasePotential C) 1 = 0 :=
   (isNondegenerateCriticalPoint_intervalBasePotential_one hC.ne').morseIndex_real_of_pos
@@ -242,6 +248,7 @@ theorem _root_.HasDerivAt.intervalBaseTimeCoordinate_comp {x : ℝ → ℝ} {s :
   field_simp [hxs.1.ne', h1.ne']
 
 /-- Along the trajectory `q` the time coordinate is exactly `C s`. -/
+@[simp]
 theorem intervalBaseTimeCoordinate_intervalBaseOrbit (C s : ℝ) :
     intervalBaseTimeCoordinate (intervalBaseOrbit C s) = C * s := by
   have hw0 : 0 < 1 + Real.exp (-(2 * C * s)) := by positivity
@@ -340,7 +347,7 @@ theorem ker_trajectoryOperator_neg_intervalBasePotential_eq_bot (hC : 0 < C)
     (isFredholm_trajectoryOperator_intervalBasePotential hC.ne' hγ hbot htop hAL).isClosed_range).1
     (surjective_trajectoryOperator_intervalBasePotential hC hγ hbot htop hAL)
 
-/-- **The base operator at the maximum is invertible.** For `C ≠ 0`, the linearized operator at
+/-- **The base operator at `0` is invertible.** For `C ≠ 0`, the linearized operator at
 the constant trajectory at `0`, which is `ξ ↦ ξ' - C ξ`, is a bijection from `W^{1,2}(ℝ, ℝ)` onto
 `L²(ℝ, ℝ)`. -/
 theorem bijective_trajectoryOperator_intervalBasePotential_zero (hC : C ≠ 0)
@@ -350,7 +357,7 @@ theorem bijective_trajectoryOperator_intervalBasePotential_zero (hC : C ≠ 0)
   IsNondegenerateCriticalPoint.bijective_trajectoryOperator_hessianOperator
     (isNondegenerateCriticalPoint_intervalBasePotential_zero hC) hAL
 
-/-- **The base operator at the minimum is invertible.** For `C ≠ 0`, the linearized operator at
+/-- **The base operator at `1` is invertible.** For `C ≠ 0`, the linearized operator at
 the constant trajectory at `1`, which is `ξ ↦ ξ' + 2 C ξ`, is a bijection from `W^{1,2}(ℝ, ℝ)`
 onto `L²(ℝ, ℝ)`. -/
 theorem bijective_trajectoryOperator_intervalBasePotential_one (hC : C ≠ 0)
