@@ -108,73 +108,32 @@ theorem isClosedImmersion_restrictPreimage_presentationLimitPreAdicSpaceQuotient
     (Ideal.Quotient.mk J s) L' hden'
   let Ploc := P.completionLocalization T s L hden
   let Ploc' := (P.quotient J).completionLocalization T' (Ideal.Quotient.mk J s) L' hden'
-  have hPloc : Ploc.ringOfDefinition ≤ Sloc.plus := by
-    rw [rationalLocalizationPair_plus]
-    exact P.completionLocalization_ringOfDefinition_le_completedPlusSubring S.plus hP T s L hden
-  have hPloc' : Ploc'.ringOfDefinition ≤ Sloc'.plus := by
-    rw [rationalLocalizationPair_plus]
-    exact (P.quotient J).completionLocalization_ringOfDefinition_le_completedPlusSubring
-      (S.quotient J).plus hPq T' (Ideal.Quotient.mk J s) L' hden'
-  -- the structure presheaves of both rational localisations are sheaves
-  have hsY : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Sloc.plus))
-      (presentationLimitPresheaf Ploc Sloc.plus) := by
-    rw [rationalLocalizationPair_plus]
-    exact isSheaf_presentationLimitPresheaf_completionLocalization P S.plus
-      S.isRingOfIntegralElements.isPowerBounded_of_mem hP T s L hden hT hsheafA
-  have hsX : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Sloc'.plus))
-      (presentationLimitPresheaf Ploc' Sloc'.plus) := by
-    rw [rationalLocalizationPair_plus]
-    exact isSheaf_presentationLimitPresheaf_completionLocalization (P.quotient J)
-      (S.quotient J).plus (S.quotient J).isRingOfIntegralElements.isPowerBounded_of_mem hPq T'
-      (Ideal.Quotient.mk J s) L' hden' hTq hsheaf
+  -- the structure presheaves of both rational localisations are sheaves, and the structure maps
+  -- induce open immersions of the pre-adic spaces onto `R(T/s)` and `R(q(T)/q(s))`
+  obtain ⟨hsY, v, hvd, hvo, hvr⟩ :=
+    exists_isSheaf_isOpenImmersion_comap_completionLocalization P S hP T s L hden hT hsheafA
+  obtain ⟨hsX, u, hud, huo, hur⟩ := exists_isSheaf_isOpenImmersion_comap_completionLocalization
+    (P.quotient J) (S.quotient J) hPq T' (Ideal.Quotient.mk J s) L' hden' hTq hsheaf
   -- the top side: the quotient mapping `π : A⟨T/s⟩ → (A ⧸ J)⟨q(T)/q(s)⟩`, with closed kernel
   let π := P.completionLocQuotientPairHom J T s L hT' L' S hP hden
   have hπ : π.IsQuotientMapping :=
     P.isQuotientMapping_completionLocQuotientPairHom J T s L hT' L' S hP hden
-  have hK : IsClosed (RingHom.ker π.toRingHom : Set (UniformSpace.Completion L)) :=
-    isClosed_singleton.preimage π.continuous_toRingHom
-  -- the vertical sides: the open immersions induced by the structure maps
-  let v := presentationLimitPreAdicSpaceComap (P' := Ploc)
-    (P.toCompletionLocHom S hP T s L hden).toRingHom
-    (P.toCompletionLocHom S hP T s L hden).continuous_toRingHom
-    (P.toCompletionLocHom S hP T s L hden).map_mem_plus
-    S.isRingOfIntegralElements.isPowerBounded_of_mem
-    Sloc.isRingOfIntegralElements.isPowerBounded_of_mem hP hPloc hsY
-  have hvo : IsOpenImmersion v :=
-    isOpenImmersion_presentationLimitPreAdicSpaceComap_toCompletionLocHom P hP T s L hden hT hsY
-  have hvr : Set.range v.base = (spaBasicOpen S.plus T s : Set (spa S.plus)) :=
-    range_presentationLimitPreAdicSpaceComap_toCompletionLocHom_base P hP T s L hden hsY
-  let u := presentationLimitPreAdicSpaceComap (P' := Ploc')
-    ((P.quotient J).toCompletionLocHom (S.quotient J) hPq T' (Ideal.Quotient.mk J s) L'
-      hden').toRingHom
-    ((P.quotient J).toCompletionLocHom (S.quotient J) hPq T' (Ideal.Quotient.mk J s) L'
-      hden').continuous_toRingHom
-    ((P.quotient J).toCompletionLocHom (S.quotient J) hPq T' (Ideal.Quotient.mk J s) L'
-      hden').map_mem_plus
-    (S.quotient J).isRingOfIntegralElements.isPowerBounded_of_mem
-    Sloc'.isRingOfIntegralElements.isPowerBounded_of_mem hPq hPloc' hsX
-  have huo : IsOpenImmersion u :=
-    isOpenImmersion_presentationLimitPreAdicSpaceComap_toCompletionLocHom (P.quotient J) hPq T'
-      (Ideal.Quotient.mk J s) L' hden' hTq hsX
-  have hur : Set.range u.base = (spaBasicOpen (S.quotient J).plus T' (Ideal.Quotient.mk J s) :
-      Set (spa (S.quotient J).plus)) :=
-    range_presentationLimitPreAdicSpaceComap_toCompletionLocHom_base (P.quotient J) hPq T'
-      (Ideal.Quotient.mk J s) L' hden' hsX
+  have key := isClosedImmersion_presentationLimitPreAdicSpaceComap_of_isQuotientMapping Sloc Ploc
+    (P.completionLocalization_ringOfDefinition_le_rationalLocalizationPair S hP T s L hden) Ploc'
+    ((P.quotient J).completionLocalization_ringOfDefinition_le_rationalLocalizationPair
+      (S.quotient J) hPq T' (Ideal.Quotient.mk J s) L' hden') π hπ
+    (isClosed_singleton.preimage π.continuous_toRingHom) hsX
   refine (Hom.prop_restrictPreimage_iff_of_isOpenImmersion _ (spaBasicOpen S.plus T s)
-    (@IsClosedImmersion.{u}) _ u v hvr ?_ ?_).mpr
-    (isClosedImmersion_presentationLimitPreAdicSpaceComap_of_isQuotientMapping Sloc Ploc hPloc
-      Ploc' hPloc' π hπ hK hsX)
+    (@IsClosedImmersion.{u}) _ u v hvr ?_ ?_).mpr key
   · -- the preimage of `R(T/s)` under the quotient morphism is `R(q(T)/q(s))`
     rw [hur, coe_presentationLimitPreAdicSpaceQuotientComap_base]
     ext x
-    have := Set.ext_iff.mp (Pair.Hom.spaComap_preimage_rationalSubset (Pair.quotientHom S J) T s) x
-    simp only [Pair.Hom.toRingHom_quotientHom, Set.mem_preimage] at this
-    rw [SetLike.mem_coe, mem_spaBasicOpen]
-    exact this.symm.trans mem_spaBasicOpen.symm
+    have := Set.ext_iff.mp ((S.quotientHom J).spaComap_preimage_rationalSubset T s) x
+    simp only [Pair.Hom.toRingHom_quotientHom] at this
+    exact mem_spaBasicOpen.trans (this.symm.trans mem_spaBasicOpen.symm)
   · -- the square commutes, since `π` is compatible with the structure maps
-    rw [presentationLimitPreAdicSpaceQuotientComap_def]
-    simp only [u, v]
-    rw [← presentationLimitPreAdicSpaceComap_comp, ← presentationLimitPreAdicSpaceComap_comp]
+    rw [presentationLimitPreAdicSpaceQuotientComap_def, hvd, hud,
+      ← presentationLimitPreAdicSpaceComap_comp, ← presentationLimitPreAdicSpaceComap_comp]
     congr 1
     rw [toRingHom_completionLocQuotientPairHom, toRingHom_toCompletionLocHom,
       toRingHom_toCompletionLocHom]
@@ -227,27 +186,7 @@ private theorem IsClosedImmersion.exists_le_isClosedImmersion_restrictPreimage {
       ((Opens.map q.base).obj R).isOpenEmbedding ≫
     eU.inv ≫ X.ofRestrict ((Opens.map f.base).obj V).isOpenEmbedding
   let V' : Opens Y := ⟨Set.range v.base, v.isOpenEmbedding.isOpen_range⟩
-  have w : q.restrictPreimage R ≫ v = u ≫ f := by
-    simp only [v, u, Category.assoc, Hom.restrictPreimage_ofRestrict_assoc, hfac,
-      Iso.inv_hom_id_assoc, q]
-  have : IsOpenImmersion eV.inv := @IsOpenImmersion.of_isIso _ _ eV.inv eV.isIso_inv
-  have hinj := (eV.inv ≫ Y.ofRestrict V.isOpenEmbedding).isOpenEmbedding.injective
-  have hu : Set.range u.base = f.base ⁻¹' (V' : Set Y) := by
-    ext x
-    constructor
-    · rintro ⟨z, rfl⟩
-      exact ⟨(q.restrictPreimage R).base z, congrArg (fun g ↦ g.base z) w⟩
-    · rintro ⟨r, hr⟩
-      -- `f x` lies in `V`; the point of `Spa(A ⧸ J)` over `x` maps to the point `r` of `R(T/s)`
-      have hxV : f.base x ∈ V := Eq.mpr (congrArg (· ∈ V) hr.symm) (eV.inv.base r.1).2
-      let x' : X.restrict ((Opens.map f.base).obj V).isOpenEmbedding :=
-        ⟨x, Opens.mem_map.mpr hxV⟩
-      have hfx : (eV.inv ≫ Y.ofRestrict V.isOpenEmbedding).base (q.base (eU.hom.base x')) =
-          (eV.inv ≫ Y.ofRestrict V.isOpenEmbedding).base r.1 :=
-        (congrArg (fun g ↦ g.base x') hfac).symm.trans hr.symm
-      have hzR : eU.hom.base x' ∈ (Opens.map q.base).obj R :=
-        Opens.mem_map.mpr (Eq.mpr (congrArg (· ∈ R) (hinj hfx)) r.2)
-      exact ⟨⟨eU.hom.base x', hzR⟩, congrArg (fun g ↦ (g.base x').1) eU.hom_inv_id⟩
+  obtain ⟨hu, w⟩ := range_restrictPreimage_comp_eq_preimage_range hfac R
   have hV' : IsClosedImmersion (f.restrictPreimage V') :=
     (Hom.prop_restrictPreimage_iff_of_isOpenImmersion f V' (@IsClosedImmersion.{u})
       (q.restrictPreimage R) u v rfl hu w).mpr
