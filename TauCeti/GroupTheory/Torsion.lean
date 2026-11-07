@@ -313,8 +313,8 @@ end TauCeti
 
 * `IsMulTorsion.exists_prime_orderOf_mem`: a nontrivial subgroup of a torsion group contains an
   element of prime order.
-* `exists_forall_pow_ne_of_not_isOfFinOrder`: an element `H` of infinite order has `H ^ k ≠ a` for
-  all large `k`.
+* `TauCeti.exists_forall_pow_ne_of_not_isOfFinOrder`: an element `H` of infinite order has
+  `H ^ k ≠ a` for all large `k`.
 -/
 
 section PrimeOrder
@@ -332,6 +332,8 @@ theorem IsMulTorsion.exists_prime_orderOf_mem (hG : IsMulTorsion G) {H : Subgrou
   rwa [orderOf_pow_orderOf_div (hG g).orderOf_pos.ne' hpg]
 
 end PrimeOrder
+
+namespace TauCeti
 
 section InfiniteOrder
 
@@ -351,3 +353,5 @@ theorem exists_forall_pow_ne_of_not_isOfFinOrder {G : Type*} [LeftCancelMonoid G
     exact ⟨0, fun k _ => hk k⟩
 
 end InfiniteOrder
+
+end TauCeti
