@@ -10,6 +10,7 @@ public import Mathlib.Algebra.CharP.Defs
 import Mathlib.Algebra.CharP.Lemmas
 import TauCeti.Algebra.AlgebraicGroup.Representation.Embedding
 import TauCeti.Algebra.AlgebraicGroup.Representation.Faithful.Basic
+import TauCeti.Algebra.Ring.SubOnePow
 
 /-!
 # Unipotent points in positive characteristic
@@ -109,14 +110,11 @@ theorem isUnipotentPoint_of_pow_char_pow_eq_one (p : ℕ) [Fact p.Prime] [CharP 
     rwa [← LinearEquiv.automorphismGroup.toLinearMapMonoidHom_apply, map_pow,
       LinearEquiv.automorphismGroup.toLinearMapMonoidHom_apply,
       Comodule.pointsAction_toLinearMap] at h
-  -- Expand `E ^ p ^ n = (1 + (E - 1)) ^ p ^ n` by the Frobenius binomial formula.
-  obtain ⟨r, hr⟩ := (Commute.one_left (E - 1)).exists_add_pow_prime_pow_eq hprime n
+  -- `p` divides `(E - 1) ^ p ^ n` by the binomial theorem, and `p = 0` in characteristic `p`.
   have hp : (p : Module.End K (K ⊗[k] M)) = 0 := by
     rw [← map_natCast (algebraMap K (Module.End K (K ⊗[k] M))), CharP.cast_eq_zero, map_zero]
-  rw [show 1 + (E - 1) = E from add_sub_cancel 1 E, hE, hp] at hr
-  have h1 : 1 + (E - 1) ^ p ^ n = 1 := by simpa using hr.symm
-  refine ⟨p ^ n, ?_⟩
-  rw [← add_sub_cancel_left 1 ((E - 1) ^ p ^ n), h1, sub_self]
+  exact ⟨p ^ n, by simpa only [hp, zero_dvd_iff] using
+    hprime.dvd_sub_one_pow_of_pow_eq_one (A := Module.End K (K ⊗[k] M)) hE⟩
 
 end General
 
