@@ -240,11 +240,6 @@ section NormedAlgebra
 
 variable [NormedAlgebra ℚ_[p] K]
 
-omit [Algebra ℤ_[p] K] [IsBoundedSMul ℤ_[p] K] [IsUltrametricDist K] [CompleteSpace K] in
-/-- The norm of a natural number in a normed `ℚ_p`-algebra is its `p`-adic norm. -/
-private theorem norm_natCast_eq_norm_padic (m : ℕ) : ‖(m : K)‖ = ‖(m : ℚ_[p])‖ := by
-  rw [← map_natCast (algebraMap ℚ_[p] K), norm_algebraMap']
-
 /-- **The stage seminorm is the dual stage norm of the Amice transform.** For a normed
 `ℚ_p`-algebra `K`, the norm of a distribution on the stage `LA_h(K)` is
 `D_h(Aμ) = supₙ ‖bₙ‖ ‖⌊n / pʰ⌋!‖`, the factorials being taken in `ℚ_p`. -/
@@ -284,18 +279,9 @@ section OfOnOpenDisc
 variable (p) {F : PowerSeries K} (hF : F.OnOpenDisc 1)
 include hF
 
-omit [Algebra ℤ_[p] K] [IsBoundedSMul ℤ_[p] K] [IsUltrametricDist K] [CompleteSpace K] in
-/-- The prescribed values `⌊n / pʰ⌋! cₙ` on Amice's basis of `LA_h(K)` are bounded. -/
-private theorem memℓp_factorial_mul_coeff (h : ℕ) :
-    Memℓp (fun n ↦ ((n / p ^ h)! : K) * F.coeff n) ∞ := by
-  obtain ⟨B, hB⟩ := (onOpenDisc_iff_forall_bddAbove_norm_coeff_mul_norm_factorial (p := p)).mp hF h
-  refine memℓp_infty ⟨B, ?_⟩
-  rintro _ ⟨n, rfl⟩
-  simpa only [norm_mul, norm_natCast_eq_norm_padic (p := p), mul_comm] using hB ⟨n, rfl⟩
-
 /-- The functional on `LA_h(K)` taking the value `⌊n / pʰ⌋! cₙ` on Amice's vector `e_{h,n}`. -/
 private noncomputable def stageOfOnOpenDisc (h : ℕ) : AnalyticStage p h K →L[K] K :=
-  linearCombination K ⟨_, memℓp_factorial_mul_coeff p hF h⟩ ∘L
+  linearCombination K ⟨_, memℓp_factorial_mul_coeff_of_onOpenDisc p hF h⟩ ∘L
     ((amiceEquiv p h K (E := K)).symm : AnalyticStage p h K →L[K] C₀(ℕ, K))
 
 private theorem stageOfOnOpenDisc_amiceTerm (h n : ℕ) (e : K) :
