@@ -296,6 +296,34 @@ theorem contMDiff_symplectizationLift {F : M → M'} (hF : ContMDiff I I' ∞ F)
 
 namespace SmoothForm
 
+/-- Pulling back a symplectization form along a map covering `F` depends on its real component
+only through its exponential. No derivative of that component occurs. -/
+theorem mpullback_symplectization_apply_of_snd_eq {F : M → M'}
+    (hF : ContMDiff I I' ∞ F) {f : M → ℝ} {α : SmoothForm I M ℝ 1}
+    {α' : SmoothForm I' M' ℝ 1}
+    (hα : ∀ x, (mpullback F hF α').1 x = f x • α.1 x)
+    {Ψ : ℝ × M → ℝ × M'} (hΨ : ContMDiff (𝓘(ℝ).prod I) (𝓘(ℝ).prod I') ∞ Ψ)
+    (hcover : ∀ p, (Ψ p).2 = F p.2) (p : ℝ × M)
+    (v : TangentSpace (𝓘(ℝ).prod I) p) :
+    (mpullback Ψ hΨ α'.symplectization).1 p ![v] =
+      Real.exp (Ψ p).1 * f p.2 * α.1 p.2 ![(Manifold.tangentSpaceProdEquiv p v).2] := by
+  have hcomp : TauCeti.mpullback (𝓘(ℝ).prod I) (𝓘(ℝ).prod I') Ψ
+      (mpullback Prod.snd contMDiff_snd α').1 =
+        TauCeti.mpullback (𝓘(ℝ).prod I) I Prod.snd (mpullback F hF α').1 := by
+    rw [coe_mpullback, coe_mpullback,
+      ← TauCeti.mpullback_comp (hΨ.mdifferentiable (by simp)) mdifferentiable_snd,
+      ← TauCeti.mpullback_comp mdifferentiable_snd (hF.mdifferentiable (by simp))]
+    exact congrArg (fun G ↦ TauCeti.mpullback (𝓘(ℝ).prod I) I' G α'.1) (funext hcover)
+  have h := congrArg (fun φ ↦ φ p ![v]) hcomp
+  rw [← coe_mpullback Prod.snd contMDiff_snd, mpullback_snd_apply, hα p.2] at h
+  simp only [ContinuousAlternatingMap.smul_apply, smul_eq_mul,
+    Matrix.vec_single_eq_const] at h
+  simp only [coe_mpullback, TauCeti.mpullback_apply, coe_symplectization,
+    ContinuousAlternatingMap.smul_apply, smul_eq_mul] at h ⊢
+  simp only [Matrix.vec_single_eq_const] at h ⊢
+  rw [h]
+  ring
+
 /-- **Lifts of conformal maps preserve the symplectization form.** If a smooth map `F : M → M'`
 pulls a one-form `α'` back to `f α`, for a smooth positive function `f`, then its lift
 `(t, x) ↦ (t - log f(x), F(x))` pulls the symplectization form `eᵗ α'` back to `eᵗ α`. For a
@@ -307,25 +335,12 @@ theorem mpullback_symplectizationLift_symplectization {F : M → M'} (hF : ContM
     mpullback (symplectizationLift F f)
         (contMDiff_symplectizationLift hF hf fun x ↦ (hf₀ x).ne') α'.symplectization =
       α.symplectization := by
-  have hΦ := (contMDiff_symplectizationLift hF hf fun x ↦ (hf₀ x).ne').mdifferentiable
-    (by simp)
-  -- The second component of the lift is `F ∘ Prod.snd`.
-  have hcomp : TauCeti.mpullback (𝓘(ℝ).prod I) (𝓘(ℝ).prod I') (symplectizationLift F f)
-      (mpullback Prod.snd contMDiff_snd α').1 =
-        TauCeti.mpullback (𝓘(ℝ).prod I) I Prod.snd (mpullback F hF α').1 := by
-    rw [coe_mpullback, coe_mpullback, ← TauCeti.mpullback_comp hΦ mdifferentiable_snd,
-      ← TauCeti.mpullback_comp mdifferentiable_snd (hF.mdifferentiable (by simp))]
-    -- `Prod.snd ∘ symplectizationLift F f` and `F ∘ Prod.snd` are the same function.
-    rfl
   apply Subtype.ext
   funext p
   refine ContinuousAlternatingMap.ext fun v ↦ ?_
-  have h := congrArg (fun φ ↦ φ p v) hcomp
-  simp only [TauCeti.mpullback_apply] at h
-  rw [hα p.2] at h
-  simp only [coe_mpullback, TauCeti.mpullback_apply, coe_symplectization,
-    ContinuousAlternatingMap.smul_apply, smul_eq_mul] at h ⊢
-  rw [h, symplectizationLift_apply, Real.exp_sub, Real.exp_log (hf₀ p.2)]
+  have hv : v = ![v 0] := by ext i; fin_cases i; rfl
+  rw [hv, mpullback_symplectization_apply_of_snd_eq hF hα _ (fun _ ↦ rfl),
+    symplectization_apply, symplectizationLift_apply, Real.exp_sub, Real.exp_log (hf₀ p.2)]
   field_simp [(hf₀ p.2).ne']
 
 end SmoothForm

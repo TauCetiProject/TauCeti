@@ -64,6 +64,12 @@ def symplectizationLift (e : M ≃ₘ⟮I, J⟯ N) (f : M → ℝ)
     (contMDiff_fst.add (((hf.log hf₀).comp e.symm.contMDiff).comp contMDiff_snd)).prodMk
       (e.symm.contMDiff.comp contMDiff_snd)
 
+/-- The underlying function of the bundled lift is the canonical unbundled lift. -/
+theorem coe_symplectizationLift (e : M ≃ₘ⟮I, J⟯ N) {f : M → ℝ}
+    (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hf₀ : ∀ x, f x ≠ 0) :
+    ⇑(e.symplectizationLift f hf hf₀) = TauCeti.symplectizationLift e f :=
+  (rfl)
+
 /-- Evaluation of the lifted diffeomorphism. -/
 @[simp]
 theorem symplectizationLift_apply (e : M ≃ₘ⟮I, J⟯ N) {f : M → ℝ}
@@ -112,39 +118,12 @@ namespace TauCeti.SmoothForm
 variable [IsManifold I ∞ M] [IsManifold J ∞ N]
   {α : SmoothForm I M ℝ 1} {β : SmoothForm J N ℝ 1}
 
-/-- Pulling back a symplectization form along a map covering `F` depends on its real component
-only through its exponential. No derivative of that component occurs. -/
-theorem mpullback_symplectization_apply_of_snd_eq {F : M → N}
-    (hF : ContMDiff I J ∞ F) {f : M → ℝ}
-    (hα : ∀ x, (mpullback F hF β).1 x = f x • α.1 x)
-    {Ψ : ℝ × M → ℝ × N} (hΨ : ContMDiff (𝓘(ℝ).prod I) (𝓘(ℝ).prod J) ∞ Ψ)
-    (hcover : ∀ p, (Ψ p).2 = F p.2) (p : ℝ × M)
-    (v : TangentSpace (𝓘(ℝ).prod I) p) :
-    (mpullback Ψ hΨ β.symplectization).1 p ![v] =
-      Real.exp (Ψ p).1 * f p.2 * α.1 p.2 ![(Manifold.tangentSpaceProdEquiv p v).2] := by
-  have hcomp : TauCeti.mpullback (𝓘(ℝ).prod I) (𝓘(ℝ).prod J) Ψ
-      (mpullback Prod.snd contMDiff_snd β).1 =
-        TauCeti.mpullback (𝓘(ℝ).prod I) I Prod.snd (mpullback F hF β).1 := by
-    rw [coe_mpullback, coe_mpullback,
-      ← TauCeti.mpullback_comp (hΨ.mdifferentiable (by simp)) mdifferentiable_snd,
-      ← TauCeti.mpullback_comp mdifferentiable_snd (hF.mdifferentiable (by simp))]
-    exact congrArg (fun G ↦ TauCeti.mpullback (𝓘(ℝ).prod I) J G β.1) (funext hcover)
-  have h := congrArg (fun φ ↦ φ p ![v]) hcomp
-  rw [← coe_mpullback Prod.snd contMDiff_snd, mpullback_snd_apply, hα p.2] at h
-  simp only [ContinuousAlternatingMap.smul_apply, smul_eq_mul,
-    Matrix.vec_single_eq_const] at h
-  simp only [coe_mpullback, TauCeti.mpullback_apply, coe_symplectization,
-    ContinuousAlternatingMap.smul_apply, smul_eq_mul] at h ⊢
-  simp only [Matrix.vec_single_eq_const] at h ⊢
-  rw [h]
-  ring
-
 /-- **Uniqueness of the tautological-form-preserving lift.** For a nowhere vanishing `α` and
-`F*β = f α` with `f > 0`, every smooth map covering `F` and preserving `eᵗ α` is the canonical
-lift. Neither invertibility of `F` nor homogeneity of the map is assumed. -/
+`F*β = f α`, every smooth map covering `F` and preserving `eᵗ α` is the canonical lift.
+Positivity of `f` follows from preservation. Neither invertibility of `F` nor homogeneity
+of the map is assumed. -/
 theorem eq_symplectizationLift_of_mpullback_eq {F : M → N}
-    (hF : ContMDiff I J ∞ F) {f : M → ℝ} (hf₀ : ∀ x, 0 < f x)
-    (hα₀ : ∀ x, α.1 x ≠ 0)
+    (hF : ContMDiff I J ∞ F) {f : M → ℝ} (hα₀ : ∀ x, α.1 x ≠ 0)
     (hα : ∀ x, (mpullback F hF β).1 x = f x • α.1 x)
     {Ψ : ℝ × M → ℝ × N} (hΨ : ContMDiff (𝓘(ℝ).prod I) (𝓘(ℝ).prod J) ∞ Ψ)
     (hcover : ∀ p, (Ψ p).2 = F p.2)
@@ -164,10 +143,12 @@ theorem eq_symplectizationLift_of_mpullback_eq {F : M → N}
   rw [hpres, symplectization_apply] at h
   simp only [v, ContinuousLinearEquiv.apply_symm_apply] at h
   have hexp : Real.exp (Ψ p).1 * f p.2 = Real.exp p.1 := mul_right_cancel₀ hu h.symm
+  have hf₀ : 0 < f p.2 :=
+    pos_of_mul_pos_right (hexp ▸ Real.exp_pos p.1) (Real.exp_pos (Ψ p).1).le
   have ht : (Ψ p).1 = p.1 - Real.log (f p.2) := by
     apply Real.exp_injective
-    rw [Real.exp_sub, Real.exp_log (hf₀ p.2), ← hexp]
-    exact (mul_div_cancel_right₀ _ (hf₀ p.2).ne').symm
+    rw [Real.exp_sub, Real.exp_log hf₀, ← hexp]
+    exact (mul_div_cancel_right₀ _ hf₀.ne').symm
   rw [TauCeti.symplectizationLift_apply]
   exact Prod.ext ht (hcover p)
 
@@ -187,8 +168,9 @@ theorem mpullback_symplectizationLift_symplectization (e : M ≃ₘ⟮I, J⟯ N)
     (hα : ∀ x, (mpullback e e.contMDiff β).1 x = f x • α.1 x) :
     mpullback (e.symplectizationLift f hf fun x ↦ (hf₀ x).ne')
       (e.symplectizationLift f hf fun x ↦ (hf₀ x).ne').contMDiff β.symplectization =
-        α.symplectization :=
-  TauCeti.SmoothForm.mpullback_symplectizationLift_symplectization e.contMDiff hf hf₀ hα
+        α.symplectization := by
+  simp only [coe_symplectizationLift]
+  exact TauCeti.SmoothForm.mpullback_symplectizationLift_symplectization e.contMDiff hf hf₀ hα
 
 /-- Consequently the lifted diffeomorphism preserves `d(eᵗ α)`, the symplectic form when `α`
 is contact. -/
@@ -213,10 +195,9 @@ theorem existsUnique_mpullback_symplectization_eq (e : M ≃ₘ⟮I, J⟯ N) {f 
   refine ⟨e.symplectizationLift f hf (fun x ↦ (hf₀ x).ne'),
     ⟨fun p ↦ by simp, mpullback_symplectizationLift_symplectization e hf hf₀ hα⟩, ?_⟩
   intro Ψ hΨ
-  have h := eq_symplectizationLift_of_mpullback_eq e.contMDiff hf₀ hα₀ hα
+  have h := eq_symplectizationLift_of_mpullback_eq e.contMDiff hα₀ hα
     Ψ.contMDiff hΨ.1 hΨ.2
   apply Diffeomorph.ext
-  intro p
-  simpa only [symplectizationLift_apply, TauCeti.symplectizationLift_apply] using congrFun h p
+  exact congrFun (h.trans (coe_symplectizationLift e hf _).symm)
 
 end Diffeomorph
