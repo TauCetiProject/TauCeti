@@ -55,14 +55,14 @@ noncomputable abbrev complexificationFunctor : ModuleCat.{u} ℝ ⥤ StarModuleC
 
 /-- On pure tensors, conjugation conjugates just the scalar factor. The star instance
 is specified explicitly because the tensor carrier can carry other involutions. -/
-@[simp] theorem _root_.ModuleCat.star_complexification_tmul (W : ModuleCat.{u} ℝ)
+@[simp] theorem _root_.ModuleCat.star_complexificationFunctor_obj_tmul (W : ModuleCat.{u} ℝ)
     (z : ℂ) (w : W) :
     @star (complexificationFunctor.obj W) (complexificationFunctor.obj W).starAddMonoid.toStar
       (z ⊗ₜ[ℝ] w) = (starRingEnd ℂ) z ⊗ₜ[ℝ] w :=
   tmulConj_tmul W z w
 
 /-- Complexification acts on the real factor of pure tensors. -/
-@[simp] theorem _root_.ModuleCat.complexificationFunctor_map_tmul
+@[simp] theorem complexificationFunctor_map_tmul
     {W W' : ModuleCat.{u} ℝ} (f : W ⟶ W') (z : ℂ) (w : W) :
     (complexificationFunctor.map f).hom (z ⊗ₜ[ℝ] w) = z ⊗ₜ[ℝ] f.hom w :=
   LinearMap.baseChange_tmul _ _ _
@@ -76,7 +76,7 @@ noncomputable abbrev realPointsFunctor : StarModuleCat.{u} ℂ ⥤ ModuleCat.{u}
       (congrArg f.hom (mem_realPoints.mp hv))))
 
 /-- Taking real points restricts a morphism to its fixed vectors. -/
-@[simp] theorem StarModuleCat.realPointsFunctor_map_apply
+@[simp] theorem realPointsFunctor_map_apply
     {V V' : StarModuleCat.{u} ℂ} (f : V ⟶ V') (v : realPointsFunctor.obj V) :
     ((realPointsFunctor.map f).hom v : V') = f.hom v := rfl
 
@@ -87,7 +87,7 @@ noncomputable def _root_.ModuleCat.realPointsComplexificationEquiv (W : ModuleCa
     ((TensorProduct.mk ℝ ℂ W 1).codRestrict _ (fun w => by
       apply mem_realPoints.mpr
       simpa only [LinearEquiv.coe_coe, starLinearEquiv_apply, TensorProduct.mk_apply, map_one]
-        using W.star_complexification_tmul (1 : ℂ) w))
+        using W.star_complexificationFunctor_obj_tmul (1 : ℂ) w))
     ((realPart W).comp (Submodule.subtype _))
     (by
       apply LinearMap.ext
@@ -157,7 +157,7 @@ noncomputable def complexificationUnitIso :
       change (W'.realPointsComplexificationEquiv (f.hom w) : ℂ ⊗[ℝ] W') =
         (complexificationFunctor.map f).hom (W.realPointsComplexificationEquiv w)
       rw [W'.realPointsComplexificationEquiv_apply, W.realPointsComplexificationEquiv_apply]
-      exact (ModuleCat.complexificationFunctor_map_tmul f 1 w).symm)
+      exact (complexificationFunctor_map_tmul f 1 w).symm)
 
 @[simp] theorem _root_.ModuleCat.complexificationUnitIso_hom_app_hom (W : ModuleCat.{u} ℝ) :
     (complexificationUnitIso.hom.app W).hom = W.realPointsComplexificationEquiv.toLinearMap :=
@@ -181,7 +181,7 @@ noncomputable def complexificationCounitIso :
         LinearMap.comp_apply]
       -- Simp cannot match the tensor formulas through the functor's chosen star instance;
       -- rw uses the definitional equality between these bundled module instances.
-      rw [ModuleCat.complexificationFunctor_map_tmul (realPointsFunctor.map f) z w,
+      rw [complexificationFunctor_map_tmul (realPointsFunctor.map f) z w,
         StarModuleCat.complexificationRealPointsIso_hom_tmul,
         StarModuleCat.complexificationRealPointsIso_hom_tmul]
       simp
@@ -211,7 +211,7 @@ includes naturality and both triangle identities. -/
     -- rw uses the definitional equality between these bundled module instances.
     rw [StarModuleCat.hom_comp, LinearMap.comp_apply,
       StarModuleCat.complexificationCounitIso_hom_app,
-      ModuleCat.complexificationFunctor_map_tmul,
+      complexificationFunctor_map_tmul,
       StarModuleCat.complexificationRealPointsIso_hom_tmul,
       ModuleCat.complexificationUnitIso_hom_app_hom]
     simp [W.realPointsComplexificationEquiv_apply, TensorProduct.smul_tmul']

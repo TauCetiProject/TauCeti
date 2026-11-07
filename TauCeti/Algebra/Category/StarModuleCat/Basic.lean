@@ -73,6 +73,9 @@ instance : ConcreteCategory (StarModuleCat.{u} R) Hom where
   hom f := f
   ofHom f := f
 
+@[simp] theorem Hom.coe_hom_apply {V W : StarModuleCat R} (f : V ⟶ W) (v : V) :
+    f v = f.hom v := rfl
+
 /-- Bundle a linear map that commutes with star as a morphism. -/
 abbrev ofHom {V W : StarModuleCat R} (f : V →ₗ[R] W)
     (hf : ∀ v, f (star v) = star (f v)) : V ⟶ W := ⟨f, hf⟩
@@ -110,17 +113,18 @@ def isoMk {V W : StarModuleCat R} (e : V ≃ₗ[R] W)
     (he : ∀ v, e (star v) = star (e v)) : (isoMk e he).inv.hom = e.symm.toLinearMap := by rfl
 
 /-- The forgetful functor discarding the involution. -/
-@[expose] def forget : StarModuleCat.{u} R ⥤ ModuleCat.{u} R where
-  obj V := V.toModuleCat
-  map f := ModuleCat.ofHom f.hom
+instance : HasForget₂ (StarModuleCat.{u} R) (ModuleCat.{u} R) where
+  forget₂ :=
+    { obj V := V.toModuleCat
+      map f := ModuleCat.ofHom f.hom }
 
-@[simp] theorem forget_obj (V : StarModuleCat.{u} R) :
-    (forget (R := R)).obj V = V.toModuleCat := rfl
+@[simp] theorem forget₂_obj (V : StarModuleCat.{u} R) :
+    (forget₂ (StarModuleCat R) (ModuleCat R)).obj V = V.toModuleCat := rfl
 
-@[simp] theorem forget_map {V W : StarModuleCat.{u} R} (f : V ⟶ W) :
-    ((forget (R := R)).map f).hom = f.hom := rfl
+@[simp] theorem forget₂_map {V W : StarModuleCat.{u} R} (f : V ⟶ W) :
+    ((forget₂ (StarModuleCat R) (ModuleCat R)).map f).hom = f.hom := rfl
 
-instance : (forget (R := R)).Faithful where
+instance : (forget₂ (StarModuleCat.{u} R) (ModuleCat.{u} R)).Faithful where
   map_injective h := hom_ext (congrArg ModuleCat.Hom.hom h)
 
 end StarModuleCat
