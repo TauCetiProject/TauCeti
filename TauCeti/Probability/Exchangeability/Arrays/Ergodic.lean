@@ -127,10 +127,8 @@ private theorem map_pairReindex_eq_self_of_finite {ρ : Measure (ℕ × ℕ → 
     (hπ : (MulAction.fixedBy ℕ π)ᶜ.Finite) : ρ.map (pairReindex π π) = ρ := by
   have hπ' : (MulAction.fixedBy ℕ π⁻¹)ᶜ.Finite := by
     simpa only [MulAction.fixedBy_inv ℕ] using hπ
-  ext s hs
-  rw [Measure.map_apply (measurable_pairReindex _ _) hs]
-  have h := SMulInvariantMeasure.measure_preimage_smul (μ := ρ) (FinitaryPerm.ofPerm π⁻¹ hπ') hs
-  simpa only [finitaryPerm_smul_array_def, FinitaryPerm.toPerm_ofPerm, inv_inv] using h
+  simpa only [finitaryPerm_smul_array_def, FinitaryPerm.toPerm_ofPerm, inv_inv] using
+    MeasureTheory.map_smul (FinitaryPerm.ofPerm π⁻¹ hπ') ρ
 
 /-- A finitary-invariant law gives the symmetric difference of a measurable set `t` with an
 invariant set `s` the same measure after relabelling `t` by a finitary permutation. -/
