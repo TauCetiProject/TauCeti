@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Coordinates
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.Basic
+public import TauCeti.Data.Finsupp.MassTransfer
 
 /-!
 # The barycentric identification for stellar subdivision
@@ -209,37 +210,13 @@ theorem surjOn_stellarSubdivisionLinearMap (hσ : σ ∈ K) (hv : ({v} : Finset 
     obtain ⟨a, ha, hmin⟩ := (σ : Set ι).exists_min_image (fun i => x i)
       σ.finite_toSet hσne
     have haσ : a ∈ σ := ha
-    have hav : a ≠ v := fun h => hvσ (h ▸ ha)
-    let c : ι →₀ ℝ := ∑ i ∈ σ, Finsupp.single i 1
-    let y : ι →₀ ℝ := x + x a • ((σ.card : ℝ) • Finsupp.single v 1 - c)
-    have hycoord (i : ι) : y i = x i + x a *
-        ((if i = v then (σ.card : ℝ) else 0) - if i ∈ σ then 1 else 0) := by
-      simp [y, c, Finsupp.single_apply, eq_comm]
-    -- Remove equal mass on σ and transfer it to v, preserving nonnegativity.
-    have hypos : ∀ i, 0 ≤ y i := by
-      intro i
-      rw [hycoord]
-      by_cases hiv : i = v
-      · subst i
-        simp only [hxv, ite_true, hvσ, ite_false, sub_zero, zero_add]
-        exact mul_nonneg (hxpos a) (Nat.cast_nonneg _)
-      · by_cases his : i ∈ σ
-        · simp only [hiv, ite_false, his, ite_true, zero_sub, mul_neg_one]
-          linarith [hmin i his]
-        · simpa [hiv, his] using hxpos i
-    have hya : y a = 0 := by simp [hycoord, haσ, hav]
+    obtain ⟨y, hy, hycoord, hypos, hya, hysum⟩ :=
+      Finsupp.exists_transfer_vector hvσ hxpos hxsum hxv haσ hmin
+    -- The least coordinate vanishes, and every other old coordinate stays in the old face.
     have hyne : y.support.Nonempty := by
-      have hsum : y.sum (fun _ r => r) = 1 := by
-        let S := Finsupp.linearCombination ℝ (fun _ : ι => (1 : ℝ))
-        have hS (z : ι →₀ ℝ) : S z = z.sum (fun _ r => r) := by
-          simp [S, Finsupp.linearCombination_apply]
-        rw [← hS]
-        have hSx : S x = 1 := (hS x).trans hxsum
-        simp [y, c, map_add, map_smul, map_sub, map_sum, hSx, S]
       apply Finsupp.support_nonempty_iff.mpr
       intro hz
-      simp [hz] at hsum
-    -- The least coordinate vanishes, and every other old coordinate stays in the old face.
+      simp [hz] at hysum
     have hysub : y.support.erase v ⊆ x.support := by
       intro i hi
       obtain ⟨hiv, hiy⟩ := Finset.mem_erase.mp hi
@@ -260,12 +237,10 @@ theorem surjOn_stellarSubdivisionLinearMap (hσ : σ ∈ K) (hv : ({v} : Finset 
         exact K.isRelLowerSet_faces.mem_of_le hxface
           (by simpa [Finset.erase_eq_of_notMem hvy] using hysub) hyne
     have hyimage : stellarSubdivisionLinearMap σ v y = x :=
-      stellarSubdivisionLinearMap_lift hσne hvσ hxv (x a)
-    -- The linear map undoes the transfer; mass preservation supplies the final normalization.
-    refine ⟨y, Geometry.SimplicialComplex.mem_space_onFinsupp_iff.mpr
-      ⟨hypos, ?_, hyface⟩, hyimage⟩
-    rw [← sum_stellarSubdivisionLinearMap hσne y, hyimage]
-    exact hxsum
+      hy ▸ stellarSubdivisionLinearMap_lift hσne hvσ hxv (x a)
+    -- The linear map undoes the transfer, and the transfer preserves total mass.
+    exact ⟨y, Geometry.SimplicialComplex.mem_space_onFinsupp_iff.mpr ⟨hypos, hysum, hyface⟩,
+      hyimage⟩
   · refine ⟨x, Geometry.SimplicialComplex.mem_space_onFinsupp_iff.mpr
       ⟨hxpos, hxsum, (mem_stellarSubdivision_iff_of_notMem hvx).mpr ⟨hxface, hsub⟩⟩, hfix⟩
 
