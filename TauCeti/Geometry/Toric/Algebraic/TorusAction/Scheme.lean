@@ -74,10 +74,6 @@ theorem affineToricSchemeAction_comp_specMap_algebraMap :
 
 /-! ### Naturality -/
 
-private theorem mapsTo_bot {V' : Type*} [AddCommGroup V'] [Module ℝ V'] (g : V →ₗ[ℝ] V') :
-    Set.MapsTo g (⊥ : PointedCone ℝ V) (⊥ : PointedCone ℝ V') := by
-  simp [Set.MapsTo]
-
 /-- A compatible map of lattice cones induces the product map from the source torus action
 domain to the target torus action domain.  Its two factors are the induced dense-torus map and
 the induced affine toric morphism. -/
@@ -95,13 +91,13 @@ noncomputable def affineToricSchemeActionMap
           (affineCoordinateRing hi' (⊥ : PointedCone ℝ V')))))
         (Spec.map (CommRingCat.ofHom (algebraMap ℂ (affineCoordinateRing hi' τ)))) :=
   pullback.map _ _ _ _
-    (affineToricSchemeMap hi hi' f g hfg (mapsTo_bot g))
+    (affineToricSchemeMap hi hi' f g hfg (PointedCone.mapsTo_bot g))
     (affineToricSchemeMap hi hi' f g hfg hστ) (𝟙 _)
     (by
       rw [Category.comp_id, affineToricSchemeMap_def]
       exact (comp_over (Spec.map (CommRingCat.ofHom
         (affineCoordinateRingMap hi hi' f g hfg
-          (mapsTo_bot g)).toRingHom)) (Spec (.of ℂ))).symm)
+          (PointedCone.mapsTo_bot g)).toRingHom)) (Spec (.of ℂ))).symm)
     (by
       rw [Category.comp_id, affineToricSchemeMap_def]
       exact (comp_over (Spec.map (CommRingCat.ofHom
