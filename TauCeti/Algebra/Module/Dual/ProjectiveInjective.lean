@@ -99,36 +99,19 @@ theorem moduleInjective_of_dual_projective (e : Q ≃ₗ[k] Module.Dual k N)
     exact hx
   simpa [s, r, map_finsuppSum] using congr(e q $hf)
 
-/-- Over a finite-dimensional algebra, the linear dual of a finite-dimensional injective
-right module is a projective left module, with the action given by precomposition. -/
-theorem moduleProjective_of_dual_injective [FiniteDimensional k A] [FiniteDimensional k N]
-    [Small.{w} Aᵐᵒᵖ] [Module.Injective Aᵐᵒᵖ N] (e : Q ≃ₗ[k] Module.Dual k N)
-    (he : ∀ (a : A) (q : Q) (x : N), e (a • q) x = e q (MulOpposite.op a • x)) :
+/-- The transposed free presentation of `Q` embeds `N` into `(Dual k A)ⁿ`; a splitting of this
+embedding, which exists since `N` is injective, makes `Q` a direct summand of `Aⁿ`. -/
+private theorem projective_of_injective_transpose [FiniteDimensional k A] [Small.{w} Aᵐᵒᵖ]
+    [Module.Injective Aᵐᵒᵖ N] [Module Aᵐᵒᵖ (Module.Dual k A)]
+    (hsmul : ∀ (c : Aᵐᵒᵖ) (ψ : Module.Dual k A) (x : A), (c • ψ) x = ψ (c.unop * x))
+    (e : Q ≃ₗ[k] Module.Dual k N)
+    (he : ∀ (a : A) (q : Q) (x : N), e (a • q) x = e q (MulOpposite.op a • x))
+    {n : ℕ} (b : Module.Basis (Fin n) k Q) (j : N →ₗ[Aᵐᵒᵖ] (Fin n → Module.Dual k A))
+    (hj_apply : ∀ (x : N) (y : A) (i : Fin n), j x i y = e (b i) (MulOpposite.op y • x)) :
     Module.Projective A Q := by
-  -- The dual `D(ₐA)` of the left regular module, as a right module: `(ψ · c) x = ψ (c * x)`.
-  let : Module Aᵐᵒᵖ (Module.Dual k A) := Module.compHom _
-    { toFun := fun c ↦ (LinearMap.mulLeft k c.unop).dualMap
-      map_one' := by ext; simp
-      map_mul' := fun _ _ ↦ by ext; simp
-      map_zero' := by ext; simp
-      map_add' := fun _ _ ↦ by ext; simp [add_mul] : Aᵐᵒᵖ →+* Module.End k (Module.Dual k A) }
-  have hsmul (c : Aᵐᵒᵖ) (ψ : Module.Dual k A) (x : A) : (c • ψ) x = ψ (c.unop * x) := by
-    -- the action is `Module.compHom` of the ring homomorphism above, applied to `ψ`
-    rfl
-  have : FiniteDimensional k Q := LinearEquiv.finiteDimensional e.symm
-  let b := Module.finBasis k Q
-  let n := Module.finrank k Q
   -- The free presentation `p : Aⁿ → Q` given by a `k`-basis of `Q`.
   let p : (Fin n → A) →ₗ[A] Q := Fintype.linearCombination A b
   have hp (a : Fin n → A) : p a = ∑ i, a i • b i := Fintype.linearCombination_apply A b a
-  -- Transpose the free presentation to an embedding of the right module `N`.
-  let j : N →ₗ[Aᵐᵒᵖ] (Fin n → Module.Dual k A) :=
-    { toFun := fun x i ↦ (e (b i)).comp
-          (((LinearMap.toSpanSingleton Aᵐᵒᵖ N x).restrictScalars k).comp
-            (MulOpposite.opLinearEquiv k).toLinearMap)
-      map_add' := fun _ _ ↦ by ext; simp
-      map_smul' := fun _ _ ↦ by ext; simp [hsmul, mul_smul] }
-  have hj_apply (x : N) (y : A) (i : Fin n) : j x i y = e (b i) (MulOpposite.op y • x) := rfl
   have hj : Function.Injective j := by
     refine (injective_iff_map_eq_zero j).2 fun x hx ↦ ?_
     have h (i : Fin n) : e (b i) x = 0 := by
@@ -175,6 +158,35 @@ theorem moduleProjective_of_dual_injective [FiniteDimensional k A] [FiniteDimens
     _ = e q (r (∑ i, Pi.single i (j x i))) := by simp [hs₀]
     _ = e q x := by rw [Finset.univ_sum_single, hrj]
     _ = e (LinearMap.id q) x := rfl
+
+/-- Over a finite-dimensional algebra, the linear dual of a finite-dimensional injective
+right module is a projective left module, with the action given by precomposition. -/
+theorem moduleProjective_of_dual_injective [FiniteDimensional k A] [FiniteDimensional k N]
+    [Small.{w} Aᵐᵒᵖ] [Module.Injective Aᵐᵒᵖ N] (e : Q ≃ₗ[k] Module.Dual k N)
+    (he : ∀ (a : A) (q : Q) (x : N), e (a • q) x = e q (MulOpposite.op a • x)) :
+    Module.Projective A Q := by
+  -- The dual `D(ₐA)` of the left regular module, as a right module: `(ψ · c) x = ψ (c * x)`.
+  let : Module Aᵐᵒᵖ (Module.Dual k A) := Module.compHom _
+    { toFun := fun c ↦ (LinearMap.mulLeft k c.unop).dualMap
+      map_one' := by ext; simp
+      map_mul' := fun _ _ ↦ by ext; simp
+      map_zero' := by ext; simp
+      map_add' := fun _ _ ↦ by ext; simp [add_mul] : Aᵐᵒᵖ →+* Module.End k (Module.Dual k A) }
+  have hsmul (c : Aᵐᵒᵖ) (ψ : Module.Dual k A) (x : A) : (c • ψ) x = ψ (c.unop * x) := by
+    -- the action is `Module.compHom` of the ring homomorphism above, applied to `ψ`
+    rfl
+  have : FiniteDimensional k Q := LinearEquiv.finiteDimensional e.symm
+  let b := Module.finBasis k Q
+  let n := Module.finrank k Q
+  -- Transpose the free presentation to an embedding of the right module `N`.
+  let j : N →ₗ[Aᵐᵒᵖ] (Fin n → Module.Dual k A) :=
+    { toFun := fun x i ↦ (e (b i)).comp
+          (((LinearMap.toSpanSingleton Aᵐᵒᵖ N x).restrictScalars k).comp
+            (MulOpposite.opLinearEquiv k).toLinearMap)
+      map_add' := fun _ _ ↦ by ext; simp
+      map_smul' := fun _ _ ↦ by ext; simp [hsmul, mul_smul] }
+  have hj_apply (x : N) (y : A) (i : Fin n) : j x i y = e (b i) (MulOpposite.op y • x) := rfl
+  exact projective_of_injective_transpose hsmul e he b j hj_apply
 
 /-- Over a finite-dimensional algebra, a finite-dimensional right module is projective
 exactly when its left scalar dual is injective. The dual action is specified by the pairing. -/
