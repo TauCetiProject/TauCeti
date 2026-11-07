@@ -6,14 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.EMetricSpace.Lipschitz
-public import Mathlib.Topology.MetricSpace.Lipschitz
 public import Mathlib.Topology.MetricSpace.Pseudo.Defs
 
 /-!
 # Lipschitz maps from extended metric spaces
 
 This file gives a real-valued Lipschitz estimate for the extended distance from a fixed point,
-shows that the shifted positive part `t ↦ max (t - k) 0` is `1`-Lipschitz,
 and shows that composing a function locally Lipschitz on a set with a locally Lipschitz map keeps
 it locally Lipschitz on that set.
 
@@ -53,12 +51,6 @@ theorem lipschitzWith_toReal_edist {X : Type*} [PseudoEMetricSpace X] (a : X) :
   rw [ENNReal.toReal_add hax hxy] at hforward
   rw [ENNReal.toReal_add hay hxy', edist_comm y x] at hbackward
   constructor <;> linarith
-
-/-- The shifted positive part `t ↦ max (t - k) 0` is `1`-Lipschitz on the real line. -/
-theorem lipschitzWith_max_sub_const_zero (k : ℝ) : LipschitzWith 1 (fun t : ℝ => max (t - k) 0) :=
-  LipschitzWith.of_dist_le_mul fun x y => by
-    simpa only [NNReal.coe_one, one_mul, Real.dist_eq, sub_sub_sub_cancel_right] using
-      abs_max_sub_max_le_abs (x - k) (y - k) 0
 
 end TauCeti
 
