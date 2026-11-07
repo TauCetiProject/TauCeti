@@ -336,11 +336,7 @@ theorem continuous_totalSpaceMk_mk :
   Continuous.totalSpaceMk_associatedBundleMk (f := fun x : TotalSpace G P × F ↦ x.1.proj)
     continuous_fst continuous_snd
 
-/-- The map `(p, v) ↦ [p, v]` is an open map. Through a pair `(p₀, v₀)` over `b₀` it has the
-local continuous section sending a point `y` of the associated bundle near `[p₀, v₀]` to the pair
-of the point `σ(y)` of `P` over the base point of `y` with the coordinate of `p₀` in the chart
-`e = trivializationAt G P b₀`, and of `(e p₀).2⁻¹` applied to the coordinate of `y` in the chart at
-`b₀`. -/
+/-- The map `(p, v) ↦ [p, v]` is an open map. -/
 theorem isOpenMap_totalSpaceMk_mk :
     IsOpenMap fun x : TotalSpace G P × F ↦
       (⟨x.1.proj, mk G x.1.2 x.2⟩ : TotalSpace F (AssociatedBundle G P F)) := by
@@ -352,7 +348,10 @@ theorem isOpenMap_totalSpaceMk_mk :
   have heA : eA.baseSet = e.baseSet := baseSet_trivializationAt _
   have hb₀ : x₀.1.proj ∈ e.baseSet := mem_baseSet_trivializationAt G P x₀.1.proj
   set g₀ := (e x₀.1).2
-  -- The local section `ψ` through `x₀`.
+  -- The local continuous section `ψ` through `x₀ = (p₀, v₀)` over `b₀`: it sends a point `y` of
+  -- the associated bundle near `[p₀, v₀]` to the pair of the point of `P` over the base point of
+  -- `y` whose coordinate in the chart `e` is `g₀ = (e p₀).2`, and of `g₀⁻¹` applied to the
+  -- coordinate of `y` in the chart at `b₀`.
   set ψ : TotalSpace F (AssociatedBundle G P F) → TotalSpace G P × F :=
     fun y ↦ (e.toOpenPartialHomeomorph.symm (y.proj, g₀), g₀⁻¹ • (eA y).2)
   have hψ₀ : ψ (Φ x₀) = x₀ := by
