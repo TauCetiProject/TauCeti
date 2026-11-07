@@ -67,9 +67,8 @@ lemma singularCohomologyTopCatSphereEquiv_apply (n : ℕ)
     TopCat.singularKroneckerEquivOfProjectiveHomology_apply, Linear.homCongr_apply,
     Iso.refl_hom, Category.comp_id, Iso.trans_inv, Iso.symm_inv]
   rw [← reducedSingularHomologySuccIso_hom]
-  -- Evaluation at 1 in Hom(k,M) is the underlying linear map evaluated at 1.
-  dsimp [ModuleCat.homLinearEquiv, ModuleCat.homAddEquiv, ModuleCat.homEquiv,
-    LinearMap.ringLmapEquivSelf]
+  rw [ModuleCat.homLinearEquiv_apply, LinearMap.ringLmapEquivSelf_apply]
+  -- The additive hom equivalence is the underlying linear map; it has no apply lemma.
   rfl
 
 /-- The inverse sphere cohomology equivalence has prescribed evaluation on the native
@@ -107,15 +106,7 @@ lemma singularCohomologyTopCatSphereEquiv_naturality {N : ModuleCat.{w} k}
           (ModuleCat.of k k)).linearYonedaObjMap k g) (n + 1) α) =
       g (singularCohomologyTopCatSphereEquiv k M n α) := by
   rw [singularCohomologyTopCatSphereEquiv_apply,
-    singularCohomologyTopCatSphereEquiv_apply]
-  convert ConcreteCategory.congr_hom
-    (ChainComplex.kronecker_coefficient_naturality (k := k) g (n + 1) α)
-      (((reducedSingularHomologyι (ModuleCat.of k k) (n + 1)).app
-        (TopCat.sphere (n + 1)))
-          ((reducedSingularHomologyTopCatSphereIso (ModuleCat.of k k) (n + 1)).inv 1)) using 1
-  · rw [TopCat.singularKronecker_def]
-    rfl
-  · rw [TopCat.singularKronecker_def]
-    rfl
+    singularCohomologyTopCatSphereEquiv_apply,
+    TopCat.singularKronecker_coefficient_naturality, ModuleCat.comp_apply]
 
 end TauCeti
