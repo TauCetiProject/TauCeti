@@ -88,7 +88,9 @@ private theorem three_step_divisions {α β γ δ ε ζ : Fin t.numRoots}
   rcases hc₂ with h | h <;> rcases hc₃ with h' | h' <;>
     rcases hc₃' with h'' | h'' <;> simp [h, h', h'']
 
-private theorem three_step_brackets {α β γ δ ε ζ : Fin t.numRoots}
+/-- The successive divided brackets in a three-step root string, with their integral
+coefficients. These identities retain the factors two and three before scalar extension. -/
+theorem lie_chevalleySystem_three_step {α β γ δ ε ζ : Fin t.numRoots}
     (hγ : (t.simplyConnectedRootDatum ht).root γ =
       (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
     (hδ : (t.simplyConnectedRootDatum ht).root δ =
@@ -182,7 +184,10 @@ private theorem short_long_exclusions (ht : G2.Valid) (α β : Fin G2.numRoots)
   simpa +instances only [simplyConnectedRootDatum_G2, numRoots_G2, rank_G2] using
     g2_short_long_exclusions
 
-private theorem short_long_vanishing (ht : G2.Valid) {α β γ δ ε ζ : Fin G2.numRoots}
+/-- The vanishing brackets among the output root vectors of a three-step G₂ string.
+These are the commutations used when collecting the corresponding root-subgroup factors. -/
+theorem lie_chevalleySystem_g2_three_step_vanishing (ht : G2.Valid)
+    {α β γ δ ε ζ : Fin G2.numRoots}
     (hγ : (G2.simplyConnectedRootDatum ht).root γ =
       (G2.simplyConnectedRootDatum ht).root α + (G2.simplyConnectedRootDatum ht).root β)
     (hδ : (G2.simplyConnectedRootDatum ht).root δ =
@@ -264,9 +269,10 @@ theorem chevalleyRootSubgroup_mul_of_g2_short_long {α β γ δ ε ζ : Fin G2.n
         x ε A (Multiplicative.ofAdd ((a : A) * (u ^ 3 * v))) *
         x ζ A (Multiplicative.ofAdd ((b : A) * (u ^ 3 * v ^ 2))) *
         x α A (Multiplicative.ofAdd u) := by
-  obtain ⟨hik, hil, hlk⟩ := three_step_brackets hγ hδ hε hζ
+  obtain ⟨hik, hil, hlk⟩ := lie_chevalleySystem_three_step hγ hδ hε hζ
   have hij := lie_chevalleySystem_eq_structureConstant_zsmul hγ
-  obtain ⟨him, hio, hjk, hlm, hko, hlo, hmo⟩ := short_long_vanishing ht hγ hδ hε hζ
+  obtain ⟨him, hio, hjk, hlm, hko, hlo, hmo⟩ :=
+    lie_chevalleySystem_g2_three_step_vanishing ht hγ hδ hε hζ
   -- Extend stability from simple generators to the all-root Kostant form.
   have hstable := dividedPower_chevalleySystem_smul_mem ρ M hM hnil
   have hall : ∀ z ∈ kostantForm (G2.chevalleySystem ht) (G2.lieBasis ht).h,
