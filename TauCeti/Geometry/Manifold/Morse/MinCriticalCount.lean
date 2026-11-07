@@ -24,8 +24,9 @@ On a compact boundaryless manifold the minimum is finite (`TauCeti.minCriticalCo
 a Morse function exists, and it has finitely many critical points. Together with attainment this
 makes `c(M)` a natural number, realized by a smooth function with a finite critical set; no default
 natural value is assigned when the minimum is infinite. The minimum is bounded below by the
-Lusternik–Schnirelmann count of `M` (`TauCeti.lsCategoryCount_univ_le_minCriticalCount`), hence
-by the cup length of `M` plus one (`TauCeti.lsCupLength_add_one_le_minCriticalCount`), it
+Lusternik–Schnirelmann count of `M` (`TauCeti.lsCategoryCount_univ_le_minCriticalCount`), hence,
+when `M` is nonempty, by the cup length of `M` plus one
+(`TauCeti.lsCupLength_add_one_le_minCriticalCount`); it
 vanishes exactly on the empty manifold (`TauCeti.minCriticalCount_eq_zero_iff`), and it is at
 least `2` as soon as `M` has two points (`TauCeti.two_le_minCriticalCount`), attained on every
 sphere by the height function (`TauCeti.minCriticalCount_sphere`).
@@ -38,7 +39,7 @@ sphere by the height function (`TauCeti.minCriticalCount_sphere`).
 * `TauCeti.exists_totalCriticalCount_eq_minCriticalCount`: the minimum is attained.
 * `TauCeti.minCriticalCount_ne_top`: the minimum is finite on a compact manifold.
 * `TauCeti.lsCategoryCount_univ_le_minCriticalCount`: the Lusternik–Schnirelmann lower bound.
-* `TauCeti.lsCupLength_add_one_le_minCriticalCount`: the cup-length lower bound.
+* `TauCeti.lsCupLength_add_one_le_minCriticalCount`: the cup-length lower bound for nonempty `M`.
 * `TauCeti.minCriticalCount_eq_zero_iff` and `TauCeti.two_le_minCriticalCount`: the elementary
   lower bounds.
 * `TauCeti.minCriticalCount_sphere`: the minimum is `2` on every sphere.
