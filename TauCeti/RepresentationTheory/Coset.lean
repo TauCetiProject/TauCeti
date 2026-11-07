@@ -38,9 +38,7 @@ variable {R G V : Type*} [Semiring R] [Group G] [AddCommMonoid V] [Module R V]
 theorem apply_eq_apply_of_quotientGroup_mk_eq {x : V}
     (hx : ∀ h : H, ρ h x = x) {a b : G}
     (hab : (a : G ⧸ H) = (b : G ⧸ H)) : ρ a x = ρ b x := by
-  obtain ⟨h, rfl⟩ : ∃ h : H, a * (h : G) = b :=
-    ⟨⟨a⁻¹ * b, QuotientGroup.eq.mp hab⟩, by simp⟩
-  simp [map_mul, mul_apply_eq_comp, hx]
+  simpa using (congrArg (ρ a) (hx ⟨_, QuotientGroup.eq.mp hab⟩)).symm
 
 end FixedVectors
 
@@ -56,12 +54,9 @@ theorem comp_eq_of_rightCoset_eq (hΓ : Γ.toSubmonoid ≤ Δ) {q : V →ₛₗ[
     (h : MulOpposite.op x • (Γ : Set G) = MulOpposite.op y • (Γ : Set G)) :
     q ∘ₛₗ ρ ⟨x, hx⟩ = q ∘ₛₗ ρ ⟨y, hy⟩ := by
   have hγ : y * x⁻¹ ∈ Γ := (rightCoset_eq_iff Γ).mp h
-  calc q ∘ₛₗ ρ ⟨x, hx⟩ = (q ∘ₛₗ ρ ⟨y * x⁻¹, hΓ hγ⟩) ∘ₛₗ ρ ⟨x, hx⟩ := by rw [hq _ hγ]
-    _ = q ∘ₛₗ ρ (⟨y * x⁻¹, hΓ hγ⟩ * ⟨x, hx⟩) := by
-      rw [map_mul, Module.End.mul_eq_comp, LinearMap.comp_assoc]
-    _ = q ∘ₛₗ ρ ⟨y, hy⟩ := by
-      congr 2
-      exact Subtype.ext (inv_mul_cancel_right y x)
+  have hyx : (⟨y, hy⟩ : Δ) = ⟨y * x⁻¹, hΓ hγ⟩ * ⟨x, hx⟩ :=
+    Subtype.ext (inv_mul_cancel_right y x).symm
+  rw [hyx, map_mul, Module.End.mul_eq_comp, ← LinearMap.comp_assoc, hq _ hγ]
 
 end Representation
 
