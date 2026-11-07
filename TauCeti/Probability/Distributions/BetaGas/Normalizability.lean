@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.BetaGas.Basic
-import TauCeti.Algebra.Order.BigOperators.SumProd
+import TauCeti.Algebra.Order.BigOperators.Sum.Prod
 import TauCeti.MeasureTheory.Integral.GaussianGrowth
 
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
