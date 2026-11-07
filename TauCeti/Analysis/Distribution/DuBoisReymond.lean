@@ -90,7 +90,7 @@ theorem _root_.ContDiff.exists_contDiff_deriv_eq_of_integral_eq_zero {a b : ℝ}
   obtain ⟨εb, hεb, hφb⟩ := Metric.eventually_nhds_iff.mp
     (notMem_tsupport_iff_eventuallyEq.mp fun h ↦ (hφs h).2.ne rfl)
   have hleft : ∀ t, t < a + εa → ψ t = 0 := fun t ht ↦
-    integral_eq_zero_of_lt_add hεa hφ0 hφa ht
+    integral_eq_zero_of_lt_add (fun x hx ↦ hφ0 x fun h ↦ h.1.not_ge hx) hφa ht
   have hright : ∀ t, b - εb < t → ψ t = 0 := by
     intro t ht
     simp only [hψ_def]

@@ -107,19 +107,18 @@ theorem integral_re_mul_im_sub_im_mul_re_eq {a b : ℝ} {k : ℝ} (hk : k ≠ 0)
 
 end intervalIntegral
 
-/-- A function vanishing outside `Ioo a b` and on a ball around `a` has zero integral on `a..t`
-for every `t` in that ball's right half, `t < a + ε`. -/
-lemma integral_eq_zero_of_lt_add {a b ε t : ℝ} {φ : ℝ → ℝ}
-    (hε : 0 < ε) (hφ0 : ∀ x, x ∉ Ioo a b → φ x = 0) (hφa : ∀ ⦃y⦄, dist y a < ε → φ y = 0)
-    (ht : t < a + ε) : ∫ s in a..t, φ s = 0 := by
-  refine (intervalIntegral.integral_congr (g := fun _ ↦ (0 : ℝ)) fun s hs ↦ ?_).trans
+/-- A function vanishing on `(-∞, a]` and on a ball around `a` has zero integral on `a..t` for
+every `t < a + ε`, where `ε` is the radius of that ball. -/
+lemma integral_eq_zero_of_lt_add {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {μ : Measure ℝ} {a ε t : ℝ} {φ : ℝ → E} (hφ0 : ∀ x, x ≤ a → φ x = 0)
+    (hφa : ∀ ⦃y⦄, dist y a < ε → φ y = 0) (ht : t < a + ε) : ∫ s in a..t, φ s ∂μ = 0 := by
+  refine (intervalIntegral.integral_congr (g := fun _ ↦ (0 : E)) fun s hs ↦ ?_).trans
     intervalIntegral.integral_zero
   rcases le_or_gt s a with hsa | hsa
-  · exact hφ0 s fun h ↦ h.1.not_ge hsa
-  · have h1 : s < a + ε := lt_of_le_of_lt hs.2 (max_lt (by linarith) ht)
-    refine hφa ?_
+  · exact hφ0 s hsa
+  · refine hφa ?_
     rw [Real.dist_eq, abs_of_pos (sub_pos.mpr hsa)]
-    linarith
+    linarith [(le_max_iff.1 hs.2).resolve_left hsa.not_ge]
 
 end TauCeti
 
