@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 public import TauCeti.Topology.Algebra.Module.BilinearForm
+import TauCeti.Analysis.PDE.Ellipticity.Basic
 
 /-!
 # Uniform quadratic bounds for compact positive-definite matrix families
@@ -44,26 +45,12 @@ theorem exists_uniform_quadratic_bounds {ι X : Type*} [Fintype ι] [DecidableEq
   let : ContinuousSMul ℝ (EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ) :=
     ContinuousLinearMap.continuousSMul
   let B : X → EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ := fun x =>
-    ∑ i, ∑ j, A x i j • (EuclideanSpace.proj i).smulRight (EuclideanSpace.proj j)
-  have hB : Continuous B := by
-    dsimp only [B]
-    apply continuous_finsetSum
-    intro i _
-    apply continuous_finsetSum
-    intro j _
-    exact (hA.matrix_elem i j).smul continuous_const
-  have hdiag (x : X) (ξ : EuclideanSpace ℝ ι) : B x ξ ξ = (A x).toQuadraticForm' ξ := by
-    simp only [B, sum_apply, smul_apply,
-      ContinuousLinearMap.smulRight_apply, EuclideanSpace.proj, PiLp.proj_apply,
-      smul_eq_mul, Matrix.toQuadraticForm'_apply, dotProduct, Matrix.mulVec, Finset.mul_sum]
-    apply Finset.sum_congr rfl
-    intro i _
-    apply Finset.sum_congr rfl
-    intro j _
-    ring
+    PDE.matrixBilinearForm (A x)
+  have hB : Continuous B := PDE.continuous_matrixBilinearForm.comp hA
   have hpositive (x : X) (_ : x ∈ (univ : Set X)) (ξ : EuclideanSpace ℝ ι) (hξ : ξ ≠ 0) :
       0 < B x ξ ξ := by
-    rw [hdiag, Matrix.toQuadraticForm'_apply]
+    change 0 < PDE.matrixBilinearForm (A x) ξ ξ
+    rw [PDE.matrixBilinearForm_self, Matrix.toQuadraticForm'_apply]
     apply (hpos x).dotProduct_mulVec_pos
     intro hz
     apply hξ
@@ -75,15 +62,11 @@ theorem exists_uniform_quadratic_bounds {ι X : Type*} [Fintype ι] [DecidableEq
   let b : ℝ := max M 0 + 1
   have hMb : M ≤ b := (le_max_left M 0).trans (le_add_of_nonneg_right zero_le_one)
   refine ⟨a, b, ha, by positivity, fun x ξ => ⟨?_, ?_⟩⟩
-  · rw [← hdiag]
-    exact hlo x (mem_univ x) ξ
+  · exact (hlo x (mem_univ x) ξ).trans_eq (PDE.matrixBilinearForm_self (A x) ξ)
   · calc
-      (A x).toQuadraticForm' ξ = B x ξ ξ := (hdiag x ξ).symm
-      _ ≤ ‖B x ξ ξ‖ := Real.le_norm_self _
-      _ ≤ ‖B x‖ * ‖ξ‖ * ‖ξ‖ := (B x).le_opNorm₂ ξ ξ
-      _ ≤ b * ‖ξ‖ * ‖ξ‖ := by
-        gcongr
-        exact (hM x (mem_univ x)).trans hMb
-      _ = b * ‖ξ‖ ^ 2 := by ring
+      (A x).toQuadraticForm' ξ ≤ ‖B x‖ * ‖ξ‖ ^ 2 :=
+        PDE.toQuadraticForm'_le_norm_matrixBilinearForm_mul_sq (A x) ξ
+      _ ≤ b * ‖ξ‖ ^ 2 :=
+        mul_le_mul_of_nonneg_right ((hM x (mem_univ x)).trans hMb) (sq_nonneg _)
 
 end TauCeti
