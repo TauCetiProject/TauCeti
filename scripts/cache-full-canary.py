@@ -64,7 +64,7 @@ try:
   trial['fetch_seconds']=time.monotonic()-fetchstart;trial['fetch_success']=row['exit']==0 and not row['censored'];save()
   if not trial['fetch_success']:raise RuntimeError('No clean full cache after bounded trial attempts: '+name)
   revisions=list((cache/'revisions').rglob(SPEC['revision']+'.jsonl'));assert len(revisions)==1,revisions
-  assert digest(revisions[0])==SPEC['map_sha256'],'published map changed'
+  assert digest(revisions[0])==SPEC['map_lake_sha256'],'published map changed after native trimAscii normalization'
   start=time.monotonic();identity=cache_identity(cache);trial['identity']=identity;trial['identity_validation_s']=time.monotonic()-start
   assert identity['artifacts']['files']>=26000,identity
   if initial is None:initial=identity

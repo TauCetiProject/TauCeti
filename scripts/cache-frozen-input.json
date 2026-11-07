@@ -18,5 +18,7 @@
   "no_progress_bytes_per_s": 1024,
   "no_progress_s": 30,
   "transfer_max_s": 90,
-  "retry_budget_s": 120
+  "retry_budget_s": 120,
+  "map_lake_sha256": "9d631ec1df184c5497855213e7b34615d12ad2b312aea316321e0f11f62f890b",
+  "map_normalization": "Stock Lake getUrl? applies trimAscii before persisting revision-map contents."
 }
