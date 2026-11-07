@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Basic
-import TauCeti.LinearAlgebra.Matrix.PosDef.Basic
 
 /-!
 # A finite-type Cartan inequality has finitely many natural solutions
