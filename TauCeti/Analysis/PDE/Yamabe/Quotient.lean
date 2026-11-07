@@ -48,7 +48,8 @@ that `u ^ (4 / (n - 2)) g` has constant scalar curvature `λ`
 (`TauCeti.Yamabe.scalarCurvature_rescale_eq_iff_conformalLaplacian_eq`).
 
 The quotient is defined for every function, through the Riemannian gradient and Bochner integrals;
-its classical meaning, and every result here, concern differentiable functions. The metric is the
+its classical meaning, and the variational results here, concern differentiable functions; scale
+invariance (`yamabeQuotient_smul`) holds for every function. The metric is the
 `RiemannianBundle` instance of the tangent bundle and the volume is `TauCeti.riemannianVolume`, as
 for `TauCeti.Yamabe.conformalLaplacian`.
 

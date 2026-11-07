@@ -160,6 +160,7 @@ theorem mgradient_mul {g : M → ℝ} (hf : MDifferentiable I 𝓘(ℝ) f)
   simp only [add_apply, smul_apply, smul_eq_mul]
 
 /-- The gradient commutes with multiplication by a real constant. -/
+@[simp]
 theorem mgradient_smul (c : ℝ) :
     mgradient I (c • f) = c • mgradient I f := by
   funext x
