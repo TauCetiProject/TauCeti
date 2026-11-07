@@ -14,7 +14,10 @@ public import TauCeti.Algebra.Homology.DG.Bimodule.TensorProduct.Lift
 Ordinary balanced tensor product commutes with arbitrary direct sums in either variable.
 The comparison maps preserve the cohomological grading, both outer actions, and the signed
 differential. On a tensor supported in one summand, they simply insert the tensor into that
-summand. No flatness is needed, and the sum retains finite support.
+summand. No flatness is needed, and the sum retains finite support. The two factor universes
+are independent; the index universe is bounded by the carrier universe of the summed factor,
+as required by `tensorMap` on the summand inclusions. In particular, a sum indexed by `ℕ`
+can have summands in any carrier universe.
 
 These comparisons allow maps on pairs of tensor-length pieces to assemble into multiplication
 on a direct sum of tensor powers. They concern ordinary tensor products; computing a derived
@@ -34,7 +37,7 @@ open scoped DirectSum
 
 namespace TauCeti.DGBimoduleCat
 
-universe uR uA uB uC u
+universe uR uA uB uC uI uM uN
 
 variable {R : Type uR} {A : Type uA} {B : Type uB} {C : Type uC}
   [CommRing R] [Ring A] [Ring B] [Ring C]
@@ -43,7 +46,7 @@ variable {R : Type uR} {A : Type uA} {B : Type uB} {C : Type uC}
   [GradedAlgebra 𝒜] [GradedAlgebra ℬ] [GradedAlgebra 𝒞]
   {dA : A →ₗ[R] A} {dB : B →ₗ[R] B} {dC : C →ₗ[R] C}
   {hA : IsDGAlgebra 𝒜 dA} {hB : IsDGAlgebra ℬ dB} {hC : IsDGAlgebra 𝒞 dC}
-  {ι : Type u}
+  {ι : Type uI}
 
 open BalancedTensorProduct
 
@@ -53,7 +56,7 @@ attribute [local instance] tensorGradedOuterLeft tensorGradedOuterRight
 
 -- Bundling the additive maps avoids repeating zero and addition cases for each action.
 private theorem directSum_ext_on_summands
-    (M : ι → DGBimoduleCat.{uR, uA, uB, u} hA hB)
+    (M : ι → DGBimoduleCat.{uR, uA, uB, uM} hA hB)
     {X : Type*} [AddCommGroup X] {f g : directSumObj M → X}
     (hf : ∀ x y, f (x + y) = f x + f y)
     (hg : ∀ x y, g (x + y) = g x + g y)
@@ -67,8 +70,9 @@ private theorem directSum_ext_on_summands
 
 section Left
 
-variable (M : ι → DGBimoduleCat.{uR, uA, uB, u} hA hB)
-  (N : DGBimoduleCat.{uR, uB, uC, u} hB hC)
+-- `tensorMap` requires each inclusion to stay in one carrier universe.
+variable (M : ι → DGBimoduleCat.{uR, uA, uB, max uI uM} hA hB)
+  (N : DGBimoduleCat.{uR, uB, uC, uN} hB hC)
 
 private def distributeLeftBilinear :
     directSumObj M →ₗ[R] N →ₗ[R] directSumObj (fun i ↦ tensorObj (M i) N) := by
@@ -204,12 +208,29 @@ theorem tensorDirectSumLeft_inv_ι (i : ι) (z : tensorObj (M i) N) :
       tensorMap (directSumι M i) (𝟙 N) z := by
   exact directSumDesc_ι (fun i ↦ tensorMap (directSumι M i) (𝟙 N)) i z
 
+/-- The forward comparison on a single-coordinate element of the first factor. -/
+@[simp↓]
+theorem tensorDirectSumLeft_hom_tmul_of [DecidableEq ι] (i : ι) (m : M i) (n : N) :
+    (tensorDirectSumLeft M N).hom (tmul R B (DirectSum.of (fun i ↦ M i) i m) n) =
+      DirectSum.of (fun i ↦ tensorObj (M i) N) i (tmul R B m n) := by
+  rw [← directSumι_apply M, ← directSumι_apply (fun i ↦ tensorObj (M i) N)]
+  exact tensorDirectSumLeft_hom_tmul_ι M N i m n
+
+/-- The inverse comparison on a single-coordinate element of the sum of tensors. -/
+@[simp↓]
+theorem tensorDirectSumLeft_inv_of [DecidableEq ι] (i : ι) (z : tensorObj (M i) N) :
+    (tensorDirectSumLeft M N).inv (DirectSum.of (fun i ↦ tensorObj (M i) N) i z) =
+      tensorMap (directSumι M i) (𝟙 N) z := by
+  rw [← directSumι_apply (fun i ↦ tensorObj (M i) N)]
+  exact tensorDirectSumLeft_inv_ι M N i z
+
 end Left
 
 section Right
 
-variable (M : DGBimoduleCat.{uR, uA, uB, u} hA hB)
-  (N : ι → DGBimoduleCat.{uR, uB, uC, u} hB hC)
+-- `tensorMap` requires each inclusion to stay in one carrier universe.
+variable (M : DGBimoduleCat.{uR, uA, uB, uM} hA hB)
+  (N : ι → DGBimoduleCat.{uR, uB, uC, max uI uN} hB hC)
 
 private def distributeRightBilinear :
     M →ₗ[R] directSumObj N →ₗ[R] directSumObj (fun i ↦ tensorObj M (N i)) := by
@@ -252,49 +273,58 @@ private theorem distributeRightBilinear_mem {p q : ℤ} {m : M} {n : directSumOb
           (tmul_mem_tensorObj_grading hm
             (by simpa only [InternalGrading.ofDecomposition_piece] using hx))) hn
 
+private theorem distributeRightBilinear_balance (b : B) (m : M) (n : directSumObj N) :
+    distributeRightBilinear M N (op b • m) n = distributeRightBilinear M N m (b • n) := by
+  refine directSum_ext_on_summands N
+    (f := fun n ↦ distributeRightBilinear M N (op b • m) n)
+    (g := fun n ↦ distributeRightBilinear M N m (b • n))
+    (fun x y ↦ ?_) (fun x y ↦ ?_) ?_ n
+  · simp only [map_add]
+  · simp only [smul_add, map_add]
+  · intro i x
+    rw [← DGBimoduleHom.map_smul_left, distributeRightBilinear_ι,
+      distributeRightBilinear_ι, balance]
+
+private theorem distributeRightBilinear_smul_left (a : A) (m : M) (n : directSumObj N) :
+    distributeRightBilinear M N (a • m) n = a • distributeRightBilinear M N m n := by
+  refine directSum_ext_on_summands N
+    (f := fun n ↦ distributeRightBilinear M N (a • m) n)
+    (g := fun n ↦ a • distributeRightBilinear M N m n)
+    (fun x y ↦ ?_) (fun x y ↦ ?_) ?_ n
+  · simp only [map_add]
+  · simp only [map_add, smul_add]
+  · intro i x
+    rw [distributeRightBilinear_ι, distributeRightBilinear_ι,
+      ← smul_tmul_left, DGBimoduleHom.map_smul_left]
+
+private theorem distributeRightBilinear_smul_right (c : C) (m : M) (n : directSumObj N) :
+    distributeRightBilinear M N m (op c • n) = op c • distributeRightBilinear M N m n := by
+  refine directSum_ext_on_summands N
+    (f := fun n ↦ distributeRightBilinear M N m (op c • n))
+    (g := fun n ↦ op c • distributeRightBilinear M N m n)
+    (fun x y ↦ ?_) (fun x y ↦ ?_) ?_ n
+  · simp only [smul_add, map_add]
+  · simp only [map_add, smul_add]
+  · intro i x
+    rw [← map_smul, distributeRightBilinear_ι, distributeRightBilinear_ι,
+      ← smul_tmul_right, map_smul]
+
 private def distributeRightHom :
     tensorObj M (directSumObj N) ⟶ directSumObj (fun i ↦ tensorObj M (N i)) := by
   classical
-  refine tensorLift (distributeRightBilinear M N) ?_ ?_ ?_
-    (fun hm hn ↦ distributeRightBilinear_mem M N hm hn) ?_
-  · intro b m n
-    refine directSum_ext_on_summands N
-      (f := fun n ↦ distributeRightBilinear M N (op b • m) n)
-      (g := fun n ↦ distributeRightBilinear M N m (b • n))
-      (fun x y ↦ ?_) (fun x y ↦ ?_) ?_ n
-    · simp
-    · simp [smul_add]
-    · intro i x
-      rw [← DGBimoduleHom.map_smul_left, distributeRightBilinear_ι,
-        distributeRightBilinear_ι, balance]
-  · intro a m n
-    refine directSum_ext_on_summands N
-      (f := fun n ↦ distributeRightBilinear M N (a • m) n)
-      (g := fun n ↦ a • distributeRightBilinear M N m n)
-      (fun x y ↦ ?_) (fun x y ↦ ?_) ?_ n
-    · simp
-    · simp [smul_add]
-    · intro i x
-      rw [distributeRightBilinear_ι, distributeRightBilinear_ι,
-        ← smul_tmul_left, DGBimoduleHom.map_smul_left]
-  · intro c m n
-    refine directSum_ext_on_summands N
-      (f := fun n ↦ distributeRightBilinear M N m (op c • n))
-      (g := fun n ↦ op c • distributeRightBilinear M N m n)
-      (fun x y ↦ ?_) (fun x y ↦ ?_) ?_ n
-    · simp [smul_add]
-    · simp [smul_add]
-    · intro i x
-      rw [← map_smul, distributeRightBilinear_ι, distributeRightBilinear_ι,
-        ← smul_tmul_right, map_smul]
-  · intro p m hm n
-    induction n using DirectSum.induction_on with
-    | zero => simp
-    | of i x =>
-      rw [← directSumι_apply]
-      simp only [distributeRightBilinear_ι M N, DGBimoduleHom.map_d,
-        tensorObj_differential_tmul hm, map_add, map_zsmul_unit]
-    | add x y hx hy => simp only [map_add, hx, hy, smul_add]; abel
+  let f := distributeRightBilinear M N
+  refine tensorLift (M := M) (N := directSumObj N)
+    (P := directSumObj (fun i ↦ tensorObj M (N i))) f
+    (distributeRightBilinear_balance M N) (distributeRightBilinear_smul_left M N)
+    (distributeRightBilinear_smul_right M N) (distributeRightBilinear_mem M N) ?_
+  intro p m hm n
+  induction n using DirectSum.induction_on with
+  | zero => simp [f]
+  | of i x =>
+    rw [← directSumι_apply]
+    simp only [f, distributeRightBilinear_ι M N, DGBimoduleHom.map_d,
+      tensorObj_differential_tmul hm, map_add, map_zsmul_unit]
+  | add x y hx hy => simp only [map_add, hx, hy, smul_add]; abel
 
 /-- Tensoring a direct sum in the second variable distributes over its summands. -/
 def tensorDirectSumRight :
@@ -342,6 +372,22 @@ theorem tensorDirectSumRight_inv_ι (i : ι) (z : tensorObj M (N i)) :
     (tensorDirectSumRight M N).inv (directSumι (fun i ↦ tensorObj M (N i)) i z) =
       tensorMap (𝟙 M) (directSumι N i) z := by
   exact directSumDesc_ι (fun i ↦ tensorMap (𝟙 M) (directSumι N i)) i z
+
+/-- The forward comparison on a single-coordinate element of the second factor. -/
+@[simp↓]
+theorem tensorDirectSumRight_hom_tmul_of [DecidableEq ι] (i : ι) (m : M) (n : N i) :
+    (tensorDirectSumRight M N).hom (tmul R B m (DirectSum.of (fun i ↦ N i) i n)) =
+      DirectSum.of (fun i ↦ tensorObj M (N i)) i (tmul R B m n) := by
+  rw [← directSumι_apply N, ← directSumι_apply (fun i ↦ tensorObj M (N i))]
+  exact tensorDirectSumRight_hom_tmul_ι M N i m n
+
+/-- The inverse comparison on a single-coordinate element of the sum of tensors. -/
+@[simp↓]
+theorem tensorDirectSumRight_inv_of [DecidableEq ι] (i : ι) (z : tensorObj M (N i)) :
+    (tensorDirectSumRight M N).inv (DirectSum.of (fun i ↦ tensorObj M (N i)) i z) =
+      tensorMap (𝟙 M) (directSumι N i) z := by
+  rw [← directSumι_apply (fun i ↦ tensorObj M (N i))]
+  exact tensorDirectSumRight_inv_ι M N i z
 
 end Right
 

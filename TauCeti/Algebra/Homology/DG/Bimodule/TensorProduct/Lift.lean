@@ -26,7 +26,7 @@ open CategoryTheory MulOpposite
 
 namespace TauCeti.DGBimoduleCat
 
-universe uR uA uB uC u
+universe uR uA uB uC uM uN uP
 
 variable {R : Type uR} {A : Type uA} {B : Type uB} {C : Type uC}
   [CommRing R] [Ring A] [Ring B] [Ring C]
@@ -35,9 +35,9 @@ variable {R : Type uR} {A : Type uA} {B : Type uB} {C : Type uC}
   [GradedAlgebra 𝒜] [GradedAlgebra ℬ] [GradedAlgebra 𝒞]
   {dA : A →ₗ[R] A} {dB : B →ₗ[R] B} {dC : C →ₗ[R] C}
   {hA : IsDGAlgebra 𝒜 dA} {hB : IsDGAlgebra ℬ dB} {hC : IsDGAlgebra 𝒞 dC}
-  {M : DGBimoduleCat.{uR, uA, uB, u} hA hB}
-  {N : DGBimoduleCat.{uR, uB, uC, u} hB hC}
-  {P : DGBimoduleCat.{uR, uA, uC, u} hA hC}
+  {M : DGBimoduleCat.{uR, uA, uB, uM} hA hB}
+  {N : DGBimoduleCat.{uR, uB, uC, uN} hB hC}
+  {P : DGBimoduleCat.{uR, uA, uC, uP} hA hC}
 
 open BalancedTensorProduct
 
@@ -67,7 +67,8 @@ def tensorLift (f : M →ₗ[R] N →ₗ[R] P)
       f m n ∈ P.grading (p + q))
     (hd : ∀ {p : ℤ} {m}, m ∈ M.grading p → ∀ n,
       P.differential (f m n) = f (M.differential m) n +
-        p.negOnePow • f m (N.differential n)) : tensorObj M N ⟶ P := by
+        p.negOnePow • f m (N.differential n)) :
+    DGBimoduleHom (tensorObj M N).isDGBimodule P.isDGBimodule := by
   let F : tensorObj M N →ₗ[Cᵐᵒᵖ] P :=
     { toFun := lift f hb
       map_add' := map_add _
