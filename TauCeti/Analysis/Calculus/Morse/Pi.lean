@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.FDeriv.Pi
+public import TauCeti.Analysis.Calculus.FDeriv.Pi.Basic
 public import TauCeti.Analysis.Calculus.Morse.Index
 import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
 
