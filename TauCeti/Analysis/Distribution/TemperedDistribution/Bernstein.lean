@@ -11,7 +11,6 @@ import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
 import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
 import TauCeti.Analysis.Fourier.ChangeOfVariables
-import TauCeti.MeasureTheory.Function.Lp.Dilation
 
 /-!
 # Bernstein's inequalities
@@ -44,8 +43,9 @@ convolution with the Schwartz kernel `𝓕⁻ χ_R`, which maps `Lᵖ` to `Lᵠ`
 (`TemperedDistribution.exists_fourierMultiplierCLM_toTemperedDistribution_eq`). Similarly `∂_m u` is
 reproduced by the symbol `2πi ⟪ξ, m⟫ χ_R ξ`, whose kernel is `∂_m (𝓕⁻ χ_R)`. Since
 `𝓕⁻ χ_R x = R ^ n 𝓕⁻ χ (R • x)`, the `Lʳ` norm of the first kernel is `R ^ (n (1 - 1/r))` times
-that of `𝓕⁻ χ`, and the `L¹` norm of the second is `R` times that of `∂_m 𝓕⁻ χ`, which is at most
-a fixed multiple of `‖m‖`. Derivatives of a band-limited distribution are again band-limited
+that of `𝓕⁻ χ` (`TauCeti.eLpNorm_fourierInv_comp_inv_smul`), and the `L¹` norm of the second is
+`R` times that of `∂_m 𝓕⁻ χ`, which is at most a fixed multiple of `‖m‖`. Derivatives of a
+band-limited distribution are again band-limited
 (`TemperedDistribution.isVanishingOn_fourier_iteratedLineDerivOp`), so the bounds for one
 derivative iterate.
 
@@ -114,23 +114,6 @@ private theorem cutoff_eq_comp {R : ℝ} (hR : 0 < R) :
     ⇑(cutoff (E := E) hR) = fun ξ ↦ cutoff (E := E) one_pos (R⁻¹ • ξ) := by
   ext ξ
   simp [cutoff_apply]
-
-/-- **Dilating a symbol rescales the `Lʳ` norm of its kernel:** the kernel of `ξ ↦ g (R⁻¹ • ξ)`
-has `Lʳ` norm `R ^ (n - n / r)` times that of the kernel of `g`. -/
-private theorem eLpNorm_fourierInv_comp_inv_smul (g : E → ℂ) {R : ℝ} (hR : 0 < R)
-    (r : ℝ≥0∞) :
-    eLpNorm (𝓕⁻ fun ξ ↦ g (R⁻¹ • ξ)) r volume =
-      ENNReal.ofReal (R ^ ((finrank ℝ E : ℝ) - finrank ℝ E / r.toReal)) *
-        eLpNorm (𝓕⁻ g) r volume := by
-  have h : (𝓕⁻ fun ξ ↦ g (R⁻¹ • ξ)) =
-      (R ^ finrank ℝ E : ℝ) • fun x ↦ 𝓕⁻ g ((R⁻¹)⁻¹ • x) := by
-    ext x
-    simp [fourierInv_comp_smul g (inv_ne_zero hR.ne'), abs_of_pos hR]
-  rw [h, eLpNorm_const_smul, Measure.eLpNorm_comp_inv_smul volume _ (inv_ne_zero hR.ne'),
-    abs_of_pos (inv_pos.2 hR), ← mul_assoc,
-    ← ofReal_norm, Real.norm_eq_abs, abs_of_pos (by positivity),
-    ← ENNReal.ofReal_mul (by positivity), Real.inv_rpow hR.le, ← Real.rpow_natCast,
-    ← Real.rpow_neg hR.le, ← Real.rpow_add hR, sub_eq_add_neg]
 
 variable [CompleteSpace F]
 

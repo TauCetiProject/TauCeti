@@ -43,6 +43,8 @@ inequalities are derived this way.
   with a test function is the pairing of the convolution `𝓕⁻ σ ⋆ f`.
 * `TemperedDistribution.exists_fourierMultiplierCLM_toTemperedDistribution_eq`: `T_σ f` is the
   `Lᵠ` function `𝓕⁻ σ ⋆ f`, with `‖T_σ f‖_q ≤ ‖𝓕⁻ σ‖_r ‖f‖_p`.
+* `TemperedDistribution.exists_fourierMultiplierCLM_eq_and_norm_le`: the case `q = p`, `r = 1`,
+  `‖T_σ f‖_p ≤ ‖𝓕⁻ σ‖₁ ‖f‖_p`.
 
 ## References
 
@@ -183,5 +185,22 @@ theorem exists_fourierMultiplierCLM_toTemperedDistribution_eq (σ : 𝓢(E, ℂ)
     rw [hx]
   · rw [Lp.norm_toLp, Lp.norm_def, ← ENNReal.toReal_mul]
     exact ENNReal.toReal_mono hfin hbound
+
+/-- **`Lᵖ` bound for a multiplier with Schwartz symbol.** For `1 ≤ p ≤ ∞`, the Fourier multiplier
+with a Schwartz symbol `σ` maps every `f ∈ Lᵖ` to a function `g ∈ Lᵖ` with
+`‖g‖_p ≤ ‖𝓕⁻ σ‖₁ ‖f‖_p`. This is the case `q = p`, `r = 1` of
+`TemperedDistribution.exists_fourierMultiplierCLM_toTemperedDistribution_eq`. -/
+theorem exists_fourierMultiplierCLM_eq_and_norm_le (σ : 𝓢(E, ℂ))
+    (f : Lp F p (volume : Measure E)) :
+    ∃ g : Lp F p (volume : Measure E), fourierMultiplierCLM F σ (f : 𝓢'(E, F)) = g ∧
+      ‖g‖ ≤ (∫ x, ‖𝓕⁻ (σ : E → ℂ) x‖) * ‖f‖ := by
+  obtain ⟨g, hg, -, hgf⟩ :=
+    exists_fourierMultiplierCLM_toTemperedDistribution_eq σ f (q := p) (r := 1) le_rfl
+      (by rw [inv_one, add_comm])
+  have hK : AEStronglyMeasurable (𝓕⁻ (σ : E → ℂ)) volume := by
+    rw [← SchwartzMap.fourierInv_coe]
+    exact (𝓕⁻ σ).continuous.aestronglyMeasurable
+  rw [eLpNorm_one_eq_lintegral_enorm hK, ← integral_norm_eq_lintegral_enorm hK] at hgf
+  exact ⟨g, hg, hgf⟩
 
 end TemperedDistribution

@@ -225,15 +225,6 @@ namespace MeasureTheory
 variable {G : Type*} {mG : MeasurableSpace G} [AddCommGroup G] [MeasurableAdd₂ G] [MeasurableNeg G]
   {μ : Measure G} [SFinite μ] [μ.IsAddLeftInvariant] [μ.IsNegInvariant] {f g : G → ℝ≥0∞}
 
-omit [SFinite μ] in
-/-- In the convolution `(f ⋆ₗ[μ] g) x = ∫⁻ y, f y * g (x - y)`, every translate `y ↦ g (x - y)`
-of the second factor has the same `Lʳ` norm as `g`. -/
-private theorem eLpNorm_comp_sub_left (hg : AEMeasurable g μ) (r : ℝ≥0∞) (x : G) :
-    eLpNorm (fun y ↦ g (-y + x)) r μ = eLpNorm g r μ := by
-  simp_rw [neg_add_eq_sub]
-  exact eLpNorm_comp_measurePreserving hg.aestronglyMeasurable
-    (Measure.measurePreserving_sub_left μ x)
-
 /-- Young's inequality with `q = ∞`, which is Hölder's inequality at each point. -/
 private theorem eLpNorm_lconvolution_top_le {p r : ℝ≥0∞} (hpr : p⁻¹ + r⁻¹ = 1)
     (hf : AEMeasurable f μ) (hg : AEMeasurable g μ) :
@@ -254,7 +245,10 @@ private theorem eLpNorm_lconvolution_top_le {p r : ℝ≥0∞} (hpr : p⁻¹ + r
           (fun hf hg ↦ (hf.aemeasurable.mul hg.aemeasurable).aestronglyMeasurable)
           hf.aestronglyMeasurable hgx.aestronglyMeasurable (Filter.Eventually.of_forall
             fun _ ↦ by simp)
-    _ = eLpNorm f p μ * eLpNorm g r μ := by rw [one_mul, eLpNorm_comp_sub_left hg]
+    _ = eLpNorm f p μ * eLpNorm g r μ := by
+        simp_rw [one_mul, neg_add_eq_sub]
+        exact congrArg _ (eLpNorm_comp_measurePreserving hg.aestronglyMeasurable
+          (Measure.measurePreserving_sub_left μ x))
 
 /-- Young's inequality with finite exponents, in terms of lower Lebesgue integrals: it is Young's
 inequality for the integral operator with kernel `(x, y) ↦ g (x - y)`, whose rows and columns
