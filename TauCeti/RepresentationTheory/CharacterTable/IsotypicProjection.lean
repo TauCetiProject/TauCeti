@@ -39,19 +39,19 @@ component of a finite-dimensional unitary representation is the explicit operato
 
 ## Main statements
 
-* `TauCeti.Representation.primitiveCentralIdempotent_smul_of_mem`: `e_ρ` acts on a simple
+* `Representation.primitiveCentralIdempotent_smul_of_mem`: `e_ρ` acts on a simple
   submodule as the identity or as zero, according to whether it is isomorphic to `ρ`.
-* `TauCeti.Representation.primitiveCentralIdempotent_smul_eq_self_iff`: a vector is fixed by
+* `Representation.primitiveCentralIdempotent_smul_eq_self_iff`: a vector is fixed by
   `e_ρ` exactly when it lies in the `ρ`-isotypic component.
-* `TauCeti.Representation.range_asAlgebraHom_primitiveCentralIdempotent`: **the range of the action
+* `Representation.range_asAlgebraHom_primitiveCentralIdempotent`: **the range of the action
   of `e_ρ` is the `ρ`-isotypic component**.
-* `TauCeti.Representation.primitiveCentralIdempotent_coeff_inv`: over `ℂ`, the coefficients of
+* `Representation.primitiveCentralIdempotent_coeff_inv`: over `ℂ`, the coefficients of
   `e_ρ` are conjugate-symmetric.
-* `TauCeti.Representation.isSymmetricProjection_asAlgebraHom_primitiveCentralIdempotent`: over `ℂ`,
+* `Representation.isSymmetricProjection_asAlgebraHom_primitiveCentralIdempotent`: over `ℂ`,
   `e_ρ` acts on a unitary representation by a symmetric projection.
-* `TauCeti.Representation.asAlgebraHom_primitiveCentralIdempotent_eq_starProjection`: **`e_ρ` acts
+* `Representation.asAlgebraHom_primitiveCentralIdempotent_eq_starProjection`: **`e_ρ` acts
   on a finite-dimensional unitary representation as the orthogonal projection onto its
-  `ρ`-isotypic component**, and `TauCeti.Representation.starProjection_isotypicComponent_apply`
+  `ρ`-isotypic component**, and `Representation.starProjection_isotypicComponent_apply`
   writes that projection as `(χ(1)/|G|) ∑_g conj (χ(g)) σ(g)`.
 
 ## References
@@ -64,7 +64,7 @@ public section
 
 open scoped InnerProductSpace MonoidAlgebra
 
-namespace TauCeti
+open TauCeti.Representation
 
 namespace Representation
 
@@ -93,7 +93,7 @@ theorem primitiveCentralIdempotent_smul_of_mem (m : Submodule k[G] σ.asModule)
   let τ : Subrepresentation σ := Subrepresentation.ofSubmodule' m
   have hatom : IsAtom τ := Subrepresentation.isSimpleModule_asSubmodule_iff.mp ‹_›
   have : τ.toRepresentation.IsIrreducible :=
-    _root_.Representation.isIrreducible_toRepresentation_of_isAtom hatom
+    isIrreducible_toRepresentation_of_isAtom hatom
   let eτ : τ.toRepresentation.asModule ≃ₗ[k[G]] m := τ.asModuleEquivAsSubmodule
   have : IsSimpleModule k[G] τ.toRepresentation.asModule := IsSimpleModule.congr eτ
   -- A simple `k[G]`-module is cyclic, hence finite-dimensional over `k`.
@@ -222,5 +222,3 @@ theorem starProjection_isotypicComponent_apply (hσ : ∀ g v w, ⟪σ g v, σ g
 end Complex
 
 end Representation
-
-end TauCeti
