@@ -13,7 +13,7 @@ public import TauCeti.LinearAlgebra.SymplecticGroup
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Equivalence
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
-public import TauCeti.LinearAlgebra.Matrix.Nondegenerate
+public import Mathlib.LinearAlgebra.Matrix.Nondegenerate
 public import TauCeti.LinearAlgebra.Matrix.SkewAdjoint
 
 /-!
