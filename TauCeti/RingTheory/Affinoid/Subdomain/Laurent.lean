@@ -28,7 +28,8 @@ classical points: for an affinoid algebra `B` with a complete ultrametric algebr
 `Sp B → Sp A` takes values in `L(f, g⁻¹)`, and the factorisation is then unique. In particular
 every classical point of `A⟨f, g⁻¹⟩` lies over a point of `L(f, g⁻¹)`. The structure map
 represents this set as an affinoid subdomain (`LaurentFraction.isAffinoidSubdomainMap`), with
-no norm or topology required on the test algebras in that universal property.
+no norm or topology required on the test algebras in that universal property. This file also
+handles intersections of Laurent domains and iterated Laurent presentations.
 
 The universal property is the point-free one of `TauCeti.LaurentFraction.existsUnique_algHom`
 (each `φ fᵢ` is power-bounded, each `φ gⱼ` is a unit with power-bounded inverse), translated by
@@ -42,6 +43,10 @@ power-bounded inverse (`TauCeti.IsAffinoidAlgebra.isUnit_and_isPowerBounded_inve
 
 ## Main results
 
+* `TauCeti.laurentDomain_append`: concatenating two families of Laurent inequalities gives
+  the intersection of their Laurent domains.
+* `TauCeti.IsAffinoidSubdomainMap.image_laurentDomain`: under a map representing the first
+  Laurent domain, the image of the second Laurent domain is the concatenated Laurent domain.
 * `TauCeti.IsAffinoidAlgebra.range_maximalSpectrumComap_subset_laurentDomain_iff`: `Sp B → Sp A`
   lands in `L(f, g⁻¹)` if and only if every `φ fᵢ` is power-bounded and every `φ gⱼ` is a unit
   with power-bounded inverse.
@@ -52,6 +57,8 @@ power-bounded inverse (`TauCeti.IsAffinoidAlgebra.isUnit_and_isPowerBounded_inve
   classical point of `A⟨f, g⁻¹⟩`.
 * `TauCeti.LaurentFraction.isAffinoidSubdomainMap`: the Laurent fraction algebra represents
   the Laurent domain as an affinoid subdomain, including empty domains and nonreduced algebras.
+* `TauCeti.LaurentFraction.isAffinoidSubdomainMap_iterate`: successively imposing Laurent
+  inequalities represents the concatenated Laurent domain via the composite structure map.
 * `TauCeti.LaurentFraction.maximalSpectrumComap_mem_laurentDomain`: the map
   `Sp A⟨f, g⁻¹⟩ → Sp A` takes values in `L(f, g⁻¹)`.
 
