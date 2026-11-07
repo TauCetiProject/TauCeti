@@ -89,6 +89,94 @@ theorem W1p.gradient_ae_eq_on_eq (hp : p ≠ ∞) (u v : W1p mu Omega p) :
   apply sub_eq_zero.mp
   simpa only [hgx, Pi.sub_apply] using hx (by simp [hux, h])
 
+/-- If increasing levels `mⱼ`, eventually above `k`, have a null intersection of the sets
+`{u > mⱼ, ∇u ≠ 0}`, and each lies below an admissible level `l ≥ k` (one exceeded by `u` on a set
+of positive measure), then admissible levels along which the measure of `{u > l, ∇u ≠ 0}` tends to
+zero exist. -/
+private theorem W1p.exists_tendsto_measure_of_monotone_levels (u : W1p mu Omega p) {k : ℝ}
+    (hfin : ∀ l, k < l → mu.restrict Omega {x | l < W1p.value u x} ≠ ∞)
+    (m : ℕ → ℝ) (hm : Monotone m) (hmk : ∃ i, k < m i)
+    (hnull : mu.restrict Omega (⋂ j, {x | m j < W1p.value u x ∧ W1p.gradient u x ≠ 0}) = 0)
+    (hL : ∀ j, ∃ l, k ≤ l ∧ m j ≤ l ∧ ¬ ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ l) :
+    ∃ l : ℕ → ℝ, (∀ j, k ≤ l j ∧ ¬ ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ l j) ∧
+      Tendsto (fun j ↦ mu.restrict Omega {x | l j < W1p.value u x ∧ W1p.gradient u x ≠ 0})
+        atTop (𝓝 0) := by
+  set μ := mu.restrict Omega
+  set T : ℝ → Set E :=
+    fun l ↦ {x | l < W1p.value u x ∧ W1p.gradient u x ≠ 0}
+  have hT : ∀ l, MeasurableSet (T l) := fun l ↦
+    (measurableSet_lt measurable_const (Lp.stronglyMeasurable (W1p.value u)).measurable).inter
+      ((Lp.stronglyMeasurable (W1p.gradient u)).measurable (measurableSet_singleton 0).compl)
+  have hTanti : Antitone T := fun l l' hll' x hx ↦ ⟨hll'.trans_lt hx.1, hx.2⟩
+  obtain ⟨i, hi⟩ := hmk
+  choose l hkl hml hnot using hL
+  refine ⟨l, fun j ↦ ⟨hkl j, hnot j⟩, tendsto_of_tendsto_of_tendsto_of_le_of_le
+    tendsto_const_nhds ?_ (fun _ ↦ zero_le) fun j ↦ measure_mono (hTanti (hml j))⟩
+  have := tendsto_measure_iInter_atTop (μ := μ) (s := fun j ↦ T (m j))
+    (fun j ↦ (hT _).nullMeasurableSet) (fun i j hij ↦ hTanti (hm hij))
+    ⟨i, ne_top_of_le_ne_top (hfin _ hi) (measure_mono fun _ hx ↦ hx.1)⟩
+  rwa [hnull] at this
+
+omit [FiniteDimensional ℝ E] in
+/-- If `u` is essentially bounded above on the set of admissible levels `l ≥ k`, with supremum
+`M`, then `u ≤ M` almost everywhere and `k < M`. -/
+private theorem W1p.ae_value_le_csSup_of_bddAbove (u : W1p mu Omega p) {k : ℝ}
+    (hk : ¬ ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ k)
+    (hbdd : BddAbove {l : ℝ | k ≤ l ∧ ¬ ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ l}) :
+    (∀ᵐ x ∂mu.restrict Omega,
+      W1p.value u x ≤ sSup {l : ℝ | k ≤ l ∧ ¬ ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ l}) ∧
+    k < sSup {l : ℝ | k ≤ l ∧ ¬ ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ l} := by
+  set μ := mu.restrict Omega
+  set L : Set ℝ := {l | k ≤ l ∧ ¬ ∀ᵐ x ∂μ, W1p.value u x ≤ l}
+  have hkL : k ∈ L := ⟨le_rfl, hk⟩
+  set M := sSup L
+  have hle : ∀ᵐ x ∂μ, W1p.value u x ≤ M := by
+    have hj : ∀ j : ℕ, ∀ᵐ x ∂μ, W1p.value u x ≤ M + 1 / ((j : ℝ) + 1) := by
+      intro j
+      by_contra hj
+      have hmemL : M + 1 / ((j : ℝ) + 1) ∈ L :=
+        ⟨(le_csSup hbdd hkL).trans (le_add_of_nonneg_right (by positivity)), hj⟩
+      linarith [le_csSup hbdd hmemL, (by positivity : (0 : ℝ) < 1 / ((j : ℝ) + 1))]
+    filter_upwards [ae_all_iff.2 hj] with x hx
+    refine le_of_forall_pos_le_add fun ε hε ↦ ?_
+    obtain ⟨j, hjε⟩ := exists_nat_one_div_lt hε
+    linarith [hx j]
+  exact ⟨hle, lt_of_not_ge fun hMk ↦ hk (hle.mono fun x hx ↦ hx.trans hMk)⟩
+
+/-- The bounded case of `W1p.exists_tendsto_measure_lt_value_and_gradient_ne_zero`: `u` is
+essentially bounded above, and the levels approach its essential supremum `M` from below. -/
+private theorem W1p.exists_tendsto_measure_of_bddAbove (hp : p ≠ ∞) (u : W1p mu Omega p) {k : ℝ}
+    (hfin : ∀ l, k < l → mu.restrict Omega {x | l < W1p.value u x} ≠ ∞)
+    (hk : ¬ ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ k)
+    (hbdd : BddAbove {l : ℝ | k ≤ l ∧ ¬ ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ l}) :
+    ∃ l : ℕ → ℝ, (∀ j, k ≤ l j ∧ ¬ ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ l j) ∧
+      Tendsto (fun j ↦ mu.restrict Omega {x | l j < W1p.value u x ∧ W1p.gradient u x ≠ 0})
+        atTop (𝓝 0) := by
+  set μ := mu.restrict Omega
+  set L : Set ℝ := {l | k ≤ l ∧ ¬ ∀ᵐ x ∂μ, W1p.value u x ≤ l}
+  have hkL : k ∈ L := ⟨le_rfl, hk⟩
+  obtain ⟨hle, hkM⟩ := W1p.ae_value_le_csSup_of_bddAbove u hk hbdd
+  set M := sSup L
+  refine W1p.exists_tendsto_measure_of_monotone_levels u hfin (fun j ↦ M - 1 / ((j : ℝ) + 1))
+    (fun i j hij ↦ ?_) ?_ ?_ fun j ↦ ?_
+  · dsimp only
+    gcongr
+  · obtain ⟨i, hi⟩ := exists_nat_one_div_lt (sub_pos.2 hkM)
+    exact ⟨i, by linarith⟩
+  · rw [measure_eq_zero_iff_ae_notMem]
+    filter_upwards [hle, W1p.gradient_ae_eq_zero_on_level_set hp u M] with x hxM hlev hx
+    rw [mem_iInter] at hx
+    have hMx : M ≤ W1p.value u x := le_of_forall_pos_le_add fun ε hε ↦ by
+      obtain ⟨j, hjε⟩ := exists_nat_one_div_lt hε
+      linarith [(hx j).1]
+    exact (hx 0).2 (hlev (le_antisymm hxM hMx))
+  · have hlt : max k (M - 1 / ((j : ℝ) + 1)) < M :=
+      max_lt hkM (sub_lt_self _ (by positivity))
+    obtain ⟨l', hl'L, hl'⟩ := exists_lt_of_lt_csSup ⟨k, hkL⟩ hlt
+    exact ⟨max k (M - 1 / ((j : ℝ) + 1)), le_max_left _ _, le_max_right _ _,
+      fun hae ↦ hl'L.2 (hae.mono fun x hx ↦ hx.trans hl'.le)⟩
+
+
 /-- Let `u ∈ W^{1,p}(Ω)`, `1 ≤ p < ∞`, have superlevel sets `{u > l}` of finite measure for every
 `l > k` (for instance because `Ω` has finite measure, or because `k ≥ 0`), and suppose `u > k` on
 a set of positive measure. Then there are levels `lⱼ ≥ k`, each exceeded by `u` on a set of positive
@@ -104,63 +192,11 @@ theorem W1p.exists_tendsto_measure_lt_value_and_gradient_ne_zero (hp : p ≠ ∞
     ∃ l : ℕ → ℝ, (∀ j, k ≤ l j ∧ ¬ ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ l j) ∧
       Tendsto (fun j ↦ mu.restrict Omega {x | l j < W1p.value u x ∧ W1p.gradient u x ≠ 0})
         atTop (𝓝 0) := by
-  set μ := mu.restrict Omega
-  set T : ℝ → Set E :=
-    fun l ↦ {x | l < W1p.value u x ∧ W1p.gradient u x ≠ 0}
-  have hT : ∀ l, MeasurableSet (T l) := fun l ↦
-    (measurableSet_lt measurable_const (Lp.stronglyMeasurable (W1p.value u)).measurable).inter
-      ((Lp.stronglyMeasurable (W1p.gradient u)).measurable (measurableSet_singleton 0).compl)
-  have hTanti : Antitone T := fun l l' hll' x hx ↦ ⟨hll'.trans_lt hx.1, hx.2⟩
-  -- It suffices to find increasing levels `mⱼ`, eventually above `k`, with `⋂ⱼ T mⱼ` null, each
-  -- below an admissible level.
-  have key : ∀ m : ℕ → ℝ, Monotone m → (∃ i, k < m i) → μ (⋂ j, T (m j)) = 0 →
-      (∀ j, ∃ l, k ≤ l ∧ m j ≤ l ∧ ¬ ∀ᵐ x ∂μ, W1p.value u x ≤ l) →
-      ∃ l : ℕ → ℝ, (∀ j, k ≤ l j ∧ ¬ ∀ᵐ x ∂μ, W1p.value u x ≤ l j) ∧
-        Tendsto (fun j ↦ μ (T (l j))) atTop (𝓝 0) := by
-    intro m hm ⟨i, hi⟩ hnull hL
-    choose l hkl hml hnot using hL
-    refine ⟨l, fun j ↦ ⟨hkl j, hnot j⟩, tendsto_of_tendsto_of_tendsto_of_le_of_le
-      tendsto_const_nhds ?_ (fun _ ↦ zero_le) fun j ↦ measure_mono (hTanti (hml j))⟩
-    have := tendsto_measure_iInter_atTop (μ := μ) (s := fun j ↦ T (m j))
-      (fun j ↦ (hT _).nullMeasurableSet) (fun i j hij ↦ hTanti (hm hij))
-      ⟨i, ne_top_of_le_ne_top (hfin _ hi) (measure_mono fun _ hx ↦ hx.1)⟩
-    rwa [hnull] at this
-  set L : Set ℝ := {l | k ≤ l ∧ ¬ ∀ᵐ x ∂μ, W1p.value u x ≤ l}
-  have hkL : k ∈ L := ⟨le_rfl, hk⟩
-  by_cases hbdd : BddAbove L
-  · -- `u` is essentially bounded above by `M = sup L > k`; approach `M` from below.
-    set M := sSup L
-    have hle : ∀ᵐ x ∂μ, W1p.value u x ≤ M := by
-      have hj : ∀ j : ℕ, ∀ᵐ x ∂μ, W1p.value u x ≤ M + 1 / ((j : ℝ) + 1) := by
-        intro j
-        by_contra hj
-        have hmemL : M + 1 / ((j : ℝ) + 1) ∈ L :=
-          ⟨(le_csSup hbdd hkL).trans (le_add_of_nonneg_right (by positivity)), hj⟩
-        linarith [le_csSup hbdd hmemL, (by positivity : (0 : ℝ) < 1 / ((j : ℝ) + 1))]
-      filter_upwards [ae_all_iff.2 hj] with x hx
-      refine le_of_forall_pos_le_add fun ε hε ↦ ?_
-      obtain ⟨j, hjε⟩ := exists_nat_one_div_lt hε
-      linarith [hx j]
-    have hkM : k < M := lt_of_not_ge fun hMk ↦ hk (hle.mono fun x hx ↦ hx.trans hMk)
-    refine key (fun j ↦ M - 1 / ((j : ℝ) + 1)) (fun i j hij ↦ ?_) ?_ ?_ fun j ↦ ?_
-    · dsimp only
-      gcongr
-    · obtain ⟨i, hi⟩ := exists_nat_one_div_lt (sub_pos.2 hkM)
-      exact ⟨i, by linarith⟩
-    · rw [measure_eq_zero_iff_ae_notMem]
-      filter_upwards [hle, W1p.gradient_ae_eq_zero_on_level_set hp u M] with x hxM hlev hx
-      rw [mem_iInter] at hx
-      have hMx : M ≤ W1p.value u x := le_of_forall_pos_le_add fun ε hε ↦ by
-        obtain ⟨j, hjε⟩ := exists_nat_one_div_lt hε
-        linarith [(hx j).1]
-      exact (hx 0).2 (hlev (le_antisymm hxM hMx))
-    · have hlt : max k (M - 1 / ((j : ℝ) + 1)) < M :=
-        max_lt hkM (sub_lt_self _ (by positivity))
-      obtain ⟨l', hl'L, hl'⟩ := exists_lt_of_lt_csSup ⟨k, hkL⟩ hlt
-      exact ⟨max k (M - 1 / ((j : ℝ) + 1)), le_max_left _ _, le_max_right _ _,
-        fun hae ↦ hl'L.2 (hae.mono fun x hx ↦ hx.trans hl'.le)⟩
+  by_cases hbdd : BddAbove {l : ℝ | k ≤ l ∧ ¬ ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ l}
+  · exact W1p.exists_tendsto_measure_of_bddAbove hp u hfin hk hbdd
   · -- `u` is essentially unbounded above; take the levels `j`.
-    refine key (fun j ↦ (j : ℝ)) Nat.mono_cast (exists_nat_gt k) ?_ fun j ↦ ?_
+    refine W1p.exists_tendsto_measure_of_monotone_levels u hfin (fun j ↦ (j : ℝ)) Nat.mono_cast
+      (exists_nat_gt k) ?_ fun j ↦ ?_
     · rw [measure_eq_zero_iff_ae_notMem]
       refine Eventually.of_forall fun x hx ↦ ?_
       obtain ⟨j, hj⟩ := exists_nat_gt (W1p.value u x)
