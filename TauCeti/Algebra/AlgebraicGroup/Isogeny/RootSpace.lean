@@ -41,41 +41,6 @@ open CategoryTheory Derivation
 
 universe u
 
-namespace TauCeti.CommHopfAlgCat
-
-section EtaleKernel
-
-variable {k : Type u} [Field k] {H K : _root_.CommHopfAlgCat.{u} k}
-  [Algebra.FiniteType k K] {f : H ⟶ K} {M : Type u} [CommGroup M]
-
-/-- A homomorphism with étale kernel and finite-type source has an injective differential on
-cotangent duals. -/
-theorem dualCotangentMap_injective_of_etaleKernel
-    (hker : Algebra.Etale k (K ⧸ (kernelHopfIdeal f).toIdeal)) :
-    Function.Injective (Derivation.dualCotangentMap f.hom) := by
-  have hinj := (algebraEtale_quotient_kernelHopfIdeal_iff f).mp hker
-  intro x y hxy
-  apply (Derivation.cotangentLinearEquiv (R := k) (A := K) (B := k)).injective
-  apply hinj
-  rw [derivationCompLieHom_apply, derivationCompLieHom_apply]
-  simpa only [Derivation.cotangentLinearEquiv_dualCotangentMap] using
-    congrArg (Derivation.cotangentLinearEquiv (R := k) (A := H) (B := k)) hxy
-
-/-- The differential of a homomorphism with étale kernel detects adjoint weight vectors.
-Both weights are indexed by the characters of the diagonalizable group in the source. -/
-theorem dualCotangentMap_mem_adjointWeightSpace_iff_of_etaleKernel [Algebra.FiniteType k H]
-    (hker : Algebra.Etale k (K ⧸ (kernelHopfIdeal f).toIdeal))
-    (π : K →ₐc[k] MonoidAlgebra k M) (α : M)
-    (x : Module.Dual k (Bialgebra.CotangentSpace k K)) :
-    Derivation.dualCotangentMap f.hom x ∈ adjointWeightSpace (π.comp f.hom) α ↔
-      x ∈ adjointWeightSpace π α :=
-  f.hom.dualCotangentMap_mem_adjointWeightSpace_iff_of_injective
-    (dualCotangentMap_injective_of_etaleKernel hker) π α x
-
-end EtaleKernel
-
-end TauCeti.CommHopfAlgCat
-
 namespace TauCeti.CommHopfAlgCat.IsIsogeny
 
 variable {k : Type u} [Field k] {H K : _root_.CommHopfAlgCat.{u} k}
