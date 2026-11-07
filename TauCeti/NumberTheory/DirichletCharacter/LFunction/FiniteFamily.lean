@@ -21,6 +21,12 @@ For primitive characters the level equals the conductor, so these results provid
 rational finite-family input to the small-conductor step of zero-free-region arguments.
 No primitivity or reality hypothesis is needed for the disk theorem itself.
 
+The analytic inputs are Mathlib's `DirichletCharacter.differentiable_LFunction`
+from `Mathlib.NumberTheory.LSeries.DirichletContinuation` and
+`DirichletCharacter.LFunction_apply_one_ne_zero` from
+`Mathlib.NumberTheory.LSeries.Nonvanishing`. The finite character instance is
+supplied by `Mathlib.NumberTheory.DirichletCharacter.Orthogonality`.
+
 ## References
 
 * H. Davenport, *Multiplicative Number Theory*, 3rd ed., Chapter 14.
@@ -28,9 +34,9 @@ No primitivity or reality hypothesis is needed for the disk theorem itself.
 
 public section
 
-open Filter Topology Metric
+open Filter Topology Metric DirichletCharacter
 
-namespace DirichletCharacter
+namespace TauCeti.DirichletCharacter
 
 variable {N : ℕ} [NeZero N]
 
@@ -47,7 +53,7 @@ theorem eventually_forall_LFunction_ne_zero :
 
 /-- For each fixed level bound, a single positive closed-disk radius works for all
 nonprincipal characters. The radius is selected before the level and character. -/
-theorem exists_pos_forall_LFunction_ne_zero_of_le (Q : ℕ) :
+theorem exists_pos_forall_LFunction_ne_zero (Q : ℕ) :
     ∃ δ : ℝ, 0 < δ ∧ ∀ (N : ℕ) [NeZero N], N ≤ Q →
       ∀ χ : DirichletCharacter ℂ N, χ ≠ 1 →
         ∀ s : ℂ, ‖s - 1‖ ≤ δ → χ.LFunction s ≠ 0 := by
@@ -68,11 +74,11 @@ theorem exists_pos_forall_LFunction_ne_zero_of_le (Q : ℕ) :
 
 /-- Real zeros of nonprincipal characters of bounded positive level have a common
 positive distance from one. This does not assert a uniform gap as the bound grows. -/
-theorem exists_pos_real_zero_gap_of_le (Q : ℕ) :
+theorem exists_pos_real_zero_gap (Q : ℕ) :
     ∃ δ : ℝ, 0 < δ ∧ ∀ (N : ℕ) [NeZero N], N ≤ Q →
       ∀ χ : DirichletCharacter ℂ N, χ ≠ 1 →
         ∀ β : ℝ, β < 1 → χ.LFunction β = 0 → δ < 1 - β := by
-  obtain ⟨δ, hδ, h⟩ := exists_pos_forall_LFunction_ne_zero_of_le Q
+  obtain ⟨δ, hδ, h⟩ := exists_pos_forall_LFunction_ne_zero Q
   refine ⟨δ, hδ, ?_⟩
   intro N _ hN χ hχ β hβ hz
   by_contra hn
@@ -81,4 +87,4 @@ theorem exists_pos_real_zero_gap_of_le (Q : ℕ) :
     abs_of_neg (sub_neg.mpr hβ)]
   linarith
 
-end DirichletCharacter
+end TauCeti.DirichletCharacter
