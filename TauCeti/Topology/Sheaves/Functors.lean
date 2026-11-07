@@ -10,6 +10,7 @@ public import Mathlib.CategoryTheory.Sites.ConstantSheaf
 public import Mathlib.CategoryTheory.Sites.Pullback
 public import Mathlib.Topology.Sheaves.AddCommGrpCat
 public import Mathlib.Topology.Sheaves.Functors
+public import TauCeti.CategoryTheory.Sites.Pullback
 
 /-!
 # The sheaf condition along a homeomorphism
@@ -25,7 +26,9 @@ embedding, `Topology.IsOpenEmbedding.sheafPullback`, are restriction maps of the
 between the image opens.
 
 Finally, it records that the inverse image functor `f⁻¹` of abelian sheaves along a continuous map
-`f` is exact and additive, and that it carries constant sheaves to constant sheaves.
+`f` is left exact, and that it carries constant sheaves to constant sheaves. Its right exactness
+and additivity hold for the pullback along any continuous functor of sites
+(`TauCeti/CategoryTheory/Sites/Pullback.lean`).
 
 ## Main results
 
@@ -85,19 +88,6 @@ instance : PreservesFiniteLimits ((Opens.map f).sheafPullback AddCommGrpCat.{w}
     (Opens.grothendieckTopology Y) (Opens.grothendieckTopology X)) :=
   have : RepresentablyFlat (Opens.map f) := flat_of_preservesFiniteLimits _
   Functor.sheafPullbackConstruction.preservesFiniteLimits (Opens.map f) AddCommGrpCat.{w} _ _
-
-/-- The inverse image of abelian sheaves along a continuous map is right exact, being a left
-adjoint. -/
-instance : PreservesFiniteColimits ((Opens.map f).sheafPullback AddCommGrpCat.{w}
-    (Opens.grothendieckTopology Y) (Opens.grothendieckTopology X)) :=
-  have := ((Opens.map f).sheafAdjunctionContinuous AddCommGrpCat.{w}
-    (Opens.grothendieckTopology Y) (Opens.grothendieckTopology X)).isLeftAdjoint
-  inferInstance
-
-/-- The inverse image of abelian sheaves along a continuous map is additive. -/
-instance : ((Opens.map f).sheafPullback AddCommGrpCat.{w}
-    (Opens.grothendieckTopology Y) (Opens.grothendieckTopology X)).Additive :=
-  Functor.additive_of_preserves_binary_products _
 
 /-- The inverse image of the constant sheaf with value `A` is the constant sheaf with value `A`.
 Both functors `A ↦ f⁻¹ A_Y` and `A ↦ A_X` are left adjoint to taking global sections, because
