@@ -20,9 +20,9 @@ length `2π`. Taking products, the map `(q, p) ↦ ((q_i² + p_i²) / 2)_i` on `
 Lebesgue measure to `(2π)^|ι|` times Lebesgue measure on the closed positive orthant
 (`TauCeti.map_volume_pi_half_sq_add_sq`).
 
-Read on `ℂ^ι` with `z_i = q_i + i p_i`, these maps are the moment maps `|z_i|² / 2` of the standard
-rotation actions of the circle and of the torus, and the statements compute their
-Duistermaat–Heckman measures.
+Read on `ℂ^ι` with `z_i = q_i + i p_i`, these maps are the moment maps `|z_i|² / 2` of the reversed
+rotation actions `z_i ↦ exp(-i θ_i) z_i` of the circle and of the torus, and the statements
+compute their Duistermaat–Heckman measures.
 
 ## References
 

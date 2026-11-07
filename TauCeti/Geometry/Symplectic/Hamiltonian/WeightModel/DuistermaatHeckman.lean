@@ -23,10 +23,11 @@ the standard form `ω = Σ dq_i ∧ dp_i` is Lebesgue measure in the coordinates
 results are stated for the pushforward of `volume` on `EuclideanSpace ℝ ι × EuclideanSpace ℝ ι`.
 
 Since `μ` is the linear map `a ↦ Σ_i a_i (-α_i)` applied to the moment map `(|z_i|² / 2)_i` of the
-standard torus action, and the latter pushes Lebesgue measure to `(2π)^|ι|` times Lebesgue measure
-on the closed positive orthant (`TauCeti.map_volume_pi_half_sq_add_sq`), for arbitrary weights the
-pushforward of Lebesgue measure by `μ` is `(2π)^|ι|` times the image of Lebesgue measure on the
-orthant under that linear map (`TauCeti.map_volume_weightMomentMap`).
+reversed rotation action `z_i ↦ exp(-i θ_i) z_i` (`TauCeti.weightMomentMap_eq_linearCombination`),
+and the latter pushes Lebesgue measure to `(2π)^|ι|` times Lebesgue measure on the closed positive
+orthant (`TauCeti.map_volume_pi_half_sq_add_sq`), for arbitrary weights the pushforward of
+Lebesgue measure by `μ` is `(2π)^|ι|` times the image of Lebesgue measure on the orthant under that
+linear map (`TauCeti.map_volume_weightMomentMap`).
 
 When the negated weights form a basis `b` of `𝔱*`, so that `μ = ½ Σ_i (q_i² + p_i²) b_i` is the
 moment map of the action `z_i ↦ exp(-i b_i(ξ)) z_i`, this pushforward is `(2π)^|ι|` times the Haar
@@ -59,18 +60,6 @@ variable {ι : Type*} [Fintype ι] {𝔱 : Type*} [NormedAddCommGroup 𝔱] [Nor
 
 namespace TauCeti
 
-/-- The moment map of the weight model is the linear map `a ↦ Σ_i a_i (-α_i)` applied to the
-half squared radii `(q_i² + p_i²) / 2`. -/
-theorem weightMomentMap_eq_linearCombination (α : ι → StrongDual ℝ 𝔱)
-    (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
-    weightMomentMap α x =
-      Fintype.linearCombination ℝ (-α) fun i ↦ (x.1 i ^ 2 + x.2 i ^ 2) / 2 := by
-  rw [weightMomentMap_def, Fintype.linearCombination_apply]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [Pi.neg_apply, smul_neg, ← neg_smul]
-  congr 1
-  ring
-
 variable [MeasurableSpace (StrongDual ℝ 𝔱)] [BorelSpace (StrongDual ℝ 𝔱)]
 
 /-- **The Duistermaat–Heckman measure of the weight model.** For arbitrary weights `α`, the moment
@@ -100,21 +89,6 @@ end TauCeti
 namespace Module.Basis
 
 open TauCeti
-
-/-- **The image of the weight model with a basis of negated weights.** If `b` is a basis of `𝔱*`,
-the moment map `μ = ½ Σ_i (q_i² + p_i²) b_i` has image the cone of covectors whose coordinates in
-`b` are nonnegative. -/
-theorem range_weightMomentMap_neg (b : Basis ι ℝ (StrongDual ℝ 𝔱)) :
-    range (weightMomentMap (-⇑b)) = {ν | ∀ i, 0 ≤ b.repr ν i} := by
-  rw [range_weightMomentMap, neg_neg]
-  ext ν
-  rw [SetLike.mem_coe, PointedCone.hull, Submodule.mem_span_range_iff_exists_fun, mem_ofPred_eq]
-  constructor
-  · rintro ⟨c, rfl⟩ i
-    simp only [← Nonneg.coe_smul, b.repr_sum_self]
-    exact (c i).2
-  · intro h
-    exact ⟨fun i ↦ ⟨b.repr ν i, h i⟩, by simp [Nonneg.mk_smul]⟩
 
 variable [MeasurableSpace (StrongDual ℝ 𝔱)] [BorelSpace (StrongDual ℝ 𝔱)]
 
