@@ -75,6 +75,69 @@ namespace freeProP
 
 variable {p : ℕ} [Fact p.Prime] {n : ℕ}
 
+/-- The `p`-power coordinates of the class of a relator with exponent vector `q e₁`, `p ^ 2 ∣ q`,
+vanish. -/
+private theorem degreeOneBasis_repr_gradedMk_inl_eq_zero_of_toAdd_exponentSum_eq
+    (r : pLowerCentralSeries p (freeProP p (Fin n)) 1) {q : ℕ} (hq : p ^ 2 ∣ q)
+    (hv : ∀ k : Fin n, (exponentSum p (Fin n) (r : freeProP p (Fin n))).toAdd k =
+      if (k : ℕ) = 0 then (q : ℤ_[p]) else 0) (k : Fin n) :
+    (degreeOneBasis p (Fin n)).repr (gradedMk p (freeProP p (Fin n)) 1 r) (Sum.inl k) = 0 := by
+  rw [degreeOneBasis_repr_gradedMk_inl_eq_zero_iff, hv]
+  split_ifs
+  · simpa using Nat.cast_dvd_cast (α := ℤ_[p]) hq
+  · exact dvd_zero _
+
+/-- The elementary automorphism step: some automorphism `e₁` carries a relator with exponent
+vector `q e₁` to an element with the same class in `gr_1(F)` and the same exponent vector as the
+normal-form word, and its class has derivatives spanning `gr_0(F)`. -/
+private theorem exists_continuousMulEquiv_gradedMk_eq_demushkinWordNeTwo
+    (r : pLowerCentralSeries p (freeProP p (Fin n)) 1)
+    (hnd : (degreeOneForm (gradedMk p (freeProP p (Fin n)) 1 r)).Nondegenerate)
+    {q : ℕ} (hq : p ^ 2 ∣ q) (hn : 0 < n)
+    (hv : ∀ k : Fin n, (exponentSum p (Fin n) (r : freeProP p (Fin n))).toAdd k =
+      if (k : ℕ) = 0 then (q : ℤ_[p]) else 0) :
+    ∃ (e₁ : freeProP p (Fin n) ≃ₜ* freeProP p (Fin n))
+      (hmem : e₁ r ∈ pLowerCentralSeries p (freeProP p (Fin n)) 1),
+      gradedMk p (freeProP p (Fin n)) 1 ⟨e₁ r, hmem⟩ =
+        gradedMk p (freeProP p (Fin n)) 1 ⟨demushkinWordNeTwo q n (freeProPGen p n),
+          demushkinWordNeTwo_mem_pLowerCentralSeries_one
+            ((dvd_pow_self p two_ne_zero).trans hq) n _⟩ ∧
+      exponentSum p (Fin n) (e₁ r) =
+        exponentSum p (Fin n) (demushkinWordNeTwo q n (freeProPGen p n)) ∧
+      Submodule.span (ZMod p) (Set.range fun i ↦ degreeOneDeriv p (Fin n) i
+        (gradedMk p (freeProP p (Fin n)) 1 ⟨e₁ r, hmem⟩)) = ⊤ := by
+  have hpq : p ∣ q := (dvd_pow_self p two_ne_zero).trans hq
+  have hc := degreeOneBasis_repr_gradedMk_inl_eq_zero_of_toAdd_exponentSum_eq r hq hv
+  -- The normal form modulo `λ_2(F)` by an automorphism `e₁` fixing `x₁`.
+  obtain ⟨-, e₁, he₁0, he₁⟩ :=
+    exists_continuousMulEquiv_freeProPGen_zero_eq_inv_mul_demushkinWordNeTwo_mem r hnd
+      (isAlt_degreeOneForm_of_repr_inl_eq_zero _ hc) hpq hv
+  have hmem : e₁ r ∈ pLowerCentralSeries p (freeProP p (Fin n)) 1 :=
+    (e₁ : freeProP p (Fin n) →ₜ* freeProP p (Fin n)).toMonoidHom.map_pLowerCentralSeries_le
+      (e₁ : freeProP p (Fin n) →ₜ* freeProP p (Fin n)).continuous 1 ⟨r, r.2, rfl⟩
+  refine ⟨e₁, hmem, ?_, ?_, ?_⟩
+  · -- `e₁ r` and the normal-form word have the same class in `gr_1(F)`.
+    rw [gradedMk_eq_gradedMk_iff]
+    exact QuotientGroup.eq.mpr he₁
+  · -- They have the same exponent vector `q e₁`, because `e₁` fixes `x₁`.
+    refine Multiplicative.toAdd.injective ?_
+    rw [toAdd_exponentSum_demushkinWordNeTwo,
+      ← ContinuousMonoidHom.coe_coe e₁,
+      toAdd_exponentSum_apply_eq_sum_smul,
+      Finset.sum_eq_single ⟨0, hn⟩ (fun k _ hk ↦ by
+        rw [hv, ite_eq_right fun h ↦ hk (Fin.ext h), zero_smul])
+        (fun h ↦ (h (Finset.mem_univ _)).elim),
+      hv, ite_eq_left rfl, ContinuousMonoidHom.coe_coe, ← freeProPGen_of_lt p hn, he₁0]
+  · -- The class of `e₁ r` has derivatives spanning `gr_0(F)`.
+    have hr' : gradedMk p (freeProP p (Fin n)) 1 ⟨e₁ r, hmem⟩ =
+        gradedMap p (e₁ : freeProP p (Fin n) →ₜ* freeProP p (Fin n)).toMonoidHom
+          (e₁ : freeProP p (Fin n) →ₜ* freeProP p (Fin n)).continuous 1
+          (gradedMk p (freeProP p (Fin n)) 1 r) := by
+      rw [gradedMap_gradedMk]
+      rfl
+    rw [span_range_degreeOneDeriv_eq_top_iff_nondegenerate_degreeOneForm, hr']
+    exact (nondegenerate_degreeOneForm_gradedMap_iff e₁ _).2 hnd
+
 /-- **Labute's normal form for a relator with exponent vector `q e₁`, `p ^ 2 ∣ q`.** Let `F` be the
 free pro-`p` group on `n` generators and let `r ∈ λ_1(F)` be a relator whose class in `gr_1(F)` has
 nondegenerate degree-one form, and whose exponent sums are `q` at `x₁` and `0` at the other
@@ -91,79 +154,31 @@ theorem exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_toAdd_exponentS
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · exact ⟨ContinuousMulEquiv.refl _, Subsingleton.elim _ _⟩
   have hpq : p ∣ q := (dvd_pow_self p two_ne_zero).trans hq
-  have hq' : (p : ℤ_[p]) ^ 2 ∣ (q : ℤ_[p]) := by
-    have h := Nat.cast_dvd_cast (α := ℤ_[p]) hq
-    rwa [Nat.cast_pow] at h
-  -- The `p`-power coordinates of the class of `r` vanish, so its degree-one form is alternating.
-  have hc : ∀ k, (degreeOneBasis p (Fin n)).repr (gradedMk p (freeProP p (Fin n)) 1 r)
-      (Sum.inl k) = 0 := by
-    intro k
-    rw [degreeOneBasis_repr_gradedMk_inl_eq_zero_iff, hv]
-    split_ifs
-    · exact hq'
-    · exact dvd_zero _
-  -- The normal form modulo `λ_2(F)` by an automorphism `e₁` fixing `x₁`.
-  obtain ⟨-, e₁, he₁0, he₁⟩ :=
-    exists_continuousMulEquiv_freeProPGen_zero_eq_inv_mul_demushkinWordNeTwo_mem r hnd
-      (isAlt_degreeOneForm_of_repr_inl_eq_zero _ hc) hpq hv
-  set f : freeProP p (Fin n) →ₜ* freeProP p (Fin n) :=
-    (e₁ : freeProP p (Fin n) →ₜ* freeProP p (Fin n)) with hf
-  have hmem : f r ∈ pLowerCentralSeries p (freeProP p (Fin n)) 1 :=
-    f.toMonoidHom.map_pLowerCentralSeries_le f.continuous 1 ⟨r, r.2, rfl⟩
-  -- `e₁ r` and the normal-form word have the same class in `gr_1(F)`.
-  have hclass : gradedMk p (freeProP p (Fin n)) 1 ⟨f r, hmem⟩ =
-      gradedMk p (freeProP p (Fin n)) 1 ⟨demushkinWordNeTwo q n (freeProPGen p n),
-        demushkinWordNeTwo_mem_pLowerCentralSeries_one hpq n _⟩ := by
-    rw [gradedMk_eq_gradedMk_iff]
-    exact QuotientGroup.eq.mpr he₁
-  -- They have the same exponent vector `q e₁`, because `e₁` fixes `x₁`.
-  have hrw : exponentSum p (Fin n) (f r) =
-      exponentSum p (Fin n) (demushkinWordNeTwo q n (freeProPGen p n)) := by
-    refine Multiplicative.toAdd.injective ?_
-    rw [toAdd_exponentSum_demushkinWordNeTwo, hf, toAdd_exponentSum_apply_eq_sum_smul,
-      Finset.sum_eq_single ⟨0, hn⟩ (fun k _ hk ↦ by
-        rw [hv, ite_eq_right fun h ↦ hk (Fin.ext h), zero_smul])
-        (fun h ↦ (h (Finset.mem_univ _)).elim),
-      hv, ite_eq_left rfl, ContinuousMonoidHom.coe_coe, ← freeProPGen_of_lt p hn, he₁0]
-  -- The class of `e₁ r` has derivatives spanning `gr_0(F)` and no `p`-power part.
-  have hr' : gradedMk p (freeProP p (Fin n)) 1 ⟨f r, hmem⟩ =
-      gradedMap p f.toMonoidHom f.continuous 1 (gradedMk p (freeProP p (Fin n)) 1 r) := by
-    rw [gradedMap_gradedMk]
-    rfl
-  have hρ : Submodule.span (ZMod p) (Set.range fun i ↦ degreeOneDeriv p (Fin n) i
-      (gradedMk p (freeProP p (Fin n)) 1 ⟨f r, hmem⟩)) = ⊤ := by
-    rw [span_range_degreeOneDeriv_eq_top_iff_nondegenerate_degreeOneForm, hr']
-    exact (nondegenerate_degreeOneForm_gradedMap_iff e₁ _).2 hnd
-  have hc' : ∀ i, (degreeOneBasis p (Fin n)).repr (gradedMk p (freeProP p (Fin n)) 1 ⟨f r, hmem⟩)
+  obtain ⟨e₁, hmem, hclass, hrw, hρ⟩ :=
+    exists_continuousMulEquiv_gradedMk_eq_demushkinWordNeTwo r hnd hq hn hv
+  -- The class of `e₁ r` has no `p`-power part.
+  have hc' : ∀ i, (degreeOneBasis p (Fin n)).repr (gradedMk p (freeProP p (Fin n)) 1 ⟨e₁ r, hmem⟩)
       (Sum.inl i) = 0 := by
     intro i
     rw [degreeOneBasis_repr_gradedMk_inl_eq_zero_iff, hrw, toAdd_exponentSum_demushkinWordNeTwo,
       Pi.smul_apply, smul_eq_mul]
+    have hq' : (p : ℤ_[p]) ^ 2 ∣ (q : ℤ_[p]) := by simpa using Nat.cast_dvd_cast (α := ℤ_[p]) hq
     exact hq'.mul_right _
-  -- The deviations in the closed commutator subgroup are absorbed by corrections lying in the
-  -- commutator subgroup at `x₁`, the only generator carrying a nonzero exponent.
-  have hspan : ∀ m (hm : 1 ≤ m), ∀ z : pLowerCentralSeries p (freeProP p (Fin n)) (m + 1),
-      (z : freeProP p (Fin n)) ∈ (commutator (freeProP p (Fin n))).topologicalClosure →
-      ∃ ω : Fin n → pLowerCentralSeries p (freeProP p (Fin n)) m,
-        (∀ i, (exponentSum p (Fin n) (f r)).toAdd i ≠ 0 →
-          (ω i : freeProP p (Fin n)) ∈ (commutator (freeProP p (Fin n))).topologicalClosure) ∧
-        basisModificationDelta p (Fin n) hm (gradedMk p (freeProP p (Fin n)) 1 ⟨f r, hmem⟩)
-          (fun i ↦ gradedMk p (freeProP p (Fin n)) m (ω i)) =
-            gradedMk p (freeProP p (Fin n)) (m + 1) z := by
-    intro m hm z hz
-    obtain ⟨ω, hω₀, hω⟩ := exists_apply_mem_commutator_basisModificationDelta_eq_of_mem_range hm hρ
-      hc' ⟨0, hn⟩ (gradedMk_mem_range_basisModificationDelta_of_mem_topologicalClosure_commutator
-        hm hρ hc' z hz)
-    refine ⟨ω, fun i hi ↦ ?_, hω⟩
-    obtain rfl : i = ⟨0, hn⟩ := by
-      by_contra h
-      apply hi
-      rw [hrw, toAdd_exponentSum_demushkinWordNeTwo, Pi.smul_apply,
-        toAdd_exponentSum_freeProPGen_apply, ite_eq_right fun h' ↦ h (Fin.ext h'), smul_zero]
-    exact Subgroup.le_topologicalClosure _ hω₀
-  obtain ⟨e₂, he₂⟩ := exists_continuousMulEquiv_apply_eq_of_exponentSum_eq ⟨f r, hmem⟩
+  have hz : ∀ i, (exponentSum p (Fin n) (e₁ r)).toAdd i ≠ 0 → i = ⟨0, hn⟩ := by
+    intro i hi
+    by_contra h
+    apply hi
+    rw [hrw, toAdd_exponentSum_demushkinWordNeTwo, Pi.smul_apply,
+      toAdd_exponentSum_freeProPGen_apply, ite_eq_right fun h' ↦ h (Fin.ext h'), smul_zero]
+  obtain ⟨e₂, he₂⟩ := exists_continuousMulEquiv_apply_eq_of_exponentSum_eq ⟨e₁ r, hmem⟩
     ⟨demushkinWordNeTwo q n (freeProPGen p n),
-      demushkinWordNeTwo_mem_pLowerCentralSeries_one hpq n _⟩ hclass hrw hspan
+      demushkinWordNeTwo_mem_pLowerCentralSeries_one hpq n _⟩ hclass hrw
+    (fun m hm z hzc ↦ by
+      -- The corrections are in the commutator subgroup at `x₁`, the only generator with a nonzero
+      -- exponent.
+      obtain ⟨ω, hω₀, hω⟩ := exists_mem_topologicalClosure_commutator_basisModificationDelta_eq
+        hm hρ hc' ⟨0, hn⟩ z hzc
+      exact ⟨ω, fun i hi ↦ by obtain rfl := hz i hi; exact hω₀, hω⟩)
   exact ⟨e₁.trans e₂, he₂⟩
 
 /-- **Labute's normal form for `q ≠ p`** (Labute, Theorem 3, the cases `q = 0` and `q = p^f` with
