@@ -19,8 +19,8 @@ the second is the first with its coefficients cast to `ℚ`.
 
 * `NumberField.RingOfIntegers.minpoly_rat_coe`:
   `minpoly ℚ (x : K) = (minpoly ℤ x).map (algebraMap ℤ ℚ)`.
-* `TauCeti.NumberField.minpoly_int_eq_of_aeval_eq_zero`: a root of `minpoly ℚ x` in a commutative
-  `ℚ`-algebra that is a domain has the same minimal polynomial over `ℤ` as `x`.
+* `TauCeti.NumberField.minpoly_int_eq_of_aeval_eq_zero`: a root of `minpoly ℚ x` in a nontrivial
+  `ℚ`-algebra has the same minimal polynomial over `ℤ` as `x`.
 * `TauCeti.NumberField.minpoly_two_mul_sub_one_of_minpoly_eq_X_sq_sub_X_add`: an algebraic
   integer `ω` with minimal polynomial `X² - X + c` has `2ω - 1` with minimal polynomial
   `X² - (1 - 4c)`.
@@ -63,16 +63,23 @@ theorem isIntegral_of_aeval_eq_zero {β : M}
   ⟨minpoly ℤ θ, minpoly.monic θ.isIntegral, by
     rwa [aeval_minpoly_rat_eq_aeval_minpoly_int] at hβ⟩
 
-end RingTarget
+/-- A root of `minpoly ℚ θ` in a nontrivial `ℚ`-algebra has the same minimal polynomial over `ℤ`
+as `θ`. -/
+theorem minpoly_int_eq_of_aeval_eq_zero [Nontrivial M] {β : M}
+    (hβ : aeval β (minpoly ℚ (θ : K)) = 0) : minpoly ℤ β = minpoly ℤ θ := by
+  have hQ := (minpoly.eq_iff_aeval_minpoly_eq_zero (IsIntegral.of_finite ℚ (θ : K))).mpr hβ
+  refine (minpoly.unique' ℤ β (minpoly.monic θ.isIntegral)
+    ((aeval_minpoly_rat_eq_aeval_minpoly_int β).symm.trans hβ) fun q hq => ?_).symm
+  -- A nonzero integer polynomial vanishing at `β` stays nonzero over `ℚ`, so its degree is at
+  -- least that of `minpoly ℚ β = minpoly ℚ θ`, which is the degree of `minpoly ℤ θ`.
+  refine or_iff_not_imp_left.mpr fun hq0 hqβ => hq.not_ge ?_
+  have hinj := (algebraMap ℤ ℚ).injective_int
+  rw [← degree_map_eq_of_injective hinj, ← degree_map_eq_of_injective hinj,
+    ← _root_.NumberField.RingOfIntegers.minpoly_rat_coe, hQ]
+  exact minpoly.degree_le_of_ne_zero ℚ β ((Polynomial.map_ne_zero_iff hinj).mpr hq0)
+    (by rwa [aeval_map_algebraMap])
 
-/-- A root of `minpoly ℚ θ` in a commutative `ℚ`-algebra that is a domain has the same minimal
-polynomial over `ℤ` as `θ`. -/
-theorem minpoly_int_eq_of_aeval_eq_zero {M : Type*} [CommRing M] [IsDomain M] [Algebra ℚ M]
-    {β : M} (hβ : aeval β (minpoly ℚ (θ : K)) = 0) : minpoly ℤ β = minpoly ℤ θ := by
-  have h := ((minpoly.eq_iff_aeval_minpoly_eq_zero (IsIntegral.of_finite ℚ (θ : K))).mpr hβ).symm
-  rw [minpoly.isIntegrallyClosed_eq_field_fractions' ℚ (isIntegral_of_aeval_eq_zero hβ),
-    _root_.NumberField.RingOfIntegers.minpoly_rat_coe] at h
-  exact Polynomial.map_injective _ (algebraMap ℤ ℚ).injective_int h
+end RingTarget
 
 /-- For an algebraic integer `ω` with minimal polynomial `X² - X + c` over `ℤ`, the element
 `2ω - 1` is a square root of `1 - 4c`: its minimal polynomial over `ℤ` is `X² - (1 - 4c)`. This
@@ -85,15 +92,16 @@ theorem minpoly_two_mul_sub_one_of_minpoly_eq_X_sq_sub_X_add {ω : 𝓞 K} {c : 
   have hscale : minpoly ℤ ((2 : ℤ) • ω) = X ^ 2 - C 2 * X + C (4 * c) := by
     rw [IsIntegrallyClosed.minpoly_smul two_ne_zero ω.isIntegral, hmin]
     ext i
-    rw [coeff_scaleRoots, show (X ^ 2 - X + C c : ℤ[X]).natDegree = 2 by compute_degree!]
+    have hdeg : (X ^ 2 - X + C c : ℤ[X]).natDegree = 2 := by compute_degree!
+    rw [coeff_scaleRoots, hdeg]
     rcases i with _ | _ | _ | i <;> simp [coeff_X, coeff_C, -eq_intCast]
     ring
   -- Over `ℚ`, subtracting `1` composes the minimal polynomial with `X + 1`; the coefficient map
   -- `ℤ → ℚ` is injective.
+  have hcoe : ((2 * ω - 1 : 𝓞 K) : K) = (((2 : ℤ) • ω : 𝓞 K) : K) - algebraMap ℚ K 1 := by simp
   apply Polynomial.map_injective (algebraMap ℤ ℚ) (algebraMap ℤ ℚ).injective_int
-  rw [← _root_.NumberField.RingOfIntegers.minpoly_rat_coe,
-    show ((2 * ω - 1 : 𝓞 K) : K) = (((2 : ℤ) • ω : 𝓞 K) : K) - algebraMap ℚ K 1 by simp,
-    minpoly.sub_algebraMap, _root_.NumberField.RingOfIntegers.minpoly_rat_coe, hscale]
+  rw [← _root_.NumberField.RingOfIntegers.minpoly_rat_coe, hcoe, minpoly.sub_algebraMap,
+    _root_.NumberField.RingOfIntegers.minpoly_rat_coe, hscale]
   simp
   ring
 
