@@ -13,6 +13,7 @@ public import Mathlib.RingTheory.Ideal.Operations
 import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.LinearAlgebra.Finsupp.Span
 import Mathlib.LinearAlgebra.Pi
+import TauCeti.Data.Fin.Basic
 
 /-!
 # Complements on ideal multiplication and the ideal action
@@ -122,10 +123,7 @@ theorem smul_top_eq_top_of_isIdempotentElem {I : Ideal R} (hI : IsIdempotentElem
 /-- The two entries of a pair generate the unit ideal exactly when they are coprime. -/
 theorem span_range_fin_two_eq_top_iff (v : Fin 2 → R) :
     span (Set.range v) = ⊤ ↔ IsCoprime (v 0) (v 1) := by
-  have hv : Set.range v = {v 0, v 1} := by
-    ext x
-    simp [Fin.exists_fin_two, eq_comm]
-  rw [hv, span_insert, sup_eq_top_iff_isCoprime]
+  rw [Set.range_fin_two, span_insert, sup_eq_top_iff_isCoprime]
 
 /-- The elements of `(u, v)²` are the binary quadratic forms `a u² + b u v + c v²`. -/
 theorem mem_span_pair_sq {u v f : R} :
@@ -151,10 +149,7 @@ theorem mem_span_pair_sq {u v f : R} :
 `a v₀² + b v₀ v₁ + c v₁²`. -/
 theorem mem_span_range_fin_two_sq_iff (v : Fin 2 → R) {x : R} :
     x ∈ span (Set.range v) ^ 2 ↔ ∃ a b c : R, x = a * v 0 ^ 2 + b * v 0 * v 1 + c * v 1 ^ 2 := by
-  have hv : Set.range v = {v 0, v 1} := by
-    ext x
-    simp [Fin.exists_fin_two, eq_comm]
-  rw [hv, sq, span_pair_mul_span_pair, mul_comm (v 1) (v 0), Set.insert_idem,
+  rw [Set.range_fin_two, sq, span_pair_mul_span_pair, mul_comm (v 1) (v 0), Set.insert_idem,
     Submodule.mem_span_triple]
   simp only [smul_eq_mul, sq, mul_assoc, eq_comm (a := x)]
 

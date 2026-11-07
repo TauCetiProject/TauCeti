@@ -10,6 +10,8 @@ public import Mathlib.LinearAlgebra.Projectivization.Cardinality
 public import TauCeti.NumberTheory.Multiquadratic.Subfield.Degree
 public import TauCeti.NumberTheory.Multiquadratic.CoprimeSquarefree
 
+import TauCeti.Data.Fin.Basic
+
 /-!
 # The number of quadratic subfields of a multiquadratic field
 
@@ -147,8 +149,8 @@ theorem card_quadratic_intermediateField_adjoin_sqrt_two_three :
     (not_isSquare_prod_of_coprime_squarefree_rat ![2, 3] hcop hsf hnu)
   have hset : (Set.range fun i : Fin 2 => Real.sqrt ((![2, 3] : Fin 2 → ℤ) i))
       = {Real.sqrt 2, Real.sqrt 3} := by
-    ext x
-    simp [Fin.exists_fin_two, eq_comm]
+    rw [Set.range_fin_two]
+    simp
   rw [hset] at hkey
   have h3 : (2 : ℕ) ^ Nat.card (Fin 2) - 1 = 3 := by
     rw [Nat.card_eq_fintype_card, Fintype.card_fin]; rfl

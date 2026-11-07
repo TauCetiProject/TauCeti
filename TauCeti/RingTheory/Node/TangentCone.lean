@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.Node.ExceptionalFiber
 public import TauCeti.RingTheory.Node.PlaneCurve
 public import TauCeti.RingTheory.RegularLocalRing.Basic
+import TauCeti.Data.Fin.Basic
 import TauCeti.RingTheory.Ideal.Operations
 import TauCeti.RingTheory.LocalRing.MaximalIdeal.Generator
 import TauCeti.RingTheory.Smooth.Regular
@@ -93,9 +94,7 @@ theorem exists_quadratic_relation_of_isUnit_det_hessian
     ∃ x y a b : A, maximalIdeal A = Ideal.span {x, y} ∧ x ∈ nonZeroDivisors A ∧
       ¬ (maximalIdeal A).IsPrincipal ∧ a * x ^ 2 + b * x * y + y ^ 2 = 0 ∧
       IsUnit (discrim a b 1) := by
-  have hs2 : Set.range s = {s 0, s 1} := by
-    ext
-    simp [Fin.exists_fin_two, eq_comm]
+  have hs2 : Set.range s = {s 0, s 1} := Set.range_fin_two s
   have hsm (i : Fin 2) : s i ∈ maximalIdeal P := hs ▸ Ideal.subset_span ⟨i, rfl⟩
   -- The cotangent space of `P` is a plane, so no single element generates `𝔪_P` modulo `𝔪_P²`.
   have hne (z : P) (hz : z ∈ maximalIdeal P) :

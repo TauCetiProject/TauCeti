@@ -38,6 +38,7 @@ range, so the value is a `dite` rather than a plain application.
 
 * `Equiv.Perm.eq_one_or_swap_fin_two` and `Equiv.Perm.univ_fin_two`: every permutation of
   `Fin 2` is the identity or the transposition, and these form the set of all permutations.
+* `Set.range_fin_two`: the range of a family indexed by `Fin 2` is the pair of its two entries.
 * `TauCeti.forall_cons_swap_eq_zero_iff`: vanishing of the final coordinates after swapping
   coordinate zero with coordinate `d` in a vector built with `Fin.cons`.
 * `Fin.sum_univ_eq_sum_castLE_add`: a sum over `Fin n` of a family vanishing beyond `i`
@@ -918,3 +919,12 @@ theorem sum_fin_three_rotate {M : Type*} [AddCommMonoid M] (f : Fin 3 → M) (j 
   rw [← h, Fin.sum_univ_three, add_zero]
 
 end TauCeti
+
+namespace Set
+
+/-- The range of a family indexed by `Fin 2` is the pair of its two entries. -/
+theorem range_fin_two {α : Type*} (v : Fin 2 → α) : Set.range v = {v 0, v 1} := by
+  ext x
+  simp [Fin.exists_fin_two, eq_comm]
+
+end Set

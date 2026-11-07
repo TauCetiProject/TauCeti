@@ -12,6 +12,8 @@ public import Mathlib.Data.Rat.Lemmas
 public import Mathlib.Algebra.Squarefree.Basic
 public import Mathlib.RingTheory.Int.Basic
 
+import TauCeti.Data.Fin.Basic
+
 /-!
 # Multiquadratic fields with pairwise-coprime squarefree integer radicands
 
@@ -125,8 +127,8 @@ theorem finrank_adjoin_sqrt_six_thirtyfive :
     (fun i => by fin_cases i <;> exact sq_sqrt_intCast (by norm_num)) hcop hsf hnu
   have hset : (Set.range fun i : Fin 2 => Real.sqrt ((![6, 35] : Fin 2 → ℤ) i))
       = {Real.sqrt 6, Real.sqrt 35} := by
-    ext x
-    simp [Fin.exists_fin_two, eq_comm]
+    rw [Set.range_fin_two]
+    simp
   rw [hset] at h
   rw [h]
   simp

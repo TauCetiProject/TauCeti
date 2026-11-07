@@ -8,6 +8,8 @@ module
 public import TauCeti.NumberTheory.Multiquadratic.Galois.Group
 public import TauCeti.NumberTheory.Multiquadratic.Prime.Radicands
 
+import TauCeti.Data.Fin.Basic
+
 /-!
 # The Galois group of a prime-radicand multiquadratic field
 
@@ -94,8 +96,8 @@ theorem card_aut_adjoin_sqrt_two_three :
   have h := card_aut_adjoin_sqrt_primes ![2, 3] (by decide) (by decide)
   have hset : (Set.range fun i : Fin 2 => Real.sqrt ((![2, 3] : Fin 2 → ℕ) i))
       = {Real.sqrt 2, Real.sqrt 3} := by
-    ext x
-    simp [Fin.exists_fin_two, eq_comm]
+    rw [Set.range_fin_two]
+    simp
   rw [hset] at h
   rw [h, Nat.card_eq_fintype_card, Fintype.card_fin]
   norm_num

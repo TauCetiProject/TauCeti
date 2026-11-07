@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Squarefree
 public import TauCeti.FieldTheory.IntermediateField.Rescale
 public import TauCeti.NumberTheory.Multiquadratic.Galois.Kummer
+import TauCeti.Data.Fin.Basic
 import TauCeti.NumberTheory.Multiquadratic.CoprimeSquarefree
 import Mathlib.Analysis.Real.Sqrt
 
@@ -202,8 +203,8 @@ private theorem finrank_adjoin_sqrt_eight_ninths_three_quarters :
       (fun i _ => hsf i) (fun i _ => hnu i) hS)
   have hset : (Set.range fun i : Fin 2 => Real.sqrt ((![8 / 9, 3 / 4] : Fin 2 → ℚ) i))
       = {Real.sqrt (8 / 9), Real.sqrt (3 / 4)} := by
-    ext x
-    simp [Fin.exists_fin_two, eq_comm]
+    rw [Set.range_fin_two]
+    simp
   rw [hset] at hfin
   rw [hfin]
   simp

@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.Data.Rat.Lemmas
 public import Mathlib.Data.Nat.Squarefree
 import Mathlib.FieldTheory.KummerPolynomial
+import TauCeti.Data.Fin.Basic
 
 /-!
 # Multiquadratic fields with prime radicands
@@ -109,8 +110,8 @@ theorem finrank_adjoin_sqrt_two_three :
   have h := finrank_adjoin_sqrt_primes ![2, 3] (by decide) (by decide)
   have hset : (Set.range fun i : Fin 2 => Real.sqrt ((![2, 3] : Fin 2 → ℕ) i))
       = {Real.sqrt 2, Real.sqrt 3} := by
-    ext x
-    simp [Fin.exists_fin_two, eq_comm]
+    rw [Set.range_fin_two]
+    simp
   rw [hset] at h
   rw [h]
   simp
