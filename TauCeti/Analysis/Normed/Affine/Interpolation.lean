@@ -11,9 +11,10 @@ public import Mathlib.LinearAlgebra.AffineSpace.FiniteDimensional
 /-!
 # Affine interpolation on independent points
 
-Arbitrary values on an affinely independent set in a finite-dimensional real normed space
-extend to a continuous affine map. In particular, an inverse prescribed on the vertices of
-an affine simplex extends to an affine inverse on its convex hull. This allows inverse
+Arbitrary values on an affinely independent set in a finite-dimensional normed affine space
+over a complete nontrivially normed field extend to a continuous affine map. In particular, an
+affine map that is injective on a set with affinely independent image has a continuous affine
+left inverse on the affine span of that set, hence on its convex hull. This allows inverse
 simplicial maps to be checked one simplex at a time.
 
 The construction extends the independent set to an affine basis and uses Mathlib's
@@ -25,61 +26,52 @@ public section
 
 open Set
 
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+
 namespace AffineIndependent
 
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [AddCommGroup F] [Module ℝ F] [TopologicalSpace F] [IsTopologicalAddGroup F]
-  [ContinuousSMul ℝ F] {s : Set E}
+variable {V P F : Type*} [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V]
+  [MetricSpace P] [NormedAddTorsor V P]
+  [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [IsTopologicalAddGroup F]
+  [ContinuousSMul 𝕜 F] {s : Set P}
 
 /-- Values on an affinely independent set extend to a continuous affine map of the ambient
 space. The set need not span the ambient space, and may be empty. -/
-theorem exists_continuousAffineMap_eqOn (hs : AffineIndependent ℝ ((↑) : s → E))
-    (f : E → F) : ∃ A : E →ᴬ[ℝ] F, EqOn A f s := by
+theorem exists_continuousAffineMap_eqOn (hs : AffineIndependent 𝕜 ((↑) : s → P))
+    (f : P → F) : ∃ A : P →ᴬ[𝕜] F, EqOn A f s := by
   classical
   obtain ⟨t, hst, ht, hspan⟩ := exists_subset_affineIndependent_affineSpan_eq_top hs
-  let b : AffineBasis t ℝ E := ⟨Subtype.val, ht, by simpa using hspan⟩
+  let b : AffineBasis t 𝕜 P := ⟨Subtype.val, ht, by simpa using hspan⟩
   have : Finite t := b.finite
   let : Fintype t := Fintype.ofFinite t
-  let c (i : t) : E →ᴬ[ℝ] ℝ := ⟨b.coord i, continuous_barycentric_coord b i⟩
-  let A : E →ᴬ[ℝ] F := ∑ i : t,
-    ((ContinuousLinearMap.id ℝ ℝ).smulRight (f i)).toContinuousAffineMap.comp (c i)
+  let c (i : t) : P →ᴬ[𝕜] 𝕜 := ⟨b.coord i, continuous_barycentric_coord b i⟩
+  let A : P →ᴬ[𝕜] F := ∑ i : t,
+    ((ContinuousLinearMap.id 𝕜 𝕜).smulRight (f i)).toContinuousAffineMap.comp (c i)
   refine ⟨A, fun x hx => ?_⟩
   have hcoord (i : t) : b.coord i x = if i = ⟨x, hst hx⟩ then 1 else 0 :=
     b.coord_apply i ⟨x, hst hx⟩
-  let ev : (E →ᴬ[ℝ] F) →+ F :=
-    ⟨⟨fun A => A x, rfl⟩, fun _ _ => rfl⟩
-  have hev := map_sum ev
-    (fun i : t =>
-      ((ContinuousLinearMap.id ℝ ℝ).smulRight (f i)).toContinuousAffineMap.comp (c i))
-    Finset.univ
+  -- Evaluation at `x` is additive, so it distributes over the sum defining `A`.
   calc
-    A x = ∑ i : t,
-        (((ContinuousLinearMap.id ℝ ℝ).smulRight (f i)).toContinuousAffineMap.comp (c i)) x :=
-      hev
-    _ = f x := by
-      simp [c, ContinuousAffineMap.comp_apply,
-        ContinuousLinearMap.coe_toContinuousAffineMap, hcoord]
+    A x = AddMonoidHom.mk' (fun A : P →ᴬ[𝕜] F => A x) (fun _ _ => rfl) A := rfl
+    _ = f x := by simp [A, c, hcoord]
 
 end AffineIndependent
 
 namespace ContinuousAffineMap
 
-variable {E F : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
-  [IsTopologicalAddGroup E] [ContinuousSMul ℝ E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-  {s : Set E} {g : F → E}
+variable {E V P : Type*} [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
+  [IsTopologicalAddGroup E] [ContinuousSMul 𝕜 E]
+  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V]
+  [MetricSpace P] [NormedAddTorsor V P] {s : Set E}
 
-/-- If the images of a set under an affine map are affinely independent, prescribed inverse
-values on those images extend to an affine left inverse on the entire convex hull. -/
-theorem exists_leftInverseOn_convexHull (A : E →ᴬ[ℝ] F)
-    (hA : AffineIndependent ℝ ((↑) : (A '' s) → F))
-    (hg : ∀ x ∈ s, g (A x) = x) :
-    ∃ B : F →ᴬ[ℝ] E, ∀ x ∈ convexHull ℝ s, B (A x) = x := by
-  obtain ⟨B, hB⟩ := hA.exists_continuousAffineMap_eqOn g
-  have heq : EqOn (B.comp A).toAffineMap (AffineMap.id ℝ E) s := by
-    intro x hx
-    exact (hB ⟨x, hx, rfl⟩).trans (hg x hx)
-  exact ⟨B, fun x hx => AffineMap.eqOn_affineSpan heq
-    (convexHull_subset_affineSpan s hx)⟩
+/-- An affine map that is injective on a set whose image is affinely independent has a
+continuous affine left inverse on the affine span of that set. -/
+theorem exists_leftInvOn_affineSpan (A : E →ᴬ[𝕜] P)
+    (hA : AffineIndependent 𝕜 ((↑) : (A '' s) → P)) (hinj : InjOn A s) :
+    ∃ B : P →ᴬ[𝕜] E, LeftInvOn B A (affineSpan 𝕜 s) := by
+  obtain ⟨B, hB⟩ := hA.exists_continuousAffineMap_eqOn (Function.invFunOn A s)
+  have heq : EqOn (B.comp A).toAffineMap (AffineMap.id 𝕜 E) s := fun x hx =>
+    (hB ⟨x, hx, rfl⟩).trans (hinj.leftInvOn_invFunOn hx)
+  exact ⟨B, fun x hx => AffineMap.eqOn_affineSpan heq hx⟩
 
 end ContinuousAffineMap
