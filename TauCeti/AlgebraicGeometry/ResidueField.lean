@@ -406,3 +406,41 @@ theorem isIso_SpecMap_residueFieldMap_iff {R S : Type u} [CommRing R] [CommRing 
   rfl
 
 end RingHom
+
+namespace AlgebraicGeometry
+
+universe u
+
+/-- The map `Spec R ⟶ U ⊆ S` induced by the structure map of a `Γ(S, U)`-algebra `R` on an
+affine open `U` sends a point `u` of `Spec R` over the prime `s` of `Γ(S, U)` to `s`. -/
+theorem IsAffineOpen.spec_algebraMap_comp_fromSpec_apply {S : Scheme.{u}} {U : S.Opens}
+    (hU : IsAffineOpen U) {s : S} (hs : s ∈ U) (R : Type u) [CommRing R] [Algebra Γ(S, U) R]
+    (u : Spec ↧R) [u.asIdeal.LiesOver (hU.primeIdealOf ⟨s, hs⟩).asIdeal] :
+    (Spec.map (CommRingCat.ofHom (algebraMap Γ(S, U) R)) ≫ hU.fromSpec) u = s := by
+  rw [Scheme.Hom.comp_apply]
+  refine Eq.trans ?_ (hU.fromSpec_primeIdealOf ⟨s, hs⟩)
+  congr 1
+  exact PrimeSpectrum.ext <| (congrArg PrimeSpectrum.asIdeal
+    (Spec.map_apply (CommRingCat.ofHom (algebraMap Γ(S, U) R)) u)).trans
+    (Ideal.over_def u.asIdeal _).symm
+
+/-- The map `Spec R ⟶ U ⊆ S` induced by the structure map of a `Γ(S, U)`-algebra `R` on an
+affine open `U` induces an isomorphism of residue fields at a point `u` over the prime `s` of
+`Γ(S, U)` as soon as `κ(s) ≅ κ(u)`. -/
+theorem IsAffineOpen.isIso_residueFieldMap_spec_algebraMap_comp_fromSpec {S : Scheme.{u}}
+    {U : S.Opens} (hU : IsAffineOpen U) {s : S} (hs : s ∈ U) (R : Type u) [CommRing R]
+    [Algebra Γ(S, U) R] (u : Spec ↧R) [u.asIdeal.IsPrime]
+    [u.asIdeal.LiesOver (hU.primeIdealOf ⟨s, hs⟩).asIdeal]
+    (hres : Function.Bijective (Ideal.ResidueField.mapₐ (hU.primeIdealOf ⟨s, hs⟩).asIdeal
+      u.asIdeal (Algebra.ofId _ _) (u.asIdeal.over_def _))) :
+    IsIso ((Spec.map (CommRingCat.ofHom (algebraMap Γ(S, U) R)) ≫ hU.fromSpec).residueFieldMap
+      u) := by
+  -- the residue field map of the open immersion `hU.fromSpec`, then 00UJ.
+  have := ((algebraMap Γ(S, U) R).isIso_SpecMap_residueFieldMap_iff u _
+    (u.asIdeal.over_def _)).mpr hres
+  rw [Scheme.residueFieldMap_comp]
+  have h₁ : IsIso (hU.fromSpec.residueFieldMap
+    ((Spec.map (CommRingCat.ofHom (algebraMap Γ(S, U) R))) u)) := inferInstance
+  exact IsIso.comp_isIso' h₁ this
+
+end AlgebraicGeometry
