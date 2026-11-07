@@ -103,7 +103,7 @@ theorem tendsto_zero_cobounded_of_eqOn_logDeriv_deriv_comp_neg_inv
     (hreal : ∀ z ∈ Ω, z.im = 0 → (g z).im = 0)
     (hupper : MapsTo g (Ω ∩ upperHalfPlaneSet) upperHalfPlaneSet)
     (hinj : InjOn g (Ω ∩ {z : ℂ | 0 ≤ z.im}))
-    {φ : ℂ → ℂ} (hφcont : ∀ᶠ z in cobounded ℂ, z.im = 0 → ContinuousAt φ z)
+    {φ : ℂ → ℂ} (hφcont : ∀ᶠ z in cobounded ℂ, z.im = 0 → ContinuousWithinAt φ upperHalfPlaneSet z)
     (hφconj : ∀ᶠ z in cobounded ℂ, φ ((starRingEnd ℂ) z) = (starRingEnd ℂ) (φ z))
     (hφ : EqOn φ (logDeriv (deriv (fun w => g (-w⁻¹)))) upperHalfPlaneSet) :
     Tendsto φ (cobounded ℂ) (𝓝 0) := by
@@ -200,7 +200,7 @@ theorem tendsto_zero_cobounded_of_eqOn_logDeriv_deriv {f φ : ℂ → ℂ} {q b 
     (hreal : ∀ z ∈ Metric.ball (0 : ℂ) r, z.im = 0 → (g z).im = 0)
     (hupper : MapsTo g (Metric.ball 0 r ∩ upperHalfPlaneSet) upperHalfPlaneSet)
     (hinj : InjOn g (Metric.ball 0 r ∩ {z : ℂ | 0 ≤ z.im}))
-    (hφcont : ∀ᶠ z in cobounded ℂ, z.im = 0 → ContinuousAt φ z)
+    (hφcont : ∀ᶠ z in cobounded ℂ, z.im = 0 → ContinuousWithinAt φ upperHalfPlaneSet z)
     (hφconj : Filter.Eventually
       (fun z => φ ((starRingEnd ℂ) z) = (starRingEnd ℂ) (φ z)) (cobounded ℂ))
     (hφf : EqOn φ (logDeriv (deriv f)) upperHalfPlaneSet) :
