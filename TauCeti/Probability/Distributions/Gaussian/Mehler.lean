@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Distributions.Gaussian.Real
+public import TauCeti.Probability.Distributions.Gaussian.Affine
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 
@@ -31,23 +32,11 @@ def mehler (t : ℝ) (f : ℝ → ℝ) (x : ℝ) : ℝ :=
   ∫ y, f (Real.exp (-t) * x + Real.sqrt (1 - Real.exp (-2 * t)) * y)
     ∂(gaussianReal 0 1)
 
-/-- A standard Gaussian is invariant under an orthogonal combination of two independent
-standard Gaussians. -/
-theorem gaussianReal_map_linear_combination (a b : ℝ) (hab : a ^ 2 + b ^ 2 = 1) :
-    ((gaussianReal 0 1).prod (gaussianReal 0 1)).map
-      (fun p : ℝ × ℝ ↦ a * p.1 + b * p.2) = gaussianReal 0 1 := by
-  have hmap : ((gaussianReal 0 1).prod (gaussianReal 0 1)).map
-      (fun p : ℝ × ℝ ↦ a * p.1 + b * p.2) =
-      ((gaussianReal 0 1).map (fun x ↦ a * x)) ∗
-        ((gaussianReal 0 1).map (fun y ↦ b * y)) := by
-    rw [Measure.conv, Measure.map_prod_map _ _ (by fun_prop) (by fun_prop),
-      Measure.map_map (by fun_prop) (by fun_prop)]
-    rfl
-  rw [hmap, gaussianReal_map_const_mul, gaussianReal_map_const_mul]
-  simp only [mul_zero, mul_one, gaussianReal_conv_gaussianReal, zero_add]
-  congr 1
-  apply NNReal.coe_injective
-  simpa using hab
+/-- The defining Gaussian integral for Mehler averaging. -/
+theorem mehler_def (t : ℝ) (f : ℝ → ℝ) (x : ℝ) :
+    mehler t f x =
+      ∫ y, f (Real.exp (-t) * x + Real.sqrt (1 - Real.exp (-2 * t)) * y)
+        ∂(gaussianReal 0 1) := (rfl)
 
 /-- Mehler averaging leaves constants unchanged. -/
 @[simp] theorem mehler_const (t c x : ℝ) : mehler t (fun _ ↦ c) x = c := by
@@ -65,8 +54,8 @@ theorem norm_mehler_le (t : ℝ) {f : ℝ → ℝ} {C : ℝ}
       Real.sqrt (1 - Real.exp (-2 * t)) * y)) (Filter.Eventually.of_forall fun y ↦ hf _)
   simpa [mehler] using h
 
-/-- A bounded continuous function is integrable against every Mehler kernel. -/
-theorem integrable_mehler_section (t x : ℝ) {f : ℝ → ℝ} (hf : Continuous f)
+/-- A bounded measurable function is integrable against every Mehler kernel. -/
+theorem integrable_mehler_section (t x : ℝ) {f : ℝ → ℝ} (hf : Measurable f)
     {C : ℝ} (hC : ∀ z, ‖f z‖ ≤ C) :
     Integrable (fun y ↦ f (Real.exp (-t) * x +
       Real.sqrt (1 - Real.exp (-2 * t)) * y)) (gaussianReal 0 1) := by
@@ -96,8 +85,7 @@ theorem mehler_id (t x : ℝ) : mehler t id x = Real.exp (-t) * x := by
   have hi : Integrable (fun y : ℝ ↦ y) (gaussianReal 0 1) :=
     integrable_of_mem_interior_integrableExpSet (by simp)
   rw [mehler]
-  change (∫ y, Real.exp (-t) * x + Real.sqrt (1 - Real.exp (-2 * t)) * y
-    ∂(gaussianReal 0 1)) = _
+  simp only [id_eq]
   rw [integral_add (integrable_const _) (hi.const_mul _), integral_const,
     integral_const_mul, integral_id_gaussianReal]
   simp
@@ -109,12 +97,32 @@ theorem gaussianReal_map_mehler (t : ℝ) (ht : 0 ≤ t) :
         Real.sqrt (1 - Real.exp (-2 * t)) * p.2) = gaussianReal 0 1 := by
   apply gaussianReal_map_linear_combination
   have hnonneg : 0 ≤ 1 - Real.exp (-2 * t) := by
-    have h := Real.exp_le_one_iff.mpr (show -2 * t ≤ 0 by linarith)
+    have ht' : -2 * t ≤ 0 := by linarith
+    have h := Real.exp_le_one_iff.mpr ht'
     linarith
   rw [Real.sq_sqrt hnonneg, pow_two, ← Real.exp_add]
   have h : -t + -t = -2 * t := by ring
   rw [h]
   ring
+
+/-- Mehler averaging preserves integrability under the standard Gaussian law. -/
+theorem integrable_mehler (t : ℝ) (ht : 0 ≤ t) {f : ℝ → ℝ}
+    (hf : Integrable f (gaussianReal 0 1)) :
+    Integrable (mehler t f) (gaussianReal 0 1) := by
+  let T : ℝ × ℝ → ℝ := fun p ↦ Real.exp (-t) * p.1 +
+    Real.sqrt (1 - Real.exp (-2 * t)) * p.2
+  have hT : Measurable T := by fun_prop
+  have hmap : ((gaussianReal 0 1).prod (gaussianReal 0 1)).map T = gaussianReal 0 1 :=
+    gaussianReal_map_mehler t ht
+  have hi : Integrable (f ∘ T) ((gaussianReal 0 1).prod (gaussianReal 0 1)) := by
+    have hf' : Integrable f (((gaussianReal 0 1).prod (gaussianReal 0 1)).map T) := by
+      rwa [hmap]
+    exact hf'.comp_measurable hT
+  have heq : mehler t f = fun x ↦ ∫ y, f (T (x, y)) ∂(gaussianReal 0 1) := by
+    funext x
+    exact mehler_def t f x
+  rw [heq]
+  exact hi.integral_prod_left
 
 /-- Integration against the standard Gaussian is unchanged by Mehler averaging. -/
 theorem integral_mehler (t : ℝ) (ht : 0 ≤ t) {f : ℝ → ℝ}
