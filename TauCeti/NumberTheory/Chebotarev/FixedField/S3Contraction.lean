@@ -165,7 +165,7 @@ private theorem isPrimitiveRoot_div_of_mem_rootSet
 /-- In the splitting field of `X ^ 3 - 2`, the quotient of a root by a fixed root generates the
 field over any intermediate field containing that fixed root. -/
 private theorem adjoin_div_eq_top_of_mem
-    {L : Type*} [Field L] [Algebra ℚ L] [FiniteDimensional ℚ L]
+    {L : Type*} [Field L] [Algebra ℚ L]
     [Polynomial.IsSplittingField ℚ L (X ^ 3 - 2 : ℚ[X])]
     {beta gamma : L} (E : IntermediateField ℚ L)
     (hbeta : beta ∈ (X ^ 3 - 2 : ℚ[X]).rootSet L)
