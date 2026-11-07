@@ -20,10 +20,6 @@ whose residue extension is purely inseparable of degree four, even though `t` re
 a uniformizer. This instantiates the fierce biquadratic construction without any
 nonsquare or independence assumptions on unspecified constants.
 
-The residue-field identification at the rational place transports the explicit
-rational-function nonsquare obstructions to `A`. The DVR and residue-degree conclusions
-then use `TauCeti.FierceBiquadratic` rather than repeating its local algebra.
-
 ## References
 
 * I. B. Fesenko, S. V. Vostokov, *Local Fields and Their Extensions*, 2nd ed., for

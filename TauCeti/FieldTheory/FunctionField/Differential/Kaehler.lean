@@ -109,6 +109,7 @@ theorem kaehlerBasisRatFunc_apply (i : Unit) :
   simp [KaehlerDifferential.map_D, RatFunc.algebraMap_X]
 
 /-- The differential of the variable of a rational function field is nonzero. -/
+@[simp]
 theorem _root_.RatFunc.D_X_ne_zero : D k (RatFunc k) RatFunc.X ≠ 0 := by
   simpa only [kaehlerBasisRatFunc_apply] using (kaehlerBasisRatFunc k).ne_zero ()
 

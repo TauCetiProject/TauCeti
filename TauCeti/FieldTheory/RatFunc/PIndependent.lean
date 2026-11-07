@@ -18,10 +18,6 @@ In characteristic two, the two variables of `k(s)(u)` are `2`-independent: the e
 `s` is not a square, and `u` cannot be written as `a² + s b²`. These are the residue-field
 conditions for constructing fierce biquadratic extensions of discrete valuation rings.
 
-The first obstruction descends a putative square root of `s` through the relatively
-algebraically closed extension `k(s) ⊆ k(s)(u)`. Differentiation with respect to `u` gives
-the second obstruction and the linear independence of the four monomials.
-
 ## References
 
 * S. Lang, *Algebra*, 3rd ed., Chapter VIII, Section 4, for `p`-independence.
