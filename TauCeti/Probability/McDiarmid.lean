@@ -30,7 +30,7 @@ and the induction hypothesis controls the function obtained by averaging over it
 * `TauCeti.Probability.hasSubgaussianMGF_of_bounded_differences_fin` specializes it to `Fin n`.
 
 The proof uses Hoeffding's lemma in oscillation form
-(`TauCeti.Probability.integral_exp_mul_sub_integral_le_of_abs_sub_le`) and the decomposition of a
+(`MeasureTheory.Measure.integral_exp_mul_sub_integral_le_of_abs_sub_le`) and the decomposition of a
 product measure along `Fin.cons`
 (`MeasureTheory.Measure.integral_pi_fin_succ_eq_integral_integral_finCons`,
 `Measurable.comp_finCons`, `MeasureTheory.Measure.integrable_comp_finCons_of_abs_le`).
@@ -83,7 +83,7 @@ private theorem integrable_exp_mul_sub_of_bounded_differences {ι : Type*} [Fini
 
 /-- Averaging out the first coordinate of a function with bounded differences gives a function
 of the remaining coordinates with the same bounded differences. -/
-theorem abs_integral_finCons_sub_le {β : Type*} [MeasurableSpace β]
+theorem _root_.MeasureTheory.Measure.abs_integral_finCons_sub_le {β : Type*} [MeasurableSpace β]
     (ν : Measure β) [IsProbabilityMeasure ν] {n : ℕ} {f : (Fin (n + 1) → β) → ℝ}
     {c : Fin (n + 1) → ℝ}
     (hint : ∀ w : Fin n → β, Integrable (fun a => f (Fin.cons a w)) ν)
@@ -127,10 +127,10 @@ private theorem integral_integral_exp_finCons_le {β : Type*} [MeasurableSpace �
     hf.comp_finCons.comp (measurable_id.prodMk measurable_const)
   have hg_bd : ∀ (i : Fin n) (w w' : Fin n → β), (∀ l, l ≠ i → w l = w' l) →
       |g w - g w'| ≤ c i.succ := fun i w w' hww' =>
-    abs_integral_finCons_sub_le ν hint hbd i w w' hww'
+    ν.abs_integral_finCons_sub_le hint hbd i w w' hww'
   have hHoeff : ∀ w, ∫ a, Real.exp (t * (f (Fin.cons a w) - g w)) ∂ν
       ≤ Real.exp ((c 0 / 2) ^ 2 * t ^ 2 / 2) := fun w =>
-    integral_exp_mul_sub_integral_le_of_abs_sub_le ν (hsec_meas w).aemeasurable
+    ν.integral_exp_mul_sub_integral_le_of_abs_sub_le (hsec_meas w).aemeasurable
       (fun a a' => hbd 0 _ _ (fun l hl => by
         rcases Fin.eq_zero_or_eq_succ l with rfl | ⟨m, rfl⟩
         · exact absurd rfl hl
@@ -205,7 +205,7 @@ private theorem integral_exp_mul_centered_le_pi_fin_succ {β : Type*} [Measurabl
       apply mul_le_mul_of_nonneg_left _ (Real.exp_nonneg _)
       rw [hgf]
       exact ih g hf.comp_finCons.stronglyMeasurable.integral_prod_left.measurable
-        (fun i w w' hww' => abs_integral_finCons_sub_le ν hint hbd i w w' hww')
+        (fun i w w' hww' => ν.abs_integral_finCons_sub_le hint hbd i w w' hww')
     _ = Real.exp ((∑ i : Fin (n + 1), (c i / 2) ^ 2) * t ^ 2 / 2) := by
       rw [← Real.exp_add]
       congr 1
