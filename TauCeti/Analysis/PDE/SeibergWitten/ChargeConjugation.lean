@@ -203,8 +203,7 @@ theorem coe_positiveHalfSpinorsConjEquiv_symm_apply (ψ : positiveHalfSpinors o 
     ((positiveHalfSpinorsConjEquiv o ρ ρ' j hj).symm ψ : W) = j.symm ψ :=
   (rfl)
 
-/-- The dimension `Fact` makes the oriented four-space finite-dimensional. -/
-local instance : FiniteDimensional ℝ V := .of_fact_finrank_eq_succ 3
+attribute [local instance] finiteDimensional_of_finrank_four
 
 variable [FiniteDimensional ℂ W] [FiniteDimensional ℂ W']
 
