@@ -220,6 +220,9 @@ ellipticity nor commutativity of `A` is needed. -/
 theorem algHom_injective (f : W.CoordinateRing →ₐ[R] A)
     (hx : Transcendental R (f (CoordinateRing.mk W (C X)))) :
     Function.Injective f := by
+  -- Evaluating a polynomial in `R[X]` at the image of `x` is `f` after the structure map.
+  have hhom : aeval (f (mk W (C X))) = f.comp (IsScalarTower.toAlgHom R R[X] W.CoordinateRing) :=
+    Polynomial.algHom_ext <| by simp
   refine (injective_iff_map_eq_zero f).2 fun z hz ↦ by_contra fun hz₀ ↦ hx
     ⟨_, (Algebra.norm_ne_zero_iff_of_basis (CoordinateRing.basis W)).2 hz₀, ?_⟩
   -- The norm of `z = p • 1 + q • y` is `z` times its conjugate, so `f` kills it.
@@ -227,8 +230,7 @@ theorem algHom_injective (f : W.CoordinateRing →ₐ[R] A)
   have hnorm : algebraMap R[X] W.CoordinateRing (Algebra.norm R[X] (p • 1 + q • mk W Y)) =
       (p • 1 + q • mk W Y) * mk W (C p + C q * (-(Y : R[X][Y]) - C (C W.a₁ * X + C W.a₃))) := by
     simpa [CoordinateRing.smul] using coe_norm_smul_basis (W' := W) p q
-  rw [AdjoinRoot.mk_C, ← AdjoinRoot.algebraMap_eq, aeval_algHom_apply, aeval_algebraMap_apply,
-    aeval_X_left_apply, hnorm, map_mul, hz, zero_mul]
+  rw [hhom, AlgHom.comp_apply, IsScalarTower.toAlgHom_apply, hnorm, map_mul, hz, zero_mul]
 
 end Domain
 
