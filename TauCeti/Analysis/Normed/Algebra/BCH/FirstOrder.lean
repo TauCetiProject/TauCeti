@@ -63,10 +63,6 @@ attribute [local instance] TauCeti.normedAlgebraRatOfReal
 
 /-! ### The quadratic Taylor estimate for a product of two exponentials -/
 
-/-- The exponential is continuous at `0`, with value `1`. -/
-private lemma tendsto_exp_nhds_zero : Tendsto (exp : A → A) (𝓝 (0 : A)) (𝓝 (1 : A)) := by
-  simpa only [exp_zero] using (exp_analytic (𝕂 := ℝ) (0 : A)).continuousAt.tendsto
-
 omit [CompleteSpace A] in
 /-- The product of the two quadratic truncations of the exponential, minus the quadratic
 truncation of the product, leaves only monomials of degree at least three. -/
@@ -90,7 +86,8 @@ private lemma exp_mul_exp_sub_quadratic_eq (x y : A) :
   abel
 
 omit [CompleteSpace A] in
-/-- The three cubic monomials left over by `exp_mul_exp_sub_quadratic_eq` are of order three. -/
+/-- The monomials of degree at least three left over by `exp_mul_exp_sub_quadratic_eq` are of
+order three. -/
 private lemma isBigO_cubic_remainder :
     (fun p : A × A ↦ (2⁻¹ : ℝ) • (p.1 * p.2 ^ 2) + (2⁻¹ : ℝ) • (p.1 ^ 2 * p.2) +
         (2⁻¹ : ℝ) • ((2⁻¹ : ℝ) • (p.1 ^ 2 * p.2 ^ 2)))
@@ -133,7 +130,7 @@ private lemma isBigO_exp_remainder_mul :
       =O[𝓝 ((0, 0) : A × A)] fun p ↦ ‖p‖ ^ 3 :=
     ((isBigO_exp_sub_quadratic ℝ (A := A)).comp_tendsto htsnd).trans (hsnd.norm_left.pow 3)
   have hbddExp : (fun p : A × A ↦ exp p.2) =O[𝓝 ((0, 0) : A × A)] fun _ ↦ (1 : ℝ) := by
-    exact ((tendsto_exp_nhds_zero A).comp htsnd).isBigO_one ℝ
+    exact ((tendsto_exp_nhds_zero_nhds_one ℝ (A := A)).comp htsnd).isBigO_one ℝ
   have hbddTrunc : (fun p : A × A ↦ 1 + p.1 + (2⁻¹ : ℝ) • p.1 ^ 2)
       =O[𝓝 ((0, 0) : A × A)] fun _ ↦ (1 : ℝ) := by
     refine Tendsto.isBigO_one ℝ (c := (1 : A)) ?_
@@ -160,7 +157,7 @@ theorem isBigO_exp_mul_exp_sub_one_sub_quadratic :
 /-! ### The first-order law -/
 
 omit [CompleteSpace A] in
-/-- The quadratic truncation of `exp x * exp y` is of order two. -/
+/-- The homogeneous quadratic term `2⁻¹ • x ^ 2 + x * y + 2⁻¹ • y ^ 2` is of order two. -/
 private lemma isBigO_quadratic_truncation :
     (fun p : A × A ↦ (2⁻¹ : ℝ) • p.1 ^ 2 + p.1 * p.2 + (2⁻¹ : ℝ) • p.2 ^ 2)
       =O[𝓝 ((0, 0) : A × A)] fun p ↦ ‖p‖ ^ 2 := by
@@ -174,7 +171,7 @@ private lemma isBigO_quadratic_truncation :
     ((hsnd.pow 2).const_smul_left (2⁻¹ : ℝ))
   simpa using h
 
-/-- The product of the exponentials differs from `x + y` by a term of order two. -/
+/-- The difference `exp x * exp y - 1` differs from `x + y` by a term of order two. -/
 private lemma isBigO_exp_mul_exp_sub_one_sub_add :
     (fun p : A × A ↦ exp p.1 * exp p.2 - 1 - (p.1 + p.2))
       =O[𝓝 ((0, 0) : A × A)] fun p ↦ ‖p‖ ^ 2 := by
@@ -184,7 +181,7 @@ private lemma isBigO_exp_mul_exp_sub_one_sub_add :
     (.of_forall fun p ↦ ?_) EventuallyEq.rfl
   abel_nf
 
-/-- The product of the exponentials is of order one. -/
+/-- The difference `exp x * exp y - 1` is of order one. -/
 private lemma isBigO_exp_mul_exp_sub_one :
     (fun p : A × A ↦ exp p.1 * exp p.2 - 1) =O[𝓝 ((0, 0) : A × A)] fun p ↦ ‖p‖ := by
   have hsum : (fun p : A × A ↦ p.1 + p.2) =O[𝓝 ((0, 0) : A × A)] fun p ↦ ‖p‖ :=
@@ -221,9 +218,9 @@ private lemma isBigO_log_exp_mul_exp_sub_quadratic :
       =O[𝓝 ((0, 0) : A × A)] fun p ↦ ‖p‖ ^ 3 := by
   have htendsto : Tendsto (fun p : A × A ↦ exp p.1 * exp p.2 - 1)
       (𝓝 ((0, 0) : A × A)) (𝓝 (0 : A)) := by
-    have h := (((tendsto_exp_nhds_zero A).comp (continuous_fst.tendsto' ((0, 0) : A × A) 0 rfl)).mul
-      ((tendsto_exp_nhds_zero A).comp
-        (continuous_snd.tendsto' ((0, 0) : A × A) 0 rfl))).sub_const 1
+    have h0 := tendsto_exp_nhds_zero_nhds_one ℝ (A := A)
+    have h := ((h0.comp (continuous_fst.tendsto' ((0, 0) : A × A) 0 rfl)).mul
+      (h0.comp (continuous_snd.tendsto' ((0, 0) : A × A) 0 rfl))).sub_const 1
     simpa using h
   have h : (fun p : A × A ↦ log (exp p.1 * exp p.2) -
         ((exp p.1 * exp p.2 - 1) - (2⁻¹ : ℝ) • (exp p.1 * exp p.2 - 1) ^ 2))
