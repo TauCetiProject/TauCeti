@@ -48,7 +48,7 @@ A path that starts in an open set and leaves it has a first exit time.
   endpoint value and its limit.
 * `TauCeti.exists_continuous_projIcc_inverse` — a continuous strictly increasing real function on
   `[a, b]` has a continuous inverse on its range, clamped to be constant outside it.
-* `TauCeti.exists_first_exit` — a path continuous on `[a, b]` that starts in an open set and leaves
+* `IsOpen.exists_first_exit` — a path continuous on `[a, b]` that starts in an open set and leaves
   it has a first exit time.
 -/
 
@@ -192,7 +192,7 @@ theorem exists_continuous_projIcc_inverse {f : ℝ → ℝ} {a b c d : ℝ} (hab
 /-- **First exit from an open set.** A path continuous on `[a, b]` that starts in an open set `V`
 and leaves it has a first exit time `T > a`: the path stays in `V` on `[a, T)`, and `γ T` lies in
 the closure of `V` but not in `V`. -/
-theorem exists_first_exit {X : Type*} [TopologicalSpace X] {V : Set X} (hV : IsOpen V)
+theorem _root_.IsOpen.exists_first_exit {X : Type*} [TopologicalSpace X] {V : Set X} (hV : IsOpen V)
     {γ : ℝ → X} {a b : ℝ} (hγ : ContinuousOn γ (Icc a b)) (ha : γ a ∈ V)
     (hex : ∃ t ∈ Icc a b, γ t ∉ V) :
     ∃ T ∈ Icc a b, a < T ∧ γ T ∉ V ∧ γ T ∈ closure V ∧ ∀ t ∈ Ico a T, γ t ∈ V := by
