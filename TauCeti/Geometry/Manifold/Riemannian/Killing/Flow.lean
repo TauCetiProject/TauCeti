@@ -138,7 +138,7 @@ that flow exists. No completeness of the vector field or the Riemannian metric i
   have hmap : curveVelocity I ((flowOf X t) ∘ c) 0 =
       mfderiv I I (flowOf X t) (c 0) (curveVelocity I c 0) := by
     simpa only [curveVelocityWithin_univ] using
-      curveVelocityWithin_map (by simpa only [hc0] using hflow) uniqueDiffWithinAt_univ
+      curveVelocityWithin_map (s := univ) (by simpa only [hc0] using hflow)
         (hc.mdifferentiableAt (by norm_num)).mdifferentiableWithinAt
   rw [variationField_apply, ← Function.comp_def, hmap, hc0, hvel] at heq
   exact heq

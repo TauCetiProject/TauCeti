@@ -166,20 +166,36 @@ vector. -/
 theorem curveVelocity_apply : curveVelocity I γ t = mfderiv 𝓘(𝕜, 𝕜) I γ t (1 : 𝕜) := by
   rw [← curveVelocityWithin_univ, curveVelocityWithin_apply, mfderivWithin_univ]
 
+/-- A curve has vanishing manifold derivative within a parameter set at a point where that set
+does not have unique derivatives, since the derivative within it then takes Mathlib's junk
+value `0`. -/
+theorem mfderivWithin_eq_zero_of_not_uniqueDiffWithinAt (hs : ¬ UniqueDiffWithinAt 𝕜 s t) :
+    mfderivWithin 𝓘(𝕜, 𝕜) I γ s t = 0 := by
+  unfold mfderivWithin
+  split_ifs
+  · have : ¬ UniqueDiffWithinAt 𝕜 ((extChartAt 𝓘(𝕜, 𝕜) t).symm ⁻¹' s ∩ Set.range 𝓘(𝕜, 𝕜))
+        (extChartAt 𝓘(𝕜, 𝕜) t t) := by simpa only [mfld_simps] using hs
+    rw [fderivWithin_zero_of_not_uniqueDiffWithinAt this]
+    simp
+  · rfl
+
 /-- The velocity of the image of a curve under a differentiable map is the differential of the
-map applied to the velocity of the curve. The derivative within the parameter set is uniquely
-determined at `t`. -/
+map applied to the velocity of the curve. Where the parameter set does not have unique
+derivatives at `t`, both sides take the junk value `0`. -/
 theorem curveVelocityWithin_map
     {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners 𝕜 F H'}
     {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] {f : M → N}
     (hf : MDifferentiableAt I J f (γ t))
-    (hs : UniqueDiffWithinAt 𝕜 s t)
     (hγ : MDifferentiableWithinAt 𝓘(𝕜, 𝕜) I γ s t) :
     curveVelocityWithin J (f ∘ γ) s t =
       mfderiv I J f (γ t) (curveVelocityWithin I γ s t) := by
   rw [curveVelocityWithin_apply, curveVelocityWithin_apply]
-  rw [mfderiv_comp_mfderivWithin t hf hγ hs.uniqueMDiffWithinAt]
-  rfl
+  by_cases hs : UniqueDiffWithinAt 𝕜 s t
+  · rw [mfderiv_comp_mfderivWithin t hf hγ hs.uniqueMDiffWithinAt]
+    rfl
+  · rw [mfderivWithin_eq_zero_of_not_uniqueDiffWithinAt hs,
+      mfderivWithin_eq_zero_of_not_uniqueDiffWithinAt hs]
+    exact (map_zero (mfderiv I J f (γ t))).symm
 
 /-- Evaluating the `smulRight` presentation of a velocity at the unit tangent vector returns that
 velocity.  The tangent space of the scalar model is definitionally `𝕜`, but its instances block
@@ -341,14 +357,23 @@ theorem curveVelocity_comp {φ : 𝕜 → 𝕜} {c : 𝕜} (hφ : HasDerivAt φ 
       (Set.mapsTo_univ φ Set.univ) hγ.mdifferentiableWithinAt
       (uniqueDiffOn_univ t (Set.mem_univ t))
 
-/-- The velocity of a `c`-periodic curve is `c`-periodic: at a point where the curve is
-differentiable, its velocity at `t + c` is its velocity at `t`. -/
-theorem _root_.Function.Periodic.curveVelocity_add {c : 𝕜} (h : Function.Periodic γ c)
-    (hγ : MDifferentiableAt 𝓘(𝕜, 𝕜) I γ (t + c)) :
+/-- The velocity of a `c`-periodic curve is `c`-periodic: its velocity at `t + c` is its velocity
+at `t`. Where the curve is not differentiable, both velocities take the junk value `0`. -/
+theorem _root_.Function.Periodic.curveVelocity_add {c : 𝕜} (h : Function.Periodic γ c) :
     curveVelocity I γ (t + c) = curveVelocity I γ t := by
-  have h' := curveVelocity_comp (c := 1) ((hasDerivAt_id' t).add_const c) hγ
-  rw [one_smul, show (γ ∘ fun t ↦ t + c) = γ from funext h] at h'
-  exact h'.symm
+  by_cases hγ : MDifferentiableAt 𝓘(𝕜, 𝕜) I γ (t + c)
+  · have h' := curveVelocity_comp (c := 1) ((hasDerivAt_id' t).add_const c) hγ
+    rw [one_smul, show (γ ∘ fun t ↦ t + c) = γ from funext h] at h'
+    exact h'.symm
+  · have hγt : ¬ MDifferentiableAt 𝓘(𝕜, 𝕜) I γ t := fun hd ↦ hγ (by
+      have hφ : MDifferentiableAt 𝓘(𝕜, 𝕜) 𝓘(𝕜, 𝕜) (fun x : 𝕜 ↦ x - c) (t + c) :=
+        (differentiableAt_id.sub_const c).mdifferentiableAt
+      have := MDifferentiableAt.comp (I := 𝓘(𝕜, 𝕜)) (I' := 𝓘(𝕜, 𝕜)) (t + c)
+        (by simpa using hd) hφ
+      rwa [show (γ ∘ fun x : 𝕜 ↦ x - c) = γ from funext h.sub_eq] at this)
+    rw [curveVelocity_apply, curveVelocity_apply, mfderiv_zero_of_not_mdifferentiableAt hγ,
+      mfderiv_zero_of_not_mdifferentiableAt hγt]
+    rfl
 
 /-- On a parameter set which is a neighbourhood of `t`, the restricted velocity is the
 unrestricted one. -/
@@ -501,14 +526,14 @@ theorem tangentMapWithin_unit_eq_curveVelocityLiftWithin {u : Set 𝕜} (t : �
 image curve. This is the tangent-bundle form of the within-domain chain rule. -/
 theorem tangentMap_curveVelocityLiftWithin
     (hf : MDifferentiableAt I J f (γ t))
-    (hγ : MDifferentiableWithinAt 𝓘(𝕜, 𝕜) I γ u t)
-    (hu : UniqueMDiffWithinAt 𝓘(𝕜, 𝕜) u t) :
+    (hγ : MDifferentiableWithinAt 𝓘(𝕜, 𝕜) I γ u t) :
     tangentMap I J f (curveVelocityLiftWithin I γ u t) =
       curveVelocityLiftWithin J (f ∘ γ) u t := by
-  rw [← tangentMapWithin_unit_eq_curveVelocityLiftWithin,
-    ← tangentMapWithin_unit_eq_curveVelocityLiftWithin, ← tangentMapWithin_univ,
-    ← tangentMapWithin_comp_at _ hf.mdifferentiableWithinAt hγ
-      (fun _ _ ↦ Set.mem_univ _) hu]
+  apply TotalSpace.ext
+  · exact tangentMap_proj
+  · rw [tangentMap_snd, curveVelocityLiftWithin_snd, curveVelocityLiftWithin_snd,
+      curveVelocityWithin_map hf hγ]
+    rfl
 
 /-- Tangent maps carry the unrestricted velocity lift of a differentiable curve to the velocity
 lift of its image. -/
@@ -518,8 +543,7 @@ theorem tangentMap_curveVelocityLift
     tangentMap I J f (curveVelocityLift I γ t) =
       curveVelocityLift J (f ∘ γ) t := by
   simpa only [curveVelocityLiftWithin_univ] using
-    tangentMap_curveVelocityLiftWithin hf hγ.mdifferentiableWithinAt
-    (uniqueMDiffWithinAt_univ 𝓘(𝕜, 𝕜))
+    tangentMap_curveVelocityLiftWithin (u := Set.univ) hf hγ.mdifferentiableWithinAt
 
 variable [IsManifold I 1 M]
 
@@ -628,25 +652,27 @@ theorem contMDiffOn_succ_iff_contMDiffOn_curveVelocityLiftWithin {n : ℕ}
       hγ.contMDiffOn_curveVelocityLiftWithin le_rfl hs.uniqueMDiffOn⟩,
     fun h ↦ contMDiffOn_succ_of_contMDiffOn_curveVelocityLiftWithin hs h.1 h.2⟩
 
+omit [IsManifold I 1 M] in
 /-- Reading the curve in the extended chart centred at the *current* point differentiates it to
 the velocity itself: the derivative of that chart at its own centre is the identity. -/
 theorem hasDerivWithinAt_extChartAt_comp_curve
     (hγ : HasMFDerivWithinAt 𝓘(𝕜, 𝕜) I γ s t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight w)) :
     HasDerivWithinAt (extChartAt I (γ t) ∘ γ) w s t := by
-  have h := hasDerivWithinAt_comp_curve
-    (mdifferentiableAt_extChartAt (I := I) (mem_chart_source H (γ t))) hγ
-  have hv : mvfderiv I (extChartAt I (γ t)) (γ t) w = w := by
-    simp only [mvfderiv, mfderiv_extChartAt_self]
-    rfl
-  rwa [hv] at h
+  -- Reading the curve in the chart at its own centre is the chart expression in `hγ.2`.
+  have h := hγ.2
+  simp only [mfld_simps] at h
+  have h' := (show HasFDerivWithinAt (extChartAt I (γ t) ∘ γ)
+    ((1 : 𝕜 →L[𝕜] 𝕜).smulRight (w : E)) s t from h).hasDerivWithinAt
+  exact h'.congr_deriv (smulRight_one_apply_one w)
 
+omit [IsManifold I 1 M] in
 /-- The unrestricted case of `TauCeti.Manifold.hasDerivWithinAt_extChartAt_comp_curve`. -/
 theorem hasDerivAt_extChartAt_comp_curve
     (hγ : HasMFDerivAt 𝓘(𝕜, 𝕜) I γ t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight w)) :
     HasDerivAt (extChartAt I (γ t) ∘ γ) w t :=
   hasDerivWithinAt_univ.mp (hasDerivWithinAt_extChartAt_comp_curve hγ.hasMFDerivWithinAt)
 
-
+omit [IsManifold I 1 M] in
 /-- The derivative within `s` of a differentiable curve read in the chart centred at the current
 point is its velocity within `s`. -/
 theorem derivWithin_extChartAt_comp_curve (hγ : MDifferentiableWithinAt 𝓘(𝕜, 𝕜) I γ s t)
@@ -755,7 +781,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  {n : ℕ∞ω} [IsManifold I n M] [I.Boundaryless]
+  {n : ℕ∞ω} [I.Boundaryless]
 
 /-- Every tangent vector to a boundaryless manifold is the velocity of a curve which is
 `C^n` near the prescribed parameter. No completeness or metric is required. -/
@@ -763,7 +789,6 @@ theorem exists_contMDiffAt_curveVelocity_eq (hn : 1 ≤ n) (p : M)
     (v : TangentSpace I p) (t : 𝕜) :
     ∃ γ : 𝕜 → M, γ t = p ∧ ContMDiffAt 𝓘(𝕜, 𝕜) I n γ t ∧
       curveVelocity I γ t = v := by
-  have : IsManifold I 1 M := IsManifold.of_le hn
   let c := extChartAt I p
   -- Use the model-space instances for the chart line, rather than the fibre instances.
   let v' : E := v

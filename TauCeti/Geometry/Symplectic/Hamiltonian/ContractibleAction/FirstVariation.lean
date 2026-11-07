@@ -540,7 +540,7 @@ theorem IsContractibleLoopActionCritical.mem_periodicSolutions [I.Boundaryless]
     exact mul_pos hκ hu
   have hgper : Periodic g 1 := fun t ↦ by
     simp only [g]
-    rw [hγper.curveVelocity_add (hγd _), hP, hc.apply_add_one]
+    rw [hγper.curveVelocity_add, hP, hc.apply_add_one]
   -- the bump of radius `r ≤ δ`, supported where `cos (2π(t - t₀)) > cos (πr)`, has a chart
   -- variation, so `∫₀¹ φ g = 0` with `φ g` continuous
   have hcosr : ∀ r, 0 < r → r ≤ 1 / 2 → cos (2 * π * r) < cos (π * r) :=

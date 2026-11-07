@@ -93,7 +93,7 @@ theorem inner_leviCivitaConnection_self_eq_zero_of_eventually_norm_mfderiv_flowO
       contMDiffAt_const contMDiffAt_id htd
     have hmap := curveVelocityWithin_map (s := univ)
       (by simpa only [hγ₀] using hslice.mdifferentiableAt one_ne_zero)
-      uniqueDiffWithinAt_univ (hγ.mdifferentiableAt (by norm_num)).mdifferentiableWithinAt
+      (hγ.mdifferentiableAt (by norm_num)).mdifferentiableWithinAt
     simp only [curveVelocityWithin_univ, Function.comp_def, id_eq, hvel] at hmap
     have hnorm : ‖U t‖ = ‖mfderiv I I (flowOf X t) p u‖ := by
       have hFt : F 0 t = flowOf X t p := by simp only [F, hγ₀]

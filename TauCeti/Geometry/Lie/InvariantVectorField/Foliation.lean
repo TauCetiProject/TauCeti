@@ -116,7 +116,6 @@ theorem joinedByTangentCurve_mul_left (S : LieSubalgebra ℝ (LeftInvariantDeriv
   · exact (contMDiff_mul_left (I := I) (n := 1)).comp_contMDiffOn hγ
   · intro t ht
     rw [curveVelocityWithin_map (mdifferentiableAt_mul_left (I := I))
-      (uniqueDiffOn_Icc zero_lt_one t ht)
       ((hγ.mdifferentiableOn one_ne_zero) t ht)]
     simp only [Function.comp_apply, LieSubalgebra.mulInvariantFoliation_distribution]
     rw [← map_mfderiv_mul_left_mulInvariantDistribution h (γ t)]

@@ -228,7 +228,6 @@ theorem mfderiv_globalFlow_apply_self (t : ℝ) (x : M) :
     simp only [comp_apply, ← Flow.map_add, add_comm]
   have key := Manifold.curveVelocityWithin_map (s := univ) (t := 0)
     ((contMDiff_globalFlow_apply hcomplete le_rfl hv t).mdifferentiableAt one_ne_zero)
-    uniqueDiffWithinAt_univ
     (isMIntegralCurve_globalFlow hv hcomplete x 0).mdifferentiableAt.mdifferentiableWithinAt
   rw [hcomp, hvel, hvel, Flow.map_zero_apply] at key
   exact key.symm

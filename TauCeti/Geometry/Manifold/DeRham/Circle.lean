@@ -137,7 +137,7 @@ theorem circleAngularForm_apply_curveVelocity_circleExp (t : ℝ) :
     have hc : MDifferentiableAt (𝓡 1) 𝓘(ℝ, ℂ) (fun z : Circle ↦ (z : ℂ)) (Circle.exp t) :=
       (contMDiff_coe_sphere (m := 1)).mdifferentiableAt one_ne_zero
     simpa only [Manifold.curveVelocityWithin_univ] using
-      Manifold.curveVelocityWithin_map (s := Set.univ) hc uniqueDiffWithinAt_univ
+      Manifold.curveVelocityWithin_map (s := Set.univ) hc
         ((contMDiff_circleExp (m := 1)).mdifferentiableAt one_ne_zero).mdifferentiableWithinAt
   rw [circleAngularForm_def, mpullback_apply]
   simp only [← hv]

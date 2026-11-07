@@ -122,7 +122,6 @@ theorem isGeodesicCurveOnFrom_comp_iff (Φ : RiemannianIsometry I J M N)
     have hlift := tangentMap_curveVelocityLiftWithin
       (Φ.symm.mdifferentiableAt (Φ (γ 0)))
       (h.isGeodesicCurveOn.mdifferentiableOn 0 h.zero_mem)
-      (h.isGeodesicCurveOn.uniqueDiffOn 0 h.zero_mem).uniqueMDiffWithinAt
     have hcomp : Φ.symm ∘ (Φ ∘ γ) = γ := by
       funext t
       exact Φ.symm_apply_apply (γ t)
@@ -152,8 +151,7 @@ theorem isGeodesicCurveOnFrom_comp_iff (Φ : RiemannianIsometry I J M N)
         (curveVelocityLiftWithin_apply (I := J) (Φ ∘ γ) s 0).symm
       _ = tangentMap I J Φ (curveVelocityLiftWithin I γ s 0) :=
         (tangentMap_curveVelocityLiftWithin (Φ.mdifferentiableAt (γ 0))
-          (h.isGeodesicCurveOn.mdifferentiableOn 0 h.zero_mem)
-          (h.isGeodesicCurveOn.uniqueDiffOn 0 h.zero_mem).uniqueMDiffWithinAt).symm
+          (h.isGeodesicCurveOn.mdifferentiableOn 0 h.zero_mem)).symm
       _ = tangentMap I J Φ (TotalSpace.mk' E p v) := by
         simpa only [curveVelocityLiftWithin_apply] using hinitial
       _ = TotalSpace.mk' F (Φ p) (mfderiv I J Φ p v) :=

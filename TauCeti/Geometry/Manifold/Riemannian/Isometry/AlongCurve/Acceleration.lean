@@ -59,7 +59,7 @@ theorem mfderiv_accelerationWithin (hf : IsLocalRiemannianIsometry I J f)
   have hvelocity (r : ℝ) (hr : r ∈ s) :
       curveVelocityWithin J (f ∘ γ) s r =
         mfderiv I J f (γ r) (curveVelocityWithin I γ s r) :=
-    curveVelocityWithin_map (hf.mdifferentiableAt _) (hs r hr)
+    curveVelocityWithin_map (hf.mdifferentiableAt _)
       ((hγ.mdifferentiableOn (by norm_num)) r hr)
   have hcoord := differentiableWithinAt_sectionCoord_curveVelocityWithin γ hs hγ ht
     (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))

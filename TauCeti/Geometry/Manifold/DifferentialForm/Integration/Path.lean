@@ -304,7 +304,7 @@ theorem pathIntegral_mpullback {f : M → M'} (φ : RoughForm I' M' F 1) {γ : �
   have hv : Manifold.curveVelocity I' (f ∘ γ) t =
       mfderiv I I' f (γ t) (Manifold.curveVelocity I γ t) := by
     simpa only [Manifold.curveVelocityWithin_univ] using
-      Manifold.curveVelocityWithin_map (s := univ) (hf t ht) uniqueDiffWithinAt_univ
+      Manifold.curveVelocityWithin_map (s := univ) (hf t ht)
         (hγ t ht).mdifferentiableWithinAt
   simp only [Function.comp_apply, hv]
 

@@ -56,7 +56,6 @@ theorem joinedByTangentCurve_of_isHorizontalMap
   refine joinedByTangentCurve_iff.mpr ⟨f ∘ γ, (hfd.comp hγ).contMDiffOn, ?_, ?_, ?_⟩
   · intro t ht
     rw [curveVelocityWithin_map (hfd.mdifferentiable one_ne_zero (γ t))
-      (uniqueDiffOn_Icc zero_lt_one t ht)
       ((hγ.mdifferentiable one_ne_zero t).mdifferentiableWithinAt)]
     exact hf.mfderiv_mem _ _
   · simp only [Function.comp_apply, h₀ 0 le_rfl]
