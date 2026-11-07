@@ -165,34 +165,6 @@ private lemma tendsto_apply_levyApproximationParameter_add {f : ℝ → ℝ}
         Eventually.of_forall fun n => mem_Ici.mpr
           (add_nonneg (levyApproximationParameter_pos n).le hc)⟩
 
-/-- Monotone convergence for the exponentially damped kernels `exp (-(ε n * x)) * q x`, where
-`ε n` decreases to `0` and `q` is nonnegative. -/
-private lemma tendsto_lintegral_ofReal_exp_mul {σ : Measure ℝ≥0} {q : ℝ≥0 → ℝ} {ε : ℕ → ℝ}
-    {G : ℕ → ℝ≥0 → ℝ} (hε : Antitone ε) (hε₀ : Tendsto ε atTop (𝓝 0)) (hq : ∀ x, 0 ≤ q x)
-    (hG_int : ∀ n, Integrable (G n) σ)
-    (hG_factor : ∀ n x, G n x = Real.exp (-(ε n * (x : ℝ))) * q x) :
-    Tendsto (fun n => ∫⁻ x, ENNReal.ofReal (G n x) ∂σ) atTop
-      (𝓝 (∫⁻ x, ENNReal.ofReal (q x) ∂σ)) := by
-  have hG_mono : ∀ x, Monotone fun n => ENNReal.ofReal (G n x) := by
-    intro x n m hnm
-    apply ENNReal.ofReal_le_ofReal
-    rw [hG_factor, hG_factor]
-    exact mul_le_mul_of_nonneg_right
-      (Real.exp_le_exp.mpr <| neg_le_neg <| mul_le_mul_of_nonneg_right (hε hnm) x.coe_nonneg)
-      (hq x)
-  have hG_tendsto_real : ∀ x, Tendsto (fun n => G n x) atTop (𝓝 (q x)) := by
-    intro x
-    have hexp : Tendsto (fun n => Real.exp (-(ε n * (x : ℝ)))) atTop (𝓝 1) := by
-      have harg : Tendsto (fun n => -(ε n * (x : ℝ))) atTop (𝓝 0) := by
-        simpa [mul_comm] using hε₀.const_mul (-(x : ℝ))
-      simpa only [Real.exp_zero] using harg.rexp
-    simpa only [one_mul] using (hexp.mul_const (q x)).congr'
-      (Eventually.of_forall fun n => hG_factor n x |>.symm)
-  exact lintegral_tendsto_of_tendsto_of_monotone
-    (fun n => (hG_int n).aestronglyMeasurable.aemeasurable.ennreal_ofReal)
-    (ae_of_all _ hG_mono)
-    (ae_of_all _ fun x => ENNReal.tendsto_ofReal (hG_tendsto_real x))
-
 private lemma integrable_integratedLaplaceKernel_zero_one
     {f : ℝ → ℝ} {σ : Measure ℝ≥0} (hf : IsBernsteinFunction f)
     (hσ : RepresentsLaplaceOnIoi σ (deriv f)) :
@@ -213,9 +185,12 @@ private lemma integrable_integratedLaplaceKernel_zero_one
     rw [hG_factor]
     exact mul_nonneg (Real.exp_nonneg _) (hq_nonneg x)
   -- Monotone convergence passes from the positive shifts to the endpoint kernel.
-  have hlin_tendsto := tendsto_lintegral_ofReal_exp_mul (σ := σ) (q := q) (G := G)
-    antitone_levyApproximationParameter tendsto_levyApproximationParameter hq_nonneg hG_int
-    hG_factor
+  have hlin_tendsto : Tendsto (fun n => ∫⁻ x, ENNReal.ofReal (G n x) ∂σ) atTop
+      (𝓝 (∫⁻ x, ENNReal.ofReal (q x) ∂σ)) := by
+    simp_rw [hG_factor]
+    exact tendsto_lintegral_ofReal_exp_mul antitone_levyApproximationParameter
+      tendsto_levyApproximationParameter hq_nonneg
+      (continuous_integratedLaplaceKernel 0 1).aemeasurable
   -- Continuity at zero identifies the limiting integral with `f 1 - f 0`.
   have hε_zero : Tendsto (fun n => f (levyApproximationParameter n)) atTop (𝓝 (f 0)) :=
     by simpa using tendsto_apply_levyApproximationParameter_add hf le_rfl
