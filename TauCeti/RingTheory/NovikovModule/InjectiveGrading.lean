@@ -59,12 +59,12 @@ namespace TauCeti.NovikovModule
 
 open Function Set
 
-variable {R H D : Type*} [Semiring R] [AddGroup H]
+variable {R H D : Type*} [AddGroup H]
 
 section Homogeneous
 
-variable [AddGroup D] {δ : H →+ D} {ι : Type*} [Finite ι] {P : ι → Type*} [∀ i, AddTorsor H (P i)]
-  {F : (Σ i, P i) → ℝ} {d : (Σ i, P i) → D}
+variable [Semiring R] [AddGroup D] {δ : H →+ D} {ι : Type*} [Finite ι] {P : ι → Type*}
+  [∀ i, AddTorsor H (P i)] {F : (Σ i, P i) → ℝ} {d : (Σ i, P i) → D}
 
 /-- If the degree shift `δ` of a finite union of torsors is injective, every homogeneous
 completed combination is a finite combination: it has at most one nonzero coefficient in each
@@ -80,7 +80,7 @@ end Homogeneous
 
 section Kernel
 
-variable [AddGroup D] {δ : H →+ D} {ι₀ : Type*} [Finite ι₀] {P₀ : ι₀ → Type*}
+variable [Zero R] [AddGroup D] {δ : H →+ D} {ι₀ : Type*} [Finite ι₀] {P₀ : ι₀ → Type*}
   [∀ k, AddTorsor H (P₀ k)] {d₀ : (Σ k, P₀ k) → D}
   (hd₀ : ∀ k (h : H) (p : P₀ k), d₀ ⟨k, h +ᵥ p⟩ = δ h + d₀ ⟨k, p⟩) (hδ : Injective δ)
 include hd₀ hδ
