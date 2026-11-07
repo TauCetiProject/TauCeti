@@ -116,11 +116,14 @@ The matching need only be injective; the new partition may have fewer cells. -/
 theorem isPairColorRegular_fillDiagonal_of_card_sdiff_le [Fintype V] [DecidableEq V]
     {P Q : Finpartition (univ : Finset V)} (f : Q.parts ↪ P.parts)
     (hreg : ∀ A ∈ P.parts, ∀ B ∈ P.parts, A ≠ B → S.IsRegularPair ε A B)
-    (hε : 0 < ε) (hsize : ∀ A : Q.parts, (#(f A).val : ℝ) ≤ 2 * #A.val)
+    (hsize : ∀ A : Q.parts, (#(f A).val : ℝ) ≤ 2 * #A.val)
     (hnew : ∀ A : Q.parts, (#(A.val \ (f A).val) : ℝ) ≤ ε ^ 2 * #A.val)
     (hdiag : ∀ A ∈ Q.parts, 1 < 4 * ε * #A) :
     (⟨Q, S.fillDiagonal Q⟩ : PairSkeleton3 (Option κ) V).IsPairColorRegular (4 * ε) := by
   refine S.isPairColorRegular_fillDiagonal Q hdiag fun A hA B hB hAB ↦ ?_
+  have hε : 0 < ε := by
+    by_contra! h
+    nlinarith [hdiag A hA, (Nat.cast_nonneg #A : (0 : ℝ) ≤ #A)]
   let a : Q.parts := ⟨A, hA⟩
   let b : Q.parts := ⟨B, hB⟩
   have hne : (f a).val ≠ (f b).val := fun heq ↦
