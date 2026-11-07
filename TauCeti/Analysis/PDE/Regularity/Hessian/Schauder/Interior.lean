@@ -363,7 +363,7 @@ private theorem holderWith_translate_cutoff {α Z : ℝ≥0} {ζ₀ : E → ℝ}
 
 /-- The `L²` norm of the second derivative of a `C²` function supported in a closed ball is bounded
 by the volume of the ball and the bound on its second partial derivatives. -/
-theorem toReal_eLpNorm_iteratedFDeriv_two_le_of_support_subset_closedBall {w : E → ℝ}
+private theorem toReal_eLpNorm_iteratedFDeriv_two_le_of_support_subset_closedBall {w : E → ℝ}
     (hw : ContDiff ℝ 2 w) {x₀ : E} {R B : ℝ}
     (hsupp : Function.support (iteratedFDeriv ℝ 2 w) ⊆ closedBall x₀ R)
     (hB : ∀ x i j,
