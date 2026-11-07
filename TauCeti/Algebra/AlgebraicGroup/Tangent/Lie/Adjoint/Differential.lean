@@ -42,56 +42,6 @@ variable [Module.Projective R (Bialgebra.CotangentSpace R H)]
 
 attribute [local instance] adjointComodule
 
-/-- Extracting the infinitesimal coefficient after scalar extension to the dual numbers: the
-coefficient of the cotangent-linear equivalence agrees with the infinitesimal part of the
-scalar-extended tangent vector. -/
-private theorem algEquivSelf_cotangentLinearEquiv_rTensor_sndHom
-    (z : DualNumber (Bialgebra.CounitAlgebra R H R) ⊗[R]
-      Module.Dual R (Bialgebra.CotangentSpace R H)) (a : H) :
-    Bialgebra.CounitAlgebra.algEquivSelf R H R
-        (cotangentLinearEquiv (B := R)
-          (TensorProduct.lid R (Module.Dual R (Bialgebra.CotangentSpace R H))
-            (LinearMap.rTensor (Module.Dual R (Bialgebra.CotangentSpace R H))
-              ((Bialgebra.CounitAlgebra.algEquivSelf R H R).toLinearMap ∘ₗ
-                (sndHom (Bialgebra.CounitAlgebra R H R)
-                  (Bialgebra.CounitAlgebra R H R)).restrictScalars R) z)) a) =
-      Bialgebra.CounitAlgebra.algEquivSelf R H R
-        ((Bialgebra.CounitAlgebra.algEquivSelf R H (DualNumber (Bialgebra.CounitAlgebra R H R))
-          (tangentScalarExtensionEquiv (R := R) (A := H)
-            (B := DualNumber (Bialgebra.CounitAlgebra R H R)) z a)).snd) := by
-  induction z using TensorProduct.inductionOn with
-  | add z w hz hw => simp only [map_add, add_apply, snd_add, hz, hw]
-  | tmul c y =>
-    rw [LinearMap.rTensor_tmul, TensorProduct.lid_tmul,
-      algEquivSelf_cotangentLinearEquiv_apply,
-      algEquivSelf_tangentScalarExtensionEquiv_tmul_apply,
-      LinearMap.smul_apply, smul_eq_mul]
-    simp only [algebraMap_eq_inl', snd_mul, snd_inl, fst_inl,
-      op_smul_eq_smul, smul_eq_mul]
-    simp only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply,
-      LinearMap.restrictScalars_apply, sndHom_apply]
-    -- The coefficient synonym carries the same ring operations, with transported instances.
-    erw [mul_zero, zero_add, map_mul]
-    rw [AlgEquiv.commutes]
-    exact mul_comm _ _
-
-omit [Module.Finite R (Bialgebra.CotangentSpace R H)]
-  [Module.Projective R (Bialgebra.CotangentSpace R H)] in
-/-- The point of the dual-number-valued counit algebra attached to a tangent vector, viewed through
-`pointInCounitAlgebra`, is its image under `pointsMulEquiv.symm`. -/
-private theorem pointInCounitAlgebra_derivationMulEquivTangentKer
-    (d : Derivation R H (Bialgebra.CounitAlgebra R H R)) :
-    pointInCounitAlgebra (DualNumber (Bialgebra.CounitAlgebra R H R))
-      ((derivationMulEquivTangentKer R H R (.ofAdd d)).val) =
-      (Bialgebra.CounitAlgebra.pointsMulEquiv R H (DualNumber (Bialgebra.CounitAlgebra R H R))).symm
-        ((derivationMulEquivTangentKer R H R (.ofAdd d)).val) := by
-  apply WithConv.ofConv_injective
-  ext b
-  simp only [pointInCounitAlgebra_apply,
-    Bialgebra.CounitAlgebra.pointsMulEquiv_symm_apply]
-  exact (Bialgebra.CounitAlgebra.algEquivSelf_symm_apply R H
-    (DualNumber (Bialgebra.CounitAlgebra R H R)) _).symm
-
 /-- The differential of the adjoint comodule is the adjoint action of the tangent Lie algebra,
 expressed in the cotangent-dual model. -/
 -- Apply before the general differential and adjoint-coaction evaluation rules expand the input.
@@ -108,7 +58,7 @@ theorem differential_adjointComodule (d : Derivation R H (Bialgebra.CounitAlgebr
     (sndHom C C).restrictScalars R
   -- Extract the infinitesimal coefficient after scalar extension, so both descriptions
   -- of the differentiated action can be compared in the cotangent-dual model.
-  have hcoeff := algEquivSelf_cotangentLinearEquiv_rTensor_sndHom (R := R) (H := H)
+  have hcoeff := algEquivSelf_cotangentLinearEquiv_rTensor_sndHom (R := R) (A := H)
   -- Compute the adjoint action on the constant lift of the input tangent vector.
   have haction := tangentScalarExtensionEquiv_adjointComodule_endOfPoint
     (R := R) (H := H) (CommAlgCat.of R (DualNumber C))
@@ -136,7 +86,7 @@ theorem differential_adjointComodule (d : Derivation R H (Bialgebra.CounitAlgebr
   -- The tangent-point equivalence packages the same dual-number lift.
   simp only [derivationMulEquivTangentKer_apply_ofConv, toAdd_ofAdd] at ha
   rw [ha]
-  rw [pointInCounitAlgebra_derivationMulEquivTangentKer, adDerivation_dualNumber_apply]
+  rw [pointInCounitAlgebra_eq_pointsMulEquiv_symm, adDerivation_dualNumber_apply]
   simp only [snd_add, snd_inl, snd_inr, zero_add, cotangentDualLieEquiv_apply]
 
 end Derivation
