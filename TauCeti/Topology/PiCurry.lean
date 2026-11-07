@@ -24,8 +24,8 @@ Similarly, a family indexed by `Option ι` splits off its `none` component: the 
 ## Main declarations
 
 * `TauCeti.piCurryHomeomorph`: `Equiv.piCurry` as a homeomorphism.
-* `TauCeti.piSigmaHomeomorph`: reindex a curried dependent family along an equivalence from its
-  sigma index.
+* `TauCeti.piSigmaHomeomorph`: uncurry a dependent family of families and reindex it along an
+  equivalence from its sigma index.
 * `TauCeti.piSigmaConstHomeomorph`: along an explicit equivalence from a sigma index, a
   homeomorphism between a family of tuples and a tuple in a fixed space.
 * `TauCeti.piOptionEquivProdHomeomorph`: `Equiv.piOptionEquivProd` as a homeomorphism, with
@@ -56,26 +56,26 @@ theorem piCurryHomeomorph_symm_apply {ι : Type*} {κ : ι → Type*} (Y : ∀ i
     (piCurryHomeomorph Y).symm f p = f p.1 p.2 :=
   (rfl)
 
-/-- **Regrouping a dependent family.** Curry a family indexed by a sigma type, then reindex its
-uncurried form along an explicit equivalence. -/
-def piSigmaHomeomorph {ι : Type*} {κ : ι → Type*} (Z : ι → Type*)
-    [∀ i, TopologicalSpace (Z i)] {ι' : Type*} (e : (Σ i, κ i) ≃ ι') :
-    (∀ i, κ i → Z i) ≃ₜ (∀ j : ι', Z (e.symm j).1) :=
-  (piCurryHomeomorph fun (i : ι) (_ : κ i) => Z i).symm.trans
-    (Homeomorph.piCongrLeft (Y := fun k : (Σ i, κ i) => Z k.1) e.symm).symm
+/-- **Regrouping a dependent family.** Uncurry a family `f : ∀ i j, Y i j` of families to the
+sigma index `Σ i, κ i`, then reindex it along an explicit equivalence `e : (Σ i, κ i) ≃ ι'`. -/
+def piSigmaHomeomorph {ι : Type*} {κ : ι → Type*} (Y : ∀ i, κ i → Type*)
+    [∀ i j, TopologicalSpace (Y i j)] {ι' : Type*} (e : (Σ i, κ i) ≃ ι') :
+    (∀ i j, Y i j) ≃ₜ (∀ j : ι', Y (e.symm j).1 (e.symm j).2) :=
+  (piCurryHomeomorph Y).symm.trans
+    (Homeomorph.piCongrLeft (Y := fun k : (Σ i, κ i) => Y k.1 k.2) e.symm).symm
 
 @[simp]
-theorem piSigmaHomeomorph_apply {ι : Type*} {κ : ι → Type*} (Z : ι → Type*)
-    [∀ i, TopologicalSpace (Z i)] {ι' : Type*} (e : (Σ i, κ i) ≃ ι')
-    (f : ∀ i, κ i → Z i) (j : ι') :
-    piSigmaHomeomorph Z e f j = f (e.symm j).1 (e.symm j).2 :=
+theorem piSigmaHomeomorph_apply {ι : Type*} {κ : ι → Type*} (Y : ∀ i, κ i → Type*)
+    [∀ i j, TopologicalSpace (Y i j)] {ι' : Type*} (e : (Σ i, κ i) ≃ ι')
+    (f : ∀ i j, Y i j) (j : ι') :
+    piSigmaHomeomorph Y e f j = f (e.symm j).1 (e.symm j).2 :=
   (rfl)
 
 /-- **Regrouping a tuple in a fixed space.** An explicit bijection from a sigma type to another
 index type identifies a family of tuples of points of `Y` with one tuple of points of `Y`. -/
 def piSigmaConstHomeomorph (Y : Type*) [TopologicalSpace Y] {ι : Type*} {κ : ι → Type*}
     {ι' : Type*} (e : (Σ i, κ i) ≃ ι') : (∀ i, κ i → Y) ≃ₜ (ι' → Y) :=
-  piSigmaHomeomorph (fun _ : ι => Y) e
+  piSigmaHomeomorph (fun (_ : ι) (_ : κ _) => Y) e
 
 @[simp]
 theorem piSigmaConstHomeomorph_apply (Y : Type*) [TopologicalSpace Y] {ι : Type*}
@@ -87,12 +87,8 @@ theorem piSigmaConstHomeomorph_apply (Y : Type*) [TopologicalSpace Y] {ι : Type
 theorem piSigmaConstHomeomorph_symm_apply (Y : Type*) [TopologicalSpace Y] {ι : Type*}
     {κ : ι → Type*} {ι' : Type*} (e : (Σ i, κ i) ≃ ι') (f : ι' → Y) (i : ι)
     (j : κ i) : (piSigmaConstHomeomorph Y e).symm f i j = f (e ⟨i, j⟩) := by
-  have h : (piSigmaConstHomeomorph Y e).symm f = fun i j => f (e ⟨i, j⟩) := by
-    rw [Homeomorph.symm_apply_eq]
-    funext k
-    rw [piSigmaConstHomeomorph_apply]
-    exact congrArg f (e.apply_symm_apply k).symm
-  exact congrFun (congrFun h i) j
+  have h := congrFun ((piSigmaConstHomeomorph Y e).apply_symm_apply f) (e ⟨i, j⟩)
+  rwa [piSigmaConstHomeomorph_apply, e.symm_apply_apply] at h
 
 /-- **Splitting off the `none` component.** A family indexed by `Option ι` is its `none`
 component together with the family of its `some` components: `Equiv.piOptionEquivProd` as a
@@ -105,9 +101,7 @@ def piOptionEquivProdHomeomorph {ι : Type*} (Y : Option ι → Type*)
   continuous_invFun := continuous_pi fun o => by
     cases o with
     | none => exact continuous_fst
-    | some i =>
-      exact ((continuous_apply i).comp continuous_snd :
-        Continuous fun x : Y none × ∀ i : ι, Y (some i) => x.2 i)
+    | some i => exact (continuous_apply i).comp continuous_snd
 
 @[simp]
 theorem piOptionEquivProdHomeomorph_apply {ι : Type*} (Y : Option ι → Type*)
