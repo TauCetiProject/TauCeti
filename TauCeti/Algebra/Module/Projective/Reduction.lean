@@ -141,7 +141,8 @@ theorem nonempty_linearEquiv_of_projective_of_natCard_linearMap_eq
   have : Finite (Module.End R S) := Finite.of_injective _ DFunLike.coe_injective
   refine Nat.pow_right_injective (Finite.one_lt_card (α := Module.End R S)) ?_
   simp only [← natCard_linearMap_eq_pow_jordanHolderMultiplicity,
-    Nat.card_congr (linearMapQuotientJacobsonEquiv _ S).toEquiv]
+    Nat.card_congr
+      (linearMapQuotientSMulTopEquiv _ (IsSemisimpleModule.jacobson_le_annihilator R S)).toEquiv]
   exact h S
 
 end TauCeti
