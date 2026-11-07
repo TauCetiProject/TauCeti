@@ -71,6 +71,14 @@ namespace PowerSeries
 
 variable {k K : Type*} [Field k] [CommRing K] [Algebra k K]
 
+/-- The polynomial algebra map into power series over a nontrivial field algebra is injective. -/
+theorem algebraMap_polynomial_injective [Nontrivial K] :
+    Function.Injective (algebraMap k[X] K⟦X⟧) := by
+  intro p q hpq
+  apply Polynomial.coe_injective (R := k)
+  apply map_injective (algebraMap k K) (algebraMap k K).injective
+  simpa only [algebraMap_apply'] using hpq
+
 /-! ### The definition -/
 
 variable (k) in

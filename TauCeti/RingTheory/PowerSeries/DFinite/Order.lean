@@ -69,7 +69,7 @@ theorem dfiniteOrder_le {f : K⟦X⟧} {n : ℕ} {p : Fin (n + 1) → k[X]}
 
 /-- Every prefix of derivatives of length at most the minimal order is linearly independent
 over the polynomial ring. -/
-theorem linearIndependent_iterate_derivative {f : K⟦X⟧}
+theorem linearIndependent_iterate_derivative_of_le_dfiniteOrder {f : K⟦X⟧}
     {n : ℕ} (hn : n ≤ dfiniteOrder k f) :
     LinearIndependent k[X] (fun i : Fin n ↦ (d⁄dX)^[i] f) := by
   induction n with
@@ -93,7 +93,7 @@ theorem linearIndependent_iterate_derivative {f : K⟦X⟧}
 theorem IsDFinite.linearIndependent_iterate_derivative_iff {f : K⟦X⟧}
     (hf : IsDFinite k f) (n : ℕ) :
     LinearIndependent k[X] (fun i : Fin n ↦ (d⁄dX)^[i] f) ↔ n ≤ dfiniteOrder k f := by
-  refine ⟨fun hli ↦ ?_, linearIndependent_iterate_derivative⟩
+  refine ⟨fun hli ↦ ?_, linearIndependent_iterate_derivative_of_le_dfiniteOrder⟩
   by_contra hn
   obtain ⟨p, hp, h⟩ := hf.exists_minimal_equation
   have hli' := hli.comp (Fin.castLE (by omega : dfiniteOrder k f + 1 ≤ n))
@@ -130,7 +130,8 @@ theorem minimal_equation_unique {f : K⟦X⟧}
   | last => exact mul_comm _ _
   | cast i =>
     exact sub_eq_zero.mp (Fintype.linearIndependent_iff.mp
-      (linearIndependent_iterate_derivative (k := k) (f := f) le_rfl) _ hinit i)
+      (linearIndependent_iterate_derivative_of_le_dfiniteOrder (k := k) (f := f) le_rfl)
+      _ hinit i)
 
 /-- The zero series has minimal differential order zero. -/
 @[simp]
@@ -153,13 +154,8 @@ theorem IsDFinite.dfiniteOrder_eq_zero_iff {f : K⟦X⟧} (hf : IsDFinite k f) :
     obtain ⟨p, hp, h⟩ := hex
     have heq : p (Fin.last 0) • f = 0 := by simpa using h
     rw [Algebra.smul_def, mul_eq_zero] at heq
-    rcases heq with heq | heq
-    · apply False.elim
-      apply hp
-      apply Polynomial.map_injective (algebraMap k K) (algebraMap k K).injective
-      apply Polynomial.coe_injective (R := K)
-      simpa [algebraMap_apply', Polynomial.polynomial_map_coe] using heq
-    · exact heq
+    exact heq.resolve_left (fun h ↦ hp
+      (algebraMap_polynomial_injective (k := k) (K := K) (by simpa using h)))
   · rintro rfl
     exact dfiniteOrder_zero
 
