@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.LocalRing.ResidueField.Fiber
 import Mathlib.RingTheory.Smooth.Quotient
 import Mathlib.RingTheory.Support
 import Mathlib.RingTheory.TensorProduct.MvPolynomial
+import TauCeti.RingTheory.Extension.Presentation.Basic
 import TauCeti.RingTheory.Extension.Presentation.LocalizationAway
 import TauCeti.RingTheory.MvPolynomial.Rescale
 
@@ -50,8 +51,6 @@ the generators of the fibre presentation, which exist up to units of `κ(p)`.
   over `p`, agrees with `K` near every prime over `p`.
 * `MvPolynomial.ker_eq_map_ker_comp_rename_inr_sup`: eliminating redundant variables from the
   kernel of a map out of a polynomial ring.
-* `MvPolynomial.map_ker_aeval_eq_ker_aeval_tmul`: base change of the kernel of a surjection
-  `R[ι] → A` is the kernel of the corresponding map `B[ι] → B ⊗[R] A`.
 
 ## References
 
@@ -252,31 +251,6 @@ theorem exists_ker_eq_span_range (Q : Presentation B S σ τ) (u : σ → Bˣ) {
 end Elimination
 
 variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A]
-
-/-- Base change of the kernel of a surjection from a polynomial ring onto `A`: if `ϕ : R[ι] → A`
-sends the variables to `val`, then for every commutative `R`-algebra `B` the kernel of the map
-`B[ι] → B ⊗[R] A` sending the variables to `1 ⊗ val i` is the extension of `ker ϕ` to `B[ι]`. -/
-theorem _root_.MvPolynomial.map_ker_aeval_eq_ker_aeval_tmul {ι : Type*} {val : ι → A}
-    (B : Type*) [CommRing B] [Algebra R B] (hϕ : Function.Surjective (aeval (R := R) val)) :
-    (RingHom.ker (aeval (R := R) val)).map (map (algebraMap R B)) =
-      RingHom.ker (aeval (R := B) fun v ↦ (1 : B) ⊗ₜ[R] val v :
-        MvPolynomial ι B →ₐ[B] B ⊗[R] A) := by
-  let PA : Presentation R A ι (RingHom.ker (aeval (R := R) val) : Set (MvPolynomial ι R)) :=
-    { toGenerators := .ofSurjective val hϕ
-      relation := Subtype.val
-      span_range_relation_eq_ker := by
-        rw [Subtype.range_coe, Ideal.span_eq, Generators.ker_eq_ker_aeval_val,
-          funext (Generators.ofSurjective_val val hϕ)] }
-  have h := PA.span_range_relation_eq_ker_baseChange B
-  have h₁ : (Set.range fun i ↦ map (algebraMap R B) (PA.relation i)) =
-      map (algebraMap R B) '' (RingHom.ker (aeval (R := R) val) : Set (MvPolynomial ι R)) := by
-    ext
-    simp [PA]
-  have h₂ : (PA.toGenerators.baseChange B).val = fun v ↦ 1 ⊗ₜ val v := by
-    ext
-    simp [PA]
-  rw [h₁, h₂] at h
-  exact h
 
 /-- **Lifting presentations from a fibre.** Let `A` be a flat and finitely presented `R`-algebra,
 and `q` a prime of `A` lying over a prime `p` of `R`. If the fibre `κ(p) ⊗[R] A` has a
