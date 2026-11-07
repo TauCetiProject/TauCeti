@@ -73,10 +73,10 @@ everywhere there with a function that is locally integrable on the whole space a
   preserves local integrability for an additive Haar measure.
 * `MeasureTheory.LocallyIntegrableOn.exists_integrable_eqOn_add_of_isCompact`: localization to
   a compact set and its small translates by a globally integrable function.
-* `TauCeti.locallyIntegrableOn_iff_forall_isCompact_closure`: characterization by relatively
-  compact open subdomains.
-* `TauCeti.locallyIntegrableOn_indicator_const`: the indicator of a constant on a null-measurable
-  set is locally integrable.
+* `MeasureTheory.locallyIntegrableOn_iff_forall_isCompact_closure`: characterization by
+  relatively compact open subdomains.
+* `MeasureTheory.locallyIntegrableOn_indicator_const`: the indicator of a constant on a
+  null-measurable set is locally integrable.
 * `MeasureTheory.LocallyIntegrableOn.indicator_of_isClosed`: local integrability of relative
   zero extension when the support avoids the added boundary.
 * `MeasureTheory.LocallyIntegrableOn.integrable_indicator_of_isCompact`: integrability of the
@@ -198,7 +198,7 @@ theorem LocallyIntegrableOn.comp_smul_of_mapsTo (hu : LocallyIntegrableOn u Ω �
 
 end MeasureTheory
 
-namespace TauCeti
+namespace MeasureTheory
 
 variable {X : Type*} [MeasurableSpace X] [TopologicalSpace X] {μ : Measure X}
 
@@ -256,7 +256,7 @@ theorem exists_locallyIntegrable_mem_Icc_ae_eq [IsLocallyFiniteMeasure μ] {u : 
   rw [Real.norm_eq_abs, norm_one, abs_le]
   exact ⟨by linarith [(hmem x).1], (hmem x).2⟩
 
-end TauCeti
+end MeasureTheory
 
 namespace MeasureTheory.LocallyIntegrableOn
 
