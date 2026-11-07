@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Datum
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.RootSubgroup
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Subgroup
 
 /-!
@@ -21,10 +21,11 @@ from points over fields.
 
 `TauCeti.DynkinType.chevalleyRootSubgroupToToral` needs only Kostant stability, nilpotence of the
 simple generators, a lattice basis and torus characters. Its specialization
-`TauCeti.DynkinType.ChevalleyDatum.rootSubgroup` is the morphism `𝔾ₐ → G_D`. Their composites into
-`GLₙ` are the polynomial exponentials, agreeing at positive and negative simple roots with the
-original Kostant root subgroups. Their action on scheme-valued points is the lattice action in
-the chosen basis. This file does not assert that these morphisms are closed immersions.
+`TauCeti.DynkinType.ChevalleyDatum.rootSubgroupHom` is the morphism `𝔾ₐ → G_D`, distinct from
+`TauCeti.DynkinType.ChevalleyDatum.rootSubgroup`, the homomorphism on matrix points. Their
+composites into `GLₙ` are the polynomial exponentials, agreeing at positive and negative simple
+roots with the original Kostant root subgroups. Their action on scheme-valued points is the lattice
+action in the chosen basis. This file does not assert that these morphisms are closed immersions.
 
 The construction uses the all-root exponential and Weyl conjugation of
 `TauCeti.DynkinType.chevalleyRootSubgroup`, and the polynomial reconstruction
@@ -263,64 +264,64 @@ theorem kostantRootSubgroupMatrix_chevalleySystem_mem_points (A : Type*) [CommRi
 
 /-- The integral root-subgroup morphism `𝔾ₐ → G_D` for every numbered root. Its composite
 into the general linear group is the divided-power exponential of the named root vector. -/
-def rootSubgroup (γ : Fin t.numRoots) : AdditiveGroup.groupScheme ℤ ⟶ D.groupScheme :=
+def rootSubgroupHom (γ : Fin t.numRoots) : AdditiveGroup.groupScheme ℤ ⟶ D.groupScheme :=
   chevalleyRootSubgroupToToral D.representation D.lattice D.representation_mem_lattice
     D.isNilpotent_representation_rootGenerator D.basis D.coordinateWeight γ
 
 /-- Including the root morphism into `GLₙ` recovers the original polynomial exponential. -/
 @[simp]
-theorem rootSubgroup_comp_groupSchemeι (γ : Fin t.numRoots) :
-    D.rootSubgroup γ ≫ D.groupSchemeι =
+theorem rootSubgroupHom_comp_groupSchemeι (γ : Fin t.numRoots) :
+    D.rootSubgroupHom γ ≫ D.groupSchemeι =
       kostantRootSubgroup (t.chevalleySystem ht) (t.lieBasis ht).h D.representation D.lattice
         (kostantForm_chevalleySystem_apply_mem_of_isNilpotent D.representation D.lattice
           D.representation_mem_lattice D.isNilpotent_representation_rootGenerator) γ
         (isNilpotent_apply_ι_chevalleySystem D.representation
           D.isNilpotent_representation_rootGenerator γ) D.basis := by
-  rw [rootSubgroup, groupSchemeι_def]
+  rw [rootSubgroupHom, groupSchemeι_def]
   exact chevalleyRootSubgroupToToral_comp_ι D.representation D.lattice
     D.representation_mem_lattice D.isNilpotent_representation_rootGenerator
     D.basis D.coordinateWeight γ
 
 /-- At a positive simple root the composite into `GLₙ` is the original simple-root
 Kostant subgroup. -/
-theorem rootSubgroup_simpleIndex_comp_groupSchemeι (i : Fin t.rank) :
-    D.rootSubgroup (t.simpleIndex ht i) ≫ D.groupSchemeι =
+theorem rootSubgroupHom_simpleIndex_comp_groupSchemeι (i : Fin t.rank) :
+    D.rootSubgroupHom (t.simpleIndex ht i) ≫ D.groupSchemeι =
       kostantRootSubgroup (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
         D.representation D.lattice D.representation_mem_lattice (.inl i)
         (D.isNilpotent_representation_rootGenerator (.inl i)) D.basis := by
-  rw [rootSubgroup, groupSchemeι_def]
+  rw [rootSubgroupHom, groupSchemeι_def]
   exact chevalleyRootSubgroupToToral_simpleIndex_comp_ι D.representation D.lattice
     D.representation_mem_lattice D.isNilpotent_representation_rootGenerator
     D.basis D.coordinateWeight i
 
 /-- At a negative simple root the composite into `GLₙ` is the original negative-simple-root
 Kostant subgroup. -/
-theorem rootSubgroup_reflectionPerm_simpleIndex_comp_groupSchemeι (i : Fin t.rank) :
-    D.rootSubgroup
+theorem rootSubgroupHom_reflectionPerm_simpleIndex_comp_groupSchemeι (i : Fin t.rank) :
+    D.rootSubgroupHom
         ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) (t.simpleIndex ht i)) ≫
       D.groupSchemeι =
       kostantRootSubgroup (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
         D.representation D.lattice D.representation_mem_lattice (.inr i)
         (D.isNilpotent_representation_rootGenerator (.inr i)) D.basis := by
-  rw [rootSubgroup, groupSchemeι_def]
+  rw [rootSubgroupHom, groupSchemeι_def]
   exact chevalleyRootSubgroupToToral_reflectionPerm_simpleIndex_comp_ι
     D.representation D.lattice D.representation_mem_lattice
     D.isNilpotent_representation_rootGenerator D.basis D.coordinateWeight i
 
 /-- On scheme-valued points the root morphism acts by the original all-root lattice
 exponential, expressed in the weight basis of the datum. -/
-theorem schemePointsMulEquiv_rootSubgroup (γ : Fin t.numRoots) (A : Type) [CommRing A]
+theorem schemePointsMulEquiv_rootSubgroupHom (γ : Fin t.numRoots) (A : Type) [CommRing A]
     (p : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
       (AdditiveGroup.groupScheme ℤ).X) :
     GeneralLinear.schemePointsMulEquiv D.dim A
-        (p ≫ (D.rootSubgroup γ).hom.hom ≫ D.groupSchemeι.hom.hom) =
+        (p ≫ (D.rootSubgroupHom γ).hom.hom ≫ D.groupSchemeι.hom.hom) =
       kostantRootSubgroupMatrix (t.chevalleySystem ht) (t.lieBasis ht).h D.representation
         D.lattice (kostantForm_chevalleySystem_apply_mem_of_isNilpotent D.representation D.lattice
           D.representation_mem_lattice D.isNilpotent_representation_rootGenerator) γ
         (isNilpotent_apply_ι_chevalleySystem D.representation
           D.isNilpotent_representation_rootGenerator γ) D.basis
         ((AdditiveGroup.groupSchemePointMulEquiv A).symm p) := by
-  rw [rootSubgroup, groupSchemeι_def]
+  rw [rootSubgroupHom, groupSchemeι_def]
   exact schemePointsMulEquiv_chevalleyRootSubgroupToToral D.representation D.lattice
     D.representation_mem_lattice D.isNilpotent_representation_rootGenerator
     D.basis D.coordinateWeight γ A p
