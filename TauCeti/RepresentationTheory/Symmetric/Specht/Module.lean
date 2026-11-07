@@ -359,10 +359,12 @@ theorem spechtSubrepresentation_span_orbit_polytabloid_eq_top (t : YoungTableau 
       (Set.range fun σ : Equiv.Perm (Fin μ.card) =>
         (spechtSubrepresentation (R := R) μ).toRepresentation σ
           ⟨polytabloid (R := R) t, polytabloid_mem_spechtSubrepresentation t⟩) = ⊤ := by
-  apply Submodule.map_injective_of_injective
-    (spechtSubrepresentation (R := R) μ).toSubmodule.injective_subtype
-  rw [Submodule.map_top, Submodule.range_subtype, Submodule.map_span, ← Set.range_comp]
-  exact (spechtSubrepresentation_eq_span_orbit t).symm
+  exact (Submodule.span_range_subtype_eq_top_iff (spechtSubrepresentation (R := R) μ).toSubmodule
+    (s := fun σ : Equiv.Perm (Fin μ.card) =>
+      (permutationModule (R := R) (shapePartition μ)).ρ σ (polytabloid (R := R) t))
+    fun σ => ((spechtSubrepresentation (R := R) μ).toRepresentation σ
+      ⟨polytabloid (R := R) t, polytabloid_mem_spechtSubrepresentation t⟩).2).2
+    (spechtSubrepresentation_eq_span_orbit t).symm
 
 /-- The Specht module is nonzero. -/
 @[simp]
