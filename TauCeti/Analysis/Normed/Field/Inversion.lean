@@ -30,6 +30,9 @@ into an open set.
 * `TauCeti.bijOn_add_inv_image_inv_sub`: `w ↦ q + w⁻¹` inverts the inversion about `q`.
 * `TauCeti.image_inv_sub_eq_preimage_add_inv`: the inversion about `q` maps a set onto its
   preimage under `w ↦ q + w⁻¹`.
+* `TauCeti.bijOn_inv_compl_ball_one`, `TauCeti.bijOn_inv_compl_closedBall_one` and
+  `TauCeti.bijOn_inv_sphere_one`: inversion exchanges the exterior of the unit ball, of the closed
+  unit ball, and the unit sphere with the punctured closed ball, the punctured ball and the sphere.
 * `TauCeti.isClosed_setOf_ne_zero_and_add_inv_mem`: the inversion of a closed bounded set about
   any centre, with the centre removed, is closed.
 * `TauCeti.isBounded_image_inv_sub`: the inversion of a set about a point outside its closure is
@@ -69,9 +72,42 @@ theorem image_inv_sub_eq_preimage_add_inv (S : Set 𝕜) :
   congrFun (image_eq_preimage_of_inverse (f := fun z : 𝕜 => (z - q)⁻¹)
     (g := fun w : 𝕜 => q + w⁻¹) (fun _ => by simp) fun _ => by simp) S
 
+/-- Inversion `w ↦ w⁻¹` is a bijection from `s` onto `t` as soon as it exchanges membership in `s`
+and in `t`: it is an involution. -/
+theorem bijOn_inv_of_forall_mem_iff {s t : Set 𝕜} (h : ∀ w, w ∈ s ↔ w⁻¹ ∈ t) :
+    BijOn (fun w : 𝕜 => w⁻¹) s t :=
+  ⟨fun w hw => (h w).1 hw, inv_injective.injOn,
+    fun y hy => ⟨y⁻¹, (h _).2 (by rwa [inv_inv]), inv_inv y⟩⟩
+
 end DivisionRing
 
 variable {𝕜 : Type*} [NormedDivisionRing 𝕜] {K : Set 𝕜}
+
+section UnitBall
+
+/-- Inversion is a bijection from the closed exterior `(ball 0 1)ᶜ` of the unit ball onto the
+punctured closed unit ball. -/
+theorem bijOn_inv_compl_ball_one :
+    BijOn (fun w : 𝕜 => w⁻¹) (ball 0 1)ᶜ (closedBall 0 1 \ {0}) :=
+  bijOn_inv_of_forall_mem_iff fun w => by
+    rcases eq_or_ne w 0 with rfl | hw
+    · simp
+    · simp [hw, inv_le_one₀ (norm_pos_iff.mpr hw)]
+
+/-- Inversion is a bijection from the exterior `(closedBall 0 1)ᶜ` of the closed unit ball onto
+the punctured open unit ball. -/
+theorem bijOn_inv_compl_closedBall_one :
+    BijOn (fun w : 𝕜 => w⁻¹) (closedBall 0 1)ᶜ (ball 0 1 \ {0}) :=
+  bijOn_inv_of_forall_mem_iff fun w => by
+    rcases eq_or_ne w 0 with rfl | hw
+    · simp
+    · simp [hw, inv_lt_one₀ (norm_pos_iff.mpr hw)]
+
+/-- Inversion is a bijection of the unit sphere. -/
+theorem bijOn_inv_sphere_one : BijOn (fun w : 𝕜 => w⁻¹) (sphere 0 1) (sphere 0 1) :=
+  bijOn_inv_of_forall_mem_iff fun w => by simp
+
+end UnitBall
 
 /-- **The inversion of a closed bounded set is closed.** For closed bounded `K` and any `q`, the
 image `{w | w ≠ 0 ∧ q + w⁻¹ ∈ K}` of `K \ {q}` under `z ↦ (z - q)⁻¹` is closed: it stays away
