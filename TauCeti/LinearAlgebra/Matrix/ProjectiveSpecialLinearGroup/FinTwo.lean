@@ -100,11 +100,11 @@ theorem isParabolic_mk_iff (a : SL(2, R)) :
   · simpa [GeneralLinearGroup.IsParabolic] using hpar
 
 omit [NoZeroDivisors R] in
-/-- Parabolicity is invariant under conjugation in `PSL(2, R)`: conjugate the parabolic
-representative. -/
+/-- Parabolicity is invariant under conjugation in `PSL(2, R)`. -/
 @[simp]
 theorem isParabolic_conj_iff (g h : PSL(2, R)) :
     IsParabolic (g * h * g⁻¹) ↔ IsParabolic h := by
+  -- Conjugate the parabolic representative.
   have hone (g h : PSL(2, R)) (hh : IsParabolic h) : IsParabolic (g * h * g⁻¹) := by
     induction g using QuotientGroup.induction_on with | H a => ?_
     obtain ⟨b, rfl, hb⟩ := hh
@@ -121,10 +121,11 @@ theorem isParabolic_conj_iff' (g h : PSL(2, R)) :
   simpa using isParabolic_conj_iff g⁻¹ h
 
 omit [NoZeroDivisors R] in
-/-- The identity of `PSL(2, R)` is not parabolic: a representative of the identity is central,
-hence scalar, and a parabolic matrix is not scalar. -/
+/-- The identity of `PSL(2, R)` is not parabolic. -/
 @[simp]
 theorem not_isParabolic_one : ¬ IsParabolic (1 : PSL(2, R)) := by
+  -- A representative of the identity is central, hence scalar, and a parabolic matrix is not
+  -- scalar.
   rintro ⟨a, ha, hpar⟩
   rw [QuotientGroup.eq_one_iff, SpecialLinearGroup.mem_center_iff] at ha
   obtain ⟨r, -, hr⟩ := ha
