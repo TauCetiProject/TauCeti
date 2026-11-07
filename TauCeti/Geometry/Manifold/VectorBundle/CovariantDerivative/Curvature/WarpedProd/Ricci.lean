@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvatu
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.WarpedProd.Vertical
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.WarpedProd
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Ricci
-import Mathlib.LinearAlgebra.Basis.Prod
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 
 /-!
@@ -52,35 +51,6 @@ variable
   [IsContMDiffRiemannianBundle (I.prod J) ∞ (E × F)
     (fun p : M × N ↦ TangentSpace (I.prod J) p)]
   {f : M → ℝ}
-
--- Ricci is an ordinary trace, so the product basis need not be orthonormal for the warped metric.
-omit [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)] in
-private theorem ricciTensor_eq_sum_factor_basis (p : M × N)
-    (u v : TangentSpace (I.prod J) p) :
-    (leviCivitaConnection (I.prod J) (M × N)).ricciTensor p u v =
-      (∑ i, inner ℝ (stdOrthonormalBasis ℝ (TangentSpace I p.1) i)
-        (tangentSpaceProdEquiv p
-          ((leviCivitaConnection (I.prod J) (M × N)).curvatureTensor p
-            ((tangentSpaceProdEquiv p).symm (stdOrthonormalBasis ℝ (TangentSpace I p.1) i, 0))
-            u v)).1) +
-      ∑ j, inner ℝ (stdOrthonormalBasis ℝ (TangentSpace J p.2) j)
-        (tangentSpaceProdEquiv p
-          ((leviCivitaConnection (I.prod J) (M × N)).curvatureTensor p
-            ((tangentSpaceProdEquiv p).symm (0, stdOrthonormalBasis ℝ (TangentSpace J p.2) j))
-            u v)).2 := by
-  set b := stdOrthonormalBasis ℝ (TangentSpace I p.1) with hb
-  set c := stdOrthonormalBasis ℝ (TangentSpace J p.2) with hc
-  rw [ricciTensor_eq_sum _ p
-    ((b.toBasis.prod c.toBasis).map (tangentSpaceProdEquiv p).symm.toLinearEquiv),
-    Fintype.sum_sum_type]
-  simp only [Module.Basis.map_apply, Module.Basis.prod_apply, Module.Basis.map_repr,
-    Sum.elim_inl, Sum.elim_inr, Function.comp_apply, LinearMap.inl_apply, LinearMap.inr_apply,
-    LinearEquiv.trans_apply, ContinuousLinearEquiv.coe_symm_toLinearEquiv,
-    ContinuousLinearEquiv.coe_toLinearEquiv, ContinuousLinearEquiv.symm_symm,
-    Module.Basis.prod_repr_inl, Module.Basis.prod_repr_inr,
-    OrthonormalBasis.coe_toBasis_repr_apply, OrthonormalBasis.repr_apply_apply,
-    OrthonormalBasis.coe_toBasis]
 
 /-- The horizontal Ricci tensor of `g_M + f² g_N` is
 `Ric_M - (dim N / f) Hess f`, evaluated on unscaled base vectors. -/
