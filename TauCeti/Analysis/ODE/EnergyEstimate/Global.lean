@@ -204,6 +204,35 @@ theorem exists_pos_forall_integral_norm_deriv_sq_add_mul_integral_norm_sq_le
 
 /-! ### Hyperbolic limits -/
 
+/-- A continuous family of operators with limits at `±∞` is uniformly bounded. -/
+theorem exists_forall_norm_le_of_tendsto (hA : Continuous A) {Aminus Aplus : E →L[ℝ] E}
+    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus)) :
+    ∃ M, ∀ s, ‖A s‖ ≤ M := by
+  obtain ⟨a, ha⟩ := eventually_atBot.mp (hbot.norm.eventually (Iic_mem_nhds (lt_add_one ‖Aminus‖)))
+  obtain ⟨b, hb⟩ := eventually_atTop.mp (htop.norm.eventually (Iic_mem_nhds (lt_add_one ‖Aplus‖)))
+  obtain ⟨K, hK⟩ := (isCompact_Icc (a := a) (b := b)).exists_bound_of_continuousOn hA.continuousOn
+  refine ⟨max K (max (‖Aminus‖ + 1) (‖Aplus‖ + 1)), fun s ↦ ?_⟩
+  rcases lt_or_ge s a with hs | hs
+  · exact (mem_Iic.mp (ha s hs.le)).trans (le_max_of_le_right (le_max_left _ _))
+  rcases le_or_gt s b with hs' | hs'
+  · exact (hK s ⟨hs, hs'⟩).trans (le_max_left _ _)
+  · exact (mem_Iic.mp (hb s hs'.le)).trans (le_max_of_le_right (le_max_right _ _))
+
+/-- Solving the interior estimate for `∫ ‖u‖²` and substituting it into the derivative estimate
+bounds `∫ ‖u'‖² + ∫ ‖u‖²` by the two error terms. -/
+private theorem add_le_mul_add_mul_of_le_of_le {U Y Z W MA a b c : ℝ} (hc : 0 < c)
+    (ha : 0 ≤ a) (hb : 0 ≤ b) (hZ : 0 ≤ Z) (hW : 0 ≤ W)
+    (hX : U ≤ 2 * Z + 2 * MA ^ 2 * Y) (hY : c / 2 * Y ≤ a * Z + b * W) :
+    U + Y ≤ (2 + (2 * MA ^ 2 + 1) * (2 / c) * (a + b)) * Z +
+      (2 + (2 * MA ^ 2 + 1) * (2 / c) * (a + b)) * W := by
+  have hY' : Y ≤ 2 / c * (a * Z + b * W) := by
+    rw [div_mul_eq_mul_div, le_div_iff₀ hc]
+    linarith
+  have hk : 0 ≤ (2 * MA ^ 2 + 1) * (2 / c) := by positivity
+  nlinarith [mul_le_mul_of_nonneg_left hY' (by positivity : (0 : ℝ) ≤ 2 * MA ^ 2 + 1),
+    mul_nonneg (mul_nonneg hk hb) hZ, mul_nonneg (mul_nonneg hk ha) hW,
+    mul_nonneg (mul_nonneg hk ha) hZ, mul_nonneg (mul_nonneg hk hb) hW]
+
 /-- **The trajectory estimate for hyperbolic limits on test paths.** Let `A` be a continuous
 family of operators whose limits `A±` at `±∞` have Lyapunov forms. Then there are `R > 0` and
 `C ≥ 0` with
@@ -241,16 +270,7 @@ theorem exists_pos_nonneg_forall_integral_norm_deriv_sq_add_integral_norm_sq_le_
     (Real.le_norm_self _).trans (hK s hs)
   have hK₀ : 0 ≤ K := (by positivity : (0 : ℝ) ≤ ‖S 0‖ * ‖A 0‖ + ‖deriv S 0‖ / 2).trans
     (hK' 0 ⟨by linarith, by linarith⟩)
-  -- A uniform bound on `A`.
-  obtain ⟨KA, hKA⟩ := (isCompact_Icc (a := -R) (b := R)).exists_bound_of_continuousOn
-    hA.continuousOn
-  set MA := max KA (max (‖Aminus‖ + 1) (‖Aplus‖ + 1))
-  have hMA (s : ℝ) : ‖A s‖ ≤ MA := by
-    rcases lt_or_ge s (-R) with hs | hs
-    · exact (mem_Iic.mp (ha s (by linarith)).2).trans (le_max_of_le_right (le_max_left _ _))
-    rcases le_or_gt s R with hs' | hs'
-    · exact (hKA s ⟨hs, hs'⟩).trans (le_max_left _ _)
-    · exact (mem_Iic.mp (hb s (by linarith)).2).trans (le_max_of_le_right (le_max_right _ _))
+  obtain ⟨MA, hMA⟩ := exists_forall_norm_le_of_tendsto hA hbot htop
   set c := min cm cp
   have hc : 0 < c := lt_min hcm hcp
   refine ⟨R, hR, 2 + (2 * MA ^ 2 + 1) * (2 / c) * ((‖Sm‖ + ‖Sp - Sm‖) ^ 2 / (2 * c) + (K + c)),
@@ -273,16 +293,6 @@ theorem exists_pos_nonneg_forall_integral_norm_deriv_sq_add_integral_norm_sq_le_
   have hZ : 0 ≤ ∫ s, ‖deriv u s + A s (u s)‖ ^ 2 := integral_nonneg fun _ ↦ by positivity
   have hW : 0 ≤ ∫ s in Icc (-R) R, ‖u s‖ ^ 2 :=
     setIntegral_nonneg measurableSet_Icc fun _ _ ↦ by positivity
-  -- Solve `hY` for `∫ ‖u‖²` and substitute the result into `hX`.
-  set a := (‖Sm‖ + ‖Sp - Sm‖) ^ 2 / (2 * c)
-  set b := K + c
-  have hY' : (∫ s, ‖u s‖ ^ 2) ≤ 2 / c * (a * (∫ s, ‖deriv u s + A s (u s)‖ ^ 2) +
-      b * ∫ s in Icc (-R) R, ‖u s‖ ^ 2) := by
-    rw [div_mul_eq_mul_div, le_div_iff₀ hc]
-    linarith
-  have hk : 0 ≤ (2 * MA ^ 2 + 1) * (2 / c) := by positivity
-  nlinarith [mul_le_mul_of_nonneg_left hY' (by positivity : (0 : ℝ) ≤ 2 * MA ^ 2 + 1),
-    mul_nonneg (mul_nonneg hk (by positivity : (0 : ℝ) ≤ b)) hZ,
-    mul_nonneg (mul_nonneg hk (by positivity : (0 : ℝ) ≤ a)) hW]
+  exact add_le_mul_add_mul_of_le_of_le hc (by positivity) (by positivity) hZ hW hX hY
 
 end TauCeti
