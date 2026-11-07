@@ -238,21 +238,12 @@ theorem dimVector_kroneckerJordanRep (w : Quiver.Kronecker A) :
   -- `AdjoinRoot f` *is* `k[X] ⧸ (f)`, so Mathlib's dimension formula for such a quotient applies.
   cases w <;> exact finrank_quotient_span_eq_natDegree.trans (natDegree_X_pow (n + 1))
 
-/-- A Jordan block is nonzero: its vertex spaces are the nontrivial ring `k[X]/(Xⁿ⁺¹)`. -/
-theorem not_isZero_kroneckerJordanRep :
-    ¬ IsZero (kroneckerJordanRep k a₁ n) := by
-  intro hz
-  have : Subsingleton (AdjoinRoot ((X : k[X]) ^ (n + 1))) :=
-    ModuleCat.subsingleton_of_isZero
-      (hz.obj (Quiver.Kronecker.src : Paths (Quiver.Kronecker A)))
-  exact false_of_nontrivial_of_subsingleton (AdjoinRoot ((X : k[X]) ^ (n + 1)))
-
 /-- **A Kronecker Jordan block is indecomposable, as soon as some arrow other than the distinguished
 one exists.** An idempotent endomorphism is multiplication by an idempotent of `k[X]/(Xⁿ⁺¹)`, and
 that ring is local, so that idempotent is `0` or `1`. -/
 theorem indecomposable_kroneckerJordanRep (h : a₀ ≠ a₁) :
     Indecomposable (kroneckerJordanRep k a₁ n) := by
-  refine indecomposable_of_injective_of_isLocalRing not_isZero_kroneckerJordanRep
+  refine indecomposable_of_injective_of_isLocalRing
     (fun e ↦ jordanApp e 1) (fun e e' heq ↦ ?_) ?_ ?_ fun e ↦ ?_
   · refine jordanApp_ext h ?_
     rw [jordanApp_eq_mulRight h e, jordanApp_eq_mulRight h e']

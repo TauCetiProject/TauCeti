@@ -141,6 +141,27 @@ private theorem squareStripsOfContext_comp :
 
 end Context
 
+/-! ## Measurability of the pair layer -/
+
+/-- The hidden entries of the array, together with the codings of the entries of the off-diagonal
+pairs in `V₂`, depend measurably on the array and the uniform variables. -/
+theorem measurable_restrict_pairCoding (H V₂ : Set (ℕ × ℕ)) (e : ℕ → ℕ)
+    {G : ((((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α)) × (((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α))) ×
+      (α × α) → I → α × α} (hG : Measurable (Function.uncurry G)) :
+    Measurable fun q : (ℕ × ℕ → α) × (V₂ → I) =>
+      (H.domRestrict q.1,
+        fun p : V₂ => G (offDiagonalPairSquareContext e p.1.1 p.1.2 q.1) (q.2 p)) :=
+  ((Set.measurable_restrict H).comp measurable_fst).prodMk (Measurable.of_eval fun p =>
+    hG.comp (((measurable_offDiagonalPairSquareContext e p.1.1 p.1.2).comp
+      measurable_fst).prodMk ((measurable_pi_apply p).comp measurable_snd)))
+
+/-- The hidden entries of the array, together with the entries of the pairs in `V₂`, depend
+measurably on the array. -/
+theorem measurable_restrict_pairs (H V₂ : Set (ℕ × ℕ)) :
+    Measurable fun x : ℕ × ℕ → α => (H.domRestrict x, fun p : V₂ => (x p.1, x p.1.swap)) :=
+  (Set.measurable_restrict H).prodMk (Measurable.of_eval fun p =>
+    (measurable_pi_apply p.1).prodMk (measurable_pi_apply p.1.swap))
+
 /-! ## Conditional independence -/
 
 variable [StandardBorelSpace α] {ρ : Measure (ℕ × ℕ → α)} [IsFiniteMeasure ρ]
@@ -166,15 +187,14 @@ theorem JointlyExchangeable.condIndepFun_offDiagonalPair_crossingStripsAndDiagon
   -- The square context and the entries of the square other than the pair generate the same
   -- information, and that information is part of the crossing strips and the diagonal.
   have hRC : MeasurableSpace.comap ((S ×ˢ S \ C).domRestrict (π := fun _ => α)) inferInstance ≤
-      MeasurableSpace.comap (offDiagonalPairSquareContext (α := α) e i j) inferInstance := by
-    rw [← squareStripsOfContext_comp (α := α) e i j hij hi hj, ← MeasurableSpace.comap_comp]
-    exact MeasurableSpace.comap_mono (measurable_squareStripsOfContext e i j).comap_le
+      MeasurableSpace.comap (offDiagonalPairSquareContext (α := α) e i j) inferInstance :=
+    MeasurableSpace.comap_le_comap_of_eq_comp _ (measurable_squareStripsOfContext e i j)
+      (squareStripsOfContext_comp (α := α) e i j hij hi hj).symm
   have hCH : MeasurableSpace.comap (offDiagonalPairSquareContext (α := α) e i j) inferInstance ≤
-      MeasurableSpace.comap (D.domRestrict (π := fun _ => α)) inferInstance := by
-    rw [← offDiagonalPairSquareContextOfStripsAndDiagonal_comp_domRestrict (α := α) e i j,
-      ← MeasurableSpace.comap_comp]
-    exact MeasurableSpace.comap_mono
-      (measurable_offDiagonalPairSquareContextOfStripsAndDiagonal e i j).comap_le
+      MeasurableSpace.comap (D.domRestrict (π := fun _ => α)) inferInstance :=
+    MeasurableSpace.comap_le_comap_of_eq_comp _
+      (measurable_offDiagonalPairSquareContextOfStripsAndDiagonal e i j)
+      (offDiagonalPairSquareContextOfStripsAndDiagonal_comp_domRestrict (α := α) e i j).symm
   -- The pair is conditionally independent of everything outside it, given the rest of the square
   -- spanned by the hidden vertices together with `i` and `j`.
   have hCsub : C ⊆ S ×ˢ S := by
@@ -196,9 +216,9 @@ theorem JointlyExchangeable.condIndepFun_offDiagonalPair_crossingStripsAndDiagon
     · exact hj hp.1
     · exact hij hp.symm
   have hDC : MeasurableSpace.comap (D.domRestrict (π := fun _ => α)) inferInstance ≤
-      MeasurableSpace.comap (Cᶜ.domRestrict (π := fun _ => α)) inferInstance := by
-    rw [← Set.domRestrict₂_comp_domRestrict hDsub, ← MeasurableSpace.comap_comp]
-    exact MeasurableSpace.comap_mono (Set.measurable_restrict₂ hDsub).comap_le
+      MeasurableSpace.comap (Cᶜ.domRestrict (π := fun _ => α)) inferInstance :=
+    MeasurableSpace.comap_le_comap_of_eq_comp _ (Set.measurable_restrict₂ hDsub)
+      (Set.domRestrict₂_comp_domRestrict hDsub).symm
   have hpair := TauCeti.MeasureTheory.comap_pair_le_comap_domRestrict (π := fun _ => α) C
     (Set.mem_insert (i, j) _) (Set.mem_insert_of_mem _ (Set.mem_singleton (j, i)))
   have hstep := condIndep_of_condIndep_of_le_right
@@ -447,7 +467,8 @@ private theorem map_prod_orientedPairCoding_eq
   refine Eq.trans (congrArg (Measure.map · _) (funext fun q => ?_))
     (TauCeti.MeasureTheory.Measure.map_ite_mem_eq (hcoding i j).aemeasurable
       (hswap.comp (hcoding j i)).aemeasurable hO'
-      (Filter.Eventually.of_forall fun _ => Iff.rfl) (hfwd.trans hbwd.symm))
+      (Filter.Eventually.of_forall fun _ => Iff.rfl)
+      (congrArg (Measure.restrict · _) (hfwd.trans hbwd.symm)))
   by_cases hq : offDiagonalPairSquareContextOfStripsAndDiagonal e i j q.1 ∈ O <;>
     simp [hq, offDiagonalPairSquareContextOfStripsAndDiagonal_swap e i j]
 
@@ -605,16 +626,8 @@ theorem JointlyExchangeable.exists_common_offDiagonalArray_coding
   obtain ⟨g, hg, hswap, hF⟩ := hρ.exists_common_offDiagonalPairs_coding he hO
   refine ⟨g, hg, hswap, ?_⟩
   have hZ : Measurable (H.domRestrict (π := fun _ : ℕ × ℕ => α)) := Set.measurable_restrict H
-  have hcode : Measurable fun q : (ℕ × ℕ → α) × (V₂ → I) =>
-      (H.domRestrict q.1,
-        fun p : V₂ => g (offDiagonalPairSquareContext e p.1.1 p.1.2 q.1) (q.2 p)) :=
-    (hZ.comp measurable_fst).prodMk (Measurable.of_eval fun p => hg.comp
-      (((measurable_offDiagonalPairSquareContext e p.1.1 p.1.2).comp measurable_fst).prodMk
-        ((measurable_pi_apply p).comp measurable_snd)))
-  have hread : Measurable fun x : ℕ × ℕ → α =>
-      (H.domRestrict x, fun p : V₂ => (x p.1, x p.1.swap)) :=
-    hZ.prodMk (Measurable.of_eval fun p =>
-      (measurable_pi_apply p.1).prodMk (measurable_pi_apply p.1.swap))
+  have hcode := measurable_restrict_pairCoding H V₂ e hg
+  have hread := measurable_restrict_pairs (α := α) H V₂
   -- Jointly with the crossing strips and the diagonal, the finite-dimensional marginals in the
   -- pairs are those of `exists_common_offDiagonalPairs_coding`, which determine the law.
   refine TauCeti.MeasureTheory.Measure.ext_prod_pi_of_forall_finset_map_restrict_eq fun F => ?_

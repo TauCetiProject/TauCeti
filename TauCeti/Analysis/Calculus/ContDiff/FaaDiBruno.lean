@@ -36,18 +36,19 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
 
 /-- The `m`-th coefficient of the Taylor composition `q.taylorComp p` is continuous in the
-coefficients of `q` and of `p` of order at most `m`. -/
+coefficients of `q` of order at most `m` and of `p` of orders `1` through `m` (the constant
+coefficient of `p` does not enter). -/
 theorem Filter.Tendsto.taylorComp {α : Type*} {l : Filter α}
     {q : α → FormalMultilinearSeries 𝕜 F G} {p : α → FormalMultilinearSeries 𝕜 E F}
     {q₀ : FormalMultilinearSeries 𝕜 F G} {p₀ : FormalMultilinearSeries 𝕜 E F} {m : ℕ}
     (hq : ∀ k ≤ m, Tendsto (fun a ↦ q a k) l (𝓝 (q₀ k)))
-    (hp : ∀ k ≤ m, Tendsto (fun a ↦ p a k) l (𝓝 (p₀ k))) :
+    (hp : ∀ k, 1 ≤ k → k ≤ m → Tendsto (fun a ↦ p a k) l (𝓝 (p₀ k))) :
     Tendsto (fun a ↦ (q a).taylorComp (p a) m) l (𝓝 (q₀.taylorComp p₀ m)) := by
   refine tendsto_finsetSum _ fun c _ ↦ ?_
   have hB := ((c.compAlongOrderedFinpartitionL 𝕜 E F G).continuous.tendsto _).comp
     (hq c.length c.length_le)
   have hP : Tendsto (fun a i ↦ p a (c.partSize i)) l (𝓝 fun i ↦ p₀ (c.partSize i)) :=
-    tendsto_pi_nhds.2 fun i ↦ hp _ (c.partSize_le i)
+    tendsto_pi_nhds.2 fun i ↦ hp _ (c.partSize_pos i) (c.partSize_le i)
   exact (continuous_eval.tendsto _).comp (hB.prodMk_nhds hP)
 
 /-- **A norm bound for the Faà di Bruno composition.** If the coefficients of `p` of orders `1`
@@ -61,7 +62,7 @@ theorem FormalMultilinearSeries.norm_taylorComp_le (q : FormalMultilinearSeries 
   refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun c _ ↦ ?_)
   refine (c.norm_compAlongOrderedFinpartition_le _ _).trans ?_
   rw [mul_comm (max 1 B ^ m)]
-  refine mul_le_mul_of_nonneg_left ?_ (norm_nonneg _)
+  gcongr
   calc ∏ i, ‖p (c.partSize i)‖ ≤ ∏ _i : Fin c.length, max 1 B := by
         gcongr with i
         exact (hp _ (c.partSize_pos i) (c.partSize_le i)).trans (le_max_right _ _)

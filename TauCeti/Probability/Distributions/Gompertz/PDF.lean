@@ -167,7 +167,7 @@ theorem gompertzMeasure_eq_withDensity (η b : ℝ) :
     have hmap := TauCeti.MeasureTheory.map_withDensity_abs_deriv_mul
       (s := Ioi (0 : ℝ)) (φ := fun e : ℝ => log (1 + e / η) / b)
       (φ' := fun e => (η + e)⁻¹ / b) (f := gompertzPDF η b)
-      measurableSet_Ioi (by fun_prop)
+      measurableSet_Ioi
       (fun e he => (hasDerivAt_gompertzTransform hη b he).hasDerivWithinAt)
       (injOn_gompertzTransform hη hb)
     have hw : (fun e : ℝ => ENNReal.ofReal |(η + e)⁻¹ / b| *

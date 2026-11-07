@@ -195,15 +195,6 @@ theorem dimVector_subspaceJordanRep_outer (i : Fin 4) :
   (dimVector_apply _ _).trans
     (finrank_quotient_span_eq_natDegree.trans (natDegree_X_pow (n + 1)))
 
-/-- `TauCeti.subspaceJordanRep k n` is nonzero: its outer vertex spaces are the nontrivial ring
-`k[X]/(Xⁿ⁺¹)`. -/
-theorem not_isZero_subspaceJordanRep : ¬ IsZero (subspaceJordanRep k n) := by
-  intro h
-  have : Subsingleton (AdjoinRoot ((X : k[X]) ^ (n + 1))) :=
-    ModuleCat.subsingleton_of_isZero
-      (h.obj (Quiver.Subspace.outer 0 : Paths (Quiver.Subspace (Fin 4))))
-  exact false_of_nontrivial_of_subsingleton (AdjoinRoot ((X : k[X]) ^ (n + 1)))
-
 /-! ### Endomorphisms -/
 
 /-- The component of an endomorphism at the outer vertex indexed by `i`. -/
@@ -311,7 +302,7 @@ theorem indecomposable_subspaceJordanRep : Indecomposable (subspaceJordanRep k n
   -- determined by it, so that value records the endomorphism faithfully in the local ring
   -- `k[X]/(Xⁿ⁺¹)` (`TauCeti.isLocalRing_adjoinRoot_X_pow`), sending `0` to `0`, the identity to
   -- `1` and squares to squares.
-  refine indecomposable_of_injective_of_isLocalRing not_isZero_subspaceJordanRep
+  refine indecomposable_of_injective_of_isLocalRing
     (fun e ↦ outerApp e 0 1) (fun e e' h ↦ ?_) rfl rfl
     fun e ↦ ?_
   · refine hom_ext_of_outerApp ?_
