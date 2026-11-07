@@ -9,6 +9,8 @@ public import Mathlib.MeasureTheory.Measure.GiryMonad
 public import Mathlib.Probability.IdentDistrib
 public import TauCeti.Probability.Distributions.Poisson.Basic
 
+import TauCeti.Probability.Independence.Basic
+
 /-!
 # Poisson random measures
 
@@ -175,55 +177,13 @@ theorem isPoissonRandomMeasure_smul_dirac (r : ℝ≥0) (x : X) :
       (((r : ℝ≥0∞) • Measure.dirac x) (A i)).toNNReal = if x ∈ A i then r else 0 := by
     by_cases hx : x ∈ A i <;> simp [Measure.dirac_apply' _ (hA i).1, hx]
   constructor
-  · rw [iIndepFun_iff_measure_inter_preimage_eq_mul]
-    intro S sets hsets
-    -- Only the set containing the atom can give a nonconstant count. An impossible zero-count
-    -- event makes both sides vanish; otherwise all constant coordinates contribute the unit.
-    by_cases hbad : ∃ i ∈ S, x ∉ A i ∧ (0 : ℝ≥0∞) ∉ sets i
-    · obtain ⟨i, hi, hxi, hzi⟩ := hbad
-      have hempty : (fun k : ℕ => ((k : ℝ≥0∞) • Measure.dirac x) (A i)) ⁻¹' sets i = ∅ := by
-        ext k
-        simp [heval, hxi, hzi]
-      have hInter : (⋂ j ∈ S,
-          (fun k : ℕ => ((k : ℝ≥0∞) • Measure.dirac x) (A j)) ⁻¹' sets j) = ∅ :=
-        Set.eq_empty_iff_forall_notMem.mpr fun k hk => by
-          have := Set.mem_iInter₂.mp hk i hi
-          simp only [hempty, Set.mem_empty_iff_false] at this
-      rw [hInter, measure_empty]
-      exact (Finset.prod_eq_zero hi (by rw [hempty, measure_empty])).symm
-    · have hzero (i : Fin n) (hi : i ∈ S) (hxi : x ∉ A i) :
-          (fun k : ℕ => ((k : ℝ≥0∞) • Measure.dirac x) (A i)) ⁻¹' sets i = Set.univ := by
-        have hzi : (0 : ℝ≥0∞) ∈ sets i := by grind
-        ext k
-        simp [heval, hxi, hzi]
-      by_cases hactive : ∃ i ∈ S, x ∈ A i
-      · obtain ⟨i, hi, hxi⟩ := hactive
-        have hother (j : Fin n) (hj : j ∈ S) (hji : j ≠ i) :
-            (fun k : ℕ => ((k : ℝ≥0∞) • Measure.dirac x) (A j)) ⁻¹' sets j = Set.univ :=
-          hzero j hj (fun hxj => Set.disjoint_left.mp (hd hji) hxj hxi)
-        have hInter : (⋂ j ∈ S,
-            (fun k : ℕ => ((k : ℝ≥0∞) • Measure.dirac x) (A j)) ⁻¹' sets j) =
-              (fun k : ℕ => ((k : ℝ≥0∞) • Measure.dirac x) (A i)) ⁻¹' sets i := by
-          ext k
-          simp only [Set.mem_iInter]
-          constructor
-          · exact fun hk => hk i hi
-          · intro hk j hj
-            by_cases hji : j = i
-            · simpa only [hji] using hk
-            · rw [hother j hj hji]
-              exact Set.mem_univ k
-        rw [hInter, Finset.prod_eq_single_of_mem i hi]
-        intro j hj hji
-        rw [hother j hj hji, measure_univ]
-      · have hz (i : Fin n) (hi : i ∈ S) := hzero i hi (by grind)
-        have hInter : (⋂ i ∈ S,
-            (fun k : ℕ => ((k : ℝ≥0∞) • Measure.dirac x) (A i)) ⁻¹' sets i) = Set.univ := by
-          exact Set.eq_univ_iff_forall.mpr fun k => Set.mem_iInter₂.mpr fun i hi => by
-            rw [hz i hi]
-            exact Set.mem_univ k
-        rw [hInter, measure_univ]
-        exact (Finset.prod_eq_one fun i hi => by rw [hz i hi, measure_univ]).symm
+  · apply iIndepFun_of_ae_eq_const_outside_subsingleton (s := {i | x ∈ A i})
+    · intro i hi j hj
+      by_contra hij
+      exact Set.disjoint_left.mp (hd hij) hi hj
+    · intro i hi
+      change x ∉ A i at hi
+      exact ⟨0, Filter.Eventually.of_forall fun k => by simp [heval, hi]⟩
   · intro i
     by_cases hx : x ∈ A i
     · simpa only [heval, hrate, hx, ↓reduceIte] using
