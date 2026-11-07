@@ -64,21 +64,6 @@ open scoped ENNReal Topology
 
 variable {ι : Type*} [Fintype ι] {A B : Set (ι → ℝ)} {δ : ℝ≥0∞}
 
-/-- In positive dimension, the dyadic cubes `Q` with `δ |Q| < |A|`, for `δ ≠ 0` and `|A|` finite,
-have bounded level. -/
-private theorem exists_forall_lt_of_mul_volume_dyadicCube_lt [Nonempty ι] (hδ : δ ≠ 0)
-    (hA : volume A ≠ ∞) :
-    ∃ N : ℤ, ∀ (k : ℤ) (m : ι → ℤ), δ * volume (dyadicCube k m) < volume A → k < N := by
-  have h : Tendsto (fun k : ℤ => δ * volume (dyadicCube k fun _ : ι => (0 : ℤ))) atTop (𝓝 ∞) := by
-    have h := ENNReal.Tendsto.const_mul (a := δ)
-      (tendsto_volume_dyadicCube_atTop fun _ (_ : ι) => (0 : ℤ)) (.inl ENNReal.top_ne_zero)
-    rwa [ENNReal.mul_top hδ] at h
-  obtain ⟨N, hN⟩ := eventually_atTop.1 ((tendsto_order.1 h).1 (volume A) hA.lt_top)
-  refine ⟨N, fun k m hk => lt_of_not_ge fun hNk => ?_⟩
-  have hlt := hN k hNk
-  rw [volume_dyadicCube] at hlt hk
-  exact (hlt.trans hk).false
-
 /-- **The Krylov–Safonov covering lemma.** Let `0 < δ < 1`, and let `A ⊆ ℝⁿ`, `n ≥ 1`, be
 null-measurable with finite measure. If the parent of every dyadic cube `Q` with
 `δ |Q| < |A ∩ Q|` (the dyadic cube of the next level containing `Q`) lies in `B`, then

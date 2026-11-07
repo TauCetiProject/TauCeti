@@ -41,6 +41,8 @@ Mathlib's differentiation theorem along closed balls with moving centres.
 * `TauCeti.volume_closedBall_eq_zero_of_nonpos`: a closed ball of nonpositive radius is null.
 * `TauCeti.volume_dyadicCube`, `TauCeti.volume_dyadicCube_add_one`: a cube of level `k` has
   volume `(2ᵏ)ⁿ`, so its parent is `2ⁿ` times larger.
+* `TauCeti.exists_forall_lt_of_mul_volume_dyadicCube_lt`: in positive dimension, the dyadic cubes
+  `Q` with `δ |Q| < |s|`, for `δ ≠ 0` and `|s|` finite, have bounded level.
 * `TauCeti.exists_subset_pairwiseDisjoint_forall_dyadicCube_subset`: in a family of dyadic cubes
   of bounded level, the maximal cubes are pairwise disjoint and contain every cube of the family.
 * `TauCeti.ae_tendsto_setLAverage_dyadicCube`: the Lebesgue differentiation theorem along dyadic
@@ -242,6 +244,21 @@ theorem tendsto_volume_dyadicCube_atTop [Nonempty ι] (m : ℤ → ι → ℤ) :
       tendsto_atTop_atTop_of_monotone (fun _ _ h => zpow_le_zpow_right₀ one_le_two h) fun b => ?_
   obtain ⟨n, hn⟩ := exists_nat_gt b
   exact ⟨n, hn.le.trans <| by exact_mod_cast (Nat.lt_two_pow_self).le⟩
+
+/-- In positive dimension, the dyadic cubes `Q` with `δ |Q| < |s|`, for `δ ≠ 0` and `|s|` finite,
+have bounded level. -/
+theorem exists_forall_lt_of_mul_volume_dyadicCube_lt [Nonempty ι] {s : Set (ι → ℝ)} {δ : ℝ≥0∞}
+    (hδ : δ ≠ 0) (hs : volume s ≠ ∞) :
+    ∃ N : ℤ, ∀ (k : ℤ) (m : ι → ℤ), δ * volume (dyadicCube k m) < volume s → k < N := by
+  have h : Tendsto (fun k : ℤ => δ * volume (dyadicCube k fun _ : ι => (0 : ℤ))) atTop (𝓝 ∞) := by
+    have h := ENNReal.Tendsto.const_mul (a := δ)
+      (tendsto_volume_dyadicCube_atTop fun _ (_ : ι) => (0 : ℤ)) (.inl ENNReal.top_ne_zero)
+    rwa [ENNReal.mul_top hδ] at h
+  obtain ⟨N, hN⟩ := eventually_atTop.1 ((tendsto_order.1 h).1 (volume s) hs.lt_top)
+  refine ⟨N, fun k m hk => lt_of_not_ge fun hNk => ?_⟩
+  have hlt := hN k hNk
+  rw [volume_dyadicCube] at hlt hk
+  exact (hlt.trans hk).false
 
 /-- **Lebesgue's differentiation theorem along dyadic cubes**: for an integrable `g`, at almost
 every `x` the averages of `g` over the dyadic cubes containing `x` converge to `g x` as the level
