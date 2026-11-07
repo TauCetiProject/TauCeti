@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.HomologySequence
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
+public import Mathlib.Algebra.Homology.HomologicalComplexBiprod
+public import Mathlib.Algebra.Homology.HomologySequence
 public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Biproducts
 
 /-!
@@ -35,7 +36,8 @@ attribute [local instance] preservesBinaryBiproduct_of_preservesBiproduct
 
 namespace HomologicalComplex
 
-variable {C ι : Type*} [Category* C] [Abelian C] {c : ComplexShape ι}
+variable {C ι : Type*} [Category* C] [Preadditive C] [HasBinaryBiproducts C]
+  [CategoryWithHomology C] {c : ComplexShape ι}
   {X A B Z : HomologicalComplex C c} {f₁ : X ⟶ A} {f₂ : X ⟶ B} {g₁ : A ⟶ Z} {g₂ : B ⟶ Z}
 
 /-- The maps induced on homology by the components of `X ⟶ A ⊞ B ⟶ Z` compose to zero. -/
@@ -65,19 +67,19 @@ private lemma homologyBiprodIso_hom_comp_desc_homologyMap (i : ι) :
       homologyMap (biprod.desc g₁ g₂) i :=
   biprod.mapBiprod_hom_desc (homologyFunctor C c i) _ _ _ _
 
-/-- The map `Hᵢ(X) ⟶ Hᵢ(A) ⊞ Hᵢ(B)` induced by `(f₁, f₂)` is a monomorphism when the map induced
-by `biprod.lift f₁ f₂` is. -/
-lemma mono_biprod_lift_homologyMap (i : ι) [Mono (homologyMap (biprod.lift f₁ f₂) i)] :
-    Mono (biprod.lift (homologyMap f₁ i) (homologyMap f₂ i)) := by
-  rw [← homologyMap_lift_comp_homologyBiprodIso_hom]
-  infer_instance
+/-- The map `Hᵢ(X) ⟶ Hᵢ(A) ⊞ Hᵢ(B)` induced by `(f₁, f₂)` is a monomorphism if and only if the
+map induced by `biprod.lift f₁ f₂` is. -/
+lemma mono_biprod_lift_homologyMap_iff (i : ι) :
+    Mono (biprod.lift (homologyMap f₁ i) (homologyMap f₂ i)) ↔
+      Mono (homologyMap (biprod.lift f₁ f₂) i) := by
+  rw [← homologyMap_lift_comp_homologyBiprodIso_hom, mono_comp_iff_of_mono]
 
-/-- The map `Hᵢ(A) ⊞ Hᵢ(B) ⟶ Hᵢ(Z)` induced by `g₁ + g₂` is an epimorphism when the map induced
-by `biprod.desc g₁ g₂` is. -/
-lemma epi_biprod_desc_homologyMap (i : ι) [Epi (homologyMap (biprod.desc g₁ g₂) i)] :
-    Epi (biprod.desc (homologyMap g₁ i) (homologyMap g₂ i)) :=
-  (epi_comp_iff_of_epi (homologyBiprodIso A B i).hom _).1
-    (by rw [homologyBiprodIso_hom_comp_desc_homologyMap]; infer_instance)
+/-- The map `Hᵢ(A) ⊞ Hᵢ(B) ⟶ Hᵢ(Z)` induced by `g₁ + g₂` is an epimorphism if and only if the
+map induced by `biprod.desc g₁ g₂` is. -/
+lemma epi_biprod_desc_homologyMap_iff (i : ι) :
+    Epi (biprod.desc (homologyMap g₁ i) (homologyMap g₂ i)) ↔
+      Epi (homologyMap (biprod.desc g₁ g₂) i) := by
+  rw [← homologyBiprodIso_hom_comp_desc_homologyMap, epi_comp_iff_of_epi]
 
 end HomologicalComplex
 
@@ -98,8 +100,7 @@ lemma δ_comp_biprod_lift_homologyMap (i j : ι) (hij : c.Rel i j) :
     hS.δ i j hij ≫
       biprod.lift (HomologicalComplex.homologyMap f₁ j) (HomologicalComplex.homologyMap f₂ j) =
         0 := by
-  rw [← homologyMap_lift_comp_homologyBiprodIso_hom]
-  exact hS.δ_comp_assoc i j hij _ |>.trans zero_comp
+  rw [← homologyMap_lift_comp_homologyBiprodIso_hom, δ_comp_assoc, zero_comp]
 
 /-- The map `Hᵢ(A) ⊞ Hᵢ(B) ⟶ Hᵢ(Z)` induced by a short exact sequence `X ⟶ A ⊞ B ⟶ Z` followed
 by its connecting morphism is zero. -/
@@ -115,8 +116,7 @@ lemma biprod_desc_homologyMap_comp_δ (i j : ι) (hij : c.Rel i j) :
 lemma biprod_homology_exact₁ (i j : ι) (hij : c.Rel i j) :
     (ShortComplex.mk _ _ (hS.δ_comp_biprod_lift_homologyMap i j hij)).Exact := by
   refine (ShortComplex.exact_iff_of_iso ?_).1 (hS.homology_exact₁ i j hij)
-  refine ShortComplex.isoMk (Iso.refl _) (Iso.refl _)
-    (homologyBiprodIso A B j) ?_ ?_
+  refine ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (homologyBiprodIso A B j) ?_ ?_
   · simp
   · exact (Category.id_comp _).trans (homologyMap_lift_comp_homologyBiprodIso_hom j).symm
 
@@ -126,8 +126,7 @@ lemma biprod_homology_exact₂ (i : ι) :
     (ShortComplex.mk _ _
       (HomologicalComplex.biprod_lift_homologyMap_comp_desc_homologyMap w i)).Exact := by
   refine (ShortComplex.exact_iff_of_iso ?_).1 (hS.homology_exact₂ i)
-  refine ShortComplex.isoMk (Iso.refl _)
-    (homologyBiprodIso A B i) (Iso.refl _) ?_ ?_
+  refine ShortComplex.isoMk (Iso.refl _) (homologyBiprodIso A B i) (Iso.refl _) ?_ ?_
   · exact (Category.id_comp _).trans (homologyMap_lift_comp_homologyBiprodIso_hom i).symm
   · exact (homologyBiprodIso_hom_comp_desc_homologyMap i).trans (Category.comp_id _).symm
 
@@ -135,8 +134,7 @@ lemma biprod_homology_exact₂ (i : ι) :
 lemma biprod_homology_exact₃ (i j : ι) (hij : c.Rel i j) :
     (ShortComplex.mk _ _ (hS.biprod_desc_homologyMap_comp_δ i j hij)).Exact := by
   refine (ShortComplex.exact_iff_of_iso ?_).1 (hS.homology_exact₃ i j hij)
-  refine ShortComplex.isoMk (homologyBiprodIso A B i)
-    (Iso.refl _) (Iso.refl _) ?_ ?_
+  refine ShortComplex.isoMk (homologyBiprodIso A B i) (Iso.refl _) (Iso.refl _) ?_ ?_
   · exact (homologyBiprodIso_hom_comp_desc_homologyMap i).trans (Category.comp_id _).symm
   · simp
 
