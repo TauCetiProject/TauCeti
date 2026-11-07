@@ -405,9 +405,9 @@ theorem contMDiffOn_maximalIntegralCurve [CompleteSpace E] {n : ℕ∞} (hn : 1 
     hp).2.contMDiffWithinAt.of_le (by exact_mod_cast hmk)
 
 /-- **Continuity of the maximal flow.** The maximal flow of a `C^1` vector field on a
-finite-dimensional boundaryless manifold is jointly continuous in its initial point and time at
-every point of its natural domain. -/
-theorem continuousAt_maximalIntegralCurve [FiniteDimensional ℝ E]
+boundaryless manifold modelled on a complete normed space is jointly continuous in its initial
+point and time at every point of its natural domain. -/
+theorem continuousAt_maximalIntegralCurve [CompleteSpace E]
     (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {p : M × ℝ}
     (hp : p.2 ∈ maximalIntegralCurveInterval v p.1) :
     ContinuousAt (fun q : M × ℝ ↦ maximalIntegralCurve v q.1 q.2) p :=
