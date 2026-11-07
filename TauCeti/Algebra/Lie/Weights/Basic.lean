@@ -306,9 +306,10 @@ theorem toSubmodule_rootSpace_eq_of_isZero {χ : Weight K H L} (hχ : χ.IsZero)
   simp
 
 omit [LieAlgebra.IsKilling K L] in
-/-- A linear map of `L` respects the bracket as soon as it does so on every pair of root vectors,
-since the root spaces span `L`. -/
-theorem _root_.LinearMap.map_lie_eq_of_forall_mem_rootSpace (f : L →ₗ[K] L)
+/-- A linear map from `L` to a Lie algebra respects the bracket as soon as it does so on every
+pair of root vectors, since the root spaces span `L`. -/
+theorem _root_.LinearMap.map_lie_eq_of_forall_mem_rootSpace {M : Type*} [LieRing M]
+    [LieAlgebra K M] (f : L →ₗ[K] M)
     (h : ∀ (χ₁ χ₂ : Weight K H L) (v : L), v ∈ rootSpace H χ₁ → ∀ w : L, w ∈ rootSpace H χ₂ →
       f ⁅v, w⁆ = ⁅f v, f w⁆) (v w : L) : f ⁅v, w⁆ = ⁅f v, f w⁆ := by
   have htop : ⨆ χ : Weight K H L, (rootSpace H χ).toSubmodule = ⊤ :=
@@ -318,12 +319,12 @@ theorem _root_.LinearMap.map_lie_eq_of_forall_mem_rootSpace (f : L →ₗ[K] L)
       f ⁅v, w⁆ = ⁅f v, f w⁆ := by
     intro χ₁ v hv w
     have hle : (⊤ : Submodule K L) ≤
-        LinearMap.eqLocus (f.comp (LieAlgebra.ad K L v)) ((LieAlgebra.ad K L (f v)).comp f) := by
+        LinearMap.eqLocus (f.comp (LieAlgebra.ad K L v)) ((LieAlgebra.ad K M (f v)).comp f) := by
       rw [← htop]
       exact iSup_le fun χ₂ u hu ↦ h χ₁ χ₂ v hv u hu
     exact hle trivial
   have hle : (⊤ : Submodule K L) ≤
-      LinearMap.eqLocus (f.comp (LieAlgebra.ad K L w)) ((LieAlgebra.ad K L (f w)).comp f) := by
+      LinearMap.eqLocus (f.comp (LieAlgebra.ad K L w)) ((LieAlgebra.ad K M (f w)).comp f) := by
     rw [← htop]
     exact iSup_le fun χ₁ u hu ↦ LinearMap.map_lie_swap (hright χ₁ u hu w)
   exact LinearMap.map_lie_swap (hle trivial)
