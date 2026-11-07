@@ -66,12 +66,12 @@ private theorem integrable_abs_rpow_standardStableMeasure_iff
     exact (integrable_abs_rpow_stableCompensatedPoissonMeasure_iff hα hβ zero_lt_one hq).1
       ((memLp_id_ofReal_iff_integrable_abs_rpow hq _).1 hlarge)
   · intro hqα
+    have hq_two : ENNReal.ofReal q ≤ 2 := by
+      calc ENNReal.ofReal q ≤ ENNReal.ofReal 2 :=
+            ENNReal.ofReal_le_ofReal (hqα.trans hα.2).le
+           _ = 2 := by norm_num
     have hsmall := (memLp_two_id_of_conv_stableCompensatedPoissonMeasure_eq
-      hα hβ zero_lt_one hμ).mono_exponent
-      (show ENNReal.ofReal q ≤ 2 by
-        calc ENNReal.ofReal q ≤ ENNReal.ofReal 2 :=
-              ENNReal.ofReal_le_ofReal (hqα.trans hα.2).le
-             _ = 2 := by norm_num)
+      hα hβ zero_lt_one hμ).mono_exponent hq_two
     have hlarge := (memLp_id_ofReal_iff_integrable_abs_rpow hq _).2
       ((integrable_abs_rpow_stableCompensatedPoissonMeasure_iff hα hβ zero_lt_one hq).2 hqα)
     apply (memLp_id_ofReal_iff_integrable_abs_rpow hq _).1
