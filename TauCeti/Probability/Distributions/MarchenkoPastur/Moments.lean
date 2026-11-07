@@ -169,6 +169,47 @@ private lemma neg_mul_I_mul_resolventTransform_quadratic_eq_zero (y : ℝ≥0) {
   rw [hmQ] at hq
   linear_combination hq + (-(y : ℂ) * w * Q ^ 2 + Q) * hwt
 
+/-- If the quadratic polynomial built from `P` equals `X ^ n * G` and the truncation error
+`(i t) ^ n * (P(w(t)) - Q(t))` tends to `0`, then `G(w(t))` tends to `0` along
+`w(t) = (i t)⁻¹` as `t → +∞`: subtract the resolvent quadratic equation. -/
+private theorem tendsto_aeval_inv_mul_I_eq_zero (y : ℝ≥0) (n : ℕ) (P G : ℝ[X])
+    (hFG : Polynomial.C (y : ℝ) * Polynomial.X * P ^ 2 +
+      (Polynomial.C (1 - (y : ℝ)) * Polynomial.X - 1) * P + 1 = Polynomial.X ^ n * G)
+    (hrem : Tendsto (fun t : ℝ ↦ ((t : ℂ) * I) ^ n *
+      (Polynomial.aeval (((t : ℂ) * I)⁻¹) P -
+        -((t : ℂ) * I * resolventTransform (marchenkoPastur y) ((t : ℂ) * I)))) atTop (𝓝 0)) :
+    Tendsto (fun t : ℝ ↦ Polynomial.aeval (((t : ℂ) * I)⁻¹) G) atTop (𝓝 0) := by
+  let F : ℝ[X] := Polynomial.C (y : ℝ) * Polynomial.X * P ^ 2 +
+    (Polynomial.C (1 - (y : ℝ)) * Polynomial.X - 1) * P + 1
+  let w : ℝ → ℂ := fun t ↦ ((t : ℂ) * I)⁻¹
+  let Q : ℝ → ℂ := fun t ↦ -((t : ℂ) * I * resolventTransform (marchenkoPastur y) ((t : ℂ) * I))
+  let S : ℝ → ℂ := fun t ↦ Polynomial.aeval (w t) P
+  have hw0 : Tendsto w atTop (𝓝 0) := I.tendsto_inv_ofReal_mul_atTop_zero
+  have hQ_lim : Tendsto Q atTop (𝓝 1) := by
+    simpa [Q] using (tendsto_mul_I_mul_resolventTransform (μ := marchenkoPastur y)).neg
+  have hS_lim : Tendsto S atTop (𝓝 (Polynomial.aeval (0 : ℂ) P)) :=
+    (P.continuous_aeval.tendsto (0 : ℂ)).comp hw0
+  have hrem' : Tendsto (fun t : ℝ ↦ ((t : ℂ) * I) ^ n * (S t - Q t)) atTop (𝓝 0) := hrem
+  have hFG' : F = Polynomial.X ^ n * G := hFG
+  have hprod : Tendsto (fun t : ℝ ↦ (((t : ℂ) * I) ^ n * (S t - Q t)) *
+      ((y : ℂ) * w t * (S t + Q t) + ((1 - (y : ℂ)) * w t - 1))) atTop (𝓝 0) := by
+    simpa using hrem'.mul (((tendsto_const_nhds.mul hw0).mul (hS_lim.add hQ_lim)).add
+      ((tendsto_const_nhds.mul hw0).sub tendsto_const_nhds))
+  refine hprod.congr' ?_
+  filter_upwards [eventually_ne_atTop (0 : ℝ)] with t ht
+  have hwt : w t * ((t : ℂ) * I) = 1 := inv_mul_cancel₀ (by simp [ht])
+  have hQeq : (y : ℂ) * w t * Q t ^ 2 + ((1 - (y : ℂ)) * w t - 1) * Q t + 1 = 0 :=
+    neg_mul_I_mul_resolventTransform_quadratic_eq_zero y ht
+  have hFeval : Polynomial.aeval (w t) F =
+      (y : ℂ) * w t * S t ^ 2 + ((1 - (y : ℂ)) * w t - 1) * S t + 1 := by
+    simp [F, S]
+  have hFG_eval : Polynomial.aeval (w t) F = w t ^ n * Polynomial.aeval (w t) G := by
+    rw [hFG', map_mul, map_pow, Polynomial.aeval_X]
+  have hwn : ((t : ℂ) * I) ^ n * w t ^ n = 1 := by
+    rw [← mul_pow, mul_comm, hwt, one_pow]
+  linear_combination -((t : ℂ) * I) ^ n * hFeval + ((t : ℂ) * I) ^ n * hFG_eval -
+    ((t : ℂ) * I) ^ n * hQeq + Polynomial.aeval (w t) G * hwn
+
 /-- The moment generating series `M` of `marchenkoPastur y` satisfies the formal quadratic equation
 `y X M² + ((1 - y) X - 1) M + 1 = 0`. -/
 private theorem momentSeries_quadratic_eq_zero (y : ℝ≥0) :
@@ -205,31 +246,10 @@ private theorem momentSeries_quadratic_eq_zero (y : ℝ≥0) :
   have hG_lim : Tendsto (fun t : ℝ ↦ Polynomial.aeval (w t) G) atTop (𝓝 ((G.coeff 0 : ℝ) : ℂ)) := by
     simpa [Function.comp_def, Polynomial.aeval_def, Polynomial.eval₂_at_zero] using
       (G.continuous_aeval.tendsto (0 : ℂ)).comp hw0
-  have hQ_lim : Tendsto Q atTop (𝓝 1) := by
-    simpa [Q] using (tendsto_mul_I_mul_resolventTransform (μ := marchenkoPastur y)).neg
-  have hS_lim : Tendsto S atTop (𝓝 (Polynomial.aeval (0 : ℂ) P)) :=
-    (P.continuous_aeval.tendsto (0 : ℂ)).comp hw0
   have hrem : Tendsto (fun t : ℝ ↦ ((t : ℂ) * I) ^ n * (S t - Q t)) atTop (𝓝 0) :=
     tendsto_mul_I_pow_mul_aeval_trunc_momentSeries y n
-  have hG_zero : Tendsto (fun t : ℝ ↦ Polynomial.aeval (w t) G) atTop (𝓝 0) := by
-    have hprod : Tendsto (fun t : ℝ ↦ (((t : ℂ) * I) ^ n * (S t - Q t)) *
-        ((y : ℂ) * w t * (S t + Q t) + ((1 - (y : ℂ)) * w t - 1))) atTop (𝓝 0) := by
-      simpa using hrem.mul (((tendsto_const_nhds.mul hw0).mul (hS_lim.add hQ_lim)).add
-        ((tendsto_const_nhds.mul hw0).sub tendsto_const_nhds))
-    refine hprod.congr' ?_
-    filter_upwards [eventually_ne_atTop (0 : ℝ)] with t ht
-    have hwt : w t * ((t : ℂ) * I) = 1 := inv_mul_cancel₀ (by simp [ht])
-    have hQeq : (y : ℂ) * w t * Q t ^ 2 + ((1 - (y : ℂ)) * w t - 1) * Q t + 1 = 0 :=
-      neg_mul_I_mul_resolventTransform_quadratic_eq_zero y ht
-    have hFeval : Polynomial.aeval (w t) F =
-        (y : ℂ) * w t * S t ^ 2 + ((1 - (y : ℂ)) * w t - 1) * S t + 1 := by
-      simp [F, S]
-    have hFG_eval : Polynomial.aeval (w t) F = w t ^ n * Polynomial.aeval (w t) G := by
-      rw [hFG, map_mul, map_pow, Polynomial.aeval_X]
-    have hwn : ((t : ℂ) * I) ^ n * w t ^ n = 1 := by
-      rw [← mul_pow, mul_comm, hwt, one_pow]
-    linear_combination -((t : ℂ) * I) ^ n * hFeval + ((t : ℂ) * I) ^ n * hFG_eval -
-      ((t : ℂ) * I) ^ n * hQeq + Polynomial.aeval (w t) G * hwn
+  have hG_zero : Tendsto (fun t : ℝ ↦ Polynomial.aeval (w t) G) atTop (𝓝 0) :=
+    tendsto_aeval_inv_mul_I_eq_zero y n P G hFG hrem
   rw [hEG]
   exact ofReal_eq_zero.1 (tendsto_nhds_unique hG_lim hG_zero)
 
