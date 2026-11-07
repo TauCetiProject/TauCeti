@@ -22,8 +22,6 @@ unitary group. Rescaling by a scalar of modulus one keeps a matrix unitary, so n
 ## Main results
 
 * `Circle.coe_mem_unitary`: a point of the circle is a unitary complex number.
-* `Matrix.diagonal_update_one_mem_unitary_iff`: a diagonal matrix with all diagonal entries `1`
-  except one is unitary exactly when that entry is.
 * `Matrix.exists_circle_smul_mem_specialUnitaryGroup`: every complex unitary matrix becomes
   special unitary after multiplication by a suitable scalar of modulus one.
 * `Matrix.mem_unitaryGroup_of_star_mul_self_eq_scalar`: over `ℝ` or `ℂ`, a matrix `A` for which
@@ -47,13 +45,6 @@ theorem Circle.coe_mem_unitary (z : Circle) : (z : ℂ) ∈ unitary ℂ :=
 namespace Matrix
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
-
-/-- A diagonal matrix whose diagonal entries are all `1` except the `i`-th one is unitary exactly
-when its `i`-th diagonal entry is unitary. -/
-theorem diagonal_update_one_mem_unitary_iff {α : Type*} [Semiring α] [StarRing α] {a : α}
-    {i : n} :
-    diagonal (Function.update (1 : n → α) i a) ∈ unitary (Matrix n n α) ↔ a ∈ unitary α := by
-  simp [Pi.mem_unitary_iff, Function.forall_update_iff]
 
 /-- **Recognizing unitary matrices.** If `Aᴴ A` is a scalar matrix and the determinant of `A` has
 norm one, then `A` is unitary: the scalar is the squared norm of a column of `A`, a nonnegative

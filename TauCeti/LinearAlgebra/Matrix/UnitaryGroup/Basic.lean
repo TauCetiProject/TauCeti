@@ -18,6 +18,9 @@ permutation matrices are unitary. Accordingly `Matrix.permutationUnitary` is
 
 `Matrix.conjTranspose_mul_mul_mem_unitary` transfers unitarity along a possibly rectangular
 matrix whose conjugate transpose is a two-sided inverse.
+
+`Matrix.diagonal_update_one_mem_unitary_iff` says that a diagonal matrix with all diagonal entries
+`1` except one is unitary exactly when that entry is.
 -/
 
 public section
@@ -56,6 +59,13 @@ theorem conjTranspose_mul_mul_mem_unitary
   constructor <;>
     simp only [conjTranspose_mul, conjTranspose_conjTranspose,
       ← Matrix.mul_assoc Pᴴ Xᴴ P, hcancel, hX.1, hX.2, Matrix.mul_one, hP]
+
+/-- A diagonal matrix whose diagonal entries are all `1` except the `i`-th one is unitary exactly
+when its `i`-th diagonal entry is unitary. -/
+theorem diagonal_update_one_mem_unitary_iff {n α : Type*} [Fintype n] [DecidableEq n]
+    [Semiring α] [StarRing α] {a : α} {i : n} :
+    diagonal (Function.update (1 : n → α) i a) ∈ unitary (Matrix n n α) ↔ a ∈ unitary α := by
+  simp [Pi.mem_unitary_iff, Function.forall_update_iff]
 
 variable {R : Type u} [CommRing R] [StarRing R]
 variable {n : Type v} [Fintype n] [DecidableEq n]
