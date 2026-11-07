@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Deriv
+import TauCeti.Analysis.Distribution.TemperateGrowth
 
 /-!
 # Directional differentiation and linear maps on Schwartz space
@@ -21,8 +22,9 @@ directional differentiation, and hence with the Laplacian. In particular, real a
 parts, and the embedding of real-valued functions into complex Schwartz space, commute with
 differentiation.
 
-Multiplication by a continuous linear functional `L` satisfies the Leibniz rule
-`∂_v (L f) = L ∂_v f + L v f`, and its iterate
+Multiplication by a function `g` of temperate growth satisfies the Leibniz rule
+`∂_v (g f) = (∂_v g) f + g ∂_v f`. For a continuous linear functional `L` it reads
+`∂_v (L f) = L ∂_v f + L v f`, with iterate
 `∂_v^(k+1) (L f) = L ∂_v^(k+1) f + (k + 1) L v ∂_v^k f`. On the Fourier side, multiplying a symbol
 by `⟪h, ξ⟫` differentiates its kernel along `h`, so these identities control the derivatives of
 the symbol of a differentiated kernel.
@@ -103,13 +105,22 @@ theorem laplacian_eq_lineDerivOp_one_I (f : 𝓢(ℂ, F)) :
     Δ f = ∂_{(1 : ℂ)} (∂_{(1 : ℂ)} f) + ∂_{Complex.I} (∂_{Complex.I} f) := by
   simp [laplacian_eq_sum Complex.orthonormalBasisOneI, Fin.sum_univ_two]
 
+/-- **The Leibniz rule for multiplication by a function of temperate growth**:
+`∂_v (g f) = (∂_v g) f + g ∂_v f`, where `∂_v g` is `x ↦ Dg(x) v`. -/
+theorem lineDerivOp_smulLeftCLM {𝕜 : Type*} [RCLike 𝕜] [NormedSpace 𝕜 F] {g : V → 𝕜}
+    (hg : g.HasTemperateGrowth) (f : 𝓢(V, F)) (v : V) :
+    ∂_{v} (smulLeftCLM F g f) =
+      smulLeftCLM F (fun x ↦ fderiv ℝ g x v) f + smulLeftCLM F g (∂_{v} f) := by
+  ext x
+  simp [lineDerivOp_apply_eq_fderiv, smulLeftCLM_apply hg, smulLeftCLM_apply (hg.fderiv_apply v),
+    fderiv_fun_smul (hg.1.differentiable (by simp) x) f.differentiableAt, add_comm]
+
 /-- **The Leibniz rule for multiplication by a linear function**:
 `∂_v (L f) = L ∂_v f + L v f` for a continuous linear functional `L`. -/
 theorem lineDerivOp_smulLeftCLM_clm (L : V →L[ℝ] ℝ) (f : 𝓢(V, F)) (v : V) :
     ∂_{v} (smulLeftCLM F L f) = smulLeftCLM F L (∂_{v} f) + L v • f := by
-  ext x
-  simp [lineDerivOp_apply_eq_fderiv, smulLeftCLM_apply L.hasTemperateGrowth,
-    fderiv_fun_smul L.differentiableAt f.differentiableAt]
+  rw [lineDerivOp_smulLeftCLM L.hasTemperateGrowth, add_comm]
+  simp
 
 /-- **The iterated Leibniz rule for multiplication by a linear function**:
 `∂_v^(k+1) (L f) = L ∂_v^(k+1) f + (k + 1) L v ∂_v^k f` for a continuous linear functional `L`. -/

@@ -55,6 +55,9 @@ several do.
 * `AlgHom.range_comp_left_of_injective`, `AlgHom.range_comp_left_eq_of_adjoin_eq_top` and
   `AlgHom.range_comp_right_of_surjective`: ranges of composition maps on algebra homomorphisms,
   characterized by lifting values and by vanishing on a kernel.
+* `AlgHom.descend`: an algebra homomorphism constant on the fibres of a surjective algebra
+  homomorphism descends along it, over arbitrary semirings; `AlgHom.descend_unique` says the
+  descent is the only homomorphism factoring it.
 
 ## Implementation notes
 
@@ -241,3 +244,45 @@ theorem AlgHom.range_comp_right_of_surjective {k A B R : Type*}
     refine ⟨{ y with commutes' := ?_ }, AlgHom.ext hy⟩
     intro c
     exact (congrArg y (φ.commutes c)).symm.trans ((hy _).trans (x.commutes c))
+
+/-! ### Descending along a surjection -/
+
+section Descend
+
+variable {R A B C : Type*} [CommSemiring R] [Semiring A] [Semiring B] [Semiring C]
+  [Algebra R A] [Algebra R B] [Algebra R C]
+
+/-- An algebra homomorphism `φ : A →ₐ[R] C` that is constant on the fibres of a surjective
+algebra homomorphism `g : A →ₐ[R] B` descends to `B →ₐ[R] C`. Unlike Mathlib's
+`AlgHom.liftOfSurjective`, which asks for a kernel inclusion, this needs no ring structure. -/
+noncomputable def AlgHom.descend (g : A →ₐ[R] B) (hg : Function.Surjective g) (φ : A →ₐ[R] C)
+    (h : ∀ a b, g a = g b → φ a = φ b) : B →ₐ[R] C where
+  toFun x := φ (Function.surjInv hg x)
+  map_one' := (h _ _ (by rw [Function.surjInv_eq hg, map_one])).trans (map_one φ)
+  map_mul' x y := (h _ _ (by rw [map_mul, Function.surjInv_eq hg, Function.surjInv_eq hg,
+    Function.surjInv_eq hg])).trans (map_mul φ _ _)
+  map_zero' := (h _ _ (by rw [Function.surjInv_eq hg, map_zero])).trans (map_zero φ)
+  map_add' x y := (h _ _ (by rw [map_add, Function.surjInv_eq hg, Function.surjInv_eq hg,
+    Function.surjInv_eq hg])).trans (map_add φ _ _)
+  commutes' c := (h _ _ (by rw [Function.surjInv_eq hg, AlgHom.commutes])).trans (φ.commutes c)
+
+/-- The descent of `φ` along `g` sends `g a` to `φ a`. -/
+@[simp]
+theorem AlgHom.descend_apply (g : A →ₐ[R] B) (hg : Function.Surjective g) (φ : A →ₐ[R] C)
+    (h : ∀ a b, g a = g b → φ a = φ b) (a : A) : g.descend hg φ h (g a) = φ a :=
+  h _ _ (Function.surjInv_eq hg (g a))
+
+/-- The descent of `φ` along `g`, composed with `g`, is `φ`. -/
+@[simp]
+theorem AlgHom.descend_comp (g : A →ₐ[R] B) (hg : Function.Surjective g) (φ : A →ₐ[R] C)
+    (h : ∀ a b, g a = g b → φ a = φ b) : (g.descend hg φ h).comp g = φ :=
+  AlgHom.ext (g.descend_apply hg φ h)
+
+/-- The descent of `φ` along `g` is the only homomorphism whose composite with `g` is `φ`. -/
+theorem AlgHom.descend_unique (g : A →ₐ[R] B) (hg : Function.Surjective g) (φ : A →ₐ[R] C)
+    (h : ∀ a b, g a = g b → φ a = φ b) (ψ : B →ₐ[R] C) (hψ : ψ.comp g = φ) :
+    ψ = g.descend hg φ h :=
+  AlgHom.ext <| hg.forall.mpr fun a ↦
+    (DFunLike.congr_fun hψ a).trans (g.descend_apply hg φ h a).symm
+
+end Descend

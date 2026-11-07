@@ -121,8 +121,8 @@ theorem divisor_of_not_forall_meromorphicAt (hω : ¬ ∀ x, ω.MeromorphicAt x)
   simp [divisor, hω]
 
 /-- The divisor of a holomorphic `1`-form is effective. -/
-theorem isEffective_divisor (hω : ∀ x, ω.HolomorphicAt x) : IsEffective ω.divisor := by
-  rw [isEffective_iff]
+theorem divisor_nonneg (hω : ∀ x, ω.HolomorphicAt x) : 0 ≤ ω.divisor := by
+  rw [nonneg_iff]
   intro x
   rw [coeff_divisor fun y ↦ (hω y).meromorphicAt]
   rcases eq_or_ne (ω.order x) ⊤ with h | h
