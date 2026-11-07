@@ -58,8 +58,8 @@ noncomputable section
 attribute [local instance 100] LieRing.ofAssociativeRing
 attribute [local instance high] Algebra.toModule
 
-local notation "rootGen" => TauCeti.serreRootGenerator (CartanMatrix.E 7)
-local notation "cartanGen" => TauCeti.serreH ℚ (CartanMatrix.E 7)
+local notation "rootGen" => TauCeti.serreRootGenerator weightTable.cartanMatrix
+local notation "cartanGen" => TauCeti.serreH ℚ weightTable.cartanMatrix
 
 variable (A : Type v) [CommRing A]
 
