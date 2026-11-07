@@ -22,6 +22,8 @@ A nonempty compact subset of an open interval lies in the interior of a smaller 
 Every nonempty closed unbounded order-connected set in a conditionally complete linear order is
 a left half-line, a right half-line, or the whole space.
 
+A continuous positive real function on a half-infinite interval, tending to `0` at infinity and to
+`+∞` at the finite endpoint, has image `Ioi 0`.
 The image of a half-infinite real interval under a continuous strictly monotone map is determined
 by its value at the finite endpoint and its limit at infinity.  The endpoint at infinity is omitted
 when the limit is finite.
@@ -196,5 +198,25 @@ theorem tendsto_sub_nhdsGT_nhdsWithin_Icc {G : Type*} [AddCommGroup G] [LinearOr
     exact this.mono_left nhdsWithin_le_nhds
   · filter_upwards [Ioo_mem_nhdsGT (sub_pos.2 hab)] with δ hδ
     exact ⟨le_sub_comm.1 hδ.2.le, sub_le_self _ hδ.1.le⟩
+
+/-- A continuous function on `Ioi p` that is above `v`, tends to `v` at `+∞` and to `+∞` at `p⁺`
+has image `Ioi v`. -/
+theorem image_Ioi_eq_Ioi_of_tendsto {β : Type*} [LinearOrder β] [TopologicalSpace β]
+    [OrderClosedTopology β] {d : ℝ → β} {p : ℝ} {v : β} (hcont : ContinuousOn d (Ioi p))
+    (hpos : ∀ x ∈ Ioi p, v < d x) (htop : Tendsto d atTop (𝓝 v))
+    (hp : Tendsto d (𝓝[>] p) atTop) : d '' Ioi p = Ioi v :=
+  Subset.antisymm (by rintro _ ⟨x, hx, rfl⟩; exact hpos x hx)
+    (isPreconnected_Ioi.intermediate_value_Ioi (le_principal_iff.mpr (Ioi_mem_atTop p))
+      (le_principal_iff.mpr self_mem_nhdsWithin) hcont htop hp)
+
+/-- A continuous function on `Iio p` that is above `v`, tends to `v` at `-∞` and to `+∞` at `p⁻`
+has image `Ioi v`. -/
+theorem image_Iio_eq_Ioi_of_tendsto {β : Type*} [LinearOrder β] [TopologicalSpace β]
+    [OrderClosedTopology β] {d : ℝ → β} {p : ℝ} {v : β} (hcont : ContinuousOn d (Iio p))
+    (hpos : ∀ x ∈ Iio p, v < d x) (hbot : Tendsto d atBot (𝓝 v))
+    (hp : Tendsto d (𝓝[<] p) atTop) : d '' Iio p = Ioi v :=
+  Subset.antisymm (by rintro _ ⟨x, hx, rfl⟩; exact hpos x hx)
+    (isPreconnected_Iio.intermediate_value_Ioi (le_principal_iff.mpr (Iio_mem_atBot p))
+      (le_principal_iff.mpr self_mem_nhdsWithin) hcont hbot hp)
 
 end TauCeti
