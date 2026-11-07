@@ -99,13 +99,12 @@ theorem modulusOfConvexity_eq_one_of_two_lt {ε : ℝ} (hε : 2 < ε) :
   have := norm_sub_le x y
   linarith
 
-/-- In the zero space, the modulus is one at positive separations. -/
-theorem modulusOfConvexity_eq_one_of_subsingleton [Subsingleton E] {ε : ℝ} (hε : 0 < ε) :
+/-- In the zero space, the modulus is one at every separation. -/
+theorem modulusOfConvexity_eq_one_of_subsingleton [Subsingleton E] (ε : ℝ) :
     modulusOfConvexity E ε = 1 := by
   refine le_antisymm (modulusOfConvexity_le_one E ε) ((le_modulusOfConvexity_iff E).2 ?_)
-  refine ⟨le_rfl, fun x y _ _ hxy ↦ ?_⟩
-  simp [Subsingleton.elim x y] at hxy
-  linarith
+  refine ⟨le_rfl, fun x y _ _ _ ↦ ?_⟩
+  simp [Subsingleton.elim x 0, Subsingleton.elim y 0]
 
 variable [NormedSpace ℝ E]
 
