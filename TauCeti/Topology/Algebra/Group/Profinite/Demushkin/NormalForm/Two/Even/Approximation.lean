@@ -78,26 +78,11 @@ open Subgroup
 
 variable {n : ℕ} {χ : freeProP 2 (Fin n) →ₜ* ℤ_[2]ˣ}
 
-/-- A basis modification whose corrections lie in the kernel of the exponent sum at `i` preserves
-that kernel. -/
-theorem basisModification_mem_exponentSumKer {i : Fin n}
-    (ω : Fin n → pLowerCentralSeries 2 (freeProP 2 (Fin n)) 1)
-    (hω : ∀ j, (ω j : freeProP 2 (Fin n)) ∈ exponentSumKer 2 (Fin n) i)
-    {c : freeProP 2 (Fin n)} (hc : c ∈ exponentSumKer 2 (Fin n) i) :
-    basisModification ω c ∈ exponentSumKer 2 (Fin n) i := by
-  rw [mem_exponentSumKer_iff] at hc ⊢
-  rw [toAdd_exponentSum_basisModification, Finset.sum_apply]
-  refine Finset.sum_eq_zero fun j _ ↦ ?_
-  rw [Pi.smul_apply, Pi.add_apply, mem_exponentSumKer_iff.mp (hω j), add_zero]
-  by_cases hj : j = i
-  · subst j
-    simp [hc]
-  · simp [hj]
-
 /-- The crossed-homomorphism half of the constrained successive approximation at `r_f`: an
-endomorphism `φ` of `F` moving every generator into `λ₁(F)` and into the exponent-sum kernel at
-`x₄` carries `w = x₁² (x₁, x₂) x₃^(2^f) ⋯` to an element whose quotient into `r` is killed by
-every coordinate crossed homomorphism for `χ` except the one at `x₂`. -/
+endomorphism `φ` of `F` all of whose generator corrections `xᵢ⁻¹ φ(xᵢ)` lie in `λ₁(F)` and in
+the exponent-sum kernel at `x₄` carries `w = x₁² (x₁, x₂) x₃^(2^f) ⋯` to an element whose
+quotient into `r` is killed by every coordinate crossed homomorphism for `χ` except the one at
+`x₂`. -/
 private theorem inv_apply_demushkinWordTwoEven_mul_mem_of_forall_crossedHom_eq_zero
     (hn3 : 3 < n) {f : ℕ} (hf : 2 ≤ f)
     (h₁ : χ (of ⟨1, by omega⟩) = -1)
@@ -133,12 +118,12 @@ private theorem inv_apply_demushkinWordTwoEven_mul_mem_of_forall_crossedHom_eq_z
         by_cases hk₁ : k = i₁
         · rw [hk₁, h₁, neg_one_sq]
         · rw [hχ k hk₁ hk, one_pow]) (hφX j) (hφ (of j))
-  have hφwX : φ w ∈ X := by
-    rw [hφeq]
-    exact basisModification_mem_exponentSumKer ωφ hφX (by simp [w, i₃])
+  have hφwX : φ w ∈ X :=
+    (φ.apply_mem_exponentSumKer_iff_of_forall_inv_mul_apply_mem hφX _).2 (by simp [w, i₃])
   refine ⟨mul_mem (inv_mem hφwX) hrX, ?_⟩
   intro i hi
-  have hφw : crossedHom χ (Pi.single i 1) (φ w) = 0 := by
+  have hφw : crossedHom χ (Pi.single i 1)
+      (φ (demushkinWordTwoEven 0 f n (freeProPGen 2 n))) = 0 := by
     rw [hφeq]
     let hF := isCrossedHom_crossedHom χ (Pi.single i 1)
     have hw : crossedHom χ (Pi.single i 1)
@@ -156,8 +141,7 @@ private theorem inv_apply_demushkinWordTwoEven_mul_mem_of_forall_crossedHom_eq_z
       hn3 h₁ h₃ hχ ωφ hωχ
     rw [TauCeti.map_demushkinWordTwoEven]
     simpa [hF.map_mul, hF.map_inv, hw] using this
-  change crossedHom χ (Pi.single i 1) ((φ (w : freeProP 2 (Fin n)))⁻¹ * r) = 0
-  generalize φ (w : freeProP 2 (Fin n)) = u at hφw ⊢
+  generalize φ (demushkinWordTwoEven 0 f n (freeProPGen 2 n)) = u at hφw ⊢
   simp [(isCrossedHom_crossedHom χ (Pi.single i 1)).map_mul,
     (isCrossedHom_crossedHom χ (Pi.single i 1)).map_inv, hφw, hrD i hi]
 
@@ -206,7 +190,8 @@ theorem exists_continuousMulEquiv_apply_demushkinWordTwoEven_zero_eq_of_forall_c
     ?_ w r hρ ?_ ?_
   · intro ω hω _ c hc
     rw [mem_inf] at hc ⊢
-    exact ⟨basisModification_mem_exponentSumKer ω (fun j ↦ (hω j).1) hc.1,
+    exact ⟨((basisModification ω).apply_mem_exponentSumKer_iff_of_forall_inv_mul_apply_mem
+        (fun j ↦ by rw [basisModification_of, inv_mul_cancel_left]; exact (hω j).1) c).2 hc.1,
       (basisModification ω).toMonoidHom.map_pLowerCentralSeries_le
         (basisModification ω).continuous 1 (mem_map_of_mem _ hc.2)⟩
   · intro φ hφ hφX
