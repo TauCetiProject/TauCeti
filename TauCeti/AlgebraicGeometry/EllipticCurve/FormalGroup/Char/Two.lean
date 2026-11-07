@@ -52,27 +52,10 @@ theorem coeff_nsmulSeries_two_formalGroup_of_char_two (h₁ : W.a₁ = 0) {n : �
         congrArg PowerSeries.C (CharP.cast_eq_zero R 2)
     linear_combination (norm := ring_nf) -PowerSeries.X * hd
     simp [h2]
-  have ha₀ : ∀ i, PowerSeries.constantCoeff
-      ((![(formalGroup W).addInvX, PowerSeries.X] : Fin 2 → PowerSeries R) i) = 0 := by
-    intro i
-    fin_cases i
-    · exact (formalGroup W).constantCoeff_addInvX
-    · exact PowerSeries.constantCoeff_X
-  have ha := MvPowerSeries.hasSubst_of_constantCoeff_zero ha₀
-  have hu : Function.update (![W.formalInverse, PowerSeries.X] : Fin 2 → PowerSeries R) 0
-      (W.formalInverse + PowerSeries.X ^ 4 * r) = ![PowerSeries.X, PowerSeries.X] := by
-    rw [hfactor]
-    funext i
-    fin_cases i <;> simp
-  have h := PowerSeries.coeff_subst_update_add_X_pow_mul (formalGroup W).toPowerSeries
-    ha ha₀ 0 r (by decide : (4 : ℕ) ≠ 0) hn
-  rw [(formalGroup W).subst_addInvX_X_eq_zero, map_zero] at h
-  rw [formalGroup_addInvX, Matrix.cons_val_zero, hu] at h
-  rw [(formalGroup W).lin_coeff_X] at h
-  simp only [Algebra.algebraMap_self, RingHom.id_apply, one_mul, zero_add] at h
-  rw [FormalGroup.nsmulSeries_succ, FormalGroup.nsmulSeries_one]
-  rw [h]
-  simp [r, d, CharTwo.neg_eq]
+  have h := (formalGroup W).coeff_nsmulSeries_succ_of_eq_addInvX_add_X_pow_mul
+    (n := 1) (s := r) (by rw [FormalGroup.nsmulSeries_one, formalGroup_addInvX, hfactor])
+    (by decide : (4 : ℕ) ≠ 0) hn
+  simpa [r, d, CharTwo.neg_eq] using h
 
 end Ring
 

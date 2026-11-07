@@ -234,6 +234,18 @@ theorem hasCompactSupport_cappedPerturbation (x : M) :
   HasCompactSupport.of_support_subset_isCompact (isCompact_truncation _)
     (support_cappedPerturbation_subset x)
 
+/-- Along any map `u` of the plane chart, a component `K(v)` of the capped perturbation has compact
+support: it vanishes outside the truncation `S_{L + 3}`. -/
+theorem hasCompactSupport_cappedPerturbation_apply (a L : ℝ) (u : ℝ × ℝ → M) (v : ℂ) :
+    HasCompactSupport fun z ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) (u z) v :=
+  HasCompactSupport.of_support_subset_isCompact
+    (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_truncation (L + 3)))
+    fun z hz ↦ by_contra fun h ↦ hz <| by
+      have h' : Complex.equivRealProdCLM.symm z ∉ truncation (L + 3) := h
+      dsimp only
+      rw [cappedPerturbation_eq_zero_of_notMem_truncation h' (u z)]
+      simp
+
 /-- **The datum vanishes near the poles `0` and `1`.** -/
 theorem eventually_cappedPerturbation_eq_zero_of_eq_zero_or_eq_one {c : ℂ} (hc : c = 0 ∨ c = 1) :
     ∀ᶠ w in 𝓝 c, ∀ x : M, cappedPerturbation a L H w x = 0 := by
@@ -417,6 +429,18 @@ private theorem mdifferentiable_cappedPerturbation_target (hH : ∀ q, Function.
     (contMDiff_cappedPerturbation (n := 1) hH hHs).comp (f := fun y : M ↦ (w, ((a, L), y)))
       (contMDiff_const.prodMk (contMDiff_const.prodMk contMDiff_id))
   exact (h.mdifferentiable one_ne_zero).clm_apply mdifferentiable_const
+
+/-- A component `K(v)` of the capped perturbation, for a fixed tangent vector `v` of `ℂ`, is `C^n`
+jointly in the point of the plane chart `ℝ × ℝ` and the target point. -/
+theorem contMDiff_cappedPerturbation_apply {n : ℕ∞} (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (H q))) (a L : ℝ) (v : ℂ) :
+    ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ, ℝ) n
+      (uncurry fun z x ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) x v) := by
+  have hι : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) (𝓘(ℝ, ℂ).prod (𝓘(ℝ, ℝ × ℝ).prod I)) n
+      fun p : (ℝ × ℝ) × M ↦ (Complex.equivRealProdCLM.symm p.1, ((a, L), p.2)) :=
+    (Complex.equivRealProdCLM.symm.contDiff.contMDiff.comp contMDiff_fst).prodMk
+      (contMDiff_const.prodMk contMDiff_snd)
+  exact ((contMDiff_cappedPerturbation hH hHs).comp hι).clm_apply contMDiff_const
 
 end Smooth
 

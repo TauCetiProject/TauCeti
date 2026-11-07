@@ -32,6 +32,8 @@ import TauCeti.Data.Set.PowersetCard
 * `TauCeti.card_even_card_finset` and `TauCeti.card_odd_card_finset` count the finsets of a
   nonempty finite type by the parity of their cardinality: each parity accounts for exactly half
   of them.
+* `Finset.filter_lt_eq_insert_of_forall_lt` splits the elements of a finite set after `s` into its
+  first such element and the elements after a later point.
 * `Finset.sum_powerset_neg_one_pow_card_of_ring` evaluates the alternating sum over the subsets of
   a finset in an arbitrary ring.
 * `Finset.sum_powerset_neg_one_pow_mul_eq_zero` pairs subsets that differ by one element
@@ -795,6 +797,23 @@ theorem sum_eq_four {ι κ M : Type*} [Fintype ι] [Fintype κ] [AddCommMonoid M
               (fun h => hi'ne h.1.symm) (fun h => hi'ne h.1.symm) (fun h => hy.1 h.2)
               (fun h => hy.2 h.2))]
     _ = g i j + g i j' + g i' j + g i' j' := by simp only [add_assoc]
+
+/-- If `c` is the first element of a finite set `S` after `s`, and no element of `S` lies in
+`(c, t₂]`, then the elements of `S` after `s` are `c` and the elements after `t₂`. -/
+theorem filter_lt_eq_insert_of_forall_lt {α : Type*} [LinearOrder α] {S : Finset α} {s c t₂ : α}
+    (hc : c ∈ S) (hsc : s < c) (hcmin : ∀ t ∈ S, s < t → c ≤ t) (hct : c < t₂)
+    (hgap : ∀ t ∈ S, c < t → t₂ < t) :
+    {t ∈ S | s < t} = insert c {t ∈ S | t₂ < t} := by
+  ext t
+  simp only [Finset.mem_filter, Finset.mem_insert]
+  constructor
+  · rintro ⟨htS, hst⟩
+    rcases (hcmin t htS hst).eq_or_lt with h | h
+    · exact Or.inl h.symm
+    · exact Or.inr ⟨htS, hgap t htS h⟩
+  · rintro (rfl | ⟨htS, ht⟩)
+    · exact ⟨hc, hsc⟩
+    · exact ⟨htS, hsc.trans (hct.trans ht)⟩
 
 end Finset
 
