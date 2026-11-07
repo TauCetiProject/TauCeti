@@ -13,6 +13,7 @@ public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Prescription.Equiv
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Prescription.Presentation
 import Mathlib.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.Algebra.Group.Subgroup.Ker
+import TauCeti.NumberTheory.Padics.Matrix
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.CrossedHom
 
 /-!
@@ -80,54 +81,6 @@ universe u v w
 attribute [local instance 2000] Ring.toAddCommGroup
 
 variable {p : ℕ} [Fact p.Prime] {X : Type u}
-
-/-- **The lifted degree-one matrix of a nondegenerate form has unit determinant.** The matrix
-over `𝔽_p` with nonzero determinant, lifted entrywise to `ℤ_p` and transposed, has a unit
-determinant, since its reduction modulo `p` has nonzero determinant. -/
-theorem isUnit_det_transpose_map_cast {ι : Type*} [Fintype ι] [DecidableEq ι]
-    (B : Matrix ι ι (ZMod p)) (hB : B.det ≠ 0) :
-    IsUnit (B.map (ZMod.cast : ZMod p → ℤ_[p]))ᵀ.det := by
-  have h1 : (PadicInt.toZMod (p := p)).mapMatrix (B.map (ZMod.cast : ZMod p → ℤ_[p]))ᵀ = Bᵀ := by
-    ext i j
-    simp [ZMod.ringHom_map_cast]
-  rw [← IsLocalRing.notMem_maximalIdeal, ← PadicInt.ker_toZMod, RingHom.mem_ker, RingHom.map_det,
-    h1, Matrix.det_transpose]
-  exact hB
-
-/-- **The linearisation of the Kronecker values on a relator.** For continuous characters `χ, χ'`
-of the free pro-`p` group on a finite type, congruent modulo `p ^ k` on the generators, the values
-at `n ∈ λ_1(F)` of the Kronecker crossed homomorphisms differ, modulo `p ^ (k + 1)`, by the lifted
-matrix of the degree-one form of `n` applied to the difference of the generator values. -/
-private theorem pow_succ_dvd_crossedHom_single_sub_sub_mulVec [Fintype X] [DecidableEq X]
-    {χ χ' : freeProP p X →ₜ* ℤ_[p]ˣ} {k : ℕ}
-    (hχ : ∀ i, (p : ℤ_[p]) ^ k ∣ (χ' (of i) : ℤ_[p]) - χ (of i))
-    (n : pLowerCentralSeries p (freeProP p X) 1) (j : X) :
-    (p : ℤ_[p]) ^ (k + 1) ∣ crossedHom χ' (Pi.single j 1) n - crossedHom χ (Pi.single j 1) n -
-      (((LinearMap.BilinForm.toMatrix (dualBasis p X)
-        (degreeOneForm (gradedMk p (freeProP p X) 1 n))).map
-          (ZMod.cast : ZMod p → ℤ_[p]))ᵀ *ᵥ (fun i ↦ (χ' (of i) : ℤ_[p]) - χ (of i))) j := by
-  have h := IsCrossedHom.pow_succ_dvd_sub_sub_sum_degreeOneForm hχ
-    (isCrossedHom_crossedHom _ (Pi.single j 1)) (isCrossedHom_crossedHom _ (Pi.single j 1))
-    (continuous_crossedHom _ _) (continuous_crossedHom _ _)
-    (fun x ↦ by rw [crossedHom_of, crossedHom_of]) n
-  convert h using 2
-  simp only [Matrix.mulVec, dotProduct, Matrix.transpose_apply, Matrix.map_apply,
-    LinearMap.BilinForm.toMatrix_apply, crossedHom_of, Pi.single_apply, mul_ite, mul_one,
-    mul_zero, ite_mul, zero_mul, Finset.sum_ite_eq', Finset.mem_univ, ite_true]
-  exact Finset.sum_congr rfl fun i _ ↦ by ring
-
-/-- **The relator criterion on the Kronecker crossed homomorphisms.** Every continuous crossed
-homomorphism for `χ` vanishes at `r` if and only if the Kronecker crossed homomorphisms do, since a
-crossed homomorphism is the `ℤ_p`-combination of them. -/
-theorem forall_isCrossedHom_apply_eq_zero_iff [Finite X] [DecidableEq X]
-    (χ : freeProP p X →ₜ* ℤ_[p]ˣ) (r : freeProP p X) :
-    (∀ F : freeProP p X → ℤ_[p], Continuous F → IsCrossedHom χ F → F r = 0) ↔
-      ∀ j, crossedHom χ (Pi.single j 1) r = 0 := by
-  have := Fintype.ofFinite X
-  refine ⟨fun h j ↦ h _ (continuous_crossedHom _ _) (isCrossedHom_crossedHom _ _),
-    fun h F hFc hF ↦ ?_⟩
-  rw [hF.eq_crossedHom hFc, crossedHom_apply_eq_sum]
-  exact Finset.sum_eq_zero fun j _ ↦ by rw [h j, mul_zero]
 
 /-- **Newton's method for the relator.** Under a nondegenerate degree-one form, there is exactly
 one continuous character of the free pro-`p` group, trivial modulo `p` on the generators, whose
@@ -214,7 +167,7 @@ theorem existsUnique_hasPrescriptionProperty_presentedProP_of_nondegenerate
   classical
   have := Fintype.ofFinite X
   obtain ⟨χF, ⟨-, hZ⟩, huniq⟩ := existsUnique_character_forall_crossedHom_single_eq_zero hr hnd
-  have hkill := (forall_isCrossedHom_apply_eq_zero_iff χF r).2 hZ
+  have hkill := (ContinuousMonoidHom.forall_isCrossedHom_apply_eq_zero_iff χF r).2 hZ
   -- In particular `χF - 1` kills `r`, so `χF` descends to the presented group.
   have hχr : χF r = 1 := by
     have h1 : IsCrossedHom χF fun g ↦ (χF g : ℤ_[p]) - 1 := isCrossedHom_iff.2 fun g h ↦ by
@@ -235,7 +188,8 @@ theorem existsUnique_hasPrescriptionProperty_presentedProP_of_nondegenerate
   -- generators and has vanishing Kronecker values at `r`, hence equals `χF`.
   · refine presentedProP.hom_ext ?_
     rw [presentedProP.lift_comp_mk]
-    refine huniq _ ⟨fun i ↦ ?_, (forall_isCrossedHom_apply_eq_zero_iff _ r).1 ?_⟩
+    refine huniq _ ⟨fun i ↦ ?_,
+      (ContinuousMonoidHom.forall_isCrossedHom_apply_eq_zero_iff _ r).1 ?_⟩
     · have := mem_unitsPrincipal_iff.1
         ((presentedProP.isProP p X {r}).mem_unitsPrincipal_one χ₂ (presentedProP.mk p {r} (of i)))
       simpa using this
