@@ -359,6 +359,47 @@ theorem qExpansion_coeff_one_E_ne_zero {k : ℕ} (hk : 3 ≤ k) (hk2 : Even k) :
     one_pos one_mem_strictPeriods_SL (by omega) fun m hm ↦ ?_)
   rw [E_qExpansion_coeff hk hk2 m, ite_eq_right hm.ne', h1, zero_mul]
 
+/-- The prime-power recurrence for the divisor power sum: `σ_j(p^{m+1}) = p^j σ_j(p^m) + 1`. -/
+private lemma sigma_prime_pow_succ {j p : ℕ} (hp : p.Prime) (m : ℕ) :
+    (σ j (p ^ (m + 1)) : ℂ) = (p : ℂ) ^ j * (σ j (p ^ m) : ℂ) + 1 := by
+  rw [ArithmeticFunction.sigma_apply_prime_pow hp, ArithmeticFunction.sigma_apply_prime_pow hp,
+    Nat.cast_sum, Nat.cast_sum, Finset.sum_range_succ', Finset.mul_sum]
+  simp only [Nat.zero_mul, pow_zero, Nat.cast_one, Nat.cast_pow]
+  congr 1
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [Nat.succ_mul, pow_add, mul_comm]
+
+/-- A level-one form `F` whose Fourier coefficients are `σ_{k-1}(m)` for `m ≥ 1` is an eigenvector
+of the Hecke operator `Tₙ` on the trivial-character space, with eigenvalue `σ_{k-1}(n)`: the
+coefficients are multiplicative and satisfy the prime-power recurrence. -/
+private lemma heckeRingHomCharSpace_heckeTCompositeGamma0_eq_smul_of_coeff {k : ℕ} (hk : 1 ≤ k)
+    (n : ℕ) [NeZero n] (F : modFormCharSpace k (1 : (ZMod 1)ˣ →* ℂˣ))
+    (hpos : ∀ {m : ℕ}, m ≠ 0 → (qExpansion 1 F.val).coeff m = (σ (k - 1) m : ℂ)) :
+    heckeRingHomCharSpace (k : ℤ) (1 : (ZMod 1)ˣ →* ℂˣ)
+      (heckeTCompositeGamma0 1 n) F = (σ (k - 1) n : ℂ) • F := by
+  have h1 : (qExpansion 1 F.val).coeff 1 = 1 := by
+    simpa [ArithmeticFunction.sigma_one] using hpos one_ne_zero
+  rw [← hpos (NeZero.ne n)]
+  refine (forall_heckeTCompositeGamma0_eq_coeff_smul_iff F h1).mpr ⟨?_, ?_⟩ n (NeZero.ne n)
+  · intro u v huv
+    rcases eq_or_ne u 0 with rfl | hu
+    · obtain rfl := (Nat.coprime_zero_left v).mp huv
+      rw [zero_mul, h1, mul_one]
+    rcases eq_or_ne v 0 with rfl | hv
+    · obtain rfl := (Nat.coprime_zero_right u).mp huv
+      rw [mul_zero, h1, one_mul]
+    rw [hpos (mul_ne_zero hu hv), hpos hu, hpos hv,
+      ArithmeticFunction.isMultiplicative_sigma.map_mul_of_coprime huv, Nat.cast_mul]
+  · intro p hp r
+    have hk1 : (k : ℤ) - 1 = ((k - 1 : ℕ) : ℤ) := by omega
+    have hp1 : (σ (k - 1) p : ℂ) = (p : ℂ) ^ (k - 1) + 1 := by
+      simpa [ArithmeticFunction.sigma_one] using sigma_prime_pow_succ (j := k - 1) hp 0
+    rw [hpos (pow_ne_zero _ hp.ne_zero), hpos hp.ne_zero, hpos (pow_ne_zero _ hp.ne_zero),
+      hpos (pow_ne_zero _ hp.ne_zero), DirichletCharacter.level_one (MulChar.ofUnitHom 1),
+      MulChar.one_apply (isUnit_of_subsingleton _), one_mul, hk1, zpow_natCast,
+      sigma_prime_pow_succ hp (r + 1), sigma_prime_pow_succ hp r, hp1]
+    ring
+
 /-- **The normalized Eisenstein series `E_k` is a Hecke eigenform** with eigenvalue `σ_{k-1}(n)` at
 every `n ≥ 1` (Serre, *A Course in Arithmetic*, VII.5.3; Diamond–Shurman, Proposition 5.2.3). -/
 theorem heckeTLevelOne_E {k : ℕ} (hk : 3 ≤ k) (hk2 : Even k) (n : ℕ) [NeZero n] :
@@ -379,39 +420,7 @@ theorem heckeTLevelOne_E {k : ℕ} (hk : 3 ≤ k) (hk2 : Even k) (n : ℕ) [NeZe
       _root_.ModularForm.qExpansion_smul one_pos (one_mem_strictPeriods_Gamma1_map 1),
       PowerSeries.coeff_smul, _root_.ModularForm.coe_modularFormGamma1OneEquiv_symm_apply,
       E_qExpansion_coeff hk hk2 m, ite_eq_right hm, ← hc_eq, smul_eq_mul, inv_mul_cancel_left₀ hc0]
-  have h1 : (qExpansion 1 F.val).coeff 1 = 1 := by
-    simpa [ArithmeticFunction.sigma_one] using hpos one_ne_zero
-  have heig : heckeRingHomCharSpace (k : ℤ) (1 : (ZMod 1)ˣ →* ℂˣ)
-      (heckeTCompositeGamma0 1 n) F = (σ (k - 1) n : ℂ) • F := by
-    rw [← hpos (NeZero.ne n)]
-    refine (forall_heckeTCompositeGamma0_eq_coeff_smul_iff F h1).mpr ⟨?_, ?_⟩ n (NeZero.ne n)
-    · intro u v huv
-      rcases eq_or_ne u 0 with rfl | hu
-      · obtain rfl := (Nat.coprime_zero_left v).mp huv
-        rw [zero_mul, h1, mul_one]
-      rcases eq_or_ne v 0 with rfl | hv
-      · obtain rfl := (Nat.coprime_zero_right u).mp huv
-        rw [mul_zero, h1, one_mul]
-      rw [hpos (mul_ne_zero hu hv), hpos hu, hpos hv,
-        ArithmeticFunction.isMultiplicative_sigma.map_mul_of_coprime huv, Nat.cast_mul]
-    · intro p hp r
-      have hk1 : (k : ℤ) - 1 = ((k - 1 : ℕ) : ℤ) := by omega
-      have step (m : ℕ) :
-          (σ (k - 1) (p ^ (m + 1)) : ℂ) = (p : ℂ) ^ (k - 1) * (σ (k - 1) (p ^ m) : ℂ) + 1 := by
-        rw [ArithmeticFunction.sigma_apply_prime_pow hp,
-          ArithmeticFunction.sigma_apply_prime_pow hp,
-          Nat.cast_sum, Nat.cast_sum, Finset.sum_range_succ', Finset.mul_sum]
-        simp only [Nat.zero_mul, pow_zero, Nat.cast_one, Nat.cast_pow]
-        congr 1
-        refine Finset.sum_congr rfl fun j _ ↦ ?_
-        rw [Nat.succ_mul, pow_add, mul_comm]
-      have hp1 : (σ (k - 1) p : ℂ) = (p : ℂ) ^ (k - 1) + 1 := by
-        simpa [ArithmeticFunction.sigma_one] using step 0
-      rw [hpos (pow_ne_zero _ hp.ne_zero), hpos hp.ne_zero, hpos (pow_ne_zero _ hp.ne_zero),
-        hpos (pow_ne_zero _ hp.ne_zero), DirichletCharacter.level_one (MulChar.ofUnitHom 1),
-        MulChar.one_apply (isUnit_of_subsingleton _), one_mul, hk1, zpow_natCast,
-        step (r + 1), step r, hp1]
-      ring
+  have heig := heckeRingHomCharSpace_heckeTCompositeGamma0_eq_smul_of_coeff (by omega) n F hpos
   have hG : modularFormGamma1OneEquiv k G = c⁻¹ • ModularForm.E hk := by
     simp [G]
   have hTG := heckeTLevelOne_modularFormGamma1OneEquiv (k := (k : ℤ)) (by omega) n G
