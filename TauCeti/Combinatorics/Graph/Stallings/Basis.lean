@@ -143,8 +143,8 @@ def basisEquiv (hS : S.IsFolded) (hO : S.graph.IsOrientation O) :
     S.basisEquiv T a hS hO (FreeGroup.of e) =
       ⟨S.treeLoopWord T a e.1, S.treeLoopWord_mem_subgroup T a e.1⟩ := by
   apply Subtype.ext
-  change S.pathGroupRead a ((T.pathGroupEquivFreeGroup a hO).symm (FreeGroup.of e)) = _
-  rw [T.pathGroupEquivFreeGroup_symm_of, S.pathGroupRead_loop]
+  rw [basisEquiv, MulEquiv.trans_apply, S.coe_pathGroupEquivSubgroup_apply,
+    ← S.pathGroupRead_apply, T.pathGroupEquivFreeGroup_symm_of, S.pathGroupRead_loop]
 
 /-- The inverse basis map reads a closed path in spanning-tree coordinates, recording its
 non-tree darts with their orientation signs. -/
@@ -169,12 +169,16 @@ theorem lift_treeLoopWord_injective (hS : S.IsFolded) (hO : S.graph.IsOrientatio
   exact Subtype.val_injective.comp (S.basisEquiv T a hS hO).injective
 
 /-- The image of the free group on the tree-loop words is exactly the accepted subgroup. -/
-@[simp] theorem range_lift_treeLoopWord (hS : S.IsFolded) (hO : S.graph.IsOrientation O) :
+@[simp] theorem range_lift_treeLoopWord (hO : S.graph.IsOrientation O) :
     (FreeGroup.lift (fun e : ↥(O \ T.darts) => S.treeLoopWord T a e.1)).range =
       S.subgroup a := by
-  rw [← S.subtype_comp_basisEquiv T a hS hO, MonoidHom.range_comp,
-    MonoidHom.range_eq_top.mpr (S.basisEquiv T a hS hO).surjective,
-    Subgroup.map_top, Subgroup.range_subtype]
+  have h : FreeGroup.lift (fun e : ↥(O \ T.darts) => S.treeLoopWord T a e.1) =
+      (S.pathGroupRead a).comp (T.pathGroupEquivFreeGroup a hO).symm.toMonoidHom := by
+    ext e
+    simp
+  rw [h, MonoidHom.range_comp,
+    MonoidHom.range_eq_top.mpr (T.pathGroupEquivFreeGroup a hO).symm.surjective,
+    Subgroup.map_top, S.range_pathGroupRead]
 
 /-- A free group basis of the accepted subgroup, indexed by the positive non-tree darts. -/
 def freeGroupBasis (hS : S.IsFolded) (hO : S.graph.IsOrientation O) :
