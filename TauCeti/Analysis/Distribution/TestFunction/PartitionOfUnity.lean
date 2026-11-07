@@ -128,6 +128,15 @@ theorem exists_eventually_eq_one {K : Set E} (hK : IsCompact K) (hKΩ : K ⊆ Ω
   exact ⟨⟨χ, hχ.of_le (by simp), hχc, hχΩ⟩,
     subset_interior_iff_mem_nhdsSet.1 hχ1, fun x ↦ hχ01 ⟨x, rfl⟩⟩
 
+/-- A compact subset `K` of an open set `W` contained in the domain has a test function with values
+in `[0, 1]`, equal to one on `K`, whose topological support lies in `W`. -/
+theorem exists_cutoff_tsupport_subset {K W : Set E} (hK : IsCompact K) (hW : IsOpen W)
+    (hKW : K ⊆ W) (hWΩ : W ⊆ Ω) :
+    ∃ χ : 𝓓^{n}(Ω, ℝ), (∀ x, χ x ∈ Icc 0 1) ∧ (∀ x ∈ K, χ x = 1) ∧ tsupport χ ⊆ W := by
+  obtain ⟨χ, hχ, hχ01, hχ1, hχc, hχW⟩ := hK.exists_contDiff_cutoff hW hKW
+  exact ⟨⟨χ, hχ.of_le (by simp), hχc, hχW.trans hWΩ⟩, fun x ↦ hχ01 ⟨x, rfl⟩,
+    fun x hx ↦ interior_subset (hχ1 hx), hχW⟩
+
 /-- Every point of the domain has a test function taking a prescribed value at it and supported
 in a given neighbourhood of it. -/
 theorem exists_tsupport_subset_apply_eq {x : E} {s : Set E} (hs : s ∈ 𝓝 x) (hsΩ : s ⊆ Ω)

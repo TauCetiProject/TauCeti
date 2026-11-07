@@ -11,8 +11,9 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.MeasureTheory.Function.AEEqOfIntegral
 import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
-import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.MeasureTheory.Integral.Bochner.Regular
+import TauCeti.Topology.MetricSpace.Thickening
 
 /-!
 # Pointwise bounds on a density from its pairings with test vector fields
@@ -74,41 +75,6 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {Ω : Opens E} {ρ : Measure Ω} {k : Ω → ℝ≥0∞} {h : Ω → ℝ}
 
-omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- Shrinking open neighbourhoods of a compact set `K` inside a compact set `L` whose interior
-contains `K`, with intersection `K`. -/
-private theorem exists_antitone_open_iInter_eq {K L : Set Ω} (hK : IsCompact K)
-    (hKL : K ⊆ interior L) :
-    ∃ W : ℕ → Set Ω, (∀ n, IsOpen (W n)) ∧ (∀ n, W n ⊆ L) ∧ (∀ n, K ⊆ W n) ∧ Antitone W ∧
-      ⋂ n, W n = K := by
-  set W : ℕ → Set Ω := fun n => interior L ∩ thickening (1 / ((n : ℝ) + 1)) K
-  have hKW (n : ℕ) : K ⊆ W n := subset_inter hKL (self_subset_thickening (by positivity) K)
-  refine ⟨W, fun n => isOpen_interior.inter isOpen_thickening,
-    fun n => inter_subset_left.trans interior_subset, hKW, fun m n hmn =>
-    inter_subset_inter_right _ (thickening_mono (one_div_le_one_div_of_le (by positivity)
-      (by exact_mod_cast Nat.add_le_add_right hmn 1)) K), ?_⟩
-  refine Subset.antisymm (fun x hx => ?_) (subset_iInter hKW)
-  rw [← hK.isClosed.closure_eq, Metric.mem_closure_iff]
-  intro ε hε
-  obtain ⟨n, hn⟩ := exists_nat_one_div_lt hε
-  obtain ⟨y, hy, hxy⟩ := mem_thickening_iff.1 (mem_iInter.1 hx n).2
-  exact ⟨y, hy, hxy.trans hn⟩
-
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- A smooth cutoff with values in `[0, 1]`, equal to one on a compact set `K` and supported in an
-open set `W ⊇ K`. -/
-private theorem exists_testFunction_cutoff {K W : Set Ω} (hK : IsCompact K) (hW : IsOpen W)
-    (hKW : K ⊆ W) :
-    ∃ ψ : 𝓓(Ω, ℝ), (∀ x, 0 ≤ ψ x) ∧ (∀ x, ψ x ≤ 1) ∧ (∀ x ∈ K, ψ x = 1) ∧
-      tsupport ψ ⊆ (↑) '' W := by
-  have := Ω.isOpen.locallyCompactSpace
-  obtain ⟨ψ, hψ, hrange, hone, hcpt, hsupp⟩ :=
-    (hK.image continuous_subtype_val).exists_contDiff_cutoff
-      (Ω.isOpen.isOpenMap_subtype_val _ hW) (image_mono hKW)
-  exact ⟨⟨ψ, hψ, hcpt, hsupp.trans (Subtype.coe_image_subset _ _)⟩,
-    fun x => (hrange ⟨x, rfl⟩).1, fun x => (hrange ⟨x, rfl⟩).2,
-    fun x hx => interior_subset (hone ⟨x, hx, rfl⟩), hsupp⟩
-
 /-- The pairings of `h` with cutoffs `ψ n` supported in shrinking neighbourhoods `W n ⊆ L` of a
 compact set `K`, equal to one on `K`, converge to the integral of `h` over `K`, by dominated
 convergence. -/
@@ -145,8 +111,14 @@ private theorem enorm_setIntegral_isCompact_le (hh : LocallyIntegrable h ρ)
     {K : Set Ω} (hK : IsCompact K) : ‖∫ x in K, h x ∂ρ‖ₑ ≤ ∫⁻ x in K, k x ∂ρ := by
   have := Ω.isOpen.locallyCompactSpace
   obtain ⟨L, hL, hKL⟩ := exists_compact_superset hK
-  obtain ⟨W, hWo, hWL, hKW, hWanti, hWK⟩ := exists_antitone_open_iInter_eq hK hKL
-  choose ψ hψ0 hψ1 hψK hψW using fun n => exists_testFunction_cutoff hK (hWo n) (hKW n)
+  obtain ⟨W, hWo, hWL, hKW, hWanti, hWK⟩ := hK.isClosed.exists_antitone_isOpen_iInter_eq hKL
+  have hcut (n : ℕ) : ∃ ψ : 𝓓(Ω, ℝ), (∀ x, 0 ≤ ψ x) ∧ (∀ x, ψ x ≤ 1) ∧ (∀ x ∈ K, ψ x = 1) ∧
+      tsupport ψ ⊆ (↑) '' W n := by
+    obtain ⟨ψ, h01, h1, hsupp⟩ := TestFunction.exists_cutoff_tsupport_subset
+      (hK.image continuous_subtype_val) (Ω.isOpen.isOpenMap_subtype_val _ (hWo n))
+      (image_mono (hKW n)) (Subtype.coe_image_subset _ _)
+    exact ⟨ψ, fun x => (h01 x).1, fun x => (h01 x).2, fun x hx => h1 x ⟨x, hx, rfl⟩, hsupp⟩
+  choose ψ hψ0 hψ1 hψK hψW using hcut
   have hψ_zero (n : ℕ) (x : Ω) (hx : x ∉ W n) : ψ n x = 0 :=
     image_eq_zero_of_notMem_tsupport fun hx' => hx <| by
       obtain ⟨y, hy, hyx⟩ := hψW n hx'
