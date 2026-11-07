@@ -537,6 +537,30 @@ instance instT1SpaceConnectedComponents : T1Space (ConnectedComponents X) :=
       connectedComponents_preimage_singleton]
     exact isClosed_connectedComponent⟩
 
+/-- If a subset has only finitely many connected components, each component is relatively
+open in that subset. No local connectedness of the ambient space is required. -/
+theorem _root_.Set.Finite.isOpen_preimage_connectedComponentIn {s : Set X}
+    (hs : (connectedComponentIn s '' s).Finite) (x : X) :
+    IsOpen ((Subtype.val : s → X) ⁻¹' connectedComponentIn s x) := by
+  classical
+  by_cases hx : x ∈ s
+  · let j : ConnectedComponents s → Set X :=
+      fun C ↦ connectedComponentIn s (Quotient.out C).val
+    have hj : Injective j := by
+      intro C D hCD
+      have h := (ConnectedComponents.coe_eq_coe_iff_connectedComponentIn_eq
+        (Quotient.out C).property (Quotient.out D).property).2 hCD
+      exact (Quotient.out_eq' C).symm.trans (h.trans (Quotient.out_eq' D))
+    have hfin : (range j).Finite := hs.subset <| by
+      rintro _ ⟨C, rfl⟩
+      exact ⟨(Quotient.out C).val, (Quotient.out C).property, rfl⟩
+    have : Finite (ConnectedComponents s) := (finite_range_iff hj).1 hfin
+    have hopen := ConnectedComponents.discreteTopology_iff.1
+      (inferInstance : DiscreteTopology (ConnectedComponents s)) (⟨x, hx⟩ : s)
+    simpa only [connectedComponentIn_eq_image hx,
+      Subtype.val_injective.preimage_image] using hopen
+  · simp [connectedComponentIn_eq_empty hx]
+
 /-- A fibre of the quotient to connected components is path-connected when the ambient space is
 locally path-connected. -/
 instance instPathConnectedSpaceConnectedComponentsFiber [LocallyPathConnectedSpace X]
