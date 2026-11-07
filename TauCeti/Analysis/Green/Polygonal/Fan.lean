@@ -45,7 +45,7 @@ theorem windingNumber_eq_sum_polygon_segments {γ : ℝ → ℂ} {a b : ℝ} {N 
       ∑ i : Fin N, Contour.windingNumber
         (fun t : ℝ ↦ γ (s i.castSucc) + t • (γ (s i.succ) - γ (s i.castSucc))) 0 1 z := by
   have hγ := AbsolutelyContinuousOnInterval.of_affine_subdivision hs ha hb hsegments
-  have hmem := TauCeti.subdivision_mem_uIcc hs.monotone ha hb
+  have hmem := hs.monotone.mem_uIcc_of_map_zero_of_map_last ha hb
   have hpv (i : Fin N) : Contour.CauchyPVExistsAt γ (s i.castSucc) (s i.succ)
       (fun w ↦ (w - z)⁻¹) z :=
     hγ.cauchyPVExistsAt_inv_sub_of_mem_uIcc (hmem i.castSucc) (hmem i.succ) hz

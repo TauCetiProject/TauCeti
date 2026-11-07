@@ -23,8 +23,8 @@ family from `a` to `b`, every point of the family lies in `[a, b]`.
 
 * `TauCeti.exists_Icc_subset_Icc_castSucc_succ`: an interval meeting no point of the family in
   its interior lies in a single cell;
-* `TauCeti.subdivision_mem_uIcc`: every point of a monotone subdivision from `a` to `b` lies in
-  `uIcc a b`.
+* `Monotone.mem_uIcc_of_map_zero_of_map_last`: every point of a monotone subdivision from `a` to
+  `b` lies in `uIcc a b`.
 -/
 
 public section
@@ -62,9 +62,9 @@ theorem exists_Icc_subset_Icc_castSucc_succ {α : Type*} [LinearOrder α] {N : �
   exact hj.trans ht.1
 
 /-- Every point of a monotone subdivision `s` from `a` to `b` lies in `[a, b]`. -/
-theorem subdivision_mem_uIcc {α : Type*} [LinearOrder α] {a b : α} {N : ℕ}
-    {s : Fin (N + 1) → α} (hs : Monotone s) (ha : s 0 = a) (hb : s (Fin.last N) = b)
-    (i : Fin (N + 1)) : s i ∈ uIcc a b := by
+theorem _root_.Monotone.mem_uIcc_of_map_zero_of_map_last {α : Type*} [LinearOrder α]
+    {a b : α} {N : ℕ} {s : Fin (N + 1) → α} (hs : Monotone s) (ha : s 0 = a)
+    (hb : s (Fin.last N) = b) (i : Fin (N + 1)) : s i ∈ uIcc a b := by
   have hab : a ≤ b := by rw [← ha, ← hb]; exact hs (Fin.zero_le _)
   rw [uIcc_of_le hab, ← ha, ← hb]
   exact ⟨hs (Fin.zero_le _), hs (Fin.le_last _)⟩
