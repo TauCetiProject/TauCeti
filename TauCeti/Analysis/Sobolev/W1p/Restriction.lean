@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.W1p.Basic
 public import TauCeti.Analysis.Sobolev.W1p.Zero
 public import Mathlib.MeasureTheory.Integral.Average
+import TauCeti.MeasureTheory.Function.Lp.L1Convergence
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 
@@ -47,8 +48,8 @@ noncomputable section
 
 namespace TauCeti
 
-open MeasureTheory Set TopologicalSpace
-open scoped Distributions ENNReal Gradient
+open Filter MeasureTheory Set TopologicalSpace
+open scoped Distributions ENNReal Gradient Topology
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
@@ -286,5 +287,24 @@ theorem W1p.continuous_setAverage_value (hSU : S ⊆ (U : Set E))
   simp only [hEq]
   exact continuous_const.mul
     (hF.comp' (W1p.valueL (mu := mu) (Omega := U) (p := p)).continuous)
+
+/-- If Sobolev classes `a n` converge to `u`, their gradients converge in `L¹` on any open set
+`V` of finite measure contained in the domain. -/
+theorem W1p.tendsto_lintegral_gradient_sub (hV : V ≤ Omega)
+    {a : ℕ → W1p mu Omega p} {u : W1p mu Omega p} (ha : Tendsto a atTop (𝓝 u))
+    [IsFiniteMeasure (mu.restrict (V : Set E))] :
+    Tendsto (fun n => ∫⁻ x in (V : Set E), ‖W1p.gradient (a n) x - W1p.gradient u x‖ₑ ∂mu)
+      atTop (𝓝 0) := by
+  have hgrad : Tendsto (fun n => W1p.gradient (W1p.restrictL hV (a n))) atTop
+      (𝓝 (W1p.gradient (W1p.restrictL hV u))) := by
+    simpa only [Function.comp_def, W1p.gradientL_apply] using
+      ((W1p.gradientL (mu := mu) (Omega := V) (p := p)).continuous.tendsto
+        (W1p.restrictL hV u)).comp
+          ((W1p.restrictL hV).continuous.tendsto u |>.comp ha)
+  refine (tendsto_lintegral_enorm_sub_of_tendsto_Lp hgrad).congr fun n => ?_
+  apply lintegral_congr_ae
+  filter_upwards [W1p.gradient_restrictL_ae hV (a n),
+    W1p.gradient_restrictL_ae hV u] with x han hu
+  rw [han, hu]
 
 end TauCeti

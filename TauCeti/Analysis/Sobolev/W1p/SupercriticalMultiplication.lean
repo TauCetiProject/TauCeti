@@ -11,7 +11,6 @@ import TauCeti.Analysis.Normed.Lp.ProdLp
 import TauCeti.Analysis.Sobolev.W1p.Restriction
 import TauCeti.Analysis.Sobolev.WeakDeriv.Limit
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
-import TauCeti.MeasureTheory.Function.Lp.L1Convergence
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
@@ -138,19 +137,6 @@ private theorem W1p.morreyRepresentative_ofTestFunction
   rw [W1p.value_ofTestFunctionₗ]
   exact testFunctionLp_apply_ae (mu := mu) (p : ℝ≥0∞) phi
 
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] [mu.IsAddHaarMeasure] in
-/-- A function in `L^p` of the whole-space restriction has finite `L¹` norm on any set of finite
-measure. -/
-private theorem W1p.lintegral_enorm_restrict_ne_top {F : Type*} [NormedAddCommGroup F]
-    (V : Opens E) [IsFiniteMeasure (mu.restrict (V : Set E))]
-    (f : Lp F (p : ℝ≥0∞) (mu.restrict (⊤ : Opens E))) :
-    ∫⁻ x in (V : Set E), ‖f x‖ₑ ∂mu ≠ ∞ := by
-  have hm : MemLp f 1 (mu.restrict (V : Set E)) :=
-    ((Lp.memLp f).mono_measure
-      (Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr le_top))).mono_exponent Fact.out
-  rw [← eLpNorm_one_eq_lintegral_enorm hm.aestronglyMeasurable]
-  exact hm.ne
-
 /-- The Morrey representative of a Sobolev class is within the Morrey-embedding distance of a
 test function whose Sobolev class is close to it. -/
 private theorem W1p.enorm_testFunction_sub_morreyRepresentative_le
@@ -226,39 +212,6 @@ private theorem W1p.lintegral_mulGradient_sub_le (hp : (finrank ℝ E : ℝ≥0)
     gcongr
     exact W1p.enorm_morreyRepresentative_le_embedding hp v x
 
-/-- If Sobolev classes `a n` converge to `u`, their Morrey embeddings converge uniformly. -/
-private theorem W1p.tendsto_enorm_morreyEmbedding_sub (hp : (finrank ℝ E : ℝ≥0) < p)
-    {a : ℕ → W1p mu ⊤ (p : ℝ≥0∞)} {u : W1p mu ⊤ (p : ℝ≥0∞)} (ha : Tendsto a atTop (𝓝 u)) :
-    Tendsto (fun n => ‖W1p.morreyEmbedding hp (a n) - W1p.morreyEmbedding hp u‖ₑ) atTop
-      (𝓝 0) := by
-  have ha_morrey : Tendsto (fun n => W1p.morreyEmbedding hp (a n)) atTop
-      (𝓝 (W1p.morreyEmbedding hp u)) :=
-    ((W1p.morreyEmbedding (mu := mu) hp).continuous.tendsto u).comp ha
-  have hsub : Tendsto (fun n => W1p.morreyEmbedding hp (a n) -
-      W1p.morreyEmbedding hp u) atTop (𝓝 0) := by
-    simpa only [sub_self] using ha_morrey.sub_const (W1p.morreyEmbedding hp u)
-  simpa only [Function.comp_def, enorm_zero] using (continuous_enorm.tendsto 0).comp hsub
-
-/-- If Sobolev classes `a n` converge to `u`, their gradients converge in `L¹` on any open set
-`V`. -/
-private theorem W1p.tendsto_lintegral_gradient_sub (V : Opens E)
-    {a : ℕ → W1p mu ⊤ (p : ℝ≥0∞)} {u : W1p mu ⊤ (p : ℝ≥0∞)} (ha : Tendsto a atTop (𝓝 u))
-    [IsFiniteMeasure (mu.restrict (V : Set E))] :
-    Tendsto (fun n => ∫⁻ x in (V : Set E), ‖W1p.gradient (a n) x - W1p.gradient u x‖ₑ ∂mu)
-      atTop (𝓝 0) := by
-  have hVle : V ≤ (⊤ : Opens E) := le_top
-  have hgrad : Tendsto (fun n => W1p.gradient (W1p.restrictL hVle (a n))) atTop
-      (𝓝 (W1p.gradient (W1p.restrictL hVle u))) := by
-    simpa only [Function.comp_def, W1p.gradientL_apply] using
-      ((W1p.gradientL (mu := mu) (Omega := V) (p := (p : ℝ≥0∞))).continuous.tendsto
-        (W1p.restrictL hVle u)).comp
-          ((W1p.restrictL hVle).continuous.tendsto u |>.comp ha)
-  refine (tendsto_lintegral_enorm_sub_of_tendsto_Lp hgrad).congr fun n => ?_
-  apply lintegral_congr_ae
-  filter_upwards [W1p.gradient_restrictL_ae hVle (a n),
-    W1p.gradient_restrictL_ae hVle u] with x han hu
-  rw [han, hu]
-
 /-- The product of two Morrey representatives is locally integrable. -/
 private theorem W1p.locallyIntegrableOn_mul_morreyRepresentative
     (hp : (finrank ℝ E : ℝ≥0) < p) (u v : W1p mu ⊤ (p : ℝ≥0∞)) :
@@ -310,11 +263,18 @@ theorem W1p.hasWeakFDerivOn_mul_morreyRepresentative
   have ha_uniform := W1p.tendsto_enorm_morreyEmbedding_sub hp ha_tendsto
   -- On the relatively compact `V` the gradients converge in `L¹`, by restriction and the
   -- finiteness of `mu` there.
-  have hgrad1 := W1p.tendsto_lintegral_gradient_sub V ha_tendsto
+  have hgrad1 := W1p.tendsto_lintegral_gradient_sub (V := V) le_top ha_tendsto
   -- Local integrability bounds: `v` and its gradient have finite `L¹` norms on `V`; these are
   -- the constants in the two error estimates.
-  have hvVal := W1p.lintegral_enorm_restrict_ne_top V (W1p.value v)
-  have hvGrad := W1p.lintegral_enorm_restrict_ne_top V (W1p.gradient v)
+  have hVtop : (mu.restrict ((⊤ : Opens E) : Set E)) (V : Set E) ≠ ∞ := by
+    rw [Opens.coe_top, Measure.restrict_univ, ← Measure.restrict_apply_univ]
+    exact measure_ne_top _ _
+  have hvVal : ∫⁻ x in (V : Set E), ‖W1p.value v x‖ₑ ∂mu ≠ ∞ := by
+    simpa only [Opens.coe_top, Measure.restrict_univ] using
+      (integrableOn_Lp_of_measure_ne_top (W1p.value v) Fact.out hVtop).hasFiniteIntegral.ne
+  have hvGrad : ∫⁻ x in (V : Set E), ‖W1p.gradient v x‖ₑ ∂mu ≠ ∞ := by
+    simpa only [Opens.coe_top, Measure.restrict_univ] using
+      (integrableOn_Lp_of_measure_ne_top (W1p.gradient v) Fact.out hVtop).hasFiniteIntegral.ne
   -- The Leibniz rule is already available for the smooth factors `phi n`.
   have hchain : ∀ n, HasWeakFDerivOn mu V
       (fun x => (phi n : E → ℝ) x * W1p.value v x)
