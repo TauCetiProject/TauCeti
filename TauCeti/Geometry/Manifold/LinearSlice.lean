@@ -44,11 +44,13 @@ open scoped ContDiff Manifold
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {s : Set M}
+
+section ChartedSpace
+
+variable {F G : Type*} [TopologicalSpace F] [TopologicalSpace G] [Zero G]
   (e : s → OpenPartialHomeomorph M (F × G))
   (he : ∀ x, IsSliceChart (e x) ((univ : Set F) ×ˢ ({0} : Set G)) s)
 
@@ -82,6 +84,14 @@ theorem linearSliceChart_apply (x y : s) :
   unfold linearSliceChart
   apply IsSliceChart.subtypeChart_apply
 
+/-- On its source, the induced chart recovers the ambient coordinates by reinserting the zero
+transverse coordinate. -/
+theorem linearSliceChart_mk_zero_eq (x : s) {y : s} (hy : y ∈ (linearSliceChart e he x).source) :
+    (linearSliceChart e he x y, (0 : G)) = e x y := by
+  let : Nonempty s := ⟨x⟩
+  unfold linearSliceChart at hy ⊢
+  exact (he x).subtypeChart_mk_zero_eq hy
+
 /-- On the target, the induced inverse is the ambient inverse evaluated on the zero slice. -/
 @[simp]
 theorem coe_linearSliceChart_symm_apply (x : s) {v : F}
@@ -112,7 +122,13 @@ theorem linearSliceChartedSpace_atlas (hcover : ∀ x : s, (x : M) ∈ (e x).sou
 theorem linearSliceChartedSpace_chartAt (hcover : ∀ x : s, (x : M) ∈ (e x).source) (x : s) :
     @chartAt F _ s _ (linearSliceChartedSpace e he hcover) x = linearSliceChart e he x := (rfl)
 
-variable {n : ℕ∞ω}
+end ChartedSpace
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  (e : s → OpenPartialHomeomorph M (F × G))
+  (he : ∀ x, IsSliceChart (e x) ((univ : Set F) ×ˢ ({0} : Set G)) s)
+  {n : ℕ∞ω}
   (hsmooth : ∀ x, ∀ z ∈ (e x).source, ContMDiffAt I 𝓘(𝕜, F × G) n (e x) z)
   (hinv : ∀ x, ∀ z ∈ (e x).target, ContMDiffAt 𝓘(𝕜, F × G) I n (e x).symm z)
 
