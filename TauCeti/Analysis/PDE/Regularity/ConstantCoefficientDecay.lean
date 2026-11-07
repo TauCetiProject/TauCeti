@@ -328,9 +328,9 @@ open scoped Distributions InnerProductSpace
 variable {n : ℕ} {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
   {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))} {x₀ : EuclideanSpace ℝ (Fin (n + 1))} {ρ r : ℝ}
 
-/-- The `A`-harmonic replacement `w` on a ball `B_r ⊆ Ω` of a weak solution `u` of
-`-div(A ∇u) = -div G`, with `G - c` square integrable on `B_r`, satisfies
-`∫_{B_r} ‖∇u - ∇w‖² ≤ λ⁻² ∫_{B_r} ‖G - c‖²`. -/
+/-- For a weak solution `u` of `-div(A ∇u) = -div G` on a ball `B_r ⊆ Ω`, with `G - c` square
+integrable on `B_r`, there is an `A`-harmonic `w ∈ H¹(B_r)` (that is, `∫ ⟨A∇w, ∇v⟩ = 0` for all
+`v ∈ H¹₀(B_r)`) with `∫_{B_r} ‖∇u - ∇w‖² ≤ λ⁻² ∫_{B_r} ‖G - c‖²`. -/
 private theorem exists_forall_energyFormH1_eq_zero_setIntegral_norm_gradient_sub_sq_le
     {lam Lam : ℝ} (hA : UniformlyEllipticOn (ball x₀ r) (fun _ => A) lam Lam)
     {u : W1p volume Omega 2}
