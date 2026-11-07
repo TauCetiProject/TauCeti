@@ -198,6 +198,18 @@ theorem returnLengths_deterministic {f : α → α} (hf : Measurable f) (x : α)
   simp [deterministic_pow, deterministic_apply, pos_iff_ne_zero,
     Set.indicator_apply_eq_zero, Function.IsPeriodicPt, Function.IsFixedPt]
 
+/-- A nonzero translation in a torsion-free left-cancellative additive monoid has no positive
+return lengths. -/
+-- Simplify translations before the general deterministic return-length formula applies.
+@[simp↓]
+theorem returnLengths_deterministic_add [AddMonoid α] [IsLeftCancelAdd α] [IsAddTorsionFree α]
+    {a : α} (ha : Measurable (fun y : α => y + a)) (ha0 : a ≠ 0) (x : α) :
+    (deterministic (fun y : α => y + a) ha).returnLengths x = ∅ := by
+  rw [returnLengths_deterministic, Set.eq_empty_iff_forall_notMem]
+  rintro n ⟨hn, hreturn⟩
+  rw [Function.IsPeriodicPt, Function.IsFixedPt, add_right_iterate] at hreturn
+  exact ha0 ((nsmul_eq_zero_iff_right hn.ne').mp (add_eq_left.mp hreturn))
+
 /-- The period of `x` under the deterministic kernel of `f` is the minimal period of `x`
 under `f`. In particular a point that is not periodic has period zero. -/
 @[simp]
