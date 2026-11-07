@@ -286,17 +286,23 @@ theorem IsMorseSmale.isClosed_unstableSet_inter_stableSet_inter_level
 omit hX in
 /-- **Finiteness of the index-one trajectories.** Under the Morse–Smale condition, if the critical
 points `p` and `q` have Morse indices differing by one, then only finitely many trajectories run
-from `p` to `q`: their points on a level `c` strictly between `f q` and `f p` form a finite set.
-This is the finiteness behind the coefficients of the mod-two Morse boundary. -/
+from `p` to `q`: their points on any level `c` form a finite set, which is empty unless `c` lies
+strictly between `f q` and `f p`. This is the finiteness behind the coefficients of the mod-two
+Morse boundary. -/
 theorem IsMorseSmale.finite_unstableSet_inter_stableSet_inter_level
     {hX : IsAdaptedPseudoGradient f X} (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f) {p q : M}
     (hp : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0) (hq : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0)
-    (hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1) {c : ℝ}
-    (hc : f q < c ∧ c < f p) :
-    (hX.flow.unstableSet p ∩ hX.flow.stableSet q ∩ {z | f z = c}).Finite :=
-  (h.isClosed_unstableSet_inter_stableSet_inter_level hf hp hq hind hc).isCompact.finite
-    (hX.isDiscrete_unstableSet_inter_stableSet_level hf hp hq hind
-      fun _ hy ↦ h.span_mtangentConeAt_sup_eq_top hp hq hy.1)
+    (hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1) (c : ℝ) :
+    (hX.flow.unstableSet p ∩ hX.flow.stableSet q ∩ {z | f z = c}).Finite := by
+  by_cases hc : f q < c ∧ c < f p
+  · exact (h.isClosed_unstableSet_inter_stableSet_inter_level hf hp hq hind hc).isCompact.finite
+      (hX.isDiscrete_unstableSet_inter_stableSet_level hf hp hq hind
+        fun _ hy ↦ h.span_mtangentConeAt_sup_eq_top hp hq hy.1)
+  · -- Outside `(f q, f p)` the slice is empty.
+    have hpq : p ≠ q := by rintro rfl; omega
+    refine finite_empty.subset fun y hy ↦ hc ?_
+    exact hy.2 ▸ hX.mem_Ioo_of_mem_unstableSet_inter_stableSet
+      (hf.contMDiff.mdifferentiable (by simp)) hpq hy.1
 
 end IsAdaptedPseudoGradient
 

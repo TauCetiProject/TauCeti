@@ -42,6 +42,11 @@ vector space.
 * `TauCeti.IsAdaptedPseudoGradient.existsUnique_flow_eq_midpoint_of_mem_unstableSet_inter_stableSet`
   (the case `c = (f a + f b) / 2`): a trajectory from `a` to `b` crosses the middle level exactly
   once.
+* `TauCeti.IsAdaptedPseudoGradient.eq_of_flow_eq_of_value_eq`: a point of such a trajectory is
+  determined by its orbit and its level.
+* `TauCeti.IsAdaptedPseudoGradient.exists_subseq_tendsto_flow_of_tendsto`: if points of such a
+  trajectory is the limit of a sequence, the crossings of an intermediate level by the orbits of
+  the sequence converge along a subsequence to the crossing of the limit orbit.
 * `TauCeti.IsAdaptedPseudoGradient.tendsto_zero_of_flow_eq_of_mem_unstableSet_inter_stableSet`:
   the time at which an orbit crosses the level of a point `y` of such a trajectory depends
   continuously on the orbit near `y`.
@@ -158,6 +163,52 @@ theorem existsUnique_flow_eq_midpoint_of_mem_unstableSet_inter_stableSet
   have hval := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hf hab hy
   exact hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hf hab hy
     (by linarith [hval.1, hval.2]) (by linarith [hval.1, hval.2])
+
+/-- **A point of a trajectory is determined by its orbit and its level.** Two points that lie on a
+common orbit and a common level coincide, if one of them is on a trajectory between distinct
+points. -/
+theorem eq_of_flow_eq_of_value_eq (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {y' : M}
+    (hab : a ≠ b) (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) {t t' : ℝ}
+    (h : hX.flow t y = hX.flow t' y') (hv : f y = f y') : y = y' := by
+  have hy' : y' = hX.flow (t - t') y := by
+    rw [show t - t' = -t' + t by ring, Flow.map_add, h, ← Flow.map_add, neg_add_cancel,
+      Flow.map_zero_apply]
+  have h0 := (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hf hab hy).injective
+    (show f (hX.flow (t - t') y) = f (hX.flow 0 y) by rw [← hy', Flow.map_zero_apply, hv])
+  rw [hy', h0, Flow.map_zero_apply]
+
+/-- **Level crossings converge along converging orbits.** Let `w` lie on a trajectory from `a` to
+`b`, and `c` a value strictly between `f b` and `f a`. If `u n → w` and the orbit of `u n` meets
+the level `c` at time `s n`, then along a subsequence the crossing points converge to the point
+where the orbit of `w` meets the level `c`. -/
+theorem exists_subseq_tendsto_flow_of_tendsto (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {w : M}
+    (hw : w ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) (hbc : f b < c)
+    (hca : c < f a) {u : ℕ → M} (hu : Tendsto u atTop (𝓝 w)) {s : ℕ → ℝ}
+    (hs : ∀ n, f (hX.flow (s n) (u n)) = c) :
+    ∃ (σ : ℝ) (φ : ℕ → ℕ), StrictMono φ ∧ f (hX.flow σ w) = c ∧
+      Tendsto (fun k ↦ hX.flow (s (φ k)) (u (φ k))) atTop (𝓝 (hX.flow σ w)) := by
+  have hfc : Continuous f := hf.continuous
+  -- The orbit of `w` lies below the level `c` at some time `T₁` and above it at some time `T₀`.
+  obtain ⟨T₁, hT₁⟩ := (((hfc.tendsto b).comp (Flow.mem_stableSet.1 hw.2)).eventually
+    (eventually_lt_nhds hbc)).exists
+  obtain ⟨T₀, hT₀⟩ := (((hfc.tendsto a).comp (Flow.mem_unstableSet.1 hw.1)).eventually
+    (eventually_gt_nhds hca)).exists
+  have hlim (T : ℝ) : Tendsto (fun n ↦ f (hX.flow T (u n))) atTop (𝓝 (f (hX.flow T w))) :=
+    (hfc.tendsto _).comp (((hX.flow.continuous continuous_const continuous_id).tendsto w).comp hu)
+  -- So do the orbits of `u n` for large `n`, which traps the crossing times in `[T₀, T₁]`.
+  have hfreq : ∃ᶠ n in atTop, s n ∈ Icc T₀ T₁ := by
+    refine (((hlim T₁).eventually (eventually_lt_nhds hT₁)).and
+      ((hlim T₀).eventually (eventually_gt_nhds hT₀))).frequently.mono fun n hn ↦ ⟨?_, ?_⟩
+    · by_contra! h
+      exact (hs n ▸ hn.2).not_ge (hX.antitone_flow hf (u n) h.le)
+    · by_contra! h
+      exact (hs n ▸ hn.1).not_ge (hX.antitone_flow hf (u n) h.le)
+  obtain ⟨σ, -, φ, hφ, hσ⟩ := isCompact_Icc.tendsto_subseq' hfreq
+  have hconv : Tendsto (fun k ↦ hX.flow (s (φ k)) (u (φ k))) atTop (𝓝 (hX.flow σ w)) :=
+    ((hX.flow.continuous continuous_fst continuous_snd).tendsto (σ, w)).comp
+      (hσ.prodMk_nhds (hu.comp hφ.tendsto_atTop))
+  exact ⟨σ, φ, hφ, tendsto_nhds_unique ((hfc.tendsto _).comp hconv)
+    (by simp only [Function.comp_def, hs, tendsto_const_nhds]), hconv⟩
 
 /-- **Level-crossing times depend continuously on the point.** Let `y` lie on a trajectory from a
 critical point `a` to a different critical point `b`, and let `w` tend to `y`. If the orbit of each
