@@ -209,9 +209,9 @@ lemma coeff_principalDivisor_pos_iff_valuation_lt_one (u : Additive Kˣ) (v : He
 no poles, only zeros. The element is presented as any unit `u : Kˣ` whose value is
 `algebraMap R K r`. This is the divisor-of-functions sanity check that rules out a vacuous
 order system. -/
-lemma isEffective_principalDivisor_of_integral {r : R} {u : Kˣ} (hu : (u : K) = algebraMap R K r) :
-    IsEffective ((OrderSystem.ofDedekindDomain R K).principalDivisor (Additive.ofMul u)) := by
-  rw [isEffective_iff]
+lemma principalDivisor_nonneg_of_integral {r : R} {u : Kˣ} (hu : (u : K) = algebraMap R K r) :
+    0 ≤ (OrderSystem.ofDedekindDomain R K).principalDivisor (Additive.ofMul u) := by
+  rw [nonneg_iff]
   intro v
   rw [OrderSystem.coeff_principalDivisor, OrderSystem.ofDedekindDomain_ord, adicOrd_nonneg_iff]
   simp only [toMul_ofMul, hu]
@@ -239,7 +239,7 @@ lemma mem_support_principalDivisor_of_integral_iff_mem_asIdeal {r : R} {u : Kˣ}
   · intro hv
     rw [← coeff_principalDivisor_pos_iff_mem hu v]
     exact lt_of_le_of_ne
-      ((isEffective_iff _).mp (isEffective_principalDivisor_of_integral hu) v) (Ne.symm hv)
+      (coeff_nonneg (principalDivisor_nonneg_of_integral hu) v) (Ne.symm hv)
   · intro hv
     exact ne_of_gt ((coeff_principalDivisor_pos_iff_mem hu v).mpr hv)
 

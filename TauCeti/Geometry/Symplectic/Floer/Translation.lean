@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Energy
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.MeanValue
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
 
 /-!
@@ -26,8 +27,14 @@ This file identifies the fixed points of this action of `ℝ` on finite-energy s
 that it is free elsewhere, so that the quotient by translations is taken only away from the
 stationary cylinders.
 
-The *stationary* cylinders `u(s, t) = x(t)` are fixed by every translation. Such a cylinder solves
-the Floer equation exactly when `x' = X_{H_t}(x)`, that is, when `x` is a Hamiltonian orbit
+For this perturbation the two components of the perturbed derivative are `∂_s u` and
+`∂_t u - X_{H_t}(u)` (`SymplecticForm.perturbedFDeriv_cylindrical_apply_stdComplexLineReal` and
+`SymplecticForm.perturbedFDeriv_cylindrical_apply_stdComplexLineImag`).
+
+The *stationary* cylinders `u(s, t) = x(t)` are fixed by every translation. The perturbed
+derivative of such a cylinder sends `(a, b)` to `b (x' - X_{H_t}(x))`
+(`SymplecticForm.perturbedFDeriv_comp_snd_apply`), so it solves the Floer equation exactly when
+`x' = X_{H_t}(x)`, that is, when `x` is a Hamiltonian orbit
 (`SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_snd_iff`), and its energy density
 vanishes (`SymplecticForm.floerEnergyDensity_comp_snd`). Conversely, for almost complex structures
 tamed by `ω`, a `C¹` solution has zero energy exactly when it is stationary
@@ -86,9 +93,22 @@ private theorem floerEnergyDensity_cylindrical_comp_add_right (ω : SymplecticFo
 
 variable {ω : SymplecticForm V} {H : ℝ → V → ℝ} {x : ℝ → V} {z : ℝ × ℝ}
 
+/-- For `K = H_t dt` the `s`-component of the perturbed derivative is `∂_s u`. -/
+theorem perturbedFDeriv_cylindrical_apply_stdComplexLineReal (u : ℝ × ℝ → V) (z : ℝ × ℝ) :
+    ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z stdComplexLineReal =
+      fderiv ℝ u z (1, 0) := by
+  rw [perturbedFDeriv_apply_stdComplexLineReal, stdComplexLineReal_eq,
+    hamiltonianVectorField_const, Pi.zero_apply, sub_zero]
+
+/-- For `K = H_t dt` the `t`-component of the perturbed derivative is `∂_t u - X_{H_t}(u)`. -/
+theorem perturbedFDeriv_cylindrical_apply_stdComplexLineImag (u : ℝ × ℝ → V) (z : ℝ × ℝ) :
+    ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z stdComplexLineImag =
+      fderiv ℝ u z (0, 1) - ω.hamiltonianVectorField (H z.2) (u z) := by
+  rw [perturbedFDeriv_apply_stdComplexLineImag, stdComplexLineImag_eq]
+
 /-- The perturbed derivative of a stationary map `(s, t) ↦ x(t)` for `K = H_t dt` sends `(a, b)`
 to `b (x'(t) - X_{H_t}(x(t)))`. -/
-private theorem perturbedFDeriv_comp_snd_apply (hx : DifferentiableAt ℝ x z.2) (v : ℝ × ℝ) :
+theorem perturbedFDeriv_comp_snd_apply (hx : DifferentiableAt ℝ x z.2) (v : ℝ × ℝ) :
     ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ x w.2) z v =
       v.2 • (deriv x z.2 - ω.hamiltonianVectorField (H z.2) (x z.2)) := by
   have h : HasFDerivAt (fun w : ℝ × ℝ ↦ x w.2)
@@ -161,14 +181,40 @@ private theorem eq_of_forall_floerEnergyDensity_eq_zero (ω : SymplecticForm V)
   intro s t ht
   have hline (r : ℝ) : HasDerivAt (fun r ↦ u (r, t)) 0 r := by
     have hr : (r, t) ∈ U := hRU ⟨mem_univ r, ht⟩
-    have hd := HasFDerivAt.comp_hasDerivAt r
-      ((hu.differentiableOn one_ne_zero _ hr).differentiableAt (hU.mem_nhds hr)).hasFDerivAt
-      ((hasDerivAt_id r).prodMk (hasDerivAt_const r t))
     have h0 := hds' (show (r, t) ∈ (univ : Set ℝ) ×ˢ Icc 0 1 from ⟨mem_univ r, ht⟩)
     rw [stdComplexLineReal_eq] at h0
-    simpa [Function.comp_def, h0] using hd
+    simpa [h0] using hasDerivAt_slice_left
+      ((hu.differentiableOn one_ne_zero _ hr).differentiableAt (hU.mem_nhds hr))
   exact is_const_of_deriv_eq_zero (fun r ↦ (hline r).differentiableAt)
     (fun r ↦ (hline r).deriv) s 0
+
+/-- A map that is `C¹` on a neighbourhood of the closed strip `ℝ × [0, 1]` and solves the Floer
+equation for `K = H_t dt` and tamed almost complex structures there has zero energy density at
+every point of the open strip `ℝ × (0, 1)` if its energy over the open strip vanishes. -/
+private theorem floerEnergyDensity_eq_zero_of_lintegral_eq_zero (ω : SymplecticForm V)
+    {J : ℝ × ℝ → AlmostComplexStructure V} (hH : ContDiff ℝ 1 (uncurry H)) (hU : IsOpen U)
+    (hu : ContDiffOn ℝ 1 u U) (hRU : (univ : Set ℝ) ×ˢ Icc 0 1 ⊆ U)
+    (hJ : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ω.Tames (J z))
+    (hfloer : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1,
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+        (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V))
+    (hE : ∫⁻ z in (univ : Set ℝ) ×ˢ Ioo 0 1,
+      ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) = 0) :
+    ∀ z ∈ (univ : Set ℝ) ×ˢ Ioo 0 1,
+      ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z = 0 := by
+  have hopen : IsOpen ((univ : Set ℝ) ×ˢ Ioo (0 : ℝ) 1) := isOpen_univ.prod isOpen_Ioo
+  have hc : ContinuousOn (fun z ↦ ENNReal.ofReal
+      (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z)) ((univ : Set ℝ) ×ˢ Ioo 0 1) :=
+    ENNReal.continuous_ofReal.comp_continuousOn
+      ((ω.continuousOn_floerEnergyDensity hU hu contDiffOn_const
+        (contDiff_uncurry_cylindrical hH).contDiffOn).mono (strip_Ioo_subset_Icc.trans hRU))
+  -- A continuous function with zero integral over an open set vanishes there.
+  have hae := (lintegral_eq_zero_iff' (hc.aemeasurable hopen.measurableSet)).1 hE
+  intro z hz
+  have h := Measure.eqOn_open_of_ae_eq hae hopen hc continuous_zero.continuousOn hz
+  have hz' := strip_Ioo_subset_Icc hz
+  exact le_antisymm (ENNReal.ofReal_eq_zero.1 h)
+    (ω.floerEnergyDensity_nonneg (hJ z hz') (hfloer z hz'))
 
 /-- **Zero energy characterizes stationary Floer cylinders.** Let `H` be a `C¹` time-dependent
 Hamiltonian and let `u` be `C¹` on an open neighbourhood `U` of the strip `ℝ × [0, 1]`, solving
@@ -186,10 +232,7 @@ theorem lintegral_floerEnergyDensity_eq_zero_iff (ω : SymplecticForm V)
         ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) = 0 ↔
       ∀ s, ∀ t ∈ Icc (0 : ℝ) 1, u (s, t) = u (0, t) := by
   refine ⟨fun hE ↦ eq_of_forall_floerEnergyDensity_eq_zero ω hU hu hRU hJ hfloer
-    (ω.floerEnergyDensity_eq_zero_of_setLIntegral_eq_zero (isOpen_univ.prod isOpen_Ioo)
-      (hu.mono (strip_Ioo_subset_Icc.trans hRU)) contDiffOn_const
-      (contDiff_uncurry_cylindrical hH).contDiffOn (fun z hz ↦ hJ z (strip_Ioo_subset_Icc hz))
-      (fun z hz ↦ hfloer z (strip_Ioo_subset_Icc hz))
+    (floerEnergyDensity_eq_zero_of_lintegral_eq_zero ω hH hU hu hRU hJ hfloer
       (le_antisymm (hE ▸ lintegral_mono_set strip_Ioo_subset_Icc) zero_le)), fun hst ↦ ?_⟩
   -- Near a point of the open strip `u` agrees with the stationary map `(s, t) ↦ u(0, t)`.
   have h0 : EqOn (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u) 0
@@ -254,10 +297,7 @@ theorem lintegral_floerEnergyDensity_eq_zero_of_periodic (ω : SymplecticForm V)
     (ne_top_of_le_ne_top hfin (lintegral_mono_set strip_Ioo_subset_Icc))
   exact (ω.lintegral_floerEnergyDensity_eq_zero_iff hH hU hu hRU hJ hfloer).2
     (eq_of_forall_floerEnergyDensity_eq_zero ω hU hu hRU hJ hfloer
-      (ω.floerEnergyDensity_eq_zero_of_setLIntegral_eq_zero (isOpen_univ.prod isOpen_Ioo)
-        (hu.mono (strip_Ioo_subset_Icc.trans hRU)) contDiffOn_const
-        (contDiff_uncurry_cylindrical hH).contDiffOn (fun z hz ↦ hJ z (strip_Ioo_subset_Icc hz))
-        (fun z hz ↦ hfloer z (strip_Ioo_subset_Icc hz)) hE))
+      (floerEnergyDensity_eq_zero_of_lintegral_eq_zero ω hH hU hu hRU hJ hfloer hE))
 
 /-- **Translations act freely on nonstationary finite-energy Floer cylinders.** Under the
 hypotheses of `TauCeti.SymplecticForm.lintegral_floerEnergyDensity_eq_zero_iff`, if `u` has finite

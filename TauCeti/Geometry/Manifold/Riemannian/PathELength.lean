@@ -155,63 +155,39 @@ theorem exists_contMDiff_pathELength_eq_of_le {γ : ℝ → M} {a b : ℝ} (hab 
 
 end Manifold
 
-/-- Given two `C¹` paths on `[0, 1]` whose endpoints match, there is a globally `C¹` path with
-their outer endpoints which is constant near those endpoints, whose length is the sum of the two
-original lengths, and whose image stays in the union of the two original path images. -/
-theorem exists_contMDiff_pathELength_eq_add {γ₁ γ₂ : ℝ → M}
-    (hγ₁ : ContMDiffOn 𝓘(ℝ, ℝ) I 1 γ₁ (Icc 0 1))
-    (hγ₂ : ContMDiffOn 𝓘(ℝ, ℝ) I 1 γ₂ (Icc 0 1)) (h₁₂ : γ₁ 1 = γ₂ 0) :
-    ∃ η : ℝ → M,
-      ContMDiff 𝓘(ℝ, ℝ) I 1 η ∧
-      η 0 = γ₁ 0 ∧
-      η 1 = γ₂ 1 ∧
-      Manifold.pathELength I η 0 1 =
-        Manifold.pathELength I γ₁ 0 1 + Manifold.pathELength I γ₂ 0 1 ∧
-      η =ᶠ[𝓝 0] (fun _ ↦ γ₁ 0) ∧
-      η =ᶠ[𝓝 1] (fun _ ↦ γ₂ 1) ∧
-      MapsTo η (Icc 0 1) (γ₁ '' Icc 0 1 ∪ γ₂ '' Icc 0 1) := by
-  obtain ⟨α, hα, hα₀, _, hαlen, hαconst₀, hαconst₁, hαmaps⟩ :=
-    exists_contMDiff_pathELength_eq hγ₁
-  obtain ⟨β, hβ, _, hβ₁, hβlen, hβconst₀, hβconst₁, hβmaps⟩ :=
-    exists_contMDiff_pathELength_eq hγ₂
-  let f : ℝ → M := fun t ↦ α (2 * t)
-  let g : ℝ → M := fun t ↦ β (2 * t - 1)
-  let η : ℝ → M := piecewise (Iic (1 / 2 : ℝ)) f g
-  have hf : ContMDiff 𝓘(ℝ, ℝ) I 1 f := by
+omit [∀ x : M, ENorm (TangentSpace I x)] [∀ x : M, ENormSMulClass ℝ (TangentSpace I x)] in
+/-- Gluing two paths after rescaling them to `[0, 1 / 2]` and `[1 / 2, 1]` gives a `C¹` path when
+the first is constant near its right end and the second near its left end, with equal values. -/
+private theorem contMDiff_piecewise_scale {α β : ℝ → M} {x y : M}
+    (hα : ContMDiff 𝓘(ℝ, ℝ) I 1 α) (hβ : ContMDiff 𝓘(ℝ, ℝ) I 1 β)
+    (hα₁ : α =ᶠ[𝓝 1] (fun _ ↦ x)) (hβ₀ : β =ᶠ[𝓝 0] (fun _ ↦ y)) (hxy : x = y) :
+    ContMDiff 𝓘(ℝ, ℝ) I 1
+      (piecewise (Iic (1 / 2 : ℝ)) (fun t ↦ α (2 * t)) (fun t ↦ β (2 * t - 1))) := by
+  have hf : ContMDiff 𝓘(ℝ, ℝ) I 1 (fun t : ℝ ↦ α (2 * t)) := by
     apply hα.comp
     simpa only [contMDiff_iff_contDiff] using
       (show ContDiff ℝ 1 (fun t : ℝ ↦ 2 * t) by fun_prop)
-  have hg : ContMDiff 𝓘(ℝ, ℝ) I 1 g := by
+  have hg : ContMDiff 𝓘(ℝ, ℝ) I 1 (fun t : ℝ ↦ β (2 * t - 1)) := by
     apply hβ.comp
     simpa only [contMDiff_iff_contDiff] using
       (show ContDiff ℝ 1 (fun t : ℝ ↦ 2 * t - 1) by fun_prop)
-  have hf_const : f =ᶠ[𝓝 (1 / 2 : ℝ)] (fun _ ↦ γ₁ 1) := by
-    apply hαconst₁.comp_tendsto
-    have h : ContinuousAt (fun t : ℝ ↦ 2 * t) (1 / 2) := by fun_prop
-    -- Expose the value hidden in `ContinuousAt` so `norm_num` can identify the target filter.
-    change Tendsto (fun t : ℝ ↦ 2 * t) (𝓝 (1 / 2)) (𝓝 (2 * (1 / 2))) at h
-    norm_num at h
-    exact h
-  have hg_const : g =ᶠ[𝓝 (1 / 2 : ℝ)] (fun _ ↦ γ₂ 0) := by
-    apply hβconst₀.comp_tendsto
-    have h : ContinuousAt (fun t : ℝ ↦ 2 * t - 1) (1 / 2) := by fun_prop
-    -- Expose the value hidden in `ContinuousAt` so `norm_num` can identify the target filter.
-    change Tendsto (fun t : ℝ ↦ 2 * t - 1) (𝓝 (1 / 2))
-      (𝓝 (2 * (1 / 2) - 1)) at h
-    norm_num at h
-    exact h
-  have hfg : f =ᶠ[𝓝 (1 / 2 : ℝ)] g :=
-    hf_const.trans <| (h₁₂ ▸ hg_const.symm)
-  have hη : ContMDiff 𝓘(ℝ, ℝ) I 1 η := hf.piecewise_Iic hg hfg
-  have hη₀ : η 0 = γ₁ 0 := by
-    simp [η, f, hα₀]
-  have hη₁ : η 1 = γ₂ 1 := by
-    rw [show η 1 = g 1 by
-      exact (Iic (1 / 2 : ℝ)).piecewise_eq_of_notMem f g (by norm_num)]
-    -- Unfold the rescaling at the endpoint without unfolding `η` or the piecewise construction.
-    change β (2 * 1 - 1) = γ₂ 1
-    norm_num
-    exact hβ₁
+  have hf_const : (fun t : ℝ ↦ α (2 * t)) =ᶠ[𝓝 (1 / 2 : ℝ)] (fun _ ↦ x) := by
+    exact hα₁.comp_tendsto ((by fun_prop : Continuous fun t : ℝ ↦ 2 * t).tendsto' _ _ (by norm_num))
+  have hg_const : (fun t : ℝ ↦ β (2 * t - 1)) =ᶠ[𝓝 (1 / 2 : ℝ)] (fun _ ↦ y) := by
+    exact hβ₀.comp_tendsto <|
+      (by fun_prop : Continuous fun t : ℝ ↦ 2 * t - 1).tendsto' _ _ (by norm_num)
+  exact hf.piecewise_Iic hg (hf_const.trans <| (hxy ▸ hg_const.symm))
+
+/-- The path obtained by gluing `α` and `β`, rescaled to `[0, 1 / 2]` and `[1 / 2, 1]`, has length
+the sum of the lengths of `α` and `β`, when both are `C¹`. -/
+private theorem pathELength_piecewise_scale {α β : ℝ → M}
+    (hα : ContMDiff 𝓘(ℝ, ℝ) I 1 α) (hβ : ContMDiff 𝓘(ℝ, ℝ) I 1 β) :
+    Manifold.pathELength I
+        (piecewise (Iic (1 / 2 : ℝ)) (fun t ↦ α (2 * t)) (fun t ↦ β (2 * t - 1))) 0 1 =
+      Manifold.pathELength I α 0 1 + Manifold.pathELength I β 0 1 := by
+  set f : ℝ → M := fun t ↦ α (2 * t) with hf
+  set g : ℝ → M := fun t ↦ β (2 * t - 1) with hg
+  set η : ℝ → M := piecewise (Iic (1 / 2 : ℝ)) f g with hη
   have hη_left : Manifold.pathELength I η 0 (1 / 2) =
       Manifold.pathELength I α 0 1 := by
     rw [Manifold.pathELength_congr (γ' := f) (fun t ht ↦ by
@@ -236,51 +212,81 @@ theorem exists_contMDiff_pathELength_eq_add {γ₁ γ₂ : ℝ → M}
       (hβ.mdifferentiable one_ne_zero).mdifferentiableOn
     norm_num at hlength
     exact hlength
-  have hηlen : Manifold.pathELength I η 0 1 =
-      Manifold.pathELength I γ₁ 0 1 + Manifold.pathELength I γ₂ 0 1 := by
-    rw [← Manifold.pathELength_add (I := I) (γ := η) (a := 0) (b := 1 / 2) (c := 1)
-      (by norm_num) (by norm_num),
-      hη_left, hη_right, hαlen, hβlen]
-  have hηconst₀ : η =ᶠ[𝓝 0] (fun _ ↦ γ₁ 0) := by
-    have hmap : Tendsto (fun t : ℝ ↦ 2 * t) (𝓝 0) (𝓝 0) := by
-      have h : ContinuousAt (fun t : ℝ ↦ 2 * t) 0 := by fun_prop
-      -- Expose the value hidden in `ContinuousAt` so `norm_num` can identify the target filter.
-      change Tendsto (fun t : ℝ ↦ 2 * t) (𝓝 0) (𝓝 (2 * 0)) at h
-      norm_num at h
-      exact h
-    filter_upwards [hαconst₀.comp_tendsto hmap,
-      Iio_mem_nhds (show (0 : ℝ) < 1 / 2 by norm_num)] with t htα ht
-    have ht' : t < 1 / 2 := ht
-    rw [show η t = f t by
-      exact (Iic (1 / 2 : ℝ)).piecewise_eq_of_mem f g ht'.le]
-    simpa only [f, Function.comp_apply] using htα
-  have hηconst₁ : η =ᶠ[𝓝 1] (fun _ ↦ γ₂ 1) := by
-    have hmap : Tendsto (fun t : ℝ ↦ 2 * t - 1) (𝓝 1) (𝓝 1) := by
-      have h : ContinuousAt (fun t : ℝ ↦ 2 * t - 1) 1 := by fun_prop
-      -- Expose the value hidden in `ContinuousAt` so `norm_num` can identify the target filter.
-      change Tendsto (fun t : ℝ ↦ 2 * t - 1) (𝓝 1) (𝓝 (2 * 1 - 1)) at h
-      norm_num at h
-      exact h
-    filter_upwards [hβconst₁.comp_tendsto hmap,
-      Ioi_mem_nhds (show (1 / 2 : ℝ) < 1 by norm_num)] with t htβ ht
-    have ht' : 1 / 2 < t := ht
-    rw [show η t = g t by
-      exact (Iic (1 / 2 : ℝ)).piecewise_eq_of_notMem f g (not_le_of_gt ht')]
-    simpa only [g, Function.comp_apply] using htβ
-  have hηmaps : MapsTo η (Icc 0 1) (γ₁ '' Icc 0 1 ∪ γ₂ '' Icc 0 1) := by
-    intro t ht
-    by_cases ht_half : t ≤ (1 / 2 : ℝ)
-    · left
-      have hηt : η t = f t := by
-        simpa only [η] using (Iic (1 / 2 : ℝ)).piecewise_eq_of_mem f g ht_half
-      rw [hηt]
-      simpa only [f] using hαmaps ⟨by linarith [ht.1], by linarith⟩
-    · right
-      have hηt : η t = g t := by
-        simpa only [η] using (Iic (1 / 2 : ℝ)).piecewise_eq_of_notMem f g ht_half
-      rw [hηt]
-      simpa only [g] using hβmaps ⟨by linarith, by linarith [ht.2]⟩
-  exact ⟨η, hη, hη₀, hη₁, hηlen, hηconst₀, hηconst₁, hηmaps⟩
+  rw [← Manifold.pathELength_add (I := I) (γ := η) (a := 0) (b := 1 / 2) (c := 1)
+    (by norm_num) (by norm_num), hη_left, hη_right]
+
+omit [TopologicalSpace M] in
+/-- The path obtained by gluing `α` and `β`, rescaled to `[0, 1 / 2]` and `[1 / 2, 1]`, is constant
+near `0` when `α` is. -/
+private theorem piecewise_scale_eventuallyEq_nhds_zero {α β : ℝ → M} {x : M}
+    (hα₀ : α =ᶠ[𝓝 0] (fun _ ↦ x)) :
+    piecewise (Iic (1 / 2 : ℝ)) (fun t ↦ α (2 * t)) (fun t ↦ β (2 * t - 1)) =ᶠ[𝓝 0]
+      (fun _ ↦ x) := by
+  filter_upwards [hα₀.comp_tendsto (
+    (by fun_prop : Continuous fun t : ℝ ↦ 2 * t).tendsto' _ _ (by norm_num)),
+    Iio_mem_nhds (show (0 : ℝ) < 1 / 2 by norm_num)] with t htα ht
+  have ht' : t < 1 / 2 := ht
+  rw [(Iic (1 / 2 : ℝ)).piecewise_eq_of_mem _ _ ht'.le]
+  exact htα
+
+omit [TopologicalSpace M] in
+/-- The path obtained by gluing `α` and `β`, rescaled to `[0, 1 / 2]` and `[1 / 2, 1]`, is constant
+near `1` when `β` is. -/
+private theorem piecewise_scale_eventuallyEq_nhds_one {α β : ℝ → M} {y : M}
+    (hβ₁ : β =ᶠ[𝓝 1] (fun _ ↦ y)) :
+    piecewise (Iic (1 / 2 : ℝ)) (fun t ↦ α (2 * t)) (fun t ↦ β (2 * t - 1)) =ᶠ[𝓝 1]
+      (fun _ ↦ y) := by
+  filter_upwards [hβ₁.comp_tendsto (
+    (by fun_prop : Continuous fun t : ℝ ↦ 2 * t - 1).tendsto' _ _ (by norm_num)),
+    Ioi_mem_nhds (show (1 / 2 : ℝ) < 1 by norm_num)] with t htβ ht
+  have ht' : 1 / 2 < t := ht
+  rw [(Iic (1 / 2 : ℝ)).piecewise_eq_of_notMem _ _ (not_le_of_gt ht')]
+  exact htβ
+
+omit [TopologicalSpace M] in
+/-- The path obtained by gluing `α` and `β`, rescaled to `[0, 1 / 2]` and `[1 / 2, 1]`, maps
+`[0, 1]` into the union of the sets into which `α` and `β` map `[0, 1]`. -/
+private theorem mapsTo_piecewise_scale {α β : ℝ → M} {S T : Set M}
+    (hα : MapsTo α (Icc 0 1) S) (hβ : MapsTo β (Icc 0 1) T) :
+    MapsTo (piecewise (Iic (1 / 2 : ℝ)) (fun t ↦ α (2 * t)) (fun t ↦ β (2 * t - 1)))
+      (Icc 0 1) (S ∪ T) := by
+  intro t ht
+  by_cases ht_half : t ≤ (1 / 2 : ℝ)
+  · left
+    rw [(Iic (1 / 2 : ℝ)).piecewise_eq_of_mem _ _ ht_half]
+    exact hα ⟨by linarith [ht.1], by linarith⟩
+  · right
+    rw [(Iic (1 / 2 : ℝ)).piecewise_eq_of_notMem _ _ ht_half]
+    exact hβ ⟨by linarith, by linarith [ht.2]⟩
+
+/-- Given two `C¹` paths on `[0, 1]` whose endpoints match, there is a globally `C¹` path with
+their outer endpoints which is constant near those endpoints, whose length is the sum of the two
+original lengths, and whose image stays in the union of the two original path images. -/
+theorem exists_contMDiff_pathELength_eq_add {γ₁ γ₂ : ℝ → M}
+    (hγ₁ : ContMDiffOn 𝓘(ℝ, ℝ) I 1 γ₁ (Icc 0 1))
+    (hγ₂ : ContMDiffOn 𝓘(ℝ, ℝ) I 1 γ₂ (Icc 0 1)) (h₁₂ : γ₁ 1 = γ₂ 0) :
+    ∃ η : ℝ → M,
+      ContMDiff 𝓘(ℝ, ℝ) I 1 η ∧
+      η 0 = γ₁ 0 ∧
+      η 1 = γ₂ 1 ∧
+      Manifold.pathELength I η 0 1 =
+        Manifold.pathELength I γ₁ 0 1 + Manifold.pathELength I γ₂ 0 1 ∧
+      η =ᶠ[𝓝 0] (fun _ ↦ γ₁ 0) ∧
+      η =ᶠ[𝓝 1] (fun _ ↦ γ₂ 1) ∧
+      MapsTo η (Icc 0 1) (γ₁ '' Icc 0 1 ∪ γ₂ '' Icc 0 1) := by
+  obtain ⟨α, hα, hα₀, _, hαlen, hαconst₀, hαconst₁, hαmaps⟩ :=
+    exists_contMDiff_pathELength_eq hγ₁
+  obtain ⟨β, hβ, _, hβ₁, hβlen, hβconst₀, hβconst₁, hβmaps⟩ :=
+    exists_contMDiff_pathELength_eq hγ₂
+  refine ⟨piecewise (Iic (1 / 2 : ℝ)) (fun t ↦ α (2 * t)) (fun t ↦ β (2 * t - 1)),
+    contMDiff_piecewise_scale hα hβ hαconst₁ hβconst₀ h₁₂, ?_, ?_, ?_,
+    piecewise_scale_eventuallyEq_nhds_zero hαconst₀,
+    piecewise_scale_eventuallyEq_nhds_one hβconst₁, mapsTo_piecewise_scale hαmaps hβmaps⟩
+  · simp [hα₀]
+  · rw [(Iic (1 / 2 : ℝ)).piecewise_eq_of_notMem _ _ (by norm_num)]
+    norm_num
+    exact hβ₁
+  · rw [pathELength_piecewise_scale hα hβ, hαlen, hβlen]
 
 namespace Manifold
 
