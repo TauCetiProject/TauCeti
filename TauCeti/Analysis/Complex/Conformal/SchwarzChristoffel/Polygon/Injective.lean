@@ -69,50 +69,26 @@ theorem schwarzChristoffelCompactifiedBoundary_injective
     (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
     (he : ∀ k, e k ∈ Ioo (-1 : ℝ) 0) (hsum : ∑ k, e k = -2) :
     Function.Injective (schwarzChristoffelCompactifiedBoundary a e z₀) := by
-  let B := schwarzChristoffelBoundary a e z₀
-  let V := schwarzChristoffelVertexAtInfinity a e z₀
   have hfinite (k : Fin (n + 1)) : -1 < ∑ l with a l = a k, e l := by
     simpa [ha.injective.eq_iff, Finset.filter_eq'] using (he k).1
-  have hS : ∑ k, e k < -1 := by rw [hsum]; norm_num
   have hfirst : ∀ k, e k ≠ 0 → a 0 ≤ a k := fun k _ ↦ ha.monotone k.zero_le
   have hlast : ∀ k, e k ≠ 0 → a k ≤ a (Fin.last n) := fun k _ ↦ ha.monotone k.le_last
-  have hVfirst : V < B (a 0) :=
-    schwarzChristoffelVertexAtInfinity_lt_boundary a e z₀ (hfinite _) hfirst hsum
-  have hVlast : B (a (Fin.last n)) < V :=
-    schwarzChristoffelBoundary_lt_vertexAtInfinity a e z₀ (hfinite _) hlast hS
-  -- The unbounded arcs lie on opposite sides of infinity along the closing line.
-  have hleft {x : ℝ} (hx : x ≤ a 0) : V < B x := by
-    have hm : B x ∈ B '' Iic (a 0) := ⟨x, hx, rfl⟩
-    rw [schwarzChristoffelBoundary_image_Iic a e z₀ (hfinite _) hfirst hS] at hm
-    have hseg : B x ∈ segment ℝ V (B (a 0)) := by
-      rw [segment_symm]
-      exact hm.1
-    exact lt_of_le_of_ne (segment_subset_Icc hVfirst.le hseg).1 (Ne.symm hm.2)
-  have hright {x : ℝ} (hx : a (Fin.last n) ≤ x) : B x < V := by
-    have hm : B x ∈ B '' Ici (a (Fin.last n)) := ⟨x, hx, rfl⟩
-    rw [schwarzChristoffelBoundary_image_Ici a e z₀ (hfinite _) hlast hS] at hm
-    exact lt_of_le_of_ne (segment_subset_Icc hVlast.le hm.1).2 hm.2
-  -- The remaining open arc lies strictly above that line.
-  have hmiddle {x : ℝ} (hx : x ∈ Ioo (a 0) (a (Fin.last n))) : V.im < (B x).im := by
-    rw [(Complex.lt_def.mp hVfirst).2]
-    exact im_schwarzChristoffelBoundary_first_lt a e z₀ ha he hsum hx
-  have hne : ∀ x, B x ≠ V := by
-    intro x
-    by_cases hx₀ : x ≤ a 0
-    · exact (hleft hx₀).ne'
-    by_cases hxn : a (Fin.last n) ≤ x
-    · exact (hright hxn).ne
-    · intro h
-      have hi := hmiddle ⟨lt_of_not_ge hx₀, lt_of_not_ge hxn⟩
-      rw [h] at hi
-      exact hi.false
+  have hleft {x : ℝ} (hx : x ≤ a 0) :=
+    schwarzChristoffelVertexAtInfinity_lt_boundary_of_le_first a e z₀ ha
+      (fun k ↦ (he k).1) hsum hx
+  have hright {x : ℝ} (hx : a (Fin.last n) ≤ x) :=
+    schwarzChristoffelBoundary_lt_vertexAtInfinity_of_last_le a e z₀ ha
+      (fun k ↦ (he k).1) hsum hx
+  have hmiddle {x : ℝ} (hx : x ∈ Ioo (a 0) (a (Fin.last n))) :=
+    im_schwarzChristoffelVertexAtInfinity_lt_im_boundary a e z₀ ha he hsum hx
   rw [schwarzChristoffelCompactifiedBoundary_injective_iff]
-  refine ⟨?_, hne⟩
+  refine ⟨?_, schwarzChristoffelBoundary_ne_vertexAtInfinity a e z₀ ha he hsum⟩
   -- Equality on each of the three arcs is already controlled; separate their images.
   have hbounded := schwarzChristoffelBoundary_injOn_prevertex_interval a e z₀ ha he hsum
   have hleftInj := schwarzChristoffelBoundary_injOn_Iic a e z₀ (hfinite _) hfirst
   have hrightInj := schwarzChristoffelBoundary_injOn_Ici a e z₀ (hfinite _) hlast
-  suffices h : ∀ x y, x < y → B x ≠ B y by
+  suffices h : ∀ x y, x < y →
+      schwarzChristoffelBoundary a e z₀ x ≠ schwarzChristoffelBoundary a e z₀ y by
     intro x y hxy
     rcases lt_trichotomy x y with hlt | heq | hgt
     · exact False.elim (h x y hlt hxy)
