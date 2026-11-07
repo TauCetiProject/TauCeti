@@ -119,8 +119,7 @@ private theorem exists_differentiableOn_eq_schwarzChristoffelPrimitive_sub_comp_
   -- The third divided difference at `w ≠ 0` has the closed form `(q w - 1 - M w - C w²) / w³`.
   have hD₃w (w : ℂ) (hw : w ≠ 0) : dslope (dslope (dslope q 0) 0) 0 w =
       (q w - 1 - M * w - C * w ^ 2) / w ^ 3 := by
-    simpa only [hq0] using dslope_dslope_dslope_zero_apply
-      ((hD₂ 0 (mem_ball_self hr)).differentiableAt hball).continuousAt hq'
+    simpa only [hq0] using dslope_dslope_dslope_zero_apply hq'
       (hlim.congr fun w => by rw [hq0]; ring) hw
   -- Match the remainder of the primitive with a primitive of `-dslope³ q` on the half-disc.
   have hint (w : ℂ) (hw : w ∈ upperHalfPlaneSet) :
