@@ -365,12 +365,9 @@ private theorem exists_memLp_forall_setIntegral_eq_add_inner_of_coercive [Comple
         simp only [map_smul, inner_smul_right, Submodule.coe_smul, Pi.smul_apply,
           RingHom.id_apply, smul_eq_mul]
         ring }
-  have hℓ_def : ∀ φ : testFunctions V b, ℓ φ = ⟪F, j φ⟫_ℝ + ⟪u₀, ι ((φ : ℝ → V) a)⟫_ℝ :=
-    fun _ => rfl
   have hℓ_apply : ∀ φ : testFunctions V b,
-      ℓ φ = (∫ t in Ioo a b, f t ((φ : ℝ → V) t)) + ⟪u₀, ι ((φ : ℝ → V) a)⟫_ℝ := by
-    intro φ
-    rw [hℓ_def, L2.inner_def]
+      ℓ φ = (∫ t in Ioo a b, f t ((φ : ℝ → V) t)) + ⟪u₀, ι ((φ : ℝ → V) a)⟫_ℝ := fun φ => by
+    simp only [ℓ, LinearMap.coe_mk, AddHom.coe_mk, L2.inner_def]
     congr 1
     refine integral_congr_ae ?_
     filter_upwards [hRf.coeFn_toLp, coeFn_testFunctionsToL2 φ] with t hFt hjt
@@ -388,19 +385,14 @@ private theorem exists_memLp_forall_setIntegral_eq_add_inner_of_coercive [Comple
       min α (1 / 2) * p φ ^ 2 ≤ variationalForm ι hA hA_bound φ (j φ) := by
     intro φ
     have hlow := mul_norm_sq_add_le_variationalForm ι hab hA hA_bound hA_coercive φ
-    have hmin₁ : min α (1 / 2) ≤ α := min_le_left _ _
-    have hmin₂ : min α (1 / 2) ≤ 1 / 2 := min_le_right _ _
     rw [hp_sq]
-    nlinarith [sq_nonneg ‖j φ‖, sq_nonneg ‖ι ((φ : ℝ → V) a)‖]
+    nlinarith [sq_nonneg ‖j φ‖, sq_nonneg ‖ι ((φ : ℝ → V) a)‖, min_le_left α (1 / 2),
+      min_le_right α (1 / 2)]
   -- The right-hand side is bounded by `p`.
-  have hbound : ∀ φ : testFunctions V b, |ℓ φ| ≤ (‖F‖ + ‖u₀‖) * p φ := by
-    intro φ
-    calc |ℓ φ| = |⟪F, j φ⟫_ℝ + ⟪u₀, ι ((φ : ℝ → V) a)⟫_ℝ| := by rw [hℓ_def]
-      _ ≤ ‖F‖ * ‖j φ‖ + ‖u₀‖ * ‖ι ((φ : ℝ → V) a)‖ :=
-          (abs_add_le _ _).trans
-            (add_le_add (abs_real_inner_le_norm _ _) (abs_real_inner_le_norm _ _))
-      _ ≤ ‖F‖ * p φ + ‖u₀‖ * p φ := by gcongr <;> [exact hjp φ; exact hιp φ]
-      _ = (‖F‖ + ‖u₀‖) * p φ := by ring
+  have hbound : ∀ φ : testFunctions V b, |ℓ φ| ≤ (‖F‖ + ‖u₀‖) * p φ := fun φ =>
+    ((abs_add_le _ _).trans (add_le_add (abs_real_inner_le_norm _ _)
+      (abs_real_inner_le_norm _ _))).trans
+        (by nlinarith [hjp φ, hιp φ, norm_nonneg F, norm_nonneg u₀])
   -- Lions' theorem produces the solution.
   obtain ⟨u, hu, -⟩ := LinearMap.exists_forall_apply_eq_and_norm_le_of_coercive
     (variationalForm ι hA hA_bound) (fun φ => j φ) p ℓ (lt_min hα one_half_pos) (by positivity)
@@ -565,7 +557,7 @@ theorem hasWeakLineDerivOn_gelfandDual_of_forall_setIntegral_eq_add_inner [Compl
   ext v
   have hI {g : ℝ → StrongDual ℝ V} (hg : LocallyIntegrableOn g (Ioo a b)) :
       Integrable (fun t => ψ t * g t v) μ := by
-    simpa using ((integrable_smul_of_locallyIntegrableOn hg φ).restrict
+    simpa using ((φ.integrable_smul hg).restrict
       (s := Ioo a b)).apply_continuousLinearMap v
   have hI' : Integrable (fun t => deriv ψ t * ⟪ι (u t), ι v⟫_ℝ) μ := by
     simpa [ContinuousLinearMap.gelfandDual_apply, lineDeriv_one] using
@@ -574,7 +566,7 @@ theorem hasWeakLineDerivOn_gelfandDual_of_forall_setIntegral_eq_add_inner [Compl
   rw [ContinuousLinearMap.integral_apply
       ((integrable_lineDeriv_smul_of_locallyIntegrableOn hG φ 1).restrict) v,
     neg_apply, ContinuousLinearMap.integral_apply
-      ((integrable_smul_of_locallyIntegrableOn hg φ).restrict) v]
+      ((φ.integrable_smul hg).restrict) v]
   -- Test the variational formulation against `ψ v`.
   have h := hvar (fun t => ψ t • v) (hψ.smul contDiff_const) (by simp [hψ0 b (by simp)])
   have hd : ∀ t, deriv (fun s => ψ s • v) t = deriv ψ t • v := fun t =>
@@ -627,17 +619,16 @@ theorem gelfandDual_eq_of_forall_setIntegral_eq_add_inner [CompleteSpace V]
   refine ContinuousLinearMap.ext fun v => ?_
   -- Evaluate at `v` and pass to integrals over `(a, b)`.
   have hKv := congrArg (fun L : StrongDual ℝ V => L v) hK
+  have hQ : ∫ t in Ioo a b, (deriv θ t • ξ t) v = ∫ t in Ioo a b, deriv θ t * ⟪ι (u t), ι v⟫_ℝ := by
+    refine integral_congr_ae ?_
+    filter_upwards [hξae] with t ht
+    rw [smul_apply, ← ht, ContinuousLinearMap.gelfandDual_apply, smul_eq_mul]
   rw [ContinuousLinearMap.intervalIntegral_apply
       (hθd.continuousOn.smul (uIcc_of_le hab.le ▸ hξ)).intervalIntegrable v, sub_apply, neg_apply,
     ContinuousLinearMap.intervalIntegral_apply
       (hgi.continuousOn_smul hθ.continuous.continuousOn) v,
     intervalIntegral.integral_of_le hab.le, intervalIntegral.integral_of_le hab.le,
-    integral_Ioc_eq_integral_Ioo, integral_Ioc_eq_integral_Ioo] at hKv
-  have hQ : ∫ t in Ioo a b, (deriv θ t • ξ t) v = ∫ t in Ioo a b, deriv θ t * ⟪ι (u t), ι v⟫_ℝ := by
-    refine integral_congr_ae ?_
-    filter_upwards [hξae] with t ht
-    rw [smul_apply, ← ht, ContinuousLinearMap.gelfandDual_apply, smul_eq_mul]
-  rw [hQ] at hKv
+    integral_Ioc_eq_integral_Ioo, integral_Ioc_eq_integral_Ioo, hQ] at hKv
   simp only [smul_apply, smul_eq_mul, hg_def, sub_apply, mul_sub, ξ,
     ContinuousLinearMap.gelfandDual_apply] at hKv
   have hI {F : ℝ → StrongDual ℝ V} {c : ℝ → ℝ} (hc : Continuous c) (hF : MemLp F 2 μ) :
@@ -652,11 +643,9 @@ theorem gelfandDual_eq_of_forall_setIntegral_eq_add_inner [CompleteSpace V]
   rw [integral_sub (hI hθ.continuous hf) (hI hθ.continuous hAu)] at hKv
   -- Test the variational formulation against `θ v`.
   have h := hvar (fun t => θ t • v) (hθ.smul contDiff_const) (by simp [hθb])
-  have hd' : ∀ t, deriv (fun s => θ s • v) t = deriv θ t • v := fun t =>
-    deriv_smul_const ((hθ.differentiable one_ne_zero) t) v
-  simp only [hd', hθa, one_smul, map_smul, smul_eq_mul, inner_smul_right] at h
+  simp only [deriv_smul_const (hθ.differentiable one_ne_zero _) v, hθa, one_smul, map_smul,
+    smul_eq_mul, inner_smul_right, ContinuousLinearMap.gelfandDual_apply] at h ⊢
   rw [integral_sub (hI hθ.continuous hAu) hIQ] at h
-  simp only [ContinuousLinearMap.gelfandDual_apply]
   linarith
 
 /-- **Existence of weak solutions for linear parabolic equations.** Let `V ↪ H ↪ V*` be a Gelfand

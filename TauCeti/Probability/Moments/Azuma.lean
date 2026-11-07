@@ -87,7 +87,11 @@ theorem hasCondSubgaussianMGF_of_mem_Icc_of_condExp_eq_zero [StandardBorelSpace 
 /-- **Azuma-Hoeffding inequality for interval-bounded martingale differences.** Let `Y i` be a
 strongly adapted sequence with conditionally centered increments in `[a i, b i]` almost surely.
 Then the upper tail is bounded using Hoeffding's variance proxy
-`∑ i < n, ((‖b i - a i‖₊ / 2) ^ 2)`. -/
+`∑ i < n, ((‖b i - a i‖₊ / 2) ^ 2)`.
+
+The hypothesis `StandardBorelSpace Ω` is not needed for the classical inequality; it is inherited
+from Mathlib's `HasCondSubgaussianMGF`, which is defined through the conditional expectation kernel
+`condExpKernel`, and from `measure_sum_ge_le_of_hasCondSubgaussianMGF`. -/
 theorem measureReal_sum_range_ge_le_of_mem_Icc_martingale_differences
     [StandardBorelSpace Ω] [IsProbabilityMeasure μ] {ℱ : Filtration ℕ mΩ}
     {Y : ℕ → Ω → ℝ} {a b : ℕ → ℝ}
