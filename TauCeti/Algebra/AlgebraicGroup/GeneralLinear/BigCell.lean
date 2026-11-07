@@ -72,7 +72,7 @@ theorem blockBigCellMatrix_apply (i j : n) :
 variable {R} {b}
 
 /-- Each leading block minor of the universal matrix is invertible. -/
-theorem isUnit_blockBigCellMatrix_minor (i : n) :
+theorem isUnit_det_toSquareBlockProp_blockBigCellMatrix (i : n) :
     IsUnit ((blockBigCellMatrix R b).toSquareBlockProp fun j => b j ≤ b i).det := by
   have h := IsLocalization.Away.isUnit_of_dvd
     (S := BlockBigCellCoordinateAlgebra R b) (blockBigCellDenominator R b)
@@ -87,7 +87,7 @@ theorem isUnit_blockBigCellMatrix_minor (i : n) :
 theorem isUnit_det_blockBigCellMatrix : IsUnit (blockBigCellMatrix R b).det := by
   obtain ⟨L, D, U, hL, _, _, hU, hD, h⟩ :=
     (Matrix.exists_blockLDU_iff (blockBigCellMatrix R b)).mp
-      isUnit_blockBigCellMatrix_minor
+      isUnit_det_toSquareBlockProp_blockBigCellMatrix
   rw [h, Matrix.det_mul, Matrix.det_mul, hL.det_eq_one, hU.det_eq_one, one_mul, mul_one]
   exact hD
 
@@ -139,10 +139,10 @@ theorem blockBigCell_algHom_ext {f g : BlockBigCellCoordinateAlgebra R b →ₐ[
   simpa only [Matrix.map_apply, blockBigCellMatrix_apply] using congrFun (congrFun h ij.1) ij.2
 
 /-- Every algebra-valued point of the block big cell has invertible leading block minors. -/
-theorem isUnit_minor_map_blockBigCellMatrix
+theorem isUnit_det_toSquareBlockProp_map_blockBigCellMatrix
     (f : BlockBigCellCoordinateAlgebra R b →ₐ[R] S) (i : n) :
     IsUnit (((blockBigCellMatrix R b).map f).toSquareBlockProp fun j => b j ≤ b i).det :=
-  (isUnit_blockBigCellMatrix_minor i).det_map_toSquareBlockProp f.toRingHom
+  (isUnit_det_toSquareBlockProp_blockBigCellMatrix i).det_map_toSquareBlockProp f.toRingHom
 
 variable (R b S) in
 /-- The block big cell represents matrices with invertible leading block minors, over every
@@ -150,10 +150,11 @@ commutative coefficient algebra. -/
 noncomputable def blockBigCellPointsEquiv :
     (BlockBigCellCoordinateAlgebra R b →ₐ[R] S) ≃
       {M : Matrix n n S // ∀ i, IsUnit (M.toSquareBlockProp fun j => b j ≤ b i).det} where
-  toFun f := ⟨(blockBigCellMatrix R b).map f, isUnit_minor_map_blockBigCellMatrix f⟩
+  toFun f := ⟨(blockBigCellMatrix R b).map f,
+    isUnit_det_toSquareBlockProp_map_blockBigCellMatrix f⟩
   invFun M := blockBigCellEval M.val M.property
   left_inv f := blockBigCell_algHom_ext
-    (map_blockBigCellMatrix _ (isUnit_minor_map_blockBigCellMatrix f))
+    (map_blockBigCellMatrix _ (isUnit_det_toSquareBlockProp_map_blockBigCellMatrix f))
   right_inv M := Subtype.ext (map_blockBigCellMatrix M.val M.property)
 
 /-- The represented matrix of an algebra-valued point is obtained by mapping the universal
@@ -190,7 +191,7 @@ private noncomputable def blockBigCellFactors :
       t.2.1.BlockTriangular (toDual ∘ b) ∧ t.2.2.BlockUnitriangular b ∧
       IsUnit t.2.1.det ∧ blockBigCellMatrix R b = t.1 * t.2.1 * t.2.2} := by
   let h := (Matrix.exists_blockLDU_iff (blockBigCellMatrix R b)).mp
-    isUnit_blockBigCellMatrix_minor
+    isUnit_det_toSquareBlockProp_blockBigCellMatrix
   exact ⟨(h.choose, h.choose_spec.choose, h.choose_spec.choose_spec.choose),
     h.choose_spec.choose_spec.choose_spec⟩
 
