@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.LocallyFlat.Bicollar
 public import TauCeti.AlgebraicTopology.Singular.InvarianceOfDomain
-public import Mathlib.Analysis.Normed.Module.Ball.Homeomorph
 
 /-!
 # Bicollars given on a closed interval
