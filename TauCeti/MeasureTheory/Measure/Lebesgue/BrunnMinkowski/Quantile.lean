@@ -231,7 +231,7 @@ theorem _root_.Convex.continuousOn_volume_real_hyperplaneSection_quantile (hs : 
       (y : E) + ((volume[|s]).map fun x ↦ ⟪e, x⟫).quantile τ • e ∈ s}) (Ioo 0 1) := by
   have hsi : volume s ≠ ∞ := hsb.measure_lt_top.ne
   refine (hs.continuousOn_volume_real_hyperplaneSection he).comp
-    (continuousOn_quantile _ (continuous_cdf_map_inner_cond he hs0 hsi)
+    (continuousOn_quantile _
       (hs.strictMonoOn_cdf_map_inner_cond he hs0 hsi)) fun τ hτ ↦ ?_
   exact interior_maximal (image_mono interior_subset) (isOpen_image_inner_interior he s)
     (hs.quantile_map_inner_cond_mem_image_interior he hs0 hsi hτ)
@@ -266,7 +266,7 @@ theorem _root_.Convex.hasDerivAt_quantile_map_inner_cond (hs : Convex ℝ s)
   have hloc : ∀ᶠ y in 𝓝 τ, cdf ν (ν.quantile y) = y := by
     filter_upwards [isOpen_Ioo.mem_nhds hτ] with y hy using cdf_quantile ν hcont hy.1 hy.2
   simpa only [inv_div] using HasDerivAt.of_local_left_inverse
-    ((continuousOn_quantile ν hcont (hs.strictMonoOn_cdf_map_inner_cond he hs0 hsi)).continuousAt
+    ((continuousOn_quantile ν (hs.strictMonoOn_cdf_map_inner_cond he hs0 hsi)).continuousAt
       (isOpen_Ioo.mem_nhds hτ)) hcdf hne hloc
 
 /-- The quantile function of the height law of a bounded Borel set of positive volume is
