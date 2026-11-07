@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Algebra.Homology.Embedding.Extend
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
-public import TauCeti.Algebra.Homology.ModuleCat.Subobject
+public import TauCeti.Algebra.Homology.Subobject
+public import Mathlib.Algebra.Category.ModuleCat.Abelian
 
 /-!
 # Extending subcomplexes along an embedding of complex shapes
@@ -69,7 +70,8 @@ theorem mono_extendMap (φ : K ⟶ L) [∀ i, Mono (φ.f i)] : Mono (extendMap �
 
 /-- With pullbacks, the evaluations preserve monomorphisms, so extension along an embedding of
 complex shapes preserves monomorphisms of complexes. -/
-instance [HasPullbacks C] (φ : K ⟶ L) [Mono φ] : Mono (extendMap φ e) :=
+instance mono_extendMap_of_mono [HasPullbacks C] (φ : K ⟶ L) [Mono φ] :
+    Mono (extendMap φ e) :=
   have (i : ι) : Mono (φ.f i) := (eval C c i).map_mono φ
   mono_extendMap e φ
 
@@ -174,7 +176,7 @@ theorem mem_range_extend_arrow_f_iff (S : Subobject K) {i : ι} {i' : ι'} (hi :
     (x : (K.extend e).X i') :
     x ∈ LinearMap.range ((S.extend e).arrow.f i').hom ↔
       (K.extendXIso e hi).hom x ∈ LinearMap.range (S.arrow.f i).hom := by
-  rw [extend_eq_mk, Subobject.range_mk_arrow_f,
+  rw [extend_eq_mk, Subobject.range_mk_arrow_f_hom,
     HomologicalComplex.mem_range_extendMap_f_iff e _ hi]
 
 end ModuleCat

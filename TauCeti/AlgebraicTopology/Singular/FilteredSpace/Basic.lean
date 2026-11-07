@@ -97,10 +97,8 @@ inclusion is a monomorphism before reindexing, and extension preserves monomorph
 instance (q : ℤ) : Mono (singularChainFiltrationι R X q) := by
   have : Mono (SSet.chainComplexMap (TopCat.toSSet.map (TopPair.ofSubset (X q)).map) R) :=
     ((TopPair.ofSubset (X q)).shortExact_singularChainComplexShortComplex R).mono_f
-  have (i : ℕ) := (HomologicalComplex.eval A (ComplexShape.down ℕ) i).map_mono
-    (SSet.chainComplexMap (TopCat.toSSet.map (TopPair.ofSubset (X q)).map) R)
   rw [singularChainFiltrationι_def]
-  exact HomologicalComplex.mono_extendMap _ _
+  exact HomologicalComplex.mono_extendMap_of_mono _ _
 
 /-- The filtration of the singular chains of `Y` by the singular chains of the subsets `X q`,
 with the chain complexes reindexed as cochain complexes in nonpositive degrees along `n ↦ -n`. -/
