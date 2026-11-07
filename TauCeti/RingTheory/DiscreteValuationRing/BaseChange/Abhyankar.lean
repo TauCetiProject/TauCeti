@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.DiscreteValuationRing.AbhyankarModel
+public import TauCeti.RingTheory.DiscreteValuationRing.AbhyankarModel.Basic
 public import Mathlib.RingTheory.RingHom.Unramified
 import Mathlib.RingTheory.Unramified.LocalRing
 import TauCeti.Algebra.Algebra.NatCast
@@ -106,20 +106,6 @@ section Kummer
 
 variable {A B : Type*} [CommRing A] [CommRing B] [Algebra A B]
   {π : A} {ϖ u : B} {e d : ℕ}
-
-/-- The Kummer root algebra maps to the Abhyankar model by sending its root to `x`, when
-`π = u ϖ^e` in `B`. -/
-def abhyankarModelKummerHom (hπ : algebraMap A B π = u * ϖ ^ e) :
-    standardTameCover A π (e * d) →ₐ[A] abhyankarModel ϖ u e d :=
-  AdjoinRoot.liftAlgHom _ (Algebra.ofId A _) (abhyankarModelRoot ϖ u e d) (by
-    simp [abhyankarModelRoot_pow_mul, ← hπ, ← IsScalarTower.algebraMap_apply])
-
-/-- The canonical Kummer map sends the Kummer root to the root of the model. -/
-@[simp]
-theorem abhyankarModelKummerHom_root (hπ : algebraMap A B π = u * ϖ ^ e) :
-    abhyankarModelKummerHom (d := d) hπ (AdjoinRoot.root (X ^ (e * d) - C π)) =
-      abhyankarModelRoot ϖ u e d :=
-  AdjoinRoot.liftAlgHom_root _ _ _ _
 
 variable [IsDomain A] [IsDiscreteValuationRing A]
   [IsDomain B] [IsDiscreteValuationRing B] [IsLocalHom (algebraMap A B)]
