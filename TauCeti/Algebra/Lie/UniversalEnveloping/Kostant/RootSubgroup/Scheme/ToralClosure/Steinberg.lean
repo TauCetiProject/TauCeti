@@ -150,7 +150,7 @@ theorem kostantToralSteinberg_pow (m : ℕ) :
       kostantToralSteinberg e h ρ M hM hnil b wt σ θ hθM hθe hσ τ hwt p k A) =
       (show Monoid.End _ from γ.toMonoidHom) *
         (show Monoid.End _ from kostantToralFrobenius e h ρ M hM hnil b wt p k A) := rfl
-  rw [hmul, ← kostantToralFrobenius_mul]
+  rw [hmul, ← kostantToralFrobenius_pow]
   exact hcomm.mul_pow m
 
 /-- If the symmetry matrix has order dividing `m`, the `m`-th power of twisted Frobenius is
