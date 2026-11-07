@@ -260,23 +260,48 @@ section Ring
 
 variable (R : Type) [Ring R]
 
-/-- The image of the sphere generator in `Hᵢ(Sⁱ, Sⁱ ∖ {p, -p})` under the attaching map of the
-`(i + 1)`-cell, read in the local homology of the skeleton at the class of the pole, is the
-incidence coefficient `[c' : c]` times the local class of `c`. -/
-private lemma comp_singularHomologyMap_ofSubsetMap_apply_one_eq_cellularIncidence_smul
-    (hi : i + 1 ≤ N) (c : cell (univ : Set (RealProjectiveSpace N)) i)
-    (c' : cell (univ : Set (RealProjectiveSpace N)) (i + 1))
-    {s : ModuleCat.of R R ⟶ (TopPair.ofSubset ({pole i}ᶜ ∩
-      {diskBoundaryNeg (i + 1) (pole i)}ᶜ)).singularHomology (ModuleCat.of R R) i}
-    (hs : s = diskBoundaryFundamentalClass (ModuleCat.of R R)
-      ({pole i}ᶜ ∩ {diskBoundaryNeg (i + 1) (pole i)}ᶜ)) :
-    (s ≫ TopPair.singularHomologyMap (TopPair.ofSubsetMap _
-      (mapsTo_cellAttachingMap_compl_pole hi c')) (ModuleCat.of R R) i) 1 =
-      cellularIncidence univ R i c c' • cellLocalClass univ (ModuleCat.of R R)
-        (cellAttachingMap c' (pole i)) (cellAttachingMap_pole_mem_openCell hi c c') 1 := by
-  rw [hs, diskBoundaryFundamentalClass_comp_singularHomologyMap_ofSubsetMap]
-  exact singularHomologyπ_cellAttachingMap_eq_cellularIncidence_smul univ R
-    (cellAttachingMap c' (pole i)) (cellAttachingMap_pole_mem_openCell hi c c') c'
+/-- **The contribution of the pole to the attaching map.** The attaching map of the `(i + 1)`-cell
+sends the generator of `Hᵢ(Sⁱ, Sⁱ ∖ {p, -p})` to `1 + (-1) ^ (i + 1)` times the image of its
+contribution `t` near the pole `p` in `Hᵢ(U, U ∖ {p})`, where `U` is the open upper hemisphere. The
+class `t` is an isomorphism when `i > 0`. -/
+private lemma exists_comp_singularHomologyMap_ofSubsetMap_eq_one_add_smul (hi : i + 1 ≤ N)
+    (c' : cell (univ : Set (RealProjectiveSpace N)) (i + 1)) :
+    ∃ t : ModuleCat.of R R ⟶ (TopPair.interPair (upperHemisphere i) {pole i}ᶜ).singularHomology
+        (ModuleCat.of R R) i,
+      diskBoundaryFundamentalClass (ModuleCat.of R R)
+          ({pole i}ᶜ ∩ {diskBoundaryNeg (i + 1) (pole i)}ᶜ) ≫
+        TopPair.singularHomologyMap (TopPair.ofSubsetMap _
+          (mapsTo_cellAttachingMap_compl_pole hi c')) (ModuleCat.of R R) i =
+        (1 + (-1) ^ (i + 1) : ℤ) • (t ≫ TopPair.singularHomologyMap (TopPair.ofSubsetMap _
+          (mapsTo_cellAttachingMap_upperHemisphere_compl_pole hi c')) (ModuleCat.of R R) i) ∧
+      (0 < i → IsIso t) := by
+  have ha : Function.Involutive (diskBoundaryNeg.{0} (i + 1)) :=
+    diskBoundaryNeg_diskBoundaryNeg_apply
+  have hapU := diskBoundaryNeg_pole_notMem_upperHemisphere i
+  have haP := mapsTo_diskBoundaryNeg_compl_pole i
+  have := TopPair.isIso_singularHomologyMap_excisionMap_of_isClosed_subset (ModuleCat.of R R)
+    (isOpen_upperHemisphere i) isClosed_singleton
+    (singleton_subset_iff.2 (pole_mem_upperHemisphere i)) i
+  -- The sphere generator in `Hᵢ(Sⁱ, Sⁱ ∖ {p, -p})`, and its contribution near the pole.
+  obtain ⟨s, hs⟩ : ∃ s, s = diskBoundaryFundamentalClass (ModuleCat.of R R)
+      ({pole i}ᶜ ∩ {diskBoundaryNeg (i + 1) (pole i)}ᶜ) := ⟨_, rfl⟩
+  obtain ⟨t, ht⟩ : ∃ t, t = s ≫ TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 _)
+      inter_subset_left) (ModuleCat.of R R) i ≫ inv (TopPair.singularHomologyMap
+        (TopPair.excisionMap (upperHemisphere i) {pole i}ᶜ) (ModuleCat.of R R) i) := ⟨_, rfl⟩
+  refine ⟨t, hs ▸ TopPair.comp_singularHomologyMap_ofSubsetMap_eq_one_add_smul (ModuleCat.of R R)
+    ha (diskBoundaryNeg_pole_ne i) hapU (cellAttachingMap c')
+    (cellAttachingMap_diskBoundaryNeg hi c')
+    (mapsTo_cellAttachingMap_compl_pole hi c') i ((-1) ^ (i + 1)) s
+    (hs ▸ diskBoundaryFundamentalClass_comp_singularHomologyMap_ofSubsetMap_diskBoundaryNeg
+      (ModuleCat.of R R) haP) t
+    (by rw [ht, Category.assoc, Category.assoc, IsIso.inv_hom_id, Category.comp_id]),
+    fun hi0 ↦ ?_⟩
+  obtain ⟨k, rfl⟩ : ∃ k, i = k + 1 := ⟨i - 1, by omega⟩
+  have := isIso_diskBoundaryFundamentalClass_compl_singleton (ModuleCat.of R R) k (pole (k + 1))
+  rw [ht, ← Category.assoc, hs,
+    diskBoundaryFundamentalClass_comp_singularHomologyMap_ofSubsetMap_id _
+      (B' := {pole (k + 1)}ᶜ) inter_subset_left]
+  infer_instance
 
 /-- The incidence coefficient of the `i`-cell in the boundary of the `(i + 1)`-cell of `RPᴺ` is
 `1 + (-1) ^ (i + 1)` times the local degree `μ` of the attaching map near the pole, and `μ` is a
@@ -285,37 +310,27 @@ private lemma exists_cellularIncidence_cwComplex_eq_mul (hi : i + 1 ≤ N)
     (c : cell (univ : Set (RealProjectiveSpace N)) i)
     (c' : cell (univ : Set (RealProjectiveSpace N)) (i + 1)) :
     ∃ μ : R, cellularIncidence univ R i c c' = (1 + (-1) ^ (i + 1)) * μ ∧ (0 < i → IsUnit μ) := by
-  -- Let `s` be the sphere generator in `Hᵢ(Sⁱ, Sⁱ ∖ {p, -p})` and `t` its contribution near the
-  -- pole `p`, in `Hᵢ(U, U ∖ {p})`. The attaching map sends `s` to `[c' : c]` times the local class
-  -- of `c` (`singularHomologyπ_cellAttachingMap_eq_cellularIncidence_smul`), and to
-  -- `1 + (-1) ^ (i + 1)` times the image `μ` of `t` (by the involution lemma). For `i > 0` both
+  -- Let `t` be the contribution near the pole `p` of the sphere generator `s` in
+  -- `Hᵢ(Sⁱ, Sⁱ ∖ {p, -p})`, in `Hᵢ(U, U ∖ {p})`. The attaching map sends `s` to `[c' : c]` times
+  -- the local class of `c` (`singularHomologyπ_cellAttachingMap_eq_cellularIncidence_smul`), and
+  -- to `1 + (-1) ^ (i + 1)` times the image `μ` of `t` (by the involution lemma). For `i > 0` both
   -- `t` and the map it is pushed along are isomorphisms, so `μ` is a unit.
   have hx := cellAttachingMap_pole_mem_openCell hi c c'
-  have ha : Function.Involutive (diskBoundaryNeg.{0} (i + 1)) :=
-    diskBoundaryNeg_diskBoundaryNeg_apply
-  have hapU := diskBoundaryNeg_pole_notMem_upperHemisphere i
-  have haP := mapsTo_diskBoundaryNeg_compl_pole i
-  have hfP := mapsTo_cellAttachingMap_compl_pole hi c'
   have hfU := mapsTo_cellAttachingMap_upperHemisphere_compl_pole hi c'
-  have := TopPair.isIso_singularHomologyMap_excisionMap_of_isClosed_subset (ModuleCat.of R R)
-    (isOpen_upperHemisphere i) isClosed_singleton
-    (singleton_subset_iff.2 (pole_mem_upperHemisphere i)) i
   have := isIso_singularHomologyMap_cellAttachingMap_domRestrict univ (ModuleCat.of R R) hx
     (isEmbedding_cellAttachingMap_restrict hi c')
     (exists_mem_upperHemisphere_cellAttachingMap_eq hi c c') hfU i
-  -- The sphere generator in `Hᵢ(Sⁱ, Sⁱ ∖ {p, -p})`, and its contribution near the pole.
-  obtain ⟨s, hs⟩ : ∃ s, s = diskBoundaryFundamentalClass (ModuleCat.of R R)
-      ({pole i}ᶜ ∩ {diskBoundaryNeg (i + 1) (pole i)}ᶜ) := ⟨_, rfl⟩
-  obtain ⟨t, ht⟩ : ∃ t, t = s ≫ TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 _)
-      inter_subset_left) (ModuleCat.of R R) i ≫ inv (TopPair.singularHomologyMap
-        (TopPair.excisionMap (upperHemisphere i) {pole i}ᶜ) (ModuleCat.of R R) i) := ⟨_, rfl⟩
-  have hmain := TopPair.comp_singularHomologyMap_ofSubsetMap_eq_one_add_smul (ModuleCat.of R R) ha
-    (diskBoundaryNeg_pole_ne i) hapU (cellAttachingMap c')
-    (cellAttachingMap_diskBoundaryNeg hi c') hfP i ((-1) ^ (i + 1)) s
-    (hs ▸ diskBoundaryFundamentalClass_comp_singularHomologyMap_ofSubsetMap_diskBoundaryNeg
-      (ModuleCat.of R R) haP) t
-    (by rw [ht, Category.assoc, Category.assoc, IsIso.inv_hom_id, Category.comp_id])
-  have hs1 := comp_singularHomologyMap_ofSubsetMap_apply_one_eq_cellularIncidence_smul R hi c c' hs
+  obtain ⟨t, hmain, hiso⟩ := exists_comp_singularHomologyMap_ofSubsetMap_eq_one_add_smul R hi c'
+  -- The image of the sphere generator under the attaching map is the image of the sphere
+  -- generator in the local homology of the skeleton at the class of the pole.
+  have hs1 : (diskBoundaryFundamentalClass (ModuleCat.of R R)
+      ({pole i}ᶜ ∩ {diskBoundaryNeg (i + 1) (pole i)}ᶜ) ≫ TopPair.singularHomologyMap
+        (TopPair.ofSubsetMap _ (mapsTo_cellAttachingMap_compl_pole hi c')) (ModuleCat.of R R) i) 1 =
+      cellularIncidence univ R i c c' • cellLocalClass univ (ModuleCat.of R R)
+        (cellAttachingMap c' (pole i)) hx 1 := by
+    rw [diskBoundaryFundamentalClass_comp_singularHomologyMap_ofSubsetMap]
+    exact singularHomologyπ_cellAttachingMap_eq_cellularIncidence_smul univ R
+      (cellAttachingMap c' (pole i)) hx c'
   set μ := inv (cellLocalClass univ (ModuleCat.of R R) (cellAttachingMap c' (pole i)) hx)
     ((t ≫ TopPair.singularHomologyMap (TopPair.ofSubsetMap _ hfU) (ModuleCat.of R R) i) 1)
     with hμ
@@ -329,13 +344,7 @@ private lemma exists_cellularIncidence_cwComplex_eq_mul (hi : i + 1 ≤ N)
     rw [h]
     push_cast
     rfl
-  · obtain ⟨k, rfl⟩ : ∃ k, i = k + 1 := ⟨i - 1, by omega⟩
-    have := isIso_diskBoundaryFundamentalClass_compl_singleton (ModuleCat.of R R) k (pole (k + 1))
-    have : IsIso t := by
-      rw [ht, ← Category.assoc, hs,
-        diskBoundaryFundamentalClass_comp_singularHomologyMap_ofSubsetMap_id _
-          (B' := {pole (k + 1)}ᶜ) inter_subset_left]
-      infer_instance
+  · have := hiso hi0
     exact ModuleCat.isUnit_apply_one_of_isIso (t ≫ TopPair.singularHomologyMap
       (TopPair.ofSubsetMap _ hfU) (ModuleCat.of R R) _ ≫ inv (cellLocalClass univ
         (ModuleCat.of R R) (cellAttachingMap c' (pole _)) hx))
