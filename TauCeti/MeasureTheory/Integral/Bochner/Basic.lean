@@ -25,6 +25,11 @@ for set and probability integrals.
 * `AddMonoidHom.integral_comp_comm` commutes integration with a continuous additive map
   between real Banach spaces.
 
+## Measure-preserving maps
+
+* `MeasureTheory.MeasurePreserving.integral_comp_of_aestronglyMeasurable` gives change of variables
+  for an almost everywhere strongly measurable integrand, without requiring an embedding.
+
 ## Counting measures of multisets
 
 * `Multiset.integrable_sum_map_dirac` and `Multiset.integral_sum_map_dirac`: every function is
@@ -131,6 +136,15 @@ noncomputable section
 open MeasureTheory Filter TopologicalSpace
 
 open scoped ENNReal NNReal Function Topology
+
+/-- Change variables along a measure-preserving map for an a.e. strongly measurable integrand. -/
+theorem MeasureTheory.MeasurePreserving.integral_comp_of_aestronglyMeasurable
+    {α β E : Type*} [MeasurableSpace α] [MeasurableSpace β]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {μ : Measure α} {ν : Measure β} {T : α → β}
+    (hT : MeasurePreserving T μ ν) {g : β → E} (hg : AEStronglyMeasurable g ν) :
+    ∫ a, g (T a) ∂μ = ∫ b, g b ∂ν := by
+  rw [← hT.map_eq]
+  exact (integral_map hT.measurable.aemeasurable (hT.map_eq ▸ hg)).symm
 
 /-- Integration commutes with a continuous additive map between real Banach spaces. -/
 theorem AddMonoidHom.integral_comp_comm {X E F : Type*} [MeasurableSpace X]
