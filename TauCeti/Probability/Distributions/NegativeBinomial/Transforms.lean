@@ -8,6 +8,8 @@ module
 public import Mathlib.Probability.Moments.MGFAnalytic
 public import TauCeti.Probability.Distributions.NegativeBinomial.Basic
 
+import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.Probability.Distributions.Dirac
 
 /-!
@@ -241,38 +243,6 @@ theorem integral_sq_map_cast_negativeBinomialMeasure
   rw [sub_eq_iff_eq_add.1 hvar]
   field_simp
 
-/-- The binomial-series argument `(1 - p) e^{i t}` of the negative-binomial characteristic function
-lies in the open unit disk, for every `0 < p ≤ 1`. -/
-private theorem norm_one_sub_ofReal_mul_exp_I_mul_lt_one {p : ℝ} (hp : 0 < p) (hp1 : p ≤ 1)
-    (t : ℝ) : ‖(1 - (p : ℂ)) * Complex.exp (Complex.I * t)‖ < 1 := by
-  rw [norm_mul, Complex.norm_exp]
-  have him : (Complex.I * (t : ℂ)).re = 0 := by simp
-  rw [him, Real.exp_zero, mul_one]
-  simpa only [← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.norm_real,
-    Real.norm_eq_abs, abs_of_nonneg (by linarith : 0 ≤ 1 - p)] using sub_lt_self 1 hp
-
-/-- For `w` in the right half-plane and `p > 0`, the principal powers combine:
-`w⁻ʳ * pʳ = (p / w)ʳ`. -/
-private theorem one_div_cpow_mul_ofReal_rpow {w : ℂ} (hw : 0 < w.re) {p : ℝ} (hp : 0 < p)
-    (r : ℝ) : (1 / w ^ (r : ℂ)) * (Real.rpow p r : ℂ) = ((p : ℂ) / w) ^ (r : ℂ) := by
-  have hw_ne : w ≠ 0 := by
-    rintro rfl
-    norm_num at hw
-  -- The denominator lies in the right half-plane, so its principal logarithm avoids the cut.
-  have hw_arg : w.arg ≠ Real.pi := fun h ↦
-    (not_lt_of_ge hw.le) (Complex.arg_eq_pi_iff.mp h).1
-  have hp_ne : (p : ℂ) ≠ 0 := by exact_mod_cast hp.ne'
-  have hratio_ne : (p : ℂ) / w ≠ 0 := div_ne_zero hp_ne hw_ne
-  have hratio : (p : ℂ) / w = w⁻¹ * (p : ℂ) := by ring
-  rw [Complex.cpow_def_of_ne_zero hratio_ne, hratio,
-    Complex.log_mul_ofReal p hp _ (inv_ne_zero hw_ne), Complex.log_inv _ hw_arg,
-    Complex.ofReal_log hp.le, add_mul, Complex.exp_add, neg_mul, Complex.exp_neg,
-    ← Complex.cpow_def_of_ne_zero hp_ne, ← Complex.cpow_def_of_ne_zero hw_ne,
-    ← Complex.ofReal_cpow hp.le]
-  -- Align the real-power notation with the coercion lemma used in the preceding rewrite.
-  simp only [show Real.rpow p r = p ^ r from rfl]
-  ring_nf
-
 /-- The characteristic function of the real cast of a valid negative-binomial law. -/
 theorem charFun_map_cast_negativeBinomialMeasure
     {r p : ℝ} (hr : 0 ≤ r) (hp : 0 < p) (hp1 : p ≤ 1) (t : ℝ) :
@@ -285,7 +255,9 @@ theorem charFun_map_cast_negativeBinomialMeasure
   let _ := isProbabilityMeasure_negativeBinomialMeasure hr.le hp hp1
   -- The binomial-series argument lies in the open unit disk, including at `p = 1`.
   let q : ℂ := (1 - (p : ℂ)) * Complex.exp (Complex.I * t)
-  have hq_norm : ‖q‖ < 1 := norm_one_sub_ofReal_mul_exp_I_mul_lt_one hp hp1 t
+  have hq_norm : ‖q‖ < 1 := Complex.norm_mul_exp_I_mul_lt_one (by
+    simpa only [← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.norm_real,
+      Real.norm_eq_abs, abs_of_nonneg (by linarith : 0 ≤ 1 - p)] using sub_lt_self 1 hp) t
   have hsum :=
     (hasSum_multichoose_mul_geometric_complex_of_norm_lt_one (r := (r : ℂ)) hq_norm).mul_right
       (Real.rpow p r : ℂ)
@@ -301,7 +273,7 @@ theorem charFun_map_cast_negativeBinomialMeasure
     linarith
   -- The branch information justifies combining the two principal complex powers.
   have hvalue : (1 / (1 - q) ^ (r : ℂ)) * (Real.rpow p r : ℂ) = ((p : ℂ) / (1 - q)) ^ (r : ℂ) :=
-    one_div_cpow_mul_ofReal_rpow hw_re hp r
+    TauCeti.one_div_cpow_mul_ofReal_rpow hw_re hp r
   have hweight_ne_top (k : ℕ) : negativeBinomialWeight r p k ≠ ⊤ := by
     rw [← negativeBinomialMeasure_singleton hr.le hp hp1]
     exact measure_ne_top _ _

@@ -47,4 +47,10 @@ theorem exp_two_pi_mul_I_mul_add_intCast (z : ℂ) (k : ℤ) :
 theorem norm_exp_two_pi_mul_I_mul_ofReal (x : ℝ) : ‖cexp (2 * π * I * x)‖ = 1 := by
   simp [norm_exp]
 
+/-- Multiplying by a unit-modulus exponential `exp (I * t)` preserves membership in the open unit
+disk. -/
+theorem norm_mul_exp_I_mul_lt_one {c : ℂ} (hc : ‖c‖ < 1) (t : ℝ) :
+    ‖c * exp (I * t)‖ < 1 := by
+  rwa [norm_mul, mul_comm I, norm_exp_ofReal_mul_I, mul_one]
+
 end Complex
