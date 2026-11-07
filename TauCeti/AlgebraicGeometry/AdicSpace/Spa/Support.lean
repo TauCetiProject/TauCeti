@@ -103,17 +103,6 @@ namespace TauCeti.ValuationSpectrum
 
 open TauCeti.Huber
 
-/-- **Points off the support of an element.** The points of `Spa (A, A⁺)` at which `f` does not
-vanish, that is `f ∉ supp v`, form an open subset. -/
-theorem isOpen_setOf_notMem_supp {A : Type*} [CommRing A] [TopologicalSpace A]
-    (Aplus : Subring A) (f : A) :
-    IsOpen {v : spa Aplus | f ∉ supp v.1} := by
-  have : {v : spa Aplus | f ∉ supp v.1} = Subtype.val ⁻¹' basicOpen f f := by
-    ext v
-    simp [ValuativeRel.vle_refl]
-  rw [this]
-  exact (isOpen_basicOpen f f).preimage continuous_subtype_val
-
 section HuberPair
 
 variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
