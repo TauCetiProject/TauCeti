@@ -109,50 +109,22 @@ namespace ImmersedLieSubgroupData
 
 variable {K : Subgroup G}
 
+attribute [local instance] ImmersedLieSubgroupData.group
+  ImmersedLieSubgroupData.topologicalSpace ImmersedLieSubgroupData.normedAddCommGroup
+  ImmersedLieSubgroupData.normedSpace ImmersedLieSubgroupData.modelTopology
+  ImmersedLieSubgroupData.chartedSpace ImmersedLieSubgroupData.isManifold
+  ImmersedLieSubgroupData.lieGroup
+
 /-- The homomorphism presenting an immersed Lie subgroup is smooth. -/
 theorem contMDiff_toHom (d : ImmersedLieSubgroupData I K) :
-    let _ : Group d.X := d.group
-    let _ : TopologicalSpace d.X := d.topologicalSpace
-    let _ : NormedAddCommGroup d.E' := d.normedAddCommGroup
-    let _ : NormedSpace ℝ d.E' := d.normedSpace
-    let _ : TopologicalSpace d.H' := d.modelTopology
-    let _ : ChartedSpace d.H' d.X := d.chartedSpace
-    let _ : IsManifold d.I' ∞ d.X := d.isManifold
-    let _ : LieGroup d.I' ∞ d.X := d.lieGroup
-    ContMDiff d.I' I ∞ (d.toHom : d.X → G) := by
-  dsimp only
-  let _ : Group d.X := d.group
-  let _ : TopologicalSpace d.X := d.topologicalSpace
-  let _ : NormedAddCommGroup d.E' := d.normedAddCommGroup
-  let _ : NormedSpace ℝ d.E' := d.normedSpace
-  let _ : TopologicalSpace d.H' := d.modelTopology
-  let _ : ChartedSpace d.H' d.X := d.chartedSpace
-  let _ : IsManifold d.I' ∞ d.X := d.isManifold
-  let _ : LieGroup d.I' ∞ d.X := d.lieGroup
-  exact d.isImmersion.contMDiff
+    ContMDiff d.I' I ∞ (d.toHom : d.X → G) :=
+  d.isImmersion.contMDiff
 
 /-- The differential of the homomorphism presenting an immersed Lie subgroup is injective at
 every point. -/
 theorem injective_mfderiv_toHom (d : ImmersedLieSubgroupData I K) (x : d.X) :
-    let _ : Group d.X := d.group
-    let _ : TopologicalSpace d.X := d.topologicalSpace
-    let _ : NormedAddCommGroup d.E' := d.normedAddCommGroup
-    let _ : NormedSpace ℝ d.E' := d.normedSpace
-    let _ : TopologicalSpace d.H' := d.modelTopology
-    let _ : ChartedSpace d.H' d.X := d.chartedSpace
-    let _ : IsManifold d.I' ∞ d.X := d.isManifold
-    let _ : LieGroup d.I' ∞ d.X := d.lieGroup
-    Function.Injective (mfderiv d.I' I (d.toHom : d.X → G) x) := by
-  dsimp only
-  let _ : Group d.X := d.group
-  let _ : TopologicalSpace d.X := d.topologicalSpace
-  let _ : NormedAddCommGroup d.E' := d.normedAddCommGroup
-  let _ : NormedSpace ℝ d.E' := d.normedSpace
-  let _ : TopologicalSpace d.H' := d.modelTopology
-  let _ : ChartedSpace d.H' d.X := d.chartedSpace
-  let _ : IsManifold d.I' ∞ d.X := d.isManifold
-  let _ : LieGroup d.I' ∞ d.X := d.lieGroup
-  exact d.isImmersion.mfderiv_injective (by simp) x
+    Function.Injective (mfderiv d.I' I (d.toHom : d.X → G) x) :=
+  d.isImmersion.mfderiv_injective (by simp) x
 
 end ImmersedLieSubgroupData
 
