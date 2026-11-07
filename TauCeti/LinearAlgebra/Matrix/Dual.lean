@@ -68,9 +68,11 @@ theorem isSymm_dotProductBilin {R ι : Type*} [CommSemiring R] [Fintype ι] :
 
 /-- **A family paired diagonally by a second family is linearly independent.** If `v i ⬝ᵥ w j`
 vanishes whenever `i ≠ j` and right multiplication by `v i ⬝ᵥ w i` is injective, the `v i` are
-linearly independent. Over a semiring without zero divisors, nonzero diagonal entries suffice; in
-particular, this applies over `ℤ` with diagonal `2`. The semiring may have zero divisors away
-from the chosen diagonal entries.
+linearly independent. If right multiplication by every nonzero element is injective
+(`IsRightCancelMulZero R`, as over a ring without zero divisors or over `ℕ`), nonzero diagonal
+entries suffice; in particular, this applies over `ℤ` with diagonal `2`. Absence of zero divisors
+alone does not suffice over a semiring. The semiring may have zero divisors away from the chosen
+diagonal entries.
 The family index `κ` is arbitrary — neither finite nor decidable — and unrelated to the coordinate
 index `ι`; the scalars need neither commute nor have additive inverses. -/
 theorem linearIndependent_of_dotProduct_diagonal {κ ι R : Type*}
