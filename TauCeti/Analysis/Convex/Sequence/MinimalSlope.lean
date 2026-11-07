@@ -62,6 +62,50 @@ theorem secantSlopes_nonempty_iff {a : ℕ → WithTop ℝ} {p : ℕ} :
 
 variable {a : ℕ → WithTop ℝ} {p : ℕ}
 
+/-- A finite point set gives only finitely many secant slopes from a fixed index. -/
+theorem finite_secantSlopes (hfinite : {n | a n ≠ ⊤}.Finite) (p : ℕ) :
+    (secantSlopes a p).Finite := by
+  have heq : secantSlopes a p =
+      (fun n => ((a n).untop₀ - (a p).untop₀) / ((n : ℝ) - p)) ''
+        {n | p < n ∧ a n ≠ ⊤} := by
+    ext σ
+    simp only [mem_secantSlopes, Set.mem_image, Set.mem_ofPred_eq]
+    aesop
+  rw [heq]
+  have hindices : {n | p < n ∧ a n ≠ ⊤}.Finite :=
+    hfinite.subset (by intro n hn; exact hn.2)
+  exact hindices.image _
+
+/-- A line through the first finite height meets the sequence at the anchor and
+precisely those later indices whose secant slope equals its slope. -/
+theorem mem_supportingFace_iff_eq_or_secantSlope_eq (hp : a p ≠ ⊤)
+    (hfirst : ∀ n < p, a n = ⊤) (σ : ℝ) (n : ℕ) :
+    n ∈ supportingFace a σ ((a p).untop₀ - σ * p) ↔
+      n = p ∨ (p < n ∧ a n ≠ ⊤ ∧
+        ((a n).untop₀ - (a p).untop₀) / ((n : ℝ) - p) = σ) := by
+  by_cases hnp : n = p
+  · subst n
+    simp only [mem_supportingFace, sub_add_cancel, WithTop.coe_untop₀_of_ne_top hp,
+      eq_self, true_or]
+  by_cases hn : a n = ⊤
+  · simp only [mem_supportingFace, hn, WithTop.top_ne_coe, hnp, ne_eq,
+      not_true_eq_false, and_false, false_and, or_self]
+  have hpn : p < n := by
+    by_contra h
+    exact hn (hfirst n (lt_of_le_of_ne (not_lt.mp h) hnp))
+  constructor
+  · intro h
+    have heq := congrArg WithTop.untop₀ (mem_supportingFace.mp h)
+    rw [WithTop.untop₀_coe] at heq
+    refine Or.inr ⟨hpn, hn, ?_⟩
+    rw [div_eq_iff (sub_pos.mpr (Nat.cast_lt.mpr hpn)).ne']
+    nlinarith
+  · rintro (h | ⟨_, _, h⟩)
+    · exact (hnp h).elim
+    rw [mem_supportingFace, ← WithTop.coe_untop₀_of_ne_top hn, WithTop.coe_eq_coe]
+    rw [div_eq_iff (sub_pos.mpr (Nat.cast_lt.mpr hpn)).ne'] at h
+    nlinarith
+
 /-- Secants from a finite height of an admissible sequence have a real lower bound. -/
 theorem IsAdmissible.bddBelow_secantSlopes (ha : IsAdmissible a) (hp : a p ≠ ⊤) :
     BddBelow (secantSlopes a p) := by
