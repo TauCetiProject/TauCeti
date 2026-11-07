@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.Semicircle.ResolventTransform
+import TauCeti.Analysis.Complex.UpperHalfPlaneLogKernel
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
@@ -52,54 +53,99 @@ open scoped NNReal Topology
 
 namespace TauCeti.Probability
 
-/-- The standard semicircle law is dominated by `π⁻¹` times Lebesgue measure. -/
-theorem semicircleReal_zero_one_le :
-    semicircleReal 0 1 ≤ ENNReal.ofReal Real.pi⁻¹ • (volume : Measure ℝ) := by
-  rw [semicircleReal_eq_withDensity 0 one_pos]
-  refine Measure.le_iff.2 fun s hs ↦ ?_
-  rw [withDensity_apply _ hs, smul_apply, smul_eq_mul, ← setLIntegral_const]
-  refine lintegral_mono fun y ↦ ENNReal.ofReal_le_ofReal ?_
-  have h4 : Real.sqrt (4 * ((1 : ℝ≥0) : ℝ) - (y - 0) ^ 2) ≤ 2 := by
-    rw [Real.sqrt_le_left (by norm_num)]
-    have : ((1 : ℝ≥0) : ℝ) = 1 := NNReal.coe_one
-    rw [this]
-    nlinarith [sq_nonneg (y - 0)]
-  have hpi := Real.pi_pos
-  calc (2 * Real.pi * ((1 : ℝ≥0) : ℝ))⁻¹ * Real.sqrt (4 * ((1 : ℝ≥0) : ℝ) - (y - 0) ^ 2)
-      ≤ (2 * Real.pi * ((1 : ℝ≥0) : ℝ))⁻¹ * 2 := by gcongr
-    _ = Real.pi⁻¹ := by simp
-
-/-- The standard semicircle law is carried by `[-2, 2]`. -/
-theorem ae_mem_Icc_semicircleReal_zero_one :
+private theorem ae_mem_Icc_semicircleReal_zero_one :
     ∀ᵐ y ∂semicircleReal 0 1, y ∈ Icc (-2 : ℝ) 2 := by
-  filter_upwards [ae_mem_Icc_semicircleReal 0 1] with y hy
-  simpa using hy
+  simpa using ae_mem_Icc_semicircleReal 0 1
 
-/-- The standard semicircle law has no atoms. -/
-theorem semicircleReal_zero_one_singleton (x : ℝ) : semicircleReal 0 1 {x} = 0 := by
-  have h := semicircleReal_zero_one_le {x}
-  simp only [smul_apply, smul_eq_mul, Real.volume_singleton, mul_zero,
-    nonpos_iff_eq_zero] at h
-  exact h
+private theorem restrict_Icc_semicircleReal_zero_one :
+    (semicircleReal 0 1).restrict (Icc (-2) 2) = semicircleReal 0 1 := by
+  simpa using restrict_Icc_semicircleReal 0 1
 
 /-- The logarithmic kernel `y ↦ log |x - y|` is integrable against the semicircle law. -/
-theorem integrable_log_abs_sub_semicircleReal (x : ℝ) :
-    Integrable (fun y : ℝ ↦ Real.log |x - y|) (semicircleReal 0 1) := by
-  have hrestr : (semicircleReal 0 1).restrict (Icc (-2) 2) = semicircleReal 0 1 :=
-    Measure.restrict_eq_self_of_ae_mem ae_mem_Icc_semicircleReal_zero_one
-  have hlog : IntervalIntegrable (fun y : ℝ ↦ Real.log (x - y)) volume (-2) 2 := by
-    have h := (intervalIntegral.intervalIntegrable_log' (a := x + 2) (b := x - 2)).comp_sub_left x
-    simpa using h
-  have hint : IntegrableOn (fun y : ℝ ↦ Real.log |x - y|) (Icc (-2) 2) volume := by
-    simp only [Real.log_abs]
-    exact (intervalIntegrable_iff_integrableOn_Icc_of_le (by norm_num)).1 hlog
-  have h1 : Integrable (fun y : ℝ ↦ Real.log |x - y|)
-      (ENNReal.ofReal Real.pi⁻¹ • volume.restrict (Icc (-2 : ℝ) 2)) :=
-    hint.smul_measure ENNReal.ofReal_ne_top
-  rw [← hrestr]
-  refine h1.mono_measure ?_
-  rw [← Measure.restrict_smul]
-  exact Measure.restrict_mono_measure semicircleReal_zero_one_le _
+theorem integrable_log_abs_sub_semicircleReal (x a : ℝ) (v : ℝ≥0) :
+    Integrable (fun y : ℝ ↦ Real.log |x - y|) (semicircleReal a v) := by
+  rcases eq_zero_or_pos v with rfl | hv
+  · rw [semicircleReal_zero_var]
+    exact integrable_dirac (by simp)
+  · let l := a - 2 * Real.sqrt v
+    let u := a + 2 * Real.sqrt v
+    have hlu : l ≤ u := by dsimp [l, u]; linarith [Real.sqrt_nonneg (v : ℝ)]
+    have hlog : IntervalIntegrable (fun y : ℝ ↦ Real.log (x - y)) volume l u := by
+      have h := (intervalIntegral.intervalIntegrable_log' (a := x - l) (b := x - u)).comp_sub_left x
+      simpa using h
+    have hint : IntegrableOn (fun y : ℝ ↦ Real.log |x - y|) (Icc l u) volume := by
+      simp only [Real.log_abs]
+      exact (intervalIntegrable_iff_integrableOn_Icc_of_le hlu).1 hlog
+    have h1 : Integrable (fun y : ℝ ↦ Real.log |x - y|)
+        (ENNReal.ofReal (Real.pi * Real.sqrt v)⁻¹ • volume.restrict (Icc l u)) :=
+      hint.smul_measure ENNReal.ofReal_ne_top
+    have hrestr : (semicircleReal a v).restrict (Icc l u) = semicircleReal a v :=
+      restrict_Icc_semicircleReal a v
+    rw [← hrestr]
+    refine h1.mono_measure ?_
+    rw [← Measure.restrict_smul]
+    exact Measure.restrict_mono_measure (semicircleReal_le_smul_volume a hv) _
+
+private theorem log_norm_sub_bound (x y ε : ℝ) (hεpos : 0 < ε) (hεle : ε ≤ 1)
+    (hy : y ∈ Icc (-2 : ℝ) 2) (hxy : y ≠ x) :
+    ‖Real.log ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖‖ ≤
+      ‖Real.log |x - y|‖ + Real.log (|x| + 3) := by
+  have hdiff : 0 < |x - y| := abs_pos.mpr (sub_ne_zero.mpr (Ne.symm hxy))
+  have hlow :
+      |x - y| ≤ ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖ := by
+    have hre : ((x : ℂ) + (ε : ℂ) * Complex.I - y).re = x - y := by simp
+    rw [← hre]
+    exact Complex.abs_re_le_norm _
+  have hhigh :
+      ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖ ≤ |x - y| + 1 := by
+    calc
+      ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖
+          = ‖((x - y : ℝ) : ℂ) + (ε : ℂ) * Complex.I‖ := by
+        congr 1
+        push_cast
+        ring
+      _ ≤ ‖((x - y : ℝ) : ℂ)‖ + ‖(ε : ℂ) * Complex.I‖ := norm_add_le _ _
+      _ = |x - y| + ε := by
+        rw [Complex.norm_real, Real.norm_eq_abs]
+        simp [abs_of_pos hεpos]
+      _ ≤ |x - y| + 1 := by linarith
+  have hdiff_le : |x - y| ≤ |x| + 2 := by
+    rw [abs_le]
+    constructor
+    · have hx := neg_abs_le x
+      have hy' := hy.2
+      linarith
+    · have hx := le_abs_self x
+      have hy' := hy.1
+      linarith
+  have hlog_low := Real.log_le_log hdiff hlow
+  have hnormpos : 0 < ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖ :=
+    lt_of_lt_of_le hdiff hlow
+  have hlog_high : Real.log ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖ ≤
+      Real.log (|x| + 3) :=
+    Real.log_le_log hnormpos (by linarith [hhigh, hdiff_le])
+  have hlog_bound :
+      |Real.log ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖| ≤ ‖Real.log |x - y|‖ + Real.log (|x| + 3) := by
+    apply abs_le.mpr
+    constructor
+    · calc
+        -(‖Real.log |x - y|‖ + Real.log (|x| + 3)) ≤ Real.log |x - y| := by
+          have hconst : 0 ≤ Real.log (|x| + 3) :=
+            Real.log_nonneg (by have := abs_nonneg x; linarith)
+          have hneg : -‖Real.log |x - y|‖ ≤ Real.log |x - y| := by
+            rw [Real.norm_eq_abs]
+            exact neg_abs_le _
+          calc
+            -(‖Real.log |x - y|‖ + Real.log (|x| + 3))
+                ≤ -‖Real.log |x - y|‖ := by linarith
+            _ ≤ Real.log |x - y| := hneg
+        _ ≤ Real.log ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖ := hlog_low
+    · calc
+        Real.log ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖ ≤ Real.log (|x| + 3) :=
+          hlog_high
+        _ ≤ ‖Real.log |x - y|‖ + Real.log (|x| + 3) :=
+          le_add_of_nonneg_left (norm_nonneg _)
+  simpa only [Real.norm_eq_abs] using hlog_bound
 
 private theorem tendsto_log_norm_sub_integral (x : ℝ) :
     Tendsto
@@ -109,14 +155,11 @@ private theorem tendsto_log_norm_sub_integral (x : ℝ) :
       (𝓝 (∫ y : ℝ, Real.log |x - y| ∂semicircleReal 0 1)) := by
   let bound : ℝ → ℝ := fun y ↦ ‖Real.log |x - y|‖ + Real.log (|x| + 3)
   have hbound_integrable : Integrable bound (semicircleReal 0 1) := by
-    have hlog := (integrable_log_abs_sub_semicircleReal x).norm
+    have hlog := (integrable_log_abs_sub_semicircleReal x 0 1).norm
     have hconst := integrable_const (Real.log (|x| + 3)) (μ := semicircleReal 0 1)
     simpa [bound, Real.norm_eq_abs] using hlog.add hconst
   refine tendsto_integral_filter_of_dominated_convergence bound ?_ ?_ hbound_integrable ?_
-  · filter_upwards [self_mem_nhdsWithin,
-      mem_nhdsWithin_of_mem_nhds (Iio_mem_nhds (by norm_num : (0 : ℝ) < 1))]
-      with ε hε hε1
-    have hεpos : 0 < ε := hε
+  · refine Filter.Eventually.of_forall fun ε ↦ ?_
     have hmeas : Measurable fun y : ℝ ↦
         Real.log ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖ := by
       fun_prop
@@ -126,80 +169,12 @@ private theorem tendsto_log_norm_sub_integral (x : ℝ) :
       with ε hε hε1
     have hεpos : 0 < ε := hε
     have hεle : ε ≤ 1 := hε1.le
-    have hnull : semicircleReal 0 1 {x} = 0 := semicircleReal_zero_one_singleton x
-    have hae : ∀ᵐ y ∂semicircleReal 0 1, y ≠ x := by
-      rw [ae_iff]
-      convert hnull using 1
-      simp
+    let := nullSingletonClass_semicircleReal 0 one_pos
     filter_upwards [ae_mem_Icc_semicircleReal_zero_one,
-      hae] with y hy hxy
-    have hdiff : 0 < |x - y| := abs_pos.mpr (sub_ne_zero.mpr (Ne.symm hxy))
-    have hlow :
-        |x - y| ≤ ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖ := by
-      have hre : ((x : ℂ) + (ε : ℂ) * Complex.I - y).re = x - y := by simp
-      rw [← hre]
-      exact Complex.abs_re_le_norm _
-    have hhigh :
-        ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖ ≤ |x - y| + 1 := by
-      calc
-        ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖
-            = ‖((x - y : ℝ) : ℂ) + (ε : ℂ) * Complex.I‖ := by
-          congr 1
-          push_cast
-          ring
-        _ ≤ ‖((x - y : ℝ) : ℂ)‖ + ‖(ε : ℂ) * Complex.I‖ := norm_add_le _ _
-        _ = |x - y| + ε := by
-          rw [Complex.norm_real, Real.norm_eq_abs]
-          simp [abs_of_pos hεpos]
-        _ ≤ |x - y| + 1 := by linarith
-    have hyabs : |y| ≤ 2 := abs_le.mpr hy
-    have hdiff_le : |x - y| ≤ |x| + 2 := by
-      rw [abs_le]
-      constructor
-      · have hx := neg_abs_le x
-        have hy' := hy.2
-        linarith
-      · have hx := le_abs_self x
-        have hy' := hy.1
-        linarith
-    have hlog_low := Real.log_le_log hdiff hlow
-    have hnormpos : 0 < ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖ :=
-      lt_of_lt_of_le hdiff hlow
-    have hlog_high : Real.log ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖ ≤
-        Real.log (|x| + 3) :=
-      Real.log_le_log hnormpos (by linarith [hhigh, hdiff_le])
-    have hlog_bound :
-        |Real.log ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖| ≤ bound y := by
-      change |Real.log ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖| ≤
-        ‖Real.log |x - y|‖ + Real.log (|x| + 3)
-      apply abs_le.mpr
-      constructor
-      · calc
-          -(‖Real.log |x - y|‖ + Real.log (|x| + 3)) ≤ Real.log |x - y| := by
-            have hconst : 0 ≤ Real.log (|x| + 3) :=
-              Real.log_nonneg (by have := abs_nonneg x; linarith)
-            have hneg : -‖Real.log |x - y|‖ ≤ Real.log |x - y| := by
-              rw [Real.norm_eq_abs]
-              exact neg_abs_le _
-            calc
-              -(‖Real.log |x - y|‖ + Real.log (|x| + 3))
-                  ≤ -‖Real.log |x - y|‖ := by linarith
-              _ ≤ Real.log |x - y| := hneg
-          _ ≤ Real.log ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖ := hlog_low
-      · calc
-          Real.log ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖ ≤ Real.log (|x| + 3) :=
-            hlog_high
-          _ ≤ ‖Real.log |x - y|‖ + Real.log (|x| + 3) :=
-            le_add_of_nonneg_left (norm_nonneg _)
-    change ‖Real.log ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖‖ ≤ bound y
-    rw [Real.norm_eq_abs]
-    exact hlog_bound
-  · have hnull : semicircleReal 0 1 {x} = 0 := semicircleReal_zero_one_singleton x
-    have hae : ∀ᵐ y ∂semicircleReal 0 1, y ≠ x := by
-      rw [ae_iff]
-      convert hnull using 1
-      simp
-    filter_upwards [hae] with y hxy
+      (semicircleReal 0 1).ae_ne x] with y hy hxy
+    simpa only [bound] using log_norm_sub_bound x y ε hεpos hεle hy hxy
+  · let := nullSingletonClass_semicircleReal 0 one_pos
+    filter_upwards [(semicircleReal 0 1).ae_ne x] with y hxy
     have harg : ContinuousAt
         (fun ε : ℝ ↦ (x : ℂ) + (ε : ℂ) * Complex.I - y) 0 := by
       fun_prop
@@ -227,40 +202,6 @@ private def primitive (z : ℂ) : ℂ :=
 section UpperHalfPlane
 
 variable {z : ℂ}
-
-private theorem restrict_Icc_semicircleReal_zero_one :
-    (semicircleReal 0 1).restrict (Icc (-2) 2) = semicircleReal 0 1 :=
-  Measure.restrict_eq_self_of_ae_mem ae_mem_Icc_semicircleReal_zero_one
-
-private theorem im_gt_of_mem_ball {w : ℂ} (hw : w ∈ Metric.ball z (z.im / 2)) :
-    z.im / 2 < w.im := by
-  rw [Metric.mem_ball, dist_eq_norm] at hw
-  have h := Complex.abs_im_le_norm (w - z)
-  simp only [Complex.sub_im] at h
-  have := neg_abs_le (w.im - z.im)
-  linarith
-
-private theorem norm_inv_sub_le (hz : 0 < z.im) {w : ℂ} (hw : w ∈ Metric.ball z (z.im / 2))
-    (y : ℝ) : ‖((w - y)⁻¹ : ℂ)‖ ≤ 2 / z.im := by
-  have h1 := im_gt_of_mem_ball hw
-  have h2 : w.im ≤ ‖w - (y : ℂ)‖ := by
-    have := Complex.abs_im_le_norm (w - (y : ℂ))
-    simp only [Complex.sub_im, Complex.ofReal_im, sub_zero] at this
-    exact (le_abs_self _).trans this
-  rw [norm_inv]
-  calc ‖w - (y : ℂ)‖⁻¹ ≤ (z.im / 2)⁻¹ := inv_anti₀ (by positivity) (by linarith)
-    _ = 2 / z.im := by field_simp
-
-private theorem mem_slitPlane_sub {w : ℂ} (hw : 0 < w.im) (y : ℝ) :
-    (w - y : ℂ) ∈ Complex.slitPlane := by
-  rw [Complex.mem_slitPlane_iff]
-  right
-  simpa using hw.ne'
-
-private theorem continuous_log_sub {w : ℂ} (hw : 0 < w.im) :
-    Continuous fun y : ℝ ↦ Complex.log (w - y) :=
-  continuous_iff_continuousAt.2 fun y ↦
-    ((by fun_prop : Continuous fun y : ℝ ↦ (w - y : ℂ)).continuousAt).clog (mem_slitPlane_sub hw y)
 
 private theorem integrable_log_sub {w : ℂ} (hw : 0 < w.im) :
     Integrable (fun y : ℝ ↦ Complex.log (w - y)) (semicircleReal 0 1) := by
@@ -294,16 +235,12 @@ private theorem hasDerivAt_logPotential (hz : 0 < z.im) :
 private theorem hasDerivAt_m (hz : 0 < z.im) : ∃ d, HasDerivAt m d z := by
   refine ⟨_, hasDerivAt_resolventTransform (μ := semicircleReal 0 1) z ?_⟩
   rintro ⟨x, -, hx⟩
-  have := congrArg Complex.im hx
-  simp at this
-  linarith
+  exact ofReal_ne_of_im_pos hz x hx
 
 private theorem m_quad (hz : 0 < z.im) : m z * m z + z * m z + 1 = 0 := by
   have h := resolventTransform_semicircleReal_quadratic_eq_zero (a := 0) (v := 1) (z := z) (by
     rintro ⟨x, -, hx⟩
-    have := congrArg Complex.im hx
-    simp at this
-    linarith)
+    exact ofReal_ne_of_im_pos hz x hx)
   simpa [m] using h
 
 private theorem m_im_pos (hz : 0 < z.im) : 0 < (m z).im :=
@@ -331,11 +268,8 @@ private theorem hasDerivAt_logPotential_eq_neg_m (hz : 0 < z.im) :
   apply integral_congr_ae
   filter_upwards with y
   simp only [resolvent, Ring.inverse_eq_inv]
-  have hyz : (algebraMap ℝ ℂ) y - z ≠ 0 := by
-    intro h
-    have him := congrArg Complex.im h
-    simp at him
-    linarith
+  have hyz : (algebraMap ℝ ℂ) y - z ≠ 0 :=
+    sub_ne_zero.mpr (ofReal_ne_of_im_pos hz y)
   have hzy : z - (y : ℂ) ≠ 0 := by
     intro h
     apply hyz
@@ -357,9 +291,8 @@ private theorem m_ne_zero (hz : 0 < z.im) : m z ≠ 0 := by
   rw [hm] at h
   norm_num at h
 
-private theorem hasDerivAt_primitive (hz : 0 < z.im) :
-    HasDerivAt primitive (-m z) z := by
-  obtain ⟨d, hdm⟩ := hasDerivAt_m hz
+private theorem deriv_m_quad (hz : 0 < z.im) {d : ℂ} (hdm : HasDerivAt m d z) :
+    d * m z + m z * d + m z + z * d = 0 := by
   have hq : HasDerivAt (fun w : ℂ ↦ m w * m w + w * m w + 1)
       (d * m z + m z * d + m z + z * d) z := by
     convert ((hdm.mul hdm).add ((hasDerivAt_id z).mul hdm)).add
@@ -368,16 +301,20 @@ private theorem hasDerivAt_primitive (hz : 0 < z.im) :
       simp only [Pi.add_apply, Pi.mul_apply, id_eq]
     · simp only [id_eq]
       ring
-  have hq0 : d * m z + m z * d + m z + z * d = 0 := by
-    have hEq : (fun w : ℂ ↦ m w * m w + w * m w + 1) =ᶠ[𝓝 z] fun _ ↦ 0 := by
-      filter_upwards [Metric.ball_mem_nhds z (by positivity : 0 < z.im / 2)] with w hw
-      simpa using m_quad (by
-        have h := im_gt_of_mem_ball hw
-        linarith)
-    have hzero := (hasDerivAt_const z 0).congr_of_eventuallyEq hEq
-    have := hzero.deriv
-    rw [hq.deriv] at this
-    exact this
+  have hEq : (fun w : ℂ ↦ m w * m w + w * m w + 1) =ᶠ[𝓝 z] fun _ ↦ 0 := by
+    filter_upwards [Metric.ball_mem_nhds z (by positivity : 0 < z.im / 2)] with w hw
+    simpa using m_quad (by
+      have h := im_gt_of_mem_ball hw
+      linarith)
+  have hzero := (hasDerivAt_const z 0).congr_of_eventuallyEq hEq
+  have := hzero.deriv
+  rw [hq.deriv] at this
+  exact this
+
+private theorem hasDerivAt_primitive (hz : 0 < z.im) :
+    HasDerivAt primitive (-m z) z := by
+  obtain ⟨d, hdm⟩ := hasDerivAt_m hz
+  have hq0 := deriv_m_quad hz hdm
   have hm0 := m_ne_zero hz
   have hlog := HasDerivAt.clog (hdm.neg) (mem_slitPlane_neg_m hz)
   have hprod := (hasDerivAt_id z).mul hdm
@@ -393,7 +330,7 @@ private theorem hasDerivAt_primitive (hz : 0 < z.im) :
     · simp only [id]
       field_simp [hm0]
       simp only [Pi.neg_apply]
-      ring_nf
+      ring
   have hval : -(m z + z * d) / 2 - (-d) / (-(m z)) = -m z := by
     have hq1 := m_quad hz
     field_simp [hm0]
@@ -458,7 +395,8 @@ private theorem m_at_imaginary_axis (t : ℝ) (ht : 0 < t) :
     Complex.I_im, zero_mul, mul_zero, sub_zero, add_zero, hzre, hzim] at hr
   constructor
   · exact hre
-  · change (m z).im ^ 2 + t * (m z).im = 1
+  · -- Unfold the local abbreviation for the point on the imaginary axis.
+    change (m z).im ^ 2 + t * (m z).im = 1
     nlinarith
 
 private theorem tendsto_mul_m_im_atTop :
@@ -686,6 +624,8 @@ private theorem m_boundary_q_estimate {x ε : ℝ} (hx : x ∈ Icc (-2) 2)
     rw [himag] at hnonpos
     linarith
   have hq_le : q ≤ 1 := hq_lt.le
+  -- The quadratic identities bound q(1-q)^2 by b^2(q+1)^2; the imaginary
+  -- identity then yields a fourth-power bound and hence the desired estimate.
   have hxabs : |x| ≤ 2 := abs_le.mpr hx
   have hx2 : x ^ 2 ≤ 4 := by
     have hsquare := (sq_le_sq₀ (abs_nonneg x) (by norm_num : (0 : ℝ) ≤ 2)).2 hxabs
@@ -768,7 +708,7 @@ private theorem tendsto_m_boundary_normSq {x : ℝ} (hx : x ∈ Icc (-2) 2) :
     have hest := m_boundary_q_estimate hx hε
     have hqpos : 0 < 1 - q := by simpa [z, a, b, q] using hest.1
     have hqbound : (1 - q) ^ 2 ≤ 2 * ε := by simpa [z, a, b, q] using hest.2
-    change ε < (1 - c) ^ 2 / 2 at hεsmall
+    simp only [Set.mem_Iio] at hεsmall
     have hεsq : 2 * ε < (1 - c) ^ 2 := by linarith
     have hsq : (1 - q) ^ 2 < (1 - c) ^ 2 := lt_of_le_of_lt hqbound hεsq
     have hdelta : 1 - q < 1 - c := by
@@ -850,6 +790,7 @@ private theorem tendsto_eps_mul_m_boundary_im {x : ℝ} (hx : x ∈ Icc (-2) 2) 
       nlinarith [sq_nonneg a]
     have hb_le : b ≤ 1 :=
       (sq_le_sq₀ hb.le (by norm_num : (0 : ℝ) ≤ 1)).1 (by simpa using hb_sq)
+    -- Express the goal using the local abbreviation for the imaginary part.
     change ε * b ≤ ε
     simpa using mul_le_mul_of_nonneg_left hb_le (le_of_lt hε)
 
@@ -954,7 +895,7 @@ theorem integral_log_abs_sub_semicircleReal (x : ℝ) (hx : x ∈ Icc (-2) 2) :
       (primitive ((x : ℂ) + (ε : ℂ) * Complex.I)).re := by
     filter_upwards [self_mem_nhdsWithin] with ε hε
     let z : ℂ := (x : ℂ) + (ε : ℂ) * Complex.I
-    change 0 < ε at hε
+    simp only [Set.mem_Ioi] at hε
     have hz : 0 < z.im := by simp [z, hε]
     calc
       H ε = ∫ y : ℝ, Real.log ‖z - y‖ ∂semicircleReal 0 1 := by

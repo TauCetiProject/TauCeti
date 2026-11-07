@@ -83,6 +83,12 @@ theorem ae_mem_Icc_semicircleReal (a : ℝ) (v : ℝ≥0) :
   filter_upwards [ae_mem_Ioo_semicircleMeasure] with x hx
   constructor <;> nlinarith [Real.sqrt_nonneg (v : ℝ), hx.1, hx.2]
 
+/-- Restriction to the support interval leaves the semicircle law unchanged. -/
+theorem restrict_Icc_semicircleReal (a : ℝ) (v : ℝ≥0) :
+    (semicircleReal a v).restrict (Icc (a - 2 * Real.sqrt v) (a + 2 * Real.sqrt v)) =
+      semicircleReal a v :=
+  Measure.restrict_eq_self_of_ae_mem (ae_mem_Icc_semicircleReal a v)
+
 /-- The exact support is the closed interval between the semicircle edges, also at variance zero.
 -/
 @[simp]
@@ -173,6 +179,38 @@ theorem semicircleReal_eq_withDensity (a : ℝ) {v : ℝ≥0} (hv : 0 < v) :
   rw [hrad, Real.sqrt_div' _ (sq_nonneg _), Real.sqrt_sq (by positivity)]
   field_simp
   rw [hs2]
+
+/-- A positive-variance semicircle law is absolutely continuous with respect to volume. -/
+theorem semicircleReal_absolutelyContinuous (a : ℝ) {v : ℝ≥0} (hv : 0 < v) :
+    semicircleReal a v ≪ volume := by
+  rw [semicircleReal_eq_withDensity a hv]
+  exact withDensity_absolutelyContinuous _ _
+
+/-- A positive-variance semicircle law has no atoms. -/
+theorem nullSingletonClass_semicircleReal (a : ℝ) {v : ℝ≥0} (hv : 0 < v) :
+    NullSingletonClass (semicircleReal a v) := by
+  rw [semicircleReal_eq_withDensity a hv]
+  infer_instance
+
+/-- A positive-variance semicircle law has a uniformly bounded density. -/
+theorem semicircleReal_le_smul_volume (a : ℝ) {v : ℝ≥0} (hv : 0 < v) :
+    semicircleReal a v ≤ ENNReal.ofReal (Real.pi * Real.sqrt v)⁻¹ • (volume : Measure ℝ) := by
+  have hv' : 0 < (v : ℝ) := by exact_mod_cast hv
+  have hs : 0 < Real.sqrt (v : ℝ) := Real.sqrt_pos.2 hv'
+  have hs2 := Real.sq_sqrt v.coe_nonneg
+  rw [semicircleReal_eq_withDensity a hv, ← withDensity_const]
+  apply withDensity_mono
+  filter_upwards with y
+  apply ENNReal.ofReal_le_ofReal
+  have hrad : Real.sqrt (4 * (v : ℝ) - (y - a) ^ 2) ≤ 2 * Real.sqrt v := by
+    rw [Real.sqrt_le_left (by positivity)]
+    nlinarith [sq_nonneg (y - a)]
+  calc
+    (2 * Real.pi * (v : ℝ))⁻¹ * Real.sqrt (4 * (v : ℝ) - (y - a) ^ 2)
+        ≤ (2 * Real.pi * (v : ℝ))⁻¹ * (2 * Real.sqrt v) := by gcongr
+    _ = (Real.pi * Real.sqrt v)⁻¹ := by
+      field_simp
+      nlinarith
 
 /-- A semicircle law carried by `[0, ∞)` with positive centre gives no mass to `(-∞, 0]`. -/
 theorem ae_pos_semicircleReal {a : ℝ} {v : ℝ≥0} (h : 2 * Real.sqrt v ≤ a) (ha : 0 < a) :
