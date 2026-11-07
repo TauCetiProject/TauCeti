@@ -73,9 +73,7 @@ value Burnside's lemma takes on it -- needs more than this: a genuine `MulAction
 `Nonempty` to rule the empty case back out. -/
 theorem isPretransitive_prod_left [IsPretransitive G X] [Subsingleton Y] :
     IsPretransitive G (X × Y) :=
-  ⟨fun p q => by
-    obtain ⟨g, hg⟩ := MulAction.exists_smul_eq G p.1 q.1
-    exact ⟨g, Prod.fst_injective hg⟩⟩
+  ⟨fun p q => (exists_smul_eq G p.1 q.1).imp fun _ hg => Prod.fst_injective hg⟩
 
 end SMul
 
@@ -86,9 +84,8 @@ the set acted on, the coset of `g` corresponding to `g • b`.  This is
 `MulAction.ofQuotientStabilizer`, which transitivity makes surjective. -/
 noncomputable def quotientStabilizerEquiv (b : X) : G ⧸ stabilizer G b ≃ X :=
   Equiv.ofBijective (ofQuotientStabilizer G b)
-    ⟨injective_ofQuotientStabilizer G b, fun x => by
-      obtain ⟨g, hg⟩ := exists_smul_eq G b x
-      exact ⟨QuotientGroup.mk g, (ofQuotientStabilizer_mk G b g).trans hg⟩⟩
+    ⟨injective_ofQuotientStabilizer G b, fun x =>
+      QuotientGroup.mk_surjective.exists.mpr (exists_smul_eq G b x)⟩
 
 /-- The computation rule for `TauCeti.quotientStabilizerEquiv`: on the coset represented by `g` it
 takes the value `g • b`. -/
@@ -117,10 +114,9 @@ points, by `MulAction.index_stabilizer_of_transitive`, so the stabiliser has one
 theorem stabilizer_eq_bot_of_natCard_eq [Finite X] (h : Nat.card G = Nat.card X) (x : X) :
     stabilizer G x = ⊥ := by
   have : Nonempty X := ⟨x⟩
-  have hmul := (stabilizer G x).index_mul_card
+  have hmul := (stabilizer G x).card_mul_index
   rw [index_stabilizer_of_transitive G x, h] at hmul
-  exact Subgroup.card_eq_one.mp
-    (Nat.eq_of_mul_eq_mul_left Nat.card_pos (by rw [hmul, mul_one]))
+  exact Subgroup.eq_bot_of_card_eq _ ((mul_eq_right₀ Nat.card_pos.ne').mp hmul)
 
 variable {G} in
 /-- In a transitive action of a group with as many elements as the finite set acted on, an
@@ -139,16 +135,15 @@ variable {G X : Type*} [Group G]
 
 /-- **A generator of a cyclic group acts as one cycle in every transitive permutation
 representation.** If `g` generates `G` and the image of `ρ : G →* Perm X` acts transitively,
-then `ρ g` is a cycle on all of `X`. This includes singleton `X`, where `ρ g` is the identity
-and `IsCycleOn univ` is the appropriate nondegenerate-free formulation. -/
+then `ρ g` is a cycle on all of `X`. Stating this with `Equiv.Perm.IsCycleOn` rather than
+`Equiv.Perm.IsCycle` keeps it true when `X` has at most one point, where `ρ g` is the identity. -/
 theorem isCycleOn_apply_of_zpowers_eq_top (ρ : G →* Perm X)
     (hρ : IsPretransitive ρ.range X) {g : G} (hg : Subgroup.zpowers g = ⊤) :
     (ρ g).IsCycleOn Set.univ := by
   refine ⟨(ρ g).bijective.bijOn_univ, fun x _ y _ => ?_⟩
   obtain ⟨⟨_, a, rfl⟩, ha⟩ := hρ.exists_smul_eq x y
-  obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.mp (hg.symm ▸ Subgroup.mem_top a)
-  have ha' : ρ a x = y := by simpa [Subgroup.smul_def] using ha
-  exact ⟨k, by simpa [← map_zpow, hk] using ha'⟩
+  obtain ⟨k, rfl⟩ := Subgroup.mem_zpowers_iff.mp ((Subgroup.eq_top_iff' _).mp hg a)
+  exact ⟨k, by simpa [Subgroup.smul_def] using ha⟩
 
 /-- **Orbit-stabiliser for a transitive permutation representation** `ρ : G →* Perm X`: the coset
 space of the point stabiliser `ρ⁻¹ (stabilizer x)` is `X`, the coset of `g` corresponding to
