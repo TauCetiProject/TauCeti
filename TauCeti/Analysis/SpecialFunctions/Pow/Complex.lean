@@ -13,6 +13,7 @@ import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Analysis.Complex.SlitPlane
+import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 
 /-!
 # Principal complex powers: scaling, sector inversion, and holomorphic products
@@ -290,35 +291,6 @@ theorem exists_norm_ofReal_add_cpow_le_mul_one_add_rpow {x : ℂ} (hx : x ∈ sl
   rw [Complex.norm_cpow_real, ← Real.mul_rpow hc.le (by linarith)]
   exact Real.rpow_le_rpow_of_nonpos (by positivity) (h t ht) hr
 
-/-- The norm of `(t : ℂ) + w` for `w` in the ball of radius `c` around `z` and `t ≥ 0` is at most
-`(1 + ‖z‖ + c) * (1 + t)`. -/
-theorem norm_ofReal_add_le_mul_one_add_of_mem_ball {z w : ℂ} {c : ℝ} (hc : 0 ≤ c)
-    (hw : w ∈ Metric.ball z c) {t : ℝ} (ht : 0 ≤ t) :
-    ‖(t : ℂ) + w‖ ≤ (1 + ‖z‖ + c) * (1 + t) := by
-  have hwz : ‖w - z‖ < c := by simpa [dist_eq_norm] using hw
-  have hw_norm : ‖w‖ ≤ ‖z‖ + c := by
-    calc ‖w‖ = ‖(w - z) + z‖ := by ring_nf
-      _ ≤ ‖w - z‖ + ‖z‖ := norm_add_le _ _
-      _ ≤ c + ‖z‖ := by linarith
-      _ = ‖z‖ + c := add_comm _ _
-  calc ‖(t : ℂ) + w‖ ≤ ‖(t : ℂ)‖ + ‖w‖ := norm_add_le _ _
-    _ = t + ‖w‖ := by rw [Complex.norm_real, Real.norm_of_nonneg ht]
-    _ ≤ t + (‖z‖ + c) := by linarith
-    _ ≤ (1 + ‖z‖ + c) * (1 + t) := by
-      have : 0 ≤ (‖z‖ + c) * t := mul_nonneg (by positivity) ht
-      linarith
-
-/-- The inverse of `exp (arg u * r)` is at most `exp (π * |r|)`. -/
-theorem inv_exp_arg_mul_le_exp_pi_mul_abs (u : ℂ) (r : ℝ) :
-    (Real.exp (u.arg * r))⁻¹ ≤ Real.exp (Real.pi * |r|) := by
-  rw [← Real.exp_neg]
-  apply Real.exp_le_exp.mpr
-  calc -(u.arg * r) ≤ |u.arg * r| := neg_le_abs _
-    _ = |u.arg| * |r| := abs_mul _ _
-    _ ≤ Real.pi * |r| := by
-      gcongr
-      exact Complex.abs_arg_le_pi _
-
 /-- Near any `z ∈ slitPlane`, the principal power `((t : ℂ) + w) ^ s` is bounded by a constant
 multiple of `(1 + t) ^ s.re` uniformly in `w` and in `t ≥ 0`, with no sign restriction on `s`. -/
 theorem exists_mem_nhds_norm_ofReal_add_cpow_le_mul_one_add_rpow {z : ℂ} (hz : z ∈ slitPlane)
@@ -344,7 +316,7 @@ theorem exists_mem_nhds_norm_ofReal_add_cpow_le_mul_one_add_rpow {z : ℂ} (hz :
     exact hlow w hw_ball ⟨t, ht⟩
   -- Upper bound `‖(t : ℂ) + w‖ ≤ M * (1 + t)` from the triangle inequality on `ball z c`.
   have hupper : ‖(t : ℂ) + w‖ ≤ M * (1 + t) :=
-    norm_ofReal_add_le_mul_one_add_of_mem_ball hc.le hw_ball ht
+    norm_ofReal_add_le_mul_one_add_of_mem_closedBall (Metric.ball_subset_closedBall hw_ball) ht
   -- Bound the radial factor `‖(t : ℂ) + w‖ ^ s.re` according to the sign of `s.re`.
   have hrpow : ‖(t : ℂ) + w‖ ^ s.re ≤ max (c ^ s.re) (M ^ s.re) * (1 + t) ^ s.re := by
     rcases le_or_gt s.re 0 with hs | hs
@@ -361,7 +333,7 @@ theorem exists_mem_nhds_norm_ofReal_add_cpow_le_mul_one_add_rpow {z : ℂ} (hz :
           gcongr
           exact le_max_right _ _
   -- Bound the angular factor `1 / exp (arg * s.im) ≤ exp (π * |s.im|)`.
-  have hexp := inv_exp_arg_mul_le_exp_pi_mul_abs ((t : ℂ) + w) s.im
+  have hexp := Complex.inv_exp_arg_mul_le_exp_pi_mul_abs ((t : ℂ) + w) s.im
   calc ‖((t : ℂ) + w) ^ s‖
       ≤ ‖(t : ℂ) + w‖ ^ s.re / Real.exp (((t : ℂ) + w).arg * s.im) :=
         Complex.norm_cpow_le _ _
