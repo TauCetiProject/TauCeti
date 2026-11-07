@@ -58,6 +58,15 @@ public section
 open Metric Set
 open scoped LinearAlgebra.Projectivization
 
+namespace TauCeti
+
+/-- The reciprocal transform `(1 + ‖x - a‖²)⁻¹` of the squared distance is at most `1`. -/
+theorem inv_one_add_norm_sub_sq_le_one {F : Type*} [SeminormedAddCommGroup F] (x a : F) :
+    (1 + ‖x - a‖ ^ 2)⁻¹ ≤ 1 :=
+  inv_le_one_of_one_le₀ (le_add_of_nonneg_right (by positivity))
+
+end TauCeti
+
 namespace Projectivization
 
 variable {𝕜 : Type*} [RCLike 𝕜] {n : ℕ} (i : Fin (n + 1)) (a : EuclideanSpace 𝕜 (Fin n))
@@ -152,8 +161,8 @@ theorem affineChartInvOneAddDistSq_nonneg (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) 
 /-- The reciprocal affine distance is at most `1`. -/
 theorem affineChartInvOneAddDistSq_le_one (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :
     affineChartInvOneAddDistSq i a x ≤ 1 :=
-  indicator_apply_le' (fun _ ↦ inv_le_one_of_one_le₀ (le_add_of_nonneg_right (sq_nonneg _)))
-    fun _ ↦ zero_le_one
+  indicator_apply_le' (fun _ ↦ dist_eq_norm (E := EuclideanSpace 𝕜 (Fin n)) _ a ▸
+    TauCeti.inv_one_add_norm_sub_sq_le_one _ a) fun _ ↦ zero_le_one
 
 /-- The reciprocal affine distance is positive exactly on the affine open. -/
 @[simp]
