@@ -36,6 +36,7 @@ Mathlib's: reduce a `Fin (n + 1)`-indexed product to a binary product measure al
 * `TauCeti.integral_pi_eq_integral_integral_update`: the two-coordinate Fubini
   identity.
 * `TauCeti.integral_pi_succ`: splitting off the zeroth coordinate of a finite product measure.
+* `TauCeti.integrable_pi_succ`: the integrability counterpart of `TauCeti.integral_pi_succ`.
 * `TauCeti.integral_pi_sum_mul`: Fubini over a sum of index types, for a product of a function of
   each block of coordinates.
 * `TauCeti.setIntegral_prod_le_exp_mul_pow`: the exponential-moment (Chernoff) bound for the
@@ -210,5 +211,16 @@ theorem integral_pi_succ {n : ℕ} {α : Fin (n + 1) → Type*} [∀ i, Measurab
         f ((MeasurableEquiv.piFinSuccAbove α 0).symm p)
           ∂((μ 0).prod (Measure.pi fun i ↦ μ (Fin.succAbove (0 : Fin (n + 1)) i))) := by
   rw [← ((measurePreserving_piFinSuccAbove μ 0).symm).integral_comp']
+
+/-- Integrability under a finite product measure on `Fin (n + 1)` transfers to the product of the
+zeroth marginal with the product measure of the remaining coordinates, the integrability
+counterpart of `integral_pi_succ`. -/
+theorem integrable_pi_succ {n : ℕ} {α : Fin (n + 1) → Type*} [∀ i, MeasurableSpace (α i)]
+    (μ : ∀ i, Measure (α i)) [∀ i, SigmaFinite (μ i)] {E : Type*} [NormedAddCommGroup E]
+    {f : (∀ i, α i) → E} (hf : Integrable f (Measure.pi μ)) :
+    Integrable (fun p : α 0 × (∀ i : Fin n, α (Fin.succAbove (0 : Fin (n + 1)) i)) ↦
+        f ((MeasurableEquiv.piFinSuccAbove α 0).symm p))
+      ((μ 0).prod (Measure.pi fun i ↦ μ (Fin.succAbove (0 : Fin (n + 1)) i))) :=
+  (measurePreserving_piFinSuccAbove μ 0).symm.integrable_comp_of_integrable hf
 
 end TauCeti

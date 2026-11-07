@@ -163,8 +163,7 @@ private lemma integrable_cons_prod_ite {n : ℕ} (μ ν : Fin (n + 1) → Measur
         (Measure.pi fun i : Fin n ↦ if s i then ν i.succ else μ i.succ)) := by
   let bs : Fin (n + 1) → Bool := Fin.cons b s
   let ρ : Fin (n + 1) → Measure ℝ := fun i ↦ if bs i = true then ν i else μ i
-  have h := (measurePreserving_piFinSuccAbove ρ 0).symm.integrable_comp_of_integrable
-    (hfi bs)
+  have h := integrable_pi_succ ρ (hfi bs)
   simpa [ρ, MeasurableEquiv.piFinSuccAbove_symm_apply, Fin.insertNthEquiv_zero,
     Fin.zero_succAbove, bs, Fin.cons_zero, Fin.cons_succ, Function.comp_def,
     Fin.consEquiv_apply] using h
