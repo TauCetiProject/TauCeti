@@ -90,20 +90,6 @@ private theorem constantCoeff_pow_eq_zero (x : PowerSeries K)
   rw [map_pow, ← PowerSeries.constantCoeff_eq, hx, zero_pow (pow_ne_zero h hp.out.ne_zero)]
 
 omit [G.IsComm] in
-/-- A formal group law of finite height `h` over a field of characteristic `p` has `h ≠ 0`. -/
-private theorem ne_zero_of_height_eq (hF : F.height p = h) : h ≠ 0 := by
-  have := F.one_le_height (p := p)
-  rw [hF] at this
-  exact_mod_cast (Nat.one_le_iff_ne_zero.mp (by exact_mod_cast this))
-
-omit [G.IsComm] in
-/-- The coefficient of `X ^ (p ^ h)` in `[p]_F` is nonzero when `F` has height `h`. -/
-private theorem coeff_nsmulSeries_ne_zero (hF : F.height p = h) :
-    PowerSeries.coeff (p ^ h) (F.nsmulSeries p) ≠ 0 := by
-  have := (F.heightFrobeniusIso hF).isUnit_coeff_one
-  rwa [coeff_heightFrobeniusIso, mul_one, isUnit_iff_ne_zero] at this
-
-omit [G.IsComm] in
 /-- Composing `c Xᴹ` with `[p]_F` gives a series whose coefficient of `X ^ (M p ^ h)` is `c uᴹ`,
 where `u` is the coefficient of `X ^ (p ^ h)` in `[p]_F`. -/
 private theorem coeff_subst_nsmulSeries_smul_X_pow (hF : F.height p = h) (M : ℕ) (c : K) :
@@ -238,15 +224,16 @@ private theorem coeff_pSeriesError_of_lt (hF : F.height p = h) (hG : G.height p 
       _ = (p ^ h : ℕ) * 1 := (mul_one _).symm
       _ ≤ (p ^ h : ℕ) * f.order := by gcongr
 
-/-- If `N + 1 = pᵏ` with `k ≠ 0`, the `p`-series failure vanishing in degrees `pʲ p ^ h` with
-`pʲ ≤ N` forces the degree-`N + 1` part of the homomorphism defect to vanish. -/
+/-- Let `f` be a homomorphism from `F` to `G` up to degree `N ≥ 1`, with `N + 1 = pᵏ`, whose
+`p`-series failure vanishes in the degrees `pʲ p ^ h` with `pʲ ≤ N`. Then the degree-`N + 1` part
+of the homomorphism defect vanishes. -/
 private theorem homogeneousComponent_homDefect_eq_zero_of_pow (hF : F.height p = h)
     (hG : G.height p = h) {f : PowerSeries K} (hf : PowerSeries.constantCoeff f = 0) {N k : ℕ}
     (hN : N ≠ 0) (hk : N + 1 = p ^ k) (hΦ : ((N + 1 : ℕ) : ℕ∞) ≤ (F.homDefect G f).order)
     (hP : ∀ j, p ^ j ≤ N → PowerSeries.coeff (p ^ j * p ^ h) (pSeriesError F G p f) = 0) :
     homogeneousComponent (N + 1) (F.homDefect G f) = 0 := by
   have hp' := hp.out
-  have hh := ne_zero_of_height_eq hF
+  have hh := F.ne_zero_of_height_eq_natCast hF
   have hpK : (p : K) = 0 := CharP.cast_eq_zero K p
   have hk₀ : k ≠ 0 := by
     rintro rfl
@@ -305,7 +292,7 @@ private theorem exists_le_order_homDefect_add [IsSepClosed K] (hF : F.height p =
         (pSeriesError F G p (f + c • PowerSeries.X ^ (N + 1))) = 0 := by
   have hp' := hp.out
   have hpK : (p : K) = 0 := CharP.cast_eq_zero K p
-  have hh := ne_zero_of_height_eq hF
+  have hh := F.ne_zero_of_height_eq_natCast hF
   set M := N + 1 with hM
   have hXM (c : K) : (M : ℕ∞) ≤ (f + c • PowerSeries.X ^ M - f).order := by
     rw [add_sub_cancel_left]
@@ -342,7 +329,7 @@ private theorem exists_le_order_homDefect_add [IsSepClosed K] (hF : F.height p =
       (PowerSeries.coeff (M * p ^ h) (pSeriesError F G p f))
       (by rw [Nat.cast_pow, hpK, zero_pow hh])
       (by have := Nat.one_lt_pow hh hp'.one_lt; omega)
-      (pow_ne_zero _ (coeff_nsmulSeries_ne_zero hF))
+      (pow_ne_zero _ (F.coeff_nsmulSeries_ne_zero hF))
     refine ⟨c, hord c ?_, fun j hj ↦ ?_⟩
     · -- `(X + Y) ^ pᵏ = X ^ pᵏ + Y ^ pᵏ` in characteristic `p`
       rw [hΦ₀, _root_.add_zero, hk, add_pow_char_pow]
@@ -371,7 +358,7 @@ private theorem exists_pow_sub_one_eq_div [IsSepClosed K] (hF : F.height p = h)
     (hG : G.height p = h) : ∃ c₁ : K, c₁ ≠ 0 ∧ c₁ ^ (p ^ h - 1) =
       PowerSeries.coeff (p ^ h) (F.nsmulSeries p) /
         PowerSeries.coeff (p ^ h) (G.nsmulSeries p) := by
-  have hh := ne_zero_of_height_eq hF
+  have hh := F.ne_zero_of_height_eq_natCast hF
   have hpK : (p : K) = 0 := CharP.cast_eq_zero K p
   have : NeZero ((p ^ h - 1 : ℕ) : K) := ⟨by
     rw [Nat.cast_sub (by have := Nat.one_lt_pow hh hp.out.one_lt; omega), Nat.cast_pow, hpK,
@@ -384,7 +371,7 @@ private theorem exists_pow_sub_one_eq_div [IsSepClosed K] (hF : F.height p = h)
   rintro rfl
   have h1 := Nat.one_lt_pow hh hp.out.one_lt
   rw [zero_pow (by omega)] at hc₁
-  exact div_ne_zero (coeff_nsmulSeries_ne_zero hF) (coeff_nsmulSeries_ne_zero hG) hc₁.symm
+  exact div_ne_zero (F.coeff_nsmulSeries_ne_zero hF) (G.coeff_nsmulSeries_ne_zero hG) hc₁.symm
 
 /-- The first approximation `c₁ X`, where `c₁ ^ (p ^ h - 1) = u / v`, is a homomorphism up to
 degree `2` and satisfies the `p`-series condition in degree `p ^ h`. -/
@@ -393,12 +380,12 @@ private theorem approx_zero_spec (hF : F.height p = h) (hG : G.height p = h) {c�
       PowerSeries.coeff (p ^ h) (G.nsmulSeries p)) :
     PowerSeries.constantCoeff (c₁ • PowerSeries.X ^ 1 : PowerSeries K) = 0 ∧
       PowerSeries.coeff 1 (c₁ • PowerSeries.X ^ 1 : PowerSeries K) = c₁ ∧
-      ((0 + 2 : ℕ) : ℕ∞) ≤ (F.homDefect G (c₁ • PowerSeries.X ^ 1 : PowerSeries K)).order ∧
-      ∀ j, p ^ j ≤ 0 + 1 → PowerSeries.coeff (p ^ j * p ^ h)
+      ((2 : ℕ) : ℕ∞) ≤ (F.homDefect G (c₁ • PowerSeries.X ^ 1 : PowerSeries K)).order ∧
+      ∀ j, p ^ j ≤ 1 → PowerSeries.coeff (p ^ j * p ^ h)
         (pSeriesError F G p (c₁ • PowerSeries.X ^ 1 : PowerSeries K)) = 0 := by
   have hp' := hp.out
-  have hu := coeff_nsmulSeries_ne_zero hF
-  have hv := coeff_nsmulSeries_ne_zero hG
+  have hu := F.coeff_nsmulSeries_ne_zero hF
+  have hv := G.coeff_nsmulSeries_ne_zero hG
   have h₀ : (c₁ • PowerSeries.X ^ 1 : PowerSeries K) = 0 + c₁ • PowerSeries.X ^ 1 := by
     rw [_root_.zero_add]
   refine ⟨by simp, by simp, ?_, fun j hj ↦ ?_⟩
@@ -421,7 +408,7 @@ private theorem approx_zero_spec (hF : F.height p = h) (hG : G.height p = h) {c�
         PowerSeries.coeff (p ^ h) (G.nsmulSeries p)) := by
       rw [← hc₁, ← pow_succ']
       congr 1
-      have := Nat.one_lt_pow (ne_zero_of_height_eq hF) hp'.one_lt
+      have := Nat.one_lt_pow (F.ne_zero_of_height_eq_natCast hF) hp'.one_lt
       omega
     rw [h₀, pow_zero, one_mul, ← one_mul (p ^ h),
       coeff_pSeriesError_add hF hG (map_zero _) one_ne_zero, pSeriesError_zero, map_zero,
@@ -449,7 +436,7 @@ private theorem exists_formalGroupHom_coeff_one_ne_zero [IsSepClosed K] (hF : F.
       ∀ j, p ^ j ≤ n + 1 →
         PowerSeries.coeff (p ^ j * p ^ h) (pSeriesError F G p (approx c₁ c n)) = 0 := by
     induction n with
-    | zero => exact approx_zero_spec hF hG hc₁
+    | zero => simpa only [approx, Nat.zero_add] using approx_zero_spec hF hG hc₁
     | succ n ih =>
       obtain ⟨h₀, h₁, hord, hP⟩ := ih
       obtain ⟨hord', hP'⟩ := hc n (approx c₁ c n) h₀ hord hP
