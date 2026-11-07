@@ -68,6 +68,61 @@ section OrderedSemifield
 variable [Fintype n] [DecidableEq n] [Semifield R] [LinearOrder R] [IsStrictOrderedRing R]
   {K : Matrix n n R}
 
+/-- The average of the permutation matrices over a nonempty finite set of permutations is doubly
+stochastic. -/
+private theorem average_permMatrix_mem_doublyStochastic (s : Finset (Equiv.Perm n))
+    (hs : s.Nonempty) :
+    ∑ σ ∈ s, (s.card : R)⁻¹ • σ.permMatrix R ∈ doublyStochastic R n := by
+  have hcard : (s.card : R) ≠ 0 := by exact_mod_cast hs.card_pos.ne'
+  -- Check the average's marginal sums directly: Convex.sum_mem requires a field.
+  apply mem_doublyStochastic_iff_sum.2
+  simp only [Matrix.sum_apply, Matrix.smul_apply, smul_eq_mul]
+  refine ⟨?_, ?_, ?_⟩
+  · intro i j
+    exact Finset.sum_nonneg fun σ _ ↦
+      mul_nonneg (by positivity) (σ.permMatrix_nonneg i j)
+  · intro i
+    rw [Finset.sum_comm]
+    simp_rw [← Finset.mul_sum, sum_row_of_mem_doublyStochastic
+      (permMatrix_mem_doublyStochastic (R := R))]
+    simp [hcard]
+  · intro j
+    rw [Finset.sum_comm]
+    simp_rw [← Finset.mul_sum, sum_col_of_mem_doublyStochastic
+      (permMatrix_mem_doublyStochastic (R := R))]
+    simp [hcard]
+
+omit [Fintype n] in
+/-- The average of the permutation matrices over a nonempty set `s` of permutations, each of which
+stays inside the support of `K` and which together cover the support, has the zero pattern of
+`K`. -/
+private theorem average_permMatrix_apply_eq_zero_iff {s : Finset (Equiv.Perm n)}
+    (hs : s.Nonempty) (hsub : ∀ σ ∈ s, ∀ k, K k (σ k) ≠ 0)
+    (hcover : ∀ i j, K i j ≠ 0 → ∃ σ ∈ s, σ i = j) (i j : n) :
+    (∑ σ ∈ s, (s.card : R)⁻¹ • σ.permMatrix R) i j = 0 ↔ K i j = 0 := by
+  have hentry : (∑ σ ∈ s, (s.card : R)⁻¹ • σ.permMatrix R) i j
+      = ∑ σ ∈ s, (s.card : R)⁻¹ * σ.permMatrix R i j := by
+    simp only [Matrix.sum_apply, Matrix.smul_apply, smul_eq_mul]
+  constructor
+  · intro hzero
+    by_contra hij
+    obtain ⟨σ, hσmem, hσij⟩ := hcover i j hij
+    have hle : (s.card : R)⁻¹ ≤ (∑ σ ∈ s, (s.card : R)⁻¹ • σ.permMatrix R) i j := by
+      simpa only [hσij] using
+        weight_le_sum_permMatrix s (fun _ ↦ (s.card : R)⁻¹)
+          (fun _ _ ↦ by positivity) hσmem i
+    have hpos : 0 < (s.card : R)⁻¹ := inv_pos.2 (by exact_mod_cast hs.card_pos)
+    exact (hpos.trans_le hle).ne' hzero
+  · intro hij
+    rw [hentry]
+    apply Finset.sum_eq_zero
+    intro σ hσ
+    have hσij : σ i ≠ j := by
+      intro heq
+      exact hsub σ hσ i (heq ▸ hij)
+    simp only [PEquiv.toMatrix_toPEquiv_apply]
+    simp [hσij]
+
 /-- A matrix with total support has the same zero pattern as a doubly stochastic matrix.
 No sign condition on the original entries is needed: only their support matters. -/
 theorem HasTotalSupport.exists_mem_doublyStochastic (hK : HasTotalSupport K) :
@@ -81,51 +136,11 @@ theorem HasTotalSupport.exists_mem_doublyStochastic (hK : HasTotalSupport K) :
       exact hK.1 (Matrix.ext h)
     obtain ⟨σ, -, hσ⟩ := hK.2 i j hij
     exact ⟨σ, Finset.mem_filter.2 ⟨Finset.mem_univ _, hσ⟩⟩
-  have hcard : (s.card : R) ≠ 0 := by exact_mod_cast hs.card_pos.ne'
-  let P : Matrix n n R := ∑ σ ∈ s, (s.card : R)⁻¹ • σ.permMatrix R
-  -- Check the average's marginal sums directly: Convex.sum_mem requires a field.
-  have hP : P ∈ doublyStochastic R n := by
-    apply mem_doublyStochastic_iff_sum.2
-    simp only [P, Matrix.sum_apply, Matrix.smul_apply, smul_eq_mul]
-    refine ⟨?_, ?_, ?_⟩
-    · intro i j
-      exact Finset.sum_nonneg fun σ _ ↦
-        mul_nonneg (by positivity) (σ.permMatrix_nonneg i j)
-    · intro i
-      rw [Finset.sum_comm]
-      simp_rw [← Finset.mul_sum, sum_row_of_mem_doublyStochastic
-        (permMatrix_mem_doublyStochastic (R := R))]
-      simp [hcard]
-    · intro j
-      rw [Finset.sum_comm]
-      simp_rw [← Finset.mul_sum, sum_col_of_mem_doublyStochastic
-        (permMatrix_mem_doublyStochastic (R := R))]
-      simp [hcard]
-  -- Every supported entry receives a positive contribution; unsupported entries receive zero.
-  refine ⟨P, hP, fun i j ↦ ?_⟩
-  have hentry : P i j = ∑ σ ∈ s, (s.card : R)⁻¹ * σ.permMatrix R i j := by
-    simp only [P, Matrix.sum_apply, Matrix.smul_apply, smul_eq_mul]
-  constructor
-  · intro hzero
-    by_contra hij
-    obtain ⟨σ, hσij, hσ⟩ := hK.2 i j hij
-    have hσmem : σ ∈ s := Finset.mem_filter.2 ⟨Finset.mem_univ _, hσ⟩
-    have hle : (s.card : R)⁻¹ ≤ P i j := by
-      simpa only [hσij] using
-        weight_le_sum_permMatrix s (fun _ ↦ (s.card : R)⁻¹)
-          (fun _ _ ↦ by positivity) hσmem i
-    have hpos : 0 < (s.card : R)⁻¹ := inv_pos.2 (by exact_mod_cast hs.card_pos)
-    have hposP : 0 < P i j := hpos.trans_le hle
-    exact hposP.ne' hzero
-  · intro hij
-    rw [hentry]
-    apply Finset.sum_eq_zero
-    intro σ hσ
-    have hσij : σ i ≠ j := by
-      intro heq
-      exact (Finset.mem_filter.1 hσ).2 i (heq ▸ hij)
-    simp only [PEquiv.toMatrix_toPEquiv_apply]
-    simp [hσij]
+  refine ⟨_, average_permMatrix_mem_doublyStochastic s hs,
+    average_permMatrix_apply_eq_zero_iff hs (fun σ hσ ↦ (Finset.mem_filter.1 hσ).2) ?_⟩
+  intro i j hij
+  obtain ⟨σ, hσij, hσ⟩ := hK.2 i j hij
+  exact ⟨σ, Finset.mem_filter.2 ⟨Finset.mem_univ _, hσ⟩, hσij⟩
 
 end OrderedSemifield
 
