@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Convolution
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 import Mathlib.Analysis.Calculus.ContDiff.Convolution
 import TauCeti.Analysis.Calculus.ContDiff.Convolution
-import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 
 /-!
@@ -31,8 +30,6 @@ factor, where the distributional identity for the kernel applies
 
 ## Main declarations
 
-* `HasCompactSupport.iteratedFDeriv_two_convolution_right_apply`: the second derivative of
-  `f ⋆[L, μ] g` in the directions `v`, `w` is `f ⋆[L, μ]` of that of `g`.
 * `HasCompactSupport.laplacian_convolution_right`: `Δ (f ⋆[L, μ] g) = f ⋆[L, μ] Δ g`.
 * `TauCeti.laplacian_convolution_eq_neg_of_integral_laplacian_mul`: if `-ΔK = δ` in the sense of
   distributions, then `-Δ (K ⋆ f) = f` for every `C²` function `f` with compact support.
@@ -47,39 +44,6 @@ variable {E E₀ E' F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] 
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [SFinite μ] [μ.IsAddLeftInvariant]
   [NormedAddCommGroup E₀] [NormedSpace ℝ E₀] [NormedAddCommGroup E'] [NormedSpace ℝ E']
   [NormedAddCommGroup F] [NormedSpace ℝ F] {f : E → E₀} {g : E → E'}
-
-omit [FiniteDimensional ℝ E] in
-/-- **Iterated directional derivatives of a convolution fall on the compactly supported
-factor.** If `f` is locally integrable and `g` is `C²` with compact support, then the derivative
-in the direction `v` of the derivative of `f ⋆ g` in the direction `w` is the convolution of `f`
-with the corresponding second derivative of `g`. -/
-theorem HasCompactSupport.fderiv_fderiv_convolution_right_apply (L : E₀ →L[ℝ] E' →L[ℝ] F)
-    (hcg : HasCompactSupport g) (hf : LocallyIntegrable f μ) (hg : ContDiff ℝ 2 g) (x v w : E) :
-    fderiv ℝ (fun y => fderiv ℝ (f ⋆[L, μ] g) y w) x v =
-      (f ⋆[L, μ] fun y => fderiv ℝ (fun z => fderiv ℝ g z w) y v) x := by
-  have hfw : ContDiff ℝ 1 fun y => fderiv ℝ g y w :=
-    (hg.fderiv_right (m := 1) (by norm_num)).clm_apply contDiff_const
-  have hcw : HasCompactSupport fun y => fderiv ℝ g y w :=
-    (hcg.fderiv (𝕜 := ℝ)).comp_left (g := fun A : E →L[ℝ] E' => A w) (zero_apply w)
-  have h₁ : (fun y => fderiv ℝ (f ⋆[L, μ] g) y w) = f ⋆[L, μ] fun y => fderiv ℝ g y w :=
-    funext fun y => hcg.fderiv_convolution_right_apply L hf (hg.of_le (by norm_num)) y w
-  rw [h₁, hcw.fderiv_convolution_right_apply L hf hfw x v]
-
-omit [FiniteDimensional ℝ E] in
-/-- **Second derivatives of a convolution fall on the compactly supported factor.** If `f` is
-locally integrable and `g` is `C²` with compact support, then the second derivative of `f ⋆ g` in
-the directions `v`, `w` is the convolution of `f` with the second derivative of `g`. -/
-theorem HasCompactSupport.iteratedFDeriv_two_convolution_right_apply (L : E₀ →L[ℝ] E' →L[ℝ] F)
-    (hcg : HasCompactSupport g) (hf : LocallyIntegrable f μ) (hg : ContDiff ℝ 2 g) (x v w : E) :
-    iteratedFDeriv ℝ 2 (f ⋆[L, μ] g) x ![v, w] =
-      (f ⋆[L, μ] fun y => fderiv ℝ (fun z => fderiv ℝ g z w) y v) x := by
-  have hdu : DifferentiableAt ℝ (fderiv ℝ (f ⋆[L, μ] g)) x :=
-    ((hcg.contDiff_convolution_right L hf hg).fderiv_right (m := 1) (by norm_num)).differentiable
-      one_ne_zero x
-  rw [iteratedFDeriv_two_apply]
-  simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
-  rw [← TauCeti.fderiv_clm_apply_const_apply hdu w v]
-  exact hcg.fderiv_fderiv_convolution_right_apply L hf hg x v w
 
 /-- **The Laplacian of a convolution.** If `f` is locally integrable and `g` is `C²` with compact
 support, then `Δ (f ⋆ g) = f ⋆ Δ g`. -/

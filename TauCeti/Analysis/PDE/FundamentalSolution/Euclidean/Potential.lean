@@ -263,8 +263,14 @@ theorem iteratedFDeriv_two_newtonianKernel_convolution_apply_of_notMem_tsupport
   set fw : EuclideanSpace ℝ (Fin n) → F := fun y => fderiv ℝ f y w
   have hfw : ContDiff ℝ 1 fw := (hf.fderiv_right (m := 1) (by norm_num)).clm_apply contDiff_const
   have hcw : HasCompactSupport fw := hc.fderiv_apply (𝕜 := ℝ) w
-  rw [hc.iteratedFDeriv_two_convolution_right_apply (lsmul ℝ ℝ)
-    (locallyIntegrable_newtonianKernel n) hf, convolution_lsmul_swap]
+  have hdu : DifferentiableAt ℝ (fderiv ℝ (G ⋆ f)) x :=
+    ((hc.contDiff_convolution_right _ (locallyIntegrable_newtonianKernel n) hf).fderiv_right
+      (m := 1) (by norm_num)).differentiable one_ne_zero x
+  rw [iteratedFDeriv_two_apply]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
+  rw [← fderiv_clm_apply_const_apply hdu w v,
+    hc.fderiv_fderiv_convolution_right_apply (lsmul ℝ ℝ) (locallyIntegrable_newtonianKernel n) hf,
+    convolution_lsmul_swap]
   -- The kernel `k y = Gₙ(y - x)` is `C²` away from `x`, in particular near `tsupport f`.
   set k : EuclideanSpace ℝ (Fin n) → ℝ := fun y => G (y - x)
   have hk : ∀ y, y ≠ x → ContDiffAt ℝ 2 k y := fun y hy =>
