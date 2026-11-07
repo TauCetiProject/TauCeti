@@ -72,3 +72,53 @@ theorem isBigO_norm_pow_exp_norm_rpow (n : ℕ) {b : ℝ} (hb : 0 < b) :
   exact h.comp_tendsto tendsto_norm_cobounded_atTop
 
 end TauCeti
+
+namespace Real
+
+/-- The Mellin growth scale `(1+r) log (2+r)` is negligible compared with every power above one. -/
+theorem isLittleO_add_one_mul_log_add_two_rpow {p : ℝ} (hp : 1 < p) :
+    (fun r : ℝ ↦ (1 + r) * log (2 + r)) =o[atTop] fun r ↦ r ^ p := by
+  have hlin : (fun r : ℝ ↦ 1 + r) =O[atTop] fun r ↦ r := by
+    apply IsBigO.of_bound 2
+    filter_upwards [eventually_ge_atTop (1 : ℝ)] with r hr
+    rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg (by linarith),
+      abs_of_nonneg (by linarith)]
+    linarith
+  have hlog : (fun r : ℝ ↦ log (2 + r)) =O[atTop] log := by
+    apply IsBigO.of_bound 2
+    filter_upwards [eventually_ge_atTop (2 : ℝ)] with r hr
+    rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg (log_nonneg (by linarith)),
+      abs_of_nonneg (log_nonneg (by linarith))]
+    calc
+      log (2 + r) ≤ log (r * r) := log_le_log (by linarith) (by nlinarith)
+      _ = 2 * log r := by rw [log_mul (by linarith) (by linarith)]; ring
+  refine (hlin.mul_isLittleO (hlog.trans_isLittleO
+    (isLittleO_log_rpow_atTop (sub_pos.mpr hp)))).congr' .rfl ?_
+  filter_upwards [eventually_gt_atTop (0 : ℝ)] with r hr
+  calc
+    r * r ^ (p - 1) = r ^ (1 + (p - 1)) := by rw [rpow_add hr, rpow_one]
+    _ = r ^ p := by congr 1; ring
+/-- The logarithmic growth scale is stable under nonnegative affine majorants. -/
+theorem add_one_mul_log_add_two_le {r t A : ℝ} (hr : 0 ≤ r) (ht : 0 ≤ t)
+    (hA : 0 ≤ A) (htA : t ≤ A * (1 + r)) :
+    (1 + t) * log (2 + t) ≤ (A + 2) * (2 * (A + 2) + 1) * (1 + r) * log (2 + r) := by
+  let M := A + 2
+  have hM : 0 < M := by dsimp [M]; positivity
+  have hL : (1 / 2 : ℝ) ≤ log (2 + r) := by
+    have h2 : (1 / 2 : ℝ) ≤ log 2 := by
+      convert one_sub_inv_le_log_of_pos (by norm_num : (0 : ℝ) < 2) using 1; norm_num
+    exact h2.trans (log_le_log (by norm_num) (by linarith))
+  have h1 : 1 + t ≤ M * (1 + r) := by dsimp [M]; nlinarith
+  have h2 : 2 + t ≤ M * (2 + r) := by dsimp [M]; nlinarith
+  have hlog : log (2 + t) ≤ log M + log (2 + r) := by
+    rw [← log_mul hM.ne' (by positivity : 2 + r ≠ 0)]
+    exact log_le_log (by positivity) h2
+  have hlogM : log M ≤ M := (log_le_sub_one_of_pos hM).trans (by linarith)
+  have hlog' : log (2 + t) ≤ (2 * M + 1) * log (2 + r) := by
+    nlinarith [mul_le_mul_of_nonneg_left hL (by positivity : 0 ≤ 2 * M)]
+  calc
+    _ ≤ (M * (1 + r)) * ((2 * M + 1) * log (2 + r)) :=
+      mul_le_mul h1 hlog' (log_nonneg (by linarith)) (by positivity)
+    _ = _ := by dsimp [M]; ring
+
+end Real
