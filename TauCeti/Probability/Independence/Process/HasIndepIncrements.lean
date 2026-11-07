@@ -11,6 +11,7 @@ import Mathlib.Probability.Independence.Process.Basic
 import Mathlib.Probability.IdentDistribIndep
 import Mathlib.Probability.Process.FiniteDimensionalLaws
 import Mathlib.Data.Finset.Sort
+import TauCeti.Data.Finset.Sort
 import TauCeti.Probability.Independence.Sup
 
 /-!
@@ -56,30 +57,6 @@ variable {T Ω E : Type*} [LinearOrder T] [OrderBot T] [MeasurableSpace Ω]
   [MeasurableSpace E] [AddCommGroup E] [MeasurableAdd₂ E] [MeasurableSub₂ E]
   {P : Measure Ω} {X : T → Ω → E}
 
-open Classical in
-/-- The sorted past of a finite set, followed by the two increment endpoints `s ≤ t`, is a
-monotone sequence of times. -/
-private theorem monotone_pastTimes (I : Finset T) {s t : T} (hI : ∀ i ∈ I, i ≤ s) (hst : s ≤ t) :
-    Monotone (fun n : ℕ ↦ if h : n = 0 then (⊥ : T) else
-      if h : n ≤ I.card then I.orderEmbOfFin rfl ⟨n - 1, by omega⟩ else
-        if n = I.card + 1 then s else t) := by
-  apply monotone_nat_of_le_succ
-  intro n
-  by_cases hn : n = 0
-  · simp [hn]
-  by_cases hnI : n ≤ I.card
-  · by_cases hnI' : n + 1 ≤ I.card
-    · simp [hn, hnI, hnI']
-    · have hncard : n = I.card := by omega
-      have hcard : I.card ≠ 0 := by omega
-      simpa [hncard, hcard] using
-        hI _ (I.orderEmbOfFin_mem rfl ⟨n - 1, by omega⟩)
-  · by_cases hncard : n = I.card + 1
-    · simp [hncard, hst]
-    · have hnlt : ¬n < I.card := by omega
-      have hne : n ≠ I.card := by omega
-      simp [hn, hnI, hncard, hnlt, hne]
-
 /-- A finite vector of past values is independent of a later increment. -/
 theorem HasIndepIncrements.indepFun_finset_sub (hX : HasIndepIncrements X P)
     (hm : ∀ t, Measurable (X t)) (h0 : ∀ᵐ ω ∂P, X ⊥ ω = 0)
@@ -90,7 +67,7 @@ theorem HasIndepIncrements.indepFun_finset_sub (hX : HasIndepIncrements X P)
   let τ : ℕ → T := fun n ↦ if h : n = 0 then ⊥ else
     if h : n ≤ I.card then I.orderEmbOfFin rfl ⟨n - 1, by omega⟩ else
       if n = I.card + 1 then s else t
-  have hτ : Monotone τ := monotone_pastTimes I hI hst
+  have hτ : Monotone τ := Finset.monotone_pastTimes I hI hst
   let D : ℕ → Ω → E := fun n ω ↦ X (τ (n + 1)) ω - X (τ n) ω
   have hD := hX.nat hτ
   -- Separate the adjacent increments generating the past from the last increment.
