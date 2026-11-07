@@ -668,20 +668,6 @@ theorem isRecut_recutOfIsEmpty
   rw [D.recutOfIsEmpty_eq_recut hone hrectangle hpentagon]
   exact D.toRectangleDecomposition.isRecut_recut hone _ _
 
-/-- The forgotten recut of a rectangle-pentagon decomposition with empty rectangle and pentagon and
-a common initial side is a recut of the left-equals-left kind. -/
-private theorem isRecutOfLeftEqLeft_recutOfIsEmpty
-    (D : GridRectanglePentagonDecomposition a s x z)
-    (hcommon : D.rectangle.left = D.pentagon.left)
-    (hone : D.toRectangleDecomposition.HasOneCommonSide)
-    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty) :
-    D.toRectangleDecomposition.IsRecutOfLeftEqLeft
-      (D.recutOfIsEmpty hone hrectangle hpentagon) := by
-  rw [D.recutOfIsEmpty_eq_recut]
-  exact D.toRectangleDecomposition.isRecutOfLeftEqLeft_recut
-    (by simpa only [toRectangleDecomposition_first_left,
-      toRectangleDecomposition_second_left] using hcommon) hone _ _
-
 /-- If the rectangle of a pentagon-rectangle decomposition `E` starts at a column `c` strictly
 inside `D`'s rectangle, ends where it does, and `E` has the swapped middle state, then `E`'s
 rectangle has the same bottom and top rows. -/
@@ -728,7 +714,8 @@ theorem recut_rectangle_branch_data_of_left_eq_left
   have hE : E.toRectangleDecomposition = D.recutOfIsEmpty hone hrectangle hpentagon := by
     simpa only [E, D.recutOfIsEmpty_eq_recut] using
       D.recutLeftEqLeft_toRectangleDecomposition hcommon hone hrectangle hpentagon
-  have hdata := D.isRecutOfLeftEqLeft_recutOfIsEmpty hcommon hone hrectangle hpentagon
+  have hdata := D.isRecutOfLeftEqLeft_recut hcommon hone hrectangle hpentagon
+  rw [← D.recutOfIsEmpty_eq_recut hone hrectangle hpentagon] at hdata
   have hEright : E.rectangle.right = D.rectangle.right := by
     have h := hdata.recut_sides.2
     rw [← hE] at h
