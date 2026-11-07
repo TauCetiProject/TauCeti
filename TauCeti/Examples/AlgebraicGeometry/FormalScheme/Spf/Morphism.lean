@@ -61,12 +61,12 @@ end Evaluation
 section Nonreduced
 
 /-- The discrete topology on the nonreduced coefficient ring. -/
-local instance zmodFourTopology : TopologicalSpace (ZMod 4) := ⊥
-local instance : DiscreteTopology (ZMod 4) := ⟨rfl⟩
+private local instance zmodFourTopology : TopologicalSpace (ZMod 4) := ⊥
+private local instance : DiscreteTopology (ZMod 4) := ⟨rfl⟩
 
 /-- The discrete topology on its polynomial ring. -/
-local instance zmodFourPolynomialTopology : TopologicalSpace (Polynomial (ZMod 4)) := ⊥
-local instance : DiscreteTopology (Polynomial (ZMod 4)) := ⟨rfl⟩
+private local instance zmodFourPolynomialTopology : TopologicalSpace (Polynomial (ZMod 4)) := ⊥
+private local instance : DiscreteTopology (Polynomial (ZMod 4)) := ⟨rfl⟩
 
 -- The maps retain nilpotent information: evaluation at zero differs from evaluation at two.
 example :
@@ -94,8 +94,8 @@ end Composition
 section Zero
 
 /-- The discrete topology on the zero ring. -/
-local instance zmodOneTopology : TopologicalSpace (ZMod 1) := ⊥
-local instance : DiscreteTopology (ZMod 1) := ⟨rfl⟩
+private local instance zmodOneTopology : TopologicalSpace (ZMod 1) := ⊥
+private local instance : DiscreteTopology (ZMod 1) := ⟨rfl⟩
 
 example : map (RingHom.id (ZMod 1)) continuous_id = 𝟙 (Spf (ZMod 1)) := map_id
 
@@ -105,7 +105,7 @@ section Padic
 
 variable (p : ℕ) [Fact p.Prime]
 
-local instance : IsAdicRing ℤ_[p] :=
+private local instance : IsAdicRing ℤ_[p] :=
   ⟨IsLocalRing.maximalIdeal ℤ_[p],
     by rw [PadicInt.maximalIdeal_eq_span_p]; exact Submodule.fg_span_singleton _,
     Huber.PadicInt.isAdic_maximalIdeal, inferInstance⟩
