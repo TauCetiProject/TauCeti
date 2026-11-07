@@ -66,6 +66,30 @@ theorem exists_finset_orderAt_eq_iInf_trailingDegree (D : ℕ)
     apply Polynomial.trailingDegree_le_of_ne_zero
     simpa only [coeff_aeval_C_add_C_mul_X] using hv
 
+/-- With a single variable, the substitution `x ↦ a + y` along a new variable has a polynomial
+retraction, so it preserves ambient order at every center. -/
+private theorem orderAt_aeval_const_add_X_eq (p : MvPolynomial (Fin 1) K) (a : Fin 1 → K) :
+    p.orderAt a =
+      (aeval (fun _ : Fin 1 ↦ C (a 0) + X (1 : Fin 2)) p).orderAt (0 : Fin 2 → K) := by
+  let g : Fin 1 → MvPolynomial (Fin 2) K := fun _ ↦ C (a 0) + X 1
+  let h : Fin 2 → MvPolynomial (Fin 1) K := ![0, X 0 - C (a 0)]
+  have hcomp : aeval h (aeval g p) = p := by
+    rw [← AlgHom.comp_apply]
+    have : (aeval h).comp (aeval g) = AlgHom.id K (MvPolynomial (Fin 1) K) := by
+      ext i : 1
+      simp [g, h, Subsingleton.elim i 0]
+    rw [this]
+    rfl
+  have hg : (fun i ↦ eval (0 : Fin 2 → K) (g i)) = a := by
+    ext i
+    simp [g, Subsingleton.elim i 0]
+  have hh : (fun i ↦ eval a (h i)) = (0 : Fin 2 → K) := by
+    ext i
+    fin_cases i <;> simp [h]
+  exact le_antisymm
+    (by simpa only [hg] using p.orderAt_le_orderAt_aeval g 0)
+    (by simpa only [hh, hcomp] using (aeval g p).orderAt_le_orderAt_aeval h a)
+
 /-- Finitely many fixed base directions detect ambient order on transverse planes at
 all centers, uniformly for polynomials of bounded total degree. The plane coordinates are
 the base-line parameter and the distinguished root coordinate, respectively. -/
@@ -86,29 +110,12 @@ theorem exists_finset_orderAt_eq_iInf_transverse (n D : ℕ)
     · intro v _ i
       exact Fin.elim0 i
     simp only [Finset.mem_singleton, iInf_subtype, iInf_iInf_eq_left]
-    let g : Fin 1 → MvPolynomial (Fin 2) K := fun _ ↦ C (a 0) + X 1
-    let h : Fin 2 → MvPolynomial (Fin 1) K := ![0, X 0 - C (a 0)]
-    have hcomp : aeval h (aeval g p) = p := by
-      rw [← AlgHom.comp_apply]
-      have : (aeval h).comp (aeval g) = AlgHom.id K (MvPolynomial (Fin 1) K) := by
-        ext i : 1
-        simp [g, h, Subsingleton.elim i 0]
-      rw [this]
-      rfl
-    have hg : (fun i ↦ eval (0 : Fin 2 → K) (g i)) = a := by
-      ext i
-      simp [g, Subsingleton.elim i 0]
-    have hh : (fun i ↦ eval a (h i)) = (0 : Fin 2 → K) := by
-      ext i
-      fin_cases i <;> simp [h]
-    have horder := le_antisymm
-      (by simpa only [hg] using p.orderAt_le_orderAt_aeval g 0)
-      (by simpa only [hh, hcomp] using (aeval g p).orderAt_le_orderAt_aeval h a)
+    have horder := orderAt_aeval_const_add_X_eq p a
     convert horder using 2
     congr 1
     ext i
     fin_cases i
-    simp [g]
+    simp
   -- An infinite side of a positive-dimensional box supplies the scalar infinitude needed
   -- to apply the line detector with a free distinguished-coordinate direction.
   have : Infinite K :=
