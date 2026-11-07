@@ -18,13 +18,13 @@ parameter. The Gaussian `archGaussian y x` is `exp (-π ∑ w, y w * |x w|²)`; 
 occurs once in this sum, in accordance with the Euclidean pairing `mixedInner`.
 
 For positive parameters, the coordinatewise square-root dilation identifies this Gaussian with
-the standard Euclidean Schwartz Gaussian. Its sum over any discrete lattice converges absolutely.
+the standard Euclidean Schwartz Gaussian. Its sum over any discrete lattice converges absolutely,
+and the resulting theta series is continuous on the positive parameters
+(`continuousAt_latticeTheta`), being dominated by its value at any smaller positive parameter
+(`norm_latticeTheta_le`).
 The sum `latticeTheta L y` is invariant under the parameter action of a unit when `L` is an ideal
 lattice. This invariance is what allows integration over a fundamental domain on the norm-one
 surface, rather than a divergent sum over infinitely many generators of each ideal.
-
-The Gaussian decreases as the parameters increase, so the theta series is locally dominated and
-continuous on the positive parameters (`continuousOn_latticeTheta`).
 
 The construction uses `SchwartzMap.gaussian` and `ZLattice.summable_poisson_left`; it does not
 introduce another generic Euclidean Gaussian or a theta function on the upper half-plane.
@@ -150,6 +150,26 @@ theorem summable_archGaussian (L : Submodule ℤ (mixedSpace K)) [DiscreteTopolo
   classical
   simpa using ZLattice.summable_poisson_left L (archGaussianSchwartz y hy) 0
 
+/-- Absolute convergence of the archimedean Gaussian over a discrete lattice, in norm. -/
+theorem summable_norm_archGaussian (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L]
+    (y : realSpace K) (hy : ∀ w, 0 < y w) :
+    Summable fun x : L ↦ ‖archGaussian y x‖ :=
+  summable_norm_iff.mpr (summable_archGaussian L y hy)
+
+/-- Increasing the parameters decreases the archimedean Gaussian. -/
+theorem norm_archGaussian_le {y y' : realSpace K} (h : ∀ w, y' w ≤ y w) (x : mixedSpace K) :
+    ‖archGaussian y x‖ ≤ ‖archGaussian y' x‖ := by
+  simp only [archGaussian_apply, Complex.norm_real, Real.norm_eq_abs, Real.abs_exp,
+    Real.exp_le_exp, neg_mul, neg_le_neg_iff]
+  exact mul_le_mul_of_nonneg_left
+    (Finset.sum_le_sum fun w _ ↦ mul_le_mul_of_nonneg_right (h w) (sq_nonneg _)) Real.pi_pos.le
+
+/-- The archimedean Gaussian at a fixed point depends continuously on the parameters. -/
+theorem continuous_archGaussian (x : mixedSpace K) :
+    Continuous fun y : realSpace K ↦ archGaussian y x := by
+  simp only [archGaussian_apply]
+  fun_prop
+
 /-- The theta kernel of a lattice at a parameter with one coordinate per infinite place.
 Its defining series converges when `L` is discrete and all the coordinates of `y` are positive. -/
 def latticeTheta (L : Submodule ℤ (mixedSpace K)) (y : realSpace K) : ℂ :=
@@ -170,42 +190,39 @@ theorem latticeTheta_eq_one_add (L : Submodule ℤ (mixedSpace K)) [DiscreteTopo
     Equiv.subtypeEquivRight fun x ↦ by simp
   exact e.tsum_eq (fun x ↦ archGaussian y (x : L))
 
-/-- The archimedean Gaussian decreases as the parameters increase. -/
-theorem norm_archGaussian_le {y z : realSpace K} (h : ∀ w, z w ≤ y w) (x : mixedSpace K) :
-    ‖archGaussian y x‖ ≤ ‖archGaussian z x‖ := by
-  simp only [archGaussian_apply, Complex.norm_real, Real.norm_eq_abs, Real.abs_exp]
-  refine Real.exp_le_exp.mpr (mul_le_mul_of_nonpos_left ?_ (neg_nonpos.mpr Real.pi_pos.le))
-  exact Finset.sum_le_sum fun w _ ↦ mul_le_mul_of_nonneg_right (h w) (sq_nonneg _)
-
-/-- For a fixed point of the mixed space, the archimedean Gaussian is continuous in the
-parameters. -/
-theorem continuous_archGaussian_left (x : mixedSpace K) :
-    Continuous fun y : realSpace K ↦ archGaussian y x := by
-  simp only [archGaussian_apply]
-  fun_prop
-
-/-- The theta series at `y` is bounded by the absolutely convergent theta series at any positive
-parameter below `y`. -/
+/-- The theta series is dominated by its value at any smaller positive parameter, which is a
+positive real number. -/
 theorem norm_latticeTheta_le (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L]
-    {y z : realSpace K} (hz : ∀ w, 0 < z w) (h : ∀ w, z w ≤ y w) :
-    ‖latticeTheta L y‖ ≤ ∑' x : L, ‖archGaussian z x‖ := by
-  have hy := (summable_archGaussian L y fun w ↦ (hz w).trans_le (h w)).norm
-  exact (norm_tsum_le_tsum_norm hy).trans <|
-    hy.tsum_le_tsum (fun x ↦ norm_archGaussian_le h x) (summable_archGaussian L z hz).norm
+    {y y' : realSpace K} (hy' : ∀ w, 0 < y' w) (h : ∀ w, y' w ≤ y w) :
+    ‖latticeTheta L y‖ ≤ ‖latticeTheta L y'‖ := by
+  have hy : ∀ w, 0 < y w := fun w ↦ (hy' w).trans_le (h w)
+  have hnorm : ‖latticeTheta L y'‖ = ∑' x : L, ‖archGaussian y' x‖ := by
+    simp only [latticeTheta_def, archGaussian_apply, Complex.norm_real, Real.norm_eq_abs,
+      Real.abs_exp, ← Complex.ofReal_tsum]
+    exact abs_of_nonneg (tsum_nonneg fun _ ↦ (Real.exp_pos _).le)
+  rw [hnorm, latticeTheta_def]
+  exact (norm_tsum_le_tsum_norm (summable_norm_archGaussian L y hy)).trans
+    ((summable_norm_archGaussian L y hy).tsum_le_tsum (fun x ↦ norm_archGaussian_le h x)
+      (summable_norm_archGaussian L y' hy'))
 
-/-- The theta series of a discrete lattice is continuous on the positive parameters: near `y₀` it
-is dominated by the theta series at `y₀ / 2`. -/
-theorem continuousOn_latticeTheta (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L] :
-    ContinuousOn (latticeTheta L) {y : realSpace K | ∀ w, 0 < y w} := by
-  intro y₀ hy₀
-  set z : realSpace K := fun w ↦ y₀ w / 2
-  have hz (w : InfinitePlace K) : 0 < z w := half_pos (hy₀ w)
-  have hcont : ContinuousOn (latticeTheta L) {y : realSpace K | ∀ w, z w < y w} :=
-    continuousOn_tsum (fun x ↦ (continuous_archGaussian_left (x : mixedSpace K)).continuousOn)
-      (summable_archGaussian L z hz).norm fun x y hy ↦ norm_archGaussian_le (fun w ↦ (hy w).le) _
-  exact (hcont.continuousAt (Filter.eventually_all.2 fun w ↦
-    continuousAt_const.eventually_lt (continuous_apply w).continuousAt
-      (half_lt_self (hy₀ w)))).continuousWithinAt
+/-- The theta series of a discrete lattice is continuous at every positive parameter: on the
+parameters bounded below by a positive constant, its terms are dominated by the Gaussian at that
+constant. -/
+theorem continuousAt_latticeTheta (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L]
+    {y₀ : realSpace K} (hy₀ : ∀ w, 0 < y₀ w) : ContinuousAt (latticeTheta L) y₀ := by
+  obtain ⟨w₀, -, hw₀⟩ := Finset.exists_min_image Finset.univ y₀ Finset.univ_nonempty
+  set δ := y₀ w₀ / 2
+  have hδ : 0 < δ := half_pos (hy₀ w₀)
+  have hU : IsOpen {y : realSpace K | ∀ w, δ < y w} := by
+    rw [Set.ofPred_forall]
+    exact isOpen_iInter_of_finite fun w ↦ isOpen_lt continuous_const (continuous_apply w)
+  have hy₀U : y₀ ∈ {y : realSpace K | ∀ w, δ < y w} := fun w ↦
+    (half_lt_self (hy₀ w₀)).trans_le (hw₀ w (Finset.mem_univ w))
+  have hcont : ContinuousOn (latticeTheta L) {y : realSpace K | ∀ w, δ < y w} :=
+    continuousOn_tsum (fun x ↦ (continuous_archGaussian (x : mixedSpace K)).continuousOn)
+      (summable_norm_archGaussian L (fun _ ↦ δ) fun _ ↦ hδ)
+      fun x y hy ↦ norm_archGaussian_le (fun w ↦ (hy w).le) x
+  exact hcont.continuousAt (hU.mem_nhds hy₀U)
 
 /-- The theta series of an ideal lattice descends to the quotient of positive parameters
 by the unit action. No restriction on the unit rank is needed. -/

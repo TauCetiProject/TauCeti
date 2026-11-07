@@ -222,22 +222,16 @@ theorem surfacePart_inv {y : realSpace K} (hy : 0 ≤ archNorm y) :
   simp only [surfacePart_def, surfaceScale_apply, Pi.inv_apply, archNorm_inv, inv_inv,
     mul_inv, Real.inv_rpow hy]
 
+/-- Inverting a radially scaled parameter inverts both coordinates. -/
+theorem surfaceScale_inv (x : realSpace K) {t : ℝ} (ht : 0 ≤ t) :
+    (surfaceScale x t)⁻¹ = surfaceScale x⁻¹ t⁻¹ := by
+  ext w
+  simp [Real.inv_rpow ht, mul_comm]
+
 /-- Multiplication by a norm-one parameter translates only the surface coordinate. -/
 theorem surfacePart_mul {c : realSpace K} (hc : archNorm c = 1) (y : realSpace K) :
     surfacePart (c * y) = c * surfacePart y := by
   ext w
   simp [surfacePart_def, map_mul, hc, mul_assoc]
-
-/-- Inverting a radially scaled parameter inverts both of its coordinates. -/
-theorem inv_surfaceScale (x : realSpace K) {t : ℝ} (ht : 0 ≤ t) :
-    (surfaceScale x t)⁻¹ = surfaceScale x⁻¹ t⁻¹ := by
-  ext w
-  simp only [surfaceScale_apply, Pi.inv_apply, mul_inv, Real.inv_rpow ht]
-
-/-- Multiplication by a parameter commutes with radial scaling. -/
-theorem mul_surfaceScale (c x : realSpace K) (t : ℝ) :
-    c * surfaceScale x t = surfaceScale (c * x) t := by
-  ext w
-  simp [mul_assoc]
 
 end TauCeti.LFunctions

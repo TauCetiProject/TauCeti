@@ -25,9 +25,9 @@ the measures of that decomposition:
   (`map_archHaar_mul_left`) and coordinatewise inversion (`map_archHaar_inv`).
 * `surfaceHaar K` is the measure `d*x` on `S` induced by the product-over-places normalization of
   `dy / y`: the mass of `A ⊆ S` is the `dy / y`-mass of the parameters with surface part in `A`
-  and norm in `[1, e]` (`surfaceHaar_apply`). It is σ-finite, and bounded subsets of `S` have
-  finite mass (`surfaceHaar_lt_top_of_isBounded`). Neukirch's canonical surface measure is `2 ^ r₂`
-  times `surfaceHaar K`.
+  and norm in `[1, e]` (`surfaceHaar_apply`). It is σ-finite, and a bounded set of parameters
+  meets `S` in a set of finite mass (`surfaceHaar_preimage_lt_top`). Neukirch's canonical surface
+  measure is `2 ^ r₂` times `surfaceHaar K`.
 * `archHaar_eq_map`: `dy / y` is the image of the product measure `d*x × dt / t` under
   `(x, t) ↦ x t^(1/n)`. The corresponding rectangle-mass formula is
   `archHaar_surfacePart_preimage_inter`, allowing any measurable radial shell.
@@ -67,8 +67,12 @@ times this one. -/
 def archHaar : Measure (realSpace K) :=
   Measure.pi fun _ ↦ multHaar
 
+variable (K) in
+/-- The defining formula of `dy / y`, as the product over the infinite places of `dt / t`. -/
+theorem archHaar_def : archHaar K = Measure.pi fun _ ↦ multHaar := (rfl)
+
 instance : SigmaFinite (archHaar K) := by
-  unfold archHaar
+  rw [archHaar_def]
   infer_instance
 
 /-- `dy / y` is Lebesgue measure on the positive orthant with density `∏_w y_w⁻¹`. -/
@@ -208,22 +212,17 @@ instance : SigmaFinite (surfaceHaar K) :=
       finite := surfaceHaar_surfaceBox_lt_top
       spanning := iUnion_surfaceBox }
 
-/-- A bounded subset of `S` has finite `d*x`-mass: its coordinates are bounded above, hence also
-bounded below on `S`, so it lies in a box of finite mass. -/
-theorem surfaceHaar_lt_top_of_isBounded {A : Set (normOneSurface K)}
-    (hA : Bornology.IsBounded (Subtype.val '' A)) : surfaceHaar K A < ∞ := by
-  obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.mp hA
-  set C' := max C 1
-  obtain ⟨k, hk⟩ := exists_nat_ge (C' ^ Module.finrank ℚ K)
-  have hk' : C' ^ Module.finrank ℚ K ≤ k + 1 := hk.trans (le_add_of_nonneg_right zero_le_one)
-  refine (measure_mono (fun x hx ↦ ?_ : A ⊆ surfaceBox k)).trans_lt
+/-- A bounded set of parameters meets `S` in a set of finite `d*x`-mass: on `S` an upper bound on
+the coordinates is also a positive lower bound. -/
+theorem surfaceHaar_preimage_lt_top {D : Set (realSpace K)} (hD : Bornology.IsBounded D) :
+    surfaceHaar K (Subtype.val ⁻¹' D) < ∞ := by
+  obtain ⟨C, hC1, hC⟩ := exists_forall_mem_Icc_of_isBounded hD
+  obtain ⟨k, hk⟩ := exists_nat_ge C
+  have hCk : C ≤ k + 1 := hk.trans (le_add_of_nonneg_right zero_le_one)
+  refine (measure_mono (show Subtype.val ⁻¹' D ⊆ surfaceBox k from fun x hx w _ ↦ ?_)).trans_lt
     (surfaceHaar_surfaceBox_lt_top k)
-  intro w _
-  obtain ⟨hlo, hhi⟩ := mem_Icc_of_mem_normOneSurface_of_norm_le x.2 (hC _ ⟨x, hx, rfl⟩) w
-  refine ⟨?_, ?_⟩
-  · rw [inv_le_comm₀ (by positivity) ((mem_normOneSurface.mp x.2).1 w)]
-    exact (inv_le_of_inv_le₀ (by positivity) hlo).trans hk'
-  · exact hhi.trans ((le_self_pow₀ (le_max_right _ _) Module.finrank_pos.ne').trans hk')
+  obtain ⟨h1, h2⟩ := hC x hx x.property w
+  exact ⟨(inv_anti₀ (zero_lt_one.trans_le hC1) hCk).trans h1, h2.trans hCk⟩
 
 /-! ### The decomposition `dy / y = d*x × dt / t` -/
 
