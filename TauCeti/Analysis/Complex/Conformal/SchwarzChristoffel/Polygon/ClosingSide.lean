@@ -161,7 +161,7 @@ theorem im_schwarzChristoffelVertex_zero_lt (a e : Fin (n + 1) → ℝ) (z₀ : 
   rw [← hW, ← hW]
   simp only [Fin.val_zero]
   by_cases hθk : θ k ≤ -Real.pi
-  · exact height_lt_of_monotone_turning_of_le_neg_pi W θ hθmono hθlow hkval hkn' hθk hstep
+  · exact height_lt_of_monotone_turning_of_le_neg_pi W θ hθmono hθlow hkval hθk hstep
   · have hWn : W n = W 0 := by
       have h1 := hW (Fin.last n)
       have h0 := hW 0

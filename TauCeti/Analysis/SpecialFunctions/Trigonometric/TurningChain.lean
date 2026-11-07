@@ -152,7 +152,7 @@ steps `W (l + 1) - W l` are positive multiples of `sin (θ l)` for a strictly in
 `θ` bounded below by `-2π`, and `θ k ≤ -π`. -/
 theorem height_lt_of_monotone_turning_of_le_neg_pi {n : ℕ} (W : ℕ → ℝ) (θ : Fin (n + 1) → ℝ)
     (hθmono : StrictMono θ) (hθlow : ∀ l, -2 * Real.pi < θ l) {k : Fin (n + 1)}
-    (hkval : 0 < k.val) (hkn' : k.val < n) (hθk : θ k ≤ -Real.pi)
+    (hkval : 0 < k.val) (hθk : θ k ≤ -Real.pi)
     (hstep : ∀ l (hl : l < n), ∃ d : ℝ, 0 < d ∧
       W (l + 1) - W l = d * Real.sin (θ ⟨l, by omega⟩)) :
     W 0 < W k.val := by
@@ -160,7 +160,7 @@ theorem height_lt_of_monotone_turning_of_le_neg_pi {n : ℕ} (W : ℕ → ℝ) (
   rw [← sub_pos, ← htel]
   refine Finset.sum_pos (fun l hl ↦ ?_) (Finset.nonempty_Ico.mpr hkval)
   rw [Finset.mem_Ico] at hl
-  obtain ⟨d, hd, h⟩ := hstep l (hl.2.trans hkn')
+  obtain ⟨d, hd, h⟩ := hstep l (hl.2.trans_le (Nat.lt_succ_iff.mp k.isLt))
   rw [h]
   have hlt : θ ⟨l, by omega⟩ < θ k := hθmono (Fin.mk_lt_mk.mpr hl.2)
   refine mul_pos hd ?_
