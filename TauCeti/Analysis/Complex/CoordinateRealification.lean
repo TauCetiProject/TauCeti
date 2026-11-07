@@ -306,6 +306,9 @@ theorem realifyCoords_complexifyCoords (g : (Fin m → ℝ) →L[ℝ] (Fin n →
   ext w : 1
   apply (splitCoords (𝕜 := ℝ) n n).injective
   rw [splitCoords_realifyCoords_complexifyCoords]
-  simp
+  -- Cancel `splitCoords` against its inverse before `splitCoords_symm_apply` unfolds the
+  -- inverse: with equal block sizes, `simp` turns `Fin.natAdd` into `Fin.addNat`, where
+  -- `Fin.append_right` no longer applies.
+  simp [-splitCoords_symm_apply]
 
 end ContinuousLinearMap
