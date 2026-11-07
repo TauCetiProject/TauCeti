@@ -37,58 +37,6 @@ namespace TauCeti.EisensteinSeries
 variable {u v N t k : ℕ} [NeZero N]
   (ψ : DirichletCharacter ℂ u) (φ : DirichletCharacter ℂ v)
 
-/-- The `u = 1` constant coefficient identity: for a primitive character `φ` with
-`φ(-1) = (-1)ᵏ`, the normalization of the Eisenstein series cancels against the Gauss sum and
-the `L`-value, leaving `-Bₖ,φ / (2k)`. -/
-private theorem inv_normalization_mul_tsum_eq_generalizedBernoulli [NeZero v]
-    (hk : 3 ≤ (k : ℤ)) (hφ : φ.IsPrimitive) (hφpar : φ (-1) = (-1 : ℂ) ^ k) :
-    (2 * (-2 * π * I) ^ k / (((k - 1).factorial : ℂ) * (v : ℂ) ^ k) *
-        gaussSum φ⁻¹ stdAddChar)⁻¹ * ∑' d : ℤ, φ⁻¹ d * (d : ℂ) ^ (-(k : ℤ)) =
-      -φ.generalizedBernoulli k / (2 * (k : ℂ)) := by
-  have hprod :=
-    DirichletCharacter.gaussSum_mul_gaussSum_inv_eq_neg_one_mul_card_of_isPrimitive hφ
-    (ZMod.isPrimitive_stdAddChar v)
-  rw [ZMod.card, hφpar] at hprod
-  have hv : (v : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne v)
-  have hφinv : (φ⁻¹).IsPrimitive := by
-    rwa [DirichletCharacter.isPrimitive_def, DirichletCharacter.conductor_inv]
-  have hτ := DirichletCharacter.gaussSum_ne_zero_of_isPrimitive hv hφ
-    (ZMod.isPrimitive_stdAddChar v)
-  have hτinv := DirichletCharacter.gaussSum_ne_zero_of_isPrimitive hv hφinv
-    (ZMod.isPrimitive_stdAddChar v)
-  have hf : ((k - 1).factorial : ℂ) ≠ 0 :=
-    Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _)
-  have hA : (-2 * π * I : ℂ) ≠ 0 := by
-    simp [Real.pi_ne_zero, Complex.I_ne_zero]
-  have hC : 2 * (-2 * π * I) ^ k / ((k - 1).factorial * (v : ℂ) ^ k) *
-      gaussSum φ⁻¹ stdAddChar ≠ 0 := by
-    exact mul_ne_zero (div_ne_zero (mul_ne_zero (by norm_num) (pow_ne_zero _ hA))
-      (mul_ne_zero hf (pow_ne_zero _ hv))) hτinv
-  rw [inv_mul_eq_iff_eq_mul₀ hC]
-  apply mul_left_cancel₀ hτ
-  -- TauCeti's gaussSum_mul_tsum_inv_pow_eq_generalizedBernoulli evaluates the integer
-  -- row sum; the primitive Gauss-sum product and parity then cancel the normalization.
-  rw [φ.gaussSum_mul_tsum_inv_pow_eq_generalizedBernoulli hφ (by omega)]
-  have hfac : (k.factorial : ℂ) = (k : ℂ) * (k - 1).factorial := by
-    exact_mod_cast (Nat.mul_factorial_pred (by omega : k ≠ 0)).symm
-  have hpower : (-2 * π * I : ℂ) ^ k * (-1 : ℂ) ^ k = (2 * π * I) ^ k := by
-    rw [← mul_pow]
-    congr 1
-    ring
-  have hpowv : (v : ℂ) ^ k = (v : ℂ) ^ (k - 1) * v := by
-    rw [← pow_succ, Nat.sub_add_cancel (by omega : 1 ≤ k)]
-  -- The Gauss product and the parity sign cancel the normalization factor.
-  symm
-  calc
-    _ = (2 * (-2 * π * I) ^ k / ((k - 1).factorial * (v : ℂ) ^ k) *
-        (gaussSum φ stdAddChar * gaussSum φ⁻¹ stdAddChar)) *
-          (-φ.generalizedBernoulli k / (2 * (k : ℂ))) := by ring
-    _ = _ := by
-      rw [hprod, hfac, hpowv]
-      have hk0 : (k : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
-      field_simp
-      linear_combination -φ.generalizedBernoulli k * hpower
-
 /-- The constant coefficient of the normalized character Eisenstein series is
 `-Bₖ,φ / (2k)` when the first modulus is one, and zero otherwise. Primitivity is needed
 only for the second character. -/
@@ -115,7 +63,7 @@ theorem qExpansion_normalizedCharEisensteinSeriesMF_coeff_zero
     have hφpar : φ (-1) = (-1 : ℂ) ^ k := by
       simpa only [hψneg, one_mul, zpow_natCast] using hpar
     simp only [hψ, one_mul]
-    exact inv_normalization_mul_tsum_eq_generalizedBernoulli φ hk hφ hφpar
+    exact φ.inv_normalization_mul_tsum_eq_generalizedBernoulli (by omega) hφ hφpar
   · rw [ψ.map_zero' hu, zero_mul, mul_zero]
 
 /-- A raised normalized character Eisenstein series has the same Bernoulli constant

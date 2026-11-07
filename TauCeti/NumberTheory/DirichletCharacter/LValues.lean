@@ -194,4 +194,56 @@ theorem generalizedBernoulli_one_ne_zero (hχ : χ.IsPrimitive) (hodd : χ.Odd) 
   have hzero : χ⁻¹.LFunction 1 = 0 := by simpa [hB] using hL
   exact LFunction_apply_one_ne_zero (inv_ne_one.mpr hχ1) hzero
 
+/-- The constant coefficient identity of the normalized Eisenstein series: for a primitive
+character `χ` with `χ(-1) = (-1)ᵏ`, the normalization of the Eisenstein series cancels against the
+Gauss sum and the `L`-value, leaving `-Bₖ,χ / (2k)`. -/
+theorem inv_normalization_mul_tsum_eq_generalizedBernoulli
+    (hk : 2 ≤ k) (hχ : χ.IsPrimitive) (hχpar : χ (-1) = (-1 : ℂ) ^ k) :
+    (2 * (-2 * π * I) ^ k / (((k - 1).factorial : ℂ) * (N : ℂ) ^ k) *
+        gaussSum χ⁻¹ ZMod.stdAddChar)⁻¹ * ∑' d : ℤ, χ⁻¹ d * (d : ℂ) ^ (-(k : ℤ)) =
+      -χ.generalizedBernoulli k / (2 * (k : ℂ)) := by
+  have hprod :=
+    DirichletCharacter.gaussSum_mul_gaussSum_inv_eq_neg_one_mul_card_of_isPrimitive hχ
+    (ZMod.isPrimitive_stdAddChar N)
+  rw [ZMod.card, hχpar] at hprod
+  have hv : (N : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
+  have hχinv : (χ⁻¹).IsPrimitive := by
+    rwa [DirichletCharacter.isPrimitive_def, DirichletCharacter.conductor_inv]
+  have hτ := DirichletCharacter.gaussSum_ne_zero_of_isPrimitive hv hχ
+    (ZMod.isPrimitive_stdAddChar N)
+  have hτinv := DirichletCharacter.gaussSum_ne_zero_of_isPrimitive hv hχinv
+    (ZMod.isPrimitive_stdAddChar N)
+  have hf : ((k - 1).factorial : ℂ) ≠ 0 :=
+    Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _)
+  have hA : (-2 * π * I : ℂ) ≠ 0 := by
+    simp [Real.pi_ne_zero, Complex.I_ne_zero]
+  have hC : 2 * (-2 * π * I) ^ k / ((k - 1).factorial * (N : ℂ) ^ k) *
+      gaussSum χ⁻¹ ZMod.stdAddChar ≠ 0 := by
+    exact mul_ne_zero (div_ne_zero (mul_ne_zero (by norm_num) (pow_ne_zero _ hA))
+      (mul_ne_zero hf (pow_ne_zero _ hv))) hτinv
+  rw [inv_mul_eq_iff_eq_mul₀ hC]
+  apply mul_left_cancel₀ hτ
+  -- TauCeti's gaussSum_mul_tsum_inv_pow_eq_generalizedBernoulli evaluates the integer
+  -- row sum; the primitive Gauss-sum product and parity then cancel the normalization.
+  rw [χ.gaussSum_mul_tsum_inv_pow_eq_generalizedBernoulli hχ hk]
+  have hfac : (k.factorial : ℂ) = (k : ℂ) * (k - 1).factorial := by
+    exact_mod_cast (Nat.mul_factorial_pred (by omega : k ≠ 0)).symm
+  have hpower : (-2 * π * I : ℂ) ^ k * (-1 : ℂ) ^ k = (2 * π * I) ^ k := by
+    rw [← mul_pow]
+    congr 1
+    ring
+  have hpowv : (N : ℂ) ^ k = (N : ℂ) ^ (k - 1) * N := by
+    rw [← pow_succ, Nat.sub_add_cancel (by omega : 1 ≤ k)]
+  -- The Gauss product and the parity sign cancel the normalization factor.
+  symm
+  calc
+    _ = (2 * (-2 * π * I) ^ k / ((k - 1).factorial * (N : ℂ) ^ k) *
+        (gaussSum χ ZMod.stdAddChar * gaussSum χ⁻¹ ZMod.stdAddChar)) *
+          (-χ.generalizedBernoulli k / (2 * (k : ℂ))) := by ring
+    _ = _ := by
+      rw [hprod, hfac, hpowv]
+      have hk0 : (k : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
+      field_simp
+      linear_combination -χ.generalizedBernoulli k * hpower
+
 end DirichletCharacter
