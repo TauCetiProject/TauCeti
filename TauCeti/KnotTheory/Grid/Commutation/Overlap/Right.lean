@@ -768,12 +768,13 @@ private lemma coveredColumns_initial_piece_rectangle
     (hEleft : E.left = D.rectangle.left) (hEright : E.right = D.pentagon.left) :
     E.toGridRectangle.coveredColumns ⊆ D.rectangle.toGridRectangle.coveredColumns ∧
     a ∉ E.toGridRectangle.coveredColumns ∧
-    a ∈ D.rectangle.toGridRectangle.coveredColumns := by
+    a ∈ D.rectangle.toGridRectangle.coveredColumns ∧
+    finRotate n a ∉ E.toGridRectangle.coveredColumns := by
   have hcol' : D.pentagon.left ∈ Grid.cIoo D.rectangle.left (finRotate n a) := by
     simpa only [hcommon, D.pentagon.right_eq] using hcol
-  obtain ⟨hsub, haNot, -⟩ :=
+  obtain ⟨hsub, haNot, hbNot⟩ :=
     coveredColumns_initial_piece_subset_not_mem (a := a) E hEleft (hEright ▸ hcol')
-  refine ⟨fun c hc => ?_, haNot, ?_⟩
+  refine ⟨fun c hc => ?_, haNot, ?_, hbNot⟩
   · rw [GridRectangleBetween.mem_coveredColumns, hcommon, D.pentagon.right_eq]
     exact hsub hc
   · rw [GridRectangleBetween.mem_coveredColumns, hcommon, D.pentagon.right_eq]
@@ -815,7 +816,8 @@ theorem recutRightEqRightFirst_rectangle_geometry
     E.rectangle.toGridRectangle.coveredColumns ⊆
       D.rectangle.toGridRectangle.coveredColumns ∧
     a ∉ E.rectangle.toGridRectangle.coveredColumns ∧
-    a ∈ D.rectangle.toGridRectangle.coveredColumns := by
+    a ∈ D.rectangle.toGridRectangle.coveredColumns ∧
+    finRotate n a ∉ E.rectangle.toGridRectangle.coveredColumns := by
   let E := D.recutRightEqRightFirst hcommon hone hrectangle hpentagon hfirst
   obtain ⟨hcol, _, _⟩ :=
     D.first_recut_branch_data_of_right_eq_right hcommon hone hrectangle hpentagon hfirst
@@ -858,9 +860,9 @@ theorem recutRightEqRightFirst_rectangle_geometry
       D.recutRightEqRightFirst_middle hcommon hone hrectangle hpentagon hfirst,
       hbranch.1, GridState.swapColumns_apply, Equiv.swap_apply_left,
       ← GridRectangleBetween.top_def]
-  obtain ⟨hCols, haNot, ha⟩ :=
+  obtain ⟨hCols, haNot, ha, hbNot⟩ :=
     coveredColumns_initial_piece_rectangle D hcommon hcol E.rectangle hEleft hEright
-  exact ⟨hEleft, hEright, hEbottom, hEtop, hCols, haNot, ha⟩
+  exact ⟨hEleft, hEright, hEbottom, hEtop, hCols, haNot, ha, hbNot⟩
 
 /-- Geometry of the rectangle left after the second terminal-side recut: it occupies
 an initial subinterval of the original pentagon's columns, away from the swapped columns. -/
