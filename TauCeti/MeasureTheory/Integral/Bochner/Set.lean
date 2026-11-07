@@ -75,6 +75,22 @@ theorem setIntegral_abs_eq_sub {α : Type*} [MeasurableSpace α] {μ : Measure �
     Measure.restrict_restrict₀ (hf.1.nullMeasurableSet_lt aestronglyMeasurable_const),
     inter_comm _ s, hneg]
 
+/-- Perturbing `g` by a constant `c` changes the `L¹` distance over `S` to `f` by at most
+the `L¹` norm of `c`. -/
+theorem integral_norm_add_const_sub_le {α E : Type*} [MeasurableSpace α] {μ : Measure α}
+    [NormedAddCommGroup E] {S : Set α} {g f : α → E} (c : E) (hS : μ S ≠ ⊤)
+    (hg : IntegrableOn g S μ) (hf : IntegrableOn f S μ) :
+    (∫ t in S, ‖g t + c - f t‖ ∂μ) ≤ (∫ t in S, ‖g t - f t‖ ∂μ) + ∫ _ in S, ‖c‖ ∂μ := by
+  have h1 : Integrable (fun t ↦ ‖g t - f t‖) (μ.restrict S) := (hg.sub hf).norm
+  rw [← integral_add h1 (integrableOn_const hS)]
+  refine integral_mono ((hg.add (integrableOn_const hS)).sub hf).norm
+    ((hg.sub hf).norm.add (integrableOn_const hS)) ?_
+  intro t
+  dsimp only
+  have he : g t + c - f t = (g t - f t) + c := by abel
+  rw [he]
+  exact norm_add_le _ _
+
 /-- If disjoint parametrizations `Q i` of a domain `D` cover the complement of a finite set `Z`, and
 `g` is injective on `s`, the integral over `g '' s` is the sum of the integrals over the images
 `(g ∘ Q i) '' (D ∩ Q i ⁻¹' s)` of the pieces cut out by each parametrization, up to the transport

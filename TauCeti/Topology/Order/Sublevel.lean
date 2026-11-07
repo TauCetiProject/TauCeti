@@ -45,8 +45,12 @@ homotopy fixing `{f ≤ a}` pointwise (`TauCeti.exists_sublevelDeformation_of_ap
 of the deformation of sublevels across a band without critical points, where the motion is the
 flow of a vector field `X` with `df(X) = -1` on the band. The sublevels form the topological pair
 `TauCeti.sublevelPair f : ({f ≤ b}, {f ≤ a})`, whose relative homology measures the change in
-topology across the band. All sublevels together form the functor `TauCeti.sublevelFunctor f` from
-the levels to spaces, with the cocone `TauCeti.sublevelCocone f` of their inclusions into `X`.
+topology across the band. The band itself, relative to its lower level, is the pair
+`TauCeti.bandPair f : (f⁻¹[a, b], f⁻¹(a))`, which includes into the sublevel pair by
+`TauCeti.bandPairInclusion`; when `f⁻¹[a, b]` is a cobordism between regular levels, this is the
+cobordism relative to its incoming boundary. All sublevels together form the functor
+`TauCeti.sublevelFunctor f` from the levels to spaces, with the cocone `TauCeti.sublevelCocone f`
+of their inclusions into `X`.
 
 If the motion is a flow along whose lines `f` never increases, then its time-`(b - a)` map carries
 `{f ≤ b}` exactly onto `{f ≤ a}` (`Flow.apply_le_iff_of_apply_eq_sub`), and, when `f`
@@ -217,6 +221,30 @@ of `X`. -/
 abbrev sublevelPair {X : Type*} [TopologicalSpace X] {β : Type*} [Preorder β] (f : X → β)
     {a b : β} (hab : a ≤ b) : TopPair :=
   TopPair.ofInclusion (X := TopCat.of X) (sublevel_mono f hab)
+
+/-- The band pair `(f⁻¹[a, b], f⁻¹(a))` of a function `f` for `a ≤ b`: the band of values between
+`a` and `b`, relative to its lower level. -/
+abbrev bandPair {X : Type*} [TopologicalSpace X] {β : Type*} [Preorder β] (f : X → β) {a b : β}
+    (hab : a ≤ b) : TopPair :=
+  TopPair.ofInclusion (X := TopCat.of X) (preimage_mono (singleton_subset_iff.2 ⟨le_rfl, hab⟩) :
+    f ⁻¹' {a} ⊆ f ⁻¹' Icc a b)
+
+/-- The inclusion `(f⁻¹[a, b], f⁻¹(a)) ⟶ ({f ≤ b}, {f ≤ a})` of the band pair into the sublevel
+pair. -/
+def bandPairInclusion {X : Type*} [TopologicalSpace X] {β : Type*} [Preorder β] (f : X → β)
+    {a b : β} (hab : a ≤ b) : bandPair f hab ⟶ sublevelPair f hab :=
+  TopPair.ofInclusionMap _ _ (ContinuousMap.inclusion fun _ hx ↦ (hx : f _ ∈ Icc a b).2)
+    fun _ hx ↦ (hx : f _ = a).le
+
+/-- On ambient spaces, the inclusion of the band pair into the sublevel pair is the inclusion of
+the band `f⁻¹[a, b]` into the sublevel `{f ≤ b}`. -/
+@[simp]
+theorem bandPairInclusion_fst {X : Type*} [TopologicalSpace X] {β : Type*} [Preorder β]
+    (f : X → β) {a b : β} (hab : a ≤ b) :
+    TopPair.Hom.fst (bandPairInclusion f hab) =
+      TopCat.ofHom (ContinuousMap.inclusion fun _ hx ↦ (hx : f _ ∈ Icc a b).2) := by
+  ext x
+  exact TopPair.ofInclusionMap_fst_apply _ _ x
 
 section Functor
 
