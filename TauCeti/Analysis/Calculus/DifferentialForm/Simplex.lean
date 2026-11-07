@@ -79,7 +79,8 @@ private lemma extDerivWithin_fullSimplex_eq_sum {p : ℕ}
   simp only [Int.cast_pow, Int.cast_neg, Int.cast_one]
 
 /-- The integral of the exterior derivative over `Δᵖ⁺¹` as an alternating sum of differences of
-integrals of the coefficients `x ↦ ω x (j.removeNth e)` over two faces of `Δᵖ`. -/
+integrals of the coefficients `x ↦ ω x (j.removeNth e)` over two faces of `Δᵖ⁺¹`, each
+parametrized by `Δᵖ`. -/
 private lemma integral_extDerivWithin_fullSimplex_eq_sum {p : ℕ}
     {ω : EuclideanSpace ℝ (Fin (p + 1)) → EuclideanSpace ℝ (Fin (p + 1)) [⋀^Fin p]→L[ℝ] F}
     (hω : ContDiffOn ℝ 1 ω (fullSimplex (p + 1))) :
