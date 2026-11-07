@@ -202,7 +202,7 @@ theorem integral_eval_smul_resolvent (hΓ : IsIn Γ (resolventSet ℂ a))
       ← Algebra.smul_def]
     rw [integral_smul, integral_pow_smul_resolvent hΓ hwind, smul_comm]
 
-/-- Integrating the resolvent identity over a cycle `Γ₂` around which `z` winds once evaluates the
+/-- Integrating the resolvent identity over a cycle `Γ₂` that winds once around `z` evaluates the
 part of the double integrand carrying the resolvent at the point of `Γ₂`. -/
 private theorem integral_div_sub_smul_smul_resolvent {U : Set ℂ} (hU : IsOpen U) {g : ℂ → ℂ}
     (hg : DifferentiableOn ℂ g U) {Γ₂ : Cycle} (c : ℂ) {z : ℂ} (hzU : z ∈ U)
