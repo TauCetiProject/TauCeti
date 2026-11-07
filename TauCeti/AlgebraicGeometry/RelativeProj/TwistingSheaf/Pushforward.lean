@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.RelativeProj.TwistingSheaf.TensorProduct
-public import TauCeti.AlgebraicGeometry.Modules.Pushforward.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Sections
 
 /-!
