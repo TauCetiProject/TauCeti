@@ -36,6 +36,10 @@ variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] [CompleteSpace R]
 
 attribute [local instance] radius_pos
 
+-- A fixed smaller disc suffices for the injectivity arguments below.
+private noncomputable def substRadius : Set.Ioo (0 : ℝ) S₀ :=
+  ⟨S₀ / 2, half_pos Fact.out, half_lt_self Fact.out⟩
+
 private theorem summable_subst (g : OnOpenDisc.subring R S₀)
     (hg : ∀ s : Set.Ioo (0 : ℝ) S₀, ‖restrict s g‖ < R₀)
     (f : OnOpenDisc.subring R R₀) :
@@ -44,11 +48,19 @@ private theorem summable_subst (g : OnOpenDisc.subring R S₀)
   apply isUniformInducing_restrictFamily.cauchy_map_iff.mp
   rw [cauchy_pi_iff']
   intro s
-  have h := summable_iff_cauchySeq_finset.mp
-    ((OnOpenDisc.mem_subring.mp f.2).hasSum_evalAt (hg s)).summable
-  simpa only [CauchySeq, Filter.map_map, Function.comp_def, Function.eval, map_sum,
-    Finset.sum_apply, Pi.mul_apply, Pi.pow_apply, restrictFamily_apply,
-    map_mul, map_pow, restrict_polynomialHom_C, Algebra.smul_def] using h
+  have hrestricted : Summable (fun n ↦
+      restrict s (OnOpenDisc.polynomialHom (Polynomial.C (coeff n (f : R⟦X⟧))) * g ^ n)) := by
+    simpa only [map_mul, map_pow, restrict_polynomialHom_C, Algebra.smul_def] using
+      ((OnOpenDisc.mem_subring.mp f.2).hasSum_evalAt (hg s)).summable
+  have hsum (t : Finset ℕ) :
+      (restrictFamily (∑ n ∈ t,
+        OnOpenDisc.polynomialHom (Polynomial.C (coeff n (f : R⟦X⟧))) * g ^ n)) s =
+      ∑ n ∈ t, restrict s
+        (OnOpenDisc.polynomialHom (Polynomial.C (coeff n (f : R⟦X⟧))) * g ^ n) := by
+    simp only [map_sum, restrictFamily_apply]
+  simp only [Filter.map_map, Function.comp_def, Function.eval]
+  rw [Filter.map_congr (Filter.Eventually.of_forall hsum)]
+  exact summable_iff_cauchySeq_finset.mp hrestricted
 
 private theorem restrict_tsum_subst (g : OnOpenDisc.subring R S₀)
     (hg : ∀ s : Set.Ioo (0 : ℝ) S₀, ‖restrict s g‖ < R₀)
@@ -68,23 +80,21 @@ noncomputable def analyticSubst (g : OnOpenDisc.subring R S₀)
     OnOpenDisc.subring R R₀ →+* OnOpenDisc.subring R S₀ where
   toFun f := ∑' n, OnOpenDisc.polynomialHom (Polynomial.C (coeff n (f : R⟦X⟧))) * g ^ n
   map_one' := by
-    apply restrict_injective ⟨S₀ / 2, half_pos Fact.out, half_lt_self Fact.out⟩
+    apply restrict_injective substRadius
     rw [restrict_tsum_subst g hg 1]
     simp
   map_mul' f h := by
-    let s : Set.Ioo (0 : ℝ) S₀ := ⟨S₀ / 2, half_pos Fact.out, half_lt_self Fact.out⟩
-    have : Fact (0 < (s : ℝ)) := ⟨s.2.1⟩
+    let s : Set.Ioo (0 : ℝ) S₀ := substRadius
     apply restrict_injective s
     rw [restrict_tsum_subst g hg (f * h), map_mul,
       restrict_tsum_subst g hg f, restrict_tsum_subst g hg h, Subring.coe_mul]
     exact (OnOpenDisc.mem_subring.mp f.2).evalAt_mul (OnOpenDisc.mem_subring.mp h.2) (hg s)
   map_zero' := by
-    apply restrict_injective ⟨S₀ / 2, half_pos Fact.out, half_lt_self Fact.out⟩
+    apply restrict_injective substRadius
     rw [restrict_tsum_subst g hg 0]
     simp
   map_add' f h := by
-    let s : Set.Ioo (0 : ℝ) S₀ := ⟨S₀ / 2, half_pos Fact.out, half_lt_self Fact.out⟩
-    have : Fact (0 < (s : ℝ)) := ⟨s.2.1⟩
+    let s : Set.Ioo (0 : ℝ) S₀ := substRadius
     apply restrict_injective s
     rw [restrict_tsum_subst g hg (f + h), map_add,
       restrict_tsum_subst g hg f, restrict_tsum_subst g hg h, Subring.coe_add]
@@ -126,9 +136,7 @@ theorem norm_restrict_analyticSubst_le [NormOneClass R] (f : OnOpenDisc.subring 
 theorem analyticSubst_C (a : R) :
     analyticSubst g hg (OnOpenDisc.polynomialHom (Polynomial.C a)) =
       OnOpenDisc.polynomialHom (Polynomial.C a) := by
-  let s : Set.Ioo (0 : ℝ) S₀ := ⟨S₀ / 2, half_pos Fact.out, half_lt_self Fact.out⟩
-  have : Fact (0 < (s : ℝ)) := ⟨s.2.1⟩
-  apply restrict_injective s
+  apply restrict_injective substRadius
   rw [restrict_analyticSubst, OnOpenDisc.coe_polynomialHom, Polynomial.coe_C, evalAt_C,
     restrict_polynomialHom_C]
 
@@ -136,9 +144,7 @@ theorem analyticSubst_C (a : R) :
 @[simp]
 theorem analyticSubst_X :
     analyticSubst g hg (OnOpenDisc.polynomialHom Polynomial.X) = g := by
-  let s : Set.Ioo (0 : ℝ) S₀ := ⟨S₀ / 2, half_pos Fact.out, half_lt_self Fact.out⟩
-  have : Fact (0 < (s : ℝ)) := ⟨s.2.1⟩
-  apply restrict_injective s
+  apply restrict_injective substRadius
   rw [restrict_analyticSubst, OnOpenDisc.coe_polynomialHom, Polynomial.coe_X, evalAt_X]
 
 /-- Coefficients of analytic substitution are convergent sums, including contributions from
@@ -197,6 +203,7 @@ omit [CompleteSpace R] [Fact (0 < S₀)] [CompleteSpace A] in
 theorem norm_evalAt_lt (hb : ‖b‖ < S₀) : ‖(g : R⟦X⟧).evalAt b‖ < R₀ := by
   obtain ⟨s, hbs, hsS⟩ := exists_between hb
   let s' : Set.Ioo (0 : ℝ) S₀ := ⟨s, (norm_nonneg _).trans_lt hbs, hsS⟩
+  -- Reduction to the real witness s hides its interval subtype from instance search.
   have : Fact (0 < (s' : ℝ)) := ⟨s'.2.1⟩
   have hf := hasGaussNorm_of_isRestricted (mem_subring_iff_forall_isRestricted.mp g.2 s')
   calc ‖(g : R⟦X⟧).evalAt b‖ ≤ (g : R⟦X⟧).gaussNorm norm s :=
@@ -225,7 +232,7 @@ variable {T₀ : ℝ} [Fact (0 < T₀)]
 
 /-- Analytic substitutions compose, with the strict radius condition supplied by the
 closed-disc Gauss estimates. -/
-theorem analyticSubst_comp [NormOneClass R] (h : OnOpenDisc.subring R T₀)
+theorem analyticSubst_comp_analyticSubst [NormOneClass R] (h : OnOpenDisc.subring R T₀)
     (hh : ∀ t : Set.Ioo (0 : ℝ) T₀, ‖restrict t h‖ < S₀) :
     (analyticSubst h hh).comp (analyticSubst g hg) =
       analyticSubst (analyticSubst h hh g) (norm_restrict_analyticSubst_lt h hh g hg) := by
