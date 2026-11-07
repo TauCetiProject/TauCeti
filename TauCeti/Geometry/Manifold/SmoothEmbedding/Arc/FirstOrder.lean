@@ -121,20 +121,6 @@ private theorem hasDerivAt_track_right (F : Concordance K K') (θ t : ℝ) :
     ((hasDerivAt_const t θ).prodMk (hasDerivAt_id' t))
   exact h
 
-/-- If a loop `L` in `Sⁿ` has the same derivative at `exp (θ₀ i)` as a smooth embedding `K`, then
-`L` is differentiable there, since the derivative of `K` is injective. -/
-private theorem mdifferentiableAt_of_mfderiv_eq {L : Circle → sphere (0 : E) 1} {θ₀ : ℝ}
-    (hK : mfderiv (𝓡 1) (𝓡 n) K (Circle.exp θ₀) = mfderiv (𝓡 1) (𝓡 n) L (Circle.exp θ₀)) :
-    MDifferentiableAt (𝓡 1) (𝓡 n) L (Circle.exp θ₀) := by
-  by_contra hnd
-  have hu₁ : mfderiv 𝓘(ℝ, ℝ) (𝓡 1) Circle.exp θ₀ 1 ≠ 0 := fun h =>
-    one_ne_zero (show (1 : ℝ) = 0 from injective_mfderiv_circleExp θ₀ (h.trans (map_zero _).symm))
-  have hinj := (K.isImmersion.isDiffImmersionAt (by simp) (Circle.exp θ₀)).mfderiv_injective
-  have h0 := congrArg (fun D : EuclideanSpace ℝ (Fin 1) →L[ℝ] EuclideanSpace ℝ (Fin n) =>
-    D (mfderiv 𝓘(ℝ, ℝ) (𝓡 1) Circle.exp θ₀ 1)) hK
-  simp only [mfderiv_zero_of_not_mdifferentiableAt hnd] at h0
-  exact hu₁ (hinj (h0.trans (map_zero _).symm))
-
 /-- A concordance `F` which is the straight line over `exp (θ₀ i)` and whose ends `K` and `K'` have
 the same derivative there as a loop `L` makes `L` differentiable at `exp (θ₀ i)`, with the same
 velocity there as `K` and `K'`. -/
@@ -156,7 +142,10 @@ private theorem mdifferentiableAt_and_deriv_eq_of_collars (F : Concordance K K')
     have h := h₀ 1
     rw [hFr _ 1 (by linarith)] at h
     exact congrArg Prod.fst h
-  have hLd := mdifferentiableAt_of_mfderiv_eq (K := K) hK
+  have hLd : MDifferentiableAt (𝓡 1) (𝓡 n) L (Circle.exp θ₀) :=
+    mdifferentiableAt_of_mfderiv_injective <| by
+      rw [← hK]
+      exact (K.isImmersion.isDiffImmersionAt (by simp) (Circle.exp θ₀)).mfderiv_injective
   exact ⟨hLd, deriv_coe_comp_circleExp_eq_of_mfderiv_eq
     (K.contMDiff.mdifferentiableAt (by simp)) hLd hKL hK,
     deriv_coe_comp_circleExp_eq_of_mfderiv_eq
@@ -199,8 +188,9 @@ private theorem fderiv_track_right_line (F : Concordance K K') {L : Circle → s
     {θ₀ : ℝ} (h₀ : ∀ t, F (Circle.exp θ₀, t) = (L (Circle.exp θ₀), t)) (t : ℝ) :
     fderiv ℝ (track F) (θ₀, t) (0, 1) = (0, 1) := by
   refine (hasDerivAt_track_right F θ₀ t).unique ?_
-  rw [show (fun s => track F (θ₀, s)) = fun s => ((L (Circle.exp θ₀) : E), s) from
-    funext (track_line F h₀)]
+  have hfun : (fun s => track F (θ₀, s)) = fun s => ((L (Circle.exp θ₀) : E), s) :=
+    funext (track_line F h₀)
+  rw [hfun]
   exact (hasDerivAt_const t _).prodMk (hasDerivAt_id' t)
 
 /-- The circle velocity of the straight line over `exp (θ₀ i)`, at any time, is nonzero. -/
@@ -306,76 +296,6 @@ private theorem exists_apply_eq_diffeomorph_comp_timeShear (F : Concordance K K'
         have hb := abs_lt.1 (hsmall x t).1
         constructor <;> linarith [min_le_left εl εr, min_le_right εl εr, hI.1, hI.2]
   exact ⟨⟨G₀, hcol⟩, hG₀⟩
-
-/-- The derivative at `(t, v)` of the rotation by `Q t` followed by the boost toward `-v` of
-rapidity `α t = log (‖W‖ / ‖A‖)`, in the direction `(0, A)` for `A` orthogonal to `v`, is `W`
-when `Q t` turns the direction of `A` into that of `W`. Read along a curve through `v` with
-velocity `A` at a fixed time, this gives the velocity of the image curve. -/
-private theorem hasDerivAt_boostRotate_comp {v A W : E} {α : ℝ → ℝ}
-    {Q : ℝ → E ≃ₗᵢ[ℝ] E} (hv' : ‖-v‖ = 1) (hα : ContDiff ℝ ∞ α)
-    (hQ : ContDiff ℝ ∞ fun p : ℝ × E => Q p.1 p.2) {t : ℝ} (hQv : Q t v = v) (hAv : ⟪A, v⟫ = 0)
-    (hA0 : A ≠ 0) (hW : W ≠ 0) (hdir : ‖A‖⁻¹ • Q t A = ‖W‖⁻¹ • W)
-    (hαt : α t = Real.log (‖W‖ / ‖A‖)) {c : ℝ → E} {s : ℝ → ℝ} {θ₀ : ℝ}
-    (hc : HasDerivAt c A θ₀) (hs : HasDerivAt s 0 θ₀) (hc₀ : c θ₀ = v) (hs₀ : s θ₀ = t) :
-    HasDerivAt (fun θ => boostRotate (-v) α Q (s θ, c θ)) W θ₀ := by
-  have hBR := ((contDiffAt_boostRotate hv' hα hQ t (by rwa [norm_neg] at hv')).differentiableAt
-    (by simp)).hasFDerivAt
-  have hD := hBR.comp_hasDerivAt_of_eq θ₀ (hs.prodMk hc) (by rw [hs₀, hc₀])
-  have hval := fderiv_boostRotate_apply_zero hv' hα hQ t (by rw [neg_neg, hQv]) (ξ := A)
-    (by rw [inner_neg_right, ← hQv, LinearIsometryEquiv.inner_map_map, hAv, neg_zero])
-  rw [neg_neg, hαt, Real.exp_log (div_pos (norm_pos_iff.2 hW) (norm_pos_iff.2 hA0))] at hval
-  rwa [hval, norm_div_norm_smul_eq_of_inv_norm_smul_eq_normalize hdir] at hD
-
-/-- **The rotation and boost.** For a smooth family `A t` of nonzero vectors orthogonal to the unit
-vector `v` (in dimension at least `3`), there is a diffeomorphism `Ψ` of `Sⁿ × ℝ` preserving the
-levels, which fixes the points over `v` and the levels where `A t = A 0`, and whose derivative
-turns the velocity `A t` of a curve through `v` at level `t` into `A 0`. -/
-private theorem exists_diffeomorph_apply_eq {v W : E} (hn : 3 ≤ n) (hv : ‖v‖ = 1) {A : ℝ → E}
-    (hA : ContDiff ℝ ∞ A) (hA0 : ∀ t, A t ≠ 0) (hAv : ∀ t, ⟪A t, v⟫ = 0) (hAW : A 0 = W) :
-    ∃ Ψ : (sphere (0 : E) 1 × ℝ) ≃ₘ^∞⟮(𝓡 n).prod 𝓘(ℝ), (𝓡 n).prod 𝓘(ℝ)⟯
-        (sphere (0 : E) 1 × ℝ),
-      (∀ p, (Ψ p).2 = p.2) ∧ (∀ t, A t = W → ∀ y, Ψ (y, t) = (y, t)) ∧
-      (∀ (y : sphere (0 : E) 1) t, (y : E) = v → Ψ (y, t) = (y, t)) ∧
-      ∀ (t : ℝ) (c : ℝ → sphere (0 : E) 1) (s : ℝ → ℝ) (θ₀ : ℝ), (c θ₀ : E) = v → s θ₀ = t →
-        HasDerivAt (fun θ => (c θ : E)) (A t) θ₀ → HasDerivAt s 0 θ₀ →
-          HasDerivAt (fun θ => ((Ψ (c θ, s θ)).1 : E)) W θ₀ := by
-  have hW : W ≠ 0 := hAW ▸ hA0 0
-  set u : ℝ → E := fun t => ‖A t‖⁻¹ • A t with hu_def
-  have hu : ContDiff ℝ ∞ u :=
-    ((hA.norm ℝ hA0).inv fun t => norm_ne_zero_iff.2 (hA0 t)).smul hA
-  have hu0 : u 0 = ‖W‖⁻¹ • W := by simp only [hu_def, hAW]
-  have hfin : 2 < finrank ℝ (ℝ ∙ v)ᗮ := by
-    rw [Submodule.finrank_orthogonal_span_singleton (n := n)
-      (norm_ne_zero_iff.1 (hv.symm ▸ one_ne_zero))]
-    omega
-  obtain ⟨Q, hQ, hQv, hQu, hQ1⟩ := exists_contDiff_linearIsometryEquiv_apply_eq (k := ∞)
-    (by simp) hfin hu (fun t => norm_smul_inv_norm (hA0 t)) 
-    (fun t => by rw [hu_def, real_inner_smul_left, hAv, mul_zero]) 0
-  set α : ℝ → ℝ := fun t => Real.log (‖W‖ / ‖A t‖) with hα_def
-  have hα : ContDiff ℝ ∞ α :=
-    (contDiff_const.div (hA.norm ℝ hA0) fun t => norm_ne_zero_iff.2 (hA0 t)).log fun t =>
-      (div_pos (norm_pos_iff.2 hW) (norm_pos_iff.2 (hA0 t))).ne'
-  have hv' : ‖-v‖ = 1 := by rw [norm_neg, hv]
-  have hΨ₁ (p : sphere (0 : E) 1 × ℝ) :
-      ((boostRotateDiffeomorph (n := n) hv' hα hQ p).1 : E) = boostRotate (-v) α Q (p.2, p.1) :=
-    coe_boostRotateDiffeomorph_apply_fst hv' hα hQ p
-  have hΨ₂ (p : sphere (0 : E) 1 × ℝ) : (boostRotateDiffeomorph (n := n) hv' hα hQ p).2 = p.2 :=
-    boostRotateDiffeomorph_apply_snd hv' hα hQ p
-  refine ⟨boostRotateDiffeomorph (n := n) hv' hα hQ, hΨ₂, fun t hAt y => ?_, fun y t hy => ?_,
-    fun t c s θ₀ hc₀ hs₀ hc hs => ?_⟩
-  · have hut : u t = u 0 := by simp only [hu_def, hAt, hAW]
-    refine Prod.ext (Subtype.ext ?_) (hΨ₂ _)
-    simp only [hΨ₁, boostRotate_apply, hQ1 t hut, hα_def, hAt, div_self (norm_ne_zero_iff.2 hW),
-      Real.log_one, sphereBoost_zero, _root_.id]
-  · refine Prod.ext (Subtype.ext ?_) (hΨ₂ _)
-    have h := sphereBoost_neg_self hv' (α t)
-    rw [neg_neg] at h
-    simp only [hΨ₁, boostRotate_apply]
-    rw [hy, hQv, h]
-  · have hdir : ‖A t‖⁻¹ • Q t (A t) = ‖W‖⁻¹ • W := by
-      rw [← map_smul, show ‖A t‖⁻¹ • A t = u t by rw [hu_def], hQu, hu0]
-    simp only [hΨ₁]
-    exact hasDerivAt_boostRotate_comp hv' hα hQ (hQv t) (hAv t) (hA0 t) hW hdir rfl hc hs hc₀ hs₀
 
 /-- **Making a concordance standard to first order along an arc.** Let `F` be a concordance
 between smooth circle embeddings `K` and `K'` into the unit sphere `Sⁿ`, `n ≥ 3`, which is the
