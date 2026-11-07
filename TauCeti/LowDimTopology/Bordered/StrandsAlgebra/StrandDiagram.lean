@@ -96,6 +96,17 @@ theorem toPEquiv_injective : Function.Injective (toPEquiv : StrandDiagram α →
 theorem le_of_mem (φ : StrandDiagram α) {i j : α} (h : j ∈ φ i) : i ≤ j :=
   φ.le_of_mem' h
 
+/-- Two strands of a diagram with the same end point start at the same point. -/
+theorem eq_of_mem_of_mem (φ : StrandDiagram α) {x y a : α} (hx : a ∈ φ x) (hy : a ∈ φ y) :
+    x = y :=
+  φ.toPEquiv.inj hx hy
+
+/-- Strands of a diagram starting at distinct points end at distinct points. -/
+theorem ne_of_mem_of_mem_of_ne (φ : StrandDiagram α) {x y a b : α} (ha : a ∈ φ x)
+    (hb : b ∈ φ y) (h : x ≠ y) : a ≠ b := by
+  rintro rfl
+  exact h (φ.eq_of_mem_of_mem ha hb)
+
 /-- The composite of two strand diagrams: first `φ`, then `ψ`. In the strands algebra it is the
 concatenation of the diagram of `φ` on the left with that of `ψ` on the right. -/
 protected def trans (φ ψ : StrandDiagram α) : StrandDiagram α where
@@ -224,6 +235,50 @@ theorem mem_inversions {φ : StrandDiagram α} {p : α × α} :
   · rintro ⟨hab, a, ha, b, hb, h⟩
     rw [Option.mem_def] at ha hb
     exact ⟨⟨a, ha⟩, ⟨b, hb⟩, hab, by simpa [ha, hb] using h⟩
+
+/-- The strands of a crossing start at starting points of the diagram. -/
+theorem fst_mem_source_of_mem_inversions {φ : StrandDiagram α} {p : α × α}
+    (h : p ∈ φ.inversions) : p.1 ∈ φ.source := by
+  obtain ⟨-, a, ha, -⟩ := mem_inversions.1 h
+  exact mem_source.2 ⟨a, ha⟩
+
+/-- The strands of a crossing start at starting points of the diagram. -/
+theorem snd_mem_source_of_mem_inversions {φ : StrandDiagram α} {p : α × α}
+    (h : p ∈ φ.inversions) : p.2 ∈ φ.source := by
+  obtain ⟨-, -, -, b, hb, -⟩ := mem_inversions.1 h
+  exact mem_source.2 ⟨b, hb⟩
+
+/-- The strands of `φ` starting at `x` and `y`, with end points `a` and `b`, cross exactly when
+`x < y` and `b < a`. -/
+theorem mem_inversions_iff_of_mem {φ : StrandDiagram α} {x y a b : α} (ha : a ∈ φ x)
+    (hb : b ∈ φ y) :
+    (x, y) ∈ φ.inversions ↔ x < y ∧ b < a := by
+  rw [mem_inversions]
+  refine ⟨fun ⟨hxy, a', ha', b', hb', h⟩ ↦ ⟨hxy, ?_⟩, fun ⟨hxy, h⟩ ↦ ⟨hxy, a, ha, b, hb, h⟩⟩
+  rwa [Option.mem_unique ha' ha, Option.mem_unique hb' hb] at h
+
+/-- For distinct `x` and `y`, the sorted pair `(min x y, max x y)` is a crossing exactly when the
+strands from `x` and `y` reverse their order. -/
+theorem min_max_mem_inversions_iff {φ : StrandDiagram α} {x y a b : α} (hxy : x ≠ y)
+    (ha : a ∈ φ x) (hb : b ∈ φ y) : (min x y, max x y) ∈ φ.inversions ↔ (x < y ↔ b < a) := by
+  have hab : a ≠ b := φ.ne_of_mem_of_mem_of_ne ha hb hxy
+  rcases lt_or_gt_of_ne hxy with h | h
+  · simp [min_eq_left h.le, max_eq_right h.le, mem_inversions_iff_of_mem ha hb, h]
+  · simp only [min_eq_right h.le, max_eq_left h.le, mem_inversions_iff_of_mem hb ha, h,
+      true_and, h.not_gt, false_iff, not_lt]
+    exact ⟨fun h' ↦ h'.le, fun h' ↦ lt_of_le_of_ne h' hab⟩
+
+/-- The two strands of a crossing written as a sorted pair start at starting points of the
+diagram. -/
+theorem mem_source_of_min_max_mem_inversions {φ : StrandDiagram α} {x y : α}
+    (h : (min x y, max x y) ∈ φ.inversions) : x ∈ φ.source ∧ y ∈ φ.source := by
+  have h₁ := fst_mem_source_of_mem_inversions h
+  have h₂ := snd_mem_source_of_mem_inversions h
+  rcases le_total x y with hxy | hxy
+  · simp only [min_eq_left hxy, max_eq_right hxy] at h₁ h₂
+    exact ⟨h₁, h₂⟩
+  · simp only [min_eq_right hxy, max_eq_left hxy] at h₁ h₂
+    exact ⟨h₂, h₁⟩
 
 /-- The number of crossings of a strand diagram, written `inv(φ)` by Lipshitz, Ozsváth and
 Thurston. -/
