@@ -14,11 +14,11 @@ import Mathlib.Tactic.NormNum
 These examples compute homomorphism densities of small uniform hypergraphs from a downstream
 module, through public statements only:
 
-* a single `3`-uniform edge, the triangle, in the complete `3`-uniform hypergraph on four vertices:
+* a single `3`-uniform edge in the complete `3`-uniform hypergraph on four vertices:
   `3! · 4` of the `4³` vertex maps are homomorphisms, while every vertex embedding is one;
 * a single `2`-uniform edge, `K₂`, in the complete `2`-uniform hypergraph on three vertices;
-* homomorphisms out of a single edge are injective, so the identity of a triangle has `3!`
-  homomorphic relabellings and no others;
+* homomorphisms out of a single edge are injective, so a single `3`-uniform edge has `3!`
+  homomorphic relabellings to itself and no others;
 * the empty host, the empty pattern, and a host with fewer vertices than the pattern;
 * the edge density of a simple graph, recovered from its `2`-uniform hypergraph.
 -/
@@ -27,13 +27,13 @@ open Finset TauCeti TauCeti.UniformHypergraph
 
 /-! ### Single edges in complete hosts -/
 
--- The triangle in the complete `3`-uniform hypergraph on four vertices: `3! · 4 = 24` of the
--- `4³ = 64` vertex maps are homomorphisms.
+-- A single `3`-uniform edge in the complete `3`-uniform hypergraph on four vertices:
+-- `3! · 4 = 24` of the `4³ = 64` vertex maps are homomorphisms.
 example : (complete 3 (Fin 3)).homDensity (complete 3 (Fin 4)) = 3 / 8 := by
   rw [homDensity_complete_left_of_card_eq (Fintype.card_fin 3), card_edges_complete]
   norm_num [Nat.choose, Nat.factorial]
 
--- Every vertex embedding of the triangle is a homomorphism.
+-- Every vertex embedding of a single `3`-uniform edge is a homomorphism.
 example : (complete 3 (Fin 3)).injHomDensity (complete 3 (Fin 4)) = 1 :=
   injHomDensity_complete_right (by simp)
 
@@ -48,8 +48,8 @@ example : (complete 2 (Fin 2)).homDensity (complete 2 (Fin 3)) = 2 / 3 := by
   rw [homDensity_complete_left_of_card_eq (Fintype.card_fin 2), card_edges_complete]
   norm_num [Nat.choose, Nat.factorial]
 
--- The `3!` relabellings of a triangle are its only homomorphisms to itself: a homomorphism out of
--- a single edge cannot identify two vertices.
+-- The `3!` relabellings of a single `3`-uniform edge are its only homomorphisms to itself: a
+-- homomorphism out of a single edge cannot identify two vertices.
 example : (complete 3 (Fin 3)).homCount (complete 3 (Fin 3)) = 6 := by
   rw [homCount_complete_left_of_card_eq (Fintype.card_fin 3), card_edges_complete]
   simp [Nat.factorial]

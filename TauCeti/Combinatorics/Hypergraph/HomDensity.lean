@@ -16,8 +16,9 @@ import Mathlib.Tactic.Positivity
 # Homomorphism densities of uniform hypergraphs
 
 A vertex map `f : U → V` is a homomorphism from an `r`-uniform hypergraph `F` to an `r`-uniform
-hypergraph `H` when it maps every edge of `F` onto an edge of `H`. Since both edges have `r`
-vertices, a homomorphism is injective on every edge of `F`. This file counts homomorphisms and
+hypergraph `H` when it maps every edge of `F` onto an edge of `H`
+(`TauCeti.UniformHypergraph.IsHom`). Since both edges have `r` vertices, a homomorphism is
+injective on every edge of `F`. This file counts homomorphisms and
 injective homomorphisms between uniform hypergraphs on finite vertex types, and normalizes the
 counts to densities:
 
@@ -43,7 +44,6 @@ injective count is Mathlib's labelled copy count `SimpleGraph.labelledCopyCount`
 
 ## Main definitions
 
-* `TauCeti.UniformHypergraph.IsHom`: a vertex map sending every edge onto an edge.
 * `TauCeti.UniformHypergraph.homCount` and `TauCeti.UniformHypergraph.injHomCount`: the numbers of
   homomorphisms and of injective homomorphisms.
 * `TauCeti.UniformHypergraph.homDensity` and `TauCeti.UniformHypergraph.injHomDensity`: the
@@ -51,13 +51,12 @@ injective count is Mathlib's labelled copy count `SimpleGraph.labelledCopyCount`
 
 ## Main results
 
-* `TauCeti.UniformHypergraph.IsHom.injOn`: homomorphisms are injective on edges.
 * `TauCeti.UniformHypergraph.homDensity_le_one` and
   `TauCeti.UniformHypergraph.injHomDensity_le_one`: both densities are at most `1`.
 * `TauCeti.UniformHypergraph.homDensity_empty_left` and
   `TauCeti.UniformHypergraph.injHomDensity_complete_right`: the two normalizations are exact.
-* `TauCeti.UniformHypergraph.injHomDensity_complete_of_card_eq`: the injective density of a single
-  edge is the edge density.
+* `TauCeti.UniformHypergraph.injHomDensity_complete_left_of_card_eq`: the injective density of a
+  single edge is the edge density.
 * `SimpleGraph.homDensity_toUniformHypergraph` and
   `SimpleGraph.injHomDensity_toUniformHypergraph`: agreement with the graph densities.
 
@@ -74,88 +73,7 @@ namespace TauCeti
 
 namespace UniformHypergraph
 
-variable {r : ℕ} {U V W : Type*}
-
-/-! ### Homomorphisms -/
-
-section IsHom
-
-variable [DecidableEq V]
-
-/-- A vertex map `f : U → V` is a **homomorphism** from `F` to `H` when the image of every edge of
-`F` is an edge of `H`. Both have `r` vertices, so `f` is injective on every edge of `F`
-(`IsHom.injOn`). -/
-def IsHom (F : UniformHypergraph r U) (H : UniformHypergraph r V) (f : U → V) : Prop :=
-  ∀ e ∈ F.edges, e.image f ∈ H.edges
-
-variable {F F' : UniformHypergraph r U} {H H' : UniformHypergraph r V} {f : U → V}
-
-/-- The defining property of a homomorphism. -/
-theorem isHom_iff : F.IsHom H f ↔ ∀ e ∈ F.edges, e.image f ∈ H.edges := Iff.rfl
-
-instance (F : UniformHypergraph r U) (H : UniformHypergraph r V) : DecidablePred (F.IsHom H) :=
-  fun _ ↦ decidable_of_iff' _ isHom_iff
-
-/-- A homomorphism maps every edge onto an edge. -/
-theorem IsHom.image_mem (h : F.IsHom H f) {e : Finset U} (he : e ∈ F.edges) :
-    e.image f ∈ H.edges :=
-  h e he
-
-/-- A homomorphism is injective on every edge: the image of an edge has `r` vertices, as many as
-the edge itself. -/
-theorem IsHom.injOn (h : F.IsHom H f) {e : Finset U} (he : e ∈ F.edges) : Set.InjOn f e := by
-  rw [← card_image_iff, H.edge_card _ (h e he), F.edge_card e he]
-
-/-- A homomorphism into `H` is a homomorphism into every hypergraph with more edges. -/
-theorem IsHom.mono_right (h : F.IsHom H f) (hH : H.edges ⊆ H'.edges) : F.IsHom H' f :=
-  fun e he ↦ hH (h e he)
-
-/-- A homomorphism from `F` is a homomorphism from every hypergraph with fewer edges. -/
-theorem IsHom.mono_left (h : F.IsHom H f) (hF : F'.edges ⊆ F.edges) : F'.IsHom H f :=
-  fun e he ↦ h e (hF he)
-
-/-- The identity is a homomorphism. -/
-theorem isHom_id [DecidableEq U] (F : UniformHypergraph r U) : F.IsHom F id :=
-  fun e he ↦ by rwa [image_id]
-
-/-- Homomorphisms compose. -/
-theorem IsHom.comp [DecidableEq W] {G : UniformHypergraph r W} {g : V → W} (hg : H.IsHom G g)
-    (hf : F.IsHom H f) : F.IsHom G (g ∘ f) :=
-  fun e he ↦ by
-    rw [← image_image]
-    exact hg _ (hf e he)
-
-/-- Every vertex map is a homomorphism out of the empty hypergraph. -/
-@[simp]
-theorem isHom_empty_left : (empty r U).IsHom H f :=
-  fun _ he ↦ by simp at he
-
-/-- A vertex map is a homomorphism into the empty hypergraph exactly when the pattern has no
-edges. -/
-@[simp]
-theorem isHom_empty_right_iff : F.IsHom (empty r V) f ↔ F.edges = ∅ := by
-  simp [isHom_iff, eq_empty_iff_forall_notMem]
-
-/-- A vertex map is a homomorphism into the complete hypergraph exactly when it is injective on
-every edge. -/
-theorem isHom_complete_right_iff [Fintype V] :
-    F.IsHom (complete r V) f ↔ ∀ e ∈ F.edges, Set.InjOn f e := by
-  refine forall₂_congr fun e he ↦ ?_
-  rw [mem_edges_complete, ← F.edge_card e he, card_image_iff]
-
-/-- Every injective vertex map is a homomorphism into the complete hypergraph. -/
-theorem isHom_complete_right_of_injective [Fintype V] (hf : Function.Injective f) :
-    F.IsHom (complete r V) f :=
-  isHom_complete_right_iff.2 fun _ _ ↦ hf.injOn
-
-/-- A homomorphism out of a single edge, the complete `r`-uniform hypergraph on `r` vertices, is
-injective. -/
-theorem injective_of_isHom_complete [Fintype U] (hU : Fintype.card U = r)
-    (h : (complete r U).IsHom H f) : Function.Injective f := by
-  rw [← Set.injOn_univ, ← coe_univ]
-  exact h.injOn (by rw [mem_edges_complete, card_univ, hU])
-
-end IsHom
+variable {r : ℕ} {U V : Type*}
 
 /-! ### Counting homomorphisms -/
 
@@ -217,11 +135,13 @@ theorem injHomCount_empty_left :
   simp [injHomCount_def, Fintype.card_embedding_eq]
 
 /-- A pattern with an edge has no homomorphism into the empty hypergraph. -/
+@[simp]
 theorem homCount_empty_right (hF : F.edges.Nonempty) : F.homCount (empty r V) = 0 := by
   simp [homCount_def, hF.ne_empty]
 
 omit [DecidableEq U] in
 /-- A pattern with an edge has no injective homomorphism into the empty hypergraph. -/
+@[simp]
 theorem injHomCount_empty_right (hF : F.edges.Nonempty) : F.injHomCount (empty r V) = 0 := by
   simp [injHomCount_def, hF.ne_empty]
 
@@ -330,17 +250,20 @@ theorem homDensity_empty_left [Nonempty V] : (empty r U).homDensity H = 1 := by
 omit [DecidableEq U] in
 /-- The empty pattern has injective homomorphism density `1` in every host with at least as many
 vertices: every vertex embedding is a homomorphism. -/
+@[simp]
 theorem injHomDensity_empty_left (h : Fintype.card U ≤ Fintype.card V) :
     (empty r U).injHomDensity H = 1 := by
   rw [injHomDensity_def, injHomCount_empty_left]
   exact div_self (Nat.cast_ne_zero.2 (Nat.descFactorial_eq_zero_iff_lt.not.2 h.not_gt))
 
 /-- A pattern with an edge has homomorphism density `0` in the empty hypergraph. -/
+@[simp]
 theorem homDensity_empty_right (hF : F.edges.Nonempty) : F.homDensity (empty r V) = 0 := by
   rw [homDensity_def, homCount_empty_right hF, Nat.cast_zero, zero_div]
 
 omit [DecidableEq U] in
 /-- A pattern with an edge has injective homomorphism density `0` in the empty hypergraph. -/
+@[simp]
 theorem injHomDensity_empty_right (hF : F.edges.Nonempty) : F.injHomDensity (empty r V) = 0 := by
   rw [injHomDensity_def, injHomCount_empty_right hF, Nat.cast_zero, zero_div]
 
@@ -348,6 +271,7 @@ omit [DecidableEq U] in
 /-- Every pattern has injective homomorphism density `1` in a complete host with at least as many
 vertices: every vertex embedding is a homomorphism, and the falling factorial `(|V|)_{|U|}` counts
 them. -/
+@[simp]
 theorem injHomDensity_complete_right (h : Fintype.card U ≤ Fintype.card V) :
     F.injHomDensity (complete r V) = 1 := by
   rw [injHomDensity_def, injHomCount_complete_right]
@@ -388,7 +312,7 @@ exactly when it maps adjacent vertices to adjacent vertices. -/
 theorem _root_.SimpleGraph.isHom_toUniformHypergraph_iff {f : U → V} :
     F.toUniformHypergraph.IsHom G.toUniformHypergraph f ↔
       ∀ a b, F.Adj a b → G.Adj (f a) (f b) := by
-  refine ⟨fun h a b hab ↦ ?_, fun h e he ↦ ?_⟩
+  refine ⟨fun h a b hab ↦ ?_, fun h ↦ isHom_iff.2 fun e he ↦ ?_⟩
   · have hmem := h.image_mem (SimpleGraph.insert_mem_toUniformHypergraph_edges.2 hab)
     rwa [image_insert, image_singleton, SimpleGraph.insert_mem_toUniformHypergraph_edges] at hmem
   · obtain ⟨a, b, -, rfl⟩ := card_eq_two.1 (F.toUniformHypergraph.edge_card e he)
