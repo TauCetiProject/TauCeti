@@ -33,7 +33,6 @@ theorem isPrimitive_fundamentalModuleGenerator (i : Fin t.rank) :
       t.fundamentalModuleGenerator_mem_fundamentalLattice ht i⟩ :
         t.fundamentalLattice ht i) := by
   apply Submodule.isPrimitive_of_forall_smul_mem
-  · exact fun h => t.fundamentalModuleGenerator_ne_zero ht i (congrArg Subtype.val h)
-  · exact fun q hq => (t.smul_fundamentalModuleGenerator_mem_fundamentalLattice_iff ht i q).mp hq
+  exact fun q hq => (t.smul_fundamentalModuleGenerator_mem_fundamentalLattice_iff ht i q).mp hq
 
 end TauCeti.DynkinType

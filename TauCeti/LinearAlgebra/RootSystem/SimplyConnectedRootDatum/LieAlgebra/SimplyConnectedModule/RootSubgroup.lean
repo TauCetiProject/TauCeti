@@ -54,7 +54,8 @@ private def highest (i : Fin t.rank) : M :=
 private def lowered (i : Fin t.rank) : M := rootOp (.inr i) (highest t ht i)
 
 private theorem primitive_highest (i : Fin t.rank) : IsPrimitive (highest t ht i) := by
-  obtain ⟨f, hf⟩ := isPrimitive_def.mp (t.isPrimitive_fundamentalModuleGenerator ht i)
+  -- Direct-sum operations are pointwise, and subtype operations are inherited,
+  -- so the two linearity equations below hold definitionally.
   let p : M →ₗ[ℤ] t.fundamentalLattice ht i :=
     { toFun x := ⟨(x : t.scModule ht) i, mem_scLattice_iff.mp x.2 i⟩
       map_add' _ _ := rfl
@@ -62,8 +63,8 @@ private theorem primitive_highest (i : Fin t.rank) : IsPrimitive (highest t ht i
   have hp : p (highest t ht i) = ⟨t.fundamentalModuleGenerator ht i,
       t.fundamentalModuleGenerator_mem_fundamentalLattice ht i⟩ := by
     apply Subtype.ext
-    exact of_eq_same i (t.fundamentalModuleGenerator ht i)
-  exact isPrimitive_def.mpr ⟨f.comp p, (congrArg f hp).trans hf⟩
+    exact lof_apply ℚ i (t.fundamentalModuleGenerator ht i)
+  exact IsPrimitive.of_map (g := p) (hp.symm ▸ t.isPrimitive_fundamentalModuleGenerator ht i)
 
 private theorem e_highest (i : Fin t.rank) : rootOp (.inl i) (highest t ht i) = 0 := by
   apply Subtype.ext
@@ -78,19 +79,15 @@ private theorem f_lowered (i : Fin t.rank) : rootOp (.inr i) (lowered t ht i) = 
     lie_lieBasis_f_lie_lieBasis_f_fundamentalModuleGenerator, map_zero, ZeroMemClass.coe_zero]
 
 private theorem e_lowered (i : Fin t.rank) : rootOp (.inl i) (lowered t ht i) = highest t ht i := by
-  have hef : ⁅(t.lieBasis ht).e i,
-      ⁅(t.lieBasis ht).f i, t.fundamentalModuleGenerator ht i⁆⁆ =
-      t.fundamentalModuleGenerator ht i := by
-    rw [leibniz_lie, ((t.lieBasis ht).sl2 i).lie_e_f]
-    simp
   apply Subtype.ext
   simp only [lowered, coe_kostantRootOperator_apply, LieAlgebra.Basis.rootGenerator_inl,
-    LieAlgebra.Basis.rootGenerator_inr, representation_ι_apply, highest, ← lof_lie, hef]
+    LieAlgebra.Basis.rootGenerator_inr, representation_ι_apply, highest, ← lof_lie,
+    lie_lieBasis_e_lie_lieBasis_f_fundamentalModuleGenerator]
 
 private theorem primitive_lowered (i : Fin t.rank) : IsPrimitive (lowered t ht i) := by
-  obtain ⟨f, hf⟩ := isPrimitive_def.mp (primitive_highest t ht i)
-  refine isPrimitive_def.mpr ⟨f.comp (rootOp (.inl i)), ?_⟩
-  simpa only [LinearMap.comp_apply, e_lowered] using hf
+  apply IsPrimitive.of_map (g := rootOp (.inl i))
+  rw [e_lowered]
+  exact primitive_highest t ht i
 
 private theorem exists_primitive_step (i : Fin t.rank ⊕ Fin t.rank) : ∃ v w : M,
     ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (v : t.scModule ht) = (w : t.scModule ht) ∧
@@ -111,7 +108,7 @@ private theorem exists_primitive_step (i : Fin t.rank ⊕ Fin t.rank) : ∃ v w 
 
 /-- Every numbered positive or negative simple-root subgroup on the full-weight lattice
 has injective parameter map over every commutative ring. -/
-theorem scRootSubgroupParam_injective (A : Type*) [CommRing A]
+theorem kostantRootSubgroupParam_scLattice_injective (A : Type*) [CommRing A]
     (i : Fin t.rank ⊕ Fin t.rank) :
     Function.Injective (kostantRootSubgroupParam e h ρ M
       (t.kostantForm_apply_mem_scLattice ht) i

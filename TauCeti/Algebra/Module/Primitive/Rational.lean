@@ -10,7 +10,7 @@ public import TauCeti.Algebra.Module.Primitive
 /-!
 # Primitive vectors from rational saturation
 
-A nonzero vector in a free integral submodule of a rational vector space is primitive
+A vector in a free integral submodule of a rational vector space is primitive
 if the only rational multiples lying in that submodule are its integer multiples.
 This criterion turns integral normalization of a rational line into an integral
 coordinate taking its specified generator to one.
@@ -22,9 +22,14 @@ namespace Submodule
 
 /-- A normalized generator of the intersection with a rational line is primitive. -/
 theorem isPrimitive_of_forall_smul_mem {V : Type*} [AddCommGroup V] [Module ℚ V]
-    (M : Submodule ℤ V) [Module.Free ℤ M] {v : M} (hv : v ≠ 0)
+    (M : Submodule ℤ V) [Module.Free ℤ M] {v : M}
     (h : ∀ q : ℚ, q • (v : V) ∈ M → ∃ n : ℤ, (n : ℚ) = q) :
     TauCeti.IsPrimitive v := by
+  have hv : v ≠ 0 := by
+    intro hv
+    obtain ⟨n, hn⟩ := h (1 / 2) (by simp [hv])
+    have hden := congrArg Rat.den hn
+    norm_num at hden
   obtain ⟨d, w, hd, hp, hvw⟩ := TauCeti.exists_eq_zsmul_isPrimitive hv
   have hdq : (d : ℚ) ≠ 0 := by exact_mod_cast hd.ne'
   have hval : (v : V) = d • (w : V) := congrArg Subtype.val hvw
