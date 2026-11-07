@@ -127,20 +127,12 @@ theorem mpullback_eq_compContinuousLinearMap (ω : RoughForm I' M' F k) {f : M �
       (ω.inChartAt c (extChartAt I' c (f x))).compContinuousLinearMap
         (fderivWithin ℝ (extChartAt I' c ∘ f ∘ (extChartAt I x).symm) (range I)
           (extChartAt I x x)) := by
-  have hxt : extChartAt I x x ∈ (extChartAt I x).target := mem_extChartAt_target x
   have hf' : MDifferentiableAt I I' f ((extChartAt I x).symm (extChartAt I x x)) := by
     rwa [extChartAt_to_inv]
-  -- The flat pullback is the pullback by `f` composed with the inverse chart, read in the chart.
-  have h := mpullbackWithin_eq_compContinuousLinearMap ω c
-    (by simpa only [Function.comp_apply, extChartAt_to_inv] using hfc)
-    (hf'.comp_mdifferentiableWithinAt _ (mdifferentiableWithinAt_extChartAt_symm hxt))
-    (I.uniqueDiffOn.uniqueDiffWithinAt (extChartAt_target_subset_range x hxt))
-  simp only [Function.comp_apply, extChartAt_to_inv] at h
-  rw [← inChartAt_extChartAt_self (mpullback I I' f ω) x, inChartAt_mpullback ω f x hxt hf']
-  refine Eq.trans ?_ h
-  ext v
-  rw [mpullbackWithin_apply, ContinuousAlternatingMap.compContinuousLinearMap_apply]
-  -- The two sides differ only by unfolding `Function.comp`.
+  rw [← inChartAt_extChartAt_self (mpullback I I' f ω) x,
+    inChartAt_mpullback_eq_compContinuousLinearMap ω x c (mem_extChartAt_target x) hf'
+      (by rwa [extChartAt_to_inv])]
+  simp only [extChartAt_to_inv]
   rfl
 
 end TauCeti.RoughForm

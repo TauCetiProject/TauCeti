@@ -78,19 +78,6 @@ theorem SmoothForm.mpullback_realLineCoordForm (h : M → ℝ) :
 
 variable [IsManifold I 2 M] [IsManifold I' 2 M']
 
-/-- The coordinate expression of a pullback agrees, at a chart coordinate where `f` is `C²` and
-lands in the source of the target chart, with the flat pullback of the coordinate expression of
-the form by the derivative of the coordinate expression of `f`. -/
-private theorem inChartAt_mpullback_eq_at {f : M → M'} (x : M) {z : E}
-    (hz : z ∈ (extChartAt I x).target)
-    (hzf : f ((extChartAt I x).symm z) ∈ (extChartAt I' (f x)).source)
-    (hfx : ContMDiffAt I I' 2 f ((extChartAt I x).symm z)) (φ : RoughForm I' M' F k) :
-    (mpullback I I' f φ).inChartAt x z =
-      (φ.inChartAt (f x) (writtenInExtChartAt I I' x f z)).compContinuousLinearMap
-        (fderivWithin ℝ (writtenInExtChartAt I I' x f) (range I) z) :=
-  RoughForm.inChartAt_mpullback_eq_compContinuousLinearMap φ x (f x) hz
-    (hfx.mdifferentiableAt (by norm_num)) hzf
-
 private theorem inChartAt_mpullback_eventuallyEq {f : M → M'} (x : M)
     (hf : ContMDiffAt I I' 2 f x) (φ : RoughForm I' M' F k) :
     (mpullback I I' f φ).inChartAt x =ᶠ[𝓝[range I] extChartAt I x x]
@@ -101,7 +88,8 @@ private theorem inChartAt_mpullback_eventuallyEq {f : M → M'} (x : M)
   have h := hsrc.and ((contMDiffAt_iff_contMDiffAt_nhds (by norm_num)).mp hf)
   rw [← map_extChartAt_symm_nhdsWithin_range (I := I) x] at h
   filter_upwards [extChartAt_target_mem_nhdsWithin x, h] with z hz hz'
-  exact inChartAt_mpullback_eq_at x hz hz'.1 hz'.2 φ
+  exact RoughForm.inChartAt_mpullback_eq_compContinuousLinearMap φ x (f x) hz
+    (hz'.2.mdifferentiableAt (by norm_num)) hz'.1
 
 /-- At a point, pullback commutes with the exterior derivative. -/
 theorem mpullback_mextDeriv_at {f : M → M'} (hf : ContMDiffAt I I' 2 f x)
