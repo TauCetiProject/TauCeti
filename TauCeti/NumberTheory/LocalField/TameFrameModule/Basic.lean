@@ -92,8 +92,8 @@ theorem tameFrameRelationMap_def (σ τ : G) (a b : R) :
 
 /-- The tame-frame relation map sends `x` to `x` times the defining relation `(σ - a, τ - b)`. -/
 theorem tameFrameRelationMap_apply (σ τ : G) (a b : R) (x : MonoidAlgebra R G) :
-    tameFrameRelationMap R G σ τ a b x = x • (tameFrameRelations R G σ τ a b).relation () :=
-  (rfl)
+    tameFrameRelationMap R G σ τ a b x = x • (tameFrameRelations R G σ τ a b).relation () := by
+  rw [tameFrameRelationMap_def, LinearMap.toSpanSingleton_apply]
 
 /-- The zeroth coordinate of the tame-frame relation map is right multiplication by `σ - a`. -/
 @[simp]
