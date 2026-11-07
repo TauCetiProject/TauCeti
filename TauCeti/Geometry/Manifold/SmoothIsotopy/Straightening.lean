@@ -501,14 +501,19 @@ private theorem exists_smoothIsotopy_eventuallyEq_of_mfderiv_eq_one
   -- Step 2: `K` and `L` read in the chart along the circle have the same nonzero velocity at `0`.
   set k : ℝ → E := fun t => φ (K (Circle.exp t))
   set l : ℝ → E := fun t => φ (L (Circle.exp t))
-  have hkC := contDiffOn_chartAt_comp_circleExp p K.contMDiff hKφ
-  have hlC := contDiffOn_chartAt_comp_circleExp p hL hLφ
+  have hkC := contDiffOn_chart_comp_circleExp hφ K.contMDiff hKφ
+  have hlC := contDiffOn_chart_comp_circleExp hφ hL hLφ
   have hk0 : k 0 = φ p := by simp only [k, Circle.exp_zero, hp]
   have hl0 : l 0 = φ p := by simp only [l, Circle.exp_zero, ← h₀]
   have hn0 : (∞ : WithTop ℕ∞) ≠ 0 := by simp
-  have hd := deriv_chartAt_comp_circleExp_eq hn0 (K.contMDiff.mdifferentiableAt hn0)
-    (hL.mdifferentiableAt hn0) h₀ h₁
-  have hv := deriv_chartAt_comp_circleExp_ne_zero hn0 (K.isImmersion.isImmersionAt 1)
+  have hd := deriv_chart_comp_circleExp_eq (K := ⇑K) (L := L) (t := 0) hn0 hφ
+    (by rwa [Circle.exp_zero])
+    (by rw [Circle.exp_zero]; exact K.contMDiff.mdifferentiableAt hn0)
+    (by rw [Circle.exp_zero]; exact hL.mdifferentiableAt hn0)
+    (by simpa only [Circle.exp_zero] using h₀)
+    (by rw [Circle.exp_zero]; exact h₁)
+  have hv := deriv_chart_comp_circleExp_ne_zero (f := ⇑K) (t := 0) hn0 hφ (by rwa [Circle.exp_zero])
+    (by rw [Circle.exp_zero]; exact K.isImmersion.isImmersionAt 1)
   -- Step 3: the spliced curves are regular on a fixed interval `[-ρ, ρ]`.
   obtain ⟨ℓ, ρ, hρ0, hρr, hpos⟩ := exists_pos_deriv_splice hr (hkC.of_le (by simp))
     (hlC.of_le (by simp)) (hk0.trans hl0.symm) hd hv
