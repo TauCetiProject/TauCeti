@@ -8,6 +8,7 @@ module
 import Mathlib.Algebra.Group.Shrink
 import Mathlib.Topology.Maps.Proper.Basic
 
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Descent
 public import TauCeti.Topology.Algebra.Group.ClosedSubgroup
 public import TauCeti.Topology.Algebra.Group.Profinite.EmbeddingProblem.Lift
 
@@ -64,19 +65,6 @@ def IsProjective (p : ℕ) (G : Type u) [Group G] [TopologicalSpace G] : Prop :=
     IsProP p A → ∀ (α : A →ₜ* B), Function.Surjective α →
       ∀ f : G →ₜ* B, ∃ φ : G →ₜ* A, α.comp φ = f
 
-/-- A continuous homomorphism that kills the kernel of a homomorphism which is a quotient map
-factors through it by a continuous homomorphism. -/
-theorem exists_continuousMonoidHom_comp_eq_of_isQuotientMap {X Y Z : Type*} [Group X] [Group Y]
-    [Group Z] [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z] {s : X →* Y}
-    {π : X →* Z} (hs : Topology.IsQuotientMap s) (hπ : Continuous π) (hle : s.ker ≤ π.ker) :
-    ∃ β : Y →* Z, Continuous β ∧ ∀ x, β (s x) = π x := by
-  refine ⟨s.liftOfSurjective hs.surjective ⟨π, hle⟩, hs.continuous_iff.mpr ?_, fun x ↦ ?_⟩
-  · convert hπ using 1
-    exact funext fun x ↦ by
-      simp only [Function.comp_apply, MonoidHom.liftOfSurjective,
-        MonoidHom.liftOfRightInverse_comp_apply]
-  · simp only [MonoidHom.liftOfSurjective, MonoidHom.liftOfRightInverse_comp_apply]
-
 variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 variable {A : Type v} [Group A] [TopologicalSpace A] [IsTopologicalGroup A]
   [CompactSpace A]
@@ -120,13 +108,15 @@ private theorem exists_quotient_map_in_relation {p : ℕ} (hG : HasPGroupSolutio
     QuotientGroup.continuous_mk.comp
       ((QuotientGroup.continuous_mk.comp
         (continuous_fst.comp continuous_subtype_val)).subtype_mk _)
-  obtain ⟨β, hβcont, hβ⟩ := exists_continuousMonoidHom_comp_eq_of_isQuotientMap hsquot hπcont hle
+  let β := ContinuousMonoidHom.liftOfIsQuotientMap ⟨s, hscont⟩ hsquot ⟨π, hπcont⟩ hle
+  have hβ (h : H) : β (s h) = π h :=
+    ContinuousMonoidHom.liftOfIsQuotientMap_comp_apply ⟨s, hscont⟩ hsquot ⟨π, hπcont⟩ hle h
   -- Stage 4: `K` is a `p`-group inside the `p`-group `A ⧸ U`, so `HasPGroupSolutions` lifts `β`
   -- through `t.range ↠ t.range ⧸ K` to `γ : G → t.range`; `δ` is `γ` followed by the inclusion.
   obtain ⟨γ, hγ, hγβ⟩ := hG.exists_comp_eq (QuotientGroup.mk' K)
     (QuotientGroup.mk'_surjective K)
-    (((isProP_iff.mp hA U).to_subgroup t.range).to_subgroup _) β
-    ((MonoidHom.continuous_iff_isOpen_ker _).mp hβcont)
+    (((isProP_iff.mp hA U).to_subgroup t.range).to_subgroup _) β.toMonoidHom
+    ((MonoidHom.continuous_iff_isOpen_ker _).mp β.continuous)
   let δ : G →ₜ* A ⧸ U.toSubgroup :=
     ⟨t.range.subtype.comp γ,
       continuous_subtype_val.comp (γ.continuous_iff_isOpen_ker.mpr hγ)⟩
