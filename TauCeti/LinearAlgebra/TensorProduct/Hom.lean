@@ -27,6 +27,39 @@ public section
 
 open TensorProduct
 
+namespace Function
+
+/-- A map `Φ` that is a retract of a bijection `Φ'` is bijective: if `a`, `b` embed the source
+and target of `Φ` into those of `Φ'` with retractions `c`, `d`, `Φ'` restricts to `Φ` along them
+in both directions. -/
+theorem bijective_of_retract {A B A' B' : Type*} {Φ : A → B} {Φ' : A' → B'} {a : A → A'}
+    {c : A' → A} {b : B → B'} {d : B' → B} (hΦ' : Bijective Φ')
+    (ha : ∀ z, Φ' (a z) = b (Φ z)) (hb : ∀ z, Φ (c z) = d (Φ' z)) (hc : ∀ z, c (a z) = z)
+    (hd : ∀ g, d (b g) = g) : Bijective Φ :=
+  ⟨fun z z' h ↦ by rw [← hc z, ← hc z', hΦ'.1 ((ha z).trans (h ▸ (ha z').symm))],
+    fun g ↦ by
+      obtain ⟨z, hz⟩ := hΦ'.2 (b g)
+      exact ⟨c z, by rw [hb, hz, hd]⟩⟩
+
+end Function
+
+namespace LinearMap
+
+/-- Base-changing the precomposition maps along a retraction `p` of a section `i` gives the
+identity. -/
+theorem baseChange_lcomp_comp_baseChange_lcomp {R S M N F : Type*} [CommSemiring R]
+    [CommSemiring S] [Algebra R S] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    [AddCommMonoid F] [Module R F] {i : M →ₗ[R] F} {p : F →ₗ[R] M} (hpi : p ∘ₗ i = .id)
+    (z : S ⊗[R] (M →ₗ[R] N)) :
+    (lcomp R N i).baseChange S ((lcomp R N p).baseChange S z) = z := by
+  rw [← comp_apply, ← baseChange_comp]
+  have : lcomp R N i ∘ₗ lcomp R N p = .id := by
+    ext x : 1
+    simp [lcomp_apply', comp_assoc, hpi]
+  simp [this]
+
+end LinearMap
+
 namespace IsBaseChange
 
 variable {R S M N P Q : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
@@ -85,22 +118,14 @@ theorem linearMapLeftRight_of_projective [Module.Finite R M] [Module.Projective 
     induction z with
     | tmul s y => simp [ΦF, ΦM, ← hi, LinearMap.smul_comp, LinearMap.lcomp_apply']
     | add x y hx hy => simp [hx, hy, LinearMap.add_comp]
-  have hc (z : S ⊗[R] (M →ₗ[R] N)) :
-      (LinearMap.lcomp R N i).baseChange S ((LinearMap.lcomp R N p).baseChange S z) = z := by
-    rw [← LinearMap.comp_apply, ← LinearMap.baseChange_comp]
-    have : LinearMap.lcomp R N i ∘ₗ LinearMap.lcomp R N p = LinearMap.id := by
-      ext x : 1
-      simp [LinearMap.lcomp_apply', LinearMap.comp_assoc, hpi]
-    simp [this]
   have hd (g : P →ₗ[S] Q) : (g ∘ₗ pS) ∘ₗ iS = g := by
     ext x
     simp [hpiS]
   -- Hence `ΦM` is a retract of the bijection `ΦF`, so it is bijective.
-  refine of_equiv (LinearEquiv.ofBijective ΦM ⟨fun z z' h ↦ ?_, fun g ↦ ?_⟩) fun x ↦
+  exact of_equiv (LinearEquiv.ofBijective ΦM (Function.bijective_of_retract (a := fun z ↦
+    (LinearMap.lcomp R N p).baseChange S z) (b := (· ∘ₗ pS)) (d := (· ∘ₗ iS)) hΦF ha hb
+    (LinearMap.baseChange_lcomp_comp_baseChange_lcomp hpi) hd)) fun x ↦
     (LinearMap.liftBaseChange_tmul _ _ _ _).trans (one_smul S _)
-  · rw [← hc z, ← hc z', hΦF.1 ((ha z).trans (h ▸ (ha z').symm))]
-  · obtain ⟨z, hz⟩ := hΦF.2 (g ∘ₗ pS)
-    exact ⟨(LinearMap.lcomp R N i).baseChange S z, by rw [hb, hz, hd]⟩
 
 end IsBaseChange
 
