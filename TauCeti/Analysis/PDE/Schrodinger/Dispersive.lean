@@ -284,9 +284,10 @@ theorem coeFn_schrodingerPropagator_toLp_gaussian (t : ℝ) :
     rw [FourierTransform.fourier_fourierInv_eq, SchwartzMap.fourier_coe]
     have : ⇑(SchwartzMap.gaussian hπ : 𝓢(E, ℂ)) = fun ξ ↦ cexp (-π * ‖ξ‖ ^ 2) :=
       funext (SchwartzMap.gaussian_apply hπ)
-    rw [this, fourier_gaussian_innerProductSpace hπ, div_self (ofReal_ne_zero.2 pi_ne_zero),
-      one_cpow, one_mul, SchwartzMap.gaussian_apply, schrodingerSymbol_apply, smul_eq_mul,
-      ← Complex.exp_add]
+    rw [this, fourier_gaussian_innerProductSpace hπ]
+    simp only [div_self (ofReal_ne_zero.2 pi_ne_zero), one_cpow, one_mul,
+      SchwartzMap.gaussian_apply, schrodingerSymbol_apply, smul_eq_mul]
+    rw [← Complex.exp_add]
     congr 1
     simp only [b]
     push_cast

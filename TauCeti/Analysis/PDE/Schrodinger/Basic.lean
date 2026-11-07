@@ -36,8 +36,6 @@ dispersive estimate `‖S(t) f‖_∞ ≤ (4π|t|)^{-n/2} ‖f‖₁` is proved 
 * `TauCeti.schrodingerSymbol`: the symbol `exp(-4π² i t ‖ξ‖²)`.
 * `TauCeti.schrodingerPropagator`: the propagator `S(t)` on `L²(E, F)`.
 * `TauCeti.fourier_schrodingerPropagator`: `𝓕 (S(t) f) = exp(-4π² i t ‖·‖²) • 𝓕 f`.
-* `TauCeti.eq_schrodingerPropagator_iff`: `S(t)` is the only bounded operator on `L²` acting on
-  the Fourier side as multiplication by `exp(-4π² i t ‖ξ‖²)`.
 * `TauCeti.schrodingerPropagator_zero`, `TauCeti.schrodingerPropagator_add`: the group law.
 * `TauCeti.norm_schrodingerPropagator_apply`, `TauCeti.inner_schrodingerPropagator_apply`,
   `TauCeti.adjoint_schrodingerPropagator`: unitarity.
@@ -150,17 +148,6 @@ theorem coeFn_fourier_schrodingerPropagator (t : ℝ) (f : Lp F 2 (volume : Meas
   filter_upwards [Lp.coeFn_lpSMul (r := 2) ((memLp_schrodingerSymbol (E := E) t).toLp _) (𝓕 f),
     (memLp_schrodingerSymbol (E := E) t).coeFn_toLp] with ξ h₁ h₂
   rw [h₁, Pi.smul_apply', h₂]
-
-/-- `S(t)` is the only bounded operator on `L²` acting on the Fourier side as multiplication by
-`exp(-4π² i t ‖ξ‖²)`. -/
-theorem eq_schrodingerPropagator_iff {t : ℝ}
-    {T : Lp F 2 (volume : Measure E) →L[ℂ] Lp F 2 (volume : Measure E)} :
-    T = schrodingerPropagator F t ↔
-      ∀ f, 𝓕 (T f) =ᵐ[volume] fun ξ ↦ schrodingerSymbol t ξ • 𝓕 f ξ := by
-  refine ⟨fun h f ↦ h ▸ coeFn_fourier_schrodingerPropagator t f, fun h ↦ ?_⟩
-  ext1 f
-  refine (Lp.fourierTransformₗᵢ E F).injective (Lp.ext ?_)
-  exact (h f).trans (coeFn_fourier_schrodingerPropagator t f).symm
 
 /-- `S(0)` is the identity. -/
 @[simp]
