@@ -135,6 +135,16 @@ theorem charPoly_eq_prod_charDivisor (hM : Module.IsTorsion O⟦X⟧ M) :
   rw [charPoly_def, (LinearEquiv.ofTop _
     (eq_top_iff.mpr fun x _ ↦ (mem_torsion_iff x).mpr (@hM x))).charDivisor_eq]
 
+/-- The characteristic polynomial of `M` is that of its torsion submodule. -/
+@[simp]
+theorem charPoly_torsion : charPoly O (torsion O⟦X⟧ M) = charPoly O M := by
+  rw [charPoly_eq_prod_charDivisor (torsion_isTorsion (R := O⟦X⟧) (M := M)), charPoly_def]
+
+/-- The `λ`-invariant of `M` is that of its torsion submodule. -/
+@[simp]
+theorem lambdaInvariant_torsion : lambdaInvariant O (torsion O⟦X⟧ M) = lambdaInvariant O M := by
+  rw [lambdaInvariant_def, charPoly_torsion, lambdaInvariant_def]
+
 /-- The characteristic polynomial of a torsion-free module is `1`. -/
 @[simp]
 theorem charPoly_eq_one_of_isTorsionFree [IsDomain O] [Module.IsTorsionFree O⟦X⟧ M] :
@@ -185,10 +195,7 @@ theorem IsPseudoIsomorphism.lambdaInvariant_eq [IsDomain O] [IsNoetherianRing O]
 
 /-- The characteristic polynomial is invariant under linear equivalence. -/
 theorem _root_.LinearEquiv.charPoly_eq (e : M ≃ₗ[O⟦X⟧] N) : charPoly O M = charPoly O N := by
-  have h : (torsion O⟦X⟧ M).map (e : M →ₗ[O⟦X⟧] N) = torsion O⟦X⟧ N :=
-    le_antisymm (map_le_iff_le_comap.mpr e.toLinearMap.le_comap_torsion) fun x hx ↦
-      ⟨e.symm x, e.symm.toLinearMap.le_comap_torsion hx, e.apply_symm_apply x⟩
-  rw [charPoly_def, charPoly_def, (e.ofSubmodules _ _ h).charDivisor_eq]
+  rw [charPoly_def, charPoly_def, e.charDivisor_torsion_eq]
 
 /-- The `λ`-invariant is invariant under linear equivalence. -/
 theorem _root_.LinearEquiv.lambdaInvariant_eq (e : M ≃ₗ[O⟦X⟧] N) :
@@ -219,8 +226,7 @@ their characteristic polynomials. -/
 @[simp]
 theorem charPoly_prod [IsNoetherianRing O] [Module.Finite O⟦X⟧ M] [Module.Finite O⟦X⟧ N] :
     charPoly O (M × N) = charPoly O M * charPoly O N := by
-  rw [charPoly_def, (Submodule.torsionProdEquiv O⟦X⟧ M N).charDivisor_eq,
-    charDivisor_prod torsion_isTorsion torsion_isTorsion,
+  rw [charPoly_def, charDivisor_torsion_prod,
     Finsupp.prod_add_index' (fun _ ↦ pow_zero _) fun _ ↦ pow_add _, charPoly_def, charPoly_def]
 
 /-- The `λ`-invariant of a product of two finitely generated modules is the sum of their
@@ -237,18 +243,8 @@ of their characteristic polynomials. -/
 theorem charPoly_pi [IsNoetherianRing O] {ι : Type*} [Fintype ι] (M : ι → Type u)
     [∀ i, AddCommGroup (M i)] [∀ i, Module O⟦X⟧ (M i)] [∀ i, Module.Finite O⟦X⟧ (M i)] :
     charPoly O (∀ i, M i) = ∏ i, charPoly O (M i) := by
-  -- Reduce to `ι = Fin k`, then split off one factor at a time.
-  suffices h : ∀ (k : ℕ) (M : Fin k → Type u) [∀ i, AddCommGroup (M i)] [∀ i, Module O⟦X⟧ (M i)]
-      [∀ i, Module.Finite O⟦X⟧ (M i)], charPoly O (∀ i, M i) = ∏ i, charPoly O (M i) by
-    let e := (Fintype.equivFin ι).symm
-    rw [← (LinearEquiv.piCongrLeft O⟦X⟧ M e).charPoly_eq, h]
-    exact e.prod_comp fun i ↦ charPoly O (M i)
-  intro k
-  induction k with
-  | zero => intro M _ _ _; simp
-  | succ k ih =>
-    intro M _ _ _
-    rw [← (Fin.consLinearEquiv O⟦X⟧ M).charPoly_eq, charPoly_prod, ih, Fin.prod_univ_succ]
+  simp only [charPoly_def]
+  rw [charDivisor_torsion_pi, Finsupp.prod_finsetSum_index (fun _ ↦ pow_zero _) fun _ ↦ pow_add _]
 
 /-- The `λ`-invariant of a finite product of finitely generated modules is the sum of their
 `λ`-invariants. -/
@@ -256,9 +252,8 @@ theorem charPoly_pi [IsNoetherianRing O] {ι : Type*} [Fintype ι] (M : ι → T
 theorem lambdaInvariant_pi [IsNoetherianRing O] {ι : Type*} [Fintype ι] (M : ι → Type u)
     [∀ i, AddCommGroup (M i)] [∀ i, Module O⟦X⟧ (M i)] [∀ i, Module.Finite O⟦X⟧ (M i)] :
     lambdaInvariant O (∀ i, M i) = ∑ i, lambdaInvariant O (M i) := by
-  rw [lambdaInvariant_def, charPoly_pi, Polynomial.natDegree_prod_of_monic _ _
-    fun i _ ↦ monic_charPoly]
-  rfl
+  simp only [lambdaInvariant_def]
+  rw [charPoly_pi, Polynomial.natDegree_prod_of_monic _ _ fun i _ ↦ monic_charPoly]
 
 end CharPoly
 
@@ -351,6 +346,34 @@ theorem IsPseudoIsomorphism.lambdaInvariant_eq_sum (hϖ : Irreducible ϖ) {r a b
     lambdaInvariant O M = ∑ j, n j * (F j).natDegree :=
   hf.lambdaInvariant_eq.trans (lambdaInvariant_elementary hϖ r m hF hirr n)
 
+omit [IsAdicComplete (maximalIdeal O) O] in
+/-- The vertical prime contributes `1` to the characteristic polynomial: for a torsion module `M`,
+`F_M` is the product of the distinguished generators over the other primes of `div_Λ(M)`. -/
+theorem charPoly_eq_prod_erase_verticalPrime (hM : Module.IsTorsion O⟦X⟧ M) :
+    charPoly O M = ((charDivisor O⟦X⟧ M).erase (verticalPrime O)).prod
+      fun 𝔭 n ↦ 𝔭.distinguishedGenerator ^ n := by
+  rw [charPoly_eq_prod_charDivisor hM, ← Finsupp.mul_prod_erase' (charDivisor O⟦X⟧ M)
+    (verticalPrime O) _ fun _ ↦ pow_zero _, distinguishedGenerator_verticalPrime, one_pow, one_mul]
+
+/-- Over a complete discrete valuation ring, let `d` be a divisor supported on height-one primes of
+`O⟦X⟧`. Away from the vertical prime `(ϖ)`, the product `∏ 𝔭 ^ d(𝔭)` is the principal ideal
+generated by the product `∏ F_𝔭 ^ d(𝔭)` of the distinguished generators. -/
+theorem prod_erase_verticalPrime_asIdeal_pow_eq_span {d : PrimeSpectrum O⟦X⟧ →₀ ℕ}
+    (hd : ∀ 𝔭 ∈ d.support, 𝔭.asIdeal.height = 1) :
+    ((d.erase (verticalPrime O)).prod fun 𝔭 n ↦ 𝔭.asIdeal ^ n) =
+      Ideal.span {(((d.erase (verticalPrime O)).prod
+        fun 𝔭 n ↦ 𝔭.distinguishedGenerator ^ n : O[X]) : O⟦X⟧)} := by
+  classical
+  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible O
+  have hcoe := map_finsuppProd Polynomial.coeToPowerSeries.ringHom (d.erase (verticalPrime O))
+    fun 𝔭 n ↦ 𝔭.distinguishedGenerator ^ n
+  simp only [Polynomial.coeToPowerSeries.ringHom_apply, Polynomial.coe_pow] at hcoe
+  rw [hcoe, Finsupp.prod, Finsupp.prod, ← Ideal.prod_span_singleton]
+  refine Finset.prod_congr rfl fun 𝔭 h𝔭 ↦ ?_
+  rw [Finsupp.support_erase, Finset.mem_erase] at h𝔭
+  rw [← Ideal.span_singleton_pow, PrimeSpectrum.span_distinguishedGenerator hϖ (hd 𝔭 h𝔭.2)
+    fun h ↦ h𝔭.1 (PrimeSpectrum.ext (h.trans (verticalPrime_asIdeal_eq_span hϖ).symm))]
+
 /-- **The characteristic ideal from `μ` and `F_M`.** Over a complete discrete valuation ring with
 uniformiser `ϖ`, the characteristic ideal of a torsion `O⟦X⟧`-module `M` is generated by
 `ϖ ^ μ(M) F_M`: the vertical prime `(ϖ)` occurs with multiplicity `μ(M)`, and every other
@@ -359,34 +382,14 @@ theorem charIdeal_eq_span_C_pow_mul_charPoly (hϖ : Irreducible ϖ)
     (hM : Module.IsTorsion O⟦X⟧ M) :
     charIdeal O⟦X⟧ M = Ideal.span {C (ϖ ^ muInvariant O M) * (charPoly O M : O⟦X⟧)} := by
   classical
-  rw [charIdeal_def, charPoly_eq_prod_charDivisor hM, muInvariant_eq_charDivisor hM]
-  set d := charDivisor O⟦X⟧ M
-  set v := verticalPrime O
+  have hd : ∀ 𝔭 ∈ (charDivisor O⟦X⟧ M).support, 𝔭.asIdeal.height = 1 := fun 𝔭 h𝔭 ↦ by
+    by_contra hne
+    exact Finsupp.mem_support_iff.mp h𝔭 (charDivisor_apply_of_height_ne_one hne)
   -- Split off the vertical prime from the divisor; the remaining primes are horizontal.
-  have hsplit : d = Finsupp.single v (d v) + d.erase v := (Finsupp.single_add_erase v d).symm
-  have hhor : (d.erase v).prod (fun 𝔭 n ↦ 𝔭.asIdeal ^ n) =
-      Ideal.span {(((d.erase v).prod fun 𝔭 n ↦ 𝔭.distinguishedGenerator ^ n : O[X]) : O⟦X⟧)} := by
-    have hcoe := map_finsuppProd Polynomial.coeToPowerSeries.ringHom (d.erase v)
-      fun 𝔭 n ↦ 𝔭.distinguishedGenerator ^ n
-    simp only [Polynomial.coeToPowerSeries.ringHom_apply, Polynomial.coe_pow] at hcoe
-    rw [hcoe, Finsupp.prod, Finsupp.prod, ← Ideal.prod_span_singleton]
-    refine Finset.prod_congr rfl fun 𝔭 h𝔭 ↦ ?_
-    rw [Finsupp.support_erase, Finset.mem_erase] at h𝔭
-    have hht : 𝔭.asIdeal.height = 1 := by
-      by_contra hne
-      exact Finsupp.mem_support_iff.mp h𝔭.2 (charDivisor_apply_of_height_ne_one hne)
-    rw [← Ideal.span_singleton_pow, PrimeSpectrum.span_distinguishedGenerator hϖ hht fun h ↦
-      h𝔭.1 (PrimeSpectrum.ext (h.trans (verticalPrime_asIdeal_eq_span hϖ).symm))]
-  have hprod : (d.prod fun 𝔭 n ↦ 𝔭.distinguishedGenerator ^ n) =
-      (d.erase v).prod fun 𝔭 n ↦ 𝔭.distinguishedGenerator ^ n := by
-    conv_lhs => rw [hsplit]
-    rw [Finsupp.prod_add_index' (fun _ ↦ pow_zero _) fun _ ↦ pow_add _,
-      Finsupp.prod_single_index (by rw [pow_zero]), distinguishedGenerator_verticalPrime, one_pow,
-      one_mul]
-  conv_lhs => rw [hsplit]
-  rw [Finsupp.prod_add_index' (fun _ ↦ pow_zero _) fun _ ↦ pow_add _,
-    Finsupp.prod_single_index (by rw [pow_zero]), hhor, hprod, verticalPrime_asIdeal_eq_span hϖ,
-    Ideal.span_singleton_pow, Ideal.span_singleton_mul_span_singleton, map_pow]
+  rw [charIdeal_def, ← Finsupp.mul_prod_erase' _ (verticalPrime O) _ fun _ ↦ pow_zero _,
+    prod_erase_verticalPrime_asIdeal_pow_eq_span hd, ← charPoly_eq_prod_erase_verticalPrime hM,
+    ← muInvariant_eq_charDivisor hM, verticalPrime_asIdeal_eq_span hϖ, Ideal.span_singleton_pow,
+    Ideal.span_singleton_mul_span_singleton, map_pow]
 
 end Elementary
 
