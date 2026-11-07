@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.Taylor
 public import TauCeti.MeasureTheory.Integral.Pi
+public import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
 # Lindeberg replacement
@@ -167,20 +168,6 @@ private lemma integrable_cons_prod_ite {n : ℕ} (μ ν : Fin (n + 1) → Measur
   simpa [ρ, MeasurableEquiv.piFinSuccAbove_symm_apply, Fin.insertNthEquiv_zero,
     Fin.zero_succAbove, bs, Fin.cons_zero, Fin.cons_succ, Function.comp_def,
     Fin.consEquiv_apply] using h
-
-/-- If two integrals over the second factor of a product measure with a probability first factor
-differ by at most `C` for almost every point of the first factor, then the two integrals over the
-product measures differ by at most `C`. -/
-lemma abs_integral_prod_sub_integral_prod_le_of_ae {α β : Type*} [MeasurableSpace α]
-    [MeasurableSpace β] {ρ : Measure α} [IsProbabilityMeasure ρ] {κ₁ κ₂ : Measure β}
-    [SFinite κ₁] [SFinite κ₂] {F : α × β → ℝ} {C : ℝ}
-    (h₁ : Integrable F (ρ.prod κ₁)) (h₂ : Integrable F (ρ.prod κ₂))
-    (h : ∀ᵐ t ∂ρ, |∫ w, F (t, w) ∂κ₁ - ∫ w, F (t, w) ∂κ₂| ≤ C) :
-    |∫ p, F p ∂(ρ.prod κ₁) - ∫ p, F p ∂(ρ.prod κ₂)| ≤ C := by
-  rw [integral_prod _ h₁, integral_prod _ h₂,
-    ← integral_sub h₁.integral_prod_left h₂.integral_prod_left, ← Real.norm_eq_abs]
-  exact le_trans (norm_integral_le_of_norm_le_const (C := C)
-    (by simpa only [Real.norm_eq_abs] using h)) (by simp)
 
 /-- **Lindeberg replacement.** Let `μ i` and `ν i` be probability measures on `ℝ` with finite
 absolute moments of order `r + 1` and the same moments up to order `r`. If `f` is integrable under
