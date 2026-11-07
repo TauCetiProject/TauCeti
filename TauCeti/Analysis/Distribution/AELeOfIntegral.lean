@@ -117,7 +117,8 @@ private theorem enorm_setIntegral_isCompact_le (hh : LocallyIntegrable h ρ)
     obtain ⟨ψ, h01, h1, hsupp⟩ := TestFunction.exists_cutoff_tsupport_subset
       (hK.image continuous_subtype_val) (Ω.isOpen.isOpenMap_subtype_val _ (hWo n))
       (image_mono (hKW n)) (Subtype.coe_image_subset _ _)
-    exact ⟨ψ, fun x => (h01 x).1, fun x => (h01 x).2, fun x hx => h1 x ⟨x, hx, rfl⟩, hsupp⟩
+    exact ⟨ψ, fun x => (h01 x).1, fun x => (h01 x).2,
+      fun x hx => h1.self_of_nhdsSet x ⟨x, hx, rfl⟩, hsupp⟩
   choose ψ hψ0 hψ1 hψK hψW using hcut
   have hψ_zero (n : ℕ) (x : Ω) (hx : x ∉ W n) : ψ n x = 0 :=
     image_eq_zero_of_notMem_tsupport fun hx' => hx <| by

@@ -120,22 +120,21 @@ theorem exists_sum_subordinate (φ : 𝓓^{n}(Ω, F)) {ι : Type*} (U : ι → S
     simpa [ψ, norm_smul, abs_of_nonneg (ρ.nonneg i x)] using
       mul_le_of_le_one_left (norm_nonneg (φ x)) (ρ.le_one i x)
 
+/-- A compact subset `K` of an open set `W` contained in the domain has a test function with values
+in `[0, 1]`, equal to one on a neighbourhood of `K`, whose topological support lies in `W`. -/
+theorem exists_cutoff_tsupport_subset {K W : Set E} (hK : IsCompact K) (hW : IsOpen W)
+    (hKW : K ⊆ W) (hWΩ : W ⊆ Ω) :
+    ∃ χ : 𝓓^{n}(Ω, ℝ), (∀ x, χ x ∈ Icc 0 1) ∧ (∀ᶠ x in 𝓝ˢ K, χ x = 1) ∧ tsupport χ ⊆ W := by
+  obtain ⟨χ, hχ, hχ01, hχ1, hχc, hχW⟩ := hK.exists_contDiff_cutoff hW hKW
+  exact ⟨⟨χ, hχ.of_le (by simp), hχc, hχW.trans hWΩ⟩, fun x ↦ hχ01 ⟨x, rfl⟩,
+    subset_interior_iff_mem_nhdsSet.1 hχ1, hχW⟩
+
 /-- Every compact subset of the domain has a test function with values in `[0, 1]` that is equal
 to one on a neighbourhood of it. -/
 theorem exists_eventually_eq_one {K : Set E} (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
     ∃ χ : 𝓓^{n}(Ω, ℝ), (∀ᶠ x in 𝓝ˢ K, χ x = 1) ∧ ∀ x, χ x ∈ Icc 0 1 := by
-  obtain ⟨χ, hχ, hχ01, hχ1, hχc, hχΩ⟩ := hK.exists_contDiff_cutoff Ω.isOpen hKΩ
-  exact ⟨⟨χ, hχ.of_le (by simp), hχc, hχΩ⟩,
-    subset_interior_iff_mem_nhdsSet.1 hχ1, fun x ↦ hχ01 ⟨x, rfl⟩⟩
-
-/-- A compact subset `K` of an open set `W` contained in the domain has a test function with values
-in `[0, 1]`, equal to one on `K`, whose topological support lies in `W`. -/
-theorem exists_cutoff_tsupport_subset {K W : Set E} (hK : IsCompact K) (hW : IsOpen W)
-    (hKW : K ⊆ W) (hWΩ : W ⊆ Ω) :
-    ∃ χ : 𝓓^{n}(Ω, ℝ), (∀ x, χ x ∈ Icc 0 1) ∧ (∀ x ∈ K, χ x = 1) ∧ tsupport χ ⊆ W := by
-  obtain ⟨χ, hχ, hχ01, hχ1, hχc, hχW⟩ := hK.exists_contDiff_cutoff hW hKW
-  exact ⟨⟨χ, hχ.of_le (by simp), hχc, hχW.trans hWΩ⟩, fun x ↦ hχ01 ⟨x, rfl⟩,
-    fun x hx ↦ interior_subset (hχ1 hx), hχW⟩
+  obtain ⟨χ, hχ01, hχ1, -⟩ := exists_cutoff_tsupport_subset (n := n) hK Ω.isOpen hKΩ subset_rfl
+  exact ⟨χ, hχ1, hχ01⟩
 
 /-- Every point of the domain has a test function taking a prescribed value at it and supported
 in a given neighbourhood of it. -/
