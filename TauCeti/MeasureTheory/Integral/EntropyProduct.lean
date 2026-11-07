@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Integral.Entropy
+import TauCeti.Analysis.SpecialFunctions.Log.MulLog
 import Mathlib.Analysis.Convex.Integral
 import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
 import Mathlib.MeasureTheory.Integral.Prod
@@ -26,17 +27,6 @@ open MeasureTheory Set
 
 namespace MeasureTheory.Measure
 
-private theorem sub_le_mul_log_sub_mul_log {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b)
-    (hzero : b = 0 → a = 0) : a - b ≤ a * Real.log a - a * Real.log b := by
-  rcases eq_or_lt_of_le ha with rfl | ha
-  · simpa only [zero_sub, zero_mul, sub_zero] using neg_nonpos.mpr hb
-  have hb' : 0 < b := lt_of_le_of_ne hb (Ne.symm (fun h ↦ ha.ne' (hzero h)))
-  have h := mul_le_mul_of_nonneg_left (Real.log_le_sub_one_of_pos (div_pos hb' ha)) ha.le
-  rw [Real.log_div hb'.ne' ha.ne'] at h
-  have hdiv : a * (b / a - 1) = b - a := by field_simp
-  rw [hdiv] at h
-  nlinarith
-
 private theorem integral_log_sum_le_of_pos {α : Type*} [MeasurableSpace α] (μ : Measure α)
     {f h : α → ℝ} (hf : 0 ≤ᵐ[μ] f) (hh : 0 ≤ᵐ[μ] h)
     (hzero : ∀ᵐ x ∂μ, h x = 0 → f x = 0)
@@ -51,7 +41,7 @@ private theorem integral_log_sum_le_of_pos {α : Type*} [MeasurableSpace α] (μ
   have hbound : ∀ᵐ x ∂μ, f x - c * h x ≤
       f x * Real.log (f x) - f x * Real.log (c * h x) := by
     filter_upwards [hf, hh, hzero] with x hx hy hz
-    exact sub_le_mul_log_sub_mul_log hx (mul_nonneg hc.le hy) (by
+    exact Real.sub_le_mul_log_sub_mul_log hx (mul_nonneg hc.le hy) (by
       intro hz'
       have : h x = 0 := (mul_eq_zero.mp hz').resolve_left hc.ne'
       exact hz this)
