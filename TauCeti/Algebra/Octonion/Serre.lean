@@ -178,84 +178,107 @@ private theorem lie_loweringDerivation_one_lie_loweringDerivation_one_loweringDe
   ext i
   fin_cases i <;> simp [Matrix.mulVec, dotProduct, Fin.sum_univ_three]
 
+/-- The Cartan generators of `Der 𝕆` commute. -/
+private theorem lie_cartanDerivation_cartanDerivation :
+    ∀ i j, ⁅cartanDerivation (R := R) i, cartanDerivation (R := R) j⁆ = 0 := by
+  simp only [Fin.forall_fin_two, cartanDerivation_zero, cartanDerivation_one,
+    ← LieHom.map_lie]
+  refine ⟨⟨?_, ?_⟩, ?_, ?_⟩ <;> rw [← map_zero (slDerivation (R := R))] <;> congr 1 <;>
+    apply Subtype.ext <;> ext i j <;> fin_cases i <;> fin_cases j <;>
+    simp [Ring.lie_def, Matrix.mul_apply, Matrix.single_apply]
+
+/-- `⁅Eᵢ, Fᵢ⁆ = Hᵢ` for the Chevalley generators of `Der 𝕆`. -/
+private theorem lie_raisingDerivation_loweringDerivation_self :
+    ∀ i, ⁅raisingDerivation (R := R) i, loweringDerivation (R := R) i⁆ = cartanDerivation i := by
+  simp only [Fin.forall_fin_two, cartanDerivation_zero, cartanDerivation_one,
+    raisingDerivation_zero, raisingDerivation_one, loweringDerivation_zero,
+    loweringDerivation_one, ← LieHom.map_lie, lie_upperDerivation_lowerDerivation, ← map_neg]
+  constructor <;> congr 1 <;> apply Subtype.ext <;> ext i j <;> fin_cases i <;> fin_cases j <;>
+    norm_num [Ring.lie_def, Matrix.vecMulVec_apply]
+
+/-- `Eᵢ` and `Fⱼ` commute for `i ≠ j`, for the Chevalley generators of `Der 𝕆`. -/
+private theorem lie_raisingDerivation_loweringDerivation_of_ne :
+    ∀ i j, i ≠ j → ⁅raisingDerivation (R := R) i, loweringDerivation (R := R) j⁆ = 0 := by
+  simp only [Fin.forall_fin_two, raisingDerivation_zero, raisingDerivation_one,
+    loweringDerivation_zero, loweringDerivation_one, ne_eq, not_true_eq_false,
+    IsEmpty.forall_iff, zero_ne_one, one_ne_zero, not_false_eq_true, forall_const, true_and,
+    and_true, lie_neg, ← lie_skew (upperDerivation _), lie_slDerivation_upperDerivation,
+    lie_slDerivation_lowerDerivation, neg_eq_zero]
+  constructor
+  · convert map_zero (upperDerivation (R := R)) using 2
+    ext i
+    fin_cases i <;> simp
+  · convert map_zero (lowerDerivation (R := R)) using 2
+    ext i
+    fin_cases i <;> simp [Matrix.transpose_single]
+
+/-- `Eⱼ` is an eigenvector of `ad Hᵢ` of eigenvalue `G₂ᵢⱼ`, for the Chevalley generators of
+`Der 𝕆`. -/
+private theorem lie_cartanDerivation_raisingDerivation :
+    ∀ i j, ⁅cartanDerivation (R := R) i, raisingDerivation (R := R) j⁆ =
+    CartanMatrix.G₂ i j • raisingDerivation (R := R) j := by
+  simp only [Fin.forall_fin_two, cartanDerivation_zero, cartanDerivation_one,
+    raisingDerivation_zero, raisingDerivation_one, ← LieHom.map_lie,
+    lie_slDerivation_upperDerivation, ← map_zsmul]
+  refine ⟨⟨?_, ?_⟩, ?_, ?_⟩ <;> congr 1
+  · ext i
+    fin_cases i <;> norm_num [CartanMatrix.G₂, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
+  · apply Subtype.ext
+    ext i j
+    fin_cases i <;> fin_cases j <;>
+      norm_num [CartanMatrix.G₂, Ring.lie_def, Matrix.mul_apply, Matrix.single_apply]
+  · ext i
+    fin_cases i <;> simp [CartanMatrix.G₂, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
+  · apply Subtype.ext
+    ext i j
+    fin_cases i <;> fin_cases j <;>
+      norm_num [CartanMatrix.G₂, Ring.lie_def, Matrix.mul_apply, Matrix.single_apply]
+
+/-- `Fⱼ` is an eigenvector of `ad Hᵢ` of eigenvalue `-G₂ᵢⱼ`, for the Chevalley generators of
+`Der 𝕆`. -/
+private theorem lie_cartanDerivation_loweringDerivation :
+    ∀ i j, ⁅cartanDerivation (R := R) i, loweringDerivation (R := R) j⁆ =
+    -(CartanMatrix.G₂ i j • loweringDerivation (R := R) j) := by
+  simp only [Fin.forall_fin_two, cartanDerivation_zero, cartanDerivation_one,
+    loweringDerivation_zero, loweringDerivation_one, ← LieHom.map_lie,
+    lie_slDerivation_lowerDerivation, ← map_neg, ← map_zsmul]
+  refine ⟨⟨?_, ?_⟩, ?_, ?_⟩ <;> congr 1
+  · ext i
+    fin_cases i <;> norm_num [CartanMatrix.G₂, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
+  · apply Subtype.ext
+    ext i j
+    fin_cases i <;> fin_cases j <;>
+      norm_num [CartanMatrix.G₂, Ring.lie_def, Matrix.mul_apply, Matrix.single_apply]
+  · ext i
+    fin_cases i <;> simp [CartanMatrix.G₂, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
+  · apply Subtype.ext
+    ext i j
+    fin_cases i <;> fin_cases j <;>
+      norm_num [CartanMatrix.G₂, Ring.lie_def, Matrix.mul_apply, Matrix.single_apply]
+
+/-- The exponents `-CMᵢⱼ` of the higher Serre relations of type `G₂` are `0`, `3`, `1` and `0`. -/
+private theorem toNat_neg_G₂ : (-CartanMatrix.G₂ 0 0).toNat = 0 ∧ (-CartanMatrix.G₂ 0 1).toNat = 3 ∧
+    (-CartanMatrix.G₂ 1 0).toNat = 1 ∧ (-CartanMatrix.G₂ 1 1).toNat = 0 := by
+  decide
+
 /-- **The Chevalley generators of `Der 𝕆` satisfy Serre's relations of type `G₂`**, for Mathlib's
 Cartan matrix `CartanMatrix.G₂`, over every commutative ring. -/
 theorem isSerreSystem :
     IsSerreSystem R CartanMatrix.G₂ (cartanDerivation (R := R)) raisingDerivation
       loweringDerivation where
-  lie_H_H := by
-    simp only [Fin.forall_fin_two, cartanDerivation_zero, cartanDerivation_one,
-      ← LieHom.map_lie]
-    refine ⟨⟨?_, ?_⟩, ?_, ?_⟩ <;> rw [← map_zero (slDerivation (R := R))] <;> congr 1 <;>
-      apply Subtype.ext <;> ext i j <;> fin_cases i <;> fin_cases j <;>
-      simp [Ring.lie_def, Matrix.mul_apply, Matrix.single_apply]
-  lie_E_F_self := by
-    simp only [Fin.forall_fin_two, cartanDerivation_zero, cartanDerivation_one,
-      raisingDerivation_zero, raisingDerivation_one, loweringDerivation_zero,
-      loweringDerivation_one, ← LieHom.map_lie, lie_upperDerivation_lowerDerivation, ← map_neg]
-    constructor <;> congr 1 <;> apply Subtype.ext <;> ext i j <;> fin_cases i <;> fin_cases j <;>
-      norm_num [Ring.lie_def, Matrix.vecMulVec_apply]
-  lie_E_F_of_ne := by
-    simp only [Fin.forall_fin_two, raisingDerivation_zero, raisingDerivation_one,
-      loweringDerivation_zero, loweringDerivation_one, ne_eq, not_true_eq_false,
-      IsEmpty.forall_iff, zero_ne_one, one_ne_zero, not_false_eq_true, forall_const, true_and,
-      and_true, lie_neg, ← lie_skew (upperDerivation _), lie_slDerivation_upperDerivation,
-      lie_slDerivation_lowerDerivation, neg_eq_zero]
-    constructor
-    · convert map_zero (upperDerivation (R := R)) using 2
-      ext i
-      fin_cases i <;> simp
-    · convert map_zero (lowerDerivation (R := R)) using 2
-      ext i
-      fin_cases i <;> simp [Matrix.transpose_single]
-  lie_H_E := by
-    simp only [Fin.forall_fin_two, cartanDerivation_zero, cartanDerivation_one,
-      raisingDerivation_zero, raisingDerivation_one, ← LieHom.map_lie,
-      lie_slDerivation_upperDerivation, ← map_zsmul]
-    refine ⟨⟨?_, ?_⟩, ?_, ?_⟩ <;> congr 1
-    · ext i
-      fin_cases i <;> norm_num [CartanMatrix.G₂, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
-    · apply Subtype.ext
-      ext i j
-      fin_cases i <;> fin_cases j <;>
-        norm_num [CartanMatrix.G₂, Ring.lie_def, Matrix.mul_apply, Matrix.single_apply]
-    · ext i
-      fin_cases i <;> simp [CartanMatrix.G₂, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
-    · apply Subtype.ext
-      ext i j
-      fin_cases i <;> fin_cases j <;>
-        norm_num [CartanMatrix.G₂, Ring.lie_def, Matrix.mul_apply, Matrix.single_apply]
-  lie_H_F := by
-    simp only [Fin.forall_fin_two, cartanDerivation_zero, cartanDerivation_one,
-      loweringDerivation_zero, loweringDerivation_one, ← LieHom.map_lie,
-      lie_slDerivation_lowerDerivation, ← map_neg, ← map_zsmul]
-    refine ⟨⟨?_, ?_⟩, ?_, ?_⟩ <;> congr 1
-    · ext i
-      fin_cases i <;> norm_num [CartanMatrix.G₂, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
-    · apply Subtype.ext
-      ext i j
-      fin_cases i <;> fin_cases j <;>
-        norm_num [CartanMatrix.G₂, Ring.lie_def, Matrix.mul_apply, Matrix.single_apply]
-    · ext i
-      fin_cases i <;> simp [CartanMatrix.G₂, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
-    · apply Subtype.ext
-      ext i j
-      fin_cases i <;> fin_cases j <;>
-        norm_num [CartanMatrix.G₂, Ring.lie_def, Matrix.mul_apply, Matrix.single_apply]
+  lie_H_H := lie_cartanDerivation_cartanDerivation
+  lie_E_F_self := lie_raisingDerivation_loweringDerivation_self
+  lie_E_F_of_ne := lie_raisingDerivation_loweringDerivation_of_ne
+  lie_H_E := lie_cartanDerivation_raisingDerivation
+  lie_H_F := lie_cartanDerivation_loweringDerivation
   ad_pow_lie_E_E := by
-    -- The exponents `-CMᵢⱼ` of the higher Serre relations are `0`, `3`, `1` and `0`.
-    have hCM : (-CartanMatrix.G₂ 0 0).toNat = 0 ∧ (-CartanMatrix.G₂ 0 1).toNat = 3 ∧
-        (-CartanMatrix.G₂ 1 0).toNat = 1 ∧ (-CartanMatrix.G₂ 1 1).toNat = 0 := by
-      decide
-    simp only [Fin.forall_fin_two, hCM, pow_zero, one_apply_eq_self, lie_self,
+    simp only [Fin.forall_fin_two, toNat_neg_G₂.1, toNat_neg_G₂.2.1, toNat_neg_G₂.2.2.1,
+      toNat_neg_G₂.2.2.2, pow_zero, one_apply_eq_self, lie_self,
       pow_one, LieAlgebra.ad_apply, ad_pow_raisingDerivation_zero,
       lie_raisingDerivation_one_lie_raisingDerivation_one_raisingDerivation_zero, and_self]
   ad_pow_lie_F_F := by
-    -- The exponents `-CMᵢⱼ` of the higher Serre relations are `0`, `3`, `1` and `0`.
-    have hCM : (-CartanMatrix.G₂ 0 0).toNat = 0 ∧ (-CartanMatrix.G₂ 0 1).toNat = 3 ∧
-        (-CartanMatrix.G₂ 1 0).toNat = 1 ∧ (-CartanMatrix.G₂ 1 1).toNat = 0 := by
-      decide
-    simp only [Fin.forall_fin_two, hCM, pow_zero, one_apply_eq_self, lie_self,
+    simp only [Fin.forall_fin_two, toNat_neg_G₂.1, toNat_neg_G₂.2.1, toNat_neg_G₂.2.2.1,
+      toNat_neg_G₂.2.2.2, pow_zero, one_apply_eq_self, lie_self,
       pow_one, LieAlgebra.ad_apply, ad_pow_loweringDerivation_zero,
       lie_loweringDerivation_one_lie_loweringDerivation_one_loweringDerivation_zero, and_self]
 
