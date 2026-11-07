@@ -191,6 +191,25 @@ theorem globalFlow_eq_of_isMIntegralCurve {γ : ℝ → M} (hγ : IsMIntegralCur
   rw [← flowOf_eq_globalFlow hv hcomplete]
   exact flowOf_eq_of_isMIntegralCurve hv hγ t
 
+/-- A point is stationary under the complete flow exactly when the vector field vanishes there.
+
+This is not a simp lemma: `globalFlow_apply` already rewrites flow evaluations to the maximal
+integral curve. -/
+theorem globalFlow_eq_self_iff (x : M) :
+    (∀ t, globalFlow v hv hcomplete t x = x) ↔ v x = 0 := by
+  constructor
+  · intro h
+    have hγ : IsMIntegralCurve (fun _ : ℝ ↦ x) v := by
+      rw [← funext h]
+      exact isMIntegralCurve_globalFlow hv hcomplete x
+    calc
+      v x = Manifold.curveVelocityWithin I (fun _ : ℝ ↦ x) univ 0 :=
+        (Manifold.curveVelocityWithin_eq_of_hasMFDerivWithinAt
+          (hγ 0).hasMFDerivWithinAt uniqueDiffWithinAt_univ).symm
+      _ = 0 := Manifold.curveVelocityWithin_const x
+  · intro h t
+    exact globalFlow_eq_of_isMIntegralCurve hv hcomplete (isMIntegralCurve_const h) t
+
 omit hv in
 /-- The flow of a complete `C^n` vector field, `1 ≤ n`, is jointly `C^n` in time and space. -/
 theorem contMDiff_globalFlow_uncurry {n : ℕ∞} (hn : 1 ≤ n) [IsManifold I n M]
