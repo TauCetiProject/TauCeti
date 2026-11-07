@@ -10,6 +10,7 @@ public import TauCeti.Combinatorics.Hypergraph.PairColor.Regular
 public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 import Mathlib.Data.Nat.Cast.Order.Field
 import Mathlib.Tactic.Linarith
+import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Data.Finset.Basic
 import TauCeti.Order.Partition.Finpartition
 
@@ -123,55 +124,6 @@ private theorem card_image_union_irregularPairs_le (P : Finpartition (univ : Fin
         add_le_add card_image_le card_image_le
     _ ≤ 2 * #P.parts ^ 2 := by rw [sq]; omega
 
-/-- Cutting a partition along `F` and refining by the atoms gives at most
-`#P.parts * 4 ^ #P.parts ^ 2` parts when `#F ≤ 2 * #P.parts ^ 2`. -/
-private theorem card_parts_inf_atomise_le_of_card_le (P : Finpartition (univ : Finset V))
-    (F : Finset (Finset V)) (hF : #F ≤ 2 * #P.parts ^ 2) :
-    #(P ⊓ atomise univ F).parts ≤ #P.parts * 4 ^ #P.parts ^ 2 :=
-  calc #(P ⊓ atomise univ F).parts ≤ #P.parts * #(atomise univ F).parts :=
-        card_parts_inf_le_mul P _
-    _ ≤ #P.parts * 2 ^ (2 * #P.parts ^ 2) := by
-      gcongr
-      exact card_atomise_le.trans (Nat.pow_le_pow_right two_pos hF)
-    _ = #P.parts * 4 ^ #P.parts ^ 2 := by rw [pow_mul]; norm_num
-
-/-- The final estimate of the energy increment: the gain `ε² ε² M / D`, where `M` exceeds
-`ε n²` and `D ≤ n²`, exceeds `ε⁵`. -/
-private theorem pow_five_lt_of_mul_div_le {ε M D n g : ℝ} (hε : 0 < ε) (hD : 0 < D)
-    (hDn : D ≤ n ^ 2) (hbad : ε * n ^ 2 < M) (hgain : ε ^ 2 * ε ^ 2 * (M / D) ≤ g) :
-    ε ^ 5 < g := by
-  have hn : 0 < n ^ 2 := hD.trans_le hDn
-  have hM₀ : 0 ≤ M := hbad.le.trans' (by positivity)
-  have hM : ε < M / D :=
-    ((lt_div_iff₀ hn).2 hbad).trans_le (div_le_div_of_nonneg_left hM₀ hD hDn)
-  have hε4 : 0 < ε ^ 2 * ε ^ 2 := by positivity
-  nlinarith
-
-omit [Fintype V] in
-/-- A rectangle `X ×ˢ Y` inside a block `A ×ˢ B` of disjoint sets, with sides carrying an
-`ε`-fraction of `A` and `B`, carries an `ε²`-fraction of the ordered distinct pairs of the block. -/
-private theorem sq_mul_card_filter_ne_product_le {A B X Y : Finset V} (hε : 0 ≤ ε)
-    (hAB : Disjoint A B) (hX : X ⊆ A) (hY : Y ⊆ B) (hXc : ε * #A ≤ #X) (hYc : ε * #B ≤ #Y) :
-    ε ^ 2 * #((A ×ˢ B).filter fun p => p.1 ≠ p.2) ≤
-      (#((X ×ˢ Y).filter fun p => p.1 ≠ p.2) : ℝ) := by
-  rw [filter_ne_product_of_disjoint hAB, filter_ne_product_of_disjoint (hAB.mono hX hY),
-    card_product, card_product]
-  push_cast
-  calc ε ^ 2 * (#A * #B : ℝ) = (ε * #A) * (ε * #B) := by ring
-    _ ≤ #X * #Y := mul_le_mul hXc hYc (by positivity) (Nat.cast_nonneg _)
-
-omit [DecidableEq V] in
-/-- There are at most `n ^ 2` ordered pairs of distinct elements of a type with `n` elements. -/
-private theorem card_offDiag_univ_le_sq :
-    (#(univ : Finset V).offDiag : ℝ) ≤ (Fintype.card V : ℝ) ^ 2 := by
-  have : #(univ : Finset V).offDiag ≤ Fintype.card V * Fintype.card V := by
-    rw [offDiag_card, card_univ]
-    exact Nat.sub_le _ _
-  have h := Nat.cast_le (α := ℝ) |>.2 this
-  rw [Nat.cast_mul] at h
-  rw [sq]
-  exact h
-
 variable [Fintype κ]
 
 /-- **Energy increment.** If the ordered pairs of distinct parts of `P` that are not `ε`-regular
@@ -203,7 +155,7 @@ theorem exists_refinement_energy_add_lt (P : Finpartition (univ : Finset V)) (h�
   set R := atomise univ (I.image X ∪ I.image Y)
   refine ⟨P ⊓ R, inf_le_left, ?_, ?_⟩
   · -- There are at most `2 * #P.parts ^ 2` witnesses to cut along.
-    exact card_parts_inf_atomise_le_of_card_le P _ (S.card_image_union_irregularPairs_le P X Y)
+    exact P.card_parts_inf_atomise_le_of_card_le _ (S.card_image_union_irregularPairs_le P X Y)
   · -- Every witness is a union of parts of the refinement.
     have hres {Z : Finset V} (hZ : Z ∈ I.image X ∪ I.image Y) :
         ∀ C ∈ (P ⊓ R).parts, C ⊆ Z ∨ Disjoint C Z :=
@@ -211,7 +163,7 @@ theorem exists_refinement_energy_add_lt (P : Finpartition (univ : Finset V)) (h�
     -- Each witness rectangle carries an `ε²`-fraction of its block.
     have hsize : ∀ AB ∈ I, ε ^ 2 * #((AB.1 ×ˢ AB.2).filter fun p => p.1 ≠ p.2) ≤
         (#((X AB ×ˢ Y AB).filter fun p => p.1 ≠ p.2) : ℝ) := fun AB hAB ↦
-      sq_mul_card_filter_ne_product_le hε.le (hdisj hAB) (hXsub AB hAB) (hYsub AB hAB)
+      Finset.sq_mul_card_filter_ne_product_le hε.le (hdisj hAB) (hXsub AB hAB) (hYsub AB hAB)
         (hXcard AB hAB) (hYcard AB hAB)
     have hgain := S.energy_increment_of_witnesses (inf_le_left : P ⊓ R ≤ P) I
       (fun AB hAB ↦ ⟨(hmem hAB).1, (hmem hAB).2.1⟩) c X Y hε.le hXsub hYsub
@@ -232,7 +184,10 @@ theorem exists_refinement_energy_add_lt (P : Finpartition (univ : Finset V)) (h�
       obtain ⟨b, hb⟩ := P.nonempty_of_mem_parts (hmem hAB₀).2.1
       exact Nat.cast_pos.2 (card_pos.2 ⟨(a, b), mem_offDiag.2 ⟨mem_univ _, mem_univ _,
         (hdisj hAB₀).forall_ne_finset ha hb⟩⟩)
-    have hDn : D ≤ n ^ 2 := card_offDiag_univ_le_sq
+    have hDn : D ≤ n ^ 2 := by
+      have h := (Nat.cast_le (α := ℝ)).2 (Finset.card_offDiag_univ_le_sq V)
+      push_cast at h
+      exact h
     linarith [pow_five_lt_of_mul_div_le hε hD hDn hbad hgain]
 
 /-- The refinement invariant: after `k` rounds starting from `P₀`, either the irregular pairs
