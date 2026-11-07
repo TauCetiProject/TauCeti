@@ -182,7 +182,7 @@ theorem isPoissonRandomMeasure_smul_dirac (r : ℝ≥0) (x : X) :
       by_contra hij
       exact Set.disjoint_left.mp (hd hij) hi hj
     · intro i hi
-      change x ∉ A i at hi
+      simp only [Set.mem_ofPred_eq] at hi
       exact ⟨0, Filter.Eventually.of_forall fun k => by simp [heval, hi]⟩
   · intro i
     by_cases hx : x ∈ A i
