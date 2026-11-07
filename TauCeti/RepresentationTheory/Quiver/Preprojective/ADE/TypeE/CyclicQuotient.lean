@@ -40,8 +40,8 @@ So for every `n ≥ 4`, every path of positive length in the signless algebra of
 commutators as soon as every nonempty word in `x` and `y` is. For `E₆` the long arm has two nodes,
 so `x ^ 2 = 0`, `y ^ 3 = 0` and `(x + y) ^ 3 = (-z) ^ 3 = 0`, and the words in `x` and `y` are
 sums of commutators when `2` and `3` are units
-(`TauCeti.mem_commutatorSubmodule_of_mem_span_pair_pow`). For `E₇` the long arm has three nodes,
-so `(x + y) ^ 4 = z ^ 4 = 0`, and the same holds when `2` and `3` are units
+(`TauCeti.mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_three`). For `E₇` the long arm
+has three nodes, so `(x + y) ^ 4 = z ^ 4 = 0`, and the same holds when `2` and `3` are units
 (`TauCeti.mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_four`). For `E₈` the long arm
 has four nodes, so `(x + y) ^ 5 = z ^ 5 = 0`, and the words in `x` and `y` are sums of commutators
 when `2`, `3` and `5` are units
@@ -237,7 +237,7 @@ private theorem mem_commutatorSubmodule_of_mem_eSpan_six_pow (h2 : IsUnit (2 : k
   have hn : 4 ≤ 6 := by norm_num
   have hsum : eTurn k 6 0 + eTurn k 6 1 = -eTurn k 6 2 :=
     eq_neg_of_add_eq_zero_left (eTurn_add_eTurn_add_eTurn k hn)
-  refine mem_commutatorSubmodule_of_mem_span_pair_pow h2 h3 (eTurn_zero_sq k hn)
+  refine mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_three h2 h3 (eTurn_zero_sq k hn)
     (eTurn_one_pow_three k hn) ?_ ?_ ?_ (eTurn_pow_mem_commutatorSubmodule k hn 1 two_pos) ?_ hw
   · rw [hsum, neg_pow, eTurn_two_pow k (n := 6) hn, mul_zero]
   · simpa using eTurn_pow_mem_commutatorSubmodule k hn 0 one_pos

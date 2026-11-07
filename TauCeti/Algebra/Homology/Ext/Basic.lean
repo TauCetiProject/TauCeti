@@ -35,7 +35,9 @@ This file collects general `Ext` API that Mathlib does not state in this form:
   `TauCeti.exact_precompOfLinear₁` (respectively `TauCeti.exact_precomp₃` and
   `TauCeti.exact_precompOfLinear₃`) are the same repackaging one step further along the
   contravariant sequence, where the outgoing (respectively incoming) map is precomposition with
-  the extension class;
+  the extension class; the covariant connecting positions are
+  `TauCeti.exact_postcomp₁` and `TauCeti.exact_postcomp₃`, with `R`-linear forms
+  `TauCeti.exact_postcompOfLinear₁` and `TauCeti.exact_postcompOfLinear₃`;
 * dimension shifting: the connecting map `Extⁿ⁺¹(P, S.X₃) ⟶ Extⁿ⁺²(P, S.X₁)` of a short exact
   sequence `S` is bijective when `Extⁿ⁺¹(P, S.X₂)` and `Extⁿ⁺²(P, S.X₂)` vanish
   (`CategoryTheory.ShortComplex.ShortExact.extClass_postcomp_bijective`);
@@ -276,6 +278,38 @@ theorem exact_precompOfLinear (R : Type t) [CommRing R] [Linear R C] (hS : S.Sho
       (Ext.precompOfLinear (Ext.mk₀ S.f) R Y (zero_add n)) := by
   simp only [coe_precompOfLinear]
   exact exact_precomp hS Y n
+
+/-- Exactness of `Extⁿ⁰(X, S.X₃) → Extⁿ¹(X, S.X₁) → Extⁿ¹(X, S.X₂)` for
+`n₁ = n₀ + 1`. The first map is postcomposition with the extension class of `S`. -/
+theorem exact_postcomp₁ (hS : S.ShortExact) (X : C) (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) :
+    Function.Exact (Ext.postcomp hS.extClass X h)
+      (Ext.postcomp (Ext.mk₀ S.f) X (add_zero n₁)) :=
+  (ShortComplex.ab_exact_iff_function_exact _).1
+    (Ext.covariant_sequence_exact₁' X hS n₀ n₁ h)
+
+/-- The `R`-linear form of `TauCeti.exact_postcomp₁`. -/
+theorem exact_postcompOfLinear₁ (R : Type t) [CommRing R] [Linear R C] (hS : S.ShortExact)
+    (X : C) (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) :
+    Function.Exact (Ext.postcompOfLinear hS.extClass R X h)
+      (Ext.postcompOfLinear (Ext.mk₀ S.f) R X (add_zero n₁)) := by
+  simp only [coe_postcompOfLinear]
+  exact exact_postcomp₁ hS X n₀ n₁ h
+
+/-- Exactness of `Extⁿ⁰(X, S.X₂) → Extⁿ⁰(X, S.X₃) → Extⁿ¹(X, S.X₁)` for
+`n₁ = n₀ + 1`. The second map is postcomposition with the extension class of `S`. -/
+theorem exact_postcomp₃ (hS : S.ShortExact) (X : C) (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) :
+    Function.Exact (Ext.postcomp (Ext.mk₀ S.g) X (add_zero n₀))
+      (Ext.postcomp hS.extClass X h) :=
+  (ShortComplex.ab_exact_iff_function_exact _).1
+    (Ext.covariant_sequence_exact₃' X hS n₀ n₁ h)
+
+/-- The `R`-linear form of `TauCeti.exact_postcomp₃`. -/
+theorem exact_postcompOfLinear₃ (R : Type t) [CommRing R] [Linear R C] (hS : S.ShortExact)
+    (X : C) (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) :
+    Function.Exact (Ext.postcompOfLinear (Ext.mk₀ S.g) R X (add_zero n₀))
+      (Ext.postcompOfLinear hS.extClass R X h) := by
+  simp only [coe_postcompOfLinear]
+  exact exact_postcomp₃ hS X n₀ n₁ h
 
 /-- Exactness of `Extⁿ⁰(S.X₁, Y) → Extⁿ¹(S.X₃, Y) → Extⁿ¹(S.X₂, Y)` at the middle term, for a
 short exact sequence `S` and `n₁ = 1 + n₀`. The first map is precomposition with the extension
