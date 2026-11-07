@@ -572,14 +572,9 @@ private theorem setLAverage_comp_cubeEquiv_le (hr : 0 < r)
   have hae : dyadicCube q.1 q.2 =ᵐ[volume] e ⁻¹' B := by
     rw [hpre, closure_dyadicCube]
     exact dyadicCube_ae_eq_closedBall q.1 q.2
-  have havg : ⨍ y in e ⁻¹' B, f (e y) ∂volume = ⨍ y in B, f y ∂volume :=
-    setAverage_comp_preimage_of_map_eq_smul hmap ha ENNReal.ofReal_ne_top f B
-  have hlavg : ⨍⁻ x in e ⁻¹' B, ‖f (e x) - ⨍ y in B, f y ∂volume‖ₑ ∂volume =
-      ⨍⁻ x in B, ‖f x - ⨍ y in B, f y ∂volume‖ₑ ∂volume :=
-    setLAverage_comp_preimage_of_map_eq_smul hmap ha ENNReal.ofReal_ne_top
-      (fun x => ‖f x - ⨍ y in B, f y ∂volume‖ₑ) B
   simp only [Function.comp_apply]
-  rw [setAverage_congr hae, setLAverage_congr hae, havg, hlavg]
+  rw [setAverage_congr hae, setLAverage_congr hae,
+    setLAverage_enorm_sub_setAverage_comp_preimage_of_map_eq_smul hmap ha ENNReal.ofReal_ne_top f B]
   refine hM _ _ ?_
   rw [← e.surjective.preimage_subset_preimage_iff, hpre, preimage_cubeEquiv_closedBall_self hr]
   exact closure_mono hq
@@ -858,8 +853,7 @@ private theorem setLIntegral_exp_preimage_closedBall_le [Nonempty ι] [CompleteS
     · rw [setLAverage_eq, setLIntegral_measure_zero _ _
         (volume_closedBall_eq_zero_of_nonpos y hρ0), ENNReal.zero_div]
       exact zero_le
-    rw [← setLAverage_comp_preimage_of_map_eq_smul he ha ha',
-      ← setAverage_comp_preimage_of_map_eq_smul he ha ha', hpre]
+    rw [← setLAverage_enorm_sub_setAverage_comp_preimage_of_map_eq_smul he ha ha', hpre]
     simp_rw [hge]
     exact (setLAverage_preimage_closedBall_le he hf hM hρ0 hy).trans hM'
   have havg : ⨍ y in closedBall (ofLp x₀) r₀, g y ∂volume =
