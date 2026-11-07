@@ -29,10 +29,10 @@ the two constructions produces the other: a conjugation on `V` presents `V` as a
 and a complexification carries a conjugation.  That is what makes conjugations the tool for
 realizing an object over `ℝ`.
 
-The two constructions are not set up here as mutually inverse, and nothing here transports
-`TauCeti.tmulConj` along an isomorphism `ℂ ⊗[ℝ] W ≃ₗ[ℂ] V`: a presentation of `V` as a
-complexification carries a noncanonical choice of real carrier and isomorphism, which a conjugation
-does not.  The equivariant form of that transport is
+The canonical `TauCeti.realPointsEquiv` intertwines `TauCeti.tmulConj` with the original
+conjugation `K`. Transport along a noncanonical presentation `ℂ ⊗[ℝ] W ≃ₗ[ℂ] V` is not
+constructed here: such a presentation carries a choice of real carrier and isomorphism, which a
+conjugation does not. The equivariant form of that transport is
 `Representation.IsRealForm.exists_isRealStructure`, downstream in
 `TauCeti.RepresentationTheory.RealForm`.
 
@@ -72,6 +72,8 @@ Everything is stated for an arbitrary `V`; no finite-dimensionality is used anyw
   for any real structure compatible with the complex one.
 * `TauCeti.tmulConj_involutive`, `TauCeti.tmulConj_tmul` and `TauCeti.tmulConj_eq_self_iff`: the
   conjugation of a complexification and its real points.
+* `TauCeti.realPointsEquiv_tmulConj` and `TauCeti.realPointsEquiv_symm_conj`: the canonical
+  real-descent equivalence and its inverse intertwine tensor conjugation with `K`.
 * `TauCeti.tmulConj_baseChange`: that conjugation commutes with every base-changed map, which is
   what makes it equivariant for a base-changed action.
 
@@ -512,6 +514,22 @@ theorem tmulConj_eq_one_tmul_sub_I_tmul (u : ℂ ⊗[ℝ] W) :
     (one_tmul_realPart_add_I_tmul_imaginaryPart W (tmulConj W u)).symm
 
 end Complexification
+
+/-- Real descent intertwines tensor conjugation with the original conjugation. -/
+@[simp]
+theorem realPointsEquiv_tmulConj (hK : Function.Involutive K)
+    (x : ℂ ⊗[ℝ] realPoints K) :
+    realPointsEquiv hK (tmulConj (realPoints K) x) = K (realPointsEquiv hK x) := by
+  induction x using TensorProduct.inductionOn with
+  | tmul z w => simp [mem_realPoints.mp w.property]
+  | add x y hx hy => simpa only [map_add] using congrArg₂ (· + ·) hx hy
+
+/-- Inverse real descent intertwines the original conjugation with tensor conjugation. -/
+theorem realPointsEquiv_symm_conj (hK : Function.Involutive K) (v : V) :
+    (realPointsEquiv hK).symm (K v) =
+      tmulConj (realPoints K) ((realPointsEquiv hK).symm v) :=
+  Function.Semiconj.inverse_left (realPointsEquiv_tmulConj hK)
+    (realPointsEquiv hK).symm_apply_apply (realPointsEquiv hK).apply_symm_apply v
 
 /-- **The conjugation of a complexification commutes with every base-changed map**, because
 `LinearMap.baseChange` leaves the conjugated factor alone. -/
