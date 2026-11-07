@@ -12,8 +12,7 @@ public import TauCeti.LinearAlgebra.Matrix.Cartan.Realization.Basic
 
 Every finite-dimensional realization contains a minimal sub-realization, with a complementary
 subspace annihilated by all simple roots. Thus an arbitrary realization differs from a minimal
-one only by central directions. We also characterize minimality by containment of the Cartan
-center in the coroot span, and compute the dimension of the extra central directions.
+one only by central directions. We compute the dimension of these extra central directions.
 
 Restriction to a subspace is a realization when it contains the coroots and, together with the
 Cartan center, spans the ambient space. This criterion ensures that the restricted roots remain
@@ -34,34 +33,6 @@ variable {I K H : Type*} [Fintype I] [Field K] [AddCommGroup H] [Module K H]
 
 variable [FiniteDimensional K H]
 
-omit [FiniteDimensional K H] in
-/-- The central part of the coroot span has dimension equal to the nullity of the matrix. -/
-theorem finrank_cartanCenter_inf_corootSpan_add_rank :
-    finrank K ↥(R.cartanCenter ⊓ R.corootSpan) + A.rank = Fintype.card I := by
-  rw [R.cartanCenter_inf_corootSpan,
-    ← (Submodule.equivMapOfInjective R.corootMap R.corootMap_injective
-      (LinearMap.ker A.transpose.mulVecLin)).finrank_eq]
-  have h := A.transpose.mulVecLin.finrank_range_add_finrank_ker
-  -- Matrix rank is the dimension of the range of its coordinate linear map.
-  have hr : finrank K (LinearMap.range A.transpose.mulVecLin) = A.transpose.rank := (rfl)
-  rw [hr, Matrix.rank_transpose, Module.finrank_fintype_fun_eq_card] at h
-  omega
-
-/-- A realization is minimal exactly when its full center lies in the coroot span. -/
-theorem isMinimal_iff_cartanCenter_le_corootSpan :
-    R.IsMinimal ↔ R.cartanCenter ≤ R.corootSpan := by
-  rw [R.isMinimal_iff]
-  have hc := R.finrank_cartanCenter_add_card
-  have hi := R.finrank_cartanCenter_inf_corootSpan_add_rank
-  constructor
-  · intro h
-    have heq : R.cartanCenter ⊓ R.corootSpan = R.cartanCenter :=
-      Submodule.eq_of_le_of_finrank_eq inf_le_left (by omega)
-    exact inf_eq_left.mp heq
-  · intro h
-    rw [inf_eq_left.mpr h] at hi
-    omega
-
 /-- A sub-realization is minimal exactly when its central vectors already lie in the
 original coroot span. -/
 theorem isMinimal_restrict_iff (M : Submodule K H) (hc : R.corootSpan ≤ M)
@@ -69,7 +40,7 @@ theorem isMinimal_restrict_iff (M : Submodule K H) (hc : R.corootSpan ≤ M)
     (R.restrict M hc hs).IsMinimal ↔ R.cartanCenter ⊓ M ≤ R.corootSpan := by
   rw [isMinimal_iff_cartanCenter_le_corootSpan,
     ← Submodule.map_le_map_iff_of_injective M.injective_subtype,
-    map_corootSpan_restrict, cartanCenter_restrict, Submodule.map_comap_eq,
+    corootSpan_restrict_map_subtype, cartanCenter_restrict, Submodule.map_comap_eq,
     Submodule.range_subtype, inf_comm]
 
 /-- Every finite-dimensional realization is a minimal sub-realization plus a central

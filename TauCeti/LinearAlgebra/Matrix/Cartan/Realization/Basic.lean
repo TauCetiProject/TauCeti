@@ -148,6 +148,18 @@ theorem cartanCenter_inf_corootSpan :
   rw [← hcomp, LinearMap.ker_comp, Submodule.map_comap_eq, R.range_corootMap,
     inf_comm, cartanCenter]
 
+/-- The central part of the coroot span has dimension equal to the nullity of the matrix. -/
+theorem finrank_cartanCenter_inf_corootSpan_add_rank :
+    finrank K ↥(R.cartanCenter ⊓ R.corootSpan) + A.rank = Fintype.card I := by
+  rw [R.cartanCenter_inf_corootSpan,
+    ← (Submodule.equivMapOfInjective R.corootMap R.corootMap_injective
+      (LinearMap.ker A.transpose.mulVecLin)).finrank_eq]
+  have h := A.transpose.mulVecLin.finrank_range_add_finrank_ker
+  -- Matrix rank is the dimension of the range of its coordinate linear map.
+  have hr : finrank K (LinearMap.range A.transpose.mulVecLin) = A.transpose.rank := (rfl)
+  rw [hr, Matrix.rank_transpose, Module.finrank_fintype_fun_eq_card] at h
+  omega
+
 omit [Fintype I] in
 private theorem linearIndependent_root_coordinates {J : Type*} [Finite J]
     (b : Basis J K H) : LinearIndependent K (fun i j => R.root i (b j)) := by
@@ -207,15 +219,39 @@ theorem restrict_root_apply (M : Submodule K H) (hc : R.corootSpan ≤ M)
     (hs : M ⊔ R.cartanCenter = ⊤) (i : I) (m : M) :
     (R.restrict M hc hs).root i m = R.root i m := (rfl)
 
+/-- Restriction preserves coroot linear combinations under the subspace inclusion. -/
+@[simp]
+theorem coe_restrict_corootMap (M : Submodule K H) (hc : R.corootSpan ≤ M)
+    (hs : M ⊔ R.cartanCenter = ⊤) (c : I → K) :
+    ((R.restrict M hc hs).corootMap c : H) = R.corootMap c := by
+  simp [corootMap_apply]
+
+omit [Fintype I] in
+/-- Root evaluation on a restriction agrees with the original evaluation. -/
+@[simp]
+theorem restrict_rootEvaluation (M : Submodule K H) (hc : R.corootSpan ≤ M)
+    (hs : M ⊔ R.cartanCenter = ⊤) (m : M) :
+    (R.restrict M hc hs).rootEvaluation m = R.rootEvaluation m := by
+  ext i
+  simp
+
 omit [Fintype I] in
 /-- The coroot span of a restriction maps onto the original coroot span. -/
-@[simp]
-theorem map_corootSpan_restrict (M : Submodule K H) (hc : R.corootSpan ≤ M)
+theorem corootSpan_restrict_map_subtype (M : Submodule K H) (hc : R.corootSpan ≤ M)
     (hs : M ⊔ R.cartanCenter = ⊤) :
     (R.restrict M hc hs).corootSpan.map M.subtype = R.corootSpan := by
   have heq : M.subtype ∘ (R.restrict M hc hs).coroot = R.coroot :=
     funext (R.coe_restrict_coroot M hc hs)
   simp only [corootSpan, Submodule.map_span, ← Set.range_comp, heq]
+
+omit [Fintype I] in
+/-- The coroot span of a restricted realization is the trace of the original coroot span. -/
+@[simp]
+theorem corootSpan_restrict (M : Submodule K H) (hc : R.corootSpan ≤ M)
+    (hs : M ⊔ R.cartanCenter = ⊤) :
+    (R.restrict M hc hs).corootSpan = R.corootSpan.comap M.subtype := by
+  rw [← R.corootSpan_restrict_map_subtype M hc hs,
+    Submodule.comap_map_eq_of_injective M.injective_subtype]
 
 omit [Fintype I] in
 /-- The center of a restricted realization is the trace of the original center. -/
@@ -307,6 +343,21 @@ theorem isMinimal_iff : R.IsMinimal ↔ finrank K H + A.rank = 2 * Fintype.card 
     omega
   · intro h
     exact ⟨inferInstance, by omega⟩
+
+/-- A realization is minimal exactly when its full center lies in the coroot span. -/
+theorem isMinimal_iff_cartanCenter_le_corootSpan :
+    R.IsMinimal ↔ R.cartanCenter ≤ R.corootSpan := by
+  rw [R.isMinimal_iff]
+  have hc := R.finrank_cartanCenter_add_card
+  have hi := R.finrank_cartanCenter_inf_corootSpan_add_rank
+  constructor
+  · intro h
+    have heq : R.cartanCenter ⊓ R.corootSpan = R.cartanCenter :=
+      Submodule.eq_of_le_of_finrank_eq inf_le_left (by omega)
+    exact inf_eq_left.mp heq
+  · intro h
+    rw [inf_eq_left.mpr h] at hi
+    omega
 
 end FiniteDimensional
 
