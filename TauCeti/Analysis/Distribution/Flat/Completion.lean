@@ -167,6 +167,7 @@ theorem norm_boundaryCLM_le (T : FlatNormedCurrent Ω (k + 1)) : ‖boundaryCLM 
     ENNReal.toReal_mono T.normalFlatMass_ne_top
       T.toCurrent.normalFlatMass_comp_extDerivCLM_le
 
+/-- Two successive boundaries of a real normal current vanish. -/
 @[simp]
 theorem boundaryCLM_boundaryCLM (T : FlatNormedCurrent Ω (k + 2)) :
     boundaryCLM (boundaryCLM T) = 0 := by
@@ -218,6 +219,7 @@ theorem norm_boundaryCLM_le (T : RealFlatChain Ω (k + 1)) : ‖boundaryCLM T‖
   | hp => exact isClosed_le (by fun_prop) (by fun_prop)
   | ih T => simpa using T.norm_boundaryCLM_le
 
+/-- Two successive boundaries of a completed real flat chain vanish. -/
 @[simp]
 theorem boundaryCLM_boundaryCLM (T : RealFlatChain Ω (k + 2)) :
     boundaryCLM (boundaryCLM T) = 0 := by
