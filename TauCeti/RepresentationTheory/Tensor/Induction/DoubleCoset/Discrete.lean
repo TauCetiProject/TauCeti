@@ -169,6 +169,19 @@ noncomputable def smoothTensorInducedMackeyIso (A : SmoothDiscreteTopRep.{u, v, 
   (toSmoothDiscrete R V).mapIso
     (DiscreteRep.tensorInducedMackeyIso U V hU r hr t s ((ofSmoothDiscrete R U).obj A))
 
+/-- The smooth Mackey comparison acts on arbitrary tensors by the algebraic Mackey comparison. -/
+theorem smoothTensorInducedMackeyIso_hom_apply
+    (A : SmoothDiscreteTopRep.{u, v, w} R U)
+    (z : ⨂[R] D : DoubleCoset.Quotient (V : Set G) (U : Set G),
+      ⨂[R] _ : V ⧸ (mackeySubgroup (r D) U V).subgroupOf V, A.obj.V) :
+    (smoothTensorInducedMackeyIso U V hU r hr t s A).hom.hom.hom z =
+      Subgroup.tensorInducedMackey U V r hr t ((ofSmoothDiscrete R U).obj A).ρ s z := by
+  unfold smoothTensorInducedMackeyIso
+  exact (toSmoothDiscrete_map_hom_hom_apply R V
+    (DiscreteRep.tensorInducedMackeyIso U V hU r hr t s ((ofSmoothDiscrete R U).obj A)).hom z).trans
+    (LinearMap.congr_fun (DiscreteRep.tensorInducedMackeyIso_hom_toLinearMap
+      U V hU r hr t s ((ofSmoothDiscrete R U).obj A)) z)
+
 /-- On orbitwise pure tensors, the smooth Mackey comparison reads the Mackey coordinates of each
 coset and corrects the factor by the difference between `s` and the Mackey-adapted transversal. -/
 @[simp] theorem smoothTensorInducedMackeyIso_hom_apply_tprod
