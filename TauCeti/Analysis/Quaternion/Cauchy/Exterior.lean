@@ -47,12 +47,10 @@ theorem left_cauchyFueter_box_of_notMem {a b : Fin 4 → ℝ} (hab : a ≤ b)
     (hf : LeftFueterOn f (dq '' pi univ (fun i ↦ Ioo (a i) (b i)))) :
     boxBoundarySum a b (fun i x ↦
       cauchyFueterKernel (dq x) q₀ * dq (Pi.single i 1) * f (dq x)) = 0 := by
-  apply cauchy_box hab (f := f) (g := fun q ↦ cauchyFueterKernel q q₀)
-    (continuousOn_cauchyFueterKernel hq₀) hc ?_ hf
-  · rw [rightFueterOn_iff]
-    rintro q ⟨x, hx, rfl⟩
-    exact rightFueterAt_cauchyFueterKernel (ne_of_mem_of_not_mem
-      (mem_image_of_mem dq (Ioo_subset_Icc_self (pi_univ_Ioo_subset a b hx))) hq₀)
+  exact cauchy_box hab (f := f) (g := fun q ↦ cauchyFueterKernel q q₀)
+    (continuousOn_cauchyFueterKernel hq₀) hc
+    ((rightFueterOn_cauchyFueterKernel hq₀).mono
+      (image_mono fun _ hx ↦ Ioo_subset_Icc_self (pi_univ_Ioo_subset a b hx))) hf
 
 /-- The right Cauchy–Fueter box boundary sum vanishes for an exterior pole, with
 coefficients ordered `f * eᵢ * G`. -/
@@ -62,12 +60,10 @@ theorem right_cauchyFueter_box_of_notMem {a b : Fin 4 → ℝ} (hab : a ≤ b)
     (hf : RightFueterOn f (dq '' pi univ (fun i ↦ Ioo (a i) (b i)))) :
     boxBoundarySum a b (fun i x ↦
       f (dq x) * dq (Pi.single i 1) * cauchyFueterKernel (dq x) q₀) = 0 := by
-  apply cauchy_box hab (g := f) (f := fun q ↦ cauchyFueterKernel q q₀) hc
-    (continuousOn_cauchyFueterKernel hq₀) hf ?_
-  · rw [leftFueterOn_iff]
-    rintro q ⟨x, hx, rfl⟩
-    exact leftFueterAt_cauchyFueterKernel (ne_of_mem_of_not_mem
-      (mem_image_of_mem dq (Ioo_subset_Icc_self (pi_univ_Ioo_subset a b hx))) hq₀)
+  exact cauchy_box hab (g := f) (f := fun q ↦ cauchyFueterKernel q q₀) hc
+    (continuousOn_cauchyFueterKernel hq₀) hf
+    ((leftFueterOn_cauchyFueterKernel hq₀).mono
+      (image_mono fun _ hx ↦ Ioo_subset_Icc_self (pi_univ_Ioo_subset a b hx)))
 
 /-- The left kernel-weighted signed cofactor flux on an affine parallelepiped vanishes
 when the pole is outside its closure. Both orientations of the affine chart are allowed. -/
@@ -82,9 +78,9 @@ theorem left_cauchyFueter_affine_cofactor_of_notMem
   have hK := continuousOn_cauchyFueterKernel hq₀
   have hr u (hu : u ∈ univ.pi (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1)) :
       RightFueterAt (fun q ↦ cauchyFueterKernel q q₀) (dq (p + L u)) :=
-    rightFueterAt_cauchyFueterKernel (ne_of_mem_of_not_mem
+    rightFueterOn_iff.mp (rightFueterOn_cauchyFueterKernel hq₀) _
       (mem_image_of_mem dq (mem_image_of_mem (fun u ↦ p + L u)
-        (Ioo_subset_Icc_self (pi_univ_Ioo_subset 0 1 hu)))) hq₀)
+        (Ioo_subset_Icc_self (pi_univ_Ioo_subset 0 1 hu))))
   rw [boxBoundarySum_zero_one]
   simpa only [dq_single, one_smul] using cauchy_affine_cofactor L p
       (hK.comp dq.continuous.continuousOn (fun _ hx ↦ mem_image_of_mem _ hx)) hc hr hf
@@ -102,9 +98,9 @@ theorem right_cauchyFueter_affine_cofactor_of_notMem
   have hK := continuousOn_cauchyFueterKernel hq₀
   have hl u (hu : u ∈ univ.pi (fun _ : Fin 4 ↦ Ioo (0 : ℝ) 1)) :
       LeftFueterAt (fun q ↦ cauchyFueterKernel q q₀) (dq (p + L u)) :=
-    leftFueterAt_cauchyFueterKernel (ne_of_mem_of_not_mem
+    leftFueterOn_iff.mp (leftFueterOn_cauchyFueterKernel hq₀) _
       (mem_image_of_mem dq (mem_image_of_mem (fun u ↦ p + L u)
-        (Ioo_subset_Icc_self (pi_univ_Ioo_subset 0 1 hu)))) hq₀)
+        (Ioo_subset_Icc_self (pi_univ_Ioo_subset 0 1 hu))))
   rw [boxBoundarySum_zero_one]
   simpa only [dq_single, one_smul] using cauchy_affine_cofactor L p hc
       (hK.comp dq.continuous.continuousOn (fun _ hx ↦ mem_image_of_mem _ hx)) hf hl
