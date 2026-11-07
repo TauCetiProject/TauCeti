@@ -69,7 +69,7 @@ for higher powers are in `TauCeti.Geometry.Manifold.Algebra.VanishingIdeal.Pow`.
 
 public section
 
-open scoped ContDiff Manifold Topology Nat
+open scoped ContDiff Manifold Topology
 
 open TopologicalSpace
 
@@ -273,7 +273,7 @@ theorem mem_smoothVanishingIdeal_pow_succ_of_iteratedFDeriv_eq_zero {x : M}
       simp only [P, ContMDiffMap.coe_sum, Finset.sum_apply, ContMDiffMap.coe_mul, Pi.mul_apply,
         ContMDiffMap.comp_apply, hprod, Finset.prod_apply, hc]
     have hsum : ∑ k ∈ Finset.range (m + 1),
-        (k ! : ℝ)⁻¹ * iteratedFDeriv ℝ k g (F x) (fun _ ↦ F y - F x) = 0 :=
+        (k.factorial : ℝ)⁻¹ * iteratedFDeriv ℝ k g (F x) (fun _ ↦ F y - F x) = 0 :=
       Finset.sum_eq_zero fun k hk ↦ by
         rw [hgk k (Nat.lt_succ_iff.mp (Finset.mem_range.mp hk))]
         simp
