@@ -72,6 +72,10 @@ use.
 * `TauCeti.isInvertible_toContinuousBilinearMap_iff_separatingLeft`:
   contraction with a bilinear form is invertible exactly when it is left-separating in
   finite dimensions, identifying covectors with vectors for local contraction equations.
+* `ContinuousLinearMap.isInvertible_iff_separatingLeft` and
+  `ContinuousLinearMap.isInvertible_iff_nondegenerate_toBilinForm`: in finite dimensions, a map
+  into the dual is invertible exactly when its bilinear form is left-separating, respectively
+  nondegenerate.
 * `ContinuousLinearMap.isVonNBounded_setOf_lt_one_of_pos`: in finite dimensions, positivity on
   nonzero diagonal vectors already implies the bounded-unit-set condition.
 * `TauCeti.isOpen_setOf_forall_bilinear_apply_self_pos`: strict diagonal positivity is open
@@ -158,6 +162,19 @@ theorem _root_.ContinuousLinearMap.isInvertible_of_separatingLeft
   ContinuousLinearMap.isInvertible_of_injective
     ((L.separatingLeft_toBilinForm_iff_injective).1 hsep)
 
+/-- In finite dimensions, a continuous linear map into the dual is invertible exactly when its
+bilinear form is left-separating. -/
+theorem _root_.ContinuousLinearMap.isInvertible_iff_separatingLeft :
+    L.IsInvertible ↔ L.toBilinForm.SeparatingLeft :=
+  ⟨fun h ↦ L.separatingLeft_toBilinForm_iff_injective.2 h.injective,
+    ContinuousLinearMap.isInvertible_of_separatingLeft⟩
+
+/-- In finite dimensions, a continuous linear map into the dual is invertible exactly when its
+bilinear form is nondegenerate. -/
+theorem _root_.ContinuousLinearMap.isInvertible_iff_nondegenerate_toBilinForm :
+    L.IsInvertible ↔ L.toBilinForm.Nondegenerate :=
+  L.isInvertible_iff_separatingLeft.trans ⟨.ofSeparatingLeft, And.left⟩
+
 omit [CompleteSpace 𝕜] in
 /-- In finite dimensions, the bilinear form of a continuous linear map into the dual is
 nondegenerate exactly when the map is injective. -/
@@ -175,11 +192,7 @@ theorem isInvertible_toContinuousBilinearMap_iff_separatingLeft
   have hround : b.toContinuousBilinearMap.toBilinForm = b := by
     ext v w
     simp
-  have hsep : b.SeparatingLeft ↔ Function.Injective b.toContinuousBilinearMap := by
-    simpa only [hround] using
-      b.toContinuousBilinearMap.separatingLeft_toBilinForm_iff_injective
-  exact ⟨fun hb ↦ hsep.mpr hb.injective,
-    fun hb ↦ _root_.ContinuousLinearMap.isInvertible_of_injective (hsep.mp hb)⟩
+  rw [ContinuousLinearMap.isInvertible_iff_separatingLeft, hround]
 
 end FiniteDimensional
 
