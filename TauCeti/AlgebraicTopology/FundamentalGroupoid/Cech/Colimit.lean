@@ -73,22 +73,6 @@ private lemma map_inclusion_comp_coconeLeg (c : Cocone (cechDiagram U)) {s t : C
   rw [coconeLeg, coconeLeg, ← h, ← c.w f]
   simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
 
-/-- The map induced by the inclusion of the intersection indexed by `s` is the leg at `s` of the
-canonical Čech cocone, transported along `cechDiagram_obj`. -/
-private lemma map_subtypeVal_eq_cechCocone_ι_app (s : CechIndex ι) :
-    fundamentalGroupoidFunctor.map
-        (TopCat.ofHom (ContinuousMap.subtypeVal (cechIntersection U s : Set X))) =
-      eqToHom (cechDiagram_obj U s).symm ≫ (cechCocone U).ι.app s := by
-  have hinc : eqToHom (cechTopDiagram_obj U s).symm ≫ cechInclusion U s =
-      (TopCat.ofHom (ContinuousMap.subtypeVal (cechIntersection U s : Set X)) :
-        TopCat.of (cechIntersection U s) ⟶ X) := by
-    ext x
-    exact cechInclusion_apply U s x
-  -- The cocone point is by definition the fundamental groupoid of `X`.
-  have hpt : eqToHom (cechCocone_pt U) = 𝟙 ((cechCocone U).pt) := rfl
-  rw [← hinc, ← cechCocone_ι_app, hpt]
-  exact (Category.assoc _ _ _).symm.trans (Category.comp_id _)
-
 variable {U}
 
 /-- Every point has a singleton Čech intersection of an open cover as a neighbourhood. -/
