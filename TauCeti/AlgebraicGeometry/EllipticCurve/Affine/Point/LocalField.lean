@@ -150,10 +150,14 @@ theorem existsUnique_nonsingularReduction_torsion_lift_of_localField {n : ℕ}
       (residue (valuation K).valuationSubring)).toAffine.Point) (hQ : n • Q = 0) :
     ∃! P : W.toAffine.nonsingularReduction (valuation K),
       n • P = 0 ∧ W.toAffine.nonsingularReductionHom (valuation K) P = Q := by
-  exact TauCeti.existsUnique_torsion_lift_of_bijective_ker_nsmul n
-    (W.toAffine.nonsingularReductionHom (valuation K))
-    (nonsingularReductionHom_surjective (valuation K))
-    (nsmul_ker_nonsingularReductionHom_bijective W hn) Q hQ
+  let ρ := W.toAffine.nonsingularReductionHom (valuation K)
+  have hker : Function.Bijective (fun P : ρ.ker ↦ (n : ℤ) • P) := by
+    simpa only [natCast_zsmul] using nsmul_ker_nonsingularReductionHom_bijective W hn
+  -- The additive and ℤ-linear kernels have definitionally equal carriers.
+  simpa only [natCast_zsmul, AddMonoidHom.coe_toIntLinearMap] using
+    TauCeti.existsUnique_torsion_lift_of_bijective_ker_smul (n : ℤ) ρ.toIntLinearMap
+      (nonsingularReductionHom_surjective (valuation K)) hker
+      Q (by simpa only [natCast_zsmul] using hQ)
 
 /-- Reduction identifies the prime-to-residue-characteristic torsion of the subgroup with
 nonsingular reduction over a local field with the torsion of its reduced nonsingular locus. -/
@@ -164,10 +168,13 @@ noncomputable def torsionNonsingularReductionAddEquivOfLocalField {n : ℕ}
         ((integralModel (valuation K).valuationSubring W.toAffine).map
           (residue (valuation K).valuationSubring)).toAffine.Point (n : ℤ) := by
   let ρ := W.toAffine.nonsingularReductionHom (valuation K)
+  have hker : Function.Bijective (fun P : ρ.ker ↦ (n : ℤ) • P) := by
+    simpa only [natCast_zsmul] using nsmul_ker_nonsingularReductionHom_bijective W hn
+  -- The additive and ℤ-linear kernels have definitionally equal carriers.
   exact AddEquiv.ofBijective (TauCeti.torsionByMap (n : ℤ) ρ.toIntLinearMap).toAddMonoidHom
-    (TauCeti.bijective_torsionByMap_of_bijective_ker_nsmul n ρ
+    (TauCeti.bijective_torsionByMap_of_bijective_ker_smul (n : ℤ) ρ.toIntLinearMap
       (nonsingularReductionHom_surjective (valuation K))
-      (nsmul_ker_nonsingularReductionHom_bijective W hn))
+      hker)
 
 /-- The local-field torsion equivalence sends a point to its reduction. -/
 @[simp]

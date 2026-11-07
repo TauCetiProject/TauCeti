@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LocalField.MaximalPrime
 public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Completion
+import TauCeti.Topology.Algebra.UniformRing
 
 /-!
 # Completing a local field at its maximal ideal
@@ -35,11 +36,9 @@ theorem bijective_algebraMap_adicCompletion_maximalPrime :
   let e := WithVal.uniformEquiv (v := v) (w := valuation K) rfl
     (isEquiv_valuation_maximalPrime K)
   have : CompleteSpace (WithVal v) := e.completeSpace_iff.mpr inferInstance
-  have hs : Function.Surjective ((↑) : WithVal v → UniformSpace.Completion (WithVal v)) := by
-    rw [← Set.range_eq_univ,
-      ← (UniformSpace.Completion.isUniformInducing_coe
-        (WithVal v)).isComplete_range.isClosed.closure_eq]
-    exact UniformSpace.Completion.denseRange_coe.closure_range
+  have hs : Function.Surjective ((↑) : WithVal v → UniformSpace.Completion (WithVal v)) :=
+    UniformSpace.Completion.coe_completeRingEquivSelf_symm (WithVal v) ▸
+      (UniformSpace.Completion.completeRingEquivSelf (WithVal v)).symm.surjective
   refine ⟨(algebraMap K ((maximalPrime K).adicCompletion K)).injective, fun x ↦ ?_⟩
   obtain ⟨y, hy⟩ := hs x.toCompletion
   refine ⟨y.ofVal, ?_⟩

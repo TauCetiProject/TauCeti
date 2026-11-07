@@ -307,7 +307,9 @@ theorem mem_kerReduction_iff_nonsingularReductionHom_eq_zero
       (C.baseChange F_u).toAffine.nonsingularReductionHom Valued.v P = 0 := by
   rw [mem_kerReduction_iff, nonsingularReductionHom_eq_zero_iff, reduction_eq_zero_iff]
 
-private theorem nsmul_nonsingularReductionHom_ker_bijective {n : ℕ}
+/-- Multiplication by an integer nonzero in the residue field is bijective on the kernel of
+nonsingular reduction over the completed field. -/
+theorem _root_.WeierstrassCurve.nsmul_ker_nonsingularReductionHom_bijective {n : ℕ}
     (hn : (n : A) ∉ u.asIdeal) :
     Function.Bijective
       (fun P : ((C.baseChange F_u).toAffine.nonsingularReductionHom Valued.v).ker ↦ n • P) := by
@@ -349,10 +351,14 @@ theorem existsUnique_nonsingularReduction_torsion_lift {n : ℕ} (hn : (n : A) �
     (hQ : n • Q = 0) :
     ∃! P : (C.baseChange F_u).toAffine.nonsingularReduction Valued.v,
       n • P = 0 ∧ (C.baseChange F_u).toAffine.nonsingularReductionHom Valued.v P = Q := by
-  exact TauCeti.existsUnique_torsion_lift_of_bijective_ker_nsmul n
-    ((C.baseChange F_u).toAffine.nonsingularReductionHom Valued.v)
-    (nonsingularReductionHom_surjective Valued.v)
-    (nsmul_nonsingularReductionHom_ker_bijective u C hn) Q hQ
+  let ρ := (C.baseChange F_u).toAffine.nonsingularReductionHom Valued.v
+  have hker : Function.Bijective (fun P : ρ.ker ↦ (n : ℤ) • P) := by
+    simpa only [natCast_zsmul] using C.nsmul_ker_nonsingularReductionHom_bijective u hn
+  -- The additive and ℤ-linear kernels have definitionally equal carriers.
+  simpa only [natCast_zsmul, AddMonoidHom.coe_toIntLinearMap] using
+    TauCeti.existsUnique_torsion_lift_of_bijective_ker_smul (n : ℤ) ρ.toIntLinearMap
+      (nonsingularReductionHom_surjective Valued.v) hker
+      Q (by simpa only [natCast_zsmul] using hQ)
 
 /-- **Specialization identifies the prime-to-residue-characteristic torsion with nonsingular
 reduction.** Over the completed field, with good or bad reduction, reduction is an isomorphism from
@@ -364,10 +370,13 @@ noncomputable def _root_.WeierstrassCurve.torsionNonsingularReductionAddEquiv
       Submodule.torsionBy ℤ
         ((integralModel R_u (C.baseChange F_u)).map (residue R_u)).toAffine.Point (n : ℤ) := by
   let ρ := (C.baseChange F_u).toAffine.nonsingularReductionHom Valued.v
+  have hker : Function.Bijective (fun P : ρ.ker ↦ (n : ℤ) • P) := by
+    simpa only [natCast_zsmul] using C.nsmul_ker_nonsingularReductionHom_bijective u hn
+  -- The additive and ℤ-linear kernels have definitionally equal carriers.
   exact AddEquiv.ofBijective (TauCeti.torsionByMap (n : ℤ) ρ.toIntLinearMap).toAddMonoidHom
-    (TauCeti.bijective_torsionByMap_of_bijective_ker_nsmul n ρ
+    (TauCeti.bijective_torsionByMap_of_bijective_ker_smul (n : ℤ) ρ.toIntLinearMap
       (nonsingularReductionHom_surjective Valued.v)
-      (nsmul_nonsingularReductionHom_ker_bijective u C hn))
+      hker)
 
 /-- The torsion specialization equivalence with nonsingular reduction sends a point to its
 reduction. -/
