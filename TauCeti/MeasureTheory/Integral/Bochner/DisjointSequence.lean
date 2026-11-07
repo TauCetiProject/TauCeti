@@ -8,6 +8,7 @@ module
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 import TauCeti.Analysis.RCLike.Basic
+import TauCeti.Data.Set.Lattice
 import TauCeti.MeasureTheory.Integral.Bochner.Set
 
 /-!
@@ -75,47 +76,6 @@ theorem tendsto_setIntegral_iUnion_ge_of_pairwise_disjoint {g : α → E} (hg : 
   have hlim := tendsto_setIntegral_of_antitone (μ := μ) (f := g)
     (fun M ↦ .iUnion fun m ↦ .iUnion fun _ ↦ hBm m) hanti ⟨0, hg.integrableOn⟩
   rwa [hinter, Measure.restrict_empty, integral_zero_measure] at hlim
-/-- If `H`, `S` and `T` are disjoint, with `S` and `T` measurable, then the integral of `f` over `S`
-is bounded by its integrals over `H ∪ (S ∪ T)`, `H` and `T`. -/
-theorem norm_setIntegral_le_add_of_disjoint {f : α → E} (hf : Integrable f μ) {H S T : Set α}
-    (hS : MeasurableSet S) (hT : MeasurableSet T) (hHST : Disjoint H (S ∪ T))
-    (hST : Disjoint S T) :
-    ‖∫ x in S, f x ∂μ‖ ≤
-      ‖∫ x in H ∪ (S ∪ T), f x ∂μ‖ + ‖∫ x in H, f x ∂μ‖ + ‖∫ x in T, f x ∂μ‖ := by
-  rw [setIntegral_union hHST (hS.union hT) hf.integrableOn hf.integrableOn,
-    setIntegral_union hST hT hf.integrableOn hf.integrableOn]
-  set a := ∫ x in H, f x ∂μ
-  set b := ∫ x in S, f x ∂μ
-  set c := ∫ x in T, f x ∂μ
-  calc ‖b‖ = ‖a + (b + c) - a - c‖ := by congr 1; abel
-    _ ≤ ‖a + (b + c) - a‖ + ‖c‖ := norm_sub_le _ _
-    _ ≤ ‖a + (b + c)‖ + ‖a‖ + ‖c‖ := by gcongr; exact norm_sub_le _ _
-
-/-- For a strictly monotone `σ` and pairwise disjoint sets `B`, the union `⋃ j, B (σ j)` splits
-into the earlier sets, the `k`-th set and the later sets, and these three pieces are disjoint. -/
-private theorem iUnion_comp_eq_union_of_pairwise_disjoint {B : ℕ → Set α}
-    (hB : Pairwise (Disjoint on B)) {σ : ℕ → ℕ} (hσ : StrictMono σ) (k : ℕ) :
-    ⋃ j, B (σ j) = (⋃ i ∈ Finset.range k, B (σ i)) ∪ (B (σ k) ∪ ⋃ i, ⋃ (_ : k < i), B (σ i)) ∧
-    Disjoint (⋃ i ∈ Finset.range k, B (σ i)) (B (σ k) ∪ ⋃ i, ⋃ (_ : k < i), B (σ i)) ∧
-    Disjoint (B (σ k)) (⋃ i, ⋃ (_ : k < i), B (σ i)) := by
-  have hdisj (i i' : ℕ) (hii' : i ≠ i') : Disjoint (B (σ i)) (B (σ i')) :=
-    hB (hσ.injective.ne hii')
-  refine ⟨?_, ?_, ?_⟩
-  · ext x
-    simp only [mem_union, mem_iUnion, Finset.mem_range, exists_prop]
-    constructor
-    · rintro ⟨i, hi⟩
-      rcases lt_trichotomy i k with hik | rfl | hik
-      · exact Or.inl ⟨i, hik, hi⟩
-      · exact Or.inr (Or.inl hi)
-      · exact Or.inr (Or.inr ⟨i, hik, hi⟩)
-    · rintro (⟨i, -, hi⟩ | hi | ⟨i, -, hi⟩)
-      exacts [⟨i, hi⟩, ⟨k, hi⟩, ⟨i, hi⟩]
-  · simp only [disjoint_union_right, disjoint_iUnion_left, disjoint_iUnion_right,
-      Finset.mem_range]
-    exact ⟨fun i hi ↦ hdisj i k hi.ne, fun i hi i' hi' ↦ hdisj i' i (by omega)⟩
-  · simp only [disjoint_iUnion_right]
-    exact fun i hi ↦ hdisj k i hi.ne
 
 /-- The step of the gliding hump argument: if the integrals of `h n` over each fixed measurable set
 tend to zero and `‖∫ x in B n, h n x ∂μ‖ ≥ ε` for infinitely many `n`, then for any `N` and `K`
@@ -147,7 +107,7 @@ private theorem lt_norm_setIntegral_iUnion_comp {f : α → E} (hf : Integrable 
     (hN : ∀ i < k, σ i < N) (hbig : ε ≤ ‖∫ x in B (σ k), f x ∂μ‖)
     (htail : ∫ x in ⋃ m ≥ L, B m, ‖f x‖ ∂μ < ε / 3) (hL : ∀ i, k < i → L ≤ σ i) :
     ε / 3 < ‖∫ x in ⋃ j, B (σ j), f x ∂μ‖ := by
-  obtain ⟨hDeq, hd₁, hd₂⟩ := iUnion_comp_eq_union_of_pairwise_disjoint hB hσ k
+  obtain ⟨hDeq, hd₁, hd₂⟩ := TauCeti.iUnion_comp_eq_union_of_pairwise_disjoint hB hσ k
   have hT'm : MeasurableSet (⋃ i, ⋃ (_ : k < i), B (σ i)) :=
     .iUnion fun i ↦ .iUnion fun _ ↦ hBm _
   have hHb : ‖∫ x in ⋃ i ∈ Finset.range k, B (σ i), f x ∂μ‖ < ε / 3 := by
@@ -167,7 +127,7 @@ private theorem lt_norm_setIntegral_iUnion_comp {f : α → E} (hf : Integrable 
         setIntegral_mono_set hf.norm.integrableOn (Eventually.of_forall fun _ ↦ norm_nonneg _)
           (Eventually.of_forall hsub)
       _ < ε / 3 := htail
-  have hsplit := norm_setIntegral_le_add_of_disjoint hf (hBm (σ k)) hT'm hd₁ hd₂
+  have hsplit := norm_setIntegral_le_add_of_disjoint hf.integrableOn (hBm (σ k)) hT'm hd₁ hd₂
   rw [← hDeq] at hsplit
   linarith
 
