@@ -81,7 +81,7 @@ theorem HolomorphicAt.apply_eq_zero_of_order_eq_top {x : X} (hω : ω.Holomorphi
 /-- **Unique continuation.** On a connected surface, a holomorphic differential has infinite
 order at a point exactly when it is the zero differential. -/
 @[simp]
-theorem order_eq_top_iff [PreconnectedSpace X] (hω : ∀ x, ω.HolomorphicAt x) (x : X) :
+theorem order_eq_top_iff_eq_zero [PreconnectedSpace X] (hω : ∀ x, ω.HolomorphicAt x) (x : X) :
     ω.order x = ⊤ ↔ ω = 0 := by
   refine ⟨fun hx ↦ ?_, fun h ↦ by simp [h]⟩
   have hu := (isClopen_setOfPred_order_eq_top fun y ↦ (hω y).meromorphicAt).eq_univ ⟨x, hx⟩

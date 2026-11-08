@@ -467,9 +467,9 @@ theorem _root_.TauCeti.RiemannSurface.mem_holomorphicOneForms :
   Iff.rfl
 
 /-- A holomorphic global `1`-form is meromorphic at every point. -/
-theorem _root_.TauCeti.RiemannSurface.holomorphicOneForms.meromorphicAt
-    (η : holomorphicOneForms X) (x : X) : (η : OneForm X).MeromorphicAt x :=
-  (mem_holomorphicOneForms.1 η.2 x).meromorphicAt
+theorem meromorphicAt_of_mem_holomorphicOneForms
+    (hω : ω ∈ holomorphicOneForms X) (x : X) : ω.MeromorphicAt x :=
+  (mem_holomorphicOneForms.1 hω x).meromorphicAt
 
 end Algebra
 
