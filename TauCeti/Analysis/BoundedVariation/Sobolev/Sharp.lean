@@ -65,8 +65,6 @@ private theorem mul_eLpNorm_le_totalVariationOn_of_nonneg (hu : Integrable u)
       (finrank ℝ E : ℝ)⁻¹) * eLpNorm u p volume ≤ totalVariationOn volume ⊤ u := by
   let C := ENNReal.ofReal (finrank ℝ E * volume.real (ball (0 : E) 1) ^
     (finrank ℝ E : ℝ)⁻¹)
-  have hn : finrank ℝ E ≠ 0 := by
-    exact_mod_cast hp.pos.ne'
   have hpower : 1 / (p : ℝ) = 1 - (finrank ℝ E : ℝ)⁻¹ := by
     simpa only [one_div, NNReal.coe_natCast] using hp.coe.one_sub_inv.symm
   have hlevel (t : ℝ) (ht : 0 < t) :
@@ -77,7 +75,7 @@ private theorem mul_eLpNorm_le_totalVariationOn_of_nonneg (hu : Integrable u)
     have hfin : volume {x | t < u x} ≠ ∞ := (hu.measure_gt_lt_top ht).ne
     by_cases hzero : volume {x | t < u x} = 0
     · simp [hzero, inv_pos.mpr hp.coe.symm.pos]
-    · have h := hs.ofReal_mul_volume_real_rpow_mul_le_perimeter hfin hn hzero
+    · have h := hs.ofReal_mul_volume_real_rpow_mul_le_perimeter hfin hzero
       rw [ENNReal.ofReal_mul (mul_nonneg (Nat.cast_nonneg _) (Real.rpow_nonneg
         measureReal_nonneg _)), ← ENNReal.ofReal_rpow_of_nonneg measureReal_nonneg
         (by rw [← hpower]; positivity), ofReal_measureReal hfin] at h
