@@ -19,6 +19,9 @@ of measures.
 
 ## Main results
 
+* `Measurable.measure_of_isPiSystem_of_iUnion` — measurability on a generating π-system
+  suffices for measures finite on a fixed increasing exhaustion by π-system sets, without
+  finite total mass.
 * `TauCeti.MeasureTheory.measurable_sum_smul_dirac` — a countable mixture of Dirac measures at
   fixed atoms is measurable when each weight is measurable.
 * `TauCeti.MeasureTheory.measurable_probabilityMeasure_map` — pushing forward along a fixed
