@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 public import TauCeti.CategoryTheory.Functor.RingEquivEnd
 public import TauCeti.CategoryTheory.Preadditive.Indecomposable
 import TauCeti.RingTheory.LocalRing.Basic

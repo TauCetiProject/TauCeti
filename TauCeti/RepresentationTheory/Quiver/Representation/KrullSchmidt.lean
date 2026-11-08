@@ -8,7 +8,6 @@ module
 public import TauCeti.RepresentationTheory.Quiver.Representation.FiniteDimensional
 public import TauCeti.Algebra.Category.ModuleCat.KrullSchmidt
 public import TauCeti.CategoryTheory.Adjunction.Additive
-public import TauCeti.CategoryTheory.Preadditive.KrullSchmidt.FullSubcategory
 public import TauCeti.RepresentationTheory.Quiver.Representation.HomDifferential
 
 /-!
