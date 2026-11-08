@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.FiberProduct.Manifold
-import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 
 /-!
 # Fibre products with an identity map
