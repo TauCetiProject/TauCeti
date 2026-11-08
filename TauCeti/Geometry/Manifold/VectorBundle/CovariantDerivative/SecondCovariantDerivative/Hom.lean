@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.SecondCovariantDerivative
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Hom
-public import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
+import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
 /-!
 # The second covariant derivative as an induced Hom derivative
