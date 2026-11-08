@@ -13,6 +13,8 @@ import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Cutoff
+import TauCeti.Geometry.Manifold.Algebra.SmoothFunctions
+import TauCeti.Analysis.Normed.Module.Ball
 
 /-!
 # Peetre's theorem: local operators have locally finite order
@@ -83,13 +85,6 @@ private theorem apply_eq_apply_of_eventuallyEq (P : C^∞⟮𝓘(ℝ, E), E; �
     filter_upwards [h] with z hz
     rw [ContMDiffMap.coe_sub, Pi.sub_apply, hz, sub_self, Pi.zero_apply])
   rwa [map_sub, Pi.sub_apply, sub_eq_zero] at h'
-
-/-- The iterated derivatives of a difference of smooth functions. -/
-private theorem iteratedFDeriv_coe_sub (u v : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, F), F⟯) (i : ℕ) (z : E) :
-    iteratedFDeriv ℝ i ⇑(u - v) z = iteratedFDeriv ℝ i u z - iteratedFDeriv ℝ i v z := by
-  rw [ContMDiffMap.coe_sub, iteratedFDeriv_sub_apply
-    (u.contMDiff.contDiff.contDiffAt.of_le (by exact_mod_cast le_top))
-    (v.contMDiff.contDiff.contDiffAt.of_le (by exact_mod_cast le_top))]
 
 /-! ### The estimate on punctured balls -/
 
@@ -346,7 +341,7 @@ private theorem norm_apply_le_of_iteratedFDeriv_eq_zero
       rw [ContMDiffMap.coe_sub, Pi.sub_apply, hz, sub_self, Pi.zero_apply]
   have hvM : ∀ i ≤ r, ∀ z, ‖iteratedFDeriv ℝ i v z‖ ≤ M + Kw * δ := by
     intro i hi z
-    rw [iteratedFDeriv_coe_sub]
+    rw [ContMDiffMap.iteratedFDeriv_sub_apply _ _ (by exact_mod_cast le_top)]
     exact (norm_sub_le _ _).trans (add_le_add (hwM i hi z) (hKw δ hδ hδ1 i hi z))
   have := hC v hvs (M + Kw * δ) hvM y' (hρU hy')
   rw [hPv] at this
@@ -452,7 +447,8 @@ theorem exists_apply_eq_apply_of_iteratedFDeriv_eq
       (∀ i ≤ r, iteratedFDeriv ℝ i u x = iteratedFDeriv ℝ i v x) → P u x = P v x := by
   obtain ⟨r, hr⟩ := exists_apply_eq_zero_of_iteratedFDeriv_eq_zero P hU hloc hcont hK hKU
   refine ⟨r, fun x hx u v huv ↦ ?_⟩
-  have h := hr x hx (u - v) fun i hi ↦ by rw [iteratedFDeriv_coe_sub, huv i hi, sub_self]
+  have h := hr x hx (u - v) fun i hi ↦ by
+    rw [ContMDiffMap.iteratedFDeriv_sub_apply _ _ (by exact_mod_cast le_top), huv i hi, sub_self]
   rwa [map_sub, Pi.sub_apply, sub_eq_zero] at h
 
 end Cutoff

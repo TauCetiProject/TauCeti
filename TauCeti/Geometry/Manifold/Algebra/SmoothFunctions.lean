@@ -5,18 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.FTaylorSeries
 public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
+import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 
 /-!
 # Algebraic operations on smooth maps
 
 This file complements Mathlib's algebraic structures on spaces of smooth maps with the pointwise
-evaluation of finite sums, and with the transport of pointwise identities between scalar-valued
-smooth functions to identities in the algebra of smooth functions.
+evaluation of finite sums, with the iterated derivatives of a difference of `C^n` maps between
+normed spaces, and with the transport of pointwise identities between scalar-valued smooth
+functions to identities in the algebra of smooth functions.
 
 ## Main results
 
 * `ContMDiffMap.coe_sum`: the coercion of a finite sum of smooth maps is the sum of the coercions.
+* `ContMDiffMap.iteratedFDeriv_sub_apply`: the iterated derivatives of order at most `n` of a
+  difference of `C^n` maps are the differences of their iterated derivatives.
 * `TauCeti.sub_algebraMap_eq_sum_mul_sub_algebraMap`: the bundled form of a pointwise
   factorization of `g - g x` in the algebra of smooth functions.
 -/
@@ -40,6 +45,16 @@ theorem coe_sum {𝕜 : Type*} [NontriviallyNormedField 𝕜]
     {ι : Type*} (s : Finset ι) (f : ι → C^n⟮I, N; I', G⟯) :
     ⇑(∑ i ∈ s, f i) = ∑ i ∈ s, ⇑(f i) :=
   map_sum coeFnAddMonoidHom f s
+
+/-- The iterated derivatives of order at most `n` of a difference of `C^n` maps between normed
+spaces are the differences of their iterated derivatives. -/
+theorem iteratedFDeriv_sub_apply {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {n : ℕ∞ω}
+    (u v : C^n⟮𝓘(𝕜, E), E; 𝓘(𝕜, F), F⟯) {i : ℕ} (hi : i ≤ n) (z : E) :
+    iteratedFDeriv 𝕜 i ⇑(u - v) z = iteratedFDeriv 𝕜 i u z - iteratedFDeriv 𝕜 i v z := by
+  rw [coe_sub, _root_.iteratedFDeriv_sub_apply (u.contMDiff.contDiff.contDiffAt.of_le hi)
+    (v.contMDiff.contDiff.contDiffAt.of_le hi)]
 
 end ContMDiffMap
 
