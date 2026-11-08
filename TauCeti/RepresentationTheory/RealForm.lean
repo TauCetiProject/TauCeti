@@ -161,13 +161,13 @@ theorem isRealForm_iff_nonempty_equiv :
 
 /-- The character of a representation with a real form is the character of that real form.  In
 particular it takes real values (`Representation.IsRealForm.conj_char`). -/
-theorem IsRealForm.char_eq [FiniteDimensional ℝ W] (h : IsRealForm ρ σ) (g : G) :
+theorem IsRealForm.char_eq (h : IsRealForm ρ σ) (g : G) :
     ρ.character g = (σ.character g : ℂ) := by
   obtain ⟨φ⟩ := isRealForm_iff_nonempty_equiv.mp h
   rw [← congrFun (char_iso φ) g, Representation.character_baseChange, Complex.coe_algebraMap]
 
 /-- The character of a representation with a real form is fixed by complex conjugation. -/
-theorem IsRealForm.conj_char [FiniteDimensional ℝ W] (h : IsRealForm ρ σ) (g : G) :
+theorem IsRealForm.conj_char (h : IsRealForm ρ σ) (g : G) :
     (starRingEnd ℂ) (ρ.character g) = ρ.character g := by
   rw [h.char_eq g, Complex.conj_ofReal]
 
