@@ -18,13 +18,15 @@ public import TauCeti.RepresentationTheory.Continuous.LinHom
 Let `π` and `ρ` be representations of a group `G` on Banach spaces `E` and `F`, and let `σ` be a
 representation on a finite-dimensional space `V`. The continuous intertwiners `σ →ⁱL π` form the
 invariant subspace `(linHom σ π).invariants` of the operator space `V →L[𝕜] E`, a Banach space;
-when `G` is compact and `σ` is irreducible, its dimension is the multiplicity of `σ` in `π`. An
-intertwining map `T : π →ⁱL ρ` acts on these multiplicity spaces by composition, `S ↦ T ∘ S`; this
-is `(T.compLinHom σ).mapInvariants`.
+when `G` is compact, `σ` is irreducible and its only self-intertwiners are the scalars (always the
+case over `ℂ`, by Schur's lemma), its dimension is the multiplicity of `σ` in `π`. In general it is
+that multiplicity times the dimension of the self-intertwiners of `σ`. An intertwining map
+`T : π →ⁱL ρ` acts on these multiplicity spaces by composition, `S ↦ T ∘ S`; this is
+`(T.compLinHom σ).mapInvariants`.
 
-This file shows that the action of `T` on multiplicity spaces computes the multiplicities of `σ`
-in the kernel and in the cokernel of `T`. For every `T`, the kernel of the action is the space of
-intertwiners from `σ` into the kernel representation of `T`. For unitary representations on
+This file shows that the action of `T` on multiplicity spaces computes the intertwiners from `σ`
+into the kernel and into the cokernel of `T`. For every `T`, the kernel of the action is the space
+of intertwiners from `σ` into the kernel representation of `T`. For unitary representations on
 Hilbert spaces and `T` with closed range, its cokernel is the space of intertwiners from `σ` into
 the cokernel representation of `T`. Two lifting properties give this: an intertwiner with values in
 the range of `T` factors through `T`, through the inverse of `T` on the orthogonal complement of its
@@ -35,9 +37,10 @@ multiplicity spaces, with index `dim Hom_G(σ, ker T) - dim Hom_G(σ, coker T)`.
 The action is the restriction to invariants of the continuous linear map `T ↦ (S ↦ T ∘ S)`, so it
 carries norm-continuous families of equivariant operators to norm-continuous families. With the
 local constancy of the Fredholm index, along a norm-continuous family of equivariant Fredholm
-operators on a preconnected parameter set the difference of the multiplicities of `σ` in the kernel
-and in the cokernel is constant. This is the homotopy invariance of the equivariant index
-`[ker T] - [coker T]`, read one multiplicity at a time.
+operators on a preconnected parameter set the difference of the dimensions of the intertwiners from
+`σ` into the kernel and into the cokernel is constant. When these dimensions are multiplicities (as
+above), this is the homotopy invariance of the equivariant index `[ker T] - [coker T]`, read one
+multiplicity at a time.
 
 ## Main definitions
 
@@ -61,7 +64,7 @@ and in the cokernel is constant. This is the homotopy invariance of the equivari
   `ContIntertwiningMap.index_mapInvariants_compLinHom`: the action of a Fredholm `T` is Fredholm,
   of index `finrank (σ →ⁱL T.kerRepresentation) - finrank (σ →ⁱL T.cokerRepresentation)`.
 * `ContinuousOn.finrank_contIntertwiningMap_kerRepresentation_sub_cokerRepresentation_eq`: this
-  difference of multiplicities is constant along a continuous family of equivariant Fredholm
+  difference of intertwiner dimensions is constant along a continuous family of equivariant Fredholm
   operators on a preconnected parameter set.
 
 ## References
@@ -354,8 +357,9 @@ theorem isFredholm_mapInvariants_compLinHom (hπ : π.IsUnitary) (hρ : ρ.IsUni
 
 /-- **The index of the action on multiplicity spaces.** For unitary representations on Hilbert
 spaces and a Fredholm `T`, the action of `T` on the multiplicity spaces of a finite-dimensional `σ`
-has index `dim Hom_G(σ, ker T) - dim Hom_G(σ, coker T)`, the difference of the multiplicities of
-`σ` in the kernel and in the cokernel of `T` when `σ` is irreducible and `G` compact. -/
+has index `dim Hom_G(σ, ker T) - dim Hom_G(σ, coker T)`. When `G` is compact and `σ` is irreducible
+with only scalar self-intertwiners (as over `ℂ`), this is the difference of the multiplicities of
+`σ` in the kernel and in the cokernel of `T`. -/
 theorem index_mapInvariants_compLinHom (hπ : π.IsUnitary) (hρ : ρ.IsUnitary) {T : π →ⁱL ρ}
     (hT : T.toContinuousLinearMap.IsFredholm) :
     (T.compLinHom σ).mapInvariants.index =
@@ -366,12 +370,12 @@ theorem index_mapInvariants_compLinHom (hπ : π.IsUnitary) (hρ : ρ.IsUnitary)
 
 variable {X : Type*} [TopologicalSpace X]
 
-/-- **Homotopy invariance of the multiplicities in the equivariant index.** Along a family of
-intertwining maps between unitary representations on Hilbert spaces, continuous in operator norm
+/-- **Homotopy invariance of the intertwiner dimensions in the equivariant index.** Along a family
+of intertwining maps between unitary representations on Hilbert spaces, continuous in operator norm
 and Fredholm on a preconnected set `s`, the difference between the dimensions of the intertwiners
 from a finite-dimensional `σ` into the kernel and into the cokernel is the same at every point of
-`s`. For `G` compact and `σ` irreducible this is the difference of the multiplicities of `σ` in the
-kernel and in the cokernel. -/
+`s`. For `G` compact and `σ` irreducible with only scalar self-intertwiners (as over `ℂ`), this is
+the difference of the multiplicities of `σ` in the kernel and in the cokernel. -/
 theorem _root_.ContinuousOn.finrank_contIntertwiningMap_kerRepresentation_sub_cokerRepresentation_eq
     (hπ : π.IsUnitary) (hρ : ρ.IsUnitary) {A : X → π →ⁱL ρ} {s : Set X}
     (hA : ContinuousOn (fun x ↦ (A x).toContinuousLinearMap) s)
