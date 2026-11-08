@@ -190,9 +190,8 @@ theorem eigenvalues_eq_zero_of_inner_ne_zero (hA : A.IsHermitian) (hB : B.IsHerm
     exact h hv
   have hsymm := isSymmetric_toEuclideanLin_iff.mpr hA (hA.eigenvectorBasis i)
     (hB.eigenvectorBasis j)
-  rw [hA.toEuclideanLin_eigenvectorBasis, toLpLin_apply, hker, WithLp.toLp_zero, inner_zero_right,
-    inner_smul_left, RCLike.conj_ofReal, mul_eq_zero, RCLike.ofReal_eq_zero] at hsymm
-  exact hsymm.resolve_right hij
+  rw [hA.toEuclideanLin_eigenvectorBasis, inner_smul_left] at hsymm
+  simpa [toLpLin_apply, hker, hij] using hsymm
 
 end Matrix.IsHermitian
 
