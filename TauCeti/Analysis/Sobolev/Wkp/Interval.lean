@@ -160,6 +160,23 @@ theorem norm_lowerOrder_le_of_mem_w1p0Submodule (hab : a < b)
     W1p.norm_le_norm_value_add_norm_gradient w
   linarith
 
+/-- Uniqueness of weak derivatives: if `u ∈ W^{2,p}(a, b)` has value `v`, where
+`v' = w` and `w' = g` weakly, then the weak Hessian of `u` equals `g` almost everywhere. -/
+private theorem iteratedGradient_one_ae_eq_of_value_firstOrder
+    {u : Wkp volume ⟨Ioo a b, isOpen_Ioo⟩ p 2} {v w g : ℝ → ℝ}
+    (hu : Wkp.value 2 u =ᵐ[volume.restrict (Ioo a b)] v)
+    (hdv : HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ v w 1)
+    (hdw : HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ w g 1) :
+    (fun x => iteratedGradient 1 u x 1) =ᵐ[volume.restrict (Ioo a b)] g := by
+  have hlow : W1p.value (lowerOrder 1 u) =ᵐ[volume.restrict (Ioo a b)] v := by
+    rw [← value_one, ← value_succ]
+    exact hu
+  have hval : HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩
+      (W1p.value (lowerOrder 1 u)) (W1p.gradient (lowerOrder 1 u)) 1 := by
+    simpa using (W1p.hasWeakFDerivOn (lowerOrder 1 u)).hasWeakLineDerivOn (1 : ℝ)
+  exact ((hasWeakLineDerivOn_gradient_lowerOrder u).congr_ae
+    ((hval.congr_ae hlow).ae_eq hdv)).ae_eq hdw
+
 /-- Every `g ∈ Lᵖ(a, b)`, `p < ∞`, is the second weak derivative of some `u ∈ W^{2,p}(a, b)` with
 first-order part in `W^{1,p}_0(a, b)`: integrate twice, adjusting the first primitive by a
 constant so that the second vanishes at both endpoints. -/
@@ -215,15 +232,7 @@ theorem exists_firstOrder_mem_w1p0Submodule_and_iteratedGradient_ae_eq
     rcases ht with rfl | rfl
     · exact integral_same
     · exact hw0
-  · -- By uniqueness of weak derivatives, `u' = w` and `u'' = g`.
-    have hlow : W1p.value (lowerOrder 1 u) =ᵐ[volume.restrict (Ioo a b)] v := by
-      rw [← value_one, ← value_succ]
-      exact hu
-    have hval : HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩
-        (W1p.value (lowerOrder 1 u)) (W1p.gradient (lowerOrder 1 u)) 1 := by
-      simpa using (W1p.hasWeakFDerivOn (lowerOrder 1 u)).hasWeakLineDerivOn (1 : ℝ)
-    exact ((hasWeakLineDerivOn_gradient_lowerOrder u).congr_ae
-      ((hval.congr_ae hlow).ae_eq hdv)).ae_eq hdw
+  · exact iteratedGradient_one_ae_eq_of_value_firstOrder hu hdv hdw
 
 end Wkp
 

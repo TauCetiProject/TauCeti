@@ -55,6 +55,10 @@ one-parameter automorphism groups of C⋆-algebras.
 * `TauCeti.eq_dysonSeriesLeft_apply`: for a path of bounded operators, every solution of the
   time-dependent linear equation `w' t = M t (w t)` is `w t = dysonSeriesLeft M t (w 0)`.
 * `TauCeti.contDiff_dysonSeriesLeft`: the left series of a `Cⁿ` path is `Cⁿ⁺¹`.
+* `TauCeti.dysonSeries_neg_mul_dysonSeriesLeft`, `TauCeti.dysonSeriesLeft_mul_dysonSeries_neg`:
+  the Dyson series of `-p` is the inverse of the left Dyson series of `p`.
+* `TauCeti.eq_dysonSeriesLeft_apply_add_integral`: variation of constants, every solution of
+  `w' t = M t (w t) + f t` is `w t = Γ t (w 0 + ∫₀ᵗ Γ(s)⁻¹ (f s) ds)`.
 
 ## References
 
@@ -355,6 +359,42 @@ theorem dysonSeriesLeft_add_of_periodic (hp : Continuous p) {d : ℝ}
   simpa using eq_dysonSeriesLeft_mul hp (f := fun t => dysonSeriesLeft p (t + d))
     (fun t => by simpa [hper t] using (hasDerivAt_dysonSeriesLeft hp (t + d)).comp_add_const t d) t
 
+/-- The Dyson series of `-p` is a left inverse of the left Dyson series of `p`:
+`dysonSeries (-p) t * dysonSeriesLeft p t = 1`. -/
+theorem dysonSeries_neg_mul_dysonSeriesLeft (hp : Continuous p) (t : ℝ) :
+    dysonSeries (-p) t * dysonSeriesLeft p t = 1 := by
+  -- The product has derivative `Φ (-p) Ψ + Φ p Ψ = 0`.
+  have hd (s : ℝ) : HasDerivAt (fun s => dysonSeries (-p) s * dysonSeriesLeft p s) 0 s :=
+    ((hasDerivAt_dysonSeries hp.neg s).mul (hasDerivAt_dysonSeriesLeft hp s)).congr_deriv (by
+      simp only [Pi.neg_apply, mul_neg, neg_mul, mul_assoc, neg_add_cancel])
+  have hconst := is_const_of_deriv_eq_zero (fun s => (hd s).differentiableAt)
+    fun s => (hd s).deriv
+  exact (hconst t 0).trans (by simp)
+
+/-- The Dyson series of `-p` is a right inverse of the left Dyson series of `p`:
+`dysonSeriesLeft p t * dysonSeries (-p) t = 1`. -/
+theorem dysonSeriesLeft_mul_dysonSeries_neg (hp : Continuous p) (t : ℝ) :
+    dysonSeriesLeft p t * dysonSeries (-p) t = 1 := by
+  -- The product solves `X' = p X - X p`, as does the constant `1`.
+  let L : ℝ → B →L[ℝ] B := fun s =>
+    ContinuousLinearMap.mul ℝ B (p s) - (ContinuousLinearMap.mul ℝ B).flip (p s)
+  have hL : Continuous L :=
+    ((ContinuousLinearMap.mul ℝ B).continuous.comp hp).sub
+      ((ContinuousLinearMap.mul ℝ B).flip.continuous.comp hp)
+  have h : (fun s => dysonSeriesLeft p s * dysonSeries (-p) s) = fun _ => 1 := by
+    refine hL.eq_of_hasDerivAt_clm_apply (fun s => ?_) (fun s => ?_) (t₀ := 0) (by simp)
+    · exact ((hasDerivAt_dysonSeriesLeft hp s).mul (hasDerivAt_dysonSeries hp.neg s)).congr_deriv
+        (by simp only [L, sub_apply, ContinuousLinearMap.flip_apply,
+          ContinuousLinearMap.mul_apply', Pi.neg_apply, mul_neg]; noncomm_ring)
+    · exact (hasDerivAt_const s (1 : B)).congr_deriv (by simp [L])
+  exact congrFun h t
+
+/-- The left Dyson series of a continuous path takes invertible values, with inverse the Dyson
+series of `-p`. -/
+theorem isUnit_dysonSeriesLeft (hp : Continuous p) (t : ℝ) : IsUnit (dysonSeriesLeft p t) :=
+  ⟨⟨_, _, dysonSeriesLeft_mul_dysonSeries_neg hp t, dysonSeries_neg_mul_dysonSeriesLeft hp t⟩,
+    rfl⟩
+
 /-- The left Dyson series of a `Cⁿ` path is `Cⁿ⁺¹`. -/
 theorem contDiff_dysonSeriesLeft {n : ℕ} (hp : ContDiff ℝ n p) :
     ContDiff ℝ (n + 1) (dysonSeriesLeft p) := by
@@ -388,6 +428,37 @@ theorem hasDerivAt_dysonSeriesLeft_apply {M : ℝ → X →L[ℝ] X} (hM : Conti
     (t : ℝ) :
     HasDerivAt (fun t => dysonSeriesLeft M t x) (M t (dysonSeriesLeft M t x)) t := by
   simpa using (hasDerivAt_dysonSeriesLeft hM t).clm_apply (hasDerivAt_const t x)
+
+/-- **Variation of constants.** For continuous `M` and `f`, the map
+`w t = Ψ t (x + ∫₀ᵗ Ψ(s)⁻¹ (f s) ds)`, where `Ψ = dysonSeriesLeft M` and
+`Ψ(s)⁻¹ = dysonSeries (-M) s`, solves the inhomogeneous equation `w' t = M t (w t) + f t`. -/
+theorem hasDerivAt_dysonSeriesLeft_apply_add_integral {M : ℝ → X →L[ℝ] X} (hM : Continuous M)
+    {f : ℝ → X} (hf : Continuous f) (x : X) (t : ℝ) :
+    HasDerivAt (fun t => dysonSeriesLeft M t (x + ∫ s in 0..t, dysonSeries (-M) s (f s)))
+      (M t (dysonSeriesLeft M t (x + ∫ s in 0..t, dysonSeries (-M) s (f s))) + f t) t := by
+  have hy : HasDerivAt (fun t => x + ∫ s in 0..t, dysonSeries (-M) s (f s))
+      (dysonSeries (-M) t (f t)) t :=
+    (((continuous_dysonSeries hM.neg).clm_apply hf).integral_hasStrictDerivAt 0 t).hasDerivAt
+      |>.const_add x
+  refine ((hasDerivAt_dysonSeriesLeft hM t).clm_apply hy).congr_deriv ?_
+  rw [← mul_apply_eq_comp, dysonSeriesLeft_mul_dysonSeries_neg hM, one_apply_eq_self,
+    mul_apply_eq_comp]
+
+/-- **Variation of constants.** Every solution of `w' t = M t (w t) + f t`, for continuous `M`
+and `f`, is `w t = Ψ t (w 0 + ∫₀ᵗ Ψ(s)⁻¹ (f s) ds)`, where `Ψ = dysonSeriesLeft M` and
+`Ψ(s)⁻¹ = dysonSeries (-M) s`. -/
+theorem eq_dysonSeriesLeft_apply_add_integral {M : ℝ → X →L[ℝ] X} (hM : Continuous M)
+    {f : ℝ → X} (hf : Continuous f) {w : ℝ → X} (hw : ∀ t, HasDerivAt w (M t (w t) + f t) t)
+    (t : ℝ) : w t = dysonSeriesLeft M t (w 0 + ∫ s in 0..t, dysonSeries (-M) s (f s)) := by
+  set v : ℝ → X := fun t => dysonSeriesLeft M t (w 0 + ∫ s in 0..t, dysonSeries (-M) s (f s))
+  -- The difference of two solutions solves the homogeneous equation and vanishes at `0`.
+  have hd (t : ℝ) : HasDerivAt (fun t => w t - v t) (M t (w t - v t)) t :=
+    ((hw t).sub (hasDerivAt_dysonSeriesLeft_apply_add_integral hM hf (w 0) t)).congr_deriv
+      (by rw [map_sub]; abel)
+  have h0 := eq_dysonSeriesLeft_apply hM hd t
+  simp only [v, dysonSeriesLeft_zero, intervalIntegral.integral_same, add_zero,
+    one_apply_eq_self, sub_self, map_zero] at h0
+  exact sub_eq_zero.1 h0
 
 end Left
 
