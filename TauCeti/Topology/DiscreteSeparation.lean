@@ -12,14 +12,14 @@ import Mathlib.Topology.ClusterPt
 /-!
 # Shrinking an open set to separate part of a non-accumulating set
 
-If every point of `K ⊆ V` avoids the closure of `Z \ K`, the open ambient set `V`
-shrinks to an open neighbourhood of `K` meeting `Z` in exactly `K ∩ Z`. This is the
+The open ambient set `V ⊇ K` shrinks to an open neighbourhood of `K` meeting `Z` in exactly
+`K ∩ Z` if and only if every point of `K` avoids the closure of `Z \ K`. This is the
 localization step for residue computations — a contour region is
 shrunk until the only singularities it contains are the intended ones.
 
 ## Main declarations
 
-* `TauCeti.exists_isOpen_inter_eq_of_notMem_closure` (with the accumulation-hypothesis
+* `TauCeti.exists_isOpen_inter_eq_iff_notMem_closure` (with the accumulation-hypothesis
   corollary `TauCeti.exists_isOpen_inter_eq_of_not_accPt`).
 -/
 
@@ -27,19 +27,18 @@ public section
 
 namespace TauCeti
 
-/-- A set `K ⊆ V` whose points avoid the closure of `Z \ K` shrinks the open ambient `V`
-to an open neighbourhood meeting `Z` exactly in `K ∩ Z`: remove that closure. -/
-theorem exists_isOpen_inter_eq_of_notMem_closure {X : Type*} [TopologicalSpace X]
-    {V Z K : Set X} (hV : IsOpen V) (hKV : K ⊆ V)
-    (hK : ∀ x ∈ K, x ∉ closure (Z \ K)) :
-    ∃ U : Set X, IsOpen U ∧ K ⊆ U ∧ U ⊆ V ∧ U ∩ Z = K ∩ Z := by
-  refine ⟨V \ closure (Z \ K), hV.sdiff isClosed_closure,
-    fun x hx => ⟨hKV hx, hK x hx⟩, Set.sdiff_subset, ?_⟩
-  refine Set.Subset.antisymm ?_ fun z hz => ⟨⟨hKV hz.1, hK z hz.1⟩, hz.2⟩
-  rintro z ⟨⟨_, hznc⟩, hzZ⟩
-  refine ⟨?_, hzZ⟩
-  by_contra hzK
-  exact hznc (subset_closure ⟨hzZ, hzK⟩)
+/-- Inside an open ambient set `V ⊇ K`, `K` has an open neighbourhood `U ⊆ V` meeting `Z`
+exactly in `K ∩ Z` if and only if no point of `K` lies in the closure of `Z \ K`; for the
+reverse direction, remove that closure from `V`. -/
+theorem exists_isOpen_inter_eq_iff_notMem_closure {X : Type*} [TopologicalSpace X]
+    {V Z K : Set X} (hV : IsOpen V) (hKV : K ⊆ V) :
+    (∃ U : Set X, IsOpen U ∧ K ⊆ U ∧ U ⊆ V ∧ U ∩ Z = K ∩ Z) ↔
+      ∀ x ∈ K, x ∉ closure (Z \ K) := by
+  refine ⟨fun ⟨U, hU, hKU, _, hUZ⟩ x hx hxc => ?_, fun hK => ⟨V \ closure (Z \ K),
+    hV.sdiff isClosed_closure, fun x hx => ⟨hKV hx, hK x hx⟩, Set.sdiff_subset, ?_⟩⟩
+  · obtain ⟨z, hzU, hzZ, hzK⟩ := mem_closure_iff.mp hxc U hU (hKU hx)
+    exact hzK (hUZ.subset ⟨hzU, hzZ⟩).1
+  · grind [subset_closure]
 
 /-- The separation under the stronger hypothesis that no point of `K` is an accumulation
 point of `Z` at all. -/
@@ -47,12 +46,10 @@ theorem exists_isOpen_inter_eq_of_not_accPt {X : Type*} [TopologicalSpace X] {V 
     (hV : IsOpen V) (hKV : K ⊆ V)
     (hacc : ∀ x ∈ K, ¬AccPt x (Filter.principal Z)) :
     ∃ U : Set X, IsOpen U ∧ K ⊆ U ∧ U ⊆ V ∧ U ∩ Z = K ∩ Z := by
-  refine exists_isOpen_inter_eq_of_notMem_closure hV hKV fun x hx hxc => ?_
-  have hx_notin : x ∉ Z \ K := fun h => h.2 hx
-  have hcl : ClusterPt x (Filter.principal ((Z \ K) \ {x})) := by
-    rwa [Set.sdiff_singleton_eq_self hx_notin, ← mem_closure_iff_clusterPt]
-  exact hacc x hx ((accPt_principal_iff_clusterPt.mpr hcl).mono
-    (Filter.principal_mono.mpr Set.sdiff_subset))
+  refine (exists_isOpen_inter_eq_iff_notMem_closure hV hKV).mpr fun x hx hxc => hacc x hx ?_
+  rw [accPt_principal_iff_nhdsWithin]
+  exact (mem_closure_iff_nhdsWithin_neBot.mp hxc).mono
+    (nhdsWithin_mono _ (Set.sdiff_subset_sdiff_right (Set.singleton_subset_iff.mpr hx)))
 
 end TauCeti
 
