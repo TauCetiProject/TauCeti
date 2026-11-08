@@ -60,6 +60,36 @@ private theorem contDiff_coe_period (hp : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) n p) 
     ContDiff ℝ n (fun x ↦ (p x : ℝ)) :=
   contMDiff_iff_contDiff.mp (contMDiff_subtype_val.comp hp)
 
+/-- The bound `(k!)^2 C^k / ε^(k+1)` of `TauCeti.norm_iteratedFDeriv_inv_comp_le` is at least one
+when `0 < ε ≤ 1` and `1 ≤ C`. -/
+private theorem one_le_factorial_sq_mul_pow_div_pow (k : ℕ) {ε C : ℝ} (hε : 0 < ε) (hε₁ : ε ≤ 1)
+    (hC : 1 ≤ C) : 1 ≤ (k ! : ℝ) ^ 2 * C ^ k / ε ^ (k + 1) := by
+  rw [one_le_div (by positivity)]
+  calc ε ^ (k + 1) ≤ 1 := pow_le_one₀ hε.le hε₁
+    _ ≤ (k ! : ℝ) ^ 2 * C ^ k :=
+      one_le_mul_of_one_le_of_one_le (one_le_pow₀ (by exact_mod_cast k.factorial_pos))
+        (one_le_pow₀ hC)
+
+/-- For `0 < ε ≤ 1` and `1 ≤ C`, `k + 1` times the bound `(k!)^2 C^k / ε^(k+1)` of
+`TauCeti.norm_iteratedFDeriv_inv_comp_le` is at most the bound of order `k + 1`. -/
+private theorem succ_mul_factorial_sq_mul_pow_div_pow_le (k : ℕ) {ε C : ℝ} (hε : 0 < ε)
+    (hε₁ : ε ≤ 1) (hC : 1 ≤ C) :
+    ((k + 1 : ℕ) : ℝ) * ((k ! : ℝ) ^ 2 * C ^ k / ε ^ (k + 1)) ≤
+      ((k + 1) ! : ℝ) ^ 2 * C ^ (k + 1) / ε ^ (k + 1 + 1) := by
+  have hk : (1 : ℝ) ≤ (k + 1 : ℕ) := by exact_mod_cast Nat.le_add_left 1 k
+  calc ((k + 1 : ℕ) : ℝ) * ((k ! : ℝ) ^ 2 * C ^ k / ε ^ (k + 1))
+      ≤ ((k + 1 : ℕ) : ℝ) * ((k ! : ℝ) ^ 2 * C ^ (k + 1) / ε ^ (k + 1 + 1)) := by
+        gcongr _ * (_ * ?_ / ?_)
+        · exact pow_le_pow_right₀ hC k.le_succ
+        · exact pow_le_pow_of_le_one hε.le hε₁ (k + 1).le_succ
+    _ ≤ ((k + 1 : ℕ) : ℝ) * ((k + 1 : ℕ) * ((k ! : ℝ) ^ 2 * C ^ (k + 1) / ε ^ (k + 1 + 1))) := by
+        gcongr
+        exact le_mul_of_one_le_left (by positivity) hk
+    _ = ((k + 1) ! : ℝ) ^ 2 * C ^ (k + 1) / ε ^ (k + 1 + 1) := by
+        rw [Nat.factorial_succ]
+        push_cast
+        ring
+
 /-- **Uniform derivative bounds for the real normalization.** Let `p` be a `C^n` positive period
 function and `1 ≤ k ≤ n`. At a point `(b, t)` with `|t| ≤ R`, `ε ≤ p b` for some `0 < ε ≤ 1`, and
 `‖D^i p b‖ ≤ C` for `1 ≤ i ≤ k` with `1 ≤ C`, the `k`-th iterated derivative of
