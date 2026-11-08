@@ -482,8 +482,7 @@ theorem exists_finset_eq_sum_mul_isRestricted_subring_of_division [CompleteSpace
   let m : MonomialOrder σ := MonomialOrder.lex
   obtain ⟨F, hFH, hF⟩ := exists_finset_isLeadingIndex m deg H
   obtain ⟨ε, hε0, hε1, hε⟩ := exists_gap F
-  refine ⟨F, hFH, fun y hy ↦ TauCeti.exists_eq_sum_mul_of_approx (S := H) hε0.le hε1
-    (fun y hy ↦ ?_) hy⟩
+  refine ⟨F, hFH, fun y hy ↦ TauCeti.exists_eq_sum_mul_of_approx (S := H) hε1 (fun y hy ↦ ?_) hy⟩
   rcases eq_or_ne y 0 with rfl | hy0
   · exact ⟨0, fun x _ ↦ by simp, by simp, by simp⟩
   obtain ⟨b, hb, hbε⟩ :=
