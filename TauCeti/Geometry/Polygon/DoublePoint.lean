@@ -80,8 +80,6 @@ projection of `poly` along `d` (`Polygon.doublePoints_map_projAlong`).
   polygon has finitely many double points.
 * `Polygon.IsRegularProjection.perfectMatchingDoublePoints_val_apply`: the matching sends each
   double point to its partner.
-* `Polygon.doublePointPartnerOnDoublePoints_spec`: the restricted partner is a different point
-  with the same image.
 * `Polygon.doublePointPartnerOnDoublePoints_val`: the restricted partner agrees with the ambient
   partner after coercion.
 * `Polygon.IsRegularProjection.even_ncard_doublePoints`: the `ncard` of the double points is even.
@@ -254,13 +252,6 @@ noncomputable def doublePointPartnerOnDoublePoints (poly : Polygon P n) (π : P 
 @[simp]
 theorem doublePointPartnerOnDoublePoints_val (x : poly.doublePoints R π) :
     (poly.doublePointPartnerOnDoublePoints R π x : P) = poly.doublePointPartner R π x := (rfl)
-
-/-- The restricted partner is a different point on the polygon with the same image. -/
-theorem doublePointPartnerOnDoublePoints_spec (x : poly.doublePoints R π) :
-    (poly.doublePointPartnerOnDoublePoints R π x : P) ≠ x ∧
-      π (poly.doublePointPartnerOnDoublePoints R π x) = π x := by
-  obtain ⟨_, hne, hπ⟩ := doublePointPartner_spec x.property
-  exact ⟨hne, hπ⟩
 
 /-- For a regular projection, the partner of `x` is the only point of the polygon other than `x`
 with the same image as `x`. -/
