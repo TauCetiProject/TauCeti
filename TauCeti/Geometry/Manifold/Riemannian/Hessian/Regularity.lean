@@ -38,10 +38,11 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 `C^n`, on a `C^(n+2)` manifold with a `C^(n+1)` metric. -/
 theorem contMDiffAt_hessian_pair (hm : n + 2 ≤ m) (hk : n + 1 ≤ k) {f : M → ℝ} {U : Set M}
     (hU : IsOpen U) (hf : ContMDiffOn I 𝓘(ℝ) (n + 2) f U) {γ : N → M}
-    {P Q : ∀ y, TangentSpace I (γ y)} {x : N} (hx : γ x ∈ U) (hγ : ContMDiffAt J I n γ x)
+    {P Q : ∀ y, TangentSpace I (γ y)} {x : N} (hx : γ x ∈ U)
     (hP : ContMDiffAt J I.tangent n (fun y ↦ TotalSpace.mk' E (γ y) (P y)) x)
     (hQ : ContMDiffAt J I.tangent n (fun y ↦ TotalSpace.mk' E (γ y) (Q y)) x) :
     ContMDiffAt J 𝓘(ℝ) n (fun y ↦ hessian I f (γ y) (P y) (Q y)) x := by
+  have hγ : ContMDiffAt J I n γ x := (contMDiffAt_totalSpace.mp hP).1
   have h2 : n + 1 + 1 = n + 2 := by rw [add_assoc, one_add_one_eq_two]
   have : IsManifold I (n + 1 + 1) M := IsManifold.of_le (n := m) (h2 ▸ hm)
   have : IsContMDiffRiemannianBundle I (n + 1) E (fun x : M ↦ TangentSpace I x) :=
