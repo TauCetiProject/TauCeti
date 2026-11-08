@@ -263,6 +263,7 @@ section Comp
 
 variable [IsManifold 𝓘(ℂ) 1 Z] [T2Space X] [T2Space Y] [PreconnectedSpace Y] [CompactSpace Y]
 
+omit [T2Space X] in
 /-- **The chain rule for ramification divisors.** The ramification divisor of a composite of
 finite holomorphic maps between compact Riemann surfaces, with `Y` connected, is
 `R_{g ∘ f} = R_f + f^* R_g`: at `x` this is `e_g e_f - 1 = (e_f - 1) + e_f (e_g - 1)`. -/

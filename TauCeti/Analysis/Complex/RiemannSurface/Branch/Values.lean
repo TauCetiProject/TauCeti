@@ -180,6 +180,7 @@ theorem ncard_fiber_restrictPreimage_compl (f : FiniteHolomorphicMap X Y) {S : S
     Set.ncard_eq_toFinset_card _ (f.finite_fiber y)]
   exact (f.card_fiber_eq_degree_iff y).2 fun hy ↦ y.property (hS hy)
 
+omit [T2Space X] in
 /-- **Branch values of a composite**: for finite holomorphic maps `f : X → Y` and `g : Y → Z`,
 with `X` compact and `Y` connected, the branch values of `g ∘ f` are the images
 under `g` of the branch values of `f` together with the branch values of `g`. -/

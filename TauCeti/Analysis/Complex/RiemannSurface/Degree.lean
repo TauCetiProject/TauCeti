@@ -195,9 +195,10 @@ variable [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
 /-- **Finiteness of fibres.** A holomorphic map from a compact Riemann surface which is constant
 near no point has finite fibres: each fibre is compact, and each of its points has a neighbourhood
 containing no other point of the fibre. -/
-theorem finite_preimage_singleton [CompactSpace X] [T1Space Y]
+theorem finite_preimage_singleton [CompactSpace X]
     (hf : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f) (hne : ∀ x, ¬ EventuallyConst f (𝓝 x)) (y : Y) :
     (f ⁻¹' {y}).Finite := by
+  have : T1Space Y := 𝓘(ℂ).t1Space Y
   refine (isClosed_singleton.preimage hf.continuous).isCompact.finite
     (isDiscrete_iff_forall_mem_exists_isOpen.2 fun x hx ↦ ?_)
   obtain ⟨U, hU, -, V, -, hUx, -⟩ :=
@@ -295,16 +296,15 @@ theorem degree_pos_of_forall_not_eventuallyConst [Nonempty X] : 0 < degree f :=
   ((localMultiplicity_pos_iff (.of_forall fun z ↦ hf z)).2 (hne (Classical.arbitrary X))).trans_le
     (localMultiplicity_le_degree_of_forall_not_eventuallyConst hf hne _)
 
+omit [T2Space X] in
 /-- **Surjectivity.** A holomorphic map from a nonempty compact Riemann surface to a connected
-Riemann surface which is constant near no point is surjective: its positive degree is the fibre
-sum over every point, so no fibre is empty. -/
-theorem surjective_of_forall_not_eventuallyConst [Nonempty X] : Surjective f := fun y ↦ by
-  by_contra h
-  have hemp : f ⁻¹' {y} = ∅ := eq_empty_iff_forall_notMem.2 fun x hx ↦ h ⟨x, hx⟩
-  have h0 : fiberMultiplicitySum f y = 0 := by
-    rw [fiberMultiplicitySum_def, hemp, finsum_mem_empty]
-  exact (degree_pos_of_forall_not_eventuallyConst hf hne).ne'
-    ((fiberMultiplicitySum_eq_degree hf hne y).symm.trans h0)
+Riemann surface which is constant near no point is surjective: its range is open by the open
+mapping theorem, closed because it is compact, and nonempty, hence everything. -/
+theorem surjective_of_forall_not_eventuallyConst [Nonempty X] : Surjective f := by
+  have hopen : IsOpen (range f) := (isOpenMap_of_forall_not_eventuallyConst hf hne).isOpen_range
+  have hclosed : IsClosed (range f) := (isCompact_range hf.continuous).isClosed
+  exact range_eq_univ.1
+    ((isClopen_iff.1 ⟨hclosed, hopen⟩).resolve_left (range_nonempty f).ne_empty)
 
 end Degree
 
@@ -388,7 +388,7 @@ theorem localMultiplicity_pos (x : X) : 0 < localMultiplicity f x :=
 /-- A holomorphic map from a compact connected Riemann surface which takes two distinct values is
 a finite holomorphic map: its fibres are finite by
 `TauCeti.RiemannSurface.finite_preimage_singleton`. -/
-def FiniteHolomorphicMap.ofMDifferentiable [CompactSpace X] [PreconnectedSpace X] [T1Space Y]
+def FiniteHolomorphicMap.ofMDifferentiable [CompactSpace X] [PreconnectedSpace X]
     {f : X → Y} (hf : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f) (hne : ∃ x x', f x ≠ f x') :
     FiniteHolomorphicMap X Y where
   toFun := f
@@ -400,7 +400,7 @@ def FiniteHolomorphicMap.ofMDifferentiable [CompactSpace X] [PreconnectedSpace X
 
 @[simp]
 theorem FiniteHolomorphicMap.coe_ofMDifferentiable [CompactSpace X] [PreconnectedSpace X]
-    [T1Space Y] {f : X → Y} (hf : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f) (hne : ∃ x x', f x ≠ f x') :
+    {f : X → Y} (hf : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f) (hne : ∃ x x', f x ≠ f x') :
     ⇑(FiniteHolomorphicMap.ofMDifferentiable hf hne) = f :=
   (rfl)
 
@@ -408,6 +408,7 @@ section Compact
 
 variable [CompactSpace X] [T2Space X] [T2Space Y] [PreconnectedSpace Y]
 
+omit [T2Space X] in
 /-- A finite holomorphic map from a compact Riemann surface to a connected Riemann surface is
 surjective. -/
 theorem FiniteHolomorphicMap.surjective : Surjective f :=
@@ -433,6 +434,7 @@ theorem degree_pos : 0 < degree f :=
   have : Nonempty X := f.nonconstant.nonempty
   degree_pos_of_forall_not_eventuallyConst f.holomorphic f.not_eventuallyConst
 
+omit [T2Space X] in
 /-- The composite of finite holomorphic maps, for a compact source and a connected
 middle surface: the composite takes two distinct values because the first map is surjective, and
 its fibres are finite unions of finite fibres. -/
@@ -449,11 +451,13 @@ def FiniteHolomorphicMap.comp (g : FiniteHolomorphicMap Y Z) (f : FiniteHolomorp
     rw [preimage_comp, ← biUnion_preimage_singleton]
     exact (g.finite_fiber z).biUnion fun y _ ↦ f.finite_fiber y
 
+omit [T2Space X] in
 @[simp]
 theorem FiniteHolomorphicMap.coe_comp (g : FiniteHolomorphicMap Y Z)
     (f : FiniteHolomorphicMap X Y) : ⇑(g.comp f) = g ∘ f :=
   (rfl)
 
+omit [T2Space X] in
 /-- **Multiplicativity of the local multiplicity** for finite holomorphic maps: the local
 multiplicity of `g.comp f` at `x` is the product of that of `g` at `f x` and that of `f` at `x`.
 The statement for maps, with holomorphy near the two points as hypotheses, is
