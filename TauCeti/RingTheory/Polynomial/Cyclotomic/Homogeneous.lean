@@ -37,6 +37,7 @@ control the primitive prime divisors of `a ^ n - b ^ n` (the Bang–Zsigmondy th
   `_prime_pow`: closed forms, including `Φ_p(a, b) = ∑_{i < p} a ^ i b ^ (p - 1 - i)` and
   `Φ_{p ^ (e + 1)}(a, b) = Φ_p(a ^ p ^ e, b ^ p ^ e)` for a prime `p`.
 * `TauCeti.homogeneousCyclotomic_comm`: `Φ_n(b, a) = Φ_n(a, b)` for `n ≠ 1`.
+* `TauCeti.homogeneousCyclotomic_one_anticomm`: `Φ_1(b, a) = -Φ_1(a, b)`.
 * `TauCeti.homogeneousCyclotomic_zero_right`, `TauCeti.homogeneousCyclotomic_zero_left`:
   `Φ_n(a, 0) = a ^ φ(n)`, and `Φ_n(0, b) = b ^ φ(n)` for `n ≠ 1`.
 * `TauCeti.prod_homogeneousCyclotomic_eq_pow_sub_pow`: `∏_{d ∣ n} Φ_d(a, b) = a ^ n - b ^ n` for
@@ -177,6 +178,11 @@ theorem homogeneousCyclotomic_comm {n : ℕ} (hn : n ≠ 1) (a b : R) :
         (aeval_homogenize_reflect _ _ a b).symm
     _ = homogeneousCyclotomic n a b := by
         rw [reflect_cyclotomic hn, homogeneousCyclotomic_def, MvPolynomial.aeval_eq_eval]
+
+/-- `Φ_1(a, b) = a - b` is antisymmetric: `Φ_1(b, a) = -Φ_1(a, b)`. -/
+theorem homogeneousCyclotomic_one_anticomm (a b : R) :
+    homogeneousCyclotomic 1 b a = -homogeneousCyclotomic 1 a b := by
+  rw [homogeneousCyclotomic_one, homogeneousCyclotomic_one, neg_sub]
 
 /-- `Φ_n(a, 0) = a ^ φ(n)`: only the leading monomial survives. -/
 @[simp]
