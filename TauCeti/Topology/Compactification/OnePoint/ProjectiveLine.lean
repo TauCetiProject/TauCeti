@@ -54,7 +54,7 @@ stabilizer of a cusp, moved to `∞`, consists of translations.
 * `Matrix.ProjectiveSpecialLinearGroup.toPGL_smul`: the inclusion `PSL(2, K) → PGL(2, K)` is
   compatible with the actions.
 * `OnePoint.instIsMultiplyPretransitiveGL`: `GL(2, K)` acts 2-transitively on `OnePoint K`, and
-  `OnePoint.exists_smul_zero_smul_infty`: any two distinct points are the images of `0` and `∞`
+  `OnePoint.exists_smul_zero_infty_eq`: any two distinct points are the images of `0` and `∞`
   under a matrix of determinant one.
 * `Matrix.ProjectiveSpecialLinearGroup.mk_smul_zero_eq_infty_iff`,
   `mk_smul_infty_eq_infty_iff`, `mk_smul_zero_eq_coe_iff`, `mk_smul_infty_eq_coe_iff`: where the
@@ -241,7 +241,7 @@ instance instIsMultiplyPretransitiveGL :
 /-- **Any two distinct points of the projective line are the images of `0` and `∞` under a matrix
 of determinant one.** This is Mathlib's 2-transitivity of `SL(2, K)` on `ℙ K (Fin 2 → K)`,
 transported along `OnePoint.equivProjectivization`. -/
-theorem exists_smul_zero_smul_infty {a b : OnePoint K} (h : a ≠ b) :
+theorem exists_smul_zero_infty_eq {a b : OnePoint K} (h : a ≠ b) :
     ∃ g : GL (Fin 2) K, (g : Matrix (Fin 2) (Fin 2) K).det = 1 ∧
       g • ((0 : K) : OnePoint K) = a ∧ g • (∞ : OnePoint K) = b := by
   let e := equivProjectivization K

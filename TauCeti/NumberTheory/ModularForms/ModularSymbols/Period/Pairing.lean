@@ -69,7 +69,7 @@ private def periodAtCusp [CuspFormClass F 𝒢 k] (f : F) (hk : k = w + 2)
     rcases eq_or_ne (∞ : OnePoint ℚ) α with hα | hα
     · subst α
       simp
-    · obtain ⟨g, hg, hzero, hinf⟩ := exists_smul_zero_smul_infty hα
+    · obtain ⟨g, hg, hzero, hinf⟩ := exists_smul_zero_infty_eq hα
       replace hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℚ).det := hg ▸ one_pos
       rw [← hzero, ← hinf]
       exact cuspIntegral_add hg

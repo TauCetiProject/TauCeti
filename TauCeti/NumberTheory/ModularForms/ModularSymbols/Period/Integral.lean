@@ -376,7 +376,7 @@ theorem cuspIntegral_mul_sub_pow [Γ.IsArithmetic] [CuspFormClass F Γ k] (f : F
         (w.choose j : ℂ) * (-τ) ^ (w - j) * cuspIntegral (fun z ↦ f z * (z : ℂ) ^ j) α β := by
   rcases eq_or_ne α β with rfl | hαβ
   · simp
-  obtain ⟨g, hg, rfl, rfl⟩ := OnePoint.exists_smul_zero_smul_infty hαβ
+  obtain ⟨g, hg, rfl, rfl⟩ := OnePoint.exists_smul_zero_infty_eq hαβ
   replace hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℚ).det := hg ▸ one_pos
   set c : ℕ → ℂ := fun j ↦ (w.choose j : ℂ) * (-τ) ^ (w - j) with hc
   -- each term is the period integrand of a multiple of the monomial `X₀ʲ X₁ʷ⁻ʲ`
