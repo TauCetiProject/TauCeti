@@ -10,7 +10,6 @@ public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
 import Mathlib.Analysis.Complex.CauchyIntegral
-import Mathlib.MeasureTheory.Measure.OpenPos
 import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Basic
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.MeasureTheory.Measure.OpenPos

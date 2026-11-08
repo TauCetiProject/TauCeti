@@ -222,7 +222,7 @@ theorem mul_le_eight_mul_setIntegral_ball_of_neg_mul_sq_le_laplacian
   set I := ∫ x in ball x₀ r, w x ∂μ
   set V := μ.real (ball (0 : E) 1) with hV_def
   have hV : 0 < V := by
-    rw [hV_def, measureReal_def]
+    rw [hV_def]
     exact Metric.measureReal_ball_pos μ 0 one_pos
   -- Replacing `A` by `A' = max A 0` only weakens the hypotheses.
   set A' := max A 0 with hA'_def
