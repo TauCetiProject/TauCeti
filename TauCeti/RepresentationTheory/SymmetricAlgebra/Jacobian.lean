@@ -111,10 +111,12 @@ variable {K G V : Type*} [Field K] [Group G] [AddCommGroup V] [Module K V]
   [FiniteDimensional K V] (ρ : Representation K G V)
   {n : Type*} [Fintype n] [DecidableEq n]
 
-/-- **The hyperplane multiplicity in the Jacobian.** If `g` fixes the hyperplane
-`ker ℓ` pointwise and `det (ρ g)` is a primitive `e`-th root of unity, then
+/-- **The hyperplane multiplicity in the Jacobian.** If `g` fixes the kernel `ker ℓ`
+pointwise and `det (ρ g)` is a primitive `e`-th root of unity, then
 `ℓ ^ (e - 1)` divides the Jacobian of every family of invariant polynomial functions.
-This applies to a generator of the cyclic pointwise stabilizer, with `e` the order
+For `ℓ ≠ 0` the kernel is a hyperplane and this is its multiplicity in the Jacobian; for
+`ℓ = 0` the kernel is the whole space, so `g` is the identity, `e = 1`, and the statement is
+trivial. This applies to a generator of the cyclic pointwise stabilizer, with `e` the order
 of its determinant character; no order-two assumption is made. -/
 theorem dual_ι_pow_sub_one_dvd_jacobian (b : Module.Basis n K (Module.Dual K V))
     {g : G} {ℓ : Module.Dual K V}
