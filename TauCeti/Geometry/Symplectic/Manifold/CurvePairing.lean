@@ -36,8 +36,10 @@ therefore holds with `K` the maximal comass of `θ`: the integral `∫_C u^* θ`
 pseudoholomorphic curve is bounded by the comass of `θ` times the symplectic area `∫_C u^* σ`.
 
 The intended application bounds, for a basis of closed two-forms, every real pairing of the
-homology class of a curve of bounded area, and then uses `TauCeti.finite_setOf_forall_abs_apply_le`
-to leave only finitely many possible classes. That step depends on identifying `∫_C u^* θ` with
+homology class of a curve of bounded area, and then uses
+`TauCeti.IsComassBounded.finite_setOf_area_le`, with injectivity from
+`TauCeti.liftBaseChange_pi_injective_of_span_eq_top`, to leave only finitely many possible
+classes. That step depends on identifying `∫_C u^* θ` with
 the pairing of `[θ]` with the class of the curve, a de Rham comparison not provided here.
 
 ## References

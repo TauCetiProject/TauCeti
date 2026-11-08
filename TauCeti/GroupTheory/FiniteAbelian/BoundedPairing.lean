@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Hom
+public import Mathlib.Algebra.Module.Pi
 public import Mathlib.GroupTheory.Finiteness
 public import Mathlib.LinearAlgebra.Span.Defs
+public import Mathlib.LinearAlgebra.TensorProduct.Lift
 public import Mathlib.Basic.Real.Basic
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
@@ -20,10 +22,11 @@ import TauCeti.Algebra.Module.ZLattice.LiftBaseChange
 # Elements of a finitely generated abelian group with bounded real pairings
 
 Let `H` be a finitely generated abelian group and `θ i : H →+ ℝ` a family of real-valued
-homomorphisms spanning the real vector space `H →+ ℝ`. Then only finitely many `A : H` have all
-pairings `θ i A` in a bounded window: `{A | ∀ i, |θ i A| ≤ C i}` is finite
-(`TauCeti.finite_setOf_forall_abs_apply_le`). Torsion elements are not lost: each window contains
-whole cosets of the finite torsion subgroup.
+homomorphisms spanning the real vector space `H →+ ℝ`. Evaluation at the `θ i` then has injective
+real extension `ℝ ⊗[ℤ] H → (ι → ℝ)` (`TauCeti.liftBaseChange_pi_injective_of_span_eq_top`), and
+only finitely many `A : H` have all pairings `θ i A` in a bounded window:
+`{A | ∀ i, |θ i A| ≤ C i}` is finite (`TauCeti.finite_setOf_forall_abs_apply_le`). Torsion
+elements are not lost: each window contains whole cosets of the finite torsion subgroup.
 
 The spanning hypothesis cannot be weakened to joint injectivity modulo torsion: for
 `H = ℤ²` the single homomorphism `(a, b) ↦ a + b √2` vanishes only at zero, yet takes infinitely
@@ -31,20 +34,20 @@ many values in `[-1, 1]`.
 
 The intended application is to pseudoholomorphic curves. There `H` is the integral homology
 `H₂(X; ℤ)` of a closed manifold and the `θ i` are the pairings with a basis of closed two-forms,
-which span `H²(X; ℝ) = Hom(H₂(X; ℤ), ℝ)` by de Rham's theorem. The classes `A` with `σ A ≤ a`
-and `|θ i A| ≤ K i σ A` form a finite set
-(`TauCeti.finite_setOf_apply_le_and_forall_abs_apply_le_mul`). The integral `∫_C u^* θ` over a
-curve is bounded by the comass of `θ` times the symplectic area of the curve
+which span `H²(X; ℝ) = Hom(H₂(X; ℤ), ℝ)` by de Rham's theorem. For such a finite family,
+`TauCeti.liftBaseChange_pi_injective_of_span_eq_top` is the injectivity hypothesis of the
+area-cutoff finiteness `TauCeti.IsComassBounded.finite_setOf_area_le`. The integral `∫_C u^* θ`
+over a curve is bounded by the comass of `θ` times the symplectic area of the curve
 (`TauCeti.abs_integralTopForm_mpullback_le`). Concluding that below an area cutoff only finitely
 many homology classes carry pseudoholomorphic curves also requires identifying `∫_C u^* θ` with
 the pairing of `[θ]` with the class of the curve. That de Rham comparison is not provided here.
 
 ## Implementation notes
 
-Real-valued homomorphisms on `H` are the real linear functionals on `ℝ ⊗[ℤ] H`, a
-finite-dimensional space, so finitely many of the `θ i` already span. Evaluation at these has
-injective real extension `ℝ ⊗[ℤ] H → ℝᵇ`, and a window lies in the preimage of a bounded box, so
-it is finite by `LinearMap.finite_preimage_of_injective_liftBaseChange`.
+Real-valued homomorphisms on `H` are the real linear functionals on `ℝ ⊗[ℤ] H`, so a spanning
+family separates the points of `ℝ ⊗[ℤ] H`. This space is finite-dimensional, so finitely many of
+the `θ i` already span. A window lies in the preimage of a bounded box under evaluation at these,
+so it is finite by `LinearMap.finite_preimage_of_injective_liftBaseChange`.
 
 ## References
 
@@ -57,54 +60,52 @@ open Set
 
 namespace TauCeti
 
-variable {H ι : Type*} [AddCommGroup H] [AddGroup.FG H]
+variable {H ι : Type*} [AddCommGroup H]
+
+/-- If the real-valued homomorphisms `θ i` span `H →+ ℝ`, then evaluation at them has injective
+real extension `ℝ ⊗[ℤ] H → (ι → ℝ)`. For finite `ι` this is the injectivity hypothesis of
+`TauCeti.IsComassBounded.finite_setOf_area_le`. -/
+theorem liftBaseChange_pi_injective_of_span_eq_top (θ : ι → H →+ ℝ)
+    (hθ : Submodule.span ℝ (range θ) = ⊤) :
+    Function.Injective
+      ((LinearMap.pi fun i ↦ (θ i).toIntLinearMap : H →ₗ[ℤ] ι → ℝ).liftBaseChange ℝ) := by
+  -- Real-valued homomorphisms on `H` are the real linear functionals on `ℝ ⊗[ℤ] H`.
+  let Ψ : (H →+ ℝ) ≃ₗ[ℝ] Module.Dual ℝ (TensorProduct ℤ ℝ H) :=
+    (addMonoidHomLequivInt ℝ).trans (LinearMap.liftBaseChangeEquiv ℝ)
+  set l : H →ₗ[ℤ] ι → ℝ := LinearMap.pi fun i ↦ (θ i).toIntLinearMap
+  refine (injective_iff_map_eq_zero _).2 fun x hx ↦
+    (Module.forall_dual_apply_eq_zero_iff ℝ x).1 fun φ ↦ ?_
+  have hΨ (i : ι) (y : TensorProduct ℤ ℝ H) : Ψ (θ i) y = l.liftBaseChange ℝ y i := by
+    induction y using TensorProduct.inductionOn <;> simp_all [Ψ, l]
+  have hx' (g : H →+ ℝ) (hg : g ∈ Submodule.span ℝ (range θ)) : Ψ g x = 0 := by
+    induction hg using Submodule.span_induction with
+    | mem f hf =>
+      obtain ⟨i, rfl⟩ := hf
+      simpa [hx] using hΨ i x
+    | zero => simp
+    | add => simp_all
+    | smul => simp_all
+  simpa using hx' (Ψ.symm φ) (by simp [hθ])
 
 /-- **Bounded real pairings cut out a finite set.** In a finitely generated abelian group `H`, if
 the real-valued homomorphisms `θ i` span `H →+ ℝ`, then only finitely many elements have all
 pairings `|θ i A| ≤ C i`. -/
-theorem finite_setOf_forall_abs_apply_le (θ : ι → H →+ ℝ)
+theorem finite_setOf_forall_abs_apply_le [AddGroup.FG H] (θ : ι → H →+ ℝ)
     (hθ : Submodule.span ℝ (range θ) = ⊤) (C : ι → ℝ) :
     {A : H | ∀ i, |θ i A| ≤ C i}.Finite := by
-  classical
-  -- Real-valued homomorphisms on `H` are the real linear functionals on `ℝ ⊗[ℤ] H`.
-  let Ψ : (H →+ ℝ) ≃ₗ[ℝ] Module.Dual ℝ (TensorProduct ℤ ℝ H) :=
-    (addMonoidHomLequivInt ℝ).trans (LinearMap.liftBaseChangeEquiv ℝ)
-  have : FiniteDimensional ℝ (H →+ ℝ) := Ψ.symm.finiteDimensional
+  have : FiniteDimensional ℝ (H →+ ℝ) :=
+    ((addMonoidHomLequivInt ℝ).trans (LinearMap.liftBaseChangeEquiv ℝ)).symm.finiteDimensional
   -- A finite linearly independent subfamily `b` of the `θ i` still spans.
   obtain ⟨b, hbθ, hbspan, hb⟩ := exists_linearIndependent ℝ (range θ)
   have : Fintype b := hb.setFinite.fintype
   choose c hc using fun f : b ↦ hbθ f.2
-  -- Evaluation at `b` has injective real extension, since `b` spans the dual of `ℝ ⊗[ℤ] H`.
-  let l : H →ₗ[ℤ] b → ℝ := LinearMap.pi fun f ↦ (f : H →+ ℝ).toIntLinearMap
-  have hl : Function.Injective (l.liftBaseChange ℝ) := by
-    refine (injective_iff_map_eq_zero _).2 fun x hx ↦
-      (Module.forall_dual_apply_eq_zero_iff ℝ x).1 fun φ ↦ ?_
-    have hΨ (f : b) (y : TensorProduct ℤ ℝ H) : Ψ f y = l.liftBaseChange ℝ y f := by
-      induction y using TensorProduct.inductionOn <;> simp_all [Ψ, l]
-    have hx' (g : H →+ ℝ) (hg : g ∈ Submodule.span ℝ b) : Ψ g x = 0 := by
-      induction hg using Submodule.span_induction with
-      | mem f hf => simpa [hx] using hΨ ⟨f, hf⟩ x
-      | zero => simp
-      | add => simp_all
-      | smul => simp_all
-    simpa using hx' (Ψ.symm φ) (by simp [hbspan, hθ])
-  refine (l.finite_preimage_of_injective_liftBaseChange hl
+  refine (LinearMap.finite_preimage_of_injective_liftBaseChange _
+    (liftBaseChange_pi_injective_of_span_eq_top (fun f : b ↦ (f : H →+ ℝ))
+      (by rw [Subtype.range_coe, hbspan, hθ]))
     (Bornology.IsBounded.pi fun f ↦ Metric.isBounded_Icc (-C (c f)) (C (c f)))).subset
     fun A hA ↦ ?_
   simp only [mem_preimage, mem_pi, mem_univ, forall_const, mem_Icc]
   intro f
-  simpa [l, hc] using abs_le.1 (hA (c f))
-
-/-- **Finitely many classes below an area cutoff.** In a finitely generated abelian group `H`,
-let the real-valued homomorphisms `θ i` span `H →+ ℝ`, and let `σ : H →+ ℝ` and `K i ≥ 0`. Then
-only finitely many `A` satisfy `σ A ≤ a` and `|θ i A| ≤ K i * σ A` for all `i`. These are the
-bounds expected from the area `σ A` of a pseudoholomorphic curve in the class `A` on its pairings
-with closed two-forms of comass at most `K i`, once integrals over curves are identified with
-pairings of homology classes. -/
-theorem finite_setOf_apply_le_and_forall_abs_apply_le_mul (θ : ι → H →+ ℝ)
-    (hθ : Submodule.span ℝ (range θ) = ⊤) (σ : H →+ ℝ) {K : ι → ℝ} (hK : ∀ i, 0 ≤ K i)
-    (a : ℝ) : {A : H | σ A ≤ a ∧ ∀ i, |θ i A| ≤ K i * σ A}.Finite :=
-  (finite_setOf_forall_abs_apply_le θ hθ fun i ↦ K i * a).subset fun _ hA i ↦
-    (hA.2 i).trans (mul_le_mul_of_nonneg_left hA.1 (hK i))
+  simpa [hc] using abs_le.1 (hA (c f))
 
 end TauCeti
