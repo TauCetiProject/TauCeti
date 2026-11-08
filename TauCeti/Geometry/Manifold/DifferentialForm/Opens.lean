@@ -315,12 +315,11 @@ theorem contMDiffAt_mpullback_inclusion_iff {U W : Opens M} (h : U ≤ W) {n : W
   have hpt : extChartAt I x x ∈ range I := mem_range_self _
   refine ⟨fun hx ↦ contMDiffAt_form_of_contDiffWithinAt_inChartAt_self ?_,
     fun hx ↦ contMDiffAt_form_of_contDiffWithinAt_inChartAt_self ?_⟩
-  · have hc := RoughForm.contDiffWithinAt_inChartAt _ hx.contMDiffWithinAt (s := univ)
-    rw [preimage_univ, univ_inter] at hc
+  · have hc := RoughForm.contDiffWithinAt_range_inChartAt_of_contMDiffAt _ hx
     rw [extChartAt_inclusion_self]
     exact hc.congr_of_eventuallyEq heq.symm (heq.self_of_nhdsWithin hpt).symm
-  · have hc := RoughForm.contDiffWithinAt_inChartAt _ hx.contMDiffWithinAt (s := univ)
-    rw [preimage_univ, univ_inter, extChartAt_inclusion_self] at hc
+  · have hc := RoughForm.contDiffWithinAt_range_inChartAt_of_contMDiffAt _ hx
+    rw [extChartAt_inclusion_self] at hc
     exact hc.congr_of_eventuallyEq heq (heq.self_of_nhdsWithin hpt)
 
 /-- A form on an open subset `W` is `C^n` when its restrictions to the members of a family of open
