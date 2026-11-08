@@ -13,8 +13,8 @@ public import Mathlib.Tactic.NoncommRing
 
 Let `q` be a star projection in a star ring and `u` an element with `star u * u = q` and
 `q * u = 0`. For a bounded operator `u` on a Hilbert space, `u` maps the range of `q`
-isometrically onto a subspace orthogonal to it. For `c` and `d` in the corner `q R q` with
-`d` self-adjoint, `c * d = d * c` and `d * d = c - c * c`, the element
+isometrically onto a subspace orthogonal to it. For self-adjoint `c` and `d` in the corner
+`q R q` with `c * d = d * c` and `d * d = c - c * c`, the element
 
 `projectionDilation q u c d = c + d * star u + u * d + u * (q - c) * star u`
 
@@ -44,9 +44,11 @@ namespace TauCeti
 variable {R : Type*} [Ring R] [StarRing R]
 
 /-- The **projection dilation** `c + d * star u + u * d + u * (q - c) * star u`. When `q` is a
-star projection, `star u * u = q`, `q * u = 0`, and `c`, `d` lie in the corner of `q` with
-`d * d = c - c * c`, this is the block operator `[[c, d], [d, q - c]]` relative to `q` and
-`u * star u`. It is a star projection with compression `q * c * q`. -/
+star projection, `star u * u = q`, `q * u = 0`, and `c`, `d` are self-adjoint commuting elements
+of the corner of `q` with `d * d = c - c * c`, this is the block operator `[[c, d], [d, q - c]]`
+relative to `q` and `u * star u`. It is then a star projection
+(`TauCeti.isStarProjection_projectionDilation`) with compression `q * c * q`
+(`TauCeti.mul_projectionDilation_mul`). -/
 def projectionDilation (q u c d : R) : R :=
   c + d * star u + u * d + u * (q - c) * star u
 

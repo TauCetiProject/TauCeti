@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
-public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.InnerProductSpace.StarOrder
 public import Mathlib.Analysis.InnerProductSpace.WeakOperatorTopology
 public import TauCeti.Analysis.CStarAlgebra.ProjectionDilation
+public import TauCeti.Analysis.InnerProductSpace.PartialIsometry
 
 /-!
 # Weak operator limits of projections
@@ -33,11 +33,12 @@ is a positive contraction.
 
 ## Main statements
 
-* `Submodule.exists_star_mul_self_eq_starProjection_and_starProjection_mul_eq_zero`: if `Kᗮ`
-  is at least as large as the finite-dimensional subspace `K`, some operator `u` has
-  `star u * u = P_K` and `P_K * u = 0`.
-* `Submodule.exists_isStarProjection_starProjection_mul_mul_eq`: under the same hypothesis,
-  every positive contraction has the same compression to `K` as some projection.
+* `Submodule.exists_isStarProjection_starProjection_mul_mul_eq`: if `Kᗮ` is at least as large
+  as the finite-dimensional subspace `K`, every positive contraction has the same compression to
+  `K` as some projection. The partial isometry it uses comes from
+  `Submodule.exists_star_mul_self_eq_starProjection_and_starProjection_mul_eq_zero`.
+* `ContinuousLinearMapWOT.isClosed_setOf_isPositive`: the positive operators form a weak
+  operator closed set.
 * `ContinuousLinearMapWOT.isClosed_image_ofCLM_Icc`: order intervals are weak operator closed.
 * `ContinuousLinearMapWOT.closure_isStarProjection_eq_positive_contractions`: on an
   infinite-dimensional complex Hilbert space, the weak operator closure of the projections is the
@@ -54,36 +55,6 @@ open Filter Module
 open scoped ComplexOrder InnerProductSpace Topology
 
 namespace Submodule
-
-variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
-
-/-- If the orthogonal complement of a finite-dimensional subspace `K` has dimension at least
-`finrank 𝕜 K`, some operator `u` maps `K` isometrically into `Kᗮ` and vanishes on `Kᗮ`:
-`star u * u = K.starProjection` and `K.starProjection * u = 0`. -/
-theorem exists_star_mul_self_eq_starProjection_and_starProjection_mul_eq_zero
-    (K : Submodule 𝕜 E) [FiniteDimensional 𝕜 K]
-    (hK : (finrank 𝕜 K : Cardinal) ≤ Module.rank 𝕜 Kᗮ) :
-    ∃ u : E →L[𝕜] E, star u * u = K.starProjection ∧ K.starProjection * u = 0 := by
-  obtain ⟨v, hv⟩ := exists_linearIndependent_of_le_rank hK
-  let W : Submodule 𝕜 Kᗮ := span 𝕜 (Set.range v)
-  have : FiniteDimensional 𝕜 W := FiniteDimensional.span_of_finite 𝕜 (Set.finite_range v)
-  have hW : finrank 𝕜 K = finrank 𝕜 W := by rw [finrank_span_eq_card hv, Fintype.card_fin]
-  -- An isometry from `K` onto the subspace `W` of `Kᗮ`, which has the same dimension.
-  let e : K ≃ₗᵢ[𝕜] W := (stdOrthonormalBasis 𝕜 K).equiv (stdOrthonormalBasis 𝕜 W) (finCongr hW)
-  let L : K →ₗᵢ[𝕜] E := Kᗮ.subtypeₗᵢ.comp (W.subtypeₗᵢ.comp e.toLinearIsometry)
-  have hLK : ∀ x, L x ∈ Kᗮ := fun x => ((e x : W) : Kᗮ).2
-  have hKK : ∀ z, K.starProjection (K.starProjection z) = K.starProjection z :=
-    fun z => starProjection_eq_self_iff.mpr (K.orthogonalProjectionOnto z).2
-  refine ⟨L.toContinuousLinearMap ∘L K.orthogonalProjectionOnto, ?_, ?_⟩
-  · ext x
-    refine ext_inner_left 𝕜 fun y => ?_
-    rw [ContinuousLinearMap.star_eq_adjoint, mul_apply_eq_comp,
-      ContinuousLinearMap.adjoint_inner_right]
-    simp only [ContinuousLinearMap.comp_apply, LinearIsometry.coe_toContinuousLinearMap,
-      LinearIsometry.inner_map_map, coe_inner, coe_orthogonalProjectionOnto_apply,
-      inner_starProjection_left_eq_right, hKK]
-  · ext x
-    exact starProjection_apply_eq_zero_iff K |>.mpr (hLK _)
 
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
 
@@ -104,23 +75,25 @@ namespace ContinuousLinearMapWOT
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
 
-/-- The set of operators above `a` in the Loewner order is weak operator closed. -/
-theorem isClosed_image_ofCLM_Ici {a : E →L[𝕜] E} :
-    IsClosed (ofCLM '' Set.Ici a) := by
+/-- The positive operators, cut out by closed conditions on matrix coefficients, form a weak
+operator closed set. -/
+theorem isClosed_setOf_isPositive : IsClosed {T : E →WOT[𝕜] E | (toCLM T).IsPositive} := by
   have hl : ∀ x y, Continuous fun T : E →WOT[𝕜] E => ⟪x, T y⟫_𝕜 :=
     fun x y => continuous_inner_apply continuous_id y x
   have hr : ∀ x y, Continuous fun T : E →WOT[𝕜] E => ⟪T x, y⟫_𝕜 := fun x y => by
     exact (RCLike.continuous_conj.comp (hl y x)).congr fun T => inner_conj_symm _ _
-  -- The positive operators are cut out by closed conditions on matrix coefficients.
-  have hpos : IsClosed {T : E →WOT[𝕜] E | (toCLM T).IsPositive} := by
-    have h : {T : E →WOT[𝕜] E | (toCLM T).IsPositive} =
-        (⋂ x, ⋂ y, {T | ⟪T x, y⟫_𝕜 = ⟪x, T y⟫_𝕜}) ∩ ⋂ x, {T | 0 ≤ ⟪T x, x⟫_𝕜} := by
-      ext T
-      simp [ContinuousLinearMap.isPositive_iff, LinearMap.IsSymmetric]
-    rw [h]
-    exact (isClosed_iInter fun x => isClosed_iInter fun y => isClosed_eq (hr x y) (hl x y)).inter
-      (isClosed_iInter fun x => isClosed_le continuous_const (hr x x))
-  convert hpos.preimage (continuous_sub_right (ofCLM a)) using 1
+  have h : {T : E →WOT[𝕜] E | (toCLM T).IsPositive} =
+      (⋂ x, ⋂ y, {T | ⟪T x, y⟫_𝕜 = ⟪x, T y⟫_𝕜}) ∩ ⋂ x, {T | 0 ≤ ⟪T x, x⟫_𝕜} := by
+    ext T
+    simp [ContinuousLinearMap.isPositive_iff, LinearMap.IsSymmetric]
+  rw [h]
+  exact (isClosed_iInter fun x => isClosed_iInter fun y => isClosed_eq (hr x y) (hl x y)).inter
+    (isClosed_iInter fun x => isClosed_le continuous_const (hr x x))
+
+/-- The set of operators above `a` in the Loewner order is weak operator closed. -/
+theorem isClosed_image_ofCLM_Ici {a : E →L[𝕜] E} :
+    IsClosed (ofCLM '' Set.Ici a) := by
+  convert isClosed_setOf_isPositive.preimage (continuous_sub_right (ofCLM a)) using 1
   ext T
   obtain ⟨T, rfl⟩ := ofCLM_surjective T
   simp [ofCLM_injective.mem_set_image, ContinuousLinearMap.le_def]

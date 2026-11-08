@@ -7,8 +7,7 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
-public import TauCeti.Algebra.Order.Star.Basic
-public import TauCeti.Algebra.Star.ProjectionDilation
+public import TauCeti.Algebra.Star.Projection.Dilation
 
 /-!
 # Positive contractions as compressions of projections
@@ -54,7 +53,8 @@ theorem IsStarProjection.exists_isStarProjection_mul_mul_eq {q u a : A} (hq : Is
   have hcq : q * a * q * q = q * a * q := by rw [mul_assoc, hqq]
   have hqc : q * (q * a * q) = q * a * q := by rw [← mul_assoc, ← mul_assoc, hqq]
   generalize q * a * q = c at hc hcq hqc ⊢
-  have hcc : 0 ≤ c - c * c := sub_nonneg.mpr (mul_self_le_self_of_mem_Icc hc)
+  have hcc : 0 ≤ c - c * c := sub_nonneg.mpr (CStarAlgebra.mul_self_le_of_nonneg_of_norm_le_one
+    hc.1 ((CStarAlgebra.norm_le_one_iff_of_nonneg c hc.1).mpr hc.2))
   have hd : IsSelfAdjoint (CFC.sqrt (c - c * c)) := (CFC.sqrt_nonneg _).isSelfAdjoint
   have hdd : CFC.sqrt (c - c * c) * CFC.sqrt (c - c * c) = c - c * c :=
     CFC.sqrt_mul_sqrt_self _ hcc
