@@ -17,6 +17,9 @@ The dyadic grid of level `n` of `[a, b]` consists of the points `a + k * ((b - a
 ## Main results
 
 * `TauCeti.dyadicPoint`: the finite-indexed dyadic grid as points of the closed interval.
+* `TauCeti.exists_dyadicPoint_eq_of_le`: the finite-indexed dyadic grids are nested.
+* `TauCeti.dense_iUnion_range_dyadicPoint`: the union of the finite-indexed grids is dense
+  for `a ≤ b`, including the singleton interval `a = b`.
 * `TauCeti.exists_eq_add_mul_div_two_pow_of_le`: a point of the dyadic grid of level `m` lies on
   the dyadic grids of all levels `n ≥ m`.
 * `TauCeti.dense_setOfPred_eq_add_mul_div_two_pow`: the points of the dyadic grids of `[a, b]`,

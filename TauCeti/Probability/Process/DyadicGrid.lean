@@ -95,9 +95,9 @@ theorem iSup_dyadicObservationFiltration (T : ℝ≥0) :
       obtain ⟨n, k, rfl⟩ := mem_iUnion.1 ht
       exact (comap_eval_le_dyadicObservationFiltration T n k).trans (le_iSup _ n)
 
-/-- Conditional expectations on the finite dyadic observation fields converge in `Lᵖ`
-to every claim on continuous path space. Almost-sure measurability suffices,
-including completed-measurable claims. -/
+/-- For a finite measure and `1 ≤ p < ∞`, conditional expectations on the finite dyadic
+observation fields converge in `Lᵖ` to every `Lᵖ` claim on continuous path space.
+Almost-sure measurability suffices, including completed-measurable claims. -/
 theorem tendsto_eLpNorm_condExp_dyadicObservationFiltration {T : ℝ≥0}
     {μ : Measure C(Icc (0 : ℝ) T, Y)} [IsFiniteMeasure μ]
     {𝕜 : Type*} [RCLike 𝕜] {p : ℝ≥0∞} (hp : 1 ≤ p) (hp' : p ≠ ∞)
