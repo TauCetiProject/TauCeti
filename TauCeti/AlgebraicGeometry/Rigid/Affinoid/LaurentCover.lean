@@ -77,20 +77,10 @@ private theorem overlapIdeal_eq (f : A) :
   have hL : laurentFractionIdeal (fun _ : Fin 1 ↦ f) (fun _ : Fin 1 ↦ f) =
       Ideal.span {X₀ - algebraMap A T(2) f, algebraMap A T(2) f * X₁ - 1} := by
     simp [laurentFractionIdeal_def, Set.range_unique, Fin.default_eq_zero, Ideal.span_insert]
-  rw [hL]
-  apply le_antisymm
-  · apply Ideal.span_le.mpr
-    rintro _ (rfl | rfl)
-    · simpa only [SetLike.mem_coe, neg_sub] using
-        (Ideal.span {1 - X₀ * X₁, algebraMap A T(2) f - X₀}).neg_mem
-          (Ideal.subset_span (Set.mem_insert_of_mem _ (Set.mem_singleton _)))
-    · exact Ideal.mem_span_pair.mpr ⟨-1, X₁, by ring⟩
-  · apply Ideal.span_le.mpr
-    rintro _ (rfl | rfl)
-    · exact Ideal.mem_span_pair.mpr ⟨-X₁, -1, by ring⟩
-    · simpa only [SetLike.mem_coe, neg_sub] using
-        (Ideal.span {X₀ - algebraMap A T(2) f, algebraMap A T(2) f * X₁ - 1}).neg_mem
-          (Ideal.subset_span (Set.mem_insert _ _))
+  rw [hL, ← neg_sub (algebraMap A T(2) f) X₀, Ideal.span_insert_neg]
+  have h : algebraMap A T(2) f * X₁ - 1 =
+      -(1 - X₀ * X₁) + (algebraMap A T(2) f - X₀) * X₁ := by ring
+  rw [h, Ideal.span_pair_add_left_mul, Ideal.span_pair_comm, Ideal.span_insert_neg]
 
 private noncomputable def overlapRelation (f : A) : Ideal (W(2)) :=
   Ideal.span {(weightedC (fun _ : Fin 2 ↦ ({1} : Set A)) isWeightFamily_one_weight f -
