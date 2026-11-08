@@ -124,33 +124,64 @@ section RingEquivDedekind
 
 variable {R R' : Type*} [CommRing R] [IsDedekindDomain R] [CommRing R'] [IsDedekindDomain R']
 
-/-- Multiplicities in the factorisation of an ideal are unchanged by pushing forward along a ring
-isomorphism: the number of times `Ideal.map e p` divides `Ideal.map e I` is the number of times
-`p` divides `I`. -/
-theorem count_factors_map_of_ringEquiv (e : R ≃+* R') {p I : Ideal R} (hp : Prime p) (hI : I ≠ ⊥) :
-    (Associates.mk (Ideal.map e p)).count (Associates.mk (Ideal.map e I)).factors =
-      (Associates.mk p).count (Associates.mk I).factors := by
-  classical
+/-- A ring isomorphism sends prime ideals of a Dedekind domain to prime elements of the monoid of
+ideals. -/
+theorem prime_map_ringEquiv_of_prime (e : R ≃+* R') {p : Ideal R} (hp : Prime p) :
+    Prime (Ideal.map e p) := by
   have hpb : p ≠ ⊥ := by simpa only [zero_eq_bot] using hp.ne_zero
   have hpmapb : Ideal.map e p ≠ ⊥ := by
     simpa only [ne_eq, map_eq_bot_iff_of_injective e.injective] using hpb
-  have hI0 : I ≠ 0 := by simpa only [zero_eq_bot] using hI
   -- `map_isPrime_of_equiv` is an instance, so it fires once `p.IsPrime` is in the context.
   have : p.IsPrime := (prime_iff_isPrime hpb).mp hp
-  have hpmap : Prime (Ideal.map e p) := (prime_iff_isPrime hpmapb).mpr (map_isPrime_of_equiv e)
-  have hmkImap : Associates.mk (Ideal.map e I) ≠ 0 := Associates.mk_ne_zero.mpr
-    (by simpa only [ne_eq, zero_eq_bot, map_eq_bot_iff_of_injective e.injective] using hI)
-  have hmkI : Associates.mk I ≠ 0 := Associates.mk_ne_zero.mpr hI0
-  -- Both counts are pinned by the same `n ≤ ·` characterisation, through `prime_pow_dvd_iff_le`.
-  have key : ∀ n : ℕ, n ≤ (Associates.mk (Ideal.map e p)).count
-        (Associates.mk (Ideal.map e I)).factors ↔
-      n ≤ (Associates.mk p).count (Associates.mk I).factors := fun n ↦ by
-    rw [← Associates.prime_pow_dvd_iff_le hmkImap (Associates.irreducible_mk.mpr hpmap.irreducible),
-      ← Associates.prime_pow_dvd_iff_le hmkI (Associates.irreducible_mk.mpr hp.irreducible),
-      ← Associates.mk_pow, ← Associates.mk_pow, Associates.mk_le_mk_iff_dvd,
-      Associates.mk_le_mk_iff_dvd]
-    exact map_pow_dvd_map_iff_of_ringEquiv e p I n
-  exact le_antisymm ((key _).mp le_rfl) ((key _).mpr le_rfl)
+  exact (prime_iff_isPrime hpmapb).mpr (map_isPrime_of_equiv e)
+
+/-- Multiplicities in the factorisation of an ideal are unchanged by pushing forward along a ring
+isomorphism: the number of times `Ideal.map e p` divides `Ideal.map e I` is the number of times
+`p` divides `I`. The identity also holds, with both sides `0`, when `p` is not prime or `I = ⊥`. -/
+theorem count_factors_map_of_ringEquiv (e : R ≃+* R') {p I : Ideal R} :
+    (Associates.mk (Ideal.map e p)).count (Associates.mk (Ideal.map e I)).factors =
+      (Associates.mk p).count (Associates.mk I).factors := by
+  classical
+  by_cases hI : I = ⊥
+  · have hmap : Ideal.map e I = ⊥ := by rw [hI, Ideal.map_bot]
+    have h0 : ∀ q : Associates (Ideal R'), q.count (Associates.mk (Ideal.map e I)).factors = 0 :=
+      fun q ↦ by
+        rw [hmap, ← zero_eq_bot, Associates.mk_zero, Associates.factors_zero]
+        unfold Associates.count
+        split_ifs <;> rfl
+    have h0' : ∀ q : Associates (Ideal R), q.count (Associates.mk I).factors = 0 := fun q ↦ by
+      rw [hI, ← zero_eq_bot, Associates.mk_zero, Associates.factors_zero]
+      unfold Associates.count
+      split_ifs <;> rfl
+    rw [h0, h0']
+  by_cases hp : Prime p
+  · have hpmap := prime_map_ringEquiv_of_prime e hp
+    have hI0 : I ≠ 0 := by simpa only [zero_eq_bot] using hI
+    have hmkImap : Associates.mk (Ideal.map e I) ≠ 0 := Associates.mk_ne_zero.mpr
+      (by simpa only [ne_eq, zero_eq_bot, map_eq_bot_iff_of_injective e.injective] using hI)
+    have hmkI : Associates.mk I ≠ 0 := Associates.mk_ne_zero.mpr hI0
+    -- Both counts are pinned by the same `n ≤ ·` characterisation, through
+    -- `prime_pow_dvd_iff_le`.
+    have key : ∀ n : ℕ, n ≤ (Associates.mk (Ideal.map e p)).count
+          (Associates.mk (Ideal.map e I)).factors ↔
+        n ≤ (Associates.mk p).count (Associates.mk I).factors := fun n ↦ by
+      rw [← Associates.prime_pow_dvd_iff_le hmkImap
+          (Associates.irreducible_mk.mpr hpmap.irreducible),
+        ← Associates.prime_pow_dvd_iff_le hmkI (Associates.irreducible_mk.mpr hp.irreducible),
+        ← Associates.mk_pow, ← Associates.mk_pow, Associates.mk_le_mk_iff_dvd,
+        Associates.mk_le_mk_iff_dvd]
+      exact map_pow_dvd_map_iff_of_ringEquiv e p I n
+    exact le_antisymm ((key _).mp le_rfl) ((key _).mpr le_rfl)
+  · -- Neither `p` nor `Ideal.map e p` is prime, so both counts are the junk value `0`.
+    have hp' : ¬ Prime (Ideal.map e p) := fun h ↦ hp <| by
+      have := prime_map_ringEquiv_of_prime e.symm h
+      change Prime (Ideal.map (e.symm : R' →+* R) (Ideal.map (e : R →+* R') p)) at this
+      rwa [Ideal.map_map, show (e.symm : R' →+* R).comp (e : R →+* R') = RingHom.id R by ext; simp,
+        Ideal.map_id] at this
+    rw [Associates.count_reducible (mt Associates.irreducible_mk.mp
+        (mt (irreducible_iff_prime.mp) hp')),
+      Associates.count_reducible (mt Associates.irreducible_mk.mp (mt irreducible_iff_prime.mp hp))]
+    rfl
 
 end RingEquivDedekind
 
