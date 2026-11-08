@@ -70,7 +70,7 @@ theorem derivativeEnd_apply_of_mem_range (c : RightConnection (E := E) D)
 
 omit [IsScalarTower k Aᵐᵒᵖ E] in
 /-- The derivative of an idempotent has no range-to-range component. -/
-theorem project_derivativeEnd_apply (c : RightConnection (E := E) D)
+theorem apply_derivativeEnd_self_apply_eq_zero (c : RightConnection (E := E) D)
     {p : E →ₗ[Aᵐᵒᵖ] E} (hp : IsIdempotentElem p) (x : LinearMap.range p) :
     p (derivativeEnd c p x) = 0 := by
   rw [derivativeEnd_apply_of_mem_range c hp x, LinearMap.map_sub,
@@ -91,7 +91,7 @@ theorem coe_curvature_project (c₁ : RightConnection (E := E) D₁)
       p (derivativeEnd c p (derivativeEnd c' p x)) =
         p (c (p (c' x))) - p (c (c' x)) := by
     have hpp (y : E) : p (p y) = p y := LinearMap.congr_fun hp y
-    rw [derivativeEnd_apply, project_derivativeEnd_apply c' hp x,
+    rw [derivativeEnd_apply, apply_derivativeEnd_self_apply_eq_zero c' hp x,
       map_zero, zero_sub, LinearMap.map_neg,
       derivativeEnd_apply_of_mem_range c' hp x, map_sub]
     simp only [LinearMap.map_sub, hpp]

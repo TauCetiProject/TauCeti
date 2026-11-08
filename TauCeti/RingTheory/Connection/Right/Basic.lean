@@ -58,6 +58,10 @@ instance : LinearMapClass (RightConnection (E := E) D) k E E where
   map_add c := c.toLinearMap.map_add
   map_smulₛₗ c := c.toLinearMap.map_smul
 
+@[simp]
+theorem coe_mk (f : E →ₗ[k] E) (h) :
+    ⇑(RightConnection.mk (D := D) f h) = f := (rfl)
+
 /-- Two connections are equal when they agree on every vector. -/
 @[ext]
 theorem ext {c c' : RightConnection (E := E) D} (h : ∀ x, c x = c' x) : c = c' :=
@@ -124,6 +128,13 @@ theorem addEnd_difference (c c' : RightConnection (E := E) D) :
   ext x
   simp
 
+/-- Adding an endomorphism changes a connection by exactly that endomorphism. -/
+@[simp]
+theorem difference_addEnd (c : RightConnection (E := E) D) (T : E →ₗ[Aᵐᵒᵖ] E) :
+    difference (addEnd c T) c = T := by
+  ext x
+  simp
+
 omit [IsScalarTower k Aᵐᵒᵖ E] in
 /-- For commuting algebra derivations the commutator of connections is right `A`-linear. -/
 def curvature (c₁ : RightConnection (E := E) D₁) (c₂ : RightConnection (E := E) D₂)
@@ -149,10 +160,10 @@ theorem curvature_apply (c₁ : RightConnection (E := E) D₁)
 For finite `ι`, this is a connection on a free right module. -/
 def coordinate (D : derivationLieAlgebra k A) (ι : Type*) :
     RightConnection (E := ι → A) D where
-  toLinearMap := LinearMap.pi fun i ↦ (D : Module.End k A).comp (LinearMap.proj i)
+  toLinearMap := LinearMap.piMap fun _ ↦ (D : Module.End k A)
   leibniz' a x := by
     ext i
-    simpa only [LinearMap.pi_apply, LinearMap.comp_apply, LinearMap.proj_apply,
+    simpa only [LinearMap.coe_piMap, Pi.map_apply,
       Pi.add_apply, Pi.smul_apply, smul_eq_mul_unop, unop_op, add_comm] using
       derivationLieAlgebra.leibniz D (x i) a
 
@@ -166,7 +177,9 @@ theorem curvature_coordinate (ι : Type*)
     (hD : Commute (D₁ : Module.End k A) (D₂ : Module.End k A)) :
     curvature (coordinate D₁ ι) (coordinate D₂ ι) hD = 0 := by
   ext x i
-  exact sub_eq_zero.mpr (LinearMap.congr_fun hD.eq (x i))
+  simp only [curvature_apply, coordinate_apply, LinearMap.zero_apply, Pi.sub_apply,
+    Pi.zero_apply, sub_eq_zero]
+  exact LinearMap.congr_fun hD.eq (x i)
 
 end RightConnection
 
