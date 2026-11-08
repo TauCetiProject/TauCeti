@@ -331,6 +331,26 @@ theorem IsCoupling.aestronglyMeasurable_edist [SFinite π] (hπ : IsCoupling π 
   aestronglyMeasurable_edist_comp hπ.measurePreserving_fst hπ.measurePreserving_snd
     hωX hωY
 
+/-- For a coupling, the `∞`-distortion is at most `c` exactly when the indicator of the set where
+the kernel discrepancy exceeds `c` has zero integral against the square of the coupling. -/
+theorem gromovWassersteinDistortion_top_le_iff [SFinite π]
+    (hωX : AEStronglyMeasurable ωX (μ.prod μ)) (hωY : AEStronglyMeasurable ωY (ν.prod ν))
+    (hπ : IsCoupling π μ ν) (c : ℝ≥0∞) :
+    gromovWassersteinDistortion ∞ ωX ωY π ≤ c ↔
+      ∫⁻ q, (Ioi c).indicator (fun _ ↦ (1 : ℝ≥0∞))
+        (edist (ωX (q.1.1, q.2.1)) (ωY (q.1.2, q.2.2))) ∂(π.prod π) = 0 := by
+  have hmeas := hπ.aestronglyMeasurable_edist hωX hωY
+  have hind : AEMeasurable (fun q : (X × Y) × (X × Y) ↦ (Ioi c).indicator
+      (fun _ ↦ (1 : ℝ≥0∞)) (edist (ωX (q.1.1, q.2.1)) (ωY (q.1.2, q.2.2)))) (π.prod π) :=
+    (measurable_const.indicator measurableSet_Ioi).comp_aemeasurable hmeas.aemeasurable
+  rw [gromovWassersteinDistortion_def, eLpNorm_exponent_top hmeas, lintegral_eq_zero_iff' hind]
+  refine ⟨fun h ↦ ?_, fun h ↦ eLpNormEssSup_le_of_ae_enorm_bound ?_⟩
+  · filter_upwards [ae_le_eLpNormEssSup (f := fun q : (X × Y) × (X × Y) ↦
+      edist (ωX (q.1.1, q.2.1)) (ωY (q.1.2, q.2.2)))] with q hq
+    simpa using (hq.trans h).not_gt
+  · filter_upwards [h] with q hq
+    simpa using hq
+
 /-- **Distortion of an a.e.-measurable parametrized plan.** If almost-everywhere measurable maps
 `f` and `g` push an s-finite measure `γ` on `Ω` forward to `μ` and `ν`, the plan `(f, g)_# γ`
 couples them, and its distortion is the `L^p (γ ⊗ γ)` seminorm of the discrepancy of the two
