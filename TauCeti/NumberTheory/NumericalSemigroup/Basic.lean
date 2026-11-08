@@ -72,7 +72,7 @@ theorem isNumericalSemigroup_iff_exists_bound :
     S.IsNumericalSemigroup ↔ ∃ c : ℕ, ∀ n ≥ c, n ∈ S := by
   rw [isNumericalSemigroup_def, ← Filter.eventually_atTop, ← Nat.cofinite_eq_atTop,
     Filter.eventually_cofinite]
-  rfl
+  simp only [Set.compl_def, SetLike.mem_coe]
 
 /-- A submonoid of `ℕ` has finite complement exactly when its elements have gcd one. -/
 theorem isNumericalSemigroup_iff_setGcd :
@@ -248,23 +248,12 @@ private theorem numericalGaps_closure_three_five :
     (by decide) (by decide) (by decide))
   by_cases hn : n ≤ 7
   · simp only [mem_numericalGaps, mem_closure_pair, smul_eq_mul]
-    interval_cases n
-    · simp
-    · simp only [not_exists, Set.mem_insert_iff, OfNat.one_ne_ofNat,
-        Set.mem_singleton_iff, or_self, or_false, iff_true]
-      omega
-    · simp only [not_exists, Set.mem_insert_iff, OfNat.ofNat_ne_one, Nat.reduceEqDiff,
-        Set.mem_singleton_iff, or_self, or_false, or_true, iff_true]
-      omega
-    · simpa using (⟨1, 0, rfl⟩ : ∃ a b : ℕ, a * 3 + b * 5 = 3)
-    · simp only [not_exists, Set.mem_insert_iff, OfNat.ofNat_ne_one, Nat.reduceEqDiff,
-        Set.mem_singleton_iff, or_false, or_true, iff_true]
-      omega
-    · simpa using (⟨0, 1, rfl⟩ : ∃ a b : ℕ, a * 3 + b * 5 = 5)
-    · simpa using (⟨2, 0, rfl⟩ : ∃ a b : ℕ, a * 3 + b * 5 = 6)
-    · simp only [not_exists, Set.mem_insert_iff, OfNat.ofNat_ne_one, Nat.reduceEqDiff,
-        Set.mem_singleton_iff, or_true, iff_true]
-      omega
+    interval_cases n <;> norm_num
+    all_goals first
+      | omega
+      | exact ⟨1, 0, rfl⟩
+      | exact ⟨0, 1, rfl⟩
+      | exact ⟨2, 0, rfl⟩
   · have hmem := hf.2 n (by omega)
     simp only [mem_numericalGaps, hmem, not_true, Set.mem_insert_iff, Set.mem_singleton_iff,
       false_iff]
