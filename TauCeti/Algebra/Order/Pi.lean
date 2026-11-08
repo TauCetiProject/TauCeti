@@ -19,6 +19,8 @@ that such a family inherits, at every index, any property shared by `x` and `0`,
 * `Pi.forall_single_of`: `Pi.single i x` inherits at every index any property shared by `x`
   and `0`.
 * `Pi.abs_single_le_single`: a bound `|x| ≤ b` gives `|Pi.single i x j| ≤ Pi.single i b j`.
+* `Pi.abs_single_apply_apply_le_single`: the same bound for a family of two-argument functions,
+  `|f t x| ≤ b` gives `|Pi.single i f j t x| ≤ Pi.single i b j`.
 -/
 
 public section
@@ -39,5 +41,13 @@ theorem abs_single_le_single {α : Type*} [Lattice α] [AddGroup α] [AddLeftMon
   rcases eq_or_ne j i with rfl | hj
   · simpa using h
   · simp [single_eq_of_ne hj]
+
+/-- A bound `|f t x| ≤ b` on a two-argument function `f` gives the bounds `Pi.single i b` for the
+family `Pi.single i f`, at every pair of arguments. -/
+theorem abs_single_apply_apply_le_single {κ μ α : Type*} [Lattice α] [AddGroup α] [AddLeftMono α]
+    (i : ι) {f : κ → μ → α} {b : α} (h : ∀ t x, |f t x| ≤ b) (j : ι) (t : κ) (x : μ) :
+    |(single i f : ι → κ → μ → α) j t x| ≤ (single i b : ι → α) j :=
+  apply_single (fun _ (g : κ → μ → α) ↦ g t x) (fun _ ↦ rfl) i f j ▸
+    abs_single_le_single i (h t x) j
 
 end Pi

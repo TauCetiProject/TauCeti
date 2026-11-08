@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Capping
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature
 import TauCeti.Algebra.Order.Pi
+import TauCeti.Algebra.BigOperators.Pi
 import TauCeti.Geometry.Symplectic.Floer.Pullback
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import Mathlib.Geometry.Manifold.Algebra.Monoid
@@ -493,10 +494,8 @@ theorem lintegral_enorm_hamiltonianCurvature_inputEndPerturbation_le (ω : Sympl
   have hP := ω.lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le
     (Pi.forall_single_of zero (p := fun f => Periodic f 1) (fun _ => rfl) hH)
     (Pi.forall_single_of zero (p := fun f => ContDiff ℝ 1 (uncurry f)) contDiff_const hHs)
-    (fun j t x ↦ Pi.apply_single (fun _ (g : ℝ → V → ℝ) ↦ g t x) (fun _ ↦ rfl) zero H j ▸
-      Pi.abs_single_le_single zero (hB t x) j) (u ∘ realChart (c + a * ·))
-  simp only [Pi.apply_single (fun _ ↦ ENNReal.ofReal) fun _ ↦ ENNReal.ofReal_zero,
-    Fintype.sum_pi_single'] at hP
+    (Pi.abs_single_apply_apply_le_single zero hB) (u ∘ realChart (c + a * ·))
+  simp only [Fintype.sum_apply_single ENNReal.ofReal_zero] at hP
   calc _ = ∫⁻ z in univ, ‖ω.hamiltonianCurvature
         (fun z x ↦ inputEndPerturbation c a H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ inputEndPerturbation c a H (Complex.equivRealProdCLM.symm z) x Complex.I)
