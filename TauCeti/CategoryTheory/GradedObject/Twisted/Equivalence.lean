@@ -125,9 +125,11 @@ def functor (_g : Gauge c d) : TwistedGradedObject c C ⥤ TwistedGradedObject d
   obj X := X
   map f := f
 
+variable {C} in
 /-- A change of cocycle leaves graded objects unchanged. -/
 @[simp]
-lemma functor_obj (X : GradedObject I C) : (g.functor C).obj X = X := (rfl)
+lemma _root_.CategoryTheory.GradedObject.gaugeFunctor_obj (X : GradedObject I C)
+    (g : Gauge c d) : (g.functor C).obj X = X := (rfl)
 
 /-- A change of cocycle leaves graded morphisms unchanged. -/
 @[simp]
@@ -215,8 +217,10 @@ instance functorMonoidal : (g.functor C).Monoidal :=
 @[simp]
 lemma functor_ε : Functor.LaxMonoidal.ε (g.functor C) = 𝟙 Monoidal.tensorUnit := (rfl)
 
+variable {C} in
 /-- The tensorator is multiplication by the two-cochain on each homogeneous summand. -/
-lemma functor_μ (X Y : GradedObject I C) :
+lemma _root_.CategoryTheory.GradedObject.gaugeFunctor_μ (X Y : GradedObject I C)
+    (g : Gauge c d) :
     Functor.LaxMonoidal.μ (g.functor C) X Y =
       scaleTensorObj X Y (fun i j ↦ (g.u i j : R)) :=
   scaleTensorIso_hom X Y g.u
@@ -225,26 +229,32 @@ lemma functor_μ (X Y : GradedObject I C) :
 @[simp]
 lemma functor_η : Functor.OplaxMonoidal.η (g.functor C) = 𝟙 Monoidal.tensorUnit := (rfl)
 
+variable {C} in
 /-- The inverse tensorator acts by the inverse two-cochain. -/
-lemma functor_δ (X Y : GradedObject I C) :
+lemma _root_.CategoryTheory.GradedObject.gaugeFunctor_δ (X Y : GradedObject I C)
+    (g : Gauge c d) :
     Functor.OplaxMonoidal.δ (g.functor C) X Y =
       scaleTensorObj X Y (fun i j ↦ (((g.u i j)⁻¹ : Rˣ) : R)) :=
   scaleTensorIso_inv X Y g.u
 
+variable {C} in
 /-- The tensorator multiplies a tensor summand by its gauge scalar. -/
 @[reassoc, simp]
-lemma ι_functor_μ (X Y : GradedObject I C) (i j n : I) (h : i + j = n) :
+lemma _root_.CategoryTheory.GradedObject.ι_gaugeFunctor_μ (X Y : GradedObject I C)
+    (g : Gauge c d) (i j n : I) (h : i + j = n) :
     ιTensorObj X Y i j n h ≫ Functor.LaxMonoidal.μ (g.functor C) X Y n =
       (g.u i j : R) • ιTensorObj X Y i j n h := by
-  rw [functor_μ]
+  rw [gaugeFunctor_μ]
   exact ι_scaleTensorObj X Y _ i j n h
 
+variable {C} in
 /-- The inverse tensorator multiplies a tensor summand by its inverse gauge scalar. -/
 @[reassoc, simp]
-lemma ι_functor_δ (X Y : GradedObject I C) (i j n : I) (h : i + j = n) :
+lemma _root_.CategoryTheory.GradedObject.ι_gaugeFunctor_δ (X Y : GradedObject I C)
+    (g : Gauge c d) (i j n : I) (h : i + j = n) :
     ιTensorObj X Y i j n h ≫ Functor.OplaxMonoidal.δ (g.functor C) X Y n =
       (((g.u i j)⁻¹ : Rˣ) : R) • ιTensorObj X Y i j n h := by
-  rw [functor_δ]
+  rw [gaugeFunctor_δ]
   exact ι_scaleTensorObj X Y _ i j n h
 
 /-- The forward functor of the gauge equivalence has the scalar tensorator. -/
@@ -268,7 +278,7 @@ instance equivalence_isMonoidal : (g.equivalence C).IsMonoidal where
     change Functor.LaxMonoidal.μ (g.symm.functor C) X Y =
       𝟙 (Monoidal.tensorObj X Y) ≫ (Functor.OplaxMonoidal.δ (g.functor C) X Y ≫
         Monoidal.tensorHom (𝟙 X) (𝟙 Y))
-    simp only [functor_μ, functor_δ, Monoidal.id_tensorHom_id, Category.id_comp, symm_u]
+    simp only [gaugeFunctor_μ, gaugeFunctor_δ, Monoidal.id_tensorHom_id, Category.id_comp, symm_u]
     exact (Category.comp_id _).symm
 
 end Gauge
