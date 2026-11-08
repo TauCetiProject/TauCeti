@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Duality
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
+import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Calculus.FDeriv.Prod
@@ -27,6 +28,9 @@ identity used to show that Hamiltonian flows preserve the symplectic form.
 A Lipschitz bound `‖X_G(z) - X_G(y₀)‖ ≤ L ‖z - y₀‖` on a ball gives the second-order Taylor bound
 `|G(y) - G(y₀) - dG(y₀)(y - y₀)| ≤ ‖ω‖ L ‖y - y₀‖²` there
 (`TauCeti.SymplecticForm.abs_sub_sub_fderiv_le_of_norm_hamiltonianVectorField_sub_le`).
+A compactly supported `C²` Hamiltonian has a globally Lipschitz Hamiltonian vector field
+(`TauCeti.SymplecticForm.exists_lipschitzWith_hamiltonianVectorField`), so its flow is defined
+for all times.
 
 For an almost complex structure `J` preserving `ω`, the field `J X_H` is the gradient of `H` for
 the bilinear form `g = ω(·, J ·)`
@@ -138,6 +142,19 @@ theorem contDiff_hamiltonianVectorField (ω : SymplecticForm V) {H : V → ℝ}
     ContDiff ℝ n (ω.hamiltonianVectorField H) :=
   ω.toBilinForm.toContinuousBilinearMap.inverse.contDiff.comp
     (hH.fderiv_right le_rfl)
+
+/-- A `C²` Hamiltonian with compact support has a globally Lipschitz Hamiltonian vector field, so
+its flow `TauCeti.SymplecticForm.hamiltonianFlow` is defined for all times. -/
+theorem exists_lipschitzWith_hamiltonianVectorField (ω : SymplecticForm V) {H : V → ℝ}
+    (hH : ContDiff ℝ 2 H) (hc : HasCompactSupport H) :
+    ∃ K, LipschitzWith K (ω.hamiltonianVectorField H) := by
+  refine (ω.contDiff_hamiltonianVectorField (n := 1)
+    (by simpa only [one_add_one_eq_two] using hH)).lipschitzWith_of_hasCompactSupport ?_
+    one_ne_zero
+  have h : ω.hamiltonianVectorField H =
+      ω.toBilinForm.toContinuousBilinearMap.inverse ∘ fderiv ℝ H :=
+    funext (ω.hamiltonianVectorField_def H)
+  exact h ▸ (hc.fderiv ℝ).comp_left (map_zero _)
 
 /-- Contracting the linearization of the Hamiltonian vector field gives the Hessian. -/
 theorem apply_fderiv_hamiltonianVectorField (ω : SymplecticForm V) {H : V → ℝ}
