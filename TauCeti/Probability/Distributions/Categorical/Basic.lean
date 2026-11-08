@@ -132,15 +132,22 @@ end Measurability
 
 section Continuity
 
-variable [Fintype I] [MeasurableSpace I] [MeasurableSingletonClass I]
-  [TopologicalSpace I] [OpensMeasurableSpace I]
+variable [Fintype I] [MeasurableSpace I] [TopologicalSpace I] [OpensMeasurableSpace I]
 
 /-- Categorical laws vary weakly continuously with all their weights, including zero weights. -/
 theorem continuous_categoricalMeasure :
     Continuous (fun p : StdSimplex ℝ≥0 I ↦ (categoricalMeasure p).toProbabilityMeasure) := by
   apply ProbabilityMeasure.continuous_iff_forall_continuous_integral.2
   intro f
-  simp only [Measure.coe_toProbabilityMeasure, integral_categoricalMeasure, smul_eq_mul]
+  have hf : StronglyMeasurable f := f.continuous.stronglyMeasurable
+  have hint (p : StdSimplex ℝ≥0 I) :
+      ∫ i, f i ∂categoricalMeasure p = ∑ i, (p.weights i : ℝ) * f i := by
+    have hI : Integrable f (categoricalMeasure p) := f.integrable _
+    rw [categoricalMeasure_def, ← Measure.sum_fintype] at hI ⊢
+    rw [integral_sum_measure hI, tsum_fintype]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [integral_smul_measure, integral_dirac' _ _ hf, ENNReal.coe_toReal, smul_eq_mul]
+  simp only [Measure.coe_toProbabilityMeasure, hint]
   fun_prop
 
 /-- A continuous probability vector gives a weakly continuous categorical family. -/
