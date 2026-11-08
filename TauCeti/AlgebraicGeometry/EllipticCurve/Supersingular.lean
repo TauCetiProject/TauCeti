@@ -15,6 +15,8 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Torsion.AlgClo
 -- Proof-only: over an algebraically closed field, the `2`- and `3`-torsion in characteristic `2`
 -- and `3`, read off the roots of `ΨSqₙ`.
 import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Torsion.Roots
+-- Proof-only: an elliptic curve has infinitely many points over an algebraically closed field.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.IsSepClosed
 
 /-!
 # Supersingular and ordinary Weierstrass curves
@@ -137,14 +139,27 @@ section Elliptic
 
 variable [W.IsElliptic]
 
+/-- **`0`-torsion is everything**: over an algebraically closed field the group of points of an
+elliptic curve is nontrivial, so it is not the `0`-torsion subgroup, which is the whole group. -/
+theorem torsionBy_zero_baseChange_ne_bot (Ω : Type*) [Field Ω] [IsAlgClosed Ω] [Algebra K Ω]
+    [DecidableEq Ω] :
+    AddSubgroup.torsionBy (W.baseChange Ω).toAffine.Point 0 ≠ ⊥ := by
+  have : (W.baseChange Ω).IsElliptic := inferInstanceAs (W.map _).IsElliptic
+  obtain ⟨P, hP⟩ := exists_ne (0 : (W.baseChange Ω).toAffine.Point)
+  intro h
+  exact hP (AddSubgroup.eq_bot_iff_forall _ |>.mp h P (by simp))
+
 /-- **Supersingularity may be read over any algebraically closed extension** `Ω` of `K`: the
 `p`-torsion of `W` over `Ω` is trivial exactly when it is over `AlgebraicClosure K`, since
 `AlgebraicClosure K` embeds into `Ω` and an extension of an algebraically closed field adds no
 torsion. -/
-theorem isSupersingular_iff_of_isAlgClosed (hp : p ≠ 0) (Ω : Type*) [Field Ω] [IsAlgClosed Ω]
+theorem isSupersingular_iff_of_isAlgClosed (Ω : Type*) [Field Ω] [IsAlgClosed Ω]
     [Algebra K Ω] [DecidableEq Ω] :
     W.IsSupersingular p ↔ AddSubgroup.torsionBy (W.baseChange Ω).toAffine.Point p = ⊥ := by
   classical
+  obtain rfl | hp := eq_or_ne p 0
+  · exact iff_of_false (W.torsionBy_zero_baseChange_ne_bot (AlgebraicClosure K))
+      (W.torsionBy_zero_baseChange_ne_bot Ω)
   -- Mathlib's ellipticity instance is stated for `W.map f`, which `W.baseChange A` unfolds to.
   have : (W.baseChange (AlgebraicClosure K)).IsElliptic := inferInstanceAs (W.map _).IsElliptic
   let ι : AlgebraicClosure K →ₐ[K] Ω := IsAlgClosed.lift
@@ -158,20 +173,20 @@ theorem isSupersingular_iff_of_isAlgClosed (hp : p ≠ 0) (Ω : Type*) [Field Ω
 
 /-- **Supersingularity is invariant under field extension**: for an arbitrary extension `L / K`,
 not necessarily algebraic, `W` is supersingular exactly when its base change to `L` is. -/
-theorem isSupersingular_baseChange_iff (hp : p ≠ 0) (L : Type*) [Field L] [Algebra K L] :
+theorem isSupersingular_baseChange_iff (L : Type*) [Field L] [Algebra K L] :
     (W.baseChange L).IsSupersingular p ↔ W.IsSupersingular p := by
   classical
   have : (W.baseChange L).IsElliptic := inferInstanceAs (W.map _).IsElliptic
   -- As above, `map_baseChange` collapses the double base change along `K → L → AlgebraicClosure L`.
   have hbc : (W.baseChange L).baseChange (AlgebraicClosure L) = W.baseChange (AlgebraicClosure L) :=
     map_baseChange W (IsScalarTower.toAlgHom K L (AlgebraicClosure L))
-  rw [isSupersingular_iff_of_isAlgClosed hp (AlgebraicClosure L),
-    W.isSupersingular_iff_of_isAlgClosed hp (AlgebraicClosure L), hbc]
+  rw [isSupersingular_iff_of_isAlgClosed (AlgebraicClosure L),
+    W.isSupersingular_iff_of_isAlgClosed (AlgebraicClosure L), hbc]
 
 /-- **Ordinarity is invariant under field extension.** -/
-theorem isOrdinary_baseChange_iff (hp : p ≠ 0) (L : Type*) [Field L] [Algebra K L] :
+theorem isOrdinary_baseChange_iff (L : Type*) [Field L] [Algebra K L] :
     (W.baseChange L).IsOrdinary p ↔ W.IsOrdinary p :=
-  (isSupersingular_baseChange_iff hp L).not
+  (isSupersingular_baseChange_iff L).not
 
 end Elliptic
 

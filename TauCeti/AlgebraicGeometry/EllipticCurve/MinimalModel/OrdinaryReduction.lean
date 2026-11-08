@@ -232,21 +232,21 @@ over `R`. No ramification hypothesis is needed: the reduction over `S` is the ba
 reduction over `R`, and ordinarity is invariant under field extension. -/
 theorem hasGoodOrdinaryReduction_baseChange_iff
     (hRS : (algebraMap S L).comp (algebraMap R S) = (algebraMap K L).comp (algebraMap R K))
-    (hp : p ≠ 0) (h : W.HasGoodReduction R) :
+    (h : W.HasGoodReduction R) :
     (W.baseChange L).HasGoodOrdinaryReduction S p ↔ W.HasGoodOrdinaryReduction R p := by
   have := (h.baseChange R S hRS).toIsMinimal
   have := h.baseChange R S hRS
   have := (hasGoodReduction_iff_isElliptic_reduction (R := R)).mp h
   rw [hasGoodOrdinaryReduction_iff_isOrdinary_reduction,
     hasGoodOrdinaryReduction_iff_isOrdinary_reduction, reduction_baseChange R S hRS,
-    isOrdinary_baseChange_iff hp]
+    isOrdinary_baseChange_iff]
 
 /-- **Good supersingular reduction is preserved and reflected by base change** along a local map
 `R → S` of discrete valuation rings compatible with `K → L`, for an equation with good reduction
 over `R`. -/
 theorem hasGoodSupersingularReduction_baseChange_iff
     (hRS : (algebraMap S L).comp (algebraMap R S) = (algebraMap K L).comp (algebraMap R K))
-    (hp : p ≠ 0) (h : W.HasGoodReduction R) :
+    (h : W.HasGoodReduction R) :
     (W.baseChange L).HasGoodSupersingularReduction S p ↔
       W.HasGoodSupersingularReduction R p := by
   have := (h.baseChange R S hRS).toIsMinimal
@@ -254,23 +254,23 @@ theorem hasGoodSupersingularReduction_baseChange_iff
   have := (hasGoodReduction_iff_isElliptic_reduction (R := R)).mp h
   rw [hasGoodSupersingularReduction_iff_isSupersingular_reduction,
     hasGoodSupersingularReduction_iff_isSupersingular_reduction, reduction_baseChange R S hRS,
-    isSupersingular_baseChange_iff hp]
+    isSupersingular_baseChange_iff]
 
 /-- **Good ordinary reduction is preserved by base change** along a local map of discrete
 valuation rings. -/
 theorem HasGoodOrdinaryReduction.baseChange
     (hRS : (algebraMap S L).comp (algebraMap R S) = (algebraMap K L).comp (algebraMap R K))
-    (hp : p ≠ 0) (h : W.HasGoodOrdinaryReduction R p) :
+    (h : W.HasGoodOrdinaryReduction R p) :
     (W.baseChange L).HasGoodOrdinaryReduction S p :=
-  (hasGoodOrdinaryReduction_baseChange_iff S hRS hp h.toHasGoodReduction).mpr h
+  (hasGoodOrdinaryReduction_baseChange_iff S hRS h.toHasGoodReduction).mpr h
 
 /-- **Good supersingular reduction is preserved by base change** along a local map of discrete
 valuation rings. -/
 theorem HasGoodSupersingularReduction.baseChange
     (hRS : (algebraMap S L).comp (algebraMap R S) = (algebraMap K L).comp (algebraMap R K))
-    (hp : p ≠ 0) (h : W.HasGoodSupersingularReduction R p) :
+    (h : W.HasGoodSupersingularReduction R p) :
     (W.baseChange L).HasGoodSupersingularReduction S p :=
-  (hasGoodSupersingularReduction_baseChange_iff S hRS hp h.toHasGoodReduction).mpr h
+  (hasGoodSupersingularReduction_baseChange_iff S hRS h.toHasGoodReduction).mpr h
 
 end BaseChange
 
