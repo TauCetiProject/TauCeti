@@ -30,10 +30,11 @@ integer-valued binomial `Ring.choose m r`. These are the coefficients of the div
 toral binomials of integral forms of quantized enveloping algebras, whose specializations at roots
 of unity are computed from them.
 
-The identities of `[n choose r]_v` that hold over every field, such as the second Pascal rule,
+The identities of `[n choose r]_v` that hold over every field, such as vanishing for `r > n`,
 invariance under `v ↦ v⁻¹` and the factorial formula, are deduced from those of
-`TauCeti.quantumBinomial` by `TauCeti.eq_of_forall_laurentEval_eq`. The identities of the signed
-extension follow from its product formula, since `[r]_v! ≠ 0` in the domain `ℤ[v, v⁻¹]`.
+`TauCeti.quantumBinomial` by `TauCeti.eq_of_forall_laurentEval_eq`; the second Pascal rule is the
+image of the defining one under `v ↦ v⁻¹`. The identities of the signed extension follow from its
+product formula, since `[r]_v! ≠ 0` in the domain `ℤ[v, v⁻¹]`.
 
 ## Main definitions
 
@@ -102,48 +103,36 @@ theorem laurentQuantumBinomial_succ_succ (n r : ℕ) :
         T (-((r : ℤ) + 1)) * laurentQuantumBinomial n (r + 1) := by
   rw [laurentQuantumBinomial]
 
-/-- `[n choose r]_v = 0` for `n < r`. -/
-@[simp]
-theorem laurentQuantumBinomial_eq_zero_of_lt {n r : ℕ} (h : n < r) :
-    laurentQuantumBinomial n r = 0 := by
-  induction n generalizing r with
-  | zero =>
-    obtain ⟨r, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero h.ne'
-    exact laurentQuantumBinomial_zero_succ r
-  | succ n ih =>
-    obtain ⟨r, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero (by omega : r ≠ 0)
-    rw [laurentQuantumBinomial_succ_succ, ih (by omega), ih (by omega)]
-    simp
-
-/-- `[n choose n]_v = 1`. -/
-@[simp]
-theorem laurentQuantumBinomial_self (n : ℕ) : laurentQuantumBinomial n n = 1 := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [laurentQuantumBinomial_succ_succ, ih,
-      laurentQuantumBinomial_eq_zero_of_lt (Nat.lt_succ_self n)]
-    simp
-
 /-- At a unit `q` of a field, the Gaussian binomial `[n choose r]_v` takes the value of the
 symmetric quantum binomial `[n choose r]_q`. This includes roots of unity and `q = ±1`. -/
 @[simp]
 theorem laurentEval_laurentQuantumBinomial {K : Type*} [Field K] (u : Kˣ) (n r : ℕ) :
     laurentEval u (laurentQuantumBinomial n r) = quantumBinomial (u : K) n r := by
   induction n generalizing r with
-  | zero => cases r <;> simp
+  | zero => cases r <;> simp [laurentQuantumBinomial_zero_succ]
   | succ n ih =>
     cases r with
     | zero => simp
     | succ r =>
       rw [laurentQuantumBinomial_succ_succ, quantumBinomial_succ_succ]
       rcases le_or_gt r n with h | h
-      · obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h
-        simp only [map_add, map_mul, laurentEval_T, ih, Units.val_zpow_eq_zpow_val]
-        rw [Nat.cast_add, add_sub_cancel_left, zpow_natCast, Nat.add_sub_cancel_left, inv_pow,
-          ← zpow_natCast (u : K) (r + 1), ← zpow_neg, Nat.cast_add_one]
+      · simp only [map_add, map_mul, laurentEval_T, ih, ← Nat.cast_sub h, ← Nat.cast_add_one,
+          zpow_neg, zpow_natCast, inv_pow, Units.val_inv_eq_inv_val, Units.val_pow_eq_pow_val]
       · simp [ih, quantumBinomial_eq_zero_of_lt _ h,
           quantumBinomial_eq_zero_of_lt _ (h.trans r.lt_succ_self)]
+
+/-- `[n choose r]_v = 0` for `n < r`. -/
+@[simp]
+theorem laurentQuantumBinomial_eq_zero_of_lt {n r : ℕ} (h : n < r) :
+    laurentQuantumBinomial n r = 0 := by
+  refine eq_of_forall_laurentEval_eq fun K _ u _ => ?_
+  simp [quantumBinomial_eq_zero_of_lt _ h]
+
+/-- `[n choose n]_v = 1`. -/
+@[simp]
+theorem laurentQuantumBinomial_self (n : ℕ) : laurentQuantumBinomial n n = 1 := by
+  refine eq_of_forall_laurentEval_eq fun K _ u _ => ?_
+  simp
 
 /-- At `v = 1` the Gaussian binomial `[n choose r]_v` is the binomial coefficient
 `n.choose r`. -/
@@ -159,6 +148,13 @@ theorem laurentEval_one_laurentQuantumBinomial {A : Type*} [Ring A] (n r : ℕ) 
 
 /-! ### Identities transported from the fraction field -/
 
+/-- The Gaussian binomials are invariant under `v ↦ v⁻¹`. -/
+@[simp]
+theorem laurentQuantumBinomial_invert (n r : ℕ) :
+    invert (laurentQuantumBinomial n r) = laurentQuantumBinomial n r := by
+  refine eq_of_forall_laurentEval_eq fun K _ u _ => ?_
+  simp [Units.val_inv_eq_inv_val]
+
 /-- The second Pascal rule
 `[n+1 choose r+1]_v = v^(-(n-r)) [n choose r]_v + v^(r+1) [n choose r+1]_v`, the image of the
 defining rule under `v ↦ v⁻¹`. -/
@@ -166,23 +162,7 @@ theorem laurentQuantumBinomial_succ_succ' (n r : ℕ) :
     laurentQuantumBinomial (n + 1) (r + 1) =
       T (-((n : ℤ) - r)) * laurentQuantumBinomial n r +
         T ((r : ℤ) + 1) * laurentQuantumBinomial n (r + 1) := by
-  refine eq_of_forall_laurentEval_eq fun K _ u _ => ?_
-  rw [laurentEval_laurentQuantumBinomial, quantumBinomial_succ_succ']
-  rcases le_or_gt r n with h | h
-  · obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h
-    simp only [map_add, map_mul, laurentEval_T, laurentEval_laurentQuantumBinomial,
-      Units.val_zpow_eq_zpow_val]
-    rw [Nat.cast_add, add_sub_cancel_left, zpow_neg, zpow_natCast, Nat.add_sub_cancel_left,
-      inv_pow, ← Nat.cast_add_one, zpow_natCast]
-  · simp [quantumBinomial_eq_zero_of_lt _ h,
-      quantumBinomial_eq_zero_of_lt _ (h.trans r.lt_succ_self), Units.val_zpow_eq_zpow_val]
-
-/-- The Gaussian binomials are invariant under `v ↦ v⁻¹`. -/
-@[simp]
-theorem laurentQuantumBinomial_invert (n r : ℕ) :
-    invert (laurentQuantumBinomial n r) = laurentQuantumBinomial n r := by
-  refine eq_of_forall_laurentEval_eq fun K _ u _ => ?_
-  simp [Units.val_inv_eq_inv_val]
+  simpa using congrArg invert (laurentQuantumBinomial_succ_succ n r)
 
 /-- The symmetry `[n choose n - r]_v = [n choose r]_v` for `r ≤ n`. -/
 theorem laurentQuantumBinomial_symm {n r : ℕ} (h : r ≤ n) :
