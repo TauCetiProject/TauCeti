@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
 public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 public import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
+import Mathlib.RingTheory.AlgebraicIndependent.TranscendenceBasis
+import TauCeti.AlgebraicGeometry.ResidueDegree
 
 /-!
 # Local dimension of schemes locally of finite type over a field
@@ -51,6 +53,9 @@ All in the namespace `TauCeti.AlgebraicGeometry`:
 * `topologicalKrullDimAt_eq_iSup_toNat_trdeg_residueField`: `dim_x X` is the supremum of
   `trdeg_k κ(ξ)` over the generic points `ξ` of the irreducible components through `x`.
 * `coheight_add_height_eq_topologicalKrullDim`: for `X` irreducible, `codim x + dim {x}⁻ = dim X`.
+* `height_eq_toNat_trdeg_residueField`: the height of `x` is `trdeg_k κ(x)`.
+* `height_apply_eq_height_of_residueDegree_ne_zero`: a morphism over `k` preserves the height of
+  a point with finite residue field extension.
 
 ## References
 
@@ -197,6 +202,34 @@ theorem topologicalKrullDimAt_eq_iSup_toNat_trdeg_residueField (x : X) :
     rw [← topologicalKrullDim_closure_singleton_eq_toNat_trdeg_residueField k, hξ]
   · rw [← topologicalKrullDim_closure_singleton_eq_toNat_trdeg_residueField k]
     exact le_iSup₂_of_le _ hξ (le_iSup_of_le (specializes_iff_mem_closure.1 hξx) le_rfl)
+
+/-- **Height of a point.** On a scheme `X` locally of finite type over a field `k`, the height of a
+point `x` for the specialization order, that is the dimension of its closure, is the transcendence
+degree of the residue field `κ(x)` over `k`. -/
+theorem height_eq_toNat_trdeg_residueField (x : X) :
+    Order.height x = (Algebra.trdeg k (X.residueField x)).toNat := by
+  have h := (height_eq_topologicalKrullDim_closure_singleton x).trans
+    (topologicalKrullDim_closure_singleton_eq_toNat_trdeg_residueField k x)
+  exact_mod_cast h
+
+/-- **Points with finite residue extension have the same dimension.** Let `f : X ⟶ Y` be a
+morphism of schemes locally of finite type over a field `k`, and let `x ∈ X` be a point whose
+residue field `κ(x)` is finite over `κ(f x)`, that is, `f.residueDegree x ≠ 0`. Then the closures
+of `x` and of `f x` have the same dimension: both are the transcendence degree of `κ(x)` over `k`.
+-/
+theorem height_apply_eq_height_of_residueDegree_ne_zero {Y : Scheme.{u}} [Y.Over (Spec (.of k))]
+    [LocallyOfFiniteType (Y ↘ Spec (.of k))] (f : X ⟶ Y) [f.IsOver (Spec (.of k))] {x : X}
+    (hx : f.residueDegree x ≠ 0) : Order.height (f x) = Order.height x := by
+  let : Algebra (Y.residueField (f x)) (X.residueField x) := (f.residueFieldMap x).hom.toAlgebra
+  have : IsScalarTower k (Y.residueField (f x)) (X.residueField x) :=
+    IsScalarTower.of_algebraMap_eq fun c ↦ (f.residueFieldMap_algebraMap k x c).symm
+  have : Module.Finite (Y.residueField (f x)) (X.residueField x) :=
+    (residueDegree_ne_zero_iff f x).mp hx
+  -- `κ(x)` is algebraic over `κ(f x)`, so both residue fields have the same transcendence degree
+  -- over `k`.
+  rw [height_eq_toNat_trdeg_residueField k, height_eq_toNat_trdeg_residueField k,
+    ← trdeg_add_eq k (Y.residueField (f x)) (A := X.residueField x),
+    trdeg_eq_zero (R := Y.residueField (f x)), add_zero]
 
 end AlgebraicGeometry
 
