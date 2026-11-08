@@ -78,57 +78,9 @@ namespace Symbol
 variable {n : ℕ} {m m' : ℝ} {V W U : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
   [NormedAddCommGroup W] [NormedSpace ℂ W] [NormedAddCommGroup U] [NormedSpace ℂ U]
 
-/-! ### The Fourier transform of a symbol in the position -/
-
-section SymbolFourier
-
-variable {b : Symbol n V W m'}
-
-/-- The Fourier transform of the position derivative `∂_{x_j} b` is `2πi θ_j b̂(θ, ξ)`. -/
-private theorem HasCompactSpatialSupport.fourier_spatialDeriv (hb : b.HasCompactSpatialSupport)
-    (j : Fin n) (ξ θ : CoordinateSpace n) :
-    𝓕 (fun y ↦ (Symbol.spatialDeriv j b).coefficient (y, ξ)) θ =
-      (2 * π * Complex.I * θ j) • 𝓕 (fun y ↦ b.coefficient (y, ξ)) θ := by
-  set f := (hb.hasCompactSupport_slice ξ).toSchwartzMap (b.contDiff_coefficient_slice ξ)
-  have hf : (fun y ↦ b.coefficient (y, ξ)) = ⇑f :=
-    (funext (HasCompactSupport.toSchwartzMap_toFun _ _)).symm
-  have hdf : (fun y ↦ (Symbol.spatialDeriv j b).coefficient (y, ξ)) =
-      ⇑(∂_{EuclideanSpace.single j (1 : ℝ)} f : 𝓢(CoordinateSpace n, V →L[ℂ] W)) := by
-    funext y
-    rw [SchwartzMap.lineDerivOp_apply_eq_fderiv, ← hf, ← fderiv_coefficient_single]
-  have hg : (fun x : CoordinateSpace n ↦ ⟪x, EuclideanSpace.single j (1 : ℝ)⟫).HasTemperateGrowth :=
-    ((innerSL ℝ).flip _).hasTemperateGrowth
-  rw [hdf, hf, ← SchwartzMap.fourier_coe, ← SchwartzMap.fourier_coe,
-    SchwartzMap.fourier_lineDerivOp_eq, smul_apply, SchwartzMap.smulLeftCLM_apply_apply hg,
-    EuclideanSpace.inner_single_right, smul_comm, ← Complex.coe_smul, smul_smul]
-  simp [mul_comm]
-
-end SymbolFourier
-
-
 /-! ### Estimates -/
 
 section Estimates
-
-/-- The derivative of a symbol of order `m` in both variables is bounded by `C ⟨ζ⟩ ^ m`, locally
-uniformly in the position. -/
-private theorem exists_bound_fderiv_coefficient_prod (a : Symbol n W U m)
-    (K : Set (CoordinateSpace n)) (hK : IsCompact K) :
-    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ζ, ‖fderiv ℝ a.coefficient (x, ζ)‖ ≤ C * (1 + ‖ζ‖ ^ 2) ^ (m / 2) := by
-  choose C hC0 hC using fun j ↦ (spatialDeriv j a).exists_bound_coefficient K hK
-  choose D hD0 hD using fun j ↦ (frequencyDeriv j a).exists_bound_coefficient K hK
-  have hC0' : 0 ≤ ∑ j, C j := Finset.sum_nonneg fun j _ ↦ hC0 j
-  have hD0' : 0 ≤ ∑ j, D j := Finset.sum_nonneg fun j _ ↦ hD0 j
-  refine ⟨∑ j, C j + ∑ j, D j, add_nonneg hC0' hD0', fun x hx ζ ↦ ?_⟩
-  have hdiff := (a.contDiff_coefficient.differentiable (by simp)) (x, ζ)
-  refine (fderiv ℝ a.coefficient (x, ζ)).norm_le_sum_norm_apply_prod_single.trans ?_
-  rw [add_mul, Finset.sum_mul, Finset.sum_mul]
-  refine add_le_add (Finset.sum_le_sum fun j _ ↦ ?_) (Finset.sum_le_sum fun j _ ↦ ?_)
-  · rw [hdiff.fderiv_apply_single_zero, ← coefficient_spatialDeriv]
-    exact hC j x hx ζ
-  · rw [hdiff.fderiv_apply_zero_single, ← coefficient_frequencyDeriv]
-    exact (hD j x hx ζ).trans
-      (mul_le_mul_of_nonneg_left (rpow_weight_le_rpow_weight ζ (by linarith)) (hD0 j))
 
 variable {b : Symbol n V W m'}
 
@@ -253,9 +205,10 @@ private theorem hasFDerivAt_phaseIntegrand (hA : ContDiff ℝ 1 A)
   have hc : HasFDerivAt (fun p : CoordinateSpace n × CoordinateSpace n ↦ (𝐞 ⟪θ, p.1⟫ : ℂ))
       ((ContinuousLinearMap.toSpanSingleton ℝ (2 * π * Complex.I * 𝐞 ⟪θ, p.1⟫)).comp
         ((innerSL ℝ θ).comp (ContinuousLinearMap.fst ℝ _ _))) p := by
-    have := (Real.hasDerivAt_fourierChar ⟪θ, p.1⟫).hasFDerivAt.comp p
-      ((innerSL ℝ θ).comp (ContinuousLinearMap.fst ℝ _ _)).hasFDerivAt
-    exact this
+    convert (Real.hasDerivAt_fourierChar ⟪θ, p.1⟫).hasFDerivAt.comp p
+      ((innerSL ℝ θ).comp (ContinuousLinearMap.fst ℝ _ _)).hasFDerivAt using 1
+    funext q
+    simp [innerSL_apply_apply]
   have hF := (ContinuousLinearMap.lsmul ℝ ℂ).hasFDerivAt_of_bilinear hc hv
   simp only [ContinuousLinearMap.lsmul_apply] at hF
   refine hF.congr_fderiv (ContinuousLinearMap.ext fun h ↦ ?_)
@@ -269,6 +222,92 @@ private theorem hasFDerivAt_phaseIntegrand (hA : ContDiff ℝ 1 A)
   · exact add_comm _ _
   · rw [smul_eq_mul]
     ring_nf
+
+omit [IsScalarTower ℝ ℂ G₃] in
+/-- The integrand of the composition integral is bounded by the product of the norms of `A` and
+`Bh` and their derivatives, with a factor `1 + ‖θ‖` to spare. -/
+private theorem norm_phaseIntegrand_le (θ : CoordinateSpace n)
+    (p : CoordinateSpace n × CoordinateSpace n) :
+    ‖(𝐞 ⟪θ, p.1⟫ : ℂ) • B (A (p.1, p.2 + (2 * π) • θ)) (Bh θ p.2)‖ ≤
+      ‖B‖ * ((1 + ‖θ‖) * ((‖A (p.1, p.2 + (2 * π) • θ)‖ +
+        ‖fderiv ℝ A (p.1, p.2 + (2 * π) • θ)‖) *
+          (‖Bh θ p.2‖ + ∑ j, ‖DBh θ p.2 (EuclideanSpace.single j 1)‖))) := by
+  rw [norm_smul, Circle.norm_coe, one_mul]
+  refine (B.le_opNorm₂ _ _).trans ?_
+  rw [mul_assoc]
+  refine mul_le_mul_of_nonneg_left ?_ (norm_nonneg B)
+  have h1 : 1 ≤ 1 + ‖θ‖ := le_add_of_nonneg_right (norm_nonneg θ)
+  have h2 := norm_nonneg (fderiv ℝ A (p.1, p.2 + (2 * π) • θ))
+  have h3 : 0 ≤ ∑ j, ‖DBh θ p.2 (EuclideanSpace.single j 1)‖ := by positivity
+  have h4 := norm_nonneg (A (p.1, p.2 + (2 * π) • θ))
+  have h5 := norm_nonneg (Bh θ p.2)
+  nlinarith [mul_nonneg h4 h5, mul_nonneg (add_nonneg h4 h2) (add_nonneg h5 h3)]
+
+/-- The derivative `phaseIntegrandFDeriv` of the integrand of the composition integral is bounded,
+up to a constant, by the same product as the integrand (`norm_phaseIntegrand_le`); the factor
+`1 + ‖θ‖` absorbs the derivative `2πi θ_j` of the phase. -/
+private theorem exists_norm_phaseIntegrandFDeriv_le :
+    ∃ C, 0 ≤ C ∧ ∀ (θ : CoordinateSpace n) (p : CoordinateSpace n × CoordinateSpace n),
+      ‖phaseIntegrandFDeriv B A Bh DBh θ p‖ ≤
+        C * ((1 + ‖θ‖) * ((‖A (p.1, p.2 + (2 * π) • θ)‖ +
+          ‖fderiv ℝ A (p.1, p.2 + (2 * π) • θ)‖) *
+            (‖Bh θ p.2‖ + ∑ j, ‖DBh θ p.2 (EuclideanSpace.single j 1)‖))) := by
+  obtain ⟨D, hD0, hD⟩ := (EuclideanSpace.basisFun (Fin n) ℝ).toBasis.exists_opNorm_le (F := G₂)
+  refine ⟨(1 + 2 * π) * (1 + D) * ‖B‖, by positivity, fun θ p ↦ ?_⟩
+  set a := ‖A (p.1, p.2 + (2 * π) • θ)‖
+  set a' := ‖fderiv ℝ A (p.1, p.2 + (2 * π) • θ)‖
+  set β := ‖Bh θ p.2‖
+  set β' := ∑ j, ‖DBh θ p.2 (EuclideanSpace.single j 1)‖
+  have ha := norm_nonneg (A (p.1, p.2 + (2 * π) • θ))
+  have ha' := norm_nonneg (fderiv ℝ A (p.1, p.2 + (2 * π) • θ))
+  have hβ := norm_nonneg (Bh θ p.2)
+  have hβ' : 0 ≤ β' := by positivity
+  have hθ := norm_nonneg θ
+  have hDB : ‖DBh θ p.2‖ ≤ D * β' := hD hβ' fun j ↦ by
+    rw [OrthonormalBasis.coe_toBasis, EuclideanSpace.basisFun_apply]
+    exact Finset.single_le_sum (f := fun j ↦ ‖DBh θ p.2 (EuclideanSpace.single j 1)‖)
+      (fun i _ ↦ norm_nonneg _) (Finset.mem_univ j)
+  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun h ↦ ?_
+  rw [phaseIntegrandFDeriv_apply]
+  have hh2 : ‖h.2‖ ≤ ‖h‖ := norm_snd_le h
+  have hi : ‖(2 * π * Complex.I * ⟪θ, h.1⟫ * 𝐞 ⟪θ, p.1⟫ : ℂ)‖ ≤ 2 * π * (‖θ‖ * ‖h‖) := by
+    simp only [norm_mul, Complex.norm_ofNat, Complex.norm_real, Real.norm_of_nonneg pi_pos.le,
+      Complex.norm_I, mul_one, Circle.norm_coe, Real.norm_eq_abs]
+    gcongr
+    exact (abs_real_inner_le_norm θ h.1).trans (by gcongr; exact norm_fst_le h)
+  have t1 : ‖B (fderiv ℝ A (p.1, p.2 + (2 * π) • θ) h) (Bh θ p.2)‖ ≤ ‖B‖ * (a' * ‖h‖) * β :=
+    (B.le_opNorm₂ _ _).trans (by gcongr; exact ContinuousLinearMap.le_opNorm _ _)
+  have t2 : ‖B (A (p.1, p.2 + (2 * π) • θ)) (DBh θ p.2 h.2)‖ ≤ ‖B‖ * a * (D * β' * ‖h‖) :=
+    (B.le_opNorm₂ _ _).trans
+      (by gcongr; exact (ContinuousLinearMap.le_opNorm _ _).trans (by gcongr))
+  have t3 : ‖B (A (p.1, p.2 + (2 * π) • θ)) (Bh θ p.2)‖ ≤ ‖B‖ * a * β := B.le_opNorm₂ _ _
+  -- The three terms are each at most `(1 + ‖θ‖) (a + a') (β + β')`.
+  set Y := (1 + ‖θ‖) * ((a + a') * (β + β'))
+  have hP : 0 ≤ (a + a') * (β + β') := by positivity
+  have hY : (a + a') * (β + β') ≤ Y := le_mul_of_one_le_left hP (by linarith)
+  have e1 : a' * β ≤ Y := (mul_le_mul (by linarith) (by linarith) hβ (by linarith)).trans hY
+  have e2 : a * β' ≤ Y := (mul_le_mul (by linarith) (by linarith) hβ' (by linarith)).trans hY
+  have e3 : ‖θ‖ * (a * β) ≤ Y :=
+    mul_le_mul (by linarith) (mul_le_mul (by linarith) (by linarith) hβ (by linarith))
+      (by positivity) (by linarith)
+  calc _ ≤ ‖(𝐞 ⟪θ, p.1⟫ : ℂ) • (B (fderiv ℝ A (p.1, p.2 + (2 * π) • θ) h) (Bh θ p.2) +
+          B (A (p.1, p.2 + (2 * π) • θ)) (DBh θ p.2 h.2))‖ +
+        ‖(2 * π * Complex.I * ⟪θ, h.1⟫ * 𝐞 ⟪θ, p.1⟫ : ℂ)‖ *
+          ‖B (A (p.1, p.2 + (2 * π) • θ)) (Bh θ p.2)‖ := by
+        refine (norm_add_le _ _).trans ?_
+        rw [norm_smul (2 * π * Complex.I * ⟪θ, h.1⟫ * 𝐞 ⟪θ, p.1⟫ : ℂ)]
+    _ ≤ (‖B‖ * (a' * ‖h‖) * β + ‖B‖ * a * (D * β' * ‖h‖)) +
+        2 * π * (‖θ‖ * ‖h‖) * (‖B‖ * a * β) := by
+        rw [norm_smul, Circle.norm_coe, one_mul]
+        gcongr
+        exact (norm_add_le _ _).trans (add_le_add t1 t2)
+    _ = ‖B‖ * ((a' * β + D * (a * β')) + 2 * π * (‖θ‖ * (a * β))) * ‖h‖ := by ring
+    _ ≤ ‖B‖ * ((1 + 2 * π) * (1 + D) * Y) * ‖h‖ := by
+        gcongr
+        nlinarith [mul_le_mul_of_nonneg_left e2 hD0.le,
+          mul_le_mul_of_nonneg_left e3 (by positivity : (0 : ℝ) ≤ 2 * π),
+          mul_nonneg (mul_nonneg pi_pos.le hD0.le) (hP.trans hY)]
+    _ = _ := by ring
 
 /-- **Differentiation under the composition integral.** If the integrand
 `𝐞 ⟪θ, x⟫ • B (A (x, ξ + 2πθ)) (Bh θ ξ)` and its derivative are dominated, for `(x, ξ)` near `p₀`,
@@ -314,82 +353,20 @@ private theorem hasFDerivAt_integral_phaseIntegrand (hA : ContDiff ℝ 1 A)
       Complex.continuous_ofReal.comp (continuous_id.inner continuous_const)
     exact ((continuous_const.mul hi).mul (he p₀.1)).smul
       ((B.continuous.comp (hAθ p₀)).clm_apply (hBθ p₀.2))
-  -- The pointwise bounds.
-  have hB0 : 0 ≤ ‖B‖ := norm_nonneg B
-  have hnorm (θ : CoordinateSpace n) (p : CoordinateSpace n × CoordinateSpace n) :
-      ‖(𝐞 ⟪θ, p.1⟫ : ℂ) • B (A (p.1, p.2 + (2 * π) • θ)) (Bh θ p.2)‖ ≤
-        ‖B‖ * ((1 + ‖θ‖) * ((‖A (p.1, p.2 + (2 * π) • θ)‖ +
-          ‖fderiv ℝ A (p.1, p.2 + (2 * π) • θ)‖) *
-            (‖Bh θ p.2‖ + ∑ j, ‖DBh θ p.2 (EuclideanSpace.single j 1)‖))) := by
-    rw [norm_smul, Circle.norm_coe, one_mul]
-    refine (B.le_opNorm₂ _ _).trans ?_
-    rw [mul_assoc]
-    refine mul_le_mul_of_nonneg_left ?_ hB0
-    have h1 : 1 ≤ 1 + ‖θ‖ := le_add_of_nonneg_right (norm_nonneg θ)
-    have h2 := norm_nonneg (fderiv ℝ A (p.1, p.2 + (2 * π) • θ))
-    have h3 : 0 ≤ ∑ j, ‖DBh θ p.2 (EuclideanSpace.single j 1)‖ := by positivity
-    have h4 := norm_nonneg (A (p.1, p.2 + (2 * π) • θ))
-    have h5 := norm_nonneg (Bh θ p.2)
-    nlinarith [mul_nonneg h4 h5, mul_nonneg (add_nonneg h4 h2) (add_nonneg h5 h3)]
-  have hnorm' (θ : CoordinateSpace n) (p : CoordinateSpace n × CoordinateSpace n) :
-      ‖phaseIntegrandFDeriv B A Bh DBh θ p‖ ≤
-        (1 + 2 * π) * ‖B‖ * ((1 + ‖θ‖) * ((‖A (p.1, p.2 + (2 * π) • θ)‖ +
-          ‖fderiv ℝ A (p.1, p.2 + (2 * π) • θ)‖) *
-            (‖Bh θ p.2‖ + ∑ j, ‖DBh θ p.2 (EuclideanSpace.single j 1)‖))) := by
-    have hDB : ‖DBh θ p.2‖ ≤ ∑ j, ‖DBh θ p.2 (EuclideanSpace.single j 1)‖ :=
-      (DBh θ p.2).norm_le_sum_norm_apply_single
-    set a := ‖A (p.1, p.2 + (2 * π) • θ)‖
-    set a' := ‖fderiv ℝ A (p.1, p.2 + (2 * π) • θ)‖
-    set β := ‖Bh θ p.2‖
-    set β' := ∑ j, ‖DBh θ p.2 (EuclideanSpace.single j 1)‖
-    have ha := norm_nonneg (A (p.1, p.2 + (2 * π) • θ))
-    have ha' := norm_nonneg (fderiv ℝ A (p.1, p.2 + (2 * π) • θ))
-    have hβ := norm_nonneg (Bh θ p.2)
-    have hβ' : 0 ≤ β' := by positivity
-    have hθ := norm_nonneg θ
-    refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun h ↦ ?_
-    rw [phaseIntegrandFDeriv_apply]
-    have hh2 : ‖h.2‖ ≤ ‖h‖ := norm_snd_le h
-    have hi : ‖(2 * π * Complex.I * ⟪θ, h.1⟫ * 𝐞 ⟪θ, p.1⟫ : ℂ)‖ ≤ 2 * π * (‖θ‖ * ‖h‖) := by
-      simp only [norm_mul, Complex.norm_ofNat, Complex.norm_real, Real.norm_of_nonneg pi_pos.le,
-        Complex.norm_I, mul_one, Circle.norm_coe, Real.norm_eq_abs]
-      gcongr
-      exact (abs_real_inner_le_norm θ h.1).trans (by gcongr; exact norm_fst_le h)
-    have t1 : ‖B (fderiv ℝ A (p.1, p.2 + (2 * π) • θ) h) (Bh θ p.2)‖ ≤ ‖B‖ * (a' * ‖h‖) * β :=
-      (B.le_opNorm₂ _ _).trans (by gcongr; exact ContinuousLinearMap.le_opNorm _ _)
-    have t2 : ‖B (A (p.1, p.2 + (2 * π) • θ)) (DBh θ p.2 h.2)‖ ≤ ‖B‖ * a * (β' * ‖h‖) :=
-      (B.le_opNorm₂ _ _).trans
-        (by gcongr; exact (ContinuousLinearMap.le_opNorm _ _).trans (by gcongr))
-    have t3 : ‖B (A (p.1, p.2 + (2 * π) • θ)) (Bh θ p.2)‖ ≤ ‖B‖ * a * β := B.le_opNorm₂ _ _
-    calc _ ≤ ‖(𝐞 ⟪θ, p.1⟫ : ℂ) • (B (fderiv ℝ A (p.1, p.2 + (2 * π) • θ) h) (Bh θ p.2) +
-            B (A (p.1, p.2 + (2 * π) • θ)) (DBh θ p.2 h.2))‖ +
-          ‖(2 * π * Complex.I * ⟪θ, h.1⟫ * 𝐞 ⟪θ, p.1⟫ : ℂ)‖ *
-            ‖B (A (p.1, p.2 + (2 * π) • θ)) (Bh θ p.2)‖ := by
-          refine (norm_add_le _ _).trans ?_
-          rw [norm_smul (2 * π * Complex.I * ⟪θ, h.1⟫ * 𝐞 ⟪θ, p.1⟫ : ℂ)]
-      _ ≤ (‖B‖ * (a' * ‖h‖) * β + ‖B‖ * a * (β' * ‖h‖)) +
-          2 * π * (‖θ‖ * ‖h‖) * (‖B‖ * a * β) := by
-          rw [norm_smul, Circle.norm_coe, one_mul]
-          gcongr
-          exact (norm_add_le _ _).trans (add_le_add t1 t2)
-      _ = ‖B‖ * ((a' * β + a * β') + 2 * π * (‖θ‖ * (a * β))) * ‖h‖ := by ring
-      _ ≤ ‖B‖ * ((1 + 2 * π) * ((1 + ‖θ‖) * ((a + a') * (β + β')))) * ‖h‖ := by
-          gcongr
-          nlinarith [mul_nonneg ha hβ, mul_nonneg ha' hβ, mul_nonneg ha hβ', mul_nonneg ha' hβ',
-            mul_nonneg hθ (mul_nonneg ha hβ), mul_nonneg hθ (mul_nonneg ha' hβ),
-            mul_nonneg hθ (mul_nonneg ha hβ'), mul_nonneg hθ (mul_nonneg ha' hβ'), pi_pos]
-      _ = _ := by ring
+  obtain ⟨C, hC0, hnorm'⟩ :=
+    exists_norm_phaseIntegrandFDeriv_le B (A := A) (Bh := Bh) (DBh := DBh)
   have hp₀ : p₀ ∈ Metric.ball p₀ 1 := Metric.mem_ball_self one_pos
   have hint' : Integrable (fun θ ↦ phaseIntegrandFDeriv B A Bh DBh θ p₀) :=
-    (hg.const_mul ((1 + 2 * π) * ‖B‖)).mono' hcont'.aestronglyMeasurable
+    (hg.const_mul C).mono' hcont'.aestronglyMeasurable
       (ae_of_all _ fun θ ↦ (hnorm' θ p₀).trans (by gcongr; exact hbound θ p₀ hp₀))
   refine ⟨_, hasFDerivAt_integral_of_dominated_of_fderiv_le (Metric.ball_mem_nhds p₀ one_pos)
     (Filter.Eventually.of_forall fun p ↦ (hcont p).aestronglyMeasurable)
     ((hg.const_mul ‖B‖).mono' (hcont p₀).aestronglyMeasurable
-      (ae_of_all _ fun θ ↦ (hnorm θ p₀).trans (by gcongr; exact hbound θ p₀ hp₀)))
+      (ae_of_all _ fun θ ↦ (norm_phaseIntegrand_le B (DBh := DBh) θ p₀).trans
+        (by gcongr; exact hbound θ p₀ hp₀)))
     hcont'.aestronglyMeasurable
     (ae_of_all _ fun θ p hp ↦ (hnorm' θ p).trans (by gcongr; exact hbound θ p hp))
-    (hg.const_mul ((1 + 2 * π) * ‖B‖))
+    (hg.const_mul C)
     (ae_of_all _ fun θ p _ ↦ hasFDerivAt_phaseIntegrand B hA hBh θ p), fun h ↦ ?_⟩
   rw [ContinuousLinearMap.integral_apply hint']
   simp only [phaseIntegrandFDeriv_apply]
@@ -406,6 +383,9 @@ variable {b : Symbol n V W m'}
 /-- The Fourier transform `b̂(θ, ξ)` of the position slice `y ↦ b(y, ξ)` at `θ`. -/
 private def fourierSlice (b : Symbol n V W m') (θ ξ : CoordinateSpace n) : V →L[ℂ] W :=
   𝓕 (fun y ↦ b.coefficient (y, ξ)) θ
+
+private theorem fourierSlice_apply (b : Symbol n V W m') (θ ξ : CoordinateSpace n) :
+    fourierSlice b θ ξ = 𝓕 (fun y ↦ b.coefficient (y, ξ)) θ := (rfl)
 
 /-- The frequency derivative of `b̂(θ, ξ)`, assembled from the Fourier transforms of the frequency
 derivatives of `b`. -/
@@ -439,8 +419,9 @@ private theorem HasCompactSpatialSupport.hasFDerivAt_fourierSlice (hb : b.HasCom
     HasFDerivAt (fourierSlice b θ) (fourierSliceDeriv b θ ξ) ξ := by
   obtain ⟨K, hK, hKb⟩ := hasCompactSpatialSupport_iff.mp hb
   have h := hasFDerivAt_fourier_slice (b.contDiff_coefficient.of_le (by simp)) hK hKb θ ξ
-  simp only [← coefficient_frequencyDeriv] at h
-  exact h
+  rw [show fourierSlice b θ = fun η ↦ 𝓕 (fun y ↦ b.coefficient (y, η)) θ from
+    funext (fourierSlice_apply b θ)]
+  simpa only [fourierSliceDeriv, fourierSlice_apply, coefficient_frequencyDeriv] using h
 
 private theorem continuous_sharpIntegrand (a : Symbol n W U m) (hb : b.HasCompactSpatialSupport)
     (p : CoordinateSpace n × CoordinateSpace n) :
@@ -478,16 +459,12 @@ private theorem exists_norm_sharpIntegrand_le (a : Symbol n W U m)
         mul_le_mul_of_nonneg_left (hC ξ θ) hCa0
     _ = _ := by ring
 
-private theorem integrable_one_add_norm_rpow_neg_succ :
-    Integrable fun θ : CoordinateSpace n ↦ (1 + ‖θ‖) ^ (-((n + 1 : ℕ) : ℝ)) :=
-  integrable_one_add_norm (by rw [finrank_euclideanSpace_fin]; push_cast; linarith)
-
 private theorem integrable_sharpIntegrand (a : Symbol n W U m) (hb : b.HasCompactSpatialSupport)
     (p : CoordinateSpace n × CoordinateSpace n) :
     Integrable fun θ ↦ (𝐞 ⟪θ, p.1⟫ : ℂ) •
       (a.coefficient (p.1, p.2 + (2 * π) • θ)).comp (fourierSlice b θ p.2) := by
   obtain ⟨C, -, hC⟩ := exists_norm_sharpIntegrand_le a hb {p.1} isCompact_singleton (n + 1)
-  exact (integrable_one_add_norm_rpow_neg_succ.const_mul _).mono'
+  exact ((integrable_one_add_norm (by simp)).const_mul _).mono'
     (continuous_sharpIntegrand a hb p).aestronglyMeasurable
     (ae_of_all _ fun θ ↦ hC p.1 rfl p.2 θ)
 
@@ -499,7 +476,7 @@ private theorem exists_norm_sharpCoeff_le (a : Symbol n W U m) (hb : b.HasCompac
   obtain ⟨C, hC0, hC⟩ := exists_norm_sharpIntegrand_le a hb K hK (n + 1)
   refine ⟨C * ∫ θ : CoordinateSpace n, (1 + ‖θ‖) ^ (-((n + 1 : ℕ) : ℝ)),
     mul_nonneg hC0 (integral_nonneg fun _ ↦ by positivity), fun x hx ξ ↦ ?_⟩
-  refine (norm_integral_le_of_norm_le (integrable_one_add_norm_rpow_neg_succ.const_mul _)
+  refine (norm_integral_le_of_norm_le ((integrable_one_add_norm (by simp)).const_mul _)
     (ae_of_all _ fun θ ↦ hC x hx ξ θ)).trans_eq ?_
   rw [integral_const_mul]
   ring
@@ -530,7 +507,7 @@ private theorem hasFDerivAt_sharpCoeff (a : Symbol n W U m) (hb : b.HasCompactSp
     (Bh := fourierSlice b) (DBh := fourierSliceDeriv b) (a.contDiff_coefficient.of_le (by simp))
     hb.hasFDerivAt_fourierSlice hb.continuous_fourierSlice hb.continuous_fourierSliceDeriv
     (p₀ := p₀) (g := fun θ ↦ (Ca + Cf) * C * (1 + ‖θ‖) ^ (-((n + 1 : ℕ) : ℝ)))
-    (integrable_one_add_norm_rpow_neg_succ.const_mul _) (fun θ p hp ↦ ?_)
+    ((integrable_one_add_norm (by simp)).const_mul _) (fun θ p hp ↦ ?_)
   · simp only [ContinuousLinearMap.bilinearRestrictScalars_apply_apply,
       ContinuousLinearMap.compL_apply] at key
     exact key
@@ -556,7 +533,7 @@ private theorem hasFDerivAt_sharpCoeff (a : Symbol n W U m) (hb : b.HasCompactSp
       rw [add_mul]
       exact add_le_add (hCa _ hx _) (hCf _ hx _)
     have hB := hC p.2 θ hξ
-    simp only [fourierSlice] at hB ⊢
+    simp only [fourierSlice_apply] at hB ⊢
     calc (1 + ‖θ‖) * ((‖a.coefficient (p.1, p.2 + (2 * π) • θ)‖ +
           ‖fderiv ℝ a.coefficient (p.1, p.2 + (2 * π) • θ)‖) *
           (‖𝓕 (fun y ↦ b.coefficient (y, p.2)) θ‖ +
@@ -590,7 +567,7 @@ private theorem fderiv_sharpCoeff_apply_inl (a : Symbol n W U m) (hb : b.HasComp
   have hfd := hdiff.fderiv_apply_single_zero j
   dsimp only at hfd
   simp only [hfd, ← coefficient_spatialDeriv, map_zero, ContinuousLinearMap.comp_zero, add_zero,
-    fourierSlice, hb.fourier_spatialDeriv j p.2 θ, ContinuousLinearMap.comp_smul,
+    fourierSlice_apply, hb.fourier_spatialDeriv j p.2 θ, ContinuousLinearMap.comp_smul,
     EuclideanSpace.inner_single_right, one_mul, conj_trivial]
   module
 
@@ -722,6 +699,7 @@ private theorem coefficient_sharp_eq (a : Symbol n W U m) {b : Symbol n V W m'}
 
 /-- The coefficient of the composition symbol:
 `(a # b)(x, ξ) = ∫ 𝐞 ⟪θ, x⟫ a(x, ξ + 2πθ) b̂(θ, ξ) dθ`. -/
+@[simp]
 theorem coefficient_sharp (a : Symbol n W U m) {b : Symbol n V W m'}
     (hb : b.HasCompactSpatialSupport)
     (x ξ : CoordinateSpace n) :
@@ -798,7 +776,7 @@ theorem quantizeSchwartzValue_sharp [CompleteSpace W] (a : Symbol n W U m) {b : 
   obtain ⟨C, hC0, hC⟩ := exists_norm_sharpIntegrand_le a hb {x} isCompact_singleton (n + 1)
   have hshear : Integrable (H ∘ fun z ↦ (z.1, z.1 + z.2)) (volume.prod volume) := by
     refine ((((𝓕 u).integrable_one_add_norm_smul_sq_rpow_mul_norm (2 * π) (m + m')).const_mul
-      C).mul_prod integrable_one_add_norm_rpow_neg_succ).mono'
+      C).mul_prod (integrable_one_add_norm (r := ((n + 1 : ℕ) : ℝ)) (by simp))).mono'
       (hHc.comp (continuous_fst.prodMk (continuous_fst.add continuous_snd))).aestronglyMeasurable
       (ae_of_all _ fun z ↦ ?_)
     have h := hC x rfl ((2 * π) • z.1) z.2
@@ -849,8 +827,7 @@ theorem quantizeSchwartzValue_sharp [CompleteSpace W] (a : Symbol n W U m) {b : 
         simp only [hH, Circle.smul_def]
         rw [integral_smul, (a.coefficient (x, (2 * π) • η)).integral_comp_comm hint,
           SchwartzMap.fourier_coe w, hw, hb.fourier_quantizeSchwartzValue u η]
-        unfold fourierSlice
-        rfl
+        simp only [fourierSlice_apply]
 
 /-- **Uniqueness of the composition symbol.** A symbol `c`, of any order, whose quantization is
 `Op(a) ∘ Op(b)` on compactly supported Schwartz functions has the coefficient of `a # b`. -/

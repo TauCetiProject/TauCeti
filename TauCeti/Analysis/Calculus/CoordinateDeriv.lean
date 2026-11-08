@@ -53,9 +53,8 @@ symbol calculus.
 * `TauCeti.mixedDeriv`: the mixed position-frequency derivative `∂_x^α ∂_ξ^β`.
 * `ContinuousLinearMap.coordinateDeriv_of_bilinear`, `ContinuousLinearMap.mixedDeriv_of_bilinear`:
   the Leibniz rules.
-* `ContinuousLinearMap.apply_prod_eq_sum_single`,
-  `ContinuousLinearMap.norm_le_sum_norm_apply_prod_single`: a real-linear map on `ℝⁿ × ℝⁿ` in
-  terms of its values on the coordinate vectors, and the resulting norm bound.
+* `ContinuousLinearMap.apply_eq_sum_single`, `ContinuousLinearMap.apply_prod_eq_sum_single`: a
+  real-linear map on `ℝⁿ` or `ℝⁿ × ℝⁿ` in terms of its values on the coordinate vectors.
 * `DifferentiableAt.fderiv_apply_single_zero`, `DifferentiableAt.fderiv_apply_zero_single`: the
   derivative of a function of two variables on a coordinate vector is a coordinate derivative of
   a slice.
@@ -616,6 +615,12 @@ section Coordinates
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
+/-- A real-linear map on `ℝⁿ` is determined by its values on the coordinate vectors. -/
+theorem _root_.ContinuousLinearMap.apply_eq_sum_single (L : CoordinateSpace n →L[ℝ] F)
+    (h : CoordinateSpace n) : L h = ∑ j, h j • L (EuclideanSpace.single j 1) := by
+  conv_lhs => rw [← (EuclideanSpace.basisFun (Fin n) ℝ).sum_repr h]
+  simp
+
 /-- A real-linear map on `ℝⁿ × ℝⁿ` is determined by its values on the coordinate vectors. -/
 theorem _root_.ContinuousLinearMap.apply_prod_eq_sum_single
     (L : CoordinateSpace n × CoordinateSpace n →L[ℝ] F)
@@ -627,41 +632,9 @@ theorem _root_.ContinuousLinearMap.apply_prod_eq_sum_single
     rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, ← map_add,
       ContinuousLinearMap.inl_apply, ContinuousLinearMap.inr_apply, Prod.mk_add_mk, add_zero,
       zero_add]
-  rw [hsplit]
-  congr 1
-  · conv_lhs => rw [← (EuclideanSpace.basisFun (Fin n) ℝ).sum_repr h.1]
-    simp
-  · conv_lhs => rw [← (EuclideanSpace.basisFun (Fin n) ℝ).sum_repr h.2]
-    simp
-
-/-- The norm of a real-linear map on `ℝⁿ × ℝⁿ` is at most the sum of the norms of its values on
-the coordinate vectors. -/
-theorem _root_.ContinuousLinearMap.norm_le_sum_norm_apply_prod_single
-    (L : CoordinateSpace n × CoordinateSpace n →L[ℝ] F) :
-    ‖L‖ ≤ ∑ j, ‖L (EuclideanSpace.single j 1, 0)‖ + ∑ j, ‖L (0, EuclideanSpace.single j 1)‖ := by
-  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun h ↦ ?_
-  rw [L.apply_prod_eq_sum_single, add_mul, Finset.sum_mul, Finset.sum_mul]
-  refine (norm_add_le _ _).trans (add_le_add ((norm_sum_le _ _).trans
-    (Finset.sum_le_sum fun j _ ↦ ?_)) ((norm_sum_le _ _).trans (Finset.sum_le_sum fun j _ ↦ ?_)))
-  · rw [norm_smul, mul_comm]
-    gcongr
-    exact (PiLp.norm_apply_le h.1 j).trans (norm_fst_le h)
-  · rw [norm_smul, mul_comm]
-    gcongr
-    exact (PiLp.norm_apply_le h.2 j).trans (norm_snd_le h)
-
-/-- The norm of a real-linear map on `ℝⁿ` is at most the sum of the norms of its values on the
-coordinate vectors. -/
-theorem _root_.ContinuousLinearMap.norm_le_sum_norm_apply_single (L : CoordinateSpace n →L[ℝ] F) :
-    ‖L‖ ≤ ∑ j, ‖L (EuclideanSpace.single j 1)‖ := by
-  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun h ↦ ?_
-  conv_lhs => rw [← (EuclideanSpace.basisFun (Fin n) ℝ).sum_repr h]
-  simp only [map_sum, map_smul, EuclideanSpace.basisFun_repr, EuclideanSpace.basisFun_apply]
-  rw [Finset.sum_mul]
-  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun j _ ↦ ?_)
-  rw [norm_smul, mul_comm]
-  gcongr
-  exact PiLp.norm_apply_le h j
+  rw [hsplit, ContinuousLinearMap.apply_eq_sum_single, ContinuousLinearMap.apply_eq_sum_single]
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.inl_apply,
+    ContinuousLinearMap.inr_apply]
 
 /-- The derivative of a function on `ℝⁿ × ℝⁿ` on the coordinate vectors of the first factor is the
 coordinate derivative of the slice in the first variable. -/

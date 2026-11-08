@@ -52,25 +52,15 @@ theorem continuous_fourier_slice {P : Type*} [TopologicalSpace P] [FirstCountabl
     [LocallyCompactSpace P] {f : E × P → G} (hf : Continuous f) (hK : IsCompact K)
     (hfK : ∀ y ∉ K, ∀ η, f (y, η) = 0) :
     Continuous fun q : E × P ↦ 𝓕 (fun y ↦ f (y, q.2)) q.1 := by
-  simp only [Real.fourier_eq]
-  refine continuous_iff_continuousAt.2 fun q₀ ↦ ?_
-  obtain ⟨L, hL, hLq⟩ := exists_compact_mem_nhds q₀.2
-  obtain ⟨C, hC⟩ := (hK.prod hL).exists_bound_of_continuousOn hf.continuousOn
-  have hnhds : ∀ᶠ q : E × P in nhds q₀, q.2 ∈ L :=
-    (continuous_snd.tendsto q₀).eventually hLq
-  refine continuousAt_of_dominated (bound := K.indicator fun _ ↦ C)
-    (Filter.Eventually.of_forall fun q ↦ ((Real.continuous_fourierChar.comp
-      (by fun_prop)).smul (hf.comp (by fun_prop))).aestronglyMeasurable)
-    ?_ ((integrable_indicator_iff hK.measurableSet).2 (integrableOn_const hK.measure_lt_top.ne))
-    (ae_of_all _ fun y ↦ ((Real.continuous_fourierChar.comp (by fun_prop)).smul
-      (hf.comp (by fun_prop))).continuousAt)
-  filter_upwards [hnhds] with q hq
-  refine ae_of_all _ fun y ↦ ?_
-  rw [Circle.norm_smul]
-  by_cases hy : y ∈ K
-  · rw [Set.indicator_of_mem hy]
-    exact hC _ (Set.mk_mem_prod hy hq)
-  · rw [Set.indicator_of_notMem hy, hfK y hy, norm_zero]
+  have hF : (fun q : E × P ↦ 𝓕 (fun y ↦ f (y, q.2)) q.1) =
+      fun q ↦ ∫ y in K, 𝐞 (-⟪y, q.1⟫) • f (y, q.2) := by
+    funext q
+    rw [Real.fourier_eq]
+    exact (setIntegral_eq_integral_of_forall_compl_eq_zero fun y hy ↦ by
+      rw [hfK y hy, smul_zero]).symm
+  rw [hF]
+  exact continuous_parametric_integral_of_continuous
+    ((Real.continuous_fourierChar.comp (by fun_prop)).smul (hf.comp (by fun_prop))) hK
 
 /-- **Differentiation of `f̂(θ, ξ)` in the parameter.** For a `C¹` function `f` of a position and
 a parameter in `ℝⁿ`, vanishing for positions outside a compact set, the Fourier transform of the
@@ -129,9 +119,8 @@ theorem hasFDerivAt_fourier_slice {n : ℕ} {f : E × CoordinateSpace n → G} (
     refine ContinuousLinearMap.ext fun h ↦ ?_
     have hint := hcont'.integrable_of_hasCompactSupport (μ := volume) hsupp'
     rw [ContinuousLinearMap.integral_apply hint]
-    conv_rhs => rw [← (EuclideanSpace.basisFun (Fin n) ℝ).sum_repr h]
-    simp only [FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.smulRight_apply, map_sum,
-      map_smul, EuclideanSpace.basisFun_repr, EuclideanSpace.basisFun_apply,
+    conv_rhs => enter [2, y]; rw [ContinuousLinearMap.apply_eq_sum_single _ h]
+    simp only [FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.smulRight_apply,
       ContinuousLinearMap.comp_apply, PiLp.proj_apply]
     rw [integral_finsetSum (f := fun j y ↦
       h j • e y (fderiv ℝ (fun η ↦ f (y, η)) ξ (EuclideanSpace.single j 1))) _

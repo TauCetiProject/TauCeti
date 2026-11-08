@@ -443,6 +443,41 @@ theorem exists_bound_fderiv_coefficient (a : Symbol n V W m) (K : Set (Coordinat
   gcongr
   exact Finset.single_le_sum (fun i _ ↦ hC0 i) (Finset.mem_univ j)
 
+/-- The derivative of a symbol of order `m` in both variables is bounded by `C ⟨ξ⟩ ^ m` locally
+uniformly in the position. -/
+theorem exists_bound_fderiv_coefficient_prod (a : Symbol n V W m) (K : Set (CoordinateSpace n))
+    (hK : IsCompact K) :
+    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖fderiv ℝ a.coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
+  choose C hC0 hC using fun j ↦ (spatialDeriv j a).exists_bound_coefficient K hK
+  choose D hD0 hD using fun j ↦ (frequencyDeriv j a).exists_bound_coefficient K hK
+  set e := (EuclideanSpace.basisFun (Fin n) ℝ).toBasis
+  obtain ⟨E, hE0, hE⟩ := (e.prod e).exists_opNorm_le (F := V →L[ℂ] W)
+  have hS : 0 ≤ ∑ j, C j + ∑ j, D j :=
+    add_nonneg (Finset.sum_nonneg fun j _ ↦ hC0 j) (Finset.sum_nonneg fun j _ ↦ hD0 j)
+  refine ⟨E * (∑ j, C j + ∑ j, D j), mul_nonneg hE0.le hS, fun x hx ξ ↦ ?_⟩
+  have hdiff := (a.contDiff_coefficient.differentiable (by simp)) (x, ξ)
+  rw [mul_assoc]
+  refine hE (mul_nonneg hS (by positivity)) fun i ↦ ?_
+  rw [add_mul]
+  rcases i with j | j
+  · rw [Module.Basis.prod_apply, Sum.elim_inl, Function.comp_apply, LinearMap.inl_apply,
+      OrthonormalBasis.coe_toBasis, EuclideanSpace.basisFun_apply,
+      hdiff.fderiv_apply_single_zero, ← coefficient_spatialDeriv]
+    refine (hC j x hx ξ).trans (le_add_of_le_of_nonneg ?_
+      (mul_nonneg (Finset.sum_nonneg fun j _ ↦ hD0 j) (by positivity)))
+    gcongr
+    exact Finset.single_le_sum (fun i _ ↦ hC0 i) (Finset.mem_univ j)
+  · rw [Module.Basis.prod_apply, Sum.elim_inr, Function.comp_apply, LinearMap.inr_apply,
+      OrthonormalBasis.coe_toBasis, EuclideanSpace.basisFun_apply,
+      hdiff.fderiv_apply_zero_single, ← coefficient_frequencyDeriv]
+    refine (hD j x hx ξ).trans (le_add_of_nonneg_of_le
+      (mul_nonneg (Finset.sum_nonneg fun j _ ↦ hC0 j) (by positivity)) ?_)
+    calc D j * (1 + ‖ξ‖ ^ 2) ^ ((m - 1) / 2) ≤ D j * (1 + ‖ξ‖ ^ 2) ^ (m / 2) :=
+          mul_le_mul_of_nonneg_left (rpow_weight_le_rpow_weight ξ (by linarith)) (hD0 j)
+      _ ≤ _ := by
+          gcongr
+          exact Finset.single_le_sum (fun i _ ↦ hD0 i) (Finset.mem_univ j)
+
 theorem IsUniform.frequencyDeriv {a : Symbol n V W m} (ha : a.IsUniform) (j : Fin n) :
     (frequencyDeriv j a).IsUniform := by
   intro α β
