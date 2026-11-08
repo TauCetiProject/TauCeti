@@ -72,9 +72,8 @@ theorem exists_lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_add_
       (fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x v) = 0 := by
     funext x
     simp [pairOfPantsPerturbation_eq_zero_of_forall_le (hcore z hz) x]
-  have heq (z : ℝ × ℝ) := ω.constSmooth.hamiltonianCurvature_add_of_eq_zero_on hD.isClosed hU hDU
+  have heq (z : ℝ × ℝ) := ω.hamiltonianCurvature_add_of_eq_zero_on hD.isClosed hU hDU
     (hzero 1) (hzero Complex.I) (hs p hp) (ht p hp) z (u z)
-  simp only [hamiltonianCurvature_constSmooth] at heq
   calc
     _ ≤ (∫⁻ z, ‖ω.hamiltonianCurvature
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
@@ -86,16 +85,14 @@ theorem exists_lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_add_
       apply add_le_add
       · refine (setLIntegral_mono' hD.measurableSet.compl fun z hz ↦ ?_).trans
           (setLIntegral_le_lintegral _ _)
-        have h0 := ω.constSmooth.hamiltonianCurvature_eq_zero_of_notMem hD.isClosed
+        have h0 := ω.hamiltonianCurvature_eq_zero_of_notMem hD.isClosed
           (hs p hp) (ht p hp) hz (u z)
-        simp only [hamiltonianCurvature_constSmooth] at h0
         rw [heq, h0, add_zero]
       · refine (setLIntegral_mono' hD.measurableSet fun z hz ↦ ?_).trans
           (setLIntegral_le_lintegral _ _)
-        have h0 := ω.constSmooth.hamiltonianCurvature_eq_zero_of_eventuallyEq_zero
+        have h0 := ω.hamiltonianCurvature_eq_zero_of_eventuallyEq_zero
           (Filter.eventually_of_mem (hU.mem_nhds (hDU hz)) (hzero 1))
           (Filter.eventually_of_mem (hU.mem_nhds (hDU hz)) (hzero Complex.I)) (u z)
-        simp only [hamiltonianCurvature_constSmooth] at h0
         rw [heq, h0, zero_add]
     _ ≤ (∑ q, ENNReal.ofReal (B q)) + ENNReal.ofReal C :=
       add_le_add (ω.lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le hH hHs hB u)
