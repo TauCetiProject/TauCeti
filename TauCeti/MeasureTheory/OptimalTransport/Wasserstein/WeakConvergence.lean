@@ -114,17 +114,28 @@ end TauCeti
 
 namespace MeasureTheory.Measure
 
-/-- If an almost-everywhere measurable map moves almost every point by at most `δ`, and
-`δ < ε²`, then its pushforward is at most `ε` away in the Lévy--Prokhorov extended distance. -/
+/-- If an almost-everywhere measurable map moves almost every point by at most `δ`, then its
+pushforward is at most `δ` away in the Lévy--Prokhorov extended distance. -/
 theorem levyProkhorovEDist_map_le_of_edist_le
-    {Z : Type*} [PseudoMetricSpace Z] [SecondCountableTopology Z]
-    [MeasurableSpace Z] [BorelSpace Z]
-    (ρ : Measure Z) [IsProbabilityMeasure ρ] {F : Z → Z} (hF : AEMeasurable F ρ)
-    {δ ε : ℝ≥0∞} (hδ : ∀ᵐ z ∂ρ, edist z (F z) ≤ δ) (hε : δ < ε * ε) :
-    levyProkhorovEDist ρ (ρ.map F) ≤ ε := by
-  exact TauCeti.levyProkhorovEDist_le_of_wassersteinEDist_lt_mul_self measurable_edist
-    (by norm_num : (1 : ℝ≥0∞) ≤ 1)
-    ((TauCeti.wassersteinEDist_map_le_of_edist_le ρ hF hδ).trans_lt hε)
+    {Z : Type*} [PseudoEMetricSpace Z] [MeasurableSpace Z] [OpensMeasurableSpace Z]
+    (ρ : Measure Z) {F : Z → Z} (hF : AEMeasurable F ρ)
+    {δ : ℝ≥0∞} (hδ : ∀ᵐ z ∂ρ, edist z (F z) ≤ δ) :
+    levyProkhorovEDist ρ (ρ.map F) ≤ δ := by
+  refine levyProkhorovEDist_le_of_forall _ _ _ fun ε B hδε hε hB => ?_
+  have hmem : ∀ᵐ z ∂ρ, (z ∈ B → F z ∈ Metric.thickening ε.toReal B) ∧
+      (F z ∈ B → z ∈ Metric.thickening ε.toReal B) := by
+    filter_upwards [hδ] with z hz
+    have hlt : edist z (F z) < ENNReal.ofReal ε.toReal := by
+      rw [ENNReal.ofReal_toReal hε.ne]
+      exact hz.trans_lt hδε
+    exact ⟨fun h ↦ (Metric.mem_thickening_iff_exists_edist_lt _ _).mpr ⟨z, h, by rwa [edist_comm]⟩,
+      fun h ↦ (Metric.mem_thickening_iff_exists_edist_lt _ _).mpr ⟨F z, h, hlt⟩⟩
+  have hU : MeasurableSet (Metric.thickening ε.toReal B) := Metric.isOpen_thickening.measurableSet
+  constructor
+  · rw [Measure.map_apply_of_aemeasurable hF hU]
+    exact (measure_mono_ae (by filter_upwards [hmem] with z hz h using hz.1 h)).trans le_self_add
+  · rw [Measure.map_apply_of_aemeasurable hF hB]
+    exact (measure_mono_ae (by filter_upwards [hmem] with z hz h using hz.2 h)).trans le_self_add
 
 end MeasureTheory.Measure
 

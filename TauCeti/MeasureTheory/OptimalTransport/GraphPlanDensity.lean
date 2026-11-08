@@ -69,7 +69,7 @@ theorem exists_graphPlan_levyProkhorovEDist_lt (hπ : IsCoupling π μ ν)
   classical
   let u : ℕ → X := TopologicalSpace.denseSeq X
   have hu : DenseRange u := TopologicalSpace.denseRange_denseSeq X
-  let r : ℝ := ε * ε / 32
+  let r : ℝ := ε / 4
   have hr : 0 < r := by dsimp [r]; positivity
   have hidx : ∀ x : X, ∃ i, dist x (u i) < r :=
     fun x ↦ Metric.denseRange_iff.1 hu x r hr
@@ -89,17 +89,12 @@ theorem exists_graphPlan_levyProkhorovEDist_lt (hπ : IsCoupling π μ ν)
     have hcomp : (Prod.map u (id : Y → Y)) ∘ (Prod.map q id) = F := rfl
     simpa only [Measure.map_map hu' hq', hcomp] using
       congrArg (Measure.map (Prod.map u (id : Y → Y))) hqmap.symm
-  have hrbound : ENNReal.ofReal r < ENNReal.ofReal (ε / 4) * ENNReal.ofReal (ε / 4) := by
-    rw [← ENNReal.ofReal_mul (by positivity : 0 ≤ ε / 4)]
-    exact (ENNReal.ofReal_lt_ofReal_iff (by positivity : 0 < ε / 4 * (ε / 4))).2
-      (by dsimp [r]; nlinarith [sq_pos_of_pos hε])
   have hdistleft : levyProkhorovEDist π (π.map F) ≤ ENNReal.ofReal (ε / 4) :=
     π.levyProkhorovEDist_map_le_of_edist_le hF.aemeasurable (Filter.Eventually.of_forall hdist)
-      hrbound
   have hdistright : levyProkhorovEDist (graphPlan T μ) ((graphPlan T μ).map F) ≤
       ENNReal.ofReal (ε / 4) :=
     (graphPlan T μ).levyProkhorovEDist_map_le_of_edist_le hF.aemeasurable
-      (Filter.Eventually.of_forall hdist) hrbound
+      (Filter.Eventually.of_forall hdist)
   refine ⟨T, hT, ?_⟩
   calc
     levyProkhorovEDist π (graphPlan T μ) ≤
