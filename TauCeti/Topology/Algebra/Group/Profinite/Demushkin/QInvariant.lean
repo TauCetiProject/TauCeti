@@ -331,10 +331,16 @@ theorem demushkinQ_presentedProP_eq_zero_iff (hG : IsDemushkin p (presentedProP 
 
 include hw hr in
 /-- **The `q`-invariant of a one-relator Demushkin group vanishes exactly when the relator lies in
-the closed commutator subgroup** of the free pro-`p` group, for `p ∣ q`. -/
+the closed commutator subgroup** of the free pro-`p` group. The divisibility `p ∣ q` is automatic: a
+relator of a Demushkin presentation lies in the Frattini subgroup, so all its exponent sums are
+divisible by `p`. -/
 theorem demushkinQ_presentedProP_eq_zero_iff_mem_topologicalClosure_commutator
-    (hG : IsDemushkin p (presentedProP p X {r})) (hpq : (p : ℤ_[p]) ∣ q) :
+    (hG : IsDemushkin p (presentedProP p X {r})) :
     demushkinQ hG = 0 ↔ r ∈ (commutator (freeProP p X)).topologicalClosure := by
+  have hpq : (p : ℤ_[p]) ∣ q := by
+    have := freeProP.dvd_exponentSum_of_mem_proPFrattini p X
+      hG.mem_proPFrattini_of_presentedProP_singleton x₀
+    rwa [hr, Pi.smul_apply, hw, smul_eq_mul, mul_one] at this
   rw [demushkinQ_presentedProP_eq_zero_iff hw hr hG hpq,
     presentedProP.oneRelator_q_eq_zero_iff_mem_topologicalClosure_commutator r x₀ w hw q hr]
 
