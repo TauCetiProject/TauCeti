@@ -495,11 +495,6 @@ theorem IsManifoldNondegenerateCriticalPoint.contMDiffAt
     (h : IsManifoldNondegenerateCriticalPoint I f x) : ContMDiffAt I 𝓘(ℝ) 2 f x :=
   (isManifoldNondegenerateCriticalPoint_iff_criticalHessian.mp h).1
 
-/-- The differential of a function vanishes at a nondegenerate critical point. -/
-theorem IsManifoldNondegenerateCriticalPoint.mvfderiv_eq_zero
-    (h : IsManifoldNondegenerateCriticalPoint I f x) : mvfderiv I f x = 0 :=
-  (isManifoldNondegenerateCriticalPoint_iff_criticalHessian.mp h).2.1
-
 /-- At a critical point, differentiating `df(Y)` in a tangent direction computes the critical
 Hessian against `Y x`. The derivative of the vector field contributes nothing because `df = 0`.
 In particular this expression depends only on the value of `Y` at the point. -/
@@ -735,7 +730,7 @@ theorem manifoldMorseIndex_symm_eq_morseIndex_of_mem_maximalAtlas
     simpa only [OpenPartialHomeomorph.extend_source] using (e.extend I).map_target hv
   have hnd := isManifoldNondegenerateCriticalPoint_symm_of_mem_maximalAtlas he hv h
   rw [manifoldMorseIndex_eq_morseIndex_of_mem_maximalAtlas he hs hnd.contMDiffAt
-    hnd.mvfderiv_eq_zero, (e.extend I).right_inv hv]
+    (mem_criticalPoints.1 hnd.mem_criticalPoints), (e.extend I).right_inv hv]
 
 omit hx in
 /-- **Morse in a chart.** On a boundaryless manifold, a function `f` smooth at every point of a
