@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.GlobalExtension
 public import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.Compactness
 import TauCeti.Analysis.Sobolev.W1p.LocalCompactness
-import TauCeti.Analysis.Sobolev.W1p.UniformCompactness
 
 /-!
 # Rellich–Kondrachov on bounded Lipschitz domains
@@ -19,9 +18,8 @@ concerns the whole Sobolev space, with no vanishing boundary values. The boundar
 only through the extension operator `TauCeti.W1p.exists_extensionL_of_isLipschitzDomainWith`: the
 value map factors as extension to the whole space followed by restriction to `Ω`, and the latter is
 compact by local Rellich compactness (`TauCeti.W1p.isCompactOperator_valueL_restrictL`), since
-`closure Ω` is compact. At `p = ∞`, Arzelà–Ascoli for the uniformly bounded equi-Lipschitz
-whole-space representatives supplies the compact restriction
-(`TauCeti.W1p.isCompactOperator_valueL_restrictL_top`).
+`closure Ω` is compact. At `p = ∞`, the local compactness theorem uses Arzelà–Ascoli for
+the uniformly bounded equi-Lipschitz whole-space representatives.
 
 Compactness then gives the Poincaré–Wirtinger inequality on bounded connected Lipschitz domains,
 with a constant that is not explicit.
@@ -59,11 +57,8 @@ theorem W1p.isCompactOperator_valueL_of_isLipschitzDomainWith
     IsCompactOperator (W1p.valueL (mu := volume) (Omega := Ω) (p := p)) := by
   obtain ⟨T, hT⟩ := W1p.exists_extensionL_of_isLipschitzDomainWith (p := p) hΩ hb
   have hK : IsCompactOperator
-      ((W1p.valueL (mu := volume) (Omega := Ω) (p := p)).comp (W1p.restrictL le_top)) := by
-    by_cases hp : p = ∞
-    · subst p
-      exact W1p.isCompactOperator_valueL_restrictL_top hb.isCompact_closure (subset_univ _)
-    · exact W1p.isCompactOperator_valueL_restrictL hp hb.isCompact_closure (subset_univ _)
+      ((W1p.valueL (mu := volume) (Omega := Ω) (p := p)).comp (W1p.restrictL le_top)) :=
+    W1p.isCompactOperator_valueL_restrictL hb.isCompact_closure (subset_univ _)
   -- The value map is the value of the restriction of the extension.
   have heq : W1p.valueL (mu := volume) (Omega := Ω) (p := p) =
       ((W1p.valueL (mu := volume) (Omega := Ω) (p := p)).comp (W1p.restrictL le_top)).comp T := by
