@@ -55,12 +55,17 @@ In the namespace `TauCeti.SmoothEmbedding`:
 
 * `IsCriticalSubmanifold.normalHessian_apply_self_neg` and
   `IsCriticalSubmanifold.normalHessian_apply_self_pos`: definiteness of the normal Hessian.
-* `IsCriticalSubmanifold.normalHessian_eq_zero` and
-  `IsCriticalSubmanifold.normalRiemannianMetric_inner_eq_zero`: the negative and positive normal
-  spaces are orthogonal for the normal Hessian and for the normal metric.
+* `normalHessian_eq_zero_of_mem_negativeNormalSpace_of_mem_positiveNormalSpace` and
+  `normalRiemannianMetric_inner_eq_zero_of_mem_negativeNormalSpace_of_mem_positiveNormalSpace`, in
+  the namespace `IsCriticalSubmanifold`: the negative and positive normal spaces are orthogonal for
+  the normal Hessian and for the normal metric.
+* `IsCriticalSubmanifold.pointSpectralSubspace_le_orthogonal`: the eigenvectors of `Hess♯` with
+  nonzero eigenvalues are orthogonal to the tangent space of a critical submanifold.
 * `IsCriticalSubmanifold.finrank_negativeNormalSpace` and
   `IsCriticalSubmanifold.finrank_positiveNormalSpace`: the dimensions are the Morse indices of `f`
   and of `-f`.
+* `IsNondegenerateCriticalSubmanifold.pointSpectralSubspace_singleton_zero`: for a Morse–Bott
+  submanifold the zero eigenspace of `Hess♯` is its tangent space.
 * `IsNondegenerateCriticalSubmanifold.sup_pointSpectralSubspace_eq_orthogonal`: for a Morse–Bott
   submanifold the two eigenvector spans together span the orthogonal complement of its tangent
   space.
@@ -148,11 +153,8 @@ theorem mem_positiveNormalSpace_iff {s : S} {p : i.NormalSpace s hn} :
           TangentSpace I (i s) →ₗ[ℝ] TangentSpace I (i s)) (Ioi 0), i.normalClass s hn v = p := by
   rw [positiveNormalSpace_def, Submodule.mem_map]
 
-/-- Negative and positive real numbers form disjoint sets. -/
-private theorem disjoint_Iio_Ioi : Disjoint (Iio (0 : ℝ)) (Ioi 0) :=
-  (Iic_disjoint_Ioi le_rfl).mono_left Iio_subset_Iic_self
-
 /-- The negative normal space of `-f` is the positive normal space of `f`. -/
+@[simp]
 theorem negativeNormalSpace_neg (s : S) :
     i.negativeNormalSpace (-f) s hn = i.positiveNormalSpace f s hn := by
   rw [negativeNormalSpace_def, positiveNormalSpace_def, criticalHessian_neg,
@@ -160,6 +162,7 @@ theorem negativeNormalSpace_neg (s : S) :
     pointSpectralSubspace_neg, neg_Iio, neg_zero]
 
 /-- The positive normal space of `-f` is the negative normal space of `f`. -/
+@[simp]
 theorem positiveNormalSpace_neg (s : S) :
     i.positiveNormalSpace (-f) s hn = i.negativeNormalSpace f s hn := by
   rw [← negativeNormalSpace_neg, neg_neg]
@@ -185,7 +188,7 @@ private theorem tangentRange_le_pointSpectralSubspace_zero (s : S) :
 
 /-- The eigenvectors of the Riesz operator of the critical Hessian with nonzero eigenvalues are
 orthogonal to the tangent space of a critical submanifold. -/
-private theorem pointSpectralSubspace_le_orthogonal {Ω : Set ℝ} (hΩ : 0 ∉ Ω) (s : S) :
+theorem pointSpectralSubspace_le_orthogonal {Ω : Set ℝ} (hΩ : 0 ∉ Ω) (s : S) :
     pointSpectralSubspace
       (continuousLinearMapOfBilin (criticalHessian I f (i s)) :
         TangentSpace I (i s) →ₗ[ℝ] TangentSpace I (i s)) Ω ≤ (i.tangentRange s hn)ᗮ :=
@@ -201,11 +204,10 @@ private theorem injOn_normalClass {Ω : Set ℝ} (hΩ : 0 ∉ Ω) (s : S) :
         TangentSpace I (i s) →ₗ[ℝ] TangentSpace I (i s)) Ω) := by
   intro u hu w hw huw
   have hle := h.pointSpectralSubspace_le_orthogonal hn hΩ s
-  rw [normalClass_eq_iff] at huw
-  have hsub : u - w ∈ (i.tangentRange s hn)ᗮ := sub_mem (hle hu) (hle hw)
-  have hbot : u - w ∈ i.tangentRange s hn ⊓ (i.tangentRange s hn)ᗮ := ⟨huw, hsub⟩
-  rw [Submodule.inf_orthogonal_eq_bot, Submodule.mem_bot] at hbot
-  exact sub_eq_zero.mp hbot
+  -- Both vectors are orthogonal to the tangent space, so they are the normal representative of
+  -- their common class.
+  rw [← (i.normalRepresentative_eq_iff s hn _ u).mpr ⟨hle hu, rfl⟩,
+    ← (i.normalRepresentative_eq_iff s hn _ w).mpr ⟨hle hw, huw.symm⟩]
 
 /-- **The normal Hessian is negative definite on the negative normal space.** -/
 theorem normalHessian_apply_self_neg {s : S} {p : i.NormalSpace s hn}
@@ -224,18 +226,20 @@ theorem normalHessian_apply_self_pos {s : S} {p : i.NormalSpace s hn}
     (criticalHessian_apply_swap (h.contMDiffAt s)) hv (by rintro rfl; exact hp0 (map_zero _))
 
 /-- The negative and positive normal spaces are orthogonal for the normal Hessian. -/
-theorem normalHessian_eq_zero {s : S} {p q : i.NormalSpace s hn}
+theorem normalHessian_eq_zero_of_mem_negativeNormalSpace_of_mem_positiveNormalSpace
+    {s : S} {p q : i.NormalSpace s hn}
     (hp : p ∈ i.negativeNormalSpace f s hn) (hq : q ∈ i.positiveNormalSpace f s hn) :
     h.normalHessian hn s p q = 0 := by
   obtain ⟨v, hv, rfl⟩ := mem_negativeNormalSpace_iff hn |>.mp hp
   obtain ⟨w, hw, rfl⟩ := mem_positiveNormalSpace_iff hn |>.mp hq
   rw [normalHessian_normalClass]
   exact apply_eq_zero_of_mem_pointSpectralSubspace (criticalHessian_apply_swap (h.contMDiffAt s))
-    disjoint_Iio_Ioi hv hw
+    Ioi_disjoint_Iio_same.symm hv hw
 
 /-- The negative and positive normal spaces are orthogonal for the metric induced on the normal
 space, which pairs the orthogonal representatives of normal classes. -/
-theorem normalRiemannianMetric_inner_eq_zero {s : S} {p q : i.NormalSpace s hn}
+theorem normalRiemannianMetric_inner_eq_zero_of_mem_negativeNormalSpace_of_mem_positiveNormalSpace
+    {s : S} {p q : i.NormalSpace s hn}
     (hp : p ∈ i.negativeNormalSpace f s hn) (hq : q ∈ i.positiveNormalSpace f s hn) :
     (i.normalRiemannianMetric hn).inner s p q = 0 := by
   obtain ⟨v, hv, rfl⟩ := mem_negativeNormalSpace_iff hn |>.mp hp
@@ -249,7 +253,7 @@ theorem normalRiemannianMetric_inner_eq_zero {s : S} {p q : i.NormalSpace s hn}
       ⟨h.pointSpectralSubspace_le_orthogonal hn (lt_irrefl 0) s hw, rfl⟩
   rw [normalRiemannianMetric_inner, hv', hw']
   exact ((isSymmetric_continuousLinearMapOfBilin (criticalHessian_apply_swap (h.contMDiffAt s))
-    ).isOrtho_pointSpectralSubspace disjoint_Iio_Ioi).inner_eq hv hw
+    ).isOrtho_pointSpectralSubspace Ioi_disjoint_Iio_same.symm).inner_eq hv hw
 
 /-- **The dimension of the negative normal space is the Morse index.** -/
 theorem finrank_negativeNormalSpace (s : S) :
@@ -277,7 +281,7 @@ include h
 
 /-- At a point of a Morse–Bott critical submanifold, the tangent space of the submanifold is the
 zero eigenspace of the Riesz operator of the critical Hessian. -/
-private theorem pointSpectralSubspace_zero (s : S) :
+theorem pointSpectralSubspace_singleton_zero (s : S) :
     pointSpectralSubspace
       (continuousLinearMapOfBilin (criticalHessian I f (i s)) :
         TangentSpace I (i s) →ₗ[ℝ] TangentSpace I (i s)) {0} = i.tangentRange s hn := by
@@ -300,7 +304,7 @@ theorem sup_pointSpectralSubspace_eq_orthogonal (s : S) :
         (continuousLinearMapOfBilin (criticalHessian I f (i s)) :
           TangentSpace I (i s) →ₗ[ℝ] TangentSpace I (i s)) (Ioi 0) =
       (i.tangentRange s hn)ᗮ := by
-  rw [← h.pointSpectralSubspace_zero hn s,
+  rw [← h.pointSpectralSubspace_singleton_zero hn s,
     (isSymmetric_continuousLinearMapOfBilin (criticalHessian_apply_swap (h.contMDiffAt s))
       ).orthogonal_pointSpectralSubspace, ← pointSpectralSubspace_union, Iio_union_Ioi]
 
@@ -325,23 +329,16 @@ theorem isCompl_negativeNormalSpace_positiveNormalSpace (s : S) :
       (pointSpectralSubspace_mono subset_union_left hv) hwv
     subst hvw
     have hbot : w ∈ pointSpectralSubspace A (Iio 0) ⊓ pointSpectralSubspace A (Ioi 0) := ⟨hv, hw⟩
-    rw [(disjoint_pointSpectralSubspace disjoint_Iio_Ioi).eq_bot, Submodule.mem_bot]
+    rw [(disjoint_pointSpectralSubspace Ioi_disjoint_Iio_same.symm).eq_bot, Submodule.mem_bot]
       at hbot
     rw [hbot, map_zero]
-  · -- The two spans and the tangent space span the tangent space of `M`, and the quotient map
-    -- is surjective and kills the tangent space.
+  · -- The two spans together span the orthogonal complement of the tangent space, which
+    -- contains the normal representative of every normal class.
     rw [codisjoint_iff, negativeNormalSpace_def, positiveNormalSpace_def, ← Submodule.map_sup,
       h.sup_pointSpectralSubspace_eq_orthogonal hn s, eq_top_iff]
     rintro p -
-    obtain ⟨v, rfl⟩ := i.normalClass_surjective s hn p
-    refine Submodule.mem_map.mpr ⟨(i.tangentRange s hn)ᗮ.starProjection v,
-      Submodule.starProjection_apply_mem _ v, ?_⟩
-    rw [normalClass_eq_iff]
-    have hv := Submodule.sub_starProjection_mem_orthogonal (K := (i.tangentRange s hn)ᗮ) v
-    rw [Submodule.orthogonal_orthogonal_eq_closure,
-      (i.isClosed_tangentRange s hn).submodule_topologicalClosure_eq] at hv
-    rw [← neg_mem_iff, neg_sub]
-    exact hv
+    exact Submodule.mem_map.mpr ⟨i.normalRepresentative s hn p,
+      i.normalRepresentative_mem_orthogonal s hn p, i.normalClass_normalRepresentative s hn p⟩
 
 /-- The rank of the negative normal space is locally constant along a Morse–Bott critical
 submanifold, hence constant on each connected component. -/

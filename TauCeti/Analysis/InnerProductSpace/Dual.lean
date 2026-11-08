@@ -44,6 +44,10 @@ No inner product instance on the algebraic dual is installed.
   continuously on the sesquilinear form.
 * `InnerProductSpace.ker_continuousLinearMapOfBilin`: the Riesz operator of a form has the kernel
   of the form.
+* `InnerProductSpace.continuousLinearMapOfBilin_neg`: the Riesz operator of `-B` is the negative
+  of the Riesz operator of `B`.
+* `InnerProductSpace.isSymmetric_continuousLinearMapOfBilin`: the Riesz operator of a Hermitian
+  form is symmetric.
 * `InnerProductSpace.adjoint_continuousLinearMapOfBilin`: over `ℝ`, the adjoint of the Riesz
   operator represents the transposed form.
 * `ContinuousLinearMap.continuousLinearMapOfBilin_bilinearComp`: pulling a real bilinear form back
@@ -110,6 +114,23 @@ theorem ker_continuousLinearMapOfBilin (B : E →L⋆[𝕜] E →L[𝕜] 𝕜) :
     (continuousLinearMapOfBilin B).ker = B.ker := by
   ext u
   simp [continuousLinearMapOfBilin]
+
+/-- The Riesz operator of `-B` is the negative of the Riesz operator of `B`. -/
+@[simp]
+theorem continuousLinearMapOfBilin_neg (B : E →L⋆[𝕜] E →L[𝕜] 𝕜) :
+    continuousLinearMapOfBilin (-B) = -continuousLinearMapOfBilin B := by
+  ext u
+  refine ext_inner_right 𝕜 fun w ↦ ?_
+  simp only [continuousLinearMapOfBilin_apply, neg_apply, inner_neg_left]
+
+/-- The Riesz operator of a Hermitian sesquilinear form is symmetric. Over `ℝ` the hypothesis
+says that the form is symmetric. -/
+theorem isSymmetric_continuousLinearMapOfBilin {B : E →L⋆[𝕜] E →L[𝕜] 𝕜}
+    (hB : ∀ u v, starRingEnd 𝕜 (B u v) = B v u) :
+    (continuousLinearMapOfBilin B : E →ₗ[𝕜] E).IsSymmetric := fun u v ↦ by
+  simp only [ContinuousLinearMap.coe_coe]
+  rw [continuousLinearMapOfBilin_apply, ← inner_conj_symm u, continuousLinearMapOfBilin_apply,
+    hB v u]
 
 /-- Evaluating functionals at each other's Riesz representatives is conjugate-symmetric:
 `β(α♯) = conj (α(β♯))`. Over `ℝ` this says `β(α♯) = α(β♯)`. -/

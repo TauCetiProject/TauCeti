@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.QuadraticForm.Signature
+public import TauCeti.Analysis.InnerProductSpace.Dual
 public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
 
 /-!
@@ -29,15 +30,13 @@ critical submanifold, where `B` is the normal Hessian and the inner product is a
 
 ## Main results
 
-* `InnerProductSpace.isSymmetric_continuousLinearMapOfBilin`: the Riesz operator of a symmetric
-  form is symmetric.
-* `InnerProductSpace.continuousLinearMapOfBilin_neg`: the Riesz operator of `-B` is `-B♯`, so
-  negating `B` exchanges its negative and positive point-spectral subspaces.
 * `InnerProductSpace.apply_eq_zero_of_mem_pointSpectralSubspace`: point-spectral subspaces for
   disjoint sets of eigenvalues are `B`-orthogonal.
 * `InnerProductSpace.apply_self_neg_of_mem_pointSpectralSubspace_Iio` and
   `InnerProductSpace.apply_self_pos_of_mem_pointSpectralSubspace_Ioi`: `B` is negative definite
   on the negative and positive definite on the positive point-spectral subspace.
+* `InnerProductSpace.apply_self_nonneg_of_mem_pointSpectralSubspace_Ici`: `B` is positive
+  semidefinite on the nonnegative point-spectral subspace.
 * `InnerProductSpace.finrank_pointSpectralSubspace_Iio_zero` and
   `InnerProductSpace.finrank_pointSpectralSubspace_Ioi_zero`: their dimensions are the indices of
   inertia `sigNeg` and `sigPos` of `B`.
@@ -57,19 +56,6 @@ namespace InnerProductSpace
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteSpace V]
   {B : V →L[ℝ] V →L[ℝ] ℝ}
-
-/-- The Riesz operator of a symmetric bilinear form is symmetric. -/
-theorem isSymmetric_continuousLinearMapOfBilin (hB : ∀ u v, B u v = B v u) :
-    (continuousLinearMapOfBilin B : V →ₗ[ℝ] V).IsSymmetric := fun u v ↦ by
-  simp only [ContinuousLinearMap.coe_coe]
-  rw [continuousLinearMapOfBilin_apply, real_inner_comm, continuousLinearMapOfBilin_apply, hB]
-
-/-- The Riesz operator of `-B` is the negative of the Riesz operator of `B`. -/
-theorem continuousLinearMapOfBilin_neg :
-    continuousLinearMapOfBilin (-B) = -continuousLinearMapOfBilin B := by
-  ext u
-  refine ext_inner_right ℝ fun w ↦ ?_
-  simp only [continuousLinearMapOfBilin_apply, neg_apply, inner_neg_left]
 
 /-- Point-spectral subspaces of the Riesz operator of a symmetric form `B`, selected by disjoint
 sets of eigenvalues, are orthogonal for `B`. -/
@@ -128,7 +114,7 @@ theorem apply_self_pos_of_mem_pointSpectralSubspace_Ioi (hB : ∀ u v, B u v = B
 
 /-- A symmetric form is positive semidefinite on the point-spectral subspace of its Riesz operator
 spanned by the eigenvectors with nonnegative eigenvalues. -/
-private theorem apply_self_nonneg_of_mem_pointSpectralSubspace_Ici (hB : ∀ u v, B u v = B v u)
+theorem apply_self_nonneg_of_mem_pointSpectralSubspace_Ici (hB : ∀ u v, B u v = B v u)
     {v : V} (hv : v ∈ pointSpectralSubspace (continuousLinearMapOfBilin B : V →ₗ[ℝ] V) (Ici 0)) :
     0 ≤ B v v := by
   have hle := (isSymmetric_continuousLinearMapOfBilin hB).le_re_inner_apply_self_of_pointSpectrumIn
@@ -169,7 +155,9 @@ theorem finrank_pointSpectralSubspace_Ioi_zero (hB : ∀ u v, B u v = B v u) :
   have h := finrank_pointSpectralSubspace_Iio_zero hneg
   rw [continuousLinearMapOfBilin_neg, ContinuousLinearMap.toLinearMap_neg,
     pointSpectralSubspace_neg, neg_Iio, neg_zero] at h
-  rw [h, ← sigNeg_neg]
-  congr 1
+  have hQ : (-B).toBilinForm.toQuadraticMap = -B.toBilinForm.toQuadraticMap := by
+    ext v
+    simp
+  rw [h, ← sigNeg_neg, hQ]
 
 end InnerProductSpace
