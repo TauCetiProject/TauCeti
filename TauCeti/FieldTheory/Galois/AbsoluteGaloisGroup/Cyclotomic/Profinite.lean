@@ -73,6 +73,8 @@ theorem profiniteCyclotomicCharacter_spec (n : ℕ+) (σ : Field.absoluteGaloisG
     σ.toRingEquiv ζ =
       ζ ^ (zHat.toZMod n (profiniteCyclotomicCharacter K σ : Additive zHat)).val := by
   rw [toZMod_coe_profiniteCyclotomicCharacter]
+  -- The underlying ring element of `mkOfPowEq ζ hζ` is definitionally `ζ`
+  -- (`rootsOfUnity.coe_mkOfPowEq`), so the unit-root specification applies to `ζ`.
   exact modularCyclotomicCharacter.spec (AlgebraicClosure K)
     (HasEnoughRootsOfUnity.natCard_rootsOfUnity _ n) σ.toRingEquiv
     (rootsOfUnity.mkOfPowEq ζ hζ).property
@@ -88,6 +90,9 @@ theorem map_component_profiniteCyclotomicCharacter (ℓ : ℕ) [Fact ℓ.Prime]
   intro r
   rw [Units.coe_map, MonoidHom.coe_ofClass, zHat.toZModPow_component,
     localCyclotomicCharacter_apply, cyclotomicCharacter.toZModPow]
+  -- `Units.val (Units.map f u)` is definitionally `f (Units.val u)` (`Units.coe_map`).
+  -- The coercion of the positive level `⟨ℓ ^ r, _⟩` is definitionally `ℓ ^ r`
+  -- (`PNat.mk_coe`), including in the root-cardinality proof argument.
   exact congrArg Units.val (map_toZMod_profiniteCyclotomicCharacter K
     ⟨ℓ ^ r, pow_pos (Fact.out : ℓ.Prime).pos r⟩ σ)
 
