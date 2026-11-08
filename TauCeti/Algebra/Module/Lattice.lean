@@ -240,14 +240,16 @@ namespace Submodule
 section Rationalization
 
 variable {R : Type u} {K : Type v} {V' : Type w}
-variable [CommRing R] [IsDomain R]
+variable [CommRing R]
 variable [Field K] [Algebra R K] [IsFractionRing R K]
 variable [AddCommGroup V'] [Module R V'] [Module K V'] [IsScalarTower R K V']
 
-/-- The inclusion of a free full lattice submodule over an integral domain into its ambient vector
-space over the fraction field exhibits that space as base change from `R` to `K`. -/
+/-- The inclusion of a free full lattice submodule into its ambient vector space over the fraction
+field exhibits that space as base change from `R` to `K`. (`R` is a domain anyway, embedding in
+the field `K`, so no domain hypothesis is needed.) -/
 theorem isBaseChange_subtype (S : Submodule R V') [Module.Free R S] [S.IsLattice K] :
     IsBaseChange K S.subtype := by
+  have : IsDomain R := (IsFractionRing.injective R K).isDomain (algebraMap R K)
   have : Module.IsTorsionFree R K :=
     Module.isTorsionFree_iff_algebraMap_injective.2 (IsFractionRing.injective R K)
   let b := Module.Free.chooseBasis R S
@@ -413,7 +415,7 @@ instance isLattice_range_mk_one [AddCommMonoid M] [Module R M] [Module.Finite R 
 end CommRing
 
 variable [CommRing R] [Field K] [Algebra R K] [IsFractionRing R K]
-variable [AddCommGroup M] [Module R M] [Module.Free R M] [IsDomain R] [Module.Finite R M]
+variable [AddCommGroup M] [Module R M] [Module.Free R M] [Module.Finite R M]
 
 /-- Rationalizing the unit-tensor lattice recovers the scalar extension it sits in: base-changing
 the unit-tensor equivalence and then rationalizing is the identity. -/
