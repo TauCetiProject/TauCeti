@@ -200,8 +200,10 @@ theorem mk_trace_quotientPiece_sup_span_singleton [∀ n, Module.Finite k (𝒜 
   let e := (Ideal.quotientEquivAlgOfEq k hspan).trans
     (DoubleQuot.quotQuotEquivQuotSupₐ k I (Ideal.span {f}))
   -- Both equivalences send a class of a class to the class of the same element.
-  have he (x : A) : e (Ideal.Quotient.mk _ (Ideal.Quotient.mk I x)) = Ideal.Quotient.mk _ x :=
-    rfl
+  have he (x : A) : e (Ideal.Quotient.mk _ (Ideal.Quotient.mk I x)) = Ideal.Quotient.mk _ x := by
+    simp only [e, AlgEquiv.trans_apply, Ideal.quotientEquivAlgOfEq_mk,
+      DoubleQuot.coe_quotQuotEquivQuotSupₐ]
+    exact DoubleQuot.quotQuotEquivQuotSup_quotQuotMk I (Ideal.span {f}) x
   let Q' := e.toLinearEquiv.symm.conj Q
   have hQ' (y : A ⧸ I) : Q' (Ideal.Quotient.mk _ y) = Ideal.Quotient.mk _ (Q₀ y) := by
     obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective y
@@ -217,7 +219,11 @@ theorem mk_trace_quotientPiece_sup_span_singleton [∀ n, Module.Finite k (𝒜 
   refine LinearMap.trace_restrict_eq_of_linearEquiv e.toLinearEquiv ?_ (fun y ↦ ?_) _ _
   · rw [← map_quotientPiece_quotientPiece 𝒜 I (Ideal.span {f}) n]
     simp only [quotientPiece_def, ← Submodule.map_comp]
-    rfl
+    apply congrArg (fun φ : A →ₗ[k] A ⧸ (I ⊔ Ideal.span {f}) ↦ (𝒜 n).map φ)
+    ext x
+    simp only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, AlgHom.toLinearMap_apply,
+      Ideal.Quotient.mkₐ_eq_mk, he, DoubleQuot.coe_quotQuotEquivQuotSupₐ]
+    exact (DoubleQuot.quotQuotEquivQuotSup_quotQuotMk I (Ideal.span {f}) x).symm
   · simp [Q', LinearEquiv.conj_apply]
 
 /-- Quotienting by a homogeneous weakly regular sequence multiplies the graded trace series by
