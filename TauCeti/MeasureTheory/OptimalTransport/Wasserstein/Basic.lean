@@ -596,7 +596,7 @@ theorem wassersteinEDist_dirac_left_ne_top (hd : Measurable fun z : X × X ↦ e
     (h : wassersteinEDist p (Measure.dirac x₀) ν ≠ ∞) :
     wassersteinEDist p (Measure.dirac x₁) ν ≠ ∞ := by
   obtain ⟨π, hπ⟩ := exists_isCoupling_of_wassersteinEDist_ne_top h
-  have : IsProbabilityMeasure ν := ⟨by rw [← hπ.measure_univ_eq]; simp⟩
+  have : IsProbabilityMeasure ν := hπ.isProbabilityMeasure_right
   rw [← memLp_edist_iff_wassersteinEDist_dirac_ne_top hd] at h ⊢
   exact (memLp_edist_iff_of_edist_ne_top
     (hd.comp (measurable_const.prodMk measurable_id)).aestronglyMeasurable
@@ -872,13 +872,13 @@ theorem hasFiniteMoment_iff_forall_hasFiniteMoment_iff_wassersteinEDist_ne_top
         (measurable_id.prodMk measurable_id).aemeasurable]
       exact eLpNorm_eq_zero_of_ae_zero (.of_forall fun x ↦ edist_self x))⟩
 
-/-- A probability law of finite weighted Wasserstein cost `∑ j ∈ s, w j * W_p(ν, μ j) ^ q` has
+/-- A measure of finite weighted Wasserstein cost `∑ j ∈ s, w j * W_p(ν, μ j) ^ q` has
 finite `p`-moment, provided some law `μ i` with `i ∈ s` of positive weight has finite `p`-moment
 and `0 < q`: the corresponding summand bounds `W_p(ν, μ i)`. -/
 theorem hasFiniteMoment_of_sum_mul_wassersteinEDist_rpow_ne_top
     (hd : Measurable fun z : X × X ↦ edist z.1 z.2) {ι : Type*} {s : Finset ι} {w : ι → ℝ≥0∞}
     {μ : ι → Measure X} {ν : Measure X} {i : ι} (hi : i ∈ s)
-    (hwi : w i ≠ 0) [IsProbabilityMeasure (μ i)] (hμ : HasFiniteMoment p (μ i)) {q : ℝ}
+    (hwi : w i ≠ 0) [IsFiniteMeasure (μ i)] (hμ : HasFiniteMoment p (μ i)) {q : ℝ}
     (hq : 0 < q) (h : ∑ j ∈ s, w j * wassersteinEDist p ν (μ j) ^ q ≠ ∞) :
     HasFiniteMoment p ν := by
   have hi' : w i * wassersteinEDist p ν (μ i) ^ q ≠ ∞ :=
@@ -887,9 +887,10 @@ theorem hasFiniteMoment_of_sum_mul_wassersteinEDist_rpow_ne_top
   have hW : wassersteinEDist p (μ i) ν ≠ ∞ := by
     rw [wassersteinEDist_comm hd]
     exact fun htop ↦ hi' (by rw [htop, ENNReal.top_rpow_of_pos hq, ENNReal.mul_top hwi])
-  obtain ⟨π, hπ⟩ := exists_isCoupling_of_wassersteinEDist_ne_top hW
-  have : IsProbabilityMeasure ν := ⟨by rw [← hπ.measure_univ_eq]; simp⟩
-  exact (hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment hd hμ).2 hW
+  obtain ⟨π, hπ, hπtop⟩ := wassersteinEDist_lt_iff.mp hW.lt_top
+  have : IsFiniteMeasure ν := ⟨by rw [← hπ.measure_univ_eq]; exact measure_lt_top _ _⟩
+  obtain ⟨x₀, hx₀⟩ := hasFiniteMoment_def.mp hμ
+  exact (memLp_edist_iff_hasFiniteMoment_of_isCoupling hd hπ hx₀).mp hπtop
 
 end Anchor
 
