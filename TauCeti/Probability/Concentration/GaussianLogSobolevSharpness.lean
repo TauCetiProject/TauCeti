@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Probability.Concentration.Poincare.LogSobolev
 import TauCeti.Analysis.SpecialFunctions.Exp.Half
+import TauCeti.Analysis.SpecialFunctions.Exp.Derivative
+import TauCeti.Probability.Distributions.Gaussian.Transforms
 public import Mathlib.Probability.Distributions.Gaussian.Real
 import Mathlib.Probability.Moments.SubGaussian
 
@@ -28,29 +30,6 @@ open scoped NNReal ContDiff
 
 namespace TauCeti.Probability
 
-private theorem gaussian_exp_integral (a : ℝ) :
-    ∫ x : ℝ, exp (a * x) ∂gaussianReal 0 1 = exp (a ^ 2 / 2) := by
-  have h := congrFun (mgf_fun_id_gaussianReal (μ := 0) (v := 1)) a
-  simpa [mgf] using h
-
-private theorem gaussian_x_exp_integral (a : ℝ) :
-    ∫ x : ℝ, x * exp (a * x) ∂gaussianReal 0 1 = a * exp (a ^ 2 / 2) := by
-  have ha : a ∈ interior (integrableExpSet (fun x : ℝ => x) (gaussianReal 0 1)) := by
-    simp
-  have h := deriv_mgf ha
-  rw [mgf_fun_id_gaussianReal] at h
-  have hd : HasDerivAt (fun t : ℝ => exp (0 * t + (1 : ℝ≥0) * t ^ 2 / 2))
-      (a * exp (a ^ 2 / 2)) a := by
-    convert ((hasDerivAt_id a).pow 2 |>.div_const 2).exp using 1 <;> simp; ring
-  rw [hd.deriv] at h
-  exact h.symm
-
-private theorem gaussian_x_exp_integrable (a : ℝ) :
-    Integrable (fun x : ℝ => x * exp (a * x)) (gaussianReal 0 1) := by
-  have ha : a ∈ interior (integrableExpSet (fun x : ℝ => x) (gaussianReal 0 1)) := by
-    simp
-  simpa using integrable_pow_mul_exp_of_mem_interior_integrableExpSet ha 1
-
 /-- The entropy of the squared exponential test under the standard Gaussian. -/
 theorem entropy_exp_half_sq_gaussianReal (a : ℝ) :
     (gaussianReal 0 1).entropy (fun x => exp (a * x / 2) ^ 2) =
@@ -67,26 +46,6 @@ theorem entropy_exp_half_sq_gaussianReal (a : ℝ) :
   rw [hint, gaussian_x_exp_integral]
   ring_nf
 
-private theorem deriv_exp_half (a x : ℝ) :
-    deriv (fun y : ℝ => exp (a * y / 2)) x = (a / 2) * exp (a * x / 2) := by
-  have h : HasDerivAt (fun y : ℝ => exp ((a / 2) * y))
-      ((a / 2) * exp ((a / 2) * x)) x := by
-    simpa [mul_comm] using ((hasDerivAt_id x).const_mul (a / 2)).exp
-  have hfun : (fun y : ℝ => exp (a * y / 2)) = fun y => exp ((a / 2) * y) := by
-    funext y
-    congr 1
-    ring
-  rw [hfun]
-  convert h.deriv using 1
-  congr 2
-  ring
-
-private theorem norm_fderiv_exp_half (a x : ℝ) :
-    ‖fderiv ℝ (fun y : ℝ => exp (a * y / 2)) x‖ =
-      |a / 2| * exp (a * x / 2) := by
-  rw [← norm_deriv_eq_norm_fderiv, deriv_exp_half, Real.norm_eq_abs, abs_mul,
-    abs_of_pos (exp_pos _)]
-
 /-- The gradient energy of the exponential test under the standard Gaussian. -/
 theorem integral_sq_norm_fderiv_exp_half_gaussianReal (a : ℝ) :
     (∫ x : ℝ, ‖fderiv ℝ (fun y : ℝ => exp (a * y / 2)) x‖ ^ 2 ∂gaussianReal 0 1) =
@@ -94,7 +53,13 @@ theorem integral_sq_norm_fderiv_exp_half_gaussianReal (a : ℝ) :
   have heq : (fun x : ℝ => ‖fderiv ℝ (fun y : ℝ => exp (a * y / 2)) x‖ ^ 2) =
       fun x => (a ^ 2 / 4) * exp (a * x) := by
     funext x
-    rw [norm_fderiv_exp_half, mul_pow, sq_abs, pow_two (exp (a * x / 2)),
+    have hfun : (fun y : ℝ => exp (a * y / 2)) = fun y => exp ((a / 2) * y) := by
+      funext y
+      congr 1
+      ring
+    rw [hfun, norm_fderiv_exp_mul]
+    have hx : (a / 2) * x = a * x / 2 := by ring
+    rw [hx, mul_pow, sq_abs, pow_two (exp (a * x / 2)),
       Real.exp_half_mul_exp_half]
     ring
   rw [heq, integral_const_mul, gaussian_exp_integral]
@@ -122,9 +87,11 @@ theorem one_le_of_logSobolevInequality_gaussianReal {C : ℝ}
     convert h using 1
     funext x
     dsimp [f]
-    rw [norm_fderiv_exp_half]
-    congr 2
-    ring
+    have hfun : (fun y : ℝ => exp (1 * y / 2)) = fun y => exp ((1 / 2) * y) := by
+      funext y
+      congr 1
+      ring
+    rw [hfun, norm_fderiv_exp_mul]
   have hf2 : Integrable (fun x => f x ^ 2) (gaussianReal 0 1) := by
     simp_rw [f, pow_two, Real.exp_half_mul_exp_half]
     exact integrable_exp_mul_gaussianReal 1
