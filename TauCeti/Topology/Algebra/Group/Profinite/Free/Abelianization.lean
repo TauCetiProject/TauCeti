@@ -359,6 +359,23 @@ theorem toAdd_exponentSum_apply_eq_sum_smul [Fintype X] {Y : Type v}
   rw [Function.comp_apply, ← ofAdd_toAdd (exponentSum p Y (φ (of x))), IsProP.padicPow_ofAdd_pi,
     toAdd_ofAdd, toAdd_ofAdd]
 
+/-- The abelianization isomorphism of the free pro-`p` group carries the `p`-adic powers of the
+class of `r` to the multiples of its exponent vector. -/
+@[simp]
+lemma abelianizationEquiv_padicPow_class (r : freeProP p X) (l : ℤ_[p]) :
+    abelianizationEquiv p X
+        ((isProP_freeProP p X).topologicalAbelianization_self.padicPow
+          (r : TopologicalAbelianization (freeProP p X)) l) =
+      ofAdd (l • (exponentSum p X r).toAdd) := by
+  have hερ : abelianizationEquiv p X (r : TopologicalAbelianization (freeProP p X)) =
+      ofAdd (exponentSum p X r).toAdd := by
+    rw [abelianizationEquiv_mk, ofAdd_toAdd]
+  have h := (isProP_freeProP p X).topologicalAbelianization_self.map_padicPow_pi
+    (abelianizationEquiv p X : TopologicalAbelianization
+      (freeProP p X) →ₜ* Multiplicative (X → ℤ_[p]))
+    (r : TopologicalAbelianization (freeProP p X)) l
+  rwa [ContinuousMonoidHom.coe_coe, hερ, toAdd_ofAdd] at h
+
 end freeProP
 
 end TauCeti
