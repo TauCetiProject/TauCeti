@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Carrier
+import TauCeti.LinearAlgebra.Matrix.Step
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Ring
 import Mathlib.LinearAlgebra.Matrix.Integer
@@ -78,8 +79,16 @@ private def gaussPatterns : List (Fin 14 → ℤ) := [
 
 private theorem gaussEntries_mem (i : Fin 4) (hi : 2 ≤ i.val) (r s : Fin 26) :
     gaussEntries i r s ∈ gaussPatterns := by
-  simp only [gaussEntries, Matrix.mul_apply, raisingMatrix_apply, loweringMatrix_apply,
+  -- Select the single nonzero column contribution before checking the finite certificate.
+  -- Expanding dense matrix sums here repeats the same zero arithmetic at every entry.
+  have hE := Matrix.isStep_of_apply (raisingMatrix_apply i)
+  have hF := Matrix.isStep_of_apply (loweringMatrix_apply i)
+  have hE2 := Matrix.isStep_of_apply (raisingDividedSquareMatrix_apply i)
+  have hF2 := Matrix.isStep_of_apply (loweringDividedSquareMatrix_apply i)
+  simp only [gaussEntries, hE.mul_right_apply, hF.mul_right_apply,
+    hE2.mul_right_apply, hF2.mul_right_apply, raisingMatrix_apply, loweringMatrix_apply,
     raisingDividedSquareMatrix_apply, loweringDividedSquareMatrix_apply, Matrix.one_apply]
+  clear hE hF hE2 hF2
   revert i r s
   decide +kernel
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Weyl.Basic
 public import Mathlib.GroupTheory.Coxeter.Basic
+import TauCeti.LinearAlgebra.Matrix.Step
 
 /-!
 # Braid relations for the short-root F₄ Weyl representatives
@@ -45,28 +46,67 @@ private def weylCoeff : Fin 4 → Fin 26 → ℤ := ![
 
 -- The extra entries record the two-dimensional zero-weight block, which is not monomial.
 private def weylMatrix (i : Fin 4) : Matrix (Fin 26) (Fin 26) ℤ :=
-  Matrix.of fun a b ↦ (if a = weylTarget i b then weylCoeff i b else 0) +
-    if i = 2 ∧ a = 13 ∧ b = 13 then 1 else
-      if i = 3 ∧ a = 13 ∧ b = 12 then -1 else 0
+  (Matrix.of fun a b ↦ if a = weylTarget i b then weylCoeff i b else 0) +
+    (Matrix.of fun a b ↦ if a = 13 then
+      (if i = 2 ∧ b = 13 then 1 else if i = 3 ∧ b = 12 then -1 else 0) else 0)
+
+private theorem mul_weylMatrix_apply (M : Matrix (Fin 26) (Fin 26) ℤ)
+    (i : Fin 4) (a b : Fin 26) :
+    (M * weylMatrix i) a b = M a (weylTarget i b) * weylCoeff i b +
+      M a 13 * (if i = 2 ∧ b = 13 then 1 else if i = 3 ∧ b = 12 then -1 else 0) := by
+  have h (t : Fin 26 → Fin 26) (c : Fin 26 → ℤ) :
+      (Matrix.of fun a b ↦ if a = t b then c b else 0).IsStep t c :=
+    Matrix.isStep_of_apply (fun _ _ ↦ rfl)
+  rw [weylMatrix, mul_add, Matrix.add_apply,
+    (h _ _).mul_right_apply, (h _ _).mul_right_apply]
 
 private def positiveMatrix (i : Fin 4) : Matrix (Fin 26) (Fin 26) ℤ :=
-  Matrix.of fun a b ↦ (if a = b then 1 else 0) +
-    (if a = raisingTarget i b then raisingCoeff i b else 0) +
-    (if a = raisingDividedSquareTarget i b then raisingDividedSquareCoeff i b else 0)
+  1 + raisingMatrix i + raisingDividedSquareMatrix i
 
 private def negativeMatrix (i : Fin 4) : Matrix (Fin 26) (Fin 26) ℤ :=
-  Matrix.of fun a b ↦ (if a = b then 1 else 0) -
-    (if a = loweringTarget i b then loweringCoeff i b else 0) +
-    (if a = loweringDividedSquareTarget i b then loweringDividedSquareCoeff i b else 0)
+  1 - loweringMatrix i + loweringDividedSquareMatrix i
 
 private theorem weylMatrix_certificate : ∀ i : Fin 4,
     positiveMatrix i * negativeMatrix i * positiveMatrix i = weylMatrix i := by
+  intro i
+  have hE := Matrix.isStep_of_apply (raisingMatrix_apply i)
+  have hF := Matrix.isStep_of_apply (loweringMatrix_apply i)
+  have hE2 := Matrix.isStep_of_apply (raisingDividedSquareMatrix_apply i)
+  have hF2 := Matrix.isStep_of_apply (loweringDividedSquareMatrix_apply i)
+  ext a b
+  simp only [positiveMatrix, negativeMatrix, add_mul, mul_add, sub_mul, mul_sub,
+    one_mul, mul_one, Matrix.add_apply, Matrix.sub_apply, hE.mul_right_apply,
+    hF.mul_right_apply, hE2.mul_right_apply, hF2.mul_right_apply,
+    raisingMatrix_apply, loweringMatrix_apply, raisingDividedSquareMatrix_apply,
+    loweringDividedSquareMatrix_apply, Matrix.one_apply, weylMatrix, Matrix.add_apply,
+    Matrix.of_apply]
+  clear hE hF hE2 hF2
+  revert i a b
   decide +kernel
 
-private theorem braid_certificate : ∀ i j : Fin 4,
+-- Only six unordered pairs need computation; diagonal cases and reversals are formal.
+private theorem braid_certificate_of_lt (i j : Fin 4) (hij : i < j) :
     ((CoxeterSystem.braidWord CoxeterMatrix.F₄ i j).map weylMatrix).prod =
       ((CoxeterSystem.braidWord CoxeterMatrix.F₄ j i).map weylMatrix).prod := by
-  decide +kernel
+  fin_cases i <;> fin_cases j <;> norm_num at hij
+  all_goals
+    simp only [CoxeterSystem.braidWord, CoxeterMatrix.F₄, Matrix.of_apply,
+      Fin.isValue, Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Matrix.cons_val,
+      CoxeterSystem.alternatingWord, List.map_concat, List.prod_concat,
+      List.map_nil, List.prod_nil, one_mul]
+    ext a b
+    simp only [mul_weylMatrix_apply]
+    simp only [weylMatrix, Matrix.add_apply, Matrix.of_apply]
+    revert a b
+    decide +kernel
+
+private theorem braid_certificate (i j : Fin 4) :
+    ((CoxeterSystem.braidWord CoxeterMatrix.F₄ i j).map weylMatrix).prod =
+      ((CoxeterSystem.braidWord CoxeterMatrix.F₄ j i).map weylMatrix).prod := by
+  rcases lt_trichotomy i j with hij | rfl | hji
+  · exact braid_certificate_of_lt i j hij
+  · rfl
+  · exact (braid_certificate_of_lt j i hji).symm
 
 private theorem coe_simpleWeylPoint_int (i : Fin 4) :
     ((simpleWeylPoint i ℤ : Matrix.GeneralLinearGroup (Fin 26) ℤ) :
@@ -76,13 +116,13 @@ private theorem coe_simpleWeylPoint_int (i : Fin 4) :
         positiveMatrix i := by
     rw [coe_rootSubgroupPoints_inl]
     ext a b
-    simp [positiveMatrix, Matrix.one_apply]
+    simp [positiveMatrix]
   have hn : ((rootSubgroupPoints (.inr i) ℤ (Multiplicative.ofAdd (-1)) :
       Matrix.GeneralLinearGroup (Fin 26) ℤ) : Matrix (Fin 26) (Fin 26) ℤ) =
         negativeMatrix i := by
     rw [coe_rootSubgroupPoints_inr]
     ext a b
-    simp [negativeMatrix, Matrix.one_apply, sub_eq_add_neg]
+    simp [negativeMatrix, sub_eq_add_neg]
   simpa only [simpleWeylPoint_def, Subgroup.coe_mul, Matrix.GeneralLinearGroup.coe_mul,
     hp, hn] using weylMatrix_certificate i
 
