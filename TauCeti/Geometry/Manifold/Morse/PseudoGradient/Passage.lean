@@ -37,6 +37,9 @@ applied to the flow of an adapted pseudo-gradient on a compact manifold.
   face to its image under the passage map, at the exit time.
 * `TauCeti.IsAdaptedPseudoGradient.flow_splitEntryTime`: backward in time, the flow carries a point
   of the exit face to its image under the inverse passage map, at the entry time.
+* `TauCeti.IsAdaptedPseudoGradient.flow_splitEntryTime_of_norm_lt` and
+  `TauCeti.IsAdaptedPseudoGradient.flow_splitExitTime_of_norm_lt`: near the entrance and exit
+  faces, the flow at the model entry and exit times is the split hyperbolic flow.
 
 ## References
 
@@ -133,6 +136,101 @@ theorem flow_splitEntryTime (hX : IsAdaptedPseudoGradient f X) (φ : MorseChart 
   obtain ⟨-, -, hxε⟩ := mem_splitPassage_target.1 hw
   rw [uIcc_of_ge (splitEntryTime_nonpos hxε)] at hs
   exact (norm_fst_le_and_norm_snd_le_iff_of_mem_splitPassage_target hw).2 hs
+
+/-- **Entering the Morse box.** Let `X` be linear in the Morse chart `φ`, whose coordinate cube of
+radius `2 ε` lies in the chart. Near the entrance face, at a point `w` whose contracting split
+coordinate has norm less than `2 ε` and whose expanding one has norm less than `ε`, the flow of `X`
+at the model entry time is the split hyperbolic flow. -/
+theorem flow_splitEntryTime_of_norm_lt (hX : IsAdaptedPseudoGradient f X) (φ : MorseChart E f x)
+    (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
+      fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
+    {ε : ℝ} (hε : 0 < ε) (hε₂ : ∀ z, ‖z‖ ≤ 2 * ε → φ.coord.symm z ∈ φ.toChart.target)
+    {w : M} (hw : w ∈ φ.toChart.source)
+    (hfst : ‖(φ.splitCoord (φ.coord (φ.toChart w))).fst‖ < 2 * ε)
+    (hsnd : ‖(φ.splitCoord (φ.coord (φ.toChart w))).snd‖ < ε) :
+    hX.flow (splitEntryTime ε (φ.splitCoord (φ.coord (φ.toChart w)))) w =
+      φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm (splitQuadraticFlow
+        (splitEntryTime ε (φ.splitCoord (φ.coord (φ.toChart w))))
+        (φ.splitCoord (φ.coord (φ.toChart w)))))) := by
+  set z := φ.splitCoord (φ.coord (φ.toChart w))
+  have hwz : φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z)) = w := by
+    rw [LinearEquiv.symm_apply_apply, φ.toChart_symm_coord_symm_coord hw]
+  conv_lhs => rw [← hwz]
+  refine hX.flow_toChart_symm_splitCoord_symm φ hφ hε₂ fun s hs ↦ ?_
+  -- Bound `exp s` and `exp (-s)` on the time interval between `0` and `t`.
+  have hs₁ := (Real.exp_monotone.image_uIcc_subset (mem_image_of_mem _ hs)).2
+  have hs₂ := ((Real.exp_monotone.comp_antitone fun _ _ h ↦ neg_le_neg h).image_uIcc_subset
+    (mem_image_of_mem _ hs)).2
+  simp only [Function.comp_apply, neg_zero, Real.exp_zero] at hs₁ hs₂
+  rw [norm_fst_splitQuadraticFlow, norm_snd_splitQuadraticFlow]
+  rcases (norm_nonneg z.fst).eq_or_lt with h0 | h0
+  · have : s = 0 := by simpa [splitEntryTime_def, ← h0] using hs
+    subst this
+    simp only [neg_zero, Real.exp_zero, one_mul]
+    constructor <;> linarith
+  have hexp : Real.exp (splitEntryTime ε z) = ‖z.fst‖ / ε := by
+    rw [splitEntryTime_def]; exact Real.exp_log (by positivity)
+  rw [hexp] at hs₁
+  rw [Real.exp_neg (splitEntryTime ε z), hexp, inv_div] at hs₂
+  constructor
+  · calc Real.exp (-s) * ‖z.fst‖ ≤ max 1 (ε / ‖z.fst‖) * ‖z.fst‖ := by gcongr
+      _ ≤ 2 * ε := by
+        rcases le_total 1 (ε / ‖z.fst‖) with h | h
+        · rw [max_eq_right h, div_mul_cancel₀ _ h0.ne']; linarith
+        · rw [max_eq_left h]; linarith
+  · calc Real.exp s * ‖z.snd‖ ≤ max 1 (‖z.fst‖ / ε) * ‖z.snd‖ := by gcongr
+      _ ≤ 2 * ε := by
+        have : max 1 (‖z.fst‖ / ε) ≤ 2 :=
+          max_le one_le_two ((div_le_iff₀ hε).2 (by linarith))
+        nlinarith [norm_nonneg z.snd]
+
+
+/-- **Leaving the Morse box.** Let `X` be linear in the Morse chart `φ`, whose coordinate cube of
+radius `2 ε` lies in the chart. Near the exit face, at a point `w` whose expanding split
+coordinate has norm less than `2 ε` and whose contracting one has norm less than `ε`, the flow of
+`X` at the model exit time is the split hyperbolic flow. -/
+theorem flow_splitExitTime_of_norm_lt (hX : IsAdaptedPseudoGradient f X) (φ : MorseChart E f x)
+    (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
+      fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
+    {ε : ℝ} (hε : 0 < ε) (hε₂ : ∀ z, ‖z‖ ≤ 2 * ε → φ.coord.symm z ∈ φ.toChart.target)
+    {w : M} (hw : w ∈ φ.toChart.source)
+    (hfst : ‖(φ.splitCoord (φ.coord (φ.toChart w))).fst‖ < ε)
+    (hsnd : ‖(φ.splitCoord (φ.coord (φ.toChart w))).snd‖ < 2 * ε) :
+    hX.flow (splitExitTime ε (φ.splitCoord (φ.coord (φ.toChart w)))) w =
+      φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm (splitQuadraticFlow
+        (splitExitTime ε (φ.splitCoord (φ.coord (φ.toChart w))))
+        (φ.splitCoord (φ.coord (φ.toChart w)))))) := by
+  set z := φ.splitCoord (φ.coord (φ.toChart w))
+  have hwz : φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z)) = w := by
+    rw [LinearEquiv.symm_apply_apply, φ.toChart_symm_coord_symm_coord hw]
+  conv_lhs => rw [← hwz]
+  refine hX.flow_toChart_symm_splitCoord_symm φ hφ hε₂ fun s hs ↦ ?_
+  -- Bound `exp s` and `exp (-s)` on the time interval between `0` and `t`.
+  have hs₁ := (Real.exp_monotone.image_uIcc_subset (mem_image_of_mem _ hs)).2
+  have hs₂ := ((Real.exp_monotone.comp_antitone fun _ _ h ↦ neg_le_neg h).image_uIcc_subset
+    (mem_image_of_mem _ hs)).2
+  simp only [Function.comp_apply, neg_zero, Real.exp_zero] at hs₁ hs₂
+  rw [norm_fst_splitQuadraticFlow, norm_snd_splitQuadraticFlow]
+  rcases (norm_nonneg z.snd).eq_or_lt with h0 | h0
+  · have : s = 0 := by simpa [splitExitTime_def, ← h0] using hs
+    subst this
+    simp only [neg_zero, Real.exp_zero, one_mul]
+    constructor <;> linarith
+  have hexp : Real.exp (splitExitTime ε z) = ε / ‖z.snd‖ := by
+    rw [splitExitTime_def]; exact Real.exp_log (by positivity)
+  rw [hexp] at hs₁
+  rw [Real.exp_neg (splitExitTime ε z), hexp, inv_div] at hs₂
+  constructor
+  · calc Real.exp (-s) * ‖z.fst‖ ≤ max 1 (‖z.snd‖ / ε) * ‖z.fst‖ := by gcongr
+      _ ≤ 2 * ε := by
+        have : max 1 (‖z.snd‖ / ε) ≤ 2 :=
+          max_le one_le_two ((div_le_iff₀ hε).2 (by linarith))
+        nlinarith [norm_nonneg z.fst]
+  · calc Real.exp s * ‖z.snd‖ ≤ max 1 (ε / ‖z.snd‖) * ‖z.snd‖ := by gcongr
+      _ ≤ 2 * ε := by
+        rcases le_total 1 (ε / ‖z.snd‖) with h | h
+        · rw [max_eq_right h, div_mul_cancel₀ _ h0.ne']; linarith
+        · rw [max_eq_left h]; linarith
 
 end IsAdaptedPseudoGradient
 
