@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.ConstMulAction
 public import Mathlib.Topology.Algebra.MulAction
 public import Mathlib.Topology.FiberBundle.Trivialization
 public import TauCeti.Topology.Algebra.Group.Quotient.LocalSection
+import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 
 /-!
 # Trivializations of orbit projections from equivariant maps
@@ -39,8 +40,6 @@ the stabilizer; see Steenrod, *The Topology of Fibre Bundles*, §7.
   and its inverse.
 * `TauCeti.orbitTrivialization_apply_smul`: the chart intertwines the action on `X` with left
   multiplication on the fibre `G`.
-* `TauCeti.smul_eq_smul_iff_inv_mul_mem_stabilizer`: two group elements carry `x₀` to the same
-  point exactly when they differ on the right by an element of the stabilizer of `x₀`.
 * `TauCeti.orbitMapTrivialization`: the trivialization of the orbit map `g ↦ g • x₀` over an open
   set, with fibre the stabilizer of `x₀`, determined by a continuous local section.
 * `TauCeti.orbitMapTrivialization_apply_mul`: it intertwines right multiplication by the
@@ -145,13 +144,6 @@ end TauCeti
 namespace TauCeti
 
 variable {G X : Type*} [Group G] [MulAction G X]
-
-/-- Two group elements carry `x₀` to the same point exactly when they differ on the right by an
-element of the stabilizer of `x₀`. -/
-theorem smul_eq_smul_iff_inv_mul_mem_stabilizer (x₀ : X) (a b : G) :
-    a • x₀ = b • x₀ ↔ a⁻¹ * b ∈ stabilizer G x₀ := by
-  rw [mem_stabilizer_iff, mul_smul, inv_smul_eq_iff, eq_comm]
-
 variable [TopologicalSpace G] [ContinuousMul G] [ContinuousInv G] [TopologicalSpace X]
 
 /-- Let `G` act on `X` with continuous orbit map `g ↦ g • x₀`. A section `s` of the orbit map,
