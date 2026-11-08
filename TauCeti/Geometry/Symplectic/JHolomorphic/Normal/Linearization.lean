@@ -12,14 +12,17 @@ public import Mathlib.LinearAlgebra.Quotient.Defs
 # Descent of the Cauchy–Riemann linearization to normal directions
 
 For a parametrized curve `u`, the normal fiber at `x` is the actual quotient
-`V ⧸ range (du x)`. Projecting the ambient Cauchy–Riemann linearization to this quotient
-removes infinitesimal reparametrizations. We prove this by differentiating the holomorphicity
-identity and using symmetry of the second derivative, not by assuming a splitting of the
-ambient tangent space. In particular the almost complex structure need not be integrable.
+`V ⧸ range (du x)`. If `u` is C² at `x` and J-holomorphic on a neighbourhood of `x`,
+and `J` is differentiable at `u x`, projecting the ambient Cauchy–Riemann linearization to
+this quotient removes infinitesimal reparametrizations. We prove this by differentiating the
+holomorphicity identity and using symmetry of the second derivative, not by assuming a
+splitting of the ambient tangent space. In particular the almost complex structure need not
+be integrable.
 
 `normalCauchyRiemannLinearization` is the resulting local-coordinate expression on ambient
-lifts of normal sections. Its value is unchanged on adding `du · a` for any differentiable
-source vector field `a`. Its Leibniz rule identifies its first-order symbol explicitly.
+lifts of normal sections. Under these hypotheses, its value on a lift differentiable at `x`
+is unchanged on adding `du · a` for any source vector field `a` differentiable at `x`.
+Its Leibniz rule identifies its first-order symbol explicitly.
 These statements do not require `u` to be immersive; for an embedding the quotient is its
 normal fiber. Global bundle gluing, Sobolev realizations and Fredholm theory are not asserted
 here. The source endomorphism is constant, as in a holomorphic coordinate on a Riemann surface.
@@ -30,7 +33,7 @@ We use the unnormalized defect `du ∘ j - J(u) ∘ du` of
 ## References
 
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
-  Section 3.1 and Appendix D (linearization and normal operators).
+  Section 3.1 (linearization of the Cauchy–Riemann operator).
 -/
 
 public section
@@ -81,7 +84,8 @@ theorem normalCauchyRiemannLinearization_smul
   ext v
   simp [cauchyRiemannLinearization_smul]
 
-/-- Infinitesimal reparametrizations vanish in the normal quotient. -/
+/-- For `u` C² at `x` and J-holomorphic near `x`, with `J` differentiable at `u x`,
+infinitesimal reparametrizations differentiable at `x` vanish in the normal quotient. -/
 @[simp]
 theorem normalCauchyRiemannLinearization_fderiv_apply
     (j : U →L[ℝ] U) (J : V → V →L[ℝ] V) (u : U → V) (a : U → U) (x : U)
@@ -95,8 +99,10 @@ theorem normalCauchyRiemannLinearization_fderiv_apply
   rw [LinearMap.zero_apply, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
   exact ⟨_, rfl⟩
 
-/-- Adding a differentiable tangential section does not change the normal linearization.
-This is lift invariance modulo differentiable infinitesimal reparametrizations. -/
+/-- For `u` C² at `x` and J-holomorphic near `x`, with `J` differentiable at `u x`,
+adding `du · a` to a differentiable ambient lift does not change the normal linearization,
+provided `a` is differentiable at `x`. This is lift invariance modulo differentiable
+infinitesimal reparametrizations. -/
 theorem normalCauchyRiemannLinearization_add_fderiv_apply
     (j : U →L[ℝ] U) (J : V → V →L[ℝ] V) (u ξ : U → V) (a : U → U) (x : U)
     (hu : ContDiffAt ℝ 2 u x) (hξ : DifferentiableAt ℝ ξ x)
