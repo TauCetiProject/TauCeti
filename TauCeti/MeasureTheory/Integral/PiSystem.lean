@@ -7,6 +7,9 @@ module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.PiSystem
+public import Mathlib.MeasureTheory.Function.AEEqOfIntegral
+public import Mathlib.MeasureTheory.Function.L2Space
+public import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 
 /-!
 # A Dynkin (π-λ) step for Bochner integrals
@@ -19,6 +22,9 @@ This is the Bochner counterpart of Mathlib's `ℝ≥0∞`-valued
 `MeasureTheory.lintegral_eq_lintegral_of_isPiSystem`. Stating it for an arbitrary π-system rather
 than for a specific one (rectangles, boxes) lets a single theorem serve every product-measure
 arity.
+
+For a countably spanning generating π-system, testing set integrals determines an integrable
+function, and the indicators have dense real linear span in L² of any finite measure.
 -/
 
 public section
@@ -41,5 +47,53 @@ theorem setIntegral_eq_zero_of_isPiSystem {X E : Type*} {m m0 : MeasurableSpace 
   | basic s hs => exact hS s hs
   | compl u hu ih => rw [setIntegral_compl (hm u hu) hf, huniv, ih, sub_zero]
   | iUnion u hd hu ih => simp [integral_iUnion (fun i => hm _ (hu i)) hd hf.integrableOn, ih]
+
+/-- Testing set integrals on a countably spanning generating π-system determines an
+integrable Banach-valued function. -/
+theorem ae_eq_zero_of_setIntegral_eq_zero_of_isPiSystem
+    {X E : Type*} {m : MeasurableSpace X}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+    {μ : Measure X} {S : Set (Set X)}
+    (hgen : m = MeasurableSpace.generateFrom S) (hpi : IsPiSystem S)
+    (hcover : IsCountablySpanning S) {f : X → E} (hf : Integrable f μ)
+    (hS : ∀ s ∈ S, ∫ x in s, f x ∂μ = 0) : f =ᵐ[μ] 0 := by
+  have hmeas {s : Set X} (hs : s ∈ S) : MeasurableSet s :=
+    hgen ▸ MeasurableSpace.measurableSet_generateFrom hs
+  obtain ⟨v, hv, hcover⟩ := hcover
+  have hlocal (n : ℕ) : f =ᵐ[μ.restrict (v n)] 0 := by
+    apply hf.integrableOn.ae_eq_zero_of_forall_setIntegral_eq_zero
+    intro s hs _
+    apply setIntegral_eq_zero_of_isPiSystem le_rfl hgen hpi hf.integrableOn (hS _ (hv n))
+      (fun t ht => ?_) s hs
+    rw [Measure.restrict_restrict (hmeas ht)]
+    by_cases hempty : t ∩ v n = ∅
+    · rw [hempty, setIntegral_empty]
+    · exact hS _ (hpi t ht (v n) (hv n) (Set.nonempty_iff_ne_empty.mpr hempty))
+  have h := (ae_eq_restrict_iUnion_iff v f 0).mpr hlocal
+  rwa [hcover, Measure.restrict_univ] at h
+
+/-- Indicators of a countably spanning generating π-system have dense real linear span
+in L² of a finite measure. -/
+theorem topologicalClosure_span_indicatorConstLp_eq_top_of_isPiSystem
+    {X : Type*} {m : MeasurableSpace X} {μ : Measure X} [IsFiniteMeasure μ]
+    {S : Set (Set X)} (hgen : m = MeasurableSpace.generateFrom S)
+    (hpi : IsPiSystem S) (hcover : IsCountablySpanning S) :
+    (Submodule.span ℝ {g : Lp ℝ 2 μ | ∃ (s : Set X) (hs : s ∈ S),
+      g = indicatorConstLp 2 (hgen ▸ MeasurableSpace.measurableSet_generateFrom hs)
+        (measure_ne_top μ _) 1}).topologicalClosure = ⊤ := by
+  rw [← Submodule.orthogonal_eq_bot_iff, Submodule.orthogonal_closure]
+  apply bot_unique
+  intro f hf
+  apply Lp.ext
+  have hfi : Integrable f μ := by
+    simpa only [integrableOn_univ] using
+      integrableOn_Lp_of_measure_ne_top f (by norm_num) (measure_ne_top μ Set.univ)
+  refine (ae_eq_zero_of_setIntegral_eq_zero_of_isPiSystem hgen hpi hcover hfi ?_).trans
+    (Lp.coeFn_zero ℝ 2 μ).symm
+  intro s hs
+  rw [← L2.inner_indicatorConstLp_one
+    (hgen ▸ MeasurableSpace.measurableSet_generateFrom hs) (measure_ne_top μ _) f]
+  exact (Submodule.mem_orthogonal _ f).mp hf _
+    (Submodule.subset_span ⟨s, hs, rfl⟩)
 
 end TauCeti

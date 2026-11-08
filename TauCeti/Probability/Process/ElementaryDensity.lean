@@ -6,10 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Process.Predictable
-public import Mathlib.MeasureTheory.Function.L2Space
-public import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
-public import Mathlib.MeasureTheory.Function.AEEqOfIntegral
-import TauCeti.MeasureTheory.Integral.PiSystem
+public import TauCeti.MeasureTheory.Integral.PiSystem
 
 /-!
 # Density of elementary predictable integrands
@@ -66,7 +63,10 @@ theorem measurableSet_predictable_of_mem_elementarySets {u : Set (ι × Ω)}
 theorem isPiSystem_elementarySets : IsPiSystem ℱ.elementarySets := by
   rintro u (⟨A, hA, rfl⟩ | ⟨s, t, A, hA, rfl⟩)
     v (⟨B, hB, rfl⟩ | ⟨s', t', B, hB, rfl⟩) hne
-  · exact Or.inl ⟨A ∩ B, hA.inter hB, by ext p; simp; tauto⟩
+  · exact Or.inl ⟨A ∩ B, hA.inter hB, by
+      ext p
+      simp only [mem_inter_iff, mem_prod, mem_singleton_iff]
+      tauto⟩
   · obtain ⟨p, hpA, hpB⟩ := hne
     have hp0 : p.1 = ⊥ := hpA.1
     have hlt := hpB.1.1
@@ -81,7 +81,33 @@ theorem isPiSystem_elementarySets : IsPiSystem ℱ.elementarySets := by
     simp only [mem_inter_iff, mem_prod, mem_Ioc, max_lt_iff, le_min_iff]
     tauto
 
+omit [OrderBot ι] in
+private theorem iUnion_Ioc_prod_eq_Ioi_prod {u : ℕ → ι}
+    (hu : Tendsto u atTop atTop) (s : ι) (A : Set Ω) :
+    (⋃ n, Ioc s (u n) ×ˢ A) = Ioi s ×ˢ A := by
+  rw [← iUnion_prod_const, iUnion_Ioc_eq_Ioi_self_iff.mpr
+    (fun x _ => (hu.eventually (eventually_ge_atTop x)).exists)]
+
 variable [(atTop : Filter ι).IsCountablyGenerated]
+
+/-- A countable subfamily of the elementary predictable sets covers the whole space. -/
+theorem isCountablySpanning_elementarySets : IsCountablySpanning ℱ.elementarySets := by
+  obtain ⟨u, _, hu⟩ := exists_seq_monotone_tendsto_atTop_atTop ι
+  let v : ℕ → Set (ι × Ω)
+    | 0 => {⊥} ×ˢ univ
+    | n + 1 => Ioc ⊥ (u n) ×ˢ univ
+  refine ⟨v, ?_, ?_⟩
+  · intro n
+    cases n with
+    | zero => exact Or.inl ⟨univ, MeasurableSet.univ, rfl⟩
+    | succ n => exact Or.inr ⟨⊥, u n, univ, MeasurableSet.univ, rfl⟩
+  · rw [← union_iUnion_nat_succ]
+    change ({⊥} ×ˢ univ) ∪ (⋃ n, Ioc ⊥ (u n) ×ˢ univ) = univ
+    rw [iUnion_Ioc_prod_eq_Ioi_prod hu]
+    ext p
+    simp only [mem_union, mem_prod, mem_singleton_iff, mem_univ, and_true,
+      mem_Ioi, bot_lt_iff_ne_bot, iff_true]
+    exact Classical.em _
 
 /-- Bounded elementary rectangles and the initial slices generate the predictable sigma-algebra. -/
 theorem predictable_eq_generateFrom_elementarySets :
@@ -92,10 +118,7 @@ theorem predictable_eq_generateFrom_elementarySets :
     · intro A hA
       exact MeasurableSpace.measurableSet_generateFrom (Or.inl ⟨A, hA, rfl⟩)
     · intro s A hA
-      have he : (⋃ n, Ioc s (u n) ×ˢ A) = Ioi s ×ˢ A := by
-        rw [← iUnion_prod_const, iUnion_Ioc_eq_Ioi_self_iff.mpr
-          (fun x _ => (hu.eventually (eventually_ge_atTop x)).exists)]
-      rw [← he]
+      rw [← iUnion_Ioc_prod_eq_Ioi_prod hu s A]
       exact MeasurableSet.iUnion fun n =>
         MeasurableSpace.measurableSet_generateFrom (Or.inr ⟨s, u n, A, hA, rfl⟩)
   · exact MeasurableSpace.generateFrom_le fun _ hu =>
@@ -110,36 +133,9 @@ theorem ae_eq_zero_of_setIntegral_elementarySets_eq_zero
     (helem : ∀ u ∈ ℱ.elementarySets, ∫ p in u, f p ∂μ = 0) :
     f =ᵐ[μ] 0 := by
   let : MeasurableSpace (ι × Ω) := ℱ.predictable
-  obtain ⟨u, hmono, hu⟩ := exists_seq_monotone_tendsto_atTop_atTop ι
-  have huniv : ∫ p, f p ∂μ = 0 := by
-    let v (n : ℕ) := ({⊥} ×ˢ (univ : Set Ω)) ∪ (Ioc ⊥ (u n) ×ˢ univ)
-    have hmeas (n : ℕ) : MeasurableSet (v n) :=
-      (measurableSet_predictable_singleton_bot_prod (𝓕 := ℱ) MeasurableSet.univ).union
-        (measurableSet_predictable_Ioc_prod ⊥ (u n) MeasurableSet.univ)
-    have hv (n : ℕ) : ∫ p in v n, f p ∂μ = 0 := by
-      have hd : Disjoint ({(⊥ : ι)} ×ˢ (univ : Set Ω)) (Ioc ⊥ (u n) ×ˢ univ) := by
-        simp [Set.disjoint_left]
-      simpa only [helem _ (Or.inl ⟨univ, MeasurableSet.univ, rfl⟩),
-        helem _ (Or.inr ⟨⊥, u n, univ, MeasurableSet.univ, rfl⟩), add_zero] using
-        setIntegral_union (μ := μ) (f := f) hd
-          (measurableSet_predictable_Ioc_prod ⊥ (u n) MeasurableSet.univ)
-          hf.integrableOn hf.integrableOn
-    have hcover : (⋃ n, v n) = univ := by
-      apply eq_univ_of_forall
-      intro p
-      obtain ⟨n, hn⟩ := (hu.eventually (eventually_ge_atTop p.1)).exists
-      refine mem_iUnion.mpr ⟨n, ?_⟩
-      by_cases h : p.1 = ⊥ <;> simp [v, h, bot_lt_iff_ne_bot, hn]
-    have ht := tendsto_setIntegral_of_monotone hmeas
-      (fun i j hij => union_subset_union_right _
-        (prod_mono (Ioc_subset_Ioc_right (hmono hij)) le_rfl)) hf.integrableOn
-    rw [hcover, setIntegral_univ] at ht
-    exact tendsto_nhds_unique ht (by simpa only [hv] using
-      (tendsto_const_nhds : Tendsto (fun _ : ℕ => (0 : E)) atTop (𝓝 0)))
-  apply hf.ae_eq_zero_of_forall_setIntegral_eq_zero
-  intro v hv _
-  exact TauCeti.setIntegral_eq_zero_of_isPiSystem le_rfl
-    ℱ.predictable_eq_generateFrom_elementarySets ℱ.isPiSystem_elementarySets hf huniv helem v hv
+  exact TauCeti.ae_eq_zero_of_setIntegral_eq_zero_of_isPiSystem
+    ℱ.predictable_eq_generateFrom_elementarySets ℱ.isPiSystem_elementarySets
+    ℱ.isCountablySpanning_elementarySets hf helem
 
 /-- Testing integrals against bounded predictable rectangles determines an integrable function,
 provided the initial slice has zero measure. -/
@@ -165,20 +161,9 @@ theorem topologicalClosure_span_indicatorConstLp_elementarySets_eq_top
       g = indicatorConstLp 2 (ℱ.measurableSet_predictable_of_mem_elementarySets hu)
         (measure_ne_top μ _) 1}).topologicalClosure = ⊤ := by
   let : MeasurableSpace (ι × Ω) := ℱ.predictable
-  rw [← Submodule.orthogonal_eq_bot_iff, Submodule.orthogonal_closure]
-  apply bot_unique
-  intro f hf
-  apply Lp.ext
-  have hfi : Integrable f μ := by
-    simpa only [integrableOn_univ] using
-      integrableOn_Lp_of_measure_ne_top f (by norm_num) (measure_ne_top μ univ)
-  refine (ℱ.ae_eq_zero_of_setIntegral_elementarySets_eq_zero μ hfi ?_).trans
-    (Lp.coeFn_zero ℝ 2 μ).symm
-  intro u hu
-  rw [← L2.inner_indicatorConstLp_one (ℱ.measurableSet_predictable_of_mem_elementarySets hu)
-    (measure_ne_top μ _) f]
-  exact (Submodule.mem_orthogonal _ f).mp hf _
-    (Submodule.subset_span ⟨u, hu, rfl⟩)
+  exact TauCeti.topologicalClosure_span_indicatorConstLp_eq_top_of_isPiSystem
+    ℱ.predictable_eq_generateFrom_elementarySets ℱ.isPiSystem_elementarySets
+    ℱ.isCountablySpanning_elementarySets
 
 /-- Indicators of bounded predictable rectangles have dense real linear span in L² of any
 finite predictable measure with no mass at the initial time. -/
