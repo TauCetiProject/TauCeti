@@ -192,8 +192,9 @@ theorem exists_continuous_projIcc_inverse {f : ℝ → ℝ} {a b c d : ℝ} (hab
 /-- **First exit from an open set.** A path continuous on `[a, b]` that starts in an open set `V`
 and leaves it has a first exit time `T > a`: the path stays in `V` on `[a, T)`, and `γ T` lies in
 the closure of `V` but not in `V`. -/
-theorem _root_.IsOpen.exists_first_exit {X : Type*} [TopologicalSpace X] {V : Set X} (hV : IsOpen V)
-    {γ : ℝ → X} {a b : ℝ} (hγ : ContinuousOn γ (Icc a b)) (ha : γ a ∈ V)
+theorem _root_.IsOpen.exists_first_exit {α X : Type*} [ConditionallyCompleteLinearOrder α]
+    [TopologicalSpace α] [OrderTopology α] [DenselyOrdered α] [TopologicalSpace X] {V : Set X}
+    (hV : IsOpen V) {γ : α → X} {a b : α} (hγ : ContinuousOn γ (Icc a b)) (ha : γ a ∈ V)
     (hex : ∃ t ∈ Icc a b, γ t ∉ V) :
     ∃ T ∈ Icc a b, a < T ∧ γ T ∉ V ∧ γ T ∈ closure V ∧ ∀ t ∈ Ico a T, γ t ∈ V := by
   obtain ⟨t₀, ht₀, ht₀V⟩ := hex
