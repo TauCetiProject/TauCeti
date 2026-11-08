@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.MeanValue
 public import TauCeti.Topology.MetricSpace.Holder
+import Mathlib.Analysis.Calculus.ContDiff.Comp
 
 /-!
 # Hölder bounds from bounds on a function and its derivative
@@ -20,6 +22,9 @@ controls its oscillation between distant points (`HolderOnWith.of_le_of_dist_le`
 
 * `TauCeti.holderWith_of_norm_le_of_norm_fderiv_le`: on the whole space, the Hölder constant is
   `N₁ + 2 N₀`.
+* `TauCeti.holderWith_and_holderWith_fderiv_of_norm_le_of_norm_iteratedFDeriv_two_le`: for a `C²`
+  function bounded together with its first two derivatives, both the function and its derivative
+  are globally Hölder.
 * `TauCeti.holderOnWith_thickening_of_norm_fderiv_le`: if the bounds hold on an open set containing
   the `2δ`-thickening of a set `K`, the function is Hölder on the `δ`-thickening of `K`.
 -/
@@ -48,6 +53,18 @@ theorem holderWith_of_norm_le_of_norm_fderiv_le {g : E → F} {N₀ N₁ α : �
   · simpa only [NNReal.one_rpow, mul_one, holderOnWith_univ] using h
   · push_cast
     linarith [dist_le_norm_add_norm (g x) (g y), hg0 x, hg0 y]
+
+/-- If `u` is `C²` on the whole space, with `‖u‖ ≤ N`, and `Du` and `D²u` are bounded by `P`, then
+`u` and `Du` are globally `α`-Hölder for `α ≤ 1`, with constants `P + 2 N` and `P + 2 P`. -/
+theorem holderWith_and_holderWith_fderiv_of_norm_le_of_norm_iteratedFDeriv_two_le
+    {u : E → F} {α N P : ℝ≥0} (hα : α ≤ 1) (hu : ContDiff ℝ 2 u) (hN : ∀ x, ‖u x‖ ≤ N)
+    (h1 : ∀ x, ‖fderiv ℝ u x‖ ≤ P) (h2 : ∀ x, ‖iteratedFDeriv ℝ 2 u x‖ ≤ P) :
+    HolderWith (P + 2 * N) α u ∧ HolderWith (P + 2 * P) α (fderiv ℝ u) := by
+  refine ⟨holderWith_of_norm_le_of_norm_fderiv_le hα (hu.differentiable (by norm_num)) hN h1,
+    holderWith_of_norm_le_of_norm_fderiv_le hα
+      ((hu.fderiv_right (m := 1) (by norm_num)).differentiable (by norm_num)) h1 fun x => ?_⟩
+  rw [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
+  exact h2 x
 
 /-- A function bounded by `N₀`, with derivative bounded by `N₁`, on an open set containing the
 `2δ`-thickening of `K` is `α`-Hölder on the `δ`-thickening of `K` for every `α ≤ 1`, with constant
