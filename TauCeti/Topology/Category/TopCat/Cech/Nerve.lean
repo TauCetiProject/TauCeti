@@ -65,11 +65,26 @@ theorem isOpenMap_openCoverMap : IsOpenMap (openCoverMap U) :=
   isOpenMap_sigma.mpr fun i => (U i).isOpen.isOpenMap_subtype_val
 
 /-- The cover map is surjective exactly when the family is an open cover. -/
-theorem openCoverMap_surjective_iff : Function.Surjective (openCoverMap U) ↔ IsOpenCover U := by
-  simp [Function.Surjective, IsOpenCover, eq_top_iff, IsConcreteLE.le_iff, Opens.mem_iSup]
+@[simp]
+-- Avoid indexing on the two definitionally equal presentations of the continuous-map type.
+theorem openCoverMap_surjective_iff :
+    @Function.Surjective (Σ i, U i) X
+        (DFunLike.coe (F := no_index _) (ConcreteCategory.hom (openCoverMap U))) ↔
+      IsOpenCover U := by
+  refine ⟨fun h ↦ .of_sets (fun i ↦ (U i).isOpen) (Set.eq_univ_of_forall fun x ↦ ?_),
+    fun hU x ↦ ?_⟩
+  · obtain ⟨⟨i, y⟩, rfl⟩ := h x
+    exact Set.mem_iUnion.2 ⟨i, y.2⟩
+  · obtain ⟨i, hi⟩ := hU.exists_mem x
+    exact ⟨⟨i, x, hi⟩, rfl⟩
 
 /-- The disjoint-union map is an open quotient map exactly when the family is an open cover. -/
-theorem isOpenQuotientMap_openCoverMap_iff : IsOpenQuotientMap (openCoverMap U) ↔ IsOpenCover U :=
+@[simp]
+-- Avoid indexing on the two definitionally equal presentations of the continuous-map type.
+theorem isOpenQuotientMap_openCoverMap_iff :
+    @IsOpenQuotientMap (Σ i, U i) X _ _
+        (DFunLike.coe (F := no_index _) (ConcreteCategory.hom (openCoverMap U))) ↔
+      IsOpenCover U :=
   ⟨fun h ↦ (openCoverMap_surjective_iff U).1 h.surjective, fun hU ↦
     ⟨(openCoverMap_surjective_iff U).2 hU, (openCoverMap U).hom.continuous,
       isOpenMap_openCoverMap U⟩⟩
@@ -82,6 +97,23 @@ def openCoverArrowMap {Y : TopCat.{u}} {κ : Type u} (V : κ → Opens Y)
     Continuous.sigma_map fun i ↦ f.hom.continuous.restrict (hf i)⟩
   right := f
   w := by ext p; rfl
+
+/-- The arrow map sends a point of a member `U i` to the same point, mapped by `f`, of the
+member `V (r i)`. -/
+@[simp]
+-- Avoid indexing on the two definitionally equal presentations of the continuous-map type.
+theorem openCoverArrowMap_left_apply {Y : TopCat.{u}} {κ : Type u} (V : κ → Opens Y)
+    (f : X ⟶ Y) (r : ι → κ) (hf : ∀ i, Set.MapsTo f (U i) (V (r i))) (p : Σ i, U i) :
+    DFunLike.coe (F := no_index _) (ConcreteCategory.hom (openCoverArrowMap U V f r hf).left) p =
+      (⟨r p.1, f p.2, hf p.1 p.2.2⟩ : Σ k, V k) :=
+  (rfl)
+
+/-- The arrow map is `f` on the ambient spaces. -/
+@[simp]
+theorem openCoverArrowMap_right {Y : TopCat.{u}} {κ : Type u} (V : κ → Opens Y)
+    (f : X ⟶ Y) (r : ι → κ) (hf : ∀ i, Set.MapsTo f (U i) (V (r i))) :
+    (openCoverArrowMap U V f r hf).right = f :=
+  (rfl)
 
 /-- The identity map of a covered space induces the identity arrow map. -/
 @[simp]
