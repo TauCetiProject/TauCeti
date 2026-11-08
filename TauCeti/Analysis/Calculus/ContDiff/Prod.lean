@@ -21,7 +21,7 @@ of the derivative of a `C¹` map is continuous along a continuous graph
 (`ContDiffAt.continuousAt_fderiv_comp_inr`).
 
 The partial derivative in the second variable of a `C^n` function on a product, applied to a fixed
-vector, is `C^(n - 1)` jointly (`TauCeti.contDiffAt_fderiv_snd_apply`).
+vector, is `C^m` jointly whenever `m + 1 ≤ n` (`ContDiffAt.fderiv_snd_apply`).
 -/
 
 public section
@@ -40,21 +40,17 @@ theorem contDiffOn_comp_prodMk_left (hH : ∀ p ∈ s ×ˢ I, ContDiffAt 𝕜 n 
     (ht : t ∈ I) : ContDiffOn 𝕜 n (fun x ↦ H (x, t)) s :=
   fun x hx ↦ ((hH (x, t) ⟨hx, ht⟩).comp x (contDiff_prodMk_left t).contDiffAt).contDiffWithinAt
 
-/-- The partial derivative in the second variable of a function of `(r.1, z)`, applied to a fixed
-vector, is as differentiable in `r` as the function allows. -/
-theorem contDiffAt_fderiv_snd_apply {f : E × G → F} {r : E × G} {m : WithTop ℕ∞}
-    (hf : ContDiffAt 𝕜 n f r) (hmn : m + 1 ≤ n) (v : G) :
-    ContDiffAt 𝕜 m (fun r : E × G ↦ fderiv 𝕜 (fun z ↦ f (r.1, z)) r.2 v) r :=
-  (hf.fderiv_slice hmn).clm_apply contDiffAt_const
-
 end TauCeti
 
 namespace ContDiffAt
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-  {P : Type*} [NormedAddCommGroup P] [NormedSpace 𝕜 P]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  {P : Type*} [NormedAddCommGroup P] [NormedSpace 𝕜 P]
   {X : Type*} [NormedAddCommGroup X] [NormedSpace 𝕜 X] {p : P} {x : E}
+  {n : WithTop ℕ∞}
 
 /-- The spatial differential of a `C^n` family is `C^m` jointly in the parameter and the spatial
 variable, for `m + 1 ≤ n`. -/
@@ -81,5 +77,12 @@ theorem continuousAt_fderiv_comp_inr {G : P × E → X} {ψ : P → E}
   ((hG.continuousAt_fderiv (by norm_num)).comp_of_eq
     (f := fun q ↦ (q, ψ q)) (continuousAt_id.prodMk hψ) rfl).clm_comp
     continuousAt_const
+
+/-- The partial derivative in the second variable of a function of `(r.1, z)`, applied to a fixed
+vector, is as differentiable in `r` as the function allows. -/
+theorem fderiv_snd_apply {f : E × G → F} {r : E × G} {m : WithTop ℕ∞}
+    (hf : ContDiffAt 𝕜 n f r) (hmn : m + 1 ≤ n) (v : G) :
+    ContDiffAt 𝕜 m (fun r : E × G ↦ fderiv 𝕜 (fun z ↦ f (r.1, z)) r.2 v) r :=
+  (hf.fderiv_slice hmn).clm_apply contDiffAt_const
 
 end ContDiffAt
