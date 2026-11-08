@@ -30,9 +30,10 @@ in the preferred extended chart at `x` has zero Fréchet derivative. That is the
 built into `TauCeti.IsMorseOn`, so a Morse function is exactly a smooth function all of whose
 critical points are nondegenerate.
 
-Local extrema are critical points, so a continuous function on a nonempty compact manifold has a
-critical point, and so does each nonempty compact sublevel of a continuous function. On a compact
-manifold with at least two points it has at least two critical points, a maximum and a minimum.
+On a boundaryless manifold local extrema are critical points, so a continuous function on a
+nonempty compact boundaryless manifold has a critical point, and so does each nonempty compact
+sublevel of a continuous function. On a compact boundaryless manifold with at least two points it
+has at least two critical points, a maximum and a minimum.
 The critical set of a `C¹` function is closed, and a nondegenerate critical point is isolated in
 it, so a Morse function has finitely many critical points in every compact set; for a proper
 function bounded below, this applies to every sublevel set. A compact band between regular
@@ -58,7 +59,6 @@ polynomial in the Morse inequalities.
 * `TauCeti.isMorseOn_iff_criticalPoints`: Morse functions in terms of the critical set.
 * `TauCeti.criticalPoints_comp_subtypeVal` and `TauCeti.totalCriticalCount_comp_subtypeVal`: the
   critical points of the restriction of `f` to an open submanifold `U` are those of `f` in `U`.
-* `TauCeti.criticalPoints_comp_subtypeVal`: the critical set of a restriction to an open subset.
 * `IsLocalExtr.mem_criticalPoints`, `TauCeti.criticalPoints_nonempty` and
   `TauCeti.exists_mem_criticalPoints_of_isCompact_sublevel`: Fermat's theorem on a manifold and the
   existence of critical points on compact manifolds and in compact sublevels.
