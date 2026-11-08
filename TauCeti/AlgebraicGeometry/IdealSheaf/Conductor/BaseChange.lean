@@ -76,7 +76,7 @@ private theorem conductor_ideal_eq_map_of_isPullback (H : IsPullback g' f' f g)
 The square may be any chosen pullback square. -/
 theorem conductor_eq_comap_of_isPullback (H : IsPullback g' f' f g) :
     f'.conductor = f.conductor.comap g := by
-  refine Scheme.IdealSheafData.ext_of_comap_fromSpec_over _ g fun U V e ↦ ?_
+  refine Scheme.IdealSheafData.ext_of_comap_fromSpec_over g fun U V e ↦ ?_
   rw [Scheme.IdealSheafData.comap_fromSpec_eq_ofIdealTop f'.conductor V.2,
     Scheme.IdealSheafData.comap_comap_fromSpec_eq_ofIdealTop _ g U.2 V.2 e,
     conductor_ideal_eq_map_of_isPullback H U V e]

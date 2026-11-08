@@ -159,7 +159,7 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.fittingIdeal_pullback
         (fun U ↦ Scheme.Modules.finite_sections_of_isAffineOpen _ U.1 U.2) k =
       (M.fittingIdeal
         (fun U ↦ Scheme.Modules.finite_sections_of_isAffineOpen _ U.1 U.2) k).comap f := by
-  refine Scheme.IdealSheafData.ext_of_comap_fromSpec_over _ f fun V U hUV ↦ ?_
+  refine Scheme.IdealSheafData.ext_of_comap_fromSpec_over f fun V U hUV ↦ ?_
   let N := (Scheme.Modules.pullback f).obj M
   let P := (Scheme.Modules.pullback V.2.fromSpec).obj M
   have : N.IsQuasicoherent := Scheme.Modules.isQuasicoherent_pullback _ M

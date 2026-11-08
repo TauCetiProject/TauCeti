@@ -84,7 +84,7 @@ theorem _root_.AlgebraicGeometry.Scheme.IdealSheafData.ext_of_comap_openCover
 /-- Ideal sheaves on `X` are equal if their pullbacks agree on every affine chart mapping
 into an affine open of `Y`. This allows comparisons local on both sides of `f`. -/
 theorem _root_.AlgebraicGeometry.Scheme.IdealSheafData.ext_of_comap_fromSpec_over
-    {Y : Scheme.{u}} (I : X.IdealSheafData) {J : X.IdealSheafData} (f : X ⟶ Y)
+    {Y : Scheme.{u}} {I J : X.IdealSheafData} (f : X ⟶ Y)
     (h : ∀ (U : Y.affineOpens) (V : X.affineOpens), V.1 ≤ f ⁻¹ᵁ U.1 →
       I.comap V.2.fromSpec = J.comap V.2.fromSpec) : I = J := by
   have charts (x : X) : ∃ (U : Y.Opens) (V : X.Opens), IsAffineOpen U ∧

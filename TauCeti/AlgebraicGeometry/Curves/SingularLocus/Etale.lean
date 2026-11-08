@@ -83,7 +83,7 @@ the singular locus of `X`. For the closed subschemes, see
 `AlgebraicGeometry.Scheme.isPullback_singularLocus_subschemeι_of_etale`. -/
 theorem _root_.AlgebraicGeometry.Scheme.singularLocus_eq_comap_of_etale :
     X'.singularLocus R = (X.singularLocus R).comap g := by
-  refine Scheme.IdealSheafData.ext_of_comap_fromSpec_over _ g fun U V e ↦ ?_
+  refine Scheme.IdealSheafData.ext_of_comap_fromSpec_over g fun U V e ↦ ?_
   rw [Scheme.IdealSheafData.comap_fromSpec_eq_ofIdealTop (X'.singularLocus R) V.2,
     Scheme.IdealSheafData.comap_comap_fromSpec_eq_ofIdealTop _ g U.2 V.2 e,
     Scheme.singularLocus_ideal_eq_map_of_etale g U V e]
