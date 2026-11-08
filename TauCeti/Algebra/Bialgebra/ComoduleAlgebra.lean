@@ -64,6 +64,8 @@ trivial torsor `G ⟶ Spec R`.
 
 ## Main results
 
+* `TauCeti.ComoduleAlgebra.eqLocus_coactAlgHom`: the coinvariants are the equalizer of the
+  projection and the action `Spec (A ⊗[R] H) ⇉ Spec A`.
 * `TauCeti.ComoduleAlgebra.coinvariants_eq_range`: if `A` is faithfully flat over `B` and the
   Galois map is injective, the coinvariants are exactly the image of `B`.
 * `TauCeti.ComoduleAlgebra.existsUnique_comp_eq`: under the same hypotheses, every invariant
@@ -229,6 +231,21 @@ theorem coactAlgHom_self : coactAlgHom R H H = Bialgebra.comulAlgHom R H :=
 
 end Semiring
 
+section Ring
+
+variable {R : Type u} {H : Type v} {A : Type w} [CommSemiring R] [Ring H] [Bialgebra R H]
+  [CommRing A] [Algebra R A] [ComoduleAlgebra R H A]
+
+/-- The invariants `{a : a ⊗ 1 = coact a}` of the projection and the action
+`Spec (A ⊗[R] H) ⇉ Spec A` are the coinvariants. -/
+theorem eqLocus_coactAlgHom :
+    ((algebraMap A (A ⊗[R] H)).eqLocus (coactAlgHom R H A).toRingHom : Set A) =
+      coinvariants R H A := by
+  ext a
+  simp [mem_coinvariants, eq_comm]
+
+end Ring
+
 /-! ### The Galois map -/
 
 section Galois
@@ -287,20 +304,17 @@ theorem galoisMap_comp_includeRight (hB : ∀ b : B, algebraMap B A b ∈ coinva
   AlgHom.ext fun a ↦ by simp [← Algebra.TensorProduct.one_def]
 
 /-- If the Galois map over an algebra `B` acting by coinvariants is surjective, so is the Galois map
-`A ⊗[R] A → A ⊗[R] H` over the base ring, through which it factors: the action of `Spec H` on
-the total space of a torsor is free. -/
+`A ⊗[R] A → A ⊗[R] H` over the base ring, which factors through it via `A ⊗[R] A → A ⊗[B] A`:
+the action of `Spec H` on the total space of a torsor is free. -/
 theorem surjective_galoisMap_of_surjective_galoisMap
     (hB : ∀ b : B, algebraMap B A b ∈ coinvariants R H A)
     (h : Function.Surjective (galoisMap B hB)) :
     Function.Surjective (galoisMap R fun r ↦ (coinvariants R H A).algebraMap_mem r) := by
-  intro w
-  obtain ⟨v, rfl⟩ := h w
-  induction v using TensorProduct.inductionOn with
-  | tmul a a' => exact ⟨a ⊗ₜ a', by rw [galoisMap_tmul, galoisMap_tmul]⟩
-  | add v v' hv hv' =>
-    obtain ⟨u, hu⟩ := hv
-    obtain ⟨u', hu'⟩ := hv'
-    exact ⟨u + u', by simp [hu, hu']⟩
+  have : (galoisMap B hB).comp (Algebra.TensorProduct.mapOfCompatibleSMul B R A A A) =
+      galoisMap R fun r ↦ (coinvariants R H A).algebraMap_mem r :=
+    Algebra.TensorProduct.ext' fun a a' ↦ by simp
+  rw [← this, AlgHom.coe_comp]
+  exact h.comp (Algebra.TensorProduct.mapOfCompatibleSMul_surjective B R A A A)
 
 end Galois
 

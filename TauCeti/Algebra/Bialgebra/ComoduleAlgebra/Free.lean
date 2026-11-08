@@ -47,7 +47,6 @@ through `s` because `H` is finite projective over `R`. So `A` is faithfully flat
 
 * `TauCeti.ComoduleAlgebra.isSpecEquivRel_of_surjective_galoisMap`: a free action is an
   equivalence relation.
-* `TauCeti.ComoduleAlgebra.eqLocus_coactAlgHom`: its invariants are the coinvariants.
 * `TauCeti.ComoduleAlgebra.faithfullyFlat_coinvariants_of_surjective_galoisMap` and
   `TauCeti.ComoduleAlgebra.bijective_galoisMap_coinvariants_of_surjective_galoisMap`: a free action
   of a finite locally free group scheme is a torsor over the coinvariants.
@@ -71,21 +70,6 @@ namespace TauCeti.ComoduleAlgebra
 
 universe u
 
-section Bialgebra
-
-variable {R : Type*} {H A : Type u} [CommSemiring R] [CommRing H] [Bialgebra R H] [CommRing A]
-  [Algebra R A] [ComoduleAlgebra R H A]
-
-/-- The invariants `{a : a ⊗ 1 = coact a}` of the projection and the action
-`Spec (A ⊗[R] H) ⇉ Spec A` are the coinvariants. -/
-theorem eqLocus_coactAlgHom :
-    ((algebraMap A (A ⊗[R] H)).eqLocus (coactAlgHom R H A).toRingHom : Set A) =
-      coinvariants R H A := by
-  ext a
-  simp [mem_coinvariants, eq_comm]
-
-end Bialgebra
-
 section Hopf
 
 variable {R : Type*} {H A : Type u} [CommSemiring R] [CommRing H] [HopfAlgebra R H] [CommRing A]
@@ -97,6 +81,29 @@ A point `x : A ⊗[R] H →+* T` of `Spec A × Spec H` is a pair `(u, g)`, with 
 restriction of `x` to `H`, and it relates `u` to `x ∘ t = u g`. -/
 
 variable {T : Type u} [CommRing T]
+
+-- `(a ⊗ h) ⊗ h' ↦ x (a ⊗ h) τ(h')`, on `a ⊗ v` for `v : H ⊗[R] H`
+omit [ComoduleAlgebra R H A] in
+private theorem liftRingHom_assoc_symm_tmul (x : A ⊗[R] H →+* T) (τ : H →+* T)
+    (hτ : x.comp (algebraMap R (A ⊗[R] H)) = τ.comp (algebraMap R H))
+    (hτ' : (x.comp (includeRight : H →ₐ[R] A ⊗[R] H).toRingHom).comp (algebraMap R H) =
+      τ.comp (algebraMap R H)) (a : A) (v : H ⊗[R] H) :
+    liftRingHom x τ hτ ((TensorProduct.assoc R A H H).symm (a ⊗ₜ v)) =
+      x (a ⊗ₜ 1) * liftRingHom (x.comp (includeRight : H →ₐ[R] A ⊗[R] H).toRingHom) τ hτ' v := by
+  induction v using TensorProduct.inductionOn with
+  | add v v' hv hv' => simp [mul_add, tmul_add, hv, hv']
+  | tmul h₁ h₂ => simp [← mul_assoc, ← map_mul, Algebra.TensorProduct.tmul_mul_tmul]
+
+-- `(coact a) ⊗ h ↦ x (coact a) τ(h)`
+private theorem liftRingHom_rTensor_coact (x : A ⊗[R] H →+* T) (τ : H →+* T)
+    (hτ : x.comp (algebraMap R (A ⊗[R] H)) = τ.comp (algebraMap R H))
+    (hτ' : (x.comp (coactAlgHom R H A).toRingHom).comp (algebraMap R A) =
+      τ.comp (algebraMap R H)) (w : A ⊗[R] H) :
+    liftRingHom x τ hτ ((Comodule.coact (R := R) (C := H) (M := A)).rTensor H w) =
+      liftRingHom (x.comp (coactAlgHom R H A).toRingHom) τ hτ' w := by
+  induction w using TensorProduct.inductionOn with
+  | tmul a h => simp
+  | add w w' hw hw' => simp only [map_add, hw, hw']
 
 -- reflexivity: the point `(u, 1)` relates `u` to itself
 private theorem exists_comp_algebraMap_eq_and_comp_coactAlgHom_eq (u : A →+* T) :
@@ -120,18 +127,28 @@ private theorem exists_comp_algebraMap_eq_and_comp_coactAlgHom_eq (u : A →+* T
 private theorem exists_comp_algebraMap_eq_and_comp_coactAlgHom_eq_symm (x : A ⊗[R] H →+* T) :
     ∃ z : A ⊗[R] H →+* T, z.comp (algebraMap A (A ⊗[R] H)) = x.comp (coactAlgHom R H A).toRingHom ∧
       z.comp (coactAlgHom R H A).toRingHom = x.comp (algebraMap A (A ⊗[R] H)) := by
+  let ι : H →+* A ⊗[R] H := (includeRight : H →ₐ[R] A ⊗[R] H).toRingHom
   -- `g⁻¹ = g ∘ S`
-  let σ : H →+* T :=
-    (x.comp (includeRight : H →ₐ[R] A ⊗[R] H).toRingHom).comp
-      (HopfAlgebra.antipodeAlgHom R H).toRingHom
+  let σ : H →+* T := (x.comp ι).comp (HopfAlgebra.antipodeAlgHom R H).toRingHom
   have hσ : (x.comp (coactAlgHom R H A).toRingHom).comp (algebraMap R A) =
       σ.comp (algebraMap R H) := by
     ext r
-    simp [σ]
-  -- `(a ⊗ h) ⊗ h' ↦ x (a ⊗ h) g⁻¹(h')`
-  let Ψ : (A ⊗[R] H) ⊗[R] H →+* T := liftRingHom x σ (by
+    simp [σ, ι]
+  have hσR : x.comp (algebraMap R (A ⊗[R] H)) = σ.comp (algebraMap R H) := by
     ext r
-    simp [σ])
+    simp [σ, ι]
+  have hσι : (x.comp ι).comp (algebraMap R H) = σ.comp (algebraMap R H) := by
+    ext r
+    simp [σ, ι]
+  -- `(a ⊗ h) ⊗ h' ↦ x (a ⊗ h) g⁻¹(h')`
+  let Ψ : (A ⊗[R] H) ⊗[R] H →+* T := liftRingHom x σ hσR
+  -- `∑ g(h₁) g⁻¹(h₂) = g (S h₁ h₂)`
+  have hgσ (v : H ⊗[R] H) :
+      liftRingHom (x.comp ι) σ hσι v =
+        x (1 ⊗ₜ LinearMap.mul' R H ((HopfAlgebra.antipode R).lTensor H v)) := by
+    induction v using TensorProduct.inductionOn with
+    | add v v' hv hv' => simp [tmul_add, hv, hv']
+    | tmul h₁ h₂ => simp [σ, ι, ← map_mul, Algebra.TensorProduct.tmul_mul_tmul]
   -- `∑ x (a ⊗ h₁) g⁻¹(h₂) = x (a ⊗ ε(h))`
   have hΨ (w : A ⊗[R] H) :
       Ψ ((TensorProduct.assoc R A H H).symm (Coalgebra.comul.lTensor A w)) =
@@ -139,29 +156,17 @@ private theorem exists_comp_algebraMap_eq_and_comp_coactAlgHom_eq_symm (x : A �
     induction w using TensorProduct.inductionOn with
     | add w w' hw hw' => simp only [map_add, hw, hw']
     | tmul a h =>
-      rw [LinearMap.lTensor_tmul]
-      have key (v : H ⊗[R] H) : Ψ ((TensorProduct.assoc R A H H).symm (a ⊗ₜ v)) =
-          x (a ⊗ₜ LinearMap.mul' R H ((HopfAlgebra.antipode R).lTensor H v)) := by
-        induction v using TensorProduct.inductionOn with
-        | add v v' hv hv' => simp [tmul_add, hv, hv']
-        | tmul h₁ h₂ => simp [Ψ, σ, ← map_mul, Algebra.TensorProduct.tmul_mul_tmul]
-      rw [key, HopfAlgebra.mul_antipode_lTensor_comul_apply, LinearMap.lTensor_tmul,
-        TensorProduct.rid_tmul, Algebra.algebraMap_eq_smul_one, TensorProduct.tmul_smul,
-        TensorProduct.smul_tmul']
-      simp
-  -- `z (a ⊗ h) = x (coact a) g⁻¹(h)`, which is `Ψ` after coacting on `a`
-  have hz (w : A ⊗[R] H) : liftRingHom (x.comp (coactAlgHom R H A).toRingHom) σ hσ w =
-      Ψ ((Comodule.coact (R := R) (C := H) (M := A)).rTensor H w) := by
-    induction w using TensorProduct.inductionOn with
-    | tmul a h => simp [Ψ]
-    | add w w' hw hw' => rw [map_add, map_add, map_add, hw, hw']
+      rw [LinearMap.lTensor_tmul, liftRingHom_assoc_symm_tmul x σ hσR hσι, hgσ,
+        HopfAlgebra.mul_antipode_lTensor_comul_apply]
+      simp [← map_mul, Algebra.TensorProduct.tmul_mul_tmul, Algebra.TensorProduct.algebraMap_apply,
+        Algebra.algebraMap_eq_smul_one (A := H), TensorProduct.smul_tmul']
   refine ⟨liftRingHom (x.comp (coactAlgHom R H A).toRingHom) σ hσ, ?_, ?_⟩
   · ext a
-    simp [σ, ← Algebra.TensorProduct.one_def]
+    simp [σ]
   · ext a
     have := hΨ (Comodule.coact a)
-    rw [← Comodule.coassoc_apply, LinearEquiv.symm_apply_apply, ← hz,
-      Comodule.lTensor_counit_coact, TensorProduct.rid_tmul, one_smul] at this
+    rw [← Comodule.coassoc_apply, LinearEquiv.symm_apply_apply,
+      liftRingHom_rTensor_coact x σ hσR hσ, Comodule.lTensor_counit_coact] at this
     simpa using this
 
 -- transitivity: the points `(u, g)` and `(u g, g')` give the point `(u, g g')`
@@ -178,6 +183,9 @@ private theorem exists_comp_algebraMap_eq_and_comp_coactAlgHom_eq_trans (x y : A
       ← IsScalarTower.algebraMap_apply] at this
     simpa only [RingHom.comp_apply, ι, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
       AlgHom.commutes] using this
+  have hRx : x.comp (algebraMap R (A ⊗[R] H)) = (y.comp ι).comp (algebraMap R H) := by
+    ext r
+    simpa [ι, ← IsScalarTower.algebraMap_apply] using congr($hR r)
   -- `g g' = (g ⊗ g') ∘ Δ`
   let γ : H →+* T :=
     (liftRingHom (x.comp ι) (y.comp ι) hR).comp (Bialgebra.comulAlgHom R H).toRingHom
@@ -186,9 +194,7 @@ private theorem exists_comp_algebraMap_eq_and_comp_coactAlgHom_eq_trans (x y : A
     ext r
     simp [γ, ι, ← Algebra.TensorProduct.one_def]
   -- `(a ⊗ h) ⊗ h' ↦ x (a ⊗ h) g'(h')`
-  let Ψ : (A ⊗[R] H) ⊗[R] H →+* T := liftRingHom x (y.comp ι) (by
-    ext r
-    simpa [ι, ← IsScalarTower.algebraMap_apply] using congr($hR r))
+  let Ψ : (A ⊗[R] H) ⊗[R] H →+* T := liftRingHom x (y.comp ι) hRx
   let z := liftRingHom (x.comp (algebraMap A (A ⊗[R] H))) γ hγ
   -- `z (a ⊗ h) = ∑ x (a ⊗ h₁) g'(h₂)`
   have hz (w : A ⊗[R] H) :
@@ -196,27 +202,23 @@ private theorem exists_comp_algebraMap_eq_and_comp_coactAlgHom_eq_trans (x y : A
     induction w using TensorProduct.inductionOn with
     | add w w' hw hw' => simp only [map_add, hw, hw']
     | tmul a h =>
-      rw [LinearMap.lTensor_tmul]
-      have key (v : H ⊗[R] H) : x (a ⊗ₜ 1) * liftRingHom (x.comp ι) (y.comp ι) hR v =
-          Ψ ((TensorProduct.assoc R A H H).symm (a ⊗ₜ v)) := by
-        induction v using TensorProduct.inductionOn with
-        | add v v' hv hv' => simp [mul_add, tmul_add, hv, hv']
-        | tmul h₁ h₂ => simp [Ψ, ι, ← mul_assoc, ← map_mul, Algebra.TensorProduct.tmul_mul_tmul]
-      simpa [z, γ] using key (Coalgebra.comul h)
+      rw [LinearMap.lTensor_tmul, liftRingHom_assoc_symm_tmul x (y.comp ι) hRx hR]
+      simp [z, γ, ι]
   -- `Ψ ((coact a) ⊗ h) = x (coact a) g'(h) = y (a ⊗ h)`
   have hΨ (w : A ⊗[R] H) :
       Ψ ((Comodule.coact (R := R) (C := H) (M := A)).rTensor H w) = y w := by
+    rw [liftRingHom_rTensor_coact x (y.comp ι) hRx (by rw [hxy]; ext r; simp [ι])]
     induction w using TensorProduct.inductionOn with
     | add w w' hw hw' => simp only [map_add, hw, hw']
     | tmul a h =>
       have : x (Comodule.coact a) = y (a ⊗ₜ 1) := by simpa using congr($hxy a)
-      simp [Ψ, ι, this, ← map_mul, Algebra.TensorProduct.tmul_mul_tmul]
+      simp [ι, this, ← map_mul, Algebra.TensorProduct.tmul_mul_tmul]
   refine ⟨z, ?_, ?_⟩
   · ext a
     simp [z]
   · ext a
-    rw [RingHom.comp_apply, RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
-      coactAlgHom_apply, hz, ← Comodule.coassoc_apply, LinearEquiv.symm_apply_apply, hΨ]
+    simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, coactAlgHom_apply]
+    rw [hz, ← Comodule.coassoc_apply, LinearEquiv.symm_apply_apply, hΨ]
 
 /-- **A free action is an equivalence relation.** If the Galois map `A ⊗[R] A → A ⊗[R] H` is
 surjective, then the projection and the action `Spec (A ⊗[R] H) ⇉ Spec A`, given by `a ↦ a ⊗ 1`
