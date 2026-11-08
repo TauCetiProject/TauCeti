@@ -58,17 +58,17 @@ the energy identity over the truncation `S_R` of `S`
 (`TauCeti.ThricePuncturedSphere.truncation`), where every `±s ≤ R`. On each end the rectangle
 identity `TauCeti.SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity` applies in cylinder
 coordinates; the boundary terms along the angular sides cancel by periodicity, and those on the
-circles `±s = 1` vanish with the cutoff. For a map `u` which is `C¹` on `S`, whose energy density
-is integrable over `S_R`, and `R ≥ 1` this gives
+circles `±s = 1` vanish with the cutoff. For a map `u` which is `C¹` on `S` and `R ≥ 1` this
+gives
 
 `∫_{S_R} E = ∫_{S_R} u^*ω + β(R - 1) ∑ q, ±∫₀¹ H_q(t, u(φ_q(±R + i t))) dt - ∫_{S_R} R_K(u)`,
 
 with the sign `+` on the input ends `0`, `1` and `-` on the output end `∞`. Here the area density
-`ω(∂_s u, ∂_t u)` is integrable over `S_R`, since it differs from the energy density by the
-curvature and the exterior derivative `d(K(u))`, which is continuous on `S`. With the curvature
-bound, the energy over `S_R` therefore differs from the area plus the Hamiltonian boundary terms by
-at most `B₀ + B₁ + B_∞`, uniformly in `R`. For a vector space target the energy density of a map
-`C¹` on `S` is continuous there, so its integrability over `S_R` is automatic. Letting `R → ∞`
+`ω(∂_s u, ∂_t u)` is continuous on `S`, so integrable over the compact set `S_R`, and so is the
+energy density, since it differs from the area density by the curvature and the exterior
+derivative `d(K(u))`, which is continuous on `S`. With the curvature bound, the energy over `S_R`
+therefore differs from the area plus the Hamiltonian boundary terms by at most `B₀ + B₁ + B_∞`,
+uniformly in `R`. Letting `R → ∞`
 gives the energy identity on the whole pair of pants, in
 `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Asymptotic`.
 
@@ -495,6 +495,31 @@ theorem integrableOn_hamiltonianCurvature_pairOfPantsPerturbation (ω : SmoothTw
   by_contra! h
   exact hzA (mem_iUnion.2 ⟨q, mem_image_endPiece hzT h⟩)
 
+/-- Along a map which is `C¹` on an open set `U` of the plane, the symplectic area density
+`ω(∂_s u, ∂_t u)` is continuous on `U`. -/
+private theorem continuousOn_eval₂_mfderiv (ω : SmoothTwoForm I M) {u : ℝ × ℝ → M}
+    {U : Set (ℝ × ℝ)} (hU : IsOpen U) (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u U) :
+    ContinuousOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) U := by
+  -- The coordinate derivatives are continuous tangent fields along `u` on `U`.
+  have hv (e : ℝ × ℝ) : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I.tangent 0
+      (fun w ↦ Bundle.TotalSpace.mk' E (u w) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u w e)) U :=
+    contMDiffOn_zero_iff.2 fun z hz ↦
+      (((hu.contMDiffAt (hU.mem_nhds hz)).continuousAt_tangentMap le_rfl).comp
+        ((tangentBundleModelSpaceHomeomorph 𝓘(ℝ, ℝ × ℝ)).symm.continuous.continuousAt.comp
+          (continuous_id.prodMk continuous_const).continuousAt)).continuousWithinAt
+  have h := ContMDiffOn.continuousAlternatingMap_bundle_apply
+    (v := fun i ↦ ![fun w ↦ mfderiv 𝓘(ℝ, ℝ × ℝ) I u w stdComplexLineReal,
+      fun w ↦ mfderiv 𝓘(ℝ, ℝ × ℝ) I u w stdComplexLineImag] i)
+    ((SmoothForm.contMDiff ω |>.of_le (by simp)).comp_contMDiffOn (hu.of_le zero_le_one))
+    (fun i ↦ by fin_cases i <;> exact hv _)
+  refine ((continuous_snd.comp (Bundle.Trivial.homeomorphProd M ℝ).continuous).comp_continuousOn
+    (contMDiffOn_zero_iff.1 h)).congr fun z _ ↦ ?_
+  rw [SmoothBundleForm.eval₂_apply]
+  refine congrArg (ω.1 (u z)) (funext fun i ↦ ?_)
+  fin_cases i <;> rfl
+
 section Energy
 
 variable [FiniteDimensional ℝ E] {ω : SmoothTwoForm I M}
@@ -717,22 +742,22 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_image_endPiece
       intervalIntegral.integral_zero, zero_sub, intervalIntegral.integral_const_mul]
     ring
 
-/-- Over a compact part `T` of `S`, along a map which is `C¹` on `S`, the symplectic area density
-is integrable as soon as the Floer energy density of the pair-of-pants perturbation is: they
-differ by the exterior derivative `d(K(u))`, which is continuous on `S`, and by the curvature. -/
-private theorem IsNondegenerate.integrableOn_eval₂_mfderiv_of_integrableOn_floerEnergyDensity
+/-- Over a compact part `T` of `S`, along a map which is `C¹` on `S`, the Floer energy density of
+the pair-of-pants perturbation is integrable: it differs from the symplectic area density, which is
+continuous on `S`, by the exterior derivative `d(K(u))`, which is continuous on `S`, and by the
+curvature. -/
+private theorem IsNondegenerate.integrableOn_floerEnergyDensity_pairOfPantsPerturbation
     (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) {u : ℝ × ℝ → M}
     (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal) {T : Set (ℝ × ℝ)}
-    (hT : IsCompact T) (hTS : T ⊆ thricePuncturedSphereReal)
-    (hE : IntegrableOn (ω.floerEnergyDensity
+    (hT : IsCompact T) (hTS : T ⊆ thricePuncturedSphereReal) :
+    IntegrableOn (ω.floerEnergyDensity
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u) T) :
-    IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
-      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
-      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) T := by
+      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u) T := by
   have hmem : MapsTo (fun w ↦ (w, u w)) thricePuncturedSphereReal
       (thricePuncturedSphereReal ×ˢ (univ : Set M)) := fun _ hz ↦ ⟨hz, mem_univ _⟩
+  have harea := ((ω.continuousOn_eval₂_mfderiv isOpen_thricePuncturedSphereReal hu).mono
+    hTS).integrableOn_compact (μ := volume) hT
   -- Each pulled-back component `K(u)` is `C¹` on `S`, so its derivative is continuous on `S`.
   have hd (v : ℂ) (e : ℝ × ℝ) : IntegrableOn (fun z ↦ fderiv ℝ
       (fun w ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm w) (u w) v) z e) T := by
@@ -745,39 +770,35 @@ private theorem IsNondegenerate.integrableOn_eval₂_mfderiv_of_integrableOn_flo
       continuousOn_const).mono hTS).integrableOn_compact hT
   have hR := (integrableOn_hamiltonianCurvature_pairOfPantsPerturbation ω hH hHs
     hu.continuousOn).mono_set hTS
-  refine ((hE.sub ((hd Complex.I stdComplexLineReal).sub (hd 1 stdComplexLineImag))).add
+  refine ((harea.add ((hd Complex.I stdComplexLineReal).sub (hd 1 stdComplexLineImag))).sub
     hR).congr_fun (fun z hz ↦ ?_) hT.isClosed.measurableSet
   have hzS := hTS hz
   have hzS' : (z, u z) ∈ thricePuncturedSphereReal ×ˢ (univ : Set M) := hmem hzS
   have hKz (v : ℂ) := ((contMDiffOn_pairOfPantsPerturbation hH hHs v).contMDiffAt
     ((isOpen_thricePuncturedSphereReal.prod isOpen_univ).mem_nhds hzS')).mdifferentiableAt
       one_ne_zero
-  simp only [Pi.add_apply, Pi.sub_apply, hω.floerEnergyDensity_eq
-    ((hu.contMDiffAt (isOpen_thricePuncturedSphereReal.mem_nhds hzS)).mdifferentiableAt
-      one_ne_zero) (hKz 1) (hKz Complex.I)]
-  ring
+  rw [hω.floerEnergyDensity_eq ((hu.contMDiffAt
+    (isOpen_thricePuncturedSphereReal.mem_nhds hzS)).mdifferentiableAt one_ne_zero) (hKz 1)
+    (hKz Complex.I)]
+  rfl
 
 /-- **The energy identity on the truncated pair of pants, for a manifold target.** Let `K` be the
 pair-of-pants perturbation of period-one `C¹` Hamiltonians `H_q` on a finite-dimensional manifold
 with a nondegenerate two-form, with components `K_s(z) = K(z)(1)` and `K_t(z) = K(z)(i)` in the
-global coordinate `z = s + i t` of `ℂ`, and let `u` be a map which is `C¹` on `S`. For `R ≥ 1`, if
-the Floer energy density of `u` is integrable over the truncation `S_R` of `S`, then the Floer
-energy over `S_R` is the symplectic area, plus `β(R - 1)` times the signed sum over the three ends
-of the integrals of `H_q(t)` along the boundary circles `±s = R`, minus the integrated curvature:
+global coordinate `z = s + i t` of `ℂ`, and let `u` be a map which is `C¹` on `S`. For `R ≥ 1`,
+the Floer energy over the truncation `S_R` of `S` is the symplectic area, plus `β(R - 1)` times
+the signed sum over the three ends of the integrals of `H_q(t)` along the boundary circles
+`±s = R`, minus the integrated curvature:
 
 `∫_{S_R} E = ∫_{S_R} u^*ω + β(R - 1) ∑ q, ±∫₀¹ H_q(t, u(φ_q(±R + i t))) dt - ∫_{S_R} R_K(u)`.
 
 Here `φ_q` is the end lift of `q`, the sign is `+` on the input ends `0` and `1` and `-` on the
 output end `∞`, and `β = smoothTransition` is the cutoff of the perturbation, so `β(R - 1) = 1`
-for `R ≥ 2`. The area and curvature terms are integrable automatically. -/
+for `R ≥ 2`. The energy, area and curvature densities are integrable over `S_R` automatically. -/
 theorem IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation
     (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) {u : ℝ × ℝ → M}
-    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal) {R : ℝ} (hR : 1 ≤ R)
-    (hE : IntegrableOn (ω.floerEnergyDensity
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u)
-      (Complex.equivRealProdCLM.symm ⁻¹' truncation R)) :
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal) {R : ℝ} (hR : 1 ≤ R) :
     ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R, ω.floerEnergyDensity
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
@@ -799,8 +820,9 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_trun
     Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_truncation R)
   have hTS : T ⊆ thricePuncturedSphereReal := fun z hz =>
     mem_thricePuncturedSphereReal_iff.2 ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩
-  have harea := hω.integrableOn_eval₂_mfderiv_of_integrableOn_floerEnergyDensity hH hHs hu hT
-    hTS hE
+  have hE := hω.integrableOn_floerEnergyDensity_pairOfPantsPerturbation hH hHs hu hT hTS
+  have harea := ((ω.continuousOn_eval₂_mfderiv isOpen_thricePuncturedSphereReal hu).mono
+    hTS).integrableOn_compact (μ := volume) hT
   have hcurv := (integrableOn_hamiltonianCurvature_pairOfPantsPerturbation ω hH hHs
     hu.continuousOn).mono_set hTS
   -- The truncation is the disjoint union of its core `C`, where every `±s < 1`, and the three
@@ -849,17 +871,13 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_trun
 
 /-- **The energy bound on the truncated pair of pants, for a manifold target.** If the end
 Hamiltonians are bounded, `|H_q| ≤ B_q`, then for every `R ≥ 1` the Floer energy over the
-truncation `S_R`, when it is integrable, differs from the symplectic area plus the Hamiltonian
+truncation `S_R` differs from the symplectic area plus the Hamiltonian
 boundary terms by at most `B₀ + B₁ + B_∞`, uniformly in `R`. -/
 theorem IsNondegenerate.abs_integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_sub_le
     (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
     {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) {u : ℝ × ℝ → M}
-    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal) {R : ℝ} (hR : 1 ≤ R)
-    (hE : IntegrableOn (ω.floerEnergyDensity
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u)
-      (Complex.equivRealProdCLM.symm ⁻¹' truncation R)) :
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal) {R : ℝ} (hR : 1 ≤ R) :
     |(∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R, ω.floerEnergyDensity
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
@@ -871,7 +889,7 @@ theorem IsNondegenerate.abs_integral_floerEnergyDensity_pairOfPantsPerturbation_
           H q t (u (Complex.equivRealProdCLM
             (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I)))))| ≤ ∑ q, B q := by
   have hsub (a b c : ℝ) : a + b - c - a - b = -c := by ring
-  rw [hω.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation hH hHs hu hR hE, hsub,
+  rw [hω.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation hH hHs hu hR, hsub,
     abs_neg]
   exact abs_setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_le ω hH hHs hB u _
 
@@ -1031,8 +1049,7 @@ the integrals of `H_q(t)` along the boundary circles `±s = R`, minus the integr
 Here `φ_q` is the end lift of `q`, the sign is `+` on the input ends `0` and `1` and `-` on the
 output end `∞`, and `β = smoothTransition` is the cutoff of the perturbation, so `β(R - 1) = 1`
 for `R ≥ 2`. This is the vector-space case of
-`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation`;
-here the energy density is integrable over `S_R` automatically. -/
+`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation`. -/
 theorem integral_floerEnergyDensity_pairOfPantsPerturbation_truncation (ω : SymplecticForm V)
     (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {u : ℝ × ℝ → V}
     (hu : ContDiffOn ℝ 1 u thricePuncturedSphereReal)
@@ -1050,18 +1067,10 @@ theorem integral_floerEnergyDensity_pairOfPantsPerturbation_truncation (ω : Sym
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
           z (u z) := by
-  obtain ⟨hE, -, -⟩ := integrableOn_truncation_pairOfPantsPerturbation ω hH hHs hu R
-  have hE' : ω.constSmooth.floerEnergyDensity
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u =
-      ω.floerEnergyDensity
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u :=
-    funext (floerEnergyDensity_constSmooth ω _ _ u)
   simpa only [floerEnergyDensity_constSmooth, hamiltonianCurvature_constSmooth,
     eval₂_constSmooth_mfderiv_stdComplexLine] using
     (isNondegenerate_constSmooth ω).integral_floerEnergyDensity_pairOfPantsPerturbation_truncation
-    hH (contMDiff_uncurry_of_contDiff hHs) (contMDiffOn_iff_contDiffOn.mpr hu) hR (hE' ▸ hE)
+    hH (contMDiff_uncurry_of_contDiff hHs) (contMDiffOn_iff_contDiffOn.mpr hu) hR
 
 
 /-- **The energy bound on the truncated pair of pants.** If the end Hamiltonians are bounded,

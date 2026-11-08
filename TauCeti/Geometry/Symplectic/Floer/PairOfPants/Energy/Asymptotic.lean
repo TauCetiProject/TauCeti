@@ -171,9 +171,6 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation
     tendsto_const_nhds.congr' <| by
       filter_upwards [eventually_ge_atTop 2] with R hR
       exact (smoothTransition.one_of_one_le (by linarith)).symm
-  have hTS (R : ℝ) : Complex.equivRealProdCLM.symm ⁻¹' truncation R ⊆
-      thricePuncturedSphereReal := fun z hz =>
-    mem_thricePuncturedSphereReal_iff.2 ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩
   have hrhs := ((tendsto_setIntegral_truncation hA).add (by
       simpa only [one_mul] using hβ.mul (tendsto_finsetSum Finset.univ fun q _ ↦
         (tendsto_intervalIntegral_endLoop (fun q ↦ (hHs q).continuous) hB hu.continuousOn
@@ -182,8 +179,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation
       (integrableOn_hamiltonianCurvature_pairOfPantsPerturbation ω hH hHs hu.continuousOn))
   refine tendsto_nhds_unique (tendsto_setIntegral_truncation hE) (hrhs.congr' ?_)
   filter_upwards [eventually_ge_atTop 1] with R hR
-  exact (hω.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation hH hHs hu hR
-    (hE.mono_set (hTS R))).symm
+  exact (hω.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation hH hHs hu hR).symm
 
 /-- **The energy bound on the pair of pants, for a manifold target.** Under the hypotheses of
 `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation`, the Floer
