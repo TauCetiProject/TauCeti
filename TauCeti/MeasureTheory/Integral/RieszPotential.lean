@@ -61,7 +61,7 @@ the convolution of `‖f‖` with the locally integrable kernel `‖·‖ ^ (α 
 integrability hypothesis, and it dominates the potential of `f` itself for vector-valued `f`.
 No normalising constant is included.
 
-The **Hardy–Littlewood–Sobolev inequality** (`TauCeti.eLpNorm_rieszPotential_le`) says that
+The **Hardy–Littlewood–Sobolev inequality** (`TauCeti.exists_eLpNorm_rieszPotential_le`) says that
 `I_α` is bounded from `Lᵖ` to `L^q` whenever `1 < p` and `1 / q = 1 / p - α / n`:
 
 `‖I_α f‖_q ≤ C ‖f‖_p`,
@@ -85,7 +85,7 @@ function. Since `α > 0` these shells sum to at most a multiple of `R ^ α M f (
 outside `B(x, R)` Hölder's inequality bounds the same integral by
 `μ (B(x, 2 r)) ^ (1 - 1 / p) ‖f‖_p`. Since `α < n / p` these shells sum to at most a multiple of
 `R ^ (α - n / p) ‖f‖_p`. Choosing the radius `R` that balances the two terms gives **Hedberg's
-inequality** (`TauCeti.rieszPotential_le_mul_maximalFunction_rpow_mul_eLpNorm_rpow`)
+inequality** (`TauCeti.exists_rieszPotential_le_mul_maximalFunction_rpow_mul_eLpNorm_rpow`)
 
 `I_α f (x) ≤ C (M f (x)) ^ (1 - θ) ‖f‖_p ^ θ`, where `θ = α p / n`,
 
@@ -103,8 +103,9 @@ Hardy–Littlewood–Sobolev inequality when `p > 1`. The strong-type bound fail
 * `TauCeti.rieszPotential`: the Riesz potential `I_α f` of order `α` on the whole space.
 * `TauCeti.rieszPotential_zero`, `TauCeti.rieszPotential_add_le`,
   `TauCeti.rieszPotential_const_smul`: `I_α` is sublinear.
-* `TauCeti.rieszPotential_le_mul_maximalFunction_rpow_mul_eLpNorm_rpow`: Hedberg's inequality.
-* `TauCeti.eLpNorm_rieszPotential_le`: the Hardy–Littlewood–Sobolev inequality.
+* `TauCeti.exists_rieszPotential_le_mul_maximalFunction_rpow_mul_eLpNorm_rpow`: Hedberg's
+  inequality.
+* `TauCeti.exists_eLpNorm_rieszPotential_le`: the Hardy–Littlewood–Sobolev inequality.
 
 ## References
 
@@ -690,8 +691,8 @@ pointwise by the Hardy–Littlewood maximal function and the `Lᵖ` norm,
 `I_α f (x) ≤ C (M f (x)) ^ (1 - θ) ‖f‖_p ^ θ`, where `θ = α p / n`,
 
 with `C` depending only on `μ`, `α` and `p`. -/
-theorem rieszPotential_le_mul_maximalFunction_rpow_mul_eLpNorm_rpow [FiniteDimensional ℝ E]
-    (μ : Measure E) [μ.IsAddHaarMeasure] (hα : 0 < α) {p : ℝ≥0} (hp : 1 ≤ p)
+theorem exists_rieszPotential_le_mul_maximalFunction_rpow_mul_eLpNorm_rpow
+    [FiniteDimensional ℝ E] (μ : Measure E) [μ.IsAddHaarMeasure] (hα : 0 < α) {p : ℝ≥0} (hp : 1 ≤ p)
     (hαp : α * p < finrank ℝ E) :
     ∃ C : ℝ≥0, ∀ (f : E → F) (x : E), rieszPotential μ α f x ≤
       C * maximalFunction μ f x ^ (1 - α * p / finrank ℝ E) *
@@ -755,8 +756,8 @@ The bound has content only for `q ≠ 0`, equivalently `α p < n`. The hypothesi
 `q = 0` (the case `α p = n`, since `0⁻¹ = 0`), where the bound is degenerate: it is trivial when
 `‖f‖_p = ∞`, and otherwise `f`, hence `I_α f`, is almost everywhere strongly measurable, so
 `eLpNorm (I_α f) 0 = 0`. -/
-theorem eLpNorm_rieszPotential_le [FiniteDimensional ℝ E] (μ : Measure E) [μ.IsAddHaarMeasure]
-    (hα : 0 < α) {p q : ℝ≥0} (hp : 1 < p)
+theorem exists_eLpNorm_rieszPotential_le [FiniteDimensional ℝ E] (μ : Measure E)
+    [μ.IsAddHaarMeasure] (hα : 0 < α) {p q : ℝ≥0} (hp : 1 < p)
     (hpq : (q : ℝ)⁻¹ = (p : ℝ)⁻¹ - α / finrank ℝ E) :
     ∃ C : ℝ≥0, ∀ f : E → F, eLpNorm (rieszPotential μ α f) q μ ≤ C * eLpNorm f p μ := by
   -- At `q = 0` the left side vanishes once `‖f‖_p < ∞` makes `I_α f` measurable.
@@ -790,24 +791,28 @@ theorem eLpNorm_rieszPotential_le [FiniteDimensional ℝ E] (μ : Measure E) [μ
       field_simp
     rw [← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul (by positivity), this,
       ENNReal.ofReal_coe_nnreal]
-  -- The strong-type maximal inequality with some constant `K`. The constant below uses `K + 1`,
-  -- which keeps it nonzero, so that it also covers `‖f‖_p = ∞`.
-  obtain ⟨K, hK⟩ := exists_eLpNorm_maximalFunction_le (F := F) μ (p := p)
-    (by exact_mod_cast hp) ENNReal.coe_ne_top
+  -- The strong-type maximal inequality, with the constant `K` of
+  -- `eLpNorm_maximalFunction_le` inferred by unification.
+  have hp' : 1 < (p : ℝ≥0∞) := by exact_mod_cast hp
+  obtain ⟨K, hK, hK_top, hK₀⟩ : ∃ K : ℝ≥0∞, (∀ f : E → F, AEMeasurable (‖f ·‖ₑ) μ →
+      eLpNorm (maximalFunction μ f) p μ ≤ K * eLpNorm f p μ) ∧ K ≠ ∞ ∧ K ≠ 0 :=
+    ⟨_, fun _ hf => eLpNorm_maximalFunction_le μ hf hp' ENNReal.coe_ne_top, by finiteness,
+      (ENNReal.rpow_pos (ENNReal.mul_pos (ENNReal.ofReal_pos.2 (by
+        simp only [ENNReal.coe_toReal]
+        exact div_pos (by positivity) (sub_pos.2 (by exact_mod_cast hp)))).ne' (by simp))
+        (by finiteness)).ne'⟩
   set C₀ := hedbergConst μ α p
-  have hK₁ : ((K : ℝ≥0∞) + 1) ^ (1 - α * p / finrank ℝ E) ≠ 0 :=
-    (ENNReal.rpow_pos (by positivity) (by simp)).ne'
-  have hC : C₀ * ((K : ℝ≥0∞) + 1) ^ (1 - α * p / finrank ℝ E) ≠ ∞ :=
+  have hC : C₀ * K ^ (1 - α * p / finrank ℝ E) ≠ ∞ :=
     ENNReal.mul_ne_top (hedbergConst_ne_top hα hp.le hαp)
-      (ENNReal.rpow_ne_top_of_ne_zero (by positivity) (by simp))
-  refine ⟨(C₀ * ((K : ℝ≥0∞) + 1) ^ (1 - α * p / finrank ℝ E)).toNNReal, fun f => ?_⟩
+      (ENNReal.rpow_ne_top_of_ne_zero hK₀ hK_top)
+  refine ⟨(C₀ * K ^ (1 - α * p / finrank ℝ E)).toNNReal, fun f => ?_⟩
   rw [ENNReal.coe_toNNReal hC]
   rcases eq_or_ne (eLpNorm f p μ) ∞ with hN | hN
-  · rw [hN, ENNReal.mul_top (mul_ne_zero hedbergConst_ne_zero hK₁)]
+  · rw [hN, ENNReal.mul_top (mul_ne_zero hedbergConst_ne_zero
+      (ENNReal.rpow_pos (pos_iff_ne_zero.2 hK₀) hK_top).ne')]
     exact le_top
   have hf := aestronglyMeasurable_of_eLpNorm_ne_top hN
-  exact eLpNorm_rieszPotential_le_mul hα hp.le hαp hqp hq hf
-    ((hK f hf.enorm).trans (by gcongr; exact le_self_add))
+  exact eLpNorm_rieszPotential_le_mul hα hp.le hαp hqp hq hf (hK f hf.enorm)
 
 end WholeSpace
 

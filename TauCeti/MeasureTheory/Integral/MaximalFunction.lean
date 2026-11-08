@@ -90,8 +90,7 @@ Here `c = d = 2⁻¹`, so the low part is bounded by `t / 2`, its maximal functi
 * `TauCeti.ae_maximalFunction_lt_top`: the maximal function of an `L¹` function is finite almost
   everywhere.
 * `TauCeti.lintegral_rpow_maximalFunction_le`, `TauCeti.eLpNorm_maximalFunction_le`: the
-  **strong type `(p, p)` maximal inequality** for `1 < p < ∞`, with an explicit constant, and
-  `TauCeti.exists_eLpNorm_maximalFunction_le`, the same bound with an unspecified constant.
+  **strong type `(p, p)` maximal inequality** for `1 < p < ∞`, with an explicit constant.
 * `TauCeti.eLpNorm_maximalFunction_lt_top`,
   `TauCeti.ae_maximalFunction_lt_top_of_eLpNorm_ne_top`: a function with finite `Lᵖ` seminorm
   has a maximal function with finite `Lᵖ` seminorm for `1 < p ≤ ∞`, and the maximal function
@@ -505,16 +504,6 @@ theorem eLpNorm_maximalFunction_le [TopologicalSpace F] (μ : Measure E) [μ.IsA
           4 ^ finrank ℝ E) ^ (1 / p.toReal) * (∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ) ^ (1 / p.toReal) :=
         ENNReal.mul_rpow_of_nonneg _ _ (by positivity)
     _ ≤ _ := by gcongr
-
-/-- **The Hardy–Littlewood maximal inequality** for `1 < p < ∞` with an unspecified constant:
-`‖M f‖_p ≤ C ‖f‖_p`, with `C` depending only on `μ` and `p`. The explicit constant is
-`TauCeti.eLpNorm_maximalFunction_le`. -/
-theorem exists_eLpNorm_maximalFunction_le [TopologicalSpace F] (μ : Measure E)
-    [μ.IsAddHaarMeasure] {p : ℝ≥0∞} (hp : 1 < p) (hp_top : p ≠ ∞) :
-    ∃ C : ℝ≥0, ∀ f : E → F, AEMeasurable (fun x => ‖f x‖ₑ) μ →
-      eLpNorm (maximalFunction μ f) p μ ≤ C * eLpNorm f p μ :=
-  ⟨_, fun _ hf => (eLpNorm_maximalFunction_le μ hf hp hp_top).trans_eq
-    (congrArg (· * _) (ENNReal.coe_toNNReal (by finiteness)).symm)⟩
 
 end StrongType
 
