@@ -33,12 +33,13 @@ Morse function exists depends on the coefficients, as projective spaces show.
   (`TauCeti.isPerfectMorse_projectiveMomentFunction_real`).
 * **No perfect Morse function over `ℚ`.** Every Morse function on a nonempty compact manifold of
   dimension `m` has a critical point of index `m`, at a point of maximum
-  (`TauCeti.IsMorse.criticalCount_finrank_ne_zero`). For even `N ≥ 2` the top homology
-  `H_N(ℝPᴺ; k)` vanishes as soon as `2 ≠ 0` in `k`. So no Morse function on `ℝPᴺ`, for instance
-  on `ℝP²`, is perfect over `ℚ`, or over any division ring of characteristic other than `2`
-  (`TauCeti.not_isPerfectMorse_projectivization_real`). On `ℝP²` the moment function with three
-  distinct weights has three critical points, of indices `0`, `1` and `2`; the Betti numbers are
-  `1, 1, 1` over `ℤ/2` but `1, 0, 0` over `ℚ`.
+  (`TauCeti.IsMorse.criticalCount_finrank_ne_zero`), so a perfect Morse function forces the top
+  homology to be nonzero (`TauCeti.IsPerfectMorse.finrank_singularHomology_finrank_ne_zero`).
+  For even `N ≥ 2` the top homology `H_N(ℝPᴺ; k)` vanishes as soon as `2 ≠ 0` in `k`. So no
+  Morse function on `ℝPᴺ`, for instance on `ℝP²`, is perfect over `ℚ`, or over any division ring
+  of characteristic other than `2` (`TauCeti.not_isPerfectMorse_projectivization_real`). On `ℝP²`
+  the moment function with three distinct weights has three critical points, of indices `0`, `1`
+  and `2`; the Betti numbers are `1, 1, 1` over `ℤ/2` but `1, 0, 0` over `ℚ`.
 
 ## References
 
@@ -121,6 +122,18 @@ theorem IsMorse.isPerfectMorse_of_forall_ne_add_one (hf : IsMorse I f)
     ModuleCat.finrank_of_self, mul_one,
     ENat.natCast_toNat_eq_self.2 (hf.criticalCount_ne_top n)]
 
+omit [IsManifold I ∞ M] [T2Space M] in
+/-- **A perfect Morse function forces nonzero top homology.** If a nonempty compact manifold of
+dimension `m` carries a perfect Morse function with coefficients in `k`, then `Hₘ(M; k) ≠ 0`:
+the maximum is a critical point of index `m`. -/
+theorem IsPerfectMorse.finrank_singularHomology_finrank_ne_zero [Nonempty M]
+    (hf : IsPerfectMorse I k f) :
+    finrank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) (finrank ℝ E)).obj
+      (ModuleCat.of k k)).obj (TopCat.of M)) ≠ 0 := by
+  have h := hf.isMorse.criticalCount_finrank_ne_zero
+  rw [hf.criticalCount_eq] at h
+  exact_mod_cast h
+
 end Compact
 
 /-! ### Projective spaces -/
@@ -162,8 +175,8 @@ theorem not_isPerfectMorse_projectivization_real (hn : Even n) (hn0 : n ≠ 0) {
     [DivisionRing k] (h2 : (2 : k) ≠ 0) (f : ℙ ℝ (Fin (n + 1) → ℝ) → ℝ) :
     ¬ IsPerfectMorse 𝓘(ℝ, Fin n → ℝ) k f := by
   intro hf
-  have h := hf.isMorse.criticalCount_finrank_ne_zero
-  rw [finrank_fin_fun, hf.criticalCount_eq, ModuleCat.finrank_eq_zero_of_isZero
+  have h := hf.finrank_singularHomology_finrank_ne_zero
+  rw [finrank_fin_fun, ModuleCat.finrank_eq_zero_of_isZero
     (RealProjectiveSpace.isZero_singularHomology_projectivization_of_even k
       (isRegular_iff_ne_zero.2 h2).right hn hn0)] at h
   exact h rfl
