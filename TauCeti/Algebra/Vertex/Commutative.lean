@@ -90,9 +90,9 @@ private theorem expCoeff_derivation (a : V) (m : ℤ) :
     · simp [D.expCoeff_of_neg _ hm, hm']
     · rw [D.expCoeff_of_neg _ hm, D.expCoeff_of_neg _ hm', smul_zero]
   · lift m to ℕ using hm
+    rw [← Int.cast_smul_eq_zsmul ℚ]
     simp only [expCoeff, ← Nat.cast_succ, Nat.cast_nonneg, ite_true, Int.toNat_natCast]
-    rw [pow_succ, mul_apply_eq_comp, coeFn_coe, natCast_zsmul, ← Nat.cast_smul_eq_nsmul ℚ,
-      smul_smul, Nat.factorial_succ]
+    rw [pow_succ, mul_apply_eq_comp, coeFn_coe, smul_smul, Nat.factorial_succ]
     congr 1
     push_cast
     field_simp
@@ -119,7 +119,9 @@ private theorem ncoeff_expField (a : V) (n : ℤ) :
 
 private theorem ncoeff_expField_neg (a : V) (k : ℕ) :
     (D.expField a)[[-k - 1]] = LinearMap.mulLeft R (D.expCoeff a k) := by
-  rw [ncoeff_expField, neg_sub, sub_neg_eq_add, add_sub_cancel_left]
+  rw [ncoeff_expField]
+  congr 2
+  ring
 
 private theorem ncoeff_expField_of_nonneg (a : V) {n : ℤ} (hn : 0 ≤ n) :
     (D.expField a)[[n]] = 0 := by
@@ -128,8 +130,9 @@ private theorem ncoeff_expField_of_nonneg (a : V) {n : ℤ} (hn : 0 ≤ n) :
 /-- The state-derivative identity `Y(D a, z) = ∂_z Y(a, z)`. -/
 private theorem expField_derivation (a : V) : D.expField (D a) = derivative (D.expField a) := by
   refine ext_ncoeff fun n ↦ ?_
-  rw [ncoeff_expField, ncoeff_derivative, ncoeff_expField, D.expCoeff_derivation, sub_add_cancel,
-    neg_sub, sub_sub_cancel_left]
+  have h₁ : -n - 1 + 1 = -n := by ring
+  have h₂ : -(n - 1) - 1 = -n := by ring
+  rw [ncoeff_expField, ncoeff_derivative, ncoeff_expField, D.expCoeff_derivation, h₁, h₂]
   ext v
   simp only [LinearMap.mulLeft_apply, LinearMap.smul_apply, smul_mul_assoc]
 
