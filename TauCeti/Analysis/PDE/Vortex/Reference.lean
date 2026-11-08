@@ -179,6 +179,16 @@ theorem norm_referenceSection_le_one (f : ContDiffBump (0 : ℝ)) (m : ℕ) (z :
     exact div_self_le_one _
   simpa using mul_le_mul h₁ h₂ (by positivity) zero_le_one
 
+/-- The modulus defect `1 - ‖α_ref‖` of the reference section is compactly supported: it vanishes
+outside the disc where the cutoff is active. -/
+theorem hasCompactSupport_one_sub_norm_referenceSection (f : ContDiffBump (0 : ℝ)) (m : ℕ) :
+    HasCompactSupport fun z ↦ 1 - ‖referenceSection f m z‖ := by
+  refine HasCompactSupport.intro (isCompact_closedBall 0 (f.rOut + 1)) fun z hz ↦ ?_
+  have hz' : f.rOut ≤ ‖z‖ ^ 2 := by
+    rw [Metric.mem_closedBall, dist_zero_right, not_le] at hz
+    nlinarith [f.rOut_pos]
+  rw [norm_referenceSection f m hz', sub_self]
+
 /-- Rotation of the coordinate multiplies the reference section by the degree-`m` phase. -/
 theorem referenceSection_mul (f : ContDiffBump (0 : ℝ)) (m : ℕ) {u : ℂ}
     (hu : ‖u‖ = 1) (z : ℂ) :

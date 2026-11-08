@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.FieldSpace
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Sobolev
+import TauCeti.Analysis.Normed.Ring.Basic
 import TauCeti.Analysis.Sobolev.BesselPotential.Algebra
-import TauCeti.Analysis.Sobolev.BesselPotential.Basic
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 
 /-!
@@ -75,21 +75,6 @@ theorem gaugeForm_apply_mem_realSobolevFunctions_of_mem_framedFieldSpace {s : �
     PiLp.sub_apply, Matrix.cons_val_zero, Matrix.cons_val_one, smul_eq_mul]
   ring
 
-/-- The pointwise bound behind `memLp_coe_sub_one_of_mem_framedFieldSpace`: for `|w| = 1`
-and `|r| ≤ 1`, `|w - 1| ≤ |(w - 1) a| + 2 |a - r| + 2 (1 - |r|)`. -/
-private theorem norm_sub_one_le {w a r : ℂ} (hw : ‖w‖ = 1) (hr : ‖r‖ ≤ 1) :
-    ‖w - 1‖ ≤ ‖(w - 1) * a‖ + 2 * ‖a - r‖ + 2 * (1 - ‖r‖) := by
-  have hw₂ : ‖w - 1‖ ≤ 2 := (norm_sub_le _ _).trans (by norm_num [hw])
-  have h₁ : ‖w - 1‖ * ‖r‖ ≤ ‖(w - 1) * a‖ + 2 * ‖a - r‖ := by
-    calc ‖w - 1‖ * ‖r‖ = ‖(w - 1) * a - (w - 1) * (a - r)‖ := by
-          rw [← norm_mul]
-          ring_nf
-      _ ≤ ‖(w - 1) * a‖ + ‖w - 1‖ * ‖a - r‖ := by
-          rw [← norm_mul]
-          exact norm_sub_le _ _
-      _ ≤ _ := by gcongr
-  nlinarith [mul_nonneg (sub_nonneg.2 hw₂) (sub_nonneg.2 hr), norm_nonneg (w - 1)]
-
 /-- **A gauge between two framed fields is square integrable about one.** If a continuous gauge
 `u` carries a field `x` of `A_m^s` to another field of `A_m^s`, then `u - 1 ∈ L²`. Where the
 reference section has unit modulus, `|u - 1| ≤ |(u - 1) α_x| + 2 |α_x - α_ref|`, and
@@ -98,26 +83,12 @@ theorem memLp_coe_sub_one_of_mem_framedFieldSpace {s : ℝ}
     (hx : x ∈ framedFieldSpace f m s) (hu : Continuous fun z ↦ (u z : ℂ))
     (hux : gaugeTransform u x ∈ framedFieldSpace f m s) :
     MemLp (fun z ↦ (u z : ℂ) - 1) 2 volume := by
-  -- The section of a field of `sobolevFields s` is square integrable.
-  have hsec {d : ℂ → EuclideanSpace ℝ (Fin 4)} (hd : d ∈ sobolevFields s) :
-      MemLp (sectionValue d) 2 volume := by
-    have h₂ := memLp_of_mem_realSobolevFunctions (mem_sobolevFields.1 hd 2)
-    have h₃ := memLp_of_mem_realSobolevFunctions (mem_sobolevFields.1 hd 3)
-    refine (((h₂.ofReal (K := ℂ)).add ((h₃.ofReal (K := ℂ)).mul_const I)).const_mul 2).ae_eq
-      (.of_forall fun z ↦ ?_)
-    simp [sectionValue_apply]
-  -- The defect `1 - |α_ref|` of the reference section is supported in a disc.
-  have hρ : MemLp (fun z ↦ 1 - ‖referenceSection f m z‖) 2 volume := by
-    refine (continuous_const.sub (contDiff_referenceSection f m).continuous.norm)
-      |>.memLp_of_hasCompactSupport ?_
-    refine HasCompactSupport.intro (isCompact_closedBall 0 (f.rOut + 1)) fun z hz ↦ ?_
-    have hz' : f.rOut ≤ ‖z‖ ^ 2 := by
-      rw [Metric.mem_closedBall, dist_zero_right, not_le] at hz
-      nlinarith [f.rOut_pos]
-    rw [Pi.sub_apply, norm_referenceSection f m hz', sub_self]
-  have hdx := hsec (mem_framedFieldSpace.1 hx)
-  have hg := ((hsec (mem_framedFieldSpace.1 hux)).sub hdx).norm.add
-    ((hdx.norm.const_mul 2).add (hρ.const_mul 2))
+  have hρ : MemLp (fun z ↦ 1 - ‖referenceSection f m z‖) 2 volume :=
+    (continuous_const.sub (contDiff_referenceSection f m).continuous.norm)
+      |>.memLp_of_hasCompactSupport (hasCompactSupport_one_sub_norm_referenceSection f m)
+  have hdx := memLp_sectionValue_of_mem_sobolevFields (mem_framedFieldSpace.1 hx)
+  have hdux := memLp_sectionValue_of_mem_sobolevFields (mem_framedFieldSpace.1 hux)
+  have hg := (hdux.sub hdx).norm.add ((hdx.norm.const_mul 2).add (hρ.const_mul 2))
   refine hg.of_le (hu.sub continuous_const).aestronglyMeasurable (.of_forall fun z ↦ ?_)
   refine le_trans ?_ (Real.le_norm_self _)
   -- The sections differ by `(u - 1) α_x`, and `α_x - α_ref` is the section of `x - x_ref`.
@@ -130,7 +101,8 @@ theorem memLp_coe_sub_one_of_mem_framedFieldSpace {s : ℝ}
     simp [sectionValue_sub]
   simp only [Pi.add_apply, Pi.sub_apply]
   rw [hdiff, hxr, ← add_assoc]
-  exact norm_sub_one_le (Circle.norm_coe _) (norm_referenceSection_le_one f m z)
+  exact norm_sub_one_le_norm_sub_one_mul_add (Circle.norm_coe _)
+    (norm_referenceSection_le_one f m z)
 
 /-- With `|c| ≤ 1` and `dc = c' ω` for some `|c'| ≤ 1`, the product of `c` with a coefficient of
 `ω = Im (u⁻¹ du) ∈ H^k`, `k ≥ 2`, lies in `H¹`: its derivative is `c ∂ω(v) + c' ω(v) ω(w)`, a sum

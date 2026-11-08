@@ -351,6 +351,7 @@ theorem memLp_of_mem_realSobolevFunctions {s : ℝ} {f : E → ℝ}
   (Lp.memLp u).ae_eq huf
 
 /-- A real function lies in `realSobolevFunctions E 0 p` exactly when it lies in `Lᵖ`. -/
+@[simp]
 theorem mem_realSobolevFunctions_zero_iff {f : E → ℝ} :
     f ∈ realSobolevFunctions E 0 p ↔ MemLp f p volume :=
   ⟨memLp_of_mem_realSobolevFunctions,
