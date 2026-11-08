@@ -14,8 +14,8 @@ public import Mathlib.Algebra.Homology.HomologySequence
 The opcycles isomorphism of an extended complex is natural in chain maps and compatible with
 `HomologicalComplex.opcyclesToCycles`. These identities require homology only in the degrees
 involved, in a category with zero morphisms and a zero object. An extended chain map is an
-epimorphism in homology in a degree of the image exactly when the original map is, the counterpart
-for epimorphisms of Mathlib's `HomologicalComplex.quasiIsoAt_extendMap_iff`. Outside the image,
+epimorphism (or a monomorphism) in homology in a degree of the image exactly when the original map
+is, the counterpart of Mathlib's `HomologicalComplex.quasiIsoAt_extendMap_iff`. Outside the image,
 an extended complex has zero homology, so every extended chain map is an isomorphism in homology
 there.
 
@@ -69,6 +69,16 @@ lemma epi_homologyMap_extendMap_iff {j : ι} {j' : ι'} (hj' : e.f j = j')
     [(L.extend e).HasHomology j'] :
     Epi (homologyMap (extendMap φ e) j') ↔ Epi (homologyMap φ j) :=
   (MorphismProperty.epimorphisms C).arrow_mk_iso_iff
+    (Arrow.isoMk (K.extendHomologyIso e hj') (L.extendHomologyIso e hj') (by simp))
+
+variable {e} in
+/-- In a degree `j'` in the image of `e`, the map induced in homology by the extension of `φ` is a
+monomorphism exactly when the map induced by `φ` is in the corresponding degree `j`. -/
+lemma mono_homologyMap_extendMap_iff {j : ι} {j' : ι'} (hj' : e.f j = j')
+    [K.HasHomology j] [L.HasHomology j] [(K.extend e).HasHomology j']
+    [(L.extend e).HasHomology j'] :
+    Mono (homologyMap (extendMap φ e) j') ↔ Mono (homologyMap φ j) :=
+  (MorphismProperty.monomorphisms C).arrow_mk_iso_iff
     (Arrow.isoMk (K.extendHomologyIso e hj') (L.extendHomologyIso e hj') (by simp))
 
 variable {e} in
