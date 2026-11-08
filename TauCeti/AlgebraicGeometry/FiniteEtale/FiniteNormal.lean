@@ -345,6 +345,21 @@ theorem sectionsAlgMap_hom_apply (hdim : 2 ≤ ringKrullDim A)
     (sectionsAlgMap hdim f).hom.hom x = f.hom.left.appTop.hom x :=
   (rfl)
 
+/-- Restriction of sections along the identity is the identity. -/
+@[simp]
+theorem sectionsAlgMap_id (hdim : 2 ≤ ringKrullDim A)
+    (V : FiniteEtaleScheme (puncturedSpectrum A).toScheme) :
+    sectionsAlgMap hdim (𝟙 V) = 𝟙 _ := by
+  ext; rfl
+
+/-- Restriction of sections along a composite `f ≫ g` is restriction along `g` followed by
+restriction along `f`. -/
+@[simp, reassoc]
+theorem sectionsAlgMap_comp (hdim : 2 ≤ ringKrullDim A)
+    {V W X : FiniteEtaleScheme (puncturedSpectrum A).toScheme} (f : V ⟶ W) (g : W ⟶ X) :
+    sectionsAlgMap hdim (f ≫ g) = sectionsAlgMap hdim g ≫ sectionsAlgMap hdim f := by
+  ext; rfl
+
 /-- A finite étale cover `V` of the punctured spectrum is the restriction of the spectrum of its
 ring of sections `sectionsAlg hdim V`. -/
 def restrictPuncturedSpecSectionsAlgIso (hdim : 2 ≤ ringKrullDim A)
@@ -435,8 +450,8 @@ def finiteNormalEquiv (hdim : 2 ≤ ringKrullDim A) :
   let F : FiniteEtaleScheme (puncturedSpectrum A).toScheme ⥤ (FiniteNormalPuncturedEtaleAlg A)ᵒᵖ :=
     { obj V := .op (sectionsAlg hdim V)
       map f := (sectionsAlgMap hdim f).op
-      map_id V := Quiver.Hom.unop_inj <| by ext; rfl
-      map_comp f g := Quiver.Hom.unop_inj <| by ext; rfl }
+      map_id V := Quiver.Hom.unop_inj <| sectionsAlgMap_id hdim V
+      map_comp f g := Quiver.Hom.unop_inj <| sectionsAlgMap_comp hdim f g }
   let η : F ⋙ e.inverse ≅ 𝟭 _ := NatIso.ofComponents (restrictPuncturedSpecSectionsAlgIso hdim)
     fun f ↦ restrictPuncturedSpecSectionsAlgIso_hom_naturality hdim f
   -- Replace the forward functor by `F ≅ F ⋙ e.inverse ⋙ e.functor ≅ e.functor`.
