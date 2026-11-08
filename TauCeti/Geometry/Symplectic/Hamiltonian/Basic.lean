@@ -18,8 +18,10 @@ vector field of `H` is obtained by inverting contraction with the symplectic for
 Our sign convention is `ω (X_H x) v = dH(x) v`. For `ω = dq ∧ dp`, this gives the
 Hamilton equations `q' = ∂H/∂p`, `p' = -∂H/∂q`.
 
-The characteristic contraction equation determines the field uniquely. Its linearization
-is infinitesimally symplectic when `H` is twice continuously differentiable; this is the
+The characteristic contraction equation determines the field uniquely. Since `dH(X_H) = 0`, a
+differentiable Hamiltonian is constant along every integral curve of `X_H`
+(`TauCeti.SymplecticForm.apply_eq_of_hasDerivAt_hamiltonianVectorField`). The linearization of
+`X_H` is infinitesimally symplectic when `H` is twice continuously differentiable; this is the
 identity used to show that Hamiltonian flows preserve the symplectic form.
 
 For an almost complex structure `J` preserving `ω`, the field `J X_H` is the gradient of `H` for
@@ -54,6 +56,12 @@ theorem hamiltonianVectorField_def (ω : SymplecticForm V) (H : V → ℝ) (x : 
     ω.hamiltonianVectorField H x =
       ω.toBilinForm.toContinuousBilinearMap.inverse (fderiv ℝ H x) :=
   (rfl)
+
+/-- The Hamiltonian vector field at `x` depends only on the germ of the Hamiltonian at `x`. -/
+theorem hamiltonianVectorField_congr_of_eventuallyEq (ω : SymplecticForm V) {H H' : V → ℝ}
+    {x : V} (h : H =ᶠ[nhds x] H') :
+    ω.hamiltonianVectorField H x = ω.hamiltonianVectorField H' x := by
+  rw [hamiltonianVectorField_def, hamiltonianVectorField_def, h.fderiv_eq]
 
 /-- Contraction of the Hamiltonian field is the derivative of the Hamiltonian. -/
 @[simp]
@@ -97,6 +105,20 @@ theorem hamiltonianVectorField_const_mul (ω : SymplecticForm V) (c : ℝ) (H : 
 theorem fderiv_apply_hamiltonianVectorField (ω : SymplecticForm V) (H : V → ℝ) (x : V) :
     fderiv ℝ H x (ω.hamiltonianVectorField H x) = 0 := by
   rw [← ω.apply_hamiltonianVectorField H x, ω.self_eq_zero]
+
+/-- **Conservation of energy.** A Hamiltonian is constant along every integral curve of its
+Hamiltonian vector field on a preconnected open set of times, provided it is differentiable at
+every point of the curve. -/
+theorem apply_eq_of_hasDerivAt_hamiltonianVectorField (ω : SymplecticForm V) {H : V → ℝ}
+    {γ : ℝ → V} {s : Set ℝ} (hs : IsOpen s) (hs' : IsPreconnected s)
+    (hγ : ∀ t ∈ s, HasDerivAt γ (ω.hamiltonianVectorField H (γ t)) t)
+    (hH : ∀ t ∈ s, DifferentiableAt ℝ H (γ t)) {t₀ t : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
+    H (γ t) = H (γ t₀) := by
+  have hd (t : ℝ) (ht : t ∈ s) : HasDerivAt (H ∘ γ) 0 t := by
+    simpa using (hH t ht).hasFDerivAt.comp_hasDerivAt t (hγ t ht)
+  exact hs.is_const_of_deriv_eq_zero hs'
+    (fun t ht ↦ (hd t ht).differentiableAt.differentiableWithinAt) (fun t ht ↦ (hd t ht).deriv)
+    ht ht₀
 
 /-- For a `J`-invariant symplectic form, `J X_H(x)` is the gradient of `H` at `x` for the
 bilinear form `g = ω(·, J ·)`: `g(J X_H(x), w) = dH(x) w`. -/
@@ -143,6 +165,17 @@ theorem hamiltonianVectorField_const (ω : SymplecticForm V) (c : ℝ) :
   funext x
   rw [Pi.zero_apply, eq_comm, eq_hamiltonianVectorField_iff]
   simp
+
+/-- The Hamiltonian vector field of the linear function `ω(a, ·)` is the constant `a`. -/
+@[simp]
+theorem hamiltonianVectorField_apply_left (ω : SymplecticForm V) (a x : V) :
+    ω.hamiltonianVectorField (fun y ↦ ω a y) x = a := by
+  -- The function `ω(a, ·)` is the continuous linear map `ω.toBilinForm.toContinuousBilinearMap a`.
+  have h : HasFDerivAt (fun y ↦ ω a y) (ω.toBilinForm.toContinuousBilinearMap a) x :=
+    (ω.toBilinForm.toContinuousBilinearMap a).hasFDerivAt
+  rw [eq_comm, eq_hamiltonianVectorField_iff, h.fderiv]
+  intro v
+  exact (LinearMap.toContinuousBilinearMap_apply _ a v).symm
 
 /-- The Hamiltonian vector field is linear in Hamiltonians differentiable at the point:
 `X_{aF + bG} = a X_F + b X_G`. -/
@@ -238,6 +271,16 @@ theorem continuousOn_uncurry_hamiltonianVectorField {W : Type*} [NormedAddCommGr
       fun _ hq ↦ ⟨hq.1.1, Set.mem_univ _⟩
   exact ω.continuousOn_hamiltonianVectorField_comp_of_contDiffOn (hU.prod isOpen_univ)
     continuousOn_snd hK'
+
+/-- For a jointly `C¹` family of Hamiltonians `K z`, the Hamiltonian vector field `X_{K z}(x)` is
+continuous jointly in the parameter `z` and the point `x`. -/
+theorem continuous_uncurry_hamiltonianVectorField {W : Type*} [NormedAddCommGroup W]
+    [NormedSpace ℝ W] (ω : SymplecticForm V) {K : W → V → ℝ}
+    (hK : ContDiff ℝ 1 (Function.uncurry K)) :
+    Continuous (Function.uncurry fun z ↦ ω.hamiltonianVectorField (K z)) := by
+  have h := ω.continuousOn_uncurry_hamiltonianVectorField isOpen_univ hK.contDiffOn
+  rw [Set.univ_prod_univ] at h
+  exact continuousOn_univ.1 h
 
 section PoissonBracket
 

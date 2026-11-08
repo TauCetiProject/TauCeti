@@ -164,14 +164,11 @@ theorem rankOnePoints_diag2nUnit (u : Kˣ) :
   apply Subtype.ext
   apply Units.ext
   rw [coe_rankOnePoints, weightTable.coe_sl2BlockSL,
-    Matrix.SpecialLinearGroup.diag2nUnit_coe, weightTable.sl2BlockMatrix_diagonal,
+    Matrix.SpecialLinearGroup.diag2nUnit_coe, weightTable.sl2BlockMatrix_diagonal_unit,
     coe_weightTorusPoints, UniversalEnvelopingAlgebra.kostantTorusMatrix_apply, diagGL_coe]
   congr 1
   funext a
-  rw [torusCharacter_mulSingle]
-  rcases weightTable.weight_eq_neg_one_or_eq_zero_or_eq_one a i with h | h | h
-  all_goals simp only [weightTable_weight] at h
-  all_goals simp [weightTable_weight, h]
+  simp [torusCharacter_mulSingle, weightTable_weight]
 
 /-- The integral rank-one map commutes with homomorphisms of value rings. -/
 @[simp↓]
@@ -263,7 +260,8 @@ representative `x_i(1) x_{-i}(-1) x_i(1)` at the node. -/
 theorem coe_rankOnePoints_modularGroup_S :
     (rankOnePoints K i ((ModularGroup.S : SL(2, ℤ)) : SL(2, K)) : GL (Fin 56) K) =
       (TauCeti.UniversalEnvelopingAlgebra.kostantToralWeylPoint
-        (TauCeti.serreRootGenerator (CartanMatrix.E 7)) (TauCeti.serreH ℚ (CartanMatrix.E 7))
+        (TauCeti.serreRootGenerator weightTable.cartanMatrix)
+        (TauCeti.serreH ℚ weightTable.cartanMatrix)
         rep lattice.toAddSubgroup rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator
         latticeBasis e7MinusculeWeight (.inl i) (.inr i) K : GL (Fin 56) K)⁻¹ := by
   rw [rankOnePoints_modularGroup_S, ← Subgroup.coe_inv,

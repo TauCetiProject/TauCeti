@@ -139,7 +139,7 @@ theorem center_le_range_toSL :
   have hnorm : ‖r‖ = 1 := by
     rw [← pow_eq_one_iff_of_nonneg (norm_nonneg r) (Fintype.card_ne_zero (α := n)), ← norm_pow,
       hr, norm_one]
-  rw [scalar_apply, diagonal_mem_unitaryGroup_iff]
+  rw [scalar_apply, diagonal_mem_unitary, Pi.mem_unitary_iff]
   exact fun _ => Unitary.mem_iff_star_mul_self.mpr <| by
     rw [RCLike.star_def, RCLike.conj_mul, hnorm]
     simp
