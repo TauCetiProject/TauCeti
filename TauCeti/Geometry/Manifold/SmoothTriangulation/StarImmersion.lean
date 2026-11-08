@@ -632,6 +632,15 @@ private def secantError (f : Realization K → E) (k : ℕ)
   (K.edgewiseSubdivision k).secantMap (f ∘ edgewiseSubdivisionRealizationMap K k) x -
     f (edgewiseSubdivisionRealizationMap K k x)
 
+omit [Fintype ι] in
+/-- Unfolding the secant error, used to fold the public statements into `secantError`. -/
+private theorem secantError_apply (f : Realization K → E) (k : ℕ)
+    (x : Realization (K.edgewiseSubdivision k)) :
+    secantError f k x =
+      (K.edgewiseSubdivision k).secantMap (f ∘ edgewiseSubdivisionRealizationMap K k) x -
+        f (edgewiseSubdivisionRealizationMap K k x) :=
+  rfl
+
 /-- On the closed simplices of every sufficiently fine edgewise subdivision, the secant error
 `s - f ∘ φ` of a map `f` which is a `C¹` immersion on every closed simplex is `ε`-Lipschitz in the
 original coordinates. Here `s` is the secant map of `f` on the subdivision and `φ` is the canonical
@@ -653,7 +662,7 @@ theorem _root_.TauCeti.eventually_norm_secantMap_sub_sub_le_edgewiseSubdivision_
   filter_upwards [eventually_all.mpr fun σ : Face K =>
     ContDiffOn.eventually_norm_linearCombination_sub_comp_sub_le_edgewiseSubdivision
       ((contMDiffOn_iff_contDiffOn.mp (hF σ)).of_le hn) hε] with k hk ρ x y
-  change ‖secantError f k (faceInclusion _ ρ y) - secantError f k (faceInclusion _ ρ x)‖ ≤ _
+  rw [← secantError_apply, ← secantError_apply]
   -- The simplex `ρ` lies in the face `σ` of `K` spanned by the entries of its vertices.
   let σ : Face K := ⟨_, biUnion_image_mem_of_mem_edgewiseSubdivision ρ.2⟩
   have hρσ : ∀ u ∈ ρ.1, ∀ l, u.1 l ∈ σ.1 := fun u hu l =>
@@ -677,7 +686,7 @@ theorem _root_.TauCeti.eventually_norm_secantMap_sub_sub_le_edgewiseSubdivision_
         F σ (Fintype.linearCombination ℝ
           (fun (a : ρ.1) (i : σ.1) => (edgewiseVertexPoint hρσ a).1 i) (w t)) =
         secantError f k (faceInclusion _ ρ t) := by
-    rw [hA, hFg, secantError, secantMap_faceInclusion_edgewiseSubdivision f ρ σ hρσ, hφ,
+    rw [hA, hFg, secantError_apply, secantMap_faceInclusion_edgewiseSubdivision f ρ σ hρσ, hφ,
       Fintype.linearCombination_apply]
     simp only [hFg, w, Finset.standardSimplexHomeomorph_weights, comp_apply]
   have h := hk σ K.toPreAbstractSimplicialComplex ρ.1 ρ.2 (edgewiseVertexPoint hρσ)
@@ -755,7 +764,7 @@ theorem _root_.TauCeti.eventually_norm_secantMap_sub_sub_le_edgewiseSubdivision
       (ε := ε / (2 * N + 1)) (by positivity),
     hfc.eventually_norm_secantMap_sub_lt_edgewiseSubdivision (Set.toFinite K.faces)
       (ε := ε / (2 * (N + 1))) (by positivity)] with k hk hface hclose x y
-  change ‖secantError f k x - secantError f k y‖ ≤ _
+  rw [← secantError_apply, ← secantError_apply]
   set c := fun x : Realization (K.edgewiseSubdivision k) =>
     ((edgewiseSubdivisionRealizationMap K k x).1 : ι → ℝ)
   have hmem (x : Realization (K.edgewiseSubdivision k)) :
