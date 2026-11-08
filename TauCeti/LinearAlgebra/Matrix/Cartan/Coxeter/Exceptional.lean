@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Data.List.ElimOrder
+public import TauCeti.Data.List.OneDegenerateOrder
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Basic
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Cyclotomic
 import Mathlib.RingTheory.Polynomial.Cyclotomic.Expand
@@ -34,8 +34,8 @@ the matrix used here.
 
 * `TauCeti.Coxeter.orderOf_coxE8` (and `E7`, `E6`, `F4`, `G2`): the order of the Coxeter element.
 * `TauCeti.Coxeter.charpoly_coxE8` (and `E7`, `E6`, `F4`, `G2`): its characteristic polynomial.
-* `TauCeti.Coxeter.isElimOrder_E8` (and `E7`, `E6`, `F4`, `G2`): an elimination order of the Dynkin
-  diagram.
+* `TauCeti.Coxeter.isOneDegenerateOrder_E8` (and `E7`, `E6`, `F4`, `G2`): a one-degenerate order
+  of the Dynkin diagram.
 -/
 
 public section
@@ -123,41 +123,45 @@ theorem charpoly_coxG2 : coxG2.charpoly = cyclotomic 6 ℤ := by
   simp only [cyclotomic_six, map_add, map_sub, map_pow, aeval_X, map_one]
   decide +kernel
 
-/-! ### Elimination orders of the exceptional diagrams (Bourbaki numbering, from 0) -/
+/-! ### One-degenerate orders of the exceptional diagrams (Bourbaki numbering, from 0) -/
 
-/-- An elimination order of the Dynkin diagram of type `E₈`. -/
-theorem isElimOrder_E8 :
-    List.IsElimOrder (fun i j : Fin 8 => CartanMatrix.E 8 i j ≠ 0) [0, 2, 3, 1, 4, 5, 6, 7] :=
-  ((((((((List.isElimOrder_nil.append_singleton (z := 0) (by decide)).append_singleton (z := 2)
-    (by decide)).append_singleton (z := 3) (by decide)).append_singleton (z := 1)
+/-- A one-degenerate order of the Dynkin diagram of type `E₈`. -/
+theorem isOneDegenerateOrder_E8 :
+    List.IsOneDegenerateOrder (fun i j : Fin 8 => CartanMatrix.E 8 i j ≠ 0)
+      [0, 2, 3, 1, 4, 5, 6, 7] :=
+  ((((((((List.isOneDegenerateOrder_nil.append_singleton (z := 0) (by decide)).append_singleton
+    (z := 2) (by decide)).append_singleton (z := 3) (by decide)).append_singleton (z := 1)
     (by decide)).append_singleton (z := 4) (by decide)).append_singleton (z := 5)
     (by decide)).append_singleton (z := 6) (by decide)).append_singleton (z := 7) (by decide))
 
-/-- An elimination order of the Dynkin diagram of type `E₇`. -/
-theorem isElimOrder_E7 :
-    List.IsElimOrder (fun i j : Fin 7 => CartanMatrix.E 7 i j ≠ 0) [0, 2, 3, 1, 4, 5, 6] :=
-  (((((((List.isElimOrder_nil.append_singleton (z := 0) (by decide)).append_singleton (z := 2)
-    (by decide)).append_singleton (z := 3) (by decide)).append_singleton (z := 1)
+/-- A one-degenerate order of the Dynkin diagram of type `E₇`. -/
+theorem isOneDegenerateOrder_E7 :
+    List.IsOneDegenerateOrder (fun i j : Fin 7 => CartanMatrix.E 7 i j ≠ 0)
+      [0, 2, 3, 1, 4, 5, 6] :=
+  (((((((List.isOneDegenerateOrder_nil.append_singleton (z := 0) (by decide)).append_singleton
+    (z := 2) (by decide)).append_singleton (z := 3) (by decide)).append_singleton (z := 1)
     (by decide)).append_singleton (z := 4) (by decide)).append_singleton (z := 5)
     (by decide)).append_singleton (z := 6) (by decide))
 
-/-- An elimination order of the Dynkin diagram of type `E₆`. -/
-theorem isElimOrder_E6 :
-    List.IsElimOrder (fun i j : Fin 6 => CartanMatrix.E 6 i j ≠ 0) [0, 2, 3, 1, 4, 5] :=
-  ((((((List.isElimOrder_nil.append_singleton (z := 0) (by decide)).append_singleton (z := 2)
-    (by decide)).append_singleton (z := 3) (by decide)).append_singleton (z := 1)
+/-- A one-degenerate order of the Dynkin diagram of type `E₆`. -/
+theorem isOneDegenerateOrder_E6 :
+    List.IsOneDegenerateOrder (fun i j : Fin 6 => CartanMatrix.E 6 i j ≠ 0)
+      [0, 2, 3, 1, 4, 5] :=
+  ((((((List.isOneDegenerateOrder_nil.append_singleton (z := 0) (by decide)).append_singleton
+    (z := 2) (by decide)).append_singleton (z := 3) (by decide)).append_singleton (z := 1)
     (by decide)).append_singleton (z := 4) (by decide)).append_singleton (z := 5) (by decide))
 
-/-- An elimination order of the Dynkin diagram of type `F₄`. -/
-theorem isElimOrder_F4 :
-    List.IsElimOrder (fun i j : Fin 4 => CartanMatrix.F₄ i j ≠ 0) [0, 1, 2, 3] :=
-  ((((List.isElimOrder_nil.append_singleton (z := 0) (by decide)).append_singleton (z := 1)
+/-- A one-degenerate order of the Dynkin diagram of type `F₄`. -/
+theorem isOneDegenerateOrder_F4 :
+    List.IsOneDegenerateOrder (fun i j : Fin 4 => CartanMatrix.F₄ i j ≠ 0) [0, 1, 2, 3] :=
+  ((((List.isOneDegenerateOrder_nil.append_singleton (z := 0) (by decide)).append_singleton (z := 1)
     (by decide)).append_singleton (z := 2) (by decide)).append_singleton (z := 3) (by decide))
 
-/-- An elimination order of the Dynkin diagram of type `G₂`. -/
-theorem isElimOrder_G2 :
-    List.IsElimOrder (fun i j : Fin 2 => CartanMatrix.G₂ᵀ i j ≠ 0) [0, 1] :=
-  (List.isElimOrder_nil.append_singleton (z := 0) (by decide)).append_singleton (z := 1) (by decide)
+/-- A one-degenerate order of the Dynkin diagram of type `G₂`. -/
+theorem isOneDegenerateOrder_G2 :
+    List.IsOneDegenerateOrder (fun i j : Fin 2 => CartanMatrix.G₂ᵀ i j ≠ 0) [0, 1] :=
+  (List.isOneDegenerateOrder_nil.append_singleton (z := 0) (by decide)).append_singleton
+    (z := 1) (by decide)
 
 end TauCeti.Coxeter
 

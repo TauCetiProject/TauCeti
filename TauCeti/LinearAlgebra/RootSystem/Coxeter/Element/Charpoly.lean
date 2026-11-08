@@ -20,9 +20,9 @@ characteristic polynomial.
 
 ## Main results
 
-* `RootPairing.Base.charpoly_prod_reflMatrix_eq_of_isElimOrder`: for a base whose Dynkin diagram has
-  an elimination order, the matrices of all Coxeter elements on the simple roots have the same
-  characteristic polynomial.
+* `RootPairing.Base.charpoly_prod_reflMatrix_eq_of_isOneDegenerateOrder`: for a base whose Dynkin
+  diagram has a one-degenerate order, the matrices of all Coxeter elements on the simple roots have
+  the same characteristic polynomial.
 -/
 
 public section
@@ -35,14 +35,16 @@ variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommG
   [Module R N] {P : RootPairing ι R M N} [P.IsCrystallographic] [IsDomain R] [CharZero R]
 
 /-- **All Coxeter elements have the same characteristic polynomial** (of their matrices on the
-simple roots) when the Dynkin diagram of the base has an elimination order. -/
-theorem charpoly_prod_reflMatrix_eq_of_isElimOrder [DecidableEq ι] (b : P.Base)
+simple roots) when the Dynkin diagram of the base has a one-degenerate order. -/
+theorem charpoly_prod_reflMatrix_eq_of_isOneDegenerateOrder [DecidableEq ι] (b : P.Base)
     {S : List b.support} (hnd : S.Nodup)
-    (hel : List.IsElimOrder (fun x y => b.cartanMatrix x y ≠ 0) S) {l l' : List b.support}
+    (hel : List.IsOneDegenerateOrder (fun x y => b.cartanMatrix x y ≠ 0) S)
+    {l l' : List b.support}
     (hl : l.Perm S) (hl' : l'.Perm S) :
     ((l.map (reflMatrix b.cartanMatrix)).prod).charpoly =
       ((l'.map (reflMatrix b.cartanMatrix)).prod).charpoly :=
-  List.eq_of_isElimOrder (fun _ _ h h' => h (b.cartanMatrix_apply_eq_zero_iff_symm.2 h')) hnd hel
+  List.eq_of_isOneDegenerateOrder
+    (fun _ _ h h' => h (b.cartanMatrix_apply_eq_zero_iff_symm.2 h')) hnd hel
     (fun l => ((l.map (reflMatrix b.cartanMatrix)).prod).charpoly)
     (fun l l' _ hce => by
       have hw : wordProd P b l = wordProd P b l' := wordProd_eq_of_commEquiv b hce

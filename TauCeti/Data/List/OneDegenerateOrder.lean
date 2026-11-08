@@ -14,12 +14,15 @@ import Mathlib.Tactic.Push
 /-!
 # Orderings of a forest are connected by commutations and rotations
 
-Let `adj` be a symmetric relation on the letters of a duplicate-free list `S`, and call `S` an
-*elimination order* (`List.IsElimOrder`) if each letter is adjacent to at most one earlier letter.
-A forest admits an elimination order: remove leaves one at a time, and list the vertices in the
-reverse order of removal. Such an order gives a way to compare all the orderings of the vertices:
-any function `φ` of the orderings of `S` that is invariant under commuting non-adjacent letters
-(`List.CommEquiv`) and under rotation `a :: t ↦ t ++ [a]` is constant (`List.eq_of_isElimOrder`).
+Let `adj` be a symmetric relation on the letters of a duplicate-free list `S`, and call `S` a
+*one-degenerate order* (`List.IsOneDegenerateOrder`) if each letter is adjacent to at most one
+earlier letter. This is the degeneracy ordering of graph theory with degeneracy one; it is not a
+perfect elimination ordering, and the two notions agree only on forests. A graph admits a
+one-degenerate order exactly when it is a forest: remove leaves one at a time, and list the
+vertices in the reverse order of removal. Such an order gives a way to compare all the orderings
+of the vertices: any function `φ` of the orderings of `S` that is invariant under commuting
+non-adjacent letters (`List.CommEquiv`) and under rotation `a :: t ↦ t ++ [a]` is constant
+(`List.eq_of_isOneDegenerateOrder`).
 
 This applies to words in the generators of a Coxeter group, whose Coxeter graph plays the role of
 `adj`.
@@ -28,14 +31,14 @@ This applies to words in the generators of a Coxeter group, whose Coxeter graph 
 
 * `List.CommEquiv`: `l'` is a reordering of `l` in which only non-adjacent letters change their
   relative order.
-* `List.IsElimOrder`: each letter of the list is adjacent to at most one earlier letter.
+* `List.IsOneDegenerateOrder`: each letter of the list is adjacent to at most one earlier letter.
 
 ## Main results
 
-* `List.eq_of_isElimOrder`: a function of the orderings of a duplicate-free elimination order that
-  is invariant under commutations and rotations is constant.
-* `List.IsElimOrder.append_singleton` builds an elimination order letter by letter, and
-  `List.IsElimOrder.map_equiv` transports one along an equivalence.
+* `List.eq_of_isOneDegenerateOrder`: a function of the orderings of a duplicate-free
+  one-degenerate order that is invariant under commutations and rotations is constant.
+* `List.IsOneDegenerateOrder.append_singleton` builds a one-degenerate order letter by letter, and
+  `List.IsOneDegenerateOrder.map_equiv` transports one along an equivalence.
 
 ## References
 
@@ -77,14 +80,14 @@ theorem commEquiv_iff {l l' : List α} :
   Iff.rfl
 
 variable (adj) in
-/-- `S` is an elimination order for `adj`: each letter is adjacent to at most one earlier
-letter. -/
-def IsElimOrder (S : List α) : Prop :=
+/-- `S` is a one-degenerate order for `adj`: each letter is adjacent to at most one earlier
+letter. This is not a perfect elimination ordering; the two notions agree only on forests. -/
+def IsOneDegenerateOrder (S : List α) : Prop :=
   ∀ S₁ z S₂, S = S₁ ++ z :: S₂ → ∀ x ∈ S₁, ∀ y ∈ S₁, adj z x → adj z y → x = y
 
-/-- The defining property of `List.IsElimOrder`. -/
-theorem isElimOrder_iff {S : List α} :
-    IsElimOrder adj S ↔
+/-- The defining property of `List.IsOneDegenerateOrder`. -/
+theorem isOneDegenerateOrder_iff {S : List α} :
+    IsOneDegenerateOrder adj S ↔
       ∀ S₁ z S₂, S = S₁ ++ z :: S₂ → ∀ x ∈ S₁, ∀ y ∈ S₁, adj z x → adj z y → x = y :=
   Iff.rfl
 
@@ -147,22 +150,24 @@ theorem CommEquiv.append_singleton {m m' : List α} (h : CommEquiv adj m m') {z 
   · subst hyz; exact absurd (hyx'.subset (by simp)) (fun h' => hz (h.1.symm.subset h'))
   exact h.2 x y (sublist_pair_of_sublist_append_singleton hyz hxy) hyx'
 
-/-- The empty list is an elimination order. -/
-theorem isElimOrder_nil : IsElimOrder adj ([] : List α) := fun S₁ z S₂ h => by simp at h
+/-- The empty list is a one-degenerate order. -/
+theorem isOneDegenerateOrder_nil : IsOneDegenerateOrder adj ([] : List α) :=
+  fun S₁ z S₂ h => by simp at h
 
-/-- Removing the last letter of an elimination order leaves an elimination order. -/
-theorem IsElimOrder.of_append_singleton {S : List α} {z : α} (h : IsElimOrder adj (S ++ [z])) :
-    IsElimOrder adj S := fun S₁ w S₂ hS =>
+/-- Removing the last letter of a one-degenerate order leaves a one-degenerate order. -/
+theorem IsOneDegenerateOrder.of_append_singleton {S : List α} {z : α}
+    (h : IsOneDegenerateOrder adj (S ++ [z])) :
+    IsOneDegenerateOrder adj S := fun S₁ w S₂ hS =>
   h S₁ w (S₂ ++ [z]) (by rw [hS]; simp)
 
-/-- The last letter of an elimination order is adjacent to at most one earlier letter. -/
-theorem IsElimOrder.last {S : List α} {z : α} (h : IsElimOrder adj (S ++ [z])) :
+/-- The last letter of a one-degenerate order is adjacent to at most one earlier letter. -/
+theorem IsOneDegenerateOrder.last {S : List α} {z : α} (h : IsOneDegenerateOrder adj (S ++ [z])) :
     ∀ x ∈ S, ∀ y ∈ S, adj z x → adj z y → x = y :=
   h S z [] rfl
 
-/-- An elimination order extends by a letter adjacent to at most one letter of it. -/
-theorem IsElimOrder.append_singleton {S : List α} {z : α} (h : IsElimOrder adj S)
-    (hz : ∀ x ∈ S, ∀ y ∈ S, adj z x → adj z y → x = y) : IsElimOrder adj (S ++ [z]) := by
+/-- A one-degenerate order extends by a letter adjacent to at most one letter of it. -/
+theorem IsOneDegenerateOrder.append_singleton {S : List α} {z : α} (h : IsOneDegenerateOrder adj S)
+    (hz : ∀ x ∈ S, ∀ y ∈ S, adj z x → adj z y → x = y) : IsOneDegenerateOrder adj (S ++ [z]) := by
   intro S₁ w S₂ hS
   rcases eq_nil_or_concat S₂ with rfl | ⟨L, c, rfl⟩
   · obtain ⟨rfl, hzw⟩ := append_inj' hS rfl
@@ -171,19 +176,20 @@ theorem IsElimOrder.append_singleton {S : List α} {z : α} (h : IsElimOrder adj
   · have hS' : S ++ [z] = (S₁ ++ w :: L) ++ [c] := by rw [hS]; simp
     exact h S₁ w L (append_inj' hS' rfl).1
 
-/-- An elimination order transports along an equivalence of the letters. -/
-theorem IsElimOrder.map_equiv {adj' : β → β → Prop} {S : List β} (h : IsElimOrder adj' S)
-    (e : α ≃ β) : IsElimOrder (fun x y => adj' (e x) (e y)) (S.map e.symm) := by
+/-- A one-degenerate order transports along an equivalence of the letters. -/
+theorem IsOneDegenerateOrder.map_equiv {adj' : β → β → Prop} {S : List β}
+    (h : IsOneDegenerateOrder adj' S)
+    (e : α ≃ β) : IsOneDegenerateOrder (fun x y => adj' (e x) (e y)) (S.map e.symm) := by
   intro S₁ z S₂ hS x hx y hy hxz hyz
   have hS' : S = S₁.map e ++ e z :: S₂.map e := by
     simpa [map_map] using congrArg (map e) hS
   exact e.injective (h _ _ _ hS' (e x) (mem_map_of_mem hx) (e y) (mem_map_of_mem hy) hxz hyz)
 
-/-- **Orderings of a forest are connected.** If `S` is a duplicate-free elimination order for a
+/-- **Orderings of a forest are connected.** If `S` is a duplicate-free one-degenerate order for a
 symmetric relation `adj`, then a function of the orderings of `S` that is invariant under
 commuting non-adjacent letters and under rotation takes the same value on all of them. -/
-theorem eq_of_isElimOrder (hsymm : ∀ x y, adj x y → adj y x)
-    {S : List α} (hnd : S.Nodup) (hel : IsElimOrder adj S) (φ : List α → β)
+theorem eq_of_isOneDegenerateOrder (hsymm : ∀ x y, adj x y → adj y x)
+    {S : List α} (hnd : S.Nodup) (hel : IsOneDegenerateOrder adj S) (φ : List α → β)
     (hcomm : ∀ l l', l.Perm S → CommEquiv adj l l' → φ l = φ l')
     (hrot : ∀ a t, (a :: t).Perm S → φ (a :: t) = φ (t ++ [a]))
     {l l' : List α} (hl : l.Perm S) (hl' : l'.Perm S) : φ l = φ l' := by
