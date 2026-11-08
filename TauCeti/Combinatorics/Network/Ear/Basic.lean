@@ -420,11 +420,6 @@ theorem snoc_stage_castSucc (D : EarDecomposition T) (P : Ear T)
     (i : Fin (D.length + 1)) : (D.snoc P).stage i.castSucc = D.stage i := by
   simp [snoc]
 
-@[simp]
-theorem snoc_stage_last (D : EarDecomposition T) (P : Ear T) :
-    (D.snoc P).stage (Fin.last (D.length + 1)) = P.adjoin := by
-  simp [snoc]
-
 /-- The old ears are unchanged when a new ear is appended. -/
 theorem snoc_ear_castSucc (D : EarDecomposition T) (P : Ear T) (i : Fin D.length) :
     HEq ((D.snoc P).ear i.castSucc) (D.ear i) := by
