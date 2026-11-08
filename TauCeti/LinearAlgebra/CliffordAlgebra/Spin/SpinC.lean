@@ -136,6 +136,11 @@ def mk : spinGroup Q × Circle →* spinCGroup Q hQ :=
 theorem mk_apply (p : spinGroup Q × Circle) : mk Q hQ p = (p : spinCGroup Q hQ) :=
   (rfl)
 
+/-- The underlying function of `mk` is the quotient projection. This is not a simp lemma:
+simplifying partially applied `mk` would prevent representative lemmas from matching. -/
+theorem coe_mk : ⇑(mk Q hQ) = QuotientGroup.mk :=
+  (rfl)
+
 /-- Every element of `Spinᶜ(Q)` is a class `[s, z]`. -/
 theorem mk_surjective : Function.Surjective (mk Q hQ) :=
   QuotientGroup.mk'_surjective _
@@ -278,9 +283,10 @@ theorem toSpecialOrthogonal_ofCircle (z : Circle) :
 
 /-- **The kernel of `Spinᶜ(Q) → SO(Q) × U(1)`**, `[s, z] ↦ (π(s), z²)`, is `{1, [1, -1]}` for a
 finite-dimensional nondegenerate quadratic form in positive dimension. -/
-theorem mem_ker_toSpecialOrthogonal_prod_det_iff [FiniteDimensional ℝ M] [Nontrivial M]
+theorem mem_ker_toSpecialOrthogonal_prod_det_iff [FiniteDimensional ℝ M]
     (hQn : Q.Nondegenerate) (x : spinCGroup Q hQ) :
     x ∈ ((toSpecialOrthogonal Q hQ).prod (det Q hQ)).ker ↔ x = 1 ∨ x = ofCircle Q hQ (-1) := by
+  have : Nontrivial M := QuadraticMap.nontrivial_of_ne_zero hQ
   obtain ⟨⟨s, z⟩, rfl⟩ := mk_surjective Q hQ x
   constructor
   · intro hx
@@ -305,7 +311,6 @@ theorem coe_ker_toSpecialOrthogonal_prod_det [FiniteDimensional ℝ M]
     (hQn : Q.Nondegenerate) :
     (((toSpecialOrthogonal Q hQ).prod (det Q hQ)).ker : Set (spinCGroup Q hQ)) =
       {1, ofCircle Q hQ (-1)} := by
-  have : Nontrivial M := QuadraticMap.nontrivial_of_ne_zero hQ
   ext x
   simp [mem_ker_toSpecialOrthogonal_prod_det_iff Q hQ hQn]
 

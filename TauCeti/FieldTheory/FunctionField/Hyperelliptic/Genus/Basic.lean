@@ -138,8 +138,7 @@ theorem finrank_ratFunc_eq_two_of_sq_eq {f : k[X]} (hf : Squarefree f) (hdeg : 0
   -- `f` has order one at the place of any irreducible factor `q`
   obtain ⟨q, hq, hqf⟩ := WfDvdMonoid.exists_irreducible_factor
     (Polynomial.not_isUnit_of_natDegree_pos f hdeg) hf.ne_zero
-  refine (Place.adicOfIrreducible hq).valuation.finrank_eq_of_pow_eq_of_gcd_ord_eq_one hgen hy
-    two_ne_zero ?_
+  refine (Place.adicOfIrreducible hq).valuation.finrank_eq_of_pow_eq_of_gcd_ord_eq_one hgen hy ?_
   rw [Valuation.ord_def, ← Place.ord_def,
     Place.ord_adicOfIrreducible_algebraMap_of_squarefree hq hf]
   simp [hqf]
@@ -160,8 +159,7 @@ theorem finrank_ratFunc_eq_two_of_sq_eq_of_odd {f : k[X]}
     (hodd : Odd f.natDegree) {y : F} (hgen : (RatFunc k)⟮y⟯ = ⊤)
     (hy : y ^ 2 = algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) f)) :
     Module.finrank (RatFunc k) F = 2 := by
-  refine (Place.infty k).valuation.finrank_eq_of_pow_eq_of_gcd_ord_eq_one
-    hgen hy two_ne_zero ?_
+  refine (Place.infty k).valuation.finrank_eq_of_pow_eq_of_gcd_ord_eq_one hgen hy ?_
   rw [Valuation.ord_def, ← Place.ord_def]
   simp only [Place.ord_infty, RatFunc.intDegree_polynomial, Int.gcd_neg,
     Int.gcd_natCast_natCast]

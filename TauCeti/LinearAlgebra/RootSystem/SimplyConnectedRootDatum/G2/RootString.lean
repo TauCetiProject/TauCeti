@@ -19,6 +19,7 @@ and for the long–short Chevalley straightening relation. For the pinned datum
 * whenever a long root plus a short root is a root, the resulting root is short;
 * whenever two short roots add to a long root, their root string has bottom coefficient two;
 * whenever two short roots add to a short root, their root string has bottom coefficient one;
+* when a root sum is long, adding either summand again does not give a root;
 * a short root and a long root whose sum is a root have descending string coefficient zero
   and ascending coefficient three.
 
@@ -29,6 +30,8 @@ the short coroot directions, is an ideal after base change to characteristic thr
 The short-sum statement gives coefficient `±2`, the first coefficient of the three-factor
 short-pair Chevalley commutator relation. Constructing that Lie ideal and identifying the induced
 exceptional isogeny are later steps.
+The absence of higher roots also gives the class-two Chevalley commutator relation at a long
+root sum.
 The four-term long–short string gives the exact factors two and three that occur in the
 successive divided brackets used by straightening.
 
@@ -42,6 +45,8 @@ successive divided brackets used by straightening.
   is long have bottom root-string coefficient two.
 * `TauCeti.DynkinType.g2_chainBotCoeff_eq_one_of_short_add_short_eq_short`: two short roots whose
   sum is short have bottom root-string coefficient one.
+* `TauCeti.DynkinType.g2_root_add_notMem_range_of_add_eq_long`: a long root sum has no
+  higher roots.
 * `TauCeti.DynkinType.g2_chainBotCoeff_eq_zero_and_chainTopCoeff_eq_three_of_short_long`:
   the four-term string starting at a long root in a short-root direction.
 
@@ -154,6 +159,20 @@ theorem g2_chainBotCoeff_eq_one_of_short_add_short_eq_short (i j k : Fin 12)
   have hnot := mt (g2SimplyConnectedRootDatum.root_sub_nsmul_mem_range_iff_le_chainBotCoeff hli
     (n := 2)).2 htwo
   omega
+
+/-- If the sum of two `G₂` roots is long, adding either summand to that sum does not give a
+root. This is the absence of higher roots in the corresponding class-two root string. -/
+theorem g2_root_add_notMem_range_of_add_eq_long (i j k : Fin 12)
+    (hk : g2Length k = 3)
+    (hadd : g2SimplyConnectedRootDatum.root k =
+      g2SimplyConnectedRootDatum.root i + g2SimplyConnectedRootDatum.root j) :
+    g2SimplyConnectedRootDatum.root i + g2SimplyConnectedRootDatum.root k ∉
+      range g2SimplyConnectedRootDatum.root := by
+  rintro ⟨l, hl⟩
+  simp only [g2SimplyConnectedRootDatum_root, g2Root_apply] at hadd hl
+  rw [g2Length_apply] at hk
+  revert i j k l
+  decide +kernel
 
 /-- A short root and a long root whose sum is a root start a four-term root string:
 its descending coefficient is zero and its ascending coefficient is three. -/

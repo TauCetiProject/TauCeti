@@ -26,8 +26,8 @@ past `x_γ(2cuv)` accounts for this last sign.
 ## Main results
 
 * `TauCeti.DynkinType.chevalleyRootSubgroup_mul_of_g2_short_pair`: the product relation.
-* `TauCeti.DynkinType.chevalleyRootSubgroup_mul_of_g2_short_add_short_eq_long`: the single-term
-  relation for two short roots with long sum.
+* `TauCeti.DynkinType.chevalleyRootSubgroup_mul_of_g2_long_sum`: the single-term relation
+  for a long root sum.
 * `TauCeti.DynkinType.commutatorElement_chevalleyRootSubgroup_of_g2_short_pair`: the ordered
   element-commutator formula.
 
@@ -79,16 +79,6 @@ private theorem g2_chainBotCoeff_eq (i j : Fin G2.numRoots) :
     (G2.simplyConnectedRootDatum ht).chainBotCoeff i j =
       g2SimplyConnectedRootDatum.chainBotCoeff i j := by
   simp +instances only [simplyConnectedRootDatum_G2, rank, numRoots]
-
-private theorem g2_short_add_short_long_excluded {j k m : Fin 12}
-    (hj : g2Length j = 1) (hk : g2Length k = 1) (hm : g2Length m = 3)
-    (hjk : g2Root m = g2Root j + g2Root k) :
-    (g2Root j + g2Root m ∉ Set.range g2Root ∧ g2Root j + g2Root m ≠ 0) ∧
-      (g2Root k + g2Root m ∉ Set.range g2Root ∧ g2Root k + g2Root m ≠ 0) := by
-  simp only [Set.mem_range, g2Root_apply] at hjk ⊢
-  simp only [g2Length_apply] at hj hk hm
-  revert j k m
-  decide +kernel
 
 private theorem g2_short_pair_excluded_sums {i j k : Fin 12}
     (hi : g2Length i = 1) (hj : g2Length j = 1) (hk : g2Length k = 1)
@@ -253,10 +243,10 @@ theorem chevalleyRootSubgroup_mul_of_g2_short_pair
     (dividedPower_chevalleySystem_smul_mem ρ M hM hnil l)
     (dividedPower_chevalleySystem_smul_mem ρ M hM hnil m) u v
 
-/-- Two short G₂ roots with long sum satisfy the single-term Chevalley product relation.
+/-- G₂ roots with long sum satisfy the single-term Chevalley product relation.
 The vanishing brackets are derived from the root datum; no auxiliary roots are required. -/
-theorem chevalleyRootSubgroup_mul_of_g2_short_add_short_eq_long
-    (hj : g2Length j = 1) (hk : g2Length k = 1) (hm : g2Length m = 3)
+theorem chevalleyRootSubgroup_mul_of_g2_long_sum
+    (hm : g2Length m = 3)
     (hjk : (G2.simplyConnectedRootDatum ht).root m =
       (G2.simplyConnectedRootDatum ht).root j + (G2.simplyConnectedRootDatum ht).root k)
     (A : CommAlgCat ℤ) (p q : A) :
@@ -266,13 +256,17 @@ theorem chevalleyRootSubgroup_mul_of_g2_short_add_short_eq_long
         chevalleyRootSubgroup ρ M hM hnil m A
           (Multiplicative.ofAdd ((G2.structureConstant ht j k : A) * (p * q))) *
         chevalleyRootSubgroup ρ M hM hnil j A (Multiplicative.ofAdd p) := by
-  have hex := g2_short_add_short_long_excluded hj hk hm ((g2_root_add_iff j k m).1 hjk)
-  have hjm := (g2_sum_excluded_iff (ht := ht) j m 1 1).2 (by simpa using hex.1)
-  have hkm := (g2_sum_excluded_iff (ht := ht) k m 1 1).2 (by simpa using hex.2)
-  simp only [one_zsmul] at hjm hkm
+  have excluded (r s : Fin G2.numRoots)
+      (hrs : (G2.simplyConnectedRootDatum ht).root m =
+        (G2.simplyConnectedRootDatum ht).root r + (G2.simplyConnectedRootDatum ht).root s) :
+      (G2.simplyConnectedRootDatum ht).root r + (G2.simplyConnectedRootDatum ht).root m ∉
+        Set.range (G2.simplyConnectedRootDatum ht).root := by
+    rw [simplyConnectedRootDatum_G2] at hrs ⊢
+    exact g2_root_add_notMem_range_of_add_eq_long r s m hm hrs
   exact chevalleyRootSubgroup_mul_of_add ρ M hM hnil hjk
-    (lie_chevalleySystem_eq_zero hjm.1 hjm.2)
-    (lie_chevalleySystem_eq_zero hkm.1 hkm.2) A p q
+    (lie_chevalleySystem_eq_zero_of_add_eq hjk (excluded j k hjk))
+    (lie_chevalleySystem_eq_zero_of_add_eq (hjk.trans (add_comm _ _))
+      (excluded k j (hjk.trans (add_comm _ _)))) A p q
 
 /-- The Chevalley element-commutator formula for any two short G₂ roots with short sum.
 The factors occur at `i+j`, `2i+j`, `i+2j`, in increasing total degree. The last coefficient
@@ -309,7 +303,7 @@ theorem commutatorElement_chevalleyRootSubgroup_of_g2_short_pair
   let t := (G2.structureConstant ht j k : A) * (v * ((c : A) * (2 * u * v)))
   have hswap : x j v * x k ((c : A) * (2 * u * v)) =
       x k ((c : A) * (2 * u * v)) * x m t * x j v :=
-    chevalleyRootSubgroup_mul_of_g2_short_add_short_eq_long ρ M hM hnil hj hk hmLong
+    chevalleyRootSubgroup_mul_of_g2_long_sum ρ M hM hnil hmLong
       (hkj.trans (add_comm _ _)) A v ((c : A) * (2 * u * v))
   have hprod := chevalleyRootSubgroup_mul_of_g2_short_pair ρ M hM hnil hi hj hk hij hik hkj A u v
   have hm : x m t * x m ((a : A) * (3 * u * v ^ 2)) =
