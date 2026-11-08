@@ -1143,37 +1143,37 @@ lemma qParam_one_scaleGL_smul [NeZero d] (τ : ℍ) :
   rw [← Complex.exp_nat_mul]
   ring_nf
 
-/-- **The `q`-parameter function of a level-raise is analytic at the cusp `∞`.** Only the
-periodicity of `f` is needed: `V_d f` is `1`-periodic whenever `f` is, with no assumption that
-`1` is a strict period of the target group. -/
+/-- Scaling up commutes with a unit translation, at the cost of translating by `d`. -/
+lemma scaleGL_smul_one_vadd [NeZero d] (τ : ℍ) :
+    (scaleGL d • ((1 : ℝ) +ᵥ τ) : ℍ) = (d : ℝ) +ᵥ (scaleGL d • τ) := by
+  apply UpperHalfPlane.ext
+  rw [coe_scaleGL_smul, UpperHalfPlane.coe_vadd, UpperHalfPlane.coe_vadd, coe_scaleGL_smul]
+  push_cast
+  ring
+
+/-- **A level-raise is `1`-periodic through `ofComplex`.** If `1` is a strict period of `𝒢`, then
+`V_d f ∘ ofComplex` is `1`-periodic, for any target group `𝒢'` admitted by `hle`. -/
+theorem _root_.ModularForm.periodic_comp_ofComplex_levelRaise [𝒢'.HasDetOne] [NeZero d]
+    (h𝒢 : (1 : ℝ) ∈ 𝒢.strictPeriods)
+    (hle : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (f : ModularForm 𝒢 k) :
+    Periodic (⇑(ModularForm.levelRaise d hle f) ∘ ofComplex) 1 := by
+  refine UpperHalfPlane.periodic_comp_ofComplex fun τ ↦ ?_
+  simp only [ModularForm.levelRaise_apply, scaleGL_smul_one_vadd]
+  rw [SlashInvariantForm.vAdd_apply_of_mem_strictPeriods f _ (by simpa using nsmul_mem h𝒢 d)]
+
+/-- **The `q`-parameter function of a level-raise is analytic at the cusp `∞`.** If `1` is a
+strict period of `𝒢`, the cusp function `cuspFunction 1 (V_d f)` of a level-raise is analytic at
+`0`, for any target group `𝒢'` admitted by `hle`. -/
 theorem _root_.ModularForm.analyticAt_cuspFunction_levelRaise [𝒢'.HasDetOne] [NeZero d]
     (h𝒢 : (1 : ℝ) ∈ 𝒢.strictPeriods)
     (hle : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (f : ModularForm 𝒢 k) :
     AnalyticAt ℂ (cuspFunction 1 (ModularForm.levelRaise d hle f)) 0 := by
-  have hd : d ≠ 0 := NeZero.ne d
   have : Fact (IsCusp OnePoint.infty 𝒢) := ⟨Subgroup.isCusp_of_mem_strictPeriods one_pos h𝒢⟩
-  refine analyticAt_cuspFunction_zero one_pos ?_ (ModularFormClass.holo _) ?_
-  · intro z
-    have hf := SlashInvariantFormClass.periodic_comp_ofComplex f h𝒢
-    by_cases hz : 0 < z.im
-    · have e : ∀ w : ℂ, 0 < w.im →
-          ((ModularForm.levelRaise d hle f : ModularForm 𝒢' k) ∘ ofComplex) w =
-            (f ∘ ofComplex) (d * w) := by
-        intro w hw
-        simp only [Function.comp_apply, ModularForm.levelRaise_apply]
-        congr 1
-        refine UpperHalfPlane.ext ?_
-        have hdw : 0 < ((d : ℂ) * w).im := by
-          simpa using mul_pos (Nat.cast_pos.2 (Nat.pos_of_ne_zero hd)) hw
-        rw [coe_scaleGL_smul, ofComplex_apply_of_im_pos hw, ofComplex_apply_of_im_pos hdw]
-      have h1 : 0 < (z + 1).im := by simpa using hz
-      rw [Complex.ofReal_one, e (z + 1) h1, e z hz, mul_add, mul_one]
-      simpa using (hf.nat_mul d) ((d : ℂ) * z)
-    · have hz' : (z + ((1 : ℝ) : ℂ)).im ≤ 0 := by simpa using not_lt.1 hz
-      simp only [Function.comp_apply, ofComplex_apply_eq_of_im_nonpos (not_lt.1 hz) hz']
-  · rw [ModularForm.coe_levelRaise]
-    exact (UpperHalfPlane.IsBoundedAtImInfty.slash k (by simp [scaleGL])
-      (ModularFormClass.bdd_at_infty f)).const_smul_left _
+  refine analyticAt_cuspFunction_zero one_pos
+    (ModularForm.periodic_comp_ofComplex_levelRaise h𝒢 hle f) (ModularFormClass.holo _) ?_
+  rw [ModularForm.coe_levelRaise]
+  exact (UpperHalfPlane.IsBoundedAtImInfty.slash k (by simp [scaleGL])
+    (ModularFormClass.bdd_at_infty f)).const_smul_left _
 
 /-- **The `q`-expansion of a level-raise.** Level-raising substitutes `q ↦ q ^ d` in the
 `q`-expansion, which on power series is `PowerSeries.expand d`. -/
