@@ -132,38 +132,67 @@ private theorem coe_normalizeSegmentToSphere_apply_of_normalize_eq {y : Y} {v : 
 
 end Segment
 
-/-- A path in the unit sphere is homotopic to the radial projection of a continuous comparison
+/-- A path in the unit sphere is homotopic to the radial projection of a comparison
 map when every point of their pointwise straight-line homotopy avoids the origin. -/
 theorem _root_.Path.homotopic_of_segment_ne_zero {a b : sphere (0 : E) 1} (γ γ' : Path a b)
-    (f : I → E) (hf : Continuous f)
+    (f : I → E)
     (hγ' : ∀ t, ((γ' t : sphere (0 : E) 1) : E) = normalize (f t))
     (h : ∀ z : I × I,
       (1 - (z.1 : ℝ)) • ((γ z.2 : sphere (0 : E) 1) : E) +
         (z.1 : ℝ) • f z.2 ≠ 0) : γ.Homotopic γ' := by
   have hanorm : ‖((a : sphere (0 : E) 1) : E)‖ = 1 := mem_sphere_zero_iff_norm.mp a.2
   have hbnorm : ‖((b : sphere (0 : E) 1) : E)‖ = 1 := mem_sphere_zero_iff_norm.mp b.2
+  have hγnorm (t : I) : ‖((γ t : sphere (0 : E) 1) : E)‖ = 1 := mem_sphere_zero_iff_norm.mp (γ t).2
+  have hγ'norm (t : I) : ‖((γ' t : sphere (0 : E) 1) : E)‖ = 1 :=
+    mem_sphere_zero_iff_norm.mp (γ' t).2
+  -- The straight segment from `γ` to `γ'` avoids the origin, since that from `γ` to `f` does.
+  have h0 : ∀ z : I × I, (1 - (z.1 : ℝ)) • ((γ z.2 : sphere (0 : E) 1) : E) +
+      (z.1 : ℝ) • ((γ' z.2 : sphere (0 : E) 1) : E) ≠ 0 := by
+    rintro ⟨u, t⟩ hz
+    have hft : f t ≠ 0 := by simpa using h (1, t)
+    have hfc : f t = ‖f t‖ • ((γ' t : sphere (0 : E) 1) : E) := by
+      rw [hγ', norm_smul_normalize]
+    have hc : 0 < ‖f t‖ := norm_pos_iff.mpr hft
+    generalize ‖f t‖ = c at hfc hc
+    have hne : ((γ t : sphere (0 : E) 1) : E) ≠ -((γ' t : sphere (0 : E) 1) : E) := by
+      intro hneg
+      have hs : 0 ≤ (1 + c)⁻¹ := by positivity
+      have hs1 : (1 + c)⁻¹ ≤ 1 :=
+        inv_le_one_of_one_le₀ (by linarith)
+      have hne : (1 + c) ≠ 0 := by positivity
+      refine h ((⟨(1 + c)⁻¹, ⟨hs, hs1⟩⟩ : I), t) ?_
+      change (1 - (1 + c)⁻¹) • ((γ t : sphere (0 : E) 1) : E) + (1 + c)⁻¹ • f t = 0
+      rw [hneg]
+      rw [hfc]
+      rw [smul_neg, smul_smul, ← neg_smul, ← add_smul]
+      convert zero_smul ℝ _ using 2
+      field_simp
+      ring
+    refine smul_sub_smul_ne_zero_of_ne (hγnorm t) (by simp) hne u ?_
+    simpa [sub_eq_add_neg] using hz
   refine Path.homotopic_of_continuous_square
-    (normalizeSegmentToSphere (fun t => ((γ t : sphere (0 : E) 1) : E)) f
-      (continuous_subtype_val.comp γ.continuous) hf h)
+    (normalizeSegmentToSphere (fun t => ((γ t : sphere (0 : E) 1) : E))
+      (fun t => ((γ' t : sphere (0 : E) 1) : E))
+      (continuous_subtype_val.comp γ.continuous) (continuous_subtype_val.comp γ'.continuous) h0)
     (ContinuousMap.continuous _) ?_ ?_ ?_ ?_
   · intro s
     refine Subtype.ext ?_
     rw [coe_normalizeSegmentToSphere_zero_left]
-    exact normalize_eq_self_of_norm_eq_one (mem_sphere_zero_iff_norm.mp (γ s).2)
+    exact normalize_eq_self_of_norm_eq_one (hγnorm s)
   · intro s
     refine Subtype.ext ?_
     rw [coe_normalizeSegmentToSphere_one_left]
-    exact (hγ' s).symm
+    exact normalize_eq_self_of_norm_eq_one (hγ'norm s)
   · intro u
     refine Subtype.ext (coe_normalizeSegmentToSphere_apply_of_normalize_eq
       (y := (0 : I)) ?_ ?_ hanorm u)
     · exact congrArg Subtype.val γ.source
-    · exact (hγ' 0).symm.trans (congrArg Subtype.val γ'.source)
+    · exact (normalize_eq_self_of_norm_eq_one (hγ'norm 0)).trans (congrArg Subtype.val γ'.source)
   · intro u
     refine Subtype.ext (coe_normalizeSegmentToSphere_apply_of_normalize_eq
       (y := (1 : I)) ?_ ?_ hbnorm u)
     · exact congrArg Subtype.val γ.target
-    · exact (hγ' 1).symm.trans (congrArg Subtype.val γ'.target)
+    · exact (normalize_eq_self_of_norm_eq_one (hγ'norm 1)).trans (congrArg Subtype.val γ'.target)
 
 private theorem normalize_smul_sub_smul_ne_of_ne {x p : E} (hx : ‖x‖ = 1) (hp : ‖p‖ = 1)
     (hxp : x ≠ p) (u : I) : normalize ((1 - (u : ℝ)) • x - (u : ℝ) • p) ≠ p := by
