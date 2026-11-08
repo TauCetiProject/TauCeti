@@ -9,6 +9,7 @@ public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 public import Mathlib.LinearAlgebra.BilinearForm.Basic
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
+public import TauCeti.Geometry.Symplectic.JHolomorphic.GoodCycle
 public import TauCeti.Geometry.Symplectic.JHolomorphic.TorusWeight
 
 /-!
@@ -87,6 +88,9 @@ intersections are inputs here; the geometric theorems supplying them are separat
 * `TauCeti.configurationCount_eq_zero_of_area_nonpos`,
   `TauCeti.configurationCount_eq_zero_of_isOfFinAddOrder`: vanishing in nonzero classes of
   nonpositive area and in nonzero torsion classes.
+* `TauCeti.apply_eq_sum_of_mem_compatibleConfigurations`,
+  `TauCeti.apply_eq_sum_of_mem_compatibleConfigurations'`: the pairing of the class of a
+  configuration with any class, in either slot, expanded over the components.
 * `TauCeti.apply_eq_mul_apply_self_of_mem_compatibleConfigurations`,
   `TauCeti.apply_self_sub_apply_eq_sum_of_mem_compatibleConfigurations`: intersection numbers and
   virtual dimension of the class of a configuration.
@@ -345,20 +349,20 @@ open LinearMap (BilinForm)
 variable [AddCommGroup H] {B : BilinForm ℤ H} {r : ι → ι → Prop} {cls : ι → H} {s : Set ι}
   {A : H} {l : ι →₀ ℕ}
 
-/-- The pairing of the class of a configuration with a class `x`, expanded over the
-components. -/
-private theorem apply_eq_sum_of_mem_compatibleConfigurations
+/-- The pairing of the class of a configuration, in the left slot, with a class `x`, expanded
+over the components. -/
+theorem apply_eq_sum_of_mem_compatibleConfigurations
     (hl : l ∈ compatibleConfigurations r cls s A) (x : H) :
     B A x = ∑ c ∈ l.support, (l c : ℤ) * B (cls c) x := by
   simp [← hl.2.2, Finsupp.linearCombination_apply, Finsupp.sum, map_sum, LinearMap.sum_apply,
     map_nsmul]
 
-/-- The pairing of a class `x` with the class of a configuration, expanded over the
-components. -/
-private theorem apply_eq_sum_of_mem_compatibleConfigurations'
+/-- The pairing of a class `x` with the class of a configuration, in the right slot, expanded
+over the components: `apply_eq_sum_of_mem_compatibleConfigurations` for the flipped form. -/
+theorem apply_eq_sum_of_mem_compatibleConfigurations'
     (hl : l ∈ compatibleConfigurations r cls s A) (x : H) :
-    B x A = ∑ c ∈ l.support, (l c : ℤ) * B x (cls c) := by
-  simp [← hl.2.2, Finsupp.linearCombination_apply, Finsupp.sum, map_sum, map_nsmul]
+    B x A = ∑ c ∈ l.support, (l c : ℤ) * B x (cls c) :=
+  apply_eq_sum_of_mem_compatibleConfigurations (B := B.flip) hl x
 
 /-- A component `c` of a configuration meets the class of the configuration only through itself:
 if every candidate compatible with `c` has intersection number zero with it, as for disjoint
@@ -394,11 +398,17 @@ theorem apply_self_sub_apply_eq_sum_of_mem_compatibleConfigurations
     (hl : l ∈ compatibleConfigurations r cls s A) (κ : H) :
     B A A - B κ A =
       ∑ c ∈ l.support, (l c : ℤ) * (l c * B (cls c) (cls c) - B κ (cls c)) := by
-  rw [apply_eq_sum_of_mem_compatibleConfigurations' hl A,
-    apply_eq_sum_of_mem_compatibleConfigurations' hl κ, ← Finset.sum_sub_distrib]
+  have hA : ∑ c : l.support, l c • cls c = A := by
+    rw [← hl.2.2, Finsupp.linearCombination_apply, Finsupp.sum,
+      Finset.sum_coe_sort l.support fun c ↦ l c • cls c]
+  rw [cycle_apply_self_sub_apply_canonical_eq_sum_add_sum (B := B) (κ := κ) hA,
+    Finset.sum_coe_sort l.support fun c ↦ (l c : ℤ) * (B (cls c) (cls c) - B κ (cls c)),
+    Finset.sum_coe_sort l.support fun c ↦ (l c : ℤ) * (B A (cls c) - B (cls c) (cls c)),
+    ← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun c hc ↦ ?_
   rw [apply_eq_mul_apply_self_of_mem_compatibleConfigurations
-    (fun b hb hbc ↦ hr b hb c (hl.1 hc) hbc) hl hc, mul_sub]
+    (fun b hb hbc ↦ hr b hb c (hl.1 hc) hbc) hl hc]
+  ring
 
 variable [CommSemiring R] {w : ι → ℕ → R}
 
@@ -420,7 +430,8 @@ theorem configurationCount_eq_zero_of_apply_lt_neg_one {S : ι}
   have hA' := apply_eq_mul_apply_self_of_mem_compatibleConfigurations hr hl hSl
   have h2 : 2 ≤ l S := by
     by_contra h
-    rw [show l S = 1 by omega, Nat.cast_one, one_mul] at hA'
+    have h1 : l S = 1 := by omega
+    rw [h1, Nat.cast_one, one_mul] at hA'
     linarith
   rw [Finsupp.prod]
   exact Finset.prod_eq_zero hSl (hw _ h2)
@@ -445,7 +456,8 @@ theorem configurationCount_eq_zero_of_apply_self_sub_apply_neg {κ : H}
   have hd := hind c (hl.1 hc)
   have hl0 := Finsupp.mem_support_iff.1 hc
   rcases Nat.lt_or_ge (l c) 2 with h | h
-  · rw [show l c = 1 by omega, Nat.cast_one, one_mul]
+  · have h1 : l c = 1 := by omega
+    rw [h1, Nat.cast_one, one_mul]
     exact hd
   · have hsq := hmult c (hl.1 hc) _ h fun hw ↦ hne (Finset.prod_eq_zero hc hw)
     have h' : (2 : ℤ) ≤ l c := by exact_mod_cast h
