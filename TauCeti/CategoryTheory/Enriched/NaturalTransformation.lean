@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Enriched.Ordinary.Basic
-import TauCeti.CategoryTheory.Monoidal.Braided.Basic
 import Mathlib.Tactic.ApplyFun
 
 /-!
