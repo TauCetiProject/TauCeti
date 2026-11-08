@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 # Implementation is pinned in tauceti.toml; CI materializes it from TauCetiTools.
-exec uvx --from git+https://github.com/TauCetiProject/TauCetiTools@fddd772584e81a08d56ea573169f37411f01a201 tauceti-tools script build-lint-driver.sh "$@"
+exec uvx --from git+https://github.com/TauCetiProject/TauCetiTools@3b5a8cf7e28f2d51fc6f5e5a13941840db612c0e tauceti-tools script build-lint-driver.sh "$@"
