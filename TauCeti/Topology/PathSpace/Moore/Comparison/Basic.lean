@@ -23,7 +23,10 @@ and back changes the length to one and reparametrizes, and the result is homotop
 path through Moore paths with the same end points (`MoorePath.unitHomotopy`).  So the two path
 spaces are homotopy equivalent over `X × X` (`MoorePath.homotopyEquivUnitPath`), and the based
 version follows: the Moore loops `MooreLoopSpace X x` are homotopy equivalent to Mathlib's loops
-`Path x x` (`MooreLoopSpace.homotopyEquivPath`).
+`Path x x` (`MooreLoopSpace.homotopyEquivPath`). Away from length zero there is no need to pass
+through length one: the Moore loops of positive length are homeomorphic to `(0, ∞) × Path x x`
+(`MooreLoopSpace.posLengthHomeomorph`). The Moore loop of length zero is the unit alone, while
+there are as many loops of each positive length as there are fixed-interval loops.
 
 The homotopy is assembled from three pieces, each one a homotopy through maps that preserve the
 two end points, so that their composite is one as well (`MoorePath.PreservesEndpoints`,
@@ -49,6 +52,8 @@ The detour through length `L + 1` avoids dividing by a length that could be zero
 * `TauCeti.MoorePath.homotopyEquivUnitPath`: the homotopy equivalence `MoorePath X ≃ₕ C(I, X)`.
 * `TauCeti.MooreLoopSpace.homotopyEquivPath`: the homotopy equivalence
   `MooreLoopSpace X x ≃ₕ Path x x` with Mathlib's loop space.
+* `TauCeti.MooreLoopSpace.posLengthHomeomorph`: the Moore loops of positive length are homeomorphic
+  to `(0, ∞) × Path x x`, by the length and `toPath`.
 
 ## Main results
 
@@ -450,6 +455,58 @@ theorem homotopyEquivPath_apply (γ : MooreLoopSpace X x) : homotopyEquivPath x 
 theorem homotopyEquivPath_symm_apply (p : Path x x) :
     (homotopyEquivPath x).symm p = p.toMooreLoop :=
   (rfl)
+
+/-! ### Moore loops of positive length -/
+
+variable (x) in
+/-- **Moore loops of positive length are pairs of a positive length and a loop on the unit
+interval**: a Moore loop is sent to its length and to its reparametrization to the unit interval,
+and a pair `(L, c)` to the loop `c` run in time `L`. In particular, over positive lengths, the
+length of Moore loops is a product projection, with fibre the loop space `Path x x`. -/
+def posLengthHomeomorph :
+    (length ⁻¹' Set.Ioi 0 : Set (MooreLoopSpace X x)) ≃ₜ Set.Ioi (0 : ℝ≥0) × Path x x where
+  toFun γ := (⟨γ.1.length, γ.2⟩, γ.1.toPath)
+  invFun q := ⟨⟨q.2.toMoorePath.rescale q.1, by simp, by
+    rw [MoorePath.target_rescale _ (ne_of_gt q.1.2), Path.target_toMoorePath]⟩, by
+    simpa only [Set.mem_preimage, ← length_toMoorePath, MoorePath.length_rescale] using q.1.2⟩
+  left_inv γ := Subtype.ext <| ext <| by
+    simp only
+    rw [← Path.toMoorePath_toMooreLoop, ← toLengthOne_apply, toMoorePath_toLengthOne,
+      MoorePath.toLengthOne_eq_rescale_one, MoorePath.rescale_rescale _ one_ne_zero,
+      ← length_toMoorePath, MoorePath.rescale_length]
+  right_inv q := by
+    refine Prod.ext (Subtype.ext ?_) (Path.ext (funext fun s ↦ ?_))
+    · simp only [← length_toMoorePath, MoorePath.length_rescale]
+    simp only [toPath_apply, MoorePath.length_rescale, MoorePath.rescale_apply,
+      Path.length_toMoorePath, one_mul, Path.toMoorePath_apply]
+    rw [mul_div_cancel_left₀ (toNNReal s) (ne_of_gt q.1.2 : (q.1 : ℝ≥0) ≠ 0)]
+    exact q.2.extend_extends' s
+  continuous_toFun := by fun_prop
+  continuous_invFun := by
+    refine Continuous.subtype_mk (isEmbedding_toMoorePath.continuous_iff.2 ?_) _
+    exact (Path.continuous_toMoorePath.comp continuous_snd).moorePath_rescale
+      (continuous_subtype_val.comp continuous_fst) fun q ↦ ne_of_gt q.1.2
+
+@[simp]
+theorem posLengthHomeomorph_apply_fst (γ : (length ⁻¹' Set.Ioi 0 : Set (MooreLoopSpace X x))) :
+    ((posLengthHomeomorph x γ).1 : ℝ≥0) = γ.1.length :=
+  (rfl)
+
+@[simp]
+theorem posLengthHomeomorph_apply_snd (γ : (length ⁻¹' Set.Ioi 0 : Set (MooreLoopSpace X x))) :
+    (posLengthHomeomorph x γ).2 = γ.1.toPath :=
+  (rfl)
+
+@[simp]
+theorem toMoorePath_posLengthHomeomorph_symm_apply (q : Set.Ioi (0 : ℝ≥0) × Path x x) :
+    ((posLengthHomeomorph x).symm q).1.toMoorePath = q.2.toMoorePath.rescale q.1 :=
+  (rfl)
+
+/-- Reparametrizing to the unit interval commutes with the Moore loop map of a continuous map. -/
+@[simp]
+theorem toPath_map {Y : Type*} [TopologicalSpace Y] (f : C(X, Y)) (γ : MooreLoopSpace X x) :
+    (map f rfl γ).toPath = γ.toPath.map f.continuous :=
+  Path.ext (funext fun _ ↦ by simp [toPath_apply])
 
 end MooreLoopSpace
 
