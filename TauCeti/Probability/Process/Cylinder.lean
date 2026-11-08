@@ -199,6 +199,16 @@ theorem integrable_blockIndicatorProd {μ : Measure Ω} [IsFiniteMeasure μ] {X 
   rw [blockIndicatorProd_eq_indicator]
   exact (integrable_const (1 : ℝ)).indicator₀ (nullMeasurableSet_blockCylinder hX hC)
 
+/-- A product of indicators along any selection `s` of a process with a.e. measurable selected
+coordinates is integrable under a finite measure: `integrable_blockIndicatorProd` read through
+`blockIndicatorProd_apply`. -/
+theorem integrable_prod_indicator_comp {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ → Ω → α}
+    {r : ℕ} {s : Fin r → ℕ} (hX : ∀ i, AEMeasurable (X (s i)) μ) {B : Fin r → Set α}
+    (hB : ∀ i, MeasurableSet (B i)) :
+    Integrable (fun ω => ∏ i, (B i).indicator (fun _ => (1 : ℝ)) (X (s i) ω)) μ :=
+  (integrable_blockIndicatorProd hX hB).congr
+    (ae_of_all _ fun ω => blockIndicatorProd_apply X s B ω)
+
 /-- **The block law of a rectangle is the lintegral of the block-cylinder indicator.** For
 a.e.-measurable selected coordinates,
 `∫⁻ ω, 𝟙_{blockCylinder X k C}(ω) ∂μ = blockLaw μ X k (∏ᵢ C i)`. Being an `ℝ≥0∞` lintegral, this is
