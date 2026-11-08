@@ -12,13 +12,14 @@ public import Mathlib.Analysis.InnerProductSpace.LinearMap
 # The Gelfand triple `V ↪ H ↪ V*`
 
 Let `ι : V →L[ℝ] H` be a continuous linear map from a real seminormed space `V` into a real inner
-product space `H`. Pairing with `H` through `ι` gives the continuous linear map
+product space `H`, which need only be seminormed. Pairing with `H` through `ι` gives the continuous
+linear map
 
 `ι.gelfandDual : H →L[ℝ] StrongDual ℝ V`, `h ↦ (x ↦ ⟪h, ι x⟫)`.
 
-When `ι` is injective with dense range, `V ↪ H ↪ V*` is a **Gelfand triple** (also called an
-evolution triple, with `H` the pivot space): `ι.gelfandDual` is then injective as well
-(`ContinuousLinearMap.gelfandDual_injective`), so `H` sits inside `V*`, and the pairing of
+When `H` is normed and `ι` is injective with dense range, `V ↪ H ↪ V*` is a **Gelfand triple**
+(also called an evolution triple, with `H` the pivot space): `ι.gelfandDual` is then injective
+as well (`ContinuousLinearMap.gelfandDual_injective`), so `H` sits inside `V*`, and the pairing of
 `V*` with `V` restricts on `H × V` to the inner product of `H`. The standard example is
 `H¹₀(Ω) ↪ L²(Ω) ↪ H⁻¹(Ω)`. Evolution equations `u' + A u = f` are posed in such a triple: the
 solution takes values in `V`, while its time derivative takes values in `V*`.
@@ -31,10 +32,11 @@ The composite `ι.gelfandDual ∘ ι : V →L[ℝ] StrongDual ℝ V` is the symm
 * `ContinuousLinearMap.gelfandDual`: the map `H → V*`, `h ↦ ⟪h, ι ·⟫`.
 * `ContinuousLinearMap.gelfandDual_apply`: its defining formula.
 * `ContinuousLinearMap.norm_gelfandDual`: its norm is `‖ι‖`.
-* `ContinuousLinearMap.gelfandDual_injective`: it is injective when `ι` has dense range.
+* `ContinuousLinearMap.gelfandDual_injective`: for normed `H`, it is injective when `ι` has dense
+  range.
 * `ContinuousLinearMap.flip_gelfandDual_comp`: the form `⟪ι x, ι y⟫` on `V` is symmetric.
-* `ContinuousLinearMap.gelfandDual_comp_injective_iff`: the composite `V → V*` is injective
-  exactly when `ι` is.
+* `ContinuousLinearMap.gelfandDual_comp_injective_iff`: for normed `H`, the composite `V → V*` is
+  injective exactly when `ι` is.
 
 ## References
 
@@ -57,8 +59,8 @@ section Seminormed
 variable [SeminormedAddCommGroup H] [InnerProductSpace ℝ H] (ι : V →L[ℝ] H)
 
 /-- The map `H → V*`, `h ↦ (x ↦ ⟪h, ι x⟫)`, induced by a continuous linear map `ι : V →L[ℝ] H`
-into a real inner product space. When `ι` is injective with dense range this is the second
-embedding of the Gelfand triple `V ↪ H ↪ V*`. -/
+into a real inner product space. When `H` is normed and `ι` is injective with dense range, this
+is the second embedding of the Gelfand triple `V ↪ H ↪ V*`. -/
 def gelfandDual : H →L[ℝ] StrongDual ℝ V :=
   ((compL ℝ V H ℝ).flip ι).comp (innerSL ℝ : H →L[ℝ] H →L[ℝ] ℝ)
 
