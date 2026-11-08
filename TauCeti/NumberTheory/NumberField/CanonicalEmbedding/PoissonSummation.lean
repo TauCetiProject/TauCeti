@@ -175,6 +175,7 @@ theorem exists_pos_le_mixedInner (L : Submodule ℤ (mixedSpace K)) [DiscreteTop
   have hεx : ε ≤ ‖x‖ := le_of_not_gt fun h ↦ hx <| by
     have := hball (by simpa using h)
     simpa using this
+  rw [← Submodule.norm_coe] at hεx
   exact (pow_le_pow_left₀ hε.le hεx 2).trans (norm_sq_le_mixedInner_self K x)
 
 open scoped Classical in

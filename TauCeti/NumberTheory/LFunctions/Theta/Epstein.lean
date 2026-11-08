@@ -69,7 +69,7 @@ theorem summable_epsteinZeta (L : Submodule ℤ (mixedSpace K)) [DiscreteTopolog
       Real.rpow_le_rpow_of_nonpos (sq_pos_of_pos (norm_pos_iff.mpr hx))
         (norm_sq_le_mixedInner_self K _) (by linarith)
     _ = ‖(x : L)‖ ^ (-2 * s.re) := by
-      rw [← Real.rpow_natCast, ← Real.rpow_mul (norm_nonneg _)]
+      rw [Submodule.norm_coe, ← Real.rpow_natCast, ← Real.rpow_mul (norm_nonneg _)]
       congr 1
       ring
 
