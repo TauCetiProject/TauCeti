@@ -255,12 +255,12 @@ theorem exists_testFunction_approximation_restrictL (hp : p ≠ ∞)
         (ofTestFunctionₗ (mu := mu) (p := p) k (psi j))) atTop
         (𝓝 (restrictL (SetLike.coe_subset_coe.mp (subset_closure.trans hclosure)) k u)) := by
   obtain ⟨chi, hchi, -, hchi_one, hchi_cpt, hchi_ts⟩ :=
-    hcompact.exists_contDiff_cutoff Omega.isOpen hclosure
+    hcompact.exists_contDiff_cutoff_eventuallyEq_one Omega.isOpen hclosure
   let chiTest : 𝓓(Omega, ℝ) := ⟨chi, hchi, hchi_cpt, hchi_ts⟩
   have hchiU : ∀ x ∈ U, chiTest x = 1 := by
     intro x hx
-    simpa only [chiTest, TestFunction.coe_mk, mem_preimage, mem_singleton_iff] using
-      (interior_subset (hchi_one (subset_closure hx)))
+    simpa only [chiTest, TestFunction.coe_mk] using
+      (hchi_one x (subset_closure hx)).self_of_nhds
   obtain ⟨δ, hδ, hδO⟩ := hcompact.exists_cthickening_subset_open Omega.isOpen hclosure
   let phi : ℕ → ContDiffBump (0 : E) := fun j =>
     ⟨(δ / ((j : ℝ) + 1)) / 2, δ / ((j : ℝ) + 1), by positivity,
