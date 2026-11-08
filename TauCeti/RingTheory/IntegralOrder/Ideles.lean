@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.RestrictedProduct.Basic
+public import TauCeti.Algebra.Module.Submodule.Pointwise
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Gluing
 public import TauCeti.RingTheory.IntegralOrder.Basic
+public import TauCeti.RingTheory.TensorProduct.Maps
 import Mathlib.RingTheory.DedekindDomain.Factorization
 import TauCeti.Algebra.Module.Lattice
 
@@ -62,76 +64,11 @@ public section
 open TensorProduct IsDedekindDomain Submodule
 open scoped RestrictedProduct Pointwise
 
-section Translates
-
-variable {R S : Type*} [CommSemiring R] [Semiring S] [Algebra R S]
-
-/-- Membership in the translate `s N` of a submodule by a unit `s`. -/
-theorem Submodule.mem_units_smul_iff {N : Submodule R S} {s : Sˣ} {x : S} :
-    x ∈ s • N ↔ ↑s⁻¹ * x ∈ N :=
-  Set.mem_smul_set_iff_inv_smul_mem (a := s) (A := (N : Set S))
-
-/-- The base change of a subalgebra has the base change of its underlying submodule as underlying
-submodule. -/
-@[simp]
-theorem Subalgebra.toSubmodule_baseChange (T : Type*) [CommSemiring T] [Algebra R T]
-    (C : Subalgebra R S) :
-    Subalgebra.toSubmodule (C.baseChange T) = (Subalgebra.toSubmodule C).baseChange T :=
-  rfl
-
-/-- Two translates `s C` and `t C` of a subalgebra agree exactly when `s⁻¹ t` is a unit of `C`. -/
-theorem Subalgebra.smul_toSubmodule_eq_smul_toSubmodule_iff {C : Subalgebra R S} {s t : Sˣ} :
-    s • Subalgebra.toSubmodule C = t • Subalgebra.toSubmodule C ↔
-      s⁻¹ * t ∈ C.toSubmonoid.units := by
-  -- If `s C ≤ t C`, then `s ∈ t C`, that is `t⁻¹ s ∈ C`.
-  have key {s t : Sˣ} (h : s • Subalgebra.toSubmodule C ≤ t • Subalgebra.toSubmodule C) :
-      (↑(t⁻¹ * s) : S) ∈ C := by
-    have hs : (s : S) ∈ s • Subalgebra.toSubmodule C := by
-      simp [Submodule.mem_units_smul_iff]
-    simpa [Submodule.mem_units_smul_iff] using h hs
-  refine ⟨fun h ↦ ⟨key h.ge, by simpa using key h.le⟩, fun h ↦ ?_⟩
-  -- If `u = s⁻¹ t` is a unit of `C`, then `t C = s u C = s C`.
-  obtain ⟨h₁, h₂⟩ := (Submonoid.mem_units_iff _ _).1 h
-  rw [Subsemiring.mem_toSubmonoid, Subalgebra.mem_toSubsemiring] at h₁ h₂
-  ext z
-  simp only [Submodule.mem_units_smul_iff, Subalgebra.mem_toSubmodule]
-  constructor
-  · intro hz
-    have := mul_mem h₂ hz
-    rwa [← mul_assoc, ← Units.val_mul, mul_inv_rev, inv_inv, mul_inv_cancel_right] at this
-  · intro hz
-    have := mul_mem h₁ hz
-    rwa [← mul_assoc, ← Units.val_mul, mul_assoc, mul_inv_cancel, mul_one] at this
-
-end Translates
-
 namespace TauCeti.OrderIdeles
 
 variable {A : Type*} [CommRing A] [IsDedekindDomain A]
   (F : Type*) [Field F] [Algebra A F] [IsFractionRing A F]
   {B : Type*} [Ring B] [Algebra A B] (Λ : Subalgebra A B)
-
-variable {F Λ}
-
-/-- The `A`-module structure on `𝒪_v ⊗[A] B` preserves `Λ_v`. -/
-theorem smul_mem_baseChange {v : HeightOneSpectrum A} (a : A)
-    {z : v.adicCompletionIntegers F ⊗[A] B} (hz : z ∈ Λ.baseChange (v.adicCompletionIntegers F)) :
-    a • z ∈ Λ.baseChange (v.adicCompletionIntegers F) := by
-  rw [← algebraMap_smul (v.adicCompletionIntegers F)]
-  exact Subalgebra.smul_mem _ hz _
-
-/-- If `a • x ∈ Λ` for an element `a` of `A` outside `v`, then `1 ⊗ₜ x ∈ Λ_v`, since `a` is a
-unit of `𝒪_v`. -/
-theorem one_tmul_mem_baseChange_of_smul_mem {v : HeightOneSpectrum A} {a : A}
-    (ha : a ∉ v.asIdeal) {x : B} (hx : a • x ∈ Λ) :
-    (1 : v.adicCompletionIntegers F) ⊗ₜ x ∈ Λ.baseChange (v.adicCompletionIntegers F) := by
-  obtain ⟨u, hu⟩ := (v.isUnit_algebraMap_adicCompletionIntegers_iff (K := F) a).2 ha
-  have h := Subalgebra.smul_mem _ (Subalgebra.tmul_mem_baseChange hx 1)
-    (↑u⁻¹ : v.adicCompletionIntegers F)
-  rwa [← smul_tmul, ← Algebra.algebraMap_eq_smul_one, ← hu, smul_tmul', smul_eq_mul,
-    Units.inv_mul] at h
-
-variable (F Λ)
 
 /-- The **finite idele group** `J_f(Λ)` of `B` relative to `Λ`: the restricted product of the
 unit groups `(𝒪_v ⊗[A] B)ˣ` with respect to the unit groups of the completions `Λ_v`. -/
@@ -165,7 +102,8 @@ theorem mem_lattice_iff {α : FiniteIdeles F Λ} {x : B} :
     x ∈ lattice F Λ α ↔
       ∀ v : HeightOneSpectrum A, ↑(α v)⁻¹ * ((1 : v.adicCompletionIntegers F) ⊗ₜ[A] x) ∈
         Λ.baseChange (v.adicCompletionIntegers F) := by
-  simp only [lattice, mem_glueCompletions, Submodule.mem_units_smul_iff, Subalgebra.mem_toSubmodule]
+  simp only [lattice, mem_glueCompletions]
+  exact forall_congr' fun v ↦ Submodule.mem_pointwise_smul_iff_inv_smul_mem (g := α v)
 
 /-- **`I(α)` is a right `Λ`-module.** -/
 theorem mul_mem_lattice {α : FiniteIdeles F Λ} {x y : B} (hx : x ∈ lattice F Λ α) (hy : y ∈ Λ) :
@@ -183,22 +121,6 @@ theorem lattice_one (hA : ¬IsField A) : lattice F Λ 1 = Subalgebra.toSubmodule
 
 variable [Algebra F B] [IsScalarTower A F B]
 
-variable (Λ) in
-/-- Every element of `𝒪_v ⊗[A] B` has a nonzero `A`-multiple in `Λ_v` when `Λ` spans `B`. -/
-theorem exists_ne_zero_smul_mem_baseChange (hΛ : span F (Λ : Set B) = ⊤)
-    {v : HeightOneSpectrum A} (z : v.adicCompletionIntegers F ⊗[A] B) :
-    ∃ a : A, a ≠ 0 ∧ a • z ∈ Λ.baseChange (v.adicCompletionIntegers F) := by
-  induction z using TensorProduct.inductionOn with
-  | tmul o x =>
-    obtain ⟨a, ha, hax⟩ := IsLattice.exists_ne_zero_smul_mem F (Subalgebra.toSubmodule Λ) hΛ x
-    exact ⟨a, ha, by rw [← tmul_smul]; exact Subalgebra.tmul_mem_baseChange hax o⟩
-  | add z₁ z₂ h₁ h₂ =>
-    obtain ⟨a₁, ha₁, h₁⟩ := h₁
-    obtain ⟨a₂, ha₂, h₂⟩ := h₂
-    refine ⟨a₂ * a₁, mul_ne_zero ha₂ ha₁, ?_⟩
-    rw [smul_add, mul_smul, mul_comm, mul_smul]
-    exact add_mem (smul_mem_baseChange a₂ h₁) (smul_mem_baseChange a₁ h₂)
-
 variable (F Λ) in
 /-- The **principal ideles**: a unit `b` of `B` has components `1 ⊗ₜ b`, which are units of `Λ_v`
 for all but finitely many `v` when `Λ` spans `B`. -/
@@ -215,8 +137,10 @@ noncomputable def principal (hΛ : span F (Λ : Set B) = ⊤) : Bˣ →* FiniteI
     refine Filter.eventually_cofinite.2 (hfin.subset fun v hv ↦ ?_)
     rw [Set.mem_ofPred_eq, Ideal.dvd_span_singleton]
     by_contra h
-    refine hv ⟨one_tmul_mem_baseChange_of_smul_mem (fun h' ↦ h (Ideal.mul_mem_right _ _ h')) h₁,
-      one_tmul_mem_baseChange_of_smul_mem (fun h' ↦ h (Ideal.mul_mem_left _ _ h')) h₂⟩
+    refine hv ⟨(Subalgebra.toSubmodule Λ).one_tmul_mem_baseChange_of_smul_mem
+      (fun h' ↦ h (Ideal.mul_mem_right _ _ h')) h₁,
+      (Subalgebra.toSubmodule Λ).one_tmul_mem_baseChange_of_smul_mem
+        (fun h' ↦ h (Ideal.mul_mem_left _ _ h')) h₂⟩
   map_one' := RestrictedProduct.ext _ _ fun _ ↦ Units.ext (by simp)
   map_mul' _ _ := RestrictedProduct.ext _ _ fun _ ↦ Units.ext (by simp)
 
@@ -237,13 +161,14 @@ theorem exists_ne_zero_forall_smul_inv_mem_baseChange (hΛ : span F (Λ : Set B)
   -- denominators of `α_v⁻¹` over `S`.
   have hS := Filter.eventually_cofinite.1 α.eventually
   set S := hS.toFinset
-  choose c hc0 hc using fun v ↦ exists_ne_zero_smul_mem_baseChange Λ hΛ (↑(α v)⁻¹ :
-    v.adicCompletionIntegers F ⊗[A] B)
+  choose c hc0 hc using fun v ↦
+    (Subalgebra.toSubmodule Λ).exists_ne_zero_smul_mem_baseChange hΛ
+      (↑(α v)⁻¹ : v.adicCompletionIntegers F ⊗[A] B)
   refine ⟨∏ v ∈ S, c v, Finset.prod_ne_zero_iff.2 fun v _ ↦ hc0 v, fun v ↦ ?_⟩
   by_cases hv : v ∈ S
   · rw [← Finset.mul_prod_erase S c hv, mul_comm, mul_smul]
-    exact smul_mem_baseChange _ (hc v)
-  · refine smul_mem_baseChange _ ?_
+    exact (Λ.baseChange _).toSubmodule.smul_of_tower_mem _ (hc v)
+  · refine (Λ.baseChange _).toSubmodule.smul_of_tower_mem _ ?_
     have : α v ∈ (Λ.baseChange (v.adicCompletionIntegers F)).toSubmonoid.units := by
       simpa [S] using hv
     exact this.2
@@ -259,8 +184,8 @@ theorem span_lattice (hΛ : span F (Λ : Set B) = ⊤) (α : FiniteIdeles F Λ) 
     refine mem_lattice_iff.2 fun v ↦ ?_
     have := mul_mem (hav v) (Subalgebra.tmul_mem_baseChange hx 1)
     rwa [smul_mul_assoc, ← mul_smul_comm, ← tmul_smul] at this
-  have := smul_mem _ (algebraMap A F a)⁻¹ (subset_span (R := F) hmem)
-  rwa [← algebraMap_smul F a x, smul_smul, inv_mul_cancel₀ ha', one_smul] at this
+  rw [← algebraMap_smul F a x] at hmem
+  exact (smul_mem_iff _ ha').1 (subset_span (R := F) hmem)
 
 /-- **The completions of `I(α)`.** The completion of `I(α)` at every `v` is `α_v Λ_v`. -/
 theorem baseChange_lattice (hΛ : span F (Λ : Set B) = ⊤) (α : FiniteIdeles F Λ)
@@ -285,7 +210,10 @@ theorem lattice_principal_mul (hΛ : span F (Λ : Set B) = ⊤) (b : Bˣ) (α : 
     lattice F Λ (principal F Λ hΛ b * α) =
       b • lattice F Λ α := by
   ext x
-  rw [Submodule.mem_units_smul_iff, mem_lattice_iff, mem_lattice_iff]
+  refine Iff.trans ?_ (Submodule.mem_pointwise_smul_iff_inv_smul_mem
+    (N := lattice F Λ α) (g := b) (x := x)).symm
+  rw [mem_lattice_iff, mem_lattice_iff]
+  simp only [Units.smul_def, smul_eq_mul]
   refine forall_congr' fun v ↦ ?_
   have hb : (↑(principal F Λ hΛ b v)⁻¹ : v.adicCompletionIntegers F ⊗[A] B) = 1 ⊗ₜ ↑b⁻¹ := by
     rw [← RestrictedProduct.inv_apply, ← map_inv, coe_principal_apply]
@@ -300,11 +228,9 @@ theorem isLattice_lattice (hA : ¬IsField A) (hΛ : IntegralOrder.IsOrder F Λ)
   -- Some nonzero `a ∈ A` makes every `a • α_v` integral, so that `a • I(α) ⊆ I(1) = Λ`.
   obtain ⟨a, ha, hav⟩ := exists_ne_zero_forall_smul_inv_mem_baseChange hΛ.span_eq_top α⁻¹
   have ha' : algebraMap A F a ≠ 0 := (map_ne_zero_iff _ (IsFractionRing.injective A F)).2 ha
-  have hinj : Function.Injective (LinearMap.lsmul A B a) := fun x y hxy ↦ by
-    rw [LinearMap.lsmul_apply, LinearMap.lsmul_apply, ← algebraMap_smul F a x,
-      ← algebraMap_smul F a y] at hxy
-    have := congr_arg ((algebraMap A F a)⁻¹ • ·) hxy
-    rwa [smul_smul, smul_smul, inv_mul_cancel₀ ha', one_smul, one_smul] at this
+  have hinj : Function.Injective (LinearMap.lsmul A B a) := by
+    change Function.Injective fun x : B ↦ a • x
+    simpa only [← algebraMap_smul F a] using smul_right_injective B ha'
   refine fg_of_fg_map_injective _ hinj
     (FG.of_le (IntegralOrder.isOrder_iff_isLattice.1 hΛ).fg ?_)
   rw [← lattice_one (F := F) hA]
