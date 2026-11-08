@@ -91,8 +91,7 @@ private lemma slantCochain_eq (p q n : ℕ) (h : p + q = n) (z : K.X p) (φ : T.
 @[simp]
 lemma slantCochain_apply (p q n : ℕ) (h : p + q = n) (z : K.X p) (φ : T.X n ⟶ P) (v : L.X q) :
     slantCochain k D p q n h z φ v = φ (D.f n (ιTensorObj K L p q n h (z ⊗ₜ v))) := by
-  rw [slantCochain_eq, ConcreteCategory.comp_apply, ModuleCat.tensorMk_apply]
-  rfl
+  simp only [slantCochain_eq, ConcreteCategory.comp_apply, ModuleCat.tensorMk_apply]
 
 private lemma tensorObj_d_eq (n : ℕ) :
     (HomologicalComplex.tensorObj K L).d (n + 1) n =
@@ -181,6 +180,10 @@ private lemma slantCochainHom_d_zero (p : ℕ) (w : K.X (p + 1)) (φ : (T.linear
       slantCochainHom k D (p + 1) 0 (p + 1) (add_zero _) w (T.d (p + 1) p ≫ φ) :=
   slantCochain_d_zero D p w φ
 
+/-- A cycle has zero boundary. -/
+private lemma d_iCycles_apply (i j : ℕ) (z : K.cycles i) : K.d i j (K.iCycles i z) = 0 :=
+  (ConcreteCategory.comp_apply _ _ z).symm.trans (ConcreteCategory.congr_hom (K.iCycles_d _ _) z)
+
 /-- A cocycle slanted by a cycle is a cocycle. -/
 private lemma d_comp_slantCochain_iCycles (p q n : ℕ) (h : p + q = n) (z : K.cycles p)
     (φ : T.X n ⟶ P) (hφ : T.d (n + 1) n ≫ φ = 0) :
@@ -188,9 +191,7 @@ private lemma d_comp_slantCochain_iCycles (p q n : ℕ) (h : p + q = n) (z : K.c
   obtain _ | r := p
   · obtain rfl : n = q := by omega
     rw [d_comp_slantCochain_zero, hφ, map_zero]
-  · have hz : K.d (r + 1) r (K.iCycles (r + 1) z) = 0 :=
-      (ConcreteCategory.comp_apply _ _ z).symm.trans
-        (ConcreteCategory.congr_hom (K.iCycles_d _ _) z)
+  · have hz := d_iCycles_apply (K := K) (r + 1) r z
     have hd := slantCochain_d_comp_succ D r q n h (K.iCycles (r + 1) z) φ
     rw [hφ, map_zero, hz, map_zero, LinearMap.zero_apply, zero_add] at hd
     -- `(-1)^(r+1)` is its own inverse
@@ -283,9 +284,7 @@ private lemma homologyπ_slantCycles_toCycles_right (p q n : ℕ) (h : p + q = n
         rw [iCycles_slantCycles_slantCochainHom, linearYonedaObj_iCycles_toCycles_apply,
           linearYonedaObj_iCycles_toCycles_apply, d_comp_slantCochainHom_zero]
       rw [key, linearYonedaObj_homologyπ_toCycles_apply]
-    · have hz : K.d (r + 1) r (K.iCycles (r + 1) z) = 0 :=
-        (ConcreteCategory.comp_apply _ _ z).symm.trans
-          (ConcreteCategory.congr_hom (K.iCycles_d _ _) z)
+    · have hz := d_iCycles_apply (K := K) (r + 1) r z
       obtain _ | s := q
       · -- in degree zero of `L`, `δψ / z = ψ / ∂z = 0`
         obtain rfl : r = i := by omega
@@ -306,6 +305,9 @@ private lemma homologyπ_slantCycles_toCycles_right (p q n : ℕ) (h : p + q = n
         apply HomologicalComplex.moduleCat_iCycles_injective
         rw [iCycles_slantCycles_slantCochainHom, map_zsmul, linearYonedaObj_iCycles_toCycles_apply,
           linearYonedaObj_iCycles_toCycles_apply, ← hd]
+        -- the two sides differ only in their `ℤ`-action: one is that of the hom group
+        -- `L.X (s + 1) ⟶ P`, the other that of the cochain module
+        -- `(L.linearYonedaObj k P).X (s + 1)`; these agree by unfolding `linearYonedaObj`
         rfl
       rw [key, map_zsmul, linearYonedaObj_homologyπ_toCycles_apply, smul_zero]
   · rw [(T.linearYonedaObj k P).toCycles_eq_zero hin]
@@ -337,6 +339,9 @@ private lemma homologyπ_slantCycles_toCycles_left (p q n : ℕ) (h : p + q = n)
         apply HomologicalComplex.moduleCat_iCycles_injective
         rw [iCycles_slantCycles_slantCochainHom, map_zsmul, linearYonedaObj_iCycles_toCycles_apply,
           hw, slantCochainHom_d_of_d_comp_eq_zero D p s (m + 1) (by omega)]
+        -- the two sides differ only in their `ℤ`-action: one is that of the hom group
+        -- `L.X (s + 1) ⟶ P`, the other that of the cochain module
+        -- `(L.linearYonedaObj k P).X (s + 1)`; these agree by unfolding `linearYonedaObj`
         rfl
       rw [key, map_zsmul, linearYonedaObj_homologyπ_toCycles_apply, smul_zero]
   · rw [K.toCycles_eq_zero hip]
