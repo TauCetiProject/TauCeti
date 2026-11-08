@@ -45,22 +45,23 @@ the reflection length.
 Both steps rest on a description of the orbits of the product:
 `Equiv.Perm.SameCycle.sameCycle_or_of_swap_mul` says that two points sharing an orbit of
 `Equiv.swap a b * σ` either shared an orbit of `σ` already, or were attached one to `a` and the
-other to `b`. That containment needs no hypothesis at all; what the two orbit-relation statements
-`TauCeti.sameCycle_swap_mul_of_mem_periodicPts_of_not_sameCycle` and
-`TauCeti.not_sameCycle_swap_mul_of_mem_periodicPts_of_ne_of_sameCycle` do need is that the orbit
-being walked round comes back to its starting point, that is, that the relevant point is periodic
-for `σ`. Every point of a finite type is periodic (`Function.Injective.mem_periodicPts`), which is
-how the orbit-count steps below supply that.
+other to `b`. That containment needs no hypothesis at all, and neither does the splitting
+statement `TauCeti.not_sameCycle_swap_mul_of_ne_of_sameCycle`: for `a ≠ b` in one orbit of `σ`, the
+product closes the arc between them into an orbit that contains only one of the two. What the
+merging statement `TauCeti.sameCycle_swap_mul_of_mem_periodicPts_of_not_sameCycle` does need is that
+the orbit being walked round comes back to its starting point, that is, that `b` is periodic for
+`σ`. Every point of a finite type is periodic (`Function.Injective.mem_periodicPts`), which is how
+the merging orbit-count steps below supply that.
 
-⚠ That periodicity is essential rather than a convenience. For the shift on two disjoint copies of
-`ℤ`, with `a` and `b` the two origins, the product `Equiv.swap a b * σ` cuts both lines and
-reconnects them into two lines again, so the two orbits do not merge.
+⚠ That periodicity is essential for merging rather than a convenience. For the shift on two
+disjoint copies of `ℤ`, with `a` and `b` the two origins, the product `Equiv.swap a b * σ` cuts
+both lines and reconnects them into two lines again, so the two orbits do not merge.
 
 `TauCeti.orbitCount_mul_swap_add_one` in `TauCeti/GroupTheory/Perm/OrbitCount/Basic.lean` is the
 specialized fixed-point formulation of the right-multiplication merging step: the transposition
 splices that one-point orbit into another one. The generalized step lemmas below assume only
-finiteness of the relevant orbit quotient together with an explicit periodic-point hypothesis;
-their `@[simp]` corollaries assume that the underlying type is finite.
+finiteness of the relevant orbit quotient (together with an explicit periodic-point hypothesis, for
+merging); their `@[simp]` corollaries assume that the underlying type is finite.
 
 The last section applies this to a pair of permutations `σ` and `τ`, such as the rotation and the
 edge involution of a ribbon graph. Adjoining a transposition to a group of permutations merges at
@@ -227,14 +228,13 @@ theorem sameCycle_swap_mul_of_mem_periodicPts_of_not_sameCycle
 
 /-- The data from the closed arc used in the splitting step: `a` remains periodic under the
 product, while `a` and `b` no longer share an orbit. -/
-private theorem mem_periodicPts_and_not_sameCycle_swap_mul_of_sameCycle
-    (ha : a ∈ Function.periodicPts (σ : α → α)) (hab : a ≠ b) (h : σ.SameCycle a b) :
+private theorem mem_periodicPts_and_not_sameCycle_swap_mul_of_exists_pow_eq
+    (hab : a ≠ b) (hex : ∃ j : ℕ, 0 < j ∧ (σ ^ j) a = b) :
     a ∈ Function.periodicPts (Equiv.swap a b * σ : α → α) ∧
       ¬ (Equiv.swap a b * σ).SameCycle a b := by
   classical
   obtain ⟨j, hjpos, hja, hjmin⟩ : ∃ j : ℕ, 0 < j ∧ (σ ^ j) a = b ∧
       ∀ i, 0 < i → i < j → (σ ^ i) a ≠ b := by
-    have hex := h.exists_pos_pow_eq_of_mem_periodicPts ha
     exact ⟨Nat.find hex, (Nat.find_spec hex).1, (Nat.find_spec hex).2,
       fun i hi hij hcon => Nat.find_min hex hij ⟨hi, hcon⟩⟩
   -- Before reaching `b`, the powers of `σ` cannot return to `a` either.
@@ -261,14 +261,35 @@ private theorem mem_periodicPts_and_not_sameCycle_swap_mul_of_sameCycle
   · rw [pow_swap_mul_apply_of_lt hwalk (r % j) hlt] at hmod
     exact hjmin (r % j) hrpos hlt hmod
 
+/-- Splitting an orbit by a transposition: for `a ≠ b` in one orbit of `σ`, one of the two points is
+periodic for `Equiv.swap a b * σ`, and they lie in different orbits of it. -/
+private theorem periodicPts_or_and_not_sameCycle_swap_mul_of_sameCycle
+    (hab : a ≠ b) (h : σ.SameCycle a b) :
+    (a ∈ Function.periodicPts (Equiv.swap a b * σ : α → α) ∨
+        b ∈ Function.periodicPts (Equiv.swap a b * σ : α → α)) ∧
+      ¬ (Equiv.swap a b * σ).SameCycle a b := by
+  obtain ⟨k, hk⟩ := h
+  rcases k with n | n
+  · rcases Nat.eq_zero_or_pos n with rfl | hn
+    · exact absurd (by simpa using hk) hab
+    · obtain ⟨h₁, h₂⟩ := mem_periodicPts_and_not_sameCycle_swap_mul_of_exists_pow_eq hab
+        ⟨n, hn, by simpa using hk⟩
+      exact ⟨Or.inl h₁, h₂⟩
+  · have hba : (σ ^ (n + 1)) b = a := by
+      have h0 : ((n + 1 : ℕ) : ℤ) + Int.negSucc n = 0 := by omega
+      rw [← hk, ← Equiv.Perm.mul_apply, ← zpow_natCast, ← zpow_add, h0, zpow_zero]
+      rfl
+    obtain ⟨h₁, h₂⟩ := mem_periodicPts_and_not_sameCycle_swap_mul_of_exists_pow_eq hab.symm
+      ⟨n + 1, n.succ_pos, hba⟩
+    rw [Equiv.swap_comm] at h₁ h₂
+    exact ⟨Or.inr h₁, fun hsc => h₂ hsc.symm⟩
+
 /-- **Multiplying by a transposition splits the orbit of its two points.** If `a ≠ b` lie in one
-orbit of `σ`, and `a` is a periodic point of `σ`, they lie in different orbits of
-`Equiv.swap a b * σ`: the product closes the arc from `a` to `b` into an orbit of its own, which
-`b` is not on. -/
-theorem not_sameCycle_swap_mul_of_mem_periodicPts_of_ne_of_sameCycle
-    (ha : a ∈ Function.periodicPts (σ : α → α)) (hab : a ≠ b) (h : σ.SameCycle a b) :
+orbit of `σ`, they lie in different orbits of `Equiv.swap a b * σ`: the product closes the arc
+between `a` and `b` into an orbit of its own, which the other point is not on. -/
+theorem not_sameCycle_swap_mul_of_ne_of_sameCycle (hab : a ≠ b) (h : σ.SameCycle a b) :
     ¬ (Equiv.swap a b * σ).SameCycle a b :=
-  (mem_periodicPts_and_not_sameCycle_swap_mul_of_sameCycle ha hab h).2
+  (periodicPts_or_and_not_sameCycle_swap_mul_of_sameCycle hab h).2
 
 /-- **The transposition step lemma, merging, for a finite set of orbits.** If `a` and `b` lie in
 different orbits of `σ`, the orbit set of `σ` is finite, and `b` is periodic, then
@@ -291,25 +312,29 @@ theorem orbitCount_swap_mul_add_one_of_not_sameCycle [Finite α] (h : ¬ σ.Same
     (σ.injective.mem_periodicPts b) h
 
 /-- **The transposition step lemma, splitting, for a finite set of resulting orbits.** If `a ≠ b`
-lie in one orbit of `σ`, `a` is periodic for `σ`, and the orbit set of
-`Equiv.swap a b * σ` is finite, then that product has one orbit more than `σ`. -/
-theorem orbitCount_swap_mul_of_mem_periodicPts_of_ne_of_sameCycle
+lie in one orbit of `σ` and the orbit set of `Equiv.swap a b * σ` is finite, then that product has
+one orbit more than `σ`. -/
+theorem orbitCount_swap_mul_of_ne_of_sameCycle
     [Finite (Quotient (SameCycle.setoid (Equiv.swap a b * σ)))]
-    (ha : a ∈ Function.periodicPts (σ : α → α)) (hab : a ≠ b) (h : σ.SameCycle a b) :
+    (hab : a ≠ b) (h : σ.SameCycle a b) :
     orbitCount (Equiv.swap a b * σ) = orbitCount σ + 1 := by
-  have hdata := mem_periodicPts_and_not_sameCycle_swap_mul_of_sameCycle ha hab h
-  have hmerge := orbitCount_swap_mul_add_one_of_mem_periodicPts_of_not_sameCycle
-    (σ := Equiv.swap a b * σ) (a := b) (b := a) hdata.1 (fun hba => hdata.2 hba.symm)
-  rw [Equiv.swap_comm b a, Equiv.swap_mul_self_mul] at hmerge
-  exact hmerge.symm
+  obtain ⟨hper, hnot⟩ := periodicPts_or_and_not_sameCycle_swap_mul_of_sameCycle hab h
+  rcases hper with ha | hb
+  · have hmerge := orbitCount_swap_mul_add_one_of_mem_periodicPts_of_not_sameCycle
+      (σ := Equiv.swap a b * σ) (a := b) (b := a) ha (fun hba => hnot hba.symm)
+    rw [Equiv.swap_comm b a, Equiv.swap_mul_self_mul] at hmerge
+    exact hmerge.symm
+  · have hmerge := orbitCount_swap_mul_add_one_of_mem_periodicPts_of_not_sameCycle
+      (σ := Equiv.swap a b * σ) (a := a) (b := b) hb hnot
+    rw [Equiv.swap_mul_self_mul] at hmerge
+    exact hmerge.symm
 
 /-- **The transposition step lemma, splitting.** If `a ≠ b` lie in one orbit of `σ`, then
 `Equiv.swap a b * σ` has one orbit more than `σ`: that orbit has been cut in two. -/
 @[simp]
 theorem orbitCount_swap_mul_of_sameCycle [Finite α] (hab : a ≠ b) (h : σ.SameCycle a b) :
     orbitCount (Equiv.swap a b * σ) = orbitCount σ + 1 :=
-  orbitCount_swap_mul_of_mem_periodicPts_of_ne_of_sameCycle
-    (σ.injective.mem_periodicPts a) hab h
+  orbitCount_swap_mul_of_ne_of_sameCycle hab h
 
 /-- A transposition of two distinct points has one orbit fewer than there are points. -/
 theorem orbitCount_swap_add_one [Finite α] (hab : a ≠ b) :
@@ -352,19 +377,18 @@ theorem orbitCount_mul_swap_add_one_of_not_sameCycle [Finite α] (h : ¬ σ.Same
     (σ.injective.mem_periodicPts b) h
 
 /-- **The transposition step lemma on the other side, splitting, for a finite set of resulting
-orbits.** If `a ≠ b` lie in one orbit of `σ`, `a` is periodic for `σ`, and the orbit set of
-`σ * Equiv.swap a b` is finite, then that product has one orbit more than `σ`. -/
-theorem orbitCount_mul_swap_of_mem_periodicPts_of_ne_of_sameCycle
+orbits.** If `a ≠ b` lie in one orbit of `σ` and the orbit set of `σ * Equiv.swap a b` is finite,
+then that product has one orbit more than `σ`. -/
+theorem orbitCount_mul_swap_of_ne_of_sameCycle
     [Finite (Quotient (SameCycle.setoid (σ * Equiv.swap a b)))]
-    (ha : a ∈ Function.periodicPts (σ : α → α)) (hab : a ≠ b) (h : σ.SameCycle a b) :
+    (hab : a ≠ b) (h : σ.SameCycle a b) :
     orbitCount (σ * Equiv.swap a b) = orbitCount σ + 1 := by
   let _ : Finite (Quotient
       (SameCycle.setoid (Equiv.swap (σ a) (σ b) * σ))) := by
     rw [← Equiv.mul_swap_eq_swap_mul]
     infer_instance
   rw [Equiv.mul_swap_eq_swap_mul]
-  refine orbitCount_swap_mul_of_mem_periodicPts_of_ne_of_sameCycle
-    ((Function.Commute.refl (σ : α → α)).mapsTo_periodicPts ha) (σ.injective.ne hab) ?_
+  refine orbitCount_swap_mul_of_ne_of_sameCycle (σ.injective.ne hab) ?_
   rwa [sameCycle_apply_left, sameCycle_apply_right]
 
 /-- **The transposition step lemma on the other side, splitting.** If `a ≠ b` lie in one orbit of
@@ -374,8 +398,7 @@ theorem orbitCount_mul_swap_of_mem_periodicPts_of_ne_of_sameCycle
 @[simp]
 theorem orbitCount_mul_swap_of_sameCycle [Finite α] (hab : a ≠ b) (h : σ.SameCycle a b) :
     orbitCount (σ * Equiv.swap a b) = orbitCount σ + 1 :=
-  orbitCount_mul_swap_of_mem_periodicPts_of_ne_of_sameCycle
-    (σ.injective.mem_periodicPts a) hab h
+  orbitCount_mul_swap_of_ne_of_sameCycle hab h
 
 /-- Multiplying on the right by a transposition removes at most one orbit, the mirror of
 `Equiv.Perm.orbitCount_le_orbitCount_swap_mul_add_one`. -/
@@ -665,14 +688,36 @@ theorem _root_.Equiv.Perm.orbitCount_mul_add_orbitCount_le_orbitCount_add_card [
 
 /-! ### Orbits of the group generated by a pair of permutations -/
 
+omit [DecidableEq α] in
+/-- The map from the orbits of `K` to the orbits of a larger group of permutations. -/
+private def orbitRelQuotientMapOfLE {K H : Subgroup (Perm α)} (hKH : K ≤ H) :
+    MulAction.orbitRel.Quotient K α → MulAction.orbitRel.Quotient H α :=
+  Quotient.map' id fun _ _ h ↦ MulAction.orbitRel_le_of_subgroup_le hKH h
+
+omit [DecidableEq α] in
+private theorem orbitRelQuotientMapOfLE_surjective {K H : Subgroup (Perm α)} (hKH : K ≤ H) :
+    Function.Surjective (orbitRelQuotientMapOfLE hKH) := fun q ↦ by
+  induction q using Quotient.inductionOn with
+  | h z => exact ⟨Quotient.mk _ z, rfl⟩
+
 /-- Adjoining the transposition `Equiv.swap a b` to a group `K` of permutations merges at most two
 of its orbits, those of `a` and of `b`, so the number of orbits drops by at most one. -/
 theorem _root_.Subgroup.card_orbitRelQuotient_le_card_orbitRelQuotient_closure_insert_swap_add_one
-    [Finite α] (K : Subgroup (Perm α)) (a b : α) :
+    (K : Subgroup (Perm α)) (a b : α) :
     Nat.card (MulAction.orbitRel.Quotient K α) ≤
       Nat.card (MulAction.orbitRel.Quotient
         (Subgroup.closure (insert (Equiv.swap a b) (K : Set (Perm α)))) α) + 1 := by
   classical
+  by_cases hfin : Finite (MulAction.orbitRel.Quotient K α)
+  swap
+  · have := not_finite_iff_infinite.1 hfin
+    rw [Nat.card_eq_zero_of_infinite]
+    exact Nat.zero_le _
+  have hKle : K ≤ Subgroup.closure (insert (Equiv.swap a b) (K : Set (Perm α))) :=
+    fun g hg ↦ Subgroup.subset_closure (Set.mem_insert_of_mem _ hg)
+  have : Finite (MulAction.orbitRel.Quotient
+      (Subgroup.closure (insert (Equiv.swap a b) (K : Set (Perm α)))) α) :=
+    Finite.of_surjective _ (orbitRelQuotientMapOfLE_surjective hKle)
   let mk : α → MulAction.orbitRel.Quotient K α := Quotient.mk _
   have hK (g : Perm α) (hg : g ∈ K) (z : α) : mk (g z) = mk z :=
     Quotient.sound (MulAction.mem_orbit z (⟨g, hg⟩ : K))
@@ -686,9 +731,14 @@ theorem _root_.Subgroup.card_orbitRelQuotient_le_card_orbitRelQuotient_closure_i
       · by_cases h : mk a = mk z <;> simp [f, h]
       · rw [Equiv.swap_apply_of_ne_of_ne hza hzb]
     · simp only [f, hK g hg]
-  have hrange := MulAction.card_le_card_orbitRelQuotient_closure_of_surjective
-    (f := Set.rangeFactorization f) (fun g hg z ↦ Subtype.ext (hf g hg z))
-    Set.rangeFactorization_surjective
+  have hrange : Nat.card (Set.range f) ≤ Nat.card (MulAction.orbitRel.Quotient
+      (Subgroup.closure (insert (Equiv.swap a b) (K : Set (Perm α)))) α) :=
+    Nat.card_le_card_of_surjective
+      (MulAction.orbitRelQuotientLift (Set.rangeFactorization f) fun g z ↦
+        Subtype.ext (apply_eq_of_mem_closure hf g.2 z))
+      fun y ↦ by
+        obtain ⟨z, rfl⟩ := Set.rangeFactorization_surjective y
+        exact ⟨Quotient.mk _ z, MulAction.orbitRelQuotientLift_mk z⟩
   -- The values of `f` miss at most the orbit of `b`.
   refine (Nat.card_le_card_of_surjective
     (fun q : Option (Set.range f) ↦ q.elim (mk b) Subtype.val) ?_).trans
@@ -700,7 +750,7 @@ theorem _root_.Subgroup.card_orbitRelQuotient_le_card_orbitRelQuotient_closure_i
 
 /-- Adjoining to a group `K` of permutations the transposition of two points `a` and `b` of one
 `K`-orbit does not change the number of orbits. -/
-theorem card_orbitRelQuotient_closure_insert_swap_of_mem_orbit [Finite α]
+theorem card_orbitRelQuotient_closure_insert_swap_of_mem_orbit
     {K : Subgroup (Perm α)} (hab : b ∈ MulAction.orbit K a) :
     Nat.card (MulAction.orbitRel.Quotient
         (Subgroup.closure (insert (Equiv.swap a b) (K : Set (Perm α)))) α) =
@@ -715,10 +765,16 @@ theorem card_orbitRelQuotient_closure_insert_swap_of_mem_orbit [Finite α]
       · simpa using hmk
       · rw [Equiv.swap_apply_of_ne_of_ne hza hzb]
     · exact Quotient.sound (MulAction.mem_orbit z (⟨g, hg⟩ : K))
-  exact le_antisymm (MulAction.card_orbitRelQuotient_anti
-    fun g hg ↦ Subgroup.subset_closure (Set.mem_insert_of_mem _ hg))
-    (MulAction.card_le_card_orbitRelQuotient_closure_of_surjective (f := mk) hf
-      Quotient.mk_surjective)
+  have hle : K ≤ Subgroup.closure (insert (Equiv.swap a b) (K : Set (Perm α))) :=
+    fun g hg ↦ Subgroup.subset_closure (Set.mem_insert_of_mem _ hg)
+  let φ := MulAction.orbitRelQuotientLift (G := Subgroup.closure
+    (insert (Equiv.swap a b) (K : Set (Perm α)))) mk fun g z ↦
+      apply_eq_of_mem_closure hf g.2 z
+  have hφψ : Function.LeftInverse φ (orbitRelQuotientMapOfLE hle) := fun q ↦ by
+    induction q using Quotient.inductionOn with
+    | h z => exact (MulAction.orbitRelQuotientLift_mk z)
+  exact (Nat.card_congr (Equiv.ofBijective _
+    ⟨hφψ.injective, orbitRelQuotientMapOfLE_surjective hle⟩)).symm
 
 omit [DecidableEq α] in
 /-- **The Euler bound for a pair of permutations.** For permutations `σ` and `τ` of a finite type,
@@ -754,14 +810,18 @@ theorem _root_.Equiv.Perm.orbitCount_add_orbitCount_add_orbitCount_mul_le [Finit
 type attaining the Euler bound `Equiv.Perm.orbitCount_add_orbitCount_add_orbitCount_mul_le`, as the
 rotation and edge involution of a ribbon graph whose components are spheres do. If `a ≠ b` lie in
 one cycle of `ρ`, then cutting that cycle in two by the transposition `Equiv.swap a b` gives a
-pair attaining the bound again. -/
+pair attaining the bound again; for `a = b` the transposition is trivial. -/
 theorem orbitCount_swap_mul_add_orbitCount_add_orbitCount_mul_swap_mul_eq [Finite α] {ρ τ : Perm α}
-    (hab : a ≠ b) (hρ : ρ.SameCycle a b)
+    (hρ : ρ.SameCycle a b)
     (h : orbitCount ρ + orbitCount τ + orbitCount (τ * ρ) =
       Nat.card α + 2 * Nat.card (MulAction.orbitRel.Quotient (Subgroup.closure {ρ, τ}) α)) :
     orbitCount (Equiv.swap a b * ρ) + orbitCount τ + orbitCount (τ * (Equiv.swap a b * ρ)) =
       Nat.card α + 2 * Nat.card
         (MulAction.orbitRel.Quotient (Subgroup.closure {Equiv.swap a b * ρ, τ}) α) := by
+  by_cases hab : a = b
+  · subst hab
+    rw [Equiv.swap_self, ← Equiv.Perm.one_def, one_mul]
+    exact h
   have hbound := (Equiv.swap a b * ρ).orbitCount_add_orbitCount_add_orbitCount_mul_le τ
   set K := Subgroup.closure {Equiv.swap a b * ρ, τ}
   have hsplit := orbitCount_swap_mul_of_sameCycle hab hρ

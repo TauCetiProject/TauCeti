@@ -726,7 +726,7 @@ theorem IsPlanar.resolveCrossing (hD : D.IsPlanar) : (D.resolveCrossing c t).IsP
   have hSk (k : Fin 4) : D.localSmoothing c t k ≠ k := slotSmoothing_ne _ k
   -- Smooth the vertex `c` of the underlying ribbon graph.
   have h₁ := orbitCount_swap_mul_add_orbitCount_add_orbitCount_mul_swap_mul_eq
-    (a := .inr p) (b := .inr q) (by simpa using hpq)
+    (a := .inr p) (b := .inr q)
     (by rw [D.permCongr_crossingRotation c t]; simpa using hcyc)
     (D.orbitCount_add_orbitCount_add_orbitCount_mul_slot_eq c hD)
   rw [D.permCongr_crossingRotation c t, ← sumCongr_one_swap, Perm.sumCongr_mul, one_mul,
