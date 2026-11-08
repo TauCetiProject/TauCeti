@@ -72,6 +72,8 @@ Unless indicated otherwise, the results are in `WeierstrassCurve.Affine.Point`.
   `n ∉ u`.
 * `card_torsionBy_dvd_card_reduction`: at good reduction, `#W(F)[n]` divides the number of points
   of the reduced curve for `n ∉ u`.
+* `WeierstrassCurve.nsmul_ker_nonsingularReductionHom_bijective`: multiplication by `n ∉ u` is
+  bijective on the kernel of nonsingular reduction over the completed field.
 * `existsUnique_nonsingularReduction_torsion_lift`: over the completed field, with good or bad
   reduction, every nonsingular reduced `n`-torsion point has a unique `n`-torsion lift with
   nonsingular reduction, for `n ∉ u`.

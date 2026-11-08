@@ -25,7 +25,8 @@ The functor `QuotSMulTop r` and the right-exact half of this sequence are Mathli
 (`QuotSMulTop.map`, `QuotSMulTop.map_exact`, `QuotSMulTop.map_surjective`). This file supplies the
 torsion functor `TauCeti.torsionByMap`, the left-exact half, the connecting map
 `TauCeti.torsionByδ` (Mathlib's `SnakeLemma.δ'` for this diagram), exactness at its two ends, and
-its naturality in morphisms of short exact sequences.
+its naturality in morphisms of short exact sequences. A surjection with uniquely `r`-divisible
+kernel induces a bijection on `r`-torsion, so every `r`-torsion point lifts uniquely.
 
 Naturality is what makes the connecting map compatible with extra structure. For `R = ℤ`, `r = ℓ`
 and a group `G` acting on the sequence by additive automorphisms, each `g : G` gives a morphism of
@@ -52,6 +53,9 @@ class of `l` in `Λ ⧸ rΛ`, so this class does not depend on the representativ
 ## Main results
 
 * `TauCeti.injective_torsionByMap`, `TauCeti.exact_torsionByMap`: `M[r]` is left exact.
+* `TauCeti.bijective_torsionByMap_of_bijective_ker_smul`,
+  `TauCeti.existsUnique_torsion_lift_of_bijective_ker_smul`: a surjection with uniquely
+  `r`-divisible kernel induces a bijection on `r`-torsion and lifts `r`-torsion uniquely.
 * `TauCeti.torsionByδ_eq`: the connecting map sends `g y` to the class of `z` when `f z = r • y`.
 * `TauCeti.exact_torsionByMap_torsionByδ`, `TauCeti.exact_torsionByδ_quotSMulTop_map`: exactness
   at `M₃[r]` and at `M₁ ⧸ rM₁`.
