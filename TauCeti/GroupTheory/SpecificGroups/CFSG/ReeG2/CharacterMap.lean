@@ -50,6 +50,9 @@ private theorem weightTorus_torusPointMap_datumSpecialIsogeny
     Fin.ext rfl
   rw [weightTorus_apply]
   simp only [toSuzukiReeIndex, SuzukiReeIndex.datumSpecialIsogeny_weightMap_reeG2, hr]
+  -- Both sides now apply the same G₂ torus-point map: `toSuzukiReeIndex` keeps the
+  -- underlying validated index, hence its `Closure`, and the remaining rank reindexing
+  -- reduces to the identity on `Fin 2` for `of m hm`.
   rfl
 
 /-- The represented Ree G₂ half-Frobenius pulls characters back by the native exceptional

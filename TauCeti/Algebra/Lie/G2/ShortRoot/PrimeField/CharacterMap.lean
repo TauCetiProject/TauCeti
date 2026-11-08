@@ -17,9 +17,10 @@ characters back by `TauCeti.DynkinType.g2SpecialIsogeny.weightMap`. Its torus ac
 root datum, with the short node first. The character matrix is therefore
 `!![0, 3; 1, 0]`, not its transpose.
 
-`isCharacterMap_specialIsogeny_pow` records the pullback for every iterate, including the
-odd powers defining the Ree Steinberg maps. These are comparisons on the existing represented
-carrier; no identification with a canonical Chevalley–Demazure group is asserted.
+The pullback for every iterate, including the odd powers defining the Ree Steinberg maps,
+follows from `(isCharacterMap_specialIsogeny A).pow n` using `TauCeti.IsCharacterMap.pow`.
+These are comparisons on the existing represented carrier; no identification with a canonical
+Chevalley–Demazure group is asserted.
 
 The construction uses the torus equation of
 `TauCeti.G2ShortRoot.PrimeField.specialIsogeny_weightTorusPoints` and the contravariant
@@ -52,14 +53,6 @@ theorem isCharacterMap_specialIsogeny :
   fin_cases i <;>
     simp [torusPointMap_apply, DynkinType.g2SpecialIsogeny_weightMap,
       DynkinType.g2SpecialIsogenyMatrix_def, torusCharacter_def, Fin.prod_univ_two]
-
-/-- Iterating the represented special isogeny pulls characters back by the corresponding
-power of the root-datum weight map. In particular, odd powers have the Ree character action. -/
-theorem isCharacterMap_specialIsogeny_pow (n : ℕ) :
-    IsCharacterMap (weightTorusPoints A)
-      (HPow.hPow (α := Monoid.End (points A)) (specialIsogeny A) n)
-      (DynkinType.g2SpecialIsogeny.weightMap ^ n) :=
-  (isCharacterMap_specialIsogeny A).pow n
 
 end
 
