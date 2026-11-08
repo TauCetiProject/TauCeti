@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Convex.GaugeRescale
 public import Mathlib.Analysis.Normed.Module.Ball.Homeomorph
 public import Mathlib.Analysis.Normed.Module.Convex
-public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import Mathlib.Topology.UnitInterval
 
@@ -287,14 +286,10 @@ theorem nonempty_homeomorph_closedBall_of_convex {s : Set E} (hc : Convex ℝ s)
     (hs : IsCompact s) (hn : (interior s).Nonempty)
     (hEF : Module.finrank ℝ E = Module.finrank ℝ F) :
     Nonempty (s ≃ₜ closedBall (0 : F) 1) := by
-  -- a compact set with an interior point contains a compact closed ball, so `E` is
-  -- finite-dimensional
+  -- a compact set with an interior point forces `E` to be finite-dimensional (Riesz)
   obtain ⟨x, hx⟩ := hn
-  obtain ⟨ε, hε, hxε⟩ := Metric.mem_nhds_iff.mp (mem_interior_iff_mem_nhds.mp hx)
-  have hball : IsCompact (closedBall x (ε / 2)) :=
-    hs.of_isClosed_subset isClosed_closedBall
-      ((closedBall_subset_ball (half_lt_self hε)).trans hxε)
-  have : FiniteDimensional ℝ E := .of_isCompact_closedBall ℝ (half_pos hε) hball
+  have : FiniteDimensional ℝ E :=
+    .of_totallyBounded_nhds ℝ (mem_interior_iff_mem_nhds.mp hx) hs.totallyBounded
   obtain ⟨h, -, hcl, -⟩ :=
     exists_homeomorph_image_interior_closure_frontier_eq_unitBall hc ⟨x, hx⟩ hs.isBounded
   rw [hs.isClosed.closure_eq] at hcl
