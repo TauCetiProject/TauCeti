@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Probability.Process.Indistinguishable
 public import Mathlib.Probability.Process.Predictable
 public import Mathlib.Topology.Order.Cadlag
 import Mathlib.Analysis.SpecificLimits.Basic
@@ -18,9 +19,10 @@ left endpoint step approximations on countable regular partitions, including the
 on the predictable time-zero slice. Continuous paths give a corollary. This supplies predictability
 of continuous asset processes and hence of Borel functions of time and those assets.
 
-An adapted process with almost-surely continuous paths has a predictable indistinguishable
+An adapted process with almost-surely left-continuous paths has a predictable indistinguishable
 version, even when the filtration is neither complete nor right-continuous. This does not assert
-literal predictability of the original process or everywhere continuity of the selected version.
+literal predictability of the original process or everywhere left continuity of the selected
+version.
 
 The time projection is measurable for the predictable sigma-algebra, so deterministic Borel
 time dependence can be combined with predictable processes. A predictably measurable function
@@ -34,7 +36,7 @@ remains strongly predictable when extended by zero outside a measurable set of t
 
 public section
 
-open MeasureTheory Filter Set TopologicalSpace
+open MeasureTheory ProbabilityTheory Filter Set TopologicalSpace
 open scoped NNReal Topology
 
 -- Unlike floor sampling on half-open intervals, this samples strictly before every positive
@@ -153,15 +155,15 @@ theorem MeasureTheory.StronglyAdapted.isStronglyPredictable_of_continuous
   hu.isStronglyPredictable_of_isLeftContinuous fun ω => (hc ω).isLeftContinuous
 
 omit [MeasurableSpace E] [BorelSpace E] in
-/-- An adapted process with almost-surely continuous paths has a predictable
+/-- An adapted process with almost-surely left-continuous paths has a predictable
 indistinguishable version on the same raw filtration. No completeness or right continuity of
-the filtration is required. The selected version need not be continuous on exceptional paths. -/
-theorem MeasureTheory.StronglyAdapted.exists_isStronglyPredictable_of_ae_continuous
+the filtration is required. The selected version need not be left-continuous on exceptional
+paths. -/
+theorem MeasureTheory.StronglyAdapted.exists_isStronglyPredictable_indist_of_ae_isLeftContinuous
     [Nonempty E] [IsCompletelyMetrizableSpace E]
     {ℱ : Filtration ℝ≥0 m} {u : ℝ≥0 → Ω → E} {P : Measure Ω}
-    (hu : StronglyAdapted ℱ u) (hc : ∀ᵐ ω ∂P, Continuous (fun t => u t ω)) :
-    ∃ v : ℝ≥0 → Ω → E, IsStronglyPredictable ℱ v ∧
-      ∀ᵐ ω ∂P, ∀ t, v t ω = u t ω := by
+    (hu : StronglyAdapted ℱ u) (hc : ∀ᵐ ω ∂P, IsLeftContinuous (fun t => u t ω)) :
+    ∃ v : ℝ≥0 → Ω → E, IsStronglyPredictable ℱ v ∧ v ≡ᵐ[P] u := by
   borelize E
   let v t ω := limUnder atTop (fun n => u (leftSample n t) ω)
   refine ⟨v, ?_, ?_⟩
@@ -169,7 +171,9 @@ theorem MeasureTheory.StronglyAdapted.exists_isStronglyPredictable_of_ae_continu
     exact StronglyMeasurable.limUnder (stronglyMeasurable_leftSample hu)
   · filter_upwards [hc] with ω hω
     intro t
-    exact ((hω.tendsto t).comp (tendsto_leftSample t)).limUnder_eq
+    exact ((continuousWithinAt_Iio_iff_Iic.mp (hω t)).tendsto.comp
+      (tendsto_nhdsWithin_iff.mpr
+        ⟨tendsto_leftSample t, .of_forall fun n => leftSample_le n t⟩)).limUnder_eq
 
 /-- Calendar time is measurable for the predictable sigma-algebra. -/
 theorem MeasureTheory.Filtration.measurable_fst_predictable {ι Ω : Type*} {m : MeasurableSpace Ω}

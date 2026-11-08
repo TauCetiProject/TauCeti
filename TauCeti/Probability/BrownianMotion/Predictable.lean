@@ -40,13 +40,15 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
 /-- A filtered pre-Brownian motion with almost-surely continuous paths has a predictable
 indistinguishable Brownian version on the same raw filtration. The selected version is still
 adapted and has increments independent of the past, not merely the same marginal laws. -/
-theorem exists_predictable_brownian_version (hB : IsFilteredPreBrownianReal ℱ B P)
+theorem exists_isStronglyPredictable_isBrownianReal_indist
+    (hB : IsFilteredPreBrownianReal ℱ B P)
     (hc : ∀ᵐ ω ∂P, Continuous (fun t => B t ω)) :
     ∃ W : ℝ≥0 → Ω → ℝ, IsStronglyPredictable ℱ W ∧ IsBrownianReal W P ∧
-      IsFilteredPreBrownianReal ℱ W P ∧ ∀ᵐ ω ∂P, ∀ t, W t ω = B t ω := by
-  obtain ⟨W, hW, heq⟩ := hB.adapted.stronglyAdapted.exists_isStronglyPredictable_of_ae_continuous hc
-  have hFW := hB.congr hW.isStronglyProgressive.stronglyAdapted.adapted
-    (fun t => heq.mono fun ω hω => (hω t).symm)
+      IsFilteredPreBrownianReal ℱ W P ∧ W ≡ᵐ[P] B := by
+  obtain ⟨W, hW, heq⟩ :=
+    hB.adapted.stronglyAdapted.exists_isStronglyPredictable_indist_of_ae_isLeftContinuous
+      (hc.mono fun ω hω => hω.isLeftContinuous)
+  have hFW := hB.congr hW.isStronglyProgressive.stronglyAdapted.adapted heq.symm.ae_eq_eval
   refine ⟨W, hW, ⟨hFW.toIsPreBrownianReal, ?_⟩, hFW, heq⟩
   filter_upwards [hc, heq] with ω hω heqω
   exact hω.congr (fun t => (heqω t).symm)
