@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Padics.Measure.AmiceTransform
-public import TauCeti.NumberTheory.Padics.Measure.Clopen.Basic
+public import TauCeti.NumberTheory.Padics.Measure.Clopen.Topology
 public import TauCeti.NumberTheory.Padics.Measure.FiniteProjection
 public import TauCeti.NumberTheory.Padics.Measure.Multiples
 
@@ -30,26 +30,6 @@ restricted Mahler moments. Depth zero is allowed and gives the identity, includi
 public noncomputable section
 
 open ContinuousMap TopologicalSpace
-
-namespace PadicInt
-
-variable {p : ℕ} [Fact p.Prime]
-
-/-- The clopen residue class `a` modulo `p ^ n` in `ℤ_p`. -/
-def residueClopen (n : ℕ) (a : ZMod (p ^ n)) : Clopens ℤ_[p] :=
-  ⟨toZModPow n ⁻¹' {a}, (isClopen_discrete {a}).preimage (continuous_toZModPow n)⟩
-
-@[simp]
-theorem mem_residueClopen (n : ℕ) (a : ZMod (p ^ n)) (x : ℤ_[p]) :
-    x ∈ residueClopen n a ↔ toZModPow n x = a := Iff.rfl
-
-/-- A residue class is the coset of `p ^ n ℤ_p` represented by `a.val`. -/
-theorem mem_residueClopen_iff_dvd (n : ℕ) (a : ZMod (p ^ n)) (x : ℤ_[p]) :
-    x ∈ residueClopen n a ↔ (p : ℤ_[p]) ^ n ∣ x - (a.val : ℤ_[p]) := by
-  rw [mem_residueClopen, ← toZModPow_eq_iff_dvd_sub]
-  simp [eq_comm]
-
-end PadicInt
 
 namespace AbstractMeasure
 
@@ -222,13 +202,12 @@ theorem continuous_restrictResidue_weak (n : ℕ) (a : ZMod (p ^ n)) :
     @Continuous _ _ (WeakTopology (X := ℤ_[p]) (R := R) (E := R))
       (WeakTopology (X := ℤ_[p]) (R := R) (E := R)) (restrictResidue n a) := by
   let : TopologicalSpace D(ℤ_[p], R) := WeakTopology
-  have heval : Continuous (fun μ : D(ℤ_[p], R) ↦ fun f : C(ℤ_[p], R) ↦ μ f) :=
-    continuous_induced_dom
-  refine continuous_induced_rng.mpr <| continuous_pi fun f ↦ ?_
-  exact ((continuous_apply
-    (fiberIndicator ⟨PadicInt.toZModPow n, PadicInt.continuous_toZModPow n⟩ a * f)).comp
-      heval).congr
-      fun μ ↦ (restrictResidue_apply n a μ f).symm
+  let : TopologicalSpace D(PadicInt.residueClopen n a, R) := WeakTopology
+  have h :=
+    (subtypeVal (PadicInt.residueClopen n a : Set ℤ_[p])).continuous_abstractMeasure_map_weak
+      (R := R) (E := R)
+  exact (h.comp (Clopens.continuous_restrictClopen_weak (PadicInt.residueClopen n a))).congr
+    fun μ ↦ (restrictResidue_eq_map_restrictClopen n a μ).symm
 
 /-- The zero residue class modulo `p` recovers restriction to the multiples of `p`. -/
 theorem restrictResidue_one_zero (μ : D(ℤ_[p], R)) :
