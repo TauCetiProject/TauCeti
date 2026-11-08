@@ -14,11 +14,13 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 On a finite measure space, Mathlib's exponent comparison
 `eLpNorm_le_eLpNorm_mul_rpow_measure_univ` bounds the `L¹` seminorm by the `Lᵖ` seminorm (for
 `1 ≤ p`) times a finite constant. This file packages that comparison as a convergence statement
-whose conclusion is the Bochner integral `∫ ‖f i‖ ∂μ`, the form in which `L¹` convergence of a
-difference `f i = W i - a` is usually consumed.
+both for the `L¹` seminorm and for the Bochner integral `∫ ‖f i‖ ∂μ`, the form in which `L¹`
+convergence of a difference `f i = W i - a` is usually consumed.
 
 ## Main declarations
 
+* `TauCeti.MeasureTheory.tendsto_eLpNorm_one_of_tendsto_eLpNorm`: convergence to zero in `Lᵖ`
+  for `1 ≤ p` implies convergence to zero in `L¹`.
 * `TauCeti.MeasureTheory.tendsto_integral_norm_of_tendsto_eLpNorm`: if `eLpNorm (f i) p μ → 0`
   for some `1 ≤ p`, then `∫ ‖f i‖ ∂μ → 0`.
 -/
@@ -34,6 +36,23 @@ namespace MeasureTheory
 
 variable {Ω : Type*} [MeasurableSpace Ω]
 
+/-- On a finite measure space, convergence to zero in `Lᵖ` for `1 ≤ p` implies convergence
+to zero in `L¹`. No measurability hypothesis or finiteness assumption on `p` is needed. -/
+theorem tendsto_eLpNorm_one_of_tendsto_eLpNorm {ι E : Type*} [NormedAddCommGroup E]
+    {l : Filter ι} {μ : Measure Ω} [IsFiniteMeasure μ] {f : ι → Ω → E} {p : ℝ≥0∞}
+    (hp : 1 ≤ p) (h : Tendsto (fun i => eLpNorm (f i) p μ) l (𝓝 0)) :
+    Tendsto (fun i => eLpNorm (f i) 1 μ) l (𝓝 0) := by
+  have hexp : 0 ≤ 1 / (1 : ℝ≥0∞).toReal - 1 / p.toReal := by
+    rcases eq_or_ne p ∞ with rfl | hp_top
+    · simp
+    rw [ENNReal.toReal_one, sub_nonneg]
+    gcongr
+    simpa using ENNReal.toReal_mono hp_top hp
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds ?_ (fun _ => zero_le)
+    fun _ => eLpNorm_le_eLpNorm_mul_rpow_measure_univ_of_pos hp one_pos
+  simpa using ENNReal.Tendsto.mul_const h
+    (.inr (ENNReal.rpow_ne_top_of_nonneg hexp (measure_ne_top μ Set.univ)))
+
 /-- **`Lᵖ` convergence implies `L¹` convergence on a finite measure space.** If `1 ≤ p` and a
 family `f` tends to `0` in `Lᵖ` along a filter `l`, then `∫ ‖f i‖` tends to `0` along `l`.
 No measurability hypothesis is needed: `eLpNorm (f i) p μ` is finite eventually along `l`, which
@@ -42,17 +61,7 @@ theorem tendsto_integral_norm_of_tendsto_eLpNorm {ι E : Type*} [NormedAddCommGr
     {l : Filter ι} {μ : Measure Ω} [IsFiniteMeasure μ] {f : ι → Ω → E} {p : ℝ≥0∞}
     (hp : 1 ≤ p) (h : Tendsto (fun i => eLpNorm (f i) p μ) l (𝓝 0)) :
     Tendsto (fun i => ∫ ω, ‖f i ω‖ ∂μ) l (𝓝 0) := by
-  have hexp : 0 ≤ 1 / (1 : ℝ≥0∞).toReal - 1 / p.toReal := by
-    rcases eq_or_ne p ∞ with rfl | hp_top
-    · simp
-    rw [ENNReal.toReal_one, sub_nonneg]
-    gcongr
-    simpa using ENNReal.toReal_mono hp_top hp
-  have hL1 : Tendsto (fun i => eLpNorm (f i) 1 μ) l (𝓝 0) := by
-    refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds ?_ (fun _ => zero_le)
-      fun _ => eLpNorm_le_eLpNorm_mul_rpow_measure_univ_of_pos hp one_pos
-    simpa using ENNReal.Tendsto.mul_const h
-      (.inr (ENNReal.rpow_ne_top_of_nonneg hexp (measure_ne_top μ Set.univ)))
+  have hL1 := tendsto_eLpNorm_one_of_tendsto_eLpNorm hp h
   have hreal : Tendsto (fun i => (eLpNorm (f i) 1 μ).toReal) l (𝓝 0) := by
     simpa [Function.comp_def] using (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp hL1
   refine hreal.congr' ?_
