@@ -26,7 +26,7 @@ for all input vectors. In particular, for orthonormal `T,Y`,
 The curvature coefficient comes from the Jacobi-field calculation in
 `Geodesic.Normal.Jet`. Applying the native second-order Taylor estimate to the
 bilinear-form-valued pullback `riemannianExpPullbackMetric` gives uniformity in the two metric
-inputs. Its smoothness at the origin, the vanishing of its first derivative there, and its
+inputs. Its value and smoothness at the origin, the vanishing of its first derivative there, and its
 second derivative on a repeated direction are recorded as public lemmas.
 
 ## References
@@ -69,7 +69,7 @@ bilinear forms on `T_pM`: `v` is sent to `(w, z) ↦ ⟪d exp_p(v) w, d exp_p(v)
 def riemannianExpPullbackMetric (p : M) (v : TangentSpace I p) :
     TangentSpace I p →L[ℝ] TangentSpace I p →L[ℝ] ℝ :=
   let L := mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v
-  (ContinuousLinearMap.precomp ℝ L).comp ((innerSL ℝ).comp L)
+  (innerSL ℝ).bilinearComp L L
 
 omit [I.Boundaryless] [T2Space M] in
 /-- Evaluating the exponential pullback metric on two vectors. -/
@@ -78,6 +78,14 @@ theorem riemannianExpPullbackMetric_apply (p : M) (v w z : TangentSpace I p) :
     riemannianExpPullbackMetric I M p v w z =
       inner ℝ (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v w)
         (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v z) := (rfl)
+
+/-- At the origin, the exponential pullback metric is the metric of `T_pM`. -/
+@[simp]
+theorem riemannianExpPullbackMetric_zero (p : M) :
+    riemannianExpPullbackMetric I M p 0 = innerSL ℝ := by
+  ext w z
+  simp only [riemannianExpPullbackMetric_apply, mfderiv_riemannianExp_apply_zero]
+  rw [riemannianExp_zero, innerSL_apply_apply]
 
 /-- The exponential pullback metric is smooth at the origin, as a map to the fixed space of
 continuous bilinear forms. -/
@@ -140,20 +148,13 @@ theorem fderiv_fderiv_riemannianExpPullbackMetric_apply_self (p : M) (v w z : Ta
   let f := fun u ↦ riemannianExpPullbackMetric I M p u w z
   have hfn : ContDiffAt ℝ 2 f 0 :=
     ((hf.clm_apply contDiffAt_const).clm_apply contDiffAt_const).of_le (by norm_num)
-  have hsecond := (show ContDiffAt ℝ 2 f (0 + (0 : ℝ) • v) by simpa using hfn)
-    |>.deriv_deriv_comp_add_smul
-  simp only [zero_add, zero_smul] at hsecond
-  have heval : (fun u ↦ fderiv ℝ f u v) =ᶠ[𝓝 (0 : TangentSpace I p)]
-      (fun u ↦ fderiv ℝ (riemannianExpPullbackMetric I M p) u v w z) := by
-    filter_upwards [hf.eventually (by simp)] with u hu
-    exact fderiv_clm_apply_const_apply₂ (hu.differentiableAt (by simp)) w z v
-  have hdf := (hf.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
-  have hdfv := hdf.clm_apply (differentiableAt_const v)
-  have hcalc := congrArg (fun L : TangentSpace I p →L[ℝ] ℝ ↦ L v) (heval.fderiv_eq (𝕜 := ℝ))
-  rw [fderiv_clm_apply_const_apply (hfn.hasFDerivAt_fderiv (by norm_num)).differentiableAt v v,
-    fderiv_clm_apply_const_apply₂ hdfv w z v,
-    fderiv_clm_apply_const_apply hdf v v] at hcalc
-  rw [← hcalc, ← hsecond]
+  -- Restrict `f` to the line `s ↦ s • v` through the origin.
+  have hline := ContDiffAt.deriv_deriv_comp_add_smul (f := f) (x := 0) (t := (0 : ℝ)) (y := v)
+    (by simpa using hfn)
+  simp only [zero_add, zero_smul] at hline
+  rw [← fderiv_fderiv_clm_apply_const_apply₂
+    (hf.eventually (by simp) |>.mono fun u hu ↦ hu.differentiableAt (by simp))
+    ((hf.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)) w z v v, ← hline]
   simpa only [f, riemannianExpPullbackMetric_apply] using
     deriv_deriv_inner_mfderiv_riemannianExp_zero (I := I) p v w z
 
@@ -192,9 +193,9 @@ theorem exists_abs_inner_mfderiv_riemannianExp_sub_le (p : M) :
       inner ℝ (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v w)
         (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v z) - inner ℝ w z +
         (1 / 3 : ℝ) * inner ℝ ((leviCivitaConnection I M).curvatureTensor p w v v) z := by
-    simp only [A, sub_apply, smul_apply, smul_eq_mul, riemannianExpPullbackMetric_apply,
-      mfderiv_riemannianExp_apply_zero, fderiv_fderiv_riemannianExpPullbackMetric_apply_self]
-    rw [riemannianExp_zero]
+    simp only [A, sub_apply, smul_apply, smul_eq_mul, riemannianExpPullbackMetric_zero,
+      riemannianExpPullbackMetric_apply, fderiv_fderiv_riemannianExpPullbackMetric_apply_self]
+    rw [innerSL_apply_apply]
     ring
   rw [← heval, ← Real.norm_eq_abs]
   exact (A.le_opNorm₂ w z).trans

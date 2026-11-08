@@ -22,7 +22,8 @@ continuous linear map. At a zero of the vector-valued argument, the variation of
 contributes nothing to the derivative, so the operator-valued map need only be continuous. It also
 records the derivative of the pairing `(x, φ) ↦ φ x` of a space with its continuous linear maps
 (in particular with its continuous dual), the derivative of the application of a varying continuous
-linear map to a fixed vector (or of a varying bilinear map to two fixed vectors), the product rule
+linear map to a fixed vector (or of a varying bilinear map to two fixed vectors, together with the
+second derivative of the latter), the product rule
 for a varying bilinear map applied to two varying vectors, and the fact that the derivative of a
 field of symmetric bilinear maps takes symmetric values. A continuous linear map vanishing on a
 function near a point vanishes on its derivative there. Finally, a family of continuous linear maps
@@ -35,7 +36,8 @@ families of linear and bilinear maps are tested on vectors.
 * `HasFDerivWithinAt.clm_apply_of_eq_zero`: the derivative of `y ↦ c y (u y)` at a zero of
   `u`, assuming only continuity of `c`.
 * `TauCeti.fderiv_clm_apply_const_apply`: the derivative of `y ↦ c y v` in the direction `w` is
-  `Dc(w) v`; `TauCeti.fderiv_clm_apply_const_apply₂` is the form for fields of bilinear maps.
+  `Dc(w) v`; `TauCeti.fderiv_clm_apply_const_apply₂` is the form for fields of bilinear maps,
+  and `TauCeti.fderiv_fderiv_clm_apply_const_apply₂` is its second-derivative analogue.
 * `TauCeti.hasFDerivAt_pairing`: the derivative of the evaluation pairing `(x, φ) ↦ φ x` of a
   space with its continuous linear maps, in particular with its continuous dual.
 * `TauCeti.fderiv_bilin_apply`: the product rule for `y ↦ c y (A y) (B y)`.
@@ -112,6 +114,23 @@ theorem fderiv_clm_apply_const_apply₂ {c : E → F →L[𝕜] F' →L[𝕜] G}
     fderiv 𝕜 (fun y ↦ c y v w) x u = fderiv 𝕜 c x u v w := by
   rw [fderiv_clm_apply_const_apply (hc.clm_apply (differentiableAt_const v)),
     fderiv_clm_apply_const_apply hc]
+
+/-- The second derivative of `y ↦ c y v w`, for a field `c` of bilinear maps and fixed vectors `v`
+and `w`, is the second derivative of `c` applied to `v` and `w`. -/
+theorem fderiv_fderiv_clm_apply_const_apply₂ {c : E → F →L[𝕜] F' →L[𝕜] G} {x : E}
+    (hc : ∀ᶠ y in 𝓝 x, DifferentiableAt 𝕜 c y) (hdc : DifferentiableAt 𝕜 (fderiv 𝕜 c) x)
+    (v : F) (w : F') (a b : E) :
+    fderiv 𝕜 (fderiv 𝕜 fun y ↦ c y v w) x a b = fderiv 𝕜 (fderiv 𝕜 c) x a b v w := by
+  -- Near `x`, the derivative of `y ↦ c y v w` is the derivative of `c` followed by the fixed
+  -- continuous linear evaluation at `v` and `w`.
+  let L := (ContinuousLinearMap.apply 𝕜 G w).comp (ContinuousLinearMap.apply 𝕜 (F' →L[𝕜] G) v)
+  have heq : fderiv 𝕜 (fun y ↦ c y v w) =ᶠ[𝓝 x] fun y ↦ L.comp (fderiv 𝕜 c y) :=
+    hc.mono fun y hy ↦ ContinuousLinearMap.ext fun u ↦ fderiv_clm_apply_const_apply₂ hy v w u
+  -- Naming `c` and `d` avoids a unification failure on the nested operator spaces.
+  have hL := HasFDerivAt.clm_comp (c := fun _ ↦ L) (d := fderiv 𝕜 c)
+    (hasFDerivAt_const L x) hdc.hasFDerivAt
+  rw [heq.fderiv_eq, hL.fderiv]
+  simp [L]
 
 /-- The derivative of `y ↦ c y (A y) (B y)` for a field `c` of bilinear maps: the product rule. -/
 theorem fderiv_bilin_apply {c : E → F →L[𝕜] G →L[𝕜] F'} {A : E → F} {B : E → G} {x : E}
