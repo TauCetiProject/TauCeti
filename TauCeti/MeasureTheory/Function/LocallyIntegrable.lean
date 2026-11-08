@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.LinearMap
 public import Mathlib.MeasureTheory.Function.LocallyIntegrable
+public import Mathlib.MeasureTheory.Measure.Decomposition.Lebesgue
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import Mathlib.MeasureTheory.Group.Measure
+import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 import Mathlib.Tactic.Linarith
 import Mathlib.Topology.Separation.Regular
 
@@ -101,6 +103,10 @@ globally strongly measurable representative to `[0, 1]`. The set `s` needs no me
   a set `U`, times a function continuous on `U`, is integrable.
 * `Continuous.integrable_smul_of_continuousOn`: the same for a scalar multiple of a continuous
   compactly supported function by a function continuous on `U`.
+
+A function locally integrable for a measure `ν` becomes locally integrable for any σ-finite
+measure `ρ` dominating `ν` after multiplication by the Radon–Nikodym derivative `dν/dρ`
+(`locallyIntegrable_toReal_rnDeriv_smul`).
 
 ## Attribution
 
@@ -530,5 +536,25 @@ theorem integrable_continuousOn_smul_of_forall_notMem_eq_zero {s : Set E}
     fun x hx => by simp [hw0 x hx]
 
 end CompactlySupportedSmul
+
+section RadonNikodym
+
+variable {X F : Type*} [MeasurableSpace X] [TopologicalSpace X] [OpensMeasurableSpace X]
+  [LocallyCompactSpace X] [T2Space X] [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- If `ν ≪ ρ` and `g` is locally integrable for `ν`, then `(dν/dρ) g` is locally integrable for
+`ρ`. -/
+theorem locallyIntegrable_toReal_rnDeriv_smul {ν ρ : Measure X} [SigmaFinite ν] [SigmaFinite ρ]
+    (hνρ : ν ≪ ρ) {g : X → F} (hg : LocallyIntegrable g ν) :
+    LocallyIntegrable (fun x => (ν.rnDeriv ρ x).toReal • g x) ρ := by
+  refine locallyIntegrable_iff.2 fun K hK => ?_
+  have hi := (integrable_rnDeriv_smul_iff hνρ).2
+    ((integrable_indicator_iff hK.measurableSet).2 (hg.integrableOn_isCompact hK))
+  apply (integrable_indicator_iff hK.measurableSet).1
+  convert hi using 1
+  ext x
+  by_cases hx : x ∈ K <;> simp [hx]
+
+end RadonNikodym
 
 end MeasureTheory

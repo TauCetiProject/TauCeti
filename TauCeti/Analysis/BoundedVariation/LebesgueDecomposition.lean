@@ -9,6 +9,7 @@ public import TauCeti.Analysis.BoundedVariation.PolarDecomposition
 public import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 import TauCeti.Analysis.Distribution.AELeOfIntegral
 import TauCeti.Analysis.Distribution.TestFunction.Integral
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Measure.Decomposition.Lebesgue
 import Mathlib.MeasureTheory.Measure.WithDensity
 
@@ -65,49 +66,6 @@ theorem acDerivativeDensity_def (ν : Measure Ω) (x : Ω) :
 theorem measurable_acDerivativeDensity (ν : Measure Ω) :
     Measurable (acDerivativeDensity μ Ω u ν) :=
   (Measure.measurable_rnDeriv _ _).ennreal_toReal.smul measurable_polarDensity
-
-section InnerPairing
-
-omit [FiniteDimensional ℝ E]
-
-variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-
-/-- The pairing of a test vector field with a locally integrable field is integrable. -/
-theorem integrable_inner_testFunction {m : Measure Ω} {v : Ω → F} (hv : LocallyIntegrable v m)
-    (φ : 𝓓(Ω, F)) : Integrable (fun x : Ω => ⟪φ x, v x⟫) m :=
-  (φ.integrable_bilin_subtype (innerSL ℝ) hv).congr
-    (ae_of_all _ fun _ => innerSL_apply_apply ℝ _ _)
-
-/-- The pairing of a test vector field supported in `U` and bounded by `1` with a field `v` is
-bounded by the mass of the measure `|v| m` on `U`. -/
-theorem enorm_integral_inner_testFunction_le {U : Opens E} {φ : 𝓓(Ω, F)} (hφU : tsupport φ ⊆ U)
-    (hφ : ∀ x, ‖φ x‖ ≤ 1) (m : Measure Ω) (v : Ω → F) :
-    ‖∫ x : Ω, ⟪φ x, v x⟫ ∂m‖ₑ ≤ m.withDensity (fun x => ‖v x‖ₑ) ((↑) ⁻¹' (U : Set E)) := by
-  rw [withDensity_apply _ (U.isOpen.measurableSet.preimage measurable_subtype_coe),
-    ← lintegral_indicator (U.isOpen.measurableSet.preimage measurable_subtype_coe)]
-  refine (enorm_integral_le_lintegral_enorm _).trans (lintegral_mono fun x => ?_)
-  by_cases hx : x ∈ ((↑) ⁻¹' (U : Set E) : Set Ω)
-  · rw [indicator_of_mem hx, ← ofReal_norm, ← ofReal_norm]
-    exact ENNReal.ofReal_le_ofReal ((norm_inner_le_norm _ _).trans
-      (mul_le_of_le_one_left (norm_nonneg _) (hφ x)))
-  · have hzero : φ x = 0 := image_eq_zero_of_notMem_tsupport fun hx' => hx (hφU hx')
-    simp [hx, hzero]
-
-end InnerPairing
-
-/-- If `ν ≪ ρ` and `g` is locally integrable for `ν`, then `(dν/dρ) g` is locally integrable for
-`ρ`. -/
-theorem locallyIntegrable_toReal_rnDeriv_smul {ν ρ : Measure Ω} [SigmaFinite ν] [SigmaFinite ρ]
-    (hνρ : ν ≪ ρ) {g : Ω → E} (hg : LocallyIntegrable g ν) :
-    LocallyIntegrable (fun x => (ν.rnDeriv ρ x).toReal • g x) ρ := by
-  have := Ω.isOpen.locallyCompactSpace
-  refine locallyIntegrable_iff.2 fun K hK => ?_
-  have hi := (integrable_rnDeriv_smul_iff hνρ).2
-    ((integrable_indicator_iff hK.measurableSet).2 (hg.integrableOn_isCompact hK))
-  apply (integrable_indicator_iff hK.measurableSet).1
-  convert hi using 1
-  ext x
-  by_cases hx : x ∈ K <;> simp [hx]
 
 variable (hu : LocallyIntegrableOn u Ω μ)
   (hfin : ∀ K, IsCompact K → K ⊆ Ω →
@@ -187,7 +145,7 @@ theorem integral_divergenceCLM_mul_eq_neg_integral_inner_acDerivativeDensity_sub
         ∫ x : Ω, ⟪φ x, polarDensity μ Ω u x⟫ ∂(variationMeasure μ Ω u).singularPart ν := by
   have := Ω.isOpen.locallyCompactSpace
   let lam := variationMeasure μ Ω u
-  have hint := integrable_inner_testFunction (locallyIntegrable_polarDensity hu hfin) φ
+  have hint := φ.integrable_inner_subtype (locallyIntegrable_polarDensity hu hfin)
   have hac := hint.mono_measure (Measure.withDensity_rnDeriv_le lam ν)
   have hsing := hint.mono_measure (Measure.singularPart_le lam ν)
   have hsplit := congrArg
@@ -230,6 +188,7 @@ theorem ae_eq_acDerivativeDensity [SigmaFinite ν] {g τ : Ω → E} {ξ : Measu
   -- Transfer the difference of the absolutely continuous densities to the common measure.
   let f := fun x => (ν.rnDeriv ρ x).toReal • (g x - acDerivativeDensity μ Ω u ν x)
   have hg' := hg.sub (locallyIntegrable_acDerivativeDensity hu hfin ν)
+  have := Ω.isOpen.locallyCompactSpace
   have hf : LocallyIntegrable f ρ := locallyIntegrable_toReal_rnDeriv_smul hνρ hg'
   have hle := ae_enorm_le_of_forall_enorm_integral_inner_le hf
     (Measure.measurable_rnDeriv η ρ)
@@ -240,8 +199,8 @@ theorem ae_eq_acDerivativeDensity [SigmaFinite ν] {g τ : Ω → E} {ξ : Measu
           (∫ x : Ω, ⟪φ x, polarDensity μ Ω u x⟫ ∂ω) - ∫ x : Ω, ⟪φ x, τ x⟫ ∂ξ := by
         simp only [f, inner_smul_right, inner_sub_right]
         rw [integral_toReal_rnDeriv_mul hνρ,
-          integral_sub (integrable_inner_testFunction hg φ)
-            (integrable_inner_testFunction (locallyIntegrable_acDerivativeDensity hu hfin ν) φ)]
+          integral_sub (φ.integrable_inner_subtype hg)
+            (φ.integrable_inner_subtype (locallyIntegrable_acDerivativeDensity hu hfin ν))]
         have h₁ := h φ
         have h₂ :=
           integral_divergenceCLM_mul_eq_neg_integral_inner_acDerivativeDensity_sub_singularPart
@@ -250,8 +209,8 @@ theorem ae_eq_acDerivativeDensity [SigmaFinite ν] {g τ : Ω → E} {ξ : Measu
       rw [heq, Measure.setLIntegral_rnDeriv hηρ]
       exact enorm_sub_le.trans (by
         simpa only [η, _root_.add_apply, add_comm] using add_le_add
-          (enorm_integral_inner_testFunction_le hφU hφ ω (polarDensity μ Ω u))
-          (enorm_integral_inner_testFunction_le hφU hφ ξ τ))
+          (TestFunction.enorm_integral_inner_le_withDensity hφU hφ ω (polarDensity μ Ω u))
+          (TestFunction.enorm_integral_inner_le_withDensity hφU hφ ξ τ))
   -- The singular bound vanishes ν-a.e., while the density of ν in ρ is positive there.
   filter_upwards [hνρ.ae_le hle, Measure.rnDeriv_eq_zero_of_mutuallySingular hην hνρ,
     Measure.rnDeriv_pos hνρ, hνρ.ae_le (Measure.rnDeriv_ne_top ν ρ)] with x hx hz hp ht
