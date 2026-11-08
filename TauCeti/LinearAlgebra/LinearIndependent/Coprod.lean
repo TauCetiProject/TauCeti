@@ -23,11 +23,12 @@ open Function
 
 namespace LinearMap
 
-/-- The map `(a, b) ↦ ∑ i, aᵢ • Xᵢ + S b` is injective when a linear map `dF` inverts `S` and
-kills the linearly independent family `X`. -/
-theorem injective_coprod_linearCombination {R E ι : Type*} [Ring R] [AddCommGroup E]
-    [Module R E] [Fintype ι] {X : ι → E} (hX : LinearIndependent R X)
-    {S : (ι → R) →ₗ[R] E} (dF : E →ₗ[R] (ι → R)) (hdFX : ∀ i, dF (X i) = 0)
+/-- The map `(a, b) ↦ ∑ i, aᵢ • Xᵢ + S b`, for `a : ι → R` and `b` in a module `B`, is injective
+when a linear map `dF : E → B` inverts `S : B → E` and kills the linearly independent family
+`X`. -/
+theorem injective_coprod_linearCombination {R E B ι : Type*} [Ring R] [AddCommGroup E]
+    [Module R E] [AddCommGroup B] [Module R B] [Fintype ι] {X : ι → E}
+    (hX : LinearIndependent R X) {S : B →ₗ[R] E} (dF : E →ₗ[R] B) (hdFX : ∀ i, dF (X i) = 0)
     (hdFs : ∀ b, dF (S b) = b) : Injective ((Fintype.linearCombination R X).coprod S) := by
   refine (injective_iff_map_eq_zero _).2 fun ⟨a, b⟩ h ↦ ?_
   rw [coprod_apply, Fintype.linearCombination_apply] at h
