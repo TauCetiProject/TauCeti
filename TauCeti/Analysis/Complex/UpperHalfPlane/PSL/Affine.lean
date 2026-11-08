@@ -36,6 +36,17 @@ open scoped MatrixGroups OnePoint
 
 open Matrix.SpecialLinearGroup (dilation)
 
+namespace UpperHalfPlane
+
+/-- The multiplier of an affine action on `ℍ` is positive: if `h ∈ PSL(2, ℝ)` acts as
+`z ↦ μ * z + c`, then `h • I` lies in `ℍ` and has imaginary part `μ`. -/
+theorem pos_of_coe_smul_eq {h : PSL(2, ℝ)} {μ c : ℝ}
+    (hz : ∀ z : ℍ, ((h • z : ℍ) : ℂ) = μ * z + c) : 0 < μ := by
+  have him : (((h • UpperHalfPlane.I : ℍ) : ℂ)).im = μ := by simp [hz]
+  simpa [← UpperHalfPlane.coe_im, him] using (h • UpperHalfPlane.I).im_pos
+
+end UpperHalfPlane
+
 namespace TauCeti.UpperHalfPlane
 
 /-- `dilation s` acts on `ℍ` as `z ↦ exp s * z`. -/
@@ -101,10 +112,7 @@ theorem tendsto_pow_smul_of_coe_smul_eq {h : PSL(2, ℝ)} {μ c : ℝ} (hμ₁ :
     (hw : ∀ k, (w k : ℂ) = u + ((μ⁻¹ ^ k : ℝ) : ℂ) * Complex.I) (z₀ : ℍ)
     (hz₀ : (z₀ : ℂ) = ((c / (1 - μ) : ℝ) : ℂ) + Complex.I) :
     Filter.Tendsto (fun k : ℕ ↦ h ^ k • w k) Filter.atTop (nhds z₀) := by
-  -- the image of `I` lies in `ℍ`, and its imaginary part is `μ`
-  have hμ₀ : 0 < μ := by
-    have him : (((h • UpperHalfPlane.I : ℍ) : ℂ)).im = μ := by simp [hz]
-    simpa [← UpperHalfPlane.coe_im, him] using (h • UpperHalfPlane.I).im_pos
+  have hμ₀ : 0 < μ := UpperHalfPlane.pos_of_coe_smul_eq hz
   rw [UpperHalfPlane.isEmbedding_coe.tendsto_nhds_iff, Function.comp_def, hz₀]
   have hμk : Filter.Tendsto (fun k : ℕ ↦ ((c / (1 - μ) : ℝ) : ℂ) + ((μ ^ k : ℝ) : ℂ) *
       (u - ((c / (1 - μ) : ℝ) : ℂ)) + Complex.I) Filter.atTop
