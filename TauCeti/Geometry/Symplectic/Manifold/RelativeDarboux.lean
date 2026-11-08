@@ -39,8 +39,10 @@ by the chain rule. The flat theorem along an immersion
 (`TauCeti.exists_partialDiffeomorph_fix_immersion_compContinuousLinearMap_fderiv_eq`) gives a
 partial diffeomorphism of the model space, which the chart at `i p` carries back to `M`.
 
-The main theorem only needs `p` and `i p` to be interior points; the boundaryless form is
-`TauCeti.SmoothTwoForm.exists_partialDiffeomorph_fix_immersion_mpullback_eq`.
+The general form,
+`TauCeti.SmoothTwoForm.exists_partialDiffeomorph_fix_immersion_mpullback_eq_of_isInteriorPoint`,
+only needs `p` and `i p` to be interior points; `..._mpullback_eq` is its specialisation to
+boundaryless manifolds.
 
 ## Main results
 
