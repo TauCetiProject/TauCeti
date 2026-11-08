@@ -89,7 +89,8 @@ theorem forall_residue_mul_eq_zero_iff (φ : meromorphicGerms ℂ a) (n : ℤ) :
       exact_mod_cast (mem_orderGE _ _).1 hrem |>.trans_eq hord
     omega
 
-/-- The orthogonal complement is computed using Mathlib's bilinear-form orthogonal. -/
+/-- Under the residue pairing, the orthogonal complement of the germs of order at least `n`
+is the lattice of germs of order at least `-n`. -/
 @[simp]
 theorem orthogonal_residuePairing_orderGE (a : ℂ) (n : ℤ) :
     (residuePairing a).orthogonal (orderGE a n) = orderGE a (-n) := by
@@ -110,11 +111,6 @@ theorem residuePairing_nondegenerate (a : ℂ) : (residuePairing a).Nondegenerat
 
 /-! ## Pairing quotient windows -/
 
-/-- The quotient of two order bounds, with the denominator viewed in the numerator.
-For `n ≤ m` it consists of the coefficients of orders `n, …, m - 1`. -/
-abbrev OrderWindow (a : ℂ) (n m : ℤ) :=
-  orderGE a n ⧸ (orderGE a m).comap (orderGE a n).subtype
-
 private def residuePairingRestrict (a : ℂ) (n m : ℤ) :
     orderGE a n →ₗ[ℂ] orderGE a (-m) →ₗ[ℂ] ℂ :=
   (residuePairing a).compl₁₂ (orderGE a n).subtype (orderGE a (-m)).subtype
@@ -133,8 +129,8 @@ def orderWindowResiduePairing (a : ℂ) (n m : ℤ) :
 @[simp]
 theorem orderWindowResiduePairing_mk (n m : ℤ) (φ : orderGE a n) (ψ : orderGE a (-m)) :
     orderWindowResiduePairing a n m (Submodule.Quotient.mk φ) (Submodule.Quotient.mk ψ) =
-      residue a (φ.1 * ψ.1) :=
-  (rfl)
+      residue a (φ.1 * ψ.1) := by
+  simp [orderWindowResiduePairing, residuePairingRestrict, LinearMap.liftQ₂_mk]
 
 /-- **Nondegeneracy of the quotient residue pairing.** Both radicals vanish, without any
 restriction on the signs of the order bounds. -/
