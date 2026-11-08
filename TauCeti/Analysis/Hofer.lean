@@ -23,15 +23,15 @@ first localizes the lemma: `ϕ` only needs to be continuous and nonnegative on t
 radius `3 ε` about `x`, which contains every point the lemma looks at
 (`TauCeti.hofer_of_continuousOn_closedBall`).
 
-Applied along a sequence of functions `ϕ i` blowing up at points `x i → x₀`, at radii
-`ε i → 0` with `ε i * ϕ i (x i) → ∞`, it gives centres `c i → x₀` and radii `ρ i → 0` with
-`ρ i * ϕ i (c i) → ∞` and `ϕ i ≤ 2 ϕ i (c i)` on the ball of radius `ρ i` about `c i`
+Applied along a sequence of functions `ϕ i`, continuous and nonnegative on a closed ball about
+`x₀`, with `ϕ i (x i) → ∞` at points `x i → x₀`, it gives centres `c i → x₀` and radii `ρ i → 0`
+with `ρ i * ϕ i (c i) → ∞` and `ϕ i ≤ 2 ϕ i (c i)` on the ball of radius `ρ i` about `c i`
 (`TauCeti.exists_tendsto_hofer`).
 
-For the derivatives `ϕ i = ‖du i‖` of maps `u i` between real normed spaces, rescaling by
-`ε i = 1 / ‖du i (c i)‖` gives maps `v i (w) = u i (c i + ε i w)` whose derivatives have norm one
-at the origin and norm at most two on balls of radii `R i → ∞`, while the rescaled balls
-`c i + ε i • closedBall 0 (R i)` shrink to the point of blow-up
+For the derivatives `ϕ i = ‖du i‖` of maps `u i` from a complete real normed space to a real
+normed space, rescaling by `ε i = 1 / ‖du i (c i)‖` gives maps `v i (w) = u i (c i + ε i w)` whose
+derivatives have norm one at the origin and norm at most two on balls of radii `R i → ∞`, while the
+rescaled balls `c i + ε i • closedBall 0 (R i)` shrink to the point of blow-up
 (`TauCeti.exists_tendsto_norm_fderiv_rescale_le`). This is the normalization of
 McDuff–Salamon, Section 4.2. Extracting a convergent subsequence of the rescaled maps needs
 elliptic estimates for the equation they solve and is not part of this file.
