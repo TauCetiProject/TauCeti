@@ -9,7 +9,9 @@ public import Mathlib.GroupTheory.Perm.Cycle.Type
 public import Mathlib.GroupTheory.Perm.Fin
 public import TauCeti.Combinatorics.Enumerative.PerfectMatching.Labelling
 
+import TauCeti.Combinatorics.ChordDiagram
 import TauCeti.Data.Fin.Basic
+import TauCeti.GroupTheory.Perm.Basic
 import TauCeti.GroupTheory.Perm.OrbitCount.FinRotate
 
 /-!
@@ -33,16 +35,15 @@ removes small neighbourhoods of `p` and `q` and reconnects the ends compatibly w
 orientation: an arc arriving at `p` continues out of `q`, and an arc arriving at `q` continues out
 of `p`. So after the surgeries, the arc ending at `p` is followed by the arc ending at
 `partner p + 1`, and the components of the surgered circle are the cycles of the permutation
-`p ↦ partner p + 1` (`TauCeti.Matching.surgeryPerm`). The surgery condition says that this
+`finRotate (4 * k) * partner`, `p ↦ partner p + 1`. The surgery condition says that this
 permutation is a single cycle through all the points. This is the boundary permutation
 `finRotate n * σ` of the one-vertex chord diagram whose chords are the matched pairs, as in
 `TauCeti/Combinatorics/ChordDiagram.lean`: the surgered circle is the boundary of the disk with a
-band attached along each matched pair.
+band attached along each matched pair. The general facts about such diagrams with a single
+boundary cycle, such as `4 ∣ n`, are proved there.
 
 ## Main definitions
 
-* `TauCeti.Matching.surgeryPerm`: for a matching of the points `Fin n` of a pointed circle, the
-  permutation `p ↦ partner p + 1` of the arcs that records how surgery reconnects them.
 * `TauCeti.PointedMatchedCircle k`: a matching of `4k` points by `2k` labels on which surgery
   yields a single circle.
 * `TauCeti.PointedMatchedCircle.reverse`: the orientation reversal `-Z`, which reverses the order
@@ -53,12 +54,10 @@ band attached along each matched pair.
 
 ## Main results
 
-* `TauCeti.Matching.four_dvd_of_isCycleOn_surgeryPerm`: if surgery on a matching of `n` points
-  yields a single circle then `4 ∣ n`, so pointed matched circles have `4k` points.
-* `TauCeti.Matching.apply_finRotate_ne`: in a pointed matched circle, two consecutive points (in
-  the cyclic order, through the basepoint) are never matched.
-* `TauCeti.Matching.isCycleOn_surgeryPerm_comp_revPerm_iff`: reversing the orientation preserves
-  the surgery condition.
+* `TauCeti.PointedMatchedCircle.apply_finRotate_ne`: in a pointed matched circle, two consecutive
+  points (in the cyclic order, through the basepoint) are never matched.
+* `TauCeti.PointedMatchedCircle.finRotate_mul_partner_antipodal`: surgery on the antipodal
+  pointed matched circle of genus `k` is the rotation by `2k + 1` points.
 
 ## References
 
@@ -74,99 +73,17 @@ open Finset Equiv Equiv.Perm
 
 namespace TauCeti
 
-namespace Matching
-
-variable {β : Type*} [DecidableEq β] {n : ℕ} (M : Matching (Fin n) β)
-
-/-! ### Surgery on a matching of the points of a pointed circle -/
-
-/-- For a matching `M` of the points `Fin n` of a pointed circle, ordered by its orientation, the
-permutation `p ↦ partner p + 1` of the arcs between consecutive points, indexed by their end
-points. Surgery along the matched pairs joins the end of the arc ending at `p` to the beginning
-of the arc ending at `partner p + 1`, so the circles obtained by surgery correspond to the cycles
-of this permutation. It is the boundary permutation `finRotate n * σ` of the one-vertex chord
-diagram with chords `σ = M.partner`. -/
-noncomputable def surgeryPerm : Perm (Fin n) :=
-  finRotate n * M.partner.val
-
-@[simp]
-theorem surgeryPerm_apply (p : Fin n) : M.surgeryPerm p = finRotate n (M.partner.val p) := (rfl)
-
-/-- In a matching of the points of a pointed circle on which surgery yields a single circle, no
-arc closes up on its own after surgery. -/
-theorem surgeryPerm_apply_ne (h : M.surgeryPerm.IsCycleOn Set.univ) (p : Fin n) :
-    M.surgeryPerm p ≠ p :=
-  have := M.nontrivial p
-  h.apply_ne Set.nontrivial_univ (Set.mem_univ p)
-
-/-- If surgery on a matching of `n` points of a pointed circle yields a single circle, then `n` is
-a multiple of four. Counting with signs: the partner perfect matching is a product of `n / 2`
-transpositions, `p ↦ p + 1` is an `n`-cycle, and their product is an `n`-cycle. -/
-theorem four_dvd_of_isCycleOn_surgeryPerm (h : M.surgeryPerm.IsCycleOn Set.univ) : 4 ∣ n := by
-  rcases Nat.eq_zero_or_pos n with rfl | hn
-  · exact dvd_zero 4
-  have := M.nontrivial ⟨0, hn⟩
-  have hcycle : M.surgeryPerm.IsCycle :=
-    isCycle_iff_exists_isCycleOn.2 ⟨Set.univ, Set.nontrivial_univ, h, fun _ _ => trivial⟩
-  have hsupp : M.surgeryPerm.support = univ :=
-    eq_univ_of_forall fun p => mem_support.2 (M.surgeryPerm_apply_ne h p)
-  obtain ⟨m, hm⟩ := even_card_of_nonempty_perfectMatching (Fin n) ⟨M.partner⟩
-  rw [Fintype.card_fin] at hm
-  have hsign := hcycle.sign
-  rw [hsupp, surgeryPerm, sign_mul, sign_finRotate, M.partner.prop.sign_eq, card_univ,
-    Fintype.card_fin, hm, show m + m - 1 = 2 * (m - 1) + 1 by omega,
-    show (m + m) / 2 = m by omega] at hsign
-  have hm2 : Even m := (neg_one_pow_eq_one_iff_even (show (-1 : ℤˣ) ≠ 1 by decide)).1 <| by
-    simpa [← two_mul, pow_succ, pow_mul] using hsign
-  obtain ⟨t, rfl⟩ := hm2
-  exact ⟨t, by omega⟩
-
-/-- In a matching of the points of a pointed circle on which surgery yields a single circle, two
-consecutive points are never matched; this includes the last and the first point, which are
-consecutive through the basepoint. -/
-theorem apply_finRotate_ne (h : M.surgeryPerm.IsCycleOn Set.univ) (p : Fin n) :
-    M (finRotate n p) ≠ M p := by
-  intro hp
-  rcases M.apply_eq_apply_iff.1 hp with hp | hp
-  · exact mem_support.1 (by simp [support_finRotate_of_le (by simpa using M.two_le_card p)]) hp
-  · refine M.surgeryPerm_apply_ne h (M.partner.val p) ?_
-    rw [surgeryPerm_apply, PerfectMatching.apply_apply, hp]
-
-/-- Reversing the order of the points conjugates the inverse of the surgery permutation. -/
-theorem surgeryPerm_comp_revPerm :
-    (M.comp Fin.revPerm).surgeryPerm =
-      (Fin.revPerm * M.partner.val) * M.surgeryPerm⁻¹ * (Fin.revPerm * M.partner.val)⁻¹ := by
-  rw [eq_mul_inv_iff_mul_eq, eq_mul_inv_iff_mul_eq]
-  refine Equiv.ext fun p => ?_
-  simpa [surgeryPerm, PerfectMatching.congr_val_apply] using
-    Fin.finRotate_rev_finRotate_rev (M.partner.val p).rev
-
-/-- Reversing the orientation of a pointed circle, which reverses the order of its points,
-preserves the condition that surgery on a matching yields a single circle. -/
-theorem isCycleOn_surgeryPerm_comp_revPerm_iff :
-    (M.comp Fin.revPerm).surgeryPerm.IsCycleOn Set.univ ↔ M.surgeryPerm.IsCycleOn Set.univ := by
-  set g := Fin.revPerm * M.partner.val
-  rw [surgeryPerm_comp_revPerm, ← isCycleOn_inv (f := M.surgeryPerm)]
-  constructor
-  · intro h
-    have := h.conj (g := g⁻¹)
-    rwa [show g⁻¹ * (g * M.surgeryPerm⁻¹ * g⁻¹) * g⁻¹⁻¹ = M.surgeryPerm⁻¹ by group,
-      Set.image_univ_of_surjective (Equiv.surjective _)] at this
-  · intro h
-    have := h.conj (g := g)
-    rwa [Set.image_univ_of_surjective (Equiv.surjective _)] at this
-
-end Matching
-
 /-- A *pointed matched circle* of genus `k` (Lipshitz–Ozsváth–Thurston): a matching of `4k` points
 on an oriented circle with a basepoint, labelled by `Fin (2 * k)`, such that surgery on the circle
 along the `2k` matched pairs yields a single circle. The points are identified with
 `Fin (4 * k)` in the order in which they are met when going around the circle from the basepoint.
-There is no loss in assuming `4k` points: see `TauCeti.Matching.four_dvd_of_isCycleOn_surgeryPerm`.
--/
+There is no loss in assuming `4k` points: see
+`TauCeti.IsPerfectMatching.four_dvd_of_isCycleOn_finRotate_mul`. -/
 structure PointedMatchedCircle (k : ℕ) extends Matching (Fin (4 * k)) (Fin (2 * k)) where
-  /-- Surgery along the matched pairs yields a single circle. -/
-  isCycleOn_surgeryPerm : toMatching.surgeryPerm.IsCycleOn Set.univ
+  /-- Surgery along the matched pairs yields a single circle: the permutation `p ↦ partner p + 1`
+  recording how surgery reconnects the arcs between consecutive points is a single cycle. -/
+  isCycleOn_finRotate_mul_partner :
+    (finRotate (4 * k) * toMatching.partner.val).IsCycleOn Set.univ
 
 namespace PointedMatchedCircle
 
@@ -181,14 +98,25 @@ theorem ext {Z Z' : PointedMatchedCircle k} (h : ∀ p, Z.toMatching p = Z'.toMa
     Z = Z' :=
   toMatching_injective (Matching.ext h)
 
+/-- In a pointed matched circle, two consecutive points are never matched; this includes the last
+and the first point, which are consecutive through the basepoint. -/
+theorem apply_finRotate_ne (Z : PointedMatchedCircle k) (p : Fin (4 * k)) :
+    Z.toMatching (finRotate (4 * k) p) ≠ Z.toMatching p := by
+  intro hp
+  rcases Z.toMatching.apply_eq_apply_iff.1 hp with hp | hp
+  · exact mem_support.1 (by simp [support_finRotate_of_le (by simpa using Z.two_le_card p)]) hp
+  · exact Z.partner.prop.apply_ne_finRotate_of_isCycleOn Z.isCycleOn_finRotate_mul_partner p hp.symm
+
 /-- The orientation reversal `-Z` of a pointed matched circle `Z`: the same points and matching,
 on the circle with the opposite orientation. Going around the reversed circle from the basepoint
 meets the points in the opposite order, so the `p`-th point of `-Z` is the `(4k - 1 - p)`-th point
 of `Z`. -/
 def reverse (Z : PointedMatchedCircle k) : PointedMatchedCircle k where
   toMatching := Z.toMatching.comp Fin.revPerm
-  isCycleOn_surgeryPerm :=
-    Z.toMatching.isCycleOn_surgeryPerm_comp_revPerm_iff.2 Z.isCycleOn_surgeryPerm
+  isCycleOn_finRotate_mul_partner := by
+    rw [Matching.partner_comp, PerfectMatching.congr_val, Fin.revPerm_symm,
+      Z.partner.prop.involutive.isCycleOn_finRotate_mul_permCongr_revPerm_iff]
+    exact Z.isCycleOn_finRotate_mul_partner
 
 @[simp]
 theorem toMatching_reverse (Z : PointedMatchedCircle k) :
@@ -241,35 +169,51 @@ private theorem antipodalMatching_partner (p : Fin (4 * k)) :
     (antipodalMatching k).partner.val p = antipode p :=
   Matching.partner_ofPartner _ _ _ _ _ p
 
+/-- Surgery on the antipodal matching of `4k` points sends the arc ending at `p` to the arc
+ending at `p + 2k + 1`. -/
+private theorem finRotate_mul_antipodalMatching_partner :
+    finRotate (4 * k) * (antipodalMatching k).partner.val = finRotate (4 * k) ^ (2 * k + 1) := by
+  refine Equiv.ext fun p => Fin.ext ?_
+  have h1 (q : Fin (4 * k)) : (finRotate (4 * k) q : ℕ) = (q + 1) % (4 * k) := by
+    simpa using Fin.coe_finRotate_pow 1 q
+  rw [Perm.mul_apply, antipodalMatching_partner, Fin.coe_finRotate_pow, h1]
+  simp only [antipode, Nat.mod_add_mod]
+  ring_nf
+
+/-- Rotating `4k` points by `2k + 1` steps is a single cycle through all of them, since `2k + 1`
+is coprime to `4k`. -/
+private theorem isCycleOn_finRotate_pow_two_mul_add_one :
+    (finRotate (4 * k) ^ (2 * k + 1)).IsCycleOn Set.univ := by
+  rcases Nat.eq_zero_or_pos k with rfl | hk
+  · have := Fin.subsingleton_iff_le_one.2 (show 4 * 0 ≤ 1 by omega)
+    exact isCycleOn_of_subsingleton _ _
+  have : Nontrivial (Fin (4 * k)) := Fin.nontrivial_iff_two_le.2 (by omega)
+  have hc : (finRotate (4 * k)).IsCycle := isCycle_finRotate_of_le (by omega)
+  have hcop : Nat.Coprime (2 * k + 1) (orderOf (finRotate (4 * k))) := by
+    rw [orderOf_finRotate (by omega)]
+    have h4 : Nat.Coprime (2 * k + 1) 4 :=
+      Nat.Coprime.pow_right 2 (Nat.coprime_two_right.2 (even_two.mul_right k).add_one)
+    exact h4.mul_right <| by
+      simp only [Nat.coprime_mul_right_add_left, Nat.coprime_one_left_eq_true]
+  rw [isCycleOn_univ_iff, support_pow_coprime hcop, support_finRotate_of_le (by omega)]
+  exact ⟨hc.pow_iff.2 hcop, rfl⟩
+
 /-- The pointed matched circle of genus `k` in which each point is matched with the antipodal
 point: the `p`-th and the `(p + 2k)`-th points carry the label `p` for `p < 2k`. For `k = 1` it
 matches the first point with the third and the second with the fourth; this is the genus-one
 pointed matched circle, whose algebra is the torus algebra. -/
 def antipodal (k : ℕ) : PointedMatchedCircle k where
   toMatching := antipodalMatching k
-  isCycleOn_surgeryPerm := by
-    rcases Nat.eq_zero_or_pos k with rfl | hk
-    · have := Fin.subsingleton_iff_le_one.2 (show 4 * 0 ≤ 1 by omega)
-      exact isCycleOn_of_subsingleton _ _
-    have hσ : (antipodalMatching k).surgeryPerm = finRotate (4 * k) ^ (2 * k + 1) := by
-      refine Equiv.ext fun p => Fin.ext ?_
-      have h1 (q : Fin (4 * k)) : (finRotate (4 * k) q : ℕ) = (q + 1) % (4 * k) := by
-        simpa using Fin.coe_finRotate_pow 1 q
-      rw [Matching.surgeryPerm_apply, antipodalMatching_partner, Fin.coe_finRotate_pow, h1]
-      simp only [antipode, Nat.mod_add_mod]
-      ring_nf
-    have hc : (finRotate (4 * k)).IsCycle := isCycle_finRotate_of_le (by omega)
-    have hcop : Nat.Coprime (2 * k + 1) (orderOf (finRotate (4 * k))) := by
-      rw [orderOf_finRotate (by omega)]
-      have h4 : Nat.Coprime (2 * k + 1) 4 :=
-        Nat.Coprime.pow_right 2 (Nat.coprime_two_right.2 (even_two.mul_right k).add_one)
-      exact h4.mul_right <| by
-        simp only [Nat.coprime_mul_right_add_left, Nat.coprime_one_left_eq_true]
-    rw [hσ]
-    convert (hc.pow_iff.2 hcop).isCycleOn
-    refine iff_of_true (Set.mem_univ _) (mem_support.1 ?_)
-    rw [support_pow_coprime hcop, support_finRotate_of_le (by omega)]
-    exact mem_univ _
+  isCycleOn_finRotate_mul_partner := by
+    rw [finRotate_mul_antipodalMatching_partner]
+    exact isCycleOn_finRotate_pow_two_mul_add_one
+
+/-- Surgery on the antipodal pointed matched circle of genus `k` is the rotation of the `4k` points
+by `2k + 1` steps. -/
+@[simp]
+theorem finRotate_mul_partner_antipodal :
+    finRotate (4 * k) * (antipodal k).toMatching.partner.val = finRotate (4 * k) ^ (2 * k + 1) :=
+  finRotate_mul_antipodalMatching_partner
 
 /-- In the antipodal pointed matched circle, the `p`-th point carries the label `p mod 2k`. -/
 @[simp]
