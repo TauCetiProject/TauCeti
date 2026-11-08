@@ -37,8 +37,8 @@ union. For small `δ` the union lies in `G`.
 ## Main results
 
 * `TauCeti.Contour.exists_cycle_trace_subset_gridCover`: for `δ > 0` and bounded `K`, there is a
-  cycle in `gridCover δ K \ K` winding once around every point of `K` and not at all around any
-  point outside `gridCover δ K`.
+  cycle in `gridCover δ K \ K`, null-homologous in `gridCover δ K`, winding once around every
+  point of `K`.
 * `IsCompact.exists_cycle_windingNumber_eq_one`: for a compact subset `K` of an open set `G`,
   there is a cycle in `G \ K`, null-homologous in `G`, winding once around every point of `K`.
 
@@ -390,13 +390,12 @@ private theorem exists_cycle_boundaryEdges (hδ : 0 < δ) (S : Finset (ℤ × �
   exact hw.sum_boundaryEdges_edgeWinding hδ S
 
 /-- **A grid cycle around a bounded set.** For `δ > 0` and a bounded set `K`, there is a contour
-cycle whose trace lies in the union `gridCover δ K` of the grid squares of side `δ` meeting `K`
-and avoids `K`, which winds once around every point of `K` and does not wind around any point
-outside `gridCover δ K`. -/
+cycle in `gridCover δ K \ K`, where `gridCover δ K` is the union of the grid squares of side `δ`
+meeting `K`, which is null-homologous in `gridCover δ K` and winds once around every point of
+`K`. -/
 theorem exists_cycle_trace_subset_gridCover (hδ : 0 < δ) (hK : Bornology.IsBounded K) :
-    ∃ Γ : Cycle, Cycle.trace Γ ⊆ gridCover δ K \ K ∧
-      (∀ z ∈ K, Cycle.windingNumber z Γ = 1) ∧
-      ∀ z ∉ gridCover δ K, Cycle.windingNumber z Γ = 0 := by
+    ∃ Γ : Cycle, Γ.IsIn (gridCover δ K \ K) ∧ Γ.IsNullHomologous (gridCover δ K) ∧
+      ∀ z ∈ K, Cycle.windingNumber z Γ = 1 := by
   classical
   set S := (finite_gridIndices hδ hK).toFinset
   obtain ⟨Γ, htrace, hoff⟩ := exists_cycle_boundaryEdges hδ S
@@ -430,15 +429,16 @@ theorem exists_cycle_trace_subset_gridCover (hδ : 0 < δ) (hK : Bornology.IsBou
     rw [← hind hwoff, Cycle.windingNumber_eq_of_mem_connectedComponentIn
       ((convex_ball z r).isPreconnected.subset_connectedComponentIn (mem_ball_self hr)
         (show ball z r ⊆ (Cycle.trace Γ)ᶜ from fun x hx hxΓ ↦ hball hx (htrace hxΓ)) hw)]
-  refine ⟨Γ, fun x hx ↦ hU (htrace hx), fun z hz ↦ ?_, fun z hz ↦ ?_⟩
-  · obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.1 (isOpen_interior.inter hUclosed.isOpen_compl) z
-      ⟨subset_interior_gridCover hδ hz, fun h ↦ (hU h).2 hz⟩
-    obtain ⟨w, hw, hzw⟩ := hnear hr fun x hx ↦ (hball hx).2
-    simp [hzw, interior_subset (hball hw).1]
+  refine ⟨Γ, Cycle.isIn_iff.2 fun x hx ↦ hU (htrace hx), Cycle.isNullHomologous_iff.2 fun z hz ↦ ?_,
+    fun z hz ↦ ?_⟩
   · obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.1
       (isCompact_gridCover hδ hK).isClosed.isOpen_compl z hz
     obtain ⟨w, hw, hzw⟩ := hnear hr fun x hx hxU ↦ hball hx (hU hxU).1
     simp [hzw, show w ∉ gridCover δ K from hball hw]
+  · obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.1 (isOpen_interior.inter hUclosed.isOpen_compl) z
+      ⟨subset_interior_gridCover hδ hz, fun h ↦ (hU h).2 hz⟩
+    obtain ⟨w, hw, hzw⟩ := hnear hr fun x hx ↦ (hball hx).2
+    simp [hzw, interior_subset (hball hw).1]
 
 end TauCeti.Contour
 
@@ -451,6 +451,7 @@ theorem IsCompact.exists_cycle_windingNumber_eq_one {K G : Set ℂ} (hK : IsComp
     ∃ Γ : Cycle, Γ.IsIn (G \ K) ∧ Γ.IsNullHomologous G ∧ ∀ z ∈ K, Cycle.windingNumber z Γ = 1 := by
   obtain ⟨δ, hcover, hδ⟩ :=
     ((hK.eventually_gridCover_subset hG hKG).and self_mem_nhdsWithin).exists
-  obtain ⟨Γ, htrace, hK1, hout⟩ := exists_cycle_trace_subset_gridCover hδ hK.isBounded
-  exact ⟨Γ, Cycle.isIn_iff.2 fun x hx ↦ ⟨hcover (htrace hx).1, (htrace hx).2⟩,
-    Cycle.isNullHomologous_iff.2 fun z hz ↦ hout z fun h ↦ hz (hcover h), hK1⟩
+  obtain ⟨Γ, hin, hnull, hK1⟩ := exists_cycle_trace_subset_gridCover hδ hK.isBounded
+  exact ⟨Γ, Cycle.isIn_iff.2 ((Cycle.isIn_iff.1 hin).trans (sdiff_subset_sdiff_left hcover)),
+    Cycle.isNullHomologous_iff.2 fun z hz ↦ Cycle.isNullHomologous_iff.1 hnull z (hz <| hcover ·),
+    hK1⟩
