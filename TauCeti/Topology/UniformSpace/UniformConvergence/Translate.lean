@@ -51,11 +51,9 @@ theorem tendstoUniformlyOn_Icc_prod_comp_add_and_continuousOn [l.NeBot] {a b : �
       (hv.mono (prod_mono (subset_univ _) le_rfl))
   have hcont : ∀ᶠ i in l, ContinuousOn (fun z ↦ u (z + (s i, 0))) (Icc a b ×ˢ T) := by
     filter_upwards [hW] with i hi
-    have hadd : Continuous fun z : ℝ × β ↦ z + (s i, 0) := by
-      have : (fun z : ℝ × β ↦ z + (s i, 0)) = fun z ↦ (z.1 + s i, z.2) := by
-        funext z; exact Prod.ext rfl (add_zero _)
-      rw [this]
-      exact (continuous_fst.add continuous_const).prodMk continuous_snd
+    have hadd : Continuous fun z : ℝ × β ↦ z + (s i, 0) :=
+      ((continuous_fst.add (continuous_const (y := s i))).prodMk continuous_snd).congr fun z ↦ by
+        ext <;> simp
     refine hu.comp hadd.continuousOn fun z hz ↦ hi ?_
     obtain ⟨⟨h₁, h₂⟩, h₃⟩ := hz
     exact ⟨⟨by simp [h₁], by simp [h₂]⟩, by simpa using h₃⟩
