@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.LinearMap
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
 import Mathlib.Analysis.InnerProductSpace.Calculus
+import TauCeti.Analysis.Normed.Module.Normalize
 
 /-!
 # Conformal boosts of a unit sphere
@@ -335,12 +336,11 @@ theorem fderiv_sphereBoost_log_apply_eq (e : E →ₗᵢ[ℝ] F) {x v : E} {y w 
   have hperp : ⟪e v, -y⟫ = 0 := by
     rw [inner_neg_right, ← hex, LinearIsometry.inner_map_map, real_inner_comm, hxv,
       neg_zero]
-  have hev' : e v = ‖v‖ • ‖w‖⁻¹ • w := by
-    rw [← hev, map_smul, smul_inv_smul₀ (norm_ne_zero_iff.2 hv)]
   have hxy : e x = - -y := by rw [hex, neg_neg]
-  have hscalar : ‖w‖ / ‖v‖ * ‖v‖ * ‖w‖⁻¹ = 1 := by
-    field_simp [norm_ne_zero_iff.2 hv, norm_ne_zero_iff.2 hw]
-  rw [hxy, fderiv_sphereBoost_neg_self_apply hy _ hperp, hev', Real.exp_log (by positivity),
-    smul_smul, smul_smul, hscalar, one_smul]
+  rw [hxy, fderiv_sphereBoost_neg_self_apply hy _ hperp, Real.exp_log (by positivity)]
+  rw [← LinearIsometry.norm_map e v]
+  refine TauCeti.norm_div_norm_smul_eq_of_inv_norm_smul_eq_normalize ?_
+  rw [LinearIsometry.norm_map]
+  simpa [NormedSpace.normalize, map_smul] using hev
 
 end LinearIsometry
