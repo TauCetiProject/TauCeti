@@ -53,9 +53,10 @@ excludes both eigenvalues `1` and `-1` from the return maps of all covers of per
 
 The differential `df_x` at a fixed point `x` maps `T_x M` to `T_{f x} M`; transporting its target
 along `f x = x` makes it an endomorphism of `T_x M`, the **fixed-point derivative**
-`TauCeti.fixedPointDerivative`. Over `ℝ`, the sign of `det (1 - df_x)` is the local contribution of
-a nondegenerate fixed point to the Lefschetz fixed-point formula. The
-fixed-point derivative of `f^[n]` at `x` is the `n`-th power of that of `f`
+`TauCeti.fixedPointDerivative`. Over `ℝ`, on a manifold without boundary, the sign of
+`det (1 - df_x)` is the local contribution of a nondegenerate fixed point to the Lefschetz
+fixed-point formula; at a boundary fixed point this identification can fail. The fixed-point
+derivative of `f^[n]` at `x` is the `n`-th power of that of `f`
 (`TauCeti.fixedPointDerivative_iterate`). In finite dimensions `x` is a nondegenerate fixed point
 exactly when `det (1 - df_x) ≠ 0` (`TauCeti.isNondegenerateFixedPt_iff_det_id_sub_ne_zero`). Read in
 the extended chart at any point `x'` whose chart contains `x`, the derivative of `f` at the fixed
@@ -370,8 +371,8 @@ the derivative of the transition map, so `det (1 - df_x)`, and over `ℝ` its si
 variable (I) in
 /-- The **fixed-point derivative** of `f : M → M` at a fixed point `x`: the differential
 `df_x : T_x M → T_{f x} M`, viewed as an endomorphism of `T_x M` by transporting its target along
-`f x = x`. Over `ℝ`, at a nondegenerate fixed point, the sign of `det (1 - df_x)` is the
-contribution of `x` to the Lefschetz fixed-point formula. -/
+`f x = x`. Over `ℝ`, at a nondegenerate fixed point in the interior of the manifold, the sign of
+`det (1 - df_x)` is the contribution of `x` to the Lefschetz fixed-point formula. -/
 noncomputable def fixedPointDerivative (f : M → M) (x : {x // f x = x}) :
     TangentSpace I x.1 →ₗ[𝕜] TangentSpace I x.1 :=
   (x.2 ▸ mfderiv I I f x.1).toLinearMap
@@ -451,8 +452,9 @@ theorem finite_fixedPoints_of_det_id_sub_ne_zero [CompleteSpace 𝕜] [FiniteDim
 /-- **`det (1 - df_x)` is intrinsic.** If `f` is differentiable at a fixed point `x`, then in any
 extended chart whose source contains `x`, the derivative of the coordinate expression of `f` at `x`
 within the range of the model has the same `det (1 - ·)` as the fixed-point derivative of `f` at
-`x`: the two endomorphisms are conjugate by the derivative of the transition map. Over `ℝ`, the sign
-of this determinant is the local Lefschetz number of a nondegenerate fixed point. -/
+`x`: the two endomorphisms are conjugate by the derivative of the transition map. Over `ℝ`, at a
+nondegenerate fixed point in the interior of the manifold, the sign of this determinant is the local
+Lefschetz number. -/
 theorem det_id_sub_fderivWithin_extChartAt_comp_extChartAt_symm [IsManifold I 1 M] {x' : M}
     (x : {x // f x = x}) (hf : MDifferentiableAt I I f x.1)
     (hx' : x.1 ∈ (extChartAt I x').source) :
