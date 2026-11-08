@@ -27,11 +27,11 @@ and a criterion for an operator into tempered distributions to take values in `L
   even when it is compared with a locally integrable function that need not lie in the same
   `Lᵖ` space. Mathlib's `MeasureTheory.Lp.ker_toTemperedDistributionCLM_eq_bot` is the case of
   two functions in one `Lᵖ` space.
-* The distributional inverse Fourier transform of an `L¹` function `v` is the bounded continuous
-  function `𝓕⁻ v`, given by the absolutely convergent Fourier integral. This is the
-  multiplication formula `∫ (𝓕⁻ φ) • v = ∫ φ • 𝓕⁻ v` of
-  `VectorFourier.integral_bilin_fourierIntegral_eq_flip`, read through the definition
-  `𝓕⁻ T (φ) = T (𝓕⁻ φ)` of the Fourier transform on `𝓢'`.
+* The distributional Fourier transform and inverse Fourier transform of an integrable function
+  `v` are the bounded continuous functions `𝓕 v` and `𝓕⁻ v`, given by the absolutely convergent
+  Fourier integrals. This is the multiplication formula `∫ (𝓕⁻ φ) • v = ∫ φ • 𝓕⁻ v`, and its
+  analogue for `𝓕`, of `VectorFourier.integral_bilin_fourierIntegral_eq_flip`, read through the
+  definition `𝓕⁻ T (φ) = T (𝓕⁻ φ)` of the inverse Fourier transform on `𝓢'`.
 
 Together they turn the statement "the Fourier transform of `u ∈ Lᵖ` is an `L¹` function `v`" into
 the continuous representative `𝓕⁻ v` of `u` (`MeasureTheory.Lp.ae_eq_fourierInv_of_fourier_eq`);
@@ -56,6 +56,13 @@ function by a function of temperate growth multiplies the function pointwise
 * `MeasureTheory.Lp.ae_eq_of_toTemperedDistribution_apply_eq`: an `Lᵖ` function whose pairings
   with Schwartz functions agree with those of a locally integrable `g` is almost everywhere
   equal to `g`.
+* `MeasureTheory.Lp.toTemperedDistribution_compLp_apply`: applying a continuous linear map to the
+  values of an `Lᵖ` function applies it to its tempered distribution.
+* `SchwartzMap.toTemperedDistributionCLM_postcompCLM_apply`: the same for the values of a
+  Schwartz function.
+* `MeasureTheory.Lp.fourier_toTemperedDistribution_apply`: the Fourier transform of the tempered
+  distribution of an `Lᵖ` function `v` with an integrable representative `f` pairs with `φ` as
+  `∫ φ • 𝓕 f`.
 * `MeasureTheory.Lp.fourierInv_toTemperedDistribution_apply`: the inverse Fourier transform of
   the tempered distribution of an `L¹` function `v` pairs with `φ` as `∫ φ • 𝓕⁻ v`.
 * `MeasureTheory.Lp.ae_eq_fourierInv_of_fourier_eq`: an `Lᵖ` function whose Fourier transform is
@@ -117,11 +124,45 @@ theorem smulLeftCLM_toTemperedDistribution_apply {μ : Measure E} [μ.HasTempera
   rw [TemperedDistribution.smulLeftCLM_apply_apply, Lp.toTemperedDistribution_apply]
   simp only [SchwartzMap.smulLeftCLM_apply_apply hg, smul_eq_mul, mul_comm (g _), mul_smul]
 
+omit [FiniteDimensional ℝ E] in
+/-- Applying a continuous linear map `L` to the values of an `Lᵖ` function `u` applies `L` to the
+pairings of its tempered distribution. -/
+theorem toTemperedDistribution_compLp_apply {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G]
+    [CompleteSpace G] {μ : Measure E} [μ.HasTemperateGrowth] {p : ENNReal} [hp : Fact (1 ≤ p)]
+    (L : F →L[ℂ] G) (u : Lp F p μ) (φ : 𝓢(E, ℂ)) :
+    ((L.compLp u : Lp G p μ) : 𝓢'(E, G)) φ = L ((u : 𝓢'(E, F)) φ) := by
+  have : (1 - p⁻¹)⁻¹.HolderConjugate p :=
+    (ENNReal.HolderConjugate.inv_one_sub_inv' hp.out).symm
+  have hφu : Integrable (fun x ↦ φ x • u x) μ :=
+    memLp_one_iff_integrable.1 ((φ.memLp (1 - p⁻¹)⁻¹ (μ := μ)).smul (Lp.memLp u))
+  rw [Lp.toTemperedDistribution_apply, Lp.toTemperedDistribution_apply, ← L.integral_comp_comm hφu]
+  refine integral_congr_ae ((L.coeFn_compLp u).mono fun x hx ↦ ?_)
+  simp only [hx, map_smul]
+
 end NormedSpace
 
 section InnerProductSpace
 
 variable [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+
+/-- **The Fourier transform of an integrable function as a tempered distribution.** If the
+`Lᵖ` function `v` agrees almost everywhere with an integrable function `f`, the distributional
+Fourier transform of `v` is the function `𝓕 f` given by the absolutely convergent Fourier
+integral: it pairs with a Schwartz function `φ` as `∫ φ • 𝓕 f`. -/
+theorem fourier_toTemperedDistribution_apply {p : ENNReal} [Fact (1 ≤ p)]
+    (v : Lp F p (volume : Measure E)) {f : E → F} (hf : Integrable f) (hvf : v =ᵐ[volume] f)
+    (φ : 𝓢(E, ℂ)) :
+    𝓕 (v : 𝓢'(E, F)) φ = ∫ x, φ x • 𝓕 f x := by
+  rw [TemperedDistribution.fourier_apply, Lp.toTemperedDistribution_apply,
+    integral_congr_ae (hvf.mono fun x hx => by rw [hx]), SchwartzMap.fourier_coe]
+  -- On functions, `𝓕` is the Fourier integral for the pairing `⟪·, ·⟫`, which is its own flip,
+  -- so this is the multiplication formula for that pairing.
+  have hL : Continuous fun p : E × E => (innerₗ E) p.1 p.2 := by
+    simp only [innerₗ_apply_apply]
+    fun_prop
+  have h := VectorFourier.integral_fourierIntegral_smul_eq_flip Real.continuous_fourierChar hL
+    (φ.integrable (μ := volume)) hf
+  rwa [flip_innerₗ] at h
 
 /-- **The inverse Fourier transform of an `L¹` function as a tempered distribution.** For
 `v ∈ L¹`, the distributional inverse Fourier transform of `v` is the function `𝓕⁻ v` given by the
@@ -161,6 +202,25 @@ theorem ae_eq_fourierInv_of_fourier_eq {p : ENNReal} [Fact (1 ≤ p)]
 end InnerProductSpace
 
 end MeasureTheory.Lp
+
+namespace SchwartzMap
+
+open MeasureTheory
+
+variable {E F G : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
+  [NormedAddCommGroup G] [NormedSpace ℂ G] [CompleteSpace G]
+
+/-- Applying a continuous linear map `L` to the values of a Schwartz function `u` applies `L` to
+the pairings of its tempered distribution. -/
+theorem toTemperedDistributionCLM_postcompCLM_apply (L : F →L[ℂ] G) (u : 𝓢(E, F))
+    (φ : 𝓢(E, ℂ)) :
+    ((u.postcompCLM L : 𝓢(E, G)) : 𝓢'(E, G)) φ = L ((u : 𝓢'(E, F)) φ) := by
+  have hφu : Integrable (fun x ↦ φ x • u x) := φ.integrable.smul_of_top_left u.memLp_top
+  rw [SchwartzMap.coe_apply, SchwartzMap.coe_apply, ← L.integral_comp_comm hφu]
+  simp only [postcompCLM_apply, map_smul]
+
+end SchwartzMap
 
 namespace ContinuousLinearMap
 
