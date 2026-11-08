@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 public import Mathlib.LinearAlgebra.Prod
 public import Mathlib.Topology.Instances.Sign
+public import TauCeti.LinearAlgebra.Prod
 
 /-!
 # Graph coordinates for negative subspaces
@@ -235,6 +236,14 @@ theorem opNorm_lt_one_iff_isSplitNegative_graph [FiniteDimensional ℝ E] (A : E
   rw [A.opNorm_lt_iff zero_lt_one, Submodule.isSplitNegative_graph_iff]
   simp only [ContinuousLinearMap.coe_coe, one_mul]
 
+/-- The range of a frame whose nonzero values lie strictly inside the negative cone is
+split-negative. -/
+theorem isSplitNegative_range_of_norm_snd_lt {V : Type*} [TopologicalSpace V] [AddCommGroup V]
+    [Module ℝ V] (L : V →L[ℝ] E × F) (hL : ∀ u, u ≠ 0 → ‖(L u).2‖ < ‖(L u).1‖) :
+    (LinearMap.range (L : V →ₗ[ℝ] E × F)).IsSplitNegative := by
+  rintro _ ⟨u, rfl⟩ hu
+  exact hL u fun h ↦ hu (by simp [h])
+
 end ContinuousLinearMap
 
 namespace Submodule
@@ -269,11 +278,7 @@ theorem existsUnique_eq_graph_iff_finrank_eq_and_isSplitNegative (W : Submodule 
       Module.finrank ℝ W = Module.finrank ℝ E ∧ W.IsSplitNegative := by
   constructor
   · rintro ⟨A, ⟨hA, rfl⟩, -⟩
-    refine ⟨?_, A.opNorm_lt_one_iff_isSplitNegative_graph.mp hA⟩
-    rw [LinearMap.graph_eq_range_prod]
-    apply LinearMap.finrank_range_of_inj
-    intro u v huv
-    exact congrArg Prod.fst huv
+    exact ⟨LinearMap.finrank_graph _, A.opNorm_lt_one_iff_isSplitNegative_graph.mp hA⟩
   · rintro ⟨hdim, hW⟩
     obtain ⟨A, hA, hgraph⟩ := hW.exists_eq_graph_of_finrank_eq hdim
     refine ⟨A, ⟨hA, hgraph⟩, fun B hB ↦ ?_⟩

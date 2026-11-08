@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
-public import Mathlib.Analysis.Normed.Module.Connected
+public import Mathlib.Analysis.Convex.Contractible
 public import TauCeti.Analysis.InnerProductSpace.Indefinite
 public import TauCeti.Analysis.Normed.Module.NegativeSubspace
 public import TauCeti.LinearAlgebra.Orientation.Basic
@@ -44,8 +44,8 @@ the first component of `e` has positive determinant
 (`Submodule.orientation_map_eq_map_splitNegativeFstEquiv_symm_iff`).
 
 The negative column `u ↦ (A u, B u)` of the derivative of a transition between two Morse charts
-pulls `Q` back to `-‖u‖²` (`ContinuousLinearMap.norm_le_norm_fst_of_norm_sq_sub` and its
-neighbours). Its range is a maximal split-negative subspace
+pulls `Q` back to `-‖u‖²` (`PartialDiffeomorph.norm_sq_sub_fderiv_transition`). Its range is a
+maximal split-negative subspace
 (`ContinuousLinearMap.maximal_isSplitNegative_range_of_norm_sq_sub`). So the two charts induce
 the same orientation on their common negative subspace, compared through graph coordinates,
 exactly when the negative block `A` of the transition has positive determinant
@@ -130,10 +130,8 @@ theorem maximal_isSplitNegative_iff_exists_eq_graph :
   · intro h
     exact h.prop.exists_eq_graph_of_finrank_eq (maximal_isSplitNegative_iff.1 h).2
   · rintro ⟨T, hT, rfl⟩
-    refine maximal_isSplitNegative_iff.2 ⟨T.opNorm_lt_one_iff_isSplitNegative_graph.1 hT, ?_⟩
-    rw [LinearMap.graph_eq_range_prod, LinearMap.finrank_range_of_inj]
-    intro x y hxy
-    exact congr(($hxy).1)
+    exact maximal_isSplitNegative_iff.2
+      ⟨T.opNorm_lt_one_iff_isSplitNegative_graph.1 hT, LinearMap.finrank_graph _⟩
 
 /-- The projection to the negative factor `E` of a maximal split-negative subspace `W` of `E × F`,
 as a linear equivalence. If `W` is the graph of `T`, its inverse is `u ↦ (u, T u)`
@@ -263,10 +261,8 @@ variable [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [Norm
 /-- The range of an isometric negative column is split-negative. -/
 theorem isSplitNegative_range_of_norm_sq_sub
     (hL : ∀ u, ‖(L u).1‖ ^ 2 - ‖(L u).2‖ ^ 2 = ‖u‖ ^ 2) :
-    (LinearMap.range (L : E →ₗ[ℝ] E × F)).IsSplitNegative := by
-  rw [Submodule.isSplitNegative_iff]
-  rintro _ ⟨u, rfl⟩ hu
-  exact L.norm_snd_lt_norm_fst_of_norm_sq_sub hL fun h ↦ hu (by simp [h])
+    (LinearMap.range (L : E →ₗ[ℝ] E × F)).IsSplitNegative :=
+  L.isSplitNegative_range_of_norm_snd_lt fun _ ↦ L.norm_snd_lt_norm_fst_of_norm_sq_sub hL
 
 end Normed
 

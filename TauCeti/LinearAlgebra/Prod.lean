@@ -38,6 +38,7 @@ quadratic forms with the subgroup preserving both summands.
   basis `(b × c) × d` to `b × (c × d)`, up to relabelling the index.
 * `LinearEquiv.det_skewProd`: the same determinant formula for block triangular
   automorphisms, independently of the off-diagonal block.
+* `LinearMap.finrank_graph`: the graph of a linear map `M → M₂` has the dimension of `M`.
 * `LinearMap.range_eq_graph_of_fst_eq_equiv`: a linear map into `M₁ × M₂` whose first component
   is a linear equivalence `e` has range the graph of `snd ∘ L ∘ e⁻¹`.
 * `TauCeti.LinearMap.lsmul_restrictScalars_prodMap`: multiplication by a scalar on a product of
@@ -148,6 +149,13 @@ theorem range_eq_graph_of_fst_eq_equiv (L : M →ₗ[R] M₁ × M₂) (e : M ≃
   · rintro rfl
     refine ⟨e.symm x, Prod.ext ?_ rfl⟩
     rw [← he, e.apply_symm_apply]
+
+/-- The graph of a linear map `f : M → M₂` has the dimension of `M`. -/
+theorem finrank_graph {R M M₂ : Type*} [Ring R] [AddCommGroup M] [Module R M] [AddCommGroup M₂]
+    [Module R M₂] (f : M →ₗ[R] M₂) : Module.finrank R (graph f) = Module.finrank R M := by
+  rw [graph_eq_range_prod, finrank_range_of_inj]
+  intro x y h
+  exact congr(($h).1)
 
 end LinearMap
 
