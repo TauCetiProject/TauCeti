@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.MeasureTheory.Rectifiable.TangentCone
+public import TauCeti.Geometry.MeasureTheory.Rectifiable.MeasurableTangent
 import TauCeti.Geometry.Euclidean.Volume.Measure
 
 /-!

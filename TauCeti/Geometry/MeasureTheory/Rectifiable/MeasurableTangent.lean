@@ -6,10 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.MeasureTheory.Rectifiable.Bilipschitz
+public import TauCeti.Geometry.MeasureTheory.Rectifiable.TangentCone
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.ContinuousLinearMap
 import TauCeti.MeasureTheory.Function.SpecialFunctions.Projection
-import TauCeti.Analysis.Calculus.FDeriv.ImageCone
-import TauCeti.MeasureTheory.Function.AreaFormula.Lipschitz
 import TauCeti.Geometry.Euclidean.Volume.Measure
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 
@@ -68,20 +67,9 @@ theorem LipschitzOnWith.exists_measurable_tangent_projection
     (((measurable_fderiv ℝ g).starProjection_range).comp measurable_subtype_coe)
     (fun _ ↦ ⟨0⟩)
   refine ⟨Q, hQm, ?_⟩
-  have hgood : ∀ᵐ y ∂(μHE[Module.finrank ℝ U] : Measure V),
-      y ∉ g '' {x | DifferentiableAt ℝ g x ∧ (fderiv ℝ g x).normDet ≠ 0}ᶜ :=
-    ae_iff.mpr (by simpa only [not_not, ofPred_mem_eq] using
-      hg.euclideanHausdorffMeasure_image_compl_setOf_regular)
-  filter_upwards [hgood] with y hy hyimage
-  obtain ⟨x, hx, rfl⟩ := hyimage
-  have hxreg : DifferentiableAt ℝ g x ∧ (fderiv ℝ g x).normDet ≠ 0 := by
-    by_contra h
-    exact hy ⟨x, h, rfl⟩
-  refine ⟨(fderiv ℝ g x).range, LinearMap.finrank_range_of_inj
-    (((fderiv ℝ g x).toLinearMap.normDet_ne_zero_tfae.out 1 5).mp hxreg.2), ?_, ?_⟩
-  · exact congrFun hQ ⟨x, hx⟩
-  · intro ε hε
-    exact hxreg.1.hasFDerivAt.hasFDerivWithinAt.exists_pos_forall_infDist_range_le hx hi' hε
+  filter_upwards [hg.ae_exists_fderiv_range_forall_infDist_le hi'] with y hy hyimage
+  obtain ⟨x, hx, rfl, hdim, hcone⟩ := hy hyimage
+  exact ⟨(fderiv ℝ g x).range, hdim, congrFun hQ ⟨x, hx⟩, hcone⟩
 
 namespace TauCeti
 
