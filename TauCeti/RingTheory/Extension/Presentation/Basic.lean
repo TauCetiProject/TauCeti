@@ -24,11 +24,13 @@ by its values on the generators (`Algebra.Generators.algHom_ext`, in
 ## Main results
 
 * `Algebra.Presentation.lift_val`: `P.lift x hx` sends the `i`-th generator to `x i`.
+* `MvPolynomial.map_ker_aeval_eq_ker_aeval_tmul`: base change of the kernel of a surjection
+  `R[ι] → S` is the kernel of the corresponding map `B[ι] → B ⊗[R] S`.
 -/
 
 public section
 
-open MvPolynomial
+open MvPolynomial TensorProduct
 
 namespace Algebra
 
@@ -54,5 +56,30 @@ theorem lift_val (x : ι → T) (hx : ∀ r, aeval x (P.relation r) = 0) (i : ι
   rw [lift, ← aeval_X (R := R) P.val i, AlgHom.liftOfSurjective_apply, aeval_X]
 
 end Presentation
+
+/-- Base change of the kernel of a surjection from a polynomial ring onto `S`: if `ϕ : R[ι] → S`
+sends the variables to `val`, then for every commutative `R`-algebra `B` the kernel of the map
+`B[ι] → B ⊗[R] S` sending the variables to `1 ⊗ val i` is the extension of `ker ϕ` to `B[ι]`. -/
+theorem _root_.MvPolynomial.map_ker_aeval_eq_ker_aeval_tmul {ι : Type*} {val : ι → S}
+    (B : Type*) [CommRing B] [Algebra R B] (hϕ : Function.Surjective (aeval (R := R) val)) :
+    (RingHom.ker (aeval (R := R) val)).map (map (algebraMap R B)) =
+      RingHom.ker (aeval (R := B) fun v ↦ (1 : B) ⊗ₜ[R] val v :
+        MvPolynomial ι B →ₐ[B] B ⊗[R] S) := by
+  let PA : Presentation R S ι (RingHom.ker (aeval (R := R) val) : Set (MvPolynomial ι R)) :=
+    { toGenerators := .ofSurjective val hϕ
+      relation := Subtype.val
+      span_range_relation_eq_ker := by
+        rw [Subtype.range_coe, Ideal.span_eq, Generators.ker_eq_ker_aeval_val,
+          funext (Generators.ofSurjective_val val hϕ)] }
+  have h := PA.span_range_relation_eq_ker_baseChange B
+  have h₁ : (Set.range fun i ↦ map (algebraMap R B) (PA.relation i)) =
+      map (algebraMap R B) '' (RingHom.ker (aeval (R := R) val) : Set (MvPolynomial ι R)) := by
+    ext
+    simp [PA]
+  have h₂ : (PA.toGenerators.baseChange B).val = fun v ↦ 1 ⊗ₜ val v := by
+    ext
+    simp [PA]
+  rw [h₁, h₂] at h
+  exact h
 
 end Algebra
