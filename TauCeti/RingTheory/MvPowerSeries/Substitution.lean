@@ -554,10 +554,29 @@ into `F` a pair `(u', v')` that agrees with `(u, v)` modulo the coefficients of 
 `u' + v' + G(u, v)`. -/
 theorem subst_X_add_X_add_eq {G : MvPowerSeries (Fin 2) O}
     (hG : ∀ d e, coeff d G * coeff e G = 0) {u v u' v' : MvPowerSeries τ O}
-    (h' : HasSubst ![u', v']) (h : HasSubst ![u, v])
+    (h : HasSubst ![u, v])
     (hu : ∀ e, coeff e (u' - u) ∈ Ideal.span (Set.range fun d ↦ coeff d G))
     (hv : ∀ e, coeff e (v' - v) ∈ Ideal.span (Set.range fun d ↦ coeff d G)) :
     (X 0 + X 1 + G).subst ![u', v'] = u' + v' + G.subst ![u, v] := by
+  -- The ideal spanned by the coefficients of `G` squares to zero, so its elements are nilpotent.
+  have hsq : Ideal.span (Set.range fun d ↦ coeff d G) *
+      Ideal.span (Set.range fun d ↦ coeff d G) = ⊥ := by
+    rw [Ideal.span_mul_span, Ideal.span_eq_bot]
+    rintro _ ⟨_, ⟨d, rfl⟩, _, ⟨e, rfl⟩, rfl⟩
+    exact hG d e
+  have hnil {x : O} (hx : x ∈ Ideal.span (Set.range fun d ↦ coeff d G)) : IsNilpotent x :=
+    ⟨2, by
+      have := Ideal.mul_mem_mul hx hx
+      rwa [hsq, Ideal.mem_bot, ← pow_two] at this⟩
+  have hnil' {a b : MvPowerSeries τ O} (ha : IsNilpotent (constantCoeff a))
+      (hab : ∀ e, coeff e (b - a) ∈ Ideal.span (Set.range fun d ↦ coeff d G)) :
+      IsNilpotent (constantCoeff b) := by
+    have := (Commute.all _ _).isNilpotent_add ha (hnil (by simpa using hab 0))
+    rwa [add_sub_cancel] at this
+  have h' : HasSubst ![u', v'] := hasSubst_of_constantCoeff_nilpotent fun s ↦ by
+    fin_cases s
+    · exact hnil' (h.const_coeff 0) hu
+    · exact hnil' (h.const_coeff 1) hv
   rw [subst_add h', subst_add h', subst_X h', subst_X h', subst_eq_subst_of_coeff_mem
     (J := Ideal.span (Set.range fun d ↦ coeff d G)) h' h ?_ fun d ↦ Submodule.mem_annihilator.1
       ((Submodule.mem_annihilator_span _ _).2 fun ⟨_, e, rfl⟩ ↦ hG d e)]
