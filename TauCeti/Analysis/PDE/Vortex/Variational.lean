@@ -61,8 +61,8 @@ coercivity estimate, and the regularity and decay of the minimizer.
 * `TauCeti.Vortex.taubesPotential`: the potential `φ(t) = (exp (2t) - 1 - 2t) / 16`.
 * `TauCeti.Vortex.taubesDensity`, `TauCeti.Vortex.taubesFunctional`: the density
   `‖∇w‖² / 2 + h φ(w) + k w` and its integral `𝒜(w)`.
-* `TauCeti.Vortex.backgroundWeight`, `TauCeti.Vortex.backgroundSource`: the coefficients `h` and
-  `k` of the reduced vortex equation.
+* `TauCeti.Vortex.backgroundSource`: the coefficient `k` of the reduced vortex equation, whose
+  coefficient `h` is `TauCeti.Vortex.backgroundWeight` from `Vortex/Background.lean`.
 
 ## Main results
 
@@ -134,6 +134,7 @@ theorem hasDerivAt_taubesPotential (t : ℝ) :
   convert ((h2.exp.sub_const 1).sub h2).div_const 16 using 1
   ring
 
+@[fun_prop]
 theorem contDiff_taubesPotential {n : WithTop ℕ∞} : ContDiff ℝ n taubesPotential := by
   have hφ : taubesPotential = fun s ↦ (Real.exp (2 * s) - 1 - 2 * s) / 16 :=
     funext taubesPotential_def
@@ -193,13 +194,6 @@ theorem taubesDensity_add {x : E} (hw : DifferentiableAt ℝ w x) (hv : Differen
     Pi.add_apply, taubesPotential_add]
   ring
 
-/-- A function vanishing wherever `v` and `∇v` vanish has compact support if `v` has. -/
-private theorem hasCompactSupport_of_forall (hvc : HasCompactSupport v) {g : E → ℝ}
-    (hg : ∀ x, v x = 0 → ∇ v x = 0 → g x = 0) : HasCompactSupport g :=
-  hvc.mono' fun x hx ↦ by
-    by_contra hxv
-    exact hx (hg x (image_eq_zero_of_notMem_tsupport hxv) (TauCeti.gradient_of_notMem_tsupport hxv))
-
 variable [MeasurableSpace E] {μ : Measure E}
 
 variable (μ) in
@@ -230,7 +224,7 @@ private theorem integrable_firstVariation [μ.IsAddHaarMeasure] (hh : Continuous
   have := hw.continuous
   have := hv.continuous
   refine Continuous.integrable_of_hasCompactSupport (by fun_prop) ?_
-  exact hasCompactSupport_of_forall hvc fun x hx hgx ↦ by simp [hx, hgx]
+  exact hvc.mono_of_forall_gradient fun x hx hgx ↦ by simp [hx, hgx]
 
 /-- The remainder of the expansion is integrable. -/
 private theorem integrable_secondVariation [μ.IsAddHaarMeasure] (hh : Continuous h)
@@ -240,7 +234,7 @@ private theorem integrable_secondVariation [μ.IsAddHaarMeasure] (hh : Continuou
   have := (hv.gradient_right (m := 0) (by simp)).continuous
   have := hv.continuous
   refine Continuous.integrable_of_hasCompactSupport (by fun_prop) ?_
-  exact hasCompactSupport_of_forall hvc fun x hx hgx ↦ by simp [hx, hgx]
+  exact hvc.mono_of_forall_gradient fun x hx hgx ↦ by simp [hx, hgx]
 
 /-- **The exact second-order expansion of Taubes's functional.** For continuous coefficients, a
 `C¹` function `w` with integrable density and a compactly supported `C¹` perturbation `v`,
@@ -276,6 +270,52 @@ theorem integrable_taubesDensity_of_hasCompactSupport [μ.IsAddHaarMeasure] (hh 
   simpa using integrable_taubesDensity_add (μ := μ) (w := 0) hh hk contDiff_zero_fun
     (by simp) hw hwc
 
+/-- Along a compactly supported `C¹` direction `v`, the remainder
+`∫ (t² ‖∇v‖² / 2 + h exp (2w) φ(t v))` of the expansion of `𝒜(w + t v)` is `O(t²)` as `t → 0`:
+near `t = 0`, `φ(t v) ≤ t² v² / 4`. -/
+private theorem isBigO_remainder_taubesFunctional [μ.IsAddHaarMeasure] (hh : Continuous h)
+    (hw : Continuous w) (hv : ContDiff ℝ 1 v) (hvc : HasCompactSupport v) :
+    (fun t : ℝ ↦ ∫ x, (t ^ 2 * (‖∇ v x‖ ^ 2 / 2) +
+      h x * Real.exp (2 * w x) * taubesPotential (t * v x)) ∂μ) =O[𝓝 0] fun t ↦ t ^ 2 := by
+  obtain ⟨M, hM⟩ := hv.continuous.bounded_above_of_compact_support hvc
+  set B : E → ℝ := fun x ↦ ‖∇ v x‖ ^ 2 / 2 + |h x| * Real.exp (2 * w x) * (v x ^ 2 / 4)
+  have hB : Integrable B μ := by
+    have := (hv.gradient_right (m := 0) (by simp)).continuous
+    have := hv.continuous
+    refine Continuous.integrable_of_hasCompactSupport (by fun_prop) ?_
+    exact hvc.mono_of_forall_gradient fun x hx hgx ↦ by simp [B, hx, hgx]
+  refine IsBigO.of_bound (∫ x, B x ∂μ) ?_
+  have hr : (0 : ℝ) < 1 / (2 * (|M| + 1)) := by positivity
+  filter_upwards [Metric.ball_mem_nhds (0 : ℝ) hr] with t ht
+  rw [Metric.mem_ball, Real.dist_0_eq_abs] at ht
+  have hpt (x : E) : ‖t ^ 2 * (‖∇ v x‖ ^ 2 / 2) +
+      h x * Real.exp (2 * w x) * taubesPotential (t * v x)‖ ≤ t ^ 2 * B x := by
+    have htv : |t * v x| ≤ 1 / 2 := by
+      rw [abs_mul]
+      calc |t| * |v x| ≤ 1 / (2 * (|M| + 1)) * (|M| + 1) := by
+            gcongr
+            exact ((Real.norm_eq_abs _).symm.trans_le (hM x)).trans (by linarith [le_abs_self M])
+        _ = 1 / 2 := by field_simp
+    have hφ := taubesPotential_le_sq htv
+    have hφ0 := taubesPotential_nonneg (t * v x)
+    have he := Real.exp_pos (2 * w x)
+    calc ‖t ^ 2 * (‖∇ v x‖ ^ 2 / 2) + h x * Real.exp (2 * w x) * taubesPotential (t * v x)‖
+        ≤ |t ^ 2 * (‖∇ v x‖ ^ 2 / 2)| +
+            |h x * Real.exp (2 * w x) * taubesPotential (t * v x)| := by
+          rw [Real.norm_eq_abs]
+          exact abs_add_le _ _
+      _ ≤ t ^ 2 * (‖∇ v x‖ ^ 2 / 2) + |h x| * Real.exp (2 * w x) * ((t * v x) ^ 2 / 4) := by
+          rw [abs_of_nonneg (by positivity), abs_mul, abs_mul, abs_of_pos he,
+            abs_of_nonneg hφ0]
+          gcongr
+      _ = t ^ 2 * B x := by
+          simp only [B]
+          ring
+  calc _ ≤ ∫ x, t ^ 2 * B x ∂μ :=
+        norm_integral_le_of_norm_le (hB.const_mul _) (ae_of_all _ hpt)
+    _ = (∫ x, B x ∂μ) * ‖t ^ 2‖ := by
+        rw [integral_const_mul, Real.norm_eq_abs, abs_of_nonneg (by positivity), mul_comm]
+
 /-- **The first variation of Taubes's functional.** For continuous coefficients, a `C¹` function
 `w` with integrable density and a compactly supported `C¹` direction `v`, the function
 `t ↦ 𝒜(w + t v)` has derivative `∫ (⟪∇w, ∇v⟫ + (h (exp (2w) - 1) / 8 + k) v)` at `t = 0`. -/
@@ -288,7 +328,7 @@ theorem hasDerivAt_taubesFunctional_add_smul [μ.IsAddHaarMeasure] (hh : Continu
     with hD
   -- The remainder along the line `w + t v`.
   set R : ℝ → ℝ := fun t ↦ ∫ x, (t ^ 2 * (‖∇ v x‖ ^ 2 / 2) +
-    h x * Real.exp (2 * w x) * taubesPotential (t * v x)) ∂μ with hR
+    h x * Real.exp (2 * w x) * taubesPotential (t * v x)) ∂μ with hR_def
   have hexp (t : ℝ) :
       taubesFunctional μ h k (w + t • v) = taubesFunctional μ h k w + t * D + R t := by
     have hgrad (x : E) : ∇ (t • v) x = t • ∇ v x := by
@@ -301,59 +341,20 @@ theorem hasDerivAt_taubesFunctional_add_smul [μ.IsAddHaarMeasure] (hh : Continu
       ring
     have h2 : ∫ x, (‖∇ (t • v) x‖ ^ 2 / 2 +
         h x * Real.exp (2 * w x) * taubesPotential ((t • v) x)) ∂μ = R t := by
-      rw [hR]
+      rw [hR_def]
       refine integral_congr_ae (ae_of_all _ fun x ↦ ?_)
       simp only [hgrad, Pi.smul_apply, smul_eq_mul, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs]
       ring
     have hcd : ContDiff ℝ 1 (t • v) := hv.const_smul t
     rw [taubesFunctional_add hh hk hw hwi hcd
       (hvc.mono (Function.support_const_smul_subset t v)), h1, h2]
-  -- The remainder is `O(t²)`: near `t = 0`, `φ(t v) ≤ t² v² / 4`.
-  obtain ⟨M, hM⟩ := hv.continuous.bounded_above_of_compact_support hvc
-  set B : E → ℝ := fun x ↦ ‖∇ v x‖ ^ 2 / 2 + |h x| * Real.exp (2 * w x) * (v x ^ 2 / 4)
-  have hB : Integrable B μ := by
-    have := (hv.gradient_right (m := 0) (by simp)).continuous
-    have := hv.continuous
-    have := hw.continuous
-    refine Continuous.integrable_of_hasCompactSupport (by fun_prop) ?_
-    exact hasCompactSupport_of_forall hvc fun x hx hgx ↦ by simp [B, hx, hgx]
-  have hRO : R =O[𝓝 0] fun t ↦ t ^ 2 := by
-    refine IsBigO.of_bound (∫ x, B x ∂μ) ?_
-    have hr : (0 : ℝ) < 1 / (2 * (|M| + 1)) := by positivity
-    filter_upwards [Metric.ball_mem_nhds (0 : ℝ) hr] with t ht
-    rw [Metric.mem_ball, Real.dist_0_eq_abs] at ht
-    have hpt (x : E) : ‖t ^ 2 * (‖∇ v x‖ ^ 2 / 2) +
-        h x * Real.exp (2 * w x) * taubesPotential (t * v x)‖ ≤ t ^ 2 * B x := by
-      have htv : |t * v x| ≤ 1 / 2 := by
-        rw [abs_mul]
-        calc |t| * |v x| ≤ 1 / (2 * (|M| + 1)) * (|M| + 1) := by
-              gcongr
-              exact ((Real.norm_eq_abs _).symm.trans_le (hM x)).trans (by linarith [le_abs_self M])
-          _ = 1 / 2 := by field_simp
-      have hφ := taubesPotential_le_sq htv
-      have hφ0 := taubesPotential_nonneg (t * v x)
-      have he := Real.exp_pos (2 * w x)
-      calc ‖t ^ 2 * (‖∇ v x‖ ^ 2 / 2) + h x * Real.exp (2 * w x) * taubesPotential (t * v x)‖
-          ≤ |t ^ 2 * (‖∇ v x‖ ^ 2 / 2)| +
-              |h x * Real.exp (2 * w x) * taubesPotential (t * v x)| := by
-            rw [Real.norm_eq_abs]
-            exact abs_add_le _ _
-        _ ≤ t ^ 2 * (‖∇ v x‖ ^ 2 / 2) + |h x| * Real.exp (2 * w x) * ((t * v x) ^ 2 / 4) := by
-            rw [abs_of_nonneg (by positivity), abs_mul, abs_mul, abs_of_pos he,
-              abs_of_nonneg hφ0]
-            gcongr
-        _ = t ^ 2 * B x := by
-            simp only [B]
-            ring
-    calc ‖R t‖ ≤ ∫ x, t ^ 2 * B x ∂μ :=
-          norm_integral_le_of_norm_le (hB.const_mul _) (ae_of_all _ hpt)
-      _ = (∫ x, B x ∂μ) * ‖t ^ 2‖ := by
-          rw [integral_const_mul, Real.norm_eq_abs, abs_of_nonneg (by positivity), mul_comm]
-  have hR : HasDerivAt R 0 0 := by
+  have hRO : R =O[𝓝 0] fun t ↦ t ^ 2 :=
+    isBigO_remainder_taubesFunctional hh hw.continuous hv hvc
+  have hRd : HasDerivAt R 0 0 := by
     rw [hasDerivAt_iff_isLittleO_nhds_zero]
     have hR0 : R 0 = 0 := by simp [R]
     simpa [hR0] using hRO.trans_isLittleO (isLittleO_pow_id one_lt_two)
-  convert (((hasDerivAt_id (0 : ℝ)).const_mul D).const_add (taubesFunctional μ h k w)).add hR
+  convert (((hasDerivAt_id (0 : ℝ)).const_mul D).const_add (taubesFunctional μ h k w)).add hRd
     using 1
   · funext t
     simp only [hexp, Pi.add_apply, id]
@@ -374,7 +375,7 @@ private theorem integral_firstVariation_eq [μ.IsAddHaarMeasure] (hh : Continuou
   have := hw.continuous_laplacian
   have hI1 : Integrable (fun x ↦ ⟪∇ w x, ∇ v x⟫_ℝ) μ :=
     Continuous.integrable_of_hasCompactSupport (by fun_prop)
-      (hasCompactSupport_of_forall hvc fun x _ hgx ↦ by simp [hgx])
+      (hvc.mono_of_forall_gradient fun x _ hgx ↦ by simp [hgx])
   have hI2 : Integrable (fun x ↦ (h x * (Real.exp (2 * w x) - 1) / 8 + k x) * v x) μ :=
     Continuous.integrable_of_hasCompactSupport (by fun_prop) hvc.mul_left
   have hI3 : Integrable (fun x ↦ v x * Δ w x) μ :=
@@ -468,7 +469,7 @@ theorem taubesFunctional_lt_add [Nontrivial E] [μ.IsAddHaarMeasure] (hh₀ : �
     rw [is_const_of_fderiv_eq_zero (hv.differentiable one_ne_zero) hd x y,
       image_eq_zero_of_notMem_tsupport hy, Pi.zero_apply]
   exact hgc.integral_pos_of_hasCompactSupport_nonneg_ne_zero
-    (hasCompactSupport_of_forall hvc fun x hx hgx ↦ by simp [g, hx, hgx]) hg₀ hx
+    (hvc.mono_of_forall_gradient fun x hx hgx ↦ by simp [g, hx, hgx]) hg₀ hx
 
 end Functional
 
@@ -477,15 +478,6 @@ end Functional
 section Vortex
 
 variable {f : ℂ → ℂ} {w : ℂ → ℝ}
-
-/-- The coefficient `h = ‖f‖² / (1 + ‖f‖²)` of the reduced vortex equation, equal to
-`exp (2u₀) ‖f‖²` for the background amplitude `u₀`. -/
-def backgroundWeight (f : ℂ → ℂ) (z : ℂ) : ℝ :=
-  ‖f z‖ ^ 2 / (1 + ‖f z‖ ^ 2)
-
-/-- The defining formula of `TauCeti.Vortex.backgroundWeight`. -/
-theorem backgroundWeight_def (f : ℂ → ℂ) (z : ℂ) :
-    backgroundWeight f z = ‖f z‖ ^ 2 / (1 + ‖f z‖ ^ 2) := (rfl)
 
 /-- The source `k = (h - 1) / 8 + 2 ‖f'‖² / (1 + ‖f‖²)²` of the reduced vortex equation, written
 as an Euler–Lagrange equation of Taubes's functional. Here `2 ‖f'‖² / (1 + ‖f‖²)² = -Δu₀` for the
@@ -497,16 +489,6 @@ def backgroundSource (f : ℂ → ℂ) (z : ℂ) : ℝ :=
 theorem backgroundSource_def (f : ℂ → ℂ) (z : ℂ) :
     backgroundSource f z =
       (backgroundWeight f z - 1) / 8 + 2 * ‖deriv f z‖ ^ 2 / (1 + ‖f z‖ ^ 2) ^ 2 := (rfl)
-
-theorem backgroundWeight_nonneg (f : ℂ → ℂ) (z : ℂ) : 0 ≤ backgroundWeight f z := by
-  rw [backgroundWeight_def]
-  positivity
-
-theorem continuous_backgroundWeight (hf : Continuous f) : Continuous (backgroundWeight f) := by
-  have hh : backgroundWeight f = fun z ↦ ‖f z‖ ^ 2 / (1 + ‖f z‖ ^ 2) :=
-    funext (backgroundWeight_def f)
-  rw [hh]
-  exact (hf.norm.pow 2).div (continuous_const.add (hf.norm.pow 2)) fun z ↦ by positivity
 
 theorem continuous_backgroundSource (hf : Differentiable ℂ f) :
     Continuous (backgroundSource f) := by
@@ -528,8 +510,7 @@ theorem laplacian_eq_iff_equation_amplitudeField_backgroundAmplitude_add_eq_zero
     (hf : AnalyticAt ℂ f z) (hw : ContDiffAt ℝ 2 w z) :
     Δ w z = backgroundWeight f z * (Real.exp (2 * w z) - 1) / 8 + backgroundSource f z ↔
       equation (amplitudeField (fun z ↦ backgroundAmplitude f z + w z) f) z = 0 := by
-  rw [equation_amplitudeField_backgroundAmplitude_add_eq_zero_iff hf hw, backgroundSource_def,
-    backgroundWeight_def]
+  rw [equation_amplitudeField_backgroundAmplitude_add_eq_zero_iff hf hw, backgroundSource_def]
   constructor <;> intro H <;> rw [H] <;> ring
 
 /-- **Vortex amplitudes are the critical points of Taubes's functional.** For an entire function

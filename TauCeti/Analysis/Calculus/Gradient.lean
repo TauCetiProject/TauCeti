@@ -40,7 +40,8 @@ theorem about `‖Dφ‖`.
 * `TauCeti.gradient_const_smul`: `∇ (c • f) x = conj c • ∇ f x`.
 * `TauCeti.gradient_of_notMem_tsupport`: the gradient vanishes off the topological support.
 * `HasCompactSupport.gradient`: the gradient of a compactly supported function is compactly
-  supported.
+  supported; `HasCompactSupport.mono_of_forall_gradient`: so is any function vanishing where both
+  the function and its gradient vanish.
 * `TauCeti.measurable_gradient`: the gradient of any function is measurable.
 * `ContDiff.gradient_right`: over `ℝ`, where `toDual` is linear, the gradient of a `C^{m+1}`
   function is `Cᵐ`; `HasCompactSupport.memLp_gradient`: the gradient of a compactly supported
@@ -105,6 +106,14 @@ theorem gradient_of_notMem_tsupport (h : x ∉ tsupport f) : ∇ f x = 0 := by
 derivative (`HasCompactSupport.fderiv`). -/
 theorem _root_.HasCompactSupport.gradient (hf : HasCompactSupport f) : HasCompactSupport (∇ f) :=
   hf.mono' fun _ hx ↦ by_contra fun h ↦ hx (gradient_of_notMem_tsupport h)
+
+/-- A function vanishing wherever both `f` and its gradient vanish is compactly supported if `f`
+is. -/
+theorem _root_.HasCompactSupport.mono_of_forall_gradient {M : Type*} [Zero M] {g : F → M}
+    (hf : HasCompactSupport f) (hg : ∀ x, f x = 0 → ∇ f x = 0 → g x = 0) :
+    HasCompactSupport g :=
+  hf.mono' fun y hy ↦ by_contra fun h ↦
+    hy (hg y (image_eq_zero_of_notMem_tsupport h) (gradient_of_notMem_tsupport h))
 
 /-- The gradient of an arbitrary function is Borel measurable, as is its Fréchet derivative
 (`measurable_fderiv`); no differentiability is assumed, the gradient being `0` where `f` is not

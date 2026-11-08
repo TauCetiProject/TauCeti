@@ -67,20 +67,6 @@ theorem integral_inner_gradient_eq_neg_integral_mul_laplacian {u v : E → ℝ}
     rw [inner_gradient_left, real_inner_comm (∇ v x), inner_gradient_left]
   have hΔ (x) : Δ u x = ∑ i, fderiv ℝ (fun y ↦ fderiv ℝ u y (b i)) x (b i) :=
     laplacian_eq_sum_fderiv_fderiv_apply b ((hu1.differentiable one_ne_zero) x)
-  -- Integrate by parts in each direction of the orthonormal basis.
-  have hdir (i) : ∫ x, fderiv ℝ u x (b i) * fderiv ℝ v x (b i) ∂μ =
-      -∫ x, v x * fderiv ℝ (fun y ↦ fderiv ℝ u y (b i)) x (b i) ∂μ := by
-    have hc : Continuous fun x ↦ fderiv ℝ (fun y ↦ fderiv ℝ u y (b i)) x (b i) :=
-      ((hdu i).continuous_fderiv one_ne_zero).clm_apply continuous_const
-    simp_rw [mul_comm (v _)]
-    exact integral_mul_fderiv_eq_neg_fderiv_mul_of_integrable
-      ((hc.mul hv.continuous).integrable_of_hasCompactSupport hvc.mul_left)
-      (((hdu i).continuous.mul ((hv.continuous_fderiv one_ne_zero).clm_apply
-        continuous_const)).integrable_of_hasCompactSupport
-          (hvc.fderiv_apply (𝕜 := ℝ) (b i)).mul_left)
-      (((hdu i).continuous.mul hv.continuous).integrable_of_hasCompactSupport hvc.mul_left)
-      (fun x _ ↦ (hdu i).differentiable one_ne_zero x)
-      (fun x _ ↦ hv.differentiable one_ne_zero x)
   have hint (i) : Integrable (fun x ↦ v x * fderiv ℝ (fun y ↦ fderiv ℝ u y (b i)) x (b i)) μ :=
     (hv.continuous.mul (((hdu i).continuous_fderiv one_ne_zero).clm_apply
       continuous_const)).integrable_of_hasCompactSupport hvc.mul_right
@@ -88,6 +74,15 @@ theorem integral_inner_gradient_eq_neg_integral_mul_laplacian {u v : E → ℝ}
     (((hdu i).continuous.mul ((hv.continuous_fderiv one_ne_zero).clm_apply
       continuous_const)).integrable_of_hasCompactSupport
         (hvc.fderiv_apply (𝕜 := ℝ) (b i)).mul_left)
+  -- Integrate by parts in each direction of the orthonormal basis.
+  have hdir (i) : ∫ x, fderiv ℝ u x (b i) * fderiv ℝ v x (b i) ∂μ =
+      -∫ x, v x * fderiv ℝ (fun y ↦ fderiv ℝ u y (b i)) x (b i) ∂μ := by
+    simp_rw [mul_comm (v _)]
+    exact integral_mul_fderiv_eq_neg_fderiv_mul_of_integrable
+      (by simpa only [mul_comm (v _)] using hint i) (hint' i)
+      (((hdu i).continuous.mul hv.continuous).integrable_of_hasCompactSupport hvc.mul_left)
+      (fun x _ ↦ (hdu i).differentiable one_ne_zero x)
+      (fun x _ ↦ hv.differentiable one_ne_zero x)
   simp_rw [hinner, hΔ, Finset.mul_sum]
   rw [integral_finsetSum _ fun i _ ↦ hint' i, integral_finsetSum _ fun i _ ↦ hint i,
     ← Finset.sum_neg_distrib]
