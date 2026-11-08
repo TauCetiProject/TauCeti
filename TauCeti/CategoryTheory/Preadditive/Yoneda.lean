@@ -91,7 +91,7 @@ theorem exists_preadditiveYoneda_map_comp_eq {Y Y' : C} {F : Cᵒᵖ ⥤ AddComm
 
 /-- **Yoneda for `Hom(M, -)` as a `Γᵐᵒᵖ`-module, `Γ = End M`.** Composition identifies the
 morphisms `M ⟶ Y` with the `Γᵐᵒᵖ`-linear maps `Hom(M, M) → Hom(M, Y)`: a linear map `φ` is
-composition with `φ (𝟙 M)`, since `φ f = φ (f • 𝟙 M) = f ≫ φ (𝟙 M)`. -/
+composition with `φ (𝟙 M)`. -/
 theorem preadditiveCoyonedaObj_map_bijective_self (M Y : C) :
     Function.Bijective ((preadditiveCoyonedaObj M).map : (M ⟶ Y) → _) := by
   -- The elements of `(preadditiveCoyonedaObj M).obj X` are the morphisms `M ⟶ X`, and

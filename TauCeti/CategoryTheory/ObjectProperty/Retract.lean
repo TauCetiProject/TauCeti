@@ -68,9 +68,7 @@ end CategoryTheory.ObjectProperty
 namespace CategoryTheory.Functor
 
 /-- **The essential image of a fully faithful functor out of an idempotent-complete category is
-stable under retracts.** A retract `X` of `F.obj Z` is the image of an idempotent of `F.obj Z`;
-this idempotent is `F.map p` for an idempotent `p` of `Z`, and `F` sends a splitting object of `p`
-to an object isomorphic to `X`. -/
+stable under retracts.** -/
 instance essImage_isStableUnderRetracts {C D : Type*} [Category* C] [Category* D]
     [IsIdempotentComplete C] (F : C ⥤ D) [F.Full] [F.Faithful] :
     F.essImage.IsStableUnderRetracts where
