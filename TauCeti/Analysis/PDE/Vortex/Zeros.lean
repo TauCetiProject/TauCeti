@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.Deformation
 public import TauCeti.Analysis.Complex.Wirtinger.Similarity
-import TauCeti.Analysis.Complex.ContinuousLog.ArgumentPrinciple
+import TauCeti.Analysis.Normed.Module.LocalFactorization
 
 /-!
 # Isolated zeros and local multiplicities of plane vortex sections
@@ -23,7 +23,7 @@ identity is asserted here.
 
 Two such sections with the same multiplicity function differ by a nowhere-vanishing `Cᵏ`
 factor (`TauCeti.Vortex.exists_contDiff_sectionValue_eq_mul`). Since the exponent of a local
-factorization is unique (`TauCeti.eq_of_eventually_sub_pow_mul_eq`), the factor at a zero is the
+factorization is unique (`TauCeti.eq_of_eventually_sub_pow_smul_eq`), the factor at a zero is the
 quotient of the two similarity-principle factors there.
 
 Only the holomorphicity rows are used. The curvature equation is unnecessary, and the
@@ -151,9 +151,9 @@ private theorem exists_contDiffAt_sectionValue_eq_pow_mul_of_order (hk : 1 ≤ k
     rw [← hw, h0]
   obtain ⟨m, V, hV, hV₀, hfacV⟩ :=
     exists_contDiffAt_sectionValue_eq_pow_mul hk hb₁ hb₂ hp hq hhol hne z
-  obtain rfl : m = n := eq_of_eventually_sub_pow_mul_eq hV.continuousAt hV₀ hv hv₀ <| by
+  obtain rfl : m = n := eq_of_eventually_sub_pow_smul_eq hV.continuousAt hV₀ hv hv₀ <| by
     filter_upwards [hfac, hfacV] with w hw hwV
-    rw [← hwV, ← hw]
+    rw [smul_eq_mul, smul_eq_mul, ← hwV, ← hw]
   exact ⟨V, hV, hV₀, hfacV⟩
 
 /-- **Vortex sections with the same zero multiplicities differ by a nowhere-vanishing `Cᵏ`

@@ -10,6 +10,7 @@ import TauCeti.Analysis.Complex.AtInfinity
 import Mathlib.Analysis.Complex.BranchLogRoot
 import Mathlib.Analysis.LocallyConvex.WithSeminorms
 import TauCeti.Algebra.BigOperators.Finprod
+import TauCeti.Analysis.Normed.Module.LocalFactorization
 import Mathlib.Data.Finsupp.Multiset
 
 /-!
@@ -21,7 +22,7 @@ Suppose that near every point `z` a function `f : ℂ → ℂ` factors as
 form that the similarity principle gives for solutions of `∂bar f = a f`, for instance for the
 section of a plane vortex. The exponent `n z` is then the local multiplicity of `f` at `z`, and
 `n z = 0` wherever `f z ≠ 0`. The exponent is unique, already among factors that are only
-continuous at the point (`TauCeti.eq_of_eventually_sub_pow_mul_eq`). The zeros are isolated, so
+continuous at the point (`TauCeti.eq_of_eventually_sub_pow_smul_eq`). The zeros are isolated, so
 there are finitely many if `f` has none near infinity
 (`TauCeti.finite_setOfPred_eq_zero_of_eventually_eq_pow_mul`).
 
@@ -102,28 +103,6 @@ theorem finite_support_of_eventually_eq_pow_mul
     (htail : ∀ᶠ w in cocompact ℂ, f w ≠ 0) : (Function.support n).Finite :=
   (finite_setOfPred_eq_zero_of_eventually_eq_pow_mul hn htail).subset
     (support_subset_setOf_eq_zero_of_eventually_eq_pow_mul fun z ↦ (hn z).imp fun _ hv ↦ hv.2.2)
-
-/-- The exponent of a local factorization `(w - z) ^ m * v w`, with `v` continuous and nonzero at
-`z`, is unique. -/
-theorem eq_of_eventually_sub_pow_mul_eq {z : ℂ} {m n : ℕ} {u v : ℂ → ℂ}
-    (hu : ContinuousAt u z) (hu₀ : u z ≠ 0) (hv : ContinuousAt v z) (hv₀ : v z ≠ 0)
-    (h : ∀ᶠ w in 𝓝 z, (w - z) ^ m * u w = (w - z) ^ n * v w) : m = n := by
-  wlog hmn : m < n generalizing m n u v
-  · rcases (not_lt.mp hmn).eq_or_lt with h' | h'
-    · exact h'.symm
-    · exact (this hv hv₀ hu hu₀ (h.mono fun w hw ↦ hw.symm) h').symm
-  exfalso
-  -- Off `z`, cancelling `(w - z) ^ m` gives `u w = (w - z) ^ (n - m) * v w`, which tends to `0`.
-  have hlim : Tendsto (fun w ↦ (w - z) ^ (n - m) * v w) (𝓝[≠] z) (𝓝 (u z)) := by
-    refine (hu.tendsto.mono_left nhdsWithin_le_nhds).congr' ?_
-    filter_upwards [nhdsWithin_le_nhds h, self_mem_nhdsWithin] with w hw hwz
-    apply mul_left_cancel₀ (pow_ne_zero m (sub_ne_zero.mpr hwz))
-    rw [hw, ← mul_assoc, ← pow_add, Nat.add_sub_cancel' hmn.le]
-  have h0 : Tendsto (fun w ↦ (w - z) ^ (n - m) * v w) (𝓝[≠] z) (𝓝 0) := by
-    have hc : ContinuousAt (fun w ↦ (w - z) ^ (n - m) * v w) z :=
-      ((continuousAt_id.sub continuousAt_const).pow _).mul hv
-    simpa [zero_pow (Nat.sub_ne_zero_of_lt hmn)] using hc.tendsto.mono_left nhdsWithin_le_nhds
-  exact hu₀ (tendsto_nhds_unique hlim h0)
 
 /-- **Zero-free quotient by the zeros.** A continuous function whose zeros lie in a finite set
 `s`, and which factors as `(w - z) ^ n z * v w` near each `z ∈ s` with `v` continuous at `z` and
@@ -311,9 +290,9 @@ theorem count_eq_of_eventually_eq_pow_mul (hD : HasZeroDivisor f D) {z : ℂ} {n
     (hv : ContinuousAt v z) (hv₀ : v z ≠ 0) (h : ∀ᶠ w in 𝓝 z, f w = (w - z) ^ n * v w) :
     D.count z = n := by
   obtain ⟨u, hu, hu₀, hfu⟩ := hD z
-  refine eq_of_eventually_sub_pow_mul_eq hu hu₀ hv hv₀ ?_
+  refine eq_of_eventually_sub_pow_smul_eq hu hu₀ hv hv₀ ?_
   filter_upwards [hfu, h] with w hwu hwv
-  rw [← hwu, ← hwv]
+  rw [smul_eq_mul, smul_eq_mul, ← hwu, ← hwv]
 
 /-- **Uniqueness of the zero divisor.** The multiplicities are the exponents of the local
 factorizations, which are unique. -/
