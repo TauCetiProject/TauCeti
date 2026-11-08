@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Projective.MinimalResolution.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Projective.FiniteResolution
+public import TauCeti.Algebra.Homology.HomologicalComplex.Minimal
 
 /-!
 # Bounded minimal free chain resolutions
@@ -85,16 +86,17 @@ theorem exists_projectiveResolution_finite_free_minimal {R : Type u} [CommRing R
     ∃ F : ProjectiveResolution M,
       (∀ i, Module.Finite R (F.complex.X i) ∧ Module.Free R (F.complex.X i)) ∧
       (∀ i, n < i → IsZero (F.complex.X i)) ∧
-      ∀ i, LinearMap.range (F.complex.d (i + 1) i).hom ≤ maximalIdeal R • ⊤ := by
+      F.complex.IsMinimal := by
   obtain ⟨r, hr, hmin⟩ :=
     TauCeti.exists_minimal_finiteProjectiveResolution_of_hasProjectiveDimensionLE hM
   have hP := TauCeti.finiteProjectiveModules_le_categoryTheory_isProjective R
   refine ⟨r.toProjectiveResolution hP, fun i ↦ ?_, fun i hi ↦
-    r.isZero_toProjectiveResolution_X_of_length_lt hP (by omega),
-    fun i ↦ ?_⟩
+    r.isZero_toProjectiveResolution_X_of_length_lt hP (by omega), ?_⟩
   · have := r.finite_toProjectiveResolution_X hP i
     exact ⟨inferInstance, Module.free_of_flat_of_isLocalRing⟩
-  · simp only [TauCeti.ExactStructure.FiniteResolution.toProjectiveResolution_complex_d,
+  · rw [ChainComplex.isMinimal_iff_range_d_succ_le, ringJacobson_eq_maximalIdeal]
+    intro i
+    simp only [TauCeti.ExactStructure.FiniteResolution.toProjectiveResolution_complex_d,
       ModuleCat.hom_comp]
     rw [LinearMap.comp_assoc, LinearMap.range_comp]
     exact Submodule.map_le_iff_le_comap.mpr <|

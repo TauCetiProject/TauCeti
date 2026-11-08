@@ -52,6 +52,15 @@ theorem isMinimal_iff : K.IsMinimal ↔
     ∀ i j, LinearMap.range (K.d i j).hom ≤ Ring.jacobson R • (⊤ : Submodule R (K.X j)) :=
   Iff.rfl
 
+/-- Minimality can be checked just on the differentials allowed by the complex shape. -/
+theorem isMinimal_iff_of_rel : K.IsMinimal ↔
+    ∀ i j, c.Rel i j →
+      LinearMap.range (K.d i j).hom ≤ Ring.jacobson R • (⊤ : Submodule R (K.X j)) := by
+  refine ⟨fun h i j _ ↦ h i j, fun h i j ↦ ?_⟩
+  by_cases hij : c.Rel i j
+  · exact h i j hij
+  · simp [K.shape i j hij]
+
 /-- Every value of a differential in a minimal complex lies in the radical times its target. -/
 theorem IsMinimal.d_apply_mem (hK : K.IsMinimal) (i j : ι) (x : K.X i) :
     (K.d i j).hom x ∈ Ring.jacobson R • (⊤ : Submodule R (K.X j)) :=
@@ -121,3 +130,20 @@ theorem IsMinimal.isIso_hom_of_homotopyEquiv (hK : K.IsMinimal) (hL : L.IsMinima
   exact isIso_of_mono_of_isSplitEpi e.hom
 
 end HomologicalComplex
+
+namespace ChainComplex
+
+universe u v
+
+/-- A natural-number-indexed chain complex is minimal exactly when each successive
+differential has image in the radical times its target. -/
+theorem isMinimal_iff_range_d_succ_le {R : Type u} [CommRing R]
+    {K : ChainComplex (ModuleCat.{v} R) ℕ} : K.IsMinimal ↔
+    ∀ n, LinearMap.range (K.d (n + 1) n).hom ≤
+      Ring.jacobson R • (⊤ : Submodule R (K.X n)) := by
+  rw [HomologicalComplex.isMinimal_iff_of_rel]
+  exact ⟨fun h n ↦ h (n + 1) n rfl, fun h i j hij ↦ by
+    obtain rfl := hij
+    exact h j⟩
+
+end ChainComplex

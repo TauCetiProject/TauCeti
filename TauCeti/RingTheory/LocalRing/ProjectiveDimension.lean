@@ -196,6 +196,7 @@ theorem finrank_cotangentSpace_le_of_hasProjectiveDimensionLE {R : Type u} [Comm
   -- A minimal finite free resolution `F` of `κ`, zero above degree `d`.
   obtain ⟨F, hFfree, hFzero, hFmin⟩ :=
     ModuleCat.exists_projectiveResolution_finite_free_minimal (ModuleCat.of R (R ⧸ 𝔪)) ‹_›
+  rw [ChainComplex.isMinimal_iff_range_d_succ_le, ringJacobson_eq_maximalIdeal] at hFmin
   have (k : ℕ) : Module.Free R (F.complex.X k) := (hFfree k).2
   have (k : ℕ) : Projective ((koszulComplex φ).X k) := by
     rw [koszulComplex_X]
