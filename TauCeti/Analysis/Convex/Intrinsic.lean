@@ -176,6 +176,19 @@ theorem intrinsicInterior_inter_intrinsicInterior_subset :
   exact ⟨hys (affineSpan_mono 𝕜 inter_subset_left hy),
     hyt (affineSpan_mono 𝕜 inter_subset_right hy)⟩
 
+/-- The intrinsic frontier of a closed cell is covered by the other cells contained in it, when
+every point of the cell lies in the intrinsic interior of a cell contained in it. -/
+theorem intrinsicFrontier_subset_iUnion_of_exists_mem_intrinsicInterior {ι : Type*}
+    {Q : ι → Set P} (i : ι) (hQc : IsClosed (Q i))
+    (h : ∀ x ∈ Q i, ∃ j, x ∈ intrinsicInterior 𝕜 (Q j) ∧ Q j ⊆ Q i) :
+    intrinsicFrontier 𝕜 (Q i) ⊆ ⋃ (j) (_ : j ≠ i ∧ Q j ⊆ Q i), Q j := by
+  intro x hx
+  obtain ⟨j, hxj, hji⟩ := h x (intrinsicFrontier_subset hQc hx)
+  have hxi : x ∉ intrinsicInterior 𝕜 (Q i) := by
+    rw [← intrinsicClosure_sdiff_intrinsicInterior] at hx
+    exact hx.2
+  exact mem_iUnion₂.2 ⟨j, ⟨fun hji' => hxi (hji' ▸ hxj), hji⟩, intrinsicInterior_subset hxj⟩
+
 end AffineSpan
 
 section FiniteDimensional
