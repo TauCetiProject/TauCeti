@@ -278,8 +278,8 @@ theorem _root_.Polynomial.cauchyIndex_univ_eq_add_cauchyIndex_neg_mod {p q : R[X
   rw [List.signVariations_cons_cons_of_ne_zero _ (by simpa using hp') (by simpa using hq'),
     List.signVariations_cons_cons_of_ne_zero _ hp' hq']
   simp only [sign_mul, sign_pow, Left.sign_neg, sign_one]
-  rw [← SignType.ite_mul_neg_one_pow_sub_ite _ _ (sign_ne_zero.mpr hp') (sign_ne_zero.mpr hq')]
   push_cast
+  rw [← SignType.ite_mul_neg_one_pow_sub_ite]
   ring
 
 end TauCeti
