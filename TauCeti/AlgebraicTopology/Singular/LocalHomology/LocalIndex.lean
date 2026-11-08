@@ -299,10 +299,10 @@ theorem localDegree_eq_sum_localIndex (f : C(M, N)) {y : N} (hy : (f ⁻¹' {y})
   rw [localDegree_eq_iff o o' hE hF f hy.isCompact, ← o.sum_compClass hE hy, map_sum]
   -- The class of each point `x` of the fibre is carried by `f` to the local index at `x` times
   -- `o' y`, the complement of the rest of the fibre being a neighbourhood isolating `x`.
-  have hsmul : (∑ x ∈ hy.toFinset, o.localIndex o' f x) • (o' y).val =
-      ∑ x ∈ hy.toFinset, o.localIndex o' f x • (o' y).val := by
-    simpa only [zmultiplesHom_apply] using map_sum (zmultiplesHom _ (o' y).val) _ hy.toFinset
-  refine (Finset.sum_congr rfl fun x hx ↦ ?_).trans hsmul.symm
+  -- The scalar action on the homology group is `zsmul`, so `Finset.sum_smul` is used with the
+  -- `ℤ`-module structure `AddCommGroup.toIntModule` rather than the one of `ModuleCat`.
+  refine (Finset.sum_congr rfl fun x hx ↦ ?_).trans
+    (@Finset.sum_smul _ _ _ _ _ (AddCommGroup.toIntModule _) _ _ _).symm
   rw [compClass, ← ConcreteCategory.comp_apply, localHomologyMap_comp]
   exact o.localHomologyMap_restrict_localOrientationEquiv_symm o' f (hy.mem_toFinset.1 hx)
     hy.sdiff.isClosed.isOpen_compl (fun h ↦ h.2 rfl) fun z hz hfz ↦ by_contra fun h ↦ hz ⟨hfz, h⟩
