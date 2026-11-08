@@ -49,6 +49,8 @@ derivative bounds; it localizes operators to the frequencies of a single block.
 * `ContDiffBump.enlargedLittlewoodPaley_mul_inhomogeneousLittlewoodPaley`: `Ψⱼ ψⱼ = ψⱼ`.
 * `ContDiffBump.exists_norm_iteratedFDeriv_enlargedLittlewoodPaley_le`: the uniform rescaled
   derivative bounds for the enlarged cutoffs.
+* `ContDiffBump.exists_one_add_norm_sq_le_of_mem_tsupport_enlargedLittlewoodPaley`: on the
+  support of `Ψⱼ`, `1 + ‖ξ‖ ^ 2` is comparable to `4^j` uniformly in `j`.
 
 ## References
 
@@ -404,6 +406,44 @@ theorem tsupport_enlargedLittlewoodPaley_subset_of_le {L j : ℕ} (hLj : L ≤ j
   closure_minimal (fun _ hξ ↦ not_lt.1 fun h ↦
     hξ (φ.enlargedLittlewoodPaley_eq_zero_of_norm_le hLj h.le))
     (isClosed_le continuous_const continuous_norm)
+
+/-- On the support of the enlarged cutoff `Ψⱼ`, the Japanese bracket is comparable to `2^j`:
+`a 4^j ≤ 1 + ‖ξ‖ ^ 2 ≤ b 4^j` with `a > 0` and `b` independent of `j`. -/
+theorem exists_one_add_norm_sq_le_of_mem_tsupport_enlargedLittlewoodPaley (L : ℕ) :
+    ∃ a b : ℝ, 0 < a ∧ ∀ (j : ℕ), ∀ ξ ∈ tsupport (φ.enlargedLittlewoodPaley L j),
+      a * (2 ^ j) ^ 2 ≤ 1 + ‖ξ‖ ^ 2 ∧ 1 + ‖ξ‖ ^ 2 ≤ b * (2 ^ j) ^ 2 := by
+  refine ⟨min 1 (φ.rIn ^ 2) / (2 ^ L) ^ 2, 1 + (2 ^ L * φ.rOut) ^ 2,
+    div_pos (lt_min one_pos (pow_pos φ.rIn_pos 2)) (by positivity), fun j ξ hξ ↦ ⟨?_, ?_⟩⟩
+  · rcases lt_or_ge j L with hjL | hLj
+    · -- Low frequencies: `a 4^j ≤ 4^(j - L) ≤ 1`.
+      have : min 1 (φ.rIn ^ 2) / (2 ^ L) ^ 2 * (2 ^ j) ^ 2 ≤ 1 := by
+        rw [div_mul_eq_mul_div, div_le_one (by positivity)]
+        calc min 1 (φ.rIn ^ 2) * (2 ^ j) ^ 2 ≤ 1 * (2 ^ L) ^ 2 := by
+              gcongr
+              · exact min_le_left _ _
+              · exact one_le_two
+          _ = (2 ^ L) ^ 2 := one_mul _
+      nlinarith [sq_nonneg ‖ξ‖]
+    · -- High frequencies: `‖ξ‖ ≥ 2^(j - L) φ.rIn` on the support.
+      have hξ' : 2 ^ (j - L) * φ.rIn ≤ ‖ξ‖ := φ.tsupport_enlargedLittlewoodPaley_subset_of_le hLj hξ
+      have hj : (2 : ℝ) ^ j = 2 ^ (j - L) * 2 ^ L := by rw [← pow_add, Nat.sub_add_cancel hLj]
+      calc min 1 (φ.rIn ^ 2) / (2 ^ L) ^ 2 * (2 ^ j) ^ 2
+          ≤ φ.rIn ^ 2 / (2 ^ L) ^ 2 * (2 ^ j) ^ 2 := by
+            gcongr
+            exact min_le_right _ _
+        _ = (2 ^ (j - L) * φ.rIn) ^ 2 := by
+            rw [hj]
+            field_simp
+        _ ≤ ‖ξ‖ ^ 2 := by
+            gcongr
+            exact mul_nonneg (by positivity) φ.rIn_pos.le
+        _ ≤ 1 + ‖ξ‖ ^ 2 := le_add_of_nonneg_left zero_le_one
+  · have hξ' := mem_closedBall_zero_iff.1 (φ.tsupport_enlargedLittlewoodPaley_subset L j hξ)
+    have h1 : (1 : ℝ) ≤ (2 ^ j) ^ 2 := one_le_pow₀ (one_le_pow₀ one_le_two)
+    calc 1 + ‖ξ‖ ^ 2 ≤ (2 ^ j) ^ 2 + (2 ^ (j + L) * φ.rOut) ^ 2 := by gcongr
+      _ = (1 + (2 ^ L * φ.rOut) ^ 2) * (2 ^ j) ^ 2 := by
+          rw [pow_add]
+          ring
 
 end HasContDiffBump
 
