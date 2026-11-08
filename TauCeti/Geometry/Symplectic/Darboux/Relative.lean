@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 public import Mathlib.Geometry.Manifold.Diffeomorph
+import Mathlib.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Analysis.Calculus.DifferentialForm.Pullback
 import TauCeti.Analysis.Calculus.DifferentialForm.Relative
+import TauCeti.Geometry.Symplectic.ContinuousAlternatingMap
 import TauCeti.Geometry.Symplectic.Darboux.Basic
 import TauCeti.Geometry.Symplectic.WittExtension
 import TauCeti.Topology.Algebra.Module.Alternating.Basic
@@ -39,8 +41,9 @@ It is proved in two steps.
   zero there. Moser's lemma
   (`TauCeti.exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq_of_extDeriv_eq`)
   applied to this primitive gives a diffeomorphism fixing the zeros of `β`, hence the zero section.
-* **The linear step.** The identity of `E × {0}` preserves the restrictions of the forms at
-  `(q₀, 0)`, so Witt's extension theorem
+* **The linear step**
+  (`TauCeti.exists_continuousLinearEquiv_fix_inl_of_compContinuousLinearMap_inl_eq`). The identity
+  of `E × {0}` preserves the restrictions of the forms at `(q₀, 0)`, so Witt's extension theorem
   (`TauCeti.SymplecticForm.exists_isSymplectomorphism_extend`) extends it to a linear
   symplectomorphism `A` from `(E × N, ω₀(q₀, 0))` to `(E × N, ω₁(q₀, 0))`. It fixes the zero
   section pointwise, so `A^* ω₁` agrees with `ω₀` as a full form at `(q₀, 0)` and has the same
@@ -126,6 +129,33 @@ private theorem exists_diffeomorph_fix_zeroSection_of_eq
   have hi : Tendsto (fun q : E ↦ (q, (0 : N))) (𝓝 q₀) (𝓝 (q₀, 0)) :=
     (continuous_id.prodMk continuous_const).tendsto q₀
   filter_upwards [hi.eventually hfix] with q hq using hq (hβ0 q)
+
+/-- **Witt's extension theorem for the zero section.** If two alternating forms `a₀`, `a₁` on
+`E × N` are nondegenerate and have the same restriction to `E × {0}`, then some continuous linear
+automorphism `A` of `E × N` fixes `E × {0}` pointwise and carries `a₀` to `a₁`. -/
+theorem exists_continuousLinearEquiv_fix_inl_of_compContinuousLinearMap_inl_eq
+    {a₀ a₁ : (E × N) [⋀^Fin 2]→L[ℝ] ℝ} (hnd₀ : ∀ v, (∀ w, a₀ ![v, w] = 0) → v = 0)
+    (hnd₁ : ∀ v, (∀ w, a₁ ![v, w] = 0) → v = 0)
+    (htan : a₁.compContinuousLinearMap (.inl ℝ E N) = a₀.compContinuousLinearMap (.inl ℝ E N)) :
+    ∃ A : (E × N) ≃L[ℝ] (E × N),
+      (∀ v w : E × N, a₁ ![A v, A w] = a₀ ![v, w]) ∧ ∀ q : E, A (q, 0) = (q, 0) := by
+  -- Witt's extension theorem: the identity of the zero section extends to a linear
+  -- symplectomorphism `A` from `a₀` to `a₁`.
+  let S : Submodule ℝ (E × N) := LinearMap.range (LinearMap.inl ℝ E N)
+  obtain ⟨e, he, heS⟩ := SymplecticForm.exists_isSymplectomorphism_extend
+    (SymplecticForm.ofContinuousAlternatingMap _ hnd₀)
+    (SymplecticForm.ofContinuousAlternatingMap _ hnd₁) rfl S.subtype S.injective_subtype
+    fun x y ↦ by
+      obtain ⟨a, ha⟩ := x.2
+      obtain ⟨b, hb⟩ := y.2
+      have h := congrArg (fun c ↦ c ![a, b]) htan
+      simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply] at h
+      simp only [SymplecticForm.ofContinuousAlternatingMap_apply, Submodule.coe_subtype, ← ha,
+        ← hb]
+      convert h using 2 <;> ext i <;> fin_cases i <;> rfl
+  refine ⟨e.toContinuousLinearEquiv, fun v w ↦ ?_, fun q ↦ heS ⟨(q, 0), q, rfl⟩⟩
+  exact ((SymplecticForm.ofContinuousAlternatingMap_apply _ hnd₁ (e v) (e w)).symm.trans
+    (he.apply v w)).trans (SymplecticForm.ofContinuousAlternatingMap_apply _ hnd₀ v w)
 
 /-- **The relative Darboux theorem** in adapted coordinates. Let `ω₀`, `ω₁` be closed `C^r`
 two-forms (`r ≥ 1`) on an open subset `W` of `E × N` containing `(q₀, 0)`, both nondegenerate at
