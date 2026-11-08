@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Ring.Units
+public import Mathlib.GroupTheory.PGroup
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.NumberTheory.Padics.ProperSpace
 public import Mathlib.Topology.MetricSpace.Ultra.TotallySeparated
@@ -137,6 +138,14 @@ theorem isUnit_of_dvd_one_sub_sq {d : ℤ_[p]} (h : (p : ℤ_[p]) ∣ 1 - d ^ 2)
 /-- A natural number prime to `p` is a unit in `ℤ_p`. -/
 theorem isUnit_natCast_of_coprime {n : ℕ} (h : p.Coprime n) : IsUnit (n : ℤ_[p]) :=
   isUnit_iff.mpr (norm_natCast_eq_one_iff.mpr h)
+
+/-- The order of a finite `ℓ`-group is a unit in `ℤ_p` for a prime `ℓ ≠ p`. -/
+theorem isUnit_natCard_of_isPGroup {ℓ : ℕ} [Fact ℓ.Prime] (hℓ : ℓ ≠ p) {S : Type*} [Group S]
+    [Finite S] (hS : IsPGroup ℓ S) : IsUnit (Nat.card S : ℤ_[p]) := by
+  obtain ⟨e, he⟩ := hS.exists_card_eq
+  rw [he, Nat.cast_pow]
+  exact (isUnit_natCast_of_coprime
+    ((Nat.coprime_primes Fact.out Fact.out).mpr (Ne.symm hℓ))).pow e
 
 /-- Every prime number `ℓ` is a unit in `ℤ_p` or generates a maximal ideal of `ℤ_p`: it is a unit
 for `ℓ ≠ p` and generates the maximal ideal for `ℓ = p`. -/

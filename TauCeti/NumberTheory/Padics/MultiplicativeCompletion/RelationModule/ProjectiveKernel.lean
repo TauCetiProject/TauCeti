@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.Cohomology
 public import TauCeti.NumberTheory.Padics.GroupAlgebra.RelationModule
-import TauCeti.LinearAlgebra.FreeModule.PID
 import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.Rational
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.RepresentationTheory.Homological.GroupCohomology.Corestriction
@@ -62,32 +61,6 @@ namespace TauCeti
 open _root_.Rep
 
 variable (p : ℕ) [Fact p.Prime]
-
-/-- On an `ℓ`-subgroup with `ℓ ≠ p`, all positive-degree Tate cohomology of a `ℤ_p`-representation
-vanishes, because the order of the subgroup is a unit in `ℤ_p`. -/
-theorem subsingleton_tateCohomology_res_succ_of_isPGroup {ℓ : ℕ} [Fact ℓ.Prime] (hℓ : ℓ ≠ p)
-    {G : Type} [Group G] (S : Subgroup G) [Fintype S] (hS : IsPGroup ℓ S)
-    (B : Rep ℤ_[p] G) (n : ℕ) : Subsingleton (tateCohomology (res S.subtype B) (n + 1 : ℕ)) := by
-  obtain ⟨e, he⟩ := hS.exists_card_eq
-  have hunit : IsUnit (Nat.card S : ℤ_[p]) := by
-    rw [he, Nat.cast_pow]
-    exact (PadicInt.isUnit_natCast_of_coprime
-      ((Nat.coprime_primes Fact.out Fact.out).mpr (Ne.symm hℓ))).pow e
-  exact @Equiv.subsingleton _ _
-    ((TateCohomology.isoGroupCohomology (n + 1)).app _).toLinearEquiv.toEquiv
-    (groupCohomology.subsingleton_of_isUnit_natCard (res S.subtype B) hunit n)
-
-/-- The kernel of a `ℤ_p[G]`-linear map out of the relation module of a group is a free
-`ℤ_p`-module, as a submodule of `ℤ_p[G]^ι`. -/
-theorem free_ker_of_relationModule {G : Type} [Group G] {ι : Type} [Fintype ι]
-    {g : ι → G} {N : Type*} [AddCommGroup N] [Module (MonoidAlgebra ℤ_[p] G) N]
-    (β : MonoidAlgebra.relationModule ℤ_[p] G g →ₗ[MonoidAlgebra ℤ_[p] G] N) :
-    Module.Free ℤ_[p] (LinearMap.ker β) :=
-  Module.Free.of_injective_of_projective_of_isPrincipalIdealRing (R := ℤ_[p])
-    (M := ι → MonoidAlgebra ℤ_[p] G) (N := LinearMap.ker β)
-    (((MonoidAlgebra.relationModule ℤ_[p] G g).subtype ∘ₗ
-      (LinearMap.ker β).subtype).restrictScalars ℤ_[p])
-    (Subtype.val_injective.comp Subtype.val_injective)
 
 section LocalField
 
@@ -190,7 +163,7 @@ theorem projective_ker_of_relationModule_surjective_of_h2_surjective {L K : Type
     ShortComplex.mk T₀.f (T₀.g ≫ eA.hom) (by rw [← Category.assoc, T₀.zero, zero_comp])
   have hT : T.ShortExact := ShortComplex.shortExact_of_iso
     (ShortComplex.isoMk (S₁ := T₀) (S₂ := T) (.refl _) (.refl _) eA (by simp [T]) (by simp [T])) hT₀
-  have : Module.Free ℤ_[p] (LinearMap.ker β) := free_ker_of_relationModule p β
+  have : Module.Free ℤ_[p] (LinearMap.ker β) := free_of_submodule_relationModule (LinearMap.ker β)
   let e₁ : T.X₁.ρ.asModule ≃ₗ[Λ] LinearMap.ker β :=
     (counitIso (ModuleCat.of Λ (LinearMap.ker β))).toLinearEquiv
   have : Module.Projective ℤ_[p] T.X₁.V :=
@@ -210,14 +183,17 @@ theorem projective_ker_of_relationModule_surjective_of_h2_surjective {L K : Type
           ((isZero_groupCohomology_one_res_padicCompletionUnits ℓ K L S).of_iso
             ((TateCohomology.isoGroupCohomology 1).app _))) _
       · exact @Function.surjective_to_subsingleton _ _ _
-          (subsingleton_tateCohomology_res_succ_of_isPGroup p hℓ S hS A 0) _
+          (TateCohomology.subsingleton_tateCohomology_of_isUnit_natCard
+            (PadicInt.isUnit_natCard_of_isPGroup hℓ hS) _) _
     · by_cases hℓ : ℓ = p
       · subst hℓ
         refine bijective_tateCohomology_two_res_of_surjective ℓ hg T.g ?_ S hS
         rw [Functor.map_comp, ConcreteCategory.coe_comp]
         exact (ConcreteCategory.bijective_of_isIso _).surjective.comp h2
-      · have h₂ := subsingleton_tateCohomology_res_succ_of_isPGroup p hℓ S hS T.X₂ 1
-        have h₃ := subsingleton_tateCohomology_res_succ_of_isPGroup p hℓ S hS T.X₃ 1
+      · have h₂ := TateCohomology.subsingleton_tateCohomology_of_isUnit_natCard
+          (PadicInt.isUnit_natCard_of_isPGroup hℓ hS) (A := (res S.subtype T.X₂)) 2
+        have h₃ := TateCohomology.subsingleton_tateCohomology_of_isUnit_natCard
+          (PadicInt.isUnit_natCard_of_isPGroup hℓ hS) (A := (res S.subtype T.X₃)) 2
         exact ⟨@Function.injective_of_subsingleton _ _ h₂ _,
           @Function.surjective_to_subsingleton _ _ _ h₃ _⟩
   exact .of_equiv e₁

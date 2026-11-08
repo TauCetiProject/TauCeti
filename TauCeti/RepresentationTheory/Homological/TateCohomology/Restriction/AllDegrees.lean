@@ -18,9 +18,10 @@ For a subgroup `H` of a finite group `G`, the separate constructions of restrict
 corestriction in positive, zero, minus one, and lower negative degrees assemble into maps in
 every integer degree. Their composite is multiplication by the index `[G : H]`; for the trivial
 subgroup, whose Tate cohomology vanishes, this shows that every Tate cohomology group of `G` is
-killed by `|G|` (`natCard_nsmul_eq_zero`), hence torsion (`isAddTorsion_tateCohomology`). These
-uniform maps are the group-change operations used in the restriction law for the Tate cup product.
-Restriction is natural in the coefficient representation in every degree (`res_natural`).
+killed by `|G|` (`natCard_nsmul_eq_zero`), hence torsion (`isAddTorsion_tateCohomology`), and zero
+if `|G|` is invertible in the coefficient ring (`subsingleton_tateCohomology_of_isUnit_natCard`).
+These uniform maps are the group-change operations used in the restriction law for the Tate cup
+product. Restriction is natural in the coefficient representation in every degree (`res_natural`).
 Tower composition for class-field-theory layers is provided by
 `ClassFieldTheory.LayerRestriction.tateRes_trans` and
 `ClassFieldTheory.LayerRestriction.tateCor_trans`.
@@ -206,6 +207,14 @@ theorem natCard_nsmul_eq_zero {A : Rep.{u} R G} {n : ℤ} (x : tateCohomology A 
     (Rep.res (⊥ : Subgroup G).subtype A) LinearMap.id (fun x ↦ by simp) n
   rw [← Subgroup.index_bot, ← res_comp_cor_apply,
     (ModuleCat.subsingleton_of_isZero hbot).elim (res A ⊥ n x) 0, map_zero]
+
+/-- **Tate cohomology vanishes in every degree if the order of the group is invertible in the
+coefficient ring**, since it is killed by `Nat.card G`. -/
+theorem subsingleton_tateCohomology_of_isUnit_natCard {A : Rep.{u} R G}
+    (h : IsUnit (Nat.card G : R)) (n : ℤ) : Subsingleton (tateCohomology A n) :=
+  (subsingleton_iff_forall_eq 0).2 fun x ↦ by
+    obtain ⟨b, hb⟩ := h.exists_left_inv
+    rw [← one_smul R x, ← hb, mul_smul, Nat.cast_smul_eq_nsmul, natCard_nsmul_eq_zero, smul_zero]
 
 /-- Every Tate cohomology group of a finite group is torsion, being killed by `Nat.card G`. -/
 theorem isAddTorsion_tateCohomology (A : Rep.{u} R G) (n : ℤ) :
