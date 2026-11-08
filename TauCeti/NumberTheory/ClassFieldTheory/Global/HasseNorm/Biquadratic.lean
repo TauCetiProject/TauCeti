@@ -83,6 +83,10 @@ private theorem exists_eq_sq_sub_seventeen_mul_sq {E : Type*} [Field E] [Algebra
   simp only [map_mul, map_sub, map_add, map_pow, map_ofNat] at h₁' h₂' ⊢
   linear_combination h₂' - (algebraMap ℚ E a₂ ^ 2 - 17 * algebraMap ℚ E b₂ ^ 2) * hr - 2 * r * h₁'
 
+/-- A prime `p` different from the prime `ℓ` is not divisible by `ℓ` in `ℤ`. -/
+private theorem not_natCast_dvd_of_ne {ℓ p : ℕ} (hℓ : ℓ.Prime) (hp : p.Prime) (h : ℓ ≠ p) :
+    ¬ (ℓ : ℤ) ∣ p := fun hdvd ↦ h ((Nat.prime_dvd_prime_iff_eq hℓ hp).mp (by exact_mod_cast hdvd))
+
 /-- At an odd prime `ℓ` at which `13` is not a square, the symbol `(17, m)_ℓ` is trivial as soon as
 `(13, m)_ℓ` is: either `17` or `13 · 17` is then a square in `ℚ_ℓ`. -/
 private theorem hilbertSymbol_seventeen_eq_one {ℓ : ℕ} [Fact ℓ.Prime] (hℓ : ℓ ≠ 2)
@@ -107,23 +111,18 @@ private theorem hilbertSymbol_seventeen_eq_one {ℓ : ℕ} [Fact ℓ.Prime] (h�
         (by rw [legendreSym.mul, h13, h]; norm_num) (by norm_num)
     rwa [hilbertSymbol_mul_left two_ne_zero, hm, one_mul] at h221
 
-/-- At an odd prime `ℓ` at which `13` is not a square, the symbol `(17, 5 (c² - 13 d²))_ℓ` is
-`(17, 5)_ℓ`, which is `-1` at `ℓ = 5` and `1` otherwise. -/
+/-- At an odd prime `ℓ` at which `13` is not a square, the symbol `(17, q)_ℓ` with
+`q = 5 (c² - 13 d²)` is `(17, 5)_ℓ`, which is `-1` at `ℓ = 5` and `1` otherwise. -/
 private theorem hilbertSymbol_seventeen_five_mul {ℓ : ℕ} [Fact ℓ.Prime] (hℓ : ℓ ≠ 2)
-    (h13 : legendreSym ℓ 13 = -1) (hm : c ^ 2 - 13 * d ^ 2 ≠ 0) :
-    hilbertSymbol (Units.mk0 (17 : ℚ_[ℓ]) (by norm_num))
-        (Units.mk0 (((5 * (c ^ 2 - 13 * d ^ 2) : ℚ)) : ℚ_[ℓ])
-          (Rat.cast_ne_zero.2 (mul_ne_zero (by norm_num) hm))) =
-      if ℓ = 5 then -1 else 1 := by
+    (h13 : legendreSym ℓ 13 = -1) (hm : c ^ 2 - 13 * d ^ 2 ≠ 0) {q : ℚ_[ℓ]ˣ}
+    (hq : (q : ℚ_[ℓ]) = ((5 * (c ^ 2 - 13 * d ^ 2) : ℚ) : ℚ_[ℓ])) :
+    hilbertSymbol (Units.mk0 (17 : ℚ_[ℓ]) (by norm_num)) q = if ℓ = 5 then -1 else 1 := by
   have hp : ℓ.Prime := Fact.out
-  have h17 : ¬ (ℓ : ℤ) ∣ 17 := fun h ↦ by
-    obtain rfl := (Nat.prime_dvd_prime_iff_eq hp (by norm_num : Nat.Prime 17)).mp
-      (by exact_mod_cast h)
-    norm_num at h13
+  have h17 : ¬ (ℓ : ℤ) ∣ 17 :=
+    not_natCast_dvd_of_ne hp (by norm_num) (by rintro rfl; norm_num at h13)
   have hm' : (((c ^ 2 - 13 * d ^ 2 : ℚ)) : ℚ_[ℓ]) ≠ 0 := Rat.cast_ne_zero.2 hm
-  have hsplit : Units.mk0 (((5 * (c ^ 2 - 13 * d ^ 2) : ℚ)) : ℚ_[ℓ])
-        (Rat.cast_ne_zero.2 (mul_ne_zero (by norm_num) hm)) =
-      Units.mk0 (5 : ℚ_[ℓ]) (by norm_num) * Units.mk0 _ hm' := Units.ext (by push_cast; rfl)
+  have hsplit : q = Units.mk0 (5 : ℚ_[ℓ]) (by norm_num) * Units.mk0 _ hm' :=
+    Units.ext (by simp [hq])
   -- `(13, c² - 13 d²)_ℓ = 1` forces `(17, c² - 13 d²)_ℓ = 1`.
   have h13m : hilbertSymbol (Units.mk0 (13 : ℚ_[ℓ]) (by norm_num)) (Units.mk0 _ hm') = 1 :=
     (hilbertSymbol_eq_one_iff _ _).2 ⟨c, d, by simp only [Units.val_mk0]; push_cast; ring⟩
@@ -137,27 +136,22 @@ private theorem hilbertSymbol_seventeen_five_mul {ℓ : ℕ} [Fact ℓ.Prime] (h
     apply Units.ext
     rw [Units.val_neg, Units.val_one, ← h]
     simp
-  · have h5' : ¬ (ℓ : ℤ) ∣ 5 := fun h ↦
-      h5 ((Nat.prime_dvd_prime_iff_eq hp (by norm_num)).mp (by exact_mod_cast h))
-    rw [ite_eq_right h5]
-    convert Padic.hilbertSymbol_intCast_intCast_eq_one hℓ h17 h5' using 2 <;> ext <;> simp
+  · rw [ite_eq_right h5]
+    convert Padic.hilbertSymbol_intCast_intCast_eq_one hℓ h17
+      (not_natCast_dvd_of_ne hp (by norm_num) h5) using 2 <;> ext <;> simp
 
 /-- **The local symbols of `17` and `q = 5 (c² - 13 d²)`.** If `q = α² - 17 β²` with `α, β`
 in `ℚ(√13)`, written in rational coordinates, then the Hilbert symbol `(17, q)_ℓ` over `ℚ_ℓ` is
 `-1` at `ℓ = 5` and `1` at every other prime. -/
 private theorem hilbertSymbol_seventeen_padic (ℓ : ℕ) [Fact ℓ.Prime] (hm : c ^ 2 - 13 * d ^ 2 ≠ 0)
+    {q : ℚ_[ℓ]ˣ} (hq : (q : ℚ_[ℓ]) = ((5 * (c ^ 2 - 13 * d ^ 2) : ℚ) : ℚ_[ℓ]))
     (h₁ : a₁ * a₂ = 17 * (b₁ * b₂))
     (h₂ : 5 * (c ^ 2 - 13 * d ^ 2) = a₁ ^ 2 + 13 * a₂ ^ 2 - 17 * b₁ ^ 2 - 221 * b₂ ^ 2) :
-    hilbertSymbol (Units.mk0 (17 : ℚ_[ℓ]) (by norm_num))
-        (Units.mk0 (((5 * (c ^ 2 - 13 * d ^ 2) : ℚ)) : ℚ_[ℓ])
-          (Rat.cast_ne_zero.2 (mul_ne_zero (by norm_num) hm))) =
-      if ℓ = 5 then -1 else 1 := by
+    hilbertSymbol (Units.mk0 (17 : ℚ_[ℓ]) (by norm_num)) q = if ℓ = 5 then -1 else 1 := by
   have hp : ℓ.Prime := Fact.out
   -- Where `17` is a square in `ℚ_ℓ`, the symbol is trivial.
   have hsq17 (h : IsSquare (17 : ℚ_[ℓ])) (h5 : ℓ ≠ 5) :
-      hilbertSymbol (Units.mk0 (17 : ℚ_[ℓ]) (by norm_num))
-        (Units.mk0 (((5 * (c ^ 2 - 13 * d ^ 2) : ℚ)) : ℚ_[ℓ])
-          (Rat.cast_ne_zero.2 (mul_ne_zero (by norm_num) hm))) = if ℓ = 5 then -1 else 1 := by
+      hilbertSymbol (Units.mk0 (17 : ℚ_[ℓ]) (by norm_num)) q = if ℓ = 5 then -1 else 1 := by
     rw [ite_eq_right h5]
     exact hilbertSymbol_eq_one_of_isSquare_left (Units.isSquare_coe_iff.mp (by simpa using h)) _
   rcases eq_or_ne ℓ 2 with rfl | h2
@@ -174,18 +168,17 @@ private theorem hilbertSymbol_seventeen_padic (ℓ : ℕ) [Fact ℓ.Prime] (hm :
     have h := (Padic.isSquare_intCast_iff_legendreSym_eq_one (p := 13) (n := 17) (by norm_num)
       (by norm_num)).2 (by norm_num)
     exact hsq17 (by exact_mod_cast h) (by norm_num)
-  have h13' : ((13 : ℤ) : ZMod ℓ) ≠ 0 := (ZMod.intCast_zmod_eq_zero_iff_dvd 13 ℓ).not.2 fun h ↦
-    h13 ((Nat.prime_dvd_prime_iff_eq hp (by norm_num)).mp (by exact_mod_cast h))
-  rcases legendreSym.eq_one_or_neg_one ℓ h13' with hχ | hχ
+  have h13' : ¬ (ℓ : ℤ) ∣ 13 := not_natCast_dvd_of_ne hp (by norm_num) h13
+  rcases legendreSym.eq_one_or_neg_one ℓ ((ZMod.intCast_zmod_eq_zero_iff_dvd 13 ℓ).not.2 h13')
+    with hχ | hχ
   · -- If `13` is a square in `ℚ_ℓ`, the norm equation over `ℚ(√13)` descends to `ℚ_ℓ`.
     have h5 : ℓ ≠ 5 := by rintro rfl; norm_num at hχ
-    obtain ⟨r, hr⟩ := (Padic.isSquare_intCast_iff_legendreSym_eq_one h2 (n := 13)
-      fun h ↦ h13' ((ZMod.intCast_zmod_eq_zero_iff_dvd 13 ℓ).2 h)).2 hχ
+    obtain ⟨r, hr⟩ := (Padic.isSquare_intCast_iff_legendreSym_eq_one h2 h13').2 hχ
     obtain ⟨x, y, hxy⟩ := exists_eq_sq_sub_seventeen_mul_sq (E := ℚ_[ℓ]) (r := r)
       (by rw [pow_two, ← hr]; norm_num) h₁ h₂
     rw [ite_eq_right h5, hilbertSymbol_eq_one_iff]
-    exact ⟨x, y, by simpa using hxy⟩
-  · exact hilbertSymbol_seventeen_five_mul h2 hχ hm
+    exact ⟨x, y, by simpa [hq] using hxy⟩
+  · exact hilbertSymbol_seventeen_five_mul h2 hχ hm hq
 
 /-- **Hilbert reciprocity rules out the norm equation.** There is no solution in rational
 coordinates of `5 (c² - 13 d²) = α² - 17 β²` over `ℚ(√13)` with `c² - 13 d² ≠ 0`: the Hilbert
@@ -198,8 +191,11 @@ private theorem false_of_sq_sub_seventeen_mul_sq (hm : c ^ 2 - 13 * d ^ 2 ≠ 0)
   let q : ℚˣ := Units.mk0 (5 * (c ^ 2 - 13 * d ^ 2)) (mul_ne_zero (by norm_num) hm)
   have hloc (ℓ : Nat.Primes) : hilbertSymbol (Units.map (algebraMap ℚ ℚ_[ℓ]).toMonoidHom a)
       (Units.map (algebraMap ℚ ℚ_[ℓ]).toMonoidHom q) = if (ℓ : ℕ) = 5 then -1 else 1 := by
-    rw [← hilbertSymbol_seventeen_padic ℓ hm h₁ h₂]
-    congr 1 <;> ext <;> simp [a, q]
+    rw [← hilbertSymbol_seventeen_padic ℓ hm (q := Units.map (algebraMap ℚ ℚ_[ℓ]).toMonoidHom q)
+      (by simp [q]) h₁ h₂]
+    congr 1
+    ext
+    simp [a]
   -- At the real place `17` is a square.
   have hreal : hilbertSymbol (Units.map (algebraMap ℚ ℝ).toMonoidHom a)
       (Units.map (algebraMap ℚ ℝ).toMonoidHom q) = 1 :=
@@ -287,8 +283,8 @@ private theorem finrank_adjoin_simple_eq_two (hs : s ^ 2 = 13) : Module.finrank 
     (fun i ↦ by fin_cases i; simp [hs]) (fun i j hij ↦ (hij (Subsingleton.elim i j)).elim)
     (fun i ↦ by fin_cases i; exact (Int.prime_iff_natAbs_prime.2 (by norm_num)).squarefree)
     (fun i ↦ by fin_cases i; simp [Int.isUnit_iff])
-  rwa [Matrix.range_cons, Matrix.range_empty, Set.union_empty, Nat.card_eq_fintype_card,
-    Fintype.card_fin, pow_one] at h
+  rw [show Set.range ![s] = {s} by simp] at h
+  simpa using h
 
 /-- `ℚ(√13, √17)` has degree four over `ℚ`. -/
 private theorem finrank_eq_four (hs : s ^ 2 = 13) (ht : t ^ 2 = 17) (hst : ℚ⟮s, t⟯ = ⊤) :
@@ -301,8 +297,35 @@ private theorem finrank_eq_four (hs : s ^ 2 = 13) (ht : t ^ 2 = 17) (hst : ℚ�
     (sq_vecCons hs ht) hcop
     (fun i ↦ by fin_cases i <;> exact (Int.prime_iff_natAbs_prime.2 (by norm_num)).squarefree)
     (fun i ↦ by fin_cases i <;> simp [Int.isUnit_iff])
-  rwa [adjoin_range_vecCons hst, IntermediateField.finrank_top', Nat.card_eq_fintype_card,
-    Fintype.card_fin] at h
+  rw [adjoin_range_vecCons hst] at h
+  simpa using h
+
+/-- `ℚ(√13, √17)` has degree two over `ℚ(√13)`. -/
+private theorem finrank_adjoin_simple_left_eq_two (hs : s ^ 2 = 13) (ht : t ^ 2 = 17)
+    (hst : ℚ⟮s, t⟯ = ⊤) : Module.finrank ℚ⟮s⟯ L = 2 := by
+  have h := Module.finrank_mul_finrank ℚ ℚ⟮s⟯ L
+  rw [finrank_adjoin_simple_eq_two hs, finrank_eq_four hs ht hst] at h
+  omega
+
+/-- `√13` is not rational. -/
+private theorem gen_notMem_range_algebraMap (hs : s ^ 2 = 13) :
+    AdjoinSimple.gen ℚ s ∉ Set.range (algebraMap ℚ ℚ⟮s⟯) := by
+  rintro ⟨a, ha⟩
+  have hF := finrank_adjoin_simple_eq_two hs
+  rw [adjoin_simple_eq_bot_iff.2 ⟨a, by simpa using congrArg Subtype.val ha⟩,
+    IntermediateField.finrank_bot] at hF
+  omega
+
+/-- `√17` does not lie in `ℚ(√13)`. -/
+private theorem notMem_range_algebraMap_adjoin_simple (hs : s ^ 2 = 13) (ht : t ^ 2 = 17)
+    (hst : ℚ⟮s, t⟯ = ⊤) : t ∉ Set.range (algebraMap ℚ⟮s⟯ L) := by
+  rintro ⟨f, hf⟩
+  have htop : ℚ⟮s⟯ = ⊤ := by
+    rw [eq_top_iff, ← hst, adjoin_le_iff, Set.insert_subset_iff, Set.singleton_subset_iff]
+    exact ⟨mem_adjoin_simple_self ℚ s, hf ▸ f.2⟩
+  have hF := finrank_adjoin_simple_eq_two hs
+  rw [htop, IntermediateField.finrank_top', finrank_eq_four hs ht hst] at hF
+  omega
 
 /-- **`25` is a local norm everywhere from `ℚ(√13, √17)`.** If `L` is generated over `ℚ` by
 square roots `s` of `13` and `t` of `17`, then `25` is a norm from the local étale algebra
@@ -328,27 +351,12 @@ theorem twentyFive_notMem_normGroup (hs : s ^ 2 = 13) (ht : t ^ 2 = 17) (hst : �
   intro h25
   obtain ⟨x, hx⟩ := mem_normGroup_iff.1 h25
   -- The tower `ℚ ⊆ F = ℚ(√13) ⊆ L` consists of two quadratic steps, generated by `√13` and `√17`.
-  have hF := finrank_adjoin_simple_eq_two hs
-  have hFL : Module.finrank ℚ⟮s⟯ L = 2 := by
-    have h := Module.finrank_mul_finrank ℚ ℚ⟮s⟯ L
-    rw [hF, finrank_eq_four hs ht hst] at h
-    omega
-  have : Algebra.IsQuadraticExtension ℚ ℚ⟮s⟯ := ⟨hF⟩
+  have hFL := finrank_adjoin_simple_left_eq_two hs ht hst
+  have : Algebra.IsQuadraticExtension ℚ ℚ⟮s⟯ := ⟨finrank_adjoin_simple_eq_two hs⟩
   have : Algebra.IsQuadraticExtension ℚ⟮s⟯ L := ⟨hFL⟩
-  let σ : ℚ⟮s⟯ := ⟨s, mem_adjoin_simple_self ℚ s⟩
-  have hσ2 : σ ^ 2 = 13 := Subtype.ext (by simp [σ, hs]; norm_cast)
-  have hσ : σ ∉ Set.range (algebraMap ℚ ℚ⟮s⟯) := by
-    rintro ⟨a, ha⟩
-    have hbot : ℚ⟮s⟯ = ⊥ := adjoin_simple_eq_bot_iff.2 ⟨a, congrArg Subtype.val ha⟩
-    rw [hbot, IntermediateField.finrank_bot] at hF
-    omega
-  have ht' : t ∉ Set.range (algebraMap ℚ⟮s⟯ L) := by
-    rintro ⟨f, hf⟩
-    have htop : ℚ⟮s⟯ = ⊤ := by
-      rw [eq_top_iff, ← hst, adjoin_le_iff, Set.insert_subset_iff, Set.singleton_subset_iff]
-      exact ⟨mem_adjoin_simple_self ℚ s, hf ▸ f.2⟩
-    rw [htop, IntermediateField.finrank_top', finrank_eq_four hs ht hst] at hF
-    omega
+  have hσ2 : AdjoinSimple.gen ℚ s ^ 2 = 13 := Subtype.ext (by simp [hs]; norm_cast)
+  have hσ := gen_notMem_range_algebraMap hs
+  have ht' := notMem_range_algebraMap_adjoin_simple hs ht hst
   -- `y = N_{L/F}(x) = u + v √13` has norm `u² - 13 v² = 25`, so `y (c² - 13 d²) = 5 z²`.
   obtain ⟨v, u, hy⟩ := Algebra.IsQuadraticExtension.exists_eq_algebraMap_add_algebraMap_mul
     (K := ℚ) (L := ℚ⟮s⟯) hσ (Algebra.norm ℚ⟮s⟯ (x : L))
@@ -371,8 +379,9 @@ theorem twentyFive_notMem_normGroup (hs : s ^ 2 = 13) (ht : t ^ 2 = 17) (hst : �
   have hq : Units.mk0 _ hq0 ∈ normGroup ℚ⟮s⟯ L := by
     have h5z : algebraMap ℚ⟮s⟯ L (5 * z) ≠ 0 := (map_ne_zero _).2 (mul_ne_zero (by norm_num) hz0)
     refine mem_normGroup_iff.2 ⟨Units.mk0 _ h5z * x⁻¹, mul_right_cancel₀ hy0 ?_⟩
-    rw [← map_mul, Units.val_mul, Units.val_mk0, mul_assoc, Units.inv_mul, mul_one,
-      Algebra.norm_algebraMap, hFL, Units.val_mk0]
+    rw [← map_mul]
+    simp only [Units.val_mul, Units.val_mk0, mul_assoc, Units.inv_mul, mul_one,
+      Algebra.norm_algebraMap, hFL]
     simp only [map_mul, map_ofNat] at hyz ⊢
     linear_combination -5 * hyz
   obtain ⟨α, β, hαβ⟩ := (mem_normGroup_iff_exists_sq_sub_mul_sq L ht' (a := 17)
