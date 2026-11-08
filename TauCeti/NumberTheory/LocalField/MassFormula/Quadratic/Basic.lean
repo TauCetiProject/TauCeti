@@ -69,6 +69,7 @@ namespace TauCeti
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
+omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
 /-- **The two fields `K(√ϖ)` and `K(√(u ϖ))` are distinct** when `2 ≠ 0` in `K` and `u` is a unit
 of `𝒪[K]` that is not a square: equality would make `ϖ · u ϖ`, hence `u`, a square. -/
 theorem adjoin_ne_adjoin_of_sq_eq_of_sq_eq_mul [NeZero (2 : K)] {ϖ : 𝒪[K]}
@@ -77,15 +78,7 @@ theorem adjoin_ne_adjoin_of_sq_eq_of_sq_eq_mul [NeZero (2 : K)] {ϖ : 𝒪[K]}
     (hy : y ^ 2 = algebraMap K (SeparableClosure K) ((u : 𝒪[K]) * ϖ : 𝒪[K])) :
     K⟮x⟯ ≠ K⟮y⟯ := by
   intro hxy
-  -- `x ∉ K`, since `K(x)` has degree two.
-  have hxb : x ∉ (⊥ : IntermediateField K (SeparableClosure K)) := by
-    rw [← IntermediateField.adjoin_simple_eq_bot_iff]
-    intro hbot
-    have h := (mem_totallyRamifiedOfDegree_iff.1
-      (adjoin_mem_totallyRamifiedOfDegree_of_pow_eq hϖ two_pos hx)).1
-    rw [hbot, IntermediateField.finrank_bot] at h
-    omega
-  obtain ⟨t, ht⟩ := IntermediateField.isSquare_mul_of_adjoin_simple_eq hx hy hxb hxy
+  obtain ⟨t, ht⟩ := IntermediateField.isSquare_mul_of_adjoin_simple_eq hx hy hxy
   have hϖ0 : (ϖ : K) ≠ 0 := fun h ↦ hϖ.ne_zero (Subtype.ext h)
   refine hu ⟨t / ϖ, ?_⟩
   field_simp
