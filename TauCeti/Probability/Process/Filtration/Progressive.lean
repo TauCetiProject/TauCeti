@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Process.Predictable
-public import Mathlib.Topology.Instances.NNReal.Lemmas
 
 /-!
 # The progressive sigma algebra
