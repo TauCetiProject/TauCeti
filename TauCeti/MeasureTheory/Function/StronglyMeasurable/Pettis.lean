@@ -128,8 +128,10 @@ theorem MemLp.clm_apply_of_forall_aestronglyMeasurable {p : ℝ≥0∞} {u : α 
     (hA : ∀ x y, AEStronglyMeasurable (fun t ↦ A t x y) μ) (hA_bound : ∀ᵐ t ∂μ, ‖A t‖ ≤ Λ) :
     MemLp (fun t ↦ A t (u t)) p μ := by
   refine hu.of_le_mul (c := Λ) (TauCeti.aestronglyMeasurable_strongDual_iff_forall_apply.2
-    fun y ↦ hu.aestronglyMeasurable.apply_of_forall_of_continuous (g := fun t x ↦ A t x y)
-      (fun x ↦ hA x y) fun t ↦ ((ContinuousLinearMap.apply 𝕜 𝕜 y).comp (A t)).continuous) ?_
+    fun y ↦ hu.aestronglyMeasurable.apply_of_forall_of_continuousAt (g := fun t x ↦ A t x y)
+      (fun x ↦ hA x y)
+      (ae_of_all _ fun t ↦ ((ContinuousLinearMap.apply 𝕜 𝕜 y).comp (A t)).continuous.continuousAt))
+    ?_
   filter_upwards [hA_bound] with t ht
   exact (A t).le_of_opNorm_le ht (u t)
 
