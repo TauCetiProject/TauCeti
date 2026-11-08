@@ -302,6 +302,17 @@ lemma comap_comap (φ : A →+* B) (ψ : B →+* C) (v : Spv C) :
     comap φ (comap ψ v) = comap (ψ.comp φ) v := by
   rw [comap_comp, Function.comp_apply]
 
+/-- Pulling back along the action of `g ∈ G` does not change the image in `Spv A`, when `G` acts
+by `A`-algebra automorphisms. -/
+@[simp]
+theorem comap_algebraMap_comap_toRingHom {G : Type*} [Monoid G] [Algebra A B]
+    [MulSemiringAction G B] [SMulCommClass G A B] (g : G) (y : Spv B) :
+    comap (algebraMap A B) (comap (MulSemiringAction.toRingHom G B g) y) =
+      comap (algebraMap A B) y := by
+  rw [comap_comap]
+  congr 1
+  exact RingHom.ext fun a ↦ smul_algebraMap g a
+
 /-- `comap φ` is injective when `φ` is surjective. -/
 lemma comap_injective {φ : A →+* B} (hφ : Function.Surjective φ) :
     Function.Injective (comap φ) := by

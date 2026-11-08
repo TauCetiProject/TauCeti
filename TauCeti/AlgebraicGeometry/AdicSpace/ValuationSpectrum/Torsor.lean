@@ -46,17 +46,6 @@ namespace TauCeti.ValuationSpectrum
 variable {G A B : Type*} [Group G] [Finite G] [CommRing A] [CommRing B] [Algebra A B]
   [MulSemiringAction G B] [SMulCommClass G A B]
 
-omit [Finite G] in
-/-- Pulling back along the action of `g ∈ G` does not change the image in `Spv A`, since `G` acts
-by `A`-algebra automorphisms. -/
-@[simp]
-theorem comap_algebraMap_comap_toRingHom (g : G) (y : Spv B) :
-    comap (algebraMap A B) (comap (MulSemiringAction.toRingHom G B g) y) =
-      comap (algebraMap A B) y := by
-  rw [comap_comap]
-  congr 1
-  exact RingHom.ext fun a ↦ smul_algebraMap g a
-
 /-- **The fibres of `Spv B → Spv A` for a finite étale torsor are the `G`-orbits.** If `B` is a
 finite étale `G`-torsor over `A`, two points `y` and `y'` of `Spv B` have the same image in
 `Spv A` exactly when `y' = g • y` for some `g ∈ G`, where `(g • y)(b) = y(g⁻¹ • b)`. -/
