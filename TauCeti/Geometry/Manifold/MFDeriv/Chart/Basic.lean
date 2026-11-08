@@ -767,3 +767,30 @@ theorem eventually_mdifferentiableAt_chart_symm_comp_of_eventually_differentiabl
 end ProductCharts
 
 end TauCeti
+
+namespace TauCeti
+
+section ExtChartAtSelf
+
+omit [IsManifold I 1 M] in
+/-- The preferred extended chart at `x` has the identity as its manifold derivative at `x`. This
+is `mfderiv_extChartAt_self` without any smoothness hypothesis on the atlas, in the form of a
+`HasMFDerivAt` statement. -/
+theorem hasMFDerivAt_extChartAt_self (x : M) :
+    HasMFDerivAt I 𝓘(𝕜, E) (extChartAt I x) x (ContinuousLinearMap.id 𝕜 E) :=
+  ⟨continuousAt_extChartAt x,
+    (hasFDerivWithinAt_id (extChartAt I x x) (range I)).congr_of_eventuallyEq
+    (Filter.eventuallyEq_of_mem (extChartAt_target_mem_nhdsWithin x)
+      fun _ h ↦ writtenInExtChartAt_extChartAt h)
+    (writtenInExtChartAt_extChartAt (mem_extChartAt_target x))⟩
+
+omit [IsManifold I 1 M] in
+/-- The manifold derivative of the preferred extended chart at its centre is the identity, with no
+smoothness hypothesis on the atlas. -/
+theorem mfderiv_extChartAt_eq_id (x : M) :
+    mfderiv I 𝓘(𝕜, E) (extChartAt I x) x = ContinuousLinearMap.id 𝕜 E :=
+  (hasMFDerivAt_extChartAt_self x).mfderiv
+
+end ExtChartAtSelf
+
+end TauCeti
