@@ -143,7 +143,8 @@ theorem sum_fderiv_cauchyFueterCutoffField {ε : ℝ} (hε : 0 < ε)
     simp only [Finset.mul_sum, Finset.sum_mul, mul_smul_comm, smul_mul_assoc]
 
 /-- The divergence theorem for the cut-off Cauchy–Fueter field on a coordinate box.
-The right side is the radial-density integral whose limit gives `2π² • f q₀`.
+The right side is the radial-density integral whose limit gives `2π² • f q₀` when
+`q₀` lies strictly inside the box; see `tendsto_boxBoundarySum_cauchyFueterCutoffField`.
 Regularity is required only in the punctured open box, not at the pole. -/
 theorem boxBoundarySum_cauchyFueterCutoffField {ε : ℝ} (hε : 0 < ε)
     {a b : Fin 4 → ℝ} (hab : a ≤ b) {q₀ : ℍ} {f : ℍ → ℍ}
