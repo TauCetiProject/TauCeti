@@ -77,7 +77,7 @@ theorem exists_isFiniteMeasure_eq_I_mul_herglotzTransform_cayley_add {F : ℂ �
     have hmem := bijOn_I_mul_one_add_div_one_sub_ball.mapsTo hw
     have hinner : DifferentiableAt ℂ (fun u : ℂ => I * (1 + u) / (1 - u)) w :=
       (hasDerivAt_I_mul_one_add_div_one_sub
-        (ne_of_mem_ball_of_norm_eq_one hw norm_one)).differentiableAt
+        (ne_of_mem_of_not_mem hw (by simp))).differentiableAt
     have hF' : DifferentiableAt ℂ F (I * (1 + w) / (1 - w)) :=
       (hF _ hmem).differentiableAt
         (UpperHalfPlane.isOpen_upperHalfPlaneSet.mem_nhds hmem)
