@@ -138,7 +138,8 @@ theorem mfderiv_generatingSource_comp_inr (hS : ContMDiff (I.prod J) 𝓘(ℝ) �
 
 /-- **The differential of the source projection is invertible exactly where the mixed Hessian
 is.** In the preferred charts the differential is block triangular, keeping the base coordinate
-and acting on the second factor by the mixed Hessian. -/
+and acting on the second factor by the mixed Hessian. The argument is that of
+`TauCeti.isInvertible_mfderiv_legendreMap_iff` for the Legendre map. -/
 theorem isInvertible_mfderiv_generatingSource_iff (hS : ContMDiff (I.prod J) 𝓘(ℝ) ∞ S)
     (x : M × N) :
     (mfderiv (I.prod J) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (generatingSource I S) x).IsInvertible ↔
@@ -207,7 +208,6 @@ theorem liouvilleForm_sub_mpullback_generatingTarget_comp (hS : ContMDiff (I.pro
   rwa [hgraph.mpullback_eq, SmoothForm.mpullback_graph_mpullback_fst_sub_mpullback_snd _ _ htgt]
     at key
 
-variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
 /-- **The map generated through any branch is symplectic.** If `β` is a right inverse of the
 source projection near `z`, differentiable at `z`, then `φ = tgt ∘ β` pulls the canonical
 symplectic form `ω_N` back to `ω_M` at `z`. -/
@@ -220,10 +220,15 @@ theorem mpullback_generatingTarget_comp_symplecticForm (hS : ContMDiff (I.prod J
   have htgt : MDifferentiableAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (J.prod 𝓘(ℝ, F →L[ℝ] ℝ))
       (generatingTarget J S ∘ β) z :=
     ((contMDiff_generatingTarget hS (β z)).mdifferentiableAt (by simp)).comp z hβ
-  -- The generated relation is isotropic, so it pulls the twisted product back to zero.
+  -- The generated relation is exact, hence isotropic, so it pulls the twisted product back to
+  -- zero.
   have hiso := (SmoothTwoForm.IsNondegenerate.isIsotropicMap_iff_mpullback_eq_zero
     (contMDiff_generatingCorrespondence hS)).1
-    (isExactLagrangianMap_generatingCorrespondence hS).isLagrangianMap.isIsotropicMap
+    (SmoothTwoForm.IsNondegenerate.isIsotropicMap_of_mpullback_eq_mextDeriv
+      (hσ := (isSymplectic_symplecticForm (I := I) (M := M)).isNondegenerate.twistedProd
+        (isSymplectic_symplecticForm (I := J) (M := N)).isNondegenerate)
+      (twistedProd_symplecticForm I M J N) (contMDiff_generatingCorrespondence hS)
+      (hS.of_le (by simp)) (mpullback_generatingCorrespondence_liouvilleForm hS))
   have key := congrArg (fun α ↦ mpullback (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (I.prod J) β α.1 z) hiso
   simp only [SmoothForm.coe_mpullback] at key
   rw [← mpullback_comp_at hβ hcorr] at key
@@ -310,6 +315,12 @@ theorem eventually_generatingSource_generatingBranch {z : CotangentBundle I M}
   eventually_of_mem ((generatingBranch hS hx).open_source.mem_nhds hz)
     fun _ hz' ↦ generatingSource_generatingBranch hS hx hz'
 
+/-- The branch is a left inverse of the source projection on its target. -/
+theorem generatingBranch_generatingSource_of_mem_target {y : M × N}
+    (hy : y ∈ (generatingBranch hS hx).target) :
+    generatingBranch hS hx (generatingSource I S y) = y :=
+  IsLocalDiffeomorphAt.localInverse_left_inv _ hy
+
 /-- Near `x`, the branch is a left inverse of the source projection. -/
 theorem eventually_generatingBranch_generatingSource :
     ∀ᶠ y in 𝓝 x, generatingBranch hS hx (generatingSource I S y) = y :=
@@ -334,8 +345,7 @@ theorem eventuallyEq_generatingBranch {β : CotangentBundle I M → M × N}
       rw [hβx]
       exact hf.localInverse.open_target.mem_nhds hf.localInverse_mem_target)
   filter_upwards [hT, hsrc] with z hz hz'
-  rw [← hf.localInverse_left_inv hz, hz']
-  rfl
+  rw [← generatingBranch_generatingSource_of_mem_target hS hx hz, hz']
 
 /-- The source point `(q₀, d_q S(q₀, Q₀))` lies in the source of the generated map. -/
 @[simp]
@@ -346,6 +356,11 @@ theorem mem_generatedMap_source : generatingSource I S x ∈ (generatedMap hS hx
   simp only [mem_preimage, OpenPartialHomeomorph.symm_symm,
     PartialDiffeomorph.toFun'_toOpenPartialHomeomorph, h]
   exact (isLocalDiffeomorphAt_generatingTarget hS hx).localInverse_mem_target
+
+/-- The source of the generated map lies in the source of the branch. -/
+theorem generatedMap_source_subset :
+    (generatedMap hS hx).source ⊆ (generatingBranch hS hx).source :=
+  fun _ hz ↦ hz.1
 
 /-- On its source, the generated map is the target projection composed with the branch. -/
 theorem generatedMap_apply {z : CotangentBundle I M} (hz : z ∈ (generatedMap hS hx).source) :
@@ -386,8 +401,8 @@ theorem mpullback_generatedMap_symplecticForm {z : CotangentBundle I M}
         (symplecticForm J N).1 z = (symplecticForm I M).1 z := by
   rw [(eventuallyEq_generatedMap hS hx hz).mpullback_eq]
   exact mpullback_generatingTarget_comp_symplecticForm hS
-    ((generatingBranch hS hx).mdifferentiableAt (by simp) hz.1)
-    (eventually_generatingSource_generatingBranch hS hx hz.1)
+    ((generatingBranch hS hx).mdifferentiableAt (by simp) (generatedMap_source_subset hS hx hz))
+    (eventually_generatingSource_generatingBranch hS hx (generatedMap_source_subset hS hx hz))
 
 /-- **`S` is the primitive of the generated map.** At every point of its source, the map `φ`
 generated by `S` satisfies `λ_M - φ^*λ_N = d(S ∘ branch)`. -/
@@ -400,8 +415,8 @@ theorem liouvilleForm_sub_mpullback_generatedMap {z : CotangentBundle I M}
         (RoughForm.ofFunction (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (S ∘ generatingBranch hS hx)) z := by
   rw [(eventuallyEq_generatedMap hS hx hz).mpullback_eq]
   exact liouvilleForm_sub_mpullback_generatingTarget_comp hS
-    ((generatingBranch hS hx).mdifferentiableAt (by simp) hz.1)
-    (eventually_generatingSource_generatingBranch hS hx hz.1)
+    ((generatingBranch hS hx).mdifferentiableAt (by simp) (generatedMap_source_subset hS hx hz))
+    (eventually_generatingSource_generatingBranch hS hx (generatedMap_source_subset hS hx hz))
 
 end Generated
 
