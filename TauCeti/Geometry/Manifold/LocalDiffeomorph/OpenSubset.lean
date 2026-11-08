@@ -108,6 +108,11 @@ theorem ofTop_apply {U : TopologicalSpace.Opens M} {hU : U = ⊤} (x : U) :
     ofTop (I := I) (n := n) U hU x = x :=
   (rfl)
 
+/-- The diffeomorphism `Diffeomorph.ofTop` is the inclusion, as a function. -/
+theorem coe_ofTop {U : TopologicalSpace.Opens M} {hU : U = ⊤} :
+    ⇑(ofTop (I := I) (n := n) U hU) = Subtype.val :=
+  (rfl)
+
 /-- The inverse of `Diffeomorph.ofTop` sends a point to itself, viewed in `U`. -/
 @[simp]
 theorem coe_ofTop_symm_apply {U : TopologicalSpace.Opens M} {hU : U = ⊤} (x : M) :
