@@ -21,6 +21,9 @@ The overlap argument refines a neighbourhood of the image of the closed point to
 principal open. Its points form an open subspace by the localization theorem. This
 also shows why locality of the coefficient ring matters: containing the closed point
 ensures that the entire scheme-valued point factors through that principal open.
+The same overlap argument gives `continuous_chartPoint_of_isLocalRing`: continuity on
+points for any morphism from an affine scheme over the base, not just an open immersion.
+This is what makes arbitrary scheme morphisms act continuously on points.
 
 ## References
 
