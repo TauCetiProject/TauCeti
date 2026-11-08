@@ -28,8 +28,9 @@ form used to change formal parameters.
   linear coefficient of `Q` is a unit.
 * `PowerSeries.exists_unit_eq_X_mul_of_subst_eq_X`: if `constantCoeff Q = 0` and `P(Q) = X`, then
   `Q = X * v` for a unit `v` of `R⟦X⟧`.
-* `PowerSeries.eq_subst_substInvOfIsUnit_of_subst_eq`: substituting a series `P = u X + ⋯` with
-  `u` a unit is undone by substituting its compositional inverse, so `f` is determined by `f(P)`.
+* `PowerSeries.subst_eq_iff_eq_subst_substInvOfIsUnit`: substituting a series `P = u X + ⋯` with
+  `u` a unit is undone by substituting its compositional inverse: `f(P) = g ↔ f = g(P⁻¹)`, so `f`
+  is determined by `f(P)`.
 * `PowerSeries.map_substInvOfIsUnit`: compositional inverses commute with coefficient maps.
 -/
 
@@ -61,13 +62,16 @@ theorem exists_unit_eq_X_mul_of_subst_eq_X {P Q : R⟦X⟧} (hQ : constantCoeff 
   exact ⟨v, rfl⟩
 
 /-- Substituting a series `P = u X + ⋯` with `u` a unit is undone by substituting its
-compositional inverse: if `f(P) = g`, then `f = g(P⁻¹)`. In particular a power series `f` is
+compositional inverse: `f(P) = g` if and only if `f = g(P⁻¹)`. In particular a power series `f` is
 determined by `f(P)`. -/
-theorem eq_subst_substInvOfIsUnit_of_subst_eq {P : R⟦X⟧} (hP : constantCoeff P = 0)
-    (hP' : IsUnit (coeff 1 P)) {f g : R⟦X⟧} (h : f.subst P = g) :
-    f = g.subst (P.substInvOfIsUnit hP') := by
-  rw [← h, subst_comp_subst_apply (.of_constantCoeff_zero' hP) (.substInvOfIsUnit P hP'),
-    P.subst_substInvOfIsUnit_right hP hP', X_subst]
+theorem subst_eq_iff_eq_subst_substInvOfIsUnit {P : R⟦X⟧} (hP : constantCoeff P = 0)
+    (hP' : IsUnit (coeff 1 P)) {f g : R⟦X⟧} :
+    f.subst P = g ↔ f = g.subst (P.substInvOfIsUnit hP') := by
+  have hP₀ : HasSubst P := .of_constantCoeff_zero' hP
+  have hQ := HasSubst.substInvOfIsUnit P hP'
+  constructor <;> rintro rfl
+  · rw [subst_comp_subst_apply hP₀ hQ, P.subst_substInvOfIsUnit_right hP hP', X_subst]
+  · rw [subst_comp_subst_apply hQ hP₀, P.subst_substInvOfIsUnit_left hP hP', X_subst]
 
 /-- The compositional inverse of a series `P = u X + ⋯` with `u` a unit commutes with applying a
 ring homomorphism to the coefficients. -/
@@ -78,11 +82,8 @@ theorem map_substInvOfIsUnit {S : Type*} [CommRing S] (f : R →+* S) {P : R⟦X
       (P.map f).substInvOfIsUnit (by simpa only [coeff_map] using hP'.map f) := by
   have hQ := HasSubst.substInvOfIsUnit P hP'
   refine (P.map f).eq_substInvOfIsUnit_of_subst_eq_X
-    (by rw [← coeff_zero_eq_constantCoeff_apply, coeff_map, coeff_zero_eq_constantCoeff, hP,
-      map_zero]) _
-    (.of_constantCoeff_zero' (by
-      rw [← coeff_zero_eq_constantCoeff_apply, coeff_map, coeff_zero_eq_constantCoeff,
-        constantCoeff_substInvOfIsUnit, map_zero])) ?_
+    (by rw [← coeff_zero_eq_constantCoeff_apply, coeff_map]; simp [hP]) _
+    (.of_constantCoeff_zero' (by rw [← coeff_zero_eq_constantCoeff_apply, coeff_map]; simp)) ?_
   -- `PowerSeries.map` is `MvPowerSeries.map` on the unit index type.
   rw [show (P.substInvOfIsUnit hP').map f = MvPowerSeries.map f (P.substInvOfIsUnit hP') from rfl,
     ← map_subst hQ, P.subst_substInvOfIsUnit_right hP hP']
