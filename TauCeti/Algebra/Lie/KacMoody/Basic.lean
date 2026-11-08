@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.Solvable
 public import TauCeti.Algebra.Lie.Presentation.Serre
-public import TauCeti.LinearAlgebra.Matrix.Cartan.Realization
+public import TauCeti.LinearAlgebra.Matrix.Cartan.Realization.Basic
 
 /-!
 # The Kac–Moody algebra of a realization, by generators and relations
