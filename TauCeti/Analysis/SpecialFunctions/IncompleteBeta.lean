@@ -331,9 +331,13 @@ theorem integral_Ioi_rpow_one_add_rpow_eq_interval_tail {a b u0 : ℝ}
 /-- The upper tail of the first beta-integral kernel is the total beta mass minus the normalized
 lower incomplete beta mass. -/
 theorem integral_Ioo_rpow_one_sub_rpow_tail_eq {a b u0 : ℝ} (ha : 0 < a) (hb : 0 < b)
-    (hu00 : 0 ≤ u0) (hu01 : u0 < 1) :
+    (hu00 : 0 ≤ u0) :
     ∫ u in Ioo u0 1, u ^ (a - 1) * (1 - u) ^ (b - 1) =
       beta a b * (1 - regularizedIncompleteBeta a b u0) := by
+  rcases lt_or_ge u0 1 with hu01 | hu01
+  swap
+  · simp [Set.Ioo_eq_empty (not_lt.2 hu01),
+      regularizedIncompleteBeta_eq_one_of_one_le ha.le hb hu01]
   let k : ℝ → ℝ := fun u => u ^ (a - 1) * (1 - u) ^ (b - 1)
   have hmem01 : (0 : ℝ) ∈ Icc (0 : ℝ) 1 := ⟨le_rfl, zero_le_one⟩
   have hmem11 : (1 : ℝ) ∈ Icc (0 : ℝ) 1 := ⟨zero_le_one, le_rfl⟩
@@ -380,7 +384,7 @@ theorem integral_Ioi_rpow_one_add_rpow_tail_eq {a b u0 : ℝ} (ha : 0 < a) (hb :
     ∫ w in Ioi (u0 / (1 - u0)), w ^ (a - 1) * (1 + w) ^ (-(a + b)) =
       beta a b * (1 - regularizedIncompleteBeta a b u0) := by
   rw [integral_Ioi_rpow_one_add_rpow_eq_interval_tail hu00 hu01,
-    integral_Ioo_rpow_one_sub_rpow_tail_eq ha hb hu00 hu01]
+    integral_Ioo_rpow_one_sub_rpow_tail_eq ha hb hu00]
 
 /-- The reflection formula `I_x(a, b) = 1 - I_{1-x}(b, a)`, valid at every real argument: the
 clamping convention makes both sides constant outside `[0, 1]`, so no restriction on `x` is
