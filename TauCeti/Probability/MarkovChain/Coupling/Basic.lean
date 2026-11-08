@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Measure.TotalVariation
+public import TauCeti.MeasureTheory.Measure.TotalVariation.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Coupling
 public import TauCeti.Probability.MarkovChain.MarkovProperty
 

@@ -9,13 +9,15 @@ public import Mathlib.LinearAlgebra.Dimension.Finrank
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 import Mathlib.LinearAlgebra.Dimension.Finite
 import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
+import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
 
 /-!
-# Linear relations in a one-dimensional space
+# Spanning vectors and linear relations in a one-dimensional space
 
-Any two vectors of a one-dimensional vector space over a division ring satisfy a nontrivial linear
-relation (`TauCeti.exists_smul_add_smul_eq_zero_of_finrank_eq_one`).
+In a one-dimensional vector space over a division ring, a single vector spans exactly when it is
+nonzero (`TauCeti.span_singleton_eq_top_iff_ne_zero_of_finrank_eq_one`), and any two vectors
+satisfy a nontrivial linear relation (`TauCeti.exists_smul_add_smul_eq_zero_of_finrank_eq_one`).
 -/
 
 public section
@@ -23,6 +25,15 @@ public section
 open Module (finrank)
 
 namespace TauCeti
+
+/-- In a one-dimensional vector space, a singleton spans exactly when its vector is nonzero. -/
+theorem span_singleton_eq_top_iff_ne_zero_of_finrank_eq_one {K V : Type*} [DivisionRing K]
+    [AddCommGroup V] [Module K V] (hV : finrank K V = 1) (v : V) :
+    Submodule.span K {v} = ⊤ ↔ v ≠ 0 := by
+  refine ⟨?_, fun hv ↦ (finrank_eq_one_iff_of_ne_zero v hv).mp hV⟩
+  rintro h rfl
+  have := Module.nontrivial_of_finrank_eq_succ hV
+  simp at h
 
 /-- Any two vectors of a one-dimensional vector space satisfy a nontrivial linear relation. -/
 theorem exists_smul_add_smul_eq_zero_of_finrank_eq_one {K V : Type*} [DivisionRing K]

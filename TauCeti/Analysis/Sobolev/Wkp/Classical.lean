@@ -238,20 +238,17 @@ theorem Wkp.norm_le_sum_lpNorm_iteratedFDeriv_of_contDiffOn :
   | 0, u, f, hf, hu => by
       rw [Finset.sum_range_one, ← norm_value_eq_lpNorm_of_contDiffOn 0 u hf hu, value_zero]
   | 1, u, f, hf, hu => by
-      have h := W1p.norm_le_norm_value_add_norm_gradient u
+      have h := norm_le_norm_lowerOrder_add_norm_iteratedGradient 0 u
       rw [Finset.sum_range_succ, Finset.sum_range_one,
         ← norm_value_eq_lpNorm_of_contDiffOn 1 u hf hu, value_one,
         ← norm_iteratedGradient_eq_lpNorm_of_contDiffOn 0 u hf hu, iteratedGradient_zero]
-      exact h
+      simpa only [lowerOrder_zero, iteratedGradient_zero] using h
   | k + 2, u, f, hf, hu => by
       have hlow := norm_le_sum_lpNorm_iteratedFDeriv_of_contDiffOn (k + 1) (lowerOrder (k + 1) u)
         (hf.of_le (by exact_mod_cast (by omega : k + 1 ≤ k + 2)))
         (by simpa only [value_succ] using hu)
       have hhigh := norm_iteratedGradient_eq_lpNorm_of_contDiffOn (k + 1) u hf hu
-      have hsq := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k u
-      have hle : ‖u‖ ≤ ‖lowerOrder (k + 1) u‖ + ‖iteratedGradient (k + 1) u‖ :=
-        le_of_pow_le_pow_left₀ two_ne_zero (by positivity) (by
-          nlinarith [norm_nonneg (lowerOrder (k + 1) u), norm_nonneg (iteratedGradient (k + 1) u)])
+      have hle := norm_le_norm_lowerOrder_add_norm_iteratedGradient (k + 1) u
       rw [Finset.sum_range_succ _ (k + 2)]
       linarith
 

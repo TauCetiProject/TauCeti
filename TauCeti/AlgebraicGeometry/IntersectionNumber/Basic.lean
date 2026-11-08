@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.CartierDivisor.Effective.Degree
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Degree.EulerCharacteristic
+public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Factorial
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Pullback
 public import TauCeti.AlgebraicGeometry.LineBundle.LocalRing
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.PicZero
@@ -72,19 +73,23 @@ off-diagonal entries of the intersection matrix.
 * `LineBundleClass.intersectionNumber_mk_toInvertibleSheaf`: `(-D · C) = -dim_k Γ(D ∩ C)` for an
   effective Cartier divisor `D` meeting a proper curve `C` properly;
 * `LineBundleClass.intersectionNumber_inv_mk_toInvertibleSheaf`: `(D · C) = dim_k Γ(D ∩ C)` for
-  an effective Cartier divisor `D` meeting a proper curve `C` properly;
+  an effective Cartier divisor `D` meeting a proper curve `C` properly, so that `(D · C) ≥ 0`
+  (`LineBundleClass.intersectionNumber_inv_mk_toInvertibleSheaf_nonneg`);
 * `LineBundleClass.intersectionNumber_mk_mul_mk_toInvertibleSheaf` and
   `LineBundleClass.intersectionNumber_mk_mul_inv_mk_toInvertibleSheaf`: additivity of twisting a
   line bundle by an effective Cartier divisor meeting a proper curve properly;
 * `LineBundleClass.intersectionNumber_mul_of_isIntegral` and
   `LineBundleClass.intersectionNumber_inv_of_isIntegral`: additivity on a proper integral curve,
-  possibly singular;
+  possibly singular, with `LineBundleClass.intersectionNumber_pow_of_isIntegral` and
+  `LineBundleClass.intersectionNumber_prod_of_isIntegral` for powers and finite products;
 * `LineBundleClass.intersectionNumber_mul` and `LineBundleClass.intersectionNumber_inv`:
   additivity on a regular proper integral curve, bundled as
   `LineBundleClass.intersectionNumberHom k ι : Pic X →+ ℤ`;
 * `LineBundleClass.intersectionNumber_mk_toInvertibleSheaf_comm` and
   `LineBundleClass.intersectionNumber_inv_mk_toInvertibleSheaf_comm`: `(-D · E) = (-E · D)` and
-  `(D · E) = (E · D)` for effective Cartier divisors `D` and `E` meeting properly.
+  `(D · E) = (E · D)` for effective Cartier divisors `D` and `E` meeting properly;
+* `LineBundleClass.intersectionNumber_inv_mk_toInvertibleSheaf_nonneg_of_ne`: distinct prime
+  divisors on a regular surface have nonnegative intersection number.
 
 ## References
 
@@ -181,6 +186,16 @@ theorem intersectionNumber_inv_mk_toInvertibleSheaf {I : X.IdealSheafData}
   rw [intersectionNumber_def, pullback_inv, hI.pullback_mk_toInvertibleSheaf hI']
   exact hI'.eulerDegree_inv_mk_toInvertibleSheaf k _ s
 
+/-- **Effective Cartier divisors meeting a curve properly meet it nonnegatively.** Let `D` be an
+effective Cartier divisor on `X` with ideal sheaf `I = 𝒪_X(-D)`, and let `C` be a proper curve
+over `k` with finite-dimensional `H⁰(C, 𝒪_C)` and `H¹(C, 𝒪_C)` meeting `D` properly. Then
+`(D · C) ≥ 0`. -/
+theorem intersectionNumber_inv_mk_toInvertibleSheaf_nonneg {I : X.IdealSheafData}
+    (hI : I.IsEffectiveCartier) (hI' : (I.comap ι).IsEffectiveCartier) :
+    0 ≤ intersectionNumber k ι (mk hI.toInvertibleSheaf)⁻¹ := by
+  rw [intersectionNumber_inv_mk_toInvertibleSheaf k ι hI hI' default]
+  exact Nat.cast_nonneg _
+
 variable {I : X.IdealSheafData} (L : InvertibleSheaf X)
   [FiniteDimensional k (Cohomology ((InvertibleSheaf.pullback ι).obj L).obj 0)]
   [FiniteDimensional k (Cohomology ((InvertibleSheaf.pullback ι).obj L).obj 1)]
@@ -238,6 +253,28 @@ theorem intersectionNumber_inv_of_isIntegral (a : LineBundleClass X) :
     intersectionNumber k ι a⁻¹ = -intersectionNumber k ι a := by
   rw [intersectionNumber_def, intersectionNumber_def, pullback_inv]
   exact eulerDegree_inv_of_isIntegral k _
+
+/-- The intersection number of a power of a class with a proper integral curve over `k` with
+finite-dimensional `H⁰(C, 𝒪_C)` and `H¹(C, 𝒪_C)` is the corresponding multiple. -/
+@[simp]
+theorem intersectionNumber_pow_of_isIntegral (a : LineBundleClass X) (n : ℕ) :
+    intersectionNumber k ι (a ^ n) = n * intersectionNumber k ι a := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [pow_succ, intersectionNumber_mul_of_isIntegral, ih]; push_cast; ring
+
+/-- The intersection number of a finite product of classes with a proper integral curve over `k`
+with finite-dimensional `H⁰(C, 𝒪_C)` and `H¹(C, 𝒪_C)` is the sum of their intersection
+numbers. -/
+@[simp]
+theorem intersectionNumber_prod_of_isIntegral {α : Type*} (s : Finset α)
+    (a : α → LineBundleClass X) :
+    intersectionNumber k ι (∏ i ∈ s, a i) = ∑ i ∈ s, intersectionNumber k ι (a i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | @insert i s hi ih =>
+    rw [Finset.prod_insert hi, Finset.sum_insert hi, intersectionNumber_mul_of_isIntegral, ih]
 
 end Integral
 
@@ -344,6 +381,37 @@ theorem intersectionNumber_inv_mk_toInvertibleSheaf_comm (hD : D.IsEffectiveCart
 end Effective
 
 end Symmetric
+
+section PrimeDivisor
+
+open Order
+open _root_.AlgebraicGeometry.Scheme.IdealSheafData (vanishingIdeal
+  isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
+  isEffectiveCartier_comap_subschemeι_vanishingIdeal_closure_singleton_of_isRegular)
+
+/-- **Distinct prime divisors on a regular surface meet nonnegatively.** On a regular scheme `X`
+all of whose points have codimension at most two, let `η ≠ η'` be codimension-one points, and
+suppose that the closure `C` of `η`, with its reduced structure, is a proper curve over a field `k`
+with finite-dimensional `H⁰(C, 𝒪_C)` and `H¹(C, 𝒪_C)`. Then the intersection number of the prime
+divisor `C'`, the closure of `η'`, with `C` is nonnegative: `(C' · C) = dim_k Γ(C' ∩ C) ≥ 0`. -/
+theorem intersectionNumber_inv_mk_toInvertibleSheaf_nonneg_of_ne
+    [TauCeti.AlgebraicGeometry.IsRegular X] (hX : ∀ x : X, coheight x ≤ 2)
+    {η η' : CodimensionOnePoint X} (hne : η ≠ η')
+    [(vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme.Over (Spec (.of k))]
+    [IsProper ((vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme ↘ Spec (.of k))]
+    [RelativeDimensionLE 1
+      ((vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme ↘ Spec (.of k))]
+    [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial
+      (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme).obj 0)]
+    [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial
+      (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme).obj 1)] :
+    0 ≤ intersectionNumber k (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subschemeι
+      (mk (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
+        hX η'.2).toInvertibleSheaf)⁻¹ :=
+  intersectionNumber_inv_mk_toInvertibleSheaf_nonneg k _ _
+    (isEffectiveCartier_comap_subschemeι_vanishingIdeal_closure_singleton_of_isRegular hX hne)
+
+end PrimeDivisor
 
 end LineBundleClass
 

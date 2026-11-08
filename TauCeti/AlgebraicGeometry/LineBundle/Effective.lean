@@ -54,10 +54,10 @@ include hdim hφ in
 /-- On a proper regular integral curve with constant global functions, a line bundle of degree
 at least the genus is represented by an effective Weil divisor of that degree, with the same
 line-bundle class. -/
-theorem exists_isEffective_iso_sheaf_of_genus_le_eulerDegree (L : InvertibleSheaf X)
+theorem exists_nonneg_iso_sheaf_of_genus_le_eulerDegree (L : InvertibleSheaf X)
     (hL : (finrank k (Scheme.Modules.Cohomology (trivial X).obj 1) : ℤ) ≤ L.eulerDegree k) :
     letI : IsNoetherian X := isNoetherian_of_finiteType (X ↘ Spec (.of k))
-    ∃ D : SchemeWeilDivisor X, WeilDivisor.IsEffective D ∧
+    ∃ D : SchemeWeilDivisor X, 0 ≤ D ∧
       Nonempty (L.obj ≅ SchemeWeilDivisor.sheaf D) ∧
         SchemeWeilDivisor.relativeDegree (X ↘ Spec (.of k)) D = L.eulerDegree k ∧
           SchemeWeilDivisor.toLineBundleClass hdim D = LineBundleClass.mk L := by
@@ -81,7 +81,7 @@ theorem exists_isEffective_cartierDivisor_of_genus_le_eulerDegree (L : Invertibl
     ∃ D : Scheme.CartierDivisor X, D.IsEffective ∧ D.toLineBundleClass = LineBundleClass.mk L := by
   have : IsNoetherian X := isNoetherian_of_finiteType (X ↘ Spec (.of k))
   obtain ⟨D, hD, -, -, hclass⟩ :=
-    exists_isEffective_iso_sheaf_of_genus_le_eulerDegree hdim hφ L hL
+    exists_nonneg_iso_sheaf_of_genus_le_eulerDegree hdim hφ L hL
   refine ⟨SchemeWeilDivisor.equivCartierDivisor hdim D,
     (SchemeWeilDivisor.isEffective_equivCartierDivisor_iff hdim D).mpr hD, ?_⟩
   rw [Scheme.CartierDivisor.toLineBundleClass_eq_toWeilDivisor hdim,

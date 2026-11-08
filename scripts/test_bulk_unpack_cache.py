@@ -1,5 +1,6 @@
 """Bulk restoration must leave stock Lake responsible for current input validity."""
 
+import errno
 import importlib.util
 import json
 import os
@@ -148,6 +149,178 @@ class BulkUnpackTests(unittest.TestCase):
         self.assert_stock_fallback()
 
 
+class PreparedSeedTests(unittest.TestCase):
+    def setUp(self):
+        BulkUnpackTests.setUp(self)
+        (self.root / "lean-toolchain").write_text("leanprover/lean4:v4.36.0-rc2\n")
+        (self.root / "lake-manifest.json").write_text("{}")
+        (self.root / "TauCeti").mkdir()
+        (self.root / "TauCeti/Seeded.lean").write_text("module\n")
+        self.seed = self.root / "seed"
+        build = self.seed / "build/lib/lean/TauCeti"
+        build.mkdir(parents=True)
+        self.files = ["lib/lean/TauCeti/Seeded." + ext for ext in ("trace", "olean", "ilean")]
+        for relative in self.files:
+            (self.seed / "build" / relative).write_text("trusted output")
+            (self.seed / "build" / relative).chmod(0o444)
+        self.manifest = dict(schema=1, kind="tauceti-prepared-root-v1", identity=bulk.configuration(self.root),
+                             published_revision="a" * 40, producer_revision="b" * 40,
+                             modules={"TauCeti.Seeded": dict(archive=self.archive.name, archive_sha256=bulk.file_digest(self.archive), native_input_hash=self.record.stem, files=self.files)})
+        self.write_manifest()
+
+    def write_manifest(self):
+        (self.seed / "manifest.json").write_text(json.dumps(self.manifest))
+
+    def test_complete_seed_copies_private_outputs_without_unpacking(self):
+        with patch.object(bulk.subprocess, "run") as extract, \
+                patch.object(bulk.fcntl, "ioctl", side_effect=OSError(errno.EOPNOTSUPP, "no reflink")):
+            self.assertEqual(bulk.unpack(self.root, self.seed), 1)
+        extract.assert_not_called()
+        for relative in self.files:
+            source, target = self.seed / "build" / relative, self.root / ".lake/build" / relative
+            self.assertEqual(source.read_bytes(), target.read_bytes())
+            self.assertNotEqual(source.stat().st_ino, target.stat().st_ino)
+            target.write_text("private change")
+            self.assertEqual(source.read_text(), "trusted output")
+        self.assertFalse(self.record.exists())
+        self.assertTrue(self.archive.exists())
+
+    def test_partial_seed_keeps_one_bulk_invocation_for_all_misses(self):
+        for number in range(3):
+            input_hash, archive_hash = f"{number + 2:016x}", f"{number + 20:016x}"
+            (self.records / (input_hash + ".json")).write_text(json.dumps(
+                dict(schemaVersion=bulk.SCHEMA, data=archive_hash + ".ltar")))
+            (self.artifacts / (archive_hash + ".ltar")).write_bytes(b"miss")
+            (self.root / f"TauCeti/M{number}.lean").write_text("module\n")
+        def extract(*args, **kwargs):
+            requests = json.loads(kwargs["input"])
+            self.assertEqual(len(requests), 3)
+            for number, record in enumerate(requests):
+                lib, ir = map(Path, record["base"])
+                lib.mkdir(parents=True)
+                ir.mkdir()
+                (lib / f"M{number}.ilean").write_text(json.dumps(dict(version=5, module=f"TauCeti.M{number}")))
+        with patch.object(bulk.subprocess, "check_output", return_value="/toolchain"), \
+                patch.object(bulk.subprocess, "run", side_effect=extract) as native:
+            self.assertEqual(bulk.unpack(self.root, self.seed), 4)
+        native.assert_called_once()
+        self.assertEqual(list(self.records.iterdir()), [])
+
+    def test_interrupted_combined_publication_preserves_every_original_mapping(self):
+        original = self.record.read_bytes()
+        with patch.object(bulk, "publish", side_effect=OSError("interrupted")):
+            self.assertEqual(bulk.unpack(self.root, self.seed), 0)
+        self.assertEqual(self.record.read_bytes(), original)
+        self.assertFalse((self.root / ".lake/build").exists())
+        self.assertTrue(self.archive.exists())
+
+    def test_changed_mapping_is_rejected_before_build_publication(self):
+        records = bulk.selected_records(self.root)
+        with tempfile.TemporaryDirectory(dir=self.root / ".lake") as temporary:
+            combined, satisfied, _ = bulk.assemble(self.root, records, Path(temporary), self.seed)
+            self.record.write_text("changed")
+            with self.assertRaisesRegex(ValueError, "changed during"):
+                bulk.publish(self.root, combined, satisfied)
+        self.assertEqual(self.record.read_text(), "changed")
+        self.assertFalse((self.root / ".lake/build").exists())
+
+    def test_seed_identity_paths_and_overlapping_archives_are_rejected(self):
+        original = json.loads(json.dumps(self.manifest))
+        for change in ("config", "escape", "duplicate", "schema"):
+            self.manifest = json.loads(json.dumps(original))
+            entry = self.manifest["modules"]["TauCeti.Seeded"]
+            if change == "config":
+                self.manifest["identity"]["toolchain"] = "wrong"
+            elif change == "escape":
+                entry["files"].append("../escape")
+            elif change == "duplicate":
+                self.manifest["modules"]["TauCeti.Other"] = dict(entry)
+            else:
+                self.manifest["schema"] = True
+            self.write_manifest()
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                bulk.read_seed(self.seed, self.root)
+
+    def test_symlinked_seed_file_stays_in_one_bulk_miss_set(self):
+        file = self.seed / "build" / self.files[0]
+        file.unlink()
+        file.symlink_to(self.archive)
+        with patch.object(bulk, "extract_records", return_value=[]) as extract:
+            self.assertEqual(bulk.unpack(self.root, self.seed), 0)
+        self.assertEqual(len(extract.call_args.args[0]), 1)
+        self.assertTrue(self.record.exists())
+
+    def test_successful_clone_has_writable_private_outputs_and_preserved_mtime(self):
+        source = self.seed / "build" / self.files[0]
+        target = self.root / "clone"
+        def clone(destination, operation, descriptor):
+            self.assertEqual(operation, bulk.FICLONE)
+            os.write(destination.fileno(), os.read(descriptor, 4096))
+        with patch.object(bulk.fcntl, "ioctl", side_effect=clone):
+            self.assertTrue(bulk.install_file(source, target, True))
+        self.assertEqual(target.read_bytes(), source.read_bytes())
+        self.assertNotEqual(target.stat().st_ino, source.stat().st_ino)
+        self.assertEqual(target.stat().st_mtime_ns, source.stat().st_mtime_ns)
+        target.write_text("private")
+        self.assertEqual(source.read_text(), "trusted output")
+
+    def test_interrupt_after_tree_rename_keeps_records_for_native_restoration(self):
+        unlink = Path.unlink
+        def interrupted(path, *args, **kwargs):
+            if path == self.record:
+                raise OSError("interrupted after tree publication")
+            return unlink(path, *args, **kwargs)
+        with patch.object(Path, "unlink", interrupted):
+            self.assertEqual(bulk.unpack(self.root, self.seed), 0)
+        self.assertTrue(self.record.exists())
+        self.assertTrue((self.root / ".lake/build/lib/lean/TauCeti/Seeded.olean").is_file())
+
+    def test_rebound_trace_preserves_unicode_logs_and_every_other_byte(self):
+        original = self.record.stem
+        selected = "1" * 16
+        content = json.dumps(dict(schemaVersion=bulk.TRACE_SCHEMA, depHash=original,
+                                  outputs={"m": True}, log=["α → β"]), ensure_ascii=False).encode("utf-8")
+        self.assertEqual(bulk.rebound_trace(content, original, selected),
+                         content.replace(original.encode(), selected.encode()))
+
+    def test_rebinding_rejects_wrong_digest_and_unsupported_trace_into_bulk(self):
+        old_input = "1" * 16
+        entry = self.manifest["modules"]["TauCeti.Seeded"]
+        entry["native_input_hash"] = old_input
+        trace = dict(schemaVersion=bulk.TRACE_SCHEMA, depHash=old_input, outputs={"m": True})
+        for case in ("digest", "schema", "input", "missing-identity"):
+            candidate = json.loads(json.dumps(trace))
+            entry["native_input_hash"] = old_input
+            entry["archive_sha256"] = bulk.file_digest(self.archive)
+            if case == "digest":
+                entry["archive_sha256"] = "0" * 64
+            elif case == "schema":
+                candidate["schemaVersion"] = "future"
+            elif case == "input":
+                candidate["depHash"] = "2" * 16
+            else:
+                entry.pop("native_input_hash")
+            self.write_manifest()
+            path = self.seed / "build" / self.files[0]
+            path.chmod(0o644)
+            path.write_text(json.dumps(candidate))
+            path.chmod(0o444)
+            with self.subTest(case=case), tempfile.TemporaryDirectory(dir=self.root / ".lake") as tmp:
+                with patch.object(bulk, "extract_records", return_value=[]) as extract:
+                    _, satisfied, result = bulk.assemble(self.root, bulk.selected_records(self.root), Path(tmp), self.seed)
+                self.assertEqual(len(extract.call_args.args[0]), 1)
+                self.assertEqual(satisfied, [])
+                self.assertEqual(result["seed_rebound_traces"], 0)
+
+    def test_permission_and_space_errors_are_not_unsupported_capabilities(self):
+        for code in (errno.EACCES, errno.ENOSPC):
+            with self.subTest(code=code), patch.object(bulk.fcntl, "ioctl", side_effect=OSError(code, "resource failure")):
+                self.assertEqual(bulk.unpack(self.root, self.seed), 0)
+            self.assertTrue(self.record.exists())
+            self.assertFalse((self.root / ".lake/build").exists())
+
+
+
 class WorkflowTests(unittest.TestCase):
     def test_pr_preparation_runs_offline_with_trusted_tooling_before_build(self):
         workflow = yaml.safe_load((ROOT / ".github/workflows/pr-build.yml").read_text())
@@ -174,6 +347,9 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(steps[prepare]["env"]["LAKE_NO_CACHE"], "true")
         self.assertFalse(any("test_bulk_unpack_cache.py --integration" in text for text in commands))
         infrastructure = yaml.safe_load((ROOT / ".github/workflows/infrastructure-tests.yml").read_text())
+        triggers = infrastructure.get("on", infrastructure.get(True))
+        for event in ("push", "pull_request"):
+            self.assertIn("lean-toolchain", triggers[event]["paths"])
         fixtures = infrastructure["jobs"]["lean-fixtures"]["steps"]
         self.assertTrue(any("test_bulk_unpack_cache.py --integration" in step.get("run", "")
                             for step in fixtures))
@@ -225,7 +401,7 @@ class StockLakeTests(unittest.TestCase):
                     restored = bulk.unpack(path) if mode == "bulk" else 0
                     if mode == "bulk":
                         # Future toolchain layouts may safely use stock restoration.
-                        self.assertIn(restored, (0, 4))
+                        self.assertIn(restored, (0, 3 if change else 4))
                         if change:
                             self.assertFalse((path / ".lake/build/lib/lean/TauCeti/C.olean").exists())
                     if change:
@@ -251,8 +427,151 @@ class StockLakeTests(unittest.TestCase):
                 (path / "TauCeti/B.lean").write_text(
                     "module\npublic import TauCeti.C\npublic def b := c + 1\n")
                 if mode == "bulk":
-                    self.assertIn(bulk.unpack(path), (0, 4))
+                    self.assertIn(bulk.unpack(path), (0, 3))
                 run(path, "build", "--iofail", expected=1)
+
+
+@unittest.skipUnless(INTEGRATION, "pass --integration with the pinned Lake installed")
+class PreparedSeedNativeTests(unittest.TestCase):
+    def test_aged_seed_mixed_misses_interruption_and_native_invalidation(self):
+        with tempfile.TemporaryDirectory(prefix="prepared-root-native-") as temporary:
+            root = Path(temporary)
+            def fresh(name):
+                project = root / name
+                project.mkdir()
+                (project / "lean-toolchain").write_text((ROOT / "lean-toolchain").read_text())
+                (project / "lakefile.toml").write_text(
+                    'name = "TauCeti"\nplatformIndependent = true\ndefaultTargets = ["TauCeti"]\n'
+                    '[[lean_lib]]\nname = "TauCeti"\nglobs = ["TauCeti.*"]\n')
+                (project / "TauCeti").mkdir()
+                for i in range(20):
+                    text = f"module\npublic def m{i} : Nat := {i}\n"
+                    (project / f"TauCeti/M{i}.lean").write_text(text)
+                (project / "TauCeti.lean").write_text("module\n" + "\n".join(
+                    f"public import TauCeti.M{i}" for i in range(20)) + "\n")
+                return project
+            def lake(project, *args, expected=0):
+                env = {**os.environ, "LAKE_CACHE_DIR": str(project / ".lake/cache"),
+                       "LAKE_ARTIFACT_CACHE": "true", "LAKE_RESTORE_ARTIFACTS": "true", "LAKE_NO_CACHE": "true"}
+                result = subprocess.run(["lake", *args], cwd=project, env=env, text=True, capture_output=True, timeout=120)
+                self.assertEqual(result.returncode, expected, result.stdout + result.stderr)
+                return result.stdout + result.stderr
+            producer = fresh("producer")
+            lake(producer, "build", "--iofail", "-o", ".lake/map.jsonl")
+            lake(producer, "cache", "stage", ".lake/map.jsonl", str(root / "old"))
+            trusted = fresh("trusted")
+            lake(trusted, "cache", "unstage", str(root / "old"))
+            records = bulk.selected_records(trusted)
+            snapshot = dict(version=1, toolchain=(trusted / "lean-toolchain").read_text().strip(),
+                            entries={r["hash"]: [r["archive"], bulk.file_digest(Path(r["file"]))] for r in records})
+            self.assertEqual(bulk.unpack(trusted), 21)
+            self.assertNotIn("Built TauCeti", lake(trusted, "build", "--iofail"))
+            seed = root / "seed"
+            manifest = bulk.export_seed(trusted, seed, snapshot, published_revision="a" * 40, producer_revision="b" * 40)
+            self.assertEqual(len(manifest["modules"]), 21)
+            def fingerprint(directory):
+                return {str(p.relative_to(directory)): bulk.file_digest(p) for p in directory.rglob("*") if p.is_file()}
+            before = fingerprint(seed)
+            (producer / "TauCeti/M19.lean").write_text("module\npublic def m19 : Nat := 190\n")
+            # A comment changes native input identity while leaving every
+            # archived output byte identical. Seed traces must bind to the
+            # native-selected input exactly as stock leantar would.
+            comment_source = "module\npublic def m17 : Nat := 17\n-- appended comment\n"
+            (producer / "TauCeti/M17.lean").write_text(comment_source)
+            lake(producer, "build", "--iofail", "-o", ".lake/map.jsonl")
+            lake(producer, "cache", "stage", ".lake/map.jsonl", str(root / "new"))
+            reference = fresh("trace-reference")
+            (reference / "TauCeti/M17.lean").write_text(comment_source)
+            (reference / "TauCeti/M19.lean").write_text("module\npublic def m19 : Nat := 190\n")
+            lake(reference, "cache", "unstage", str(root / "new"))
+            alias_entry = manifest["modules"]["TauCeti.M17"]
+            alias_record, = [r for r in bulk.selected_records(reference) if r["archive"] == alias_entry["archive"]]
+            self.assertNotEqual(alias_record["hash"], alias_entry["native_input_hash"])
+            alias_outputs = bulk.extract_records([alias_record], root / "native-trace-reference")
+            expected_trace, = [source.read_bytes() for _, _, files in alias_outputs for source, relative in files
+                               if relative.endswith(".trace")]
+            stock_map = None
+            for case, limit in (("zero", 0), ("partial", 8), ("near", 100), ("interrupted", 8), ("deleted", 100)):
+                project = fresh(case)
+                (project / "TauCeti/M19.lean").write_text("module\npublic def m19 : Nat := 190\n")
+                (project / "TauCeti/M17.lean").write_text(comment_source)
+                lake(project, "cache", "unstage", str(root / "new"))
+                if case == "deleted":
+                    (project / "TauCeti/M0.lean").unlink()
+                selected_seed = root / (case + "-seed")
+                selected_seed.mkdir()
+                available = {r["archive"] for r in bulk.selected_records(project)}
+                eligible = [(m, entry) for m, entry in manifest["modules"].items()
+                            if entry["archive"] in available and bulk.source_present(project, m)]
+                eligible.sort(key=lambda pair: pair[0] != "TauCeti.M17")
+                reduced = dict(manifest, modules=dict(eligible[:limit]))
+                (selected_seed / "manifest.json").write_text(json.dumps(reduced))
+                shutil.copytree(seed / "build", selected_seed / "build")
+                selected_before = fingerprint(selected_seed)
+                originals = {p: p.read_bytes() for p in (project / ".lake/cache/outputs/TauCeti").glob("*.json")}
+                with patch.object(bulk, "extract_records", wraps=bulk.extract_records) as extract:
+                    if case == "interrupted":
+                        with patch.object(bulk, "publish", side_effect=OSError("interrupted")):
+                            self.assertEqual(bulk.unpack(project, selected_seed), 0)
+                        self.assertEqual({p: p.read_bytes() for p in originals}, originals)
+                        self.assertFalse((project / ".lake/build").exists())
+                        lake(project, "build", "--iofail")
+                        self.assertEqual(fingerprint(selected_seed), selected_before)
+                        continue
+                    self.assertEqual(bulk.unpack(project, selected_seed), 20 if case == "deleted" else 21)
+                    extract.assert_called_once()
+                    miss_count = len(extract.call_args.args[0])
+                    self.assertEqual(miss_count, 21 - len(reduced["modules"]))
+                if case == "deleted":
+                    retained = list((project / ".lake/cache/outputs/TauCeti").glob("*.json"))
+                    self.assertEqual(len(retained), 1)
+                    self.assertEqual(retained[0].read_bytes(), originals[retained[0]])
+                self.assertEqual((project / ".lake/build/lib/lean/TauCeti/M17.trace").read_bytes(), expected_trace)
+                log = lake(project, "build", "--iofail", expected=1 if case == "deleted" else 0)
+                if case == "deleted":
+                    self.assertFalse((project / ".lake/build/lib/lean/TauCeti/M0.olean").exists())
+                    self.assertEqual(retained[0].read_bytes(), originals[retained[0]])
+                else:
+                    self.assertNotIn("Unpacked", log)
+                    self.assertNotIn("Built TauCeti", log)
+                    lake(project, "build", "--no-build", "--rehash", "-o", ".lake/after.jsonl")
+                    lines = (project / ".lake/after.jsonl").read_text().splitlines()
+                    current_map = (json.loads(lines[0]), dict(map(json.loads, lines[1:])))
+                    if stock_map is None:
+                        stock_map = current_map
+                    self.assertEqual(current_map, stock_map)
+                    (project / "TauCeti/M18.lean").write_text("module\npublic def m18 : Nat := 180\n")
+                    self.assertIn("Built TauCeti.M18", lake(project, "build", "--iofail"))
+                self.assertEqual(fingerprint(selected_seed), selected_before)
+                self.assertEqual(fingerprint(seed), before)
+
+            # Rebuilt native outputs under changed inputs must not be exported
+            # under the earlier snapshot's archive identities.
+            (trusted / "TauCeti/M18.lean").write_text("module\npublic def m18 : Nat := 1800\n")
+            lake(trusted, "build", "--iofail")
+            changed = bulk.export_seed(trusted, root / "changed-seed", snapshot,
+                                       published_revision="a" * 40, producer_revision="b" * 40)
+            self.assertNotIn("TauCeti.M18", changed["modules"])
+            self.assertGreater(len(changed["modules"]), 0)
+            missing = trusted / ".lake/build/lib/lean/TauCeti/M17.olean"
+            missing.unlink()
+            omitted = bulk.export_seed(trusted, root / "missing-output-seed", snapshot,
+                                       published_revision="a" * 40, producer_revision="b" * 40)
+            self.assertNotIn("TauCeti.M17", omitted["modules"])
+            for name in ("digest", "toolchain", "overlap"):
+                bad = json.loads(json.dumps(snapshot))
+                first = next(iter(bad["entries"]))
+                if name == "digest":
+                    bad["entries"][first][1] = "0" * 64
+                elif name == "toolchain":
+                    bad["toolchain"] = "wrong"
+                else:
+                    bad["entries"]["0" * 16] = bad["entries"][first]
+                with self.subTest(export=name), self.assertRaises(ValueError):
+                    bulk.export_seed(trusted, root / ("invalid-" + name), bad,
+                                     published_revision="a" * 40, producer_revision="b" * 40)
+                self.assertFalse((root / ("invalid-" + name)).exists())
+
 
 
 if __name__ == "__main__":
