@@ -22,7 +22,7 @@ ring at its maximal ideal. Without faithful flatness, the image criterion does n
 that arbitrarily prescribed local lifts can be realized simultaneously.
 
 `IsBaseChange.mem_range_iff_locally_mem_range` gives the corresponding membership criterion
-for any map exhibiting a faithfully flat base change, rather than only for the canonical map
+for any map exhibiting a flat base change, rather than only for the canonical map
 into a tensor product.
 
 The Amitsur differential of a locally liftable element is ideal-power torsion. Base change
@@ -192,9 +192,9 @@ namespace IsBaseChange
 
 variable {R S M N : Type*} [CommRing R] [CommRing S] [Algebra R S]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] [Module S N]
-  [IsScalarTower R S N] [Module.FaithfullyFlat R S] {G : Finset R} {f : M →ₗ[R] N}
+  [IsScalarTower R S N] [Module.Flat R S] {G : Finset R} {f : M →ₗ[R] N}
 
-/-- A module model inside its faithfully flat base change is determined by its localizations
+/-- A module model inside its flat base change is determined by its localizations
 away from the ideal defining the formal neighbourhood. The map `f` need not be the canonical
 map to a tensor product. -/
 theorem mem_range_iff_locally_mem_range (hf : IsBaseChange S f)

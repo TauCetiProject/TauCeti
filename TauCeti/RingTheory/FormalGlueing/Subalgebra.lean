@@ -10,7 +10,7 @@ public import TauCeti.RingTheory.FormalGlueing.Lifting
 /-!
 # Algebraizing a module model in formal gluing
 
-Suppose `R → S` is faithfully flat and induces `R/I ≅ S/IS`, where a finite set `G` generates
+Suppose `R → S` is flat and induces `R/I ≅ S/IS`, where a finite set `G` generates
 `I`. Let `B` be an `S`-algebra, and let `P ⊆ B` be an `R`-submodule whose scalar extension to
 `S` is `B`. To turn this module model into an algebra model, it suffices to check the unit
 and multiplication after localization at each generator of `I`.
@@ -29,7 +29,7 @@ base-change form of `TensorProduct.mem_range_mk_one_iff_locally_mem_range`.
 ## References
 
 * The Stacks Project, Remark 15.91.20 (05EU), passage from formal module gluing to algebra
-  structures. Here the underlying module model is given and the ring map is faithfully flat.
+  structures. Here the underlying module model is given and the ring map is flat.
 -/
 
 public section
@@ -38,12 +38,12 @@ namespace Submodule
 
 variable {R S B : Type*} [CommRing R] [CommRing S] [Algebra R S]
   [Ring B] [Algebra R B] [Algebra S B] [IsScalarTower R S B]
-  [Module.FaithfullyFlat R S] {G : Finset R}
+  [Module.Flat R S] {G : Finset R}
 
 /-- **Descent of the unit in formal gluing.** An `R`-submodule `P` of an `S`-algebra `B`
 that base changes to `B` contains the unit if the unit belongs to the image of `P` after
 localization at each generator of the defining ideal. -/
-@[stacks 05EU "descending the unit on a given module model, for faithfully flat ring maps"]
+@[stacks 05EU "descending the unit on a given module model, for flat ring maps"]
 theorem one_mem_of_formalGlueing (P : Submodule R B)
     (hP : IsBaseChange S P.subtype)
     (hI : Function.Bijective (Ideal.quotientMap
@@ -61,7 +61,7 @@ theorem one_mem_of_formalGlueing (P : Submodule R B)
 that base changes to `B` is closed under multiplication if products of elements of `P` belong
 to the image of `P` after localization at each generator of the defining ideal. No finiteness
 or commutativity assumption on `B` is needed. -/
-@[stacks 05EU "descending multiplication on a given module model, for faithfully flat ring maps"]
+@[stacks 05EU "descending multiplication on a given module model, for flat ring maps"]
 theorem mul_mem_of_formalGlueing (P : Submodule R B)
     (hP : IsBaseChange S P.subtype)
     (hI : Function.Bijective (Ideal.quotientMap
