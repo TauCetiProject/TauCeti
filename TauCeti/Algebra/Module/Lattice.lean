@@ -132,6 +132,7 @@ intersection with it. -/
 theorem Submodule.IsLattice.relIndex_ne_zero {N M : Submodule ℤ V} [N.IsLattice ℚ]
     [M.IsLattice ℚ] : N.toAddSubgroup.relIndex M.toAddSubgroup ≠ 0 := by
   classical
+  -- needed for the `IsLattice.inf` instance on `N ⊓ M`
   have := Module.Finite.of_isLattice (R := ℤ) (A := ℚ) N
   have key {P : Submodule ℤ V} [P.IsLattice ℚ] (hle : P ≤ M) :
       P.toAddSubgroup.relIndex M.toAddSubgroup ≠ 0 := by
@@ -233,6 +234,12 @@ end TauCeti
 
 namespace Submodule
 
+/-- A commutative ring with an injective map into a field (such as `R` with `IsFractionRing R K`)
+is a domain. -/
+private theorem isDomain_of_isFractionRing (R K : Type*) [CommRing R] [Field K] [Algebra R K]
+    [IsFractionRing R K] : IsDomain R :=
+  (IsFractionRing.injective R K).isDomain (algebraMap R K)
+
 section Rationalization
 
 variable {R : Type u} {K : Type v} {V' : Type w}
@@ -286,7 +293,7 @@ theorem _root_.LinearMap.det_eq_algebraMap_det_of_isLattice {S : Submodule R V'}
     [Module.Free R S] [S.IsLattice K] (f : V' →ₗ[K] V') (g : S →ₗ[R] S)
     (h : ∀ x : S, f x = g x) : LinearMap.det f = algebraMap R K (LinearMap.det g) := by
   -- Rationalization identifies `f` with the base change of `g`.
-  have : IsDomain R := (IsFractionRing.injective R K).isDomain (algebraMap R K)
+  have := isDomain_of_isFractionRing R K
   have hconj : f = (rationalizationEquiv S).toLinearMap ∘ₗ g.baseChange K ∘ₗ
       (rationalizationEquiv S).symm.toLinearMap := by
     rw [← LinearMap.comp_assoc, LinearEquiv.eq_comp_toLinearMap_symm]
@@ -448,7 +455,7 @@ omit [IsDomain R] in
 over the fraction field `K`, in particular in a full lattice submodule. -/
 theorem exists_ne_zero_smul_mem (S : Submodule R V') (hS : Submodule.span K (S : Set V') = ⊤)
     (v : V') : ∃ r : R, r ≠ 0 ∧ r • v ∈ S := by
-  have : IsDomain R := (IsFractionRing.injective R K).isDomain (algebraMap R K)
+  have := isDomain_of_isFractionRing R K
   have hv : v ∈ Submodule.span K (S : Set V') := by
     rw [hS]
     trivial
@@ -463,7 +470,7 @@ omit [IsDomain R] in
 particular of a full lattice submodule, localizes it at the nonzero divisors of `R`. -/
 theorem isLocalizedModule_subtype (S : Submodule R V') (hS : Submodule.span K (S : Set V') = ⊤) :
     IsLocalizedModule (nonZeroDivisors R) S.subtype := by
-  have : IsDomain R := (IsFractionRing.injective R K).isDomain (algebraMap R K)
+  have := isDomain_of_isFractionRing R K
   have := isLocalizedModule_id (nonZeroDivisors R) V' K
   refine ⟨IsLocalizedModule.map_units (LinearMap.id : V' →ₗ[R] V'), ?_, ?_⟩
   · intro v
@@ -472,12 +479,15 @@ theorem isLocalizedModule_subtype (S : Submodule R V') (hS : Submodule.span K (S
   · intro x y h
     exact ⟨1, by simpa using Subtype.ext h⟩
 
+variable (K) in
 omit [IsDomain R] in
-/-- The `R`-finrank of a full lattice in `V'` equals the `K`-finrank of the ambient space. -/
-theorem _root_.Submodule.finrank_eq_finrank (N : Submodule R V') [N.IsLattice K] :
+/-- The `R`-finrank of a submodule spanning the ambient space over the fraction field `K`, in
+particular of a full lattice, equals the `K`-finrank of the ambient space. -/
+theorem _root_.Submodule.finrank_eq_finrank (N : Submodule R V')
+    (hN : Submodule.span K (N : Set V') = ⊤) :
     Module.finrank R N = Module.finrank K V' := by
-  have : IsDomain R := (IsFractionRing.injective R K).isDomain (algebraMap R K)
-  have := isLocalizedModule_subtype K N IsLattice.span_eq_top
+  have := isDomain_of_isFractionRing R K
+  have := isLocalizedModule_subtype K N hN
   rw [IsFractionRing.finrank_right_eq (R := R) (S := K) (N := V'),
     IsLocalizedModule.finrank_eq (nonZeroDivisors R) N.subtype le_rfl]
 
@@ -488,7 +498,7 @@ into a full lattice submodule. -/
 theorem exists_ne_zero_forall_smul_mem (S : Submodule R V') [S.IsLattice K]
     {M : Submodule R V'} (hM : M.FG) : ∃ r : R, r ≠ 0 ∧ ∀ x ∈ M, r • x ∈ S := by
   classical
-  have : IsDomain R := (IsFractionRing.injective R K).isDomain (algebraMap R K)
+  have := isDomain_of_isFractionRing R K
   obtain ⟨t, rfl⟩ := hM
   choose r hr0 hr using exists_ne_zero_smul_mem K S
     (IsLattice.span_eq_top (A := K) (M := S))
