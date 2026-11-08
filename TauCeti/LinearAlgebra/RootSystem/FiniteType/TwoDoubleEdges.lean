@@ -416,72 +416,36 @@ theorem IsFiniteType.apply_mul_apply_le_one_of_chain_of_two_le (h : IsFiniteType
     (hsimple : ∀ s, 0 < s → s < m + 1 → A (v s) (v (s + 1)) * A (v (s + 1)) (v s) = 1)
     (hfirst : 2 ≤ A (v 0) (v 1) * A (v 1) (v 0)) :
     A (v (m + 1)) (v (m + 2)) * A (v (m + 2)) (v (m + 1)) ≤ 1 := by
-  by_contra hcon
-  rw [not_le] at hcon
+  by_contra! hcon
   have hvne : ∀ s t, s < m + 3 → t < m + 3 → s ≠ t → v s ≠ v t := fun s t hs ht hst hc ↦
     hst (hv (Set.mem_Iio.2 hs) (Set.mem_Iio.2 ht) hc)
   -- The second edge of the chain is present: it is an interior edge, or, on the shortest chain,
-  -- the last edge.
-  have hedge12 : A (v 1) (v 2) * A (v 2) (v 1) ≠ 0 := by
+  -- the last edge. So is the edge before the last one, which on the shortest chain is the first.
+  have hedge12 : A (v 1) (v 2) ≠ 0 := by
     intro hc
     rcases Nat.eq_zero_or_pos m with rfl | hm
-    · simp only [Nat.zero_add] at hcon
-      rw [hc] at hcon
-      exact absurd hcon (by norm_num)
-    · have h1 := hsimple 1 one_pos (by omega)
-      norm_num at h1
-      rw [hc] at h1
-      exact absurd h1 (by norm_num)
-  -- So is the edge before the last one, which on the shortest chain is the first edge.
-  have hedgeLast : A (v (m + 1)) (v m) * A (v m) (v (m + 1)) ≠ 0 := by
+    · simp [hc] at hcon
+    · simpa [hc] using hsimple 1 one_pos (by omega)
+  have hedgeLast : A (v (m + 1)) (v m) ≠ 0 := by
     intro hc
     rcases Nat.eq_zero_or_pos m with rfl | hm
-    · rw [Nat.zero_add, mul_comm] at hc
-      rw [hc] at hfirst
-      exact absurd hfirst (by norm_num)
-    · have h1 := hsimple m hm (by omega)
-      rw [mul_comm] at hc
-      rw [hc] at h1
-      exact absurd h1 (by norm_num)
-  -- Neither extreme edge is triple: a triple edge is isolated, while both of its ends carry a
-  -- further edge of the chain.
-  have hnot3first : A (v 0) (v 1) * A (v 1) (v 0) ≠ 3 := by
-    intro hc
-    refine hedge12 ?_
-    rw [h.apply_eq_zero_of_apply_mul_apply_eq_three (i := v 1) (j := v 0) (k := v 2)
-      (hvne 1 2 (by omega) (by omega) (by omega)) (hvne 0 2 (by omega) (by omega) (by omega))
-      (by rw [mul_comm]; exact hc), zero_mul]
-  have hnot3last : A (v (m + 1)) (v (m + 2)) * A (v (m + 2)) (v (m + 1)) ≠ 3 := by
-    intro hc
-    refine hedgeLast ?_
-    rw [h.apply_eq_zero_of_apply_mul_apply_eq_three (i := v (m + 1)) (j := v (m + 2)) (k := v m)
-      (hvne (m + 1) m (by omega) (by omega) (by omega))
-      (hvne (m + 2) m (by omega) (by omega) (by omega)) hc, zero_mul]
-  -- So both extreme edges are double, their Cartan product being at most `3` in any case.
-  have hfirst2 : A (v 0) (v 1) * A (v 1) (v 0) = 2 := by
-    have hmem := h.apply_mul_apply_mem_of_ne (hvne 0 1 (by omega) (by omega) (by omega))
-    simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hmem
-    rcases hmem with hval | hval | hval | hval
-    · rw [hval] at hfirst; exact absurd hfirst (by norm_num)
-    · rw [hval] at hfirst; exact absurd hfirst (by norm_num)
-    · exact hval
-    · exact absurd hval hnot3first
+    · simp [hc] at hfirst
+    · simpa [hc] using hsimple m hm (by omega)
+  -- So both extreme edges are double: neither is triple, since both ends carry a further edge.
+  have hfirst2 := h.apply_mul_apply_eq_two_of_two_le (hvne 0 1 (by omega) (by omega) (by omega))
+    (hvne 0 2 (by omega) (by omega) (by omega)) (hvne 1 2 (by omega) (by omega) (by omega))
+    hfirst hedge12
   have hlast2 : A (v (m + 1)) (v (m + 2)) * A (v (m + 2)) (v (m + 1)) = 2 := by
-    have hmem := h.apply_mul_apply_mem_of_ne
-      (hvne (m + 1) (m + 2) (by omega) (by omega) (by omega))
-    simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hmem
-    rcases hmem with hval | hval | hval | hval
-    · rw [hval] at hcon; exact absurd hcon (by norm_num)
-    · rw [hval] at hcon; exact absurd hcon (by norm_num)
-    · exact hval
-    · exact absurd hval hnot3last
+    rw [mul_comm]
+    exact h.apply_mul_apply_eq_two_of_two_le (hvne (m + 2) (m + 1) (by omega) (by omega)
+      (by omega)) (hvne (m + 2) m (by omega) (by omega) (by omega))
+      (hvne (m + 1) m (by omega) (by omega) (by omega)) (by linarith) hedgeLast
   -- The interior edges are single, so both of their entries are `-1`.
   have hsimple' : ∀ s, 0 < s → s < m + 1 → A (v s) (v (s + 1)) = -1 ∧ A (v (s + 1)) (v s) = -1 := by
     intro s hpos hlt
-    have hne := hvne s (s + 1) (by omega) (by omega) (by omega)
-    have h1 := h.apply_le_zero_of_ne hne
+    have h1 := h.apply_le_zero_of_ne (hvne s (s + 1) (by omega) (by omega) (by omega))
     rcases Int.mul_eq_one_iff_eq_one_or_neg_one.1 (hsimple s hpos hlt) with ⟨e1, e2⟩ | ⟨e1, e2⟩
-    · rw [e1] at h1; exact absurd h1 (by norm_num)
+    · omega
     · exact ⟨e1, e2⟩
   -- Both orientations of the first edge are excluded, the second by transposition.
   have hne01 := hvne 0 1 (by omega) (by omega) (by omega)
