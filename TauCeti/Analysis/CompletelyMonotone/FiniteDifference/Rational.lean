@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CompletelyMonotone.FiniteDifference.Basic
+public import TauCeti.Topology.Order.LeftRight
 
 /-!
 # Complete monotonicity in the finite-difference sense, from rational data
@@ -76,42 +77,6 @@ theorem tendsto_fwdDiffList_nhdsGT
       simp only [hrw]
       exact h₁.sub (ih hrest hu)
 
-/-- A sequence of rationals converging to a real number from the right. -/
-private theorem exists_seq_rat_tendsto_nhdsGT (u : ℝ) :
-    ∃ r : ℕ → ℚ, (∀ n, u < (r n : ℝ)) ∧ Tendsto (fun n => (r n : ℝ)) atTop (𝓝[>] u) := by
-  have hlt : ∀ n : ℕ, ∃ q : ℚ, u < (q : ℝ) ∧ (q : ℝ) < u + 1 / ((n : ℝ) + 1) := by
-    intro n
-    have hpos : (0 : ℝ) < 1 / ((n : ℝ) + 1) := by positivity
-    exact exists_rat_btwn (by linarith)
-  choose r hr₁ hr₂ using hlt
-  refine ⟨r, hr₁, tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ ?_
-    (Eventually.of_forall hr₁)⟩
-  have hup : Tendsto (fun n : ℕ => u + 1 / ((n : ℝ) + 1)) atTop (𝓝 (u + 0)) :=
-    tendsto_const_nhds.add tendsto_one_div_add_atTop_nhds_zero_nat
-  rw [add_zero] at hup
-  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hup
-    (fun n => (hr₁ n).le) fun n => (hr₂ n).le
-
-/-- A function that is right-continuous at `t + h` and does not increase along rational
-increments from `t` does not increase along the real increment `h ≥ 0`. -/
-theorem le_of_forall_rat_add_le {G : ℝ → ℝ} {t h : ℝ} (hh : 0 ≤ h)
-    (hG : Tendsto G (𝓝[>] (t + h)) (𝓝 (G (t + h))))
-    (hanti : ∀ q : ℚ, 0 ≤ q → G (t + q) ≤ G t) : G (t + h) ≤ G t := by
-  obtain ⟨r, hr, hrt⟩ := exists_seq_rat_tendsto_nhdsGT h
-  have hid : Tendsto (fun n => (r n : ℝ)) atTop (𝓝 h) := hrt.mono_right nhdsWithin_le_nhds
-  have hshift : Tendsto (fun n => t + (r n : ℝ)) atTop (𝓝[>] (t + h)) := by
-    refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-      (tendsto_const_nhds.add hid) (Eventually.of_forall fun n => ?_)
-    exact mem_Ioi.2 (by linarith [hr n])
-  refine le_of_tendsto (hG.comp hshift) (Eventually.of_forall fun n => ?_)
-  exact hanti (r n) (by exact_mod_cast (hh.trans (hr n).le))
-
-private theorem nonneg_of_mem_map_ratCast {l : List ℚ} (hl : ∀ h ∈ l, 0 ≤ h) :
-    ∀ h ∈ l.map (Rat.cast : ℚ → ℝ), (0 : ℝ) ≤ h := by
-  intro h hh
-  obtain ⟨q, hq, rfl⟩ := List.mem_map.1 hh
-  exact_mod_cast hl q hq
-
 /-- The base point is freed first: the sign condition along a fixed list of rational steps passes
 from rational to real base points by right-continuity. -/
 private theorem sign_fwdDiffList_map_ratCast
@@ -120,9 +85,13 @@ private theorem sign_fwdDiffList_map_ratCast
       0 ≤ (-1) ^ l.length * fwdDiffList (l.map (Rat.cast)) f (s : ℝ))
     {l : List ℚ} (hl : ∀ h ∈ l, 0 ≤ h) {t : ℝ} (ht : 0 ≤ t) :
     0 ≤ (-1) ^ l.length * fwdDiffList (l.map (Rat.cast)) f t := by
-  obtain ⟨r, hr, hrt⟩ := exists_seq_rat_tendsto_nhdsGT t
+  obtain ⟨r, -, hr, hrt'⟩ := Real.exists_seq_rat_strictAnti_tendsto t
+  have hrt : Tendsto (fun n => (r n : ℝ)) atTop (𝓝[>] t) :=
+    tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ hrt' (Eventually.of_forall hr)
+  have hlR : ∀ k ∈ l.map (Rat.cast : ℚ → ℝ), (0 : ℝ) ≤ k :=
+    List.forall_mem_map.2 fun q hq => Rat.cast_nonneg.2 (hl q hq)
   refine ge_of_tendsto (((tendsto_const_nhds (x := ((-1 : ℝ) ^ l.length))).mul
-    (tendsto_fwdDiffList_nhdsGT hcont (nonneg_of_mem_map_ratCast hl) ht)).comp hrt)
+    (tendsto_fwdDiffList_nhdsGT hcont hlR ht)).comp hrt)
     (Eventually.of_forall fun n => ?_)
   simpa using hrat l hl (r n) (by exact_mod_cast (ht.trans (hr n).le))
 
@@ -139,7 +108,7 @@ private theorem sign_fwdDiffList_cons_step
   have hLnonneg : ∀ k ∈ l.map (Rat.cast : ℚ → ℝ) ++ m, (0 : ℝ) ≤ k := by
     intro k hk
     rcases List.mem_append.1 hk with hk | hk
-    · exact nonneg_of_mem_map_ratCast hl k hk
+    · exact List.forall_mem_map.2 (fun q hq => Rat.cast_nonneg.2 (hl q hq)) k hk
     · exact hmrest k hk
   have hpow : ∀ k : ℕ, ((-1 : ℝ)) ^ (k + 1) = -((-1 : ℝ) ^ k) := by
     intro k; rw [pow_succ]; ring
@@ -164,7 +133,7 @@ private theorem sign_fwdDiffList_cons_step
     rw [← hΦ, hlenl, hpow] at hstep
     nlinarith [hstep]
   -- Right-continuity turns rational increments into arbitrary ones.
-  have hreal := le_of_forall_rat_add_le hh
+  have hreal := TauCeti.le_of_forall_rat_add_le hh
     (G := fun v => (-1 : ℝ) ^ (l.length + m.length) * Φ v)
     (tendsto_const_nhds.mul
       (hΦ ▸ tendsto_fwdDiffList_nhdsGT hcont hLnonneg (by linarith : (0 : ℝ) ≤ t + h)))

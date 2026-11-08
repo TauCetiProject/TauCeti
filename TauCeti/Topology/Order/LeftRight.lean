@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.SpecificLimits.Basic
+public import Mathlib.Topology.Instances.Real.Lemmas
 public import Mathlib.Topology.Order.LeftRightNhds
 
 /-!
@@ -23,6 +25,8 @@ replaces a supremum over uncountably many times by a countable one.
   by a value above `a` at `T` or at a point of `(D ∪ C) ∩ (-∞, T]`.
 * `TopologicalSpace.exists_countable_subset_Iic_exists_mem_lt`: in a second countable space,
   one countable set of times `≤ T` serves for every function right-continuous before `T`.
+* `TauCeti.le_of_forall_rat_add_le`: a function right-continuous at `t + h` that does not
+  increase along rational increments from `t` does not increase along the real increment `h`.
 -/
 
 public section
@@ -63,3 +67,24 @@ theorem TopologicalSpace.exists_countable_subset_Iic_exists_mem_lt [SecondCounta
     ((hDc.union countable_setOfPred_covBy_right).mono inter_subset_left).insert T,
     insert_subset_iff.2 ⟨le_rfl, inter_subset_right⟩,
     fun _ hg _ htT _ ha ↦ hD.exists_mem_insert_inter_Iic_lt hg htT ha⟩
+
+section Rational
+
+open Filter
+open scoped Topology
+
+/-- A function that is right-continuous at `t + h` and does not increase along rational
+increments from `t` does not increase along the real increment `h ≥ 0`. -/
+theorem TauCeti.le_of_forall_rat_add_le {β : Type*} [Preorder β] [TopologicalSpace β]
+    [ClosedIicTopology β] {G : ℝ → β} {t h : ℝ} (hh : 0 ≤ h)
+    (hG : Tendsto G (𝓝[>] (t + h)) (𝓝 (G (t + h))))
+    (hanti : ∀ q : ℚ, 0 ≤ q → G (t + q) ≤ G t) : G (t + h) ≤ G t := by
+  obtain ⟨r, -, hr, hid⟩ := Real.exists_seq_rat_strictAnti_tendsto h
+  have hshift : Tendsto (fun n => t + (r n : ℝ)) atTop (𝓝[>] (t + h)) := by
+    refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
+      (tendsto_const_nhds.add hid) (Eventually.of_forall fun n => ?_)
+    exact mem_Ioi.2 (by linarith [hr n])
+  refine le_of_tendsto (hG.comp hshift) (Eventually.of_forall fun n => ?_)
+  exact hanti (r n) (by exact_mod_cast (hh.trans (hr n).le))
+
+end Rational
