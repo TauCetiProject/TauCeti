@@ -697,7 +697,6 @@ preferred charts. -/
 theorem signAt_mul_signAt_mul_det_pos
     (l : OrientationLift I M (Fin k)) (l' : OrientationLift J N (Fin k))
     (hl : l'.modelOrientation = l.modelOrientation) {f : M → N} {x : M}
-    (hf : MDifferentiableAt I J f x)
     (ho : Manifold.Orientation.IsOrientationPreservingAt (Manifold.Orientation.mk l)
       (Manifold.Orientation.mk l') f x)
     {β : M} {α : N} (hx : x ∈ (chartAt H β).source) (hfx : f x ∈ (chartAt H' α).source) :
@@ -729,9 +728,20 @@ theorem signAt_mul_signAt_mul_det_pos
   have hD : fderivWithin ℝ (extChartAt J α ∘ f ∘ (extChartAt I β).symm) (range I)
       (extChartAt I β x) = tangentCoordChange J (f x) α (f x) ∘L D ∘L
         tangentCoordChange I β x x := by
-    subst hD₀
-    exact hf.fderivWithin_extChartAt_comp_extChartAt_symm
-      (by simpa only [extChartAt_source] using hx) (by simpa only [extChartAt_source] using hfx)
+    by_cases hf : MDifferentiableAt I J f x
+    · subst hD₀
+      exact hf.fderivWithin_extChartAt_comp_extChartAt_symm
+        (by simpa only [extChartAt_source] using hx) (by simpa only [extChartAt_source] using hfx)
+    · -- Without differentiability the manifold derivative is `0`, hence so is the equivalence `e`,
+      -- which forces the model space to be trivial and all its endomorphisms to agree.
+      have h0 : ∀ u, e u = 0 := fun u ↦ by
+        have := congrArg (fun L ↦ L u) (he.trans (mfderiv_zero_of_not_mdifferentiableAt hf))
+        simpa using this
+      have hsub : ∀ u : E, u = 0 := fun u ↦ by
+        have h : e u = e 0 := (h0 u).trans (h0 0).symm
+        exact e.injective h
+      refine ContinuousLinearMap.ext fun v ↦ ?_
+      simp [hsub v]
   have hdet : LinearMap.det (D : E →ₗ[ℝ] E) = LinearMap.det (A : E →ₗ[ℝ] E) := by
     subst hD₀ hA
     rw [← he]

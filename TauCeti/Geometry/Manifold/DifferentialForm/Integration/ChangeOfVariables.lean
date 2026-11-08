@@ -167,7 +167,7 @@ theorem RoughForm.integral_signedInChartAt_mpullback_eq (φ : RoughForm J N ℝ 
   have hx' : x ∈ (chartAt H β).source := by simpa only [extChartAt_source] using (hsub hx).1
   have hfx' : f x ∈ (chartAt H' α).source := by
     simpa only [extChartAt_source, mem_preimage] using (hsub hx).2
-  have hpos := l.signAt_mul_signAt_mul_det_pos l' hl (hf x hx) (ho x hx) hx' hfx'
+  have hpos := l.signAt_mul_signAt_mul_det_pos l' hl (ho x hx) hx' hfx'
   beta_reduce
   rw [signedInChartAt_apply_of_mem_source _ _ _ _ (hsub hx).1, Function.comp_apply,
     Function.comp_apply, (extChartAt I β).left_inv (hsub hx).1,
