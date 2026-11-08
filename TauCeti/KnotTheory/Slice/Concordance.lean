@@ -341,6 +341,106 @@ private theorem one_le_of_isTopologicalSliceDisc (hΨ : IsTopologicalSliceDisc K
   rw [Complex.finrank_real_complex, (Fact.out : finrank ℝ E = n + 1)] at hle
   omega
 
+omit [Fact (finrank ℝ E = n + 1)] in
+/-- The extended slice chart `y ↦ (φ (r y) - log (max ‖y‖ 1) • e₀, ...)` is injective on the set of
+points `y` retracting into the source of the slice chart `φ`: its zeroth coordinate recovers
+`log (max ‖y‖ 1)`, because `φ` sends the unit sphere into the boundary hyperplane. -/
+private theorem injOn_extendedSliceChart [FiniteDimensional ℝ E]
+    (hdim : finrank ℝ E = 2 + finrank ℝ (EuclideanSpace ℝ (Fin (n - 1))))
+    {φ : OpenPartialHomeomorph (closedBall (0 : E) 1)
+      (EuclideanHalfSpace 2 × EuclideanSpace ℝ (Fin (n - 1)))}
+    {Θ : E → EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin (n - 1))}
+    (hΘ : ∀ y, Θ y = ((φ (radialRetractionToClosedBall zero_le_one y)).1.1 -
+        Real.log (max ‖y‖ 1) • EuclideanSpace.single 0 1,
+      (φ (radialRetractionToClosedBall zero_le_one y)).2)) :
+    InjOn Θ (radialRetractionToClosedBall zero_le_one ⁻¹' φ.source) := by
+  -- The chart `φ` sends the unit sphere into the boundary hyperplane.
+  have hsphere {w : closedBall (0 : E) 1} (hw : w ∈ φ.source) (hw1 : ‖(w : E)‖ = 1) :
+      (φ w).1.1 0 = 0 :=
+    φ.coe_fst_apply_zero_eq_zero_of_notMem_interior hdim hw (by
+      rw [interior_closedBall _ one_ne_zero, mem_ball_zero_iff, hw1]
+      exact lt_irrefl 1)
+  set W : Set E := radialRetractionToClosedBall zero_le_one ⁻¹' φ.source
+  -- The zeroth coordinate of `Θ` recovers `log (max ‖y‖ 1)`, so `Θ` is injective on `W`.
+  have hlogΘ {y : E} (hy : y ∈ W) : Real.log (max ‖y‖ 1) = max (-(Θ y).1 0) 0 := by
+    have hcoord : (Θ y).1 0 =
+        (φ (radialRetractionToClosedBall zero_le_one y)).1.1 0 - Real.log (max ‖y‖ 1) := by
+      simp [hΘ]
+    rcases le_or_gt ‖y‖ 1 with hy1 | hy1
+    · rw [hcoord, max_eq_right hy1, Real.log_one, sub_zero]
+      exact (max_eq_right (neg_nonpos.2 (φ (radialRetractionToClosedBall zero_le_one y)).1.2)).symm
+    · have h0 := hsphere hy
+        (by rw [norm_radialRetractionToClosedBall zero_le_one, min_eq_right hy1.le])
+      have hlogpos : 0 < Real.log ‖y‖ := Real.log_pos hy1
+      rw [hcoord, h0, max_eq_left hy1.le, zero_sub, neg_neg, max_eq_left hlogpos.le]
+  intro y hy y' hy' h
+  have hlog : Real.log (max ‖y‖ 1) = Real.log (max ‖y'‖ 1) := by
+    rw [hlogΘ hy, hlogΘ hy', h]
+  have hφeq : φ (radialRetractionToClosedBall zero_le_one y) =
+      φ (radialRetractionToClosedBall zero_le_one y') := by
+    have h2 : (φ (radialRetractionToClosedBall zero_le_one y)).2 =
+        (φ (radialRetractionToClosedBall zero_le_one y')).2 := by
+      simpa only [hΘ] using congrArg Prod.snd h
+    refine Prod.ext (Subtype.ext ?_) h2
+    have h1 := congrArg Prod.fst h
+    simp only [hΘ, hlog] at h1
+    exact sub_left_injective h1
+  have hr : radialRetraction (1 : ℝ) y = radialRetraction 1 y' :=
+    by simpa only [coe_radialRetractionToClosedBall] using
+      congrArg Subtype.val (φ.injOn hy hy' hφeq)
+  have hm : max ‖y‖ 1 = max ‖y'‖ 1 :=
+    Real.log_injOn_pos (lt_max_of_lt_right one_pos) (lt_max_of_lt_right one_pos) hlog
+  rw [← max_norm_one_smul_radialRetraction_one y, ← max_norm_one_smul_radialRetraction_one y',
+    hr, hm]
+
+/-- The invariance-of-domain step of `isLocallyFlat_coneExt`: if the extended chart `Θ` is an open
+embedding on an open set `W` and its last coordinates vanish on the cone extension, then the cone
+extension is locally flat near every `z` whose image lies in `W`. The first coordinates of `Θ`
+then flatten the cone extension to the coordinate plane. -/
+private theorem exists_isLocallyFlat_coneExt_comp_coe_of_isOpenEmbedding
+    (hΨ : IsTopologicalSliceDisc K₀ Ψ) {z : ℂ} {W : Set E} (hW : IsOpen W)
+    {Θ : E → EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin (n - 1))}
+    (hΘW : IsOpenEmbedding (W.domRestrict Θ))
+    (hslice : ∀ w, coneExt Ψ w ∈ W → (Θ (coneExt Ψ w)).2 = 0) (hz : coneExt Ψ z ∈ W) :
+    ∃ U : Set ℂ, IsOpen U ∧ z ∈ U ∧
+      IsLocallyFlat (EuclideanHalfSpace 2) (EuclideanSpace ℝ (Fin (n - 1)))
+        (coneExt Ψ ∘ ((↑) : U → ℂ)) := by
+  -- On the preimage `U` of `W`, the cone extension is carried by `Θ` into the coordinate plane.
+  set U : Set ℂ := coneExt Ψ ⁻¹' W
+  have hc := continuous_coneExt hΨ.continuous
+  have hU : IsOpen U := hc.isOpen_preimage _ hW
+  let h₀ : ℂ → EuclideanSpace ℝ (Fin 2) := fun w => (Θ (coneExt Ψ w)).1
+  have hΘext {w : ℂ} (hw : w ∈ U) : Θ (coneExt Ψ w) = (h₀ w, 0) :=
+    Prod.ext rfl (hslice _ hw)
+  have hΘc : ContinuousOn Θ W := continuousOn_iff_continuous_domRestrict.2 hΘW.continuous
+  have hΘinj : InjOn Θ W := Set.injOn_iff_injective.2 hΘW.injective
+  have hh₀c : ContinuousOn h₀ U :=
+    continuous_fst.comp_continuousOn (hΘc.comp hc.continuousOn fun _ hw => hw)
+  have hh₀inj : InjOn h₀ U := by
+    intro w hw w' hw' h
+    refine coneExt_injective hΨ (hΘinj hw hw' ?_)
+    rw [hΘext hw, hΘext hw', h]
+  have hh₀ : IsOpenEmbedding (U.domRestrict h₀) :=
+    hU.isOpenEmbedding_domRestrict_of_continuousOn_of_injOn (E := ℂ)
+      (F := EuclideanSpace ℝ (Fin 2)) hh₀c hh₀inj (by simp [Complex.finrank_real_complex])
+  -- Assemble: the coordinate plane is locally flat, and `Θ` pulls it back to the cone extension.
+  have h1 : IsLocallyFlat (EuclideanSpace ℝ (Fin 2)) (EuclideanSpace ℝ (Fin (n - 1)))
+      ((fun x : EuclideanSpace ℝ (Fin 2) => (x, (0 : EuclideanSpace ℝ (Fin (n - 1))))) ∘
+        U.domRestrict h₀) :=
+    isLocallyFlat_prodMkLeft.comp_isOpenEmbedding hh₀
+  let cW : U → W := fun w => ⟨coneExt Ψ w, w.2⟩
+  have hcW : W.domRestrict Θ ∘ cW =
+      (fun x : EuclideanSpace ℝ (Fin 2) => (x, (0 : EuclideanSpace ℝ (Fin (n - 1))))) ∘
+        U.domRestrict h₀ := by
+    funext w
+    exact hΘext w.2
+  have h2 : IsLocallyFlat (EuclideanSpace ℝ (Fin 2)) (EuclideanSpace ℝ (Fin (n - 1)))
+      (coneExt Ψ ∘ ((↑) : U → ℂ)) :=
+    (IsLocallyFlat.of_isOpenEmbedding_comp hΘW (hcW ▸ h1)).isOpenEmbedding_comp
+      hW.isOpenEmbedding_subtypeVal
+  exact ⟨U, hU, hz,
+    h2.transIsOpenEmbedding (EuclideanHalfSpace.isOpenEmbedding_interiorEmbedding 1)⟩
+
 /-- Near every point of the plane, the cone extension of a slice disc is locally flat. A
 flattening chart `φ` of the ball at the point `Ψ (radialRetractionToClosedBall zero_le_one z)`
 sends the sphere into the boundary hyperplane of the half-space
@@ -362,13 +462,6 @@ private theorem exists_isLocallyFlat_coneExt_comp_coe (hΨ : IsTopologicalSliceD
     rw [finrank_prod, finrank_euclideanSpace_fin, hdim]
   obtain ⟨φ, hφz, hφ⟩ :=
     hΨ.isLocallyFlat.exists_isSliceChart (radialRetractionToClosedBall zero_le_one z)
-  -- The chart `φ` sends the unit sphere into the boundary hyperplane.
-  have hsphere {w : closedBall (0 : E) 1} (hw : w ∈ φ.source) (hw1 : ‖(w : E)‖ = 1) :
-      (φ w).1.1 0 = 0 :=
-    φ.coe_fst_apply_zero_eq_zero_of_notMem_interior hdim hw (by
-      rw [interior_closedBall _ one_ne_zero, mem_ball_zero_iff, hw1]
-      exact lt_irrefl 1)
-  -- The extended chart `Θ` on the open set `W` of points retracting into the source of `φ`.
   set W : Set E := radialRetractionToClosedBall zero_le_one ⁻¹' φ.source
   have hW : IsOpen W :=
     (continuous_radialRetractionToClosedBall zero_le_one).isOpen_preimage _ φ.open_source
@@ -385,79 +478,19 @@ private theorem exists_isLocallyFlat_coneExt_comp_coe (hΨ : IsTopologicalSliceD
         (lt_max_of_lt_right one_pos).ne'
     exact (((continuous_subtype_val.comp_continuousOn (continuous_fst.comp_continuousOn hφr)).sub
       ((hlog.smul continuous_const).continuousOn))).prodMk (continuous_snd.comp_continuousOn hφr)
-  -- The zeroth coordinate of `Θ` recovers `log (max ‖y‖ 1)`, so `Θ` is injective on `W`.
-  have hlogΘ {y : E} (hy : y ∈ W) : Real.log (max ‖y‖ 1) = max (-(Θ y).1 0) 0 := by
-    have hcoord : (Θ y).1 0 =
-        (φ (radialRetractionToClosedBall zero_le_one y)).1.1 0 - Real.log (max ‖y‖ 1) := by
-      simp [Θ]
-    rcases le_or_gt ‖y‖ 1 with hy1 | hy1
-    · rw [hcoord, max_eq_right hy1, Real.log_one, sub_zero]
-      exact (max_eq_right (neg_nonpos.2 (φ (radialRetractionToClosedBall zero_le_one y)).1.2)).symm
-    · have h0 := hsphere hy
-        (by rw [norm_radialRetractionToClosedBall zero_le_one, min_eq_right hy1.le])
-      have hlogpos : 0 < Real.log ‖y‖ := Real.log_pos hy1
-      rw [hcoord, h0, max_eq_left hy1.le, zero_sub, neg_neg, max_eq_left hlogpos.le]
-  have hΘinj : InjOn Θ W := by
-    intro y hy y' hy' h
-    have hlog : Real.log (max ‖y‖ 1) = Real.log (max ‖y'‖ 1) := by
-      rw [hlogΘ hy, hlogΘ hy', h]
-    have hφeq : φ (radialRetractionToClosedBall zero_le_one y) =
-        φ (radialRetractionToClosedBall zero_le_one y') := by
-      have h2 : (Θ y).2 = (Θ y').2 := congrArg Prod.snd h
-      refine Prod.ext (Subtype.ext ?_) h2
-      have h1 := congrArg Prod.fst h
-      simp only [Θ, hlog] at h1
-      exact sub_left_injective h1
-    have hr : radialRetraction (1 : ℝ) y = radialRetraction 1 y' :=
-      by simpa only [coe_radialRetractionToClosedBall] using
-        congrArg Subtype.val (φ.injOn hy hy' hφeq)
-    have hm : max ‖y‖ 1 = max ‖y'‖ 1 :=
-      Real.log_injOn_pos (lt_max_of_lt_right one_pos) (lt_max_of_lt_right one_pos) hlog
-    rw [← max_norm_one_smul_radialRetraction_one y, ← max_norm_one_smul_radialRetraction_one y',
-      hr, hm]
+  have hΘinj := injOn_extendedSliceChart hdim (φ := φ) (Θ := Θ) fun _ => rfl
   -- By invariance of domain, `Θ` is an open embedding on `W`.
   have hΘW : IsOpenEmbedding (W.domRestrict Θ) :=
     hW.isOpenEmbedding_domRestrict_of_continuousOn_of_injOn hΘc hΘinj hdim'
-  -- On the preimage `U` of `W`, the cone extension is carried by `Θ` into the coordinate plane.
-  set U : Set ℂ := coneExt Ψ ⁻¹' W
-  have hc := continuous_coneExt hΨ.continuous
-  have hU : IsOpen U := hc.isOpen_preimage _ hW
-  have hzU : z ∈ U := by
-    simp only [U, W, Set.mem_preimage]
-    rwa [radialRetractionToClosedBall_coneExt hΨ]
-  have hslice {w : ℂ} (hw : w ∈ U) : (Θ (coneExt Ψ w)).2 = 0 := by
+  have hslice : ∀ w, coneExt Ψ w ∈ W → (Θ (coneExt Ψ w)).2 = 0 := fun w hw => by
     have hw' : Ψ (radialRetractionToClosedBall zero_le_one w) ∈ φ.source := by
       rw [← radialRetractionToClosedBall_coneExt hΨ]
       exact hw
     have := (hφ.mem_iff hw').1 (mem_range_self _)
     simp only [Θ, radialRetractionToClosedBall_coneExt hΨ]
     exact this.2
-  let h₀ : ℂ → EuclideanSpace ℝ (Fin 2) := fun w => (Θ (coneExt Ψ w)).1
-  have hΘext {w : ℂ} (hw : w ∈ U) : Θ (coneExt Ψ w) = (h₀ w, 0) :=
-    Prod.ext rfl (hslice hw)
-  have hh₀c : ContinuousOn h₀ U :=
-    continuous_fst.comp_continuousOn (hΘc.comp hc.continuousOn fun _ hw => hw)
-  have hh₀inj : InjOn h₀ U := by
-    intro w hw w' hw' h
-    refine coneExt_injective hΨ (hΘinj hw hw' ?_)
-    rw [hΘext hw, hΘext hw', h]
-  have hh₀ : IsOpenEmbedding (U.domRestrict h₀) :=
-    hU.isOpenEmbedding_domRestrict_of_continuousOn_of_injOn (E := ℂ)
-      (F := EuclideanSpace ℝ (Fin 2)) hh₀c hh₀inj (by simp [Complex.finrank_real_complex])
-  -- Assemble: the coordinate plane is locally flat, and `Θ` pulls it back to the cone extension.
-  have h1 : IsLocallyFlat (EuclideanSpace ℝ (Fin 2)) V'
-      ((fun x : EuclideanSpace ℝ (Fin 2) => (x, (0 : V'))) ∘ U.domRestrict h₀) :=
-    isLocallyFlat_prodMkLeft.comp_isOpenEmbedding hh₀
-  let cW : U → W := fun w => ⟨coneExt Ψ w, w.2⟩
-  have hcW : W.domRestrict Θ ∘ cW =
-      (fun x : EuclideanSpace ℝ (Fin 2) => (x, (0 : V'))) ∘ U.domRestrict h₀ := by
-    funext w
-    exact hΘext w.2
-  have h2 : IsLocallyFlat (EuclideanSpace ℝ (Fin 2)) V' (coneExt Ψ ∘ ((↑) : U → ℂ)) :=
-    (IsLocallyFlat.of_isOpenEmbedding_comp hΘW (hcW ▸ h1)).isOpenEmbedding_comp
-      hW.isOpenEmbedding_subtypeVal
-  exact ⟨U, hU, hzU,
-    h2.transIsOpenEmbedding (EuclideanHalfSpace.isOpenEmbedding_interiorEmbedding 1)⟩
+  exact exists_isLocallyFlat_coneExt_comp_coe_of_isOpenEmbedding hΨ hW hΘW hslice
+    (by simpa only [W, mem_preimage, radialRetractionToClosedBall_coneExt hΨ] using hφz)
 
 /-- **The cone extension of a locally flat slice disc is locally flat.** Extending a locally flat
 slice disc `Ψ` of `K₀` beyond the unit circle by the cone `r • K₀ u`, `r ≥ 1`, gives a locally

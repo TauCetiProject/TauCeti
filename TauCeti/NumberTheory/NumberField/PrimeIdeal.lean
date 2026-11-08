@@ -222,6 +222,77 @@ theorem span_natCast_eq_prod_primesOverFinset {p : ℕ} [Fact p.Prime]
   rw [← Ideal.ramificationIdx_ringOfIntegers_rat_eq_int P,
     Ideal.ramificationIdx_eq_one_of_isUnramifiedAt, pow_one]
 
+/-- **Primes above distinct rational primes are distinct.** The finsets of primes of `𝓞 K` lying
+over two distinct rational primes are disjoint, since a prime lies over exactly one of them. -/
+theorem disjoint_primesOverFinset_natCast {q₁ q₂ : ℕ} (h₁ : q₁.Prime) (h₂ : q₂.Prime)
+    (hne : q₁ ≠ q₂) :
+    Disjoint (IsDedekindDomain.primesOverFinset (span {(q₁ : ℤ)}) (𝓞 K))
+      (IsDedekindDomain.primesOverFinset (span {(q₂ : ℤ)}) (𝓞 K)) := by
+  have := Fact.mk h₁
+  have := Fact.mk h₂
+  have hq₁ : (span {(q₁ : ℤ)} : Ideal ℤ) ≠ ⊥ := by
+    simpa [Ideal.span_singleton_eq_bot] using h₁.ne_zero
+  have hq₂ : (span {(q₂ : ℤ)} : Ideal ℤ) ≠ ⊥ := by
+    simpa [Ideal.span_singleton_eq_bot] using h₂.ne_zero
+  refine Finset.disjoint_left.2 fun P hP₁ hP₂ => ?_
+  have hunder₁ := ((IsDedekindDomain.mem_primesOverFinset_iff hq₁ (𝓞 K)).mp hP₁).2.over
+  have hunder₂ := ((IsDedekindDomain.mem_primesOverFinset_iff hq₂ (𝓞 K)).mp hP₂).2.over
+  have hassoc : Associated (q₁ : ℤ) (q₂ : ℤ) :=
+    Ideal.span_singleton_eq_span_singleton.1 (hunder₁.trans hunder₂.symm)
+  exact hne (by simpa using Int.associated_iff_natAbs.1 hassoc)
+
+/-- A prime of `𝓞 K` belongs to the union of the sets of primes above the members of `T` iff it is
+prime and lies over `(q)` for some `q ∈ T`. -/
+theorem mem_biUnion_primesOverFinset_iff {T : Finset ℕ} (hT : ∀ q ∈ T, q.Prime)
+    {P : Ideal (𝓞 K)} :
+    P ∈ T.biUnion (fun q => IsDedekindDomain.primesOverFinset (span {(q : ℤ)}) (𝓞 K)) ↔
+      ∃ q ∈ T, P.IsPrime ∧ P.LiesOver (span {(q : ℤ)}) := by
+  classical
+  rw [Finset.mem_biUnion]
+  have hq0 : ∀ q ∈ T, (span {(q : ℤ)} : Ideal ℤ) ≠ ⊥ := fun q hq => by
+    simpa [Ideal.span_singleton_eq_bot] using (hT q hq).ne_zero
+  refine ⟨fun ⟨q, hq, hP⟩ => ⟨q, hq, ?_⟩, fun ⟨q, hq, hP⟩ => ⟨q, hq, ?_⟩⟩
+  · have := Fact.mk (hT q hq)
+    exact (IsDedekindDomain.mem_primesOverFinset_iff (hq0 q hq) (𝓞 K)).mp hP
+  · have := Fact.mk (hT q hq)
+    exact (IsDedekindDomain.mem_primesOverFinset_iff (hq0 q hq) (𝓞 K)).mpr hP
+
+/-- **The primes above a finite set of rational primes count by the sum.** The union over `q ∈ T`
+of the primes of `𝓞 K` above `q` has as many members as the sum of the numbers of primes above
+the individual `q`. -/
+theorem card_biUnion_primesOverFinset {T : Finset ℕ} (hT : ∀ q ∈ T, q.Prime) :
+    (T.biUnion (fun q => IsDedekindDomain.primesOverFinset (span {(q : ℤ)}) (𝓞 K))).card
+      = ∑ q ∈ T, ((span {(q : ℤ)}).primesOver (𝓞 K)).ncard := by
+  classical
+  rw [Finset.card_biUnion (fun q₁ hq₁ q₂ hq₂ h =>
+    disjoint_primesOverFinset_natCast (hT q₁ hq₁) (hT q₂ hq₂) h)]
+  refine Finset.sum_congr rfl fun q hq => ?_
+  have := Fact.mk (hT q hq)
+  have hq0 : (span {(q : ℤ)} : Ideal ℤ) ≠ ⊥ := by
+    simpa [Ideal.span_singleton_eq_bot] using (hT q hq).ne_zero
+  rw [← IsDedekindDomain.coe_primesOverFinset hq0 (𝓞 K), Set.ncard_coe_finset]
+
+/-- **A squarefree product of unramified rational primes is the product of the primes above
+them.** If every prime of `𝓞 K` above a member of the finite set `T` of rational primes is
+unramified, then the product of the members of `T` generates the product of all the primes above
+them. -/
+theorem prod_biUnion_primesOverFinset_eq_span_prod {T : Finset ℕ} (hT : ∀ q ∈ T, q.Prime)
+    (hun : ∀ q ∈ T, ∀ P : Ideal (𝓞 K), ∀ [P.IsPrime] [P.LiesOver (span {(q : ℤ)})],
+      Algebra.IsUnramifiedAt (𝓞 ℚ) P) :
+    ∏ P ∈ T.biUnion (fun q => IsDedekindDomain.primesOverFinset (span {(q : ℤ)}) (𝓞 K)), P
+      = span {((∏ q ∈ T, q : ℕ) : 𝓞 K)} := by
+  classical
+  rw [Finset.prod_biUnion (fun q₁ hq₁ q₂ hq₂ h =>
+    disjoint_primesOverFinset_natCast (hT q₁ hq₁) (hT q₂ hq₂) h)]
+  have hfactor : ∀ q ∈ T,
+      ∏ P ∈ IsDedekindDomain.primesOverFinset (span {(q : ℤ)}) (𝓞 K), P = span {(q : 𝓞 K)} :=
+    fun q hq => by
+      have := Fact.mk (hT q hq)
+      exact (span_natCast_eq_prod_primesOverFinset (hun q hq)).symm
+  rw [Finset.prod_congr rfl hfactor, Ideal.prod_span_singleton]
+  push_cast
+  rfl
+
 /-- **When a rational prime stays prime.** If `p 𝓞 K` is the product of the primes above the
 rational prime `p` raised to a common power `e`, then `p 𝓞 K` is prime iff a single prime lies
 above `p` and `e = 1`. -/
@@ -267,3 +338,44 @@ theorem isPrime_span_natCast_iff_of_eq_prod_primesOverFinset_pow {p e : ℕ}
     exact hQmem.1
 
 end TauCeti.NumberField
+
+namespace NumberField
+
+variable {K : Type*} [Field K] [NumberField K]
+
+/-- Over every rational prime `p` there is a nonzero prime ideal of `𝓞 K`. -/
+theorem exists_prime_ne_zero_liesOver (p : ℕ) (hp : p.Prime) :
+    ∃ P : Ideal (𝓞 K), P.IsPrime ∧ P ≠ 0 ∧ P.LiesOver (span {(p : ℤ)}) := by
+  have _ : Fact p.Prime := ⟨hp⟩
+  obtain ⟨⟨P, hPprime, hPover⟩⟩ :=
+    (inferInstance : Nonempty ((span {(p : ℤ)}).primesOver (𝓞 K)))
+  refine ⟨P, hPprime, ?_, hPover⟩
+  rw [Ideal.zero_eq_bot]
+  exact Ideal.ne_bot_of_liesOver_of_ne_bot (p := span {(p : ℤ)}) (by simpa using hp.ne_zero) P
+
+/-- The classes of the nonzero prime ideals of `𝓞 K` above a rational prime `p` lie in a finite set
+of at most `[K : ℚ]` classes. -/
+theorem exists_finset_card_le_finrank_mk0_mem (p : ℕ) (hp : p.Prime) :
+    ∃ F : Finset (ClassGroup (𝓞 K)), F.card ≤ Module.finrank ℚ K ∧
+      ∀ I : (Ideal (𝓞 K))⁰, I.1.IsPrime → I.1.LiesOver (span {(p : ℤ)}) →
+        ClassGroup.mk0 I ∈ F := by
+  classical
+  have _ : Fact p.Prime := ⟨hp⟩
+  have hpne : (span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := by simpa using hp.ne_zero
+  let primes : Finset (Ideal (𝓞 K)) := IsDedekindDomain.primesOverFinset (span {(p : ℤ)}) (𝓞 K)
+  let classOf : {P // P ∈ primes} → ClassGroup (𝓞 K) := fun P =>
+    ClassGroup.mk0 ⟨P.1, by
+      have hdata := (IsDedekindDomain.mem_primesOverFinset_iff hpne (𝓞 K)).mp P.2
+      let _ : P.1.LiesOver (span {(p : ℤ)}) := hdata.2
+      exact mem_nonZeroDivisors_of_prime_of_liesOver hp P.1⟩
+  refine ⟨primes.attach.image classOf, ?_, fun I hprime hover => ?_⟩
+  · calc
+      (primes.attach.image classOf).card ≤ primes.attach.card := Finset.card_image_le
+      _ = primes.card := Finset.card_attach
+      _ ≤ Module.finrank ℚ K := TauCeti.NumberField.card_primesOverFinset_le_finrank (K := K) hpne
+  · have hmem : I.1 ∈ primes := by
+      rw [IsDedekindDomain.mem_primesOverFinset_iff hpne]
+      exact ⟨hprime, hover⟩
+    exact Finset.mem_image.mpr ⟨⟨I.1, hmem⟩, Finset.mem_attach _ _, rfl⟩
+
+end NumberField

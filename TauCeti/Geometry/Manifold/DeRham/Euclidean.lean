@@ -176,8 +176,8 @@ private theorem mem_exactCompactlySupportedForms_top {k : ℕ} (hk : 0 < k)
   obtain ⟨ρ, hρ, hρU, hρc⟩ := exists_cutoff_compl_closedBall (E := E) R
   rcases j with _ | j
   · -- In degree one, `η` is a function, constant on the connected set `U`.
-    have : PreconnectedSpace U := isPreconnected_iff_preconnectedSpace.mp <|
-      isPreconnected_compl_closedBall (by rw [← finrank_eq_rank]; exact_mod_cast hkE) 0 R
+    have : PathConnectedSpace U := isPathConnected_iff_pathConnectedSpace.mp <|
+      isPathConnected_compl_closedBall (by rw [← finrank_eq_rank]; exact_mod_cast hkE) 0 R
     have hUc : IsCompact {x : (⊤ : Opens E) | (x : E) ∉ U} := by
       let Φ : (⊤ : Opens E) ≃ₘ⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ E := Diffeomorph.ofTop _ rfl
       have : {x : (⊤ : Opens E) | (x : E) ∉ U} = Φ ⁻¹' closedBall 0 R := by
