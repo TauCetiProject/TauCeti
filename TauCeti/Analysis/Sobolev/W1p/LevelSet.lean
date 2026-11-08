@@ -28,7 +28,8 @@ measure, then there are levels
 principle with bounded drift.
 
 The same holds for the classical gradient of a `C¹` function, which is read off from the weak
-statement on small balls.
+statement on small balls. In particular a level set of a `C¹` function on which its derivative
+does not vanish is null.
 -/
 
 public section
@@ -70,6 +71,17 @@ theorem W1p.gradient_ae_eq_zero_on_level_set (hp : p ≠ ∞) (u : W1p mu Omega 
   have hz : innerSL ℝ (W1p.gradient u x) = 0 := by
     simpa only [Pi.sub_apply, Pi.zero_apply, sub_zero, hpos, hneg, map_zero] using hx
   exact innerSL_inj.mp (hz.trans (map_zero _).symm)
+
+/-- At a level `k`, the jet of a Sobolev function has zero gradient almost everywhere on the
+level set of its value. -/
+theorem W1p.snd_ae_eq_zero_of_fst_eq (hp : p ≠ ∞) (u : W1p mu Omega p) (k : ℝ) :
+    ∀ᵐ x ∂mu.restrict Omega, ((u : Sobolev1JetLp mu Omega p) x).fst = k →
+      ((u : Sobolev1JetLp mu Omega p) x).snd = 0 := by
+  filter_upwards [W1p.value_apply_ae u, W1p.gradient_apply_ae u,
+    W1p.gradient_ae_eq_zero_on_level_set hp u k] with x hv hg hz
+  intro hx
+  rw [← hg]
+  exact hz (hv.trans hx)
 
 /-- Weak gradients agree almost everywhere wherever the values agree, even if their
 coincidence set has empty interior. -/
@@ -199,3 +211,23 @@ theorem gradient_ae_eq_zero_on_level_set_of_contDiffOn {w : E → ℝ}
   exact hx ⟨hxO, hxk, h⟩
 
 end TauCeti
+
+namespace ContDiff
+
+open MeasureTheory TauCeti TopologicalSpace
+open scoped Gradient
+
+variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
+
+/-- A level set of a `C¹` function is null if the derivative does not vanish on it. -/
+theorem measure_setOf_eq_eq_zero_of_fderiv_ne_zero {w : E → ℝ} (hw : ContDiff ℝ 1 w) {k : ℝ}
+    (hreg : ∀ x, w x = k → fderiv ℝ w x ≠ 0) : mu {x | w x = k} = 0 := by
+  have h := gradient_ae_eq_zero_on_level_set_of_contDiffOn (mu := mu) (Omega := ⊤)
+    hw.contDiffOn k
+  rw [Opens.coe_top, Measure.restrict_univ] at h
+  rw [measure_eq_zero_iff_ae_notMem]
+  filter_upwards [h] with x hx hxk
+  exact hreg x hxk (by simpa [gradient] using hx hxk)
+
+end ContDiff

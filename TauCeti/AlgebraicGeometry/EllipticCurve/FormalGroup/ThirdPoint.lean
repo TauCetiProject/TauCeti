@@ -147,61 +147,11 @@ private lemma chord_addY {AA Λ N q₁ q₂ w₁ w₂ T₃ wT : F}
     (hw₁0 : w₁ ≠ 0) (hw₂0 : w₂ ≠ 0) (hwT0 : wT ≠ 0) :
     (1 - W.a₁ * T₃ - W.a₃ * wT) / wT =
       W.toAffine.addY (q₁ / w₁) (q₂ / w₂) (-1 / w₁) (Λ / N) := by
-  simp only [chordCubic] at hCub₁ hCub₂
-  rw [Affine.addY, Affine.negAddY, Affine.addX, Affine.negY]
+  have hx := chord_addX W hAA2 hline₁ hline₂ hCub₁ hCub₂ hT₃ hwT hA hq12 hN0 hw₁0 hw₂0 hwT0
+  rw [Affine.addY, Affine.negAddY, Affine.negY, ← hx]
   field_simp
-  refine mul_left_cancel₀ (mul_ne_zero (pow_ne_zero 3 hA) hq12) ?_
-  linear_combination (AA^3*(q₂*w₂*N^3 - q₁*w₂*N^3 + Λ*w₁*N^2*q₂^2 + W.a₁*w₁*N^3*q₂^2
-    + q₁*w₁*w₂*Λ^3 - W.a₁*w₂*N^3*q₁^2 - q₂*w₁*w₂*Λ^3 - 2*Λ*w₂*N^2*q₁^2 + W.a₁*q₁*q₂*w₂*N^3
-    - Λ*q₁*q₂*w₁*N^2 - W.a₁*q₁*q₂*w₁*N^3 + 2*Λ*q₁*q₂*w₂*N^2 + Λ*W.a₂*q₂*w₁*w₂*N^2
-    + Λ*q₁*w₁*w₂*N^2*W.a₁^2 + W.a₁*W.a₂*q₂*w₁*w₂*N^3 - Λ*W.a₂*q₁*w₁*w₂*N^2
-    - Λ*q₂*w₁*w₂*N^2*W.a₁^2 - W.a₁*W.a₂*q₁*w₁*w₂*N^3 - 2*N*W.a₁*q₂*w₁*w₂*Λ^2
-    + 2*N*W.a₁*q₁*w₁*w₂*Λ^2)) * hwT +
-  (AA^3*(Λ*N^3*q₂^2 + W.a₁*N^4*q₂^2 + q₁*w₂*N^3 - q₂*w₂*N^3 + N*q₁*w₂*Λ^3 + T₃*q₁*w₂*Λ^4
-    + T₃*Λ^2*N^2*q₂^2 - Λ*q₁*q₂*N^3 - N*q₂*w₂*Λ^3 - T₃*q₂*w₂*Λ^4 - W.a₁*q₁*q₂*N^4
-    + Λ*T₃*W.a₁*N^3*q₂^2 + Λ*W.a₂*q₂*w₂*N^3 + Λ*q₁*w₂*N^3*W.a₁^2 + T₃*W.a₁*q₂*w₂*N^3
-    + W.a₁*W.a₂*q₂*w₂*N^4 - Λ*W.a₂*q₁*w₂*N^3 - Λ*q₂*w₂*N^3*W.a₁^2 - T₃*W.a₁*q₁*w₂*N^3
-    - T₃*q₁*q₂*Λ^2*N^2 - W.a₁*W.a₂*q₁*w₂*N^4 - 2*W.a₁*q₂*w₂*Λ^2*N^2 + 2*W.a₁*q₁*w₂*Λ^2*N^2
-    + T₃*W.a₂*q₂*w₂*Λ^2*N^2 + T₃*q₁*w₂*Λ^2*N^2*W.a₁^2 - Λ*T₃*W.a₁*q₁*q₂*N^3
-    - T₃*W.a₂*q₁*w₂*Λ^2*N^2 - T₃*q₂*w₂*Λ^2*N^2*W.a₁^2 - 2*N*T₃*W.a₁*q₂*w₂*Λ^3
-    + 2*N*T₃*W.a₁*q₁*w₂*Λ^3 + Λ*T₃*W.a₁*W.a₂*q₂*w₂*N^3
-    - Λ*T₃*W.a₁*W.a₂*q₁*w₂*N^3)) * hline₁ +
-  (AA^3*(N*Λ^4*q₁^2 + T₃*Λ^5*q₁^2 + q₁*Λ^3*N^2 - Λ*N^3*q₁^2 - W.a₁*N^4*q₁^2 - q₂*Λ^3*N^2
-    + Λ*T₃*q₂*N^3 + Λ*W.a₂*q₂*N^4 + Λ*q₁*q₂*N^3 + Λ*q₁*N^4*W.a₁^2 + N*T₃*q₁*Λ^4
-    + T₃*W.a₁*q₂*N^4 + W.a₁*W.a₂*q₂*N^5 + W.a₁*q₁*q₂*N^4 + Λ^2*N^3*W.a₁^2*q₁^2
-    - Λ*T₃*q₁*N^3 - Λ*W.a₂*q₁*N^4 - Λ*q₂*N^4*W.a₁^2 - N*T₃*q₂*Λ^4 - N*q₁*q₂*Λ^4
-    - T₃*W.a₁*q₁*N^4 - T₃*q₁*q₂*Λ^5 - W.a₁*W.a₂*q₁*N^5 - W.a₂*Λ^2*N^3*q₁^2
-    - 2*T₃*Λ^2*N^2*q₁^2 - 2*W.a₁*q₂*Λ^2*N^3 + 2*W.a₁*q₁*Λ^2*N^3 + 2*W.a₁*Λ^3*N^2*q₁^2
-    + T₃*W.a₂*q₂*Λ^2*N^3 + T₃*q₁*Λ^2*N^3*W.a₁^2 + T₃*Λ^3*N^2*W.a₁^2*q₁^2
-    + W.a₂*q₁*q₂*Λ^2*N^3 - Λ*W.a₁*W.a₂*N^4*q₁^2 - T₃*W.a₂*q₁*Λ^2*N^3
-    - T₃*W.a₂*Λ^3*N^2*q₁^2 - T₃*q₂*Λ^2*N^3*W.a₁^2 - q₁*q₂*Λ^2*N^3*W.a₁^2
-    - 2*Λ*T₃*W.a₁*N^3*q₁^2 - 2*T₃*W.a₁*q₂*Λ^3*N^2 - 2*W.a₁*q₁*q₂*Λ^3*N^2
-    + 2*N*T₃*W.a₁*Λ^4*q₁^2 + 2*T₃*W.a₁*q₁*Λ^3*N^2 + 2*T₃*q₁*q₂*Λ^2*N^2
-    + Λ*T₃*W.a₁*W.a₂*q₂*N^4 + Λ*W.a₁*W.a₂*q₁*q₂*N^4 + T₃*W.a₂*q₁*q₂*Λ^3*N^2
-    - Λ*T₃*W.a₁*W.a₂*q₁*N^4 - T₃*W.a₁*W.a₂*Λ^2*N^3*q₁^2 - T₃*q₁*q₂*Λ^3*N^2*W.a₁^2
-    - 2*N*T₃*W.a₁*q₁*q₂*Λ^4 + 2*Λ*T₃*W.a₁*q₁*q₂*N^3 + T₃*W.a₁*W.a₂*q₁*q₂*Λ^2*N^3)) * hline₂ +
-  (AA^2*(Λ*q₂*N^4 + N*Λ^5*q₁^2 + W.a₁*q₂*N^5 + q₁*Λ^4*N^2 + q₂*Λ^6*q₁^2 - Λ*q₁*N^4
-    - N*Λ^5*q₂^2 - W.a₁*q₁*N^5 - q₁*Λ^6*q₂^2 - q₂*Λ^4*N^2 - 2*Λ^2*N^3*q₁^2 + 2*Λ^2*N^3*q₂^2
-    + W.a₂*q₂*Λ^2*N^4 + W.a₂*Λ^3*N^3*q₂^2 + q₁*Λ^2*N^4*W.a₁^2 + Λ^3*N^3*W.a₁^2*q₁^2
-    - W.a₂*q₁*Λ^2*N^4 - W.a₂*Λ^3*N^3*q₁^2 - q₂*Λ^2*N^4*W.a₁^2 - Λ^3*N^3*W.a₁^2*q₂^2
-    - 3*q₂*Λ^3*N^2*q₁^2 - 2*Λ*W.a₁*N^4*q₁^2 - 2*W.a₁*q₂*Λ^3*N^3 - 2*W.a₁*Λ^4*N^2*q₂^2
-    + 2*Λ*W.a₁*N^4*q₂^2 + 2*W.a₁*q₁*Λ^3*N^3 + 2*W.a₁*Λ^4*N^2*q₁^2 + 3*q₁*Λ^3*N^2*q₂^2
-    + Λ*W.a₁*W.a₂*q₂*N^5 + W.a₁*W.a₂*Λ^2*N^4*q₂^2 + W.a₂*q₁*Λ^4*N^2*q₂^2
-    + q₂*Λ^4*N^2*W.a₁^2*q₁^2 - Λ*W.a₁*W.a₂*q₁*N^5 - W.a₁*W.a₂*Λ^2*N^4*q₁^2
-    - W.a₂*q₂*Λ^4*N^2*q₁^2 - q₁*Λ^4*N^2*W.a₁^2*q₂^2 - 3*W.a₁*q₂*Λ^2*N^3*q₁^2
-    - 2*N*W.a₁*q₁*Λ^5*q₂^2 + 2*N*W.a₁*q₂*Λ^5*q₁^2 + 3*W.a₁*q₁*Λ^2*N^3*q₂^2
-    + W.a₁*W.a₂*q₁*Λ^3*N^3*q₂^2 - W.a₁*W.a₂*q₂*Λ^3*N^3*q₁^2)) * hT₃ +
-  (AA*(-AA*N*Λ^5 - AA*q₂*Λ^6 + 2*AA*Λ^2*N^3 + AA*W.a₂*Λ^3*N^3 - AA*Λ^3*N^3*W.a₁^2
-    - 2*AA*W.a₁*Λ^4*N^2 + 2*AA*Λ*W.a₁*N^4 + 3*AA*q₂*Λ^3*N^2 + AA*W.a₁*W.a₂*Λ^2*N^4
-    + AA*W.a₂*q₂*Λ^4*N^2 - AA*q₂*Λ^4*N^2*W.a₁^2 - 2*AA*N*W.a₁*q₂*Λ^5
-    + 3*AA*W.a₁*q₂*Λ^2*N^3 + AA*W.a₁*W.a₂*q₂*Λ^3*N^3)) * hCub₁ +
-  (N*AA^2*Λ^5 + q₁*AA^2*Λ^6 - 2*AA^2*Λ^2*N^3 + AA^2*Λ^3*N^3*W.a₁^2 - W.a₂*AA^2*Λ^3*N^3
-    - 3*q₁*AA^2*Λ^3*N^2 - 2*Λ*W.a₁*AA^2*N^4 + 2*W.a₁*AA^2*Λ^4*N^2 + q₁*AA^2*Λ^4*N^2*W.a₁^2
-    - W.a₁*W.a₂*AA^2*Λ^2*N^4 - W.a₂*q₁*AA^2*Λ^4*N^2 - 3*W.a₁*q₁*AA^2*Λ^2*N^3
-    + 2*N*W.a₁*q₁*AA^2*Λ^5 - W.a₁*W.a₂*q₁*AA^2*Λ^3*N^3) * hCub₂ +
-  (AA^2*(q₁*Λ^3*N^3 - q₂*Λ^3*N^3 + Λ*W.a₂*q₂*N^5 + Λ*q₁*N^5*W.a₁^2 + W.a₁*W.a₂*q₂*N^6
-    - Λ*W.a₂*q₁*N^5 - Λ*q₂*N^5*W.a₁^2 - W.a₁*W.a₂*q₁*N^6 - 2*W.a₁*q₂*Λ^2*N^4
-    + 2*W.a₁*q₁*Λ^2*N^4)) * hAA2
+  subst hwT hline₁
+  ring
 
 variable [DecidableEq F]
 

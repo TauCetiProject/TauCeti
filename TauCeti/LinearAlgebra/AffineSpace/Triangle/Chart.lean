@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.AffineSpace.Independent
 public import Mathlib.LinearAlgebra.AffineSpace.Midpoint
+import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
@@ -25,6 +26,10 @@ in the coordinate plane.
 Three points of the coordinate plane over a field are affinely independent exactly when the
 determinant of the two difference vectors is nonzero (`TauCeti.affineIndependent_iff_det_ne_zero`).
 
+If the sides `b - a` and `d - a` of a parallelogram `abcd` are linearly independent, then three of
+its vertices `b`, `d`, `c = b + (d - a)` are affinely independent
+(`LinearIndependent.affineIndependent_vsub_vadd`).
+
 ## Main definitions
 
 * `TauCeti.triangleChart`: the affine chart of the plane through three points.
@@ -34,6 +39,9 @@ determinant of the two difference vectors is nonzero (`TauCeti.affineIndependent
 * `TauCeti.triangleChart_injective`: the chart of an affinely independent triple is injective.
 * `TauCeti.affineIndependent_iff_det_ne_zero`: three points of `k × k` are affinely independent iff
   `det (y - x, z - x) ≠ 0`.
+* `LinearIndependent.affineIndependent_vsub_vadd`: if `b - a`, `d - a` are linearly independent,
+  then `b`, `d`, `b + (d - a)` (three vertices of the parallelogram `abcd`) are affinely
+  independent.
 -/
 
 public section
@@ -149,3 +157,27 @@ theorem affineIndependent_iff_det_ne_zero {x y z : k × k} :
 end Independent
 
 end TauCeti
+
+section Parallelogram
+
+variable {R V P : Type*} [Ring R] [AddCommGroup V] [Module R V] [AddTorsor V P]
+
+/-- If the sides `b - a` and `d - a` are linearly independent, then the points `b`, `d`,
+`c = b + (d - a)` (three vertices of the parallelogram `abcd`) are affinely independent. -/
+theorem LinearIndependent.affineIndependent_vsub_vadd {a b d : P}
+    (hli : LinearIndependent R ![b -ᵥ a, d -ᵥ a]) :
+    AffineIndependent R ![b, d, (d -ᵥ a) +ᵥ b] := by
+  rw [affineIndependent_iff_linearIndependent_vsub R _ 0,
+    ← linearIndependent_equiv (finSuccAboveEquiv (0 : Fin 3))]
+  have hdb : d -ᵥ b = (d -ᵥ a) - (b -ᵥ a) := (vsub_sub_vsub_cancel_right d b a).symm
+  have hcb : ((d -ᵥ a) +ᵥ b) -ᵥ b = d -ᵥ a := vadd_vsub _ _
+  have hli' : LinearIndependent R ![(d -ᵥ a) - (b -ᵥ a), d -ᵥ a] := by
+    simpa only [sub_eq_add_neg, add_comm (d -ᵥ a), LinearIndependent.pair_add_left_iff,
+      LinearIndependent.pair_neg_left_iff] using hli
+  convert hli' using 1
+  ext j
+  fin_cases j
+  · exact hdb
+  · exact hcb
+
+end Parallelogram
