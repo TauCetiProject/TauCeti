@@ -475,7 +475,8 @@ theorem lintegral_enorm_hamiltonianCurvature_negativePlanePerturbation_le (ω : 
   have h := ω.lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le
     (Pi.forall_single_of inf (p := fun f => Periodic f 1) (fun _ => rfl) hH)
     (Pi.forall_single_of inf (p := fun f => ContDiff ℝ 1 (uncurry f)) contDiff_const hHs)
-    (Pi.abs_single_le_single inf hB) u
+    (fun j t x ↦ Pi.apply_single (fun _ (g : ℝ → V → ℝ) ↦ g t x) (fun _ ↦ rfl) inf H j ▸
+      Pi.abs_single_le_single inf (hB t x) j) u
   rw [pairOfPantsPerturbation_single_inf] at h
   simpa only [Pi.apply_single (fun _ ↦ ENNReal.ofReal) fun _ ↦ ENNReal.ofReal_zero,
     Fintype.sum_pi_single'] using h
@@ -604,7 +605,9 @@ theorem lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_single_inf_le
   have h := ω.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_le hq
     (Pi.forall_single_of inf (p := fun f => Periodic f 1) (fun _ => rfl) (hHb q)) hHb
     (Pi.forall_single_of inf (p := fun f => ContDiff ℝ 1 (uncurry f)) contDiff_const (hHbs q)) hHbs
-    (by simp) hL (Pi.abs_single_le_single inf (hBb q)) hBb u
+    (by simp) hL
+    (fun j t x ↦ Pi.apply_single (fun _ (g : ℝ → V → ℝ) ↦ g t x) (fun _ ↦ rfl) inf (Hb q) j ▸
+      Pi.abs_single_le_single inf (hBb q t x) j) hBb u
   simpa only [Pi.apply_single (fun _ ↦ ENNReal.ofReal) fun _ ↦ ENNReal.ofReal_zero,
     Fintype.sum_pi_single'] using h
 
@@ -625,7 +628,8 @@ theorem lintegral_enorm_hamiltonianCurvature_positivePlanePerturbation_le (ω : 
   have h := ω.lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le
     (Pi.forall_single_of zero (p := fun f => Periodic f 1) (fun _ => rfl) hH)
     (Pi.forall_single_of zero (p := fun f => ContDiff ℝ 1 (uncurry f)) contDiff_const hHs)
-    (Pi.abs_single_le_single zero hB) u
+    (fun j t x ↦ Pi.apply_single (fun _ (g : ℝ → V → ℝ) ↦ g t x) (fun _ ↦ rfl) zero H j ▸
+      Pi.abs_single_le_single zero (hB t x) j) u
   rw [pairOfPantsPerturbation_single_zero] at h
   simpa only [Pi.apply_single (fun _ ↦ ENNReal.ofReal) fun _ ↦ ENNReal.ofReal_zero,
     Fintype.sum_pi_single'] using h
@@ -818,7 +822,9 @@ theorem lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_single_zero_le
   have h := ω.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_le (q := zero) (by decide)
     hHa (Pi.forall_single_of zero (p := fun f => Periodic f 1) (fun _ => rfl) (hHa inf)) hHas
     (Pi.forall_single_of zero (p := fun f => ContDiff ℝ 1 (uncurry f)) contDiff_const (hHas inf))
-    (by simp) hL hBa (Pi.abs_single_le_single zero (hBa inf)) u
+    (by simp) hL hBa
+    (fun j t x ↦ Pi.apply_single (fun _ (g : ℝ → V → ℝ) ↦ g t x) (fun _ ↦ rfl) zero (Ha inf) j ▸
+      Pi.abs_single_le_single zero (hBa inf t x) j) u
   simpa only [Pi.apply_single (fun _ ↦ ENNReal.ofReal) fun _ ↦ ENNReal.ofReal_zero,
     Fintype.sum_pi_single'] using h
 

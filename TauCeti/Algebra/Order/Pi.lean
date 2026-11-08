@@ -12,13 +12,13 @@ public import Mathlib.Algebra.Order.Group.Unbundled.Abs
 
 A family `Pi.single i x` is `x` at the index `i` and `0` at every other index. This file records
 that such a family inherits, at every index, any property shared by `x` and `0`, and that a bound
-`|G| ≤ B` on a function-valued `G` gives the bounds `Pi.single i B` for the family `Pi.single i G`.
+`|x| ≤ b` gives the bounds `Pi.single i b` for the family `Pi.single i x`.
 
 ## Main results
 
 * `Pi.forall_single_of`: `Pi.single i x` inherits at every index any property shared by `x`
   and `0`.
-* `Pi.abs_single_le_single`: a bound `|G| ≤ B` gives `|Pi.single i G j| ≤ Pi.single i B j`.
+* `Pi.abs_single_le_single`: a bound `|x| ≤ b` gives `|Pi.single i x j| ≤ Pi.single i b j`.
 -/
 
 public section
@@ -33,14 +33,11 @@ theorem forall_single_of {β : Type*} [Zero β] (i : ι) {p : β → Prop} (h₀
     (hx : p x) : ∀ j, p ((single i x : ι → β) j) :=
   (Function.forall_update_iff (0 : ι → β) fun _ ↦ p).2 ⟨hx, fun _ _ ↦ h₀⟩
 
-/-- A bound `|G| ≤ B` on a function `G` of two variables gives the bounds `Pi.single i B` for the
-family `Pi.single i G`. -/
-theorem abs_single_le_single {X Y α : Type*} [Lattice α] [AddGroup α] [AddLeftMono α] (i : ι)
-    {G : X → Y → α} {B : α} (hB : ∀ t x, |G t x| ≤ B) :
-    ∀ j t x, |(single i G : ι → X → Y → α) j t x| ≤ (single i B : ι → α) j := by
-  intro j t x
+/-- A bound `|x| ≤ b` gives the bounds `Pi.single i b` for the family `Pi.single i x`. -/
+theorem abs_single_le_single {α : Type*} [Lattice α] [AddGroup α] [AddLeftMono α] (i : ι)
+    {x b : α} (h : |x| ≤ b) (j : ι) : |(single i x : ι → α) j| ≤ (single i b : ι → α) j := by
   rcases eq_or_ne j i with rfl | hj
-  · simpa using hB t x
+  · simpa using h
   · simp [single_eq_of_ne hj]
 
 end Pi

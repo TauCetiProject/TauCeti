@@ -493,7 +493,8 @@ theorem lintegral_enorm_hamiltonianCurvature_inputEndPerturbation_le (ω : Sympl
   have hP := ω.lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le
     (Pi.forall_single_of zero (p := fun f => Periodic f 1) (fun _ => rfl) hH)
     (Pi.forall_single_of zero (p := fun f => ContDiff ℝ 1 (uncurry f)) contDiff_const hHs)
-    (Pi.abs_single_le_single zero hB) (u ∘ realChart (c + a * ·))
+    (fun j t x ↦ Pi.apply_single (fun _ (g : ℝ → V → ℝ) ↦ g t x) (fun _ ↦ rfl) zero H j ▸
+      Pi.abs_single_le_single zero (hB t x) j) (u ∘ realChart (c + a * ·))
   simp only [Pi.apply_single (fun _ ↦ ENNReal.ofReal) fun _ ↦ ENNReal.ofReal_zero,
     Fintype.sum_pi_single'] at hP
   calc _ = ∫⁻ z in univ, ‖ω.hamiltonianCurvature
