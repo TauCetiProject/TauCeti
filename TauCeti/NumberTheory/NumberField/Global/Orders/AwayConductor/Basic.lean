@@ -8,10 +8,10 @@ module
 public import TauCeti.NumberTheory.NumberField.Global.Orders.Discriminant
 public import TauCeti.NumberTheory.NumberField.Global.Orders.Picard
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Modulus
-public import TauCeti.RingTheory.FractionalIdeal.Operations
 public import TauCeti.RingTheory.Ideal.Conductor
 import Mathlib.LinearAlgebra.FreeModule.IdealQuotient
 import TauCeti.RingTheory.ClassGroup.CoprimeRepresentative
+import TauCeti.RingTheory.FractionalIdeal.Operations
 import TauCeti.RingTheory.Ideal.Quotient.Artinian
 
 /-!
