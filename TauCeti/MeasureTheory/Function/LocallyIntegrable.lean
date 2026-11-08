@@ -50,7 +50,9 @@ An `Lᵖ` function for a locally finite restriction of a measure to a set, with 
 integrable on that set.
 
 Likewise, a function locally integrable on `s` times a continuous function whose compact support
-lies in `s` is integrable on the whole space.
+lies in `s`, on either side, is integrable on the whole space, and applying a field of continuous
+linear maps that is continuous on a locally closed set `s` to a function locally integrable on `s`
+keeps it locally integrable on `s`.
 
 A function continuous on a compact set is bounded there, so for a measure finite on compact sets
 it lies in every `Lᵖ` on each measurable subset of that compact set.
@@ -501,5 +503,43 @@ theorem integrable_smul_right_of_hasCompactSupport (hf : LocallyIntegrableOn f s
   refine Integrable.smul_of_top_left ?_ (hg.memLp_top_of_hasCompactSupport h'g μ)
   rw [integrable_indicator_iff h'g.isCompact.measurableSet]
   exact hf.integrableOn_compact_subset hgs h'g
+
+/-- If `f` is locally integrable on `s` and `g` is continuous with compact support contained in
+`s`, then `g • f` is integrable. This is the relative form of Mathlib's
+`LocallyIntegrable.integrable_smul_left_of_hasCompactSupport`. -/
+theorem integrable_smul_left_of_hasCompactSupport {f : X → E} {g : X → 𝕜}
+    (hf : LocallyIntegrableOn f s μ) (hg : Continuous g) (h'g : HasCompactSupport g)
+    (hgs : tsupport g ⊆ s) : Integrable (fun x ↦ g x • f x) μ := by
+  have : (tsupport g).indicator (fun x ↦ g x • f x) = fun x ↦ g x • f x :=
+    indicator_eq_self.2 <| Function.support_subset_iff'.2 fun x hx => by
+      simp [image_eq_zero_of_notMem_tsupport hx]
+  rw [← this, indicator_smul]
+  refine Integrable.smul_of_top_right ?_ (hg.memLp_top_of_hasCompactSupport h'g μ)
+  rw [integrable_indicator_iff h'g.isCompact.measurableSet]
+  exact hf.integrableOn_compact_subset hgs h'g
+
+end MeasureTheory.LocallyIntegrableOn
+
+namespace MeasureTheory.LocallyIntegrableOn
+
+variable {X F G : Type*} [MeasurableSpace X] [TopologicalSpace X] [OpensMeasurableSpace X]
+  [T2Space X] [LocallyCompactSpace X] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [NormedAddCommGroup G] [NormedSpace ℝ G] {μ : Measure X} {s : Set X}
+
+/-- Applying a field of continuous linear maps that is continuous on a locally closed set `s` to a
+function locally integrable on `s` gives a function locally integrable on `s`. This is the
+operator-valued counterpart of Mathlib's `LocallyIntegrableOn.continuousOn_smul`. -/
+theorem continuousOn_clm_apply {f : X → F} {A : X → F →L[ℝ] G} (hs : IsLocallyClosed s)
+    (hf : LocallyIntegrableOn f s μ) (hA : ContinuousOn A s) :
+    LocallyIntegrableOn (fun x ↦ A x (f x)) s μ := by
+  rw [locallyIntegrableOn_iff hs] at hf ⊢
+  intro k hks hk
+  obtain ⟨C, hC⟩ := hk.exists_bound_of_continuousOn (hA.mono hks)
+  refine Integrable.mono' ((hf k hks hk).norm.const_mul C) ?_
+    ((ae_restrict_iff' hk.measurableSet).2 <| ae_of_all _ fun x hx ↦ (A x).le_of_opNorm_le
+      (hC x hx) _)
+  exact isBoundedBilinearMap_apply.continuous.comp_aestronglyMeasurable₂
+    ((hA.mono hks).aestronglyMeasurable_of_isCompact hk hk.measurableSet)
+    (hf k hks hk).aestronglyMeasurable
 
 end MeasureTheory.LocallyIntegrableOn

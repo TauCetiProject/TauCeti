@@ -87,6 +87,8 @@ The conversion is `MeasureTheory.ofReal_integral_norm_eq_lintegral_enorm`, whose
 * `tendsto_integral_smul_of_tendsto_lintegral_enorm_sub` turns `L¹(s)` convergence into
   convergence of integrals against an almost everywhere bounded scalar multiplier vanishing
   almost everywhere outside `s`.
+* `TendstoUniformlyOn.tendsto_setLIntegral_enorm_sub`: uniform convergence on a set of finite
+  measure is `L¹` convergence on that set.
 
 ## Tail lower bounds
 
@@ -459,6 +461,23 @@ theorem tendsto_integral_smul_of_tendsto_lintegral_enorm_sub {α 𝕜 F ι : Typ
         lintegral_indicator_le _ _
     _ = ENNReal.ofReal K * ∫⁻ x in s, ‖a i x - b x‖ₑ ∂μ :=
         lintegral_const_mul' _ _ ENNReal.ofReal_ne_top
+
+/-- **Uniform convergence on a set of finite measure gives `L¹` convergence on it.** If `f i → g`
+uniformly on a set `s` with `μ s ≠ ∞`, then `∫⁻ x in s, ‖f i x - g x‖ₑ ∂μ → 0`. Neither the set
+nor the functions need be measurable. -/
+theorem _root_.TendstoUniformlyOn.tendsto_setLIntegral_enorm_sub {α E ι : Type*}
+    [MeasurableSpace α] [NormedAddCommGroup E] {μ : Measure α} {s : Set α} {l : Filter ι}
+    {f : ι → α → E} {g : α → E} (h : TendstoUniformlyOn f g l s) (hμs : μ s ≠ ∞) :
+    Tendsto (fun i => ∫⁻ x in s, ‖f i x - g x‖ₑ ∂μ) l (𝓝 0) := by
+  refine ENNReal.tendsto_nhds_zero.2 fun ε hε => ?_
+  obtain ⟨η, hη, hηε⟩ := ENNReal.exists_nnreal_pos_mul_lt hμs hε.ne'
+  filter_upwards [Metric.tendstoUniformlyOn_iff.1 h η (by exact_mod_cast hη)] with i hi
+  calc ∫⁻ x in s, ‖f i x - g x‖ₑ ∂μ ≤ ∫⁻ _ in s, (η : ℝ≥0∞) ∂μ := by
+        refine setLIntegral_mono measurable_const fun x hx => ?_
+        rw [← ofReal_norm, ← ENNReal.ofReal_coe_nnreal]
+        exact ENNReal.ofReal_le_ofReal (by simpa [dist_eq_norm'] using (hi x hx).le)
+    _ = η * μ s := setLIntegral_const _ _
+    _ ≤ ε := hηε.le
 
 /-- **Averaging against a kernel supported in `[-ε, 0]` samples only `[t, t + ε]`.** If `ψ` is a
 nonnegative probability density with respect to `μ` vanishing outside `[-ε, 0]`, and `F` is antitone
