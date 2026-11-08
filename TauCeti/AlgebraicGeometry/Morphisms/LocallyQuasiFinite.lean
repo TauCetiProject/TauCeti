@@ -187,12 +187,7 @@ theorem Scheme.Hom.ringKrullDim_stalk_eq_of_locallyQuasiFinite {X Y : Scheme.{u}
     [TauCeti.AlgebraicGeometry.IsNormalScheme Y] (x : X) :
     ringKrullDim (X.presheaf.stalk x) = ringKrullDim (Y.presheaf.stalk (f x)) := by
   -- `Y` is reduced, being normal, and irreducible, being the dominant image of `X`.
-  have himage : IsIrreducible (Set.range f) := by
-    simpa only [Set.image_univ] using
-      (IrreducibleSpace.isIrreducible_univ X).image f f.continuous.continuousOn
-  have : IrreducibleSpace Y := by
-    refine (irreducibleSpace_def Y).mpr ?_
-    simpa only [Set.top_eq_univ, f.denseRange.closure_eq] using himage.closure
+  have := f.irreducibleSpace_of_isDominant
   have : IsIntegral Y := isIntegral_of_irreducibleSpace_of_isReduced Y
   exact f.ringKrullDim_stalk_eq_of_quasiFiniteAt (f.quasiFiniteAt x)
 
