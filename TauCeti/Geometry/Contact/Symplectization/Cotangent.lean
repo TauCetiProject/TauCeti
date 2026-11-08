@@ -130,14 +130,13 @@ theorem mpullback_symplectizationToCotangent_liouvilleForm (α : SmoothForm I M 
       (g := Prod.snd) (fun _ ↦ rfl)
       ((α.contMDiff_symplectizationToCotangent p).mdifferentiableAt (by simp)),
     symplectizationToCotangent_snd_apply, coe_symplectization,
-    ContinuousAlternatingMap.smul_apply, mpullback_snd_apply, mfderiv_snd, smul_eq_mul]
+    ContinuousAlternatingMap.smul_apply, mpullback_snd_apply, smul_eq_mul]
   congr 2
   ext i
   fin_cases i
   simp only [Fin.zero_eta, Fin.isValue, Matrix.cons_val_fin_one,
     Manifold.tangentSpaceProdEquiv_apply]
-  -- `ContinuousLinearMap.snd` is the projection of the product.
-  rfl
+  exact mfderiv_snd_apply p (v 0)
 
 /-- The map `(t, x) ↦ eᵗ α_x` pulls the canonical symplectic form `ω = -dλ` of `T*M` back to
 `-d(eᵗ α)`. -/

@@ -376,10 +376,9 @@ theorem eq_symplectizationLift_of_mpullback_symplectization_eq {F : M → M'}
       rw [Manifold.tangentSpaceProdEquiv_apply]
       refine (hΦ.mfderiv_snd_apply u).symm.trans ?_
       -- The second coordinate of the map is `F ∘ Prod.snd`.
-      rw [show (fun y ↦ (φ y, (F ∘ Prod.snd) y).2) = F ∘ Prod.snd from rfl, mfderiv_comp_snd,
-        ← hu, Manifold.tangentSpaceProdEquiv_apply]
-      -- `ContinuousLinearMap.snd` is the second projection.
-      rfl
+      rw [show (fun y ↦ (φ y, (F ∘ Prod.snd) y).2) = F ∘ Prod.snd from rfl,
+        mfderiv_comp_apply p ((hF p.2).mdifferentiableAt (by simp)) mdifferentiableAt_snd,
+        mfderiv_snd_apply, ← hu, Manifold.tangentSpaceProdEquiv_apply]
     have hp := congrArg (fun θ : SmoothForm (𝓘(ℝ).prod I) (ℝ × M) ℝ 1 ↦ θ.1 p ![u]) h
     have hF' := congrArg (fun A ↦ A ![v]) (hα p.2)
     simp only [mpullback_apply, Matrix.cons_val_fin_one, ← Matrix.vec_single_eq_const,
