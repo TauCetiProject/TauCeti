@@ -93,8 +93,6 @@ noncomputable def transposeAntiInvolution :
       (Matrix.GeneralLinearGroup.transposeMulEquiv (Fin n) x).unop :=
   HeckeAntiInvolution.ofAmbient_bar _ _ _ _ x hx
 
-variable [NeZero n]
-
 /-- Transposition fixes every double coset: each one has a diagonal representative, and
 transposition fixes diagonal matrices. -/
 @[simp] lemma transposeAntiInvolution_onHeckeCoset_eq_self

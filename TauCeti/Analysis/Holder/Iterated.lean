@@ -406,10 +406,8 @@ seminorm of `D²f`. -/
 theorem holderWith_fderiv_fderiv (f : CkHolderSpace 2 α E F) :
     HolderWith (nnHolderNorm α (_root_.iteratedFDeriv ℝ 2 f)) α (fderiv ℝ (fderiv ℝ f)) := by
   have he : (fun x ↦ continuousMultilinearCurryFin2 ℝ E F (_root_.iteratedFDeriv ℝ 2 f x)) =
-      fderiv ℝ (fderiv ℝ f) := by
-    funext x
-    ext v w
-    simp [_root_.iteratedFDeriv_two_apply]
+      fderiv ℝ (fderiv ℝ f) :=
+    funext fun x ↦ continuousMultilinearCurryFin2_iteratedFDeriv_two _ x
   simpa [Function.comp_def, he] using
     (continuousMultilinearCurryFin2 ℝ E F).isometry.lipschitzWith.holderWith.comp
       f.memHolder_iteratedFDeriv.holderWith
@@ -582,5 +580,35 @@ instance instCompleteSpace [CompleteSpace F] : CompleteSpace (CkHolderSpace k α
 attribute [irreducible] instNormedAddCommGroup instNormedSpace _root_.TauCeti.CkHolderSpace
 
 end CkHolderSpace
+
+/-- Bounded finite-order Hölder maps vanishing outside a prescribed set, as a submodule of the
+native derivative-graph space. -/
+def supportedCkHolderSubmodule {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] (k : ℕ) (α : ℝ≥0) (s : Set E) :
+    Submodule ℝ (CkHolderSpace k α E F) where
+  carrier := {f | ∀ x ∉ s, f x = 0}
+  zero_mem' := by simp
+  add_mem' := by
+    intro f g hf hg x hx
+    simp [hf x hx, hg x hx]
+  smul_mem' := by
+    intro c f hf x hx
+    simp [hf x hx]
+
+/-- Membership in the supported submodule means vanishing outside its defining set. -/
+@[simp]
+theorem mem_supportedCkHolderSubmodule_iff {E F : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {k : ℕ} {α : ℝ≥0} {s : Set E} {f : CkHolderSpace k α E F} :
+    f ∈ supportedCkHolderSubmodule k α s ↔ ∀ x ∉ s, f x = 0 := Iff.rfl
+
+/-- The support of an element of the supported Hölder submodule lies in its defining set. -/
+theorem support_subset_of_mem_supportedCkHolderSubmodule {E F : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {k : ℕ} {α : ℝ≥0} {s : Set E} {f : CkHolderSpace k α E F}
+    (hf : f ∈ supportedCkHolderSubmodule k α s) : Function.support f ⊆ s := by
+  intro x hx
+  by_contra h
+  exact hx (hf x h)
 
 end TauCeti

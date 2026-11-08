@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.SmoothZero
 public import TauCeti.Analysis.Fredholm.LevelSet.GlobalParametric
-import TauCeti.Geometry.Manifold.MFDeriv.Chart
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # Parametric transversality for Fredholm bundle sections

@@ -28,8 +28,9 @@ that makes `1 + p^f ℤ_p` a subgroup of `ℤ_pˣ`.
 
 The unit group `ℤ_pˣ` is a profinite group: it is the closed unit sphere of the compact
 totally disconnected space `ℤ_p`, and the topology of the units is the subspace topology because
-`ℤ_p` is a complete normed ring. The instances `CompactSpace ℤ_[p]ˣ` and
-`TotallyDisconnectedSpace ℤ_[p]ˣ` are recorded here.
+`ℤ_p` is a complete normed ring. Compactness is Mathlib's instance for the units of a compact `T₁`
+topological monoid, recorded here as a shortcut instance; the instance
+`TotallyDisconnectedSpace ℤ_[p]ˣ` is proved here.
 
 Two consequences of the ultrametric divisibility in `ℤ_p` are recorded as well: an element
 divides every element of no larger norm, so that a finite family of `p`-adic integers is a common
@@ -216,14 +217,12 @@ theorem not_isUnit_two : ¬IsUnit (2 : ℤ_[2]) := by
 theorem continuous_inverse : Continuous (Ring.inverse : ℤ_[p] → ℤ_[p]) :=
   NormedRing.continuous_inverse_of_isOpen_nonunits (IsLocalRing.isOpen_maximalIdeal ℤ_[p])
 
-/-- `ℤ_pˣ` is compact: it is the closed unit sphere of the compact space `ℤ_p`, and the topology
-on the units of the complete normed ring `ℤ_p` is the subspace topology. -/
-instance compactSpace_units : CompactSpace ℤ_[p]ˣ := by
-  have h : IsCompact (Set.range (Units.val : ℤ_[p]ˣ → ℤ_[p])) := by
-    rw [range_units_val]
-    exact (isClosed_eq continuous_norm continuous_const).isCompact
-  rw [← Set.image_univ] at h
-  exact isCompact_univ_iff.mp (Units.isOpenEmbedding_val.isInducing.isCompact_iff.mpr h)
+/-- `ℤ_pˣ` is compact: Mathlib's `Units.instCompactSpaceOfT1SpaceOfContinuousMul` for the units
+of the compact `T₁` topological monoid `ℤ_p`. It is recorded as a shortcut instance because the
+instance term matters for unification: elaborating continuous linear maps on `C(ℤ_[p]ˣ, ℤ_[p])`
+(`TauCeti.NumberTheory.Padics.Measure.UnitCoordinates`) identifies the sup-norm topology with the
+compact-open topology, which times out at `whnf` with Mathlib's applied instance term. -/
+instance compactSpace_units : CompactSpace ℤ_[p]ˣ := inferInstance
 
 /-- `ℤ_pˣ` is totally disconnected, as a subspace of the ultrametric space `ℤ_p`. -/
 instance totallyDisconnectedSpace_units : TotallyDisconnectedSpace ℤ_[p]ˣ :=
