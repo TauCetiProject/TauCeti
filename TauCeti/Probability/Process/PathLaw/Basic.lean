@@ -183,11 +183,8 @@ theorem prefixLaw_singleton_cond_initial_mem [MeasurableSingletonClass α] {μ :
     · exact And.right
     · intro hp
       refine ⟨?_, hp⟩
-      have h0 := hp 0
-      simp only [Fin.val_zero] at h0
-      change X 0 ω ∈ S
-      rw [h0]
-      exact hw
+      have h0 : X 0 ω = w 0 := hp 0
+      simpa only [s, Set.mem_ofPred_eq, h0] using hw
   · have hempty : s ∩ {ω | ∀ i : Fin (n + 1), X i.val ω = w i} = ∅ := by
       apply Set.eq_empty_of_forall_notMem
       intro ω hω
