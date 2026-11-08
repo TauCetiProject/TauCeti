@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Analysis.SpecificLimits.Basic
 
 /-!
@@ -26,6 +27,10 @@ polynomial in the range of Roth's index estimate. They are stated for an arbitra
 * `TauCeti.floor_div_le_mul_floor_div`: if `σ M ≥ 2`, then `r (k + 1) ≤ σ r k`.
 * `TauCeti.inv_mul_add_le_floor_div_mul`: if `L ≥ σ⁻¹ (5 C₁ / 2 + 5 n)` and a height `H` is
   at most `C₁ ∑_{j < n} r j`, then `σ⁻¹ (H + 4 n r 0) ≤ r k h k`.
+* `TauCeti.floor_div_bounds`: for `D = h (n - 1) / ε`, `5 h i ≤ D`, `r i > 0` and
+  `(1 - ε) D ≤ r i * h i ≤ D`.
+* `TauCeti.two_mul_mul_rpow_inv_two_pow`: `2 n σ ^ (1 / 2 ^ (n - 1)) = 5 n ε / 2` for
+  `σ = (5 ε / 4) ^ 2 ^ (n - 1)`.
 
 The degree bounds are positive, `1 ≤ r k`, by `Nat.one_le_floor_iff` and `one_le_div`.
 
@@ -39,7 +44,7 @@ public section
 
 namespace TauCeti
 
-open Finset
+open Finset Real
 
 /-- If a sequence starts at `h 0 ≥ L > 0` and grows by a factor `M ≥ 2` at each of its first `n`
 terms, then the sum of `⌊D / h k⌋₊` over these terms is at most `2 D / L`. -/
@@ -107,5 +112,29 @@ theorem inv_mul_add_le_floor_div_mul {n k : ℕ} {h : ℕ → ℝ} {D L M σ C�
     _ ≤ 4 / 5 * (σ * L) * (D / L) := by gcongr
     _ = σ * (4 / 5 * D) := by field_simp
     _ ≤ σ * (⌊D / h k⌋₊ * h k) := mul_le_mul_of_nonneg_left (by linarith) hσ.le
+
+/-- The degree bounds `⌊D / h i⌋₊` of Roth's auxiliary polynomial, for `D = h (n - 1) / ε` and a
+positive monotone sequence `h`: they are positive, `⌊D / h i⌋₊ * h i` lies between `(1 - ε) D`
+and `D`, and `5 h i ≤ D`. -/
+theorem floor_div_bounds {n : ℕ} {ε : ℝ} (hε : ε ≤ 1 / 12) {h : ℕ → ℝ}
+    (hpos : ∀ k, 0 < h k) (hmono : Monotone h) {D : ℝ} (hD₀ : 0 < D) (hεD : ε * D = h (n - 1))
+    (i : Fin n) : 5 * h i ≤ D ∧ 0 < ⌊D / h i⌋₊ ∧ (⌊D / h i⌋₊ : ℝ) * h i ≤ D ∧
+      (1 - ε) * D ≤ ⌊D / h i⌋₊ * h i := by
+  have hhD : h i ≤ ε * D := hεD ▸ hmono (by omega)
+  have h5D : 5 * h i ≤ D := by nlinarith [hpos i]
+  refine ⟨h5D, Nat.floor_pos.2 ((one_le_div (hpos i)).2 (by linarith [hpos i])),
+    (le_div_iff₀ (hpos i)).1 (Nat.floor_le (div_pos hD₀ (hpos i)).le), ?_⟩
+  have hlt := Nat.lt_floor_add_one (D / h i)
+  have hmul : D / h i * h i = D := div_mul_cancel₀ D (hpos i).ne'
+  nlinarith [hpos i]
+
+/-- The exponent `2 n σ ^ (1 / 2 ^ (n - 1))` for `σ = (5 ε / 4) ^ 2 ^ (n - 1)` equals
+`5 n ε / 2`. -/
+theorem two_mul_mul_rpow_inv_two_pow {ε : ℝ} (hε : 0 ≤ ε) (n : ℕ) :
+    2 * (n : ℝ) * ((5 * ε / 4) ^ 2 ^ (n - 1)) ^ ((1 : ℝ) / 2 ^ (n - 1)) =
+      5 * Fintype.card (Fin n) * ε / 2 := by
+  rw [one_div, (by norm_cast : (2 : ℝ) ^ (n - 1) = ((2 ^ (n - 1) : ℕ) : ℝ)),
+    pow_rpow_inv_natCast (by positivity) (pow_ne_zero _ two_ne_zero), Fintype.card_fin]
+  ring
 
 end TauCeti

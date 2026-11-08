@@ -80,30 +80,6 @@ private theorem two_le_twelve_mul_max_house (α : ℝ) {b : ℕ} (hb : 0 < b) :
   have hb₁ : (1 : ℝ) ≤ b := by exact_mod_cast hb
   nlinarith [le_max_left 1 (house α)]
 
-/-- The degree bounds `⌊D / h i⌋₊` of Roth's auxiliary polynomial, for `D = h (n - 1) / ε` and a
-positive monotone sequence `h`: they are positive, `⌊D / h i⌋₊ * h i` lies between `(1 - ε) D`
-and `D`, and `5 h i ≤ D`. -/
-private theorem floor_div_bounds {n : ℕ} {ε : ℝ} (hε : ε ≤ 1 / 12) {h : ℕ → ℝ}
-    (hpos : ∀ k, 0 < h k) (hmono : Monotone h) {D : ℝ} (hD₀ : 0 < D) (hεD : ε * D = h (n - 1))
-    (i : Fin n) : 5 * h i ≤ D ∧ 0 < ⌊D / h i⌋₊ ∧ (⌊D / h i⌋₊ : ℝ) * h i ≤ D ∧
-      (1 - ε) * D ≤ ⌊D / h i⌋₊ * h i := by
-  have hhD : h i ≤ ε * D := hεD ▸ hmono (by omega)
-  have h5D : 5 * h i ≤ D := by nlinarith [hpos i]
-  refine ⟨h5D, Nat.floor_pos.2 ((one_le_div (hpos i)).2 (by linarith [hpos i])),
-    (le_div_iff₀ (hpos i)).1 (Nat.floor_le (div_pos hD₀ (hpos i)).le), ?_⟩
-  have hlt := Nat.lt_floor_add_one (D / h i)
-  have hmul : D / h i * h i = D := div_mul_cancel₀ D (hpos i).ne'
-  nlinarith [hpos i]
-
-/-- The exponent `2 n σ ^ (1 / 2 ^ (n - 1))` for `σ = (5 ε / 4) ^ 2 ^ (n - 1)` equals
-`5 n ε / 2`. -/
-private theorem two_mul_mul_rpow_inv_two_pow {ε : ℝ} (hε : 0 ≤ ε) (n : ℕ) :
-    2 * (n : ℝ) * ((5 * ε / 4) ^ 2 ^ (n - 1)) ^ ((1 : ℝ) / 2 ^ (n - 1)) =
-      5 * Fintype.card (Fin n) * ε / 2 := by
-  rw [one_div, (by norm_cast : (2 : ℝ) ^ (n - 1) = ((2 ^ (n - 1) : ℕ) : ℝ)),
-    pow_rpow_inv_natCast (by positivity) (pow_ne_zero _ two_ne_zero), Fintype.card_fin]
-  ring
-
 /-- The main step of the proof of Roth's theorem. Let `β₀, β₁, …` be rational approximations
 of `α` with `|βₖ - α| ≤ H(βₖ) ^ (-κ)`, whose logarithmic heights satisfy `L ≤ h(β₀)` and
 `M h(βₖ) ≤ h(βₖ₊₁)`, where `σ M ≥ 2` and `σ⁻¹ (5 C₁ / 2 + 5 n) ≤ L` for
