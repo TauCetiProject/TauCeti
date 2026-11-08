@@ -80,16 +80,10 @@ theorem formalAdd_pow_mem_span_of_zeroSectionDivisor_submonoid (q : ℕ)
   let y := point (MvPowerSeries.X (Sum.inr ())) (PowerSeries.HasSubst.X _)
   have hx : I ≤ x.left.ker := (hpoint _ _).mpr (Ideal.subset_span (by simp))
   have hy : I ≤ y.left.ker := (hpoint _ _).mpr (Ideal.subset_span (by simp))
-  let x' : T ⟶ D := TauCeti.closedImmersionOverLift i x (by simpa [i, I] using hx)
-  let y' : T ⟶ D := TauCeti.closedImmersionOverLift i y (by simpa [i, I] using hy)
   -- Their product lies on the divisor because its inclusion is a monoid homomorphism.
   have hxy : I ≤ (x * y).left.ker := by
-    have he : (x' * y') ≫ i = x * y := by
-      rw [MonObj.mul_comp]
-      simp only [x', y', TauCeti.closedImmersionOverLift_comp]
-    rw [← he, Over.comp_left]
-    exact (Scheme.IdealSheafData.ker_subschemeι I).symm ▸
-      Scheme.Hom.le_ker_comp (x' * y').left i.left
+    simpa [i] using i.ker_le_mul_left x y
+      (by simpa [i] using hx) (by simpa [i] using hy)
   -- The scheme addition comparison identifies the parameter of that product.
   have he : x * y = point W.formalAdd
       (PowerSeries.HasSubst.of_constantCoeff_zero W.constantCoeff_formalAdd) := by
@@ -103,18 +97,17 @@ theorem formalAdd_pow_mem_span_of_zeroSectionDivisor_submonoid (q : ℕ)
   rw [he] at hxy
   exact (hpoint _ _).mp hxy
 
-/-- If `pⁿ[0]` is a subgroup scheme of an elliptic Weierstrass model, with `p` prime and
+/-- If `pⁿ[0]` is a submonoid scheme of an elliptic Weierstrass model, with `p` prime and
 `n > 0`, then `p` vanishes in the base ring. No reducedness or Noetherian hypothesis is needed. -/
-theorem natCast_eq_zero_of_zeroSectionDivisor_subgroup {p n : ℕ} (hp : p.Prime) (hn : n ≠ 0)
-    (h : ∃ _ : GrpObj (Over.mk ((W.zeroSectionDivisor ^ p ^ n).subschemeι ≫ W.projModelOver)),
+theorem natCast_eq_zero_of_zeroSectionDivisor_submonoid {p n : ℕ} (hp : p.Prime) (hn : n ≠ 0)
+    (h : ∃ _ : MonObj (Over.mk ((W.zeroSectionDivisor ^ p ^ n).subschemeι ≫ W.projModelOver)),
       IsMonHom (Over.homMk (W.zeroSectionDivisor ^ p ^ n).subschemeι :
         Over.mk ((W.zeroSectionDivisor ^ p ^ n).subschemeι ≫ W.projModelOver) ⟶
           Over.mk W.projModelOver)) :
     (p : R) = 0 := by
-  obtain ⟨hD, hi⟩ := h
   apply W.formalGroup.natCast_eq_zero_of_pow_mem_span hp hn
   have H := Ideal.mem_map_of_mem (MvPowerSeries.rename TauCeti.unitSumUnitEquivFinTwo)
-    (W.formalAdd_pow_mem_span_of_zeroSectionDivisor_submonoid (p ^ n) ⟨hD.toMonObj, hi⟩)
+    (W.formalAdd_pow_mem_span_of_zeroSectionDivisor_submonoid (p ^ n) h)
   simpa [formalGroup_toPowerSeries, Ideal.map_span, Set.image_pair,
     MvPowerSeries.rename_X] using H
 

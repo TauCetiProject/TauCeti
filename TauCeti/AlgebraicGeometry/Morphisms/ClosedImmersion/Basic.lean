@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
+public import Mathlib.CategoryTheory.Monoidal.Cartesian.Over
 
 /-!
 # Closed immersions over a base
@@ -58,6 +59,27 @@ theorem closedImmersionOverLift_comp (i : X ⟶ Y) (f : Z ⟶ Y)
   simp
 
 end TauCeti
+
+namespace CategoryTheory.Over.Hom
+
+open scoped MonObj
+
+universe u
+
+/-- Points factoring through a closed immersion that is a monoid homomorphism remain in its
+closed subscheme after multiplication. -/
+theorem ker_le_mul_left {S : Scheme.{u}} {X Y Z : Over S} [MonObj X] [MonObj Y]
+    (i : X ⟶ Y) [IsClosedImmersion i.left] [IsMonHom i] (x y : Z ⟶ Y)
+    (hx : i.left.ker ≤ x.left.ker) (hy : i.left.ker ≤ y.left.ker) :
+    i.left.ker ≤ (x * y).left.ker := by
+  let x' := TauCeti.closedImmersionOverLift i x hx
+  let y' := TauCeti.closedImmersionOverLift i y hy
+  have he : (x' * y') ≫ i = x * y := by
+    simp [MonObj.mul_comp, x', y']
+  rw [← he, Over.comp_left]
+  exact Scheme.Hom.le_ker_comp (x' * y').left i.left
+
+end CategoryTheory.Over.Hom
 
 namespace AlgebraicGeometry.Scheme.Hom
 
