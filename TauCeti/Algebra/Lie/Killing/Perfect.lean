@@ -109,26 +109,15 @@ theorem isTrivial_of_derivedSeries_one_eq_top_of_lie_lie_eq_zero (hL : derivedSe
   have hx : x ∈ Submodule.span K {b | ∃ y z : L, ⁅y, z⁆ = b} := by
     rw [← hspan]
     exact hL ▸ LieSubmodule.mem_top x
-  -- The set of brackets is stable under scalars, so its span is its additive closure; this
-  -- avoids using `smul_lie`, which needs a compatible `K`-module structure on `M`.
-  let T : Submodule K L :=
-    { AddSubmonoid.closure {b | ∃ y z : L, ⁅y, z⁆ = b} with
-      smul_mem' := fun t u hu => by
-        induction hu using AddSubmonoid.closure_induction with
-        | mem u hu =>
-          obtain ⟨y, z, rfl⟩ := hu
-          exact AddSubmonoid.subset_closure ⟨t • y, z, smul_lie t y z⟩
-        | zero => simp
-        | add u v _ _ hu hv => rw [smul_add]; exact AddSubmonoid.add_mem _ hu hv }
-  have hxT : x ∈ AddSubmonoid.closure {b | ∃ y z : L, ⁅y, z⁆ = b} :=
-    (Submodule.span_le (p := T)).2 (fun _ hb => AddSubmonoid.subset_closure hb) hx
-  clear hx
-  induction hxT using AddSubmonoid.closure_induction with
-  | mem u hu =>
-    obtain ⟨y, z, rfl⟩ := hu
-    exact hbracket y z
+  -- Induct on the span of the brackets; only `smul_lie` in `L` is used, so `M` needs no
+  -- compatible `K`-module structure.
+  induction hx using Submodule.closure_induction with
   | zero => rw [zero_lie]
   | add u v _ _ hu hv => rw [add_lie, hu, hv, add_zero]
+  | smul_mem t u hu =>
+    obtain ⟨y, z, rfl⟩ := hu
+    rw [← smul_lie]
+    exact hbracket (t • y) z
 
 end Perfect
 
