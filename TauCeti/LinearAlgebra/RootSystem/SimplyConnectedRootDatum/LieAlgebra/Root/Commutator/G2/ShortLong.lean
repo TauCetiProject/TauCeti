@@ -157,19 +157,18 @@ theorem lie_chevalleySystem_three_step_extra_vanishing {α β γ δ ζ : Fin t.n
   have hthree : P.root β + P.root ζ = (3 : ℕ) • P.root γ := by
     rw [hζ, hδ, hγ]
     abel
-  constructor
-  · apply lie_chevalleySystem_eq_zero
-    · rw [htwo]
+  have hvanish (η : Fin t.numRoots) (n : ℕ) [n.AtLeastTwo]
+      (hsum : P.root β + P.root η = n • P.root γ) :
+      ⁅t.chevalleySystem ht β, t.chevalleySystem ht η⁆ = 0 := by
+    have hn : (n : ℤ) ≠ 0 := by
+      have := Nat.AtLeastTwo.prop (n := n)
+      omega
+    apply lie_chevalleySystem_eq_zero
+    · rw [hsum]
       exact P.nsmul_notMem_range_root
-    · rw [htwo]
-      simpa only [ofNat_zsmul] using
-        smul_ne_zero (by decide : (2 : ℤ) ≠ 0) (P.ne_zero γ)
-  · apply lie_chevalleySystem_eq_zero
-    · rw [hthree]
-      exact P.nsmul_notMem_range_root
-    · rw [hthree]
-      simpa only [ofNat_zsmul] using
-        smul_ne_zero (by decide : (3 : ℤ) ≠ 0) (P.ne_zero γ)
+    · rw [hsum]
+      simpa only [Nat.cast_smul_eq_nsmul] using smul_ne_zero hn (P.ne_zero γ)
+  exact ⟨hvanish δ 2 htwo, hvanish ζ 3 hthree⟩
 
 private theorem three_step_highest_root {α β γ δ ε ζ : Fin t.numRoots}
     (hγ : (t.simplyConnectedRootDatum ht).root γ =
@@ -185,8 +184,9 @@ private theorem three_step_highest_root {α β γ δ ε ζ : Fin t.numRoots}
   rw [hζ, hε, hδ, hγ]
   abel
 
-/-- The highest-root coefficient relation obtained from Jacobi in a three-step root string.
-All divisions in the coefficients are performed in ℤ. -/
+/-- In a three-step root string, `a * N β ε = b`, where `a` and `b` are the coefficients
+of 3α + β and 3α + 2β in the collection formula. All divisions in these coefficients
+are performed in ℤ. -/
 theorem structureConstant_three_step_highest_coefficient {α β γ δ ε ζ : Fin t.numRoots}
     (hγ : (t.simplyConnectedRootDatum ht).root γ =
       (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
@@ -220,9 +220,10 @@ theorem structureConstant_three_step_highest_coefficient {α β γ δ ε ζ : Fi
       _ = d • (⁅⁅e β, e α⁆, e δ⁆ + ⁅e α, ⁅e β, e δ⁆⁆) := by
         rw [lie_smul, leibniz_lie]
       _ = (d * c) • ⁅e δ, e γ⁆ := by
-        rw [hβδ, lie_zero, add_zero, ← lie_skew (e β) (e α),
-          lie_chevalleySystem_eq_structureConstant_zsmul hγ, neg_lie, smul_lie,
-          ← lie_skew (e δ) (e γ), smul_neg, smul_smul, smul_neg]
+        rw [hβδ, ← lie_skew (e β) (e α),
+          lie_chevalleySystem_eq_structureConstant_zsmul hγ]
+        simpa only [lie_zero, add_zero, neg_lie, smul_lie, smul_neg, smul_smul] using
+          congrArg ((d * c) • ·) (lie_skew (e δ) (e γ))
       _ = _ := hδγ
   have he : e ζ ≠ 0 := (t.isSl2Triple_chevalleySystem ht ζ).e_ne_zero
   have hc : ((3 * (a * N β ε) : ℤ) : ℚ) = ((3 * b : ℤ) : ℚ) :=
