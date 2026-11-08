@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Pompeiu.Basic
 public import TauCeti.Analysis.Complex.Wirtinger.Weyl
 import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.Analysis.Calculus.FDeriv.OfReal
 import TauCeti.Analysis.Complex.CauchyKernel
 
 /-!
@@ -47,8 +48,10 @@ properties of the Cauchy transform.
   data on `s × ℂ`.
 * `TauCeti.integrableOn_cauchyTransform` and `TauCeti.locallyIntegrable_cauchyTransform`: the
   Cauchy transform of integrable data is integrable on sets of finite measure.
+* `TauCeti.integral_conjWirtingerDeriv_smul_cauchyTransform`: `∫ bar∂ψ • T f = -∫ ψ • f` for a
+  compactly supported complex `C¹` function `ψ`.
 * `TauCeti.integral_lineDeriv_smul_cauchyTransform_add_I_smul_eq_neg_two_smul_integral_smul`:
-  the integration-by-parts identity against a compactly supported real `C¹` function.
+  its form against a compactly supported real `C¹` function.
 * `TauCeti.hasWeakConjWirtingerDerivOn_cauchyTransform`: `bar∂ (T f) = f` distributionally, and
   `TauCeti.hasWeakConjWirtingerDerivOn_cauchyTransform_of_memLp` its form for compactly supported
   `Lᵖ` data.
@@ -123,8 +126,9 @@ private theorem integral_conjWirtingerDeriv_mul_sub_inv {ψ : ℂ → ℂ} (hc :
   rw [smul_eq_mul, ← neg_sub z w, inv_neg, mul_neg, mul_comm]
 
 /-- The pairing of the Cauchy transform of integrable data with `bar∂` of a compactly supported
-`C¹` function `ψ` is `-∫ ψ f`. -/
-private theorem integral_conjWirtingerDeriv_smul_cauchyTransform [CompleteSpace F] {f : ℂ → F}
+complex `C¹` function `ψ` is `-∫ ψ f`: the weak form of `bar∂ (T f) = f` against complex test
+functions. -/
+theorem integral_conjWirtingerDeriv_smul_cauchyTransform [CompleteSpace F] {f : ℂ → F}
     (hf : Integrable f) {ψ : ℂ → ℂ} (hc : HasCompactSupport ψ) (hψ : ContDiff ℝ 1 ψ) :
     ∫ w, conjWirtingerDeriv ψ w 1 • cauchyTransform f w = -∫ z, ψ z • f z := by
   set g : ℂ → ℂ := fun w ↦ conjWirtingerDeriv ψ w 1 with hg_def
@@ -177,10 +181,7 @@ theorem integral_lineDeriv_smul_cauchyTransform_add_I_smul_eq_neg_two_smul_integ
   have hψ : ContDiff ℝ 1 ψ := ofRealCLM.contDiff.comp hφ
   have hψc : HasCompactSupport ψ := hc.comp_left ofReal_zero
   have hd (w : ℂ) (v : ℂ) : fderiv ℝ ψ w v = ((lineDeriv ℝ φ w v : ℝ) : ℂ) := by
-    have hφw : DifferentiableAt ℝ φ w := hφ.differentiable one_ne_zero w
-    have hψφ : ψ = ofRealCLM ∘ φ := funext fun z ↦ (ofRealCLM_apply (φ z)).symm
-    rw [hφw.lineDeriv_eq_fderiv, hψφ, fderiv_comp w ofRealCLM.differentiableAt hφw,
-      ContinuousLinearMap.fderiv, ContinuousLinearMap.comp_apply, ofRealCLM_apply]
+    rw [fderiv_ofReal_comp_apply, (hφ.differentiable one_ne_zero w).lineDeriv_eq_fderiv]
   have hi (v : ℂ) : Integrable fun w ↦ ((lineDeriv ℝ φ w v : ℝ) : ℂ) • cauchyTransform f w := by
     refine (locallyIntegrable_cauchyTransform hf).integrable_smul_left_of_hasCompactSupport ?_ ?_
     · simp_rw [← hd]
