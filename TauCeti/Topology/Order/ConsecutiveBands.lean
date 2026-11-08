@@ -98,6 +98,21 @@ theorem mem_bandStrata {B : Set (X × ℝ)} :
     B ∈ bandStrata f s ↔ (∃ i, s.graphOn (f i) = B) ∨ B ∈ consecutiveBands f s :=
   Iff.rfl
 
+/-- The graph of each member of the family over `s` is a stratum. -/
+theorem graphOn_mem_bandStrata (f : ι → X → ℝ) (s : Set X) (i : ι) :
+    s.graphOn (f i) ∈ bandStrata f s :=
+  .inl ⟨i, rfl⟩
+
+/-- Every band between consecutive members is a stratum. -/
+theorem consecutiveBands_subset_bandStrata (f : ι → X → ℝ) (s : Set X) :
+    consecutiveBands f s ⊆ bandStrata f s :=
+  subset_union_right
+
+/-- The open band between two consecutive members is a consecutive band. -/
+theorem IsConsecutiveOn.regionBetween_mem_consecutiveBands (h : IsConsecutiveOn f s i j) :
+    regionBetween (f i) (f j) s ∈ consecutiveBands f s :=
+  ⟨i, j, h, rfl⟩
+
 namespace IsConsecutiveOn
 
 /-- The lower member of a consecutive pair determines the upper one on `s`. -/
@@ -189,7 +204,8 @@ theorem exists_isConsecutiveOn_mem_regionBetween (hs : IsPreconnected s)
 /-- The strata of a family over a preconnected base cover the cylinder over the base, provided
 that at every point of the base the values of the family are unbounded above and below, with only
 finitely many distinct values in each compact interval. The finiteness condition follows from
-`LocallyFinite.finite_range_apply_inter` when the graphs form a locally finite family. -/
+`LocallyFinite.finite_range_apply_inter` (in `TauCeti.Topology.LocallyFinite.Projection`) when the
+graphs form a locally finite family. -/
 theorem sUnion_bandStrata (hs : IsPreconnected s) (hf : ∀ i, ContinuousOn (f i) s)
     (hsep : ∀ i j, EqOn (f i) (f j) s ∨ ∀ x ∈ s, f i x ≠ f j x)
     (hfin : ∀ x ∈ s, ∀ a b, (range (fun i ↦ f i x) ∩ Icc a b).Finite)
@@ -202,10 +218,10 @@ theorem sUnion_bandStrata (hs : IsPreconnected s) (hf : ∀ i, ContinuousOn (f i
   · rintro ⟨x, t⟩ ⟨hx, -⟩
     by_cases ht : ∃ i, f i x = t
     · obtain ⟨i, hi⟩ := ht
-      exact ⟨_, .inl ⟨i, rfl⟩, mem_graphOn.2 ⟨hx, hi⟩⟩
+      exact ⟨_, graphOn_mem_bandStrata f s i, mem_graphOn.2 ⟨hx, hi⟩⟩
     · obtain ⟨i, j, h, hp⟩ := exists_isConsecutiveOn_mem_regionBetween hs hf hsep hx (hfin x hx)
         (hunb x hx t).1 (hunb x hx t).2 (not_exists.1 ht)
-      exact ⟨_, .inr ⟨i, j, h, rfl⟩, hp⟩
+      exact ⟨_, consecutiveBands_subset_bandStrata f s h.regionBetween_mem_consecutiveBands, hp⟩
 
 end Cover
 
@@ -352,12 +368,14 @@ theorem IsConsecutiveOn.exists_closure_regionBetween_inter_eq_sUnion
   rw [hcl]
   have hss : s ∪ s₀ ⊆ closure s := union_subset subset_closure hs₀
   rcases h.eqOn_or_isConsecutiveOn hs₀ (hfi.mono hss) (hfj.mono hss) hsep₀ hg hi hj with he | hc
-  · refine ⟨{s₀.graphOn (g k₁)}, singleton_subset_iff.2 (.inl ⟨k₁, rfl⟩), ?_⟩
+  · refine ⟨{s₀.graphOn (g k₁)}, singleton_subset_iff.2 (graphOn_mem_bandStrata g s₀ k₁), ?_⟩
     rw [sUnion_singleton, ← closedRegionBetween_congr (eqOn_refl _ _) he,
       closedRegionBetween_self]
   · refine ⟨{s₀.graphOn (g k₁), regionBetween (g k₁) (g k₂) s₀, s₀.graphOn (g k₂)}, ?_, ?_⟩
     · rintro B (rfl | rfl | rfl)
-      exacts [.inl ⟨k₁, rfl⟩, .inr ⟨k₁, k₂, hc, rfl⟩, .inl ⟨k₂, rfl⟩]
+      exacts [graphOn_mem_bandStrata g s₀ k₁,
+        consecutiveBands_subset_bandStrata g s₀ hc.regionBetween_mem_consecutiveBands,
+        graphOn_mem_bandStrata g s₀ k₂]
     · rw [closedRegionBetween_eq_union fun x hx ↦ (hc.lt x hx).le, sUnion_insert, sUnion_insert,
         sUnion_singleton, union_assoc]
 

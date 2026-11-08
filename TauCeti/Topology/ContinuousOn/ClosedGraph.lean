@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Maps.Proper.Basic
-import Mathlib.Topology.Compactness.LocallyFinite
 
 /-!
 # Closed graphs and continuity on a set
@@ -17,10 +16,6 @@ identifies a bounded single-valued closure of a graph with a continuous function
 Conversely, `ContinuousOn.closure_graphOn_inter` recovers a continuous function's graph from
 its restriction to a relatively dense subset. This permits extending a description of a graph
 across an exceptional locus without making any choices of values there.
-
-When the graphs over `s` of a family of functions form a locally finite family, only finitely many
-of the functions take values in a given compact set at each point of `s`
-(`LocallyFinite.finite_setOf_apply_mem`, `LocallyFinite.finite_range_apply_inter`).
 -/
 
 public section
@@ -82,20 +77,3 @@ theorem ContinuousOn.closure_graphOn_inter [T2Space Y] {f : X → Y} {s t : Set 
     refine ⟨?_, hx, mem_univ _⟩
     simpa only [graphOn, id_eq] using
       (continuousWithinAt_id.prodMk ((hf x hx).mono hts)).mem_closure_image (hst hx)
-
-/-- If the graphs over `s` of a family of functions form a locally finite family, then at each
-point of `s` only finitely many of the functions take values in a given compact set. -/
-theorem LocallyFinite.finite_setOf_apply_mem {ι : Type*} {f : ι → X → Y} {s : Set X}
-    (hlf : LocallyFinite fun i ↦ s.graphOn (f i)) {x : X} (hx : x ∈ s) {K : Set Y}
-    (hK : IsCompact K) : {i | f i x ∈ K}.Finite :=
-  (hlf.finite_nonempty_inter_compact (isCompact_singleton.prod hK)).subset
-    fun i hi ↦ ⟨(x, f i x), ⟨x, hx, rfl⟩, rfl, hi⟩
-
-/-- If the graphs over `s` of a family of functions form a locally finite family, then at each
-point of `s` the functions take only finitely many distinct values in a given compact set. -/
-theorem LocallyFinite.finite_range_apply_inter {ι : Type*} {f : ι → X → Y} {s : Set X}
-    (hlf : LocallyFinite fun i ↦ s.graphOn (f i)) {x : X} (hx : x ∈ s) {K : Set Y}
-    (hK : IsCompact K) : (range (fun i ↦ f i x) ∩ K).Finite :=
-  ((hlf.finite_setOf_apply_mem hx hK).image fun i ↦ f i x).subset <| by
-    rintro _ ⟨⟨i, rfl⟩, hi⟩
-    exact ⟨i, hi, rfl⟩
