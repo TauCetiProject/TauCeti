@@ -23,7 +23,7 @@ A nonempty convex subset of `t` whose intrinsic interior misses that of `t`, suc
 of the intrinsic frontier of `t`, has strictly smaller dimension
 (`TauCeti.finrank_vectorSpan_lt_of_disjoint_intrinsicInterior`): equal dimensions would force
 equal affine spans, and the intrinsic interior is monotone on sets with a common affine span
-(`TauCeti.intrinsicInterior_mono_of_affineSpan_eq`). Consequently, in a family of nonempty convex
+(`TauCeti.intrinsicInterior_mono_of_affineSpan_eq`). Consequently, in a family of convex
 cells with pairwise disjoint intrinsic interiors whose intrinsic frontiers are covered by a set
 `S` and the smaller cells, every point of a cell lies in `S` or in the intrinsic interior of a
 cell contained in it (`TauCeti.mem_intrinsicInterior_or_of_mem`), and the intrinsic interior of a
@@ -221,7 +221,6 @@ variable {ι : Type*} {P : ι → Set E} {S : Set E}
 smaller-dimensional cell contained in it, when the frontier of every cell is covered by `S` and
 the other cells contained in it. -/
 theorem mem_intrinsicInterior_or_of_mem (hPv : ∀ i, Convex ℝ (P i))
-    (hPne : ∀ i, (P i).Nonempty)
     (hri : Pairwise fun i j => Disjoint (intrinsicInterior ℝ (P i)) (intrinsicInterior ℝ (P j)))
     (hfr : ∀ i, intrinsicFrontier ℝ (P i) ⊆ S ∪ ⋃ (j) (_ : j ≠ i ∧ P j ⊆ P i), P j)
     {i : ι} {x : E} (hx : x ∈ P i) :
@@ -241,7 +240,7 @@ theorem mem_intrinsicInterior_or_of_mem (hPv : ∀ i, Convex ℝ (P i))
   obtain ⟨j, ⟨hji, hjP⟩, hxj⟩ := hx'
   -- the cell `P j` lies in the frontier of `P i`, so it has smaller dimension
   have hj : _ < n :=
-    hn ▸ finrank_vectorSpan_lt_of_disjoint_intrinsicInterior (hPv j) (hPne j) hjP (hri hji)
+    hn ▸ finrank_vectorSpan_lt_of_disjoint_intrinsicInterior (hPv j) ⟨x, hxj⟩ hjP (hri hji)
   rcases ih _ hj hxj rfl with h | h | ⟨k, hk, hkj, hxk⟩
   · exact .inr (.inr ⟨j, hj, hjP, h⟩)
   · exact .inr (.inl h)
@@ -251,13 +250,12 @@ theorem mem_intrinsicInterior_or_of_mem (hPv : ∀ i, Convex ℝ (P i))
 interiors of the cells avoid `S`, the intrinsic interior of a cell meets no other cell of smaller
 or equal dimension. -/
 theorem eq_or_finrank_lt_of_mem_intrinsicInterior (hPv : ∀ i, Convex ℝ (P i))
-    (hPne : ∀ i, (P i).Nonempty)
     (hri : Pairwise fun i j => Disjoint (intrinsicInterior ℝ (P i)) (intrinsicInterior ℝ (P j)))
     (hfr : ∀ i, intrinsicFrontier ℝ (P i) ⊆ S ∪ ⋃ (j) (_ : j ≠ i ∧ P j ⊆ P i), P j)
     (hS : ∀ i, Disjoint (intrinsicInterior ℝ (P i)) S) {i j : ι} {x : E}
     (hxi : x ∈ intrinsicInterior ℝ (P i)) (hxj : x ∈ P j) :
     i = j ∨ Module.finrank ℝ (vectorSpan ℝ (P i)) < Module.finrank ℝ (vectorSpan ℝ (P j)) := by
-  rcases mem_intrinsicInterior_or_of_mem hPv hPne hri hfr hxj with h | h | ⟨k, hk, -, hxk⟩
+  rcases mem_intrinsicInterior_or_of_mem hPv hri hfr hxj with h | h | ⟨k, hk, -, hxk⟩
   · by_contra hij
     exact Set.disjoint_left.1 (hri fun h => hij (.inl h)) hxi h
   · exact (Set.disjoint_left.1 (hS i) hxi h).elim
@@ -331,12 +329,24 @@ lemma isVonNBounded_setOf_add_mem (hb : IsBounded C) :
   rw [mem_closedBall, dist_self_add_left] at hv'
   rwa [mem_closedBall_zero_iff, ← Submodule.norm_coe]
 
-/-- For `c` in the affine span of `C`, `c + v` lies in the intrinsic frontier of `C` iff `v`
-lies in the frontier, within the direction, of the displacement set `{w | c + w ∈ C}`. -/
-lemma add_mem_intrinsicFrontier_iff (hc : c ∈ affineSpan ℝ C)
-    (v : (affineSpan ℝ C).direction) :
+/-- `c + v` lies in the intrinsic frontier of `C` iff `v` lies in the frontier, within the
+direction of the affine span of `C`, of the displacement set `{w | c + w ∈ C}`. -/
+lemma add_mem_intrinsicFrontier_iff (v : (affineSpan ℝ C).direction) :
     c + (v : E) ∈ intrinsicFrontier ℝ C ↔
       v ∈ frontier {w : (affineSpan ℝ C).direction | c + (w : E) ∈ C} := by
+  by_cases hc : c ∈ affineSpan ℝ C
+  swap
+  · -- A displacement `w` in the direction with `c + w` in the span puts `c` in the span.
+    have key (w : (affineSpan ℝ C).direction) (h : c + (w : E) ∈ affineSpan ℝ C) :
+        c ∈ affineSpan ℝ C := by
+      have := AffineSubspace.vadd_mem_of_mem_direction (neg_mem w.2) h
+      rwa [vadd_eq_add, show -(w : E) + (c + w) = c by abel] at this
+    have hempty : {w : (affineSpan ℝ C).direction | c + (w : E) ∈ C} = ∅ :=
+      Set.eq_empty_of_forall_notMem fun w hw ↦ hc (key w (subset_affineSpan ℝ C hw))
+    rw [hempty, frontier_empty]
+    simp only [Set.mem_empty_iff_false, iff_false]
+    rintro ⟨y, -, hy⟩
+    exact hc (key v (hy ▸ y.2))
   let cA : affineSpan ℝ C := ⟨c, hc⟩
   let : Nonempty (affineSpan ℝ C) := ⟨cA⟩
   let e := Homeomorph.vaddConst cA
@@ -529,7 +539,7 @@ theorem coe_convexClosedBallHomeomorph_mem_intrinsicFrontier_iff (hconv : Convex
     (convexClosedBallHomeomorph hconv hcl hb hc v : E) ∈ intrinsicFrontier ℝ C ↔
       ‖v.1‖ = 1 := by
   rw [coe_convexClosedBallHomeomorph_apply_eq_gaugeRescale,
-    add_mem_intrinsicFrontier_iff (subset_affineSpan ℝ C (intrinsicInterior_subset hc)),
+    add_mem_intrinsicFrontier_iff,
     ← gauge_eq_one_iff_mem_frontier (convex_setOf_add_mem hconv)
       (setOf_add_mem_mem_nhds_of_mem_intrinsicInterior hc),
     gauge_gaugeRescale _
