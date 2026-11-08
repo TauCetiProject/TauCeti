@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.GradedModule.HomogeneousBasis
+public import TauCeti.Algebra.Module.Polynomial
 public import TauCeti.Order.SupIndep
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 
