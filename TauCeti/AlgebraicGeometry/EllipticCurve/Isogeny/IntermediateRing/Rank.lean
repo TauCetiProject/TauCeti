@@ -270,7 +270,7 @@ theorem ncard_primesOver_le_degree (φ : Isogeny W₁ W₂)
     [Module.Finite W₂.CoordinateRing φ.intermediateRing]
     [Module.Flat W₂.CoordinateRing φ.intermediateRing]
     (h : ∀ x, algebraMap W₂.CoordinateRing W₁.FunctionField x = φ.pullback x)
-    (p : Ideal W₂.CoordinateRing) [p.IsPrime] :
+    (p : Ideal W₂.CoordinateRing) :
     (p.primesOver φ.intermediateRing).ncard ≤ φ.degree := by
   exact (RamificationInertia.ncard_primesOver_le_finrank p).trans_eq
     (φ.finrank_intermediateRing_eq_degree h)
