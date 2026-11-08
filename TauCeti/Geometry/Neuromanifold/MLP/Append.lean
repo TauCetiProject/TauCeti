@@ -352,6 +352,15 @@ theorem append_width_natAdd (i : Fin (M + 2)) :
     (A.append B σ).width (Fin.natAdd (L + 1) i) = B.width i :=
   Fin.append_right (fun i => A.width i.castSucc) B.width i
 
+/-- Input widths of a concatenation and its first factor agree. -/
+@[simp] theorem append_width_zero : (A.append B σ).width 0 = A.width 0 :=
+  append_width_castAdd A B σ 0
+
+/-- Output widths of a concatenation and its second factor agree. -/
+@[simp] theorem append_width_last :
+    (A.append B σ).width (Fin.last (L + 1 + (M + 1))) = B.width (Fin.last (M + 1)) :=
+  append_width_natAdd A B σ (Fin.last (M + 1))
+
 /-- Below the junction, the hidden activations of a concatenation are those of its first
 factor. -/
 @[simp]
