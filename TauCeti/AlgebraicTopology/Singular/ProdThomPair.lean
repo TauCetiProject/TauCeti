@@ -230,7 +230,7 @@ private lemma emptyIso_hom_naturality (n : ℕ) :
         TopCat.ofHom (ContinuousMap.fst : C(B' × F, B')) := by
     have hpair : TopPair.Hom.fst (pairMap g (⊤ : Submodule ℝ F)) =
         TopCat.ofHom (g.prodMap (ContinuousMap.id F)) :=
-      TopPair.ofSubsetMap_fst _ _
+      subspaceComplPairMap_fst _ _ _
     rw [hpair]
     rfl
   rw [← cancel_epi ((pair B (⊤ : Submodule ℝ F)).singularHomologyπ R n)]
@@ -250,7 +250,10 @@ private lemma emptyIso_hom_naturality (n : ℕ) :
 
 private lemma botIso_hom_naturality :
     (botIso B F).hom ≫ pairMap g ⊥ = prodThomPairMap F g ≫ (botIso B' F).hom := by
-  simp only [botIso, pairMap, subspaceComplPairMap, prodThomPairMap, TopPair.ofSubsetIso_hom]
+  have h : pairMap g (⊥ : Submodule ℝ F) =
+      TopPair.ofSubsetMap (TopCat.ofHom (g.prodMap (ContinuousMap.id F))) fun _ hx ↦ hx :=
+    subspaceComplPairMap_eq_ofSubsetMap _ _ _ _
+  simp only [botIso, h, prodThomPairMap, TopPair.ofSubsetIso_hom]
   exact TopPair.ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _ rfl
 
 end ProdThomPair
