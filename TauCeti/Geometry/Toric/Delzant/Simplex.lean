@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Toric.Delzant.Basic
 import Mathlib.LinearAlgebra.Dimension.OrzechProperty
 import Mathlib.LinearAlgebra.StdBasis
 import TauCeti.Algebra.Group.Pi.Lemmas
-import TauCeti.LinearAlgebra.Pi
+import Mathlib.LinearAlgebra.Pi
 
 /-!
 # The standard simplex as a Delzant polytope
@@ -154,7 +154,8 @@ coordinate vectors. -/
 private theorem apply_compLeft_one (x : StrongDual ℝ (κ → ℝ)) :
     x ((Int.castAddHom ℝ).compLeft κ 1) = ∑ k, x (Pi.single k 1) := by
   rw [show (Int.castAddHom ℝ).compLeft κ 1 = 1 by ext; simp]
-  simpa using (x : (κ → ℝ) →ₗ[ℝ] ℝ).pi_apply_eq_sum_single 1
+  simpa [← Pi.single_apply, Pi.single_comm _ (1 : ℝ)] using
+    (x : (κ → ℝ) →ₗ[ℝ] ℝ).pi_apply_eq_sum_univ 1
 
 /-- **The standard simplex.** The polyhedron cut out by the normals `e k` and `-1` with support
 constants `0` and `-a` is the simplex `{x | 0 ≤ x (e k) for every k, and ∑ k, x (e k) ≤ a}`. -/
@@ -184,7 +185,8 @@ theorem isBounded_facetPolyhedron_simplex (a : ℝ) :
   rw [Metric.mem_closedBall, dist_zero_right]
   refine ContinuousLinearMap.opNorm_le_bound x (abs_nonneg a) fun v ↦ ?_
   have hxv : x v = ∑ k, v k * x (Pi.single k 1) := by
-    simpa using (x : (κ → ℝ) →ₗ[ℝ] ℝ).pi_apply_eq_sum_single v
+    simpa [← Pi.single_apply, Pi.single_comm _ (1 : ℝ)] using
+      (x : (κ → ℝ) →ₗ[ℝ] ℝ).pi_apply_eq_sum_univ v
   rw [hxv, mul_comm |a|]
   calc ‖∑ k, v k * x (Pi.single k 1)‖ ≤ ∑ k, ‖v‖ * x (Pi.single k 1) := by
         refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun k _ ↦ ?_)

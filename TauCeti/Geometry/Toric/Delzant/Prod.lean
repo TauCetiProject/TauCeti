@@ -150,13 +150,12 @@ private theorem linearIndepOn_prodNormal_iff {s : Set ι} {t : Set ι'} :
 private theorem span_prodNormal_eq_top_iff {s : Set ι} {t : Set ι'} :
     Submodule.span ℤ (prodNormal u u' '' (Sum.inl '' s ∪ Sum.inr '' t)) = ⊤ ↔
       Submodule.span ℤ (u '' s) = ⊤ ∧ Submodule.span ℤ (u' '' t) = ⊤ := by
-  rw [image_union, image_image, image_image, Submodule.span_union]
+  rw [image_union, image_image, image_image]
   have hl : (fun j ↦ prodNormal u u' (Sum.inl j)) '' s = LinearMap.inl ℤ N N' '' (u '' s) := by
     simp [image_image]
   have hr : (fun j ↦ prodNormal u u' (Sum.inr j)) '' t = LinearMap.inr ℤ N N' '' (u' '' t) := by
     simp [image_image]
-  rw [hl, hr, Submodule.span_image, Submodule.span_image, Submodule.map_inl, Submodule.map_inr,
-    Submodule.prod_sup_prod, sup_bot_eq, bot_sup_eq, Submodule.prod_eq_top_iff]
+  rw [hl, hr, LinearMap.span_inl_union_inr, Submodule.prod_eq_top_iff]
 
 /-- **Smooth vertices of a product.** The point `y.coprod y'` is a smooth vertex of the product
 presentation exactly when `y` and `y'` are smooth vertices of the factors. -/
