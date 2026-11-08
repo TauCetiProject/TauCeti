@@ -93,13 +93,6 @@ namespace Orientation
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (finrank ℝ V = 2)]
   {Q : QuadraticForm ℝ V} (o : Orientation ℝ V (Fin 2)) (hQ : ∀ v, Q v = -‖v‖ ^ 2)
 
-/-- A positively oriented orthonormal basis of the plane. -/
-private def frame : OrthonormalBasis (Fin 2) ℝ V :=
-  ((stdOrthonormalBasis ℝ V).reindex (finCongr Fact.out)).adjustToOrientation o
-
-private theorem frame_orientation : (o.frame).toBasis.orientation = o :=
-  OrthonormalBasis.orientation_adjustToOrientation _ _
-
 include hQ
 
 /-- **The circle subgroup of the Spin group of an oriented Euclidean plane**, for
@@ -108,8 +101,10 @@ element (`Orientation.coe_spinCircle`). In a positively oriented orthonormal bas
 is `Re z + Im z c(e₀) c(e₁)` (`Orientation.spinCircle_eq_spinCircle`). It is an isomorphism onto
 `Spin(Q)` (`Orientation.spinCircleEquiv`). -/
 def spinCircle : Circle →* spinGroup Q :=
-  CliffordAlgebra.spinCircle Q (o.frame 0) (o.frame 1) (o.frame.isOrtho_apply hQ (by decide))
-    (o.frame.map_apply_mul_map_apply hQ 0 1)
+  CliffordAlgebra.spinCircle Q (o.finOrthonormalBasis two_pos Fact.out 0)
+    (o.finOrthonormalBasis two_pos Fact.out 1)
+    ((o.finOrthonormalBasis two_pos Fact.out).isOrtho_apply hQ (by decide))
+    ((o.finOrthonormalBasis two_pos Fact.out).map_apply_mul_map_apply hQ 0 1)
 
 /-- The Clifford value of `o.spinCircle hQ z` is `Re z + Im z · ω`, with `ω` the volume element of
 the orientation. -/
@@ -118,7 +113,8 @@ theorem coe_spinCircle (z : Circle) :
     (o.spinCircle hQ z : CliffordAlgebra Q) =
       algebraMap ℝ _ (z : ℂ).re + (z : ℂ).im • volumeElement Q o := by
   rw [spinCircle, CliffordAlgebra.coe_spinCircle,
-    volumeElement_eq_ι_mul_ι o _ o.frame_orientation (o.frame.isOrthoᵢ_associated hQ)]
+    volumeElement_eq_ι_mul_ι o _ (o.finOrthonormalBasis_orientation two_pos Fact.out)
+      ((o.finOrthonormalBasis two_pos Fact.out).isOrthoᵢ_associated hQ)]
 
 /-- **Frame formula**: for every positively oriented orthonormal basis `(e₀, e₁)`, the circle
 subgroup of the orientation is the circle subgroup `z ↦ Re z + Im z c(e₀) c(e₁)` of the pair
@@ -147,8 +143,8 @@ for the complex structure given by the quarter turn `J` of the orientation,
 theorem spinVectorAction_spinCircle (z : Circle) (v : V) :
     spinVectorAction Q (o.spinCircle hQ z) v =
       ((z : ℂ) ^ 2).re • v + ((z : ℂ) ^ 2).im • o.rightAngleRotation v := by
-  let b := o.frame
-  have hb : b.toBasis.orientation = o := o.frame_orientation
+  let b := o.finOrthonormalBasis two_pos Fact.out
+  have hb : b.toBasis.orientation = o := o.finOrthonormalBasis_orientation two_pos Fact.out
   have h : (spinVectorAction Q (o.spinCircle hQ z) : V →ₗ[ℝ] V) =
       ((z : ℂ) ^ 2).re • LinearMap.id + ((z : ℂ) ^ 2).im •
         (o.rightAngleRotation.toLinearEquiv : V →ₗ[ℝ] V) := by
@@ -226,8 +222,8 @@ group of the positive definite form `-Q`, the circle element `Re z + Im z · ω`
 theorem coe_spinGroupEquivNeg_spinCircle (z : Circle) :
     (spinGroupEquivNeg Q (o.spinCircle hQ z) : CliffordAlgebra (-Q)) =
       algebraMap ℝ _ (z : ℂ).re - (z : ℂ).im • volumeElement (-Q) o := by
-  let b := o.frame
-  have hb : b.toBasis.orientation = o := o.frame_orientation
+  let b := o.finOrthonormalBasis two_pos Fact.out
+  have hb : b.toBasis.orientation = o := o.finOrthonormalBasis_orientation two_pos Fact.out
   have hQb : Q (b 0) = -1 := by simp [hQ, b.orthonormal.1 0]
   -- The circle element is the product of `e₀` with `-Re z e₀ + Im z e₁`.
   have hx : (o.spinCircle hQ z : CliffordAlgebra Q) =
@@ -257,8 +253,8 @@ theorem spinCircle_injective : Function.Injective (o.spinCircle hQ) := by
 private theorem exists_coe_eq_algebraMap_add_smul_volumeElement (x : spinGroup Q) :
     ∃ r s : ℝ, r ^ 2 + s ^ 2 = 1 ∧
       (x : CliffordAlgebra Q) = algebraMap ℝ _ r + s • volumeElement Q o := by
-  let b := o.frame
-  have hb : b.toBasis.orientation = o := o.frame_orientation
+  let b := o.finOrthonormalBasis two_pos Fact.out
+  have hb : b.toBasis.orientation = o := o.finOrthonormalBasis_orientation two_pos Fact.out
   have hQb : Q (b 0) = -1 := by simp [hQ, b.orthonormal.1 0]
   let _ : Invertible (Q (b 0)) := invertibleOfNonzero (by rw [hQb]; norm_num)
   obtain ⟨w, hw⟩ := (mem_even_iff_exists_ι_mul_ι_of_finrank_eq_two Q Fact.out (b 0)).1
