@@ -179,17 +179,20 @@ theorem _root_.MonoidHom.eq_of_eqOn_of_topologicalClosure_closure_eq_top {M : Ty
   MonoidHom.ext fun x ↦
     MonoidHom.eqOn_topologicalClosure_closure hf hg hfg (by rw [hs]; exact Subgroup.mem_top x)
 
+omit [IsTopologicalGroup H] in
 /-- The range of a continuous homomorphism lies in a closed subgroup exactly when a topological
 generating set of the source maps into it. -/
 theorem _root_.MonoidHom.range_le_iff_of_topologicalClosure_closure_eq_top {s : Set G}
     (hs : (Subgroup.closure s).topologicalClosure = ⊤) {f : G →* H} (hf : Continuous f)
     {T : Subgroup H} (hT : IsClosed (T : Set H)) : f.range ≤ T ↔ ∀ x ∈ s, f x ∈ T := by
   refine ⟨fun h x _ ↦ h ⟨x, rfl⟩, fun h ↦ ?_⟩
-  rw [MonoidHom.range_eq_map, ← hs]
-  refine (f.map_topologicalClosure_le hf _).trans (Subgroup.topologicalClosure_minimal _ ?_ hT)
-  rw [MonoidHom.map_closure, Subgroup.closure_le]
-  rintro _ ⟨x, hx, rfl⟩
-  exact h x hx
+  have hle : Subgroup.closure s ≤ T.comap f := by
+    rw [Subgroup.closure_le]
+    exact fun x hx ↦ h x hx
+  have htop := Subgroup.topologicalClosure_minimal _ hle (hT.preimage hf)
+  rw [hs] at htop
+  rintro _ ⟨x, rfl⟩
+  exact htop (Subgroup.mem_top x)
 
 /-- The closed range of a continuous homomorphism is the closure of a subgroup `T` as soon as a
 topological generating set of the source maps into that closure and `T` lies in the range. Out
