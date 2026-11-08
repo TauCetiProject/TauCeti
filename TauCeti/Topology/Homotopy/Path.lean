@@ -56,8 +56,12 @@ value of one of its two halves, and `Path.subpath_apply_mem` bounds the values o
 values of the path on an interval containing its endpoints. They are used by the gluing
 construction in `AlgebraicTopology/FundamentalGroupoid/Glue.lean`.
 
-The path-homotopy quotient API also records that reversing twice is the identity and that the
-reverse of the constant class is constant.
+The path-homotopy quotient API also records that reversing twice is the identity, that the
+reverse of the constant class is constant, and that mapping a composite class and casting its
+endpoints composes the cast images of the factors (`Path.Homotopic.Quotient.map_trans_cast`).
+`Path.refl_trans_eq_reparam`, the left counterpart of Mathlib's
+`Path.Homotopy.trans_refl_reparam`, and `map_trans_cast` are used by the gluing of caps along a
+pair of pants in `Geometry/Symplectic/Floer/Cap/Loop.lean`.
 -/
 
 public section
@@ -291,6 +295,19 @@ theorem unitInterval.exists_vertex_family {X : Type*} [TopologicalSpace X]
 namespace Path
 variable {X : Type*} [TopologicalSpace X] {x y : X}
 
+/-- The constant path followed by `p` is a reparametrization of `p`, the counterpart of
+`Path.Homotopy.trans_refl_reparam`. -/
+theorem refl_trans_eq_reparam {y z : X} (p : Path y z) :
+    (Path.refl y).trans p =
+      p.reparam (fun t => Set.projIcc 0 1 zero_le_one (2 * (t : ℝ) - 1)) (by fun_prop)
+        (Subtype.ext (by norm_num)) (Subtype.ext (by norm_num)) := by
+  ext t
+  rw [Path.trans_apply, Path.coe_reparam, Function.comp_apply]
+  split_ifs with h
+  · rw [Path.refl_apply, Set.projIcc_of_le_left _ (by linarith)]
+    exact p.source.symm
+  · exact congrArg p (Set.projIcc_of_mem _ ⟨by linarith, by linarith [t.2.2]⟩).symm
+
 namespace Homotopic.Quotient
 
 /-- Reversing a path-homotopy class twice recovers the original class. -/
@@ -427,6 +444,17 @@ theorem refl_cast {x y : X} (h : y = x) : (refl x).cast h h = refl y := by
   -- After `cases h` the cast is along `rfl`, and `Quotient.cast` on a literal `refl` class
   -- reduces definitionally, so `rfl` closes the goal.
   cases h; rfl
+
+/-- The image under `f` of a composite of path classes, with endpoints cast along `h₀` and `h₂`,
+is the composite of the cast images of the two factors. -/
+theorem map_trans_cast {Y : Type*} [TopologicalSpace Y] {a b c : X} {f : C(X, Y)}
+    (A : Homotopic.Quotient a b) (B : Homotopic.Quotient b c) {y₀ y₁ y₂ : Y}
+    (h₀ : y₀ = f a) (h₁ : y₁ = f b) (h₂ : y₂ = f c) :
+    ((A.trans B).map f).cast h₀ h₂ = ((A.map f).cast h₀ h₁).trans ((B.map f).cast h₁ h₂) := by
+  subst h₀ h₁ h₂
+  simp only [cast_rfl_rfl]
+  induction A, B using Quotient.ind₂ with
+  | mk A B => simp only [← mk_trans, ← mk_map, Path.map_trans]
 
 /-- If `trans γ (symm γ') = refl`, then `γ = γ'`.
 This is the quotient analogue of `eq_of_div_eq_one : a / b = 1 → a = b`. -/
