@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Moments.SubExponential
-public import Mathlib.Probability.Moments.SubGaussian
+public import TauCeti.Probability.Moments.SubGaussian.Basic
 public import Mathlib.Probability.Distributions.Gaussian.Real
 
 /-!
@@ -18,7 +18,7 @@ with parameter `1`.
 
 ## Main results
 
-* `HasSubexponentialMGF.of_hasSubgaussianMGF` compares the two MGF conventions.
+* `ProbabilityTheory.HasSubgaussianMGF.hasSubexponentialMGF` compares the two MGF conventions.
 * `hasSubexponentialMGF_standardGaussian` verifies the standard Gaussian example.
 -/
 
@@ -27,15 +27,16 @@ public section
 open MeasureTheory ProbabilityTheory Real
 open scoped NNReal
 
-namespace TauCeti.Probability
+namespace ProbabilityTheory.HasSubgaussianMGF
 
-/-- A centered sub-Gaussian variable is sub-exponential when the quadratic MGF constants
+/-- A sub-Gaussian variable is sub-exponential when the quadratic MGF constants
 are compatible. -/
-theorem HasSubexponentialMGF.of_hasSubgaussianMGF {Ω : Type*} [MeasurableSpace Ω]
+theorem hasSubexponentialMGF {Ω : Type*} [MeasurableSpace Ω]
     {μ : Measure Ω} [IsProbabilityMeasure μ] {X : Ω → ℝ} {c : ℝ≥0} {K : ℝ}
-    (hX : HasSubgaussianMGF X c μ) (hmean : μ[X] = 0)
+    (hX : HasSubgaussianMGF X c μ)
     (hK : 0 < K) (hc : (c : ℝ) / 2 ≤ K ^ 2) :
-    HasSubexponentialMGF X K μ := by
+    TauCeti.Probability.HasSubexponentialMGF X K μ := by
+  have hmean := hX.integral_eq_zero
   refine ⟨hK, hX.integrable, ?_, ?_⟩
   · intro t ht
     simpa [hmean] using hX.integrable_exp_mul t
@@ -44,6 +45,10 @@ theorem HasSubexponentialMGF.of_hasSubgaussianMGF {Ω : Type*} [MeasurableSpace 
       nlinarith [mul_le_mul_of_nonneg_right hc (sq_nonneg t)]
     simpa only [hmean, sub_zero] using (hX.mgf_le t).trans (Real.exp_le_exp.mpr hbound)
 
+end ProbabilityTheory.HasSubgaussianMGF
+
+namespace TauCeti.Probability
+
 /-- The standard Gaussian satisfies the sub-exponential MGF bound with parameter `1`. -/
 theorem hasSubexponentialMGF_standardGaussian :
     HasSubexponentialMGF (fun x : ℝ ↦ x) 1 (gaussianReal 0 1) := by
@@ -51,8 +56,7 @@ theorem hasSubexponentialMGF_standardGaussian :
     refine ⟨integrable_exp_mul_gaussianReal, ?_⟩
     intro t
     simp [mgf_fun_id_gaussianReal]
-  apply HasSubexponentialMGF.of_hasSubgaussianMGF hX
-  · simp
+  apply hX.hasSubexponentialMGF
   · norm_num
   · norm_num
 
