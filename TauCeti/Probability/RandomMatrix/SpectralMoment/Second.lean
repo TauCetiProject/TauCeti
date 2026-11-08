@@ -35,7 +35,8 @@ theorem integral_sq_spectralMeasure_wignerMatrix (n : ℕ) (ω : Ω) :
         ∑ i : Fin (n + 1), ∑ j : Fin (n + 1), ‖wignerMatrix ξ η (n + 1) ω i j‖ ^ 2 := by
   have h := Matrix.integral_pow_spectralMeasure (wignerMatrix ξ η (n + 1) ω)
     (wignerMatrix_isHermitian ξ η ω (n + 1)) 2
-  simpa only [pow_two, Fintype.card_fin, trace_wignerMatrix_mul_self,
+  simpa only [pow_two, Fintype.card_fin,
+    (wignerMatrix_isHermitian ξ η ω (n + 1)).trace_mul_self_eq_sum_norm_sq,
     RCLike.re_to_complex, Complex.ofReal_re, Nat.cast_add, Nat.cast_one] using h
 
 /-- The diagonal squares occur once and the upper-triangular squared norms occur twice. -/
@@ -183,11 +184,13 @@ private theorem wignerCoordinateWeight_sq_le (n : ℕ) (i : Fin n ⊕ FinStrictU
   cases i <;> norm_num [wignerCoordinateWeight]
 
 private theorem wignerCoordinate_variance_bound (n : ℕ)
-    {V : ℝ} (hV : 0 ≤ V)
+    {V : ℝ}
     (hv : ∀ i, Var[wignerCoordinateSquare ξ η (n + 1) i; P] ≤ V) :
     (∑ i, (((n + 1 : ℝ)⁻¹ ^ 2) * wignerCoordinateWeight (n + 1) i) ^ 2 *
       Var[wignerCoordinateSquare ξ η (n + 1) i; P]) ≤
       8 * V / (n + 1 : ℝ) ^ 2 := by
+  have hV : 0 ≤ V :=
+    (variance_nonneg (wignerCoordinateSquare ξ η (n + 1) (.inl 0)) P).trans (hv (.inl 0))
   have hN : 1 ≤ (n + 1 : ℝ) := by
     have hn0 : (0 : ℝ) ≤ n := Nat.cast_nonneg n
     linarith
@@ -226,7 +229,7 @@ private theorem wignerCoordinate_variance_bound (n : ℕ)
 /-- The variance of the second spectral moment is `O(n⁻²)` under a uniform bound on
 the variances of the squared coordinate norms. -/
 theorem variance_second_spectralMoment_le
-    (n : ℕ) {V : ℝ} (hV : 0 ≤ V)
+    (n : ℕ) {V : ℝ}
     (hindep : Pairwise fun i j ↦ IndepFun (wignerCoordinateSquare ξ η (n + 1) i)
       (wignerCoordinateSquare ξ η (n + 1) j) P)
     (hmem : ∀ i, MemLp (wignerCoordinateSquare ξ η (n + 1) i) 2 P)
@@ -236,12 +239,12 @@ theorem variance_second_spectralMoment_le
       8 * V / (n + 1 : ℝ) ^ 2 := by
   simp_rw [integral_sq_spectralMeasure_wignerMatrix_weighted]
   rw [variance_weighted_coordinate_sum _ hmem hindep]
-  exact wignerCoordinate_variance_bound n hV hvar
+  exact wignerCoordinate_variance_bound n hvar
 
 /-- The second spectral moment concentrates if the squared coordinate norms are pairwise
 independent and have uniformly bounded variances. -/
 theorem measure_second_spectralMoment_sub_mean_ge [IsProbabilityMeasure P]
-    (n : ℕ) {V : ℝ} (hV : 0 ≤ V)
+    (n : ℕ) {V : ℝ}
     (hindep : Pairwise fun i j ↦ IndepFun (wignerCoordinateSquare ξ η (n + 1) i)
       (wignerCoordinateSquare ξ η (n + 1) j) P)
     (hmem : ∀ i, MemLp (wignerCoordinateSquare ξ η (n + 1) i) 2 P)
@@ -256,7 +259,7 @@ theorem measure_second_spectralMoment_sub_mean_ge [IsProbabilityMeasure P]
     (fun i ↦ (n + 1 : ℝ)⁻¹ ^ 2 * wignerCoordinateWeight (n + 1) i)
     hmem hindep hε
   have hbound := ENNReal.ofReal_le_ofReal (div_le_div_of_nonneg_right
-    (wignerCoordinate_variance_bound n hV hvar) (sq_nonneg ε))
+    (wignerCoordinate_variance_bound n hvar) (sq_nonneg ε))
   simp_rw [integral_sq_spectralMeasure_wignerMatrix_weighted]
   exact h.trans hbound
 
@@ -266,7 +269,7 @@ theorem tendsto_second_spectralMoment_sub_mean_probability
     {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω n)]
     {P : (n : ℕ) → Measure (Ω n)} [∀ n, IsProbabilityMeasure (P n)]
     {ξ : (n : ℕ) → StrictUpper → Ω n → ℂ}
-    {η : (n : ℕ) → ℕ → Ω n → ℝ} {V : ℝ} (hV : 0 ≤ V)
+    {η : (n : ℕ) → ℕ → Ω n → ℝ} {V : ℝ}
     (hindep : ∀ n, Pairwise fun i j ↦
       IndepFun (wignerCoordinateSquare (ξ n) (η n) (n + 1) i)
         (wignerCoordinateSquare (ξ n) (η n) (n + 1) j) (P n))
@@ -291,13 +294,13 @@ theorem tendsto_second_spectralMoment_sub_mean_probability
       ((8 * V / (n + 1 : ℝ) ^ 2) / ε ^ 2)) atTop (𝓝 0) := by
     simpa using ENNReal.tendsto_ofReal hreal
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hbound
-    (fun _ ↦ bot_le) (fun n ↦ measure_second_spectralMoment_sub_mean_ge n hV
+    (fun _ ↦ bot_le) (fun n ↦ measure_second_spectralMoment_sub_mean_ge n
       (hindep n) (hmem n) (hvar n) hε)
 
 /-- The variance bound applies in particular when the original Wigner coordinates are jointly
 independent. -/
 theorem variance_second_spectralMoment_le_of_independent_coordinates
-    (n : ℕ) {V : ℝ} (hV : 0 ≤ V)
+    (n : ℕ) {V : ℝ}
     (hindep : iIndepFun (fun k : StrictUpper ⊕ ℕ ↦
       Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) k) P)
     (hmem : ∀ i, MemLp (wignerCoordinateSquare ξ η (n + 1) i) 2 P)
@@ -305,12 +308,12 @@ theorem variance_second_spectralMoment_le_of_independent_coordinates
     Var[fun ω ↦ ∫ x, x ^ 2 ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
       (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ); P] ≤
       8 * V / (n + 1 : ℝ) ^ 2 :=
-  variance_second_spectralMoment_le n hV
+  variance_second_spectralMoment_le n
     (wignerCoordinateSquare_pairwise_independent hindep (n + 1)) hmem hvar
 
 /-- The second-moment Chebyshev bound for jointly independent Wigner coordinates. -/
 theorem measure_second_spectralMoment_sub_mean_ge_of_independent_coordinates
-    [IsProbabilityMeasure P] (n : ℕ) {V : ℝ} (hV : 0 ≤ V)
+    [IsProbabilityMeasure P] (n : ℕ) {V : ℝ}
     (hindep : iIndepFun (fun k : StrictUpper ⊕ ℕ ↦
       Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) k) P)
     (hmem : ∀ i, MemLp (wignerCoordinateSquare ξ η (n + 1) i) 2 P)
@@ -321,7 +324,7 @@ theorem measure_second_spectralMoment_sub_mean_ge_of_independent_coordinates
       ∫ ω, (∫ x, x ^ 2 ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
         (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ)) ∂P|} ≤
       ENNReal.ofReal ((8 * V / (n + 1 : ℝ) ^ 2) / ε ^ 2) :=
-  measure_second_spectralMoment_sub_mean_ge n hV
+  measure_second_spectralMoment_sub_mean_ge n
     (wignerCoordinateSquare_pairwise_independent hindep (n + 1)) hmem hvar hε
 
 /-- Second-moment fluctuations vanish for triangular arrays whose original coordinates
@@ -330,7 +333,7 @@ theorem tendsto_second_spectralMoment_sub_mean_probability_of_independent_coordi
     {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω n)]
     {P : (n : ℕ) → Measure (Ω n)} [∀ n, IsProbabilityMeasure (P n)]
     {ξ : (n : ℕ) → StrictUpper → Ω n → ℂ}
-    {η : (n : ℕ) → ℕ → Ω n → ℝ} {V : ℝ} (hV : 0 ≤ V)
+    {η : (n : ℕ) → ℕ → Ω n → ℝ} {V : ℝ}
     (hindep : ∀ n, iIndepFun (fun k : StrictUpper ⊕ ℕ ↦
       Sum.elim (ξ n) (fun i ω ↦ (η n i ω : ℂ)) k) (P n))
     (hmem : ∀ n i, MemLp (wignerCoordinateSquare (ξ n) (η n) (n + 1) i) 2 (P n))
@@ -342,7 +345,7 @@ theorem tendsto_second_spectralMoment_sub_mean_probability_of_independent_coordi
       ∫ ω, (∫ x, x ^ 2 ∂((wignerMatrix (ξ n) (η n) (n + 1) ω).spectralMeasure
         (wignerMatrix_isHermitian (ξ n) (η n) ω (n + 1)) : Measure ℝ)) ∂P n|})
       atTop (𝓝 0) :=
-  tendsto_second_spectralMoment_sub_mean_probability hV
+  tendsto_second_spectralMoment_sub_mean_probability
     (fun n ↦ wignerCoordinateSquare_pairwise_independent (hindep n) (n + 1))
     hmem hvar hε
 

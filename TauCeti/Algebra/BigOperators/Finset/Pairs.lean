@@ -64,47 +64,6 @@ open Finset
 /-- Strictly increasing pairs of indices in `Fin n`. -/
 abbrev FinStrictUpper (n : ℕ) := {p : Fin n × Fin n // p.1 < p.2}
 
-/-- A symmetric double sum is its diagonal plus twice the sum over increasing pairs. -/
-theorem sum_symmetric_pairs {α G : Type*} [Fintype α] [LinearOrder α] [AddCommMonoid G]
-    (g : α → α → G) (hs : ∀ i j, g i j = g j i) :
-    (∑ i, ∑ j, g i j) =
-      (∑ i, g i i) + 2 • ∑ p : {p : α × α // p.1 < p.2}, g p.val.1 p.val.2 := by
-  classical
-  have hlower : (∑ i, ∑ j, if j < i then g i j else 0) =
-      ∑ i, ∑ j, if i < j then g i j else 0 := by
-    rw [Finset.sum_comm]
-    apply Finset.sum_congr rfl
-    intro i _
-    apply Finset.sum_congr rfl
-    intro j _
-    rw [hs j i]
-  have hdiag : (∑ i, ∑ j, if i = j then g i j else 0) = ∑ i, g i i := by
-    simp
-  have hu : (∑ p : {p : α × α // p.1 < p.2}, g p.val.1 p.val.2) =
-      ∑ i, ∑ j, if i < j then g i j else 0 := by
-    let s : Finset (α × α) := Finset.univ.filter (fun p ↦ p.1 < p.2)
-    have h : (∑ p ∈ s, g p.1 p.2) = ∑ p : {p : α × α // p.1 < p.2},
-        g p.val.1 p.val.2 :=
-      Finset.sum_subtype s (by simp [s]) (fun p ↦ g p.1 p.2)
-    rw [← h]
-    simp only [s, Finset.sum_filter, Fintype.sum_prod_type]
-  have hsplit : (∑ i, ∑ j, g i j) =
-      (∑ i, ∑ j, if i = j then g i j else 0) +
-      (∑ i, ∑ j, if i < j then g i j else 0) +
-      (∑ i, ∑ j, if j < i then g i j else 0) := by
-    simp only [← Finset.sum_add_distrib]
-    apply Finset.sum_congr rfl
-    intro i _
-    apply Finset.sum_congr rfl
-    intro j _
-    rcases lt_trichotomy i j with hij | hij | hij
-    · simp [hij, hij.ne, hij.not_gt]
-    · subst j
-      simp
-    · simp [hij, hij.ne', hij.not_gt]
-  rw [hdiag, hlower, ← hu] at hsplit
-  simpa only [two_nsmul, add_assoc] using hsplit
-
 /-- A sum over bounded pairs of indices of total degree less than the bound equals the
 antidiagonal sum, provided the summands agree under the natural-index coercions. -/
 theorem sum_fin_product_eq_sum_antidiagonal {M : Type*} [AddCommMonoid M] {n d : ℕ}
@@ -339,6 +298,33 @@ theorem sum_univ_prod_eq_sum_lt_add_swap {l : Type*} [Fintype l] [LinearOrder l]
       exact hdiag a ▸ congrArg (fun c => F (a, c)) (le_antisymm hnotmem hmem).symm
   rw [← Finset.sum_filter_add_sum_filter_not Finset.univ (fun ij : l × l => ij.1 < ij.2) F,
     ← hnot, hswap, Finset.sum_add_distrib]
+
+/-- A symmetric double sum is its diagonal plus twice the sum over increasing pairs. -/
+theorem sum_symmetric_pairs {α G : Type*} [Fintype α] [LinearOrder α] [AddCommMonoid G]
+    (g : α → α → G) (hs : ∀ i j, g i j = g j i) :
+    (∑ i, ∑ j, g i j) =
+      (∑ i, g i i) + 2 • ∑ p : {p : α × α // p.1 < p.2}, g p.val.1 p.val.2 := by
+  classical
+  let F : α × α → G := fun p ↦ if p.1 = p.2 then 0 else g p.1 p.2
+  have hfold := sum_univ_prod_eq_sum_lt_add_swap F (by intro a; simp [F])
+  have hsplit : (∑ i, ∑ j, g i j) =
+      (∑ i, g i i) + ∑ p : α × α, F p := by
+    rw [Fintype.sum_prod_type, ← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    have hdiag : g i i = ∑ j, if i = j then g i j else 0 := by simp
+    rw [hdiag, ← Finset.sum_add_distrib]
+    apply Finset.sum_congr rfl
+    intro j _
+    by_cases h : i = j <;> simp [F, h]
+  have hupper : (∑ p ∈ {p : α × α | p.1 < p.2}, g p.1 p.2) =
+      ∑ p : {p : α × α // p.1 < p.2}, g p.val.1 p.val.2 :=
+    Finset.sum_subtype _ (by simp) _
+  rw [hsplit, hfold, ← hupper, two_nsmul, ← Finset.sum_add_distrib]
+  congr 1
+  apply Finset.sum_congr rfl
+  intro p hp
+  have hp' : p.1 < p.2 := by simpa using hp
+  simp [F, hp'.ne, hp'.ne', hs]
 
 /-- **A product over the increasing pairs of a symmetric function is permutation invariant:**
 for symmetric `f`, `∏_{i<j} f (σ i) (σ j) = ∏_{i<j} f i j` for every permutation `σ`. -/
