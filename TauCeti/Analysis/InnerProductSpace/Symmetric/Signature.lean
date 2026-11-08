@@ -81,9 +81,8 @@ theorem equivalent_weightedSumSquares_eigenvalues (hT : T.IsSymmetric) {n : ℕ}
   let b := hT.eigenvectorBasis rfl
   -- The polar form of `Q` is `⟪T x, y⟫`, because `T` is symmetric.
   have hassoc (x y : E) : QuadraticMap.associated Q x y = ⟪T x, y⟫_ℝ := by
-    rw [QuadraticMap.associated_apply, hQ, hQ, hQ, map_add, inner_add_left, inner_add_right,
-      inner_add_right, hT y x, real_inner_comm (T x) y]
-    simp [invOf_eq_inv]
+    simp [QuadraticMap.associated_apply, hQ, inner_add_left, inner_add_right, hT y x,
+      real_inner_comm]
     ring
   have hb (i : Fin (Module.finrank ℝ E)) : T (b i) = hT.eigenvalues rfl i • b i :=
     hT.apply_eigenvectorBasis rfl i
@@ -122,7 +121,7 @@ theorem sigNeg_eq_finrank_pointSpectralSubspace (hT : T.IsSymmetric)
     (hQ : ∀ x, Q x = ⟪T x, x⟫_ℝ) :
     sigNeg Q = Module.finrank ℝ (Module.End.pointSpectralSubspace T (Iio 0)) := by
   rw [hT.finrank_pointSpectralSubspace rfl, hT.sigNeg_eq_ncard_eigenvalues_neg rfl hQ]
-  rfl
+  simp only [Set.mem_Iio]
 
 /-- **The positive index of the form of a symmetric operator.** The positive index of the
 quadratic form `x ↦ ⟪T x, x⟫` of a symmetric operator `T` is the dimension of the sum of the
@@ -131,7 +130,7 @@ theorem sigPos_eq_finrank_pointSpectralSubspace (hT : T.IsSymmetric)
     (hQ : ∀ x, Q x = ⟪T x, x⟫_ℝ) :
     sigPos Q = Module.finrank ℝ (Module.End.pointSpectralSubspace T (Ioi 0)) := by
   rw [hT.finrank_pointSpectralSubspace rfl, hT.sigPos_eq_ncard_eigenvalues_pos rfl hQ]
-  rfl
+  simp only [Set.mem_Ioi]
 
 /-! ### The bilinear form of an operator -/
 
