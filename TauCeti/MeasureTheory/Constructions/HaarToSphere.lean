@@ -220,7 +220,7 @@ theorem integral_Ioo_pow_mul_toSphere_real_univ {R : ℝ} :
   simp only [integral_const, smul_eq_mul, mul_one, measureReal_restrict_apply_univ] at h
   rw [h, ← integral_mul_const]
 
-omit [MeasurableSpace E] [BorelSpace E] in
+omit [MeasurableSpace E] [BorelSpace E] [Nontrivial E] in
 /-- Along the ray through a point `u` of the unit sphere, the radially weighted integrand of the
 radial fundamental theorem of calculus is the derivative of `r ↦ f (r • u)`, so its integral over
 `(0, ∞)` is `-f 0`. -/
@@ -230,12 +230,13 @@ theorem integral_Ioi_ray_fderiv_apply_smul_eq_neg
       (‖r • (u : E)‖ ^ (-(Module.finrank ℝ E : ℝ)) *
         fderiv ℝ f (r • (u : E)) (r • (u : E))) = -f 0 := by
   set d := Module.finrank ℝ E
-  have hd : 1 ≤ d := Module.finrank_pos
   have hu : ‖(u : E)‖ = 1 := norm_eq_of_mem_sphere u
+  have hu0 : (u : E) ≠ 0 := fun h ↦ by simp [h] at hu
+  have : Nontrivial E := ⟨⟨u, 0, hu0⟩⟩
+  have hd : 1 ≤ d := Module.finrank_pos
   rw [setIntegral_congr_fun measurableSet_Ioi (g := fun r ↦ fderiv ℝ f (r • (u : E)) u)
     fun r (hr : 0 < r) ↦ ?_]
-  · have hu0 : (u : E) ≠ 0 := fun h ↦ by simp [h] at hu
-    simpa only [zero_add] using hc.integral_Ioi_fderiv_apply_ray hf 0 hu0
+  · simpa only [zero_add] using hc.integral_Ioi_fderiv_apply_ray hf 0 hu0
   · have hpow : r ^ (d - 1) * r ^ (-(d : ℝ)) * r = 1 := by
       rw [mul_right_comm, ← pow_succ, Nat.sub_add_cancel hd, ← Real.rpow_natCast,
         ← Real.rpow_add hr, add_neg_cancel, Real.rpow_zero]
