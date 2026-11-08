@@ -49,8 +49,7 @@ variable [CompactSpace M] [T2Space N] [LocallyCompactSpace E]
 target point, for the weak Whitney topology. -/
 theorem continuous_diffeomorph_symm_eval :
     Continuous fun p : (M ≃ₘ^n⟮I, J⟯ N) × N ↦ p.1.symm p.2 :=
-  continuous_homeomorph_symm_eval (fun f : M ≃ₘ^n⟮I, J⟯ N ↦ f.toHomeomorph)
-    ContinuousEval.continuous_eval
+  continuous_equiv_symm_eval (fun f : M ≃ₘ^n⟮I, J⟯ N ↦ f.toEquiv) ContinuousEval.continuous_eval
 
 /-- The underlying continuous maps of inverse diffeomorphisms depend continuously on the
 diffeomorphism. The target here carries the compact-open topology. -/

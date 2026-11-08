@@ -69,7 +69,9 @@ linear approximation error by the difference of the Hessians.
 * `ContDiff.norm_iteratedFDeriv_succ_le_of_norm_iteratedFDeriv_le`: the Landau-type inequality.
 * `HolderWith.norm_iteratedFDeriv_add_two_le_of_norm_le` and
   `HolderWith.norm_iteratedFDeriv_succ_le_of_norm_le_of_bddAbove`: the absorbed bounds on the two
-  derivatives above `D^k f`.
+  derivatives above `D^k f`, and
+  `HolderWith.norm_iteratedFDeriv_succ_le_and_norm_iteratedFDeriv_add_two_le`: both bounds with
+  one constant, for scales `ε ≤ 1`.
 * `HolderOnWith.norm_le_of_hasDerivWithinAt_Icc`: the interpolation inequality for derivatives
   within a closed interval.
 * `TauCeti.holderOnWith_Icc_of_hasFDerivAt_of_hasDerivWithinAt`: the temporal
@@ -361,6 +363,30 @@ theorem norm_iteratedFDeriv_succ_le_of_norm_le_of_bddAbove {f : E → F} {k : �
       ≤ 2 * M / ε + (⨆ y, ‖iteratedFDeriv ℝ (k + 2) f y‖) * ε := h
     _ ≤ 2 * M / ε + (32 * M / ε ^ 2 + 2 * H * ε ^ (α : ℝ)) * ε := by gcongr
     _ = 34 * M / ε + 2 * H * ε ^ (1 + (α : ℝ)) := heq
+
+/-- **Absorbed interpolation inequalities with one constant.** If `f` is `C^(k+2)` with
+`‖D^k f‖ ≤ M`, `D^(k+2) f` is bounded and globally `α`-Hölder with constant `H`, then for every
+scale `0 < ε ≤ 1` both `‖D^(k+1) f x‖` and `‖D^(k+2) f x‖` are at most
+`(34 / ε + 32 / ε²) M + 2 H ε^α`. -/
+theorem norm_iteratedFDeriv_succ_le_and_norm_iteratedFDeriv_add_two_le {f : E → F} {k : ℕ}
+    {H α : ℝ≥0} (hH : HolderWith H α (iteratedFDeriv ℝ (k + 2) f)) (hf : ContDiff ℝ (k + 2) f)
+    {M : ℝ} (hM : ∀ y, ‖iteratedFDeriv ℝ k f y‖ ≤ M)
+    (hbdd : BddAbove (range fun y => ‖iteratedFDeriv ℝ (k + 2) f y‖)) {ε : ℝ} (hε : 0 < ε)
+    (hε1 : ε ≤ 1) (x : E) :
+    ‖iteratedFDeriv ℝ (k + 1) f x‖ ≤ (34 / ε + 32 / ε ^ 2) * M + 2 * H * ε ^ (α : ℝ) ∧
+      ‖iteratedFDeriv ℝ (k + 2) f x‖ ≤ (34 / ε + 32 / ε ^ 2) * M + 2 * H * ε ^ (α : ℝ) := by
+  have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM 0)
+  have h34 : 0 ≤ 34 * M / ε := by positivity
+  have h32 : 0 ≤ 32 * M / ε ^ 2 := by positivity
+  have hc : (34 / ε + 32 / ε ^ 2) * M = 34 * M / ε + 32 * M / ε ^ 2 := by ring
+  have hεα : ε ^ (1 + (α : ℝ)) ≤ ε ^ (α : ℝ) :=
+    Real.rpow_le_rpow_of_exponent_ge hε hε1 (by linarith)
+  have h1 := hH.norm_iteratedFDeriv_succ_le_of_norm_le_of_bddAbove hf hM hbdd hε x
+  have h2 := hH.norm_iteratedFDeriv_add_two_le_of_norm_le hf hM hbdd hε x
+  rw [hc]
+  constructor
+  · nlinarith [H.coe_nonneg]
+  · linarith
 
 end HolderWith
 

@@ -421,7 +421,7 @@ theorem logEmbedding_smul (σ : L ≃ₐ[K] L) (x : Additive (𝓞 L)ˣ) :
 variable (K L) in
 /-- The unit lattice `logEmbedding L ((𝓞 L)ˣ)` as an integral subrepresentation of `logSpaceRep`:
 it is stable under `Aut(L/K)` by `TauCeti.NumberField.Units.logEmbedding_smul`. -/
-def unitLatticeSubrep : Subrepresentation (logSpaceRep K L).restrictScalarsInt where
+def unitLatticeSubrep : Subrepresentation ((logSpaceRep K L).restrictScalars ℤ) where
   toSubmodule := unitLattice L
   apply_mem_toSubmodule σ y := by
     rintro ⟨x, -, rfl⟩

@@ -388,7 +388,7 @@ makes the Hasse invariant well defined on isometry classes. -/
 theorem quaternionClass_congr {a b c d : Kˣ}
     (h : (weightedSumSquares K ![(a : K), b]).Equivalent (weightedSumSquares K ![(c : K), d])) :
     quaternionClass a b = quaternionClass c d :=
-  let ⟨e⟩ := QuaternionAlgebra.nonempty_algEquiv_of_equivalent_binary (a : K) b c d h
+  let ⟨e⟩ := QuaternionAlgebra.nonempty_algEquiv_of_equivalent_binary h
   quaternionClass_eq_of_algEquiv e
 
 end BrauerGroup

@@ -10,6 +10,8 @@ public import Mathlib.GroupTheory.Coxeter.Basic
 public import Mathlib.LinearAlgebra.BilinearForm.Basic
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import Mathlib.RepresentationTheory.Basic
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Angle
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-!
 # The standard geometric representation of a Coxeter system
@@ -317,14 +319,8 @@ rotation is the identity. -/
 private theorem geometricReflection_mul_pow_eq_one (hm : 2 ≤ M i i') :
     (M.geometricReflection i * M.geometricReflection i') ^ M i i' = 1 := by
   have hm0 : (M i i' : ℝ) ≠ 0 := Nat.cast_ne_zero.2 (by omega)
-  have hpos : 0 < π / (M i i' : ℝ) := by
-    have : (0 : ℝ) < M i i' := by positivity
-    positivity
-  have hlt : π / (M i i' : ℝ) < π := by
-    refine div_lt_self Real.pi_pos ?_
-    have : (2 : ℝ) ≤ M i i' := by exact_mod_cast hm
-    linarith
-  have hs : sin (π / M i i') ≠ 0 := ne_of_gt (Real.sin_pos_of_pos_of_lt_pi hpos hlt)
+  have hs : sin (π / M i i') ≠ 0 :=
+    (TauCeti.sin_pi_div_pos (by exact_mod_cast hm : (1 : ℝ) < M i i')).ne'
   have hden : (1 : ℝ) - cos (π / M i i') ^ 2 ≠ 0 := by
     have hsq := Real.sin_sq_add_cos_sq (π / (M i i' : ℝ))
     have : sin (π / (M i i' : ℝ)) ^ 2 ≠ 0 := pow_ne_zero 2 hs
@@ -408,15 +404,8 @@ private theorem pow_geometricReflection_mul_eq_one_iff (n : ℕ) :
       have : (n : ℝ) = 0 := by linarith
       have : n = 0 := by exact_mod_cast this
       simp [hzero, this]
-    · have hm0 : (M i i' : ℝ) ≠ 0 := Nat.cast_ne_zero.2 (by omega)
-      have hpos : 0 < π / (M i i' : ℝ) := by
-        have : (0 : ℝ) < M i i' := by positivity
-        positivity
-      have hlt' : π / (M i i' : ℝ) < π := by
-        refine div_lt_self Real.pi_pos ?_
-        have : (2 : ℝ) ≤ M i i' := by exact_mod_cast hge
-        linarith
-      have hs : sin (π / M i i') ≠ 0 := ne_of_gt (Real.sin_pos_of_pos_of_lt_pi hpos hlt')
+    · have hs : sin (π / M i i') ≠ 0 :=
+        (TauCeti.sin_pi_div_pos (by exact_mod_cast hge : (1 : ℝ) < M i i')).ne'
       have key := M.pow_geometricReflection_mul_apply_single i i' hs n
       rw [hR, one_apply_eq_self] at key
       obtain ⟨hc, hsi⟩ := hpair
@@ -431,17 +420,7 @@ private theorem pow_geometricReflection_mul_eq_one_iff (n : ℕ) :
       have hcos : cos (2 * (n : ℝ) * (π / M i i')) = 1 := by
         rw [hsi] at hc
         linarith
-      obtain ⟨j, hj⟩ := (Real.cos_eq_one_iff _).1 hcos
-      have h2pi : (2 : ℝ) * π ≠ 0 := by positivity
-      have hmul : (j : ℝ) * (2 * π) * (M i i' : ℝ) = 2 * (n : ℝ) * π := by
-        rw [hj]
-        field_simp
-      have hcancel : (j : ℝ) * (M i i' : ℝ) = (n : ℝ) :=
-        mul_right_cancel₀ h2pi (by linear_combination hmul)
-      have hint : (M i i' : ℤ) ∣ (n : ℤ) := ⟨j, by
-        have : (n : ℤ) = j * (M i i' : ℤ) := by exact_mod_cast hcancel.symm
-        linarith⟩
-      exact Int.ofNat_dvd.1 (by simpa using hint)
+      exact TauCeti.dvd_of_cos_two_mul_pi_div_eq_one (by omega) hcos
   · obtain ⟨k, rfl⟩ := hdvd
     rcases eq_or_ne i i' with rfl | hne
     · rw [M.diagonal i, one_mul, M.geometricReflection_mul_self, one_pow]

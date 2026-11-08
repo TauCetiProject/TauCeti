@@ -178,7 +178,7 @@ end OpenQuotient
 
 section Normalise
 
-variable {A M : Type*} [NormedRing A] [NormMulClass A] [NormOneClass A] [IsUltrametricDist A]
+variable {A M : Type*} [NormedRing A] [NormMulClass A] [IsUltrametricDist A]
   [SeminormedAddCommGroup M] [Module A M] [NormSMulClass A M]
 
 /-- **Normalising a strict generating system.** Let `N` be a submodule of a normed module over
@@ -204,6 +204,8 @@ theorem exists_finset_norm_eq_one_of_exists_finset_eq_sum_smul {N : Submodule A 
   · simp only [Finset.mem_image, forall_exists_index, and_imp]
     rintro _ x hx rfl
     refine ⟨N.smul_mem _ (hFN x hx).1, ?_⟩
+    have : Nontrivial A := ⟨1, 0, fun h ↦ (hFN x hx).2 (by simpa using congrArg (· • x) h)⟩
+    have := NormMulClass.toNormOneClass (α := A)
     simp only [g]
     rw [norm_smul, ← hu x hx, ← norm_mul, Units.inv_mul, norm_one]
   obtain ⟨a, rfl, ha⟩ := hF y hy

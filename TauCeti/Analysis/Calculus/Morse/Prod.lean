@@ -7,6 +7,9 @@ module
 
 public import TauCeti.Analysis.Calculus.Morse.Index
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
+public import Mathlib.Analysis.Calculus.Gradient.Basic
+public import Mathlib.Analysis.InnerProductSpace.ProdL2
+import TauCeti.Analysis.Calculus.FDeriv.Comp
 
 /-!
 # Nondegenerate critical points of separated sums
@@ -18,6 +21,11 @@ exactly when `a` and `b` are nondegenerate critical points of the summands, and 
 is additive. This is the calculus behind the product of two Morse functions on a product manifold,
 whose critical points are the pairs of critical points, graded by the sum of the indices.
 
+For real functions `f` and `g` on inner product spaces, `TauCeti.separatedSum f g` is the separated
+sum on the `L²` product `WithLp 2 (E × F)`, whose inner product makes the gradient of the sum the
+pair of gradients. The results above transfer to it through
+`WithLp.prodContinuousLinearEquiv`.
+
 ## Main declarations
 
 * `TauCeti.hessianQuadraticForm_comp_fst_add_comp_snd`: the Hessian of a separated sum is the
@@ -27,11 +35,17 @@ whose critical points are the pairs of critical points, graded by the sum of the
   a separated sum are the pairs of nondegenerate critical points of the summands.
 * `TauCeti.morseIndex_comp_fst_add_comp_snd`: the Morse index of a separated sum is the sum of
   the Morse indices of the summands.
+* `TauCeti.separatedSum`: the separated sum on the `L²` product.
+* `TauCeti.gradient_separatedSum` and `TauCeti.lipschitzWith_gradient_separatedSum`: its gradient is
+  the pair of gradients, and is Lipschitz when both gradients are.
+* `TauCeti.isNondegenerateCriticalPoint_separatedSum_iff` and `TauCeti.morseIndex_separatedSum`:
+  its nondegenerate critical points are the pairs of nondegenerate critical points, with additive
+  Morse index.
 
 ## References
 
 * M. Audin and M. Damian, *Morse Theory and Floer Homology*, Springer Universitext, 2014,
-  Chapter 1.
+  Chapter 1 (sums of Morse functions on products).
 -/
 
 public section
@@ -39,6 +53,8 @@ public section
 open ContinuousLinearMap
 
 namespace TauCeti
+
+section CompFstAddCompSnd
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {φ : E → ℝ} {ψ : F → ℝ} {a : E} {b : F}
@@ -94,6 +110,154 @@ theorem morseIndex_comp_fst_add_comp_snd [FiniteDimensional ℝ E] [FiniteDimens
     morseIndex (φ ∘ Prod.fst + ψ ∘ Prod.snd) (a, b) = morseIndex φ a + morseIndex ψ b := by
   simp only [morseIndex_def, hessianQuadraticForm_comp_fst_add_comp_snd hφ hψ,
     QuadraticForm.sigNeg_prod]
+
+end CompFstAddCompSnd
+
+section SeparatedSum
+
+open Set
+open scoped Gradient NNReal
+
+section Defs
+
+variable {E F : Type*} {f : E → ℝ} {g : F → ℝ}
+
+/-- The **separated sum** `(x, y) ↦ f x + g y` of two real functions, on the `L²` product of their
+domains. -/
+def separatedSum (f : E → ℝ) (g : F → ℝ) (z : WithLp 2 (E × F)) : ℝ :=
+  f z.fst + g z.snd
+
+@[simp]
+theorem separatedSum_apply (z : WithLp 2 (E × F)) : separatedSum f g z = f z.fst + g z.snd :=
+  (rfl)
+
+end Defs
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [NormedAddCommGroup F] [InnerProductSpace ℝ F] {f : E → ℝ} {g : F → ℝ}
+
+/-- The separated sum is the separated sum `f ∘ Prod.fst + g ∘ Prod.snd` on the plain product, read
+through the identification of the `L²` product with it. -/
+theorem separatedSum_eq_comp :
+    separatedSum f g =
+      (f ∘ Prod.fst + g ∘ Prod.snd) ∘ WithLp.prodContinuousLinearEquiv 2 ℝ E F :=
+  (rfl)
+
+/-- A separated sum of `Cⁿ` functions is `Cⁿ`. -/
+theorem _root_.ContDiff.separatedSum {n : WithTop ℕ∞} (hf : ContDiff ℝ n f) (hg : ContDiff ℝ n g) :
+    ContDiff ℝ n (separatedSum f g) := by
+  rw [separatedSum_eq_comp]
+  exact ((hf.comp contDiff_fst).add (hg.comp contDiff_snd)).comp
+    (WithLp.prodContinuousLinearEquiv 2 ℝ E F).contDiff
+
+section Gradient
+
+variable [CompleteSpace E] [CompleteSpace F]
+
+/-- **The gradient of a separated sum is the pair of gradients.** -/
+theorem hasGradientAt_separatedSum {z : WithLp 2 (E × F)} (hf : DifferentiableAt ℝ f z.fst)
+    (hg : DifferentiableAt ℝ g z.snd) :
+    HasGradientAt (separatedSum f g) (WithLp.toLp 2 (∇ f z.fst, ∇ g z.snd)) z := by
+  rw [hasGradientAt_iff_hasFDerivAt]
+  have hF := hf.hasGradientAt.hasFDerivAt.comp z (WithLp.fstL 2 ℝ E F).hasFDerivAt
+  have hG := hg.hasGradientAt.hasFDerivAt.comp z (WithLp.sndL 2 ℝ E F).hasFDerivAt
+  refine (hF.add hG).congr_fderiv ?_
+  ext w
+  simp [WithLp.prod_inner_apply]
+
+/-- **The gradient of a separated sum is the pair of gradients.** -/
+theorem gradient_separatedSum {z : WithLp 2 (E × F)} (hf : DifferentiableAt ℝ f z.fst)
+    (hg : DifferentiableAt ℝ g z.snd) :
+    ∇ (separatedSum f g) z = WithLp.toLp 2 (∇ f z.fst, ∇ g z.snd) :=
+  (hasGradientAt_separatedSum hf hg).gradient
+
+/-- The gradient of a separated sum is Lipschitz, with the larger of the two constants, when both
+gradients are. -/
+theorem lipschitzWith_gradient_separatedSum {K K' : ℝ≥0} (hfd : Differentiable ℝ f)
+    (hgd : Differentiable ℝ g) (hf : LipschitzWith K (∇ f)) (hg : LipschitzWith K' (∇ g)) :
+    LipschitzWith (max K K') (∇ (separatedSum f g)) := by
+  refine LipschitzWith.of_dist_le_mul fun z w ↦ ?_
+  rw [gradient_separatedSum (hfd _) (hgd _), gradient_separatedSum (hfd _) (hgd _),
+    WithLp.prod_dist_eq_of_L2, WithLp.prod_dist_eq_of_L2]
+  simp only [WithLp.toLp_fst, WithLp.toLp_snd]
+  have h₁ : dist (∇ f z.fst) (∇ f w.fst) ≤ max K K' * dist z.fst w.fst :=
+    (hf.dist_le_mul _ _).trans (mul_le_mul_of_nonneg_right (by simp) dist_nonneg)
+  have h₂ : dist (∇ g z.snd) (∇ g w.snd) ≤ max K K' * dist z.snd w.snd :=
+    (hg.dist_le_mul _ _).trans (mul_le_mul_of_nonneg_right (by simp) dist_nonneg)
+  rw [show ((max K K' : ℝ≥0) : ℝ) * √(dist z.fst w.fst ^ 2 + dist z.snd w.snd ^ 2) =
+      √(((max K K' : ℝ≥0) : ℝ) ^ 2 * (dist z.fst w.fst ^ 2 + dist z.snd w.snd ^ 2)) by
+    rw [Real.sqrt_mul (by positivity), Real.sqrt_sq (by positivity)]]
+  refine Real.sqrt_le_sqrt ?_
+  nlinarith [pow_le_pow_left₀ dist_nonneg h₁ 2, pow_le_pow_left₀ dist_nonneg h₂ 2]
+
+end Gradient
+
+section Critical
+
+/-- **Nondegenerate critical points of a separated sum** are the pairs of nondegenerate critical
+points of the summands. -/
+theorem isNondegenerateCriticalPoint_separatedSum_iff {z : WithLp 2 (E × F)}
+    (hf : ContDiffAt ℝ 2 f z.fst) (hg : ContDiffAt ℝ 2 g z.snd) :
+    IsNondegenerateCriticalPoint (separatedSum f g) z ↔
+      IsNondegenerateCriticalPoint f z.fst ∧ IsNondegenerateCriticalPoint g z.snd := by
+  let e := WithLp.prodContinuousLinearEquiv 2 ℝ E F
+  have hsum : ContDiffAt ℝ 2 (f ∘ Prod.fst + g ∘ Prod.snd) (e z) :=
+    (ContDiffAt.comp (e z) hf contDiffAt_fst).add (ContDiffAt.comp (e z) hg contDiffAt_snd)
+  rw [separatedSum_eq_comp, isNondegenerateCriticalPoint_comp_iff hsum e.contDiff.contDiffAt
+    (by rw [e.fderiv]; exact ⟨e, rfl⟩)]
+  exact isNondegenerateCriticalPoint_comp_fst_add_comp_snd_iff hf hg
+
+/-- A pair of nondegenerate critical points is a nondegenerate critical point of the separated
+sum. -/
+theorem IsNondegenerateCriticalPoint.separatedSum {x : E} {y : F}
+    (hx : IsNondegenerateCriticalPoint f x) (hy : IsNondegenerateCriticalPoint g y) :
+    IsNondegenerateCriticalPoint (separatedSum f g) (WithLp.toLp 2 (x, y)) :=
+  (isNondegenerateCriticalPoint_separatedSum_iff (z := WithLp.toLp 2 (x, y)) hx.contDiffAt
+    hy.contDiffAt).2 ⟨hx, hy⟩
+
+/-- **Critical points of a separated sum** are the pairs of critical points of the summands. -/
+theorem fderiv_separatedSum_eq_zero_iff {z : WithLp 2 (E × F)} (hf : DifferentiableAt ℝ f z.fst)
+    (hg : DifferentiableAt ℝ g z.snd) :
+    fderiv ℝ (separatedSum f g) z = 0 ↔ fderiv ℝ f z.fst = 0 ∧ fderiv ℝ g z.snd = 0 := by
+  let e := WithLp.prodContinuousLinearEquiv 2 ℝ E F
+  rw [separatedSum_eq_comp, fderiv_comp_eq_zero_iff_of_isInvertible
+    ((DifferentiableAt.comp (e z) hf differentiableAt_fst).add
+      (DifferentiableAt.comp (e z) hg differentiableAt_snd))
+    e.differentiableAt (by rw [e.fderiv]; exact ⟨e, rfl⟩)]
+  exact fderiv_comp_fst_add_comp_snd_eq_zero_iff hf hg
+
+/-- A separated sum of `C²` functions with nondegenerate critical points has nondegenerate critical
+points. -/
+theorem HasNondegenerateCriticalPointsOn.separatedSum (hfs : ContDiff ℝ 2 f)
+    (hgs : ContDiff ℝ 2 g) (hf : HasNondegenerateCriticalPointsOn f univ)
+    (hg : HasNondegenerateCriticalPointsOn g univ) :
+    HasNondegenerateCriticalPointsOn (separatedSum f g) univ := by
+  refine hasNondegenerateCriticalPointsOn_iff.2 fun z _ hz ↦ ?_
+  obtain ⟨h₁, h₂⟩ := (fderiv_separatedSum_eq_zero_iff (hfs.differentiable two_ne_zero _)
+    (hgs.differentiable two_ne_zero _)).1 hz
+  exact (isNondegenerateCriticalPoint_separatedSum_iff hfs.contDiffAt hgs.contDiffAt).2
+    ⟨hasNondegenerateCriticalPointsOn_iff.1 hf (mem_univ _) h₁,
+      hasNondegenerateCriticalPointsOn_iff.1 hg (mem_univ _) h₂⟩
+
+/-- **The Morse index of a separated sum is additive.** -/
+theorem morseIndex_separatedSum [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
+    {z : WithLp 2 (E × F)} (hf : ContDiffAt ℝ 2 f z.fst) (hg : ContDiffAt ℝ 2 g z.snd) :
+    morseIndex (separatedSum f g) z = morseIndex f z.fst + morseIndex g z.snd := by
+  let e := WithLp.prodContinuousLinearEquiv 2 ℝ E F
+  have hsum : ContDiffAt ℝ 2 (f ∘ Prod.fst + g ∘ Prod.snd) (e z) :=
+    (ContDiffAt.comp (e z) hf contDiffAt_fst).add (ContDiffAt.comp (e z) hg contDiffAt_snd)
+  -- The change of coordinates is linear, so the Hessian pulls back without a criticality
+  -- hypothesis.
+  have hH := (e : WithLp 2 (E × F) →L[ℝ] E × F).hessianQuadraticForm_comp hsum
+  simp only [ContinuousLinearEquiv.coe_coe] at hH
+  rw [separatedSum_eq_comp, morseIndex_def, hH, ← morseIndex_comp_fst_add_comp_snd hf hg,
+    morseIndex_def]
+  exact (QuadraticMap.Equivalent.sigNeg_eq
+    ⟨QuadraticMap.isometryEquivOfCompLinearEquiv _ e.toLinearEquiv⟩).symm
+
+end Critical
+
+end SeparatedSum
 
 end TauCeti
 

@@ -60,7 +60,7 @@ theorem cotangentLinearEquivZariski_toCotangent (a : AugmentationIdeal k H) :
             ((Spec (CommRingCat.of H)).presheaf.stalk (augmentationPoint k H)) a,
           by
             let _ : (AugmentationIdeal k H).IsMaximal :=
-              _root_.AlgHom.kernelIsMaximal (_root_.Bialgebra.counitAlgHom k H)
+              _root_.AlgHom.ker_isMaximal (_root_.Bialgebra.counitAlgHom k H)
             let _ : IsLocalization.AtPrime
                 ((Spec (CommRingCat.of H)).presheaf.stalk (augmentationPoint k H))
                 (AugmentationIdeal k H) :=

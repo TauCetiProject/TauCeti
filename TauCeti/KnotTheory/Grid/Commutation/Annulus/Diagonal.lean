@@ -334,6 +334,28 @@ As for the vertical annuli, each family has at most one member: its rectangle an
 the side columns `b` and the line on which `x` sits one row above, or one row below, its row on
 `b`. -/
 
+/-- The rectangle starts on `b` and ends on the line where `x` sits one row higher. -/
+private theorem sideColumns_of_mem_rectanglePentagonOppositeSideOrder (x : GridState n) (D)
+    (hD : D ∈ G.rectanglePentagonOppositeSideOrder C x) :
+    D.rectangle.left = finRotate n C.column ∧ D.pentagon.right = finRotate n C.column ∧
+      D.pentagon.left = D.rectangle.right ∧
+        x D.rectangle.right = finRotate n (x (finRotate n C.column)) ∧
+          x (finRotate n C.column) = C.turnRow := by
+  obtain ⟨hleft, hthin, -⟩ :=
+    (G.mem_rectanglePentagonOppositeSideOrder_iff_markings C x D).1 hD
+  have hright := ((G.mem_rectanglePentagonOppositeSideOrder C x D).1 hD).2.2
+  have h₁ : D.rectangle.left = finRotate n C.column := hleft.trans D.pentagon.right_eq
+  have htop : x D.rectangle.right = finRotate n (x (finRotate n C.column)) := by
+    rw [← D.rectangle.top_def, hthin, D.rectangle.bottom_def, h₁]
+  have hbottom : D.pentagon.bottom = x (finRotate n C.column) := by
+    rw [GridRectangleBetween.bottom_def, ← hright, D.rectangle.map_right, h₁]
+  have hPtop : D.pentagon.top = x D.rectangle.right := by
+    rw [GridRectangleBetween.top_def, ← hleft, D.rectangle.map_left]
+  refine ⟨h₁, D.pentagon.right_eq, hright.symm, htop, ?_⟩
+  rw [← hbottom]
+  exact (D.pentagon.turn_eq_bottom_of_top_eq_finRotate_bottom
+    (by rw [hPtop, hbottom, htop])).symm
+
 open Classical in
 /-- The horizontal rectangle--pentagon term at `x` exists when the row of `x` on the line `b` is
 the turn row. -/
@@ -342,27 +364,7 @@ private theorem sum_rectanglePentagonOppositeSideOrder_eq (x : GridState n) :
       if x (finRotate n C.column) = C.turnRow ∧ G.X C.column = C.turnRow then
         MvPolynomial.X (Equiv.swap C.column (finRotate n C.column) (G.O.transpose C.turnRow))
       else 0 := by
-  -- The rectangle starts on `b` and ends on the line where `x` sits one row higher.
-  have hgeom : ∀ D ∈ G.rectanglePentagonOppositeSideOrder C x,
-      D.rectangle.left = finRotate n C.column ∧ D.pentagon.right = finRotate n C.column ∧
-        D.pentagon.left = D.rectangle.right ∧
-          x D.rectangle.right = finRotate n (x (finRotate n C.column)) ∧
-            x (finRotate n C.column) = C.turnRow := by
-    intro D hD
-    obtain ⟨hleft, hthin, -⟩ :=
-      (G.mem_rectanglePentagonOppositeSideOrder_iff_markings C x D).1 hD
-    have hright := ((G.mem_rectanglePentagonOppositeSideOrder C x D).1 hD).2.2
-    have h₁ : D.rectangle.left = finRotate n C.column := hleft.trans D.pentagon.right_eq
-    have htop : x D.rectangle.right = finRotate n (x (finRotate n C.column)) := by
-      rw [← D.rectangle.top_def, hthin, D.rectangle.bottom_def, h₁]
-    have hbottom : D.pentagon.bottom = x (finRotate n C.column) := by
-      rw [GridRectangleBetween.bottom_def, ← hright, D.rectangle.map_right, h₁]
-    have hPtop : D.pentagon.top = x D.rectangle.right := by
-      rw [GridRectangleBetween.top_def, ← hleft, D.rectangle.map_left]
-    refine ⟨h₁, D.pentagon.right_eq, hright.symm, htop, ?_⟩
-    rw [← hbottom]
-    exact (D.pentagon.turn_eq_bottom_of_top_eq_finRotate_bottom
-      (by rw [hPtop, hbottom, htop])).symm
+  have hgeom := G.sideColumns_of_mem_rectanglePentagonOppositeSideOrder C x
   split
   next h =>
     obtain ⟨hs, hX⟩ := h
@@ -472,6 +474,29 @@ private theorem sum_initialPentagonRectangleOppositeSideOrder_eq (x : GridState 
     exact Finset.sum_eq_zero fun D hD => (h ⟨(hgeom D hD).2.2.2.2,
       G.X_column_eq_turnRow_of_mem_initialPentagonRectangleOppositeSideOrder C x D hD⟩).elim
 
+/-- The rectangle ends on `b` and starts on the line where `x` sits in the turn row. -/
+private theorem sideColumns_of_mem_rectangleInitialPentagonOppositeSideOrder (x : GridState n) (D)
+    (hD : D ∈ G.rectangleInitialPentagonOppositeSideOrder C x) :
+    D.first.right = finRotate n C.column ∧ D.second.left = finRotate n C.column ∧
+      D.second.right = D.first.left ∧ x D.first.left = C.turnRow ∧
+        x (finRotate n C.column) = finRotate n C.turnRow := by
+  obtain ⟨hleft, hthin, -⟩ :=
+    (G.mem_rectangleInitialPentagonOppositeSideOrder_iff_markings C x D).1 hD
+  have hright := ((G.mem_rectangleInitialPentagonOppositeSideOrder C x D).1 hD).2.2
+  have h₁ : D.first.right = finRotate n C.column := hright.trans D.second_left_eq
+  have hbottom : D.pentagon.bottom = x D.first.left := by
+    rw [GridRectangleInitialPentagonDecomposition.pentagon_toGridRectangleBetween,
+      GridRectangleBetween.bottom_def, ← hright, D.first.map_right]
+  have htop : D.pentagon.top = x (finRotate n C.column) := by
+    rw [GridRectangleInitialPentagonDecomposition.pentagon_toGridRectangleBetween,
+      GridRectangleBetween.top_def, ← hleft, D.first.map_left, h₁]
+  have hthin' : x (finRotate n C.column) = finRotate n (x D.first.left) := by
+    rw [← h₁, ← D.first.top_def, hthin, D.first.bottom_def]
+  have hturn := D.pentagon.turn_eq_bottom_of_top_eq_finRotate_bottom
+    (by rw [htop, hbottom, hthin'])
+  rw [hbottom] at hturn
+  exact ⟨h₁, D.second_left_eq, hleft.symm, hturn.symm, hturn ▸ hthin'⟩
+
 open Classical in
 /-- The horizontal rectangle--initial-side pentagon term at `x` exists when the row of `x` on the
 line `b` is the successor of the turn row. -/
@@ -482,28 +507,7 @@ private theorem sum_rectangleInitialPentagonOppositeSideOrder_eq (x : GridState 
           G.X (finRotate n C.column) = C.turnRow then
         MvPolynomial.X (Equiv.swap C.column (finRotate n C.column) (G.O.transpose C.turnRow))
       else 0 := by
-  -- The rectangle ends on `b` and starts on the line where `x` sits in the turn row.
-  have hgeom : ∀ D ∈ G.rectangleInitialPentagonOppositeSideOrder C x,
-      D.first.right = finRotate n C.column ∧ D.second.left = finRotate n C.column ∧
-        D.second.right = D.first.left ∧ x D.first.left = C.turnRow ∧
-          x (finRotate n C.column) = finRotate n C.turnRow := by
-    intro D hD
-    obtain ⟨hleft, hthin, -⟩ :=
-      (G.mem_rectangleInitialPentagonOppositeSideOrder_iff_markings C x D).1 hD
-    have hright := ((G.mem_rectangleInitialPentagonOppositeSideOrder C x D).1 hD).2.2
-    have h₁ : D.first.right = finRotate n C.column := hright.trans D.second_left_eq
-    have hbottom : D.pentagon.bottom = x D.first.left := by
-      rw [GridRectangleInitialPentagonDecomposition.pentagon_toGridRectangleBetween,
-        GridRectangleBetween.bottom_def, ← hright, D.first.map_right]
-    have htop : D.pentagon.top = x (finRotate n C.column) := by
-      rw [GridRectangleInitialPentagonDecomposition.pentagon_toGridRectangleBetween,
-        GridRectangleBetween.top_def, ← hleft, D.first.map_left, h₁]
-    have hthin' : x (finRotate n C.column) = finRotate n (x D.first.left) := by
-      rw [← h₁, ← D.first.top_def, hthin, D.first.bottom_def]
-    have hturn := D.pentagon.turn_eq_bottom_of_top_eq_finRotate_bottom
-      (by rw [htop, hbottom, hthin'])
-    rw [hbottom] at hturn
-    exact ⟨h₁, D.second_left_eq, hleft.symm, hturn.symm, hturn ▸ hthin'⟩
+  have hgeom := G.sideColumns_of_mem_rectangleInitialPentagonOppositeSideOrder C x
   split
   next h =>
     obtain ⟨hs, hX⟩ := h
@@ -541,6 +545,21 @@ private theorem sum_rectangleInitialPentagonOppositeSideOrder_eq (x : GridState 
     exact Finset.sum_eq_zero fun D hD => (h ⟨(hgeom D hD).2.2.2.2,
       G.X_next_eq_turnRow_of_mem_rectangleInitialPentagonOppositeSideOrder C x D hD⟩).elim
 
+/-- The pentagon ends on `b` and starts on the line where `x` sits in the turn row. -/
+private theorem sideColumns_of_mem_pentagonRectangleOppositeSideOrder (x : GridState n) (D)
+    (hD : D ∈ G.pentagonRectangleOppositeSideOrder C x) :
+    D.pentagon.right = finRotate n C.column ∧ D.rectangle.left = finRotate n C.column ∧
+      D.rectangle.right = D.pentagon.left ∧ x D.pentagon.left = C.turnRow ∧
+        x (finRotate n C.column) = finRotate n C.turnRow := by
+  obtain ⟨hleft, hthin, -⟩ :=
+    (G.mem_pentagonRectangleOppositeSideOrder_iff_markings C x D).1 hD
+  have hright := ((G.mem_pentagonRectangleOppositeSideOrder C x D).1 hD).2.2
+  have hturn := D.pentagon.turn_eq_bottom_of_top_eq_finRotate_bottom hthin
+  rw [GridRectangleBetween.bottom_def] at hturn
+  refine ⟨D.pentagon.right_eq, hleft.trans D.pentagon.right_eq, hright, hturn.symm, ?_⟩
+  rw [← D.pentagon.right_eq, ← GridRectangleBetween.top_def, hthin,
+    GridRectangleBetween.bottom_def, ← hturn]
+
 open Classical in
 /-- The horizontal pentagon--rectangle term at `x` exists when the row of `x` on the line `b` is
 the successor of the turn row. -/
@@ -550,20 +569,7 @@ private theorem sum_pentagonRectangleOppositeSideOrder_eq (x : GridState n) :
           G.X (finRotate n C.column) = C.turnRow then
         MvPolynomial.X (Equiv.swap C.column (finRotate n C.column) (G.O.transpose C.turnRow))
       else 0 := by
-  -- The pentagon ends on `b` and starts on the line where `x` sits in the turn row.
-  have hgeom : ∀ D ∈ G.pentagonRectangleOppositeSideOrder C x,
-      D.pentagon.right = finRotate n C.column ∧ D.rectangle.left = finRotate n C.column ∧
-        D.rectangle.right = D.pentagon.left ∧ x D.pentagon.left = C.turnRow ∧
-          x (finRotate n C.column) = finRotate n C.turnRow := by
-    intro D hD
-    obtain ⟨hleft, hthin, -⟩ :=
-      (G.mem_pentagonRectangleOppositeSideOrder_iff_markings C x D).1 hD
-    have hright := ((G.mem_pentagonRectangleOppositeSideOrder C x D).1 hD).2.2
-    have hturn := D.pentagon.turn_eq_bottom_of_top_eq_finRotate_bottom hthin
-    rw [GridRectangleBetween.bottom_def] at hturn
-    refine ⟨D.pentagon.right_eq, hleft.trans D.pentagon.right_eq, hright, hturn.symm, ?_⟩
-    rw [← D.pentagon.right_eq, ← GridRectangleBetween.top_def, hthin,
-      GridRectangleBetween.bottom_def, ← hturn]
+  have hgeom := G.sideColumns_of_mem_pentagonRectangleOppositeSideOrder C x
   split
   next h =>
     obtain ⟨hs, hX⟩ := h
