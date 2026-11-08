@@ -48,6 +48,8 @@ vertex type.
   and `TauCeti.UniformHypergraph.blockDensity_univ`: block densities lie in `[0, 1]` and agree
   with the edge density on the whole vertex type.
 * `TauCeti.UniformHypergraph.IsHom.injOn`: homomorphisms are injective on edges.
+* `SimpleGraph.isHom_toUniformHypergraph_iff`: hypergraph homomorphisms between simple graphs are
+  the adjacency-preserving maps.
 
 ## References
 
@@ -365,6 +367,20 @@ theorem _root_.SimpleGraph.insert_mem_toUniformHypergraph_edges {u v : V} :
   refine ⟨fun ⟨hadj, hcard⟩ ↦ hadj ?_, fun h ↦ ⟨fun _ ↦ h, card_pair h.ne⟩⟩
   rintro rfl
   simp at hcard
+
+variable {U : Type*} [Fintype U] [DecidableEq U] {F : SimpleGraph U} [DecidableRel F.Adj]
+
+/-- A vertex map is a homomorphism between the `2`-uniform hypergraphs of two simple graphs
+exactly when it maps adjacent vertices to adjacent vertices. -/
+theorem _root_.SimpleGraph.isHom_toUniformHypergraph_iff {f : U → V} :
+    F.toUniformHypergraph.IsHom G.toUniformHypergraph f ↔
+      ∀ a b, F.Adj a b → G.Adj (f a) (f b) := by
+  refine ⟨fun h a b hab ↦ ?_, fun h ↦ UniformHypergraph.isHom_iff.2 fun e he ↦ ?_⟩
+  · have hmem := h.image_mem (SimpleGraph.insert_mem_toUniformHypergraph_edges.2 hab)
+    rwa [image_insert, image_singleton, SimpleGraph.insert_mem_toUniformHypergraph_edges] at hmem
+  · obtain ⟨a, b, -, rfl⟩ := card_eq_two.1 (F.toUniformHypergraph.edge_card e he)
+    rw [image_insert, image_singleton, SimpleGraph.insert_mem_toUniformHypergraph_edges]
+    exact h a b (SimpleGraph.insert_mem_toUniformHypergraph_edges.1 he)
 
 end SimpleGraph
 

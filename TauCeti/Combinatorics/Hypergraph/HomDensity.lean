@@ -306,19 +306,6 @@ open UniformHypergraph
 variable {U V : Type*} [Fintype U] [DecidableEq U] [Fintype V] [DecidableEq V]
   (F : SimpleGraph U) (G : SimpleGraph V) [DecidableRel F.Adj] [DecidableRel G.Adj]
 
-variable {F G} in
-/-- A vertex map is a homomorphism between the `2`-uniform hypergraphs of two simple graphs
-exactly when it maps adjacent vertices to adjacent vertices. -/
-theorem _root_.SimpleGraph.isHom_toUniformHypergraph_iff {f : U → V} :
-    F.toUniformHypergraph.IsHom G.toUniformHypergraph f ↔
-      ∀ a b, F.Adj a b → G.Adj (f a) (f b) := by
-  refine ⟨fun h a b hab ↦ ?_, fun h ↦ isHom_iff.2 fun e he ↦ ?_⟩
-  · have hmem := h.image_mem (SimpleGraph.insert_mem_toUniformHypergraph_edges.2 hab)
-    rwa [image_insert, image_singleton, SimpleGraph.insert_mem_toUniformHypergraph_edges] at hmem
-  · obtain ⟨a, b, -, rfl⟩ := card_eq_two.1 (F.toUniformHypergraph.edge_card e he)
-    rw [image_insert, image_singleton, SimpleGraph.insert_mem_toUniformHypergraph_edges]
-    exact h a b (SimpleGraph.insert_mem_toUniformHypergraph_edges.1 he)
-
 /-- The homomorphisms between the `2`-uniform hypergraphs of two simple graphs are counted by the
 graph homomorphisms. -/
 theorem _root_.SimpleGraph.homCount_toUniformHypergraph :
