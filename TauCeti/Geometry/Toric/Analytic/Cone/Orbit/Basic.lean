@@ -202,8 +202,7 @@ theorem isLocallyClosed_affineConeOrbit (hi : IsIntegralLattice i)
   obtain ⟨l, b, hb⟩ := hσ.exists_basis_sum
   let _ := ToricRay.finite_of_fg hσ.fg
   rw [← preimage_zeroPatternSet_eq_affineConeOrbit hi hσ hb F]
-  exact (isLocallyClosed_zeroPatternSet (ToricRay σ) (Fin l → ℂˣ) ℂ
-    (hσ.faceOrderIso hi F)).preimage
+  exact (isLocallyClosed_zeroPatternSet (Set.toFinite (hσ.faceOrderIso hi F)ᶜ)).preimage
     (by simpa only [coe_coneChartHomeomorph hi hσ.toIsToricCone hb g] using
       (coneChartHomeomorph hi hσ.toIsToricCone hb g).continuous)
 
@@ -416,7 +415,7 @@ theorem range_affineConeOrbitAmbient (hi : IsIntegralLattice i)
     · rw [← preimage_zeroPatternSet_eq_affineConeOrbit hi hσ hb F]
       simpa using z.2
     · ext ρ
-      · simp [z, zeroPatternSetHomeomorph_symm_fst_apply_of_notMem _ _ _ _ _ _ ρ.2]
+      · simp [z, zeroPatternSetHomeomorph_symm_fst_apply_of_notMem _ ρ.2]
       · simp [z]
 
 /-- The retained coordinates realize the affine orbit as an open subset of a complex vector

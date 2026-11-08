@@ -39,6 +39,8 @@ with `F (x * y) = χ x * F y + F x` (`TauCeti.IsCrossedHom`).
   `TauCeti.IsCrossedHom.eq_crossedHom` its uniqueness and
   `TauCeti.freeProP.crossedHom_apply_eq_sum` the linearity of its values in the prescribed values
   on the generators.
+* `ContinuousMonoidHom.forall_isCrossedHom_apply_eq_zero_iff`: every continuous crossed
+  homomorphism vanishes at an element exactly when the Kronecker crossed homomorphisms do.
 * `TauCeti.IsCrossedHom.pow_dvd_sub_of_forall_of_eq`: two continuous crossed homomorphisms with
   the same values on the generators, for characters congruent modulo `p ^ k`, are congruent modulo
   `p ^ k`.
@@ -128,6 +130,16 @@ theorem crossedHom_single_freeProPGen {n : ℕ} (χ : freeProP p (Fin n) →ₜ*
   · rw [freeProPGen_eq_one_of_le p (not_lt.1 hm), (isCrossedHom_crossedHom χ _).map_one,
       ite_eq_right fun h ↦ hm (by rw [h]; exact k.isLt)]
 
+/-- The Kronecker crossed homomorphism `D_k` vanishes at the generators `x_m`, `m ≠ k`. -/
+theorem crossedHom_single_freeProPGen_of_ne {n : ℕ} (χ : freeProP p (Fin n) →ₜ* ℤ_[p]ˣ)
+    (k : Fin n) {m : ℕ} (hm : m ≠ k) : crossedHom χ (Pi.single k 1) (freeProPGen p n m) = 0 := by
+  rw [crossedHom_single_freeProPGen, ite_eq_right hm]
+
+/-- The Kronecker crossed homomorphism `D_k` takes the value `1` at the generator `x_k`. -/
+theorem crossedHom_single_freeProPGen_self {n : ℕ} (χ : freeProP p (Fin n) →ₜ* ℤ_[p]ˣ)
+    (k : Fin n) : crossedHom χ (Pi.single k 1) (freeProPGen p n k) = 1 := by
+  rw [crossedHom_single_freeProPGen, ite_eq_left rfl]
+
 /-- **Crossed homomorphisms with the same values on the generators, for characters congruent
 modulo `p ^ k`, are congruent modulo `p ^ k`**: their truncations modulo `p ^ k` are continuous
 crossed homomorphisms for the same character of `F` agreeing on the generators. -/
@@ -176,5 +188,19 @@ theorem crossedHom_apply_eq_sum [Fintype X] [DecidableEq X] (χ : freeProP p X �
   exact (congrFun h g).symm
 
 end freeProP
+
+open freeProP in
+/-- **The relator criterion on the Kronecker crossed homomorphisms.** Every continuous crossed
+homomorphism for `χ` vanishes at `r` if and only if the Kronecker crossed homomorphisms do, since a
+crossed homomorphism is the `ℤ_p`-combination of them. -/
+theorem _root_.ContinuousMonoidHom.forall_isCrossedHom_apply_eq_zero_iff [Finite X] [DecidableEq X]
+    (χ : freeProP p X →ₜ* ℤ_[p]ˣ) (r : freeProP p X) :
+    (∀ F : freeProP p X → ℤ_[p], Continuous F → IsCrossedHom χ F → F r = 0) ↔
+      ∀ j, crossedHom χ (Pi.single j 1) r = 0 := by
+  have := Fintype.ofFinite X
+  refine ⟨fun h j ↦ h _ (continuous_crossedHom _ _) (isCrossedHom_crossedHom _ _),
+    fun h F hFc hF ↦ ?_⟩
+  rw [hF.eq_crossedHom hFc, crossedHom_apply_eq_sum]
+  exact Finset.sum_eq_zero fun j _ ↦ by rw [h j, mul_zero]
 
 end TauCeti

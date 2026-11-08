@@ -177,7 +177,7 @@ theorem pow_mul_pow_mem_riemannRochSpace_zsmul_poles_of_aeval_eq_zero (hF : IsFu
       (Units.mk0 RatFunc.X RatFunc.X_ne_zero)) i)
     (pow_mem_riemannRochSpace_zsmul (mem_riemannRochSpace_poles_of_aeval_eq_zero hF hlead hy) j)
   rw [← add_zsmul] at hmem
-  exact riemannRochSpace_mono ((Divisor.isEffective_poles hF _).zsmul_le_zsmul h) hmem
+  exact riemannRochSpace_mono (zsmul_le_zsmul_left (Divisor.poles_nonneg hF _) h) hmem
 
 variable [IsScalarTower k (RatFunc k) F]
 

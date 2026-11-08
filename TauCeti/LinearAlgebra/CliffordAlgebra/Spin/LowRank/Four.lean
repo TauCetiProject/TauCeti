@@ -68,27 +68,10 @@ theorem evenUnitaryGroup_le_lipschitzGroup_of_finrank_le_four (Q : QuadraticForm
   have : Nontrivial V := Module.nontrivial_of_finrank_pos hV0
   intro x hx
   refine mem_lipschitzGroup_of_involute_act_ι_mem_range_ι Q hQ hQ.exists_isUnit fun m => ?_
-  have hxe : (x : CliffordAlgebra Q) ∈ evenOdd Q 0 := by
-    have h := evenUnitaryGroup.mem_even Q hx
-    rwa [← Subalgebra.mem_toSubmodule, even_toSubmodule] at h
-  have hxie : ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) ∈ evenOdd Q 0 := by
-    have h := evenUnitaryGroup.mem_even Q (inv_mem hx)
-    rwa [← Subalgebra.mem_toSubmodule, even_toSubmodule] at h
-  rw [involute_eq_of_mem_even hxe]
-  -- The conjugate of a vector by an even unit is odd.
-  have hodd : (x : CliffordAlgebra Q) * ι Q m * ↑x⁻¹ ∈ evenOdd Q 1 := by
-    have h : (x : CliffordAlgebra Q) * ι Q m ∈ evenOdd Q 1 :=
-      zero_add (1 : ZMod 2) ▸ SetLike.mul_mem_graded hxe (ι_mem_evenOdd_one Q m)
-    exact add_zero (1 : ZMod 2) ▸ SetLike.mul_mem_graded h hxie
-  -- Reversal inverts an even unitary unit, so it fixes the conjugate.
-  have hrev : reverse ((x : CliffordAlgebra Q) * ι Q m *
-        ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) =
-      (x : CliffordAlgebra Q) * ι Q m * ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) := by
-    have hxr : reverse (x : CliffordAlgebra Q) = ↑x⁻¹ := evenUnitaryGroup.reverse_eq_inv Q ⟨x, hx⟩
-    have hxir : reverse ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = x := by
-      rw [← hxr, reverse_reverse]
-    simp only [reverse.map_mul, reverse_ι, hxr, hxir, mul_assoc]
-  exact mem_range_ι_of_mem_evenOdd_one_of_reverse_eq_of_finrank_le_four Q hV hodd hrev
+  rw [involute_eq_of_mem_even (evenUnitaryGroup.coe_mem_evenOdd_zero Q hx)]
+  exact mem_range_ι_of_mem_evenOdd_one_of_reverse_eq_of_finrank_le_four Q hV
+    (evenUnitaryGroup.mul_ι_mul_inv_mem_evenOdd_one Q hx m)
+    (evenUnitaryGroup.reverse_mul_ι_mul_inv Q ⟨x, hx⟩ m)
 
 /-- For a nondegenerate quadratic space of positive dimension at most four, the Spin group fills
 the even unitary carrier inside Clifford units. -/

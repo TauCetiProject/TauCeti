@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.Topology.Order.LeftRightNhds
+import TauCeti.Analysis.Complex.SlitPlane
 
 /-!
 # Chord-quotient asymptotics at a transverse crossing
@@ -140,14 +141,6 @@ theorem div_mem_slitPlane_of_close_to_one {z w : ℂ} (hz : ‖z - 1‖ ≤ 1 / 
   exact Complex.ball_one_subset_slitPlane (by simpa [Metric.mem_ball, dist_eq_norm]
     using h_diff_norm)
 
-/-- Multiplication by a positive real preserves membership in `Complex.slitPlane`. -/
-private theorem ofReal_pos_mul_mem_slitPlane {c : ℝ} (hc : 0 < c) {z : ℂ}
-    (hz : z ∈ Complex.slitPlane) : ((c : ℝ) : ℂ) * z ∈ Complex.slitPlane := by
-  rw [Complex.mem_slitPlane_iff] at hz ⊢
-  rcases hz with h_re | h_im
-  · exact Or.inl <| by simpa using mul_pos hc h_re
-  · exact Or.inr <| by simpa using mul_ne_zero hc.ne' h_im
-
 /-- **Chord quotient in the slit plane (algebraic core).** If the normalized chords at `a` and
 `b` are `1/4`-close to `1` and `a`, `b` lie on a common side of `t₀` — so that
 `(b - t₀) / (a - t₀) > 0` — then `(γ b - s) / (γ a - s) ∈ Complex.slitPlane`. -/
@@ -175,7 +168,7 @@ theorem chord_quotient_mem_slitPlane (hL : L ≠ 0) {a b : ℝ}
     push_cast
     field_simp
   rw [h_ratio]
-  exact ofReal_pos_mul_mem_slitPlane hab (div_mem_slitPlane_of_close_to_one hb ha)
+  exact ofReal_mul_mem_slitPlane hab (div_mem_slitPlane_of_close_to_one hb ha)
 
 /-- **Chord quotients on a small right interval lie in the slit plane**: there is `r > 0` such
 that `(γ b - s) / (γ a - s) ∈ Complex.slitPlane` whenever `t₀ < a ≤ b ≤ t₀ + r`. -/
@@ -336,7 +329,7 @@ theorem exists_chord_div_tangent_mem_slitPlane_right
     have hr'_ne : ((r' : ℝ) : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hr'_pos.ne'
     field_simp
   rw [h_div_eq]
-  refine ofReal_pos_mul_mem_slitPlane hr'_pos (Complex.ball_one_subset_slitPlane ?_)
+  refine ofReal_mul_mem_slitPlane hr'_pos (Complex.ball_one_subset_slitPlane ?_)
   rw [Metric.mem_ball, dist_eq_norm]
   linarith
 
@@ -367,7 +360,7 @@ theorem exists_neg_tangent_div_chord_mem_slitPlane_left
     push_cast
     field_simp
   rw [h_eq_target]
-  exact ofReal_pos_mul_mem_slitPlane (by positivity)
+  exact ofReal_mul_mem_slitPlane (by positivity)
     (neg_inv_mem_slitPlane_of_neg_close_to_one hq_close)
 
 /-- **The per-crossing slit-plane radius package**: at a transverse crossing with non-zero

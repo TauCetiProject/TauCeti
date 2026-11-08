@@ -194,10 +194,8 @@ theorem conorm_mono : Monotone (conorm k' F' : Divisor k F → Divisor k' F') :=
   exact mul_le_mul_of_nonneg_left (WeilDivisor.coeff_le_coeff h _) (by positivity)
 
 /-- The conorm of an effective divisor is effective. -/
-theorem isEffective_conorm {D : Divisor k F} (hD : D.IsEffective) :
-    (conorm k' F' D).IsEffective :=
-  WeilDivisor.isEffective_iff_zero_le.mpr <| by
-    simpa using conorm_mono k' F' (WeilDivisor.isEffective_iff_zero_le.mp hD)
+theorem conorm_nonneg {D : Divisor k F} (hD : 0 ≤ D) : 0 ≤ conorm k' F' D := by
+  simpa using conorm_mono k' F' hD
 
 /-- **Every divisor of `F' / k'` is bounded above by a conorm**: for every divisor `D'` of
 `F' / k'` there is a divisor `D` of `F / k` with `D' ≤ Con D`.  This transports estimates on the

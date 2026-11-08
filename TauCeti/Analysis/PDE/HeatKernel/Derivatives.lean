@@ -235,6 +235,40 @@ theorem exists_norm_iteratedFDeriv_heatKernel_mul_rpow_le (m : ℕ) {α : ℝ} (
         ring
     _ = _ := by rw [hpow, h4]; ring
 
+/-- **Mean value estimate for the time differences of the derivatives of the heat kernel.** For
+every order `m` there is a constant `C > 0` such that for `0 < a ≤ b`,
+`‖D^m K_b(x) - D^m K_a(x)‖ ≤ C a^(-(n + m + 2)/2) ((8πb)^(n/2) K_{2b}(x)) (b - a)`, where
+`n = dim E`. -/
+private theorem exists_norm_iteratedFDeriv_heatKernel_sub_le (m : ℕ) :
+    ∃ C > 0, ∀ a b : ℝ, 0 < a → a ≤ b → ∀ x : E,
+      ‖iteratedFDeriv ℝ m (heatKernel b) x - iteratedFDeriv ℝ m (heatKernel a) x‖ ≤
+        C * a ^ (-(finrank ℝ E + m + 2 : ℝ) / 2) *
+          ((8 * π * b) ^ ((finrank ℝ E : ℝ) / 2) * heatKernel (2 * b) x) * (b - a) := by
+  obtain ⟨C₁, hC₁⟩ := exists_norm_iteratedDeriv_iteratedFDeriv_heatKernel_le (E := E) 1 m
+  refine ⟨max C₁ 1, by positivity, fun a b ha hab x => ?_⟩
+  have hb : 0 < b := ha.trans_le hab
+  have hn : (0 : ℝ) ≤ finrank ℝ E := Nat.cast_nonneg _
+  have hm : (0 : ℝ) ≤ m := Nat.cast_nonneg _
+  -- On `[a, b]` the time derivative is at most `C₁ a^(-(n + m + 2)/2) exp(-‖x‖² / (8b))`.
+  have hderiv : ∀ s ∈ Icc a b, ‖deriv (fun s => iteratedFDeriv ℝ m (heatKernel s) x) s‖ ≤
+      max C₁ 1 * a ^ (-(finrank ℝ E + m + 2 : ℝ) / 2) * exp (-‖x‖ ^ 2 / (8 * b)) := by
+    rintro s ⟨has, hsb⟩
+    have hs : 0 < s := ha.trans_le has
+    have h := hC₁ s hs x
+    rw [iteratedDeriv_one, Nat.cast_one, mul_one] at h
+    refine h.trans ?_
+    gcongr ?_ * ?_ * exp ?_
+    · exact le_max_left _ _
+    · exact rpow_le_rpow_of_nonpos ha has (by linarith)
+    · rw [neg_div, neg_div, neg_le_neg_iff]
+      gcongr
+  have hmvt := Convex.norm_image_sub_le_of_norm_deriv_le
+    (fun s (hs : s ∈ Icc a b) => differentiableAt_iteratedFDeriv_heatKernel (ha.trans_le hs.1) m x)
+    hderiv
+    (convex_Icc a b) (left_mem_Icc.2 hab) (right_mem_Icc.2 hab)
+  rw [norm_of_nonneg (sub_nonneg.2 hab), exp_neg_norm_sq_div_eq_mul_heatKernel hb] at hmvt
+  exact hmvt
+
 /-- **Time differences of the derivatives of the heat kernel.** For every order `m` and every
 `α ≥ 0` there is a constant `C > 0`, independent of the times, such that
 `‖D^m K_b(x) - D^m K_a(x)‖ ‖x‖^α ≤ C (b - a) a^((α - m - 2)/2) K_{4b}(x)` whenever
@@ -244,31 +278,14 @@ theorem exists_norm_iteratedFDeriv_heatKernel_sub_mul_rpow_le (m : ℕ) {α : �
     ∃ C > 0, ∀ a b, 0 < a → a ≤ b → b ≤ 2 * a → ∀ x : E,
       ‖iteratedFDeriv ℝ m (heatKernel b) x - iteratedFDeriv ℝ m (heatKernel a) x‖ * ‖x‖ ^ α ≤
         C * (b - a) * a ^ ((α - m - 2) / 2) * heatKernel (4 * b) x := by
-  obtain ⟨C₁, hC₁⟩ := exists_norm_iteratedDeriv_iteratedFDeriv_heatKernel_le (E := E) 1 m
+  obtain ⟨C₁, hC₁0, hC₁⟩ := exists_norm_iteratedFDeriv_heatKernel_sub_le (E := E) m
   obtain ⟨C₂, hC₂0, hC₂⟩ := exists_norm_rpow_mul_heatKernel_le (E := E) hα
   set n : ℝ := (finrank ℝ E : ℝ)
   have hn : 0 ≤ n := Nat.cast_nonneg _
-  refine ⟨max C₁ 1 * C₂ * (16 * π) ^ (n / 2) * 4 ^ (α / 2), by positivity,
+  refine ⟨C₁ * C₂ * (16 * π) ^ (n / 2) * 4 ^ (α / 2), by positivity,
     fun a b ha hab hb2 x => ?_⟩
   have hb : 0 < b := ha.trans_le hab
-  -- On `[a, b]` the time derivative is at most `C₁ a^(-(n + m + 2)/2) exp(-‖x‖² / (8b))`.
-  have hderiv : ∀ s ∈ Icc a b, ‖deriv (fun s => iteratedFDeriv ℝ m (heatKernel s) x) s‖ ≤
-      max C₁ 1 * a ^ (-(n + m + 2) / 2) * exp (-‖x‖ ^ 2 / (8 * b)) := by
-    rintro s ⟨has, hsb⟩
-    have hs : 0 < s := ha.trans_le has
-    have h := hC₁ s hs x
-    rw [iteratedDeriv_one, Nat.cast_one, mul_one] at h
-    refine h.trans ?_
-    gcongr ?_ * ?_ * exp ?_
-    · exact le_max_left _ _
-    · exact rpow_le_rpow_of_nonpos ha has (by linarith [(Nat.cast_nonneg m : (0 : ℝ) ≤ m)])
-    · rw [neg_div, neg_div, neg_le_neg_iff]
-      gcongr
-  have hmvt := Convex.norm_image_sub_le_of_norm_deriv_le
-    (fun s (hs : s ∈ Icc a b) => differentiableAt_iteratedFDeriv_heatKernel (ha.trans_le hs.1) m x)
-    hderiv
-    (convex_Icc a b) (left_mem_Icc.2 hab) (right_mem_Icc.2 hab)
-  rw [norm_of_nonneg (sub_nonneg.2 hab), exp_neg_norm_sq_div_eq_mul_heatKernel hb] at hmvt
+  have hmvt := hC₁ a b ha hab x
   -- Collect the powers of `b`, then bound them by powers of `a` using `b ≤ 2a`.
   have hpow : (8 * π * b) ^ (n / 2) * (2 * b) ^ (α / 2) ≤
       (16 * π) ^ (n / 2) * 4 ^ (α / 2) * a ^ ((n + α) / 2) := by
@@ -287,20 +304,20 @@ theorem exists_norm_iteratedFDeriv_heatKernel_sub_mul_rpow_le (m : ℕ) {α : �
     congr 1
     ring
   calc ‖iteratedFDeriv ℝ m (heatKernel b) x - iteratedFDeriv ℝ m (heatKernel a) x‖ * ‖x‖ ^ α
-      ≤ max C₁ 1 * a ^ (-(n + m + 2) / 2) *
+      ≤ C₁ * a ^ (-(n + m + 2) / 2) *
           ((8 * π * b) ^ (n / 2) * heatKernel (2 * b) x) * (b - a) * ‖x‖ ^ α := by
         gcongr
-    _ = max C₁ 1 * a ^ (-(n + m + 2) / 2) * (8 * π * b) ^ (n / 2) * (b - a) *
+    _ = C₁ * a ^ (-(n + m + 2) / 2) * (8 * π * b) ^ (n / 2) * (b - a) *
           (‖x‖ ^ α * heatKernel (2 * b) x) := by ring
-    _ ≤ max C₁ 1 * a ^ (-(n + m + 2) / 2) * (8 * π * b) ^ (n / 2) * (b - a) *
+    _ ≤ C₁ * a ^ (-(n + m + 2) / 2) * (8 * π * b) ^ (n / 2) * (b - a) *
           (C₂ * (2 * b) ^ (α / 2) * heatKernel (2 * (2 * b)) x) := by
         exact mul_le_mul_of_nonneg_left (hC₂ (2 * b) (by linarith) x)
           (mul_nonneg (by positivity) (sub_nonneg.2 hab))
-    _ = max C₁ 1 * C₂ * a ^ (-(n + m + 2) / 2) *
+    _ = C₁ * C₂ * a ^ (-(n + m + 2) / 2) *
           ((8 * π * b) ^ (n / 2) * (2 * b) ^ (α / 2)) * (b - a) * heatKernel (4 * b) x := by
         rw [show 2 * (2 * b) = 4 * b by ring]
         ring
-    _ ≤ max C₁ 1 * C₂ * a ^ (-(n + m + 2) / 2) *
+    _ ≤ C₁ * C₂ * a ^ (-(n + m + 2) / 2) *
           ((16 * π) ^ (n / 2) * 4 ^ (α / 2) * a ^ ((n + α) / 2)) * (b - a) *
             heatKernel (4 * b) x := by
         gcongr
