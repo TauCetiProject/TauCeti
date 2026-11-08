@@ -391,14 +391,21 @@ theorem glHeight_single (i : n) (c : R) :
 variable {M : Type*} [AddCommGroup M] [Module R M] [LieRingModule (Matrix n n R) M]
   [LieModule R (Matrix n n R) M]
 
+omit [LieModule R (Matrix n n R) M] in
 /-- A simultaneous eigenvector of the diagonal is an eigenvector of the height operator. -/
 theorem lie_glHeightMatrix_eq_smul {mu : n → R} {v : M}
     (hv : ∀ i : n, ⁅(single i i 1 : Matrix n n R), v⁆ = mu i • v) :
     ⁅glHeightMatrix R n, v⁆ = glHeight R n mu • v := by
-  have h := (LieModule.mem_weightSpace _ _).mp
-    ((mem_weightSpace_glWeightEquiv_iff mu v).mpr hv)
-    ⟨glHeightMatrix R n, glHeightMatrix_mem_diagonalCartan⟩
-  simpa [glHeight] using h
+  have hH : glHeightMatrix R n = ∑ i, glHeightLabel n i • (single i i 1 : Matrix n n R) := by
+    ext a b
+    by_cases hab : a = b
+    · subst hab
+      simp [glHeightMatrix_apply, Matrix.sum_apply, single_apply]
+    · have : ∀ c, ¬(c = a ∧ c = b) := fun c ⟨h₁, h₂⟩ => hab (h₁.symm.trans h₂)
+      simp [glHeightMatrix_apply, Matrix.sum_apply, hab, this]
+  rw [hH, sum_lie, glHeight_apply, Finset.sum_smul]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [zsmul_lie, hv, ← Int.cast_smul_eq_zsmul R, ← mul_smul, mul_comm]
 
 /-- A matrix unit shifts a height eigenvalue by the difference of its integer labels. -/
 theorem lie_glHeightMatrix_lie_single_eq_smul {c : R} {v : M}
