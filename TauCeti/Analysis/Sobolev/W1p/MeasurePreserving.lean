@@ -44,7 +44,8 @@ half-space trace to that region. Since `fderiv ℝ Φ` vanishes where `Φ` is no
 * `TauCeti.W1p.compMeasurePreservingL_mem_w1p0Submodule`: zero boundary values are preserved.
 * `TauCeti.W1p.compAffineIsometryEquivL`: precomposition with an affine isometry `g`, the rigid
   change of coordinates of a boundary chart. Its weak gradient at `x` is the inverse of the linear
-  part of `g` applied to `∇u (g x)`, and it does not increase the norm.
+  part of `g` applied to `∇u (g x)`, and it does not increase the norm. It preserves and reflects
+  zero boundary values (`TauCeti.W1p.compAffineIsometryEquivL_mem_w1p0Submodule_iff`).
 -/
 
 public section
@@ -297,6 +298,28 @@ theorem W1p.compAffineIsometryEquivL_mem_w1p0Submodule (hp : p ≠ (∞ : ℝ≥
   rw [W1p.compAffineIsometryEquivL]
   exact W1p.compMeasurePreservingL_mem_w1p0Submodule hp
     g.toHomeomorph.isProperMap _ _ _ _ hu
+
+/-- Precomposition with `g.symm` undoes precomposition with `g`: `(u ∘ g) ∘ g⁻¹ = u`. -/
+@[simp] theorem W1p.compAffineIsometryEquivL_symm_compAffineIsometryEquivL (g : F ≃ᵃⁱ[ℝ] F')
+    (hUV : (U : Set F) = g ⁻¹' V) (hVU : (V : Set F') = g.symm ⁻¹' U) (u : W1p volume V p) :
+    W1p.compAffineIsometryEquivL g.symm hVU (W1p.compAffineIsometryEquivL g hUV u) = u :=
+  W1p.compMeasurePreservingL_compMeasurePreservingL _ _ _ _ _ _ _ _
+    (fun x _ => g.apply_symm_apply x) u
+
+/-- **Zero boundary values are invariant under rigid changes of coordinates.** For `p < ∞` and
+`U = g⁻¹(V)`, the function `u ∘ g` lies in `W^{1,p}_0(U)` exactly when `u` lies in
+`W^{1,p}_0(V)`. -/
+@[simp] theorem W1p.compAffineIsometryEquivL_mem_w1p0Submodule_iff (hp : p ≠ (∞ : ℝ≥0∞))
+    (g : F ≃ᵃⁱ[ℝ] F') (hUV : (U : Set F) = g ⁻¹' V) {u : W1p volume V p} :
+    W1p.compAffineIsometryEquivL g hUV u ∈ w1p0Submodule volume U p ↔
+      u ∈ w1p0Submodule volume V p := by
+  have hVU : (V : Set F') = g.symm ⁻¹' U := by
+    rw [hUV, ← Set.preimage_comp]
+    ext x
+    simp
+  refine ⟨fun hu => ?_, W1p.compAffineIsometryEquivL_mem_w1p0Submodule hp g hUV⟩
+  rw [← W1p.compAffineIsometryEquivL_symm_compAffineIsometryEquivL g hUV hVU u]
+  exact W1p.compAffineIsometryEquivL_mem_w1p0Submodule hp g.symm hVU hu
 
 end AffineIsometry
 
