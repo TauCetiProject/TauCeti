@@ -35,10 +35,11 @@ that the distributional derivative of `χ_{s_{x,r}}` points in the direction `-�
 vanishes in the limit. These are the steps of De Giorgi's structure theorem that produce blow-up
 limits and identify their normal.
 
-* `TauCeti.perimeter_ball_zero_preimage_add_smul` and
-  `TauCeti.measure_preimage_add_smul_inter_ball`: against an additive Haar measure,
-  `P(s_{x,r}; ball 0 R) = r^(1-n) P(s; ball x (r R))` and
-  `μ(s_{x,r} ∩ ball 0 ρ) = r^(-n) μ(s ∩ ball x (r ρ))`, where `n = dim E`.
+* The scaling identities `TauCeti.perimeter_ball_zero_preimage_add_smul` and
+  `MeasureTheory.Measure.addHaar_preimage_add_smul_inter_ball`, proved with the other dilation
+  results, give `P(s_{x,r}; ball 0 R) = r^(1-n) P(s; ball x (r R))` and
+  `μ(s_{x,r} ∩ ball 0 ρ) = r^(-n) μ(s ∩ ball x (r ρ))` against an additive Haar measure, where
+  `n = dim E`. They transport the estimates below between `s` and its blow-ups.
 * `TauCeti.eventually_perimeter_ball_zero_preimage_add_smul_le`: by the upper density estimate
   `TauCeti.eventually_perimeter_ball_le`, for every `t > 1` and `R > 0`,
   `P(s_{x,r}; ball 0 R) ≤ t n μ(ball 0 1) R^(n-1)` for every small `r > 0`.
@@ -291,40 +292,6 @@ theorem integral_divergenceCLM_mul_indicator_nonneg_of_tendsto_measure_symmDiff_
 
 /-! ### Perimeter and volume of the blow-ups -/
 
-/-- **The perimeter of a blow-up in a ball.** Against an additive Haar measure and for `r > 0`, the
-perimeter in `ball 0 R` of the blow-up `(fun y => x + r • y) ⁻¹' s` is `r / r ^ n` times the
-perimeter of `s` in `ball x (r * R)`, where `n = dim E`. -/
-theorem perimeter_ball_zero_preimage_add_smul {r : ℝ} (hr : 0 < r) (R : ℝ) :
-    perimeter μ ⟨ball 0 R, isOpen_ball⟩ ((fun y => x + r • y) ⁻¹' s) =
-      ENNReal.ofReal (r / r ^ finrank ℝ E) * perimeter μ ⟨ball x (r * R), isOpen_ball⟩ s := by
-  have h : (fun y => x + r • y) ⁻¹' s = (r • ·) ⁻¹' ((· + x) ⁻¹' s) := by
-    ext y
-    simp [add_comm]
-  rw [h, perimeter_preimage_smul (Ω := ⟨ball 0 (r * R), isOpen_ball⟩) hr ?_ ?_,
-    perimeter_preimage_add_right (Ω := ⟨ball x (r * R), isOpen_ball⟩) ?_ ?_]
-  · intro y hy
-    simpa using hy
-  · intro y hy
-    simpa [dist_eq_norm] using hy
-  · intro y hy
-    simpa [norm_smul, abs_of_pos hr, mul_lt_mul_iff_right₀ hr] using hy
-  · intro y hy
-    simpa [norm_smul, abs_of_pos hr, inv_mul_lt_iff₀ hr] using hy
-
-/-- **The volume of a blow-up in a ball.** Against an additive Haar measure and for `r > 0`,
-`μ(s_{x,r} ∩ ball 0 ρ) = r ^ (-n) μ(s ∩ ball x (r * ρ))`, where `n = dim E`. -/
-theorem measure_preimage_add_smul_inter_ball {r : ℝ} (hr : 0 < r) (ρ : ℝ) :
-    μ ((fun y => x + r • y) ⁻¹' s ∩ ball 0 ρ) =
-      ENNReal.ofReal ((r ^ finrank ℝ E)⁻¹) * μ (s ∩ ball x (r * ρ)) := by
-  have hball : (fun y => x + r • y) ⁻¹' ball x (r * ρ) = ball 0 ρ := by
-    simpa [abs_of_pos hr, add_comm] using
-      preimage_smul_vadd_ball_norm x (c := r) (norm_pos_iff.2 hr.ne') ρ
-  rw [← hball, ← preimage_inter]
-  have h : (fun y => x + r • y) ⁻¹' (s ∩ ball x (r * ρ)) =
-      (r • ·) ⁻¹' ((fun y => x + y) ⁻¹' (s ∩ ball x (r * ρ))) := rfl
-  rw [h, Measure.addHaar_preimage_smul μ hr.ne', measure_preimage_add,
-    abs_of_pos (by positivity)]
-
 omit [BorelSpace E] [μ.IsAddHaarMeasure] in
 /-- The scaling `r / r ^ n · n (r R) ^ (n - 1) ω = n R ^ (n - 1) ω` of the upper density bound
 under a blow-up, in positive dimension `n`. -/
@@ -546,7 +513,7 @@ theorem ofReal_pow_le_mul_measure_inter_ball_of_tendsto_measure_symmDiff_inter {
     _ ≤ ENNReal.ofReal ((r i ^ finrank ℝ E)⁻¹) * (c * μ (s ∩ ball x (r i * ρ))) :=
         mul_le_mul_right (hsub ⟨mul_pos hri hρ, (lt_div_iff₀ hρ).1 hi.2⟩) _
     _ = c * μ ((fun y => x + r i • y) ⁻¹' s ∩ ball 0 ρ) := by
-        rw [measure_preimage_add_smul_inter_ball hri, mul_left_comm]
+        rw [Measure.addHaar_preimage_add_smul_inter_ball μ x hri, mul_left_comm]
     _ ≤ c * (μ (F ∩ ball 0 ρ) + μ ((((fun y => x + r i • y) ⁻¹' s) ∆ F) ∩ closedBall 0 ρ)) :=
         mul_le_mul_right ((measure_mono hsub').trans (measure_union_le _ _)) _
 
