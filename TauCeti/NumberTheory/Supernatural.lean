@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Notation.Support
 public import Mathlib.Data.ENat.Lattice
 public import Mathlib.Data.ENat.Monoid
+public import Mathlib.Data.Nat.Factorization.Defs
 public import Mathlib.Data.Nat.MaxPowDiv
 public import Mathlib.Data.Nat.PadicValNat
 public import Mathlib.Data.PNat.Prime
@@ -191,12 +192,8 @@ theorem primePower_injective (p : Nat.Primes) : Function.Injective (primePower p
 /-- A prime power with a sum of exponents is the product of the two prime powers. -/
 @[simp]
 theorem primePower_add (p : Nat.Primes) (m n : ℕ∞) :
-    primePower p (m + n) = primePower p m * primePower p n := by
-  ext q
-  by_cases hq : q = p
-  · subst q
-    simp
-  · simp [hq]
+    primePower p (m + n) = primePower p m * primePower p n :=
+  Pi.single_add (f := fun _ : Nat.Primes ↦ ℕ∞) p m n
 
 /-- A prime power `p ^ m` is at most a supernatural number exactly when `m` is at most its
 exponent at `p`. -/
@@ -290,7 +287,9 @@ def ofNat (n : ℕ+) : Supernatural :=
 theorem ofNat_apply (n : ℕ+) (p : Nat.Primes) : ofNat n p = (padicValNat p n : ℕ∞) :=
   (rfl)
 
-private theorem ofNat_apply_eq_factorization (n : ℕ+) (p : Nat.Primes) :
+/-- The exponent of `p` in `ofNat n` is the multiplicity of `p` in the prime factorization
+of `n`. -/
+theorem ofNat_apply_eq_factorization (n : ℕ+) (p : Nat.Primes) :
     ofNat n p = ((n : ℕ).factorization p : ℕ∞) := by
   rw [ofNat_apply, Nat.factorization_def _ p.prop, Nat.padicValNat_def]
 
@@ -403,8 +402,10 @@ theorem isNatural_iff {n : Supernatural} :
     have hfactorization :
         ((Nat.factorizationEquiv.symm ⟨_, hprime⟩ : ℕ+) : ℕ).factorization = f.embDomain e :=
       congrArg Subtype.val (Nat.factorizationEquiv.apply_symm_apply ⟨_, hprime⟩)
-    rw [ofNat_apply_eq_factorization, hfactorization]
-    exact (congrArg _ (Finsupp.embDomain_apply_self e f p)).trans (ENat.natCast_toNat (hfinite p))
+    have he : e p = p := congrFun (Function.Embedding.coeFn_mk _ _) p
+    have hf : f p = (n p).toNat := congrFun Finsupp.ofSupportFinite_coe p
+    rw [ofNat_apply_eq_factorization, hfactorization, ← he, Finsupp.embDomain_apply_self, hf,
+      ENat.natCast_toNat (hfinite p)]
 
 /-- A prime power with infinite exponent is not a natural supernatural number. -/
 @[simp]
