@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Consequences.HighDegree
+-- Proof-only: the degree of a place is divisible by the degree of the constant field.
+import TauCeti.FieldTheory.FunctionField.Place.ConstantField
 -- Proof-only: inseparable parameters of prime degree are `p`-th powers.
 import TauCeti.FieldTheory.FunctionField.Frobenius
 -- Proof-only: the generator of `k(x)` generates it.
@@ -18,10 +20,9 @@ import TauCeti.FieldTheory.FunctionField.RiemannRoch.RatFunc
 /-!
 # Genus-zero function fields with a divisor of degree one
 
-Let `F / k` be an algebraic function field with exact constant field.  If `F` has genus zero
-and admits a divisor of degree one, then `F` is a rational function field over `k`.  This is the
-nontrivial implication of Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed.,
-Proposition 1.6.3.
+Let `F / k` be an algebraic function field.  If `F` has genus zero and admits a divisor of degree
+one, then `F` is a rational function field over `k`.  This is the nontrivial implication of
+Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., Proposition 1.6.3.
 
 The degree-one hypothesis is deliberately stated for an arbitrary divisor, not for a rational
 place.  Riemann--Roch gives a nonzero section of that divisor.  Translating the section by its
@@ -48,6 +49,8 @@ two in the anticanonical class, whose Riemann–Roch space has dimension three.
 
 ## Main results
 
+* `TauCeti.isIntegrallyClosedIn_of_exists_divisor_degree_eq_one`: a divisor of degree one forces
+  the field of constants to be exact.
 * `TauCeti.exists_place_degree_eq_one_of_genus_eq_zero_of_divisor_degree_eq_one`: genus zero and
   a degree-one divisor produce a rational place.
 * `TauCeti.nonempty_algEquiv_ratFunc_of_genus_eq_zero_of_divisor_degree_eq_one`: genus zero and a
@@ -81,15 +84,30 @@ open AlgebraicGeometry
 
 variable {k F : Type*} [Field k] [Field F] [Algebra k F]
 
+/-- **A divisor of degree one forces exact constants**: the degree of every divisor is a multiple
+of the degree of the field of constants `algebraicClosure k F`, because that field sits inside
+the residue field of every place.  No function-field hypothesis is needed. -/
+theorem isIntegrallyClosedIn_of_exists_divisor_degree_eq_one
+    (hdegree : ∃ D : Divisor k F, Divisor.degree D = 1) : IsIntegrallyClosedIn k F := by
+  obtain ⟨D, hD⟩ := hdegree
+  rw [isIntegrallyClosedIn_iff_finrank_algebraicClosure_eq_one]
+  have hdvd : (Module.finrank k (algebraicClosure k F) : ℤ) ∣ Divisor.degree D := by
+    rw [Divisor.degree_eq_sum_support]
+    exact Finset.dvd_sum fun P _ ↦
+      Dvd.dvd.mul_left (Int.natCast_dvd_natCast.mpr P.finrank_algebraicClosure_dvd_degree) _
+  rw [hD] at hdvd
+  exact_mod_cast Int.eq_one_of_dvd_one (Int.natCast_nonneg _) hdvd
+
 /-- A genus-zero function field with a divisor of degree one has a rational place.
 
 Riemann--Roch gives dimension two for the degree-one divisor.  A nonzero section translates it
 to a linearly equivalent effective divisor, still of degree one, and such a divisor contains a
 rational place. -/
 theorem exists_place_degree_eq_one_of_genus_eq_zero_of_divisor_degree_eq_one
-    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) (hg : genus k F = 0)
+    (hF : IsFunctionField k F) (hg : genus k F = 0)
     (hdegree : ∃ D : Divisor k F, Divisor.degree D = 1) :
     ∃ P : Place k F, P.degree = 1 := by
+  have hex := isIntegrallyClosedIn_of_exists_divisor_degree_eq_one hdegree
   obtain ⟨D, hD⟩ := hdegree
   have hhigh : 2 * (genus k F : ℤ) - 1 ≤ Divisor.degree D := by
     rw [hg, hD]
@@ -115,16 +133,17 @@ theorem exists_place_degree_eq_one_of_genus_eq_zero_of_divisor_degree_eq_one
 Stichtenoth, Proposition 1.6.3).
 
 The conclusion is an equivalence of `k`-algebras `F ≃ₐ[k] RatFunc k`.  No perfectness,
-separability, or rational-place hypothesis is added: exactness of the constant field is the only
-extra hypothesis required by Riemann--Roch. -/
+separability, rational-place or exactness hypothesis is added: the degree-one divisor already makes
+the constant field exact (`TauCeti.isIntegrallyClosedIn_of_exists_divisor_degree_eq_one`). -/
 theorem nonempty_algEquiv_ratFunc_of_genus_eq_zero_of_divisor_degree_eq_one
-    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) (hg : genus k F = 0)
+    (hF : IsFunctionField k F) (hg : genus k F = 0)
     (hdegree : ∃ D : Divisor k F, Divisor.degree D = 1) :
     Nonempty (F ≃ₐ[k] RatFunc k) := by
   obtain ⟨P, hP⟩ :=
-    exists_place_degree_eq_one_of_genus_eq_zero_of_divisor_degree_eq_one hF hex hg hdegree
+    exists_place_degree_eq_one_of_genus_eq_zero_of_divisor_degree_eq_one hF hg hdegree
   obtain ⟨z, hpoles⟩ :=
-    P.exists_poles_eq_natCast_zsmul_ofPoint hF hex (n := 1) (by simp [hg])
+    P.exists_poles_eq_natCast_zsmul_ofPoint hF
+      (isIntegrallyClosedIn_of_exists_divisor_degree_eq_one hdegree) (n := 1) (by simp [hg])
   have hpoles' : Divisor.poles hF z = WeilDivisor.ofPoint P := by
     simpa using hpoles
   have hz : Transcendental k (z : F) := by
