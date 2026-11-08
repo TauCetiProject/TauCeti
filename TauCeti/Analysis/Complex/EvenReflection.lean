@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Basic
+public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
-import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.Analysis.Complex.RealDeriv
 import Mathlib.Analysis.Complex.ReImTopology
@@ -51,6 +51,8 @@ mean-value inequality to the interior one
   on the closed upper half-plane and `w ∘ conj` on the closed lower half-plane.
 * `TauCeti.continuousOn_evenReflection`: the reflection of a function continuous up to the axis
   is continuous.
+* `TauCeti.isSymmSndFDerivWithinAt_setOfPred_le_im_inter`: the second derivative within
+  `{0 ≤ im z} ∩ U` of a function that is `C²` there is symmetric, also on the real axis.
 * `TauCeti.contDiffOn_evenReflection`: the reflection of a function that is `C²` up to the axis
   and satisfies the Neumann condition there is `C²`.
 * `TauCeti.laplacian_evenReflection_of_pos`, `TauCeti.laplacian_evenReflection_of_neg`: the
@@ -104,9 +106,34 @@ theorem continuousOn_evenReflection [TopologicalSpace F] {s : Set ℂ} (hs : ∀
   · convert hs z hz using 1
     apply Complex.ext <;> simp [abs_of_nonpos h]
 
+/-! ### The closed upper half-plane near an open set -/
+
+/-- Horizontal lines stay in `{0 ≤ im z} ∩ U` near any of its points, for `U` open. -/
+theorem eventually_add_smul_one_mem_setOfPred_le_im_inter {U : Set ℂ} (hU : IsOpen U) {x : ℂ}
+    (hx : x ∈ {z : ℂ | 0 ≤ z.im} ∩ U) :
+    ∀ᶠ t : ℝ in 𝓝 0, x + t • (1 : ℂ) ∈ {z : ℂ | 0 ≤ z.im} ∩ U :=
+  ((Continuous.tendsto' (by fun_prop) 0 x (by simp)).eventually (hU.mem_nhds hx.2)).mono
+    fun t ht ↦ ⟨by simpa using hx.1, ht⟩
+
+/-- For `U` open, every point of `{0 ≤ im z} ∩ U`, including the points on the real axis, lies in
+the closure of its interior. -/
+theorem subset_closure_interior_setOfPred_le_im_inter {U : Set ℂ} (hU : IsOpen U) :
+    {z : ℂ | 0 ≤ z.im} ∩ U ⊆ closure (interior ({z : ℂ | 0 ≤ z.im} ∩ U)) := by
+  intro x hx
+  rw [interior_inter, hU.interior_eq, interior_setOfPred_le_im, inter_comm]
+  exact hU.inter_closure ⟨hx.2, by rw [closure_setOfPred_lt_im]; exact hx.1⟩
+
 /-! ### `C²` regularity of the even reflection -/
 
 variable [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- The second derivative within `{0 ≤ im z} ∩ U` of a function that is `C²` there is symmetric,
+also at the points on the real axis. -/
+theorem isSymmSndFDerivWithinAt_setOfPred_le_im_inter {U : Set ℂ} (hU : IsOpen U)
+    (hw : ContDiffOn ℝ 2 w ({z | 0 ≤ z.im} ∩ U)) {x : ℂ} (hx : x ∈ {z : ℂ | 0 ≤ z.im} ∩ U) :
+    IsSymmSndFDerivWithinAt ℝ w ({z | 0 ≤ z.im} ∩ U) x :=
+  (hw x hx).isSymmSndFDerivWithinAt (by simp) ((uniqueDiffOn_setOfPred_le_im 0).inter hU)
+    (subset_closure_interior_setOfPred_le_im_inter hU hx) hx
 
 /-- Precomposition with conjugation, `L ↦ L ∘ conj`, on real-linear maps out of `ℂ`. -/
 private noncomputable abbrev conjPrecomp (F : Type*) [NormedAddCommGroup F] [NormedSpace ℝ F] :
@@ -200,7 +227,6 @@ derivative `∂ₛ ∂ₜ w` vanishes along the axis, where `∂ₜ w` does. -/
 private theorem conjPrecomp_comp_fderivWithin_fderivWithin_of_im_eq_zero {U : Set ℂ}
     (hU : IsOpen U) {w : ℂ → F} (hw : ContDiffOn ℝ 2 w ({z | 0 ≤ z.im} ∩ U))
     (hN : ∀ x ∈ U, x.im = 0 → fderivWithin ℝ w ({z | 0 ≤ z.im} ∩ U) x I = 0)
-    (hS : UniqueDiffOn ℝ ({z : ℂ | 0 ≤ z.im} ∩ U))
     (hD₁S : ∀ z ∈ {z : ℂ | 0 ≤ z.im} ∩ U,
       HasFDerivWithinAt (fderivWithin ℝ w ({z | 0 ≤ z.im} ∩ U))
         (fderivWithin ℝ (fderivWithin ℝ w ({z | 0 ≤ z.im} ∩ U)) ({z | 0 ≤ z.im} ∩ U) z)
@@ -214,19 +240,13 @@ private theorem conjPrecomp_comp_fderivWithin_fderivWithin_of_im_eq_zero {U : Se
   set D₂ := fderivWithin ℝ D₁ S
   have hxS : x ∈ S := ⟨hx0.ge, hx⟩
   have hmixed : D₂ x 1 I = 0 := by
-    have hU' : ∀ᶠ t : ℝ in 𝓝 0, x + t • (1 : ℂ) ∈ U :=
-      (Continuous.tendsto' (by fun_prop) 0 x (by simp)).eventually (hU.mem_nhds hx)
+    have hS' := eventually_add_smul_one_mem_setOfPred_le_im_inter hU hxS
     have hline := (((ContinuousLinearMap.apply ℝ F I).hasFDerivAt.comp_hasFDerivWithinAt x
-      (hD₁S x hxS)).hasLineDerivWithinAt
-        (1 : ℂ)).hasLineDerivAt' (hU'.mono fun t ht ↦ ⟨by simp [hx0], ht⟩)
+      (hD₁S x hxS)).hasLineDerivWithinAt (1 : ℂ)).hasLineDerivAt' hS'
     refine hline.unique ((hasDerivAt_const (0 : ℝ) (0 : F)).congr_of_eventuallyEq ?_)
-    filter_upwards [hU'] with t ht
-    exact hN _ ht (by simp [hx0])
-  have hcl : x ∈ closure (interior S) := by
-    rw [interior_inter, hU.interior_eq, interior_setOfPred_le_im, inter_comm]
-    exact hU.inter_closure ⟨hx, by rw [closure_setOfPred_lt_im]; exact hx0.ge⟩
-  have hsymm : D₂ x I 1 = D₂ x 1 I :=
-    (hw x hxS).isSymmSndFDerivWithinAt (by simp) hS hcl hxS I 1
+    filter_upwards [hS'] with t ht
+    exact hN _ ht.2 (by simp [hx0])
+  have hsymm : D₂ x I 1 = D₂ x 1 I := isSymmSndFDerivWithinAt_setOfPred_le_im_inter hU hw hxS I 1
   ext v e
   simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, conjCLE_apply,
     conjPrecomp_apply]
@@ -308,7 +328,7 @@ theorem contDiffOn_evenReflection {U : Set ℂ} (hU : IsOpen U) (hUc : ∀ z ∈
     exact (D₁ x).toLinearMap.apply_conj_of_apply_I_eq_zero (hN x hx hx0) v
   have hedge₂ : ∀ x ∈ U, x.im = 0 →
       (conjPrecomp F).comp ((D₂ x).comp (conjCLE : ℂ →L[ℝ] ℂ)) = D₂ x := fun x hx hx0 ↦
-    conjPrecomp_comp_fderivWithin_fderivWithin_of_im_eq_zero hU hw hN hS hD₁S hx hx0
+    conjPrecomp_comp_fderivWithin_fderivWithin_of_im_eq_zero hU hw hN hD₁S hx hx0
   -- The first and second derivatives of the reflection, glued along the axis.
   set G₁ : ℂ → ℂ →L[ℝ] F := fun z ↦ if 0 ≤ z.im then D₁ z else conjPrecomp F (D₁ (conj z))
   have hG₁ : ContDiffOn ℝ 1 G₁ U := by

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.MeanValueInequality
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
@@ -300,20 +301,17 @@ theorem exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setInteg
       (∀ y ∈ ball z₀ r, u y ∈ K) →
       ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 < δ →
       π * r ^ 2 * ‖fderiv ℝ u z₀ 1‖ ^ 2 ≤ 8 * ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 := by
-  obtain ⟨a, ha⟩ := hK.exists_bound_of_continuousOn (hJ.continuousOn.mono hKW)
-  obtain ⟨b, hb⟩ := hK.exists_bound_of_continuousOn
-    ((hJ.continuousOn_fderiv_of_isOpen hW (by norm_num)).mono hKW)
-  obtain ⟨c, hc⟩ := hK.exists_bound_of_continuousOn
-    (((hJ.continuousOn_iteratedFDerivWithin le_rfl hW.uniqueDiffOn).congr
-      (iteratedFDerivWithin_of_isOpen 2 hW).symm).mono hKW)
-  -- Nonnegative bounds, so that the constant of the differential inequality is nonnegative.
-  set A := 4 * max a 0 * max c 0 + 2 * b ^ 2 + 8 * max a 0 ^ 2 * b ^ 2
+  -- One nonnegative bound `C` for `J` and its first two derivatives on `K`.
+  obtain ⟨C, hC0, hC⟩ := hJ.exists_nonneg_bound_iteratedFDeriv_of_isOpen (n := 2) hW hK hKW
+  set A := 4 * C * C + 2 * C ^ 2 + 8 * C ^ 2 * C ^ 2
   refine ⟨π / (8 * (A + 1)), by positivity, fun u z₀ r hr hu hu' hCR huK hE ↦ ?_⟩
   have hI : 0 ≤ ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 := by positivity
   refine pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball hr hu hu' hCR
     (fun y hy ↦ hJ.contDiffAt (hW.mem_nhds (hKW (huK y hy))))
-    (fun y hy ↦ hJsq _ (huK y hy)) (fun y hy ↦ (ha _ (huK y hy)).trans (le_max_left _ 0))
-    (fun y hy ↦ hb _ (huK y hy)) (fun y hy ↦ (hc _ (huK y hy)).trans (le_max_left _ 0)) ?_
+    (fun y hy ↦ hJsq _ (huK y hy))
+    (fun y hy ↦ by simpa using hC 0 (by norm_num) _ (huK y hy))
+    (fun y hy ↦ by simpa [norm_iteratedFDeriv_one] using hC 1 (by norm_num) _ (huK y hy))
+    (fun y hy ↦ hC 2 le_rfl _ (huK y hy)) ?_
   rw [lt_div_iff₀ (by positivity)] at hE
   nlinarith
 
