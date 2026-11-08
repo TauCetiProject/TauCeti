@@ -208,6 +208,17 @@ theorem stripFunction_eq {g : C.stripTraces} {F : ℂ → C.SumSpace} (hF : C.Is
     {z : ℂ} (hz : z ∈ verticalClosedStrip 0 1) : C.stripFunction g z = F z :=
   (C.isStripFunction_stripFunction g).eqOn hF hz
 
+@[simp]
+theorem stripFunction_mul_I (g : C.stripTraces) (t : ℝ) :
+    C.stripFunction g (t * I) = C.fstToSum ((g : C₀(ℝ, X₀) × C₀(ℝ, X₁)).1 t) :=
+  (C.isStripFunction_stripFunction g).apply_mul_I t
+
+@[simp]
+theorem stripFunction_one_add_mul_I (g : C.stripTraces) (t : ℝ) :
+    C.stripFunction g (1 + t * I) = C.sndToSum ((g : C₀(ℝ, X₀) × C₀(ℝ, X₁)).2 t) :=
+  (C.isStripFunction_stripFunction g).apply_one_add_mul_I t
+
+@[simp]
 theorem stripFunction_eq_zero (g : C.stripTraces) {z : ℂ} (hz : z ∉ verticalClosedStrip 0 1) :
     C.stripFunction g z = 0 :=
   indicator_of_notMem hz _
@@ -257,6 +268,7 @@ theorem stripEval_apply (z : ℂ) (g : C.stripTraces) : C.stripEval z g = C.stri
   (rfl)
 
 /-- Evaluation off the closed strip vanishes. -/
+@[simp]
 theorem stripEval_eq_zero {z : ℂ} (hz : z ∉ verticalClosedStrip 0 1) : C.stripEval z = 0 :=
   ContinuousLinearMap.ext fun g => C.stripFunction_eq_zero g hz
 
