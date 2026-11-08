@@ -13,6 +13,10 @@ public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 A continuous linear equivalence `T : E ≃L[𝕜] F` over a field can be multiplied by a nonzero
 scalar `d`; the result is again a continuous linear equivalence, whose inverse is `d⁻¹ • T⁻¹`.
 The construction uses Mathlib's `ContinuousLinearEquiv.equivOfInverse'`.
+
+Dually, multiplying a continuous linear map by a nonzero scalar `c` is composing it with the
+scalar equivalence `ContinuousLinearEquiv.smulLeft (Units.mk0 c hc)`, so results about
+composition with equivalences apply to scalar multiples.
 -/
 
 public section
@@ -32,3 +36,16 @@ theorem exists_coe_eq_smul (T : E ≃L[𝕜] F) {d : 𝕜} (hd : d ≠ 0) :
     (by simp [smul_smul, hd]) (by simp [smul_smul, hd]), by simp, by simp⟩
 
 end ContinuousLinearEquiv
+
+namespace ContinuousLinearMap
+
+variable {𝕜 M M₂ : Type*} [Field 𝕜]
+  [TopologicalSpace M] [AddCommMonoid M] [Module 𝕜 M]
+  [TopologicalSpace M₂] [AddCommMonoid M₂] [Module 𝕜 M₂] [ContinuousConstSMul 𝕜 M₂]
+
+/-- Multiplying by a nonzero scalar is composing with the corresponding scalar equivalence. -/
+theorem smul_eq_smulLeft_comp {c : 𝕜} (hc : c ≠ 0) (f : M →L[𝕜] M₂) :
+    c • f = (ContinuousLinearEquiv.smulLeft (Units.mk0 c hc) : M₂ ≃L[𝕜] M₂) ∘L f := by
+  ext; simp
+
+end ContinuousLinearMap
