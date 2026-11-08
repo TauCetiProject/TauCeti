@@ -53,8 +53,8 @@ this is the separation input for comparing and fitting together smooth triangula
 * `TauCeti.IsStarImmersion.exists_antilipschitzWith`: an injective `C¹` star immersion of a
   complex on a finite vertex type is antilipschitz in barycentric coordinates.
 * `TauCeti.eventually_norm_secantMap_sub_sub_le_edgewiseSubdivision`: on fine edgewise
-  subdivisions, the secant error of a map which is a `C¹` immersion on every closed simplex is
-  Lipschitz with arbitrarily small constant in barycentric coordinates, also across simplices.
+  subdivisions, the secant error of a map which is `C¹` on every closed simplex is Lipschitz
+  with arbitrarily small constant in barycentric coordinates, also across simplices.
 * `TauCeti.IsStarImmersion.exists_pos_eventually_norm_sub_le_mul_norm_secantMap_sub`: the secant
   maps of an injective `C¹` star immersion on fine edgewise subdivisions are antilipschitz in
   barycentric coordinates, uniformly in the subdivision.
@@ -641,64 +641,6 @@ private theorem secantError_apply (f : Realization K → E) (k : ℕ)
         f (edgewiseSubdivisionRealizationMap K k x) :=
   rfl
 
-/-- On the closed simplices of every sufficiently fine edgewise subdivision, the secant error
-`s - f ∘ φ` of a map `f` which is a `C¹` immersion on every closed simplex is `ε`-Lipschitz in the
-original coordinates. Here `s` is the secant map of `f` on the subdivision and `φ` is the canonical
-map onto `|K|`. -/
-theorem _root_.TauCeti.eventually_norm_secantMap_sub_sub_le_edgewiseSubdivision_faceInclusion
-    (hf : ∀ σ : Face K, IsSimplexImmersion 𝓘(ℝ, E) n (f ∘ faceInclusion K σ)) (hn : 1 ≤ n)
-    {ε : ℝ} (hε : 0 < ε) :
-    ∀ᶠ k in atTop, ∀ (ρ : Face (K.edgewiseSubdivision k)) (x y : StandardSimplex ρ.1),
-      ‖((K.edgewiseSubdivision k).secantMap (f ∘ edgewiseSubdivisionRealizationMap K k)
-              (faceInclusion _ ρ y) -
-            f (edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ y))) -
-          ((K.edgewiseSubdivision k).secantMap (f ∘ edgewiseSubdivisionRealizationMap K k)
-              (faceInclusion _ ρ x) -
-            f (edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ x)))‖ ≤
-        ε * ‖((edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ y)).1 : ι → ℝ) -
-          (edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ x)).1‖ := by
-  have : Finite (Face K) := (Set.toFinite K.faces).to_subtype
-  choose F hFg hF _ using fun σ => isSimplexImmersion_iff.mp (hf σ)
-  filter_upwards [eventually_all.mpr fun σ : Face K =>
-    ContDiffOn.eventually_norm_linearCombination_sub_comp_sub_le_edgewiseSubdivision
-      ((contMDiffOn_iff_contDiffOn.mp (hF σ)).of_le hn) hε] with k hk ρ x y
-  rw [← secantError_apply, ← secantError_apply]
-  -- The simplex `ρ` lies in the face `σ` of `K` spanned by the entries of its vertices.
-  let σ : Face K := ⟨_, biUnion_image_mem_of_mem_edgewiseSubdivision ρ.2⟩
-  have hρσ : ∀ u ∈ ρ.1, ∀ l, u.1 l ∈ σ.1 := fun u hu l =>
-    Finset.mem_biUnion.mpr ⟨u, hu, Finset.mem_image_of_mem _ (Finset.mem_univ l)⟩
-  let w (t : StandardSimplex ρ.1) := ⇑(Finset.standardSimplexHomeomorph ρ.1 t).weights
-  have hφ (t : StandardSimplex ρ.1) :
-      edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ t) =
-        faceInclusion K σ (edgewiseSubdivisionFaceMap hρσ t) :=
-    congrFun (edgewiseSubdivisionRealizationMap_comp_faceInclusion ρ σ hρσ) t
-  -- In the coordinates of `σ`, the vertices of `ρ` combine to the image of `t`.
-  have hA (t : StandardSimplex ρ.1) :
-      Fintype.linearCombination ℝ (fun (a : ρ.1) (i : σ.1) => (edgewiseVertexPoint hρσ a).1 i)
-        (w t) = fun i : σ.1 => (edgewiseSubdivisionFaceMap hρσ t).1 i := by
-    funext i
-    rw [Fintype.linearCombination_apply, edgewiseSubdivisionFaceMap_apply, Finset.sum_apply,
-      ← Finset.sum_coe_sort ρ.1]
-    simp [w, Finset.standardSimplexHomeomorph_weights]
-  have hB (t : StandardSimplex ρ.1) :
-      Fintype.linearCombination ℝ
-          (fun a : ρ.1 => F σ fun i : σ.1 => (edgewiseVertexPoint hρσ a).1 i) (w t) -
-        F σ (Fintype.linearCombination ℝ
-          (fun (a : ρ.1) (i : σ.1) => (edgewiseVertexPoint hρσ a).1 i) (w t)) =
-        secantError f k (faceInclusion _ ρ t) := by
-    rw [hA, hFg, secantError_apply, secantMap_faceInclusion_edgewiseSubdivision f ρ σ hρσ, hφ,
-      Fintype.linearCombination_apply]
-    simp only [hFg, w, Finset.standardSimplexHomeomorph_weights, comp_apply]
-  have h := hk σ K.toPreAbstractSimplicialComplex ρ.1 ρ.2 (edgewiseVertexPoint hρσ)
-    (coe_edgewiseVertexPoint hρσ) (Finset.standardSimplexHomeomorph ρ.1 x)
-    (Finset.standardSimplexHomeomorph ρ.1 y)
-  rw [hB, hB, map_sub, hA, hA] at h
-  refine h.trans (mul_le_mul_of_nonneg_left ?_ hε.le)
-  rw [hφ, hφ, faceInclusion_val, faceInclusion_val]
-  refine (pi_norm_le_iff_of_nonneg (norm_nonneg _)).2 fun i => ?_
-  exact norm_le_pi_norm (((edgewiseSubdivisionFaceMap hρσ y).1 : ι → ℝ) -
-    ((edgewiseSubdivisionFaceMap hρσ x).1 : ι → ℝ)) i.1
-
 /-- The secant error, read as a function of the original coordinates `ι → ℝ` (and extended by
 zero off the realization). -/
 private def secantErrorCoord (f : Realization K → E) (k : ℕ) : (ι → ℝ) → E :=
@@ -744,12 +686,15 @@ private theorem lipschitzOnWith_secantErrorCoord {k : ℕ} (hk : k ≠ 0) {ε : 
     exact hface ρ t' t
 
 /-- On every sufficiently fine edgewise subdivision, the secant error `s - f ∘ φ` of a
-map `f` which is a `C¹` immersion on every closed simplex is `ε`-Lipschitz in the original
-coordinates, also between points of different simplices. Here `s` is the secant map of `f` on the
-subdivision and `φ` is the canonical map onto `|K|`. -/
+map `f` which is `C¹` on every closed simplex is `ε`-Lipschitz in the original coordinates, also
+between points of different simplices. Here `s` is the secant map of `f` on the subdivision, `φ`
+is the canonical map onto `|K|`, and being `C¹` on a closed simplex means being, in barycentric
+coordinates, the restriction of a map which is `C¹` within the standard simplex. -/
 theorem _root_.TauCeti.eventually_norm_secantMap_sub_sub_le_edgewiseSubdivision
-    (hf : ∀ σ : Face K, IsSimplexImmersion 𝓘(ℝ, E) n (f ∘ faceInclusion K σ))
-    (hn : 1 ≤ n) {ε : ℝ} (hε : 0 < ε) :
+    (hf : ∀ σ : Face K, ∃ F : (σ.1 → ℝ) → E,
+      (∀ x : StandardSimplex σ.1, F (fun a => x.1 a) = f (faceInclusion K σ x)) ∧
+        ContDiffOn ℝ 1 F (range fun t : Convexity.StdSimplex ℝ σ.1 => ⇑t.weights))
+    {ε : ℝ} (hε : 0 < ε) :
     ∀ᶠ k in atTop, ∀ x y : Realization (K.edgewiseSubdivision k),
       ‖((K.edgewiseSubdivision k).secantMap (f ∘ edgewiseSubdivisionRealizationMap K k) x -
             f (edgewiseSubdivisionRealizationMap K k x)) -
@@ -757,11 +702,17 @@ theorem _root_.TauCeti.eventually_norm_secantMap_sub_sub_le_edgewiseSubdivision
             f (edgewiseSubdivisionRealizationMap K k y))‖ ≤
         ε * ‖((edgewiseSubdivisionRealizationMap K k x).1 : ι → ℝ) -
           (edgewiseSubdivisionRealizationMap K k y).1‖ := by
-  have hfc : Continuous f := continuous_iff_faceInclusion.2 fun σ => (hf σ).continuous
+  have hfc : Continuous f := continuous_iff_faceInclusion.2 fun σ => by
+    obtain ⟨F, hFg, hF⟩ := hf σ
+    have hcoord : Continuous fun x : StandardSimplex σ.1 => fun a : σ.1 => x.1 a :=
+      continuous_pi fun a => (continuous_apply a.1).comp continuous_induced_dom
+    refine (hF.continuousOn.comp_continuous hcoord fun x => ?_).congr hFg
+    rw [← Finset.range_standardSimplex_coordinates]
+    exact mem_range_self x
   set N : ℝ := (Fintype.card ι : ℝ)
   have hN : 0 ≤ N := Nat.cast_nonneg _
   filter_upwards [eventually_ne_atTop 0,
-    eventually_norm_secantMap_sub_sub_le_edgewiseSubdivision_faceInclusion hf hn
+    eventually_norm_secantMap_sub_sub_le_edgewiseSubdivision_faceInclusion hf
       (ε := ε / (2 * N + 1)) (by positivity),
     hfc.eventually_norm_secantMap_sub_lt_edgewiseSubdivision (Set.toFinite K.faces)
       (ε := ε / (2 * (N + 1))) (by positivity)] with k hk hface hclose x y
@@ -815,8 +766,14 @@ theorem exists_pos_eventually_norm_sub_le_mul_norm_secantMap_sub (h : IsStarImme
   obtain ⟨C, hC, hanti⟩ := h.exists_antilipschitzWith hn hf
   have hlt : (2 * C)⁻¹ < C⁻¹ := inv_strictAnti₀ hC (lt_two_mul_self hC)
   refine ⟨((C⁻¹ - (2 * C)⁻¹)⁻¹ : NNReal), NNReal.coe_pos.2 (inv_pos.2 (tsub_pos_of_lt hlt)), ?_⟩
+  -- On every closed simplex, `f` is the restriction of a `C¹` map in barycentric coordinates.
+  have hC1 (σ : Face K) : ∃ F : (σ.1 → ℝ) → E,
+      (∀ x : StandardSimplex σ.1, F (fun a => x.1 a) = f (faceInclusion K σ x)) ∧
+        ContDiffOn ℝ 1 F (range fun t : Convexity.StdSimplex ℝ σ.1 => ⇑t.weights) := by
+    obtain ⟨F, hFg, hF, -⟩ := isSimplexImmersion_iff.mp (h.1 σ)
+    exact ⟨F, hFg, (contMDiffOn_iff_contDiffOn.mp hF).of_le hn⟩
   filter_upwards [eventually_ne_atTop 0, eventually_norm_secantMap_sub_sub_le_edgewiseSubdivision
-    h.1 hn (ε := ((2 * C)⁻¹ : NNReal)) (NNReal.coe_pos.2 (inv_pos.2 (by positivity)))]
+    hC1 (ε := ((2 * C)⁻¹ : NNReal)) (NNReal.coe_pos.2 (inv_pos.2 (by positivity)))]
     with k hk0 hk x y
   -- Move the secant map to the coordinate image of `|K|` and perturb `f` there.
   set Ψ := (edgewiseSubdivisionRealizationHomeomorph K hk0).trans e
