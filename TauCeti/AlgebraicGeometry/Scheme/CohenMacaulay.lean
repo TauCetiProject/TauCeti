@@ -119,6 +119,9 @@ theorem isCohenMacaulay_tilde_iff {R : CommRingCat.{u}} [IsNoetherianRing R] (M 
     let y : PrimeSpectrum.Top R := x
     let : Module R ((tilde M).presheaf.stalk x) :=
       inferInstanceAs (Module R ((tilde M).presheaf.stalk y))
+    -- Both actions of `r : R` are multiplication by the germ of the constant section `r`:
+    -- `stalkAlgebra` maps `r` to `toStalk R x r`, and Mathlib's module structure is that of the
+    -- stalk of `moduleStructurePresheaf R M`, so they agree by definition.
     have : IsScalarTower R ((Spec R).presheaf.stalk x) ((tilde M).presheaf.stalk x) :=
       .of_algebraMap_smul fun _ _ ↦ rfl
     exact Module.isCohenMacaulay_iff_of_isLocalizedModule y.asIdeal (tilde.toStalk M y).hom

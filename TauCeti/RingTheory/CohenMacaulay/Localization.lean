@@ -91,8 +91,9 @@ theorem isCohenMacaulay_iff_of_isLocalizedModule (f : M →ₗ[R] N)
   let : Module A N := .compHom N (algebraMap A B)
   have : IsScalarTower A B N := .of_compHom A B N
   have : IsScalarTower R A N := .of_algebraMap_smul fun r n ↦ by
-    change e (algebraMap R A r) • n = r • n
-    rw [e.commutes, algebraMap_smul]
+    -- `A` acts on `N` through `e`, which commutes with the maps from `R`.
+    rw [MulAction.compHom_smul_def, RingHom.algebraMap_toAlgebra]
+    exact (congrArg (· • n) (e.commutes r)).trans (algebraMap_smul B r n)
   have : Module.Finite B N := .of_isLocalizedModule p.primeCompl f
   have : Small.{w} A := small_map e.toEquiv
   rw [← isCohenMacaulay_iff_isCohenMacaulay_of_surjective (R := A) e.surjective]

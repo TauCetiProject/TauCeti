@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.KrullDimension.Polynomial
-public import Mathlib.RingTheory.MvPolynomial.Ideal
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.CohenMacaulay
 public import TauCeti.RingTheory.CohenMacaulay.Catenary
 public import TauCeti.RingTheory.CohenMacaulay.Localization
 public import TauCeti.RingTheory.KrullDimension.Module
+public import TauCeti.RingTheory.MvPolynomial.Ideal
 
 /-!
 # Tests for Cohen–Macaulay schemes
@@ -65,38 +65,24 @@ open MvPolynomial
 
 variable {k : Type u} [Field k]
 
-/-- The ideal `(x, y)` of the origin in `k[x, y]` is the kernel of the constant coefficient. -/
-private theorem span_X_eq_ker_constantCoeff :
-    Ideal.span {(X 0 : MvPolynomial (Fin 2) k), X 1} = RingHom.ker (constantCoeff (R := k)) := by
-  refine le_antisymm (Ideal.span_le.2 ?_) fun f hf ↦ ?_
-  · rw [Set.insert_subset_iff, Set.singleton_subset_iff]
-    simp
-  have hX : ({X 0, X 1} : Set (MvPolynomial (Fin 2) k)) = X '' Set.univ := by
-    ext p
-    simp [Fin.exists_fin_two, eq_comm]
-  -- Every monomial of `f` is nonconstant, since `f` has no constant term.
-  rw [hX, mem_ideal_span_X_image]
-  intro m hm
-  have hm0 : m ≠ 0 := by
-    rintro rfl
-    exact (mem_support_iff.1 hm) (by rwa [← constantCoeff_eq, ← RingHom.mem_ker])
-  obtain ⟨i, hi⟩ := Finsupp.ne_iff.1 hm0
-  exact ⟨i, Set.mem_univ i, hi⟩
+/-- The ideal `(x, y)` of the origin in `k[x, y]` is the ideal of the variables. -/
+private theorem span_X_pair_eq_idealOfVars :
+    Ideal.span {(X 0 : MvPolynomial (Fin 2) k), X 1} = idealOfVars (Fin 2) k := by
+  congr 1
+  ext p
+  simp [Fin.exists_fin_two, eq_comm]
 
-/-- The origin `(x, y)` is a maximal ideal of `k[x, y]`. -/
-local instance isMaximal_span_X :
-    (Ideal.span {(X 0 : MvPolynomial (Fin 2) k), X 1}).IsMaximal := by
-  rw [span_X_eq_ker_constantCoeff]
-  exact RingHom.ker_isMaximal_of_surjective _ fun a ↦ ⟨C a, constantCoeff_C ..⟩
-
-/-- *Scheme.Modules.IsCohenMacaulay.test_point_on_plane*, first half: on the plane
-`Spec k[x, y]`, the coherent module of `k[x, y] ⧸ (x, y)` is Cohen–Macaulay, of depth `0` with
-support a point. -/
-example : (tilde (ModuleCat.of (CommRingCat.of (MvPolynomial (Fin 2) k))
-    (MvPolynomial (Fin 2) k ⧸
-      Ideal.span {(X 0 : MvPolynomial (Fin 2) k), X 1}))).IsCohenMacaulay := by
+/-- On the plane `Spec k[x, y]`, the coherent module of `k[x, y] ⧸ (x, y)` is Cohen–Macaulay, of
+depth `0` with support a point. -/
+private theorem isCohenMacaulay_tilde_quotient_origin :
+    (tilde (ModuleCat.of (CommRingCat.of (MvPolynomial (Fin 2) k))
+      (MvPolynomial (Fin 2) k ⧸
+        Ideal.span {(X 0 : MvPolynomial (Fin 2) k), X 1}))).IsCohenMacaulay := by
   rw [Modules.isCohenMacaulay_tilde_iff]
   intro p _
+  have : (Ideal.span {(X 0 : MvPolynomial (Fin 2) k), X 1}).IsMaximal := by
+    rw [span_X_pair_eq_idealOfVars]
+    infer_instance
   by_cases hp : Ideal.span {(X 0 : MvPolynomial (Fin 2) k), X 1} ≤ p
   · -- The support is the origin alone.
     apply Module.isCohenMacaulay_localizedModule_of_mem_minimalPrimes
@@ -112,18 +98,20 @@ example : (tilde (ModuleCat.of (CommRingCat.of (MvPolynomial (Fin 2) k))
       exact hp
     exact Module.isCohenMacaulay_of_subsingleton
 
-/-- *Scheme.Modules.IsCohenMacaulay.test_point_on_plane*, second half: on the plane
-`Spec k[x, y]`, the coherent module of `k[x, y] ⧸ (x², xy)` is not Cohen–Macaulay. Its stalk at
-the origin has depth `0`, since the origin is the annihilator of the class of `x`, but its support
-contains the line `x = 0`. -/
-example : ¬ (tilde (ModuleCat.of (CommRingCat.of (MvPolynomial (Fin 2) k))
-    (MvPolynomial (Fin 2) k ⧸
-      Ideal.span {(X 0 ^ 2 : MvPolynomial (Fin 2) k), X 0 * X 1}))).IsCohenMacaulay := by
+/-- On the plane `Spec k[x, y]`, the coherent module of `k[x, y] ⧸ (x², xy)` is not
+Cohen–Macaulay. Its stalk at the origin has depth `0`, since the origin is the annihilator of the
+class of `x`, but its support contains the line `x = 0`. -/
+private theorem not_isCohenMacaulay_tilde_quotient_embedded :
+    ¬ (tilde (ModuleCat.of (CommRingCat.of (MvPolynomial (Fin 2) k))
+      (MvPolynomial (Fin 2) k ⧸
+        Ideal.span {(X 0 ^ 2 : MvPolynomial (Fin 2) k), X 0 * X 1}))).IsCohenMacaulay := by
   rw [Modules.isCohenMacaulay_tilde_iff]
   intro h
+  have : (Ideal.span {(X 0 : MvPolynomial (Fin 2) k), X 1}).IsMaximal := by
+    rw [span_X_pair_eq_idealOfVars]
+    infer_instance
   set m := Ideal.span {(X 0 : MvPolynomial (Fin 2) k), X 1}
   set I := Ideal.span {(X 0 ^ 2 : MvPolynomial (Fin 2) k), X 0 * X 1}
-  have : m.IsMaximal := isMaximal_span_X
   -- The origin is an associated prime: it is the annihilator of the class of `x`.
   have hass : m ∈ associatedPrimes (MvPolynomial (Fin 2) k) (MvPolynomial (Fin 2) k ⧸ I) := by
     refine isAssociatedPrime_iff.2 ⟨inferInstance, Ideal.Quotient.mk I (X 0), ?_⟩
@@ -150,7 +138,8 @@ example : ¬ (tilde (ModuleCat.of (CommRingCat.of (MvPolynomial (Fin 2) k))
       hm.2 ⟨hq, hIq⟩ (Ideal.span_mono (by simp)) (Ideal.subset_span (by simp))
     rw [← Set.image_singleton, mem_ideal_span_X_image] at hX1
     obtain ⟨i, hi, hne⟩ := hX1 (Finsupp.single 1 1) (by simp [support_X])
-    simp_all
+    rw [Set.mem_singleton_iff.1 hi] at hne
+    exact hne (Finsupp.single_eq_of_ne (by decide))
   have hIm : I ≤ m := Ideal.span_le.2 <| by
     rw [Set.insert_subset_iff, Set.singleton_subset_iff]
     exact ⟨Ideal.pow_mem_of_mem _ (Ideal.subset_span (by simp)) 2 two_pos,
@@ -164,6 +153,18 @@ example : ¬ (tilde (ModuleCat.of (CommRingCat.of (MvPolynomial (Fin 2) k))
   · exact absurd (hdepth.symm.trans (IsLocalRing.depth_eq_top_of_subsingleton _)) (by decide)
   · rw [hdepth] at hcm
     exact hsupp (hcm ▸ le_rfl)
+
+variable (k) in
+/-- *Scheme.Modules.IsCohenMacaulay.test_point_on_plane*: on the plane `Spec k[x, y]`, the coherent
+module of `k[x, y] ⧸ (x, y)` is Cohen–Macaulay, while that of `k[x, y] ⧸ (x², xy)` is not. -/
+theorem Modules.IsCohenMacaulay.test_point_on_plane :
+    (tilde (ModuleCat.of (CommRingCat.of (MvPolynomial (Fin 2) k))
+      (MvPolynomial (Fin 2) k ⧸
+        Ideal.span {(X 0 : MvPolynomial (Fin 2) k), X 1}))).IsCohenMacaulay ∧
+    ¬ (tilde (ModuleCat.of (CommRingCat.of (MvPolynomial (Fin 2) k))
+      (MvPolynomial (Fin 2) k ⧸
+        Ideal.span {(X 0 ^ 2 : MvPolynomial (Fin 2) k), X 0 * X 1}))).IsCohenMacaulay :=
+  ⟨isCohenMacaulay_tilde_quotient_origin, not_isCohenMacaulay_tilde_quotient_embedded⟩
 
 end Plane
 
@@ -203,6 +204,63 @@ private theorem cone_algHom_ext {S : Type u} [Semiring S] [Algebra k S] {f g : C
     (h : ∀ i, f (coneX k i) = g (coneX k i)) : f = g :=
   Ideal.Quotient.algHom_ext _ (MvPolynomial.algHom_ext h)
 
+/-- If `h` factors as `g ∘ f`, then the kernel of `f` lies in the kernel of `h`. -/
+private theorem ker_le_ker_of_eq_comp {A S T : Type*} [CommRing A] [Semiring S] [Semiring T]
+    [Algebra k A] [Algebra k S] [Algebra k T] {f : A →ₐ[k] S} {g : S →ₐ[k] T} {h : A →ₐ[k] T}
+    (hgf : h = g.comp f) : RingHom.ker f ≤ RingHom.ker h :=
+  hgf ▸ Ideal.ker_le_comap (K := RingHom.ker g) f
+
+/-- In `k[x, y, z] ⧸ (xz, yz)`, both `x` and `y` kill `z`. -/
+private theorem coneX_mul_coneX_two {i : Fin 3} (hi : i = 0 ∨ i = 1) :
+    coneX k i * coneX k 2 = 0 := by
+  rw [← map_mul, Ideal.Quotient.eq_zero_iff_mem]
+  rcases hi with rfl | rfl <;> exact Ideal.subset_span (by simp)
+
+variable (k) in
+/-- Evaluation of `k[x, y, z] ⧸ (xz, yz)` along the line `x = y = 0`. -/
+private noncomputable abbrev coneLine : Cone k →ₐ[k] Polynomial k :=
+  coneEval ![0, 0, Polynomial.X] (by simp) (by simp)
+
+/-- The line `P = (x, y)` is a minimal prime of `k[x, y, z] ⧸ (xz, yz)`: it kills `z ∉ P`. -/
+private theorem height_ker_coneLine : (RingHom.ker (coneLine k)).height = 0 := by
+  have : (RingHom.ker (coneLine k)).IsPrime := RingHom.ker_isPrime _
+  have hzP : coneX k 2 ∉ RingHom.ker (coneLine k) := by
+    simp [coneEval_coneX, Polynomial.X_ne_zero]
+  have hPz (a : Cone k) (ha : a ∈ RingHom.ker (coneLine k)) : a * coneX k 2 = 0 := by
+    -- Modulo `K = (x, y)` the ring is `k[z]`, so `a ∈ P` lies in `K`.
+    let K := Ideal.span {coneX k 0, coneX k 1}
+    let g : Polynomial k →ₐ[k] Cone k ⧸ K := Polynomial.aeval (Ideal.Quotient.mk K (coneX k 2))
+    have hK {i : Fin 3} (hi : i = 0 ∨ i = 1) : Ideal.Quotient.mk K (coneX k i) = 0 := by
+      rw [Ideal.Quotient.eq_zero_iff_mem]
+      rcases hi with rfl | rfl <;> exact Ideal.subset_span (by simp)
+    have hg : Ideal.Quotient.mkₐ k K = g.comp (coneLine k) := by
+      refine cone_algHom_ext (f := Ideal.Quotient.mkₐ k K) (g := g.comp (coneLine k)) fun i ↦ ?_
+      rw [AlgHom.comp_apply, coneEval_coneX, Ideal.Quotient.mkₐ_eq_mk]
+      fin_cases i <;> simp [g, hK]
+    have haK := ker_le_ker_of_eq_comp hg ha
+    rw [RingHom.mem_ker, Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq_zero_iff_mem] at haK
+    obtain ⟨b, c, rfl⟩ := Ideal.mem_span_pair.1 haK
+    rw [add_mul, mul_assoc, mul_assoc, coneX_mul_coneX_two (.inl rfl),
+      coneX_mul_coneX_two (.inr rfl), mul_zero, mul_zero, add_zero]
+  exact Ideal.height_eq_zero_iff.2
+    ⟨⟨inferInstance, bot_le⟩, fun q ⟨hq, _⟩ hqP a ha ↦
+      (hq.mem_or_mem (hPz a ha ▸ q.zero_mem)).resolve_right fun hz ↦ hzP (hqP hz)⟩
+
+/-- A prime above the line `P` has height at most `dim k[z] = 1` in the quotient by `P`. -/
+private theorem height_map_ker_coneLine_le_one (Q : Ideal (Cone k)) [Q.IsPrime]
+    (hPQ : RingHom.ker (coneLine k) ≤ Q) :
+    (Q.map (Ideal.Quotient.mk (RingHom.ker (coneLine k)))).height ≤ 1 := by
+  have hφ : Function.Surjective (coneLine k) := fun f ↦ ⟨Polynomial.aeval (coneX k 2) f, by
+    rw [← Polynomial.aeval_algHom_apply, coneEval_coneX]
+    simp⟩
+  have : (Q.map (Ideal.Quotient.mk (RingHom.ker (coneLine k)))).IsPrime :=
+    Ideal.map_isPrime_of_surjective Ideal.Quotient.mk_surjective (by rwa [Ideal.mk_ker])
+  have h := Ideal.height_le_ringKrullDim_of_ne_top
+    (I := Q.map (Ideal.Quotient.mk (RingHom.ker (coneLine k)))) this.ne_top
+  rw [ringKrullDim_eq_of_ringEquiv (Ideal.quotientKerAlgEquivOfSurjective hφ).toRingEquiv,
+    Polynomial.ringKrullDim_of_isNoetherianRing, ringKrullDim_eq_zero_of_field, zero_add] at h
+  exact_mod_cast h
+
 /-- *test_cone*: the union `Spec k[x, y, z] ⧸ (xz, yz)` of a plane and a line meeting at the
 origin is not Cohen–Macaulay. In the Cohen–Macaulay local ring at the origin `Q`, the dimension
 formula would give `ht P + ht (Q / P) = ht Q` for the line `P = (x, y)`; but `P` is a minimal
@@ -211,39 +269,28 @@ prime, `Q / P` is the origin of the line `k[z]`, of height at most `1`, and the 
 example : ¬ (Spec (CommRingCat.of (Cone k))).IsCohenMacaulay := by
   rw [isCohenMacaulay_Spec_iff]
   intro hCM
-  -- Evaluations at the origin `Q`, along the line `P`, along the plane `P₁ = (z)` and along the
-  -- line `P₂ = (y, z)` in the plane.
+  -- Evaluations at the origin `Q`, along the plane `P₁ = (z)` and along the line `P₂ = (y, z)`
+  -- in the plane.
   let ε := coneEval (k := k) (S := k) (fun _ ↦ 0) (by simp) (by simp)
-  let φ := coneEval (k := k) (S := Polynomial k) ![0, 0, Polynomial.X] (by simp) (by simp)
   let ψ₁ := coneEval (k := k) (S := MvPolynomial (Fin 2) k) ![X 0, X 1, 0] (by simp) (by simp)
   let ψ₂ := coneEval (k := k) (S := Polynomial k) ![Polynomial.X, 0, 0] (by simp) (by simp)
   let Q := RingHom.ker ε
-  let P := RingHom.ker φ
   let P₁ := RingHom.ker ψ₁
   let P₂ := RingHom.ker ψ₂
   have : Q.IsPrime := RingHom.ker_isPrime ε
-  have : P.IsPrime := RingHom.ker_isPrime φ
+  have : (RingHom.ker (coneLine k)).IsPrime := RingHom.ker_isPrime _
   have : P₁.IsPrime := RingHom.ker_isPrime ψ₁
   have : P₂.IsPrime := RingHom.ker_isPrime ψ₂
-  have hεφ : ε = (Polynomial.aeval 0).comp φ :=
-    cone_algHom_ext fun i ↦ by fin_cases i <;> simp [ε, φ, coneEval_coneX]
-  have hεψ : ε = (Polynomial.aeval 0).comp ψ₂ :=
-    cone_algHom_ext fun i ↦ by fin_cases i <;> simp [ε, ψ₂, coneEval_coneX]
-  have hψ : ψ₂ = (aeval ![Polynomial.X, 0]).comp ψ₁ :=
-    cone_algHom_ext fun i ↦ by fin_cases i <;> simp [ψ₁, ψ₂, coneEval_coneX]
-  have hPQ : P ≤ Q := fun a ha ↦ by
-    rw [RingHom.mem_ker] at ha ⊢
-    rw [hεφ, AlgHom.comp_apply, ha, map_zero]
+  have hPQ : RingHom.ker (coneLine k) ≤ Q := ker_le_ker_of_eq_comp (g := Polynomial.aeval 0)
+    (cone_algHom_ext fun i ↦ by fin_cases i <;> simp [ε, coneEval_coneX])
   -- The chain `P₁ < P₂ < Q` gives `ht Q ≥ 2`.
   have h₁₂ : P₁ < P₂ := IsConcreteLE.lt_iff_le_and_exists.2
-    ⟨fun a ha ↦ by
-      rw [RingHom.mem_ker] at ha ⊢
-      rw [hψ, AlgHom.comp_apply, ha, map_zero],
+    ⟨ker_le_ker_of_eq_comp (g := aeval ![Polynomial.X, 0])
+      (cone_algHom_ext fun i ↦ by fin_cases i <;> simp [ψ₁, ψ₂, coneEval_coneX]),
       coneX k 1, by simp [P₂, ψ₂, coneEval_coneX], by simp [P₁, ψ₁, coneEval_coneX, X_ne_zero]⟩
   have h₂Q : P₂ < Q := IsConcreteLE.lt_iff_le_and_exists.2
-    ⟨fun a ha ↦ by
-      rw [RingHom.mem_ker] at ha ⊢
-      rw [hεψ, AlgHom.comp_apply, ha, map_zero],
+    ⟨ker_le_ker_of_eq_comp (g := Polynomial.aeval 0)
+      (cone_algHom_ext fun i ↦ by fin_cases i <;> simp [ε, ψ₂, coneEval_coneX]),
       coneX k 0, by simp [Q, ε, coneEval_coneX],
       by simp [P₂, ψ₂, coneEval_coneX, Polynomial.X_ne_zero]⟩
   have hQ : 2 ≤ Q.height := by
@@ -252,49 +299,10 @@ example : ¬ (Spec (CommRingCat.of (Cone k))).IsCohenMacaulay := by
     calc (2 : ℕ∞) ≤ P₁.height + 1 + 1 := by rw [add_assoc, one_add_one_eq_two]; exact le_add_self
       _ ≤ P₂.height + 1 := by gcongr
       _ ≤ Q.height := h2
-  -- The line `P = (x, y)` is a minimal prime: it kills `z ∉ P`.
-  have hzP : coneX k 2 ∉ P := by simp [P, φ, coneEval_coneX, Polynomial.X_ne_zero]
-  have hxz : coneX k 0 * coneX k 2 = 0 := by
-    rw [← map_mul, Ideal.Quotient.eq_zero_iff_mem]
-    exact Ideal.subset_span (by simp)
-  have hyz : coneX k 1 * coneX k 2 = 0 := by
-    rw [← map_mul, Ideal.Quotient.eq_zero_iff_mem]
-    exact Ideal.subset_span (by simp)
-  have hPz (a : Cone k) (ha : a ∈ P) : a * coneX k 2 = 0 := by
-    -- Modulo `K = (x, y)` the ring is `k[z]`, so `a ∈ P` lies in `K`.
-    let K := Ideal.span {coneX k 0, coneX k 1}
-    let g : Polynomial k →ₐ[k] Cone k ⧸ K := Polynomial.aeval (Ideal.Quotient.mk K (coneX k 2))
-    have hg : Ideal.Quotient.mkₐ k K = g.comp φ := by
-      refine cone_algHom_ext (f := Ideal.Quotient.mkₐ k K) (g := g.comp φ) fun i ↦ ?_
-      rw [AlgHom.comp_apply, coneEval_coneX, Ideal.Quotient.mkₐ_eq_mk]
-      fin_cases i
-      · simpa [Ideal.Quotient.eq_zero_iff_mem, K] using Ideal.subset_span (by simp)
-      · simpa [Ideal.Quotient.eq_zero_iff_mem, K] using Ideal.subset_span (by simp)
-      · simp [g]
-    have haK : a ∈ K := by
-      rw [← Ideal.Quotient.eq_zero_iff_mem, ← Ideal.Quotient.mkₐ_eq_mk k, hg, AlgHom.comp_apply,
-        RingHom.mem_ker.1 ha, map_zero]
-    obtain ⟨b, c, rfl⟩ := Ideal.mem_span_pair.1 haK
-    rw [add_mul, mul_assoc, mul_assoc, hxz, hyz, mul_zero, mul_zero, add_zero]
-  have hP : P.height = 0 := Ideal.height_eq_zero_iff.2
-    ⟨⟨inferInstance, bot_le⟩, fun q ⟨hq, _⟩ hqP a ha ↦
-      (hq.mem_or_mem (hPz a ha ▸ q.zero_mem)).resolve_right fun hz ↦ hzP (hqP hz)⟩
-  -- `ht (Q / P) ≤ dim k[z] = 1`.
-  have hφ : Function.Surjective φ := fun f ↦ ⟨Polynomial.aeval (coneX k 2) f, by
-    rw [← Polynomial.aeval_algHom_apply, coneEval_coneX]
-    simp⟩
-  have hQP : (Q.map (Ideal.Quotient.mk P)).height ≤ 1 := by
-    have : (Q.map (Ideal.Quotient.mk P)).IsPrime :=
-      Ideal.map_isPrime_of_surjective Ideal.Quotient.mk_surjective (by rwa [Ideal.mk_ker])
-    have h := Ideal.height_le_ringKrullDim_of_ne_top (I := Q.map (Ideal.Quotient.mk P))
-      this.ne_top
-    rw [ringKrullDim_eq_of_ringEquiv (Ideal.quotientKerAlgEquivOfSurjective hφ).toRingEquiv,
-      Polynomial.ringKrullDim_of_isNoetherianRing, ringKrullDim_eq_zero_of_field, zero_add] at h
-    exact_mod_cast h
   -- But `ht P + ht (Q / P) = ht Q` in the Cohen–Macaulay local ring at `Q`.
   have hsum := (hCM.isCohenMacaulay_localization Q).height_add_height_map_quotientMk hPQ
-  rw [hP, zero_add] at hsum
-  exact absurd (hQ.trans (hsum ▸ hQP)) (by decide)
+  rw [height_ker_coneLine, zero_add] at hsum
+  exact absurd (hQ.trans (hsum ▸ height_map_ker_coneLine_le_one Q hPQ)) (by decide)
 
 end Cone
 
