@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.Cholesky.Equiv
+public import TauCeti.LinearAlgebra.Matrix.Trace.Basic
+public import TauCeti.Topology.Instances.Matrix
 public import Mathlib.Topology.Maps.Proper.CompactlyGenerated
 
 /-!
@@ -56,38 +58,6 @@ theorem continuous_choleskyReconstruction :
   exact (continuous_subtype_val.matrix_mul continuous_subtype_val.matrix_transpose).congr
     fun L ↦ (choleskyReconstruction_coe L).symm
 
-/-- The lower-triangular matrices with nonnegative diagonal whose Gram matrix lies in a closed set
-form a closed set. -/
-theorem isClosed_isLowerTriangular_nonneg_diag_mul_transpose_mem
-    {S : Set (Matrix (Fin p) (Fin p) ℝ)}
-    (hS : IsClosed S) :
-    IsClosed {L : Matrix (Fin p) (Fin p) ℝ |
-      L.IsLowerTriangular ∧ (∀ i, 0 ≤ L i i) ∧ L * Lᵀ ∈ S} := by
-  have htri : IsClosed {L : Matrix (Fin p) (Fin p) ℝ | L.IsLowerTriangular} := by
-    simp only [Matrix.IsLowerTriangular, Matrix.BlockTriangular, Set.ofPred_forall]
-    exact isClosed_iInter fun i ↦ isClosed_iInter fun j ↦ isClosed_iInter fun _ ↦
-      isClosed_eq (continuous_id.matrix_elem i j) continuous_const
-  have hdiag : IsClosed {L : Matrix (Fin p) (Fin p) ℝ | ∀ i, 0 ≤ L i i} := by
-    simp only [Set.ofPred_forall]
-    exact isClosed_iInter fun i ↦ isClosed_le continuous_const (continuous_id.matrix_elem i i)
-  exact htri.inter (hdiag.inter
-    (hS.preimage (continuous_id.matrix_mul continuous_id.matrix_transpose)))
-
-/-- Each entry of a real matrix is bounded in absolute value by the square root of the trace of
-its Gram matrix `L * Lᵀ`. -/
-theorem abs_apply_le_sqrt_trace_mul_transpose (L : Matrix (Fin p) (Fin p) ℝ) (i j : Fin p) :
-    |L i j| ≤ √(L * Lᵀ).trace := by
-  refine Real.abs_le_sqrt ?_
-  have htrace : (L * Lᵀ).trace = ∑ i, ∑ k, L i k * L i k := by
-    simp [Matrix.trace, Matrix.mul_apply]
-  calc L i j ^ 2 = L i j * L i j := sq _
-    _ ≤ ∑ k, L i k * L i k :=
-      Finset.single_le_sum (fun k _ ↦ mul_self_nonneg (L i k)) (Finset.mem_univ j)
-    _ ≤ ∑ i, ∑ k, L i k * L i k :=
-      Finset.single_le_sum (f := fun i ↦ ∑ k, L i k * L i k)
-        (fun i _ ↦ Finset.sum_nonneg fun k _ ↦ mul_self_nonneg (L i k)) (Finset.mem_univ i)
-    _ = (L * Lᵀ).trace := htrace.symm
-
 /-- The factors of the matrices in a set `K` of positive-definite matrices are the lower-triangular
 matrices with nonnegative diagonal whose Gram matrix lies in `K`: the positivity of the diagonal is
 automatic. -/
@@ -125,8 +95,8 @@ theorem isProperMap_choleskyReconstruction :
   obtain ⟨c, hc⟩ := hK'c.bddAbove_image (continuous_id.matrix_trace).continuousOn
   have hTc := (isCompact_univ_pi fun _ ↦ isCompact_univ_pi fun _ ↦
     isCompact_Icc (a := -√c) (b := √c)).of_isClosed_subset
-      (isClosed_isLowerTriangular_nonneg_diag_mul_transpose_mem hK'c.isClosed)
-      (fun L hL i _ j _ ↦ abs_le.1 ((abs_apply_le_sqrt_trace_mul_transpose L i j).trans
+      (Matrix.isClosed_isLowerTriangular_nonneg_diag_mul_transpose_mem hK'c.isClosed)
+      (fun L hL i _ j _ ↦ abs_le.1 ((Matrix.abs_apply_le_sqrt_trace_mul_transpose L i j).trans
         (Real.sqrt_le_sqrt (hc ⟨_, hL.2.2, rfl⟩))))
   exact Topology.IsEmbedding.subtypeVal.isInducing.isCompact_iff.2
     ((image_val_preimage_choleskyReconstruction K) ▸ hTc)

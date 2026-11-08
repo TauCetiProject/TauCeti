@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Matrix.Kronecker
 public import Mathlib.Topology.Algebra.GroupWithZero
 public import Mathlib.Topology.Algebra.MvPolynomial
 public import Mathlib.Topology.Instances.Matrix
+public import Mathlib.Topology.Instances.Real.Lemmas
 public import Mathlib.Topology.MetricSpace.Pseudo.Defs
 public import Mathlib.Topology.UniformSpace.Matrix
 public import Mathlib.Topology.Metrizable.Basic
@@ -225,5 +226,24 @@ theorem continuous_oneKroneckerStarAlgHom :
     Continuous (oneKroneckerStarAlgHom R (α := α) (m := m) n) :=
   ((continuous_pi fun _ ↦ continuous_id).matrix_blockDiagonal.matrix_reindex _ _).congr fun B ↦
     (one_kronecker B).symm.trans (oneKroneckerStarAlgHom_apply B).symm
+
+end Matrix
+
+namespace Matrix
+
+variable {n : Type*} [Fintype n] [LinearOrder n]
+
+/-- The lower-triangular matrices with nonnegative diagonal whose Gram matrix lies in a closed set
+form a closed set. -/
+theorem isClosed_isLowerTriangular_nonneg_diag_mul_transpose_mem {S : Set (Matrix n n ℝ)}
+    (hS : IsClosed S) :
+    IsClosed {L : Matrix n n ℝ | L.IsLowerTriangular ∧ (∀ i, 0 ≤ L i i) ∧ L * Lᵀ ∈ S} := by
+  have htri : IsClosed {L : Matrix n n ℝ | L.IsLowerTriangular} :=
+    isClosed_setOfPred_blockTriangular (b := OrderDual.toDual)
+  have hdiag : IsClosed {L : Matrix n n ℝ | ∀ i, 0 ≤ L i i} := by
+    simp only [Set.ofPred_forall]
+    exact isClosed_iInter fun i ↦ isClosed_le continuous_const (continuous_id.matrix_elem i i)
+  exact htri.inter (hdiag.inter
+    (hS.preimage (continuous_id.matrix_mul continuous_id.matrix_transpose)))
 
 end Matrix

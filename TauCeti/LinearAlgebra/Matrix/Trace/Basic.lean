@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.LinearAlgebra.Matrix.Trace
+import Mathlib.Analysis.Matrix.Normed
 import Mathlib.Tactic.Ring
 
 /-!
@@ -35,5 +37,15 @@ theorem trace_add_mul_add_mul (M N : Matrix m n R) (S : Matrix n m R) :
     simpa only [Matrix.mul_assoc] using trace_mul_comm (N * S) (M * S)
   simp only [Matrix.add_mul, Matrix.mul_add, trace_add, hcross]
   ring
+
+open scoped Matrix.Norms.Frobenius in
+/-- Each entry of a real matrix is bounded in absolute value by the square root of the trace of
+its Gram matrix `L * Lᵀ`. -/
+theorem abs_apply_le_sqrt_trace_mul_transpose (L : Matrix m n ℝ) (i : m) (j : n) :
+    |L i j| ≤ √(L * Lᵀ).trace := by
+  rw [← Real.norm_eq_abs]
+  refine (norm_apply_le_frobenius_norm L i j).trans (le_of_eq ?_)
+  rw [frobenius_norm_def, ← Real.sqrt_eq_rpow]
+  simp [trace, Matrix.mul_apply, sq]
 
 end Matrix
