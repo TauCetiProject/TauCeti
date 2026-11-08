@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Exchangeability.Basic
+public import TauCeti.Probability.Exchangeability.PathSpace.ContractableLaw
 public import Mathlib.Order.Fin.Basic
 public import Mathlib.Data.Fin.VecNotation
 public import Mathlib.Dynamics.Ergodic.MeasurePreserving
@@ -197,14 +198,14 @@ theorem contractable_of_forall_map_reindex_pathLaw {μ : Measure Ω} {X : ℕ �
       (pathLaw μ X).map (fun x : ℕ → α ↦ fun k ↦ x (φ k)) = pathLaw μ X) :
     Contractable μ X := by
   intro m k hk
-  obtain ⟨φ, hφ, hφ_eq⟩ := hk.exists_strictMono_nat_extending_fin
-  have hmap := congrArg (fun ν : Measure (ℕ → α) ↦ ν.map (prefixProj α m)) (hX φ hφ)
-  rw [map_reindex_prefixProj_pathLaw μ hX_meas φ m,
-    map_prefixProj_pathLaw μ (AEMeasurable.of_eval hX_meas) m] at hmap
-  have hidx : (fun i : Fin m ↦ φ i.val) = k := by
-    funext i
-    exact hφ_eq i
-  simpa [hidx] using hmap
+  have hX' : ContractableLaw (pathLaw μ X) := ContractableLaw.intro hX
+  have h := hX'.map_prefixProj_of_strictMono hk
+  have hpath := AEMeasurable.of_eval hX_meas
+  rw [pathLaw_def, AEMeasurable.map_map_of_aemeasurable
+      (measurable_pi_iff.2 fun i ↦ measurable_pi_apply (k i)).aemeasurable hpath,
+    AEMeasurable.map_map_of_aemeasurable (measurable_prefixProj m).aemeasurable hpath] at h
+  rw [blockLaw_def, prefixLaw_def, blockLaw_def]
+  exact h
 
 /-- Contractability is equivalent to invariance of the path law under every strictly increasing
 time-reindexing `ℕ → ℕ`. This is the path-law form of spreadability/contractability. -/
