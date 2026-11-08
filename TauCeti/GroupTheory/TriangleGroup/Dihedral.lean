@@ -96,12 +96,14 @@ private theorem y_mul_y_mul_x_zpow_cast_one (m : ℕ) :
     y 2 2 m * (y 2 2 m * x 2 2 m) ^ (ZMod.cast (1 : ZMod m) : ℤ) = x 2 2 m := by
   have hyy : y 2 2 m * y 2 2 m = 1 := by simpa only [pow_two] using y_pow 2 2 m
   rcases m with - | - | m
-  · rw [show (ZMod.cast (1 : ZMod 0) : ℤ) = 1 from rfl, zpow_one, ← mul_assoc, hyy, one_mul]
+  · -- `ZMod 0` is `ℤ` by definition, so the cast to `ℤ` is the identity
+    have hc : (ZMod.cast (1 : ZMod 0) : ℤ) = 1 := rfl
+    simp [hc, ← mul_assoc, hyy]
   · have hyx : y 2 2 1 * x 2 2 1 = 1 := by simpa only [pow_one] using y_mul_x_pow 2 2 1
-    rw [Subsingleton.elim (1 : ZMod 1) 0, ZMod.cast_zero, zpow_zero, mul_one]
-    rw [← mul_one (y 2 2 1), ← hyx, ← mul_assoc, hyy, one_mul]
+    have hxy : x 2 2 1 = y 2 2 1 := mul_left_cancel (hyx.trans hyy.symm)
+    simp [Subsingleton.elim (1 : ZMod 1) 0, hxy]
   · have : Fact (1 < m + 2) := ⟨by omega⟩
-    rw [ZMod.cast_eq_val, ZMod.val_one, Nat.cast_one, zpow_one, ← mul_assoc, hyy, one_mul]
+    simp [ZMod.cast_eq_val, ZMod.val_one, ← mul_assoc, hyy]
 
 /-- The isomorphism from `DihedralGroup m` to the `(2, 2, m)` triangle group. -/
 private noncomputable def dihedralEquiv (m : ℕ) :
@@ -119,9 +121,9 @@ private noncomputable def dihedralEquiv (m : ℕ) :
       rw [hset]
       exact closure_x_y 2 2 m)
 
-/-- **The signature `(2, 2, m)` is the dihedral group of order `2m`**, for every `m`: the
-spherical dihedral row when `2 ≤ m`, the infinite dihedral group when `m = 0`, and the group of
-order two when `m = 1`. -/
+/-- **The signature `(2, 2, m)` is the dihedral group `DihedralGroup m`**, for every `m`: the
+spherical dihedral row of order `2m` when `2 ≤ m`, the infinite dihedral group when `m = 0`, and
+the group of order two when `m = 1`. -/
 noncomputable def equivDihedral (m : ℕ) :
     TriangleGroup 2 2 m ≃* DihedralGroup m :=
   (dihedralEquiv m).symm
