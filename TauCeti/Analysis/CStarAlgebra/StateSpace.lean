@@ -11,6 +11,7 @@ public import Mathlib.Analysis.LocallyConvex.WeakDual
 public import Mathlib.Analysis.Normed.Module.WeakDual
 public import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional
 import Mathlib.Analysis.Normed.Module.HahnBanach
+import TauCeti.Analysis.LocallyConvex.WeakDual.Basic
 import TauCeti.Topology.Algebra.Module.Spaces.WeakDual
 
 /-!
@@ -91,17 +92,23 @@ theorem isClosed_preimage_toWeakDual_stateSpace :
   exact (isClosed_setOf_map_nonneg.preimage NormedSpace.Dual.toWeakDual_continuous).inter
     (isClosed_eq continuous_norm continuous_const)
 
-variable [StarOrderedRing A]
-
-/-- A positive linear functional, continuous by `PositiveLinearMap.exists_norm_apply_le`, is a
-state exactly when its norm is one. -/
+/-- A positive continuous linear functional is a state exactly when its norm is one. -/
 @[simp]
-theorem _root_.PositiveLinearMap.toWeakDual_mem_stateSpace_iff (ω : A →ₚ[ℂ] ℂ) :
-    StrongDual.toWeakDual (PositiveContinuousLinearMap.ofClass ω : A →L[ℂ] ℂ) ∈ stateSpace A ↔
-      ‖(PositiveContinuousLinearMap.ofClass ω : A →L[ℂ] ℂ)‖ = 1 := by
+theorem _root_.PositiveContinuousLinearMap.toWeakDual_mem_stateSpace_iff (ω : A →P[ℂ] ℂ) :
+    StrongDual.toWeakDual (ω : A →L[ℂ] ℂ) ∈ stateSpace A ↔ ‖(ω : A →L[ℂ] ℂ)‖ = 1 := by
   simp only [mem_stateSpace_iff, StrongDual.toWeakDual_apply,
     StrongDual.toStrongDual_toWeakDual, and_iff_right_iff_imp]
   exact fun _ a ha => ω.map_nonneg ha
+
+variable [StarOrderedRing A]
+
+/-- A positive linear functional, continuous by `PositiveLinearMap.exists_norm_apply_le`, is a
+state exactly when its norm is one. Simp proves this through
+`PositiveContinuousLinearMap.toWeakDual_mem_stateSpace_iff`. -/
+theorem _root_.PositiveLinearMap.toWeakDual_mem_stateSpace_iff (ω : A →ₚ[ℂ] ℂ) :
+    StrongDual.toWeakDual (PositiveContinuousLinearMap.ofClass ω : A →L[ℂ] ℂ) ∈ stateSpace A ↔
+      ‖(PositiveContinuousLinearMap.ofClass ω : A →L[ℂ] ℂ)‖ = 1 :=
+  (PositiveContinuousLinearMap.ofClass ω).toWeakDual_mem_stateSpace_iff
 
 /-- The states of `A` are exactly the positive linear maps `A →ₚ[ℂ] ℂ` of norm one, viewed in the
 weak-* dual. -/
@@ -148,6 +155,11 @@ noncomputable def pullbackFunctional (f : F) : WeakDual ℂ B →ₗ[ℂ] WeakDu
 theorem pullbackFunctional_apply (f : F) (φ : WeakDual ℂ B) (a : A) :
     pullbackFunctional A f φ a = φ (f a) :=
   (rfl)
+
+/-- The pullback along `f` is weak-* continuous: each evaluation `φ ↦ φ (f a)` is. -/
+@[fun_prop]
+theorem continuous_pullbackFunctional (f : F) : Continuous (pullbackFunctional A f) :=
+  continuous_of_continuous_eval fun a => by simpa using eval_continuous (f a)
 
 /-- **Pullback of states along a surjective star homomorphism.** Composing a state of `B` with a
 surjective star homomorphism `A → B` gives a state of `A`. Without surjectivity the norm of the
@@ -220,21 +232,13 @@ theorem stateSpace_nonempty [Nontrivial A] : (stateSpace A).Nonempty := by
 /-- **Krein–Milman for states.** For unital `A`, the state space is the weak-* closed convex hull
 of its extreme points, the pure states. -/
 theorem closure_convexHull_extremePoints_stateSpace :
-    closure (convexHull ℝ (extremePoints ℝ (stateSpace A))) = stateSpace A := by
-  -- The weak-* dual inherits its real local convexity from the canonical dual pairing.
-  let : IsScalarTower ℝ ℂ (WeakDual ℂ A) := inferInstanceAs (IsScalarTower ℝ ℂ (StrongDual ℂ A))
-  let : LocallyConvexSpace ℝ (WeakDual ℂ A) :=
-    inferInstanceAs (LocallyConvexSpace ℝ (WeakBilin (topDualPairing ℂ A)))
-  exact closure_convexHull_extremePoints isCompact_stateSpace convex_stateSpace
+    closure (convexHull ℝ (extremePoints ℝ (stateSpace A))) = stateSpace A :=
+  closure_convexHull_extremePoints isCompact_stateSpace convex_stateSpace
 
 /-- **Existence of pure states.** A nonzero unital C⋆-algebra has an extreme state. -/
 theorem extremePoints_stateSpace_nonempty [Nontrivial A] :
-    (extremePoints ℝ (stateSpace A)).Nonempty := by
-  -- The weak-* dual inherits its real local convexity from the canonical dual pairing.
-  let : IsScalarTower ℝ ℂ (WeakDual ℂ A) := inferInstanceAs (IsScalarTower ℝ ℂ (StrongDual ℂ A))
-  let : LocallyConvexSpace ℝ (WeakDual ℂ A) :=
-    inferInstanceAs (LocallyConvexSpace ℝ (WeakBilin (topDualPairing ℂ A)))
-  exact isCompact_stateSpace.extremePoints_nonempty stateSpace_nonempty
+    (extremePoints ℝ (stateSpace A)).Nonempty :=
+  isCompact_stateSpace.extremePoints_nonempty stateSpace_nonempty
 
 /-- The only state of `ℂ` is the identity functional. -/
 theorem stateSpace_complex :

@@ -10,6 +10,7 @@ public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.Topology.Algebra.Module.Spaces.WeakDual
 public import Mathlib.LinearAlgebra.SesquilinearForm.Orthogonal
 import Mathlib.Analysis.LocallyConvex.Separation
+import TauCeti.Analysis.LocallyConvex.WeakDual.Basic
 
 /-!
 # Weak-star double annihilators
@@ -70,10 +71,6 @@ theorem map_orthogonalBilin_flip_orthogonalBilin_eq_topologicalClosure
     inferInstanceAs (AddCommGroup (WeakBilin (topDualPairing 𝕜 E)))
   let : IsTopologicalAddGroup (WeakDual 𝕜 E) :=
     inferInstanceAs (IsTopologicalAddGroup (WeakBilin (topDualPairing 𝕜 E)))
-  let : IsScalarTower ℝ 𝕜 (WeakDual 𝕜 E) :=
-    inferInstanceAs (IsScalarTower ℝ 𝕜 (StrongDual 𝕜 E))
-  let : LocallyConvexSpace ℝ (WeakDual 𝕜 E) :=
-    inferInstanceAs (LocallyConvexSpace ℝ (WeakBilin (topDualPairing 𝕜 E)))
   let H := G.map StrongDual.toWeakDual.toLinearMap
   apply le_antisymm
   · rintro _ ⟨f, hf, rfl⟩
