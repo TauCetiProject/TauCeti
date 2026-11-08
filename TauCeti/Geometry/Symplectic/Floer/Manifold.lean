@@ -622,8 +622,6 @@ end TauCeti.SmoothTwoForm
 
 namespace TauCeti.SymplecticForm
 
-open Filter Topology
-
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
 /-- A constant smooth two-form has the same Hamiltonian curvature as the vector-space form. -/
@@ -633,36 +631,6 @@ theorem hamiltonianCurvature_constSmooth (ω : SymplecticForm V)
     ω.constSmooth.hamiltonianCurvature Ks Kt z x = ω.hamiltonianCurvature Ks Kt z x := by
   rw [SmoothTwoForm.hamiltonianCurvature_def, hamiltonianCurvature_def,
     poissonBracket_constSmooth]
-
-/-- If both components of a Hamiltonian one-form vanish near a domain point, its curvature
-vanishes there. No differentiability assumption is needed. -/
-theorem hamiltonianCurvature_eq_zero_of_eventuallyEq_zero (ω : SymplecticForm V)
-    {Ks Kt : ℝ × ℝ → V → ℝ} {z : ℝ × ℝ}
-    (hs : Ks =ᶠ[𝓝 z] 0) (ht : Kt =ᶠ[𝓝 z] 0) (x : V) :
-    ω.hamiltonianCurvature Ks Kt z x = 0 := by
-  simpa only [hamiltonianCurvature_constSmooth] using
-    ω.constSmooth.hamiltonianCurvature_eq_zero_of_eventuallyEq_zero hs ht x
-
-/-- If both components of a Hamiltonian one-form vanish off a closed domain set, its curvature
-also vanishes off that set. No differentiability assumption is needed. -/
-theorem hamiltonianCurvature_eq_zero_of_notMem (ω : SymplecticForm V)
-    {Ks Kt : ℝ × ℝ → V → ℝ} {D : Set (ℝ × ℝ)} (hD : IsClosed D)
-    (hs : ∀ z ∉ D, Ks z = 0) (ht : ∀ z ∉ D, Kt z = 0)
-    {z : ℝ × ℝ} (hz : z ∉ D) (x : V) : ω.hamiltonianCurvature Ks Kt z x = 0 := by
-  simpa only [hamiltonianCurvature_constSmooth] using
-    ω.constSmooth.hamiltonianCurvature_eq_zero_of_notMem hD hs ht hz x
-
-/-- Adding a perturbation supported in a closed set inside an open region where the original
-one-form vanishes adds their curvatures exactly: there are no mixed Poisson-bracket terms. -/
-theorem hamiltonianCurvature_add_of_eq_zero_on (ω : SymplecticForm V)
-    {Ks Kt δs δt : ℝ × ℝ → V → ℝ} {D U : Set (ℝ × ℝ)}
-    (hD : IsClosed D) (hU : IsOpen U) (hDU : D ⊆ U)
-    (hKs : ∀ z ∈ U, Ks z = 0) (hKt : ∀ z ∈ U, Kt z = 0)
-    (hδs : ∀ z ∉ D, δs z = 0) (hδt : ∀ z ∉ D, δt z = 0) (z : ℝ × ℝ) (x : V) :
-    ω.hamiltonianCurvature (fun w y ↦ Ks w y + δs w y) (fun w y ↦ Kt w y + δt w y) z x =
-      ω.hamiltonianCurvature Ks Kt z x + ω.hamiltonianCurvature δs δt z x := by
-  simpa only [hamiltonianCurvature_constSmooth] using
-    ω.constSmooth.hamiltonianCurvature_add_of_eq_zero_on hD hU hDU hKs hKt hδs hδt z x
 
 /-- Under the canonical target tangent identification the intrinsic perturbed derivative
 for a constant form is the vector-space perturbed derivative. -/
