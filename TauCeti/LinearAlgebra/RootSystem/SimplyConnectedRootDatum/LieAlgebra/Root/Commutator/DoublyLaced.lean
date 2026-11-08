@@ -120,8 +120,11 @@ theorem commutatorElement_chevalleyRootSubgroup_of_add_eq_of_add_eq
   have hM' := kostantForm_chevalleySystem_apply_mem_of_isNilpotent ρ M hM hnil
   simp_rw [chevalleyRootSubgroup_eq_kostantRootSubgroupParam, kostantRootSubgroupParam_apply]
   -- Normalize the stored integer algebra without destructuring the bundled value ring.
-  rw [Subsingleton.elim (CommAlgCat.instAlgebraObjForgetAlgHomCarrier (A := A))
-    (Ring.toIntAlgebra A)]
+  have halg := Subsingleton.elim
+    (inferInstance : Algebra ℤ ((CategoryTheory.forget (CommAlgCat ℤ)).obj A))
+    (Ring.toIntAlgebra A)
+  dsimp only [inferInstance] at halg
+  rw [halg]
   simpa only [MulEquiv.apply_symm_apply, toAdd_ofAdd] using
     commutatorElement_kostantRootSubgroupPoints_of_lie_lie_eq' e (t.lieBasis ht).h ρ M hM'
       (A := A)
