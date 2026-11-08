@@ -63,10 +63,10 @@ theorem squarefree_germ_of_forall_ord_le_one {f : Γ(X, ⊤)} (hf : f ≠ 0)
   have haK : algebraMap (X.presheaf.stalk x) X.functionField a ≠ 0 :=
     (map_ne_zero_iff _ hinj).mpr ha0
   have hbound := hord ⟨η, hη⟩
-  have hnonneg := TauCeti.AlgebraicGeometry.Scheme.ord_algebraMap_stalk_nonneg hη hηx ha0
+  have hnonneg := TauCeti.AlgebraicGeometry.Scheme.ord_algebraMap_stalk_nonneg (b := a) hη hηx
   rw [← X.algebraMap_germ_eq_germToFunctionField (x := x) trivial f, ha, map_mul,
     map_mul, X.ord_mul (mul_ne_zero hpK hpK) haK, X.ord_mul hpK hpK,
-    TauCeti.AlgebraicGeometry.Scheme.ord_algebraMap_stalk_eq_one hη hηx hprime hp0] at hbound
+    TauCeti.AlgebraicGeometry.Scheme.ord_algebraMap_stalk_eq_one hη hηx hprime] at hbound
   -- Normalize the bundled codimension-one point before comparing the integer orders.
   dsimp only at hbound
   omega
@@ -99,7 +99,7 @@ theorem isReduced_subscheme_ofIdealTop_span_singleton_iff_ord_le_one
     have hnt := Ring.ord_ne_top (mem_nonZeroDivisors_of_ne_zero hb)
     obtain ⟨n, hn⟩ := ENat.ne_top_iff_exists.mp hnt
     rw [← X.algebraMap_germ_eq_germToFunctionField (x := (η : X)) trivial f,
-      TauCeti.AlgebraicGeometry.Scheme.ord_algebraMap_stalk η.property hb, ← hn,
+      TauCeti.AlgebraicGeometry.Scheme.ord_algebraMap_stalk η.property, ← hn,
       ENat.toNat_natCast]
     rw [← hn] at hle
     exact_mod_cast hle
