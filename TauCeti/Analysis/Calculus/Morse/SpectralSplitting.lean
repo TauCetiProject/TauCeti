@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.Morse.Index
 public import TauCeti.Analysis.Calculus.Morse.Linearization
 public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
+public import TauCeti.Analysis.InnerProductSpace.Symmetric.Signature
 -- Private: used only to turn the finite-dimensional algebraic splitting into a continuous
 -- projection; the public API exposes the resulting continuous linear map.
 import Mathlib.Analysis.Normed.Module.Complemented
@@ -158,33 +159,10 @@ the Morse index. -/
 theorem morseIndex_eq_ncard_hessianOperator_eigenvalues_neg (hf : ContDiffAt ℝ 2 f x) :
     morseIndex f x =
       {i | hf.isSelfAdjoint_hessianOperator.isSymmetric.eigenvalues rfl i < 0}.ncard := by
-  let hT := hf.isSelfAdjoint_hessianOperator.isSymmetric
-  let b := hT.eigenvectorBasis rfl
-  have horth : (QuadraticMap.associated (hessianQuadraticForm f x)).IsOrthoᵢ b := by
-    rw [LinearMap.isOrthoᵢ_def]
-    intro i j hij
-    rw [associated_hessianQuadraticForm hf, ContinuousLinearMap.toBilinForm_apply,
-      ← inner_hessianOperator_left]
-    have heigen : hessianOperator f x (b i) =
-        (hT.eigenvalues rfl i : ℝ) • b i := by
-      exact hT.apply_eigenvectorBasis rfl i
-    rw [heigen, real_inner_smul_left, orthonormal_iff_ite.mp b.orthonormal i j]
-    simp [hij]
-  have hequiv : QuadraticMap.Equivalent (hessianQuadraticForm f x)
-      (QuadraticMap.weightedSumSquares ℝ fun i ↦ hessianQuadraticForm f x (b i)) :=
-    ⟨QuadraticForm.isometryEquivWeightedSumSquares (hessianQuadraticForm f x) b.toBasis horth⟩
-  have hweights : (fun i ↦ hessianQuadraticForm f x (b i)) = hT.eigenvalues rfl := by
-    funext i
-    rw [hessianQuadraticForm_apply, ← inner_hessianOperator_left]
-    have heigen : hessianOperator f x (b i) =
-        (hT.eigenvalues rfl i : ℝ) • b i := by
-      exact hT.apply_eigenvectorBasis rfl i
-    rw [heigen, real_inner_smul_left, orthonormal_iff_ite.mp b.orthonormal i i]
-    simp
-  rw [hweights] at hequiv
   rw [morseIndex_def]
-  simpa only [hT] using
-    QuadraticForm.sigNeg_of_equiv_weightedSumSquares hequiv
+  exact hf.isSelfAdjoint_hessianOperator.isSymmetric.sigNeg_eq_ncard_eigenvalues_neg rfl
+    fun v ↦ by rw [hessianQuadraticForm_apply, ← inner_hessianOperator_left,
+      ContinuousLinearMap.coe_coe]
 
 /-- The dimension of the unstable linear subspace at a `C²` point is its Morse index. -/
 @[simp]
