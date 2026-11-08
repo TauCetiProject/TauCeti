@@ -229,8 +229,8 @@ private theorem exists_isMorse_of_seminorms (f : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯
   have hw : ∀ r, 0 < w r := fun r ↦ by positivity
   obtain ⟨F, hF0, hFQ, hFinv, hFsupp⟩ := exists_stages_of_step f L hL0 _
     (exists_isMorseOn_stage f hC hV hCV hfV A p ht hfin hp L hLpred hε hε₀ hw)
-  have hsupp : ∀ r, tsupport (fun x ↦ F (r + 1) x - F r x) ⊆ interior (L (r + 2)) := fun r ↦
-    (hFsupp r).trans (inter_subset_left.trans sdiff_subset)
+  have hsupp : ∀ r, tsupport (fun x ↦ F (r + 1) x - F r x) ⊆ L (r + 2) := fun r ↦
+    (hFsupp r).trans (inter_subset_left.trans (sdiff_subset.trans interior_subset))
   -- The stages stabilize: stage `r + 1` changes nothing on `L r`, so they have a smooth limit.
   obtain ⟨g, hgF⟩ := ContMDiffMap.exists_eqOn_of_eqOn_compactExhaustion L F fun r x hx ↦
     sub_eq_zero.mp (image_eq_zero_of_notMem_tsupport

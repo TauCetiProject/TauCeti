@@ -64,18 +64,19 @@ open scoped ContDiff Topology
 
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {n : WithTop ℕ∞}
 
-/-- If the perturbations `F (r + 1) - F r` are supported in `interior (L (r + 2))` and the seminorm
+/-- If the perturbations `F (r + 1) - F r` are supported in `L (r + 2)` and the seminorm
 `q` kills functions which vanish near the compact set `A`, then the limit `g` of the stages is
 within `t` of `f` for `q` as soon as each stage, as long as `A` meets `L (r + 2)`, is within
 `t * w r`. -/
 theorem seminorm_sub_lt_of_stages (L : CompactExhaustion M)
-    (q : Seminorm ℝ C^∞⟮I, M; 𝓘(ℝ), ℝ⟯) {A : Set M} (hA : IsCompact A)
-    (hq0 : ∀ u : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯, (∀ y ∈ A, (u : M → ℝ) =ᶠ[𝓝 y] 0) → q u = 0) {t : ℝ}
+    (q : Seminorm ℝ C^n⟮I, M; 𝓘(ℝ), ℝ⟯) {A : Set M} (hA : IsCompact A)
+    (hq0 : ∀ u : C^n⟮I, M; 𝓘(ℝ), ℝ⟯, (∀ y ∈ A, (u : M → ℝ) =ᶠ[𝓝 y] 0) → q u = 0) {t : ℝ}
     (ht : 0 < t) {w : ℕ → ℝ} (hw : ∀ r, 0 < w r) (hwsum : ∀ N, ∑ r ∈ Finset.range N, w r ≤ 1)
-    (F : ℕ → C^∞⟮I, M; 𝓘(ℝ), ℝ⟯) (g : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯)
+    (F : ℕ → C^n⟮I, M; 𝓘(ℝ), ℝ⟯) (g : C^n⟮I, M; 𝓘(ℝ), ℝ⟯)
     (hgF : ∀ N, EqOn g (F (N + 1)) (L N))
-    (hsupp : ∀ r, tsupport (fun x ↦ F (r + 1) x - F r x) ⊆ interior (L (r + 2)))
+    (hsupp : ∀ r, tsupport (fun x ↦ F (r + 1) x - F r x) ⊆ L (r + 2))
     (hq : ∀ r, (A ∩ L (r + 2)).Nonempty → q (F (r + 1) - F r) < t * w r) :
     q (g - F 0) < t := by
   obtain ⟨N, hN⟩ := L.exists_superset_of_isCompact hA
@@ -89,7 +90,7 @@ theorem seminorm_sub_lt_of_stages (L : CompactExhaustion M)
     · rw [hq0 _ fun y hy ↦ ?_]
       · exact mul_pos ht (hw r)
       · have hy' : y ∉ tsupport fun x ↦ F (r + 1) x - F r x := fun h ↦
-          hi ⟨y, hy, interior_subset (hsupp r h)⟩
+          hi ⟨y, hy, hsupp r h⟩
         simpa [Pi.sub_def] using notMem_tsupport_iff_eventuallyEq.mp hy'
   calc q (g - F 0) = q ((F (N + 1 + 1) - F 0) + (g - F (N + 2))) := by congr 1; abel
     _ ≤ q (F (N + 1 + 1) - F 0) + q (g - F (N + 2)) := map_add_le_add _ _ _
@@ -102,9 +103,9 @@ theorem seminorm_sub_lt_of_stages (L : CompactExhaustion M)
 inside `L (r + 2)`) is within `ε x` of `F 0` at `x`. -/
 theorem abs_sub_lt_of_stages (L : CompactExhaustion M) {ε : M → ℝ} (hε₀ : ∀ x, 0 < ε x)
     {w : ℕ → ℝ} (hw : ∀ r, 0 < w r) (hwsum : ∀ N, ∑ r ∈ Finset.range N, w r ≤ 1)
-    (F : ℕ → C^∞⟮I, M; 𝓘(ℝ), ℝ⟯) (g : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯)
+    (F : ℕ → C^n⟮I, M; 𝓘(ℝ), ℝ⟯) (g : C^n⟮I, M; 𝓘(ℝ), ℝ⟯)
     (hgF : ∀ N, EqOn g (F (N + 1)) (L N))
-    (hsupp : ∀ r, tsupport (fun x ↦ F (r + 1) x - F r x) ⊆ interior (L (r + 2)))
+    (hsupp : ∀ r, tsupport (fun x ↦ F (r + 1) x - F r x) ⊆ L (r + 2))
     (hε : ∀ r, ∀ x ∈ L (r + 2), |F (r + 1) x - F r x| < ε x * w r) (x : M) :
     |g x - F 0 x| < ε x := by
   obtain ⟨N, hN⟩ := L.exists_mem x
@@ -113,7 +114,7 @@ theorem abs_sub_lt_of_stages (L : CompactExhaustion M) {ε : M → ℝ} (hε₀ 
     by_cases hx : x ∈ L (r + 2)
     · exact hε r x hx
     · have h0 : F (r + 1) x - F r x = 0 := image_eq_zero_of_notMem_tsupport
-        (f := fun y ↦ F (r + 1) y - F r y) fun h ↦ hx (interior_subset (hsupp r h))
+        (f := fun y ↦ F (r + 1) y - F r y) fun h ↦ hx (hsupp r h)
       rw [h0, abs_zero]
       exact mul_pos (hε₀ x) (hw r)
   rw [hgF N hN]
