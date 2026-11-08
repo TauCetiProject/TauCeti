@@ -160,7 +160,7 @@ private theorem continuous_integral_gradientIntegrand (hf : Continuous (Function
     refine ae_of_all _ fun τ ↦ ?_
     dsimp only
     rw [norm_inv, norm_of_nonneg (sqrt_nonneg τ)]
-    exact (inv_sqrt_eq_rpow_neg_one_div_two τ).le
+    exact (inv_sqrt_eq_rpow τ).le
   · -- Away from `τ = p₀.1` the cut-off is locally constant in `p`.
     filter_upwards [Measure.ae_ne volume p₀.1] with τ hτ _
     rcases hτ.lt_or_gt with hlt | hlt
