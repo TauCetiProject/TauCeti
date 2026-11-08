@@ -98,8 +98,8 @@ theorem orthogonal_residuePairing_orderGE (a : ℂ) (n : ℤ) :
   exact LinearMap.BilinForm.mem_orthogonal_iff.trans
     (forall_residue_mul_eq_zero_iff φ n)
 
-/-- **Nondegeneracy on all meromorphic germs.** A nonzero germ can be tested against its
-inverse times the reciprocal coordinate; their product has residue one. -/
+/-- The residue pairing on meromorphic germs at `a` is nondegenerate: only the zero germ
+pairs to zero with every germ. -/
 theorem residuePairing_nondegenerate (a : ℂ) : (residuePairing a).Nondegenerate := by
   have hleft : (residuePairing a).SeparatingLeft := by
     intro φ hφ
