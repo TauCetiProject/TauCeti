@@ -65,7 +65,9 @@ private theorem extend_testFunction_iteratedGradient (hsub : Omega ≤ Omega') (
     iteratedGradientTestFunctionLp_apply_ae (mu := mu) p k
       (TestFunction.monoCLM ℝ phi : 𝓓(Omega', ℝ))
 
-private theorem norm_testFunction_mono (hsub : Omega ≤ Omega') (k : ℕ)
+/-- Extension by zero from `Ω` to a larger open set `Ω'` preserves the `W^{k,p}` norm of a test
+function. -/
+theorem Wkp.norm_ofTestFunctionₗ_monoCLM (hsub : Omega ≤ Omega') (k : ℕ)
     (phi : 𝓓(Omega, ℝ)) :
     ‖Wkp.ofTestFunctionₗ (mu := mu) (Omega := Omega') (p := p) k
         (TestFunction.monoCLM ℝ phi)‖ =
@@ -116,7 +118,8 @@ def Wkp0.extendByZeroₗᵢ (hsub : Omega ≤ Omega') (k : ℕ) :
     (TestFunction.monoCLM ℝ).toLinearMap).extendOfIsometry
     (Wkp0.denseRange_ofTestFunctionₗ k) (fun phi => by
       simpa only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe, ← Submodule.norm_coe,
-        Wkp0.coe_ofTestFunctionₗ] using norm_testFunction_mono (mu := mu) (p := p) hsub k phi)
+        Wkp0.coe_ofTestFunctionₗ] using
+          Wkp.norm_ofTestFunctionₗ_monoCLM (mu := mu) (p := p) hsub k phi)
 
 /-- A test function extends to the same test function on the larger domain. -/
 @[simp]
