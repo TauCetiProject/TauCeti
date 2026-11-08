@@ -35,8 +35,8 @@ by the class-group interface and the multiplicative value can be read off from o
 
 ## Main results
 
-* `Valuation.eq_valuation_of_forall_mem_asIdeal_iff`: a normalized valuation bounded by `1` on `R`
-  and of positive value exactly on a height one prime `𝔭` is the adic valuation of `𝔭`.
+* `Valuation.eq_valuation_of_forall_mem_asIdeal_iff`: a normalized valuation of positive value
+  exactly on a height one prime `𝔭` of `R` is the adic valuation of `𝔭`.
 * `Valuation.valuation_heightOneSpectrum`: the adic valuation of the centre of `w` on `R` is `w`.
 * `Valuation.existsUnique_heightOneSpectrum_valuation_eq`: the centre is the only height one prime
   whose adic valuation is `w`.
@@ -96,12 +96,25 @@ section Comparison
 
 variable [IsFractionRing R K]
 
-/-- **A normalized valuation of the fraction field of a Dedekind domain `R` that is bounded by `1`
-on `R` and of positive value exactly at a height one prime `𝔭` is the adic valuation of `𝔭`.** -/
+/-- **A normalized valuation of the fraction field of a Dedekind domain `R` that is of value below
+`1` on `R` exactly at a height one prime `𝔭` is the adic valuation of `𝔭`.** The valuation is then
+automatically bounded by `1` on `R`. -/
 theorem eq_valuation_of_forall_mem_asIdeal_iff [IsDedekindDomain R] {𝔭 : HeightOneSpectrum R}
-    (hw : Function.Surjective w) (hR : ∀ r : R, w (algebraMap R K r) ≤ 1)
-    (h𝔭 : ∀ r : R, r ∈ 𝔭.asIdeal ↔ w (algebraMap R K r) < 1) :
+    (hw : Function.Surjective w) (h𝔭 : ∀ r : R, r ∈ 𝔭.asIdeal ↔ w (algebraMap R K r) < 1) :
     𝔭.valuation K = w := by
+  -- The valuation is bounded by `1` on `R`: an element `r ∉ 𝔭` has an inverse `y` modulo `𝔭`, so
+  -- `w (y * r) = 1`, while `w y ≥ 1` and `w r ≥ 1`.
+  have hR : ∀ r : R, w (algebraMap R K r) ≤ 1 := fun r ↦ by
+    by_cases hr : r ∈ 𝔭.asIdeal
+    · exact ((h𝔭 r).1 hr).le
+    obtain ⟨y, i, hi, hyi⟩ := 𝔭.isMaximal.exists_inv hr
+    have hy : y ∉ 𝔭.asIdeal := fun hy ↦ 𝔭.isPrime.ne_top <| (Ideal.eq_top_iff_one _).2 <|
+      hyi ▸ add_mem (𝔭.asIdeal.mul_mem_right r hy) hi
+    have h1 : w (algebraMap R K y) * w (algebraMap R K r) = 1 := by
+      rw [← map_mul, ← map_mul, eq_sub_of_add_eq hyi, RingHom.map_sub, map_one]
+      exact Valuation.map_one_sub_of_lt _ ((h𝔭 i).1 hi)
+    by_contra hlt
+    exact (one_lt_mul_of_le_of_lt (not_lt.1 (mt (h𝔭 y).2 hy)) (not_le.1 hlt)).ne' h1
   -- On `R` both valuations are bounded by `1` and are `< 1` on the members of `𝔭`, so they take
   -- the value `1` on exactly the same elements of `R`.
   have hone : ∀ r : R, 𝔭.valuation K (algebraMap R K r) = 1 ↔ w (algebraMap R K r) = 1 := by
@@ -144,7 +157,7 @@ theorem valuation_heightOneSpectrum [IsDedekindDomain R] (hw : Function.Surjecti
     haveI := isNontrivial_of_surjective hw
     (heightOneSpectrum R w hR).valuation K = w :=
   haveI := isNontrivial_of_surjective hw
-  eq_valuation_of_forall_mem_asIdeal_iff hw hR fun _ ↦ by
+  eq_valuation_of_forall_mem_asIdeal_iff hw fun _ ↦ by
     rw [asIdeal_heightOneSpectrum, mem_centerIdeal]
 
 /-- A height one prime whose adic valuation is `w` is the centre of `w`. -/
