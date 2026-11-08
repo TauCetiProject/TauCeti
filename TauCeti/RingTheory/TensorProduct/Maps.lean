@@ -60,6 +60,8 @@ ones, so the public `LinearMap.baseChange` API applies.
   then `productMap f g e ∈ J` for every such `e`.
 * `Algebra.TensorProduct.mulLeft_map`, `Algebra.TensorProduct.mulLeft_map_includeRight`:
   naturality of tensor multiplication and cancellation of an inserted middle factor `1`.
+* `Algebra.TensorProduct.map_rTensor_eq_rTensor_lTensor`: `g ⊗ φ` after `f ⊗ id` is
+  `(g ∘ f) ⊗ id` after `id ⊗ φ`, for algebra maps `g, φ` and a linear map `f`.
 * `Algebra.TensorProduct.map_assoc_tmul_one`: applying `f : B ⊗[R] C → D` after
   reassociating `y ⊗ 1` is the base change of `b ↦ f (b ⊗ 1)`.
 * `Algebra.TensorProduct.assoc_comp_includeLeft_comp_includeLeft`,
@@ -182,6 +184,17 @@ theorem map_assoc_tmul_one {C D : Type*} [Semiring C] [Algebra R C] [Semiring D]
   induction y using TensorProduct.inductionOn with
   | tmul a b => simp
   | add x y hx hy => simp only [TensorProduct.add_tmul, map_add, hx, hy]
+
+/-- Applying `g ⊗ φ` after `f ⊗ id`, for algebra maps `g, φ` and a linear map `f` into the source
+of `g`, is applying `id ⊗ φ` and then `(g ∘ f) ⊗ id`. For `g` the identity this lets tensor
+constructions on the image of `f` pass through a change of the coefficient algebra. -/
+theorem map_rTensor_eq_rTensor_lTensor {M C D : Type*} [AddCommMonoid M] [Module R M]
+    [Semiring C] [Algebra R C] [Semiring D] [Algebra R D] (g : A →ₐ[R] C) (φ : B →ₐ[R] D)
+    (f : M →ₗ[R] A) (z : M ⊗[R] B) :
+    map g φ (f.rTensor B z) = (g.toLinearMap ∘ₗ f).rTensor D (φ.toLinearMap.lTensor M z) := by
+  induction z using TensorProduct.inductionOn with
+  | tmul m b => simp
+  | add x y hx hy => simp only [map_add, hx, hy]
 
 section AssocInclude
 
