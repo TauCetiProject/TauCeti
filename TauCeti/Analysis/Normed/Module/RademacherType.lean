@@ -35,6 +35,8 @@ theory. Complex spaces are covered through their underlying real spaces.
 ## Main statements
 
 * `TauCeti.expect_sign_mul_sign`: distinct coordinates of the sign cube are orthogonal.
+* `TauCeti.rademacherNorm_eq_zero_iff`: in a normed group without `2`-torsion, `R₂(y) = 0` only
+  for `y = 0`.
 * `TauCeti.rademacherNorm_comp_equiv`, `TauCeti.rademacherNorm_sumElim_zero`,
   `TauCeti.rademacherNorm_smul`, `TauCeti.rademacherNorm_add_le`: invariance under reindexing and
   zero-padding, homogeneity and the triangle inequality.
@@ -119,8 +121,41 @@ theorem sq_rademacherNorm (y : ι → E) : rademacherNorm y ^ 2 = rademacherSeco
   Real.sq_sqrt (rademacherSecondMoment_nonneg y)
 
 @[simp]
+theorem rademacherSecondMoment_zero : rademacherSecondMoment (0 : ι → E) = 0 := by
+  simp [rademacherSecondMoment_def]
+
+@[simp]
 theorem rademacherNorm_zero : rademacherNorm (0 : ι → E) = 0 := by
-  simp [rademacherNorm_def, rademacherSecondMoment_def]
+  simp [rademacherNorm_def]
+
+/-- In a normed group without `2`-torsion, the Rademacher second moment vanishes only on the zero
+family. Some torsion hypothesis is needed: if `2 • a = 0`, every signed sum of `![a, a]` vanishes.
+A real normed space provides it through `HasUniqueDiv.of_isTorsionFree ℝ`. -/
+@[simp]
+theorem rademacherSecondMoment_eq_zero_iff {G : Type*} [NormedAddCommGroup G] [HasUniqueDiv G]
+    {y : ι → G} : rademacherSecondMoment y = 0 ↔ y = 0 := by
+  refine ⟨fun h ↦ funext fun i ↦ ?_, fun h ↦ h ▸ rademacherSecondMoment_zero⟩
+  rw [rademacherSecondMoment_def, Fintype.expect_eq_zero_iff_of_nonneg fun _ ↦ sq_nonneg _] at h
+  have hs (ε : ι → ℤˣ) : ∑ j, ε j • y j = 0 := by simpa using congrFun h ε
+  -- Flipping the sign of the `i`-th coordinate changes the signed sum by `2 • y i`.
+  have h1 := hs 1
+  have h2 := hs (Pi.mulSingle i (-1))
+  rw [Fintype.sum_eq_add_sum_compl i] at h1 h2
+  have hc : ∑ j ∈ {i}ᶜ, (Pi.mulSingle i (-1) : ι → ℤˣ) j • y j = ∑ j ∈ {i}ᶜ, y j :=
+    sum_congr rfl fun j hj ↦ by
+      rw [Pi.mulSingle_eq_of_ne (by simpa using hj : j ≠ i), one_smul]
+  rw [hc] at h2
+  simp only [Pi.one_apply, one_smul, Pi.mulSingle_eq_same, Units.neg_smul] at h1 h2
+  rw [Pi.zero_apply, ← two_nsmul_eq_zero, two_nsmul, ← sub_eq_zero.mpr (h1.trans h2.symm)]
+  abel
+
+/-- In a normed group without `2`-torsion, the Rademacher norm vanishes only on the zero family;
+see `rademacherSecondMoment_eq_zero_iff`. -/
+@[simp]
+theorem rademacherNorm_eq_zero_iff {G : Type*} [NormedAddCommGroup G] [HasUniqueDiv G]
+    {y : ι → G} : rademacherNorm y = 0 ↔ y = 0 := by
+  rw [rademacherNorm_def, Real.sqrt_eq_zero (rademacherSecondMoment_nonneg y),
+    rademacherSecondMoment_eq_zero_iff]
 
 /-- Comparison principle: if every signed sum of `x` is bounded by `c` times the corresponding
 signed sum of `y`, then `R₂(x) ≤ c R₂(y)`. The two families may live in different spaces. -/
