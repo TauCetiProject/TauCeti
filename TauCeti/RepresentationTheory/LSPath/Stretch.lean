@@ -36,41 +36,6 @@ universe u v w
 variable {ι : Type u} {M : Type v} {N : Type w} [AddCommGroup M] [AddCommGroup N]
   {P : RootPairing ι ℤ M N} {b : P.Base} [Finite ι] [P.IsReduced]
 
-variable (P b)
-
-omit [Finite ι] [P.IsReduced] in
-/-- A nonzero natural multiple of a weight lies on exactly the same simple walls. -/
-@[simp]
-theorem _root_.RootPairing.wallIndices_nsmul {n : ℕ} (hn : n ≠ 0) (lam : M) :
-    P.wallIndices b (n • lam) = P.wallIndices b lam := by
-  simpa only [Nat.cast_smul_eq_nsmul] using
-    (P.wallIndices_smul (b := b) (Int.natCast_ne_zero.mpr hn) lam)
-
-omit [Finite ι] in
-/-- Scaling the shape by a natural number multiplies each orbit bond by that number. -/
-theorem _root_.RootPairing.reflectionBond_smul_nsmul (n : ℕ) (lam : M)
-    (x y : P.weylGroup) :
-    P.reflectionBond b (x • n • lam) (y • n • lam) =
-      (n : ℤ) * P.reflectionBond b (x • lam) (y • lam) := by
-  simpa only [Nat.cast_smul_eq_nsmul, smul_comm x n lam, smul_comm y n lam] using
-    P.reflectionBond_smul (b := b) (n : ℤ) (x • lam) (y • lam)
-
-/-- Identify minimal wall-parabolic representatives before and after nonzero natural scaling.
-The underlying Weyl-group element is unchanged. -/
-def _root_.RootPairing.minimalCosetRepNsmulEquiv (lam : M) (n : ℕ) (hn : n ≠ 0) :
-    {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w} ≃
-      {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b (n • lam)) w} :=
-  Equiv.subtypeEquivRight fun _ ↦ by rw [P.wallIndices_nsmul b hn lam]
-
-/-- Scaling the shape preserves the Weyl-group element of a minimal representative. -/
-@[simp]
-theorem _root_.RootPairing.coe_minimalCosetRepNsmulEquiv (lam : M) (n : ℕ) (hn : n ≠ 0)
-    (w : {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w}) :
-    (P.minimalCosetRepNsmulEquiv b lam n hn w).1 = w.1 := by
-  simp only [minimalCosetRepNsmulEquiv, Equiv.subtypeEquivRight_apply]
-
-variable {P b}
-
 namespace LSPath
 
 variable {lam : M}
@@ -122,7 +87,8 @@ noncomputable def stretch (π : LSPath P b lam) (n : ℕ) (hn : 0 < n) :
     C.map ⟨liftDir, fun {x y} h ↦ by
       simpa only [Set.mem_ofPred_eq, liftDir, coe_minimalCosetRepNsmulEquiv,
         P.wallIndices_nsmul b hn.ne' lam] using h⟩
-  refine ⟨D, ?_, ?_, isAChain_map_nsmul n C _ (fun _ ↦ rfl) hC⟩
+  refine ⟨D, ?_, ?_, isAChain_map_nsmul n C _
+    (fun _ ↦ P.coe_minimalCosetRepNsmulEquiv b lam n hn.ne' _) hC⟩
   · simpa only [D, RelSeries.head_map, RelHom.coeFn_mk] using congrArg liftDir hhead
   · simpa only [D, RelSeries.last_map, RelHom.coeFn_mk] using congrArg liftDir hlast
 
@@ -134,7 +100,9 @@ theorem length_stretch (π : LSPath P b lam) (n : ℕ) (hn : 0 < n) :
 theorem dir_stretch (π : LSPath P b lam) (n : ℕ) (hn : 0 < n)
     (j : Fin ((π.stretch n hn).length + 1)) :
     ((π.stretch n hn).dir j).1 =
-      (π.dir (j.cast (congrArg (· + 1) (π.length_stretch n hn)))).1 := (rfl)
+      (π.dir (j.cast (congrArg (· + 1) (π.length_stretch n hn)))).1 := by
+  simp only [stretch, coe_minimalCosetRepNsmulEquiv]
+  exact congrArg (fun k ↦ (π.dir k).1) (Fin.ext rfl)
 
 @[simp]
 theorem time_stretch (π : LSPath P b lam) (n : ℕ) (hn : 0 < n)
