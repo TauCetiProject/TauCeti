@@ -18,7 +18,7 @@ Stacks, Fields, Lemma 9.27.3(2), whose proof reads "We set `E_insep = E^{Aut(E/F
 omitted." Mathlib has the Galois half as `IsGalois.of_fixed_field`; the purely inseparable half
 is new here. The two are stated separately, one conclusion each.
 
-Order matters for the consumer (`TauCeti.IsJapanese.of_isPurelyInseparable`):
+Order matters for the consumer (`TauCeti.Ring.IsJapanese.of_isPurelyInseparable`):
 the purely inseparable step has to sit *below* the separable one, because the integral closure
 of a polynomial ring in a separable extension is no longer a polynomial ring.
 
