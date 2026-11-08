@@ -30,7 +30,8 @@ parallel notion of Hölder continuity.
 * `TauCeti.HolderSpace.instCompleteSpace`: completeness when the codomain is complete.
 * `TauCeti.HolderSpace.holderWith`, `TauCeti.HolderSpace.holderWith_nnnorm`: the Hölder bound
   with the canonical seminorm, and with the Hölder-space norm.
-* `TauCeti.supportedHolderSubmodule`: the Hölder subspace supported in a prescribed set.
+* `TauCeti.supportedHolderSubmodule`: the Hölder subspace supported in a prescribed set, which is
+  closed (`TauCeti.isClosed_supportedHolderSubmodule`) and hence complete for a complete codomain.
 * `TauCeti.HolderSpace.constL`, `TauCeti.HolderSpace.evalCLM`, and
   `TauCeti.HolderSpace.toBoundedContinuousFunctionCLM`: continuous linear maps for constants,
   evaluation, and inclusion, with operator-norm bounds.
@@ -292,6 +293,15 @@ theorem sum_apply {ι : Type*} (s : Finset ι) (f : ι → HolderSpace α X Y) (
 theorem norm_apply_le (f : HolderSpace α X Y) (x : X) : ‖f x‖ ≤ ‖f‖ := by
   simpa using (f.toBoundedContinuousFunction.norm_coe_le_norm x).trans
     f.norm_toBoundedContinuousFunction_le
+
+/-- A Hölder function bounded pointwise by `M` and `α`-Hölder with constant `K` has
+supremum-plus-Hölder norm at most `M + K`. -/
+theorem norm_le_of_norm_le_of_holderWith {f : HolderSpace α X Y} {M : ℝ} {K : ℝ≥0}
+    (hM0 : 0 ≤ M) (hM : ∀ x, ‖f x‖ ≤ M) (hK : HolderWith K α f) : ‖f‖ ≤ M + K := by
+  rw [norm_def]
+  gcongr
+  · exact (BoundedContinuousFunction.norm_le hM0).mpr fun x ↦ by simpa using hM x
+  · simpa using hK.nnholderNorm_le
 
 /-- Evaluation has operator norm at most one. -/
 theorem norm_evalCLM_le_one (x : X) : ‖evalCLM (α := α) (Y := Y) x‖ ≤ 1 :=
@@ -594,5 +604,21 @@ theorem support_subset_of_mem_supportedHolderSubmodule {X Y : Type*} [MetricSpac
   intro z hz
   by_contra h
   exact hz (hf z h)
+
+/-- The fixed-support Hölder subspace is closed, as an intersection of kernels of evaluations. -/
+theorem isClosed_supportedHolderSubmodule {X Y : Type*} [MetricSpace X] [NormedAddCommGroup Y]
+    [NormedSpace ℝ Y] (α : ℝ≥0) (s : Set X) :
+    IsClosed (supportedHolderSubmodule (Y := Y) α s : Set (HolderSpace α X Y)) := by
+  have h : (supportedHolderSubmodule (Y := Y) α s : Set (HolderSpace α X Y)) =
+      ⋂ z ∈ sᶜ, (HolderSpace.evalCLM (α := α) (Y := Y) z) ⁻¹' {0} := by
+    ext f
+    simp [HolderSpace.evalCLM_apply]
+  rw [h]
+  exact isClosed_biInter fun z _ ↦ isClosed_singleton.preimage (ContinuousLinearMap.continuous _)
+
+/-- The fixed-support Hölder subspace is a Banach space when the codomain is. -/
+instance {X Y : Type*} [MetricSpace X] [NormedAddCommGroup Y] [NormedSpace ℝ Y] [CompleteSpace Y]
+    (α : ℝ≥0) (s : Set X) : CompleteSpace (supportedHolderSubmodule (Y := Y) α s) :=
+  (isClosed_supportedHolderSubmodule α s).completeSpace_coe
 
 end TauCeti
