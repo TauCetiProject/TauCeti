@@ -279,12 +279,13 @@ private theorem exists_specialLinearGroup_mulVec {v w : Fin m → k} (hm : 2 ≤
       using hg
   -- A second direction modulo `k · v` gives a rank-one correction that fixes `v` and has
   -- determinant inverse to that of `φ`.
-  obtain ⟨f', z, hf'z, hf'v⟩ :=
-    Submodule.exists_dual_apply_eq_one_apply_eq_zero_of_span_singleton_ne_top
+  obtain ⟨f', z, hf'z, hf'ker⟩ :=
+    Submodule.exists_dual_apply_eq_one_of_ne_top
       (span_lt_top_of_card_lt_finrank (R := k) (s := {v}) (by
         simp only [Set.toFinset_singleton, Finset.card_singleton, Module.finrank_pi,
           Fintype.card_fin]
         omega)).ne
+  have hf'v : f' v = 0 := hf'ker (Submodule.mem_span_singleton_self v)
   let d := LinearEquiv.det φ
   let z' : Fin m → k := ((↑d⁻¹ : k) - 1) • z
   have hf'z' : f' z' = (↑d⁻¹ : k) - 1 := by
