@@ -302,7 +302,6 @@ theorem ContinuousOn.absolutelyContinuousOnInterval_of_hasDerivAt_off_countable
     (fun u hu ↦ hd u ⟨⟨by simpa only [min_eq_left ht.1] using hu.1.1,
       (by simpa only [max_eq_right ht.1] using hu.1.2 : u < t).trans_le ht.2⟩, hu.2⟩)
     (hi.mono_set hsub)
-  change L (f (min a b)) + (∫ u in min a b..t, (L ∘ f') u) = L (f t)
+  simp only [Pi.add_apply, Function.comp_apply] at hFTC ⊢
   rw [hFTC]
-  simp only [Function.comp_apply]
   abel
