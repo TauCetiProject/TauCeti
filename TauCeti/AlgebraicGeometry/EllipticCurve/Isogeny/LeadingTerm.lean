@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Wronskian
 public import TauCeti.RingTheory.Valuation.RootMonic
 
 import Mathlib.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Degree
+import TauCeti.RingTheory.Polynomial.Wronskian
 
 /-!
 # The leading term of the `x`-coordinate of an isogeny
@@ -146,32 +147,6 @@ theorem natDegree_num_xRatFunc_eq_succ_of_eq_smul :
   rw [wronskian_xRatFunc_sq_mul_Ψ₂Sq hc, (natDegree_and_leadingCoeff_rhs (φ := φ) hc0 h2).1] at hlhs
   omega
 
-/-- The top coefficient of the Wronskian `D N' - D' N`, at degree `2 deg D`, is the leading
-coefficient of `N`, when `D` is monic and `deg N = deg D + 1`. -/
-private theorem coeff_wronskian_xRatFunc :
-    (wronskian φ.xRatFunc.denom φ.xRatFunc.num).coeff (2 * φ.xRatFunc.denom.natDegree) =
-      φ.xRatFunc.num.leadingCoeff := by
-  set N := φ.xRatFunc.num
-  set D := φ.xRatFunc.denom
-  set d := D.natDegree with hd
-  have hN : N.natDegree = d + 1 := natDegree_num_xRatFunc_eq_succ_of_eq_smul hc hc0 h2
-  have hD : D.Monic := φ.xRatFunc.monic_denom
-  have hDN' : (D * derivative N).coeff (d + d) = (d + 1) * N.leadingCoeff := by
-    rw [coeff_mul_add_eq_of_natDegree_le le_rfl (natDegree_derivative_le N |>.trans (by omega)),
-      coeff_derivative, ← hd, hD.coeff_natDegree, leadingCoeff, hN]
-    ring
-  have hD'N : (derivative D * N).coeff (d + d) = d * N.leadingCoeff := by
-    rcases Nat.eq_zero_or_pos d with h0 | h0
-    · simp [derivative_of_natDegree_zero h0, h0]
-    · have hdd : d + d = (d - 1) + (d + 1) := by omega
-      rw [hdd, coeff_mul_add_eq_of_natDegree_le (natDegree_derivative_le D |>.trans le_rfl) hN.le,
-        coeff_derivative, Nat.sub_add_cancel h0, ← hd, hD.coeff_natDegree, leadingCoeff, hN,
-        Nat.cast_sub h0]
-      push_cast
-      ring
-  rw [two_mul, wronskian, coeff_sub, hDN', hD'N]
-  ring
-
 /-- **The leading coefficient of the `x`-coordinate of a separable isogeny is `c⁻²`**: if
 `φ^*ω₂ = c ω₁` with `c ≠ 0` and `2 ≠ 0` in `F`, then the leading coefficient of the numerator of
 `φ.xRatFunc`, whose denominator is monic, is `c⁻²`. So `x ∘ φ = c⁻² x + O(1)` near the point at
@@ -190,7 +165,8 @@ theorem leadingCoeff_num_xRatFunc_mul_sq : φ.xRatFunc.num.leadingCoeff * c ^ 2 
   have h := congrArg (coeff · (2 * (2 * d) + 3)) (wronskian_xRatFunc_sq_mul_Ψ₂Sq hc)
   obtain ⟨hdeg, hlc⟩ := natDegree_and_leadingCoeff_rhs (φ := φ) hc0 h2
   rw [coeff_mul_add_eq_of_natDegree_le (natDegree_pow_le_of_le 2 hwdeg) W₁.natDegree_Ψ₂Sq_le,
-    coeff_pow_of_natDegree_le hwdeg, coeff_wronskian_xRatFunc hc hc0 h2,
+    coeff_pow_of_natDegree_le hwdeg, coeff_wronskian_of_natDegree_eq_succ hN,
+    φ.xRatFunc.monic_denom.leadingCoeff, one_mul,
     WeierstrassCurve.coeff_Ψ₂Sq, show 2 * (2 * d) + 3 = d + 3 * N.natDegree by omega, ← hdeg,
     coeff_natDegree, hlc] at h
   have h4 : (4 : F) * N.leadingCoeff ^ 2 ≠ 0 :=

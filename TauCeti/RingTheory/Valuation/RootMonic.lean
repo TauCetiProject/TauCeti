@@ -98,8 +98,7 @@ lemma map_eval_eq_leadingCoeff_mul_pow {p : L[X]}
   rcases Nat.eq_zero_or_pos n with h0 | h0
   · simp [eval_eq_sum_range, ← hn, h0, leadingCoeff]
   have heval : p.eval t = (∑ i ∈ Finset.range n, p.coeff i * t ^ i) + p.leadingCoeff * t ^ n := by
-    rw [eval_eq_sum_range, Finset.sum_range_succ]
-    rfl
+    rw [eval_eq_sum_range, Finset.sum_range_succ, leadingCoeff]
   have hlt : ν (∑ i ∈ Finset.range n, p.coeff i * t ^ i) < ν (p.leadingCoeff * t ^ n) := by
     rw [map_mul, map_pow]
     refine ν.map_sum_lt (zero_le.trans_lt (hp 0 h0)).ne' fun i hi ↦ ?_
