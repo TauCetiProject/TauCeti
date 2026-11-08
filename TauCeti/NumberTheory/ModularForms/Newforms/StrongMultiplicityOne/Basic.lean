@@ -196,7 +196,7 @@ theorem Newform.level_eq_of_dvd_of_forall_prime_eigenvalue_eq {M : ℕ} [NeZero 
     rw [hG, FunLike.coe_smul,
       ModularForm.qExpansion_smul one_pos (one_mem_strictPeriods_Gamma1_map _),
       PowerSeries.coeff_smul, CuspForm.qExpansion_levelRaise_coeff
-        (one_mem_strictPeriods_Gamma1_map _) (one_mem_strictPeriods_Gamma1_map _)]
+        (one_mem_strictPeriods_Gamma1_map _)]
     simp [inv_mul_cancel₀ hg₁]
   have hGeig : ∀ (p : ℕ) (hp : p.Prime) (hpN : Nat.Coprime p N),
       heckeTCuspNat k p (_hn := ⟨hp.ne_zero⟩) G = f.eigenvalue ⟨p, hp.pos⟩ hpN • G := by
@@ -254,8 +254,7 @@ private theorem qExpansion_coeff_one_projection_levelRaise_eq_zero {L p q : ℕ}
     CuspForm.levelRaiseₗ_apply, map_add, Submodule.projection_apply_of_mem_right _
       (levelRaise_mem_cuspFormsOldAt_of_mem hpLp ha),
     Submodule.projection_apply_of_mem_left _ (levelRaise_mem_cuspFormsNewAt hq hpLp hqLp hb),
-    zero_add, CuspForm.qExpansion_levelRaise_coeff (one_mem_strictPeriods_Gamma1_map _)
-      (one_mem_strictPeriods_Gamma1_map _),
+    zero_add, CuspForm.qExpansion_levelRaise_coeff (one_mem_strictPeriods_Gamma1_map _),
     ite_eq_right_iff.mpr fun h ↦ absurd (Nat.dvd_one.mp h) hp.ne_one]
 
 /-- **Newforms are separated at a level telling their `q`-parts apart.** Let `f`, `g` be

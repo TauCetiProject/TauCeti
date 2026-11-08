@@ -163,9 +163,8 @@ theorem heckeTCuspNat_levelRaise_mul {n e : ℕ} [NeZero N] (hdvd : n * e * M �
   refine CuspForm.qExpansion_injective one_pos (one_mem_strictPeriods_Gamma1_map N)
     (PowerSeries.ext fun m ↦ ?_)
   simp only [qExpansion_coeff_heckeTCuspNat_of_primeFactors_subset k n hn,
-    CuspForm.qExpansion_levelRaise_coeff (one_mem_strictPeriods_Gamma1_map M)
-      (one_mem_strictPeriods_Gamma1_map N), Nat.mul_dvd_mul_iff_left hn0,
-    Nat.mul_div_mul_left _ _ hn0]
+    CuspForm.qExpansion_levelRaise_coeff (one_mem_strictPeriods_Gamma1_map M),
+    Nat.mul_dvd_mul_iff_left hn0, Nat.mul_div_mul_left _ _ hn0]
 
 /-- **`T_n` commutes with `V_d` when `n` is supported on the source level and prime to `d`**:
 for `d * M ∣ N`, `n` coprime to `d` and every prime factor of `n` dividing `M`,
@@ -188,8 +187,8 @@ theorem heckeTCuspNat_levelRaise_of_primeFactors_subset {n : ℕ} [NeZero N] [Ne
     (PowerSeries.ext fun m ↦ ?_)
   simp only [qExpansion_coeff_heckeTCuspNat_of_primeFactors_subset k n hnN,
     qExpansion_coeff_heckeTCuspNat_of_primeFactors_subset k n hn,
-    CuspForm.qExpansion_levelRaise_coeff (one_mem_strictPeriods_Gamma1_map M)
-      (one_mem_strictPeriods_Gamma1_map N), hnd.symm.dvd_mul_left]
+    CuspForm.qExpansion_levelRaise_coeff (one_mem_strictPeriods_Gamma1_map M),
+    hnd.symm.dvd_mul_left]
   split_ifs with hdm
   · rw [Nat.mul_div_assoc n hdm]
   · rfl
@@ -226,8 +225,8 @@ theorem heckeTCuspNat_levelRaise_eq_sub [NeZero N] (hp : p.Prime)
   rw [FunLike.coe_sub, ModularForm.qExpansion_sub one_pos hΓN, FunLike.coe_smul,
     ModularForm.qExpansion_smul one_pos hΓN, map_sub, map_smul, smul_eq_mul,
     qExpansion_coeff_heckeTCuspNat_of_primeFactors_subset k p hpN,
-    CuspForm.qExpansion_levelRaise_coeff hΓM hΓN, CuspForm.qExpansion_levelRaise_coeff hΓM hΓN,
-    CuspForm.qExpansion_levelRaise_coeff hΓM hΓN]
+    CuspForm.qExpansion_levelRaise_coeff hΓM, CuspForm.qExpansion_levelRaise_coeff hΓM,
+    CuspForm.qExpansion_levelRaise_coeff hΓM]
   by_cases hdm : d ∣ m
   · -- `m = d t`: both sides are the `Tₚ` recurrence at level `M`, read at `t`
     obtain ⟨t, rfl⟩ := hdm

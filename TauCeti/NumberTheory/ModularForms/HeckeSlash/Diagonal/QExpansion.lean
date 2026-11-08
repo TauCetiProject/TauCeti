@@ -129,25 +129,24 @@ the level-raised expansion by `d ^ (k - 1)`, so the result is
 `d ^ (k - 1) • (qExpansion f).expand d`. -/
 theorem _root_.ModularForm.qExpansion_slash_natDiagGL_d_one
     {𝒢 𝒢' : Subgroup (GL (Fin 2) ℝ)} [𝒢'.HasDetOne] [NeZero d]
-    (h𝒢 : (1 : ℝ) ∈ 𝒢.strictPeriods) (h𝒢' : (1 : ℝ) ∈ 𝒢'.strictPeriods)
+    (h𝒢 : (1 : ℝ) ∈ 𝒢.strictPeriods)
     (hle : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (f : ModularForm 𝒢 k) :
     qExpansion 1 (⇑f ∣[k] (natDiagGL 2 ![d, 1] : GL (Fin 2) ℚ)) =
       (d : ℂ) ^ (k - 1) • (qExpansion 1 f).expand d (NeZero.ne d) := by
   rw [slash_natDiagGL_d_one_eq_smul_levelRaise hle f,
     UpperHalfPlane.qExpansion_smul
-      (ModularFormClass.analyticAt_cuspFunction_zero
-        (ModularForm.levelRaise d hle f) one_pos h𝒢'),
-    ModularForm.qExpansion_levelRaise h𝒢 h𝒢' hle]
+      (ModularForm.analyticAt_cuspFunction_levelRaise h𝒢 hle f),
+    ModularForm.qExpansion_levelRaise h𝒢 hle]
 
 /-- The coefficient form of `qExpansion_slash_natDiagGL_d_one`: the diagonal term contributes
 `d ^ (k - 1) a_(n / d)` on indices divisible by `d`, and zero elsewhere. -/
 theorem _root_.ModularForm.qExpansion_slash_natDiagGL_d_one_coeff
     {𝒢 𝒢' : Subgroup (GL (Fin 2) ℝ)} [𝒢'.HasDetOne] [NeZero d]
-    (h𝒢 : (1 : ℝ) ∈ 𝒢.strictPeriods) (h𝒢' : (1 : ℝ) ∈ 𝒢'.strictPeriods)
+    (h𝒢 : (1 : ℝ) ∈ 𝒢.strictPeriods)
     (hle : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (f : ModularForm 𝒢 k) (n : ℕ) :
     (qExpansion 1 (⇑f ∣[k] (natDiagGL 2 ![d, 1] : GL (Fin 2) ℚ))).coeff n =
       if d ∣ n then (d : ℂ) ^ (k - 1) * (qExpansion 1 f).coeff (n / d) else 0 := by
-  rw [ModularForm.qExpansion_slash_natDiagGL_d_one h𝒢 h𝒢' hle f, PowerSeries.coeff_smul,
+  rw [ModularForm.qExpansion_slash_natDiagGL_d_one h𝒢 hle f, PowerSeries.coeff_smul,
     PowerSeries.coeff_expand]
   split_ifs <;> simp
 
@@ -159,9 +158,8 @@ theorem _root_.ModularForm.qExpansion_slash_natDiagGL_d_one_coeff_Gamma1
     (f : ModularForm ((Gamma1 M).map (mapGL ℝ)) k) (n : ℕ) :
     (qExpansion 1 (⇑f ∣[k] (natDiagGL 2 ![d, 1] : GL (Fin 2) ℚ))).coeff n =
       if d ∣ n then (d : ℂ) ^ (k - 1) * (qExpansion 1 f).coeff (n / d) else 0 := by
-  refine ModularForm.qExpansion_slash_natDiagGL_d_one_coeff ?_ ?_
-    (Gamma1_map_le_conjAct_scaleGL M d) f n <;>
-    exact one_mem_strictPeriods_Gamma1_map _
+  exact ModularForm.qExpansion_slash_natDiagGL_d_one_coeff (one_mem_strictPeriods_Gamma1_map _)
+    (Gamma1_map_le_conjAct_scaleGL M d) f n
 
 end TauCeti
 
