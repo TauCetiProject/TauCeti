@@ -31,8 +31,9 @@ roots of unity.
 
 These degenerate traces form a countable set. The trace of `R(θ) A`, where
 `R(θ) = Matrix.SpecialLinearGroup.rotation θ`, is `trace A cos θ + (A₁₀ - A₀₁) sin θ`, and the two
-coefficients do not both vanish when `det A = 1`. So for all but countably many `θ`, every positive
-iterate of `R(θ) A` is nondegenerate
+coefficients do not both vanish when `det A = 1`
+(`Matrix.trace_ne_zero_or_sub_ne_zero_of_det_eq_one_fin_two`). So for all but countably many `θ`,
+every positive iterate of `R(θ) A` is nondegenerate
 (`Matrix.SpecialLinearGroup.countable_setOf_exists_det_one_sub_pow_rotation_mul_eq_zero`), and
 such `θ` are dense in `ℝ`, in particular arbitrarily close to `0` on either side. The rotations
 `R(θ)` are the linear Hamiltonian flow of the quadratic Hamiltonian `(x² + y²) / 2`, run forwards
@@ -128,24 +129,13 @@ theorem exists_det_one_sub_pow_eq_zero_iff_fin_two (hdet : A.det = 1) :
 
 namespace SpecialLinearGroup
 
-/-- For a real `2 × 2` matrix of determinant one, the coefficients `trace A` and `A₁₀ - A₀₁` of
-`trace (R(θ) A)` in `cos θ` and `sin θ` do not both vanish: otherwise `A` would be symmetric and
-traceless, of determinant `-A₀₀² - A₀₁² ≤ 0`. -/
-private theorem trace_ne_zero_or_sub_ne_zero (hdet : A.det = 1) :
-    A.trace ≠ 0 ∨ A 1 0 - A 0 1 ≠ 0 := by
-  by_contra! h
-  rw [trace_fin_two] at h
-  rw [det_fin_two] at hdet
-  rw [show A 1 1 = -A 0 0 by linarith [h.1], show A 1 0 = A 0 1 by linarith [h.2]] at hdet
-  nlinarith [sq_nonneg (A 0 0), sq_nonneg (A 0 1)]
-
 /-- For a real `2 × 2` matrix `A` of determinant one and a countable set `T` of reals, only
 countably many angles `θ` give `trace (R(θ) A) ∈ T`. -/
 theorem countable_setOf_trace_rotation_mul_mem (hdet : A.det = 1) {T : Set ℝ}
     (hT : T.Countable) :
     {θ : ℝ | ((rotation θ : Matrix (Fin 2) (Fin 2) ℝ) * A).trace ∈ T}.Countable := by
   refine (hT.biUnion fun t _ ↦ countable_setOf_mul_cos_add_mul_sin_eq
-    (trace_ne_zero_or_sub_ne_zero hdet) t).mono fun θ hθ ↦ ?_
+    (trace_ne_zero_or_sub_ne_zero_of_det_eq_one_fin_two hdet) t).mono fun θ hθ ↦ ?_
   rw [mem_iUnion₂]
   exact ⟨_, hθ, by rw [mem_ofPred_eq, ← trace_rotation_mul]⟩
 
