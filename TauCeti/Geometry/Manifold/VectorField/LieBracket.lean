@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorField.LieBracket
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
@@ -278,15 +279,9 @@ theorem lieBracketWithin_mpullbackWithin_extChartAt_symm
         mlieBracketWithin I V W s x := by
   -- The chart derivative at its centre is the identity of `E`; `TangentSpace I x` is not
   -- syntactically `E`, so the identification is made on the inverse before evaluating it.
-  have hid : HasMFDerivAt I 𝓘(𝕜, E) (extChartAt I x) x (ContinuousLinearMap.id 𝕜 E) := by
-    refine ⟨continuousAt_extChartAt x, ?_⟩
-    -- Near the chart point the round trip through the chart is the identity.
-    exact (hasFDerivWithinAt_id (extChartAt I x x) (Set.range I)).congr_of_eventuallyEq
-      (Filter.eventuallyEq_of_mem (extChartAt_target_mem_nhdsWithin x)
-        fun _ ↦ (extChartAt I x).right_inv)
-      ((extChartAt I x).right_inv (mem_extChartAt_target x))
-  have hinverse : (mfderiv I 𝓘(𝕜, E) (extChartAt I x) x).inverse = ContinuousLinearMap.id 𝕜 E :=
-    (congrArg (fun f : E →L[𝕜] E ↦ f.inverse) hid.mfderiv).trans ContinuousLinearMap.inverse_id
+  have hinverse : (mfderiv I 𝓘(𝕜, E) (extChartAt I x) x).inverse = ContinuousLinearMap.id 𝕜 E := by
+    rw [TauCeti.mfderiv_extChartAt_eq_id]
+    exact ContinuousLinearMap.inverse_id
   rw [mlieBracketWithin_apply]
   exact (congrArg (fun f : E →L[𝕜] E ↦ f (lieBracketWithin 𝕜 _ _ _ _)) hinverse).symm
 
