@@ -25,11 +25,6 @@ for set and probability integrals.
 * `AddMonoidHom.integral_comp_comm` commutes integration with a continuous additive map
   between real Banach spaces.
 
-## Measure-preserving maps
-
-* `MeasureTheory.MeasurePreserving.integral_comp_of_aestronglyMeasurable` gives change of variables
-  for an almost everywhere strongly measurable integrand, without requiring an embedding.
-
 ## Counting measures of multisets
 
 * `Multiset.integrable_sum_map_dirac` and `Multiset.integral_sum_map_dirac`: every function is

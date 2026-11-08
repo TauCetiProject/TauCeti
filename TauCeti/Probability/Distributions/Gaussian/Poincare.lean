@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Probability.Distributions.Gaussian.Real
 public import TauCeti.Probability.Distributions.Gaussian.IntegrationByParts
+public import TauCeti.Probability.Distributions.Gaussian.Symmetry
 public import TauCeti.Probability.Concentration.EfronStein
 public import TauCeti.MeasureTheory.Integral.Pi
-public import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.Deriv.Pi
 import Mathlib.Probability.Distributions.Gaussian.Fernique
@@ -55,65 +54,9 @@ namespace TauCeti.Probability
 
 local notation "γ" => gaussianReal 0 1
 
-private theorem measurePreserving_reflection_gaussianReal (θ : ℝ) :
-    MeasurePreserving
-      (fun p : ℝ × ℝ => (cos θ * p.1 + sin θ * p.2, sin θ * p.1 - cos θ * p.2))
-      (Measure.prod γ γ) (Measure.prod γ γ) := by
-  have hrot : MeasurePreserving (ContinuousLinearMap.rotation θ : ℝ × ℝ →L[ℝ] ℝ × ℝ)
-      (Measure.prod γ γ) (Measure.prod γ γ) :=
-    ⟨by fun_prop, IsGaussian.map_rotation_eq_self (μ := γ) (by simp [integral_id_gaussianReal]) _⟩
-  have hneg : MeasurePreserving (fun x : ℝ => -x) γ γ :=
-    ⟨by fun_prop, by simpa using (gaussianReal_map_neg (μ := 0) (v := 1))⟩
-  convert ((MeasurePreserving.id γ).prod hneg).comp hrot using 1
-  funext p
-  simp [ContinuousLinearMap.rotation_apply, sub_eq_add_neg, add_comm]
-
 section Interpolation
 
 variable {f : ℝ → ℝ} {A B : ℝ}
-
-private theorem integrable_abs_gaussianReal : Integrable (fun x : ℝ => |x|) γ := by
-  have := ((memLp_id_gaussianReal' (μ := 0) (v := 1) 1 (by simp)).integrable le_rfl).norm
-  simpa using this
-
-private theorem integrable_abs_add_abs :
-    Integrable (fun p : ℝ × ℝ => |p.1| + |p.2|) (Measure.prod γ γ) := by
-  have h1 : Integrable (fun p : ℝ × ℝ => |p.1|) (Measure.prod γ γ) :=
-    (measurePreserving_fst (μ := γ) (ν := γ)).integrable_comp
-      integrable_abs_gaussianReal.aestronglyMeasurable |>.2 integrable_abs_gaussianReal
-  have h2 : Integrable (fun p : ℝ × ℝ => |p.2|) (Measure.prod γ γ) :=
-    (measurePreserving_snd (μ := γ) (ν := γ)).integrable_comp
-      integrable_abs_gaussianReal.aestronglyMeasurable |>.2 integrable_abs_gaussianReal
-  exact h1.add h2
-
-/-- Gaussian integration by parts for `x * f (a + s * x)`. -/
-private theorem integral_mul_comp_affine (hf : ContDiff ℝ 1 f) (hA : ∀ x, |f x| ≤ A)
-    (hB : ∀ x, |deriv f x| ≤ B) (a s : ℝ) :
-    ∫ v, v * f (a + s * v) ∂γ = s * ∫ v, deriv f (a + s * v) ∂γ := by
-  have hc : Continuous f := hf.continuous
-  have hc' : Continuous (deriv f) := hf.continuous_deriv le_rfl
-  have hd : ∀ v, HasDerivAt (fun v => f (a + s * v)) (deriv f (a + s * v) * s) v := fun v => by
-    have h1 : HasDerivAt (fun v : ℝ => a + s * v) s v := by
-      simpa using ((hasDerivAt_id v).const_mul s).const_add a
-    exact (hf.differentiable one_ne_zero (a + s * v)).hasDerivAt.comp v h1
-  have hder : deriv (fun v => f (a + s * v)) = fun v => deriv f (a + s * v) * s :=
-    funext fun v => (hd v).deriv
-  have hA0 : 0 ≤ A := (abs_nonneg _).trans (hA 0)
-  have hB0 : 0 ≤ B := (abs_nonneg _).trans (hB 0)
-  have key := integral_mul_eq_integral_deriv_gaussianReal (fun v => f (a + s * v))
-    (fun v => (hd v).differentiableAt)
-    (by
-      refine (integrable_abs_gaussianReal.const_mul A).mono' (by fun_prop) (ae_of_all _ fun x => ?_)
-      rw [Real.norm_eq_abs, abs_mul]
-      exact mul_le_mul_of_nonneg_left (hA _) (abs_nonneg _) |>.trans_eq (mul_comm _ _))
-    (by
-      rw [hder]
-      refine (integrable_const (B * |s|)).mono' (by fun_prop) (ae_of_all _ fun x => ?_)
-      rw [Real.norm_eq_abs, abs_mul]
-      exact mul_le_mul_of_nonneg_right (hB _) (abs_nonneg _))
-  rw [key, hder]
-  simp_rw [mul_comm (deriv f _) s]
-  exact integral_const_mul s _
 
 private theorem hasDerivAt_interp (hf : ContDiff ℝ 1 f) (hA : ∀ x, |f x| ≤ A)
     (hB : ∀ x, |deriv f x| ≤ B) (θ : ℝ) :
@@ -149,7 +92,7 @@ private theorem hasDerivAt_interp (hf : ContDiff ℝ 1 f) (hA : ∀ x, |f x| ≤
     calc |f p.1| * (|deriv f (cos t * p.1 + sin t * p.2)| * |-sin t * p.1 + cos t * p.2|)
         ≤ A * (B * (|p.1| + |p.2|)) := by gcongr <;> first | exact hA _ | exact hB _
       _ = A * B * (|p.1| + |p.2|) := by ring
-  · exact integrable_abs_add_abs.const_mul (A * B)
+  · exact (integrable_abs_add_abs_gaussianReal 0 0 1 1).const_mul (A * B)
   · refine ae_of_all _ fun p t _ => ?_
     have h1 : HasDerivAt (fun t : ℝ => cos t * p.1 + sin t * p.2)
         (-sin t * p.1 + cos t * p.2) t :=
@@ -174,7 +117,8 @@ private theorem integral_interp_deriv (hf : ContDiff ℝ 1 f) (hA : ∀ x, |f x|
   let H : ℝ × ℝ → ℝ := fun q => f (c * q.1 + s * q.2) * (deriv f q.1 * (-q.2))
   have hHc : Continuous H := by fun_prop
   have hHint : Integrable H (Measure.prod γ γ) := by
-    refine (integrable_abs_add_abs.const_mul (A * B)).mono' hHc.aestronglyMeasurable
+    refine ((integrable_abs_add_abs_gaussianReal 0 0 1 1).const_mul (A * B)).mono'
+      hHc.aestronglyMeasurable
       (ae_of_all _ fun q => ?_)
     rw [Real.norm_eq_abs]
     simp only [H, abs_mul, abs_neg]
@@ -202,7 +146,7 @@ private theorem integral_interp_deriv (hf : ContDiff ℝ 1 f) (hA : ∀ x, |f x|
     have : ∀ v : ℝ, H (u, v) = -(deriv f u) * (v * f (c * u + s * v)) := fun v => by
       simp only [H]; ring
     simp_rw [this]
-    rw [integral_const_mul, integral_mul_comp_affine hf hA hB]
+    rw [integral_const_mul, integral_mul_comp_affine_gaussianReal hf hA hB]
     ring
   simp_rw [hinner]
   rw [integral_const_mul]
