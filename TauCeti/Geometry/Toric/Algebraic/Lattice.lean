@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.Dual.BaseChange
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.TensorProduct.IsBaseChangeFree
+public import TauCeti.Algebra.Module.ZLattice.BaseChange
 public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
 import Mathlib.LinearAlgebra.Dual.Lemmas
@@ -351,12 +352,8 @@ theorem IsIntegralLattice.isZLattice (h : IsIntegralLattice i) :
 space, is an integral lattice for its inclusion: the space is the real scalar extension of the
 lattice. -/
 theorem isIntegralLattice_subtype_of_isZLattice [FiniteDimensional ℝ V] (L : Submodule ℤ V)
-    [DiscreteTopology L] [IsZLattice ℝ L] : IsIntegralLattice L.subtype.toAddMonoidHom := by
-  have : Module.Free ℤ L := ZLattice.module_free ℝ L
-  have : Module.Finite ℤ L := ZLattice.module_finite ℝ L
-  let b := Module.Free.chooseBasis ℤ L
-  exact isIntegralLattice_of_basis b (b.ofZLatticeBasis ℝ L) fun j ↦
-    (Module.Basis.ofZLatticeBasis_apply ℝ L b j).symm
+    [DiscreteTopology L] [IsZLattice ℝ L] : IsIntegralLattice L.subtype.toAddMonoidHom :=
+  ⟨ZLattice.module_free ℝ L, ZLattice.module_finite ℝ L, ZLattice.isBaseChange_subtype ℝ L⟩
 
 end Discrete
 

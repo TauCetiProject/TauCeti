@@ -31,9 +31,10 @@ exponential of the circle is `Circle.exp`. It is characterized by
 
 `χ (exp X) = Circle.exp (α_χ X)`
 
-(`ContinuousMonoidHom.apply_lieExp`, `ContinuousMonoidHom.eq_lieWeight`). The weight of a product
-of characters is the sum of the weights, and the weight of `χ ∘ f` is `α_χ ∘ df`. On the period
-lattice weights take integer values: for `λ ∈ ker(exp)` the number `α_χ(λ) / (2π)` is an integer.
+(`ContinuousMonoidHom.apply_lieExp_eq_circleExp_lieWeight`, `ContinuousMonoidHom.eq_lieWeight`).
+The weight of a product of characters is the sum of the weights, and the weight of `χ ∘ f` is
+`α_χ ∘ df`. On the period lattice weights take integer values: for `λ ∈ ker(exp)` the number
+`α_χ(λ) / (2π)` is an integer.
 
 For connected `G` these weights are exactly the integral functionals: a character is determined
 by its weight, and every real-linear functional taking integer values on `Λ_ℤ` is the weight of a
@@ -55,8 +56,9 @@ a character `χ` acts by `exp(ξ) · z = e^{i α_χ(ξ)} z`.
 * `TauCeti.isZLattice_periodLattice`, `TauCeti.isIntegralLattice_periodLattice`: for compact `G`,
   the period lattice is a full lattice, and `𝔤` is its real scalar extension.
 * `ContinuousMonoidHom.lieMap_mem_periodLattice`: continuous homomorphisms preserve period lattices.
-* `ContinuousMonoidHom.apply_lieExp`, `ContinuousMonoidHom.eq_lieWeight`: the defining identity
-  `χ (exp X) = Circle.exp (α_χ X)`, and uniqueness of a functional satisfying it.
+* `ContinuousMonoidHom.apply_lieExp_eq_circleExp_lieWeight`, `ContinuousMonoidHom.eq_lieWeight`:
+  the defining identity `χ (exp X) = Circle.exp (α_χ X)`, and uniqueness of a functional
+  satisfying it.
 * `ContinuousMonoidHom.lieWeight_mul`, `ContinuousMonoidHom.lieWeight_comp`: weights are additive
   in the character and natural in the group.
 * `ContinuousMonoidHom.exists_lieWeight_apply_eq_intCast_mul_of_mem_ker`,
@@ -100,6 +102,7 @@ def periodLattice : AddSubgroup (LeftInvariantDerivation I G) :=
     (DistribSMul.toAddMonoidHom (LeftInvariantDerivation I G) (2 * π))
 
 /-- Membership in the period lattice: `X ∈ Λ_ℤ` exactly when `exp(2π X) = 1`. -/
+@[simp]
 theorem mem_periodLattice {X : LeftInvariantDerivation I G} :
     X ∈ periodLattice I G ↔ lieExp ((2 * π) • X) = 1 := by
   rw [periodLattice, AddSubgroup.mem_comap, DistribSMul.toAddMonoidHom_apply,
@@ -203,7 +206,7 @@ theorem lieMap_mem_periodLattice
 /-- The **real weight** `α_χ = (1/i) dχ` of a continuous character `χ : G → Circle`: the Lie map of
 `χ` followed by the identification of the Lie algebra of the circle with `ℝ` under which the
 abstract exponential of the circle is `Circle.exp`. It is characterized by
-`χ (exp X) = Circle.exp (α_χ X)` (`ContinuousMonoidHom.apply_lieExp`). -/
+`χ (exp X) = Circle.exp (α_χ X)` (`ContinuousMonoidHom.apply_lieExp_eq_circleExp_lieWeight`). -/
 def lieWeight (χ : G →ₜ* Circle) : Module.Dual ℝ (LeftInvariantDerivation I G) :=
   circleLieAlgebraEquiv.toLinearMap ∘ₗ (lieMap (I := I) (I' := 𝓡 1) χ).toLinearMap
 
@@ -236,7 +239,8 @@ variable [T2Space G] [BoundarylessManifold I G]
 
 /-- **The defining identity of the real weight**: `χ (exp X) = Circle.exp (α_χ X)`. -/
 @[simp]
-theorem apply_lieExp (χ : G →ₜ* Circle) (X : LeftInvariantDerivation I G) :
+theorem apply_lieExp_eq_circleExp_lieWeight (χ : G →ₜ* Circle)
+    (X : LeftInvariantDerivation I G) :
     χ (lieExp X) = Circle.exp (lieWeight χ X) := by
   rw [map_lieExp (I' := 𝓡 1), lieWeight_apply, ← lieExp_circle,
     LinearEquiv.symm_apply_apply]
@@ -250,7 +254,8 @@ theorem eq_lieWeight {χ : G →ₜ* Circle} {α : Module.Dual ℝ (LeftInvarian
   have hc : α X - lieWeight χ X ≠ 0 := sub_ne_zero.2 hne
   -- At `(π / c) • X`, where `c = α X - α_χ X`, the two exponentials differ by `Circle.exp π`.
   have hX := h ((π / (α X - lieWeight χ X)) • X)
-  rw [apply_lieExp, LinearMap.map_smul, LinearMap.map_smul, smul_eq_mul, smul_eq_mul] at hX
+  rw [apply_lieExp_eq_circleExp_lieWeight, LinearMap.map_smul, LinearMap.map_smul, smul_eq_mul,
+    smul_eq_mul] at hX
   have hπ : Circle.exp π = 1 := by
     rw [show π = π / (α X - lieWeight χ X) * α X - π / (α X - lieWeight χ X) * lieWeight χ X by
       field_simp, Circle.exp_sub, ← hX, div_self']
@@ -266,7 +271,8 @@ theorem lieWeight_one : lieWeight (I := I) (1 : G →ₜ* Circle) = 0 :=
 theorem lieWeight_mul (χ ψ : G →ₜ* Circle) :
     lieWeight (I := I) (χ * ψ) = lieWeight χ + lieWeight ψ :=
   (eq_lieWeight fun X ↦ by
-    rw [mul_apply, apply_lieExp, apply_lieExp, LinearMap.add_apply, Circle.exp_add]).symm
+    rw [mul_apply, apply_lieExp_eq_circleExp_lieWeight, apply_lieExp_eq_circleExp_lieWeight,
+      LinearMap.add_apply, Circle.exp_add]).symm
 
 /-- The weight of the inverse character is the negative weight. -/
 @[simp]
@@ -308,7 +314,8 @@ variable [IsMulCommutative G]
 theorem exists_lieWeight_apply_eq_intCast_mul_of_mem_ker (χ : G →ₜ* Circle)
     {X : LeftInvariantDerivation I G} (hX : X ∈ (lieExpAddMonoidHom (I := I) (G := G)).ker) :
     ∃ n : ℤ, lieWeight χ X = n * (2 * π) := by
-  rw [← Circle.exp_eq_one, ← apply_lieExp, (mem_ker_lieExpAddMonoidHom (I := I)).1 hX, map_one]
+  rw [← Circle.exp_eq_one, ← apply_lieExp_eq_circleExp_lieWeight,
+    (mem_ker_lieExpAddMonoidHom (I := I)).1 hX, map_one]
 
 /-- **Weights take integer values on the period lattice.** -/
 theorem exists_lieWeight_apply_eq_intCast_of_mem_periodLattice (χ : G →ₜ* Circle)
