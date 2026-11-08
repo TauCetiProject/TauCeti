@@ -167,6 +167,7 @@ theorem Hom.boundaryMap_comp (φ : K ⟶ L) (ψ : L ⟶ M) (i j : ι) :
 
 /-- If the differential `K.X i ⟶ K.X j` vanishes, the map on its image induced by a chain map is
 zero. -/
+@[simp]
 theorem Hom.boundaryMap_eq_zero (φ : K ⟶ L) {i j : ι} (h : K.d i j = 0) :
     φ.boundaryMap i j = 0 :=
   LinearMap.ext fun ⟨_, x, hx⟩ ↦ Subtype.ext <| by simp [← hx, h]
@@ -355,6 +356,7 @@ lemma moduleCatKerHomologyClass_surjective :
 variable {K} in
 /-- A chain map `φ` sends the homology class of an element `z` of the kernel of `K.d n m` to the
 homology class of `φ z`. -/
+@[simp]
 lemma homologyMap_moduleCatKerHomologyClass {L : HomologicalComplex (ModuleCat R) c} (φ : K ⟶ L)
     (z : LinearMap.ker (K.d n m).hom) :
     homologyMap φ n (K.moduleCatKerHomologyClass hm z) =
