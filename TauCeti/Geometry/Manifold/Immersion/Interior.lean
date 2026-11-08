@@ -265,6 +265,7 @@ variable {𝕜 : Type*} [RCLike 𝕜]
   {n : ℕ∞ω} [Nontrivial E] [IsManifold I n M] [IsManifold J n N]
   {f : M → N} {s : Set M} {x : M}
 
+omit [CompleteSpace E] in
 /-- A `C^n` map on an open set, `1 ≤ n`, is an immersion at an interior point `x` mapped to an
 interior point, as soon as its manifold derivative at `x` admits a continuous linear left inverse.
 The models may have boundary or corners; the source model space must be nontrivial. -/
@@ -305,9 +306,6 @@ theorem ContMDiffOn.isImmersionAt_of_injective_mfderiv_of_isInteriorPoint
     (hn : 1 ≤ n) (hxi : I.IsInteriorPoint x) (hfxi : J.IsInteriorPoint (f x))
     (hdf : Injective (mfderiv I J f x)) :
     IsImmersionAt I J n f x := by
-  have : FiniteDimensional 𝕜 E :=
-    FiniteDimensional.of_injective (mfderiv I J f x).toLinearMap hdf
-  have : CompleteSpace E := FiniteDimensional.complete 𝕜 E
   have : CompleteSpace E' := FiniteDimensional.complete 𝕜 E'
   exact hf.isImmersionAt_of_hasLeftInverse_mfderiv_of_isInteriorPoint hs hx hn hxi hfxi
     (ContinuousLinearMap.HasLeftInverse.of_injective_of_finiteDimensional hdf)
