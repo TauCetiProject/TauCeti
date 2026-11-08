@@ -130,6 +130,18 @@ def HeegaardTripleRegionSystem.IsCrossingCompatible {A B R : Type*} (aNext : Equ
     (aLeft (aNext.symm a₀) = bRight (bNext.symm b₀) ∧ aRight (aNext.symm a₀) = bRight b₀ ∧
       aLeft a₀ = bLeft (bNext.symm b₀) ∧ aRight a₀ = bLeft b₀)
 
+/-- A crossing is compatible exactly when the four corner regions agree for one of the two local
+orientations of the crossing. -/
+theorem HeegaardTripleRegionSystem.isCrossingCompatible_iff {A B R : Type*}
+    {aNext : Equiv.Perm A} {aLeft aRight : A → R} {bNext : Equiv.Perm B} {bLeft bRight : B → R}
+    {a₀ : A} {b₀ : B} :
+    HeegaardTripleRegionSystem.IsCrossingCompatible aNext aLeft aRight bNext bLeft bRight a₀ b₀ ↔
+      (aLeft (aNext.symm a₀) = bLeft b₀ ∧ aRight (aNext.symm a₀) = bLeft (bNext.symm b₀) ∧
+          aLeft a₀ = bRight b₀ ∧ aRight a₀ = bRight (bNext.symm b₀)) ∨
+        (aLeft (aNext.symm a₀) = bRight (bNext.symm b₀) ∧ aRight (aNext.symm a₀) = bRight b₀ ∧
+          aLeft a₀ = bLeft (bNext.symm b₀) ∧ aRight a₀ = bLeft b₀) :=
+  Iff.rfl
+
 /-- At a compatible crossing, the boundaries along the two curves of every region chain cancel:
 the `a`-boundary of the `a`-part of `∂D` and the `b`-boundary of its `b`-part sum to zero there. -/
 theorem HeegaardTripleRegionSystem.IsCrossingCompatible.sum_eq_zero {A B R : Type*}
