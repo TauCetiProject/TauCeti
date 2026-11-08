@@ -36,8 +36,6 @@ The identification of the opcycles with the cycles is
 
 * `TauCeti.SingularityCategory.exists_iso_Q_obj_singleFunctor_obj_isSyzygy`: every object of the
   singularity category is isomorphic to a `d`-th syzygy placed in some degree.
-* `TauCeti.SingularityCategory.exists_iso_Q_obj_singleFunctor_obj`: the same, with the syzygy
-  expressed by the vanishing of `Ext` into objects of injective dimension at most `d`.
 
 ## References
 
@@ -50,7 +48,7 @@ public section
 open CategoryTheory CategoryTheory.Limits CategoryTheory.Abelian CategoryTheory.Pretriangulated
   ZeroObject
 
-universe w' w v u
+universe w v u
 
 namespace TauCeti.SingularityCategory
 
@@ -151,17 +149,5 @@ theorem exists_iso_Q_obj_singleFunctor_obj_isSyzygy [EnoughProjectives C]
   exact ⟨K.cycles (m + 1), m, CochainComplex.isSyzygy_cycles (m + 1) d (fun _ _ ↦ hK _)
       (fun l hl ↦ K.exactAt_of_isGE a _ (by lia)),
     ⟨(Q C).mapIso eX.symm ≪≫ asIso ((Q C).map T'.mor₂) ≪≫ (Q C).mapIso eS⟩⟩
-
-/-- **Objects of the singularity category are shifted syzygies**, in terms of `Ext`: every object
-of the singularity category is isomorphic to an object `M` of `C` placed in some degree, where `M`
-can be chosen with `Ext^{i+1}(M, Y) = 0` for all objects `Y` of injective dimension at most a given
-`d`. -/
-theorem exists_iso_Q_obj_singleFunctor_obj [EnoughProjectives C] [HasExt.{w'} C]
-    (X : _root_.DerivedCategory.Bounded C) (d : ℕ) :
-    ∃ (M : C) (n : ℤ), (∀ (Y : C) [HasInjectiveDimensionLE Y d] (i : ℕ)
-        (e : Ext.{w'} M Y (i + 1)), e = 0) ∧
-      Nonempty ((Q C).obj X ≅ (Q C).obj ((DerivedCategory.Bounded.singleFunctor C n).obj M)) :=
-  have ⟨M, n, hM, e⟩ := exists_iso_Q_obj_singleFunctor_obj_isSyzygy X d
-  ⟨M, n, fun Y _ i e' ↦ hM.ext_eq_zero_of_hasInjectiveDimensionLE (fun _ h ↦ h) Y i e', e⟩
 
 end TauCeti.SingularityCategory
