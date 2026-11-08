@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Meromorphic.TrailingCoefficient
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
+import TauCeti.Analysis.Calculus.IteratedDeriv.Leibniz
+import TauCeti.Order.WithBot
 
 /-!
 # The residue of a meromorphic function
@@ -171,38 +173,6 @@ theorem residue_eq_meromorphicTrailingCoeffAt_of_order_eq_neg_one {f : ℂ → E
   rw [hres, hg.meromorphicTrailingCoeffAt_of_eq_nhdsNE hfg, huntop]
   simp
 
-/-- **Taylor-shift invariance of the residue coefficient.** For `h` analytic at `z₀`, the
-`(p + i)`-th Taylor coefficient at `z₀` of `(· − z₀) ^ p • h` is the `i`-th Taylor coefficient of
-`h`: multiplying an analytic germ by `(· − z₀) ^ p` shifts its Taylor coefficients up by `p` without
-changing them. Only the top Leibniz term of the product rule survives, since `(· − z₀) ^ p` and its
-first `p − 1` derivatives vanish at `z₀`. -/
-private lemma inv_factorial_smul_iteratedDeriv_pow_sub_smul [CompleteSpace E] {z₀ : ℂ} (p i : ℕ)
-    {h : ℂ → E} (hh : AnalyticAt ℂ h z₀) :
-    ((p + i).factorial : ℂ)⁻¹ • iteratedDeriv (p + i) (fun z ↦ (z - z₀) ^ p • h z) z₀ =
-      (i.factorial : ℂ)⁻¹ • iteratedDeriv i h z₀ := by
-  have hpow (j : ℕ) : iteratedDeriv j (fun z : ℂ ↦ (z - z₀) ^ p) z₀ =
-      if j = p then (p.factorial : ℂ) else 0 := by
-    simpa only [sub_self, iteratedDeriv_fun_pow_zero, Nat.cast_ite, Nat.cast_zero] using
-      congrFun (iteratedDeriv_comp_sub_const j (fun w : ℂ ↦ w ^ p) z₀) z₀
-  have hleib := iteratedDerivWithin_smul (Set.mem_univ z₀) uniqueDiffOn_univ (n := p + i)
-    (f := fun z : ℂ ↦ (z - z₀) ^ p) (by fun_prop) hh.contDiffAt.contDiffWithinAt
-  simp only [iteratedDerivWithin_univ] at hleib
-  -- The applied product is, by definition, the `Pi` scalar product that `hleib` expands.
-  rw [show (fun z ↦ (z - z₀) ^ p • h z) = (fun z : ℂ ↦ (z - z₀) ^ p) • h from rfl, hleib,
-    Finset.sum_eq_single p (fun j _ hj ↦ by rw [hpow, ite_eq_right hj, zero_smul, smul_zero])
-      (fun hp ↦ absurd (Finset.mem_range.2 (by omega)) hp),
-    hpow, ite_eq_left rfl, Nat.add_sub_cancel_left, ← Nat.cast_smul_eq_nsmul ℂ, smul_smul,
-    smul_smul]
-  congr 1
-  have h := Nat.choose_mul_factorial_mul_factorial (Nat.le_add_right p i)
-  rw [Nat.add_sub_cancel_left] at h
-  have hC : ((p + i).choose p : ℂ) ≠ 0 :=
-    Nat.cast_ne_zero.mpr (Nat.choose_pos (Nat.le_add_right p i)).ne'
-  have hP : (p.factorial : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr p.factorial_ne_zero
-  rw [← h]
-  push_cast
-  field_simp
-
 /-- The pole case (`meromorphicOrderAt f z₀ < 0`) of `residue_eq_of_eventuallyEq_zpow_smul`: the
 presentation factor `g` is the reduced analytic part times `(· − z₀) ^ (order − n)`, whose Taylor
 coefficients are those of the analytic part shifted by `order − n`. -/
@@ -226,9 +196,11 @@ private theorem residue_eq_of_eventuallyEq_zpow_smul_of_order_lt_zero [CompleteS
     rw [← smul_right_inj (zpow_ne_zero n hzne), ← hz1, hz2, smul_smul, ← zpow_natCast,
       ← zpow_add₀ hzne, Int.toNat_of_nonneg (by omega), add_sub_cancel]
   have hana : AnalyticAt ℂ (fun z ↦ (z - z₀) ^ (a - n).toNat • g₀ z) z₀ := by fun_prop
+  -- Split the Taylor index `-1 - n` as the shift `a - n` plus the index `-1 - a` for `g₀`.
+  have hidx : (-1 - n).toNat = (a - n).toNat + (-1 - a).toNat := by omega
   rw [hres, ((hg.continuousAt.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE hana.continuousAt).1
-    hg_eqNE).iteratedDeriv_eq, show (-1 - n).toNat = (a - n).toNat + (-1 - a).toNat by omega,
-    inv_factorial_smul_iteratedDeriv_pow_sub_smul _ _ hg₀_an]
+    hg_eqNE).iteratedDeriv_eq, hidx,
+    inv_factorial_smul_iteratedDeriv_pow_sub_smul _ _ hg₀_an.contDiffAt]
 
 /-- The pole-free case of `residue_eq_of_eventuallyEq_zpow_smul`: when
 `meromorphicOrderAt f z₀ ≥ 0`, `f` has no pole so its residue is `0`, and `g` vanishes to
@@ -293,21 +265,13 @@ lemma exists_analyticAt_eventuallyEq_zpow_smul {f : ℂ → E} {z₀ : ℂ} {m :
     rw [hz1, smul_smul, ← zpow_natCast, ← zpow_add₀ (sub_ne_zero.mpr hz2),
       Int.toNat_of_nonneg (by omega), add_sub_cancel]
 
-/-- Every element of `WithTop ℤ` lies above some integer that is at most `m₀`: the exponent bound
-used to bring meromorphic functions to a common presentation with a pole. -/
-private lemma exists_le_and_coe_le (x : WithTop ℤ) (m₀ : ℤ) :
-    ∃ m : ℤ, m ≤ m₀ ∧ (m : WithTop ℤ) ≤ x := by
-  induction x with
-  | top => exact ⟨m₀, le_rfl, le_top⟩
-  | coe k => exact ⟨min k m₀, min_le_right _ _, WithTop.coe_le_coe.2 (min_le_left _ _)⟩
-
 /-- **Additivity of the residue.** The residue is additive on functions meromorphic at `z₀`. -/
 @[simp]
 theorem residue_add [CompleteSpace E] {f g : ℂ → E} {z₀ : ℂ} (hf : MeromorphicAt f z₀)
     (hg : MeromorphicAt g z₀) :
     residue (f + g) z₀ = residue f z₀ + residue g z₀ := by
   obtain ⟨m, hm1, hm⟩ :=
-    exists_le_and_coe_le (min (meromorphicOrderAt f z₀) (meromorphicOrderAt g z₀)) (-1)
+    (min (meromorphicOrderAt f z₀) (meromorphicOrderAt g z₀)).exists_le_and_coe_le (-1)
   rw [le_min_iff] at hm
   obtain ⟨φf, hφf_an, hφf_eq⟩ := exists_analyticAt_eventuallyEq_zpow_smul hf hm.1
   obtain ⟨φg, hφg_an, hφg_eq⟩ := exists_analyticAt_eventuallyEq_zpow_smul hg hm.2
@@ -393,8 +357,8 @@ theorem residue_div_sub_pow_of_analyticAt {g : ℂ → ℂ} {z₀ : ℂ} (hg : A
       fun z ↦ (z - z₀) ^ (-(k + 1 : ℕ) : ℤ) • g z :=
     Filter.Eventually.of_forall fun z ↦ by
       simp only [smul_eq_mul, zpow_neg, zpow_natCast, div_eq_inv_mul]
-  rw [residue_eq_of_eventuallyEq_zpow_smul (by omega) hg hfg,
-    show (-1 - (-(k + 1 : ℕ) : ℤ)).toNat = k by omega, smul_eq_mul, inv_mul_eq_div]
+  have hidx : (-1 - (-(k + 1 : ℕ) : ℤ)).toNat = k := by omega
+  rw [residue_eq_of_eventuallyEq_zpow_smul (by omega) hg hfg, hidx, smul_eq_mul, inv_mul_eq_div]
 
 /-- **The residue of a Laurent monomial**: `residue (a / (z - z₀)^(k+1)) z₀` is `a` for `k = 0`
 and `0` for higher-order terms. -/
