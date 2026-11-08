@@ -56,10 +56,13 @@ theorem quotientRangeCoordinate_def (A : E →L[R] F) (B : G →L[R] F) :
     (h : ¬(A.coprod B).IsInvertible) : A.quotientRangeCoordinate B = 0 := by
   simp [quotientRangeCoordinate_def, h]
 
-/-- Tangent representatives have zero complementary coordinate. -/
-@[simp] theorem quotientRangeCoordinate_apply_left (h : (A.coprod B).IsInvertible) (u : E) :
+/-- Tangent representatives have zero complementary coordinate. Without an invertible
+coproduct this holds because the coordinate is zero. -/
+@[simp] theorem quotientRangeCoordinate_apply_left (u : E) :
     A.quotientRangeCoordinate B (A u) = 0 := by
-  simpa [quotientRangeCoordinate] using congrArg Prod.snd (h.inverse_apply_self (u, 0))
+  by_cases h : (A.coprod B).IsInvertible
+  · simpa [quotientRangeCoordinate] using congrArg Prod.snd (h.inverse_apply_self (u, 0))
+  · simp [quotientRangeCoordinate_of_not_isInvertible h]
 
 /-- A vector parametrized by the complement has its original complementary coordinate. -/
 @[simp] theorem quotientRangeCoordinate_apply_right (h : (A.coprod B).IsInvertible) (w : G) :
@@ -80,7 +83,7 @@ theorem exists_apply_add_apply_quotientRangeCoordinate_eq (h : (A.coprod B).IsIn
     have hy0 : A.quotientRangeCoordinate B y = 0 := LinearMap.mem_ker.mp hy
     exact ⟨u, by simpa [hy0] using hu⟩
   · rintro y ⟨u, rfl⟩
-    exact quotientRangeCoordinate_apply_left h u
+    exact quotientRangeCoordinate_apply_left u
 
 end Semiring
 
