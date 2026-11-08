@@ -206,12 +206,11 @@ private theorem jacobianForm_isAlt : jacobianForm.IsAlt := fun u ↦ by
 
 variable {μ : Measure ℂ} [μ.IsAddHaarMeasure]
 
-/-- The potential along a compactly supported `C¹` variation is integrable. -/
-theorem integrable_gaugeFixedPotential (hx : ContDiff ℝ 1 x) (hy : ContDiff ℝ 1 y)
+/-- The potential along a compactly supported continuous variation is integrable. -/
+theorem integrable_gaugeFixedPotential (hx : ContDiff ℝ 1 x) (hy : Continuous y)
     (hyc : HasCompactSupport y) : Integrable (fun z ↦ gaugeFixedPotential x z (y z)) μ := by
   have hxi := (contDiff_piLp 2).1 hx
   have := hx.continuous
-  have := hy.continuous
   have hdx (i : Fin 4) (v : ℂ) : Continuous fun z ↦ fderiv ℝ (fun w ↦ x w i) z v :=
     ((hxi i).continuous_fderiv one_ne_zero).clm_apply continuous_const
   rw [funext fun z ↦ gaugeFixedPotential_eq (hx.differentiable one_ne_zero z) (y z)]
@@ -229,14 +228,14 @@ theorem integrable_gaugeFixedGradientDensity (hx : Continuous x) (hy : ContDiff 
     (hyc.mono' <| Function.support_subset_iff'.2 fun z hz ↦ ?_)
   · simp only [funext (gaugeFixedGradientDensity_def x y)]
     fun_prop
-  · simp [gaugeFixedGradientDensity_def, fderiv_piLp_apply (hy.differentiable one_ne_zero z),
+  · simp [gaugeFixedGradientDensity_def, (hy.differentiable one_ne_zero z).fderiv_piLp_apply,
       fderiv_of_notMem_tsupport ℝ hz, image_eq_zero_of_notMem_tsupport hz]
 
 /-- The Jacobian form of the two partial derivatives of a compactly supported `C¹` variation is
 integrable. -/
 private theorem integrable_jacobianForm_fderiv (hy : ContDiff ℝ 1 y) (hyc : HasCompactSupport y) :
     Integrable (fun z ↦ jacobianForm (fderiv ℝ y z 1) (fderiv ℝ y z I)) μ := by
-  have hdi (z : ℂ) := fderiv_piLp_apply (hy.differentiable one_ne_zero z)
+  have hdi (z : ℂ) := (hy.differentiable one_ne_zero z).fderiv_piLp_apply
   have hdy (i : Fin 4) (v : ℂ) : Continuous fun z ↦ fderiv ℝ (fun w ↦ y w i) z v :=
     (((contDiff_piLp 2).1 hy i).continuous_fderiv one_ne_zero).clm_apply continuous_const
   refine Continuous.integrable_of_hasCompactSupport ?_
@@ -256,7 +255,7 @@ private theorem integral_weitzenbockRemainder (hx : ContDiff ℝ 1 x) (hy : Cont
   have hyi := (contDiff_piLp 2).1 hy₁
   have hy0 {z : ℂ} (hz : z ∉ tsupport y) (i : Fin 4) : y z i = 0 := by
     simp [image_eq_zero_of_notMem_tsupport hz]
-  have hdi (z : ℂ) := fderiv_piLp_apply (hy₁.differentiable one_ne_zero z)
+  have hdi (z : ℂ) := (hy₁.differentiable one_ne_zero z).fderiv_piLp_apply
   set J : ℂ → ℝ := fun z ↦ 2 * jacobianForm (fderiv ℝ y z 1) (fderiv ℝ y z I) with hJ
   set W₁ : ℂ → ℝ := fun w ↦ 2 * y w 0 * (x w 2 * y w 3 - x w 3 * y w 2) -
       2 * y w 1 * (x w 2 * y w 2 + x w 3 * y w 3) - x w 1 * (y w 2 ^ 2 + y w 3 ^ 2) with hW₁
@@ -304,7 +303,7 @@ theorem integral_norm_sq_gaugeFixedOperator (hx : ContDiff ℝ 1 x) (hy : ContDi
       (∫ z, gaugeFixedGradientDensity x y z ∂μ) + ∫ z, gaugeFixedPotential x z (y z) ∂μ := by
   have hy₁ : ContDiff ℝ 1 y := hy.of_le (by norm_num)
   have hG := integrable_gaugeFixedGradientDensity (μ := μ) hx.continuous hy₁ hyc
-  have hP := integrable_gaugeFixedPotential (μ := μ) hx hy₁ hyc
+  have hP := integrable_gaugeFixedPotential (μ := μ) hx hy.continuous hyc
   obtain ⟨hRi, hR0⟩ := integral_weitzenbockRemainder (μ := μ) hx hy hyc
   have h₁ : Integrable (fun z ↦ gaugeFixedGradientDensity x y z +
       gaugeFixedPotential x z (y z)) μ := hG.add hP
@@ -434,7 +433,6 @@ theorem exists_integral_gaugeFixedGradientDensity_add_mul_integral_norm_sq_le
         ∫ z, ‖gaugeFixedOperator x y z‖ ^ 2 ∂μ + K * ∫ z in closedBall 0 R, ‖y z‖ ^ 2 ∂μ := by
   obtain ⟨R, hR, b, hb⟩ := exists_lt_vortexMass hx hlim hcov ha
   refine ⟨R, hR, a - b, fun y hy hyc ↦ ?_⟩
-  have hy₁ : ContDiff ℝ 1 y := hy.of_le (by norm_num)
   have hn : Integrable (fun z ↦ ‖y z‖ ^ 2) μ :=
     Continuous.integrable_of_hasCompactSupport (f := fun z ↦ ‖y z‖ ^ 2)
       (hy.continuous.norm.pow 2) (hyc.comp_left (g := fun v ↦ ‖v‖ ^ 2) (by simp))
@@ -451,7 +449,8 @@ theorem exists_integral_gaugeFixedGradientDensity_add_mul_integral_norm_sq_le
       exact mul_le_mul_of_nonneg_right ((hb z).2 hz).le (sq_nonneg _)
   have hlow : ∫ z, (a * ‖y z‖ ^ 2 - (a - b) * (closedBall 0 R).indicator
       (fun z ↦ ‖y z‖ ^ 2) z) ∂μ ≤ ∫ z, gaugeFixedPotential x z (y z) ∂μ :=
-    integral_mono ((hn.const_mul a).sub hnB) (integrable_gaugeFixedPotential hx hy₁ hyc) hpt
+    integral_mono ((hn.const_mul a).sub hnB)
+      (integrable_gaugeFixedPotential hx hy.continuous hyc) hpt
   rw [integral_sub (hn.const_mul a) hnB, integral_const_mul, integral_const_mul,
     integral_indicator measurableSet_closedBall] at hlow
   rw [integral_norm_sq_gaugeFixedOperator hx hy hyc]

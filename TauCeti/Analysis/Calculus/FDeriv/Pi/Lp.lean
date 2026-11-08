@@ -14,7 +14,7 @@ import Mathlib.Analysis.Calculus.FDeriv.WithLp
 # Derivatives of coordinates on finite `L^p` products
 
 The derivative of a coordinate of a function into a finite `L^p` product is the corresponding
-coordinate of its derivative (`fderiv_piLp_apply`).
+coordinate of its derivative (`DifferentiableAt.fderiv_piLp_apply`).
 
 Freezing all but one coordinate of a scalar function on `PiLp 2 E` gives a function on
 that factor. At a differentiability point, its derivative norm equals the norm of the
@@ -36,7 +36,7 @@ variable {𝕜 ι H : Type*} {E : ι → Type*} [NontriviallyNormedField 𝕜] [
 
 /-- The partial derivatives of a coordinate of a function into a finite `L^p` product, at a
 point where the function is differentiable, are the coordinates of its partial derivatives. -/
-theorem fderiv_piLp_apply (hf : DifferentiableAt 𝕜 f y) (i : ι) (v : H) :
+theorem DifferentiableAt.fderiv_piLp_apply (hf : DifferentiableAt 𝕜 f y) (i : ι) (v : H) :
     fderiv 𝕜 (fun x ↦ f x i) y v = fderiv 𝕜 f y v i := by
   rw [(hasFDerivWithinAt_univ.1 ((hasFDerivWithinAt_piLp p).1
     hf.hasFDerivAt.hasFDerivWithinAt i)).fderiv]
