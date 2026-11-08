@@ -223,7 +223,6 @@ end Complex
 section ComplexDivisionMonoid
 
 variable {G : Type v} {V : Type w} [DivisionMonoid G] [AddCommGroup V] [Module ℂ V]
-  [FiniteDimensional ℂ V]
 
 /-- **Over `ℂ`, inversion conjugates character values**: if `g ^ n = 1` with `n ≠ 0`, then
 `conj (χ g) = χ g⁻¹`. The eigenvalues of `ρ g` are `n`-th roots of unity, so conjugating them
@@ -240,7 +239,7 @@ end ComplexDivisionMonoid
 
 section ComplexGroup
 
-variable {G : Type v} {V : Type w} [Group G] [AddCommGroup V] [Module ℂ V] [FiniteDimensional ℂ V]
+variable {G : Type v} {V : Type w} [Group G] [AddCommGroup V] [Module ℂ V]
 
 /-- **Over `ℂ`, inversion conjugates the character values of a finite group.** -/
 @[simp]

@@ -120,6 +120,13 @@ theorem isIntegral_trace_of_pow_eq_one {f : End k V} {n : ℕ} (hn : n ≠ 0) (h
   rw [LinearMap.trace_baseChange] at hint
   exact hint.tower_bot (algebraMap k (AlgebraicClosure k)).injective
 
+/-- The trace is the zero functional on a module that is not finitely generated. -/
+private theorem trace_eq_zero_of_not_finite {R M : Type*} [CommRing R] [AddCommGroup M]
+    [Module R M] (h : ¬ Module.Finite R M) : LinearMap.trace R M = 0 := by
+  rw [LinearMap.trace, dite_eq_right]
+  rintro ⟨s, ⟨b⟩⟩
+  exact h (Module.Finite.of_basis b)
+
 omit [FiniteDimensional k V] in
 /-- An endomorphism `f` with `f ^ n = 1` for some `n` invertible in `k` is semisimple, because it
 is annihilated by the squarefree polynomial `X ^ n - 1`. -/
@@ -142,6 +149,7 @@ theorem mapsTo_pow_eigenspace (f : End k V) (μ : k) (m : ℕ) :
   rw [SetLike.mem_coe, hx']
   exact Submodule.smul_mem _ _ hx
 
+omit [FiniteDimensional k V] in
 /-- The trace of `f ^ m` on the `μ`-eigenspace of `f` is `dim(V_μ) * μ ^ m`, because `f ^ m` acts
 there as the scalar `μ ^ m`. -/
 theorem trace_pow_restrict_eigenspace (f : End k V) (μ : k) (m : ℕ) :
@@ -151,7 +159,10 @@ theorem trace_pow_restrict_eigenspace (f : End k V) (μ : k) (m : ℕ) :
     ext x
     refine (LinearMap.coe_restrict_apply _ x).trans ?_
     simpa using End.aeval_apply_of_mem_apply_eq_smul (p := X ^ m) (End.mem_eigenspace_iff.1 x.2)
-  rw [hrestrict, map_smul, LinearMap.trace_id, smul_eq_mul, mul_comm]
+  by_cases hE : Module.Finite k (f.eigenspace μ)
+  · rw [hrestrict, map_smul, LinearMap.trace_id, smul_eq_mul, mul_comm]
+  · rw [trace_eq_zero_of_not_finite hE, LinearMap.zero_apply, Module.finrank_of_not_finite hE,
+      Nat.cast_zero, zero_mul]
 
 /-- Every eigenvalue of an endomorphism of finite order `n` is an `n`-th root of unity. -/
 theorem pow_eq_one_of_hasEigenvalue (hf : f ^ n = 1) {μ : k} (hμ : f.HasEigenvalue μ) :
@@ -201,15 +212,18 @@ section Complex
 
 variable {V : Type w} [AddCommGroup V] [Module ℂ V] [FiniteDimensional ℂ V]
 
+omit [FiniteDimensional ℂ V] in
 /-- **Complex conjugation of the trace inverts the endomorphism.** If `f ^ n = 1` with `n ≠ 0`, then
 the conjugate of the trace of `f` is the trace of its inverse `f ^ (n - 1)`: the eigenvalues of `f`
 are `n`-th roots of unity, and conjugation inverts those. -/
 theorem conj_trace_eq_trace_pow_sub_one {f : End ℂ V} {n : ℕ} (hn : n ≠ 0) (hf : f ^ n = 1) :
-    (starRingEnd ℂ) (LinearMap.trace ℂ V f) = LinearMap.trace ℂ V (f ^ (n - 1)) :=
-  map_trace_eq_trace_pow (Nat.cast_ne_zero.2 hn) hf (starRingEnd ℂ) fun μ hμ => by
-    rw [← Complex.inv_eq_conj (Complex.norm_eq_one_of_pow_eq_one hμ hn)]
-    exact inv_eq_of_mul_eq_one_right
-      (by rw [← pow_succ', Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.2 hn), hμ])
+    (starRingEnd ℂ) (LinearMap.trace ℂ V f) = LinearMap.trace ℂ V (f ^ (n - 1)) := by
+  by_cases hV : FiniteDimensional ℂ V
+  · exact map_trace_eq_trace_pow (Nat.cast_ne_zero.2 hn) hf (starRingEnd ℂ) fun μ hμ => by
+      rw [← Complex.inv_eq_conj (Complex.norm_eq_one_of_pow_eq_one hμ hn)]
+      exact inv_eq_of_mul_eq_one_right
+        (by rw [← pow_succ', Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.2 hn), hμ])
+  · rw [trace_eq_zero_of_not_finite hV, LinearMap.zero_apply, LinearMap.zero_apply, map_zero]
 
 /-- **An endomorphism of finite order whose trace has the largest possible absolute value is a
 scalar.** The eigenvalues of `f` are `n`-th roots of unity and the trace is their sum, weighted by
