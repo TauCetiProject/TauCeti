@@ -439,6 +439,21 @@ theorem hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt (ω : Smo
   rw [hβ, mul_zero, zero_mul] at key
   exact (mul_eq_zero.1 key).resolve_left (det_fderiv_endChart_pos q w).ne'
 
+/-- The curvature vanishes on the core `S_R ∖ ⋃_q A_q` of the truncation, where the perturbation
+vanishes nearby. -/
+private theorem hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_mem_core
+    (ω : SmoothTwoForm I M) {R : ℝ} {z : ℝ × ℝ}
+    (hz : z ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation R \
+      ⋃ q, endChart q '' endPiece q R) (x : M) :
+    ω.hamiltonianCurvature
+      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+      z x = 0 :=
+  ω.hamiltonianCurvature_eq_zero_of_forall_endCoord_lt
+    (fun _ hw y ↦ pairOfPantsPerturbation_eq_zero_of_forall_le hw y)
+    (preimage_truncation_subset_thricePuncturedSphereReal R hz.1)
+    (endSign_mul_re_endCoord_lt_one_of_mem_core hz) x
+
 /-- The curvature term along a map continuous on `S` is integrable over every truncation `S_R`
 with `R ≥ 1`: it vanishes on the core, and in the coordinates of each end it is the continuous
 function `±β'(±s - 1) H_q(t, u)`. -/
@@ -456,13 +471,10 @@ private theorem integrableOn_truncation_hamiltonianCurvature (ω : SmoothTwoForm
   rw [← sdiff_union_of_subset (iUnion_subset hAT)]
   refine integrableOn_union.2 ⟨?_, integrableOn_finite_iUnion.2 fun q ↦ ?_⟩
   · -- On the core the perturbation vanishes, and so does its curvature.
-    refine integrableOn_zero.congr_fun (fun z hz ↦ ?_)
+    exact integrableOn_zero.congr_fun
+      (fun z hz ↦ (hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_mem_core ω hz _).symm)
       ((isCompact_preimage_truncation R).isClosed.measurableSet.diff
         (MeasurableSet.iUnion fun q ↦ measurableSet_image_endPiece q R))
-    exact (ω.hamiltonianCurvature_eq_zero_of_forall_endCoord_lt
-      (fun w hw y ↦ pairOfPantsPerturbation_eq_zero_of_forall_le hw y)
-      (preimage_truncation_subset_thricePuncturedSphereReal R hz.1)
-      (endSign_mul_re_endCoord_lt_one_of_mem_core hz) _).symm
   · -- Change variables to the coordinates of the end, where the curvature is continuous on the
     -- compact closure of the end piece.
     set K : Set (ℝ × ℝ) :=
@@ -871,10 +883,7 @@ theorem integral_floerEnergyDensity_pairOfPantsPerturbation_truncation (hω : ω
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
       z (u z) = 0 :=
     setIntegral_eq_zero_of_forall_eq_zero fun z hz =>
-      ω.hamiltonianCurvature_eq_zero_of_forall_endCoord_lt
-        (fun w hw y ↦ pairOfPantsPerturbation_eq_zero_of_forall_le hw y)
-        (preimage_truncation_subset_thricePuncturedSphereReal R hz.1)
-        (endSign_mul_re_endCoord_lt_one_of_mem_core hz) _
+      hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_mem_core ω hz _
   rw [setIntegral_truncation_eq_add_sum hR hE,
     setIntegral_truncation_eq_add_sum hR (integrableOn_truncation_eval₂_mfderiv ω hu R),
     setIntegral_truncation_eq_add_sum hR hcurv, hCE, hCR,
@@ -1127,12 +1136,8 @@ theorem integrableOn_hamiltonianCurvature_pairOfPantsPerturbation (ω : Symplect
   have hc := ω.continuousOn_hamiltonianCurvature_comp isOpen_thricePuncturedSphereReal hu
     (contDiffOn_pairOfPantsPerturbation hH hHs 1)
     (contDiffOn_pairOfPantsPerturbation hH hHs Complex.I)
-  have hT : Complex.equivRealProdCLM.symm ⁻¹' truncation 2 ⊆
-      {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1} :=
-    fun z hz ↦ ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩
-  refine ((hc.mono hT).integrableOn_compact
-    (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
-      (isCompact_truncation 2))).of_forall_sdiff_eq_zero
+  refine ((hc.mono (preimage_truncation_subset_thricePuncturedSphereReal 2)).integrableOn_compact
+    (isCompact_preimage_truncation 2)).of_forall_sdiff_eq_zero
     isOpen_thricePuncturedSphereReal.measurableSet fun z hz ↦ ?_
   -- Off `S_2` some end has signed longitudinal coordinate greater than `2`.
   obtain ⟨q, hq⟩ : ∃ q : Puncture,
@@ -1299,7 +1304,7 @@ theorem neg_sum_le_integral_add_sum_of_isComplexLinearMap (ω : SymplecticForm V
         ∑ q, q.endSign * ∫ t in (0 : ℝ)..1, H q t (x q t) := by
   have hpos := setIntegral_nonneg (μ := volume) isOpen_thricePuncturedSphereReal.measurableSet
     fun z hz ↦ ω.floerEnergyDensity_nonneg (hJ z hz) (hfloer z hz)
-  rw [thricePuncturedSphereReal] at hpos
+  rw [thricePuncturedSphereReal_eq] at hpos
   have h := abs_le.1
     (abs_integral_floerEnergyDensity_pairOfPantsPerturbation_sub_le ω hH hHs hB hu hx hE hA)
   linarith [h.2]
@@ -1417,7 +1422,7 @@ theorem sum_mul_integral_le_setIntegral_hamiltonianCurvature_pairOfPantsPerturba
     measurable_image_of_fderivWithin (measurableSet_endStrip q)
       (fun ζ _ ↦ (hasFDerivAt_endChart q ζ).hasFDerivWithinAt) (injOn_endChart q)
   -- The curvature is supported in the images of the strips of the ends.
-  rw [← thricePuncturedSphereReal,
+  rw [← thricePuncturedSphereReal_eq,
     setIntegral_eq_of_subset_of_forall_sdiff_eq_zero isOpen_thricePuncturedSphereReal.measurableSet
       (iUnion_subset hsub) fun z hz ↦ ?_,
     integral_iUnion_fintype hmeas pairwise_disjoint_image_endChart fun q ↦ hR.mono_set (hsub q)]
