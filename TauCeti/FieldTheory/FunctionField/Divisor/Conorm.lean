@@ -338,6 +338,7 @@ private theorem degree_conorm_of_cross_mul
   push_cast
   ring
 
+omit [Algebra.IsIntegral k k'] in
 /-- **The degree of a conorm, divided through**: when adjoining the constant field `k'` to `F`
 costs exactly `[k' : k]` — the degree form of linear disjointness of `F` and `k'` over `k` — so
 that `[k' : k]` divides `[F' : F]` with quotient the geometric degree `n(F'/F)`, the conorm
@@ -357,16 +358,19 @@ forces `[k' : k]` to be finite and positive, which is what licenses the division
 finiteness assumption on `k' / k` is needed. -/
 theorem degree_conorm (hF : IsFunctionField k F)
     (h : Module.finrank F (constantCompositum F k' F') = Module.finrank k k') (D : Divisor k F) :
-    degree (conorm k' F' D) = geometricDegree F k' F' * degree D :=
-  degree_conorm_of_cross_mul k' F' h D (finrank_mul_degree_conorm k' F' hF D)
+    degree (conorm k' F' D) = geometricDegree F k' F' * degree D := by
+  have : Module.Finite k k' := Module.finite_of_finrank_pos (h ▸ Module.finrank_pos)
+  exact degree_conorm_of_cross_mul k' F' h D (finrank_mul_degree_conorm k' F' hF D)
 
+omit [Algebra.IsIntegral k k'] in
 /-- **The degree of a conorm for a separable extension, divided through**: the version of
 `TauCeti.Divisor.degree_conorm` which requires no function-field hypothesis on `F / k`, but
 instead assumes that `F' / F` is separable. -/
 theorem degree_conorm_of_isSeparable [Algebra.IsSeparable F F']
     (h : Module.finrank F (constantCompositum F k' F') = Module.finrank k k') (D : Divisor k F) :
-    degree (conorm k' F' D) = geometricDegree F k' F' * degree D :=
-  degree_conorm_of_cross_mul k' F' h D (finrank_mul_degree_conorm_of_isSeparable k' F' D)
+    degree (conorm k' F' D) = geometricDegree F k' F' * degree D := by
+  have : Module.Finite k k' := Module.finite_of_finrank_pos (h ▸ Module.finrank_pos)
+  exact degree_conorm_of_cross_mul k' F' h D (finrank_mul_degree_conorm_of_isSeparable k' F' D)
 
 omit [Algebra.IsIntegral k k'] in
 private theorem degree_conorm_of_finrank_eq_one_of_cross_mul
@@ -377,6 +381,7 @@ private theorem degree_conorm_of_finrank_eq_one_of_cross_mul
   rw [h] at hmul
   simpa using hmul
 
+omit [Algebra.IsIntegral k k'] in
 /-- **The conorm multiplies degrees by `[F' : F]` when the constant field does not grow**, i.e.
 when `[k' : k] = 1`. No hypothesis on where the constants sit is needed: the cross-multiplied
 identity `finrank_mul_degree_conorm` already has `[k' : k]` as its left factor, so setting it to
@@ -385,17 +390,20 @@ where `k' = k` is that base field. -/
 @[simp]
 theorem degree_conorm_of_finrank_eq_one (hF : IsFunctionField k F)
     (h : Module.finrank k k' = 1) (D : Divisor k F) :
-    degree (conorm k' F' D) = Module.finrank F F' * degree D :=
-  degree_conorm_of_finrank_eq_one_of_cross_mul k' F' h D
+    degree (conorm k' F' D) = Module.finrank F F' * degree D := by
+  have : Module.Finite k k' := Module.finite_of_finrank_pos (by omega)
+  exact degree_conorm_of_finrank_eq_one_of_cross_mul k' F' h D
     (finrank_mul_degree_conorm k' F' hF D)
 
+omit [Algebra.IsIntegral k k'] in
 /-- **The conorm multiplies degrees by `[F' : F]` for a separable extension with unchanged
 constants**, without requiring a function-field hypothesis on `F / k`. -/
 @[simp]
 theorem degree_conorm_of_isSeparable_of_finrank_eq_one [Algebra.IsSeparable F F']
     (h : Module.finrank k k' = 1) (D : Divisor k F) :
-    degree (conorm k' F' D) = Module.finrank F F' * degree D :=
-  degree_conorm_of_finrank_eq_one_of_cross_mul k' F' h D
+    degree (conorm k' F' D) = Module.finrank F F' * degree D := by
+  have : Module.Finite k k' := Module.finite_of_finrank_pos (by omega)
+  exact degree_conorm_of_finrank_eq_one_of_cross_mul k' F' h D
     (finrank_mul_degree_conorm_of_isSeparable k' F' D)
 
 end Degree
