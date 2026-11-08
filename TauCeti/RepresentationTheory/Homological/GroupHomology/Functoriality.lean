@@ -27,6 +27,8 @@ through Mathlib's identification `H₁(G, A) ≃ Gᵃᵇ ⊗ A` for trivial coef
   by `f : H →* G` and `φ : A ⟶ Res(f)(B)` sends the class of `x ⊗ a` to that of `f x ⊗ φ a`.
 * `TauCeti.groupHomology.H1AddEquivOfIsTrivial_map`: with trivial coefficients, change of group
   and a coefficient map act as `Abelianization.map f ⊗ φ`.
+* `TauCeti.groupHomology.subsingleton_groupHomology_of_mulEquiv`: with trivial coefficients,
+  vanishing of group homology transfers along group isomorphisms.
 * `Rep.chainsMap_inclusion_comp_chainsMap_subtype`: the maps of inhomogeneous
   chains induced by inclusions of subgroups `S ≤ T ≤ G` compose.
 * `Rep.map_inclusion_comp_map_subtype`: so do the induced maps on homology.
@@ -102,6 +104,14 @@ theorem H1AddEquivOfIsTrivial_map {A : Rep R H} {B : Rep R G} [A.IsTrivial] [B.I
     rw [H1AddEquivOfIsTrivial_symm_tmul, ← mkH1OfIsTrivial_apply, map_mkH1OfIsTrivial]
     simpa using H1AddEquivOfIsTrivial_single B (f h) (φ.hom a)
   | add t t' ht ht' => rw [map_add, map_add, map_add, ht, ht', map_add]
+
+/-- With trivial coefficients, vanishing of group homology transfers along a group isomorphism
+`e : G ≃* H` and a linear equivalence `φ` of the coefficients. -/
+theorem subsingleton_groupHomology_of_mulEquiv {A : Rep R G} {B : Rep R H} [A.IsTrivial]
+    [B.IsTrivial] (e : G ≃* H) (φ : A.V ≃ₗ[R] B.V) (n : ℕ) [Subsingleton (groupHomology B n)] :
+    Subsingleton (groupHomology A n) :=
+  (mapIso e φ (fun _ ↦ by ext; simp [Representation.isTrivial_apply]) n).toLinearEquiv.toEquiv
+    |>.subsingleton
 
 end IsTrivial
 

@@ -38,6 +38,8 @@ the reduced mod-two homology of `K(A, 1)` for every uniquely two-divisible abeli
 
 * `TauCeti.isZero_groupHomology_localizationAway`: `Hₙ(ℤ[1/m], k) = 0` for `n ≥ 2`.
 * `TauCeti.isZero_groupHomology_one_localizationAway`: `H₁(ℤ[1/m], k) = 0` when `m = 0` in `k`.
+* `TauCeti.subsingleton_groupHomology_localizationAway`: `Hₙ(ℤ[1/m], k) = 0` for `n ≥ 1` when
+  `m = 0` in `k`.
 * `TauCeti.isZero_classifyingSpace_singularHomology_localizationAway`: the classifying space
   of `ℤ[1/m]` has no homology in positive degrees with coefficients in which `m = 0`.
 
@@ -124,6 +126,16 @@ theorem isZero_groupHomology_one_localizationAway (hmk : (m : k) = 0) :
       rw [toAdd_zpow, toAdd_ofAdd, zsmul_eq_mul, ← eq_intCast (algebraMap ℤ (Localization.Away m))]
       linear_combination g.toAdd * mul_invSelf (S := Localization.Away m) m⟩)
     fun c ↦ by rw [zsmul_eq_mul, hmk, zero_mul]
+
+/-- The additive group of `ℤ[1/m]` has no homology in positive degrees with coefficients in which
+`m = 0`. -/
+theorem subsingleton_groupHomology_localizationAway (hm : m ≠ 0) (hmk : (m : k) = 0) (n : ℕ) :
+    Subsingleton
+      (groupHomology (Rep.trivial k (Multiplicative (Localization.Away m)) k) (n + 1)) := by
+  rw [← ModuleCat.isZero_iff_subsingleton]
+  rcases n with _ | n
+  · exact isZero_groupHomology_one_localizationAway k hmk
+  · exact isZero_groupHomology_localizationAway k hm (by omega)
 
 /-- **The classifying space of `ℤ[1/m]` is acyclic modulo `m`.** For a nonzero integer `m` and a
 commutative ring `k` in which `m = 0`, the singular homology of the classifying space of the
