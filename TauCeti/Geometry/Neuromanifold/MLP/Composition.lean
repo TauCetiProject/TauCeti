@@ -9,6 +9,7 @@ public import Batteries.Data.Fin.Fold
 public import TauCeti.Geometry.Neuromanifold.Activation
 public import TauCeti.Geometry.Neuromanifold.Dense
 public import TauCeti.Geometry.Neuromanifold.MLP.Basic
+public import TauCeti.Geometry.Neuromanifold.Reparametrization
 
 /-!
 # MLPs as iterated layer compositions
@@ -475,7 +476,7 @@ theorem realizedFunctions_realize_depth_one (A : MLPSpec K 1) :
   let e : A.Parameters ≃ Matrix (Fin (A.width 1)) (Fin (A.width 0)) K × (Fin (A.width 1) → K) :=
     Equiv.piUnique _
   have h : A.realize = dense ∘ e := funext A.realize_depth_one_eq_dense
-  rw [realizedFunctions_def, h, e.surjective.range_comp, ← realizedFunctions_def]
+  rw [h, realizedFunctions_comp_of_surjective _ e.surjective]
 
 /-- A one-layer bias-free MLP has the same neuromanifold as `Matrix.mulVec`. -/
 @[simp]
@@ -484,7 +485,7 @@ theorem realizedFunctions_realizeWeights_depth_one (A : MLPSpec K 1) :
   let e : A.Weights ≃ Matrix (Fin (A.width 1)) (Fin (A.width 0)) K := Equiv.piUnique _
   have h : A.realizeWeights = Matrix.mulVec ∘ e :=
     funext fun w => funext (A.realizeWeights_depth_one w)
-  rw [realizedFunctions_def, h, e.surjective.range_comp, ← realizedFunctions_def]
+  rw [h, realizedFunctions_comp_of_surjective _ e.surjective]
 
 /-- In depth at least two, the affine neuromanifold splits off the first hidden layer
 `Neuromanifold.activation (A.activation 0) () ∘ dense`. -/
