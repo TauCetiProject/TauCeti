@@ -101,7 +101,7 @@ private theorem diagonal_derivative (Φ : Isom J Sol) (hfix : Φ 1 = 1)
   -- The distinct eigenvalues force each coordinate axis to be invariant.
   obtain ⟨h₁, h₂, h₃⟩ : A (1, 0, 0) = ((A (1, 0, 0)).1, 0, 0) ∧
       A (0, 1, 0) = (0, (A (0, 1, 0)).2.1, 0) ∧ A (0, 0, 1) = (0, 0, 1) :=
-    TauCeti.LinearMap.map_axes_of_snd_snd_of_commute (A : P →ₗ[ℝ] P) hz hc
+    LinearMap.map_axes_of_snd_snd_of_commute (A : P →ₗ[ℝ] P) hz hc
   -- At the identity the metric is Euclidean, so the two horizontal factors are signs.
   have hnorm (u : P) : (A u).1 ^ 2 + (A u).2.1 ^ 2 + (A u).2.2 ^ 2 =
       u.1 ^ 2 + u.2.1 ^ 2 + u.2.2 ^ 2 := by

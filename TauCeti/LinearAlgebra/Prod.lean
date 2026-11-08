@@ -40,7 +40,7 @@ quadratic forms with the subgroup preserving both summands.
   automorphisms, independently of the off-diagonal block.
 * `TauCeti.LinearMap.lsmul_restrictScalars_prodMap`: multiplication by a scalar on a product of
   complex modules is the product map of the two multiplications.
-* `TauCeti.LinearMap.map_axes_of_snd_snd_of_commute`: a linear endomorphism of `R × R × R`
+* `LinearMap.map_axes_of_snd_snd_of_commute`: a linear endomorphism of `R × R × R`
   preserving the third coordinate and commuting with `(x, y, z) ↦ (x, -y, 0)` preserves the first
   two coordinate axes and fixes the third basis vector.
 -/
@@ -194,6 +194,11 @@ theorem lsmul_restrictScalars_prodMap (c : ℂ) :
   rcases x with ⟨x, y⟩
   simp [LinearMap.lsmul_apply, LinearMap.prodMap_apply]
 
+end LinearMap
+
+end TauCeti
+
+namespace LinearMap
 
 section Axes
 
@@ -230,5 +235,3 @@ theorem map_axes_of_snd_snd_of_commute [Ring R] [NoZeroDivisors R] [CharZero R]
 end Axes
 
 end LinearMap
-
-end TauCeti
