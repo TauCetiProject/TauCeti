@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Symmetric.Signature
 public import TauCeti.Analysis.Matrix.HermitianSignature.RegularCrossings
 public import TauCeti.Analysis.ODE.EnergyEstimate.Index
+import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 
 /-!
 # The index of the trajectory operator is the spectral flow
@@ -68,19 +69,6 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {A : ℝ → E →L[ℝ] E}
 
-omit [FiniteDimensional ℝ E] in
-/-- The path of bilinear forms `⟪A t ·, ·⟫` of a differentiable family `A` has derivative
-`⟪A' t ·, ·⟫`. -/
-private theorem hasDerivAt_innerSL_comp (hA : Differentiable ℝ A) (t : ℝ) :
-    HasDerivAt (fun t ↦ (innerSL ℝ).comp (A t)) ((innerSL ℝ).comp (deriv A t)) t := by
-  simpa using (hasDerivAt_const t (innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ)).clm_comp (hA t).hasDerivAt
-
-omit [FiniteDimensional ℝ E] in
-/-- The path of bilinear forms `⟪A t ·, ·⟫` of a differentiable family `A` is continuous. -/
-private theorem continuous_innerSL_comp (hA : Differentiable ℝ A) :
-    Continuous fun t ↦ (innerSL ℝ).comp (A t) :=
-  continuous_const.clm_comp hA.continuous
-
 /-- Regularity of the crossings of `A`, stated with the kernels of `A t`, in the form used for the
 path of bilinear forms `⟪A t ·, ·⟫`: the crossing form is nondegenerate wherever `⟪A t ·, ·⟫` is
 degenerate. -/
@@ -106,11 +94,11 @@ theorem finite_setOf_ker_ne_bot_of_tendsto (hA : Differentiable ℝ A)
   obtain ⟨a, b, -, hout, -, -⟩ :=
     exists_le_forall_ker_eq_bot_and_sigNeg_eq_of_tendsto hsym hminus hplus hbot htop
   have hfin := finite_setOf_not_nondegenerate_toBilinForm
-    (continuous_innerSL_comp hA).continuousOn (a := a) (b := b)
+    (hA.continuous.const_clm_comp _).continuousOn (a := a) (b := b)
     (fun t _ ↦ (hsym t).isSymm_toBilinForm_innerSL_comp)
     (nondegenerate_toBilinForm_innerSL_comp_iff.2 (hout a (by simp)))
     (nondegenerate_toBilinForm_innerSL_comp_iff.2 (hout b (by simp)))
-    (fun t _ _ ↦ hasDerivAt_innerSL_comp hA t)
+    (fun t _ _ ↦ (hA t).hasDerivAt.const_clm_comp _)
     (fun t _ ↦ nondegenerate_crossingForm_of_not_nondegenerate hreg t)
   refine hfin.subset fun t ht ↦ ⟨?_, mt nondegenerate_toBilinForm_innerSL_comp_iff.1 ht⟩
   by_contra hab
@@ -142,8 +130,9 @@ theorem index_trajectoryOperator_eq_finsum_sigPos_sub_sigNeg_crossingForm
   have hnd {s : ℝ} (hs : s ∉ Ioo a b) : ((innerSL ℝ).comp (A s)).toBilinForm.Nondegenerate :=
     nondegenerate_toBilinForm_innerSL_comp_iff.2 (hout s hs)
   have hcross := sigNeg_sub_sigNeg_eq_finsum_sigPos_sub_sigNeg_crossingForm hab
-    (continuous_innerSL_comp hA).continuousOn (fun t _ ↦ (hsym t).isSymm_toBilinForm_innerSL_comp)
-    (hnd (by simp)) (hnd (by simp)) (fun t _ _ ↦ hasDerivAt_innerSL_comp hA t)
+    (hA.continuous.const_clm_comp _).continuousOn
+    (fun t _ ↦ (hsym t).isSymm_toBilinForm_innerSL_comp) (hnd (by simp)) (hnd (by simp))
+    (fun t _ _ ↦ (hA t).hasDerivAt.const_clm_comp _)
     (fun t _ ↦ nondegenerate_crossingForm_of_not_nondegenerate hreg t)
   rw [index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank hA.continuous
       (isClosed_setOf_isSymmetric.mem_of_tendsto hbot (.of_forall hsym))
