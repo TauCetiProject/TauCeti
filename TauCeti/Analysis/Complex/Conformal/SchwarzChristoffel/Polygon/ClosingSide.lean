@@ -313,32 +313,6 @@ theorem im_schwarzChristoffelBoundary_first_lt (a e : Fin (n + 1) → ℝ)
       rw [← heq] at hlt
       exact hle.not_gt hlt
 
-/-- The unbounded arc to the left of the first prevertex lies strictly to the right of the vertex
-at infinity, on the closing line. -/
-theorem schwarzChristoffelVertexAtInfinity_lt_boundary_of_le_first
-    (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
-    (he : -1 < e 0) (hsum : ∑ k, e k = -2) {x : ℝ} (hx : x ≤ a 0) :
-    schwarzChristoffelVertexAtInfinity a e z₀ < schwarzChristoffelBoundary a e z₀ x := by
-  have hfin : -1 < ∑ l with a l = a 0, e l := by
-    simpa [ha.injective.eq_iff, Finset.filter_eq'] using he
-  exact schwarzChristoffelVertexAtInfinity_lt_boundary a e z₀
-    (Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le (α := OrderDual ℝ) Finset.univ
-      (by norm_num) hfin
-      (fun i _ _ ↦ ha.monotone i.zero_le) hx)
-    (fun i _ ↦ hx.trans (ha.monotone i.zero_le)) hsum
-
-/-- The unbounded arc to the right of the last prevertex lies strictly to the left of the vertex
-at infinity, on the closing line. -/
-theorem schwarzChristoffelBoundary_lt_vertexAtInfinity_of_last_le
-    (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
-    (he : -1 < e (Fin.last n)) (hsum : ∑ k, e k < -1) {x : ℝ} (hx : a (Fin.last n) ≤ x) :
-    schwarzChristoffelBoundary a e z₀ x < schwarzChristoffelVertexAtInfinity a e z₀ :=
-  schwarzChristoffelBoundary_lt_vertexAtInfinity a e z₀
-    (Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le Finset.univ (by norm_num)
-      (by simpa [ha.injective.eq_iff, Finset.filter_eq'] using he)
-      (fun i _ _ ↦ ha.monotone i.le_last) hx)
-    (fun i _ ↦ (ha.monotone i.le_last).trans hx) hsum
-
 /-- The bounded open arc lies strictly above the line through the vertex at infinity. -/
 theorem im_schwarzChristoffelVertexAtInfinity_lt_im_boundary
     (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
