@@ -134,8 +134,7 @@ theorem IsMorse.toNat_totalCriticalCount_modEq {g : M → ℝ} (hf : IsMorse I f
   let K := ULift.{u} ℚ
   have h₁ := hf.sum_range_neg_one_pow_mul_finrank_singularHomology_modEq (ModuleCat.of K K) le_rfl
   have h₂ := hg.sum_range_neg_one_pow_mul_finrank_singularHomology_modEq (ModuleCat.of K K) le_rfl
-  have hK : finrank K (ModuleCat.of K K) = 1 := finrank_self K
-  rw [hK, Nat.cast_one, one_mul] at h₁ h₂
+  rw [ModuleCat.finrank_of_self, Nat.cast_one, one_mul] at h₁ h₂
   exact Int.natCast_modEq_iff.1 (h₁.symm.trans h₂)
 
 /-- Euler's equality with coefficients in `k` itself, with the critical count summed over
@@ -147,9 +146,8 @@ private theorem IsMorse.sum_range_neg_one_pow_mul_finrank_singularHomology_self_
           (ModuleCat.of k k)).obj (TopCat.of M)) =
       ∑ i ∈ Finset.range (finrank ℝ E + 1), (-1 : ℤ) ^ i * (criticalCount I f i).toNat := by
   rw [hf.sum_range_neg_one_pow_mul_finrank_singularHomology_eq (ModuleCat.of k k) hn,
-    sum_range_neg_one_pow_mul_toNat_criticalCount_of_finrank_le hn]
-  have h1 : finrank k (ModuleCat.of k k) = 1 := finrank_self k
-  rw [h1, Nat.cast_one, one_mul]
+    sum_range_neg_one_pow_mul_toNat_criticalCount_of_finrank_le hn, ModuleCat.finrank_of_self,
+    Nat.cast_one, one_mul]
 
 /-- **The signed critical count is independent of the Morse function.** Any two Morse functions on
 a compact boundaryless manifold have the same signed count `∑ᵢ (-1)ⁱ cᵢ`, namely the Euler
