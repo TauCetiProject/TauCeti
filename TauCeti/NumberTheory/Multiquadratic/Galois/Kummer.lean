@@ -157,7 +157,6 @@ theorem exists_root_adjoin_eq_adjoin [NeZero (2 : K)] (s : Finset L)
       · simpa [h] using hxadj
       · exact IntermediateField.subset_adjoin K _ (by simpa [h] using hy)
     exact Finset.notMem_erase x t (hmin hadjoin (Finset.erase_subset x t) hx)
-  have hzero : (0 : L) ∉ t := fun hx => hnotmem 0 hx (zero_mem _)
   -- Index the chosen square roots by `Fin t.card` and name their radicands.
   set e : Fin t.card ≃ {x // x ∈ t} := t.equivFin.symm
   set root : Fin t.card → L := fun i => (e i : L) with hroot_def
@@ -173,7 +172,6 @@ theorem exists_root_adjoin_eq_adjoin [NeZero (2 : K)] (s : Finset L)
       IntermediateField.adjoin K (s : Set L) := by rw [hrange]; exact htadj
   -- Square-class independence, by minimality.
   have hindep := not_isSquare_prod_of_notMem_adjoin_erase hd hroot_inj hroot_mem hnotmem
-    fun i h => hzero (h ▸ hroot_mem i)
   refine ⟨t.card, d, root, fun i => hts (hroot_mem i), hd, hindep, hadjoin, ?_⟩
   rw [← hadjoin]
   simpa [Nat.card_eq_fintype_card] using finrank_adjoin_range (K := K) (L := L) hd hindep
