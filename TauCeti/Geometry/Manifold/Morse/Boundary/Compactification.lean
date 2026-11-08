@@ -67,7 +67,6 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
 ## Main results
 
-* `TauCeti.IsMorse.exists_lt_lt_lt_forall_mem_Ioo`: suitable entrance and exit levels exist.
 * `disjoint_morseUnbrokenPairs_morseBrokenPairs`: no pair is both broken and unbroken.
 * `exists_homeomorph_morseUnbrokenPairs`: the unbroken pairs are homeomorphic to the level slice
   of trajectories at the entrance level, by the first projection.
@@ -99,36 +98,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M]
   [CompactSpace M] [T2Space M]
   {f : M → ℝ} {X : (x : M) → TangentSpace 𝓘(ℝ, E) x} {p r : M} {a b : ℝ}
-
-omit [FiniteDimensional ℝ E] [T2Space M] in
-/-- **Entrance and exit levels.** For critical points `p` and `r` of a Morse function on a compact
-manifold with `f r < f p`, there are levels `f r < b < a < f p` such that every critical value
-strictly between `f r` and `f p` lies strictly between `b` and `a`. -/
-theorem IsMorse.exists_lt_lt_lt_forall_mem_Ioo (hf : IsMorse 𝓘(ℝ, E) f) (hrp : f r < f p) :
-    ∃ a b, f r < b ∧ b < a ∧ a < f p ∧
-      ∀ q, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0 → f q ∈ Ioo (f r) (f p) → f q ∈ Ioo b a := by
-  -- The critical values in `(f r, f p)`, together with the midpoint, form a finite nonempty set.
-  set S : Set ℝ := insert ((f r + f p) / 2)
-    (f '' (criticalPoints 𝓘(ℝ, E) f ∩ f ⁻¹' Ioo (f r) (f p)))
-  have hfin : S.Finite := ((hf.finite_criticalPoints.subset inter_subset_left).image f).insert _
-  have hsub : S ⊆ Ioo (f r) (f p) := by
-    rintro x (rfl | ⟨q, hq, rfl⟩)
-    · exact ⟨by linarith, by linarith⟩
-    · exact hq.2
-  have hmid : (f r + f p) / 2 ∈ S := mem_insert _ _
-  obtain ⟨m₀, hm₀, hmin⟩ := exists_min_image S id hfin ⟨_, hmid⟩
-  obtain ⟨m₁, hm₁, hmax⟩ := exists_max_image S id hfin ⟨_, hmid⟩
-  have h₀ := hsub hm₀
-  have h₁ := hsub hm₁
-  have hle₀ : m₀ ≤ (f r + f p) / 2 := hmin _ hmid
-  have hle₁ : (f r + f p) / 2 ≤ m₁ := hmax _ hmid
-  refine ⟨(m₁ + f p) / 2, (f r + m₀) / 2, by linarith [h₀.1], by linarith, by linarith [h₁.2],
-    fun q hq hqI ↦ ?_⟩
-  have hqS : f q ∈ S :=
-    mem_insert_of_mem _ ⟨q, ⟨mem_criticalPoints_iff_mfderiv_eq_zero.2 hq, hqI⟩, rfl⟩
-  have hq₀ : m₀ ≤ f q := hmin _ hqS
-  have hq₁ : f q ≤ m₁ := hmax _ hqS
-  exact ⟨by linarith [h₀.1], by linarith [h₁.2]⟩
 
 omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
 /-- Points whose Morse indices differ by one are distinct. -/
@@ -211,90 +180,6 @@ theorem morseCompactifiedPairs_sdiff_morseBrokenPairs :
     hX.morseCompactifiedPairs p r a b \ hX.morseBrokenPairs p r a b =
       hX.morseUnbrokenPairs p r a b :=
   union_sdiff_cancel_right (Set.disjoint_iff.1 hX.disjoint_morseUnbrokenPairs_morseBrokenPairs)
-
-/-! ### Level crossings -/
-
-/-- **Points of one orbit on one level coincide.** If `y` lies on a trajectory from a critical
-point `x` to a different critical point `x'`, a point of its orbit on the level of `y` is `y`. -/
-private theorem flow_eq_self_of_value_eq (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {x x' y : M}
-    (hxx' : x ≠ x') (hy : y ∈ hX.flow.unstableSet x ∩ hX.flow.stableSet x') {t : ℝ}
-    (ht : f (hX.flow t y) = f y) : hX.flow t y = y := by
-  have h0 : t = 0 := (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hf hxx' hy).injective
-    (by simpa only [Flow.map_zero_apply] using ht)
-  rw [h0, Flow.map_zero_apply]
-
-/-- The point where the orbit of `y` crosses the level `c`. -/
-private noncomputable def levelCrossing (c : ℝ) (y : M) : M :=
-  hX.flow (Flow.levelCrossingTime hX.flow f c y) y
-
-/-- The crossing of the level `c` by a trajectory from `x` to `x'`, for `f x' < c < f x`, lies on
-the same trajectory and on the level `c`. -/
-private theorem levelCrossing_mem (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {x x' y : M} {c : ℝ}
-    (hxx' : x ≠ x') (hy : y ∈ hX.flow.unstableSet x ∩ hX.flow.stableSet x') (hc : f x' < c)
-    (hc' : c < f x) :
-    hX.levelCrossing c y ∈ hX.flow.unstableSet x ∩ hX.flow.stableSet x' ∩ {z | f z = c} :=
-  ⟨hX.flow.isInvariant_unstableSet_inter_stableSet x x' _ hy,
-    Flow.apply_flow_levelCrossingTime
-      (hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hf hxx' hy hc hc').exists⟩
-
-/-- A point of the orbit of `y` on the level `c` is the crossing of that level. -/
-private theorem levelCrossing_eq (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {x x' y : M} {c t : ℝ}
-    (hxx' : x ≠ x') (hy : y ∈ hX.flow.unstableSet x ∩ hX.flow.stableSet x')
-    (ht : f (hX.flow t y) = c) : hX.levelCrossing c y = hX.flow t y := by
-  rw [levelCrossing, ← (Flow.eq_levelCrossingTime_iff
-    (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hf hxx' hy) ⟨t, ht⟩).2 ht]
-
-/-- The crossing of the level of `y` by an orbit through a point of the orbit of `y` is `y`. -/
-private theorem levelCrossing_flow (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {x x' y : M}
-    (hxx' : x ≠ x') (hy : y ∈ hX.flow.unstableSet x ∩ hX.flow.stableSet x') (t : ℝ) :
-    hX.levelCrossing (f y) (hX.flow t y) = y := by
-  have hy' := hX.flow.isInvariant_unstableSet_inter_stableSet x x' t hy
-  have h := hX.levelCrossing_eq hf hxx' hy' (t := -t) (by rw [← Flow.map_add, neg_add_cancel,
-    Flow.map_zero_apply])
-  rwa [← Flow.map_add, neg_add_cancel, Flow.map_zero_apply] at h
-
-/-- **Crossings of a level converge along convergent orbits.** Let the points `φ (s i) (u i)` of
-the orbits of `u i` tend to a point `z` of a trajectory from `x` to a different critical point
-`x'`. If the orbit of each `u i` meets the level of `φ T z` at the time `τ i`, then these crossing
-points tend to `φ T z`. -/
-private theorem tendsto_flow_of_value_eq {ι : Type*} {l : Filter ι}
-    (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {x x' z : M} (hxx' : x ≠ x')
-    (hz : z ∈ hX.flow.unstableSet x ∩ hX.flow.stableSet x') {u : ι → M} {s : ι → ℝ}
-    (hu : Tendsto (fun i ↦ hX.flow (s i) (u i)) l (𝓝 z)) (T : ℝ) {τ : ι → ℝ}
-    (hτ : ∀ i, f (hX.flow (τ i) (u i)) = f (hX.flow T z)) :
-    Tendsto (fun i ↦ hX.flow (τ i) (u i)) l (𝓝 (hX.flow T z)) := by
-  have hz' := hX.flow.isInvariant_unstableSet_inter_stableSet x x' T hz
-  have hw : Tendsto (fun i ↦ hX.flow T (hX.flow (s i) (u i))) l (𝓝 (hX.flow T z)) :=
-    ((hX.contMDiff_flow_apply T).continuous.tendsto z).comp hu
-  have hflow (i : ι) :
-      hX.flow (τ i - s i - T) (hX.flow T (hX.flow (s i) (u i))) = hX.flow (τ i) (u i) := by
-    rw [← Flow.map_add, ← Flow.map_add, sub_add_cancel, sub_add_cancel]
-  -- The crossing times of the orbits of `φ T (φ (s i) (u i))` tend to `0`, that of `φ T z`.
-  have hσ := hX.tendsto_zero_of_flow_eq_of_mem_unstableSet_inter_stableSet hf hxx' hz' hw
-    (σ := fun i ↦ τ i - s i - T) fun i ↦ by rw [hflow, hτ]
-  have hlim := (hX.contMDiff_flow_uncurry.continuous.tendsto ((0 : ℝ), hX.flow T z)).comp
-    (hσ.prodMk_nhds hw)
-  simp only [Flow.map_zero_apply] at hlim
-  exact hlim.congr hflow
-
-/-- Crossings of levels by trajectories ending at different critical points are different. -/
-private theorem eq_of_levelCrossing_eq_of_mem_stableSet {q q' y y' : M} {c c' : ℝ}
-    (hy : y ∈ hX.flow.stableSet q) (hy' : y' ∈ hX.flow.stableSet q')
-    (h : hX.levelCrossing c y = hX.levelCrossing c' y') : q = q' := by
-  by_contra hqq'
-  exact (Flow.disjoint_stableSet hqq').ne_of_mem
-    ((Flow.apply_mem_stableSet_iff _ _).2 hy) ((Flow.apply_mem_stableSet_iff _ _).2 hy') h
-
-/-- Two points of one level of a trajectory space whose orbits cross another level at the same
-point coincide. -/
-private theorem eq_of_levelCrossing_eq (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {x x' y y' : M}
-    {c : ℝ} (hxx' : x ≠ x') (hy : y ∈ hX.flow.unstableSet x ∩ hX.flow.stableSet x')
-    (hfy : f y' = f y) (h : hX.levelCrossing c y = hX.levelCrossing c y') : y = y' := by
-  simp only [levelCrossing] at h
-  have h' : hX.flow (Flow.levelCrossingTime hX.flow f c y -
-      Flow.levelCrossingTime hX.flow f c y') y = y' := by
-    rw [sub_eq_neg_add, Flow.map_add, h, ← Flow.map_add, neg_add_cancel, Flow.map_zero_apply]
-  exact (hX.flow_eq_self_of_value_eq hf hxx' hy (by rw [h', hfy])).symm.trans h'
 
 /-! ### Unbroken pairs -/
 

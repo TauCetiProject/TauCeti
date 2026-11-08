@@ -73,6 +73,8 @@ polynomial in the Morse inequalities.
   sublevel sets of proper functions bounded below.
 * `TauCeti.IsMorse.exists_criticalPoints_inter_preimage_Icc_subset`: in a compact band around
   `c`, a Morse function has no critical values close to `c` other than `c` itself.
+* `TauCeti.IsMorse.exists_lt_lt_lt_forall_mem_Ioo`: on a compact manifold, two levels
+  `f r < b < a < f p` separate the critical values strictly between `f r` and `f p` from the ends.
 * `TauCeti.IsMorse.band_induction`: a property of compact bands between regular values follows
   from its validity across bands without critical points, across single critical levels, and
   along triples of levels.
@@ -437,6 +439,36 @@ theorem IsMorse.exists_criticalPoints_inter_preimage_Icc_subset (hf : IsMorse I 
     exact Icc_subset_Icc (by linarith) (by linarith) hyε
   by_contra hyc
   exact hball hyball ⟨⟨y, ⟨hy, hyδ⟩, rfl⟩, hyc⟩
+
+/-- **Entrance and exit levels.** For critical points `p` and `r` of a Morse function on a compact
+manifold with `f r < f p`, there are levels `f r < b < a < f p` such that every critical value
+strictly between `f r` and `f p` lies strictly between `b` and `a`. -/
+theorem IsMorse.exists_lt_lt_lt_forall_mem_Ioo [CompactSpace M] (hf : IsMorse I f) {p r : M}
+    (hrp : f r < f p) :
+    ∃ a b, f r < b ∧ b < a ∧ a < f p ∧
+      ∀ q, mfderiv I 𝓘(ℝ) f q = 0 → f q ∈ Ioo (f r) (f p) → f q ∈ Ioo b a := by
+  -- The critical values in `(f r, f p)`, together with the midpoint, form a finite nonempty set.
+  set S : Set ℝ := insert ((f r + f p) / 2)
+    (f '' (criticalPoints I f ∩ f ⁻¹' Ioo (f r) (f p)))
+  have hfin : S.Finite := ((hf.finite_criticalPoints.subset inter_subset_left).image f).insert _
+  have hsub : S ⊆ Ioo (f r) (f p) := by
+    rintro x (rfl | ⟨q, hq, rfl⟩)
+    · exact ⟨by linarith, by linarith⟩
+    · exact hq.2
+  have hmid : (f r + f p) / 2 ∈ S := mem_insert _ _
+  obtain ⟨m₀, hm₀, hmin⟩ := exists_min_image S id hfin ⟨_, hmid⟩
+  obtain ⟨m₁, hm₁, hmax⟩ := exists_max_image S id hfin ⟨_, hmid⟩
+  have h₀ := hsub hm₀
+  have h₁ := hsub hm₁
+  have hle₀ : m₀ ≤ (f r + f p) / 2 := hmin _ hmid
+  have hle₁ : (f r + f p) / 2 ≤ m₁ := hmax _ hmid
+  refine ⟨(m₁ + f p) / 2, (f r + m₀) / 2, by linarith [h₀.1], by linarith, by linarith [h₁.2],
+    fun q hq hqI ↦ ?_⟩
+  have hqS : f q ∈ S :=
+    mem_insert_of_mem _ ⟨q, ⟨mem_criticalPoints_iff_mfderiv_eq_zero.2 hq, hqI⟩, rfl⟩
+  have hq₀ : m₀ ≤ f q := hmin _ hqS
+  have hq₁ : f q ≤ m₁ := hmax _ hqS
+  exact ⟨by linarith [h₀.1], by linarith [h₁.2]⟩
 
 /-- **Induction over the critical levels of a compact band.** Let `f` be a Morse function and
 `a ≤ b` regular values of `f` with compact band `f⁻¹[a, b]`. A property `P s t` of intervals holds
