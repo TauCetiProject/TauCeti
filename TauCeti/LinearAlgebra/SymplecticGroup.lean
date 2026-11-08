@@ -206,12 +206,13 @@ theorem mul_J_mul_transpose_apply_self_sub_J (M : Matrix (l ⊕ l) (l ⊕ l) R) 
 
 /-- **The linearized symplectic equation is solvable over an ideal.** An alternating matrix `E`
 with entries in an ideal `I` is minus the linearized symplectic defect `X * J + J * Xᵀ` of a
-matrix `X` with entries in `I`. The matrix `X` is built from `Matrix.subTransposeEqEquiv`, which
-avoids division by two, so this holds in every characteristic. -/
+matrix `X` with entries in `I`. No division by two is needed, so this holds in every
+characteristic. -/
 theorem exists_entries_mem_add_mul_J_add_J_mul_transpose_eq_zero (I : Ideal R)
     (E : Matrix (l ⊕ l) (l ⊕ l) R) (hE_mem : ∀ i j, E i j ∈ I) (hE_transpose : Eᵀ = -E)
     (hE_diag : ∀ i, E i i = 0) :
     ∃ X : Matrix (l ⊕ l) (l ⊕ l) R, (∀ i j, X i j ∈ I) ∧ E + X * J l R + J l R * Xᵀ = 0 := by
+  -- The matrix `X` is built from `Matrix.subTransposeEqEquiv`, which avoids division by two.
   let _ : LinearOrder (l ⊕ l) := (Fintype.equivFin (l ⊕ l)).linearOrder
   have hQ : (-E)ᵀ = -(-E) := by rw [transpose_neg, hE_transpose]
   have hQd : ∀ i, (-E) i i = 0 := fun i => by simp [hE_diag]
@@ -234,17 +235,24 @@ theorem exists_entries_mem_add_mul_J_add_J_mul_transpose_eq_zero (I : Ideal R)
       E + Y + -Yᵀ = E + (Y - Yᵀ) := by abel
       _ = 0 := by rw [hY_sub, add_neg_cancel]
 
-/-- Correcting a matrix `M` with `M * J * Mᵀ - J = E` by `1 + X`, where `E` and `X` have entries in
-a square-zero ideal and `E + X * J + J * Xᵀ = 0`, gives a symplectic matrix. -/
+/-- Correcting a matrix `M` with `M * J * Mᵀ - J = E` by `1 + X`, where `X` has entries in a
+square-zero ideal and `E + X * J + J * Xᵀ = 0`, gives a symplectic matrix. -/
 theorem one_add_mul_mem_symplecticGroup {I : Ideal R} (hI : I ^ 2 = (⊥ : Ideal R))
     {M E X : Matrix (l ⊕ l) (l ⊕ l) R}
-    (hM : M * J l R * Mᵀ - J l R = E)
-    (hE_mem : ∀ i j, E i j ∈ I) (hX_mem : ∀ i j, X i j ∈ I)
+    (hM : M * J l R * Mᵀ - J l R = E) (hX_mem : ∀ i j, X i j ∈ I)
     (hX : E + X * J l R + J l R * Xᵀ = 0) :
     (1 + X) * M ∈ symplecticGroup l R := by
   have hXt_mem : ∀ i j, Xᵀ i j ∈ I := fun i j => hX_mem j i
   have hXJ_mem : ∀ i j, (X * J l R) i j ∈ I := fun i j => by
     simpa using mul_mul_apply_mem hX_mem 1 (J l R) i j
+  -- The entries of `E = -(X * J + J * Xᵀ)` lie in `I`.
+  have hE_mem : ∀ i j, E i j ∈ I := fun i j => by
+    have hE : E = -(X * J l R + J l R * Xᵀ) := by
+      rw [eq_neg_iff_add_eq_zero, ← add_assoc]
+      exact hX
+    rw [hE, Matrix.neg_apply, Matrix.add_apply]
+    exact I.neg_mem (I.add_mem (hXJ_mem i j)
+      (by simpa using mul_mul_apply_mem hXt_mem (J l R) 1 i j))
   have hX_mul_E : X * E = 0 := mul_eq_zero_of_sq_eq_bot hI hX_mem hE_mem
   have hE_mul_Xt : E * Xᵀ = 0 := mul_eq_zero_of_sq_eq_bot hI hE_mem hXt_mem
   have hXJ_mul_Xt : X * J l R * Xᵀ = 0 :=
