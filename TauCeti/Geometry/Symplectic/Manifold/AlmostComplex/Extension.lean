@@ -57,78 +57,49 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 open Classical in
 private def cutoffField (x : M) : AlmostComplexStructure E :=
   if hx : x ∈ U then
-    ((h₀.compatibleAt x).compatibleCayleyEquiv.symm
-      ⟨ρ x • (J₀.almostComplexStructureAt x).cayley (K x),
-        (h₀.compatibleAt x).smul_cayley_mem_compatibleCayleyBall (hK x hx) (hρ x)⟩).val
+    (h₀.compatibleAt x).cayleyInterp (V := E) (hK x hx) (hρ x)
   else J₀.almostComplexStructureAt x
 
 private theorem cutoffField_of_mem {x : M} (hx : x ∈ U) :
     cutoffField h₀ K hK ρ hρ x =
-      ((h₀.compatibleAt x).compatibleCayleyEquiv.symm
-        ⟨ρ x • (J₀.almostComplexStructureAt x).cayley (K x),
-          (h₀.compatibleAt x).smul_cayley_mem_compatibleCayleyBall (hK x hx) (hρ x)⟩).val :=
+      (h₀.compatibleAt x).cayleyInterp (V := E) (hK x hx) (hρ x) :=
   dite_eq_left hx
 
 private theorem cutoffField_of_notMem {x : M} (hx : x ∉ U) :
     cutoffField h₀ K hK ρ hρ x = J₀.almostComplexStructureAt x :=
   dite_eq_right hx
 
-private theorem cayley_cutoffField {x : M} (hx : x ∈ U) :
-    (J₀.almostComplexStructureAt x).cayley (cutoffField (E := E) h₀ K hK ρ hρ x) =
-      ρ x • (J₀.almostComplexStructureAt x).cayley (K x) := by
-  rw [cutoffField_of_mem h₀ K hK ρ hρ hx]
-  simpa only [SymplecticForm.Compatible.compatibleCayleyEquiv_apply_coe] using
-    congrArg Subtype.val ((h₀.compatibleAt x).compatibleCayleyEquiv.apply_symm_apply
-      ⟨ρ x • (J₀.almostComplexStructureAt x).cayley (K x),
-        (h₀.compatibleAt x).smul_cayley_mem_compatibleCayleyBall (hK x hx) (hρ x)⟩)
-
 private theorem compatible_cutoffField (x : M) :
     (h₀.isNondegenerate.symplecticFormAt x).Compatible
       (cutoffField (E := E) h₀ K hK ρ hρ x) := by
   by_cases hx : x ∈ U
   · rw [cutoffField_of_mem h₀ K hK ρ hρ hx]
-    exact Subtype.property _
+    exact (h₀.compatibleAt x).compatible_cayleyInterp (V := E) (hK x hx) (hρ x)
   · rw [cutoffField_of_notMem h₀ K hK ρ hρ hx]
     exact h₀.compatibleAt x
 
 private theorem cutoffField_eq_background {x : M} (hx : ρ x = 0) :
     cutoffField h₀ K hK ρ hρ x = J₀.almostComplexStructureAt x := by
   by_cases hxU : x ∈ U
-  · apply (h₀.compatibleAt x).eq_of_cayley_eq
-      (compatible_cutoffField h₀ K hK ρ hρ x).tames (h₀.compatibleAt x).tames
-    simp [cayley_cutoffField h₀ K hK ρ hρ hxU, hx]
+  · rw [cutoffField_of_mem h₀ K hK ρ hρ hxU]
+    simpa only [hx] using
+      (h₀.compatibleAt x).cayleyInterp_zero (V := E) (hK x hxU)
   · exact cutoffField_of_notMem h₀ K hK ρ hρ hxU
 
 private theorem cutoffField_eq_local {x : M} (hxU : x ∈ U) (hx : ρ x = 1) :
     cutoffField h₀ K hK ρ hρ x = K x := by
-  apply (h₀.compatibleAt x).eq_of_cayley_eq
-    (compatible_cutoffField h₀ K hK ρ hρ x).tames (hK x hxU).tames
-  simp [cayley_cutoffField h₀ K hK ρ hρ hxU, hx]
+  rw [cutoffField_of_mem h₀ K hK ρ hρ hxU]
+  simpa only [hx] using
+    (h₀.compatibleAt x).cayleyInterp_one (V := E) (hK x hxU)
 
 private theorem cutoffField_formula {x : M} (hx : x ∈ U) :
     LinearMap.toContinuousLinearMap (cutoffField h₀ K hK ρ hρ x).toLinearMap =
       cayleyPathFormula (ρ x) (J₀.toEndomorphism x)
         (LinearMap.toContinuousLinearMap (K x).toLinearMap) := by
-  have hf : cutoffField h₀ K hK ρ hρ x =
-      ((h₀.compatibleAt x).cayleyEquiv.symm
-        ⟨ρ x • (J₀.almostComplexStructureAt x).cayley (K x),
-          (h₀.compatibleAt x).smul_cayley_mem_cayleyBall (hK x hx).tames (hρ x)⟩).val := by
-    refine (cutoffField_of_mem h₀ K hK ρ hρ hx).trans ?_
-    apply AlmostComplexStructure.toLinearMap_injective
-    exact (SymplecticForm.Compatible.compatibleCayleyEquiv_symm_apply_toLinearMap
-      (V := TangentSpace I x) (h₀.compatibleAt x)
-      ⟨ρ x • (J₀.almostComplexStructureAt x).cayley (K x),
-        (h₀.compatibleAt x).smul_cayley_mem_compatibleCayleyBall (hK x hx) (hρ x)⟩).trans
-      (SymplecticForm.Compatible.cayleyEquiv_symm_apply_toLinearMap
-        (V := TangentSpace I x) (h₀.compatibleAt x)
-        ⟨ρ x • (J₀.almostComplexStructureAt x).cayley (K x),
-          (h₀.compatibleAt x).smul_cayley_mem_cayleyBall (hK x hx).tames (hρ x)⟩).symm
-  exact (congrArg (fun J : AlmostComplexStructure E ↦
-    LinearMap.toContinuousLinearMap J.toLinearMap) hf).trans
-    (SymplecticForm.Compatible.toContinuousLinearMap_cayleyEquiv_symm_smul_cayley
-      (V := E) (h₀.compatibleAt x) (hK x hx).tames (hρ x)
-      (J₀.almostComplexStructureAt_toLinearMap x).symm
-      (LinearMap.coe_toContinuousLinearMap _))
+  rw [cutoffField_of_mem h₀ K hK ρ hρ hx]
+  exact (h₀.compatibleAt x).toContinuousLinearMap_cayleyInterp (V := E) (hK x hx) (hρ x)
+    (J₀.almostComplexStructureAt_toLinearMap x).symm
+    (LinearMap.coe_toContinuousLinearMap _)
 
 private theorem contMDiffAt_cutoffField_of_mem (hU : IsOpen U)
     (hs : ContMDiffOn I (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
