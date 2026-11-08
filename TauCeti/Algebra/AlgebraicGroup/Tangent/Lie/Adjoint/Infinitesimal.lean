@@ -56,9 +56,9 @@ theorem _root_.Derivation.adDerivation_dualNumber_apply
   let S := (sndHom C C).restrictScalars R
   have hF (d : Derivation R H C) :
       F ∘ₗ (p d).ofConv.toLinearMap = (1 : WithConv (H →ₗ[R] C)).ofConv :=
-    fstHom_comp_derivationMulEquivTangentKer d
+    Derivation.fstHom_comp_derivationMulEquivTangentKer d
   have hS (d : Derivation R H C) : S ∘ₗ (p d).ofConv.toLinearMap = d.toLinearMap :=
-    sndHom_comp_derivationMulEquivTangentKer d
+    Derivation.sndHom_comp_derivationMulEquivTangentKer d
   let c := (Bialgebra.CounitAlgebra.algEquivSelf R H (DualNumber C)).toAlgHom
   let E := c.toLinearMap ∘ₗ (Derivation.mapValue ((inlAlgHom R C C).comp
     (Bialgebra.CounitAlgebra.algEquivSelf R H B).symm.toAlgHom) e).toLinearMap
@@ -85,14 +85,18 @@ theorem _root_.Derivation.adDerivation_dualNumber_apply
       (mul_neg (toConv e.toLinearMap) (toConv d.toLinearMap))
     rw [hneg, ofConv_neg, add_comm]
   -- Transport the point and action back through the coefficient-algebra equivalence.
-  have hc := algEquivSelf_comp_pointsMulEquiv_symm (R := R) (H := H) (B := B)
+  have hc (g : WithConv (H →ₐ[R] DualNumber C)) :
+      c.toLinearMap ∘ₗ
+        ((Bialgebra.CounitAlgebra.pointsMulEquiv R H (DualNumber C)).symm g).ofConv.toLinearMap =
+          g.ofConv.toLinearMap :=
+    WithConv.algEquivSelf_comp_pointsMulEquiv_symm g
   rw [Derivation.adDerivation_apply]
   -- Postcompose convolution by the coefficient equivalence to calculate in actual dual numbers.
   rw [← AlgEquiv.toAlgHom_apply, ← AlgHom.toLinearMap_apply, ← LinearMap.comp_apply]
   simp only [LinearMap.algHom_comp_convMul_distrib, toConv_ofConv]
   erw [← map_inv (Bialgebra.CounitAlgebra.pointsMulEquiv R H (DualNumber C)).symm (p d)]
   rw [hc, hc]
-  rw [derivationMulEquivTangentKer_val_inv]
+  rw [Derivation.derivationMulEquivTangentKer_val_inv]
   -- Expand the local coefficient transport in the computed product coefficients.
   dsimp only [E, c] at hprodF hprodS
   apply TrivSqZeroExt.ext

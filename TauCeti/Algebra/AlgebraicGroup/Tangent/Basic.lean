@@ -615,7 +615,8 @@ lemma derivationMulEquivTangentKer_symm_apply
     derivationToTrivSqZeroExtEquivLift_symm_apply]
 
 /-- The counit coefficient of the dual-number point of a tangent vector `d` is the counit. -/
-theorem fstHom_comp_derivationMulEquivTangentKer
+@[simp]
+theorem _root_.Derivation.fstHom_comp_derivationMulEquivTangentKer
     (d : Derivation R A (Bialgebra.CounitAlgebra R A B)) :
     (fstHom R (Bialgebra.CounitAlgebra R A B) (Bialgebra.CounitAlgebra R A B)).toLinearMap ∘ₗ
         (derivationMulEquivTangentKer R A B (Multiplicative.ofAdd d)).val.ofConv.toLinearMap =
@@ -627,7 +628,8 @@ theorem fstHom_comp_derivationMulEquivTangentKer
       derivationMulEquivTangentKer_apply_fst (Multiplicative.ofAdd d) x
 
 /-- The infinitesimal coefficient of the dual-number point of a tangent vector `d` is `d`. -/
-theorem sndHom_comp_derivationMulEquivTangentKer
+@[simp]
+theorem _root_.Derivation.sndHom_comp_derivationMulEquivTangentKer
     (d : Derivation R A (Bialgebra.CounitAlgebra R A B)) :
     ((sndHom (Bialgebra.CounitAlgebra R A B) (Bialgebra.CounitAlgebra R A B)).restrictScalars
         R) ∘ₗ
@@ -734,7 +736,8 @@ variable {R A B : Type*} [CommRing R] [CommRing A] [HopfAlgebra R A] [CommRing B
   [Algebra R B]
 
 /-- The inverse of the dual-number point of `d` is the dual-number point of `-d`. -/
-theorem derivationMulEquivTangentKer_val_inv (d : Derivation R A (Bialgebra.CounitAlgebra R A B)) :
+theorem _root_.Derivation.derivationMulEquivTangentKer_val_inv
+    (d : Derivation R A (Bialgebra.CounitAlgebra R A B)) :
     (derivationMulEquivTangentKer R A B (Multiplicative.ofAdd d)).val⁻¹ =
       (derivationMulEquivTangentKer R A B (Multiplicative.ofAdd (-d))).val := by
   simpa only [← Subgroup.coe_inv, ← ofAdd_neg] using congrArg Subtype.val

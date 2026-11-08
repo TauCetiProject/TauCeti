@@ -127,14 +127,12 @@ section PointsTransport
 variable {R H B : Type*} [CommSemiring R] [CommSemiring H] [HopfAlgebra R H] [CommSemiring B]
   [Algebra R B]
 
-/-- Transporting a point of the dual-number counit algebra through the coefficient equivalence
-does not change its underlying linear map. -/
-theorem algEquivSelf_comp_pointsMulEquiv_symm
-    (g : WithConv (H →ₐ[R] DualNumber (Bialgebra.CounitAlgebra R H B))) :
-    (Bialgebra.CounitAlgebra.algEquivSelf R H
-      (DualNumber (Bialgebra.CounitAlgebra R H B))).toAlgHom.toLinearMap ∘ₗ
-        ((Bialgebra.CounitAlgebra.pointsMulEquiv R H
-          (DualNumber (Bialgebra.CounitAlgebra R H B))).symm g).ofConv.toLinearMap =
+/-- Transporting a point through the coefficient equivalence does not change its underlying
+linear map. -/
+@[simp]
+theorem _root_.WithConv.algEquivSelf_comp_pointsMulEquiv_symm (g : WithConv (H →ₐ[R] B)) :
+    (Bialgebra.CounitAlgebra.algEquivSelf R H B).toLinearMap ∘ₗ
+        ((Bialgebra.CounitAlgebra.pointsMulEquiv R H B).symm g).ofConv.toLinearMap =
       g.ofConv.toLinearMap := by
   apply LinearMap.ext
   intro x
