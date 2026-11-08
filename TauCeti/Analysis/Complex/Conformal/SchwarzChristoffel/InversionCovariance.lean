@@ -91,7 +91,7 @@ theorem logDeriv_deriv_schwarzChristoffelPrimitive_const_sub_inv
       (e i : ℂ) / (z - (-(a i - p)⁻¹ : ℝ)) - (e i : ℂ) / z := by
     have hap : (a i : ℂ) ≠ p := by exact_mod_cast ha i
     push_cast
-    exact partial_fraction_const_sub_inv (e i : ℂ) hap hz0
+    exact div_sub_inv_sub_div_sq_eq_div_sub_sub_div (e i : ℂ) hap hz0
       (sub_ne_zero.mpr (UpperHalfPlane.ne_ofReal ⟨_, hφz⟩ _))
   have hsum := Finset.sum_congr (s₁ := univ) (s₂ := univ) rfl (fun i _ => hfraction i)
   rw [← Finset.sum_div, Finset.sum_sub_distrib, ← Finset.sum_div] at hsum
