@@ -49,7 +49,6 @@ system of rank at least three by a global form reduces to realizing those of ran
 
 * `QuadraticForm.globalInvariants_prod`: the system of an orthogonal sum of regular forms is the
   sum of their systems.
-* `QuadraticForm.globalInvariants_weightedSumSquares_fin_one`: the system of the line `⟨c⟩`.
 * `GlobalFormInvariants.IsAdmissible.exists_isAdmissible_eq_prod_iff`: an admissible system of
   rank at least four splits as the system of `⟨c⟩` plus an admissible system exactly when the
   real signs of `c` are compatible with its real signature.
@@ -147,33 +146,6 @@ theorem globalInvariants_prod (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenera
     exact finiteHasse_prod Q hQ R hR v
   · funext w
     simp
-
-/-- **The local invariants of a line** `⟨c⟩`: rank one, discriminant the class of `c`, trivial
-Hasse sign at every finite place, and positive index `1` or `0` at a real place according to the
-sign of `c` there. -/
-theorem globalInvariants_weightedSumSquares_fin_one (c : Kˣ)
-    (h : (QuadraticMap.weightedSumSquares K ![(c : K)]).Nondegenerate) :
-    globalInvariants (QuadraticMap.weightedSumSquares K ![(c : K)]) h =
-      { rank := 1, discr := squareClass c, finiteHasse := 1,
-        realPositiveIndex := fun w => if 0 < embedding_of_isReal w.2 (c : K) then 1 else 0 } := by
-  let _ : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-  refine GlobalFormInvariants.ext ?_ ?_ ?_ ?_
-  · simp
-  · have hw : (fun i => ((![c] i : Kˣ) : K)) = ![(c : K)] := by
-      funext i
-      fin_cases i
-      rfl
-    rw [globalInvariants_discr]
-    convert discr_formClass_weightedSumSquares ![c] (hw ▸ h) using 3
-    · rw [hw]
-    · simp
-  · funext v
-    rw [globalInvariants_finiteHasse]
-    exact finiteHasse_eq_one_of_finrank_le_one _ h (by simp) v
-  · funext w
-    rw [globalInvariants_realPositiveIndex, realPositiveIndex_weightedSumSquares]
-    dsimp only
-    split_ifs with hc <;> simp [hc]
 
 end QuadraticForm
 

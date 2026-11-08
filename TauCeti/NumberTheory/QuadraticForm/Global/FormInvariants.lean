@@ -47,6 +47,7 @@ of coefficients.
   product over the pairs of coefficients of a diagonalization.
 * `QuadraticForm.isAdmissible_globalInvariants_iff`: the system is admissible exactly when the rank
   is positive and the Hasse product is one.
+* `QuadraticForm.globalInvariants_weightedSumSquares_fin_one`: the system of the line `⟨c⟩`.
 * `TauCeti.NumberField.QuadraticForm.globalInvariants_weightedSumSquares_one_self_neg`: the system
   of `⟨1, a, -a⟩` does not depend on `a`.
 
@@ -180,6 +181,33 @@ theorem isAdmissible_globalInvariants_iff :
   · rw [GlobalFormInvariants.discrAtFinitePlace_def, globalInvariants_discr] at hd
     rw [globalInvariants_finiteHasse]
     exact finiteHasse_eq_one_of_finrank_eq_two Q hQ h2 hd
+
+/-- **The local invariants of a line** `⟨c⟩`: rank one, discriminant the class of `c`, trivial
+Hasse sign at every finite place, and positive index `1` or `0` at a real place according to the
+sign of `c` there. -/
+theorem globalInvariants_weightedSumSquares_fin_one (c : Kˣ)
+    (h : (QuadraticMap.weightedSumSquares K ![(c : K)]).Nondegenerate) :
+    globalInvariants (QuadraticMap.weightedSumSquares K ![(c : K)]) h =
+      { rank := 1, discr := squareClass c, finiteHasse := 1,
+        realPositiveIndex := fun w => if 0 < embedding_of_isReal w.2 (c : K) then 1 else 0 } := by
+  let _ : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
+  refine GlobalFormInvariants.ext ?_ ?_ ?_ ?_
+  · simp
+  · have hw : (fun i => ((![c] i : Kˣ) : K)) = ![(c : K)] := by
+      funext i
+      fin_cases i
+      rfl
+    rw [globalInvariants_discr]
+    convert discr_formClass_weightedSumSquares ![c] (hw ▸ h) using 3
+    · rw [hw]
+    · simp
+  · funext v
+    rw [globalInvariants_finiteHasse]
+    exact finiteHasse_eq_one_of_finrank_le_one _ h (by simp) v
+  · funext w
+    rw [globalInvariants_realPositiveIndex, realPositiveIndex_weightedSumSquares]
+    dsimp only
+    split_ifs with hc <;> simp [hc]
 
 end QuadraticForm
 
