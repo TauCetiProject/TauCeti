@@ -9,6 +9,7 @@ public import TauCeti.Probability.Kernel.ProbabilityMeasure
 public import Mathlib.Probability.Kernel.Representation
 public import Mathlib.Probability.Kernel.Condexp
 public import Mathlib.Probability.ProductMeasure
+public import Mathlib.Probability.HasLaw
 import Mathlib.Probability.Kernel.CondDistrib
 import Mathlib.Probability.Kernel.CompProdEqIff
 import TauCeti.MeasureTheory.Measure.Measurability
@@ -170,6 +171,26 @@ theorem _root_.ProbabilityTheory.Kernel.map_prod_eq_compProd_of_map
   congr with b
   rw [← hmap b, Measure.map_apply hf.of_uncurry_left (measurable_prodMk_left hs)]
   rfl
+
+omit [StandardBorelSpace α] [Nonempty α] in
+/-- A measurable update driven by independent noise with law `ρ` realizes the
+composition-product of the parameter's law and the update kernel. -/
+theorem _root_.ProbabilityTheory.IndepFun.map_prodMk_eq_compProd_of_map
+    {Ω ξ : Type*} [MeasurableSpace Ω] [MeasurableSpace ξ]
+    {P : Measure Ω} [IsFiniteMeasure P] {W : Ω → β} {U : Ω → ξ}
+    (hindep : IndepFun W U P) (hW : Measurable W) (hU : Measurable U)
+    {ρ : Measure ξ} (hlaw : HasLaw U ρ P)
+    (κ : Kernel β α) [IsSFiniteKernel κ] (f : β → ξ → α)
+    (hf : Measurable (Function.uncurry f)) (hmap : ∀ w, ρ.map (f w) = κ w) :
+    P.map (fun ω => (W ω, f (W ω) (U ω))) = (P.map W) ⊗ₘ κ := by
+  have : IsFiniteMeasure ρ := hlaw.isFiniteMeasure_iff.mp inferInstance
+  have hpair := hindep.map_prod_eq_prod_map_map hW.aemeasurable hU.aemeasurable
+  rw [hlaw.map_eq] at hpair
+  calc
+    _ = ((P.map W).prod ρ).map (fun p => (p.1, f p.1 p.2)) := by
+      rw [← hpair, Measure.map_map (by fun_prop) (hW.prodMk hU)]
+      rfl
+    _ = _ := κ.map_prod_eq_compProd_of_map ρ f hf hmap
 
 omit [StandardBorelSpace α] [Nonempty α] in
 /-- **Separate randomizations realize a product kernel.** If `f b` and `g b` realize two kernels

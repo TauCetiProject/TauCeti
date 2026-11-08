@@ -158,6 +158,34 @@ private theorem lie_eq_ad_of_mem [IsLieAbelian I] {φ : L →ₗ[K] L} (hφ : �
   rw [LieHom.lie_apply, hc _ (lie_mem_left K L I r y hr), ad_apply, neg_lie, smul_lie,
     LieIdeal.lie_eq_zero_of_mem hr (hφ y), zero_sub]
 
+/-- For a nonzero abelian ideal `I`, the endomorphisms of `L` with range in `I` that vanish on `I`
+do not fill up the quotient of the endomorphisms with range in `I` acting on `I` as a scalar by the
+inner derivations by elements of `I`: a projection of `L` onto `I` is not congruent to any of them
+modulo inner derivations. -/
+private theorem map_zeroOnIdeal_ne_top [IsLieAbelian I] (hI : I ≠ ⊥) :
+    ((zeroOnIdeal I).comap (scalarOnIdeal I).incl).map (LieSubmodule.Quotient.mk'
+      ((adOfIdeal I).comap (scalarOnIdeal I).incl)) ≠ ⊤ := by
+  let C := scalarOnIdeal I
+  let A := (adOfIdeal I).comap C.incl
+  obtain ⟨W, hW⟩ := Submodule.exists_isCompl I.toSubmodule
+  obtain ⟨r₀, hr₀, hr₀0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
+    ((LieSubmodule.toSubmodule_eq_bot I).not.mpr hI)
+  let φ₀ : L →ₗ[K] L := I.toSubmodule.projection W hW
+  have hφ₀ (r : L) (hr : r ∈ I) : φ₀ r = r := Submodule.projection_apply_of_mem_left hW hr
+  have hφ₀C : φ₀ ∈ C := ⟨Submodule.projection_apply_mem hW, 1,
+    fun r hr ↦ by rw [hφ₀ r hr, one_smul]⟩
+  intro htop
+  obtain ⟨β, ⟨-, hβ⟩, hβφ₀⟩ := (LieSubmodule.mem_map _).1 (htop ▸ LieSubmodule.mem_top
+    (LieSubmodule.Quotient.mk' A ⟨φ₀, hφ₀C⟩))
+  rw [← sub_eq_zero, ← map_sub, LieSubmodule.Quotient.mk_eq_zero, LieSubmodule.mem_comap,
+    LieSubmodule.incl_apply] at hβφ₀
+  obtain ⟨a, ha, hadβ⟩ := hβφ₀
+  have hβr₀ : (β : L →ₗ[K] L) r₀ = 0 := hβ r₀ hr₀
+  have h := LinearMap.congr_fun hadβ r₀
+  rw [ad_apply, LieIdeal.lie_eq_zero_of_mem ha hr₀, LieSubmodule.coe_sub, LinearMap.sub_apply,
+    hβr₀, hφ₀ r₀ hr₀, zero_sub, zero_eq_neg] at h
+  exact hr₀0 h
+
 /-- For an abelian ideal `I` with Killing quotient, there is a projection `ψ` of `L` onto `I`
 whose bracket with every element of `L` is an inner derivation by an element of `I`. -/
 private theorem exists_projection [CharZero K] [FiniteDimensional K L] [IsLieAbelian I]
@@ -185,25 +213,7 @@ private theorem exists_projection [CharZero K] [FiniteDimensional K L] [IsLieAbe
     exact ⟨_, I.neg_mem (I.smul_mem c hr), rfl⟩
   obtain ⟨D, hD⟩ := B.exists_isCompl_of_le_ker hker
   -- A projection of `L` onto `I` lies in `C` but not in `B`, so `B` is proper.
-  have hBtop : B ≠ ⊤ := by
-    obtain ⟨W, hW⟩ := Submodule.exists_isCompl I.toSubmodule
-    obtain ⟨r₀, hr₀, hr₀0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
-      ((LieSubmodule.toSubmodule_eq_bot I).not.mpr hI)
-    let φ₀ : L →ₗ[K] L := I.toSubmodule.projection W hW
-    have hφ₀ (r : L) (hr : r ∈ I) : φ₀ r = r := Submodule.projection_apply_of_mem_left hW hr
-    have hφ₀C : φ₀ ∈ C := ⟨Submodule.projection_apply_mem hW, 1,
-      fun r hr ↦ by rw [hφ₀ r hr, one_smul]⟩
-    intro htop
-    obtain ⟨β, ⟨-, hβ⟩, hβφ₀⟩ := (LieSubmodule.mem_map _).1 (htop ▸ LieSubmodule.mem_top
-      (LieSubmodule.Quotient.mk' A ⟨φ₀, hφ₀C⟩))
-    rw [← sub_eq_zero, ← map_sub, LieSubmodule.Quotient.mk_eq_zero, LieSubmodule.mem_comap,
-      LieSubmodule.incl_apply] at hβφ₀
-    obtain ⟨a, ha, hadβ⟩ := hβφ₀
-    have hβr₀ : (β : L →ₗ[K] L) r₀ = 0 := hβ r₀ hr₀
-    have h := LinearMap.congr_fun hadβ r₀
-    rw [ad_apply, LieIdeal.lie_eq_zero_of_mem ha hr₀, LieSubmodule.coe_sub, LinearMap.sub_apply,
-      hβr₀, hφ₀ r₀ hr₀, zero_sub, zero_eq_neg] at h
-    exact hr₀0 h
+  have hBtop : B ≠ ⊤ := map_zeroOnIdeal_ne_top hI
   -- A nonzero vector of the complement `D` is invariant and lies outside `B`.
   obtain ⟨v, hv, hv0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
     ((LieSubmodule.toSubmodule_eq_bot D).not.mpr fun h ↦ hBtop (eq_top_of_isCompl_bot (h ▸ hD)))

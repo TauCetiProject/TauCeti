@@ -206,6 +206,26 @@ theorem IsCrossedHom.map_demushkinWordNeTwo (q n : ℕ) (x : ℕ → H) :
   rw [demushkinWordNeTwo_def, hF.map_mul, hF.map_pow, _root_.map_pow, Units.val_pow_eq_pow_val,
     hF.map_list_range_prod_labuteComm]
 
+/-- A crossed homomorphism vanishing at every entry vanishes on the `q ≠ 2` normal-form word
+`x₁^q (x₁, x₂)(x₃, x₄) ⋯`. -/
+theorem IsCrossedHom.map_demushkinWordNeTwo_eq_zero_of_forall_eq_zero (q n : ℕ)
+    {x : ℕ → H} (h : ∀ j, F (x j) = 0) : F (demushkinWordNeTwo q n x) = 0 := by
+  rw [hF.map_demushkinWordNeTwo, Finset.sum_eq_zero fun i _ ↦
+    hF.map_labuteComm_eq_zero_of_eq_zero (h _) (h _), mul_zero, h 0, mul_zero, add_zero]
+
+/-- A crossed homomorphism vanishing at every entry `x j` of the `q ≠ 2` normal-form word except
+`x (2 i₀)` and `x (2 i₀ + 1)` (`0`-based) sees only the commutator factor
+`(x (2 i₀), x (2 i₀ + 1))` and the `q`-th power of `x 0`. -/
+theorem IsCrossedHom.map_demushkinWordNeTwo_of_forall_eq_zero_of_ne (q : ℕ)
+    {n i₀ : ℕ} (hi₀ : i₀ < n / 2) {x : ℕ → H}
+    (h : ∀ j, j ≠ 2 * i₀ → j ≠ 2 * i₀ + 1 → F (x j) = 0) :
+    F (demushkinWordNeTwo q n x) =
+      (χ (x 0) : R) ^ q * F (labuteComm (x (2 * i₀)) (x (2 * i₀ + 1))) +
+        (∑ j ∈ Finset.range q, (χ (x 0) : R) ^ j) * F (x 0) := by
+  rw [hF.map_demushkinWordNeTwo, Finset.sum_eq_single i₀ (fun i _ hi ↦
+    hF.map_labuteComm_eq_zero_of_eq_zero (h _ (by omega) (by omega)) (h _ (by omega) (by omega)))
+    fun h' ↦ absurd (Finset.mem_range.2 hi₀) h']
+
 /-- **A crossed homomorphism kills the `q ≠ 2` word at the tabulated character values.** For
 `n ≥ 2` and a tuple `x` with `χ (x 1) * (1 - q) = 1` and `χ (x i) = 1` for `i ≠ 1` (the `0`-based
 indices of the tuple: `χ(x₂) = (1 - q)⁻¹` and `χ(x_i) = 1` for `i ≠ 2`), the value of a crossed

@@ -11,7 +11,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.Topology.Connected.LocallyPathConnected
 import Mathlib.Topology.MetricSpace.Thickening
-import TauCeti.Analysis.Contour.Curve.Approximation
+import TauCeti.Analysis.Calculus.ContDiff.Approximation
 import TauCeti.Analysis.Contour.Winding.LocallyConstant
 
 /-!
@@ -71,7 +71,7 @@ theorem notMem_connectedComponentIn_compl_of_isPreconnected_sdiff_singleton (hK 
     exact connectedComponentIn_subset _ _ (hπ₀ t)
   obtain ⟨δ, hδ, hthick⟩ :=
     (isCompact_range π₀.continuous).exists_thickening_subset_open hK.isOpen_compl hrangeK
-  obtain ⟨g, hg, hg0, hg1, hgδ⟩ := exists_contDiff_eq_endpoints_dist_lt π₀.toContinuousMap hδ
+  obtain ⟨g, hg, hg0, hg1, hgδ⟩ := π₀.toContinuousMap.exists_contDiff_eq_endpoints_dist_lt hδ
   replace hg0 : g 0 = v * b + z₀ := hg0.trans π₀.source
   replace hg1 : g 1 = v * a + z₀ := hg1.trans π₀.target
   have hgK : ∀ t ∈ Icc (0 : ℝ) 1, g t ∈ Kᶜ := by

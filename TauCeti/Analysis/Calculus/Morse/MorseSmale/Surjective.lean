@@ -17,12 +17,19 @@ import TauCeti.Analysis.Calculus.TangentCone.Basic
 /-!
 # Admissible perturbations move the end of an orbit in every direction transverse to it
 
-Let `f` be a `C²` function with globally Lipschitz gradient on a finite-dimensional real inner
-product space `E`, `φ` its negative-gradient flow, `x` a point that is not a critical point of `f`,
-and `T > 0`. Perturbing `f` by functions vanishing near its critical points moves the point
-`φ_T x` in every direction transverse to the orbit: there is a finite family `h` of admissible
+Let `f` be a `C^r` function, `r ≥ 2`, with globally Lipschitz gradient on a finite-dimensional
+real inner product space `E`, `φ` its negative-gradient flow, `x` a point that is not a critical
+point of `f`, and `T > 0`. Perturbing `f` by functions vanishing near its critical points moves the
+point `φ_T x` in every direction transverse to the orbit: there is a finite family `h` of admissible
 perturbations such that the derivative at `s = 0` of `s ↦ φ^{f + ∑ sᵢ hᵢ}_T x`, together with
 the flow direction `∇f(φ_T x)`, spans `E`.
+
+The perturbations can be localized and are as regular as `f`: for any time `0 < σ₀ < T` and any
+neighbourhood `W` of the point `φ_{σ₀} x` of the orbit, the family can be chosen of class `C^r` and
+supported in `W`. Localization is what lets a perturbation change the unstable set of one critical
+point while leaving the stable sets of the others alone; the regularity is what makes the perturbed
+flow as smooth as a Sard-type argument in the parameter needs
+(`TauCeti.contDiff_perturbedFlow_of_contDiff`).
 
 The statement includes the flow direction among the spanning vectors. This costs nothing for the
 intended application: the flow direction is tangent to both the unstable and the stable sets of
@@ -31,7 +38,9 @@ these sets for a generic perturbation needs.
 
 ## Main results
 
-* `TauCeti.exists_admissible_range_fderiv_perturbedFlow_sup_span_eq_top`.
+* `TauCeti.exists_admissible_range_fderiv_perturbedFlow_sup_span_eq_top`: a finite family of
+  admissible `C^r` perturbations supported in a prescribed neighbourhood of a point of the orbit,
+  whose parameter derivative at `0` spans `E` together with the flow direction.
 * `TauCeti.exists_admissible_range_fderiv_perturbedFlow_sup_span_tangentConeAt_eq_top`: the range
   of the parameter derivative and the linear span of the tangent cone of any flow-invariant set
   containing `φ_T x` together span `E`. Where that set is a `C¹` submanifold near `φ_T x` (as the
@@ -56,14 +65,18 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   {f : E → ℝ} {K : ℝ≥0}
 
 
-/-- A test perturbation `θ (ψ ∘ f) ⟪w, ·⟫`, with `θ` a bump whose closed support avoids the critical
-points of `f`, is admissible. -/
-private theorem isAdmissiblePerturbation_bump_mul (hfs : ContDiff ℝ 2 f) {z : E}
-    (θ : ContDiffBump z) (hθ : ∀ p ∈ Metric.closedBall z θ.rOut, fderiv ℝ f p ≠ 0) {c : ℝ}
-    (ψ : ContDiffBump c) (w : E) :
-    IsAdmissiblePerturbation f fun p ↦ θ p * (ψ (f p) * ⟪w, p⟫) :=
-  θ.isAdmissiblePerturbation_mul hθ
-    ((ψ.contDiff.comp hfs).mul (innerSL ℝ w).contDiff)
+/-- A test perturbation `θ (ψ ∘ f) ⟪w, ·⟫`, with `θ` a bump whose closed support lies in `W` and
+avoids the critical points of `f`, is admissible, as regular as `f`, and supported in `W`. -/
+private theorem isAdmissiblePerturbation_bump_mul {r : ℕ∞} (hr : 2 ≤ r) (hfr : ContDiff ℝ r f)
+    {z : E} (θ : ContDiffBump z) (hθ : ∀ p ∈ Metric.closedBall z θ.rOut, fderiv ℝ f p ≠ 0)
+    {W : Set E} (hθW : Metric.closedBall z θ.rOut ⊆ W) {c : ℝ} (ψ : ContDiffBump c) (w : E) :
+    IsAdmissiblePerturbation f (fun p ↦ θ p * (ψ (f p) * ⟪w, p⟫)) ∧
+      ContDiff ℝ r (fun p ↦ θ p * (ψ (f p) * ⟪w, p⟫)) ∧
+      tsupport (fun p ↦ θ p * (ψ (f p) * ⟪w, p⟫)) ⊆ W :=
+  ⟨θ.isAdmissiblePerturbation_mul hθ
+      ((ψ.contDiff.comp (hfr.of_le (WithTop.coe_le_coe.2 hr))).mul (innerSL ℝ w).contDiff),
+    θ.contDiff.mul ((ψ.contDiff.comp hfr).mul (innerSL ℝ w).contDiff),
+    fun _ hp ↦ hθW (θ.tsupport_eq ▸ tsupport_mul_subset_left hp)⟩
 
 /-- The integral `∫₀ᵀ Dφ_{-σ}(φ_σ x) (∇g(φ_σ x)) dσ` that an admissible perturbation `g` contributes
 to the parameter derivative of the flow. -/
@@ -73,12 +86,17 @@ private noncomputable def contribution (f : E → ℝ) (hf : LipschitzWith K (�
     fderiv ℝ (negativeGradientFlow f hf (-σ)) (negativeGradientFlow f hf σ x)
       (∇ g (negativeGradientFlow f hf σ x))
 
-/-- **The contributions of admissible perturbations and the gradient span `E`.** -/
-private theorem span_insert_gradient_range_contribution_eq_top (hfs : ContDiff ℝ 2 f)
-    (hf : LipschitzWith K (∇ f)) {x : E} (hx : ∇ f x ≠ 0) {T : ℝ} (hT : 0 < T) :
+/-- **The contributions of admissible perturbations and the gradient span `E`.** The
+perturbations may be taken of class `C^r` and supported in a neighbourhood `W` of a point
+`φ_{σ₀} x`, `0 < σ₀ < T`, of the orbit. -/
+private theorem span_insert_gradient_range_contribution_eq_top {r : ℕ∞} (hr : 2 ≤ r)
+    (hfr : ContDiff ℝ r f) (hf : LipschitzWith K (∇ f)) {x : E} (hx : ∇ f x ≠ 0) {T σ₀ : ℝ}
+    (hσ₀ : σ₀ ∈ Ioo 0 T) {W : Set E} (hW : W ∈ 𝓝 (negativeGradientFlow f hf σ₀ x)) :
     Submodule.span ℝ (insert (∇ f x)
-      (range fun g : {g : E → ℝ // IsAdmissiblePerturbation f g} ↦
+      (range fun g : {g : E → ℝ // IsAdmissiblePerturbation f g ∧ ContDiff ℝ r g ∧
+          tsupport g ⊆ W} ↦
         contribution f hf x T g.1)) = ⊤ := by
+  have hfs : ContDiff ℝ 2 f := hfr.of_le (WithTop.coe_le_coe.2 hr)
   set φ := negativeGradientFlow f hf
   set N : ℝ → E →L[ℝ] E := fun σ ↦ fderiv ℝ (φ (-σ)) (φ σ x)
   have hφd : ∀ t, Differentiable ℝ (φ t) := differentiable_negativeGradientFlow_apply f hf hfs
@@ -91,8 +109,8 @@ private theorem span_insert_gradient_range_contribution_eq_top (hfs : ContDiff �
     fun h0 ↦ hV (Submodule.orthogonal_eq_bot_iff.1 h0)
   have hyx : ⟪∇ f x, y⟫ = 0 :=
     Submodule.inner_right_of_mem_orthogonal (Submodule.subset_span (mem_insert _ _)) hyV
-  have hyk : ∀ g : {g : E → ℝ // IsAdmissiblePerturbation f g},
-      ⟪contribution f hf x T g.1, y⟫ = 0 := fun g ↦
+  have hyk : ∀ g : {g : E → ℝ // IsAdmissiblePerturbation f g ∧ ContDiff ℝ r g ∧
+      tsupport g ⊆ W}, ⟪contribution f hf x T g.1, y⟫ = 0 := fun g ↦
     Submodule.inner_right_of_mem_orthogonal
       (Submodule.subset_span (mem_insert_of_mem _ (mem_range_self g))) hyV
   -- The covectors `⟪y, N σ ·⟫`, as vectors.
@@ -105,19 +123,22 @@ private theorem span_insert_gradient_range_contribution_eq_top (hfs : ContDiff �
       have := fderiv_negativeGradientFlow_apply_gradient f hf hfs (-σ) (φ σ x)
       rwa [← Flow.map_add, neg_add_cancel, Flow.map_zero_apply] at this
     rw [← inner_gradient_left, ContinuousLinearMap.adjoint_inner_right, hNg, hyx]
-  -- A bump around a point of the orbit, inside a region without critical points.
-  set σ₀ := T / 2 with hσdef
-  have hσ₀ : σ₀ ∈ Ioo 0 T := ⟨by rw [hσdef]; positivity, by rw [hσdef]; linarith⟩
+  -- A bump around the point `φ_{σ₀} x` of the orbit, inside `W` and a region without critical
+  -- points.
   set z := φ σ₀ x
   have hgradc : Continuous (∇ f) := (hfs.gradient_right (m := 1) (by norm_num)).continuous
   obtain ⟨ρ, hρ, hρz⟩ := Metric.eventually_nhds_iff.1
-    (hgradc.continuousAt.eventually_ne
-      ((gradient_negativeGradientFlow_eq_zero_iff f hf x σ₀).not.2 hx))
+    ((hgradc.continuousAt.eventually_ne
+      ((gradient_negativeGradientFlow_eq_zero_iff f hf x σ₀).not.2 hx)).and
+        (eventually_mem_set.2 hW))
   let θ : ContDiffBump z := ⟨ρ / 4, ρ / 2, by positivity, by linarith⟩
   have hθr : θ.rOut = ρ / 2 := rfl
   have hθz : θ z = 1 := θ.one_of_mem_closedBall (Metric.mem_closedBall_self θ.rIn_pos.le)
+  have hθρ : ∀ p ∈ Metric.closedBall z θ.rOut, dist p z < ρ := fun p hp ↦
+    (Metric.mem_closedBall.1 hp).trans_lt (by rw [hθr]; linarith)
   have hθcrit : ∀ p ∈ Metric.closedBall z θ.rOut, fderiv ℝ f p ≠ 0 := fun p hp hp0 ↦
-    hρz (Metric.mem_closedBall.1 hp |>.trans_lt (by rw [hθr]; linarith)) (by simp [gradient, hp0])
+    (hρz (hθρ p hp)).1 (by simp [gradient, hp0])
+  have hθW : Metric.closedBall z θ.rOut ⊆ W := fun p hp ↦ (hρz (hθρ p hp)).2
   have hθ'z : fderiv ℝ θ z = 0 := by
     rw [θ.eventuallyEq_one.fderiv_eq]
     exact fderiv_const_apply _
@@ -127,8 +148,9 @@ private theorem span_insert_gradient_range_contribution_eq_top (hfs : ContDiff �
         ψ (f (φ σ x)) = 0 := by
     intro w ψ
     set g : E → ℝ := fun p ↦ θ p * (ψ (f p) * ⟪w, p⟫)
-    have hg : IsAdmissiblePerturbation f g := isAdmissiblePerturbation_bump_mul hfs θ hθcrit ψ w
-    have hk := hyk ⟨g, hg⟩
+    have hgW := isAdmissiblePerturbation_bump_mul hr hfr θ hθcrit hθW ψ w
+    have hg : IsAdmissiblePerturbation f g := hgW.1
+    have hk := hyk ⟨g, hgW⟩
     have hint : IntervalIntegrable (fun σ ↦ N σ (∇ g (φ σ x))) MeasureTheory.volume 0 T :=
       (hN.clm_apply (((hg.contDiff.gradient_right (m := 1) (by norm_num)).continuous).comp
         hγ)).intervalIntegrable 0 T
@@ -172,25 +194,31 @@ private theorem span_insert_gradient_range_contribution_eq_top (hfs : ContDiff �
   simp [m, hm0]
 
 /-- **Admissible perturbations move the end of an orbit in every direction transverse to it.** For
-a point `x` that is not critical and a time `T > 0`, there is a finite family `h` of admissible
-perturbations of `f` such that the derivative at the parameter `0` of
-`s ↦ φ^{f + ∑ sᵢ hᵢ}_T x`, together with the flow direction `∇f(φ_T x)`, spans `E`. -/
-theorem exists_admissible_range_fderiv_perturbedFlow_sup_span_eq_top (hfs : ContDiff ℝ 2 f)
-    (hf : LipschitzWith K (∇ f)) {x : E} (hx : ∇ f x ≠ 0) {T : ℝ} (hT : 0 < T) :
+a `C^r` function `f`, `r ≥ 2`, a point `x` that is not critical, times `0 < σ₀ < T` and a
+neighbourhood `W` of the point `φ_{σ₀} x` of the orbit of `x`, there is a finite family `h` of
+admissible perturbations of `f`, each of class `C^r` and supported in `W`, such that the derivative
+at the parameter `0` of `s ↦ φ^{f + ∑ sᵢ hᵢ}_T x`, together with the flow direction `∇f(φ_T x)`,
+spans `E`. -/
+theorem exists_admissible_range_fderiv_perturbedFlow_sup_span_eq_top {r : ℕ∞} (hr : 2 ≤ r)
+    (hfr : ContDiff ℝ r f) (hf : LipschitzWith K (∇ f)) {x : E} (hx : ∇ f x ≠ 0) {T σ₀ : ℝ}
+    (hσ₀ : σ₀ ∈ Ioo 0 T) {W : Set E} (hW : W ∈ 𝓝 (negativeGradientFlow f hf σ₀ x)) :
     ∃ (n : ℕ) (h : Fin n → E → ℝ) (hh : ∀ i, IsAdmissiblePerturbation f (h i)),
+      (∀ i, ContDiff ℝ r (h i)) ∧ (∀ i, tsupport (h i) ⊆ W) ∧
       LinearMap.range (((ContinuousLinearMap.fst ℝ E (EuclideanSpace ℝ (Fin n))).comp
           ((fderiv ℝ (perturbedFlow f h hf (fun i ↦ (hh i).contDiff)
               (fun i ↦ (hh i).hasCompactSupport) T) (x, 0)).comp
             (ContinuousLinearMap.inr ℝ E (EuclideanSpace ℝ (Fin n))))) :
             EuclideanSpace ℝ (Fin n) →ₗ[ℝ] E) ⊔
         (ℝ ∙ ∇ f (negativeGradientFlow f hf T x)) = ⊤ := by
+  have hfs : ContDiff ℝ 2 f := hfr.of_le (WithTop.coe_le_coe.2 hr)
   set φ := negativeGradientFlow f hf
-  set S := range fun g : {g : E → ℝ // IsAdmissiblePerturbation f g} ↦ contribution f hf x T g.1
+  set S := range fun g : {g : E → ℝ // IsAdmissiblePerturbation f g ∧ ContDiff ℝ r g ∧
+    tsupport g ⊆ W} ↦ contribution f hf x T g.1
   obtain ⟨v, hvS, hvspan, -⟩ := Submodule.exists_fun_fin_finrank_span_eq ℝ S
   choose g hg using hvS
-  refine ⟨_, fun i ↦ (g i).1, fun i ↦ (g i).2, ?_⟩
-  have hgc : ∀ i, ContDiff ℝ 2 (g i).1 := fun i ↦ (g i).2.contDiff
-  have hgs : ∀ i, HasCompactSupport (g i).1 := fun i ↦ (g i).2.hasCompactSupport
+  refine ⟨_, fun i ↦ (g i).1, fun i ↦ (g i).2.1, fun i ↦ (g i).2.2.1, fun i ↦ (g i).2.2.2, ?_⟩
+  have hgc : ∀ i, ContDiff ℝ 2 (g i).1 := fun i ↦ (g i).2.1.contDiff
+  have hgs : ∀ i, HasCompactSupport (g i).1 := fun i ↦ (g i).2.1.hasCompactSupport
   set MT := fderiv ℝ (φ T) x
   set L : EuclideanSpace ℝ (Fin (Module.finrank ℝ (Submodule.span ℝ S))) →ₗ[ℝ] E :=
     ContinuousLinearMap.toLinearMap (((ContinuousLinearMap.fst ℝ E _).comp
@@ -214,7 +242,7 @@ theorem exists_admissible_range_fderiv_perturbedFlow_sup_span_eq_top (hfs : Cont
   have hS : Submodule.span ℝ S ≤ (LinearMap.range L).comap (MT : E →ₗ[ℝ] E) :=
     hvspan.symm.le.trans (Submodule.span_le.2 (by rintro _ ⟨i, rfl⟩; exact hv i))
   have hgrad : MT (∇ f x) = ∇ f (φ T x) := fderiv_negativeGradientFlow_apply_gradient f hf hfs T x
-  have htop := span_insert_gradient_range_contribution_eq_top hfs hf hx hT
+  have htop := span_insert_gradient_range_contribution_eq_top hr hfr hf hx hσ₀ hW
   refine top_unique fun w _ ↦ ?_
   have hw : fderiv ℝ (φ (-T)) (φ T x) w ∈ Submodule.span ℝ (insert (∇ f x) S) := by
     rw [htop]
@@ -228,27 +256,31 @@ theorem exists_admissible_range_fderiv_perturbedFlow_sup_span_eq_top (hfs : Cont
   rw [hwab]
   exact Submodule.add_mem_sup (hS hb) (Submodule.smul_mem _ c (Submodule.mem_span_singleton_self _))
 
-/-- **Spanning with the tangent cone of an invariant set.** For a point `x` that is not critical,
-a time `T > 0` and a set `S` invariant under the negative-gradient flow and containing `φ_T x` (for
-instance the stable or unstable set of a point), there is a finite family `h` of admissible
-perturbations of `f`, depending on `x` and `T`, such that the range of the derivative at the
-parameter `0` of `s ↦ φ^{f + ∑ sᵢ hᵢ}_T x` and the linear span of the tangent cone of `S` at
-`φ_T x` together span `E`. The flow direction lies in that tangent cone. When `S` is a `C¹`
-submanifold near `φ_T x` and this span is its tangent space, this says the parametrized flow is
-transverse to `S` at `(0, x)` through the parameter directions alone. -/
-theorem exists_admissible_range_fderiv_perturbedFlow_sup_span_tangentConeAt_eq_top
-    (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f)) {x : E} (hx : ∇ f x ≠ 0) {T : ℝ}
-    (hT : 0 < T) {S : Set E} (hS : IsInvariant (negativeGradientFlow f hf) S)
+/-- **Spanning with the tangent cone of an invariant set.** For a `C^r` function `f`, `r ≥ 2`, a
+point `x` that is not critical, times `0 < σ₀ < T`, a neighbourhood `W` of `φ_{σ₀} x` and a set `S`
+invariant under the negative-gradient flow and containing `φ_T x` (for instance the stable or
+unstable set of a point), there is a finite family `h` of admissible perturbations of `f`, each of
+class `C^r` and supported in `W`, depending on `x`, `T`, `σ₀` and `W`, such that the range of the
+derivative at the parameter `0` of `s ↦ φ^{f + ∑ sᵢ hᵢ}_T x` and the linear span of the tangent
+cone of `S` at `φ_T x` together span `E`. The flow direction lies in that tangent cone. When `S`
+is a `C¹` submanifold near `φ_T x` and this span is its tangent space, this says the parametrized
+flow is transverse to `S` at `(0, x)` through the parameter directions alone. -/
+theorem exists_admissible_range_fderiv_perturbedFlow_sup_span_tangentConeAt_eq_top {r : ℕ∞}
+    (hr : 2 ≤ r) (hfr : ContDiff ℝ r f) (hf : LipschitzWith K (∇ f)) {x : E} (hx : ∇ f x ≠ 0)
+    {T σ₀ : ℝ} (hσ₀ : σ₀ ∈ Ioo 0 T) {W : Set E} (hW : W ∈ 𝓝 (negativeGradientFlow f hf σ₀ x))
+    {S : Set E} (hS : IsInvariant (negativeGradientFlow f hf) S)
     (hTS : negativeGradientFlow f hf T x ∈ S) :
     ∃ (n : ℕ) (h : Fin n → E → ℝ) (hh : ∀ i, IsAdmissiblePerturbation f (h i)),
+      (∀ i, ContDiff ℝ r (h i)) ∧ (∀ i, tsupport (h i) ⊆ W) ∧
       LinearMap.range (((ContinuousLinearMap.fst ℝ E (EuclideanSpace ℝ (Fin n))).comp
           ((fderiv ℝ (perturbedFlow f h hf (fun i ↦ (hh i).contDiff)
               (fun i ↦ (hh i).hasCompactSupport) T) (x, 0)).comp
             (ContinuousLinearMap.inr ℝ E (EuclideanSpace ℝ (Fin n))))) :
             EuclideanSpace ℝ (Fin n) →ₗ[ℝ] E) ⊔
         Submodule.span ℝ (tangentConeAt ℝ S (negativeGradientFlow f hf T x)) = ⊤ := by
-  obtain ⟨n, h, hh, H⟩ := exists_admissible_range_fderiv_perturbedFlow_sup_span_eq_top hfs hf hx hT
-  refine ⟨n, h, hh, top_unique (H ▸ sup_le_sup_left ?_ _)⟩
+  obtain ⟨n, h, hh, hhr, hhW, H⟩ :=
+    exists_admissible_range_fderiv_perturbedFlow_sup_span_eq_top hr hfr hf hx hσ₀ hW
+  refine ⟨n, h, hh, hhr, hhW, top_unique (H ▸ sup_le_sup_left ?_ _)⟩
   set y := negativeGradientFlow f hf T x
   -- The velocity of the orbit of `y`, which stays in `S`, is tangent to `S`.
   have hmem : -∇ f y ∈ tangentConeAt ℝ S y :=

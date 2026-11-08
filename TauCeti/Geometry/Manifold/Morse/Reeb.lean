@@ -69,17 +69,9 @@ private theorem IsMorse.nonempty_homeomorph_sphere_of_lt (hf : IsMorse I f) {x�
   have hsmooth' : ∀ᶠ y in 𝓝 x₁, ContMDiffAt I 𝓘(ℝ) ∞ (-f) y :=
     .of_forall fun y ↦ contDiff_neg.contMDiff.contMDiffAt.comp y (hf.contMDiff y)
   -- The minimum and the maximum are the only points with their values.
-  have hmin (y : M) (hy : f y ≤ f x₀) : y = x₀ := by
-    have hy' : IsMinOn f univ y := isMinOn_univ_iff.2 fun z ↦ hy.trans (hx₀ (mem_univ z))
-    refine (hcrit y (hy'.isLocalMin univ_mem).mem_criticalPoints).resolve_right ?_
-    rintro rfl
-    linarith
-  have hmax (y : M) (hy : (-f) y ≤ (-f) x₁) : y = x₁ := by
-    simp only [Pi.neg_apply, neg_le_neg_iff] at hy
-    have hy' : IsMaxOn f univ y := isMaxOn_univ_iff.2 fun z ↦ (hx₁ (mem_univ z)).trans hy
-    refine (hcrit y (hy'.isLocalMax univ_mem).mem_criticalPoints).resolve_left ?_
-    rintro rfl
-    linarith
+  have hmin (y : M) (hy : f y ≤ f x₀) : y = x₀ := hx₀.eq_of_le_of_two_criticalPoints hlt hcrit hy
+  have hmax (y : M) (hy : (-f) y ≤ (-f) x₁) : y = x₁ :=
+    hx₁.eq_of_le_of_two_criticalPoints hlt hcrit (neg_le_neg_iff.1 hy)
   -- Small sublevels at the minimum and small superlevels at the maximum are discs.
   obtain ⟨R₀, hR₀, he₀⟩ :=
     (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
@@ -148,26 +140,15 @@ critical points is homeomorphic to the sphere `Sⁿ`. -/
 theorem IsMorse.nonempty_homeomorph_sphere_of_totalCriticalCount_eq_two (hf : IsMorse I f)
     (h2 : totalCriticalCount I f = 2) :
     Nonempty (M ≃ₜ sphere (0 : EuclideanSpace ℝ (Fin (finrank ℝ E + 1))) 1) := by
-  obtain ⟨p, q, hpq, hpq'⟩ := encard_eq_two.1 ((totalCriticalCount_def (I := I)).symm.trans h2)
-  have hfc : Continuous f := hf.contMDiff.continuous
-  obtain ⟨x₀, -, hx₀⟩ := isCompact_univ.exists_isMinOn ⟨p, mem_univ p⟩ hfc.continuousOn
-  obtain ⟨x₁, -, hx₁⟩ := isCompact_univ.exists_isMaxOn ⟨p, mem_univ p⟩ hfc.continuousOn
-  rcases (hx₀ (mem_univ x₁)).lt_or_eq with hlt | hconst
-  · refine hf.nonempty_homeomorph_sphere_of_lt hx₀ hx₁ hlt fun x hx ↦ ?_
-    have h₀ := (hx₀.isLocalMin univ_mem).mem_criticalPoints (I := I)
-    have h₁ := (hx₁.isLocalMax univ_mem).mem_criticalPoints (I := I)
-    have hne : x₀ ≠ x₁ := fun h ↦ hlt.ne (congrArg f h)
-    rw [hpq', mem_insert_iff, mem_singleton_iff] at hx h₀ h₁
-    grind
+  obtain ⟨p, q, hx₀, hx₁, hpq, hpq', hlt | ⟨hall, huniv⟩⟩ :=
+    exists_isMinOn_isMaxOn_of_totalCriticalCount_eq_two (I := I) hf.contMDiff.continuous h2
+  · exact hf.nonempty_homeomorph_sphere_of_lt hx₀ hx₁ hlt fun x hx ↦ by rwa [hpq'] at hx
   -- A constant function: every point is critical, so `M = {p, q}`, and `M` is `0`-dimensional.
-  have hall (x : M) : f x = f x₀ :=
-    le_antisymm (hconst ▸ hx₁ (mem_univ x)) (hx₀ (mem_univ x))
-  have hcrit (x : M) : x ∈ criticalPoints I f :=
-    ((isMinOn_univ_iff.2 fun y ↦ by rw [hall x, hall y]).isLocalMin univ_mem).mem_criticalPoints
+  have hcrit (x : M) : x ∈ criticalPoints I f := huniv ▸ mem_univ x
   have hE : finrank ℝ E = 0 := by
     have hnd := hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints (hcrit p)
-    have hmin : IsLocalMin f p := .of_forall fun y ↦ by rw [hall p, hall y]
-    have hmin' : IsLocalMin (-f) p := .of_forall fun y ↦ by simp [hall p, hall y]
+    have hmin : IsLocalMin f p := .of_forall fun y ↦ by rw [hall y]
+    have hmin' : IsLocalMin (-f) p := .of_forall fun y ↦ by simp [hall y]
     have h₀ := manifoldMorseIndex_eq_zero_of_isLocalMin
       ((hf.contMDiff p).of_le (by norm_cast)) hmin
     have h₀' := manifoldMorseIndex_eq_zero_of_isLocalMin (f := -f)

@@ -156,6 +156,15 @@ theorem hasDerivAt_effectivePotential {m ℓ : ℝ} {U : ℝ → ℝ} {U' r : �
     · field_simp
       ring
 
+/-- Away from `r = 0`, the effective potential is continuous wherever `U` is. -/
+theorem continuousAt_effectivePotential {m ℓ : ℝ} {U : ℝ → ℝ} {r : ℝ} (hU : ContinuousAt U r)
+    (hr : r ≠ 0) :
+    ContinuousAt (effectivePotential m ℓ U) r := by
+  have hUℓ : effectivePotential m ℓ U = fun r ↦ ℓ ^ 2 / (2 * m) / r ^ 2 + U r :=
+    funext fun r ↦ by rw [effectivePotential_apply, div_div]
+  rw [hUℓ]
+  exact (continuousAt_const.div (continuousAt_id.pow 2) (pow_ne_zero 2 hr)).add hU
+
 /-- Away from `r = 0`, `r` is a critical point of the effective potential exactly when
 `U'(r) = ℓ² / (m r³)`. -/
 theorem hasDerivAt_effectivePotential_zero_iff {m ℓ : ℝ} {U : ℝ → ℝ} {U' r : ℝ}
@@ -171,6 +180,26 @@ theorem centralForceHamiltonian_effectivePotential_apply {m ℓ : ℝ} {U : ℝ 
     centralForceHamiltonian m (effectivePotential m ℓ U) (r, p_r) =
       p_r ^ 2 / (2 * m) + ℓ ^ 2 / (2 * m * r ^ 2) + U r := by
   simp [Real.norm_of_nonneg hr, add_assoc]
+
+/-- On the half-line `r > 0`, the reduced Hamiltonian `H_ℓ(r, p_r) = p_r² / (2m) + U_ℓ(r)` is
+continuous wherever `U` is. -/
+theorem continuousAt_centralForceHamiltonian_effectivePotential {m ℓ : ℝ} {U : ℝ → ℝ} {r : ℝ}
+    (hr : 0 < r) (hU : ContinuousAt U r) (p_r : ℝ) :
+    ContinuousAt (centralForceHamiltonian m (effectivePotential m ℓ U)) (r, p_r) := by
+  refine continuousAt_centralForceHamiltonian ?_
+  rw [Real.norm_of_nonneg hr.le]
+  exact continuousAt_effectivePotential hU hr.ne'
+
+/-- On the half-line `r > 0`, the reduced Hamiltonian `H_ℓ(r, p_r) = p_r² / (2m) + U_ℓ(r)` is
+differentiable wherever `U` is. -/
+theorem differentiableAt_centralForceHamiltonian_effectivePotential {m ℓ : ℝ} {U : ℝ → ℝ} {r : ℝ}
+    (hr : 0 < r) (hU : DifferentiableAt ℝ U r) (p_r : ℝ) :
+    DifferentiableAt ℝ (centralForceHamiltonian m (effectivePotential m ℓ U)) (r, p_r) := by
+  have hV : HasDerivAt (effectivePotential m ℓ U) (deriv U r - ℓ ^ 2 / (m * r ^ 3))
+      ‖((r, p_r) : ℝ × ℝ).1‖ := by
+    rw [Real.norm_of_nonneg hr.le]
+    exact hasDerivAt_effectivePotential hU.hasDerivAt hr.ne'
+  exact (hasFDerivAt_centralForceHamiltonian hV hr.ne').differentiableAt
 
 /-! ### The energy in radial form -/
 
