@@ -24,9 +24,9 @@ chart. These two steps reduce local statements about smooth functions to the mod
   the extended chart at `x`.
 * `TauCeti.exists_contMDiffMap_comp_eventuallyEq`: near an interior point, every smooth function
   agrees with a smooth function of that localized chart.
-* `TauCeti.exists_contMDiffMap_comp_extChartAt_symm_eventuallyEq`: equivalently, near the image of
-  an interior point, the chart expression of a smooth function agrees with a smooth function on
-  the model space.
+* `TauCeti.comp_extChartAt_symm_eventuallyEq_of_eventuallyEq`: if a smooth function agrees with
+  `g ∘ F` near an interior point, for `F` with the germ of the chart, then its chart expression
+  agrees with `g` near the image of that point.
 * `TauCeti.contDiffAt_comp_extChartAt_symm`: the chart expression of a smooth function is smooth
   at the image of an interior point.
 -/
@@ -119,20 +119,6 @@ theorem comp_extChartAt_symm_eventuallyEq_of_eventuallyEq
   filter_upwards [ht.eventually hg, ht.eventually hF, htarget] with z hz hFz hzt
   simp only [Function.comp_apply] at hz hFz ⊢
   rw [hz, hFz, (extChartAt I x).right_inv hzt]
-
-/-- **The chart expression of a smooth function near an interior point.** Near the image of an
-interior point `x`, the chart expression `f ∘ (extChartAt I x).symm` of a smooth function agrees
-with a smooth function on the model space. -/
-theorem exists_contMDiffMap_comp_extChartAt_symm_eventuallyEq
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
-    {x : M} (hx : I.IsInteriorPoint x) (f : C^∞⟮I, M; ℝ⟯) :
-    ∃ g : C^∞⟮modelWithCornersSelf ℝ E, E; ℝ⟯,
-      (f ∘ (extChartAt I x).symm) =ᶠ[𝓝 (extChartAt I x x)] g := by
-  obtain ⟨F, hF⟩ := exists_contMDiffMap_eventuallyEq_extChartAt (I := I) x
-  obtain ⟨g, hg⟩ := exists_contMDiffMap_comp_eventuallyEq hx F hF f
-  exact ⟨g, comp_extChartAt_symm_eventuallyEq_of_eventuallyEq hx hF hg⟩
 
 /-- At an interior point `x`, the chart expression `f ∘ (extChartAt I x).symm` of a smooth
 function is smooth at `extChartAt I x x`. -/

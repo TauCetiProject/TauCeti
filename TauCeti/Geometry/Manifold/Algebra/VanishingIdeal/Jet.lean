@@ -48,7 +48,8 @@ composed with a globally smooth localized chart. The higher-order Hadamard lemma
 space with vanishing jet as a combination of products of relative coordinate functions, and
 pulling back along the localized chart gives an element of `I_x ^ n` up to a function vanishing
 near `x`. Conversely, orders of vanishing add under multiplication
-(`TauCeti.iteratedFDeriv_mul_eq_zero_of_lt_add`).
+(`TauCeti.iteratedFDeriv_mul_eq_zero_of_lt_add`); this direction only uses smoothness of chart
+expressions at `x`, so it holds without finite-dimensionality or the Hausdorff property.
 
 ## References
 
@@ -67,6 +68,34 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+
+/-- At an interior point `x`, a function in the `n`-th power of the vanishing ideal at `x` has
+vanishing iterated derivatives of every order `k < n` at `x` in the chart at `x`. -/
+theorem iteratedFDeriv_comp_extChartAt_symm_eq_zero_of_mem_smoothVanishingIdeal_pow
+    [IsManifold I ∞ M] {x : M} (hx : I.IsInteriorPoint x) {n : ℕ} {f : C^∞⟮I, M; ℝ⟯}
+    (hf : f ∈ smoothVanishingIdeal I x ^ n) {k : ℕ} (hk : k < n) :
+    iteratedFDeriv ℝ k (f ∘ (extChartAt I x).symm) (extChartAt I x x) = 0 := by
+  induction n generalizing f k with
+  | zero => omega
+  | succ n ih =>
+    rw [pow_succ] at hf
+    induction hf using Submodule.mul_induction_on' with
+    | mem_mul_mem g hg h hh =>
+      -- The chart expressions of both factors are smooth at `x`, and orders of vanishing add.
+      refine iteratedFDeriv_mul_eq_zero_of_lt_add (contDiffAt_comp_extChartAt_symm hx g)
+        (contDiffAt_comp_extChartAt_symm hx h) (m := n) (n := 1) (fun i hi ↦ ih hg hi)
+        (fun i hi ↦ ?_) hk (by exact_mod_cast le_top)
+      obtain rfl : i = 0 := by omega
+      ext v
+      simpa using hh
+    | add g _ h _ hg hh =>
+      have hsum : ((g + h : C^∞⟮I, M; ℝ⟯) ∘ (extChartAt I x).symm) =
+          (g ∘ (extChartAt I x).symm) + (h ∘ (extChartAt I x).symm) := by
+        ext; simp
+      rw [hsum, iteratedFDeriv_add_apply
+        ((contDiffAt_comp_extChartAt_symm hx g).of_le (by exact_mod_cast le_top))
+        ((contDiffAt_comp_extChartAt_symm hx h).of_le (by exact_mod_cast le_top)), hg, hh,
+        add_zero]
 
 variable [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M]
 
@@ -90,45 +119,6 @@ theorem mem_smoothVanishingIdeal_pow_of_eventuallyEq_zero {x : M} {f : C^∞⟮I
   | succ n ih =>
     rw [hfac, pow_succ']
     exact Ideal.mul_mem_mul h1 ih
-
-/-- At an interior point `x`, a function in the `n`-th power of the vanishing ideal at `x` has
-vanishing iterated derivatives of every order `k < n` at `x` in the chart at `x`. -/
-theorem iteratedFDeriv_comp_extChartAt_symm_eq_zero_of_mem_smoothVanishingIdeal_pow {x : M}
-    (hx : I.IsInteriorPoint x) {n : ℕ} {f : C^∞⟮I, M; ℝ⟯}
-    (hf : f ∈ smoothVanishingIdeal I x ^ n) {k : ℕ} (hk : k < n) :
-    iteratedFDeriv ℝ k (f ∘ (extChartAt I x).symm) (extChartAt I x x) = 0 := by
-  induction n generalizing f k with
-  | zero => omega
-  | succ n ih =>
-    rw [pow_succ] at hf
-    induction hf using Submodule.mul_induction_on' with
-    | mem_mul_mem g hg h hh =>
-      -- Replace both chart expressions by smooth functions on the model space and use that
-      -- orders of vanishing add.
-      obtain ⟨G, hG⟩ := exists_contMDiffMap_comp_extChartAt_symm_eventuallyEq hx g
-      obtain ⟨K, hK⟩ := exists_contMDiffMap_comp_extChartAt_symm_eventuallyEq hx h
-      have hGK : ((g * h : C^∞⟮I, M; ℝ⟯) ∘ (extChartAt I x).symm) =ᶠ[𝓝 (extChartAt I x x)]
-          fun y ↦ G y * K y := by
-        filter_upwards [hG, hK] with z hz hz'
-        simp only [Function.comp_apply] at hz hz' ⊢
-        rw [ContMDiffMap.coe_mul, Pi.mul_apply, hz, hz']
-      rw [(hGK.iteratedFDeriv ℝ k).eq_of_nhds]
-      refine iteratedFDeriv_mul_eq_zero_of_lt_add G.contMDiff.contDiff K.contMDiff.contDiff
-        (m := n) (n := 1) (fun i hi ↦ ?_) (fun i hi ↦ ?_) hk (by exact_mod_cast le_top)
-      · rw [← (hG.iteratedFDeriv ℝ i).eq_of_nhds]
-        exact ih hg hi
-      · obtain rfl : i = 0 := by omega
-        ext v
-        rw [← (hK.iteratedFDeriv ℝ 0).eq_of_nhds, iteratedFDeriv_zero_apply]
-        simpa using hh
-    | add g _ h _ hg hh =>
-      have hsum : ((g + h : C^∞⟮I, M; ℝ⟯) ∘ (extChartAt I x).symm) =
-          (g ∘ (extChartAt I x).symm) + (h ∘ (extChartAt I x).symm) := by
-        ext; simp
-      rw [hsum, iteratedFDeriv_add_apply
-        ((contDiffAt_comp_extChartAt_symm hx g).of_le (by exact_mod_cast le_top))
-        ((contDiffAt_comp_extChartAt_symm hx h).of_le (by exact_mod_cast le_top)), hg, hh,
-        add_zero]
 
 /-- **The higher-order Hadamard lemma for the vanishing ideal.** At an interior point `x`, a
 smooth function whose iterated derivatives of every order `k < n` vanish at `x` in the chart at

@@ -27,12 +27,22 @@ variable {𝕜 E A : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E
 /-- **Orders of vanishing add under multiplication.** If the iterated derivatives of `g` of order
 `i < m` and those of `h` of order `i < n` vanish at `x`, then so do those of `g * h` of every
 order `k < m + n`. -/
-theorem iteratedFDeriv_mul_eq_zero_of_lt_add {g h : E → A} {N : WithTop ℕ∞}
-    (hg : ContDiff 𝕜 N g) (hh : ContDiff 𝕜 N h) {x : E} {m n k : ℕ}
+theorem iteratedFDeriv_mul_eq_zero_of_lt_add {g h : E → A} {N : WithTop ℕ∞} {x : E}
+    (hg : ContDiffAt 𝕜 N g x) (hh : ContDiffAt 𝕜 N h x) {m n k : ℕ}
     (hgx : ∀ i < m, iteratedFDeriv 𝕜 i g x = 0) (hhx : ∀ i < n, iteratedFDeriv 𝕜 i h x = 0)
     (hk : k < m + n) (hkN : k ≤ N) :
     iteratedFDeriv 𝕜 k (fun y ↦ g y * h y) x = 0 := by
-  refine norm_le_zero_iff.mp ((norm_iteratedFDeriv_mul_le hg hh x hkN).trans ?_)
+  -- Work on an open neighbourhood of `x` on which both factors are `C^k`.
+  obtain ⟨u, hu, hxu, hgu⟩ := hg.contDiffOn' hkN (by simp)
+  obtain ⟨v, hv, hxv, hhv⟩ := hh.contDiffOn' hkN (by simp)
+  have hs : IsOpen (u ∩ v) := hu.inter hv
+  have hxs : x ∈ u ∩ v := ⟨hxu, hxv⟩
+  have hbound := norm_iteratedFDerivWithin_mul_le
+    (hgu.mono fun y (hy : y ∈ u ∩ v) ↦ ⟨Set.mem_insert_of_mem _ trivial, hy.1⟩)
+    (hhv.mono fun y (hy : y ∈ u ∩ v) ↦ ⟨Set.mem_insert_of_mem _ trivial, hy.2⟩)
+    hs.uniqueDiffOn hxs le_rfl
+  simp only [iteratedFDerivWithin_of_isOpen _ hs hxs] at hbound
+  refine norm_le_zero_iff.mp (hbound.trans ?_)
   -- Each Leibniz term has a factor `D^i g x` with `i < m` or `D^(k-i) h x` with `k - i < n`.
   refine (Finset.sum_eq_zero fun i hi ↦ ?_).le
   rw [Finset.mem_range] at hi
