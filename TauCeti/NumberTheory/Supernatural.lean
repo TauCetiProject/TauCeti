@@ -13,7 +13,6 @@ public import Mathlib.Data.Nat.MaxPowDiv
 public import Mathlib.Data.Nat.PadicValNat
 public import Mathlib.Data.PNat.Prime
 import Mathlib.Data.Nat.Factorization.Basic
-import Mathlib.NumberTheory.Padics.PadicVal.Basic
 
 /-!
 # Supernatural numbers
