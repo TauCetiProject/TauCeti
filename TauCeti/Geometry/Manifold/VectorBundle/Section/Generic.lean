@@ -167,7 +167,7 @@ theorem mem_residual_setOf_isRegular_affineFamily
       (mem_baseSet_trivializationAt F V z.1) (hc.mdifferentiableAt (by simp)) hz).mpr
         (ContinuousLinearMap.isFredholm_of_finiteDimensional _)
   · exact fun z _ ↦ surjective_sectionLinearization_affineFamily s₀ s hspan z
-  · exact fun _ _ ↦ .inl (WithTop.coe_le_coe.mpr le_top)
+  · exact fun _ _ ↦ .of_quadratic (WithTop.coe_le_coe.mpr le_top)
 
 /-- Regular parameters of an actual finite spanning perturbation are dense. -/
 theorem dense_setOf_isRegular_affineFamily

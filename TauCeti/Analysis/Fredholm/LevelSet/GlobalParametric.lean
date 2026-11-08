@@ -139,12 +139,7 @@ theorem isMeagre_setOf_not_isRegularParameter [SecondCountableTopology (E × Λ)
         ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)))
     (htotal : ∀ z, f z = c → Surjective (fderiv ℝ f z))
     (hn : ∀ z, f z = c →
-      ((finrank ℝ ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).ker *
-          finrank ℝ ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).ker + 1 : ℕ) :
-        ℕ∞ω) ≤ n ∨
-      ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).index ≤ 2 ∧
-        ((((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).index.toNat + 1 : ℕ) : ℕ∞ω) ≤
-          n) :
+      ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).SardSmaleThreshold n) :
     IsMeagre {l | ¬ IsRegularParameter f c l} := by
   let S := {z : E × Λ | f z = c}
   let fixedDeriv (z : S) : E →L[ℝ] F :=
@@ -156,10 +151,7 @@ theorem isMeagre_setOf_not_isRegularParameter [SecondCountableTopology (E × Λ)
   have hlocal : ∀ z : S, ∃ Q ∈ 𝓝 z, ∃ B : Set Λ, IsNowhereDense B ∧
       ∀ w : S, w ∈ Q → ¬ Surjective (fixedDeriv w) → (w : E × Λ).2 ∈ B := by
     intro z
-    have hn0 : n ≠ 0 := by
-      rintro rfl
-      rcases hn z z.2 with h | h
-      exacts [absurd h (by simp), absurd h.2 (by simp)]
+    have hn0 : n ≠ 0 := (hn z z.2).ne_zero
     have hstrict : HasStrictFDerivAt f ((fixedDeriv z).coprod (parameterDeriv z)) z := by
       simpa only [fixedDeriv, parameterDeriv,
         ContinuousLinearMap.coprod_comp_inl_inr] using
@@ -223,12 +215,7 @@ theorem mem_residual_setOf_isRegularParameter [SecondCountableTopology (E × Λ)
         ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)))
     (htotal : ∀ z, f z = c → Surjective (fderiv ℝ f z))
     (hn : ∀ z, f z = c →
-      ((finrank ℝ ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).ker *
-          finrank ℝ ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).ker + 1 : ℕ) :
-        ℕ∞ω) ≤ n ∨
-      ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).index ≤ 2 ∧
-        ((((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).index.toNat + 1 : ℕ) : ℕ∞ω) ≤
-          n) :
+      ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).SardSmaleThreshold n) :
     {l | IsRegularParameter f c l} ∈ residual Λ := by
   simpa only [IsMeagre, Set.compl_ofPred, Classical.not_not] using
     isMeagre_setOf_not_isRegularParameter hcont hFred htotal hn
@@ -245,12 +232,7 @@ theorem dense_setOf_isRegularParameter [SecondCountableTopology (E × Λ)]
         ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)))
     (htotal : ∀ z, f z = c → Surjective (fderiv ℝ f z))
     (hn : ∀ z, f z = c →
-      ((finrank ℝ ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).ker *
-          finrank ℝ ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).ker + 1 : ℕ) :
-        ℕ∞ω) ≤ n ∨
-      ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).index ≤ 2 ∧
-        ((((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).index.toNat + 1 : ℕ) : ℕ∞ω) ≤
-          n) :
+      ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).SardSmaleThreshold n) :
     Dense {l | IsRegularParameter f c l} := by
   exact dense_of_mem_residual
     (mem_residual_setOf_isRegularParameter hcont hFred htotal hn)

@@ -93,6 +93,8 @@ as a hypothesis on the slices, and specialized to the two bounds.
   `TauCeti.isMeagre_image_criticalPoints_of_isFredholm_of_index_le_two` and
   `TauCeti.dense_compl_image_criticalPoints_of_isFredholm_of_index_le_two`: the same at Smale's
   sharp regularity `k > max (index, 0)`, for Fredholm maps of index at most two.
+* `ContinuousLinearMap.SardSmaleThreshold`: the condition that an order meets either threshold,
+  as consumed by the parametric transversality theorems.
 
 ## References
 
@@ -106,6 +108,64 @@ public section
 open Filter Function MeasureTheory Module Set
 
 open scoped ContDiff Topology
+
+namespace ContinuousLinearMap
+
+variable {E F E' F' : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
+  [AddCommGroup F] [Module ℝ F] [TopologicalSpace F]
+  [AddCommGroup E'] [Module ℝ E'] [TopologicalSpace E']
+  [AddCommGroup F'] [Module ℝ F'] [TopologicalSpace F']
+  {D : E →L[ℝ] F} {D' : E' →L[ℝ] F'} {n : ℕ∞ω}
+
+/-- The order `n` meets a regularity threshold of local Sard--Smale for a map whose derivative is
+`D`: either the quadratic threshold `n ≥ (dim ker D)² + 1` of
+`TauCeti.exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints`, or, when `D` has index
+`i ≤ 2`, Smale's sharp threshold `n > max (i, 0)` of
+`TauCeti.exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_of_index_le_two`.
+
+The condition depends on `D` only through the dimension of its kernel and its index, so it
+transfers along `ContinuousLinearMap.SardSmaleThreshold.congr`. -/
+@[expose] def SardSmaleThreshold (D : E →L[ℝ] F) (n : ℕ∞ω) : Prop :=
+  ((finrank ℝ D.ker * finrank ℝ D.ker + 1 : ℕ) : ℕ∞ω) ≤ n ∨
+    D.index ≤ 2 ∧ ((D.index.toNat + 1 : ℕ) : ℕ∞ω) ≤ n
+
+namespace SardSmaleThreshold
+
+/-- The quadratic Sard--Smale threshold. -/
+theorem of_quadratic (hn : ((finrank ℝ D.ker * finrank ℝ D.ker + 1 : ℕ) : ℕ∞ω) ≤ n) :
+    D.SardSmaleThreshold n :=
+  .inl hn
+
+/-- Smale's sharp threshold in index at most two. -/
+theorem of_index_le_two (hindex : D.index ≤ 2) (hn : ((D.index.toNat + 1 : ℕ) : ℕ∞ω) ≤ n) :
+    D.SardSmaleThreshold n :=
+  .inr ⟨hindex, hn⟩
+
+/-- In negative index Smale's sharp threshold is `C¹`. -/
+theorem of_index_neg (hindex : D.index < 0) (hn : n ≠ 0) : D.SardSmaleThreshold n := by
+  refine of_index_le_two (by omega) ?_
+  rw [Int.toNat_of_nonpos hindex.le]
+  exact ENat.one_le_iff_ne_zero_withTop.mpr hn
+
+/-- Every Sard--Smale threshold asks for at least `C¹`. -/
+theorem one_le (h : D.SardSmaleThreshold n) : 1 ≤ n := by
+  rcases h with hn | hn
+  exacts [(Nat.cast_le.mpr (Nat.le_add_left 1 _)).trans hn,
+    (Nat.cast_le.mpr (Nat.le_add_left 1 _)).trans hn.2]
+
+/-- Every Sard--Smale threshold is a positive order. -/
+theorem ne_zero (h : D.SardSmaleThreshold n) : n ≠ 0 := by
+  rintro rfl
+  exact absurd h.one_le (by simp)
+
+/-- The threshold transfers between operators with kernels of equal dimension and equal index. -/
+theorem congr (h : D.SardSmaleThreshold n) (hker : finrank ℝ D.ker = finrank ℝ D'.ker)
+    (hindex : D.index = D'.index) : D'.SardSmaleThreshold n := by
+  rwa [SardSmaleThreshold, ← hker, ← hindex]
+
+end SardSmaleThreshold
+
+end ContinuousLinearMap
 
 namespace TauCeti
 

@@ -136,12 +136,8 @@ private theorem exists_section_badParameter_neighborhood {n : ℕ∞ω} {x : M} 
     (hFred : ContinuousLinearMap.IsFredholm
       (sectionLinearization (F := F) 𝓘(ℝ, X) (fun y ↦ b (y, l)) (fun y ↦ s (y, l)) x))
     (htotal : Surjective (sectionLinearization (F := F) (𝓘(ℝ, X).prod 𝓘(ℝ, Λ)) b s (x, l)))
-    (hn : ((finrank ℝ (sectionLinearization (F := F) 𝓘(ℝ, X) (fun y ↦ b (y, l))
-      (fun y ↦ s (y, l)) x).ker ^ 2 + 1 : ℕ) : ℕ∞ω) ≤ n ∨
-      LinearMap.index (sectionLinearization (F := F) 𝓘(ℝ, X) (fun y ↦ b (y, l))
-        (fun y ↦ s (y, l)) x).toLinearMap ≤ 2 ∧
-      (((LinearMap.index (sectionLinearization (F := F) 𝓘(ℝ, X) (fun y ↦ b (y, l))
-        (fun y ↦ s (y, l)) x).toLinearMap).toNat + 1 : ℕ) : ℕ∞ω) ≤ n)
+    (hn : (sectionLinearization (F := F) 𝓘(ℝ, X) (fun y ↦ b (y, l))
+      (fun y ↦ s (y, l)) x).SardSmaleThreshold n)
     (hz : s (x, l) = 0)
     (hb : ∀ w, s w = 0 → ContinuousAt b w) :
     ∃ Q ∈ 𝓝 (⟨(x, l), hz⟩ : ↥{w | s w = 0}), ∃ A : Set Λ, IsNowhereDense A ∧
@@ -158,13 +154,7 @@ private theorem exists_section_badParameter_neighborhood {n : ℕ∞ω} {x : M} 
   let c : M × Λ → F := fun w ↦ (e ⟨b w, s w⟩).2
   let f : X × Λ → F := fun p ↦ c (φ.symm p.1, p.2)
   have he : b (x, l) ∈ e.baseSet := mem_baseSet_trivializationAt F E (b (x, l))
-  have hn1 : 1 ≤ n := by
-    rcases hn with hn | hn
-    exacts [(Nat.cast_le.mpr (Nat.le_add_left 1 _)).trans hn,
-      (Nat.cast_le.mpr (Nat.le_add_left 1 _)).trans hn.2]
-  have hn0 : n ≠ 0 := by
-    rintro rfl
-    exact absurd hn1 (by simp)
+  have hn0 : n ≠ 0 := hn.ne_zero
   have hcn : ContMDiffAt (𝓘(ℝ, X).prod 𝓘(ℝ, Λ)) 𝓘(ℝ, F) n c (x, l) :=
     (contMDiffAt_totalSpace.mp hcont).2
   have hcd : MDifferentiableAt (𝓘(ℝ, X).prod 𝓘(ℝ, Λ)) 𝓘(ℝ, F) c (x, l) :=
@@ -199,12 +189,11 @@ private theorem exists_section_badParameter_neighborhood {n : ℕ∞ω} {x : M} 
   have hFred' : ContinuousLinearMap.IsFredholm D₁ := by
     rw [hD₁]
     exact (isFredholm_sectionLinearization_iff hbl he hcl hz).mp hFred
-  have hn' : ((finrank ℝ D₁.ker * finrank ℝ D₁.ker + 1 : ℕ) : ℕ∞ω) ≤ n ∨
-      D₁.index ≤ 2 ∧ ((D₁.index.toNat + 1 : ℕ) : ℕ∞ω) ≤ n := by
-    rw [ker_sectionLinearization hbl he hcl hz, index_sectionLinearization hbl he hcl hz,
-      ← ContinuousLinearMap.index_def] at hn
-    rw [hD₁, ← pow_two]
-    exact hn
+  have hn' : D₁.SardSmaleThreshold n := by
+    have hi := index_sectionLinearization hbl he hcl hz
+    rw [← ContinuousLinearMap.index_def, ← ContinuousLinearMap.index_def] at hi
+    rw [hD₁]
+    exact hn.congr (by rw [ker_sectionLinearization hbl he hcl hz]; rfl) hi
   -- A section zero in the chart source and over the trivialization's base set is a coordinate
   -- zero.
   have hfzero_of : ∀ {x' : M} {k : Λ}, x' ∈ φ.source → b (x', k) ∈ e.baseSet →
@@ -228,7 +217,7 @@ private theorem exists_section_badParameter_neighborhood {n : ℕ∞ω} {x : M} 
   obtain ⟨V, hV, hVsub⟩ := exists_mem_nhds_forall_mem_source_and_levelSetChart_mem hstrict
     hsurj (hFred'.closedComplemented_ker_coprod hsurj) hfzero hN
   have hdiff : {p | DifferentiableAt ℝ f p} ∈ 𝓝 (φ x, l) := by
-    filter_upwards [(hfn.of_le hn1).eventually (by simp)] with p hp
+    filter_upwards [(hfn.of_le hn.one_le).eventually (by simp)] with p hp
     exact hp.differentiableAt one_ne_zero
   -- Points near `(x, l)` are read in the chart at `x`.
   let ψ : M × Λ → X × Λ := fun w ↦ (φ w.1, w.2)
@@ -305,12 +294,8 @@ variable [SecondCountableTopology ↥{z | s z = 0}] {n : ℕ∞ω}
       (sectionLinearization (F := F) 𝓘(ℝ, X) (fun y ↦ b (y, z.2)) (fun y ↦ s (y, z.2)) z.1))
     (htotal : ∀ z, s z = 0 →
       Surjective (sectionLinearization (F := F) (𝓘(ℝ, X).prod 𝓘(ℝ, Λ)) b s z))
-    (hn : ∀ z, s z = 0 → ((finrank ℝ (sectionLinearization (F := F) 𝓘(ℝ, X)
-      (fun y ↦ b (y, z.2)) (fun y ↦ s (y, z.2)) z.1).ker ^ 2 + 1 : ℕ) : ℕ∞ω) ≤ n ∨
-      LinearMap.index (sectionLinearization (F := F) 𝓘(ℝ, X)
-        (fun y ↦ b (y, z.2)) (fun y ↦ s (y, z.2)) z.1).toLinearMap ≤ 2 ∧
-      (((LinearMap.index (sectionLinearization (F := F) 𝓘(ℝ, X)
-        (fun y ↦ b (y, z.2)) (fun y ↦ s (y, z.2)) z.1).toLinearMap).toNat + 1 : ℕ) : ℕ∞ω) ≤ n)
+    (hn : ∀ z, s z = 0 → (sectionLinearization (F := F) 𝓘(ℝ, X)
+      (fun y ↦ b (y, z.2)) (fun y ↦ s (y, z.2)) z.1).SardSmaleThreshold n)
 
 include hcont hFred htotal hn
 
@@ -402,17 +387,9 @@ The section only needs to be `C¹`: Smale's regularity threshold `k > max (index
 negative index. -/
 theorem mem_residual_setOf_forall_section_ne_zero_of_index_neg :
     {l | ∀ x, s (x, l) ≠ 0} ∈ residual Λ := by
-  have hn : ∀ z, s z = 0 → ((finrank ℝ (sectionLinearization (F := F) 𝓘(ℝ, X)
-      (fun y ↦ b (y, z.2)) (fun y ↦ s (y, z.2)) z.1).ker ^ 2 + 1 : ℕ) : ℕ∞ω) ≤ n ∨
-      LinearMap.index (sectionLinearization (F := F) 𝓘(ℝ, X)
-        (fun y ↦ b (y, z.2)) (fun y ↦ s (y, z.2)) z.1).toLinearMap ≤ 2 ∧
-      (((LinearMap.index (sectionLinearization (F := F) 𝓘(ℝ, X)
-        (fun y ↦ b (y, z.2)) (fun y ↦ s (y, z.2)) z.1).toLinearMap).toNat + 1 : ℕ) : ℕ∞ω) ≤
-          n := fun z hz ↦
-    .inr ⟨by linarith [hindex z hz], by
-      rw [Int.toNat_of_nonpos (hindex z hz).le]
-      exact ENat.one_le_iff_ne_zero_withTop.mpr hn0⟩
-  filter_upwards [mem_residual_setOf_isRegularSectionParameter hcont hFred htotal hn] with l hl
+  filter_upwards [mem_residual_setOf_isRegularSectionParameter hcont hFred htotal
+    fun z hz ↦ .of_index_neg ((ContinuousLinearMap.index_def _).trans_lt (hindex z hz)) hn0]
+    with l hl
   exact (isRegularSectionParameter_iff_forall_ne_zero_of_index_neg
     (fun x hx ↦ hindex (x, l) hx)).mp hl
 

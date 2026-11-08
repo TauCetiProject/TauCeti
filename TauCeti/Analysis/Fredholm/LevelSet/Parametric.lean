@@ -7,9 +7,9 @@ module
 
 public import TauCeti.Analysis.Fredholm.LevelSet.Smooth
 public import TauCeti.Analysis.Fredholm.LevelSet.Tangent
+public import TauCeti.Analysis.Fredholm.SardSmale
 public import TauCeti.Analysis.Fredholm.UniversalLevelSet
 import Mathlib.Analysis.Calculus.ContDiff.Comp
-import TauCeti.Analysis.Fredholm.SardSmale
 
 /-!
 # Parameter maps on universal Fredholm level sets
@@ -394,7 +394,8 @@ Here criticality is defined intrinsically for the local parameter map;
 `TauCeti.exists_mem_nhds_isClosed_isNowhereDense_image_not_surjective_levelSetParameterMap`
 rewrites it as failure of regularity of the original equation.
 
-The regularity hypothesis `hn` accepts either threshold of local Sard--Smale: the quadratic one
+The regularity hypothesis `hn`, `ContinuousLinearMap.SardSmaleThreshold`, accepts either threshold
+of local Sard--Smale: the quadratic one
 `(dim ker D₁)² + 1` of `TauCeti.exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints`, or,
 when `D₁` has index `i ≤ 2`, Smale's sharp threshold `k > max (i, 0)` of
 `TauCeti.exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_of_index_le_two`. The
@@ -409,8 +410,7 @@ theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_levelSetPar
     (hD₁ : ContinuousLinearMap.IsFredholm D₁)
     (hD : Surjective (D₁.coprod D₂))
     (hxl : f (x, l) = c)
-    (hn : ((finrank ℝ D₁.ker * finrank ℝ D₁.ker + 1 : ℕ) : ℕ∞ω) ≤ n ∨
-      D₁.index ≤ 2 ∧ ((D₁.index.toNat + 1 : ℕ) : ℕ∞ω) ≤ n)
+    (hn : D₁.SardSmaleThreshold n)
     (hU : U ∈ 𝓝 (0 : (D₁.coprod D₂).ker)) :
     ∃ N ∈ 𝓝 (0 : (D₁.coprod D₂).ker),
       N ⊆ U ∩ (levelSetChart hf (LinearMap.range_eq_top.mpr hD)
@@ -431,17 +431,14 @@ theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_levelSetPar
     (hD₁.closedComplemented_ker_coprod hD) hxl).open_target.mem_nhds
       (mem_levelSetChart_target hf (LinearMap.range_eq_top.mpr hD)
         (hD₁.closedComplemented_ker_coprod hD) hxl)
-  rcases hn with hn | ⟨hindex, hn⟩
-  · have hn' :
-        ((finrank ℝ (D₁.parameterProj D₂).ker * finrank ℝ (D₁.parameterProj D₂).ker + 1 : ℕ) :
-          ℕ∞ω) ≤ n := by
-      simpa only [ContinuousLinearMap.finrank_ker_parameterProj] using hn
-    rw [← hg'] at hn'
-    exact exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints hg hFred hn'
+  have hn' : (fderiv ℝ g 0).SardSmaleThreshold n :=
+    hn.congr (by rw [hg', ContinuousLinearMap.finrank_ker_parameterProj])
+      (index_fderiv_levelSetParameterMap hf hD (hD₁.closedComplemented_ker_coprod hD) hxl).symm
+  rcases hn' with hn' | ⟨hindex, hn'⟩
+  · exact exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints hg hFred hn'
       (Filter.inter_mem hU htarget)
-  · have hi := index_fderiv_levelSetParameterMap hf hD (hD₁.closedComplemented_ker_coprod hD) hxl
-    exact exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_of_index_le_two hg hFred
-      (hi ▸ hindex) (hi ▸ hn) (Filter.inter_mem hU htarget)
+  · exact exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_of_index_le_two hg hFred
+      hindex hn' (Filter.inter_mem hU htarget)
 
 /-- **Local parametric transversality.** Near a regular solution of a parametrized equation whose
 fixed-parameter linearization is Fredholm, the parameters carrying a nearby solution at which the
@@ -467,8 +464,7 @@ theorem exists_mem_nhds_isClosed_isNowhereDense_image_not_surjective_levelSetPar
     (hD₁ : ContinuousLinearMap.IsFredholm D₁)
     (hD : Surjective (D₁.coprod D₂))
     (hxl : f (x, l) = c)
-    (hn : ((finrank ℝ D₁.ker * finrank ℝ D₁.ker + 1 : ℕ) : ℕ∞ω) ≤ n ∨
-      D₁.index ≤ 2 ∧ ((D₁.index.toNat + 1 : ℕ) : ℕ∞ω) ≤ n)
+    (hn : D₁.SardSmaleThreshold n)
     (hU : U ∈ 𝓝 (0 : (D₁.coprod D₂).ker)) :
     ∃ N ∈ 𝓝 (0 : (D₁.coprod D₂).ker),
       N ⊆ U ∩ (levelSetChart hf (LinearMap.range_eq_top.mpr hD)
@@ -483,12 +479,8 @@ theorem exists_mem_nhds_isClosed_isNowhereDense_image_not_surjective_levelSetPar
           (((levelSetChart hf (LinearMap.range_eq_top.mpr hD)
               (hD₁.closedComplemented_ker_coprod hD) hxl).symm k : ↥{z | f z = c}) :
             E × Λ)).comp (ContinuousLinearMap.inl ℝ E Λ))})) := by
-  have hn1 : 1 ≤ n := by
-    rcases hn with hn | hn
-    exacts [(Nat.cast_le.mpr (Nat.le_add_left 1 _)).trans hn,
-      (Nat.cast_le.mpr (Nat.le_add_left 1 _)).trans hn.2]
   have hdiff : ∀ᶠ w in 𝓝 ((x, l) : E × Λ), DifferentiableAt ℝ f w := by
-    filter_upwards [(hcont.of_le hn1).eventually (by simp)] with w hw
+    filter_upwards [(hcont.of_le hn.one_le).eventually (by simp)] with w hw
     exact hw.differentiableAt one_ne_zero
   obtain ⟨W, hW, hWopen, hW0⟩ := eventually_nhds_iff.1
     (eventually_mem_target_and_surjective_fderiv_levelSetParameterMap_iff hf hdiff hD
