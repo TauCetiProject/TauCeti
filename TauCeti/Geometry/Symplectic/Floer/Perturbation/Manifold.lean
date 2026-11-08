@@ -149,7 +149,7 @@ theorem IsNondegenerate.exists_contMDiff_integral_apply_deriv_floerOperator_pos
 /-- A continuous covector annihilating all integrable localized Hamiltonian coefficient
 derivatives of the intrinsic Floer operator vanishes at the chosen point. The test class
 includes integrability, so totalized integrals of nonintegrable pairings are not used. -/
-theorem IsNondegenerate.eq_zero_of_integral_apply_deriv_floerOperator_eq_zero
+theorem IsNondegenerate.eq_zero_of_forall_integral_apply_deriv_floerOperator_eq_zero
     (hω : ω.IsNondegenerate)
     (hη : Continuous (fun z ↦ (⟨u z, η z⟩ : CotangentBundle I M)))
     (hKs : ∀ z, MDifferentiableAt I 𝓘(ℝ) (Ks z) (u z))
