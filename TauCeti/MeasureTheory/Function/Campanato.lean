@@ -11,6 +11,7 @@ import Mathlib.Analysis.Convex.Integral
 import Mathlib.MeasureTheory.Covering.BesicovitchVectorSpace
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Measure.OpenPos
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -52,12 +53,12 @@ For exponents `p ≥ 1` and `λ`, the **Campanato seminorm** of `f` on `Ω` is
 
 and the Campanato space `𝓛^{p,λ}(Ω)` consists of the functions for which it is finite. Following
 Giaquinta–Martinazzi, who state their estimates for `[f]_{p,λ}^p`, the declaration
-`TauCeti.MeasureTheory.campanatoSeminorm` is the `p`-th power `[f]_{p,λ}^p`, the supremum itself,
+`TauCeti.MeasureTheory.campanatoSeminormPow` is the `p`-th power `[f]_{p,λ}^p`, the supremum itself,
 without the `p`-th root. It is `p`-homogeneous rather than homogeneous, and its finiteness is
 membership in the Campanato space. On a null-measurable set with the measure density property a
 locally integrable function lies in `𝓛^{p,n + p α}(Ω)` exactly when it agrees almost everywhere on
 `Ω` with a function that is `α`-Hölder continuous on `Ω`
-(`TauCeti.MeasureTheory.exists_holderOnWith_ae_eq_iff_campanatoSeminorm_ne_top`), with explicit
+(`TauCeti.MeasureTheory.exists_holderOnWith_ae_eq_iff_campanatoSeminormPow_ne_top`), with explicit
 bounds between the Hölder constant and `[f]_{p,λ}^p` in both directions. For `λ = n` the
 Campanato space is the space of functions of bounded mean oscillation, which contains unbounded
 functions; the characterization needs `λ > n`, that is `α > 0`.
@@ -100,11 +101,11 @@ All declarations are in the `TauCeti.MeasureTheory` namespace.
 * `exists_holderWith_ae_eq_iff_forall_setAverage_norm_sub_le`: a locally integrable function
   agrees almost everywhere with an `α`-Hölder function if and only if its mean oscillation on
   balls of radius `r` is `O(r^α)`.
-* `campanatoSeminorm`: the `p`-th power `[f]_{p,λ}^p` of the Campanato seminorm on a set.
-* `campanatoSeminorm_le_of_holderOnWith`: Hölder functions lie in the Campanato space.
-* `setAverage_norm_sub_le_of_campanatoSeminorm_le`: the Campanato seminorm bounds the mean
+* `campanatoSeminormPow`: the `p`-th power `[f]_{p,λ}^p` of the Campanato seminorm on a set.
+* `campanatoSeminormPow_le_of_holderOnWith`: Hölder functions lie in the Campanato space.
+* `setAverage_norm_sub_le_of_campanatoSeminormPow_le`: the Campanato seminorm bounds the mean
   oscillation on a domain with the measure density property.
-* `exists_holderOnWith_ae_eq_iff_campanatoSeminorm_ne_top`: **Campanato's characterization**
+* `exists_holderOnWith_ae_eq_iff_campanatoSeminormPow_ne_top`: **Campanato's characterization**
   `𝓛^{p,n + p α}(Ω) = C^{0,α}(Ω)` on a domain with the measure density property.
 
 ## References
@@ -593,38 +594,38 @@ and `B(x, r)` is the closed ball, both the integral and the average being taken 
 quantity scales by `|a|^p`, not `|a|`, when `f` is multiplied by `a`; the Campanato seminorm
 itself is its `p`-th root. The **Campanato space** `𝓛^{p,λ}(Ω)` consists of the functions for
 which it is finite. -/
-def campanatoSeminorm : ℝ≥0∞ :=
+def campanatoSeminormPow : ℝ≥0∞ :=
   ⨆ x ∈ Ω, ⨆ (r : ℝ) (_ : 0 < r), ENNReal.ofReal (r ^ (-lam)) *
     ∫⁻ y in closedBall x r, ‖f y - ⨍ z in closedBall x r, f z ∂μ.restrict Ω‖ₑ ^ p ∂μ.restrict Ω
 
-/-- The defining formula of `campanatoSeminorm`, the supremum of the rescaled `p`-th power mean
+/-- The defining formula of `campanatoSeminormPow`, the supremum of the rescaled `p`-th power mean
 oscillations over the points of `Ω` and the positive radii. -/
-theorem campanatoSeminorm_def :
-    campanatoSeminorm μ Ω p lam f = ⨆ x ∈ Ω, ⨆ (r : ℝ) (_ : 0 < r), ENNReal.ofReal (r ^ (-lam)) *
+theorem campanatoSeminormPow_def :
+    campanatoSeminormPow μ Ω p lam f = ⨆ x ∈ Ω, ⨆ (r : ℝ) (_ : 0 < r), ENNReal.ofReal (r ^ (-lam)) *
       ∫⁻ y in closedBall x r, ‖f y - ⨍ z in closedBall x r, f z ∂μ.restrict Ω‖ₑ ^ p
         ∂μ.restrict Ω := by
-  simp only [campanatoSeminorm]
+  simp only [campanatoSeminormPow]
 
 /-- The Campanato seminorm is at most `C` exactly when each of the quantities of which it is the
 supremum is. -/
-theorem campanatoSeminorm_le_iff {C : ℝ≥0∞} :
-    campanatoSeminorm μ Ω p lam f ≤ C ↔ ∀ x ∈ Ω, ∀ r : ℝ, 0 < r →
+theorem campanatoSeminormPow_le_iff {C : ℝ≥0∞} :
+    campanatoSeminormPow μ Ω p lam f ≤ C ↔ ∀ x ∈ Ω, ∀ r : ℝ, 0 < r →
       ENNReal.ofReal (r ^ (-lam)) * ∫⁻ y in closedBall x r,
         ‖f y - ⨍ z in closedBall x r, f z ∂μ.restrict Ω‖ₑ ^ p ∂μ.restrict Ω ≤ C := by
-  simp only [campanatoSeminorm, iSup_le_iff]
+  simp only [campanatoSeminormPow, iSup_le_iff]
 
 /-- The quantity attached to a point `x ∈ Ω` and a radius `r > 0` is at most the Campanato
 seminorm. -/
-theorem le_campanatoSeminorm (hx : x ∈ Ω) (hr : 0 < r) :
+theorem le_campanatoSeminormPow (hx : x ∈ Ω) (hr : 0 < r) :
     ENNReal.ofReal (r ^ (-lam)) * ∫⁻ y in closedBall x r,
       ‖f y - ⨍ z in closedBall x r, f z ∂μ.restrict Ω‖ₑ ^ p ∂μ.restrict Ω ≤
-        campanatoSeminorm μ Ω p lam f :=
-  campanatoSeminorm_le_iff.1 le_rfl x hx r hr
+        campanatoSeminormPow μ Ω p lam f :=
+  campanatoSeminormPow_le_iff.1 le_rfl x hx r hr
 
 /-- The Campanato seminorm only depends on the almost-everywhere class of `f` on `Ω`. -/
-theorem campanatoSeminorm_congr_ae (h : f =ᵐ[μ.restrict Ω] g) :
-    campanatoSeminorm μ Ω p lam f = campanatoSeminorm μ Ω p lam g := by
-  simp only [campanatoSeminorm]
+theorem campanatoSeminormPow_congr_ae (h : f =ᵐ[μ.restrict Ω] g) :
+    campanatoSeminormPow μ Ω p lam f = campanatoSeminormPow μ Ω p lam g := by
+  simp only [campanatoSeminormPow]
   refine iSup_congr fun x ↦ iSup_congr fun _ ↦ iSup_congr fun r ↦ iSup_congr fun _ ↦ ?_
   rw [average_congr (ae_restrict_of_ae h)]
   congr 1
@@ -634,13 +635,14 @@ theorem campanatoSeminorm_congr_ae (h : f =ᵐ[μ.restrict Ω] g) :
 
 /-- The Campanato seminorm on the empty set vanishes. -/
 @[simp]
-theorem campanatoSeminorm_empty : campanatoSeminorm μ ∅ p lam f = 0 := by
-  simp [campanatoSeminorm]
+theorem campanatoSeminormPow_empty : campanatoSeminormPow μ ∅ p lam f = 0 := by
+  simp [campanatoSeminormPow]
 
 /-- For `p > 0`, the Campanato seminorm of the zero function vanishes. -/
 @[simp]
-theorem campanatoSeminorm_zero (hp : 0 < p) : campanatoSeminorm μ Ω p lam (0 : X → F) = 0 := by
-  simp [campanatoSeminorm, ENNReal.zero_rpow_of_pos hp]
+theorem campanatoSeminormPow_zero (hp : 0 < p) :
+    campanatoSeminormPow μ Ω p lam (0 : X → F) = 0 := by
+  simp [campanatoSeminormPow, ENNReal.zero_rpow_of_pos hp]
 
 end Seminorm
 
@@ -671,12 +673,12 @@ private lemma rpow_neg_add_mul_mul_rpow_mul_pow_eq {n : ℕ} {K α : ℝ≥0} {r
 null-measurable set `Ω` with constant `K`, then for `p ≥ 0` the `p`-th power `[f]_{p,λ}^p` of its
 Campanato seminorm with exponents `p` and `λ = n + p α` is at most `(2^α K)^p μ(B(0, 1))`, where
 `n` is the dimension. -/
-theorem campanatoSeminorm_le_of_holderOnWith {K α : ℝ≥0} (hp : 0 ≤ p)
+theorem campanatoSeminormPow_le_of_holderOnWith {K α : ℝ≥0} (hp : 0 ≤ p)
     (hΩ : NullMeasurableSet Ω μ) (hf : HolderOnWith K α f Ω)
     (hfm : AEStronglyMeasurable f (μ.restrict Ω)) :
-    campanatoSeminorm μ Ω p (finrank ℝ E + p * α) f ≤
+    campanatoSeminormPow μ Ω p (finrank ℝ E + p * α) f ≤
       ENNReal.ofReal ((2 ^ (α : ℝ) * K) ^ p) * μ (closedBall 0 1) := by
-  refine campanatoSeminorm_le_iff.2 fun x hx r hr ↦ ?_
+  refine campanatoSeminormPow_le_iff.2 fun x hx r hr ↦ ?_
   have hL : (0 : ℝ) ≤ K * (2 * r) ^ (α : ℝ) := by positivity
   calc ENNReal.ofReal (r ^ (-((finrank ℝ E : ℝ) + p * α))) *
         ∫⁻ y in closedBall x r, ‖f y - ⨍ z in closedBall x r, f z ∂μ.restrict Ω‖ₑ ^ p
@@ -707,8 +709,8 @@ omit [CompleteSpace F] in
 with exponents `p ≥ 1` and `λ = n + p α` is at most `M`, then the mean oscillation of `f` on
 `closedBall x r` for `μ.restrict Ω` is at most `(M / (c μ(B(0, 1))))^(1/p) r^α`, where `n` is the
 dimension. -/
-theorem setAverage_norm_sub_le_of_campanatoSeminorm_le {M : ℝ≥0} {α r : ℝ} (hp : 1 ≤ p)
-    (hc : 0 < c) (hM : campanatoSeminorm μ Ω p (finrank ℝ E + p * α) f ≤ M) (hx : x ∈ Ω)
+theorem setAverage_norm_sub_le_of_campanatoSeminormPow_le {M : ℝ≥0} {α r : ℝ} (hp : 1 ≤ p)
+    (hc : 0 < c) (hM : campanatoSeminormPow μ Ω p (finrank ℝ E + p * α) f ≤ M) (hx : x ∈ Ω)
     (hr : 0 < r) (hd : (c : ℝ≥0∞) * μ (closedBall x r) ≤ μ (closedBall x r ∩ Ω)) :
     ⨍ y in closedBall x r, ‖f y - ⨍ z in closedBall x r, f z ∂μ.restrict Ω‖ ∂μ.restrict Ω ≤
       (M / (c * μ.real (closedBall 0 1))) ^ p⁻¹ * r ^ α := by
@@ -733,7 +735,7 @@ theorem setAverage_norm_sub_le_of_campanatoSeminorm_le {M : ℝ≥0} {α r : ℝ
   -- The Campanato seminorm bounds the integral.
   have h₂ : ∫⁻ y in closedBall x r, ‖f y - a‖ₑ ^ p ∂μ.restrict Ω ≤
       ENNReal.ofReal (r ^ (n + p * α)) * M := by
-    have h := (le_campanatoSeminorm hx hr).trans hM
+    have h := (le_campanatoSeminormPow hx hr).trans hM
     calc ∫⁻ y in closedBall x r, ‖f y - a‖ₑ ^ p ∂μ.restrict Ω
         = ENNReal.ofReal (r ^ (n + p * α)) * (ENNReal.ofReal (r ^ (-(n + p * α))) *
             ∫⁻ y in closedBall x r, ‖f y - a‖ₑ ^ p ∂μ.restrict Ω) := by
@@ -769,30 +771,30 @@ at least `c` in every closed ball centred in `Ω` of radius `r > 0` at most twic
 integrable for `μ.restrict Ω` agrees almost everywhere on `Ω` with a function that is `α`-Hölder
 continuous on `Ω` if and only if it belongs to the Campanato space `𝓛^{p,λ}(Ω)` for
 `λ = n + p α`, where `n` is the dimension. -/
-theorem exists_holderOnWith_ae_eq_iff_campanatoSeminorm_ne_top {α : ℝ≥0}
+theorem exists_holderOnWith_ae_eq_iff_campanatoSeminormPow_ne_top {α : ℝ≥0}
     (hα : 0 < α) (hp : 1 ≤ p) (hc : 0 < c) (hΩ : NullMeasurableSet Ω μ)
     (hf : LocallyIntegrable f (μ.restrict Ω))
     (hdens : ∀ x ∈ Ω, ∀ r : ℝ, 0 < r → ENNReal.ofReal r ≤ 2 * ediam Ω →
       (c : ℝ≥0∞) * μ (closedBall x r) ≤ μ (closedBall x r ∩ Ω)) :
     (∃ (K : ℝ≥0) (g : E → F), HolderOnWith K α g Ω ∧ f =ᵐ[μ.restrict Ω] g) ↔
-      campanatoSeminorm μ Ω p (finrank ℝ E + p * α) f ≠ ⊤ := by
+      campanatoSeminormPow μ Ω p (finrank ℝ E + p * α) f ≠ ⊤ := by
   constructor
   · rintro ⟨K, g, hg, hfg⟩
-    rw [campanatoSeminorm_congr_ae hfg]
+    rw [campanatoSeminormPow_congr_ae hfg]
     exact ne_top_of_le_ne_top
       (ENNReal.mul_ne_top ENNReal.ofReal_ne_top measure_closedBall_lt_top.ne)
-      (campanatoSeminorm_le_of_holderOnWith (zero_le_one.trans hp) hΩ hg
+      (campanatoSeminormPow_le_of_holderOnWith (zero_le_one.trans hp) hΩ hg
         (hf.aestronglyMeasurable.congr hfg))
   · intro hfin
-    have hM : campanatoSeminorm μ Ω p (finrank ℝ E + p * α) f ≤
-        (campanatoSeminorm μ Ω p (finrank ℝ E + p * α) f).toNNReal :=
+    have hM : campanatoSeminormPow μ Ω p (finrank ℝ E + p * α) f ≤
+        (campanatoSeminormPow μ Ω p (finrank ℝ E + p * α) f).toNNReal :=
       (ENNReal.coe_toNNReal hfin).ge
     refine ⟨_, _, holderOnWith_preciseRepresentative_restrict_of_setAverage_norm_sub_le
-      (M := Real.toNNReal (((campanatoSeminorm μ Ω p (finrank ℝ E + p * α) f).toNNReal /
+      (M := Real.toNNReal (((campanatoSeminormPow μ Ω p (finrank ℝ E + p * α) f).toNNReal /
         (c * μ.real (closedBall (0 : E) 1))) ^ p⁻¹)) hα hc hf hdens fun x hx r hr hr' ↦ ?_,
       ae_eq_preciseRepresentative_of_hasBesicovitchCovering hf⟩
     rw [Real.coe_toNNReal _ (by positivity)]
-    exact setAverage_norm_sub_le_of_campanatoSeminorm_le hp hc hM hx hr (hdens x hx r hr hr')
+    exact setAverage_norm_sub_le_of_campanatoSeminormPow_le hp hc hM hx hr (hdens x hx r hr hr')
 
 end Characterization
 

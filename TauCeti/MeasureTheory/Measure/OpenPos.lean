@@ -34,6 +34,8 @@ almost everywhere means everywhere.
   measure.
 * `Metric.eventually_measure_closedBall_ne_zero_ne_top`: closed balls of small positive radius
   have positive finite measure.
+* `MeasureTheory.Measure.restrict_closedBall_ne_zero_of_mul_le`: a closed ball of positive radius
+  in which a set has positive density charges the restriction of the measure to that set.
 * `Continuous.ae_le_iff_le`: continuous functions satisfy `f ≤ᵐ[μ] g` if and only if `f ≤ g`.
 * `MeasureTheory.ae_eq_top_of_discreteTopology`: on a discrete space, for a measure positive on
   open sets, almost everywhere means everywhere.
@@ -104,6 +106,17 @@ theorem _root_.Metric.eventually_measure_closedBall_ne_zero_ne_top {X : Type*}
   filter_upwards [Ioo_mem_nhdsGT hε] with r hr
   exact ⟨(Metric.measure_closedBall_pos μ x hr.1).ne',
     ((measure_mono ((Metric.closedBall_subset_ball hr.2).trans hεU)).trans_lt hUμ).ne⟩
+
+/-- A closed ball in which a set `s` has density at least `c > 0`, in the sense that
+`c μ(closedBall y ε) ≤ μ(closedBall y ε ∩ s)`, charges `μ.restrict s`. -/
+theorem _root_.MeasureTheory.Measure.restrict_closedBall_ne_zero_of_mul_le
+    {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
+    (μ : Measure X) [μ.IsOpenPosMeasure] {s : Set X} {c : NNReal} {y : X} {ε : ℝ} (hc : 0 < c)
+    (hε : 0 < ε) (hd : (c : ENNReal) * μ (Metric.closedBall y ε) ≤ μ (Metric.closedBall y ε ∩ s)) :
+    μ.restrict s (Metric.closedBall y ε) ≠ 0 := by
+  rw [Measure.restrict_apply Metric.isClosed_closedBall.measurableSet]
+  exact ((ENNReal.mul_pos (by exact_mod_cast hc.ne')
+    (Metric.measure_closedBall_pos μ y hε).ne').trans_le hd).ne'
 
 /-- Under a measure positive on nonempty open sets, an almost everywhere inequality between
 continuous functions into an order-closed space holds everywhere. -/

@@ -66,12 +66,11 @@ to `ℝ` gives the same bound for `‖det f‖` over `ℂ`, or any `RCLike` fiel
   the centered ball has measure below `m` has measure `m`.
 * `MeasureTheory.Measure.addHaar_real_closedBall_div_le`: a closed ball of radius `R ≤ c r` has
   at most `cⁿ` times the measure of a closed ball of radius `r`.
-* `MeasureTheory.Measure.restrict_closedBall_ne_zero_of_mul_le`,
-  `MeasureTheory.Measure.addHaar_real_restrict_closedBall_div_le`,
+* `MeasureTheory.Measure.addHaar_real_restrict_closedBall_div_le`,
   `MeasureTheory.Measure.ofReal_mul_rpow_mul_le_addHaar_restrict_closedBall`: for the restriction
-  of the measure to a set `s` with density at least `c > 0` in a closed ball, the ball is charged,
-  the ratio of the measures of nearby balls is at most `2ⁿ / c`, and the measure of a ball of
-  radius `r` is at least `c rⁿ` times that of the unit ball.
+  of the measure to a set `s` with density at least `c > 0` in a closed ball, the ratio of the
+  measures of nearby balls is at most `2ⁿ / c`, and the measure of a ball of radius `r` is at
+  least `c rⁿ` times that of the unit ball.
 * `MeasureTheory.Measure.addHaar_real_closedBall_mul_eq_pow_mul_addHaar_real_ball`: the closed ball
   of radius `c r` has `cⁿ` times the measure of the open ball of radius `r`.
 * `MeasureTheory.Measure.addHaar_real_closedBall_sdiff_ball`: the shell between the open ball of
@@ -309,17 +308,6 @@ theorem _root_.MeasureTheory.Measure.addHaar_real_closedBall_div_le
   rw [mu.addHaar_real_closedBall x hR, mu.addHaar_real_closedBall y hr.le,
     mul_div_mul_right _ _ hball.ne', div_le_iff₀ (by positivity), ← mul_pow]
   exact pow_le_pow_left₀ hR hRr _
-
-/-- A closed ball in which a set `s` has density at least `c > 0`, in the sense that
-`c μ(closedBall y ε) ≤ μ(closedBall y ε ∩ s)`, charges `μ.restrict s`. -/
-theorem _root_.MeasureTheory.Measure.restrict_closedBall_ne_zero_of_mul_le
-    {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
-    (mu : Measure X) [mu.IsOpenPosMeasure] {s : Set X} {c : NNReal} {y : X} {ε : ℝ} (hc : 0 < c)
-    (hε : 0 < ε) (hd : (c : ENNReal) * mu (closedBall y ε) ≤ mu (closedBall y ε ∩ s)) :
-    mu.restrict s (closedBall y ε) ≠ 0 := by
-  rw [Measure.restrict_apply measurableSet_closedBall]
-  exact ((ENNReal.mul_pos (by exact_mod_cast hc.ne') (measure_closedBall_pos mu y hε).ne').trans_le
-    hd).ne'
 
 /-- If a set `s` has density at least `c > 0` in `closedBall y ε`, in the sense that
 `c μ(closedBall y ε) ≤ μ(closedBall y ε ∩ s)`, then for `0 ≤ r ≤ 2 ε` a closed ball of radius `r`
