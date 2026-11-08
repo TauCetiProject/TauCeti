@@ -24,7 +24,9 @@ to that point is bounded by `C * exp (-c * t)` for every `t ≥ 0`. The existing
 bound, and `TauCeti.exists_tendsto_maximalIntegralCurve_neg_mgradient` supplies compact-trap
 convergence. Continuity on the initial compact time interval absorbs that interval into `C`.
 No adapted metric or positivity of the Hessian is required, so a trajectory may converge to a
-saddle.
+saddle. For Morse functions, convergence alone supplies the nondegenerate critical point:
+`IsMIntegralCurveOn.mem_criticalPoints_of_tendsto_neg_mgradient` proves criticality of the limit,
+and `TauCeti.IsMorse.exists_edist_le_exp_of_tendsto_neg_mgradient` gives the distance bound.
 
 The comparison with the maximal curve moves the time origin to time `1`, which lies in the
 interior of the prescribed curve's domain. It therefore does not require a two-sided derivative
@@ -67,6 +69,31 @@ theorem IsMIntegralCurveOn.exists_tendsto_neg_mgradient
   obtain ⟨p, hp, hlim⟩ := exists_tendsto_maximalIntegralCurve_neg_mgradient hK hmaps hf hfin
   exact ⟨p, hp, (hγ.tendsto_maximalIntegralCurve_iff
     (contMDiff_neg_mgradient_one hf) (by norm_num : (0 : ℝ) < 1)).1 hlim⟩
+
+/-- The limit of a convergent prescribed forward negative-gradient curve is critical. No
+compact trap is required as an input: the forward image together with its limit is compact. -/
+theorem IsMIntegralCurveOn.mem_criticalPoints_of_tendsto_neg_mgradient
+    (hγ : IsMIntegralCurveOn γ (-mgradient I f) (Ici 0)) (hf : ContMDiff I 𝓘(ℝ) 2 f)
+    (hconv : Tendsto γ atTop (𝓝 p)) : p ∈ criticalPoints I f := by
+  let : Inhabited (Ici (0 : ℝ)) := ⟨0, le_rfl⟩
+  have hlim : Tendsto (fun t : Ici (0 : ℝ) ↦ γ t) (cocompact (Ici (0 : ℝ))) (𝓝 p) := by
+    rw [cocompact_eq_atTop]
+    exact tendsto_comp_val_Ici_atTop.mpr hconv
+  have hK : IsCompact (insert p (γ '' Ici 0)) := by
+    simpa only [image_eq_range] using
+      hlim.isCompact_insert_range_of_cocompact hγ.continuousOn.domRestrict
+  have heq := hγ.eqOn_maximalIntegralCurve_Ici
+    (contMDiff_neg_mgradient_one hf) (b := 1) (by norm_num)
+  have hmaps : MapsTo (maximalIntegralCurve (-mgradient I f) (γ 1))
+      (maximalIntegralCurveInterval (-mgradient I f) (γ 1) ∩ Ici 0)
+      (insert p (γ '' Ici 0)) := by
+    intro t ht
+    rw [heq (x := t) (lt_of_lt_of_le (by norm_num : (0 : ℝ) - 1 < 0) ht.2)]
+    exact mem_insert_of_mem p (mem_image_of_mem γ (by
+      simpa only [mem_Ici] using add_nonneg ht.2 zero_le_one))
+  exact mem_criticalPoints_of_mapClusterPt_maximalIntegralCurve_neg_mgradient hK hmaps hf
+    ((hγ.tendsto_maximalIntegralCurve_iff
+      (contMDiff_neg_mgradient_one hf) (by norm_num : (0 : ℝ) < 1)).2 hconv).mapClusterPt
 
 namespace TauCeti
 
@@ -121,10 +148,10 @@ private theorem eventually_edist_neg_mgradient
   filter_upwards [(tendsto_atTop_add_const_right atTop (-1 : ℝ) tendsto_id).eventually hbound,
     eventually_ge_atTop (1 : ℝ)] with t ht ht1
   simp only [id_eq] at ht
-  rw [heq (x := t + -1) (by simp only [mem_Ioi]; linarith), comp_apply,
-    neg_add_cancel_right, ← IsRiemannianManifold.out (I := I)] at ht
-  rw [← sub_eq_add_neg, exp_neg_mul_sub, mul_one] at ht
-  simpa only [mul_assoc] using ht
+  have hpoint : maximalIntegralCurve (-mgradient I f) (γ 1) (t - 1) = γ t := by
+    simpa using heq (x := t - 1) (by simp only [mem_Ioi]; linarith)
+  rw [IsRiemannianManifold.out (I := I)]
+  simpa [← sub_eq_add_neg, hpoint, exp_neg_mul_sub, mul_assoc] using ht
 
 /-- A prescribed forward negative-gradient curve converging to a nondegenerate critical point
 satisfies an exponential distance bound for every nonnegative time, not only eventually. The
@@ -157,5 +184,21 @@ theorem IsMIntegralCurveOn.exists_edist_le_exp_of_tendsto_neg_mgradient
   obtain ⟨B, hB, hBbound⟩ := hcont.exists_forall_le_mul_exp_Ici_of_eventually_le hbound'
   exact ⟨B, hB, c, hc, fun t ht ↦ (ENNReal.le_ofReal_iff_toReal_le (hfin t ht)
     (by positivity)).2 (hBbound t ht)⟩
+
+namespace TauCeti
+
+/-- A convergent prescribed forward trajectory of a Morse function satisfies an exponential
+Riemannian extended-distance bound for every nonnegative time. No compact trap or criticality
+hypothesis on the limit needs to be supplied. -/
+theorem IsMorse.exists_edist_le_exp_of_tendsto_neg_mgradient [I.Boundaryless]
+    (hf : IsMorse I f) (hγ : IsMIntegralCurveOn γ (-mgradient I f) (Ici 0))
+    (hconv : Tendsto γ atTop (𝓝 p)) :
+    ∃ C > 0, ∃ c > 0, ∀ t ≥ 0, edist (γ t) p ≤ ENNReal.ofReal (C * Real.exp (-(c * t))) := by
+  have hf2 : ContMDiff I 𝓘(ℝ) 2 f := hf.contMDiff.of_le (by norm_num)
+  exact hγ.exists_edist_le_exp_of_tendsto_neg_mgradient hf2
+    (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
+      (hγ.mem_criticalPoints_of_tendsto_neg_mgradient hf2 hconv)) hconv
+
+end TauCeti
 
 end Distance

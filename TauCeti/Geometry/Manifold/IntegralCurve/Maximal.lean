@@ -133,16 +133,22 @@ theorem IsMIntegralCurveOn.Ioi_subset_maximalIntegralCurveInterval
   exact hcurve.subset_maximalIntegralCurveInterval
     ⟨ha, by linarith [le_max_right t 0]⟩ hx ⟨ht, by linarith [le_max_left t 0]⟩
 
+/-- Translating a curve on a closed forward ray gives an integral curve on the translated
+open ray. -/
+theorem IsMIntegralCurveOn.comp_add_Ioi_sub_of_Ici
+    (hγ : IsMIntegralCurveOn γ v (Ici a)) (b : ℝ) :
+    IsMIntegralCurveOn (γ ∘ (· + b)) v (Ioi (a - b)) :=
+  (hγ.comp_add b).mono fun t ht ↦ by
+    simp only [mem_ofPred_eq, mem_Ici, mem_Ioi] at *
+    linarith
+
 /-- Moving the time origin to an interior time of a closed forward ray supplies existence on
 the corresponding open ray. -/
 theorem IsMIntegralCurveOn.Ioi_subset_maximalIntegralCurveInterval_of_Ici
     (hγ : IsMIntegralCurveOn γ v (Ici a)) (hb : a < b) :
-    Ioi (a - b) ⊆ maximalIntegralCurveInterval v (γ b) := by
-  have hshift : IsMIntegralCurveOn (γ ∘ (· + b)) v (Ioi (a - b)) :=
-    (hγ.comp_add b).mono fun t ht ↦ by
-      simp only [mem_ofPred_eq, mem_Ici, mem_Ioi] at *
-      linarith
-  exact hshift.Ioi_subset_maximalIntegralCurveInterval (by linarith) (by simp)
+    Ioi (a - b) ⊆ maximalIntegralCurveInterval v (γ b) :=
+  (hγ.comp_add_Ioi_sub_of_Ici b).Ioi_subset_maximalIntegralCurveInterval
+    (by linarith) (by simp)
 
 /-- The maximal interval of existence is open. -/
 theorem isOpen_maximalIntegralCurveInterval : IsOpen (maximalIntegralCurveInterval v x) := by
@@ -310,12 +316,9 @@ through any chosen interior time, after translating the time parameter. -/
 theorem IsMIntegralCurveOn.eqOn_maximalIntegralCurve_Ici
     (hγ : IsMIntegralCurveOn γ v (Ici a))
     (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) (hb : a < b) :
-    EqOn (maximalIntegralCurve v (γ b)) (γ ∘ (· + b)) (Ioi (a - b)) := by
-  have hshift : IsMIntegralCurveOn (γ ∘ (· + b)) v (Ioi (a - b)) :=
-    (hγ.comp_add b).mono fun t ht ↦ by
-      simp only [mem_ofPred_eq, mem_Ici, mem_Ioi] at *
-      linarith
-  exact hshift.eqOn_maximalIntegralCurve_Ioi hv (by linarith) (by simp)
+    EqOn (maximalIntegralCurve v (γ b)) (γ ∘ (· + b)) (Ioi (a - b)) :=
+  (hγ.comp_add_Ioi_sub_of_Ici b).eqOn_maximalIntegralCurve_Ioi hv
+    (by linarith) (by simp)
 
 /-- A curve on a closed forward ray has the same limit at positive infinity as the maximal
 curve through any of its interior points. -/
