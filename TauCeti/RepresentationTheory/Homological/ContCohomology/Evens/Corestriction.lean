@@ -81,7 +81,7 @@ private theorem cochainsCor1_evensHomCocycleAmbient (U : OpenSubgroup G) (s : G)
   by_cases hγ : γ ∈ U
   · have hγ' : γ ∈ U.toSubgroup := hγ
     simp_rw [lWord_indexTwoTransversal_mk_one_of_mem s hγ',
-      lWord_indexTwoTransversal_mk_of_mem hU hs hγ']
+      lWord_indexTwoTransversal_mk_of_mem hs hγ']
     rw [evensB1_of_mem hγ, evensBs_apply]
     have hsγ : s⁻¹ * γ ∉ U := by
       intro h
@@ -92,7 +92,7 @@ private theorem cochainsCor1_evensHomCocycleAmbient (U : OpenSubgroup G) (s : G)
         (Subgroup.normal_of_index_eq_two hU).conj_mem γ hγ s⁻¹
     rw [evensExtend_of_mem hγ, evensB1_of_notMem hsγ, evensExtend_of_mem hconj]
   · have hγ' : γ ∉ U.toSubgroup := hγ
-    simp_rw [lWord_indexTwoTransversal_mk_one_of_notMem hU hs hγ',
+    simp_rw [lWord_indexTwoTransversal_mk_one_of_notMem s hγ',
       lWord_indexTwoTransversal_mk_of_notMem hU hs hγ']
     rw [evensB1_of_notMem hγ, evensBs_apply]
     have hsγ : s⁻¹ * γ ∈ U :=
