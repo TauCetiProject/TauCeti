@@ -86,8 +86,7 @@ theorem monObjObj_injective [F.Faithful] (X : C) :
     Function.Injective fun _ : MonObj X ↦ monObjObj (F := F) X := by
   intro h₁ h₂ e
   refine MonObj.ext _ _ (F.map_injective ?_)
-  have := congr(($e).mul)
-  simpa [← cancel_epi (LaxMonoidal.μ F X X)] using this
+  simpa [← cancel_epi (LaxMonoidal.μ F X X)] using congr(($e).mul)
 
 /-- A faithful monoidal functor reflects monoid homomorphisms. -/
 theorem isMonHom_map_iff [F.Faithful] {X Y : C} [MonObj X] [MonObj Y] (f : X ⟶ Y) :
@@ -112,11 +111,14 @@ end Braided
 
 section Cartesian
 
-variable [CartesianMonoidalCategory C] [CartesianMonoidalCategory D] (F : C ⥤ D) [F.Monoidal]
-  [F.Faithful]
+variable [CartesianMonoidalCategory C] [CartesianMonoidalCategory D] (F : C ⥤ D)
 
-/-- Pull back a group object along a faithful monoidal functor `F`, given lifts `one`, `mul` and
-`inv` of the unit, the multiplication and the inverse of `F.obj X`. -/
+section OplaxMonoidal
+
+variable [F.OplaxMonoidal] [F.Faithful]
+
+/-- Pull back a group object along a faithful oplax monoidal functor `F`, given lifts `one`, `mul`
+and `inv` of the unit, the multiplication and the inverse of `F.obj X`. -/
 @[simps]
 abbrev grpObjOfFaithful (X : C) [GrpObj (F.obj X)] (one : 𝟙_ C ⟶ X) (mul : X ⊗ X ⟶ X)
     (inv : X ⟶ X) (h_one : F.map one = OplaxMonoidal.η F ≫ η[F.obj X])
@@ -125,11 +127,13 @@ abbrev grpObjOfFaithful (X : C) [GrpObj (F.obj X)] (one : 𝟙_ C ⟶ X) (mul : 
   __ := F.monObjOfFaithful X one mul h_one h_mul
   inv := inv
   left_inv := F.map_injective <| by
-    rw [F.map_comp, F.map_comp, ← Monoidal.lift_μ, F.map_id, h_inv]
-    simp [h_mul, h_one, OplaxMonoidal.η_of_cartesianMonoidalCategory]
+    simp [h_one, h_mul, h_inv, OplaxMonoidal.η_of_cartesianMonoidalCategory]
   right_inv := F.map_injective <| by
-    rw [F.map_comp, F.map_comp, ← Monoidal.lift_μ, F.map_id, h_inv]
-    simp [h_mul, h_one, OplaxMonoidal.η_of_cartesianMonoidalCategory]
+    simp [h_one, h_mul, h_inv, OplaxMonoidal.η_of_cartesianMonoidalCategory]
+
+end OplaxMonoidal
+
+variable [F.Monoidal] [F.Faithful]
 
 /-- The image under `F` of the group object structure `F.grpObjOfFaithful X one mul inv _ _ _` is
 the group object structure of `F.obj X` it was built from. -/
