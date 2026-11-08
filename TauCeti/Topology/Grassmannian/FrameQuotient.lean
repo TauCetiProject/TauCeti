@@ -40,8 +40,9 @@ For full frames, `r = N`, the stabilizer is trivial: an orthonormal `N`-frame is
 `U(N)` acts freely on these frames (`TauCeti.finiteOrthonormalFrame.unitaryMap_left_injective`)
 and the orbit map of the standard frame is a homeomorphism `U(N) ≃ₜ V_N(𝕜^N)`
 (`TauCeti.finiteOrthonormalFrame.unitaryHomeomorph`). The determinant classifies the orbits of
-the special unitary group: two frames `A • f` and `A' • f` lie in the same `SU(N)`-orbit exactly
-when `det A = det A'` (`TauCeti.finiteOrthonormalFrame.exists_specialUnitary_unitaryMap_eq_iff`).
+the special unitary group `SU(N)`, acting through `unitaryMap`: two frames `unitaryMap A f` and
+`unitaryMap A' f` lie in the same `SU(N)`-orbit exactly when `det A = det A'`
+(`TauCeti.finiteOrthonormalFrame.exists_specialUnitary_unitaryMap_eq_iff`).
 Over `ℝ` the special unitary group is, by definition, the special orthogonal group `SO(N)`.
 
 The action `TauCeti.finiteOrthonormalFrame.unitaryMulAction` and the standard frame
@@ -285,8 +286,8 @@ theorem unitaryMap_left_injective (f : finiteOrthonormalFrame 𝕜 N N) :
   exact mul_right_cancel (Subtype.ext hcol)
 
 variable (𝕜 N) in
-/-- **The orthonormal `N`-frames of `𝕜^N` are `U(N)`**: `A ↦ A • e`, sending a unitary matrix to
-the image of the standard frame, the frame of its columns, is a homeomorphism. -/
+/-- **The orthonormal `N`-frames of `𝕜^N` are `U(N)`**: `A ↦ unitaryMap A e`, sending a unitary
+matrix to the image of the standard frame `e`, the frame of its columns, is a homeomorphism. -/
 def unitaryHomeomorph : unitaryGroup (Fin N) 𝕜 ≃ₜ finiteOrthonormalFrame 𝕜 N N :=
   (continuous_unitaryMap.comp (continuous_id.prodMk continuous_const)).homeoOfEquivCompactToT2
     (f := Equiv.ofBijective (fun A : unitaryGroup (Fin N) 𝕜 ↦ unitaryMap A (standard 𝕜 le_rfl))
@@ -307,9 +308,9 @@ theorem coe_unitaryHomeomorph_symm_apply (f : finiteOrthonormalFrame 𝕜 N N) (
   simp
 
 /-- **The determinant classifies the `SU(N)`-orbits of orthonormal `N`-frames of `𝕜^N`**: the
-frames `A • f` and `A' • f` lie in the same `SU(N)`-orbit exactly when the unitary matrices `A`
-and `A'` have the same determinant. Over `ℝ` the special unitary group is, by definition,
-`SO(N)`. -/
+frames `unitaryMap A f` and `unitaryMap A' f` lie in the same orbit of `SU(N)`, acting through
+`unitaryMap`, exactly when the unitary matrices `A` and `A'` have the same determinant. Over `ℝ`
+the special unitary group is, by definition, `SO(N)`. -/
 theorem exists_specialUnitary_unitaryMap_eq_iff (f : finiteOrthonormalFrame 𝕜 N N)
     (A A' : unitaryGroup (Fin N) 𝕜) :
     (∃ S : specialUnitaryGroup (Fin N) 𝕜,
