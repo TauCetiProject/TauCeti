@@ -90,7 +90,10 @@ theorem exists_contMDiffOn_analyticBoundaryComponent_eq_zero_transverse_curve
     exact mem_range_self x'
   · exact (Φ.contMDiff_analyticAffineChartι hΦ σ hB κ g ∞).comp
       (contMDiff_coneChartRaySlice Φ.lattice hσ.toIsToricCone hB κ g x' r ∞)
-  · refine congrArg (Φ.analyticAffineChartι hΦ σ) ?_
+  · -- `hxρ` says that `x0` lies on the boundary component `ρ`, that is, its chart coordinate at `ρ`
+    -- is `0`; the `show` restates it in the form `coneChartEquiv_fst_apply` rewrites, since the
+    -- hypothesis is stated for the boundary coordinate rather than for the chart coordinate.
+    refine congrArg (Φ.analyticAffineChartι hΦ σ) ?_
     rw [← show (coneChartEquiv Φ.lattice hσ.toIsToricCone hB x0).1 r = 0 from hxρ,
       coneChartEquiv_fst_apply, coneChartRaySlice_self]
   · intro t
