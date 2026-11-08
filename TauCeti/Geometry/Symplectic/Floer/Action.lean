@@ -8,7 +8,9 @@ module
 public import TauCeti.Geometry.Symplectic.Area.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Energy
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
+import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
 /-!
 # The Hamiltonian action and the energy of cylindrical Floer solutions
@@ -73,6 +75,8 @@ for a monotone homotopy (`SymplecticForm.hamiltonianAction_le_hamiltonianAction_
   solutions.
 * `SymplecticForm.lintegral_floerEnergyDensity_eq_of_tendsto_hamiltonianAction`: the energy of a
   Floer solution on the whole cylinder is the difference of its limiting actions.
+* `SymplecticForm.tendsto_hamiltonianAction`: the action is continuous for uniform `C¹`
+  convergence of loops.
 * `SymplecticForm.integral_floerEnergyDensity_eq_hamiltonianAction_sub_sub_integral`: the energy
   identity of a continuation cylinder over a rectangle.
 * `SymplecticForm.hamiltonianAction_le_hamiltonianAction_sub_integral`: the action estimate along
@@ -315,5 +319,36 @@ theorem lintegral_floerEnergyDensity_eq_of_tendsto_hamiltonianAction (ω : Sympl
       htop
 
 end Energy
+
+section Continuity
+
+variable [FiniteDimensional ℝ V] {ι : Type*} {l : Filter ι} [l.IsCountablyGenerated]
+  {H : ℝ → V → ℝ} {x : ι → ℝ → V} {x₀ : ℝ → V}
+
+/-- **The action is continuous for uniform `C¹` convergence of loops.** Let `H` be a continuous
+time-dependent Hamiltonian. If the loops `x i` and their derivatives are eventually continuous on
+`[0, 1]` and converge uniformly there to `x₀` and to the derivative of `x₀`, then the actions of the
+`x i` converge to the action of `x₀`. -/
+theorem tendsto_hamiltonianAction (ω : SymplecticForm V) (hH : Continuous (uncurry H))
+    (hx : ∀ᶠ i in l, ContinuousOn (x i) (Icc 0 1))
+    (hdx : ∀ᶠ i in l, ContinuousOn (deriv (x i)) (Icc 0 1))
+    (hlim : TendstoUniformlyOn x x₀ l (Icc 0 1))
+    (hdlim : TendstoUniformlyOn (fun i ↦ deriv (x i)) (deriv x₀) l (Icc 0 1)) :
+    Tendsto (fun i ↦ ω.hamiltonianAction H (x i)) l (𝓝 (ω.hamiltonianAction H x₀)) := by
+  -- The pairs `(x(t), x'(t))` converge uniformly on `[0, 1]`, so the integrands of the symplectic
+  -- area and of the Hamiltonian term, continuous functions of `t` and of the pair, converge.
+  rw [← uIcc_of_le (zero_le_one : (0 : ℝ) ≤ 1)] at hx hdx hlim hdlim
+  have hP := hlim.prodMk_same hdlim
+  have hPc : ∀ᶠ i in l, ContinuousOn (fun t ↦ (x i t, deriv (x i) t)) (uIcc 0 1) :=
+    (hx.and hdx).mono fun i hi ↦ hi.1.prodMk hi.2
+  have hg1 : Continuous (uncurry fun (_ : ℝ) (p : V × V) ↦ ω p.1 p.2) :=
+    ω.continuous_apply_comp continuous_snd.fst continuous_snd.snd
+  have hg2 : Continuous (uncurry fun t (p : V × V) ↦ H t p.1) :=
+    hH.comp (continuous_fst.prodMk continuous_snd.fst)
+  simpa only [hamiltonianAction_def, loopArea_def] using
+    (tendsto_const_nhds.mul (hP.tendsto_intervalIntegral_comp hg1 hPc)).add
+      (hP.tendsto_intervalIntegral_comp hg2 hPc)
+
+end Continuity
 
 end TauCeti.SymplecticForm
