@@ -669,7 +669,10 @@ theorem eq_zero_of_stationaryCylinderOperator_eq_zero (hJ : ∀ t, ω.Compatible
     simpa [h, stdComplexLineReal_eq] using hs0 s t₀ (Ico_subset_Icc_self ht₀)
   -- A map independent of `s` which decays as `s → ∞` vanishes.
   exact eq_zero_of_fderiv_fst_eq_zero_of_tendsto hξ1 hs
-    ((continuous_fst.tendsto (0 : V × V)).comp hdecay)
+    fun t ↦ ((continuous_fst.tendsto (0 : V × V)).comp hdecay).comp
+      (Filter.tendsto_comap_iff.2 (Filter.tendsto_id.mono_left atTop_le_cocompact) :
+        Filter.Tendsto (fun r : ℝ ↦ (r, t)) Filter.atTop
+          (Filter.comap Prod.fst (Filter.cocompact ℝ)))
 
 end Cylinder
 
