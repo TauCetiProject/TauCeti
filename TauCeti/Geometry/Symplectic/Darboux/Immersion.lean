@@ -9,8 +9,8 @@ public import TauCeti.Geometry.Symplectic.Darboux.Relative
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
-import TauCeti.Geometry.Symplectic.ContinuousAlternatingMap
-import TauCeti.Geometry.Symplectic.Darboux.Basic
+import TauCeti.Analysis.Normed.Module.Alternating.Bilinear
+import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.LocalDiffeomorph
 
 /-!
 # The relative Darboux theorem along an immersion
