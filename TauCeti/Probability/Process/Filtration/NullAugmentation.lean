@@ -8,6 +8,8 @@ module
 public import Mathlib.Probability.Process.Filtration
 public import Mathlib.MeasureTheory.Measure.AbsolutelyContinuous
 public import Mathlib.MeasureTheory.MeasurableSpace.EventuallyMeasurable
+import Mathlib.MeasureTheory.OuterMeasure.BorelCantelli
+import Mathlib.Topology.Order.IsLUB
 
 /-!
 # Augmenting a filtration by ambient null sets
@@ -15,7 +17,9 @@ public import Mathlib.MeasureTheory.MeasurableSpace.EventuallyMeasurable
 `MeasureTheory.Filtration.nullAugment` adjoins all ambient null sets at every time,
 not just the null sets of the measure restricted to that time's σ-algebra.
 Its events are exactly those equal almost everywhere to an event of the original filtration.
-Taking its `Filtration.rightCont` gives the usual right-continuous augmentation.
+Taking its `Filtration.rightCont` gives the usual right-continuous augmentation. On a densely
+ordered first-countable time axis without a last time, this commutes with null augmentation
+(`MeasureTheory.Filtration.rightCont_nullAugment_apply`).
 
 Equivalent measures give the same augmented σ-algebras, including after right-continuation.
 This allows a change of probability measure without changing the information available to a
@@ -109,5 +113,45 @@ theorem rightCont_nullAugment_apply_eq_of_absolutelyContinuous
   let := Preorder.topology ι
   have : OrderTopology ι := ⟨rfl⟩
   simp only [rightCont_apply, ℱ.nullAugment_apply_eq_of_absolutelyContinuous hPQ hQP]
+
+/-- On a densely ordered first-countable time axis with no last time, null augmentation
+commutes with right-continuation. The completion uses ambient null sets in both orders. -/
+theorem rightCont_nullAugment_apply [LinearOrder ι] [DenselyOrdered ι] [NoMaxOrder ι]
+    [TopologicalSpace ι] [OrderTopology ι] [FirstCountableTopology ι]
+    (ℱ : Filtration ι m) (P : Measure Ω) (i : ι) :
+    (ℱ.nullAugment P).rightCont i = ℱ.rightCont.nullAugment P i := by
+  classical
+  apply le_antisymm
+  · intro A hA
+    obtain ⟨u, -, hu, hlim⟩ := exists_seq_strictAnti_tendsto i
+    have hAn (n : ℕ) : MeasurableSet[ℱ.nullAugment P (u n)] A := by
+      have hle : (ℱ.nullAugment P).rightCont i ≤ ℱ.nullAugment P (u n) := by
+        rw [(ℱ.nullAugment P).rightCont_eq]
+        exact iInf₂_le (u n) (hu n)
+      exact hle A hA
+    choose B hB hAB using hAn
+    refine ⟨Filter.limsup B Filter.atTop, ?_,
+      (limsup_ae_eq_of_forall_ae_eq B (fun n => (hAB n).symm)).symm⟩
+    rw [ℱ.rightCont_eq]
+    simp only [MeasurableSpace.measurableSet_iInf]
+    intro j hij
+    obtain ⟨N, hN⟩ := Filter.eventually_atTop.1 (hlim.eventually (gt_mem_nhds hij))
+    have htail : Filter.limsup B Filter.atTop =
+        Filter.limsup (fun n => if N ≤ n then B n else ∅) Filter.atTop :=
+      Filter.limsup_congr ((Filter.eventually_ge_atTop N).mono fun n hn => by simp [hn])
+    rw [htail]
+    let : MeasurableSpace Ω := ℱ j
+    exact MeasurableSet.measurableSet_limsup fun n => by
+      split_ifs with hn
+      · exact ℱ.mono (hN n hn).le _ (hB n)
+      · exact MeasurableSet.empty
+  · rintro A ⟨B, hB, hAB⟩
+    rw [(ℱ.nullAugment P).rightCont_eq]
+    simp only [MeasurableSpace.measurableSet_iInf]
+    intro j hij
+    have hle : ℱ.rightCont i ≤ ℱ j := by
+      rw [ℱ.rightCont_eq]
+      exact iInf₂_le j hij
+    exact ⟨B, hle _ hB, hAB⟩
 
 end MeasureTheory.Filtration

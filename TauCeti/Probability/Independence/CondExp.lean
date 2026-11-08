@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.ConditionalExpectation.Basic
 public import Mathlib.MeasureTheory.Integral.Prod
 public import Mathlib.Probability.Independence.Basic
+import Mathlib.MeasureTheory.Function.FactorsThrough
 
 /-!
 # Conditioning a function of a known and an independent variable
@@ -33,6 +34,8 @@ theorem integrates `Y` out first.
   of `X` and `Y` is a product measure.
 * `TauCeti.Probability.condExp_comp_prodMk_ae_eq_integral_of_indep`: the conditional expectation
   of `f (X, Y)` given `m`.
+* `ProbabilityTheory.Indep.condExp_eq_of_le_of_stronglyMeasurable_sup`: extra information
+  independent of the future does not change the conditional prediction of a past/future observable.
 
 ## References
 
@@ -93,3 +96,35 @@ theorem condExp_comp_prodMk_ae_eq_integral_of_indep (hm : m ≤ mΩ) (hX : Measu
     (hg.comp_measurable hX).aestronglyMeasurable).symm
 
 end TauCeti.Probability
+
+namespace ProbabilityTheory.Indep
+
+variable {Ω E : Type*} {m₁ m₂ m₃ mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+  [IsFiniteMeasure μ] [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+
+/-- If `m₂` is independent of `m₃`, then an integrable observable of `m₁ ⊔ m₃`, with
+`m₁ ≤ m₂`, has the same conditional expectation given `m₂` as given `m₁`.
+Thus the extra information in `m₂` does not help predict such an observable. -/
+theorem condExp_eq_of_le_of_stronglyMeasurable_sup (h : Indep m₂ m₃ μ)
+    (h₁₂ : m₁ ≤ m₂) (h₂ : m₂ ≤ mΩ) (h₃ : m₃ ≤ mΩ) {f : Ω → E}
+    (hf : StronglyMeasurable[m₁ ⊔ m₃] f) (hint : Integrable f μ) :
+    μ[f | m₂] =ᵐ[μ] μ[f | m₁] := by
+  let : MeasurableSpace (Ω × Ω) := m₁.prod m₃
+  have hdiag : (m₁.prod m₃).comap (fun ω => (ω, ω)) = m₁ ⊔ m₃ := by
+    simpa only [MeasurableSpace.comap_id, id_eq] using
+      (MeasurableSpace.comap_prodMk (mβ := m₁) (mγ := m₃) id id)
+  have hf' : StronglyMeasurable[(m₁.prod m₃).comap (fun ω => (ω, ω))] f :=
+    hdiag.symm ▸ hf
+  obtain ⟨g, hg, rfl⟩ := hf'.exists_eq_measurable_comp
+  have hY : @Measurable Ω Ω mΩ m₃ id := measurable_id.mono h₃ le_rfl
+  have hX : @Measurable Ω Ω m₂ m₁ id := measurable_id.mono h₁₂ le_rfl
+  have hbig := TauCeti.Probability.condExp_comp_prodMk_ae_eq_integral_of_indep
+    (mα := m₁) (mβ := m₃) h₂ hX hY (by simpa using h.symm) hg
+    (by simpa only [Function.comp_def, id_eq] using hint)
+  have hsmall := TauCeti.Probability.condExp_comp_prodMk_ae_eq_integral_of_indep
+    (mα := m₁) (mβ := m₃) (h₁₂.trans h₂) measurable_id hY
+    (by simpa using indep_of_indep_of_le_left h h₁₂ |>.symm) hg
+    (by simpa only [Function.comp_def, id_eq] using hint)
+  exact hbig.trans hsmall.symm
+
+end ProbabilityTheory.Indep
