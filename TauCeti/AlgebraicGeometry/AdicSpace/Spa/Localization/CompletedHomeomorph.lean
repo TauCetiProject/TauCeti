@@ -167,6 +167,7 @@ theorem val_comp_spaCompletedLocalizationHomeomorph (P : PairOfDefinition A) (Ap
 
 /-- The inverse of the homeomorphism, followed by `spaComapLoc`, is the inclusion of `R(T/s)` into
 `Spa (A, A⁺)`: the point of `Spa (A⟨T/s⟩, A_U⁺)` lying over `x` pulls back to `x`. -/
+@[simp]
 theorem spaComapLoc_spaCompletedLocalizationHomeomorph_symm (P : PairOfDefinition A)
     (Aplus : Subring A) (hP : P.ringOfDefinition ≤ Aplus) (T : Finset A) (s : A) (S : Type*)
     [CommRing S] [Algebra A S] [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S) :
