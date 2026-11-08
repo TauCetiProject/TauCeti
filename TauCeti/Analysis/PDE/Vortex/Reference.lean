@@ -166,6 +166,29 @@ theorem norm_referenceSection (f : ContDiffBump (0 : ℝ)) (m : ℕ) {z : ℂ}
   rw [referenceSection_eq_phase f m hz, norm_pow, norm_div]
   simp [norm_ne_zero_iff.2 hz0]
 
+/-- The reference section has norm at most one everywhere. -/
+theorem norm_referenceSection_le_one (f : ContDiffBump (0 : ℝ)) (m : ℕ) (z : ℂ) :
+    ‖referenceSection f m z‖ ≤ 1 := by
+  rw [referenceSection_apply, norm_mul, norm_pow, Complex.norm_real, Real.norm_eq_abs]
+  have h₁ : |1 - f (‖z‖ ^ 2)| ≤ 1 := by
+    rw [abs_le]
+    constructor <;> linarith [f.nonneg (x := ‖z‖ ^ 2), f.le_one (x := ‖z‖ ^ 2)]
+  have h₂ : ‖z / (‖z‖ : ℂ)‖ ^ m ≤ 1 := by
+    refine pow_le_one₀ (norm_nonneg _) ?_
+    rw [norm_div, Complex.norm_real, norm_norm]
+    exact div_self_le_one _
+  simpa using mul_le_mul h₁ h₂ (by positivity) zero_le_one
+
+/-- The modulus defect `1 - ‖α_ref‖` of the reference section is compactly supported: it vanishes
+outside the disc where the cutoff is active. -/
+theorem hasCompactSupport_one_sub_norm_referenceSection (f : ContDiffBump (0 : ℝ)) (m : ℕ) :
+    HasCompactSupport fun z ↦ 1 - ‖referenceSection f m z‖ := by
+  refine HasCompactSupport.intro (isCompact_closedBall 0 (f.rOut + 1)) fun z hz ↦ ?_
+  have hz' : f.rOut ≤ ‖z‖ ^ 2 := by
+    rw [Metric.mem_closedBall, dist_zero_right, not_le] at hz
+    nlinarith [f.rOut_pos]
+  rw [norm_referenceSection f m hz', sub_self]
+
 /-- Rotation of the coordinate multiplies the reference section by the degree-`m` phase. -/
 theorem referenceSection_mul (f : ContDiffBump (0 : ℝ)) (m : ℕ) {u : ℂ}
     (hu : ‖u‖ = 1) (z : ℂ) :
