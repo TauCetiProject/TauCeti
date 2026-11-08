@@ -93,13 +93,8 @@ theorem fixedPoints_stabilizer_eq_singleton (a : X) (ha : stabilizer G a ≠ ⊥
     fixedPoints (stabilizer G a) X = {a} := by
   refine Set.Subset.antisymm (fun b hb ↦ ?_) (Set.singleton_subset_iff.mpr fun g ↦ g.property)
   -- By faithfulness, the nontrivial stabilizer moves some point; in particular `X` is nontrivial.
-  have hfix : fixedPoints (stabilizer G a) X ≠ Set.univ := by
-    refine fun hu ↦ ha <| (Subgroup.eq_bot_iff_forall _).mpr fun g hg ↦
-      eq_of_smul_eq_smul (α := X) fun x ↦ ?_
-    simpa using (hu ▸ Set.mem_univ x : x ∈ fixedPoints (stabilizer G a) X) ⟨g, hg⟩
-  obtain ⟨x, hx⟩ := Set.ne_univ_iff_exists_notMem _ |>.mp hfix
-  obtain ⟨k, hk⟩ := not_forall.mp hx
-  have : Nontrivial X := nontrivial_of_ne _ _ hk
+  have hfix := fixedPoints_ne_univ_of_ne_bot (α := X) ha
+  have : Nontrivial X := nontrivial_of_fixedPoints_ne_univ hfix
   have hco := IsPreprimitive.isCoatom_stabilizer_of_isPreprimitive G a
   obtain ⟨g, rfl⟩ := exists_smul_eq G a b
   -- The stabilizer of `g • a` contains the maximal stabilizer of `a`, so the two are equal.
