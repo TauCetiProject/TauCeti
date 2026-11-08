@@ -103,6 +103,7 @@ theorem gradient_of_notMem_tsupport (h : x ∉ tsupport f) : ∇ f x = 0 := by
   rw [gradient, fderiv_of_notMem_tsupport 𝕜 h, map_zero]
 
 /-- The gradient vanishes exactly where the Fréchet derivative does: `toDual` is injective. -/
+@[simp]
 theorem gradient_eq_zero_iff : ∇ f x = 0 ↔ fderiv 𝕜 f x = 0 := by
   rw [gradient, map_eq_zero_iff _ (toDual 𝕜 F).symm.injective]
 
