@@ -508,13 +508,15 @@ noncomputable def zerothHomotopyDoubleLoopSpaceEquiv (x : X) :
 
 /-- The component of a double loop `γ` is the image of its homotopy class under
 `fundamentalGroupLoopSpaceMulEquiv`. -/
+@[simp]
 theorem zerothHomotopyDoubleLoopSpaceEquiv_mk (x : X) (γ : Ω (Ω X x) (Path.refl x)) :
     zerothHomotopyDoubleLoopSpaceEquiv x (.mk γ) =
       fundamentalGroupLoopSpaceMulEquiv (FundamentalGroup.fromPath (.mk γ)) :=
   congrArg fundamentalGroupLoopSpaceMulEquiv (zerothHomotopyLoopSpaceEquivFundamentalGroup_mk γ)
 
 /-- The component of the constant double loop is the identity of `π₂(X, x)`. -/
-@[simp]
+-- `high` priority: `simp` does not reduce the right-hand side of the general `_mk` lemma to `1`.
+@[simp high]
 theorem zerothHomotopyDoubleLoopSpaceEquiv_mk_refl (x : X) :
     zerothHomotopyDoubleLoopSpaceEquiv x
         (.mk (Path.refl (Path.refl x) : Ω (Ω X x) (Path.refl x))) = 1 := by

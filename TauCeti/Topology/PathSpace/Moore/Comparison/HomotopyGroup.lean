@@ -65,6 +65,7 @@ def zerothHomotopyDoubleEquiv (x : X) :
 
 /-- The component of a double Moore loop `γ` is the image of its class in the fundamental group
 of `ΩᴹX` under the Moore loop-space shift. -/
+@[simp]
 theorem zerothHomotopyDoubleEquiv_mk (x : X) (γ : MooreLoopSpace (MooreLoopSpace X x) 1) :
     zerothHomotopyDoubleEquiv x (.mk γ) =
       homotopyGroupMulEquiv x 0 (pi1MulEquivFundamentalGroup.symm (fundamentalGroupHom 1 γ)) :=
@@ -72,7 +73,8 @@ theorem zerothHomotopyDoubleEquiv_mk (x : X) (γ : MooreLoopSpace (MooreLoopSpac
     (zerothHomotopyEquivFundamentalGroup_mk γ)
 
 /-- The component of the constant double Moore loop is the identity of `π₂(X, x)`. -/
-@[simp]
+-- `high` priority: `simp` does not reduce the right-hand side of the general `_mk` lemma to `1`.
+@[simp high]
 theorem zerothHomotopyDoubleEquiv_mk_one (x : X) :
     zerothHomotopyDoubleEquiv x (.mk 1) = 1 := by
   rw [zerothHomotopyDoubleEquiv_mk, (fundamentalGroupHom (1 : MooreLoopSpace X x)).map_one]

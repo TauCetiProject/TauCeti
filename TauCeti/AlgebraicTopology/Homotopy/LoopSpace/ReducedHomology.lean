@@ -18,7 +18,8 @@ statement that it detects the first nontrivial higher homotopy group `π_k(X, x)
 pointed space: the path components of `Ω²X` are the elements of `π₂(X, x)`, so the reduced
 zeroth homology `H~₀(Ω²X; R)` is the coproduct of copies of `R` indexed by the nontrivial
 elements of `π₂(X, x)`, the generator at `a` being `[γ] - [1]` for a double loop `γ` of class `a`.
-If `π₂(X, x)` is nontrivial, `H~₀(Ω²X; ℤ)` therefore contains an infinite cyclic subgroup.
+If `π₂(X, x)` is nontrivial, `H~₀(Ω²X; R)` therefore contains a copy of `R`; for `R = ℤ` this is
+an infinite cyclic subgroup.
 
 For context, the positive-degree part is proved in other files. In positive degrees reduced and
 ordinary homology agree (`TauCeti.reducedSingularHomologySuccIso`), and if `π_j(X, x)` vanishes
@@ -37,8 +38,9 @@ not formalized here, so the results of this file are statements about `H~₀(Ω�
 `TauCeti.MooreLoopSpace.doubleReducedHomology₀SphereIso`, with the homotopy groups of spheres.
 
 Both the fixed-interval double loop space `Ω (Ω X x) (Path.refl x)` and the double Moore loop
-space `MooreLoopSpace (MooreLoopSpace X x) 1` are treated. The statements with integer
-coefficients take `X : Type`, so that `ℤ`-modules live in the universe of the space.
+space `MooreLoopSpace (MooreLoopSpace X x) 1` are treated. The statements with coefficients in a
+ring `R` take `R` and `X` in the same universe, so that `R`-modules live in the universe of the
+space.
 
 The path components of `Ω²X` and `ΩᴹΩᴹX` are identified with the elements of `π₂(X, x)` by
 `TauCeti.zerothHomotopyDoubleLoopSpaceEquiv` and `TauCeti.MooreLoopSpace.zerothHomotopyDoubleEquiv`.
@@ -52,8 +54,8 @@ The path components of `Ω²X` and `ΩᴹΩᴹX` are identified with the element
 
 * `TauCeti.exists_injective_doubleLoopSpaceReducedHomology₀`,
   `TauCeti.MooreLoopSpace.exists_injective_doubleReducedHomology₀`: if `π₂(X, x)` is nontrivial,
-  the reduced zeroth integral homology of the double loop space contains an infinite cyclic
-  subgroup.
+  the reduced zeroth homology of the double loop space with coefficients in a ring `R` contains a
+  copy of `R`, so an infinite cyclic subgroup for `R = ℤ`.
 
 ## References
 
@@ -133,39 +135,39 @@ end MooreLoopSpace
 
 end DegreeZero
 
-/-! ### Integral statements -/
+/-! ### Statements with coefficients in a ring -/
 
-section Integral
+section Ring
 
-variable {X : Type} [TopologicalSpace X]
+variable {R : Type u} [Ring R] {X : Type u} [TopologicalSpace X]
 
 /-- **The degree-zero homological input to Proposition 5.11 of Barraud--Damian--Humilière--Oancea
-(case `k = 2`).** If `π₂(X, x)` is nontrivial, the reduced zeroth integral homology of the double
-loop space, the kernel of `H₀(Ω²X; ℤ) → H₀(pt; ℤ)`, contains an infinite cyclic subgroup. The
-identification of this kernel with `ker i_{Q*}` is not formalized here. -/
+(case `k = 2`).** If `π₂(X, x)` is nontrivial, the reduced zeroth homology of the double loop
+space with coefficients in `R`, the kernel of `H₀(Ω²X; R) → H₀(pt; R)`, contains a copy of `R`; for
+`R = ℤ` this is an infinite cyclic subgroup. The identification of this kernel with `ker i_{Q*}` is
+not formalized here. -/
 theorem exists_injective_doubleLoopSpaceReducedHomology₀ (x : X) [Nontrivial (π_ 2 X x)] :
-    ∃ f : ℤ →+ (reducedSingularHomologyFunctor (ModuleCat.of ℤ ℤ) 0).obj
+    ∃ f : R →ₗ[R] (reducedSingularHomologyFunctor (ModuleCat.of R R) 0).obj
         (TopCat.of (Ω (Ω X x) (Path.refl x))),
       Function.Injective f :=
   have := nonempty_subtype.2 (exists_ne (1 : π_ 2 X x))
-  have ⟨f, hf⟩ := ModuleCat.exists_injective_of_iso_sigma (doubleLoopSpaceReducedHomology₀Iso _ x)
-  ⟨f.toAddMonoidHom, hf⟩
+  ModuleCat.exists_injective_of_iso_sigma (doubleLoopSpaceReducedHomology₀Iso _ x)
 
 namespace MooreLoopSpace
 
 /-- **The degree-zero homological input to Proposition 5.11 of Barraud--Damian--Humilière--Oancea
-(case `k = 2`), for Moore double loops.** If `π₂(X, x)` is nontrivial, the reduced zeroth integral
-homology of the double Moore loop space contains an infinite cyclic subgroup. -/
+(case `k = 2`), for Moore double loops.** If `π₂(X, x)` is nontrivial, the reduced zeroth homology
+of the double Moore loop space with coefficients in `R` contains a copy of `R`; for `R = ℤ` this is
+an infinite cyclic subgroup. -/
 theorem exists_injective_doubleReducedHomology₀ (x : X) [Nontrivial (π_ 2 X x)] :
-    ∃ f : ℤ →+ (reducedSingularHomologyFunctor (ModuleCat.of ℤ ℤ) 0).obj
+    ∃ f : R →ₗ[R] (reducedSingularHomologyFunctor (ModuleCat.of R R) 0).obj
         (TopCat.of (MooreLoopSpace (MooreLoopSpace X x) 1)),
       Function.Injective f :=
   have := nonempty_subtype.2 (exists_ne (1 : π_ 2 X x))
-  have ⟨f, hf⟩ := ModuleCat.exists_injective_of_iso_sigma (doubleReducedHomology₀Iso _ x)
-  ⟨f.toAddMonoidHom, hf⟩
+  ModuleCat.exists_injective_of_iso_sigma (doubleReducedHomology₀Iso _ x)
 
 end MooreLoopSpace
 
-end Integral
+end Ring
 
 end TauCeti

@@ -27,12 +27,13 @@ the homology of spheres, `πₙ(Sⁿ, x) ≅ ℤ` for `n ≥ 2` (`TauCeti.homoto
 the double Moore loop space of `S³` has first integral homology `ℤ`
 (`TauCeti.MooreLoopSpace.doubleFirstHomologySphereAddEquiv`), and for `m ≥ 4` the double Moore loop
 space of `Sᵐ` has integral homology `ℤ` in degree `m - 2`
-(`TauCeti.MooreLoopSpace.doubleHomologySphereAddEquiv`). In degree zero, `π₂(S²) ≅ ℤ` is
-nontrivial (`TauCeti.nontrivial_homotopyGroup_two_sphere`), so the double Moore loop space of `S²`
+(`TauCeti.MooreLoopSpace.doubleHomologySphereAddEquiv`). In particular `πₙ(Sⁿ, x)` is nontrivial
+for `n ≥ 2` (`TauCeti.nontrivial_homotopyGroup_sphere`). In degree zero, as `π₂(S²) ≅ ℤ`,
+the double Moore loop space of `S²`
 has one path component for each integer, and its reduced zeroth homology is the coproduct of copies
 of the coefficients indexed by the nonzero integers
-(`TauCeti.MooreLoopSpace.doubleReducedHomology₀SphereIso`); with integer coefficients it contains
-an infinite cyclic subgroup
+(`TauCeti.MooreLoopSpace.doubleReducedHomology₀SphereIso`); with coefficients in a ring `R` it
+contains a copy of `R`, so an infinite cyclic subgroup for `R = ℤ`
 (`TauCeti.MooreLoopSpace.exists_injective_doubleReducedHomology₀_sphere`).
 
 The vanishing follows from cellular compression, as in Hatcher's Corollary 4.12. The sphere
@@ -191,11 +192,11 @@ theorem MooreLoopSpace.doubleHomologySphereAddEquiv_apply
       homotopyGroupSphereAddEquiv (n := n + 2) b x ((doubleHomologyAddEquiv x n hX).symm a) :=
   (rfl)
 
-/-- **`π₂(S²)` is nontrivial**, being isomorphic to `ℤ` by
+/-- **`πₙ(Sⁿ)` is nontrivial** for `n ≥ 2`, being isomorphic to `ℤ` by
 `TauCeti.homotopyGroupSphereAddEquiv`. -/
-theorem nontrivial_homotopyGroup_two_sphere (b : OrthonormalBasis (Fin 3) ℝ E)
-    (x : sphere (0 : E) 1) : Nontrivial (π_ 2 (sphere (0 : E) 1) x) :=
-  (Additive.ofMul.trans (homotopyGroupSphereAddEquiv (n := 0) b x).toEquiv).nontrivial
+theorem nontrivial_homotopyGroup_sphere (b : OrthonormalBasis (Fin (n + 3)) ℝ E)
+    (x : sphere (0 : E) 1) : Nontrivial (π_ (n + 2) (sphere (0 : E) 1) x) :=
+  (Additive.ofMul.trans (homotopyGroupSphereAddEquiv b x).toEquiv).nontrivial
 
 /-- The path components of the double Moore loop space of `S²` are the integers, through
 `π₂(S²) ≅ ℤ`. -/
@@ -246,15 +247,16 @@ theorem MooreLoopSpace.ι_doubleReducedHomology₀SphereIso_inv_ι {C : Type*} [
     (Y := TopCat.of (MooreLoopSpace (MooreLoopSpace (sphere (0 : E) 1) x) 1)) 1 γ
     (zerothHomotopyDoubleSphereEquiv b x) (zerothHomotopyDoubleSphereEquiv_mk_one b x) h
 
-/-- **The reduced zeroth homology of `ΩᴹΩᴹS²` contains `ℤ`.** For the unit sphere `S²` of a real
-inner product space of dimension three, the kernel of the augmentation
-`H₀(ΩᴹΩᴹS²; ℤ) → H₀(pt; ℤ)` contains an infinite cyclic subgroup. -/
-theorem MooreLoopSpace.exists_injective_doubleReducedHomology₀_sphere
+/-- **The reduced zeroth homology of `ΩᴹΩᴹS²` contains the coefficients.** For the unit sphere
+`S²` of a real inner product space of dimension three and a ring `R`, the kernel of the
+augmentation `H₀(ΩᴹΩᴹS²; R) → H₀(pt; R)` contains a copy of `R`; for `R = ℤ` this is an infinite
+cyclic subgroup. -/
+theorem MooreLoopSpace.exists_injective_doubleReducedHomology₀_sphere {R : Type} [Ring R]
     (b : OrthonormalBasis (Fin 3) ℝ E) (x : sphere (0 : E) 1) :
-    ∃ f : ℤ →+ (reducedSingularHomologyFunctor (ModuleCat.of ℤ ℤ) 0).obj
+    ∃ f : R →ₗ[R] (reducedSingularHomologyFunctor (ModuleCat.of R R) 0).obj
         (TopCat.of (MooreLoopSpace (MooreLoopSpace (sphere (0 : E) 1) x) 1)),
       Function.Injective f :=
-  have := nontrivial_homotopyGroup_two_sphere b x
+  have := nontrivial_homotopyGroup_sphere (n := 0) b x
   exists_injective_doubleReducedHomology₀ x
 
 end Hurewicz
