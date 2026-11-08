@@ -48,7 +48,7 @@ Isometric endomorphisms form a monoid, not a group: for the zero form on `ℤ ^ 
 is one. For a finite free `ℤ`-module `V` and a left-separating integral form `Q` an isometric
 endomorphism is automatically invertible (`TauCeti.BilinForm.IsIsometry.toIsometryGroup`), and the
 resulting automorphisms are the arithmetic group `Aut(V, Q)`; see
-`TauCeti.BilinForm.isometryGroup`. -/
+`LinearMap.BilinForm.isometryGroup`. -/
 def IsIsometry (B : BilinForm R M) (f : M →ₗ[R] M) : Prop :=
   ∀ x y, B (f x) (f y) = B x y
 

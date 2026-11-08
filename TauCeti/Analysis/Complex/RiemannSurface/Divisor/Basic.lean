@@ -88,14 +88,12 @@ theorem coeff_divisorPullback (f : FiniteHolomorphicMap X Y) (D : WeilDivisor Y)
   (rfl)
 
 /-- Pullback preserves effective divisors. -/
-theorem _root_.TauCeti.AlgebraicGeometry.WeilDivisor.IsEffective.divisorPullback
-    {D : WeilDivisor Y}
-    (hD : WeilDivisor.IsEffective D) (f : FiniteHolomorphicMap X Y) :
-    WeilDivisor.IsEffective (divisorPullback f D) := by
-  rw [WeilDivisor.isEffective_iff] at hD ⊢
+theorem divisorPullback_nonneg {D : WeilDivisor Y} (hD : 0 ≤ D) (f : FiniteHolomorphicMap X Y) :
+    0 ≤ divisorPullback f D := by
+  rw [WeilDivisor.nonneg_iff]
   intro x
   rw [coeff_divisorPullback]
-  exact mul_nonneg (Int.natCast_nonneg _) (hD (f x))
+  exact mul_nonneg (Int.natCast_nonneg _) (WeilDivisor.coeff_nonneg hD (f x))
 
 /-- Pulling back a point divisor gives the fibre, with each point weighted by its local
 multiplicity. -/

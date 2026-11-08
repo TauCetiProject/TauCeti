@@ -31,6 +31,8 @@ Borel measurable structure on the scalar field.
 
 ## Additional results
 
+* `EuclideanSpace.dotProduct_ofLp_self`: the coordinate dot product of a real Euclidean vector
+  with itself is its squared norm.
 * `EuclideanSpace.measurableSet_setOf_forall_pos`: the real positive orthant is measurable.
 * `EuclideanSpace.sqrt_card_pos`: the square root of the dimension is positive.
 * `EuclideanSpace.sum_mul_dist_basisFun_le_sqrt`: a point of the standard simplex is, on average
@@ -60,6 +62,13 @@ noncomputable section
 open scoped BigOperators
 
 namespace EuclideanSpace
+
+/-- The dot product of the coordinates of a real Euclidean vector with themselves is its squared
+norm. -/
+theorem dotProduct_ofLp_self {ι : Type*} [Fintype ι] (x : EuclideanSpace ℝ ι) :
+    WithLp.ofLp x ⬝ᵥ WithLp.ofLp x = ‖x‖ ^ 2 := by
+  rw [← real_inner_self_eq_norm_sq, EuclideanSpace.inner_eq_star_dotProduct]
+  simp
 
 /-- The positive orthant in finite real Euclidean space is measurable. -/
 theorem measurableSet_setOf_forall_pos {ι : Type*} [Finite ι] :

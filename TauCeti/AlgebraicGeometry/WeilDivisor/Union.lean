@@ -44,8 +44,8 @@ noncomputable section
 private lemma exists_sup (D : EffectiveDivisorOfDegree X d) (E : EffectiveDivisorOfDegree X e) :
     ∃ F : EffectiveDivisorOfDegree X (degree ((D : WeilDivisor X) ⊔ E)).toNat,
       (F : WeilDivisor X) = (D : WeilDivisor X) ⊔ E :=
-  ⟨⟨(D : WeilDivisor X) ⊔ E, D.isEffective.sup,
-    (Int.toNat_of_nonneg D.isEffective.sup.degree_nonneg).symm⟩, rfl⟩
+  ⟨⟨(D : WeilDivisor X) ⊔ E, le_sup_of_le_left D.coe_nonneg,
+    (Int.toNat_of_nonneg (degree_nonneg (le_sup_of_le_left D.coe_nonneg))).symm⟩, rfl⟩
 
 /-- The union of two fixed-degree effective divisors.
 
@@ -74,8 +74,8 @@ lemma multiplicityFinsupp_sup (D : EffectiveDivisorOfDegree X d)
   ext x
   rw [multiplicityFinsupp_apply, coeff_sup, Finsupp.sup_apply, multiplicityFinsupp_apply,
     multiplicityFinsupp_apply]
-  have hD := (isEffective_iff (D : WeilDivisor X)).mp D.isEffective x
-  have hE := (isEffective_iff (E : WeilDivisor X)).mp E.isEffective x
+  have hD := coeff_nonneg D.coe_nonneg x
+  have hE := coeff_nonneg E.coe_nonneg x
   omega
 
 /-- The symmetric-power representative of the union is the pointwise maximum of multiplicity
@@ -149,8 +149,9 @@ lemma degree_inf_toNat_add_degree_sup_toNat (D : EffectiveDivisorOfDegree X d)
     (degree ((D : WeilDivisor X) ⊓ E)).toNat + (degree ((D : WeilDivisor X) ⊔ E)).toNat =
       d + e := by
   have hinf : 0 ≤ degree ((D : WeilDivisor X) ⊓ E) :=
-    (D.isEffective.inf E.isEffective).degree_nonneg
-  have hsup : 0 ≤ degree ((D : WeilDivisor X) ⊔ E) := D.isEffective.sup.degree_nonneg
+    degree_nonneg (_root_.le_inf D.coe_nonneg E.coe_nonneg)
+  have hsup : 0 ≤ degree ((D : WeilDivisor X) ⊔ E) :=
+    degree_nonneg (le_sup_of_le_left D.coe_nonneg)
   have hkey : degree ((D : WeilDivisor X) ⊓ E) + degree ((D : WeilDivisor X) ⊔ E) =
       (d : ℤ) + e := by
     rw [WeilDivisor.degree_inf_add_degree_sup, D.degree_eq, E.degree_eq]

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.ImplicitFunctionTheorem
 public import TauCeti.Geometry.Manifold.RegularValue
-public import TauCeti.Geometry.Manifold.MFDeriv.Chart
+public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Topology.LocallyConstant.Basic
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Integral.Prod
 public import Mathlib.MeasureTheory.Measure.WithDensityFinite
 public import TauCeti.MeasureTheory.Function.Lp.TendstoExponentTop
+import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 
 /-!
 # Iterated `Lᵖ` seminorms on a product measure
@@ -28,6 +29,8 @@ Only the second measure needs to be s-finite.
   seminorm of its section seminorms.
 * `TauCeti.eLpNorm_prod_smul` — the `Lᵖ(μ ⊗ ν)` seminorm of `(x, y) ↦ f x • g y` is the product
   of the `Lᵖ(μ)` seminorm of `f` and the `Lᵖ(ν)` seminorm of `g`.
+* `MeasureTheory.MemLp.ae_memLp_prod_right` — for `f ∈ Lᵖ(μ ⊗ ν)`, almost every section is in
+  `Lᵖ(ν)`.
 -/
 
 public section
@@ -194,3 +197,16 @@ theorem eLpNorm_prod_smul [SFinite ν] {𝕜 : Type*} [TopologicalSpace 𝕜] [C
   rw [eLpNorm_const_mul_ennreal hf.enorm.aestronglyMeasurable, eLpNorm_enorm _ hf, mul_comm]
 
 end TauCeti
+
+/-- If `f ∈ Lᵖ(μ ⊗ ν)` then almost every section `y ↦ f (x, y)` is in `Lᵖ(ν)`. -/
+theorem MeasureTheory.MemLp.ae_memLp_prod_right [SFinite ν] {f : α × β → ε}
+    (hf : MemLp f p (μ.prod ν)) : ∀ᵐ x ∂μ, MemLp (fun y ↦ f (x, y)) p ν := by
+  have h : eLpNorm (fun x ↦ eLpNorm (fun y ↦ f (x, y)) p ν) p μ < ∞ := by
+    rw [← TauCeti.eLpNorm_prod_eq_eLpNorm_eLpNorm hf.aestronglyMeasurable]
+    exact hf
+  set g : α → ℝ≥0∞ := fun x ↦ eLpNorm (fun y ↦ f (x, y)) p ν with hg
+  suffices ∀ᵐ x ∂μ, g x < ∞ from this.mono fun x hx ↦ hx
+  rcases eq_or_ne p 0 with rfl | hp0
+  · filter_upwards [hf.aestronglyMeasurable.prodMk_left] with x hx
+    simp [hg, eLpNorm_exponent_zero hx]
+  · exact TauCeti.ae_lt_top_of_eLpNorm_ne_top hp0 h.ne

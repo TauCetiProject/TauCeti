@@ -24,6 +24,9 @@ over the roots of a polynomial.
   every centre at once.
 * `TauCeti.eq_of_dist_lt_of_dist_lt`: two such centres within the radius of a common point
   coincide.
+* `TauCeti.mem_and_apply_eq_of_surjOn_of_dist_lt`: a map moving the points of a separated set
+  by less than the radius and onto a target is determined by the points of the target near the
+  source points.
 -/
 
 public section
@@ -42,15 +45,11 @@ theorem exists_pos_closedBall_subset_and_lt_dist {T : Finset X} {U : X → Set X
     ∃ r > 0, (∀ w ∈ T, closedBall w r ⊆ U w) ∧ ∀ w ∈ T, ∀ w' ∈ T, w ≠ w' → 2 * r < dist w w' := by
   have h1 : ∀ᶠ r in 𝓝 (0 : ℝ), ∀ w ∈ T, closedBall w r ⊆ U w :=
     (eventually_all_finset T).2 fun w hw => eventually_closedBall_subset (hU w hw)
-  have h2 : ∀ᶠ r in 𝓝 (0 : ℝ), ∀ w ∈ T, ∀ w' ∈ T, w ≠ w' → 2 * r < dist w w' := by
-    refine (eventually_all_finset T).2 fun w _ => (eventually_all_finset T).2 fun w' _ => ?_
-    by_cases hww : w = w'
-    · exact Eventually.of_forall fun _ h => absurd hww h
-    · exact (eventually_lt_nhds (half_pos (dist_pos.2 hww))).mono fun r hr _ => by linarith
-  obtain ⟨r, ⟨h1r, h2r⟩, hr⟩ :=
-    (((h1.and h2).filter_mono nhdsWithin_le_nhds).and self_mem_nhdsWithin).exists
-      (f := 𝓝[>] (0 : ℝ))
-  exact ⟨r, hr, h1r, h2r⟩
+  have h2 : ∀ᶠ r in 𝓝 (0 : ℝ), ∀ w ∈ T, ∀ w' ∈ T, w ≠ w' → 2 * r < dist w w' :=
+    (eventually_all_finset T).2 fun w _ => (eventually_all_finset T).2 fun w' _ =>
+      eventually_imp_distrib_left.2 fun hww =>
+        (eventually_lt_nhds (half_pos (dist_pos.2 hww))).mono fun _ _ => by linarith
+  exact (eventually_mem_nhdsWithin.and (nhdsWithin_le_nhds (h1.and h2))).exists (f := 𝓝[>] 0)
 
 /-- Two points that are either equal or more than `2 * r` apart are equal if both lie within `r`
 of a common point. -/
@@ -58,6 +57,19 @@ theorem eq_of_dist_lt_of_dist_lt {Y : Type*} [PseudoMetricSpace Y] {w w' y : Y} 
     (hsep : w ≠ w' → 2 * r < dist w w') (h : dist y w < r) (h' : dist y w' < r) : w = w' := by
   by_contra hne
   linarith [hsep hne, dist_triangle_left w w' y]
+
+omit [MetricSpace X] in
+/-- A map `e` from `A` onto `B` that moves each point of `A` by less than `r`, with `A` inside
+a set `T` whose distinct points are more than `2 * r` apart, matches a point `w` of `B` lying
+within `r` of a point `z` of `T` with `z`: then `z ∈ A` and `e z = w`. -/
+theorem mem_and_apply_eq_of_surjOn_of_dist_lt [PseudoMetricSpace X] {A B T : Set X} {e : X → X}
+    {r : ℝ} (hA : A ⊆ T) (he : Set.SurjOn e A B) (hsep : ∀ z ∈ T, ∀ w ∈ T, z ≠ w → 2 * r < dist z w)
+    (hclose : ∀ z ∈ A, dist (e z) z < r) {z w : X} (hz : z ∈ T) (hw : w ∈ B) (hwz : dist w z < r) :
+    z ∈ A ∧ e z = w := by
+  obtain ⟨z', hz', rfl⟩ := he hw
+  obtain rfl : z = z' :=
+    eq_of_dist_lt_of_dist_lt (hsep z hz z' (hA hz')) hwz (hclose z' hz')
+  exact ⟨hz', rfl⟩
 
 end TauCeti
 

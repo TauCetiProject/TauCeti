@@ -50,6 +50,11 @@ namespace TopologicalSpace.Opens
 
 variable {X : Type*} [TopologicalSpace X]
 
+/-- The interior of the underlying set of an open set is that open set. -/
+@[simp]
+theorem interior_coe (U : Opens X) : Opens.interior (U : Set X) = U :=
+  Opens.ext U.isOpen.interior_eq
+
 /-- A set of the form `{x | ¬ ∃ U : Opens X, x ∈ U ∧ P U}` is closed: its complement is the union
 of the open sets `U` with `P U`. -/
 theorem isClosed_setOf_not_exists (P : Opens X → Prop) :

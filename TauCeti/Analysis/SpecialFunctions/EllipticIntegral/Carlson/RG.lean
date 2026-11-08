@@ -104,6 +104,59 @@ theorem carlsonRG_def (x y z : ℂ) :
 
 /-! ### Convergence -/
 
+/-- One symmetric summand of the integrand of `carlsonRG` is integrable on `(0, ∞)` when its
+numerator argument `u` lies in `slitPlane`: it is `u (t + u)^(-3/2) (t + v)^(-1/2) (t + w)^(-1/2) t
+= O((1 + t)^(-3/2))` on `(0, ∞)`, since `(t + v)^(-1/2) (t + w)^(-1/2) t = O(1)`. -/
+private theorem integrableOn_summand_of_mem_slitPlane {u v w : ℂ} (hu : u ∈ slitPlane)
+    (hv : v ∈ slitPlane ∪ {0}) (hw : w ∈ slitPlane ∪ {0}) :
+    IntegrableOn (fun t : ℝ => ((t : ℂ) + u) ^ (-(1 / 2) : ℂ) *
+      ((t : ℂ) + v) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + w) ^ (-(1 / 2) : ℂ) *
+        (u / ((t : ℂ) + u)) * t) (Ioi 0) := by
+  have hrew (t : ℝ) : ((t : ℂ) + u) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + v) ^ (-(1 / 2) : ℂ) *
+      ((t : ℂ) + w) ^ (-(1 / 2) : ℂ) * (u / ((t : ℂ) + u)) * t =
+      u * (((t : ℂ) + u) ^ (-(3 / 2) : ℂ) * ((t : ℂ) + v) ^ (-(1 / 2) : ℂ) *
+        ((t : ℂ) + w) ^ (-(1 / 2) : ℂ) * t) := by
+    have hpow : ((t : ℂ) + u) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + u)⁻¹ =
+        ((t : ℂ) + u) ^ (-(3 / 2) : ℂ) := by
+      rw [TauCeti.cpow_mul_inv (by norm_num)]
+      norm_num
+    rw [div_eq_mul_inv u ((t : ℂ) + u)]
+    linear_combination
+      (u * ((t : ℂ) + v) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + w) ^ (-(1 / 2) : ℂ) * t) * hpow
+  simp_rw [hrew]
+  refine Integrable.const_mul ?_ u
+  have hcont := (((TauCeti.continuousOn_ofReal_add_cpow (Or.inl hu) (-(3 / 2))).mul
+    (TauCeti.continuousOn_ofReal_add_cpow hv (-(1 / 2)))).mul
+    (TauCeti.continuousOn_ofReal_add_cpow hw (-(1 / 2)))).mul
+    Complex.continuous_ofReal.continuousOn
+  obtain ⟨Cu, hCu0, hCu⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_one_add_rpow hu
+    (r := -(3 / 2)) (by norm_num)
+  have hr : (-(1 / 2) : ℝ) ≤ 0 := by norm_num
+  obtain ⟨Cv, hCv⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow hv hr
+  obtain ⟨Cw, hCw⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow hw hr
+  have hCv0 : 0 ≤ Cv := by simpa using (norm_nonneg _).trans (hCv 1 one_pos)
+  have hCw0 : 0 ≤ Cw := by simpa using (norm_nonneg _).trans (hCw 1 one_pos)
+  push_cast at hCu hCv hCw
+  refine ((TauCeti.integrableOn_rpow_mul_one_add_rpow one_pos one_half_pos).const_mul
+    (Cu * Cv * Cw)).mono' (hcont.aestronglyMeasurable measurableSet_Ioi) ?_
+  filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
+  have ht0 : (0 : ℝ) < t := ht
+  have ht_cancel : t ^ (-(1 / 2) : ℝ) * t ^ (-(1 / 2) : ℝ) * t = 1 := by
+    rw [← Real.rpow_add ht0]
+    norm_num [Real.rpow_neg_one, inv_mul_cancel₀ ht0.ne']
+  simp only [norm_mul, Complex.norm_real, Real.norm_of_nonneg ht0.le]
+  calc ‖((t : ℂ) + u) ^ (-(3 / 2) : ℂ)‖ * ‖((t : ℂ) + v) ^ (-(1 / 2) : ℂ)‖ *
+        ‖((t : ℂ) + w) ^ (-(1 / 2) : ℂ)‖ * t
+      ≤ (Cu * (1 + t) ^ (-(3 / 2) : ℝ)) * (Cv * t ^ (-(1 / 2) : ℝ)) *
+          (Cw * t ^ (-(1 / 2) : ℝ)) * t := by
+        gcongr
+        exacts [hCu t ht0.le, hCv t ht0, hCw t ht0]
+    _ = Cu * Cv * Cw * (t ^ (-(1 / 2) : ℝ) * t ^ (-(1 / 2) : ℝ) * t) *
+        (1 + t) ^ (-(3 / 2) : ℝ) := by ring
+    _ = Cu * Cv * Cw * (t ^ ((1 : ℝ) - 1) * (1 + t) ^ (-((1 : ℝ) + 1 / 2))) := by
+        rw [ht_cancel]
+        norm_num
+
 /-- **Convergence of `R_G`.** The integrand of `carlsonRG x y z` is integrable on `(0, ∞)`
 whenever `x, y, z ∈ slitPlane ∪ {0}`, including when two or all three arguments vanish. -/
 theorem integrableOn_carlsonRGIntegrand {x y z : ℂ} (hx : x ∈ slitPlane ∪ {0})
@@ -118,50 +171,7 @@ theorem integrableOn_carlsonRGIntegrand {x y z : ℂ} (hx : x ∈ slitPlane ∪ 
         ((t : ℂ) + v) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + w) ^ (-(1 / 2) : ℂ) *
           (u / ((t : ℂ) + u)) * t) (Ioi 0) := by
     rcases hu with hu | hu
-    · have hrew (t : ℝ) : ((t : ℂ) + u) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + v) ^ (-(1 / 2) : ℂ) *
-          ((t : ℂ) + w) ^ (-(1 / 2) : ℂ) * (u / ((t : ℂ) + u)) * t =
-          u * (((t : ℂ) + u) ^ (-(3 / 2) : ℂ) * ((t : ℂ) + v) ^ (-(1 / 2) : ℂ) *
-            ((t : ℂ) + w) ^ (-(1 / 2) : ℂ) * t) := by
-        have hpow : ((t : ℂ) + u) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + u)⁻¹ =
-            ((t : ℂ) + u) ^ (-(3 / 2) : ℂ) := by
-          rw [TauCeti.cpow_mul_inv (by norm_num)]
-          norm_num
-        rw [div_eq_mul_inv u ((t : ℂ) + u)]
-        linear_combination
-          (u * ((t : ℂ) + v) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + w) ^ (-(1 / 2) : ℂ) * t) * hpow
-      simp_rw [hrew]
-      refine Integrable.const_mul ?_ u
-      have hcont := (((TauCeti.continuousOn_ofReal_add_cpow (Or.inl hu) (-(3 / 2))).mul
-        (TauCeti.continuousOn_ofReal_add_cpow hv (-(1 / 2)))).mul
-        (TauCeti.continuousOn_ofReal_add_cpow hw (-(1 / 2)))).mul
-        Complex.continuous_ofReal.continuousOn
-      obtain ⟨Cu, hCu0, hCu⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_one_add_rpow hu
-        (r := -(3 / 2)) (by norm_num)
-      have hr : (-(1 / 2) : ℝ) ≤ 0 := by norm_num
-      obtain ⟨Cv, hCv⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow hv hr
-      obtain ⟨Cw, hCw⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow hw hr
-      have hCv0 : 0 ≤ Cv := by simpa using (norm_nonneg _).trans (hCv 1 one_pos)
-      have hCw0 : 0 ≤ Cw := by simpa using (norm_nonneg _).trans (hCw 1 one_pos)
-      push_cast at hCu hCv hCw
-      refine ((TauCeti.integrableOn_rpow_mul_one_add_rpow one_pos one_half_pos).const_mul
-        (Cu * Cv * Cw)).mono' (hcont.aestronglyMeasurable measurableSet_Ioi) ?_
-      filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
-      have ht0 : (0 : ℝ) < t := ht
-      have ht_cancel : t ^ (-(1 / 2) : ℝ) * t ^ (-(1 / 2) : ℝ) * t = 1 := by
-        rw [← Real.rpow_add ht0]
-        norm_num [Real.rpow_neg_one, inv_mul_cancel₀ ht0.ne']
-      simp only [norm_mul, Complex.norm_real, Real.norm_of_nonneg ht0.le]
-      calc ‖((t : ℂ) + u) ^ (-(3 / 2) : ℂ)‖ * ‖((t : ℂ) + v) ^ (-(1 / 2) : ℂ)‖ *
-            ‖((t : ℂ) + w) ^ (-(1 / 2) : ℂ)‖ * t
-          ≤ (Cu * (1 + t) ^ (-(3 / 2) : ℝ)) * (Cv * t ^ (-(1 / 2) : ℝ)) *
-              (Cw * t ^ (-(1 / 2) : ℝ)) * t := by
-            gcongr
-            exacts [hCu t ht0.le, hCv t ht0, hCw t ht0]
-        _ = Cu * Cv * Cw * (t ^ (-(1 / 2) : ℝ) * t ^ (-(1 / 2) : ℝ) * t) *
-            (1 + t) ^ (-(3 / 2) : ℝ) := by ring
-        _ = Cu * Cv * Cw * (t ^ ((1 : ℝ) - 1) * (1 + t) ^ (-((1 : ℝ) + 1 / 2))) := by
-            rw [ht_cancel]
-            norm_num
+    · exact integrableOn_summand_of_mem_slitPlane hu hv hw
     · rw [Set.mem_singleton_iff.mp hu]
       simp
   refine (((hterm hx hy hz).add (hterm hy hz hx)).add (hterm hz hx hy)).congr_fun
