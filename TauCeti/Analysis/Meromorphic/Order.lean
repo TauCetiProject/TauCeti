@@ -10,7 +10,11 @@ public import Mathlib.Analysis.RCLike.Basic
 import Mathlib.Analysis.Normed.Module.Convex
 
 /-!
-# Finite meromorphic order on closed discs from boundary conditions
+# Meromorphic order from limits and connected sets
+
+A nonzero limit of `(z - c) • f z` at `c` detects an exact simple pole of `f`.
+An analytic function on a connected set that is nonzero somewhere has finite meromorphic
+order throughout the set.
 
 On a nonempty closed disc `closedBall c R` over `ℝ` or `ℂ` (`RCLike 𝕜`), the boundary point
 `c + R` lies on `sphere c R` and `closedBall c R` is convex, hence preconnected. Consequently,
@@ -21,6 +25,10 @@ meromorphic order to every point of `closedBall c R`.
 
 ## Main results
 
+* `MeromorphicAt.meromorphicOrderAt_eq_neg_one_of_tendsto_sub_smul`: a nonzero residue limit
+  forces meromorphic order exactly `-1`.
+* `AnalyticOnNhd.meromorphicOrderAt_ne_top_of_exists_ne_zero`: a nonzero value on a connected
+  set rules out infinite order throughout the set.
 * `MeromorphicOn.meromorphicOrderAt_ne_top_of_forall_mem_sphere`: finite meromorphic order on the
   bounding sphere propagates throughout the closed disc.
 * `AnalyticOnNhd.meromorphicOrderAt_ne_top_of_forall_mem_sphere_ne_zero`: an analytic function on
@@ -30,10 +38,37 @@ meromorphic order to every point of `closedBall c R`.
 
 public section
 
-open Metric
+/-- An analytic function on a connected set has finite meromorphic order everywhere
+on that set if it is nonzero at some point of the set. -/
+theorem AnalyticOnNhd.meromorphicOrderAt_ne_top_of_exists_ne_zero
+    {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {U : Set 𝕜} {f : 𝕜 → E} (hf : AnalyticOnNhd 𝕜 f U) (hU : IsConnected U)
+    (h0 : ∃ z ∈ U, f z ≠ 0) {z : 𝕜} (hz : z ∈ U) : meromorphicOrderAt f z ≠ ⊤ := by
+  have hfin := (hf.meromorphicOn.exists_meromorphicOrderAt_ne_top_iff_forall hU).mp
+  have hex : ∃ z : U, meromorphicOrderAt f z ≠ ⊤ := by
+    obtain ⟨z, hz, hzero⟩ := h0
+    refine ⟨⟨z, hz⟩, ?_⟩
+    rw [(hf z hz).meromorphicOrderAt_eq, (hf z hz).analyticOrderAt_eq_zero.mpr hzero]
+    simp
+  exact hfin hex ⟨z, hz⟩
+
+open Filter Metric Topology
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {f : 𝕜 → E} {c : 𝕜} {R : ℝ}
+
+/-- A meromorphic function has an exact simple pole if multiplying by the displacement from
+that point gives a nonzero punctured limit. -/
+theorem MeromorphicAt.meromorphicOrderAt_eq_neg_one_of_tendsto_sub_smul
+    (hf : MeromorphicAt f c) {a : E} (ha : a ≠ 0)
+    (hlim : Tendsto (fun z ↦ (z - c) • f z) (𝓝[≠] c) (𝓝 a)) :
+    meromorphicOrderAt f c = (-1 : ℤ) := by
+  have hm : MeromorphicAt (fun z : 𝕜 ↦ z - c) c := by fun_prop
+  have h := (tendsto_ne_zero_iff_meromorphicOrderAt_eq_zero (hm.smul hf)).mp
+    ⟨a, ha, hlim⟩
+  rw [meromorphicOrderAt_smul hm hf, meromorphicOrderAt_id_sub_const] at h
+  exact (WithTop.add_left_inj (by simp : (1 : WithTop ℤ) ≠ ⊤)).mp
+    (h.trans (by norm_num : (0 : WithTop ℤ) = 1 + (-1 : ℤ)))
 
 /-- If `f` is meromorphic on `closedBall c R` and has finite meromorphic order at every point of
 the bounding sphere `sphere c R`, then `f` has finite meromorphic order throughout

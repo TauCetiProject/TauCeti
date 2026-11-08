@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Group.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Add
 -- `Mathlib.Analysis.SpecialFunctions.Pow.Continuity` and
@@ -29,6 +30,8 @@ quantity being estimated.
 ## Main statements
 
 * `TauCeti.tendsto_lintegral_min_atTop`: `∫⁻ x, min (f x) M ∂μ → ∫⁻ x, f x ∂μ` as `M → ∞`.
+* `TauCeti.lintegral_enorm_rpow_eq_setLIntegral`: the `q`-th power integral of a truncation to a
+  measurable set is the truncated integral.
 * `TauCeti.lintegral_rpow_le_of_forall_le`: a bound on `∫⁻ φ ^ q` for the measurable `φ ≤ G` with
   `∫⁻ φ ^ q` finite is a bound on `∫⁻ G ^ q`.
 -/
@@ -59,6 +62,15 @@ theorem tendsto_lintegral_min_atTop {f : α → ℝ≥0∞} (hf : AEMeasurable f
     fun _ ↦ lintegral_mono fun _ ↦ min_le_left _ _
   simpa using ENNReal.coe_le_coe.2 (Nat.floor_le (a := M) zero_le)
 
+/-- The `q`-th power integral of a truncation of `f` is a truncated integral of `‖f‖ ^ q`. -/
+theorem lintegral_enorm_rpow_eq_setLIntegral {E : Type*} [TopologicalSpace E]
+    [ESeminormedAddMonoid E] {q : ℝ} {f g : α → E} {R : Set α} (hR : MeasurableSet R)
+    (hg : g =ᵐ[μ] R.indicator f) (hq : 0 < q) :
+    ∫⁻ x, ‖g x‖ₑ ^ q ∂μ = ∫⁻ x in R, ‖f x‖ₑ ^ q ∂μ := by
+  rw [← lintegral_indicator hR]
+  refine lintegral_congr_ae ?_
+  filter_upwards [hg] with x hx
+  by_cases hxR : x ∈ R <;> simp [hx, hxR, ENNReal.zero_rpow_of_pos hq]
 
 /-- **Monotone convergence through truncations.** For a σ-finite measure `μ` and `0 < q`, if
 `∫⁻ φ ^ q ≤ C` for every measurable `φ ≤ G` with `∫⁻ φ ^ q` finite, then `∫⁻ G ^ q ≤ C`.

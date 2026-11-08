@@ -24,7 +24,7 @@ three matrix shapes
 where `i ≠ j`. This file defines a standard generator for every root of each shape. The
 difference-root generator has paired entries in its diagonal blocks, while the two sum-root
 generators have a skew pair in the upper-right or lower-left block. The block description makes
-membership in the split type-`D` Lie algebra immediate from `Matrix.fromBlocks_mem_typeD`.
+membership in the split type-`D` Lie algebra immediate from `Matrix.fromBlocks_mem_typeD_iff`.
 
 The entry-support criterion for the diagonal Cartan then places each generator in its named root
 space over an arbitrary commutative ring. At the simple roots, these families agree with the
@@ -145,26 +145,22 @@ variable [CommRing K] [Fintype ι]
 
 /-- A difference-root matrix is skew-adjoint for the split type-`D` Gram matrix. -/
 theorem differenceRootMatrix_mem_typeD (i j : ι) :
-    differenceRootMatrix (K := K) i j ∈ LieAlgebra.Orthogonal.typeD ι K := by
-  exact Matrix.fromBlocks_mem_typeD (ι := ι) _ 0 0 (by simp) (by simp)
+    differenceRootMatrix (K := K) i j ∈ LieAlgebra.Orthogonal.typeD ι K :=
+  Matrix.fromBlocks_mem_typeD_iff.mpr ⟨by simp, by simp, rfl⟩
 
 /-- A positive sum-root matrix is skew-adjoint for the split type-`D` Gram matrix. -/
 theorem sumRootMatrix_mem_typeD (i j : ι) :
     sumRootMatrix (K := K) i j ∈ LieAlgebra.Orthogonal.typeD ι K := by
   rw [sumRootMatrix_def]
-  simpa only [Matrix.transpose_zero, neg_zero] using
-    Matrix.fromBlocks_mem_typeD (K := K) (ι := ι) 0
-      (Matrix.single i j 1 - Matrix.single j i 1) 0
-        (Matrix.transpose_single_sub_single i j (a := (1 : K))) (by simp)
+  exact Matrix.fromBlocks_mem_typeD_iff.mpr
+    ⟨Matrix.transpose_single_sub_single i j (a := (1 : K)), by simp, by simp⟩
 
 /-- A negative sum-root matrix is skew-adjoint for the split type-`D` Gram matrix. -/
 theorem negSumRootMatrix_mem_typeD (i j : ι) :
     negSumRootMatrix (K := K) i j ∈ LieAlgebra.Orthogonal.typeD ι K := by
   rw [negSumRootMatrix_def]
-  simpa only [Matrix.transpose_zero, neg_zero] using
-    Matrix.fromBlocks_mem_typeD (K := K) (ι := ι) 0 0
-      (Matrix.single i j 1 - Matrix.single j i 1) (by simp)
-        (Matrix.transpose_single_sub_single i j (a := (1 : K)))
+  exact Matrix.fromBlocks_mem_typeD_iff.mpr
+    ⟨by simp, Matrix.transpose_single_sub_single i j (a := (1 : K)), by simp⟩
 
 /-! ## Bundled generators -/
 
