@@ -93,8 +93,7 @@ theorem eq_of_mk_toInvertibleSheaf_eq_of_genus_pos
   rw [WeilDivisor.OrderSystem.linearlyEquivalent_iff, neg_sub_neg,
     ← WeilDivisor.OrderSystem.linearlyEquivalent_iff] at hlin
   have hk : IsIntegrallyClosedIn K Y.functionField :=
-    Y.isIntegrallyClosedIn_functionField_of_residueDegree_eq_one (x := (x : Y))
-      (residueDegree_eq_one_of_section hs _)
+    Y.isIntegrallyClosedIn_functionField_of_section hs (x := (x : Y)) rfl
   have hxy : x = y := SchemeWeilDivisor.eq_of_linearlyEquivalent_ofPoint_of_genus_pos K hk hg
     (residueDegree_eq_one_of_section hs _) hlin.symm
   have : IsIso ((Y ↘ Spec (.of K)).residueFieldMap (s (IsLocalRing.closedPoint K))) :=

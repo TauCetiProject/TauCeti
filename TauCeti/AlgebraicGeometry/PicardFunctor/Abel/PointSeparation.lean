@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.Genus.BaseChange
-public import TauCeti.AlgebraicGeometry.Geometrically.FunctionField
 public import TauCeti.AlgebraicGeometry.LineBundle.LocalRing
 public import TauCeti.AlgebraicGeometry.PicardFunctor.Abel.Jacobi
 public import TauCeti.AlgebraicGeometry.RationalPoint.PointSeparation
