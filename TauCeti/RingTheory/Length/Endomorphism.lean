@@ -7,8 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import TauCeti.RingTheory.Length
-import Mathlib.LinearAlgebra.Quotient.Pi
 import TauCeti.LinearAlgebra.Dimension.Localization
+import TauCeti.LinearAlgebra.Matrix.Diagonal.Length
 
 /-!
 # The cokernel length of an injective endomorphism
@@ -73,19 +73,16 @@ section Scalar
 
 variable {A M : Type*} [CommRing A] [AddCommGroup M] [Module A M]
 
-/-- Multiplication by `a` on `Aⁿ` has cokernel `(A ⧸ aA)ⁿ`, of length `n * ord_A a`. -/
+/-- Multiplication by `a` on `Aⁿ` has cokernel `(A ⧸ aA)ⁿ`, of length `n * ord_A a`: it is the
+diagonal matrix with constant entry `a` (`Matrix.length_quotient_range_diagonal_mulVecLin`). -/
 theorem length_quotient_lsmul_pi (ι : Type*) [Fintype ι] (a : A) :
     Module.length A ((ι → A) ⧸ LinearMap.range (LinearMap.lsmul A (ι → A) a)) =
       Fintype.card ι * Ring.ord A a := by
-  have hpi : LinearMap.range (LinearMap.lsmul A (ι → A) a) =
-      Submodule.pi Set.univ fun _ ↦ Ideal.span {a} := by
-    ext x
-    simp only [LinearMap.mem_range, LinearMap.lsmul_apply, Submodule.mem_pi, Set.mem_univ,
-      forall_const, Ideal.mem_span_singleton', funext_iff, Pi.smul_apply, smul_eq_mul, mul_comm a]
-    exact ⟨fun ⟨y, hy⟩ i ↦ ⟨y i, hy i⟩, fun h ↦ by choose y hy using h; exact ⟨y, hy⟩⟩
   classical
-  rw [hpi, (Submodule.quotientPi _).length_eq, Module.length_pi_of_fintype, Finset.sum_const,
-    Finset.card_univ, nsmul_eq_mul, Ring.ord]
+  have hdiag : LinearMap.lsmul A (ι → A) a = (Matrix.diagonal fun _ ↦ a).mulVecLin := by
+    ext; simp [Matrix.mulVec_diagonal]
+  rw [hdiag, Matrix.length_quotient_range_diagonal_mulVecLin, Finset.sum_const,
+    Finset.card_univ, nsmul_eq_mul]
 
 /-- **The length of `I ⧸ aI` for an ideal `I`.** For an ideal `I` with `A ⧸ I` of finite length
 and a non-zero-divisor `a`, `length (I ⧸ aI)` is the order of vanishing `Ring.ord A a`, which is

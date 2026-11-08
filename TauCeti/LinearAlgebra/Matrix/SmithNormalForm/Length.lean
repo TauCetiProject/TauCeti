@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Diagonal
 public import Mathlib.RingTheory.OrderOfVanishing.Basic
-import Mathlib.LinearAlgebra.Quotient.Pi
+import TauCeti.LinearAlgebra.Matrix.Diagonal.Length
 
 /-!
 # Cokernel length and determinant
@@ -17,8 +17,9 @@ its cokernel is the order of its determinant. In particular, over a discrete val
 this computes the cokernel length by the normalized valuation of the determinant. Applied
 to a trace Gram matrix, this is the linear algebra input to the discriminant-length formula.
 
-The diagonal computation works over any commutative ring, including for zero entries.
-The general computation uses `Matrix.exists_mul_mul_eq_diagonal` and
+The diagonal computation `Matrix.length_quotient_range_diagonal_mulVecLin` works over any
+commutative ring, including for zero entries. The general computation uses
+`Matrix.exists_mul_mul_eq_diagonal` and
 invariance of quotients under linear equivalences; no choice of uniformizer is needed.
 
 ## References
@@ -31,26 +32,6 @@ public section
 namespace Matrix
 
 variable {R ι : Type*} [CommRing R] [Fintype ι] [DecidableEq ι]
-
-/-- The cokernel of a diagonal matrix has length equal to the sum of the orders of its
-entries. Zero entries are allowed, with length and order valued in `ℕ∞`. -/
-theorem length_quotient_range_diagonal_mulVecLin (d : ι → R) :
-    Module.length R ((ι → R) ⧸ LinearMap.range (diagonal d).mulVecLin) =
-      ∑ i, Ring.ord R (d i) := by
-  have hrange : LinearMap.range (diagonal d).mulVecLin =
-      Submodule.pi Set.univ (fun i ↦ (Ideal.span {d i} : Submodule R R)) := by
-    ext x
-    simp only [LinearMap.mem_range, Submodule.mem_pi, Set.mem_univ, forall_const,
-      Ideal.mem_span_singleton]
-    constructor
-    · rintro ⟨y, rfl⟩ i
-      exact ⟨y i, by simp [mulVec_diagonal]⟩
-    · intro hx
-      choose y hy using hx
-      exact ⟨y, by ext i; simpa [mulVecLin_apply, mulVec_diagonal] using (hy i).symm⟩
-  rw [hrange, (Submodule.quotientPi (fun i ↦ (Ideal.span {d i} : Submodule R R))).length_eq,
-    Module.length_pi_of_fintype]
-  rfl
 
 /-- Over a principal ideal domain, the cokernel length of a square matrix with nonzero
 determinant is the order of its determinant. For a discrete valuation ring this is the
