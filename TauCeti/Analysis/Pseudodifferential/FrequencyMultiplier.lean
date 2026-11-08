@@ -230,13 +230,13 @@ Mathlib's Bessel potential `TemperedDistribution.besselPotential`
 (`TauCeti.toTemperedDistribution_quantizeFrequencyCLM_besselPotential`). -/
 def besselPotential (s : ℝ) : Symbol n V V s :=
   ofFrequency (fun ξ ↦ (((1 + ‖(2 * π)⁻¹ • ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • ContinuousLinearMap.id ℂ V)
-    ((Complex.ofRealCLM.contDiff.comp (contDiff_one_add_norm_smul_sq_rpow _ _)).smul
-      contDiff_const)
+    ((Complex.ofRealCLM.contDiff.comp
+      (Function.hasTemperateGrowth_one_add_norm_smul_sq_rpow _ _).1).smul contDiff_const)
     fun k ↦ by
       simpa only [ContinuousLinearMap.smulRight_apply, Complex.ofRealCLM_apply] using
         ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_le_one_add_norm_sq_rpow
           (Complex.ofRealCLM.smulRight (ContinuousLinearMap.id ℂ V))
-          ((contDiff_one_add_norm_smul_sq_rpow _ _).of_le (mod_cast le_top))
+          ((Function.hasTemperateGrowth_one_add_norm_smul_sq_rpow _ _).1.of_le (mod_cast le_top))
           (exists_norm_iteratedFDeriv_besselWeight_le s k)
 
 @[simp]

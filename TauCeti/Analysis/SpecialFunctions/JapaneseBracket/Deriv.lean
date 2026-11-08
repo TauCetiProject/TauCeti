@@ -40,9 +40,9 @@ factor, so `(1 + ‖c x‖ ^ 2) ^ r` satisfies the same bounds.
   for `⟪x, v⟫ (1 + ‖x‖ ^ 2) ^ r`.
 * `TauCeti.one_add_norm_sq_rpow_half_le_one_add_norm_rpow`: for `p ≥ 0`,
   `(1 + ‖x‖ ^ 2) ^ (p / 2) ≤ (1 + ‖x‖) ^ p`.
-* `TauCeti.exists_one_add_norm_smul_sq_rpow_le`, `TauCeti.contDiff_one_add_norm_smul_sq_rpow`,
+* `TauCeti.exists_one_add_norm_smul_sq_rpow_le`,
   `TauCeti.exists_norm_iteratedFDeriv_one_add_norm_smul_sq_rpow_le`: the bracket power of a
-  rescaled argument `c x`, its smoothness and its derivative bounds.
+  rescaled argument `c x` and its derivative bounds.
 * `ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_le_one_add_norm_sq_rpow`: composing on the
   left with a continuous linear map preserves bracket bounds on derivatives.
 
@@ -219,12 +219,6 @@ theorem exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_le (v : E) (r 
   exact (innerSL ℝ v).exists_norm_iteratedFDeriv_smul_le_one_add_norm_sq_rpow
     ((contDiff_const.add (contDiff_norm_sq ℝ)).rpow_const_of_ne fun x ↦ by positivity)
     fun i _ ↦ exists_norm_iteratedFDeriv_one_add_norm_sq_rpow_le r i
-
-/-- The rescaled bracket power `(1 + ‖c x‖ ^ 2) ^ r` is smooth. -/
-theorem contDiff_one_add_norm_smul_sq_rpow (c r : ℝ) :
-    ContDiff ℝ ∞ (fun x : E ↦ (1 + ‖c • x‖ ^ 2) ^ r) :=
-  (contDiff_const.add ((contDiff_norm_sq ℝ).comp (contDiff_const_smul c))).rpow_const_of_ne
-    fun x ↦ (show (0 : ℝ) < 1 + ‖c • x‖ ^ 2 by positivity).ne'
 
 /-- **Derivative bounds for a rescaled bracket power.** For `c ≠ 0`, every real `r` and every
 `k`, `‖D^k (1 + ‖c x‖ ^ 2) ^ r‖ ≤ C (1 + ‖x‖ ^ 2) ^ (r - k / 2)`. -/
