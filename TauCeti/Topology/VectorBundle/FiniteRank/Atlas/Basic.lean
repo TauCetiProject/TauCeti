@@ -135,6 +135,46 @@ theorem range_stratum (n : ℕ) :
       cases hp
       exact ⟨⟨⟨x, rfl⟩, v⟩, rfl⟩
 
+section Continuity
+
+variable {Y : Type*} [TopologicalSpace Y] {b : Y → X}
+
+/-- A map into a reconstructed total space is continuous exactly when its restrictions
+to the rank strata, read in the native core total spaces, are continuous. -/
+theorem continuous_mk_iff_rankStrata (hb : Continuous b) (s : ∀ y, A.Fiber (b y)) :
+    Continuous (fun y => (⟨b y, s y⟩ : TotalSpace Unit A.Fiber)) ↔
+      ∀ n : ℕ, Continuous (fun y : {y : Y // A.rank (b y) = n} =>
+        (⟨⟨b y, y.2⟩, fun i => s y (Fin.cast y.2.symm i)⟩ : (A.charts n).TotalSpace)) := by
+  constructor
+  · intro hs n
+    apply (IsEmbedding.sigmaMk (σ := fun n => (A.charts n).TotalSpace)).continuous_iff.2
+    convert A.totalSpaceHomeomorph.symm.continuous.comp (hs.comp continuous_subtype_val) using 1
+    funext ⟨y, hy⟩
+    cases hy
+    simp only [Function.comp_apply, totalSpaceHomeomorph_symm_apply, Fin.cast_refl, id_eq]
+  · intro hs
+    apply continuous_of_cover_nhds (s := fun n : ℕ => {y : Y | A.rank (b y) = n})
+    · intro y
+      exact ⟨A.rank (b y), ((A.rank.isLocallyConstant.isOpen_fiber _).preimage hb).mem_nhds rfl⟩
+    · intro n
+      rw [continuousOn_iff_continuous_domRestrict]
+      convert A.totalSpaceHomeomorph.continuous.comp (continuous_sigmaMk.comp (hs n)) using 1
+      funext ⟨y, hy⟩
+      cases hy
+      simp only [Set.domRestrict_apply, Function.comp_apply, totalSpaceHomeomorph_apply,
+        Fin.cast_refl, id_eq]
+
+/-- The zero section of a variable-rank atlas is continuous. -/
+@[fun_prop]
+theorem continuous_zeroSection :
+    Continuous (fun x => (⟨x, 0⟩ : TotalSpace Unit A.Fiber)) := by
+  apply (A.continuous_mk_iff_rankStrata continuous_id _).2
+  intro n
+  exact (Bundle.Trivialization.continuous_zeroSection 𝕜
+    (F := Fin n → 𝕜) (E := (A.charts n).Fiber)).congr (fun _ => rfl)
+
+end Continuity
+
 section Reconstruction
 
 variable (𝕜) (r : LocallyConstant X ℕ)

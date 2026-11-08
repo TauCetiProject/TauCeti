@@ -25,9 +25,8 @@ sections are continuous (`ContinuousAt.add_section`, `ContinuousAt.smul_section`
 `ContinuousAt.sum_section`, `Continuous.finsum_section_of_locallyFinite`; for global scalar
 multiples use `Continuous.smul_totalSpace`), and a function with
 closed support inside an open set multiplies a section continuous on that set into a globally
-continuous section (`ContinuousOn.smul_section_of_tsupport`). The more general
-`Continuous.add_totalSpace` also allows the common base point of the two summands to vary
-along a map from another space.
+continuous section (`ContinuousOn.smul_section_of_tsupport`). For global continuity of
+fibrewise sums along a varying base map from another space, use `Continuous.add_totalSpace`.
 
 A linear trivialization reconstructs a section from arbitrary model coordinates by
 `Bundle.Trivialization.sectionFromCoordinates`, with the two coordinate inverse laws on its base
@@ -154,7 +153,7 @@ include 𝕜 in
 theorem Continuous.add_section (hs : Continuous fun x ↦ TotalSpace.mk' F x (s x))
     (ht : Continuous fun x ↦ TotalSpace.mk' F x (t x)) :
     Continuous fun x ↦ TotalSpace.mk' F x (s x + t x) :=
-  continuous_iff_continuousAt.mpr fun _ ↦ hs.continuousAt.add_section 𝕜 ht.continuousAt
+  hs.add_totalSpace (b := id) 𝕜 ht
 
 /-- The product of a scalar function and a section, both continuous at a point within a set, is
 continuous there. -/
