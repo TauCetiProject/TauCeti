@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Topology.Compactness.LocallyCompact
 public import Mathlib.Topology.Sets.Opens
-import Mathlib.Topology.Compactness.SigmaCompact
 import Mathlib.Topology.Separation.Hausdorff
 
 /-!
@@ -23,10 +22,6 @@ statement about a quotient, such as a group modulo a kernel, is pulled back to t
 A continuous injection out of a weakly locally compact space into a Hausdorff space is a
 topological embedding on an open neighbourhood of any compact set
 (`Continuous.exists_opens_isEmbedding_restrict`).
-
-An open subset of a second-countable locally compact space has a monotone sequence of compact
-subsets that exhausts it in the sense that every compact subset lies in one of them
-(`IsOpen.exists_monotone_isCompact_subset_forall_isCompact_subset_exists_subset`).
 -/
 
 public section
@@ -76,21 +71,3 @@ theorem Continuous.exists_opens_isEmbedding_restrict {X Y : Type*} [TopologicalS
     ((hf.comp continuous_subtype_val).isClosedEmbedding
       (hinj.comp Subtype.val_injective)).isEmbedding
   exact ⟨⟨interior L, isOpen_interior⟩, hKL, h.comp (IsEmbedding.inclusion interior_subset)⟩
-
-/-- An open subset `Ω` of a second-countable locally compact space has a monotone sequence of
-compact subsets of `Ω` such that every compact subset of `Ω` lies in one of them. -/
-theorem IsOpen.exists_monotone_isCompact_subset_forall_isCompact_subset_exists_subset
-    {X : Type*} [TopologicalSpace X] [LocallyCompactSpace X] [SecondCountableTopology X]
-    {Ω : Set X} (hΩ : IsOpen Ω) :
-    ∃ L : ℕ → Set X, (∀ m, IsCompact (L m)) ∧ (∀ m, L m ⊆ Ω) ∧ Monotone L ∧
-      ∀ K, IsCompact K → K ⊆ Ω → ∃ m, K ⊆ L m := by
-  have : LocallyCompactSpace Ω := hΩ.locallyCompactSpace
-  let Kx : CompactExhaustion Ω := CompactExhaustion.choice Ω
-  refine ⟨fun m => (↑) '' Kx m, fun m => (Kx.isCompact m).image continuous_subtype_val,
-    fun m => ?_, fun m m' h => image_mono (Kx.subset h), fun K hK hKΩ => ?_⟩
-  · rintro _ ⟨x, -, rfl⟩
-    exact x.2
-  · have hK' : IsCompact (((↑) : Ω → X) ⁻¹' K) :=
-      Topology.IsInducing.subtypeVal.isCompact_preimage' hK (by simpa using hKΩ)
-    obtain ⟨m, hm⟩ := Kx.exists_superset_of_isCompact hK'
-    exact ⟨m, fun x hx => ⟨⟨x, hKΩ hx⟩, hm hx, rfl⟩⟩

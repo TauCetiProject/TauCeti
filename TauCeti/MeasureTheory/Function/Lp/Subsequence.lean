@@ -7,7 +7,8 @@ module
 
 public import Mathlib.MeasureTheory.Function.LpSpace.Complete
 import TauCeti.MeasureTheory.Function.Gluing
-import TauCeti.Topology.Compactness.LocallyCompact
+import TauCeti.MeasureTheory.Function.LpSeminorm.AeEq
+import TauCeti.Topology.Compactness.SigmaCompact
 
 /-!
 # Subsequences converging in `Lᵖ` on compact subsets
@@ -43,29 +44,6 @@ open scoped ENNReal Topology
 variable {X : Type*} [MeasurableSpace X] {μ : Measure X} {F : Type*} [TopologicalSpace X]
   [T2Space X] [LocallyCompactSpace X] [SecondCountableTopology X] [OpensMeasurableSpace X]
   [NormedAddCommGroup F] {p : ℝ≥0∞} [Fact (1 ≤ p)] {Ω : Set X} {u : ℕ → X → F}
-
-omit [TopologicalSpace X] [T2Space X] [LocallyCompactSpace X] [SecondCountableTopology X]
-  [OpensMeasurableSpace X] in
-/-- If `w j` converges to `f` in `Lᵖ(A)` and to `g` in `Lᵖ(B)` along a nontrivial filter, where
-`A ⊆ B`, then `f = g` almost everywhere on `A`. -/
-theorem ae_eq_restrict_of_tendsto_eLpNorm_sub {ι : Type*} {l : Filter ι} [l.NeBot]
-    {A B : Set X} (hAB : A ⊆ B) {w : ι → X → F} {f g : X → F}
-    (hwf : Tendsto (fun j => eLpNorm (w j - f) p (μ.restrict A)) l (𝓝 0))
-    (hwg : Tendsto (fun j => eLpNorm (w j - g) p (μ.restrict B)) l (𝓝 0)) :
-    f =ᵐ[μ.restrict A] g := by
-  have hle (j : ι) : eLpNorm (f - g) p (μ.restrict A) ≤
-      eLpNorm (w j - f) p (μ.restrict A) + eLpNorm (w j - g) p (μ.restrict B) := by
-    calc eLpNorm (f - g) p (μ.restrict A)
-        = eLpNorm ((w j - g) - (w j - f)) p (μ.restrict A) := by rw [sub_sub_sub_cancel_left]
-      _ ≤ eLpNorm (w j - g) p (μ.restrict A) + eLpNorm (w j - f) p (μ.restrict A) :=
-          eLpNorm_sub_le Fact.out
-      _ ≤ _ := by
-          rw [add_comm]
-          gcongr
-  have h0 : eLpNorm (f - g) p (μ.restrict A) = 0 :=
-    le_antisymm (ge_of_tendsto' (by simpa using hwf.add hwg) hle) zero_le
-  filter_upwards [(eLpNorm_eq_zero_iff (zero_lt_one.trans_le Fact.out).ne').1 h0] with y hy
-  simpa [sub_eq_zero] using hy
 
 /-- **Sequential compactness in `Lᵖ_loc`.** Let `Ω` be open, and let `u n` be a sequence of
 functions in `Lᵖ(K)` for every compact `K ⊆ Ω` whose classes form a relatively compact subset of
