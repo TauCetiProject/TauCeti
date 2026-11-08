@@ -335,7 +335,7 @@ private theorem conjWirtingerDeriv_insert_eq_zero_of_delBarCoeff_eq_zero {q : �
     have hvan : f ((insert j (insert k J)).erase i) =ᶠ[𝓝 z] fun _ ↦ 0 := by
       refine eventually_of_mem (hU.mem_nhds hz) fun y hy ↦ hS _ ?_ (fun hsub ↦ ?_) y hy
       · rw [Finset.card_erase_of_mem hi, hcard]
-        rfl
+        omega
       · exact hj (hsub (Finset.mem_erase.2 ⟨Ne.symm hij, Finset.mem_insert_self j _⟩))
     simp [hvan.conjWirtingerDeriv_eq]
 
@@ -362,7 +362,7 @@ private theorem delBarCoeff_ite_subset_eq {q : ℕ} {k : ι} {S : Finset ι}
         rw [Finset.filter_erase, Finset.erase_eq_of_notMem (s := {i ∈ I | i < k}) (by simp)]
       have hcard : #(I.erase k) = q := by
         rw [Finset.card_erase_of_mem hk, hI]
-        rfl
+        omega
       simp only [hsub, ite_true]
       rw [hvk _ hsub hcard, Finset.insert_erase hk, hfilt, smul_smul, ← mul_pow, neg_one_mul,
         neg_neg, one_pow, one_smul]
@@ -456,7 +456,7 @@ private theorem exists_contDiffAt_delBarCoeff_eventually_eq_of_pi_of_eq_zero (q 
         sub_zero]
       have hcard : #(I.erase j) = q + 1 := by
         rw [Finset.card_erase_of_mem hj, hI]
-        rfl
+        omega
       exact ((hf _ hcard).contDiffAt (hpi.mem_nhds hzU)).differentiableAt (by simp)
     have hS' : ∀ I, #I = q + 1 → ¬I ⊆ S → ∀ z ∈ univ.pi W, f' I z = 0 := by
       intro I hI hIS z hz
@@ -533,23 +533,17 @@ theorem exists_contDiffAt_conjWirtingerDeriv_apply_single_eventually_eq_of_pi {U
   let : LinearOrder ι := LinearOrder.lift' (Fintype.equivFin ι) (Fintype.equivFin ι).injective
   obtain rfl : ‹DecidableEq ι› = LinearOrder.toDecidableEq := Subsingleton.elim _ _
   -- The form `f` as a `(0,1)`-form with coefficients indexed by singletons.
-  have hpair {a b : ι} (hab : a < b) (z : ι → ℂ) :
-      delBarCoeff (fun I y ↦ ∑ j ∈ I, f j y) {a, b} z =
-        conjWirtingerDeriv (f b) z (Pi.single a 1) -
-          conjWirtingerDeriv (f a) z (Pi.single b 1) := by
-    have hne : a ≠ b := hab.ne
-    rw [delBarCoeff_def, Finset.sum_pair hne, Finset.erase_insert (by simpa using hne),
-      Finset.erase_insert_of_ne hne, Finset.erase_singleton]
-    simp [Finset.filter_insert, Finset.filter_singleton, hab, hab.not_gt, sub_eq_add_neg]
   obtain ⟨u, hu⟩ := exists_contDiffAt_delBarCoeff_eventually_eq_of_pi (q := 0) hU
     (f := fun I y ↦ ∑ j ∈ I, f j y) (fun I _ ↦ ContDiffOn.sum fun j _ ↦ hf j)
     (fun z hz I hI ↦ by
       obtain ⟨a, b, hab, rfl⟩ := Finset.card_eq_two.1 hI
       rcases hab.lt_or_gt with h | h
-      · rw [hpair h, hclosed z hz a b, sub_self]
-      · rw [Finset.pair_comm, hpair h, hclosed z hz b a, sub_self]) hK hKU
+      · simp only [delBarCoeff_pair _ h, Finset.sum_singleton, hclosed z hz a b, sub_self]
+      · rw [Finset.pair_comm]
+        simp only [delBarCoeff_pair _ h, Finset.sum_singleton, hclosed z hz b a, sub_self]) hK hKU
   refine ⟨u ∅, hu.mono fun z hz ↦ ⟨hz.1 ∅, fun j ↦ ?_⟩⟩
-  simpa [delBarCoeff_def, Finset.filter_singleton] using hz.2 {j} (Finset.card_singleton j)
+  simpa only [delBarCoeff_singleton, Finset.sum_singleton] using
+    hz.2 {j} (Finset.card_singleton j)
 
 /-- **The `bar∂`-Poincaré lemma for `(0,1)`-forms on polydiscs.** A smooth `bar∂`-closed
 `(0,1)`-form `∑ j, f_j d(conj z_j)` on the polydisc `∏ B(c_i, r_i)` is `bar∂`-exact on every

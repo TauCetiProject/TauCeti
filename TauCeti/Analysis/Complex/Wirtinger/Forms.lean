@@ -68,6 +68,32 @@ theorem delBarCoeff_def (u : Finset ι → (ι → ℂ) → F) (I : Finset ι) (
         conjWirtingerDeriv (u (I.erase j)) z (Pi.single j 1) :=
   (rfl)
 
+/-- The function-valued defining formula used to differentiate `delBarCoeff`. -/
+private theorem delBarCoeff_eq_fun (u : Finset ι → (ι → ℂ) → F) (I : Finset ι) :
+    delBarCoeff u I = fun z ↦ ∑ j ∈ I, (-1 : ℂ) ^ #{i ∈ I | i < j} •
+      conjWirtingerDeriv (u (I.erase j)) z (Pi.single j 1) :=
+  funext (delBarCoeff_def u I)
+
+/-- The coefficient of `bar∂ u` indexed by the empty set vanishes. -/
+@[simp]
+theorem delBarCoeff_empty (u : Finset ι → (ι → ℂ) → F) : delBarCoeff u ∅ = 0 := by
+  ext z
+  simp [delBarCoeff_def]
+
+/-- A singleton coefficient of `bar∂ u` is a conjugate coordinate derivative of `u ∅`. -/
+@[simp]
+theorem delBarCoeff_singleton (u : Finset ι → (ι → ℂ) → F) (j : ι) (z : ι → ℂ) :
+    delBarCoeff u {j} z = conjWirtingerDeriv (u ∅) z (Pi.single j 1) := by
+  simp [delBarCoeff_def, Finset.filter_singleton]
+
+/-- A two-element coefficient of `bar∂ u` is the difference of two coordinate derivatives. -/
+theorem delBarCoeff_pair (u : Finset ι → (ι → ℂ) → F) {a b : ι} (hab : a < b) (z : ι → ℂ) :
+    delBarCoeff u {a, b} z = conjWirtingerDeriv (u {b}) z (Pi.single a 1) -
+      conjWirtingerDeriv (u {a}) z (Pi.single b 1) := by
+  rw [delBarCoeff_def, Finset.sum_pair hab.ne, Finset.erase_insert (by simpa using hab.ne),
+    Finset.erase_insert_of_ne hab.ne, Finset.erase_singleton]
+  simp [Finset.filter_insert, Finset.filter_singleton, hab, hab.not_gt, sub_eq_add_neg]
+
 /-- `bar∂` of the zero form vanishes. -/
 @[simp]
 theorem delBarCoeff_zero : delBarCoeff (0 : Finset ι → (ι → ℂ) → F) = 0 := by
@@ -98,12 +124,25 @@ theorem delBarCoeff_sub {u w : Finset ι → (ι → ℂ) → F} {I : Finset ι}
   refine Finset.sum_congr rfl fun j hj ↦ ?_
   rw [Pi.sub_apply, conjWirtingerDeriv_sub (hu j hj) (hw j hj), _root_.sub_apply]
 
+/-- `bar∂` commutes with constant complex scaling of real-differentiable coefficients. -/
+theorem delBarCoeff_const_smul (c : ℂ) {u : Finset ι → (ι → ℂ) → F} {I : Finset ι}
+    {z : ι → ℂ} (hu : ∀ j ∈ I, DifferentiableAt ℝ (u (I.erase j)) z) :
+    delBarCoeff (c • u) I z = c • delBarCoeff u I z := by
+  simp only [delBarCoeff_def, Finset.smul_sum]
+  refine Finset.sum_congr rfl fun j hj ↦ ?_
+  rw [Pi.smul_apply, conjWirtingerDeriv_const_smul (hu j hj), _root_.smul_apply, smul_comm]
+
+/-- `bar∂` commutes with negation of real-differentiable coefficients. -/
+theorem delBarCoeff_neg {u : Finset ι → (ι → ℂ) → F} {I : Finset ι} {z : ι → ℂ}
+    (hu : ∀ j ∈ I, DifferentiableAt ℝ (u (I.erase j)) z) :
+    delBarCoeff (-u) I z = -delBarCoeff u I z := by
+  simpa only [neg_one_smul] using delBarCoeff_const_smul (-1) hu
+
 /-- `bar∂` of a form whose coefficients are `C^(m+1)` at `z` has `C^m` coefficients at `z`. -/
 theorem contDiffAt_delBarCoeff {u : Finset ι → (ι → ℂ) → F} {I : Finset ι} {z : ι → ℂ}
     {m n : WithTop ℕ∞} (hu : ∀ j ∈ I, ContDiffAt ℝ n (u (I.erase j)) z) (hmn : m + 1 ≤ n) :
     ContDiffAt ℝ m (delBarCoeff u I) z := by
-  rw [show delBarCoeff u I = fun y ↦ ∑ j ∈ I, (-1 : ℂ) ^ #{i ∈ I | i < j} •
-      conjWirtingerDeriv (u (I.erase j)) y (Pi.single j 1) from funext (delBarCoeff_def u I)]
+  rw [delBarCoeff_eq_fun]
   exact ContDiffAt.sum fun j hj ↦ ((hu j hj).conjWirtingerDeriv_apply hmn _).const_smul _
 
 omit [Fintype ι] in
@@ -134,13 +173,11 @@ private theorem conjWirtingerDeriv_delBarCoeff_apply {u : Finset ι → (ι → 
     ((hu i hi).hasFDerivAt_conjWirtingerDeriv_apply _).differentiableAt
   have hD : fderiv ℝ (delBarCoeff u J) z = ∑ i ∈ J, (-1 : ℂ) ^ #{x ∈ J | x < i} •
       fderiv ℝ (fun y ↦ conjWirtingerDeriv (u (J.erase i)) y (Pi.single i 1)) z := by
-    rw [show delBarCoeff u J = fun y ↦ ∑ i ∈ J, (-1 : ℂ) ^ #{x ∈ J | x < i} •
-        conjWirtingerDeriv (u (J.erase i)) y (Pi.single i 1) from funext (delBarCoeff_def u J),
-      fderiv_fun_sum (A := fun i y ↦ (-1 : ℂ) ^ #{x ∈ J | x < i} •
+    rw [delBarCoeff_eq_fun, fderiv_fun_sum (A := fun i y ↦ (-1 : ℂ) ^ #{x ∈ J | x < i} •
         conjWirtingerDeriv (u (J.erase i)) y (Pi.single i 1)) fun i hi ↦ (hd i hi).const_smul _]
     exact Finset.sum_congr rfl fun i hi ↦ fderiv_fun_const_smul (hd i hi) _
   rw [conjWirtingerDeriv_eq_sum_smul hD, _root_.sum_apply]
-  rfl
+  simp only [_root_.smul_apply]
 
 /-- **`bar∂ bar∂ = 0`.** For a coordinate `(0,q)`-form whose coefficients indexed by subsets of `I`
 are `C²` at `z`, the coefficient of `d(conj z)_I` in `bar∂ bar∂ u` vanishes at `z`. -/
