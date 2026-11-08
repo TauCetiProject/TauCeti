@@ -41,6 +41,8 @@ which are not treated in this file.
 ## Main results
 
 * `TauCeti.EisensteinSeries.charWeight_intCast`: the weight evaluated at an integer pair.
+* `TauCeti.EisensteinSeries.charWeight_intCast_smul`: scaling an integer pair by `n` multiplies
+  the weight by `ψ(n) φ⁻¹(n)`.
 * `TauCeti.EisensteinSeries.charWeight_vecMul_inv`,
   `TauCeti.EisensteinSeries.charWeight_vecMul_map_inv`: the transformation of the weight under
   `Γ₀(N)`, on integer pairs and on residue pairs.
@@ -84,6 +86,12 @@ depend on the choice of representatives (`charWeight_intCast`). -/
 def charWeight (a : Fin 2 → ZMod N) : ℂ :=
   if v ∣ (a 0).val then ψ (((a 0).val / v : ℕ) : ZMod u) * φ⁻¹ ((a 1).val : ZMod v) else 0
 
+/-- The defining formula of the character weight, on the least nonnegative representatives. -/
+theorem charWeight_def (a : Fin 2 → ZMod N) :
+    charWeight N ψ φ a =
+      if v ∣ (a 0).val then ψ (((a 0).val / v : ℕ) : ZMod u) * φ⁻¹ ((a 1).val : ZMod v) else 0 :=
+  (rfl)
+
 variable {N}
 
 /-- The weight at the reduction of an integer pair `x`: `ψ(x₀ / v) φ⁻¹(x₁)` if `v ∣ x₀`,
@@ -124,6 +132,32 @@ private lemma charWeight_intCast_mul [NeZero N] (huv : u * v ∣ N) {R : ℤ}
     rw [map_mul, map_mul]
     ring
   · simp [h, mt hR.dvd_of_dvd_mul_left h]
+
+/-- Scaling an integer pair by `n` multiplies the weight by `ψ(n) φ⁻¹(n)`. Unlike
+`charWeight_intCast_mul`, `n` need not be coprime to `v`: when `n` rather than `x₀` supplies the
+divisibility by `v`, the factor `φ⁻¹(n)` vanishes. -/
+theorem charWeight_intCast_smul [NeZero N] (huv : u * v ∣ N) (n : ℤ) (x : Fin 2 → ℤ) :
+    charWeight N ψ φ ((↑) ∘ (n • x)) =
+      ψ (n : ZMod u) * φ⁻¹ (n : ZMod v) * charWeight N ψ φ ((↑) ∘ x) := by
+  have hv0 : (v : ℤ) ≠ 0 := by
+    have : v ≠ 0 := fun h ↦ NeZero.ne N (Nat.eq_zero_of_zero_dvd (by simpa [h] using huv))
+    exact_mod_cast this
+  rw [charWeight_intCast ψ φ huv, charWeight_intCast ψ φ huv]
+  simp only [Pi.smul_apply, smul_eq_mul]
+  by_cases h : (v : ℤ) ∣ x 0
+  · simp only [h, h.mul_left n, ↓reduceIte]
+    obtain ⟨e, he⟩ := h
+    rw [he, mul_left_comm, Int.mul_ediv_cancel_left _ hv0, Int.mul_ediv_cancel_left _ hv0]
+    push_cast
+    rw [map_mul, map_mul]
+    ring
+  · simp only [h, ↓reduceIte, mul_zero]
+    split_ifs with hn
+    · have hnu : ¬IsUnit (n : ZMod v) := fun hu ↦
+        h (((ZMod.isUnit_intCast_iff_isCoprime _ _).mp hu).dvd_of_dvd_mul_left hn)
+      rw [Int.cast_mul, map_mul, MulChar.map_nonunit _ hnu]
+      ring
+    · rfl
 
 /-- If scaling the coordinates of residue pairs by units `R` and `S` multiplies the weight by a
 constant `ψ(R) φ⁻¹(S) ≠ 1`, the weights sum to zero. -/
@@ -182,29 +216,15 @@ theorem tsum_charWeight_mul_zpow [NeZero N] (huv : u * v ∣ N) (c a : ℤ) :
         ψ ((-(c / v) : ℤ) : ZMod u) * φ⁻¹ (a : ZMod v) *
           ∑' n : ℤ, ψ (n : ZMod u) * φ⁻¹ (n : ZMod v) * (n : ℂ) ^ (-k)
       else 0 := by
-  simp only [charWeight_intCast ψ φ huv, Matrix.cons_val_zero,
-    Matrix.cons_val_one, Matrix.cons_val_fin_one]
+  have hx (n : ℤ) : ((↑) ∘ ![-(n * c), n * a] : Fin 2 → ZMod N) = (↑) ∘ (n • ![-c, a]) := by
+    ext i
+    fin_cases i <;> simp
+  simp only [hx, charWeight_intCast_smul ψ φ huv, charWeight_intCast ψ φ huv,
+    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one, dvd_neg]
   split_ifs with hc
-  · obtain ⟨c, rfl⟩ := hc
-    have hv : (v : ℤ) ≠ 0 := by
-      have : v ≠ 0 := fun h ↦ NeZero.ne N (Nat.eq_zero_of_zero_dvd (by simpa [h] using huv))
-      exact_mod_cast this
-    rw [Int.mul_ediv_cancel_left _ hv, ← tsum_mul_left]
-    refine tsum_congr fun n ↦ ?_
-    have hdvd : (v : ℤ) ∣ -(n * (v * c)) := Dvd.intro (-(n * c)) (by ring)
-    have hfactor : -(n * (v * c)) = (v : ℤ) * (n * -c) := by ring
-    have hquot : -(n * (v * c)) / (v : ℤ) = n * -c := by
-      rw [hfactor, Int.mul_ediv_cancel_left _ hv]
-    rw [hquot]
-    simp only [hdvd, ↓reduceIte, Int.cast_mul, map_mul]
-    ring
-  · refine (tsum_congr fun n ↦ ?_).trans tsum_zero
-    split_ifs with hn
-    · rw [MulChar.map_nonunit φ⁻¹, mul_zero, zero_mul]
-      intro hu
-      rw [ZMod.isUnit_intCast_iff_isCoprime] at hu
-      exact hc ((hu.of_mul_right_left).dvd_of_dvd_mul_left (by simpa using hn))
-    · rw [zero_mul]
+  · rw [Int.neg_ediv_of_dvd hc, ← tsum_mul_left]
+    exact tsum_congr fun n ↦ by ring
+  · simp
 
 /-- **The transformation of the weight under `Γ₀(N)`.** For `γ ∈ Γ₀(N)` with lower-right entry
 `d`, right multiplication by `γ⁻¹` multiplies the weight by `ψ(d) φ(d)`. -/
