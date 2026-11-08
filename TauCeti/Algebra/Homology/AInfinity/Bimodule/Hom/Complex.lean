@@ -102,6 +102,63 @@ theorem mem_homCochains_iff {p : ℤ} {F :
       LinearMap.IsHomogeneous F (barGrading AA BB MM.grading).piece
         (barGrading AA BB NN.grading).piece p := Iff.rfl
 
+/-- The signed extension of a Taylor map of degree `p` is a bimodule cochain. -/
+theorem cofreeLift_mem_homCochains {p : ℤ}
+    {φ : (TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B →ₗ[R] N}
+    (hφ : LinearMap.IsHomogeneous φ (barGrading AA BB MM.grading).piece
+      (NN.grading.shift 1).piece p) :
+    (Comodule.Hom.cofreeLift
+      (TensorProduct.map ((TensorWords.grading (AA.grading.shift 1)).koszulTwist p) φ ∘ₗ
+        Comodule.leftCoactRTensor (TensorWords R B)
+          (Comodule.leftCofreeCoact R (TensorWords R A) M))).toLinearMap ∈
+      homCochains MM NN p := by
+  let W := TensorWords.grading (AA.grading.shift 1)
+  let V := TensorWords.grading (BB.grading.shift 1)
+  let Y := W.tensorProduct (MM.grading.shift 1)
+  let τ := W.koszulTwist p
+  let δ := Comodule.leftCoactRTensor (TensorWords R B)
+    (Comodule.leftCofreeCoact R (TensorWords R A) M)
+  let L := TensorProduct.map τ φ ∘ₗ δ
+  -- The coalgebra twist makes the left extension respect the signed left coaction.
+  have hτ : Coalgebra.comul ∘ₗ τ = TensorProduct.map τ τ ∘ₗ Coalgebra.comul := by
+    dsimp only [τ, W]
+    rw [TensorWords.koszulTwist_grading, TensorWords.comul_eq_deconcatenation,
+      TensorWords.deconcatenation_natural]
+  have hL : Comodule.leftCofreeCoact R (TensorWords R A) N ∘ₗ L =
+      TensorProduct.map τ L ∘ₗ δ := by
+    dsimp only [L, δ]
+    rw [← LinearMap.comp_assoc, Comodule.leftCofreeCoact_comp_map hτ,
+      LinearMap.comp_assoc, Comodule.leftCofreeCoact_comp_leftCoactRTensor_leftCofreeCoact]
+    simp only [LinearMap.lTensor_def, ← LinearMap.comp_assoc, ← TensorProduct.map_comp,
+      LinearMap.comp_id]
+  refine (mem_homCochains_iff).2 ⟨(Comodule.Hom.cofreeLift L).map_coact, ?_, ?_⟩
+  · rw [Comodule.Hom.cofreeLift_toLinearMap, Comodule.cofree_coact]
+    rw [← LinearMap.comp_assoc, Comodule.leftCoactRTensor_comp_rTensor, hL]
+    simpa only [Comodule.cofreeCoact_def, LinearMap.comp_assoc] using
+      Comodule.assoc_comp_rTensor_comp_cofreeCoact
+        (Comodule.leftCofreeCoact R (TensorWords R A) M) τ L
+  · -- Both coactions and the twist have degree zero; only the Taylor map raises degree.
+    simp only [barGrading_def] at hφ
+    have hτh : LinearMap.IsHomogeneous τ W.piece W.piece 0 := by
+      rw [LinearMap.isHomogeneous_def]
+      intro q x hx
+      simpa only [add_zero] using W.koszulTwist_mem_piece hx p
+    have hR : LinearMap.IsHomogeneous
+        (Comodule.cofreeCoact R (TensorWords R B) (TensorWords R A ⊗[R] M))
+        (Y.tensorProduct V).piece ((Y.tensorProduct V).tensorProduct V).piece 0 := by
+      rw [Comodule.cofreeCoact_def, LinearMap.lTensor_def,
+        TensorWords.comul_eq_deconcatenation]
+      simpa only [zero_add] using (InternalGrading.isHomogeneous_assoc_symm Y V V).comp
+        ((LinearMap.isHomogeneous_id Y.piece).tensorProduct
+          (TensorWords.isHomogeneous_deconcatenation (BB.grading.shift 1)))
+    have hδ := isHomogeneous_leftCoact AA BB MM.grading
+    simp only [barGrading_def] at hδ
+    have h := (((hτh.tensorProduct hφ).comp hδ).tensorProduct
+      (LinearMap.isHomogeneous_id V.piece)).comp hR
+    simpa only [Comodule.Hom.cofreeLift_toLinearMap, Comodule.cofree_coact,
+      Comodule.cofreeCoact_def, LinearMap.rTensor_def, barGrading_def, zero_add, add_zero,
+      W, V, Y, τ, L, δ] using h
+
 namespace homCochains
 
 variable {p : ℤ}
@@ -130,6 +187,44 @@ theorem leftCoact_comp (F : homCochains MM NN p) :
       TensorProduct.map ((TensorWords.grading (AA.grading.shift 1)).koszulTwist p)
         (F : _ →ₗ[R] _) ∘ₗ Comodule.leftCoactRTensor (TensorWords R B)
           (Comodule.leftCofreeCoact R (TensorWords R A) M) := (mem_homCochains_iff.mp F.2).2.1
+
+/-- The two-counit component of a homogeneous bimodule cochain. -/
+noncomputable def taylor (F : homCochains MM NN p) :
+    (TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B →ₗ[R] N :=
+  taylorProj R A B N ∘ₗ (F : _ →ₗ[R] _)
+
+/-- The Taylor map is obtained by removing both output words. -/
+theorem taylor_def (F : homCochains MM NN p) :
+    taylor F = taylorProj R A B N ∘ₗ (F : _ →ₗ[R] _) := (rfl)
+
+/-- A cochain's Taylor map has the same degree in the suspended target grading. -/
+theorem isHomogeneous_taylor (F : homCochains MM NN p) :
+    LinearMap.IsHomogeneous (taylor F) (barGrading AA BB MM.grading).piece
+      (NN.grading.shift 1).piece p := by
+  have hbar := isHomogeneous F
+  simp only [barGrading_def] at hbar ⊢
+  rw [taylor_def, taylorProj_def, Comodule.leftCofreeCounit_def]
+  simpa only [LinearMap.comp_assoc, add_zero] using
+    ((TensorWords.isHomogeneous_lid_comp_rTensor_counit (AA.grading.shift 1)
+      (NN.grading.shift 1)).comp (TensorWords.isHomogeneous_rid_comp_lTensor_counit
+        ((TensorWords.grading (AA.grading.shift 1)).tensorProduct (NN.grading.shift 1))
+        (BB.grading.shift 1))).comp hbar
+
+/-- The signed left extension and right cofree lift recover a cochain from its Taylor map. -/
+theorem eq_cofreeLift (F : homCochains MM NN p) :
+    (F : (TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B →ₗ[R]
+      (TensorWords R A ⊗[R] N) ⊗[R] TensorWords R B) = (Comodule.Hom.cofreeLift
+      (TensorProduct.map ((TensorWords.grading (AA.grading.shift 1)).koszulTwist p)
+        (taylor F) ∘ₗ Comodule.leftCoactRTensor (TensorWords R B)
+          (Comodule.leftCofreeCoact R (TensorWords R A) M))).toLinearMap := by
+  have h := (toComoduleHom F).eq_cofreeLift_of_leftCoact _ (leftCoact_comp F)
+  simpa only [toComoduleHom_toLinearMap, taylor_def, taylorProj_def,
+    LinearMap.comp_assoc] using congrArg Comodule.Hom.toLinearMap h
+
+/-- Cochains of a fixed degree are determined by their two-counit components. -/
+theorem ext_taylor {F G : homCochains MM NN p} (h : taylor F = taylor G) : F = G := by
+  apply Subtype.ext
+  rw [eq_cofreeLift F, eq_cofreeLift G, h]
 
 end homCochains
 
@@ -349,6 +444,7 @@ theorem homComplexXEquiv_d (p : ℤ) (F : (homComplex MM NN).X p) :
     homComplexXEquiv MM NN (p + 1) (((homComplex MM NN).d p (p + 1)).hom F) =
       homDifferential MM NN p (homComplexXEquiv MM NN p F) := by
   rw [homComplex_d]
+  -- Both equivalences are eqToHom of an equality of a module with itself.
   rfl
 
 end AInfinityBimodule
