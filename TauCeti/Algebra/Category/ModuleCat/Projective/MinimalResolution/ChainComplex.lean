@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Projective.MinimalResolution.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Projective.FiniteResolution
-public import TauCeti.Algebra.Homology.HomologicalComplex.Minimal
+public import TauCeti.Algebra.Homology.ModuleCat.Minimal
 
 /-!
 # Bounded minimal free chain resolutions

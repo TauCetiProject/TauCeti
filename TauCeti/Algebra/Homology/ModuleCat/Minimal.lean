@@ -53,7 +53,7 @@ theorem isMinimal_iff : K.IsMinimal ↔
   Iff.rfl
 
 /-- Minimality can be checked just on the differentials allowed by the complex shape. -/
-theorem isMinimal_iff_of_rel : K.IsMinimal ↔
+theorem isMinimal_iff_forall_rel : K.IsMinimal ↔
     ∀ i j, c.Rel i j →
       LinearMap.range (K.d i j).hom ≤ Ring.jacobson R • (⊤ : Submodule R (K.X j)) := by
   refine ⟨fun h i j _ ↦ h i j, fun h i j ↦ ?_⟩
@@ -141,7 +141,7 @@ theorem isMinimal_iff_range_d_succ_le {R : Type u} [CommRing R]
     {K : ChainComplex (ModuleCat.{v} R) ℕ} : K.IsMinimal ↔
     ∀ n, LinearMap.range (K.d (n + 1) n).hom ≤
       Ring.jacobson R • (⊤ : Submodule R (K.X n)) := by
-  rw [HomologicalComplex.isMinimal_iff_of_rel]
+  rw [HomologicalComplex.isMinimal_iff_forall_rel]
   exact ⟨fun h n ↦ h (n + 1) n rfl, fun h i j hij ↦ by
     obtain rfl := hij
     exact h j⟩

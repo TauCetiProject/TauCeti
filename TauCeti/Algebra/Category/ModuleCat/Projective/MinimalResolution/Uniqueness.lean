@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.CategoryTheory.Abelian.Projective.Resolution
-public import TauCeti.Algebra.Homology.HomologicalComplex.Minimal
+public import TauCeti.Algebra.Homology.ModuleCat.Minimal
 
 /-!
 # Uniqueness of minimal projective resolutions
