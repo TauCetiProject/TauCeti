@@ -222,6 +222,48 @@ variable {n : ℕ} {PointAB : Type u₁} {PointBC : Type u₂} {PointAC : Type u
   {Basepoint : Type w}
   (T : HeegaardTripleRegionSystem n PointAB PointBC PointAC Region Basepoint)
 
+/-- The successor along an `α`-curve stays on that curve. -/
+@[simp]
+theorem alpha_alphaNext (p : PointAB ⊕ PointAC) :
+    Sum.elim T.alphaBeta.alpha T.alphaGamma.alpha (T.alphaNext p) =
+      Sum.elim T.alphaBeta.alpha T.alphaGamma.alpha p :=
+  (T.alphaNext_isCycleOn _).1.mapsTo rfl
+
+/-- The predecessor along an `α`-curve stays on that curve. -/
+@[simp]
+theorem alpha_alphaNext_symm (p : PointAB ⊕ PointAC) :
+    Sum.elim T.alphaBeta.alpha T.alphaGamma.alpha (T.alphaNext.symm p) =
+      Sum.elim T.alphaBeta.alpha T.alphaGamma.alpha p := by
+  simpa using (T.alpha_alphaNext (T.alphaNext.symm p)).symm
+
+/-- The successor along a `β`-curve stays on that curve. -/
+@[simp]
+theorem beta_betaNext (p : PointAB ⊕ PointBC) :
+    Sum.elim T.alphaBeta.beta T.betaGamma.alpha (T.betaNext p) =
+      Sum.elim T.alphaBeta.beta T.betaGamma.alpha p :=
+  (T.betaNext_isCycleOn _).1.mapsTo rfl
+
+/-- The predecessor along a `β`-curve stays on that curve. -/
+@[simp]
+theorem beta_betaNext_symm (p : PointAB ⊕ PointBC) :
+    Sum.elim T.alphaBeta.beta T.betaGamma.alpha (T.betaNext.symm p) =
+      Sum.elim T.alphaBeta.beta T.betaGamma.alpha p := by
+  simpa using (T.beta_betaNext (T.betaNext.symm p)).symm
+
+/-- The successor along a `γ`-curve stays on that curve. -/
+@[simp]
+theorem gamma_gammaNext (p : PointBC ⊕ PointAC) :
+    Sum.elim T.betaGamma.beta T.alphaGamma.beta (T.gammaNext p) =
+      Sum.elim T.betaGamma.beta T.alphaGamma.beta p :=
+  (T.gammaNext_isCycleOn _).1.mapsTo rfl
+
+/-- The predecessor along a `γ`-curve stays on that curve. -/
+@[simp]
+theorem gamma_gammaNext_symm (p : PointBC ⊕ PointAC) :
+    Sum.elim T.betaGamma.beta T.alphaGamma.beta (T.gammaNext.symm p) =
+      Sum.elim T.betaGamma.beta T.alphaGamma.beta p := by
+  simpa using (T.gamma_gammaNext (T.gammaNext.symm p)).symm
+
 section Boundary
 
 /-- The `α`-part `∂D ∩ α` of the boundary of a domain, as a `1`-chain on the `α`-arcs: its
@@ -258,6 +300,24 @@ theorem betaBoundary_apply (D : Region → ℤ) (p : PointAB ⊕ PointBC) :
 theorem gammaBoundary_apply (D : Region → ℤ) (p : PointBC ⊕ PointAC) :
     T.gammaBoundary D p = D (T.gammaLeft p) - D (T.gammaRight p) :=
   (rfl)
+
+/-- The whole surface, the domain with multiplicity one in every region, has no `α`-boundary. -/
+@[simp]
+theorem alphaBoundary_one : T.alphaBoundary 1 = 0 := by
+  ext
+  simp
+
+/-- The whole surface, the domain with multiplicity one in every region, has no `β`-boundary. -/
+@[simp]
+theorem betaBoundary_one : T.betaBoundary 1 = 0 := by
+  ext
+  simp
+
+/-- The whole surface, the domain with multiplicity one in every region, has no `γ`-boundary. -/
+@[simp]
+theorem gammaBoundary_one : T.gammaBoundary 1 = 0 := by
+  ext
+  simp
 
 /-- The boundary of a `1`-chain on the `α`-arcs, indexed by starting points: the coefficient at
 `q` is that of the arc ending at `q` minus that of the arc starting at `q`. -/
@@ -426,6 +486,108 @@ theorem isAlphaGammaDomainBetween_iff :
           Sum.elim (0 : PointBC → ℤ)
             (T.alphaGamma.generatorChain w - T.alphaGamma.generatorChain w') :=
   Iff.rfl
+
+/-- The zero domain connects every generator of `(Σ, α, β)` to itself. -/
+theorem isAlphaBetaDomainBetween_zero (x : T.alphaBeta.Generator) :
+    T.IsAlphaBetaDomainBetween x x 0 := by
+  simp
+
+/-- The whole surface connects every generator of `(Σ, α, β)` to itself. -/
+theorem isAlphaBetaDomainBetween_one (x : T.alphaBeta.Generator) :
+    T.IsAlphaBetaDomainBetween x x 1 := by
+  simp
+
+/-- The zero domain connects every generator of `(Σ, β, γ)` to itself. -/
+theorem isBetaGammaDomainBetween_zero (y : T.betaGamma.Generator) :
+    T.IsBetaGammaDomainBetween y y 0 := by
+  simp
+
+/-- The whole surface connects every generator of `(Σ, β, γ)` to itself. -/
+theorem isBetaGammaDomainBetween_one (y : T.betaGamma.Generator) :
+    T.IsBetaGammaDomainBetween y y 1 := by
+  simp
+
+/-- The zero domain connects every generator of `(Σ, α, γ)` to itself. -/
+theorem isAlphaGammaDomainBetween_zero (w : T.alphaGamma.Generator) :
+    T.IsAlphaGammaDomainBetween w w 0 := by
+  simp
+
+/-- The whole surface connects every generator of `(Σ, α, γ)` to itself. -/
+theorem isAlphaGammaDomainBetween_one (w : T.alphaGamma.Generator) :
+    T.IsAlphaGammaDomainBetween w w 1 := by
+  simp
+
+/-- Juxtaposing a domain from `x` to `x'` with one from `x'` to `x''` in `(Σ, α, β)` gives a
+domain from `x` to `x''`. -/
+theorem IsAlphaBetaDomainBetween.add {x'' : T.alphaBeta.Generator}
+    (hD : T.IsAlphaBetaDomainBetween x x' D) (hE : T.IsAlphaBetaDomainBetween x' x'' E) :
+    T.IsAlphaBetaDomainBetween x x'' (D + E) := by
+  refine ⟨?_, ?_, ?_⟩
+  · rw [map_add, map_add, hD.1, hE.1]
+    ext (p | p) <;> simp only [Pi.add_apply, Sum.elim_inl, Sum.elim_inr, Pi.sub_apply,
+      Pi.zero_apply] <;> ring
+  · rw [map_add, map_add, hD.2.1, hE.2.1]
+    ext (p | p) <;> simp only [Pi.add_apply, Sum.elim_inl, Sum.elim_inr, Pi.sub_apply,
+      Pi.zero_apply] <;> ring
+  · rw [map_add, hD.2.2, hE.2.2, add_zero]
+
+/-- Reversing a domain from `x` to `x'` in `(Σ, α, β)` gives a domain from `x'` to `x`. -/
+theorem IsAlphaBetaDomainBetween.neg (hD : T.IsAlphaBetaDomainBetween x x' D) :
+    T.IsAlphaBetaDomainBetween x' x (-D) := by
+  refine ⟨?_, ?_, ?_⟩
+  · rw [map_neg, map_neg, hD.1]
+    ext (p | p) <;> simp
+  · rw [map_neg, map_neg, hD.2.1]
+    ext (p | p) <;> simp
+  · rw [map_neg, hD.2.2, neg_zero]
+
+/-- Juxtaposing a domain from `y` to `y'` with one from `y'` to `y''` in `(Σ, β, γ)` gives a
+domain from `y` to `y''`. -/
+theorem IsBetaGammaDomainBetween.add {y'' : T.betaGamma.Generator}
+    (hD : T.IsBetaGammaDomainBetween y y' D) (hE : T.IsBetaGammaDomainBetween y' y'' E) :
+    T.IsBetaGammaDomainBetween y y'' (D + E) := by
+  refine ⟨?_, ?_, ?_⟩
+  · rw [map_add, hD.1, hE.1, add_zero]
+  · rw [map_add, map_add, hD.2.1, hE.2.1]
+    ext (p | p) <;> simp only [Pi.add_apply, Sum.elim_inl, Sum.elim_inr, Pi.sub_apply,
+      Pi.zero_apply] <;> ring
+  · rw [map_add, map_add, hD.2.2, hE.2.2]
+    ext (p | p) <;> simp only [Pi.add_apply, Sum.elim_inl, Sum.elim_inr, Pi.sub_apply,
+      Pi.zero_apply] <;> ring
+
+/-- Reversing a domain from `y` to `y'` in `(Σ, β, γ)` gives a domain from `y'` to `y`. -/
+theorem IsBetaGammaDomainBetween.neg (hD : T.IsBetaGammaDomainBetween y y' D) :
+    T.IsBetaGammaDomainBetween y' y (-D) := by
+  refine ⟨?_, ?_, ?_⟩
+  · rw [map_neg, hD.1, neg_zero]
+  · rw [map_neg, map_neg, hD.2.1]
+    ext (p | p) <;> simp
+  · rw [map_neg, map_neg, hD.2.2]
+    ext (p | p) <;> simp
+
+/-- Juxtaposing a domain from `w` to `w'` with one from `w'` to `w''` in `(Σ, α, γ)` gives a
+domain from `w` to `w''`. -/
+theorem IsAlphaGammaDomainBetween.add {w'' : T.alphaGamma.Generator}
+    (hD : T.IsAlphaGammaDomainBetween w w' D) (hE : T.IsAlphaGammaDomainBetween w' w'' E) :
+    T.IsAlphaGammaDomainBetween w w'' (D + E) := by
+  refine ⟨?_, ?_, ?_⟩
+  · rw [map_add, map_add, hD.1, hE.1]
+    ext (p | p) <;> simp only [Pi.add_apply, Sum.elim_inl, Sum.elim_inr, Pi.sub_apply,
+      Pi.zero_apply] <;> ring
+  · rw [map_add, hD.2.1, hE.2.1, add_zero]
+  · rw [map_add, map_add, hD.2.2, hE.2.2]
+    ext (p | p) <;> simp only [Pi.add_apply, Sum.elim_inl, Sum.elim_inr, Pi.sub_apply,
+      Pi.zero_apply] <;> ring
+
+/-- Reversing a domain from `w` to `w'` in `(Σ, α, γ)` gives a domain from `w'` to `w`. -/
+theorem IsAlphaGammaDomainBetween.neg (hD : T.IsAlphaGammaDomainBetween w w' D) :
+    T.IsAlphaGammaDomainBetween w' w (-D) := by
+  refine ⟨?_, ?_, ?_⟩
+  · rw [map_neg, map_neg, hD.1]
+    ext (p | p) <;> simp
+  · rw [map_neg, hD.2.1, neg_zero]
+  · rw [map_neg, map_neg, hD.2.2]
+    ext (p | p) <;> simp
 
 /-- Juxtaposing a disk domain from `x` to `x'` in `(Σ, α, β)` with a triangle domain at the corner
 `x'` gives a triangle domain at the corner `x`. -/
@@ -605,6 +767,39 @@ theorem isAlphaGammaDomainBetween_self_iff :
       P ∈ T.alphaGammaPeriodicDomains := by
   simp only [isAlphaGammaDomainBetween_iff, sub_self, Sum.elim_zero_zero,
     mem_alphaGammaPeriodicDomains_iff]
+  tauto
+
+/-- Given a domain `D` from `x` to `x'` in `(Σ, α, β)`, another domain `D'` is a domain from `x`
+to `x'` with the same basepoint multiplicities exactly when `D' - D` is a periodic domain of
+`(Σ, α, β)`. -/
+theorem IsAlphaBetaDomainBetween.sub_mem_alphaBetaPeriodicDomains_iff
+    {x x' : T.alphaBeta.Generator} (hD : T.IsAlphaBetaDomainBetween x x' D) :
+    D' - D ∈ T.alphaBetaPeriodicDomains ↔
+      T.IsAlphaBetaDomainBetween x x' D' ∧ ∀ z, D' (T.basepoint z) = D (T.basepoint z) := by
+  simp only [mem_alphaBetaPeriodicDomains_iff, isAlphaBetaDomainBetween_iff, map_sub, hD.1,
+    hD.2.1, hD.2.2, Pi.sub_apply, sub_eq_zero, sub_zero]
+  tauto
+
+/-- Given a domain `D` from `y` to `y'` in `(Σ, β, γ)`, another domain `D'` is a domain from `y`
+to `y'` with the same basepoint multiplicities exactly when `D' - D` is a periodic domain of
+`(Σ, β, γ)`. -/
+theorem IsBetaGammaDomainBetween.sub_mem_betaGammaPeriodicDomains_iff
+    {y y' : T.betaGamma.Generator} (hD : T.IsBetaGammaDomainBetween y y' D) :
+    D' - D ∈ T.betaGammaPeriodicDomains ↔
+      T.IsBetaGammaDomainBetween y y' D' ∧ ∀ z, D' (T.basepoint z) = D (T.basepoint z) := by
+  simp only [mem_betaGammaPeriodicDomains_iff, isBetaGammaDomainBetween_iff, map_sub, hD.1,
+    hD.2.1, hD.2.2, Pi.sub_apply, sub_eq_zero, sub_zero]
+  tauto
+
+/-- Given a domain `D` from `w` to `w'` in `(Σ, α, γ)`, another domain `D'` is a domain from `w`
+to `w'` with the same basepoint multiplicities exactly when `D' - D` is a periodic domain of
+`(Σ, α, γ)`. -/
+theorem IsAlphaGammaDomainBetween.sub_mem_alphaGammaPeriodicDomains_iff
+    {w w' : T.alphaGamma.Generator} (hD : T.IsAlphaGammaDomainBetween w w' D) :
+    D' - D ∈ T.alphaGammaPeriodicDomains ↔
+      T.IsAlphaGammaDomainBetween w w' D' ∧ ∀ z, D' (T.basepoint z) = D (T.basepoint z) := by
+  simp only [mem_alphaGammaPeriodicDomains_iff, isAlphaGammaDomainBetween_iff, map_sub, hD.1,
+    hD.2.1, hD.2.2, Pi.sub_apply, sub_eq_zero, sub_zero]
   tauto
 
 theorem alphaBetaPeriodicDomains_le_triplyPeriodicDomains :
