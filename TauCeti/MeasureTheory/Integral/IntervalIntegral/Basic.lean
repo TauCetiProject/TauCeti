@@ -24,6 +24,9 @@ not belong to any particular application.
 * `TauCeti.intervalIntegral.integral_re_mul_im_sub_im_mul_re_eq`: a polarization identity
   expressing `∫ (x v - y u)` for `f = x + i y` and `g = u + i v` through the integrals of
   `‖g‖²`, `‖f‖²` and `‖g - i k f‖²`.
+* `TauCeti.intervalIntegral.norm_sub_sub_integral_le`: the defect `a₂ - a₁ - ∫ g` from an integral
+  equation changes by at most the changes of the endpoint values plus `δ |t₂ - t₁|` when the
+  integrand changes by at most `δ`.
 * `MeasureTheory.IntegrableOn.intervalIntegrable_of_mem_Icc`: a function integrable on `(a, b)`
   for a measure without mass at points is interval integrable between any two points of `[a, b]`.
 * `ContinuousLinearEquiv.intervalIntegral_comp_comm`: a continuous linear equivalence commutes
@@ -105,7 +108,47 @@ theorem integral_re_mul_im_sub_im_mul_re_eq {a b : ℝ} {k : ℝ} (hk : k ≠ 0)
     _root_.intervalIntegral.integral_add hG (hF.const_mul _),
     _root_.intervalIntegral.integral_const_mul]
 
+/-- The defect `a₂ - a₁ - ∫ g` from an integral equation over `[t₁, t₂]` differs from the defect
+`b₂ - b₁ - ∫ g'` by at most `‖a₁ - b₁‖ + ‖a₂ - b₂‖ + δ |t₂ - t₁|` when `‖g - g'‖ ≤ δ` on the
+interval. -/
+theorem norm_sub_sub_integral_le {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {a₁ a₂ b₁ b₂ : E} {g g' : ℝ → E} {t₁ t₂ δ : ℝ} (hg : IntervalIntegrable g volume t₁ t₂)
+    (hg' : IntervalIntegrable g' volume t₁ t₂) (hgg : ∀ t ∈ uIoc t₁ t₂, ‖g t - g' t‖ ≤ δ) :
+    ‖a₂ - a₁ - ∫ t in t₁..t₂, g t‖ ≤
+      ‖b₂ - b₁ - ∫ t in t₁..t₂, g' t‖ + ‖a₁ - b₁‖ + ‖a₂ - b₂‖ + δ * |t₂ - t₁| := by
+  have hI : ‖∫ t in t₁..t₂, (g t - g' t)‖ ≤ δ * |t₂ - t₁| :=
+    _root_.intervalIntegral.norm_integral_le_of_norm_le_const hgg
+  have hsplit : a₂ - a₁ - ∫ t in t₁..t₂, g t = (b₂ - b₁ - ∫ t in t₁..t₂, g' t) + (a₂ - b₂) -
+      (a₁ - b₁) - ∫ t in t₁..t₂, (g t - g' t) := by
+    rw [_root_.intervalIntegral.integral_sub hg hg']
+    abel
+  rw [hsplit]
+  linarith [norm_sub_le ((b₂ - b₁ - ∫ t in t₁..t₂, g' t) + (a₂ - b₂) - (a₁ - b₁))
+      (∫ t in t₁..t₂, (g t - g' t)),
+    norm_sub_le ((b₂ - b₁ - ∫ t in t₁..t₂, g' t) + (a₂ - b₂)) (a₁ - b₁),
+    norm_add_le (b₂ - b₁ - ∫ t in t₁..t₂, g' t) (a₂ - b₂)]
+
 end intervalIntegral
+
+/-- The primitive of a step velocity corrected by its average defect reaches the prescribed
+endpoint. -/
+theorem add_integral_add_inv_smul_eq {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [CompleteSpace E] {a b : ℝ} (hab : a ≠ b) {s : ℝ → E} (hsi : IntervalIntegrable s volume a b)
+    (x y : E) :
+    x + ∫ t in a..b, (s t + (b - a)⁻¹ • (y - x - ∫ t in a..b, s t)) = y := by
+  rw [_root_.intervalIntegral.integral_add hsi (intervalIntegrable_const),
+    _root_.intervalIntegral.integral_const, smul_smul, mul_inv_cancel₀ (sub_ne_zero.mpr hab.symm),
+    one_smul]
+  abel
+
+/-- The `L¹` norm over `(a, b]` of the constant `(b - a)⁻¹ • D` is `‖D‖`. -/
+theorem setIntegral_norm_inv_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {a b : ℝ} (hab : a < b) (D : E) :
+    (∫ _ in Ioc a b, ‖(b - a)⁻¹ • D‖) = ‖D‖ := by
+  rw [setIntegral_const, measureReal_def, Real.volume_Ioc,
+    ENNReal.toReal_ofReal (sub_nonneg.mpr hab.le)]
+  simp only [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos (sub_pos.mpr hab), smul_eq_mul]
+  rw [← mul_assoc, mul_inv_cancel₀ (sub_pos.mpr hab).ne', one_mul]
 
 end TauCeti
 

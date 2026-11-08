@@ -11,8 +11,9 @@ public import Mathlib.Algebra.Group.Subgroup.Pointwise
 # Conjugating subgroups and joining with a normalizing subgroup
 
 Mathlib writes the conjugate `sHs⁻¹` of a subgroup `H` of a group `G` as the pointwise scalar
-action `MulAut.conj s • H`.  This file records the membership criterion for that subgroup and the
-two laws making `s ↦ MulAut.conj s • (-)` an action of `G` on the subgroups of `G`.
+action `MulAut.conj s • H`.  This file records the membership criterion for that subgroup; the
+laws making `s ↦ MulAut.conj s • (-)` an action of `G`, on subgroups as on any type on which
+`MulAut G` acts, are in `TauCeti.Algebra.Group.Action.End`.
 
 `Subgroup.mem_pointwise_smul_iff_inv_smul_mem` fixes the orientation: membership of `x` in
 `MulAut.conj s • H` is `s⁻¹ * x * s ∈ H`, so `MulAut.conj s • H` is `sHs⁻¹` and not `s⁻¹Hs`.
@@ -28,8 +29,6 @@ form of that computation: every element of `H ⊔ K` is a product `x * t` with `
 ## Main statements
 
 * `TauCeti.mem_conj_smul`: membership in `sHs⁻¹` is `s⁻¹ * x * s ∈ H`.
-* `TauCeti.conj_one_smul`, `TauCeti.conj_mul_smul`, `TauCeti.conj_inv_smul_smul`: conjugation of
-  subgroups is an action of `G`.
 * `TauCeti.map_conj_eq_conj_smul`: the image of `H` under the inner automorphism of `s` is
   `MulAut.conj s • H`, which converts Mathlib's statements phrased with `Subgroup.map`, such as
   `MulAction.stabilizer_smul_eq_stabilizer_map_conj` and `Ideal.inertia_smul`, to this convention.
@@ -52,20 +51,6 @@ theorem mem_conj_smul (s : G) (H : Subgroup G) (x : G) :
   rw [Subgroup.mem_pointwise_smul_iff_inv_smul_mem]
   simp
 
-/-- Conjugating a subgroup by `1` leaves it unchanged. -/
-theorem conj_one_smul (H : Subgroup G) : MulAut.conj (1 : G) • H = H := by
-  simp
-
-/-- Conjugating a subgroup by `s * t` is conjugating by `t` and then by `s`. -/
-theorem conj_mul_smul (s t : G) (H : Subgroup G) :
-    MulAut.conj (s * t) • H = MulAut.conj s • (MulAut.conj t • H) := by
-  rw [map_mul, mul_smul]
-
-/-- Conjugating a subgroup by `s⁻¹` undoes conjugating it by `s`. -/
-theorem conj_inv_smul_smul (s : G) (H : Subgroup G) :
-    MulAut.conj s⁻¹ • (MulAut.conj s • H) = H := by
-  rw [← mul_smul, ← map_mul, inv_mul_cancel, map_one, one_smul]
-
 /-- The image of a subgroup under the inner automorphism of `s` is its conjugate
 `MulAut.conj s • H`. -/
 theorem map_conj_eq_conj_smul (s : G) (H : Subgroup G) :
@@ -81,6 +66,8 @@ variable {G : Type*} [Group G] {H K : Subgroup G}
 
 /-- An element of `H ⊔ K` is a product of an element of `H` followed by an element of `K`, as soon
 as `K` normalizes `H`. -/
+@[to_additive /-- An element of `H ⊔ K` is a sum of an element of `H` followed by an element of
+`K`, as soon as `K` normalizes `H`. -/]
 theorem mem_sup_of_right_le_normalizer_left (hLE : K ≤ normalizer (H : Set G)) {g : G} :
     g ∈ H ⊔ K ↔ ∃ x ∈ H, ∃ t ∈ K, x * t = g := by
   rw [← SetLike.mem_coe, coe_mul_of_right_le_normalizer_left H K hLE, Set.mem_mul]

@@ -32,6 +32,12 @@ number of critical points of index `i` with value in `(a, b]`. Then, for every `
 * if no two of these critical points have indices differing by one, then `bₙ = cₙ dim V` (the
   lacunary principle).
 
+The band `W = f⁻¹[a, b]` is then a compact cobordism from the level `f⁻¹(a)` to the level
+`f⁻¹(b)`, and the inclusion of pairs `(W, f⁻¹(a)) ⟶ (M_b, M_a)` induces isomorphisms on relative
+homology (`TauCeti.isIso_singularHomologyMap_bandPairInclusion`). So the finiteness, the weak and
+strong inequalities, Euler's equality and the polynomial identity hold as well for the numbers
+`bᵢ = dim Hᵢ(W, f⁻¹(a); V)` of the cobordism relative to its incoming boundary.
+
 For compact `M` all of `M` is such a band, with `M_a = ∅`, and the same statements hold for the
 singular homology `Hᵢ(M; V)` and the numbers `cᵢ` of critical points of index `i` on `M`. In
 particular the singular homology of a compact manifold admitting a Morse function is
@@ -66,6 +72,12 @@ equality.
   `TauCeti.IsMorse.finrank_singularHomology_sublevelPair_eq_of_forall_ne_add_one`: the Morse
   polynomial identity, the bound on the total Betti number and the lacunary principle for such a
   band.
+* `TauCeti.IsMorse.finite_singularHomology_bandPair`,
+  `TauCeti.IsMorse.finrank_singularHomology_bandPair_le`,
+  `TauCeti.IsMorse.sum_range_neg_one_pow_mul_finrank_singularHomology_bandPair_le`,
+  `TauCeti.IsMorse.sum_range_neg_one_pow_mul_finrank_singularHomology_bandPair_eq` and
+  `TauCeti.IsMorse.exists_sum_range_monomial_bandPair_eq_add_mul`: the same statements for the
+  cobordism `f⁻¹[a, b]` relative to its incoming boundary `f⁻¹(a)`.
 * `TauCeti.IsMorse.finrank_singularHomology_le`,
   `TauCeti.IsMorse.sum_range_neg_one_pow_mul_finrank_singularHomology_le`,
   `TauCeti.IsMorse.sum_range_neg_one_pow_mul_finrank_singularHomology_eq`,
@@ -463,6 +475,102 @@ theorem IsMorse.finrank_singularHomology_sublevelPair_eq_of_forall_ne_add_one (h
         finrank k V :=
   (hf.morseInequalities V hab hcompact ha hb).finrank_eq_of_eq_zero_or V
     (bandCount_eq_zero_or hind) n
+
+omit [Module.Finite k V] in
+/-- Above a regular value `a`, the band pair `(f⁻¹[a, b], f⁻¹(a))` has the relative homology of the
+sublevel pair `({f ≤ b}, {f ≤ a})`, through the inclusion of pairs. -/
+private theorem nonempty_linearEquiv_singularHomology_bandPair (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    {a b : ℝ} (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b))
+    (ha : IsRegularValue I 𝓘(ℝ) f a) (n : ℕ) :
+    Nonempty (((bandPair f hab).singularHomology V n : ModuleCat k) ≃ₗ[k]
+      ((sublevelPair f hab).singularHomology V n : ModuleCat k)) :=
+  have := isIso_singularHomologyMap_bandPairInclusion hf hab hcompact ha V n
+  ⟨(asIso (TopPair.singularHomologyMap (bandPairInclusion f hab) V n)).toLinearEquiv⟩
+
+/-- **Finiteness of relative homology for a cobordism.** Let `f` be a Morse function, and `a ≤ b`
+regular values with compact band `f⁻¹[a, b]`. Then the relative singular homology
+`Hₙ(f⁻¹[a, b], f⁻¹(a); V)` of the band relative to its lower level is finite-dimensional. -/
+theorem IsMorse.finite_singularHomology_bandPair (hf : IsMorse I f) {a b : ℝ} (hab : a ≤ b)
+    (hcompact : IsCompact (f ⁻¹' Icc a b)) (ha : IsRegularValue I 𝓘(ℝ) f a)
+    (hb : IsRegularValue I 𝓘(ℝ) f b) (n : ℕ) :
+    Module.Finite k ((bandPair f hab).singularHomology V n : ModuleCat k) :=
+  have := hf.finite_singularHomology_sublevelPair V hab hcompact ha hb n
+  Module.Finite.equiv
+    (nonempty_linearEquiv_singularHomology_bandPair V hf.contMDiff hab hcompact ha n).some.symm
+
+omit [Module.Finite k V] in
+private theorem finrank_singularHomology_bandPair (hf : ContMDiff I 𝓘(ℝ) ∞ f) {a b : ℝ}
+    (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b)) (ha : IsRegularValue I 𝓘(ℝ) f a)
+    (n : ℕ) :
+    finrank k ((bandPair f hab).singularHomology V n : ModuleCat k) =
+      finrank k ((sublevelPair f hab).singularHomology V n : ModuleCat k) :=
+  (nonempty_linearEquiv_singularHomology_bandPair V hf hab hcompact ha n).some.finrank_eq
+
+/-- **The weak Morse inequalities for a cobordism.** Let `f` be a Morse function, and `a ≤ b`
+regular values with compact band `f⁻¹[a, b]`. Then `Hₙ(f⁻¹[a, b], f⁻¹(a); V)` has dimension at
+most `dim V` times the number of critical points of index `n` with values in `(a, b]`. -/
+theorem IsMorse.finrank_singularHomology_bandPair_le (hf : IsMorse I f) {a b : ℝ} (hab : a ≤ b)
+    (hcompact : IsCompact (f ⁻¹' Icc a b)) (ha : IsRegularValue I 𝓘(ℝ) f a)
+    (hb : IsRegularValue I 𝓘(ℝ) f b) (n : ℕ) :
+    finrank k ((bandPair f hab).singularHomology V n : ModuleCat k) ≤
+      {x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = n}.ncard *
+        finrank k V := by
+  rw [finrank_singularHomology_bandPair V hf.contMDiff hab hcompact ha]
+  exact hf.finrank_singularHomology_sublevelPair_le V hab hcompact ha hb n
+
+/-- **The strong Morse inequalities for a cobordism.** Let `f` be a Morse function, and `a ≤ b`
+regular values with compact band `f⁻¹[a, b]`. Write `bᵢ` for the dimension of
+`Hᵢ(f⁻¹[a, b], f⁻¹(a); V)` and `cᵢ` for the number of critical points of index `i` with values in
+`(a, b]`. Then `bₙ - bₙ₋₁ + ⋯ ± b₀ ≤ (cₙ - cₙ₋₁ + ⋯ ± c₀) dim V`. -/
+theorem IsMorse.sum_range_neg_one_pow_mul_finrank_singularHomology_bandPair_le
+    (hf : IsMorse I f) {a b : ℝ} (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b))
+    (ha : IsRegularValue I 𝓘(ℝ) f a) (hb : IsRegularValue I 𝓘(ℝ) f b) (n : ℕ) :
+    ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - i) *
+        finrank k ((bandPair f hab).singularHomology V i : ModuleCat k) ≤
+      finrank k V * ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - i) *
+        {x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = i}.ncard := by
+  simpa only [finrank_singularHomology_bandPair V hf.contMDiff hab hcompact ha] using
+    hf.sum_range_neg_one_pow_mul_finrank_singularHomology_sublevelPair_le V hab hcompact ha hb n
+
+/-- **Euler's equality for a cobordism.** Let `f` be a Morse function, and `a ≤ b` regular values
+with compact band `f⁻¹[a, b]`. Write `bᵢ` for the dimension of `Hᵢ(f⁻¹[a, b], f⁻¹(a); V)` and `cᵢ`
+for the number of critical points of index `i` with values in `(a, b]`. Then
+`∑ᵢ₌₀ⁿ (-1)ⁱ bᵢ = (∑ᵢ₌₀ⁿ (-1)ⁱ cᵢ) dim V` for every `n ≥ dim M`. -/
+theorem IsMorse.sum_range_neg_one_pow_mul_finrank_singularHomology_bandPair_eq
+    (hf : IsMorse I f) {a b : ℝ} (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b))
+    (ha : IsRegularValue I 𝓘(ℝ) f a) (hb : IsRegularValue I 𝓘(ℝ) f b) {n : ℕ}
+    (hn : finrank ℝ E ≤ n) :
+    ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i *
+        finrank k ((bandPair f hab).singularHomology V i : ModuleCat k) =
+      finrank k V * ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i *
+        {x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = i}.ncard := by
+  simpa only [finrank_singularHomology_bandPair V hf.contMDiff hab hcompact ha] using
+    hf.sum_range_neg_one_pow_mul_finrank_singularHomology_sublevelPair_eq V hab hcompact ha hb hn
+
+/-- **The Morse polynomial identity for a cobordism.** Let `f` be a Morse function, and `a ≤ b`
+regular values with compact band `f⁻¹[a, b]`. Write `bᵢ` for the dimension of
+`Hᵢ(f⁻¹[a, b], f⁻¹(a); V)` and `cᵢ` for the number of critical points of index `i` with values in
+`(a, b]`. Then for every `n ≥ dim M`, `∑ᵢ₌₀ⁿ cᵢ dim V · tⁱ = ∑ᵢ₌₀ⁿ bᵢ tⁱ + (1 + t) Q(t)` for a
+polynomial `Q` with natural number coefficients. The coefficient of `tⁱ` in `Q` is the gap
+`(cᵢ - cᵢ₋₁ + ⋯ ± c₀) dim V - (bᵢ - bᵢ₋₁ + ⋯ ± b₀)` in the `i`-th strong Morse inequality for
+`i < n`, and zero for `i ≥ n`. -/
+theorem IsMorse.exists_sum_range_monomial_bandPair_eq_add_mul (hf : IsMorse I f) {a b : ℝ}
+    (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b)) (ha : IsRegularValue I 𝓘(ℝ) f a)
+    (hb : IsRegularValue I 𝓘(ℝ) f b) {n : ℕ} (hn : finrank ℝ E ≤ n) :
+    ∃ Q : ℕ[X], ∑ i ∈ Finset.range (n + 1), monomial i
+          ({x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = i}.ncard *
+            finrank k V) =
+        ∑ i ∈ Finset.range (n + 1),
+          monomial i (finrank k ((bandPair f hab).singularHomology V i : ModuleCat k)) +
+          (1 + X) * Q ∧
+      (∀ i < n, (Q.coeff i : ℤ) =
+        finrank k V * ∑ j ∈ Finset.range (i + 1), (-1 : ℤ) ^ (i - j) *
+            {x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = j}.ncard -
+          ∑ j ∈ Finset.range (i + 1), (-1 : ℤ) ^ (i - j) *
+            finrank k ((bandPair f hab).singularHomology V j : ModuleCat k)) ∧
+      ∀ i, n ≤ i → Q.coeff i = 0 := by
+  simpa only [finrank_singularHomology_bandPair V hf.contMDiff hab hcompact ha] using
+    hf.exists_sum_range_monomial_sublevelPair_eq_add_mul V hab hcompact ha hb hn
 
 end Band
 

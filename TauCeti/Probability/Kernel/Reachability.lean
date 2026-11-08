@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Kernel.Irreducible
+public import TauCeti.Probability.Kernel.Composition.Power
 
 /-!
 # Reachability and communication for kernels
@@ -59,6 +60,14 @@ target state. -/
 theorem reaches_def (x y : S) :
     κ.Reaches x y ↔ ∃ n : ℕ, 0 < (κ ^ n) x {y} := Iff.rfl
 
+/-- Reachability under a deterministic kernel is membership in the forward orbit. -/
+@[simp]
+theorem reaches_deterministic [MeasurableSingletonClass S] {f : S → S}
+    (hf : Measurable f) (x y : S) :
+    (deterministic f hf).Reaches x y ↔ ∃ n : ℕ, f^[n] x = y := by
+  simp [reaches_def, deterministic_pow, deterministic_apply, pos_iff_ne_zero,
+    Set.indicator_apply_eq_zero]
+
 /-- Every state reaches itself. -/
 @[simp] theorem Reaches.refl (x : S) : κ.Reaches x x := by
   use 0
@@ -78,19 +87,7 @@ theorem Reaches.trans [MeasurableSingletonClass S] {x y z : S}
     (hxy : κ.Reaches x y) (hyz : κ.Reaches y z) : κ.Reaches x z := by
   obtain ⟨n, hn⟩ := hxy
   obtain ⟨m, hm⟩ := hyz
-  use n + m
-  -- Chapman-Kolmogorov: (κ ^ (n + m)) x {z} = ∫⁻ b, (κ ^ m) b {z} ∂((κ ^ n) x); bound the
-  -- resulting integral below by its restriction to the single intermediate state y
-  have hyz_y : 0 < (κ ^ m) y {z} * (κ ^ n) x {y} := by
-    rw [ENNReal.mul_pos_iff]
-    exact ⟨hm, hn⟩
-  have hsum : 0 < ∫⁻ b in {y}, (κ ^ m) b {z} ∂((κ ^ n) x) := by
-    rw [lintegral_singleton (f := fun b => (κ ^ m) b {z}) y]
-    exact hyz_y
-  rw [Kernel.pow_add_apply_eq_lintegral _ n m _ (measurableSet_singleton z)]
-  have hsum' : 0 < ∫⁻ b in Set.univ, (κ ^ m) b {z} ∂((κ ^ n) x) :=
-    lt_of_lt_of_le hsum (lintegral_mono_set (Set.subset_univ {y}))
-  exact (Measure.restrict_univ : ((κ ^ n) x).restrict Set.univ = (κ ^ n) x) ▸ hsum'
+  exact ⟨n + m, pow_add_apply_pos (measurableSet_singleton z) hn hm⟩
 
 /-- Every state communicates with itself. -/
 @[simp] theorem Communicates.refl (x : S) : κ.Communicates x x :=

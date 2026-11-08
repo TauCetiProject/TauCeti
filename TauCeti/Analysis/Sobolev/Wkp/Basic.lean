@@ -377,6 +377,15 @@ theorem hasWeakFDerivOn_iteratedGradient (k : ℕ) (u : Wkp mu Omega p (k + 2)) 
   exact WeakDerivStep.hasWeakFDerivOn_base_prev
     (sobolevStage (mu := mu) (Omega := Omega) (p := p) k).iteratedGradientL u
 
+/-- On an open subset of the line, the weak gradient of the first-order part of
+`u ∈ W^{2,p}(Ω)` has weak derivative the weak Hessian evaluated in the direction `1`. -/
+theorem hasWeakLineDerivOn_gradient_lowerOrder {mu : Measure ℝ} [mu.IsAddHaarMeasure]
+    {Omega : Opens ℝ} (u : Wkp mu Omega p 2) :
+    HasWeakLineDerivOn mu Omega (W1p.gradient (lowerOrder 1 u))
+      (fun x => iteratedGradient 1 u x 1) 1 := by
+  rw [← iteratedGradient_zero]
+  exact (hasWeakFDerivOn_iteratedGradient 0 u).hasWeakLineDerivOn 1
+
 /-- **A Sobolev function vanishing on an open subset has vanishing highest weak derivative
 there.** If `u ∈ W^{k+1,p}(Ω)` vanishes almost everywhere on an open `V ⊆ Ω`, then its highest
 weak derivative `iteratedGradient k u` vanishes almost everywhere on `V`. The first-order case is
@@ -467,6 +476,20 @@ theorem norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ (k : ℕ
   rw [lowerOrder_succ, iteratedGradient_succ]
   exact WeakDerivStep.norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq
     (sobolevStage (mu := mu) (Omega := Omega) (p := p) k).iteratedGradientL u
+
+/-- The Sobolev norm is bounded by the sum of the preceding component norm and the highest
+weak-derivative norm, for every exponent and positive order. -/
+theorem norm_le_norm_lowerOrder_add_norm_iteratedGradient (k : ℕ)
+    (u : Wkp mu Omega p (k + 1)) :
+    ‖u‖ ≤ ‖lowerOrder k u‖ + ‖iteratedGradient k u‖ := by
+  cases k with
+  | zero =>
+      rw [lowerOrder_zero, iteratedGradient_zero]
+      exact W1p.norm_le_norm_value_add_norm_gradient u
+  | succ k =>
+      have h := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k u
+      nlinarith [norm_nonneg u, norm_nonneg (lowerOrder (k + 1) u),
+        norm_nonneg (iteratedGradient (k + 1) u)]
 
 /-- At exponent two, the squared graph norm at every positive order is the sum of the squared
 norm of the lower-order component and the squared norm of the highest weak derivative.  The

@@ -53,7 +53,9 @@ the integral over all levels `t` of the indicators of its superlevel sets `{u > 
 For positive real powers on a finite measure space, it also characterizes integrability by the
 weighted strict tail `μ.real {x | t < f x} * t ^ (p - 1)`, either on `(0, ∞)` or at infinity.
 The weighted tail is measurable without any measurability assumption on `f`, and its contribution
-from bounded thresholds is integrable.
+from bounded thresholds is integrable. For measures on the nonnegative half-line, the integral
+of the shifted tail is the extended integral of a truncated difference. A finite first moment
+therefore makes every shifted tail integrable.
 
 ## Main statements
 
@@ -95,7 +97,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set
-open scoped ENNReal symmDiff
+open scoped ENNReal NNReal symmDiff
 
 namespace TauCeti
 
@@ -667,3 +669,35 @@ theorem integrable_rpow_iff_integrableAtFilter_weighted_tail
 end WeightedTail
 
 end TauCeti
+
+namespace MeasureTheory.Measure
+
+/-- The integral of the shifted tail of a half-line measure is the extended integral of
+its truncated distance above the threshold. No finiteness or normalization is required. -/
+theorem lintegral_Ioi_tail_add (F : Measure ℝ≥0) (x : ℝ≥0) :
+    (∫⁻ t : ℝ in Ioi 0, F (Ioi (t.toNNReal + x))) =
+      ∫⁻ u, ((u - x : ℝ≥0) : ℝ≥0∞) ∂F := by
+  have hlayer := lintegral_eq_lintegral_meas_lt F
+    (f := fun u : ℝ≥0 => ((u - x : ℝ≥0) : ℝ))
+    (ae_of_all _ fun u => NNReal.coe_nonneg _) (by fun_prop)
+  simp only [ENNReal.ofReal_coe_nnreal] at hlayer
+  rw [hlayer]
+  refine setLIntegral_congr_fun measurableSet_Ioi fun t ht => ?_
+  congr 1
+  ext u
+  simp only [mem_Ioi, mem_ofPred_eq, ← Real.toNNReal_lt_iff_lt_coe ht.le,
+    lt_tsub_iff_right]
+
+/-- A finite extended first moment makes every shifted tail integrable on the positive
+half-line. The measure need not be finite or normalized. -/
+theorem integrableOn_Ioi_measureReal_tail_add (F : Measure ℝ≥0) (x : ℝ≥0)
+    (hmean : (∫⁻ u, (u : ℝ≥0∞) ∂F) ≠ ∞) :
+    IntegrableOn (fun t : ℝ => F.real (Ioi (t.toNNReal + x))) (Ioi 0) := by
+  have hm : Measurable fun t : ℝ => F (Ioi (t.toNNReal + x)) :=
+    Antitone.measurable fun _ _ h => measure_mono (Ioi_subset_Ioi (by gcongr))
+  apply integrable_toReal_of_lintegral_ne_top hm.aemeasurable
+  rw [lintegral_Ioi_tail_add]
+  exact ne_top_of_le_ne_top hmean
+    (lintegral_mono fun u => ENNReal.coe_le_coe.mpr (tsub_le_self : u - x ≤ u))
+
+end MeasureTheory.Measure
