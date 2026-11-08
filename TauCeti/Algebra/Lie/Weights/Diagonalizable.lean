@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.Basic
 public import TauCeti.Algebra.Lie.Sl2.Spectrum
 public import TauCeti.Algebra.Lie.Weights.Semisimple
 public import TauCeti.LinearAlgebra.Eigenspace.Semisimple
+import TauCeti.Algebra.Lie.Killing.Basic
 import TauCeti.Algebra.Lie.Submodule.Finrank
 
 /-!
@@ -188,6 +189,7 @@ private lemma mem_span_coroot_cartan (x : H) :
   rw [RootPairing.IsRootSystem.span_coroot_eq_top]
   trivial
 
+omit [FiniteDimensional K L] in
 /-- **The Cartan subalgebra acts semisimply.** Every element of a Cartan subalgebra of a
 Killing-semisimple Lie algebra split over the ground field acts on a finite-dimensional module
 by a semisimple endomorphism.
@@ -198,6 +200,7 @@ The coroots span the Cartan subalgebra (`RootPairing.IsRootSystem.span_coroot_eq
 give commute, and both a sum of commuting semisimple endomorphisms and a scalar multiple of one are
 again semisimple. -/
 theorem isSemisimple_toEnd_cartan (x : H) : (toEnd K H M x).IsSemisimple := by
+  have := finite_of_isKilling (R := K) (L := L)
   induction mem_span_coroot_cartan x using Submodule.span_induction with
   | mem y hy =>
     obtain ⟨α, rfl⟩ := hy
@@ -251,12 +254,14 @@ instance instIsTriangularizableCartan : IsTriangularizable K H M where
 
 /-! ### Honest weight spaces -/
 
+omit [FiniteDimensional K L] in
 /-- The generalized eigenspace of `x : H` at a scalar is an honest eigenspace. -/
 @[simp]
 theorem genWeightSpaceOf_eq_eigenspace (μ : K) (x : H) :
     (genWeightSpaceOf M μ x).toSubmodule = (toEnd K H M x).eigenspace μ :=
   (isSemisimple_toEnd_cartan (M := M) x).isFinitelySemisimple.maxGenEigenspace_eq_eigenspace μ
 
+omit [FiniteDimensional K L] in
 /-- **The generalized weight spaces are honest weight spaces.** For a finite-dimensional module over
 a Killing-semisimple Lie algebra with a split Cartan subalgebra, `LieModule.genWeightSpace M χ`
 is the simultaneous eigenspace `LieModule.weightSpace M χ`.
@@ -268,6 +273,7 @@ theorem genWeightSpace_eq_weightSpace (χ : H → K) : genWeightSpace M χ = wei
   genWeightSpace_eq_weightSpace_of_isFinitelySemisimple
     (fun x ↦ (isSemisimple_toEnd_cartan x).isFinitelySemisimple) χ
 
+omit [FiniteDimensional K L] in
 /-- **Membership of a weight space is the eigenvector equation.** An element of a
 finite-dimensional module lies in the `χ`-weight space exactly when every `x : H` acts on it by the
 scalar `χ x`.
@@ -280,13 +286,16 @@ theorem mem_genWeightSpace_iff_forall_lie_eq_smul {χ : H → K} {m : M} :
   rw [genWeightSpace_eq_weightSpace, mem_weightSpace]
   simp
 
+omit [FiniteDimensional K L] in
 variable (K H M) in
 /-- **The honest weight spaces span.** A finite-dimensional module over a Killing-semisimple Lie
 algebra with a split Cartan subalgebra is spanned by its simultaneous eigenspaces. -/
 theorem iSup_weightSpace_eq_top :
     ⨆ χ : Weight K H M, weightSpace M (χ : H → K) = ⊤ := by
+  have := finite_of_isKilling (R := K) (L := L)
   simpa only [genWeightSpace_eq_weightSpace] using iSup_genWeightSpace_eq_top' K H M
 
+omit [FiniteDimensional K L] in
 variable (K H M) in
 open scoped Classical in
 /-- **The honest weight-space decomposition.** A finite-dimensional module over a
@@ -294,16 +303,19 @@ Killing-semisimple Lie algebra with a split Cartan subalgebra is the internal di
 simultaneous eigenspaces, so `χ ↦ finrank (weightSpace M χ)` counts honest multiplicities. -/
 theorem isInternal_weightSpace :
     DirectSum.IsInternal fun χ : Weight K H M ↦ (weightSpace M (χ : H → K)).toSubmodule := by
+  have := finite_of_isKilling (R := K) (L := L)
   simpa only [genWeightSpace_eq_weightSpace] using isInternal_genWeightSpace K H M
 
 /-! ### Traces -/
 
+omit [FiniteDimensional K L] in
 /-- **The trace of a power of a Cartan element**: `tr (ρ_M(h) ^ m) = ∑_μ dim M_μ · μ(h) ^ m`, the
 sum over the weights `μ` of `M`. -/
 theorem trace_toEnd_pow_eq_sum_finrank_nsmul (h : H) (m : ℕ) :
     LinearMap.trace K M (toEnd K H M h ^ m) =
       ∑ chi : Weight K H M, finrank K (genWeightSpace M chi) • chi h ^ m := by
   classical
+  have := finite_of_isKilling (R := K) (L := L)
   -- the weight space of `chi` is an honest eigenspace, on which `h` acts by the scalar `chi h`
   have hact (chi : Weight K H M) (n : ℕ) (x : M) (hx : x ∈ genWeightSpace M chi) :
       (toEnd K H M h ^ n) x = chi h ^ n • x := by
