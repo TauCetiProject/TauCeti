@@ -12,6 +12,7 @@ public import Mathlib.MeasureTheory.Integral.DominatedConvergence
 public import Mathlib.MeasureTheory.Function.L1Space.Integrable
 public import TauCeti.MeasureTheory.Function.PolynomialMemLp
 public import TauCeti.MeasureTheory.Measure.Prokhorov
+public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Cluster
 public import TauCeti.MeasureTheory.Measure.Tight.Basic
 import TauCeti.Algebra.Order.Group.MinMax
 
