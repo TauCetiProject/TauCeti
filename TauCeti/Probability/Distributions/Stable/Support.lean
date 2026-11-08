@@ -377,6 +377,7 @@ theorem stablePDFReal_pos_of_one_le (hα : α ∈ Icc 1 2) (hβ : |β| ≤ 1)
 
 /-- Below shape one, the continuous density of a positive-scale stable law of skewness `1` is
 strictly positive exactly to the right of its `S₁` location. -/
+@[simp]
 theorem stablePDFReal_one_pos_iff_of_lt_one (hα : α ∈ Ioo 0 1) (hs : 0 < s) (m x : ℝ) :
     0 < stablePDFReal α 1 s m x ↔ stableS1Location α 1 s m < x := by
   have hα' : α ∈ Ioc 0 2 := ⟨hα.1, (hα.2.trans one_lt_two).le⟩
@@ -398,6 +399,7 @@ theorem stablePDFReal_one_pos_iff_of_lt_one (hα : α ∈ Ioo 0 1) (hs : 0 < s) 
 
 /-- Below shape one, the continuous density of a positive-scale stable law of skewness `-1` is
 strictly positive exactly to the left of its `S₁` location. -/
+@[simp]
 theorem stablePDFReal_neg_one_pos_iff_of_lt_one (hα : α ∈ Ioo 0 1) (hs : 0 < s) (m x : ℝ) :
     0 < stablePDFReal α (-1) s m x ↔ x < stableS1Location α (-1) s m := by
   have hα' : α ∈ Ioc 0 2 := ⟨hα.1, (hα.2.trans one_lt_two).le⟩
