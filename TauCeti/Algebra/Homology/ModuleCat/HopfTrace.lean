@@ -65,19 +65,15 @@ namespace HomologicalComplex
 variable {k : Type u} [Field k] {ι : Type*} {c : ComplexShape ι}
   {K : HomologicalComplex (ModuleCat.{v} k) c}
 
-/-- A chain endomorphism maps the kernel of the differential `K.d n m` into itself. -/
-private theorem mapsTo_ker_d (φ : K ⟶ K) (n m : ι) :
-    ∀ x ∈ ker (K.d n m).hom, (φ.f n).hom x ∈ ker (K.d n m).hom :=
-  φ.d_apply_eq_zero_of_d_apply_eq_zero n m
-
 /-- The trace of `φ` on `K.X n` is its trace on the kernel `Zₙ` of the differential `K.d n m` plus
 its trace on the image `Bₘ` of that differential. -/
 private theorem trace_f_eq_trace_restrict_ker_add (φ : K ⟶ K) (n m : ι)
     [Module.Finite k (K.X n)] :
-    trace k (K.X n) (φ.f n).hom = trace k _ ((φ.f n).hom.restrict (mapsTo_ker_d φ n m)) +
-      trace k _ (φ.boundaryMap n m) := by
+    trace k (K.X n) (φ.f n).hom = trace k (ker (K.d n m).hom)
+      ((φ.f n).hom.restrict (φ.d_apply_eq_zero_of_d_apply_eq_zero n m)) +
+        trace k _ (φ.boundaryMap n m) := by
   refine trace_eq_add_of_exact (ker (K.d n m).hom).injective_subtype
-    (K.d n m).hom.surjective_rangeRestrict ?_ (LinearMap.ext fun _ ↦ by simp)
+    (K.d n m).hom.surjective_rangeRestrict ?_ (LinearMap.ext fun _ ↦ rfl)
     (LinearMap.ext fun x ↦ Subtype.ext (by simp [Hom.comm_apply]))
   rw [LinearMap.exact_iff, ker_rangeRestrict, Submodule.range_subtype]
 
@@ -85,11 +81,12 @@ private theorem trace_f_eq_trace_restrict_ker_add (φ : K ⟶ K) (n m : ι)
 `Bₙ` of the incoming differential `K.d p n` plus the trace of `Hₙ(φ)`. -/
 private theorem trace_restrict_ker_eq_trace_boundaryMap_add (φ : K ⟶ K) {p n m : ι}
     (hp : c.prev n = p) (hm : c.next n = m) [Module.Finite k (K.X n)] :
-    trace k _ ((φ.f n).hom.restrict (mapsTo_ker_d φ n m)) =
+    trace k (ker (K.d n m).hom)
+        ((φ.f n).hom.restrict (φ.d_apply_eq_zero_of_d_apply_eq_zero n m)) =
       trace k _ (φ.boundaryMap p n) + trace k (K.homology n) (homologyMap φ n).hom := by
   refine trace_eq_add_of_exact (Submodule.inclusion_injective _)
     (K.moduleCatKerHomologyClass_surjective hm) (K.exact_inclusion_moduleCatKerHomologyClass hm hp)
-    (LinearMap.ext fun _ ↦ Subtype.ext (by simp))
+    (LinearMap.ext fun x ↦ Subtype.ext (φ.coe_boundaryMap p n x).symm)
     (LinearMap.ext fun z ↦ (homologyMap_moduleCatKerHomologyClass hm φ z).symm)
 
 /-- The trace of a chain endomorphism `φ` on a finite-dimensional term `K.X n` is the sum of its
