@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
 public import Mathlib.Analysis.CStarAlgebra.Matrix
 
 import Mathlib.MeasureTheory.Function.Jacobian
+import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.Matrix.EuclideanLin
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
@@ -132,6 +133,29 @@ theorem pullbackDensity_apply {E : Type*} [NormedAddCommGroup E] [NormedSpace �
     (f : E → ℝ) (x : E) : pullbackDensity Φ f x = |(fderiv ℝ Φ x).det| * f (Φ x) :=
   (rfl)
 
+/-- Where `DΦ(x)` is invertible, the map of the inverse Jacobian matrix is a right inverse of
+`DΦ(x)`. -/
+private theorem fderiv_apply_toEuclideanCLM_inv_apply {Φ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    {x : EuclideanSpace ℝ ι} (hx : (fderiv ℝ Φ x).det ≠ 0) (v : EuclideanSpace ℝ ι) :
+    fderiv ℝ Φ x (toEuclideanCLM (𝕜 := ℝ) ((toEuclideanCLM (𝕜 := ℝ)).symm (fderiv ℝ Φ x))⁻¹ v) =
+      v := by
+  obtain ⟨M, hMD⟩ : ∃ M, toEuclideanCLM (𝕜 := ℝ) M = fderiv ℝ Φ x :=
+    ⟨_, StarAlgEquiv.apply_symm_apply _ _⟩
+  rw [← hMD, det_toEuclideanCLM] at hx
+  rw [← hMD, StarAlgEquiv.symm_apply_apply, ← mul_apply_eq_comp, ← map_mul,
+    mul_nonsing_inv _ (isUnit_iff_ne_zero.2 hx), map_one, one_apply_eq_self]
+
+/-- Where `DΦ(x)` is invertible, the adjoint of the map of the inverse Jacobian matrix is a left
+inverse of `DΦ(x)*`. -/
+private theorem adjoint_toEuclideanCLM_inv_adjoint_fderiv_apply
+    {Φ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {x : EuclideanSpace ℝ ι}
+    (hx : (fderiv ℝ Φ x).det ≠ 0) (v : EuclideanSpace ℝ ι) :
+    (toEuclideanCLM (𝕜 := ℝ) ((toEuclideanCLM (𝕜 := ℝ)).symm (fderiv ℝ Φ x))⁻¹).adjoint
+      ((fderiv ℝ Φ x).adjoint v) = v := by
+  refine ext_inner_right ℝ fun w => ?_
+  rw [ContinuousLinearMap.adjoint_inner_left, ContinuousLinearMap.adjoint_inner_left,
+    fderiv_apply_toEuclideanCLM_inv_apply hx]
+
 /-- **The transformed principal coefficient on pulled-back covectors.** Where `DΦ(x)` is
 invertible, the bilinear form of `a'(x)` evaluated on `DΦ(x)* η` and `DΦ(x)* ξ` is
 `|det DΦ(x)|` times the bilinear form of `a(Φ x)` evaluated on `η` and `ξ`. -/
@@ -141,17 +165,13 @@ theorem matrixBilinearForm_pullbackPrincipal {Φ : EuclideanSpace ℝ ι → Euc
     matrixBilinearForm (pullbackPrincipal Φ a x) ((fderiv ℝ Φ x).adjoint η)
         ((fderiv ℝ Φ x).adjoint ξ) =
       |(fderiv ℝ Φ x).det| * matrixBilinearForm (a (Φ x)) η ξ := by
-  -- Write `DΦ(x)` as the map of its Jacobian matrix `M`, so that `DΦ(x)*` is the map of `Mᵀ`.
-  obtain ⟨M, hMD⟩ : ∃ M, toEuclideanCLM (𝕜 := ℝ) M = fderiv ℝ Φ x :=
-    ⟨_, StarAlgEquiv.apply_symm_apply _ _⟩
-  rw [← hMD, det_toEuclideanCLM] at hx
-  have hM := isUnit_iff_ne_zero.2 hx
-  have h1 : M⁻¹ᵀ * Mᵀ = 1 := by rw [← transpose_mul, mul_nonsing_inv _ hM, transpose_one]
-  rw [pullbackPrincipal_apply, ← hMD, StarAlgEquiv.symm_apply_apply, adjoint_toEuclideanCLM,
-    conjTranspose_eq_transpose_of_trivial, matrixBilinearForm_smul_apply, matrixBilinearForm_apply,
-    matrixBilinearForm_apply, ofLp_toEuclideanCLM, ofLp_toEuclideanCLM, mulVec_mulVec,
-    Matrix.mul_assoc, h1, Matrix.mul_one, mulVec_transpose, ← dotProduct_mulVec, mulVec_mulVec,
-    ← Matrix.mul_assoc, mul_nonsing_inv _ hM, Matrix.one_mul]
+  -- As operators, `a'(x) = J T a(Φ x) T*` with `T* DΦ(x)* = id`, where `T` is the map of `M⁻¹`.
+  rw [pullbackPrincipal_apply, matrixBilinearForm_smul_apply, matrixBilinearForm_apply,
+    matrixBilinearForm_apply, ← inner_toEuclideanCLM, ← inner_toEuclideanCLM, map_mul, map_mul,
+    ← conjTranspose_eq_transpose_of_trivial, ← adjoint_toEuclideanCLM,
+    mul_apply_eq_comp, mul_apply_eq_comp,
+    ← ContinuousLinearMap.adjoint_inner_left, adjoint_toEuclideanCLM_inv_adjoint_fderiv_apply hx,
+    adjoint_toEuclideanCLM_inv_adjoint_fderiv_apply hx]
 
 /-- **The transformed drift on pulled-back covectors.** Where `DΦ(x)` is invertible,
 `⟪b'(x), DΦ(x)* ξ⟫ = |det DΦ(x)| ⟪b(Φ x), ξ⟫`. -/
@@ -160,14 +180,8 @@ theorem inner_pullbackDrift_adjoint {Φ : EuclideanSpace ℝ ι → EuclideanSpa
     (hx : (fderiv ℝ Φ x).det ≠ 0) (ξ : EuclideanSpace ℝ ι) :
     ⟪pullbackDrift Φ b x, (fderiv ℝ Φ x).adjoint ξ⟫_ℝ =
       |(fderiv ℝ Φ x).det| * ⟪b (Φ x), ξ⟫_ℝ := by
-  obtain ⟨M, hMD⟩ : ∃ M, toEuclideanCLM (𝕜 := ℝ) M = fderiv ℝ Φ x :=
-    ⟨_, StarAlgEquiv.apply_symm_apply _ _⟩
-  rw [← hMD, det_toEuclideanCLM] at hx
-  rw [pullbackDrift_apply, ← hMD, StarAlgEquiv.symm_apply_apply, adjoint_toEuclideanCLM,
-    conjTranspose_eq_transpose_of_trivial, real_inner_smul_left,
-    EuclideanSpace.inner_eq_star_dotProduct, EuclideanSpace.inner_eq_star_dotProduct,
-    ofLp_toEuclideanCLM, ofLp_toEuclideanCLM, star_trivial, star_trivial, mulVec_transpose,
-    ← dotProduct_mulVec, mulVec_mulVec, mul_nonsing_inv _ (isUnit_iff_ne_zero.2 hx), one_mulVec]
+  rw [pullbackDrift_apply, real_inner_smul_left, ContinuousLinearMap.adjoint_inner_right,
+    fderiv_apply_toEuclideanCLM_inv_apply hx]
 
 /-- **The transformed energy integrand.** Where `DΦ(x)` is invertible, the energy integrand of
 the transformed coefficients on jets whose gradients are pulled back by `DΦ(x)*` is
@@ -191,48 +205,7 @@ end Coefficients
 section Ellipticity
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {Φ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
-  {D : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι} {L L' : ℝ}
-
-omit [DecidableEq ι] in
-/-- If `D` is invertible with `‖v‖ ≤ L' ‖D v‖` for every `v`, then every `ξ` is `D* ζ` for some `ζ`
-with `‖ζ‖ ≤ L' ‖ξ‖`. -/
-private theorem exists_adjoint_eq_and_norm_le (hL' : ∀ v, ‖v‖ ≤ L' * ‖D v‖) (hL'0 : 0 ≤ L')
-    (hD : D.det ≠ 0) (ξ : EuclideanSpace ℝ ι) : ∃ ζ, D.adjoint ζ = ξ ∧ ‖ζ‖ ≤ L' * ‖ξ‖ := by
-  set e := D.toContinuousLinearEquivOfDetNeZero hD
-  set E' := e.symm.toContinuousLinearMap
-  have he : ∀ v, D (e.symm v) = v := fun v =>
-    (D.toContinuousLinearEquivOfDetNeZero_apply hD _).symm.trans (e.apply_symm_apply v)
-  have hE' : E'.comp D = ContinuousLinearMap.id ℝ _ := by
-    refine ContinuousLinearMap.ext fun v => ?_
-    rw [ContinuousLinearMap.comp_apply, ← D.toContinuousLinearEquivOfDetNeZero_apply hD,
-      ContinuousLinearEquiv.coe_coe, e.symm_apply_apply, ContinuousLinearMap.id_apply]
-  refine ⟨E'.adjoint ξ, ?_, ?_⟩
-  · rw [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_comp, hE',
-      ContinuousLinearMap.adjoint_id, ContinuousLinearMap.id_apply]
-  · refine (E'.adjoint.le_opNorm ξ).trans (mul_le_mul_of_nonneg_right ?_ (norm_nonneg _))
-    rw [LinearIsometryEquiv.norm_map]
-    refine E'.opNorm_le_bound hL'0 fun v => ?_
-    simpa only [he, E', ContinuousLinearEquiv.coe_coe] using hL' (e.symm v)
-
-omit [DecidableEq ι] in
-/-- The bounds `‖DΦ‖ ≤ L` and `‖v‖ ≤ L' ‖DΦ(x) v‖` at a single point of a nonempty set force
-`0 < L`, `0 ≤ L'` and `1 ≤ L L'`. -/
-private theorem pos_and_nonneg_and_one_le_mul [Nonempty ι] {s : Set (EuclideanSpace ℝ ι)}
-    (hs : s.Nonempty) (hL : ∀ x ∈ s, ‖fderiv ℝ Φ x‖ ≤ L)
-    (hL' : ∀ x ∈ s, ∀ v, ‖v‖ ≤ L' * ‖fderiv ℝ Φ x v‖) : 0 < L ∧ 0 ≤ L' ∧ 1 ≤ L * L' := by
-  obtain ⟨x₀, hx₀⟩ := hs
-  obtain ⟨v₀, hv₀⟩ := exists_norm_eq (EuclideanSpace ℝ ι) zero_le_one
-  have h1 := hL' x₀ hx₀ v₀
-  have hN := (fderiv ℝ Φ x₀).le_of_opNorm_le (hL x₀ hx₀) v₀
-  rw [hv₀] at h1 hN
-  rw [mul_one] at hN
-  have hL'0 : 0 ≤ L' := by
-    by_contra h
-    nlinarith [norm_nonneg (fderiv ℝ Φ x₀ v₀)]
-  have hLL' : 1 ≤ L * L' := by nlinarith [mul_le_mul_of_nonneg_left hN hL'0]
-  refine ⟨lt_of_le_of_ne ((norm_nonneg _).trans (hL x₀ hx₀)) fun h => ?_, hL'0, hLL'⟩
-  rw [← h, zero_mul] at hLL'
-  linarith
+  {L L' : ℝ}
 
 /-- The lower ellipticity bound of the transformed principal coefficient at a point: if `a(Φ x)`
 has lower constant `λ ≥ 0`, `‖DΦ(x)‖ ≤ L` and `c ≤ |det DΦ(x)|`, then `a'(x)` has lower constant
@@ -244,8 +217,11 @@ private theorem mul_norm_sq_le_toQuadraticForm'_pullbackPrincipal
     (hL'0 : 0 ≤ L') (hc : 0 < c) (hdet : c ≤ |(fderiv ℝ Φ x).det|) (ξ : EuclideanSpace ℝ ι) :
     c * lam / L ^ 2 * ‖ξ‖ ^ 2 ≤ (pullbackPrincipal Φ a x).toQuadraticForm' ξ := by
   have hdet0 : (fderiv ℝ Φ x).det ≠ 0 := abs_pos.1 (hc.trans_le hdet)
+  have hunit : IsUnit (fderiv ℝ Φ x) := ContinuousLinearMap.isUnit_iff_bijective.2 <|
+    (Module.End.isUnit_iff _).1 ((LinearMap.isUnit_iff_isUnit_det _).2 hdet0.isUnit)
   -- Write `ξ = DΦ(x)* ζ`; then `ξᵀ a' ξ = J ζᵀ a ζ ≥ c λ ‖ζ‖²` and `‖ξ‖ ≤ L ‖ζ‖`.
-  obtain ⟨ζ, rfl, -⟩ := exists_adjoint_eq_and_norm_le hL' hL'0 hdet0 ξ
+  obtain ⟨ζ, rfl, -⟩ :=
+    (fderiv ℝ Φ x).exists_adjoint_apply_eq_and_norm_le hunit hL'0 hL' ξ
   have hζ : ‖(fderiv ℝ Φ x).adjoint ζ‖ ≤ L * ‖ζ‖ := by
     refine ((fderiv ℝ Φ x).adjoint.le_opNorm ζ).trans ?_
     rw [LinearIsometryEquiv.norm_map]
@@ -269,10 +245,14 @@ private theorem abs_matrixBilinearForm_pullbackPrincipal_le
     (hL'0 : 0 ≤ L') (hdet0 : (fderiv ℝ Φ x).det ≠ 0) (η ξ : EuclideanSpace ℝ ι) :
     |matrixBilinearForm (pullbackPrincipal Φ a x) η ξ| ≤
       L ^ Fintype.card ι * L' ^ 2 * Lam * ‖η‖ * ‖ξ‖ := by
+  have hunit : IsUnit (fderiv ℝ Φ x) := ContinuousLinearMap.isUnit_iff_bijective.2 <|
+    (Module.End.isUnit_iff _).1 ((LinearMap.isUnit_iff_isUnit_det _).2 hdet0.isUnit)
   -- Write `η = DΦ(x)* ζ'` and `ξ = DΦ(x)* ζ`, with `‖ζ'‖ ≤ L' ‖η‖` and `‖ζ‖ ≤ L' ‖ξ‖`, and
   -- bound `|det DΦ(x)| ≤ ‖DΦ(x)‖ⁿ ≤ Lⁿ`.
-  obtain ⟨ζ', rfl, hζ'⟩ := exists_adjoint_eq_and_norm_le hL' hL'0 hdet0 η
-  obtain ⟨ζ, rfl, hζ⟩ := exists_adjoint_eq_and_norm_le hL' hL'0 hdet0 ξ
+  obtain ⟨ζ', rfl, hζ'⟩ :=
+    (fderiv ℝ Φ x).exists_adjoint_apply_eq_and_norm_le hunit hL'0 hL' η
+  obtain ⟨ζ, rfl, hζ⟩ :=
+    (fderiv ℝ Φ x).exists_adjoint_apply_eq_and_norm_le hunit hL'0 hL' ξ
   have hdetle : |(fderiv ℝ Φ x).det| ≤ L ^ Fintype.card ι := by
     refine ((fderiv ℝ Φ x).abs_det_le_opNorm_pow).trans ?_
     rw [finrank_euclideanSpace]
@@ -301,10 +281,14 @@ theorem UniformlyEllipticOn.pullbackPrincipal [Nonempty ι] {s t : Set (Euclidea
     UniformlyEllipticOn s (PDE.pullbackPrincipal Φ a) (c * lam / L ^ 2)
       (L ^ Fintype.card ι * L' ^ 2 * Lam) := by
   obtain ⟨hlam, hlamLam, ha⟩ := uniformlyEllipticOn_iff.1 ha
-  obtain ⟨hL0, hL'0, hLL'⟩ := pos_and_nonneg_and_one_le_mul hs hL hL'
+  -- At a point `x₀ ∈ s`, `1 ≤ ‖DΦ(x₀)‖ L' ≤ L L'`, so `L' ≥ 0` and `L > 0`.
+  obtain ⟨x₀, hx₀⟩ := hs
+  have h1 := (fderiv ℝ Φ x₀).one_le_opNorm_mul_of_forall_norm_le (hL' x₀ hx₀)
+  have hL'0 : 0 ≤ L' := (pos_of_mul_pos_right (one_pos.trans_le h1) (norm_nonneg _)).le
+  have hLL' : 1 ≤ L * L' := h1.trans (mul_le_mul_of_nonneg_right (hL x₀ hx₀) hL'0)
+  have hL0 : 0 < L := pos_of_mul_pos_left (one_pos.trans_le hLL') hL'0
   refine uniformlyEllipticOn_iff.2 ⟨by positivity, ?_, fun x hx => ⟨fun ξ => ?_, fun η ξ => ?_⟩⟩
   · -- `c λ / L² ≤ Lⁿ λ L'² ≤ Lⁿ L'² Λ`, using `c ≤ |det DΦ| ≤ Lⁿ` and `1 ≤ L L'`.
-    obtain ⟨x₀, hx₀⟩ := hs
     have hcL : c ≤ L ^ Fintype.card ι := by
       refine (hdet x₀ hx₀).trans (((fderiv ℝ Φ x₀).abs_det_le_opNorm_pow).trans ?_)
       rw [finrank_euclideanSpace]
