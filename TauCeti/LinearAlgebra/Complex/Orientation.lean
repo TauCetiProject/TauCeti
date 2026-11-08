@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Complex.Orientation
 public import Mathlib.RingTheory.AlgebraTower
+public import TauCeti.LinearAlgebra.Basis.Semilinear
 public import TauCeti.LinearAlgebra.Complex.Determinant
 public import TauCeti.LinearAlgebra.Complex.Finrank
 public import TauCeti.LinearAlgebra.Orientation.Prod
@@ -260,23 +261,8 @@ theorem map_toRealLinearEquiv_complexOrientation (f : E ≃ₛₗ[starRingEnd �
           (finCongr (by rw [← finrank_real_eq_two_mul_finrank_complex,
             ← finrank_real_eq_two_mul_finrank_complex, f.toRealLinearEquiv.finrank_eq]))
           (complexOrientation F) := by
-  have hn : finrank ℂ E = finrank ℂ F := by
-    have := f.toRealLinearEquiv.finrank_eq
-    rw [finrank_real_eq_two_mul_finrank_complex, finrank_real_eq_two_mul_finrank_complex] at this
-    omega
   set b := finBasis ℂ E
-  -- The image `f ∘ b` of a complex basis of `E` is a complex basis of `F`.
-  have hli : LinearIndependent ℂ (f ∘ b) :=
-    b.linearIndependent.map_of_injective_injectiveₛ (starRingEnd ℂ) f.toAddEquiv.toAddMonoidHom
-      (starRingEnd ℂ).injective f.injective fun r x ↦
-        (map_smulₛₗ f _ x).trans (by simp)
-  have hsp : ⊤ ≤ Submodule.span ℂ (Set.range (f ∘ b)) := by
-    rintro y -
-    rw [← f.apply_symm_apply y, ← b.sum_repr (f.symm y), map_sum]
-    exact Submodule.sum_mem _ fun i _ ↦ by
-      rw [map_smulₛₗ]
-      exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩)
-  set c : Basis (Fin (finrank ℂ F)) ℂ F := (Basis.mk hli hsp).reindex (finCongr hn)
+  set c : Basis (Fin (finrank ℂ F)) ℂ F := (b.mapₛₗ f).reindex (finCongr f.finrank_eqₛₗ)
   -- One sign for each vector `I • bᵢ` of the real basis.
   set σ := complexRealIndexEquiv (finrank ℂ E)
   set w : Fin (2 * finrank ℂ E) → ℝˣ := fun j ↦ if (σ.symm j).2 = 0 then 1 else -1
@@ -293,7 +279,7 @@ theorem map_toRealLinearEquiv_complexOrientation (f : E ≃ₛₗ[starRingEnd �
   refine Basis.eq_of_apply_eq fun j ↦ ?_
   obtain ⟨⟨i, k⟩, rfl⟩ := σ.surjective j
   fin_cases k <;>
-    simp [w, σ, c, Basis.complexToReal_apply, Basis.unitsSMul_apply, map_smulₛₗ]
+    simp [w, σ, c, Basis.unitsSMul_apply, map_smulₛₗ]
 
 /-- A conjugate-linear automorphism multiplies the canonical real orientation by `(-1) ^ n`, where
 `n` is the complex dimension. -/
