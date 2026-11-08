@@ -53,9 +53,9 @@ instance isIdempotentComplete_fullSubcategory {C : Type*} [Category* C] [IsIdemp
 
 /-- A retract of a zero object is a zero object. -/
 instance {C : Type*} [Category* C] : IsStableUnderRetracts (Limits.IsZero (C := C)) where
-  of_retract {X Y} h hY := by
+  of_retract h hY :=
     let := hY.hasZeroMorphisms
-    rw [Limits.IsZero.iff_id_eq_zero, ← h.retract, hY.eq_of_tgt h.i 0, Limits.zero_comp]
+    hY.of_mono h.i
 
 /-- The inverse image of a property stable under retracts is stable under retracts, since
 functors preserve retracts. -/
