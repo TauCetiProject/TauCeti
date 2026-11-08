@@ -46,7 +46,7 @@ product formula, since `[r]_v! ≠ 0` in the domain `ℤ[v, v⁻¹]`.
 * `TauCeti.laurentEval_laurentQuantumBinomial`: the value at a unit `q` of a field is the
   symmetric quantum binomial `[n choose r]_q`.
 * `TauCeti.laurentEval_one_laurentQuantumBinomial`: the value at `v = 1` is `n.choose r`.
-* `TauCeti.laurentQuantumBinomial_succ_succ'`, `TauCeti.laurentQuantumBinomial_invert` and
+* `TauCeti.laurentQuantumBinomial_succ_succ'`, `TauCeti.invert_laurentQuantumBinomial` and
   `TauCeti.laurentQuantumBinomial_symm`: the second Pascal rule, invariance under `v ↦ v⁻¹`, and
   the symmetry `[n choose n - r]_v = [n choose r]_v` for `r ≤ n`.
 * `TauCeti.laurentQuantumBinomial_mul_laurentQuantumFactorial_mul_laurentQuantumFactorial`:
@@ -150,7 +150,7 @@ theorem laurentEval_one_laurentQuantumBinomial {A : Type*} [Ring A] (n r : ℕ) 
 
 /-- The Gaussian binomials are invariant under `v ↦ v⁻¹`. -/
 @[simp]
-theorem laurentQuantumBinomial_invert (n r : ℕ) :
+theorem invert_laurentQuantumBinomial (n r : ℕ) :
     invert (laurentQuantumBinomial n r) = laurentQuantumBinomial n r := by
   refine eq_of_forall_laurentEval_eq fun K _ u _ => ?_
   simp [Units.val_inv_eq_inv_val]
@@ -296,7 +296,7 @@ theorem signedLaurentQuantumBinomial_succ_succ (m : ℤ) (r : ℕ) :
 
 /-- The signed Gaussian binomials are invariant under `v ↦ v⁻¹`. -/
 @[simp]
-theorem signedLaurentQuantumBinomial_invert (m : ℤ) (r : ℕ) :
+theorem invert_signedLaurentQuantumBinomial (m : ℤ) (r : ℕ) :
     invert (signedLaurentQuantumBinomial m r) = signedLaurentQuantumBinomial m r := by
   cases m <;> simp [signedLaurentQuantumBinomial_negSucc]
 
