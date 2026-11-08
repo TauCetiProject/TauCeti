@@ -5,8 +5,8 @@ Authors: pi
 -/
 module
 
-public import Mathlib.Combinatorics.SimpleGraph.Bipartite
 public import Mathlib.Combinatorics.SimpleGraph.Finite
+public import TauCeti.Combinatorics.SimpleGraph.Bipartite
 public import TauCeti.Data.Finset.Basic
 
 /-!
@@ -38,14 +38,6 @@ theorem top_between_symmDiff (S T : Set V) :
   simp only [between_adj, top_adj, Set.mem_compl_iff, symmDiff_def, Set.mem_union,
     Set.mem_sdiff, sup_adj, sdiff_adj]
   tauto
-
-/-- Restricting a graph to pairs between two sets is intersection with the corresponding
-restriction of the complete graph. -/
-theorem between_eq_inf_top_between (G : SimpleGraph V) (s t : Set V) :
-    G.between s t = G ⊓ (⊤ : SimpleGraph V).between s t := by
-  ext u v
-  simp only [between_adj, inf_adj, top_adj]
-  exact and_congr_right fun h ↦ (and_iff_right h.ne).symm
 
 section Finite
 

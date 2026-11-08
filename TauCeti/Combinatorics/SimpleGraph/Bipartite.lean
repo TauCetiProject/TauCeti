@@ -9,7 +9,10 @@ public import Mathlib.Combinatorics.SimpleGraph.Coloring.Constructions
 public import Mathlib.Logic.Equiv.Bool
 
 /-!
-# Two-colourings of a connected graph
+# Bipartite restrictions and two-colourings
+
+Restricting a graph to pairs between two sets is intersection with the corresponding
+restriction of the complete graph (`SimpleGraph.between_eq_inf_top_between`).
 
 A walk in a graph coloured by `Bool` has even length exactly when its endpoints have the same
 colour (`SimpleGraph.Coloring.even_length_iff_congr`). On a preconnected graph every two vertices
@@ -27,6 +30,20 @@ independent of the colouring up to exchanging the two classes.
 -/
 
 public section
+
+namespace SimpleGraph
+
+variable {V : Type*}
+
+/-- Restricting a graph to pairs between two sets is intersection with the corresponding
+restriction of the complete graph. -/
+theorem between_eq_inf_top_between (G : SimpleGraph V) (s t : Set V) :
+    G.between s t = G ⊓ (⊤ : SimpleGraph V).between s t := by
+  ext u v
+  simp only [between_adj, inf_adj, top_adj]
+  exact and_congr_right fun h ↦ (and_iff_right h.ne).symm
+
+end SimpleGraph
 
 namespace SimpleGraph.Coloring
 
