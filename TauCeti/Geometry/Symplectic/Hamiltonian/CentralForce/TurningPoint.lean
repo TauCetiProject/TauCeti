@@ -67,12 +67,12 @@ theorem absRadialMomentum_eq_sqrt (hm : m ≠ 0) (r : ℝ) :
   · field_simp
     ring
 
-/-- On the level `E` of the reduced Hamiltonian, the absolute radial momentum at a radius `r > 0`
+/-- On the level `E` of the reduced Hamiltonian, the absolute radial momentum at a radius `r ≥ 0`
 is `|p_r|`. -/
-theorem absRadialMomentum_eq_abs (hm : m ≠ 0) {r p : ℝ} (hr : 0 < r)
+theorem absRadialMomentum_eq_abs (hm : m ≠ 0) {r p : ℝ} (hr : 0 ≤ r)
     (hE : centralForceHamiltonian m (effectivePotential m ℓ U) (r, p) = E) :
     absRadialMomentum m U ℓ E r = |p| := by
-  rw [centralForceHamiltonian_effectivePotential_apply hr.le] at hE
+  rw [centralForceHamiltonian_effectivePotential_apply hr] at hE
   rw [absRadialMomentum_def, ← sqrt_sq_eq_abs, ← hE]
   congr 1
   field_simp
@@ -155,7 +155,7 @@ private theorem leg_data (hm : 0 < m) (ht : t₁ ≤ t₂)
       absRadialMomentum m U ℓ E (γ t).1 = |(γ t).2| ∧ (γ t).2 ≠ 0 := by
     have hEt' : centralForceHamiltonian m (effectivePotential m ℓ U) ((γ t).1, (γ t).2) = E :=
       (hEt t (hIoo htI)).trans hE
-    refine ⟨absRadialMomentum_eq_abs hm.ne' (hr t (hIoo htI)) hEt', fun h0 ↦ ?_⟩
+    refine ⟨absRadialMomentum_eq_abs hm.ne' (hr t (hIoo htI)).le hEt', fun h0 ↦ ?_⟩
     have hlt' := hlt _ (hmem t htI)
     rw [centralForceHamiltonian_effectivePotential_apply (hr t (hIoo htI)).le, h0,
       add_assoc] at hEt'
