@@ -57,12 +57,7 @@ the coheight of every point. -/
     [IsIntegral X] [IsLocallyNoetherian Y] [IsNormalScheme Y] (x : X) :
     coheight (f x) = coheight x := by
   have : IsSchemeTheoreticallyDominant f := .of_isDominant f
-  have himage : IsIrreducible (Set.range f) := by
-    simpa only [Set.image_univ] using
-      (IrreducibleSpace.isIrreducible_univ X).image f f.continuous.continuousOn
-  have : IrreducibleSpace Y := by
-    apply (irreducibleSpace_def Y).mpr
-    simpa only [Set.top_eq_univ, f.denseRange.closure_eq] using himage.closure
+  have := f.irreducibleSpace_of_isDominant
   have : IsIntegral Y := isIntegral_of_irreducibleSpace_of_isReduced Y
   obtain ⟨U, hU, hxU, -⟩ := exists_isAffineOpen_mem_and_subset (x := f x) (U := ⊤) trivial
   have hV : IsAffineOpen (f ⁻¹ᵁ U) := hU.preimage f

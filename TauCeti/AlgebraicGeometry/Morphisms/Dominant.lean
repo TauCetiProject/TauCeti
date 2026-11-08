@@ -86,6 +86,15 @@ theorem IsDominant.pullback_fst_of_isOpenMap {X Y S : Scheme.{u}} (f : X ⟶ S) 
   rw [isDominant_iff, DenseRange, Scheme.Pullback.range_fst]
   exact g.denseRange.preimage hf
 
+/-- The target of a dominant morphism from an irreducible scheme is irreducible. -/
+theorem Scheme.Hom.irreducibleSpace_of_isDominant {X Y : Scheme.{u}} [IrreducibleSpace X]
+    (f : X ⟶ Y) [IsDominant f] : IrreducibleSpace Y := by
+  have himage : IsIrreducible (Set.range f) := by
+    simpa only [Set.image_univ] using
+      (IrreducibleSpace.isIrreducible_univ X).image f f.continuous.continuousOn
+  refine (irreducibleSpace_def Y).mpr ?_
+  simpa only [Set.top_eq_univ, f.denseRange.closure_eq] using himage.closure
+
 variable {X Y Z : Scheme.{u}} [IrreducibleSpace X] [IrreducibleSpace Y]
 
 /-- A dominant morphism of irreducible schemes sends the generic point to the generic point. -/
