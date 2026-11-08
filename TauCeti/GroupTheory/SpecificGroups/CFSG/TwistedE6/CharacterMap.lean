@@ -40,7 +40,10 @@ variable (d : TypeTwistedE6LieIndex)
 @[simp]
 theorem frobenius_weightTorus (s : Fin d.1.rank → d.1.Closureˣ) :
     d.frobenius (d.weightTorus s) = d.weightTorus (s ^ d.1.fieldOrder) := by
-  rw [frobenius_def, weightTorus_apply, E6DoubledMinuscule.frobenius_weightTorusPoints,
+  rw [frobenius_def, weightTorus_apply,
+    isCharacterMap_iff.mp (E6DoubledMinuscule.isCharacterMap_frobenius
+      d.1.characteristic d.1.fieldExponent d.1.Closure),
+    torusPointMap_nsmul, torusPointMap_one, MonoidHom.pow_apply, MonoidHom.id_apply,
     weightTorus_apply, d.1.fieldOrder_eq_characteristic_pow]
   -- Reindexing by `finCongr` commutes definitionally with pointwise powers.
   rfl
@@ -54,8 +57,10 @@ theorem graphAut_weightTorus (s : Fin d.1.rank → d.1.Closureˣ) :
   rw [graphAut_def]
   -- The constructor's semireducible rank requires `erw` to apply the explicit torus equation.
   erw [weightTorus_of,
-    E6DoubledMinuscule.graphAutomorphismPoints_weightTorusPoints,
+    isCharacterMap_iff.mp (E6DoubledMinuscule.isCharacterMap_graphAutomorphismPoints _),
+    torusPointMap_funCongrLeft,
     weightTorus_of, GraphTwistedIndex.diagramPerm_twistedE6, graphPermE6_symm]
+  -- On a constructor index, `finCongr` preserves each coordinate definitionally.
   rfl
 
 /-- Frobenius pulls characters back by multiplication by the recorded field order. -/
