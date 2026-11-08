@@ -25,10 +25,12 @@ open Set
 namespace unitInterval
 
 /-- The inclusion of the unit interval into `ℝ≥0` takes values at most one. -/
+@[simp]
 theorem toNNReal_le_one (s : I) : toNNReal s ≤ 1 :=
   NNReal.coe_le_one.1 (le_one s)
 
 /-- Clamping a real `t` to the unit interval, read back in `ℝ≥0`, is `min t.toNNReal 1`. -/
+@[simp]
 theorem toNNReal_projIcc (t : ℝ) :
     toNNReal (projIcc 0 1 zero_le_one t) = min t.toNNReal 1 := by
   ext
