@@ -76,7 +76,8 @@ reference loop has action `-∫₀¹ H(t, γ₀(t)) dt` relative to itself
   glued along it.
 * `TauCeti.cylinderAction_sub_cylinderAction`: recapping changes the action by the area of the
   sphere between the two caps.
-* `TauCeti.cylinderAction_eq_of_homotopy`: for a closed form, homotopic caps give the same action.
+* `TauCeti.cylinderAction_eq_of_homotopy`: for a closed `C¹` form, the action is unchanged along a
+  `C²` homotopy of caps fixing the loop.
 
 ## References
 
