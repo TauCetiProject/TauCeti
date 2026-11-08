@@ -12,7 +12,6 @@ public import TauCeti.Topology.CWComplex.Classical.Trans
 import TauCeti.AlgebraicTopology.Disk
 import TauCeti.Topology.CWComplex.Classical.CellularApproximation
 import TauCeti.Topology.CWComplex.Classical.Sphere.Basic
-import TauCeti.Topology.Homotopy.Extension.CWComplex
 import TauCeti.Topology.Homotopy.Extension.Pushout
 
 /-!
