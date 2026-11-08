@@ -8,7 +8,6 @@ module
 public import TauCeti.RingTheory.DividedPowerAlgebra.TensorMap
 public import TauCeti.RingTheory.PolynomialLaw.Multiplicative
 import Mathlib.LinearAlgebra.TensorProduct.Finiteness
-import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
 import TauCeti.Algebra.MvPolynomial.Monomial
 import TauCeti.RingTheory.TensorProduct.Maps
 import TauCeti.RingTheory.TensorProduct.MvPolynomial
