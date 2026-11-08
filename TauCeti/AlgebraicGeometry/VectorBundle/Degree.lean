@@ -66,7 +66,9 @@ Lemma 0AYX. Writing `L` as a difference of effective Cartier divisors reduces th
 * `FixedRank.vectorBundleDegree_eq_add_eulerCharBelow_of_shortExact`: for a short exact sequence
   `0 ⟶ E₁ ⟶ E₂ ⟶ T ⟶ 0` with `E₁` and `E₂` of the same rank, `deg E₂ = deg E₁ + χ(X, T)`, and
   `FixedRank.vectorBundleDegree_elementaryModification`, its case `T = κ(x)ₓ`, where the degree
-  drops by `[κ(x) : k]`;
+  drops by `[κ(x) : k]`, with curve versions
+  `FixedRank.vectorBundleDegree_eq_add_eulerCharBelow_of_shortExact_of_isCurveOver` and
+  `FixedRank.vectorBundleDegree_elementaryModification_of_isCurveOver`;
 * `FixedRank.vectorBundleDegree_baseChange`: the degree of the pullback of `E` to `X_K` for a
   field extension `K / k` is the degree of `E`;
 * `FixedRank.vectorBundleDegree_twist_toInvertibleSheaf`: `deg E(-D) = deg E - r · deg D` for an
@@ -244,10 +246,35 @@ theorem vectorBundleDegree_elementaryModification {x : X}
     [FiniteDimensional k (Scheme.Modules.Cohomology E₂.obj.obj 1)]
     (hvan : Subsingleton (Scheme.Modules.Cohomology E₁.obj.obj 2)) :
     vectorBundleDegree k E₂ = vectorBundleDegree k E₁ + (X ↘ Spec (.of k)).residueDegree x := by
-  rw [vectorBundleDegree_eq_add_eulerCharBelow_of_shortExact k hS hvan, eulerCharBelow_two,
-    finrank_cohomology_zero_eq_finrank_globalSections,
-    Scheme.finrank_cohomology_zero_skyscraperResidueField, Module.finrank_zero_of_subsingleton,
-    Nat.cast_zero, sub_zero]
+  rw [vectorBundleDegree_eq_add_eulerCharBelow_of_shortExact k hS hvan,
+    Scheme.eulerCharBelow_skyscraperResidueField]
+
+/-- **The degree under a modification on a curve.** On a proper integral curve over `k` whose
+codimension-one local rings are discrete valuation rings, for every short exact sequence
+`0 ⟶ E₁ ⟶ E₂ ⟶ T ⟶ 0` of sheaves of modules in which `E₁` and `E₂` are vector bundles of the
+same constant rank, `deg E₂ = deg E₁ + χ(X, T)`. -/
+theorem vectorBundleDegree_eq_add_eulerCharBelow_of_shortExact_of_isCurveOver [X.IsCurveOver k]
+    [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
+    {g : E₂.obj.obj ⟶ T} {w : f ≫ g = 0} (hS : (ShortComplex.mk f g w).ShortExact) :
+    vectorBundleDegree k E₂ = vectorBundleDegree k E₁ + eulerCharBelow k X T 2 := by
+  have := finiteDimensional_cohomology_of_isCurveOver k E₁.obj.obj 1
+  have := finiteDimensional_cohomology_of_isCurveOver k E₂.obj.obj 0
+  have := finiteDimensional_cohomology_of_isCurveOver k E₂.obj.obj 1
+  exact vectorBundleDegree_eq_add_eulerCharBelow_of_shortExact k hS
+    (subsingleton_cohomology_of_two_le_of_isCurveOver k E₁.obj.obj 2 le_rfl)
+
+/-- **The degree of an elementary modification on a curve.** On a proper integral curve over `k`
+whose codimension-one local rings are discrete valuation rings, if `E₁` is the kernel of a
+surjection `E₂ ⟶ κ(x)ₓ` from a vector bundle onto the skyscraper sheaf of the residue field at a
+point `x`, and `E₁` is again a vector bundle of the same constant rank, then
+`deg E₂ = deg E₁ + [κ(x) : k]`. -/
+theorem vectorBundleDegree_elementaryModification_of_isCurveOver [X.IsCurveOver k]
+    [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))] {x : X}
+    {g : E₂.obj.obj ⟶ Scheme.skyscraperResidueField x} {w : f ≫ g = 0}
+    (hS : (ShortComplex.mk f g w).ShortExact) :
+    vectorBundleDegree k E₂ = vectorBundleDegree k E₁ + (X ↘ Spec (.of k)).residueDegree x := by
+  rw [vectorBundleDegree_eq_add_eulerCharBelow_of_shortExact_of_isCurveOver k hS,
+    Scheme.eulerCharBelow_skyscraperResidueField]
 
 end Modification
 
