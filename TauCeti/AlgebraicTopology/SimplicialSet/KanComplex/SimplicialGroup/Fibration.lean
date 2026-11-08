@@ -151,6 +151,9 @@ theorem fibration_of_addGroup_of_surjective
     (hX : ∀ ⦃m n⦄ (f : m ⟶ n) (x y : X.obj m), X.map f (x + y) = X.map f x + X.map f y)
     (hp : ∀ n (x y : X.obj n), p.app n (x + y) = p.app n x + p.app n y)
     (hs : ∀ n : ℕ, Function.Surjective (p.app (Opposite.op ⦋n + 1⦌))) : Fibration p :=
+  -- Multiplicative is a type alias with the same carrier; its multiplication unfolds to
+  -- addition. Thus hX and hp directly supply the multiplicative compatibility hypotheses
+  -- for these transported group structures, without changing the underlying simplicial sets.
   let : ∀ n, Group (X.obj n) := fun n ↦ inferInstanceAs (Group (Multiplicative (X.obj n)))
   let : ∀ n, Group (Y.obj n) := fun n ↦ inferInstanceAs (Group (Multiplicative (Y.obj n)))
   p.fibration_of_group_of_surjective hX hp hs
