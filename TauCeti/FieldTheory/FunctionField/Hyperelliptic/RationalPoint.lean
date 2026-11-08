@@ -137,6 +137,10 @@ private theorem exists_smul_ne_ord_sub_pos (h2 : (2 : k) ≠ 0) {f : k[X]} (hf :
     ord_sub_pos_iff_not_ord_add_pos h2 hdeg hy hb hab (P := P)
   obtain ⟨σ, hσ⟩ := TauCeti.exists_algEquiv_apply_eq_neg_of_sq_eq
     (finrank_ratFunc_eq_two_of_sq_eq hf hdeg hgen hy) hgen hy
+  have hord (P : Place k F) :
+      (σ • P).ord (y - algebraMap k F b) = P.ord (y + algebraMap k F b) := by
+    rw [IsScalarTower.algebraMap_apply k (RatFunc k) F]
+    exact ord_smul_sub_eq_ord_add σ P hσ _
   obtain ⟨P₀, hP₀⟩ := restrict_surjective_of_finiteDimensional (IsFunctionField.ratFunc k) hF
     (adicOfIrreducible (irreducible_X_sub_C a))
   replace hP₀ : P₀.restrict k (RatFunc k) = adicOfIrreducible (irreducible_X_sub_C a) := hP₀
@@ -146,11 +150,11 @@ private theorem exists_smul_ne_ord_sub_pos (h2 : (2 : k) ≠ 0) {f : k[X]} (hf :
     by_cases h : 0 < P₀.ord (y - algebraMap k F b)
     · exact ⟨P₀, hP₀, h⟩
     · refine ⟨σ • P₀, by rw [restrict_smul, hP₀], ?_⟩
-      rw [ord_smul_sub_eq_ord_add σ P₀ hσ]
+      rw [hord P₀]
       by_contra hS
       exact h ((hexact P₀ hP₀).mpr hS)
   refine ⟨σ, P, hPQ, hPD, fun h ↦ (hexact P hPQ).mp hPD ?_⟩
-  rw [← ord_smul_sub_eq_ord_add σ P hσ, h]
+  rw [← hord P, h]
   exact hPD
 
 end Helpers

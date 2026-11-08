@@ -159,12 +159,12 @@ theorem ord_smul (x : F') : (σ • P).ord x = P.ord (σ.symm x) := by
 theorem ord_smul_apply (x : F') : (σ • P).ord (σ x) = P.ord x := by
   simp
 
-/-- The involution `y ↦ -y` exchanges the orders of `y - b` and `y + b`, for a constant `b`. -/
-theorem ord_smul_sub_eq_ord_add {y : F'} (hσ : σ y = -y) (b : k) :
-    (σ • P).ord (y - algebraMap k F' b) = P.ord (y + algebraMap k F' b) := by
+/-- The involution `y ↦ -y` exchanges the orders of `y - c` and `y + c`, for a constant `c` of
+the base field `F`. -/
+theorem ord_smul_sub_eq_ord_add {y : F'} (hσ : σ y = -y) (c : F) :
+    (σ • P).ord (y - algebraMap F F' c) = P.ord (y + algebraMap F F' c) := by
   have hσsymm : σ.symm y = -y := by rw [AlgEquiv.symm_apply_eq, map_neg, hσ, neg_neg]
-  rw [ord_smul, map_sub, hσsymm, IsScalarTower.algebraMap_apply k F F', AlgEquiv.commutes,
-    ← IsScalarTower.algebraMap_apply, ← neg_add', ord_neg]
+  rw [ord_smul, map_sub, hσsymm, AlgEquiv.commutes, ← neg_add', ord_neg]
 
 /-- Membership in the valuation ring of `σ • P`, read off at `P`. -/
 theorem mem_integers_smul_iff {x : F'} : x ∈ (σ • P).integers ↔ σ.symm x ∈ P.integers := by

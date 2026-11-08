@@ -33,7 +33,7 @@ namespace TauCeti
 namespace Place
 
 variable {k F : Type*} [Field k] [Field F] [Algebra (RatFunc k) F] [Algebra k F]
-  [IsScalarTower k (RatFunc k) F] [FiniteDimensional (RatFunc k) F]
+  [IsScalarTower k (RatFunc k) F] [Algebra.IsIntegral (RatFunc k) F]
 
 /-- At a place over a finite place `q` of `k(x)`, a nonzero polynomial in `x` has order `e` times
 its multiplicity at `q`, where `e` is the ramification index over `k(x)`. -/
