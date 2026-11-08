@@ -18,8 +18,9 @@ algebra derivations use `TauCeti.derivationLieAlgebra`.
 
 Connections along a fixed derivation differ by right-module endomorphisms. For two commuting
 derivations, the commutator of connections is a right-module endomorphism: their curvature.
-The coordinate connection on a free right module supplies concrete flat connections and the
-ambient connections from which Grassmann connections are obtained by projection.
+The coordinate connection on a coordinate product supplies concrete flat connections and the
+ambient connections from which Grassmann connections are obtained by projection. For finite
+coordinate sets, these products are free right modules.
 
 ## References
 
@@ -84,6 +85,22 @@ def difference (c c' : RightConnection (E := E) D) : E →ₗ[Aᵐᵒᵖ] E wher
 theorem difference_apply (c c' : RightConnection (E := E) D) (x : E) :
     difference c c' x = c x - c' x := (rfl)
 
+/-- The induced derivative on right-module endomorphisms, given by `[c,T]`. -/
+def derivativeEnd (c : RightConnection (E := E) D) (T : E →ₗ[Aᵐᵒᵖ] E) :
+    E →ₗ[Aᵐᵒᵖ] E where
+  toFun x := c (T x) - T (c x)
+  map_add' x y := by simp only [map_add]; abel
+  map_smul' a x := by
+    have h₁ := c.leibniz a.unop (T x)
+    have h₂ := congrArg T (c.leibniz a.unop x)
+    simp only [op_unop, LinearMap.map_add, LinearMap.map_smul] at h₁ h₂
+    simp only [LinearMap.map_smul, RingHom.id_apply, h₁, h₂, smul_sub]
+    abel
+
+@[simp]
+theorem derivativeEnd_apply (c : RightConnection (E := E) D) (T : E →ₗ[Aᵐᵒᵖ] E) (x : E) :
+    derivativeEnd c T x = c (T x) - T (c x) := (rfl)
+
 variable [IsScalarTower k Aᵐᵒᵖ E]
 
 /-- Adding a right-module endomorphism to a connection gives a connection along the same
@@ -128,7 +145,8 @@ theorem curvature_apply (c₁ : RightConnection (E := E) D₁)
     (hD : Commute (D₁ : Module.End k A) (D₂ : Module.End k A)) (x : E) :
     curvature c₁ c₂ hD x = c₁ (c₂ x) - c₂ (c₁ x) := (rfl)
 
-/-- The coordinate connection on a free right module differentiates each coordinate. -/
+/-- The coordinate connection on a coordinate product differentiates each coordinate.
+For finite `ι`, this is a connection on a free right module. -/
 def coordinate (D : derivationLieAlgebra k A) (ι : Type*) :
     RightConnection (E := ι → A) D where
   toLinearMap := LinearMap.pi fun i ↦ (D : Module.End k A).comp (LinearMap.proj i)

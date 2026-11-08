@@ -37,26 +37,11 @@ variable {k A E : Type*} [CommRing k] [Ring A] [Algebra k A]
   [AddCommGroup E] [Module k E] [Module Aᵐᵒᵖ E]
   {D D₁ D₂ : derivationLieAlgebra k A}
 
-/-- The induced derivative on right-module endomorphisms, given by `[c,T]`. -/
-def derivativeEnd (c : RightConnection (E := E) D) (T : E →ₗ[Aᵐᵒᵖ] E) :
-    E →ₗ[Aᵐᵒᵖ] E where
-  toFun x := c (T x) - T (c x)
-  map_add' x y := by simp only [map_add]; abel
-  map_smul' a x := by
-    have h₁ := c.leibniz a.unop (T x)
-    have h₂ := congrArg T (c.leibniz a.unop x)
-    simp only [op_unop, LinearMap.map_add, LinearMap.map_smul] at h₁ h₂
-    simp only [LinearMap.map_smul, RingHom.id_apply, h₁, h₂, smul_sub]
-    abel
-
-@[simp]
-theorem derivativeEnd_apply (c : RightConnection (E := E) D) (T : E →ₗ[Aᵐᵒᵖ] E) (x : E) :
-    derivativeEnd c T x = c (T x) - T (c x) := (rfl)
-
 variable [IsScalarTower k Aᵐᵒᵖ E]
 
 /-- Projecting a connection by an idempotent gives a connection on its range. In particular,
-projecting `coordinate D ι` gives the Grassmann connection on a summand of a free module. -/
+projecting `coordinate D ι` gives a connection on a summand of a coordinate product; for finite
+`ι`, this is the Grassmann connection on a summand of a finite free module. -/
 def project (c : RightConnection (E := E) D) (p : E →ₗ[Aᵐᵒᵖ] E)
     (hp : IsIdempotentElem p) : RightConnection (E := LinearMap.range p) D where
   toLinearMap := (p.rangeRestrict.restrictScalars k).comp
