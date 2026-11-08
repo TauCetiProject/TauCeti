@@ -9,6 +9,7 @@ public import TauCeti.GroupTheory.Index.Exact
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Duality.RightExact
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.EulerCharacteristic.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LongExact
+import TauCeti.RepresentationTheory.Homological.ContCohomology.NatCardComparison
 
 /-!
 # Additivity of the local Euler characteristic
@@ -41,32 +42,6 @@ attribute [local instance] TopRep.distribMulAction
 
 variable {n : ℕ} {F : Type} [Field F] [ValuativeRel F] [TopologicalSpace F]
   [IsNonarchimedeanLocalField F]
-
-omit [ValuativeRel F] [TopologicalSpace F] [IsNonarchimedeanLocalField F] in
-/-- The explicit `H⁰` of a discrete module has the cardinality of the continuous cohomology
-`H⁰`. -/
-private theorem natCard_H0_eq (X : GalRep n F) [DiscreteTopology X.V] :
-    Nat.card (H0 (Field.absoluteGaloisGroup F) X.V) = Nat.card (continuousCohomology 0 X) :=
-  Nat.card_congr
-    (((explicitH0IsoContinuousCohomology (Field.absoluteGaloisGroup F) X.V
-      ).toContinuousLinearEquiv.toAddEquiv).trans
-        (ofDiscreteModuleRestrictScalarsIntEquiv X 0)).toEquiv
-
-omit [ValuativeRel F] [TopologicalSpace F] [IsNonarchimedeanLocalField F] in
-/-- The explicit `H¹` of a discrete module has the cardinality of the continuous cohomology
-`H¹`. -/
-private theorem natCard_H1_eq (X : GalRep n F) [DiscreteTopology X.V]
-    [ContinuousSMul (Field.absoluteGaloisGroup F) X.V] :
-    Nat.card (H1 (Field.absoluteGaloisGroup F) X.V) = Nat.card (continuousCohomology 1 X) :=
-  Nat.card_congr X.explicitH1AddEquivContinuousCohomologyOfDiscrete.toEquiv
-
-omit [ValuativeRel F] [TopologicalSpace F] [IsNonarchimedeanLocalField F] in
-/-- The explicit `H²` of a discrete module has the cardinality of the continuous cohomology
-`H²`. -/
-private theorem natCard_H2_eq (X : GalRep n F) [DiscreteTopology X.V]
-    [ContinuousSMul (Field.absoluteGaloisGroup F) X.V] :
-    Nat.card (H2 (Field.absoluteGaloisGroup F) X.V) = Nat.card (continuousCohomology 2 X) :=
-  Nat.card_congr X.explicitH2AddEquivContinuousCohomologyOfDiscrete.toEquiv
 
 /-- The cardinality identity of the nine-term long exact sequence `H⁰ → H¹ → H²` of a short exact
 sequence `0 → A → B → C → 0`, in terms of the continuous cohomology of `A`, `B` and `C`. -/
@@ -104,8 +79,11 @@ private theorem natCard_continuousCohomology_identity_of_exact (hn : IsUnit (n :
     S.explicitLongExact_H0A S.explicitLongExact_H0B S.explicitLongExact_H0C
     S.explicitLongExact_H1A S.explicitLongExact_H1B S.explicitLongExact_H1C
     S.explicitLongExact_H2A S.explicitLongExact_H2B hlast
-  rw [natCard_H0_eq A, natCard_H0_eq B, natCard_H0_eq C, natCard_H1_eq A, natCard_H1_eq B,
-    natCard_H1_eq C, natCard_H2_eq A, natCard_H2_eq B, natCard_H2_eq C] at hex
+  rw [A.natCard_H0_eq_natCard_continuousCohomology, B.natCard_H0_eq_natCard_continuousCohomology,
+    C.natCard_H0_eq_natCard_continuousCohomology, A.natCard_H1_eq_natCard_continuousCohomology,
+    B.natCard_H1_eq_natCard_continuousCohomology, C.natCard_H1_eq_natCard_continuousCohomology,
+    A.natCard_H2_eq_natCard_continuousCohomology, B.natCard_H2_eq_natCard_continuousCohomology,
+    C.natCard_H2_eq_natCard_continuousCohomology] at hex
   ring_nf at hex ⊢
   exact hex.symm
 
