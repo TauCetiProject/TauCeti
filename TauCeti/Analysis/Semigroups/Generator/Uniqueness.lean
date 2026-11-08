@@ -91,13 +91,13 @@ private theorem hasDerivAt_realOperator_sub {S : StronglyContinuousSemigroup X} 
   exact HasDerivAt.comp_const_sub t s hpsi
 
 /-- **Differentiating a composite orbit.** Along a time reparametrisation `f`, right-continuous at
-`s` and nonnegative near `s`, if the rebased generator quotient of `T` at `T s x` converges to `a`
+`s`, if the rebased generator quotient of `T` at `T s x` converges to `a`
 and `u ↦ S (f u) (T s x)` has right derivative `c` at `s`, then the composite orbit
 `u ↦ S (f u) (T u x)` has right derivative `S (f s) a + c` at `s`: pushing the quotient through
 `S (f u)` produces `S (f s) a`. -/
 theorem hasDerivWithinAt_realOperator_apply_realOperator
     (S T : StronglyContinuousSemigroup X) {f : ℝ → ℝ} {x a c : X} {s : ℝ} (hs : 0 ≤ s)
-    (hf : Tendsto f (𝓝[>] s) (𝓝 (f s))) (hf0 : ∀ᶠ u in 𝓝[>] s, 0 ≤ f u)
+    (hf : Tendsto f (𝓝[>] s) (𝓝 (f s)))
     (hquot : Tendsto (fun u : ℝ =>
       (u - s)⁻¹ • (T.realOperator (u - s) (T.realOperator s x) - T.realOperator s x))
       (𝓝[>] s) (𝓝 a))
@@ -106,7 +106,7 @@ theorem hasDerivWithinAt_realOperator_apply_realOperator
     HasDerivWithinAt (fun u : ℝ => S.realOperator (f u) (T.realOperator u x))
       (S.realOperator (f s) a + c) (Set.Ici s) s :=
   T.hasDerivWithinAt_apply_realOperator_of_tendsto (fun u => S.realOperator (f u)) x hs
-    (S.tendsto_realOperator_apply hf hf0 hquot) hslope
+    (S.tendsto_realOperator_apply hf hquot) hslope
 
 /-- The interpolation `u ↦ S (t - u) (T u x)` between the two semigroups has vanishing right
 derivative at every `u ∈ [0, t)`.
@@ -139,19 +139,19 @@ private theorem hasDerivWithinAt_interpolate {S T : StronglyContinuousSemigroup 
     ((continuous_sub_left t).tendsto s).mono_left nhdsWithin_le_nhds
   simpa only [add_neg_cancel] using
     S.hasDerivWithinAt_realOperator_apply_realOperator T (f := fun u => t - u) hs0 htime
-      ((htime.eventually_const_lt hrpos).mono fun _ h => h.le) hquot hrho.hasDerivWithinAt
+      hquot hrho.hasDerivWithinAt
 
 /-- **A path with vanishing right derivative is constant.** If `u ↦ S (f u) (g u)` has right
-derivative `0` on `[0, t)`, with `f` continuous and nonnegative and `g` continuous on `[0, t]`,
+derivative `0` on `[0, t)`, with `f` and `g` continuous on `[0, t]`,
 then it is constant on `[0, t]`, with value `S (f 0) (g 0)`. -/
 theorem realOperator_apply_eq_of_hasDerivWithinAt_zero
     (S : StronglyContinuousSemigroup X) {f : ℝ → ℝ} {g : ℝ → X} {t : ℝ}
-    (hf : ContinuousOn f (Set.Icc 0 t)) (hf0 : ∀ u ∈ Set.Icc (0 : ℝ) t, 0 ≤ f u)
+    (hf : ContinuousOn f (Set.Icc 0 t))
     (hg : ContinuousOn g (Set.Icc 0 t))
     (hderiv : ∀ u ∈ Set.Ico (0 : ℝ) t,
       HasDerivWithinAt (fun v : ℝ => S.realOperator (f v) (g v)) 0 (Set.Ici u) u) :
     ∀ u ∈ Set.Icc (0 : ℝ) t, S.realOperator (f u) (g u) = S.realOperator (f 0) (g 0) :=
-  constant_of_has_deriv_right_zero (S.continuousOn_realOperator_apply hf hf0 hg) hderiv
+  constant_of_has_deriv_right_zero (S.continuousOn_realOperator_apply hf hg) hderiv
 
 /-- Two strongly continuous semigroups with the same generator agree on the generator domain,
 at every nonnegative time. -/
@@ -160,7 +160,7 @@ theorem realOperator_eq_of_generator_eq {S T : StronglyContinuousSemigroup X}
     S.realOperator t x = T.realOperator t x := by
   have h := S.realOperator_apply_eq_of_hasDerivWithinAt_zero (f := fun u => t - u)
     (g := fun u => T.realOperator u x) (continuous_sub_left t).continuousOn
-    (fun u hu => sub_nonneg.mpr hu.2) ((T.realOperator_continuousOn_Ici x).mono fun u hu => hu.1)
+    ((T.realOperator_continuousOn_Ici x).mono fun u hu => hu.1)
     (fun _ hu => hasDerivWithinAt_interpolate hgen hx hu.1 hu.2) t (Set.right_mem_Icc.mpr ht)
   simpa only [sub_self, sub_zero, S.realOperator_zero_apply, T.realOperator_zero_apply] using
     h.symm
