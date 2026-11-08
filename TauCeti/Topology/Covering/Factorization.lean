@@ -48,67 +48,6 @@ open Bundle Set Topology
 variable {E F X : Type*} [TopologicalSpace E] [TopologicalSpace F] [TopologicalSpace X]
   {p : E → X} {q : F → X} {g : E → F}
 
-/-- A point of a sheet of `p` over a set `V` inside both base sets is sent by `g` into the source
-of `tq`, so its sheet index for `q` is defined. -/
-private theorem symm_mem_source_of_comp_eq (hqg : ∀ e, q (g e) = p e) {I J : Type*}
-    [TopologicalSpace I] [TopologicalSpace J] (tp : Trivialization I p) (tq : Trivialization J q)
-    {V : Set X} (hVsub : V ⊆ tp.baseSet ∩ tq.baseSet) (i : I) {v : X} (hv : v ∈ V) :
-    g (tp.toOpenPartialHomeomorph.symm (v, i)) ∈ tq.source := by
-  rw [tq.mem_source, hqg, tp.proj_symm_apply' (hVsub hv).1]
-  exact (hVsub hv).2
-
-/-- The `q`-sheet index of the image under `g` of a point of a `p`-sheet over a preconnected set
-`V` is constant along the sheet, because the index is continuous and `J` is discrete. -/
-private theorem sheetIndex_symm_eq (hg : Continuous g) (hqg : ∀ e, q (g e) = p e) {I J : Type*}
-    [TopologicalSpace I] [TopologicalSpace J] [DiscreteTopology J] (tp : Trivialization I p)
-    (tq : Trivialization J q) {V : Set X} (hVconn : IsPreconnected V)
-    (hVsub : V ⊆ tp.baseSet ∩ tq.baseSet) (i : I) {v x₀ : X} (hv : v ∈ V) (hx₀ : x₀ ∈ V) :
-    (tq (g (tp.toOpenPartialHomeomorph.symm (v, i)))).2 =
-      (tq (g (tp.toOpenPartialHomeomorph.symm (x₀, i)))).2 := by
-  have hsnd : ContinuousOn (fun f : F => (tq f).2) tq.source :=
-    continuous_snd.comp_continuousOn tq.continuousOn_toFun
-  have h1 : ContinuousOn (fun v => g (tp.toOpenPartialHomeomorph.symm (v, i))) V :=
-    hg.comp_continuousOn (tp.continuousOn_symm_prodMk_left.mono fun v hv => (hVsub hv).1)
-  exact hVconn.constant (hsnd.comp h1 fun v hv => symm_mem_source_of_comp_eq hqg tp tq hVsub i hv)
-    hv hx₀
-
-/-- Whether `g e` lies in the `q`-sheet of index `j` over `V` is read off the sheet index of `p`
-at `e`. -/
-private theorem comp_mem_sheet_iff (hg : Continuous g) (hqg : ∀ e, q (g e) = p e) {I J : Type*}
-    [TopologicalSpace I] [TopologicalSpace J] [DiscreteTopology J] (tp : Trivialization I p)
-    (tq : Trivialization J q) {V : Set X} (hVconn : IsPreconnected V)
-    (hVsub : V ⊆ tp.baseSet ∩ tq.baseSet) {x₀ : X} (hx₀ : x₀ ∈ V) (j : J) (e : E) :
-    (q (g e) ∈ V ∧ (tq (g e)).2 = j) ↔
-      p e ∈ V ∧ (tq (g (tp.toOpenPartialHomeomorph.symm (x₀, (tp e).2)))).2 = j := by
-  constructor
-  · rintro ⟨h1, h2⟩
-    rw [hqg] at h1
-    refine ⟨h1, ?_⟩
-    rw [← sheetIndex_symm_eq hg hqg tp tq hVconn hVsub (tp e).2 h1 hx₀,
-      tp.symm_apply_mk_proj (tp.mem_source.mpr (hVsub h1).1), h2]
-  · rintro ⟨h1, h2⟩
-    have h3 := sheetIndex_symm_eq hg hqg tp tq hVconn hVsub (tp e).2 h1 hx₀
-    rw [tp.symm_apply_mk_proj (tp.mem_source.mpr (hVsub h1).1)] at h3
-    exact ⟨by rw [hqg]; exact h1, by rw [h3, h2]⟩
-
-/-- The `p`-sheet of index `i` through a point `w` of a `q`-sheet is carried by `g` onto `w`
-when it lands in that `q`-sheet. -/
-private theorem comp_symm_eq_of_mem_sheet (hg : Continuous g) (hqg : ∀ e, q (g e) = p e)
-    {I J : Type*} [TopologicalSpace I] [TopologicalSpace J] [DiscreteTopology J]
-    (tp : Trivialization I p) (tq : Trivialization J q) {V : Set X} (hVconn : IsPreconnected V)
-    (hVsub : V ⊆ tp.baseSet ∩ tq.baseSet) {x₀ : X} (hx₀ : x₀ ∈ V) {j : J} {w : F} {i : I}
-    (hw : q w ∈ V ∧ (tq w).2 = j) (hi : (tq (g (tp.toOpenPartialHomeomorph.symm (x₀, i)))).2 = j) :
-    g (tp.toOpenPartialHomeomorph.symm (q w, i)) = w := by
-  have h1 : q (g (tp.toOpenPartialHomeomorph.symm (q w, i))) = q w := by
-    rw [hqg, tp.proj_symm_apply' (hVsub hw.1).1]
-  refine tq.injOn (symm_mem_source_of_comp_eq hqg tp tq hVsub i hw.1)
-    (tq.mem_source.mpr (hVsub hw.1).2) (Prod.ext ?_ ?_)
-  · simp only [Trivialization.coe_coe]
-    rw [tq.coe_fst (symm_mem_source_of_comp_eq hqg tp tq hVsub i hw.1),
-      tq.coe_fst (tq.mem_source.mpr (hVsub hw.1).2), h1]
-  · simp only [Trivialization.coe_coe]
-    rw [sheetIndex_symm_eq hg hqg tp tq hVconn hVsub i hw.1 hx₀, hi, hw.2]
-
 /-- The evenly covered neighbourhood of `f₀` for a map `g` over `X` between two trivialized
 projections, cut out by a connected open set `V` of the base lying inside both base sets.
 
@@ -125,7 +64,7 @@ private theorem isEvenlyCovered_of_trivialization (hq : Continuous q) (hg : Cont
   set j₀ : J := (tq f₀).2 with _₀
   set W : Set F := {f | q f ∈ V ∧ (tq f).2 = j₀}
   have hWopen : IsOpen W := tq.isOpen_sheet hq hVopen (fun v hv => (hVsub hv).2) j₀
-  have hgW := comp_mem_sheet_iff hg hqg tp tq hVconn hVsub hf₀V j₀
+  have hgW := tp.map_mem_sheet_iff hg hqg tq hVconn hVsub hf₀V j₀
   refine ⟨inferInstance, W, ⟨hf₀V, rfl⟩, hWopen, hWopen.preimage hg,
     { toFun := fun e => (⟨g e.1, e.2⟩, ⟨(tp e.1).2, (hgW e.1).mp e.2 |>.2⟩)
       invFun := fun wi => ⟨tp.toOpenPartialHomeomorph.symm (q wi.1.1, wi.2.1), by
@@ -144,7 +83,7 @@ private theorem isEvenlyCovered_of_trivialization (hq : Continuous q) (hg : Cont
         rintro ⟨⟨w, hw⟩, ⟨i, hi⟩⟩
         dsimp only
         refine Prod.ext (Subtype.ext
-          (comp_symm_eq_of_mem_sheet hg hqg tp tq hVconn hVsub hf₀V hw hi)) (Subtype.ext ?_)
+          (tp.map_symm_eq_of_mem_sheet hg hqg tq hVconn hVsub hf₀V hw hi)) (Subtype.ext ?_)
         dsimp only
         rw [tp.apply_symm_apply' (hVsub hw.1).1]
       continuous_toFun := by
