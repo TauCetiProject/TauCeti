@@ -12,7 +12,7 @@ public import TauCeti.Topology.Algebra.Module.Equiv.SMul
 /-!
 # Normalizing continuous linear equivalences
 
-The file also bounds the inverse of a continuous real-linear equivalence from a quadratic lower
+The file also bounds the inverse of a continuous linear equivalence from a quadratic lower
 bound on the equivalence itself.
 
 Rescaling a continuous linear equivalence `T` between normed spaces by a nonzero scalar does not
@@ -59,12 +59,12 @@ end ContinuousLinearEquiv
 
 namespace ContinuousLinearEquiv
 
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
-  [NormedSpace ℝ F]
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
-/-- A quadratic lower bound `λ ‖y‖ ^ 2 ≤ ‖e y‖ ^ 2` with `0 < λ` on a continuous real-linear
+/-- A quadratic lower bound `λ ‖y‖ ^ 2 ≤ ‖e y‖ ^ 2` with `0 < λ` on a continuous linear
 equivalence `e` bounds its inverse: `‖e⁻¹ x‖ ≤ ‖x‖ / √λ`. -/
-theorem norm_symm_apply_le_inv_sqrt_mul_norm (e : E ≃L[ℝ] F) {lam : ℝ} (hlam : 0 < lam)
+theorem norm_symm_apply_le_inv_sqrt_mul_norm (e : E ≃L[𝕜] F) {lam : ℝ} (hlam : 0 < lam)
     (h : ∀ y, lam * ‖y‖ ^ 2 ≤ ‖e y‖ ^ 2) (x : F) : ‖e.symm x‖ ≤ (√lam)⁻¹ * ‖x‖ := by
   -- `√λ ‖y‖ ≤ ‖e y‖`, applied to `y = e⁻¹ x`.
   have hx := h (e.symm x)
