@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 public import Mathlib.CategoryTheory.Limits.Shapes.Opposites.Kernels
 public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Kernels
+public import TauCeti.CategoryTheory.Monoidal.Closed.Basic
 
 /-!
 # Internal Hom and cokernel presentations
@@ -22,7 +23,7 @@ The construction uses Mathlib's preservation of limits by
 
 public section
 
-open CategoryTheory Limits MonoidalCategory MonoidalClosed Opposite
+open CategoryTheory Limits MonoidalClosed Opposite
 
 namespace TauCeti
 
@@ -33,24 +34,11 @@ variable {C : Type*} [Category* C] [HasZeroMorphisms C]
   {A B M : C} (f : A ⟶ B) (g : B ⟶ M) (w : f ≫ g = 0)
   (h : IsColimit (CokernelCofork.ofπ g w)) (N : C)
 
-/-- Internal Hom into a fixed object preserves zero morphisms in its first variable. In a
-braided closed category, tensoring with an object on either side is a left adjoint and so
-preserves zero morphisms; uncurrying reduces the claim to this. -/
-instance preservesZeroMorphisms_internalHom_flip_obj :
-    (internalHom.flip.obj N).PreservesZeroMorphisms where
-  map_zero X Y := by
-    change (pre (0 : Y.unop ⟶ X.unop)).app N = 0
-    refine uncurry_injective ?_
-    rw [uncurry_pre, uncurry_eq]
-    change (tensorRight _).map 0 ≫ _ = (tensorLeft _).map 0 ≫ _
-    rw [Functor.map_zero, Functor.map_zero, zero_comp, zero_comp]
-
 include w in
 /-- Precomposition reverses a zero composite into a zero composite of internal Hom maps. -/
 @[reassoc (attr := simp)]
 theorem pre_app_comp_pre_app_eq_zero : (pre g).app N ≫ (pre f).app N = 0 := by
-  rw [← NatTrans.comp_app, ← pre_map, w]
-  exact (internalHom.flip.obj N).map_zero _ _
+  rw [← NatTrans.comp_app, ← pre_map, w, pre_app_zero]
 
 /-- Internal Hom turns a cokernel presentation into a kernel presentation, by precomposition.
 No projectivity or finiteness condition is needed. -/
