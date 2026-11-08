@@ -91,29 +91,41 @@ variable {E H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [
 variable (I k) in
 /-- A function `f : M → ℝ` is a **perfect Morse function** over the division ring `k` when it is a
 Morse function whose number of critical points of index `j` is the Betti number
-`dim_k Hⱼ(M; k)` of singular homology, for every `j`. -/
+`dim_k Hⱼ(M; k)` of singular homology, for every `j`. Both sides are counted in `ℕ∞`, the Betti
+number being `⊤` when `Hⱼ(M; k)` is infinite-dimensional. -/
 structure IsPerfectMorse (f : M → ℝ) : Prop where
   /-- A perfect Morse function is a Morse function. -/
   isMorse : IsMorse I f
   /-- The number of critical points of index `j` is the `j`-th Betti number over `k`. -/
   criticalCount_eq (j : ℕ) : criticalCount I f j =
-    finrank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) j).obj
-      (ModuleCat.of k k)).obj (TopCat.of M))
+    (Module.rank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) j).obj
+      (ModuleCat.of k k)).obj (TopCat.of M))).toENat
 
 /-- A perfect Morse function is a Morse function whose critical counts are the Betti numbers. -/
 theorem isPerfectMorse_iff : IsPerfectMorse I k f ↔ IsMorse I f ∧ ∀ j, criticalCount I f j =
-    finrank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) j).obj
-      (ModuleCat.of k k)).obj (TopCat.of M)) :=
+    (Module.rank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) j).obj
+      (ModuleCat.of k k)).obj (TopCat.of M))).toENat :=
   ⟨fun h ↦ ⟨h.1, h.2⟩, fun h ↦ ⟨h.1, h.2⟩⟩
 
 /-- **The number of critical points of a perfect Morse function** is the total Betti number
 `∑ⱼ dim_k Hⱼ(M; k)`, the sum running over the degrees `j ≤ dim M`. -/
 theorem IsPerfectMorse.totalCriticalCount_eq [FiniteDimensional ℝ E] (hf : IsPerfectMorse I k f) :
     totalCriticalCount I f = ∑ j ∈ Finset.range (finrank ℝ E + 1),
-      (finrank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) j).obj
-        (ModuleCat.of k k)).obj (TopCat.of M)) : ℕ∞) := by
+      (Module.rank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) j).obj
+        (ModuleCat.of k k)).obj (TopCat.of M))).toENat := by
   rw [← sum_criticalCount_eq_totalCriticalCount]
   exact Finset.sum_congr rfl fun j _ ↦ hf.criticalCount_eq j
+
+/-- On a compact boundaryless manifold carrying a Morse function, homology is finite-dimensional,
+so its rank in `ℕ∞` is its `finrank`. -/
+private lemma IsMorse.toENat_rank_singularHomology [FiniteDimensional ℝ E] [I.Boundaryless]
+    [IsManifold I ∞ M] [T2Space M] [CompactSpace M] (hf : IsMorse I f) (j : ℕ) :
+    (Module.rank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) j).obj
+      (ModuleCat.of k k)).obj (TopCat.of M))).toENat =
+    finrank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) j).obj
+      (ModuleCat.of k k)).obj (TopCat.of M)) := by
+  have := hf.finite_singularHomology (ModuleCat.of k k) j
+  rw [← finrank_eq_rank, Cardinal.toENat_nat]
 
 /-- **The lacunary principle gives perfect Morse functions.** A Morse function on a compact
 boundaryless manifold, no two of whose critical points have indices differing by one, is perfect
@@ -125,7 +137,8 @@ theorem IsMorse.isPerfectMorse_of_forall_ne_add_one [FiniteDimensional ℝ E] [I
     IsPerfectMorse I k f where
   isMorse := hf
   criticalCount_eq j := by
-    rw [hf.finrank_singularHomology_eq_of_forall_ne_add_one (ModuleCat.of k k) hind j]
+    rw [hf.toENat_rank_singularHomology,
+      hf.finrank_singularHomology_eq_of_forall_ne_add_one (ModuleCat.of k k) hind j]
     simpa using (ENat.natCast_toNat (hf.criticalCount_ne_top j)).symm
 
 end General
@@ -168,7 +181,9 @@ theorem isPerfectMorse_projectiveMomentFunction_real {k : Type} [DivisionRing k]
     IsPerfectMorse 𝓘(ℝ, Fin n → ℝ) k (projectiveMomentFunction ℝ w) where
   isMorse := isMorse_projectiveMomentFunction hw
   criticalCount_eq j := by
-    rw [criticalCount_projectiveMomentFunction_real hw, finrank_singularHomology_projectivization,
+    rw [criticalCount_projectiveMomentFunction_real hw,
+      (isMorse_projectiveMomentFunction hw).toENat_rank_singularHomology,
+      finrank_singularHomology_projectivization,
       RealProjectiveSpace.finrank_singularHomology_of_two_eq_zero h2]
     split_ifs <;> simp
 
@@ -182,7 +197,7 @@ theorem not_isPerfectMorse_projectivization_real {k : Type} [DivisionRing k] (h2
   -- Over `k` the Betti numbers of `ℝℙⁿ` add up to at most two, so `f` has two critical points.
   have hle : totalCriticalCount 𝓘(ℝ, Fin n → ℝ) f ≤ 2 := by
     rw [hf.totalCriticalCount_eq, finrank_fin_fun]
-    simp only [finrank_singularHomology_projectivization,
+    simp only [hf.isMorse.toENat_rank_singularHomology, finrank_singularHomology_projectivization,
       RealProjectiveSpace.finrank_singularHomology_of_two_ne_zero h2]
     refine (Finset.sum_le_sum (g := fun j ↦ ((if j = 0 then 1 else 0) + if j = n then 1 else 0 :
       ℕ∞)) fun j _ ↦ ?_).trans ?_
