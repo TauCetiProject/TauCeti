@@ -151,8 +151,8 @@ theorem chainTopCoeff_indexEquiv (i j : ι) :
     refine eq_of_forall_le_iff fun n => ?_
     rw [← P.root_add_nsmul_mem_range_iff_le_chainTopCoeff h,
       ← P₂.root_add_nsmul_mem_range_iff_le_chainTopCoeff h',
-      ← f.weightMap_mem_range_root_iff hf, map_add, map_nsmul, Hom.root_weightMap_apply,
-      Hom.root_weightMap_apply]
+      ← f.weightMap_mem_range_root_iff hf]
+    simp only [map_add, map_nsmul, Hom.root_weightMap_apply]
   · rw [chainTopCoeff_of_not_linearIndependent h, chainTopCoeff_of_not_linearIndependent
       ((f.linearIndependent_root_indexEquiv_iff hf i j).not.mpr h)]
 
