@@ -49,7 +49,7 @@ namespace TauCeti
 
 section SeminormedRing
 
-variable {R : Type*} [SeminormedRing R] [NormOneClass R]
+variable {R : Type*} [SeminormedRing R]
 
 /-- **Values of Hasse derivatives near `α`** (Evertse, Lemma 6.13). Let `Q` have degree at most
 `δ r` and coefficient length at most `C₁ ^ r`. Then every Hasse derivative `Dᵏ Q` is bounded by
@@ -83,7 +83,7 @@ end SeminormedRing
 
 section SeminormedCommRing
 
-variable {R : Type*} [SeminormedCommRing R] [NormOneClass R]
+variable {R : Type*} [SeminormedCommRing R]
 
 /-- **Values of Thue's quotient polynomial near `α`** (Evertse, Lemma 6.13). Let `r > 0`, let
 `P` and `Q` have degree at most `δ r` and coefficient length at most `C₁ ^ r`, and suppose that
@@ -148,7 +148,11 @@ theorem norm_eval_hasseDeriv_sub_mul_le {P Q : R[X]} {α z : R} (w : R) (k : ℕ
   rw [hsplit, norm_sub_rev w α]
   calc
     _ ≤ ‖V.eval z‖ * ‖z - α‖ ^ (r - k) + ‖α - w‖ * ‖(hasseDeriv k Q).eval z‖ := by
-      grw [norm_add_le, norm_mul_le, norm_mul_le, norm_pow_le]
+      have hpow : ‖V.eval z * (z - α) ^ (r - k)‖ ≤ ‖V.eval z‖ * ‖z - α‖ ^ (r - k) := by
+        rcases eq_or_ne (r - k) 0 with h0 | h0
+        · simp [h0]
+        · exact (norm_mul_le _ _).trans (by gcongr; exact norm_pow_le' _ (Nat.pos_of_ne_zero h0))
+      grw [norm_add_le, hpow, norm_mul_le]
     _ ≤ (2 ^ δ * (1 + ‖α‖) ^ (1 + δ) * C₁) ^ r * ‖z - α‖ ^ (r - k) +
           ‖α - w‖ * (2 ^ δ * (1 + ‖α‖) ^ (1 + δ) * C₁) ^ r := by
       grw [hVz, hQz]
