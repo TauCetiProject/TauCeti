@@ -62,6 +62,8 @@ the ideal-theoretic one at the unramified primes.
   representative of the absolute Artin symbol of `x`.
 * `TauCeti.ClassFieldTheory.localArtinAt_comp`: compatibility with restriction to a normal
   subextension.
+* `TauCeti.ClassFieldTheory.localArtinAt_norm`: compatibility with the local norm from a
+  finite place of an intermediate field.
 * `TauCeti.ClassFieldTheory.localArtinAt_eq_map_normResidue`: the local Artin symbol at `v` is
   finite local reciprocity for `L_w/K_v`, read through the decomposition group of `w`.
 * `TauCeti.ClassFieldTheory.normGroup_le_ker_localArtinAt`: local norms have trivial local Artin
@@ -132,6 +134,67 @@ theorem localArtinAt_comp (v : HeightOneSpectrum (𝓞 K)) {M : Type} [Field M] 
     [FiniteDimensional K M] [Normal K M] (f : M →ₐ[K] L) :
     (Abelianization.map f.restrictNormalHom).comp (localArtinAt K L v) = localArtinAt K M v := by
   rw [localArtinAt, localArtinAt, ← MonoidHom.comp_assoc, decompositionRestrict_comp]
+
+/-- **Norm functoriality in the ground field.** Let `K ⊆ E ⊆ L` with `L/K` finite normal, and let
+`w` be a finite place of `E` above the finite place `v` of `K`. The local Artin symbol at `v` of
+the local norm `N_{E_w/K_v}(y)` is the local Artin symbol at `w` of `y`, read in `Gal(L/K)^ab`
+through the inclusion `Gal(L/E) ≤ Gal(L/K)`:
+
+```text
+Art_v (N_{E_w/K_v} y) = Art_w y.
+```
+
+It is the norm functoriality `artinMap_norm` of the absolute local Artin maps, read through the
+decomposition groups. The instances on `L/E` follow from those on `L/K`. -/
+theorem localArtinAt_norm {E : Type} [Field E] [NumberField E] [Algebra K E] [Algebra E L]
+    [IsScalarTower K E L] [FiniteDimensional E L] [Normal E L] (v : HeightOneSpectrum (𝓞 K))
+    (w : HeightOneSpectrum (𝓞 E)) [w.asIdeal.LiesOver v.asIdeal] (y : (w.adicCompletion E)ˣ) :
+    localArtinAt K L v (Algebra.normUnits (v.adicCompletion K) y) =
+      Abelianization.map (AlgEquiv.restrictScalarsHom K) (localArtinAt E L w y) := by
+  -- Represent `Art_w y` by `τ ∈ G_{E_w}`; then `Art_v (N y)` is represented by its image in
+  -- `G_{K_v}` along an embedding `iota` of `E_w` in `K_vˢ`.
+  obtain ⟨τ, hτ⟩ := QuotientGroup.mk_surjective (artinMap (w.adicCompletion E) y)
+  let iota : w.adicCompletion E →ₐ[v.adicCompletion K] SeparableClosure (v.adicCompletion K) :=
+    IsSepClosed.lift
+  rw [localArtinAt_apply, localArtinAt_apply, ← artinMap_norm _ iota y τ hτ, ← hτ]
+  -- Restrict `τ` to `σ ∈ Gal(L/E)` along an embedding `j` of `L` in `E_wˢ`.
+  let j : L →ₐ[E] SeparableClosure (w.adicCompletion E) := IsSepClosed.lift
+  let τ' := absoluteGaloisGroupRestrictEquiv (w.adicCompletion E) τ
+  let σ : Gal(L/E) := j.restrictNormalHom (AlgEquiv.restrictScalarsHom E τ')
+  have hσ (x : L) : j (σ x) = τ' (j x) := j.restrictNormalHom_commutes _ x
+  -- Transporting `j` along the identification `φ` of `E_wˢ` with `K_vˢ` gives a `K`-embedding
+  -- `jK` of `L` in `K_vᵃˡᵍ`, which intertwines `σ` with the image of `τ` in `G_{K_v}`.
+  let φ := separableClosureRingEquiv (v.adicCompletion K) (w.adicCompletion E) iota
+  let jK : L →ₐ[K] AlgebraicClosure (v.adicCompletion K) :=
+    { ((separableClosure _ (AlgebraicClosure (v.adicCompletion K))).val.toRingHom.comp
+        (φ.toRingHom.comp j.toRingHom)) with
+      commutes' := fun k ↦ by
+        simp only [RingHom.toMonoidHom_eq_coe, OneHom.toFun_eq_coe, MonoidHom.toOneHom_coe,
+          MonoidHom.coe_ofClass, RingHom.coe_comp, Function.comp_apply, AlgHom.toRingHom_eq_coe,
+          RingHom.coe_coe, RingEquiv.toRingHom_eq_coe]
+        have hk : algebraMap E (w.adicCompletion E) (algebraMap K E k) =
+            algebraMap (v.adicCompletion K) (w.adicCompletion E)
+              (algebraMap K (v.adicCompletion K) k) := by
+          rw [← IsScalarTower.algebraMap_apply, ← IsScalarTower.algebraMap_apply]
+        rw [IsScalarTower.algebraMap_apply K E L, AlgHom.commutes,
+          IsScalarTower.algebraMap_apply E (w.adicCompletion E)
+            (SeparableClosure (w.adicCompletion E)), hk,
+          separableClosureRingEquiv_algebraMap, AlgHom.commutes,
+          IsScalarTower.algebraMap_apply K (v.adicCompletion K)
+            (AlgebraicClosure (v.adicCompletion K))]
+        exact AlgHom.commutes _ _ }
+  -- By construction, `jK` is `j` followed by `φ` and the inclusion `K_vˢ ⊆ K_vᵃˡᵍ`.
+  have hjK (z : L) : jK z = (φ (j z) : AlgebraicClosure (v.adicCompletion K)) := rfl
+  rw [decompositionRestrict_mk
+      (((separableClosure _ (AlgebraicClosure _)).val.restrictScalars E).comp j) τ σ
+      fun x ↦ by
+        simp only [AlgHom.comp_apply, AlgHom.restrictScalars_apply, IntermediateField.coe_val, hσ]
+        exact coe_absoluteGaloisGroupRestrictEquiv_apply _ τ (j x),
+    Abelianization.map_of]
+  refine decompositionRestrict_mk jK _ _ fun x ↦ ?_
+  rw [hjK, hjK, AlgEquiv.restrictScalarsHom_apply, AlgEquiv.restrictScalars_apply, hσ,
+    ← absoluteGaloisGroupExtend_apply_separableClosureRingEquiv]
+  exact coe_absoluteGaloisGroupRestrictEquiv_apply _ _ (φ (j x))
 
 end Normal
 
