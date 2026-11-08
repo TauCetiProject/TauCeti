@@ -23,8 +23,8 @@ The value space is arbitrary; the all-distinct event is explicitly assumed measu
 
 ## Main declarations
 
-* `sampleWithoutReplacement_apply_injective`: the all-distinct event has mass one.
-* `sampleWithReplacement_apply_injective`: its mass is the exact injective-selection ratio.
+* `sampleWithoutReplacement_injective_apply_eq`: the all-distinct event has mass one.
+* `sampleWithReplacement_injective_apply_eq`: its mass is the exact injective-selection ratio.
 * `iSup_sampleWithoutReplacement_sub_sampleWithReplacement_eq`: the exact excess.
 * `etvDist_sampleWithoutReplacement_sampleWithReplacement_eq`: twice that excess.
 
@@ -44,22 +44,26 @@ namespace TauCeti.Probability
 variable {ι κ α : Type*}
   [MeasurableSpace κ] [MeasurableSingletonClass κ] [MeasurableSpace α]
 
+/-- Reading a distinct-valued population preserves the mass of the all-distinct event. -/
+theorem map_readPopulation_injective_apply_eq [Countable κ] {x : κ → α}
+    (hx : Function.Injective x)
+    (hI : MeasurableSet {f : ι → α | Function.Injective f}) (μ : Measure (ι → κ)) :
+    μ.map (fun k i => x (k i)) {f | Function.Injective f} =
+      μ {k | Function.Injective k} := by
+  rw [Measure.map_apply (measurable_readPopulation x) hI]
+  congr 1
+  ext k
+  exact hx.of_comp_iff k
+
 /-- For distinct population values, sampling without replacement gives an all-distinct word
 with probability one, provided an injective selection exists. -/
-theorem sampleWithoutReplacement_apply_injective [Finite κ] {x : κ → α}
+theorem sampleWithoutReplacement_injective_apply_eq [Finite κ] {x : κ → α}
     (hx : Function.Injective x) (e : ι ↪ κ)
     (hI : MeasurableSet {f : ι → α | Function.Injective f}) :
     sampleWithoutReplacement (ι := ι) (Measure.dirac x)
       {f | Function.Injective f} = 1 := by
   have : Finite ι := Finite.of_injective e e.injective
-  have hsample : Measurable (fun k : ι → κ => fun i => x (k i)) :=
-    measurable_reindexPopulation.comp measurable_prodMk_right
-  rw [sampleWithoutReplacement_dirac, Measure.map_apply hsample hI]
-  have hpre : (fun k : ι → κ => fun i => x (k i)) ⁻¹'
-      {f | Function.Injective f} = {k | Function.Injective k} := by
-    ext k
-    exact hx.of_comp_iff k
-  rw [hpre]
+  rw [sampleWithoutReplacement_dirac, map_readPopulation_injective_apply_eq hx hI]
   exact uniformOn_self (Set.toFinite _) ⟨e, e.injective⟩
 
 variable [Fintype ι] [Fintype κ]
@@ -67,20 +71,14 @@ variable [Fintype ι] [Fintype κ]
 /-- For distinct population values, the with-replacement probability of an all-distinct word
 is the number of injective selections divided by the number of all selections. This also
 holds when no selection exists, in which case both sides are zero. -/
-theorem sampleWithReplacement_apply_injective {x : κ → α}
+theorem sampleWithReplacement_injective_apply_eq {x : κ → α}
     (hx : Function.Injective x)
     (hI : MeasurableSet {f : ι → α | Function.Injective f}) :
     sampleWithReplacement (ι := ι) (Measure.dirac x) {f | Function.Injective f} =
       (Fintype.card κ).descFactorial (Fintype.card ι) /
         (Fintype.card κ : ℝ≥0∞) ^ Fintype.card ι := by
-  have hsample : Measurable (fun k : ι → κ => fun i => x (k i)) :=
-    measurable_reindexPopulation.comp measurable_prodMk_right
-  rw [sampleWithReplacement_dirac, Measure.map_apply hsample hI]
-  have hpre : (fun k : ι → κ => fun i => x (k i)) ⁻¹'
-      {f | Function.Injective f} = {k | Function.Injective k} := by
-    ext k
-    exact hx.of_comp_iff k
-  rw [hpre, uniformOn_injective_apply_eq]
+  rw [sampleWithReplacement_dirac, map_readPopulation_injective_apply_eq hx hI,
+    uniformOn_injective_apply_eq]
 
 /-- The exact largest excess between sampling a distinct-valued population without and with
 replacement. The all-distinct event attains the supremum. -/
@@ -98,8 +96,8 @@ theorem iSup_sampleWithoutReplacement_sub_sampleWithReplacement_eq {x : κ → �
     simpa only [uniformOn_not_injective_apply_eq] using tsub_le_iff_left.mpr
       (sampleWithoutReplacement_le_sampleWithReplacement_add_collision
         (ρ := Measure.dirac x) hA)
-  · simpa only [sampleWithoutReplacement_apply_injective hx e hI,
-      sampleWithReplacement_apply_injective hx hI] using
+  · simpa only [sampleWithoutReplacement_injective_apply_eq hx e hI,
+      sampleWithReplacement_injective_apply_eq hx hI] using
       (le_iSup₂ (f := fun (A : Set (ι → α)) (_ : MeasurableSet A) =>
         sampleWithoutReplacement (Measure.dirac x) A -
           sampleWithReplacement (Measure.dirac x) A)
