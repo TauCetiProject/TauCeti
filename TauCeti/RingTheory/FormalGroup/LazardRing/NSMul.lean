@@ -50,7 +50,7 @@ functor theorem.
   than the linear one lie in the augmentation ideal.
 * `TauCeti.LazardRing.coeff_single_hurewicz_coeff_nsmulSeries`: the coefficient of `bₙ` in the
   Hurewicz image of `aₘ` is `k^m - k` if `m = n + 1`, and `0` otherwise.
-* `TauCeti.LazardRing.lazardGcd_dvd_pow_succ_sub`: `d_(n+1)` divides `k^(n + 1) - k`.
+* `TauCeti.lazardGcd_dvd_pow_succ_sub`: `d_(n+1)` divides `k^(n + 1) - k`.
 * `TauCeti.LazardRing.toCotangent_coeff_nsmulSeries`: the class of `a_(n+1)` in `I ⧸ I²` is
   `((k^(n + 1) - k) / d_(n+1)) • xₙ`.
 * `TauCeti.LazardRing.coeff_nsmulSeries_sub_smul_generator_mem_sq`: the same congruence in `L`.
@@ -122,7 +122,7 @@ theorem coeff_single_hurewicz_coeff_nsmulSeries (k m : ℕ) (n : ℕ+) :
 
 /-- `d_(n+1)` divides `k^(n + 1) - k` for every `k`: by the Hurewicz homomorphism, this is the
 coefficient of `bₙ` in the image of the coefficient of `X^(n + 1)` in `[k](X)`. -/
-theorem lazardGcd_dvd_pow_succ_sub (k : ℕ) (n : ℕ+) :
+theorem _root_.TauCeti.lazardGcd_dvd_pow_succ_sub (k : ℕ) (n : ℕ+) :
     (lazardGcd ((n : ℕ) + 1) : ℤ) ∣ (k : ℤ) ^ ((n : ℕ) + 1) - k := by
   have h := lazardGcd_dvd_coeff_single_hurewicz n
     (PowerSeries.coeff ((n : ℕ) + 1) (formalGroup.nsmulSeries k))
@@ -158,10 +158,14 @@ include hp
 /-- **Landweber's `vⱼ` modulo decomposables.** For a prime `p` and `n + 1 = pʲ` with `j ≥ 1`, the
 coefficient `vⱼ` of `X^(pʲ)` in the `p`-series of the universal formal group law is
 `(p^n - 1) • xₙ` modulo the square of the augmentation ideal. -/
-theorem coeff_prime_pow_nsmulSeries_sub_smul_generator_mem_sq {j : ℕ} (hj : j ≠ 0) {n : ℕ+}
+theorem coeff_prime_pow_nsmulSeries_sub_smul_generator_mem_sq {j : ℕ} {n : ℕ+}
     (hn : (n : ℕ) + 1 = p ^ j) :
     PowerSeries.coeff (p ^ j) (formalGroup.nsmulSeries p) - ((p : ℤ) ^ (n : ℕ) - 1) • generator n ∈
       augmentationIdeal ^ 2 := by
+  -- `j ≠ 0`, since `n + 1 ≥ 2`.
+  have hj : j ≠ 0 := by
+    rintro rfl
+    simp at hn
   have h := coeff_nsmulSeries_sub_smul_generator_mem_sq p n
   -- `d_(pʲ) = p`, and `(p^(n + 1) - p) / p = p^n - 1`.
   have hq : ((p : ℤ) ^ ((n : ℕ) + 1) - p) / lazardGcd ((n : ℕ) + 1) = (p : ℤ) ^ (n : ℕ) - 1 := by
@@ -173,7 +177,7 @@ theorem coeff_prime_pow_nsmulSeries_sub_smul_generator_mem_sq {j : ℕ} (hj : j 
 /-- **Landweber's `vⱼ` is `-x_(pʲ - 1)` modulo `p` and decomposables.** For a prime `p` and
 `n + 1 = pʲ` with `j ≥ 1`, the coefficient `vⱼ` of `X^(pʲ)` in the `p`-series of the universal
 formal group law satisfies `vⱼ ≡ -xₙ` modulo `p L + I²`. -/
-theorem coeff_prime_pow_nsmulSeries_add_generator_mem {j : ℕ} (hj : j ≠ 0) {n : ℕ+}
+theorem coeff_prime_pow_nsmulSeries_add_generator_mem {j : ℕ} {n : ℕ+}
     (hn : (n : ℕ) + 1 = p ^ j) :
     PowerSeries.coeff (p ^ j) (formalGroup.nsmulSeries p) + generator n ∈
       Ideal.span {(p : LazardRing)} ⊔ augmentationIdeal ^ 2 := by
@@ -183,18 +187,22 @@ theorem coeff_prime_pow_nsmulSeries_add_generator_mem {j : ℕ} (hj : j ≠ 0) {
       rw [zsmul_eq_mul, Int.cast_pow, Int.cast_natCast, ← mul_assoc, ← pow_succ',
         Nat.sub_add_cancel n.pos]⟩
   have h := Ideal.add_mem _
-    (Ideal.mem_sup_right (coeff_prime_pow_nsmulSeries_sub_smul_generator_mem_sq hp hj hn))
+    (Ideal.mem_sup_right (coeff_prime_pow_nsmulSeries_sub_smul_generator_mem_sq hp hn))
     (Ideal.mem_sup_left (Ideal.mem_span_singleton.2 hp'))
   convert h using 1
   rw [sub_smul, one_smul]
   abel
 
 /-- **The `p`-series modulo `p` and decomposables away from the powers of `p`.** For a prime `p`
-and `m ≥ 2` not a power of `p`, the coefficient of `X^m` in the `p`-series of the universal formal
-group law lies in `p L + I²`. -/
-theorem coeff_nsmulSeries_mem_of_ne_prime_pow {m : ℕ} (hm : 2 ≤ m) (hpm : ∀ j, m ≠ p ^ j) :
+and `m` not of the form `pʲ` with `j ≥ 1`, the coefficient of `X^m` in the `p`-series of the
+universal formal group law lies in `p L + I²`. -/
+theorem coeff_nsmulSeries_mem_of_ne_prime_pow {m : ℕ} (hpm : ∀ j ≠ 0, m ≠ p ^ j) :
     PowerSeries.coeff m (formalGroup.nsmulSeries p) ∈
       Ideal.span {(p : LazardRing)} ⊔ augmentationIdeal ^ 2 := by
+  -- The constant coefficient is `0` and the linear one is `p`.
+  rcases lt_or_ge m 2 with hm | hm
+  · refine Ideal.mem_sup_left ?_
+    interval_cases m <;> simp
   obtain ⟨n, rfl⟩ : ∃ n : ℕ+, (n : ℕ) + 1 = m := ⟨⟨m - 1, by omega⟩, by simp; omega⟩
   set d : ℤ := ((lazardGcd ((n : ℕ) + 1) : ℕ) : ℤ)
   set c : ℤ := ((p : ℤ) ^ ((n : ℕ) + 1) - p) / d
@@ -202,7 +210,9 @@ theorem coeff_nsmulSeries_mem_of_ne_prime_pow {m : ℕ} (hm : 2 ≤ m) (hpm : �
   have hpd : ¬ (p : ℤ) ∣ d := by
     rw [Int.natCast_dvd_natCast, prime_dvd_lazardGcd_iff hp (by omega)]
     rintro ⟨j, hj⟩
-    exact hpm j hj
+    rcases eq_or_ne j 0 with rfl | hj₀
+    · simp at hj
+    · exact hpm j hj₀ hj
   have hdc : d * c = p * ((p : ℤ) ^ (n : ℕ) - 1) := by
     rw [Int.mul_ediv_cancel' (lazardGcd_dvd_pow_succ_sub p n)]
     ring
