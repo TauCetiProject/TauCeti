@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Fourier.ZMod
 public import Mathlib.NumberTheory.ZetaValues
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 import TauCeti.Analysis.Fourier.ZMod
+import TauCeti.NumberTheory.ZetaValues
 
 /-!
 # Values at positive integers of the series of a periodic function
@@ -32,8 +33,6 @@ characters, `DirichletCharacter.gaussSum_mul_tsum_inv_pow_eq_generalizedBernoull
 
 ## Main results
 
-* `algebraMap_eval_bernoulli_eq_bernoulliFun`: the Bernoulli polynomial at a rational point, in `ℂ`,
-  is `bernoulliFun` at the real point.
 * `ZMod.hasSum_mul_zpow_neg_bernoulli`: the value of `∑_{n ∈ ℤ} Φ(n) n⁻ᵏ`.
 * `ZMod.exists_natCast_mul_tsum_div_mem`: the bounded denominators of these values.
 
@@ -46,14 +45,6 @@ public section
 
 open Complex
 open scoped Real
-
-/-- The Bernoulli polynomial at a rational point, mapped into `ℂ`, is the Bernoulli function at the
-corresponding real point. -/
-theorem algebraMap_eval_bernoulli_eq_bernoulliFun {k : ℕ} (x : ℚ) :
-    algebraMap ℚ ℂ ((Polynomial.bernoulli k).eval x) = bernoulliFun k (x : ℝ) := by
-  simp only [bernoulliFun, Polynomial.eval_map, ← map_ratCast (algebraMap ℚ ℝ),
-    Polynomial.eval₂_at_apply]
-  norm_cast
 
 namespace ZMod
 
