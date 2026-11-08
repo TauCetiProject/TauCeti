@@ -6,76 +6,58 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.AbsolutelyContinuous
-import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Comp
 
 /-!
-# Absolute continuity of the logarithm of a shifted quotient
+# The almost-everywhere derivative of the logarithm of an absolutely continuous curve
 
-For two absolutely continuous complex curves `γ₀, γ₁` and a point `z` such that the quotient
-`(γ₁ t - z) / (γ₀ t - z)` stays in the slit plane, the principal logarithm of that quotient is
-absolutely continuous, and almost everywhere its derivative is the difference of the two
-logarithmic derivatives. The slit-plane hypothesis already forces both `γ₀ t - z` and
-`γ₁ t - z` to be nonzero, since `0` is not in the slit plane.
+For an absolutely continuous complex curve `σ` that stays in the slit plane, almost everywhere the
+derivative of `Complex.log ∘ σ` is `deriv σ t / σ t`. For the quotient `f / g` of two absolutely
+continuous curves, this is the difference of the two logarithmic derivatives. Absolute continuity
+of `Complex.log ∘ σ` itself is `AbsolutelyContinuousOnInterval.clog`.
 
 ## Main results
 
-* `AbsolutelyContinuousOnInterval.log_div_sub`: the logarithm of the shifted quotient is
-  absolutely continuous.
-* `AbsolutelyContinuousOnInterval.ae_hasDerivAt_log_div_sub`: its almost-everywhere derivative.
+* `AbsolutelyContinuousOnInterval.ae_hasDerivAt_clog`: the almost-everywhere derivative of
+  `Complex.log ∘ σ`.
+* `AbsolutelyContinuousOnInterval.ae_hasDerivAt_log_div`: the same for a quotient `f / g`.
 -/
 
 public section
 
 open Complex MeasureTheory Set
 
-/-- The principal logarithm of the quotient of two absolutely continuous curves, shifted by `z`,
-is absolutely continuous when the quotient stays in the slit plane (which forces the denominator
-to avoid zero). -/
-theorem AbsolutelyContinuousOnInterval.log_div_sub
-    {γ₀ γ₁ : ℝ → ℂ} {a b : ℝ} {z : ℂ}
-    (h₀ : AbsolutelyContinuousOnInterval γ₀ a b)
-    (h₁ : AbsolutelyContinuousOnInterval γ₁ a b)
-    (hslit : ∀ t ∈ uIcc a b, (γ₁ t - z) / (γ₀ t - z) ∈ slitPlane) :
-    AbsolutelyContinuousOnInterval (Complex.log ∘ fun t ↦ (γ₁ t - z) / (γ₀ t - z)) a b := by
-  have h₀ne : ∀ t ∈ uIcc a b, γ₀ t - z ≠ 0 := fun t ht h ↦ by
-    simpa [h] using hslit t ht
-  have hconst : AbsolutelyContinuousOnInterval (fun _ : ℝ ↦ z) a b :=
-    (LipschitzWith.const z).lipschitzOnWith.absolutelyContinuousOnInterval
-  have hα₀ := h₀.fun_sub hconst
-  have hα₁ := h₁.fun_sub hconst
-  have hinv : AbsolutelyContinuousOnInterval (fun t ↦ (γ₀ t - z)⁻¹) a b := by
-    apply hα₀.comp_of_contDiffAt
-    rintro _ ⟨t, ht, rfl⟩
-    exact contDiffAt_inv ℝ (h₀ne t ht)
-  have hσ : AbsolutelyContinuousOnInterval (fun t ↦ (γ₁ t - z) / (γ₀ t - z)) a b := by
-    simpa only [div_eq_mul_inv, smul_eq_mul] using hα₁.fun_smul hinv
-  apply hσ.comp_of_contDiffAt
-  rintro _ ⟨t, ht, rfl⟩
-  exact (Complex.contDiffAt_log (hslit t ht)).restrict_scalars ℝ
+namespace AbsolutelyContinuousOnInterval
 
-/-- Almost everywhere, the logarithm of the shifted quotient of two absolutely continuous curves
-has the difference of the two logarithmic derivatives as derivative. -/
-theorem AbsolutelyContinuousOnInterval.ae_hasDerivAt_log_div_sub
-    {γ₀ γ₁ : ℝ → ℂ} {a b : ℝ} {z : ℂ}
-    (h₀ : AbsolutelyContinuousOnInterval γ₀ a b)
-    (h₁ : AbsolutelyContinuousOnInterval γ₁ a b)
-    (hslit : ∀ t ∈ uIcc a b, (γ₁ t - z) / (γ₀ t - z) ∈ slitPlane) :
+/-- Almost everywhere, the principal logarithm of an absolutely continuous complex curve in the
+slit plane has derivative `deriv σ t / σ t`. -/
+theorem ae_hasDerivAt_clog {σ : ℝ → ℂ} {a b : ℝ} (hσ : AbsolutelyContinuousOnInterval σ a b)
+    (h : ∀ t ∈ uIcc a b, σ t ∈ slitPlane) :
+    ∀ᵐ t, t ∈ uIoc a b → HasDerivAt (Complex.log ∘ σ) (deriv σ t / σ t) t := by
+  filter_upwards [hσ.boundedVariationOn.ae_differentiableAt_of_mem_uIcc] with t ht ht'
+  have ht'' := uIoc_subset_uIcc ht'
+  exact (ht ht'').hasDerivAt.clog_real (h t ht'')
+
+/-- Almost everywhere, the principal logarithm of the quotient of two absolutely continuous
+complex curves, which stays in the slit plane, has the difference of the two logarithmic
+derivatives as derivative. -/
+theorem ae_hasDerivAt_log_div {f g : ℝ → ℂ} {a b : ℝ}
+    (hf : AbsolutelyContinuousOnInterval f a b) (hg : AbsolutelyContinuousOnInterval g a b)
+    (hg0 : ∀ t ∈ uIcc a b, g t ≠ 0) (h : ∀ t ∈ uIcc a b, f t / g t ∈ slitPlane) :
     ∀ᵐ t, t ∈ uIoc a b →
-      HasDerivAt (Complex.log ∘ fun t ↦ (γ₁ t - z) / (γ₀ t - z))
-        ((γ₁ t - z)⁻¹ * deriv γ₁ t - (γ₀ t - z)⁻¹ * deriv γ₀ t) t := by
-  have h₀ne : ∀ t ∈ uIcc a b, γ₀ t - z ≠ 0 := fun t ht h ↦ by
-    simpa [h] using hslit t ht
-  have h₁ne : ∀ t ∈ uIcc a b, γ₁ t - z ≠ 0 := fun t ht h ↦ by
-    simpa [h] using hslit t ht
-  filter_upwards [h₀.boundedVariationOn.ae_differentiableAt_of_mem_uIcc,
-    h₁.boundedVariationOn.ae_differentiableAt_of_mem_uIcc] with t ht₀ ht₁ ht
+      HasDerivAt (Complex.log ∘ fun t ↦ f t / g t) (deriv f t / f t - deriv g t / g t) t := by
+  have hf0 : ∀ t ∈ uIcc a b, f t ≠ 0 := fun t ht h0 ↦ by
+    simpa [h0] using h t ht
+  filter_upwards [(hf.fun_div hg hg0).ae_hasDerivAt_clog h,
+    hf.boundedVariationOn.ae_differentiableAt_of_mem_uIcc,
+    hg.boundedVariationOn.ae_differentiableAt_of_mem_uIcc] with t hlog ht₀ ht₁ ht
   have ht' := uIoc_subset_uIcc ht
-  have hd : HasDerivAt (fun t ↦ (γ₁ t - z) / (γ₀ t - z))
-      ((deriv γ₁ t * (γ₀ t - z) - (γ₁ t - z) * deriv γ₀ t) / (γ₀ t - z) ^ 2) t :=
-    ((ht₁ ht').hasDerivAt.sub_const z).div
-      ((ht₀ ht').hasDerivAt.sub_const z) (h₀ne t ht')
-  convert hd.clog_real (hslit t ht') using 1
-  · rfl
-  field_simp [h₀ne t ht', h₁ne t ht']
+  have hd : HasDerivAt (fun t ↦ f t / g t)
+      ((deriv f t * g t - f t * deriv g t) / g t ^ 2) t :=
+    ((ht₀ ht').hasDerivAt).div ((ht₁ ht').hasDerivAt) (hg0 t ht')
+  convert hlog ht using 1
+  rw [hd.deriv]
+  field_simp [hf0 t ht', hg0 t ht']
+
+end AbsolutelyContinuousOnInterval

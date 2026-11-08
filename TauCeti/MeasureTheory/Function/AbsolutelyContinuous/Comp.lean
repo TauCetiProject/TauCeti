@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Basic
+import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
+import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
@@ -16,7 +18,8 @@ import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 Locally Lipschitz maps preserve the absolute continuity of metric-valued curves under composition,
 and isometries moreover reflect it.
 In particular, a map that is continuously differentiable near every point of the compact trace of
-an absolutely continuous curve preserves absolute continuity.
+an absolutely continuous curve preserves absolute continuity: this gives the principal logarithm
+of a curve in the slit plane and the quotient of two curves with nonvanishing denominator.
 -/
 
 public section
@@ -63,5 +66,23 @@ protected theorem log {f : ℝ → ℝ} {a b : ℝ} (hf : AbsolutelyContinuousOn
     (h0 : ∀ t ∈ uIcc a b, f t ≠ 0) :
     AbsolutelyContinuousOnInterval (fun t ↦ Real.log (f t)) a b :=
   hf.comp_of_contDiffAt fun _ ⟨t, ht, hft⟩ ↦ Real.contDiffAt_log.2 (hft ▸ h0 t ht)
+
+/-- The principal logarithm of an absolutely continuous complex curve that stays in the slit plane
+is absolutely continuous. -/
+protected theorem clog {σ : ℝ → ℂ} {a b : ℝ} (hσ : AbsolutelyContinuousOnInterval σ a b)
+    (h : ∀ t ∈ uIcc a b, σ t ∈ Complex.slitPlane) :
+    AbsolutelyContinuousOnInterval (Complex.log ∘ σ) a b :=
+  hσ.comp_of_contDiffAt fun _ ⟨t, ht, hσt⟩ ↦
+    (Complex.contDiffAt_log (hσt ▸ h t ht)).restrict_scalars ℝ
+
+/-- The quotient of two absolutely continuous complex curves is absolutely continuous when the
+denominator does not vanish on the interval. -/
+protected theorem fun_div {f g : ℝ → ℂ} {a b : ℝ} (hf : AbsolutelyContinuousOnInterval f a b)
+    (hg : AbsolutelyContinuousOnInterval g a b) (h0 : ∀ t ∈ uIcc a b, g t ≠ 0) :
+    AbsolutelyContinuousOnInterval (fun t ↦ f t / g t) a b := by
+  have hinv : AbsolutelyContinuousOnInterval (fun t ↦ (g t)⁻¹) a b :=
+    hg.comp_of_contDiffAt (φ := fun x : ℂ ↦ x⁻¹) fun _ ⟨t, ht, hgt⟩ ↦
+      hgt ▸ contDiffAt_inv ℝ (h0 t ht)
+  simpa only [div_eq_mul_inv, smul_eq_mul] using hf.fun_smul hinv
 
 end AbsolutelyContinuousOnInterval

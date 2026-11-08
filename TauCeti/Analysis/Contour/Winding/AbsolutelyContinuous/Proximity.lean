@@ -63,8 +63,16 @@ theorem _root_.AbsolutelyContinuousOnInterval.windingNumber_eq_of_dist_lt_dist_o
   -- The comparison quotient and its principal logarithm are absolutely continuous.
   have hσslit : ∀ t ∈ uIcc a b, (γ₁ t - z) / (γ₀ t - z) ∈ slitPlane := fun t ht ↦
     TauCeti.div_sub_mem_slitPlane_of_dist_lt_dist (hlt t ht)
-  have hlog := h₀.log_div_sub h₁ hσslit
-  have hlogderiv := h₀.ae_hasDerivAt_log_div_sub h₁ hσslit
+  have hconst : AbsolutelyContinuousOnInterval (fun _ : ℝ ↦ z) a b :=
+    (LipschitzWith.const z).lipschitzOnWith.absolutelyContinuousOnInterval
+  have hα₀ := h₀.fun_sub hconst
+  have hα₁ := h₁.fun_sub hconst
+  have hlog := (hα₁.fun_div hα₀ h₀ne).clog hσslit
+  have hlogderiv : ∀ᵐ t, t ∈ uIoc a b →
+      HasDerivAt (Complex.log ∘ fun t ↦ (γ₁ t - z) / (γ₀ t - z))
+        ((γ₁ t - z)⁻¹ * deriv γ₁ t - (γ₀ t - z)⁻¹ * deriv γ₀ t) t := by
+    filter_upwards [hα₁.ae_hasDerivAt_log_div hα₀ h₀ne hσslit] with t ht ht'
+    simpa [div_eq_inv_mul] using ht ht'
   -- FTC evaluates the logarithmic derivative at the equal endpoint ratios.
   have hint := hlog.integral_eq_sub_of_ae_hasDerivAt hlogderiv
   simp only [Function.comp_apply, hends, sub_self] at hint
