@@ -120,13 +120,7 @@ theorem exists_chartJet_eq_of_tendsto
       ((continuous_eval_const ⟨extChartAt I x x,
         mem_extChartAt_target x⟩).tendsto _)).comp
           ((tendsto_pi_nhds.1 ((tendsto_pi_nhds.1 hg) x)) ⟨0, by simp⟩)
-    refine ht.congr' (Eventually.of_forall fun i ↦ ?_)
-    simp only [Function.comp_def]
-    rw [chartJet_apply (f i) x ⟨0, by simp⟩]
-    -- Reconcile the normalized jet target with the native chart-derivative target.
-    convert! chartIteratedFDeriv_zero_apply (f i) x
-      ⟨extChartAt I x x, mem_extChartAt_target x⟩ 0 using 1
-    exact (congrArg (f i) (extChartAt_to_inv x)).symm
+    exact ht.congr' (Eventually.of_forall fun i ↦ chartJet_zero_apply_self (f i) x)
   have hchart := contDiffOn_chartJet_limit hg hpoint
   have hsmooth : ContMDiff I 𝓘(𝕜, F) (r : ℕ∞ω) h := by
     intro x
@@ -147,15 +141,8 @@ theorem exists_chartJet_eq_of_tendsto
 theorem isClosedEmbedding_chartJet :
     IsClosedEmbedding (chartJet (I := I) (M := M) (F := F) (n := (r : ℕ∞ω))) := by
   refine ⟨⟨isInducing_chartJet, chartJet_injective⟩,
-    isClosed_of_closure_subset fun g hg ↦ ?_⟩
-  let l := Filter.comap (Subtype.val : range (chartJet (I := I) (M := M)
-    (F := F) (n := (r : ℕ∞ω))) → _) (𝓝 g)
-  have : l.NeBot := mem_closure_iff_comap_neBot.1 hg
-  let f := fun z : range (chartJet (I := I) (M := M) (F := F) (n := (r : ℕ∞ω))) ↦
-    Classical.choose z.property
-  have hf : (fun z ↦ chartJet (f z)) = Subtype.val :=
-    funext fun z ↦ Classical.choose_spec z.property
-  exact exists_chartJet_eq_of_tendsto (l := l) (f := f) (by rw [hf]; exact tendsto_comap)
+    TauCeti.isClosed_range_of_tendsto fun g l _ hg ↦ ?_⟩
+  exact exists_chartJet_eq_of_tendsto (f := fun f ↦ f) hg
 
 /-- Completeness for the additive uniformity of the native weak Whitney topology, for any
 finite or smooth regularity and complete vector target. -/

@@ -183,4 +183,13 @@ theorem chartJet_apply (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) (x : M) (m : {m : �
       chartJet f x m = chartIteratedFDeriv f x m m.2 :=
   chartIteratedFDerivLinearMap_apply _ _ _ _
 
+/-- The zeroth chart-jet entry at the chart centre recovers the map's value. -/
+theorem chartJet_zero_apply_self (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) (x : M) :
+    chartJet f x ⟨0, by simp⟩ ⟨extChartAt I x x, mem_extChartAt_target x⟩ 0 = f x := by
+  rw [chartJet_apply]
+  -- Reconcile the normalized jet target with the native chart-derivative target.
+  convert! chartIteratedFDeriv_zero_apply f x
+    ⟨extChartAt I x x, mem_extChartAt_target x⟩ 0 using 1
+  exact (congrArg f (extChartAt_to_inv x)).symm
+
 end ContMDiffMap

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.ContMDiffMap.WeakWhitney.Basic
 public import TauCeti.Analysis.Calculus.ContDiff.FTaylorSeries
+public import TauCeti.Topology.Maps.ClosedRange
 public import Mathlib.Topology.UniformSpace.CompactConvergence
 public import Mathlib.Topology.UniformSpace.UniformEmbedding
 
@@ -103,15 +104,9 @@ theorem isClosedEmbedding_weakWhitneyJet :
     IsClosedEmbedding (weakWhitneyJet :
       C^(n : ℕ∞ω)⟮𝓘(𝕜, E), E; 𝓘(𝕜, F), F⟯ →
         (m : {m : ℕ // m ≤ (n : ℕ∞ω)}) → C(E, E [×(m : ℕ)]→L[𝕜] F)) := by
-  refine ⟨isEmbedding_weakWhitneyJet, isClosed_of_closure_subset fun g hg ↦ ?_⟩
-  let l := Filter.comap (Subtype.val : range (weakWhitneyJet (𝕜 := 𝕜)
-    (E := E) (F := F) (n := (n : ℕ∞ω))) → _) (𝓝 g)
-  have : l.NeBot := mem_closure_iff_comap_neBot.1 hg
-  let f := fun z : range (weakWhitneyJet (𝕜 := 𝕜) (E := E) (F := F) (n := (n : ℕ∞ω))) ↦
-    Classical.choose z.property
-  have hf : (fun z ↦ weakWhitneyJet (f z)) = Subtype.val :=
-    funext fun z ↦ Classical.choose_spec z.property
-  exact exists_weakWhitneyJet_eq_of_tendsto (l := l) (f := f) (by rw [hf]; exact tendsto_comap)
+  refine ⟨isEmbedding_weakWhitneyJet,
+    TauCeti.isClosed_range_of_tendsto fun g l _ hg ↦ ?_⟩
+  exact exists_weakWhitneyJet_eq_of_tendsto (f := fun f ↦ f) hg
 
 /-- For a complete target, the weak Whitney `C^n` map space is complete. This includes the
 smooth map space, with uniform convergence of every derivative on compact subsets. -/

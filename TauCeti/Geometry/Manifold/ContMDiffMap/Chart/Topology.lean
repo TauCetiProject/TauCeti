@@ -248,11 +248,7 @@ theorem chartJet_injective :
   ext x
   have hx := congrArg (fun j ↦ j x ⟨0, by simp⟩ ⟨extChartAt I x x,
     mem_extChartAt_target x⟩ 0) h
-  rw [chartJet_apply f x ⟨0, by simp⟩, chartJet_apply g x ⟨0, by simp⟩] at hx
-  let z : (extChartAt I x).target := ⟨extChartAt I x x, mem_extChartAt_target x⟩
-  have hf := chartIteratedFDeriv_zero_apply f x z 0
-  have hg := chartIteratedFDeriv_zero_apply g x z 0
-  simpa only [z, extChartAt_to_inv] using hf.symm.trans (hx.trans hg)
+  exact (chartJet_zero_apply_self f x).symm.trans (hx.trans (chartJet_zero_apply_self g x))
 
 /-- The linear map recording every chart derivative restricted to every compact coordinate set,
 with each component valued in its native supremum-norm continuous-map space. -/

@@ -274,16 +274,9 @@ theorem exists_openWeakWhitneyJet_eq_of_tendsto
 No completeness of the target is required for this closed-image statement. -/
 theorem isClosedEmbedding_openWeakWhitneyJet :
     IsClosedEmbedding (openWeakWhitneyJet (𝕜 := 𝕜) (F := F) (n := (r : ℕ∞ω)) U) := by
-  refine ⟨isEmbedding_openWeakWhitneyJet U, isClosed_of_closure_subset fun g hg ↦ ?_⟩
-  let l := Filter.comap (Subtype.val : range (openWeakWhitneyJet (𝕜 := 𝕜)
-    (F := F) (n := (r : ℕ∞ω)) U) → _) (𝓝 g)
-  have : l.NeBot := mem_closure_iff_comap_neBot.1 hg
-  let f := fun z : range (openWeakWhitneyJet (𝕜 := 𝕜) (F := F) (n := (r : ℕ∞ω)) U) ↦
-    Classical.choose z.property
-  have hf : (fun z ↦ openWeakWhitneyJet U (f z)) = Subtype.val :=
-    funext fun z ↦ Classical.choose_spec z.property
-  exact exists_openWeakWhitneyJet_eq_of_tendsto U (l := l) (f := f)
-    (by rw [hf]; exact tendsto_comap)
+  refine ⟨isEmbedding_openWeakWhitneyJet U,
+    TauCeti.isClosed_range_of_tendsto fun g l _ hg ↦ ?_⟩
+  exact exists_openWeakWhitneyJet_eq_of_tendsto U (f := fun f ↦ f) hg
 
 /-- For a complete target, native finite-order and smooth maps on an open source form a complete
 space in their existing weak Whitney topology and its compatible derivative uniformity. -/

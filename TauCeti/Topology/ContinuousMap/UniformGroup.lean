@@ -10,26 +10,29 @@ public import Mathlib.Topology.Algebra.UniformConvergence
 public import Mathlib.Topology.Algebra.IsUniformGroup.Constructions
 
 /-!
-# The compact-convergence uniformity on continuous maps into an additive group
+# The compact-convergence uniformity on continuous maps into a group
 
-The native compact-convergence uniformity makes continuous maps into a uniform additive group
-a uniform additive group. This allows continuous additive embeddings of function spaces to
-transport completeness without changing their compact-open topologies.
+The native compact-convergence uniformity makes continuous maps into a uniform group
+a uniform group, with an additive version as well. This allows continuous homomorphic
+embeddings of function spaces to transport completeness without changing their compact-open
+topologies.
 -/
 
 public section
 
 namespace ContinuousMap
 
-variable {X G : Type*} [TopologicalSpace X] [UniformSpace G] [AddGroup G]
-  [IsUniformAddGroup G]
+variable {X G : Type*} [TopologicalSpace X] [UniformSpace G] [Group G]
+  [IsUniformGroup G]
 
-/-- Compact convergence of continuous maps respects the uniform additive group structure. -/
-instance instIsUniformAddGroup : IsUniformAddGroup C(X, G) := by
-  let f : C(X, G) →+ UniformOnFun X G {K | IsCompact K} :=
+/-- Compact convergence of continuous maps respects the uniform group structure. -/
+@[to_additive /-- Compact convergence of continuous maps respects the uniform additive group
+structure. -/]
+instance instIsUniformGroup : IsUniformGroup C(X, G) := by
+  let f : C(X, G) →* UniformOnFun X G {K | IsCompact K} :=
     { toFun := toUniformOnFunIsCompact
-      map_zero' := rfl
-      map_add' _ _ := rfl }
-  exact isUniformEmbedding_toUniformOnFunIsCompact.isUniformInducing.isUniformAddGroup f
+      map_one' := rfl
+      map_mul' _ _ := rfl }
+  exact isUniformEmbedding_toUniformOnFunIsCompact.isUniformInducing.isUniformGroup f
 
 end ContinuousMap
