@@ -16,6 +16,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCiv
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Christoffel.Basic
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import Mathlib.Algebra.Order.Chebyshev
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Geometry.Manifold.IsManifold.Basic
@@ -662,9 +663,9 @@ theorem laplaceBeltrami_eq_finrank_mul_of_hessian_eq_mul_inner
     laplaceBeltrami I f x = Module.finrank ℝ E * c := by
   let b := stdOrthonormalBasis ℝ (TangentSpace I x)
   rw [laplaceBeltrami_eq_sum_hessian I f x b]
-  simp only [h, b.orthonormal.1, real_inner_self_eq_norm_sq, one_pow, mul_one,
-    Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
-  rw [← Module.finrank_eq_card_basis b.toBasis, finrank_tangentSpace]
+  simp only [h, ← Finset.mul_sum]
+  rw [b.sum_inner_self, Fintype.card_fin, finrank_tangentSpace]
+  ring
 
 /-! ### Linear coordinates -/
 

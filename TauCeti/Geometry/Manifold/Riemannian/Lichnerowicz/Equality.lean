@@ -116,6 +116,27 @@ private theorem lichnerowicz_defect_eq_zero (hn : 0 < Module.finrank ℝ E)
   exact congrFun (Measure.eq_of_ae_eq ((integral_eq_zero_iff_of_nonneg hnonneg hDi).1 hzero)
     hD continuous_zero) x
 
+/-- In the equality case, the vanishing Bochner defect gives, in any orthonormal basis, the
+pointwise identity `|Hess f|² + (Ric(grad f, grad f) - (n - 1) k |grad f|²) = n k² f²`. -/
+private theorem sum_hessian_sq_add_ricci_defect_eq (hn : 0 < Module.finrank ℝ E)
+    (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    (heig : ∀ x, laplaceBeltrami I f x = -(Module.finrank ℝ E : ℝ) * k * f x)
+    (hRic : ∀ (x : M) (v : TangentSpace I x),
+      ((Module.finrank ℝ E : ℝ) - 1) * k * ‖v‖ ^ 2 ≤
+        (CovariantDerivative.leviCivitaConnection I M).ricciTensor x v v)
+    (x : M) {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ (TangentSpace I x)) :
+    ∑ i, ∑ j, hessian I f x (b i) (b j) ^ 2 +
+        ((CovariantDerivative.leviCivitaConnection I M).ricciTensor x
+          (mgradient I f x) (mgradient I f x) -
+          ((Module.finrank ℝ E : ℝ) - 1) * k * ‖mgradient I f x‖ ^ 2) =
+      (Module.finrank ℝ E : ℝ) * k ^ 2 * f x ^ 2 := by
+  have heig' : ∀ y, laplaceBeltrami I f y = -((Module.finrank ℝ E : ℝ) * k) * f y := by
+    simpa only [neg_mul] using heig
+  have hD := lichnerowicz_defect_eq_zero hn hf heig' hRic x
+  have hb := laplaceBeltrami_norm_sq_mgradient hf x b
+  rw [mvfderiv_laplaceBeltrami_mgradient_of_laplaceBeltrami_eq_neg_mul heig' x] at hb
+  linarith
+
 /-- **Equality in the Lichnerowicz estimate.** On a closed manifold with
 `Ric ≥ (n - 1) k g`, an eigenfunction of `Δ⁺` with eigenvalue `n k` satisfies
 `Hess f = -k f g`. No positivity or nonvanishing assumption is needed for this implication. -/
@@ -133,20 +154,15 @@ theorem hessian_eq_neg_mul_inner_of_laplaceBeltrami_eq_neg_mul
       rw [finrank_tangentSpace (I := I) x, hn])
     rw [Subsingleton.elim u 0]
     simp
-  have heig' : ∀ y, laplaceBeltrami I f y = -((Module.finrank ℝ E : ℝ) * k) * f y := by
-    simpa only [neg_mul] using heig
-  have hD := lichnerowicz_defect_eq_zero (Nat.pos_of_ne_zero hn) hf heig' hRic x
   let b := stdOrthonormalBasis ℝ (TangentSpace I x)
   let A : Matrix (Fin (Module.finrank ℝ (TangentSpace I x)))
       (Fin (Module.finrank ℝ (TangentSpace I x))) ℝ := fun i j ↦ hessian I f x (b i) (b j)
-  have hderiv :=
-    mvfderiv_laplaceBeltrami_mgradient_of_laplaceBeltrami_eq_neg_mul heig' x
-  have hb := laplaceBeltrami_norm_sq_mgradient hf x b
-  rw [hderiv] at hb
   have hs : (∑ i, ∑ j, A i j ^ 2) ≤ (Module.finrank ℝ E : ℝ) * (-k * f x) ^ 2 := by
+    have h := sum_hessian_sq_add_ricci_defect_eq (Nat.pos_of_ne_zero hn) hf heig hRic x b
     have hr := hRic x (mgradient I f x)
+    rw [neg_mul, neg_sq, mul_pow, ← mul_assoc]
     dsimp only [A]
-    nlinarith
+    linarith
   have hcard : Fintype.card (Fin (Module.finrank ℝ (TangentSpace I x))) =
       Module.finrank ℝ E := by simp
   have hscalar := Matrix.eq_scalar_of_trace_eq_of_sum_sq_le A (-k * f x)
@@ -191,15 +207,11 @@ theorem ricciTensor_mgradient_eq_of_laplaceBeltrami_eq_neg_mul
     rw [Subsingleton.elim (mgradient I f x) 0]
     simp
   have hn' : (0 : ℝ) < Module.finrank ℝ E := by exact_mod_cast Nat.pos_of_ne_zero hn
-  have heig' : ∀ y, laplaceBeltrami I f y = -((Module.finrank ℝ E : ℝ) * k) * f y := by
-    simpa only [neg_mul] using heig
-  have hD := lichnerowicz_defect_eq_zero (Nat.pos_of_ne_zero hn) hf heig' hRic x
   let b := stdOrthonormalBasis ℝ (TangentSpace I x)
-  have hb := laplaceBeltrami_norm_sq_mgradient hf x b
-  rw [mvfderiv_laplaceBeltrami_mgradient_of_laplaceBeltrami_eq_neg_mul heig' x] at hb
+  have h := sum_hessian_sq_add_ricci_defect_eq (Nat.pos_of_ne_zero hn) hf heig hRic x b
   -- Trace Cauchy–Schwarz bounds the squared Hessian norm below by `n k² f²`.
   have hcs := laplaceBeltrami_sq_le_finrank_mul_sum_hessian_sq f x b
-  rw [heig'] at hcs
+  rw [heig] at hcs
   have hS : (Module.finrank ℝ E : ℝ) * k ^ 2 * f x ^ 2 ≤
       ∑ i, ∑ j, hessian I f x (b i) (b j) ^ 2 :=
     le_of_mul_le_mul_left (by linarith) hn'
