@@ -32,6 +32,8 @@ unitary group. Rescaling by a scalar of modulus one keeps a matrix unitary, so n
   `Aᴴ A` is a scalar matrix and `‖det A‖ = 1` is unitary. This turns conditions that determine a
   matrix only up to a scalar factor, such as those coming from its action on a projective space,
   into unitarity.
+* `Matrix.forall_sq_norm_add_sq_norm_eq_iff_mem_unitaryGroup`: a complex `2 × 2` matrix is
+  unitary exactly when it preserves the Hermitian norm of every vector `(z, 1)`.
 
 
 ## Main definitions
@@ -90,6 +92,48 @@ theorem mem_unitaryGroup_of_star_mul_self_eq_scalar {𝕜 : Type*} [RCLike 𝕜]
     (Finset.sum_nonneg fun _ _ => sq_nonneg _)
     Fintype.card_ne_zero).mp hpow]
   simp
+
+open ComplexConjugate in
+/-- **Recognizing `2 × 2` unitary matrices.** A complex matrix `!![a, b; c, d]` is unitary exactly
+when `|a z + b|² + |c z + d|² = |z|² + 1` for every `z`, that is, when it preserves the Hermitian
+norm of every vector `(z, 1)`. -/
+theorem forall_sq_norm_add_sq_norm_eq_iff_mem_unitaryGroup (A : Matrix (Fin 2) (Fin 2) ℂ) :
+    (∀ z : ℂ, ‖A 0 0 * z + A 0 1‖ ^ 2 + ‖A 1 0 * z + A 1 1‖ ^ 2 = ‖z‖ ^ 2 + 1) ↔
+      A ∈ unitaryGroup (Fin 2) ℂ := by
+  -- Unitarity says that the columns `(a, c)` and `(b, d)` are orthonormal.
+  rw [mem_unitaryGroup_iff', ← Matrix.ext_iff]
+  simp only [Fin.forall_fin_two, Matrix.mul_apply, Fin.sum_univ_two, Matrix.star_apply,
+    Complex.star_def, Matrix.one_apply_eq, ne_eq, zero_ne_one, not_false_eq_true,
+    Matrix.one_apply_ne, one_ne_zero]
+  -- In complex form the identity reads `(conj a conj z + conj b) (a z + b) + ⋯ = conj z z + 1`.
+  have key (z : ℂ) : ‖A 0 0 * z + A 0 1‖ ^ 2 + ‖A 1 0 * z + A 1 1‖ ^ 2 = ‖z‖ ^ 2 + 1 ↔
+      (conj (A 0 0) * conj z + conj (A 0 1)) * (A 0 0 * z + A 0 1) +
+        (conj (A 1 0) * conj z + conj (A 1 1)) * (A 1 0 * z + A 1 1) = conj z * z + 1 := by
+    rw [← Complex.ofReal_inj]
+    push_cast
+    simp only [← Complex.conj_mul', map_add, map_mul]
+  simp only [key]
+  generalize A 0 0 = a
+  generalize A 0 1 = b
+  generalize A 1 0 = c
+  generalize A 1 1 = d
+  constructor
+  · -- Evaluate at `z = 0, 1, -1, i` and compare.
+    intro h
+    have h0 := h 0
+    have h1 := h 1
+    have hm1 := h (-1)
+    have hI := h Complex.I
+    simp only [map_zero, map_one, map_neg, Complex.conj_I, mul_zero, zero_add, mul_one,
+      mul_neg] at h0 h1 hm1 hI
+    have h01 : conj a * b + conj c * d = 0 := by
+      linear_combination (h1 - hm1) / 4 + Complex.I / 2 * hI - Complex.I / 4 * (h1 + hm1) +
+        ((conj a * b + conj c * d - conj b * a - conj d * c) / 2 +
+          Complex.I / 2 * (conj a * a + conj c * c - 1)) * Complex.I_sq
+    refine ⟨⟨by linear_combination (h1 + hm1) / 2 - h0, h01⟩, ?_, h0⟩
+    simpa [mul_comm] using congrArg conj h01
+  · rintro ⟨⟨h00, h01⟩, h10, h11⟩ z
+    linear_combination (conj z * z) * h00 + conj z * h01 + z * h10 + h11
 
 end Matrix
 
