@@ -11,6 +11,7 @@ import Mathlib.Analysis.Convex.Integral
 import Mathlib.MeasureTheory.Covering.BesicovitchVectorSpace
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Measure.InterBall
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -44,7 +45,8 @@ points of `Ω` are at distance at most `D / 2`, and the mean oscillation of `f �
 `closedBall x r ∩ Ω` is at most `M r^α` for `x ∈ Ω` and `0 < r ≤ D`, then the precise
 representative of `f` with respect to `μ.restrict Ω` is `α`-Hölder on `Ω`, with constant
 `2 · 2^α · 2ⁿ / (A (1 - 2^(-α))) · M`, and agrees with `f` almost everywhere on `Ω`. Conversely,
-an `α`-Hölder function on `Ω` has mean oscillation at most `K (2 r)^α` on every such piece. In
+an `α`-Hölder function on `Ω` has mean oscillation at most `K (2 r)^α` on every such piece
+(`TauCeti.setAverage_norm_sub_setAverage_le_of_holderOnWith`). In
 the language of Campanato spaces, the same conclusion follows from the `Lᵖ` bound
 `∫_{closedBall x r ∩ Ω} ‖f - f_{x,r}‖ᵖ ≤ M r^λ`, `p ≥ 1`, with `α = (λ - n) / p > 0`, by Hölder's
 inequality: `𝓛^{p,λ}(Ω) ⊆ C^{0,α}(Ω)`. The statements on the whole space are the case `Ω = E`,
@@ -69,8 +71,6 @@ measure is not doubling.
 
 All declarations are in the `TauCeti.MeasureTheory` namespace.
 
-* `setAverage_norm_sub_setAverage_le_of_holderOnWith`: the mean oscillation of an `α`-Hölder
-  function on a set inside a ball of radius `r` is at most a multiple of `r^α`.
 * `norm_setAverage_closedBall_inter_sub_preciseRepresentative_restrict_le`: mean oscillation on
   the pieces `closedBall x r ∩ Ω` decaying like `r^α` makes their averages converge at `x`, at
   rate `r^α`.
@@ -115,38 +115,6 @@ namespace TauCeti
 
 namespace MeasureTheory
 
-section Holder
-
-variable {X F : Type*} [MetricSpace X] [MeasurableSpace X] {μ : Measure X}
-  [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F] {f : X → F} {x : X}
-
-/-- **The mean oscillation of a Hölder function.** If `f` is integrable on a null-measurable set
-`s` of positive finite measure inside `closedBall x r`, and is `α`-Hölder continuous on `s` with
-constant `K`, then the mean oscillation of `f` on `s` is at most `K (2 r)^α`. -/
-theorem setAverage_norm_sub_setAverage_le_of_holderOnWith {K α : ℝ≥0} {r : ℝ} {s : Set X}
-    (hsm : NullMeasurableSet s μ) (hs : s ⊆ closedBall x r) (hμ : μ s ≠ 0) (hμ' : μ s ≠ ⊤)
-    (hf : HolderOnWith K α f s) (hint : IntegrableOn f s μ) :
-    ⨍ y in s, ‖f y - ⨍ z in s, f z ∂μ‖ ∂μ ≤ K * (2 * r) ^ (α : ℝ) := by
-  -- Every value of `f` on `s` lies within `K (2 r)^α` of every other one, hence of their
-  -- average.
-  have hpt : ∀ y ∈ s, ‖f y - ⨍ z in s, f z ∂μ‖ ≤ K * (2 * r) ^ (α : ℝ) := by
-    intro y hy
-    have hmem : ⨍ z in s, f z ∂μ ∈ closedBall (f y) (K * (2 * r) ^ (α : ℝ)) := by
-      refine (convex_closedBall _ _).set_average_mem isClosed_closedBall hμ hμ' ?_ hint
-      filter_upwards [ae_restrict_mem₀ hsm] with z hz
-      rw [mem_closedBall]
-      refine (hf.dist_le hz hy).trans ?_
-      gcongr
-      calc dist z y ≤ dist z x + dist y x := dist_triangle_right _ _ _
-        _ ≤ 2 * r := by linarith [mem_closedBall.1 (hs hz), mem_closedBall.1 (hs hy)]
-    rw [← dist_eq_norm, dist_comm]
-    exact mem_closedBall.1 hmem
-  refine (convex_Iic ((K : ℝ) * (2 * r) ^ (α : ℝ))).set_average_mem isClosed_Iic hμ hμ' ?_ ?_
-  · filter_upwards [ae_restrict_mem₀ hsm] with y hy using hpt y hy
-  · exact (hint.sub (integrableOn_const hμ')).norm
-
-end Holder
-
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F] {f : E → F} {x : E} {M α ρ : ℝ}
@@ -155,22 +123,6 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
 /-- For `α > 0`, `1 - 2^(-α)` is positive: the dyadic series of ratio `2^(-α)` converges. -/
 private lemma one_sub_two_rpow_neg_pos (hα : 0 < α) : 0 < 1 - (2 : ℝ) ^ (-α) :=
   sub_pos.2 (Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (neg_lt_zero.2 hα))
-
-omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] in
-/-- Under the measure density condition at `closedBall y ε`, `ε > 0`, the piece
-`closedBall y ε ∩ Ω` has positive measure. -/
-private lemma measure_closedBall_inter_ne_zero {y : E} {ε : ℝ} (hA : 0 < A) (hε : 0 < ε)
-    (hdens : A * μ (closedBall y ε) ≤ μ (closedBall y ε ∩ Ω)) : μ (closedBall y ε ∩ Ω) ≠ 0 :=
-  ((ENNReal.mul_pos (by exact_mod_cast hA.ne') (measure_closedBall_pos μ y hε).ne').trans_le
-    hdens).ne'
-
-omit [BorelSpace E] in
-/-- The measure density condition at `closedBall y ε`, in terms of real measures. -/
-private lemma mul_measureReal_closedBall_le {y : E} {ε : ℝ}
-    (hdens : A * μ (closedBall y ε) ≤ μ (closedBall y ε ∩ Ω)) :
-    (A : ℝ) * μ.real (closedBall y ε) ≤ μ.real (closedBall y ε ∩ Ω) := by
-  simpa [measureReal_def, ENNReal.toReal_mul] using ENNReal.toReal_mono
-    (measure_ne_top_of_subset inter_subset_left measure_closedBall_lt_top.ne) hdens
 
 /-- Comparing the averages over `closedBall y ε ∩ Ω ⊆ closedBall x r ∩ Ω` for `r ≤ 2 ε` costs at
 most `2ⁿ / A` times the mean oscillation on `closedBall x r ∩ Ω`, when `Ω` fills at least the
