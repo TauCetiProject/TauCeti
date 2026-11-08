@@ -24,9 +24,9 @@ public section
 
 open Finset Set
 
-namespace Graph
+namespace TauCeti.Examples.IndegreeOrientation
 
-namespace IndegreeOrientationExamples
+open Graph
 
 /-! ### Loops and parallel edges -/
 
@@ -55,7 +55,7 @@ theorem oneLoopOrientation_indegree : oneLoopOrientation.indegree loopVertex = 1
       oneLoopOrientation.indegree loopVertex := by
     apply Finset.sum_eq_single loopVertex
     · intro v _ hv
-      exact (hv (Subtype.ext (by cases v.1; rfl))).elim
+      exact (hv (Subsingleton.elim v loopVertex)).elim
     · simp
   rw [hsum] at h
   simpa [oneLoop] using h
@@ -92,12 +92,12 @@ example : oppositeParallelOrientation.head ⟨true, by simp [twoParallel]⟩ =
     parallelVertex true := by
   simp [oppositeParallelOrientation]
 
-/-- Orienting the two parallel edges in opposite directions gives indegree one at both ends. -/
-theorem oppositeParallelOrientation_indegree (b : Bool) :
-    oppositeParallelOrientation.indegree (parallelVertex b) = 1 := by
+/-- Orienting the two parallel edges in opposite directions gives indegree one at every vertex. -/
+theorem oppositeParallelOrientation_indegree (v : V(twoParallel)) :
+    oppositeParallelOrientation.indegree v = 1 := by
   classical
   rw [Orientation.indegree_def, Finset.card_eq_one]
-  refine ⟨⟨b, by simp [twoParallel]⟩, ?_⟩
+  refine ⟨⟨v.1, by simp [twoParallel]⟩, ?_⟩
   ext e
   simp [oppositeParallelOrientation, Subtype.ext_iff]
 
@@ -117,44 +117,47 @@ example (v : V(twoParallel)) : parallelLower v < parallelUpper v :=
 example : ∀ v, oppositeParallelOrientation.indegree v ∈
     Set.Icc (parallelLower v) (parallelUpper v) := by
   intro v
-  have hv : v = parallelVertex v.1 := Subtype.ext rfl
-  rw [hv]
   rw [oppositeParallelOrientation_indegree]
   exact ⟨Nat.zero_le _, le_rfl⟩
 
 /-- The bounded-indegree criterion also detects feasibility of these unequal bounds. -/
 example : ∃ o : twoParallel.Orientation,
     ∀ v, o.indegree v ∈ Set.Icc (parallelLower v) (parallelUpper v) := by
-  exact ⟨oppositeParallelOrientation, fun v ↦ by
-    have hv : v = parallelVertex v.1 := Subtype.ext rfl
-    rw [hv, oppositeParallelOrientation_indegree]
-    exact ⟨Nat.zero_le _, le_rfl⟩⟩
+  rw [Graph.exists_orientation_indegree_mem_Icc_iff (a := parallelLower) (b := parallelUpper)
+    (fun _ ↦ Nat.zero_le _)]
+  constructor
+  · intro S
+    simpa [parallelUpper, oppositeParallelOrientation_indegree] using
+      oppositeParallelOrientation.card_internalEdges_le_sum_indegree S
+  · intro S
+    simp [parallelLower]
 
 /-! ### The two subset obstructions -/
 
 /-- The impossible zero upper indegree bound on the vertex of `oneLoop`. -/
 private def loopUpper (_ : V(oneLoop)) : ℕ := 0
 
-/-- The singleton vertex set witnesses the upper-bound obstruction: it contains one internal
-loop but has total upper bound zero. -/
-example : ∑ v ∈ ({loopVertex} : Finset V(oneLoop)), loopUpper v <
-    #(oneLoop.internalEdges {loopVertex}) := by
+/-- The singleton vertex set violates the upper-bound criterion for `loopUpper`. -/
+private theorem loopUpper_certificate :
+    ∑ v ∈ ({loopVertex} : Finset V(oneLoop)), loopUpper v <
+      #(oneLoop.internalEdges {loopVertex}) := by
   classical
   simp only [loopUpper, sum_const_zero]
   apply Finset.card_pos.mpr
   refine ⟨⟨(), by simp [oneLoop]⟩, ?_⟩
   simp [loopVertex, oneLoop]
 
+/-- The singleton vertex set witnesses the upper-bound obstruction: it contains one internal
+loop but has total upper bound zero. -/
+example : ∑ v ∈ ({loopVertex} : Finset V(oneLoop)), loopUpper v <
+    #(oneLoop.internalEdges {loopVertex}) :=
+  loopUpper_certificate
+
 /-- Consequently no orientation of the one-loop graph has indegree at most zero. -/
 example : ¬∃ o : oneLoop.Orientation, ∀ v, o.indegree v ≤ loopUpper v := by
   rw [exists_orientation_indegree_le_iff]
   push Not
-  refine ⟨{loopVertex}, ?_⟩
-  classical
-  simp only [loopUpper, sum_const_zero]
-  apply Finset.card_pos.mpr
-  refine ⟨⟨(), by simp [oneLoop]⟩, ?_⟩
-  simp [loopVertex, oneLoop]
+  exact ⟨{loopVertex}, loopUpper_certificate⟩
 
 /-- The finite graph with one isolated vertex. -/
 abbrev isolated : Graph Unit Unit :=
@@ -173,27 +176,30 @@ abbrev isolatedVertex : V(isolated) :=
 /-- The impossible positive lower indegree bound on the isolated vertex. -/
 private def isolatedLower (_ : V(isolated)) : ℕ := 1
 
+/-- The isolated example's unique vertex is incident to no actual edges. -/
+private theorem incidentEdges_isolatedVertex :
+    isolated.incidentEdges {isolatedVertex} = ∅ := by
+  ext e
+  have he : False := by simpa [isolated] using e.2
+  exact he.elim
+
+/-- The singleton vertex set violates the lower-bound criterion for `isolatedLower`. -/
+private theorem isolatedLower_certificate :
+    #(isolated.incidentEdges {isolatedVertex}) <
+      ∑ v ∈ ({isolatedVertex} : Finset V(isolated)), isolatedLower v := by
+  simp [incidentEdges_isolatedVertex, isolatedLower]
+
 /-- The singleton vertex set witnesses the lower-bound obstruction: its required lower indegree is
 one, but it is incident to no edge. -/
 example : #(isolated.incidentEdges {isolatedVertex}) <
-    ∑ v ∈ ({isolatedVertex} : Finset V(isolated)), isolatedLower v := by
-  classical
-  have hEmpty : isolated.incidentEdges {isolatedVertex} = ∅ := by
-    ext e
-    have he : False := by simpa [isolated] using e.2
-    exact he.elim
-  simp [hEmpty, isolatedLower]
+    ∑ v ∈ ({isolatedVertex} : Finset V(isolated)), isolatedLower v :=
+  isolatedLower_certificate
 
 /-- Consequently no orientation can give an isolated vertex positive indegree. -/
 example : ¬∃ o : isolated.Orientation, ∀ v, isolatedLower v ≤ o.indegree v := by
   rw [exists_orientation_le_indegree_iff]
   push Not
-  refine ⟨{isolatedVertex}, ?_⟩
-  have hEmpty : isolated.incidentEdges {isolatedVertex} = ∅ := by
-    ext e
-    have he : False := by simpa [isolated] using e.2
-    exact he.elim
-  simp [hEmpty, isolatedLower]
+  exact ⟨{isolatedVertex}, isolatedLower_certificate⟩
 
 /-! ### Prescribed indegrees and total balance -/
 
@@ -207,7 +213,7 @@ example (S : Finset V(oneLoop)) :
   refine (oneLoopOrientation.card_internalEdges_le_sum_indegree S).trans ?_
   apply Finset.sum_le_sum
   intro v hv
-  have hvl : v = loopVertex := Subtype.ext (by cases v.1; rfl)
+  have hvl : v = loopVertex := Subsingleton.elim _ _
   norm_num [hvl, excessiveLoopIndegree, oneLoopOrientation_indegree]
 
 /-- The same prescription fails total balance: it asks a single loop to contribute two units. -/
@@ -241,6 +247,4 @@ noncomputable local instance : Fintype E(emptyGraph) := Fintype.ofFinite _
 example : ∃ o : emptyGraph.Orientation, ∀ v, o.indegree v = 0 := by
   exact ⟨Orientation.ofEdgeEnds emptyGraph, fun v ↦ v.1.elim⟩
 
-end IndegreeOrientationExamples
-
-end Graph
+end TauCeti.Examples.IndegreeOrientation
