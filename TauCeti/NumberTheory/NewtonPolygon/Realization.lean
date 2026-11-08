@@ -39,8 +39,8 @@ section CommRing
 variable {R : Type*} [CommRing R]
 variable (v : AddValuation R (WithTop ℝ))
 
-/-- Prescribed finite slopes with attainable negative valuations are realized by a monic
-split polynomial with no zero root and degree equal to the cardinality of the multiset. -/
+/-- A finite multiset `s` of slopes such that, for every `m ∈ s`, `-m` is a value of `v`
+is realized by a monic split polynomial with nonzero constant coefficient and degree `s.card`. -/
 theorem exists_monic_splits_newtonSlopes (s : Multiset ℝ)
     (hs : ∀ m ∈ s, ∃ x : R, v x = ((-m : ℝ) : WithTop ℝ)) :
     ∃ f : R[X], f.Monic ∧ f.Splits ∧ f.coeff 0 ≠ 0 ∧
@@ -81,9 +81,9 @@ theorem exists_monic_splits_newtonSlopes (s : Multiset ℝ)
     simpa only [Function.comp_apply, hroot, WithTop.untop₀_coe, neg_neg]
       using s.attach_map_val
 
-/-- A multiset is the finite slope multiset of a monic split polynomial with nonzero
-constant coefficient if and only if all its negative slopes are attained by the valuation
-on nonzero elements. The realizing polynomial has exactly the prescribed degree. -/
+/-- Over an integral domain, assuming only zero has infinite valuation, a multiset `s` is the
+finite slope multiset of a monic split polynomial with nonzero constant coefficient and degree
+`s.card` if and only if, for every `m ∈ s`, `-m` is a value of `v`. -/
 theorem exists_monic_splits_newtonSlopes_iff [IsDomain R] (hv : ∀ x, v x = ⊤ → x = 0)
     (s : Multiset ℝ) :
     (∃ f : R[X], f.Monic ∧ f.Splits ∧ f.coeff 0 ≠ 0 ∧
@@ -103,9 +103,8 @@ section Field
 
 variable {K : Type*} [Field K] (v : AddValuation K (WithTop ℝ))
 
-/-- Prescribed finite slopes with attainable negative valuations are realized over a field
-by a split polynomial with constant coefficient one and degree equal to the cardinality
-of the multiset. -/
+/-- Over a field, a finite multiset `s` of slopes such that, for every `m ∈ s`, `-m` is a value
+of `v` is realized by a split polynomial with constant coefficient one and degree `s.card`. -/
 theorem exists_splits_coeff_zero_eq_one_newtonSlopes (s : Multiset ℝ)
     (hs : ∀ m ∈ s, ∃ x : K, v x = ((-m : ℝ) : WithTop ℝ)) :
     ∃ f : K[X], f.Splits ∧ f.coeff 0 = 1 ∧
