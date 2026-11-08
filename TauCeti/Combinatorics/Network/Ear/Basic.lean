@@ -19,7 +19,8 @@ therefore closed ears of length one.
 The subnetwork of a walk consists of exactly its visited vertices and traversed arrows. Adjoining
 an ear takes its union with the current subnetwork. A directed ear decomposition records every
 prefix subnetwork, the ear adjoined at each successor stage, and its initial and final subnetworks.
-Prefixes are again decompositions, which lets arguments follow the construction order.
+Prefixes are again decompositions, and appending an ear to a decomposition gives a decomposition of
+the enlarged subnetwork, which lets arguments follow the construction order.
 
 ## References
 
@@ -185,6 +186,32 @@ theorem adjoin_arrowSet (P : Ear S) :
     P.adjoin.arrowSet = S.arrowSet ∪ P.toSubnetwork.arrowSet :=
   Network.Subnetwork.sup_arrowSet _ _
 
+/-- Every ear traverses at least one arrow. -/
+theorem nonempty_toSubnetwork_arrowSet (P : Ear S) : P.toSubnetwork.arrowSet.Nonempty := by
+  cases P with
+  | «open» P =>
+    obtain ⟨a, ha⟩ := List.exists_mem_of_ne_nil _ (P.walk.arrows_ne_nil P.source_ne_target)
+    exact ⟨a, by simpa using ha⟩
+  | closed P =>
+    obtain ⟨a, ha⟩ := List.exists_mem_of_ne_nil _ P.isCycle.arrows_ne_nil
+    exact ⟨a, by simpa using ha⟩
+
+/-- Adjoining an ear strictly enlarges the current subnetwork, since its arrows are new. -/
+theorem lt_adjoin (P : Ear S) : S < P.adjoin := by
+  refine lt_of_le_of_ne P.le_adjoin fun h ↦ ?_
+  obtain ⟨a, ha⟩ := P.nonempty_toSubnetwork_arrowSet
+  have haS : a ∈ S.arrowSet := by
+    rw [h, adjoin_arrowSet]
+    exact Or.inr ha
+  exact Set.disjoint_left.1 P.disjoint_arrowSet ha haS
+
+/-- Transporting an ear along an equality of subnetworks does not change the subnetwork obtained
+by adjoining it. -/
+private theorem adjoin_cast {S' : N.Subnetwork} (h : S = S') (P : Ear S) :
+    (h ▸ P : Ear S').adjoin = P.adjoin := by
+  subst h
+  rfl
+
 end Ear
 
 /-- A finite directed ear decomposition of the subnetwork `T`. It starts at one vertex and records
@@ -276,6 +303,12 @@ theorem stage_induction (D : EarDecomposition T) (P : N.Subnetwork → Prop)
     rw [D.stage_succ]
     exact hsucc i ih
 
+/-- The initial vertex belongs to the decomposed subnetwork. -/
+theorem initialVertex_mem (D : EarDecomposition T) : D.initialVertex ∈ T.vertexSet := by
+  have h := (D.monotone_stage (Fin.zero_le (Fin.last D.length))).1
+  rw [D.stage_zero, D.stage_last] at h
+  exact h (by simp)
+
 /-- The first `k` ears, as an ear decomposition of the `k`-th stage. -/
 @[expose]
 def prefixDecomposition (D : EarDecomposition T) (k : Fin (D.length + 1)) :
@@ -314,6 +347,50 @@ theorem prefixDecomposition_ear (D : EarDecomposition T) (k : Fin (D.length + 1)
     (D.prefixDecomposition k).ear i =
       D.ear ⟨i, i.isLt.trans_le (Nat.le_of_lt_succ k.isLt)⟩ :=
   rfl
+
+/-- Adjoin one ear at the end of a directed ear decomposition. -/
+def snoc (D : EarDecomposition T) (P : Ear T) : EarDecomposition P.adjoin where
+  length := D.length + 1
+  initialVertex := D.initialVertex
+  stage := Fin.lastCases P.adjoin D.stage
+  ear i := Fin.lastCases (motive := fun i ↦ Ear (Fin.lastCases (motive := fun _ ↦ N.Subnetwork)
+      P.adjoin D.stage i.castSucc))
+    ((Fin.lastCases_castSucc (Fin.last D.length)).symm ▸ D.stage_last.symm ▸ P)
+    (fun j ↦ (Fin.lastCases_castSucc j.castSucc).symm ▸ D.ear j) i
+  stage_zero := by rw [← Fin.castSucc_zero, Fin.lastCases_castSucc, D.stage_zero]
+  stage_succ i := by
+    refine Fin.lastCases ?_ (fun j ↦ ?_) i
+    · rw [Fin.succ_last, Fin.lastCases_last, Fin.lastCases_last, Ear.adjoin_cast,
+        Ear.adjoin_cast]
+    · simp only [Fin.succ_castSucc, Fin.lastCases_castSucc, D.stage_succ, Ear.adjoin_cast]
+  stage_last := Fin.lastCases_last
+
+@[simp]
+theorem snoc_length (D : EarDecomposition T) (P : Ear T) : (D.snoc P).length = D.length + 1 :=
+  (rfl)
+
+@[simp]
+theorem snoc_initialVertex (D : EarDecomposition T) (P : Ear T) :
+    (D.snoc P).initialVertex = D.initialVertex :=
+  (rfl)
+
+/-- Appending an ear leaves the earlier stages unchanged. -/
+@[simp]
+theorem snoc_stage_castSucc (D : EarDecomposition T) (P : Ear T) (i : Fin (D.length + 1)) :
+    (D.snoc P).stage (Fin.cast (D.snoc_length P).symm i).castSucc = D.stage i := by
+  simp [snoc]
+
+/-- Appending an ear leaves the earlier ears unchanged. -/
+theorem snoc_ear_castSucc (D : EarDecomposition T) (P : Ear T) (i : Fin D.length) :
+    HEq ((D.snoc P).ear (Fin.cast (D.snoc_length P).symm i.castSucc)) (D.ear i) := by
+  simp only [snoc, Fin.cast_eq_self, Fin.lastCases_castSucc]
+  exact eqRec_heq _ _
+
+/-- The last ear of `D.snoc P` is `P`. -/
+theorem snoc_ear_last (D : EarDecomposition T) (P : Ear T) :
+    HEq ((D.snoc P).ear (Fin.cast (D.snoc_length P).symm (Fin.last D.length))) P := by
+  simp only [snoc, Fin.cast_eq_self, Fin.lastCases_last]
+  exact (eqRec_heq _ _).trans (eqRec_heq _ _)
 
 end EarDecomposition
 
