@@ -17,7 +17,8 @@ the components `μ_{b_i}` of `μ` form a family of functions. At points where th
 nondegenerate, the regular points of this family are exactly the points where the action is locally
 free (`TauCeti.SmoothTwoForm.IsMomentMap.isRegularPoint_iff_isotropy_eq_bot`). For a nondegenerate
 form they pairwise Poisson-commute wherever the cocycle of `μ` vanishes and `μ(x)` is
-coadjoint-fixed (`TauCeti.SmoothTwoForm.IsMomentMap.poissonBracket_eq_zero`).
+coadjoint-fixed (`TauCeti.SmoothTwoForm.IsMomentMap.poissonBracket_eq_zero`, in
+`TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap`).
 
 So the results on common levels of Poisson-commuting functions apply: for a nondegenerate form, a
 parametrization of a level `μ = c` of the dimension `dim M - dim 𝔤`, at whose points the action is
@@ -47,7 +48,7 @@ namespace IsMomentMap
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   {𝔤 : Type*} [LieRing 𝔤] [LieAlgebra ℝ 𝔤]
-  {σ : SmoothTwoForm I M} {a : InfinitesimalAction 𝔤 I M} {μ : M → Module.Dual ℝ 𝔤} {x : M}
+  {σ : SmoothTwoForm I M} {a : InfinitesimalAction 𝔤 I M} {μ : M → Module.Dual ℝ 𝔤}
 
 variable {ι : Type*} [Fintype ι]
 
@@ -80,15 +81,6 @@ theorem isRegularPoint_iff_isotropy_eq_bot (h : σ.IsMomentMap a μ) (b : Basis 
 variable (hσ : σ.IsNondegenerate)
 include hσ
 
-/-- **Components of a moment map Poisson-commute** at a point where the cocycle of the moment map
-vanishes and `μ(x)` is coadjoint-fixed, for instance everywhere for an infinitesimally
-equivariant moment map of an abelian Lie algebra. -/
-theorem poissonBracket_eq_zero (h : σ.IsMomentMap a μ) (hc : σ.momentCocycle a μ x = 0)
-    (hμ : lieAnnihilator ℝ 𝔤 (μ x) = ⊤) (Z Z' : 𝔤) :
-    σ.poissonBracket (fun y ↦ μ y Z) (fun y ↦ μ y Z') x = 0 := by
-  rw [h.poissonBracket_eq_eval₂ hσ, momentCocycle_eq_zero_iff.1 hc,
-    apply_lie_eq_zero_of_lieAnnihilator_eq_top hμ]
-
 variable {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
   {J : ModelWithCorners ℝ E' H'} {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
   {g : N → M} {c : Module.Dual ℝ 𝔤}
@@ -106,7 +98,7 @@ theorem isCoisotropicMap_of_forall_eq [FiniteDimensional ℝ 𝔤] (h : σ.IsMom
   refine hσ.isCoisotropicMap_of_forall_eq (F := fun y i ↦ μ y (b i)) (c := fun i ↦ c (b i))
     (fun p ↦ by simp only [hg]) (fun p ↦ (h.isRegularPoint_iff_isotropy_eq_bot b
       (hσ.nondegenerate_bilinFormAt _)).2 (hfree p))
-    (fun p i j ↦ poissonBracket_eq_zero hσ h (hc p) (by rwa [hg]) (b i) (b j))
+    (fun p i j ↦ h.poissonBracket_eq_zero hσ (hc p) (by rwa [hg]) (b i) (b j))
     hinj ?_
   rwa [Fintype.card_fin]
 
@@ -123,7 +115,7 @@ theorem isLagrangianMap_of_forall_eq [FiniteDimensional ℝ 𝔤] (h : σ.IsMome
   refine hσ.isLagrangianMap_of_forall_eq (F := fun y i ↦ μ y (b i)) (c := fun i ↦ c (b i))
     (fun p ↦ by simp only [hg]) (fun p ↦ (h.isRegularPoint_iff_isotropy_eq_bot b
       (hσ.nondegenerate_bilinFormAt _)).2 (hfree p))
-    (fun p i j ↦ poissonBracket_eq_zero hσ h (hc p) (by rwa [hg]) (b i) (b j))
+    (fun p i j ↦ h.poissonBracket_eq_zero hσ (hc p) (by rwa [hg]) (b i) (b j))
     hinj ?_ ?_
   · rwa [Fintype.card_fin]
   · rwa [Fintype.card_fin]
