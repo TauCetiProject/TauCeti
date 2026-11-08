@@ -92,28 +92,30 @@ theorem deckChange_eq_iff (h : x ∈ (hp.isLocalHomeomorph.localInverseAt e).sou
 
 /-- The deck transformation `deckChange e e' x` carries the local section through `e` to the
 local section through `e'` over `x`. -/
-theorem deckChange_smul (h : x ∈ (hp.isLocalHomeomorph.localInverseAt e).source ∩
+theorem deckChange_smul_localInverseAt (h : x ∈ (hp.isLocalHomeomorph.localInverseAt e).source ∩
       (hp.isLocalHomeomorph.localInverseAt e').source) :
     hp.deckChange e e' x • hp.isLocalHomeomorph.localInverseAt e x =
       hp.isLocalHomeomorph.localInverseAt e' x :=
   (hp.deckChange_eq_iff h).1 rfl
 
 /-- A local section differs from itself by the identity. -/
+@[simp]
 theorem deckChange_self (h : x ∈ (hp.isLocalHomeomorph.localInverseAt e).source) :
     hp.deckChange e e x = 1 :=
   (hp.deckChange_eq_iff ⟨h, h⟩).2 (one_smul _ _)
 
 /-- The deck transformations between local sections form a cocycle. -/
-theorem deckChange_mul (h : x ∈ (hp.isLocalHomeomorph.localInverseAt e).source ∩
+theorem deckChange_mul_deckChange (h : x ∈ (hp.isLocalHomeomorph.localInverseAt e).source ∩
       (hp.isLocalHomeomorph.localInverseAt e').source ∩
       (hp.isLocalHomeomorph.localInverseAt e'').source) :
     hp.deckChange e' e'' x * hp.deckChange e e' x = hp.deckChange e e'' x :=
   ((hp.deckChange_eq_iff ⟨h.1.1, h.2⟩).2 <| by
-    rw [mul_smul, hp.deckChange_smul h.1, hp.deckChange_smul ⟨h.1.2, h.2⟩]).symm
+    rw [mul_smul, hp.deckChange_smul_localInverseAt h.1,
+      hp.deckChange_smul_localInverseAt ⟨h.1.2, h.2⟩]).symm
 
 /-- The local section through `y` passes through `g • y` after the deck transformation `g`. -/
 @[simp]
-theorem deckChange_smul_self (y : E) (g : G) : hp.deckChange y (g • y) (p y) = g := by
+theorem deckChange_self_smul (y : E) (g : G) : hp.deckChange y (g • y) (p y) = g := by
   have h := hp.isLocalHomeomorph.localInverseAt_apply_self (x := g • y)
   have hmem := hp.isLocalHomeomorph.apply_self_mem_localInverseAt_source (x := g • y)
   rw [hp.map_smul] at h hmem
@@ -123,6 +125,7 @@ theorem deckChange_smul_self (y : E) (g : G) : hp.deckChange y (g • y) (p y) =
 
 /-- Over a point `x` of its domain, the local section through `e` and the local section through
 its own value at `x` differ by the identity. -/
+@[simp]
 theorem deckChange_localInverseAt (h : x ∈ (hp.isLocalHomeomorph.localInverseAt e).source) :
     hp.deckChange e (hp.isLocalHomeomorph.localInverseAt e x) x = 1 := by
   set z := hp.isLocalHomeomorph.localInverseAt e x
@@ -144,7 +147,7 @@ theorem eventually_deckChange_eq (h : x ∈ (hp.isLocalHomeomorph.localInverseAt
   have hcont : ContinuousAt (fun x' ↦ g • s x') x :=
     (continuous_const_smul g).continuousAt.comp (s.continuousAt h.1)
   have htarget : s'.target ∈ 𝓝 (g • s x) := by
-    rw [hp.deckChange_smul h]
+    rw [hp.deckChange_smul_localInverseAt h]
     exact s'.open_target.mem_nhds (s'.map_source h.2)
   filter_upwards [s.open_source.mem_nhds h.1, s'.open_source.mem_nhds h.2, hcont htarget]
     with x' h₁ h₂ h₃
@@ -181,7 +184,12 @@ noncomputable def associatedCore : VectorBundleCore 𝕜 X F E where
       filter_upwards [hp.eventually_deckChange_eq hx] with x' hx'
       rw [hx'])).continuousWithinAt
   coordChange_comp e e' e'' x hx v := by
-    rw [← hp.deckChange_mul hx, map_mul, Units.val_mul, mul_apply_eq_comp]
+    rw [← hp.deckChange_mul_deckChange hx, map_mul, Units.val_mul, mul_apply_eq_comp]
+
+/-- The chart through `e` lives over the domain of the local section of `p` through `e`. -/
+theorem associatedCore_baseSet (e : E) :
+    (hp.associatedCore ρ).baseSet e = (hp.isLocalHomeomorph.localInverseAt e).source :=
+  (rfl)
 
 /-- The chart through `e` lives over the domain of the local section of `p` through `e`. -/
 @[simp]
@@ -191,8 +199,9 @@ theorem associatedCore_localTriv_baseSet (e : E) :
   (rfl)
 
 /-- The chart through `y` is defined at `p y`. -/
-theorem mem_associatedCore_baseSet_self (y : E) : p y ∈ (hp.associatedCore ρ).baseSet y :=
-  hp.isLocalHomeomorph.apply_self_mem_localInverseAt_source
+theorem mem_associatedCore_baseSet_self (y : E) : p y ∈ (hp.associatedCore ρ).baseSet y := by
+  rw [associatedCore_baseSet]
+  exact hp.isLocalHomeomorph.apply_self_mem_localInverseAt_source
 
 /-- The preferred chart at `x` is the chart through a chosen point over `x`. -/
 theorem associatedCore_indexAt (x : X) :
@@ -211,6 +220,7 @@ theorem eventually_associatedCore_coordChange_eq {e e' : E} {x : X}
     (hx : x ∈ (hp.associatedCore ρ).baseSet e ∩ (hp.associatedCore ρ).baseSet e') :
     ∀ᶠ x' in 𝓝 x,
       (hp.associatedCore ρ).coordChange e e' x' = (hp.associatedCore ρ).coordChange e e' x := by
+  rw [associatedCore_baseSet, associatedCore_baseSet] at hx
   filter_upwards [hp.eventually_deckChange_eq hx] with x' hx'
   rw [associatedCore_coordChange, associatedCore_coordChange, hx']
 
@@ -231,8 +241,8 @@ theorem characterCore_def (χ : G →* 𝕜ˣ) :
 /-- The transitions of the line bundle of `χ` multiply by the values of `χ`. -/
 @[simp]
 theorem characterCore_coordChange_apply (χ : G →* 𝕜ˣ) (e e' : E) (x : X) (v : 𝕜) :
-    (hp.characterCore χ).coordChange e e' x v = χ (hp.deckChange e e' x) * v :=
-  (rfl)
+    (hp.characterCore χ).coordChange e e' x v = χ (hp.deckChange e e' x) * v := by
+  simp [characterCore_def, ContinuousLinearMap.algebraMap_apply, smul_eq_mul]
 
 /-- The trivial character gives the identity transitions. -/
 @[simp]
@@ -248,11 +258,11 @@ private theorem associatedCore_coordChange_smul {e : E} (he : p y ∈ (hp.associ
     (g : G) (v : F) :
     (hp.associatedCore ρ).coordChange e (g • y) (p y) v =
       (ρ g : F →L[𝕜] F) ((hp.associatedCore ρ).coordChange e y (p y) v) := by
-  have hmem := hp.isLocalHomeomorph.apply_self_mem_localInverseAt_source (x := g • y)
+  have hmem := hp.mem_associatedCore_baseSet_self ρ (g • y)
   rw [hp.map_smul] at hmem
   rw [← (hp.associatedCore ρ).coordChange_comp _ y (g • y) (p y)
-    ⟨⟨he, hp.isLocalHomeomorph.apply_self_mem_localInverseAt_source (x := y)⟩, hmem⟩,
-    associatedCore_coordChange, deckChange_smul_self]
+    ⟨⟨he, hp.mem_associatedCore_baseSet_self ρ y⟩, hmem⟩,
+    associatedCore_coordChange, deckChange_self_smul]
 
 /-- At a point `x` of its domain, the chart through `y` agrees with the chart through the point of
 the local section through `y` over `x`. -/
@@ -262,10 +272,10 @@ private theorem associatedCore_coordChange_localInverseAt {e : E} {x : X}
     (hp.associatedCore ρ).coordChange e (hp.isLocalHomeomorph.localInverseAt y x) x v =
       (hp.associatedCore ρ).coordChange e y x v := by
   have hz := hp.isLocalHomeomorph.apply_localInverseAt_of_mem hx
-  have hmem := hp.isLocalHomeomorph.apply_self_mem_localInverseAt_source
-    (x := hp.isLocalHomeomorph.localInverseAt y x)
+  have hmem := hp.mem_associatedCore_baseSet_self ρ (hp.isLocalHomeomorph.localInverseAt y x)
   rw [hz] at hmem
-  rw [← (hp.associatedCore ρ).coordChange_comp _ y _ x ⟨⟨he, hx⟩, hmem⟩,
+  have hy : x ∈ (hp.associatedCore ρ).baseSet y := by rwa [associatedCore_baseSet]
+  rw [← (hp.associatedCore ρ).coordChange_comp _ y _ x ⟨⟨he, hy⟩, hmem⟩,
     associatedCore_coordChange, hp.deckChange_localInverseAt hx, map_one, Units.val_one,
     one_apply_eq_self]
 
@@ -274,7 +284,7 @@ private theorem localTriv_associatedCore_smul (σ : ∀ x, (hp.associatedCore ρ
     (y : E) :
     ((hp.associatedCore ρ).localTriv (g • y) ⟨p (g • y), σ (p (g • y))⟩).2 =
       (ρ g : F →L[𝕜] F) (((hp.associatedCore ρ).localTriv y ⟨p y, σ (p y)⟩).2) := by
-  rw [hp.map_smul]
+  rw [hp.map_smul, VectorBundleCore.localTriv_apply, VectorBundleCore.localTriv_apply]
   exact hp.associatedCore_coordChange_smul ρ ((hp.associatedCore ρ).mem_baseSet_at _) g (σ (p y))
 
 /-- Sections of the bundle associated with `ρ` are the same as `ρ`-equivariant functions on `E`.
@@ -288,7 +298,7 @@ noncomputable def associatedSectionEquiv :
   invFun f x := (f : E → F) ((hp.associatedCore ρ).indexAt x)
   left_inv σ := funext fun x ↦ by
     have hx : p ((hp.associatedCore ρ).indexAt x) = x := Function.surjInv_eq hp.surjective x
-    dsimp only
+    simp only [VectorBundleCore.localTriv_apply]
     rw [hx]
     exact (hp.associatedCore ρ).coordChange_self _ x ((hp.associatedCore ρ).mem_baseSet_at x) (σ x)
   right_inv f := by
@@ -298,7 +308,7 @@ noncomputable def associatedSectionEquiv :
     have hz : p ((hp.associatedCore ρ).indexAt (p y)) = p y := Function.surjInv_eq hp.surjective _
     generalize (hp.associatedCore ρ).indexAt (p y) = z at hz ⊢
     obtain ⟨g, rfl⟩ := hp.apply_eq_iff_mem_orbit.1 hz.symm
-    rw [hp.map_smul, deckChange_smul_self, hf]
+    rw [hp.map_smul, deckChange_self_smul, hf]
 
 /-- The equivariant function attached to a section sends `y` to the coordinate of the section at
 `p y` in the chart through `y`. -/
@@ -308,6 +318,14 @@ theorem associatedSectionEquiv_apply_coe (σ : ∀ x, (hp.associatedCore ρ).Fib
       ((hp.associatedCore ρ).localTriv y ⟨p y, σ (p y)⟩).2 :=
   (rfl)
 
+/-- The section attached to an equivariant function `f` takes at `x` the value of `f` at the
+point chosen over `x`, read in the preferred chart at `x`. -/
+@[simp]
+theorem associatedSectionEquiv_symm_apply
+    (f : {f : E → F // ∀ (g : G) (y : E), f (g • y) = (ρ g : F →L[𝕜] F) (f y)}) (x : X) :
+    (hp.associatedSectionEquiv ρ).symm f x = (f : E → F) ((hp.associatedCore ρ).indexAt x) :=
+  (rfl)
+
 /-- Over the domain of the chart through `y`, a section reads, in that chart, as the
 corresponding equivariant function composed with the local section of `p` through `y`. -/
 theorem localTriv_associatedCore_apply_snd (σ : ∀ x, (hp.associatedCore ρ).Fiber x) {y : E}
@@ -315,7 +333,8 @@ theorem localTriv_associatedCore_apply_snd (σ : ∀ x, (hp.associatedCore ρ).F
     ((hp.associatedCore ρ).localTriv y ⟨x, σ x⟩).2 =
       (hp.associatedSectionEquiv ρ σ : E → F) (hp.isLocalHomeomorph.localInverseAt y x) := by
   have hz := hp.isLocalHomeomorph.apply_localInverseAt_of_mem hx
-  rw [associatedSectionEquiv_apply_coe, hz]
+  rw [associatedSectionEquiv_apply_coe, VectorBundleCore.localTriv_apply,
+    VectorBundleCore.localTriv_apply, hz]
   exact (hp.associatedCore_coordChange_localInverseAt ρ ((hp.associatedCore ρ).mem_baseSet_at x)
     hx (σ x)).symm
 
@@ -332,8 +351,9 @@ theorem localTriv_associatedSectionEquiv_symm_apply_snd
 vanishes at `p y`. -/
 theorem associatedSectionEquiv_apply_eq_zero_iff (σ : ∀ x, (hp.associatedCore ρ).Fiber x)
     (y : E) : (hp.associatedSectionEquiv ρ σ : E → F) y = 0 ↔ σ (p y) = 0 := by
-  have hy : p y ∈ ((hp.associatedCore ρ).localTriv y).baseSet :=
-    hp.isLocalHomeomorph.apply_self_mem_localInverseAt_source (x := y)
+  have hy : p y ∈ ((hp.associatedCore ρ).localTriv y).baseSet := by
+    rw [associatedCore_localTriv_baseSet]
+    exact hp.isLocalHomeomorph.apply_self_mem_localInverseAt_source
   rw [associatedSectionEquiv_apply_coe,
     Trivialization.apply_eq_prod_continuousLinearEquivAt 𝕜 _ _ hy]
   exact (((hp.associatedCore ρ).localTriv y).continuousLinearEquivAt 𝕜 (p y) hy).map_eq_zero_iff

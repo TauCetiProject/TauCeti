@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.VectorBundle.Basic
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 public import TauCeti.Geometry.Manifold.VectorBundle.FrameTrivialization
 public import TauCeti.Topology.Covering.AssociatedBundle
@@ -34,11 +33,12 @@ holomorphic bundle associated with `ρ` are thus the holomorphic functions `f : 
 For a line bundle this decides triviality. The bundle associated with a representation on a line
 has a global trivialization in its maximal `C^n` atlas exactly when there is a nowhere-vanishing
 `C^n` equivariant function upstairs
-(`IsQuotientCoveringMap.exists_trivialization_associatedCore_iff`). For a character `χ`, the
-holomorphic line bundle `characterCore χ` is holomorphically trivial exactly when there is a
-nowhere-vanishing holomorphic `f : E → ℂ` with `f (g • y) = χ g * f y`
-(`IsQuotientCoveringMap.exists_trivialization_characterCore_iff`). In particular the line bundle of
-the trivial character is trivial.
+(`IsQuotientCoveringMap.exists_trivialization_baseSet_eq_univ_associatedCore_iff`). For a
+character `χ`, the holomorphic line bundle `characterCore χ` is holomorphically trivial exactly
+when there is a nowhere-vanishing holomorphic `f : E → ℂ` with `f (g • y) = χ g * f y`
+(`IsQuotientCoveringMap.exists_trivialization_baseSet_eq_univ_characterCore_iff`). The line bundle
+of the trivial character is trivial for every quotient covering
+(`IsQuotientCoveringMap.exists_trivialization_baseSet_eq_univ_characterCore_one`).
 
 ## Main results
 
@@ -46,9 +46,9 @@ the trivial character is trivial.
 * `IsQuotientCoveringMap.contMDiffAt_section_associatedCore_iff`,
   `IsQuotientCoveringMap.contMDiff_section_associatedCore_iff`: a section is `C^m` at `p y`, or
   globally, exactly when the corresponding equivariant function is `C^m` at `y`, or globally.
-* `IsQuotientCoveringMap.exists_trivialization_associatedCore_iff`,
-  `IsQuotientCoveringMap.exists_trivialization_characterCore_iff`: an associated line bundle is
-  trivial exactly when there is a nowhere-vanishing equivariant function upstairs.
+* `IsQuotientCoveringMap.exists_trivialization_baseSet_eq_univ_associatedCore_iff`,
+  `IsQuotientCoveringMap.exists_trivialization_baseSet_eq_univ_characterCore_iff`: an associated
+  line bundle is trivial exactly when there is a nowhere-vanishing equivariant function upstairs.
 
 ## References
 
@@ -79,6 +79,30 @@ instance isContMDiff_associatedCore : (hp.associatedCore ρ).IsContMDiff IB n wh
   contMDiffOn_coordChange _ _ _ hx :=
     (contMDiffAt_const.congr_of_eventuallyEq
       (hp.eventually_associatedCore_coordChange_eq ρ hx)).contMDiffWithinAt
+
+/-- The line bundle of the trivial character has a global trivialization in its maximal `C^n`
+atlas: the section attached to the constant function `1` reads as `1` in every chart. -/
+theorem exists_trivialization_baseSet_eq_univ_characterCore_one [CompleteSpace 𝕜] :
+    ∃ (e : Trivialization 𝕜 (π 𝕜 (hp.characterCore (1 : G →* 𝕜ˣ)).Fiber)) (_ : e.IsLinear 𝕜),
+      e.toOpenPartialHomeomorph ∈ (contMDiffFiberwiseLinear X 𝕜 IB n).maximalAtlas
+        (TotalSpace 𝕜 (hp.characterCore (1 : G →* 𝕜ˣ)).Fiber) ∧ e.baseSet = univ := by
+  rw [characterCore_def]
+  set ρ₁ := (Units.map (algebraMap 𝕜 (𝕜 →L[𝕜] 𝕜)).toMonoidHom).comp (1 : G →* 𝕜ˣ)
+  rw [ContMDiffVectorBundle.exists_trivialization_baseSet_eq_univ_iff_exists_ne_zero
+    (finrank_self 𝕜)]
+  refine ⟨(hp.associatedSectionEquiv ρ₁).symm ⟨fun _ ↦ 1, fun g y ↦ by simp [ρ₁]⟩, fun x ↦ ?_,
+    fun x ↦ ?_⟩
+  · set y := (hp.associatedCore ρ₁).indexAt x
+    have : MemTrivializationAtlas ((hp.associatedCore ρ₁).localTriv y) := ⟨⟨y, rfl⟩⟩
+    rw [Trivialization.contMDiffAt_section_iff ((hp.associatedCore ρ₁).localTriv y)
+      ((hp.associatedCore ρ₁).mem_baseSet_at x)]
+    refine (contMDiffAt_const (c := (1 : 𝕜))).congr_of_eventuallyEq ?_
+    filter_upwards [((hp.associatedCore ρ₁).isOpen_baseSet y).mem_nhds
+      ((hp.associatedCore ρ₁).mem_baseSet_at x)] with x' hx'
+    rw [associatedCore_baseSet] at hx'
+    rw [localTriv_associatedSectionEquiv_symm_apply_snd _ _ _ hx']
+  · rw [associatedSectionEquiv_symm_apply]
+    exact one_ne_zero (α := 𝕜)
 
 variable (hpd : IsLocalDiffeomorph I IB n p)
 include hpd
@@ -120,7 +144,7 @@ variable [CompleteSpace 𝕜]
 /-- If `p` is a `C^n` local diffeomorphism, the bundle associated with a representation on a line
 has a global trivialization in its maximal `C^n` atlas exactly when there is a nowhere-vanishing
 `C^n` equivariant function on `E`. -/
-theorem exists_trivialization_associatedCore_iff (hF : finrank 𝕜 F = 1) :
+theorem exists_trivialization_baseSet_eq_univ_associatedCore_iff (hF : finrank 𝕜 F = 1) :
     (∃ (e : Trivialization F (π F (hp.associatedCore ρ).Fiber)) (_ : e.IsLinear 𝕜),
         e.toOpenPartialHomeomorph ∈ (contMDiffFiberwiseLinear X F IB n).maximalAtlas
           (TotalSpace F (hp.associatedCore ρ).Fiber) ∧ e.baseSet = univ) ↔
@@ -148,22 +172,14 @@ has a global trivialization in its maximal `C^n` atlas exactly when there is a n
 `C^n` function `f` on `E` with `f (g • y) = χ g * f y`. Over a complex manifold with `n = ∞`, the
 holomorphic line bundle of `χ` is holomorphically trivial exactly when such a holomorphic `f`
 exists. -/
-theorem exists_trivialization_characterCore_iff (χ : G →* 𝕜ˣ) :
+theorem exists_trivialization_baseSet_eq_univ_characterCore_iff (χ : G →* 𝕜ˣ) :
     (∃ (e : Trivialization 𝕜 (π 𝕜 (hp.characterCore χ).Fiber)) (_ : e.IsLinear 𝕜),
         e.toOpenPartialHomeomorph ∈ (contMDiffFiberwiseLinear X 𝕜 IB n).maximalAtlas
           (TotalSpace 𝕜 (hp.characterCore χ).Fiber) ∧ e.baseSet = univ) ↔
       ∃ f : E → 𝕜, ContMDiff I 𝓘(𝕜) n f ∧ (∀ y, f y ≠ 0) ∧
         ∀ (g : G) (y : E), f (g • y) = χ g * f y := by
-  rw [characterCore_def, hp.exists_trivialization_associatedCore_iff _ hpd (finrank_self 𝕜)]
+  rw [characterCore_def,
+    hp.exists_trivialization_baseSet_eq_univ_associatedCore_iff _ hpd (finrank_self 𝕜)]
   simp
-
-/-- If `p` is a `C^n` local diffeomorphism, the line bundle of the trivial character has a global
-trivialization in its maximal `C^n` atlas. -/
-theorem exists_trivialization_characterCore_one :
-    ∃ (e : Trivialization 𝕜 (π 𝕜 (hp.characterCore (1 : G →* 𝕜ˣ)).Fiber)) (_ : e.IsLinear 𝕜),
-      e.toOpenPartialHomeomorph ∈ (contMDiffFiberwiseLinear X 𝕜 IB n).maximalAtlas
-        (TotalSpace 𝕜 (hp.characterCore (1 : G →* 𝕜ˣ)).Fiber) ∧ e.baseSet = univ :=
-  (hp.exists_trivialization_characterCore_iff hpd 1).2
-    ⟨fun _ ↦ 1, contMDiff_const, fun _ ↦ one_ne_zero, fun _ _ ↦ by simp⟩
 
 end IsQuotientCoveringMap
