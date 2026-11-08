@@ -262,7 +262,7 @@ theorem coeff_single_one_inftyChart {φ : MvPolynomial (Fin 2) R} {n : ℕ}
 
 /-- Dividing a plane relation `φ(x, y) = 0` by `y ^ totalDegree φ` gives a vanishing sum in the
 variables `x / y` and `y⁻¹`. -/
-theorem sum_coeff_mul_div_pow_mul_inv_pow_eq_zero {F : Type*} [Field F] [Algebra R F]
+theorem sum_coeff_mul_div_pow_mul_inv_pow_eq_zero {F : Type*} [Semifield F] [Algebra R F]
     {φ : MvPolynomial (Fin 2) R} {x y : F}
     (hφxy : aeval ![x, y] φ = 0) (hy0 : y ≠ 0) :
     ∑ s ∈ φ.support, algebraMap R F (φ.coeff s) * (x / y) ^ s 0 *
@@ -274,7 +274,9 @@ theorem sum_coeff_mul_div_pow_mul_inv_pow_eq_zero {F : Type*} [Field F] [Algebra
     obtain ⟨d, hd⟩ := Nat.exists_eq_add_of_le (add_le_totalDegree_of_mem_support hs)
     have hyy : y⁻¹ ^ s 1 * y ^ s 1 = 1 := by rw [← mul_pow, inv_mul_cancel₀ hy0, one_pow]
     simp only [hd, Nat.add_sub_cancel_left, div_eq_mul_inv, mul_pow, pow_add]
-    linear_combination -(algebraMap R F (φ.coeff s) * x ^ s 0 * y⁻¹ ^ s 0 * y⁻¹ ^ d) * hyy
+    calc _ = algebraMap R F (φ.coeff s) * (x ^ s 0 * y⁻¹ ^ s 0) * y⁻¹ ^ d *
+          (y⁻¹ ^ s 1 * y ^ s 1) := by rw [hyy, mul_one]
+      _ = _ := by ring
   rw [this, hφxy, mul_zero]
 
 section Semifield
