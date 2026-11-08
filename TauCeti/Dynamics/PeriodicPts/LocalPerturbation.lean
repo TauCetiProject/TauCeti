@@ -40,12 +40,12 @@ variable {X : Type*} [TopologicalSpace X] {φ ψ : X → X} {p : X} {k : ℕ}
 
 /-- **Iterates of a map perturbed near one point of an orbit.** If `ψ` fixes `p`, is continuous at
 `p` and is the identity near `φ^[j] p` for `0 < j < k`, and `φ` is continuous at the orbit points
-`φ^[j] p` for `j < k`, then near `p` the `k`-th iterate of `φ ∘ ψ` is `φ^[k] ∘ ψ`. -/
+`φ^[j] p` for `j + 1 < k`, then near `p` the `k`-th iterate of `φ ∘ ψ` is `φ^[k] ∘ ψ`. -/
 theorem iterate_comp_eventuallyEq_of_eventuallyEq_id (hk : 0 < k) (hψp : ψ p = p)
-    (hψ : ContinuousAt ψ p) (hφ : ∀ j < k, ContinuousAt φ (φ^[j] p))
+    (hψ : ContinuousAt ψ p) (hφ : ∀ j, j + 1 < k → ContinuousAt φ (φ^[j] p))
     (hid : ∀ j, 0 < j → j < k → ψ =ᶠ[𝓝 (φ^[j] p)] id) :
     (φ ∘ ψ)^[k] =ᶠ[𝓝 p] φ^[k] ∘ ψ := by
-  have hcont : ∀ j ≤ k, ContinuousAt φ^[j] p := by
+  have hcont : ∀ j < k, ContinuousAt φ^[j] p := by
     intro j hj
     induction j with
     | zero => exact continuousAt_id
@@ -79,7 +79,7 @@ near the orbit points `φ^[j] p`, `0 < j < k`, then the derivative at `p` of the
 of `φ ∘ ψ` is the derivative of `φ^[k]` at `p` composed with that of `ψ`. -/
 theorem HasFDerivAt.iterate_comp_of_eventuallyEq_id (hA : HasFDerivAt φ^[k] A p)
     (hB : HasFDerivAt ψ B p) (hk : 0 < k) (hψp : ψ p = p)
-    (hφ : ∀ j < k, ContinuousAt φ (φ^[j] p))
+    (hφ : ∀ j, j + 1 < k → ContinuousAt φ (φ^[j] p))
     (hid : ∀ j, 0 < j → j < k → ψ =ᶠ[𝓝 (φ^[j] p)] id) :
     HasFDerivAt (φ ∘ ψ)^[k] (A.comp B) p := by
   rw [← hψp] at hA
