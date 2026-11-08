@@ -16,6 +16,8 @@ import TauCeti.RingTheory.Huber.WeightedEval.Completion
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.FirstCountable
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
 import TauCeti.Topology.Algebra.GroupCompletion
+import TauCeti.Topology.Algebra.IsUniformGroup.Quotient
+import TauCeti.Topology.Algebra.Ring.Ideal
 import Mathlib.Topology.Baire.CompleteMetrizable
 
 /-!
@@ -227,19 +229,23 @@ theorem IsTopologicallyFiniteType.comp_isOpenQuotientMap {φ : A →+* B} {ψ : 
   exact isTopologicallyFiniteType_iff.mpr
     ⟨k, T, hTfin, hT, ψ.comp π, hψ.comp hπ, by rw [RingHom.comp_assoc, hcomm]⟩
 
-variable [IsTopologicalRing B]
-
 /-- **Strict finite type passes to a quotient by an ideal.** The quotient map of a topological
-ring is an open quotient map, so this is the previous lemma at `ψ = Ideal.Quotient.mk I`. -/
+ring is an open quotient map, so this is the previous lemma at `ψ = Ideal.Quotient.mk I`. The
+topological ring structure of `B` comes from the presentation, as an open quotient of a topological
+ring. -/
 theorem IsStrictlyTopologicallyFiniteType.quotientMk {φ : A →+* B}
     (h : IsStrictlyTopologicallyFiniteType φ) (I : Ideal B) :
-    IsStrictlyTopologicallyFiniteType ((Ideal.Quotient.mk I).comp φ) :=
-  h.comp_isOpenQuotientMap (QuotientRing.isOpenQuotientMap_mk I)
+    IsStrictlyTopologicallyFiniteType ((Ideal.Quotient.mk I).comp φ) := by
+  obtain ⟨k, π, hπ, -⟩ := isStrictlyTopologicallyFiniteType_iff.mp h
+  have := hπ.isTopologicalRing
+  exact h.comp_isOpenQuotientMap (QuotientRing.isOpenQuotientMap_mk I)
 
 /-- **Finite type passes to a quotient by an ideal.** -/
 theorem IsTopologicallyFiniteType.quotientMk {φ : A →+* B} (h : IsTopologicallyFiniteType φ)
-    (I : Ideal B) : IsTopologicallyFiniteType ((Ideal.Quotient.mk I).comp φ) :=
-  h.comp_isOpenQuotientMap (QuotientRing.isOpenQuotientMap_mk I)
+    (I : Ideal B) : IsTopologicallyFiniteType ((Ideal.Quotient.mk I).comp φ) := by
+  obtain ⟨k, T, -, hT, π, hπ, -⟩ := isTopologicallyFiniteType_iff.mp h
+  have := hπ.isTopologicalRing
+  exact h.comp_isOpenQuotientMap (QuotientRing.isOpenQuotientMap_mk I)
 
 /-- **Every quotient of `A⟨X₁, …, Xₖ⟩` is strictly topologically of finite type over `A`.** This is
 the form every Laurent and rational presentation takes — Wedhorn's Examples 6.38 and 6.39 exhibit
@@ -349,8 +355,9 @@ variable {A B : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [
   [CommRing B] [UniformSpace B] [IsUniformAddGroup B] [NonarchimedeanRing B] [CompleteSpace B]
   [T0Space B]
 
+omit [CompleteSpace B] in
 /-- **Strong noetherianness passes to an algebra strictly topologically of finite type.** Over a
-strongly noetherian Huber ring `A`, a complete Hausdorff nonarchimedean ring `B` admitting a map
+strongly noetherian Huber ring `A`, a Hausdorff nonarchimedean ring `B` admitting a map
 `φ : A →+* B` strictly topologically of finite type is again strongly noetherian.
 
 The intended use is Wedhorn's §8.2, where
@@ -363,6 +370,7 @@ noetherianness of the base alone. -/
 theorem IsStrictlyTopologicallyFiniteType.isStronglyNoetherian {φ : A →+* B}
     (hφ : IsStrictlyTopologicallyFiniteType φ) : IsStronglyNoetherian B := by
   obtain ⟨k, π, hπ, -⟩ := isStrictlyTopologicallyFiniteType_iff.mp hφ
+  have := hπ.completeSpace
   exact hπ.isStronglyNoetherian
 
 end StronglyNoetherian
@@ -933,10 +941,10 @@ theorem isStrictlyTopologicallyFiniteType_iff_isTopologicallyFiniteType {B : Typ
     IsTopologicallyFiniteType.isStrictlyTopologicallyFiniteType⟩
 
 /-- **Strong noetherianness passes to an algebra topologically of finite type over a Tate
-ring.** Over a strongly noetherian Tate ring `A`, a complete Hausdorff nonarchimedean ring `B`
+ring.** Over a strongly noetherian Tate ring `A`, a Hausdorff nonarchimedean ring `B`
 admitting a map `φ : A →+* B` topologically of finite type is again strongly noetherian. -/
 theorem IsTopologicallyFiniteType.isStronglyNoetherian [IsStronglyNoetherian A] {B : Type*}
-    [CommRing B] [UniformSpace B] [IsUniformAddGroup B] [NonarchimedeanRing B] [CompleteSpace B]
+    [CommRing B] [UniformSpace B] [IsUniformAddGroup B] [NonarchimedeanRing B]
     [T0Space B] {φ : A →+* B} (hφ : IsTopologicallyFiniteType φ) : IsStronglyNoetherian B :=
   hφ.isStrictlyTopologicallyFiniteType.isStronglyNoetherian
 
