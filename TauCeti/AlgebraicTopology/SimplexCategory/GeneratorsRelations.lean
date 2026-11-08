@@ -235,7 +235,8 @@ instance : toSimplexCategory.EssSurj where
 to the usual simplex category. -/
 instance : toSimplexCategory.IsEquivalence where
 
-/-- The inverse presentation functor, choosing the generator with the same length.
+/-- The inverse presentation functor, sending `[n]` to the presented object `mk n`
+and each morphism to its unique preimage.
 The body is exposed so dependent morphism types compute on finite ordinals. -/
 -- The object map uses the definitional equalities toSimplexCategory_obj_mk and
 -- SimplexCategory.mk_len: toSimplexCategory.obj (mk x.len) is definitionally x.

@@ -22,8 +22,9 @@ polynomial resolution when applied to the free-polynomial comonad.
 
 * The Stacks Project, Definition 92.3.1 (Tag 08PM), for the polynomial example.
 
-The assembly follows `SimplexCategoryGenRel.toSimplexCategory`, using Mathlib's
-simplex-category presentation by Robin Carlier and Tau Ceti's proof that its
+The assembly lifts the faces and degeneracies through Mathlib's simplex-category
+presentation by Robin Carlier, then precomposes with its inverse
+`SimplexCategoryGenRel.fromSimplexCategory`, using Tau Ceti's proof that the
 comparison with the simplex category is an equivalence.
 -/
 
@@ -274,7 +275,9 @@ lemma resolutionDegeneracy_comp_resolutionFace_succ_app
       (G.resolutionDegeneracy n i).app X ≫ (G.resolutionDegeneracy (n + 1) j.succ).app X :=
   congr_app (G.resolutionDegeneracy_comp_resolutionDegeneracy n i j h) X
 
-private abbrev resolutionQuiver : FreeSimplexQuiver ⥤q (C ⥤ C)ᵒᵖ where
+/-- The iterated comonad on the generating faces and degeneracies of the simplex category.
+The body is exposed so the dependent term types of the simplicial resolution compute. -/
+@[expose] def resolutionQuiver : FreeSimplexQuiver ⥤q (C ⥤ C)ᵒᵖ where
   obj n := op (G.resolutionStage (n.len + 1))
   map f := match f with
     | .δ i => (G.resolutionFace _ i).op
@@ -301,36 +304,27 @@ private lemma resolutionPaths_respects : ∀ ⦃a b : Paths FreeSimplexQuiver⦄
   case δ_comp_σ_of_gt H => exact G.resolutionDegeneracy_comp_resolutionFace_of_gt _ _ _ H
   case σ_comp_σ H => exact G.resolutionDegeneracy_comp_resolutionDegeneracy _ _ _ H
 
-private abbrev resolutionPresentation : SimplexCategoryGenRel ⥤ (C ⥤ C)ᵒᵖ :=
-  Quotient.lift _ G.resolutionPaths (G.resolutionPaths_respects)
+/-- The iterated comonad on the simplex-category presentation, obtained by lifting its
+faces and degeneracies through the simplicial relations.
+The body is exposed so the dependent term types of the simplicial resolution compute. -/
+@[expose] def resolutionPresentation : SimplexCategoryGenRel ⥤ (C ⥤ C)ᵒᵖ :=
+  Quotient.lift _ (Paths.lift G.resolutionQuiver) (by exact G.resolutionPaths_respects)
 
 private lemma resolutionPresentation_map {a b : FreeSimplexQuiver} (f : a ⟶ b) :
     G.resolutionPresentation.map ((Quotient.functor _).map ((Paths.of _).map f)) =
       G.resolutionQuiver.map f := by
-  rw [Quotient.lift_map_functor_map, resolutionPaths_map]
+  dsimp only [resolutionPresentation]
+  rw [Quotient.lift_map_functor_map]
+  exact G.resolutionPaths_map f
 
 /-- The simplicial resolution, functorial in its input object. Its `n`th term is `G^(n+1)`.
 The body is exposed so these term types compute in dependent statements. -/
 @[expose] noncomputable def simplicialResolution : C ⥤ SimplicialObject C :=
-  (SimplexCategoryGenRel.fromSimplexCategory ⋙ Quotient.lift _
-    (Paths.lift
-      { obj n := op (G.resolutionStage (n.len + 1))
-        map f := match f with
-          | .δ i => (G.resolutionFace _ i).op
-          | .σ i => (G.resolutionDegeneracy _ i).op })
-    (by exact G.resolutionPaths_respects)).leftOp.flip
+  (SimplexCategoryGenRel.fromSimplexCategory ⋙ G.resolutionPresentation).leftOp.flip
 
 @[simp] lemma simplicialResolution_obj_obj (X : C) (n : ℕ) :
     ((G.simplicialResolution.obj X).obj (op (SimplexCategory.mk n))) =
       (G.resolutionStage (n + 1)).obj X := (rfl)
-
--- The exposed construction inlines the quiver to keep its dependent term types public.
--- This bridge identifies that inline lift with our private implementation, evaluating
--- leftOp.flip by taking the unop natural transformation and its component at X.
-private lemma simplicialResolution_obj_map (X : C) {a b : SimplexCategoryᵒᵖ} (f : a ⟶ b) :
-    (G.simplicialResolution.obj X).map f =
-      (G.resolutionPresentation.map
-        (SimplexCategoryGenRel.fromSimplexCategory.map f.unop)).unop.app X := (rfl)
 
 private lemma resolutionPresentation_map_δ {n : ℕ} (i : Fin (n + 2)) :
     G.resolutionPresentation.map (SimplexCategoryGenRel.δ i) =
@@ -345,7 +339,8 @@ private lemma resolutionPresentation_map_σ {n : ℕ} (i : Fin (n + 1)) :
 /-- Faces of the simplicial resolution are the iterated counits. -/
 @[simp] lemma simplicialResolution_δ (X : C) {n : ℕ} (i : Fin (n + 2)) :
     (G.simplicialResolution.obj X).δ i = (G.resolutionFace (n + 1) i).app X := by
-  simp only [SimplicialObject.δ, simplicialResolution_obj_map, Quiver.Hom.unop_op,
+  simp only [SimplicialObject.δ, simplicialResolution, Functor.flip_obj_map,
+    Functor.leftOp_map, Functor.comp_map, Quiver.Hom.unop_op,
     SimplexCategoryGenRel.fromSimplexCategory_map_δ]
   -- fromSimplexCategory_obj identifies the implicit endpoints with the presentation's mk n.
   exact congrArg (fun f ↦ f.unop.app X) (G.resolutionPresentation_map_δ i)
@@ -353,7 +348,8 @@ private lemma resolutionPresentation_map_σ {n : ℕ} (i : Fin (n + 1)) :
 /-- Degeneracies of the simplicial resolution are the iterated comultiplications. -/
 @[simp] lemma simplicialResolution_σ (X : C) {n : ℕ} (i : Fin (n + 1)) :
     (G.simplicialResolution.obj X).σ i = (G.resolutionDegeneracy n i).app X := by
-  simp only [SimplicialObject.σ, simplicialResolution_obj_map, Quiver.Hom.unop_op,
+  simp only [SimplicialObject.σ, simplicialResolution, Functor.flip_obj_map,
+    Functor.leftOp_map, Functor.comp_map, Quiver.Hom.unop_op,
     SimplexCategoryGenRel.fromSimplexCategory_map_σ]
   -- As for faces, fromSimplexCategory_obj identifies the implicit presentation endpoints.
   exact congrArg (fun f ↦ f.unop.app X) (G.resolutionPresentation_map_σ i)
