@@ -206,11 +206,7 @@ private theorem abs_mul_norm_le_norm_covariantDerivative {z : ℂ} (hz : z ≠ 0
         gaugeTransform (windingPhase m)⁻¹ x z 1 * v.im| * ‖sectionValue x z‖ ≤
       ‖covariantDerivative x z v‖ := by
   have hu := Circle.differentiableAt_coe_inv (differentiableAt_windingPhase m hz)
-  have hsx : DifferentiableAt ℝ (sectionValue x) z := by
-    rw [funext (sectionValue_apply x)]
-    exact (differentiableAt_const (2 : ℂ)).mul
-      ((ofRealCLM.differentiableAt.comp z hp).add
-        ((ofRealCLM.differentiableAt.comp z hq).mul_const I))
+  have hsx := differentiableAt_sectionValue hp hq
   have hsy : DifferentiableAt ℝ (sectionValue (gaugeTransform (windingPhase m)⁻¹ x)) z := by
     rw [funext (sectionValue_gaugeTransform _ x)]
     exact hu.mul hsx
