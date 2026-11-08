@@ -651,17 +651,14 @@ theorem orbit_zpowers_eq_singleton {x : α} (hx : σ x = x) :
 
 /-- The cycle of `σ` through `x` has `Function.minimalPeriod σ x` points; a fixed point is a
 cycle of length one. -/
-theorem ncard_setOf_sameCycle [Finite α] (x : α) :
+theorem ncard_setOf_sameCycle (x : α) :
     {y | σ.SameCycle x y}.ncard = Function.minimalPeriod σ x := by
-  classical
-  have := Fintype.ofFinite α
-  simp_rw [sameCycle_iff_mem_orbit_zpowers, Set.ofPred_mem_eq, ← Nat.card_coe_set_eq,
-    Nat.card_eq_fintype_card]
-  exact (minimalPeriod_eq_card (a := σ) (b := x)).symm
+  simp_rw [sameCycle_iff_mem_orbit_zpowers, Set.ofPred_mem_eq, ← Nat.card_coe_set_eq]
+  exact (Nat.card_congr (MulAction.orbitZPowersEquiv σ x)).trans (Nat.card_zmod _)
 
 /-- If a single cycle of `σ` passes through every point, then every point has minimal period the
 cardinality of the carrier. -/
-theorem minimalPeriod_eq_natCard_of_forall_sameCycle [Finite α] {x : α}
+theorem minimalPeriod_eq_natCard_of_forall_sameCycle {x : α}
     (hx : ∀ y, σ.SameCycle x y) (y : α) : Function.minimalPeriod σ y = Nat.card α := by
   rw [← ncard_setOf_sameCycle, Set.eq_univ_of_forall (s := {z | σ.SameCycle y z})
     fun z => (hx y).symm.trans (hx z), Set.ncard_univ]
