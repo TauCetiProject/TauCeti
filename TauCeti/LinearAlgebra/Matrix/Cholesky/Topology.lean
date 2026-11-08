@@ -70,15 +70,13 @@ private theorem image_val_preimage_choleskyReconstruction (K : Set (PosDefMatrix
   · rintro ⟨L, hL, rfl⟩
     exact ⟨L.2.1, fun i ↦ (L.2.2 i).le, _, hL, choleskyReconstruction_coe L⟩
   · rintro ⟨htri, hdiag, A, hA, hAL⟩
-    have hdet : (∏ i, L i i) ^ 2 ≠ 0 := by
-      have hAL' : (A.1 : Matrix (Fin p) (Fin p) ℝ) = L * Lᵀ := hAL
+    have hdet : L.det ≠ 0 := by
       have h := A.2.det_pos
-      rw [hAL', Matrix.det_mul,
-        Matrix.det_transpose, Matrix.det_of_isLowerTriangular L htri, ← sq] at h
-      exact h.ne'
-    have hpos : ∀ i, 0 < L i i := fun i ↦ (hdiag i).lt_of_ne
-      (Finset.prod_ne_zero_iff.1 ((pow_ne_zero_iff two_ne_zero).1 hdet) i
-        (Finset.mem_univ i)).symm
+      rw [show (A.1 : Matrix (Fin p) (Fin p) ℝ) = L * Lᵀ from hAL, Matrix.det_mul,
+        Matrix.det_transpose, ← sq] at h
+      exact pow_ne_zero_iff two_ne_zero |>.1 h.ne'
+    have hpos : ∀ i, 0 < L i i := fun i ↦
+      (hdiag i).lt_of_ne (htri.det_ne_zero_iff.mp hdet i).symm
     refine ⟨⟨L, htri, hpos⟩, ?_, rfl⟩
     have hrec : choleskyReconstruction ⟨L, htri, hpos⟩ = A :=
       Subtype.ext (Subtype.ext ((choleskyReconstruction_coe _).trans hAL.symm))
