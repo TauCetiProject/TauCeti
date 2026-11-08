@@ -200,7 +200,7 @@ of `i` on the disc of radius `1/2`, glued to `K i` read in the annulus coordinat
 preserves the boundary sphere. -/
 private def morseCellReattachmentFun (i : ι) :
     C(TopCat.disk.{u} (k i), morseCellAttachment φ₀ k hk hε hball₀ hf₀) :=
-  (TopCat.discGlue (P := Unit) (by norm_num : (0 : ℝ) < 1 / 2)
+  (TopCat.diskGlue (P := Unit) (by norm_num : (0 : ℝ) < 1 / 2)
     ⟨fun p ↦ morseCellAttachmentCell φ₀ k hk hε hball₀ hf₀ i
         (h i (diskRadial (ULift.up ⟨p.2.1, closedBall_subset_closedBall (by norm_num) p.2.2⟩))),
       (morseCellAttachmentCell φ₀ k hk hε hball₀ hf₀ i).hom.continuous.comp
@@ -232,7 +232,7 @@ private theorem morseCellReattachmentFun_of_norm_le (i : ι) {w : TopCat.disk.{u
     morseCellReattachmentFun φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h hh K hK i w =
       morseCellAttachmentCell φ₀ k hk hε hball₀ hf₀ i (h i (diskRadial w)) := by
   rw [morseCellReattachmentFun, ContinuousMap.curry_apply,
-    TopCat.discGlue_apply_of_norm_le _ _ _ _ _ hw]
+    TopCat.diskGlue_apply_of_norm_le _ _ _ _ _ hw]
   rfl
 
 private theorem morseCellReattachmentFun_of_le_norm (i : ι) {w : TopCat.disk.{u} (k i)}
@@ -242,7 +242,7 @@ private theorem morseCellReattachmentFun_of_le_norm (i : ι) {w : TopCat.disk.{u
         ⟨K i (diskTime w, TopCat.diskBoundaryInclusion (k i)
           (TopCat.annulusDir (by norm_num) ⟨w, hw⟩)), hK i _ _⟩ := by
   rw [morseCellReattachmentFun, ContinuousMap.curry_apply,
-    TopCat.discGlue_apply_of_le_norm _ _ _ _ _ hw]
+    TopCat.diskGlue_apply_of_le_norm _ _ _ _ _ hw]
   rfl
 
 /-- On the boundary sphere of the disc of `i`, the reattachment map is the attaching map `α₁ i`. -/

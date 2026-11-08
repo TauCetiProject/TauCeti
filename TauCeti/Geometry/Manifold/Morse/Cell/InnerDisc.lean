@@ -140,7 +140,7 @@ private theorem gAnnulus_one_mem (θ : TopCat.diskBoundary.{u} k) :
 /-- The first stage for a chart `ψ` and an isometry `g`: on the small disc it is `χ ∘ g`, and on
 the annulus it deforms the annulus of `χ ∘ g` to the retraction track of its inner circle. -/
 private def chartStage : C(I × TopCat.disk.{u} k, M) :=
-  TopCat.discGlue (unitInterval.coe_pos.2 hd)
+  TopCat.diskGlue (unitInterval.coe_pos.2 hd)
     ⟨fun p ↦ ψ.morseCellMap hk ε (g p.2),
       (ψ.continuousOn_morseCellMap hball hk).comp_continuous (by fun_prop) fun p ↦ by
         rw [mem_closedBall_zero_iff, g.norm_map]
@@ -157,7 +157,7 @@ private def chartStage : C(I × TopCat.disk.{u} k, M) :=
 /-- On the small disc the first stage is `χ ∘ g` at all times. -/
 private theorem chartStage_of_norm_le (t : I) {w : TopCat.disk.{u} k} (hw : ‖w.down.1‖ ≤ d) :
     chartStage R hr hk hε hd ψ hball hf g (t, w) = ψ.morseCellMap hk ε (g w.down.1) :=
-  TopCat.discGlue_apply_of_norm_le _ _ _ _ _ hw
+  TopCat.diskGlue_apply_of_norm_le _ _ _ _ _ hw
 
 /-- On the annulus the first stage is the deformation of the annulus to the retraction track,
 read in annulus coordinates. -/
@@ -166,13 +166,13 @@ private theorem chartStage_of_le_norm (t : I) {w : TopCat.disk.{u} k} (hw : d �
       (R.annulusToTrack hr (gAnnulus d hk hε ψ hball hf g) (gAnnulus_one_mem hk hε ψ hball hf g)
         (ContinuousMap.id I) rfl rfl
         (t, TopCat.annulusParam d w, TopCat.annulusDir (unitInterval.coe_pos.2 hd) ⟨w, hw⟩) : M) :=
-  TopCat.discGlue_apply_of_le_norm _ _ _ _ _ hw
+  TopCat.diskGlue_apply_of_le_norm _ _ _ _ _ hw
 
 /-- Every stage map takes values in `M_{c+ε}`. -/
 private theorem chartStage_le (q : I × TopCat.disk.{u} k) :
     f (chartStage R hr hk hε hd ψ hball hf g q) ≤ c + ε := by
   rw [chartStage]
-  refine TopCat.discGlue_mem (S := {x | f x ≤ c + ε}) _ _ _ _ (fun q ↦ ?_) (fun q ↦ ?_) _
+  refine TopCat.diskGlue_mem (S := {x | f x ≤ c + ε}) _ _ _ _ (fun q ↦ ?_) (fun q ↦ ?_) _
   · exact (OpenPartialHomeomorph.apply_morseCellMap_le hball hf hk hε
       ((g.norm_map _).trans_le ((mem_closedBall_zero_iff.1 q.2.2).trans d.2.2))).trans
       (le_add_of_nonneg_right hε)
@@ -182,7 +182,7 @@ private theorem chartStage_le (q : I × TopCat.disk.{u} k) :
 private theorem chartStage_boundary_le (t : I) (s : TopCat.diskBoundary.{u} k) :
     f (chartStage R hr hk hε hd ψ hball hf g (t, TopCat.diskBoundaryInclusion k s)) ≤ c - ε := by
   rw [chartStage]
-  refine TopCat.discGlue_mem_of_norm_eq_one (S := {x | f x ≤ c - ε}) _ _ _ _ (fun _ v hv ↦ ?_)
+  refine TopCat.diskGlue_mem_of_norm_eq_one (S := {x | f x ≤ c - ε}) _ _ _ _ (fun _ v hv ↦ ?_)
     (fun _ θ ↦ ?_) _ (TopCat.norm_diskBoundaryInclusion s)
   · exact (OpenPartialHomeomorph.apply_morseCellMap_of_norm_eq_one hball hf hk hε
       ((g.norm_map _).trans hv)).le
@@ -246,7 +246,7 @@ private theorem coe_circleHomotopy_apply (p : I × TopCat.diskBoundary.{u} k) :
 /-- The second stage: move the small disc by `G`, together with the retraction tracks of its
 boundary circles. -/
 private def middleStage : C(I × TopCat.disk.{u} k, M) :=
-  TopCat.discGlue (unitInterval.coe_pos.2 hd) G
+  TopCat.diskGlue (unitInterval.coe_pos.2 hd) G
     ⟨fun p ↦ (R.toHomotopy.retractionTrackHomotopy (ContinuousMap.id I)
       (circleHomotopy hk hε hball₀ hball₁ hf₀ hf₁ g G hG₀ hG₁ hGd) p : M), by fun_prop⟩
     fun t θ ↦ by
@@ -257,7 +257,7 @@ private def middleStage : C(I × TopCat.disk.{u} k, M) :=
 private theorem middleStage_of_norm_le (t : I) {w : TopCat.disk.{u} k} (hw : ‖w.down.1‖ ≤ d) :
     middleStage R hk hε hd hball₀ hball₁ hf₀ hf₁ g G hG₀ hG₁ hGd (t, w) =
       G (t, ⟨w.down.1, mem_closedBall_zero_iff.2 hw⟩) :=
-  TopCat.discGlue_apply_of_norm_le _ _ _ _ _ hw
+  TopCat.diskGlue_apply_of_norm_le _ _ _ _ _ hw
 
 /-- On the annulus the second stage is the retraction track of `G` on the inner circle, read in
 annulus coordinates. -/
@@ -266,13 +266,13 @@ private theorem middleStage_of_le_norm (t : I) {w : TopCat.disk.{u} k} (hw : d �
       (R.toHomotopy.retractionTrackHomotopy (ContinuousMap.id I)
         (circleHomotopy hk hε hball₀ hball₁ hf₀ hf₁ g G hG₀ hG₁ hGd)
         (t, TopCat.annulusParam d w, TopCat.annulusDir (unitInterval.coe_pos.2 hd) ⟨w, hw⟩) : M) :=
-  TopCat.discGlue_apply_of_le_norm _ _ _ _ _ hw
+  TopCat.diskGlue_apply_of_le_norm _ _ _ _ _ hw
 
 include hGf in
 private theorem middleStage_le (q : I × TopCat.disk.{u} k) :
     f (middleStage R hk hε hd hball₀ hball₁ hf₀ hf₁ g G hG₀ hG₁ hGd q) ≤ c + ε := by
   rw [middleStage]
-  exact TopCat.discGlue_mem (S := {x | f x ≤ c + ε}) _ _ _ _ (fun q ↦ hGf _ _)
+  exact TopCat.diskGlue_mem (S := {x | f x ≤ c + ε}) _ _ _ _ (fun q ↦ hGf _ _)
     (fun q ↦ le_of_mem_sublevel hε _) _
 
 include hr in
@@ -280,7 +280,7 @@ private theorem middleStage_boundary_le (t : I) (s : TopCat.diskBoundary.{u} k) 
     f (middleStage R hk hε hd hball₀ hball₁ hf₀ hf₁ g G hG₀ hG₁ hGd
       (t, TopCat.diskBoundaryInclusion k s)) ≤ c - ε := by
   rw [middleStage]
-  refine TopCat.discGlue_mem_of_norm_eq_one (S := {x | f x ≤ c - ε}) _ _ _ _ (fun _ v hv ↦ ?_)
+  refine TopCat.diskGlue_mem_of_norm_eq_one (S := {x | f x ≤ c - ε}) _ _ _ _ (fun _ v hv ↦ ?_)
     (fun _ θ ↦ ?_) _ (TopCat.norm_diskBoundaryInclusion s)
   · -- A unit vector of the small disc forces `d = 1`.
     have hd₁ : (d : ℝ) = 1 :=

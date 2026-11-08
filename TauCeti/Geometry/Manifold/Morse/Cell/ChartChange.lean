@@ -283,7 +283,7 @@ the disc of radius `1/2`, glued to `K i` read in the annulus coordinates of the 
 `1/2 ≤ ‖x‖`. The pieces agree on the seam `‖x‖ = 1/2` because `K i` ends at `χ₀ i ∘ h i`. -/
 private def morseChartChangeCellFun (i : ι) :
     C(TopCat.disk.{u} (k i), morseCellAttachment φ₀ k hk hε.le hball₀ hf₀) :=
-  (TopCat.discGlue (P := Unit) (by norm_num : (0 : ℝ) < 2⁻¹)
+  (TopCat.diskGlue (P := Unit) (by norm_num : (0 : ℝ) < 2⁻¹)
     ⟨fun p ↦ morseCellAttachmentCell φ₀ k hk hε.le hball₀ hf₀ i
         (h i (diskCup (ULift.up ⟨p.2.1, closedBall_subset_closedBall (by norm_num) p.2.2⟩))),
       (morseCellAttachmentCell φ₀ k hk hε.le hball₀ hf₀ i).hom.continuous.comp
@@ -314,7 +314,7 @@ private theorem morseChartChangeCellFun_of_norm_le (i : ι) {w : TopCat.disk.{u}
     morseChartChangeCellFun φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h K hK i w =
       morseCellAttachmentCell φ₀ k hk hε.le hball₀ hf₀ i (h i (diskCup w)) := by
   rw [morseChartChangeCellFun, ContinuousMap.curry_apply,
-    TopCat.discGlue_apply_of_norm_le _ _ _ _ _ hw]
+    TopCat.diskGlue_apply_of_norm_le _ _ _ _ _ hw]
   rfl
 
 private theorem morseChartChangeCellFun_of_le_norm (i : ι) {w : TopCat.disk.{u} (k i)}
@@ -325,7 +325,7 @@ private theorem morseChartChangeCellFun_of_le_norm (i : ι) {w : TopCat.disk.{u}
           (TopCat.annulusDir (by norm_num) ⟨w, hw⟩)),
           hK i _ _ (TopCat.norm_diskBoundaryInclusion _)⟩ := by
   rw [morseChartChangeCellFun, ContinuousMap.curry_apply,
-    TopCat.discGlue_apply_of_le_norm _ _ _ _ _ hw]
+    TopCat.diskGlue_apply_of_le_norm _ _ _ _ _ hw]
   rfl
 
 /-- The disc part of `TauCeti.morseChartChange`. -/
