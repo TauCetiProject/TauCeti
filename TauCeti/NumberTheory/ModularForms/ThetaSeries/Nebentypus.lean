@@ -30,7 +30,7 @@ The unit-homomorphism face of `χ_L` needed by spaces of modular forms with char
 * `ZLattice.discChar_isQuadratic`: `χ_L` is quadratic.
 * `ZLattice.IsEven.discChar_neg_one`: `χ_L (-1) = (-1)^k` in rank `2k`.
 * `ZLattice.discChar_eq_one_of_isSquare` and
-  `ZLattice.IsEven.discChar_eq_one_of_isUnimodular`: `χ_L` is trivial when `D_L` is a square, in
+  `ZLattice.discChar_eq_one_of_isUnimodular`: `χ_L` is trivial when `D_L` is a square, in
   particular when `L` is unimodular.
 
 ## References
@@ -114,10 +114,13 @@ theorem discChar_eq_one_of_isSquare (hsq : IsSquare (signedDiscr L)) : discChar 
       DirichletCharacter.changeLevel_one]
   · simp only [discChar, h, dite_false]
 
-/-- `χ_L` is trivial for an even unimodular lattice. -/
-theorem IsEven.discChar_eq_one_of_isUnimodular (hL : IsEven L) (hU : IsUnimodular L) :
-    discChar L = 1 :=
-  discChar_eq_one_of_isSquare (by rw [hL.signedDiscr_eq_one_of_isUnimodular hU]; exact ⟨1, rfl⟩)
+/-- `χ_L` is trivial for a unimodular lattice. For an even one the signed discriminant is `1`;
+otherwise `χ_L` is the junk value, the trivial character. -/
+theorem discChar_eq_one_of_isUnimodular (hU : IsUnimodular L) : discChar L = 1 := by
+  by_cases hL : IsEven L
+  · exact discChar_eq_one_of_isSquare
+      (by rw [hL.signedDiscr_eq_one_of_isUnimodular hU]; exact ⟨1, rfl⟩)
+  · simp only [discChar, hL, false_and, dite_false]
 
 /-- `χ_L` is a quadratic character. This holds with no hypothesis, since the junk value is the
 trivial character. -/
