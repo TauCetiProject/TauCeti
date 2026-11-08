@@ -12,8 +12,10 @@ public import TauCeti.LinearAlgebra.Matrix.FixedDetMatrices
 # Integral matrices of fixed determinant acting on the upper half-plane
 
 For `n ≠ 0`, an integral `2 × 2` matrix `A` of determinant `n` acts on the upper half-plane
-through its image `FixedDetMatrices.toGLReal hn A` in `GL(2, ℝ)`, by the Möbius transformation
-`τ ↦ (a τ + b) / (c τ + d)`. This file records that left multiplication by `SL(2, ℤ)` on `A`
+through its image `FixedDetMatrices.toGLReal hn A` in `GL(2, ℝ)`. For `0 < n` this is the Möbius
+transformation `τ ↦ (a τ + b) / (c τ + d)`; for `n < 0` it is that transformation followed by
+complex conjugation, `τ ↦ conj ((a τ + b) / (c τ + d))`, as for Mathlib's action of `GL(2, ℝ)`
+on the upper half-plane. This file records that left multiplication by `SL(2, ℤ)` on `A`
 becomes composition of the actions, and that for `0 < n` the action is holomorphic.
 
 ## Main results
