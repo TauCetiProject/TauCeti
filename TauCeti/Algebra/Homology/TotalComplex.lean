@@ -346,13 +346,15 @@ degrees `≥ 1`. -/
 private noncomputable def dropRowZeroAux :
     (K.total (ComplexShape.down ℕ)).restriction (embeddingDownNatAdd 1) ⟶
       (rowsSucc K).total (ComplexShape.down ℕ) where
-  f n := dropRowZeroX K n
+  f n := ((K.total (ComplexShape.down ℕ)).restrictionXIso (embeddingDownNatAdd 1)
+    (embeddingDownNatAdd_f 1 n)).hom ≫ dropRowZeroX K n
   comm' := by
     rintro _ n rfl
-    refine total.hom_ext _ fun p q h ↦ ?_
     -- The differential of the restriction is that of the total complex in the shifted degrees.
-    dsimp only [HomologicalComplex.restriction]
-    simp only [embeddingDownNatAdd_f] at h ⊢
+    rw [restriction_d_eq _ _ (embeddingDownNatAdd_f 1 (n + 1)) (embeddingDownNatAdd_f 1 n)]
+    simp only [Category.assoc, Iso.inv_hom_id_assoc]
+    congr 1
+    refine total.hom_ext _ fun p q h ↦ ?_
     rcases q with _ | q
     · simp only [ιTotal_dropRowZeroX_zero_assoc, zero_comp, total_d, Preadditive.add_comp,
         Preadditive.comp_add, ι_D₁_assoc, ι_D₂_assoc, d₁_dropRowZeroX_zero,
@@ -363,7 +365,7 @@ private noncomputable def dropRowZeroAux :
 
 -- Every predecessor of a degree in the image of `embeddingDownNatAdd 1` is again in the image.
 private lemma hasLift_dropRowZeroAux : (embeddingDownNatAdd 1).HasLift (dropRowZeroAux K) :=
-  fun j hj ↦ (hj.2 (j + 1) (ComplexShape.down_mk _ _ rfl)).elim
+  fun j hj ↦ (hj.2 (j + 1) (ComplexShape.down_mk _ _ (by simp))).elim
 
 /-- The retraction of the total complex onto row `0` in degree `n`. -/
 private noncomputable def rowZeroπX (n : ℕ) : (K.total (ComplexShape.down ℕ)).X n ⟶ (K.X n).X 0 :=
@@ -416,8 +418,7 @@ private lemma dropRowZero_f_succ (n : ℕ) :
       dropRowZeroX K n ≫ (((rowsSucc K).total (ComplexShape.down ℕ)).extendXIso
         (embeddingDownNatAdd 1) (embeddingDownNatAdd_f 1 n)).inv := by
   rw [dropRowZero, (embeddingDownNatAdd 1).liftExtend_f _ _ (embeddingDownNatAdd_f 1 n)]
-  -- The restriction isomorphism is an `eqToHom` between definitionally equal objects.
-  exact Category.id_comp _
+  simp [dropRowZeroAux]
 
 /-- The projection killing row `0` vanishes on the summands of row `0`. -/
 @[reassoc (attr := simp)]

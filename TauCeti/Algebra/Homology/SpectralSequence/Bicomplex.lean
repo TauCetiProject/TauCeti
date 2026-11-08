@@ -126,7 +126,8 @@ def totalRowXIso (K : HomologicalComplex₂ C (down ℕ) (down ℕ)) :
   | 0, _ => Iso.refl _
   | s + 1, p =>
     -- The term `(K.rowsSucc.X p).X s` is `(K.X p).X (s + 1)` by definition.
-    (K.rowsSucc.totalRow s).extendXIso (embeddingDownNatAdd 1) (i := p + s) rfl ≪≫
+    (K.rowsSucc.totalRow s).extendXIso (embeddingDownNatAdd 1)
+      (embeddingDownNatAdd_f 1 (p + s)) ≪≫
       totalRowXIso K.rowsSucc s p
 
 /-- The inclusion of the summand `(K.X p).X q`, for `s ≤ q`, into the total complex of the rows
@@ -137,7 +138,8 @@ def ιTotalRowsGE (K : HomologicalComplex₂ C (down ℕ) (down ℕ)) :
   | s + 1, p, q + 1, n + 1, _, h =>
     -- The summand `(K.rowsSucc.X p).X q` is `(K.X p).X (q + 1)` by definition.
     K.rowsSucc.ιTotalRowsGE s p q n (by omega) (by omega) ≫
-      ((K.rowsSucc.totalRowsGE s).extendXIso (embeddingDownNatAdd 1) (i := n) rfl).inv
+      ((K.rowsSucc.totalRowsGE s).extendXIso (embeddingDownNatAdd 1)
+        (embeddingDownNatAdd_f 1 n)).inv
   | _ + 1, _, 0, _, hs, _ => absurd hs (by omega)
   | _ + 1, _, _ + 1, 0, _, h => absurd h (by omega)
 
@@ -185,7 +187,8 @@ lemma totalRowXIso_inv_totalRowι_f (s p : ℕ) :
   | zero => simp [totalRowXIso, totalRowι, ιTotalRowsGE]
   | succ s ih =>
     simp [totalRowXIso, totalRowι, ιTotalRowsGE,
-      HomologicalComplex.extendMap_f _ (embeddingDownNatAdd 1) (i := p + s) (i' := p + (s + 1)) rfl,
+      HomologicalComplex.extendMap_f _ (embeddingDownNatAdd 1) (i' := p + (s + 1))
+        (embeddingDownNatAdd_f 1 (p + s)),
       reassoc_of% (ih K.rowsSucc)]
 
 /-- The projections onto the total complexes of the rows `≥ s` and `≥ s + 1` are compatible. -/
@@ -231,7 +234,8 @@ lemma isZero_totalRowsGE_X (s n : ℕ) (hn : n < s) : IsZero ((K.totalRowsGE s).
     · exact (K.rowsSucc.totalRowsGE s).isZero_extend_X (embeddingDownNatAdd 1) 0
         (fun _ ↦ by simp)
     · exact (ih K.rowsSucc n (by omega)).of_iso
-        ((K.rowsSucc.totalRowsGE s).extendXIso (embeddingDownNatAdd 1) rfl)
+        ((K.rowsSucc.totalRowsGE s).extendXIso (embeddingDownNatAdd 1)
+          (embeddingDownNatAdd_f 1 n))
 
 /-- The short complex `row s ⟶ Tot (rows ≥ s) ⟶ Tot (rows ≥ s + 1)`. -/
 abbrev totalRowShortComplex (s : ℕ) : ShortComplex (ChainComplex C ℕ) :=
@@ -267,7 +271,8 @@ def totalRowHomologyIso (K : HomologicalComplex₂ C (down ℕ) (down ℕ)) : (s
   | 0, _ => Iso.refl _
   | s + 1, k =>
     -- The row `s` of `K.rowsSucc` is the row `s + 1` of `K` by definition.
-    (K.rowsSucc.totalRow s).extendHomologyIso (embeddingDownNatAdd 1) (j := k + s) rfl ≪≫
+    (K.rowsSucc.totalRow s).extendHomologyIso (embeddingDownNatAdd 1)
+      (embeddingDownNatAdd_f 1 (k + s)) ≪≫
       totalRowHomologyIso K.rowsSucc s k
 
 /-- The row `s` placed in the degrees of the total complex has no homology below degree `s`. -/
@@ -279,7 +284,8 @@ lemma isZero_totalRow_homology (s n : ℕ) (hn : n < s) : IsZero ((K.totalRow s)
     · exact ((K.rowsSucc.totalRow s).extend_exactAt (embeddingDownNatAdd 1) 0
         (fun _ ↦ by simp)).isZero_homology
     · exact (ih K.rowsSucc n (by omega)).of_iso
-        ((K.rowsSucc.totalRow s).extendHomologyIso (embeddingDownNatAdd 1) (j := n) rfl)
+        ((K.rowsSucc.totalRow s).extendHomologyIso (embeddingDownNatAdd 1)
+          (embeddingDownNatAdd_f 1 n))
 
 /-! ### The row filtration of the total complex -/
 
