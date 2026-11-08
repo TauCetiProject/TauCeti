@@ -44,10 +44,10 @@ jobs:
         persist-credentials: false
         fetch-depth: 0
     - name: Prepare pinned shared tools
-      uses: TauCetiProject/TauCetiTools/.github/actions/setup@3b5a8cf7e28f2d51fc6f5e5a13941840db612c0e
+      uses: TauCetiProject/TauCetiTools/.github/actions/setup@17896050f9b622ce129a16e1abd59c0e8cfe0d6e
       with:
         tools-repository: TauCetiProject/TauCetiTools
-        tools-ref: 3b5a8cf7e28f2d51fc6f5e5a13941840db612c0e
+        tools-ref: 17896050f9b622ce129a16e1abd59c0e8cfe0d6e
         project-directory: .
     - name: Install elan (pinned + checksum) and the toolchain
       env:
