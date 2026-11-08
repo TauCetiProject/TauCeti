@@ -204,14 +204,6 @@ private theorem target_addHorizontal_filter (hρ : IsMatchedGenerator M ρ h) (A
     (hρ.disjoint_source_of_image_subset (image_filter_mem_subset _ _ _))
     (hρ.disjoint_target_of_image_subset (image_filter_mem_subset _ _ _))
 
-omit [LinearOrder α] [Fintype α] in
-/-- If the pairs of the points of `A` avoid `k`, the points of `A` over `h` avoid every set `W`
-over `k`. -/
-private theorem disjoint_filter_of_image_subset {A W : Finset α} {h k : Finset β}
-    (hA : Disjoint (A.image M) k) (hW : W.image M ⊆ k) : Disjoint {i ∈ A | M i ∈ h} W :=
-  (disjoint_of_subset_right hW
-    (disjoint_of_subset_left (image_subset_image (filter_subset _ _)) hA)).of_image_finset
-
 /-- Adding common horizontal strands over `h ∩ k` to the forced parts of two summands does not
 change their composability, and commutes with their product. -/
 private theorem composable_and_trans_of_image_subset_inter (hρ : IsMatchedGenerator M ρ h)
@@ -229,8 +221,12 @@ private theorem composable_and_trans_of_image_subset_inter (hρ : IsMatchedGener
   have hWh : W.image M ⊆ h := hW.trans inter_subset_left
   have hWk : W.image M ⊆ k := hW.trans inter_subset_right
   -- The forced horizontal strands lie over pairs used by the other factor.
-  have hUfW : Disjoint Uf W := disjoint_filter_of_image_subset hσ.disjoint_source hWk
-  have hVfW : Disjoint Vf W := disjoint_filter_of_image_subset hρ.disjoint_target hWh
+  have hUfW : Disjoint Uf W :=
+    (disjoint_of_disjoint_image_of_image_subset hσ.disjoint_source hWk).mono_left
+      (filter_subset _ _)
+  have hVfW : Disjoint Vf W :=
+    (disjoint_of_disjoint_image_of_image_subset hρ.disjoint_target hWh).mono_left
+      (filter_subset _ _)
   have h₁s : Disjoint (ρ.addHorizontal Uf).source W := by
     rw [source_addHorizontal_filter hρ]
     exact disjoint_union_left.2 ⟨hρ.disjoint_source_of_image_subset hWh, hUfW⟩
@@ -248,32 +244,19 @@ private theorem composable_and_trans_of_image_subset_inter (hρ : IsMatchedGener
   exact StrandDiagram.addHorizontal_trans_addHorizontal fun _ _ ↦
     StrandDiagram.notMem_of_mem_of_disjoint_target h₁t
 
-omit [Fintype α] in
-/-- Under the pair condition `M(B) ∪ h = M(A) ∪ k`, the points of `A` over `h` together with a
-choice over `h ∩ k` form a choice over `h`. Here `A` is the set of starting points of the second
-factor and `B` that of end points of the first, or the other way round. -/
-private theorem image_union_eq_and_injOn {A B : Finset α} {h k : Finset β} (hA : Set.InjOn M A)
-    (hAk : Disjoint (A.image M) k) (hC : B.image M ∪ h = A.image M ∪ k) {W : Finset α}
-    (hW : W.image M = h ∩ k) (hWi : Set.InjOn M W) :
-    ({i ∈ A | M i ∈ h} ∪ W).image M = h ∧ Set.InjOn M ↑({i ∈ A | M i ∈ h} ∪ W) := by
-  have hWk : W.image M ⊆ k := hW.le.trans inter_subset_right
-  refine ⟨?_, ?_⟩
-  · ext m
-    simp only [image_union, mem_union]
-    constructor
-    · rintro (hm | hm)
-      · exact image_filter_mem_subset _ _ _ hm
-      · exact (mem_inter.1 (hW ▸ hm)).1
-    · intro hm
-      have : m ∈ A.image M ∪ k := hC ▸ mem_union_right _ hm
-      rcases mem_union.1 this with hmA | hmk
-      · obtain ⟨x, hx, rfl⟩ := mem_image.1 hmA
-        exact Or.inl (mem_image_of_mem M (mem_filter.2 ⟨hx, hm⟩))
-      · exact Or.inr (hW ▸ mem_inter.2 ⟨hm, hmk⟩)
-  · rw [coe_union]
-    refine (hA.mono (coe_subset.2 (filter_subset _ _))).union_of_disjoint_image hWi ?_
-    simpa only [coe_image] using disjoint_coe.2 (disjoint_of_subset_left
-      (image_subset_image (filter_subset _ _)) (disjoint_of_subset_right hWk hAk))
+/-- If every pair of `h` outside `k` is a pair of a point of `A`, the points of `A` over `h`
+together with a choice over `h ∩ k` form a choice over `h`. Here `A` is the set of starting points
+of the second factor, or that of end points of the first. -/
+private theorem filter_union_mem_matchedChoices {A W : Finset α} {h k : Finset β}
+    (hA : Set.InjOn M A) (hAk : Disjoint (A.image M) k) (hh : h ⊆ A.image M ∪ k)
+    (hW : W ∈ matchedChoices M (h ∩ k)) : {i ∈ A | M i ∈ h} ∪ W ∈ matchedChoices M h := by
+  obtain ⟨hWim, hWi⟩ := mem_matchedChoices.1 hW
+  refine mem_matchedChoices.2 ⟨image_filter_mem_union_eq hh hWim, ?_⟩
+  rw [coe_union]
+  refine (hA.mono (coe_subset.2 (filter_subset _ _))).union_of_disjoint_image hWi ?_
+  simpa only [coe_image] using disjoint_coe.2 (disjoint_of_subset_left
+    (image_subset_image (filter_subset _ _))
+    (disjoint_of_subset_right (hWim.le.trans inter_subset_right) hAk))
 
 /-- Under the pair condition `M(ρ⁺) ∪ h = M(σ⁻) ∪ k`, the pairs of choices over `h` and over `k`
 whose summands have a nonzero product are the images of the choices `W` over `h ∩ k` under
@@ -303,10 +286,9 @@ private theorem sum_mul_eq_sum_matchedChoices_inter (hρ : IsMatchedGenerator M 
   refine ((sum_subset ?_ ?_).symm.trans (sum_image hg)).trans (sum_congr rfl fun _ _ ↦ rfl)
   · intro p hp
     obtain ⟨W, hW, rfl⟩ := mem_image.1 hp
-    obtain ⟨hWim, hWi⟩ := mem_matchedChoices.1 hW
-    exact mem_product.2 ⟨mem_matchedChoices.2 (image_union_eq_and_injOn hσ.injOn_source
-      hσ.disjoint_source hC hWim hWi), mem_matchedChoices.2 (image_union_eq_and_injOn
-      hρ.injOn_target hρ.disjoint_target hC.symm (inter_comm h k ▸ hWim) hWi)⟩
+    exact mem_product.2 ⟨filter_union_mem_matchedChoices hσ.injOn_source hσ.disjoint_source
+      (subset_union_right.trans hC.le) hW, filter_union_mem_matchedChoices hρ.injOn_target
+      hρ.disjoint_target (subset_union_right.trans hC.ge) (inter_comm h k ▸ hW)⟩
   · intro p hp hpg
     obtain ⟨hU, hV⟩ := mem_product.1 hp
     refine of_mul_of_of_not_composable fun hUV ↦ hpg (mem_image.2 ⟨p.1 ∩ p.2, ?_⟩)
@@ -370,7 +352,9 @@ theorem IsMatchedGenerator.trans (hρ : IsMatchedGenerator M ρ h) (hσ : IsMatc
   have htarget : ((ρ.addHorizontal Uf).trans (σ.addHorizontal Vf)).target = σ.target ∪ Vf := by
     rw [StrandDiagram.target_trans_of_target_eq hτ.target_eq, target_addHorizontal_filter hσ]
   -- Pairs over `h` avoid the end points of `ρ`, so no point carries forced strands of both kinds.
-  have hUfVf : Disjoint Uf Vf := (disjoint_filter_of_image_subset hρ.disjoint_target hUf).symm
+  have hUfVf : Disjoint Uf Vf :=
+    ((disjoint_of_disjoint_image_of_image_subset hρ.disjoint_target hUf).mono_left
+      (filter_subset _ _)).symm
   refine ⟨fun i hi ↦ ?_, ?_, ?_, ?_, ?_⟩
   · obtain ⟨j, hij, hji⟩ := StrandDiagram.mem_trans.1 hi
     obtain rfl : j = i := le_antisymm ((σ.addHorizontal Vf).le_of_mem hji)
@@ -518,6 +502,7 @@ theorem horizontalCompletion_mul_matchedIdem {ρ : StrandDiagram α} {h : Finset
 
 /-- The idempotents `I(s)` are orthogonal: `I(s) I(t)` is `I(s)` when `s = t` and zero
 otherwise. -/
+@[simp]
 theorem matchedIdem_mul_matchedIdem (s t : Finset β) :
     (matchedIdem M s * matchedIdem M t : StrandsAlgebra R α) =
       if s = t then matchedIdem M s else 0 := by
@@ -529,7 +514,7 @@ theorem matchedIdem_mul_matchedIdem (s t : Finset β) :
 
 theorem isIdempotentElem_matchedIdem (s : Finset β) :
     IsIdempotentElem (matchedIdem M s : StrandsAlgebra R α) := by
-  simp [IsIdempotentElem, matchedIdem_mul_matchedIdem]
+  simp [IsIdempotentElem]
 
 /-- The unit of the algebra of a matching: the sum of the idempotents `I(s)` over all sets `s` of
 pairs, the subsets of the image of `M`. -/
@@ -545,6 +530,7 @@ theorem matchedOne_mem_matchedAlgebra : (matchedOne M : StrandsAlgebra R α) ∈
 
 variable {M} in
 /-- `∑ₛ I(s)` is a left unit for the algebra of a matching. -/
+@[simp]
 theorem matchedOne_mul {x : StrandsAlgebra R α} (hx : x ∈ matchedAlgebra R M) :
     matchedOne M * x = x := by
   induction hx using matchedAlgebra_induction with
@@ -561,6 +547,7 @@ theorem matchedOne_mul {x : StrandsAlgebra R α} (hx : x ∈ matchedAlgebra R M)
 
 variable {M} in
 /-- `∑ₛ I(s)` is a right unit for the algebra of a matching. -/
+@[simp]
 theorem mul_matchedOne {x : StrandsAlgebra R α} (hx : x ∈ matchedAlgebra R M) :
     x * matchedOne M = x := by
   induction hx using matchedAlgebra_induction with
