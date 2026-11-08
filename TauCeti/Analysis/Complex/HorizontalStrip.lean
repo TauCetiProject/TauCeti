@@ -59,13 +59,14 @@ private theorem im_lt_or_lt_im_of_mem_of_frontier_eq {U : Set ℂ} (hUo : IsOpen
   exact hz (hS ⟨hzR, hzlo, hzhi⟩)
 
 /-- If the frontier of an open set `U ⊆ ℂ` is, to the right of `R`, exactly the two horizontal
-lines at heights `lo < hi`, and a point `z` of the band between them to the right of `R` is not in
-`U`, then to the right of `R` the set `U` is exactly the set of points strictly below or strictly
-above the band. -/
+lines at heights `lo` and `hi`, and a point `z` of the band between them to the right of `R` is
+not in `U`, then to the right of `R` the set `U` is exactly the set of points strictly below or
+strictly above the band. -/
 theorem mem_iff_im_lt_or_lt_im_of_frontier_eq {U : Set ℂ} (hUo : IsOpen U) {R hi lo : ℝ}
-    (hgap : lo < hi) (hline : ∀ w : ℂ, R < w.re → (w ∈ frontier U ↔ w.im = hi ∨ w.im = lo))
+    (hline : ∀ w : ℂ, R < w.re → (w ∈ frontier U ↔ w.im = hi ∨ w.im = lo))
     {z : ℂ} (hzR : R < z.re) (hzlo : lo < z.im) (hzhi : z.im < hi) (hz : z ∉ U) {w : ℂ}
     (hwR : R < w.re) : w ∈ U ↔ w.im < lo ∨ hi < w.im := by
+  have hgap : lo < hi := hzlo.trans hzhi
   have hout {w : ℂ} (hwR : R < w.re) (hwU : w ∈ U) : w.im < lo ∨ hi < w.im :=
     im_lt_or_lt_im_of_mem_of_frontier_eq hUo hline hzR hzlo hzhi hz hwR hwU
   -- Each line lies in the closure of `U`, so points of `U` come close to it.
