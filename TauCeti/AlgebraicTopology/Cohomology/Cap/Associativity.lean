@@ -161,6 +161,9 @@ lemma singularCap_assoc
   have : Epi (((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{w} k))).homologyπ n) :=
     (ModuleCat.epi_iff_surjective _).2 (HomologicalComplex.moduleCat_homologyπ_surjective _ n)
   refine (cancel_epi (((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{w} k))).homologyπ n)).1 ?_
+  -- The `homologyπ` squares are stated for `homology`, while `singularCap` is stated for
+  -- `singularHomologyFunctor`; `erw` unfolds the latter's objects to `homology n`, and the
+  -- final `rfl` closes the remaining goal by the same definitional unfolding.
   erw [← Category.assoc, singularCap_homologyπ, Category.assoc, singularCap_homologyπ,
     singularCup_homologyπ, singularCap_homologyπ, ← Category.assoc,
     capCycles_comp_capCycles_cupCycles X k hp hq]
