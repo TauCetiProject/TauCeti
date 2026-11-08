@@ -80,20 +80,12 @@ theorem orderOf_cycleMap_of_cycleAngleSum {j : Fin n} {z : ℍ}
   rw [he]
   exact (Complex.isPrimitiveRoot_exp t ht).eq_orderOf.symm
 
-/-- If the `M`-th tile around a finite vertex returns to the vertex after angles summing to a
-number in `(0, 2π]` that is zero modulo `2π`, then the order of the cycle transformation times
-the cycle angle sum is `2π`. -/
-theorem orderOf_cycleMap_mul_cycleAngleSum_of_coe_sum_eq_zero {j : Fin n} {z : ℍ}
+/-- If the `M`-th tile around a finite vertex returns to the vertex after angles summing to `2π`,
+then the order of the cycle transformation times the cycle angle sum is `2π`. -/
+theorem orderOf_cycleMap_mul_cycleAngleSum_of_sum_eq_two_pi {j : Fin n} {z : ℍ}
     (hz : P.vertex j = .inl z) {M : ℕ} (hjM : σ.next^[M] j = j)
-    (hSM : ((∑ l ∈ Finset.range M, P.interiorAngle (σ.next^[l] j) : ℝ) : Real.Angle) = 0)
-    (hSM₀ : 0 < ∑ l ∈ Finset.range M, P.interiorAngle (σ.next^[l] j))
-    (hM : ∑ l ∈ Finset.range M, P.interiorAngle (σ.next^[l] j) ≤ 2 * π) :
+    (hk' : ∑ l ∈ Finset.range M, P.interiorAngle (σ.next^[l] j) = 2 * π) :
     (orderOf (σ.cycleMap j) : ℝ) * σ.cycleAngleSum j = 2 * π := by
-  have hk' : (∑ l ∈ Finset.range M, P.interiorAngle (σ.next^[l] j)) = 2 * π := by
-    have : Fact (0 < 2 * π) := ⟨Real.two_pi_pos⟩
-    refine (AddCircle.coe_eq_coe_iff_of_mem_Ioc (a := 0) (p := 2 * π)
-      ⟨hSM₀, by rwa [zero_add]⟩ ⟨by positivity, by rw [zero_add]⟩).1 ?_
-    exact hSM.trans Real.Angle.coe_two_pi.symm
   -- tile `M` returns to vertex `j`, so `M` is a whole number `t` of circuits
   obtain ⟨t, rfl⟩ := Function.IsPeriodicPt.minimalPeriod_dvd hjM
   have hSt : t * σ.cycleAngleSum j = 2 * π := by

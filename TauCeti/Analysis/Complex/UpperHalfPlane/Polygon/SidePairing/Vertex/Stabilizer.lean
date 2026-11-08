@@ -168,8 +168,15 @@ theorem orderOf_cycleMap_mul_cycleAngleSum {j : Fin n} {z : ℍ} (hz : P.vertex 
   rw [partialCycleMap_zero] at hone
   -- so tile `M` is `P` itself, reached after exactly one full turn
   obtain ⟨hjM, hSM⟩ := σ.next_iterate_eq_and_coe_sum_eq_zero hz hone
-  exact σ.orderOf_cycleMap_mul_cycleAngleSum_of_coe_sum_eq_zero hz hjM hSM
-    (by simpa [hS] using hmono (Nat.pos_of_ne_zero hM₀)) hM
+  -- `Real.Angle` is by definition `AddCircle (2 * π)`, so `hSM` is an equality in that circle;
+  -- the sum lies in `(0, 2π]`, a fundamental domain, so it equals `2π`.
+  have : Fact (0 < 2 * π) := ⟨Real.two_pi_pos⟩
+  have hsum : S M = 2 * π := by
+    refine (AddCircle.coe_eq_coe_iff_of_mem_Ioc (a := 0) (p := 2 * π)
+      ⟨by simpa [hS] using hmono (Nat.pos_of_ne_zero hM₀), by rwa [zero_add]⟩
+      ⟨by positivity, by rw [zero_add]⟩).1 ?_
+    exact hSM.trans Real.Angle.coe_two_pi.symm
+  exact σ.orderOf_cycleMap_mul_cycleAngleSum_of_sum_eq_two_pi hz hjM hsum
 
 /-- At a finite vertex of a polygon with disjoint translated interiors, the cycle transformation
 has finite order. -/
