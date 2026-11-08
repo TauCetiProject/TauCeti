@@ -182,13 +182,13 @@ end LinearMap
 namespace LinearMap
 
 /-- **Rank–nullity for a surjection**: the kernel of a surjective linear map from a
-finite-dimensional space has dimension the difference of the dimensions. -/
-theorem finrank_ker_eq_sub_of_surjective {K M N : Type*} [DivisionRing K] [AddCommGroup M]
-    [Module K M] [FiniteDimensional K M] [AddCommGroup N] [Module K N] (f : M →ₗ[K] N)
-    (hf : Function.Surjective f) :
+finite module has dimension the difference of the dimensions. -/
+theorem finrank_ker_eq_sub_of_surjective {K : Type*} {M : Type v} {N : Type*} [Ring K]
+    [HasRankNullity.{v} K] [StrongRankCondition K] [AddCommGroup M] [Module K M]
+    [Module.Finite K M] [AddCommGroup N] [Module K N] (f : M →ₗ[K] N) (hf : Function.Surjective f) :
     Module.finrank K (ker f) = Module.finrank K M - Module.finrank K N := by
-  have h := f.finrank_range_add_finrank_ker
-  rw [range_eq_top.2 hf, finrank_top] at h
+  have h := (ker f).finrank_quotient_add_finrank
+  rw [(f.quotKerEquivOfSurjective hf).finrank_eq] at h
   omega
 
 end LinearMap
