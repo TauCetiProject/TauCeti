@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Basic
+public import Mathlib.Analysis.Normed.Group.Constructions
+public import Mathlib.Analysis.Normed.Group.Real
 import all TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Basic
 
 /-!
@@ -18,6 +20,12 @@ moves which add or remove vertices, including stellar subdivision and elementary
 
 The construction reuses Mathlib's `Geometry.SimplicialComplex.onFinsupp` and the standard
 simplex coordinate API in `Realization.Basic`.
+
+On a finite vertex type, the coordinate vectors of a closed simplex form a convex set described by
+`AbstractSimplicialComplex.mem_range_standardSimplex_coe_iff`. Two nearby points of two closed
+simplices have a common nearby point of both simplices
+(`AbstractSimplicialComplex.exists_mem_inter_range_standardSimplex_coe`), the step that passes
+metric estimates on single closed simplices between simplices.
 -/
 
 public section
@@ -152,5 +160,124 @@ theorem mem_range_standardSimplex_coe_iff {σ : Finset ι} {z : ι → ℝ} :
     refine ⟨hnn, by rwa [Finsupp.sum_fintype _ _ (fun _ => rfl)], fun i hi => ?_⟩
     by_contra h
     exact Finsupp.mem_support_iff.mp hi (hzero i h)
+
+omit [Fintype ι] in
+/-- The coordinate vectors of the closed simplex on `σ` form a convex set. -/
+theorem convex_range_standardSimplex_coe (σ : Finset ι) :
+    Convex ℝ (range fun x : StandardSimplex σ => (x.1 : ι → ℝ)) := by
+  simpa [image_eq_range] using (convex_convexHull ℝ _).linear_image (Finsupp.lcoeFun (R := ℝ))
+
+/-- A coordinate of `y` at a vertex outside `σ ∩ τ` is at most the distance from `x` to `y`. -/
+private theorem coord_le_norm_sub {σ τ : Finset ι} {x y : ι → ℝ}
+    (hx : x ∈ range fun x : StandardSimplex σ => (x.1 : ι → ℝ))
+    (hy : y ∈ range fun x : StandardSimplex τ => (x.1 : ι → ℝ)) {i : ι} (hi : i ∈ σ → i ∉ τ) :
+    y i ≤ ‖x - y‖ := by
+  rw [mem_range_standardSimplex_coe_iff] at hx hy
+  by_cases hτ : i ∈ τ
+  · have hσ : i ∉ σ := fun hσ => hi hσ hτ
+    have h := norm_le_pi_norm (x - y) i
+    rw [Pi.sub_apply, hx.2.1 i hσ, zero_sub, norm_neg, Real.norm_of_nonneg (hy.1 i)] at h
+    exact h
+  · rw [hy.2.1 i hτ]
+    exact norm_nonneg _
+
+/-- Two points of the closed simplices on `σ` and on `τ` at distance less than `1 / N`, where `N`
+is the number of vertices, force the two simplices to meet: otherwise one of the two coordinates
+vanishes at every vertex. -/
+private theorem nonempty_inter {σ τ : Finset ι} [DecidableEq ι] {x y : ι → ℝ}
+    (hx : x ∈ range fun x : StandardSimplex σ => (x.1 : ι → ℝ))
+    (hy : y ∈ range fun x : StandardSimplex τ => (x.1 : ι → ℝ))
+    (hxy : (Fintype.card ι : ℝ) * ‖x - y‖ < 1) : (σ ∩ τ).Nonempty := by
+  by_contra hρ
+  rw [Finset.not_nonempty_iff_eq_empty] at hρ
+  have hle (i : ι) : x i + y i ≤ ‖x - y‖ := by
+    by_cases hσ : i ∈ σ
+    · have hτ : i ∉ τ := fun hτ => by
+        have hi : i ∈ σ ∩ τ := Finset.mem_inter.2 ⟨hσ, hτ⟩
+        rw [hρ] at hi
+        exact Finset.notMem_empty i hi
+      have h := coord_le_norm_sub hy hx (σ := τ) (τ := σ) (i := i) fun hi _ => hτ hi
+      rw [(mem_range_standardSimplex_coe_iff.1 hy).2.1 i hτ, norm_sub_rev]
+      simpa using h
+    · rw [(mem_range_standardSimplex_coe_iff.1 hx).2.1 i hσ, zero_add]
+      exact coord_le_norm_sub hx hy fun hi => absurd hi hσ
+  have hsum := Finset.sum_le_sum fun i (_ : i ∈ Finset.univ) => hle i
+  rw [Finset.sum_add_distrib, (mem_range_standardSimplex_coe_iff.1 hx).2.2,
+    (mem_range_standardSimplex_coe_iff.1 hy).2.2, Finset.sum_const, Finset.card_univ,
+    nsmul_eq_mul] at hsum
+  linarith
+
+/-- On a finite vertex type with `N` vertices, two points `x` and `y` of the closed simplices on
+`σ` and on `τ` at distance less than `1 / N` have a common nearby point `z` of the two closed
+simplices, with `‖y - z‖ ≤ N * ‖x - y‖`: move the coordinates of `y` off `σ ∩ τ` to the barycenter
+`β` of `σ ∩ τ`. The barycenter `β` is also a common point, with coordinates at least `1 / N` on
+`σ ∩ τ`. -/
+theorem exists_mem_inter_range_standardSimplex_coe {σ τ : Finset ι} {x y : ι → ℝ}
+    (hx : x ∈ range fun x : StandardSimplex σ => (x.1 : ι → ℝ))
+    (hy : y ∈ range fun x : StandardSimplex τ => (x.1 : ι → ℝ))
+    (hxy : (Fintype.card ι : ℝ) * ‖x - y‖ < 1) :
+    ∃ z ∈ (range fun x : StandardSimplex σ => (x.1 : ι → ℝ)) ∩
+        range fun x : StandardSimplex τ => (x.1 : ι → ℝ),
+      ∃ β ∈ (range fun x : StandardSimplex σ => (x.1 : ι → ℝ)) ∩
+          range fun x : StandardSimplex τ => (x.1 : ι → ℝ),
+        ‖y - z‖ ≤ Fintype.card ι * ‖x - y‖ ∧
+        ∀ i ∈ σ, i ∈ τ → (Fintype.card ι : ℝ)⁻¹ ≤ β i := by
+  classical
+  set N : ℝ := (Fintype.card ι : ℝ)
+  set ρ := σ ∩ τ
+  have hρ : ρ.Nonempty := nonempty_inter hx hy hxy
+  have hy' := mem_range_standardSimplex_coe_iff.1 hy
+  have hN : 1 ≤ N := by
+    obtain ⟨i, -⟩ := hρ
+    exact Nat.one_le_cast.2 (Fintype.card_pos_iff.2 ⟨i⟩)
+  have hcard : (0 : ℝ) < ρ.card := by exact_mod_cast hρ.card_pos
+  set c : ℝ := (ρ.card : ℝ)⁻¹
+  have hc : 0 < c := inv_pos.2 hcard
+  have hc1 : c ≤ 1 := inv_le_one_of_one_le₀ (by exact_mod_cast hρ.card_pos)
+  -- The mass `m` of `y` off `σ ∩ τ`, which is at most `N` times the distance of `x` and `y`.
+  set m : ℝ := ∑ i, if i ∈ ρ then 0 else y i
+  have hm0 : 0 ≤ m := Finset.sum_nonneg fun i _ => by split_ifs <;> simp [hy'.1 i]
+  have hmN : m ≤ N * ‖x - y‖ := by
+    have h := Finset.sum_le_sum fun i (_ : i ∈ Finset.univ) =>
+      show (if i ∈ ρ then 0 else y i) ≤ ‖x - y‖ by
+        split_ifs with hi
+        · exact norm_nonneg _
+        · exact coord_le_norm_sub hx hy fun h h' => hi (Finset.mem_inter.2 ⟨h, h'⟩)
+    simpa [N] using h
+  have hsplit : (∑ i, if i ∈ ρ then y i else 0) + m = 1 := by
+    rw [← Finset.sum_add_distrib, ← hy'.2.2]
+    exact Finset.sum_congr rfl fun i _ => by split_ifs <;> simp
+  have hβsum : (∑ i, if i ∈ ρ then c else 0) = 1 := by
+    rw [Finset.sum_ite_mem, Finset.univ_inter, Finset.sum_const, nsmul_eq_mul]
+    exact mul_inv_cancel₀ hcard.ne'
+  have hzero {w : ι → ℝ} (hw : ∀ i ∉ ρ, w i = 0) (h0 : ∀ i, 0 ≤ w i) (h1 : ∑ i, w i = 1) :
+      w ∈ (range fun x : StandardSimplex σ => (x.1 : ι → ℝ)) ∩
+        range fun x : StandardSimplex τ => (x.1 : ι → ℝ) :=
+    ⟨mem_range_standardSimplex_coe_iff.2
+        ⟨h0, fun i hi => hw i fun hi' => hi (Finset.mem_inter.1 hi').1, h1⟩,
+      mem_range_standardSimplex_coe_iff.2
+        ⟨h0, fun i hi => hw i fun hi' => hi (Finset.mem_inter.1 hi').2, h1⟩⟩
+  refine ⟨fun i => if i ∈ ρ then y i + m * c else 0, hzero (fun i hi => by simp [hi])
+    (fun i => ?_) ?_, fun i => if i ∈ ρ then c else 0, hzero (fun i hi => by simp [hi])
+    (fun i => ?_) hβsum, ?_, fun i hσ hτ => ?_⟩
+  · split_ifs
+    · exact add_nonneg (hy'.1 i) (mul_nonneg hm0 hc.le)
+    · exact le_rfl
+  · have h (i : ι) : (if i ∈ ρ then y i + m * c else 0) =
+        (if i ∈ ρ then y i else 0) + m * (if i ∈ ρ then c else 0) := by
+      split_ifs <;> simp
+    simp_rw [h, Finset.sum_add_distrib, ← Finset.mul_sum, hβsum, mul_one, hsplit]
+  · split_ifs
+    · exact hc.le
+    · exact le_rfl
+  · refine (pi_norm_le_iff_of_nonneg (by positivity)).2 fun i => ?_
+    simp only [Pi.sub_apply, Real.norm_eq_abs]
+    split_ifs with hi
+    · rw [sub_add_cancel_left, abs_neg, abs_of_nonneg (mul_nonneg hm0 hc.le)]
+      nlinarith
+    · rw [sub_zero, abs_of_nonneg (hy'.1 i)]
+      nlinarith [coord_le_norm_sub hx hy fun h h' => hi (Finset.mem_inter.2 ⟨h, h'⟩)]
+  · simp only [ρ, Finset.mem_inter, hσ, hτ, and_self, ite_true]
+    exact inv_anti₀ hcard (Nat.cast_le.2 (Finset.card_le_univ ρ))
 
 end AbstractSimplicialComplex

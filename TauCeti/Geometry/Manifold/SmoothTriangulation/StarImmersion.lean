@@ -12,7 +12,6 @@ import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Coordinates
 import TauCeti.Analysis.Calculus.FDeriv.Antilipschitz
 import Mathlib.Analysis.Calculus.Deriv.AffineMap
 import Mathlib.Analysis.Calculus.TangentCone.Real
-import TauCeti.Analysis.Convex.Lipschitz
 import TauCeti.Geometry.Manifold.SmoothTriangulation.Lipschitz
 
 /-!
@@ -52,9 +51,6 @@ this is the separation input for comparing and fitting together smooth triangula
 
 * `TauCeti.IsStarImmersion.exists_antilipschitzWith`: an injective `C¹` star immersion of a
   complex on a finite vertex type is antilipschitz in barycentric coordinates.
-* `TauCeti.eventually_norm_secantMap_sub_sub_le_edgewiseSubdivision`: on fine edgewise
-  subdivisions, the secant error of a map which is `C¹` on every closed simplex is Lipschitz
-  with arbitrarily small constant in barycentric coordinates, also across simplices.
 * `TauCeti.IsStarImmersion.exists_pos_eventually_norm_sub_le_mul_norm_secantMap_sub`: the secant
   maps of an injective `C¹` star immersion on fine edgewise subdivisions are antilipschitz in
   barycentric coordinates, uniformly in the subdivision.
@@ -72,9 +68,9 @@ extensions of `f` off its simplices. The proof of the separation bound works in 
 coordinates `ι → ℝ`. Near a pair of nearby points `x` and `y` of two simplices it chooses a common
 point `z` of the two simplices, compares `f` with its differential at `z`, and bounds the
 differential from below by compactness after rescaling the pair from the barycenter of the common
-face. The Lipschitz bound for the secant error is first proved on the simplices of the
-subdivision, glued across them on each closed simplex of `K`, and passed between two simplices
-of `K` through the same common point `z`; distant pairs are handled by uniform convergence.
+face. For the secant maps, the Lipschitz bound for the secant error is
+`TauCeti.eventually_norm_secantMap_sub_sub_le_edgewiseSubdivision` in
+`SmoothTriangulation.Lipschitz`.
 
 ## References
 
@@ -145,13 +141,8 @@ private theorem range_standardSimplex_coe :
   Set.ext fun _ => mem_range_standardSimplex_coe_iff
 
 private theorem convex_coordSimplex : Convex ℝ (coordSimplex σ) := by
-  rintro x ⟨hx0, hxσ, hx1⟩ y ⟨hy0, hyσ, hy1⟩ a b ha hb hab
-  refine ⟨fun i => ?_, fun i hi => ?_, ?_⟩
-  · simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul]
-    exact add_nonneg (mul_nonneg ha (hx0 i)) (mul_nonneg hb (hy0 i))
-  · simp [hxσ i hi, hyσ i hi]
-  · simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, Finset.sum_add_distrib,
-      ← Finset.mul_sum, hx1, hy1, mul_one, hab]
+  rw [← range_standardSimplex_coe]
+  exact convex_range_standardSimplex_coe σ
 
 private theorem isCompact_coordSimplex : IsCompact (coordSimplex σ) := by
   rw [← range_standardSimplex_coe]
@@ -197,103 +188,6 @@ private theorem hasDerivWithinAt_lineMap {g : StandardSimplex σ → E} {G : (ι
   refine hline.congr_of_mem (fun t ht => ?_) (left_mem_Icc.2 zero_le_one)
   rw [IccExtend_of_mem _ _ ht, comp_apply, comp_apply, ← hGg, StandardSimplex.coe_lineMap]
   simp [AffineMap.lineMap_apply_module]
-
-/-- A coordinate of `y` at a vertex outside `σ ∩ τ` is at most the distance from `x` to `y`. -/
-private theorem coord_le_norm_sub {σ τ : Finset ι} {x y : ι → ℝ} (hx : x ∈ coordSimplex σ)
-    (hy : y ∈ coordSimplex τ) {i : ι} (hi : i ∈ σ → i ∉ τ) : y i ≤ ‖x - y‖ := by
-  by_cases hτ : i ∈ τ
-  · have hσ : i ∉ σ := fun hσ => hi hσ hτ
-    have h := norm_le_pi_norm (x - y) i
-    rw [Pi.sub_apply, hx.2.1 i hσ, zero_sub, norm_neg, Real.norm_of_nonneg (hy.1 i)] at h
-    exact h
-  · rw [hy.2.1 i hτ]
-    exact norm_nonneg _
-
-/-- Two points of the closed simplices on `σ` and on `τ` at distance less than `1 / N`, where `N`
-is the number of vertices, force the two simplices to meet: otherwise one of the two coordinates
-vanishes at every vertex. -/
-private theorem nonempty_inter {σ τ : Finset ι} [DecidableEq ι] {x y : ι → ℝ}
-    (hx : x ∈ coordSimplex σ) (hy : y ∈ coordSimplex τ)
-    (hxy : (Fintype.card ι : ℝ) * ‖x - y‖ < 1) : (σ ∩ τ).Nonempty := by
-  by_contra hρ
-  rw [Finset.not_nonempty_iff_eq_empty] at hρ
-  have hle (i : ι) : x i + y i ≤ ‖x - y‖ := by
-    by_cases hσ : i ∈ σ
-    · have hτ : i ∉ τ := fun hτ => by
-        have hi : i ∈ σ ∩ τ := Finset.mem_inter.2 ⟨hσ, hτ⟩
-        rw [hρ] at hi
-        exact Finset.notMem_empty i hi
-      have h := coord_le_norm_sub hy hx (σ := τ) (τ := σ) (i := i) fun hi _ => hτ hi
-      rw [hy.2.1 i hτ, norm_sub_rev]
-      simpa using h
-    · rw [hx.2.1 i hσ, zero_add]
-      exact coord_le_norm_sub hx hy fun hi => absurd hi hσ
-  have hsum := Finset.sum_le_sum fun i (_ : i ∈ Finset.univ) => hle i
-  rw [Finset.sum_add_distrib, hx.2.2, hy.2.2, Finset.sum_const, Finset.card_univ,
-    nsmul_eq_mul] at hsum
-  linarith
-
-/-- Two points of the closed simplices on `σ` and on `τ` at distance less than `1 / N`, where `N`
-is the number of vertices, have a common nearby point `z` in the closed simplex on `σ ∩ τ`: move
-the coordinates of `y` off `σ ∩ τ` to the barycenter `β` of `σ ∩ τ`. -/
-private theorem exists_mem_inter {σ τ : Finset ι} {x y : ι → ℝ} (hx : x ∈ coordSimplex σ)
-    (hy : y ∈ coordSimplex τ) (hxy : (Fintype.card ι : ℝ) * ‖x - y‖ < 1) :
-    ∃ z ∈ coordSimplex σ ∩ coordSimplex τ, ∃ β ∈ coordSimplex σ ∩ coordSimplex τ,
-      ‖y - z‖ ≤ Fintype.card ι * ‖x - y‖ ∧
-      ∀ i ∈ σ, i ∈ τ → (Fintype.card ι : ℝ)⁻¹ ≤ β i := by
-  classical
-  set N : ℝ := (Fintype.card ι : ℝ)
-  set ρ := σ ∩ τ
-  have hρ : ρ.Nonempty := nonempty_inter hx hy hxy
-  have hN : 1 ≤ N := by
-    obtain ⟨i, -⟩ := hρ
-    exact Nat.one_le_cast.2 (Fintype.card_pos_iff.2 ⟨i⟩)
-  have hcard : (0 : ℝ) < ρ.card := by exact_mod_cast hρ.card_pos
-  set c : ℝ := (ρ.card : ℝ)⁻¹
-  have hc : 0 < c := inv_pos.2 hcard
-  have hc1 : c ≤ 1 := inv_le_one_of_one_le₀ (by exact_mod_cast hρ.card_pos)
-  -- The mass `m` of `y` off `σ ∩ τ`, which is at most `N` times the distance of `x` and `y`.
-  set m : ℝ := ∑ i, if i ∈ ρ then 0 else y i
-  have hm0 : 0 ≤ m := Finset.sum_nonneg fun i _ => by split_ifs <;> simp [hy.1 i]
-  have hmN : m ≤ N * ‖x - y‖ := by
-    have h := Finset.sum_le_sum fun i (_ : i ∈ Finset.univ) =>
-      show (if i ∈ ρ then 0 else y i) ≤ ‖x - y‖ by
-        split_ifs with hi
-        · exact norm_nonneg _
-        · exact coord_le_norm_sub hx hy fun h h' => hi (Finset.mem_inter.2 ⟨h, h'⟩)
-    simpa [N] using h
-  have hsplit : (∑ i, if i ∈ ρ then y i else 0) + m = 1 := by
-    rw [← Finset.sum_add_distrib, ← hy.2.2]
-    exact Finset.sum_congr rfl fun i _ => by split_ifs <;> simp
-  have hβsum : (∑ i, if i ∈ ρ then c else 0) = 1 := by
-    rw [Finset.sum_ite_mem, Finset.univ_inter, Finset.sum_const, nsmul_eq_mul]
-    exact mul_inv_cancel₀ hcard.ne'
-  have hzero {w : ι → ℝ} (hw : ∀ i ∉ ρ, w i = 0) (h0 : ∀ i, 0 ≤ w i) (h1 : ∑ i, w i = 1) :
-      w ∈ coordSimplex σ ∩ coordSimplex τ :=
-    ⟨⟨h0, fun i hi => hw i fun hi' => hi (Finset.mem_inter.1 hi').1, h1⟩,
-      ⟨h0, fun i hi => hw i fun hi' => hi (Finset.mem_inter.1 hi').2, h1⟩⟩
-  refine ⟨fun i => if i ∈ ρ then y i + m * c else 0, hzero (fun i hi => by simp [hi])
-    (fun i => ?_) ?_, fun i => if i ∈ ρ then c else 0, hzero (fun i hi => by simp [hi])
-    (fun i => ?_) hβsum, ?_, fun i hσ hτ => ?_⟩
-  · split_ifs
-    · exact add_nonneg (hy.1 i) (mul_nonneg hm0 hc.le)
-    · exact le_rfl
-  · have h (i : ι) : (if i ∈ ρ then y i + m * c else 0) =
-        (if i ∈ ρ then y i else 0) + m * (if i ∈ ρ then c else 0) := by
-      split_ifs <;> simp
-    simp_rw [h, Finset.sum_add_distrib, ← Finset.mul_sum, hβsum, mul_one, hsplit]
-  · split_ifs
-    · exact hc.le
-    · exact le_rfl
-  · refine (pi_norm_le_iff_of_nonneg (by positivity)).2 fun i => ?_
-    simp only [Pi.sub_apply, Real.norm_eq_abs]
-    split_ifs with hi
-    · rw [sub_add_cancel_left, abs_neg, abs_of_nonneg (mul_nonneg hm0 hc.le)]
-      nlinarith
-    · rw [sub_zero, abs_of_nonneg (hy.1 i)]
-      nlinarith [coord_le_norm_sub hx hy fun h h' => hi (Finset.mem_inter.2 ⟨h, h'⟩)]
-  · simp only [ρ, Finset.mem_inter, hσ, hτ, and_self, ite_true]
-    exact inv_anti₀ hcard (Nat.cast_le.2 (Finset.card_le_univ ρ))
 
 /-- Moving from a point `β` of the closed simplex on `σ ∩ τ`, all of whose coordinates on
 `σ ∩ τ` are at least `κ`, by `s • (u - z)` with `u` in the simplex on `σ` and `z` in that on
@@ -376,7 +270,9 @@ private theorem exists_pos_mul_norm_sub_le_differential {σ τ : Finset ι}
   set r : ℝ := (N * (N + 1))⁻¹
   obtain ⟨c₀, hc₀, hcone⟩ := exists_pos_le_norm_differential hG'σ hG'τ hstar (inv_pos.2 hN)
   refine ⟨c₀ / r, by positivity, fun x hx y hy hxy => ?_⟩
-  obtain ⟨z, hz, β, hβ, hyz, hβN⟩ := exists_mem_inter hx hy hxy
+  obtain ⟨z, hz, β, hβ, hyz, hβN⟩ := exists_mem_inter_range_standardSimplex_coe
+    (by rwa [range_standardSimplex_coe]) (by rwa [range_standardSimplex_coe]) hxy
+  rw [range_standardSimplex_coe, range_standardSimplex_coe] at hz hβ
   have hxz : ‖x - z‖ ≤ (N + 1) * ‖x - y‖ := by
     calc ‖x - z‖ ≤ ‖x - y‖ + ‖y - z‖ := norm_sub_le_norm_sub_add_norm_sub x y z
       _ ≤ (N + 1) * ‖x - y‖ := by linarith
@@ -624,126 +520,6 @@ section Secant
 open Filter _root_.PreAbstractSimplicialComplex
 
 variable [LinearOrder ι]
-
-/-- The secant error of `f` on the `k`-th edgewise subdivision: the difference between the secant
-map of `f` and `f`, read on the subdivision through the canonical map onto `|K|`. -/
-private def secantError (f : Realization K → E) (k : ℕ)
-    (x : Realization (K.edgewiseSubdivision k)) : E :=
-  (K.edgewiseSubdivision k).secantMap (f ∘ edgewiseSubdivisionRealizationMap K k) x -
-    f (edgewiseSubdivisionRealizationMap K k x)
-
-omit [Fintype ι] in
-/-- Unfolding the secant error, used to fold the public statements into `secantError`. -/
-private theorem secantError_apply (f : Realization K → E) (k : ℕ)
-    (x : Realization (K.edgewiseSubdivision k)) :
-    secantError f k x =
-      (K.edgewiseSubdivision k).secantMap (f ∘ edgewiseSubdivisionRealizationMap K k) x -
-        f (edgewiseSubdivisionRealizationMap K k x) :=
-  rfl
-
-/-- The secant error, read as a function of the original coordinates `ι → ℝ` (and extended by
-zero off the realization). -/
-private def secantErrorCoord (f : Realization K → E) (k : ℕ) : (ι → ℝ) → E :=
-  Function.extend
-    (fun x : Realization (K.edgewiseSubdivision k) =>
-      ((edgewiseSubdivisionRealizationMap K k x).1 : ι → ℝ))
-    (secantError f k) 0
-
-omit [Fintype ι] in
-/-- The secant error read in the original coordinates is the secant error. -/
-private theorem secantErrorCoord_apply (f : Realization K → E) (k : ℕ)
-    (x : Realization (K.edgewiseSubdivision k)) :
-    secantErrorCoord f k ((edgewiseSubdivisionRealizationMap K k x).1 : ι → ℝ) =
-      secantError f k x :=
-  Injective.extend_apply (fun _ _ h => edgewiseSubdivisionRealizationMap_injective
-    (Subtype.ext (DFunLike.coe_injective h))) _ _ x
-
-/-- A Lipschitz bound for the secant error on the closed simplices of the edgewise subdivision
-holds on every closed simplex of `K`, in the original coordinates. -/
-private theorem lipschitzOnWith_secantErrorCoord {k : ℕ} (hk : k ≠ 0) {ε : ℝ} (hε : 0 ≤ ε)
-    (hface : ∀ (ρ : Face (K.edgewiseSubdivision k)) (x y : StandardSimplex ρ.1),
-      ‖secantError f k (faceInclusion _ ρ y) - secantError f k (faceInclusion _ ρ x)‖ ≤
-        ε * ‖((edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ y)).1 : ι → ℝ) -
-          (edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ x)).1‖)
-    (σ : Face K) :
-    LipschitzOnWith (Real.toNNReal ε) (secantErrorCoord f k) (coordSimplex σ.1) := by
-  have : Finite (K.EdgewiseVertex k) := Finite.of_injective Subtype.val Subtype.val_injective
-  have : Finite (Face (K.edgewiseSubdivision k)) :=
-    Finite.of_injective Subtype.val Subtype.val_injective
-  refine convex_coordSimplex.lipschitzOnWith_of_finite_closed_cover
-    (fun ρ : Face (K.edgewiseSubdivision k) =>
-      convexHull ℝ (range fun a : ρ.1 => (edgewisePoint a.1.1 : ι → ℝ)))
-    (fun ρ => ((finite_range _).isCompact_convexHull (𝕜 := ℝ)).isClosed) (fun z hz => ?_)
-    (fun ρ => LipschitzOnWith.of_dist_le_mul fun z hz z' hz' => ?_)
-  · obtain ⟨t, rfl⟩ := exists_eq_of_mem_coordSimplex σ hz
-    rw [iUnion_convexHull_range_edgewisePoint K hk]
-    exact ⟨faceInclusion K σ t, congrArg DFunLike.coe (faceInclusion_val K σ t)⟩
-  · rw [← range_edgewiseSubdivisionRealizationMap_faceInclusion] at hz hz'
-    obtain ⟨t, rfl⟩ := hz.2
-    obtain ⟨t', rfl⟩ := hz'.2
-    rw [dist_eq_norm, dist_eq_norm, secantErrorCoord_apply, secantErrorCoord_apply,
-      Real.coe_toNNReal _ hε]
-    exact hface ρ t' t
-
-/-- On every sufficiently fine edgewise subdivision, the secant error `s - f ∘ φ` of a
-map `f` which is `C¹` on every closed simplex is `ε`-Lipschitz in the original coordinates, also
-between points of different simplices. Here `s` is the secant map of `f` on the subdivision, `φ`
-is the canonical map onto `|K|`, and being `C¹` on a closed simplex means being, in barycentric
-coordinates, the restriction of a map which is `C¹` within the standard simplex. -/
-theorem _root_.TauCeti.eventually_norm_secantMap_sub_sub_le_edgewiseSubdivision
-    (hf : ∀ σ : Face K, ∃ F : (σ.1 → ℝ) → E,
-      (∀ x : StandardSimplex σ.1, F (fun a => x.1 a) = f (faceInclusion K σ x)) ∧
-        ContDiffOn ℝ 1 F (range fun t : Convexity.StdSimplex ℝ σ.1 => ⇑t.weights))
-    {ε : ℝ} (hε : 0 < ε) :
-    ∀ᶠ k in atTop, ∀ x y : Realization (K.edgewiseSubdivision k),
-      ‖((K.edgewiseSubdivision k).secantMap (f ∘ edgewiseSubdivisionRealizationMap K k) x -
-            f (edgewiseSubdivisionRealizationMap K k x)) -
-          ((K.edgewiseSubdivision k).secantMap (f ∘ edgewiseSubdivisionRealizationMap K k) y -
-            f (edgewiseSubdivisionRealizationMap K k y))‖ ≤
-        ε * ‖((edgewiseSubdivisionRealizationMap K k x).1 : ι → ℝ) -
-          (edgewiseSubdivisionRealizationMap K k y).1‖ := by
-  have hfc : Continuous f := continuous_iff_faceInclusion.2 fun σ => by
-    obtain ⟨F, hFg, hF⟩ := hf σ
-    exact Finset.continuous_of_continuousOn_coordinates hFg hF.continuousOn
-  set N : ℝ := (Fintype.card ι : ℝ)
-  have hN : 0 ≤ N := Nat.cast_nonneg _
-  filter_upwards [eventually_ne_atTop 0,
-    eventually_norm_secantMap_sub_sub_le_edgewiseSubdivision_faceInclusion hf
-      (ε := ε / (2 * N + 1)) (by positivity),
-    hfc.eventually_norm_secantMap_sub_lt_edgewiseSubdivision (Set.toFinite K.faces)
-      (ε := ε / (2 * (N + 1))) (by positivity)] with k hk hface hclose x y
-  rw [← secantError_apply, ← secantError_apply]
-  set c := fun x : Realization (K.edgewiseSubdivision k) =>
-    ((edgewiseSubdivisionRealizationMap K k x).1 : ι → ℝ)
-  have hmem (x : Realization (K.edgewiseSubdivision k)) :
-      c x ∈ coordSimplex (carrier K (edgewiseSubdivisionRealizationMap K k x)).1 :=
-    mem_coordSimplex _ ⟨_, mem_convexHull_carrier K _⟩
-  by_cases hnear : N * ‖c x - c y‖ < 1
-  · -- Nearby points: pass through a common point `z` of the two closed simplices of `K`.
-    obtain ⟨z, hz, -, -, hyz, -⟩ := exists_mem_inter (hmem x) (hmem y) hnear
-    have hx := (lipschitzOnWith_secantErrorCoord hk (by positivity) hface _).dist_le_mul
-      (c x) (hmem x) z hz.1
-    have hy := (lipschitzOnWith_secantErrorCoord hk (by positivity) hface _).dist_le_mul
-      z hz.2 (c y) (hmem y)
-    rw [Real.coe_toNNReal _ (by positivity), dist_eq_norm, dist_eq_norm] at hx hy
-    rw [secantErrorCoord_apply] at hx hy
-    have hxz : ‖c x - z‖ ≤ ‖c x - c y‖ + ‖c y - z‖ := norm_sub_le_norm_sub_add_norm_sub _ _ _
-    have hzy : ‖z - c y‖ = ‖c y - z‖ := norm_sub_rev _ _
-    have hε' : ε / (2 * N + 1) * (2 * N + 1) = ε := div_mul_cancel₀ _ (by positivity)
-    calc ‖secantError f k x - secantError f k y‖
-        ≤ ‖secantError f k x - secantErrorCoord f k z‖ +
-          ‖secantErrorCoord f k z - secantError f k y‖ := norm_sub_le_norm_sub_add_norm_sub _ _ _
-      _ ≤ ε / (2 * N + 1) * (‖c x - c y‖ + 2 * ‖c y - z‖) := by nlinarith
-      _ ≤ ε / (2 * N + 1) * ((2 * N + 1) * ‖c x - c y‖) := by gcongr; nlinarith
-      _ = ε * ‖c x - c y‖ := by rw [← mul_assoc, hε']
-  · -- Distant points: both secant errors are uniformly small.
-    have hfar : 1 ≤ (N + 1) * ‖c x - c y‖ := by nlinarith [norm_nonneg (c x - c y)]
-    calc ‖secantError f k x - secantError f k y‖
-        ≤ ‖secantError f k x‖ + ‖secantError f k y‖ := norm_sub_le _ _
-      _ ≤ ε / (2 * (N + 1)) + ε / (2 * (N + 1)) := add_le_add (hclose x).le (hclose y).le
-      _ = ε / (N + 1) * 1 := by field_simp; ring
-      _ ≤ ε / (N + 1) * ((N + 1) * ‖c x - c y‖) := by gcongr
-      _ = ε * ‖c x - c y‖ := by field_simp
 
 /-- **Secant maps of embeddings are uniformly antilipschitz.** Let `f` be an injective `Cⁿ` star
 immersion, `1 ≤ n`, of a complex on a finite vertex type into a normed space. There is a constant
