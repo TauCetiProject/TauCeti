@@ -85,7 +85,8 @@ variable {d : ℕ}
 /-- For a model whose input polynomials are homogeneous of degree `d`, padding the neurovariety
 in bounded-degree coordinates up to the bound `d` gives the neurovariety in homogeneous
 coordinates, extended by zero. -/
-theorem image_boundedCoefficientPadding_neurovariety_polynomialCoefficientCoordinates
+theorem
+  image_boundedCoefficientPadding_neurovariety_polynomialCoefficientCoordinates_of_isHomogeneous
     (P : J → MvPolynomial (W ⊕ X) K) (hP : ∀ j, (inputPolynomial P j).IsHomogeneous d) :
     boundedCoefficientPadding (polynomialInputDegree_le_of_isHomogeneous hP) ''
         neurovariety (polynomialCoefficientCoordinates P) =
