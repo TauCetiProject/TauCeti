@@ -146,51 +146,6 @@ variable {A : Type v} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
 
 include hAplus hT
 
-/-- **Wedhorn's Remark 8.4 as isomorphisms of sections commuting with restriction.** For the
-rational opens `V ⊆ R(T/s)` of `Spa(A, A⁺)`, the presentation-limit sections over `V` are isomorphic
-to those of `Spa(A⟨T/s⟩, A_U⁺)` over `locOpensComap P Aplus T s S hden V`, and these
-isomorphisms commute with the restriction maps. -/
-theorem exists_iso_presentationLimitPresheaf_locOpensComap :
-    letI := locUniformSpace P T s S hden
-    letI := isUniformAddGroup_locUniformSpace P T s S hden
-    letI := isTopologicalRing_locUniformSpace P T s S hden
-    ∃ σ : (∀ V : Opens ↥(spa Aplus), V ∈ spaRationalOpens Aplus → V ≤ spaBasicOpen Aplus T s →
-        Iso ((presentationLimitPresheaf P Aplus).obj (op V))
-          ((presentationLimitPresheaf (completionLocalization P T s S hden)
-            (completedPlusSubring P Aplus T s S hden)).obj
-              (op (locOpensComap P Aplus T s S hden V)))),
-      ∀ {V V' : Opens ↥(spa Aplus)} (hV : V ∈ spaRationalOpens Aplus)
-        (hV' : V' ∈ spaRationalOpens Aplus) (hVT : V ≤ spaBasicOpen Aplus T s) (h : V' ≤ V),
-        (presentationLimitPresheaf P Aplus).map (homOfLE h).op ≫ (σ V' hV' (h.trans hVT)).hom =
-          (σ V hV hVT).hom ≫ (presentationLimitPresheaf (completionLocalization P T s S hden)
-            (completedPlusSubring P Aplus T s S hden)).map
-              (homOfLE (locOpensComap_mono P Aplus T s S hden h)).op := by
-  let _ := locUniformSpace P T s S hden
-  have _ := isUniformAddGroup_locUniformSpace P T s S hden
-  have _ := isTopologicalRing_locUniformSpace P T s S hden
-  have _ : IsHuberRing A := ⟨⟨P⟩⟩
-  let Bplus := completedPlusSubring P Aplus T s S hden
-  let Q := completionLocalization P T s S hden
-  let F := presentationLimitPresheaf P Aplus
-  let FB := presentationLimitPresheaf Q Bplus
-  let σ (V : Opens ↥(spa Aplus)) (hV : V ∈ spaRationalOpens Aplus)
-      (hVW : V ≤ spaBasicOpen Aplus T s) :
-      F.obj (op V) ≅ FB.obj (op (locOpensComap P Aplus T s S hden V)) :=
-    eqToIso (presentationLimitPresheaf_obj P Aplus (op V)) ≪≫
-      presentationLimitLocIso P Aplus T s S hden hAplus hT V hV hVW ≪≫
-      eqToIso (presentationLimitPresheaf_obj Q Bplus
-        (op (locOpensComap P Aplus T s S hden V))).symm
-  refine ⟨σ, fun {V V'} hV hV' hVT h ↦ ?_⟩
-  dsimp only [σ]
-  rw [presentationLimitPresheaf_map, presentationLimitPresheaf_map]
-  simp only [Iso.trans_hom]
-  simp only [Category.assoc]
-  simp only [eqToIso.hom, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
-  slice_lhs 2 3 =>
-    rw [presentationLimitMap_comp_presentationLimitLocIso_hom P Aplus T s S hden hAplus hT
-      hV hV' hVT h]
-  simp only [Category.assoc]
-
 /-- **The sheaf condition transported along Wedhorn's Remark 8.4.** Let `W ⊆ R(T/s)` be rational
 opens of `Spa(A, A⁺)`, where `T` spans an open ideal and `A⁺` consists of power-bounded elements,
 and let `U i ⊆ W` be rational opens. Write `j : Spa(A⟨T/s⟩, A_U⁺) → Spa(A, A⁺)` for the map
