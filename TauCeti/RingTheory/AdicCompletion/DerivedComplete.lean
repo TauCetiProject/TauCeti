@@ -369,6 +369,43 @@ def awayPresentation : ShortComplex (ModuleCat.{u} A) :=
       (Localization.awayEquivAdjoin f).symm.injective (map_zero _)).linearMap_comp_eq_zero
 
 omit [HasDerivedCategory.{w} (ModuleCat.{u} A)] in
+@[simp]
+theorem awayPresentation_X₁ : (awayPresentation f).X₁ = ModuleCat.of A A[X] := by
+  unfold awayPresentation
+  rfl
+
+omit [HasDerivedCategory.{w} (ModuleCat.{u} A)] in
+@[simp]
+theorem awayPresentation_X₂ : (awayPresentation f).X₂ = ModuleCat.of A A[X] := by
+  unfold awayPresentation
+  rfl
+
+omit [HasDerivedCategory.{w} (ModuleCat.{u} A)] in
+@[simp]
+theorem awayPresentation_X₃ :
+    (awayPresentation f).X₃ = ModuleCat.of A (Localization.Away f) := by
+  unfold awayPresentation
+  rfl
+
+omit [HasDerivedCategory.{w} (ModuleCat.{u} A)] in
+/-- The first map of `TauCeti.awayPresentation f` is multiplication by `f X - 1`. -/
+theorem awayPresentation_f : (awayPresentation f).f = eqToHom (awayPresentation_X₁ f) ≫
+    ModuleCat.ofHom (LinearMap.mulLeft A (C f * X - 1 : A[X])) ≫
+      eqToHom (awayPresentation_X₂ f).symm := by
+  unfold awayPresentation
+  rfl
+
+omit [HasDerivedCategory.{w} (ModuleCat.{u} A)] in
+/-- The second map of `TauCeti.awayPresentation f` is the quotient map
+`A[X] → A[X] ⧸ (f X - 1)` followed by `Localization.awayEquivAdjoin`, sending `X` to `1/f`. -/
+theorem awayPresentation_g : (awayPresentation f).g = eqToHom (awayPresentation_X₂ f) ≫
+    ModuleCat.ofHom ((Localization.awayEquivAdjoin f).symm.toLinearMap ∘ₗ
+      (Ideal.Quotient.mkₐ A (Ideal.span {C f * X - 1})).toLinearMap) ≫
+      eqToHom (awayPresentation_X₃ f).symm := by
+  unfold awayPresentation
+  rfl
+
+omit [HasDerivedCategory.{w} (ModuleCat.{u} A)] in
 theorem awayPresentation_shortExact : (awayPresentation f).ShortExact := by
   unfold awayPresentation
   exact ModuleCat.shortComplex_shortExact _
