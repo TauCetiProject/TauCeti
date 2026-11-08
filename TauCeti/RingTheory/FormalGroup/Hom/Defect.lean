@@ -197,7 +197,7 @@ theorem succ_le_order_homDefect_of_coeff_nsmulSeries_eq {p : ℕ} (hp : p.Prime)
   have hG' := congrArg (MvPowerSeries.coeff (Finsupp.single () (p ^ k)))
     (PowerSeries.homogeneousComponent_subst_left_eq_C_mul_X_pow hG hg hg₁)
   have hF' := congrArg (MvPowerSeries.coeff (Finsupp.single () (p ^ k)))
-    (PowerSeries.homogeneousComponent_subst_right_eq_C_mul_X_pow hn₀ hF hg hg₁)
+    (PowerSeries.homogeneousComponent_subst_right_eq_C_mul_X_pow hn₀ hF hg₁)
   simp only [coeff_homogeneousComponent, Finsupp.degree_single, ↓reduceIte, coeff_C_mul,
     coeff_X_pow, mul_one, Algebra.algebraMap_self, RingHom.id_apply] at hG' hF'
   rw [← PowerSeries.coeff_def Finsupp.single_eq_same] at hG' hF'

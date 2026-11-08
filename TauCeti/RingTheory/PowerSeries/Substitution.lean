@@ -355,10 +355,16 @@ theorem X_pow_dvd_subst {a : S⟦X⟧} (ha : constantCoeff a = 0) {n : ℕ} {f :
   exact (pow_dvd_pow_of_dvd (X_dvd_iff.mpr ha) n).mul_right _
 
 /-- Substitution respects congruence modulo `X ^ n` of the substituted series: if `a ≡ b` modulo
-`X ^ n`, then `f (a) ≡ f (b)` modulo `X ^ n`. -/
+`X ^ n`, then `f (a) ≡ f (b)` modulo `X ^ n`. For `n ≠ 0` the congruence forces `b` to have
+zero constant coefficient as well, so only `a` needs it. -/
 theorem X_pow_dvd_subst_sub_subst {a b : S⟦X⟧} (ha : constantCoeff a = 0)
-    (hb : constantCoeff b = 0) {n : ℕ} (hab : X ^ n ∣ a - b) (f : R⟦X⟧) :
+    {n : ℕ} (hab : X ^ n ∣ a - b) (f : R⟦X⟧) :
     X ^ n ∣ f.subst a - f.subst b := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · simp
+  have hb : constantCoeff b = 0 := by
+    have := X_dvd_iff.mp ((dvd_pow_self X hn.ne').trans hab)
+    rwa [map_sub, ha, zero_sub, neg_eq_zero] at this
   have ha' : HasSubst a := .of_constantCoeff_zero' ha
   have hb' : HasSubst b := .of_constantCoeff_zero' hb
   -- On the polynomial truncation this is `a - b ∣ p (a) - p (b)`; the remaining multiple of
@@ -432,29 +438,42 @@ theorem homogeneousComponent_subst_left_eq_C_mul_X_pow {f : R⟦X⟧} {φ : S⟦
   simp [← coeff_def, hφ₁]
 
 /-- The degree-`n` part of `φ (f)` is `a Xⁿ` when `f` has order at least `n ≥ 1` and coefficient
-`a` of `Xⁿ`, and `φ = X + ⋯`: the terms of `φ` of degree at least two contribute in degree at
-least `2 n`. -/
+`a` of `Xⁿ`, and `φ = c + X + ⋯`: the constant term `c` only contributes in degree `0`, and the
+terms of `φ` of degree at least two contribute in degree at least `2 n`. -/
 theorem homogeneousComponent_subst_right_eq_C_mul_X_pow {f : S⟦X⟧} {φ : R⟦X⟧} {n : ℕ}
-    (hn₀ : n ≠ 0) (hn : n ≤ f.order) (hφ : constantCoeff φ = 0) (hφ₁ : coeff 1 φ = 1) :
+    (hn₀ : n ≠ 0) (hn : n ≤ f.order) (hφ₁ : coeff 1 φ = 1) :
     MvPowerSeries.homogeneousComponent n (φ.subst f) =
       MvPowerSeries.C (coeff n f) * MvPowerSeries.X () ^ n := by
   have hf₀ : constantCoeff f = 0 := by
     rw [← coeff_zero_eq_constantCoeff_apply]
     exact coeff_of_lt_order 0 ((Nat.cast_lt.mpr (Nat.pos_of_ne_zero hn₀)).trans_le hn)
   have hS : HasSubst f := .of_constantCoeff_zero' hf₀
-  have h₂ : (2 : ℕ∞) ≤ (φ - X).order := nat_le_order _ 2 fun i hi ↦ by
-    interval_cases i <;> simp [hφ, hφ₁]
-  have hrest : ((n + 1 : ℕ) : ℕ∞) ≤ ((φ - X).subst f).order := by
+  have h₂ : (2 : ℕ∞) ≤ (φ - X - C (constantCoeff φ)).order := nat_le_order _ 2 fun i hi ↦ by
+    interval_cases i <;> simp [hφ₁]
+  have hrest : ((n + 1 : ℕ) : ℕ∞) ≤ ((φ - X - C (constantCoeff φ)).subst f).order := by
     refine le_trans ?_ (le_order_subst _ hS _)
     rw [← order_eq_order]
     calc ((n + 1 : ℕ) : ℕ∞) ≤ (n : ℕ∞) * 2 := by exact_mod_cast (by omega : n + 1 ≤ n * 2)
       _ ≤ _ := mul_le_mul' hn h₂
-  have hsplit : φ.subst f = (φ - X).subst f + f.subst X := by
-    rw [subst_sub hS, subst_X hS, X_subst, sub_add_cancel]
-  rw [hsplit, map_add, MvPowerSeries.homogeneousComponent_of_lt_order_eq_zero
+  have hsplit : φ.subst f = (φ - X - C (constantCoeff φ)).subst f + f.subst X +
+      MvPowerSeries.C (algebraMap R S (constantCoeff φ)) := by
+    conv_lhs => rw [show φ = (φ - X - C (constantCoeff φ)) + X + C (constantCoeff φ) by ring]
+    rw [subst_add hS, subst_add hS, subst_X hS, X_subst]
+    rw [← coe_substAlgHom hS, ← MvPowerSeries.algebraMap_apply]
+    exact congrArg _ ((substAlgHom hS).commutes (constantCoeff φ))
+  have hC : MvPowerSeries.homogeneousComponent n
+      (MvPowerSeries.C (algebraMap R S (constantCoeff φ)) : MvPowerSeries Unit S) = 0 := by
+    refine MvPowerSeries.ext fun d ↦ ?_
+    simp only [MvPowerSeries.coeff_homogeneousComponent, MvPowerSeries.coeff_C, map_zero]
+    split_ifs with h₁ h₂
+    · subst h₂
+      simp at h₁
+      exact absurd h₁.symm hn₀
+    all_goals rfl
+  rw [hsplit, map_add, map_add, MvPowerSeries.homogeneousComponent_of_lt_order_eq_zero
     ((Nat.cast_lt.mpr (Nat.lt_succ_self _)).trans_le hrest), _root_.zero_add,
     homogeneousComponent_subst_left_eq_C_mul_X_pow hn constantCoeff_X coeff_one_X,
-    Algebra.algebraMap_self, RingHom.id_apply]
+    Algebra.algebraMap_self, RingHom.id_apply, hC, add_zero]
 
 end Algebra
 
