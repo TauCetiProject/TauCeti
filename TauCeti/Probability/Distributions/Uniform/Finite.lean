@@ -202,12 +202,25 @@ end Function.Embedding
 
 namespace Equiv
 
-variable [MeasurableSpace β] [MeasurableSingletonClass β]
+variable [MeasurableSpace β]
 
 /-- A bijection transports the uniform law on a type to the uniform law on its codomain. -/
 theorem map_uniformOn_univ (e : α ≃ β) :
     (uniformOn (_root_.Set.univ : Set α)).map e = uniformOn (_root_.Set.univ : Set β) := by
-  exact e.bijective.bijOn_univ.map_uniformOn
+  by_cases hα : Finite α
+  · have he : Measurable e := .of_discrete
+    ext t ht
+    rw [Measure.map_apply he ht, uniformOn, cond_apply .univ, uniformOn, cond_apply .univ,
+      Measure.count_apply .univ, Measure.count_apply .univ,
+      Measure.count_apply (MeasurableSet.univ.inter ht),
+      Measure.count_apply (MeasurableSet.univ.inter (he ht))]
+    simp only [_root_.Set.univ_inter]
+    rw [Set.encard_univ, Set.encard_univ, ENat.card_congr e,
+      Set.encard_preimage_of_injective_subset_range e.injective (by simp)]
+  · have hα' : Infinite α := not_finite_iff_infinite.mp hα
+    have hβ : Infinite β := Infinite.of_injective e e.injective
+    rw [(uniformOn_eq_zero' .univ).2 (Or.inl Set.infinite_univ),
+      (uniformOn_eq_zero' .univ).2 (Or.inl Set.infinite_univ), Measure.map_zero]
 
 end Equiv
 
@@ -276,16 +289,15 @@ theorem ae_mem_image_map_uniformOn_finset [MeasurableSingletonClass β] (s : Fin
 
 open Classical in
 /-- Every label attained by a finite uniform sample has nonzero mass. -/
-theorem map_uniformOn_finset_singleton_ne_zero [MeasurableSingletonClass β]
-    (s : Finset α) (f : α → β)
+theorem map_uniformOn_finset_singleton_ne_zero (s : Finset α) (f : α → β)
     {x : β} (hx : x ∈ s.image f) : (uniformOn (s : Set α)).map f {x} ≠ 0 := by
   classical
   obtain ⟨i, hi, rfl⟩ := mem_image.mp hx
-  rw [Measure.map_apply_of_aemeasurable (s.aemeasurable_uniformOn_finset f)
-    (measurableSet_singleton _)]
   apply ne_of_gt
   calc
     0 < uniformOn (s : Set α) {i} := by simp [hi]
     _ ≤ uniformOn (s : Set α) (f ⁻¹' {f i}) := measure_mono (by simp)
+    _ ≤ (uniformOn (s : Set α)).map f {f i} :=
+      Measure.le_map_apply (s.aemeasurable_uniformOn_finset f) _
 
 end Finset
