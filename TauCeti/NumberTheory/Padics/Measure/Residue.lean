@@ -59,7 +59,7 @@ section TopologicalRing
 
 variable {R : Type*} [CommRing R] [TopologicalSpace R] [IsTopologicalRing R]
 
-local instance : ContinuousMul C(ℤ_[p], R) :=
+local instance instContinuousMulResidue : ContinuousMul C(ℤ_[p], R) :=
   ContinuousMap.instContinuousMulOfLocallyCompactSpace
 
 /-- Restriction to a residue class, extended by zero on the ambient `ℤ_p` measure carrier. -/
