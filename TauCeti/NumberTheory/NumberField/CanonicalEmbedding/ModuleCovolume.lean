@@ -126,11 +126,8 @@ theorem covolume_mixedImage_of_pseudoBasis [DecidableEq ι] {Λ : Submodule (�
   have hdetb : (Matrix.of ⇑b).det ≠ 0 := by
     rw [← Pi.basisFun_det_apply]
     exact ((Pi.basisFun K ι).isUnit_det b).ne_zero
-  have hdet : |LinearMap.det φ| = |(Algebra.norm ℚ (Matrix.of ⇑b).det : ℝ)| := by
-    have hA : A = ((Matrix.of ⇑b).map (mixedEmbedding K))ᵀ := rfl
-    rw [LinearMap.det_restrictScalars, LinearMap.det_toLin', hA, Matrix.det_transpose,
-      ← RingHom.mapMatrix_apply, ← RingHom.map_det, abs_algebraNorm, norm_eq_norm]
-    simp
+  have hdet : |LinearMap.det φ| = |(Algebra.norm ℚ (Matrix.of ⇑b).det : ℝ)| :=
+    mixedEmbedding.abs_det_changeOfVariables ⇑b
   have hdet0 : IsUnit (LinearMap.det φ) := by
     rw [isUnit_iff_ne_zero, ← abs_ne_zero, hdet, abs_ne_zero, Rat.cast_ne_zero]
     exact (Algebra.norm_ne_zero_iff).mpr hdetb
@@ -142,19 +139,8 @@ theorem covolume_mixedImage_of_pseudoBasis [DecidableEq ι] {Λ : Submodule (�
   -- The `ℤ`-span of the product basis is the product of the coefficient lattices.
   have hP (z : ι → mixedSpace K) : z ∈ span ℤ (Set.range P) ↔
       ∃ c : ι → K, (∀ i, c i ∈ IsLocalization.coeSubmodule K (J i)) ∧
-        (fun i ↦ mixedEmbedding K (c i)) = z := by
-    have hU (i : ι) (x : mixedSpace K) :
-        (∀ k, (fractionalIdealLatticeBasis K (U i)).repr x k ∈ Set.range (algebraMap ℤ ℝ)) ↔
-          ∃ c ∈ IsLocalization.coeSubmodule K (J i), mixedEmbedding K c = x := by
-      rw [← Basis.mem_span_iff_repr_mem, mem_span_fractionalIdealLatticeBasis]
-      simp [U]
-    rw [P.mem_span_iff_repr_mem ℤ]
-    simp only [P, Pi.basis_repr, Sigma.forall, hU]
-    refine ⟨fun h ↦ ?_, ?_⟩
-    · choose c hc hcz using h
-      exact ⟨c, hc, funext hcz⟩
-    · rintro ⟨c, hc, rfl⟩ i
-      exact ⟨c i, hc i, rfl⟩
+        (fun i ↦ mixedEmbedding K (c i)) = z :=
+    mem_span_pi_fractionalIdealLatticeBasis (J := U) z
   -- The mixed image is the image of that product under the change of variables.
   have hL : Λ.mixedImage = span ℤ (Set.range (P.map (LinearMap.equivOfIsUnitDet hdet0))) := by
     have hrange : Set.range (P.map (LinearMap.equivOfIsUnitDet hdet0)) =
