@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.GramSchmidtOrtho
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
 import Mathlib.Geometry.Manifold.Algebra.Structures
 
 /-!
@@ -24,6 +25,9 @@ The sectionwise induction follows `ContinuousWithinAt.gramSchmidt_bundle` in
 `TauCeti.Topology.VectorBundle.GramSchmidt`, which adapts Patrick Massot and Michael Rothgang's
 construction in Mathlib PR [#26221](https://github.com/leanprover-community/mathlib4/pull/26221).
 Here smooth section operations replace the coordinate calculations of the continuity proof.
+In particular, every compatible local trivialization of a finite-rank Riemannian bundle carries a
+smooth orthonormal frame over its base set
+(`Bundle.Trivialization.exists_contMDiffOn_orthonormal`).
 -/
 
 public section
@@ -94,6 +98,20 @@ theorem ContMDiffAt.gramSchmidtNormed_bundle
       (f := fun y : M ↦ inner ℝ (gramSchmidt ℝ (fun i ↦ v i y) j)
         (gramSchmidt ℝ (fun i ↦ v i y) j)) hh
   exact (hn.inv₀ (norm_ne_zero_iff.mpr (gramSchmidt_ne_zero j hli))).smul_section hg
+
+/-- A compatible local trivialization of a finite-rank `C^n` Riemannian bundle carries a `C^n`
+orthonormal frame over its base set: normalized Gram–Schmidt applied to the local frame of the
+trivialization. -/
+theorem Bundle.Trivialization.exists_contMDiffOn_orthonormal [ContMDiffVectorBundle n F V I]
+    [FiniteDimensional ℝ F] (e : Trivialization F (TotalSpace.proj : TotalSpace F V → M))
+    [MemTrivializationAtlas e] :
+    ∃ ε : Fin (Module.finrank ℝ F) → Π x, V x,
+      (∀ i, CMDiff[e.baseSet] n (T% (ε i))) ∧ ∀ x ∈ e.baseSet, Orthonormal ℝ (ε · x) := by
+  have hfr := e.isLocalFrameOn_localFrame_baseSet I n (Module.finBasis ℝ F)
+  refine ⟨fun j x ↦ gramSchmidtNormed ℝ (fun i ↦ e.localFrame (Module.finBasis ℝ F) i x) j,
+    fun j x hx ↦ ?_, fun x hx ↦ gramSchmidtNormed_orthonormal (hfr.linearIndependent hx)⟩
+  exact (ContMDiffAt.gramSchmidtNormed_bundle (fun i ↦ hfr.contMDiffAt e.open_baseSet hx i)
+    (hfr.linearIndependent hx) j).contMDiffWithinAt
 
 section Differentiable
 

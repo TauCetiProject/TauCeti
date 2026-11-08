@@ -46,6 +46,10 @@ No inner product instance on the algebraic dual is installed.
   of the form.
 * `InnerProductSpace.adjoint_continuousLinearMapOfBilin`: over `ℝ`, the adjoint of the Riesz
   operator represents the transposed form.
+* `InnerProductSpace.isSelfAdjoint_continuousLinearMapOfBilin` and
+  `InnerProductSpace.isUnit_continuousLinearMapOfBilin`: over `ℝ`, the Riesz operator of a
+  symmetric form is self-adjoint, and in finite dimension that of a nondegenerate form is
+  invertible.
 * `ContinuousLinearMap.continuousLinearMapOfBilin_bilinearComp`: pulling a real bilinear form back
   along a linear isometry equivalence conjugates its Riesz operator.
 * `InnerProductSpace.dualMetric`: the Hermitian form on the algebraic dual transported by Riesz.
@@ -153,6 +157,27 @@ theorem adjoint_continuousLinearMapOfBilin (B : F →L[ℝ] F →L[ℝ] ℝ) :
   refine ((ContinuousLinearMap.eq_adjoint_iff _ _).mpr fun w v => ?_).symm
   rw [continuousLinearMapOfBilin_apply, real_inner_comm, continuousLinearMapOfBilin_apply,
     ContinuousLinearMap.flip_apply]
+
+/-- The Fréchet–Riesz operator of a symmetric real bilinear form is self-adjoint. -/
+theorem isSelfAdjoint_continuousLinearMapOfBilin {B : F →L[ℝ] F →L[ℝ] ℝ}
+    (hB : ∀ v w, B v w = B w v) : IsSelfAdjoint (continuousLinearMapOfBilin B) := by
+  rw [ContinuousLinearMap.isSelfAdjoint_iff', adjoint_continuousLinearMapOfBilin]
+  congr 1
+  ext v w
+  exact hB w v
+
+/-- In finite dimension, the Fréchet–Riesz operator of a nondegenerate real bilinear form is
+invertible. -/
+theorem isUnit_continuousLinearMapOfBilin [FiniteDimensional ℝ F] {B : F →L[ℝ] F →L[ℝ] ℝ}
+    (hB : Function.Injective B) : IsUnit (continuousLinearMapOfBilin B) := by
+  refine ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap.mpr
+    ((LinearMap.isUnit_iff_ker_eq_bot _).mpr ?_)
+  rw [LinearMap.ker_eq_bot]
+  intro v w hvw
+  apply hB
+  ext u
+  rw [← continuousLinearMapOfBilin_apply, ← continuousLinearMapOfBilin_apply]
+  exact congrArg (inner ℝ · u) hvw
 
 end Real
 
