@@ -93,7 +93,7 @@ end Killing
 section Perfect
 
 variable {K L : Type*} [CommRing K] [LieRing L] [LieAlgebra K L]
-variable {M : Type*} [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
+variable {M : Type*} [AddCommGroup M] [LieRingModule L M]
 
 /-- **Over a perfect Lie algebra an action that composes to zero is zero.** Each bracket `⁅y, z⁆`
 acts as a composite of two actions by the Leibniz rule, hence by zero, and the brackets span a
@@ -109,13 +109,15 @@ theorem isTrivial_of_derivedSeries_one_eq_top_of_lie_lie_eq_zero (hL : derivedSe
   have hx : x ∈ Submodule.span K {b | ∃ y z : L, ⁅y, z⁆ = b} := by
     rw [← hspan]
     exact hL ▸ LieSubmodule.mem_top x
-  induction hx using Submodule.span_induction with
-  | mem u hu =>
-    obtain ⟨y, z, rfl⟩ := hu
-    exact hbracket y z
+  -- Induct on the span of the brackets; only `smul_lie` in `L` is used, so `M` needs no
+  -- compatible `K`-module structure.
+  induction hx using Submodule.closure_induction with
   | zero => rw [zero_lie]
   | add u v _ _ hu hv => rw [add_lie, hu, hv, add_zero]
-  | smul t u _ hu => rw [smul_lie, hu, smul_zero]
+  | smul_mem t u hu =>
+    obtain ⟨y, z, rfl⟩ := hu
+    rw [← smul_lie]
+    exact hbracket (t • y) z
 
 end Perfect
 
