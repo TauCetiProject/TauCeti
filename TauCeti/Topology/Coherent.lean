@@ -14,8 +14,9 @@ import Mathlib.Topology.CompactOpen
 
 The topology of `X` is coherent with a family `S` of subsets (`Topology.IsCoherentWith S`) when a
 set is open as soon as it is relatively open in every member of `S`; equivalently, a map out of
-`X` is continuous as soon as it is continuous on every member of `S`. Unions of CW complexes and
-of towers of subspaces carry such final topologies.
+`X` is continuous as soon as it is continuous on every member of `S`. A CW complex carries the
+final topology of its skeleta, and the union of a tower of spaces is given the final topology of
+its stages.
 
 If `S` covers `X` and `Z` is locally compact, then the topology of `Z × X` is coherent with the
 family of products `univ ×ˢ s`, `s ∈ S` (`Topology.IsCoherentWith.univ_prod`). So a homotopy

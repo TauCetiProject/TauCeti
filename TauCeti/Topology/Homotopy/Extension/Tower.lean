@@ -30,10 +30,10 @@ with its homotopy `g n ∘ φ ≃ id`, extends to a homotopy inverse `g (n + 1)`
 homotopy extending the given one
 (`TauCeti.HasHomotopyExtensionProperty.exists_inverse_extending_homotopy`). The resulting strictly
 compatible maps and homotopies glue, by the final topologies of `Y` and of `I × X`, to a map
-`g : Y → X` with `g ∘ φ ≃ id` (`TauCeti.IsCofibrationExhaustion.exists_leftInverse`). This makes
-`g` a left inverse of `φ` up to homotopy only. But each `g n` is a homotopy equivalence, so the same
-construction applied to `g` gives `k : X → Y` with `k ∘ g ≃ id`. Then `g` has the left inverse `k`
-and the right inverse `φ` up to homotopy, so `k ≃ φ`, and `φ ∘ g ≃ k ∘ g ≃ id`.
+`g : Y → X` with `g ∘ φ ≃ id` (`TauCeti.IsCofibrationExhaustion.exists_comp_homotopic_id`). This
+makes `g` a left inverse of `φ` up to homotopy only. But each `g n` is a homotopy equivalence, so
+the same construction applied to `g` gives `k : X → Y` with `k ∘ g ≃ id`. Then `g` has the left
+inverse `k` and the right inverse `φ` up to homotopy, so `k ≃ φ`, and `φ ∘ g ≃ k ∘ g ≃ id`.
 
 ## Main definitions
 
@@ -42,8 +42,8 @@ and the right inverse `φ` up to homotopy, so `k ≃ φ`, and `φ ∘ g ≃ k �
 
 ## Main results
 
-* `TauCeti.IsCofibrationExhaustion.exists_leftInverse`: stagewise homotopy equivalences glue to a
-  left homotopy inverse of the union map, which is again a stagewise homotopy equivalence.
+* `TauCeti.IsCofibrationExhaustion.exists_comp_homotopic_id`: stagewise homotopy equivalences glue
+  to a left homotopy inverse of the union map, which is again a stagewise homotopy equivalence.
 * `TauCeti.IsCofibrationExhaustion.exists_homotopyEquiv`: **a map of cofibration exhaustions
   which is a homotopy equivalence on every stage is a homotopy equivalence.**
 
@@ -82,6 +82,25 @@ structure IsCofibrationExhaustion (K : ℕ → Set X) : Prop where
   /-- Each stage has the homotopy extension property in the next. -/
   hasHomotopyExtensionProperty (n : ℕ) :
     HasHomotopyExtensionProperty (((↑) : K (n + 1) → X) ⁻¹' K n)
+
+/-- A subset `s ⊆ t` is homeomorphic to its preimage in the subspace `t`. -/
+private def homeomorphPreimageVal {s t : Set X} (h : s ⊆ t) : s ≃ₜ ((↑) : t → X) ⁻¹' s where
+  toFun a := ⟨⟨a, h a.2⟩, a.2⟩
+  invFun a := ⟨a, a.2⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  continuous_toFun := by fun_prop
+  continuous_invFun := by fun_prop
+
+@[simp]
+private theorem coe_homeomorphPreimageVal {s t : Set X} (h : s ⊆ t) (a : s) :
+    ((homeomorphPreimageVal h a : t) : X) = a :=
+  rfl
+
+@[simp]
+private theorem coe_homeomorphPreimageVal_symm {s t : Set X} (h : s ⊆ t)
+    (a : ((↑) : t → X) ⁻¹' s) : ((homeomorphPreimageVal h).symm a : X) = a :=
+  rfl
 
 namespace IsCofibrationExhaustion
 
@@ -145,24 +164,16 @@ private theorem exists_succ (hK : IsCofibrationExhaustion K) (hL : IsCofibration
         (H' (t, ⟨x, hK.monotone n.le_succ hx⟩) : X) = H (t, ⟨x, hx⟩) := by
   let A : Set (K (n + 1)) := (↑) ⁻¹' K n
   let B : Set (L (n + 1)) := (↑) ⁻¹' L n
-  let ιK : K n ≃ₜ A :=
-    ⟨(Equiv.subtypeSubtypeEquivSubtype (hK.monotone n.le_succ ·)).symm,
-      (continuous_subtype_val.subtype_mk _).subtype_mk _,
-      (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _⟩
-  let ιL : L n ≃ₜ B :=
-    ⟨(Equiv.subtypeSubtypeEquivSubtype (hL.monotone n.le_succ ·)).symm,
-      (continuous_subtype_val.subtype_mk _).subtype_mk _,
-      (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _⟩
+  let ιK : K n ≃ₜ A := homeomorphPreimageVal (hK.monotone n.le_succ)
+  let ιL : L n ≃ₜ B := homeomorphPreimageVal (hL.monotone n.le_succ)
   let h₀ := ιK.symm.toHomotopyEquiv.trans ((e n).trans ιL.toHomotopyEquiv)
   have hh₀ : ∀ a, (h₀ a : L (n + 1)) = e (n + 1) a := fun a ↦ Subtype.ext <| by
-    simp only [h₀, ιK, ιL, ContinuousMap.HomotopyEquiv.trans, Homeomorph.toHomotopyEquiv]
-    exact (he n _).trans (he (n + 1) a).symm
+    simp only [h₀, HomotopyEquiv.trans_apply, Homeomorph.coe_toHomotopyEquiv]
+    rw [coe_homeomorphPreimageVal, he, he, coe_homeomorphPreimageVal_symm]
   let g₀ : C(B, A) := (ιK : C(K n, A)).comp (g.comp (ιL.symm : C(B, L n)))
   let H₀ : (g₀.comp h₀.toFun).Homotopy (ContinuousMap.id A) :=
     ((Homotopy.refl (ιK : C(K n, A))).comp (H.compContinuousMap (ιK.symm : C(A, K n)))).cast
-      -- `ιL.symm ∘ ιL` is the identity on underlying points, by construction of
-      -- `Equiv.subtypeSubtypeEquivSubtype`.
-      (ContinuousMap.ext fun _ ↦ rfl)
+      (ContinuousMap.ext fun _ ↦ congrArg (fun y ↦ ιK (g y)) (ιL.symm_apply_apply _).symm)
       (ContinuousMap.ext fun _ ↦ by simp)
   obtain ⟨g', H', hg', hH', -⟩ :=
     (hK.hasHomotopyExtensionProperty n).exists_inverse_extending_homotopy
@@ -189,7 +200,7 @@ private theorem exists_stages (hK : IsCofibrationExhaustion K) (hL : IsCofibrati
 cofibration exhaustions of `X` and `Y`, and let `φ : X → Y` restrict on each stage to a homotopy
 equivalence `e n : K n ≃ₕ L n`. Then there is `g : Y → X` with `g ∘ φ` homotopic to the identity,
 which restricts on each stage to a homotopy equivalence `e' n : L n ≃ₕ K n`. -/
-theorem exists_leftInverse (hK : IsCofibrationExhaustion K) (hL : IsCofibrationExhaustion L)
+theorem exists_comp_homotopic_id (hK : IsCofibrationExhaustion K) (hL : IsCofibrationExhaustion L)
     (φ : C(X, Y)) (e : ∀ n, K n ≃ₕ L n) (he : ∀ n (x : K n), (e n x : Y) = φ x) :
     ∃ (g : C(Y, X)) (e' : ∀ n, L n ≃ₕ K n), (∀ n (y : L n), (e' n y : X) = g y) ∧
       (g.comp φ).Homotopic (ContinuousMap.id X) := by
@@ -219,8 +230,8 @@ equivalence, with a homotopy inverse carrying each `L n` into `K n`. -/
 theorem exists_homotopyEquiv (hK : IsCofibrationExhaustion K) (hL : IsCofibrationExhaustion L)
     (φ : C(X, Y)) (e : ∀ n, K n ≃ₕ L n) (he : ∀ n (x : K n), (e n x : Y) = φ x) :
     ∃ E : X ≃ₕ Y, E.toFun = φ ∧ ∀ n, MapsTo E.symm (L n) (K n) := by
-  obtain ⟨g, e', he', hgφ⟩ := hK.exists_leftInverse hL φ e he
-  obtain ⟨k, -, -, hkg⟩ := hL.exists_leftInverse hK g e' he'
+  obtain ⟨g, e', he', hgφ⟩ := hK.exists_comp_homotopic_id hL φ e he
+  obtain ⟨k, -, -, hkg⟩ := hL.exists_comp_homotopic_id hK g e' he'
   have hkφ : k.Homotopic φ := hkg.homotopic_of_comp_homotopic_id hgφ
   refine ⟨⟨φ, g, hgφ, (hkφ.symm.comp (.refl g)).trans hkg⟩, rfl, fun n y hy ↦ ?_⟩
   exact he' n ⟨y, hy⟩ ▸ (e' n ⟨y, hy⟩).2
