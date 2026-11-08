@@ -62,27 +62,26 @@ private theorem amitsur_differential_eq_zero_of_locally_in_range
   -- The local lifts kill the Amitsur obstruction on every basic open, making it torsion.
   have ht : d y ∈ ((Ideal.span (G : Set R)).map (algebraMap R S)).primaryComponent
       (S ⊗[R] (S ⊗[R] M)) := by
-    rw [Ideal.map_span, ← Finset.coe_image, Ideal.mem_primaryComponent_span_iff]
+    rw [Ideal.map_span, ← Finset.coe_image, Ideal.mem_primaryComponent_span_iff_localized]
     intro s hs
     obtain ⟨g, hg, rfl⟩ := Finset.mem_image.mp hs
     obtain ⟨z, hz⟩ := hy g hg
-    have hz' : LocalizedModule.mkLinearMap (.powers g) (S ⊗[R] (S ⊗[R] M)) (d y) = 0 := by
+    let loc := LocalizedModule.mkLinearMap (.powers (algebraMap R S g))
+      (S ⊗[R] (S ⊗[R] M))
+    let := IsLocalizedModule.restrictScalars_powers g loc
+    have hz' : loc (d y) = 0 := by
       have h := congr(IsLocalizedModule.map (.powers g)
         (LocalizedModule.mkLinearMap (.powers g) (S ⊗[R] M))
-        (LocalizedModule.mkLinearMap (.powers g) (S ⊗[R] (S ⊗[R] M))) d $hz)
+        (loc.restrictScalars R) d $hz)
       have hcomp := (IsLocalizedModule.map_comp' (.powers g)
         (LocalizedModule.mkLinearMap (.powers g) M)
         (LocalizedModule.mkLinearMap (.powers g) (S ⊗[R] M))
-        (LocalizedModule.mkLinearMap (.powers g) (S ⊗[R] (S ⊗[R] M))) η d).symm
+        (loc.restrictScalars R) η d).symm
       rw [hd, map_zero] at hcomp
       have hzero := h.symm.trans (LinearMap.congr_fun hcomp z)
-      simpa only [IsLocalizedModule.map_apply, LinearMap.zero_apply] using hzero
-    obtain ⟨a, ha⟩ := (IsLocalizedModule.eq_zero_iff (.powers g) _).mp hz'
-    obtain ⟨n, hn⟩ := a.2
-    rw [Submonoid.smul_def, ← hn] at ha
-    refine ⟨n, ?_⟩
-    rw [← map_pow, algebraMap_smul]
-    exact ha
+      simpa only [IsLocalizedModule.map_apply, LinearMap.zero_apply,
+        LinearMap.coe_restrictScalars] using hzero
+    exact hz'
   let e := primaryComponentEquivTensorProduct (M := S ⊗[R] M) hI
     (Submodule.fg_span G.finite_toSet)
   obtain ⟨z, hz⟩ := e.surjective ⟨d y, ht⟩

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.FiveLemma
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.LinearAlgebra.Prod
 
@@ -46,44 +47,44 @@ theorem injective_liftBaseChange_snd_ker_coprod (f : M →ₗ[R] P) (g : N →�
       (fun n ↦ by simp [K, LinearMap.mem_ker])
   let b : K →ₗ[R] M := (LinearMap.fst R M N).domRestrict K
   let c : K →ₗ[R] N := (LinearMap.snd R M N).domRestrict K
+  have hK (k : K) : f k.val.1 = g k.val.2 := by
+    simpa only [K, LinearMap.mem_ker, LinearMap.coprod_apply,
+      LinearMap.neg_apply, LinearMap.coe_restrictScalars, sub_eq_zero, ← sub_eq_add_neg]
+      using k.property
+  have ha : Injective a := by
+    intro n n' h
+    exact Subtype.ext (congrArg (fun k : K ↦ k.val.2) h)
   have hab : Exact a b := by
     intro k
     constructor
     · intro hk
       refine ⟨⟨k.val.2, ?_⟩, ?_⟩
-      · have hk0 : k.val.1 = 0 := hk
-        have h : f k.val.1 - g k.val.2 = 0 := by
-          simpa only [K, LinearMap.mem_ker, LinearMap.coprod_apply,
-            LinearMap.neg_apply, LinearMap.coe_restrictScalars, sub_eq_add_neg] using k.property
-        simpa [hk0] using h
+      · have hk0 : k.val.1 = 0 := by simpa [b] using hk
+        simpa [hk0] using (hK k).symm
       · apply Subtype.ext
         exact Prod.ext hk.symm rfl
     · rintro ⟨n, rfl⟩
-      rfl
+      simp [a, b, LinearMap.codRestrict]
   have hfc : (f.liftBaseChange S).restrictScalars R ∘ₗ b.lTensor S =
       (g.restrictScalars R) ∘ₗ (c.liftBaseChange S).restrictScalars R := by
     ext s k
-    have hk : f k.val.1 = g k.val.2 := by
-      simpa only [K, LinearMap.mem_ker, LinearMap.coprod_apply,
-        LinearMap.neg_apply, LinearMap.coe_restrictScalars, sub_eq_zero, ← sub_eq_add_neg]
-        using k.property
-    simp [b, c, hk]
+    simp [b, c, hK k]
   let μ := ((LinearMap.id : g.ker →ₗ[S] g.ker).restrictScalars R).liftBaseChange S
   have hca : (c.liftBaseChange S).restrictScalars R ∘ₗ a.lTensor S =
       (g.ker.subtype.restrictScalars R) ∘ₗ μ.restrictScalars R := by
     ext s n
-    rfl
-  refine (injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_
-  have hx' : c.liftBaseChange S x = 0 := hx
-  have hbx : b.lTensor S x = 0 := (injective_iff_map_eq_zero _).mp hf _ (by
-    have h := LinearMap.congr_fun hfc x
-    simpa only [LinearMap.comp_apply, LinearMap.coe_restrictScalars, hx', map_zero] using h)
-  obtain ⟨y, rfl⟩ := (Module.Flat.lTensor_exact S hab x).mp hbx
-  have hy : y = 0 := (injective_iff_map_eq_zero _).mp hg _ (by
-    apply g.ker.subtype_injective
-    have h := (LinearMap.congr_fun hca y).symm.trans hx
-    simpa only [LinearMap.comp_apply, LinearMap.coe_restrictScalars,
-      Submodule.subtype_apply, ZeroMemClass.coe_zero] using h)
-  simp [hy]
+    simp [a, c, μ, LinearMap.codRestrict]
+  -- Apply the four lemma to the exact rows starting in zero, with vertical maps
+  -- multiplication, the compatible-pairs comparison, and the comparison for `f`.
+  exact LinearMap.injective_of_surjective_of_injective_of_injective
+    (0 : Unit →ₗ[R] S ⊗[R] g.ker) (a.lTensor S) (b.lTensor S)
+    (0 : Unit →ₗ[R] g.ker) (g.ker.subtype.restrictScalars R) (g.restrictScalars R)
+    (0 : Unit →ₗ[R] Unit) (μ.restrictScalars R) ((c.liftBaseChange S).restrictScalars R)
+    ((f.liftBaseChange S).restrictScalars R) (by simp) hca.symm hfc.symm
+    ((LinearMap.exact_zero_iff_injective Unit _).mpr
+      (Module.Flat.lTensor_preserves_injective_linearMap a ha))
+    (Module.Flat.lTensor_exact S hab)
+    ((LinearMap.exact_zero_iff_injective Unit _).mpr g.ker.subtype_injective)
+    (fun _ ↦ ⟨(), rfl⟩) hg hf
 
 end LinearMap
