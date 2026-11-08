@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.LowDegree
-import Mathlib.Algebra.Homology.ConcreteCategory
 import TauCeti.Algebra.Homology.ModuleCat.Basic
 
 /-!
