@@ -324,7 +324,7 @@ theorem alexanderGenerator_reidemeisterOne_inr (s : Fin 4) :
     rw [alexanderWeight_of_isOver _ (by simp [PDCode.isOver_def]), one_smul, sub_self, zero_smul,
       add_zero] at r0
     rw [alexanderWeight_of_not_isOver _ (by simp [PDCode.isOver_def])] at r1
-    have h21 := (isUnit_T _).eq_of_eq_smul_add_one_sub_smul r1
+    have h21 := ((isUnit_T _).isSMulRegular _).eq_smul_add_one_sub_smul_iff.1 r1
     intro s
     fin_cases s
     · rfl
@@ -335,7 +335,7 @@ theorem alexanderGenerator_reidemeisterOne_inr (s : Fin 4) :
     rw [alexanderWeight_of_isOver _ (by simp [PDCode.isOver_def]), one_smul, sub_self, zero_smul,
       add_zero] at r1
     rw [alexanderWeight_of_not_isOver _ (by simp [PDCode.isOver_def]), ← r1] at r0
-    have h20 := (isUnit_T _).eq_of_eq_smul_add_one_sub_smul r0
+    have h20 := ((isUnit_T _).isSMulRegular _).eq_smul_add_one_sub_smul_iff.1 r0
     intro s
     fin_cases s
     · rfl

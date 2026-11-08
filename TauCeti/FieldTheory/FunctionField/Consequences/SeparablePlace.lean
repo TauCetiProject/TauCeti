@@ -137,7 +137,6 @@ theorem exists_finrank_adjoin_le_two_and_isSeparable_of_genus_eq_zero (hF : IsFu
   -- `[F : k(x)] = deg (x)_∞ ≤ 2`.  Away from characteristic two `F / k(x)` is then separable; in
   -- characteristic two one of `x` and `z` works, for `x, z ∈ L(B)` with `1, x, z` independent.
   obtain ⟨B, hB, hBdeg, hdimB⟩ := exists_degree_eq_two_and_three_le_dim_of_genus_eq_zero hF hex hg
-  have hBeff : WeilDivisor.IsEffective B := WeilDivisor.isEffective_iff_zero_le.mpr hB
   -- A nonconstant `u ∈ L(B)` is transcendental, with `(u)_∞ ≤ B`, so `[F : k(u)] ≤ 2`.
   have hindex (u : F) (huB : u ∈ riemannRochSpace B) (hu : u ∉ k ∙ (1 : F)) :
       ∃ hu0 : u ≠ 0, Transcendental k u ∧ Divisor.poles hF (Units.mk0 u hu0) ≤ B ∧
@@ -146,7 +145,7 @@ theorem exists_finrank_adjoin_le_two_and_isSeparable_of_genus_eq_zero (hF : IsFu
       obtain ⟨c, hc⟩ := isIntegrallyClosedIn_iff_forall_isAlgebraic.mp hex u halg
       exact hu (hc ▸ Submodule.mem_span_singleton.mpr ⟨c, by simp [Algebra.smul_def]⟩)
     have hu0 : u ≠ 0 := fun h ↦ hut (h ▸ isAlgebraic_zero)
-    have hle := (poles_le_iff_mem_riemannRochSpace hF hBeff (Units.mk0 u hu0)).mpr huB
+    have hle := (poles_le_iff_mem_riemannRochSpace hF hB (Units.mk0 u hu0)).mpr huB
     refine ⟨hu0, hut, hle, ?_⟩
     have := Divisor.degree_le_of_le hle
     rw [Divisor.degree_poles hF (Units.mk0 u hu0) hut, hBdeg] at this
