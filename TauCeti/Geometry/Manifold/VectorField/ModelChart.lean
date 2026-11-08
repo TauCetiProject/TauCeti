@@ -55,16 +55,15 @@ section Pullback
 variable {e : OpenPartialHomeomorph M E} {h : E → ℝ}
 
 /-- The pullback `de_y⁻¹ (V (e y))` of a vector field `V` on the model space by a chart `e`. -/
-theorem mfderiv_mpullback_apply (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M)
+theorem mfderiv_mpullback_apply (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) 1 M)
     (V : (z : E) → TangentSpace 𝓘(ℝ, E) z) {y : M} (hy : y ∈ e.source) :
     mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) e y (VectorField.mpullback 𝓘(ℝ, E) 𝓘(ℝ, E) e V y) = V (e y) := by
   rw [VectorField.mpullback_apply]
-  exact (isInvertible_mfderiv_chart
-    (IsManifold.maximalAtlas_subset_of_le (by simp) he) hy).self_apply_inverse _
+  exact (isInvertible_mfderiv_chart he hy).self_apply_inverse _
 
 /-- The derivative of `f` along the pullback of a vector field `V` by a chart `e`, where
 `f = h ∘ e` on the source of `e`. -/
-theorem mvfderiv_mpullback_apply (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M)
+theorem mvfderiv_mpullback_apply (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) 1 M)
     (hfh : EqOn f (h ∘ e) e.source) (V : (z : E) → TangentSpace 𝓘(ℝ, E) z) {y : M}
     (hy : y ∈ e.source) :
     mvfderiv 𝓘(ℝ, E) f y (VectorField.mpullback 𝓘(ℝ, E) 𝓘(ℝ, E) e V y) =
@@ -72,7 +71,7 @@ theorem mvfderiv_mpullback_apply (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, E
   -- `mvfderiv` composes `mfderiv` with `NormedSpace.fromTangentSpace`, which is the identity of
   -- `ℝ`, so the two agree definitionally; Mathlib has no rewrite lemma between them.
   change mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y (VectorField.mpullback 𝓘(ℝ, E) 𝓘(ℝ, E) e V y) = _
-  rw [mfderiv_eq_fderiv_comp_of_eqOn (IsManifold.maximalAtlas_subset_of_le (by simp) he) hfh hy]
+  rw [mfderiv_eq_fderiv_comp_of_eqOn he hfh hy]
   exact congrArg (fderiv ℝ h (e y)) (mfderiv_mpullback_apply he V hy)
 
 variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M]
@@ -130,10 +129,10 @@ theorem contMDiffOn_chartConstField [FiniteDimensional ℝ E] (p : M) (v : E) :
       (fun y ↦ (⟨y, chartConstField E p v y⟩ : TangentBundle 𝓘(ℝ, E) M)) (chartAt E p).source :=
   contMDiffOn_mpullback (IsManifold.chart_mem_maximalAtlas p) contDiffOn_const
 
-omit [FiniteDimensional ℝ E] in
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
 /-- On the source of the preferred chart at `y₀`, the derivative of `f` along a constant
 chart field with value `v` is the derivative of `f ∘ (chartAt E y₀).symm` in the direction `v`. -/
-theorem mvfderiv_chartConstField_apply {y₀ y : M} (v : E)
+theorem mvfderiv_chartConstField_apply [IsManifold 𝓘(ℝ, E) 1 M] {y₀ y : M} (v : E)
     (hy : y ∈ (chartAt E y₀).source) :
     mvfderiv 𝓘(ℝ, E) f y (chartConstField E y₀ v y) =
       fderiv ℝ (f ∘ (chartAt E y₀).symm) (chartAt E y₀ y) v :=
