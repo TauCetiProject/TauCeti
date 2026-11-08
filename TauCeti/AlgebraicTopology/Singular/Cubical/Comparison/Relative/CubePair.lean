@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Cubical.Relative
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Excision
 public import TauCeti.AlgebraicTopology.Singular.IntervalGenerator
 import TauCeti.Algebra.Homology.Kronecker
+import TauCeti.Algebra.Module.Equiv.SpanSingleton
 import TauCeti.Algebra.Homology.PrincipalIdealRing
 
 /-!
@@ -258,20 +259,6 @@ private lemma exists_intCocycle (n : ℕ) :
 
 variable (k : Type) [CommRing k]
 
-/-- If a `k`-module `M` is isomorphic to `k` and a linear functional `Ψ` takes the value `1` on
-`x`, then `a ↦ a • x` is bijective: `e x` is a unit of `k`, with inverse `Ψ (e⁻¹ 1)`. -/
-private lemma bijective_smul_of_linearEquiv_of_apply_eq_one {M : Type*} [AddCommGroup M]
-    [Module k M] (e : M ≃ₗ[k] k) (Ψ : M →ₗ[k] k) {x : M} (hx : Ψ x = 1) :
-    Function.Bijective fun a : k ↦ a • x := by
-  -- `x = e x • e⁻¹ 1`, so `Ψ (e⁻¹ 1)` is an inverse of `e x`.
-  have hxe : x = e x • e.symm 1 := by simp [← map_smul]
-  have hu : IsUnit (e x) := IsUnit.of_mul_eq_one (Ψ (e.symm 1)) <| by
-    simpa [hx] using (congrArg Ψ hxe).symm
-  -- So `a ↦ a • x` is `a ↦ e⁻¹ (a * e x)`, a composite of bijections.
-  convert e.symm.bijective.comp (Units.mulRight hu.unit).bijective using 1
-  funext a
-  simp [← smul_eq_mul, map_smul]
-
 /-- A `k`-valued cocycle detecting the fundamental class of the cube pair: a morphism from the
 relative `(n + 2)`-chains with coefficients in `k` to `k` that vanishes on boundaries and takes the
 value `1` on the identity cube. On a cube it takes the value in `k` of the integral cocycle of
@@ -343,7 +330,7 @@ private lemma bijective_smul_homologyπ_cubeBoundaryPairCycle_add_two (n : ℕ) 
   let e : K.homology (n + 2) ≃ₗ[k] k :=
     ((TopPair.singularCubicalHomologyIso k _ (n + 2)).symm ≪≫
       singularHomologyCubeBoundaryPairIso (ModuleCat.of k k) (n + 2)).toLinearEquiv
-  exact bijective_smul_of_linearEquiv_of_apply_eq_one k e Ψ.hom hΨ
+  exact e.bijective_smul_of_apply_eq_one Ψ.hom hΨ
 
 end CommRing
 
