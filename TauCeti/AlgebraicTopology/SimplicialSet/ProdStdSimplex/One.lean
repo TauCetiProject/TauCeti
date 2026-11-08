@@ -18,6 +18,8 @@ simplices: `SSet.prodStdSimplex₁.ι i : Δ[p + 1] ⟶ Δ[p] ⊗ Δ[1]` is the 
 opposite to the vertices `(i, 0)` and `(i, 1)` (`SSet.prodStdSimplex₁.δ_castSucc_ι`,
 `SSet.prodStdSimplex₁.δ_succ_ι`), and identify the extreme faces `codimOneSimplex 0` and
 `codimOneSimplex (Fin.last (p + 1))` with the top and bottom inclusions `ι₁` and `ι₀` of `Δ[p]`.
+The vertices of the `k`th nondegenerate `(p + 1)`-simplex are `(i, 0)` at `i.castSucc` for `i ≤ k`
+and `(i, 1)` at `i.succ` for `k ≤ i`, all distinct.
 -/
 
 public section
@@ -82,6 +84,35 @@ lemma yonedaEquiv_symm_codimOneSimplex_last :
   rw [Equiv.apply_symm_apply, ← Category.id_comp ι₀, yonedaEquiv_comp]
   refine Prod.ext rfl (stdSimplex.ext _ _ fun k ↦ ?_)
   simp [stdSimplex.objMk₁_apply]
+
+/-- The vertex at `i.castSucc` of the `k`th nondegenerate `(p + 1)`-simplex of `Δ[p] ⊗ Δ[1]` is
+`(i, 0)` when `i ≤ k`. -/
+lemma objEquiv_nonDegenerateEquiv_castSucc (k i : Fin (p + 1)) (hi : i ≤ k) :
+    prodStdSimplex.objEquiv (nonDegenerateEquiv.{u} k).val i.castSucc = (i, 0) := by
+  refine Prod.ext ?_ ?_
+  · exact Fin.predAbove_castSucc_of_le _ _ hi
+  · refine stdSimplex.objMk₁_of_castSucc_lt _ _ ?_
+    rw [Fin.lt_def]
+    simp only [Fin.val_castSucc, Fin.val_succ]
+    have := Fin.le_def.1 hi
+    lia
+
+/-- The vertex at `i.succ` of the `k`th nondegenerate `(p + 1)`-simplex of `Δ[p] ⊗ Δ[1]` is
+`(i, 1)` when `k ≤ i`. -/
+lemma objEquiv_nonDegenerateEquiv_succ (k i : Fin (p + 1)) (hi : k ≤ i) :
+    prodStdSimplex.objEquiv (nonDegenerateEquiv.{u} k).val i.succ = (i, 1) := by
+  refine Prod.ext ?_ ?_
+  · exact Fin.predAbove_succ_of_le _ _ hi
+  · refine stdSimplex.objMk₁_of_le_castSucc _ _ ?_
+    rw [Fin.le_def]
+    simp only [Fin.val_castSucc, Fin.val_succ]
+    have := Fin.le_def.1 hi
+    lia
+
+/-- The vertices of a nondegenerate `(p + 1)`-simplex of `Δ[p] ⊗ Δ[1]` are distinct. -/
+lemma injective_objEquiv_nonDegenerateEquiv (k : Fin (p + 1)) :
+    Function.Injective (prodStdSimplex.objEquiv (nonDegenerateEquiv.{u} k).val) :=
+  (prodStdSimplex.nonDegenerate_iff_injective_objEquiv _).1 (nonDegenerateEquiv k).2
 
 end prodStdSimplex₁
 
