@@ -270,12 +270,11 @@ theorem setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_add_const (ω :
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
           z (u z)) +
         ∑ q, q.endSign * ∫ t in (0 : ℝ)..1, c q t := by
-  obtain ⟨Bc, hBc⟩ := exists_forall_abs_le hc hcs
   -- The curvature of the normalization does not depend on the target point, so it is integrable
   -- along `u` because it is along the constant map `0`.
   have hk := (ω.integrableOn_hamiltonianCurvature_pairOfPantsPerturbation
-    (periodic_const_target hc) (contDiff_uncurry_const_target hcs) (B := Bc)
-    (fun q t _ ↦ hBc q t) (u := fun _ ↦ (0 : V)) continuousOn_const).congr_fun
+    (periodic_const_target hc) (contDiff_uncurry_const_target hcs)
+    (u := fun _ ↦ (0 : V)) continuousOn_const).congr_fun
     (fun z _ ↦ ω.hamiltonianCurvature_pairOfPantsPerturbation_const_target c z 0 (u z))
     isOpen_thricePuncturedSphereReal.measurableSet
   rw [← ω.setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_const hc hcs u,
