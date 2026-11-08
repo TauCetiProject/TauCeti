@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Continuation
 public import TauCeti.Geometry.Symplectic.Floer.Manifold
 public import TauCeti.Geometry.Symplectic.Hamiltonian.ContractibleAction.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.MeasureTheory.Integral.Rectangle
 
 /-!
 # The energy of Floer cylinders in a manifold and the action of their loops
@@ -117,18 +118,23 @@ namespace TauCeti.Floer
 variable {E HM M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace HM]
   {I : ModelWithCorners ℝ E HM} [TopologicalSpace M] [ChartedSpace HM M]
 
+/-- The cylindrical family `(s, t) ↦ H_t` of a `Cⁿ` time-dependent Hamiltonian on a manifold,
+independent of `s`, is a `Cⁿ` family of Hamiltonians. -/
+theorem contMDiff_uncurry_comp_snd {n : ℕ∞} {H : ℝ → M → ℝ}
+    (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) n (uncurry H)) :
+    ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) n (uncurry fun w : ℝ × ℝ ↦ H w.2) :=
+  hH.comp ((contDiff_snd.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd)
+
 /-- The linear homotopy `H₀ + β(s) (H₁ - H₀)` of two `Cⁿ` time-dependent Hamiltonians on a manifold
 with a `Cⁿ` profile `β` is a `Cⁿ` family of Hamiltonians. -/
 theorem contMDiff_uncurry_linearHomotopy {n : ℕ∞} {H₀ H₁ : ℝ → M → ℝ} {β : ℝ → ℝ}
     (hβ : ContDiff ℝ n β) (hH₀ : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) n (uncurry H₀))
     (hH₁ : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) n (uncurry H₁)) :
     ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) n (uncurry (linearHomotopy β H₀ H₁)) := by
-  have hp : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) (𝓘(ℝ).prod I) n fun p : (ℝ × ℝ) × M ↦ (p.1.2, p.2) :=
-    (contDiff_snd.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd
   have hs : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) n fun p : (ℝ × ℝ) × M ↦ β p.1.1 :=
     (hβ.comp contDiff_fst).contMDiff.comp contMDiff_fst
-  exact ((hH₀.comp hp).add (hs.smul ((hH₁.comp hp).sub (hH₀.comp hp)))).congr fun p ↦
-    linearHomotopy_def β p.1 p.2
+  exact ((contMDiff_uncurry_comp_snd hH₀).add (hs.smul ((contMDiff_uncurry_comp_snd hH₁).sub
+    (contMDiff_uncurry_comp_snd hH₀)))).congr fun p ↦ linearHomotopy_def β p.1 p.2
 
 end TauCeti.Floer
 
@@ -200,7 +206,8 @@ theorem IsNondegenerate.integral_floerEnergyDensity_zero_left (hω : ω.IsNondeg
     contMDiff_iff_contDiff.mp (hG.comp (contMDiff_id.prodMk hu))
   have hdK : Continuous fun z ↦ fderiv ℝ (fun w ↦ G w (u w)) z stdComplexLineReal :=
     (hf.continuous_fderiv one_ne_zero).clm_apply continuous_const
-  have hcurv := continuous_fderiv_apply_of_contMDiff hu hG stdComplexLineReal
+  have hcurv : Continuous fun z ↦ fderiv ℝ (fun w ↦ G w (u z)) z stdComplexLineReal :=
+    (continuous_fderiv_of_contMDiff hu hG).clm_apply continuous_const
   -- Pointwise, the energy density is the area density plus `d(K(u))` minus the curvature.
   have hpt (z : ℝ × ℝ) : ω.floerEnergyDensity (fun _ _ ↦ 0) G u z =
       area z + fderiv ℝ (fun w ↦ G w (u w)) z stdComplexLineReal -
@@ -233,12 +240,9 @@ theorem IsNondegenerate.integral_floerEnergyDensity_cylindrical (hω : ω.IsNond
     ∫ z in Icc a b ×ˢ Icc 0 1, ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z =
       rectangleIntegral ω.1 u (a, 0) (b, 1) + (∫ t in 0..1, H t (u (b, t))) -
         ∫ t in 0..1, H t (u (a, t)) := by
-  have hKt : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry fun (w : ℝ × ℝ) ↦ H w.2) :=
-    hH.comp ((contDiff_snd.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd)
-  rw [hω.integral_floerEnergyDensity_zero_left hKt hu hab, stdComplexLineReal_eq]
-  have h0 (z : ℝ × ℝ) : fderiv ℝ (fun w : ℝ × ℝ ↦ H w.2 (u z)) z (1, 0) = 0 :=
-    fderiv_comp_snd_apply_mk_zero (fun t ↦ H t (u z)) z 1
-  simp [h0]
+  rw [hω.integral_floerEnergyDensity_zero_left (Floer.contMDiff_uncurry_comp_snd hH) hu hab]
+  simp_rw [← ω.hamiltonianCurvature_zero_left, hamiltonianCurvature_cylindrical]
+  simp
 
 /-- **The energy of a Floer cylinder for an `s`-dependent perturbation.** Let `ω` be a
 nondegenerate weakly exact two-form on a finite-dimensional manifold, `G_z`, `z = (s, t)`, a `C¹`
@@ -293,13 +297,10 @@ theorem IsNondegenerate.integral_floerEnergyDensity_eq_contractibleLoopAction_su
     ∫ z in Icc a b ×ˢ Icc 0 1, ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z =
       contractibleLoopAction ω.1 H (fun t ↦ u (a, t)) -
         contractibleLoopAction ω.1 H (fun t ↦ u (b, t)) := by
-  have hKt : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry fun (w : ℝ × ℝ) ↦ H w.2) :=
-    hH.comp ((contDiff_snd.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd)
-  rw [hω.integral_floerEnergyDensity_eq_contractibleLoopAction_sub_sub_integral hωe hKt hu hper hab
-    hv, stdComplexLineReal_eq]
-  have h0 (z : ℝ × ℝ) : fderiv ℝ (fun w : ℝ × ℝ ↦ H w.2 (u z)) z (1, 0) = 0 :=
-    fderiv_comp_snd_apply_mk_zero (fun t ↦ H t (u z)) z 1
-  simp [h0]
+  rw [hω.integral_floerEnergyDensity_eq_contractibleLoopAction_sub_sub_integral hωe
+    (Floer.contMDiff_uncurry_comp_snd hH) hu hper hab hv]
+  simp_rw [← ω.hamiltonianCurvature_zero_left, hamiltonianCurvature_cylindrical]
+  simp
 
 /-- **The energy of a Floer cylinder for an exact form.** Let `ω = dα` be a nondegenerate exact
 two-form on a finite-dimensional manifold, `H` a `C¹` time-dependent Hamiltonian, and `u` a `C²`
@@ -436,12 +437,10 @@ theorem IsNondegenerate.contractibleLoopAction_le_contractibleLoopAction_add_of_
       (hd hH₀ _ _) (hd hH₁ _ _)
   simp only [hcurv] at h
   have hp : Continuous fun z : ℝ × ℝ ↦ (z.2, u z) := continuous_snd.prodMk hu.continuous
-  have hle := Floer.setIntegral_deriv_mul_le (f := fun z ↦ H₀ z.2 (u z) - H₁ z.2 (u z)) hβ hβm
-    hab ((hH₀.continuous.comp hp).sub (hH₁.continuous.comp hp)).continuousOn hB hHB
-  have hneg : ∫ z in Icc a b ×ˢ Icc 0 1, deriv β z.1 * (H₁ z.2 (u z) - H₀ z.2 (u z)) =
-      -∫ z in Icc a b ×ˢ Icc 0 1, deriv β z.1 * (H₀ z.2 (u z) - H₁ z.2 (u z)) := by
-    rw [← integral_neg]
-    exact integral_congr_ae (Filter.Eventually.of_forall fun z ↦ by ring)
+  have hle := neg_mul_setIntegral_le_setIntegral_deriv_mul
+    (f := fun z ↦ H₁ z.2 (u z) - H₀ z.2 (u z)) hβ hβm hab
+    ((hH₁.continuous.comp hp).sub (hH₀.continuous.comp hp)).continuousOn hB
+    fun z hz ↦ by linarith [hHB z hz]
   linarith
 
 /-- **The action shift of a continuation cylinder.** Let `ω` be a nondegenerate weakly exact

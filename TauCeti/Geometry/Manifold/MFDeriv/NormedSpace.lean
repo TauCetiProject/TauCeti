@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 
 /-!
 # Vanishing of the derivative of a vector-valued function
@@ -27,7 +28,7 @@ with `F`, so one vanishes exactly when the other does.
   is the sum of its partial derivatives.
 * `TauCeti.fderiv_comp_graph_apply_of_mdifferentiableAt`: the chain rule along the graph of a
   manifold-valued map on a normed space.
-* `TauCeti.continuous_fderiv_apply_of_contMDiff`: the derivative in the domain variable of a `C¹`
+* `TauCeti.continuous_fderiv_of_contMDiff`: the derivative in the domain variable of a `C¹`
   family along a `C¹` manifold-valued map is continuous.
 * `TauCeti.mvfderiv_apply`: the derivative of a component of a function into a finite product is
   the component of its derivative.
@@ -177,25 +178,20 @@ theorem fderiv_comp_graph_apply_of_mdifferentiableAt {u : F → M} {f : F → M 
     Function.uncurry_apply_pair, id_eq] using hc
 
 /-- Along a `C¹` map `u : F → M` from a normed space to a manifold, the derivative in the domain
-variable of a `C¹` family `f : F → M → F'`, taken at `(y, u y)` in a fixed direction `v`, depends
-continuously on `y`. It is a partial derivative of the `C¹` map `(w, y) ↦ f w (u y)` on `F × F`. -/
-theorem continuous_fderiv_apply_of_contMDiff {u : F → M} {f : F → M → F'}
+variable of a `C¹` family `f : F → M → F'`, taken at `(y, u y)`, depends continuously on `y`. It is
+a partial derivative of the `C¹` map `(w, y) ↦ f w (u y)` on `F × F`. -/
+theorem continuous_fderiv_of_contMDiff {u : F → M} {f : F → M → F'}
     (hu : ContMDiff 𝓘(𝕜, F) I 1 u)
-    (hf : ContMDiff (𝓘(𝕜, F).prod I) 𝓘(𝕜, F') 1 (Function.uncurry f)) (v : F) :
-    Continuous fun y ↦ fderiv 𝕜 (fun w ↦ f w (u y)) y v := by
+    (hf : ContMDiff (𝓘(𝕜, F).prod I) 𝓘(𝕜, F') 1 (Function.uncurry f)) :
+    Continuous fun y ↦ fderiv 𝕜 (fun w ↦ f w (u y)) y := by
   have hΦ : ContDiff 𝕜 1 fun p : F × F ↦ f p.1 (u p.2) :=
     contMDiff_iff_contDiff.mp
       (hf.comp (contDiff_fst.contMDiff.prodMk (hu.comp contDiff_snd.contMDiff)))
-  have h (y : F) : fderiv 𝕜 (fun w ↦ f w (u y)) y v =
-      fderiv 𝕜 (fun p : F × F ↦ f p.1 (u p.2)) (y, y) (v, 0) := by
-    have hd : HasFDerivAt (fun w ↦ f w (u y))
-        ((fderiv 𝕜 (fun p : F × F ↦ f p.1 (u p.2)) (y, y)).comp
-          (ContinuousLinearMap.inl 𝕜 F F)) y :=
-      HasFDerivAt.comp (g := fun p : F × F ↦ f p.1 (u p.2)) (f := fun w : F ↦ (w, y)) y
-        (hΦ.differentiable one_ne_zero (y, y)).hasFDerivAt (hasFDerivAt_prodMk_left y y)
-    rw [hd.fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearMap.inl_apply]
+  have h (y : F) : fderiv 𝕜 (fun w ↦ f w (u y)) y =
+      (fderiv 𝕜 (fun p : F × F ↦ f p.1 (u p.2)) (y, y)).comp (ContinuousLinearMap.inl 𝕜 F F) :=
+    fderiv_slice_left (f := fun p : F × F ↦ f p.1 (u p.2)) (hΦ.differentiable one_ne_zero (y, y))
   simp_rw [h]
-  exact ((hΦ.continuous_fderiv one_ne_zero).comp (continuous_id.prodMk continuous_id)).clm_apply
+  exact ((hΦ.continuous_fderiv one_ne_zero).comp (continuous_id.prodMk continuous_id)).clm_comp
     continuous_const
 
 /-- The derivative of a vector-valued function, read in the target space, commutes with
