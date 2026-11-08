@@ -8,13 +8,16 @@ module
 public import TauCeti.RingTheory.AdicCompletion.DerivedComplete.Module
 
 public import Mathlib.Algebra.Category.ModuleCat.Colimits
+public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.Algebra.Homology.DerivedCategory.Linear
 public import Mathlib.Algebra.Homology.DerivedCategory.SingleTriangle
+public import Mathlib.Algebra.Homology.DerivedCategory.TStructure
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.Algebra.Polynomial.Basis
 public import Mathlib.CategoryTheory.Triangulated.Orthogonal
 public import Mathlib.RingTheory.Localization.Away.AdjoinRoot
 public import TauCeti.Algebra.Homology.DerivedCategory.Coproduct
+public import TauCeti.Algebra.Homology.Ext.Presentation
 public import TauCeti.Algebra.Homology.ModuleCat.KInjective
 public import TauCeti.CategoryTheory.ObjectProperty.Orthogonal
 public import TauCeti.RingTheory.Localization.Away.MayerVietoris
@@ -38,6 +41,15 @@ can be tested on any set of generators of `I` (`TauCeti.derivedComplete_span_iff
 only on the radical of `I` (`TauCeti.derivedComplete_radical_iff`); in particular no finiteness of
 `I` is needed for these statements.
 
+For an `A`-module `N` placed in a single degree, derived `I`-completeness in `D(A)` is the
+telescope criterion `TauCeti.IsDerivedComplete I N` for modules
+(`TauCeti.derivedComplete_singleFunctor_iff`, Stacks, Tag 091P). Indeed `A[1/f]` has the free
+resolution `0 → A[X] → A[X] → A[1/f] → 0`, with first map multiplication by `f X - 1`, so all
+`Extⁿ_A(A[1/f], N)` vanish exactly when the telescope map `(xₙ) ↦ (xₙ - f • xₙ₊₁)` on `ℕ → N` is
+bijective (`TauCeti.forall_subsingleton_ext_localizationAway_iff`). In particular every
+`I`-adically complete module, placed in any degree, is derived `I`-complete
+(`TauCeti.derivedComplete_singleFunctor_of_isAdicComplete`).
+
 ## Main definitions and results
 
 * `TauCeti.derivedComplete I`: the derived `I`-complete objects of `D(A)`, a triangulated
@@ -46,6 +58,8 @@ only on the radical of `I` (`TauCeti.derivedComplete_radical_iff`); in particula
 * `TauCeti.derivedComplete_iff_le`: `M` is derived `I`-complete iff `I ≤ derivedCompleteIdeal M`.
 * `TauCeti.derivedComplete_span_iff`: derived completeness can be tested on generators.
 * `TauCeti.derivedComplete_radical_iff`: derived completeness depends only on the radical.
+* `TauCeti.derivedComplete_singleFunctor_iff`: a module placed in one degree is derived
+  `I`-complete iff it is a derived `I`-complete module.
 
 ## Implementation notes
 
@@ -64,7 +78,7 @@ The proof that these elements form an ideal uses two short exact sequences of `A
 ## References
 
 * [Stacks Project, Section 15.93, *Derived completion*](https://stacks.math.columbia.edu/tag/091N),
-  Lemma 15.93.1 (Tag 091Q) and Definition 15.93.4 (Tag 091S).
+  Lemma 15.93.1 (Tag 091P), Lemma 15.93.2 (Tag 091Q) and Definition 15.93.4 (Tag 091S).
 -/
 
 public section
@@ -73,7 +87,7 @@ noncomputable section
 
 open CategoryTheory Limits DerivedCategory Polynomial
 
-universe w u
+universe w w' u
 
 namespace TauCeti
 
@@ -160,6 +174,31 @@ private lemma Orth.finsupp {X ι : Type u} [AddCommGroup X] [Module A X]
   exact (ObjectProperty.leftOrthogonal_shiftClosure_singleton_iff _ M).2 fun n ↦
     singleFunctor_hom_eq_zero_of_isColimit (ModuleCat.finsuppCoconeIsColimit A X ι) fun _ ↦ h' n
 
+section Presentation
+
+variable {B : Type*} [CommRing B] [Algebra A B] (c : B)
+
+omit [HasDerivedCategory.{w} (ModuleCat.{u} A)] in
+/-- Multiplication by `c X - 1` on `B[X]` is injective: its constant coefficient `-1` is a unit,
+so it is a non-zero-divisor. -/
+private lemma mulLeft_C_mul_X_sub_one_injective :
+    Function.Injective (LinearMap.mulLeft A (C c * X - 1 : B[X])) := by
+  rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
+  exact mem_nonZeroDivisors_iff_left.1 <| Polynomial.mem_nonZeroDivisors_of_coeff_mem 0 <| by
+    simpa using (isUnit_one.neg : IsUnit (-1 : B)).mem_nonZeroDivisors
+
+omit [HasDerivedCategory.{w} (ModuleCat.{u} A)] in
+/-- The sequence `B[X] → B[X] → B[X] ⧸ (c X - 1)`, whose first map is multiplication by
+`c X - 1`, is exact. -/
+private lemma exact_mulLeft_C_mul_X_sub_one :
+    Function.Exact (LinearMap.mulLeft A (C c * X - 1 : B[X]))
+      (Ideal.Quotient.mkₐ A (Ideal.span {C c * X - 1})).toLinearMap := fun p ↦ by
+  simp only [AlgHom.toLinearMap_apply, Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq_zero_iff_mem,
+    Ideal.mem_span_singleton', Set.mem_range, LinearMap.mulLeft_apply]
+  exact exists_congr fun _ ↦ by rw [mul_comm]
+
+end Presentation
+
 /-- If `RHom(A[1/f], M) = 0` then `RHom(A[1/(cf)], M) = 0`, through the short exact sequence
 `0 → S[X] → S[X] → A[1/(fc)] → 0`, with `S = A[1/f]` and first map multiplication by
 `cX - 1`. -/
@@ -167,20 +206,13 @@ private lemma Orth.away_mul {f : A} (c : A) (hf : Orth M (deg0 A (Localization.A
     Orth M (deg0 A (Localization.Away (c * f))) := by
   let S := Localization.Away f
   let q : S[X] := C (algebraMap A S c) * X - 1
-  -- `q` is a non-zero-divisor, since its constant coefficient `-1` is a unit.
-  have hq : Function.Injective (LinearMap.mulLeft A q) := by
-    rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
-    exact mem_nonZeroDivisors_iff_left.1 <| Polynomial.mem_nonZeroDivisors_of_coeff_mem 0 <| by
-      simpa [q] using (isUnit_one.neg : IsUnit (-1 : S)).mem_nonZeroDivisors
-  have hexact : Function.Exact (LinearMap.mulLeft A q)
-      (Ideal.Quotient.mkₐ A (Ideal.span {q})).toLinearMap := by
-    intro p
-    simp [Ideal.Quotient.eq_zero_iff_mem, Ideal.mem_span_singleton', mul_comm]
   have hpoly : Orth M (deg0 A S[X]) :=
     (Orth.finsupp (ι := ULift ℕ) hf).of_linearEquiv ((Finsupp.domLCongr Equiv.ulift).trans
       ((Polynomial.basisMonomials S).repr.restrictScalars A).symm)
   have hquot : Orth M (deg0 A (S[X] ⧸ Ideal.span {q})) :=
-    Orth.of_shortExact₃ hq hexact (Ideal.Quotient.mkₐ_surjective A _) hpoly hpoly
+    Orth.of_shortExact₃ (mulLeft_C_mul_X_sub_one_injective (A := A) (algebraMap A S c))
+      (exact_mulLeft_C_mul_X_sub_one (A := A) (algebraMap A S c))
+      (Ideal.Quotient.mkₐ_surjective A _) hpoly hpoly
   -- The quotient `S[X] ⧸ (cX - 1)` is the localization of `A` away from `f * c`.
   have : IsLocalization.Away (f * c) (AdjoinRoot q) :=
     have := IsLocalization.adjoin_inv (algebraMap A S c)
@@ -338,33 +370,103 @@ theorem derivedComplete_antitone : Antitone (derivedComplete (A := A)) :=
 theorem derivedComplete_bot (M : DerivedCategory (ModuleCat.{u} A)) : derivedComplete ⊥ M :=
   derivedComplete_iff_le.2 bot_le
 
-/-- An `A`-module annihilated by a power of `I`, placed in any degree, is derived `I`-complete:
-for `f ∈ I`, multiplication by a power of `f` is invertible on `A[1/f]` and zero on the module. -/
+/-! ### Modules placed in one degree -/
+
+section Module
+
+open Abelian
+
+variable (f : A)
+
+omit [HasDerivedCategory.{w} (ModuleCat.{u} A)] in
+/-- The free resolution `0 → A[X] → A[X] → A[1/f] → 0` of `A[1/f]`, whose first map is
+multiplication by `f X - 1`. -/
+private abbrev awayPresentation : ShortComplex (ModuleCat.{u} A) :=
+  ModuleCat.shortComplexOfCompEqZero (LinearMap.mulLeft A (C f * X - 1 : A[X]))
+    ((Localization.awayEquivAdjoin f).symm.toLinearMap ∘ₗ
+      (Ideal.Quotient.mkₐ A (Ideal.span {C f * X - 1})).toLinearMap)
+    ((exact_mulLeft_C_mul_X_sub_one f).comp_injective _
+      (Localization.awayEquivAdjoin f).symm.injective (map_zero _)).linearMap_comp_eq_zero
+
+omit [HasDerivedCategory.{w} (ModuleCat.{u} A)] in
+private lemma awayPresentation_shortExact : (awayPresentation f).ShortExact :=
+  ModuleCat.shortComplex_shortExact _
+    ((exact_mulLeft_C_mul_X_sub_one f).comp_injective _
+      (Localization.awayEquivAdjoin f).symm.injective (map_zero _))
+    (mulLeft_C_mul_X_sub_one_injective f)
+    ((Localization.awayEquivAdjoin f).symm.surjective.comp (Ideal.Quotient.mkₐ_surjective A _))
+
+omit [HasDerivedCategory.{w} (ModuleCat.{u} A)] in
+/-- Under `Hom_A(A[X], N) ≃ (ℕ → N)`, `φ ↦ (φ(Xⁿ))ₙ`, restriction along multiplication by
+`f X - 1` is minus the telescope map. -/
+private lemma bijective_awayPresentation_f_comp_iff (N : ModuleCat.{u} A) :
+    Function.Bijective (fun φ : (awayPresentation f).X₂ ⟶ N ↦ (awayPresentation f).f ≫ φ) ↔
+      Function.Bijective (telescope N f) := by
+  let Φ : (ℕ → N) → (ModuleCat.of A A[X] ⟶ N) :=
+    fun c ↦ ModuleCat.ofHom ((Polynomial.basisMonomials A).constr A c)
+  have hΦ : Function.Bijective Φ :=
+    (ModuleCat.homEquiv (M := ModuleCat.of A A[X]) (N := N)).symm.bijective.comp
+      ((Polynomial.basisMonomials A).constr A).bijective
+  have hcomm : (fun φ : (awayPresentation f).X₂ ⟶ N ↦ (awayPresentation f).f ≫ φ) ∘
+      (Φ ∘ Neg.neg) = Φ ∘ telescope N f := by
+    funext c
+    refine ModuleCat.hom_ext ((Polynomial.basisMonomials A).ext fun n ↦ ?_)
+    have h : (C f * X - 1 : A[X]) * monomial n 1 = f • monomial (n + 1) 1 - monomial n 1 := by
+      rw [sub_mul, one_mul, mul_assoc, X_mul_monomial, C_mul_monomial, smul_monomial, mul_one,
+        smul_eq_mul, mul_one]
+    have hb (c : ℕ → N) (i : ℕ) : (Polynomial.basisMonomials A).constr A c (monomial i 1) = c i :=
+      by simpa using (Polynomial.basisMonomials A).constr_basis A c i
+    simp only [Φ, Function.comp_apply, ModuleCat.hom_comp, ModuleCat.hom_ofHom,
+      LinearMap.comp_apply, LinearMap.mulLeft_apply, map_neg, Polynomial.coe_basisMonomials]
+    rw [h, map_sub, map_smul]
+    simp [hb, neg_add_eq_sub]
+  rw [← Function.Bijective.of_comp_iff _ (hΦ.comp neg_involutive.bijective), hcomm,
+    Function.Bijective.of_comp_iff' hΦ]
+
+omit [HasDerivedCategory.{w} (ModuleCat.{u} A)] in
+/-- For `f : A` and an `A`-module `N`, every `Extⁿ_A(A[1/f], N)` vanishes exactly when the
+telescope map `(xₙ) ↦ (xₙ - f • xₙ₊₁)` on `ℕ → N` is bijective (Stacks, Tag 091P). -/
+theorem forall_subsingleton_ext_localizationAway_iff [HasExt.{w'} (ModuleCat.{u} A)]
+    (N : ModuleCat.{u} A) :
+    (∀ n, Subsingleton (Ext.{w'} (ModuleCat.of A (Localization.Away f)) N n)) ↔
+      Function.Bijective (telescope N f) := by
+  rw [← bijective_awayPresentation_f_comp_iff f N]
+  exact (awayPresentation_shortExact f).forall_subsingleton_ext_X₃_iff_bijective N
+
+end Module
+
+/-- An `A`-module `N`, placed in any degree, is derived `I`-complete in `D(A)` if and only if it
+is a derived `I`-complete module, that is, if and only if for every `f ∈ I` the telescope map
+`(xₙ) ↦ (xₙ - f • xₙ₊₁)` on `ℕ → N` is bijective (Stacks, Lemma 15.93.1, Tag 091P). -/
+theorem derivedComplete_singleFunctor_iff {I : Ideal A} (N : ModuleCat.{u} A) (m : ℤ) :
+    derivedComplete I ((singleFunctor (ModuleCat.{u} A) m).obj N) ↔ IsDerivedComplete I N := by
+  have := hasExt_of_hasDerivedCategory (C := ModuleCat.{u} A)
+  rw [← (derivedComplete I).prop_iff_of_iso
+      (((singleFunctors (ModuleCat.{u} A)).shiftIso (-m) m 0 (by simp)).app N),
+    Functor.comp_obj, ObjectProperty.prop_shift_iff_of_isStableUnderShift (P := derivedComplete I),
+    derivedComplete_iff, isDerivedComplete_iff]
+  refine forall₂_congr fun f _ ↦ ?_
+  rw [← forall_subsingleton_ext_localizationAway_iff]
+  refine ⟨fun h n ↦ ⟨fun x y ↦ Abelian.Ext.ext ((h n x.hom).trans (h n y.hom).symm)⟩,
+    fun h n φ ↦ ?_⟩
+  obtain hn | hn := lt_or_ge n 0
+  · -- Negative shifts: `N[0]⟦n⟧` lies in degrees `≥ -n > 0`, while `A[1/f][0]` lies in degree `0`.
+    have := TStructure.t.isGE_shift ((singleFunctor (ModuleCat.{u} A) 0).obj N) 0 n (-n)
+    exact TStructure.t.zero φ 0 (-n)
+  · obtain ⟨k, rfl⟩ := Int.eq_ofNat_of_zero_le hn
+    rw [← Abelian.Ext.homEquiv.apply_symm_apply φ, (h k).elim (Abelian.Ext.homEquiv.symm φ) 0]
+    exact Abelian.Ext.zero_hom _ _ _
+
+/-- An `I`-adically complete `A`-module, placed in any degree, is derived `I`-complete. -/
+theorem derivedComplete_singleFunctor_of_isAdicComplete {I : Ideal A} (N : ModuleCat.{u} A)
+    [IsAdicComplete I N] (m : ℤ) : derivedComplete I ((singleFunctor (ModuleCat.{u} A) m).obj N) :=
+  (derivedComplete_singleFunctor_iff N m).2 IsDerivedComplete.of_isAdicComplete
+
+/-- An `A`-module annihilated by a power of `I`, placed in any degree, is derived `I`-complete. -/
 theorem derivedComplete_singleFunctor_of_pow_le_annihilator {I : Ideal A} {N : ModuleCat.{u} A}
     {k : ℕ} (hN : I ^ k ≤ Module.annihilator A N) (m : ℤ) :
-    derivedComplete I ((singleFunctor (ModuleCat.{u} A) m).obj N) := by
-  refine derivedComplete_iff.2 fun f hf n φ ↦ ?_
-  have hr : f ^ k ∈ Module.annihilator A N := hN (Ideal.pow_mem_pow hf k)
-  have hN0 : f ^ k • 𝟙 N = 0 := by
-    ext x
-    simp [Module.mem_annihilator.1 hr x]
-  have htgt : f ^ k • 𝟙 (((singleFunctor (ModuleCat.{u} A) m).obj N)⟦n⟧) = 0 := by
-    rw [← CategoryTheory.Functor.map_id, ← CategoryTheory.Functor.map_id, ← Functor.map_smul,
-      ← Functor.map_smul, hN0, Functor.map_zero, Functor.map_zero]
-  have : IsIso (f ^ k • 𝟙 (ModuleCat.of A (Localization.Away f))) := by
-    rw [ConcreteCategory.isIso_iff_bijective]
-    have hu : IsUnit (algebraMap A (Localization.Away f) (f ^ k)) := by
-      rw [map_pow]
-      exact (IsLocalization.Away.algebraMap_isUnit f).pow k
-    convert IsUnit.isUnit_iff_mulLeft_bijective.1 hu using 1
-    ext x
-    simp only [ModuleCat.hom_smul, ModuleCat.hom_id, LinearMap.smul_apply, LinearMap.id_apply]
-    exact Algebra.smul_def _ _
-  have : IsIso (f ^ k •
-      𝟙 ((singleFunctor (ModuleCat.{u} A) 0).obj (.of A (Localization.Away f)))) := by
-    rw [← CategoryTheory.Functor.map_id, ← Functor.map_smul]
-    infer_instance
-  rw [← cancel_epi (f ^ k • 𝟙 _), Limits.comp_zero, Linear.smul_comp, Category.id_comp,
-    ← Category.comp_id φ, ← Linear.comp_smul, htgt, Limits.comp_zero]
+    derivedComplete I ((singleFunctor (ModuleCat.{u} A) m).obj N) :=
+  (derivedComplete_singleFunctor_iff N m).2 <| IsDerivedComplete.of_pow_smul_eq_bot <| by
+    rwa [← Submodule.le_annihilator_iff, Submodule.annihilator_top]
 
 end TauCeti
