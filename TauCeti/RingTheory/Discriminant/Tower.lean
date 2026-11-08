@@ -49,11 +49,15 @@ theorem traceMatrix_smulTower {K : Type*} [CommRing K]
       (Matrix.blockDiagonal fun _ : κ => Algebra.traceMatrix K b) *
         LinearMap.toMatrix (b.smulTower c) (b.smulTower c)
           ((Matrix.toLin c c (Algebra.traceMatrix L c)).restrictScalars K) := by
+  have hcoeff (i j : ι) (k l : κ) :
+      LinearMap.toMatrix (b.smulTower c) (b.smulTower c)
+          ((Matrix.toLin c c (Algebra.traceMatrix L c)).restrictScalars K) (i, k) (j, l) =
+        b.repr (b j * Algebra.traceMatrix L c k l) i := by
+    simp [LinearMap.toMatrix_apply, Finsupp.single_apply]
   ext ⟨i, k⟩ ⟨j, l⟩
-  simp [LinearMap.toMatrix_apply, Finsupp.single_apply, Matrix.mul_apply,
-    Matrix.blockDiagonal_apply, ← Finset.univ_product_univ, Finset.sum_product,
-    ← Algebra.trace_trace_of_basis b c]
-  simpa [Matrix.mulVec, dotProduct, mul_comm, mul_left_comm] using
+  simpa [hcoeff, Matrix.mul_apply, Matrix.blockDiagonal_apply, ← Finset.univ_product_univ,
+    Finset.sum_product, ← Algebra.trace_trace_of_basis b c, Matrix.mulVec, dotProduct, mul_comm,
+    mul_left_comm] using
     (congrFun (Algebra.traceMatrix_of_basis_mulVec b
       (b j * Algebra.trace L M (c k * c l))) i).symm
 
