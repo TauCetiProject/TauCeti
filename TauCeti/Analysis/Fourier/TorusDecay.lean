@@ -12,8 +12,6 @@ import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.Calculus.SmoothSeries
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import TauCeti.Algebra.Module.ZLattice.Summable
-import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
-import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.Fourier.Monomial
 import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
@@ -47,10 +45,10 @@ directions equal to a coordinate vector of maximal `|n i|`, the coefficient boun
 (`pow_mul_norm_mFourierCoeff_le`). Here `‖n‖` is the sup norm on `d → ℤ`.
 
 The `k`-th derivative of the lift of a mode `mFourier n` is bounded by `(2π ∑ i, |n i|) ^ k`
-(`norm_iteratedFDeriv_mFourier_coe_le`). Against the decay estimate this makes the Fourier series
-of a `C^K` function differentiable termwise `k` times when `K > card d + k`
-(`iteratedFDeriv_eq_tsum_mFourier`), and its partial sums converge to the function in every `C^k`
-norm (`tendstoUniformly_iteratedFDeriv_sum_mFourier`).
+(`norm_iteratedFDeriv_mFourier_coe_le`, in `TauCeti.Analysis.Fourier.Monomial`). Against the
+decay estimate this makes the Fourier series of a `C^K` function differentiable termwise `k` times
+when `K > card d + k` (`iteratedFDeriv_eq_tsum_mFourier`), and its partial sums converge to the
+function in every `C^k` norm (`tendstoUniformly_iteratedFDeriv_sum_mFourier`).
 
 A smooth function `g` on `d → ℝ` supported in the open unit cube `‖x‖ < 1 / 2` (sup norm) agrees
 there with its periodic extension `x ↦ ∑ᶠ m, g (x + m)`, which is the lift of a function on the
@@ -81,7 +79,6 @@ functions are dense, the uniqueness part of the Schwartz kernel theorem.
 * `TauCeti.UnitAddTorus.hasSum_mFourier_series_of_iteratedFDeriv`: so do its termwise derivatives.
 * `TauCeti.UnitAddTorus.summable_pow_mul_norm_mFourierCoeff`: `∑ n, ‖n‖ ^ j ‖mFourierCoeff f n‖`
   converges for a `C^k` function when `k` exceeds `card d + j`.
-* `TauCeti.UnitAddTorus.norm_iteratedFDeriv_mFourier_coe_le`: the derivatives of a mode.
 * `TauCeti.UnitAddTorus.iteratedFDeriv_eq_tsum_mFourier`: termwise differentiation of the Fourier
   series in the multilinear norm.
 * `TauCeti.UnitAddTorus.tendstoUniformly_iteratedFDeriv_sum_mFourier`: the partial sums of the
@@ -409,50 +406,6 @@ theorem hasSum_mFourier_series_of_iteratedFDeriv {f g : C(UnitAddTorus d, ℂ)} 
 
 
 /-! ### Convergence of the Fourier series in every `C^k` norm -/
-
-/-- The lift of the Fourier mode `mFourier n` to `d → ℝ` is smooth. -/
-theorem contDiff_mFourier_coe (n : d → ℤ) :
-    ContDiff ℝ ∞ fun y : d → ℝ ↦ mFourier n fun i ↦ (y i : UnitAddCircle) := by
-  have h : ContDiff ℝ ∞ fun t : ℝ ↦ (t : ℂ) := Complex.ofRealCLM.contDiff
-  simp only [mFourier_coe_apply]
-  fun_prop
-
-/-- The lift of the Fourier mode `mFourier n` has `k`-th derivative bounded by
-`(2π ∑ i, |n i|) ^ k`. -/
-theorem norm_iteratedFDeriv_mFourier_coe_le (n : d → ℤ) (k : ℕ) (x : d → ℝ) :
-    ‖iteratedFDeriv ℝ k (fun y : d → ℝ ↦ mFourier n fun i ↦ (y i : UnitAddCircle)) x‖ ≤
-      (2 * π * ∑ i, |(n i : ℝ)|) ^ k := by
-  -- The mode is `exp` composed with the real-linear map `y ↦ (∑ i, n i * y i) • 2πi`.
-  set L : (d → ℝ) →L[ℝ] ℝ := ∑ i, (n i : ℝ) • ContinuousLinearMap.proj i
-  have hLapply (y : d → ℝ) : L y = ∑ i, (n i : ℝ) * y i := by
-    simp [L]
-  have hL : ‖L‖ ≤ ∑ i, |(n i : ℝ)| := by
-    refine L.opNorm_le_bound (Finset.sum_nonneg fun i _ ↦ abs_nonneg _) fun y ↦ ?_
-    rw [hLapply, Finset.sum_mul]
-    refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun i _ ↦ ?_)
-    rw [abs_mul]
-    exact mul_le_mul_of_nonneg_left (norm_le_pi_norm y i) (abs_nonneg _)
-  set L' : (d → ℝ) →L[ℝ] ℂ := L.smulRight (2 * π * I)
-  have heq : (fun y : d → ℝ ↦ mFourier n fun i ↦ (y i : UnitAddCircle)) = cexp ∘ L' := by
-    funext y
-    simp only [mFourier_coe_apply, Function.comp_apply, L', ContinuousLinearMap.smulRight_apply,
-      hLapply, Complex.real_smul]
-    push_cast
-    ring_nf
-  have hnorm : ‖L'‖ ≤ 2 * π * ∑ i, |(n i : ℝ)| := by
-    rw [ContinuousLinearMap.norm_smulRight_apply, mul_comm]
-    have h2π : ‖(2 * π * I : ℂ)‖ = 2 * π := by
-      simp [abs_of_pos Real.pi_pos]
-    rw [h2π]
-    exact mul_le_mul_of_nonneg_left hL (by positivity)
-  rw [heq]
-  refine (L'.norm_iteratedFDeriv_comp_right_le Complex.contDiff_exp x
-    (mod_cast le_top)).trans ?_
-  -- `L' x` is purely imaginary, so every derivative of `exp` there has norm one.
-  have hre : (L' x).re = 0 := by
-    simp [L', ContinuousLinearMap.smulRight_apply]
-  rw [norm_iteratedFDeriv_real_cexp, Complex.norm_exp, hre, Real.exp_zero, one_mul]
-  exact pow_le_pow_left₀ (norm_nonneg _) hnorm k
 
 /-- A multiple `c • mFourier n` of a Fourier mode, read on `d → ℝ`, has `j`-th derivative bounded
 by `‖c‖ (2π card d) ^ j ‖n‖ ^ j`, where `‖n‖` is the sup norm. -/
