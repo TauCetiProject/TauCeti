@@ -218,7 +218,7 @@ theorem mem_flagSubcomodule_iff (bas : Basis (Fin n) k M)
 
 /-- A coordinate flag separating two basis vectors forces the corresponding coefficient to
 vanish when every subcomodule containing the first vector contains the second. -/
-theorem coefficient_eq_zero_of_coordinate_flag {ι : Type*} [Finite ι]
+theorem coefficient_eq_zero_of_coordinate_flag {ι : Type*}
     (cb : Basis ι k M) (bas : Basis (Fin n) k M)
     (htri : (coefficientMatrix (C := H) bas).IsUpperTriangular)
     (hbas : ∀ r, bas.flag r = Submodule.span k (cb '' {i | cb i ∈ bas.flag r}))
@@ -231,6 +231,8 @@ theorem coefficient_eq_zero_of_coordinate_flag {ι : Type*} [Finite ι]
       _ = (1 : k) • coefficientMatrix (C := H) cb a b := (one_smul k _).symm
       _ = 0 := by rw [Subsingleton.elim (1 : k) 0, zero_smul]
   have : Nontrivial k := h
+  have := Module.Finite.of_basis bas
+  have : Finite ι := Module.Finite.finite_basis cb
   classical
   let F := Comodule.flagSubcomodule bas htri
   have hcoord (r : Fin (n + 1)) :
