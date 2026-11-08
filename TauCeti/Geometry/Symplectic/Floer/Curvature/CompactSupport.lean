@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.Energy
+public import TauCeti.Geometry.Symplectic.Floer.Manifold
 
 /-!
 # Uniform curvature bounds for compactly supported perturbation families
@@ -82,8 +82,9 @@ theorem exists_lintegral_enorm_hamiltonianCurvature_le_of_isCompact
         apply setLIntegral_eq_of_support_subset
         intro z hz
         by_contra hzD
-        have h0 := ω.hamiltonianCurvature_eq_zero_of_notMem hD.isClosed
+        have h0 := ω.constSmooth.hamiltonianCurvature_eq_zero_of_notMem hD.isClosed
           (hs p hp) (ht p hp) hzD (u z)
+        simp only [hamiltonianCurvature_constSmooth] at h0
         simp [h0] at hz
     _ ≤ ∫⁻ _ in D, ENNReal.ofReal (max B 0) := by
         apply setLIntegral_mono' hD.measurableSet
