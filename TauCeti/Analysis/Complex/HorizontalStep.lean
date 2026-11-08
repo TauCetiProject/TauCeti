@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
+public import Mathlib.Analysis.Complex.Order
+public import Mathlib.Analysis.Complex.Trigonometric
 
 /-!
 # A horizontal step, rotated
