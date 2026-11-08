@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.Embedding.CochainComplex
 public import TauCeti.Algebra.Homology.Embedding.Restriction.Shift
 public import TauCeti.KnotTheory.Khovanov.Resolution.Cube
 public import Mathlib.Algebra.Homology.Embedding.CochainComplex
@@ -361,5 +362,12 @@ instance khovanovComplex_isStrictlyLE :
   exact (D.toPDCode.resolutionCube hD R
     (j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).isZero_cubeComplex_X_of_card_lt
       (by simp only [Fintype.card_fin]; omega)
+
+/-- The normalized chain groups vanish outside the cochain interval `[-n₋, n₊]`. -/
+theorem isZero_khovanovComplex_X_of_cochain_notMem_Icc {i : ℤ}
+    (hi : i ∉ Set.Icc (-(D.negativeCrossingCount : ℤ)) D.positiveCrossingCount) (j : ℤ) :
+    IsZero ((D.khovanovComplex hD R j).X i) :=
+  (D.khovanovComplex hD R j).isZero_X_of_notMem_Icc
+    (-(D.negativeCrossingCount : ℤ)) D.positiveCrossingCount (by simpa using hi)
 
 end TauCeti.OrientedPDCode

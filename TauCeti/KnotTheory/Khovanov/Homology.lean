@@ -84,13 +84,6 @@ instance [IsNoetherianRing R] (i j : ℤ) :
     inferInstanceAs (Module.Finite R ((D.khovanovComplex hD R j).X i))
   exact ((D.khovanovComplex hD R j).sc i).finite_homology
 
-/-- The normalized chain groups vanish outside the cochain interval `[-n₋, n₊]`. -/
-theorem isZero_khovanovComplex_X_of_cochain_notMem_Icc {i : ℤ}
-    (hi : i ∉ Set.Icc (-(D.negativeCrossingCount : ℤ)) D.positiveCrossingCount) (j : ℤ) :
-    IsZero ((D.khovanovComplex hD R j).X i) :=
-  (D.khovanovComplex hD R j).isZero_X_of_notMem_Icc
-    (-(D.negativeCrossingCount : ℤ)) D.positiveCrossingCount (by simpa using hi)
-
 /-- Khovanov cohomology vanishes outside the normalized cochain interval `[-n₋, n₊]`. -/
 theorem isZero_khovanovHomology_of_cochain_notMem_Icc {i : ℤ}
     (hi : i ∉ Set.Icc (-(D.negativeCrossingCount : ℤ)) D.positiveCrossingCount) (j : ℤ) :
