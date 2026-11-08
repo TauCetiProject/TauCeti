@@ -28,8 +28,8 @@ class, or of a class not yet met. So the internal Scott ranks of the models are 
 (`TauCeti.countableModelCount_le_aleph0_or_hasPerfectlyMany_of_internalScottRank_le`) applies.
 Its first alternative holds: up to isomorphism, the countable models are the empty structure and,
 for each `k ∈ {1, 2, …, ℵ₀}`, the relation on `ℕ` with `k` infinite classes, since two countable
-equivalence relations with infinite classes and equally many classes are isomorphic. So the
-sentence has exactly `ℵ₀` countable models
+equivalence relations with infinite classes and equally many classes are isomorphic
+(`TauCeti.isoSetoid_fromRel_iff_enatCard_eq`). So the sentence has exactly `ℵ₀` countable models
 (`TauCeti.EquivalenceRelationCounting.countableModelCount_infiniteClassesSentence`).
 
 ## Main results
@@ -39,8 +39,6 @@ All in the namespace `TauCeti.EquivalenceRelationCounting`:
 * `realize_infiniteClassesSentence_iff`: the models are the graphs of equivalence relations with
   infinite classes.
 * `internalScottRank_eq_one_of_realize`: every model has internal Scott rank one.
-* `isoSetoid_fromRel_iff_enatCard_eq`: on a countable carrier, two such models are isomorphic
-  exactly when they have equally many classes.
 * `mk_quotient_isoSetoidOn_nat_infiniteClassesSentence`: `ℵ₀` models on `ℕ` up to isomorphism.
 * `countableModelCount_infiniteClassesSentence`: exactly `ℵ₀` countable models, so no perfect set
   of pairwise non-isomorphic countable models
@@ -154,17 +152,6 @@ example : countableModelCount infiniteClassesSentence ≤ ℵ₀ ∨
     fun _ _ _ _ hM => (internalScottRank_eq_one_of_realize hM).le
 
 /-! ### Counting the models -/
-
-/-- On a countable carrier, the graphs of two equivalence relations with infinite classes are
-isomorphic exactly when the relations have equally many classes, counted in `ℕ∞`. -/
-theorem isoSetoid_fromRel_iff_enatCard_eq {V : Type*} [Countable V] {r s : Setoid V}
-    (hr : ∀ x : V, {x' | r x x'}.Infinite) (hs : ∀ x : V, {x' | s x x'}.Infinite) :
-    isoSetoid Language.graph V (fromRel r).toRelationalConfiguration
-        (fromRel s).toRelationalConfiguration ↔
-      ENat.card (Quotient r) = ENat.card (Quotient s) := by
-  rw [isoSetoid_toRelationalConfiguration_fromRel_iff]
-  exact ⟨fun ⟨e⟩ => ENat.card_congr (Quotient.congr e.toEquiv fun _ _ => e.map_rel_iff.symm),
-    Setoid.nonempty_relIso_of_infinite hr hs⟩
 
 /-- The models of `infiniteClassesSentence` on `ℕ` have countably many isomorphism classes: the
 class of a model is determined by its number of classes in `ℕ∞`. -/
