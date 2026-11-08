@@ -130,31 +130,12 @@ theorem map_dirichletStickSplit_dirichletMeasure {a : Option ι → ℝ}
     Finset.sum_pos (fun i _ ↦ ha (some i)) Finset.univ_nonempty
   let _ := isProbabilityMeasure_gammaMeasure (ha none) one_pos
   let _ := isProbabilityMeasure_gammaMeasure hA one_pos
-  let _ := isProbabilityMeasureBeta (ha none) hA
   let _ := isProbabilityMeasure_dirichletMeasure (fun i ↦ ha (some i))
   let _ i := isProbabilityMeasure_gammaMeasure (ha (some i)) one_pos
   have htail : μ.map (fun x ↦ (dirichletNormalize x, ∑ i, x i)) = δ.prod γ :=
     map_dirichletNormalize_sum_pi_gammaMeasure (fun i ↦ ha (some i)) one_pos
   -- Reassociate the three factors and apply the Gamma–Beta ratio law to the two totals.
-  have hratio : ((δ.prod γ).prod ν).map
-      (fun z ↦ (z.2 / (z.2 + z.1.2), z.1.1)) =
-      (betaMeasure (a none) (∑ i, a (some i))).prod δ := by
-    have hbeta : (γ.prod ν).map (fun z ↦ z.2 / (z.2 + z.1)) =
-        betaMeasure (a none) (∑ i, a (some i)) := by
-      rw [← Measure.prod_swap (μ := ν) (ν := γ),
-        Measure.map_map (by fun_prop) measurable_swap]
-      exact map_div_add_gammaMeasure (ha none) hA one_pos
-    calc
-      _ = (δ.prod (γ.prod ν)).map (fun z ↦ (z.2.2 / (z.2.2 + z.2.1), z.1)) := by
-        rw [← Measure.prodAssoc_prod, Measure.map_map (by fun_prop) (by fun_prop)]
-        rfl
-      _ = ((δ.prod (γ.prod ν)).map
-          (Prod.map id (fun z : ℝ × ℝ ↦ z.2 / (z.2 + z.1)))).map Prod.swap := by
-        rw [Measure.map_map measurable_swap (by fun_prop)]
-        rfl
-      _ = _ := by
-        rw [← Measure.map_prod_map _ _ measurable_id (by fun_prop),
-          Measure.map_id, hbeta, Measure.prod_swap]
+  have hratio := δ.map_prod_prod_gammaMeasure_div_add (ha none) hA one_pos
   rw [dirichletMeasure_of_pos ha, Measure.map_map measurable_dirichletStickSplit
     measurable_dirichletNormalize, ← Measure.pi_map_piOptionEquivProd]
   rw [Measure.map_map (by fun_prop) (by fun_prop)]

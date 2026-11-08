@@ -94,6 +94,18 @@ theorem multHaar_Iic_zero : multHaar (Iic 0) = 0 := by
   convert measure_empty (μ := (volume : Measure ℝ))
   exact eq_empty_of_forall_notMem fun u hu ↦ (Real.exp_pos u).not_ge hu
 
+/-- `dt / t`-almost every point is positive. -/
+theorem ae_pos_multHaar : ∀ᵐ t ∂multHaar, 0 < t :=
+  ae_iff.2 (by simp only [not_lt]; exact multHaar_Iic_zero)
+
+/-- A function continuous on `(0, ∞)` is almost everywhere strongly measurable for `dt / t`. -/
+theorem _root_.ContinuousOn.aestronglyMeasurable_multHaar {β : Type*} [TopologicalSpace β]
+    [TopologicalSpace.PseudoMetrizableSpace β] {f : ℝ → β} (hf : ContinuousOn f (Ioi 0)) :
+    AEStronglyMeasurable f multHaar := by
+  rw [multHaar_def]
+  exact (hf.aestronglyMeasurable measurableSet_Ioi).mono_ac
+    (withDensity_absolutelyContinuous _ _)
+
 /-- `dt / t` is invariant under the dilations `t ↦ c t`, `c > 0`. -/
 theorem map_multHaar_mul_left {c : ℝ} (hc : 0 < c) : multHaar.map (c * ·) = multHaar := by
   have hcomp : (c * ·) ∘ Real.exp = Real.exp ∘ (Real.log c + ·) := by

@@ -172,23 +172,9 @@ private theorem dim_add_le_one_add_dim_add_of_effective (hF : IsFunctionField k 
     (riemannRochSpace A).submoduleOf (riemannRochSpace (A + B))
   have hDB : D + B ≤ A + B := by
     simpa only [add_comm] using add_le_add_right hDA B
-  let mulZ : riemannRochSpace B →ₗ[k] riemannRochSpace (A + B) :=
-    { toFun := fun x ↦ ⟨z * x, by
-          have hprod : (z : F) * (x : F) ∈ riemannRochSpace (D + B) :=
-            mul_mem_riemannRochSpace_add (A := D) (B := B) hzD x.2
-          exact riemannRochSpace_mono hDB hprod⟩
-      map_add' := fun x y ↦ by
-        ext
-        simp only [Submodule.coe_add, mul_add]
-      map_smul' := fun c x ↦ by
-        ext
-        simp only [Submodule.coe_smul_of_tower, RingHom.id_apply, Algebra.smul_def]
-        ring }
-  let T : riemannRochSpace B →ₗ[k] (riemannRochSpace (A + B) ⧸ LA) :=
-    LA.mkQ.comp mulZ
-  have honeB : (1 : F) ∈ riemannRochSpace B :=
-    one_mem_riemannRochSpace_iff.mpr hB
-  let oneB : riemannRochSpace B := ⟨1, honeB⟩
+  obtain ⟨f, hf⟩ := exists_linearMap_mul_riemannRochSpace (B := B) hDB hzD
+  let T : riemannRochSpace B →ₗ[k] (riemannRochSpace (A + B) ⧸ LA) := LA.mkQ.comp f
+  let oneB : riemannRochSpace B := ⟨1, one_mem_riemannRochSpace_iff.mpr hB⟩
   have hzA : z ∈ riemannRochSpace A := by rwa [← hspace]
   -- The kernel consists exactly of the constant sections of `L(B)`.  At a pole of a
   -- nonconstant section, the chosen exact order of `z` prevents the product from lying in
@@ -196,69 +182,31 @@ private theorem dim_add_le_one_add_dim_add_of_effective (hF : IsFunctionField k 
   have hker : T.ker = k ∙ oneB := by
     apply le_antisymm
     · intro x hx
-      have hxzero : T x = 0 := LinearMap.mem_ker.mp hx
-      have hxprodA : (z : F) * (x : F) ∈ riemannRochSpace A := by
-        have hxLA : mulZ x ∈ LA := by
-          apply (Submodule.Quotient.mk_eq_zero LA).mp
-          simpa only [T, LinearMap.comp_apply, Submodule.mkQ_apply] using hxzero
-        simpa only [LA, Submodule.submoduleOf, Submodule.mem_comap, Submodule.subtype_apply, mulZ,
-          LinearMap.coe_mk, AddHom.coe_mk] using hxLA
-      have hxalg : (x : F) ∈ algebraicClosure k F := by
-        apply (Place.mem_algebraicClosure_iff_forall_mem_integers hF).mpr
-        intro P
-        rw [P.mem_integers_iff_ord_nonneg]
-        rcases eq_or_ne (x : F) 0 with hx0 | hx0
-        · simp [hx0]
-        by_cases hPB : P ∈ B.support
-        · have hxprodD : (z : F) * (x : F) ∈ riemannRochSpace D := by
-            rwa [hspace]
-          have hbound := (mem_riemannRochSpace_iff_neg_le_ord (mul_ne_zero hz0 hx0)).mp
-            hxprodD P
-          rw [P.ord_mul hz0 hx0, hzord P hPB] at hbound
-          omega
-        · have hxbound := (mem_riemannRochSpace_iff_neg_le_ord hx0).mp x.2 P
-          have hcoeff : B.coeff P = 0 := by
-            simpa only [WeilDivisor.mem_support_iff, not_not] using hPB
-          rw [hcoeff] at hxbound
-          omega
+      have hxLA : f x ∈ LA := by
+        apply (Submodule.Quotient.mk_eq_zero LA).mp
+        simpa only [T, LinearMap.comp_apply, Submodule.mkQ_apply] using LinearMap.mem_ker.mp hx
+      have hxprodA : z * (x : F) ∈ riemannRochSpace A := by
+        simpa only [LA, Submodule.submoduleOf, Submodule.mem_comap, Submodule.subtype_apply, hf]
+          using hxLA
       obtain ⟨c, hc⟩ := (isIntegrallyClosedIn_iff_forall_isAlgebraic.mp hex) (x : F)
-        (_root_.mem_algebraicClosure_iff.mp hxalg)
+        (_root_.mem_algebraicClosure_iff.mp
+          (mem_algebraicClosure_of_mul_mem_riemannRochSpace hF hz0 hzord x.2
+            (by rwa [hspace])))
       apply Submodule.mem_span_singleton.mpr
-      refine ⟨c, ?_⟩
-      apply Subtype.ext
+      refine ⟨c, Subtype.ext ?_⟩
       simpa only [oneB, Submodule.coe_smul_of_tower, Algebra.smul_def, mul_one] using hc
     · apply Submodule.span_le.mpr
       intro x hx
       simp only [Set.mem_singleton_iff] at hx
       subst x
-      have hmul : mulZ oneB ∈ LA := by
-        simp only [LA, Submodule.submoduleOf, Submodule.mem_comap, Submodule.subtype_apply, mulZ,
-          LinearMap.coe_mk, AddHom.coe_mk, oneB, mul_one]
-        exact hzA
+      have hmul : f oneB ∈ LA := by
+        simpa only [LA, Submodule.submoduleOf, Submodule.mem_comap, Submodule.subtype_apply, hf,
+          oneB, mul_one] using hzA
       simpa only [SetLike.mem_coe, LinearMap.mem_ker, T, LinearMap.comp_apply,
         Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero] using hmul
-  have honeB0 : oneB ≠ 0 := by
-    intro h
-    exact one_ne_zero (congrArg Subtype.val h)
-  have hkerfinrank : Module.finrank k T.ker = 1 := by
-    rw [hker]
-    exact finrank_span_singleton honeB0
-  let _ := finiteDimensional_riemannRochSpace hF B
-  let _ := finiteDimensional_riemannRochSpace hF (A + B)
-  -- Rank-nullity for `T`, together with the dimension formula for the target quotient, gives
-  -- the desired inequality.
-  have hrank := LinearMap.finrank_range_add_finrank_ker T
-  have hrange : Module.finrank k T.range ≤
-      Module.finrank k (riemannRochSpace (A + B) ⧸ LA) :=
-    Submodule.finrank_le T.range
-  have hquotRank := rank_quotient_riemannRochSpace_add_dim hF
-    (D := A) (E := A + B) (le_add_of_nonneg_right hB)
-  have hquot : Module.finrank k (riemannRochSpace (A + B) ⧸ LA) + dim A = dim (A + B) := by
-    rw [← Module.finrank_eq_rank] at hquotRank
-    exact_mod_cast hquotRank
-  rw [hkerfinrank, Nat.add_comm] at hrank
-  rw [← dim_def B] at hrank
-  omega
+  refine dim_add_le_one_add_dim_add_of_finrank_ker_eq_one hF hB T ?_
+  rw [hker]
+  exact finrank_span_singleton fun h ↦ one_ne_zero (congrArg Subtype.val h)
 
 /-- **Stichtenoth, Lemma 1.6.14**: if `L(A)` and `L(B)` are nonzero and the exact constant field
 has more than `deg B + 1` elements, then

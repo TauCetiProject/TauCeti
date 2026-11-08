@@ -37,6 +37,8 @@ The same correspondence is stated for Mathlib's bundled spectrum functor
   with image in an affine open over `Spec R` factors through it by an algebra homomorphism.
 * `TauCeti.AlgebraicGeometry.algSpecHomEquivAlgHom`: morphisms `algSpec B ⟶ algSpec A` of schemes
   over `Spec R` are the `R`-algebra homomorphisms `A →ₐ[R] B`.
+* `TauCeti.AlgebraicGeometry.algSpecObjIsoOverMk`: `algSpec A` is `Spec A` with structure
+  morphism `Spec.algebraMap R A`.
 -/
 
 public section
@@ -99,6 +101,27 @@ theorem exists_spec_map_comp_eq_of_range_subset {X : Scheme.{u}} [X.Over (Spec (
 section algSpec
 
 variable {R : CommRingCat.{u}} {A B : CommAlgCat.{u} R}
+
+variable (A) in
+/-- Mathlib's `algSpec R` sends an `R`-algebra `A` to `Spec A` over `Spec R`, with structure
+morphism `Spec.algebraMap R A`. The underlying scheme morphism is the identity, since
+`algSpec_obj_hom` computes the structure morphism of `algSpec` as `Spec.map` of the algebra map,
+which is how `Spec.algebraMap` is defined. -/
+noncomputable def algSpecObjIsoOverMk : (algSpec R).obj (op A) ≅ Over.mk (Spec.algebraMap R A) :=
+  Over.isoMk (Iso.refl _) (by
+    simp only [Iso.refl_hom, algSpec_obj_hom, Over.mk_hom, Spec.algebraMap]
+    exact Category.id_comp _)
+
+/-- The underlying scheme morphism of `algSpecObjIsoOverMk A` is the identity of `Spec A`. -/
+@[simp]
+theorem algSpecObjIsoOverMk_hom_left : (algSpecObjIsoOverMk A).hom.left = 𝟙 _ :=
+  (rfl)
+
+/-- The underlying scheme morphism of the inverse of `algSpecObjIsoOverMk A` is the identity of
+`Spec A`. -/
+@[simp]
+theorem algSpecObjIsoOverMk_inv_left : (algSpecObjIsoOverMk A).inv.left = 𝟙 _ :=
+  (rfl)
 
 variable (A B) in
 /-- Morphisms `algSpec B ⟶ algSpec A` of schemes over `Spec R` are the `R`-algebra homomorphisms

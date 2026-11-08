@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
 import Mathlib.NumberTheory.AbelSummation
 public import Mathlib.NumberTheory.LSeries.Convergence
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.NumberTheory.LSeries.Dirichlet
+import TauCeti.Analysis.Asymptotics.Lemmas
 
 /-!
 # Ordinary convergence of a Dirichlet series, and its abscissa
@@ -129,19 +129,10 @@ private theorem lSeriesConverges_of_sum_isBigO_aux (hf : f 0 = 0) {r : ℝ}
       (by linarith : -s.re + r ≤ -(s.re - r))).trans_tendsto
       ((tendsto_rpow_neg_atTop (by linarith)).comp tendsto_natCast_atTop_atTop)
   -- The partial sums along ⌊t⌋₊ are O(t ^ r), giving a bound for the Abel-summation integrand.
-  have hsumO : (fun t : ℝ ↦ ∑ k ∈ Icc 0 ⌊t⌋₊, f k) =O[atTop] fun t : ℝ ↦ t ^ r := by
-    have hfloor : Asymptotics.IsEquivalent atTop (fun t : ℝ ↦ (⌊t⌋₊ : ℝ))
-        (fun t ↦ max t 0) :=
-      Asymptotics.isEquivalent_nat_floor.congr_right
-        ((eventually_ge_atTop (0 : ℝ)).mono fun t ht ↦ (max_eq_left ht).symm)
-    refine (hO.comp_tendsto tendsto_nat_floor_atTop).trans
-      ((hfloor.rpow fun t ↦ le_max_right t 0).isBigO.congr' EventuallyEq.rfl ?_)
-    filter_upwards [eventually_ge_atTop (0 : ℝ)] with t ht
-    simp [max_eq_left ht]
   have key := tendsto_sum_mul_atTop_nhds_one_sub_integral₀ f hf
     (fun t ht ↦ (hderiv t (zero_lt_one.trans_le ht).ne').differentiableAt) hg_int h_lim
     ((isBigO_deriv_ofReal_cpow_const_atTop (-s)).mul_atTop_rpow_of_isBigO_rpow _ r
-      (r - s.re - 1) hsumO (by rw [Complex.neg_re]; linarith))
+      (r - s.re - 1) hO.comp_natFloor_rpow (by rw [Complex.neg_re]; linarith))
     (integrableAtFilter_rpow_atTop_iff.mpr (by linarith))
   -- Read the conclusion back as the partial sums of the Dirichlet series.
   refine ⟨_, (tendsto_add_atTop_iff_nat 1).mp (key.congr fun n ↦ ?_)⟩
