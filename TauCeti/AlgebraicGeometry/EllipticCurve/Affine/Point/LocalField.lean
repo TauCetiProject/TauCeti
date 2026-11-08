@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.TorsionReduction
+public import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel.ValuativeExtension
 public import Mathlib.NumberTheory.LocalField.Basic
 import TauCeti.NumberTheory.LocalField.AdicCompletion
 import TauCeti.NumberTheory.LocalField.Henselian
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.MapAlong
-import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
 import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
 
 /-!
@@ -93,11 +93,8 @@ end Division
 variable (W : Affine K) [IsIntegral 𝒪[K] W] [W.IsElliptic]
 
 -- The integer subring 𝒪[K] and the valuation subring have definitionally equal carriers;
--- only their bundled subring structures differ. These bridges let the local-field API
--- use 𝒪[K] while applying the general valuation reduction API internally.
-local instance : IsIntegral (valuation K).valuationSubring W :=
-  inferInstanceAs (IsIntegral 𝒪[K] W)
-
+-- only their bundled subring structures differ. This bridge applies the general valuation
+-- reduction API using the local-field Henselian instance.
 local instance : HenselianLocalRing (valuation K).valuationSubring :=
   inferInstanceAs (HenselianLocalRing 𝒪[K])
 

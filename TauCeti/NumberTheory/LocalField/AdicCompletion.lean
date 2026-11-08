@@ -44,6 +44,6 @@ theorem bijective_algebraMap_adicCompletion_maximalPrime :
   refine ⟨y.ofVal, ?_⟩
   apply IsDedekindDomain.HeightOneSpectrum.adicCompletion.ext
   rw [IsDedekindDomain.HeightOneSpectrum.algebraMap_adicCompletion_toCompletion]
-  exact hy
+  simpa [UniformSpace.Completion.algebraMap_def, WithVal.algebraMap_right_apply] using hy
 
 end TauCeti
