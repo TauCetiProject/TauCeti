@@ -22,15 +22,18 @@ ultrametric inequality give
 This estimate controls the nonlinear terms of a power series on sufficiently deep inputs; for
 instance, it shows that the logarithm is an isometry on the deep units of a local field.
 
-The exact formulas here say that powers with unit exponent preserve the distance of a
-principal unit from one, and compute differences of integer powers after translation by an
-element of smaller valuation. These give the displacement orders of explicit
+The exact formulas here say that powers whose exponent has valuation one preserve the distance
+of a principal unit from one (natural powers over any ring, integer powers over any division
+ring), and compute differences of integer powers in a field after translation by an element of
+smaller valuation. These give the displacement orders of explicit
 uniformizers in wildly ramified Artin--Schreier extensions.
 -/
 
 public section
 
 namespace Valuation
+
+section CommRing
 
 variable {R Γ₀ : Type*} [CommRing R] [LinearOrderedCommMonoidWithZero Γ₀]
 
@@ -42,65 +45,76 @@ theorem map_pow_sub_pow_le (v : Valuation R Γ₀) {x y : R} {c : Γ₀} (hx : v
   gcongr
   refine v.map_sum_le fun j hj => ?_
   -- Each summand `x ^ j * y ^ (n - 1 - j)` has total degree `n - 1`.
-  have hdeg : j + (n - 1 - j) = n - 1 := by
-    have := Finset.mem_range.mp hj
-    omega
   calc v (x ^ j * y ^ (n - 1 - j)) ≤ c ^ j * c ^ (n - 1 - j) := by
         simp only [map_mul, map_pow]
         gcongr <;> exact zero_le
-    _ = c ^ (n - 1) := by rw [← pow_add, hdeg]
+    _ = c ^ (n - 1) := by
+        rw [← pow_add]
+        grind
+
+end CommRing
+
+section Ring
+
+variable {R Γ₀ : Type*} [Ring R] [LinearOrderedCommMonoidWithZero Γ₀]
 
 /-- Raising a principal unit to a natural power of valuation one preserves its distance
 from one. -/
 @[simp] theorem map_one_add_pow_sub_one (v : Valuation R Γ₀) {x : R} (hx : v x < 1)
     (n : ℕ) (hn : v (n : R) = 1) : v ((1 + x) ^ n - 1) = v x := by
-  have : Nontrivial Γ₀ := ⟨⟨v x, 1, ne_of_lt hx⟩⟩
+  have : Nontrivial Γ₀ := ⟨⟨v x, 1, hx.ne⟩⟩
   have ha : v (1 + x) = 1 := v.map_one_add_of_lt hx
+  -- `(1 + x) ^ i - 1 = (∑ j < i, (1 + x) ^ j) * x`, where each `(1 + x) ^ j` has valuation one.
+  have hgeom (i : ℕ) : (1 + x) ^ i - 1 = (∑ j ∈ Finset.range i, (1 + x) ^ j) * x := by
+    rw [← geom_sum_mul, add_sub_cancel_left]
   have hsum : v ((∑ i ∈ Finset.range n, (1 + x) ^ i) - (n : R)) < 1 := by
     have hcast : (n : R) = ∑ _i ∈ Finset.range n, (1 : R) := by simp
     rw [hcast, ← Finset.sum_sub_distrib]
-    apply v.map_sum_lt one_ne_zero
-    intro i _
-    have h := v.map_pow_sub_pow_le ha.le (le_of_eq v.map_one) i
-    simp only [one_pow, mul_one, add_sub_cancel_left] at h
-    exact h.trans_lt hx
+    refine v.map_sum_lt one_ne_zero fun i _ => ?_
+    rw [hgeom, map_mul]
+    exact (mul_le_of_le_one_left' (v.map_sum_le fun j _ => by simp [ha])).trans_lt hx
   have hs : v (∑ i ∈ Finset.range n, (1 + x) ^ i) = 1 := by
-    have h := v.map_add_eq_of_lt_left (hsum.trans_eq hn.symm)
-    simpa [hn] using h
-  rw [← geom_sum_mul, map_mul, hs, one_mul]
-  simp
+    simpa [hn] using v.map_add_eq_of_lt_left (hsum.trans_eq hn.symm)
+  rw [hgeom, map_mul, hs, one_mul]
 
-variable {F Γ₁ : Type*} [Field F] [LinearOrderedCommGroupWithZero Γ₁]
+end Ring
+
+section DivisionRing
+
+variable {K Γ₀ : Type*} [DivisionRing K] [LinearOrderedCommMonoidWithZero Γ₀]
 
 /-- Raising a principal unit to an integer power of valuation one preserves its distance
 from one, including negative powers. -/
-@[simp] theorem map_one_add_zpow_sub_one (v : Valuation F Γ₁) {x : F} (hx : v x < 1)
-    (n : ℤ) (hn : v (n : F) = 1) : v ((1 + x) ^ n - 1) = v x := by
-  have ha : v (1 + x) = 1 := v.map_one_add_of_lt hx
-  have ha0 : 1 + x ≠ 0 := by
-    intro h
-    simp [h] at ha
+@[simp] theorem map_one_add_zpow_sub_one (v : Valuation K Γ₀) {x : K} (hx : v x < 1)
+    (n : ℤ) (hn : v (n : K) = 1) : v ((1 + x) ^ n - 1) = v x := by
+  have : Nontrivial Γ₀ := ⟨⟨v x, 1, hx.ne⟩⟩
   cases n with
   | ofNat n => simpa using v.map_one_add_pow_sub_one hx n (by simpa using hn)
   | negSucc n =>
-    have hneg : (Int.negSucc n : F) = -((n + 1 : ℕ) : F) := by
-      push_cast
-      ring
-    rw [hneg, v.map_neg] at hn
-    have hp := v.map_one_add_pow_sub_one hx (n + 1) hn
-    have heq : (1 + x) ^ (Int.negSucc n) - 1 =
-        -(((1 + x) ^ (n + 1) - 1) / (1 + x) ^ (n + 1)) := by
-      simp only [zpow_negSucc]
-      field_simp
-      simp_all
-    rw [heq, map_neg, map_div, hp, map_pow, ha, one_pow, div_one]
+    rw [Int.cast_negSucc, v.map_neg] at hn
+    have ha : v ((1 + x) ^ (n + 1)) = 1 := by rw [map_pow, v.map_one_add_of_lt hx, one_pow]
+    have ha0 : (1 + x) ^ (n + 1) ≠ 0 := fun h => by simp [h] at ha
+    -- `a⁻¹ - 1 = (1 - a) * a⁻¹`, and `a⁻¹` has valuation one along with `a`.
+    have hinv : v ((1 + x) ^ (n + 1))⁻¹ = 1 := by
+      simpa [ha] using congr(v $(mul_inv_cancel₀ ha0))
+    have heq : ((1 + x) ^ (n + 1))⁻¹ - 1 =
+        (1 - (1 + x) ^ (n + 1)) * ((1 + x) ^ (n + 1))⁻¹ := by
+      rw [sub_mul, one_mul, mul_inv_cancel₀ ha0]
+    rw [zpow_negSucc, heq, map_mul, hinv, mul_one, map_sub_swap,
+      v.map_one_add_pow_sub_one hx (n + 1) hn]
+
+end DivisionRing
+
+section Field
+
+variable {F Γ₀ : Type*} [Field F] [LinearOrderedCommGroupWithZero Γ₀]
 
 /-- Translating by an element of smaller valuation gives the exact valuation of the
 difference of integer powers, when the exponent has valuation one. -/
-@[simp] theorem map_add_zpow_sub_zpow (v : Valuation F Γ₁) {y c : F}
+@[simp] theorem map_add_zpow_sub_zpow (v : Valuation F Γ₀) {y c : F}
     (hc : v c < v y) (n : ℤ) (hn : v (n : F) = 1) :
     v ((y + c) ^ n - y ^ n) = v y ^ (n - 1) * v c := by
-  have hyv : v y ≠ 0 := ne_of_gt (lt_of_le_of_lt zero_le hc)
+  have hyv : v y ≠ 0 := (zero_le.trans_lt hc).ne'
   have hy0 : y ≠ 0 := v.ne_zero_iff.mp hyv
   have hx : v (c / y) < 1 := by
     rw [v.map_div]
@@ -112,5 +126,7 @@ difference of integer powers, when the exponent has valuation one. -/
   rw [heq, v.map_mul, map_zpow₀, v.map_one_add_zpow_sub_one hx n hn, v.map_div,
     zpow_sub₀ hyv, zpow_one]
   simp [div_eq_mul_inv, mul_comm, mul_left_comm]
+
+end Field
 
 end Valuation
