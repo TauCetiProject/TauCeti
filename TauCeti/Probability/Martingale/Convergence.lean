@@ -363,7 +363,7 @@ theorem measure_inter_eq_mul_of_forall_zero_or_one_iInf
   set f₀ : Ω → ℝ := A.indicator fun _ => 1 with hf₀def
   have hf₀ : Integrable f₀ μ := (integrable_const 1).indicator hA
   have hconst : μ[f₀|⨅ n, 𝔽 n] =ᵐ[μ] fun _ => ∫ x, f₀ x ∂μ :=
-    condExp_ae_eq_integral_of_forall_zero_or_one hinf htriv hf₀
+    condExp_ae_eq_integral_of_forall_zero_or_one hinf htriv
   have hc : ∫ x, f₀ x ∂μ = (μ A).toReal := by
     rw [hf₀def, integral_indicator_const (1 : ℝ) hA, smul_eq_mul, mul_one, measureReal_def]
   have hbound : ∀ n, |(μ (A ∩ B)).toReal - (μ A).toReal * (μ B).toReal| ≤
