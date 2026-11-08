@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Matrix.Polar.SpecialLinear
 public import TauCeti.RepresentationTheory.SU2.Adjoint
 public import TauCeti.Topology.Algebra.Group.ClosedSubgroup
+public import TauCeti.Topology.Homotopy.HomotopyEquiv
 
 /-!
 # `PSU(2) ≅ SO(3)`, and `PSL(2, ℂ)` is homotopy equivalent to `SO(3)`
@@ -73,9 +74,7 @@ theorem psuEquivSO3_rangeRestrict (g : SU2) :
     psuEquivSO3 (toPSL.rangeRestrict g) = toSO3 g := by
   have h : quotientKerToPSLContinuousMulEquiv (g : SU2 ⧸ _) = toPSL.rangeRestrict g :=
     Subtype.ext (coe_quotientKerToPSLContinuousMulEquiv_mk g)
-  rw [psuEquivSO3, ContinuousMulEquiv.trans_apply, ← h, ContinuousMulEquiv.symm_apply_apply,
-    ContinuousMulEquiv.trans_apply, ContinuousMulEquiv.quotientCongr_mk,
-    ContinuousMulEquiv.refl_apply, quotientKerToSO3_mk]
+  simp [psuEquivSO3, ← h, quotientKerToSO3_mk]
 
 end SU2
 
@@ -100,13 +99,8 @@ the inclusion `PSU(2) → PSL(2, ℂ)`. -/
 theorem pslHomotopyEquivSO3_symm_apply (R : specialOrthogonalGroup (Fin 3) ℝ) :
     pslHomotopyEquivSO3.symm R =
       (SU2.psuEquivSO3.symm R : ProjectiveSpecialLinearGroup (Fin 2) ℂ) := by
-  rw [pslHomotopyEquivSO3, ContinuousMap.HomotopyEquiv.symm_trans,
-    ContinuousMap.HomotopyEquiv.trans_apply, ← Homeomorph.symm_toHomotopyEquiv,
-    Homeomorph.coe_toHomotopyEquiv, ContinuousMulEquiv.toHomeomorph_eq_coe,
-    ContinuousMulEquiv.coe_toHomeomorph_symm]
-  -- The double inverse `e.symm.symm` of a homotopy equivalence has the same underlying map as `e`
-  -- by definition; Mathlib states no lemma for this.
-  exact ProjectiveSpecialLinearGroup.polarHomotopyEquiv_apply _
+  simp [pslHomotopyEquivSO3, ← Homeomorph.symm_toHomotopyEquiv,
+    ContinuousMulEquiv.toHomeomorph_eq_coe]
 
 /-- The homotopy inverse of `PSL(2, ℂ) ≃ₕ SO(3)` sends the rotation `toSO3 k` of `k ∈ SU(2)` to the
 class of `k`. -/

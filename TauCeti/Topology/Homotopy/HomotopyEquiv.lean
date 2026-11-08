@@ -28,11 +28,12 @@ Finally, the file records that a cylinder `X × [a, b]` is homotopy equivalent t
 through any of its slices `X × {t}`: the interval deforms linearly onto the point `t`. This is how
 the two ends of a cylinder are seen to induce isomorphisms on homology.
 
-It also records that a left homotopy inverse of a homotopy equivalence is automatically a right
-homotopy inverse.
+It also records that inverting a homotopy equivalence twice gives it back, and that a left
+homotopy inverse of a homotopy equivalence is automatically a right homotopy inverse.
 
 ## Main declarations
 
+* `ContinuousMap.HomotopyEquiv.symm_symm`: the double inverse of a homotopy equivalence is itself.
 * `ContinuousMap.HomotopyEquiv.pathConnectedSpace`: a space homotopy equivalent to a path
   connected space is path connected.
 * `ContinuousMap.HomotopyEquiv.prodCongr_apply`: the product of two homotopy equivalences acts
@@ -53,6 +54,11 @@ open scoped ContinuousMap
 
 variable {X Y Z Z' : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
   [TopologicalSpace Z']
+
+/-- Inverting a homotopy equivalence twice gives it back. -/
+@[simp]
+theorem _root_.ContinuousMap.HomotopyEquiv.symm_symm (e : X ≃ₕ Y) : e.symm.symm = e :=
+  rfl
 
 /-- **Path connectedness is a homotopy invariant.** A space homotopy equivalent to a path
 connected space is path connected. -/
