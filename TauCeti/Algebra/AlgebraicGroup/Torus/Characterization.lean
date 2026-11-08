@@ -29,8 +29,8 @@ generation then identifies it with a finite-rank free abelian group.
 * `iff_multiplicativeType_and_geometricallyConnected_and_geometricallyReduced`: a finite-type
   commutative Hopf algebra over a field is a torus exactly when it is of multiplicative type,
   geometrically connected, and geometrically reduced.
-* `TauCeti.torusCommHopfAlgProperty.of_groupLikeSetSpan_eq_top`: a reduced connected
-  diagonalizable group is a torus.
+* `TauCeti.splitTorusCommHopfAlgProperty.of_groupLikeSetSpan_eq_top`: a reduced connected
+  diagonalizable group is a split torus.
 
 ## References
 
@@ -116,14 +116,15 @@ theorem iff_multiplicativeType_and_geometricallyConnected_and_geometricallyReduc
     rw [torusCommHopfAlgProperty_iff]
     exact ⟨n, ⟨j ≪≫ i⟩⟩
 
-/-- **A reduced connected diagonalizable group is a torus.**
+end torusCommHopfAlgProperty
+
+/-- **A reduced connected diagonalizable group is a split torus.**
 Diagonalizability is expressed by the group-like elements spanning the coordinate Hopf
-algebra. Reducedness and connectedness of the coordinate ring force the character group to be
-torsion-free, so the group is a split torus; no algebraic closedness is needed. -/
-theorem of_groupLikeSetSpan_eq_top {k : Type u} [Field k]
+algebra. -/
+theorem splitTorusCommHopfAlgProperty.of_groupLikeSetSpan_eq_top {k : Type u} [Field k]
     (H : FiniteTypeCommHopfAlgCat.{u, u} k) [IsReduced H] [ConnectedSpace (PrimeSpectrum H)]
     (hH : Subcoalgebra.groupLikeSetSpan (R := k) (C := H) Set.univ = ⊤) :
-    torusCommHopfAlgProperty k H := by
+    splitTorusCommHopfAlgProperty k H := by
   rw [← DiagonalizableGroup.groupLikeSpannedProperty_iff,
     ← DiagonalizableGroup.essImage_coordinateRingFunctor] at hH
   obtain ⟨G, ⟨i⟩⟩ := hH
@@ -137,9 +138,7 @@ theorem of_groupLikeSetSpan_eq_top {k : Type u} [Field k]
   have _ : ConnectedSpace (PrimeSpectrum (MonoidAlgebra k G)) :=
     RingHom.connectedSpace_primeSpectrum_of_injective _ hi
   have _ : IsMulTorsionFree G := isMulTorsionFree_of_isReduced_monoidAlgebra_of_connectedSpace k G
-  exact (torusCommHopfAlgProperty k).prop_of_iso i
-    (splitTorusCommHopfAlgProperty.torus k _ (splitTorusCommHopfAlgProperty_coordinateRing k G))
-
-end torusCommHopfAlgProperty
+  exact (splitTorusCommHopfAlgProperty k).prop_of_iso i
+    (splitTorusCommHopfAlgProperty_coordinateRing k G)
 
 end TauCeti
