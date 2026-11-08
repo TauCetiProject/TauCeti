@@ -28,13 +28,13 @@ original domain.
 On a space with continuous addition and zero, a locally integrable function on an open set agrees
 with a globally integrable one on any compact subset and on all sufficiently small translates of it.
 
-A function locally integrable on a null-measurable set `s`, vanishing almost everywhere on `s` off
-a null-measurable compact `K ⊆ s`, is integrable on the whole space after extension by zero. This
-is the step that turns a local hypothesis plus compact support into a global one. Both sets are
+A function locally integrable on a set `s`, vanishing almost everywhere on `s` off a
+null-measurable compact `K ⊆ s`, is integrable on the whole space after extension by zero. This
+is the step that turns a local hypothesis plus compact support into a global one. The set `K` is
 asked to be null-measurable explicitly because nothing here ties the topology on `X` to its
 measurable space -- there is no `OpensMeasurableSpace` or `BorelSpace` assumption, so neither
 compactness nor closedness of `K` carries any measurability with it. (Absent a separation axiom
-`K` need not even be closed, but that is the lesser obstacle.)
+`K` need not even be closed, but that is the lesser obstacle.) The set `s` needs no measurability.
 
 Pointwise suprema and infima of locally integrable functions are locally integrable in a
 normed lattice with solid norm, and finite sums of functions locally integrable on a set are
@@ -55,15 +55,16 @@ lies in `s` is integrable on the whole space.
 A function continuous on a compact set is bounded there, so for a measure finite on compact sets
 it lies in every `Lᵖ` on each measurable subset of that compact set.
 In particular, the squared norm of a continuous compactly supported function is integrable, and so
-is the product of a continuous function whose compact support lies in an open set `U` with a
+is the product of a continuous function whose compact support lies in a set `U` with a
 function continuous on `U`.
 
 For a locally finite measure, the indicator of a constant on a set that is null-measurable for
 the restriction of the measure to `s` is locally integrable on `s`.
 
-A real function with values in `[0, 1]` almost everywhere on a measurable set agrees almost
-everywhere there with a function that is locally integrable on the whole space and everywhere
-`[0, 1]`-valued: clamp it to `[0, 1]` and extend it by zero.
+A real function with values in `[0, 1]` almost everywhere on a set `s`, and almost everywhere
+strongly measurable for the restriction of the measure to `s`, agrees almost everywhere there with a
+function that is locally integrable on the whole space and everywhere `[0, 1]`-valued: clamp a
+globally strongly measurable representative to `[0, 1]`. The set `s` needs no measurability.
 
 ## Main declarations
 
