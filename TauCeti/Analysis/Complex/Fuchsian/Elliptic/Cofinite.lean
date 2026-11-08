@@ -74,7 +74,7 @@ open scoped ENNReal MatrixGroups Pointwise Topology commutatorElement
 
 /-- For small `τ > 0`, the constants in the thin-part argument at an elliptic point are bounded:
 `τ ≤ c / 2`, `4 (cosh τ * cosh τ - 1) < 1 / 2` and `4 (cosh τ - 1) < sinh (c / 4) ^ 2`. -/
-theorem _root_.Real.eventually_pos_le_cosh_lt {c : ℝ} (hc : 0 < c) :
+private lemma eventually_pos_le_cosh_lt {c : ℝ} (hc : 0 < c) :
     ∀ᶠ τ in 𝓝[>] (0 : ℝ), 0 < τ ∧ τ ≤ c / 2 ∧
       4 * (Real.cosh τ * Real.cosh τ - 1) < 1 / 2 ∧
       4 * (Real.cosh τ - 1) < Real.sinh (c / 4) ^ 2 := by
@@ -140,7 +140,7 @@ theorem IsCofinite.exists_pos_le_dist_smul_of_dist_smul_lt (hΓ : Γ.IsCofinite)
   have := hΓ.discreteTopology
   obtain ⟨c, hc, hcA⟩ := hΓ.exists_pos_le_dist_smul_of_smul_eq_self
   -- choose `τ` small enough for the Margulis lemma and for the separation constant `c`
-  have hev := Real.eventually_pos_le_cosh_lt hc
+  have hev := eventually_pos_le_cosh_lt hc
   obtain ⟨τ, hτ, hτc, hτM, hτs⟩ := hev.exists
   refine ⟨τ, hτ, fun g hg hg₁ w hgw k hk hkw y hgy ↦ ?_⟩
   by_contra! hky
