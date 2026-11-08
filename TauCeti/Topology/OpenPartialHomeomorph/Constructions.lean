@@ -86,23 +86,14 @@ noncomputable def subtypeCoord (e : OpenPartialHomeomorph X Y) (s : Set X) (hs :
   source := Subtype.val ⁻¹' e.source
   target := ι ⁻¹' e.target
   map_source' x hx := by
-    -- These fields are being defined, so their public equations are not available yet.
-    change ι (π (e x.1)) ∈ e.target
-    rw [hslice hx x.2]
+    rw [mem_preimage, hslice hx x.2]
     exact e.map_source hx
   map_target' z hz := by
     simp only [mem_preimage] at hz ⊢
     rw [dite_eq_left hz]
     exact e.map_target hz
-  left_inv' x hx := by
-    have htarget : ι (π (e x.1)) ∈ e.target := by
-      rw [hslice hx x.2]
-      exact e.map_source hx
-    rw [dite_eq_left htarget]
-    apply Subtype.ext
-    -- Reduce equality in the subtype after selecting the on-target inverse branch.
-    change e.symm (ι (π (e x.1))) = x.1
-    rw [hslice hx x.2, e.left_inv hx]
+  left_inv' x hx := Subtype.ext <| by
+    simp [hslice hx x.2, e.map_source hx, e.left_inv hx]
   right_inv' z hz := by
     simp only [mem_preimage] at hz
     rw [dite_eq_left hz, e.right_inv hz]
@@ -117,55 +108,36 @@ noncomputable def subtypeCoord (e : OpenPartialHomeomorph X Y) (s : Set X) (hs :
     rw [Topology.IsInducing.subtypeVal.continuousOn_iff]
     refine ContinuousOn.congr
       (e.symm.continuousOn.comp hιc.continuousOn (mapsTo_preimage _ _)) fun z hz => ?_
-    simp only [mem_preimage] at hz
-    simp [Function.comp_apply, hz]
+    simp [mem_preimage.mp hz]
+
+section SubtypeCoord
+
+variable (e : OpenPartialHomeomorph X Y) (s : Set X) (hs : Nonempty s) (ι : Z → Y) (π : Y → Z)
+  (hι : ∀ {z}, ι z ∈ e.target → e.symm (ι z) ∈ s)
+  (hslice : ∀ {x}, x ∈ e.source → x ∈ s → ι (π (e x)) = e x)
+  (hπι : Set.LeftInvOn π ι (ι ⁻¹' e.target)) (hιc : Continuous ι)
+  (hπc : ContinuousOn π (e.target ∩ Set.range ι))
 
 /-- The source of `subtypeCoord` is the part of the subtype in the ambient source. -/
 @[simp]
-theorem subtypeCoord_source (e : OpenPartialHomeomorph X Y) (s : Set X) (hs : Nonempty s)
-    (ι : Z → Y) (π : Y → Z)
-    (hι : ∀ {z}, ι z ∈ e.target → e.symm (ι z) ∈ s)
-    (hslice : ∀ {x}, x ∈ e.source → x ∈ s → ι (π (e x)) = e x)
-    (hπι : Set.LeftInvOn π ι (ι ⁻¹' e.target)) (hιc : Continuous ι)
-    (hπc : ContinuousOn π (e.target ∩ Set.range ι)) :
-    (e.subtypeCoord s hs ι π hι hslice hπι hιc hπc).source = Subtype.val ⁻¹' e.source := by
-  unfold subtypeCoord
-  rfl
+theorem subtypeCoord_source :
+    (e.subtypeCoord s hs ι π hι hslice hπι hιc hπc).source = Subtype.val ⁻¹' e.source := (rfl)
 
 /-- The target of `subtypeCoord` is the preimage of the ambient target under the slice
 parametrization. -/
 @[simp]
-theorem subtypeCoord_target (e : OpenPartialHomeomorph X Y) (s : Set X) (hs : Nonempty s)
-    (ι : Z → Y) (π : Y → Z)
-    (hι : ∀ {z}, ι z ∈ e.target → e.symm (ι z) ∈ s)
-    (hslice : ∀ {x}, x ∈ e.source → x ∈ s → ι (π (e x)) = e x)
-    (hπι : Set.LeftInvOn π ι (ι ⁻¹' e.target)) (hιc : Continuous ι)
-    (hπc : ContinuousOn π (e.target ∩ Set.range ι)) :
-    (e.subtypeCoord s hs ι π hι hslice hπι hιc hπc).target = ι ⁻¹' e.target := by
-  unfold subtypeCoord
-  rfl
+theorem subtypeCoord_target :
+    (e.subtypeCoord s hs ι π hι hslice hπι hιc hπc).target = ι ⁻¹' e.target := (rfl)
 
 /-- `subtypeCoord` reads a subtype point using the ambient map followed by the coordinate
 retraction. -/
 @[simp]
-theorem subtypeCoord_apply (e : OpenPartialHomeomorph X Y) (s : Set X) (hs : Nonempty s)
-    (ι : Z → Y) (π : Y → Z)
-    (hι : ∀ {z}, ι z ∈ e.target → e.symm (ι z) ∈ s)
-    (hslice : ∀ {x}, x ∈ e.source → x ∈ s → ι (π (e x)) = e x)
-    (hπι : Set.LeftInvOn π ι (ι ⁻¹' e.target)) (hιc : Continuous ι)
-    (hπc : ContinuousOn π (e.target ∩ Set.range ι)) (x : s) :
-    e.subtypeCoord s hs ι π hι hslice hπι hιc hπc x = π (e x.1) := by
-  unfold subtypeCoord
-  rfl
+theorem subtypeCoord_apply (x : s) :
+    e.subtypeCoord s hs ι π hι hslice hπι hιc hπc x = π (e x.1) := (rfl)
 
 /-- On its source, `subtypeCoord` recovers the ambient coordinate after applying the slice
 parametrization. -/
-theorem subtypeCoord_parametrization_apply (e : OpenPartialHomeomorph X Y) (s : Set X)
-    (hs : Nonempty s) (ι : Z → Y) (π : Y → Z)
-    (hι : ∀ {z}, ι z ∈ e.target → e.symm (ι z) ∈ s)
-    (hslice : ∀ {x}, x ∈ e.source → x ∈ s → ι (π (e x)) = e x)
-    (hπι : Set.LeftInvOn π ι (ι ⁻¹' e.target)) (hιc : Continuous ι)
-    (hπc : ContinuousOn π (e.target ∩ Set.range ι)) {x : s}
+theorem subtypeCoord_parametrization_apply {x : s}
     (hx : x ∈ (e.subtypeCoord s hs ι π hι hslice hπι hιc hπc).source) :
     ι (e.subtypeCoord s hs ι π hι hslice hπι hιc hπc x) = e x.1 := by
   rw [subtypeCoord_apply]
@@ -174,15 +146,11 @@ theorem subtypeCoord_parametrization_apply (e : OpenPartialHomeomorph X Y) (s : 
 /-- On its target, the inverse of `subtypeCoord` is the ambient inverse evaluated on the
 parametrized slice. -/
 @[simp]
-theorem coe_subtypeCoord_symm_apply (e : OpenPartialHomeomorph X Y) (s : Set X)
-    (hs : Nonempty s) (ι : Z → Y) (π : Y → Z)
-    (hι : ∀ {z}, ι z ∈ e.target → e.symm (ι z) ∈ s)
-    (hslice : ∀ {x}, x ∈ e.source → x ∈ s → ι (π (e x)) = e x)
-    (hπι : Set.LeftInvOn π ι (ι ⁻¹' e.target)) (hιc : Continuous ι)
-    (hπc : ContinuousOn π (e.target ∩ Set.range ι)) {z : Z} (hz : ι z ∈ e.target) :
+theorem coe_subtypeCoord_symm_apply {z : Z} (hz : ι z ∈ e.target) :
     ((e.subtypeCoord s hs ι π hι hslice hπι hιc hπc).symm z : X) = e.symm (ι z) := by
-  classical
   simp [subtypeCoord, hz]
+
+end SubtypeCoord
 
 section Pi
 
