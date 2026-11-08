@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.Morse.Bott
 public import TauCeti.Geometry.Manifold.Morse.Bott.Basic
 import TauCeti.Analysis.Calculus.SecondDerivative
-import TauCeti.Geometry.Manifold.MFDeriv.Chart
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # The Morse–Bott lemma on a manifold
