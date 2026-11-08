@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.CrossedProduct.Fourier
 public import Mathlib.Analysis.InnerProductSpace.StarOrder
+import TauCeti.MeasureTheory.Function.L2Space
 
 /-!
 # Positivity and faithfulness of the identity Fourier coefficient
@@ -17,10 +18,9 @@ product is positive and faithful. Its quadratic form on `x* x` is the squared no
 without a countability assumption on the group or nondegeneracy of the faithful inducing
 representation. Coefficients may be nonunital.
 
-We use the existing contractive map `RegularCrossedProduct.fourierCoeff` rather than
-introduce a second coefficient map. These results provide the positivity and faithfulness
-of the canonical conditional expectation; the coefficient-algebra inclusion and bimodule
-identities are not constructed here.
+The identity coefficient `RegularCrossedProduct.fourierCoeff α ρ hρ 1` is the candidate
+for the canonical conditional expectation from the regular crossed product to `A`;
+these are its positivity and faithfulness properties.
 
 ## References
 
@@ -56,8 +56,8 @@ theorem inner_fourierCoeff_one_star_mul_self (x : regularAlgebra α ρ Measure.c
   rw [← h]
   simp only [MulMemClass.coe_mul, StarMemClass.coe_star,
     ContinuousLinearMap.star_eq_adjoint, mul_apply_eq_comp,
-    ContinuousLinearMap.adjoint_inner_right, inner_self_eq_norm_sq_to_K]
-  rfl
+    ContinuousLinearMap.adjoint_inner_right, inner_self_eq_norm_sq_to_K,
+    RCLike.ofReal_eq_complex_ofReal]
 
 /-- The identity coefficient detects vanishing of `x* x`. This is faithfulness in the
 usual C⋆-algebraic sense and does not require a chosen order on the coefficient algebra. -/
@@ -65,23 +65,12 @@ theorem fourierCoeff_one_star_mul_self_eq_zero_iff
     (x : regularAlgebra α ρ Measure.count) :
     fourierCoeff α ρ hρ 1 (star x * x) = 0 ↔ x = 0 := by
   refine ⟨fun hx => ?_, ?_⟩
-  · have hsingle (s : G) (v : H) :
-        (x : Lp H 2 (Measure.count : Measure G) →L[ℂ]
-          Lp H 2 (Measure.count : Measure G))
-          (indicatorConstLp 2 (measurableSet_singleton s) (by simp) v) = 0 := by
-      have h := inner_fourierCoeff_one_star_mul_self α ρ hρ x s v
-      rw [hx, map_zero, map_zero, zero_apply, inner_zero_right] at h
-      exact norm_eq_zero.mp ((pow_eq_zero_iff two_ne_zero).mp (by exact_mod_cast h.symm))
-    apply eq_zero_of_fourierCoeff_eq_zero α ρ hρ
-    intro g
-    apply hρ
-    apply ContinuousLinearMap.ext
-    intro v
-    apply ext_inner_left ℂ
-    intro w
-    have h := inner_single_fourierCoeff α ρ hρ x 1 g⁻¹ w v
-    simpa only [inv_one, one_apply, one_mul, inv_inv, hsingle, inner_zero_right,
-      map_zero, zero_apply] using h.symm
+  · apply Subtype.ext
+    apply ContinuousLinearMap.eq_zero_of_apply_indicatorConstLp_singleton
+    intro s v
+    have h := inner_fourierCoeff_one_star_mul_self α ρ hρ x s v
+    rw [hx, map_zero, map_zero, zero_apply, inner_zero_right] at h
+    exact norm_eq_zero.mp ((pow_eq_zero_iff two_ne_zero).mp (by exact_mod_cast h.symm))
   · rintro rfl
     rw [mul_zero, map_zero]
 
@@ -93,8 +82,11 @@ variable [PartialOrder A] [StarOrderedRing A]
 and a possibly degenerate faithful inducing representation. -/
 theorem fourierCoeff_one_nonneg (x : regularAlgebra α ρ Measure.count) (hx : 0 ≤ x) :
     0 ≤ fourierCoeff α ρ hρ 1 x := by
+  have hx' : 0 ≤ (x : Lp H 2 (Measure.count : Measure G) →L[ℂ]
+      Lp H 2 (Measure.count : Measure G)) := by
+    simpa only [ZeroMemClass.coe_zero] using (Subtype.coe_le_coe.mpr hx)
   have hsaX : IsSelfAdjoint x :=
-    (ContinuousLinearMap.nonneg_iff_isPositive.mp hx).isSelfAdjoint.of_map
+    (ContinuousLinearMap.nonneg_iff_isPositive.mp hx').isSelfAdjoint.of_map
       (NonUnitalStarSubalgebraClass.subtype (regularAlgebra α ρ Measure.count))
       Subtype.val_injective
   have hsa : IsSelfAdjoint (fourierCoeff α ρ hρ 1 x) := by
@@ -102,8 +94,6 @@ theorem fourierCoeff_one_nonneg (x : regularAlgebra α ρ Measure.count) (hx : 0
     simpa only [IsSelfAdjoint, inv_one, one_apply, hsaX.star_eq] using h.symm
   have hpos : (ρ (fourierCoeff α ρ hρ 1 x)).IsPositive := by
     refine ⟨(hsa.map ρ).isSymmetric, fun v => ?_⟩
-    have hx' : 0 ≤ (x : Lp H 2 (Measure.count : Measure G) →L[ℂ]
-        Lp H 2 (Measure.count : Measure G)) := hx
     rw [ContinuousLinearMap.reApplyInnerSelf_apply, inner_re_symm]
     have h := (ContinuousLinearMap.nonneg_iff_isPositive.mp hx').re_inner_nonneg_right
       (indicatorConstLp 2 (measurableSet_singleton (1 : G)) (by simp) v)
