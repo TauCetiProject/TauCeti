@@ -172,7 +172,7 @@ private theorem exists_section_badParameter_neighborhood {n : ℕ∞ω} {x : M} 
       hfn.hasStrictFDerivAt_fderiv hn0
   have hsurj : Surjective (D₁.coprod D₂) := by
     rw [ContinuousLinearMap.coprod_comp_inl_inr, ← hfeq, ← hpt,
-      ← hcd.mvfderiv_eq_fderiv_comp_extChartAt_symm]
+      ← TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm]
     exact (surjective_sectionLinearization_iff (hb _ hz) he hcd hz).mp htotal
   -- At the centre of the chart, the coordinate derivative in the `M` direction is intrinsic.
   have hcl : MDifferentiableAt 𝓘(ℝ, X) 𝓘(ℝ, F) (fun y ↦ c (y, l)) x :=
@@ -181,7 +181,7 @@ private theorem exists_section_badParameter_neighborhood {n : ℕ∞ω} {x : M} 
   have hbl : ContinuousAt (fun y ↦ b (y, l)) x :=
     ContinuousAt.comp (f := fun y ↦ (y, l)) (hb _ hz) (continuousAt_id.prodMk continuousAt_const)
   have hD₁ : D₁ = mvfderiv 𝓘(ℝ, X) (fun y ↦ c (y, l)) x := by
-    rw [hcl.mvfderiv_eq_fderiv_comp_extChartAt_symm]
+    rw [TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm]
     exact ((hfn.differentiableAt hn0).hasFDerivAt.comp (φ x)
       (hasFDerivAt_prodMk_left (𝕜 := ℝ) (φ x) l)).fderiv.symm
   have hFred' : ContinuousLinearMap.IsFredholm D₁ := by

@@ -55,7 +55,7 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   derivative is the manifold derivative transported by the canonical tangent-to-model casts.
 * `TauCeti.mdifferentiableAt_iff_differentiableAt_comp_extChartAt_symm`: conversely, a map into a
   normed space is differentiable whenever its preferred coordinate expression is.
-* `MDifferentiableAt.mvfderiv_eq_fderiv_comp_extChartAt_symm`: on a boundaryless manifold, the
+* `TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm`: on a boundaryless manifold, the
   vector-valued manifold derivative is the Fréchet derivative of the coordinate expression.
 * `MDifferentiableAt.mfderiv_eq_fderiv_extChartAt_conj`: on a boundaryless manifold, the manifold
   derivative of a map between manifolds is the Fréchet derivative of its expression in the extended
@@ -357,15 +357,6 @@ theorem _root_.MDifferentiableAt.differentiableAt_writtenInExtChartAt {g : M →
   simpa only [writtenInExtChartAt, I.range_eq_univ, differentiableWithinAt_univ] using
     ((mdifferentiableAt_iff _ _).1 hg).2
 
-omit [IsManifold I 1 M] in
-/-- On a boundaryless manifold, the vector-valued manifold derivative of a map into a normed space
-is the Fréchet derivative of its coordinate expression in the preferred extended chart. -/
-theorem _root_.MDifferentiableAt.mvfderiv_eq_fderiv_comp_extChartAt_symm
-    (hf : MDifferentiableAt I 𝓘(𝕜, F) f x) :
-    mvfderiv I f x = fderiv 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x x) := by
-  rw [hf.mvfderiv, ModelWithCorners.Boundaryless.range_eq_univ, fderivWithin_univ,
-    writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe, Function.id_comp]
-
 omit [IsManifold I 1 M] [IsManifold I' 1 M'] in
 /-- On a boundaryless manifold, the manifold derivative of `g : M → M'` at `x` is the Fréchet
 derivative of `g` read in the extended charts at `x` and at `y = g x`, with the tangent spaces at
@@ -409,6 +400,21 @@ theorem TauCeti.mdifferentiableAt_iff_differentiableAt_comp_extChartAt_symm :
       writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
       Function.id_comp]
 
+omit [IsManifold I 1 M] in
+/-- On a boundaryless manifold, the vector-valued manifold derivative of a map into a normed space
+is the Fréchet derivative of its coordinate expression in the preferred extended chart. Both sides
+are `0` when the map is not differentiable at the point. -/
+theorem TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm :
+    mvfderiv I f x = fderiv 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x x) := by
+  by_cases hf : MDifferentiableAt I 𝓘(𝕜, F) f x
+  · rw [hf.mvfderiv, ModelWithCorners.Boundaryless.range_eq_univ, fderivWithin_univ,
+      writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
+      Function.id_comp]
+  · have hd : ¬ DifferentiableAt 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x x) :=
+      mt (TauCeti.mdifferentiableAt_iff_differentiableAt_comp_extChartAt_symm).mpr hf
+    rw [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hf, fderiv_zero_of_not_differentiableAt hd]
+    rfl
+
 section SelfModel
 
 variable {N : Type*} [TopologicalSpace N] [ChartedSpace E N] {g : N → F} {z : N}
@@ -433,15 +439,7 @@ theorem TauCeti.fderiv_comp_chartAt_symm :
     fderiv 𝕜 (g ∘ (chartAt E z).symm) (chartAt E z z) = mvfderiv 𝓘(𝕜, E) g z := by
   have hext : ((extChartAt 𝓘(𝕜, E) z).symm : E → N) = (chartAt E z).symm := by ext; simp
   have hext' : extChartAt 𝓘(𝕜, E) z z = chartAt E z z := by simp
-  by_cases hg : MDifferentiableAt 𝓘(𝕜, E) 𝓘(𝕜, F) g z
-  swap
-  · have hd : ¬ DifferentiableAt 𝕜 (g ∘ (chartAt E z).symm) (chartAt E z z) := by
-      rw [← hext, ← hext']
-      exact mt (TauCeti.mdifferentiableAt_iff_differentiableAt_comp_extChartAt_symm).mpr hg
-    rw [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hg,
-      fderiv_zero_of_not_differentiableAt hd]
-    rfl
-  rw [hg.mvfderiv_eq_fderiv_comp_extChartAt_symm, hext, hext']
+  rw [TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm, hext, hext']
 
 /-- On a manifold modelled on its model space, the kernel of the vector-valued manifold derivative
 is the kernel of the derivative of the preferred-chart coordinate expression, a subspace of the

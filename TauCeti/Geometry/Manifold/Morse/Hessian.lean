@@ -433,10 +433,10 @@ theorem isManifoldNondegenerateCriticalPoint_iff_criticalHessian :
   refine ⟨fun h ↦ ?_, fun ⟨hf, hcrit, hinv⟩ ↦ ?_⟩
   · have hf := hsmooth.2 h.contDiffAt
     refine ⟨hf, ?_, h.isInvertible⟩
-    rw [(hf.mdifferentiableAt two_ne_zero).mvfderiv_eq_fderiv_comp_extChartAt_symm]
+    rw [TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm]
     exact h.fderiv_eq_zero
   · refine ⟨hsmooth.1 hf, ?_, hinv⟩
-    rwa [← (hf.mdifferentiableAt two_ne_zero).mvfderiv_eq_fderiv_comp_extChartAt_symm]
+    rwa [← TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm]
 
 section Matrix
 
@@ -529,8 +529,8 @@ theorem criticalHessian_apply_eq_mvfderiv [IsManifold I 2 M]
   have hmd : MDifferentiableAt I 𝓘(ℝ) (fun y ↦ mvfderiv I f y (Y y)) x :=
     ((hf.contMDiffAt_mvfderiv_apply (m := 1) (by norm_num)).mdifferentiableAt one_ne_zero).comp x hY
   have hzero : fderiv ℝ g (ψ x) = 0 := by
-    rwa [← (hf.mdifferentiableAt two_ne_zero).mvfderiv_eq_fderiv_comp_extChartAt_symm]
-  rw [criticalHessian_def, hmd.mvfderiv_eq_fderiv_comp_extChartAt_symm, ← heq.fderiv_eq,
+    rwa [← TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm]
+  rw [criticalHessian_def, TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm, ← heq.fderiv_eq,
     fderiv_clm_apply hDg hV]
   have hVx : V (ψ x) = Y x := VectorField.mpullbackWithin_extChartAt_symm_self Y x
   simp only [hzero, ContinuousLinearMap.zero_comp, zero_add, hVx]
@@ -646,7 +646,8 @@ private theorem exists_transition :
   have he1 : e ∈ IsManifold.maximalAtlas I 1 M :=
     IsManifold.maximalAtlas_subset_of_le (by norm_num) he
   have hext := e.contMDiffAt_extend he hx
-  have hD := ((hext.mdifferentiableAt two_ne_zero).mvfderiv_eq_fderiv_comp_extChartAt_symm).symm
+  have hD := (TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm (I := I) (f := e.extend I)
+    (x := x)).symm
   have hinv : (mvfderiv I (e.extend I) x).IsInvertible := by
     -- `mvfderiv` is `mfderiv` followed by the identification `fromTangentSpace` of the tangent
     -- space of `E` with `E`; both factors are invertible.

@@ -60,7 +60,7 @@ theorem _root_.ContMDiffAt.exists_norm_mgradient_le_mul_norm_extChartAt_sub
       ‖mgradient I f y‖ ≤ C * ‖extChartAt I p y - extChartAt I p p‖ := by
   have hg := hf.contDiffAt_comp_extChartAt_symm
   have hg0 : fderiv ℝ (f ∘ (extChartAt I p).symm) (extChartAt I p p) = 0 := by
-    rwa [← (hf.mdifferentiableAt two_ne_zero).mvfderiv_eq_fderiv_comp_extChartAt_symm]
+    rwa [← TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm]
   obtain ⟨A, hA, hupper⟩ := hg.exists_norm_fderiv_le_mul_norm_sub hg0
   let T := (trivializationAt E (TangentSpace I) p).continuousLinearMapAt ℝ p
   let B := 2 * (‖T‖ + 1)
