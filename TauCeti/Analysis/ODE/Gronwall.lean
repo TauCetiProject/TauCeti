@@ -48,6 +48,11 @@ Reversing time gives the two-sided version: on `[a, b]` such a function vanishes
 soon as it vanishes at one point (`TauCeti.eq_zero_of_norm_deriv_le_mul_norm_self_of_mem_Icc`).
 This is the uniqueness argument for linear differential equations by energy estimates.
 
+A solution of the scalar linear equation `f' = c f` on `[a, b]`, with values in a normed space and a
+continuous coefficient `c`, is `f b = exp (∫ₐᵇ c) • f a`
+(`TauCeti.eq_exp_integral_smul_of_hasDerivWithinAt`): the function `exp (-∫ₐᵗ c) • f t` has zero
+derivative.
+
 ## References
 
 * T. H. Gronwall, *Note on the derivatives with respect to a parameter of the solutions of a
@@ -229,5 +234,35 @@ theorem eq_zero_of_norm_deriv_le_mul_norm_self_of_mem_Icc {E : Type*} [NormedAdd
       (by simpa using hfc) (fun y hy ↦ by simpa using bound (-y) (hsub (Ico_subset_Icc_self hy)))
       (-x) ⟨by linarith, by linarith [hx.1]⟩
     simpa using key
+
+/-- **Scalar linear differential equations.** If `f` is differentiable within `[a, b]` with
+`f' = c f` there, for a coefficient `c` continuous on `[a, b]`, then `f b = exp (∫ₐᵇ c) • f a`. -/
+theorem eq_exp_integral_smul_of_hasDerivWithinAt {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {f : ℝ → E} {c : ℝ → ℝ} {a b : ℝ} (hab : a ≤ b)
+    (hc : ContinuousOn c (Icc a b))
+    (hf : ∀ t ∈ Icc a b, HasDerivWithinAt f (c t • f t) (Icc a b) t) :
+    f b = exp (∫ t in a..b, c t) • f a := by
+  -- Extend `c` continuously to all of `ℝ`, so that its primitive `G` is differentiable everywhere.
+  set c' : ℝ → ℝ := fun t ↦ c (projIcc a b hab t)
+  have hc' : Continuous c' :=
+    hc.comp_continuous (continuous_subtype_val.comp continuous_projIcc) fun t ↦ Subtype.mem _
+  have hcc' (t : ℝ) (ht : t ∈ Icc a b) : c' t = c t := by
+    simp only [c', projIcc_of_mem hab ht]
+  set G : ℝ → ℝ := fun t ↦ ∫ s in a..t, c' s
+  -- The function `exp (-G t) • f t` has zero derivative within `[a, b]`.
+  have hderiv (t : ℝ) (ht : t ∈ Icc a b) :
+      HasDerivWithinAt (fun t ↦ exp (-G t) • f t) 0 (Icc a b) t := by
+    have hG := (hc'.integral_hasStrictDerivAt a t).hasDerivAt.hasDerivWithinAt (s := Icc a b)
+    refine (hG.neg.exp.smul (hf t ht)).congr_deriv ?_
+    rw [hcc' t ht]
+    module
+  have hconst := constant_of_has_deriv_right_zero (fun t ht ↦ (hderiv t ht).continuousWithinAt)
+    (fun t ht ↦ (hderiv t (Ico_subset_Icc_self ht)).mono_of_mem_nhdsWithin
+      (Icc_mem_nhdsGE_of_mem ht)) b ⟨hab, le_rfl⟩
+  have hGa : G a = 0 := intervalIntegral.integral_same
+  have hGb : G b = ∫ t in a..b, c t :=
+    intervalIntegral.integral_congr fun t ht ↦ hcc' t (by rwa [uIcc_of_le hab] at ht)
+  rw [hGa, neg_zero, exp_zero, one_smul] at hconst
+  rw [← hconst, smul_smul, ← exp_add, ← hGb, add_neg_cancel, exp_zero, one_smul]
 
 end TauCeti
