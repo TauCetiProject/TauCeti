@@ -97,9 +97,9 @@ private theorem exists_mem_nhds_finite_preimage_fullAdelicOrthogonalDiagonal
       isOpen_lt (continuous_abs.comp ((continuous_apply j).comp ((continuous_apply i).comp hM)))
         continuous_const
   have hB : IsOpen (B : Set U.finiteAdelicOrthogonal) :=
-    isOpen_forall_mem_of_eventually_eq _ _
+    isOpen_integralSubgroupOf_of_eventually_le _ _
       (fun p ↦ (U.isOpen_orthogonal p).inter (isOpen_integralOrthogonalSubgroup _ _))
-      (hU.mono fun p hp ↦ (inf_eq_left.mpr hp).symm)
+      (hU.mono fun _ ↦ le_inf le_rfl)
   have h1A : (1 : orthogonalGroup (Q.baseChange ℝ)) ∈ A := fun i j ↦ by
     simp only [M, OneMemClass.coe_one, LinearEquiv.coe_toLinearMap_one,
       LinearMap.toMatrix_id_eq_basis_toMatrix, Basis.toMatrix_self, Matrix.one_apply]
