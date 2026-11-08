@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DerivedCategory.Perfect
-public import TauCeti.Algebra.Homology.Ext.Syzygy
 public import TauCeti.Algebra.Homology.HomologicalComplex.Projective.Cycles
 public import TauCeti.CategoryTheory.Triangulated.FullSubcategory
 
