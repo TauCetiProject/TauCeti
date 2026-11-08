@@ -17,7 +17,8 @@ the expectation is one. Neither independence nor identical distribution is neede
 
 ## Main declarations
 
-* `TauCeti.Probability.integral_one_div_card_mul_re_trace_sampleCovariance`: the expectation identity.
+* `TauCeti.Probability.integral_one_div_card_mul_re_trace_sampleCovariance`: the expectation
+  identity.
 * `TauCeti.Probability.integral_one_div_card_mul_re_trace_sampleCovariance_eq_one`: the unit-moment
   specialization.
 -/
