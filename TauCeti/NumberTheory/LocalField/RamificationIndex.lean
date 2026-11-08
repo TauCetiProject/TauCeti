@@ -567,19 +567,40 @@ theorem ramificationIndex_eq_ramificationIdx :
     pow_dvd_pow_iff hϖ.ne_zero hϖ.not_isUnit] at hle
   omega
 
+omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
+  [ValuativeExtension K L] in
 /-- **Multiplicativity of the ramification index in a tower** `M/L/K`:
-`e(M/K) = e(L/K) · e(M/L)`. -/
+`e(M/K) = e(L/K) · e(M/L)`. Only the compatibility of the top step `M/L` is needed. -/
 theorem ramificationIndex_tower (M : Type*) [Field M] [ValuativeRel M] [TopologicalSpace M]
     [IsNonarchimedeanLocalField M] [Algebra L M] [Algebra K M] [IsScalarTower K L M]
     [ValuativeExtension L M] :
     ramificationIndex K M = ramificationIndex K L * ramificationIndex L M := by
-  have := ValuativeExtension.trans K L M
-  refine ramificationIndex_eq_iff.2 fun x ↦ ?_
-  have hx : Units.map (algebraMap K M : K →* M) x =
-      Units.map (algebraMap L M : L →* M) (Units.map (algebraMap K L : K →* L) x) := by
-    ext
-    simp [← IsScalarTower.algebraMap_apply]
-  rw [hx, normalizedValuation_algebraMap, normalizedValuation_algebraMap, pow_mul]
+  have hcomp : (normalizedValuation M).comp (Units.map (algebraMap K M : K →* M)) =
+      (powMonoidHom (ramificationIndex L M)).comp
+        ((normalizedValuation L).comp (Units.map (algebraMap K L : K →* L))) := by
+    ext x
+    have hx : Units.map (algebraMap K M : K →* M) x =
+        Units.map (algebraMap L M : L →* M) (Units.map (algebraMap K L : K →* L) x) := by
+      ext
+      simp [← IsScalarTower.algebraMap_apply]
+    simp [hx]
+  have hLM : ramificationIndex L M = (powMonoidHom (ramificationIndex L M) :
+      Multiplicative ℤ →* Multiplicative ℤ).range.index := by
+    refine ramificationIndex_def.trans ?_
+    rw [show (normalizedValuation M).comp (Units.map (algebraMap L M : L →* M)) =
+      (powMonoidHom (ramificationIndex L M)).comp (normalizedValuation L) by
+        ext x; simp, MonoidHom.range_comp, MonoidHom.range_eq_top.2 normalizedValuation_surjective,
+      Subgroup.map_top]
+  have hinj : Function.Injective (powMonoidHom (ramificationIndex L M) :
+      Multiplicative ℤ →* Multiplicative ℤ) := by
+    intro x y hxy
+    have := congrArg Multiplicative.toAdd hxy
+    simp only [powMonoidHom_apply, toAdd_pow] at this
+    exact Multiplicative.toAdd.injective
+      (mul_left_cancel₀ (Nat.cast_ne_zero.2 ramificationIndex_pos.ne') this)
+  rw [ramificationIndex_def, hcomp, MonoidHom.range_comp]
+  refine (Subgroup.index_map_of_injective _ hinj).trans ?_
+  rw [← hLM, ← ramificationIndex_def]
 
 /-- A tower of nonarchimedean local fields is tamely ramified exactly when each of its two
 steps is tamely ramified. The residue characteristics of `K` and `L` agree, and their
