@@ -10,7 +10,8 @@ public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 public import TauCeti.Geometry.Manifold.ContMDiff.Defs
 public import TauCeti.Geometry.Manifold.ExtChartAt
-import TauCeti.Geometry.Manifold.MFDeriv.Chart
+import TauCeti.Geometry.Manifold.ContMDiff.Atlas
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # Analytic maps on manifolds, read in charts
@@ -37,9 +38,11 @@ The model is assumed boundaryless throughout, so that chart images of open sets 
 ## Main results
 
 * `ModelWithCorners.analyticOnNhd_extendCoordChange`,
-  `ModelWithCorners.analyticAt_extendCoordChange`, `TauCeti.analyticOnNhd_ext_coord_change`, and
-  `OpenPartialHomeomorph.analyticOnNhd_extendTrans_symm_trans`:
-  changes of coordinates in a `C^ω` atlas are analytic.
+  `ModelWithCorners.analyticAt_extendCoordChange`, `TauCeti.analyticOnNhd_ext_coord_change`,
+  `OpenPartialHomeomorph.analyticOnNhd_extendTrans_symm_trans`, and
+  `OpenPartialHomeomorph.analyticOnNhd_extendTrans_symm_trans_map`:
+  changes of coordinates in a `C^ω` atlas, and the coordinate expression of a `C^ω` map in two
+  charts, are analytic; the first is the special case of the second for the identity.
 * `ContMDiffAt.analyticAt_extend_comp_extend_symm`, `ContMDiffAt.analyticAt_writtenInExtChartAt`,
   `TauCeti.contMDiffAt_omega_iff_of_mem_maximalAtlas` and `TauCeti.contMDiffAt_omega_iff`: `C^ω`
   maps between manifolds in arbitrary and in preferred charts.
@@ -100,20 +103,42 @@ theorem TauCeti.analyticOnNhd_ext_coord_change [IsManifold I ω M] (x x' : M) :
       ((extChartAt I x').symm ≫ extChartAt I x).source :=
   I.analyticOnNhd_extendCoordChange (chart_mem_maximalAtlas x') (chart_mem_maximalAtlas x)
 
+variable {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F'] in
+/-- The coordinate expression of an open partial homeomorphism `Φ`, which is `C^ω` on its source,
+in two `C^ω` charts followed by homeomorphisms `Ψ`, `Ψ'` with `Ψ.symm` and `Ψ'` of class `C^ω` is
+analytic on its source. -/
+theorem OpenPartialHomeomorph.analyticOnNhd_extendTrans_symm_trans_map [I'.Boundaryless]
+    (Φ : OpenPartialHomeomorph M M') (hΦ : ContMDiffOn I I' ω Φ Φ.source)
+    {Ψ : E ≃ₜ F} {Ψ' : E' ≃ₜ F'} (hΨ : ContDiff 𝕜 ω Ψ.symm) (hΨ' : ContDiff 𝕜 ω Ψ')
+    {c : OpenPartialHomeomorph M H} {c' : OpenPartialHomeomorph M' H'}
+    (hc : c ∈ maximalAtlas I ω M) (hc' : c' ∈ maximalAtlas I' ω M') :
+    AnalyticOnNhd 𝕜 ((c.extendTrans I Ψ).symm.trans (Φ.trans (c'.extendTrans I' Ψ')))
+      ((c.extendTrans I Ψ).symm.trans (Φ.trans (c'.extendTrans I' Ψ'))).source := by
+  set C_I := c.extendTrans I Ψ
+  set T := C_I.symm.trans (Φ.trans (c'.extendTrans I' Ψ'))
+  refine T.open_source.analyticOn_iff_analyticOnNhd.1
+    ((contDiffOn_omega_iff_analyticOn T.open_source.uniqueDiffOn).1 ?_)
+  rw [← contMDiffOn_iff_contDiffOn]
+  have hstep0 : ContMDiffOn 𝓘(𝕜, F) I ω C_I.symm T.source :=
+    (c.contMDiffOn_extendTrans_symm hc hΨ).mono fun _ hv ↦ hv.1
+  have hstep1 : ContMDiffOn 𝓘(𝕜, F) I' ω (Φ ∘ C_I.symm) T.source :=
+    hΦ.comp hstep0 fun _ hv ↦ hv.2.1
+  exact ((c'.contMDiffOn_extendTrans hc' hΨ').comp hstep1 fun _ hv ↦ hv.2.2).congr
+    fun _ _ ↦ rfl
+
 /-- For a boundaryless model, the transition map between two maximal `C^ω`-atlas charts
 `c₁, c₂`, read in `E` and moved to `F` by homeomorphisms `Ψ₁, Ψ₂` with `Ψ₁.symm` and `Ψ₂` of class
-`C^ω`, is analytic on its open source. -/
+`C^ω`, is analytic on its open source. This is the case `Φ = refl` of
+`OpenPartialHomeomorph.analyticOnNhd_extendTrans_symm_trans_map`. -/
 theorem OpenPartialHomeomorph.analyticOnNhd_extendTrans_symm_trans
     {c₁ c₂ : OpenPartialHomeomorph M H} (hc₁ : c₁ ∈ maximalAtlas I ω M)
     (hc₂ : c₂ ∈ maximalAtlas I ω M) {Ψ₁ Ψ₂ : E ≃ₜ F}
     (hΨ₁ : ContDiff 𝕜 ω Ψ₁.symm) (hΨ₂ : ContDiff 𝕜 ω Ψ₂) :
     AnalyticOnNhd 𝕜 ((c₁.extendTrans I Ψ₁).symm.trans (c₂.extendTrans I Ψ₂))
       ((c₁.extendTrans I Ψ₁).symm.trans (c₂.extendTrans I Ψ₂)).source := by
-  set T := (c₁.extendTrans I Ψ₁).symm.trans (c₂.extendTrans I Ψ₂)
-  exact T.open_source.analyticOn_iff_analyticOnNhd.1 <|
-    (contDiffOn_omega_iff_analyticOn T.open_source.uniqueDiffOn).1 <|
-      (OpenPartialHomeomorph.contDiffOn_extendTrans_comp_symm I hc₁ hc₂ hΨ₁ hΨ₂).congr
-        fun _ _ ↦ rfl
+  simpa [OpenPartialHomeomorph.refl_trans] using
+    (OpenPartialHomeomorph.refl M).analyticOnNhd_extendTrans_symm_trans_map contMDiffOn_id
+      hΨ₁ hΨ₂ hc₁ hc₂
 
 /-! ### `C^ω` maps in charts -/
 

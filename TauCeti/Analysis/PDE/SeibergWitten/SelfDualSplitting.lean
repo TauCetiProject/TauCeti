@@ -54,6 +54,22 @@ imaginary form `i q(ψ)`, so `q(u₀) = ω / 4` is the identity `q(u₀) = i ω 
 * `coe_quadraticTwoForm_add_of_cliffordProjection`: for `P_α φ = φ` and `P_α β = 0`,
   `q(φ + β) = ((‖φ‖² - ‖β‖²) / 4) ω + q'(φ, β)`, with `⟪q'(φ, β), ω⟫ = 0`
   (`inner_quadraticTwoFormPolar_of_cliffordProjection`).
+* `cliffordProjection_apply_eq_inner_smul`: `P_α ψ = ⟪u₀, ψ⟫ u₀` for a unit spinor `u₀` of the line,
+  so `ψ = α u₀ + β` with `α = ⟪u₀, ψ⟫`.
+* `coe_quadraticTwoForm_sqrt_smul_add_sub_smul`, `inner_quadraticTwoForm_sqrt_smul_add_sub_smul`,
+  `starProjection_quadraticTwoForm_sqrt_smul_add_sub_smul`: for `Ψ = √r (φ + β)`,
+  `q(Ψ) - (r / 4) ω = (r / 4) (‖φ‖² - ‖β‖² - 1) ω + r q'(φ, β)`, so its projection onto `ℝ ω` is
+  `(r / 4) (‖φ‖² - ‖β‖² - 1) ω`.
+
+## The perturbed curvature equation
+
+Taubes perturbs the curvature equation on a symplectic four-manifold to
+`F_A⁺ = q(Ψ) + F_{A₀}⁺ - i r ω / 4 + η`, with `Ψ = √r (α u₀ + β)` and a perturbing self-dual form
+`η` (Taubes writes it `ρ`; here `ρ` is the Clifford representation), so that
+`F_A⁺ - F_{A₀}⁺ - η` is indexed by the real self-dual form `q(Ψ) - (r / 4) ω`. Its component along
+`ω` is `(r / 4) (|α|² - |β|² - 1)`: the cross term `q'(α u₀, β)` does not contribute. This is the
+pointwise identity behind the bounds on `1 - |α|²` for large `r`. The bundle-level equation, the
+canonical connection `A₀` and the unit section `u₀` are not constructed here.
 
 ## References
 
@@ -373,6 +389,69 @@ theorem coe_quadraticTwoForm_add_of_cliffordProjection
     coe_quadraticTwoForm_of_cliffordProjection_apply_eq_self o hQ hkl hω hω₂ h₂ hρ hφ,
     coe_quadraticTwoForm_of_cliffordProjection_apply_eq_zero o hQ hkl hω hω₂ h₂ hρ hβ]
   module
+
+/-! ### The curvature equation along `ω` -/
+
+/-- **Taubes's coordinate `α`**: for a unit spinor `u₀` of the line `P_α W⁺`,
+`P_α ψ = ⟪u₀, ψ⟫ u₀`. Thus `ψ = α u₀ + β` with `α = ⟪u₀, ψ⟫` and `β = P_β ψ`. -/
+theorem cliffordProjection_apply_eq_inner_smul (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2)
+    {u₀ : positiveHalfSpinors o ρ} (hu₀ : cliffordProjection o ρ ω u₀ = u₀) (hu₀₁ : ‖u₀‖ = 1)
+    (ψ : positiveHalfSpinors o ρ) :
+    cliffordProjection o ρ ω ψ = ⟪u₀, ψ⟫_ℂ • u₀ := by
+  have h := congrArg (fun T ↦ T ψ)
+    (rankOne_eq_smul_cliffordProjection o hQ hkl hω hω₂ h₂ hρ hu₀)
+  simpa [hu₀₁] using h.symm
+
+/-- **The quadratic term of the perturbed curvature equation.** In Taubes's normalization
+`Ψ = √r (φ + β)` with `P_α φ = φ` and `P_α β = 0`,
+`q(Ψ) - (r / 4) ω = (r / 4) (‖φ‖² - ‖β‖² - 1) ω + r q'(φ, β)`, where the cross term `q'(φ, β)` is
+orthogonal to `ω` (`inner_quadraticTwoFormPolar_of_cliffordProjection`). Under the curvature
+equation `F_A⁺ = q(Ψ) + F_{A₀}⁺ - i r ω / 4 + η` with perturbing self-dual form `η`, the left
+side indexes `F_A⁺ - F_{A₀}⁺ - η`. -/
+theorem coe_quadraticTwoForm_sqrt_smul_add_sub_smul
+    (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2) {φ β : positiveHalfSpinors o ρ}
+    (hφ : cliffordProjection o ρ ω φ = φ) (hβ : cliffordProjection o ρ ω β = 0) {r : ℝ}
+    (hr : 0 ≤ r) :
+    (quadraticTwoForm o ρ hkl (((√r : ℝ) : ℂ) • (φ + β)) : ⋀[ℝ]^2 V) - (r / 4) • ω =
+      (r / 4 * (‖φ‖ ^ 2 - ‖β‖ ^ 2 - 1)) • ω +
+        r • (quadraticTwoFormPolar o ρ hkl φ β : ⋀[ℝ]^2 V) := by
+  rw [quadraticTwoForm_sqrt_smul o ρ hkl hr, Submodule.coe_smul,
+    coe_quadraticTwoForm_add_of_cliffordProjection o hQ hkl hω hω₂ hρ h₂ hφ hβ]
+  module
+
+omit hρ in
+/-- **The curvature equation along `ω`**: for `Ψ = √r (φ + β)` with `P_α φ = φ` and `P_α β = 0`,
+`⟪q(Ψ) - (r / 4) ω, ω⟫ = (r / 2) (‖φ‖² - ‖β‖² - 1)`. -/
+theorem inner_quadraticTwoForm_sqrt_smul_add_sub_smul {φ β : positiveHalfSpinors o ρ}
+    (hφ : cliffordProjection o ρ ω φ = φ) (hβ : cliffordProjection o ρ ω β = 0) {r : ℝ}
+    (hr : 0 ≤ r) :
+    ⟪(quadraticTwoForm o ρ hkl (((√r : ℝ) : ℂ) • (φ + β)) : ⋀[ℝ]^2 V) - (r / 4) • ω, ω⟫ =
+      r / 2 * (‖φ‖ ^ 2 - ‖β‖ ^ 2 - 1) := by
+  have hPφ : cliffordProjection o ρ ω (φ + β) = φ := by rw [map_add, hφ, hβ, add_zero]
+  have hPβ : cliffordProjection o ρ (-ω) (φ + β) = β := by
+    rw [cliffordProjection_neg_apply, hPφ, add_sub_cancel_left]
+  rw [quadraticTwoForm_sqrt_smul o ρ hkl hr, Submodule.coe_smul, inner_sub_left,
+    real_inner_smul_left, real_inner_smul_left, inner_quadraticTwoForm o hQ hkl hω, hPφ, hPβ,
+    real_inner_self_eq_norm_sq, hω₂]
+  ring
+
+omit hρ in
+/-- **The projection of the curvature equation onto `ω`**: for `Ψ = √r (φ + β)` with `P_α φ = φ`
+and `P_α β = 0`, the orthogonal projection of `q(Ψ) - (r / 4) ω` onto the line `ℝ ω` is
+`(r / 4) (‖φ‖² - ‖β‖² - 1) ω`. With `φ = α u₀` for a unit `u₀`, this is the pointwise identity
+that gives Taubes's formula `π_ω (F_A - F_{A₀} - η) = (r / 4) (|α|² - |β|² - 1)` once the perturbed
+curvature equation `F_A⁺ = q(Ψ) + F_{A₀}⁺ - i r ω / 4 + η` holds. -/
+theorem starProjection_quadraticTwoForm_sqrt_smul_add_sub_smul {φ β : positiveHalfSpinors o ρ}
+    (hφ : cliffordProjection o ρ ω φ = φ) (hβ : cliffordProjection o ρ ω β = 0) {r : ℝ}
+    (hr : 0 ≤ r) :
+    (ℝ ∙ ω).starProjection
+        ((quadraticTwoForm o ρ hkl (((√r : ℝ) : ℂ) • (φ + β)) : ⋀[ℝ]^2 V) - (r / 4) • ω) =
+      (r / 4 * (‖φ‖ ^ 2 - ‖β‖ ^ 2 - 1)) • ω := by
+  rw [Submodule.starProjection_singleton, real_inner_comm,
+    inner_quadraticTwoForm_sqrt_smul_add_sub_smul o hQ hkl hω hω₂ hφ hβ hr, hω₂]
+  congr 1
+  simp only [RCLike.ofReal_real_eq_id, id_eq]
+  ring
 
 end Pairing
 

@@ -213,6 +213,57 @@ theorem exists_unit_speed_reparametrization_Icc {γ : ℝ → M} {a b : ℝ} (ha
     norm_smul, Real.norm_eq_abs, abs_of_pos (inv_pos.2 hpos)]
   exact inv_mul_cancel₀ hpos.ne'
 
+omit [IsManifold I 1 M] in
+/-- The degenerate case `a = b` of `exists_unit_speed_reparametrization`: on a singleton the
+within-interval velocity is not unique, so the reparametrization is the affine inverse
+`s ↦ a + ‖γ' a‖⁻¹ * s`. -/
+private lemma exists_unit_speed_reparametrization_self {γ : ℝ → M} {J : Set ℝ} (hJ : IsOpen J)
+    (hγ : ContMDiffOn 𝓘(ℝ, ℝ) I 1 γ J) {a : ℝ} (hsub : Icc a a ⊆ J)
+    (hreg : ∀ t ∈ Icc a a, curveVelocity I γ t ≠ 0) :
+    ∃ ψ : ℝ → ℝ,
+      (∀ t ∈ Icc a a, ψ (∫ r in a..t, ‖curveVelocity I γ r‖) = t) ∧
+      (∀ s ∈ Icc (0 : ℝ) (∫ r in a..a, ‖curveVelocity I γ r‖),
+        (∫ r in a..ψ s, ‖curveVelocity I γ r‖) = s) ∧
+      (∀ s ∈ Icc (0 : ℝ) (∫ r in a..a, ‖curveVelocity I γ r‖), ψ s ∈ Icc a a) ∧
+      StrictMonoOn ψ (Icc 0 (∫ r in a..a, ‖curveVelocity I γ r‖)) ∧
+      ContDiffOn ℝ 1 ψ (Icc 0 (∫ r in a..a, ‖curveVelocity I γ r‖)) ∧
+      ContMDiffOn 𝓘(ℝ, ℝ) I 1 (γ ∘ ψ) (Icc 0 (∫ r in a..a, ‖curveVelocity I γ r‖)) ∧
+      (γ ∘ ψ) 0 = γ a ∧
+      (γ ∘ ψ) (∫ r in a..a, ‖curveVelocity I γ r‖) = γ a ∧
+      (∀ s ∈ Icc (0 : ℝ) (∫ r in a..a, ‖curveVelocity I γ r‖),
+        ‖curveVelocity I (γ ∘ ψ) s‖ = 1) ∧
+      Manifold.pathELength I (γ ∘ ψ) 0 (∫ r in a..a, ‖curveVelocity I γ r‖) =
+        Manifold.pathELength I γ a a ∧
+      (∫ r in a..a, ‖curveVelocity I γ r‖) = (Manifold.pathELength I γ a a).toReal := by
+  let c := ‖curveVelocity I γ a‖⁻¹
+  let ψ : ℝ → ℝ := fun s ↦ a + c * s
+  have hpos : 0 < ‖curveVelocity I γ a‖ := norm_pos_iff.2 (hreg a (by simp))
+  have hc : 0 < c := inv_pos.2 hpos
+  have hC1 : ContDiff ℝ 1 ψ := contDiff_const.add (contDiff_const.mul contDiff_id)
+  have ha : ψ 0 = a := by simp [ψ]
+  have hd : HasDerivAt ψ c 0 := by
+    simpa [ψ] using ((hasDerivAt_id 0).const_mul c).const_add a
+  have hγa := hγ.contMDiffAt (hJ.mem_nhds (hsub (by simp : a ∈ Icc a a)))
+  have hcomp : ContMDiffOn 𝓘(ℝ, ℝ) I 1 (γ ∘ ψ) (Icc 0 0) := by
+    refine hγ.comp (contMDiffOn_iff_contDiffOn.2 hC1.contDiffOn) ?_
+    intro s hs
+    have hs0 : s = 0 := by simpa using hs
+    simpa [hs0, ha] using hsub (by simp : a ∈ Icc a a)
+  have hpos0 : 0 < ‖curveVelocity I γ (ψ 0)‖ := by
+    rw [ha]
+    exact hpos
+  have hc0 : c = ‖curveVelocity I γ (ψ 0)‖⁻¹ := by rw [ha]
+  have hunit : ‖curveVelocity I (γ ∘ ψ) 0‖ = 1 := by
+    rw [curveVelocity_comp hd (by simpa only [ha] using hγa.mdifferentiableAt one_ne_zero),
+      norm_smul, Real.norm_eq_abs, abs_of_pos hc, hc0]
+    exact inv_mul_cancel₀ hpos0.ne'
+  refine ⟨ψ, ?_⟩
+  simp only [intervalIntegral.integral_same, Icc_self, mem_singleton_iff,
+    forall_eq, Function.comp_apply, ha, Manifold.pathELength_self, ENNReal.toReal_zero,
+    and_true, true_and]
+  exact ⟨by simp [StrictMonoOn], hC1.contDiffOn,
+    by simpa only [Icc_self] using hcomp, hunit⟩
+
 /-- **Arc-length reparametrization of a regular curve.** Let `γ` be `C¹` on an open set `J`
 containing `[a, b]`, with nonzero velocity along `[a, b]`. There is an increasing `C¹` function
 `ψ` from
@@ -282,35 +333,7 @@ theorem exists_unit_speed_reparametrization {γ : ℝ → M} {J : Set ℝ} (hJ :
         rw [curveVelocityWithin_apply, curveVelocity_apply,
           mfderivWithin_eq_mfderiv (uniqueDiffOn_Icc hL s hs).uniqueMDiffWithinAt hd]
       simpa only [hvcomp] using hunit s hs
-  · -- On a singleton the within-interval velocity is not unique, so use an affine inverse.
-    let c := ‖curveVelocity I γ a‖⁻¹
-    let ψ : ℝ → ℝ := fun s ↦ a + c * s
-    have hpos : 0 < ‖curveVelocity I γ a‖ := norm_pos_iff.2 (hreg a (by simp))
-    have hc : 0 < c := inv_pos.2 hpos
-    have hC1 : ContDiff ℝ 1 ψ := contDiff_const.add (contDiff_const.mul contDiff_id)
-    have ha : ψ 0 = a := by simp [ψ]
-    have hd : HasDerivAt ψ c 0 := by
-      simpa [ψ] using ((hasDerivAt_id 0).const_mul c).const_add a
-    have hγa := hγ.contMDiffAt (hJ.mem_nhds (hsub (by simp : a ∈ Icc a a)))
-    have hcomp : ContMDiffOn 𝓘(ℝ, ℝ) I 1 (γ ∘ ψ) (Icc 0 0) := by
-      refine hγ.comp (contMDiffOn_iff_contDiffOn.2 hC1.contDiffOn) ?_
-      intro s hs
-      have hs0 : s = 0 := by simpa using hs
-      simpa [hs0, ha] using hsub (by simp : a ∈ Icc a a)
-    have hpos0 : 0 < ‖curveVelocity I γ (ψ 0)‖ := by
-      rw [ha]
-      exact hpos
-    have hc0 : c = ‖curveVelocity I γ (ψ 0)‖⁻¹ := by rw [ha]
-    have hunit : ‖curveVelocity I (γ ∘ ψ) 0‖ = 1 := by
-      rw [curveVelocity_comp hd (by simpa only [ha] using hγa.mdifferentiableAt one_ne_zero),
-        norm_smul, Real.norm_eq_abs, abs_of_pos hc, hc0]
-      exact inv_mul_cancel₀ hpos0.ne'
-    refine ⟨ψ, ?_⟩
-    simp only [intervalIntegral.integral_same, Icc_self, mem_singleton_iff,
-      forall_eq, Function.comp_apply, ha, Manifold.pathELength_self, ENNReal.toReal_zero,
-      and_true, true_and]
-    exact ⟨by simp [StrictMonoOn], hC1.contDiffOn,
-      by simpa only [Icc_self] using hcomp, hunit⟩
+  · exact exists_unit_speed_reparametrization_self hJ hγ hsub hreg
 
 end TauCeti.Manifold
 
