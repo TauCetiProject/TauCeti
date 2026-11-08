@@ -45,6 +45,8 @@ identity.
   map is the Jacobian of its restriction to the orthogonal complement of the kernel.
 * `LinearMap.normDet_adjoint_pos_iff`: the Jacobian of the adjoint is positive exactly for
   surjective maps.
+* `ContinuousLinearMap.normDet_adjoint_eq_norm`: the Jacobian of the adjoint of a linear functional
+  is its norm.
 * `LinearMap.normDet_coprod_of_orthogonal`: the Jacobian of a sum of maps with orthogonal ranges
   on a Euclidean product is the product of their Jacobians.
 * `ContinuousLinearMap.exists_ball_antilipschitzWith_normDet_le`: around an injective linear map
@@ -234,3 +236,12 @@ theorem ContinuousLinearMap.normDet_normalGraphL (A : U →L[ℝ] ℝ) :
     simp only [RCLike.ofReal_real_eq_id, id_eq] at h
     rw [h, hgram, Matrix.det_one_add_replicateCol_mul_replicateRow, hu]
   rw [← Real.sqrt_sq A.normalGraphL.normDet_nonneg, hsq]
+
+omit [FiniteDimensional ℝ U] in
+/-- The Jacobian of the adjoint of a linear functional is its norm. This is the coarea Jacobian
+of a real-valued map, the norm of its gradient. -/
+theorem ContinuousLinearMap.normDet_adjoint_eq_norm [CompleteSpace U] (A : U →L[ℝ] ℝ) :
+    A.adjoint.normDet = ‖A‖ := by
+  rw [LinearMap.normDet_eq_norm_apply_one, ContinuousLinearMap.coe_coe,
+    ← ContinuousLinearMap.toSpanSingletonLIE_symm_apply ℝ U, LinearIsometryEquiv.norm_map,
+    LinearIsometryEquiv.norm_map]
