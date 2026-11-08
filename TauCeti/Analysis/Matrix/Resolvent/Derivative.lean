@@ -30,7 +30,8 @@ noncomputable section
 
 open scoped Matrix.Norms.L2Operator
 
-local instance (n : Type*) [Fintype n] [DecidableEq n] :
+/-- The real normed algebra structure induced by the matrix Euclidean operator norm. -/
+local instance matrixComplexNormedAlgebraReal (n : Type*) [Fintype n] [DecidableEq n] :
     NormedAlgebra ℝ (Matrix n n ℂ) := Matrix.l2OpNormedAlgebraReal
 
 namespace Matrix.IsHermitian
