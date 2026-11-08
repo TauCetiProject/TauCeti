@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.KerReduction
+import TauCeti.Algebra.Module.Torsion.Int
 -- Proof-only: multiplication by `n` on the filtration of the formal group.
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.Filtration
 -- Proof-only: `E₀(F_u)` has finite index, by Tate's algorithm.
@@ -219,12 +220,7 @@ theorem index_range_nsmul_eq_natCard_torsionBy_mul (hn : (n : A) ≠ 0) :
   -- `(E : n E) · #U[n] = #E[n] · (U : n U)`, and `#U[n] = 1`
   have h := AddSubgroup.index_range_nsmul_add_card_ker U n
   rw [hkerU, AddSubgroup.card_bot, mul_one, hidx] at h
-  have hker : Nat.card (nsmulAddMonoidHom (α := W.toAffine.Point) n).ker =
-      Nat.card (Submodule.torsionBy ℤ W.toAffine.Point n) :=
-    Nat.card_congr (Equiv.subtypeEquivRight fun P ↦ by
-      rw [AddMonoidHom.mem_ker, nsmulAddMonoidHom_apply, Submodule.mem_torsionBy_iff,
-        natCast_zsmul])
-  rw [h, hker]
+  rw [h, TauCeti.natCard_ker_nsmulAddMonoidHom_eq_natCard_torsionBy]
 
 /-- **`E(F_u)` has a uniquely `n`-divisible subgroup of finite index** for `n` prime to `u`. -/
 theorem exists_finiteIndex_bijective_nsmul (hn : (n : A) ∉ u.asIdeal) :
