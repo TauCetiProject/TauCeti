@@ -34,7 +34,7 @@ namespace TauCeti
 
 /-- In a finite nonempty subset on which the vectors `C a` are pairwise comparable, one of them
 dominates all the others. -/
-theorem exists_forall_le_of_forall_comparable {α β : Type*} [Finite β]
+theorem exists_forall_le_of_forall_comparable {α β : Type*}
     (C : α → β → ℕ) {B : Finset α}
     (hC : ∀ a ∈ B, ∀ b ∈ B, C a ≤ C b ∨ C b ≤ C a) (hB : B.Nonempty) :
     ∃ t ∈ B, ∀ a ∈ B, C a ≤ C t := by
