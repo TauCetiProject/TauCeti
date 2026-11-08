@@ -72,19 +72,6 @@ theorem HasAlmostInvariantVectors.restrict {K : Type*} [Monoid K]
   refine ⟨v, hv, fun g hg ↦ ?_⟩
   simpa only [restrict_apply_apply] using hF (f g) (Finset.mem_image_of_mem f hg)
 
-end Definition
-
-section NormedSpace
-
-variable {𝕜 G V : Type*} [RCLike 𝕜] [Monoid G] [NormedAddCommGroup V]
-  [NormedSpace 𝕜 V] {ρ : ContRepresentation 𝕜 G V}
-
-/-- A nonzero invariant vector can be normalized to witness almost invariant vectors. -/
-theorem hasAlmostInvariantVectors_of_invariant {v : V} (hv : v ≠ 0)
-    (hfixed : v ∈ ρ.invariants) : ρ.HasAlmostInvariantVectors :=
-  hasAlmostInvariantVectors_of_invariant_unit (norm_smul_inv_norm hv)
-    (ρ.invariants.smul_mem (‖v‖⁻¹ : 𝕜) hfixed)
-
 /-- Almost invariant vectors have arbitrarily small total squared displacement on any finite
 set. The vector is still required to have norm one. -/
 theorem HasAlmostInvariantVectors.exists_sum_norm_sq_lt
@@ -104,6 +91,19 @@ theorem HasAlmostInvariantVectors.exists_sum_norm_sq_lt
       _ = _ := by simp
   have hmul := (div_mul_cancel₀ ε hd.ne').symm
   nlinarith
+
+end Definition
+
+section NormedSpace
+
+variable {𝕜 G V : Type*} [RCLike 𝕜] [Monoid G] [NormedAddCommGroup V]
+  [NormedSpace 𝕜 V] {ρ : ContRepresentation 𝕜 G V}
+
+/-- A nonzero invariant vector can be normalized to witness almost invariant vectors. -/
+theorem hasAlmostInvariantVectors_of_invariant {v : V} (hv : v ≠ 0)
+    (hfixed : v ∈ ρ.invariants) : ρ.HasAlmostInvariantVectors :=
+  hasAlmostInvariantVectors_of_invariant_unit (norm_smul_inv_norm hv)
+    (ρ.invariants.smul_mem (‖v‖⁻¹ : 𝕜) hfixed)
 
 /-- Absence of almost invariant vectors is equivalent to a finite sum-of-squares bound on the
 whole representation space. No unitarity, inner product, or completeness is needed. -/

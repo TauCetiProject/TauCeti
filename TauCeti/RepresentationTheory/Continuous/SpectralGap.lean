@@ -62,38 +62,6 @@ end Monoid
 variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [NormedAddCommGroup V]
   [InnerProductSpace 𝕜 V]
 
-namespace IsUnitary
-
-variable {ρ : ContRepresentation 𝕜 G V}
-
-/-- The restriction of a unitary representation to the orthogonal complement of its fixed vectors.
-This is the representation on which absence of almost invariant vectors detects spectral gap. -/
-def invariantComplement (hρ : ρ.IsUnitary) : ContRepresentation 𝕜 G ρ.invariantsᗮ :=
-  ρ.subrepresentation _ (hρ.apply_mem_orthogonal (fun g v hv ↦ by simpa [hv g] using hv))
-
-/-- The action on the invariant complement agrees with the ambient action. -/
-@[simp]
-theorem coe_invariantComplement_apply (hρ : ρ.IsUnitary) (g : G) (v : ρ.invariantsᗮ) :
-    (hρ.invariantComplement g v : V) = ρ g (v : V) :=
-  coe_subrepresentation_apply g v
-
-/-- The invariant complement remains unitary. -/
-theorem isUnitary_invariantComplement (hρ : ρ.IsUnitary) : hρ.invariantComplement.IsUnitary :=
-  hρ.subrepresentation _
-
-/-- The invariant complement has no nonzero fixed vectors. -/
-@[simp]
-theorem invariants_invariantComplement (hρ : ρ.IsUnitary) :
-    hρ.invariantComplement.invariants = ⊥ := by
-  rw [Submodule.eq_bot_iff]
-  intro v hv
-  have hfixed : (v : V) ∈ ρ.invariants :=
-    mem_invariants_subrepresentation.mp hv
-  apply Subtype.ext
-  exact (Submodule.disjoint_def.mp ρ.invariants.orthogonal_disjoint) v hfixed v.property
-
-end IsUnitary
-
 /-- A unitary representation has spectral gap exactly when the representation on the orthogonal
 complement of its fixed vectors has no almost invariant vectors. -/
 theorem hasSpectralGap_iff_not_hasAlmostInvariantVectors
