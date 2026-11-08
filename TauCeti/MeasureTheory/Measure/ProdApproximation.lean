@@ -5,6 +5,7 @@ Authors: Codex
 -/
 module
 
+public import TauCeti.MeasureTheory.MeasurableSpace.Prod
 public import Mathlib.MeasureTheory.Measure.MeasuredSets
 public import Mathlib.MeasureTheory.Measure.Prod
 
@@ -23,8 +24,8 @@ approximating simple function depending on only finitely many measurable events 
 
 The proof applies Mathlib's general density theorem
 `exists_measure_symmDiff_lt_of_generateFrom_isSetSemiring` to the semiring of measurable
-rectangles.  We verify the semiring law explicitly: the difference of two rectangles splits into
-two disjoint rectangles.  `generateFrom_prod` supplies the generation of the product sigma algebra.
+rectangles (`TauCeti.MeasureTheory.isSetSemiring_measurable_prod`).  `generateFrom_prod` supplies
+the generation of the product sigma algebra.
 
 ## Main results
 
@@ -53,26 +54,6 @@ namespace TauCeti
 namespace MeasureTheory
 
 variable {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
-
-/-- Measurable rectangles form a semiring of sets in a product space. -/
-private theorem isSetSemiring_measurable_prod :
-    IsSetSemiring
-      (Set.image2 (· ×ˢ ·) {s : Set X | MeasurableSet s} {t : Set Y | MeasurableSet t}) where
-  empty_mem := ⟨∅, .empty, univ, .univ, empty_prod⟩
-  inter_mem := by
-    rintro _ ⟨s, hs, t, ht, rfl⟩ _ ⟨u, hu, v, hv, rfl⟩
-    exact ⟨s ∩ u, hs.inter hu, t ∩ v, ht.inter hv, prod_inter_prod.symm⟩
-  sdiff_eq_sUnion' := by
-    rintro _ ⟨s, hs, t, ht, rfl⟩ _ ⟨u, hu, v, hv, rfl⟩
-    refine ⟨{(s \ u) ×ˢ t, (s ∩ u) ×ˢ (t \ v)}, ?_, ?_, ?_⟩ <;> rw [Finset.coe_pair]
-    · exact pair_subset_iff.2
-        ⟨⟨s \ u, hs.diff hu, t, ht, rfl⟩, ⟨s ∩ u, hs.inter hu, t \ v, ht.diff hv, rfl⟩⟩
-    · refine pairwiseDisjoint_insert.2 ⟨pairwiseDisjoint_singleton _ _, fun _ hy _ => ?_⟩
-      rw [mem_singleton_iff.1 hy]
-      exact disjoint_left.2 fun _ ha hb => ha.1.2 hb.1.2
-    · ext
-      simp only [sUnion_pair, mem_sdiff, mem_prod, mem_union, mem_inter_iff]
-      grind
 
 /-- A measurable subset of a product measurable space with a finite measure can be approximated in
 measure by a pairwise-disjoint finite union of measurable rectangles.
