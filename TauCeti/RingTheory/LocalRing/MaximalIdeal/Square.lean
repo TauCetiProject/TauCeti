@@ -247,9 +247,8 @@ theorem mem_maximalIdeal_of_sum_mul_mem_sq [IsNoetherianRing R] {n : ℕ} {x : F
   -- The classes of the `xᵢ` span the cotangent space, whose dimension is `n`.
   let v : Fin n → CotangentSpace R := fun i ↦ (maximalIdeal R).toCotangent ⟨x i, hxm i⟩
   have hspan : ⊤ ≤ Submodule.span (ResidueField R) (Set.range v) := by
-    rw [top_le_iff, show Set.range v = (maximalIdeal R).toCotangent ''
-      Set.range (fun i ↦ (⟨x i, hxm i⟩ : maximalIdeal R)) from Set.range_comp ..,
-      CotangentSpace.span_image_eq_top_iff]
+    rw [top_le_iff, Set.range_comp' (maximalIdeal R).toCotangent
+      fun i ↦ (⟨x i, hxm i⟩ : maximalIdeal R), CotangentSpace.span_image_eq_top_iff]
     refine Submodule.map_injective_of_injective (maximalIdeal R).injective_subtype ?_
     rw [Submodule.map_span, Submodule.map_top, Submodule.range_subtype, ← Set.range_comp]
     exact hx
