@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.Basic
 public import Mathlib.Topology.MetricSpace.HolderNorm
+import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.Holder.Lp
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 import TauCeti.Analysis.Normed.Operator.Holder
@@ -80,25 +81,6 @@ private theorem holderWith_frozen_hessian_error {α ε L J B : ℝ≥0}
   exact (HolderWith.sum fun i _ => HolderWith.sum fun j _ => hterm i j).mono
     (le_of_eq (by simp [Finset.card_univ]; ring))
 
-/-- Interpolation at scale `r`: a globally Hölder function in `L²` is pointwise bounded by its
-Hölder constant times `r ^ α` plus its `L²` norm times the inverse square root of the volume of
-the radius-`r` ball. -/
-private theorem norm_le_mul_rpow_add_volume_ball_rpow_mul {α J : ℝ≥0} {H : E → E [×2]→L[ℝ] ℝ}
-    (hJ : HolderWith J α H) (hH2 : MemLp H 2 volume) {r : ℝ} (hr : 0 < r) (x : E) :
-    ‖H x‖ ≤ J * r ^ (α : ℝ) +
-      (volume (ball (0 : E) r) ^ (-((2 : ℝ)⁻¹))).toReal * (eLpNorm H 2 volume).toReal := by
-  have hvol : volume (ball (0 : E) r) ^ (-((2 : ℝ)⁻¹)) ≠ ∞ :=
-    ENNReal.rpow_ne_top_of_ne_zero (measure_ball_pos volume 0 hr).ne' measure_ball_lt_top.ne
-  have hx := hJ.enorm_le_add_eLpNorm (by norm_num) (by norm_num) hH2 hr x
-  have hfin : (J : ℝ≥0∞) * ENNReal.ofReal r ^ (α : ℝ) +
-      volume (ball (0 : E) r) ^ (-((2 : ℝ)⁻¹)) * eLpNorm H 2 volume ≠ ∞ := by
-    finiteness
-  have hx' := (ENNReal.toReal_le_toReal enorm_ne_top hfin).2 hx
-  rw [ENNReal.toReal_add (by finiteness) (ENNReal.mul_ne_top hvol hH2.eLpNorm_ne_top),
-    ENNReal.toReal_mul, ENNReal.toReal_mul, ENNReal.coe_toReal, ← ENNReal.toReal_rpow,
-    ENNReal.toReal_ofReal hr.le] at hx'
-  simpa only [toReal_enorm] using hx'
-
 /-- The frozen operator `∑ A i j ∂ᵢ∂ⱼ u` is globally Hölder when the operator with coefficients
 `a`, within `ε` of `A` and `L`-Hölder, is `K`-Hölder and the Hessian is `J`-Hölder and bounded
 by `B`. -/
@@ -121,11 +103,6 @@ private theorem holderWith_frozen_operator {α ε L J K B : ℝ≥0}
   congr 1
   ext j
   ring
-
-/-- Absorbing the term `X J` with `X ≤ 1/2` into the left side. -/
-private theorem le_two_mul_of_le_add_mul {J X Y : ℝ} (hJ : 0 ≤ J) (hX : X ≤ 1 / 2)
-    (h : J ≤ Y + X * J) : J ≤ 2 * Y := by
-  nlinarith [mul_le_mul_of_nonneg_right hX hJ]
 
 /-- **Global a priori Schauder estimate for coefficients of small oscillation.**
 For `0 < α < 1` there is `C > 0`, depending only on dimension and `α`, with the following
@@ -176,7 +153,8 @@ theorem exists_holderWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv_of_abs_su
   have hκ : 0 ≤ κ := by positivity
   have hJ : HolderWith J α H := hH.holderWith
   -- Interpolation at scale `r` makes the supremum term absorbable too.
-  have hsup := norm_le_mul_rpow_add_volume_ball_rpow_mul hJ hH2 hr
+  have hsup (x : E) : ‖H x‖ ≤ J * r ^ (α : ℝ) + V * M := by
+    simpa [V, M] using hJ.norm_le_add_eLpNorm_toReal (by norm_num) (by norm_num) hH2 hr x
   let B : ℝ≥0 := (J * r ^ (α : ℝ) + V * M).toNNReal
   have hBc : (B : ℝ) = J * r ^ (α : ℝ) + V * M := Real.coe_toNNReal _ (by positivity)
   have hg := holderWith_frozen_operator ha hL hJ (fun x => (hsup x).trans_eq hBc.symm) hf
@@ -207,7 +185,7 @@ theorem exists_holderWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv_of_abs_su
     rw [div_le_iff₀ hlam]
     dsimp [κ] at *
     linarith
-  have hfinal := le_two_mul_of_le_add_mul J.coe_nonneg hsmall' (Y := κ * (K / lam +
+  have hfinal := TauCeti.le_two_mul_of_le_add_mul J.coe_nonneg hsmall' (Y := κ * (K / lam +
     (((n : ℝ) + 1) ^ 2 * L / lam * V + r ^ (-(((n : ℝ) + 1) / 2 + α))) * M))
     (hbound.trans_eq (by push_cast; rw [hBc]; ring))
   exact hJ.mono (by
