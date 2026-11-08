@@ -39,8 +39,9 @@ power of `I`. Cover `L` by a free module `F` and let `G` be the preimage of `N`;
 `I F ⊗ M → F ⊗ M` is injective because `F` is flat, and two diagram chases replace the long exact
 `Tor` sequences of the textbook argument. Applied to `J ⧸ (J ⊓ Iⁿ)` inside `R ⧸ Iⁿ`, this shows
 that the kernel of `J ⊗[R] M → M` comes from `(J ⊓ Iⁿ) ⊗[R] M`, the step of the local criterion
-for flatness before the Artin–Rees lemma. The same conclusion holds without the `Tor₁` hypothesis
-when `M ⧸ Iⁿ M` is flat over `R ⧸ Iⁿ`, since `J ⧸ (J ⊓ Iⁿ)` and `R ⧸ Iⁿ` are both killed by `Iⁿ`.
+for flatness before the Artin–Rees lemma. For any ideal `P` in place of `Iⁿ`, the same conclusion
+holds without the `Tor₁` hypothesis when `M ⧸ P M` is flat over `R ⧸ P`, since `J ⧸ (J ⊓ P)` and
+`R ⧸ P` are both killed by `P`.
 
 ## Main results
 
@@ -62,8 +63,8 @@ when `M ⧸ Iⁿ M` is flat over `R ⧸ Iⁿ`, since `J ⧸ (J ⊓ Iⁿ)` and `R
   `Ideal.subtype_rTensor_injective_of_smul_top_le` is the case `n = 1`.
 * `Ideal.mem_range_rTensor_inclusion_inf_pow`: under the same hypotheses, the kernel of
   `J ⊗[R] M → M` comes from `(J ⊓ I ^ n) ⊗[R] M`.
-* `Ideal.mem_range_rTensor_inclusion_inf_pow_of_flat`: the same conclusion when instead
-  `M ⧸ I ^ n M` is flat over `R ⧸ I ^ n`.
+* `Ideal.mem_range_rTensor_inclusion_inf_of_flat`: for an ideal `P` with `M ⧸ P M` flat over
+  `R ⧸ P`, the kernel of `J ⊗[R] M → M` comes from `(J ⊓ P) ⊗[R] M`.
 -/
 
 public section
@@ -367,14 +368,13 @@ theorem mem_range_rTensor_inclusion_inf_pow (hI : Function.Injective (I.subtype.
 
 end
 
-/-- Let `M ⧸ I ^ n M` be flat over `R ⧸ I ^ n`. For an ideal `J`, every element of the kernel of
-`J ⊗[R] M → M` comes from `(J ⊓ I ^ n) ⊗[R] M`. -/
-theorem mem_range_rTensor_inclusion_inf_pow_of_flat (I : Ideal R) (n : ℕ)
-    [Module.Flat (R ⧸ I ^ n) (M ⧸ I ^ n • (⊤ : Submodule R M))] {J : Ideal R} {t : J ⊗[R] M}
+/-- Let `M ⧸ P M` be flat over `R ⧸ P`. For an ideal `J`, every element of the kernel of
+`J ⊗[R] M → M` comes from `(J ⊓ P) ⊗[R] M`. -/
+theorem mem_range_rTensor_inclusion_inf_of_flat (P : Ideal R)
+    [Module.Flat (R ⧸ P) (M ⧸ P • (⊤ : Submodule R M))] {J : Ideal R} {t : J ⊗[R] M}
     (ht : J.subtype.rTensor M t = 0) :
-    t ∈ range ((Submodule.inclusion (inf_le_left : J ⊓ I ^ n ≤ J)).rTensor M) := by
-  -- `J ⧸ (J ⊓ Iⁿ)` is a submodule of `R ⧸ Iⁿ`, and both are killed by `Iⁿ`.
-  let P := I ^ n
+    t ∈ range ((Submodule.inclusion (inf_le_left : J ⊓ P ≤ J)).rTensor M) := by
+  -- `J ⧸ (J ⊓ P)` is a submodule of `R ⧸ P`, and both are killed by `P`.
   have hL : Module.IsTorsionBySet R (R ⧸ P) P :=
     (Module.isTorsionBySet_quotient_iff P _).mpr fun x _ hr ↦ P.mul_mem_right x hr
   have hN : Module.IsTorsionBySet R (Submodule.map P.mkQ J) P := fun x r ↦

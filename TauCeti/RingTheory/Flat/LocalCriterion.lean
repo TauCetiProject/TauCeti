@@ -92,7 +92,7 @@ Steps 1–3 hold without Noetherian hypotheses and live in `TauCeti.RingTheory.F
    (`Module.Finite.tensor`), therefore vanishes by Krull's intersection theorem over `S`.
 
 For the infinitesimal form, step 3 is replaced by flatness of `M ⧸ Iⁿ M` over `R ⧸ Iⁿ`
-(`Ideal.mem_range_rTensor_inclusion_inf_pow_of_flat`), and step 4 is unchanged.
+(`Ideal.mem_range_rTensor_inclusion_inf_of_flat`), and step 4 is unchanged.
 
 ## Main results
 
@@ -193,7 +193,7 @@ theorem Flat.of_forall_flat_quotient_pow [IsNoetherianRing R] {S : Type*} [CommR
     (hflat : ∀ n, Flat (R ⧸ I ^ n) (M ⧸ I ^ n • (⊤ : Submodule R M))) : Flat R M :=
   of_forall_mem_range_rTensor_inclusion_inf_pow hIS fun n _ _ ht ↦
     have := hflat n
-    I.mem_range_rTensor_inclusion_inf_pow_of_flat n ht
+    (I ^ n).mem_range_rTensor_inclusion_inf_of_flat ht
 
 /-- Under the hypotheses of `Module.Flat.of_forall_flat_quotient_pow`, `M` is flat over `R` if and
 only if `M ⧸ I ^ n M` is flat over `R ⧸ I ^ n` for every `n`. -/

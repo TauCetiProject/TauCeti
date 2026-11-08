@@ -25,7 +25,8 @@ Noetherian exactly when `R` is.
 One direction is descent: `R → R^{sh}` is flat and local, hence faithfully flat. For the other,
 let `R` be Noetherian and let `(R^{sh})^∧` be the completion of `R^{sh}` along its maximal ideal
 `𝔪 R^{sh}`. Unlike for the ordinary henselization, this completion is not the completion of `R`
-(for `R = ℤ_(p)` it is the ring of Witt vectors of `Ω`), so it is studied directly.
+(for `R = ℤ_(p)` and `Ω` a separable closure of `𝔽_p` it is the ring of Witt vectors `W(Ω)`), so
+it is studied directly.
 
 * `(R^{sh})^∧` is Noetherian: it is complete along the finitely generated ideal `𝔪 (R^{sh})^∧`,
   modulo which it is a field.
@@ -92,32 +93,18 @@ private theorem flat_adicCompletion [IsNoetherianRing R] :
     have := AdicCompletion.isAdicComplete_self J hfg
     rw [IsScalarTower.algebraMap_eq R S C, ← Ideal.map_map, ← hJ, Ideal.jacobson_bot]
     exact IsAdicComplete.le_jacobson _
-  · -- The map `S → C` induces `S ⧸ 𝔪 ^ n S ≃ C ⧸ 𝔪 ^ n C`.
+  · -- `C ⧸ 𝔪 ^ n C ≃ S ⧸ 𝔪 ^ n S`, since both are the quotients by `J ^ n` and `C ⧸ J ^ n C` is
+    -- `S ⧸ J ^ n`.
     set P := maximalIdeal R ^ n
-    have hmem {T : Type u} [CommRing T] [Algebra R T] [Algebra S T] [IsScalarTower R S T]
-        (x : T) : x ∈ (P • ⊤ : Submodule R T) ↔ x ∈ (J ^ n).map (algebraMap S T) := by
-      rw [Ideal.smul_top_eq_map, Submodule.restrictScalars_mem, hJ, ← Ideal.map_pow,
-        Ideal.map_map, ← IsScalarTower.algebraMap_eq]
-    let f := Submodule.mapQ _ _ (IsScalarTower.toAlgHom R S C).toLinearMap
-      (Submodule.smul_top_le_comap_smul_top P _)
-    have hinj : Function.Injective f := by
-      refine (injective_iff_map_eq_zero f).mpr fun x hx ↦ ?_
-      obtain ⟨s, rfl⟩ := Submodule.mkQ_surjective _ x
-      rw [Submodule.mkQ_apply, Submodule.mapQ_apply, Submodule.Quotient.mk_eq_zero, hmem,
-        AlgHom.toLinearMap_apply, IsScalarTower.coe_toAlgHom',
-        AdicCompletion.algebraMap_mem_map_pow_iff hfg] at hx
-      rw [Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero, hmem, Algebra.algebraMap_self,
-        Ideal.map_id]
-      exact hx
-    have hsurj : Function.Surjective f := fun x ↦ by
-      obtain ⟨x, rfl⟩ := Submodule.mkQ_surjective _ x
-      obtain ⟨s, hs⟩ := AdicCompletion.exists_sub_algebraMap_mem_map_pow hfg n x
-      refine ⟨Submodule.Quotient.mk s, ?_⟩
-      rw [Submodule.mapQ_apply, Submodule.mkQ_apply, Submodule.Quotient.eq, hmem, ← neg_mem_iff,
-        neg_sub]
-      exact hs
-    exact .of_linearEquiv ((LinearEquiv.ofBijective f ⟨hinj, hsurj⟩).symm.extendScalarsOfSurjective
-      Ideal.Quotient.mk_surjective)
+    have hP {T : Type u} [CommRing T] [Algebra R T] [Algebra S T] [IsScalarTower R S T] :
+        (P • ⊤ : Submodule R T) = ((J ^ n).map (algebraMap S T)).restrictScalars R := by
+      rw [Ideal.smul_top_eq_map, hJ, ← Ideal.map_pow, Ideal.map_map, ← IsScalarTower.algebraMap_eq]
+    let e : (C ⧸ (P • ⊤ : Submodule R C)) ≃ₗ[R] S ⧸ (P • ⊤ : Submodule R S) :=
+      (Submodule.quotEquivOfEq _ _ hP ≪≫ₗ Submodule.Quotient.restrictScalarsEquiv R _ ≪≫ₗ
+        (AdicCompletion.quotientMapPowAlgEquiv hfg n).toLinearEquiv.restrictScalars R) ≪≫ₗ
+      (Submodule.quotEquivOfEq _ _ (by rw [hP, Algebra.algebraMap_self, Ideal.map_id]) ≪≫ₗ
+        Submodule.Quotient.restrictScalarsEquiv R _).symm
+    exact .of_linearEquiv (e.extendScalarsOfSurjective Ideal.Quotient.mk_surjective)
 
 /-- The colimit of the étale neighbourhoods of a local ring `R` pointed in a field `Ω`, through a
 local map `R → Ω`, is Noetherian if and only if `R` is. For a separable closure `Ω` of the residue
