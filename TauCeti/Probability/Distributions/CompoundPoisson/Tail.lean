@@ -18,6 +18,12 @@ In particular the theorem applies to finite-intensity large-jump components of s
 
 The underlying random-sum theorem uses a polynomial union bound and the finite moments
 of the Poisson count, including rate zero.
+
+## References
+
+* P. Embrechts, C. Klüppelberg and T. Mikosch,
+  *Modelling Extremal Events for Insurance and Finance*, Springer, 1997,
+  §1.3.3 (tails of random sums, including compound Poisson sums).
 -/
 
 public section

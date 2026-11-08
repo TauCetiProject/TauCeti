@@ -21,6 +21,12 @@ both summands are moderately large.
 
 `tendsto_rpow_mul_bind_convolutionPower_real_Ioi` gives the corresponding random-sum formula: a
 finite count moment of order `α + 1` suffices to multiply the tail constant by the mean count.
+
+## References
+
+* P. Embrechts, C. Klüppelberg and T. Mikosch,
+  *Modelling Extremal Events for Insurance and Finance*, Springer, 1997:
+  Lemma 1.3.1 (convolution tails) and §1.3.3 (random sums).
 -/
 
 public section
