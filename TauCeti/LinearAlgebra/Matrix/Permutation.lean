@@ -52,7 +52,7 @@ namespace Matrix
 `w`, each of which stays inside the support of `K` and which together cover the support, has the
 zero pattern of `K`. -/
 theorem sum_smul_permMatrix_apply_eq_zero_iff {n α R : Type*} [DecidableEq n] [Zero α]
-    [Semifield R] [LinearOrder R] [IsStrictOrderedRing R] {K : Matrix n n α}
+    [Semiring R] [PartialOrder R] [IsOrderedRing R] {K : Matrix n n α}
     {s : Finset (Equiv.Perm n)} {w : Equiv.Perm n → R} (hw : ∀ σ ∈ s, 0 < w σ)
     (hsub : ∀ σ ∈ s, ∀ k, K k (σ k) ≠ 0) (hcover : ∀ i j, K i j ≠ 0 → ∃ σ ∈ s, σ i = j)
     (i j : n) :
