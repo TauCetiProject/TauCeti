@@ -58,7 +58,7 @@ critical point of a critical level, of dimension its index.
 * `TauCeti.finite_diskRelCWComplex`: the disk is a finite relative CW complex.
 * `TauCeti.exists_map_sigmaDiskRelCWComplex_eq`: the characteristic map of an `m`-cell of the
   disjoint union of disks maps the boundary sphere into the boundary of an `m`-disk.
-* `ContinuousMap.Homotopic.sigmaDiskAttachingMap`: homotopic attaching maps combine to homotopic
+* `TauCeti.homotopic_sigmaDiskAttachingMap`: homotopic attaching maps combine to homotopic
   attaching maps of the disjoint union.
 * `TauCeti.sigmaDiskAdjunctionSpaceCellEquiv`: gluing the disjoint union of disks to a space along
   a family of attaching maps attaches one `n i`-cell for each `i`.
@@ -334,6 +334,13 @@ theorem sigmaDiskAttachingMap_comp {Z' : Type*} [TopologicalSpace Z'] (f : C(Z, 
     sigmaDiskAttachingMap (fun i ↦ f.comp (a i)) = f.comp (sigmaDiskAttachingMap a) :=
   (rfl)
 
+/-- Attaching maps `a i` and `a' i` that are homotopic for each `i` combine to homotopic attaching
+maps of the disjoint union of disks. -/
+theorem homotopic_sigmaDiskAttachingMap {a a' : ∀ i, C(TopCat.diskBoundary.{u} (n i), Z)}
+    (h : ∀ i, (a i).Homotopic (a' i)) :
+    (sigmaDiskAttachingMap a).Homotopic (sigmaDiskAttachingMap a') :=
+  (ContinuousMap.Homotopic.sigma h).comp (.refl _)
+
 /-- **Attaching cells along a family of maps.** Gluing the disjoint union of the disks
 `TopCat.disk (n i)` to a space `Y` along `TauCeti.sigmaDiskAttachingMap b` gives a relative CW
 complex over `Y` (`TauCeti.relativeCWPushout`) whose `m`-cells are the indices `i` with
@@ -365,11 +372,3 @@ theorem sigmaDiskAdjunctionSpaceCellEquiv_symm_mk {Y : Type u} [TopologicalSpace
 end Sigma
 
 end TauCeti
-
-/-- Attaching maps `a i` and `a' i` that are homotopic for each `i` combine to homotopic attaching
-maps of the disjoint union of disks. -/
-theorem ContinuousMap.Homotopic.sigmaDiskAttachingMap {ι : Type u} {n : ι → ℕ} {Z : Type*}
-    [TopologicalSpace Z] {a a' : ∀ i, C(TopCat.diskBoundary.{u} (n i), Z)}
-    (h : ∀ i, (a i).Homotopic (a' i)) :
-    (TauCeti.sigmaDiskAttachingMap a).Homotopic (TauCeti.sigmaDiskAttachingMap a') :=
-  (Homotopic.sigma h).comp (.refl _)

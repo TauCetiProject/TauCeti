@@ -397,7 +397,7 @@ theorem exists_homotopyEquiv_sigmaDiskAdjunction (h : W ≃ₕ Z)
   have hK : (ab ≫ f).hom.Homotopic (TopCat.ofHom (sigmaDiskAttachingMap a)).hom := by
     rw [TopCat.hom_comp, TopCat.hom_ofHom, TopCat.hom_ofHom, TopCat.hom_ofHom,
       ← sigmaDiskAttachingMap_comp]
-    exact ContinuousMap.Homotopic.sigmaDiskAttachingMap hhb
+    exact homotopic_sigmaDiskAttachingMap hhb
   obtain ⟨φ, ψ, hφ, -, hφψ, hψφ⟩ := hP'.exists_homotopicRel_id_of_homotopy
     (IsPushout.of_hasPushout i₀ (TopCat.ofHom (sigmaDiskAttachingMap a))) hi hA hK.some
   let E₁ : (pushout i₀ ab : TopCat.{u}) ≃ₕ (pushout i₀ (ab ≫ f) : TopCat.{u}) :=
