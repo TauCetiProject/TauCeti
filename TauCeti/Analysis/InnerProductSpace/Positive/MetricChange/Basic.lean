@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.ContinuousFunctionalCalculus
 public import TauCeti.Analysis.InnerProductSpace.Dual
+public import Mathlib.Analysis.Convex.Basic
+public import Mathlib.Topology.UnitInterval
 
 import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Isometric
 
@@ -71,7 +73,7 @@ relative to the fixed inner product of `E`.
 public section
 
 open InnerProductSpace
-open scoped InnerProductSpace
+open scoped InnerProductSpace unitInterval
 
 /-- The Riesz operator of a real bilinear form, written as Mathlib's `InnerProductSpace.Dual`
 writes it. -/
@@ -325,6 +327,29 @@ theorem isStrictlyPositive_continuousLinearMapOfBilin_iff [FiniteDimensional ℝ
 end InnerProductSpace
 
 namespace ContinuousLinearMap
+
+/-- Positive-definite real bilinear forms form a convex set. -/
+theorem convex_setOf_isStrictlyPositive_continuousLinearMapOfBilin [FiniteDimensional ℝ E] :
+    Convex ℝ {h : E →L[ℝ] E →L[ℝ] ℝ | IsStrictlyPositive h♯} := by
+  intro h hh k hk a b ha hb hab
+  obtain ⟨hsym, hpos⟩ := isStrictlyPositive_continuousLinearMapOfBilin_iff.1 hh
+  obtain ⟨ksym, kpos⟩ := isStrictlyPositive_continuousLinearMapOfBilin_iff.1 hk
+  apply isStrictlyPositive_continuousLinearMapOfBilin_iff.2
+  refine ⟨fun u v ↦ by simp [hsym u v, ksym u v], fun u hu ↦ ?_⟩
+  simp only [add_apply, smul_apply, smul_eq_mul]
+  have hp := hpos u hu
+  have kp := kpos u hu
+  rcases lt_or_eq_of_le ha with ha | rfl
+  · exact add_pos_of_pos_of_nonneg (mul_pos ha hp) (mul_nonneg hb kp.le)
+  · simp_all
+
+/-- The affine interpolation of positive metrics remains positive, including at its endpoints. -/
+theorem isStrictlyPositive_lineMap [FiniteDimensional ℝ E] (h k : E →L[ℝ] E →L[ℝ] ℝ)
+    (hH : IsStrictlyPositive h♯) (hK : IsStrictlyPositive k♯) (t : unitInterval) :
+    IsStrictlyPositive (AffineMap.lineMap h k (t : ℝ))♯ := by
+  rw [AffineMap.lineMap_apply_module]
+  exact convex_setOf_isStrictlyPositive_continuousLinearMapOfBilin hH hK
+    (sub_nonneg.mpr t.2.2) t.2.1 (sub_add_cancel 1 (t : ℝ))
 
 variable [CompleteSpace E]
 

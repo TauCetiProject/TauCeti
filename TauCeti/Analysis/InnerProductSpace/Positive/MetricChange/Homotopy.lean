@@ -40,28 +40,12 @@ open scoped unitInterval
 namespace ContinuousLinearMap
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  [FiniteDimensional ℝ E]
 
 local postfix:1024 "♯" => continuousLinearMapOfBilin (𝕜 := ℝ)
 
-/-- Positive-definite real bilinear forms form a convex set. -/
-theorem convex_setOf_isStrictlyPositive_continuousLinearMapOfBilin :
-    Convex ℝ {h : E →L[ℝ] E →L[ℝ] ℝ | IsStrictlyPositive h♯} := by
-  intro h hh k hk a b ha hb hab
-  obtain ⟨hsym, hpos⟩ := isStrictlyPositive_continuousLinearMapOfBilin_iff.1 hh
-  obtain ⟨ksym, kpos⟩ := isStrictlyPositive_continuousLinearMapOfBilin_iff.1 hk
-  apply isStrictlyPositive_continuousLinearMapOfBilin_iff.2
-  refine ⟨fun u v ↦ by simp [hsym u v, ksym u v], fun u hu ↦ ?_⟩
-  simp only [add_apply, smul_apply, smul_eq_mul]
-  have hp := hpos u hu
-  have kp := kpos u hu
-  rcases lt_or_eq_of_le ha with ha | rfl
-  · exact add_pos_of_pos_of_nonneg (mul_pos ha hp) (mul_nonneg hb kp.le)
-  · simp_all
-
 /-- The composition correction varies continuously with two continuous positive metrics,
 with values in the native unitary group of the operator algebra. -/
-theorem _root_.Continuous.metricChangeCompositionCorrection
+theorem _root_.Continuous.metricChangeCompositionCorrection [CompleteSpace E]
     {X : Type*} [TopologicalSpace X] {h k : X → E →L[ℝ] E →L[ℝ] ℝ}
     (hh : Continuous h) (hk : Continuous k)
     (hpos : ∀ x, IsStrictlyPositive (h x)♯) (kpos : ∀ x, IsStrictlyPositive (k x)♯) :
@@ -70,9 +54,8 @@ theorem _root_.Continuous.metricChangeCompositionCorrection
   have hT := continuousOn_metricChangeTransport.comp_continuous hh hpos
   have hP : Continuous fun x ↦
       (k x).bilinearComp (h x).metricChangeTransport (h x).metricChangeTransport := by
-    refine continuous_clm_apply.2 fun u ↦ continuous_clm_apply.2 fun v ↦ ?_
-    exact (hk.clm_apply (hT.clm_apply continuous_const)).clm_apply
-      (hT.clm_apply continuous_const)
+    exact (flipₗᵢ ℝ E E ℝ).continuous.comp
+      (((flipₗᵢ ℝ E E ℝ).continuous.comp (hk.clm_comp hT)).clm_comp hT)
   have hPT := continuousOn_metricChangeTransport.comp_continuous hP fun x ↦
     isStrictlyPositive_bilinearComp_metricChangeTransport (h x) (k x) (hpos x) (kpos x)
   have hS := continuousOn_sqrt_continuousLinearMapOfBilin.comp_continuous hk
@@ -82,13 +65,7 @@ theorem _root_.Continuous.metricChangeCompositionCorrection
   ext u
   simp [Unitary.coe_symm_linearIsometryEquiv_apply]
 
-/-- The affine interpolation of positive metrics remains positive, including at its endpoints. -/
-theorem isStrictlyPositive_lineMap (h k : E →L[ℝ] E →L[ℝ] ℝ)
-    (hH : IsStrictlyPositive h♯) (hK : IsStrictlyPositive k♯) (t : unitInterval) :
-    IsStrictlyPositive (AffineMap.lineMap h k (t : ℝ))♯ := by
-  rw [AffineMap.lineMap_apply_module]
-  exact convex_setOf_isStrictlyPositive_continuousLinearMapOfBilin hH hK
-    (sub_nonneg.mpr t.2.2) t.2.1 (sub_add_cancel 1 (t : ℝ))
+variable [FiniteDimensional ℝ E]
 
 /-- The canonical path from the identity to the discrepancy between successive transport
 through `h` and direct transport to `k`. At time `t`, its intermediate metric is
