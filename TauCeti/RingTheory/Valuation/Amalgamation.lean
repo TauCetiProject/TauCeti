@@ -8,10 +8,9 @@ module
 public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 public import Mathlib.RingTheory.TensorProduct.Basic
 public import Mathlib.RingTheory.Valuation.ValuationSubring
-import Mathlib.RingTheory.Flat.Stability
 import Mathlib.RingTheory.Ideal.MinimalPrime.Localization
-import Mathlib.RingTheory.Valuation.LocalSubring
 import TauCeti.RingTheory.Flat.NonZeroDivisors
+import TauCeti.RingTheory.Flat.TensorProduct
 import TauCeti.RingTheory.TensorProduct.LocalRing
 import TauCeti.RingTheory.Valuation.ValuationSubring
 
@@ -122,17 +121,7 @@ theorem exists_comap_eq_of_comap_eq (V₁ : ValuationSubring K₁) (V₂ : Valua
     (algebraMap _ _).comp (Ideal.Quotient.mk P₀)
   have hψ (x) : ψ x = 0 ↔ x ∈ P₀ := by
     simp [ψ, Ideal.Quotient.eq_zero_iff_mem]
-  have inj₁ : Function.Injective (ψ.comp includeLeftRingHom) := by
-    refine (injective_iff_map_eq_zero _).mpr fun b hb ↦ by_contra fun hb0 ↦ ?_
-    exact Set.disjoint_left.mp hdisj ((hψ _).mp hb)
-      (Module.Flat.algebraMap_mem_nonZeroDivisors (mem_nonZeroDivisors_of_ne_zero hb0))
-  have inj₂ : Function.Injective (ψ.comp (includeRight : V₂ →ₐ[V₀] V₁ ⊗[V₀] V₂).toRingHom) := by
-    refine (injective_iff_map_eq_zero _).mpr fun c hc ↦ by_contra fun hc0 ↦ ?_
-    have hc' := Module.Flat.algebraMap_mem_nonZeroDivisors (A := V₂ ⊗[V₀] V₁)
-      (mem_nonZeroDivisors_of_ne_zero hc0)
-    exact Set.disjoint_left.mp hdisj ((hψ _).mp hc)
-      (mem_nonZeroDivisors_of_injective (f := Algebra.TensorProduct.comm V₀ V₁ V₂)
-        (AlgEquiv.injective _) (by simpa using hc'))
+  obtain ⟨inj₁, inj₂⟩ := ψ.injective_comp_include_of_disjoint_nonZeroDivisors P₀ hψ hdisj
   let g₁ : K₁ →+* FractionRing (V₁ ⊗[V₀] V₂ ⧸ P₀) := IsFractionRing.lift inj₁
   let g₂ : K₂ →+* FractionRing (V₁ ⊗[V₀] V₂ ⧸ P₀) := IsFractionRing.lift inj₂
   have hg : g₁.comp (algebraMap K₀ K₁) = g₂.comp (algebraMap K₀ K₂) := by
@@ -146,16 +135,8 @@ theorem exists_comap_eq_of_comap_eq (V₁ : ValuationSubring K₁) (V₂ : Valua
     rw [← Algebra.TensorProduct.algebraMap_apply, algebraMap_apply']
   -- a valuation subring `W` of `L` containing the image of `V₁ ⊗[V₀] V₂`, with the image of `Q`
   -- among its nonunits
-  have hQ' : Q.map ψ.rangeRestrict ≠ ⊤ := fun htop ↦ hQ.ne_top <| by
-    have := Ideal.comap_map_of_surjective _ ψ.rangeRestrict_surjective Q
-    rw [htop, Ideal.comap_top, sup_eq_left.mpr] at this
-    · exact this.symm
-    · intro x hx
-      exact hP₀Q ((hψ x).mp (congrArg Subtype.val (Ideal.mem_bot.mp hx)))
-  obtain ⟨W, hrange, hnon⟩ := Ideal.image_subset_nonunits_valuationSubring _ hQ'
-  have hmem (x) : ψ x ∈ W := hrange ⟨x, rfl⟩
-  have hnon' (x) (hx : x ∈ Q) : ψ x ∈ W.nonunits :=
-    hnon ⟨ψ.rangeRestrict x, Ideal.mem_map_of_mem _ hx, rfl⟩
+  obtain ⟨W, hmem, hnon'⟩ := ψ.exists_valuationSubring_mem_and_image_subset_nonunits hQ.ne_top
+    fun x hx ↦ hP₀Q ((hψ x).mp hx)
   obtain ⟨P, _, W', h₁, h₂⟩ := W.exists_residueField_of_ringHom g₁ g₂ hg
   exact ⟨P, inferInstance, W',
     h₁.trans (comap_eq_of_map_maximalIdeal_le _ ψ (le_sup_left.trans hJQ) hmem hnon' g₁
