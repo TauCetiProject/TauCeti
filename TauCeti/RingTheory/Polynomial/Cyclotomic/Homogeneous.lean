@@ -108,8 +108,10 @@ theorem homogeneousCyclotomic_eq_eval_div_mul_pow {K : Type*} [Field K] (n : ℕ
 theorem _root_.RingHom.map_homogeneousCyclotomic (f : R →+* S) (n : ℕ) (a b : R) :
     f (homogeneousCyclotomic n a b) = homogeneousCyclotomic n (f a) (f b) := by
   rw [homogeneousCyclotomic_def, homogeneousCyclotomic_def, MvPolynomial.map_eval,
-    ← homogenize_map, map_cyclotomic, ← FinVec.map_eq]
-  rfl
+    ← homogenize_map, map_cyclotomic]
+  congr 2
+  ext i
+  fin_cases i <;> simp
 
 /-- `Φ_n` is homogeneous of degree `φ(n)`: `Φ_n(c a, c b) = c ^ φ(n) Φ_n(a, b)`. -/
 theorem homogeneousCyclotomic_mul_mul (n : ℕ) (c a b : R) :
