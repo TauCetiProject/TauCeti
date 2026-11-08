@@ -45,6 +45,8 @@ CM field rather than on an abstract finite set.
   together with it is a transversal.
 * `TauCeti.IsInvolutionTransversal.prod_mul_prod_comp`: a transversal splits a product over `S`
   into the product over `T` and the product over `T` of the composite with `f`.
+* `TauCeti.map_mem_sdiff_pair`: removing one orbit `{a, f a}` of an involution of `S` leaves a
+  set it still maps to itself.
 * `TauCeti.ncard_setOf_isInvolutionTransversal`: there are `2 ^ (#S / 2)` transversals.
 -/
 
@@ -118,6 +120,107 @@ theorem finite_setOf_isInvolutionTransversal (f : α → α) (S : Finset α) :
     {T : Finset α | IsInvolutionTransversal f S T}.Finite :=
   Set.Finite.subset S.powerset.finite_toSet fun _ hT => Finset.mem_powerset.2 hT.subset
 
+/-- **Removing one orbit of an involution preserves its properties on the rest.** If `f` maps `S`
+to itself and is involutive on it, then it maps `S \ {a, f a}` to itself: an element outside the
+pair cannot be sent into it, since applying `f` twice returns it. -/
+theorem map_mem_sdiff_pair [DecidableEq α]
+    (hmaps : ∀ x ∈ S, f x ∈ S) (hinvol : ∀ x ∈ S, f (f x) = x)
+    {a x : α} (ha : a ∈ S) (hx : x ∈ S \ {a, f a}) : f x ∈ S \ {a, f a} := by
+  simp only [Finset.mem_sdiff, Finset.mem_insert, Finset.mem_singleton, not_or] at hx ⊢
+  obtain ⟨hxS, hxa, hxb⟩ := hx
+  refine ⟨hmaps x hxS, fun h => hxb ?_, fun h => hxa ?_⟩
+  · rw [← hinvol x hxS, h]
+  · rw [← hinvol x hxS, h, hinvol a ha]
+
+/-- Adjoining an element `c` of the orbit `{a, f a}` to a transversal of `S \ {a, f a}` gives a
+transversal of `S`. -/
+private lemma isInvolutionTransversal_insert_of_sdiff_pair [DecidableEq α]
+    (hinvol : ∀ x ∈ S, f (f x) = x)
+    (hfree : ∀ x ∈ S, f x ≠ x) {a c : α} (hc : c ∈ S)
+    (hcpair : ({c, f c} : Finset α) = {a, f a}) {T' : Finset α}
+    (hT' : IsInvolutionTransversal f (S \ {a, f a}) T') :
+    IsInvolutionTransversal f S (insert c T') := by
+  have hS'c : S \ {a, f a} = S \ {c, f c} := by rw [hcpair]
+  have hfcT' : f c ∉ T' := fun h => (by simp [hS'c] : f c ∉ S \ {a, f a}) (hT'.subset h)
+  refine ⟨Finset.insert_subset hc (hT'.subset.trans Finset.sdiff_subset), fun x hx => ?_⟩
+  by_cases hxc : x = c
+  · subst hxc
+    simp [Finset.mem_insert, hfree x hx, hfcT']
+  by_cases hxfc : x = f c
+  · subst hxfc
+    simp [Finset.mem_insert, hinvol c hc, hfree c hc, hfcT']
+  have hxS' : x ∈ S \ {a, f a} := by rw [hS'c]; simp [hx, hxc, hxfc]
+  have hfxc : f x ≠ c := fun h => hxfc (by rw [← hinvol x hx, h])
+  rw [Finset.mem_insert, Finset.mem_insert]
+  simp only [hxc, hfxc, false_or]
+  exact hT'.mem_iff_notMem x hxS'
+
+/-- Restricting a transversal of `S` to `S \ {a, f a}` gives a transversal there. -/
+private lemma isInvolutionTransversal_sdiff_pair [DecidableEq α] (hmaps : ∀ x ∈ S, f x ∈ S)
+    (hinvol : ∀ x ∈ S, f (f x) = x) {a : α} (ha : a ∈ S) (hT : IsInvolutionTransversal f S T) :
+    IsInvolutionTransversal f (S \ {a, f a}) (T \ {a, f a}) := by
+  refine ⟨Finset.sdiff_subset_sdiff hT.subset (Finset.Subset.refl _), fun x hx => ?_⟩
+  have hfx := map_mem_sdiff_pair hmaps hinvol ha hx
+  simp only [Finset.mem_sdiff, Finset.mem_insert, Finset.mem_singleton, not_or] at hx hfx ⊢
+  simp only [hx.2.1, hx.2.2, hfx.2.1, hfx.2.2, not_false_eq_true, and_true]
+  exact hT.mem_iff_notMem x hx.1
+
+/-- The transversals of `S` are the two extensions, by `a` or by `f a`, of the transversals of
+`S \ {a, f a}`. -/
+private lemma setOf_isInvolutionTransversal_eq_image_union [DecidableEq α]
+    (hmaps : ∀ x ∈ S, f x ∈ S)
+    (hinvol : ∀ x ∈ S, f (f x) = x) (hfree : ∀ x ∈ S, f x ≠ x) {a : α} (ha : a ∈ S) :
+    {T : Finset α | IsInvolutionTransversal f S T} =
+      (insert a '' {T : Finset α | IsInvolutionTransversal f (S \ {a, f a}) T}) ∪
+        (insert (f a) '' {T : Finset α | IsInvolutionTransversal f (S \ {a, f a}) T}) := by
+  ext T
+  constructor
+  · intro hT
+    by_cases haT : a ∈ T
+    · have herase : T \ {a, f a} = T.erase a := by
+        rw [Finset.sdiff_insert, Finset.sdiff_singleton_eq_erase,
+          Finset.erase_eq_of_notMem (hT.map_notMem_of_mem ha haT)]
+      exact Or.inl ⟨_, isInvolutionTransversal_sdiff_pair hmaps hinvol ha hT, by
+        rw [herase]; exact Finset.insert_erase haT⟩
+    · have hfaT : f a ∈ T := hT.map_mem_of_notMem ha haT
+      have herase : T \ {a, f a} = T.erase (f a) := by
+        rw [Finset.sdiff_insert_of_notMem haT, Finset.sdiff_singleton_eq_erase]
+      exact Or.inr ⟨_, isInvolutionTransversal_sdiff_pair hmaps hinvol ha hT, by
+        rw [herase]; exact Finset.insert_erase hfaT⟩
+  · rintro (⟨T', hT', rfl⟩ | ⟨T', hT', rfl⟩)
+    · exact isInvolutionTransversal_insert_of_sdiff_pair hinvol hfree ha rfl hT'
+    · exact isInvolutionTransversal_insert_of_sdiff_pair hinvol hfree (hmaps a ha)
+        (by rw [hinvol a ha, Finset.pair_comm]) hT'
+
+/-- Removing one orbit `{a, f a}` of a fixed-point-free involution halves the number of
+transversals: each transversal of the rest extends in exactly two ways. -/
+private lemma ncard_setOf_isInvolutionTransversal_eq_two_mul [DecidableEq α]
+    (hmaps : ∀ x ∈ S, f x ∈ S)
+    (hinvol : ∀ x ∈ S, f (f x) = x) (hfree : ∀ x ∈ S, f x ≠ x) {a : α} (ha : a ∈ S) :
+    {T : Finset α | IsInvolutionTransversal f S T}.ncard =
+      2 * {T : Finset α | IsInvolutionTransversal f (S \ {a, f a}) T}.ncard := by
+  have haS' : a ∉ S \ {a, f a} := by simp
+  have hfaS' : f a ∉ S \ {a, f a} := by simp
+  have hinsert : ∀ c ∉ S \ {a, f a},
+      Set.InjOn (insert c) {T : Finset α | IsInvolutionTransversal f (S \ {a, f a}) T} := by
+    intro c hc
+    refine (Finset.insert_injOn_notMem c).mono ?_
+    intro T hT h
+    exact hc (hT.subset h)
+  have hdisj : Disjoint
+      (insert a '' {T : Finset α | IsInvolutionTransversal f (S \ {a, f a}) T})
+      (insert (f a) '' {T : Finset α | IsInvolutionTransversal f (S \ {a, f a}) T}) := by
+    rw [Set.disjoint_left]
+    rintro U ⟨T₁, _, rfl⟩ ⟨T₂, h₂, h⟩
+    have hmem : a ∈ insert (f a) T₂ := h ▸ Finset.mem_insert_self a T₁
+    rcases Finset.mem_insert.1 hmem with h' | h'
+    · exact hfree a ha h'.symm
+    · exact haS' (h₂.subset h')
+  have hfin := finite_setOf_isInvolutionTransversal f (S \ {a, f a})
+  rw [setOf_isInvolutionTransversal_eq_image_union hmaps hinvol hfree ha,
+    Set.ncard_union_eq hdisj (hfin.image _) (hfin.image _),
+    (hinsert a haS').ncard_image, (hinsert (f a) hfaS').ncard_image, two_mul]
+
 /-- **The transversal count.** A fixed-point-free involution of a finite set `S` has exactly
 `2 ^ (#S / 2)` transversals: one binary choice per orbit. -/
 theorem ncard_setOf_isInvolutionTransversal (hmaps : ∀ a ∈ S, f a ∈ S)
@@ -134,107 +237,27 @@ theorem ncard_setOf_isInvolutionTransversal (hmaps : ∀ a ∈ S, f a ∈ S)
           ⟨⟨Finset.Subset.refl _, fun a ha => absurd ha (by simp)⟩,
             fun T hT => Finset.subset_empty.1 hT.subset⟩
       simp [hsingle]
-    -- Induction step. Remove the orbit `{a, f a}` of a chosen element: the transversals of `S`
-    -- are exactly the transversals of `S' = S \ {a, f a}` with one of `a`, `f a` adjoined, so
-    -- the count doubles while `#S` drops by `2`.
-    have hbS : f a ∈ S := hmaps a ha
+    -- Induction step: remove the orbit `{a, f a}` of a chosen element, which doubles the count
+    -- while `#S` drops by `2`.
     have hab : f a ≠ a := hfree a ha
-    set S' := S \ {a, f a} with hS'def
-    have haS' : a ∉ S' := by simp [hS'def]
-    have hfaS' : f a ∉ S' := by simp [hS'def]
     have hpair : ({a, f a} : Finset α) ⊆ S := by
       intro x hx
       rcases Finset.mem_insert.1 hx with rfl | hx
       · exact ha
-      · exact Finset.mem_singleton.1 hx ▸ hbS
+      · exact Finset.mem_singleton.1 hx ▸ hmaps a ha
     have hpaircard : ({a, f a} : Finset α).card = 2 := by
       rw [Finset.card_insert_of_notMem (by simpa using hab.symm), Finset.card_singleton]
-    have hcard : S.card = S'.card + 2 := by
+    have hcard : S.card = (S \ {a, f a}).card + 2 := by
       have h2 : 2 ≤ S.card := hpaircard ▸ Finset.card_le_card hpair
-      rw [hS'def, Finset.card_sdiff, Finset.inter_eq_left.2 hpair, hpaircard]
+      rw [Finset.card_sdiff, Finset.inter_eq_left.2 hpair, hpaircard]
       omega
-    have hsub' : S' ⊆ S := Finset.sdiff_subset
-    have hssub : S' ⊂ S := ⟨hsub', fun h => haS' (h ha)⟩
-    have hmemS' : ∀ x, x ∈ S' ↔ x ∈ S ∧ x ≠ a ∧ x ≠ f a := by
-      intro x; simp [hS'def]
-    have hmaps' : ∀ x ∈ S', f x ∈ S' := by
-      intro x hx
-      obtain ⟨hxS, hxa, hxb⟩ := (hmemS' x).1 hx
-      refine (hmemS' _).2 ⟨hmaps x hxS, fun h => hxb ?_, fun h => hxa ?_⟩
-      · rw [← hinvol x hxS, h]
-      · rw [← hinvol x hxS, h, hinvol a ha]
-    have hinvol' : ∀ x ∈ S', f (f x) = x := fun x hx => hinvol x (hsub' hx)
-    have hfree' : ∀ x ∈ S', f x ≠ x := fun x hx => hfree x (hsub' hx)
-    -- Adjoining either element of the orbit to a transversal of `S'` gives one of `S`.
-    have hstep : ∀ c ∈ S, ({c, f c} : Finset α) = {a, f a} → ∀ T',
-        IsInvolutionTransversal f S' T' → IsInvolutionTransversal f S (insert c T') := by
-      intro c hc hcpair T' hT'
-      have hS'c : S' = S \ {c, f c} := by rw [hS'def, hcpair]
-      have hfcT' : f c ∉ T' := fun h => (by simp [hS'c] : f c ∉ S') (hT'.subset h)
-      refine ⟨Finset.insert_subset hc (hT'.subset.trans hsub'), fun x hx => ?_⟩
-      by_cases hxc : x = c
-      · subst hxc
-        simp [Finset.mem_insert, hfree x hx, hfcT']
-      by_cases hxfc : x = f c
-      · subst hxfc
-        simp [Finset.mem_insert, hinvol c hc, hfree c hc, hfcT']
-      have hxS' : x ∈ S' := by rw [hS'c]; simp [hx, hxc, hxfc]
-      have hfxc : f x ≠ c := fun h => hxfc (by rw [← hinvol x hx, h])
-      rw [Finset.mem_insert, Finset.mem_insert]
-      simp only [hxc, hfxc, false_or]
-      exact hT'.mem_iff_notMem x hxS'
-    -- Restricting a transversal of `S` to `S'` gives a transversal of `S'`.
-    have hrestrict : ∀ T, IsInvolutionTransversal f S T →
-        IsInvolutionTransversal f S' (T \ {a, f a}) := by
-      intro T hT
-      refine ⟨Finset.sdiff_subset_sdiff hT.subset (Finset.Subset.refl _), fun x hx => ?_⟩
-      obtain ⟨hxS, hxa, hxb⟩ := (hmemS' x).1 hx
-      obtain ⟨_, hfxa, hfxb⟩ := (hmemS' _).1 (hmaps' x hx)
-      rw [Finset.mem_sdiff, Finset.mem_sdiff]
-      simp only [Finset.mem_insert, Finset.mem_singleton, hxa, hxb, hfxa, hfxb, or_self,
-        not_false_eq_true, and_true]
-      exact hT.mem_iff_notMem x hxS
-    -- Hence the transversals of `S` are the two disjoint extensions of those of `S'`.
-    have hsplit : {T : Finset α | IsInvolutionTransversal f S T} =
-        (insert a '' {T : Finset α | IsInvolutionTransversal f S' T}) ∪
-          (insert (f a) '' {T : Finset α | IsInvolutionTransversal f S' T}) := by
-      ext T
-      constructor
-      · intro hT
-        by_cases haT : a ∈ T
-        · have hfaT : f a ∉ T := hT.map_notMem_of_mem ha haT
-          have herase : T \ {a, f a} = T.erase a := by
-            ext x
-            simp only [Finset.mem_sdiff, Finset.mem_erase, Finset.mem_insert, Finset.mem_singleton]
-            grind
-          exact Or.inl ⟨_, hrestrict T hT, by rw [herase]; exact Finset.insert_erase haT⟩
-        · have hfaT : f a ∈ T := hT.map_mem_of_notMem ha haT
-          have herase : T \ {a, f a} = T.erase (f a) := by
-            ext x
-            simp only [Finset.mem_sdiff, Finset.mem_erase, Finset.mem_insert, Finset.mem_singleton]
-            grind
-          exact Or.inr ⟨_, hrestrict T hT, by rw [herase]; exact Finset.insert_erase hfaT⟩
-      · rintro (⟨T', hT', rfl⟩ | ⟨T', hT', rfl⟩)
-        · exact hstep a ha rfl T' hT'
-        · exact hstep (f a) hbS (by rw [hinvol a ha, Finset.pair_comm]) T' hT'
-    have hinsert : ∀ c ∉ S',
-        Set.InjOn (insert c) {T : Finset α | IsInvolutionTransversal f S' T} := by
-      intro c hc T₁ h₁ T₂ h₂ h
-      rw [← Finset.erase_insert (fun h' => hc (h₁.subset h')),
-        ← Finset.erase_insert (fun h' => hc (h₂.subset h')), h]
-    have hdisj : Disjoint (insert a '' {T : Finset α | IsInvolutionTransversal f S' T})
-        (insert (f a) '' {T : Finset α | IsInvolutionTransversal f S' T}) := by
-      rw [Set.disjoint_left]
-      rintro U ⟨T₁, _, rfl⟩ ⟨T₂, h₂, h⟩
-      have hmem : a ∈ insert (f a) T₂ := h ▸ Finset.mem_insert_self a T₁
-      rcases Finset.mem_insert.1 hmem with h' | h'
-      · exact hab h'.symm
-      · exact haS' (h₂.subset h')
-    have hhalf : (S'.card + 2) / 2 = S'.card / 2 + 1 := by omega
-    have hfin := finite_setOf_isInvolutionTransversal f S'
-    rw [hsplit, Set.ncard_union_eq hdisj (hfin.image _) (hfin.image _),
-      (hinsert a haS').ncard_image, (hinsert (f a) hfaS').ncard_image,
-      ih S' hssub hmaps' hinvol' hfree', hcard, hhalf, pow_succ]
+    have hssub : S \ {a, f a} ⊂ S := ⟨Finset.sdiff_subset, fun h => by simpa using h ha⟩
+    rw [ncard_setOf_isInvolutionTransversal_eq_two_mul hmaps hinvol hfree ha,
+      ih _ hssub (fun x hx => map_mem_sdiff_pair hmaps hinvol ha hx)
+        (fun x hx => hinvol x (Finset.sdiff_subset hx))
+        (fun x hx => hfree x (Finset.sdiff_subset hx)), hcard]
+    have hhalf : ((S \ {a, f a}).card + 2) / 2 = (S \ {a, f a}).card / 2 + 1 := by omega
+    rw [hhalf, pow_succ]
     omega
 
 end TauCeti
