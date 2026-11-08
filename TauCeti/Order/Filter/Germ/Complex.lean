@@ -58,7 +58,7 @@ private theorem exists_injective_algHom_germ_ofReal
       ∀ u : (σ → ℝ) → ℝ, g (u : Germ l ℝ) = ((fun y ↦ (u y : ℂ) : (σ → ℝ) → ℂ) : Germ l ℂ) := by
   obtain ⟨g, hg⟩ := RingHom.exists_algHom_mapGerm (A := MvPolynomial σ ℝ) (algebraMap ℝ ℂ)
     (l := l) fun p ↦ by
-      rw [hA, hB, RingHom.mapGerm_coe]
+      rw [hA, hB, RingHom.mapGerm_coe, Complex.coe_algebraMap]
       rfl
   exact ⟨g, fun a b hab ↦ (algebraMap ℝ ℂ).mapGerm_injective l Complex.ofReal_injective
       (by rwa [hg, hg] at hab), fun u ↦ by rw [hg]; exact RingHom.mapGerm_coe _ _ _⟩
@@ -79,30 +79,46 @@ private theorem exists_algHom_germ_star [Algebra (MvPolynomial σ ℝ) (Germ l �
       exact Complex.conj_ofReal _
   exact ⟨j, fun u ↦ by rw [hj]; exact RingHom.mapGerm_coe _ _ _⟩
 
+end Helpers
+
+end Polynomial
+
+namespace Filter.Germ
+
 /-- The real and imaginary parts of a complex germ are algebraic over `R` once the germ, its
 conjugate and all constant germs are: `re f = (f + conj f) / 2` and `im f = (f - conj f) / (2 i)`
 are built from them by sums and products. -/
-theorem isAlgebraic_re_im_germ {R : Type*} [CommRing R] [NoZeroDivisors R]
-    [Algebra R (Germ l ℂ)] {f : (σ → ℝ) → ℂ} (hf : IsAlgebraic R (f : Germ l ℂ))
-    (hconj : IsAlgebraic R ((fun y ↦ star (f y) : (σ → ℝ) → ℂ) : Germ l ℂ))
-    (hc : ∀ z : ℂ, IsAlgebraic R ((fun _ : σ → ℝ ↦ z : (σ → ℝ) → ℂ) : Germ l ℂ)) :
-    IsAlgebraic R ((fun y ↦ (((f y).re : ℝ) : ℂ) : (σ → ℝ) → ℂ) : Germ l ℂ) ∧
-      IsAlgebraic R ((fun y ↦ (((f y).im : ℝ) : ℂ) : (σ → ℝ) → ℂ) : Germ l ℂ) := by
+theorem isAlgebraic_re_im {α : Type*} {l : Filter α} {R : Type*} [CommRing R] [NoZeroDivisors R]
+    [Algebra R (Germ l ℂ)] {f : α → ℂ} (hf : IsAlgebraic R (f : Germ l ℂ))
+    (hconj : IsAlgebraic R ((fun y ↦ star (f y) : α → ℂ) : Germ l ℂ))
+    (hc : ∀ z : ℂ, IsAlgebraic R ((fun _ : α ↦ z : α → ℂ) : Germ l ℂ)) :
+    IsAlgebraic R ((fun y ↦ (((f y).re : ℝ) : ℂ) : α → ℂ) : Germ l ℂ) ∧
+      IsAlgebraic R ((fun y ↦ (((f y).im : ℝ) : ℂ) : α → ℂ) : Germ l ℂ) := by
   constructor
   · convert (hf.add hconj).mul (hc (1 / 2)) using 1
     rw [← Germ.coe_add f (fun y ↦ star (f y)), ← Germ.coe_mul]
     congr 1
     funext y
-    apply Complex.ext <;> simp [Complex.mul_re, Complex.mul_im]
+    apply Complex.ext <;> simp only [Complex.ofReal_re, RCLike.star_def, one_div, Pi.mul_apply,
+      Pi.add_apply, Complex.mul_re, Complex.add_re, Complex.conj_re, Complex.inv_re,
+      Complex.re_ofNat, Complex.normSq_ofNat, div_self_mul_self', Complex.add_im, Complex.conj_im,
+      add_neg_cancel, Complex.inv_im, Complex.im_ofNat, neg_zero, zero_div, mul_zero, sub_zero,
+      Complex.ofReal_im, Complex.mul_im, zero_mul, add_zero]
     ring
   · convert (hf.sub hconj).mul (hc (-(Complex.I / 2))) using 1
     rw [← Germ.coe_sub f (fun y ↦ star (f y)), ← Germ.coe_mul]
     congr 1
     funext y
-    simp [Complex.ext_iff, Complex.mul_re, Complex.mul_im]
+    simp only [RCLike.star_def, Pi.mul_apply, Pi.sub_apply, mul_neg, Complex.ext_iff,
+      Complex.ofReal_re, Complex.neg_re, Complex.mul_re, Complex.sub_re, Complex.conj_re, sub_self,
+      Complex.div_ofNat_re, Complex.I_re, zero_div, mul_zero, Complex.sub_im, Complex.conj_im,
+      sub_neg_eq_add, Complex.div_ofNat_im, Complex.I_im, one_div, zero_sub, neg_neg,
+      Complex.ofReal_im, Complex.neg_im, Complex.mul_im, zero_mul, add_zero, neg_zero, and_true]
     ring
 
-end Helpers
+end Filter.Germ
+
+namespace Polynomial
 
 /-- The real and imaginary parts of a complex-valued germ algebraic over the coordinate
 polynomials have real polynomial relations, including at singular points of the relation. -/
@@ -154,7 +170,7 @@ theorem exists_real_polynomial_relations {σ : Type*} {l : Filter (σ → ℝ)}
     simp only [IsScalarTower.toAlgHom_apply, RingHom.algebraMap_toAlgebra, hs,
       MvPolynomial.eval_C]
   -- Recover the two components from f and its conjugate, then reflect along the real inclusion.
-  obtain ⟨hre, him⟩ := isAlgebraic_re_im_germ halgR (hj_apply f ▸ halgR.algHom j) hc
+  obtain ⟨hre, him⟩ := Germ.isAlgebraic_re_im halgR (hj_apply f ▸ halgR.algHom j) hc
   exact ⟨Germ.isAlgebraic_coe_iff.mp ((isAlgebraic_algHom_iff g hg).mp
       (by rwa [hg_apply])),
     Germ.isAlgebraic_coe_iff.mp ((isAlgebraic_algHom_iff g hg).mp (by rwa [hg_apply]))⟩
