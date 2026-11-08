@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Process.Predictable
-public import TauCeti.MeasureTheory.Integral.PiSystem
+public import TauCeti.MeasureTheory.Function.L2Space
+public import TauCeti.Order.Interval.Set.Prod
 
 /-!
 # Density of elementary predictable integrands
@@ -53,6 +54,17 @@ theorem mem_elementarySets_iff {u : Set (ι × Ω)} :
       (∃ A, MeasurableSet[ℱ ⊥] A ∧ u = {⊥} ×ˢ A) ∨
         ∃ s t A, MeasurableSet[ℱ s] A ∧ u = Ioc s t ×ˢ A := Iff.rfl
 
+/-- An initial slice measurable at the bottom time is elementary predictable. -/
+theorem singleton_bot_prod_mem_elementarySets {A : Set Ω}
+    (hA : MeasurableSet[ℱ ⊥] A) : {⊥} ×ˢ A ∈ ℱ.elementarySets :=
+  (mem_elementarySets_iff ℱ).mpr (Or.inl ⟨A, hA, rfl⟩)
+
+/-- A bounded rectangle with its spatial set measurable at the left endpoint is
+elementary predictable. -/
+theorem Ioc_prod_mem_elementarySets (s t : ι) {A : Set Ω}
+    (hA : MeasurableSet[ℱ s] A) : Ioc s t ×ˢ A ∈ ℱ.elementarySets :=
+  (mem_elementarySets_iff ℱ).mpr (Or.inr ⟨s, t, A, hA, rfl⟩)
+
 /-- Every elementary set is predictable. -/
 theorem measurableSet_predictable_of_mem_elementarySets {u : Set (ι × Ω)}
     (hu : u ∈ ℱ.elementarySets) : MeasurableSet[ℱ.predictable] u := by
@@ -82,13 +94,6 @@ theorem isPiSystem_elementarySets : IsPiSystem ℱ.elementarySets := by
     simp only [mem_inter_iff, mem_prod, mem_Ioc, max_lt_iff, le_min_iff]
     tauto
 
-omit [OrderBot ι] in
-private theorem iUnion_Ioc_prod_eq_Ioi_prod {u : ℕ → ι}
-    (hu : Tendsto u atTop atTop) (s : ι) (A : Set Ω) :
-    (⋃ n, Ioc s (u n) ×ˢ A) = Ioi s ×ˢ A := by
-  rw [← iUnion_prod_const, iUnion_Ioc_eq_Ioi_self_iff.mpr
-    (fun x _ => (hu.eventually (eventually_ge_atTop x)).exists)]
-
 /-- If a predictable measure has a null initial slice, every subset slice is null. -/
 theorem measure_singleton_bot_prod_eq_zero
     (μ : @Measure (ι × Ω) ℱ.predictable)
@@ -107,8 +112,8 @@ theorem isCountablySpanning_elementarySets : IsCountablySpanning ℱ.elementaryS
   refine ⟨v, ?_, ?_⟩
   · intro n
     cases n with
-    | zero => exact Or.inl ⟨univ, MeasurableSet.univ, rfl⟩
-    | succ n => exact Or.inr ⟨⊥, u n, univ, MeasurableSet.univ, rfl⟩
+    | zero => exact ℱ.singleton_bot_prod_mem_elementarySets MeasurableSet.univ
+    | succ n => exact ℱ.Ioc_prod_mem_elementarySets ⊥ (u n) MeasurableSet.univ
   · rw [← union_iUnion_nat_succ]
     simp only [v]
     rw [iUnion_Ioc_prod_eq_Ioi_prod hu]
@@ -124,11 +129,11 @@ theorem predictable_eq_generateFrom_elementarySets :
   apply le_antisymm
   · apply measurableSpace_le_predictable_of_measurableSet
     · intro A hA
-      exact MeasurableSpace.measurableSet_generateFrom (Or.inl ⟨A, hA, rfl⟩)
+      exact MeasurableSpace.measurableSet_generateFrom (ℱ.singleton_bot_prod_mem_elementarySets hA)
     · intro s A hA
       rw [← iUnion_Ioc_prod_eq_Ioi_prod hu s A]
       exact MeasurableSet.iUnion fun n =>
-        MeasurableSpace.measurableSet_generateFrom (Or.inr ⟨s, u n, A, hA, rfl⟩)
+        MeasurableSpace.measurableSet_generateFrom (ℱ.Ioc_prod_mem_elementarySets s (u n) hA)
   · exact MeasurableSpace.generateFrom_le fun _ hu =>
       ℱ.measurableSet_predictable_of_mem_elementarySets hu
 
@@ -203,7 +208,7 @@ theorem topologicalClosure_span_indicatorConstLp_Ioc_prod_eq_top
   rintro g ⟨u, (⟨A, hA, rfl⟩ | ⟨s, t, A, hA, rfl⟩), rfl⟩
   · have hz : indicatorConstLp (μ := μ) 2
         (measurableSet_predictable_singleton_bot_prod hA)
-        (helem _ (Or.inl ⟨A, hA, rfl⟩)) (1 : ℝ) = 0 := by
+        (helem _ (ℱ.singleton_bot_prod_mem_elementarySets hA)) (1 : ℝ) = 0 := by
       apply norm_eq_zero.mp
       simp [norm_indicatorConstLp, ℱ.measure_singleton_bot_prod_eq_zero μ hzero A,
         measureReal_def]

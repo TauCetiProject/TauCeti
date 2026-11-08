@@ -8,8 +8,6 @@ module
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.PiSystem
 public import Mathlib.MeasureTheory.Function.AEEqOfIntegral
-public import Mathlib.MeasureTheory.Function.L2Space
-public import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 
 /-!
 # A Dynkin (π-λ) step for Bochner integrals
@@ -24,8 +22,7 @@ than for a specific one (rectangles, boxes) lets a single theorem serve every pr
 arity.
 
 For a countably spanning generating π-system, testing set integrals determines a function
-integrable on each generating set. If each generating set has finite measure, its indicators
-have dense real linear span in L².
+integrable on each generating set.
 -/
 
 public section
@@ -73,28 +70,5 @@ theorem ae_eq_zero_of_setIntegral_eq_zero_of_isPiSystem
     · exact hS _ (hpi t ht (v n) (hv n) (Set.nonempty_iff_ne_empty.mpr hempty))
   have h := (ae_eq_restrict_iUnion_iff v f 0).mpr hlocal
   rwa [hcover, Measure.restrict_univ] at h
-
-/-- Indicators of a countably spanning generating π-system of finite-measure sets have
-dense real linear span in L². -/
-theorem topologicalClosure_span_indicatorConstLp_eq_top_of_isPiSystem
-    {X : Type*} {m : MeasurableSpace X} {μ : Measure X}
-    {S : Set (Set X)} (hgen : m = MeasurableSpace.generateFrom S)
-    (hpi : IsPiSystem S) (hcover : IsCountablySpanning S) (hfin : ∀ s ∈ S, μ s ≠ ∞) :
-    (Submodule.span ℝ {g : Lp ℝ 2 μ | ∃ (s : Set X) (hs : s ∈ S),
-      g = indicatorConstLp 2 (hgen ▸ MeasurableSpace.measurableSet_generateFrom hs)
-        (hfin s hs) 1}).topologicalClosure = ⊤ := by
-  rw [← Submodule.orthogonal_eq_bot_iff, Submodule.orthogonal_closure]
-  apply bot_unique
-  intro f hf
-  apply Lp.ext
-  have hfi : ∀ s ∈ S, IntegrableOn f s μ := fun s hs =>
-    integrableOn_Lp_of_measure_ne_top f (by norm_num) (hfin s hs)
-  refine (ae_eq_zero_of_setIntegral_eq_zero_of_isPiSystem hgen hpi hcover hfi ?_).trans
-    (Lp.coeFn_zero ℝ 2 μ).symm
-  intro s hs
-  rw [← L2.inner_indicatorConstLp_one
-    (hgen ▸ MeasurableSpace.measurableSet_generateFrom hs) (hfin s hs) f]
-  exact (Submodule.mem_orthogonal _ f).mp hf _
-    (Submodule.subset_span ⟨s, hs, rfl⟩)
 
 end TauCeti
