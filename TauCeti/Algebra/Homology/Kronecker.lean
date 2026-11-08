@@ -26,8 +26,9 @@ over a field.
 ## Main definitions and results
 
 * `TauCeti.ChainComplex.kronecker`: the Kronecker map, with
-  `TauCeti.ChainComplex.kronecker_homologyπ` computing it on classes of cycles and cocycles and
-  `TauCeti.ChainComplex.kronecker_naturality` its naturality.
+  `TauCeti.ChainComplex.kronecker_homologyπ` computing it on classes of cycles and cocycles (and
+  `TauCeti.ChainComplex.kronecker_homologyπ_homologyπ` its elementwise form for complexes of
+  modules) and `TauCeti.ChainComplex.kronecker_naturality` its naturality.
 * `TauCeti.ChainComplex.homologyClassOfComp`: the class of the cocycle `f ≫ g` for a cochain
   `f : Xᵢ ⟶ A` vanishing on boundaries, with
   `TauCeti.ChainComplex.homologyπ_kronecker_homologyClassOfComp` computing its Kronecker image.
@@ -296,5 +297,25 @@ map `Hⁱ(Hom(X, Y)) →ₗ[k] (Hᵢ(X) ⟶ Y)` is bijective, for every object `
 theorem kronecker_bijective_of_isIso (i : α) [IsIso (X.iCycles i)] :
     Function.Bijective (kronecker k X Y i) :=
   ⟨kronecker_injective_of_isIso i, kronecker_surjective_of_isSplitMono i⟩
+
+end TauCeti.ChainComplex
+
+namespace TauCeti.ChainComplex
+
+universe u
+
+variable {k : Type u} [CommRing k] {α : Type*} [AddRightCancelSemigroup α] [One α]
+  {X : ChainComplex (ModuleCat.{u} k) α} {Y : ModuleCat.{u} k}
+
+/-- **The Kronecker map on classes, elementwise**: for a complex of `k`-modules, evaluating the
+class of a cocycle `φ` on the class of a cycle `x` is `φ` evaluated on the underlying chain of
+`x`. -/
+@[simp]
+lemma kronecker_homologyπ_homologyπ (i : α) (φ : (X.linearYonedaObj k Y).cycles i)
+    (x : X.cycles i) :
+    kronecker k X Y i ((X.linearYonedaObj k Y).homologyπ i φ) (X.homologyπ i x) =
+      ConcreteCategory.hom (X := X.X i) (Y := Y) ((X.linearYonedaObj k Y).iCycles i φ)
+        (X.iCycles i x) :=
+  ConcreteCategory.congr_hom (kronecker_homologyπ i φ) x
 
 end TauCeti.ChainComplex
