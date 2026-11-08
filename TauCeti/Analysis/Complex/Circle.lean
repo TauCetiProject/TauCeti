@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Algebra.Star.Unitary
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.ContinuousMap.Star
+import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 
 /-!
 # The unit circle: the unit sphere of `ℂ`, the exponential and the coordinate function
@@ -32,6 +33,7 @@ and records that the coordinate function `z ↦ z` is a unitary element of `C(S�
 * `Circle.re_sq_add_im_sq` and `Circle.coe_add_inv_coe`: `Re z ^ 2 + Im z ^ 2 = 1` and
   `z + z⁻¹ = 2 Re z` on the circle, and `Complex.re_sq_add_im_sq_of_mem_sphere`, the first
   identity for a point of `sphere (0 : ℂ) 1`.
+* `Circle.exists_pow_nat_eq`: every point of the circle has an `n`-th root on the circle.
 -/
 
 public section
@@ -69,6 +71,12 @@ theorem _root_.Complex.re_sq_add_im_sq_of_mem_sphere {z : ℂ} (hz : z ∈ spher
 /-- For a point of the circle, `z + z⁻¹ = 2 Re z`. -/
 theorem coe_add_inv_coe (z : Circle) : (z : ℂ) + (z : ℂ)⁻¹ = 2 * (z : ℂ).re := by
   rw [← coe_inv, coe_inv_eq_conj, Complex.add_conj, Complex.ofReal_mul, Complex.ofReal_ofNat]
+
+/-- Every point of the circle has an `n`-th root on the circle, for `n ≠ 0`: `exp (i arg z / n)`.
+-/
+theorem exists_pow_nat_eq (z : Circle) {n : ℕ} (hn : n ≠ 0) : ∃ y : Circle, y ^ n = z :=
+  ⟨exp (Complex.arg z / n), by
+    rw [← exp_nsmul, nsmul_eq_mul, mul_div_cancel₀ _ (Nat.cast_ne_zero.2 hn), exp_arg]⟩
 
 /-- The map `t ↦ exp (i t)` from the real line to the circle, as a continuous homomorphism
 from `Multiplicative ℝ`. -/
