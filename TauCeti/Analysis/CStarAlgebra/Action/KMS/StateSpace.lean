@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Convex.Basic
 public import Mathlib.Analysis.Normed.Module.WeakDual
 import TauCeti.Analysis.CStarAlgebra.Action.KMS.Dense
 import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional
+import TauCeti.Analysis.CStarAlgebra.StateSpace
 import TauCeti.Topology.Algebra.Module.Spaces.WeakDual
 
 /-!
@@ -119,15 +120,10 @@ theorem closure_kmsStates_inter_subset :
 theorem convex_kmsStates : Convex ℝ (α.kmsStates β) := by
   intro φ hφ ψ hψ s t hs ht hst
   rw [mem_kmsStates_iff_forall_isEntireAnalytic] at hφ hψ ⊢
-  have hpos (a : A) (ha : 0 ≤ a) : 0 ≤ (s • φ + t • ψ) a := by
-    simpa using add_nonneg (smul_nonneg hs (hφ.1 a ha)) (smul_nonneg ht (hψ.1 a ha))
-  refine ⟨hpos, ?_, fun a ha b hb => by simp [hφ.2.2 a ha b hb, hψ.2.2 a ha b hb]⟩
-  -- the norm of a positive functional is its limit along an approximate unit
-  have h := ((tendsto_approximateUnit_norm_of_map_nonneg hφ.1).const_smul s).add
-    ((tendsto_approximateUnit_norm_of_map_nonneg hψ.1).const_smul t)
-  simp only [hφ.2.1, hψ.2.1, ofReal_one, ← add_smul, hst, one_smul] at h
-  exact_mod_cast tendsto_nhds_unique (tendsto_approximateUnit_norm_of_map_nonneg hpos)
-    (h.congr fun e => by simp)
+  -- positivity and norm one are those of a convex combination of states
+  obtain ⟨hpos, hnorm⟩ := mem_stateSpace_iff.1 <| convex_stateSpace
+    (mem_stateSpace_iff.2 ⟨hφ.1, hφ.2.1⟩) (mem_stateSpace_iff.2 ⟨hψ.1, hψ.2.1⟩) hs ht hst
+  exact ⟨hpos, hnorm, fun a ha b hb => by simp [hφ.2.2 a ha b hb, hψ.2.2 a ha b hb]⟩
 
 section Unital
 

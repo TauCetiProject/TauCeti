@@ -137,7 +137,7 @@ variable (A) in
 /-- Precomposition of functionals with a star homomorphism `f : A → B`, as a complex-linear map
 `WeakDual ℂ B →ₗ[ℂ] WeakDual ℂ A`. On states it is the pullback of states along `f`, which is
 affine when `f` is surjective or unital. -/
-@[expose] noncomputable def pullbackFunctional (f : F) : WeakDual ℂ B →ₗ[ℂ] WeakDual ℂ A where
+noncomputable def pullbackFunctional (f : F) : WeakDual ℂ B →ₗ[ℂ] WeakDual ℂ A where
   toFun φ := StrongDual.toWeakDual
     ((toStrongDual φ).comp (PositiveContinuousLinearMap.ofClass f : A →L[ℂ] B))
   map_add' _ _ := rfl
@@ -147,7 +147,7 @@ affine when `f` is surjective or unital. -/
 @[simp]
 theorem pullbackFunctional_apply (f : F) (φ : WeakDual ℂ B) (a : A) :
     pullbackFunctional A f φ a = φ (f a) :=
-  rfl
+  (rfl)
 
 /-- **Pullback of states along a surjective star homomorphism.** Composing a state of `B` with a
 surjective star homomorphism `A → B` gives a state of `A`. Without surjectivity the norm of the
