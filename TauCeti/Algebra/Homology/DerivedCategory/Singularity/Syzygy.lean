@@ -15,21 +15,22 @@ public import TauCeti.CategoryTheory.Triangulated.FullSubcategory
 
 Let `C` be an abelian category with enough projectives. Every object of the singularity category
 `D_sg(C) = Dᵇ(C) / Perf(C)` is isomorphic to an object `M` of `C` placed in some degree. Moreover,
-for every `d`, the object `M` can be chosen to be a `d`-th syzygy: it has no higher extensions
-`Ext^{i+1}(M, Y)` into objects `Y` of injective dimension at most `d`.
+for every `d`, the object `M` can be chosen to be a `d`-th syzygy
+(`CategoryTheory.ObjectProperty.IsSyzygy`); in particular it has no higher extensions
+`Ext^{i+1}(M, Y)` into objects `Y` of injective dimension at most `d`
+(`CategoryTheory.ObjectProperty.IsSyzygy.ext_eq_zero_of_hasInjectiveDimensionLE`).
 
 Represent an object of `Dᵇ(C)` by a bounded above complex `K` of projective objects, exact below
 some degree `a`. For `m` far below `a`, the canonical truncation `K.truncGE m` is quasi-isomorphic
 to `K`. Its terms are projective except in degree `m`, where it is `K.opcycles m`, so it is an
 extension of `K.opcycles m` placed in degree `m` by a bounded complex of projectives, which is
 perfect. Hence `K ≅ (K.opcycles m)[-m]` in the singularity category. Since `K` is exact around
-`m`, `K.opcycles m` is the module of cycles `Zᵐ⁺¹`, and the short exact sequences
-`0 ⟶ Zʲ ⟶ Kʲ ⟶ Zʲ⁺¹ ⟶ 0` with projective middle terms shift `Ext^{i+1}(Zᵐ⁺¹, Y)` into
-`Ext^{i+1+d}(Zᵐ⁺¹⁺ᵈ, Y)`, which vanishes when `Y` has injective dimension at most `d`.
+`m`, `K.opcycles m` is the module of cycles `Zᵐ⁺¹`, which is a `d`-th syzygy along the short exact
+sequences `0 ⟶ Zʲ ⟶ Kʲ ⟶ Zʲ⁺¹ ⟶ 0` with projective middle terms
+(`CochainComplex.isSyzygy_cycles`).
 
 The identification of the opcycles with the cycles is
-`HomologicalComplex.isIso_opcyclesToCycles`, and the dimension shifting is
-`CochainComplex.ext_cycles_eq_zero_of_hasInjectiveDimensionLE`.
+`HomologicalComplex.isIso_opcyclesToCycles`.
 
 ## Main results
 

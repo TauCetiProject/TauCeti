@@ -50,7 +50,7 @@ vanishing of `δₘ ≫ f` descend to `δ₁ ≫ f = 0`, which says that `f` fac
   Gorenstein-projective object placed in any degree is isomorphic in the singularity category to a
   cycle of its complete resolution placed in degree zero
   (`TauCeti.SingularityCategory.nonempty_iso_Q_obj_singleFunctor_cycles`), so
-  `CategoryTheory.GorensteinProjective.essImage_toSingularityCategory`: it lies in the essential
+  `CategoryTheory.GorensteinProjective.mem_essImage_toSingularityCategory`: it lies in the essential
   image of Chen's functor.
 
 ## References
@@ -472,7 +472,7 @@ noncomputable def fullyFaithfulToSingularityCategory : (toSingularityCategory C)
 variable {C} in
 /-- A Gorenstein-projective object placed in any degree lies in the essential image of Chen's
 functor (`TauCeti.SingularityCategory.exists_iso_Q_obj_singleFunctor_of_isGorensteinProjective`). -/
-theorem essImage_toSingularityCategory {G : C} (hG : isGorensteinProjective C G) (n : ℤ) :
+theorem mem_essImage_toSingularityCategory {G : C} (hG : isGorensteinProjective C G) (n : ℤ) :
     (toSingularityCategory C).essImage ((TauCeti.SingularityCategory.Q C).obj
       ((DerivedCategory.Bounded.singleFunctor C n).obj G)) := by
   obtain ⟨G', hG', ⟨e⟩⟩ :=
