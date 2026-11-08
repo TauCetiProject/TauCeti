@@ -122,15 +122,12 @@ theorem image_comap_completedAway_basicOpen (a : A) :
 theorem isBasis_basicOpen_algebraMap :
     Opens.IsBasis
       (Set.range fun a : A ↦ basicOpen (algebraMap A (AdicRing.CompletedAway A f) a)) := by
-  refine Opens.isBasis_iff_nbhd.mpr fun {W q} hq ↦ ?_
-  -- a basic open set of `Spf A` inside the image of `W` pulls back into `W`
-  have hι := isOpenEmbedding_comap_completedAway f
-  obtain ⟨_, ⟨a, rfl⟩, hqa, haW⟩ := Opens.isBasis_iff_nbhd.mp isBasis_basicOpen
-    (U := ⟨_, hι.isOpenMap _ W.2⟩) (Set.mem_image_of_mem _ hq)
-  refine ⟨_, ⟨a, rfl⟩, by simpa using hqa, fun r hr ↦ ?_⟩
-  obtain ⟨s, hs, hsr⟩ := haW (x := comap _ (AdicRing.CompletedAway.continuous_algebraMap A f) r)
-    (by simpa using hr)
-  exact hι.injective hsr ▸ hs
+  convert isBasis_basicOpen.of_isInducing (isOpenEmbedding_comap_completedAway f).isInducing
+    using 1
+  ext V
+  simp only [Set.mem_range, Set.mem_ofPred_eq, exists_exists_eq_and,
+    ← comap_basicOpen _ (AdicRing.CompletedAway.continuous_algebraMap A f)]
+  rfl
 
 section Sheaf
 
@@ -179,11 +176,13 @@ private theorem basisApp_naturality (a b : A) (hba : basis f b ≤ basis f a) :
   rw [← cancel_mono (basicOpenSectionsIso (IsAdicRing.ideal_spec (AdicRing.CompletedAway A f)).2.1
     (IsAdicRing.ideal_spec (AdicRing.CompletedAway A f)).1 _).hom]
   simp only [basisApp, Category.assoc, Iso.inv_hom_id, Category.comp_id]
-  rw [map_comp_basicOpenSectionsIso_hom, Iso.inv_hom_id_assoc, ← Functor.map_comp_assoc,
-    show ((isOpenEmbedding_ι f).functor.map (homOfLE hba)).op ≫
+  -- transport along `functor_obj_basis` turns the restriction from the image of `D(a)` to that of
+  -- `D(b)` into the restriction from `D(f a)` to `D(f b)`; morphisms between opens are unique
+  have hres : ((isOpenEmbedding_ι f).functor.map (homOfLE hba)).op ≫
         eqToHom (congrArg op (functor_obj_basis f b)) =
-      eqToHom (congrArg op (functor_obj_basis f a)) ≫ (homOfLE hfba).op from
-      Quiver.Hom.unop_inj (Subsingleton.elim _ _),
+      eqToHom (congrArg op (functor_obj_basis f a)) ≫ (homOfLE hfba).op :=
+    Quiver.Hom.unop_inj (Subsingleton.elim _ _)
+  rw [map_comp_basicOpenSectionsIso_hom, Iso.inv_hom_id_assoc, ← Functor.map_comp_assoc, hres,
     Functor.map_comp_assoc, map_comp_basicOpenSectionsIso_hom_assoc]
   congr 2
   ext x
@@ -262,6 +261,15 @@ private theorem restrictIsoAux_hom_c_app (V) :
 noncomputable def basicOpenι : Spf (AdicRing.CompletedAway A f) ⟶ Spf A :=
   (restrictBasicOpenIso f).inv ≫
     (Spf A).ofRestrict (basicOpen f : Opens (Spf A).toTopCat).isOpenEmbedding
+
+/-- The inverse of `restrictBasicOpenIso` followed by the inclusion of `D(f)` is the open immersion
+`basicOpenι f`. -/
+@[reassoc (attr := simp)]
+theorem restrictBasicOpenIso_inv_ofRestrict :
+    (restrictBasicOpenIso f).inv ≫
+        (Spf A).ofRestrict (basicOpen f : Opens (Spf A).toTopCat).isOpenEmbedding =
+      basicOpenι f :=
+  (rfl)
 
 /-- The morphism `basicOpenι f` is an open immersion. -/
 instance isOpenImmersion_basicOpenι : LocallyRingedSpace.IsOpenImmersion (basicOpenι f) := by
