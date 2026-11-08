@@ -174,10 +174,13 @@ theorem lieMap_wedge (f : Module.End K V) {k l : ℕ} (x : ⋀[K]^k V) (y : ⋀[
 multiplication by its trace: the infinitesimal form of
 `LinearMap.map_exteriorPower_finrank_eq_det_smul`. -/
 @[simp]
-theorem lieMap_finrank_apply [Nontrivial K] [Module.Free K V] [Module.Finite K V]
+theorem lieMap_finrank_apply [Module.Free K V] [Module.Finite K V]
     (f : Module.End K V) (x : ⋀[K]^(Module.finrank K V) V) :
     lieMap _ f x = LinearMap.trace K V f • x := by
   classical
+  cases subsingleton_or_nontrivial K
+  · have := Module.subsingleton K (⋀[K]^(Module.finrank K V) V)
+    exact Subsingleton.elim _ _
   let b := Module.finBasis K V
   -- Every element of the basis of the top exterior power is the wedge of `b`, on which `f`
   -- contributes the diagonal coefficient `b.repr (f (b i)) i` from the `i`-th factor.
@@ -200,7 +203,7 @@ theorem lieMap_finrank_apply [Nontrivial K] [Module.Free K V] [Module.Finite K V
 
 /-- **Endomorphisms are infinitesimally conformal for wedge pairings**: for every trivialization
 `vol` of the top exterior power, `vol (f x ∧ y) + vol (x ∧ f y) = trace f * vol (x ∧ y)`. -/
-theorem wedgePairing_lieMap_add_wedgePairing_lieMap [Nontrivial K] [Module.Free K V]
+theorem wedgePairing_lieMap_add_wedgePairing_lieMap [Module.Free K V]
     [Module.Finite K V] (vol : ⋀[K]^(Module.finrank K V) V ≃ₗ[K] K) {k l : ℕ}
     (hkl : k + l = Module.finrank K V) (f : Module.End K V) (x : ⋀[K]^k V) (y : ⋀[K]^l V) :
     wedgePairing vol hkl (lieMap k f x) y + wedgePairing vol hkl x (lieMap l f y) =

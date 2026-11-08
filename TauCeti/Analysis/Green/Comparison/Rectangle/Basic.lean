@@ -255,7 +255,6 @@ theorem integralTopForm_rectangle_mextDeriv {a b c d : ℝ} [hab : Fact (a < b)]
     rw [mpullback_apply, mpullback_apply,
       DifferentiableAt.mextDeriv_manifoldOneForm_eq_smul_area
         ((hP _ hx).differentiableAt one_ne_zero) ((hQ _ hx).differentiableAt one_ne_zero)]
-  dsimp only
   rw [hω]
   have hi := ContinuousOn.integrableTopForm_rectangle_areaForm hcurl
   refine ⟨hi, (integralTopForm_rectangle_areaForm (curl P Q) hi).2.trans ?_⟩
@@ -264,9 +263,8 @@ theorem integralTopForm_rectangle_mextDeriv {a b c d : ℝ} [hab : Fact (a < b)]
   let g : ℝ × ℝ → ℝ := fun x ↦ -P (L x)
   let f' : ℝ × ℝ → ℝ × ℝ →L[ℝ] ℝ := fun x ↦ (fderiv ℝ Q (L x)).comp L.toContinuousLinearMap
   let g' : ℝ × ℝ → ℝ × ℝ →L[ℝ] ℝ := fun x ↦ -(fderiv ℝ P (L x)).comp L.toContinuousLinearMap
-  have hmem (x : ℝ × ℝ) (hx : x ∈ Icc (a, c) (b, d)) : L x ∈ R := by
-    apply mem_verticalRegion.mpr
-    exact ⟨⟨hx.1.1, hx.2.1⟩, ⟨hx.1.2, hx.2.2⟩⟩
+  have hmem (x : ℝ × ℝ) (hx : x ∈ Icc (a, c) (b, d)) : L x ∈ R :=
+    mem_verticalRegion.mpr ⟨⟨hx.1.1, hx.2.1⟩, ⟨hx.1.2, hx.2.2⟩⟩
   have hf (x : ℝ × ℝ) (hx : x ∈ Icc (a, c) (b, d)) : HasFDerivAt f (f' x) x :=
     ((hQ (L x) (hmem x hx)).differentiableAt one_ne_zero).hasFDerivAt.comp x L.hasFDerivAt
   have hg (x : ℝ × ℝ) (hx : x ∈ Icc (a, c) (b, d)) : HasFDerivAt g (g' x) x :=
@@ -278,17 +276,15 @@ theorem integralTopForm_rectangle_mextDeriv {a b c d : ℝ} [hab : Fact (a < b)]
   have hfg : IntegrableOn (fun x ↦ f' x (1, 0) + g' x (0, 1)) (Icc (a, c) (b, d)) := by
     simpa only [he, Icc_prod_eq] using
       (integralTopForm_rectangle_areaForm (curl P Q) hi).1
-  have hsubset : Ioo a b ×ˢ Ioo c d ⊆ Icc (a, c) (b, d) := by
-    rw [Icc_prod_eq]
-    exact prod_mono Ioo_subset_Icc_self Ioo_subset_Icc_self
+  have hsubset : Ioo a b ×ˢ Ioo c d ⊆ Icc (a, c) (b, d) :=
+    (prod_mono Ioo_subset_Icc_self Ioo_subset_Icc_self).trans (Icc_prod_eq (a, c) (b, d)).ge
   have hD := integral_rectangle_boundary_eq_divergence f g f' g' (a, c) (b, d)
     hab.out hcd.out ∅ countable_empty
     (fun x hx ↦ ((hQ (L x) (hmem x hx)).continuousAt.comp L.continuousAt).continuousWithinAt)
     (fun x hx ↦ ((hP (L x) (hmem x hx)).continuousAt.comp
       L.continuousAt).neg.continuousWithinAt)
     (fun x hx ↦ hf x (hsubset hx.1)) (fun x hx ↦ hg x (hsubset hx.1)) hfg
-  have hL (z : ℂ) : L (z.re, z.im) = z := by
-    simp [L, Complex.equivRealProdCLM_symm_apply]
+  have hL (z : ℂ) : L (z.re, z.im) = z := by simp [L, Complex.equivRealProdCLM_symm_apply]
   simpa only [f, g, hL, neg_neg, he, Icc_prod_eq] using hD.2.2.symm
 
 end TauCeti.Green

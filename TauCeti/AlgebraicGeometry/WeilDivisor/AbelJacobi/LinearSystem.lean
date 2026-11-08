@@ -74,7 +74,7 @@ lemma weightedAbelJacobiDivisorClass_one_effectiveDivisorOfDegree_eq_iff_mem_com
     h x₀ E D, S.mem_completeLinearSystem]
   constructor
   · intro hlin
-    exact ⟨E.isEffective, hlin.symm⟩
+    exact ⟨E.coe_nonneg, hlin.symm⟩
   · exact fun hE => hE.2.symm
 
 /-- As a set of fixed-degree effective divisors, the Abel-Jacobi fiber through `D` is the

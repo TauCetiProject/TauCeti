@@ -475,6 +475,64 @@ theorem isHomogeneous_circleX [DecidableEq ι] (i : ι) :
       ← labelingQuantumDegree_update_true (by simpa using h)]
     exact circleBasis_mem_circleQuantumGrading_piece _
 
+private noncomputable def circleXSection [DecidableEq ι] (i : ι) :
+    CircleTensor R ι →ₗ[R] CircleTensor R ι :=
+  (circleBasis R ι).constr R fun l ↦
+    if l i then circleBasis R ι (Function.update l i false) else 0
+
+private theorem circleXSection_circleBasis [DecidableEq ι] (i : ι) (l : ι → Bool) :
+    circleXSection i (circleBasis R ι l) =
+      if l i then circleBasis R ι (Function.update l i false) else 0 :=
+  (circleBasis R ι).constr_basis R _ l
+
+private theorem circleXSection_circleX_add_circleX_circleXSection [DecidableEq ι] (i : ι)
+    (x : CircleTensor R ι) :
+    circleXSection i (circleX R i x) + circleX R i (circleXSection i x) = x := by
+  have h : (circleXSection i).comp (circleX R i) +
+      (circleX R i).comp (circleXSection i) = LinearMap.id := by
+    apply (circleBasis R ι).ext
+    intro l
+    simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.id_apply]
+    cases hi : l i <;>
+      simp only [circleX_circleBasis, circleXSection_circleBasis, hi,
+        Bool.false_eq_true, ↓reduceIte, Function.update_self, Function.update_idem,
+        map_zero, add_zero, zero_add]
+    · rw [← hi, Function.update_eq_self]
+    · rw [← hi, Function.update_eq_self]
+  exact DFunLike.congr_fun h x
+
+private theorem circleXSection_mem [DecidableEq ι] (i : ι) {q : ℤ}
+    {x : CircleTensor R ι} (hx : x ∈ (circleQuantumGrading R ι).piece q) :
+    circleXSection i x ∈ (circleQuantumGrading R ι).piece (q + 2) := by
+  rw [mem_circleQuantumGrading_piece_iff] at hx
+  rw [← (circleBasis R ι).sum_repr x, map_sum]
+  refine Submodule.sum_mem _ fun l _ ↦ ?_
+  rw [map_smul, circleXSection_circleBasis]
+  by_cases hl : (circleBasis R ι).repr x l = 0
+  · simp [hl]
+  split_ifs with hi
+  · apply Submodule.smul_mem
+    have hdeg := labelingQuantumDegree_update_true (ι := ι)
+      (l := Function.update l i false) (i := i) (by simp)
+    have hup : Function.update (Function.update l i false) i true = l := by
+      rw [Function.update_idem]
+      rw [← hi, Function.update_eq_self]
+    rw [hup, hx l hl] at hdeg
+    have heq : q + 2 = labelingQuantumDegree ι (Function.update l i false) := by omega
+    rw [heq]
+    exact circleBasis_mem_circleQuantumGrading_piece _
+  · simp
+
+/-- On a quantum piece, every tensor annihilated by `X` on a selected circle is `X` times a
+homogeneous tensor of degree two higher. This holds over every commutative ring, including the
+zero ring; it is the graded image/kernel identity behind marked-component reduction. -/
+theorem exists_circleX_eq_of_mem_piece_of_circleX_eq_zero [DecidableEq ι] (i : ι) {q : ℤ}
+    {x : CircleTensor R ι} (hx : x ∈ (circleQuantumGrading R ι).piece q)
+    (hX : circleX R i x = 0) :
+    ∃ y ∈ (circleQuantumGrading R ι).piece (q + 2), circleX R i y = x := by
+  refine ⟨circleXSection i x, circleXSection_mem i hx, ?_⟩
+  simpa [hX] using circleXSection_circleX_add_circleX_circleXSection i x
+
 omit [DecidableEq τ] in
 /-- Reindexing the circle factors preserves their total quantum degree. -/
 theorem isHomogeneous_reindex (e : σ ≃ τ) :

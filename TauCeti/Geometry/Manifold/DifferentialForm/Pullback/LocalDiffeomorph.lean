@@ -39,6 +39,8 @@ surjective smooth local diffeomorphism the descended form of a smooth form is sm
 
 * `IsLocalDiffeomorph.mpullback_injective`: pullback along a surjective local diffeomorphism is
   injective.
+* `IsLocalDiffeomorphAt.mpullback_apply_eq_zero_iff`: a pullback along a local diffeomorphism
+  vanishes at a point exactly when the form vanishes at its image.
 * `IsLocalDiffeomorphAt.contMDiffAt_mpullback_form_iff`,
   `IsLocalDiffeomorph.isSmoothForm_mpullback_iff`: a form is `C^m` exactly when its pullback
   along a (surjective) `C^n` local diffeomorphism is, for `m + 1 ≤ n`.
@@ -80,6 +82,13 @@ theorem IsLocalDiffeomorph.mpullback_injective (hf : IsLocalDiffeomorph I I' n f
     (hsurj : Function.Surjective f) :
     Function.Injective (mpullback I I' f : RoughForm I' M' F k → RoughForm I M F k) :=
   mpullback_injective_of_surjective hsurj fun x ↦ (hf.isInvertible_mfderiv hn x).surjective
+
+/-- A form pulled back along a `C^n` local diffeomorphism at `x`, `n ≠ 0`, vanishes at `x` exactly
+when the form vanishes at `f x`. -/
+theorem IsLocalDiffeomorphAt.mpullback_apply_eq_zero_iff (hf : IsLocalDiffeomorphAt I I' n f x)
+    (hn : n ≠ 0) {ω : RoughForm I' M' F k} : mpullback I I' f ω x = 0 ↔ ω (f x) = 0 := by
+  simpa only [mpullback_zero, Pi.zero_apply] using
+    mpullback_apply_eq_mpullback_apply_iff (ω := ω) (η := 0) (hf.isInvertible_mfderiv hn).surjective
 
 section Descent
 

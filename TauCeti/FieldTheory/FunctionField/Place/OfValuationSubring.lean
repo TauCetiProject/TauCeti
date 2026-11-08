@@ -76,6 +76,40 @@ variable {k : Type u} {F : Type v} [Field k] [Field F] [Algebra k F] {A : Valuat
 
 /-! ### Stichtenoth's chain estimate -/
 
+/-- The estimate behind Stichtenoth's Lemma 1.1.7: if `j` is the largest index of `s` whose
+polynomial `q j` has nonzero constant term, and `q j (x)` is a unit, then the term `q j (x) * y j`
+strictly dominates, for the valuation of `A`, every other term `q i (x) * y i` with `i ∈ s`. -/
+private theorem valuation_aeval_mul_lt
+    (hkle : ∀ c : k, A.valuation (algebraMap k F c) ≤ 1) {x : F} (hx : A.valuation x < 1)
+    (hxpos : 0 < A.valuation x) {ι : Type*} [LinearOrder ι] {y : ι → F}
+    (hy : ∀ i, A.valuation (y i) < 1) (hmono : StrictMono fun i ↦ A.valuation (y i))
+    (hxy : ∀ i, A.valuation x ≤ A.valuation (y i)) {s : Finset ι} {q : ι → k[X]} {j : ι}
+    (hvj : A.valuation (aeval x (q j)) = 1) (hjmax : ∀ i ∈ s, (q i).coeff 0 ≠ 0 → i ≤ j) :
+    ∀ i ∈ s \ {j}, A.valuation (aeval x (q i) * y i) < A.valuation (aeval x (q j) * y j) := by
+  intro i hi
+  obtain ⟨his, hij⟩ := Finset.mem_sdiff.1 hi
+  rw [Finset.notMem_singleton] at hij
+  rw [map_mul, map_mul, hvj, one_mul]
+  rcases hij.lt_or_gt with hlt | hgt
+  · calc A.valuation (aeval x (q i)) * A.valuation (y i)
+        ≤ 1 * A.valuation (y i) := by gcongr; exact A.valuation.aeval_le_one hkle hx.le _
+      _ = A.valuation (y i) := one_mul _
+      _ < A.valuation (y j) := hmono hlt
+  · have hqi0 : (q i).coeff 0 = 0 := by
+      by_contra hc
+      exact absurd (hjmax i his hc) (not_le.2 hgt)
+    obtain ⟨r, hr⟩ := X_dvd_iff.2 hqi0
+    have hqix : aeval x (q i) = x * aeval x r := by rw [hr]; simp
+    calc A.valuation (aeval x (q i)) * A.valuation (y i)
+        = A.valuation x * A.valuation (aeval x r) * A.valuation (y i) := by
+          rw [hqix, map_mul]
+      _ ≤ A.valuation x * 1 * A.valuation (y i) := by
+          gcongr; exact A.valuation.aeval_le_one hkle hx.le _
+      _ = A.valuation x * A.valuation (y i) := by rw [mul_one]
+      _ < A.valuation x * 1 := mul_lt_mul_of_pos_left (hy i) hxpos
+      _ = A.valuation x := mul_one _
+      _ ≤ A.valuation (y j) := hxy j
+
 /-- **Stichtenoth, Lemma 1.1.7.** Let `x` be a nonzero nonunit of a valuation subring `A` of `F`
 containing the constants. A family of nonunits of `A` whose valuations increase strictly
 along a linear order, and are all at least `A.valuation x` — hence nonzero — is linearly
@@ -126,32 +160,8 @@ theorem linearIndependent_of_strictMono_valuation (hk : ∀ c : k, algebraMap k 
   obtain ⟨hjs, hqj⟩ := Finset.mem_filter.1 ((s.filter fun i ↦ (q i).coeff 0 ≠ 0).max'_mem hs'ne)
   have hvj : A.valuation (aeval x (q j)) = 1 := valuation_aeval_eq_one hk hx hqj
   -- Its term strictly dominates every other term of the relation.
-  have hkey : ∀ i ∈ s \ {j},
-      A.valuation (aeval x (q i) * y i) < A.valuation (aeval x (q j) * y j) := by
-    intro i hi
-    obtain ⟨his, hij⟩ := Finset.mem_sdiff.1 hi
-    rw [Finset.notMem_singleton] at hij
-    rw [map_mul, map_mul, hvj, one_mul]
-    rcases hij.lt_or_gt with hlt | hgt
-    · calc A.valuation (aeval x (q i)) * A.valuation (y i)
-          ≤ 1 * A.valuation (y i) := by gcongr; exact A.valuation.aeval_le_one hkle hx.le _
-        _ = A.valuation (y i) := one_mul _
-        _ < A.valuation (y j) := hmono hlt
-    · have hqi0 : (q i).coeff 0 = 0 := by
-        by_contra hc
-        exact absurd ((s.filter fun i ↦ (q i).coeff 0 ≠ 0).le_max' i
-          (Finset.mem_filter.2 ⟨his, hc⟩)) (not_le.2 hgt)
-      obtain ⟨r, hr⟩ := X_dvd_iff.2 hqi0
-      have hqix : aeval x (q i) = x * aeval x r := by rw [hr]; simp
-      calc A.valuation (aeval x (q i)) * A.valuation (y i)
-          = A.valuation x * A.valuation (aeval x r) * A.valuation (y i) := by
-            rw [hqix, map_mul]
-        _ ≤ A.valuation x * 1 * A.valuation (y i) := by
-            gcongr; exact A.valuation.aeval_le_one hkle hx.le _
-        _ = A.valuation x * A.valuation (y i) := by rw [mul_one]
-        _ < A.valuation x * 1 := mul_lt_mul_of_pos_left (hy i) hxpos
-        _ = A.valuation x := mul_one _
-        _ ≤ A.valuation (y j) := hxy j
+  have hkey := valuation_aeval_mul_lt hkle hx hxpos hy hmono hxy hvj
+    fun i hi hc ↦ Finset.le_max' _ i (Finset.mem_filter.2 ⟨hi, hc⟩)
   -- Hence the sum has the valuation of that term, contradicting that the sum vanishes.
   have hzero := Valuation.map_sum_eq_of_lt A.valuation hjs hkey
   rw [hsumF, map_zero] at hzero

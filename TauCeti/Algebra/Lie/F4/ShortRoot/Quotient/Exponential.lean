@@ -72,14 +72,16 @@ arbitrary scalar extension. -/
 noncomputable def f4ShortRootBaseChangeQuotient {A : Type*} [CommRing A] [Algebra (ZMod 2) A] :
     A ⊗[ℤ] f4ChevalleyLieLattice →ₗ[A]
       A ⊗[ZMod 2] (f4ModularChevalleyLieAlgebra ⧸ f4ShortRootSubspace) :=
-  (f4ShortRootSubspace.mkQ.baseChange A).comp (TauCeti.cancelBaseChange ℤ (ZMod 2) A
+  (f4ShortRootSubspace.mkQ.baseChange A).comp
+    (TauCeti.LieAlgebra.ExtendScalars.cancelBaseChange ℤ (ZMod 2) A
       f4ChevalleyLieLattice).symm.toLinearMap
 
 /-- Evaluation of the scalar-extended quotient map through scalar-tower cancellation. -/
 theorem f4ShortRootBaseChangeQuotient_apply {A : Type*} [CommRing A] [Algebra (ZMod 2) A]
     (x : A ⊗[ℤ] f4ChevalleyLieLattice) :
     f4ShortRootBaseChangeQuotient x = f4ShortRootSubspace.mkQ.baseChange A
-        ((TauCeti.cancelBaseChange ℤ (ZMod 2) A f4ChevalleyLieLattice).symm x) := by rfl
+        ((TauCeti.LieAlgebra.ExtendScalars.cancelBaseChange ℤ (ZMod 2) A
+          f4ChevalleyLieLattice).symm x) := by rfl
 
 /-- The scalar-extended quotient map on a pure integral tensor. -/
 theorem f4ShortRootBaseChangeQuotient_tmul {A : Type*} [CommRing A] [Algebra (ZMod 2) A]
@@ -87,12 +89,15 @@ theorem f4ShortRootBaseChangeQuotient_tmul {A : Type*} [CommRing A] [Algebra (ZM
     f4ShortRootBaseChangeQuotient (a ⊗ₜ[ℤ] x) =
       a ⊗ₜ[ZMod 2] f4ShortRootSubspace.mkQ (1 ⊗ₜ[ℤ] x) := by
   -- Unfold the composite quotient map to apply scalar-tower cancellation on a pure tensor.
-  change (f4ShortRootSubspace.mkQ.baseChange A) ((TauCeti.cancelBaseChange ℤ (ZMod 2) A
+  change (f4ShortRootSubspace.mkQ.baseChange A)
+      ((TauCeti.LieAlgebra.ExtendScalars.cancelBaseChange ℤ (ZMod 2) A
         f4ChevalleyLieLattice).symm (a ⊗ₜ[ℤ] x)) = _
   let q := f4ShortRootSubspace.mkQ.baseChange A
-  let e := TauCeti.cancelBaseChange ℤ (ZMod 2) A f4ChevalleyLieLattice
+  let e := TauCeti.LieAlgebra.ExtendScalars.cancelBaseChange ℤ (ZMod 2) A f4ChevalleyLieLattice
   calc q (e.symm (a ⊗ₜ[ℤ] x)) = q (a ⊗ₜ[ZMod 2] (1 ⊗ₜ[ℤ] x)) :=
-      congrArg q (TauCeti.cancelBaseChange_symm_tmul ℤ (ZMod 2) A f4ChevalleyLieLattice a x)
+      congrArg q
+        (TauCeti.LieAlgebra.ExtendScalars.cancelBaseChange_symm_tmul ℤ (ZMod 2) A
+          f4ChevalleyLieLattice a x)
     _ = _ := LinearMap.baseChange_tmul f4ShortRootSubspace.mkQ a (1 ⊗ₜ[ℤ] x)
 
 /-- After passing to the quotient, the root exponential has its three-term integral

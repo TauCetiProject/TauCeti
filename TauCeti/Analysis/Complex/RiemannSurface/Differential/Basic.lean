@@ -10,7 +10,7 @@ public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 import TauCeti.Geometry.Manifold.ChartedSpace
-import TauCeti.Geometry.Manifold.MFDeriv.Chart
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -305,7 +305,9 @@ theorem HolomorphicAt.meromorphicAt (h : ω.HolomorphicAt x) : ω.MeromorphicAt 
 theorem HolomorphicAt.order_nonneg (h : ω.HolomorphicAt x) : 0 ≤ ω.order x :=
   AnalyticAt.meromorphicOrderAt_nonneg h
 
-private theorem coeff_chartAt_eventuallyEq (h : ∀ᶠ y in 𝓝[≠] x, ω y = η y) :
+/-- `1`-forms agreeing on a punctured neighbourhood of `x` have coefficients in the chart at `x`
+agreeing on a punctured neighbourhood of the coordinate of `x`. -/
+theorem coeff_chartAt_eventuallyEq (h : ∀ᶠ y in 𝓝[≠] x, ω y = η y) :
     ω.coeff (chartAt ℂ x) =ᶠ[𝓝[≠] (chartAt ℂ x x)] η.coeff (chartAt ℂ x) :=
   ((tendsto_chartAt_symm_nhdsNE x).eventually h).mono fun z hz ↦ by rw [coeff, coeff, hz]
 
@@ -484,7 +486,7 @@ variable [IsManifold 𝓘(ℂ) 1 X]
 
 /-- Near a point where `f` is meromorphic, the coefficient of `df` in the chart at that point is
 the derivative of the chart representative of `f`, away from the point itself. -/
-private theorem coeff_mvfderiv_eventuallyEq (hf : RiemannSurface.MeromorphicAt f x) :
+theorem coeff_mvfderiv_eventuallyEq (hf : RiemannSurface.MeromorphicAt f x) :
     coeff (mvfderiv 𝓘(ℂ) f) (chartAt ℂ x) =ᶠ[𝓝[≠] (chartAt ℂ x x)]
       deriv (f ∘ (chartAt ℂ x).symm) := by
   rw [RiemannSurface.meromorphicAt_def] at hf

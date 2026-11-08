@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
 public import Mathlib.RingTheory.LocalRing.Module
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
+import Mathlib.Algebra.Module.Shrink
 
 /-!
 # Generators of modules over a local ring
@@ -121,5 +122,24 @@ theorem exists_surjective_ker_le_maximalIdeal_smul [Module.Finite R M] :
   rw [pi_eq_sum_univ x]
   exact Submodule.sum_mem _ fun j _ ↦ Submodule.smul_mem_smul
     ((_root_.IsLocalRing.residue_eq_zero_iff _).mp (hres j)) Submodule.mem_top
+
+universe u v in
+/-- A finite module over a local ring is a quotient of a finite free module, with free module in
+the universe of the module, by a submodule contained in `𝔪 • ⊤`. -/
+theorem exists_surjective_ker_le_maximalIdeal_smul_shrink {R : Type u} [CommRing R]
+    [_root_.IsLocalRing R] [Small.{v} R] (M : Type v) [AddCommGroup M] [Module R M]
+    [Module.Finite R M] :
+    ∃ (n : ℕ) (g : (Fin n → Shrink.{v} R) →ₗ[R] M),
+      Function.Surjective g ∧ LinearMap.ker g ≤ _root_.IsLocalRing.maximalIdeal R • ⊤ := by
+  obtain ⟨f, hf, hfker⟩ := exists_surjective_ker_le_maximalIdeal_smul R M
+  let e : (Fin (Module.finrank (_root_.IsLocalRing.ResidueField R)
+      (_root_.IsLocalRing.ResidueField R ⊗[R] M)) → Shrink.{v} R) ≃ₗ[R]
+      (Fin (Module.finrank (_root_.IsLocalRing.ResidueField R)
+        (_root_.IsLocalRing.ResidueField R ⊗[R] M)) → R) :=
+    LinearEquiv.piCongrRight fun _ ↦ Shrink.linearEquiv R R
+  refine ⟨_, f ∘ₗ e.toLinearMap, hf.comp e.surjective, ?_⟩
+  rw [LinearMap.ker_comp, Submodule.comap_equiv_eq_map_symm]
+  refine (Submodule.map_mono hfker).trans ?_
+  rw [Submodule.map_smul'', Submodule.map_top, LinearEquiv.range]
 
 end TauCeti.IsLocalRing

@@ -27,9 +27,9 @@ Every central slice of the cube `[-1, 1] ^ ι` by a linear subspace `V` of dimen
 both along the route of Bombieri–Gubler, Appendix C.3.
 
 1. **The Gauss measure against a product of balls** (Lemma C.3.7). Let `B = ∏ i, B i` be a product
-   of closed balls `B i ⊆ α i`, each of volume one, in finite-dimensional real inner product spaces.
-   Then the Gauss measure of every measurable convex set `A ⊆ ∀ i, α i` with `-A = A` is at most
-   `volume (A ∩ B)`. For a single ball this is
+   of closed balls `B i ⊆ α i`, each of volume at least one, in finite-dimensional real inner
+   product spaces. Then the Gauss measure of every measurable convex set `A ⊆ ∀ i, α i` with
+   `-A = A` is at most `volume (A ∩ B)`. For a single ball this is
    `TauCeti.setLIntegral_ofReal_exp_neg_pi_mul_sq_norm_le_volume_inter_closedBall`, and
    `TauCeti.pi_apply_le_pi_apply_of_forall_convex` passes it to products, since the Gauss density
    and the indicator of a ball are log-concave and even.
@@ -43,7 +43,8 @@ both along the route of Bombieri–Gubler, Appendix C.3.
    `volume (A ∩ Q) ≤ volume (V ∩ Q) * volume (closedBall (0 : Vᗮ) ε)`. Let `ε` tend to `0`.
 3. **Products of balls.** In the `L²` product `PiLp 2 α`, whose volume is the product of the
    volumes of the factors, the first step supplies the hypothesis of the second for the product
-   `{x | ∀ i, ‖x i‖ ≤ ρ i}` of balls of volume one, so its central slices have volume at least one.
+   `{x | ∀ i, ‖x i‖ ≤ ρ i}` of balls of volume at least one, so its central slices have volume at
+   least one.
 4. **The cube and the polydisc.** The cube `[-1/2, 1/2] ^ ι` is a product of intervals of length
    one, and scaling by `2` gives `2 ^ k`. The polydisc of radius `1 / √π` is a product of discs of
    area one, and scaling by `√π` in real dimension `2 * k` gives `π ^ k`.
@@ -54,12 +55,12 @@ parallel slice by the central one.
 ## Main results
 
 * `TauCeti.setLIntegral_prod_ofReal_exp_neg_pi_mul_sq_norm_le_volume_inter_pi`: Bombieri–Gubler,
-  Lemma C.3.7, the Gauss measure of a symmetric convex set against a product of balls of volume
-  one.
+  Lemma C.3.7, the Gauss measure of a symmetric convex set against a product of balls of volume at
+  least one.
 * `Submodule.one_le_volume_preimage_coe`: the slicing step of Bombieri–Gubler, Theorem C.3.8, every
   central slice of a symmetric convex set that dominates the Gauss measure has volume at least one.
 * `Submodule.one_le_volume_setOf_forall_norm_le`: every central slice of a product of balls of
-  volume one has volume at least one.
+  volume at least one has volume at least one.
 * `Submodule.two_pow_finrank_le_volume_setOf_forall_abs_le_one`: **Vaaler's cube-slicing
   theorem**.
 * `Submodule.pi_pow_finrank_le_volume_setOf_forall_norm_le_one`: its complex counterpart, for the
@@ -90,13 +91,13 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [BorelSpace E]
 
 /-- The single-ball comparison as a comparison of measures: the Gauss measure is dominated on
-symmetric convex sets by the volume restricted to a closed ball of volume one. -/
-private lemma withDensity_apply_le_restrict_apply {ρ : ℝ} (hρ : volume (closedBall (0 : E) ρ) = 1)
+symmetric convex sets by the volume restricted to a closed ball of volume at least one. -/
+private lemma withDensity_apply_le_restrict_apply {ρ : ℝ} (hρ : 1 ≤ volume (closedBall (0 : E) ρ))
     {s : Set E} (hs : MeasurableSet s) (hsc : Convex ℝ s) (hneg : ∀ x ∈ s, -x ∈ s) :
     volume.withDensity (fun x : E ↦ ENNReal.ofReal (Real.exp (-π * ‖x‖ ^ 2))) s ≤
       volume.restrict (closedBall (0 : E) ρ) s := by
   rw [withDensity_apply _ hs, restrict_apply hs]
-  refine setLIntegral_ofReal_exp_neg_pi_mul_sq_norm_le_volume_inter_closedBall hρ.ge hs ?_
+  refine setLIntegral_ofReal_exp_neg_pi_mul_sq_norm_le_volume_inter_closedBall hρ hs ?_
   -- A symmetric convex set contains the midpoint `0` of `x` and `-x`, so it is star-shaped.
   rcases s.eq_empty_or_nonempty with rfl | ⟨x, hx⟩
   · exact starConvex_empty 0
@@ -112,16 +113,17 @@ variable {ι : Type*} [Fintype ι] {α : ι → Type*} [∀ i, NormedAddCommGrou
   [∀ i, InnerProductSpace ℝ (α i)] [∀ i, FiniteDimensional ℝ (α i)] [∀ i, MeasurableSpace (α i)]
   [∀ i, BorelSpace (α i)]
 
-/-- **The Gauss measure against a product of balls** (Bombieri–Gubler, Lemma C.3.7). Let
-`closedBall (0 : α i) (ρ i)` have volume one in each of finitely many finite-dimensional real inner
-product spaces `α i`. Then for every measurable convex set `A ⊆ ∀ i, α i` with `-A = A`,
+/-- **The Gauss measure against a product of balls** (Bombieri–Gubler, Lemma C.3.7, for balls of
+volume one). Let `closedBall (0 : α i) (ρ i)` have volume at least one in each of finitely many
+finite-dimensional real inner product spaces `α i`. Then for every measurable convex set
+`A ⊆ ∀ i, α i` with `-A = A`,
 
 `∫⁻ x in A, ∏ i, exp (-π ‖x i‖ ^ 2) ≤ volume (A ∩ univ.pi fun i ↦ closedBall 0 (ρ i))`.
 
-Such radii exist by `TauCeti.exists_volume_closedBall_eq_one`. Unlike Bombieri–Gubler, `A` need
-not be closed. -/
+Radii with balls of volume exactly one exist by `TauCeti.exists_volume_closedBall_eq_one`. Unlike
+Bombieri–Gubler, `A` need not be closed. -/
 theorem setLIntegral_prod_ofReal_exp_neg_pi_mul_sq_norm_le_volume_inter_pi {ρ : ι → ℝ}
-    (hρ : ∀ i, volume (closedBall (0 : α i) (ρ i)) = 1) {A : Set (∀ i, α i)}
+    (hρ : ∀ i, 1 ≤ volume (closedBall (0 : α i) (ρ i))) {A : Set (∀ i, α i)}
     (hA : MeasurableSet A) (hAc : Convex ℝ A) (hneg : ∀ x ∈ A, -x ∈ A) :
     ∫⁻ x in A, ∏ i, ENNReal.ofReal (Real.exp (-π * ‖x i‖ ^ 2)) ≤
       volume (A ∩ univ.pi fun i ↦ closedBall 0 (ρ i)) := by
@@ -248,7 +250,7 @@ origin, and suppose that the Gauss measure `∫⁻ x in A, exp (-π ‖x‖ ^ 2)
 convex set `A` with `-A = A` is at most `volume (A ∩ Q)`. Then for every subspace `V`, the central
 slice `V ∩ Q` has volume at least one, computed in `V`.
 
-The hypothesis holds for a product of balls of volume one, by
+The hypothesis holds for a product of balls of volume at least one, by
 `TauCeti.setLIntegral_prod_ofReal_exp_neg_pi_mul_sq_norm_le_volume_inter_pi`. -/
 theorem _root_.Submodule.one_le_volume_preimage_coe (V : Submodule ℝ E) {Q : Set E}
     (hQ : MeasurableSet Q) (hQc : Convex ℝ Q) (hQneg : ∀ x ∈ Q, -x ∈ Q)
@@ -281,14 +283,15 @@ variable {ι : Type*} [Fintype ι] {α : ι → Type*} [∀ i, NormedAddCommGrou
   [∀ i, InnerProductSpace ℝ (α i)] [∀ i, FiniteDimensional ℝ (α i)] [∀ i, MeasurableSpace (α i)]
   [∀ i, BorelSpace (α i)]
 
-/-- **Central slices of a product of balls of volume one.** Let `closedBall (0 : α i) (ρ i)` have
-volume one in each of finitely many finite-dimensional real inner product spaces `α i`. Then every
-central slice of the product `{x | ∀ i, ‖x i‖ ≤ ρ i}` of these balls by a real subspace `V` of the
-`L²` product `PiLp 2 α` has volume at least one, computed in `V`.
+/-- **Central slices of a product of balls of volume at least one.** Let
+`closedBall (0 : α i) (ρ i)` have volume at least one in each of finitely many finite-dimensional
+real inner product spaces `α i`. Then every central slice of the product `{x | ∀ i, ‖x i‖ ≤ ρ i}`
+of these balls by a real subspace `V` of the `L²` product `PiLp 2 α` has volume at least one,
+computed in `V`.
 
 The cube `[-1, 1] ^ ι` and the unit polydisc of `ℂ ^ ι` are dilates of such products. -/
 theorem _root_.Submodule.one_le_volume_setOf_forall_norm_le {ρ : ι → ℝ}
-    (hρ : ∀ i, volume (closedBall (0 : α i) (ρ i)) = 1) (V : Submodule ℝ (PiLp 2 α)) :
+    (hρ : ∀ i, 1 ≤ volume (closedBall (0 : α i) (ρ i))) (V : Submodule ℝ (PiLp 2 α)) :
     1 ≤ volume {x : V | ∀ i, ‖(x : PiLp 2 α) i‖ ≤ ρ i} := by
   set Q : Set (PiLp 2 α) := {x | ∀ i, ‖x i‖ ≤ ρ i}
   have hQe : Q = WithLp.ofLp ⁻¹' univ.pi fun i ↦ closedBall (0 : α i) (ρ i) := by
@@ -371,7 +374,7 @@ theorem _root_.Submodule.pi_pow_finrank_le_volume_setOf_forall_norm_le_one
       ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul (by positivity)]
     simp [Real.pi_pos.le, Real.pi_pos.ne']
   have h := (V.restrictScalars ℝ).one_le_volume_setOf_forall_norm_le (α := fun _ : ι ↦ ℂ)
-    fun _ ↦ hρ
+    fun _ ↦ hρ.ge
   -- As a real subspace, `V` has dimension `2 * finrank ℂ V`.
   have hrank : finrank ℝ (V.restrictScalars ℝ) = 2 * finrank ℂ V := by
     rw [((Submodule.restrictScalarsEquiv ℝ ℂ _ V).restrictScalars ℝ).finrank_eq,

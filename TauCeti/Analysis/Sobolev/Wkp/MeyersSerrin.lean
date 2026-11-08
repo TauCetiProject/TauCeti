@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Wkp.Extension
-public import TauCeti.Analysis.Sobolev.Wkp.LocalApproximation
+public import TauCeti.Analysis.Sobolev.Wkp.Local.Approximation
 public import TauCeti.Analysis.Sobolev.Wkp.Multiplication
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 
