@@ -172,11 +172,6 @@ private theorem eventually_rOut_lt_norm_sq (f : ContDiffBump (0 : ℝ)) {z : ℂ
     (hz : f.rOut < ‖z‖ ^ 2) : ∀ᶠ w in 𝓝 z, f.rOut < ‖w‖ ^ 2 :=
   (isOpen_lt continuous_const (by fun_prop : Continuous fun w : ℂ ↦ ‖w‖ ^ 2)).mem_nhds hz
 
-/-- Off the origin, the amplitude `exp (-m log r)` of the winding reference is `r⁻ᵐ`. -/
-private theorem exp_neg_mul_log {r : ℝ} (hr : 0 < r) (m : ℕ) :
-    Real.exp (-(m * Real.log r)) = (r ^ m)⁻¹ := by
-  rw [Real.exp_neg, ← Real.log_pow, Real.exp_log (pow_pos hr m)]
-
 /-- Off the disc of squared radius `f.rOut`, the reference field is `(-i m dθ, (z / |z|) ^ m)`: its
 connection coefficients are `b₁ = m Im z / |z|²` and `b₂ = -m Re z / |z|²`. -/
 theorem referenceField_eq_of_rOut_le (f : ContDiffBump (0 : ℝ)) (m : ℕ) {z : ℂ}
@@ -204,7 +199,7 @@ theorem referenceField_eventuallyEq_amplitudeField (f : ContDiffBump (0 : ℝ)) 
       smul_eq_mul]
     ring
   have hs : (w / (‖w‖ : ℂ)) ^ m = (Real.exp (-(m * Real.log ‖w‖)) : ℂ) * w ^ m := by
-    rw [exp_neg_mul_log hn, div_pow, div_eq_inv_mul]
+    rw [Real.exp_neg, Real.exp_nat_mul, Real.exp_log hn, div_pow, div_eq_inv_mul]
     push_cast
     rfl
   rw [referenceField_eq_of_rOut_le f m hw.le, hs, re_ofReal_mul, im_ofReal_mul]
@@ -222,7 +217,7 @@ theorem equation_referenceField_eq_zero (f : ContDiffBump (0 : ℝ)) (m : ℕ) {
       (norm_pos_iff.1 hn)).const_smul (c := (m : ℝ))).neg
   rw [equation_congr_nhds (referenceField_eventuallyEq_amplitudeField f m hz),
     equation_amplitudeField_eq_zero_iff hu.1 (differentiableAt_pow m), hu.2.eq_of_nhds,
-    two_mul, Real.exp_add, exp_neg_mul_log hn, norm_pow]
+    two_mul, Real.exp_add, Real.exp_neg, Real.exp_nat_mul, Real.exp_log hn, norm_pow]
   field_simp
   norm_num
 
