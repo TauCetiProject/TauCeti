@@ -148,12 +148,13 @@ theorem coe_rootSubgroup_reflectionPerm_simpleIndex (i : Fin t.rank) (A : Type v
 
 /-- **The root subgroups are natural in the ring of points.** Applying a ring homomorphism
 `φ : A →+* B` entrywise to `x_γ(u)` gives `x_γ(φ u)`. -/
+@[simp]
 theorem map_rootSubgroup {A : Type v} {B : Type v'} [CommRing A] [CommRing B] (φ : A →+* B)
     (γ : Fin t.numRoots) (u : Multiplicative A) :
-    Matrix.GeneralLinearGroup.map φ
-        (D.rootSubgroup γ A u : Matrix.GeneralLinearGroup (Fin D.dim) A) =
-      (D.rootSubgroup γ B (Multiplicative.ofAdd (φ (Multiplicative.toAdd u))) :
-        Matrix.GeneralLinearGroup (Fin D.dim) B) := by
+    (D.pointsPresentation A).map (D.pointsPresentation B) φ (D.rootSubgroup γ A u) =
+      D.rootSubgroup γ B (Multiplicative.ofAdd (φ (Multiplicative.toAdd u))) := by
+  apply Subtype.ext
+  rw [GeneralLinear.IntegralPointsPresentation.coe_map]
   have hmatrix := Module.Basis.map_toMatrixAlgEquiv_baseChange D.basis φ.toIntAlgHom
     (chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
       D.isNilpotent_representation_rootGenerator γ (CommAlgCat.of ℤ A) u).val
