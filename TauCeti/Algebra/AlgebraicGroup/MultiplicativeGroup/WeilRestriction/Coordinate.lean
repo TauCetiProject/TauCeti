@@ -10,6 +10,8 @@ public import TauCeti.Algebra.AlgebraicGroup.NormTorus.Basic
 public import TauCeti.RingTheory.Norm.CharP
 public import TauCeti.RingTheory.Norm.NonZeroDivisors
 
+import TauCeti.LinearAlgebra.TensorProduct.Basis
+
 /-!
 # Coordinates on the Weil restriction of the multiplicative group
 
@@ -55,13 +57,18 @@ In the namespace `TauCeti.Algebra.WeilRestriction`:
   is sent to `Xᵢ`.
 * `multiplicativeGroupAlgEquiv_normHom`: the norm morphism `Res_{B/A} 𝔾ₘ → 𝔾ₘ` is the norm form in
   these coordinates.
+* `multiplicativeGroupAlgEquivOfPowerBasis`: **`Res_{K/k} 𝔾ₘ ≅ Spec k[X][1 / ∑ᵢ aⁱ Xᵢ ^ p]`**
+  for `K = k(a ^ (1 / p))`, characterized by
+  `multiplicativeGroupPoints_comp_multiplicativeGroupAlgEquivOfPowerBasis`,
+  `multiplicativeGroupAlgEquivOfPowerBasis_universalCoefficient` and
+  `multiplicativeGroupAlgEquivOfPowerBasis_symm_algebraMap_X`.
+* `multiplicativeGroupAlgEquivOfPowerBasis_normHom`: in these coordinates the norm morphism is
+  `∑ᵢ aⁱ Xᵢ ^ p`.
+
+In the namespace `PowerBasis`:
+
 * `isUnit_sum_gen_pow_tmul_iff`: for `α ^ p = a` in characteristic `p`, `∑ᵢ αⁱ ⊗ xᵢ` is a unit
   exactly when `∑ᵢ aⁱ xᵢ ^ p` is.
-* `multiplicativeGroupAlgEquivOfPowerBasis`: **`Res_{K/k} 𝔾ₘ ≅ Spec k[X][1 / ∑ᵢ aⁱ Xᵢ ^ p]`**
-  for `K = k(a ^ (1 / p))`.
-
-In the namespace `TauCeti.NormTorus`:
-
 * `pow_char_eq_unitsMap_norm`: in this situation the `p`-th power of a point is the diagonal
   image of its norm.
 
@@ -83,27 +90,7 @@ section Coordinates
 variable (A B : Type*) [CommRing A] [CommRing B] [Algebra A B] [Module.Free A B]
   [Module.Finite A B] {ι : Type*} [Fintype ι] (b : Module.Basis ι A B)
 
-/-- **The coordinates of the universal point.** The universal point of `Res_{B/A} 𝔾ₘ`, a unit of
-`B ⊗[A] Res_{B/A} 𝔾ₘ`, is `∑ᵢ bᵢ ⊗ cᵢ`, where `cᵢ` is the universal coefficient of the coordinate
-`T` of `𝔾ₘ` extracted by the `i`-th coordinate functional of `b`. -/
-theorem sum_tmul_universalCoefficient_T :
-    ∑ i, b i ⊗ₜ[A] universalCoefficient (b.coord i) (LaurentPolynomial.T 1 : B[T;T⁻¹]) =
-      (multiplicativeGroupPoints A B _ (toConv (AlgHom.id A (WeilRestriction A B B[T;T⁻¹]))) :
-        B ⊗[A] WeilRestriction A B B[T;T⁻¹]) := by
-  rw [sum_tmul_universalCoefficient, multiplicativeGroupPoints_apply, ofConv_toConv,
-    homEquiv_apply, AlgHom.comp_apply]
-  simp
-
 variable {A B}
-
-omit [Module.Free A B] [Module.Finite A B] in
-/-- The coordinates of `∑ⱼ bⱼ ⊗ xⱼ` are the `xⱼ`. -/
-private theorem tensorComponent_comm_sum_tmul {R : Type*} [CommRing R] [Algebra A R]
-    (x : ι → R) (i : ι) :
-    LinearMap.tensorComponent (b.coord i) (TensorProduct.comm A B R (∑ j, b j ⊗ₜ[A] x j)) =
-      x i := by
-  classical
-  simp [Finsupp.single_apply]
 
 variable (A B) in
 /-- **The points of `Res_{B/A} 𝔾ₘ` in coordinates.** For a commutative `A`-algebra `R`, the element
@@ -112,7 +99,7 @@ basis `b` takes a unit value `N(x)` of `R`. -/
 theorem isUnit_sum_tmul_iff {R : Type*} [CommRing R] [Algebra A R] (x : ι → R) :
     IsUnit (∑ j, b j ⊗ₜ[A] x j) ↔ IsUnit (aeval x
       (Algebra.norm (MvPolynomial ι A) (∑ i, (X i : MvPolynomial ι A) ⊗ₜ[A] b i))) := by
-  rw [← TauCeti.Algebra.norm_sum_tmul_eq_aeval, Algebra.isUnit_norm_iff]
+  rw [← b.norm_sum_tmul_eq_aeval, Algebra.isUnit_norm_iff]
   exact ⟨fun h ↦ by simpa using h.map (Algebra.TensorProduct.comm A B R),
     fun h ↦ by simpa using h.map (Algebra.TensorProduct.comm A R B)⟩
 
@@ -169,8 +156,8 @@ private theorem toLocalization_comp_ofLocalization :
   have key : toLocalization b L (ofLocalization b L (algebraMap (MvPolynomial ι A) L (X i))) =
       algebraMap (MvPolynomial ι A) L (X i) := by
     rw [ofLocalization_algebraMap_X, map_universalCoefficient, ← multiplicativeGroupPoints_apply,
-      multiplicativeGroupPoints_toLocalization, coe_localizationPoint,
-      tensorComponent_comm_sum_tmul]
+      multiplicativeGroupPoints_toLocalization, coe_localizationPoint, map_sum]
+    simpa only [TensorProduct.comm_tmul] using b.tensorComponent_coord_sum_tmul _ i
   exact key
 
 private theorem ofLocalization_comp_toLocalization :
@@ -247,7 +234,7 @@ theorem multiplicativeGroupAlgEquiv_normHom :
   simp only [MultiplicativeGroup.pointsMulEquiv_apply, laurentEvalEquiv_symm_apply,
     AlgHom.comp_apply, Algebra.TensorProduct.comm_tmul] at h
   refine h.trans ?_
-  rw [TauCeti.Algebra.norm_sum_tmul_eq_aeval]
+  rw [b.norm_sum_tmul_eq_aeval]
   have : (aeval fun i ↦ algebraMap (MvPolynomial ι A) L (X i)) =
       IsScalarTower.toAlgHom A (MvPolynomial ι A) L := MvPolynomial.algHom_ext fun i ↦ by simp
   rw [this, IsScalarTower.coe_toAlgHom']
@@ -255,6 +242,96 @@ theorem multiplicativeGroupAlgEquiv_normHom :
 end Coordinates
 
 section PowerBasis
+
+variable (k B : Type*) [Field k] [CommRing B] [Algebra k B] (pb : PowerBasis k B)
+  {p : ℕ} [ExpChar k p] {a : k}
+
+/-- The localization away from `∑ᵢ aⁱ Xᵢ ^ p` is a localization away from the norm form. -/
+private theorem isLocalizationAway_norm_of_powerBasis (hdim : pb.dim = p)
+    (hgen : pb.gen ^ p = algebraMap k B a) (L : Type*) [CommRing L]
+    [Algebra (MvPolynomial (Fin pb.dim) k) L]
+    [IsLocalization.Away (∑ i : Fin pb.dim, a ^ (i : ℕ) • (X i : MvPolynomial (Fin pb.dim) k) ^ p)
+      L] :
+    IsLocalization.Away (Algebra.norm (MvPolynomial (Fin pb.dim) k)
+      (∑ i, (X i : MvPolynomial (Fin pb.dim) k) ⊗ₜ[k] pb.basis i)) L := by
+  simp only [pb.coe_basis]
+  rwa [pb.norm_sum_X_tmul_gen_pow hdim hgen]
+
+/-- **`Res_{K/k} 𝔾ₘ` in coordinates for `K = k(a ^ (1 / p))`.** If `α ^ p = a` for the generator `α`
+of a power basis of rank `p` over a field `k` of exponential characteristic `p`, then
+`Res_{B/k} 𝔾ₘ ≅ Spec k[X₀, …, X_{p-1}][1 / ∑ᵢ aⁱ Xᵢ ^ p]`. Here `L` is any localization of the
+polynomial ring away from `∑ᵢ aⁱ Xᵢ ^ p`; the variable `Xᵢ` is the coordinate of `αⁱ`
+(`multiplicativeGroupAlgEquivOfPowerBasis_universalCoefficient`). -/
+noncomputable def multiplicativeGroupAlgEquivOfPowerBasis [Module.Finite k B] (hdim : pb.dim = p)
+    (hgen : pb.gen ^ p = algebraMap k B a)
+    (L : Type*) [CommRing L] [Algebra k L] [Algebra (MvPolynomial (Fin pb.dim) k) L]
+    [IsScalarTower k (MvPolynomial (Fin pb.dim) k) L]
+    [IsLocalization.Away (∑ i : Fin pb.dim, a ^ (i : ℕ) • (X i : MvPolynomial (Fin pb.dim) k) ^ p)
+      L] :
+    WeilRestriction k B B[T;T⁻¹] ≃ₐ[k] L :=
+  have : Module.Free k B := .of_basis pb.basis
+  have := isLocalizationAway_norm_of_powerBasis k B pb hdim hgen L
+  multiplicativeGroupAlgEquiv k B pb.basis L
+
+variable [Module.Finite k B] (hdim : pb.dim = p) (hgen : pb.gen ^ p = algebraMap k B a)
+  (L : Type*) [CommRing L] [Algebra k L] [Algebra (MvPolynomial (Fin pb.dim) k) L]
+  [IsScalarTower k (MvPolynomial (Fin pb.dim) k) L]
+  [IsLocalization.Away (∑ i : Fin pb.dim, a ^ (i : ℕ) • (X i : MvPolynomial (Fin pb.dim) k) ^ p) L]
+
+/-- The point of `Res_{B/k} 𝔾ₘ` attached to an algebra map `g : L →ₐ[k] R` out of
+`k[X][1 / ∑ᵢ aⁱ Xᵢ ^ p]` is the unit `∑ᵢ αⁱ ⊗ g(Xᵢ)` of `B ⊗[k] R`. -/
+theorem multiplicativeGroupPoints_comp_multiplicativeGroupAlgEquivOfPowerBasis {R : Type*}
+    [CommRing R] [Algebra k R] (g : L →ₐ[k] R) :
+    (multiplicativeGroupPoints k B R
+        (toConv (g.comp (multiplicativeGroupAlgEquivOfPowerBasis k B pb hdim hgen L).toAlgHom)) :
+        B ⊗[k] R) =
+      ∑ i : Fin pb.dim,
+        (pb.gen ^ (i : ℕ)) ⊗ₜ[k] g (algebraMap (MvPolynomial (Fin pb.dim) k) L (X i)) := by
+  have := isLocalizationAway_norm_of_powerBasis k B pb hdim hgen L
+  have h := multiplicativeGroupPoints_comp_multiplicativeGroupAlgEquiv k B pb.basis L g
+  simp only [pb.coe_basis] at h
+  exact h
+
+/-- The inverse of `multiplicativeGroupAlgEquivOfPowerBasis` sends the variable `Xᵢ` to the
+coefficient of `αⁱ` in the universal point. -/
+@[simp]
+theorem multiplicativeGroupAlgEquivOfPowerBasis_symm_algebraMap_X (i : Fin pb.dim) :
+    (multiplicativeGroupAlgEquivOfPowerBasis k B pb hdim hgen L).symm
+        (algebraMap (MvPolynomial (Fin pb.dim) k) L (X i)) =
+      universalCoefficient (pb.basis.coord i) (LaurentPolynomial.T 1 : B[T;T⁻¹]) :=
+  have := isLocalizationAway_norm_of_powerBasis k B pb hdim hgen L
+  multiplicativeGroupAlgEquiv_symm_algebraMap_X k B pb.basis L i
+
+/-- `multiplicativeGroupAlgEquivOfPowerBasis` sends the coefficient of `αⁱ` in the universal point
+to the variable `Xᵢ`. -/
+@[simp]
+theorem multiplicativeGroupAlgEquivOfPowerBasis_universalCoefficient (i : Fin pb.dim) :
+    multiplicativeGroupAlgEquivOfPowerBasis k B pb hdim hgen L
+        (universalCoefficient (pb.basis.coord i) (LaurentPolynomial.T 1 : B[T;T⁻¹])) =
+      algebraMap (MvPolynomial (Fin pb.dim) k) L (X i) :=
+  have := isLocalizationAway_norm_of_powerBasis k B pb hdim hgen L
+  multiplicativeGroupAlgEquiv_universalCoefficient k B pb.basis L i
+
+/-- **The norm morphism in coordinates for `K = k(a ^ (1 / p))`.** Under
+`multiplicativeGroupAlgEquivOfPowerBasis`, the norm morphism `Res_{B/k} 𝔾ₘ → 𝔾ₘ` sends the
+coordinate `T` of `𝔾ₘ` to `∑ᵢ aⁱ Xᵢ ^ p`. -/
+theorem multiplicativeGroupAlgEquivOfPowerBasis_normHom :
+    multiplicativeGroupAlgEquivOfPowerBasis k B pb hdim hgen L
+        (NormTorus.normHom k B (LaurentPolynomial.T 1)) =
+      algebraMap (MvPolynomial (Fin pb.dim) k) L
+        (∑ i : Fin pb.dim, a ^ (i : ℕ) • (X i : MvPolynomial (Fin pb.dim) k) ^ p) := by
+  have := isLocalizationAway_norm_of_powerBasis k B pb hdim hgen L
+  have h := multiplicativeGroupAlgEquiv_normHom k B pb.basis L
+  simp only [pb.coe_basis] at h
+  rwa [pb.norm_sum_X_tmul_gen_pow hdim hgen] at h
+
+end PowerBasis
+
+end TauCeti.Algebra.WeilRestriction
+
+namespace PowerBasis
+
+open TauCeti.Algebra.WeilRestriction
 
 variable {k B : Type*} [Field k] [CommRing B] [Algebra k B] (pb : PowerBasis k B)
   {p : ℕ} [ExpChar k p] {a : k}
@@ -274,49 +351,19 @@ theorem isUnit_sum_gen_pow_tmul_iff (hdim : pb.dim = p) (hgen : pb.gen ^ p = alg
   rw [h, pb.norm_sum_X_tmul_gen_pow hdim hgen]
   simp
 
-variable (k B)
-
-/-- **`Res_{K/k} 𝔾ₘ` in coordinates for `K = k(a ^ (1 / p))`.** If `α ^ p = a` for the generator `α`
-of a power basis of rank `p` over a field `k` of exponential characteristic `p`, then
-`Res_{B/k} 𝔾ₘ ≅ Spec k[X₀, …, X_{p-1}][1 / ∑ᵢ aⁱ Xᵢ ^ p]`. Here `L` is any localization of the
-polynomial ring away from `∑ᵢ aⁱ Xᵢ ^ p`; the variable `Xᵢ` is the coordinate of `αⁱ`. -/
-noncomputable def multiplicativeGroupAlgEquivOfPowerBasis [Module.Finite k B] (hdim : pb.dim = p)
-    (hgen : pb.gen ^ p = algebraMap k B a)
-    (L : Type*) [CommRing L] [Algebra k L] [Algebra (MvPolynomial (Fin pb.dim) k) L]
-    [IsScalarTower k (MvPolynomial (Fin pb.dim) k) L]
-    [IsLocalization.Away (∑ i : Fin pb.dim, a ^ (i : ℕ) • (X i : MvPolynomial (Fin pb.dim) k) ^ p)
-      L] :
-    WeilRestriction k B B[T;T⁻¹] ≃ₐ[k] L :=
-  have : Module.Free k B := .of_basis pb.basis
-  have : IsLocalization.Away (Algebra.norm (MvPolynomial (Fin pb.dim) k)
-      (∑ i, (X i : MvPolynomial (Fin pb.dim) k) ⊗ₜ[k] pb.basis i)) L := by
-    simp only [pb.coe_basis]
-    rwa [pb.norm_sum_X_tmul_gen_pow hdim hgen]
-  multiplicativeGroupAlgEquiv k B pb.basis L
-
-end PowerBasis
-
-end TauCeti.Algebra.WeilRestriction
-
-namespace TauCeti.NormTorus
-
-variable {k B : Type*} [Field k] [CommRing B] [Algebra k B] (pb : PowerBasis k B)
-  {p : ℕ} [ExpChar k p] {a : k}
-
 /-- **The `p`-th power factors through the norm.** If `α ^ p = a` for the generator `α` of a power
 basis of rank `p` over a field of exponential characteristic `p`, then the `p`-th power of every
 point `u` of `Res_{B/k} 𝔾ₘ` over a commutative `k`-algebra `R` is the image `1 ⊗ Nm(u)` of its
 norm under the diagonal `𝔾ₘ → Res_{B/k} 𝔾ₘ`. -/
 theorem pow_char_eq_unitsMap_norm (hdim : pb.dim = p) (hgen : pb.gen ^ p = algebraMap k B a)
     {R : Type*} [CommRing R] [Algebra k R] (u : (B ⊗[k] R)ˣ) :
-    u ^ p = Units.map (Algebra.TensorProduct.includeRight : R →ₐ[k] B ⊗[k] R) (norm k B R u) := by
+    u ^ p = Units.map (Algebra.TensorProduct.includeRight : R →ₐ[k] B ⊗[k] R)
+      (TauCeti.NormTorus.norm k B R u) := by
   have : Module.Free k B := .of_basis pb.basis
   have : Module.Finite k B := .of_basis pb.basis
   ext
   apply (Algebra.TensorProduct.comm k B R).injective
-  rw [Units.val_pow_eq_pow_val, map_pow, pb.pow_char_eq_algebraMap_norm hdim hgen, Units.coe_map,
-    MonoidHom.coe_ofClass, coe_norm, Algebra.TensorProduct.includeRight_apply,
-    Algebra.TensorProduct.comm_tmul, Algebra.TensorProduct.algebraMap_apply,
-    Algebra.algebraMap_self, RingHom.id_apply]
+  -- in `R ⊗[k] B` the `p`-th power is the norm, viewed as a scalar
+  simp [pb.pow_char_eq_algebraMap_norm hdim hgen, TauCeti.NormTorus.coe_norm]
 
-end TauCeti.NormTorus
+end PowerBasis

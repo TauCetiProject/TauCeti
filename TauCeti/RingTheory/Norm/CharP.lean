@@ -87,11 +87,9 @@ theorem sum_tmul_gen_pow_pow_char (hgen : pb.gen ^ p = algebraMap k B a)
   nontriviality T ⊗[k] B
   have : ExpChar (T ⊗[k] B) p := expChar_of_injective_algebraMap (algebraMap k _).injective p
   -- the Frobenius of `T ⊗[k] B` is additive, and `(αⁱ) ^ p = aⁱ` is a scalar
-  rw [sum_pow_char, map_sum]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [Algebra.TensorProduct.tmul_pow, ← pow_mul, mul_comm, pow_mul, hgen, ← map_pow,
-    Algebra.algebraMap_eq_smul_one (a ^ (i : ℕ)), ← TensorProduct.smul_tmul,
-    Algebra.TensorProduct.algebraMap_apply, Algebra.algebraMap_self, RingHom.id_apply]
+  have hpow (i : ℕ) : (pb.gen ^ i) ^ p = a ^ i • 1 := by
+    rw [← pow_mul, mul_comm, pow_mul, hgen, ← map_pow, Algebra.algebraMap_eq_smul_one]
+  simp [sum_pow_char, Algebra.TensorProduct.tmul_pow, hpow, TensorProduct.smul_tmul]
 
 /-- **The norm form of a `p`-th root extension.** Let `k` be a field of exponential characteristic
 `p` and `α` the generator of a power basis of rank `p` with `α ^ p = a`. Then the norm form of `B`
@@ -112,7 +110,7 @@ theorem norm_sum_tmul_gen_pow (hdim : pb.dim = p) (hgen : pb.gen ^ p = algebraMa
     Algebra.norm T (∑ i, x i ⊗ₜ[k] (pb.gen ^ (i : ℕ))) =
       ∑ i : Fin pb.dim, a ^ (i : ℕ) • x i ^ p := by
   have : Module.Free k B := .of_basis pb.basis
-  have h := TauCeti.Algebra.norm_sum_tmul_eq_aeval pb.basis x
+  have h := pb.basis.norm_sum_tmul_eq_aeval x
   simp only [pb.coe_basis] at h
   rw [h, pb.norm_sum_X_tmul_gen_pow hdim hgen]
   simp

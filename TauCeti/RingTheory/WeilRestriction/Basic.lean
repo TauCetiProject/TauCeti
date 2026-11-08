@@ -55,8 +55,8 @@ shows that its formation commutes with an arbitrary base change `A → A'`.
 * `TauCeti.Algebra.WeilRestriction.universalCoefficient`: coefficients of the universal point,
   extracted by arbitrary linear functionals; `adjoin_range_universalCoefficient` says they
   generate the representing algebra, without choosing a basis, and
-  `sum_tmul_universalCoefficient` recovers the universal point from its coefficients against a
-  basis of `B`.
+  `Module.Basis.sum_tmul_universalCoefficient` recovers the universal point from its coefficients
+  against a basis of `B`.
 * `TauCeti.Algebra.WeilRestriction.map_surjective`: the Weil restriction preserves surjections, that
   is, closed immersions.
 * `TauCeti.Algebra.WeilRestriction.homEquiv_comp_baseChangeAlgEquiv`: `baseChangeAlgEquiv` is
@@ -582,17 +582,6 @@ theorem map_universalCoefficient {T : Type*} [CommRing T] [Algebra A T]
   | tmul b w => simp
   | add z w hz hw => simp only [map_add, hz, hw]
 
-/-- The universal point is recovered from its coefficients against a basis `b` of `B`: its value
-at `c` is `∑ᵢ bᵢ ⊗ cᵢ`, where `cᵢ` is the universal coefficient of `c` extracted by the `i`-th
-coordinate functional of `b`. -/
-theorem sum_tmul_universalCoefficient {ι : Type*} [Fintype ι] (b : Module.Basis ι A B) (c : C) :
-    ∑ i, b i ⊗ₜ[A] universalCoefficient (b.coord i) c = universalPoint A B C c := by
-  -- contracting the second factor of the commuted point against the dual basis recovers it
-  have h := LinearMap.sum_tensorComponent_tmul (M := WeilRestriction A B C) b b.coord
-    (fun x ↦ by simp) (TensorProduct.comm A B _ (universalPoint A B C c))
-  apply_fun TensorProduct.comm A _ B at h
-  simpa [universalCoefficient_def] using h
-
 /-- The coefficients of the universal point generate the Weil restriction as an `A`-algebra.
 All linear functionals may be used, so no basis or projective splitting is part of the statement. -/
 theorem adjoin_range_universalCoefficient :
@@ -616,3 +605,24 @@ end UniversalCoefficients
 end WeilRestriction
 
 end TauCeti.Algebra
+
+namespace Module.Basis
+
+open TauCeti.Algebra.WeilRestriction
+
+variable {A B C : Type*} [CommRing A] [CommRing B] [CommRing C]
+  [Algebra A B] [Algebra B C] [Module.Finite A B] [Module.Projective A B]
+  [Algebra.FinitePresentation B C]
+
+/-- The universal point is recovered from its coefficients against a basis `b` of `B`: its value
+at `c` is `∑ᵢ bᵢ ⊗ cᵢ`, where `cᵢ` is the universal coefficient of `c` extracted by the `i`-th
+coordinate functional of `b`. -/
+theorem sum_tmul_universalCoefficient {ι : Type*} [Fintype ι] (b : Module.Basis ι A B) (c : C) :
+    ∑ i, b i ⊗ₜ[A] universalCoefficient (b.coord i) c = universalPoint A B C c := by
+  -- contracting the second factor of the commuted point against the dual basis recovers it
+  have h := LinearMap.sum_tensorComponent_tmul (M := TauCeti.Algebra.WeilRestriction A B C) b
+    b.coord (fun x ↦ by simp) (TensorProduct.comm A B _ (universalPoint A B C c))
+  apply_fun TensorProduct.comm A _ B at h
+  simpa [universalCoefficient_def] using h
+
+end Module.Basis
