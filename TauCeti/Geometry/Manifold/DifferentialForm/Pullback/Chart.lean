@@ -21,8 +21,8 @@ Pulling a flat form back along a preferred chart and reading it in the same char
 flat form on the chart target, which is how flat constructions in a chart are moved to the
 manifold; conversely, evaluating a form `φ` on the chart source agrees with evaluating
 `φ.inChartAt α` on `mvfderiv I (extChartAt I α)` (`TauCeti.RoughForm.apply_eq_inChartAt_mvfderiv`).
-Near time `t`, the pullback along a family of maps which is the identity near `y` at time `t` is the
-flat pullback along the family read in the chart at `y`
+Near time `t`, the pullback along a family of maps which sends `y` into the chart at `y` at time `t`
+is the flat pullback along the family read in the chart at `y`
 (`TauCeti.RoughForm.eventuallyEq_mpullback_compContinuousLinearMap`).
 -/
 
@@ -120,11 +120,12 @@ theorem mpullback_eq_compContinuousLinearMap (ω : RoughForm I' M' F k) {f : M �
   -- The two sides differ only by unfolding `Function.comp`.
   rfl
 
-/-- Near time `t`, the pullback of a form at `y` along a family of maps `ψᵤ` which fixes `y` at
-time `t` and is jointly `C¹` at `(t, y)` is the flat pullback of its chart expression along the
-family read in the chart at `y`. -/
+/-- Near time `t`, the pullback of a form at `y` along a family of maps `ψᵤ` which sends `y` into
+the chart at `y` at time `t` and is jointly `C¹` at `(t, y)` is the flat pullback of its chart
+expression along the family read in the chart at `y`. -/
 theorem eventuallyEq_mpullback_compContinuousLinearMap [I.Boundaryless]
-    (α : RoughForm I M F k) {ψ : ℝ → M → M} {t : ℝ} {y : M} (hid : ψ t y = y)
+    (α : RoughForm I M F k) {ψ : ℝ → M → M} {t : ℝ} {y : M}
+    (hψt : ψ t y ∈ (extChartAt I y).source)
     (hsmooth : ContMDiffAt (𝓘(ℝ, ℝ).prod I) I 1 (fun p : ℝ × M ↦ ψ p.1 p.2) (t, y)) :
     (fun u ↦ mpullback I I (ψ u) α y) =ᶠ[𝓝 t] fun u ↦
       (α.inChartAt y (extChartAt I y (ψ u ((extChartAt I y).symm (extChartAt I y y))))
@@ -141,9 +142,7 @@ theorem eventuallyEq_mpullback_compContinuousLinearMap [I.Boundaryless]
     hsmooth.continuousAt.comp (f := fun u : ℝ ↦ (u, y))
       (continuous_id.prodMk continuous_const).continuousAt
   have hsrc : ∀ᶠ u in 𝓝 t, ψ u y ∈ (extChartAt I y).source :=
-    hcont.preimage_mem_nhds (by
-      rw [hid]
-      exact (isOpen_extChartAt_source y).mem_nhds (mem_extChartAt_source y))
+    hcont.preimage_mem_nhds ((isOpen_extChartAt_source y).mem_nhds hψt)
   filter_upwards [hsrc, hψ] with u hu hψu
   rw [extChartAt_to_inv, RoughForm.mpullback_eq_compContinuousLinearMap α y hψu hu,
     I.range_eq_univ, fderivWithin_univ]
