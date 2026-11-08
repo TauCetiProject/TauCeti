@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.DifferentialForm.CylinderHomotopy
-public import TauCeti.Analysis.Convex.SegmentUIcc
+public import TauCeti.Analysis.Convex.Segment
 public import TauCeti.Analysis.Distribution.Mass.Normal
 
 /-!
