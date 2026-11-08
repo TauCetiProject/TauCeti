@@ -39,6 +39,7 @@ theorem comap_volume_restrict_Ioc (T : ℝ≥0) :
     (volume.restrict (Ioc 0 (T : ℝ))).comap ((↑) : ℝ≥0 → ℝ) =
       (volume.comap ((↑) : ℝ≥0 → ℝ)).restrict (Ioc 0 T) := by
   rw [NNReal.isClosedEmbedding_coe.measurableEmbedding.comap_restrict]
+  -- The preimage is definitionally `Ioc 0 T`: the order on `ℝ≥0` is inherited from `ℝ`.
   congr 1
 
 /-- The pullback of Lebesgue measure on `(0,T]` to `ℝ≥0` has total mass `T`. -/
@@ -46,15 +47,7 @@ theorem comap_volume_restrict_Ioc_univ (T : ℝ≥0) :
     (volume.restrict (Ioc 0 (T : ℝ))).comap ((↑) : ℝ≥0 → ℝ) univ = T := by
   rw [comap_volume_restrict_Ioc, Measure.restrict_apply_univ,
     NNReal.isClosedEmbedding_coe.measurableEmbedding.comap_apply]
-  have himage : ((↑) : ℝ≥0 → ℝ) '' Ioc 0 T = Ioc 0 (T : ℝ) := by
-    ext x
-    simp only [mem_image, mem_Ioc]
-    constructor
-    · rintro ⟨t, ht, rfl⟩
-      exact_mod_cast ht
-    · intro hx
-      exact ⟨⟨x, hx.1.le⟩, by exact_mod_cast hx, rfl⟩
-  simp [himage]
+  simp
 
 end NNReal
 
