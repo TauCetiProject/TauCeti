@@ -6,18 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.DirichletCharacter.Basic
-public import TauCeti.NumberTheory.MulChar.Basic
 
 /-!
-# Quadratic characters under products and level changes
+# Quadratic characters under level changes
 
-Being quadratic is preserved by the two operations that assemble one Dirichlet character out of
-several: multiplying finitely many characters, and lifting a character to a multiple of its level.
+Being quadratic is preserved by lifting a Dirichlet character to a multiple of its level. That a
+finite product of quadratic characters is quadratic holds for arbitrary multiplicative characters
+(`MulChar.isQuadratic_prod`, in `TauCeti.NumberTheory.MulChar.Basic`).
 
 ## Main results
 
-* `MulChar.isQuadratic_prod` (from `TauCeti.NumberTheory.MulChar.Basic`): a finite product of
-  quadratic characters is quadratic.
 * `DirichletCharacter.isQuadratic_changeLevel`: lifting a quadratic character to a multiple of
   its level leaves it quadratic.
 -/
