@@ -123,16 +123,9 @@ theorem _root_.Set.Nonempty.exists_ear_of_lt (hH : V(H).Nonempty) (hHG : H < G)
   have hG' := (isEdgeConnected_two_iff_connected_and_forall_not_isBridge hV).1 hG
   by_cases hvertices : V(G) ⊆ V(H)
   · have hedge : ∃ e, e ∈ E(G) ∧ e ∉ E(H) := by
-      by_contra! hedge
-      apply hHG.ne
-      apply Graph.ext
-      · exact Set.Subset.antisymm hHG.le.vertexSet_mono hvertices
-      · intro e x y
-        constructor
-        · intro he
-          exact he.mono hHG.le
-        · intro he
-          exact (hHG.le.isLink_iff (hedge e he.edge_mem)).2 he
+      rcases vertexSet_ssubset_or_edgeSet_ssubset_of_lt hHG with hV | hE
+      · exact (not_subset_of_ssubset hV hvertices).elim
+      · exact Set.exists_of_ssubset hE
     obtain ⟨e, heG, heH⟩ := hedge
     obtain ⟨x, y, h⟩ := G.exists_isLink_of_mem_edgeSet heG
     have hx := hvertices h.left_mem
