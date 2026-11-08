@@ -94,7 +94,7 @@ private theorem beltramiOperator_apply_of_mem (hα : 0 < α) (hα1 : α < 1) (hr
 private theorem norm_beltramiOperator_le (hα : 0 < α) (hα1 : α < 1) (hr : 0 ≤ r)
     (μ : supportedHolderSubmodule (Y := ℂ) α (closedBall c r)) :
     ‖beltramiOperator hα hα1 hr μ‖ ≤
-      ‖beltramiPairing‖ * ‖μ‖ * ‖cauchyDerivativeCLM (c := c) hα hα1 hr hr‖ :=
+      ‖beltramiPairing‖ * ‖μ‖ * ‖cauchyDerivativeCLM (F := ℂ) (c := c) hα hα1 hr hr‖ :=
   (ContinuousLinearMap.opNorm_comp_le _ _).trans <| by
     gcongr
     exact ContinuousLinearMap.norm_compHolder₂ExtendByZero_le _ _
@@ -149,7 +149,7 @@ private theorem cauchy_regularity (hα : 0 < α) (hα1 : α < 1) (hr : 0 ≤ r)
       (∀ z ∈ ball c (r + 1), conjWirtingerDeriv T z 1 = (h : HolderSpace α ℂ ℂ) z) ∧
       ∀ z (hz : z ∈ closedBall c r), fderiv ℝ T z = cauchyDerivativeCLM hα hα1 hr hr h ⟨z, hz⟩ := by
   obtain ⟨C₀, hC₀⟩ :=
-    exists_contDiffOn_holderOnWith_fderiv_pi_inv_smul_integral_sub_inv_smul hα hα1 c hr hr
+    exists_contDiffOn_holderOnWith_fderiv_pi_inv_smul_integral_sub_inv_smul (F := ℂ) hα hα1 c hr hr
   obtain ⟨hTC, -, -, hTbar⟩ := hC₀ (f := (h : HolderSpace α ℂ ℂ))
     (M := ‖(h : HolderSpace α ℂ ℂ).toBoundedContinuousFunction‖₊)
     (support_subset_of_mem_supportedHolderSubmodule h.2) (h : HolderSpace α ℂ ℂ).holderWith
@@ -178,7 +178,7 @@ theorem exists_conjWirtingerDeriv_eq_mul_wirtingerDeriv (hα : 0 < α) (hα1 : �
         (∀ z ∈ closedBall c r, ‖fderiv ℝ ψ z - ContinuousLinearMap.id ℝ ℂ‖ ≤ C * ‖μ‖) ∧
         HolderOnWith (C * ‖μ‖₊) α (fderiv ℝ ψ) (closedBall c r) ∧
         ∀ z ∈ closedBall c r, ∃ L : ℂ ≃L[ℝ] ℂ, HasStrictFDerivAt ψ (L : ℂ →L[ℝ] ℂ) z := by
-  set D := cauchyDerivativeCLM (c := c) hα hα1 hr hr
+  set D := cauchyDerivativeCLM (F := ℂ) (c := c) hα hα1 hr hr
   set b := ‖beltramiPairing‖
   have hb : 0 ≤ b := beltramiPairing.opNorm_nonneg
   have hD : 0 ≤ ‖D‖ := D.opNorm_nonneg
