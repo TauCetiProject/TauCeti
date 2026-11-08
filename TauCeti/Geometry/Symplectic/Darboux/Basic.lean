@@ -249,7 +249,9 @@ theorem exists_partialDiffeomorph_compContinuousLinearMap_fderiv_eq_of_conj
       PartialDiffeomorph.restrOpen_toPartialEquiv, Diffeomorph.toPartialDiffeomorph_toPartialEquiv,
       PartialDiffeomorph.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv,
       PartialDiffeomorph.ofOpenPartialHomeomorph_toPartialEquiv]
-  have hΦ (x : E) : Φ x = Θ (Ψ (Θ.symm x)) := by rw [hΦeq]; rfl
+  have hΦ (x : E) : Φ x = Θ (Ψ (Θ.symm x)) := by
+    rw [hΦeq]
+    simp
   have hΦsrc (x : E) : x ∈ Φ.source ↔
       x ∈ Θ.target ∧ Θ.symm x ∈ O ∧ Ψ (Θ.symm x) ∈ Θ.source := by
     rw [hΦeq]
