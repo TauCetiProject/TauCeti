@@ -95,6 +95,13 @@ theorem coe_simpleCorootPoints_eq_kostantTorusMatrix (i : Fin t.rank) (A : Type 
       kostantTorusMatrix D.lattice D.basis D.coordinateWeight (D.simpleCorootParameter i A s) := by
   rfl
 
+/-- The simple coroot is the actual torus evaluated at its coroot parameter. -/
+theorem simpleCorootPoints_eq_torusPoints (i : Fin t.rank) (A : Type v) [CommRing A]
+    (s : Aˣ) :
+    D.simpleCorootPoints i A s = D.torusPoints A (D.simpleCorootParameter i A s) := by
+  apply Subtype.ext
+  rw [coe_torusPoints, coe_simpleCorootPoints_eq_kostantTorusMatrix]
+
 /-- On a weight vector, the simple coroot acts by its weight's `i`-th coordinate. -/
 @[simp]
 theorem coe_simpleCorootPoints (i : Fin t.rank) (A : Type v) [CommRing A] (s : Aˣ) :
