@@ -99,7 +99,7 @@ private theorem three_step_divisions {α β γ δ ε ζ : Fin t.numRoots}
 
 /-- The successive divided brackets in a three-step root string, with their integral
 coefficients. These identities retain the factors two and three before scalar extension. -/
-theorem lie_chevalleySystem_three_step {α β γ δ ε ζ : Fin t.numRoots}
+private theorem lie_chevalleySystem_three_step {α β γ δ ε ζ : Fin t.numRoots}
     (hγ : (t.simplyConnectedRootDatum ht).root γ =
       (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
     (hδ : (t.simplyConnectedRootDatum ht).root δ =
@@ -142,7 +142,7 @@ theorem lie_chevalleySystem_three_step {α β γ δ ε ζ : Fin t.numRoots}
 
 /-- Two vanishing brackets forced by reducedness in a three-step root configuration:
 the sums β + δ and β + ζ are respectively twice and three times γ. -/
-theorem lie_chevalleySystem_three_step_extra_vanishing {α β γ δ ζ : Fin t.numRoots}
+private theorem lie_chevalleySystem_three_step_eq_zero {α β γ δ ζ : Fin t.numRoots}
     (hγ : (t.simplyConnectedRootDatum ht).root γ =
       (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
     (hδ : (t.simplyConnectedRootDatum ht).root δ =
@@ -187,7 +187,7 @@ private theorem three_step_highest_root {α β γ δ ε ζ : Fin t.numRoots}
 /-- In a three-step root string, `a * N β ε = b`, where `a` and `b` are the coefficients
 of 3α + β and 3α + 2β in the collection formula. All divisions in these coefficients
 are performed in ℤ. -/
-theorem structureConstant_three_step_highest_coefficient {α β γ δ ε ζ : Fin t.numRoots}
+private theorem mul_structureConstant_three_step_eq {α β γ δ ε ζ : Fin t.numRoots}
     (hγ : (t.simplyConnectedRootDatum ht).root γ =
       (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
     (hδ : (t.simplyConnectedRootDatum ht).root δ =
@@ -209,7 +209,7 @@ theorem structureConstant_three_step_highest_coefficient {α β γ δ ε ζ : Fi
   let a := d * (N α δ / 3)
   let b := d * c * (N δ γ / 3)
   obtain ⟨_, hαδ, hδγ⟩ := lie_chevalleySystem_three_step hγ hδ hε hζ
-  have hβδ := (lie_chevalleySystem_three_step_extra_vanishing hγ hδ hζ).1
+  have hβδ := (lie_chevalleySystem_three_step_eq_zero hγ hδ hζ).1
   have hβε := three_step_highest_root hγ hδ hε hζ
   have hjac : (3 * (a * N β ε)) • e ζ = (3 * b) • e ζ := by
     calc
@@ -287,8 +287,8 @@ private theorem short_long_exclusions (ht : G2.Valid) (α β : Fin G2.numRoots)
 /-- Seven vanishing brackets among the root vectors of α and the G₂ string
 β, α + β, 2α + β, 3α + β, 3α + 2β, used when collecting root-subgroup factors.
 The brackets of β with 2α + β and 3α + 2β are given separately by
-`lie_chevalleySystem_three_step_extra_vanishing`, for every valid Dynkin type. -/
-theorem lie_chevalleySystem_g2_three_step_vanishing (ht : G2.Valid)
+`lie_chevalleySystem_three_step_eq_zero`, for every valid Dynkin type. -/
+private theorem lie_chevalleySystem_g2_three_step_eq_zero (ht : G2.Valid)
     {α β γ δ ε ζ : Fin G2.numRoots}
     (hγ : (G2.simplyConnectedRootDatum ht).root γ =
       (G2.simplyConnectedRootDatum ht).root α + (G2.simplyConnectedRootDatum ht).root β)
@@ -374,7 +374,7 @@ theorem chevalleyRootSubgroup_mul_of_g2_short_long {α β γ δ ε ζ : Fin G2.n
   obtain ⟨hik, hil, hlk⟩ := lie_chevalleySystem_three_step hγ hδ hε hζ
   have hij := lie_chevalleySystem_eq_structureConstant_zsmul hγ
   obtain ⟨him, hio, hjk, hlm, hko, hlo, hmo⟩ :=
-    lie_chevalleySystem_g2_three_step_vanishing ht hγ hδ hε hζ
+    lie_chevalleySystem_g2_three_step_eq_zero ht hγ hδ hε hζ
   -- Extend stability from simple generators to the all-root Kostant form.
   have hstable := dividedPower_chevalleySystem_smul_mem ρ M hM hnil
   have hall : ∀ z ∈ kostantForm (G2.chevalleySystem ht) (G2.lieBasis ht).h,
@@ -434,8 +434,8 @@ theorem commutatorElement_chevalleyRootSubgroup_of_g2_short_long {α β γ δ ε
     x ε ((a : A) * (u ^ 3 * v)) * x ζ ((2 * b : ℤ) * (u ^ 3 * v ^ 2))
   -- Conjugation by the long-root factor fixes three factors and corrects the fourth.
   obtain ⟨_, _, hβγ, _, _, _, hεζ⟩ :=
-    lie_chevalleySystem_g2_three_step_vanishing ht hγ hδ hε hζ
-  obtain ⟨hβδ, hβζ⟩ := lie_chevalleySystem_three_step_extra_vanishing hγ hδ hζ
+    lie_chevalleySystem_g2_three_step_eq_zero ht hγ hδ hε hζ
+  obtain ⟨hβδ, hβζ⟩ := lie_chevalleySystem_three_step_eq_zero hγ hδ hζ
   have hconj (i : Fin G2.numRoots)
       (hβi : ⁅G2.chevalleySystem ht β, G2.chevalleySystem ht i⁆ = 0) (s : A) :
       MulAut.conj (x β v) (x i s) = x i s := by
@@ -450,7 +450,7 @@ theorem commutatorElement_chevalleyRootSubgroup_of_g2_short_long {α β γ δ ε
           (three_step_highest_root hγ hδ hε hζ)) hβζ hεζ]
     have hab : (a : A) * (N β ε : A) = (b : A) := by
       have hab : a * N β ε = b :=
-        structureConstant_three_step_highest_coefficient hγ hδ hε hζ
+        mul_structureConstant_three_step_eq hγ hδ hε hζ
       rw [← Int.cast_mul, hab]
     have hc : (N β ε : A) * (v * ((a : A) * (u ^ 3 * v))) =
         (b : A) * (u ^ 3 * v ^ 2) := by
