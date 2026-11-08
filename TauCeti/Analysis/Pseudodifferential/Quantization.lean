@@ -13,7 +13,7 @@ public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
 import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Calculus.ParametricIntegral
-import TauCeti.Analysis.Fourier.LineDeriv
+import Mathlib.Analysis.Fourier.FourierTransformDeriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 
 /-!
@@ -568,6 +568,18 @@ private lemma integral_by_parts_quantizeSchwartzValue (ha : ContDiff ℝ 1 fun �
   have hint := integrable_quantizeSchwartzValue_integrand hmeas hC (𝓕 u)
   have hint₁ := integrable_quantizeSchwartzValue_integrand (a := a') hmeas' hC' (𝓕 u)
   have hint₂ := integrable_quantizeSchwartzValue_integrand hmeas hC (∂_{v} (𝓕 u))
+  -- the line derivative of the phase `ζ ↦ 𝐞 ⟪ζ, x⟫`
+  have hphase (ζ : E) : HasLineDerivAt ℝ (fun ζ ↦ (𝐞 ⟪ζ, x⟫ : ℂ))
+      ((2 * π * Complex.I * ⟪v, x⟫) * 𝐞 ⟪ζ, x⟫) ζ v := by
+    convert (hasFDerivAt_fourierChar_neg_bilinear_right (-innerSL ℝ) x ζ).hasLineDerivAt v
+      using 1
+    · simp only [real_inner_comm x, neg_apply, neg_neg]
+      rfl
+    · simp only [real_inner_comm x, neg_mul, neg_apply, neg_neg, ContinuousLinearMap.comp_neg,
+        smul_neg, neg_smul, smul_apply, ContinuousLinearMap.comp_apply, Complex.ofRealCLM_apply,
+        smul_eq_mul]
+      rw [mul_right_comm]
+      rfl
   -- integrate by parts in the frequency, moving the derivative from the phase to the rest
   have hibp := integral_bilinear_hasLineDerivAt_right_eq_neg_left_of_integrable
     (μ := volume) (B := ContinuousLinearMap.lsmul ℝ ℂ (E := W))
@@ -580,7 +592,7 @@ private lemma integral_by_parts_quantizeSchwartzValue (ha : ContDiff ℝ 1 fun �
     (((hint₁.smul (2 * π)).add hint₂).congr (ae_of_all _ fun ζ ↦ by
       simp [Circle.smul_def, smul_add, smul_comm (2 * π)]))
     (hint.congr (ae_of_all _ fun ζ ↦ by simp [Circle.smul_def]))
-    (fun ζ _ ↦ Real.hasLineDerivAt_fourierChar_inner x v ζ)
+    (fun ζ _ ↦ hphase ζ)
     (fun ζ _ ↦ hasLineDerivAt_apply ha (𝓕 u) v ζ)
   have h₁ : ∫ ζ, ContinuousLinearMap.lsmul ℝ ℂ (𝐞 ⟪ζ, x⟫ : ℂ)
       ((2 * π) • a' (x, (2 * π) • ζ) (𝓕 u ζ) + a (x, (2 * π) • ζ) (∂_{v} (𝓕 u) ζ)) =

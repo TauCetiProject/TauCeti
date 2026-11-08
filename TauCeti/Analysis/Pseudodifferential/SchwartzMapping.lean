@@ -40,6 +40,9 @@ and each such term is bounded by a continuous seminorm of `u`
 
 * `TauCeti.Symbol.quantizeUniformCLM`: the quantization of a uniform symbol as a continuous linear
   map `𝓢(ℝⁿ, V) →L[ℂ] 𝓢(ℝⁿ, W)`.
+* `TauCeti.Symbol.quantizeUniformCLM_add`, `TauCeti.Symbol.quantizeUniformCLM_smul`,
+  `TauCeti.Symbol.quantizeUniformCLM_zero`, `TauCeti.Symbol.quantizeUniformCLM_inclusion`: the
+  quantization is linear in the symbol and does not depend on the order.
 * `TauCeti.Symbol.lineDerivOp_quantizeUniformCLM`,
   `TauCeti.Symbol.smulLeftCLM_quantizeUniformCLM`: the two commutator formulas in Schwartz space.
 * `TauCeti.Symbol.quantizeUniformCLM_const`: a constant symbol `T` quantizes to the composition
@@ -210,6 +213,38 @@ theorem quantizeUniformCLM_apply (a : Symbol n V W m) (ha : a.IsUniform)
     (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
     quantizeUniformCLM a ha u x = quantizeSchwartzValue a.coefficient u x :=
   (rfl)
+
+/-- The quantization is additive in the symbol. -/
+theorem quantizeUniformCLM_add {a b : Symbol n V W m} (ha : a.IsUniform) (hb : b.IsUniform) :
+    quantizeUniformCLM (a + b) (ha.add hb) = quantizeUniformCLM a ha + quantizeUniformCLM b hb := by
+  ext u x
+  obtain ⟨C, -, hC⟩ := a.exists_bound_coefficient {x} isCompact_singleton
+  obtain ⟨C', -, hC'⟩ := b.exists_bound_coefficient {x} isCompact_singleton
+  simpa using quantizeSchwartzValue_add_left
+    (a.contDiff_coefficient.continuous.comp (continuous_const.prodMk continuous_id)
+      ).aestronglyMeasurable (hC x rfl)
+    (b.contDiff_coefficient.continuous.comp (continuous_const.prodMk continuous_id)
+      ).aestronglyMeasurable (hC' x rfl) u
+
+/-- The quantization is homogeneous in the symbol. -/
+theorem quantizeUniformCLM_smul {a : Symbol n V W m} (ha : a.IsUniform) (c : ℂ) :
+    quantizeUniformCLM (c • a) (ha.smul c) = c • quantizeUniformCLM a ha := by
+  ext u x
+  simp
+
+/-- The zero symbol quantizes to zero. -/
+@[simp]
+theorem quantizeUniformCLM_zero (h : (0 : Symbol n V W m).IsUniform) :
+    quantizeUniformCLM 0 h = 0 := by
+  ext u x
+  simp
+
+/-- The quantization does not depend on the order at which a symbol is considered. -/
+theorem quantizeUniformCLM_inclusion {m' : ℝ} {a : Symbol n V W m} (ha : a.IsUniform)
+    (h : m ≤ m') :
+    quantizeUniformCLM (inclusion h a) (ha.inclusion h) = quantizeUniformCLM a ha := by
+  ext u x
+  simp
 
 /-- **Commutator with a derivative.** `∂_j (Op(a) u) = Op(a) (∂_j u) + Op(∂_{x_j} a) u` in
 Schwartz space. -/
