@@ -93,8 +93,8 @@ theorem chartField_eq_zero {K : Set E}
 
 variable [IsManifold I 1 M]
 
-/-- Along a segment in the chart on which `w` is the constant `d`, the chart field is the image of
-`d` under the derivative of the inverse chart. -/
+/-- At a point `p` of the chart target with `w p = d`, the chart field at `(extChartAt I x).symm p`
+is the image of `d` under the derivative of the inverse chart. -/
 theorem chartField_extChartAt_symm {p : E} {d : TangentSpace 𝓘(ℝ, E) p}
     (hp : p ∈ (extChartAt I x).target) (hwp : w p = d) :
     chartField (I := I) x w ((extChartAt I x).symm p) =
