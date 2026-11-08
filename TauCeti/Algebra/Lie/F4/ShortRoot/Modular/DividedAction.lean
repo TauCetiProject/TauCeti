@@ -328,6 +328,12 @@ reduction modulo two of the integral divided-square matrix. -/
     · simp [h]
   exact hentry.trans (hmatrix.trans hrhs.symm)
 
+private theorem coe_f4ShortRootDividedAdjointSquare_basis_eq_zero (k : Fin 4 ⊕ Fin 4) (b : Fin 26)
+    (hcoeff : (f4DividedSquareCoeff k b : ZMod 2) = 0) :
+    (f4ShortRootDividedAdjointSquare k (f4ShortRootLieIdealBasis b) :
+      f4ModularChevalleyLieAlgebra) = 0 := by
+  rw [f4ShortRootDividedAdjointSquare_basis, hcoeff, zero_smul, ZeroMemClass.coe_zero]
+
 private theorem f4ModularDividedAdjointSquare_basis_root_of_coeff_eq_zero
     (k : Fin 4 ⊕ Fin 4) (b : Fin 26) (i : Fin 48)
     (hi : f4Length i = 1) (h : f4ShortRootWeight b = f4Root i)
@@ -342,21 +348,7 @@ private theorem f4ModularDividedAdjointSquare_basis_root_of_coeff_eq_zero
     intro heq
     apply hneWeight
     rw [h, heq]
-  have hzero : f4ShortRootDividedAdjointSquare k (f4ShortRootLieIdealBasis b) = 0 := by
-    calc
-      _ = (f4DividedSquareCoeff k b : ZMod 2) •
-          f4ShortRootLieIdealBasis (f4DividedSquareTarget k b) :=
-        f4ShortRootDividedAdjointSquare_basis k b
-      _ = (0 : ZMod 2) •
-          f4ShortRootLieIdealBasis (f4DividedSquareTarget k b) :=
-        congrArg (fun c : ZMod 2 => c •
-          f4ShortRootLieIdealBasis (f4DividedSquareTarget k b)) hcoeff
-      _ = 0 := zero_smul _ _
-  have hzeroCoe :
-      (f4ShortRootDividedAdjointSquare k (f4ShortRootLieIdealBasis b) :
-        f4ModularChevalleyLieAlgebra) = 0 :=
-    congrArg (fun y : f4ShortRootLieIdeal =>
-      (y : f4ModularChevalleyLieAlgebra)) hzero
+  have hzeroCoe := coe_f4ShortRootDividedAdjointSquare_basis_eq_zero k b hcoeff
   calc
     f4ModularDividedAdjointSquare k
         (f4ShortRootLieIdealBasis b : f4ModularChevalleyLieAlgebra) =
@@ -431,20 +423,7 @@ private theorem f4ModularDividedAdjointSquare_basis_cartan
       (f4ShortRootDividedAdjointSquare k (f4ShortRootLieIdealBasis b) :
         f4ModularChevalleyLieAlgebra) := by
   have hcoeff := f4DividedSquareCoeff_cartan_eq_zero k b hb
-  have hzero : f4ShortRootDividedAdjointSquare k (f4ShortRootLieIdealBasis b) = 0 := by
-    calc
-      _ = (f4DividedSquareCoeff k b : ZMod 2) •
-          f4ShortRootLieIdealBasis (f4DividedSquareTarget k b) :=
-        f4ShortRootDividedAdjointSquare_basis k b
-      _ = (0 : ZMod 2) • f4ShortRootLieIdealBasis (f4DividedSquareTarget k b) :=
-        congrArg (fun c : ZMod 2 => c •
-          f4ShortRootLieIdealBasis (f4DividedSquareTarget k b)) hcoeff
-      _ = 0 := zero_smul _ _
-  have hzeroCoe :
-      (f4ShortRootDividedAdjointSquare k (f4ShortRootLieIdealBasis b) :
-        f4ModularChevalleyLieAlgebra) = 0 :=
-    congrArg (fun y : f4ShortRootLieIdeal =>
-      (y : f4ModularChevalleyLieAlgebra)) hzero
+  have hzeroCoe := coe_f4ShortRootDividedAdjointSquare_basis_eq_zero k b hcoeff
   calc
     f4ModularDividedAdjointSquare k
         (f4ShortRootLieIdealBasis b : f4ModularChevalleyLieAlgebra) =
