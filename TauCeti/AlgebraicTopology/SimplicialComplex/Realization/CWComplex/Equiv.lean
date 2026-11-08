@@ -121,7 +121,7 @@ theorem image_realizationMap_openCell {n : ℕ} (c : RealizationCell K n) :
       RelCWComplex.openCell n
         ((realizationCellEquiv L n).symm (cellEquiv f g hgf hfg n c)) := by
   rw [openCell_realizationCellEquiv_symm, openCell_realizationCellEquiv_symm]
-  apply image_realizationMap_ofPred_support f g hgf hfg
+  apply image_realizationMap_ofPred_support f g hfg
     (P := (· = c.1.1)) (Q := (· = (cellEquiv f g hgf hfg n c).1.1))
   simp only [cellEquiv_face, Finset.image_inj (injective_of_comp_eq_id f g hgf), implies_true]
 
@@ -133,7 +133,7 @@ theorem image_realizationMap_closedCell {n : ℕ} (c : RealizationCell K n) :
       RelCWComplex.closedCell n
         ((realizationCellEquiv L n).symm (cellEquiv f g hgf hfg n c)) := by
   rw [closedCell_realizationCellEquiv_symm, closedCell_realizationCellEquiv_symm]
-  apply image_realizationMap_ofPred_support f g hgf hfg
+  apply image_realizationMap_ofPred_support f g hfg
     (P := (· ⊆ c.1.1)) (Q := (· ⊆ (cellEquiv f g hgf hfg n c).1.1))
   simp only [cellEquiv_face, Finset.image_subset_image_iff (injective_of_comp_eq_id f g hgf),
     implies_true]
@@ -146,7 +146,7 @@ theorem image_realizationMap_cellFrontier {n : ℕ} (c : RealizationCell K n) :
       RelCWComplex.cellFrontier n
         ((realizationCellEquiv L n).symm (cellEquiv f g hgf hfg n c)) := by
   rw [cellFrontier_realizationCellEquiv_symm, cellFrontier_realizationCellEquiv_symm]
-  apply image_realizationMap_ofPred_support f g hgf hfg
+  apply image_realizationMap_ofPred_support f g hfg
     (P := (· ⊂ c.1.1)) (Q := (· ⊂ (cellEquiv f g hgf hfg n c).1.1))
   simp only [cellEquiv_face, Finset.image_ssubset_image (injective_of_comp_eq_id f g hgf),
     implies_true]
