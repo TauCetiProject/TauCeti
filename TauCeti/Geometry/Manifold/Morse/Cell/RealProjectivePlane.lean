@@ -160,8 +160,7 @@ private theorem affineChart_two_mk_one (v : Fin 3 → ℝ) (hv : v ≠ 0) :
 
 /-- The normalized Morse chart of `projectivePlaneHeight` at its maximum `[0 : 0 : 1]`: in the
 affine coordinates `a = x / z`, `b = y / z` it is `(√2 a, b) / √(1 + a² + b²)`. Its target is the
-open ellipse `u₀² / 2 + u₁² < 1`, and its inverse is
-`u ↦ [u₀ / √2 : u₁ : √(1 - u₀² / 2 - u₁²)]`. -/
+open ellipse `u₀² / 2 + u₁² < 1`, and its inverse is `u ↦ [u₀ / √2 : u₁ : √(1 - u₀² / 2 - u₁²)]`. -/
 def projectivePlaneTopChart :
     OpenPartialHomeomorph (ℙ ℝ (Fin 3 → ℝ)) (EuclideanSpace ℝ (Fin 2)) where
   toFun y := topChartPlane (affineChart 2 y)
@@ -873,8 +872,9 @@ theorem degree_projectivePlaneAttachingMap (hε : 0 < ε) (hε1 : ε < 1) :
       (projectivePlaneAttachingMap hε.le hε1).hom.continuous).map
       (projectivePlaneSublevelCircleEquiv (c := 2 - ε) (by linarith) (by linarith)).continuous) =
       2 := by
-  refine Circle.degree_eq_two_of_forall _ (a := (√2)⁻¹) (by positivity) fun t ↦ ?_
-  simp only [Path.map_coe, Function.comp_apply]
+  refine Circle.degree_eq_of_forall_eq_pow _ (a := (√2)⁻¹) (by positivity) one_pos 2 fun t ↦ ?_
+  simp only [Path.map_coe, Function.comp_apply, one_mul, div_pow, ← Complex.ofReal_pow,
+    Complex.sq_norm, Complex.normSq_add_mul_I]
   rw [coe_projectivePlaneSublevelCircleEquiv_projectivePlaneAttachingMap hε hε1,
     diskBoundaryTwoLoop_apply_zero, diskBoundaryTwoLoop_apply_one]
 
