@@ -284,8 +284,7 @@ private theorem involutive_partnerTime (hs : poly.IsSimple ℝ)
 private noncomputable def crossingMatching (hs : poly.IsSimple ℝ)
     (hπ : poly.IsRegularProjection ℝ (projAlong ℝ p₀ d)) :
     PerfectMatching (poly.crossingTimes p₀ d) :=
-  .ofInvolutive (involutive_partnerTime hs hπ)
-    (fun t h ↦ partnerTime_ne t.2 (congrArg Subtype.val h))
+  .ofInvolutive (involutive_partnerTime hs hπ) (fun t h ↦ partnerTime_ne t.2 congr($h))
 
 private theorem coe_crossingMatching_apply (hs : poly.IsSimple ℝ)
     (hπ : poly.IsRegularProjection ℝ (projAlong ℝ p₀ d)) (t : poly.crossingTimes p₀ d) :
@@ -308,12 +307,8 @@ private theorem card_crossingTimes [Fintype (poly.crossingTimes p₀ d)] (hs : p
     (hπ : poly.IsRegularProjection ℝ (projAlong ℝ p₀ d)) :
     Fintype.card (poly.crossingTimes p₀ d) =
       2 * ((poly.doublePoints ℝ (projAlong ℝ p₀ d)).ncard / 2) := by
-  have hcard : Fintype.card (poly.crossingTimes p₀ d) =
-      (poly.doublePoints ℝ (projAlong ℝ p₀ d)).ncard := by
-    rw [← Nat.card_eq_fintype_card, Nat.card_coe_set_eq, ncard_crossingTimes hs]
-  have heven := even_card_of_nonempty_perfectMatching _ ⟨crossingMatching hs hπ⟩
-  rw [hcard] at heven ⊢
-  exact (Nat.two_mul_div_two_of_even heven).symm
+  symm
+  simpa [ncard_crossingTimes hs] using Nat.two_mul_div_two_of_even hπ.even_ncard_doublePoints
 
 /-- The crossing times in increasing order. -/
 private noncomputable def visitOrderIso (hs : poly.IsSimple ℝ)

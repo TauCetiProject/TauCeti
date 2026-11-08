@@ -242,11 +242,14 @@ theorem doublePointPartner_mem_doublePoints (hx : x ∈ poly.doublePoints R π) 
   exact ⟨doublePointPartner_mem_boundary hx.1, x, hx.1, (doublePointPartner_ne hx).symm,
     (apply_doublePointPartner x).symm⟩
 
+theorem doublePointPartner_mapsTo : MapsTo (poly.doublePointPartner R π) (poly.doublePoints R π)
+    (poly.doublePoints R π) := fun _ ↦ doublePointPartner_mem_doublePoints
+
 variable (R) in
 /-- The partner map, restricted to the subtype of double points. -/
 noncomputable def doublePointPartnerOnDoublePoints (poly : Polygon P n) (π : P → Q) :
     poly.doublePoints R π → poly.doublePoints R π :=
-  fun x ↦ ⟨poly.doublePointPartner R π x, doublePointPartner_mem_doublePoints x.2⟩
+  Set.MapsTo.restrict _ _ _ doublePointPartner_mapsTo
 
 /-- Coercing the restricted partner gives the ambient partner. -/
 @[simp]
@@ -277,8 +280,7 @@ private theorem IsRegularProjection.involutive_doublePointPartnerOnDoublePoints
     Function.Involutive (poly.doublePointPartnerOnDoublePoints R π) := by
   intro x
   apply Subtype.ext
-  simpa only [doublePointPartnerOnDoublePoints] using
-    hπ.involutive_doublePointPartner x.val
+  simpa using hπ.involutive_doublePointPartner x.val
 
 /-- For a regular projection, the partner map gives a perfect matching of the double points. -/
 noncomputable def IsRegularProjection.perfectMatchingDoublePoints
@@ -302,13 +304,11 @@ theorem IsRegularProjection.even_ncard_doublePoints (hπ : poly.IsRegularProject
   classical
   by_cases hfin : (poly.doublePoints R π).Finite
   · let f := hfin.fintype
-    have heven := @TauCeti.even_card_of_nonempty_perfectMatching
-      (poly.doublePoints R π) f ⟨hπ.perfectMatchingDoublePoints⟩
-    rw [← @Nat.card_eq_fintype_card (poly.doublePoints R π) f,
-      Nat.card_coe_set_eq] at heven
-    exact heven
+    have heven := TauCeti.even_card_of_nonempty_perfectMatching
+      (poly.doublePoints R π) ⟨hπ.perfectMatchingDoublePoints⟩
+    rwa [← Nat.card_eq_fintype_card, Nat.card_coe_set_eq] at heven
   · rw [Infinite.ncard hfin]
-    exact ⟨0, rfl⟩
+    exact Even.zero
 
 /-- For a regular projection, no vertex of the polygon is a double point. -/
 theorem IsRegularProjection.apply_notMem_doublePoints (hπ : poly.IsRegularProjection R π)
