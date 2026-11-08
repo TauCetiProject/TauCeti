@@ -29,6 +29,7 @@ almost everywhere means everywhere.
 
 * `IsOpen.subset_closure_of_ae_le`: an open set lies in the closure of any set containing it a.e.
 * `IsOpen.closure_eq_of_ae_eq`: a.e. equal open sets have equal closures.
+* `TauCeti.eq_of_ae_eq_of_interior_closure_eq`: a.e. equal regular open sets are equal.
 * `Metric.measureReal_ball_pos`: a ball of positive radius has positive real measure.
 * `Metric.measureReal_closedBall_pos`: a closed ball of positive radius has positive real
   measure.
@@ -51,10 +52,9 @@ variable {X : Type*} [TopologicalSpace X] [MeasurableSpace X] {μ : Measure X}
 
 /-- An open set contained almost everywhere in another set is contained in its closure.
 No measurability assumption on either set is needed. -/
-theorem subset_closure_of_ae_le (hs : IsOpen s) (hst : s ≤ᵐ[μ] t) : s ⊆ closure t := by
-  refine ((Measure.dense_of_ae hst).open_subset_closure_inter hs).trans (closure_mono ?_)
-  intro x hx
-  exact hx.2 hx.1
+theorem subset_closure_of_ae_le (hs : IsOpen s) (hst : s ≤ᵐ[μ] t) : s ⊆ closure t :=
+  ((Measure.dense_of_ae hst).open_subset_closure_inter hs).trans <|
+    closure_mono fun _ hx => hx.2 hx.1
 
 /-- Almost-everywhere equal open sets have the same closure for a measure positive on nonempty
 open sets. The open sets themselves need not be equal. -/
@@ -75,9 +75,7 @@ theorem eq_of_ae_eq_of_interior_closure_eq {X : Type*} [TopologicalSpace X] [Mea
     (hs : interior (closure s) = s) (ht : interior (closure t) = t) (hst : s =ᵐ[μ] t) :
     s = t := by
   have hsopen : IsOpen s := hs ▸ isOpen_interior
-  have htopen : IsOpen t := ht ▸ isOpen_interior
-  have hclosures := hsopen.closure_eq_of_ae_eq htopen hst
-  simpa only [hs, ht] using congrArg interior hclosures
+  rw [← hs, ← ht, hsopen.closure_eq_of_ae_eq (ht ▸ isOpen_interior) hst]
 
 /-- In a proper space, a measure that is positive on nonempty open sets and finite on compact sets
 gives every ball of positive radius positive real measure. -/
@@ -112,10 +110,8 @@ theorem _root_.Continuous.ae_le_iff_le {X Y : Type*} [TopologicalSpace X] [Measu
     [OrderClosedTopology Y] {f g : X → Y} (hf : Continuous f) (hg : Continuous g) :
     f ≤ᵐ[μ] g ↔ f ≤ g :=
   -- The closed set where `f ≤ g` is dense, hence everything.
-  ⟨fun h x => (isClosed_le hf hg).closure_subset <| by
-      rw [(μ.dense_of_ae h).closure_eq]
-      exact Set.mem_univ x,
-    fun h => Eventually.of_forall h⟩
+  ⟨fun h x => (μ.dense_of_ae h).induction (fun _ => id) (isClosed_le hf hg) x,
+    Eventually.of_forall⟩
 
 /-- On a discrete space, a measure positive on nonempty open sets charges every point, so
 almost everywhere means everywhere. -/
