@@ -53,12 +53,9 @@ def prod : TopCat.GlueData.MkCore.{u} where
     ⟨((D.t i.1 j.1 ⟨x.1.1, x.2.1⟩).1, (E.t i.2 j.2 ⟨x.1.2, x.2.2⟩).1),
       (D.t i.1 j.1 ⟨x.1.1, x.2.1⟩).2, (E.t i.2 j.2 ⟨x.1.2, x.2.2⟩).2⟩,
     by
-      apply Continuous.subtype_mk
-      exact ((D.t i.1 j.1).hom.continuous.comp
-        ((continuous_fst.comp continuous_subtype_val).subtype_mk
-          (fun x ↦ x.2.1))).subtype_val.prodMk
-          (((E.t i.2 j.2).hom.continuous.comp
-            ((continuous_snd.comp continuous_subtype_val).subtype_mk (fun x ↦ x.2.2))).subtype_val)⟩
+      have hD := (D.t i.1 j.1).hom.continuous
+      have hE := (E.t i.2 j.2).hom.continuous
+      fun_prop⟩
   V_id i := by ext x; simp [D.V_id, E.V_id]
   t_id i := by
     funext x
@@ -84,7 +81,7 @@ theorem mem_prod_V (i j : D.J × E.J) (x : D.U i.1 × E.U i.2) :
 
 /-- A product transition applies the original transitions to the two coordinates. -/
 @[simp]
-theorem prod_t_apply (i j : D.J × E.J) (x : (D.prod E).V i j) :
+theorem prod_t_apply_coe (i j : D.J × E.J) (x : (D.prod E).V i j) :
     ((D.prod E).t i j x).1 =
       ((D.t i.1 j.1 ⟨x.1.1, x.2.1⟩).1, (E.t i.2 j.2 ⟨x.1.2, x.2.2⟩).1) := (rfl)
 
@@ -96,6 +93,8 @@ theorem prod_rel_iff (i j : D.J × E.J) (x : D.U i.1 × E.U i.2)
     (TopCat.GlueData.mk' (D.prod E)).Rel ⟨i, x⟩ ⟨j, y⟩ ↔
       (TopCat.GlueData.mk' D).Rel ⟨i.1, x.1⟩ ⟨j.1, y.1⟩ ∧
       (TopCat.GlueData.mk' E).Rel ⟨i.2, x.2⟩ ⟨j.2, y.2⟩ := by
+  -- In mk', f is the subtype inclusion and t is the supplied transition map.
+  -- For prod, their underlying maps therefore reduce coordinatewise.
   constructor
   · rintro ⟨z, hz, ht⟩
     exact ⟨⟨⟨z.1.1, z.2.1⟩, congrArg Prod.fst hz, congrArg Prod.fst ht⟩,
@@ -116,6 +115,8 @@ private theorem prodPieceMap_condition (i j : D.J × E.J) :
     (TopCat.GlueData.mk' (D.prod E)).f i j ≫ prodPieceMap D E i =
       (TopCat.GlueData.mk' (D.prod E)).t i j ≫
         (TopCat.GlueData.mk' (D.prod E)).f j i ≫ prodPieceMap D E j := by
+  -- mk' uses subtype inclusions for f and the supplied componentwise map for t;
+  -- prodPieceMap then reduces each coordinate to the original gluing condition.
   ext x
   · exact ((TopCat.GlueData.mk' D).glue_condition_apply i.1 j.1 ⟨x.1.1, x.2.1⟩).symm
   · exact ((TopCat.GlueData.mk' E).glue_condition_apply i.2 j.2 ⟨x.1.2, x.2.2⟩).symm
@@ -142,8 +143,7 @@ theorem prodGlueMap_ι (i : D.J × E.J) (x : D.U i.1 × E.U i.2) :
       (TopCat.GlueData.mk' E).toGlueData.glued)) (prodPieceMap D E)
       (fun ⟨i, j⟩ ↦ prodPieceMap_condition D E i j) i) x
 
-/-- The comparison of glued products is injective: equality in each factor supplies the two
-components of a single product-overlap witness. -/
+/-- The comparison from the glued product data to the product of glued spaces is injective. -/
 theorem prodGlueMap_injective : Function.Injective (D.prodGlueMap E) := by
   intro x y h
   obtain ⟨i, x, rfl⟩ := (TopCat.GlueData.mk' (D.prod E)).ι_jointly_surjective x
@@ -163,8 +163,7 @@ theorem prodGlueMap_surjective : Function.Surjective (D.prodGlueMap E) := by
   exact ⟨(TopCat.GlueData.mk' (D.prod E)).toGlueData.ι (i, j) (x, y),
     prodGlueMap_ι D E _ _⟩
 
-/-- The product comparison is open because its composite with each piece inclusion is the
-product of two open embeddings. -/
+/-- The product comparison `prodGlueMap` is an open map. -/
 theorem isOpenMap_prodGlueMap : IsOpenMap (D.prodGlueMap E) := by
   apply (TopCat.GlueData.mk' (D.prod E)).isOpenQuotientMap_sigma_ι.isOpenMap_iff.2
   apply isOpenMap_sigma.2
