@@ -257,17 +257,9 @@ theorem shortExact_standardResolutionSequence :
     apply arrowTensorDifferential_injective
     simpa only [arrowTensorDifferentialComplexHom_f_apply] using congrArg
       (fun z ↦ (gradedCochainComplexXEquiv n z : vertexTensorBimodule k Q)) h
-  · -- Multiplication is onto in each degree by taking the degree component of an ungraded lift.
+  · -- Multiplication is onto in each degree.
     intro x
-    obtain ⟨y, hy⟩ := vertexTensorMul_surjective (k := k) (Q := Q)
-      (Bimodule.of (AlgHom.id k A) (gradedCochainComplexXEquiv n x))
-    let z := DirectSum.decompose (vertexTensorGrading k Q wt).piece y n
-    have hz : vertexTensorMul k Q z =
-        Bimodule.of (AlgHom.id k A) (gradedCochainComplexXEquiv n x) := by
-      rw [(isHomogeneous_vertexTensorMul k Q wt).map_decompose, hy, add_zero,
-        DirectSum.decompose_of_mem_same]
-      exact ((InternalGrading.mk (gradeBy k wt) (isInternal_gradeBy k wt)).apply_mem_map_piece_iff
-        (Bimodule.of (AlgHom.id k A)) _ _).mpr (gradedCochainComplexXEquiv n x).2
+    obtain ⟨z, hz⟩ := exists_vertexTensorMul_eq_of_mem k Q wt (gradedCochainComplexXEquiv n x).2
     refine ⟨(gradedCochainComplexXEquiv n).symm z, ?_⟩
     apply (gradedCochainComplexXEquiv n).injective
     apply Subtype.ext
