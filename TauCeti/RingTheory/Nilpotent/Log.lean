@@ -9,7 +9,7 @@ public import Mathlib.RingTheory.Nilpotent.Exp
 public import Mathlib.RingTheory.PowerSeries.Log
 public import TauCeti.RingTheory.PowerSeries.Substitution
 import Mathlib.RingTheory.Adjoin.Singleton
-public import TauCeti.RingTheory.Nilpotent.Exp
+public import TauCeti.RingTheory.Nilpotent.Exp.Basic
 
 /-!
 # Finite logarithms of unipotent elements
@@ -265,8 +265,7 @@ its corresponding integral power, including negative powers. -/
 theorem exp_zsmul_log {A : Type*} [Ring A] [Algebra ℚ A]
     (u : Aˣ) (hu : IsNilpotent ((u : A) - 1)) (n : ℤ) :
     IsNilpotent.exp (n • IsNilpotent.log (u : A)) = (u ^ n : Aˣ) := by
-  have he : TauCeti.nilpotentExpUnit (IsNilpotent.isNilpotent_log hu) = u :=
-    Units.ext (by simpa using IsNilpotent.exp_log hu)
+  have he := u.nilpotentExpUnit_log hu
   have h := (TauCeti.expSMulHom ℤ (IsNilpotent.isNilpotent_log hu)).map_zpow
     (Multiplicative.ofAdd (1 : ℤ)) n
   simpa [TauCeti.expSMulHom_apply, he] using congrArg (fun v : Aˣ => (v : A)) h
