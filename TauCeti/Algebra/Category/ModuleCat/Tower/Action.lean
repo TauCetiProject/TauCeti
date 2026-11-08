@@ -17,8 +17,7 @@ The acting group is Mathlib's group of sections of the group tower, and the modu
 limit is the existing `TauCeti.ModuleTower.lim`. Thus this construction applies to
 completed coefficient modules without choosing representatives of quotient classes.
 
-`limAction` is characterized by its projections. An element whose group coordinate is the
-identity acts trivially at that order. Equivariant tower maps remain equivariant
+`limAction` is characterized by its projections. Equivariant tower maps remain equivariant
 on limits. Faithfulness follows from faithful finite actions when the module-limit
 projections are surjective; this last hypothesis is needed to test the finite actions.
 
