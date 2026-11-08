@@ -87,6 +87,14 @@ theorem contMDiff_symm_of_equivariant [LieGroup IG n G]
   apply (e _).injective
   simp only [Equiv.apply_symm_apply, he, smul_division]
 
+omit [TopologicalSpace G] in
+/-- The inverse of an equivalence from `G` that intertwines right multiplication with a right
+action of `G` intertwines them too. -/
+theorem symm_op_smul_of_equivariant {X : Type*} [MulAction Gᵐᵒᵖ X] (e : G ≃ X)
+    (he : ∀ v g : G, e (v * g) = op g • e v) (g : G) (x : X) :
+    e.symm (op g • x) = e.symm x * g := by
+  rw [Equiv.symm_apply_eq, he, Equiv.apply_symm_apply]
+
 variable (G) in
 /-- The diffeomorphism of total spaces determined by a smooth fibrewise equivariant equivalence.
 No separate smoothness hypothesis on the inverse is required. -/

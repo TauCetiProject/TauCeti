@@ -108,6 +108,12 @@ theorem apply_smul (hb : b ∈ e.baseSet) (p : P b) (g : G) :
     e ⟨b, op g • p⟩ = (b, (e ⟨b, p⟩).2 * g) :=
   Prod.ext (e.coe_coe_fst hb) (e.snd_apply_smul hb p g)
 
+/-- The fibrewise inverse of an equivariant trivialization turns right multiplication on the fibre
+coordinate into the right action on a fibre over its base set. -/
+theorem symm_apply_mul [∀ x, Nonempty (P x)] (hb : b ∈ e.baseSet) (v g : G) :
+    e.symm b (v * g) = op g • e.symm b v := by
+  rw [← e.symm_apply_apply_mk hb (op g • e.symm b v), e.snd_apply_smul hb, e.apply_mk_symm hb]
+
 /-- The inverse of an equivariant trivialization sends `(b, g)` to `s • g`, where `s` is the point
 over `b` with fibre coordinate `1`. -/
 theorem symm_apply_eq_smul (hb : b ∈ e.baseSet) (g : G) :

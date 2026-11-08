@@ -279,12 +279,8 @@ theorem exists_equivariant_fiberBundleCoreOfGroupCocycle_coordChange :
       left_inv := fun v ↦ by simp [(e (indexAt b)).apply_mk_symm (hindex' b)]
       right_inv := fun p ↦ (e (indexAt b)).symm_apply_apply_mk (hindex' b) p }
   have hψ_apply (b : B) (v : G) : ψ b v = (e (indexAt b)).symm b v := rfl
-  have hψ (b : B) (v g : G) : ψ b (v * g) = op g • ψ b v := by
-    have hb := hindex' b
-    calc (e (indexAt b)).symm b (v * g)
-        = (e (indexAt b)).symm b (e (indexAt b) ⟨b, op g • (e (indexAt b)).symm b v⟩).2 := by
-          rw [(e (indexAt b)).snd_apply_smul hb, (e (indexAt b)).apply_mk_symm hb]
-      _ = op g • (e (indexAt b)).symm b v := (e (indexAt b)).symm_apply_apply_mk hb _
+  have hψ (b : B) (v g : G) : ψ b (v * g) = op g • ψ b v :=
+    (e (indexAt b)).symm_apply_mul (hindex' b) v g
   refine ⟨ψ, hψ, fun x ↦ ?_⟩
   obtain ⟨⟨b₀, v₀⟩, rfl⟩ := (homeomorph G Z.Fiber).surjective x
   set β := indexAt b₀
@@ -354,10 +350,8 @@ theorem NonabelianCechH1.mk_coordChange_eq_mk_coordChange_iff_exists_equivariant
     PrincipalBundle.contMDiff_symm_of_equivariant (P := Z'.Fiber) (fun b ↦ ψ' b)
       (fun b g p ↦ hψ' b p g) hψ's
   -- The inverses of `ψ` and `ψ'` are equivariant too.
-  have hψsymm (b : B) (g : G) (p : P b) : (ψ b).symm (op g • p) = (ψ b).symm p * g := by
-    rw [Equiv.symm_apply_eq, hψ, Equiv.apply_symm_apply]
-  have hψ'symm (b : B) (g : G) (q : Q b) : (ψ' b).symm (op g • q) = (ψ' b).symm q * g := by
-    rw [Equiv.symm_apply_eq, hψ', Equiv.apply_symm_apply]
+  have hψsymm (b : B) := PrincipalBundle.symm_op_smul_of_equivariant (ψ b) (hψ b)
+  have hψ'symm (b : B) := PrincipalBundle.symm_op_smul_of_equivariant (ψ' b) (hψ' b)
   rw [mk_eq_mk_iff_exists_equivariant hU indexAt hindex]
   constructor
   · rintro ⟨χ, hχ, hχs⟩
