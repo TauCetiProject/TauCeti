@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.W1p.CompactSupport
 public import TauCeti.Analysis.Sobolev.W1p.LevelSet
 
-import Mathlib.MeasureTheory.Function.UnifTight
+public import TauCeti.MeasureTheory.Function.UnifTight
 
 /-!
 # Continuity of positive truncation
@@ -151,24 +151,12 @@ theorem W1p.continuous_posPartAbove (hp : p ≠ ∞) {k : ℝ} (hk : 0 ≤ k) :
     hvitali.2.1.ae_mono (fun n ↦ (Lp.memLp (g n)).aestronglyMeasurable) fun n ↦
       (hnorm n).mono fun x hx ↦ by
         simpa only [ofReal_norm] using ENNReal.ofReal_le_ofReal hx
-  have hut : UnifTight (fun n x ↦ g n x) p (mu.restrict Omega) := by
-    intro ε hε
-    obtain ⟨s, hs, hfinite, hbound⟩ := hvitali.2.2.exists_measurableSet_indicator hε.ne'
-    refine ⟨s, hfinite.ne, fun n ↦ (eLpNorm_mono_ae
-      ((Lp.memLp (g n)).aestronglyMeasurable.indicator hs.compl) ?_).trans (hbound n)⟩
-    filter_upwards [hnorm n] with x hx
-    by_cases hxs : x ∈ sᶜ
-    · simpa only [Set.indicator_of_mem hxs] using hx
-    · simp only [Set.indicator_of_notMem hxs, norm_zero, le_refl]
+  have hut : UnifTight (fun n x ↦ g n x) p (mu.restrict Omega) :=
+    hvitali.2.2.ae_mono (fun n ↦ (Lp.memLp (g n)).aestronglyMeasurable) fun n ↦
+      (hnorm n).mono fun x hx ↦ by
+        simpa only [ofReal_norm] using ENNReal.ofReal_le_ofReal hx
   -- The only discontinuity of the jet truncation disappears on Sobolev level sets.
-  have hzero : ∀ᵐ x ∂mu.restrict Omega,
-      ((u : Sobolev1JetLp mu Omega p) x).fst = k →
-        ((u : Sobolev1JetLp mu Omega p) x).snd = 0 := by
-    filter_upwards [W1p.value_apply_ae u, W1p.gradient_apply_ae u,
-      W1p.gradient_ae_eq_zero_on_level_set hp u k] with x hv hg hz
-    intro hx
-    rw [← hg]
-    exact hz (hv.trans hx)
+  have hzero := W1p.snd_ae_eq_zero_of_fst_eq hp u k
   apply (Lp.tendsto_Lp_iff_tendsto_eLpNorm' _ _).mpr
   apply tendsto_Lp_of_tendsto_ae (Fact.out : 1 ≤ p) hp
     (fun n ↦ (Lp.memLp (g n)).aestronglyMeasurable)
