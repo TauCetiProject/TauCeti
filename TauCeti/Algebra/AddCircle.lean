@@ -522,11 +522,16 @@ theorem toRatAddCircle_natCast (k : ℕ) :
   simpa using toRatAddCircle_intCast n (k : ℤ)
 
 /-- The value of `ZMod.toRatAddCircle` on the canonical representative of a residue class. -/
-theorem toRatAddCircle_apply [NeZero n] (x : ZMod n) :
+theorem toRatAddCircle_apply (x : ZMod n) :
     toRatAddCircle n x = ((x.val / n : ℚ) : AddCircle (1 : ℚ)) := by
-  have hx : ((x.val : ℕ) : ZMod n) = x := ZMod.natCast_rightInverse x
-  conv_lhs => rw [← hx]
-  rw [toRatAddCircle_natCast]
+  rcases eq_or_ne n 0 with rfl | hn
+  · conv_lhs => rw [← ZMod.intCast_zmod_cast x]
+    rw [toRatAddCircle_intCast]
+    simp
+  · have : NeZero n := ⟨hn⟩
+    have hx : ((x.val : ℕ) : ZMod n) = x := ZMod.natCast_rightInverse x
+    conv_lhs => rw [← hx]
+    rw [toRatAddCircle_natCast]
 
 /-- Only the zero residue has integral image in `ℚ/ℤ`. -/
 @[simp]
