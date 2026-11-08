@@ -71,7 +71,7 @@ omit [Fintype ι] in
 private theorem isOpenMap_regroup (hU : ∀ i, IsOpen (U i)) (e : (Σ i, Fin (m i)) ≃ Fin n) :
     IsOpenMap (regroup U m e) := by
   let R : (∀ i, Fin (m i) → U i) ≃ₜ (∀ j : Fin n, ↥(U (e.symm j).1)) :=
-    piSigmaHomeomorph (fun i => ↥(U i)) e
+    piSigmaHomeomorph (fun i _ => ↥(U i)) e
   have hfun : regroup U m e
       = (Pi.map fun j : Fin n => (Subtype.val : ↥(U (e.symm j).1) → α)) ∘ R := by
     funext f j
