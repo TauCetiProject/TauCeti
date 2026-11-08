@@ -30,18 +30,16 @@ namespace TauCeti.Probability
 private def gaussianBetaGasPairs (n : ℕ) : Finset (Fin n × Fin n) :=
   Finset.univ.filter fun p => p.1 < p.2
 
-private lemma gaussianBetaGasWeight_le_prod (n : ℕ) {β : ℝ} (hβ : 0 < β)
-    (x : Fin n → ℝ) :
-    gaussianBetaGasWeight n β x ≤
-      ∏ i : Fin n, ((1 + |x i|) ^ (2 * (β * ((gaussianBetaGasPairs n).card : ℝ))) *
-        exp (-(β * (n : ℝ) / 4) * x i ^ 2)) := by
+/-- Bound a product of powered pairwise distances by a product of coordinate magnitudes. -/
+theorem vandermonde_le_prod (n : ℕ) {β : ℝ} (hβ : 0 ≤ β)
+    (x : Fin n → ℝ) (pairs : Finset (Fin n × Fin n)) :
+    (∏ z ∈ pairs, |x z.1 - x z.2| ^ β) ≤
+      (∏ i : Fin n, (1 + |x i|)) ^ (2 * (β * (pairs.card : ℝ))) := by
   classical
-  let pairs := gaussianBetaGasPairs n
-  let a : ℝ := β * (n : ℝ) / 4
   set p : ℝ := 2 * (β * (pairs.card : ℝ)) with hp_def
   let q : ℝ := ∏ i : Fin n, (1 + |x i|)
   have hqsum : 1 + ∑ i : Fin n, |x i| ≤ q := by
-    simpa [q] using one_add_sum_le_prod (Finset.univ : Finset (Fin n))
+    simpa [q] using Finset.one_add_sum_le_prod_one_add (Finset.univ : Finset (Fin n))
       (fun i => |x i|) (fun _ _ => abs_nonneg _)
   have hqone : 1 ≤ q := by
     have hsum : 0 ≤ ∑ i : Fin n, |x i| :=
@@ -63,28 +61,34 @@ private lemma gaussianBetaGasWeight_le_prod (n : ℕ) {β : ℝ} (hβ : 0 < β)
     have hnonneg : 0 ≤ ∑ i : Fin n, |x i| :=
       Finset.sum_nonneg fun _ _ => abs_nonneg _
     nlinarith
-  have hvander : (∏ z ∈ pairs, |x z.1 - x z.2| ^ β) ≤
-      q ^ p := by
+  have hvander : (∏ z ∈ pairs, |x z.1 - x z.2| ^ β) ≤ q ^ p := by
     calc
       _ ≤ ∏ z ∈ pairs, (q ^ 2) ^ β := by
         apply Finset.prod_le_prod₀
           (fun z hz => by positivity)
-          (fun z hz => Real.rpow_le_rpow (abs_nonneg _) (hpair z hz) hβ.le)
+          (fun z hz => Real.rpow_le_rpow (abs_nonneg _) (hpair z hz) hβ)
       _ = ((q ^ 2) ^ β) ^ (pairs.card : ℕ) := by
         simp [Finset.prod_const]
-      _ = ((q ^ 2) ^ β) ^ (pairs.card : ℝ) := by
-        rw [← Real.rpow_natCast]
-      _ = (q ^ 2) ^ (β * (pairs.card : ℝ)) := by
-        rw [← Real.rpow_mul (by positivity : 0 ≤ q ^ 2)]
       _ = q ^ (2 * (β * (pairs.card : ℝ))) := by
-        have hq2 : q ^ (2 : ℕ) = q ^ ((2 : ℕ) : ℝ) := by
-          symm
-          exact Real.rpow_natCast q 2
-        rw [hq2, ← Real.rpow_mul hqnonneg (↑(2 : ℕ) : ℝ)
-          (β * (pairs.card : ℝ))]
-        congr 1
+        rw [← Real.rpow_natCast, ← Real.rpow_mul (by positivity : 0 ≤ q ^ 2),
+          ← Real.rpow_natCast q 2, ← Real.rpow_mul hqnonneg]
+        norm_num
       _ = q ^ p := by
         rw [hp_def]
+  exact hvander
+
+private lemma gaussianBetaGasWeight_le_prod (n : ℕ) {β : ℝ} (hβ : 0 < β)
+    (x : Fin n → ℝ) :
+    gaussianBetaGasWeight n β x ≤
+      ∏ i : Fin n, ((1 + |x i|) ^ (2 * (β * ((gaussianBetaGasPairs n).card : ℝ))) *
+        exp (-(β * (n : ℝ) / 4) * x i ^ 2)) := by
+  classical
+  let pairs := gaussianBetaGasPairs n
+  let a : ℝ := β * (n : ℝ) / 4
+  let p : ℝ := 2 * (β * (pairs.card : ℝ))
+  let q : ℝ := ∏ i : Fin n, (1 + |x i|)
+  have hvander : (∏ z ∈ pairs, |x z.1 - x z.2| ^ β) ≤ q ^ p :=
+    vandermonde_le_prod n hβ.le x pairs
   have hexp : exp (-(β * (n : ℝ) / 4) * ∑ i : Fin n, x i ^ 2) =
       ∏ i : Fin n, exp (-a * x i ^ 2) := by
     have hdistrib : -(β * (n : ℝ) / 4) * ∑ i : Fin n, x i ^ 2 =
@@ -97,9 +101,7 @@ private lemma gaussianBetaGasWeight_le_prod (n : ℕ) {β : ℝ} (hβ : 0 < β)
   have hpoint : gaussianBetaGasWeight n β x ≤
       ∏ i : Fin n, ((1 + |x i|) ^ p * exp (-a * x i ^ 2)) := by
     rw [gaussianBetaGasWeight_def]
-    -- The local `pairs` abbreviation is the set used in the definition of the weight.
-    change exp (-(β * (n : ℝ) / 4) * ∑ i, x i ^ 2) *
-      (∏ z ∈ pairs, |x z.1 - x z.2| ^ β) ≤ _
+    rw [show (Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2) = pairs from rfl]
     rw [hexp]
     calc
       _ ≤ (∏ i : Fin n, exp (-a * x i ^ 2)) * q ^ p := by
@@ -142,20 +144,17 @@ theorem integrable_gaussianBetaGasWeight (n : ℕ) {β : ℝ} (hβ : 0 < β) :
 /-- The Gaussian beta-gas partition function is strictly positive. -/
 theorem gaussianBetaGasPartitionFunction_pos (n : ℕ) {β : ℝ} (hβ : 0 < β) :
     0 < gaussianBetaGasPartitionFunction n β := by
-  by_cases hn : n = 0
-  · subst n
-    simp [gaussianBetaGasPartitionFunction_def, gaussianBetaGasWeight_def]
-  · let x₀ : Fin n → ℝ := fun i => (i : ℝ)
-    have hx₀ : 0 < gaussianBetaGasWeight n β x₀ := by
-      apply gaussianBetaGasWeight_pos
-      intro i j hij
-      dsimp [x₀] at hij
-      exact Fin.ext (by exact_mod_cast hij)
-    rw [gaussianBetaGasPartitionFunction_def]
-    exact integral_pos_of_integrable_nonneg_ne_zero
-      (continuous_gaussianBetaGasWeight n hβ.le)
-      (integrable_gaussianBetaGasWeight n hβ)
-      (gaussianBetaGasWeight_nonneg n β) hx₀.ne'
+  let x₀ : Fin n → ℝ := fun i => (i : ℝ)
+  have hx₀ : 0 < gaussianBetaGasWeight n β x₀ := by
+    apply gaussianBetaGasWeight_pos
+    intro i j hij
+    dsimp [x₀] at hij
+    exact Fin.ext (by exact_mod_cast hij)
+  rw [gaussianBetaGasPartitionFunction_def]
+  exact integral_pos_of_integrable_nonneg_ne_zero
+    (continuous_gaussianBetaGasWeight n hβ.le)
+    (integrable_gaussianBetaGasWeight n hβ)
+    (gaussianBetaGasWeight_nonneg n β) hx₀.ne'
 
 /-- The Gaussian beta-gas density is integrable for positive inverse temperature. -/
 theorem integrable_gaussianBetaGasDensity (n : ℕ) {β : ℝ} (hβ : 0 < β) :
@@ -177,12 +176,31 @@ theorem integral_gaussianBetaGasDensity (n : ℕ) {β : ℝ} (hβ : 0 < β) :
 /-- The normalized Gaussian beta-gas measure has total mass one. -/
 theorem isProbabilityMeasure_gaussianBetaGasMeasure (n : ℕ) {β : ℝ} (hβ : 0 < β) :
     IsProbabilityMeasure (gaussianBetaGasMeasure n β) := by
-  refine ⟨?_⟩
-  rw [gaussianBetaGasMeasure_def, withDensity_apply _ MeasurableSet.univ,
-    Measure.restrict_univ]
-  rw [← ofReal_integral_eq_lintegral_ofReal (integrable_gaussianBetaGasDensity n hβ)
-    (ae_of_all _ (gaussianBetaGasDensity_nonneg n β))]
-  rw [integral_gaussianBetaGasDensity n hβ]
-  norm_num
+  rw [gaussianBetaGasMeasure_eq_betaGasMeasure]
+  apply isProbabilityMeasure_betaGasMeasure
+  · rw [← gaussianBetaGasWeight_eq_betaGasWeight]
+    exact integrable_gaussianBetaGasWeight n hβ
+  · rw [← gaussianBetaGasPartitionFunction_eq_betaGasPartitionFunction]
+    exact gaussianBetaGasPartitionFunction_pos n hβ
+
+/-- Evaluate the Gaussian beta-gas measure on a measurable set. -/
+theorem gaussianBetaGasMeasure_apply (n : ℕ) {β : ℝ} (hβ : 0 < β)
+    {s : Set (Fin n → ℝ)} (hs : MeasurableSet s) :
+    gaussianBetaGasMeasure n β s =
+      ENNReal.ofReal (∫ x in s, gaussianBetaGasDensity n β x
+        ∂Measure.pi fun _ : Fin n => (volume : Measure ℝ)) := by
+  rw [gaussianBetaGasMeasure_eq_betaGasMeasure, gaussianBetaGasDensity_eq_betaGasDensity]
+  apply betaGasMeasure_apply n β _ hs
+  rw [← gaussianBetaGasWeight_eq_betaGasWeight]
+  exact integrable_gaussianBetaGasWeight n hβ
+
+/-- Integrate a function against the Gaussian beta-gas measure. -/
+theorem integral_gaussianBetaGasMeasure {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (n : ℕ) {β : ℝ} (hβ : 0 ≤ β) (f : (Fin n → ℝ) → E) :
+    ∫ x, f x ∂gaussianBetaGasMeasure n β =
+      ∫ x, gaussianBetaGasDensity n β x • f x
+        ∂Measure.pi fun _ : Fin n => (volume : Measure ℝ) := by
+  rw [gaussianBetaGasMeasure_eq_betaGasMeasure, gaussianBetaGasDensity_eq_betaGasDensity]
+  exact integral_betaGasMeasure n hβ (V := fun t => t ^ 2 / 2) (by fun_prop) f
 
 end TauCeti.Probability

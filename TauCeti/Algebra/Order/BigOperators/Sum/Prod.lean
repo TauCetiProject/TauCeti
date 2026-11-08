@@ -16,11 +16,11 @@ The sum of nonnegative terms plus one is bounded by the product of those terms p
 
 public section
 
-namespace TauCeti
+namespace Finset
 
 /-- A sum of nonnegative terms plus one is bounded by the product of those terms plus one. -/
-theorem one_add_sum_le_prod {ι R : Type*} [CommSemiring R] [PartialOrder R] [IsOrderedRing R]
-    (s : Finset ι) (f : ι → R)
+theorem one_add_sum_le_prod_one_add {ι R : Type*} [CommSemiring R] [PartialOrder R]
+    [IsOrderedRing R] (s : Finset ι) (f : ι → R)
     (hf : ∀ i ∈ s, 0 ≤ f i) :
     1 + ∑ i ∈ s, f i ≤ ∏ i ∈ s, (1 + f i) := by
   classical
@@ -41,4 +41,4 @@ theorem one_add_sum_le_prod {ι R : Type*} [CommSemiring R] [PartialOrder R] [Is
       _ ≤ (1 + f i) * ∏ j ∈ s, (1 + f j) :=
         mul_le_mul_of_nonneg_left ih' (add_nonneg zero_le_one hi0)
 
-end TauCeti
+end Finset
