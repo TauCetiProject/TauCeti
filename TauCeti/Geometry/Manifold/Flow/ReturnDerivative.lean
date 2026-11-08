@@ -53,13 +53,17 @@ base point on the orbit. Since the `k`-fold iterate of a return branch is the re
 
 On the tangent space of the source section the derivative of the reverse transition is a left
 inverse of `Dh` (`TauCeti.mfderiv_flowTransition_neg_apply_mfderiv_flowTransition`). So `Dh`
-restricts to an isomorphism between the generalized eigenspaces of `DP_p` and `DP_q` for every
-nonzero eigenvalue and every exponent
+restricts to an isomorphism between the tangent spaces `ker dg_p` and `ker dg'_q` of the sections,
+which conjugates the normal return derivatives
+(`TauCeti.exists_linearEquiv_comp_normalReturnDerivative`). Hence the characteristic polynomial
+and the eigenvalues of the normal return derivative, in particular its eigenvalue-one test, do not
+depend on the section or the base point (`TauCeti.charpoly_normalReturnDerivative_eq`,
+`TauCeti.hasEigenvalue_normalReturnDerivative_iff_of_flowOf`). As the generalized eigenvectors of
+`DP_p` for nonzero eigenvalues lie in `ker dg_p`, `Dh` also restricts to an isomorphism between
+the generalized eigenspaces of `DP_p` and `DP_q` for every nonzero eigenvalue and every exponent
 (`TauCeti.exists_linearEquiv_genEigenspace_returnDerivative`): the geometric and algebraic
 multiplicities of the nonzero eigenvalues do not depend on the section or the base point
-(`TauCeti.finrank_genEigenspace_returnDerivative_eq`), and neither do the nonzero eigenvalues of
-the normal return derivative, in particular its eigenvalue-one test
-(`TauCeti.hasEigenvalue_normalReturnDerivative_iff_of_flowOf`).
+(`TauCeti.finrank_genEigenspace_returnDerivative_eq`).
 
 As in `TauCeti.Geometry.Manifold.Flow.Transition`, `T₀` need not be the least period, and the
 return branch need not be the first return to the section.
@@ -90,14 +94,18 @@ return branch need not be the first return to the section.
   map is independent of the section and the base point.
 * `TauCeti.hasEigenvalue_returnDerivative_iff`: so are its eigenvalues.
 * `TauCeti.charpoly_returnDerivative_pow_eq`: the same for every power.
+* `TauCeti.exists_linearEquiv_comp_normalReturnDerivative`: transitions conjugate the normal
+  return derivatives.
+* `TauCeti.charpoly_normalReturnDerivative_eq`: the characteristic polynomial of the normal return
+  derivative is independent of the section and the base point.
 * `TauCeti.exists_linearEquiv_genEigenspace_returnDerivative`,
   `TauCeti.finrank_genEigenspace_returnDerivative_eq`: the nonzero generalized eigenspaces of
   linearized return maps at two points of a periodic orbit are isomorphic;
   `TauCeti.exists_linearEquiv_eigenspace_returnDerivative` and
   `TauCeti.finrank_eigenspace_returnDerivative_eq` are the same for eigenspaces.
-* `TauCeti.hasEigenvalue_normalReturnDerivative_iff_of_flowOf`: the nonzero eigenvalues of the
-  normal return derivative, and so its eigenvalue-one test, do not depend on the section or the
-  base point.
+* `TauCeti.hasEigenvalue_normalReturnDerivative_iff_of_flowOf`: the eigenvalues of the normal
+  return derivative, and so its eigenvalue-one test, do not depend on the section or the base
+  point.
 * `TauCeti.returnDerivative_natCast_mul`: the linearized return map of an iterate.
 
 ## References
@@ -471,6 +479,78 @@ theorem returnDerivative_comp_mfderiv_flowTransition :
   rw [add_comm] at hp₀
   exact LinearMap.ext fun w ↦ (DFunLike.congr_fun hq₀ w).trans (DFunLike.congr_fun hp₀ w).symm
 
+/-- **Transitions conjugate the normal return derivatives.** If the flow carries `p` to `q` at time
+`T` and `p` returns to itself at time `T₀`, the derivative `dh` of the transition between
+transverse sections through `p` and through `q` restricts to an isomorphism `e` from the tangent
+space `ker dg_p` of the first section onto the tangent space `ker dg'_q` of the second, and `e`
+conjugates the normal return derivatives at time `T₀`: `N_q ∘ e = e ∘ N_p`. -/
+theorem exists_linearEquiv_comp_normalReturnDerivative
+    {h : LinearMap.range (returnDerivative v g T₀ p) ≤
+      LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ)}
+    {h' : LinearMap.range (returnDerivative v g' T₀ q) ≤
+      LinearMap.ker (mvfderiv I g' q : TangentSpace I q →ₗ[ℝ] ℝ)} :
+    ∃ e : LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ) ≃ₗ[ℝ]
+        LinearMap.ker (mvfderiv I g' q : TangentSpace I q →ₗ[ℝ] ℝ),
+      (∀ w, (e w : TangentSpace I q) = mfderiv I I (flowTransition v g' T p) p w) ∧
+        normalReturnDerivative v g' T₀ q h' ∘ₗ e.toLinearMap =
+          e.toLinearMap ∘ₗ normalReturnDerivative v g T₀ p h := by
+  have hneg : (-T, q) ∈ flowDomain v := hq ▸ neg_mem_flowDomain_flowOf hv hT
+  have hback : flowOf v (-T) q = p := hq ▸ flowOf_neg_flowOf hv hT
+  -- The derivatives of the transition and of the reverse transition take values in the tangent
+  -- spaces of the target sections.
+  have hmaps (w : TangentSpace I p) :
+      mvfderiv I g' q (mfderiv I I (flowTransition v g' T p) p w) = 0 := by
+    have h := DFunLike.congr_fun
+      (mvfderiv_comp_mfderiv_flowTransition hv hT (by rwa [hq]) (by rwa [hq])) w
+    rw [hq] at h
+    exact h
+  have hmaps' (u : TangentSpace I q) :
+      mvfderiv I g p (mfderiv I I (flowTransition v g (-T) q) q u) = 0 := by
+    have h := DFunLike.congr_fun
+      (mvfderiv_comp_mfderiv_flowTransition hv hneg (by rwa [hback]) (by rwa [hback])) u
+    rw [hback] at h
+    exact h
+  let f : LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ) →ₗ[ℝ]
+      LinearMap.ker (mvfderiv I g' q : TangentSpace I q →ₗ[ℝ] ℝ) :=
+    (show TangentSpace I p →L[ℝ] TangentSpace I q from
+      mfderiv I I (flowTransition v g' T p) p).toLinearMap.restrict fun w _ ↦ hmaps w
+  let f' : LinearMap.ker (mvfderiv I g' q : TangentSpace I q →ₗ[ℝ] ℝ) →ₗ[ℝ]
+      LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ) :=
+    -- As in `returnDerivative_comp_mfderiv_flowTransition`, the derivative lands in the tangent
+    -- space at `flowTransition v g (-T) q q`, which is `p` only propositionally; it is read as a
+    -- map into the tangent space at `p`, which is the same `E`.
+    (show TangentSpace I q →L[ℝ] TangentSpace I p from
+      mfderiv I I (flowTransition v g (-T) q) q).toLinearMap.restrict fun u _ ↦ hmaps' u
+  refine ⟨LinearEquiv.ofLinearMap f f' ?_ ?_, fun w ↦ rfl, ?_⟩
+  · refine LinearMap.ext fun u ↦ Subtype.ext ?_
+    exact mfderiv_flowTransition_apply_mfderiv_flowTransition_of_add_eq_zero hv hneg hback hg'
+      hg'v hg hgv (neg_add_cancel T) u.2
+  · refine LinearMap.ext fun w ↦ Subtype.ext ?_
+    exact mfderiv_flowTransition_neg_apply_mfderiv_flowTransition hv hT hq hg hgv hg' hg'v w.2
+  · refine LinearMap.ext fun w ↦ Subtype.ext ?_
+    exact LinearMap.congr_fun
+      (returnDerivative_comp_mfderiv_flowTransition hv hT hq hP hp hg hgv hg' hg'v) w
+
+/-- **The characteristic polynomial of the normal return derivative does not depend on the section
+or the base point.** If the flow carries `p` to `q` at time `T` and `p` returns to itself at time
+`T₀`, the normal return derivatives at time `T₀` of transverse sections through `p` and through `q`
+have the same characteristic polynomial. -/
+theorem charpoly_normalReturnDerivative_eq
+    {h : LinearMap.range (returnDerivative v g T₀ p) ≤
+      LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ)}
+    {h' : LinearMap.range (returnDerivative v g' T₀ q) ≤
+      LinearMap.ker (mvfderiv I g' q : TangentSpace I q →ₗ[ℝ] ℝ)} :
+    (normalReturnDerivative v g T₀ p h).charpoly =
+      (normalReturnDerivative v g' T₀ q h').charpoly := by
+  obtain ⟨e, -, he⟩ :=
+    exists_linearEquiv_comp_normalReturnDerivative hv hT hq hP hp hg hgv hg' hg'v
+      (h := h) (h' := h')
+  have hconj : e.conj (normalReturnDerivative v g T₀ p h) = normalReturnDerivative v g' T₀ q h' :=
+    LinearMap.ext fun u ↦ by
+      rw [LinearEquiv.conj_apply_apply]
+      simpa using (LinearMap.congr_fun he (e.symm u)).symm
+  rw [← hconj, LinearEquiv.charpoly_conj]
+
 /-- **The nonzero generalized eigenspaces of linearized return maps do not depend on the section or
 the base point.** If the flow carries `p` to `q` at time `T` and `p` returns to itself at time
 `T₀`, then for every `μ ≠ 0` and every `k : ℕ∞` the generalized eigenspaces for `μ` and exponent
@@ -481,31 +561,36 @@ theorem exists_linearEquiv_genEigenspace_returnDerivative {μ : ℝ} (hμ : μ �
         (returnDerivative v g' T₀ q).genEigenspace μ k,
       ∀ w, (e w : TangentSpace I q) = mfderiv I I (flowTransition v g' T p) p w := by
   obtain ⟨hQ, hq'⟩ := hq ▸ flowOf_flowOf_of_flowOf_eq hv hT hP hp
-  have hneg : (-T, q) ∈ flowDomain v := hq ▸ neg_mem_flowDomain_flowOf hv hT
-  have hback : flowOf v (-T) q = p := hq ▸ flowOf_neg_flowOf hv hT
-  let f : (returnDerivative v g T₀ p).genEigenspace μ k →ₗ[ℝ]
-      (returnDerivative v g' T₀ q).genEigenspace μ k :=
-    (show TangentSpace I p →L[ℝ] TangentSpace I q from
-      mfderiv I I (flowTransition v g' T p) p).toLinearMap.restrict fun _ hw ↦
-        Module.End.mapsTo_genEigenspace_of_comp _ (returnDerivative_comp_mfderiv_flowTransition hv
-          hT hq hP hp hg hgv hg' hg'v) μ k hw
-  let f' : (returnDerivative v g' T₀ q).genEigenspace μ k →ₗ[ℝ]
-      (returnDerivative v g T₀ p).genEigenspace μ k :=
-    -- As in `returnDerivative_comp_mfderiv_flowTransition`, the derivative lands in the tangent
-    -- space at `flowTransition v g (-T) q q`, which is `p` only propositionally; it is read as a
-    -- map into the tangent space at `p`, which is the same `E`.
-    (show TangentSpace I q →L[ℝ] TangentSpace I p from
-      mfderiv I I (flowTransition v g (-T) q) q).toLinearMap.restrict fun _ hw ↦
-        Module.End.mapsTo_genEigenspace_of_comp _ (returnDerivative_comp_mfderiv_flowTransition hv
-          hneg hback hQ hq' hg' hg'v hg hgv) μ k hw
-  refine ⟨LinearEquiv.ofLinearMap f f' ?_ ?_, fun w ↦ rfl⟩
-  · refine LinearMap.ext fun u ↦ Subtype.ext ?_
-    exact mfderiv_flowTransition_apply_mfderiv_flowTransition_of_add_eq_zero hv hneg hback hg'
-      hg'v hg hgv (neg_add_cancel T)
-      (genEigenspace_returnDerivative_le_ker hv hQ hq' hg' hg'v hμ k u.2)
-  · refine LinearMap.ext fun w ↦ Subtype.ext ?_
-    exact mfderiv_flowTransition_neg_apply_mfderiv_flowTransition hv hT hq hg hgv hg' hg'v
-      (genEigenspace_returnDerivative_le_ker hv hP hp hg hgv hμ k w.2)
+  have hK := range_returnDerivative_le_ker hv hP hp hg hgv
+  have hK' := range_returnDerivative_le_ker hv hQ hq' hg' hg'v
+  obtain ⟨e, he, hconj⟩ :=
+    exists_linearEquiv_comp_normalReturnDerivative hv hT hq hP hp hg hgv hg' hg'v
+      (h := hK) (h' := hK')
+  -- For `μ ≠ 0` the generalized eigenspaces of a linearized return map lie in the tangent space of
+  -- the section, where they are those of the normal return derivative.
+  have hG {x : M} {f : M → ℝ} (hR : LinearMap.range (returnDerivative v f T₀ x) ≤
+      LinearMap.ker (mvfderiv I f x : TangentSpace I x →ₗ[ℝ] ℝ))
+      (hle : (returnDerivative v f T₀ x).genEigenspace μ k ≤
+        LinearMap.ker (mvfderiv I f x : TangentSpace I x →ₗ[ℝ] ℝ)) :
+      (returnDerivative v f T₀ x).genEigenspace μ k =
+        ((normalReturnDerivative v f T₀ x hR).genEigenspace μ k).map
+          (LinearMap.ker (mvfderiv I f x : TangentSpace I x →ₗ[ℝ] ℝ)).subtype := by
+    rw [normalReturnDerivative, ← Submodule.inf_genEigenspace, inf_eq_right.2 hle]
+  -- The conjugacy `e` carries the generalized eigenspaces of the normal return derivatives onto
+  -- each other.
+  have hmap : ((normalReturnDerivative v g T₀ p hK).genEigenspace μ k).map e.toLinearMap =
+      (normalReturnDerivative v g' T₀ q hK').genEigenspace μ k := by
+    refine le_antisymm (Module.End.map_genEigenspace_le _ hconj μ k) ?_
+    rw [Submodule.map_equiv_eq_comap_symm, ← Submodule.map_le_iff_le_comap]
+    refine Module.End.map_genEigenspace_le _ (LinearMap.ext fun u ↦ e.injective ?_) μ k
+    simpa using (LinearMap.congr_fun hconj (e.symm u)).symm
+  have hGp := hG hK (genEigenspace_returnDerivative_le_ker hv hP hp hg hgv hμ k)
+  have hGq := hG hK' (genEigenspace_returnDerivative_le_ker hv hQ hq' hg' hg'v hμ k)
+  -- Apart from `e`, every step of the composite keeps the underlying vector, so the composite
+  -- sends `w` to `e w`, which is `dh w` by `he`.
+  exact ⟨(LinearEquiv.ofEq _ _ hGp).trans <| (Submodule.equivSubtypeMap _ _).symm.trans <|
+    (e.ofSubmodules _ _ hmap).trans <| (Submodule.equivSubtypeMap _ _).trans <|
+      LinearEquiv.ofEq _ _ hGq.symm, fun w ↦ he _⟩
 
 /-- **The nonzero eigenspaces of linearized return maps do not depend on the section or the
 base point.** If the flow carries `p` to `q` at time `T` and `p` returns to itself at time `T₀`,
@@ -534,19 +619,19 @@ theorem finrank_eigenspace_returnDerivative_eq {μ : ℝ} (hμ : μ ≠ 0) :
       Module.finrank ℝ ((returnDerivative v g' T₀ q).eigenspace μ) :=
   finrank_genEigenspace_returnDerivative_eq hv hT hq hP hp hg hgv hg' hg'v hμ 1
 
-/-- **The nonzero eigenvalues of the normal return derivative do not depend on the section or the
-base point.** For `μ ≠ 0`, the normal return derivative at time `T₀` of a transverse section through
-`p` has eigenvalue `μ` exactly when that of a transverse section through any point `q` of the orbit
-does. For `μ = 1` this is the eigenvalue-one test. -/
+/-- **The eigenvalues of the normal return derivative do not depend on the section or the base
+point.** The normal return derivative at time `T₀` of a transverse section through `p` has
+eigenvalue `μ` exactly when that of a transverse section through any point `q` of the orbit does.
+For `μ = 1` this is the eigenvalue-one test. -/
 theorem hasEigenvalue_normalReturnDerivative_iff_of_flowOf
     {h : LinearMap.range (returnDerivative v g T₀ p) ≤
       LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ)}
     {h' : LinearMap.range (returnDerivative v g' T₀ q) ≤
-      LinearMap.ker (mvfderiv I g' q : TangentSpace I q →ₗ[ℝ] ℝ)} {μ : ℝ} (hμ : μ ≠ 0) :
+      LinearMap.ker (mvfderiv I g' q : TangentSpace I q →ₗ[ℝ] ℝ)} (μ : ℝ) :
     (normalReturnDerivative v g T₀ p h).HasEigenvalue μ ↔
       (normalReturnDerivative v g' T₀ q h').HasEigenvalue μ := by
-  rw [hasEigenvalue_normalReturnDerivative_iff hμ, hasEigenvalue_normalReturnDerivative_iff hμ]
-  exact hasEigenvalue_returnDerivative_iff hv hT hq hP hp hg hgv hg' hg'v μ
+  rw [Module.End.hasEigenvalue_iff_isRoot_charpoly, Module.End.hasEigenvalue_iff_isRoot_charpoly,
+    charpoly_normalReturnDerivative_eq hv hT hq hP hp hg hgv hg' hg'v]
 
 end Return
 
