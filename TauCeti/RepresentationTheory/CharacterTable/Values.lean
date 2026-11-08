@@ -223,13 +223,21 @@ end Complex
 section ComplexDivisionMonoid
 
 variable {G : Type v} {V : Type w} [DivisionMonoid G] [AddCommGroup V] [Module ℂ V]
-  [FiniteDimensional ℂ V]
 
 /-- **Over `ℂ`, inversion conjugates character values**: if `g ^ n = 1` with `n ≠ 0`, then
 `conj (χ g) = χ g⁻¹`. The eigenvalues of `ρ g` are `n`-th roots of unity, so conjugating them
 inverts them, and `ρ g⁻¹` is the inverse of `ρ g`. -/
 theorem conj_char_eq_char_inv (ρ : Representation ℂ G V) {g : G} {n : ℕ} (hn : n ≠ 0)
     (hg : g ^ n = 1) : (starRingEnd ℂ) (ρ.character g) = ρ.character g⁻¹ := by
+  by_cases hV : FiniteDimensional ℂ V
+  swap
+  · have H : ¬∃ s : Finset V, Nonempty (Module.Basis s ℂ V) := by
+      rintro ⟨s, ⟨b⟩⟩
+      exact hV (Module.Finite.of_basis b)
+    have h0 (x : G) : ρ.character x = 0 := by
+      rw [Representation.character, LinearMap.trace, dite_eq_right H]
+      rfl
+    rw [h0, h0, map_zero]
   have hf : ρ g ^ n = 1 := by rw [← map_pow, hg, map_one]
   have hinv : g⁻¹ = g ^ (n - 1) :=
     inv_eq_of_mul_eq_one_right (by rw [mul_pow_sub_one hn, hg])
@@ -240,7 +248,7 @@ end ComplexDivisionMonoid
 
 section ComplexGroup
 
-variable {G : Type v} {V : Type w} [Group G] [AddCommGroup V] [Module ℂ V] [FiniteDimensional ℂ V]
+variable {G : Type v} {V : Type w} [Group G] [AddCommGroup V] [Module ℂ V]
 
 /-- **Over `ℂ`, inversion conjugates the character values of a finite group.** -/
 @[simp]
@@ -305,10 +313,12 @@ noncomputable def intClassFunction (V : FDRep ℚ G) : TauCeti.ClassFunction ℤ
 theorem intClassFunction_apply (V : FDRep ℚ G) (g : G) :
     (FDRep.intClassFunction V).1 g = FDRep.intCharacter V g := (rfl)
 
+omit [Finite G] in
 /-- Conjugate elements have the same integer character. -/
 theorem intCharacter_eq_of_isConj (V : FDRep ℚ G) {g h : G} (hgh : IsConj g h) :
-    FDRep.intCharacter V g = FDRep.intCharacter V h :=
-  TauCeti.ClassFunction.eq_of_isConj (FDRep.intClassFunction V) hgh
+    FDRep.intCharacter V g = FDRep.intCharacter V h := by
+  obtain ⟨x, rfl⟩ := isConj_iff.mp hgh
+  rw [intCharacter_def, intCharacter_def, FDRep.char_conj]
 
 /-- **The integer character at the identity is the degree.** -/
 @[simp]
