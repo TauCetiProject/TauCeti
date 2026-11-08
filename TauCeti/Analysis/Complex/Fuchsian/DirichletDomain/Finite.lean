@@ -63,26 +63,6 @@ theorem isBounded_dirichletDomain_diff_iUnion_horodisc (p : ℍ) (D : ι → Γ.
     exact Or.inr (mem_iUnion.mpr ⟨i, ⟨⟨hz, hi⟩, fun h ↦ hzB (mem_iUnion.mpr ⟨i, h⟩)⟩⟩)
   · exact Or.inl ⟨hz, hzA⟩
 
-variable {Γ} in
-/-- Finitely many distance inequalities `dist z p ≤ dist z (g • p)` define the same set as finitely
-many closed geodesic half-planes: the elements fixing the centre `p` impose no condition, and for
-the others the inequality is the closure of the half-plane left of the perpendicular bisector. -/
-theorem exists_finset_iInter_dist_le_eq_iInter_closure_leftHalfPlane (p : ℍ) (s : Finset Γ) :
-    ∃ s' : Finset Γ, (∀ g ∈ s', p ≠ g • p) ∧
-      ⋂ g ∈ s, {z : ℍ | dist z p ≤ dist z (g • p)} =
-        ⋂ g ∈ s', _root_.closure (leftHalfPlane (perpBisector p (g • p))) := by
-  classical
-  refine ⟨s.filter (fun g ↦ p ≠ g • p), fun g hg ↦ (Finset.mem_filter.mp hg).2, ?_⟩
-  ext z
-  simp only [mem_iInter, Finset.mem_filter]
-  constructor
-  · intro hz g hg
-    exact (mem_closure_leftHalfPlane_perpBisector_iff hg.2 z).mpr (hz g hg.1)
-  · intro hz g hg
-    by_cases hgp : p = g • p
-    · simp [← hgp]
-    · exact (mem_closure_leftHalfPlane_perpBisector_iff hgp z).mp (hz g ⟨hg, hgp⟩)
-
 variable [DiscreteTopology Γ]
 
 /-- If a Dirichlet domain has a bounded truncation outside finitely many cusp horodiscs of
@@ -138,7 +118,8 @@ theorem exists_finset_dirichletDomain_eq_iInter_closure_leftHalfPlane_of_isBound
           rw [ht i (B i) (le_max_right _ _)]
           exact ⟨hzi, hi⟩
         exact hzD.1
-  obtain ⟨s', hs', hss'⟩ := exists_finset_iInter_dist_le_eq_iInter_closure_leftHalfPlane p s
+  obtain ⟨s', hs', hss'⟩ :=
+    UpperHalfPlane.exists_finset_iInter_dist_le_eq_iInter_closure_leftHalfPlane p s
   exact ⟨s', hs', heq.trans hss'⟩
 
 end Subgroup
