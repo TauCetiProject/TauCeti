@@ -23,8 +23,6 @@ The formulas include zero trials and probability vectors on simplex faces.
 * `TauCeti.Probability.support_multinomialMeasure`: exact native support.
 * `TauCeti.Probability.support_map_multinomialMeasure`: support after applying arbitrary labels
   in a T₁ Borel space; labels need not be injective.
-* `TauCeti.Probability.support_map_multinomialToEuclidean_multinomialMeasure`: exact Euclidean
-  support.
 
 ## References
 
@@ -51,7 +49,8 @@ theorem support_multinomialMeasure (n : ℕ) (p : StdSimplex NNReal ι) :
   simp only [multinomialMeasure_singleton_ne_zero_iff]
 
 /-- Applying labels to multinomial counts transports their finite support exactly, even when
-several count vectors have the same label. No closure of the image is needed. -/
+several count vectors have the same label. No closure of the image is needed.
+Taking `f := multinomialToEuclidean` gives the exact support of the Euclidean cast law. -/
 @[simp]
 theorem support_map_multinomialMeasure {E : Type*} [TopologicalSpace E] [T1Space E]
     [MeasurableSpace E] [BorelSpace E] (n : ℕ) (p : StdSimplex NNReal ι)
@@ -68,14 +67,5 @@ theorem support_map_multinomialMeasure {E : Type*} [TopologicalSpace E] [T1Space
   rw [Measure.support_map_eq_closure_image _ (multinomialMeasure n p).support_mem_ae
     continuous_of_discreteTopology, support_multinomialMeasure,
     (hfinite.image f).isClosed.closure_eq]
-
-/-- The Euclidean multinomial law is supported on exactly the admissible integer count vectors.
-Zero-probability cells remain identically zero, including on the topological support. -/
-theorem support_map_multinomialToEuclidean_multinomialMeasure (n : ℕ)
-    (p : StdSimplex NNReal ι) :
-    ((multinomialMeasure n p).map multinomialToEuclidean).support =
-      multinomialToEuclidean ''
-        {k | (∑ i, k i = n) ∧ ∀ i, k i ≠ 0 → p.weights i ≠ 0} :=
-  support_map_multinomialMeasure n p multinomialToEuclidean
 
 end TauCeti.Probability
