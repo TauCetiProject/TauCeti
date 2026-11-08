@@ -46,8 +46,7 @@ theorem exists_contDiff_norm_eq_one_hasDerivAt {v w : E} (hv : ‖v‖ = 1)
       ⟨u, mem_sphere_zero_iff_norm.mpr hu⟩ hvu (‖w‖ * t)
   · have hphase : HasDerivAt (fun t : ℝ ↦ ‖w‖ * t) ‖w‖ 0 := by
       simpa only [mul_one] using (hasDerivAt_id' 0).const_mul ‖w‖
-    have hd := (hphase.cos.smul_const v).add (hphase.sin.smul_const u)
-    change HasDerivAt c _ 0 at hd
-    simpa [u, smul_smul, hnorm] using hd
+    have hd := (hphase.cos.smul_const v).fun_add (hphase.sin.smul_const u)
+    simpa [c, u, smul_smul, hnorm] using hd
 
 end TauCeti
