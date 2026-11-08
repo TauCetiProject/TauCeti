@@ -203,22 +203,22 @@ theorem monodromyGroup_cyclicPowTriple :
 theorem isConnected_cyclicPowTriple (hn : n ≠ 0) : (cyclicPowTriple n k).IsConnected :=
   isConnected_iff.mpr ⟨hn, isPretransitive_of_finRotate_mem (σ0_mem_monodromyGroup _)⟩
 
-/-- In nonzero degree, each component of `cyclicPowTriple n k` is a single `n`-cycle exactly
-when `k` and `k + 1` are coprime to `n`. -/
-@[simp] theorem cycleData_cyclicPowTriple_iff (hn : n ≠ 0) :
+/-- Each component of `cyclicPowTriple n k` is a single `n`-cycle exactly when `k` and `k + 1`
+are coprime to `n`. -/
+@[simp] theorem cycleData_cyclicPowTriple_iff :
     (cyclicPowTriple n k).cycleData = ({n}, {n}, {n}) ↔
       k.Coprime n ∧ (k + 1).Coprime n := by
+  by_cases hn : n = 0
+  · subst hn
+    simp [Prod.ext_iff, cycleData_σ0]
+    omega
   simp [Prod.ext_iff, parts_partition_finRotate hn, hn]
 
 /-- Each component of `cyclicPowTriple n k` is a single `n`-cycle when `k` and `k + 1` are
 coprime to `n`. -/
 theorem cycleData_cyclicPowTriple (hk : k.Coprime n) (hk' : (k + 1).Coprime n) :
     (cyclicPowTriple n k).cycleData = ({n}, {n}, {n}) := by
-  have hn : n ≠ 0 := by
-    rintro rfl
-    rw [Nat.coprime_zero_right] at hk hk'
-    omega
-  exact (cycleData_cyclicPowTriple_iff hn).mpr ⟨hk, hk'⟩
+  exact cycleData_cyclicPowTriple_iff.mpr ⟨hk, hk'⟩
 
 /-! ### A disconnected triple, and an isomorphic pair -/
 
