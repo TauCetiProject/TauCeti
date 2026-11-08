@@ -37,15 +37,20 @@ controls the dimensions of the homology of `(X, B)` by those of `(A, B)` and `(X
   (`TauCeti.TopTriple.sum_range_neg_one_pow_mul_finrank_singularHomology_totalPair_eq`).
 
 Along a filtration `A 0 ⊆ A 1 ⊆ ⋯ ⊆ A (N + 1)` whose steps have finite-dimensional relative
-homology, so does `(A (N + 1), A 0)` (`TauCeti.finite_singularHomology_ofInclusion_of_monotone`),
-and the defect `∑ⱼ Sₙ(A (j + 1), A j) - Sₙ(A (N + 1), A 0)` of subadditivity is the sum of the
-ranks of the connecting maps `Hₙ₊₁(A (j + 2), A (j + 1)) ⟶ Hₙ(A (j + 1), A 0)` of the triples
+homology in degree `i`, so does `(A (N + 1), A 0)`
+(`TauCeti.finite_singularHomology_ofInclusion_of_monotone`). When the steps have
+finite-dimensional relative homology in every degree, the defect
+`∑ⱼ Sₙ(A (j + 1), A j) - Sₙ(A (N + 1), A 0)` of subadditivity is the sum of the ranks of the
+connecting maps `Hₙ₊₁(A (j + 2), A (j + 1)) ⟶ Hₙ(A (j + 1), A 0)` of the triples
 `(A (j + 2), A (j + 1), A 0)` (`TauCeti.sum_range_finrank_range_singularHomologyδ_eq`).
 
 Milnor derives the Morse inequalities from these two subadditivity properties, applied to the
-triples of sublevels of a Morse function; along a filtration by sublevels the ranks of the
-connecting maps are the coefficients of the polynomial measuring the failure of the Morse
-inequalities to be equalities.
+triples of sublevels of a Morse function. When a compact band is cut at regular values into pieces
+containing at most one critical value each, every piece satisfies the Morse inequalities with
+equality, so each coefficient of the polynomial measuring the failure of the Morse inequalities
+to be equalities is a sum of ranks of connecting maps along the resulting filtration by sublevels.
+A coarser filtration can hide cancellations within a piece, and then these ranks need not recover
+the coefficients.
 
 ## References
 
@@ -185,19 +190,19 @@ variable {Y : TopCat.{w}} {A : ℕ → Set Y} (hA : Monotone A) {k : Type*} [Div
 
 /-- **Finiteness along a filtration.** If `A 0 ⊆ A 1 ⊆ ⋯ ⊆ A (N + 1)` and every step
 `Hᵢ(A (j + 1), A j)`, `j ≤ N`, is finite-dimensional, then so is `Hᵢ(A (N + 1), A 0)`. -/
-theorem finite_singularHomology_ofInclusion_of_monotone {N : ℕ}
-    (hfin : ∀ j ≤ N, ∀ i, Module.Finite k
-      ((TopPair.ofInclusion (hA j.le_succ)).singularHomology V i : ModuleCat k)) (i : ℕ) :
+theorem finite_singularHomology_ofInclusion_of_monotone {N : ℕ} (i : ℕ)
+    (hfin : ∀ j ≤ N, Module.Finite k
+      ((TopPair.ofInclusion (hA j.le_succ)).singularHomology V i : ModuleCat k)) :
     Module.Finite k
       ((TopPair.ofInclusion (hA (Nat.zero_le (N + 1)))).singularHomology V i : ModuleCat k) := by
-  induction N generalizing i with
-  | zero => exact hfin 0 le_rfl i
+  induction N with
+  | zero => exact hfin 0 le_rfl
   | succ N ih =>
     let T := TopTriple.ofInclusions (hA (Nat.zero_le (N + 1))) (hA (N + 1).le_succ)
     have : Module.Finite k ((TopTriple.innerPair.obj T).singularHomology V i : ModuleCat k) :=
-      ih (fun j hj ↦ hfin j (hj.trans N.le_succ)) i
+      ih fun j hj ↦ hfin j (hj.trans N.le_succ)
     have : Module.Finite k ((TopTriple.outerPair.obj T).singularHomology V i : ModuleCat k) :=
-      hfin (N + 1) le_rfl i
+      hfin (N + 1) le_rfl
     exact T.finite_singularHomology_totalPair V i
 
 /-- **The dimension count along a filtration.** Let `A 0 ⊆ A 1 ⊆ ⋯ ⊆ A (N + 1)` be subspaces of
@@ -225,7 +230,7 @@ theorem sum_range_finrank_range_singularHomologyδ_eq {N : ℕ}
     have hfin' (j : ℕ) (hj : j ≤ N) := hfin j (hj.trans N.le_succ)
     let T := TopTriple.ofInclusions (hA (Nat.zero_le (N + 1))) (hA (N + 1).le_succ)
     have : ∀ i, Module.Finite k ((TopTriple.innerPair.obj T).singularHomology V i : ModuleCat k) :=
-      finite_singularHomology_ofInclusion_of_monotone hA V hfin'
+      fun i ↦ finite_singularHomology_ofInclusion_of_monotone hA V i fun j hj ↦ hfin' j hj i
     have : ∀ i, Module.Finite k ((TopTriple.outerPair.obj T).singularHomology V i : ModuleCat k) :=
       hfin (N + 1) le_rfl
     -- The pairs of `T` are the inclusions of `A 0 ⊆ A (N + 1) ⊆ A (N + 2)`, by

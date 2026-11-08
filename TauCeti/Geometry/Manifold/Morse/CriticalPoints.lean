@@ -38,7 +38,9 @@ it, so a Morse function has finitely many critical points in every compact set; 
 function bounded below, this applies to every sublevel set. A compact band between regular
 values therefore holds finitely many critical levels, along which properties of the band can be
 proved one level at a time. Above a regular value, the critical points in a compact band stay a
-positive distance away in value, so the band begins with a collar free of critical points.
+positive distance away in value, so the band begins with a collar free of critical points. On a
+compact manifold, the values of a Morse function can be cut at regular values into bands
+containing at most one critical value each.
 
 Restricting `f` to an open subset `U` keeps exactly the critical points lying in `U`, so the total
 critical count is additive over a finite partition of `M` into open sets, such as its connected
@@ -79,6 +81,8 @@ polynomial in the Morse inequalities.
 * `TauCeti.IsMorse.band_induction`: a property of compact bands between regular values follows
   from its validity across bands without critical points, across single critical levels, and
   along triples of levels.
+* `TauCeti.IsMorse.exists_regular_sublevel_partition`: on a compact manifold, regular values
+  cutting the values of a Morse function into bands with at most one critical value each.
 * `TauCeti.criticalCount` and `TauCeti.totalCriticalCount`: the extended counts of critical
   points, with `TauCeti.sum_criticalCount_eq_totalCriticalCount`,
   `TauCeti.IsMorse.totalCriticalCount_ne_top`, `TauCeti.two_le_totalCriticalCount` and
@@ -531,6 +535,47 @@ theorem IsMorse.band_induction (hf : IsMorse I f) {P : ∀ s t : ℝ, s ≤ t �
       linarith
   exact htrans _ _ _ _ _ hcompact
     (htrans _ _ _ _ _ (hcompact' le_rfl (by linarith)) hlow hmid) hup
+
+/-- **A regular partition of the values of a Morse function.** For a Morse function `f` on a
+compact boundaryless manifold, there are regular values `s 0 ≤ s 1 ≤ ⋯ ≤ s (N + 1)` with
+`s 0 < f ≤ s (N + 1)` on `M`, such that each band `f⁻¹[s j, s (j + 1)]` contains at most one
+critical value. -/
+theorem IsMorse.exists_regular_sublevel_partition [CompactSpace M] (hf : IsMorse I f) :
+    ∃ (s : ℕ → ℝ) (N : ℕ), Monotone s ∧ (∀ x, s 0 < f x) ∧ (∀ x, f x ≤ s (N + 1)) ∧
+      (∀ j ≤ N + 1, IsRegularValue I 𝓘(ℝ) f (s j)) ∧
+      ∀ j ≤ N, ∀ x ∈ criticalPoints I f, ∀ y ∈ criticalPoints I f,
+        f x ∈ Icc (s j) (s (j + 1)) → f y ∈ Icc (s j) (s (j + 1)) → f x = f y := by
+  set C := f '' criticalPoints I f
+  have hC : C.Finite := hf.finite_criticalPoints.image f
+  -- A step `δ` smaller than the distance between any two distinct critical values.
+  have hev : ∀ᶠ δ in 𝓝[>] (0 : ℝ), ∀ p ∈ {p ∈ C ×ˢ C | p.1 ≠ p.2}, δ < |p.1 - p.2| :=
+    (Filter.eventually_all_finite ((hC.prod hC).subset (sep_subset _ _))).2 fun p hp ↦
+      (eventually_lt_nhds (abs_pos.2 (sub_ne_zero.2 hp.2))).filter_mono nhdsWithin_le_nhds
+  obtain ⟨δ, hgap, hδ⟩ := (hev.and self_mem_nhdsWithin).exists
+  obtain ⟨L, hL⟩ := (isCompact_range hf.contMDiff.continuous).bddBelow
+  obtain ⟨U, hU⟩ := (isCompact_range hf.contMDiff.continuous).bddAbove
+  set N := ⌈(U - L + 1) / δ⌉₊
+  -- Start the arithmetic progression `a + j δ` at an `a` which keeps its first terms off `C`.
+  have hB : (⋃ j ∈ Finset.range (N + 2), (fun c ↦ c - j * δ) '' C).Finite :=
+    (Finset.range (N + 2)).finite_toSet.biUnion fun j _ ↦ hC.image _
+  obtain ⟨a, ⟨haL, haL'⟩, ha⟩ := ((Ioo_infinite (sub_one_lt L)).sdiff hB).nonempty
+  simp only [mem_iUnion, mem_image, Finset.mem_range, not_exists, not_and] at ha
+  refine ⟨fun j ↦ a + j * δ, N, fun i j hij ↦ by dsimp only; gcongr,
+    fun x ↦ by simpa using haL'.trans_le (hL (mem_range_self x)), fun x ↦ ?_, fun j hj ↦ ?_,
+    fun j _ x hx y hy hxj hyj ↦ ?_⟩
+  · have hN : (U - L + 1) / δ ≤ N := Nat.le_ceil _
+    rw [div_le_iff₀ hδ] at hN
+    have := hU (mem_range_self x)
+    push_cast
+    nlinarith
+  · refine isRegularValue_iff_notMem_image_criticalPoints.2 fun hc ↦ ha j (by lia) _ hc ?_
+    ring
+  · -- Two values in an interval of length `δ` are at distance at most `δ`.
+    by_contra hxy
+    have h := hgap (f x, f y) ⟨⟨mem_image_of_mem f hx, mem_image_of_mem f hy⟩, hxy⟩
+    simp only [Nat.cast_add, Nat.cast_one, mem_Icc] at h hxj hyj
+    rw [lt_abs] at h
+    rcases h with h | h <;> linarith [hxj.1, hxj.2, hyj.1, hyj.2]
 
 end IsManifold
 
