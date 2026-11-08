@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.IdealSheaf.Functorial
+import TauCeti.AlgebraicGeometry.Scheme.Opens
 
 /-!
 # Locality of ideal sheaf data
@@ -88,13 +89,10 @@ theorem _root_.AlgebraicGeometry.Scheme.IdealSheafData.ext_of_comap_fromSpec_ove
       I.comap V.2.fromSpec = J.comap V.2.fromSpec) : I = J := by
   have charts (x : X) : ∃ (U : Y.Opens) (V : X.Opens), IsAffineOpen U ∧
       IsAffineOpen V ∧ x ∈ V ∧ V ≤ f ⁻¹ᵁ U := by
-    obtain ⟨U, hU, hxU, -⟩ :=
-      TopologicalSpace.Opens.isBasis_iff_nbhd.mp Y.isBasis_affineOpens
-        (U := ⊤) (x := f x) (by simp)
-    obtain ⟨V, hV, hxV, hVU⟩ :=
-      TopologicalSpace.Opens.isBasis_iff_nbhd.mp X.isBasis_affineOpens
-        (U := f ⁻¹ᵁ U) (x := x) hxU
-    exact ⟨U, V, hU, hV, hxV, hVU⟩
+    obtain ⟨V, hxV⟩ := TopologicalSpace.Opens.mem_iSup.mp
+      (f.iSup_affineOpens_le_preimage_eq_top.ge (Set.mem_univ x))
+    obtain ⟨U, hVU⟩ := V.property
+    exact ⟨U.1, V.1.1, U.2, V.1.2, hxV, hVU⟩
   choose U V hU hV hx hVU using charts
   let 𝒰 : X.OpenCover := Scheme.Cover.mkOfCovers X (fun x ↦ Spec Γ(X, V x))
     (fun x ↦ (hV x).fromSpec) (fun x ↦ ⟨x, by
