@@ -546,7 +546,9 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_of_sum_smul_fderiv_fde
   -- On a neighbourhood of `closedBall x₀ ρ` the cutoff is one, so `D²w = D²u` there.
   have hwu (x : E) (hx : x ∈ closedBall x₀ ρ) :
       iteratedFDeriv ℝ 2 w x = iteratedFDeriv ℝ 2 u x :=
-    Filter.EventuallyEq.iteratedFDeriv_mul_eq (mem_interior_iff_mem_nhds.1 (hζ1 hx))
+    Filter.EventuallyEq.iteratedFDeriv_mul_eq (by
+      filter_upwards [mem_interior_iff_mem_nhds.1 (hζ1 hx)] with y hy
+      simpa using hy)
   intro x hx y hy
   rw [← hwu x hx, ← hwu y hy]
   refine (key x y).trans ?_
