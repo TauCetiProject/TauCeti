@@ -279,6 +279,7 @@ theorem normGradedMap_zero_bijective_iff (h : IsTotallyRamified K L) :
 
 /-! ### The tame case -/
 
+omit [Module.Finite K L] in
 /-- In a totally and tamely ramified Galois extension the degree divides `q - 1`. -/
 private theorem finrank_dvd_card_residueField_sub_one (h : IsTotallyRamified K L)
     (ht : IsTamelyRamified K L) : finrank K L ∣ Nat.card 𝓀[K] - 1 := by
