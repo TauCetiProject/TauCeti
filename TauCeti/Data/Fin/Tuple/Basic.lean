@@ -266,11 +266,13 @@ theorem update_removeNth_succ_eq_removeNth_castSucc {n : ℕ} (j : Fin (n + 1))
       succAbove_of_le_castSucc _ _ (by simpa using hkj.le)]
 
 /-- Inserting at a position other than the first keeps the first entry. -/
+@[simp]
 theorem insertNth_apply_zero_of_ne_zero {β : Type*} {n : ℕ} {p : Fin (n + 2)} (hp : p ≠ 0)
     (v : β) (x : Fin (n + 1) → β) : insertNth (α := fun _ => β) p v x 0 = x 0 := by
   rw [← succAbove_ne_zero_zero hp, insertNth_apply_succAbove]
 
 /-- Inserting at a position other than the last keeps the last entry. -/
+@[simp]
 theorem insertNth_apply_last_of_ne_last {β : Type*} {n : ℕ} {p : Fin (n + 2)}
     (hp : p ≠ last (n + 1)) (v : β) (x : Fin (n + 1) → β) :
     insertNth (α := fun _ => β) p v x (last (n + 1)) = x (last n) := by
