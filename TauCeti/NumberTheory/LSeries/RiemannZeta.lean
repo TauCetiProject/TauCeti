@@ -11,6 +11,8 @@ public import Mathlib.NumberTheory.LSeries.SumCoeff
 import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 import Mathlib.NumberTheory.LSeries.DirichletContinuation
 import Mathlib.NumberTheory.LSeries.Linearity
+import TauCeti.Algebra.BigOperators.Intervals
+import TauCeti.NumberTheory.LSeries.Convergence
 import TauCeti.NumberTheory.LSeries.SumCoeff
 
 /-!
@@ -39,6 +41,8 @@ Siegel's theorem on real zeros.
 * `TauCeti.hasSum_nat_rpow_neg_riemannZeta_re`: the same series indexed from `n = 0` with the
   vanishing term `0 ^ (-s)`;
 * `TauCeti.measurable_riemannZeta`: the Riemann zeta function is measurable.
+* `TauCeti.LSeries_neg_one_pow_add_one_eq_mul_riemannZeta`: the alternating series
+  `∑ (-1) ^ (n + 1) n⁻ˢ` is `(1 - 2 ^ (1 - s)) ζ(s)` for `Re s > 1`.
 * `TauCeti.one_sub_two_cpow_mul_riemannZeta_eq_mul_integral`: the partial-summation integral of
   the alternating series represents `(1 - 2 ^ (1 - s)) ζ(s)` on `Re s > 0`, `s ≠ 1`.
 * `TauCeti.riemannZeta_lt_zero`: `ζ(σ)` is a negative real number for real `0 < σ < 1`.
@@ -82,9 +86,11 @@ theorem hasSum_nat_rpow_neg_riemannZeta_re {s : ℝ} (hs : 1 < s) :
 theorem measurable_riemannZeta : Measurable riemannZeta :=
   measurable_of_continuousOn_compl_singleton 1 differentiableOn_riemannZeta.continuousOn
 
-/-- On `Re s > 1`, writing `(-1) ^ (n + 1) = 2 χ₀(n) - 1` with `χ₀` the principal character
-modulo `2` gives `η(s) = 2 (1 - 2⁻ˢ) ζ(s) - ζ(s) = (1 - 2 ^ (1 - s)) ζ(s)`. -/
-private theorem LSeries_neg_one_pow {s : ℂ} (hs : 1 < s.re) :
+/-- **The alternating zeta series.** On `Re s > 1`, the Dirichlet series
+`η(s) = ∑ (-1) ^ (n + 1) n⁻ˢ` equals `(1 - 2 ^ (1 - s)) ζ(s)`. Writing
+`(-1) ^ (n + 1) = 2 χ₀(n) - 1` with `χ₀` the principal character modulo `2` gives
+`η(s) = 2 (1 - 2⁻ˢ) ζ(s) - ζ(s)`. -/
+theorem LSeries_neg_one_pow_add_one_eq_mul_riemannZeta {s : ℂ} (hs : 1 < s.re) :
     LSeries (fun n ↦ (-1 : ℂ) ^ (n + 1)) s = (1 - 2 ^ (1 - s)) * riemannZeta s := by
   set χ : DirichletCharacter ℂ 2 := 1
   have hχ : (fun n : ℕ ↦ (-1 : ℂ) ^ (n + 1)) = (2 : ℂ) • (fun n : ℕ ↦ χ n) - 1 := by
@@ -116,16 +122,10 @@ theorem one_sub_two_cpow_mul_riemannZeta_eq_mul_integral {s : ℂ} (hs : 0 < s.r
         (t : ℂ) ^ (-(s + 1)) := by
   set G : ℂ → ℂ := fun z ↦ z * ∫ t in Set.Ioi (1 : ℝ),
     (∑ k ∈ Icc 1 ⌊t⌋₊, (-1 : ℂ) ^ (k + 1)) * (t : ℂ) ^ (-(z + 1))
-  have hA (n : ℕ) : ∑ k ∈ Icc 1 n, (-1 : ℂ) ^ (k + 1) = if Even n then 0 else 1 := by
-    rw [← Ico_add_one_right_eq_Icc, sum_Ico_eq_sum_range, add_tsub_cancel_right,
-      ← neg_one_geom_sum]
-    simp [pow_add]
-  have hA₁ (n : ℕ) : ‖∑ k ∈ Icc 1 n, (-1 : ℂ) ^ (k + 1)‖ ≤ 1 := by
-    rw [hA]; split_ifs <;> simp
   have hO : (fun n : ℕ ↦ ∑ k ∈ Icc 1 n, (-1 : ℂ) ^ (k + 1)) =O[atTop]
       fun n ↦ (n : ℝ) ^ (0 : ℝ) :=
     Asymptotics.isBigO_iff.mpr ⟨1, Eventually.of_forall fun n ↦ by
-      simpa using hA₁ n⟩
+      simpa using LSeries.norm_sum_Icc_neg_one_pow_add_one_le (R := ℂ) n⟩
   have hopen : IsOpen {z : ℂ | 0 < z.re} := isOpen_lt continuous_const continuous_re
   have hG : AnalyticOnNhd ℂ (fun z ↦ (z - 1) * G z) {z : ℂ | 0 < z.re} :=
     ((differentiableOn_id.sub_const 1).mul
@@ -140,7 +140,8 @@ theorem one_sub_two_cpow_mul_riemannZeta_eq_mul_integral {s : ℂ} (hs : 0 < s.r
     simp only [G]
     rw [← LSeries_eq_mul_integral _ le_rfl (zero_lt_one.trans hz)
       (LSeriesSummable_of_bounded_of_one_lt_re (m := 1) (fun n _ ↦ by simp) hz) hO,
-      LSeries_neg_one_pow hz, riemannZeta_eq_inv_sub_mul (sub_ne_zero.mp hz₁)]
+      LSeries_neg_one_pow_add_one_eq_mul_riemannZeta hz,
+      riemannZeta_eq_inv_sub_mul (sub_ne_zero.mp hz₁)]
     field_simp
   have h := hG.eqOn_of_preconnected_of_eventuallyEq hZ (convex_halfSpace_re_gt 0).isPreconnected
     (by norm_num : (2 : ℂ) ∈ {z : ℂ | 0 < z.re}) heq hs
@@ -153,20 +154,14 @@ theorem one_sub_two_cpow_mul_riemannZeta_eq_mul_integral {s : ℂ} (hs : 0 < s.r
 theorem riemannZeta_lt_zero {σ : ℝ} (h₀ : 0 < σ) (h₁ : σ < 1) : riemannZeta σ < 0 := by
   set F : ℝ → ℂ := fun t ↦ (∑ k ∈ Icc 1 ⌊t⌋₊, (-1 : ℂ) ^ (k + 1)) * (t : ℂ) ^ (-((σ : ℂ) + 1))
   set g : ℝ → ℝ := fun t ↦ if Even ⌊t⌋₊ then 0 else t ^ (-(σ + 1))
-  have hA (n : ℕ) : ∑ k ∈ Icc 1 n, (-1 : ℂ) ^ (k + 1) = if Even n then 0 else 1 := by
-    rw [← Ico_add_one_right_eq_Icc, sum_Ico_eq_sum_range, add_tsub_cancel_right,
-      ← neg_one_geom_sum]
-    simp [pow_add]
-  have hA₁ (n : ℕ) : ‖∑ k ∈ Icc 1 n, (-1 : ℂ) ^ (k + 1)‖ ≤ 1 := by
-    rw [hA]; split_ifs <;> simp
   have hFg : Set.EqOn F (fun t ↦ (g t : ℂ)) (Set.Ioi 1) := fun t ht ↦ by
-    simp only [F, g, hA]
+    simp only [F, g, sum_Icc_neg_one_pow_add_one]
     split_ifs
     · simp
     · rw [one_mul, ofReal_cpow (zero_le_one.trans ht.le), ofReal_neg, ofReal_add, ofReal_one]
   have hFint : MeasureTheory.IntegrableOn F (Set.Ioi 1) :=
-    TauCeti.LSeries.integrableOn_sum_mul_cpow_of_bound _ hA₁
-      (by simpa using h₀)
+    TauCeti.LSeries.integrableOn_sum_mul_cpow_of_bound _
+      LSeries.norm_sum_Icc_neg_one_pow_add_one_le (by simpa using h₀)
   have hgint : MeasureTheory.IntegrableOn g (Set.Ioi 1) := by
     simpa using (hFint.congr_fun hFg measurableSet_Ioi).re
   have hg₀ (t : ℝ) (ht : 0 ≤ t) : 0 ≤ g t := by
@@ -187,9 +182,7 @@ theorem riemannZeta_lt_zero {σ : ℝ} (h₀ : 0 < σ) (h₁ : σ < 1) : riemann
   have hrep := one_sub_two_cpow_mul_riemannZeta_eq_mul_integral (s := σ) (by simpa using h₀)
     (by exact_mod_cast h₁.ne)
   have h2 : (2 : ℂ) ^ (1 - (σ : ℂ)) = ((2 : ℝ) ^ (1 - σ) : ℝ) := by
-    rw [ofReal_cpow zero_le_two]
-    push_cast
-    rfl
+    rw [ofReal_cpow zero_le_two, ofReal_ofNat, ofReal_sub, ofReal_one]
   rw [MeasureTheory.setIntegral_congr_fun measurableSet_Ioi hFg, integral_complex_ofReal,
     h2] at hrep
   have hc : 1 - (2 : ℝ) ^ (1 - σ) < 0 := sub_neg.mpr (Real.one_lt_rpow one_lt_two (by linarith))
