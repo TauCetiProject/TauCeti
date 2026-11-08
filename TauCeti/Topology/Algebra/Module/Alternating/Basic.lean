@@ -30,6 +30,8 @@ form a complex vector space, and these operations are complex-linear or conjugat
   map as a semilinear map of alternating maps.
 * `ContinuousAlternatingMap.eq_zero_iff_forall_apply_fin_one`: an alternating map of one vector
   vanishes exactly when it vanishes on every vector.
+* `ContinuousAlternatingMap.compContinuousLinearMap_comp_inl_of_apply_inl_eq`: pulling back along a
+  linear map fixing the zero section leaves the pullback to the zero section unchanged.
 -/
 
 public section
@@ -77,6 +79,28 @@ theorem eq_zero_iff_forall_apply_fin_one {R M N : Type*} [Semiring R]
   ext w
   obtain ⟨v, rfl⟩ : ∃ v, w = ![v] := ⟨w 0, funext fun i ↦ by rw [Fin.fin_one_eq_zero i]; rfl⟩
   exact h v
+
+section ZeroSection
+
+variable {R E N F ι : Type*} [Semiring R]
+  [AddCommMonoid E] [Module R E] [TopologicalSpace E]
+  [AddCommMonoid N] [Module R N] [TopologicalSpace N]
+  [AddCommMonoid F] [Module R F] [TopologicalSpace F]
+
+/-- Pulling a form back along a linear map `A` that fixes the zero section `E × {0}` pointwise does
+not change its pullback to the zero section. -/
+theorem compContinuousLinearMap_comp_inl_of_apply_inl_eq
+    {a : (E × N) [⋀^ι]→L[R] F} {A : (E × N) →L[R] (E × N)}
+    (hA : ∀ q : E, A (q, 0) = (q, 0)) :
+    (a.compContinuousLinearMap A).compContinuousLinearMap (.inl R E N) =
+      a.compContinuousLinearMap (.inl R E N) := by
+  ext v
+  simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply]
+  congr 1
+  funext i
+  simp [hA]
+
+end ZeroSection
 
 end ContinuousAlternatingMap
 

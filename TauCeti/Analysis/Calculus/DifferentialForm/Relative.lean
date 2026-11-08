@@ -281,17 +281,4 @@ theorem _root_.Convex.exists_contDiffOn_relative_primitive {s : Set (E × N)}
   exact hs.extDeriv_fiberwisePoincareHomotopy_eq hso
     (hω.of_le (by exact_mod_cast hr)) hscale hclosed hzero hx
 
-/-- Pulling a form back along a linear map `A` that fixes the zero section `E × {0}` pointwise does
-not change its pullback to the zero section. -/
-theorem _root_.ContinuousAlternatingMap.compContinuousLinearMap_comp_inl_of_apply_inl_eq
-    {a : (E × N) [⋀^Fin 2]→L[ℝ] ℝ} {A : (E × N) →L[ℝ] (E × N)}
-    (hA : ∀ q : E, A (q, 0) = (q, 0)) :
-    (a.compContinuousLinearMap A).compContinuousLinearMap (.inl ℝ E N) =
-      a.compContinuousLinearMap (.inl ℝ E N) := by
-  ext v
-  simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply]
-  congr 1
-  funext i
-  simp [hA]
-
 end TauCeti

@@ -11,6 +11,7 @@ import TauCeti.Analysis.Calculus.DifferentialForm.Pullback
 import TauCeti.Analysis.Calculus.DifferentialForm.Relative
 import TauCeti.Geometry.Symplectic.Darboux.Basic
 import TauCeti.Geometry.Symplectic.WittExtension
+import TauCeti.Topology.Algebra.Module.Alternating.Basic
 
 /-!
 # The relative Darboux theorem in adapted coordinates
