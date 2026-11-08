@@ -38,7 +38,8 @@ a point in a product over the parts, the parts of a restriction, the
 monotonicity of `Finpartition.part` under refinement and the characterization of refinement by
 the parts through each point, the constancy of the coarse part and of membership in a union of
 parts on each part of a partition, the fact that a refinement with no more parts than the coarser
-partition is equal to it, the parts through a point of the finest and the coarsest partitions,
+partition is equal to it, the parts through a point of the finest and the coarsest partitions
+and of a common refinement,
 the characterization of the finest partition as the one whose parts all have one element,
 the count of the parts by points singled out in each part (in a linear order, the first or the last
 point of each part), the part of a point in a linear order as its part before the last point of that
@@ -446,6 +447,17 @@ theorem le_iff_forall_part_subset : P ≤ Q ↔ ∀ a, P.part a ⊆ Q.part a := 
   refine ⟨part_mono, fun h B hB => ?_⟩
   obtain ⟨a, ha⟩ := P.nonempty_of_mem_parts hB
   exact ⟨Q.part a, Q.part_mem.2 (P.le hB ha), P.part_eq_of_mem hB ha ▸ h a⟩
+
+/-- In the common refinement of two finite partitions, the part through a point is the
+intersection of the parts through it. -/
+@[simp]
+theorem part_inf (P Q : Finpartition s) (a : α) : (P ⊓ Q).part a = P.part a ∩ Q.part a := by
+  by_cases ha : a ∈ s
+  · refine part_eq_of_mem _ ?_ (mem_inter.2 ⟨P.mem_part ha, Q.mem_part ha⟩)
+    rw [parts_inf, mem_erase]
+    exact ⟨ne_empty_of_mem (mem_inter.2 ⟨P.mem_part ha, Q.mem_part ha⟩),
+      mem_image.2 ⟨(P.part a, Q.part a), mem_product.2 ⟨P.part_mem.2 ha, Q.part_mem.2 ha⟩, rfl⟩⟩
+  · simp [(P ⊓ Q).part_eq_empty.2 ha, P.part_eq_empty.2 ha]
 
 /-- In the partition into singletons, the part through a point is that point alone. -/
 @[simp]
