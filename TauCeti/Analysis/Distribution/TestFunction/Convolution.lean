@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.BumpFunction.Convolution
-public import TauCeti.Analysis.Calculus.ContDiff.Convolution
+public import TauCeti.Analysis.Calculus.BumpFunction.DerivativeApproximation
 public import Mathlib.Analysis.Distribution.TestFunction
 
 /-!
@@ -96,14 +95,8 @@ theorem iteratedFDeriv_mollify (φ : 𝓓(Ω, F)) (μ : Measure E) [μ.IsAddHaar
     (h : closedBall (0 : E) ρ.rOut + tsupport φ ⊆ (Ω : Set E)) (n : ℕ) :
     iteratedFDeriv ℝ n (mollify φ μ ρ h : E → F) =
       ρ.normed μ ⋆[lsmul ℝ ℝ, μ] iteratedFDeriv ℝ n (φ : E → F) := by
-  -- The bilinear map induced by scalar multiplication is again scalar multiplication.
-  have hL : (compContinuousMultilinearMapL ℝ (fun _ : Fin n => E) F F).comp (lsmul ℝ ℝ) =
-      lsmul ℝ ℝ := by
-    ext a m
-    simp
-  rw [coe_mollify, ← hL]
-  exact φ.hasCompactSupport.iteratedFDeriv_convolution_right (lsmul ℝ ℝ)
-    ρ.continuous_normed.locallyIntegrable φ.contDiff (by simp)
+  rw [coe_mollify]
+  exact φ.hasCompactSupport.iteratedFDeriv_normed_convolution φ.contDiff ρ (by simp)
 
 variable [CompleteSpace F]
 
@@ -129,14 +122,13 @@ private theorem tendsto_mollify_of_support_subset {ι : Type*} {l : Filter ι}
     apply tendsto_pi_nhds.2
     intro n
     apply BoundedContinuousFunction.tendsto_iff_tendstoUniformly.2
-    have hc := φ.contDiff.continuous_iteratedFDeriv (m := n) (by simp)
-    have hu := (φ.hasCompactSupport.iteratedFDeriv n).uniformContinuous_of_continuous hc
-    have ht := ContDiffBump.tendstoUniformly_normed_convolution (μ := μ) hρ hu
+    have ht := φ.hasCompactSupport.tendstoUniformly_iteratedFDeriv_normed_convolution
+      (μ := μ) φ.contDiff hρ (by simp : (n : ℕ∞) ≤ ⊤)
     convert ht using 1
     · funext i x
       simp only [Function.comp_apply, ContinuousLinearMap.pi_apply,
         ContDiffMapSupportedIn.structureMapCLM_top_apply]
-      exact congrFun (iteratedFDeriv_mollify φ μ (ρ i) ((hK i).trans hKΩ) n) x
+      rfl
     · funext x
       simp only [ContinuousLinearMap.pi_apply,
         ContDiffMapSupportedIn.structureMapCLM_top_apply, hφKcoe]

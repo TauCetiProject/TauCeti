@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 public import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
-public import TauCeti.Analysis.Calculus.ContDiff.Convolution
 
 /-!
 # Smooth approximation with uniform control of derivatives
@@ -51,16 +50,7 @@ theorem HasCompactSupport.tendstoUniformly_iteratedFDeriv_normed_convolution
     (hρ : Tendsto (fun i ↦ (ρ i).rOut) l (𝓝 0)) {k : ℕ} (hk : k ≤ N) :
     TendstoUniformly (fun i ↦ iteratedFDeriv ℝ k ((ρ i).normed μ ⋆[lsmul ℝ ℝ, μ] f))
       (iteratedFDeriv ℝ k f) l := by
-  have hL : (compContinuousMultilinearMapL ℝ (fun _ : Fin k ↦ E) F F).comp
-      (lsmul ℝ ℝ) = lsmul ℝ ℝ := by
-    ext a m
-    simp
-  have hd (i : ι) : iteratedFDeriv ℝ k ((ρ i).normed μ ⋆[lsmul ℝ ℝ, μ] f) =
-      (ρ i).normed μ ⋆[lsmul ℝ ℝ, μ] iteratedFDeriv ℝ k f := by
-    rw [← hL]
-    exact hfc.iteratedFDeriv_convolution_right (lsmul ℝ ℝ)
-      (ρ i).continuous_normed.locallyIntegrable hf hk
-  simp_rw [hd]
+  simp_rw [hfc.iteratedFDeriv_normed_convolution hf _ hk]
   exact ContDiffBump.tendstoUniformly_normed_convolution hρ
     ((hfc.iteratedFDeriv k).uniformContinuous_of_continuous
       (hf.continuous_iteratedFDeriv (by exact_mod_cast hk)))
