@@ -43,8 +43,6 @@ structure PositiveDegreeMap (d : PositiveDegrees N) (e : PositiveDegrees M) wher
   toAddMonoidHom : N →+ M
   /-- Allowed degrees map to allowed degrees. -/
   map_mem : ∀ {n}, n ∈ d.monoid → toAddMonoidHom n ∈ e.monoid
-  /-- Nonzero allowed degrees have nonzero images. -/
-  map_ne_zero : ∀ {n}, n ∈ d.monoid → n ≠ 0 → toAddMonoidHom n ≠ 0
   /-- Source cutoff needed to compute a target cutoff. -/
   modulus : ℕ → ℕ
   /-- Increasing the target cutoff cannot decrease the required source cutoff. -/
@@ -68,6 +66,18 @@ theorem map_zero (T : PositiveDegreeMap d e) : T 0 = 0 := T.toAddMonoidHom.map_z
 @[simp]
 theorem map_add (T : PositiveDegreeMap d e) (a b : N) :
     T (a + b) = T a + T b := T.toAddMonoidHom.map_add a b
+
+/-- The cutoff law forces nonzero allowed degrees to have nonzero images. -/
+theorem map_ne_zero (T : PositiveDegreeMap d e) {n : N}
+    (hn : n ∈ d.monoid) (hn0 : n ≠ 0) : T n ≠ 0 := by
+  intro h
+  have hp : (1 : ℤ) ≤ d.degree n := d.degree_pos hn hn0
+  have hdeg : (T.modulus 0 : ℤ) < d.degree ((T.modulus 0 + 1) • n) := by
+    rw [map_nsmul, nsmul_eq_mul]
+    have := le_mul_of_one_le_right (Int.natCast_nonneg (T.modulus 0 + 1)) hp
+    omega
+  have hzero : T.toAddMonoidHom n = 0 := h
+  simpa [map_nsmul, hzero] using T.degree_gt 0 (d.monoid.nsmul_mem hn _) hdeg
 
 /-- The image of the source positive monoid lies in the target positive monoid. -/
 theorem map_monoid_le (T : PositiveDegreeMap d e) : d.monoid.map T.toAddMonoidHom ≤ e.monoid :=
@@ -104,7 +114,6 @@ theorem preimage_cutoff_subset (T : PositiveDegreeMap d e) (k : ℕ) :
 def id (d : PositiveDegrees N) : PositiveDegreeMap d d where
   toAddMonoidHom := AddMonoidHom.id N
   map_mem h := h
-  map_ne_zero _ h := h
   modulus := _root_.id
   monotone_modulus := monotone_id
   degree_gt _ _ h := h
@@ -120,7 +129,6 @@ def comp (U : PositiveDegreeMap e f) (T : PositiveDegreeMap d e) :
     PositiveDegreeMap d f where
   toAddMonoidHom := U.toAddMonoidHom.comp T.toAddMonoidHom
   map_mem h := U.map_mem (T.map_mem h)
-  map_ne_zero h hn := U.map_ne_zero (T.map_mem h) (T.map_ne_zero h hn)
   modulus := T.modulus ∘ U.modulus
   monotone_modulus := T.monotone_modulus.comp U.monotone_modulus
   degree_gt k hn h := U.degree_gt k (T.map_mem hn) (T.degree_gt _ hn h)
@@ -151,7 +159,6 @@ def enlarge (T : PositiveDegreeMap d e) (μ : ℕ → ℕ) (hμ : Monotone μ)
     (hle : ∀ k, T.modulus k ≤ μ k) : PositiveDegreeMap d e where
   toAddMonoidHom := T.toAddMonoidHom
   map_mem := T.map_mem
-  map_ne_zero := T.map_ne_zero
   modulus := μ
   monotone_modulus := hμ
   degree_gt k hn h := T.degree_gt k hn (lt_of_le_of_lt (by exact_mod_cast hle k) h)
@@ -171,13 +178,6 @@ def ofModulus (T : N →+ M) (hmem : ∀ n ∈ d.monoid, T n ∈ e.monoid)
       (k : ℤ) < e.degree (T n)) : PositiveDegreeMap d e where
   toAddMonoidHom := T
   map_mem := hmem _
-  map_ne_zero {n} hn hn0 h := by
-    have hp : (1 : ℤ) ≤ d.degree n := d.degree_pos hn hn0
-    have hdeg : (μ 0 : ℤ) < d.degree ((μ 0 + 1) • n) := by
-      rw [map_nsmul, nsmul_eq_mul]
-      have := le_mul_of_one_le_right (Int.natCast_nonneg (μ 0 + 1)) hp
-      omega
-    simpa [map_nsmul, h] using hμ _ (d.monoid.nsmul_mem hn _) 0 hdeg
   modulus := partialSups μ
   monotone_modulus := (partialSups μ).monotone
   degree_gt k hn h := hμ _ hn k
@@ -199,11 +199,6 @@ def ofBound (T : N →+ M) (hmem : ∀ n ∈ d.monoid, T n ∈ e.monoid)
     PositiveDegreeMap d e where
   toAddMonoidHom := T
   map_mem := hmem _
-  map_ne_zero {n} hn hn0 h := by
-    have hb := hbound n hn
-    have hp := d.degree_pos hn hn0
-    simp only [h, _root_.map_zero, mul_zero] at hb
-    omega
   modulus k := c * k
   monotone_modulus _ _ h := Nat.mul_le_mul_left c h
   degree_gt {n} k hn h := by
@@ -229,12 +224,6 @@ noncomputable def ofFinitePreimage (T : N →+ M)
     PositiveDegreeMap d e where
   toAddMonoidHom := T
   map_mem := hmem _
-  map_ne_zero {n} hn hn0 h := by
-    have hi := (nsmul_left_strictMono (d.degree_pos hn hn0)).injective
-    apply Set.infinite_of_injective_forall_mem hi ?_ ((hfin 0).image d.degree)
-    intro m
-    exact ⟨m • n, ⟨d.monoid.nsmul_mem hn m, by simp [map_nsmul, h]⟩,
-      map_nsmul d.degree m n⟩
   modulus k := (hfin k).toFinset.sup (fun n => (d.degree n).toNat)
   monotone_modulus := by
     intro k l hkl

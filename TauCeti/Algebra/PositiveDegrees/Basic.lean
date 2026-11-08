@@ -90,6 +90,18 @@ theorem add_ne_zero {n m : N} (hn : n ∈ d.monoid) (hm : m ∈ d.monoid) (hn0 :
   simp only [map_add, map_zero] at this
   omega
 
+/-- A sum of allowed degrees is zero precisely when both summands are zero. -/
+theorem add_eq_zero_iff {n m : N} (hn : n ∈ d.monoid) (hm : m ∈ d.monoid) :
+    n + m = 0 ↔ n = 0 ∧ m = 0 := by
+  constructor
+  · intro h
+    have hn0 : n = 0 := by
+      by_contra hn0
+      exact d.add_ne_zero hn hm hn0 h
+    exact ⟨hn0, by simpa [hn0] using h⟩
+  · rintro ⟨rfl, rfl⟩
+    exact zero_add _
+
 /-- The degree cutoff, retaining zero and all allowed degrees of order at most `k`. -/
 def cutoff (k : ℕ) : Set N := {n | n ∈ d.monoid ∧ d.degree n ≤ k}
 
@@ -120,7 +132,7 @@ theorem cutoff_zero : d.cutoff 0 = {0} := by
   · rintro rfl
     simp [d.monoid.zero_mem]
 
-/-- Each summand of a decomposition in the monoid has degree at most the total. -/
+/-- The left summand has degree at most the total when the right summand is allowed. -/
 theorem degree_le_of_add_eq {a b n : N} (hb : b ∈ d.monoid) (h : a + b = n) :
     d.degree a ≤ d.degree n := by
   have hδ : d.degree a + d.degree b = d.degree n := by
@@ -133,38 +145,40 @@ theorem degree_le_of_add_eq_right {a b n : N} (ha : a ∈ d.monoid) (h : a + b =
     d.degree b ≤ d.degree n :=
   d.degree_le_of_add_eq ha (by simpa only [add_comm] using h)
 
-/-- There are finitely many ordered decompositions of any ambient element into
-two allowed degrees. This also applies when the element lies outside the monoid. -/
-theorem finite_decompositions (n : N) :
-    (Set.antidiagonal (d.monoid : Set N) d.monoid n).Finite := by
-  apply ((d.finite_cutoff (d.degree n).toNat).prod
-    (d.finite_cutoff (d.degree n).toNat)).subset
+/-- Both summands of an allowed decomposition lie in any cutoff bounding the total degree. -/
+theorem antidiagonal_subset_cutoff_prod {n : N} {k : ℕ} (hn : d.degree n ≤ k) :
+    Set.antidiagonal (d.monoid : Set N) d.monoid n ⊆ d.cutoff k ×ˢ d.cutoff k := by
   intro ⟨a, b⟩ hp
   obtain ⟨ha, hb, hab⟩ := Set.mem_antidiagonal.mp hp
-  exact ⟨⟨ha, (d.degree_le_of_add_eq hb hab).trans (Int.self_le_toNat _)⟩,
-    ⟨hb, (d.degree_le_of_add_eq_right ha hab).trans
-      (Int.self_le_toNat _)⟩⟩
+  exact ⟨⟨ha, (d.degree_le_of_add_eq hb hab).trans hn⟩,
+    ⟨hb, (d.degree_le_of_add_eq_right ha hab).trans hn⟩⟩
+
+/-- There are finitely many ordered decompositions of any ambient element into
+two allowed degrees. This also applies when the element lies outside the monoid. -/
+theorem finite_antidiagonal (n : N) :
+    (Set.antidiagonal (d.monoid : Set N) d.monoid n).Finite :=
+  ((d.finite_cutoff (d.degree n).toNat).prod
+    (d.finite_cutoff (d.degree n).toNat)).subset
+    (d.antidiagonal_subset_cutoff_prod (Int.self_le_toNat _))
 
 /-- Filtering a product of degree cutoffs by addition gives all allowed
 decompositions whenever the cutoff bounds the degree of the total. -/
-theorem filter_cutoff_product_eq_decompositions [DecidableEq N] (n : N) (k : ℕ)
+theorem filter_cutoff_product_eq_antidiagonal [DecidableEq N] (n : N) (k : ℕ)
     (hn : d.degree n ≤ k) :
     (((d.finite_cutoff k).toFinset ×ˢ (d.finite_cutoff k).toFinset).filter
-      (fun p : N × N => p.1 + p.2 = n)) = (d.finite_decompositions n).toFinset := by
+      (fun p : N × N => p.1 + p.2 = n)) = (d.finite_antidiagonal n).toFinset := by
   ext ⟨a, b⟩
-  simp only [Finset.mem_filter, Finset.mem_product, Set.Finite.mem_toFinset,
-    mem_cutoff, Set.mem_antidiagonal]
+  simp only [Finset.mem_filter, Finset.mem_product, Set.Finite.mem_toFinset]
   constructor
   · rintro ⟨⟨ha, hb⟩, hab⟩
-    exact ⟨ha.1, hb.1, hab⟩
-  · rintro ⟨ha, hb, hab⟩
-    exact ⟨⟨⟨ha, (d.degree_le_of_add_eq hb hab).trans hn⟩,
-      ⟨hb, (d.degree_le_of_add_eq_right ha hab).trans hn⟩⟩, hab⟩
+    exact Set.mem_antidiagonal.mpr ⟨ha.1, hb.1, hab⟩
+  · intro hp
+    exact ⟨d.antidiagonal_subset_cutoff_prod hn hp, (Set.mem_antidiagonal.mp hp).2.2⟩
 
 /-- Finite addition fibers on the subtype of allowed degrees. -/
-theorem finite_add_fiber (n : d.monoid) :
+theorem finite_antidiagonal_subtype (n : d.monoid) :
     Set.Finite {p : d.monoid × d.monoid | p.1 + p.2 = n} := by
-  apply (d.finite_decompositions n).of_injOn
+  apply (d.finite_antidiagonal n).of_injOn
     (f := fun p : d.monoid × d.monoid => ((p.1 : N), (p.2 : N)))
   · intro p hp
     exact Set.mem_antidiagonal.mpr
@@ -177,7 +191,7 @@ theorem finite_add_fiber (n : d.monoid) :
 Use `letI := d.hasAntidiagonal` when working on the subtype `d.monoid`. -/
 @[instance_reducible]
 noncomputable def hasAntidiagonal : Finset.HasAntidiagonal d.monoid where
-  antidiagonal n := (d.finite_add_fiber n).toFinset
+  antidiagonal n := (d.finite_antidiagonal_subtype n).toFinset
   mem_antidiagonal := by simp
 
 section Group
@@ -187,15 +201,12 @@ variable {G : Type*} [AddCommGroup G] (d : PositiveDegrees G)
 /-- The allowed monoid is sharp: an element and its negative can both belong only
 when the element is zero. -/
 theorem eq_zero_of_mem_of_neg_mem {n : G} (hn : n ∈ d.monoid)
-    (hneg : -n ∈ d.monoid) : n = 0 := by
-  have hnδ := d.degree_nonneg hn
-  have hnegδ := d.degree_nonneg hneg
-  rw [map_neg] at hnegδ
-  exact (d.degree_eq_zero_iff hn).mp (by omega)
+    (hneg : -n ∈ d.monoid) : n = 0 :=
+  ((d.add_eq_zero_iff hn hneg).mp (add_neg_cancel n)).1
 
 /-- Membership of the negative of an allowed degree characterizes zero. -/
 @[simp]
-theorem neg_mem_iff {n : G} (hn : n ∈ d.monoid) : -n ∈ d.monoid ↔ n = 0 := by
+theorem neg_mem_iff_eq_zero {n : G} (hn : n ∈ d.monoid) : -n ∈ d.monoid ↔ n = 0 := by
   constructor
   · exact d.eq_zero_of_mem_of_neg_mem hn
   · rintro rfl
