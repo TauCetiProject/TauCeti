@@ -759,9 +759,15 @@ class PrBuildWiringTest(unittest.TestCase):
             (False, False))
 
     def test_only_the_full_lint_label_rebuilds(self):
-        # pr-build does not run on label changes; a separate workflow dispatches it for full-lint.
+        # A separate workflow dispatches ordinary full-lint requests; self-tested has its own label route.
         pr_build = yaml.safe_load((ROOT / ".github" / "workflows" / "pr-build.yml").read_text())
-        self.assertNotIn("labeled", pr_build[True]["pull_request_target"]["types"])
+        self.assertIn("labeled", pr_build[True]["pull_request_target"]["types"])
+        # Ordinary full-lint labeling still only starts the full-lint workflow;
+        # pr-build label routing is limited to manual self-tested assertions.
+        condition = pr_build["jobs"]["pick-runner"]["if"]
+        self.assertIn("github.event.label.name == 'self-tested'", condition)
+        self.assertIn("contains(github.event.pull_request.labels.*.name, 'self-tested')", condition)
+        self.assertNotIn("'full-lint'", condition)
         self.assertIn("workflow_dispatch", pr_build[True])
         wf = yaml.safe_load((ROOT / ".github" / "workflows" / "full-lint-label.yml").read_text())
         self.assertEqual(wf[True]["pull_request_target"]["types"], ["labeled"])
