@@ -7,9 +7,8 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.TorsionReduction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel.ValuativeExtension
-public import Mathlib.NumberTheory.LocalField.Basic
+public import TauCeti.NumberTheory.LocalField.Henselian
 import TauCeti.NumberTheory.LocalField.AdicCompletion
-import TauCeti.NumberTheory.LocalField.Henselian
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.MapAlong
 import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
 
@@ -58,26 +57,13 @@ private theorem exists_nsmul_eq_of_pole {n : ℕ} (hn : (n : 𝓀[K]) ≠ 0)
       (TauCeti.bijective_algebraMap_adicCompletion_maximalPrime K).2⟩
   have hf_apply (Q : W.toAffine.Point) : f Q = Point.mapAlong i i.injective Q := (rfl)
   have hx (Q : W.toAffine.Point) : Valued.v (f Q).xCoord = u.valuation K Q.xCoord := by
-    cases Q with
-    | zero => simp only [← Point.zero_def, map_zero, Point.xCoord_zero]
-    | some x y h =>
-      rw [hf_apply, Point.mapAlong_some, Point.xCoord_some, Point.xCoord_some]
-      exact u.valuedAdicCompletion_eq_valuation' x
+    rw [hf_apply, Point.xCoord_mapAlong]
+    exact u.valuedAdicCompletion_eq_valuation' Q.xCoord
   have hint : IsIntegral O (W.map i) := IsIntegral.baseChange
     ((IsScalarTower.algebraMap_eq 𝒪[K] O L).symm.trans
       (IsScalarTower.algebraMap_eq 𝒪[K] K L)) W
-  have hdivide (V : WeierstrassCurve L) [IsIntegral O V] [V.IsElliptic]
-      (R : V.toAffine.Point) (hR : R = 0 ∨ 1 < Valued.v R.xCoord) :
-      ∃ S : V.toAffine.Point, (S = 0 ∨ 1 < Valued.v S.xCoord) ∧ n • S = R := by
-    obtain ⟨C, rfl⟩ := (inferInstance : IsIntegral O V).integral
-    have hR' : R ∈ C.kerReduction u := by
-      rw [mem_kerReduction_iff, Point.reduction_eq_zero_iff]
-      exact hR
-    obtain ⟨S, hS⟩ := (C.nsmul_kerReduction_bijective u
-      (TauCeti.natCast_notMem_maximalPrime (L := K) hn)).2 ⟨R, hR'⟩
-    refine ⟨S, ?_, congrArg Subtype.val hS⟩
-    exact (Point.reduction_eq_zero_iff _ _).mp ((C.mem_kerReduction_iff u).mp S.2)
-  obtain ⟨S, hS, hnS⟩ := hdivide (W.map i) (f P) (hP.imp
+  obtain ⟨S, hS, hnS⟩ := WeierstrassCurve.exists_nsmul_eq_of_pole u (W.map i)
+    (TauCeti.natCast_notMem_maximalPrime (L := K) hn) (P := f P) (hP.imp
     (fun h ↦ by rw [h, map_zero]) (fun h ↦ by
       rw [hx]
       exact (TauCeti.isEquiv_valuation_maximalPrime K).one_lt_iff_one_lt.mpr h))
@@ -91,12 +77,6 @@ private theorem exists_nsmul_eq_of_pole {n : ℕ} (hn : (n : 𝓀[K]) ≠ 0)
 end Division
 
 variable (W : Affine K) [IsIntegral 𝒪[K] W] [W.IsElliptic]
-
--- The integer subring 𝒪[K] and the valuation subring have definitionally equal carriers;
--- only their bundled subring structures differ. This bridge applies the general valuation
--- reduction API using the local-field Henselian instance.
-local instance : HenselianLocalRing (valuation K).valuationSubring :=
-  inferInstanceAs (HenselianLocalRing 𝒪[K])
 
 variable [DecidableEq 𝓀[K]]
 
@@ -144,18 +124,15 @@ unique lift killed by that integer and having nonsingular reduction, over the or
 field. No minimality or good-reduction hypothesis is required. -/
 theorem existsUnique_nonsingularReduction_torsion_lift_of_localField {n : ℕ}
     (hn : (n : 𝓀[K]) ≠ 0)
-    (Q : ((integralModel 𝒪[K] W.toAffine).map
-      (residue 𝒪[K])).toAffine.Point) (hQ : n • Q = 0) :
+    (Q : ((integralModel (valuation K).valuationSubring W.toAffine).map
+      (residue (valuation K).valuationSubring)).toAffine.Point) (hQ : n • Q = 0) :
     ∃! P : W.toAffine.nonsingularReduction (valuation K),
       n • P = 0 ∧ W.toAffine.nonsingularReductionHom (valuation K) P = Q := by
   let ρ := W.toAffine.nonsingularReductionHom (valuation K)
   have hker : Function.Bijective (fun P : ρ.ker ↦ (n : ℤ) • P) := by
     simpa only [natCast_zsmul] using
       nsmul_ker_nonsingularReductionHom_bijective_of_localField W hn
-  -- Scalar multiplication uses the same carrier identification of the two integer rings.
-  have hQ' : (n : ℤ) • (Q : ((integralModel (valuation K).valuationSubring W.toAffine).map
-      (residue (valuation K).valuationSubring)).toAffine.Point) = 0 := by
-    convert (by simpa only [natCast_zsmul] using hQ : (n : ℤ) • Q = 0) using 0
+  have hQ' : (n : ℤ) • Q = 0 := by simpa only [natCast_zsmul] using hQ
   -- The additive and ℤ-linear kernels have definitionally equal carriers.
   simpa only [natCast_zsmul, AddMonoidHom.coe_toIntLinearMap] using
     TauCeti.existsUnique_torsion_lift_of_bijective_ker_smul (n : ℤ) ρ.toIntLinearMap
@@ -167,8 +144,8 @@ noncomputable def torsionNonsingularReductionAddEquivOfLocalField {n : ℕ}
     (hn : (n : 𝓀[K]) ≠ 0) :
     Submodule.torsionBy ℤ (W.toAffine.nonsingularReduction (valuation K)) (n : ℤ) ≃+
       Submodule.torsionBy ℤ
-        ((integralModel 𝒪[K] W.toAffine).map
-          (residue 𝒪[K])).toAffine.Point (n : ℤ) := by
+        ((integralModel (valuation K).valuationSubring W.toAffine).map
+          (residue (valuation K).valuationSubring)).toAffine.Point (n : ℤ) := by
   let ρ := W.toAffine.nonsingularReductionHom (valuation K)
   have hker : Function.Bijective (fun P : ρ.ker ↦ (n : ℤ) • P) := by
     simpa only [natCast_zsmul] using
@@ -185,30 +162,27 @@ theorem coe_torsionNonsingularReductionAddEquivOfLocalField_apply {n : ℕ}
     (hn : (n : 𝓀[K]) ≠ 0)
     (P : Submodule.torsionBy ℤ (W.toAffine.nonsingularReduction (valuation K)) (n : ℤ)) :
     (W.torsionNonsingularReductionAddEquivOfLocalField hn P :
-      ((integralModel 𝒪[K] W.toAffine).map
-        (residue 𝒪[K])).toAffine.Point) =
-      W.toAffine.nonsingularReductionHom (valuation K) P := by
-  -- Identify the integer-ring carriers as above before applying the general map lemma.
-  convert TauCeti.coe_torsionByMap_apply (n : ℤ)
-    (W.toAffine.nonsingularReductionHom (valuation K)).toIntLinearMap P using 0
-  rfl
+      ((integralModel (valuation K).valuationSubring W.toAffine).map
+        (residue (valuation K).valuationSubring)).toAffine.Point) =
+      W.toAffine.nonsingularReductionHom (valuation K) P :=
+  TauCeti.coe_torsionByMap_apply (n : ℤ)
+    (W.toAffine.nonsingularReductionHom (valuation K)).toIntLinearMap P
 
 /-- The inverse local-field torsion equivalence lifts a point to one with that reduction. -/
 @[simp]
 theorem nonsingularReductionHom_torsionNonsingularReductionAddEquivOfLocalField_symm {n : ℕ}
     (hn : (n : 𝓀[K]) ≠ 0)
     (Q : Submodule.torsionBy ℤ
-      ((integralModel 𝒪[K] W.toAffine).map
-        (residue 𝒪[K])).toAffine.Point (n : ℤ)) :
+      ((integralModel (valuation K).valuationSubring W.toAffine).map
+        (residue (valuation K).valuationSubring)).toAffine.Point (n : ℤ)) :
     W.toAffine.nonsingularReductionHom (valuation K)
       ((W.torsionNonsingularReductionAddEquivOfLocalField hn).symm Q :
         W.toAffine.nonsingularReduction (valuation K)) =
-      (Q : ((integralModel 𝒪[K] W.toAffine).map (residue 𝒪[K])).toAffine.Point) := by
+      (Q : ((integralModel (valuation K).valuationSubring W.toAffine).map
+        (residue (valuation K).valuationSubring)).toAffine.Point) := by
   have h := congrArg Subtype.val
     ((W.torsionNonsingularReductionAddEquivOfLocalField hn).apply_symm_apply Q)
   rw [coe_torsionNonsingularReductionAddEquivOfLocalField_apply] at h
-  -- The equality is viewed over the valuation subring rather than the integer subring.
-  convert h using 0
-  rfl
+  exact h
 
 end WeierstrassCurve.Affine
