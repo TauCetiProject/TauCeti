@@ -31,6 +31,8 @@ with a single real root, or quadratic, with a pair of complex conjugate roots.
   equal real parts.
 * `Polynomial.exists_isCoprime_mul_eq_of_re_ne_zero`: the factorization of a real polynomial
   without roots on the imaginary axis into a left half-plane and a right half-plane factor.
+* `Polynomial.exists_pos_forall_re_lt_neg_of_re_lt_zero`: the roots of a complex polynomial in
+  the open left half-plane stay a positive distance away from the imaginary axis.
 -/
 
 public section
@@ -73,6 +75,22 @@ theorem Irreducible.re_eq_of_aeval_eq_zero {p : ℝ[X]} (hp : Irreducible p) {z 
     · rw [sub_eq_zero.mp h, Complex.conj_re]
 
 namespace Polynomial
+
+/-- **A uniform margin from the imaginary axis.** If every root of a complex polynomial `q` lies
+in the open left half-plane, then all of them lie to the left of `-β` for some `β > 0`. -/
+theorem exists_pos_forall_re_lt_neg_of_re_lt_zero {q : ℂ[X]}
+    (hq : ∀ z : ℂ, q.eval z = 0 → z.re < 0) :
+    ∃ β : ℝ, 0 < β ∧ ∀ z : ℂ, q.eval z = 0 → z.re < -β := by
+  have hq0 : q ≠ 0 := fun h ↦ lt_irrefl _ (hq 0 (by simp [h]))
+  rcases q.roots.toFinset.eq_empty_or_nonempty with he | hne
+  · refine ⟨1, one_pos, fun z hz ↦ ?_⟩
+    have : z ∈ q.roots.toFinset := by simp [hq0, hz]
+    simp [he] at this
+  · -- Half the largest real part of a root is a margin.
+    obtain ⟨z₀, hz₀, hmax⟩ := q.roots.toFinset.exists_max_image (fun z ↦ z.re) hne
+    have hz₀q : q.eval z₀ = 0 := by simpa [hq0] using hz₀
+    refine ⟨-z₀.re / 2, by linarith [hq z₀ hz₀q], fun z hz ↦ ?_⟩
+    linarith [hq z₀ hz₀q, hmax z (by simp [hq0, hz])]
 
 /-- **Stable–unstable factorization of a real polynomial.** A real polynomial `p` without complex
 roots on the imaginary axis is the product `pₛ * pᵤ` of two coprime real polynomials, where every

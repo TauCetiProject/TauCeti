@@ -61,7 +61,8 @@ for real seminormed spaces, giving a Taylor seminorm. Definiteness is needed onl
   homeomorphic to `ι → ℂ`.
 * `ContinuousLinearMap.complexify` and `ContinuousLinearEquiv.complexify`: the complex-linear
   extension of bounded real operators and equivalences, with
-  `ContinuousLinearMap.norm_complexify` and `ContinuousLinearMap.complexifyAlgHom`.
+  `ContinuousLinearMap.norm_complexify` and the continuous algebra homomorphism
+  `ContinuousLinearMap.complexifyAlgHom` (`ContinuousLinearMap.continuous_complexifyAlgHom`).
 * `TauCeti.Complexification.ext_ofReal`: complex-linear maps out of `X_ℂ` are determined on `X`,
   so `T.complexify` is the unique complex-linear extension of `T`.
 
@@ -486,6 +487,10 @@ theorem complexifyₗᵢ_apply (T : X →L[ℝ] Y) : complexifyₗᵢ X Y T = T.
 
 @[simp]
 theorem complexifyAlgHom_apply (T : X →L[ℝ] X) : complexifyAlgHom X T = T.complexify := (rfl)
+
+/-- Complexification of bounded endomorphisms is continuous, being an isometry. -/
+theorem continuous_complexifyAlgHom : Continuous (complexifyAlgHom X) :=
+  (complexifyₗᵢ X X).continuous
 
 /-- Complexification preserves natural powers of bounded endomorphisms. -/
 @[simp]

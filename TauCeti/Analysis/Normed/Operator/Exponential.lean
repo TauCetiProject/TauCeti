@@ -16,6 +16,7 @@ import Mathlib.FieldTheory.IsAlgClosed.Spectrum
 import Mathlib.LinearAlgebra.Eigenspace.Minpoly
 import TauCeti.Analysis.Normed.Algebra.Exponential
 import TauCeti.Analysis.Normed.Algebra.Exponential.Polynomial
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Intertwining
 
 /-!
 # Exponentials of bounded operators
@@ -120,14 +121,15 @@ section FiniteDimensional
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [FiniteDimensional ℂ V]
 
 open Polynomial in
-/-- **Spectral mapping for the exponential in finite dimension.** The spectrum of `exp N` is the
-image of the spectrum of `N` under the exponential. The inclusion `⊇` is Mathlib's
-`spectrum.exp_mem_exp`. For `⊆`, `exp N` is a polynomial `P (N)` in finite dimension
-(`TauCeti.exists_aeval_eq_exp`), so its spectrum consists of the values `P (μ)` at the eigenvalues
-`μ` of `N`, and an eigenvector for `μ` shows `P (μ) = exp μ`. -/
+/-- **Spectral mapping for the exponential in finite dimension.** For an operator `N` on a
+finite-dimensional complex normed space, the spectrum of `exp N` is the image of the spectrum of
+`N` under the exponential. -/
 theorem _root_.ContinuousLinearMap.spectrum_exp (N : V →L[ℂ] V) :
     spectrum ℂ (exp N) = exp '' spectrum ℂ N := by
   have := FiniteDimensional.complete ℂ V
+  -- The inclusion `⊇` is `spectrum.exp_mem_exp`. For `⊆`, `exp N` is a polynomial `P (N)`, so its
+  -- spectrum consists of the values `P (μ)` at the eigenvalues `μ` of `N`, and an eigenvector for
+  -- `μ` shows `P (μ) = exp μ`.
   refine subset_antisymm (fun z hz ↦ ?_)
     (Set.image_subset_iff.mpr fun μ hμ ↦ spectrum.exp_mem_exp N hμ)
   rcases subsingleton_or_nontrivial V with hV | hV
@@ -139,11 +141,8 @@ theorem _root_.ContinuousLinearMap.spectrum_exp (N : V →L[ℂ] V) :
   rw [ContinuousLinearMap.spectrum_eq, ← Module.End.hasEigenvalue_iff_mem_spectrum] at hμ
   obtain ⟨v, hv⟩ := hμ.exists_hasEigenvector
   -- `P (N)` acts on the eigenvector `v` by `P (μ)`, and `exp N` by `exp μ`.
-  let φ : (V →L[ℂ] V) →ₐ[ℂ] Module.End ℂ V :=
-    { ContinuousLinearMap.toLinearMapRingHom with commutes' := fun _ ↦ rfl }
-  have hφ : aeval (N : Module.End ℂ V) P = (aeval N P : V →ₗ[ℂ] V) := aeval_algHom_apply φ N P
   have h := Module.End.aeval_apply_of_hasEigenvector (p := P) hv
-  rw [hφ, ContinuousLinearMap.coe_coe, hP,
+  rw [← ContinuousLinearMap.toLinearMap_aeval, ContinuousLinearMap.coe_coe, hP,
     ContinuousLinearMap.exp_apply_of_apply_eq_smul N (Module.End.mem_eigenspace_iff.mp hv.1)] at h
   exact smul_left_injective ℂ hv.2 h
 

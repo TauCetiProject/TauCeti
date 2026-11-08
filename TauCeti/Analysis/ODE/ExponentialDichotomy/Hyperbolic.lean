@@ -14,6 +14,8 @@ import TauCeti.Algebra.Polynomial.Semiconj
 import TauCeti.Analysis.Normed.Algebra.Exponential
 import TauCeti.Analysis.Normed.Module.Complexification
 import TauCeti.Analysis.Normed.Operator.Exponential
+import TauCeti.Analysis.ODE.ExponentialDichotomy
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Intertwining
 
 /-!
 # Exponential dichotomy for hyperbolic linear operators
@@ -27,8 +29,8 @@ there are an idempotent `P` commuting with `A` and constants `K, α > 0` with
 * `‖exp (t • A) (P v)‖ ≤ K * exp (-α t) * ‖v‖` for `t ≥ 0`, and
 * `‖exp (t • A) (v - P v)‖ ≤ K * exp (α t) * ‖v‖` for `t ≤ 0`
 
-(`ContinuousLinearMap.exists_exponentialDichotomy_of_aeval_eq_zero`). These are the hypotheses
-of the Lyapunov–Perron construction of stable and unstable manifolds
+(`ContinuousLinearMap.exists_projection_exponential_bounds_of_aeval_eq_zero`). These are the
+hypotheses of the Lyapunov–Perron construction of stable and unstable manifolds
 (`ContinuousLinearMap.lyapunovPerronIntegral`). For symmetric operators they are supplied by
 `TauCeti.Analysis.ODE.ExponentialDichotomy`, from an orthonormal eigenbasis; the operators here
 need not be symmetric or diagonalizable.
@@ -61,7 +63,9 @@ and transferred to real operators through the isometric complexification
 For the dichotomy, the operator `B = A P - (1 - P)` agrees with `A` on the range of `P` and with
 `-1` on its kernel. It is annihilated by `pₛ(X) (X + 1)`, whose roots have negative real part, and
 `exp (t • B) P = exp (t • A) P`. The decay estimate for `B` is the forward bound; the backward
-bound is the forward bound for `-A`, the projection `1 - P` and the factor `pᵤ(-X)`.
+bound is the forward bound for `-A`, the projection `1 - P` and the factor `pᵤ(-X)`. These bounds
+on the range and kernel of `P` are put in projection form by
+`ContinuousLinearMap.IsIdempotentElem.exists_projection_exponential_bounds`.
 
 ## Main results
 
@@ -69,9 +73,10 @@ bound is the forward bound for `-A`, the projection `1 - P` and the factor `pᵤ
   `ContinuousLinearMap.exists_norm_exp_smul_le_of_aeval_eq_zero`: exponential decay of
   `exp (t • T)` for complex and for real operators annihilated by a polynomial with roots in the
   open left half-plane.
-* `ContinuousLinearMap.exists_exponentialDichotomy_of_aeval_eq_zero`: the exponential dichotomy
-  for an operator annihilated by a polynomial without roots on the imaginary axis, and
-  `ContinuousLinearMap.exists_exponentialDichotomy_of_charpoly` for the characteristic polynomial.
+* `ContinuousLinearMap.exists_projection_exponential_bounds_of_aeval_eq_zero`: the exponential
+  dichotomy for an operator annihilated by a polynomial without roots on the imaginary axis, and
+  `ContinuousLinearMap.exists_projection_exponential_bounds_of_charpoly` for the characteristic
+  polynomial.
 
 ## References
 
@@ -106,16 +111,7 @@ theorem exists_norm_exp_smul_le_of_aeval_eq_zero' (T : V →L[ℂ] V) {q : ℂ[X
   have := FiniteDimensional.complete ℂ V
   let +nondep : NormedAlgebra ℚ (V →L[ℂ] V) := .restrictScalars ℚ ℂ _
   -- A uniform margin `β` between the roots of `q` and the imaginary axis.
-  obtain ⟨β, hβ, hβq⟩ : ∃ β : ℝ, 0 < β ∧ ∀ z : ℂ, q.eval z = 0 → z.re < -β := by
-    have hq0 : q ≠ 0 := fun h ↦ lt_irrefl _ (hroots 0 (by simp [h]))
-    rcases q.roots.toFinset.eq_empty_or_nonempty with he | hne
-    · refine ⟨1, one_pos, fun z hz ↦ ?_⟩
-      have : z ∈ q.roots.toFinset := by simp [hq0, hz]
-      simp [he] at this
-    · obtain ⟨z₀, hz₀, hmax⟩ := q.roots.toFinset.exists_max_image (fun z ↦ z.re) hne
-      have hz₀q : q.eval z₀ = 0 := by simpa [hq0] using hz₀
-      refine ⟨-z₀.re / 2, by linarith [hroots z₀ hz₀q], fun z hz ↦ ?_⟩
-      linarith [hroots z₀ hz₀q, hmax z (by simp [hq0, hz])]
+  obtain ⟨β, hβ, hβq⟩ := exists_pos_forall_re_lt_neg_of_re_lt_zero hroots
   -- The shifted operator `N = T + β` is annihilated by `q (X - β)`, whose roots also have
   -- negative real part.
   set N : V →L[ℂ] V := T + (β : ℂ) • 1 with hN
@@ -143,17 +139,6 @@ theorem exists_norm_exp_smul_le_of_aeval_eq_zero' (T : V →L[ℂ] V) {q : ℂ[X
   rw [spectrum.spectralRadius_eq_gelfandRadius, ENNReal.coe_one, ENNReal.ofReal_lt_one] at hρ
   obtain ⟨C, hC0, hC⟩ := norm_pow_le_mul_pow_of_gelfandRadius_lt _ hρ
   simp only [one_pow, mul_one] at hC
-  -- A bound for `exp (t • N)`, uniform in `t ≥ 0`.
-  have hNt (t : ℝ) (ht : 0 ≤ t) : ‖exp ((t : ℂ) • N)‖ ≤ C * Real.exp ‖N‖ := by
-    have hs0 : 0 ≤ t - ⌊t⌋₊ := sub_nonneg.mpr (Nat.floor_le ht)
-    have hs1 : t - ⌊t⌋₊ ≤ 1 := by linarith [Nat.lt_floor_add_one t]
-    have hsplit : (t : ℂ) = (⌊t⌋₊ : ℂ) + ((t - ⌊t⌋₊ : ℝ) : ℂ) := by push_cast; ring
-    rw [hsplit, add_smul, exp_add_of_commute (((Commute.refl N).smul_left _).smul_right _),
-      Nat.cast_smul_eq_nsmul, exp_nsmul]
-    refine (norm_mul_le _ _).trans (mul_le_mul (hC _) ?_ (norm_nonneg _) (by linarith))
-    refine (TauCeti.norm_exp_smul_le (by simp) N _).trans ?_
-    rw [Real.exp_le_exp, Complex.norm_real, Real.norm_of_nonneg hs0]
-    nlinarith [norm_nonneg N]
   refine ⟨C * Real.exp ‖N‖, β, by positivity, hβ, fun t ht ↦ ?_⟩
   -- Undo the shift: `exp (t • T) = exp (t • N) * exp (-β t)`.
   have hTN : (t : ℂ) • T = (t : ℂ) • N + (-((t : ℂ) * β)) • (1 : V →L[ℂ] V) := by
@@ -162,7 +147,7 @@ theorem exists_norm_exp_smul_le_of_aeval_eq_zero' (T : V →L[ℂ] V) {q : ℂ[X
   rw [hTN, exp_add_of_commute ((Commute.one_right _).smul_right _), TauCeti.exp_smul_one,
     mul_smul_comm, mul_one, norm_smul, ← Complex.exp_eq_exp_ℂ, Complex.norm_exp, mul_comm]
   gcongr
-  · exact hNt t ht
+  · exact TauCeti.norm_exp_smul_le_mul_exp_norm_of_norm_exp_pow_le (by simp) hC ht
   · simp [mul_comm]
 
 end Complex
@@ -190,12 +175,9 @@ theorem exists_norm_exp_smul_le_of_aeval_eq_zero (B : E →L[ℝ] E) {p : ℝ[X]
   let +nondep : NormedAlgebra ℚ (E →L[ℝ] E) := .restrictScalars ℚ ℝ _
   let +nondep : NormedAlgebra ℚ (TauCeti.Complexification E →L[ℂ] TauCeti.Complexification E) :=
     .restrictScalars ℚ ℂ _
-  have hcont : Continuous (complexifyAlgHom E) := by
-    have : ⇑(complexifyAlgHom E) = ⇑(complexifyₗᵢ E E) := funext fun T ↦ by simp
-    exact this ▸ (complexifyₗᵢ E E).continuous
   have hexp : (exp (t • B)).complexify = exp ((t : ℂ) • B.complexify) := by
     rw [← complexifyAlgHom_apply,
-      map_exp (complexifyAlgHom E) hcont, complexifyAlgHom_apply]
+      map_exp (complexifyAlgHom E) continuous_complexifyAlgHom, complexifyAlgHom_apply]
     congr 1
     ext z <;> simp
   rw [← norm_complexify, hexp]
@@ -209,14 +191,15 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 
 /-- The forward half of the dichotomy. If `P` is an idempotent commuting with `A` and `p(A)`
 vanishes on the range of `P`, for a polynomial `p` with roots in the open left half-plane, then
-`exp (t • A)` decays exponentially on the range of `P`. The operator `B = A P - (1 - P)` agrees
-with `A` on the range of `P`, so `exp (t • B) P = exp (t • A) P`, and it is annihilated by
-`p(X) (X + 1)`, so the decay estimate applies to it. -/
+`exp (t • A)` decays exponentially on the range of `P`. -/
 private theorem exists_norm_exp_smul_apply_le_of_aeval_mul_eq_zero {A P : E →L[ℝ] E}
     (hP : IsIdempotentElem P) (hAP : Commute A P) {p : ℝ[X]} (hp : aeval A p * P = 0)
     (hroots : ∀ z : ℂ, aeval z p = 0 → z.re < 0) :
     ∃ K α : ℝ, 0 < K ∧ 0 < α ∧
-      ∀ t : ℝ, 0 ≤ t → ∀ v : E, ‖exp (t • A) (P v)‖ ≤ K * Real.exp (-α * t) * ‖v‖ := by
+      ∀ t : ℝ, 0 ≤ t → ∀ w ∈ P.range, ‖exp (t • A) w‖ ≤ K * Real.exp (-α * t) * ‖w‖ := by
+  -- The operator `B = A P - (1 - P)` agrees with `A` on the range of `P`, so
+  -- `exp (t • B) P = exp (t • A) P`, and it is annihilated by `p(X) (X + 1)`, so the decay
+  -- estimate applies to it.
   set B : E →L[ℝ] E := A * P - (1 - P) with hB
   have hBP : B * P = A * P := by rw [hB, sub_mul, mul_assoc, hP.eq, sub_mul, one_mul, hP.eq,
     sub_self, sub_zero]
@@ -240,20 +223,20 @@ private theorem exists_norm_exp_smul_apply_le_of_aeval_mul_eq_zero {A P : E →L
     · rw [eq_neg_of_add_eq_zero_left hz]
       norm_num
   obtain ⟨K, α, hK, hα, h⟩ := B.exists_norm_exp_smul_le_of_aeval_eq_zero hq hqroots
-  refine ⟨K * (‖P‖ + 1), α, by positivity, hα, fun t ht v ↦ ?_⟩
+  refine ⟨K, α, hK, hα, fun t ht w hw ↦ ?_⟩
+  have hPw : P w = w := by
+    obtain ⟨u, rfl⟩ := hw
+    change P (P u) = P u
+    rw [← mul_apply_eq_comp, hP.eq]
   let +nondep : NormedAlgebra ℚ (E →L[ℝ] E) := .restrictScalars ℚ ℝ _
   have hexp : exp (t • A) * P = exp (t • B) * P := by
     have hsc : SemiconjBy P (t • B) (t • A) :=
       (hBc.smul_left t).eq.symm.trans (by rw [smul_mul_assoc, smul_mul_assoc, hBP])
     rw [← hsc.exp_right.eq, (hBc.smul_left t).exp_left.eq]
-  calc ‖exp (t • A) (P v)‖ = ‖exp (t • B) (P v)‖ := by
-        rw [← mul_apply_eq_comp, hexp, mul_apply_eq_comp]
-    _ ≤ ‖exp (t • B)‖ * ‖P v‖ := le_opNorm _ _
-    _ ≤ K * Real.exp (-α * t) * ((‖P‖ + 1) * ‖v‖) := by
-        gcongr
-        · exact h t ht
-        · exact (P.le_opNorm v).trans (by gcongr; linarith)
-    _ = K * (‖P‖ + 1) * Real.exp (-α * t) * ‖v‖ := by ring
+  calc ‖exp (t • A) w‖ = ‖exp (t • B) w‖ := by
+        rw [← hPw, ← mul_apply_eq_comp, hexp, mul_apply_eq_comp]
+    _ ≤ ‖exp (t • B)‖ * ‖w‖ := le_opNorm _ _
+    _ ≤ K * Real.exp (-α * t) * ‖w‖ := by gcongr; exact h t ht
 
 /-- **Exponential dichotomy for a hyperbolic operator.** Let `A` be an operator on a
 finite-dimensional real normed space, annihilated by a real polynomial `p` without complex roots
@@ -262,7 +245,7 @@ on the imaginary axis. Then there are an idempotent `P` commuting with `A` and c
 `P` in backward time:
 `‖exp (t • A) (P v)‖ ≤ K * exp (-α t) * ‖v‖` for `t ≥ 0` and
 `‖exp (t • A) (v - P v)‖ ≤ K * exp (α t) * ‖v‖` for `t ≤ 0`. -/
-theorem exists_exponentialDichotomy_of_aeval_eq_zero (A : E →L[ℝ] E) {p : ℝ[X]}
+theorem exists_projection_exponential_bounds_of_aeval_eq_zero (A : E →L[ℝ] E) {p : ℝ[X]}
     (hp : aeval A p = 0) (hroots : ∀ z : ℂ, aeval z p = 0 → z.re ≠ 0) :
     ∃ P : E →L[ℝ] E, IsIdempotentElem P ∧ Commute A P ∧ ∃ K α : ℝ≥0, 0 < K ∧ 0 < α ∧
       (∀ t : ℝ, 0 ≤ t → ∀ v : E, ‖exp (t • A) (P v)‖ ≤ K * Real.exp (-α * t) * ‖v‖) ∧
@@ -294,17 +277,20 @@ theorem exists_exponentialDichotomy_of_aeval_eq_zero (A : E →L[ℝ] E) {p : �
     fun z hz ↦ by
       rw [aeval_comp, map_neg, aeval_X] at hz
       simpa using hpu _ hz
-  refine ⟨P, hP, hAP, (max K₁ K₂).toNNReal, (min α₁ α₂).toNNReal, by positivity,
-    by positivity, fun t ht v ↦ ?_, fun t ht v ↦ ?_⟩
-  · rw [Real.coe_toNNReal _ (by positivity), Real.coe_toNNReal _ (by positivity)]
-    refine (h₁ t ht v).trans ?_
-    gcongr
+  refine ⟨P, hP, hAP, IsIdempotentElem.exists_projection_exponential_bounds hP (C := max K₁ K₂)
+    (lt_max_of_lt_left hK₁) (lt_min hα₁ hα₂) (fun t ht w hw ↦ (h₁ t ht w hw).trans ?_)
+    fun t ht w hw ↦ ?_⟩
+  · gcongr
     · exact le_max_left _ _
     · exact min_le_left _ _
-  · rw [Real.coe_toNNReal _ (by positivity), Real.coe_toNNReal _ (by positivity)]
-    have hv : (1 - P) v = v - P v := by simp
-    have := h₂ (-t) (by linarith) v
-    rw [neg_smul_neg, hv] at this
+  · -- The kernel of `P` is the range of `1 - P`, and the flow of `A` at time `t` is the flow of
+    -- `-A` at time `-t`.
+    have hw' : w ∈ (1 - P).range := by
+      refine ⟨w, ?_⟩
+      rw [LinearMap.mem_ker, coe_coe] at hw
+      rw [coe_coe, sub_apply, one_apply_eq_self, hw, sub_zero]
+    have := h₂ (-t) (by linarith) w hw'
+    rw [neg_smul_neg] at this
     refine this.trans (mul_le_mul_of_nonneg_right (mul_le_mul (le_max_right _ _)
       (Real.exp_le_exp.mpr (by nlinarith [min_le_right α₁ α₂])) (Real.exp_nonneg _)
       (by positivity)) (norm_nonneg _))
@@ -312,18 +298,16 @@ theorem exists_exponentialDichotomy_of_aeval_eq_zero (A : E →L[ℝ] E) {p : �
 /-- **Exponential dichotomy for a hyperbolic operator**, in terms of the characteristic
 polynomial: if no complex root of the characteristic polynomial of `A` lies on the imaginary axis,
 the flow of `A` has an exponential dichotomy, as in
-`ContinuousLinearMap.exists_exponentialDichotomy_of_aeval_eq_zero`. -/
-theorem exists_exponentialDichotomy_of_charpoly (A : E →L[ℝ] E)
+`ContinuousLinearMap.exists_projection_exponential_bounds_of_aeval_eq_zero`. -/
+theorem exists_projection_exponential_bounds_of_charpoly (A : E →L[ℝ] E)
     (hA : ∀ z : ℂ, aeval z (A : E →ₗ[ℝ] E).charpoly = 0 → z.re ≠ 0) :
     ∃ P : E →L[ℝ] E, IsIdempotentElem P ∧ Commute A P ∧ ∃ K α : ℝ≥0, 0 < K ∧ 0 < α ∧
       (∀ t : ℝ, 0 ≤ t → ∀ v : E, ‖exp (t • A) (P v)‖ ≤ K * Real.exp (-α * t) * ‖v‖) ∧
       (∀ t : ℝ, t ≤ 0 → ∀ v : E, ‖exp (t • A) (v - P v)‖ ≤ K * Real.exp (α * t) * ‖v‖) := by
-  refine A.exists_exponentialDichotomy_of_aeval_eq_zero ?_ hA
+  refine A.exists_projection_exponential_bounds_of_aeval_eq_zero ?_ hA
   -- Cayley–Hamilton, transported from linear maps to continuous linear maps.
-  let φ : (E →L[ℝ] E) →ₐ[ℝ] Module.End ℝ E :=
-    { toLinearMapRingHom with commutes' := fun _ ↦ rfl }
-  refine coe_injective (?_ : φ (aeval A _) = φ 0)
-  rw [← aeval_algHom_apply, map_zero]
+  refine coe_injective ?_
+  rw [toLinearMap_aeval, toLinearMap_zero]
   exact LinearMap.aeval_self_charpoly _
 
 end Dichotomy
