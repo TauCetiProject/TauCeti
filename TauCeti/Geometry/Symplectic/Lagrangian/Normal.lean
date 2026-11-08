@@ -230,23 +230,14 @@ theorem normalPairing_cotangentSymplecticForm_inl (z : U × Dual ℝ U) :
   ext u
   simp
 
-/-- The zero section `u ↦ (u, 0)` of `U × U*` has Lagrangian range. -/
-theorem isLagrangian_range_inl :
-    cotangentSymplecticForm.IsLagrangian (LinearMap.range (LinearMap.inl ℝ U (Dual ℝ U))) := by
-  have h : LinearMap.range (LinearMap.inl ℝ U (Dual ℝ U)) = cotangentZeroSection := by
-    ext z
-    rw [mem_cotangentZeroSection_iff, LinearMap.mem_range]
-    exact ⟨fun ⟨u, hu⟩ ↦ by simp [← hu], fun hz ↦ ⟨z.1, Prod.ext rfl hz.symm⟩⟩
-  rw [h]
-  exact isLagrangian_cotangentZeroSection
-
 /-- **The normal space of the zero section is the fibre.** For finite-dimensional `U`, the
 identification of the normal quotient of the zero section of `U × U*` with `U*` sends the class
 of `(u, p)` to `p`. -/
-theorem quotientEquivDual_isLagrangian_range_inl_mk [FiniteDimensional ℝ U] (z : U × Dual ℝ U) :
-    isLagrangian_range_inl.quotientEquivDual LinearMap.inl_injective (Submodule.Quotient.mk z) =
-      z.2 := by
-  rw [IsLagrangian.quotientEquivDual_mk, normalPairing_cotangentSymplecticForm_inl]
+theorem quotientEquivDual_cotangentZeroSection_mk [FiniteDimensional ℝ U] (z : U × Dual ℝ U) :
+    (isLagrangian_cotangentZeroSection : cotangentSymplecticForm.IsLagrangian
+        (LinearMap.range (LinearMap.inl ℝ U (Dual ℝ U)))).quotientEquivDual
+      LinearMap.inl_injective (Submodule.Quotient.mk z) = z.2 :=
+  (IsLagrangian.quotientEquivDual_mk _ _ z).trans (normalPairing_cotangentSymplecticForm_inl z)
 
 end Cotangent
 

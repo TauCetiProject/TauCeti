@@ -97,17 +97,9 @@ def normalSpaceToCotangentOfIsIsotropic
     f.NormalSpace x hn →L[ℝ] (TangentSpace J x →L[ℝ] ℝ) :=
   haveI : FiniteDimensional ℝ (TangentSpace J x) :=
     Module.Finite.of_injective _ (f.isImmersion.mfderiv_injective hn x)
-  f.normalLiftL x hn (LinearMap.toContinuousLinearMap
-      (LinearMap.toContinuousLinearMap.toLinearMap ∘ₗ
-        (hσ.symplecticFormAt (f x)).normalPairing (mfderiv J I f x).toLinearMap))
-    fun v hv ↦ by
-      -- A tangent vector `df_x u` pairs to zero with the isotropic tangent image.
-      obtain ⟨u, rfl⟩ := (f.mem_tangentRange_iff x hn v).mp hv
-      have h0 : (hσ.symplecticFormAt (f x)).normalPairing (mfderiv J I f x).toLinearMap
-          (mfderiv J I f x u) = 0 :=
-        ((hσ.symplecticFormAt (f x)).normalPairing_eq_zero_iff _).mpr
-          (SymplecticForm.isIsotropic_iff_le.mp hI ⟨u, rfl⟩)
-      rw [LinearMap.coe_toContinuousLinearMap', LinearMap.comp_apply, h0, map_zero]
+  LinearMap.toContinuousLinearMap
+    (LinearMap.toContinuousLinearMap.toLinearMap ∘ₗ hI.normalPairingQuotient :
+      f.NormalSpace x hn →ₗ[ℝ] (TangentSpace J x →L[ℝ] ℝ))
 
 variable {f x hn}
 
@@ -118,11 +110,9 @@ theorem normalSpaceToCotangentOfIsIsotropic_normalClass
     (v : TangentSpace I (f x)) (u : TangentSpace J x) :
     f.normalSpaceToCotangentOfIsIsotropic x hn hI (f.normalClass x hn v) u =
       SmoothBundleForm.eval₂ σ (f x) (mfderiv J I f x u) v := by
-  have : FiniteDimensional ℝ (TangentSpace J x) :=
-    Module.Finite.of_injective _ (f.isImmersion.mfderiv_injective hn x)
-  rw [normalSpaceToCotangentOfIsIsotropic, ← normalClassL_apply, ← ContinuousLinearMap.comp_apply,
-    normalLiftL_comp_normalClassL, LinearMap.coe_toContinuousLinearMap', LinearMap.comp_apply,
-    LinearEquiv.coe_coe, LinearMap.coe_toContinuousLinearMap', SymplecticForm.normalPairing_apply,
+  rw [normalClass_def]
+  change hI.normalPairingQuotient (Submodule.Quotient.mk v) u = _
+  rw [SymplecticForm.IsIsotropic.normalPairingQuotient_mk, SymplecticForm.normalPairing_apply,
     SmoothTwoForm.IsNondegenerate.symplecticFormAt_apply, ContinuousLinearMap.coe_coe]
 
 /-- The normal class of `v` has zero covector exactly when `v` lies in the symplectic complement
@@ -143,13 +133,10 @@ theorem normalSpaceToCotangentOfIsIsotropic_normalClass_eq_zero_iff
 theorem normalSpaceToCotangentOfIsIsotropic_surjective
     (hI : (hσ.symplecticFormAt (f x)).IsIsotropic (LinearMap.range (mfderiv J I f x).toLinearMap)) :
     Function.Surjective (f.normalSpaceToCotangentOfIsIsotropic x hn hI) := by
-  intro p
-  obtain ⟨v, hv⟩ := (hσ.symplecticFormAt (f x)).normalPairing_surjective _
-    (f.isImmersion.mfderiv_injective hn x) p.toLinearMap
-  refine ⟨f.normalClass x hn v, ContinuousLinearMap.ext fun u ↦ ?_⟩
-  rw [normalSpaceToCotangentOfIsIsotropic_normalClass, ← ContinuousLinearMap.coe_coe p, ← hv,
-    SymplecticForm.normalPairing_apply, SmoothTwoForm.IsNondegenerate.symplecticFormAt_apply,
-    ContinuousLinearMap.coe_coe]
+  have : FiniteDimensional ℝ (TangentSpace J x) :=
+    Module.Finite.of_injective _ (f.isImmersion.mfderiv_injective hn x)
+  exact LinearMap.toContinuousLinearMap.surjective.comp
+    (hI.normalPairingQuotient_surjective (f.isImmersion.mfderiv_injective hn x))
 
 /-- The cotangent projection of an isotropic tangent image is injective exactly when the tangent
 image is Lagrangian. -/
@@ -157,16 +144,10 @@ theorem normalSpaceToCotangentOfIsIsotropic_injective_iff
     (hI : (hσ.symplecticFormAt (f x)).IsIsotropic (LinearMap.range (mfderiv J I f x).toLinearMap)) :
     Function.Injective (f.normalSpaceToCotangentOfIsIsotropic x hn hI) ↔
       (hσ.symplecticFormAt (f x)).IsLagrangian (LinearMap.range (mfderiv J I f x).toLinearMap) := by
-  rw [SymplecticForm.isLagrangian_iff, SymplecticForm.isCoisotropic_iff, injective_iff_map_eq_zero]
-  refine ⟨fun hinj ↦ ⟨hI, fun v hv ↦ ?_⟩, fun hL q hq ↦ ?_⟩
-  · have h0 := hinj _ ((normalSpaceToCotangentOfIsIsotropic_normalClass_eq_zero_iff hI v).mpr hv)
-    obtain ⟨u, hu⟩ := (f.mem_tangentRange_iff x hn v).mp ((f.normalClass_eq_zero_iff x hn v).mp h0)
-    exact ⟨u, hu⟩
-  · obtain ⟨v, rfl⟩ := f.normalClass_surjective x hn q
-    obtain ⟨u, hu⟩ :=
-      hL.2 v ((normalSpaceToCotangentOfIsIsotropic_normalClass_eq_zero_iff hI v).mp hq)
-    rw [← hu]
-    exact normalClass_mfderiv f x hn u
+  have : FiniteDimensional ℝ (TangentSpace J x) :=
+    Module.Finite.of_injective _ (f.isImmersion.mfderiv_injective hn x)
+  exact LinearMap.toContinuousLinearMap.injective.of_comp_iff _ |>.trans
+    hI.normalPairingQuotient_injective_iff
 
 /-! ### Lagrangian embeddings -/
 
@@ -179,21 +160,11 @@ def normalSpaceEquivCotangentOfIsLagrangian
     (hL : (hσ.symplecticFormAt (f x)).IsLagrangian
       (LinearMap.range (mfderiv J I f x).toLinearMap)) :
     f.NormalSpace x hn ≃L[ℝ] (TangentSpace J x →L[ℝ] ℝ) :=
-  (LinearEquiv.ofBijective (f.normalSpaceToCotangentOfIsIsotropic x hn hL.isIsotropic).toLinearMap
-    ⟨(normalSpaceToCotangentOfIsIsotropic_injective_iff hL.isIsotropic).mpr hL,
-      normalSpaceToCotangentOfIsIsotropic_surjective hL.isIsotropic⟩).toContinuousLinearEquiv
-
-/-- As a continuous linear map, the equivalence is the cotangent projection. -/
-@[simp]
-theorem coe_normalSpaceEquivCotangentOfIsLagrangian
-    (hL : (hσ.symplecticFormAt (f x)).IsLagrangian
-      (LinearMap.range (mfderiv J I f x).toLinearMap)) :
-    (f.normalSpaceEquivCotangentOfIsLagrangian x hn hL : f.NormalSpace x hn →L[ℝ] _) =
-      f.normalSpaceToCotangentOfIsIsotropic x hn hL.isIsotropic := by
-  ext q u
-  simp only [normalSpaceEquivCotangentOfIsLagrangian, ContinuousLinearEquiv.coe_coe,
-    LinearEquiv.coe_toContinuousLinearEquiv']
-  exact congrArg (fun p : TangentSpace J x →L[ℝ] ℝ ↦ p u) (LinearEquiv.ofBijective_apply _ q)
+  haveI : FiniteDimensional ℝ (TangentSpace J x) :=
+    Module.Finite.of_injective _ (f.isImmersion.mfderiv_injective hn x)
+  LinearEquiv.toContinuousLinearEquiv
+    ((hL.quotientEquivDual (f.isImmersion.mfderiv_injective hn x)).trans
+      LinearMap.toContinuousLinearMap)
 
 /-- The covector of the normal class of `v` is `u ↦ σ(df_x u, v)`. -/
 @[simp]
@@ -203,7 +174,22 @@ theorem normalSpaceEquivCotangentOfIsLagrangian_normalClass
     (v : TangentSpace I (f x)) (u : TangentSpace J x) :
     f.normalSpaceEquivCotangentOfIsLagrangian x hn hL (f.normalClass x hn v) u =
       SmoothBundleForm.eval₂ σ (f x) (mfderiv J I f x u) v := by
-  rw [← ContinuousLinearEquiv.coe_coe, coe_normalSpaceEquivCotangentOfIsLagrangian,
+  rw [normalClass_def]
+  change hL.quotientEquivDual (f.isImmersion.mfderiv_injective hn x)
+    (Submodule.Quotient.mk v) u = _
+  rw [SymplecticForm.IsLagrangian.quotientEquivDual_mk, SymplecticForm.normalPairing_apply,
+    SmoothTwoForm.IsNondegenerate.symplecticFormAt_apply, ContinuousLinearMap.coe_coe]
+
+/-- As a continuous linear map, the equivalence is the cotangent projection. -/
+@[simp]
+theorem coe_normalSpaceEquivCotangentOfIsLagrangian
+    (hL : (hσ.symplecticFormAt (f x)).IsLagrangian
+      (LinearMap.range (mfderiv J I f x).toLinearMap)) :
+    (f.normalSpaceEquivCotangentOfIsLagrangian x hn hL : f.NormalSpace x hn →L[ℝ] _) =
+      f.normalSpaceToCotangentOfIsIsotropic x hn hL.isIsotropic := by
+  ext q u
+  obtain ⟨v, rfl⟩ := f.normalClass_surjective x hn q
+  rw [ContinuousLinearEquiv.coe_coe, normalSpaceEquivCotangentOfIsLagrangian_normalClass,
     normalSpaceToCotangentOfIsIsotropic_normalClass]
 
 /-- The normal vector corresponding to a covector `p` is the class of any ambient tangent vector

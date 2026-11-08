@@ -89,7 +89,7 @@ lemma cotangentSymplecticForm_apply (x y : V × Module.Dual ℝ V) :
   rfl
 
 /-- The zero section `V × {0}` in the linear cotangent space `V × V*`. -/
-def cotangentZeroSection : Submodule ℝ (V × Module.Dual ℝ V) :=
+@[expose] def cotangentZeroSection : Submodule ℝ (V × Module.Dual ℝ V) :=
   LinearMap.range (LinearMap.inl ℝ V (Module.Dual ℝ V))
 
 /-- The cotangent fiber `{0} × V*` in the linear cotangent space `V × V*`. -/
