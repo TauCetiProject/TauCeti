@@ -26,10 +26,6 @@ of the composite `F ∘ φ`.
 * `MonoidAlgebra.mapDomain_id`, `MonoidAlgebra.mapDomain_mapDomain`: the functor laws, with
   additive forms `AddMonoidAlgebra.mapDomain_id` and `AddMonoidAlgebra.mapDomain_mapDomain`.
 * `MonoidAlgebra.mapDomain_surjective`: the map induced by a surjection is surjective.
-* `MonoidHom.mapDomainAlgHom_commute_single`: an element `s` commuting with the image of
-  `ι : Q →* G` commutes with the image of all of `A[Q]` under `mapDomainAlgHom`.
-* `MonoidHom.exists_linearMap_apply_eq_single_smul`: for such `s`, the action of `single s 1` on an
-  `A[G]`-module `X` that is an `A[Q]`-module through `ι` is `A[Q]`-linear.
 * `MonoidAlgebra.mapDomain_commute_single`: the image of `mapDomain f` commutes with `single n r`
   when the values of `f` commute with `n` and `r` is central.
 * `MonoidAlgebra.lift_mapDomain`: `lift F ∘ mapDomain φ = lift (F ∘ φ)`.
@@ -114,34 +110,3 @@ theorem coeff_mul_mapDomainRingEquiv_inv_one (x : MonoidAlgebra R G) :
 end Group
 
 end MonoidAlgebra
-
-namespace MonoidHom
-
-open MonoidAlgebra
-
-/-- An element `s` commuting with the image of a monoid homomorphism `ι : Q →* G` commutes with the
-image of every element of `A[Q]` in `A[G]`. -/
-theorem mapDomainAlgHom_commute_single {A : Type*} [CommSemiring A] {Q G : Type*} [Monoid Q]
-    [Monoid G] (ι : Q →* G) {s : G} (hs : ∀ c, Commute s (ι c)) (r : MonoidAlgebra A Q) :
-    Commute (mapDomainAlgHom A A ι r) (single s 1) := by
-  induction r using MonoidAlgebra.induction_linear with
-  | zero => simp
-  | add x y hx hy => rw [map_add]; exact hx.add_left hy
-  | single c a =>
-    change _ * _ = _ * _
-    simp [single_mul_single, (hs c).eq]
-
-/-- If the `A[Q]`-module structure on `X` is the `A[G]`-action through `ι`, then the action of
-`single s 1` for `s` commuting with the image of `ι` is `A[Q]`-linear. -/
-theorem exists_linearMap_apply_eq_single_smul {A : Type*} [CommSemiring A] {Q G : Type*}
-    [Monoid Q] [Monoid G] (ι : Q →* G) {s : G} (hs : ∀ c, Commute s (ι c)) (X : Type*)
-    [AddCommMonoid X] [Module (MonoidAlgebra A G) X] [Module (MonoidAlgebra A Q) X]
-    (hact : ∀ (r : MonoidAlgebra A Q) (x : X), r • x = mapDomainAlgHom A A ι r • x) :
-    ∃ S : X →ₗ[MonoidAlgebra A Q] X, ∀ x, S x = (single s (1 : A) : MonoidAlgebra A G) • x :=
-  ⟨{ toFun := fun x ↦ (single s (1 : A) : MonoidAlgebra A G) • x
-     map_add' := smul_add _
-     map_smul' := fun r x ↦ by
-       rw [RingHom.id_apply, hact, hact, ← mul_smul, ← mul_smul,
-         (mapDomainAlgHom_commute_single ι hs _).eq] }, fun _ ↦ rfl⟩
-
-end MonoidHom

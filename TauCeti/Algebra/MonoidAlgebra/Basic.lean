@@ -29,9 +29,6 @@ none of the further theory built on it.
 * `TauCeti.MonoidAlgebra.mem_ideal_smul_top_iff`: an element of `R[M]` lies in `I • R[M]` exactly
   when its coefficients lie in `I`, and `TauCeti.MonoidAlgebra.mapRingHom_eq_zero_iff`: the kernel
   of the coefficientwise map along `f : R →+* S` is `ker f • R[M]`.
-* `Module.End.pow_apply_eq_single_pow_smul`, `Module.End.pow_eq_one_of_apply_eq_single_smul`: an
-  endomorphism acting as `single s 1` has `k`-th power acting as `single (s ^ k) 1`, so it
-  satisfies `S ^ k = 1` once `s ^ k = 1`.
 * The `IsAddTorsionFree (MonoidAlgebra R M)` and `HasUniqueDiv (MonoidAlgebra R M)` instances:
   `R[M]` inherits the absence of additive torsion from its coefficients, as `M →₀ R` does in
   Mathlib.
@@ -220,27 +217,3 @@ theorem coeff_single_mul_mul_single_inv [Semiring R] (g h : G) (x : MonoidAlgebr
   simp [mul_assoc]
 
 end MonoidAlgebra
-
-namespace Module.End
-
-open MonoidAlgebra
-
-/-- The `k`-th power of an endomorphism acting as `single s 1` acts as `single (s ^ k) 1`. -/
-theorem pow_apply_eq_single_pow_smul {A : Type*} [Semiring A] {G : Type*} [Monoid G]
-    {R X : Type*} [Semiring R] [AddCommMonoid X] [Module R X] [Module (MonoidAlgebra A G) X]
-    {s : G} (S : Module.End R X)
-    (hS : ∀ x, S x = (single s (1 : A) : MonoidAlgebra A G) • x) (k : ℕ) (x : X) :
-    (S ^ k) x = (single (s ^ k) (1 : A) : MonoidAlgebra A G) • x := by
-  rw [pow_apply_eq_iterate, show ⇑S = fun x ↦ (single s (1 : A) : MonoidAlgebra A G) • x from
-    funext hS, smul_iterate_apply, single_pow, one_pow]
-
-/-- An endomorphism acting as `single s 1` satisfies `S ^ k = 1` whenever `s ^ k = 1`. -/
-theorem pow_eq_one_of_apply_eq_single_smul {A : Type*} [Semiring A] {G : Type*} [Monoid G]
-    {R X : Type*} [Semiring R] [AddCommMonoid X] [Module R X] [Module (MonoidAlgebra A G) X]
-    {s : G} (S : Module.End R X)
-    (hS : ∀ x, S x = (single s (1 : A) : MonoidAlgebra A G) • x) {k : ℕ} (hk : s ^ k = 1) :
-    S ^ k = 1 :=
-  LinearMap.ext fun x ↦ by
-    rw [pow_apply_eq_single_pow_smul S hS, hk, ← one_def, one_smul, one_apply_eq_self]
-
-end Module.End
