@@ -8,8 +8,8 @@ module
 public import TauCeti.Analysis.Sobolev.W1p.InteriorMorrey
 public import TauCeti.Analysis.Sobolev.W1p.Restriction
 import TauCeti.Analysis.Sobolev.W1p.PreciseRepresentative
+import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
 import TauCeti.MeasureTheory.Function.Lp.Subtype
-import Mathlib.MeasureTheory.Function.LpSpace.ContinuousFunctions
 import Mathlib.Topology.ContinuousMap.Bounded.ArzelaAscoli
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 
@@ -96,25 +96,18 @@ theorem W1p.isCompactOperator_valueL_restrictL_top {Omega V : Opens E}
     (hVc : IsCompact (closure (V : Set E))) (hVO : closure (V : Set E) ⊆ (Omega : Set E)) :
     IsCompactOperator ((W1p.valueL (mu := mu) (Omega := V) (p := ∞)).comp
       (W1p.restrictL (SetLike.coe_subset_coe.mp (subset_closure.trans hVO)))) := by
-  have hV : Bornology.IsBounded (V : Set E) := hVc.isBounded.subset subset_closure
   have hVΩ : V ≤ Omega := SetLike.coe_subset_coe.mp (subset_closure.trans hVO)
   let K := closure (V : Set E)
   have hK : IsCompact K := hVc
   let : CompactSpace K := isCompact_iff_compactSpace.mp hK
   let ν : Measure ↥(V : Set E) := mu.comap (Subtype.val : ↥(V : Set E) → E)
-  let : IsFiniteMeasure (mu.restrict (V : Set E)) :=
-    ⟨by simpa using hV.measure_lt_top⟩
-  let : IsFiniteMeasure ν := ⟨by
-    dsimp only [ν]
-    rw [comap_subtype_coe_apply V.isOpen.measurableSet mu univ]
-    simpa using hV.measure_lt_top⟩
   let σ : C((V : Set E), K) := ⟨fun x => ⟨x, subset_closure x.2⟩,
     continuous_subtype_val.subtype_mk _⟩
   let e := Lp.comapSubtypeEquivₗᵢ (E := ℝ) (p := ∞) ℝ mu V.isOpen.measurableSet
   let S : (K →ᵇ ℝ) → Lp ℝ ∞ (mu.restrict (V : Set E)) := fun g =>
-    e.symm (BoundedContinuousFunction.toLp ∞ ν ℝ (g.compContinuous σ))
+    e.symm (BoundedContinuousFunction.toLpTop ν ℝ (g.compContinuous σ))
   have hS : Continuous S := e.symm.continuous.comp
-    ((BoundedContinuousFunction.toLp ∞ ν ℝ).continuous.comp
+    ((BoundedContinuousFunction.toLpTop ν ℝ).continuous.comp
       (BoundedContinuousFunction.continuous_compContinuous σ))
   obtain ⟨f, hf, hc⟩ :=
     W1p.isCompact_closure_preciseRepresentative_unitBall (mu := mu) hK hVO
@@ -136,7 +129,7 @@ theorem W1p.isCompactOperator_valueL_restrictL_top {Omega V : Opens E}
       (W1p.value_restrictL_ae hVΩ u),
     (ae_restrict_iff_subtype V.isOpen.measurableSet).1
       (heq.filter_mono (ae_mono (Measure.restrict_mono_set mu hVΩ))),
-    BoundedContinuousFunction.coeFn_toLp ∞ ν ℝ ((f u).compContinuous σ)] with x hx hr hp ht
+    BoundedContinuousFunction.coeFn_toLpTop ν (𝕜 := ℝ) ((f u).compContinuous σ)] with x hx hr hp ht
   simp only [BoundedContinuousFunction.compContinuous_apply, σ, ContinuousMap.coe_mk, hf] at ht
   exact ht.trans (hp.symm.trans (hr.symm.trans hx.symm))
 
