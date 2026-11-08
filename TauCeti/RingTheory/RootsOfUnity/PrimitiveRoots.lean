@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 public import Mathlib.FieldTheory.Normal.Defs
 public import Mathlib.GroupTheory.Abelianization.Defs
+public import Mathlib.RingTheory.Polynomial.Cyclotomic.Basic
 import Mathlib.FieldTheory.Minpoly.IsConjRoot
 import Mathlib.NumberTheory.Cyclotomic.PrimitiveRoots
 
@@ -22,9 +23,9 @@ The same principle characterises when the cyclotomic character `IsPrimitiveRoot.
 trivial: it kills an automorphism exactly when that automorphism fixes the chosen primitive root,
 because the character records nothing but the power the root is sent to.
 
-Over a normal extension of `ℚ`, every coprime power of a primitive root is attained by an
-automorphism. Indeed the two primitive roots have the same cyclotomic minimal polynomial, and
-normality extends that conjugacy to the ambient field.
+Over a normal extension of a field where `Φ_n` is irreducible, every coprime power of a
+primitive `n`-th root is attained by an automorphism. Indeed the two primitive roots have the
+same cyclotomic minimal polynomial, and normality extends that conjugacy to the ambient field.
 
 Every character of a group of order `n` takes values whose `n`-th power is `1`; for `n = p` prime
 it therefore sends each element outside its kernel to a primitive `p`-th root of unity.
@@ -45,7 +46,7 @@ Multiplying one `n`-th root of a nonzero `a` by the powers of a primitive `n`-th
 * `AlgEquiv.apply_eq_apply_of_abelianization_of_eq`: two automorphisms with the same image in the
   abelianization agree on every root of unity.
 * `IsPrimitiveRoot.exists_algEquiv_apply_eq_pow_of_coprime`: every coprime power of a primitive
-  root in a normal extension of `ℚ` is realized by an automorphism.
+  root in a normal extension is realized by an automorphism if `Φ_n` is irreducible.
 * `MonoidHom.apply_pow_eq_one_of_card_eq`: a character of a group of order `n` takes values whose
   `n`-th power is `1`.
 * `MonoidHom.isPrimitiveRoot_apply_of_card_eq_prime`: a character of a group of prime order `p`
@@ -76,23 +77,20 @@ theorem _root_.IsPrimitiveRoot.map_eq_pow {n j : ℕ} [NeZero n] {ζ : R} (hζ :
   obtain ⟨i, -, rfl⟩ := hζ.eq_pow_of_pow_eq_one hμ
   rw [map_pow, hσ, ← pow_mul, ← pow_mul, Nat.mul_comm]
 
-/-- In a normal extension of `ℚ`, every coprime power of a primitive root is the image of that root
-under a `ℚ`-algebra automorphism. -/
+/-- If `Φ_n` is irreducible over `K`, every coprime power of a primitive root in a normal
+extension is the image of that root under a `K`-algebra automorphism. -/
 theorem _root_.IsPrimitiveRoot.exists_algEquiv_apply_eq_pow_of_coprime
-    {K : Type*} [Field K] [CharZero K] [Normal ℚ K]
-    {n j : ℕ} {ζ : K} (hζ : IsPrimitiveRoot ζ n) (hj : n.Coprime j) :
-    ∃ σ : K ≃ₐ[ℚ] K, σ ζ = ζ ^ j := by
-  rcases n.eq_zero_or_pos with rfl | hn
-  · obtain rfl : j = 1 := by simpa using hj
-    exact ⟨AlgEquiv.refl, by simp⟩
-  have : NeZero n := ⟨hn.ne'⟩
+    {K L : Type*} [Field K] [Field L] [Algebra K L] [Normal K L]
+    {n j : ℕ} [NeZero n] {ζ : L} (hζ : IsPrimitiveRoot ζ n) (hj : n.Coprime j)
+    (hirr : Irreducible (Polynomial.cyclotomic n K)) :
+    ∃ σ : L ≃ₐ[K] L, σ ζ = ζ ^ j := by
+  have := hζ.neZero'
+  have : NeZero (n : K) := ⟨fun hn ↦
+    (NeZero.ne (n : L)) (by simpa using congrArg (algebraMap K L) hn)⟩
   have hpow : IsPrimitiveRoot (ζ ^ j) n := hζ.pow_of_coprime j hj.symm
-  have hconj : IsConjRoot ℚ (ζ ^ j) ζ := by
-    rw [isConjRoot_def,
-      (hpow.minpoly_eq_cyclotomic_of_irreducible
-        (Polynomial.cyclotomic.irreducible_rat hn)).symm,
-      (hζ.minpoly_eq_cyclotomic_of_irreducible
-        (Polynomial.cyclotomic.irreducible_rat hn)).symm]
+  have hconj : IsConjRoot K (ζ ^ j) ζ := by
+    rw [isConjRoot_def, (hpow.minpoly_eq_cyclotomic_of_irreducible hirr).symm,
+      (hζ.minpoly_eq_cyclotomic_of_irreducible hirr).symm]
   exact hconj.exists_algEquiv
 
 /-- A character of a group of order `n` takes values whose `n`-th power is `1`. -/
