@@ -52,6 +52,8 @@ No inner product instance on the algebraic dual is installed.
   `InnerProductSpace.isUnit_continuousLinearMapOfBilin`: over `ℝ`, the Riesz operator of a
   symmetric form is self-adjoint, and in finite dimension that of a nondegenerate form is
   invertible.
+* `ContinuousLinearMap.injective_bilinearComp`: pulling a nondegenerate bilinear form back along a
+  bijective continuous linear map keeps it nondegenerate.
 * `ContinuousLinearMap.continuousLinearMapOfBilin_bilinearComp`: pulling a real bilinear form back
   along a linear isometry equivalence conjugates its Riesz operator.
 * `InnerProductSpace.dualMetric`: the Hermitian form on the algebraic dual transported by Riesz.
@@ -287,6 +289,19 @@ end FiniteDimensional
 end InnerProductSpace
 
 namespace ContinuousLinearMap
+
+/-- Pulling a nondegenerate bilinear form back along a bijective continuous linear map keeps it
+nondegenerate. -/
+theorem injective_bilinearComp {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    [NormedAddCommGroup G] [NormedSpace 𝕜 G] {Q : E →L[𝕜] E →L[𝕜] G}
+    (hQ : Function.Injective Q) {L : F →L[𝕜] E} (hL : Function.Bijective L) :
+    Function.Injective (Q.bilinearComp L L) := by
+  intro u u' huu'
+  refine hL.1 (hQ ?_)
+  ext v
+  obtain ⟨w, rfl⟩ := hL.2 v
+  exact congrArg (fun φ ↦ φ w) huu'
 
 open InnerProductSpace
 

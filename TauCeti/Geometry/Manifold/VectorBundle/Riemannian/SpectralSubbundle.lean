@@ -24,9 +24,10 @@ point `x` the metric turns `Q x` into a self-adjoint invertible operator, its Ri
 eigenspaces with negative eigenvalues and the sum of those with positive eigenvalues. This file
 shows that these two families of subspaces are `C^n` subbundles of `V`: near every point they are
 spanned by `C^n` local frames (`TauCeti.exists_isSubbundleFrameOn_pointSpectralSubspace_Iio` and
-`TauCeti.exists_isSubbundleFrameOn_pointSpectralSubspace_Ioi`). Where their ranks are constant
-this is the local frame criterion `TauCeti.HasLocalContMDiffSubbundleFrames` for a `C^n`
-subbundle (`TauCeti.hasLocalContMDiffSubbundleFrames_pointSpectralSubspace_Iio` and
+`TauCeti.exists_isSubbundleFrameOn_pointSpectralSubspace_Ioi`). If their ranks are the same at
+every point of the base, this is the local frame criterion
+`TauCeti.HasLocalContMDiffSubbundleFrames` for a `C^n` subbundle
+(`TauCeti.hasLocalContMDiffSubbundleFrames_pointSpectralSubspace_Iio` and
 `TauCeti.hasLocalContMDiffSubbundleFrames_pointSpectralSubspace_Ioi`).
 
 The ranks of the negative and positive parts at `x` are the negative and positive indices of
@@ -41,8 +42,10 @@ the metric. The positive case is the negative case for `-Q`
 No smooth choice of eigenvectors is made. Over the base set of a trivialization, normalized
 Gram–Schmidt gives a smooth orthonormal frame
 (`Bundle.Trivialization.exists_contMDiffOn_orthonormal`). Read in this frame, `Q` becomes a
-smooth family of self-adjoint invertible operators on a fixed Euclidean space, whose negative
-spectral projections are smooth
+smooth family of self-adjoint invertible operators on a fixed Euclidean space, whose spectral
+subspaces are those of `Q` in coordinates
+(`InnerProductSpace.pointSpectralSubspace_continuousLinearMapOfBilin_eq_map_synthesisMap`) and whose
+negative spectral projections are smooth
 (`ContinuousLinearMap.starProjection_pointSpectralSubspace_Iio_zero_eq`, which writes them as
 `(1 - A (A²)^(-1/2)) / 2`). Projecting a basis of the negative space at the base point and
 synthesizing the result against the frame gives the local frame of the negative subbundle
@@ -66,75 +69,6 @@ open scoped ContDiff Manifold Topology
 noncomputable section
 
 namespace TauCeti
-
-section Fibre
-
-variable {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℝ G] {d : ℕ}
-
-/-- A bilinear form read through the synthesis map of a family is the sum of its values on pairs of
-members of the family times the elementary bilinear forms. -/
-private theorem bilinearComp_synthesisMap_eq_sum (Q : G →L[ℝ] G →L[ℝ] ℝ) (v : Fin d → G) :
-    Q.bilinearComp (synthesisMap ℝ v).toContinuousLinearMap
-        (synthesisMap ℝ v).toContinuousLinearMap =
-      ∑ i, ∑ j, Q (v i) (v j) •
-        (EuclideanSpace.proj i : EuclideanSpace ℝ (Fin d) →L[ℝ] ℝ).smulRight
-          (EuclideanSpace.proj j : EuclideanSpace ℝ (Fin d) →L[ℝ] ℝ) := by
-  ext u w
-  simp only [LinearMap.coe_toContinuousLinearMap', synthesisMap_apply,
-    ContinuousLinearMap.bilinearComp_apply, map_sum, map_smul, sum_apply,
-    smul_apply, smul_eq_mul, Finset.mul_sum,
-    ContinuousLinearMap.smulRight_apply, PiLp.proj_apply]
-  rw [Finset.sum_comm]
-  exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by ring
-
-/-- The synthesis map of an orthonormal family spanning the space is bijective: it is the inverse
-of the coordinate map of the orthonormal basis. -/
-private theorem bijective_synthesisMap {v : Fin d → G} (hon : Orthonormal ℝ v)
-    (hsp : ⊤ ≤ Submodule.span ℝ (range v)) : Function.Bijective (synthesisMap ℝ v) := by
-  rw [← OrthonormalBasis.coe_mk hon hsp, OrthonormalBasis.synthesisMap_eq_repr_symm]
-  exact (OrthonormalBasis.mk hon hsp).repr.symm.bijective
-
-/-- Pulling a nondegenerate bilinear form back along a bijective linear map keeps it
-nondegenerate. -/
-private theorem injective_bilinearComp {G' : Type*} [NormedAddCommGroup G'] [NormedSpace ℝ G']
-    {Q : G →L[ℝ] G →L[ℝ] ℝ} (hQ : Function.Injective Q) {L : G' →L[ℝ] G}
-    (hL : Function.Bijective L) : Function.Injective (Q.bilinearComp L L) := by
-  intro u u' huu'
-  refine hL.1 (hQ ?_)
-  ext v
-  obtain ⟨w, rfl⟩ := hL.2 v
-  exact congrArg (fun φ ↦ φ w) huu'
-
-variable [CompleteSpace G]
-
-/-- Read through the synthesis map of an orthonormal basis, the Riesz operator of a form is the
-Riesz operator of the form in coordinates, so the point-spectral subspaces correspond. -/
-private theorem pointSpectralSubspace_eq_map_synthesisMap (Q : G →L[ℝ] G →L[ℝ] ℝ)
-    {v : Fin d → G} (hon : Orthonormal ℝ v) (hsp : ⊤ ≤ Submodule.span ℝ (range v))
-    (Ω : Set ℝ) :
-    Module.End.pointSpectralSubspace (continuousLinearMapOfBilin Q).toLinearMap Ω =
-      (Module.End.pointSpectralSubspace (continuousLinearMapOfBilin
-        (Q.bilinearComp (synthesisMap ℝ v).toContinuousLinearMap
-          (synthesisMap ℝ v).toContinuousLinearMap)).toLinearMap Ω).map (synthesisMap ℝ v) := by
-  set b := OrthonormalBasis.mk hon hsp
-  have hv : synthesisMap ℝ v = b.repr.symm.toLinearMap := by
-    rw [← OrthonormalBasis.synthesisMap_eq_repr_symm, OrthonormalBasis.coe_mk]
-  have hK : (continuousLinearMapOfBilin (Q.bilinearComp (synthesisMap ℝ v).toContinuousLinearMap
-      (synthesisMap ℝ v).toContinuousLinearMap)).toLinearMap =
-        b.repr.toLinearEquiv.conj (continuousLinearMapOfBilin Q).toLinearMap := by
-    have hS : (synthesisMap ℝ v).toContinuousLinearMap =
-        (b.repr.symm : EuclideanSpace ℝ (Fin d) →L[ℝ] G) := by
-      ext u
-      simp [hv]
-    rw [hS, ContinuousLinearMap.continuousLinearMapOfBilin_bilinearComp]
-    ext u
-    simp [LinearEquiv.conj_apply]
-  rw [hK, Module.End.pointSpectralSubspace_conj, ← Submodule.map_comp]
-  convert (Submodule.map_id _).symm
-  ext w
-  simp [hv]
-
-end Fibre
 
 section Bundle
 
@@ -193,8 +127,8 @@ private theorem contMDiffOn_starProjection_synthesisMap {d : ℕ}
     (fun A hA ↦ hA.2)).contMDiffOn.comp
     (contMDiffOn_continuousLinearMapOfBilin_synthesisMap hQ hε) fun y hy ↦
       ⟨isSelfAdjoint_continuousLinearMapOfBilin fun v w ↦ hsymm y _ _,
-        isUnit_continuousLinearMapOfBilin (injective_bilinearComp (hnd y)
-          (by simpa using bijective_synthesisMap (hon y hy) (hsp y hy)))⟩
+        isUnit_continuousLinearMapOfBilin (ContinuousLinearMap.injective_bilinearComp (hnd y)
+          (by simpa using bijective_synthesisMap (hon y hy).linearIndependent (hsp y hy)))⟩
 
 /-- **The negative spectral subspaces of a smooth field of nondegenerate symmetric forms have smooth
 local frames.** Let `Q` be a `C^n` field of symmetric bilinear forms on a finite-rank `C^n`
@@ -221,20 +155,22 @@ theorem exists_isSubbundleFrameOn_pointSpectralSubspace_Iio
     simpa using (e.linearEquivAt ℝ y hy).finrank_eq.symm
   -- In these frames the negative spectral subspaces are the images of those in coordinates.
   have hspec (y : B) (hy : y ∈ e.baseSet) :=
-    pointSpectralSubspace_eq_map_synthesisMap (Q y) (hon y hy) (hsp y hy) (Iio 0)
+    pointSpectralSubspace_continuousLinearMapOfBilin_eq_map_synthesisMap (Q y) (hon y hy) (hsp y hy)
+      (Iio 0)
   have hx₀ : x₀ ∈ e.baseSet := mem_baseSet_trivializationAt F V x₀
   obtain ⟨U, hUe, hU, hxU, X, hX, hXn⟩ := exists_isSubbundleFrameOn_map_synthesisMap (r := r)
     e.open_baseSet hε (fun y hy ↦ (hon y hy).linearIndependent)
     (contMDiffOn_starProjection_synthesisMap hQ hsymm hnd hε hon hsp) hx₀ (by
       rw [← hr, hspec x₀ hx₀]
       exact (Submodule.equivMapOfInjective _
-        (bijective_synthesisMap (hon x₀ hx₀) (hsp x₀ hx₀)).1 _).finrank_eq)
+        (bijective_synthesisMap (hon x₀ hx₀).linearIndependent (hsp x₀ hx₀)).1 _).finrank_eq)
   exact ⟨U, hU, hxU, X, ⟨hX.continuousOn, hX.linearIndependent, fun hy ↦
     (hX.span_eq hy).trans (hspec _ (hUe hy)).symm⟩, hXn⟩
 
-/-- Where the negative spectral subspaces of a `C^n` field `Q` of nondegenerate symmetric forms
-all have dimension `r`, they satisfy the local frame criterion for a `C^n` subbundle of rank `r`,
-the negative spectral subbundle of `Q`. -/
+/-- If the negative spectral subspaces of a `C^n` field `Q` of nondegenerate symmetric forms have
+dimension `r` at every point of `B` (for instance when `B` is connected, by
+`TauCeti.eventually_finrank_pointSpectralSubspace_Iio_eq`), they satisfy the local frame criterion
+for a `C^n` subbundle of rank `r`, the negative spectral subbundle of `Q`. -/
 theorem hasLocalContMDiffSubbundleFrames_pointSpectralSubspace_Iio
     (hQ : ContMDiff IB (IB.prod 𝓘(ℝ, F →L[ℝ] F →L[ℝ] ℝ)) n
       (fun x ↦ TotalSpace.mk' (F →L[ℝ] F →L[ℝ] ℝ) x (Q x)))
@@ -279,9 +215,10 @@ theorem exists_isSubbundleFrameOn_pointSpectralSubspace_Ioi
     (fun x ↦ (hQ x).neg_section)
     (fun x v w ↦ by simp [hsymm x v w]) (fun x ↦ neg_injective.comp (hnd x)) x₀ hr
 
-/-- Where the positive spectral subspaces of a `C^n` field `Q` of nondegenerate symmetric forms
-all have dimension `r`, they satisfy the local frame criterion for a `C^n` subbundle of rank `r`,
-the positive spectral subbundle of `Q`. -/
+/-- If the positive spectral subspaces of a `C^n` field `Q` of nondegenerate symmetric forms have
+dimension `r` at every point of `B` (for instance when `B` is connected, by
+`TauCeti.eventually_finrank_pointSpectralSubspace_Ioi_eq`), they satisfy the local frame criterion
+for a `C^n` subbundle of rank `r`, the positive spectral subbundle of `Q`. -/
 theorem hasLocalContMDiffSubbundleFrames_pointSpectralSubspace_Ioi
     (hQ : ContMDiff IB (IB.prod 𝓘(ℝ, F →L[ℝ] F →L[ℝ] ℝ)) n
       (fun x ↦ TotalSpace.mk' (F →L[ℝ] F →L[ℝ] ℝ) x (Q x)))

@@ -41,6 +41,10 @@ adjoints and eigenvalues assume `E` finite-dimensional.
   analysis.
 * `TauCeti.linearIndependent_iff_injective_synthesisMap`: synthesis is injective exactly for a
   linearly independent family.
+* `TauCeti.bijective_synthesisMap`: synthesis is bijective for a linearly independent spanning
+  family.
+* `TauCeti.bilinearComp_synthesisMap_eq_sum`: a bilinear form read through synthesis, expanded in
+  coordinates.
 * `TauCeti.frameOperator`, `TauCeti.gramOperator`: the frame and Gram operators.
 * `TauCeti.gramOperator_eq_toEuclideanLin_gram`: the Gram operator is the Gram matrix acting on
   coefficient space.
@@ -118,6 +122,28 @@ theorem linearIndependent_iff_injective_synthesisMap (v : ι → E) :
 theorem synthesisMap_single [DecidableEq ι] (v : ι → E) (i : ι) (c : 𝕜) :
     synthesisMap 𝕜 v (EuclideanSpace.single i c) = c • v i := by
   simp
+
+/-- The synthesis map of a linearly independent family spanning the space is bijective. -/
+theorem bijective_synthesisMap {v : ι → E} (hv : LinearIndependent 𝕜 v)
+    (hsp : ⊤ ≤ Submodule.span 𝕜 (Set.range v)) : Function.Bijective (synthesisMap 𝕜 v) :=
+  ⟨(linearIndependent_iff_injective_synthesisMap v).mp hv,
+    LinearMap.range_eq_top.mp ((range_synthesisMap v).trans (top_unique hsp))⟩
+
+/-- A bilinear form read through the synthesis map of a family is the sum of its values on pairs
+of members of the family times the elementary bilinear forms. -/
+theorem bilinearComp_synthesisMap_eq_sum (Q : E →L[𝕜] E →L[𝕜] 𝕜) (v : ι → E) :
+    Q.bilinearComp (synthesisMap 𝕜 v).toContinuousLinearMap
+        (synthesisMap 𝕜 v).toContinuousLinearMap =
+      ∑ i, ∑ j, Q (v i) (v j) •
+        (EuclideanSpace.proj i : EuclideanSpace 𝕜 ι →L[𝕜] 𝕜).smulRight
+          (EuclideanSpace.proj j : EuclideanSpace 𝕜 ι →L[𝕜] 𝕜) := by
+  ext u w
+  simp only [LinearMap.coe_toContinuousLinearMap', synthesisMap_apply,
+    ContinuousLinearMap.bilinearComp_apply, map_sum, map_smul, sum_apply,
+    smul_apply, smul_eq_mul, Finset.mul_sum,
+    ContinuousLinearMap.smulRight_apply, PiLp.proj_apply]
+  rw [Finset.sum_comm]
+  exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by ring
 
 /-- The synthesis map is adjoint to the analysis map:
 `⟪∑ᵢ aᵢ vᵢ, x⟫ = ⟪a, (⟪vᵢ, x⟫)ᵢ⟫`. -/

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.QuadraticForm.Signature
+public import TauCeti.Analysis.InnerProductSpace.Frame
 public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
 import TauCeti.Analysis.InnerProductSpace.Dual
 
@@ -24,7 +25,13 @@ positive index of inertia `sigPos` is the dimension of the positive point-spectr
 the negative case for `-B` since negating the form exchanges the two spectral subspaces
 (`InnerProductSpace.pointSpectralSubspace_Iio_continuousLinearMapOfBilin_neg`).
 
-The spectral subspaces depend on the inner product, their dimensions do not. This identifies, for
+The spectral subspaces depend on the inner product, but they are natural for isometries: pulling
+the form back along a linear isometry equivalence pulls them back
+(`InnerProductSpace.pointSpectralSubspace_continuousLinearMapOfBilin_bilinearComp`), so in the
+coordinates of an orthonormal basis they are the spectral subspaces of the form in coordinates
+(`InnerProductSpace.pointSpectralSubspace_continuousLinearMapOfBilin_eq_map_synthesisMap`).
+
+Their dimensions do not depend on the inner product. This identifies, for
 instance, the ranks of the negative and positive spectral subbundles of a field of symmetric forms
 with the index and coindex of the form.
 
@@ -51,6 +58,48 @@ theorem pointSpectralSubspace_Iio_continuousLinearMapOfBilin_neg [CompleteSpace 
       Module.End.pointSpectralSubspace (continuousLinearMapOfBilin B).toLinearMap (Ioi 0) := by
   rw [continuousLinearMapOfBilin_neg, ContinuousLinearMap.toLinearMap_neg,
     Module.End.pointSpectralSubspace_neg, neg_Iio, neg_zero]
+
+/-- Pulling a real bilinear form back along a linear isometry equivalence `e` pulls the
+point-spectral subspaces of its Riesz operator back along `e`. -/
+theorem pointSpectralSubspace_continuousLinearMapOfBilin_bilinearComp [CompleteSpace W]
+    {W' : Type*} [NormedAddCommGroup W'] [InnerProductSpace ℝ W'] [CompleteSpace W']
+    (e : W' ≃ₗᵢ[ℝ] W) (B : W →L[ℝ] W →L[ℝ] ℝ) (Ω : Set ℝ) :
+    Module.End.pointSpectralSubspace (continuousLinearMapOfBilin
+        (B.bilinearComp (e : W' →L[ℝ] W) (e : W' →L[ℝ] W))).toLinearMap Ω =
+      (Module.End.pointSpectralSubspace (continuousLinearMapOfBilin B).toLinearMap Ω).map
+        (e.symm : W →ₗ[ℝ] W') := by
+  have hconj : (continuousLinearMapOfBilin
+      (B.bilinearComp (e : W' →L[ℝ] W) (e : W' →L[ℝ] W))).toLinearMap =
+        e.symm.toLinearEquiv.conj (continuousLinearMapOfBilin B).toLinearMap := by
+    rw [ContinuousLinearMap.continuousLinearMapOfBilin_bilinearComp]
+    ext u
+    simp [LinearEquiv.conj_apply]
+  rw [hconj, Module.End.pointSpectralSubspace_conj]
+  -- The two coercions of `e.symm` to a linear map agree by definition.
+  rfl
+
+/-- Read through the synthesis map of an orthonormal basis, the point-spectral subspaces of the
+Riesz operator of a real bilinear form are the images of those of the form in coordinates. -/
+theorem pointSpectralSubspace_continuousLinearMapOfBilin_eq_map_synthesisMap [CompleteSpace W]
+    {ι : Type*} [Fintype ι] (B : W →L[ℝ] W →L[ℝ] ℝ) {v : ι → W} (hon : Orthonormal ℝ v)
+    (hsp : ⊤ ≤ Submodule.span ℝ (range v)) (Ω : Set ℝ) :
+    Module.End.pointSpectralSubspace (continuousLinearMapOfBilin B).toLinearMap Ω =
+      (Module.End.pointSpectralSubspace (continuousLinearMapOfBilin
+        (B.bilinearComp (TauCeti.synthesisMap ℝ v).toContinuousLinearMap
+          (TauCeti.synthesisMap ℝ v).toContinuousLinearMap)).toLinearMap Ω).map
+        (TauCeti.synthesisMap ℝ v) := by
+  set b := OrthonormalBasis.mk hon hsp
+  -- The synthesis map of `v` is the inverse coordinate map of the orthonormal basis `b`.
+  have hv : TauCeti.synthesisMap ℝ v = b.repr.symm.toLinearMap := by
+    rw [← OrthonormalBasis.synthesisMap_eq_repr_symm, OrthonormalBasis.coe_mk]
+  have hS : (TauCeti.synthesisMap ℝ v).toContinuousLinearMap =
+      (b.repr.symm : EuclideanSpace ℝ ι →L[ℝ] W) := by
+    ext u
+    simp [hv]
+  rw [hS, pointSpectralSubspace_continuousLinearMapOfBilin_bilinearComp, ← Submodule.map_comp]
+  convert (Submodule.map_id _).symm
+  ext w
+  simp [hv]
 
 variable [FiniteDimensional ℝ W]
 
@@ -98,7 +147,10 @@ theorem finrank_pointSpectralSubspace_Ioi_continuousLinearMapOfBilin
   rw [← pointSpectralSubspace_Iio_continuousLinearMapOfBilin_neg,
     finrank_pointSpectralSubspace_Iio_continuousLinearMapOfBilin fun v w ↦ by simp [hB v w],
     ← sigNeg_neg]
-  congr 1
+  have hneg : (-B).toBilinForm = -B.toBilinForm := by
+    ext v w
+    simp
+  rw [hneg, LinearMap.BilinMap.toQuadraticMap_neg]
 
 end InnerProductSpace
 
