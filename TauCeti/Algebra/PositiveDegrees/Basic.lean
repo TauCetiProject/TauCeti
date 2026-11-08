@@ -13,11 +13,12 @@ public import Mathlib.Algebra.Order.Ring.Int
 public import Mathlib.Basic.Finite.Prod
 public import Mathlib.Data.Fintype.Pi
 public import Mathlib.Data.Int.Interval
+public import Mathlib.Data.Set.MulAntidiagonal
 
 /-!
 # Positive degree data
 
-A positive degree on an additive monoid in an abelian group is an integer-valued
+A positive degree on a submonoid of an additive commutative monoid is an integer-valued
 additive functional, strictly positive away from zero, with finite bounded-degree
 sets. Such data make additive decompositions finite, so multiplication of completed
 graded objects can be defined by finite coefficient sums.
@@ -25,6 +26,7 @@ graded objects can be defined by finite coefficient sums.
 This file proves sharpness and finiteness of the addition fibers, supplies Mathlib's
 `Finset.HasAntidiagonal` interface on the positive monoid, and constructs the standard
 example of the nonnegative orthant in a finite power of `ℤ`, graded by coordinate sum.
+Only the sharpness lemmas require an additive commutative group.
 
 Adapted from `Mei/Algebra/PositiveDegrees/Basic.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
@@ -102,10 +104,6 @@ theorem finite_cutoff (k : ℕ) : (d.cutoff k).Finite := d.finite_le k
 /-- Degree cutoffs are finite types, so they can index finite families. -/
 instance (k : ℕ) : Finite (d.cutoff k) := (d.finite_cutoff k).to_subtype
 
-/-- A choice of finite enumeration of a degree cutoff. -/
-noncomputable instance cutoffFintype (k : ℕ) : Fintype (d.cutoff k) :=
-  (d.finite_cutoff k).fintype
-
 /-- Increasing the cutoff retains every previously allowed degree. -/
 theorem cutoff_mono : Monotone d.cutoff := by
   intro k l h n hn
@@ -130,15 +128,21 @@ theorem degree_le_of_add_eq {a b n : N} (hb : b ∈ d.monoid) (h : a + b = n) :
   have := d.degree_nonneg hb
   omega
 
+/-- The right summand has degree at most the total when the left summand is allowed. -/
+theorem degree_le_of_add_eq_right {a b n : N} (ha : a ∈ d.monoid) (h : a + b = n) :
+    d.degree b ≤ d.degree n :=
+  d.degree_le_of_add_eq ha (by simpa only [add_comm] using h)
+
 /-- There are finitely many ordered decompositions of any ambient element into
 two allowed degrees. This also applies when the element lies outside the monoid. -/
 theorem finite_decompositions (n : N) :
-    Set.Finite {p : N × N | p.1 ∈ d.monoid ∧ p.2 ∈ d.monoid ∧ p.1 + p.2 = n} := by
+    (Set.antidiagonal (d.monoid : Set N) d.monoid n).Finite := by
   apply ((d.finite_cutoff (d.degree n).toNat).prod
     (d.finite_cutoff (d.degree n).toNat)).subset
-  rintro ⟨a, b⟩ ⟨ha, hb, hab⟩
+  intro ⟨a, b⟩ hp
+  obtain ⟨ha, hb, hab⟩ := Set.mem_antidiagonal.mp hp
   exact ⟨⟨ha, (d.degree_le_of_add_eq hb hab).trans (Int.self_le_toNat _)⟩,
-    ⟨hb, (d.degree_le_of_add_eq ha (by simpa [add_comm] using hab)).trans
+    ⟨hb, (d.degree_le_of_add_eq_right ha hab).trans
       (Int.self_le_toNat _)⟩⟩
 
 /-- Filtering a product of degree cutoffs by addition gives all allowed
@@ -149,13 +153,13 @@ theorem filter_cutoff_product_eq_decompositions [DecidableEq N] (n : N) (k : ℕ
       (fun p : N × N => p.1 + p.2 = n)) = (d.finite_decompositions n).toFinset := by
   ext ⟨a, b⟩
   simp only [Finset.mem_filter, Finset.mem_product, Set.Finite.mem_toFinset,
-    mem_cutoff, Set.mem_ofPred_eq]
+    mem_cutoff, Set.mem_antidiagonal]
   constructor
   · rintro ⟨⟨ha, hb⟩, hab⟩
     exact ⟨ha.1, hb.1, hab⟩
   · rintro ⟨ha, hb, hab⟩
     exact ⟨⟨⟨ha, (d.degree_le_of_add_eq hb hab).trans hn⟩,
-      ⟨hb, (d.degree_le_of_add_eq ha (by simpa [add_comm] using hab)).trans hn⟩⟩, hab⟩
+      ⟨hb, (d.degree_le_of_add_eq_right ha hab).trans hn⟩⟩, hab⟩
 
 /-- Finite addition fibers on the subtype of allowed degrees. -/
 theorem finite_add_fiber (n : d.monoid) :
@@ -163,12 +167,13 @@ theorem finite_add_fiber (n : d.monoid) :
   apply (d.finite_decompositions n).of_injOn
     (f := fun p : d.monoid × d.monoid => ((p.1 : N), (p.2 : N)))
   · intro p hp
-    exact ⟨p.1.property, p.2.property, congrArg Subtype.val hp⟩
+    exact Set.mem_antidiagonal.mpr
+      ⟨p.1.property, p.2.property, congrArg Subtype.val hp⟩
   · intro p _ q _ h
     exact Prod.ext (Subtype.ext (congrArg Prod.fst h))
       (Subtype.ext (congrArg Prod.snd h))
 
-/-- The finite addition fibers, packaged for Mathlib's convolution and power-series APIs.
+/-- The finite addition fibers, packaged for Mathlib's antidiagonal summation API.
 Use `letI := d.hasAntidiagonal` when working on the subtype `d.monoid`. -/
 @[instance_reducible]
 noncomputable def hasAntidiagonal : Finset.HasAntidiagonal d.monoid where
@@ -204,8 +209,9 @@ def nonnegIntegers : PositiveDegrees ℤ where
   degree := AddMonoidHom.id ℤ
   degree_pos := by
     intro n hn hne
-    exact lt_of_le_of_ne hn (Ne.symm hne)
-  finite_le k := (Set.finite_Icc (a := (0 : ℤ)) (b := k)).subset fun _ h => h
+    exact lt_of_le_of_ne (AddSubmonoid.mem_nonneg.mp hn) (Ne.symm hne)
+  finite_le k := (Set.finite_Icc (a := (0 : ℤ)) (b := k)).subset
+    fun _ h => ⟨AddSubmonoid.mem_nonneg.mp h.1, h.2⟩
 
 /-- The allowed integer degrees are precisely the nonnegative integers. -/
 @[simp]
@@ -226,14 +232,16 @@ def orthant (ι : Type*) [Fintype ι] : PositiveDegrees (ι → ℤ) where
       map_add' := by intros; simp [Finset.sum_add_distrib] }
   degree_pos := by
     intro n hn hne
-    exact Fintype.sum_pos (lt_of_le_of_ne hn (Ne.symm hne))
+    exact Fintype.sum_pos
+      (lt_of_le_of_ne (AddSubmonoid.mem_nonneg.mp hn) (Ne.symm hne))
   finite_le := by
     intro k
     apply (Set.Finite.pi (fun _ : ι => Set.finite_Icc (a := (0 : ℤ)) (b := k))).subset
     intro n hn
     simp only [Set.mem_pi, Set.mem_univ, true_imp_iff, Set.mem_Icc]
     intro i
-    exact ⟨hn.1 i, (Finset.single_le_sum (fun j _ => hn.1 j)
+    exact ⟨(AddSubmonoid.mem_nonneg.mp hn.1) i,
+      (Finset.single_le_sum (fun j _ => (AddSubmonoid.mem_nonneg.mp hn.1) j)
       (Finset.mem_univ i)).trans hn.2⟩
 
 /-- The standard orthant consists of the coordinatewise nonnegative vectors. -/

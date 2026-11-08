@@ -58,6 +58,7 @@ namespace PositiveDegreeMap
 variable {d : PositiveDegrees N} {e : PositiveDegrees M}
   {f : PositiveDegrees L} {g : PositiveDegrees K}
 
+-- The modulus is part of the data, so the function coercion is not injective.
 instance : CoeFun (PositiveDegreeMap d e) (fun _ => N → M) where
   coe T := T.toAddMonoidHom
 
@@ -255,7 +256,6 @@ theorem ofFinitePreimage_apply (T : N →+ M) (hmem) (hfin) (n : N) :
 
 /-- The modulus is the finite supremum of the source degrees in the inverse cutoff.
 Source degrees are nonnegative on the allowed monoid, so `toNat` loses no information. -/
-@[simp]
 theorem ofFinitePreimage_modulus (T : N →+ M) (hmem) (hfin) (k : ℕ) :
     (ofFinitePreimage (d := d) (e := e) T hmem hfin).modulus k =
       (hfin k).toFinset.sup (fun n => (d.degree n).toNat) := (rfl)
@@ -264,11 +264,11 @@ theorem ofFinitePreimage_modulus (T : N →+ M) (hmem) (hfin) (k : ℕ) :
 theorem ofFinitePreimage_modulus_le_iff (T : N →+ M) (hmem) (hfin) (k l : ℕ) :
     (ofFinitePreimage (d := d) (e := e) T hmem hfin).modulus k ≤ l ↔
       ∀ n ∈ d.monoid, e.degree (T n) ≤ k → d.degree n ≤ l := by
-  simp [Finset.sup_le_iff, Int.toNat_le]
+  simp [ofFinitePreimage_modulus, Finset.sup_le_iff, Int.toNat_le]
 
 /-- Injectivity on the allowed monoid suffices for finite inverse cutoff sets.
 The ambient additive map need not be injective. -/
-noncomputable def ofInjectiveOn (T : N →+ M)
+noncomputable def ofInjOn (T : N →+ M)
     (hmem : ∀ n ∈ d.monoid, T n ∈ e.monoid) (hinj : Set.InjOn T d.monoid) :
     PositiveDegreeMap d e :=
   ofFinitePreimage T hmem
@@ -277,21 +277,21 @@ noncomputable def ofInjectiveOn (T : N →+ M)
       (hinj.mono (fun _ hn => hn.1)))
 
 @[simp]
-theorem ofInjectiveOn_apply (T : N →+ M) (hmem) (hinj) (n : N) :
-    ofInjectiveOn (d := d) (e := e) T hmem hinj n = T n := (rfl)
+theorem ofInjOn_apply (T : N →+ M) (hmem) (hinj) (n : N) :
+    ofInjOn (d := d) (e := e) T hmem hinj n = T n := (rfl)
 
 /-- The injective-map modulus is exactly the maximum source degree over each
 inverse target cutoff, characterized without unfolding the finite-set construction. -/
-theorem ofInjectiveOn_modulus_le_iff (T : N →+ M) (hmem) (hinj) (k l : ℕ) :
-    (ofInjectiveOn (d := d) (e := e) T hmem hinj).modulus k ≤ l ↔
+theorem ofInjOn_modulus_le_iff (T : N →+ M) (hmem) (hinj) (k l : ℕ) :
+    (ofInjOn (d := d) (e := e) T hmem hinj).modulus k ≤ l ↔
       ∀ n ∈ d.monoid, e.degree (T n) ≤ k → d.degree n ≤ l :=
   ofFinitePreimage_modulus_le_iff _ _ _ _ _
 
-/-- Changing the degree function on the same allowed monoid gives a positive degree
-map. Applying this construction in reverse gives the reverse cutoff comparison. -/
-noncomputable def changeDegree (d e : PositiveDegrees N) (hP : d.monoid = e.monoid) :
+/-- Changing the degree function while including the allowed monoid gives a positive
+degree map. Equal monoids admit cutoff comparisons in both directions. -/
+noncomputable def changeDegree (d e : PositiveDegrees N) (hP : d.monoid ≤ e.monoid) :
     PositiveDegreeMap d e :=
-  ofInjectiveOn (AddMonoidHom.id N) (fun _ hn => hP ▸ hn)
+  ofInjOn (AddMonoidHom.id N) (fun _ hn => hP hn)
     (Function.injective_id.injOn)
 
 @[simp]
@@ -302,7 +302,7 @@ theorem changeDegree_apply (d e : PositiveDegrees N) (hP) (n : N) :
 theorem changeDegree_modulus_le_iff (d e : PositiveDegrees N) (hP) (k l : ℕ) :
     (changeDegree d e hP).modulus k ≤ l ↔
       ∀ n ∈ d.monoid, e.degree n ≤ k → d.degree n ≤ l :=
-  ofInjectiveOn_modulus_le_iff _ _ _ _ _
+  ofInjOn_modulus_le_iff _ _ _ _ _
 
 end PositiveDegreeMap
 end TauCeti
