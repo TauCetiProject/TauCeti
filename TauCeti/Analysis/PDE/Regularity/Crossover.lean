@@ -57,52 +57,6 @@ open scoped ENNReal NNReal
 
 namespace TauCeti
 
-/-- If the mean absolute oscillation of `f` over `s` is at most `M`, then so is its mean
-`‖·‖ₑ`-oscillation, as an extended nonnegative real. -/
-theorem setLAverage_enorm_sub_setAverage_le_ofReal {α : Type*} [MeasurableSpace α]
-    {μ : Measure α} {s : Set α} {f : α → ℝ} {M : ℝ} (hs : μ s ≠ ⊤) (hf : IntegrableOn f s μ)
-    (h : ⨍ x in s, |f x - ⨍ z in s, f z ∂μ| ∂μ ≤ M) :
-    ⨍⁻ x in s, ‖f x - ⨍ z in s, f z ∂μ‖ₑ ∂μ ≤ ENNReal.ofReal M := by
-  rw [setLAverage_eq]
-  simp_rw [Real.enorm_eq_ofReal_abs]
-  calc (∫⁻ x in s, ENNReal.ofReal |f x - ⨍ z in s, f z ∂μ| ∂μ) / μ s
-      = ENNReal.ofReal (⨍ x in s, |f x - ⨍ z in s, f z ∂μ| ∂μ) :=
-        (ofReal_setAverage (f := fun x => |f x - ⨍ z in s, f z ∂μ|)
-          (hf.sub (integrableOn_const hs)).abs (ae_of_all _ fun _ => abs_nonneg _)).symm
-    _ ≤ ENNReal.ofReal M := ENNReal.ofReal_le_ofReal h
-
-/-- **From a John–Nirenberg bound to averages.** If `g` is almost everywhere positive on `B` and
-`∫_B exp (p log g) · ∫_B exp (-p log g) ≤ C μ(B)²`, then `⨍_B g^p · ⨍_B g^{-p} ≤ C`. -/
-theorem setAverage_rpow_mul_setAverage_rpow_neg_le {α : Type*} [MeasurableSpace α]
-    {μ : Measure α} {B : Set α} {g : α → ℝ} {p : ℝ} {C : ℝ≥0} (hB0 : μ B ≠ 0) (hBt : μ B ≠ ⊤)
-    (hpos : ∀ᵐ x ∂μ.restrict B, 0 < g x) (hmeas : AEMeasurable g (μ.restrict B))
-    (h : (∫⁻ x in B, ENNReal.ofReal (Real.exp (p * Real.log (g x))) ∂μ) *
-        ∫⁻ x in B, ENNReal.ofReal (Real.exp (-(p * Real.log (g x)))) ∂μ ≤ C * μ B ^ 2) :
-    (⨍ x in B, g x ^ p ∂μ) * (⨍ x in B, g x ^ (-p) ∂μ) ≤ C := by
-  have hrpow (q : ℝ) : ⨍ x in B, g x ^ q ∂μ =
-      (μ.real B)⁻¹ * (∫⁻ x in B, ENNReal.ofReal (Real.exp (q * Real.log (g x))) ∂μ).toReal := by
-    rw [setAverage_eq, smul_eq_mul, integral_eq_lintegral_of_nonneg_ae
-      (hpos.mono fun x hx => Real.rpow_nonneg hx.le q) (hmeas.pow_const q).aestronglyMeasurable]
-    congr 2
-    refine lintegral_congr_ae (hpos.mono fun x hx => ?_)
-    dsimp only
-    rw [Real.rpow_def_of_pos hx, mul_comm]
-  have hB0 : 0 < μ.real B := ENNReal.toReal_pos hB0 hBt
-  rw [hrpow, hrpow]
-  simp only [neg_mul] at h ⊢
-  calc (μ.real B)⁻¹ * (∫⁻ x in B, ENNReal.ofReal (Real.exp (p * Real.log (g x))) ∂μ).toReal *
-        ((μ.real B)⁻¹ * (∫⁻ x in B, ENNReal.ofReal (Real.exp (-(p * Real.log (g x)))) ∂μ).toReal)
-      = (μ.real B)⁻¹ ^ 2 * ((∫⁻ x in B, ENNReal.ofReal (Real.exp (p * Real.log (g x))) ∂μ) *
-          ∫⁻ x in B, ENNReal.ofReal (Real.exp (-(p * Real.log (g x)))) ∂μ).toReal := by
-        rw [ENNReal.toReal_mul]
-        ring
-    _ ≤ (μ.real B)⁻¹ ^ 2 * ((C : ℝ≥0∞) * μ B ^ 2).toReal := by
-        gcongr
-        exact ENNReal.mul_ne_top ENNReal.coe_ne_top (ENNReal.pow_ne_top hBt)
-    _ = C := by
-        rw [ENNReal.toReal_mul, ENNReal.toReal_pow, ENNReal.coe_toReal, ← measureReal_def]
-        field_simp
-
 namespace PDE
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
@@ -190,9 +144,12 @@ theorem exists_setAverage_rpow_mul_setAverage_rpow_neg_le [Nonempty ι] :
     have h2 : ball y (2 * ρ) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) :=
       (ball_subset_ball' (by linarith [dist_nonneg (x := y) (y := x₀),
         (ball_subset_ball_iff hρ).1 hsub])).trans hball'
-    exact setLAverage_enorm_sub_setAverage_le_ofReal measure_ball_lt_top.ne
-      (integrableOn_log_value mu hε hεu ((ball_subset_ball (by linarith : ρ ≤ 2 * ρ)).trans h2)
-        measure_ball_lt_top.ne) (hC₀' mu h ha hu hε hεu hρ h2)
+    exact (setLAverage_enorm_eq_ofReal_setAverage_norm
+      (g := fun x => f x - ⨍ z in ball y ρ, f z ∂mu)
+      ((integrableOn_log_value mu hε hεu ((ball_subset_ball (by linarith : ρ ≤ 2 * ρ)).trans h2)
+        measure_ball_lt_top.ne).sub (integrableOn_const measure_ball_lt_top.ne))).trans_le
+      (ENNReal.ofReal_le_ofReal
+        (by simpa only [Real.norm_eq_abs] using hC₀' mu h ha hu hε hεu hρ h2))
   -- For `|p| ≤ c λ/Λ` the John–Nirenberg crossover estimate applies to `log u` with `σ = p`.
   have hσ : |p| * M ≤ A := by
     rw [hMc]
@@ -202,11 +159,17 @@ theorem exists_setAverage_rpow_mul_setAverage_rpow_neg_le [Nonempty ι] :
   have hJ := hJN (integrableOn_log_value mu hε hεu ((ball_subset_ball (by linarith)).trans hball')
     measure_ball_lt_top.ne) hM hσ
   rw [hRr] at hJ
-  exact setAverage_rpow_mul_setAverage_rpow_neg_le (measure_ball_pos mu x₀ hr).ne'
-    measure_ball_lt_top.ne
-    ((ae_restrict_of_ae_restrict_of_subset hBΩ hεu).mono fun x hx => hε.trans_le hx)
-    (((Lp.aestronglyMeasurable _).mono_measure (Measure.restrict_mono hBΩ le_rfl)).aemeasurable)
-    hJ
+  have hpos : ∀ᵐ x ∂mu.restrict (ball x₀ r), 0 < W1p.value u x :=
+    (ae_restrict_of_ae_restrict_of_subset hBΩ hεu).mono fun x hx => hε.trans_le hx
+  have hexp (q : ℝ) : ∫⁻ x in ball x₀ r, ENNReal.ofReal (W1p.value u x ^ q) ∂mu =
+      ∫⁻ x in ball x₀ r, ENNReal.ofReal (Real.exp (q * f x)) ∂mu :=
+    lintegral_congr_ae (hpos.mono fun x hx => by
+      simp only [f]
+      rw [Real.rpow_def_of_pos hx, mul_comm])
+  refine setAverage_rpow_mul_setAverage_rpow_neg_le hpos
+    (((Lp.aestronglyMeasurable _).mono_measure (Measure.restrict_mono hBΩ le_rfl)).aemeasurable) ?_
+  rw [hexp p, hexp (-p)]
+  simpa only [neg_mul] using hJ
 
 end PDE
 

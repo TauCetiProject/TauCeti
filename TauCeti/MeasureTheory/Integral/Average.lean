@@ -71,6 +71,8 @@ exponent restrictions `1 ≤ p < ∞` or `1 ≤ q`.
   the average of the extended norm over the set.
 * `TauCeti.measure_mul_enorm_setAverage_le`: the measure of a set times the extended norm of the
   average over it is at most the integral of the extended norm over it.
+* `TauCeti.setLAverage_enorm_eq_ofReal_setAverage_norm`: the mean of the extended norm of an
+  integrable function over a set is the `ENNReal.ofReal` of the mean of its norm.
 * `TauCeti.setLAverage_enorm_sub_setAverage_le`: the mean oscillation of `f` about its
   average is at most twice its mean oscillation about any constant.
 * `TauCeti.eLpNorm_sub_setAverage_le`: the same factor-`2` comparison for the `Lᵖ` deviation on a
@@ -162,6 +164,15 @@ theorem measure_mul_enorm_setAverage_le (μ : Measure α) (f : α → E) (s : Se
   · rw [← measure_mul_setLAverage _ hs]
     gcongr
     exact enorm_setAverage_le_setLAverage μ f s
+
+omit [NormedSpace ℝ E] in
+/-- The mean of the extended norm of an integrable function over a set is the `ENNReal.ofReal` of
+the mean of its norm. -/
+theorem setLAverage_enorm_eq_ofReal_setAverage_norm {μ : Measure α} {s : Set α} {g : α → E}
+    (hg : IntegrableOn g s μ) :
+    ⨍⁻ x in s, ‖g x‖ₑ ∂μ = ENNReal.ofReal (⨍ x in s, ‖g x‖ ∂μ) := by
+  rw [setLAverage_eq, ofReal_setAverage hg.norm (ae_of_all _ fun _ => norm_nonneg _)]
+  simp only [ofReal_norm]
 
 end ENorm
 
