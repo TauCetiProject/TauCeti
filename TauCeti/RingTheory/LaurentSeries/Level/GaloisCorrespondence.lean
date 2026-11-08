@@ -39,8 +39,6 @@ intermediate fields of level `m`.
 
 * `TauCeti.puiseuxField.fixedField_map_ker_levelKummer`: if `K` has enough `(m / n)`-th roots of
   unity, the fixed field in level `m` of all `(m / n)`-th roots of unity is level `n`.
-* `TauCeti.puiseuxField.finrank_restrict_level`: level `n` has degree `n` over `K⸨X⸩` as an
-  intermediate field of level `m`.
 * `TauCeti.puiseuxField.fixingSubgroup_restrict_level`: if `K` has enough `(m / n)`-th roots of
   unity, the automorphisms of level `m` fixing level `n` are the Kummer automorphisms of the
   `(m / n)`-th roots of unity.
@@ -88,21 +86,6 @@ theorem fixingSubgroup_restrict_level (h : n ∣ m) [HasEnoughRootsOfUnity K ((m
   have : FiniteDimensional K⸨X⸩ (level K m) := (levelPowerBasis K m).finite
   rw [← fixedField_map_ker_levelKummer h, fixingSubgroup_fixedField]
 
-/-- For `n ∣ m`, level `n` has degree `n` over `K⸨X⸩`, as an intermediate field of level `m`. -/
-theorem finrank_restrict_level (h : n ∣ m) :
-    finrank K⸨X⸩ (restrict (level_le_level_of_dvd K h)) = n := by
-  rw [← (restrictAlgEquiv _).toLinearEquiv.finrank_eq, level_finrank]
-
-/-- For `n ∣ m` and `n' ∣ m`, level `n` is contained in level `n'`, as intermediate fields of
-level `m`, exactly when `n ∣ n'`. -/
-@[simp]
-theorem restrict_level_le_restrict_level_iff {n' : ℕ+} (h : n ∣ m) (h' : n' ∣ m) :
-    restrict (level_le_level_of_dvd K h) ≤ restrict (level_le_level_of_dvd K h') ↔ n ∣ n' := by
-  rw [← level_le_level_iff K]
-  refine ⟨fun hle x hx ↦ ?_, fun hle x hx ↦ ?_⟩
-  · exact (mem_restrict _ ⟨x, level_le_level_of_dvd K h hx⟩).mp (hle ((mem_restrict _ _).mpr hx))
-  · exact (mem_restrict _ x).mpr (hle ((mem_restrict _ x).mp hx))
-
 section Galois
 
 variable [HasEnoughRootsOfUnity K m]
@@ -143,7 +126,7 @@ noncomputable def restrictLevelOrderIso :
   OrderIso.ofSurjective
     (OrderEmbedding.ofMapLEIff
       (fun n ↦ restrict (level_le_level_of_dvd K (RamificationIndex.le_iff_dvd.mp n.2)))
-      fun a b ↦ (restrict_level_le_restrict_level_iff (RamificationIndex.le_iff_dvd.mp a.2)
+      fun a b ↦ (restrict_level_le_restrict_level_iff K (RamificationIndex.le_iff_dvd.mp a.2)
         (RamificationIndex.le_iff_dvd.mp b.2)).trans
         (RamificationIndex.le_iff_dvd.symm.trans Subtype.coe_le_coe))
     fun E ↦ by
@@ -165,7 +148,7 @@ theorem _root_.IntermediateField.coe_toPNat_restrictLevelOrderIso_symm
     (((restrictLevelOrderIso K m).symm E : RamificationIndex).toPNat : ℕ) = finrank K⸨X⸩ E := by
   conv_rhs => rw [← (restrictLevelOrderIso K m).apply_symm_apply E]
   rw [restrictLevelOrderIso_apply]
-  exact (finrank_restrict_level
+  exact (finrank_restrict_level K
     (RamificationIndex.le_iff_dvd.mp ((restrictLevelOrderIso K m).symm E).2)).symm
 
 end Galois
