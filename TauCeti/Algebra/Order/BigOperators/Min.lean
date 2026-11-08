@@ -10,7 +10,6 @@ public import Mathlib.Order.Interval.Set.Basic
 public import Mathlib.Order.Monotone.Basic
 public import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 import Mathlib.Algebra.Order.Field.Basic
-import Mathlib.Tactic.SplitIfs
 
 /-!
 # Product bounds for minima of finite sequences
@@ -34,32 +33,27 @@ open Finset
 namespace TauCeti
 
 /-- A product of pairwise minima gains the ratio across the first `k` indices when every
-first index is above the cut and some second index is below it. The proposition `P` controls
-whether the stronger bound is used. -/
-theorem prod_min_le_ite_div_mul_prod {N k p : ℕ} {μ : ℕ → ℝ}
+first index is above the cut and some second index is below it. -/
+theorem prod_min_le_div_mul_prod {N k p : ℕ} {μ : ℕ → ℝ}
     (hμm : MonotoneOn μ (Set.Iio N)) (hμp : ∀ j < N, 0 < μ j)
     {i j : Fin p → ℕ} (hi : ∀ b, i b < N) (hj : ∀ b, j b < N)
-    (hk : ∃ b, j b < k) (P : Prop) [Decidable P] (hP : P → ∀ b, k ≤ i b) :
-    ∏ b, min (μ (i b)) (μ (j b)) ≤
-      (if P then μ (k - 1) / μ k else 1) * ∏ b, μ (i b) := by
+    (h : ∀ b, k ≤ i b) (hk : ∃ b, j b < k) :
+    ∏ b, min (μ (i b)) (μ (j b)) ≤ μ (k - 1) / μ k * ∏ b, μ (i b) := by
   have hm0 (b) : 0 ≤ min (μ (i b)) (μ (j b)) :=
     le_min (hμp _ (hi b)).le (hμp _ (hj b)).le
-  split_ifs with hPt
-  · obtain ⟨b₀, hb₀⟩ := hk
-    have hkN : k < N := (hP hPt b₀).trans_lt (hi b₀)
-    have hk0 : 0 < μ k := hμp k hkN
-    have hr : 0 ≤ μ (k - 1) / μ k := div_nonneg (hμp _ (by omega)).le hk0.le
-    rw [← mul_prod_erase _ _ (mem_univ b₀),
-      ← mul_prod_erase _ (fun b ↦ μ (i b)) (mem_univ b₀), ← mul_assoc]
-    refine mul_le_mul ?_ (prod_le_prod₀ (fun b _ ↦ hm0 b) fun b _ ↦ min_le_left _ _)
-      (prod_nonneg fun b _ ↦ hm0 b) (mul_nonneg hr (hμp _ (hi b₀)).le)
-    calc
-      min (μ (i b₀)) (μ (j b₀)) ≤ μ (j b₀) := min_le_right _ _
-      _ ≤ μ (k - 1) := hμm (hj b₀) (by simp only [Set.mem_Iio]; omega) (by omega)
-      _ = μ (k - 1) / μ k * μ k := (div_mul_cancel₀ _ hk0.ne').symm
-      _ ≤ μ (k - 1) / μ k * μ (i b₀) :=
-        mul_le_mul_of_nonneg_left (hμm hkN (hi b₀) (hP hPt b₀)) hr
-  · rw [one_mul]
-    exact prod_le_prod₀ (fun b _ ↦ hm0 b) fun b _ ↦ min_le_left _ _
+  obtain ⟨b₀, hb₀⟩ := hk
+  have hkN : k < N := (h b₀).trans_lt (hi b₀)
+  have hk0 : 0 < μ k := hμp k hkN
+  have hr : 0 ≤ μ (k - 1) / μ k := div_nonneg (hμp _ (by omega)).le hk0.le
+  rw [← mul_prod_erase _ _ (mem_univ b₀),
+    ← mul_prod_erase _ (fun b ↦ μ (i b)) (mem_univ b₀), ← mul_assoc]
+  refine mul_le_mul ?_ (prod_le_prod₀ (fun b _ ↦ hm0 b) fun b _ ↦ min_le_left _ _)
+    (prod_nonneg fun b _ ↦ hm0 b) (mul_nonneg hr (hμp _ (hi b₀)).le)
+  calc
+    min (μ (i b₀)) (μ (j b₀)) ≤ μ (j b₀) := min_le_right _ _
+    _ ≤ μ (k - 1) := hμm (hj b₀) (by simp only [Set.mem_Iio]; omega) (by omega)
+    _ = μ (k - 1) / μ k * μ k := (div_mul_cancel₀ _ hk0.ne').symm
+    _ ≤ μ (k - 1) / μ k * μ (i b₀) :=
+      mul_le_mul_of_nonneg_left (hμm hkN (hi b₀) (h b₀)) hr
 
 end TauCeti

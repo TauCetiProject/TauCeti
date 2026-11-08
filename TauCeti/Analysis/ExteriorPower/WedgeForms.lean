@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Order.BigOperators.Min
 public import TauCeti.LinearAlgebra.ExteriorPower.LinearForms
 public import TauCeti.LinearAlgebra.Matrix.AbsoluteValue
+import Mathlib.Tactic.SplitIfs
 
 /-!
 # Local bounds for wedge forms
@@ -69,14 +70,20 @@ private theorem prod_apply_le_ite_div_mul_prod (v : AbsoluteValue R ℝ)
     (Equiv.prod_comp τ fun a ↦ g (eT a)).trans (prod_comp_ofFinEmbEquiv_symm T g)
   obtain ⟨j₀, hj₀J, hj₀k⟩ := hJ
   obtain ⟨b₀, hb₀⟩ := (mem_range_ofFinEmbEquiv_symm_iff_mem J j₀).2 hj₀J
-  have hmin := prod_min_le_ite_div_mul_prod hμm hμp
-    (i := fun b ↦ (σ.symm (eT (τ b)) : ℕ)) (j := fun b ↦ (eJ b : ℕ))
-    (fun _ ↦ Fin.is_lt _) (fun _ ↦ Fin.is_lt _)
-    ⟨b₀, by simpa [eJ, hb₀] using hj₀k⟩
-    (∀ t ∈ (T : Finset ι), k ≤ (σ.symm t : ℕ))
-    (fun h b ↦ h _ ((mem_range_ofFinEmbEquiv_symm_iff_mem T _).1 ⟨τ b, rfl⟩))
+  have hm0 (b) : 0 ≤ min (μ (σ.symm (eT (τ b)))) (μ (eJ b)) :=
+    le_min (hμp _ (Fin.is_lt _)).le (hμp _ (Fin.is_lt _)).le
+  have hmin : ∏ b, min (μ (σ.symm (eT (τ b)))) (μ (eJ b)) ≤
+      (if ∀ t ∈ (T : Finset ι), k ≤ (σ.symm t : ℕ) then μ (k - 1) / μ k else 1) *
+        ∏ b, μ (σ.symm (eT (τ b))) := by
+    split_ifs with hT
+    · exact prod_min_le_div_mul_prod hμm hμp
+        (fun _ ↦ Fin.is_lt _) (fun _ ↦ Fin.is_lt _)
+        (fun b ↦ hT _ ((mem_range_ofFinEmbEquiv_symm_iff_mem T _).1 ⟨τ b, rfl⟩))
+        ⟨b₀, by simpa [eJ, hb₀] using hj₀k⟩
+    · rw [one_mul]
+      exact prod_le_prod₀ (fun b _ ↦ hm0 b) fun b _ ↦ min_le_left _ _
   have hmin0 : 0 ≤ ∏ b, min (μ (σ.symm (eT (τ b)))) (μ (eJ b)) :=
-    prod_nonneg fun b _ ↦ le_min (hμp _ (Fin.is_lt _)).le (hμp _ (Fin.is_lt _)).le
+    prod_nonneg fun b _ ↦ hm0 b
   refine ⟨mul_nonneg (prod_nonneg fun t _ ↦ hν t) ?_, ?_⟩
   · simpa only [hperm (fun t ↦ μ (σ.symm t))] using hmin0.trans hmin
   calc
