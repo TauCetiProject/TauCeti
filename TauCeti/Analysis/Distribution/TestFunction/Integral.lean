@@ -11,6 +11,8 @@ public import Mathlib.MeasureTheory.Function.LocallyIntegrable
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
 public import Mathlib.Topology.ContinuousMap.CompactlySupported
 import Mathlib.MeasureTheory.Integral.Bochner.Set
+import Mathlib.MeasureTheory.Measure.WithDensity
+import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.MeasureTheory.Function.Holder
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
@@ -52,13 +54,19 @@ zero, by Mathlib's integration by parts against the constant function `1`.
 * `TestFunction.integrable_bilin_subtype`: `x ↦ B (φ x) (g x)` is integrable for `g` locally
   integrable for a measure on `Ω`.
 
+* `TestFunction.integrable_inner_subtype`: the pairing `⟪φ x, v x⟫` of a test vector field with a
+  locally integrable field is integrable.
+
+* `TestFunction.enorm_integral_inner_le_withDensity`: the pairing of a test field supported in `U`
+  and bounded by `1` with `v` is at most the mass of `|v| m` on `U`.
+
 * `TestFunction.integral_lineDeriv_eq_zero`: `∫ ∂_w φ dμ = 0` for an additive Haar measure `μ`.
 -/
 
 public section
 
 open MeasureTheory TopologicalSpace
-open scoped Distributions BoundedContinuousFunction CompactlySupported
+open scoped Distributions BoundedContinuousFunction CompactlySupported RealInnerProductSpace ENNReal
 
 namespace TestFunction
 
@@ -130,6 +138,34 @@ theorem integrable_bilin_subtype [OpensMeasurableSpace E] {F₂ F₃ : Type*} [N
   rw [hf] at hon
   refine (integrableOn_iff_integrable_of_support_subset fun x hx => ?_).1 hon
   exact subset_tsupport _ fun hφx => hx (by simp [(congrFun hf x).symm.trans hφx])
+
+section InnerPairing
+
+variable {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℝ G] [OpensMeasurableSpace E]
+
+/-- The pairing of a test vector field with a locally integrable field is integrable. -/
+theorem integrable_inner_subtype {m : Measure Ω} {v : Ω → G} (φ : 𝓓^{n}(Ω, G))
+    (hv : LocallyIntegrable v m) : Integrable (fun x : Ω => ⟪φ x, v x⟫) m :=
+  (φ.integrable_bilin_subtype (innerSL ℝ) hv).congr
+    (ae_of_all _ fun _ => innerSL_apply_apply ℝ _ _)
+
+/-- The pairing of a test vector field supported in `U` and bounded by `1` with a field `v` is
+bounded by the mass of the measure `|v| m` on `U`. -/
+theorem enorm_integral_inner_le_withDensity {U : Opens E} {φ : 𝓓^{n}(Ω, G)}
+    (hφU : tsupport φ ⊆ U) (hφ : ∀ x, ‖φ x‖ ≤ 1) (m : Measure Ω) (v : Ω → G) :
+    ‖∫ x : Ω, ⟪φ x, v x⟫ ∂m‖ₑ ≤
+      m.withDensity (fun x => ‖v x‖ₑ) ((↑) ⁻¹' (U : Set E)) := by
+  rw [withDensity_apply _ (U.isOpen.measurableSet.preimage measurable_subtype_coe),
+    ← lintegral_indicator (U.isOpen.measurableSet.preimage measurable_subtype_coe)]
+  refine (enorm_integral_le_lintegral_enorm _).trans (lintegral_mono fun x => ?_)
+  by_cases hx : x ∈ ((↑) ⁻¹' (U : Set E) : Set Ω)
+  · rw [Set.indicator_of_mem hx, ← ofReal_norm, ← ofReal_norm]
+    exact ENNReal.ofReal_le_ofReal ((norm_inner_le_norm _ _).trans
+      (mul_le_of_le_one_left (norm_nonneg _) (hφ x)))
+  · have hzero : φ x = 0 := image_eq_zero_of_notMem_tsupport fun hx' => hx (hφU hx')
+    simp [hx, hzero]
+
+end InnerPairing
 
 section IntegralOne
 
