@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Star.Unitary
+public import TauCeti.Algebra.Star.Unitary
 
 /-!
 # The unitary subgroup of units
@@ -33,8 +34,6 @@ from; see `TauCeti/Geometry/Lie/Subgroup/Unitary.lean`.
 
 ## Main results
 
-* `TauCeti.coe_unitarySubgroupUnitsEquiv_symm_apply` identifies the inverse equivalence
-  with `Unitary.toUnits` after coercing to units.
 * `TauCeti.unitarySubgroupUnitsHomeomorph`: the unitary subgroup of the units is homeomorphic
   to the unitary elements; `TauCeti.unitarySubgroupUnitsHomeomorph_apply` and
   `TauCeti.unitarySubgroupUnitsHomeomorph_symm_apply` identify its maps.
@@ -62,14 +61,6 @@ theorem continuous_toUnits {M : Type*} [Monoid M] [StarMul M] [TopologicalSpace 
 end Unitary
 
 namespace TauCeti
-
-/-- The inverse unitary equivalence, viewed in the units, is the canonical unitary inclusion. -/
-@[simp]
-theorem coe_unitarySubgroupUnitsEquiv_symm_apply {M : Type*} [Monoid M] [StarMul M]
-    (u : unitary M) : (unitarySubgroupUnitsEquiv.symm u : Mˣ) = Unitary.toUnits u := by
-  apply Units.ext
-  exact (val_unitarySubgroupUnitsEquiv_symm_apply_coe u).trans
-    (Unitary.val_toUnits_apply u).symm
 
 /-- The unitary subgroup of the units is homeomorphic to the unitary elements of the monoid. -/
 def unitarySubgroupUnitsHomeomorph (M : Type*) [Monoid M] [StarMul M] [TopologicalSpace M]
