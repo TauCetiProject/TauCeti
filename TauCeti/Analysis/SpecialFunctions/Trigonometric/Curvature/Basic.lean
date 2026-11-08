@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
+public import Mathlib.Analysis.Calculus.Deriv.Slope
 import TauCeti.Analysis.ODE.Wronskian
 
 /-!
@@ -17,7 +18,8 @@ import TauCeti.Analysis.ODE.Wronskian
 `y'' + κ y = 0`, with initial data `(0, 1)` and `(1, 0)`, respectively. They give the radial
 Jacobi coefficients in the constant-curvature models, including the flat model. The sine is
 positive at positive times before the first spherical zero, and at every positive time in
-nonpositive curvature.
+nonpositive curvature; the cosine is positive before the spherical half-radius. Near the origin
+the sine has unit first-order scale, `curvatureSine κ t / t → 1`.
 
 The parameter is the coefficient in the scalar ODE; for a geodesic of speed `c` in curvature
 `κ`, use the parameter `κ * c ^ 2`.
@@ -33,8 +35,8 @@ noncomputable section
 
 namespace TauCeti
 
-open Real
-open scoped ContDiff
+open Filter Real
+open scoped ContDiff Topology
 
 /-- The solution of `y'' + κ y = 0` with `y(0) = 0` and `y'(0) = 1`. -/
 def curvatureSine (κ t : ℝ) : ℝ :=
@@ -180,5 +182,30 @@ theorem curvatureSine_pos {κ t : ℝ} (ht : 0 < t)
   · rw [curvatureSine_of_neg hκ]
     exact div_pos (sinh_pos_iff.2 (mul_pos (sqrt_pos.2 (neg_pos.2 hκ)) ht))
       (sqrt_pos.2 (neg_pos.2 hκ))
+
+/-- The curvature sine has unit first-order scale at its origin. -/
+theorem tendsto_curvatureSine_div_zero (κ : ℝ) :
+    Tendsto (fun t ↦ curvatureSine κ t / t) (𝓝[≠] 0) (𝓝 1) := by
+  have heq : (fun t ↦ curvatureSine κ t / t) = slope (curvatureSine κ) 0 := by
+    ext t
+    simp only [slope_def_field, curvatureSine_zero_right, sub_zero]
+  rw [heq]
+  simpa only [curvatureCosine_zero_right] using (hasDerivAt_curvatureSine κ 0).tendsto_slope
+
+/-- The model cosine is positive before the spherical half-radius. -/
+theorem curvatureCosine_pos {κ t : ℝ} (ht : 0 ≤ t)
+    (hbound : 0 < κ → t < π / (2 * √κ)) : 0 < curvatureCosine κ t := by
+  rcases lt_trichotomy 0 κ with hκ | rfl | hκ
+  · rw [curvatureCosine_of_pos hκ]
+    apply cos_pos_of_mem_Ioo
+    have hs : 0 < √κ := sqrt_pos.mpr hκ
+    have hb := (lt_div_iff₀ (mul_pos (by norm_num) hs)).mp (hbound hκ)
+    constructor
+    · have := mul_nonneg hs.le ht
+      linarith [pi_pos]
+    · nlinarith
+  · simp
+  · rw [curvatureCosine_of_neg hκ]
+    exact cosh_pos _
 
 end TauCeti
