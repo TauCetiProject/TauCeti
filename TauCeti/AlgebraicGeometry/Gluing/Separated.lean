@@ -42,8 +42,9 @@ variable {U X Y S : Scheme.{u}} (i : U ⟶ X) (j : U ⟶ Y)
   [IsOpenImmersion i] [IsOpenImmersion j] (f : X ⟶ S) (g : Y ⟶ S)
   (h : i ≫ f = j ≫ g)
 
-/-- Gluing separated schemes along an open gives a separated scheme precisely when the
-overlap is a closed subscheme of the product over the base. -/
+/-- For open immersions `i : U ⟶ X`, `j : U ⟶ Y` over `S` with `f`, `g` separated,
+the glued morphism `pushout.desc f g h` is separated if and only if
+`pullback.lift i j h : U ⟶ X ×_S Y` is a closed immersion. -/
 theorem IsSeparated.pushout_desc_iff [IsSeparated f] [IsSeparated g] :
     IsSeparated (pushout.desc f g h) ↔ IsClosedImmersion (pullback.lift i j h) := by
   let p := pushout.desc f g h
@@ -107,8 +108,7 @@ theorem LocallyOfFiniteType.pushout_desc [LocallyOfFiniteType f] [LocallyOfFinit
     HasRingHomProperty.instIsZariskiLocalAtSource (Q := RingHom.FiniteType)
   exact IsZariskiLocalAtSource.pushout_desc i j f g h inferInstance inferInstance
 
-/-- Quasi-compactness passes to the morphism glued from two open pieces. In particular the
-gluing of two finite-type morphisms is finite type, with no condition on the base. -/
+/-- Quasi-compactness passes to the morphism glued from two open pieces. -/
 theorem QuasiCompact.pushout_desc [QuasiCompact f] [QuasiCompact g] :
     QuasiCompact (pushout.desc f g h) := by
   let 𝒰 := Scheme.pushoutOpenCover i j
