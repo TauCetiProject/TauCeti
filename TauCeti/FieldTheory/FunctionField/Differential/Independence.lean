@@ -244,8 +244,7 @@ theorem Place.ord_derivativeOfSeparating_eq_sub (P : Place k F)
   rw [coe_weilDifferentialSpaceModule_smul] at hchain
   rw [weilDifferentialOrder_eq_ord_add_of_eq_repartitionDualMul hF hex _ _
     (weilDifferentialOfSeparating hF hx).2
-    (by simpa using weilDifferentialOfSeparating_ne_zero hF hx)
-    (derivativeOfSeparating_ne_zero hx hy) hchain P, add_sub_cancel_right]
+    (by simpa using weilDifferentialOfSeparating_ne_zero hF hx) hchain P, add_sub_cancel_right]
 
 /-- **The Kähler–Weil comparison does not depend on the separating element** (Stichtenoth,
 Theorem 4.3.2): over any exact constant field, the comparisons built from any two separating

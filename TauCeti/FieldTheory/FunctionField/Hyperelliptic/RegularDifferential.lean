@@ -83,13 +83,13 @@ spanned by `ω, x ω, …, x^{g-1} ω`. These are linearly independent
 (`TauCeti.linearIndependent_repartitionDualMul_pow`), so they form a basis of `Ω_F(0)`. -/
 theorem weilDifferentialFiltration_zero_eq_span_pow (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) (hx : Transcendental k x)
-    (hdeg : Module.finrank k⟮x⟯ F = 2) {ω : Module.Dual k ↥(repartitionSpace k F)} (hω : ω ≠ 0)
+    (hdeg : Module.finrank k⟮x⟯ F = 2) {ω : Module.Dual k ↥(repartitionSpace k F)}
     (hW : IsGreatest {D : Divisor k F | ω ∈ weilDifferentialFiltration D}
       ((genus k F - 1 : ℤ) • Divisor.poles hF (Units.mk0 x hx.ne_zero))) :
     weilDifferentialFiltration (0 : Divisor k F) =
       Submodule.span k
         (Set.range fun i : Fin (genus k F) ↦ repartitionDualMul hF (x ^ (i : ℕ)) ω) := by
-  rw [← map_riemannRochSpace_repartitionDualMulRight hF hex hω hW, sub_zero,
+  rw [← map_riemannRochSpace_repartitionDualMulRight hF hex hW, sub_zero,
     riemannRochSpace_sub_one_zsmul_poles_eq_span hF hex hx hdeg, Submodule.map_span,
     ← Set.range_comp]
   simp only [Function.comp_def, repartitionDualMulRight_apply]
@@ -107,7 +107,7 @@ theorem mem_adjoin_of_repartitionDualMul_eq (hF : IsFunctionField k F)
   -- then `a, b ∈ L((g - 1) (x)_∞) ⊆ k(x)`, `b ≠ 0`, and `z b = a`.
   obtain ⟨ω₀, -, hω₀, hW⟩ := exists_isGreatest_of_divisorClass_eq_canonicalClass hF hex
     (divisorClass_sub_one_zsmul_poles_eq_canonicalClass hF hex hx hdeg)
-  have hmap := map_riemannRochSpace_repartitionDualMulRight hF hex hω₀ hW 0
+  have hmap := map_riemannRochSpace_repartitionDualMulRight hF hex hW 0
   rw [sub_zero] at hmap
   obtain ⟨a, ha, rfl⟩ := hmap ▸ hωmem
   obtain ⟨b, hb, rfl⟩ := hmap ▸ hηmem
@@ -136,7 +136,7 @@ theorem adjoin_setOf_repartitionDualMul_eq_adjoin (hF : IsFunctionField k F)
   · -- `x` is the quotient of `x ω₀` by `ω₀`, both regular since `1, x` lie among `1, …, x^{g-1}`.
     obtain ⟨ω₀, -, hω₀, hW⟩ := exists_isGreatest_of_divisorClass_eq_canonicalClass hF hex
       (divisorClass_sub_one_zsmul_poles_eq_canonicalClass hF hex hx hdeg)
-    have hspan := weilDifferentialFiltration_zero_eq_span_pow hF hex hx hdeg hω₀ hW
+    have hspan := weilDifferentialFiltration_zero_eq_span_pow hF hex hx hdeg hW
     have hmem (i : ℕ) (hi : i < genus k F) :
         repartitionDualMul hF (x ^ i) ω₀ ∈ weilDifferentialFiltration (0 : Divisor k F) :=
       hspan ▸ Submodule.subset_span ⟨⟨i, hi⟩, rfl⟩
@@ -240,9 +240,7 @@ theorem weilDifferentialFiltration_zero_eq_span_of_sq_eq (h2 : (2 : k) ≠ 0) {f
   have hX : Units.map (algebraMap (RatFunc k) F : RatFunc k →* F)
       (Units.mk0 RatFunc.X RatFunc.X_ne_zero) = Units.mk0 _ hx.ne_zero := Units.ext rfl
   rw [hX] at hW
-  rw [weilDifferentialFiltration_zero_eq_span_pow hF hex hx hrank
-    (repartitionDualMul_ne_zero hF (Units.ne_zero _)
-      (weilDifferentialCotrace_ratFuncWeilDifferential_ne_zero hF)) hW]
+  rw [weilDifferentialFiltration_zero_eq_span_pow hF hex hx hrank hW]
   simp_rw [repartitionDualMul_repartitionDualMul, Units.val_inv_eq_inv_val, div_eq_mul_inv]
 
 end SqEq

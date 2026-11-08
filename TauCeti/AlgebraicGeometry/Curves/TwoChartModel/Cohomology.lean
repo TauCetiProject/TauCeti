@@ -399,7 +399,7 @@ theorem finrank_cohomology_one_sheaf_eq_dim_sub (hxt : Transcendental k x)
     (isFunctionField_functionField hxt) D
   rw [← Subspace.dual_finrank_eq,
     (cohomologyOneDualEquivWeilDifferentialFiltration hxt D).finrank_eq,
-    ← dim_sub_eq_finrank_weilDifferentialFiltration hF hk hω hgreat]
+    ← dim_sub_eq_finrank_weilDifferentialFiltration hF hk hgreat]
 
 /-- **Serre duality on `X_F`, in dimensions**: for every divisor `K` on `X_F` whose image in `F`
 represents `canonicalClass hF hk`, `dim_k H¹(X_F, 𝒪(D)) = dim_k H⁰(X_F, 𝒪(K - D))`. -/
