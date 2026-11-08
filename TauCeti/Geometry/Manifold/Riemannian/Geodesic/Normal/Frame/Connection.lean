@@ -57,6 +57,30 @@ theorem normalFrameConnectionCoefficient_apply (b : OrthonormalBasis ι ℝ (Tan
       ⟪leviCivitaConnection I M (normalOrthonormalFrame I M p U b j) q
         (normalCoordinateField I M p U v q), normalOrthonormalFrame I M p U b i q⟫_ℝ := by rfl
 
+/-- Connection coefficients are additive in the normal-coordinate direction. -/
+theorem normalFrameConnectionCoefficient_add (b : OrthonormalBasis ι ℝ (TangentSpace I p))
+    (v w : TangentSpace I p) (i j : ι) (q : M) :
+    normalFrameConnectionCoefficient (I := I) (U := U) b (v + w) i j q =
+      normalFrameConnectionCoefficient (U := U) b v i j q +
+        normalFrameConnectionCoefficient (U := U) b w i j q := by
+  simp only [normalFrameConnectionCoefficient_apply, normalCoordinateField_add, Pi.add_apply,
+    map_add, inner_add_left]
+
+/-- Connection coefficients are homogeneous in the normal-coordinate direction. -/
+theorem normalFrameConnectionCoefficient_smul (b : OrthonormalBasis ι ℝ (TangentSpace I p))
+    (c : ℝ) (v : TangentSpace I p) (i j : ι) (q : M) :
+    normalFrameConnectionCoefficient (I := I) (U := U) b (c • v) i j q =
+      c * normalFrameConnectionCoefficient (U := U) b v i j q := by
+  simp only [normalFrameConnectionCoefficient_apply, normalCoordinateField_smul, Pi.smul_apply,
+    map_smul, real_inner_smul_left]
+
+/-- Connection coefficients vanish in the zero direction. -/
+@[simp]
+theorem normalFrameConnectionCoefficient_zero (b : OrthonormalBasis ι ℝ (TangentSpace I p))
+    (i j : ι) (q : M) :
+    normalFrameConnectionCoefficient (I := I) (U := U) b 0 i j q = 0 := by
+  simpa using normalFrameConnectionCoefficient_smul (U := U) b 0 0 i j q
+
 /-- The normal-frame connection matrix, represented as an operator on the initial tangent space. -/
 def normalFrameConnectionOperator (b : OrthonormalBasis ι ℝ (TangentSpace I p))
     (v : TangentSpace I p) (q : M) : TangentSpace I p →L[ℝ] TangentSpace I p :=
@@ -69,6 +93,29 @@ theorem normalFrameConnectionOperator_apply (b : OrthonormalBasis ι ℝ (Tangen
     normalFrameConnectionOperator (U := U) b v q =
       ∑ i, ∑ j, normalFrameConnectionCoefficient (I := I) (U := U) b v i j q •
         InnerProductSpace.rankOne ℝ (b i) (b j) := by rfl
+
+/-- The connection operator is additive in the normal-coordinate direction. -/
+theorem normalFrameConnectionOperator_add (b : OrthonormalBasis ι ℝ (TangentSpace I p))
+    (v w : TangentSpace I p) (q : M) :
+    normalFrameConnectionOperator (U := U) b (v + w) q =
+      normalFrameConnectionOperator (U := U) b v q +
+        normalFrameConnectionOperator (U := U) b w q := by
+  simp only [normalFrameConnectionOperator_apply, normalFrameConnectionCoefficient_add, add_smul,
+    Finset.sum_add_distrib]
+
+/-- The connection operator is homogeneous in the normal-coordinate direction. -/
+theorem normalFrameConnectionOperator_smul (b : OrthonormalBasis ι ℝ (TangentSpace I p))
+    (c : ℝ) (v : TangentSpace I p) (q : M) :
+    normalFrameConnectionOperator (U := U) b (c • v) q =
+      c • normalFrameConnectionOperator (U := U) b v q := by
+  simp only [normalFrameConnectionOperator_apply, normalFrameConnectionCoefficient_smul, mul_smul,
+    Finset.smul_sum]
+
+/-- The connection operator vanishes in the zero direction. -/
+@[simp]
+theorem normalFrameConnectionOperator_zero (b : OrthonormalBasis ι ℝ (TangentSpace I p))
+    (q : M) : normalFrameConnectionOperator (U := U) b 0 q = 0 := by
+  simp [normalFrameConnectionOperator_apply]
 
 /-- The components of the connection operator recover the connection matrix acting on components. -/
 theorem inner_normalFrameConnectionOperator (b : OrthonormalBasis ι ℝ (TangentSpace I p))
