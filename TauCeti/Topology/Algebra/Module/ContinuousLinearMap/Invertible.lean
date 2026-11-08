@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
+public import TauCeti.Topology.Algebra.Module.Equiv.SMul
 import Mathlib.Tactic.Abel
 
 /-!
@@ -18,6 +19,10 @@ Consequently, convergence of inverse maps to any nonzero map forces eventual inv
 The inverse of an invertible map also suffices, including on trivial spaces. These results apply
 without completeness or continuity of the original family, and are useful when differentiating
 inverse families.
+
+Over a field, multiplying a map by a nonzero scalar `c` preserves invertibility, and the inverse
+of `c • f` is `c⁻¹ • f.inverse`; this is how the inverse of a positively homogeneous family of
+maps is seen to be homogeneous of the opposite degree.
 
 The file also records that the product `f.prodMap g` of two continuous linear maps is invertible
 exactly when both factors are, which is how block-diagonal second derivatives on a product space
@@ -83,6 +88,37 @@ theorem IsInvertible.eventually_of_tendsto_inverse {A : ι → E →L[𝕜] F} {
     exact Eventually.of_forall fun i ↦
       Subsingleton.elim 0 (A i) ▸ isInvertible_zero_iff.mpr ⟨hE, hF⟩
   · exact eventually_isInvertible_of_tendsto_inverse h hzero
+
+section Smul
+
+variable {𝕜 M M₂ : Type*} [Field 𝕜]
+  [TopologicalSpace M] [AddCommMonoid M] [Module 𝕜 M] [ContinuousConstSMul 𝕜 M]
+  [TopologicalSpace M₂] [AddCommMonoid M₂] [Module 𝕜 M₂] [ContinuousConstSMul 𝕜 M₂]
+
+omit [ContinuousConstSMul 𝕜 M] in
+/-- Multiplying a continuous linear map by a nonzero scalar does not change its
+invertibility. -/
+@[simp]
+theorem isInvertible_smul_iff {c : 𝕜} (hc : c ≠ 0) {f : M →L[𝕜] M₂} :
+    (c • f).IsInvertible ↔ f.IsInvertible := by
+  rw [smul_eq_smulLeft_comp hc, isInvertible_equiv_comp]
+
+/-- The inverse of `c • f` is `c⁻¹ • f.inverse`. This holds for every scalar: both sides vanish
+when `c = 0` or when `f` is not invertible. -/
+theorem inverse_smul (c : 𝕜) (f : M →L[𝕜] M₂) : (c • f).inverse = c⁻¹ • f.inverse := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · -- `zero_smul` is unavailable here: `M →L[𝕜] M₂` is a `𝕜`-module only under
+    -- `ContinuousAdd M₂`, which these lemmas do not assume.
+    have h0 : (0 : 𝕜) • f = 0 := by ext; simp
+    ext y
+    simp [h0]
+  rw [smul_eq_smulLeft_comp hc, inverse_equiv_comp]
+  ext y
+  rw [comp_apply, ContinuousLinearEquiv.coe_coe,
+    (ContinuousLinearEquiv.symm_apply_eq _ (y := c⁻¹ • y)).2 (by simp [smul_smul, hc]),
+    map_smul, smul_apply]
+
+end Smul
 
 section ProdMap
 
