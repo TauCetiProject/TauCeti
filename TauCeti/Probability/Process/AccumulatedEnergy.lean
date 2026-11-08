@@ -111,7 +111,8 @@ variable {Ω : Type*} {m : MeasurableSpace Ω}
 /-- The cumulative lower integral of a progressive nonnegative process is adapted to the
 original filtration. Infinite values are permitted and no sample measure is needed. -/
 theorem adapted_setLIntegral_Iic {ι : Type*} [LinearOrder ι] [TopologicalSpace ι]
-    [OrderClosedTopology ι] [SecondCountableTopology ι] [MeasurableSpace ι] [BorelSpace ι]
+    [OrderClosedTopology ι] [SecondCountableTopology ι] [MeasurableSpace ι]
+    [OpensMeasurableSpace ι]
     {ℱ : Filtration ι m} {F : ι → Ω → ℝ≥0∞} (hF : IsProgressive ℱ F)
     (μ : Measure ι) [SFinite μ] :
     Adapted ℱ (fun t ω ↦ ∫⁻ s in Iic t, F s ω ∂μ) := by
@@ -139,6 +140,32 @@ theorem isStronglyPredictable_setLIntegral_Iic (hF : IsProgressive ℱ F)
 
 end MeasureTheory.IsProgressive
 
+namespace MeasureTheory.IsStronglyProgressive
+
+open Measure
+
+variable {Ω E : Type*} [NormedAddCommGroup E] {m : MeasurableSpace Ω}
+  {ℱ : Filtration ℝ≥0 m} {H : ℝ≥0 → Ω → E}
+  (μ : Measure ℝ≥0) [SFinite μ] [NullSingletonClass μ]
+
+/-- The accumulated square energy of a strongly progressive normed-group-valued process is
+predictable as an extended-nonnegative-valued process. No finite-energy hypothesis is imposed. -/
+theorem isStronglyPredictable_accumulatedEnergy (hH : IsStronglyProgressive ℱ H) :
+    IsStronglyPredictable ℱ (μ.accumulatedEnergy H) := by
+  simp only [accumulatedEnergy_def]
+  apply IsProgressive.isStronglyPredictable_setLIntegral_Iic (μ := μ)
+  intro t
+  let : MeasurableSpace Ω := ℱ t
+  exact (hH t).enorm.pow_const 2
+
+/-- The finite-accumulated-energy set is predictable on a raw filtration. -/
+theorem measurableSet_accumulatedEnergy_lt_top (hH : IsStronglyProgressive ℱ H) :
+    MeasurableSet[ℱ.predictable] {p : ℝ≥0 × Ω |
+      μ.accumulatedEnergy H p.1 p.2 < ∞} :=
+  measurableSet_lt (hH.isStronglyPredictable_accumulatedEnergy μ).measurable measurable_const
+
+end MeasureTheory.IsStronglyProgressive
+
 namespace MeasureTheory.IsStronglyPredictable
 
 open Measure
@@ -147,27 +174,12 @@ variable {Ω E : Type*} [NormedAddCommGroup E] {m : MeasurableSpace Ω}
   {ℱ : Filtration ℝ≥0 m} {H : ℝ≥0 → Ω → E}
   (μ : Measure ℝ≥0) [SFinite μ] [NullSingletonClass μ]
 
-/-- The accumulated square energy of a predictable normed-group-valued process is predictable as
-an extended-nonnegative-valued process. No finite-energy hypothesis is imposed. -/
-theorem accumulatedEnergy (hH : IsStronglyPredictable ℱ H) :
-    IsStronglyPredictable ℱ (μ.accumulatedEnergy H) := by
-  simp only [accumulatedEnergy_def]
-  apply IsProgressive.isStronglyPredictable_setLIntegral_Iic (μ := μ)
-  intro t
-  let : MeasurableSpace Ω := ℱ t
-  exact (hH.isStronglyProgressive t).enorm.pow_const 2
-
-/-- The finite-accumulated-energy set is predictable on a raw filtration. -/
-theorem measurableSet_finite_accumulatedEnergy (hH : IsStronglyPredictable ℱ H) :
-    MeasurableSet[ℱ.predictable] {p : ℝ≥0 × Ω |
-      μ.accumulatedEnergy H p.1 p.2 < ∞} :=
-  measurableSet_lt (hH.accumulatedEnergy μ).measurable measurable_const
-
 /-- Removing a predictable integrand after its accumulated square energy becomes infinite
 preserves literal predictability, without modifying the filtration. -/
 theorem finiteEnergyCutoff (hH : IsStronglyPredictable ℱ H) :
     IsStronglyPredictable ℱ (μ.finiteEnergyCutoff H) := by
   simp only [finiteEnergyCutoff_def]
-  exact hH.ite (hH.measurableSet_finite_accumulatedEnergy μ) stronglyMeasurable_zero
+  exact hH.ite (hH.isStronglyProgressive.measurableSet_accumulatedEnergy_lt_top μ)
+    stronglyMeasurable_zero
 
 end MeasureTheory.IsStronglyPredictable
