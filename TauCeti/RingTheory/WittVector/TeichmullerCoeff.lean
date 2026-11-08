@@ -30,9 +30,7 @@ valuations on `A_inf = W(𝒪_F)`.
 * `WittVector.exists_eq_sum_teichmullerCoeff_add_pow_mul` : the splitting
   `x = ∑_{i < m} [xᵢ] pⁱ + pᵐ b` of the Teichmüller expansion.
 * `WittVector.teichmullerCoeff_sum_teichmuller_mul_pow` : the Teichmüller coordinates of a finite
-  Teichmüller sum `∑_{j ≤ n} [aⱼ] pʲ` are the `aⱼ`.
-* `WittVector.teichmullerCoeff_sum_range_teichmuller_mul_pow` : the Teichmüller coordinates of
-  `∑_{j < n} [aⱼ] pʲ` vanish from `n` on.
+  Teichmüller sum `∑_{j ∈ s} [aⱼ] pʲ` are the `aᵢ` for `i ∈ s`, and vanish off `s`.
 * `WittVector.teichmullerCoeff_eq_of_dvd_sub` : the first `n + 1` Teichmüller coordinates only
   depend on the residue modulo `p ^ (n + 1)`.
 * `WittVector.teichmullerCoeff_teichmuller_mul` : `[c] x` has Teichmüller coordinates `c xₙ`.
@@ -90,16 +88,30 @@ theorem teichmullerCoeff_zero (x : 𝕎 R) : x.teichmullerCoeff 0 = x.coeff 0 :=
 /-- The Teichmüller coordinates of `0` vanish. -/
 @[simp]
 theorem zero_teichmullerCoeff (n : ℕ) : (0 : 𝕎 R).teichmullerCoeff n = 0 := by
-  simp [teichmullerCoeff_eq_iff, zero_pow (pow_ne_zero n hp.out.ne_zero)]
+  simp [teichmullerCoeff]
+
+/-- The Teichmüller coordinates of a finite Teichmüller sum `∑_{j ∈ s} [aⱼ] pʲ` are the `aᵢ` for
+`i ∈ s`, and vanish off `s`. -/
+@[simp]
+theorem teichmullerCoeff_sum_teichmuller_mul_pow (a : ℕ → R) (s : Finset ℕ) (i : ℕ) :
+    (∑ j ∈ s, teichmuller p (a j) * (p : 𝕎 R) ^ j).teichmullerCoeff i =
+      if i ∈ s then a i else 0 := by
+  have hcoeff (j k : ℕ) : (teichmuller p (a j) * (p : 𝕎 R) ^ j).coeff k =
+      if k = j then a j ^ p ^ j else 0 := by
+    split_ifs with h
+    · rw [h, teichmuller_mul_pow_coeff]
+    · exact teichmuller_mul_pow_coeff_of_ne _ h
+  rw [teichmullerCoeff_eq_iff, sum_coeff_eq_coeff_sum]
+  · simp only [hcoeff, Finset.sum_ite_eq]
+    split_ifs <;> simp [hp.out.ne_zero]
+  · refine fun k ↦ ⟨fun ⟨j, _, hj⟩ ⟨l, _, hl⟩ ↦ Subtype.ext ?_⟩
+    simp only [hcoeff, ne_eq, ite_eq_right_iff, not_forall] at hj hl
+    exact hj.1.symm.trans hl.1
 
 /-- The Teichmüller coordinates of `[a] p ^ m`: `a` in position `m` and `0` elsewhere. -/
 theorem teichmullerCoeff_teichmuller_mul_pow (a : R) (m n : ℕ) :
     (teichmuller p a * (p : 𝕎 R) ^ m).teichmullerCoeff n = if n = m then a else 0 := by
-  split_ifs with h
-  · subst h
-    rw [teichmullerCoeff_eq_iff, teichmuller_mul_pow_coeff]
-  · rw [teichmullerCoeff_eq_iff, teichmuller_mul_pow_coeff_of_ne _ h,
-      zero_pow (pow_ne_zero n hp.out.ne_zero)]
+  simpa using teichmullerCoeff_sum_teichmuller_mul_pow (fun _ ↦ a) {m} n
 
 /-- The Teichmüller coordinates of `p ^ m`: `1` in position `m` and `0` elsewhere. -/
 @[simp]
@@ -113,32 +125,12 @@ theorem teichmullerCoeff_teichmuller (a : R) (n : ℕ) :
     (teichmuller p a).teichmullerCoeff n = if n = 0 then a else 0 := by
   simpa using teichmullerCoeff_teichmuller_mul_pow (p := p) a 0 n
 
-/-- The Teichmüller coordinates of a finite Teichmüller sum `∑_{j ≤ n} [aⱼ] pʲ` are the `aⱼ`. -/
-theorem teichmullerCoeff_sum_teichmuller_mul_pow (a : ℕ → R) {i n : ℕ} (hi : i ≤ n) :
-    (∑ j ≤ n, teichmuller p (a j) * (p : 𝕎 R) ^ j).teichmullerCoeff i = a i := by
-  rw [teichmullerCoeff_eq_iff, sum_coeff_eq_coeff_sum, Finset.sum_eq_single_of_mem i
-    (Finset.mem_Iic.mpr hi) fun j _ hj ↦ teichmuller_mul_pow_coeff_of_ne _ (Ne.symm hj),
-    teichmuller_mul_pow_coeff]
-  refine fun k ↦ ⟨fun ⟨j, _, hj⟩ ⟨l, _, hl⟩ ↦ Subtype.ext ?_⟩
-  by_contra h
-  exact (if hk : k = j then hl (teichmuller_mul_pow_coeff_of_ne _ (hk ▸ h)) else
-    hj (teichmuller_mul_pow_coeff_of_ne _ hk))
-
 /-- The Teichmüller coordinates of a finite Teichmüller sum `∑_{j < n} [aⱼ] pʲ` are the `aᵢ` for
 `i < n`, and vanish from `n` on. -/
-@[simp]
 theorem teichmullerCoeff_sum_range_teichmuller_mul_pow (a : ℕ → R) (n i : ℕ) :
     (∑ j ∈ Finset.range n, teichmuller p (a j) * (p : 𝕎 R) ^ j).teichmullerCoeff i =
       if i < n then a i else 0 := by
-  have h : ∑ j ∈ Finset.range n, teichmuller p (a j) * (p : 𝕎 R) ^ j =
-      ∑ j ≤ i + n, teichmuller p (if j < n then a j else 0) * (p : 𝕎 R) ^ j := by
-    have hr : Finset.range n = (Finset.Iic (i + n)).filter (· < n) := by
-      ext j
-      simp only [Finset.mem_range, Finset.mem_filter, Finset.mem_Iic]
-      omega
-    rw [hr, Finset.sum_filter]
-    exact Finset.sum_congr rfl fun j _ ↦ by split_ifs <;> simp
-  rw [h, teichmullerCoeff_sum_teichmuller_mul_pow _ (Nat.le_add_right i n)]
+  simp
 
 /-- **The Teichmüller expansion**: `x` is congruent to `∑_{i ≤ n} [xᵢ] pⁱ` modulo `p ^ (n + 1)`. -/
 theorem pow_dvd_sub_sum_teichmullerCoeff (x : 𝕎 R) (n : ℕ) :
@@ -172,8 +164,8 @@ theorem teichmullerCoeff_teichmuller_mul (c : R) (x : 𝕎 R) (n : ℕ) :
       ∑ i ≤ n, teichmuller p (c * x.teichmullerCoeff i) * (p : 𝕎 R) ^ i := by
     convert (pow_dvd_sub_sum_teichmullerCoeff x n).mul_left (teichmuller p c) using 1
     simp only [mul_sub, Finset.mul_sum, map_mul, mul_assoc]
-  rw [teichmullerCoeff_eq_of_dvd_sub h le_rfl,
-    teichmullerCoeff_sum_teichmuller_mul_pow (fun i ↦ c * x.teichmullerCoeff i) le_rfl]
+  rw [teichmullerCoeff_eq_of_dvd_sub h le_rfl, teichmullerCoeff_sum_teichmuller_mul_pow]
+  simp
 
 /-- A Witt vector over a perfect ring is determined by its Teichmüller coordinates. -/
 theorem teichmullerCoeff_injective : Function.Injective (teichmullerCoeff : 𝕎 R → ℕ → R) :=
