@@ -7,7 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import TauCeti.MeasureTheory.Function.PreciseRepresentative
-import Mathlib.Analysis.Convex.Integral
 import Mathlib.MeasureTheory.Covering.BesicovitchVectorSpace
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
@@ -82,6 +81,9 @@ All declarations are in the `TauCeti.MeasureTheory` namespace.
 * `exists_holderOnWith_ae_eq_iff_forall_setAverage_norm_sub_le`: on such a domain, an integrable
   function agrees almost everywhere with an `α`-Hölder function on `Ω` if and only if its mean
   oscillation on the pieces `closedBall x r ∩ Ω` is `O(r^α)`.
+* `setAverage_norm_sub_le_of_setLIntegral_enorm_sub_rpow_le`: an `Lᵖ` bound on the oscillation
+  on a single piece `closedBall x r ∩ Ω` of growth `r^(n + p α)` bounds the mean oscillation there
+  by a multiple of `r^α`.
 * `holderOnWith_preciseRepresentative_restrict_of_setLIntegral_enorm_sub_rpow_le`: Campanato's
   theorem on such a domain from an `Lᵖ` bound on the oscillation, `𝓛^{p,λ}(Ω) ⊆ C^{0,α}(Ω)`.
 * `tendsto_setAverage_closedBall_preciseRepresentative_of_setAverage_norm_sub_le` and
@@ -415,8 +417,8 @@ theorem exists_holderOnWith_ae_eq_iff_forall_setAverage_norm_sub_le {α : ℝ≥
 omit [CompleteSpace F] in
 /-- An `Lᵖ` bound `∫_{closedBall x r ∩ Ω} ‖f - f_{x,r}‖ᵖ ≤ M r^(n + p α)` on the oscillation of `f`
 gives the bound `(M / (A |closedBall 0 1|))^(1/p) r^α` on its mean oscillation, when `Ω` fills
-at least the proportion `A` of `closedBall x r`. -/
-private lemma setAverage_norm_sub_le_of_setLIntegral_enorm_sub_rpow_le {p r : ℝ} (hp : 1 ≤ p)
+at least the proportion `A` of `closedBall x r`. Here `n` is the dimension and `p ≥ 1`. -/
+theorem setAverage_norm_sub_le_of_setLIntegral_enorm_sub_rpow_le {p r : ℝ} (hp : 1 ≤ p)
     (hA : 0 < A) (hM : 0 ≤ M) (hr : 0 < r)
     (hdens : A * μ (closedBall x r) ≤ μ (closedBall x r ∩ Ω))
     (hosc : ∫⁻ y in closedBall x r ∩ Ω, ‖f y - ⨍ z in closedBall x r ∩ Ω, f z ∂μ‖ₑ ^ p ∂μ ≤
