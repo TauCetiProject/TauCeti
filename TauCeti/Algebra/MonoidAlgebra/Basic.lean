@@ -201,9 +201,10 @@ theorem coe_inv_singleOneUnit (g : G) :
       single g⁻¹ 1 := by
   rfl
 
+omit [CommSemiring R] in
 /-- Conjugating by a basis element conjugates the indices of the coefficients:
 `(g x g⁻¹)_h = x_{g⁻¹ h g}`. -/
-theorem coeff_single_mul_mul_single_inv (g h : G) (x : MonoidAlgebra R G) :
+theorem coeff_single_mul_mul_single_inv [Semiring R] (g h : G) (x : MonoidAlgebra R G) :
     (single g (1 : R) * x * single g⁻¹ 1).coeff h = x.coeff (g⁻¹ * h * g) := by
   simp [mul_assoc]
 

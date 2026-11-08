@@ -337,7 +337,7 @@ theorem contMDiffAt_pairOfPantsAlmostComplex (h₀ : ω.Compatible J₀) {n : �
   have hFp : Function.Periodic
       (fun t y => LinearMap.toContinuousLinearMap (J₀.cayley (J q t y))) 1 := fun t => by
     simp only [hJp q t]
-  exact (contMDiffAt_smoothTransition_endCoord q hw x).smul (q.contMDiffAt_comp_im_endCoord hFp
+  exact (contMDiffAt_smoothTransition_endCoord q 1 hw x).smul (q.contMDiffAt_comp_im_endCoord hFp
     (h₀.tames.contMDiff_cayley (J := fun p : ℝ × M => J q p.1 p.2) (fun p => hJ q p.1 p.2)
       (hJs q)) hw x)
 

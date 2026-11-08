@@ -276,19 +276,19 @@ theorem floerEnergyDensity_cylindrical_nonneg (ω : SymplecticForm V) {J : Almos
 
 /-- **The action increases along Floer solutions.** Under the hypotheses of
 `TauCeti.SymplecticForm.integral_floerEnergyDensity_eq_hamiltonianAction_sub`, if `u` solves the
-Floer equation `∂_s u + J (∂_t u - X_{H_t}(u)) = 0` on the rectangle for an almost complex
-structure `J` tamed by `ω`, then the action of the loop at `s = a` is at most that of the loop at
-`s = b`. -/
+Floer equation `∂_s u + J (∂_t u - X_{H_t}(u)) = 0` on the rectangle for almost complex
+structures `J z` tamed by `ω`, which may depend on the domain point, then the action of the loop at
+`s = a` is at most that of the loop at `s = b`. -/
 theorem hamiltonianAction_le_hamiltonianAction (ω : SymplecticForm V)
-    {J : AlmostComplexStructure V} (hJ : ω.Tames J) (hH : ContDiff ℝ 1 (uncurry H))
+    {J : ℝ × ℝ → AlmostComplexStructure V} (hJ : ∀ z ∈ Icc a b ×ˢ Icc 0 1, ω.Tames (J z))
+    (hH : ContDiff ℝ 1 (uncurry H))
     (hU : IsOpen U) (hu : ContDiffOn ℝ 2 u U) (hab : a ≤ b) (hRU : Icc a b ×ˢ Icc 0 1 ⊆ U)
     (hper : ∀ s ∈ Icc a b, u (s, 1) = u (s, 0))
     (hfloer : ∀ z ∈ Icc a b ×ˢ Icc 0 1, fderiv ℝ u z stdComplexLineReal +
-      J (fderiv ℝ u z stdComplexLineImag - ω.hamiltonianVectorField (H z.2) (u z)) = 0) :
+      J z (fderiv ℝ u z stdComplexLineImag - ω.hamiltonianVectorField (H z.2) (u z)) = 0) :
     ω.hamiltonianAction H (fun t ↦ u (a, t)) ≤ ω.hamiltonianAction H (fun t ↦ u (b, t)) :=
-  ω.hamiltonianAction_le_hamiltonianAction_of_monotone (H := fun w ↦ H w.2) (J := fun _ ↦ J)
-    (fun _ _ ↦ hJ) (contDiff_uncurry_cylindrical hH) (fun _ _ _ _ _ ↦ le_rfl) hU hu hab hRU
-    hper hfloer
+  ω.hamiltonianAction_le_hamiltonianAction_of_monotone (H := fun w ↦ H w.2) hJ
+    (contDiff_uncurry_cylindrical hH) (fun _ _ _ _ _ ↦ le_rfl) hU hu hab hRU hper hfloer
 
 /-- **The energy of a Floer cylinder.** Let `H` be a `C¹` time-dependent Hamiltonian and let `u`
 be `C²` on an open neighbourhood `U` of `ℝ × [0, 1]`, with `u(s, 1) = u(s, 0)` for all `s`,
