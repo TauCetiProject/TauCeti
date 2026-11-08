@@ -22,7 +22,9 @@ A sector `{|arg ((z - v) / b)| < α}` of half-opening `α ≤ π`, cut off by a 
 vertex, is the image of an open rectangle in polar coordinates. Finally, the argument is smooth on
 the slit plane, and although it jumps across the negative real axis, a smooth `2π`-periodic function
 of the argument is smooth on the whole punctured plane: near the negative real axis it is computed
-from the argument of `-z`.
+from the argument of `-z`. Since the argument is continuous on the slit plane and blind to positive
+real scaling, `arg (f x) → arg Q` as soon as some positive real multiple of `f x` tends to
+`Q ∈ slitPlane`.
 
 ## Main results
 
@@ -35,6 +37,8 @@ from the argument of `-z`.
   rectangle.
 * `Complex.inv_exp_arg_mul_le_exp_pi_mul_abs`: `(exp (arg u * r))⁻¹ ≤ exp (π * |r|)`.
 * `Complex.contDiffAt_arg`: the argument is smooth on the slit plane.
+* `Complex.tendsto_arg_of_tendsto_ofReal_mul`: if `c x * f x → Q ∈ slitPlane` with `c x > 0`
+  eventually, then `arg (f x) → arg Q`.
 * `ContDiff.contDiffAt_comp_arg`: a smooth `2π`-periodic function of the argument is smooth away
   from the origin.
 -/
@@ -94,6 +98,15 @@ theorem contDiffAt_arg {z : ℂ} (hz : z ∈ slitPlane) {n : WithTop ℕ∞} : C
   have h := (imCLM.contDiff.contDiffAt (n := n) (x := log z)).comp z
     ((contDiffAt_log hz (n := n)).restrict_scalars ℝ)
   exact h.congr_of_eventuallyEq (Filter.Eventually.of_forall fun w ↦ (log_im w).symm)
+
+open Filter Topology in
+/-- Positive real scaling does not move the argument: if `Q ∈ slitPlane`, eventually `0 < c x`,
+and `c x * f x → Q`, then `arg (f x) → arg Q`. -/
+theorem tendsto_arg_of_tendsto_ofReal_mul {α : Type*} {l : Filter α} {c : α → ℝ} {f : α → ℂ}
+    {Q : ℂ} (hQ : Q ∈ slitPlane) (hc : ∀ᶠ x in l, 0 < c x)
+    (h : Tendsto (fun x ↦ (c x : ℂ) * f x) l (𝓝 Q)) :
+    Tendsto (fun x ↦ arg (f x)) l (𝓝 (arg Q)) :=
+  ((continuousAt_arg hQ).tendsto.comp h).congr' (hc.mono fun _ hx ↦ arg_real_mul _ hx)
 
 end Complex
 
