@@ -119,38 +119,6 @@ private theorem mul_add_mul_add_le_mul_one_add_mul_add (C₀ M N P : ℝ≥0) :
           _ = (1 + P) * (M + N) := by ring
     _ = C₀ * (1 + P) * (M + N) := by ring
 
-/-- If `u` is `C²` on the whole space, with `|u| ≤ N`, and `Du` and `D²u` are bounded by `P`, then
-`u` and `Du` are globally `α`-Hölder, with constants `P + 2 N` and `P + 2 P`. -/
-private theorem holderOnWith_univ_of_norm_le_of_norm_iteratedFDeriv_two_le {α N P : ℝ≥0}
-    (hα1 : α < 1) {u : E → ℝ} (hu : ContDiff ℝ 2 u) (hN : ∀ x, |u x| ≤ N)
-    (h1 : ∀ x, ‖fderiv ℝ u x‖ ≤ P) (h2 : ∀ x, ‖iteratedFDeriv ℝ 2 u x‖ ≤ P) :
-    HolderOnWith (P + 2 * N) α u univ ∧ HolderOnWith (P + 2 * P) α (fderiv ℝ u) univ := by
-  refine ⟨(holderWith_of_norm_le_of_norm_fderiv_le hα1.le (hu.differentiable (by norm_num))
-      (fun x => by rw [Real.norm_eq_abs]; exact hN x) h1).holderOnWith univ,
-    (holderWith_of_norm_le_of_norm_fderiv_le hα1.le
-      ((hu.fderiv_right (m := 1) (by norm_num)).differentiable (by norm_num)) h1
-      fun x => ?_).holderOnWith univ⟩
-  rw [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
-  exact h2 x
-
-/-- The interpolation inequalities at scale `0 < ε ≤ 1` for a `C²` function `u` with `|u| ≤ N` and
-bounded, globally `α`-Hölder second derivative with Hölder constant `H`: both `‖Du‖` and `‖D²u‖`
-are bounded by `(34 / ε + 32 / ε²) N + 2 H ε^α`. -/
-private theorem norm_fderiv_le_and_norm_iteratedFDeriv_two_le {α H N : ℝ≥0} {ε : ℝ} (hε : 0 < ε)
-    (hε1 : ε ≤ 1) {u : E → ℝ} (hu : ContDiff ℝ 2 u) (hN : ∀ x, |u x| ≤ N)
-    (hbdd : BddAbove (range fun x => ‖iteratedFDeriv ℝ 2 u x‖))
-    (hH : HolderWith H α (iteratedFDeriv ℝ 2 u)) :
-    (∀ x, ‖fderiv ℝ u x‖ ≤ (34 / ε + 32 / ε ^ 2) * N + 2 * H * ε ^ (α : ℝ)) ∧
-      ∀ x, ‖iteratedFDeriv ℝ 2 u x‖ ≤ (34 / ε + 32 / ε ^ 2) * N + 2 * H * ε ^ (α : ℝ) := by
-  have hN0 (y : E) : ‖iteratedFDeriv ℝ 0 u y‖ ≤ N := by
-    simpa only [norm_iteratedFDeriv_zero, Real.norm_eq_abs] using hN y
-  refine ⟨fun x => ?_, fun x => ?_⟩
-  · have h := (hH.norm_iteratedFDeriv_succ_le_and_norm_iteratedFDeriv_add_two_le (k := 0) hu hN0
-      hbdd hε hε1 x).1
-    rwa [zero_add, norm_iteratedFDeriv_one] at h
-  · exact (hH.norm_iteratedFDeriv_succ_le_and_norm_iteratedFDeriv_add_two_le (k := 0) hu hN0 hbdd hε
-      hε1 x).2
-
 /-- The absorption step of the global estimate: if `K₀ + N = K + γ N + 2 β ε^α H`, with
 `H ≤ C₀ (K₀ + N)` and `2 C₀ β ε^α ≤ 1 / 2`, then `C₀ (K₀ + N) ≤ 2 C₀ (1 + γ) (K + N)`. -/
 private theorem mul_le_two_mul_one_add_mul_of_absorb {C₀ K N γ β e H K₀ : ℝ} (hC₀ : 0 ≤ C₀)
@@ -285,12 +253,16 @@ theorem
   have hH : HolderWith H α (iteratedFDeriv ℝ 2 u) := hmem.holderWith
   set P : ℝ := c' * N + 2 * H * e
   have hP : 0 ≤ P := by positivity
-  obtain ⟨h1, h2⟩ := norm_fderiv_le_and_norm_iteratedFDeriv_two_le hε hε1 hu hN hbdd hH
+  obtain ⟨h1, h2⟩ := hH.norm_fderiv_le_and_norm_iteratedFDeriv_two_le hu
+    (fun y => by simpa only [Real.norm_eq_abs] using hN y) hbdd hε hε1
   set P' : ℝ≥0 := P.toNNReal
   have hPP' : (P' : ℝ) = P := Real.coe_toNNReal _ hP
   -- `u` and `Du` are bounded by `N` and `P'`, with derivatives bounded by `P'`, hence `α`-Hölder.
-  obtain ⟨hHu, hHDu⟩ := holderOnWith_univ_of_norm_le_of_norm_iteratedFDeriv_two_le hα1 hu hN
+  obtain ⟨hHu, hHDu⟩ := holderWith_and_holderWith_fderiv_of_norm_le_of_norm_iteratedFDeriv_two_le
+    hα1.le hu (fun x => by simpa only [Real.norm_eq_abs] using hN x)
     (fun x => (h1 x).trans hPP'.ge) fun x => (h2 x).trans hPP'.ge
+  replace hHu := hHu.holderOnWith univ
+  replace hHDu := hHDu.holderOnWith univ
   -- The principal part `L u - (b · ∇u + c u)` is globally `α`-Hölder with constant `K₀`.
   have hlow := holderOnWith_fderiv_apply_add_mul hHu hHDu (fun x _ => hN x)
     (fun x _ => (h1 x).trans hPP'.ge) (hLb.holderOnWith univ) (fun x _ => hBb x)
