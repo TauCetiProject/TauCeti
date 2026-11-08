@@ -26,8 +26,9 @@ all based at the identity and at `e₀`. The boundary map is
 `TauCeti.specialOrthogonalSphereBoundary`, and the sequence is exact at its three kinds of terms.
 
 The segment `π_n(SO(1 + n)) → π_n(Sⁿ) → π_{n-1}(SO(n))` decides which classes of `π_n(Sⁿ)` come
-from `SO(1 + n)`. If the boundary of a class `a ∈ π_{k+1}(Sⁿ)` has finite order, for instance
-because `π_k(SO(n))` is a torsion group, then a positive power of `a` comes from `SO(1 + n)`
+from `SO(1 + n)`. For `k ≥ 1`, if the boundary of a class `a ∈ π_{k+1}(Sⁿ)` has finite order,
+for instance because `π_k(SO(n))` is a torsion group, then a positive power of `a` comes from
+`SO(1 + n)`
 (`TauCeti.exists_pow_mem_range_homotopyGroupMap_specialOrthogonalSphereMap_of_isOfFinOrder`). If
 `π_k(SO(n))` is trivial, every class of `π_{k+1}(Sⁿ)` comes from `SO(1 + n)`. Since
 `π₂(SO(3)) = 0`, this is the case for `π₃(SO(4)) → π₃(S³)`
@@ -38,15 +39,17 @@ cube `I^N` for a finite type `N` of cardinality `k`, and `π_{k+1}` on `I^(Optio
 
 ## Main definitions
 
-* `TauCeti.specialOrthogonalSphereFiberHomeomorph`: `SO(n)` is homeomorphic to the fibre of
-  `A ↦ A e₀` over `e₀`, through `B ↦ diag(1, B)`.
 * `TauCeti.specialOrthogonalSphereBoundary`: the boundary map `π_{k+1}(Sⁿ, e₀) → π_k(SO(n), 1)`.
+* `TauCeti.specialOrthogonalSphereBoundaryHom`: for `k ≥ 1`, the boundary map as a group
+  homomorphism.
 
 ## Main results
 
 * `TauCeti.mem_range_homotopyGroupMap_specialOrthogonalSphereMap_iff`: exactness at `π_{k+1}(Sⁿ)`.
 * `TauCeti.mem_range_specialOrthogonalSphereBoundary_iff`: exactness at `π_k(SO(n))`.
 * `TauCeti.mem_range_homotopyGroupMap_fromBlocksOne_iff`: exactness at `π_k(SO(1 + n))`.
+* `TauCeti.specialOrthogonalSphereBoundary_apply`: the boundary map is the boundary map of the
+  Serre fibration `A ↦ A e₀`, read in `SO(n)`.
 * `TauCeti.specialOrthogonalSphereBoundary_mul`: for `k ≥ 1` the boundary is multiplicative.
 * `TauCeti.surjective_homotopyGroupMap_specialOrthogonalSphereMap`: if `π_k(SO(n))` is trivial,
   every class of `π_{k+1}(Sⁿ)` comes from `SO(1 + n)`.
@@ -72,42 +75,6 @@ open scoped Topology.Homotopy
 namespace TauCeti
 
 variable {n : ℕ}
-
-/-! ### The fibre over `e₀` -/
-
-variable (n) in
-/-- The fibre of `A ↦ A e₀` over `e₀` is `SO(n)`: the block embedding `B ↦ diag(1, B)` is a
-homeomorphism of `SO(n)` onto the special orthogonal matrices fixing `e₀`. -/
-def specialOrthogonalSphereFiberHomeomorph :
-    specialOrthogonalGroup (Fin n) ℝ ≃ₜ
-      specialOrthogonalSphereMap n ⁻¹' {specialOrthogonalSphereMap n 1} :=
-  (finiteOrthonormalFrame.specialOrthogonalStabilizerHomeomorph 1 n).trans
-    (Homeomorph.setCongr <| by
-      ext A
-      rw [← finiteOrthonormalFrame.range_fromBlocksOne_eq_specialOrthogonalStabilizer,
-        SetLike.mem_coe, mem_preimage, mem_singleton_iff,
-        specialOrthogonalSphereMap_eq_specialOrthogonalSphereMap_one_iff])
-
-@[simp]
-theorem coe_specialOrthogonalSphereFiberHomeomorph_apply (B : specialOrthogonalGroup (Fin n) ℝ) :
-    (specialOrthogonalSphereFiberHomeomorph n B : specialOrthogonalGroup (Fin (1 + n)) ℝ) =
-      SpecialOrthogonalGroup.fromBlocksOne ℝ 1 n B :=
-  finiteOrthonormalFrame.coe_specialOrthogonalStabilizerHomeomorph_apply n B
-
-/-- A special orthogonal matrix fixing `e₀` is the block matrix `diag(1, B)` of its image `B` in
-`SO(n)`. -/
-@[simp]
-theorem fromBlocksOne_specialOrthogonalSphereFiberHomeomorph_symm_apply
-    (A : specialOrthogonalSphereMap n ⁻¹' {specialOrthogonalSphereMap n 1}) :
-    SpecialOrthogonalGroup.fromBlocksOne ℝ 1 n ((specialOrthogonalSphereFiberHomeomorph n).symm A) =
-      A := by
-  rw [← coe_specialOrthogonalSphereFiberHomeomorph_apply, Homeomorph.apply_symm_apply]
-
-/-- The identity of `SO(n)` corresponds to the identity of `SO(1 + n)` in the fibre. -/
-@[simp]
-theorem specialOrthogonalSphereFiberHomeomorph_one :
-    specialOrthogonalSphereFiberHomeomorph n 1 = ⟨1, rfl⟩ :=
-  Subtype.ext (by simp)
 
 /-! ### The boundary map -/
 
@@ -161,13 +128,16 @@ def specialOrthogonalSphereBoundary [NeZero n] (N : Type*) [Finite N] :
 variable {N : Type*} [Finite N]
 
 /-- The boundary map of the sphere bundle is the boundary map of the Serre fibration `A ↦ A e₀`,
-read in `SO(n)` through the identification of the fibre with `SO(n)`. -/
-private theorem specialOrthogonalSphereBoundary_apply [NeZero n]
+read in `SO(n)` through the identification `TauCeti.specialOrthogonalSphereFiberHomeomorph` of
+the fibre with `SO(n)`. -/
+theorem specialOrthogonalSphereBoundary_apply [NeZero n]
     (a : HomotopyGroup (Option N) (sphere (0 : EuclideanSpace ℝ (Fin (1 + n))) 1)
       (specialOrthogonalSphereMap n 1)) :
     specialOrthogonalSphereBoundary n N a =
-      fiberEquiv n N (TopCat.fibrationBoundary specialOrthogonalSphereMap_mem_serreFibrations
-        (fiberOne n) a) :=
+      HomotopyGroup.homeomorphEquivOfEq (specialOrthogonalSphereFiberHomeomorph n).symm
+        ((specialOrthogonalSphereFiberHomeomorph n).symm_apply_eq.2
+          specialOrthogonalSphereFiberHomeomorph_one.symm)
+        (TopCat.fibrationBoundary specialOrthogonalSphereMap_mem_serreFibrations ⟨1, rfl⟩ a) :=
   (rfl)
 
 omit [Finite N] in
@@ -201,6 +171,20 @@ theorem specialOrthogonalSphereBoundary_mul [NeZero n] [DecidableEq N] [Nonempty
     specialOrthogonalSphereBoundary_apply]
   erw [TopCat.fibrationBoundary_mul]
   exact HomotopyGroup.map_mul _ _ _ _
+
+variable (n N) in
+/-- For `k ≥ 1`, the boundary map `π_{k+1}(Sⁿ, e₀) → π_k(SO(n), 1)` of the sphere bundle as a group
+homomorphism. -/
+def specialOrthogonalSphereBoundaryHom [NeZero n] [DecidableEq N] [Nonempty N] :
+    HomotopyGroup (Option N) (sphere (0 : EuclideanSpace ℝ (Fin (1 + n))) 1)
+        (specialOrthogonalSphereMap n 1) →*
+      HomotopyGroup N (specialOrthogonalGroup (Fin n) ℝ) 1 :=
+  MonoidHom.mk' (specialOrthogonalSphereBoundary n N) specialOrthogonalSphereBoundary_mul
+
+@[simp]
+theorem coe_specialOrthogonalSphereBoundaryHom [NeZero n] [DecidableEq N] [Nonempty N] :
+    ⇑(specialOrthogonalSphereBoundaryHom n N) = specialOrthogonalSphereBoundary n N :=
+  (rfl)
 
 /-! ### Exactness -/
 
@@ -265,9 +249,8 @@ theorem exists_pow_mem_range_homotopyGroupMap_specialOrthogonalSphereMap_of_isOf
       ⟨specialOrthogonalSphereMap n, continuous_specialOrthogonalSphereMap n⟩ rfl) := by
   obtain ⟨k, hk, hak⟩ := isOfFinOrder_iff_pow_eq_one.1 ha
   refine ⟨k, hk, mem_range_homotopyGroupMap_specialOrthogonalSphereMap_iff.2 ?_⟩
-  rw [← MonoidHom.mk'_apply (specialOrthogonalSphereBoundary n N)
-    specialOrthogonalSphereBoundary_mul, map_pow, MonoidHom.mk'_apply, hak,
-    HomotopyGroup.mk_const_eq_one]
+  rw [← coe_specialOrthogonalSphereBoundaryHom, map_pow, coe_specialOrthogonalSphereBoundaryHom,
+    hak, HomotopyGroup.mk_const_eq_one]
 
 /-- If `π_k(SO(n))` is trivial, then every class of `π_{k+1}(Sⁿ, e₀)` comes from
 `π_{k+1}(SO(1 + n), 1)`. -/
