@@ -198,7 +198,7 @@ private theorem primeCoord_lt {P : Ideal (𝓞 F)} (hP : P.IsPrime) (hP0 : P ≠
           (Finset.mem_toList.mpr (mem_primesOverFinset_under F hP hP0))
     _ = (IsDedekindDomain.primesOverFinset (Ideal.under ℤ P) (𝓞 F)).card := Finset.length_toList _
     _ ≤ Module.finrank ℚ F :=
-      TauCeti.NumberField.card_primesOverFinset_le_finrank (K := F) hp0
+      TauCeti.NumberField.card_primesOverFinset_le_finrank (K := F)
 
 /-
 [foundational] `absNormUnder` injectivity: equal `absNormUnder` means the primes lie

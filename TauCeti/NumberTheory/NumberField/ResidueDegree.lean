@@ -184,7 +184,7 @@ theorem card_filter_rationalPrimeBelow_le_finrank (F : Finset (HeightOneSpectrum
   have : (Ideal.span {(m : ℤ)}).IsMaximal := hspan.isMaximal hne
   refine le_trans (Finset.card_le_card_of_injOn (fun 𝔮 ↦ 𝔮.asIdeal) (fun 𝔮 h𝔮 ↦ ?_)
     (fun 𝔮 _ 𝔮' _ h ↦ HeightOneSpectrum.ext h))
-    (NumberField.card_primesOverFinset_le_finrank (K := K) hne)
+    (NumberField.card_primesOverFinset_le_finrank (K := K) (p := Ideal.span {(m : ℤ)}))
   exact (IsDedekindDomain.mem_primesOverFinset_iff hne (𝓞 K)).mpr ⟨𝔮.isPrime, ⟨(key 𝔮 h𝔮).symm⟩⟩
 
 /-- At most `[E : K]` height-one primes of `E` contract to a given height-one prime of `K`. -/
