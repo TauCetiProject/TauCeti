@@ -256,7 +256,9 @@ API for this set uses (`Ideal.ncard_primesOver_lt_of_not_le`). What is counted a
 intermediate ring; reading them as the fibre over the affine place that `p` names needs `p` maximal
 and `W₁` nonsingular, neither of which is assumed.
 
-Equality holds exactly when every ramification index and every inertia degree over `p` is one.
+For prime `p`, equality holds exactly when every ramification index and every inertia degree over
+`p` is one; a nonprime `p` has no primes over it, so the condition is vacuous there while the count
+is `0`.
 Turning the weighted identity above into an honest count of geometric points is therefore Layer 1's
 separable-⟹-unramified milestone (`e_q = 1`) together with a separably closed base (`f_q = 1`) and
 a nonsingular `W₁`, which makes the primes counted here points of `W₁`; none of the three is
