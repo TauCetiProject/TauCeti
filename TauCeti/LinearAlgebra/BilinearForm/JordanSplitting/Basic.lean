@@ -18,6 +18,7 @@ import Mathlib.LinearAlgebra.Projection
 import Mathlib.RingTheory.Nakayama
 import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+import TauCeti.LinearAlgebra.Dimension.DirectSum
 import TauCeti.LinearAlgebra.PerfectPairing.Basis
 import TauCeti.LinearAlgebra.SesquilinearForm.TorsionFree
 import TauCeti.LinearAlgebra.Submodule.Compl
@@ -84,6 +85,8 @@ constituent of type II between constituents of type II
 * `LinearMap.BilinForm.IsJordanSplitting.finite`, `LinearMap.BilinForm.IsJordanSplitting.free`:
   the constituents of a Jordan splitting of a finite module are finite, and over a local ring the
   constituents of a Jordan splitting of a finite flat module are free.
+* `LinearMap.BilinForm.IsJordanSplitting.finrank_biSup_Iic`: the rank of the sum of the
+  constituents of index at most `j` is the sum of their ranks.
 * `LinearMap.BilinForm.IsJordanSplitting.exists_pow_succ_dvd_sub`: on the vectors pairing into
   `π ^ j R`, the form is congruent modulo `π ^ (j + 1)` to its pullback along the projection to
   the `j`-th constituent, and between neighbours even at their own scales its self-pairings are
@@ -481,6 +484,17 @@ being finite flat direct summands. -/
 theorem IsJordanSplitting.free [IsLocalRing R] [Module.Flat R M] [Module.Finite R M]
     (h : B.IsJordanSplitting π N) (j : ℕ) : Module.Free R (N j) :=
   ((N j).finite_free_of_isCompl (h.isCompl_biSup_ne j)).2
+
+/-- The rank of the sum of the constituents of index at most `j` of a Jordan splitting of a
+finite flat module over a local ring is the sum of their ranks. -/
+theorem IsJordanSplitting.finrank_biSup_Iic [IsLocalRing R] [Module.Flat R M] [Module.Finite R M]
+    (h : B.IsJordanSplitting π N) (j : ℕ) :
+    finrank R ↥(⨆ i ∈ Set.Iic j, N i) = ∑ i ∈ Finset.Iic j, finrank R (N i) := by
+  have := h.free
+  have := h.finite
+  rw [iSup_subtype', Finset.sum_subtype (Finset.Iic j) (p := (· ∈ Set.Iic j)) (by simp)]
+  exact TauCeti.finrank_iSup_eq_sum_finrank_of_iSupIndep (V := fun i : Set.Iic j ↦ N i)
+    (h.isInternal.submodule_iSupIndep.comp Subtype.val_injective)
 
 /-- The constituent `N k` of a Jordan splitting is orthogonal, on both sides, to the constituents of
 index in any set `s` not containing `k`. -/
