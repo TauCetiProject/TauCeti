@@ -220,6 +220,7 @@ section Regular
 variable [IsStrictOrderedRing R] [Finite ι] [P.IsCrystallographic] [P.IsReduced]
   [P.flip.IsReduced]
 
+omit [P.IsReduced] in
 /-- **A weight in an open Weyl chamber is regular**, regularity being Weyl-invariant. -/
 lemma isRegularWeight_of_mem_openWeylChamber {w : P.weylGroup} {x : M}
     (hx : x ∈ openWeylChamber P b w) : IsRegularWeight P x := by

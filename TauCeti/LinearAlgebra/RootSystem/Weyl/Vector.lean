@@ -385,6 +385,7 @@ theorem twoWeylVector_mem_openDominantChamber :
     rw [coroot'_twoWeylVector P b hi]
     exact two_pos
 
+omit [P.IsReduced] in
 /-- **A dominant weight in the negative of the positive root cone is zero**: if `y` is dominant and
 `-y` is a nonnegative integer combination of the simple roots, then `y = 0`. The sum `2ρ^∨` of the
 positive coroots pairs to `2` with every simple root and nonnegatively with every dominant weight,
@@ -393,7 +394,7 @@ so it pairs to `0` with `-y` only when every coefficient of `-y` vanishes.
 This is the counterpart of `TauCeti.eq_zero_of_mem_posRootCone_of_forall_coroot'_nonpos` for a
 reduced root pairing that need not be a root system, such as a root datum whose roots do not span.
 The hypotheses are incomparable: that lemma needs `[P.IsRootSystem]` but not reducedness, while
-the pairing with `2ρ^∨` needs `P` and `P.flip` reduced but not `[P.IsRootSystem]`. -/
+the pairing with `2ρ^∨` needs `P.flip` reduced, and with it `P`, but not `[P.IsRootSystem]`. -/
 theorem eq_zero_of_mem_dominantChamber_of_neg_mem_posRootCone [P.flip.IsReduced] {y : M}
     (hy : y ∈ dominantChamber P b) (hcone : -y ∈ posRootCone P b) : y = 0 := by
   obtain ⟨c, hc⟩ := (mem_posRootCone P b).mp hcone

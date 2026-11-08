@@ -773,10 +773,14 @@ lemma _root_.RootPairing.Base.isPos_reflectionPerm_iff {i j : ι} (hj : j ∈ b.
   have hne : P.reflectionPerm j i ≠ j := fun hc ↦ hij' (by rw [← P.reflectionPerm_self j i, hc])
   simpa [P.reflectionPerm_self] using h.reflectionPerm hj hne
 
+omit [P.IsReduced] in
 /-- **A root is positive for a base exactly when its coroot is positive for that base.** -/
 @[simp]
 theorem _root_.RootPairing.Base.isPos_flip_iff
     [P.flip.IsReduced] (i : ι) : b.flip.IsPos i ↔ b.IsPos i := by
+  have : Module.IsReflexive R M := .of_isPerfPair P.toLinearMap
+  have : Module.IsReflexive R N := .of_isPerfPair P.flip.toLinearMap
+  have : P.IsReduced := inferInstanceAs P.flip.flip.IsReduced
   -- Both sides hold for a simple root, both are exchanged by root negation, and away from a
   -- simple root and its negative both are preserved by the corresponding simple reflection, so
   -- the positive-root induction propagates the equivalence over the whole index type.
@@ -806,18 +810,21 @@ end
 
 variable [P.flip.IsReduced]
 
+omit [P.IsReduced] in
 /-- A base and its flip have the same positive roots. -/
 @[simp]
 theorem posRoots_flip : posRoots P.flip b.flip = posRoots P b := by
   ext i
   simpa only [mem_posRoots] using RootPairing.Base.isPos_flip_iff P b i
 
+omit [P.IsReduced] in
 /-- A base and its flip have the same negative roots. -/
 @[simp]
 theorem negRoots_flip : negRoots P.flip b.flip = negRoots P b := by
   ext i
   simpa only [mem_negRoots] using not_congr (RootPairing.Base.isPos_flip_iff P b i)
 
+omit [P.IsReduced] in
 /-- The coroot of a positive root is a nonnegative integer combination of the simple coroots. -/
 theorem exists_coroot_eq_sum_nat_of_mem_posRoots {i : ι} (hi : i ∈ posRoots P b) :
     ∃ f : ι → ℕ, f.support ⊆ b.support ∧
@@ -826,6 +833,7 @@ theorem exists_coroot_eq_sum_nat_of_mem_posRoots {i : ι} (hi : i ∈ posRoots P
     (by rw [posRoots_flip]; exact hi)
   exact ⟨f, by simpa using hf, by simpa using hsum⟩
 
+omit [P.IsReduced] in
 /-- A positive coroot functional is a nonnegative integer combination of the simple coroot
 functionals, with at least one simple coroot genuinely occurring. -/
 theorem exists_coroot'_eq_sum_nat_of_mem_posRoots {i : ι} (hi : i ∈ posRoots P b) :

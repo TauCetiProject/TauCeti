@@ -92,6 +92,7 @@ section Free
 
 variable [P.flip.IsReduced]
 
+omit [P.IsReduced] in
 /-- **Strict dominance extends from the simple coroots to all the positive ones.** A weight taking
 a value in `1 + ℕ` on every simple coroot takes a value in `1 + ℕ` on the coroot of every positive
 root, because such a coroot is a nonnegative integer combination of the simple coroots

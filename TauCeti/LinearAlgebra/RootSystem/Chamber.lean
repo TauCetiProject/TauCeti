@@ -82,9 +82,10 @@ since the coroot functional of a negated root is the negative of the original, a
 over everything keeps the predicate manifestly Weyl-invariant, which is what the chamber arguments
 downstream use.
 
-The statements that measure a coroot against the base assume `P.flip.IsReduced` alongside
-`P.IsReduced`; Mathlib's `RootPairing.instFlipIsReduced` supplies it whenever `N` is torsion free,
-which is automatic over a field.
+The statements that measure a coroot against the base assume `P.flip.IsReduced`; for those that
+also use the other positive-root statements, `P.IsReduced` is assumed too. Mathlib's
+`RootPairing.instFlipIsReduced` supplies either from the other whenever `M` and `N` are torsion
+free, which is automatic over a field.
 
 ## References
 
@@ -312,7 +313,7 @@ end Finite
 section PosRoots
 
 variable [CharZero R] [IsDomain R] [Finite ι]
-  [P.IsCrystallographic] [P.IsReduced] [P.flip.IsReduced]
+  [P.IsCrystallographic] [P.flip.IsReduced]
 
 variable {x : M}
 

@@ -134,6 +134,7 @@ theorem wallReflections_eq_empty_of_mem_openDominantChamber {x : M}
 variable [LinearOrder R] [IsStrictOrderedRing R] [Finite ι] [P.IsCrystallographic] [P.IsReduced]
   [P.flip.IsReduced]
 
+omit [P.IsReduced] in
 /-- The inductive step, isolated: a Weyl-group element carrying a dominant weight to a dominant
 weight and inverting the simple root `αᵢ` is killed by `αᵢ`, so the wall `αᵢ` passes through the
 weight. -/

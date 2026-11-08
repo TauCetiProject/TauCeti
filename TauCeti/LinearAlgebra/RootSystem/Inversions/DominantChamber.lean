@@ -56,6 +56,7 @@ variable {ι : Type u} {R : Type v} {M : Type w} {N : Type x}
 
 variable [Finite ι] [P.IsCrystallographic] [P.IsReduced] [P.flip.IsReduced] {x : M}
 
+omit [P.IsReduced] in
 /-- A Weyl-group element carrying a weight interior to the dominant chamber back into the closed
 dominant chamber keeps every positive root positive. -/
 theorem mapsTo_posRoots_of_smul_mem_dominantChamber (w : P.weylGroup)
@@ -70,6 +71,7 @@ theorem mapsTo_posRoots_of_smul_mem_dominantChamber (w : P.weylGroup)
   rw [RootPairing.coroot'_weylGroupToPerm_smul] at h
   exact absurd h (not_le.mpr (coroot'_pos_of_mem_posRoots P b hx hi))
 
+omit [P.IsReduced] in
 /-- **A Weyl-group element carrying a weight interior to the dominant chamber back into the closed
 dominant chamber has no inversions.** -/
 theorem inversions_eq_empty_of_smul_mem_dominantChamber (w : P.weylGroup)
@@ -77,6 +79,7 @@ theorem inversions_eq_empty_of_smul_mem_dominantChamber (w : P.weylGroup)
     inversions P b w = ∅ :=
   (inversions_eq_empty_iff P b w).mpr (mapsTo_posRoots_of_smul_mem_dominantChamber P b w hx hw)
 
+omit [P.IsReduced] in
 /-- A Weyl-group element fixing a weight interior to the dominant chamber has no inversions. -/
 theorem inversions_eq_empty_of_smul_eq_self (w : P.weylGroup)
     (hx : x ∈ openDominantChamber P b) (hw : w • x = x) :
