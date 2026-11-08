@@ -91,15 +91,15 @@ structure BlockLDU (b : m → α) (M : Matrix m m R) where
   /-- The lower block unitriangular factor. -/
   lower : Matrix m m R
   /-- The invertible block diagonal factor. -/
-  diagonal : Matrix m m R
+  middle : Matrix m m R
   /-- The upper block unitriangular factor. -/
   upper : Matrix m m R
   lower_unitriangular : lower.BlockUnitriangular (toDual ∘ b)
-  diagonal_triangular : diagonal.BlockTriangular b
-  diagonal_triangular_toDual : diagonal.BlockTriangular (toDual ∘ b)
+  middle_triangular : middle.BlockTriangular b
+  middle_triangular_toDual : middle.BlockTriangular (toDual ∘ b)
   upper_unitriangular : upper.BlockUnitriangular b
-  isUnit_det_diagonal : IsUnit diagonal.det
-  mul_eq : lower * diagonal * upper = M
+  isUnit_det_middle : IsUnit middle.det
+  mul_eq : lower * middle * upper = M
 
 namespace BlockLDU
 
@@ -107,10 +107,10 @@ variable {b : m → α} {M : Matrix m m R}
 
 instance : Subsingleton (BlockLDU b M) where
   allEq F G := by
-    obtain ⟨hL, hD, hU⟩ := eq_of_blockLDU_eq F.lower_unitriangular F.diagonal_triangular
-      F.diagonal_triangular_toDual F.upper_unitriangular G.lower_unitriangular
-      G.diagonal_triangular G.diagonal_triangular_toDual G.upper_unitriangular
-      F.isUnit_det_diagonal (F.mul_eq.trans G.mul_eq.symm)
+    obtain ⟨hL, hD, hU⟩ := eq_of_blockLDU_eq F.lower_unitriangular F.middle_triangular
+      F.middle_triangular_toDual F.upper_unitriangular G.lower_unitriangular
+      G.middle_triangular G.middle_triangular_toDual G.upper_unitriangular
+      F.isUnit_det_middle (F.mul_eq.trans G.mul_eq.symm)
     cases F
     cases G
     cases hL
@@ -119,39 +119,39 @@ instance : Subsingleton (BlockLDU b M) where
     rfl
 
 /-- Construct the unique block LDU factorization on the leading-minor unit locus. -/
-noncomputable def ofIsUnitLeadingMinors
+noncomputable def ofIsUnitLeadingBlockMinors
     (hM : ∀ i, IsUnit (M.toSquareBlockProp fun j => b j ≤ b i).det) : BlockLDU b M := by
   apply Classical.choice
   obtain ⟨L, D, U, hL, hD, hD', hU, hdet, h⟩ := (exists_blockLDU_iff M).mp hM
   exact ⟨⟨L, D, U, hL, hD, hD', hU, hdet, h.symm⟩⟩
 
-/-- The leading block minors of a matrix admitting a block LDU factorization are units. -/
-theorem isUnit_leadingMinors (F : BlockLDU b M) (i : m) :
+/-- Each leading block minor of a matrix admitting a block LDU factorization is a unit. -/
+theorem isUnit_det_leadingBlockMinor (F : BlockLDU b M) (i : m) :
     IsUnit (M.toSquareBlockProp fun j => b j ≤ b i).det :=
-  (exists_blockLDU_iff M).mpr ⟨F.lower, F.diagonal, F.upper, F.lower_unitriangular,
-    F.diagonal_triangular, F.diagonal_triangular_toDual, F.upper_unitriangular,
-    F.isUnit_det_diagonal, F.mul_eq.symm⟩ i
+  (exists_blockLDU_iff M).mpr ⟨F.lower, F.middle, F.upper, F.lower_unitriangular,
+    F.middle_triangular, F.middle_triangular_toDual, F.upper_unitriangular,
+    F.isUnit_det_middle, F.mul_eq.symm⟩ i
 
 /-- Change coefficients in a block LDU factorization. Uniqueness ensures that these are the
 factors of the specialized matrix, even when the coefficient map is not injective. -/
 def map (F : BlockLDU b M) (f : R →+* S) : BlockLDU b (M.map f) where
   lower := F.lower.map f
-  diagonal := F.diagonal.map f
+  middle := F.middle.map f
   upper := F.upper.map f
   lower_unitriangular := F.lower_unitriangular.map f
-  diagonal_triangular := F.diagonal_triangular.map f
-  diagonal_triangular_toDual := F.diagonal_triangular_toDual.map f
+  middle_triangular := F.middle_triangular.map f
+  middle_triangular_toDual := F.middle_triangular_toDual.map f
   upper_unitriangular := F.upper_unitriangular.map f
-  isUnit_det_diagonal := by
+  isUnit_det_middle := by
     rw [← RingHom.mapMatrix_apply, ← RingHom.map_det]
-    exact F.isUnit_det_diagonal.map f
+    exact F.isUnit_det_middle.map f
   mul_eq := by rw [← Matrix.map_mul, ← Matrix.map_mul, F.mul_eq]
 
 @[simp] theorem map_lower (F : BlockLDU b M) (f : R →+* S) :
     (F.map f).lower = F.lower.map f := (rfl)
 
-@[simp] theorem map_diagonal (F : BlockLDU b M) (f : R →+* S) :
-    (F.map f).diagonal = F.diagonal.map f := (rfl)
+@[simp] theorem map_middle (F : BlockLDU b M) (f : R →+* S) :
+    (F.map f).middle = F.middle.map f := (rfl)
 
 @[simp] theorem map_upper (F : BlockLDU b M) (f : R →+* S) :
     (F.map f).upper = F.upper.map f := (rfl)
@@ -175,7 +175,7 @@ theorem universalMatrix_apply (i j : m) :
   simp [universalMatrix, mvPolynomialX_apply]
 
 /-- The universal matrix has unit leading block minors. -/
-theorem isUnit_leadingMinors_universalMatrix (i : m) :
+theorem isUnit_det_leadingBlockMinor_universalMatrix (i : m) :
     IsUnit ((universalMatrix b).toSquareBlockProp fun j => b j ≤ b i).det := by
   apply (isUnit_leadingBlockMinorProduct_iff b _).mp _ i
   rw [universalMatrix, leadingBlockMinorProduct_map]
@@ -183,7 +183,7 @@ theorem isUnit_leadingMinors_universalMatrix (i : m) :
 
 /-- The universal block LDU factorization, with entries regular on the leading-minor open. -/
 noncomputable def universal : BlockLDU b (universalMatrix b) :=
-  ofIsUnitLeadingMinors (isUnit_leadingMinors_universalMatrix b)
+  ofIsUnitLeadingBlockMinors (isUnit_det_leadingBlockMinor_universalMatrix b)
 
 variable {b}
 
@@ -192,7 +192,7 @@ noncomputable def eval (F : BlockLDU b M) : CoordinateRing b →+* R :=
   IsLocalization.Away.lift (leadingBlockMinorProduct b (mvPolynomialX m m ℤ))
     (g := MvPolynomial.eval₂Hom (Int.castRingHom R) fun p : m × m => M p.1 p.2) (by
       rw [MvPolynomial.coe_eval₂Hom, leadingBlockMinorProduct_mvPolynomialX_eval₂]
-      exact (isUnit_leadingBlockMinorProduct_iff b M).mpr F.isUnit_leadingMinors)
+      exact (isUnit_leadingBlockMinorProduct_iff b M).mpr F.isUnit_det_leadingBlockMinor)
 
 /-- Evaluation on polynomial coordinates is ordinary matrix substitution. -/
 @[simp]
@@ -237,13 +237,13 @@ theorem eval_map (F : BlockLDU b M) (f : R →+* S) :
 
 private theorem universal_factors_map_eval (F : BlockLDU b M) :
     (universal b).lower.map F.eval = F.lower ∧
-      (universal b).diagonal.map F.eval = F.diagonal ∧
+      (universal b).middle.map F.eval = F.middle ∧
       (universal b).upper.map F.eval = F.upper := by
   let G := (universal b).map F.eval
-  apply eq_of_blockLDU_eq G.lower_unitriangular G.diagonal_triangular
-    G.diagonal_triangular_toDual G.upper_unitriangular F.lower_unitriangular
-    F.diagonal_triangular F.diagonal_triangular_toDual F.upper_unitriangular
-    G.isUnit_det_diagonal
+  apply eq_of_blockLDU_eq G.lower_unitriangular G.middle_triangular
+    G.middle_triangular_toDual G.upper_unitriangular F.lower_unitriangular
+    F.middle_triangular F.middle_triangular_toDual F.upper_unitriangular
+    G.isUnit_det_middle
   exact G.mul_eq.trans ((universalMatrix_map_eval F).trans F.mul_eq.symm)
 
 /-- The universal lower factor specializes to the unique lower factor. -/
@@ -252,10 +252,10 @@ theorem universal_lower_map_eval (F : BlockLDU b M) :
     (universal b).lower.map F.eval = F.lower :=
   (universal_factors_map_eval F).1
 
-/-- The universal diagonal factor specializes to the unique diagonal factor. -/
+/-- The universal middle factor specializes to the unique middle factor. -/
 @[simp]
-theorem universal_diagonal_map_eval (F : BlockLDU b M) :
-    (universal b).diagonal.map F.eval = F.diagonal :=
+theorem universal_middle_map_eval (F : BlockLDU b M) :
+    (universal b).middle.map F.eval = F.middle :=
   (universal_factors_map_eval F).2.1
 
 /-- The universal upper factor specializes to the unique upper factor. -/
