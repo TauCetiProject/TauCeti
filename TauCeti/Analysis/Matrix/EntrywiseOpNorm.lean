@@ -36,12 +36,12 @@ open Matrix
 
 open scoped BigOperators
 
-/-- If every entry of a finite matrix is bounded by `ε ≥ 0`, each coordinate of its Euclidean
-action has norm at most `ε * (√(card κ) * ‖x‖)`. -/
+/-- If every entry in row `i` of a finite matrix is bounded by `ε ≥ 0`, the `i`-th coordinate of
+its Euclidean action has norm at most `ε * (√(card κ) * ‖x‖)`. -/
 theorem _root_.Matrix.norm_toEuclideanLin_apply_le_of_entry_le {𝕜 ι κ : Type*} [RCLike 𝕜]
     [Fintype κ] [DecidableEq κ]
-    {A : Matrix ι κ 𝕜} {ε : ℝ} (heps : 0 ≤ ε) (hentry : ∀ i j, ‖A i j‖ ≤ ε)
-    (x : EuclideanSpace 𝕜 κ) (i : ι) :
+    {A : Matrix ι κ 𝕜} {ε : ℝ} (heps : 0 ≤ ε) (i : ι) (hentry : ∀ j, ‖A i j‖ ≤ ε)
+    (x : EuclideanSpace 𝕜 κ) :
     ‖(Matrix.toEuclideanLin A x) i‖ ≤ ε * (Real.sqrt (Fintype.card κ) * ‖x‖) := by
   calc
     ‖(Matrix.toEuclideanLin A x) i‖ = ‖∑ j : κ, A i j * x j‖ := by
@@ -54,7 +54,7 @@ theorem _root_.Matrix.norm_toEuclideanLin_apply_le_of_entry_le {𝕜 ι κ : Typ
     _ = ∑ j : κ, ‖A i j‖ * ‖x j‖ := by simp only [norm_mul]
     _ ≤ ∑ j : κ, ε * ‖x j‖ :=
       Finset.sum_le_sum fun j _ =>
-        mul_le_mul_of_nonneg_right (hentry i j) (norm_nonneg _)
+        mul_le_mul_of_nonneg_right (hentry j) (norm_nonneg _)
     _ = ε * ∑ j : κ, ‖x j‖ := by rw [Finset.mul_sum]
     _ ≤ ε * (Real.sqrt (Fintype.card κ) * ‖x‖) :=
       mul_le_mul_of_nonneg_left (PiLp.sum_norm_le_sqrt_card_mul_norm x) heps
@@ -73,7 +73,7 @@ private theorem _root_.Matrix.norm_toEuclideanLin_sq_le_of_entry_le {𝕜 ι κ 
         ≤ ∑ _i : ι, (ε * (Real.sqrt (Fintype.card κ) * ‖x‖)) ^ 2 :=
       Finset.sum_le_sum fun i _ =>
         pow_le_pow_left₀ (norm_nonneg _)
-          (Matrix.norm_toEuclideanLin_apply_le_of_entry_le heps hentry x i) 2
+          (Matrix.norm_toEuclideanLin_apply_le_of_entry_le heps i (hentry i) x) 2
     _ = (Fintype.card ι : ℝ) * (ε * (Real.sqrt (Fintype.card κ) * ‖x‖)) ^ 2 := by
       rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
 
