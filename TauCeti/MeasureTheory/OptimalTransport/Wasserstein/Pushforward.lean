@@ -354,8 +354,11 @@ theorem wassersteinEDist_map_eq (hf : MeasurableEmbedding f) (hi : Isometry f)
       rw [Measure.map_map (hf.measurable.prodMap hf.measurable) (hg.prodMap hg)]
       have hfg : (Prod.map f f ∘ Prod.map g g) =ᵐ[π] id := by
         filter_upwards [hrange] with z ⟨⟨x, hx⟩, ⟨y, hy⟩⟩
-        exact Prod.ext (by change f (g z.1) = z.1; rw [← hx, hgf])
-          (by change f (g z.2) = z.2; rw [← hy, hgf])
+        refine Prod.ext ?_ ?_
+        · simp only [Function.comp_apply, id_eq, Prod.map_fst]
+          rw [← hx, hgf]
+        · simp only [Function.comp_apply, id_eq, Prod.map_snd]
+          rw [← hy, hgf]
       rw [Measure.map_congr hfg, Measure.map_id]
     _ < c := hπc
 
