@@ -28,6 +28,9 @@ the second is the first with its coefficients cast to `ℚ`.
   `X² - (1 - 4c)`.
 * `TauCeti.NumberField.minpoly_int_eq_of_coe_mem_rootSet`: an algebraic integer in another
   number field that is a root has the same minimal polynomial over `ℤ` as `x`.
+* `TauCeti.NumberField.exists_multiset_map_algebraMap_eq_roots`: a monic integer polynomial which
+  splits in a field `M` of characteristic zero factors over `𝓞 M` into linear factors whose
+  roots map onto the roots in `M`.
 -/
 
 public section
@@ -115,5 +118,42 @@ theorem minpoly_two_mul_sub_one_of_minpoly_eq_X_sq_sub_X_add {ω : 𝓞 K} {c : 
     _root_.NumberField.RingOfIntegers.minpoly_rat_coe, hscale]
   simp
   ring
+
+section RootsOfIntegerPolynomial
+
+variable {M : Type*} [Field M] [CharZero M] {f : ℤ[X]}
+
+/-- The two ways of viewing an integer polynomial over a field of characteristic zero agree. -/
+private theorem map_map_intCast_rat (f : ℤ[X]) :
+    (f.map (Int.castRingHom ℚ)).map (algebraMap ℚ M) =
+      (f.map (algebraMap ℤ (𝓞 M))).map (algebraMap (𝓞 M) M) := by
+  simp only [Polynomial.map_map]
+  congr 1
+  exact RingHom.ext_int _ _
+
+/-- The roots of a monic integer polynomial `f` which splits in `M` are algebraic integers: there is
+a multiset `t` in `𝓞 M` with `f = ∏ (X - a)` over `a ∈ t` in `(𝓞 M)[X]` and whose image in `M` is
+the multiset of roots of `f` in `M`. -/
+theorem exists_multiset_map_algebraMap_eq_roots (hf : f.Monic)
+    (hsplit : ((f.map (Int.castRingHom ℚ)).map (algebraMap ℚ M)).Splits) :
+    ∃ t : Multiset (𝓞 M), t.map (algebraMap (𝓞 M) M) =
+        ((f.map (Int.castRingHom ℚ)).map (algebraMap ℚ M)).roots ∧
+      f.map (algebraMap ℤ (𝓞 M)) = (t.map fun a => X - C a).prod := by
+  classical
+  set fM := (f.map (Int.castRingHom ℚ)).map (algebraMap ℚ M) with hfM
+  -- Along the tower `ℤ → ℚ → M`, being a root of `f` over `ℚ` is being a root of `f` itself.
+  have hint : ∀ x ∈ fM.roots, IsIntegral ℤ x := fun x hx =>
+    ⟨f, hf, by
+      rw [← aeval_def, ← aeval_map_algebraMap (A := ℚ), algebraMap_int_eq, ← eval_map_algebraMap]
+      exact (mem_roots'.mp hx).2⟩
+  obtain ⟨t, ht⟩ : ∃ t : Multiset (𝓞 M), t.map (algebraMap (𝓞 M) M) = fM.roots :=
+    ⟨fM.roots.attach.map fun x => IsIntegralClosure.mk' (𝓞 M) x.1 (hint x.1 x.2), by
+      simp [Multiset.map_map, IsIntegralClosure.algebraMap_mk']⟩
+  refine ⟨t, ht, ?_⟩
+  refine Polynomial.map_injective _ (FaithfulSMul.algebraMap_injective (𝓞 M) M) ?_
+  rw [← map_map_intCast_rat, ← hfM, hsplit.eq_prod_roots_of_monic ((hf.map _).map _), ← ht]
+  simp [Polynomial.map_multiset_prod, Multiset.map_map]
+
+end RootsOfIntegerPolynomial
 
 end TauCeti.NumberField
