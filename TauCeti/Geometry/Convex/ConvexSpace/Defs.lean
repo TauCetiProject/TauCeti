@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Convex.ConvexSpace.Defs
-public import TauCeti.Algebra.BigOperators.Fin
+public import TauCeti.Algebra.BigOperators.Finset.PartialSum
 
 /-!
 # Faces of the standard simplex
@@ -22,7 +22,7 @@ codimension-two face opposite both: a common point of the two facets comes from 
 both composites of face maps, the two sides of the simplicial identity
 `SimplexCategory.δ_comp_δ`.
 
-The cumulative sums `Fin.cumSum x.weights N` of the weights of a point `x` of
+The prefix sums `TauCeti.prefixSum N x.weights` of the weights of a point `x` of
 `StdSimplex R (Fin n)` lie between `0` and `1`.
 -/
 
@@ -206,18 +206,18 @@ theorem exists_map_succAbove_of_map_succAbove_eq {n : ℕ} {j k : Fin (n + 2)} (
   rw [← h, ← map_comp, ← hcomp, map_comp]
 
 
-/-- The cumulative sums of the weights of a point of a standard simplex on `Fin n` are
+/-- The prefix sums of the weights of a point of a standard simplex on `Fin n` are
 nonnegative. -/
-theorem cumSum_weights_nonneg {n : ℕ} (x : StdSimplex R (Fin n)) (N : ℕ) :
-    0 ≤ Fin.cumSum x.weights N := by
-  rw [Fin.cumSum_def]
+theorem prefixSum_weights_nonneg {n : ℕ} (x : StdSimplex R (Fin n)) (N : ℕ) :
+    0 ≤ TauCeti.prefixSum N x.weights := by
+  rw [TauCeti.prefixSum_def]
   exact Finset.sum_nonneg fun j _ ↦ x.nonneg j
 
-/-- The cumulative sums of the weights of a point of a standard simplex on `Fin n` are at
-most `1`. -/
-theorem cumSum_weights_le_one {n : ℕ} (x : StdSimplex R (Fin n)) (N : ℕ) :
-    Fin.cumSum x.weights N ≤ 1 := by
-  have := Fin.cumSum_mono x.nonneg (le_max_left N n)
-  rwa [Fin.cumSum_of_le _ (le_max_right _ _), total_of_fintype] at this
+/-- The prefix sums of the weights of a point of a standard simplex on `Fin n` are at most `1`. -/
+theorem prefixSum_weights_le_one {n : ℕ} (x : StdSimplex R (Fin n)) (N : ℕ) :
+    TauCeti.prefixSum N x.weights ≤ 1 := by
+  have : TauCeti.prefixSum N x.weights ≤ TauCeti.prefixSum (max N n) x.weights :=
+    TauCeti.monotone_prefixSum x.nonneg (le_max_left N n)
+  rwa [TauCeti.prefixSum_of_le (le_max_right _ _), total_of_fintype] at this
 
 end Convexity.StdSimplex

@@ -12,6 +12,7 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.TrivialFibration
 public import TauCeti.AlgebraicTopology.SimplicialSet.WeakEquivalence
 
 import TauCeti.Algebra.BigOperators.Fin
+import TauCeti.Algebra.BigOperators.Finset.PartialSum
 import TauCeti.AlgebraicTopology.SimplicialSet.ProdStdSimplex.Basic
 import TauCeti.Geometry.Convex.ConvexSpace.Defs
 
@@ -64,6 +65,8 @@ public section
 
 open CategoryTheory MonoidalCategory Opposite Convexity Simplicial MorphismProperty
   HomotopicalAlgebra
+
+open TauCeti (prefixSum)
 
 universe u
 
@@ -210,8 +213,8 @@ cumulative sums it occupies goes to the bottom vertex `(i, 0)`, and the rest to 
 `(i, 1)`. -/
 private noncomputable def prismWeights (s : StdSimplex ℝ (Fin (p + 1))) (t : I)
     (x : Fin (p + 1) × Fin 2) : ℝ :=
-  clamp (1 - t) x.2 (Fin.cumSum s.weights (x.1.val + 1)) -
-    clamp (1 - t) x.2 (Fin.cumSum s.weights x.1.val)
+  clamp (1 - t) x.2 (prefixSum (x.1.val + 1) s.weights) -
+    clamp (1 - t) x.2 (prefixSum x.1.val s.weights)
 
 @[fun_prop]
 private lemma continuous_prismWeights (x : Fin (p + 1) × Fin 2) :
@@ -221,21 +224,21 @@ private lemma continuous_prismWeights (x : Fin (p + 1) × Fin 2) :
 
 private lemma sum_prismWeights (s : StdSimplex ℝ (Fin (p + 1))) (t : I) :
     ∑ x, prismWeights s t x = 1 := by
-  have h := Fin.sum_sub_cumSum s.weights id (p + 1)
+  have h := TauCeti.sum_sub_prefixSum id (p + 1) s.weights
   simp only [id] at h
-  rw [Finset.filter_true_of_mem (fun j _ ↦ j.isLt), Fin.cumSum_of_le _ le_rfl,
+  rw [Finset.filter_true_of_mem (fun j _ ↦ j.isLt), TauCeti.prefixSum_of_le le_rfl,
     StdSimplex.total_of_fintype, sub_zero] at h
   rw [Fintype.sum_prod_type, ← h]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   simp only [Fin.sum_univ_two, prismWeights, clamp_zero, clamp_one]
-  linarith [min_add_max (Fin.cumSum s.weights (i.val + 1)) (1 - t),
-    min_add_max (Fin.cumSum s.weights i.val) (1 - t)]
+  linarith [min_add_max (prefixSum (i.val + 1) s.weights) (1 - t),
+    min_add_max (prefixSum i.val s.weights) (1 - t)]
 
 /-- The barycentric coordinates `prismWeights s t` on the vertices of the prism. -/
 private noncomputable def prismMeasure (s : StdSimplex ℝ (Fin (p + 1))) (t : I) :
     StdSimplex ℝ (Fin (p + 1) × Fin 2) where
   weights := Finsupp.equivFunOnFinite.symm (prismWeights s t)
-  nonneg x := sub_nonneg.2 (clamp_mono _ _ (Fin.cumSum_mono s.nonneg (Nat.le_succ _)))
+  nonneg x := sub_nonneg.2 (clamp_mono _ _ (TauCeti.monotone_prefixSum s.nonneg (Nat.le_succ _)))
   total := by
     rw [Finsupp.sum_fintype _ _ (by simp)]
     simpa using sum_prismWeights s t
@@ -246,24 +249,24 @@ private lemma prismMeasure_weights (s : StdSimplex ℝ (Fin (p + 1))) (t : I)
 /-- The `k`th closed piece of the prism `Δᵖ × I`, the realization of the `k`th nondegenerate
 `(p + 1)`-simplex of `Δ[p] ⊗ Δ[1]`. -/
 private def piece (k : Fin (p + 1)) : Set (StdSimplex ℝ (Fin (p + 1)) × I) :=
-  {z | Fin.cumSum z.1.weights k.val ≤ 1 - z.2 ∧
-    1 - (z.2 : ℝ) ≤ Fin.cumSum z.1.weights (k.val + 1)}
+  {z | prefixSum k.val z.1.weights ≤ 1 - z.2 ∧
+    1 - (z.2 : ℝ) ≤ prefixSum (k.val + 1) z.1.weights}
 
 private lemma isClosed_piece (k : Fin (p + 1)) : IsClosed (piece k) := by
   simp only [piece, Set.ofPred_and]
   exact (isClosed_le (by fun_prop) (by fun_prop)).inter (isClosed_le (by fun_prop) (by fun_prop))
 
 private lemma exists_mem_piece (z : StdSimplex ℝ (Fin (p + 1)) × I) : ∃ k, z ∈ piece k := by
-  have hex : ∃ N, 1 - (z.2 : ℝ) ≤ Fin.cumSum z.1.weights (N + 1) :=
-    ⟨p, by rw [Fin.cumSum_of_le _ le_rfl, StdSimplex.total_of_fintype]; linarith [z.2.2.1]⟩
+  have hex : ∃ N, 1 - (z.2 : ℝ) ≤ prefixSum (N + 1) z.1.weights :=
+    ⟨p, by rw [TauCeti.prefixSum_of_le le_rfl, StdSimplex.total_of_fintype]; linarith [z.2.2.1]⟩
   classical
   have hle : Nat.find hex ≤ p :=
     Nat.find_min' hex (by
-      rw [Fin.cumSum_of_le _ le_rfl, StdSimplex.total_of_fintype]
+      rw [TauCeti.prefixSum_of_le le_rfl, StdSimplex.total_of_fintype]
       linarith [z.2.2.1])
   refine ⟨⟨Nat.find hex, by lia⟩, ?_, Nat.find_spec hex⟩
   rcases Nat.eq_zero_or_pos (Nat.find hex) with h | h
-  · simp only [h, Fin.cumSum_zero]
+  · simp only [h, TauCeti.prefixSum_zero]
     linarith [z.2.2.2]
   · have := Nat.find_min hex (Nat.sub_lt h one_pos)
     rw [show Nat.find hex - 1 + 1 = Nat.find hex by lia] at this
@@ -279,13 +282,13 @@ private lemma support_prismMeasure_subset {k : Fin (p + 1)} {z : StdSimplex ℝ 
   rintro ⟨i, b⟩ hx
   simp only [Finset.mem_coe, Finsupp.mem_support_iff] at hx
   obtain ⟨hk₁, hk₂⟩ := hz
-  have hmono := Fin.cumSum_mono z.1.nonneg
+  have hmono := TauCeti.monotone_prefixSum z.1.nonneg
   revert b
   refine Fin.forall_fin_two.2 ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
   · by_cases hi : i ≤ k
     · exact ⟨i.castSucc, objEquiv_nonDegenerateEquiv_castSucc.{u} k i hi⟩
     · refine absurd ?_ hx
-      have : Fin.cumSum z.1.weights (k.val + 1) ≤ Fin.cumSum z.1.weights i.val :=
+      have : prefixSum (k.val + 1) z.1.weights ≤ prefixSum i.val z.1.weights :=
         hmono (by have := Fin.lt_def.1 (not_le.1 hi); lia)
       rw [prismMeasure_weights]
       simp only [prismWeights, clamp_zero]
@@ -294,7 +297,7 @@ private lemma support_prismMeasure_subset {k : Fin (p + 1)} {z : StdSimplex ℝ 
   · by_cases hi : k ≤ i
     · exact ⟨i.succ, objEquiv_nonDegenerateEquiv_succ.{u} k i hi⟩
     · refine absurd ?_ hx
-      have : Fin.cumSum z.1.weights (i.val + 1) ≤ Fin.cumSum z.1.weights k.val :=
+      have : prefixSum (i.val + 1) z.1.weights ≤ prefixSum k.val z.1.weights :=
         hmono (by have := Fin.lt_def.1 (not_le.1 hi); lia)
       rw [prismMeasure_weights]
       simp only [prismWeights, clamp_one]
@@ -366,7 +369,7 @@ private lemma map_prismMeasure {m n : ℕ} (f : Fin (m + 1) →o Fin (n + 1))
   ext ⟨i, b⟩
   revert i
   rw [← funext_iff]
-  refine Fin.eq_of_cumSum_eq fun N ↦ ?_
+  refine TauCeti.eq_of_forall_prefixSum_eq fun N ↦ ?_
   -- The `j` with `f j < N` form an initial segment, since `f` is monotone.
   obtain ⟨a, ha⟩ : ∃ a : ℕ, ∀ j, (f j).val < N ↔ j.val < a := by
     have hs : IsLowerSet {j | (f j).val < N} := fun _ _ h hj ↦
@@ -374,9 +377,9 @@ private lemma map_prismMeasure {m n : ℕ} (f : Fin (m + 1) →o Fin (n + 1))
     rcases hs.eq_univ_or_Iio with h | ⟨a, h⟩
     · exact ⟨m + 1, fun j ↦ ⟨fun _ ↦ j.isLt, fun _ ↦ (Set.ext_iff.1 h j).2 (Set.mem_univ j)⟩⟩
     · exact ⟨a, fun j ↦ (Set.ext_iff.1 h j).trans (Set.mem_Iio.trans Fin.lt_def)⟩
-  have hcum : Fin.cumSum (StdSimplex.map f s).weights N = Fin.cumSum s.weights a := by
-    rw [Fin.cumSum_def, StdSimplex.sum_filter_weights_map f s (fun i ↦ i.val < N),
-      Fin.cumSum_def]
+  have hcum : prefixSum N (StdSimplex.map f s).weights = prefixSum a s.weights := by
+    rw [TauCeti.prefixSum_def, StdSimplex.sum_filter_weights_map f s (fun i ↦ i.val < N),
+      TauCeti.prefixSum_def]
     exact Finset.sum_congr (Finset.filter_congr fun j _ ↦ ha j) fun _ _ ↦ rfl
   have h₁ := StdSimplex.sum_filter_weights_map (Prod.map f id) (prismMeasure s t)
     (fun x ↦ x.1.val < N ∧ x.2 = b)
@@ -385,10 +388,11 @@ private lemma map_prismMeasure {m n : ℕ} (f : Fin (m + 1) →o Fin (n + 1))
       (fun x ↦ (StdSimplex.map (Prod.map f id) (prismMeasure s t)).weights x) (fun i ↦ i.val < N),
     Fintype.sum_filter_and_snd_eq (fun x ↦ (prismMeasure s t).weights x)
       (fun j ↦ (f j).val < N)] at h₁
-  rw [Fin.cumSum_def, h₁, Fin.cumSum_def,
+  rw [TauCeti.prefixSum_def, h₁, TauCeti.prefixSum_def,
     Finset.sum_congr (Finset.filter_congr fun j _ ↦ ha j) fun _ _ ↦ rfl]
   simp only [prismMeasure_weights, prismWeights]
-  rw [Fin.sum_sub_cumSum s.weights (clamp _ b), Fin.sum_sub_cumSum _ (clamp _ b), hcum]
+  rw [TauCeti.sum_sub_prefixSum (clamp _ b) _ s.weights, TauCeti.sum_sub_prefixSum (clamp _ b),
+    hcum]
 
 /-- The triangulation of the prism is natural in the simplex. -/
 lemma prism_naturality {m n : ℕ} (f : ⦋m⦌ ⟶ ⦋n⦌) (s : StdSimplex ℝ (Fin (m + 1))) (t : I) :
@@ -416,10 +420,10 @@ private lemma prismMeasure_of_eq {t : I} {b : Fin 2} (ht : (t : ℝ) = (b : ℕ)
   rw [← StdSimplex.weights_inj]
   ext ⟨i, b'⟩
   rw [prismMeasure_weights, prismWeights, ht,
-    clamp_one_sub_of_mem_Icc (StdSimplex.cumSum_weights_nonneg _ _)
-      (StdSimplex.cumSum_weights_le_one _ _),
-    clamp_one_sub_of_mem_Icc (StdSimplex.cumSum_weights_nonneg _ _)
-      (StdSimplex.cumSum_weights_le_one _ _), Fin.cumSum_succ]
+    clamp_one_sub_of_mem_Icc (StdSimplex.prefixSum_weights_nonneg _ _)
+      (StdSimplex.prefixSum_weights_le_one _ _),
+    clamp_one_sub_of_mem_Icc (StdSimplex.prefixSum_weights_nonneg _ _)
+      (StdSimplex.prefixSum_weights_le_one _ _), TauCeti.prefixSum_succ i.isLt, Fin.eta]
   split_ifs with hb
   · subst hb
     rw [StdSimplex.weights_map_apply_of_injective hinj]

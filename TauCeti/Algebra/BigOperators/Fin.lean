@@ -30,10 +30,6 @@ A tuple is determined by its leading partial sums `∑_{j < k} a j`, and in a ca
 monoid each of them is at most the total. These are the facts about the dominance order of
 exponent vectors (compare leading partial sums) that triangular expansions in Hecke rings use.
 
-The cumulative sums `Fin.cumSum g N = ∑_{j < N} g j`, indexed by all natural numbers `N`, add one
-term at each step, are monotone for nonnegative terms, determine `g`, and telescope: the sum over
-`i < N` of `F (cumSum g (i + 1)) - F (cumSum g i)` is `F (cumSum g N) - F 0`.
-
 A product over the pairs `Fin 2 → α` is the double product over their two entries. A sum over the
 pairs `(a, b)` with `P a` and a fixed second entry `b` is the sum over the `a` with `P a`.
 -/
@@ -128,73 +124,6 @@ theorem prod_filter_succ_eq_of_prod_filter_eq {M : Type*} [CommMonoidWithZero M]
   · simp only [hP, ↓reduceIte, h0 hP] at h
     exact mul_left_cancel₀ (h0 hP ▸ hf hP) h
   · simpa only [hP, ↓reduceIte, one_mul] using h
-
-section cumSum
-
-variable {M : Type*} [AddCommMonoid M] {n : ℕ}
-
-/-- The sum of the values of `g` at the indices `j : Fin n` with `j < N`. Unlike `Fin.partialSum`,
-it is indexed by all `N : ℕ`, which makes it convenient for telescoping along initial segments. -/
-def cumSum (g : Fin n → M) (N : ℕ) : M :=
-  ∑ j ∈ Finset.univ.filter (fun j : Fin n ↦ j.val < N), g j
-
-/-- Unfold `Fin.cumSum` to the sum over the indices below `N`. -/
-theorem cumSum_def (g : Fin n → M) (N : ℕ) :
-    cumSum g N = ∑ j ∈ Finset.univ.filter (fun j : Fin n ↦ j.val < N), g j :=
-  (rfl)
-
-/-- The empty cumulative sum vanishes. -/
-@[simp]
-theorem cumSum_zero (g : Fin n → M) : cumSum g 0 = 0 := by
-  simp [cumSum]
-
-/-- The sum over the indices below `N + 1 ≤ n` adds the term at `N` to the sum below `N`. -/
-theorem sum_filter_val_lt_succ (g : Fin n → M) {N : ℕ} (hN : N < n) :
-    ∑ j ∈ Finset.univ.filter (fun j : Fin n ↦ j.val < N + 1), g j =
-      ∑ j ∈ Finset.univ.filter (fun j : Fin n ↦ j.val < N), g j + g ⟨N, hN⟩ := by
-  refine Eq.trans ?_ (add_comm _ _)
-  rw [← Finset.sum_insert (by simp)]
-  congr 1
-  ext j
-  simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_insert, Fin.ext_iff]
-  lia
-
-/-- The cumulative sum up to `i + 1` adds the term at `i`. -/
-theorem cumSum_succ (g : Fin n → M) (i : Fin n) : cumSum g (i.val + 1) = cumSum g i.val + g i :=
-  sum_filter_val_lt_succ g i.isLt
-
-/-- From `n` on, the cumulative sum is the total sum. -/
-theorem cumSum_of_le {N : ℕ} (g : Fin n → M) (hN : n ≤ N) : cumSum g N = ∑ j, g j := by
-  rw [cumSum, Finset.filter_true_of_mem (fun j _ ↦ by lia)]
-
-/-- Successive differences of a function of the cumulative sums telescope. -/
-theorem sum_sub_cumSum {G : Type*} [AddCommGroup G] (g : Fin n → M) (F : M → G) (N : ℕ) :
-    ∑ i ∈ Finset.univ.filter (fun i : Fin n ↦ i.val < N),
-      (F (cumSum g (i.val + 1)) - F (cumSum g i.val)) = F (cumSum g N) - F 0 := by
-  induction N with
-  | zero => simp
-  | succ N ih =>
-    by_cases hN : N < n
-    · rw [sum_filter_val_lt_succ _ hN, ih]
-      exact sub_add_sub_cancel' _ _ _
-    · rw [Finset.filter_congr (q := fun i : Fin n ↦ i.val < N) (fun i _ ↦ by lia), ih,
-        cumSum_of_le g (by lia), cumSum_of_le g (by lia)]
-
-/-- A tuple is determined by its cumulative sums. -/
-theorem eq_of_cumSum_eq [IsLeftCancelAdd M] {g g' : Fin n → M}
-    (h : ∀ N, cumSum g N = cumSum g' N) : g = g' := by
-  funext i
-  have := h (i.val + 1)
-  rwa [cumSum_succ, cumSum_succ, h, add_right_inj] at this
-
-/-- The cumulative sums of nonnegative terms are monotone. -/
-theorem cumSum_mono [Preorder M] [IsOrderedAddMonoid M] {g : Fin n → M} (hg : 0 ≤ g) :
-    Monotone (cumSum g) :=
-  fun _ _ h ↦ Finset.sum_le_sum_of_subset_of_nonneg
-    (fun j hj ↦ by simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hj ⊢; lia)
-    (fun j _ _ ↦ hg j)
-
-end cumSum
 
 end Fin
 
