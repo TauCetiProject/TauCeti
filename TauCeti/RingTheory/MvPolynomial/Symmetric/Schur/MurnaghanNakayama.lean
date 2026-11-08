@@ -51,23 +51,6 @@ open YoungDiagram (ofPartition card_ofPartition)
 
 variable {R : Type*} [CommRing R]
 
-/-- Multiplying an alternant by `p_r` only needs the exponent moves onto a free position: a move
-onto an occupied position repeats an exponent, and its alternant vanishes. -/
-private theorem psum_mul_alternant_eq_sum_filter {N : ℕ} {r : ℕ} (hr : 0 < r) (α : Fin N → ℕ) :
-    psum (Fin N) R r * alternant (Fin N) R α =
-      ∑ j : Fin N with ∀ i, α i ≠ α j + r,
-        alternant (Fin N) R (Function.update α j (α j + r)) := by
-  rw [psum_mul_alternant]
-  refine (sum_filter_of_ne fun j _ hj => ?_).symm
-  by_contra hcol
-  simp only [not_forall, not_not] at hcol
-  obtain ⟨i, hi⟩ := hcol
-  have hij : i ≠ j := by
-    rintro rfl
-    omega
-  refine hj (alternant_eq_zero_of_not_injective fun hinj => hij (hinj ?_))
-  rw [Function.update_of_ne hij, Function.update_self, hi]
-
 open scoped Classical in
 /-- **The Murnaghan–Nakayama rule for alternants.**  Let `ν` be a Young diagram with at most `N`
 rows and `β` its beta-numbers relative to `N`, so that `a_β = s_ν · a_δ`.  For `r > 0`, multiplying
