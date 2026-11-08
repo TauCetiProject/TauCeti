@@ -165,9 +165,8 @@ theorem _root_.IsPGroup.le_total_of_isCyclic [Fact p.Prime] [IsCyclic G]
     (hG : IsPGroup p G) (H K : Subgroup G) : H ≤ K ∨ K ≤ H := by
   -- a generator has finite order, since it is killed by a power of `p`
   obtain ⟨g, hg⟩ := IsCyclic.exists_generator (α := G)
-  obtain ⟨k, hk⟩ := hG g
   have hfin : Finite (Subgroup.zpowers g) :=
-    (isOfFinOrder_iff_pow_eq_one.2 ⟨p ^ k, pow_pos (Fact.out : p.Prime).pos k, hk⟩).finite_zpowers
+    (hG.isOfFinOrder (Fact.out : p.Prime).ne_zero g).finite_zpowers
   have : Finite G := Finite.of_surjective (fun x : Subgroup.zpowers g ↦ (x : G))
     fun x ↦ ⟨⟨x, hg x⟩, rfl⟩
   obtain ⟨a, ha⟩ := IsPGroup.iff_card.1 (hG.to_subgroup H)
