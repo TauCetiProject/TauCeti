@@ -110,20 +110,28 @@ theorem base_comp_doubleQuotientπ_eq_of_fst_eq {X : EllObj B} {f g : X ⟶ V}
 variable [IsAffine V.base] [IsFinite (D.rep V).hom] [Flat (D.rep V).hom]
   [LocallyOfFinitePresentation (D.rep V).hom]
 
--- SGA 3 V 4.1 for affine schemes, applied to the equivalence relation of two rigidifications,
--- whose first projection has morphism of bases `(D.rep V).hom`
+-- the two forgetful projections form an equivalence relation whose first projection has morphism
+-- of bases `(D.rep V).hom`, so the affine case of SGA 3 V 4.1 applies to them
+omit [IsAffine V.base] in
+private theorem isEquivalenceRelation_and (hP : P.IsRigid) :
+    IsEquivalenceRelation (V.baseChangeFunctorHom (D.rep V)).base (D.doubleSnd R).base ∧
+      IsFinite (V.baseChangeFunctorHom (D.rep V)).base ∧
+      Flat (V.baseChangeFunctorHom (D.rep V)).base ∧
+      LocallyOfFinitePresentation (V.baseChangeFunctorHom (D.rep V)).base := by
+  refine ⟨(D.doubleEquivalenceRelation R hP).isEquivalenceRelation, ?_, ?_, ?_⟩ <;>
+    rwa [EllObj.baseChangeFunctorHom_base]
+
+-- SGA 3 V 4.1 for affine schemes, applied to the equivalence relation of two rigidifications
 private theorem isKernelPair_and (hP : P.IsRigid) :
     IsKernelPair (D.doubleQuotientπ R) (V.baseChangeFunctorHom (D.rep V)).base
         (D.doubleSnd R).base ∧
       IsFinite (D.doubleQuotientπ R) ∧ Flat (D.doubleQuotientπ R) ∧
       Surjective (D.doubleQuotientπ R) ∧ LocallyOfFinitePresentation (D.doubleQuotientπ R) := by
-  have := (D.doubleEquivalenceRelation R hP).isEquivalenceRelation
-  have : IsFinite (V.baseChangeFunctorHom (D.rep V)).base := by
-    rwa [EllObj.baseChangeFunctorHom_base]
-  have : Flat (V.baseChangeFunctorHom (D.rep V)).base := by
-    rwa [EllObj.baseChangeFunctorHom_base]
-  have : LocallyOfFinitePresentation (V.baseChangeFunctorHom (D.rep V)).base := by
-    rwa [EllObj.baseChangeFunctorHom_base]
+  have h := D.isEquivalenceRelation_and R hP
+  have := h.1
+  have := h.2.1
+  have := h.2.2.1
+  have := h.2.2.2
   -- `doubleQuotientπ` is by definition the projection to the affine coequalizer
   unfold doubleQuotientπ
   exact ⟨Scheme.Hom.isKernelPair_affineCoequalizerπ _ _, Scheme.Hom.isFinite_affineCoequalizerπ _ _,
@@ -174,10 +182,12 @@ rigidifications. -/
 noncomputable def isColimitDoubleQuotientCofork (hP : P.IsRigid) :
     IsColimit (Cofork.ofπ _ (D.doubleQuotientπ_condition R) :
       Cofork (V.baseChangeFunctorHom (D.rep V)).base (D.doubleSnd R).base) :=
-  have := D.flat_doubleQuotientπ R hP
-  have := D.surjective_doubleQuotientπ R hP
-  have := D.locallyOfFinitePresentation_doubleQuotientπ R hP
-  (EffectiveEpi.getStruct _).isColimitCoforkOfIsPullback (D.isKernelPair_doubleQuotientπ R hP)
+  have h := D.isEquivalenceRelation_and R hP
+  have := h.1
+  have := h.2.1
+  have := h.2.2.1
+  have := h.2.2.2
+  Scheme.Hom.isColimitAffineCoequalizerCofork _ _
 
 /-- **The quotient is the fppf quotient sheaf.** If `𝒫` is rigid, then under the Yoneda embedding
 into fppf sheaves, the projection `𝕄(𝒫, δ) ⟶ 𝕄(𝒫)` is the coequalizer of the two forgetful
@@ -187,11 +197,12 @@ noncomputable def isColimitFppfYonedaDoubleQuotientCofork (hP : P.IsRigid) :
         (by rw [← Functor.map_comp, doubleQuotientπ_condition, Functor.map_comp]) :
       Cofork (Scheme.fppfTopology.yoneda.map (V.baseChangeFunctorHom (D.rep V)).base)
         (Scheme.fppfTopology.yoneda.map (D.doubleSnd R).base)) :=
-  have := D.flat_doubleQuotientπ R hP
-  have := D.surjective_doubleQuotientπ R hP
-  have := D.locallyOfFinitePresentation_doubleQuotientπ R hP
-  IsKernelPair.isColimitYonedaCofork Scheme.fppfTopology (D.isKernelPair_doubleQuotientπ R hP)
-    (Precoverage.generate_mem_toGrothendieck (Scheme.Hom.singleton_mem_fppfPrecoverage _))
+  have h := D.isEquivalenceRelation_and R hP
+  have := h.1
+  have := h.2.1
+  have := h.2.2.1
+  have := h.2.2.2
+  Scheme.Hom.isColimitFppfYonedaAffineCoequalizerCofork _ _
 
 /-- **Points of the quotient are isomorphism classes of `𝒫`-structures.** Let `𝒫` be rigid, with
 `𝕄(𝒫, δ)` affine and the rigidifying cover finite locally free. Let arrows `f : X ⟶ V` and
