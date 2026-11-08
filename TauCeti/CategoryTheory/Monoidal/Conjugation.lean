@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Monoidal.Category
+public import TauCeti.CategoryTheory.Conj
 
 /-!
 # Conjugating tensor-compatible endomorphisms along isomorphisms
@@ -16,14 +17,11 @@ that `d' ≫ aMN = (aM ⊗ₘ aN) ≫ d'`, then their conjugates along isomorphi
 of the original data is phrased through the composite
 `(iM.hom ⊗ₘ iN.hom) ≫ d ≫ iMN.inv`, so that no morphism `M ⊗ N ⟶ P` need be named.
 
-Conjugating a commutative square along isomorphisms keeps it commutative; this holds in any
-category (`CategoryTheory.comp_conj_eq_conj_comp`), and the monoidal statement follows by taking the
-isomorphism `iM ⊗ᵢ iN`.
+The statement is derived from the plain-category lemma `CategoryTheory.comp_conj_eq_conj_comp`
+(in `TauCeti.CategoryTheory.Conj`) by taking the isomorphism `iM ⊗ᵢ iN`.
 
 ## Main results
 
-* `CategoryTheory.comp_conj_eq_conj_comp`: conjugating a commutative square along isomorphisms of
-  its source and target keeps it commutative.
 * `CategoryTheory.MonoidalCategory.comp_conj_eq_tensorHom_conj_comp`: conjugating a
   tensor-compatible family of endomorphisms along isomorphisms of the objects keeps it
   tensor-compatible.
@@ -32,23 +30,6 @@ isomorphism `iM ⊗ᵢ iN`.
 public section
 
 open CategoryTheory MonoidalCategory
-
-namespace CategoryTheory
-
-variable {C : Type*} [Category C]
-
-/-- Conjugating a commutative square along isomorphisms keeps it commutative: if `a` and `b` are
-intertwined by the composite `iX.hom ≫ d ≫ iY.inv`, then the conjugates `iX.inv ≫ a ≫ iX.hom` and
-`iY.inv ≫ b ≫ iY.hom` are intertwined by `d`. -/
-theorem comp_conj_eq_conj_comp {X X' Y Y' : C} (iX : X ≅ X') (iY : Y ≅ Y') (d : X' ⟶ Y')
-    (a : X ⟶ X) (b : Y ⟶ Y)
-    (h : (iX.hom ≫ d ≫ iY.inv) ≫ b = a ≫ iX.hom ≫ d ≫ iY.inv) :
-    d ≫ (iY.inv ≫ b ≫ iY.hom) = (iX.inv ≫ a ≫ iX.hom) ≫ d := by
-  rw [← cancel_epi iX.hom, ← cancel_mono iY.inv]
-  simpa only [Category.assoc, Iso.hom_inv_id, Iso.hom_inv_id_assoc, Category.comp_id,
-    Iso.inv_hom_id_assoc] using h
-
-end CategoryTheory
 
 namespace CategoryTheory.MonoidalCategory
 
