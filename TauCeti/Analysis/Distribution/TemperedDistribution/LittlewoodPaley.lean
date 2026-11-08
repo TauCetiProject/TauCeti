@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Distribution.Sobolev
 public import TauCeti.Analysis.Calculus.BumpFunction.LittlewoodPaley
+public import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Fourier.ChangeOfVariables
@@ -28,6 +29,10 @@ distribution is reconstructed from its Littlewood–Paley blocks, `u = ∑ⱼ Δ
 is deduced, by duality, from the convergence of the truncations `φ (2^{-N} ·) • f → f` of Schwartz
 functions (`SchwartzMap.tendsto_smulLeftCLM_contDiffBump_two_pow`).
 
+The Fourier transform of `Δ₀ u` vanishes outside the closed ball of radius `φ.rOut`, and that of
+`Δ_{j+1} u` outside the closed annulus `2^j φ.rIn ≤ ‖ξ‖ ≤ 2^{j+1} φ.rOut`; this is the frequency
+localization to which the Bernstein inequalities apply.
+
 The blocks are almost orthogonal: there is `L`, depending only on `φ`, with `Δⱼ Δₖ = 0` whenever
 `|j - k| ≥ L`. Being Fourier multipliers, they commute with every Fourier multiplier of temperate
 growth, in particular with the Bessel potentials `J^s` of Mathlib's Bessel-potential spaces.
@@ -48,6 +53,9 @@ blocks `Δⱼ u`.
 * `TemperedDistribution.sum_littlewoodPaleyBlock_range`: the partial sums are the low-pass
   truncations by `φ (2^{-N} ·)`.
 * `TemperedDistribution.tendsto_sum_littlewoodPaleyBlock`: `u = ∑ⱼ Δⱼ u` in `𝓢'(E, F)`.
+* `TemperedDistribution.isVanishingOn_fourier_littlewoodPaleyBlock`,
+  `TemperedDistribution.isVanishingOn_fourier_littlewoodPaleyBlock_succ`: the frequency support of
+  `Δⱼ u` lies in a ball, and for `j ≥ 1` in an annulus.
 * `TemperedDistribution.exists_littlewoodPaleyBlock_compL_eq_zero`: almost orthogonality.
 * `TemperedDistribution.littlewoodPaleyBlock_besselPotential_comm`: the blocks commute with the
   Bessel potentials.
@@ -134,6 +142,30 @@ theorem tendsto_sum_littlewoodPaleyBlock (u : 𝓢'(E, F)) :
     ((fourierCLM ℂ 𝓢(E, ℂ)).continuous.tendsto _).comp
       (SchwartzMap.tendsto_smulLeftCLM_contDiffBump_two_pow φ (𝓕⁻ f))
   rwa [fourierCLM_apply, FourierTransform.fourier_fourierInv_eq] at h
+
+/-- The Fourier transform of the block `Δⱼ u` vanishes outside the closed ball of radius
+`2^j φ.rOut`. -/
+theorem isVanishingOn_fourier_littlewoodPaleyBlock (j : ℕ) (u : 𝓢'(E, F)) :
+    Distribution.IsVanishingOn (𝓕 (littlewoodPaleyBlock F φ j u) : 𝓢'(E, F))
+      (Metric.closedBall 0 (2 ^ j * φ.rOut))ᶜ := by
+  rw [littlewoodPaleyBlock_apply]
+  refine (isVanishingOn_fourier_fourierMultiplierCLM
+    (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j) u).mono
+    (Set.compl_subset_compl.2 (closure_minimal (Function.support_subset_iff'.2 fun ξ hξ ↦ ?_)
+      Metric.isClosed_closedBall))
+  rw [mem_closedBall_zero_iff, not_le] at hξ
+  simp [φ.inhomogeneousLittlewoodPaley_eq_zero_of_le_norm hξ.le]
+
+/-- The Fourier transform of the block `Δ_{j+1} u` vanishes outside the closed annulus
+`2^j φ.rIn ≤ ‖ξ‖ ≤ 2^{j+1} φ.rOut`. -/
+theorem isVanishingOn_fourier_littlewoodPaleyBlock_succ (j : ℕ) (u : 𝓢'(E, F)) :
+    Distribution.IsVanishingOn (𝓕 (littlewoodPaleyBlock F φ (j + 1) u) : 𝓢'(E, F))
+      {ξ | 2 ^ j * φ.rIn ≤ ‖ξ‖ ∧ ‖ξ‖ ≤ 2 ^ (j + 1) * φ.rOut}ᶜ := by
+  rw [littlewoodPaleyBlock_apply]
+  exact (isVanishingOn_fourier_fourierMultiplierCLM
+    (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley (j + 1)) u).mono
+    (Set.compl_subset_compl.2 ((tsupport_comp_subset Complex.ofReal_zero _).trans
+      (φ.tsupport_inhomogeneousLittlewoodPaley_succ_subset j)))
 
 /-- The composition of two Littlewood–Paley blocks is the Fourier multiplier by the product of
 the two pieces. -/
