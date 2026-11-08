@@ -58,6 +58,10 @@ Neither `ψ` nor `w` need have compact support, so it applies to unbounded `Ω` 
   boundary values.
 * `TauCeti.W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport`: multiplication by a
   compactly supported cutoff lands in `W^{1,p}_0(Ω)`.
+* `TauCeti.W1p.exists_clm_w1p0_apply_eq_contDiffSMul`: multiplication by a compactly supported
+  cutoff inside `Ω` is a continuous linear map `W^{1,p}(Ω) → W^{1,p}_0(Ω)`.
+* `TauCeti.W1p.valueL_comp_restrictL_eq_comp_cutoff`: restricting to `V` and taking values agrees
+  with cutting off by a function equal to one on `V`, taking values on `Ω` and restricting in `Lᵖ`.
 * `TauCeti.W1p.testFunctionSMulComp_mem_w1p0Submodule`: the product `φ G(u)` of a test function
   with a composition lands in `W^{1,p}_0(Ω)`.
 * `TauCeti.W1p.restrictL_contDiffSMul_mem_w1p0Submodule`: a whole-space Sobolev function times a
@@ -231,6 +235,46 @@ theorem W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport (hp : p ≠ (∞
   refine W1p.mem_w1p0Submodule_of_isCompact hp hcpt hts ?_
   filter_upwards [W1p.value_contDiffSMul_ae hpsi hM hpsiM hgradM u] with x hx hxK
   rw [hx, image_eq_zero_of_notMem_tsupport hxK, zero_smul]
+
+/-- Multiplication by a smooth compactly supported cutoff inside `Ω` is a continuous linear map
+`W^{1,p}(Ω) → W^{1,p}_0(Ω)`, with the expected underlying function. -/
+theorem W1p.exists_clm_w1p0_apply_eq_contDiffSMul (hp : p ≠ (∞ : ℝ≥0∞)) {psi : E → ℝ}
+    (hpsi : ContDiff ℝ (⊤ : ℕ∞) psi) {M : ℝ} (hM : 0 ≤ M) (hpsiM : ∀ x ∈ Omega, |psi x| ≤ M)
+    (hgradM : ∀ x ∈ Omega, ‖∇ psi x‖ ≤ M) (hcpt : HasCompactSupport psi)
+    (hts : tsupport psi ⊆ (Omega : Set E)) :
+    ∃ cutoff : W1p mu Omega p →L[ℝ] W1p0 mu Omega p, ∀ u : W1p mu Omega p,
+      (cutoff u : W1p mu Omega p) = W1p.contDiffSMul psi hpsi hM hpsiM hgradM u := by
+  refine ⟨ContinuousLinearMap.codRestrict (W1p.contDiffSMulL psi hpsi hM hpsiM hgradM)
+      (w1p0Submodule mu Omega p).toSubmodule (fun u => ?_), fun u => ?_⟩
+  · rw [W1p.contDiffSMulL_apply]
+    exact W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport hp hpsi hM hpsiM hgradM
+      hcpt hts u
+  · simp only [ContinuousLinearMap.coe_codRestrict_apply, W1p.contDiffSMulL_apply]
+
+/-- Restricting to `V ≤ Ω` and taking values agrees with cutting off by a function equal to one
+on `V`, taking values on `Ω` and restricting to `V` in `Lᵖ`. -/
+theorem W1p.valueL_comp_restrictL_eq_comp_cutoff {V : Opens E} (hV : V ≤ Omega) {psi : E → ℝ}
+    (hpsi : ContDiff ℝ (⊤ : ℕ∞) psi) {M : ℝ} (hM : 0 ≤ M) (hpsiM : ∀ x ∈ Omega, |psi x| ≤ M)
+    (hgradM : ∀ x ∈ Omega, ‖∇ psi x‖ ≤ M) (hOne : ∀ x ∈ (V : Set E), psi x = 1)
+    (cutoff : W1p mu Omega p →L[ℝ] W1p0 mu Omega p)
+    (cutoff_apply : ∀ u : W1p mu Omega p,
+      (cutoff u : W1p mu Omega p) = W1p.contDiffSMul psi hpsi hM hpsiM hgradM u)
+    (res : Lp ℝ p (mu.restrict (Omega : Set E)) →L[ℝ] Lp ℝ p (mu.restrict (V : Set E)))
+    (hres : ∀ f, res f =ᵐ[mu.restrict (V : Set E)] f) :
+    (W1p.valueL (mu := mu) (Omega := V) (p := p)).comp (W1p.restrictL hV) =
+      (res.comp (W1p0.valueL (mu := mu) (Omega := Omega) (p := p))).comp cutoff := by
+  ext u
+  filter_upwards [W1p.value_restrictL_ae hV u, hres (W1p0.valueL (cutoff u)),
+    (W1p.value_contDiffSMul_ae hpsi hM hpsiM hgradM u).filter_mono
+      (ae_mono (Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hV))),
+    ae_restrict_mem V.isOpen.measurableSet] with x hleft hres hmul hx
+  have hres' : (res (W1p.value (cutoff u : W1p mu Omega p)) : E → ℝ) x =
+      (W1p.value (cutoff u : W1p mu Omega p) : E → ℝ) x := by
+    simpa only [W1p0.valueL_apply] using hres
+  rw [ContinuousLinearMap.comp_apply, W1p.valueL_apply, hleft,
+    ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
+    W1p0.valueL_apply, hres']
+  rw [cutoff_apply u, hmul, hOne x hx, one_smul]
 
 /-- **The product of a test function with a composition lies in `W^{1,p}_0(Ω)`.**  The product
 `φ G(u)` of a test function `φ ∈ C_c^∞(Ω)` with the composition `G(u)` of any
