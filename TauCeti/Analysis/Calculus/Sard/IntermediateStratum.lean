@@ -105,7 +105,7 @@ theorem exists_parametrization_iteratedFDeriv_eq_zero
     hg.hasStrictFDerivAt (ℓ.hasFDerivAt.comp a (hiter.differentiableAt hr).hasFDerivAt) hr
   have hzero : ∀ x, iteratedFDeriv 𝕜 i f x = 0 → g x = 0 := fun x hx ↦ by simp [g, hx]
   have := FiniteDimensional.complete 𝕜 E
-  obtain ⟨θ, hθa, hθ, hθg, hcover⟩ := exists_parametrization_of_hasStrictFDerivAt hg hstrict hsurj
+  obtain ⟨θ, hθa, hθ, hθg, hcover⟩ := hg.exists_parametrization_of_hasStrictFDerivAt hstrict hsurj
     hr (hzero a hi)
   refine ⟨g, g', θ, hg, hstrict, hsurj, hzero, hθa, hθ, hθg, fun V hV ↦ ?_,
     Module.Dual.finrank_ker_add_one_of_ne_zero hg'⟩
