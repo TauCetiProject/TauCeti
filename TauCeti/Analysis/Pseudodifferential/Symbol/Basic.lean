@@ -466,6 +466,16 @@ theorem isUniform_ofSpatial_iff {f : CoordinateSpace n → V →L[ℂ] W} (hf : 
       exact (hC x).trans (le_max_left _ _)
     · exact ⟨0, le_rfl, fun x ξ => by simp [hc, mixedDeriv_comp_fst f α hβ]⟩
 
+/-- The symbol of multiplication by `f` has compact spatial support exactly when `f` has compact
+support. Composing with it is a spatial cutoff: by `HasCompactSpatialSupport.comp_right`, a
+compactly supported smooth `f` cuts every symbol off to one with compact spatial support, which
+therefore satisfies uniform estimates. -/
+theorem hasCompactSpatialSupport_ofSpatial_iff {f : CoordinateSpace n → V →L[ℂ] W}
+    (hf : ContDiff ℝ ∞ f) : (ofSpatial f hf).HasCompactSpatialSupport ↔ HasCompactSupport f := by
+  refine ⟨fun ⟨K, hK, hKf⟩ => HasCompactSupport.intro hK fun x hx => ?_, fun h => ?_⟩
+  · simpa using hKf x hx 0
+  · exact ⟨tsupport f, h, fun x hx _ => by simpa using image_eq_zero_of_notMem_tsupport hx⟩
+
 /-- The local estimates do not imply the uniform ones: the coordinate function `x_j`, times a
 nonzero coefficient `T`, is a symbol of order `0` that is unbounded in the position. -/
 theorem not_isUniform_ofSpatial_smul (j : Fin n) {T : V →L[ℂ] W} (hT : T ≠ 0)
@@ -726,16 +736,6 @@ theorem frequencyDeriv_comp (j : Fin n) (b : Symbol n W U m') (a : Symbol n V W 
       (g := fun η => a.coefficient (x, η))
       ((b.contDiff_coefficient.comp (contDiff_prodMk_right x)).of_le (by simp))
       ((a.contDiff_coefficient.comp (contDiff_prodMk_right x)).of_le (by simp)) j ξ
-
-/-- The symbol of multiplication by `f` has compact spatial support exactly when `f` has compact
-support. Composing with it is a spatial cutoff: by `HasCompactSpatialSupport.comp_right`, a
-compactly supported smooth `f` cuts every symbol off to one with compact spatial support, which
-therefore satisfies uniform estimates. -/
-theorem hasCompactSpatialSupport_ofSpatial_iff {f : CoordinateSpace n → V →L[ℂ] W}
-    (hf : ContDiff ℝ ∞ f) : (ofSpatial f hf).HasCompactSpatialSupport ↔ HasCompactSupport f := by
-  refine ⟨fun ⟨K, hK, hKf⟩ => HasCompactSupport.intro hK fun x hx => ?_, fun h => ?_⟩
-  · simpa using hKf x hx 0
-  · exact ⟨tsupport f, h, fun x hx _ => by simpa using image_eq_zero_of_notMem_tsupport hx⟩
 
 end Comp
 
