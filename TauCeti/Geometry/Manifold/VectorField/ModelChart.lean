@@ -11,6 +11,7 @@ import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import Mathlib.Geometry.Manifold.BumpFunction
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 
 /-!
 # Vector fields read in the charts of a manifold modelled on its own model space
@@ -239,15 +240,8 @@ theorem exists_vectorField_mvfderiv_eq_neg_one (hf : ContMDiff 𝓘(ℝ, E) 𝓘
   set d : M → ℝ := fun y ↦ g y + (1 - Real.smoothTransition (g y)) with hd
   set Y : (y : M) → TangentSpace 𝓘(ℝ, E) y := fun y ↦ ∑ i ∈ t, ((ρ i : M → ℝ) • s i) y with hY
   have hg0 : ∀ y, 0 ≤ g y := fun y ↦ Finset.sum_nonneg fun i _ ↦ (ρ i).nonneg
-  have hgd : ∀ y, g y ≤ d y := fun y ↦ by
-    have := Real.smoothTransition.le_one (g y)
-    simp only [hd]
-    linarith
-  have hd0 : ∀ y, d y ≠ 0 := by
-    intro y
-    rcases (hg0 y).eq_or_lt with h | h
-    · simp [hd, ← h]
-    · exact (h.trans_le (hgd y)).ne'
+  have hgd : ∀ y, g y ≤ d y := fun y ↦ Real.smoothTransition.le_add_one_sub (g y)
+  have hd0 : ∀ y, d y ≠ 0 := fun y ↦ Real.smoothTransition.add_one_sub_ne_zero (hg0 y)
   have hgC : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ g := ContMDiff.sum fun i _ ↦ (ρ i).contMDiff
   have hdC : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ d :=
     hgC.add (contMDiff_const.sub (Real.smoothTransition.contDiff.contMDiff.comp hgC))
