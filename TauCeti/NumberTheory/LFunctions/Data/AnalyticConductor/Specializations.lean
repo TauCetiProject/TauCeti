@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LFunctions.Zeros.AnalyticConductor.Basic
+public import TauCeti.NumberTheory.LFunctions.Data.AnalyticConductor.Basic
 public import TauCeti.NumberTheory.LFunctions.Data.Normalization
 public import TauCeti.NumberTheory.LFunctions.Data.RiemannZeta
 
