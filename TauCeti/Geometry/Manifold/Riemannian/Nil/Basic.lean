@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Convex.Contractible
 public import Mathlib.GroupTheory.SemidirectProduct
+public import TauCeti.Analysis.Normed.Group.Prod
 public import TauCeti.GroupTheory.SpecificGroups.Heisenberg
 public import TauCeti.Geometry.Manifold.Riemannian.Coercive
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Action
@@ -239,7 +240,7 @@ private theorem contDiff_form : ContDiff ℝ ω fun r : ℝ × ℝ × ℝ ↦ fo
 
 private theorem isCoercive_form (t : ℝ) : IsCoercive (form t) := by
   refine ⟨(2 + 2 * t ^ 2)⁻¹, by positivity, fun v ↦ ?_⟩
-  have hv' := norm_mul_self_le_sq_add_sq_add_sq v
+  have hv' := v.norm_mul_self_le_sq_add_sq_add_sq
   rw [mul_assoc, inv_mul_le_iff₀ (by positivity), form_apply]
   nlinarith [sq_nonneg (t * v.2.1 - (v.2.2 - t * v.2.1)), sq_nonneg v.1, sq_nonneg v.2.1,
     sq_nonneg (v.2.2 - t * v.2.1), mul_nonneg (sq_nonneg t) (sq_nonneg v.1),

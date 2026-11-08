@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Convex.Contractible
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+public import TauCeti.Analysis.Normed.Group.Prod
 public import TauCeti.Geometry.Manifold.Riemannian.Coercive
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Action
 
@@ -240,7 +241,7 @@ private theorem isCoercive_form (t : ℝ) : IsCoercive (form t) := by
   have h₂ : exp (-2 * |t|) ≤ exp (-2 * t) := exp_le_exp.2 (by linarith [le_abs_self t])
   have h₃ : exp (-2 * |t|) ≤ 1 := exp_le_one_iff.2 (by linarith [abs_nonneg t])
   have hv : ‖v‖ * ‖v‖ ≤ v.1 * v.1 + v.2.1 * v.2.1 + v.2.2 * v.2.2 := by
-    simpa only [sq] using norm_mul_self_le_sq_add_sq_add_sq v
+    simpa only [sq] using v.norm_mul_self_le_sq_add_sq_add_sq
   rw [form_apply, mul_assoc]
   calc exp (-2 * |t|) * (‖v‖ * ‖v‖)
       ≤ exp (-2 * |t|) * (v.1 * v.1 + v.2.1 * v.2.1 + v.2.2 * v.2.2) :=
