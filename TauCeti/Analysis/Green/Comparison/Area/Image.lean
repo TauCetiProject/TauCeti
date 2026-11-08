@@ -143,10 +143,9 @@ theorem integralTopForm_mpullback_area_eq_integral_image
   simp_rw [hcoef] at hgi hge
   rw [hpull] at hge
   have hb : b.map e.toLinearEquiv = Complex.basisOneI := by ext i; exact e.apply_symm_apply _
+  have hcoe : ⇑e.toHomeomorph.toMeasurableEquiv = e := rfl
   have hmp : MeasurePreserving e.toHomeomorph.toMeasurableEquiv b.addHaar volume :=
-    ⟨e.continuous.measurable, by
-      change Measure.map e b.addHaar = _
-      rw [b.map_addHaar e, hb, basisOneI_addHaar]⟩
+    ⟨e.continuous.measurable, by rw [hcoe, b.map_addHaar e, hb, basisOneI_addHaar]⟩
   -- The range of `e.symm ∘ f` is the preimage under `e` of the range of `f`.
   rw [Set.range_comp, ContinuousLinearEquiv.image_symm_eq_preimage] at hgi hge
   exact ⟨(hmp.integrableOn_comp_preimage (MeasurableEquiv.measurableEmbedding _)).mp hgi,
