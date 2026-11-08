@@ -212,11 +212,12 @@ theorem IsFunctionField.isAlgebraic_algebraMap_iff_isAlgebraic (hF : IsFunctionF
     mem_algebraicClosure_iff]
   exact isAlgebraic_algebraMap_iff (FaithfulSMul.algebraMap_injective F F')
 
-/-- **The fields of constants of an extension of function fields are identified along the tower
-map `k → k'`** (Stichtenoth, Definition 3.1.1 and the remark following it).  Once `k` is the full
-field of constants of `F / k`, a function of `F` is a constant of `F' / k'` exactly when it is
-already a constant of `F / k`: inside `F'` the two fields of constants meet in `k`, so `k → k'` is
-the induced inclusion of fields of constants.  Exactness of `k'` in `F'` is not needed. -/
+/-- **The base field `k'` meets `F` exactly in `k`** (Stichtenoth, Definition 3.1.1 and the remark
+following it).  Once `k` is the full field of constants of `F / k`, a function of `F` has image in
+the base field `k'` of `F'` exactly when it already lies in the base field `k` of `F`: inside `F'`
+we have `k' ∩ F = k`.  This concerns membership in the base fields themselves, not in the full
+fields of constants of `F' / k'`, which can be larger than `k'`; exactness of `k'` in `F'` is not
+needed. -/
 theorem IsFunctionField.algebraMap_mem_range_algebraMap_iff (hF : IsFunctionField k F)
     (hF' : IsFunctionField k' F') (hk : IsIntegrallyClosedIn k F) {a : F} :
     algebraMap F F' a ∈ Set.range (algebraMap k' F') ↔ a ∈ Set.range (algebraMap k F) := by
