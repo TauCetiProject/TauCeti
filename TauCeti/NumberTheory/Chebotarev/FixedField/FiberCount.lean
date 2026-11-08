@@ -271,23 +271,16 @@ private theorem card_fixedField_frobenius_fiber_mul_orderOf (σ : L ≃ₐ[K] L)
     Ideal.frobenius_fiber_card_mul_orderOf_eq_card_centralizer P.asIdeal R0.1 hR0, hcent,
     Subgroup.card_top, AlgEquiv.card_algEquiv_fixedField_zpowers]
 
-/-- Below a prime `Q` of `L` over `p` at which `τ`, read over `K`, is an arithmetic Frobenius lies a
-prime of `E = L ^ ⟨σ⟩` of residue degree one over `K` at which `τ` is an arithmetic Frobenius. -/
-private theorem inertiaDeg_under_eq_one_and_isArithFrobAt_fixedField (σ : L ≃ₐ[K] L)
-    (τ : L ≃ₐ[↥(fixedField (Subgroup.zpowers σ))] L) (p : HeightOneSpectrum (𝓞 K))
+omit [NumberField K] [NumberField L] [IsGalois K L] in
+/-- A prime of `L` over a prime `p` of `K` above which every prime of `L` is unramified is
+unramified over `K`. -/
+private theorem isUnramifiedAt_of_under_eq (p : HeightOneSpectrum (𝓞 K))
     (hur : ∀ (R : Ideal (𝓞 L)) [R.IsPrime] [R.LiesOver p.asIdeal],
       Algebra.IsUnramifiedAt (𝓞 K) R)
-    (Q : HeightOneSpectrum (𝓞 L)) (hQp : Q.under (𝓞 K) = p)
-    (hQ : IsArithFrobAt (𝓞 K) (AlgEquiv.restrictScalars K τ) Q.asIdeal) :
-    (Q.under (𝓞 ↥(fixedField (Subgroup.zpowers σ)))).asIdeal.inertiaDeg (𝓞 K) = 1 ∧
-      IsArithFrobAt (𝓞 ↥(fixedField (Subgroup.zpowers σ))) τ Q.asIdeal := by
-  have : Q.asIdeal.LiesOver p.asIdeal := ⟨(congrArg HeightOneSpectrum.asIdeal hQp).symm⟩
-  have : Algebra.IsUnramifiedAt (𝓞 K) Q.asIdeal := hur Q.asIdeal
-  have hdeg := (Ideal.inertiaDeg_under_fixedField_eq_one_iff Q.asIdeal _ hQ).2
-    (σ.restrictScalars_mem_zpowers τ)
-  rw [HeightOneSpectrum.under_asIdeal]
-  exact ⟨hdeg, (NumberField.isArithFrobAt_iff_restrictScalars_eq_pow_inertiaDeg hQ τ).mpr
-    (by rw [hdeg, pow_one])⟩
+    (Q : HeightOneSpectrum (𝓞 L)) (hQp : Q.under (𝓞 K) = p) :
+    Algebra.IsUnramifiedAt (𝓞 K) Q.asIdeal :=
+  haveI : Q.asIdeal.LiesOver p.asIdeal := ⟨(congrArg HeightOneSpectrum.asIdeal hQp).symm⟩
+  hur Q.asIdeal
 
 /-- Below a prime `Q` of `L` over `p` at which `τ`, read over `K`, is an arithmetic Frobenius lies a
 prime of `E = L ^ ⟨σ⟩` in the Frobenius set of the class of `τ`. -/
@@ -301,9 +294,10 @@ private theorem under_mem_frobeniusPrimeSet_fixedField (σ : L ≃ₐ[K] L)
       frobeniusPrimeSet ↥(fixedField (Subgroup.zpowers σ)) L (ConjClasses.mk τ) := by
   have : Q.asIdeal.LiesOver (Q.under (𝓞 ↥(fixedField (Subgroup.zpowers σ)))).asIdeal :=
     ⟨HeightOneSpectrum.under_asIdeal _ Q⟩
+  have := isUnramifiedAt_of_under_eq p hur Q hQp
   exact mem_frobeniusPrimeSet_mk_of_isArithFrobAt
     (fun R _ _ ↦ isUnramifiedAt_fixedField_of_under_eq σ p hur Q hQp R) Q.asIdeal
-    (inertiaDeg_under_eq_one_and_isArithFrobAt_fixedField σ τ p hur Q hQp hQ).2
+    (Ideal.inertiaDeg_under_eq_one_and_isArithFrobAt_fixedField Q.asIdeal σ τ hQ).2
 
 /-- The primes of `L` above `p` at which `τ`, read over `K`, is an arithmetic Frobenius and which
 lie over a residue-degree-one prime `P` of `E = L ^ ⟨σ⟩` in the relative fibre of `τ` number
@@ -325,8 +319,9 @@ private theorem card_fiber_under_fixedField_mul_orderOf (σ : L ≃ₐ[K] L)
       {R : HeightOneSpectrum (𝓞 L) //
         R.under (𝓞 ↥(fixedField (Subgroup.zpowers σ))) = P ∧
           IsArithFrobAt (𝓞 ↥(fixedField (Subgroup.zpowers σ))) τ R.asIdeal} :=
-    { toFun := fun Q ↦ ⟨Q.1.1, Q.2,
-        (inertiaDeg_under_eq_one_and_isArithFrobAt_fixedField σ τ p hur Q.1.1 Q.1.2.1 Q.1.2.2).2⟩
+    { toFun := fun Q ↦ haveI := isUnramifiedAt_of_under_eq p hur Q.1.1 Q.1.2.1
+        ⟨Q.1.1, Q.2,
+          (Ideal.inertiaDeg_under_eq_one_and_isArithFrobAt_fixedField Q.1.1.asIdeal σ τ Q.1.2.2).2⟩
       invFun := fun R ↦
         have hRK : R.1.under (𝓞 K) = p := by
           rw [← HeightOneSpectrum.under_under
@@ -389,10 +384,11 @@ theorem fixedField_frobenius_fiber_inertiaDeg_eq_one_card_mul
   let S := {P : HeightOneSpectrum (𝓞 ↥(fixedField (Subgroup.zpowers σ))) //
     P.under (𝓞 K) = p ∧ P.asIdeal.inertiaDeg (𝓞 K) = 1 ∧
       P ∈ frobeniusPrimeSet ↥(fixedField (Subgroup.zpowers σ)) L (ConjClasses.mk τ)}
-  let g : U → S := fun Q ↦ ⟨Q.1.under (𝓞 ↥(fixedField (Subgroup.zpowers σ))),
-    (HeightOneSpectrum.under_under _ Q.1).trans Q.2.1,
-    (inertiaDeg_under_eq_one_and_isArithFrobAt_fixedField σ τ p hur Q.1 Q.2.1 Q.2.2).1,
-    under_mem_frobeniusPrimeSet_fixedField σ τ p hur Q.1 Q.2.1 Q.2.2⟩
+  let g : U → S := fun Q ↦ haveI := isUnramifiedAt_of_under_eq p hur Q.1 Q.2.1
+    ⟨Q.1.under (𝓞 ↥(fixedField (Subgroup.zpowers σ))),
+      (HeightOneSpectrum.under_under _ Q.1).trans Q.2.1,
+      (Ideal.inertiaDeg_under_eq_one_and_isArithFrobAt_fixedField Q.1.asIdeal σ τ Q.2.2).1,
+      under_mem_frobeniusPrimeSet_fixedField σ τ p hur Q.1 Q.2.1 Q.2.2⟩
   -- Each fibre of `g` is a relative Frobenius fibre of `τ` in `L / E`.
   have hfib (P : S) : Nat.card {Q : U // g Q = P} * orderOf w = orderOf σ := by
     rw [← card_fiber_under_fixedField_mul_orderOf σ τ p hur P.1 P.2.1 P.2.2.1 P.2.2.2]
