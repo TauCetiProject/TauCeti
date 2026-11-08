@@ -130,9 +130,10 @@ theorem kaehlerDifferentialEquivOfAdjoinEq_symm_mk (p : R[X]) :
     (kaehlerDifferentialEquivOfAdjoinEq f hS).symm
         (Ideal.Quotient.mk (Ideal.span {derivative f}) p) =
       p • KaehlerDifferential.D S R[X] X := by
-  -- The inverse of ofLinearMap is its supplied inverse map; no computation lemma is provided.
-  change differentialFromQuotient f hS _ = _
-  exact differentialFromQuotient_mk f hS p
+  apply (kaehlerDifferentialEquivOfAdjoinEq f hS).injective
+  rw [LinearEquiv.apply_symm_apply, map_smul, kaehlerDifferentialEquivOfAdjoinEq_D,
+    derivative_X, map_one]
+  exact Algebra.algebraMap_eq_smul_one p
 
 /-- The annihilator of the relative differentials over `R[f]` is exactly `(f')`. -/
 theorem annihilator_kaehlerDifferential_of_adjoin_eq :
