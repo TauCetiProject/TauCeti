@@ -131,12 +131,12 @@ theorem image_mem_cotangentMomentumChart_target :
 theorem contDiffAt_cotangentMomentumChart_symm {n : WithTop ℕ∞}
     (hSn : ContDiffAt ℝ (n + 1) S x₀) :
     ContDiffAt ℝ n (cotangentMomentumChart hS hH).symm (cotangentMomentumProjection S x₀) := by
-  rcases eq_or_ne n 0 with rfl | hn
-  · exact contDiffAt_zero.2 ⟨_, (cotangentMomentumChart hS hH).open_target.mem_nhds
-      (image_mem_cotangentMomentumChart_target hS hH),
-      (cotangentMomentumChart hS hH).continuousOn_symm⟩
-  · exact (contDiffAt_cotangentMomentumProjection hSn).to_localInverse
-      (hasStrictFDerivAt_momentumDerivEquiv hS hH).hasFDerivAt hn
+  have hb : (cotangentMomentumChart hS hH).symm (cotangentMomentumProjection S x₀) = x₀ :=
+    (hasStrictFDerivAt_momentumDerivEquiv hS hH).localInverse_apply_image
+  exact (cotangentMomentumChart hS hH).contDiffAt_symm
+    (image_mem_cotangentMomentumChart_target hS hH)
+    (by rw [hb]; exact (hasStrictFDerivAt_momentumDerivEquiv hS hH).hasFDerivAt)
+    (by rw [hb]; exact contDiffAt_cotangentMomentumProjection hSn)
 
 /-- Any local inverse of the momentum projection agrees with this branch as a germ. -/
 theorem eventuallyEq_cotangentMomentumChart_symm
