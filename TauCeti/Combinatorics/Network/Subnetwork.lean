@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Set.Lattice.Bounded
 public import TauCeti.Combinatorics.Network.Basic
 public import TauCeti.Combinatorics.Network.Walk
+public import TauCeti.Combinatorics.Quiver.Reachable
 
 /-!
 # Subnetworks
@@ -18,8 +19,10 @@ vertex subtype, and its bounds are inherited from the ambient network.
 
 This file supplies the elementary set operations used to build subnetworks: induced subnetworks,
 restriction and deletion of vertices or arrows, singleton and empty subnetworks, and unions inside
-a fixed ambient network. It also defines the subnetwork traced by a directed walk. In particular,
-isolated selected vertices remain visible under every operation that does not delete them.
+a fixed ambient network. It defines reachability through selected arrows, proves its equivalence
+with walks in the subnetwork's own arrow family, and characterizes strong connectivity in those
+terms. It also defines the subnetwork traced by a directed walk. In particular, isolated selected
+vertices remain visible under every operation that does not delete them.
 -/
 
 public section
@@ -58,6 +61,64 @@ theorem ext {S T : N.Subnetwork} (hV : S.vertexSet = T.vertexSet)
 /-- The arrow family of a subnetwork, indexed by its selected vertex subtype. -/
 abbrev Hom (S : N.Subnetwork) (x y : ↥S.vertexSet) :=
   {e : N.Hom x.1 y.1 // (⟨x.1, y.1, e⟩ : Σ x y, N.Hom x y) ∈ S.arrowSet}
+
+/-! ### Reachability -/
+
+/-- Ambient vertices `y` are reachable from `x` inside a subnetwork when a directed walk avoiding
+the complement of its selected arrows joins them. The endpoints need not be selected for this
+definition; `isStronglyConnected_iff` below restricts them to the subnetwork's vertex set. -/
+abbrev Reachable (S : N.Subnetwork) (x y : V) : Prop :=
+  ReachableWithout S.arrowSetᶜ x y
+
+/-- Reachability inside a subnetwork is reachability avoiding the complement of its selected
+arrows. -/
+theorem reachable_def (S : N.Subnetwork) (x y : V) :
+    S.Reachable x y ↔ ReachableWithout S.arrowSetᶜ x y :=
+  Iff.rfl
+
+/-- A directed walk in a subnetwork gives reachability between its ambient endpoints. -/
+theorem reachable_of_nonempty_arrowWalk (S : N.Subnetwork) {x y : ↥S.vertexSet}
+    (h : Nonempty (ArrowWalk S.Hom x y)) : S.Reachable x.1 y.1 := by
+  obtain ⟨p⟩ := h
+  induction p with
+  | nil => exact ReachableWithout.refl S.arrowSetᶜ _
+  | cons p e ih => exact ih.tail e.1 (by simpa using e.2)
+
+/-- Reachability between selected ambient vertices lifts to a directed walk in the subnetwork. -/
+theorem nonempty_arrowWalk_of_reachable (S : N.Subnetwork) {x y : V}
+    (hx : x ∈ S.vertexSet) (hy : y ∈ S.vertexSet) (h : S.Reachable x y) :
+    Nonempty (ArrowWalk S.Hom ⟨x, hx⟩ ⟨y, hy⟩) := by
+  rw [S.reachable_def] at h
+  rw [reachableWithout_def] at h
+  obtain ⟨p, hp⟩ := h
+  replace hp : ∀ a ∈ p.arrows, a ∈ S.arrowSet := by
+    intro a ha
+    simpa using hp a ha
+  induction p generalizing hx with
+  | nil => exact ⟨ArrowWalk.nil _⟩
+  | @cons y z p e ih =>
+    have he : (⟨y, z, e⟩ : Σ x y, N.Hom x y) ∈ S.arrowSet := hp _ (by simp)
+    have hy' : y ∈ S.vertexSet := S.source_mem ⟨y, z, e⟩ he
+    obtain ⟨q⟩ := ih hx hy' (fun a ha ↦ hp a (by simp [ha]))
+    exact ⟨q.cons ⟨e, he⟩⟩
+
+/-- Reachability between selected ambient vertices is exactly the existence of a walk in the
+subnetwork's own arrow family. -/
+theorem reachable_iff_nonempty_arrowWalk (S : N.Subnetwork) (x y : ↥S.vertexSet) :
+    S.Reachable x.1 y.1 ↔ Nonempty (ArrowWalk S.Hom x y) :=
+  ⟨nonempty_arrowWalk_of_reachable S x.2 y.2,
+    reachable_of_nonempty_arrowWalk S⟩
+
+/-- A subnetwork is strongly connected exactly when every ordered pair of its selected ambient
+vertices is reachable using selected arrows. -/
+theorem isStronglyConnected_iff (S : N.Subnetwork) :
+    @Quiver.IsStronglyConnected ↥S.vertexSet ⟨S.Hom⟩ ↔
+      ∀ x ∈ S.vertexSet, ∀ y ∈ S.vertexSet, S.Reachable x y := by
+  constructor
+  · intro h x hx y hy
+    exact (S.reachable_iff_nonempty_arrowWalk ⟨x, hx⟩ ⟨y, hy⟩).2 (h _ _)
+  · intro h x y
+    exact (S.reachable_iff_nonempty_arrowWalk x y).1 (h x.1 x.2 y.1 y.2)
 
 /-- A subnetwork as a bounded network on its selected vertex subtype, with inherited bounds.
 
@@ -112,6 +173,11 @@ instance : PartialOrder N.Subnetwork where
   le_trans _ _ _ hST hTU := ⟨hST.1.trans hTU.1, hST.2.trans hTU.2⟩
   le_antisymm S T hST hTS :=
     ext (Set.Subset.antisymm hST.1 hTS.1) (Set.Subset.antisymm hST.2 hTS.2)
+
+/-- Reachability is preserved when the selected vertices and arrows are enlarged. -/
+theorem Reachable.mono {S T : N.Subnetwork} (hST : S ≤ T) {x y : V}
+    (h : S.Reachable x y) : T.Reachable x y :=
+  ReachableWithout.mono (Set.compl_subset_compl.2 hST.2) h
 
 /-- Inclusion of the vertex type of a smaller subnetwork into that of a larger one.
 
@@ -275,6 +341,13 @@ theorem vertexSet_top : (⊤ : N.Subnetwork).vertexSet = Set.univ :=
 theorem arrowSet_top : (⊤ : N.Subnetwork).arrowSet = Set.univ :=
   arrowSet_full
 
+/-- Reachability in the full subnetwork is ordinary reachability in the ambient arrow family. -/
+@[simp]
+theorem reachable_top_iff {x y : V} :
+    (⊤ : N.Subnetwork).Reachable x y ↔ Nonempty (ArrowWalk N.Hom x y) := by
+  rw [reachable_def, arrowSet_top, Set.compl_univ]
+  exact reachableWithout_empty_iff
+
 /-- The subnetwork induced by a set of ambient vertices. It retains every ambient arrow whose
 two endpoints belong to the set. -/
 def _root_.TauCeti.Network.inducedSubnetwork (N : Network K V) (W : Set V) : N.Subnetwork where
@@ -314,6 +387,16 @@ theorem vertexSet_singleton (x : V) : (N.singletonSubnetwork x).vertexSet = {x} 
 
 @[simp]
 theorem arrowSet_singleton (x : V) : (N.singletonSubnetwork x).arrowSet = ∅ := (rfl)
+
+/-- A singleton subnetwork with no arrows is strongly connected. -/
+theorem isStronglyConnected_singleton (x : V) :
+    @Quiver.IsStronglyConnected ↥(N.singletonSubnetwork x).vertexSet
+      ⟨(N.singletonSubnetwork x).Hom⟩ := by
+  rw [isStronglyConnected_iff]
+  intro a ha b hb
+  simp only [vertexSet_singleton, Set.mem_singleton_iff] at ha hb
+  subst a b
+  exact .refl _ _
 
 /-- Restrict a subnetwork to vertices belonging to `W`, deleting every arrow incident to a
 discarded vertex. -/
@@ -466,5 +549,57 @@ theorem source_mem_toSubnetwork {s t : V} (p : ArrowWalk N.Hom s t) :
 theorem target_mem_toSubnetwork {s t : V} (p : ArrowWalk N.Hom s t) :
     t ∈ p.toSubnetwork.vertexSet :=
   @Quiver.Path.end_mem_vertices V ⟨N.Hom⟩ s t p
+
+/-- The subnetwork traced by the first factor of a composite walk lies in the subnetwork traced
+by the composite. -/
+theorem toSubnetwork_comp_left_le {s t x : V} (p : ArrowWalk N.Hom s t)
+    (q : ArrowWalk N.Hom t x) : p.toSubnetwork ≤ (p.comp q).toSubnetwork := by
+  refine ⟨?_, ?_⟩
+  · intro v hv
+    -- Expose the set-comprehension representation of the traced vertex sets.
+    change v ∈ p.vertices at hv
+    change v ∈ (p.comp q).vertices
+    exact (p.comp q).vertices_subset_of_arrows_subset (by simp) hv
+  · intro a ha
+    simpa using List.mem_append_left q.arrows ha
+
+/-- The subnetwork traced by the second factor of a composite walk lies in the subnetwork traced
+by the composite. -/
+theorem toSubnetwork_comp_right_le {s t x : V} (p : ArrowWalk N.Hom s t)
+    (q : ArrowWalk N.Hom t x) : q.toSubnetwork ≤ (p.comp q).toSubnetwork := by
+  refine ⟨?_, ?_⟩
+  · intro v hv
+    -- Expose the set-comprehension representation of the traced vertex sets.
+    change v ∈ q.vertices at hv
+    change v ∈ (p.comp q).vertices
+    rw [show (p.comp q).vertices = p.vertices.dropLast ++ q.vertices from
+      @Quiver.Path.vertices_comp V ⟨N.Hom⟩ _ _ _ p q]
+    exact List.mem_append_right _ hv
+  · intro a ha
+    simpa using List.mem_append_right p.arrows ha
+
+/-- A walk gives reachability between its endpoints in the subnetwork that it traces. -/
+theorem reachable_toSubnetwork {s t : V} (p : ArrowWalk N.Hom s t) :
+    p.toSubnetwork.Reachable s t := by
+  rw [p.toSubnetwork.reachable_def, reachableWithout_def]
+  exact ⟨p, fun _ ha h ↦ h ha⟩
+
+/-- Every vertex on a walk is reachable from its source and can reach its target inside the
+subnetwork traced by that walk. -/
+theorem reachable_of_mem_vertices {s t x : V} (p : ArrowWalk N.Hom s t)
+    (hx : x ∈ p.vertices) :
+    p.toSubnetwork.Reachable s x ∧ p.toSubnetwork.Reachable x t := by
+  obtain ⟨q, r, hqr⟩ :=
+    @Quiver.Path.exists_eq_comp_of_mem_vertices V ⟨N.Hom⟩ _ _ p x hx
+  -- The Mathlib splitter exposes both pieces under its local quiver instance.
+  change ArrowWalk N.Hom s x at q
+  change ArrowWalk N.Hom x t at r
+  have hq : q.toSubnetwork ≤ p.toSubnetwork := by
+    rw [hqr]
+    exact q.toSubnetwork_comp_left_le r
+  have hr : r.toSubnetwork ≤ p.toSubnetwork := by
+    rw [hqr]
+    exact q.toSubnetwork_comp_right_le r
+  exact ⟨q.reachable_toSubnetwork.mono hq, r.reachable_toSubnetwork.mono hr⟩
 
 end TauCeti.ArrowWalk
