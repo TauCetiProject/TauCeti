@@ -138,7 +138,7 @@ theorem not_isTorsion_swapColumns_of_homotopy
 /-- **Comparison of `τ` along a column turn with a homotopy inverse up to `U ^ k`.** If `ΨΦ` is
 chain homotopic to multiplication by a polynomial `p` with `p(U, …, U) = U ^ k` and `GH⁻(G)` is not
 torsion, then `τ(G')` is at most `τ(G)` minus the Alexander degree of the commutation map `Φ`. -/
-theorem tau_swapColumns_le_of_homotopy [IsNoetherianRing K]
+theorem tau_swapColumns_le_of_homotopy
     (H : GridChainMinus K n →ₗ[MvPolynomial (Fin n) K] GridChainMinus K n)
     {p : MvPolynomial (Fin n) K} {k : ℕ}
     (hp : aeval (fun _ => (Polynomial.X : Polynomial K)) p = Polynomial.X ^ k)

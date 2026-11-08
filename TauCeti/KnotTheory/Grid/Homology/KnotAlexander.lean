@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Homology.Alexander
-public import TauCeti.KnotTheory.Grid.Homology.Finite
-public import TauCeti.Algebra.Module.GradedModule.NonTorsionDegree
 
 /-!
 # The Alexander grading on knot grid homology over `R[U]`
@@ -15,9 +13,8 @@ public import TauCeti.Algebra.Module.GradedModule.NonTorsionDegree
 For a knot grid the Alexander grading of the concrete cycle quotient transports to the
 categorical unblocked homology `GH⁻`. The knot module structure identifies the action of `U`
 with that of every grid variable. Since each grid variable lowers Alexander degree by one,
-so does `U`. Finite generation then bounds above the Alexander degrees containing a
-non-torsion class. These are the grading and boundedness properties used to define the
-grid concordance invariant from the top non-torsion degree.
+so does `U`. This is the grading property used to define the grid concordance invariant from the
+top non-torsion degree.
 
 Two knot grids, possibly of different sizes, have isomorphic `GH⁻` as Alexander-graded
 `R[U]`-modules when some `R[U]`-linear equivalence between their homologies preserves the
@@ -70,18 +67,6 @@ theorem X_smul_mem_alexanderUnblockedHomologyGrading_piece {a : ℤ}
   let i : Fin n := ⟨0, Nat.pos_of_ne_zero hG.ne_zero⟩
   rw [hG.X_smul_unblockedHomology i y]
   exact (hG.toOddComponentGridDiagram).X_smul_mem_alexanderUnblockedHomologyGrading_piece R i hy
-
-/-- The Alexander degrees containing a non-torsion class of `GH⁻` are bounded above. -/
-theorem bddAbove_nonTorsionDegrees_alexanderUnblockedHomologyGrading
-    [IsNoetherianRing R] :
-    letI := hG.unblockedHomologyModule R
-    BddAbove (hG.alexanderUnblockedHomologyGrading R).nonTorsionDegrees := by
-  let _ := hG.unblockedHomologyModule R
-  exact @InternalGrading.bddAbove_nonTorsionDegrees R (G.unblockedHomology R)
-    _ _ _ _ hG.isScalarTower_unblockedHomology
-    (hG.alexanderUnblockedHomologyGrading R) 1
-    (hG.finite_unblockedHomology (G := G) R) (fun {p} {y} hy => by
-      exact hG.X_smul_mem_alexanderUnblockedHomologyGrading_piece R hy)
 
 end GridDiagram.IsKnot
 
