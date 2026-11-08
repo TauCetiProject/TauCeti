@@ -26,6 +26,12 @@ Mathlib's `MeasureTheory.AEStronglyMeasurable.prodMk_left`.
 Finally, for a measurable map `f` into an additive group, the law of `f z.1 - f z.2` under
 `μ.prod μ` is symmetric (`MeasureTheory.Measure.map_neg_map_sub_prod_self`): swapping the two
 identical factors negates the difference.
+
+For real-valued coordinates, if one factor has a reflection-invariant law, reflecting the other
+coordinate according to the sign of the first preserves the product measure
+(`MeasureTheory.Measure.measurePreserving_prod_skew_neg`), and the quotient `z.1 / z.2` has the
+same law as `z.1 / |z.2|` when the numerator's law is reflection invariant
+(`MeasureTheory.Measure.map_div_prod_eq_map_div_abs`).
 -/
 
 public section
@@ -76,6 +82,58 @@ theorem map_neg_map_sub_prod_self {γ G : Type*} [MeasurableSpace γ] [Measurabl
   congr 1
   funext z
   simp
+
+/-- Reflecting the second coordinate according to the sign of the first preserves the product of
+a measure with a reflection-invariant measure, because every fibre transformation preserves the
+second measure. -/
+theorem measurePreserving_prod_skew_neg {μ ν : Measure ℝ} [SFinite μ] [SFinite ν]
+    (hν : ν.map (fun x : ℝ ↦ -x) = ν) :
+    MeasurePreserving (fun z : ℝ × ℝ ↦ (z.1, if z.1 < 0 then -z.2 else z.2))
+      (μ.prod ν) (μ.prod ν) := by
+  refine (MeasurePreserving.id μ).skew_product
+    (g := fun y x : ℝ ↦ if y < 0 then -x else x) ?_ ?_
+  · exact Measurable.ite (measurableSet_lt measurable_fst measurable_const)
+      measurable_snd.neg measurable_snd
+  · refine ae_of_all _ fun y ↦ ?_
+    by_cases hy : y < 0
+    · simpa only [hy, ↓reduceIte] using hν
+    · simpa only [hy, ↓reduceIte] using (Measure.map_id' (μ := ν))
+
+/-- The quotient of independent coordinates, the numerator having a reflection-invariant law, has
+the same law as the quotient by the absolute value of the denominator. -/
+theorem map_div_prod_eq_map_div_abs {μ ν : Measure ℝ} [SFinite μ] [SFinite ν]
+    (hμ : μ.map (fun x : ℝ ↦ -x) = μ) :
+    ((μ.prod ν).map fun z : ℝ × ℝ ↦ z.1 / z.2) =
+      (μ.prod ν).map fun z : ℝ × ℝ ↦ z.1 / |z.2| := by
+  let skew : ℝ × ℝ → ℝ × ℝ := fun z ↦ (z.1, if z.1 < 0 then -z.2 else z.2)
+  let twist : ℝ × ℝ → ℝ × ℝ := fun z ↦ (if z.2 < 0 then -z.1 else z.1, z.2)
+  have hskew : MeasurePreserving skew (ν.prod μ) (ν.prod μ) :=
+    measurePreserving_prod_skew_neg hμ
+  -- Conjugating the skew map by coordinate swaps reflects the numerator exactly when the
+  -- denominator is negative.
+  have htwist : MeasurePreserving twist (μ.prod ν) (μ.prod ν) := by
+    have hswap : MeasurePreserving (Prod.swap : ℝ × ℝ → ℝ × ℝ) (μ.prod ν) (ν.prod μ) :=
+      Measure.measurePreserving_swap
+    have hswap' : MeasurePreserving (Prod.swap : ℝ × ℝ → ℝ × ℝ) (ν.prod μ) (μ.prod ν) :=
+      Measure.measurePreserving_swap
+    have htwist_eq : twist = (Prod.swap : ℝ × ℝ → ℝ × ℝ) ∘ skew ∘ Prod.swap := by
+      funext z
+      rfl
+    rw [htwist_eq]
+    exact hswap'.comp (hskew.comp hswap)
+  calc
+    (μ.prod ν).map (fun z : ℝ × ℝ ↦ z.1 / z.2)
+        = ((μ.prod ν).map twist).map (fun z : ℝ × ℝ ↦ z.1 / z.2) := by rw [htwist.map_eq]
+    _ = (μ.prod ν).map ((fun z : ℝ × ℝ ↦ z.1 / z.2) ∘ twist) := by
+      rw [Measure.map_map (by fun_prop) htwist.measurable]
+    _ = (μ.prod ν).map fun z : ℝ × ℝ ↦ z.1 / |z.2| := by
+      apply Measure.map_congr
+      refine ae_of_all _ fun z ↦ ?_
+      by_cases hz : z.2 < 0
+      · simp only [twist, hz, ↓reduceIte, Function.comp_apply, abs_of_neg hz]
+        ring
+      · simp only [twist, hz, ↓reduceIte, Function.comp_apply,
+          abs_of_nonneg (le_of_not_gt hz)]
 
 end MeasureTheory.Measure
 

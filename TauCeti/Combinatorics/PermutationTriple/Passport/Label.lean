@@ -37,6 +37,8 @@ orbits inside a passport and is not an intrinsic invariant of the passport.
   label exactly when a conjugate of it is the canonical reference passport for that label.
 * `TauCeti.PassportSpec.hasLabel_conjugate_iff`: label semantics is independent of the chosen
   representative of the reference monodromy subgroup.
+* `TauCeti.PassportSpec.HasLabel.hasPassport_iff`: a label determines the passport it labels up
+  to conjugation.
 * `TauCeti.PassportSpec.hasLabel_iff_of_hasPassport`: a passport containing a connected triple
   has the label read directly from that triple's monodromy and cycle data.
 
@@ -179,6 +181,20 @@ theorem hasLabel_iff_exists_conjugate_eq_toPassportSpec (P : PassportSpec n)
 theorem hasLabel_conjugate_iff (P : PassportSpec n) (L : PassportLabel n)
     (τ : Perm (Fin n)) : (P.conjugate τ).HasLabel L ↔ P.HasLabel L := by
   simp [HasLabel]
+
+/-- A label determines its passport up to conjugating the reference subgroup: a connected triple
+lies in a passport with label `L` exactly when its own passport has label `L`. -/
+theorem HasLabel.hasPassport_iff {P : PassportSpec n} {L : PassportLabel n} (hP : P.HasLabel L)
+    (t : ConnectedTriple n) : HasPassport t P ↔ t.passportOf.HasLabel L := by
+  constructor
+  · intro htP
+    obtain ⟨τ, rfl⟩ := (t.hasPassport_iff_exists_conjugate_passportOf P).mp htP
+    exact (hasLabel_conjugate_iff _ L τ).mp hP
+  · intro ht
+    obtain ⟨τ, hτ⟩ := (hasLabel_iff_exists_conjugate_eq_toPassportSpec P L).mp hP
+    obtain ⟨σ, hσ⟩ := (hasLabel_iff_exists_conjugate_eq_toPassportSpec _ L).mp ht
+    rw [← hasPassport_conjugate_iff t P τ, hτ, ← hσ, hasPassport_conjugate_iff]
+    exact t.hasPassport_passportOf
 
 /-- Read a label from any connected triple belonging to the passport: its group component is the
 transitive-group label of the monodromy group, and its partition components are the triple's

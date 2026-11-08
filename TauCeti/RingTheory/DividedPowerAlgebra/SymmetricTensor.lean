@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.TensorPower.Symmetric
 public import TauCeti.RingTheory.DividedPowerAlgebra.TensorPower
 import Mathlib.RingTheory.TensorProduct.Free
+import TauCeti.Data.Finsupp.Multiset
 import TauCeti.Data.Sym.Basic
 
 /-!
@@ -143,7 +144,8 @@ of occurrences of the letter `j` in the word `w`. -/
 private def basisProd (w : Fin d → κ) : homogeneousSubmodule (R := R) (M := M) d :=
   ⟨∏ j ∈ Finset.univ.image w, dp R ((∑ t, Finsupp.single (w t) 1 : κ →₀ ℕ) j) (b j),
     prod_dp_mem_homogeneousSubmodule_of_sum_finset_eq _ _ _
-      (sum_sum_single_apply fun t ↦ Finset.mem_image_of_mem w (Finset.mem_univ t))⟩
+      ((Finsupp.sum_sum_single_one_apply fun t ↦
+        Finset.mem_image_of_mem w (Finset.mem_univ t)).trans (Fintype.card_fin d))⟩
 
 /-- The value of `toTensorPower` on `basisProd b w` is the sum of the product basis vectors over
 all words with the same letters as `w`. -/
@@ -152,10 +154,11 @@ private theorem toTensorPower_basisProd (w : Fin d → κ) :
       ∑ v ∈ Fintype.piFinset (fun _ : Fin d ↦ Finset.univ.image w) with
         TauCeti.Sym.ofFn v = TauCeti.Sym.ofFn w, Basis.piTensorProduct (fun _ ↦ b) v := by
   have hF : (∑ t, Finsupp.single (w t) 1 : κ →₀ ℕ).support ⊆ Finset.univ.image w := fun j hj ↦ by
-    obtain ⟨t, rfl⟩ := sum_single_apply_ne_zero_iff.mp (Finsupp.mem_support_iff.mp hj)
+    obtain ⟨t, rfl⟩ := Finsupp.sum_single_one_apply_ne_zero_iff.mp (Finsupp.mem_support_iff.mp hj)
     exact Finset.mem_image_of_mem w (Finset.mem_univ t)
   rw [basisProd, toTensorPower_prod_dp_eq_sum_tprod d _ b _ hF
-    (sum_sum_single_apply fun t ↦ Finset.mem_image_of_mem w (Finset.mem_univ t))]
+    ((Finsupp.sum_sum_single_one_apply fun t ↦ Finset.mem_image_of_mem w (Finset.mem_univ t)).trans
+      (Fintype.card_fin d))]
   simp only [sum_single_eq_sum_single_iff, Basis.piTensorProduct_apply]
 
 /-- The map back from tensors to divided powers: the product basis vector of a chosen word goes to
@@ -188,33 +191,34 @@ private theorem fromTensorPower_comp_toTensorPower :
   refine Finset.sum_bij (fun w _ ↦ ∑ t, Finsupp.single (w t) 1) (fun w hw ↦ ?_)
     (fun v hv w hw h ↦ ?_) (fun l hl ↦ ?_) (fun w hw ↦ ?_)
   · rw [Finset.mem_filter, Fintype.mem_piFinset] at hw
-    refine Finset.mem_finsuppAntidiag.mpr ⟨sum_sum_single_apply hw.1, fun j hj ↦ ?_⟩
-    obtain ⟨t, rfl⟩ := sum_single_apply_ne_zero_iff.mp (Finsupp.mem_support_iff.mp hj)
+    refine Finset.mem_finsuppAntidiag.mpr
+      ⟨(Finsupp.sum_sum_single_one_apply hw.1).trans (Fintype.card_fin d), fun j hj ↦ ?_⟩
+    obtain ⟨t, rfl⟩ := Finsupp.sum_single_one_apply_ne_zero_iff.mp (Finsupp.mem_support_iff.mp hj)
     exact hw.1 t
   · rw [← (Finset.mem_filter.mp hv).2, ← (Finset.mem_filter.mp hw).2,
       canonWord_eq_canonWord_iff, ← sum_single_eq_sum_single_iff, h]
   · rw [Finset.mem_finsuppAntidiag] at hl
-    obtain ⟨w₀, hw₀⟩ := exists_sum_single_eq l
+    obtain ⟨w₀, hw₀⟩ := (exists_sum_single_eq_iff l).2
       ((Finsupp.sum_of_support_subset l hl.2 _ fun _ _ ↦ rfl).trans hl.1)
     have hcount : ∑ t, Finsupp.single (canonWord w₀ t) 1 = l := by
       rw [sum_single_eq_sum_single_iff.mpr (ofFn_canonWord w₀), hw₀]
     refine ⟨canonWord w₀, Finset.mem_filter.mpr ⟨Fintype.mem_piFinset.mpr fun t ↦ hl.2 ?_,
       canonWord_canonWord w₀⟩, hcount⟩
     rw [Finsupp.mem_support_iff, ← hcount]
-    exact sum_single_apply_ne_zero_iff.mpr ⟨t, rfl⟩
+    exact Finsupp.sum_single_one_apply_ne_zero_iff.mpr ⟨t, rfl⟩
   · rw [Finset.mem_filter, Fintype.mem_piFinset] at hw
     have hmaps : ∀ t ∈ Finset.univ, w t ∈ s.support := fun t _ ↦ hw.1 t
     congr 1
     · rw [← Finset.prod_fiberwise_of_maps_to' hmaps]
-      simp [sum_single_apply]
+      simp [Finsupp.sum_single_one_apply]
     · apply Subtype.ext
       rw [DirectSum.decompose_of_mem_same _ (prod_dp_mem_homogeneousSubmodule_of_sum_finset_eq _ b _
-        (sum_sum_single_apply hw.1)), basisProd]
+        ((Finsupp.sum_sum_single_one_apply hw.1).trans (Fintype.card_fin d))), basisProd]
       -- letters of `s.support` outside the word have exponent zero
       refine Finset.prod_subset_one_on_sdiff (Finset.image_subset_iff.mpr hmaps)
         (fun j hj ↦ ?_) fun _ _ ↦ rfl
       rw [Finset.mem_sdiff, Finset.mem_image] at hj
-      rw [not_ne_iff.mp (mt sum_single_apply_ne_zero_iff.mp fun ⟨t, ht⟩ ↦
+      rw [not_ne_iff.mp (mt Finsupp.sum_single_one_apply_ne_zero_iff.mp fun ⟨t, ht⟩ ↦
         hj.2 ⟨t, Finset.mem_univ t, ht⟩), dp_zero]
 
 /-- On product basis vectors, `toTensorPower ∘ fromTensorPower b` followed by the coordinate at a

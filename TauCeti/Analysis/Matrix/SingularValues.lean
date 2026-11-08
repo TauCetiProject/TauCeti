@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Basic
-public import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
+public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 
 /-!
 # Singular values and two-sided unitary matrix orbits
@@ -160,8 +160,8 @@ private theorem exists_unitary_mul_mul_unitary_eq_self_fin [NeZero n]
           (UnitaryGroup.det_isUnit Q).ne_zero] using hdet
       exact ⟨i, by rw [hi, mul_zero, zero_mul]⟩
     · exact ⟨0, by rw [mul_right_comm, h, one_mul]⟩
-  let D₁ : unitaryGroup (Fin n) 𝕜 := ⟨_, diagonal_update_one_mem_unitaryGroup ha i⟩
-  let D₂ : unitaryGroup (Fin n) 𝕜 := ⟨_, diagonal_update_one_mem_unitaryGroup hb i⟩
+  let D₁ : unitaryGroup (Fin n) 𝕜 := ⟨_, (diagonal_update_one_mem_unitary_iff (i := i)).mpr ha⟩
+  let D₂ : unitaryGroup (Fin n) 𝕜 := ⟨_, (diagonal_update_one_mem_unitary_iff (i := i)).mpr hb⟩
   have hD : (D₁ : Matrix (Fin n) (Fin n) 𝕜) * diagonal σ * D₂ = diagonal σ := by
     simp only [D₁, D₂, diagonal_mul_diagonal]
     congr 1

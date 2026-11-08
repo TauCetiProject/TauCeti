@@ -278,28 +278,36 @@ private theorem coe_zigzagArrowSumPiece_apply (u : V) (p : ℤ)
 
 variable [Module.Projective (nonisolatedZigzagQuotient k G) P]
 
+/-- The sum of the arrows into `u`, `⨁_{w ∼ u} e_w • P_n → e_u • P_{n+1}`, is injective on a graded
+projective generated in degree `n`. -/
+private theorem injective_zigzagArrowSumPiece (hns : ∀ i : V, ∃ j, G.Adj i j)
+    (hP : P.grading.IsGeneratedInDegree (nonisolatedZigzagQuotient k G) n) (u : V) :
+    Function.Injective (zigzagArrowSumPiece (P := P) u n) := by
+  classical
+  refine (injective_iff_map_eq_zero _).2 fun f hf => funext fun w₀ => Subtype.ext ?_
+  -- Multiplying by the reverse of the arrow from `w₀` isolates the `w₀` component.
+  have hf' := congrArg (fun z : ↥(zigzagVertexIdempotent k G u • P.grading.piece (n + 1)) =>
+    zigzagMk k G (ofArrow (arrow G (inDart u w₀).symm.adj)) • (z : P)) hf
+  simp only [coe_zigzagArrowSumPiece_apply, ZeroMemClass.coe_zero, smul_zero,
+    Finset.smul_sum, smul_smul] at hf'
+  rw [Finset.sum_eq_single w₀ (fun w _ hw => ?_) (by simp)] at hf'
+  · have hvol := zigzagMk_ofArrow_mul_ofArrow_symm k G (inDart u w₀).symm
+    rw [SimpleGraph.Dart.symm_symm] at hvol
+    rw [hvol] at hf'
+    exact eq_zero_of_zigzagVolume_smul_eq_zero hns hP (f w₀).2 hf'
+  · have hne : inDart u w ≠ (inDart u w₀).symm.symm := by
+      rw [SimpleGraph.Dart.symm_symm]
+      intro h
+      exact hw (Subtype.ext (congrArg (fun d : G.Dart => d.fst) h))
+    rw [zigzagMk_ofArrow_mul_ofArrow_of_ne k G hne, zero_smul]
+
 /-- On a graded projective generated in degree `n`, the sum of the arrows into `u` is a bijection
 `⨁_{w ∼ u} e_w • P_n → e_u • P_{n+1}`. -/
 private theorem bijective_zigzagArrowSumPiece (hns : ∀ i : V, ∃ j, G.Adj i j)
     (hP : P.grading.IsGeneratedInDegree (nonisolatedZigzagQuotient k G) n) (u : V) :
     Function.Bijective (zigzagArrowSumPiece (P := P) u n) := by
   classical
-  refine ⟨(injective_iff_map_eq_zero _).2 fun f hf => funext fun w₀ => Subtype.ext ?_, ?_⟩
-  · -- Multiplying by the reverse of the arrow from `w₀` isolates the `w₀` component.
-    have hf' := congrArg (fun z : ↥(zigzagVertexIdempotent k G u • P.grading.piece (n + 1)) =>
-      zigzagMk k G (ofArrow (arrow G (inDart u w₀).symm.adj)) • (z : P)) hf
-    simp only [coe_zigzagArrowSumPiece_apply, ZeroMemClass.coe_zero, smul_zero,
-      Finset.smul_sum, smul_smul] at hf'
-    rw [Finset.sum_eq_single w₀ (fun w _ hw => ?_) (by simp)] at hf'
-    · have hvol := zigzagMk_ofArrow_mul_ofArrow_symm k G (inDart u w₀).symm
-      rw [SimpleGraph.Dart.symm_symm] at hvol
-      rw [hvol] at hf'
-      exact eq_zero_of_zigzagVolume_smul_eq_zero hns hP (f w₀).2 hf'
-    · have hne : inDart u w ≠ (inDart u w₀).symm.symm := by
-        rw [SimpleGraph.Dart.symm_symm]
-        intro h
-        exact hw (Subtype.ext (congrArg (fun d : G.Dart => d.fst) h))
-      rw [zigzagMk_ofArrow_mul_ofArrow_of_ne k G hne, zero_smul]
+  refine ⟨injective_zigzagArrowSumPiece hns hP u, ?_⟩
   · rintro ⟨z, hz⟩
     rw [GradedModuleCat.mem_smul_grading_piece_iff
       (isIdempotentElem_zigzagVertexIdempotent k G _)

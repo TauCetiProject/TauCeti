@@ -257,6 +257,36 @@ private theorem norm_coeff_le_of_isDistinguished_one {g : washnitzerAlgebra (Opt
     · rw [hu, ← hGt, ← hcN]
       simpa [hone] using hlt _ hu0
 
+/-- The weighted bounds in `Y`-degrees `m ≠ s` behind radius selection. If the weights
+`w u ρ₁ ^ |u|` stay below `N` in `Y`-degrees above `s`, and `w u ρ₂ ^ |u|` below `N r` in
+`Y`-degrees below `s`, then `w (t, m) ρ ^ |t| r ^ m < N r ^ s` whenever `0 ≤ w`, `0 < N`,
+`0 < ρ`, `ρ ≤ ρ₂`, `ρ ≤ r ≤ ρ₁`, `1 < r` and `1 < ρ₂`. -/
+private theorem mul_pow_mul_pow_lt_of_ne {w : (Option σ →₀ ℕ) → ℝ} (hw : ∀ u, 0 ≤ w u)
+    {s m : ℕ} (hm : m ≠ s) {N ρ ρ₁ ρ₂ r : ℝ} (hN : 0 < N) (hρ0 : 0 < ρ) (hr : 1 < r)
+    (hρ₂ : 1 < ρ₂) (hrρ₁ : r ≤ ρ₁) (hρρ₂ : ρ ≤ ρ₂) (hρr : ρ ≤ r)
+    (h₁ : ∀ u, s < u none → w u * ρ₁ ^ u.degree < N)
+    (h₂ : ∀ u, u none < s → w u * ρ₂ ^ u.degree < N * r) (t : σ →₀ ℕ) :
+    w (t.optionElim m) * ρ ^ t.degree * r ^ m < N * r ^ s := by
+  rcases hm.lt_or_gt with hm | hm
+  · have hw' : w (t.optionElim m) * ρ ^ t.degree < N * r := by
+      refine lt_of_le_of_lt (mul_le_mul_of_nonneg_left ?_ (hw _)) (h₂ _ (by simpa using hm))
+      exact Finsupp.pow_degree_le_pow_degree_optionElim hρ0.le hρρ₂ hρ₂.le t m
+    calc w (t.optionElim m) * ρ ^ t.degree * r ^ m < N * r * r ^ m :=
+          mul_lt_mul_of_pos_right hw' (pow_pos (zero_lt_one.trans hr) _)
+      _ = N * r ^ (m + 1) := by ring
+      _ ≤ N * r ^ s := mul_le_mul_of_nonneg_left (pow_le_pow_right₀ hr.le hm) hN.le
+  · have hρ₁w : ρ ^ t.degree * r ^ m ≤ ρ₁ ^ (t.optionElim m).degree := by
+      rw [Finsupp.degree_optionElim, pow_add, mul_comm]
+      exact mul_le_mul (pow_le_pow_left₀ (zero_lt_one.trans hr).le hrρ₁ _)
+        (pow_le_pow_left₀ hρ0.le (hρr.trans hrρ₁) _) (by positivity)
+        (pow_nonneg (zero_le_one.trans (hr.le.trans hrρ₁)) _)
+    calc w (t.optionElim m) * ρ ^ t.degree * r ^ m
+        ≤ w (t.optionElim m) * ρ₁ ^ (t.optionElim m).degree := by
+          rw [mul_assoc]
+          exact mul_le_mul_of_nonneg_left hρ₁w (hw _)
+      _ < N := h₁ _ (by simpa using hm)
+      _ ≤ N * r ^ s := le_mul_of_one_le_right hN.le (one_le_pow₀ hr.le)
+
 /-- **Radius selection for distinguished overconvergent series.** Let `g` be an overconvergent
 series in the variables `Option σ` which, as a series in `Y = X none` over the Tate algebra in the
 variables `σ`, is distinguished of degree `s` at radius `1` with a unit coefficient `g_s`. Then for
@@ -324,26 +354,9 @@ theorem exists_isDistinguished_isUnit_of_isDistinguished_one {g : washnitzerAlge
       ‖coeff t (↑(PowerSeries.coeff m G) : MvPowerSeries σ K)‖ * t.prod (fun _ n ↦ ρ ^ n) *
         r ^ m < N * r ^ s := by
     rw [hGcoeff, Finsupp.prod_pow_eq_pow_degree]
-    set w := ‖coeff (t.optionElim m) (g : MvPowerSeries (Option σ) K)‖
-    rcases hm.lt_or_gt with hm | hm
-    · have hw : w * ρ ^ t.degree < N * r := by
-        refine lt_of_le_of_lt (mul_le_mul_of_nonneg_left ?_ (norm_nonneg _))
-          (by simpa using hρ₂S _ (by simpa using hm))
-        exact Finsupp.pow_degree_le_pow_degree_optionElim hρ0.le (min_le_left _ _) hρ₂.le t m
-      calc w * ρ ^ t.degree * r ^ m < N * r * r ^ m :=
-            mul_lt_mul_of_pos_right hw (pow_pos (zero_lt_one.trans hr) _)
-        _ = N * r ^ (m + 1) := by ring
-        _ ≤ N * r ^ s := mul_le_mul_of_nonneg_left (pow_le_pow_right₀ hr.le hm) hN.le
-    · have hρ₁w : ρ ^ t.degree * r ^ m ≤ ρ₁ ^ (t.optionElim m).degree := by
-        rw [Finsupp.degree_optionElim, pow_add, mul_comm]
-        exact mul_le_mul (pow_le_pow_left₀ (zero_lt_one.trans hr).le (min_le_left _ _) _)
-          (pow_le_pow_left₀ hρ0.le (hρr.trans (min_le_left _ _)) _) (by positivity)
-          (by positivity)
-      calc w * ρ ^ t.degree * r ^ m ≤ w * ρ₁ ^ (t.optionElim m).degree := by
-            rw [mul_assoc]
-            exact mul_le_mul_of_nonneg_left hρ₁w (norm_nonneg _)
-        _ < N := hρ₁S _ (Or.inl (by simpa using hm))
-        _ ≤ N * r ^ s := le_mul_of_one_le_right hN.le (one_le_pow₀ hr.le)
+    exact mul_pow_mul_pow_lt_of_ne (w := fun u ↦ ‖coeff u (g : MvPowerSeries (Option σ) K)‖)
+      (fun _ ↦ norm_nonneg _) hm hN hρ0 hr hρ₂ (min_le_left _ _) (min_le_left _ _) hρr
+      (fun u hu ↦ hρ₁S u (Or.inl hu)) (fun u hu ↦ hρ₂S u hu) t
   obtain ⟨hd, hunit⟩ := MvPowerSeries.isDistinguished_isUnit_of_norm_coeff_lt (zero_lt_one.trans hr)
     (by rw [hGs0]; exact norm_pos_iff.1 hN) (by rw [hGs0]; exact hs) (by rw [hGs0]; exact hm)
   exact ⟨ρ, this, r, hρ, hρr, min_le_right _ _,
