@@ -14,8 +14,9 @@ public import Mathlib.Probability.Moments.Variance
 
 The first moment of the normalized empirical spectrum is the normalized sum of diagonal
 entries. Its variance is the sum of the diagonal variances, with the appropriate scaling,
-when those entries are independent. Uniformly bounded diagonal variances yield convergence
-to zero in probability, even for arrays on varying probability spaces.
+when those entries are pairwise independent and square-integrable. Centered entries with
+uniformly bounded diagonal variances yield convergence to zero in probability, even for
+arrays on varying probability spaces.
 -/
 
 public section
@@ -54,7 +55,7 @@ variable [MeasurableSpace Ω] {P : Measure Ω}
 /-- The first spectral moment has the variance of the normalized diagonal sum. -/
 theorem variance_integral_spectralMeasure_wignerMatrix (n : ℕ)
     (hη : ∀ i : Fin (n + 1), MemLp (η i.val) 2 P)
-    (hindep : iIndepFun (fun i : Fin (n + 1) ↦ η i.val) P) :
+    (hindep : Pairwise fun i j : Fin (n + 1) ↦ IndepFun (η i.val) (η j.val) P) :
     Var[fun ω ↦ ∫ x, x ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
       (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ); P] =
       (((n + 1 : ℝ)⁻¹ * (Real.sqrt (n + 1 : ℝ))⁻¹) ^ 2) *
@@ -68,14 +69,14 @@ theorem variance_integral_spectralMeasure_wignerMatrix (n : ℕ)
   simp only [← Finset.sum_apply]
   rw [IndepFun.variance_sum (fun i _ ↦ hη i) (by
     intro i hi j hj hij
-    exact hindep.indepFun hij)]
+    exact hindep hij)]
   simp only [Finset.sum_apply]
 
 /-- Chebyshev's bound for the first spectral moment with centred diagonal entries. -/
 theorem measure_integral_spectralMeasure_wignerMatrix_ge [IsProbabilityMeasure P] (n : ℕ)
     (hη : ∀ i : Fin (n + 1), MemLp (η i.val) 2 P)
     (hcenter : ∀ i : Fin (n + 1), ∫ ω, η i.val ω ∂P = 0)
-    (hindep : iIndepFun (fun i : Fin (n + 1) ↦ η i.val) P)
+    (hindep : Pairwise fun i j : Fin (n + 1) ↦ IndepFun (η i.val) (η j.val) P)
     {ε : ℝ} (hε : 0 < ε) :
     P {ω | ε ≤ |∫ x, x ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
       (wignerMatrix_isHermitian ξ η ω (n + 1)) : Measure ℝ)|} ≤
@@ -111,7 +112,7 @@ theorem measure_integral_spectralMeasure_wignerMatrix_le [IsProbabilityMeasure P
     {V : ℝ}
     (hη : ∀ i : Fin (n + 1), MemLp (η i.val) 2 P)
     (hcenter : ∀ i : Fin (n + 1), ∫ ω, η i.val ω ∂P = 0)
-    (hindep : iIndepFun (fun i : Fin (n + 1) ↦ η i.val) P)
+    (hindep : Pairwise fun i j : Fin (n + 1) ↦ IndepFun (η i.val) (η j.val) P)
     (hvar : ∀ i : Fin (n + 1), Var[η i.val; P] ≤ V)
     {ε : ℝ} (hε : 0 < ε) :
     P {ω | ε ≤ |∫ x, x ∂((wignerMatrix ξ η (n + 1) ω).spectralMeasure
@@ -135,8 +136,8 @@ theorem measure_integral_spectralMeasure_wignerMatrix_le [IsProbabilityMeasure P
       simpa only [Finset.sum_const, Finset.card_univ, Fintype.card_fin,
         nsmul_eq_mul, Nat.cast_add, Nat.cast_one] using hscale
 
-/-- The first spectral moment tends to zero for a triangular array with uniformly bounded
-diagonal variances, allowing the probability space and entry laws to vary with the size. -/
+/-- The first spectral moment tends to zero for centered, pairwise independent,
+square-integrable diagonals with uniformly bounded variances, even on varying spaces. -/
 theorem tendsto_integral_spectralMeasure_wignerMatrix_probability
     {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω n)]
     {P : (n : ℕ) → Measure (Ω n)} [∀ n, IsProbabilityMeasure (P n)]
@@ -144,7 +145,8 @@ theorem tendsto_integral_spectralMeasure_wignerMatrix_probability
     {η : (n : ℕ) → ℕ → Ω n → ℝ} {V : ℝ}
     (hη : ∀ n (i : Fin (n + 1)), MemLp (η n i.val) 2 (P n))
     (hcenter : ∀ n (i : Fin (n + 1)), ∫ ω, η n i.val ω ∂P n = 0)
-    (hindep : ∀ n, iIndepFun (fun i : Fin (n + 1) ↦ η n i.val) (P n))
+    (hindep : ∀ n, Pairwise fun i j : Fin (n + 1) ↦
+      IndepFun (η n i.val) (η n j.val) (P n))
     (hvar : ∀ n (i : Fin (n + 1)), Var[η n i.val; P n] ≤ V)
     {ε : ℝ} (hε : 0 < ε) :
     Tendsto (fun n ↦ P n {ω | ε ≤
@@ -152,11 +154,7 @@ theorem tendsto_integral_spectralMeasure_wignerMatrix_probability
         (wignerMatrix_isHermitian (ξ n) (η n) ω (n + 1)) : Measure ℝ)|})
       atTop (𝓝 0) := by
   have hinv : Tendsto (fun n : ℕ ↦ (n + 1 : ℝ)⁻¹) atTop (𝓝 0) := by
-    have h : Tendsto (fun n : ℕ ↦ (n : ℝ)⁻¹) atTop (𝓝 0) :=
-      tendsto_inv_atTop_zero.comp tendsto_natCast_atTop_atTop
-    convert h.comp (tendsto_add_atTop_nat 1) using 1
-    ext n
-    simp
+    simpa only [one_div] using (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ))
   have hreal : Tendsto (fun n : ℕ ↦ (V / (n + 1 : ℝ) ^ 2) / ε ^ 2)
       atTop (𝓝 0) := by
     convert ((hinv.pow 2).const_mul V).div_const (ε ^ 2) using 1
