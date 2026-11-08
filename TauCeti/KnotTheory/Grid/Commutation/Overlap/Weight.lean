@@ -83,9 +83,8 @@ private theorem pentagonRectangleWeight_recutLeftEqLeft_aux
           t ∈ Grid.cIco (E.middle.toPerm E.rectangle.left) (E.middle.toPerm D.rectangle.right) then
         1 else 0) +
       if t ∈ Grid.cIco D.pentagon.bottom C.turnRow then 1 else 0 := by
-    have ha : C.column ∉ Grid.cIco (finRotate n C.column) D.rectangle.right := fun ha =>
-      Finset.disjoint_left.mp (Grid.disjoint_cIco_cIco_of_mem_cIoo hcol)
-        (Grid.self_mem_cIco_finRotate (Grid.ne_left_of_mem_cIoo hcol).symm) ha
+    have ha : C.column ∉ Grid.cIco (finRotate n C.column) D.rectangle.right := by
+      simpa only [finRotate_apply] using Grid.notMem_cIco_finRotate_left C.column D.rectangle.right
     have hb : finRotate n C.column ∈ Grid.cIco (finRotate n C.column) D.rectangle.right :=
       Grid.left_mem_cIco (Grid.ne_right_of_mem_cIoo hcol)
     have hord := (D.toRectangleDecomposition.cyclicOrder_of_isEmpty_of_left_eq_left hleft
