@@ -84,12 +84,15 @@ theorem tendsto_pow_comp_real_singleton_of_isAperiodic_of_lintegral_return_eq_to
     Tendsto (fun n : ℕ => ((κ ^ n) ∘ₘ ν).real {y}) atTop (𝓝 0) := by
   by_cases hr : (κ ∥ₖ κ).IsRecurrent (y, y)
   · let := hκ.isIrreducible_parallelComp hκ
-    have hret := κ.return_eq_one_of_parallelComp_return_eq_one κ (isRecurrent_iff.mp hr)
-    have hlim := HasLaw.tendsto_integral_visitCount_div_of_return_eq_one
-      (HasLaw.id (μ := markovChainLaw (Measure.dirac y) κ)) hret
+    have hm : κ.meanReturnTime y = ⊤ := by
+      rw [meanReturnTime_def, ← hy]
+      refine lintegral_congr fun x ↦ ?_
+      induction hittingAfter (fun n x => x n) {y} 1 x using WithTop.recTopCoe <;> rfl
+    have hlim := HasLaw.tendsto_integral_visitCount_div_markovChainLaw_dirac
+      (HasLaw.id (μ := markovChainLaw (Measure.dirac y) κ))
     apply κ.tendsto_pow_comp_real_singleton_of_parallelComp_isRecurrent hr _ ν
     simpa only [id_eq, integral_div, κ.integral_visitCount_succ_markovChainLaw_dirac,
-      hy, ENNReal.inv_top, ENNReal.toReal_zero] using hlim
+      hm, ENNReal.inv_top, ENNReal.toReal_zero] using hlim
   · exact κ.tendsto_pow_comp_apply_singleton_of_parallelComp_return_lt_one ν
       (isTransient_iff_return_probability_lt_one.mp (isTransient_iff.mpr hr))
 
