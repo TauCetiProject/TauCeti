@@ -31,7 +31,7 @@ finite-distance components into `ProbabilityMeasure` are continuous.
   the Wasserstein distance to a pushforward;
 * `TauCeti.levyProkhorovEDist_le_of_wassersteinEDist_lt_mul_self` — a quantitative comparison
   between the two extended distances;
-* `MeasureTheory.levyProkhorovEDist_map_le_of_edist_le` — a displacement bound for the
+* `MeasureTheory.Measure.levyProkhorovEDist_map_le_of_edist_le` — a displacement bound for the
   Lévy--Prokhorov distance to a pushforward;
 * `TauCeti.WassersteinSpace.continuous_toProbabilityMeasure` — Wasserstein convergence of
   finite-moment laws implies weak convergence;
@@ -112,7 +112,7 @@ end Comparison
 
 end TauCeti
 
-namespace MeasureTheory
+namespace MeasureTheory.Measure
 
 /-- If an almost-everywhere measurable map moves almost every point by at most `δ`, and
 `δ < ε²`, then its pushforward is at most `ε` away in the Lévy--Prokhorov extended distance. -/
@@ -126,7 +126,7 @@ theorem levyProkhorovEDist_map_le_of_edist_le
     (by norm_num : (1 : ℝ≥0∞) ≤ 1)
     ((TauCeti.wassersteinEDist_map_le_of_edist_le ρ hF hδ).trans_lt hε)
 
-end MeasureTheory
+end MeasureTheory.Measure
 
 namespace TauCeti
 

@@ -94,11 +94,11 @@ theorem exists_graphPlan_levyProkhorovEDist_lt (hπ : IsCoupling π μ ν)
     exact (ENNReal.ofReal_lt_ofReal_iff (by positivity : 0 < ε / 4 * (ε / 4))).2
       (by dsimp [r]; nlinarith [sq_pos_of_pos hε])
   have hdistleft : levyProkhorovEDist π (π.map F) ≤ ENNReal.ofReal (ε / 4) :=
-    levyProkhorovEDist_map_le_of_edist_le π hF.aemeasurable (Filter.Eventually.of_forall hdist)
+    π.levyProkhorovEDist_map_le_of_edist_le hF.aemeasurable (Filter.Eventually.of_forall hdist)
       hrbound
   have hdistright : levyProkhorovEDist (graphPlan T μ) ((graphPlan T μ).map F) ≤
       ENNReal.ofReal (ε / 4) :=
-    levyProkhorovEDist_map_le_of_edist_le (graphPlan T μ) hF.aemeasurable
+    (graphPlan T μ).levyProkhorovEDist_map_le_of_edist_le hF.aemeasurable
       (Filter.Eventually.of_forall hdist) hrbound
   refine ⟨T, hT, ?_⟩
   calc
