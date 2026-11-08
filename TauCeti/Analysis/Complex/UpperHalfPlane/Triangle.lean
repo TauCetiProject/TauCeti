@@ -532,9 +532,9 @@ theorem interiorAngle_add_add_le_pi_of_normal_form {d : ℝ} (hd : 0 < d) {C : �
   rw [← normSq_sub_circleCenter hBC, hBre] at hB
   -- the smaller region has the smaller area
   have hle := measure_mono (μ := volume) (idealRegionAbove_subset_of_normal_form hd hC)
-  rw [volume_idealRegionAbove (by linarith [hC₁.1, hC₁.2]) (by linarith [hI.2]) hC.le
+  rw [volume_idealRegionAbove (by linarith [hC₁.1, hC₁.2]) (by linarith [hI.2])
       (by linarith [hC₁.2]),
-    volume_idealRegionAbove (by linarith [hC₂.1, hC₂.2]) (by linarith [hB.2]) hC.le
+    volume_idealRegionAbove (by linarith [hC₂.1, hC₂.2]) (by linarith [hB.2])
       (by linarith [hC₂.2]),
     ENNReal.ofReal_le_ofReal_iff (sub_nonneg.2 (Real.arccos_le_arccos
       ((div_le_div_iff_of_pos_right (by linarith [hC₁.1, hC₁.2])).2 (by linarith)))), zero_sub,
@@ -599,8 +599,8 @@ theorem volume_triangle_I_geodesicLine_one {d : ℝ} (hd : 0 < d) {C : ℍ} (hC 
     exact Real.lt_sqrt_of_sq_lt (by rw [hn₂]; nlinarith [Real.exp_pos d])
   have h2b : C.re < c₂ + r₂ := sub_lt_iff_lt_add'.mp (abs_lt.mp (abs_re_sub_lt_sqrt_normSq C c₂)).2
   -- the areas of the two ideal-vertex regions
-  have hV₁ := volume_idealRegionAbove hr₁0 h1a.le hC.le h1b.le
-  have hV₂ := volume_idealRegionAbove hr₂0 h2a.le hC.le h2b.le
+  have hV₁ := volume_idealRegionAbove hr₁0 h1a.le h1b.le
+  have hV₂ := volume_idealRegionAbove hr₂0 h2a.le h2b.le
   have hsub := idealRegionAbove_subset_of_normal_form hd hC
   rw [← hB, ← hc₂, ← hr₂, ← hc₁, ← hr₁] at hsub
   -- the triangle and the difference of the two regions have the same area

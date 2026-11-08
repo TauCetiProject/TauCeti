@@ -28,7 +28,7 @@ angle `0`; in particular the ideal triangle with vertices `-1`, `1` and `∞` ha
 
 `idealRegionAbove c r a b` is the same region for the semicircle of centre `c` and radius
 `r > 0`, obtained from `idealRegion` by the affine map `z ↦ r z + c` (`idealRegionAbove_eq_smul`);
-its area is the same formula in the rescaled endpoints when `c - r ≤ a ≤ b ≤ c + r`
+its area is the same formula in the rescaled endpoints when `c - r ≤ a` and `b ≤ c + r`
 (`volume_idealRegionAbove`). The two one-variable integrals of the computation are
 `TauCeti.lintegral_Ioi_inv_sq` and `TauCeti.integral_one_div_sqrt_one_sub_sq`.
 
@@ -258,11 +258,18 @@ theorem idealRegionAbove_eq_smul {c r : ℝ} (hr : 0 < r) (a b : ℝ) :
     sub_le_sub_iff_right, le_div_iff₀ (by positivity), one_mul]
 
 /-- The area of a hyperbolic triangle with a vertex at infinity, for a general semicircle, for
-`c - r ≤ a ≤ b ≤ c + r`. -/
-theorem volume_idealRegionAbove {c r a b : ℝ} (hr : 0 < r) (ha : c - r ≤ a) (hab : a ≤ b)
-    (hb : b ≤ c + r) :
+`c - r ≤ a` and `b ≤ c + r`; for `b < a` the region is empty and both sides are `0`. -/
+theorem volume_idealRegionAbove {c r a b : ℝ} (hr : 0 < r) (ha : c - r ≤ a) (hb : b ≤ c + r) :
     volume (idealRegionAbove c r a b) =
       ENNReal.ofReal (Real.arccos ((a - c) / r) - Real.arccos ((b - c) / r)) := by
+  rcases le_or_gt a b with hab | hab
+  swap
+  · have hempty : idealRegionAbove c r a b = ∅ :=
+      Set.eq_empty_of_forall_notMem fun z hz ↦ by
+        have := (mem_idealRegionAbove_iff c r a b z).1 hz
+        linarith [this.1, this.2.1]
+    rw [hempty, measure_empty, eq_comm, ENNReal.ofReal_eq_zero, sub_nonpos]
+    exact Real.arccos_le_arccos ((div_le_div_iff_of_pos_right hr).2 (by linarith))
   rw [idealRegionAbove_eq_smul hr, MeasureTheory.measure_smul, volume_idealRegion]
   · rw [le_div_iff₀ hr]
     linarith
