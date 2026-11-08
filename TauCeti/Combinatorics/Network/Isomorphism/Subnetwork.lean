@@ -147,16 +147,8 @@ theorem subnetworkOrderIso_restrictArrows (e : N ≃ₙ N') (S : N.Subnetwork)
 theorem subnetworkOrderIso_deleteVerts (e : N ≃ₙ N') (S : N.Subnetwork) (A : Set V) :
     e.subnetworkOrderIso (S.deleteVerts A) =
       (e.subnetworkOrderIso S).deleteVerts (e.vertexEquiv '' A) := by
-  apply Subnetwork.ext
-  · simp only [subnetworkOrderIso_vertexSet, Subnetwork.vertexSet_deleteVerts,
-      Set.image_sdiff e.vertexEquiv.injective]
-  · ext a
-    obtain ⟨⟨x, y, a⟩, rfl⟩ := e.totalHomEquiv.surjective a
-    rw [subnetworkOrderIso_arrowSet, e.totalHomEquiv.injective.mem_set_image]
-    simp only [Subnetwork.mem_arrowSet_deleteVerts, subnetworkOrderIso_arrowSet,
-      e.totalHomEquiv.injective.mem_set_image]
-    rw [totalHomEquiv_apply]
-    simp
+  simpa only [Subnetwork.deleteVerts_eq_restrictVertices, Equiv.image_compl] using
+    e.subnetworkOrderIso_restrictVertices S Aᶜ
 
 /-- Arrow deletion commutes with transport, including loops and parallel arrows. -/
 @[simp]
