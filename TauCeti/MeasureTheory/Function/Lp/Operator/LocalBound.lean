@@ -70,13 +70,15 @@ theorem setLIntegral_enorm_apply_le_of_ae_eq_indicator (T : Lp E p μ →L[𝕜]
               gcongr
               exact Measure.restrict_le_self
 
-/-- If, moreover, `μ s ≤ D * μ t` and `t` has finite positive measure, then the integral of `‖T g‖`
+/-- If, moreover, `μ s ≤ D * μ t` and `t` has finite measure, then the integral of `‖T g‖`
 over `t` is at most `D^{1/p} ‖T‖ ‖f‖_∞ μ t`, since `(μ s)^{1/p} (μ t)^{1 - 1/p} ≤ D^{1/p} μ t`. -/
 theorem setLIntegral_enorm_apply_le_of_ae_eq_indicator_of_measure_le
     (T : Lp E p μ →L[𝕜] Lp F p μ) {f g : Lp E p μ} {s t : Set X} {D : ℝ≥0∞}
-    (hs : MeasurableSet s) (hg : g =ᵐ[μ] s.indicator f) (hD : μ s ≤ D * μ t) (h0 : μ t ≠ 0)
+    (hs : MeasurableSet s) (hg : g =ᵐ[μ] s.indicator f) (hD : μ s ≤ D * μ t)
     (htop : μ t ≠ ∞) :
     ∫⁻ x in t, ‖T g x‖ₑ ∂μ ≤ D ^ p.toReal⁻¹ * ‖T‖ₑ * eLpNorm f ∞ μ * μ t := by
+  rcases eq_or_ne (μ t) 0 with h0 | h0
+  · simp [Measure.restrict_eq_zero.2 h0]
   have hp : 0 ≤ p.toReal⁻¹ := inv_nonneg.2 ENNReal.toReal_nonneg
   have hsq : μ t ^ p.toReal⁻¹ * μ t ^ (1 - p.toReal⁻¹) = μ t := by
     rw [← ENNReal.rpow_add _ _ h0 htop, add_sub_cancel, ENNReal.rpow_one]

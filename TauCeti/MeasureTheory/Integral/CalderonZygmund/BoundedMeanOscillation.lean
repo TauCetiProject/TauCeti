@@ -225,7 +225,7 @@ theorem setLAverage_enorm_sub_setAverage_le_of_hormander_of_measure_closedBall_l
   obtain ⟨a, ha⟩ := exists_ae_enorm_apply_sub_le_of_hormander T hK hB hrep hM₂ hr hvan h0
   have hloc : ∫⁻ x in closedBall c r, ‖T (f - f₂) x‖ₑ ∂μ ≤
       D ^ (2⁻¹ : ℝ) * ‖T‖ₑ * M * μ (closedBall c r) :=
-    by simpa using T.setLIntegral_enorm_apply_le_of_ae_eq_indicator_of_measure_le h5 hf₁ hD h0 htop
+    by simpa using T.setLIntegral_enorm_apply_le_of_ae_eq_indicator_of_measure_le h5 hf₁ hD htop
   -- Comparing `T f = T f₁ + T f₂` with the constant `a` bounds its mean oscillation.
   have hconst : ⨍⁻ x in closedBall c r, ‖T f x - a‖ₑ ∂μ ≤ (D ^ (2⁻¹ : ℝ) * ‖T‖ₑ + B) * M := by
     rw [setLAverage_eq, ENNReal.div_le_iff h0 htop]
