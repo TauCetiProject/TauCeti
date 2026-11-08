@@ -794,25 +794,28 @@ theorem exists_eLpNorm_rieszPotential_le [FiniteDimensional ℝ E] (μ : Measure
   -- The strong-type maximal inequality, with the constant `K` of
   -- `eLpNorm_maximalFunction_le` inferred by unification.
   have hp' : 1 < (p : ℝ≥0∞) := by exact_mod_cast hp
-  obtain ⟨K, hK, hK_top, hK₀⟩ : ∃ K : ℝ≥0∞, (∀ f : E → F, AEMeasurable (‖f ·‖ₑ) μ →
-      eLpNorm (maximalFunction μ f) p μ ≤ K * eLpNorm f p μ) ∧ K ≠ ∞ ∧ K ≠ 0 :=
-    ⟨_, fun _ hf => eLpNorm_maximalFunction_le μ hf hp' ENNReal.coe_ne_top, by finiteness,
-      (ENNReal.rpow_pos (ENNReal.mul_pos (ENNReal.ofReal_pos.2 (by
-        simp only [ENNReal.coe_toReal]
-        exact div_pos (by positivity) (sub_pos.2 (by exact_mod_cast hp)))).ne' (by simp))
-        (by finiteness)).ne'⟩
+  obtain ⟨K, hK, hK_top⟩ : ∃ K : ℝ≥0∞, (∀ f : E → F, AEMeasurable (‖f ·‖ₑ) μ →
+      eLpNorm (maximalFunction μ f) p μ ≤ K * eLpNorm f p μ) ∧ K ≠ ∞ :=
+    ⟨_, fun _ hf => eLpNorm_maximalFunction_le μ hf hp' ENNReal.coe_ne_top, by finiteness⟩
+  -- Enlarging `K` to `max K 1` keeps the bound and makes the constant nonzero.
+  set K₁ := max K 1
+  have hK₁ (f : E → F) (hf : AEMeasurable (‖f ·‖ₑ) μ) :
+      eLpNorm (maximalFunction μ f) p μ ≤ K₁ * eLpNorm f p μ :=
+    (hK f hf).trans (by gcongr; exact le_max_left _ _)
+  have hK₁_top : K₁ ≠ ∞ := max_ne_top hK_top ENNReal.one_ne_top
+  have hK₁₀ : K₁ ≠ 0 := (zero_lt_one.trans_le (le_max_right _ _)).ne'
   set C₀ := hedbergConst μ α p
-  have hC : C₀ * K ^ (1 - α * p / finrank ℝ E) ≠ ∞ :=
+  have hC : C₀ * K₁ ^ (1 - α * p / finrank ℝ E) ≠ ∞ :=
     ENNReal.mul_ne_top (hedbergConst_ne_top hα hp.le hαp)
-      (ENNReal.rpow_ne_top_of_ne_zero hK₀ hK_top)
-  refine ⟨(C₀ * K ^ (1 - α * p / finrank ℝ E)).toNNReal, fun f => ?_⟩
+      (ENNReal.rpow_ne_top_of_ne_zero hK₁₀ hK₁_top)
+  refine ⟨(C₀ * K₁ ^ (1 - α * p / finrank ℝ E)).toNNReal, fun f => ?_⟩
   rw [ENNReal.coe_toNNReal hC]
   rcases eq_or_ne (eLpNorm f p μ) ∞ with hN | hN
   · rw [hN, ENNReal.mul_top (mul_ne_zero hedbergConst_ne_zero
-      (ENNReal.rpow_pos (pos_iff_ne_zero.2 hK₀) hK_top).ne')]
+      (ENNReal.rpow_pos (pos_iff_ne_zero.2 hK₁₀) hK₁_top).ne')]
     exact le_top
   have hf := aestronglyMeasurable_of_eLpNorm_ne_top hN
-  exact eLpNorm_rieszPotential_le_mul hα hp.le hαp hqp hq hf (hK f hf.enorm)
+  exact eLpNorm_rieszPotential_le_mul hα hp.le hαp hqp hq hf (hK₁ f hf.enorm)
 
 end WholeSpace
 
