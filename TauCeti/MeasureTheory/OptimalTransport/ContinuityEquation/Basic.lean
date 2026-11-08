@@ -484,8 +484,8 @@ theorem exists_isContinuityEquation_map {Ω : Type*} [MeasurableSpace Ω] (P : M
   -- Jensen's inequality for the conditional expectation, read on the time slices
   have hbound (p : ℝ) (hp : 1 ≤ p) : ∫⁻ t in Ioo a b, ∫⁻ x, ‖u (t, x)‖ₑ ^ p ∂P.map (γ · t) ≤
       ∫⁻ ω, (∫⁻ t in Ioo a b, ‖V ω t‖ₑ ^ p) ∂P := by
-    have h := MeasureTheory.lintegral_enorm_condExp_rpow_le (μ := ν) (f := W)
-      (m := MeasurableSpace.comap G inferInstance) hp
+    have h := MeasureTheory.lintegral_enorm_condExp_rpow_le (μ := ν)
+      (m := MeasurableSpace.comap G inferInstance) W hp
     rw [hcu] at h
     have hmap (t : ℝ) : ∫⁻ x, ‖u (t, x)‖ₑ ^ p ∂P.map (γ · t) = ∫⁻ ω, ‖u (t, γ ω t)‖ₑ ^ p ∂P :=
       lintegral_map ((hu.measurable.comp measurable_prodMk_left).enorm.pow_const _) (hγt t)

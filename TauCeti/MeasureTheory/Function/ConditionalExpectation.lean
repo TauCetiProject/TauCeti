@@ -71,18 +71,21 @@ namespace MeasureTheory
 Both conditional expectations are pinned down by their integrals over the sets `Z ⁻¹' E`, and each
 such integral is an integral of `fun p => f p.1` over the slab `univ ×ˢ E` against the joint law,
 which is where the hypothesis applies. Equal laws make `f ∘ Y` integrable exactly when `f ∘ Y'` is,
-so no integrability hypothesis is needed: when it fails both sides are `0`, as they are when `μ`
-trimmed to `σ(Z)` is not `σ`-finite. -/
+so no integrability or measurability hypothesis is needed: when it fails both sides are `0`, as
+they are when `Z` is not measurable or `μ` trimmed to `σ(Z)` is not `σ`-finite. -/
 theorem condExp_comp_ae_eq_of_pair_law_eq {Ω α β : Type*} [mΩ : MeasurableSpace Ω]
     [MeasurableSpace α] [mβ : MeasurableSpace β] {μ : Measure Ω}
-    (Y Y' : Ω → α) (Z : Ω → β) (hY : Measurable Y) (hY' : Measurable Y') (hZ : Measurable Z)
+    (Y Y' : Ω → α) (Z : Ω → β) (hY : Measurable Y) (hY' : Measurable Y')
     (hpair : μ.map (fun ω => (Y ω, Z ω)) = μ.map (fun ω => (Y' ω, Z ω)))
     {f : α → ℝ} (hf : Measurable f) :
     μ[fun ω => f (Y ω) | MeasurableSpace.comap Z mβ]
       =ᵐ[μ] μ[fun ω => f (Y' ω) | MeasurableSpace.comap Z mβ] := by
-  have hmZ_le : MeasurableSpace.comap Z mβ ≤ mΩ := by
-    rintro s ⟨E, hE, rfl⟩
-    exact hZ hE
+  -- For non-measurable `Z`, `comap Z mβ ≤ mΩ` fails and both conditional expectations are `0`.
+  by_cases hZ : Measurable Z
+  case neg =>
+    rw [condExp_of_not_le (mt measurable_iff_comap_le.2 hZ),
+      condExp_of_not_le (mt measurable_iff_comap_le.2 hZ)]
+  have hmZ_le : MeasurableSpace.comap Z mβ ≤ mΩ := measurable_iff_comap_le.1 hZ
   -- Without `σ`-finiteness of the trimmed measure both conditional expectations are `0`.
   by_cases hsf : SigmaFinite (μ.trim hmZ_le)
   case neg => rw [condExp_of_not_sigmaFinite hmZ_le hsf, condExp_of_not_sigmaFinite hmZ_le hsf]
@@ -169,7 +172,7 @@ are `0`. -/
 theorem condExp_ae_eq_integral_of_forall_zero_or_one {Ω : Type*} {m0 : MeasurableSpace Ω}
     {μ : Measure Ω} {m' : MeasurableSpace Ω} (hm' : m' ≤ m0)
     (htriv : ∀ s, MeasurableSet[m'] s → μ s = 0 ∨ μ s = 1) {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [CompleteSpace E] {f : Ω → E} :
+    [NormedSpace ℝ E] [CompleteSpace E] (f : Ω → E) :
     μ[f | m'] =ᵐ[μ] fun _ => ∫ x, f x ∂μ := by
   by_cases hf : Integrable f μ
   case neg => rw [condExp_of_not_integrable hf, integral_undef hf]; exact EventuallyEq.rfl
@@ -224,7 +227,7 @@ them. When `μ` trimmed to `m₂` is not `σ`-finite, neither is it trimmed to `
 are `0`. -/
 theorem condExp_ae_eq_of_le_of_le {Ω E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [CompleteSpace E] {m₁ m₂ m₃ m₀ : MeasurableSpace Ω} {μ : Measure Ω} {f : Ω → E}
-    (h₁₂ : m₁ ≤ m₂) (h₂₃ : m₂ ≤ m₃) (h₃ : m₃ ≤ m₀) [SigmaFinite (μ.trim h₃)]
+    (h₁₂ : m₁ ≤ m₂) (h₂₃ : m₂ ≤ m₃) (h₃ : m₃ ≤ m₀)
     (h : μ[f | m₃] =ᵐ[μ] μ[f | m₁]) :
     μ[f | m₂] =ᵐ[μ] μ[f | m₁] := by
   by_cases hσ : SigmaFinite (μ.trim (h₂₃.trans h₃))
@@ -233,6 +236,7 @@ theorem condExp_ae_eq_of_le_of_le {Ω E : Type*} [NormedAddCommGroup E] [NormedS
     have hσ₁ : ¬ SigmaFinite (μ.trim ((h₁₂.trans h₂₃).trans h₃)) := fun h' ↦
       hσ (sigmaFiniteTrim_mono (h₂₃.trans h₃) h₁₂)
     rw [condExp_of_not_sigmaFinite _ hσ, condExp_of_not_sigmaFinite _ hσ₁]
+  have : SigmaFinite (μ.trim h₃) := sigmaFiniteTrim_mono h₃ h₂₃
   calc
   μ[f | m₂] =ᵐ[μ] μ[μ[f | m₃] | m₂] := (condExp_condExp_of_le h₂₃ h₃).symm
   _ =ᵐ[μ] μ[μ[f | m₁] | m₂] := condExp_congr_ae h
@@ -286,7 +290,7 @@ theorem condExp_comap_ae_eq_of_injOn {Ω β E : Type*} [NormedAddCommGroup E] [N
 Mathlib's `integral_norm_condExp_rpow_le`, this needs no integrability of `‖f‖ ^ p`, nor any
 measurability of `f`. -/
 theorem lintegral_enorm_condExp_rpow_le {Ω E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [CompleteSpace E] {m m₀ : MeasurableSpace Ω} {μ : Measure Ω} {f : Ω → E}
+    [CompleteSpace E] {m m₀ : MeasurableSpace Ω} {μ : Measure Ω} (f : Ω → E)
     {p : ℝ} (hp : 1 ≤ p) :
     ∫⁻ ω, ‖(μ[f | m]) ω‖ₑ ^ p ∂μ ≤ ∫⁻ ω, ‖f ω‖ₑ ^ p ∂μ := by
   have hp₀ : 0 < p := by linarith
