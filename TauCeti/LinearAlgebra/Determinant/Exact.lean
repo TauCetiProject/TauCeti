@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Determinant.Line
 public import TauCeti.LinearAlgebra.ExteriorPower.ShortExact
+import TauCeti.LinearAlgebra.Dual.Contraction
 import TauCeti.LinearAlgebra.Exact
 import TauCeti.LinearAlgebra.ExteriorPower.Basis
 import TauCeti.RingTheory.PicardGroup.Contraction
@@ -42,6 +43,19 @@ Explicitly, for `u₁, …, uₐ` in `A`, `v₁, …, vₖ` in `B` with `k = dim
 `det D` takes the value `φ (g v₁ ∧ ⋯ ∧ g vₖ ∧ z₁ ∧ ⋯ ∧ z_d)` at `h z₁ ∧ ⋯ ∧ h z_d`
 (`TauCeti.detLineFourTermEquiv_tmul`). The wedge products of different lengths are compared as
 elements of the exterior algebra, so that no renumbering of the factors appears in the statement.
+Against a functional `ξ` normalized by `ξ (h z₁ ∧ ⋯ ∧ h z_d) = 1`, this says that `β ⊗ φ` goes to
+`φ γ • (α ⊗ ξ)` (`TauCeti.detLineFourTermEquiv_tmul_eq_smul_tmul`).
+
+A six-term exact sequence `0 → A₁ → A₂ → A₃ → A₄ → A₅ → A₆ → 0` of finite-dimensional vector
+spaces likewise gives the canonical isomorphism
+
+`det A₂ ⊗ (det A₅)^* ≃ (det A₁ ⊗ (det A₄)^*) ⊗ (det A₃ ⊗ (det A₆)^*)`
+
+(`TauCeti.detLineSixTermEquiv`). This is the shape of the kernel–cokernel sequence of a
+composition `g ∘ f`, where it identifies the determinant line of `g ∘ f` with the tensor product of
+those of `f` and `g` (`LinearMap.detLineCompEquiv`). The sequence breaks at the image of `A₃` in
+`A₄` into two four-term sequences, and the two copies of the determinant line of that image
+cancel.
 
 Two short exact sequences `0 → U → V → W → 0` and `0 → U' → V' → W → 0` with the same quotient
 identify `det V ⊗ (det V')^*` with `det U ⊗ (det U')^*` by cancelling `det W`
@@ -58,13 +72,17 @@ that enlarging the stabilization changes the identification of determinant lines
   sequence `0 → U → V → W → 0`, with its value `TauCeti.coe_detLineShortExactEquiv_tmul`.
 * `TauCeti.detLineFourTermEquiv`: the isomorphism `det B ⊗ (det C)^* ≃ det A ⊗ (det D)^*` of a
   four-term exact sequence `0 → A → B → C → D → 0`.
-* `TauCeti.detLineFourTermEquiv_tmul`: its value on exterior products, which determine it by
-  `TauCeti.rid_lTensor_eval_injective`.
+* `TauCeti.detLineFourTermEquiv_tmul`, `TauCeti.detLineFourTermEquiv_tmul_eq_smul_tmul`: its value
+  on exterior products, which determine it by `TauCeti.rid_lTensor_eval_injective`.
 * `TauCeti.detLineShortExactCancelEquiv`: the isomorphism `det V ⊗ (det V')^* ≃ det U ⊗ (det U')^*`
   of two short exact sequences with the same quotient, with its value
   `TauCeti.detLineShortExactCancelEquiv_tmul`.
 * `TauCeti.detLineFourTermEquiv_detLineShortExactCancelEquiv`: the four-term isomorphisms of two
   exact sequences with enlarged middle terms agree up to sign through this cancellation.
+* `TauCeti.detLineSixTermEquiv`: the isomorphism
+  `det A₂ ⊗ (det A₅)^* ≃ (det A₁ ⊗ (det A₄)^*) ⊗ (det A₃ ⊗ (det A₆)^*)` of a six-term exact
+  sequence `0 → A₁ → A₂ → A₃ → A₄ → A₅ → A₆ → 0`, with its value
+  `TauCeti.detLineSixTermEquiv_tmul`.
 
 ## References
 
@@ -168,6 +186,8 @@ theorem detLineShortExactCancelEquiv_tmul (a : detLine K U) (w : detLine K W)
 
 end CommonQuotient
 
+section FourTerm
+
 variable {A B C D : Type*} [AddCommGroup A] [Module K A] [AddCommGroup B] [Module K B]
   [AddCommGroup C] [Module K C] [AddCommGroup D] [Module K D]
   {f : A →ₗ[K] B} {g : B →ₗ[K] C} {h : C →ₗ[K] D}
@@ -223,6 +243,24 @@ theorem detLineFourTermEquiv_tmul (u : Fin (finrank K A) → A)
     LinearEquiv.lTensor_tmul, TensorProduct.assoc_tmul, LinearMap.lTensor_tmul,
     TensorProduct.rid_tmul, Dual.eval_apply, Module.Invertible.leftCancelDualEquiv_tmul_apply,
     LinearEquiv.apply_symm_apply, LinearEquiv.dualMap_apply, hγ']
+
+/-- **The value of `TauCeti.detLineFourTermEquiv` against a normalized functional.** With `u`, `v`,
+`z`, `β` and `γ` as in `TauCeti.detLineFourTermEquiv_tmul`, let `ξ` be a functional on `det D`
+taking the value `1` at the exterior product of `h ∘ z`. Then the isomorphism sends `β ⊗ φ` to
+`φ γ • (α ⊗ ξ)`, with `α` the exterior product of `u`. -/
+theorem detLineFourTermEquiv_tmul_eq_smul_tmul (u : Fin (finrank K A) → A)
+    (v : Fin (finrank K (LinearMap.range g)) → B) (z : Fin (finrank K D) → C)
+    {β : detLine K B} (hβ : (β : ExteriorAlgebra K B) =
+      ExteriorAlgebra.ιMulti K _ (Fin.append (f ∘ u) v))
+    {γ : detLine K C} (hγ : (γ : ExteriorAlgebra K C) =
+      ExteriorAlgebra.ιMulti K _ (Fin.append (g ∘ v) z))
+    (φ : Dual K (detLine K C)) {ξ : Dual K (detLine K D)}
+    (hξ : ξ (exteriorPower.ιMulti K _ (h ∘ z)) = 1) :
+    detLineFourTermEquiv hf hfg hgh hh (β ⊗ₜ φ) = φ γ • (exteriorPower.ιMulti K _ u ⊗ₜ ξ) := by
+  have : FiniteDimensional K D := Module.Finite.of_surjective h hh
+  rw [← rid_lTensor_eval_tmul_eq_self_of_finrank_eq_one (finrank_detLine K D) hξ
+    (detLineFourTermEquiv hf hfg hgh hh (β ⊗ₜ φ)), detLineFourTermEquiv_tmul hf hfg hgh hh u v z hβ
+    hγ φ, TensorProduct.smul_tmul']
 
 /-- Pairing the dual factor with a nonzero element `ω` of a line `L` is injective on `M ⊗ L^*`.
 With `TauCeti.detLineFourTermEquiv_tmul`, taking `L = det D` and `ω` the exterior product of the
@@ -368,5 +406,118 @@ theorem detLineFourTermEquiv_detLineShortExactCancelEquiv
   ring
 
 end ChangeOfMiddle
+
+end FourTerm
+
+section SixTerm
+
+variable {A₁ A₂ A₃ A₄ A₅ A₆ : Type*} [AddCommGroup A₁] [Module K A₁] [AddCommGroup A₂]
+  [Module K A₂] [AddCommGroup A₃] [Module K A₃] [AddCommGroup A₄] [Module K A₄]
+  [AddCommGroup A₅] [Module K A₅] [AddCommGroup A₆] [Module K A₆]
+  {f₁ : A₁ →ₗ[K] A₂} {f₂ : A₂ →ₗ[K] A₃} {f₃ : A₃ →ₗ[K] A₄} {f₄ : A₄ →ₗ[K] A₅}
+  {f₅ : A₅ →ₗ[K] A₆} [FiniteDimensional K A₁] [FiniteDimensional K A₃] [FiniteDimensional K A₅]
+  (hf₁ : Function.Injective f₁) (h₁₂ : Function.Exact f₁ f₂) (h₂₃ : Function.Exact f₂ f₃)
+  (h₃₄ : Function.Exact f₃ f₄) (h₄₅ : Function.Exact f₄ f₅) (hf₅ : Function.Surjective f₅)
+
+/-- **The determinant lines of a six-term exact sequence.** For an exact sequence
+`0 → A₁ → A₂ → A₃ → A₄ → A₅ → A₆ → 0` of finite-dimensional vector spaces, with maps `f₁`, …,
+`f₅`, the canonical isomorphism
+
+`det A₂ ⊗ (det A₅)^* ≃ (det A₁ ⊗ (det A₄)^*) ⊗ (det A₃ ⊗ (det A₆)^*)`.
+
+This is the shape taken by the kernel–cokernel sequence of a composition, where it compares the
+determinant line of a composite with the determinant lines of its factors. The sequence breaks at
+the image `range f₃` into the four-term sequences `0 → A₁ → A₂ → A₃ → range f₃ → 0` and
+`0 → range f₃ → A₄ → A₅ → A₆ → 0`, each identified by `TauCeti.detLineFourTermEquiv`, and the two
+copies of `det (range f₃)` cancel. Its value on exterior products is
+`TauCeti.detLineSixTermEquiv_tmul`. Only `A₁`, `A₃` and `A₅` are assumed finite-dimensional,
+since the others then are by exactness. -/
+def detLineSixTermEquiv :
+    detLine K A₂ ⊗[K] Dual K (detLine K A₅) ≃ₗ[K]
+      (detLine K A₁ ⊗[K] Dual K (detLine K A₄)) ⊗[K]
+        (detLine K A₃ ⊗[K] Dual K (detLine K A₆)) :=
+  have : FiniteDimensional K A₄ := finiteDimensional_of_exact h₃₄
+  open Module.Invertible in
+  (rightCancelEquiv _ (linearEquiv K (detLine K A₃))).symm.rTensor _ ≪≫ₗ
+    (leftCancelEquiv _ (linearEquiv K (detLine K A₄))).symm.lTensor _ ≪≫ₗ
+    TensorProduct.congr
+      ((detLineFourTermEquiv hf₁ h₁₂ h₂₃.rangeRestrict f₃.surjective_rangeRestrict).rTensor _)
+      ((detLineFourTermEquiv (LinearMap.range f₃).injective_subtype h₃₄.range_subtype h₄₅
+        hf₅).lTensor _) ≪≫ₗ
+    TensorProduct.tensorTensorTensorComm K _ _ _ _ ≪≫ₗ
+    TensorProduct.congr (TensorProduct.rightComm K _ _ _) (TensorProduct.leftComm K _ _ _) ≪≫ₗ
+    TensorProduct.assoc K _ _ _ ≪≫ₗ
+    (leftCancelEquiv _ (linearEquiv K (detLine K (LinearMap.range f₃)))).lTensor _
+
+/-- **The value of `TauCeti.detLineSixTermEquiv` on exterior products.** Let `u` be a family of
+`dim A₁` vectors of `A₁`, and `v`, `w`, `x` families of `dim (range fᵢ)` vectors of `A₂`, `A₃`,
+`A₄` for `i = 2, 3, 4`, and `y` a family of `dim A₆` vectors of `A₅`. Let `β`, `γ`, `δ` and `ε` be
+the exterior products of `f₁ ∘ u` followed by `v`, of `f₂ ∘ v` followed by `w`, of `f₃ ∘ w`
+followed by `x`, and of `f₄ ∘ x` followed by `y`. If `ψ` takes the value `1` at `δ` and `χ` takes
+the value `1` at the exterior product of `f₅ ∘ y`, then the isomorphism sends `β ⊗ φ` to
+`φ ε • ((α ⊗ ψ) ⊗ (γ ⊗ χ))`, with `α` the exterior product of `u`. -/
+theorem detLineSixTermEquiv_tmul (u : Fin (finrank K A₁) → A₁)
+    (v : Fin (finrank K (LinearMap.range f₂)) → A₂) (w : Fin (finrank K (LinearMap.range f₃)) → A₃)
+    (x : Fin (finrank K (LinearMap.range f₄)) → A₄) (y : Fin (finrank K A₆) → A₅)
+    {β : detLine K A₂} (hβ : (β : ExteriorAlgebra K A₂) =
+      ExteriorAlgebra.ιMulti K _ (Fin.append (f₁ ∘ u) v))
+    {γ : detLine K A₃} (hγ : (γ : ExteriorAlgebra K A₃) =
+      ExteriorAlgebra.ιMulti K _ (Fin.append (f₂ ∘ v) w))
+    {δ : detLine K A₄} (hδ : (δ : ExteriorAlgebra K A₄) =
+      ExteriorAlgebra.ιMulti K _ (Fin.append (f₃ ∘ w) x))
+    {ε : detLine K A₅} (hε : (ε : ExteriorAlgebra K A₅) =
+      ExteriorAlgebra.ιMulti K _ (Fin.append (f₄ ∘ x) y))
+    (φ : Dual K (detLine K A₅)) {ψ : Dual K (detLine K A₄)} (hψ : ψ δ = 1)
+    {χ : Dual K (detLine K A₆)} (hχ : χ (exteriorPower.ιMulti K _ (f₅ ∘ y)) = 1) :
+    detLineSixTermEquiv hf₁ h₁₂ h₂₃ h₃₄ h₄₅ hf₅ (β ⊗ₜ φ) =
+      φ ε • ((exteriorPower.ιMulti K _ u ⊗ₜ ψ) ⊗ₜ (γ ⊗ₜ χ)) := by
+  have : FiniteDimensional K A₄ := finiteDimensional_of_exact h₃₄
+  have : FiniteDimensional K A₆ := Module.Finite.of_surjective f₅ hf₅
+  -- Normalized pairs `γ₀' γ₀ = 1` in `det A₃` and `ι₀' ι₀ = 1` in `det (range f₃)`.
+  have : Nontrivial (detLine K A₃) := Module.nontrivial_of_finrank_eq_succ (finrank_detLine K A₃)
+  obtain ⟨γ₀, hγ₀⟩ := exists_ne (0 : detLine K A₃)
+  obtain ⟨γ₀', hγ₀'⟩ := Module.Projective.exists_dual_eq_one K hγ₀
+  have : Nontrivial (detLine K (LinearMap.range f₃)) :=
+    Module.nontrivial_of_finrank_eq_succ (finrank_detLine K _)
+  obtain ⟨ι₀, hι₀⟩ := exists_ne (0 : detLine K (LinearMap.range f₃))
+  obtain ⟨ι₀', hι₀'⟩ := Module.Projective.exists_dual_eq_one K hι₀
+  -- The first four-term sequence, written against `ι₀'`.
+  obtain ⟨X, hE₁⟩ : ∃ X, detLineFourTermEquiv hf₁ h₁₂ h₂₃.rangeRestrict
+      f₃.surjective_rangeRestrict (β ⊗ₜ γ₀') = X ⊗ₜ ι₀' :=
+    ⟨_, (rid_lTensor_eval_tmul_eq_self_of_finrank_eq_one (finrank_detLine K _) hι₀' _).symm⟩
+  have hX : ι₀' (exteriorPower.ιMulti K _ (f₃.rangeRestrict ∘ w)) • X =
+      γ₀' γ • exteriorPower.ιMulti K _ u := by
+    have := detLineFourTermEquiv_tmul hf₁ h₁₂ h₂₃.rangeRestrict f₃.surjective_rangeRestrict u v w
+      hβ hγ γ₀'
+    rwa [hE₁, LinearMap.lTensor_tmul, TensorProduct.rid_tmul, Dual.eval_apply] at this
+  -- The second four-term sequence, written against `χ`.
+  have hE₂ := detLineFourTermEquiv_tmul_eq_smul_tmul (LinearMap.range f₃).injective_subtype
+    h₃₄.range_subtype h₄₅ hf₅ (f₃.rangeRestrict ∘ w) x y (β := δ)
+    (by rw [hδ, ← Function.comp_assoc, ← LinearMap.coe_comp, LinearMap.subtype_comp_rangeRestrict])
+    hε φ hχ
+  have h₁ : (Module.Invertible.rightCancelEquiv _
+      (Module.Invertible.linearEquiv K (detLine K A₃))).symm β = (β ⊗ₜ γ₀') ⊗ₜ γ₀ := by
+    rw [LinearEquiv.symm_apply_eq]
+    simp [hγ₀']
+  have h₂ : (Module.Invertible.leftCancelEquiv _
+      (Module.Invertible.linearEquiv K (detLine K A₄))).symm φ = ψ ⊗ₜ (δ ⊗ₜ φ) := by
+    rw [LinearEquiv.symm_apply_eq]
+    simp [hψ]
+  simp only [detLineSixTermEquiv, LinearEquiv.trans_apply, LinearEquiv.rTensor_tmul,
+    LinearEquiv.lTensor_tmul, h₁, h₂, TensorProduct.congr_tmul, hE₁, hE₂]
+  simp only [TensorProduct.tmul_smul, TensorProduct.tensorTensorTensorComm_tmul,
+    TensorProduct.rightComm_tmul, TensorProduct.leftComm_tmul, TensorProduct.assoc_tmul,
+    TensorProduct.assoc_symm_tmul, LinearEquiv.rTensor_tmul, TensorProduct.lid_tmul,
+    Module.Invertible.linearEquiv_tmul, map_smul, LinearEquiv.trans_apply,
+    LinearEquiv.lTensor_tmul, TensorProduct.congr_tmul]
+  -- Cancel the scalars: `ι₀' ι • X = γ₀' γ • α` and `γ₀' γ • γ₀ = γ`.
+  rw [← apply_smul_eq_self_of_finrank_eq_one (finrank_detLine K A₃) hγ₀' γ]
+  simp only [TensorProduct.tmul_smul, ← TensorProduct.smul_tmul', smul_smul]
+  rw [mul_smul, mul_smul]
+  congr 1
+  rw [TensorProduct.smul_tmul', TensorProduct.smul_tmul', hX, TensorProduct.smul_tmul',
+    TensorProduct.smul_tmul']
+
+end SixTerm
 
 end TauCeti
