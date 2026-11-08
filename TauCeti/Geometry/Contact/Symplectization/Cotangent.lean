@@ -30,11 +30,11 @@ symplectic subspaces of `T*M`
 (`TauCeti.SmoothForm.IsContactForm.injective_mfderiv_symplectizationToCotangent`,
 `TauCeti.SmoothForm.IsContactForm.hasSymplecticTangentImages_symplectizationToCotangent`).
 
-For a nowhere vanishing `α`, the map `ι_α` is injective, and its image is the half
-`{c α_x | c > 0}` of the annihilator line `(ker α)⁰ ⊂ T*M`. The other half is the image of
-`ι_(-α)`, the symplectization of the oppositely cooriented form; together the two images are
-exactly the nonzero covectors vanishing on `ker α`
-(`TauCeti.SmoothForm.mem_range_symplectizationToCotangent_or_neg_iff`), and they are disjoint. Since
+The image of `ι_α` is the half `{c α_x | c > 0}` of the annihilator line `(ker α)⁰ ⊂ T*M`. The
+other half is the image of `ι_(-α)`, the symplectization of the oppositely cooriented form; over
+each point where `α` does not vanish, the two images together are exactly the nonzero covectors
+vanishing on `ker α` (`TauCeti.SmoothForm.mem_range_symplectizationToCotangent_or_neg_iff`). For a
+nowhere vanishing `α`, the map `ι_α` is injective and the two images are disjoint. Since
 both maps are injective, two copies of `ℝ × M` parametrize the punctured annihilator line of the
 contact structure `ker α` bijectively: this is the trivialization by `α` of its punctured dual
 contact line.
@@ -46,10 +46,8 @@ diffeomorphism with `F^* α' = f α`. Where `f > 0`, the cotangent lift of `F` r
 the negative half, by the lift for `-α'` and `-f`
 (`Diffeomorph.cotangent_symplectizationToCotangent_of_neg`). Since cotangent lifts preserve `λ`,
 these lifts preserve `θ`, including for coorientation-reversing contactomorphisms
-(`TauCeti.SmoothForm.mpullback_symplectizationLift_neg_symplectization`).
-
-The strict lift has no free constant: a map `(t, x) ↦ (φ(t, x), F(x))` covering `F` pulls
-`eᵗ α'` back to `eᵗ α` only when `f > 0` and `φ(t, x) = t - log f(x)`
+(`TauCeti.SmoothForm.mpullback_symplectizationLift_neg_symplectization`). For a nowhere vanishing
+`α`, they are the only lifts of `F` of the form `(t, x) ↦ (φ(t, x), F(x))` preserving `θ`
 (`TauCeti.SmoothForm.eq_symplectizationLift_of_mpullback_symplectization_eq`).
 
 ## Main definitions
@@ -67,8 +65,6 @@ The strict lift has no free constant: a map `(t, x) ↦ (φ(t, x), F(x))` coveri
 * `Diffeomorph.cotangent_symplectizationToCotangent`,
   `Diffeomorph.cotangent_symplectizationToCotangent_of_neg`: cotangent lifts of contactomorphisms
   restrict to the lifts of the symplectizations, on either half.
-* `TauCeti.SmoothForm.eq_symplectizationLift_of_mpullback_symplectization_eq`: uniqueness of the
-  strict lift.
 
 ## References
 
@@ -194,18 +190,12 @@ theorem IsContactForm.hasSymplecticTangentImages_symplectizationToCotangent
 
 /-! ### The two halves of the annihilator line -/
 
-/-- A one-form which does not vanish at `x` takes a nonzero value on some tangent vector at `x`. -/
-private theorem exists_apply_ne_zero {α : SmoothForm I M ℝ 1} {x : M} (hα : α.1 x ≠ 0) :
-    ∃ v : TangentSpace I x, α.1 x ![v] ≠ 0 := by
-  by_contra! h
-  exact hα (RoughForm.ker_eq_top_iff.1 (eq_top_iff.2 fun v _ ↦ RoughForm.mem_ker.2 (h v)))
-
 /-- For a nowhere vanishing one-form `α`, the map `(t, x) ↦ eᵗ α_x` is injective. -/
 theorem symplectizationToCotangent_injective {α : SmoothForm I M ℝ 1} (hα : ∀ x, α.1 x ≠ 0) :
     Function.Injective α.symplectizationToCotangent := by
   rintro ⟨t, x⟩ ⟨s, y⟩ h
   obtain rfl : x = y := congrArg TotalSpace.proj h
-  obtain ⟨v, hv⟩ := exists_apply_ne_zero (hα x)
+  obtain ⟨v, hv⟩ := RoughForm.exists_apply_ne_zero (hα x)
   have hv' := congrArg (fun z : CotangentBundle I M ↦ z.2 v) h
   simp only [symplectizationToCotangent_snd_apply] at hv'
   rw [mul_left_inj' hv, Real.exp_eq_exp] at hv'
@@ -250,129 +240,45 @@ theorem disjoint_range_symplectizationToCotangent_neg {α : SmoothForm I M ℝ 1
   refine Set.disjoint_left.2 fun z hz hz' ↦ ?_
   obtain ⟨c, hc, hzc⟩ := mem_range_symplectizationToCotangent_iff.1 hz
   obtain ⟨d, hd, hzd⟩ := mem_range_symplectizationToCotangent_iff.1 hz'
-  obtain ⟨v, hv⟩ := exists_apply_ne_zero (hα z.proj)
+  obtain ⟨v, hv⟩ := RoughForm.exists_apply_ne_zero (hα z.proj)
   have h : (c + d) * α.1 z.proj ![v] = 0 := by
     have h := (hzc v).symm.trans (hzd v)
     simp only [NegMemClass.coe_neg, Pi.neg_apply, ContinuousAlternatingMap.coe_neg] at h
     linear_combination h
   exact (mul_ne_zero (add_pos hc hd).ne' hv) h
 
-/-- **The punctured annihilator line.** For a nowhere vanishing one-form `α`, the images of
-`(t, x) ↦ eᵗ α_x` and of `(t, x) ↦ eᵗ (-α)_x` together consist exactly of the nonzero covectors
-vanishing on `ker α`. -/
+/-- **The punctured annihilator line.** At a point where a one-form `α` does not vanish, the
+images of `(t, x) ↦ eᵗ α_x` and of `(t, x) ↦ eᵗ (-α)_x` together consist exactly of the nonzero
+covectors vanishing on `ker α`. -/
 theorem mem_range_symplectizationToCotangent_or_neg_iff {α : SmoothForm I M ℝ 1}
-    (hα : ∀ x, α.1 x ≠ 0) {z : CotangentBundle I M} :
+    {z : CotangentBundle I M} (hα : α.1 z.proj ≠ 0) :
     z ∈ Set.range α.symplectizationToCotangent ∨ z ∈ Set.range (-α).symplectizationToCotangent ↔
       z.2 ≠ 0 ∧ ∀ v, α.1 z.proj ![v] = 0 → z.2 v = 0 := by
   rw [mem_range_or_neg_iff_exists_ne_zero]
-  obtain ⟨v₀, hv₀⟩ := exists_apply_ne_zero (hα z.proj)
   constructor
   · rintro ⟨c, hc, hz⟩
+    obtain ⟨v₀, hv₀⟩ := RoughForm.exists_apply_ne_zero hα
     refine ⟨fun h0 ↦ ?_, fun v hv ↦ by rw [hz, hv, mul_zero]⟩
     have := hz v₀
     rw [h0, zero_apply] at this
     exact mul_ne_zero hc hv₀ this.symm
   · rintro ⟨hz0, hz⟩
-    -- The vector `α(v₀) v - α(v) v₀` lies in `ker α`, so `z` vanishes on it.
-    have key (v : TangentSpace I z.proj) :
-        z.2 v * α.1 z.proj ![v₀] = z.2 v₀ * α.1 z.proj ![v] := by
-      have hw := hz (α.1 z.proj ![v₀] • v - α.1 z.proj ![v] • v₀) (by
-        rw [← degreeOneEquiv_apply_apply_vec, map_sub, map_smul, map_smul,
-          degreeOneEquiv_apply_apply_vec, degreeOneEquiv_apply_apply_vec, smul_eq_mul, smul_eq_mul]
-        ring)
-      rw [map_sub, map_smul, map_smul, smul_eq_mul, smul_eq_mul] at hw
-      linear_combination hw
-    refine ⟨z.2 v₀ / α.1 z.proj ![v₀], div_ne_zero (fun h ↦ hz0 ?_) hv₀, fun v ↦ ?_⟩
-    · refine ContinuousLinearMap.ext fun v ↦ ?_
-      have hv := key v
-      rw [h, zero_mul] at hv
-      exact (mul_eq_zero.1 hv).resolve_right hv₀
-    · rw [div_mul_eq_mul_div, eq_div_iff hv₀]
-      exact key v
-
-end SmoothForm
-
-/-! ### Lifts of contactomorphisms -/
-
-variable {E H M E' H' M' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
-  {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M'] [ChartedSpace H' M'] [IsManifold I' ∞ M']
-
-namespace SmoothForm
-
-/-- **Lifts of coorientation-reversing maps.** If a smooth map `F : M → M'` pulls a one-form `α'`
-back to `f α`, for a smooth negative function `f`, then the lift
-`(t, x) ↦ (t - log(-f(x)), F(x))` pulls the symplectization form `eᵗ (-α')` of the oppositely
-cooriented form back to `eᵗ α`. It interchanges the two halves of the annihilator lines. -/
-theorem mpullback_symplectizationLift_neg_symplectization {F : M → M'}
-    (hF : ContMDiff I I' ∞ F) {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hf₀ : ∀ x, f x < 0)
-    {α : SmoothForm I M ℝ 1} {α' : SmoothForm I' M' ℝ 1}
-    (hα : ∀ x, (mpullback F hF α').1 x = f x • α.1 x) :
-    mpullback (symplectizationLift F (-f))
-        (contMDiff_symplectizationLift hF hf.neg fun x ↦ neg_ne_zero.2 (hf₀ x).ne)
-        (-α').symplectization =
-      α.symplectization :=
-  mpullback_symplectizationLift_symplectization hF hf.neg (fun x ↦ neg_pos.2 (hf₀ x))
-    fun x ↦ by simp only [map_neg, NegMemClass.coe_neg, Pi.neg_apply, neg_smul, hα x]
-
-/-- **Uniqueness of the strict lift.** Let a smooth map `F : M → M'` pull a one-form `α'` back to
-`f α`, where `α` vanishes nowhere. If a smooth map of the form `(t, x) ↦ (φ(t, x), F(x))` pulls the
-symplectization form `eᵗ α'` back to `eᵗ α`, then `f` is positive and the map is the lift
-`(t, x) ↦ (t - log f(x), F(x))`. In particular a strict lift of a contactomorphism to the
-symplectizations has no free additive constant. -/
-theorem eq_symplectizationLift_of_mpullback_symplectization_eq {F : M → M'}
-    (hF : ContMDiff I I' ∞ F) {f : M → ℝ} {α : SmoothForm I M ℝ 1} {α' : SmoothForm I' M' ℝ 1}
-    (hα : ∀ x, (mpullback F hF α').1 x = f x • α.1 x) (hα₀ : ∀ x, α.1 x ≠ 0)
-    {φ : ℝ × M → ℝ} (hφ : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) ∞ φ)
-    (h : mpullback (fun p ↦ (φ p, F p.2)) (hφ.prodMk (hF.comp contMDiff_snd))
-        α'.symplectization = α.symplectization) :
-    (∀ x, 0 < f x) ∧ (fun p ↦ (φ p, F p.2)) = symplectizationLift F f := by
-  -- The second component of the map is `F ∘ Prod.snd`, so it pulls `α'` back to `f α`.
-  have hcomp : mpullback (fun p ↦ (φ p, F p.2)) (hφ.prodMk (hF.comp contMDiff_snd))
-      (mpullback Prod.snd contMDiff_snd α') =
-        mpullback Prod.snd contMDiff_snd (mpullback F hF α') := by
-    rw [mpullback_mpullback, mpullback_mpullback]
-    rfl
-  have hsnd : (mpullback (Prod.snd : ℝ × M → M) (contMDiff_snd (I := 𝓘(ℝ)))
-      (mpullback F hF α')).1 =
-      fun p : ℝ × M ↦ f p.2 • (mpullback Prod.snd contMDiff_snd α).1 p := by
-    funext p
-    ext u
-    simp only [mpullback_snd_apply, hα, ContinuousAlternatingMap.smul_apply]
-  -- Comparing the two forms at `p` on a vector `(0, v)` with `α(v) ≠ 0` gives `e^φ f = eᵗ`.
-  have key (p : ℝ × M) : Real.exp (φ p) * f p.2 = Real.exp p.1 := by
-    have hA : (mpullback (Prod.snd : ℝ × M → M) (contMDiff_snd (I := 𝓘(ℝ))) α).1 p ≠ 0 := by
-      obtain ⟨v, hv⟩ := exists_apply_ne_zero (hα₀ p.2)
-      intro h0
-      apply hv
-      have h1 := congrArg (fun A ↦ A ![(Manifold.tangentSpaceProdEquiv p).symm (0, v)]) h0
-      rw [mpullback_snd_apply, ContinuousAlternatingMap.coe_zero, Pi.zero_apply] at h1
-      refine Eq.trans (congrArg (α.1 p.2) ?_) h1
-      ext i
-      fin_cases i
-      exact (congrArg Prod.snd ((Manifold.tangentSpaceProdEquiv p).apply_symm_apply (0, v))).symm
-    have h₃ : (mpullback (fun p ↦ (φ p, F p.2)) (hφ.prodMk (hF.comp contMDiff_snd))
-        α'.symplectization).1 p =
-          Real.exp (φ p) • (mpullback (fun p ↦ (φ p, F p.2))
-            (hφ.prodMk (hF.comp contMDiff_snd)) (mpullback Prod.snd contMDiff_snd α')).1 p := by
-      ext u
-      rw [mpullback_apply, ContinuousAlternatingMap.smul_apply, mpullback_apply,
-        coe_symplectization]
-      -- The real coordinate of `(φ p, F p.2)` is `φ p`.
-      rfl
-    have hp := congrArg (fun θ : SmoothForm (𝓘(ℝ).prod I) (ℝ × M) ℝ 1 ↦ θ.1 p) h
-    rw [h₃, hcomp, hsnd, coe_symplectization, smul_smul] at hp
-    exact smul_left_injective ℝ hA hp
-  have hf (x : M) : 0 < f x :=
-    pos_of_mul_pos_right ((key ((0 : ℝ), x)).symm ▸ Real.exp_pos 0) (Real.exp_pos _).le
-  refine ⟨hf, funext fun p ↦ Prod.ext ?_ (by simp)⟩
-  rw [symplectizationLift_apply, eq_sub_iff_add_eq, ← Real.log_exp (φ p),
-    ← Real.log_mul (Real.exp_pos _).ne' (hf p.2).ne', key, Real.log_exp]
+    -- A functional vanishing on `ker α` is a multiple of `α`.
+    have hspan : (z.2 : TangentSpace I z.proj →ₗ[ℝ] ℝ) ∈
+        Submodule.span ℝ (Set.range fun _ : Unit ↦ RoughForm.eval α.1 z.proj) :=
+      mem_span_of_iInf_ker_le_ker fun v hv ↦ hz v (by simpa using hv)
+    rw [Set.range_const, Submodule.mem_span_singleton] at hspan
+    obtain ⟨c, hc⟩ := hspan
+    have hzc (v : TangentSpace I z.proj) : z.2 v = c * α.1 z.proj ![v] := by
+      simpa using (LinearMap.congr_fun hc v).symm
+    refine ⟨c, fun h0 ↦ hz0 (ContinuousLinearMap.ext fun v ↦ ?_), hzc⟩
+    rw [hzc, h0, zero_mul, zero_apply]
 
 end SmoothForm
 
 end TauCeti
+
+/-! ### Cotangent lifts of contactomorphisms -/
 
 namespace Diffeomorph
 
@@ -432,7 +338,7 @@ theorem cotangent_symplectizationToCotangent_of_neg
     F.cotangent (α.symplectizationToCotangent p) =
       (-α').symplectizationToCotangent (symplectizationLift F (-f) p) :=
   cotangent_symplectizationToCotangent
-    (fun x ↦ by simp only [map_neg, NegMemClass.coe_neg, Pi.neg_apply, neg_smul, hα x])
+    (fun x ↦ SmoothForm.mpullback_neg_apply_eq_neg_smul (hα x))
     (neg_pos.2 hp)
 
 end Diffeomorph

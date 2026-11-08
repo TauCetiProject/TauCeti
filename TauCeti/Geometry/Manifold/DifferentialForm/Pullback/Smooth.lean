@@ -272,6 +272,13 @@ theorem mpullback_apply_eq_smul_of_mpullback_eq_smul {hf : ContMDiff I I' ∞ f}
   have h := congrFun (congrArg Subtype.val h) x
   rwa [coe_mpullback, SetLike.val_smul, Pi.smul_apply] at h
 
+/-- If the pullback of `φ'` is `c` times `φ` at `x`, then the pullback of `-φ'` is `-c` times `φ`
+at `x`. -/
+theorem mpullback_neg_apply_eq_neg_smul {hf : ContMDiff I I' ∞ f} {φ' : SmoothForm I' M' F k}
+    {φ : SmoothForm I M F k} {x : M} {c : ℝ} (h : (mpullback f hf φ').1 x = c • φ.1 x) :
+    (mpullback f hf (-φ')).1 x = -c • φ.1 x := by
+  rw [map_neg, NegMemClass.coe_neg, Pi.neg_apply, h, neg_smul]
+
 /-- Evaluation of the smooth pullback of a two-form on a pair of tangent vectors. -/
 theorem eval₂_mpullback (f : M → M') (hf : ContMDiff I I' ∞ f)
     (φ : SmoothForm I' M' F 2) (x : M) (v w : TangentSpace I x) :
