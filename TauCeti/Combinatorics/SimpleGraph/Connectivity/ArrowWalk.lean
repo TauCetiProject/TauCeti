@@ -42,8 +42,6 @@ theorem from arrow families to simple graphs.
   subgraph induced on `S` exactly when some walk between them stays in `S`.
 * `SimpleGraph.reachableAvoiding_singleton_adjHom_iff`: avoiding one vertex along the adjacency
   arrow family is witnessed by a simple-graph walk whose support avoids that vertex.
-* `SimpleGraph.exists_isPath_notMem_support_iff`: every walk avoiding one vertex can be shortened
-  to a path avoiding it.
 * `TauCeti.ReachableAvoiding.reachable`: avoiding vertices still implies ordinary simple-graph
   reachability.
 * `SimpleGraph.reachable_induce_compl_iff`: reachability after deleting a set `X` of vertices is
@@ -267,16 +265,6 @@ theorem reachableAvoiding_singleton_adjHom_iff {x : V} :
     exact ⟨p, fun hx ↦ hp x hx rfl⟩
   · rintro ⟨p, hp⟩
     exact ⟨p, fun v hv hvx ↦ hp (hvx ▸ hv)⟩
-
-/-- A walk avoiding a vertex can be shortened to a path avoiding that vertex. -/
-theorem exists_isPath_notMem_support_iff {x : V} :
-    (∃ p : G.Walk s t, p.IsPath ∧ x ∉ p.support) ↔ ∃ p : G.Walk s t, x ∉ p.support := by
-  classical
-  constructor
-  · rintro ⟨p, -, hp⟩
-    exact ⟨p, hp⟩
-  · rintro ⟨p, hp⟩
-    exact ⟨p.bypass, p.bypass_isPath, fun hx ↦ hp (p.support_bypass_subset_support hx)⟩
 
 /-- Reachability while avoiding vertices implies ordinary simple-graph reachability. -/
 theorem _root_.TauCeti.ReachableAvoiding.reachable {X : Set V}

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.BlockCut.Forest
+public import TauCeti.Combinatorics.SimpleGraph.Paths
 
 /-!
 # Paths through the block--cut forest
@@ -46,7 +47,7 @@ theorem reachableAvoiding_blockCutGraph_iff [Finite V] (B C : G.BlockVertex)
   constructor
   · intro h
     obtain ⟨q, hq⟩ := reachableAvoiding_singleton_adjHom_iff.mp h
-    obtain ⟨p, hp⟩ := q.exists_avoiding_of_blockCutGraph
+    obtain ⟨p, hp⟩ := q.exists_walk_notMem_support_of_blockCutGraph
       hq haB hbC hac hbc
     exact reachableAvoiding_singleton_adjHom_iff.mpr ⟨p, hp⟩
   · intro h
@@ -66,7 +67,7 @@ theorem reachable_induce_compl_blockCutGraph_iff [Finite V] (B C : G.BlockVertex
   exact reachableAvoiding_blockCutGraph_iff B C c haB hbC hac hbc
 
 /-- The block--cut path correspondence can be witnessed by simple paths on both sides. -/
-theorem exists_isPath_avoiding_blockCutGraph_iff [Finite V] (B C : G.BlockVertex)
+theorem exists_isPath_notMem_support_blockCutGraph_iff [Finite V] (B C : G.BlockVertex)
     (c : G.CutVertex) {a b : V} (haB : a ∈ (B : Set V)) (hbC : b ∈ (C : Set V))
     (hac : a ≠ c) (hbc : b ≠ c) :
     (∃ q : G.blockCutGraph.Walk (.inl B) (.inl C),

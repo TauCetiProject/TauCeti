@@ -26,8 +26,8 @@ forest, and that its connected components correspond to those of `G`.
   of `G`.  Finiteness ensures that every vertex and every edge of `G` lies in a block.
 * `SimpleGraph.Walk.reachableAvoiding_blockCutGraph`: a walk in `G` avoiding a set of cut vertices
   lifts to reachability in the block--cut graph avoiding the corresponding cut-vertex nodes.
-* `SimpleGraph.Walk.exists_avoiding_of_blockCutGraph`: a block--cut walk avoiding a cut-vertex
-  node projects to a walk in `G` avoiding that cut vertex.
+* `SimpleGraph.Walk.exists_walk_notMem_support_of_blockCutGraph`: a block--cut walk avoiding a
+  cut-vertex node projects to a walk in `G` avoiding that cut vertex.
 * `SimpleGraph.blockCutComponentEquiv`: hence the components of the block--cut graph and of `G`
   are in canonical bijection.
 * `SimpleGraph.blockCutGraph_isTree_iff`: the block--cut graph of a finite graph is a tree
@@ -111,7 +111,7 @@ private theorem exists_walk_notMem_support_of_blockCutGraph_walk {x y : G.BlockC
 /-- A walk between two block vertices in the block--cut graph that avoids a cut vertex projects
 to a walk between any chosen vertices of the blocks other than that cut vertex, while avoiding
 the corresponding original vertex. -/
-theorem Walk.exists_avoiding_of_blockCutGraph {B C : G.BlockVertex}
+theorem Walk.exists_walk_notMem_support_of_blockCutGraph {B C : G.BlockVertex}
     (q : G.blockCutGraph.Walk (.inl B) (.inl C)) {c : G.CutVertex} {a b : V}
     (hq : (.inr c : G.BlockCutVertex) ∉ q.support) (ha : a ∈ (B : Set V))
     (hb : b ∈ (C : Set V)) (hac : a ≠ c) (hbc : b ≠ c) :
