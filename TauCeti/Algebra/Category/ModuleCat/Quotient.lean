@@ -135,7 +135,8 @@ theorem shortExact_quotientInfSupShortComplex (S T : Submodule A M) :
   · intro x y h
     induction x using Quotient.induction_on with | _ x
     induction y using Quotient.induction_on with | _ y
-    simpa [Quotient.eq] using h
+    rw [quotientInfSupShortComplex_f_mk, quotientInfSupShortComplex_f_mk] at h
+    simpa only [Prod.mk.injEq, Quotient.eq, mem_inf] using h
   · intro z
     induction z using Quotient.induction_on with | _ z
     exact ⟨(Quotient.mk z, 0), by simp⟩
