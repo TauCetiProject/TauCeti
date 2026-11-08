@@ -53,7 +53,7 @@ this is the separation input for comparing and fitting together smooth triangula
 * `TauCeti.IsStarImmersion.exists_antilipschitzWith`: an injective `C¹` star immersion of a
   complex on a finite vertex type is antilipschitz in barycentric coordinates.
 * `TauCeti.eventually_norm_secantMap_sub_sub_le_edgewiseSubdivision`: on fine edgewise
-  subdivisions, the secant error of a continuous map which is `C¹` on every closed simplex is
+  subdivisions, the secant error of a map which is a `C¹` immersion on every closed simplex is
   Lipschitz with arbitrarily small constant in barycentric coordinates, also across simplices.
 * `TauCeti.IsStarImmersion.exists_pos_eventually_norm_sub_le_mul_norm_secantMap_sub`: the secant
   maps of an injective `C¹` star immersion on fine edgewise subdivisions are antilipschitz in
@@ -743,13 +743,13 @@ private theorem lipschitzOnWith_secantErrorCoord {k : ℕ} (hk : k ≠ 0) {ε : 
       Real.coe_toNNReal _ hε]
     exact hface ρ t' t
 
-/-- On every sufficiently fine edgewise subdivision, the secant error `s - f ∘ φ` of a continuous
+/-- On every sufficiently fine edgewise subdivision, the secant error `s - f ∘ φ` of a
 map `f` which is a `C¹` immersion on every closed simplex is `ε`-Lipschitz in the original
 coordinates, also between points of different simplices. Here `s` is the secant map of `f` on the
 subdivision and `φ` is the canonical map onto `|K|`. -/
 theorem _root_.TauCeti.eventually_norm_secantMap_sub_sub_le_edgewiseSubdivision
     (hf : ∀ σ : Face K, IsSimplexImmersion 𝓘(ℝ, E) n (f ∘ faceInclusion K σ))
-    (hfc : Continuous f) (hn : 1 ≤ n) {ε : ℝ} (hε : 0 < ε) :
+    (hn : 1 ≤ n) {ε : ℝ} (hε : 0 < ε) :
     ∀ᶠ k in atTop, ∀ x y : Realization (K.edgewiseSubdivision k),
       ‖((K.edgewiseSubdivision k).secantMap (f ∘ edgewiseSubdivisionRealizationMap K k) x -
             f (edgewiseSubdivisionRealizationMap K k x)) -
@@ -757,6 +757,7 @@ theorem _root_.TauCeti.eventually_norm_secantMap_sub_sub_le_edgewiseSubdivision
             f (edgewiseSubdivisionRealizationMap K k y))‖ ≤
         ε * ‖((edgewiseSubdivisionRealizationMap K k x).1 : ι → ℝ) -
           (edgewiseSubdivisionRealizationMap K k y).1‖ := by
+  have hfc : Continuous f := continuous_iff_faceInclusion.2 fun σ => (hf σ).continuous
   set N : ℝ := (Fintype.card ι : ℝ)
   have hN : 0 ≤ N := Nat.cast_nonneg _
   filter_upwards [eventually_ne_atTop 0,
@@ -815,7 +816,7 @@ theorem exists_pos_eventually_norm_sub_le_mul_norm_secantMap_sub (h : IsStarImme
   have hlt : (2 * C)⁻¹ < C⁻¹ := inv_strictAnti₀ hC (lt_two_mul_self hC)
   refine ⟨((C⁻¹ - (2 * C)⁻¹)⁻¹ : NNReal), NNReal.coe_pos.2 (inv_pos.2 (tsub_pos_of_lt hlt)), ?_⟩
   filter_upwards [eventually_ne_atTop 0, eventually_norm_secantMap_sub_sub_le_edgewiseSubdivision
-    h.1 h.continuous hn (ε := ((2 * C)⁻¹ : NNReal)) (NNReal.coe_pos.2 (inv_pos.2 (by positivity)))]
+    h.1 hn (ε := ((2 * C)⁻¹ : NNReal)) (NNReal.coe_pos.2 (inv_pos.2 (by positivity)))]
     with k hk0 hk x y
   -- Move the secant map to the coordinate image of `|K|` and perturb `f` there.
   set Ψ := (edgewiseSubdivisionRealizationHomeomorph K hk0).trans e
