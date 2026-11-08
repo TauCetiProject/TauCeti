@@ -50,7 +50,7 @@ private lemma height_succ_nonneg {n i k : ℕ} (hi : i < n) (hik : i ≤ k) (hkn
     rw [← htel]
     refine Finset.sum_nonneg fun l hl ↦ ?_
     rw [Finset.mem_Ico] at hl
-    exact sub_nonneg_of_step_of_le_add_pi (hstep l (by omega)) (hmono i l hl.1 (by omega))
+    exact nonneg_of_step_of_le_add_pi (hstep l (by omega)) (hmono i l hl.1 (by omega))
       ((hmono l k (by omega) (by omega)).trans hshort)
   · rw [not_le] at hshort
     have hθπ : φ i < -Real.pi := by linarith [hmono k n (by omega) le_rfl]
@@ -58,12 +58,13 @@ private lemma height_succ_nonneg {n i k : ℕ} (hi : i < n) (hik : i ≤ k) (hkn
       Finset.sum_nonpos fun l hl ↦ by
         rw [Finset.mem_Ico] at hl
         have := hmono l n hl.2.le le_rfl
-        exact sub_nonpos_of_step_of_add_pi_le (hstep l hl.2) (hlast ▸ this) (hlow i hi.le)
+        exact nonpos_of_step_of_add_pi_le (hstep l hl.2)
           (hshort.le.trans (hmono k l (by omega) hl.2.le))
+          (by linarith [hlow i hi.le, hlast ▸ this])
     have h₂ : ∑ l ∈ Finset.Ico 0 i, (H (l + 1) - H l) ≤ 0 :=
       Finset.sum_nonpos fun l hl ↦ by
         rw [Finset.mem_Ico] at hl
-        exact sub_nonpos_of_step_of_sub_pi_le (hstep l (by omega))
+        exact nonpos_of_step_of_sub_pi_le (hstep l (by omega))
           (by linarith [hlow l (by omega)]) (hmono l i hl.2.le hi.le)
     rw [Finset.sum_Ico_sub H hkn] at h₁
     rw [Finset.sum_Ico_sub H (Nat.zero_le i), hHi] at h₂
@@ -86,7 +87,7 @@ private lemma height_nonneg_of_le {n i k : ℕ} (hi : i < n) (hki : k ≤ i)
   · have h : ∑ l ∈ Finset.Ico k i, (H (l + 1) - H l) ≤ 0 :=
       Finset.sum_nonpos fun l hl ↦ by
         rw [Finset.mem_Ico] at hl
-        exact sub_nonpos_of_step_of_sub_pi_le (hstep l (by omega))
+        exact nonpos_of_step_of_sub_pi_le (hstep l (by omega))
           (hshort.trans (hmono k l hl.1 (by omega))) (hmono l i hl.2.le hi.le)
     rw [Finset.sum_Ico_sub H hki, hHi] at h
     linarith
@@ -96,13 +97,14 @@ private lemma height_nonneg_of_le {n i k : ℕ} (hi : i < n) (hki : k ≤ i)
       Finset.sum_nonneg fun l hl ↦ by
         rw [Finset.mem_Ico] at hl
         have := hmono l n hl.2.le le_rfl
-        exact sub_nonneg_of_step_of_le_add_pi (hstep l hl.2) (hmono i l hl.1 hl.2.le)
+        exact nonneg_of_step_of_le_add_pi (hstep l hl.2) (hmono i l hl.1 hl.2.le)
           (by linarith)
     have h₂ : 0 ≤ ∑ l ∈ Finset.Ico 0 k, (H (l + 1) - H l) :=
       Finset.sum_nonneg fun l hl ↦ by
         rw [Finset.mem_Ico] at hl
-        exact sub_nonneg_of_step_of_le_sub_pi (hstep l (by omega)) (hlow l (by omega))
-          (hlast ▸ hmono i n hi.le le_rfl) ((hmono l k hl.2.le hk).trans hshort.le)
+        exact nonneg_of_step_of_le_sub_pi (hstep l (by omega))
+          (by linarith [hlow l (by omega), hlast ▸ hmono i n hi.le le_rfl])
+          ((hmono l k hl.2.le hk).trans hshort.le)
     rw [Finset.sum_Ico_sub H hi.le, hHi] at h₁
     rw [Finset.sum_Ico_sub H (Nat.zero_le k)] at h₂
     linarith [hclose hθπ]
@@ -125,11 +127,11 @@ theorem heights_nonneg_of_monotone_turning {n i : ℕ} (hi : i < n) {H φ : ℕ 
   simp only [← zero_sub (φ i)] at hclose₁ hclose₂
   -- The closing steps rise when the side points no further back than `-π`, and fall otherwise.
   have hclose_nonneg (h : -Real.pi ≤ φ i) : 0 ≤ Hinf - H n ∧ 0 ≤ H 0 - Hinf :=
-    ⟨sub_nonneg_of_step_of_le_add_pi hclose₁ hθ0 (by linarith),
-      sub_nonneg_of_step_of_le_add_pi hclose₂ hθ0 (by linarith)⟩
+    ⟨nonneg_of_step_of_le_add_pi hclose₁ hθ0 (by linarith),
+      nonneg_of_step_of_le_add_pi hclose₂ hθ0 (by linarith)⟩
   have hclose_nonpos (h : φ i ≤ -Real.pi) : Hinf - H n ≤ 0 ∧ H 0 - Hinf ≤ 0 :=
-    ⟨sub_nonpos_of_step_of_add_pi_le hclose₁ le_rfl hθlow (by linarith),
-      sub_nonpos_of_step_of_add_pi_le hclose₂ le_rfl hθlow (by linarith)⟩
+    ⟨nonpos_of_step_of_add_pi_le hclose₁ (by linarith) (by linarith),
+      nonpos_of_step_of_add_pi_le hclose₂ (by linarith) (by linarith)⟩
   have hvertex (k : ℕ) (hk : k ≤ n) : 0 ≤ H k := by
     rcases lt_or_ge i k with hik | hki
     · obtain ⟨k, rfl⟩ : ∃ m, k = m + 1 := ⟨k - 1, by omega⟩
