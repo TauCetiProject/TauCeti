@@ -49,9 +49,11 @@ The index has the formal properties of the Robbin–Salamon Maslov index for pat
 
 For a diagonal path of frames `U t = diag (e^{i φ_j t})` it is computed explicitly
 (`Matrix.UnitaryGroup.maslovIndex_eq_sum_of_diagonal`): each `φ_j` contributes
-`c(φ_j 1) - c(φ_j 0)`, where `c(x) = (⌊x / π⌋ + ⌈x / π⌉) / 2` counts the multiples of `π` below
-`x`, one at `x` itself counting one half. This gives the normalization: the half-turn
-`t ↦ e^{iπt} ℝⁿ` has Maslov index `n` (`Matrix.UnitaryGroup.maslovIndex_eq_card_of_halfTurn`).
+`c(φ_j 1) - c(φ_j 0)`, where `c(x) = (⌊x / π⌋ + ⌈x / π⌉) / 2` is the half-integer step function
+with `c(kπ) = k` and `c = k + 1/2` on `(kπ, (k + 1)π)`. So `c(φ_j 1) - c(φ_j 0)` counts, with
+sign, the multiples of `π` crossed by `φ_j`, endpoints counting one half. This gives the
+normalization: the half-turn `t ↦ e^{iπt} ℝⁿ` has Maslov index `n`
+(`Matrix.UnitaryGroup.maslovIndex_eq_card_of_halfTurn`).
 It also gives the localization axiom of Robbin and Salamon for diagonal symmetric matrices
 `A t = diag (a_j t)` (`Matrix.UnitaryGroup.maslovIndex_eq_sum_sign_of_diagonal_arctan`): the
 graph `{x + i A x}` of `A t` has the frame `diag (e^{i arctan (a_j t)})`, and the index of the path
