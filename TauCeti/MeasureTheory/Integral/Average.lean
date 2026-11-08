@@ -64,7 +64,14 @@ normalizing factor `μ s ^ (-1/p)`, and bounds its `q`-th power by `(μ s)⁻¹ 
 These estimates hold for arbitrary sets, including zero or infinite measure, with only the
 exponent restrictions `1 ≤ p < ∞` or `1 ≤ q`.
 
+Jensen's inequality also holds for a function that is convex and monotone on `[0, ∞)` applied to
+an almost everywhere nonnegative integrable function.
+
 ## Main results
+
+* `ConvexOn.map_average_le_of_monotoneOn_Ici`: for an almost everywhere nonnegative `g` over a
+  finite nonzero measure, `Φ (⨍ g) ≤ ⨍ Φ ∘ g` when `Φ` is convex and monotone on `[0, ∞)` and
+  `g`, `Φ ∘ g` are integrable; it rests on `ConvexOn.continuousOn_Ici_of_monotoneOn`.
 
 * `TauCeti.enorm_setAverage_rpow_le`, `TauCeti.enorm_setAverage_le`: Hölder's bounds on an
   average over an arbitrary set, in `∫⁻` and `Lᵖ` form.
@@ -1101,7 +1108,24 @@ end TauCeti
 
 namespace ConvexOn
 
-open MeasureTheory Set
+open MeasureTheory Set Filter Topology
+
+/-- A monotone function that is convex on `[0, ∞)` is continuous there, including at `0`. -/
+theorem continuousOn_Ici_of_monotoneOn {Φ : ℝ → ℝ} (hΦ : ConvexOn ℝ (Ici 0) Φ)
+    (hΦm : MonotoneOn Φ (Ici 0)) : ContinuousOn Φ (Ici 0) := by
+  refine hΦ.continuousOn_Ici ?_
+  have hub : Tendsto (fun t : ℝ ↦ Φ 0 + t * (Φ 1 - Φ 0)) (𝓝[Ici 0] 0) (𝓝 (Φ 0)) := by
+    have hc : Continuous fun t : ℝ ↦ Φ 0 + t * (Φ 1 - Φ 0) := by fun_prop
+    simpa using (hc.tendsto 0).mono_left nhdsWithin_le_nhds
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hub ?_ ?_
+  · filter_upwards [self_mem_nhdsWithin] with t ht
+    exact hΦm (mem_Ici.2 le_rfl) ht ht
+  · filter_upwards [self_mem_nhdsWithin,
+      nhdsWithin_le_nhds (Iic_mem_nhds (zero_lt_one : (0 : ℝ) < 1))] with t ht ht1
+    have h := hΦ.2 (mem_Ici.2 le_rfl) (mem_Ici.2 zero_le_one) (sub_nonneg.2 ht1) ht
+      (by ring)
+    simp only [smul_eq_mul, mul_zero, zero_add, mul_one] at h
+    linarith
 
 /-- **Jensen's inequality for a monotone function convex on the half-line.** For a finite nonzero
 measure `μ`, an almost everywhere nonnegative `g`, and a function `Φ` that is convex and monotone
@@ -1111,20 +1135,7 @@ theorem map_average_le_of_monotoneOn_Ici {α : Type*} [MeasurableSpace α] {μ :
     [IsFiniteMeasure μ] [NeZero μ] {g : α → ℝ} {Φ : ℝ → ℝ}
     (hΦ : ConvexOn ℝ (Ici 0) Φ) (hΦm : MonotoneOn Φ (Ici 0)) (hg : ∀ᵐ x ∂μ, 0 ≤ g x)
     (hgi : Integrable g μ) (hΦi : Integrable (fun x ↦ Φ (g x)) μ) :
-    Φ (⨍ x, g x ∂μ) ≤ ⨍ x, Φ (g x) ∂μ := by
-  -- Extend `Φ` constantly to the left, so Jensen applies to a continuous convex function on a
-  -- closed set.
-  have himage : (fun t : ℝ ↦ max t 0) '' univ = Ici 0 :=
-    ext fun s ↦ ⟨fun ⟨_, _, h⟩ ↦ h ▸ le_max_right _ _, fun h ↦ ⟨s, trivial, max_eq_left h⟩⟩
-  have hmax : ConvexOn ℝ univ (fun t : ℝ ↦ max t 0) :=
-    (convexOn_id convex_univ).sup (convexOn_const 0 convex_univ)
-  have hΦmax := ConvexOn.comp (himage ▸ hΦ) hmax (himage ▸ hΦm)
-  have hc : ContinuousOn (fun t : ℝ ↦ Φ (max t 0)) univ := by
-    simpa [Function.comp_def] using hΦmax.continuousOn_interior
-  have hJ := hΦmax.map_average_le hc isClosed_univ (ae_of_all _ fun _ ↦ mem_univ _) hgi
-    (hΦi.congr (hg.mono fun x hx ↦ by simp [Function.comp_def, max_eq_left hx]))
-  have hr : ⨍ x, Φ (max (g x) 0) ∂μ = ⨍ x, Φ (g x) ∂μ :=
-    average_congr (hg.mono fun x hx ↦ by simp only [max_eq_left hx])
-  simpa only [Function.comp_apply, max_eq_left (average_nonneg_of_ae hg), hr] using hJ
+    Φ (⨍ x, g x ∂μ) ≤ ⨍ x, Φ (g x) ∂μ :=
+  hΦ.map_average_le (hΦ.continuousOn_Ici_of_monotoneOn hΦm) isClosed_Ici hg hgi hΦi
 
 end ConvexOn
