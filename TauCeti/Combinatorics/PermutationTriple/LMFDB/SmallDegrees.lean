@@ -188,33 +188,6 @@ theorem map_label_filter_not_isPrimitive :
       ["4T1-4_4_1.1.1.1-a", "4T1-4_4_2.2-a", "4T2-2.2_2.2_2.2-a", "4T3-4_2.2_2.1.1-a"] := by
   decide +kernel
 
-/-- A finite certificate that a connected triple primitivizes to the double cover branched over
-`0` and `1`: a nonempty block `B` with two translates, maximal among blocks, which neither `t.σ0`
-nor `t.σ1` maps to itself. -/
-private theorem exists_blockQuotient_eq_ofTwo_swap {n : ℕ} (t : ConnectedTriple n)
-    (B : Finset (Fin n)) (hB : t.1.isBlockBool B = true) (hBne : B.Nonempty)
-    (hmax : ∀ D : Finset (Fin n), t.1.isBlockBool D = true → B ⊆ D → D = B ∨ D = Finset.univ)
-    (hcard : B.card * 2 = n) (h0 : B.image t.1.σ0 ≠ B) (h1 : B.image t.1.σ1 ≠ B) :
-    ∃ C : Set (Fin n), IsBlock t.1.monodromyGroup C ∧ C.Nonempty ∧
-      (∀ D : Set (Fin n), IsBlock t.1.monodromyGroup D → C ⊆ D → D = C ∨ D = Set.univ) ∧
-      ∃ e : orbit t.1.monodromyGroup C ≃ Fin 2,
-        t.1.blockQuotient C e = ofTwo (swap 0 1) (swap 0 1) := by
-  classical
-  have hB' := (t.1.isBlockBool_eq_true_iff B).mp hB
-  have hBne' : (B : Set (Fin n)).Nonempty := Finset.coe_nonempty.mpr hBne
-  have h := ncard_mul_eq_of_isBlock t.2.isPretransitive hB' hBne' (Finite.equivFin _)
-  rw [Set.ncard_coe_finset] at h
-  refine ⟨B, hB', hBne', fun D hD hsub ↦ ?_,
-    Finite.equivFinOfCardEq (Nat.eq_of_mul_eq_mul_left hBne.card_pos (h.trans hcard.symm)), ?_⟩
-  · rw [← Set.coe_toFinset D] at hD hsub ⊢
-    rcases hmax D.toFinset ((t.1.isBlockBool_eq_true_iff _).mpr hD) (Finset.coe_subset.mp hsub)
-      with hD | hD
-    · exact Or.inl (by rw [hD])
-    · exact Or.inr (by rw [hD, Finset.coe_univ])
-  · refine blockQuotient_eq_ofTwo_swap _ _ _ ?_ ?_
-    · rwa [← Finset.coe_image, Ne, Finset.coe_inj]
-    · rwa [← Finset.coe_image, Ne, Finset.coe_inj]
-
 /-- **The imprimitive frozen records primitivize to `2T1-2_2_1.1-a`.** The monodromy action of the
 triple of every imprimitive record has a nonempty block, maximal among blocks, with two translates,
 and the quotient by these translates has the isomorphism class of the record `2T1-2_2_1.1-a`. -/
@@ -227,27 +200,30 @@ theorem exists_isoClass_blockQuotient_eq {r : SmallDegreeRecord} (hr : r ∈ sma
         q.label = "2T1-2_2_1.1-a" ∧
           q.isoClass = ⟨2, ConnectedIsoClass.mk
             ⟨r.triple.1.blockQuotient B e, r.triple.1.isConnected_blockQuotient B e⟩⟩ := by
-  -- The quotient is the triple of the record `2T1-2_2_1.1-a` itself.
-  suffices ∃ B : Set (Fin r.degree), IsBlock r.triple.1.monodromyGroup B ∧ B.Nonempty ∧
-      (∀ C : Set (Fin r.degree), IsBlock r.triple.1.monodromyGroup C → B ⊆ C →
-        C = B ∨ C = Set.univ) ∧
-      ∃ e : orbit r.triple.1.monodromyGroup B ≃ Fin 2,
-        r.triple.1.blockQuotient B e = ofTwo (swap 0 1) (swap 0 1) by
-    obtain ⟨B, hB, hBne, hmax, e, he⟩ := this
-    refine ⟨B, hB, hBne, hmax, e,
-      ⟨"2T1-2_2_1.1-a", 2, ⟨ofTwo (swap 0 1) (swap 0 1), by decide⟩, by decide⟩,
-      by simp [smallDegreeRecords], rfl, ?_⟩
-    rw [SmallDegreeRecord.isoClass_def]
-    exact congrArg (fun t ↦ (⟨2, ConnectedIsoClass.mk t⟩ : Σ n, ConnectedIsoClass n))
-      (Subtype.ext he.symm)
-  simp only [smallDegreeRecords, List.mem_cons, List.not_mem_nil, or_false] at hr
+  classical
   -- The nine primitive records are excluded by the finite primitivity test, and each of the four
-  -- imprimitive ones has the block `{0, 2}`.
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  all_goals first
-    | exact absurd (by decide +kernel) hprim
-    | exact exists_blockQuotient_eq_ofTwo_swap _ {0, 2} (by decide +kernel) (by decide)
-        (by decide +kernel) (by decide) (by decide +kernel) (by decide +kernel)
+  -- imprimitive ones has the block `{0, 2}`, checked against every finite block containing it.
+  have key : ∃ B : Finset (Fin r.degree), r.triple.1.isBlockBool B = true ∧ B.Nonempty ∧
+      (∀ D : Finset (Fin r.degree), r.triple.1.isBlockBool D = true → B ⊆ D →
+        D = B ∨ D = Finset.univ) ∧
+      B.card * 2 = r.degree ∧ B.image r.triple.1.σ0 ≠ B ∧ B.image r.triple.1.σ1 ≠ B := by
+    simp only [smallDegreeRecords, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    all_goals first
+      | exact absurd (by decide +kernel) hprim
+      | exact ⟨{0, 2}, by decide +kernel⟩
+  obtain ⟨B, hB, hBne, hmax, hcard, h0, h1⟩ := key
+  have hB' := (r.triple.1.isBlockBool_eq_true_iff B).mp hB
+  have hBne' : (B : Set (Fin r.degree)).Nonempty := Finset.coe_nonempty.mpr hBne
+  obtain ⟨e, he⟩ := exists_blockQuotient_eq_ofTwo_swap r.triple.2.isPretransitive hB' hBne'
+    (by rwa [Set.ncard_coe_finset]) (by rwa [← Finset.coe_image, Ne, Finset.coe_inj])
+    (by rwa [← Finset.coe_image, Ne, Finset.coe_inj])
+  -- The quotient is the triple of the record `2T1-2_2_1.1-a` itself.
+  refine ⟨B, hB', hBne', r.triple.1.eq_or_eq_univ_of_forall_isBlockBool hmax, e,
+    smallDegreeRecords[1], List.getElem_mem _, rfl, ?_⟩
+  rw [SmallDegreeRecord.isoClass_def]
+  exact congrArg (fun t ↦ (⟨2, ConnectedIsoClass.mk t⟩ : Σ n, ConnectedIsoClass n))
+    (Subtype.ext he.symm)
 
 end LMFDB
 end PermutationTriple
