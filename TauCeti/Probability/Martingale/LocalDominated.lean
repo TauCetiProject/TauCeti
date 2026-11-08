@@ -21,8 +21,6 @@ We retain Mathlib's native convention: the localized stages stop the process mul
 locality alone can hide nonmeasurable changes on null sets. No path regularity or usual
 conditions on the filtration are needed.
 
-The conditional limit step uses Mathlib's `tendsto_condExp_unique`.
-
 ## References
 
 * Karatzas and Shreve, *Brownian Motion and Stochastic Calculus*, Chapter 1, §5.
@@ -42,8 +40,8 @@ variable {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
   {X : ι → Ω → E}
 
 /-- A strongly adapted local martingale whose paths on each initial interval admit an
-integrable dominator is a true martingale. The domination is simultaneous in time, so it
-also bounds the random-time evaluations in the localized stages. -/
+integrable dominator is a true martingale. The dominator for horizon `t` bounds `‖X s ω‖`
+almost surely for all `s ≤ t` simultaneously. -/
 theorem StronglyAdapted.martingale_of_locally_martingale_of_dominated [SigmaFiniteFiltration P F]
     (hX : StronglyAdapted F X) (hlocal : Locally (fun Y ↦ Martingale Y F P) F X P)
     (hbound : ∀ t, ∃ b : Ω → ℝ, Integrable b P ∧
