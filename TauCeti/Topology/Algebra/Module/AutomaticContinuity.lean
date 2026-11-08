@@ -22,7 +22,9 @@ as maps of topological groups.
 A surjection `(Fin n → R) →ₗ[R] M` is a continuous map from a compact space to a Hausdorff space,
 hence a quotient map. The topology of `M` is therefore coinduced from the product topology, and
 since every linear map out of `Fin n → R` is continuous into the module topology of `M`, the given
-topology is no finer than the module topology.
+topology is no coarser than the module topology. It is also no finer, because the module topology
+is the finest topology for which addition and scalar multiplication are continuous, so
+`IsModuleTopology.of_continuous_id` identifies the two.
 -/
 
 public section
