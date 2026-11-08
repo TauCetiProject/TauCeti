@@ -601,6 +601,7 @@ theorem restrictPath_mapPath (S : N.Subnetwork) {x y : ↥S.vertexSet}
   induction q with
   | nil => rfl
   | cons q e ih =>
+    simp only [mapPath_cons] at h ⊢
     exact (restrictPath_cons S (S.mapPath q) e.1 h _ (toSubnetwork_mapPath_le S q).2 e.2).trans
       (congrArg (·.cons e) (ih _))
 
