@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Order.Ring.Abs
 public import TauCeti.Algebra.Order.BigOperators.Sum.UnitWeights
 
 /-!
