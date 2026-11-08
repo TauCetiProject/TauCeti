@@ -18,9 +18,8 @@ This uniqueness is the algebraic input for discussing the singularities of a min
 rather than the extra singularities introduced by multiplying an equation by a polynomial.
 
 `PowerSeries.dfiniteOrder` takes the junk value zero on non-D-finite series. Existence of a
-minimal equation requires `PowerSeries.IsDFinite`; over an integral domain, order zero for a
-D-finite series means that the series is zero. No characteristic-zero hypothesis is needed for
-this algebraic API.
+minimal equation requires `PowerSeries.IsDFinite`; order zero for a D-finite series means that
+the series is zero. No characteristic-zero hypothesis is needed for this algebraic API.
 
 ## References
 
@@ -139,11 +138,7 @@ theorem dfiniteOrder_zero : dfiniteOrder k (0 : K⟦X⟧) = 0 := by
   apply Nat.eq_zero_of_le_zero
   exact dfiniteOrder_le (p := fun _ : Fin 1 ↦ 1) one_ne_zero (by simp)
 
-section Domain
-
-variable [IsDomain K]
-
-/-- For a D-finite series over an integral domain, order zero is equivalent to vanishing. -/
+/-- For a D-finite series, order zero is equivalent to vanishing. -/
 @[simp]
 theorem IsDFinite.dfiniteOrder_eq_zero_iff {f : K⟦X⟧} (hf : IsDFinite k f) :
     dfiniteOrder k f = 0 ↔ f = 0 := by
@@ -153,9 +148,7 @@ theorem IsDFinite.dfiniteOrder_eq_zero_iff {f : K⟦X⟧} (hf : IsDFinite k f) :
     rw [horder] at hex
     obtain ⟨p, hp, h⟩ := hex
     have heq : p (Fin.last 0) • f = 0 := by simpa using h
-    rw [Algebra.smul_def, mul_eq_zero] at heq
-    exact heq.resolve_left (fun h ↦ hp
-      (algebraMap_polynomial_injective (k := k) (K := K) (by simpa using h)))
+    exact (smul_eq_zero_iff_right hp).mp heq
   · rintro rfl
     exact dfiniteOrder_zero
 
@@ -175,17 +168,15 @@ theorem dfiniteOrder_C {a : K} (ha : a ≠ 0) : dfiniteOrder k (C a) = 1 := by
 
 /-- The constant series one has differential order one. -/
 @[simp]
-theorem dfiniteOrder_one : dfiniteOrder k (1 : K⟦X⟧) = 1 := by
+theorem dfiniteOrder_one [Nontrivial K] : dfiniteOrder k (1 : K⟦X⟧) = 1 := by
   simpa only [map_one] using dfiniteOrder_C (k := k) (K := K) one_ne_zero
 
 /-- In characteristic zero the formal exponential has differential order one. -/
 @[simp]
-theorem dfiniteOrder_exp [Algebra ℚ K] : dfiniteOrder k (exp K) = 1 := by
+theorem dfiniteOrder_exp [Nontrivial K] [Algebra ℚ K] : dfiniteOrder k (exp K) = 1 := by
   apply Nat.le_antisymm _
     ((isDFinite_exp (k := k) (K := K)).dfiniteOrder_pos (isUnit_exp K).ne_zero)
   exact dfiniteOrder_le (p := ![-1, 1]) (by simp) (by
     simp [Fin.sum_univ_two, derivative_exp])
-
-end Domain
 
 end PowerSeries

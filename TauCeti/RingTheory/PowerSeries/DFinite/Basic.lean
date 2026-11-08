@@ -87,13 +87,17 @@ namespace PowerSeries
 
 variable {k K : Type*} [Field k] [CommRing K] [Algebra k K]
 
-/-- The polynomial algebra map into power series over a nontrivial field algebra is injective. -/
-theorem algebraMap_polynomial_injective [Nontrivial K] :
-    Function.Injective (algebraMap k[X] K⟦X⟧) := by
-  intro p q hpq
-  apply Polynomial.coe_injective (R := k)
-  apply map_injective (algebraMap k K) (algebraMap k K).injective
-  simpa only [algebraMap_apply'] using hpq
+/-- Nonzero polynomials over the base field act injectively on power series over any
+commutative algebra. -/
+instance : Module.IsTorsionFree k[X] K⟦X⟧ where
+  isSMulRegular p hp := by
+    have hp' : (p : k⟦X⟧) ≠ 0 := by simpa using hp.ne_zero
+    have hu := (isUnit_divided_by_X_pow_order hp').map (map (algebraMap k K))
+    intro f g hfg
+    simp only [Algebra.smul_def, algebraMap_apply'] at hfg
+    rw [← X_pow_order_mul_divXPowOrder (f := (p : k⟦X⟧))] at hfg
+    simp only [map_mul, map_pow, map_X, mul_assoc] at hfg
+    exact hu.mul_right_injective (X_pow_mul_injective hfg)
 
 /-! ### The definition -/
 
