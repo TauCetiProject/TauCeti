@@ -58,6 +58,8 @@ computational input to the norm and trace of an unramified extension.
   normalized valuation of `L` restricts to that of `K`.
 * `TauCeti.isUnramified_iff_map_maximalIdeal_eq`: `L/K` is unramified exactly when `𝓂[K]`
   generates `𝓂[L]`.
+* `TauCeti.IsUnramified.exists_associated_algebraMap`: in an unramified extension every integer
+  of `L` is associated to the image of an integer of `K`.
 * `TauCeti.IsUnramified.irreducible_algebraMap`: in an unramified extension a uniformizer of `K`
   stays a uniformizer of `L`.
 * `TauCeti.isUnramified_iff_inertiaDegree_eq_finrank`: `L/K` is unramified exactly when
@@ -195,35 +197,32 @@ theorem IsUnramified.map_maximalIdeal [IsUnramified K L] :
   (isUnramified_iff_map_maximalIdeal_eq K L).1 ‹_›
 
 omit [IsNonarchimedeanLocalField K] [TopologicalSpace K] in
+/-- In an unramified extension, every integer of `L` is associated to the image of an integer
+of `K`. -/
+theorem IsUnramified.exists_associated_algebraMap [IsUnramified K L] (a : 𝒪[L]) :
+    ∃ s : 𝒪[K], Associated (algebraMap 𝒪[K] 𝒪[L] s) a := by
+  have hintL := Valuation.integer.integers (valuation L)
+  obtain ⟨r, hr⟩ := exists_algebraMap_veq_of_isUnramified (K := K) (L := L) (a : L)
+  have hrle : r ≤ᵥ 1 := by
+    rw [← ValuativeExtension.vle_iff_vle (B := L), map_one]
+    exact hr.1.trans ((valuation L).vle_one_iff.2 a.2)
+  refine ⟨⟨r, (valuation K).vle_one_iff.1 hrle⟩, ?_⟩
+  exact associated_of_dvd_dvd (hintL.dvd_iff_le.2 ((valuation L).vle_iff_le.1 hr.2))
+    (hintL.dvd_iff_le.2 ((valuation L).vle_iff_le.1 hr.1))
+
+omit [IsNonarchimedeanLocalField K] [TopologicalSpace K] in
 /-- **In an unramified extension a uniformizer of `K` stays a uniformizer of `L`.** -/
 theorem IsUnramified.irreducible_algebraMap [IsUnramified K L] {π : 𝒪[K]} (hπ : Irreducible π) :
     Irreducible (algebraMap 𝒪[K] 𝒪[L] π) := by
-  have hintL := Valuation.integer.integers (valuation L)
-  have hintK := Valuation.integer.integers (valuation K)
-  -- every integer of `L` is associated to the image of an integer of `K`
-  have key : ∀ a : 𝒪[L], ∃ s : 𝒪[K], Associated (algebraMap 𝒪[K] 𝒪[L] s) a := by
-    intro a
-    obtain ⟨r, hr⟩ := exists_algebraMap_veq_of_isUnramified (K := K) (L := L) (a : L)
-    have hrle : r ≤ᵥ 1 := by
-      rw [← ValuativeExtension.vle_iff_vle (B := L), map_one]
-      exact hr.1.trans ((valuation L).vle_one_iff.2 a.2)
-    refine ⟨⟨r, (valuation K).vle_one_iff.1 hrle⟩, ?_⟩
-    exact associated_of_dvd_dvd (hintL.dvd_iff_le.2 ((valuation L).vle_iff_le.1 hr.2))
-      (hintL.dvd_iff_le.2 ((valuation L).vle_iff_le.1 hr.1))
-  have dvd_of_map : ∀ x y : 𝒪[K], algebraMap 𝒪[K] 𝒪[L] x ∣ algebraMap 𝒪[K] 𝒪[L] y → x ∣ y := by
-    intro x y h
-    rw [hintL.dvd_iff_le] at h
-    rw [hintK.dvd_iff_le]
-    exact (valuation K).vle_iff_le.1
-      (ValuativeExtension.vle_iff_vle.1 ((valuation L).vle_iff_le.2 h))
   refine ⟨fun h ↦ hπ.not_isUnit (isUnit_of_map_unit (algebraMap 𝒪[K] 𝒪[L]) _ h), fun a b hab ↦ ?_⟩
-  obtain ⟨s, hs⟩ := key a
-  obtain ⟨t, ht⟩ := key b
+  obtain ⟨s, hs⟩ := IsUnramified.exists_associated_algebraMap (K := K) a
+  obtain ⟨t, ht⟩ := IsUnramified.exists_associated_algebraMap (K := K) b
   have hπst : Associated π (s * t) := by
     have h1 : Associated (algebraMap 𝒪[K] 𝒪[L] π) (algebraMap 𝒪[K] 𝒪[L] (s * t)) := by
       rw [hab, map_mul]
       exact hs.symm.mul_mul ht.symm
-    exact associated_of_dvd_dvd (dvd_of_map _ _ h1.dvd) (dvd_of_map _ _ h1.symm.dvd)
+    exact associated_of_dvd_dvd (algebraMap_integerRing_dvd_iff.1 h1.dvd)
+      (algebraMap_integerRing_dvd_iff.1 h1.symm.dvd)
   obtain ⟨w, hw⟩ := hπst
   have hπ' : π = s * (t * ↑w⁻¹) := by rw [← mul_assoc, ← hw]; simp
   rcases hπ.isUnit_or_isUnit hπ' with h | h
@@ -288,12 +287,8 @@ theorem IsUnramified.tower_top [IsUnramified K M] : IsUnramified L M := by
   have h : (normalizedValuation M).comp (Units.map (algebraMap K M : K →* M)) =
       ((normalizedValuation M).comp (Units.map (algebraMap L M : L →* M))).comp
         (Units.map (algebraMap K L : K →* L)) := by
-    ext x
-    have hx : Units.map (algebraMap K M : K →* M) x =
-        Units.map (algebraMap L M : L →* M) (Units.map (algebraMap K L : K →* L) x) := by
-      ext
-      simp [← IsScalarTower.algebraMap_apply]
-    simp [hx]
+    rw [unitsMap_algebraMap_tower K L M]
+    rfl
   have hs := (isUnramified_iff_normalizedValuation_comp_unitsMap_surjective K M).1 ‹_›
   rw [h, MonoidHom.coe_comp] at hs
   exact (isUnramified_iff_normalizedValuation_comp_unitsMap_surjective L M).2 hs.of_comp
@@ -312,10 +307,7 @@ omit [ValuativeExtension K L] in
 `f(M/K) = [L : K] · f(M/L)`. -/
 theorem IsUnramified.inertiaDegree_tower_eq [IsUnramified K L] :
     inertiaDegree K M = Module.finrank K L * inertiaDegree L M := by
-  have : ValuativeExtension K L := ⟨by
-    intro a b
-    rw [← ValuativeExtension.vle_iff_vle (A := L) (B := M), ← IsScalarTower.algebraMap_apply,
-      ← IsScalarTower.algebraMap_apply, ValuativeExtension.vle_iff_vle]⟩
+  have := ValuativeExtension.of_tower_top K L M
   rw [inertiaDegree_tower (K := K) (L := L) M, IsUnramified.inertiaDegree_eq_finrank]
 
 /-- Over an unramified `L/K`, the top step of a tower `M/L/K` is totally ramified exactly when

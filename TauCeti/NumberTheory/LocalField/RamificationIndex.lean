@@ -567,6 +567,16 @@ theorem ramificationIndex_eq_ramificationIdx :
     pow_dvd_pow_iff hϖ.ne_zero hϖ.not_isUnit] at hle
   omega
 
+/-- The units map of the composite `K → M` factors through the two steps of a tower `M/L/K`. -/
+theorem unitsMap_algebraMap_tower (K L M : Type*) [CommSemiring K] [CommSemiring L]
+    [CommSemiring M] [Algebra K L] [Algebra L M] [Algebra K M] [IsScalarTower K L M] :
+    Units.map (algebraMap K M : K →* M) =
+      (Units.map (algebraMap L M : L →* M)).comp (Units.map (algebraMap K L : K →* L)) := by
+  rw [← Units.map_comp]
+  congr 1
+  ext x
+  exact IsScalarTower.algebraMap_apply K L M x
+
 omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
   [ValuativeExtension K L] in
 /-- **Multiplicativity of the ramification index in a tower** `M/L/K`:
@@ -578,12 +588,9 @@ theorem ramificationIndex_tower (M : Type*) [Field M] [ValuativeRel M] [Topologi
   have hcomp : (normalizedValuation M).comp (Units.map (algebraMap K M : K →* M)) =
       (powMonoidHom (ramificationIndex L M)).comp
         ((normalizedValuation L).comp (Units.map (algebraMap K L : K →* L))) := by
+    rw [unitsMap_algebraMap_tower K L M]
     ext x
-    have hx : Units.map (algebraMap K M : K →* M) x =
-        Units.map (algebraMap L M : L →* M) (Units.map (algebraMap K L : K →* L) x) := by
-      ext
-      simp [← IsScalarTower.algebraMap_apply]
-    simp [hx]
+    simp
   have hLM : ramificationIndex L M = (powMonoidHom (ramificationIndex L M) :
       Multiplicative ℤ →* Multiplicative ℤ).range.index := by
     refine ramificationIndex_def.trans ?_
@@ -592,12 +599,8 @@ theorem ramificationIndex_tower (M : Type*) [Field M] [ValuativeRel M] [Topologi
         ext x; simp, MonoidHom.range_comp, MonoidHom.range_eq_top.2 normalizedValuation_surjective,
       Subgroup.map_top]
   have hinj : Function.Injective (powMonoidHom (ramificationIndex L M) :
-      Multiplicative ℤ →* Multiplicative ℤ) := by
-    intro x y hxy
-    have := congrArg Multiplicative.toAdd hxy
-    simp only [powMonoidHom_apply, toAdd_pow] at this
-    exact Multiplicative.toAdd.injective
-      (mul_left_cancel₀ (Nat.cast_ne_zero.2 ramificationIndex_pos.ne') this)
+      Multiplicative ℤ →* Multiplicative ℤ) :=
+    pow_left_injective ramificationIndex_pos.ne'
   rw [ramificationIndex_def, hcomp, MonoidHom.range_comp]
   refine (Subgroup.index_map_of_injective _ hinj).trans ?_
   rw [← hLM, ← ramificationIndex_def]
