@@ -8,6 +8,7 @@ module
 public import TauCeti.Topology.Sheaves.SupportedCohomology.Sections
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import TauCeti.CategoryTheory.Sites.CoefficientEquivalence
+public import TauCeti.CategoryTheory.Sites.Preadditive
 public import TauCeti.CategoryTheory.Abelian.RightDerived
 
 /-!

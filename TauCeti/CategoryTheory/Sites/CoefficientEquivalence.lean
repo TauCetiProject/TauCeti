@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Sites.Adjunction
-public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 
 /-!
 # Changing sheaf coefficients by an equivalence
@@ -129,16 +128,5 @@ instance isEquivalence_sheafCompose {C : Type u} [Category.{v} C]
     (J : GrothendieckTopology C) (F : A ⥤ B) [F.IsEquivalence] :
     (sheafCompose J F).IsEquivalence :=
   (F.asEquivalence.sheafCongrRight J).isEquivalence_functor
-
-/-- Postcomposition with an additive coefficient functor is additive on sheaves. -/
-instance additive_sheafCompose {C : Type u} [Category.{v} C]
-    {A : Type u₁} [Category.{v₁} A] [Preadditive A]
-    {B : Type u₂} [Category.{v₂} B] [Preadditive B]
-    (J : GrothendieckTopology C) (F : A ⥤ B) [J.HasSheafCompose F] [F.Additive] :
-    (sheafCompose J F).Additive where
-  map_add := by
-    intro P Q f g
-    ext U
-    exact F.map_add
 
 end CategoryTheory
