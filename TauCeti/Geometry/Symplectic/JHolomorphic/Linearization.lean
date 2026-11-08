@@ -21,7 +21,8 @@ variation of the map and the variation of the target almost complex structure.
 
 These are local-coordinate formulas, without a Sobolev completion or a transversality
 assertion. The Leibniz rule identifies the first-order symbol, and the reparametrization
-formula proves that infinitesimal source reparametrizations have tangent-valued linearization.
+formula proves that, for a `C²` curve J-holomorphic near the point, differentiable infinitesimal
+source reparametrizations have tangent-valued linearization.
 For square-minus-one structures, the defect equals twice the usual anti-complex-linear part
 composed with the source structure.
 The geometric linearization follows McDuff–Salamon, *J-holomorphic Curves and Symplectic
