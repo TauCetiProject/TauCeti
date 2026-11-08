@@ -115,6 +115,13 @@ def transpose {μ : YoungDiagram} (T : StandardYoungTableau μ) :
       Fin.cast_lt_cast, toTableau_apply] using
       T.row_strict h (YoungDiagram.mem_transpose.mp hcell)
 
+/-- The underlying tableau of the transpose of a standard Young tableau is the transpose of its
+underlying tableau. -/
+@[simp]
+theorem transpose_toTableau {μ : YoungDiagram} (T : StandardYoungTableau μ) :
+    T.transpose.toTableau = YoungTableau.transpose T.toTableau :=
+  (rfl)
+
 /-- Transposition preserves the numeric label of each cell. -/
 @[simp]
 theorem transpose_apply_val {μ : YoungDiagram} (T : StandardYoungTableau μ)

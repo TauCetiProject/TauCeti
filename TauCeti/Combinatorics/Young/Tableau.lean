@@ -463,23 +463,6 @@ theorem exists_relabel_eq (t t' : YoungTableau μ) : ∃ σ, relabel σ t = t' :
 
 /-! ## Transposition -/
 
-/-- Swapping the two coordinates identifies the cells of the transpose `μᵗ` with the cells
-of `μ`. -/
-def _root_.YoungDiagram.transposeCellsEquiv (μ : YoungDiagram) :
-    ↥μ.transpose.cells ≃ ↥μ.cells :=
-  (Equiv.prodComm ℕ ℕ).subtypeEquiv fun _ => YoungDiagram.mem_transpose
-
-@[simp]
-theorem _root_.YoungDiagram.transposeCellsEquiv_apply (μ : YoungDiagram)
-    (c : ↥μ.transpose.cells) :
-    μ.transposeCellsEquiv c = ⟨(c : ℕ × ℕ).swap, YoungDiagram.mem_transpose.mp c.2⟩ :=
-  (rfl)
-
-@[simp]
-theorem _root_.YoungDiagram.transposeCellsEquiv_symm_apply (μ : YoungDiagram) (c : ↥μ.cells) :
-    μ.transposeCellsEquiv.symm c = ⟨(c : ℕ × ℕ).swap, YoungDiagram.mem_transpose.mpr c.2⟩ :=
-  (rfl)
-
 /-- The **transpose** of a `μ`-tableau: the `μᵗ`-tableau giving the cell `(j, i)` the label
 that `t` gives to the cell `(i, j)`, read in `Fin μᵗ.card` through
 `YoungDiagram.card_transpose`.  Rows and columns are exchanged: the label `k` lies in row `i` of

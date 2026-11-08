@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.MonoidAlgebra.CharacterTwist
 public import TauCeti.RepresentationTheory.Symmetric.Symmetrizer
 
 /-!
@@ -13,8 +12,8 @@ public import TauCeti.RepresentationTheory.Symmetric.Symmetrizer
 
 Transposing a `μ`-tableau `t` (`TauCeti.YoungTableau.transpose`) exchanges its rows and its
 columns, so it exchanges the row group and the column group of `t`. In the group algebra
-`R[Sₙ]` the **sign automorphism** `ε`, `σ ↦ sgn(σ) σ`, turns the sum over a group into the signed
-sum over the same group and back. Together these give the identities
+`R[Sₙ]` the **sign automorphism** `ε = TauCeti.signTwist`, `σ ↦ sgn(σ) σ`, turns the sum over a
+group into the signed sum over the same group and back. Together these give the identities
 
 `ε(a_t) = b_(tᵗ)`, `ε(b_t) = a_(tᵗ)`, hence `ε(c_t) = b_(tᵗ) a_(tᵗ)`,
 
@@ -33,8 +32,6 @@ by `MonoidAlgebra.domCongr` of that isomorphism.
 * `TauCeti.YoungTableau.rowSubgroup_transpose`, `TauCeti.YoungTableau.colSubgroup_transpose`: the
   row group of `tᵗ` is the column group of `t`, and the column group of `tᵗ` is the row group of
   `t`.
-* `TauCeti.signTwist R α`: the sign automorphism `ε` of `R[Perm α]`, the twist of the group
-  algebra by the sign character; it is an involution (`TauCeti.signTwist_signTwist`).
 * `TauCeti.YoungTableau.signTwist_rowSymmetrizer`,
   `TauCeti.YoungTableau.signTwist_columnAntisymmetrizer` and
   `TauCeti.YoungTableau.signTwist_youngSymmetrizer`: `ε(a_t) = b_(tᵗ)`, `ε(b_t) = a_(tᵗ)` and
@@ -48,46 +45,6 @@ by `MonoidAlgebra.domCongr` of that isomorphism.
 public section
 
 namespace TauCeti
-
-/-! ## The sign automorphism -/
-
-section SignTwist
-
-variable (R : Type*) [CommRing R] (α : Type*) [DecidableEq α] [Fintype α]
-
-/-- The **sign automorphism** `ε` of the group algebra `R[Perm α]`, which multiplies each
-permutation `σ` by its sign: the twist of the group algebra by the sign character. -/
-noncomputable def signTwist :
-    MonoidAlgebra R (Equiv.Perm α) ≃ₐ[R] MonoidAlgebra R (Equiv.Perm α) :=
-  MonoidAlgebra.charTwist (signLinearCharacter R α)
-
-variable {R α}
-
-/-- The sign automorphism multiplies `single σ r` by the sign of `σ`. -/
-@[simp]
-theorem signTwist_single (σ : Equiv.Perm α) (r : R) :
-    signTwist R α (MonoidAlgebra.single σ r) =
-      MonoidAlgebra.single σ (((Equiv.Perm.sign σ : ℤ) : R) * r) := by
-  rw [signTwist, MonoidAlgebra.charTwist_single, coe_signLinearCharacter_apply]
-
-/-- The coefficients of `ε(x)` are those of `x` multiplied by the sign. -/
-@[simp]
-theorem coeff_signTwist (x : MonoidAlgebra R (Equiv.Perm α)) (σ : Equiv.Perm α) :
-    (signTwist R α x).coeff σ = ((Equiv.Perm.sign σ : ℤ) : R) * x.coeff σ := by
-  rw [signTwist, MonoidAlgebra.coeff_charTwist, coe_signLinearCharacter_apply]
-
-/-- The sign automorphism is an involution. -/
-@[simp]
-theorem signTwist_signTwist (x : MonoidAlgebra R (Equiv.Perm α)) :
-    signTwist R α (signTwist R α x) = x :=
-  MonoidAlgebra.charTwist_involutive signLinearCharacter_mul_self x
-
-/-- The sign automorphism is its own inverse. -/
-@[simp]
-theorem signTwist_symm : (signTwist R α).symm = signTwist R α :=
-  AlgEquiv.ext fun x ↦ (AlgEquiv.symm_apply_eq _).mpr (signTwist_signTwist x).symm
-
-end SignTwist
 
 namespace YoungTableau
 
