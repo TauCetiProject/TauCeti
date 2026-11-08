@@ -91,8 +91,8 @@ theorem integral_sq_sub_of_le (hB : IsPreBrownianReal B P) {s t : ℝ≥0} (hst 
 theorem integral_pow_four_sub_of_le (hB : IsPreBrownianReal B P) {s t : ℝ≥0}
     (hst : s ≤ t) : ∫ ω, (B t ω - B s ω) ^ 4 ∂P = 3 * ((t : ℝ) - s) ^ 2 := by
   have hm : ∫ x : ℝ, x ^ 4 ∂gaussianReal 0 (t - s) = 3 * ((t : ℝ) - s) ^ 2 := by
-    simpa [Nat.doubleFactorial, NNReal.coe_sub hst, mul_comm] using
-      TauCeti.Probability.integral_sub_pow_two_mul_gaussianReal 0 (t - s) 2
+    simpa only [sub_zero, NNReal.coe_sub hst] using
+      integral_sub_pow_four_gaussianReal 0 (t - s)
   simpa only [Function.comp_apply, Pi.sub_apply] using
     ((hB.hasLaw_sub_of_le hst).integral_comp (f := fun x : ℝ ↦ x ^ 4) (by fun_prop)).trans hm
 
@@ -113,8 +113,7 @@ theorem integral_quadraticSum (hB : IsPreBrownianReal B P) (ht : Monotone t) :
         exact hB.integral_sq_sub_of_le (ht (Fin.castSucc_le_succ i))
       _ = _ := Fin.sum_univ_succ_sub_castSucc (fun i ↦ (t i : ℝ))
   · intro i _
-    exact ((hB.hasLaw_sub (t i.succ) (t i.castSucc)).memLp
-      (memLp_id_gaussianReal 2)).integrable_sq
+    exact (hB.memLp_sq_sub (t i.succ) (t i.castSucc)).integrable one_le_two
 
 /-- On a nondecreasing grid, the variance of a Brownian quadratic sum is twice the sum
 of the squared interval lengths. -/
