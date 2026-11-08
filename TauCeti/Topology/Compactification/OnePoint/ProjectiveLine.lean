@@ -223,6 +223,16 @@ instance : MulAction.IsPretransitive PSL(2, K) (OnePoint K) :=
       rw [equivProjectivization_psl_smul, Equiv.apply_symm_apply, Equiv.apply_symm_apply]⟩)
     (equivProjectivization K).symm.surjective inferInstance
 
+/-- The identification `OnePoint.equivProjectivization` intertwines the action of `SL(2, K)` on
+`ℙ K (Fin 2 → K)` with the action of its image in `GL(2, K)` on `OnePoint K`. -/
+lemma equivProjectivization_symm_toGL_smul (γ : SL(2, K)) (p : ℙ K (Fin 2 → K)) :
+    (γ : GL (Fin 2) K) • (equivProjectivization K).symm p =
+      (equivProjectivization K).symm (γ • p) := by
+  rw [Equiv.smul_def (equivProjectivization K), Equiv.apply_symm_apply]
+  -- The `SL(2, K)` and `GL(2, K)` actions on `ℙ K (Fin 2 → K)` are both multiplication of
+  -- representatives by the underlying matrix.
+  rfl
+
 /-- **`GL(2, K)` acts 2-transitively on the projective line**: any two distinct points of
 `OnePoint K` are carried to any two distinct points by some Möbius transformation. This is
 Mathlib's 2-transitivity of `SL(2, K)` on `ℙ K (Fin 2 → K)`, transported along
@@ -230,12 +240,10 @@ Mathlib's 2-transitivity of `SL(2, K)` on `ℙ K (Fin 2 → K)`, transported alo
 instance instIsMultiplyPretransitiveGL :
     MulAction.IsMultiplyPretransitive (GL (Fin 2) K) (OnePoint K) 2 :=
   MulAction.IsPretransitive.of_embedding
-    (f := (⟨(equivProjectivization K).symm, fun g p ↦ by
-      rw [Equiv.smul_def (equivProjectivization K), Equiv.apply_symm_apply]
-      -- The `SL(2, K)` and `GL(2, K)` actions on `ℙ K (Fin 2 → K)` are both multiplication of
-      -- representatives by the underlying matrix.
-      rfl⟩ : ℙ K (Fin 2 → K) →ₑ[(Matrix.SpecialLinearGroup.toGL : SL(2, K) →* GL (Fin 2) K)]
-        OnePoint K))
+    (f := (⟨(equivProjectivization K).symm, fun γ p ↦
+      (equivProjectivization_symm_toGL_smul γ p).symm⟩ :
+        ℙ K (Fin 2 → K) →ₑ[(Matrix.SpecialLinearGroup.toGL : SL(2, K) →* GL (Fin 2) K)]
+          OnePoint K))
     (equivProjectivization K).symm.surjective
 
 /-- **Any two distinct points of the projective line are the images of `0` and `∞` under a matrix
@@ -248,10 +256,16 @@ theorem exists_smul_zero_infty_eq {a b : OnePoint K} (h : a ≠ b) :
   obtain ⟨γ, hγ⟩ := MulAction.exists_smul_eq SL(2, K)
     (Function.Embedding.embFinTwo (e.injective.ne (coe_ne_infty (0 : K))))
     (Function.Embedding.embFinTwo (e.injective.ne h))
-  refine ⟨γ, by simp, ?_, ?_⟩ <;> apply e.injective <;> rw [equivProjectivization_smul]
-  -- `SL(2, K)` acts on `ℙ K (Fin 2 → K)` as its image in `GL(2, K)` does.
-  exacts [(Function.Embedding.smul_apply γ _ 0).symm.trans (DFunLike.congr_fun hγ 0),
-    (Function.Embedding.smul_apply γ _ 1).symm.trans (DFunLike.congr_fun hγ 1)]
+  have h₀ := DFunLike.congr_fun hγ 0
+  have h₁ := DFunLike.congr_fun hγ 1
+  rw [Function.Embedding.smul_apply, Function.Embedding.embFinTwo_apply_zero,
+    Function.Embedding.embFinTwo_apply_zero] at h₀
+  rw [Function.Embedding.smul_apply, Function.Embedding.embFinTwo_apply_one,
+    Function.Embedding.embFinTwo_apply_one] at h₁
+  refine ⟨γ, by simp, ?_, ?_⟩
+  · rw [← e.symm_apply_apply ((0 : K) : OnePoint K), equivProjectivization_symm_toGL_smul, h₀,
+      e.symm_apply_apply]
+  · rw [← e.symm_apply_apply ∞, equivProjectivization_symm_toGL_smul, h₁, e.symm_apply_apply]
 
 end OnePoint
 
