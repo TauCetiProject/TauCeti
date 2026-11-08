@@ -69,6 +69,45 @@ public section
 
 open NumberField
 
+namespace TauCeti
+
+open IsCyclotomicExtension.Rat
+
+variable {K : Type*} [Field K] [NumberField K] (m : ℕ) [NeZero m]
+  [IsCyclotomicExtension {m} ℚ K]
+
+/-- The action on an algebraic integer of the integral Stickelberger element
+`γ = ∑ σ, c(σ) σ⁻¹`. Here `c(σ)` is the least nonnegative representative of the
+cyclotomic character; for `m ≥ 2` it lies in `[1, m)`. -/
+noncomputable def stickelbergerProduct (α : 𝓞 K) : 𝓞 K :=
+  ∏ σ : Gal(K/ℚ), (σ⁻¹ • α) ^ (galEquivZMod m K σ : ZMod m).val
+
+/-- The product defining the action of the integral Stickelberger element. -/
+theorem stickelbergerProduct_def (α : 𝓞 K) :
+    stickelbergerProduct m α =
+      ∏ σ : Gal(K/ℚ), (σ⁻¹ • α) ^ (galEquivZMod m K σ : ZMod m).val := (rfl)
+
+/-- The Stickelberger product is multiplicative. -/
+@[simp]
+theorem stickelbergerProduct_mul (α β : 𝓞 K) :
+    stickelbergerProduct m (α * β) = stickelbergerProduct m α * stickelbergerProduct m β := by
+  simp [stickelbergerProduct_def, smul_mul', mul_pow, Finset.prod_mul_distrib]
+
+/-- The Stickelberger product of `1` is `1`. -/
+@[simp]
+theorem stickelbergerProduct_one : stickelbergerProduct m (1 : 𝓞 K) = 1 := by
+  simp [stickelbergerProduct_def]
+
+/-- The Stickelberger product commutes with natural powers. -/
+@[simp]
+theorem stickelbergerProduct_pow (α : 𝓞 K) (n : ℕ) :
+    stickelbergerProduct m (α ^ n) = stickelbergerProduct m α ^ n := by
+  induction n with
+  | zero => simp
+  | succ n ih => simp [pow_succ, ih]
+
+end TauCeti
+
 namespace Ideal
 
 open UniqueFactorizationMonoid IsCyclotomicExtension.Rat
@@ -310,8 +349,8 @@ same ideal, with `c(σ)` as in `Ideal.span_stickelbergerPhi`. -/
 theorem span_stickelbergerPhi_span_singleton (hm : 2 ≤ m) {α : 𝓞 K}
     (hα : (absNorm (span {α})).Coprime m) :
     span {stickelbergerPhi (span {α}) m} =
-      span {∏ σ : Gal(K/ℚ), (σ⁻¹ • α) ^ (galEquivZMod m K σ : ZMod m).val} := by
-  rw [span_stickelbergerPhi hm hα, ← prod_span_singleton]
+      span {TauCeti.stickelbergerProduct m α} := by
+  rw [TauCeti.stickelbergerProduct_def, span_stickelbergerPhi hm hα, ← prod_span_singleton]
   simp only [smul_closure, Set.smul_set_singleton, span_singleton_pow]
 
 end Ideal

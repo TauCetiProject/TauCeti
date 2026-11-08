@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.NumberField.PowerResidueSymbol.StickelbergerPhi.Relation
 import TauCeti.NumberTheory.NumberField.Cyclotomic.MaximalRealSubfield
 import TauCeti.NumberTheory.NumberField.AutomorphismAction
+import TauCeti.NumberTheory.NumberField.Ideal.Norm
 
 /-!
 # The root-of-unity factor in Stickelberger's relation
@@ -20,8 +21,8 @@ Gauss sum power `Φ((α))` is therefore a root of unity. This separates the
 ideal-theoretic relation from the primary-element normalization of the unit.
 
 The argument uses `Ideal.span_stickelbergerPhi_span_singleton` and
-`Ideal.stickelbergerPhi_norm_sq`, followed by Mathlib's Kronecker theorem
-`NumberField.Embeddings.pow_eq_one_of_norm_eq_one`. The final theorem expresses
+`Ideal.stickelbergerPhi_norm_sq`, followed by Mathlib's torsion criterion
+`NumberField.Units.mem_torsion`. The final theorem expresses
 the unit as `±ζ ^ i`, with `i < m`, using Mathlib's cyclotomic roots-of-unity API.
 
 ## References
@@ -39,28 +40,6 @@ namespace TauCeti
 
 variable {K : Type*} [Field K] [NumberField K] (m : ℕ) [NeZero m]
   [IsCyclotomicExtension {m} ℚ K]
-
-/-- The action on an algebraic integer of the integral Stickelberger element
-`γ = ∑ σ, c(σ) σ⁻¹`. Here `c(σ)` is the least nonnegative representative of the
-cyclotomic character; for `m ≥ 2` it lies in `[1, m)`. -/
-noncomputable def stickelbergerProduct (α : 𝓞 K) : 𝓞 K :=
-  ∏ σ : Gal(K/ℚ), (σ⁻¹ • α) ^ (galEquivZMod m K σ : ZMod m).val
-
-/-- The product defining the action of the integral Stickelberger element. -/
-theorem stickelbergerProduct_def (α : 𝓞 K) :
-    stickelbergerProduct m α =
-      ∏ σ : Gal(K/ℚ), (σ⁻¹ • α) ^ (galEquivZMod m K σ : ZMod m).val := (rfl)
-
-/-- The Stickelberger product is multiplicative. -/
-@[simp]
-theorem stickelbergerProduct_mul (α β : 𝓞 K) :
-    stickelbergerProduct m (α * β) = stickelbergerProduct m α * stickelbergerProduct m β := by
-  simp [stickelbergerProduct_def, smul_mul', mul_pow, Finset.prod_mul_distrib]
-
-/-- The Stickelberger product of `1` is `1`. -/
-@[simp]
-theorem stickelbergerProduct_one : stickelbergerProduct m (1 : 𝓞 K) = 1 := by
-  simp [stickelbergerProduct_def]
 
 /-- At each complex embedding the squared absolute value of `α ^ γ` is `|N α| ^ m`. -/
 theorem norm_stickelbergerProduct_sq (hm : 2 ≤ m) (α : 𝓞 K) (φ : K →+* ℂ) :
@@ -93,15 +72,8 @@ theorem norm_stickelbergerProduct_sq (hm : 2 ≤ m) (α : 𝓞 K) (φ : K →+* 
       _ = _ := by simp only [hf]
   have hnorm : (∏ σ, f σ) = (Ideal.absNorm (Ideal.span {α}) : ℝ) := by
     have : IsGalois ℚ K := IsCyclotomicExtension.isGalois {m} ℚ K
-    rw [Ideal.absNorm_span_singleton]
-    have h := Algebra.norm_eq_prod_automorphisms (K := ℚ) (α : K)
-    have hinv : (∏ σ : Gal(K/ℚ), σ⁻¹ (α : K)) = ∏ σ : Gal(K/ℚ), σ (α : K) :=
-      Equiv.prod_comp (Equiv.inv Gal(K/ℚ)) (fun σ ↦ σ (α : K))
-    have heq : (∏ σ : Gal(K/ℚ), σ⁻¹ (α : K)) =
-        algebraMap ℚ K (Algebra.norm ℚ (α : K)) := hinv.trans h.symm
-    have hφ := congrArg (fun x : K ↦ ‖φ x‖) heq
-    simpa [map_prod, norm_prod, f, ← Algebra.coe_norm_int, Int.norm_cast_real,
-      Rat.cast_intCast] using hφ
+    exact (Equiv.prod_comp (Equiv.inv Gal(K/ℚ))
+      (fun σ ↦ ‖φ (σ (α : K))‖)).trans (φ.prod_norm_automorphisms_eq_absNorm α)
   rw [hp, pow_two]
   calc
     _ = (∏ σ, f σ ^ c (σ * τ)) * (∏ σ, f σ ^ c σ) := congrArg (· * _) hreindex
@@ -121,8 +93,8 @@ theorem exists_torsion_mul_stickelbergerProduct_eq (hm : 2 ≤ m) {α : 𝓞 K}
     (Ideal.span_stickelbergerPhi_span_singleton hm hα)).symm
   have hu' : (u : 𝓞 K) * stickelbergerProduct m α =
       Ideal.stickelbergerPhi (Ideal.span {α}) m := by
-    simpa only [stickelbergerProduct_def, mul_comm] using hu
-  refine ⟨u, ?_, hu'⟩
+    simpa only [mul_comm] using hu
+  refine ⟨u, (NumberField.Units.mem_torsion K).mpr fun w ↦ ?_, hu'⟩
   have hN : Ideal.absNorm (Ideal.span {α}) ≠ 0 := by
     intro h
     rw [h, Nat.coprime_zero_left] at hα
@@ -138,13 +110,8 @@ theorem exists_torsion_mul_stickelbergerProduct_eq (hm : 2 ≤ m) {α : 𝓞 K}
     have hsq : ‖φ ((u : 𝓞 K) : K)‖ ^ 2 = 1 :=
       mul_right_cancel₀ hN' (hΦ.trans (one_mul _).symm)
     nlinarith [norm_nonneg (φ ((u : 𝓞 K) : K))]
-  obtain ⟨n, hn, hpow⟩ := Embeddings.pow_eq_one_of_norm_eq_one K ℂ
-    (u : 𝓞 K).isIntegral_coe hnorm
-  rw [NumberField.Units.torsion, CommGroup.mem_torsion, isOfFinOrder_iff_pow_eq_one]
-  refine ⟨n, hn, ?_⟩
-  apply Units.ext
-  apply RingOfIntegers.ext
-  simpa using hpow
+  rw [← InfinitePlace.norm_embedding_eq]
+  exact hnorm w.embedding
 
 end TauCeti
 
@@ -156,7 +123,7 @@ variable {K : Type*} [Field K] [NumberField K] {m : ℕ} [NeZero m]
 /-- **The root-of-unity factor in Stickelberger's relation.** For a cyclotomic integer
 `α` of norm prime to `m`, the Gauss sum power `Φ((α))` is `α ^ γ` times a root of unity
 `±ζ ^ i`, with `0 ≤ i < m`. -/
-theorem exists_pow_or_neg_pow_mul_stickelbergerProduct (hζ : IsPrimitiveRoot ζ m)
+theorem exists_stickelbergerPhi_eq_pow_mul_or_neg_pow_mul (hζ : IsPrimitiveRoot ζ m)
     (hm : 2 ≤ m) {α : 𝓞 K} (hα : (Ideal.absNorm (Ideal.span {α})).Coprime m) :
     ∃ i : ℕ, i < m ∧
       ((Ideal.stickelbergerPhi (Ideal.span {α}) m : K) =
