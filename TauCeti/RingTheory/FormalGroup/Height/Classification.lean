@@ -186,8 +186,7 @@ private theorem coeff_pSeriesError_add (hF : F.height p = h) (hG : G.height p = 
   have hG₁ := MvPowerSeries.coeff_subst_sub_subst_of_degree_le ψ
     (a := fun _ ↦ ((f + c • PowerSeries.X ^ M) ^ q : PowerSeries K))
     (b := fun _ ↦ (f ^ q : PowerSeries K))
-    (hasSubst_of_constantCoeff_zero fun _ ↦ hq₀ _ hfc)
-    (hasSubst_of_constantCoeff_zero fun _ ↦ hq₀ f hf) (fun _ ↦ hq₀ _ hfc) (fun _ ↦ hq₀ f hf)
+    (fun _ ↦ hq₀ _ hfc) (fun _ ↦ hq₀ f hf)
     (fun _ ↦ hord) (e := Finsupp.single () (M * q)) (by simp)
   have hG₁' : PowerSeries.coeff (M * q) (PowerSeries.subst ((f + c • PowerSeries.X ^ M) ^ q) ψ -
       PowerSeries.subst (f ^ q) ψ) = PowerSeries.coeff 1 ψ * c ^ q := by
