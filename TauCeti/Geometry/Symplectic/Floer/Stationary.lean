@@ -43,7 +43,7 @@ on the strip `ℝ × [0, 1]` has zero energy exactly when it is stationary there
 
 A solution of finite energy that is invariant under a translation by `c ≠ 0` has the same energy
 over each of the infinitely many disjoint period rectangles of the strip, so its energy is zero
-(`SmoothTwoForm.IsNondegenerate.lintegral_floerEnergyDensity_eq_zero_of_periodic`, from
+(`SmoothTwoForm.lintegral_floerEnergyDensity_eq_zero_of_periodic`, from
 `TauCeti.setLIntegral_univ_prod_eq_zero_of_periodic`), and it is stationary. Hence a
 nonstationary finite-energy solution is fixed by no nontrivial translation
 (`SmoothTwoForm.IsNondegenerate.eq_zero_of_lintegral_floerEnergyDensity_ne_top_of_periodic`).
@@ -57,8 +57,8 @@ transversality is asserted.
   Hamiltonian orbits.
 * `SmoothTwoForm.IsNondegenerate.lintegral_floerEnergyDensity_eq_zero_iff`: a solution has zero
   energy exactly when it is stationary.
-* `SmoothTwoForm.IsNondegenerate.lintegral_floerEnergyDensity_eq_zero_of_periodic`: a
-  finite-energy solution invariant under a nontrivial translation has zero energy.
+* `SmoothTwoForm.lintegral_floerEnergyDensity_eq_zero_of_periodic`: a finite-energy map invariant
+  under a nontrivial translation has zero energy.
 * `SmoothTwoForm.IsNondegenerate.eq_zero_of_lintegral_floerEnergyDensity_ne_top_of_periodic`:
   translations act freely on nonstationary finite-energy solutions.
 
@@ -87,25 +87,6 @@ section Stationary
 
 variable {ω : SmoothTwoForm I M} {H : ℝ → M → ℝ} {x : ℝ → M} {z : ℝ × ℝ}
 
-omit [IsManifold I (⊤ : ℕ∞) M] in
-/-- A stationary map `(s, t) ↦ x(t)` has zero derivative in `s`. -/
-private theorem mfderiv_comp_snd_stdComplexLineReal (hx : MDifferentiableAt 𝓘(ℝ) I x z.2) :
-    mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun w ↦ x w.2) z stdComplexLineReal = 0 := by
-  have h := Manifold.curveVelocity_eq_mfderiv_fst (I := I) (f := fun _ b ↦ x b) (u := z.1)
-    (t := z.2) (hx.comp z differentiableAt_snd.mdifferentiableAt)
-  rw [Manifold.curveVelocity_const] at h
-  rw [stdComplexLineReal_eq]
-  exact h.symm
-
-omit [IsManifold I (⊤ : ℕ∞) M] in
-/-- The derivative in `t` of a stationary map `(s, t) ↦ x(t)` is the velocity `x'(t)`. -/
-private theorem mfderiv_comp_snd_stdComplexLineImag (hx : MDifferentiableAt 𝓘(ℝ) I x z.2) :
-    mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun w ↦ x w.2) z stdComplexLineImag =
-      Manifold.curveVelocity I x z.2 := by
-  rw [stdComplexLineImag_eq]
-  exact (Manifold.curveVelocity_eq_mfderiv_snd (I := I) (f := fun _ b ↦ x b) (u := z.1)
-    (t := z.2) (hx.comp z differentiableAt_snd.mdifferentiableAt)).symm
-
 /-- **Stationary Floer cylinders are Hamiltonian orbits.** For the cylindrical perturbation
 `K = H_t dt` and any almost complex structure `J` on the tangent space, the stationary map
 `(s, t) ↦ x(t)` solves the Floer equation at `z` exactly when `x'(t) = X_{H_t}(x(t))`, where
@@ -116,8 +97,8 @@ theorem isComplexLinearMap_perturbedMFDeriv_comp_snd_iff
         (ω.perturbedMFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ x w.2) z).toLinearMap ↔
       Manifold.curveVelocity I x z.2 = ω.hamiltonianVectorField (H z.2) (x z.2) := by
   rw [ω.isComplexLinearMap_perturbedMFDeriv_iff _ _ (fun w ↦ x w.2) z J,
-    mfderiv_comp_snd_stdComplexLineReal hx,
-    mfderiv_comp_snd_stdComplexLineImag hx, hamiltonianVectorField_const, Pi.zero_apply,
+    stdComplexLineReal_eq, stdComplexLineImag_eq, Manifold.mfderiv_comp_snd_apply_one_zero hx,
+    Manifold.mfderiv_comp_snd_apply_zero_one hx, hamiltonianVectorField_const, Pi.zero_apply,
     sub_zero, zero_add]
   -- An almost complex structure is injective, since `J (J v) = -v`.
   refine ⟨fun h ↦ ?_, fun h ↦ by rw [h, sub_self, map_zero]⟩
@@ -145,8 +126,8 @@ the Floer energy density of `(s, t) ↦ x(t)` vanishes. -/
 theorem floerEnergyDensity_comp_snd (hx : MDifferentiableAt 𝓘(ℝ) I x z.2) :
     ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ x w.2) z = 0 := by
   rw [floerEnergyDensity_def, perturbedMFDeriv_apply_stdComplexLineReal,
-    mfderiv_comp_snd_stdComplexLineReal hx, hamiltonianVectorField_const, Pi.zero_apply, sub_zero,
-    SmoothBundleForm.eval₂_apply]
+    stdComplexLineReal_eq, Manifold.mfderiv_comp_snd_apply_one_zero hx,
+    hamiltonianVectorField_const, Pi.zero_apply, sub_zero, SmoothBundleForm.eval₂_apply]
   exact ContinuousAlternatingMap.map_coord_zero _ 0 rfl
 
 end Stationary
@@ -195,30 +176,6 @@ private theorem strip_Ioo_subset_Icc :
 private theorem closure_univ_prod_Ioo :
     closure ((univ : Set ℝ) ×ˢ Ioo (0 : ℝ) 1) = (univ : Set ℝ) ×ˢ Icc 0 1 := by
   rw [closure_prod_eq, closure_univ, closure_Ioo zero_ne_one]
-
-/-- A `C¹` map whose derivative in `s` vanishes along the horizontal line at height `t` is
-constant along that line. -/
-private theorem apply_eq_of_mfderiv_stdComplexLineReal_eq_zero (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u)
-    {t : ℝ} (h : ∀ s, mfderiv 𝓘(ℝ, ℝ × ℝ) I u (s, t) stdComplexLineReal = 0) (s : ℝ) :
-    u (s, t) = u (0, t) := by
-  have hline (r : ℝ) : HasMFDerivAt 𝓘(ℝ) I (fun r ↦ u (r, t)) r 0 := by
-    have hr := Manifold.hasMFDerivAt_apply_fst ((hu (r, t)).mdifferentiableAt one_ne_zero)
-    rwa [← stdComplexLineReal_eq, h r, ContinuousLinearMap.smulRight_zero] at hr
-  exact MDifferentiable.apply_eq_of_mfderiv_eq_zero (fun r ↦ (hline r).mdifferentiableAt)
-    (fun r ↦ (hline r).mfderiv) s 0
-
-omit [IsManifold I (⊤ : ℕ∞) M] in
-/-- A `C¹` map that is constant along the horizontal line at height `t` has vanishing derivative
-in `s` along that line. -/
-private theorem mfderiv_stdComplexLineReal_eq_zero_of_apply_eq (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u)
-    {t : ℝ} (h : ∀ s, u (s, t) = u (0, t)) (s : ℝ) :
-    mfderiv 𝓘(ℝ, ℝ × ℝ) I u (s, t) stdComplexLineReal = 0 := by
-  have h1 := Manifold.curveVelocity_eq_mfderiv_fst (I := I) (f := fun a b ↦ u (a, b)) (u := s)
-    (t := t) ((hu (s, t)).mdifferentiableAt one_ne_zero)
-  rw [show (fun q ↦ u (q, t)) = fun _ ↦ u (0, t) from funext h,
-    Manifold.curveVelocity_const] at h1
-  rw [stdComplexLineReal_eq]
-  exact h1.symm
 
 variable [FiniteDimensional ℝ E]
 
@@ -272,26 +229,28 @@ theorem IsNondegenerate.lintegral_floerEnergyDensity_eq_zero_iff (hω : ω.IsNon
     have h0 := hω.eqOn_floerEnergyDensity_zero hH hu hJ hfloer
       (le_antisymm (hE ▸ lintegral_mono_set strip_Ioo_subset_Icc) zero_le)
     intro s t ht
-    exact apply_eq_of_mfderiv_stdComplexLineReal_eq_zero hu
-      (fun r ↦ (hiff _ ⟨mem_univ r, ht⟩).1 (h0 ⟨mem_univ r, ht⟩)) s
+    refine Manifold.apply_eq_of_mfderiv_apply_one_zero_eq_zero
+      (fun r ↦ (hu (r, t)).mdifferentiableAt one_ne_zero) (fun r ↦ ?_) s 0
+    rw [← stdComplexLineReal_eq]
+    exact (hiff _ ⟨mem_univ r, ht⟩).1 (h0 ⟨mem_univ r, ht⟩)
   · intro hst
+    have hs (z : ℝ × ℝ) (hz : z ∈ (univ : Set ℝ) ×ˢ Icc 0 1) :
+        mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal = 0 := by
+      rw [stdComplexLineReal_eq]
+      exact Manifold.mfderiv_apply_one_zero_eq_zero_of_apply_eq
+        ((hu z).mdifferentiableAt one_ne_zero) fun s ↦ hst s z.2 hz.2
     rw [setLIntegral_congr_fun (MeasurableSet.univ.prod measurableSet_Icc) fun z hz ↦ by
-      rw [(hiff z hz).2 (mfderiv_stdComplexLineReal_eq_zero_of_apply_eq hu
-        (fun s ↦ hst s z.2 hz.2) z.1), ENNReal.ofReal_zero]]
+      rw [(hiff z hz).2 (hs z hz), ENNReal.ofReal_zero]]
     exact lintegral_zero
 
-/-- **Translation-invariant Floer cylinders have zero energy.** Under the hypotheses of
-`TauCeti.SmoothTwoForm.IsNondegenerate.lintegral_floerEnergyDensity_eq_zero_iff`, suppose that `u`
-has finite energy over the strip `ℝ × [0, 1]` and is invariant there under the translation
-`(s, t) ↦ (s + c, t)` for some `c ≠ 0`. Then the energy of `u` vanishes; by
-`TauCeti.SmoothTwoForm.IsNondegenerate.lintegral_floerEnergyDensity_eq_zero_iff` this means `u` is
-stationary. -/
-theorem IsNondegenerate.lintegral_floerEnergyDensity_eq_zero_of_periodic (hω : ω.IsNondegenerate)
-    (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H)) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u)
-    (hJ : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, (hω.symplecticFormAt (u z)).Tames (J z))
-    (hfloer : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal +
-      J z (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag -
-        ω.hamiltonianVectorField (H z.2) (u z)) = 0)
+omit [FiniteDimensional ℝ E] in
+/-- **Translation-invariant maps have zero energy.** Suppose that a differentiable map `u` has
+finite energy over the strip `ℝ × [0, 1]` for the cylindrical perturbation `K = H_t dt`, and is
+invariant there under the translation `(s, t) ↦ (s + c, t)` for some `c ≠ 0`. Then the energy of
+`u` vanishes. No Floer equation, regularity of `H` or nondegeneracy of `ω` is needed; for a Floer
+cylinder, `TauCeti.SmoothTwoForm.IsNondegenerate.lintegral_floerEnergyDensity_eq_zero_iff` then
+shows that `u` is stationary. -/
+theorem lintegral_floerEnergyDensity_eq_zero_of_periodic (hu : MDifferentiable 𝓘(ℝ, ℝ × ℝ) I u)
     (hfin : ∫⁻ z in (univ : Set ℝ) ×ˢ Icc 0 1,
       ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) ≠ ⊤)
     {c : ℝ} (hc : c ≠ 0) (hper : ∀ s, ∀ t ∈ Icc (0 : ℝ) 1, u (s + c, t) = u (s, t)) :
@@ -315,15 +274,16 @@ theorem IsNondegenerate.lintegral_floerEnergyDensity_eq_zero_of_periodic (hω : 
     -- `(s + |c|, t)`, up to the identification of the tangent spaces at equal points.
     have hτ : HasMFDerivAt 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ) (fun w : ℝ × ℝ ↦ (w.1 + |c|, w.2)) (s, t)
         (ContinuousLinearMap.id ℝ (ℝ × ℝ)) := by
+      have hfun : (fun w : ℝ × ℝ ↦ id w + ((|c|, (0 : ℝ)) : ℝ × ℝ)) =
+          fun w ↦ (w.1 + |c|, w.2) :=
+        funext fun w ↦ Prod.ext (by simp) (by simp)
       have h := ((hasFDerivAt_id (𝕜 := ℝ) (s, t)).add_const ((|c|, 0) : ℝ × ℝ)).hasMFDerivAt
-      rwa [show (fun w : ℝ × ℝ ↦ id w + ((|c|, (0 : ℝ)) : ℝ × ℝ)) = fun w ↦ (w.1 + |c|, w.2) from
-        funext fun w ↦ Prod.ext (by simp) (by simp)] at h
+      rwa [hfun] at h
     have hd : mfderiv 𝓘(ℝ, ℝ × ℝ) I u (s + |c|, t) =
         (tangentSpaceCast I (u (s, t)) (u (s + |c|, t)) :
           TangentSpace I (u (s, t)) →L[ℝ] TangentSpace I (u (s + |c|, t))) ∘L
           mfderiv 𝓘(ℝ, ℝ × ℝ) I u (s, t) := by
-      have h1 := (((hu (s + |c|, t)).mdifferentiableAt one_ne_zero).hasMFDerivAt.comp (s, t)
-        hτ).mfderiv
+      have h1 := ((hu (s + |c|, t)).hasMFDerivAt.comp (s, t) hτ).mfderiv
       -- `h1` reads `mfderiv u (s + |c|, t) ∘L id`, with the point written as `τ (s, t)`; both
       -- agree with the stated form by unfolding `ContinuousLinearMap.comp` and the projections.
       exact h1.symm.trans (hev.mfderiv_eq (I := 𝓘(ℝ, ℝ × ℝ)) (I' := I))
@@ -333,13 +293,14 @@ theorem IsNondegenerate.lintegral_floerEnergyDensity_eq_zero_of_periodic (hω : 
     rfl
   have hμ : MeasurePreserving (fun z : ℝ × ℝ ↦ (z.1 + |c|, z.2)) volume volume :=
     (measurePreserving_add_right volume |c|).prod (MeasurePreserving.id volume)
-  -- The energy over the open strip vanishes, so `u` is stationary.
+  -- The energy over the open strip vanishes, and the open and closed strips differ by the null
+  -- set `ℝ × {0, 1}`.
   have hE := setLIntegral_univ_prod_eq_zero_of_periodic measurableSet_Ioo (abs_pos.2 hc) hμ hf
     (ne_top_of_le_ne_top hfin (lintegral_mono_set strip_Ioo_subset_Icc))
-  have h0 := hω.eqOn_floerEnergyDensity_zero hH hu hJ hfloer hE
-  rw [setLIntegral_congr_fun (MeasurableSet.univ.prod measurableSet_Icc) fun z hz ↦ by
-    rw [h0 hz, Pi.zero_apply, ENNReal.ofReal_zero]]
-  exact lintegral_zero
+  have hae : (univ : Set ℝ) ×ˢ Ioo (0 : ℝ) 1 =ᵐ[volume] (univ : Set ℝ) ×ˢ Icc 0 1 := by
+    rw [Measure.volume_eq_prod]
+    exact Measure.set_prod_ae_eq (ae_eq_refl _) Ioo_ae_eq_Icc
+  rwa [← setLIntegral_congr hae]
 
 /-- **Translations act freely on nonstationary finite-energy Floer cylinders.** Under the
 hypotheses of `TauCeti.SmoothTwoForm.IsNondegenerate.lintegral_floerEnergyDensity_eq_zero_iff`, if
@@ -360,7 +321,8 @@ theorem IsNondegenerate.eq_zero_of_lintegral_floerEnergyDensity_ne_top_of_period
   by_contra hc
   obtain ⟨s, t, ht, hne⟩ := hns
   exact hne ((hω.lintegral_floerEnergyDensity_eq_zero_iff hH hu hJ hfloer).1
-    (hω.lintegral_floerEnergyDensity_eq_zero_of_periodic hH hu hJ hfloer hfin hc hper) s t ht)
+    (lintegral_floerEnergyDensity_eq_zero_of_periodic (hu.mdifferentiable one_ne_zero) hfin hc
+      hper) s t ht)
 
 end Energy
 
