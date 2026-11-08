@@ -59,7 +59,7 @@ theorem sum_divisors_ite_eq_add {N : ℕ} (hN : N ≠ 0) (a : ℕ) (f : ℕ → 
       exact Nat.dvd_of_mem_divisors hd
 
 /-- The sum over the divisors `d` of `N` of `f d` restricted to `a = N - d`. -/
-theorem sum_divisors_ite_eq_sub {N : ℕ} (hN : N ≠ 0) (a : ℕ) (f : ℕ → M) :
+theorem sum_divisors_ite_eq_sub {N : ℕ} (a : ℕ) (f : ℕ → M) :
     ∑ d ∈ N.divisors, (if a = N - d then f d else 0) =
       if a < N ∧ N - a ∣ a then f (N - a) else 0 := by
   split_ifs with h
@@ -68,7 +68,7 @@ theorem sum_divisors_ite_eq_sub {N : ℕ} (hN : N ≠ 0) (a : ℕ) (f : ℕ → 
     · intro d hd hne
       have := Nat.divisor_le hd
       rw [ite_eq_right (by omega)]
-    · refine fun h' ↦ absurd (Nat.mem_divisors.mpr ⟨?_, hN⟩) h'
+    · refine fun h' ↦ absurd (Nat.mem_divisors.mpr ⟨?_, by omega⟩) h'
       have h'' := Nat.dvd_add_self_right.mpr h.2
       rwa [Nat.add_sub_cancel' h.1.le] at h''
   · refine Finset.sum_eq_zero fun d hd ↦ ite_eq_right fun ha ↦ h ⟨?_, ?_⟩

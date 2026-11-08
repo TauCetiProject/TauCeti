@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Homology.LinearYoneda
 public import Mathlib.LinearAlgebra.Contraction
 public import Mathlib.RingTheory.Flat.CategoryTheory
 import TauCeti.Algebra.Homology.ShortComplex.PreservesHomology
+import TauCeti.Algebra.Homology.ModuleCat.Basic
 
 /-!
 # Tensor products and Hom-complex cohomology
@@ -129,5 +130,38 @@ theorem tensorLinearYonedaHomologyIso_homologyπ [Module.Flat R T] (i : α) :
         (Category.assoc _ _ _).trans <|
           congrArg ((S.mapCyclesIso F).inv ≫ ·)
             (HomologicalComplex.homologyπ_naturality (C.tensorLinearYonedaObjIso T N).hom i)
+
+/-- On a pure tensor, the Hom-cohomology comparison is the map induced by the
+coefficient homomorphism `n ↦ t ⊗ n`. -/
+@[simp]
+theorem tensorLinearYonedaHomologyIso_hom_tmul [Module.Flat R T] (i : α) (t : T)
+    (z : (C.linearYonedaObj R N).homology i) :
+    (C.tensorLinearYonedaHomologyIso T N i).hom (t ⊗ₜ[R] z) =
+      HomologicalComplex.homologyMap
+        (C.linearYonedaObjMap R (ModuleCat.ofHom (TensorProduct.mk R T N t))) i z := by
+  obtain ⟨c, rfl⟩ := (C.linearYonedaObj R N).moduleCat_homologyπ_surjective i z
+  have h := congrArg (fun f ↦ f (t ⊗ₜ[R] c))
+    (C.tensorLinearYonedaHomologyIso_homologyπ T N i)
+  simp only [ModuleCat.comp_apply, ModuleCat.MonoidalCategory.whiskerLeft_apply] at h
+  rw [h]
+  have hnat := congrArg (fun f ↦ f c) (HomologicalComplex.homologyπ_naturality
+    (C.linearYonedaObjMap R (ModuleCat.ofHom (TensorProduct.mk R T N t))) i)
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at hnat ⊢
+  rw [hnat]
+  apply congrArg ((C.linearYonedaObj R (T ⊗ N)).homologyπ i)
+  apply (C.linearYonedaObj R (T ⊗ N)).moduleCat_iCycles_injective i
+  -- The mapped short complex and the short complex of the mapped complex have the
+  -- same cycles definitionally; apply their inclusion identities as terms, not rewrites.
+  have hcy := congrArg (fun f ↦ f
+    ((((C.linearYonedaObj R N).sc i).mapCyclesIso (tensorLeft T)).inv (t ⊗ₜ[R] c)))
+    (HomologicalComplex.cyclesMap_i (C.tensorLinearYonedaObjIso T N).hom i)
+  have hinc := congrArg (fun f ↦ f (t ⊗ₜ[R] c))
+    (((C.linearYonedaObj R N).sc i).mapCyclesIso_inv_comp_iCycles (tensorLeft T))
+  have hright := congrArg (fun f ↦ f c) (HomologicalComplex.cyclesMap_i
+    (C.linearYonedaObjMap R (ModuleCat.ofHom (TensorProduct.mk R T N t))) i)
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at hcy hinc hright
+  exact hcy.trans ((congrArg ((C.tensorLinearYonedaObjIso T N).hom.f i) hinc).trans
+    ((C.tensorLinearYonedaObjIso_hom_f_tmul T N i t _).trans
+      ((C.linearYonedaObjMap_f_hom_apply R _ i _).symm.trans hright.symm)))
 
 end ChainComplex

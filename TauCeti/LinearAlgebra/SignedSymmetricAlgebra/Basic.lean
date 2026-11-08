@@ -64,6 +64,13 @@ def generator : V →ₗ[R] SignedSym G :=
 @[simp]
 theorem quotient_ι (x : V) : quotient G (TensorAlgebra.ι R x) = generator G x := (rfl)
 
+/-- The class of a tensor word is the product of its generators in the same order. -/
+theorem quotient_tprod {n : ℕ} (x : Fin n → V) :
+    quotient G (TensorAlgebra.tprod R V n x) =
+      (List.ofFn fun i => generator G (x i)).prod := by
+  simp only [TensorAlgebra.tprod_apply, map_list_prod, List.map_ofFn,
+    Function.comp_def, quotient_ι]
+
 /-- Homogeneous generators supercommute with the Koszul sign. -/
 theorem generator_mul_generator {p q : ℤ} {x y : V}
     (hx : x ∈ G.piece p) (hy : y ∈ G.piece q) :
@@ -112,6 +119,13 @@ theorem lift_generator (f : V →ₗ[R] A) (hf) (x : V) :
   rw [← quotient_ι]
   exact (RingQuot.liftAlgHom_mkAlgHom_apply R _ _ _).trans
     (TensorAlgebra.lift_ι_apply f x)
+
+/-- The extension to the signed quotient agrees with the tensor-algebra extension on every
+tensor representative. -/
+@[simp]
+theorem lift_quotient (f : V →ₗ[R] A) (hf) (x : TensorAlgebra R V) :
+    lift G f hf (quotient G x) = TensorAlgebra.lift R f x :=
+  RingQuot.liftAlgHom_mkAlgHom_apply R _ _ x
 
 /-- The extension is unique. -/
 theorem lift_unique (f : V →ₗ[R] A) (hf) (g : SignedSym G →ₐ[R] A)

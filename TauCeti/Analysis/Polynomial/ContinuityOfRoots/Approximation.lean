@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Polynomial.ContinuityOfRoots.Basic
-import TauCeti.Topology.Algebra.Polynomial.RootMultiplicity
+import TauCeti.Topology.Algebra.Polynomial.Root.Multiplicity
 
 /-!
 # Approximation of finite roots across degree drops

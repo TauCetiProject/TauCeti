@@ -138,7 +138,7 @@ private theorem f4ShortRootInclusion_baseChange_lie
     (z : A ⊗[ZMod 2] f4ShortRootLieIdeal) :
     ((f4ShortRootLieIdeal.incl.toLinearMap).baseChange A) ⁅x, z⁆ =
       ⁅x, ((f4ShortRootLieIdeal.incl.toLinearMap).baseChange A) z⁆ := by
-  exact LieModuleHom.baseChange_map_lie A (LieSubmodule.incl f4ShortRootLieIdeal) x z
+  exact LieModuleHom.map_lie_baseChange A (LieSubmodule.incl f4ShortRootLieIdeal) x z
 
 /-- Evaluating the scalar-extended adjoint action and then including the ideal is the ambient
 Lie bracket. -/
