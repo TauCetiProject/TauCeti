@@ -22,6 +22,7 @@ This file supplements Mathlib's `Mathlib.GroupTheory.Perm.Fin`.
   are stated on natural numbers, ready for `omega`.
 * `List.formPerm_finRange`, `Fin.formPerm_sort_univ`: the cycle through the points of `Fin n` in
   increasing order is the rotation `finRotate n`, that is `i ↦ i + 1` modulo `n`.
+* `TauCeti.isCycleOn_finRotate`: the rotation `finRotate n` is a single cycle on all of `Fin n`.
 -/
 
 public section
@@ -63,3 +64,16 @@ theorem formPerm_sort_univ (n : ℕ) :
   rw [sort_univ, List.formPerm_finRange]
 
 end Fin
+
+namespace TauCeti
+
+/-- The rotation `i ↦ i + 1` of `Fin n` is a single cycle on all of `Fin n`. -/
+theorem isCycleOn_finRotate : ∀ {n : ℕ}, (finRotate n).IsCycleOn Set.univ
+  | 0 => Equiv.Perm.isCycleOn_of_subsingleton _ _
+  | 1 => Equiv.Perm.isCycleOn_of_subsingleton _ _
+  | _ + 2 => by
+    convert isCycle_finRotate.isCycleOn using 1
+    ext x
+    simp
+
+end TauCeti
