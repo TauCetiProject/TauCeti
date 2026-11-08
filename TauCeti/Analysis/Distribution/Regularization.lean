@@ -130,6 +130,15 @@ theorem translatePairing_zero (ρ : 𝓓(V, ℝ)) :
   ext x
   simp [translatePairing]
 
+/-- The regularization by a test function whose underlying function is zero vanishes. -/
+theorem translatePairing_eq_zero_of_coe_eq_zero (T : 𝓓'(Ω, F)) {ρ : 𝓓(V, ℝ)}
+    (h : (ρ : E → ℝ) = 0) : T.translatePairing ρ = 0 := by
+  funext x
+  by_cases hx : MapsTo (· + x) (tsupport ρ) Ω
+  · rw [translatePairing_eq T (φ := 0) fun y => by simp [h]]
+    simp
+  · exact translatePairing_eq_zero_of_not_mapsTo T hx
+
 /-- Regularization is additive in the distribution. -/
 @[simp]
 theorem translatePairing_add (T S : 𝓓'(Ω, F)) (ρ : 𝓓(V, ℝ)) :
@@ -177,14 +186,17 @@ private theorem translatePairing_add_sub_sub_eq (T : 𝓓'(Ω, F)) (ρ : 𝓓(V,
     translatePairing_eq _ (translateOfMapsTo_apply ρ hx), lineDerivOp_apply_apply]
   simp [sub_eq_add_neg]
 
-variable [FiniteDimensional ℝ E]
-
 /-- The regularization is differentiable at every admissible translation, with derivative given
 by the regularizations of the distributional derivatives of `T`. -/
 private theorem exists_hasFDerivAt_translatePairing (T : 𝓓'(Ω, F)) (ρ : 𝓓(V, ℝ)) {x : E}
     (hx : MapsTo (· + x) (tsupport ρ) Ω) :
     ∃ L : E →L[ℝ] F, HasFDerivAt (T.translatePairing ρ) L x ∧
       ∀ v, L v = (∂_{v} T).translatePairing ρ x := by
+  rcases ρ.hasCompactSupport.eq_zero_or_finiteDimensional ℝ ρ.contDiff.continuous with h | _
+  · -- If `ρ = 0` every translate is zero, so the regularization and its derivatives vanish.
+    refine ⟨0, ?_, fun v => by simp [translatePairing_eq_zero_of_coe_eq_zero _ h]⟩
+    rw [translatePairing_eq_zero_of_coe_eq_zero T h]
+    exact hasFDerivAt_const (0 : F) x
   let L : E →L[ℝ] F := LinearMap.toContinuousLinearMap
     { toFun := fun v => (∂_{v} T).translatePairing ρ x
       map_add' := fun v w => by simp [lineDerivOp_left_add]
@@ -248,24 +260,12 @@ theorem fderiv_translatePairing_apply (T : 𝓓'(Ω, F)) (ρ : 𝓓(V, ℝ)) {x 
   obtain ⟨L, hL, hLv⟩ := exists_hasFDerivAt_translatePairing T ρ hx
   rw [hL.fderiv, hLv]
 
-omit [FiniteDimensional ℝ E] in
 /-- **Regularizations are smooth.** The regularization `x ↦ T (ρ (· - x))` is smooth on the open
 set of translations for which `ρ (· - x)` is supported in `Ω`. -/
 theorem contDiffOn_translatePairing (T : 𝓓'(Ω, F)) (ρ : 𝓓(V, ℝ)) :
     ContDiffOn ℝ ∞ (T.translatePairing ρ) {x | MapsTo (· + x) (tsupport ρ) Ω} := by
   rcases ρ.hasCompactSupport.eq_zero_or_finiteDimensional ℝ ρ.contDiff.continuous with h | _
-  · -- If `ρ = 0` every translate is zero, so the regularization vanishes.
-    have hρ (x : E) (hx : MapsTo (· + x) (tsupport ρ) Ω) : translateOfMapsTo ρ hx = 0 := by
-      ext y
-      simp [translateOfMapsTo_apply, h]
-    have : T.translatePairing ρ = 0 := by
-      funext x
-      rw [translatePairing]
-      split_ifs with hx
-      · rw [hρ x hx, map_zero]
-        rfl
-      · rfl
-    rw [this]
+  · rw [translatePairing_eq_zero_of_coe_eq_zero T h]
     exact contDiffOn_const
   have hU := ρ.hasCompactSupport.isCompact.isOpen_setOf_mapsTo_add Ω.isOpen
   rw [contDiffOn_infty]
@@ -293,6 +293,8 @@ theorem translatePairing_eq_of_lineDerivOp_eq_zero {T : 𝓓'(Ω, F)}
     (fun z hz => ?_) hx hy
   ext v
   simp [fderiv_translatePairing_apply T ρ (hU z hz), hT]
+
+variable [FiniteDimensional ℝ E]
 
 section Convolution
 
