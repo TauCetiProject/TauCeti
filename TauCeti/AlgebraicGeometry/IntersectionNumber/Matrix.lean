@@ -269,7 +269,8 @@ theorem specialFiberIntersectionMatrix_reflTransGen
     exact Set.mem_iUnion.mpr ⟨⟨⟨y, hy₂⟩, (Set.Finite.mem_toFinset _).mpr hy₁⟩,
       specializes_iff_mem_closure.mp hyx⟩
   rw [← hcover] at hconn
-  have h := hconn.transGen_of_iUnion_of_isClosed (fun _ ↦ isClosed_closure) i j
+  have h := hconn.transGen_of_iUnion_of_isClosed (locallyFinite_of_finite _)
+    (fun _ ↦ isClosed_closure) i j
     ⟨_, subset_closure rfl⟩ ⟨_, subset_closure rfl⟩
   refine Relation.reflTransGen_closed (fun a b hab ↦ ?_) i j h.to_reflTransGen
   by_cases hab' : a = b
