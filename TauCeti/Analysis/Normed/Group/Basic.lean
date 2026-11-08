@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Group.Basic
-public import Mathlib.Analysis.Normed.Group.Uniform
+public import Mathlib.Analysis.Normed.Group.Continuity
 import Mathlib.Topology.MetricSpace.Bounded
 
 /-!
