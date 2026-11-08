@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.ContMDiff.Defs
+import Mathlib.Geometry.Manifold.ContMDiff.Atlas
+import Mathlib.Geometry.Manifold.ContMDiff.Constructions
+import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 
 /-!
 # Smooth maps from products
@@ -64,6 +67,32 @@ theorem contMDiffAt_prod_modelWithCornersSelf_iff {x : E₁ × E₂} :
     ContMDiffAt (𝓘(𝕜, E₁).prod 𝓘(𝕜, E₂)) I' n f x ↔
       ContMDiffAt 𝓘(𝕜, E₁ × E₂) I' n f x := by
   rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
+
+/-- A jointly smooth family in the model space, fixing the base point of an extended chart at time
+zero, gives a family on the manifold, jointly smooth at the base point and time zero, by
+conjugating with the extended chart. -/
+theorem contMDiffAt_extChartAt_symm_comp_flow [I'.Boundaryless] (a : M)
+    {φ : E' → 𝕜 → E'} (hφ : ContDiffAt 𝕜 ∞ (fun p : E' × 𝕜 ↦ φ p.1 p.2) (extChartAt I' a a, 0))
+    (hφ0 : φ (extChartAt I' a a) 0 = extChartAt I' a a) :
+    ContMDiffAt (I'.prod 𝓘(𝕜, 𝕜)) I' ∞
+      (fun p : M × 𝕜 ↦ (extChartAt I' a).symm (φ (extChartAt I' a p.1) p.2)) (a, 0) := by
+  have hchart : ContMDiffAt (I'.prod 𝓘(𝕜, 𝕜)) 𝓘(𝕜, E') ∞
+      (fun p : M × 𝕜 ↦ extChartAt I' a p.1) (a, 0) :=
+    contMDiffAt_extChartAt.comp (a, 0) contMDiffAt_fst
+  have hcoord : ContMDiffAt (I'.prod 𝓘(𝕜, 𝕜)) (𝓘(𝕜, E').prod 𝓘(𝕜, 𝕜)) ∞
+      (fun p : M × 𝕜 ↦ (extChartAt I' a p.1, p.2)) (a, 0) :=
+    hchart.prodMk contMDiffAt_snd
+  have hφM := hφ.contMDiffAt
+  rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod] at hφM
+  have hinner : ContMDiffAt (I'.prod 𝓘(𝕜, 𝕜)) 𝓘(𝕜, E') ∞
+      (fun p : M × 𝕜 ↦ φ (extChartAt I' a p.1) p.2) (a, 0) := by
+    have h := hφM.comp (a, 0) hcoord
+    simpa only [Function.comp_def] using h
+  have hinv : ContMDiffAt 𝓘(𝕜, E') I' ∞ (extChartAt I' a).symm (extChartAt I' a a) := by
+    rw [← contMDiffWithinAt_univ, ← I'.range_eq_univ]
+    exact contMDiffWithinAt_extChartAt_symm_range_self a
+  have hcomp := hinv.comp_of_eq hinner hφ0
+  simpa only [Function.comp_def] using hcomp
 
 namespace TauCeti
 

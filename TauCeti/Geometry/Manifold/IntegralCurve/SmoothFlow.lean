@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.ODE.LocalFlow
 public import TauCeti.Geometry.Manifold.IntegralCurve.Basic
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
@@ -47,88 +48,6 @@ namespace TauCeti.Manifold
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-
-/-- If a tangent vector field is smooth on `V`, then its coordinate expression in the preferred
-trivialization of the tangent bundle at `a`, read through the inverse extended chart, is smooth on
-the interior points of the chart target which lie over `V`. -/
-private theorem contDiffOn_trivializationAt_extChartAt_symm [IsManifold I ∞ M]
-    (v : (x : M) → TangentSpace I x) (a : M) {V : Set M}
-    (hv : ContMDiffOn I I.tangent ∞ (fun x ↦ (⟨x, v x⟩ : TangentBundle I M)) V) :
-    ContDiffOn ℝ ∞ (fun z ↦ (trivializationAt E (TangentSpace I) a
-      (⟨(extChartAt I a).symm z, v ((extChartAt I a).symm z)⟩ : TangentBundle I M)).2)
-      (interior (extChartAt I a).target ∩ (extChartAt I a).symm ⁻¹' V) := by
-  let e := trivializationAt E (TangentSpace I) a
-  let W := interior (extChartAt I a).target ∩ (extChartAt I a).symm ⁻¹' V
-  have hsection : ContMDiffOn (modelWithCornersSelf ℝ E) I.tangent ∞
-      ((fun x ↦ (⟨x, v x⟩ : TangentBundle I M)) ∘ (extChartAt I a).symm)
-      W := hv.comp
-    ((contMDiffOn_extChartAt_symm a).mono (inter_subset_left.trans interior_subset))
-    (fun _ hz ↦ hz.2)
-  have hmap : MapsTo
-      ((fun x ↦ (⟨x, v x⟩ : TangentBundle I M)) ∘ (extChartAt I a).symm)
-      W e.source := by
-    intro z hz
-    rw [TangentBundle.trivializationAt_source]
-    -- Membership in this preimage reduces definitionally by projecting the displayed
-    -- tangent-bundle point to its base point; there is no separate projection lemma to apply.
-    change (extChartAt I a).symm z ∈ (chartAt H a).source
-    simpa only [extChartAt_source] using
-      (extChartAt I a).map_target (interior_subset hz.1)
-  have hcoord := ((e.contMDiffOn_iff hmap).mp hsection).2
-  simpa only [Function.comp_apply] using hcoord.contDiffOn
-
-/-- A jointly smooth family in the model space, fixing the base point of an extended chart at time
-zero, gives a family on the manifold, jointly smooth at the base point and time zero, by
-conjugating with the extended chart. -/
-theorem contMDiffAt_extChartAt_symm_comp_flow [I.Boundaryless] (a : M)
-    {φ : E → ℝ → E} (hφ : ContDiffAt ℝ ∞ (fun p : E × ℝ ↦ φ p.1 p.2) (extChartAt I a a, 0))
-    (hφ0 : φ (extChartAt I a a) 0 = extChartAt I a a) :
-    CMDiffAt ∞ (fun p : M × ℝ ↦ (extChartAt I a).symm (φ (extChartAt I a p.1) p.2)) (a, 0) := by
-  have hchart : CMDiffAt ∞ (fun p : M × ℝ ↦ extChartAt I a p.1) (a, 0) :=
-    contMDiffAt_extChartAt.comp (a, 0) contMDiffAt_fst
-  have hcoord : ContMDiffAt (I.prod (modelWithCornersSelf ℝ ℝ))
-      ((modelWithCornersSelf ℝ E).prod (modelWithCornersSelf ℝ ℝ)) ∞
-      (fun p : M × ℝ ↦ (extChartAt I a p.1, p.2)) (a, 0) :=
-    hchart.prodMk contMDiffAt_snd
-  have hφM := hφ.contMDiffAt
-  rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod] at hφM
-  have hinner : CMDiffAt ∞
-      (fun p : M × ℝ ↦ φ (extChartAt I a p.1) p.2) (a, 0) := by
-    have h := hφM.comp (a, 0) hcoord
-    simpa only [Function.comp_def] using h
-  have hinv : CMDiffAt ∞ (extChartAt I a).symm (extChartAt I a a) := by
-    rw [← contMDiffWithinAt_univ, ← I.range_eq_univ]
-    exact contMDiffWithinAt_extChartAt_symm_range_self a
-  have hcomp := hinv.comp_of_eq hinner hφ0
-  simpa only [Function.comp_def] using hcomp
-
-/-- A curve in the model space which stays in the interior of the chart target and solves the
-coordinate equation of a vector field on an open set of times gives an integral curve of the
-field on the manifold, after applying the inverse extended chart. -/
-private theorem isMIntegralCurveOn_extChartAt_symm_comp [IsManifold I ∞ M]
-    (v : (x : M) → TangentSpace I x) (a : M) {f : ℝ → E} {s : Set ℝ} (hs : IsOpen s)
-    (hmem : ∀ t ∈ s, f t ∈ interior (extChartAt I a).target)
-    (hderiv : ∀ t ∈ s, HasDerivAt f (trivializationAt E (TangentSpace I) a
-      (⟨(extChartAt I a).symm (f t), v ((extChartAt I a).symm (f t))⟩ :
-        TangentBundle I M)).2 t) :
-    IsMIntegralCurveOn ((extChartAt I a).symm ∘ f) v s := by
-  refine IsMIntegralCurveAt.isMIntegralCurveOn fun t ht ↦ ?_
-  apply IsMIntegralCurveAt.of_extChartAt_symm
-  · filter_upwards [hs.mem_nhds ht] with r hr
-    exact hmem r hr
-  · filter_upwards [hs.mem_nhds ht] with r hr
-    have hw_eq (z : E) : (trivializationAt E (TangentSpace I) a
-        (⟨(extChartAt I a).symm z, v ((extChartAt I a).symm z)⟩ : TangentBundle I M)).2 =
-        tangentCoordChange I ((extChartAt I a).symm z) a ((extChartAt I a).symm z)
-          (v ((extChartAt I a).symm z)) := by
-      -- The fibre coordinate of the preferred trivialization is the second coordinate of the
-      -- tangent-bundle chart, whose conversion to `tangentCoordChange` is recorded explicitly.
-      change (chartAt (ModelProd H E)
-        (⟨a, 0⟩ : TangentBundle I M)
-        (⟨(extChartAt I a).symm z, v ((extChartAt I a).symm z)⟩ :
-          TangentBundle I M)).2 = _
-      exact TangentBundle.coe_chartAt_snd
-    simpa only [hw_eq] using hderiv r hr
 
 /-- **Smooth dependence of integral curves on their initial point.**
 
