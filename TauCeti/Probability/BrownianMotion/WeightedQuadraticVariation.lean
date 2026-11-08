@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.BrownianMotion.Filtered
+import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.Probability.Distributions.Gaussian.Moments
 import TauCeti.Probability.Distributions.Gaussian.PolynomialMemLp
 import Mathlib.Probability.Independence.Integration
@@ -165,32 +166,11 @@ theorem integral_sq_sum_mul_centered_sq_increment (hB : IsFilteredPreBrownianRea
       rw [hB.integral_sq_mul_centered_sq_increment (ht (mem_range.1 hi).le (mem_range.1 hi)
         (Nat.le_succ i)) (hH i (mem_range.1 hi)) (hHi i (mem_range.1 hi))]
       ring
-  -- Add one orthogonal summand at a time, keeping all products integrable.
-  have hpartial : ∀ k ≤ n, (∫ ω, (∑ i ∈ range k, Z i ω) ^ 2 ∂P) =
-      ∑ i ∈ range k, ∫ ω, Z i ω ^ 2 ∂P := by
-    intro k hk
-    induction k with
-    | zero => simp
-    | succ k ih =>
-      have hk' : k < n := hk
-      have hS : MemLp (fun ω ↦ ∑ i ∈ range k, Z i ω) 2 P :=
-        memLp_finsetSum _ fun i hi ↦ hZi i ((mem_range.1 hi).trans hk')
-      have hcrossI : Integrable (fun ω ↦ (∑ i ∈ range k, Z i ω) * Z k ω) P := by
-        simpa only [Pi.mul_def] using hS.integrable_mul (hZi k hk')
-      have hprod : ∀ i < k, Integrable (fun ω ↦ Z i ω * Z k ω) P := by
-        intro i hi
-        simpa only [Pi.mul_def] using (hZi i (hi.trans hk')).integrable_mul (hZi k hk')
-      have hcross : (∫ ω, (∑ i ∈ range k, Z i ω) * Z k ω ∂P) = 0 := by
-        simp_rw [sum_mul]
-        rw [integral_finsetSum _ fun i hi ↦ hprod i (mem_range.1 hi)]
-        exact sum_eq_zero fun i hi ↦ horth i ((mem_range.1 hi).trans hk') k hk' (mem_range.1 hi)
-      simp_rw [sum_range_succ, add_sq, mul_assoc]
-      rw [integral_add (hS.integrable_sq.fun_add (hcrossI.const_mul 2))
-        (hZi k hk').integrable_sq, integral_add hS.integrable_sq
-        (hcrossI.const_mul 2), integral_const_mul, hcross,
-        ih (by omega)]
-      ring
-  exact hpartial n le_rfl
+  apply integral_sq_sum_of_pairwise_integral_mul_eq_zero (fun i hi ↦ hZi i (mem_range.1 hi))
+  intro i hi j hj hij
+  rcases lt_or_gt_of_ne hij with hij | hji
+  · exact horth i (mem_range.1 hi) j (mem_range.1 hj) hij
+  · simpa only [mul_comm] using horth j (mem_range.1 hj) i (mem_range.1 hi) hji
 
 /-- For heights equal to the Brownian left endpoint, the exact error is
 `2 ∑ᵢ tᵢ (tᵢ₊₁ - tᵢ)²`. -/

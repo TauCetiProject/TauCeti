@@ -16,6 +16,8 @@ this file gives the form for functions satisfying `MemLp f 2 μ`, which is how s
 hypotheses on random vectors are usually stated, together with the special case of a quadratic
 form `⟪B (f x), f x⟫` of a matrix `B` on a Euclidean-valued function.
 For counting measure, singleton-supported vectors separate L² functions.
+The second moment of a finite sum of pairwise orthogonal real functions is the sum of their
+second moments (`TauCeti.integral_sq_sum_of_pairwise_integral_mul_eq_zero`).
 -/
 
 public section
@@ -57,3 +59,26 @@ theorem Lp.eq_zero_of_inner_indicatorConstLp_singleton [MeasurableSingletonClass
   exact Lp.ext (hf'.trans (Lp.coeFn_zero E 2 Measure.count).symm)
 
 end MeasureTheory
+
+namespace TauCeti
+
+open MeasureTheory Finset
+
+/-- The second moment of a finite sum of square-integrable real functions with vanishing
+pairwise product integrals is the sum of their second moments. No independence or centering
+assumption is required. -/
+theorem integral_sq_sum_of_pairwise_integral_mul_eq_zero
+    {Ω ι : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω} {X : ι → Ω → ℝ} {s : Finset ι}
+    (hX : ∀ i ∈ s, MemLp (X i) 2 μ)
+    (horth : Set.Pairwise ↑s fun i j ↦ (∫ ω, X i ω * X j ω ∂μ) = 0) :
+    (∫ ω, (∑ i ∈ s, X i ω) ^ 2 ∂μ) = ∑ i ∈ s, ∫ ω, X i ω ^ 2 ∂μ := by
+  have hint : ∀ i ∈ s, ∀ j ∈ s, Integrable (fun ω ↦ X i ω * X j ω) μ := by
+    intro i hi j hj
+    simpa only [Pi.mul_def] using (hX i hi).integrable_mul (hX j hj)
+  simp_rw [pow_two, sum_mul, mul_sum]
+  rw [integral_finsetSum _ fun i hi ↦ integrable_finsetSum _ fun j hj ↦ hint i hi j hj]
+  refine sum_congr rfl fun i hi ↦ ?_
+  rw [integral_finsetSum _ fun j hj ↦ hint i hi j hj]
+  exact sum_eq_single_of_mem i hi fun j hj hji ↦ horth hi hj hji.symm
+
+end TauCeti
