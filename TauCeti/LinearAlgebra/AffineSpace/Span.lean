@@ -111,24 +111,18 @@ theorem affineSpan_prod_eq_iff {s t : Set P} {u : Set Q} (hu : u.Nonempty) :
     AffineSubspace.coe_prod, Set.prod_eq_iff_eq (hu.mono (subset_affineSpan k u)),
     SetLike.coe_set_eq]
 
-/-- The direction of the affine span of a product of nonempty sets is the product of the
-directions. Nonemptiness is needed because the empty span has zero direction. -/
-theorem direction_affineSpan_prod {s : Set P} {u : Set Q} (hs : s.Nonempty) (hu : u.Nonempty) :
-    (affineSpan k (s ×ˢ u)).direction =
-      (affineSpan k s).direction.prod (affineSpan k u).direction := by
-  rw [direction_affineSpan, vectorSpan_prod_eq hs hu, direction_affineSpan, direction_affineSpan]
-
 /-- Taking the product with a fixed nonempty set preserves and reflects equality of the
 directions of affine spans of nonempty sets. -/
 theorem direction_affineSpan_prod_eq_iff {s t : Set P} {u : Set Q}
     (hs : s.Nonempty) (ht : t.Nonempty) (hu : u.Nonempty) :
     (affineSpan k (s ×ˢ u)).direction = (affineSpan k (t ×ˢ u)).direction ↔
       (affineSpan k s).direction = (affineSpan k t).direction := by
-  rw [direction_affineSpan_prod hs hu, direction_affineSpan_prod ht hu]
+  simp only [direction_affineSpan]
+  rw [vectorSpan_prod_eq hs hu, vectorSpan_prod_eq ht hu]
   constructor
   · intro h
     simpa only [Submodule.prod_map_fst] using
       congrArg (Submodule.map (LinearMap.fst k V E)) h
-  · exact fun h => congrArg (fun S : Submodule k V => S.prod (affineSpan k u).direction) h
+  · exact fun h => congrArg (fun S : Submodule k V => S.prod (vectorSpan k u)) h
 
 end TauCeti
