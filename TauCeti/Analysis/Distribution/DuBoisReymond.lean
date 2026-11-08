@@ -60,8 +60,6 @@ namespace TauCeti
 open MeasureTheory Set Filter Topology intervalIntegral
 open scoped ContDiff
 
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-
 /-- **The primitive of a mean-zero test function is a test function.** If `φ : ℝ → ℝ` is smooth
 with `tsupport φ ⊆ Ioo a b` and `∫ φ = 0`, then `φ` is the derivative of a smooth compactly
 supported function `ψ` with `tsupport ψ ⊆ Ioo a b`. -/
@@ -153,10 +151,8 @@ theorem exists_ae_eq_const_Ioo_of_integral_deriv_smul_eq_zero
   have hρ : ContDiff ℝ ∞ ρ := β.contDiff_normed
   have hρc : HasCompactSupport ρ := β.hasCompactSupport_normed
   have hρs : tsupport ρ ⊆ Ioo a b := by
-    rw [hρ_def, β.tsupport_normed_eq, hrOut]
-    intro x hx
-    rw [Metric.mem_closedBall, Real.dist_eq, abs_le] at hx
-    exact ⟨by linarith [hx.1], by linarith [hx.2]⟩
+    rw [hρ_def, β.tsupport_normed_eq, hrOut, Real.closedBall_eq_Icc]
+    exact Icc_subset_Ioo (by linarith) (by linarith)
   have hρint : ∫ x, ρ x = 1 := β.integral_normed
   refine ⟨∫ x, ρ x • f x, ?_⟩
   -- Every test function on the interval is orthogonal to `f - c`.
@@ -167,13 +163,8 @@ theorem exists_ae_eq_const_Ioo_of_integral_deriv_smul_eq_zero
     have hρi : Integrable ρ := hρ.continuous.integrable_of_hasCompactSupport hρc
     set φ : ℝ → ℝ := fun x ↦ g x - (∫ y, g y) * ρ x with hφ_def
     have hφ : ContDiff ℝ ∞ φ := hg.sub (contDiff_const.mul hρ)
-    have hφs : tsupport φ ⊆ Ioo a b := by
-      refine (closure_minimal (fun x hx ↦ ?_)
-        ((isClosed_tsupport g).union (isClosed_tsupport ρ))).trans (union_subset hgs hρs)
-      by_contra hx'
-      simp only [mem_union, not_or] at hx'
-      exact hx (by simp [hφ_def, image_eq_zero_of_notMem_tsupport hx'.1,
-        image_eq_zero_of_notMem_tsupport hx'.2])
+    have hφs : tsupport φ ⊆ Ioo a b :=
+      (tsupport_sub _ _).trans (union_subset hgs (tsupport_mul_subset_right.trans hρs))
     have hφint : ∫ x, φ x = 0 := by
       simp only [hφ_def]
       rw [integral_sub hgi (hρi.const_mul _), MeasureTheory.integral_const_mul, hρint, mul_one,
@@ -241,16 +232,14 @@ private lemma exists_nonneg_deriv_eq_sub_bump {β : ℝ → ℝ} {r : ℝ}
     refine (intervalIntegral.integral_congr (g := fun _ ↦ (0 : ℝ)) fun s hs ↦ ?_).trans
       intervalIntegral.integral_zero
     rw [uIcc_of_ge ht] at hs
-    exact hβ0 s (by rw [abs_of_nonpos (by linarith [hs.2])]; linarith [hs.2])
+    exact hβ0 s (le_abs.mpr (Or.inr (by linarith [hs.2])))
   have hBright : ∀ t, r ≤ t → B t = 1 := by
     intro t ht
     simp only [hB_def]
     rw [intervalIntegral.integral_of_le (by linarith),
       setIntegral_eq_integral_of_forall_compl_eq_zero fun s hs ↦ ?_, hβ1]
     rw [mem_Ioc, not_and_or, not_lt, not_le] at hs
-    rcases hs with hs | hs
-    · exact hβ0 s (by rw [abs_of_nonpos (by linarith)]; linarith)
-    · exact hβ0 s (by rw [abs_of_pos (by linarith)]; linarith)
+    exact hβ0 s (le_abs.mpr (by grind))
   refine ⟨fun t ↦ B (t - x) - B (t - y),
     (hB.comp (contDiff_id.sub contDiff_const)).sub (hB.comp (contDiff_id.sub contDiff_const)),
     fun t ↦ sub_nonneg.mpr (hBmono (by linarith)), ?_, fun t ↦ ?_⟩
@@ -270,18 +259,10 @@ private lemma integral_bump_mul_mem_Icc {β f : ℝ → ℝ} {r z η : ℝ} {U :
     (hβ1 : ∫ t, β t = 1) (hf : ContinuousOn f U) (hU : IsOpen U) (hzU : Icc (z - r) (z + r) ⊆ U)
     (hfz : ∀ t, |t - z| < r → |f t - f z| < η) :
     Integrable (fun t ↦ β (t - z) * f t) ∧ ∫ t, β (t - z) * f t ∈ Icc (f z - η) (f z + η) := by
-  -- `0 < r`, since otherwise `β` vanishes identically, contradicting `∫ β = 1`.
-  have hr : 0 < r := by
-    by_contra! hr
-    simp [fun t ↦ hβ0 t (hr.trans (abs_nonneg t))] at hβ1
   have hts : tsupport (fun t ↦ β (t - z)) ⊆ Icc (z - r) (z + r) := by
     refine closure_minimal (fun t ht ↦ ?_) isClosed_Icc
-    by_contra h'
-    refine ht (hβ0 _ ?_)
-    rw [mem_Icc, not_and_or, not_le, not_le] at h'
-    rcases h' with h' | h'
-    · rw [abs_of_neg (by linarith)]; linarith
-    · rw [abs_of_pos (by linarith)]; linarith
+    rw [← Real.closedBall_eq_Icc, Metric.mem_closedBall, Real.dist_eq]
+    exact (not_le.mp (mt (hβ0 _) ht)).le
   have hcs : HasCompactSupport fun t ↦ β (t - z) :=
     isCompact_Icc.of_isClosed_subset (isClosed_tsupport _) hts
   have hcont : Continuous fun t ↦ β (t - z) * f t :=
@@ -326,30 +307,26 @@ theorem _root_.ContinuousOn.monotoneOn_of_integral_deriv_mul_nonpos {a b : ℝ} 
   have hnear : ∀ z ∈ Ioo a b, ∃ r > 0, Icc (z - r) (z + r) ⊆ Ioo a b ∧
       ∀ t, |t - z| < r → |f t - f z| < η / 2 := by
     intro z hz
-    obtain ⟨δ, hδ, hfδ⟩ := Metric.continuousAt_iff.mp
-      (hf.continuousAt (isOpen_Ioo.mem_nhds hz)) (η / 2) (half_pos hη)
-    obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.mp isOpen_Ioo z hz
-    refine ⟨min δ ε / 2, by positivity, fun t ht ↦ hball ?_, fun t ht ↦ ?_⟩
-    · rw [Metric.mem_ball, Real.dist_eq, abs_sub_lt_iff]
-      constructor <;> linarith [ht.1, ht.2, min_le_right δ ε]
-    · simpa [Real.dist_eq] using hfδ (by
-        rw [Real.dist_eq]; linarith [min_le_left δ ε, lt_min hδ hε])
+    obtain ⟨ε, hε, hball⟩ := Metric.eventually_nhds_iff.mp ((isOpen_Ioo.eventually_mem hz).and
+      ((hf.continuousAt (isOpen_Ioo.mem_nhds hz)).eventually
+        (Metric.ball_mem_nhds _ (half_pos hη))))
+    refine ⟨ε / 2, half_pos hε, fun t ht ↦ (hball ?_).1, fun t ht ↦ ?_⟩
+    · rw [Real.dist_eq, abs_sub_lt_iff]
+      constructor <;> linarith [ht.1, ht.2]
+    · simpa [Real.dist_eq] using (hball (by rw [Real.dist_eq]; linarith)).2
   obtain ⟨rx, hrx, hxsub, hfx⟩ := hnear x hx
   obtain ⟨ry, hry, hysub, hfy⟩ := hnear y hy
-  set r := min rx ry with _
+  set r := min rx ry
   have hr : 0 < r := lt_min hrx hry
   have hrx' : r ≤ rx := min_le_left _ _
   have hry' : r ≤ ry := min_le_right _ _
   -- A nonnegative bump `β` of integral one vanishing outside `(-r, r)`.
   let β₀ : ContDiffBump (0 : ℝ) := ⟨r / 2, r, half_pos hr, half_lt_self hr⟩
   set β : ℝ → ℝ := β₀.normed volume with hβ_def
-  have hβ0 : ∀ t, r ≤ |t| → β t = 0 := fun t ht ↦ by
-    by_contra hne
-    have : t ∈ Function.support β := hne
-    rw [hβ_def, β₀.support_normed_eq, Metric.mem_ball, Real.dist_eq, sub_zero] at this
-    exact (this.trans_le ht).false
+  have hβ0 : ∀ t, r ≤ |t| → β t = 0 := fun t ht ↦ Function.notMem_support.mp <| by
+    simpa [hβ_def, β₀.support_normed_eq] using ht
   obtain ⟨ψ, hψ, hψnn, hψs, hψd⟩ := exists_nonneg_deriv_eq_sub_bump β₀.contDiff_normed
-    (β₀.nonneg_normed) hβ0 β₀.integral_normed hxy
+    β₀.nonneg_normed hβ0 β₀.integral_normed hxy
   obtain ⟨hIx, hx1, -⟩ := integral_bump_mul_mem_Icc β₀.continuous_normed β₀.nonneg_normed hβ0
     β₀.integral_normed hf isOpen_Ioo
     ((Icc_subset_Icc (by linarith) (by linarith)).trans hxsub) fun t ht ↦ hfx t (by linarith)
