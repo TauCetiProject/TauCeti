@@ -104,19 +104,21 @@ theorem map_refl {Y : Type*} [TopologicalSpace Y] {f : X → Y} (hf : Continuous
     (Path.refl a).map hf = Path.refl (f a) :=
   rfl
 
-/-- The value of `γ.trans δ` at a parameter in the first half is a value of `γ`. -/
+/-- The value of `γ.trans δ` at `u` is the value of `γ` at any `v` with `v = 2 * u`. -/
 theorem trans_apply_of_le {x y z : X} (γ : Path x y) (δ : Path y z) {u : I}
-    (hu : (u : ℝ) ≤ 1 / 2) (v : I) (hv : (v : ℝ) = 2 * u) : γ.trans δ u = γ v := by
-  rw [trans_apply]
-  split_ifs
-  exact congrArg γ (Subtype.ext hv.symm)
-
-/-- The value of `γ.trans δ` at a parameter in the second half is a value of `δ`. -/
-theorem trans_apply_of_ge {x y z : X} (γ : Path x y) (δ : Path y z) {u : I}
-    (hu : 1 / 2 ≤ (u : ℝ)) (v : I) (hv : (v : ℝ) = 2 * u - 1) : γ.trans δ u = δ v := by
+    (v : I) (hv : (v : ℝ) = 2 * u) : γ.trans δ u = γ v := by
   rw [trans_apply]
   split_ifs with h
-  · have hu' : (u : ℝ) = 1 / 2 := le_antisymm h hu
+  · exact congrArg γ (Subtype.ext hv.symm)
+  · exfalso
+    linarith [v.2.2]
+
+/-- The value of `γ.trans δ` at `u` is the value of `δ` at any `v` with `v = 2 * u - 1`. -/
+theorem trans_apply_of_ge {x y z : X} (γ : Path x y) (δ : Path y z) {u : I}
+    (v : I) (hv : (v : ℝ) = 2 * u - 1) : γ.trans δ u = δ v := by
+  rw [trans_apply]
+  split_ifs with h
+  · have hu' : (u : ℝ) = 1 / 2 := le_antisymm h (by linarith [v.2.1])
     have hv_zero : v = 0 := Subtype.ext (by rw [hv, hu']; norm_num)
     rw [hv_zero, δ.source]
     convert γ.target using 2
