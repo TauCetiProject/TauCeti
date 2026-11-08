@@ -83,8 +83,11 @@ theorem HasTotalSupport.exists_mem_doublyStochastic (hK : HasTotalSupport K) :
       exact hK.1 (Matrix.ext h)
     obtain ⟨σ, -, hσ⟩ := hK.2 i j hij
     exact ⟨σ, Finset.mem_filter.2 ⟨Finset.mem_univ _, hσ⟩⟩
-  refine ⟨_, average_permMatrix_mem_doublyStochastic s hs,
-    Matrix.average_permMatrix_apply_eq_zero_iff hs (fun σ hσ ↦ (Finset.mem_filter.1 hσ).2) ?_⟩
+  have hcard : (s.card : R) ≠ 0 := by exact_mod_cast hs.card_pos.ne'
+  have hpos : ∀ σ ∈ s, 0 < (s.card : R)⁻¹ := fun _ _ ↦ inv_pos.2 (by positivity)
+  refine ⟨_, sum_smul_permMatrix_mem_doublyStochastic (fun σ hσ ↦ (hpos σ hσ).le)
+    (by simp [hcard]), sum_smul_permMatrix_apply_eq_zero_iff hpos
+    (fun σ hσ ↦ (Finset.mem_filter.1 hσ).2) ?_⟩
   intro i j hij
   obtain ⟨σ, hσij, hσ⟩ := hK.2 i j hij
   exact ⟨σ, Finset.mem_filter.2 ⟨Finset.mem_univ _, hσ⟩, hσij⟩
