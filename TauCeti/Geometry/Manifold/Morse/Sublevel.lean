@@ -216,15 +216,15 @@ theorem IsManifoldNondegenerateCriticalPoint.exists_superlevel_homeomorph_closed
     fun y hy ↦ hmax y (by simpa using hy)
   refine ⟨R, hR, fun r hr hrR ↦ ?_⟩
   obtain ⟨e, he⟩ := he r hr hrR
-  let g : {y : M // f x - r ^ 2 ≤ f y} ≃ₜ {y : M // (-f) y ≤ (-f) x + r ^ 2} :=
-    (Homeomorph.refl M).subtype fun y ↦ by
-      simp only [Homeomorph.refl_apply, id_eq, Pi.neg_apply]
-      constructor <;> intro <;> linarith
-  refine ⟨g.trans e, fun y ↦ ?_⟩
-  have hy := he (g y)
-  simp only [Function.comp_apply, Pi.neg_apply] at hy
-  have hgy : ((g y : {y : M // (-f) y ≤ (-f) x + r ^ 2}) : M) = y := rfl
-  rw [hgy] at hy
+  have hset' : {y | f x - r ^ 2 ≤ f y} = {y | (-f) y ≤ (-f) x + r ^ 2} := by
+    ext y
+    simp only [Set.mem_ofPred_eq, Pi.neg_apply]
+    constructor <;> intro <;> linarith
+  refine ⟨(Homeomorph.setCongr hset').trans e, fun y ↦ ?_⟩
+  have hy := he (Homeomorph.setCongr hset' y)
+  have hv : ((Homeomorph.setCongr hset' y : {y : M // (-f) y ≤ (-f) x + r ^ 2}) : M) = y := by
+    simp [Homeomorph.setCongr_apply]
+  simp only [Function.comp_apply, Pi.neg_apply, hv] at hy
   rw [Homeomorph.trans_apply]
   linarith
 
