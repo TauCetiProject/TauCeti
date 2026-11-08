@@ -298,4 +298,28 @@ theorem rootIntMatrix_inr_mul_inl (i : Fin (n + 1)) :
   simpa only [ite_smul, one_smul, zero_smul] using
     (rootOp_endpoint_projections_apply n i a).2
 
+/-- A numbered simple-coroot value of the spin weight torus acts by `u` and `u⁻¹` on
+its two integral root-string endpoint projections, over every commutative ring. -/
+theorem coe_weightTorusPoints_mulSingle (i : Fin (n + 1)) (A : Type v) [CommRing A]
+    (u : Aˣ) :
+    ((weightTorusPoints n A (Pi.mulSingle i u) :
+        Matrix.GeneralLinearGroup (Fin (dimension n)) A) :
+        Matrix (Fin (dimension n)) (Fin (dimension n)) A) =
+      1 + ((u : A) - 1) •
+          ((rootIntMatrix n (.inl i) * rootIntMatrix n (.inr i)).map (Int.cast : ℤ → A)) +
+        ((↑(u⁻¹) : A) - 1) •
+          ((rootIntMatrix n (.inr i) * rootIntMatrix n (.inl i)).map (Int.cast : ℤ → A)) := by
+  rw [rootIntMatrix_inl_mul_inr, rootIntMatrix_inr_mul_inl,
+    coe_weightTorusPoints, kostantTorusMatrix_apply, diagGL_coe]
+  ext a b
+  simp only [Matrix.diagonal_apply, Matrix.add_apply, Matrix.smul_apply, smul_eq_mul,
+    Matrix.one_apply, Matrix.map_apply]
+  by_cases hab : a = b
+  · subst b
+    rw [torusCharacter_mulSingle]
+    rcases DynkinType.typeBSpinWeight_apply_eq_neg_one_or_eq_zero_or_eq_one
+      (signSet n a) i with h | h | h <;>
+      simp_all [basisWeight]
+  · simp [hab]
+
 end TauCeti.TypeBSpinCarrier

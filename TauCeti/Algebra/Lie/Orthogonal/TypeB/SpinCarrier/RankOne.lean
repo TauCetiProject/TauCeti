@@ -112,19 +112,7 @@ theorem rankOneMatrix_diag2nUnit (u : Aˣ) :
         (weightTorusPoints n A (Pi.mulSingle i u) : GL (Fin (dimension n)) A) := by
   apply Units.ext
   rw [rankOneMatrix, Sl2.coe_squareZeroSL2Hom_diagonal,
-    ← Matrix.map_mul_intCast, ← Matrix.map_mul_intCast,
-    rootIntMatrix_inl_mul_inr, rootIntMatrix_inr_mul_inl,
-    coe_weightTorusPoints, kostantTorusMatrix_apply, diagGL_coe]
-  ext a b
-  simp only [Matrix.diagonal_apply, Matrix.add_apply, Matrix.smul_apply, smul_eq_mul,
-    Matrix.one_apply, Matrix.map_apply]
-  by_cases hab : a = b
-  · subst b
-    rw [torusCharacter_mulSingle]
-    rcases DynkinType.typeBSpinWeight_apply_eq_neg_one_or_eq_zero_or_eq_one
-      (signSet n a) i with h | h | h <;>
-      simp_all [basisWeight]
-  · simp [hab]
+    coe_weightTorusPoints_mulSingle, Matrix.map_mul_intCast, Matrix.map_mul_intCast]
 
 variable (K : Type*) [Field K]
 
