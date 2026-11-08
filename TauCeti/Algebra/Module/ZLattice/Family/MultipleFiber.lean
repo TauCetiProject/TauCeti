@@ -508,21 +508,6 @@ variable {m : ℕ} [NeZero m] {r : ℝ} {Λ : Type*} [AddCommGroup Λ] {E : Type
   (hbmul : ∀ (g h : rootsOfUnity m ℂ) (z : rootsOfUnityBall m r),
     b (g * h) z = torusFamilyAffineMap R P ρ hequiv b hb g (b h z))
 
-/-- The coordinate `t = z ^ m` on the cyclic quotient
-(`TauCeti.torusFamilyCyclicQuotientProjection`) is the map of orbit spaces induced by the
-invariant map `z ↦ z ^ m` of the disc (`TauCeti.torusFamilyAffineQuotientLift`). -/
-theorem torusFamilyCyclicQuotientProjection_eq_torusFamilyAffineQuotientLift :
-    letI := periodAddAction P
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
-    torusFamilyCyclicQuotientProjection R hone hmul P ρ hequiv b hb hbone hbmul =
-      torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbone hbmul
-        (fun z : rootsOfUnityBall m r ↦ (z : ℂ) ^ m)
-        (fun g z ↦ coe_smul_rootsOfUnityBall_pow g z) := by
-  let _ := periodAddAction P
-  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
-  exact funext <| Quotient.ind fun x ↦ by
-    rw [torusFamilyCyclicQuotientProjection_mk, torusFamilyAffineQuotientLift_mk]
-
 /-- **The multiple fibre is the quotient of the central torus.** For a family of tori `X → D` over
 the disc and an affine action of the `m`-th roots of unity lifting the rotations, the fibre over
 `0` of the map `p_Q : X / C_m → ℂ` induced by `z ↦ z ^ m` is the image of the map
@@ -539,8 +524,8 @@ theorem range_orbitRelQuotientMap_torusFamilyFiberMulActionHom_rootsOfUnityBall
       torusFamilyCyclicQuotientProjection R hone hmul P ρ hequiv b hb hbone hbmul ⁻¹' {0} := by
   let _ := periodAddAction P
   let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
-  rw [torusFamilyCyclicQuotientProjection_eq_torusFamilyAffineQuotientLift P R ρ hequiv b hb hone
-      hmul hbone hbmul, preimage_torusFamilyAffineQuotientLift_rootsOfUnityBall_zero P R ρ hequiv b
+  rw [torusFamilyCyclicQuotientProjection_eq_torusFamilyAffineQuotientLift R hone hmul P ρ hequiv b
+      hb hbone hbmul, preimage_torusFamilyAffineQuotientLift_rootsOfUnityBall_zero P R ρ hequiv b
       hb hone hmul hbone hbmul hu₀, range_orbitRelQuotientMap_torusFamilyFiberMulActionHom,
     ← range_torusFamilyFiberMap, ← range_comp, ← Quotient.mk_surjective.range_comp]
   exact congrArg range (funext fun v ↦ by rw [comp_apply, comp_apply, torusFamilyFiberMap_mk])
