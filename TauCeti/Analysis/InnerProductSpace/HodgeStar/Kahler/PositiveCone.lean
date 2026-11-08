@@ -17,11 +17,13 @@ import TauCeti.LinearAlgebra.Matrix.Determinant.FinFour
 
 Let `V` be a finite-dimensional real inner product space with an almost complex structure `J`.
 A two-vector `F ∈ ⋀² V` represents the two-form `F(v, w) = ⟪F, v ∧ w⟫`. It is of type `(1,1)`
-when it is `J`-invariant, `F(J v, J w) = F(v, w)`, which is the vanishing of the derivation
-action `D_J F` of `J` on two-vectors (`exteriorPower.lieMap 2 J`); it is **positive** when in
-addition `F(v, J v) ≥ 0` for every `v`. The positive `(1,1)`-forms form a closed pointed cone
-`TauCeti.AlmostComplexStructure.positiveCone J`, which contains the Kähler form `ω` when `J` is
-orthogonal. Every positive form pairs nonnegatively with `ω`.
+when this form is `J`-invariant, `F(J v, J w) = F(v, w)`; it is **positive** when in addition
+`F(v, J v) ≥ 0` for every `v`. For an orthogonal `J` the invariance is the vanishing of the
+derivation action `D_J F` of `J` on two-vectors (`exteriorPower.lieMap 2 J`); without
+orthogonality the two conditions differ, since the form transforms by the adjoint of `J`. The
+positive `(1,1)`-forms form a closed pointed cone `TauCeti.AlmostComplexStructure.positiveCone J`,
+which contains the Kähler form `ω` when `J` is orthogonal. Every positive form pairs
+nonnegatively with `ω`.
 
 Positivity of currents is tested against this cone. In Taubes's passage from Seiberg–Witten
 solutions to pseudoholomorphic curves the normalized curvature `iF_a / 2π` of a solution is a
@@ -61,6 +63,7 @@ on the positive cone, and `‖P‖ ≤ ⟪ω, P⟫` there. Hence every two-form 
 
 In the namespace `TauCeti.AlmostComplexStructure`:
 
+* `forall_inner_ιMulti_apply_eq_iff`: for orthogonal `J`, `F` is `J`-invariant iff `D_J F = 0`.
 * `kahlerForm_mem_positiveCone`: `ω` is a positive `(1,1)`-form.
 * `inner_kahlerForm_nonneg_of_mem_positiveCone`: positive forms pair nonnegatively with `ω`.
 * `lieMap_eq_zero_of_hodgeStar_eq_neg`: anti-self-dual forms are of type `(1,1)`.
@@ -96,31 +99,56 @@ namespace TauCeti.AlmostComplexStructure
 /-! ### The positive cone -/
 
 /-- The **cone of positive `(1,1)`-forms** of an almost complex structure `J`: the two-vectors
-`F` that are `J`-invariant, `D_J F = 0`, and satisfy `F(v, J v) = ⟪F, v ∧ J v⟫ ≥ 0` for every
-`v`. It is a closed pointed cone. -/
+`F` whose form is `J`-invariant, `F(J v, J w) = F(v, w)`, and satisfies
+`F(v, J v) = ⟪F, v ∧ J v⟫ ≥ 0` for every `v`. It is a closed pointed cone. -/
 def positiveCone (J : AlmostComplexStructure V) : ProperCone ℝ (⋀[ℝ]^2 V) where
-  carrier := {F | lieMap 2 J.toLinearMap F = 0 ∧ ∀ v, 0 ≤ ⟪F, ιMulti ℝ 2 ![v, J v]⟫}
-  add_mem' {F G} hF hG := ⟨by rw [map_add, hF.1, hG.1, add_zero], fun v ↦ by
-    rw [inner_add_left]; exact add_nonneg (hF.2 v) (hG.2 v)⟩
-  zero_mem' := ⟨map_zero _, fun v ↦ by simp⟩
-  smul_mem' c F hF := ⟨by rw [← Nonneg.coe_smul, map_smul, hF.1, smul_zero], fun v ↦ by
+  carrier := {F | (∀ v w, ⟪F, ιMulti ℝ 2 ![J v, J w]⟫ = ⟪F, ιMulti ℝ 2 ![v, w]⟫) ∧
+    ∀ v, 0 ≤ ⟪F, ιMulti ℝ 2 ![v, J v]⟫}
+  add_mem' {F G} hF hG := ⟨fun v w ↦ by rw [inner_add_left, inner_add_left, hF.1, hG.1],
+    fun v ↦ by rw [inner_add_left]; exact add_nonneg (hF.2 v) (hG.2 v)⟩
+  zero_mem' := ⟨fun v w ↦ by simp, fun v ↦ by simp⟩
+  smul_mem' c F hF := ⟨fun v w ↦ by rw [← Nonneg.coe_smul, real_inner_smul_left,
+    real_inner_smul_left, hF.1], fun v ↦ by
     rw [← Nonneg.coe_smul, real_inner_smul_left]; exact mul_nonneg c.2 (hF.2 v)⟩
   isClosed' := by
-    have hD : Continuous (lieMap 2 J.toLinearMap) := LinearMap.continuous_of_finiteDimensional _
     simp only [Set.ofPred_and, Set.ofPred_forall]
-    exact (isClosed_eq hD continuous_const).inter (isClosed_iInter fun v ↦
-      isClosed_le continuous_const (continuous_id.inner continuous_const))
+    exact (isClosed_iInter fun v ↦ isClosed_iInter fun w ↦ isClosed_eq
+      (continuous_id.inner continuous_const) (continuous_id.inner continuous_const)).inter
+      (isClosed_iInter fun v ↦ isClosed_le continuous_const
+        (continuous_id.inner continuous_const))
 
-/-- Membership in the positive cone: `F` is `J`-invariant and `F(v, J v) ≥ 0` for every `v`. -/
+/-- Membership in the positive cone: the form of `F` is `J`-invariant and `F(v, J v) ≥ 0` for
+every `v`. -/
 @[simp]
 theorem mem_positiveCone {J : AlmostComplexStructure V} {F : ⋀[ℝ]^2 V} :
-    F ∈ J.positiveCone ↔ lieMap 2 J.toLinearMap F = 0 ∧ ∀ v, 0 ≤ ⟪F, ιMulti ℝ 2 ![v, J v]⟫ :=
+    F ∈ J.positiveCone ↔ (∀ v w, ⟪F, ιMulti ℝ 2 ![J v, J w]⟫ = ⟪F, ιMulti ℝ 2 ![v, w]⟫) ∧
+      ∀ v, 0 ≤ ⟪F, ιMulti ℝ 2 ![v, J v]⟫ :=
   Iff.rfl
+
+/-- **`J`-invariance of a form is `D_J F = 0`** for an orthogonal `J`: the two-form of `F`
+satisfies `F(J v, J w) = F(v, w)` for all `v, w` iff the derivation action of `J` kills `F`. -/
+theorem forall_inner_ιMulti_apply_eq_iff {J : AlmostComplexStructure V}
+    (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) {F : ⋀[ℝ]^2 V} :
+    (∀ v w, ⟪F, ιMulti ℝ 2 ![J v, J w]⟫ = ⟪F, ιMulti ℝ 2 ![v, w]⟫) ↔
+      lieMap 2 J.toLinearMap F = 0 := by
+  have hneg (v w : V) : ⟪F, ιMulti ℝ 2 ![v, -w]⟫ = -⟪F, ιMulti ℝ 2 ![v, w]⟫ := by
+    have h : ![v, -w] = Function.update ![v, w] 1 (-w) := by
+      ext i; fin_cases i <;> rfl
+    rw [h, (ιMulti ℝ 2).map_update_neg, inner_neg_right]
+    exact congrArg (-⟪F, ιMulti ℝ 2 ·⟫) (Function.update_eq_self 1 ![v, w])
+  have hD (v w : V) : ⟪lieMap 2 J.toLinearMap F, ιMulti ℝ 2 ![v, w]⟫ =
+      -(⟪F, ιMulti ℝ 2 ![J v, w]⟫ + ⟪F, ιMulti ℝ 2 ![v, J w]⟫) := by
+    rw [inner_lieMap_left (inner_apply_left hJ), lieMap_two_apply_ιMulti, inner_add_right]
+  refine ⟨fun h ↦ ext_inner_ιMulti_two fun v w ↦ ?_, fun h v w ↦ ?_⟩
+  · rw [hD, inner_zero_left, ← h v (J w), apply_apply, hneg, add_neg_cancel, neg_zero]
+  · have := hD v (J w)
+    rw [h, inner_zero_left, apply_apply, hneg] at this
+    linarith
 
 /-- **The Kähler form is a positive `(1,1)`-form**, since `ω(v, J v) = ‖J v‖²`. -/
 theorem kahlerForm_mem_positiveCone {J : AlmostComplexStructure V}
     (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) : J.kahlerForm ∈ J.positiveCone :=
-  ⟨lieMap_kahlerForm hJ, fun v ↦ by
+  ⟨(forall_inner_ιMulti_apply_eq_iff hJ).2 (lieMap_kahlerForm hJ), fun v ↦ by
     rw [inner_kahlerForm_ιMulti hJ]; exact real_inner_self_nonneg⟩
 
 /-- **Positive forms pair nonnegatively with the Kähler form**: `⟪ω, F⟫ ≥ 0` for `F` in the
@@ -221,7 +249,9 @@ theorem mem_positiveCone_iff {F μ : ⋀[ℝ]^2 V} (hμ : o.hodgeStar hkl μ = -
     (hF : o.hodgeStar hkl (F - μ) = F - μ) :
     F ∈ J.positiveCone ↔ F - μ = (⟪J.kahlerForm, F⟫ / 2) • J.kahlerForm ∧
       ‖μ‖ / √2 ≤ ⟪J.kahlerForm, F⟫ / 2 := by
-  rw [mem_positiveCone, lieMap_eq_zero_iff hkl he h₀ h₂ hμ hF,
+  rw [mem_positiveCone,
+    forall_inner_ιMulti_apply_eq_iff (inner_apply_apply_of_orthonormalBasis h₀ h₂),
+    lieMap_eq_zero_iff hkl he h₀ h₂ hμ hF,
     forall_inner_ιMulti_nonneg_iff hkl he h₀ h₂ hμ hF]
 
 /-- The squared norm of a form split along the orthogonal summands `(ℝ ω)ᗮ ∩ Λ⁺`, `ℝ ω` and
@@ -320,8 +350,9 @@ theorem mul_inner_kahlerForm_le_inner_of_mem_positiveCone {Ω F : ⋀[ℝ]^2 V} 
   -- The `(1,1)`-part of `Ω - ε ω` is positive.
   set G := ν + (c - ε) • J.kahlerForm
   have hG : G ∈ J.positiveCone := by
-    refine ⟨by rw [map_add, map_smul, lieMap_eq_zero_of_hodgeStar_eq_neg hkl he h₀ h₂ hν,
-      lieMap_kahlerForm hJ, smul_zero, add_zero], fun v ↦ ?_⟩
+    refine ⟨(forall_inner_ιMulti_apply_eq_iff hJ).2 (by
+      rw [map_add, map_smul, lieMap_eq_zero_of_hodgeStar_eq_neg hkl he h₀ h₂ hν,
+        lieMap_kahlerForm hJ, smul_zero, add_zero]), fun v ↦ ?_⟩
     have h := hΩ v
     rw [inner_ιMulti_eq_mul_add_inner_ιMulti hkl he h₀ h₂ hν hΩν, ← hc] at h
     rw [inner_add_left, real_inner_smul_left, inner_kahlerForm_ιMulti hJ,
