@@ -576,6 +576,24 @@ theorem tendsto_neg_two_cpow_half_mul_inv_atTop {x y : ℂ} :
     _ = 2 * (1 + ‖x‖) ^ (1 / 2 : ℝ) * 4 * ((1 + t) ^ (1 / 2 : ℝ) * (1 + t)⁻¹) := by ring
     _ = 2 * (1 + ‖x‖) ^ (1 / 2 : ℝ) * 4 * (1 + t) ^ (-(1 / 2) : ℝ) := by rw [hrpow]
 
+/-- The principal power of a complex number `u` by a real exponent `r` has positive imaginary part
+when `arg u * r` lies in `(0, π)`. -/
+theorem im_cpow_ofReal_pos {u : ℂ} {r : ℝ} (h0 : 0 < arg u * r) (hπ : arg u * r < Real.pi) :
+    0 < (u ^ (r : ℂ)).im := by
+  have hu : u ≠ 0 := by
+    rintro rfl
+    simp at h0
+  rw [cpow_ofReal_im]
+  exact mul_pos (Real.rpow_pos_of_pos (norm_pos_iff.mpr hu) _)
+    (Real.sin_pos_of_pos_of_lt_pi h0 hπ)
+
+/-- The principal power of a complex number by a real exponent `r` is real when `arg u * r` is `0`
+or `π`. -/
+theorem im_cpow_ofReal_eq_zero {u : ℂ} {r : ℝ} (h : arg u * r = 0 ∨ arg u * r = Real.pi) :
+    (u ^ (r : ℂ)).im = 0 := by
+  rw [cpow_ofReal_im]
+  rcases h with h | h <;> rw [h] <;> simp
+
 end Complex
 
 end
