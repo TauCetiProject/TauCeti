@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.Submodule.Dual
+public import TauCeti.LinearAlgebra.Dual.RightAction
 
 /-!
 # Dual module maps and minimality
@@ -44,15 +45,6 @@ variable {k : Type u} {A : Type v} {M : Type w} {N : Type t} {P : Type w'} {Q : 
   (heM : ∀ (a : A) (n : N) (m : M), eM (a • n) m = eM n (MulOpposite.op a • m))
   (eP : Q ≃ₗ[k] Module.Dual k P)
   (heP : ∀ (a : A) (q : Q) (p : P), eP (a • q) p = eP q (MulOpposite.op a • p))
-
-include eM heM in
-/-- The `A`-action on a module identified equivariantly with the `k`-dual of a right module
-commutes with the `k`-action. -/
-theorem isScalarTower_of_moduleDual : IsScalarTower k A N :=
-  IsScalarTower.of_algebraMap_smul fun c n ↦ by
-    apply eM.injective
-    ext m
-    simp [heM, ← MulOpposite.algebraMap_apply]
 
 /-- Precomposition, transported to the specified left duals of right modules. -/
 def moduleDualMap : Q →ₗ[A] N where
@@ -119,8 +111,8 @@ module needs to be finite-dimensional for this range calculation. -/
 theorem range_moduleDualMap :
     LinearMap.range (moduleDualMap f eM heM eP heP) =
       moduleDualAnnihilator eM heM (LinearMap.ker f) := by
-  have := isScalarTower_of_moduleDual eM heM
-  have := isScalarTower_of_moduleDual eP heP
+  have := eM.isScalarTower_of_moduleDual heM
+  have := eP.isScalarTower_of_moduleDual heP
   have hsquare : eM.toLinearMap ∘ₗ (moduleDualMap f eM heM eP heP).restrictScalars k =
       (f.restrictScalars k).dualMap ∘ₗ eP.toLinearMap := by
     ext q m
@@ -137,7 +129,7 @@ and reflects this minimality condition. Only the original source needs to be fin
 theorem isEssential_range_moduleDualMap_iff [FiniteDimensional k M] :
     IsEssential (LinearMap.range (moduleDualMap f eM heM eP heP)) ↔
       IsSuperfluous (LinearMap.ker f) := by
-  have := isScalarTower_of_moduleDual eM heM
+  have := eM.isScalarTower_of_moduleDual heM
   rw [range_moduleDualMap f eM heM eP heP, isEssential_moduleDualAnnihilator_iff]
 
 end Field

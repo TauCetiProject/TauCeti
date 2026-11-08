@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Opposite
+public import Mathlib.Algebra.Algebra.Tower
 public import Mathlib.Algebra.Module.LinearMap.Basic
 public import Mathlib.LinearAlgebra.Dual.Defs
 
@@ -87,3 +89,16 @@ theorem apply_apply_eq_apply_one_mul {e : A → Module.Dual k A}
 end DomMulAct
 
 end TauCeti
+
+/-- The `A`-action on a module identified equivariantly with the `k`-dual of a right module
+commutes with the `k`-action. -/
+theorem LinearEquiv.isScalarTower_of_moduleDual {k : Type*} {A : Type*} {M : Type*} {N : Type*}
+    [CommSemiring k] [Semiring A] [Algebra k A] [AddCommMonoid M] [Module Aᵐᵒᵖ M] [Module k M]
+    [IsScalarTower k Aᵐᵒᵖ M] [AddCommMonoid N] [Module A N] [Module k N]
+    (eM : N ≃ₗ[k] Module.Dual k M)
+    (heM : ∀ (a : A) (n : N) (m : M), eM (a • n) m = eM n (MulOpposite.op a • m)) :
+    IsScalarTower k A N :=
+  IsScalarTower.of_algebraMap_smul fun c n ↦ by
+    apply eM.injective
+    ext m
+    simp [heM, ← MulOpposite.algebraMap_apply]
