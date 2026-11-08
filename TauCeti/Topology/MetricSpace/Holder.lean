@@ -222,9 +222,9 @@ theorem HolderWith.sum {ι X Y : Type*} [PseudoMetricSpace X] [SeminormedAddComm
 the sum of the constants. Compare Mathlib's `HolderWith.add`. -/
 theorem HolderOnWith.add {X Y : Type*} [PseudoMetricSpace X] [SeminormedAddCommGroup Y]
     {C C' r : ℝ≥0} {f g : X → Y} {s : Set X} (hf : HolderOnWith C r f s)
-    (hg : HolderOnWith C' r g s) : HolderOnWith (C + C') r (fun x => f x + g x) s :=
+    (hg : HolderOnWith C' r g s) : HolderOnWith (C + C') r (f + g) s :=
   HolderOnWith.of_dist_le fun x hx y hy => by
-    push_cast
+    simp only [Pi.add_apply, NNReal.coe_add]
     linarith [dist_add_add_le (f x) (g x) (f y) (g y), hf.dist_le hx hy, hg.dist_le hx hy]
 
 /-- **Local Hölder bounds near a compact set are uniform on a thickening.** If `f` is `α`-Hölder on
