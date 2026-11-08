@@ -376,6 +376,7 @@ theorem strictMonoOn_quantile (μ : Measure ℝ) (hμ : Continuous (cdf μ)) :
 
 /-- For an atomless law the quantile is an exact right inverse of the cumulative distribution
 function at every level strictly between `0` and `1`. -/
+@[simp]
 theorem cdf_quantile_of_noAtoms (μ : Measure ℝ) [IsProbabilityMeasure μ] [NullSingletonClass μ]
     (h0 : 0 < t) (h1 : t < 1) : cdf μ (μ.quantile t) = t :=
   cdf_quantile' μ h0 h1 (measure_singleton _)
