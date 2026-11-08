@@ -122,7 +122,7 @@ theorem discr_eq_index_sq_mul : O.discr = O.index ^ 2 * NumberField.discr K := b
   let bN := (bO.map O.equivToRingOfIntegers).reindex σ
   have hcard : Fintype.card (Module.Free.ChooseBasisIndex ℤ (𝓞 K)) =
       Module.finrank ℤ (𝓞 K) := (Module.finrank_eq_card_chooseBasisIndex ℤ (𝓞 K)).symm
-  have h := discr_eq_cardQuot_sq_mul_discr (Subalgebra.toSubmodule O.toRingOfIntegers) bN hcard
+  have h := (Subalgebra.toSubmodule O.toRingOfIntegers).discr_eq_cardQuot_sq_mul_discr bN hcard
   -- The discriminant of `bN`, computed with traces of `K`, is that of `O`.
   have hO : Algebra.discr ℚ (fun i => algebraMap (𝓞 K) K (bN i : 𝓞 K)) = (O.discr : ℚ) := by
     have : (fun i => algebraMap (𝓞 K) K (bN i : 𝓞 K)) = bO' ∘ σ.symm := by

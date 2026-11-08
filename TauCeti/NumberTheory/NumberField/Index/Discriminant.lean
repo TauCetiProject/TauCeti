@@ -65,9 +65,8 @@ theorem discr_minpoly_eq_index_sq_mul_discr (θ : IntegralPrimitiveElement K) :
     rwa [adjoin_def] at h
   have hcard : Fintype.card (Fin pb.dim) = finrank ℤ (𝓞 K) := by
     rw [Fintype.card_fin, ← pb.finrank, hfin]
-  have h := _root_.NumberField.discr_eq_cardQuot_sq_mul_discr
-    (Subalgebra.toSubmodule (Algebra.adjoin ℤ ({θ.1} : Set (𝓞 K))))
-    (pb.basis.map (Subalgebra.toSubmoduleEquiv _).symm) hcard
+  have h := (Subalgebra.toSubmodule (Algebra.adjoin ℤ ({θ.1} : Set (𝓞 K))))
+    |>.discr_eq_cardQuot_sq_mul_discr (pb.basis.map (Subalgebra.toSubmoduleEquiv _).symm) hcard
   -- The powers of `θ` are the power basis of `θ`, up to the identification of the index sets.
   have hdim : θ.powerBasis.dim = pb.dim := by
     rw [← θ.powerBasis.finrank, ← _root_.NumberField.RingOfIntegers.rank K, ← hfin, pb.finrank]

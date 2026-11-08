@@ -106,7 +106,7 @@ theorem index_dedekindOrder_sq_mul_discr
   have hcard : Fintype.card (Fin 3) = finrank ℤ (𝓞 K) := by
     rw [Fintype.card_fin, _root_.NumberField.RingOfIntegers.rank K,
       dedekindCubic_finrank_eq_three hmin hgen]
-  have h := _root_.NumberField.discr_eq_cardQuot_sq_mul_discr (dedekindOrder hrel).toSubmodule
+  have h := (dedekindOrder hrel).toSubmodule.discr_eq_cardQuot_sq_mul_discr
     (c.map (Subalgebra.toSubmoduleEquiv _).symm) hcard
   have hqu : (fun i ↦ algebraMap (𝓞 K) K
       ((c.map (Subalgebra.toSubmoduleEquiv _).symm i : (dedekindOrder hrel).toSubmodule) : 𝓞 K)) =

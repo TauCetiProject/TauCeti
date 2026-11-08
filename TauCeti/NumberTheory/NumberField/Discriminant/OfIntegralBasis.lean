@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.Discriminant.Defs
-import Mathlib.LinearAlgebra.FreeModule.Finite.CardQuotient
 public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 
 /-!
@@ -29,7 +28,7 @@ e.g. `{1, i}` is a `ℤ`-basis of the Gaussian integers and `disc {1, i} = -4` g
 
 * `NumberField.discr_eq_of_integralBasis`: for a `ℤ`-basis `c` of `𝒪_K`, the rational
   discriminant of its image in `K` equals `d_K`.
-* `NumberField.discr_eq_cardQuot_sq_mul_discr`: the index formula `disc b = [𝒪_K : L]² · d_K`
+* `Submodule.discr_eq_cardQuot_sq_mul_discr`: the index formula `disc b = [𝒪_K : L]² · d_K`
   for a `ℤ`-basis `b` of a full-rank sublattice `L` of `𝒪_K`.
 * `NumberField.discr_eq_of_basis_isIntegral_of_span_eq_top`: the same, phrased for a
   `ℚ`-basis `b` of algebraic integers whose `ℤ`-span (inside `𝒪_K`) is everything.
@@ -132,26 +131,39 @@ theorem natAbs_discr_eq_of_basis_isIntegral_of_span_eq_top_of_discr_eq_int
     (NumberField.discr K).natAbs = d.natAbs := by
   rw [discr_eq_of_basis_isIntegral_of_span_eq_top_of_discr_eq_int b hb hspan hd]
 
+end NumberField
+
+section Index
+
+open NumberField
+
+variable {K : Type*} [Field K] [NumberField K] {ι : Type*} [Fintype ι] [DecidableEq ι]
+
 /-- **The index formula for a full-rank sublattice.** If `b` is a `ℤ`-basis of a sublattice `L` of
 the ring of integers `𝒪_K`, with as many vectors as the rank of `𝒪_K`, then the rational
 discriminant of its image in `K` is the square of the index `[𝒪_K : L]` times the field
 discriminant `d_K`. -/
-theorem discr_eq_cardQuot_sq_mul_discr (L : Submodule ℤ (𝓞 K)) (b : Basis ι ℤ L)
+theorem Submodule.discr_eq_cardQuot_sq_mul_discr (L : Submodule ℤ (𝓞 K)) (b : Basis ι ℤ L)
     (hcard : Fintype.card ι = finrank ℤ (𝓞 K)) :
     Algebra.discr ℚ (fun i => algebraMap (𝓞 K) K (b i : 𝓞 K)) =
       (L.cardQuot : ℚ) ^ 2 * (NumberField.discr K : ℚ) := by
   let bK : Basis ι ℤ (𝓞 K) := (RingOfIntegers.basis K).reindex
     (Fintype.equivOfCardEq (by rw [← finrank_eq_card_chooseBasisIndex]; exact hcard.symm))
-  let u : ι → 𝓞 K := fun i => (b i : 𝓞 K)
-  have hdet : (bK.det u).natAbs = L.cardQuot := Submodule.natAbs_det_basis_change bK L b
-  have hv : (fun i => algebraMap (𝓞 K) K (u i)) = (fun i => algebraMap (𝓞 K) K (bK i)) ᵥ*
-      ((bK.toMatrix u).map (algebraMap ℤ ℚ)).map (algebraMap ℚ K) := by
-    have h := bK.toMatrix_map_vecMul u
+  -- The determinant of the change of basis from `bK` to `b` is the index, up to sign.
+  have hdet : (L.cardQuot : ℚ) ^ 2 = (bK.det fun i => (b i : 𝓞 K) : ℚ) ^ 2 := by
+    have h : (bK.det fun i => (b i : 𝓞 K)).natAbs = L.cardQuot :=
+      Submodule.natAbs_det_basis_change bK L b
+    rw [← h]
+    simp
+  -- Over `ℚ`, the images of `b` are obtained from those of `bK` by the change of basis matrix.
+  have hv : (fun i => algebraMap (𝓞 K) K (b i : 𝓞 K)) =
+      (fun i => algebraMap (𝓞 K) K (bK i)) ᵥ*
+        ((bK.toMatrix fun i => (b i : 𝓞 K)).map (algebraMap ℤ ℚ)).map (algebraMap ℚ K) := by
     funext j
-    rw [← congrFun h j]
+    rw [← congrFun (bK.toMatrix_map_vecMul fun i => (b i : 𝓞 K)) j]
     simp [Matrix.vecMul, dotProduct, map_sum, algebraMap_int_eq, map_intCast]
-  rw [show (fun i => algebraMap (𝓞 K) K (b i : 𝓞 K)) = _ from hv, Algebra.discr_of_matrix_vecMul,
-    discr_eq_of_integralBasis bK, ← RingHom.mapMatrix_apply, ← RingHom.map_det,
-    algebraMap_int_eq, eq_intCast, ← Basis.det_apply, ← hdet, Nat.cast_natAbs, Int.cast_abs, sq_abs]
+  rw [hv, Algebra.discr_of_matrix_vecMul, discr_eq_of_integralBasis bK, ← RingHom.mapMatrix_apply,
+    ← RingHom.map_det, hdet]
+  simp [Basis.det_apply]
 
-end NumberField
+end Index
