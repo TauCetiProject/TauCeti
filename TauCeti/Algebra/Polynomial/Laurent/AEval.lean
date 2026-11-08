@@ -123,12 +123,6 @@ theorem T_neg_one_smul_of (x : G) :
     (T (-1) : LaurentPolynomial ℤ) • of σ x = of σ (σ.symm x) := by
   simp
 
-/-- The Laurent action restricts along the constants to the integer action of the underlying
-group. -/
-instance : IsScalarTower ℤ (LaurentPolynomial ℤ) (LaurentAEval σ) where
-  smul_assoc a p x := by
-    rw [zsmul_eq_mul, mul_smul, Int.cast_smul_eq_zsmul]
-
 variable {σ} {N : Type*} [AddCommGroup N] [Module (LaurentPolynomial ℤ) N]
 
 /-- **A `ℤ[T;T⁻¹]`-linear map out of `TauCeti.LaurentAEval σ` is determined by the underlying
