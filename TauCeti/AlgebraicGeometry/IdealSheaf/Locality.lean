@@ -15,8 +15,9 @@ computations of ideal sheaves, such as Fitting ideals, be glued on an arbitrary 
 
 Vanishing of the sections of an ideal sheaf under a morphism also passes to smaller affine opens
 (`AlgebraicGeometry.Scheme.IdealSheafData.ideal_le_ker_appLE_of_le`), so it can be checked
-locally on an affine basis. A quasi-compact morphism is bounded by an ideal sheaf as soon as it is
-on each member of an open cover of its source (`AlgebraicGeometry.Scheme.Hom.le_ker_of_openCover`).
+locally on an affine basis. An ideal sheaf lies in the kernel of a quasi-compact morphism as soon
+as it lies in the kernel of the morphism's restriction to each member of an open cover of the
+source (`AlgebraicGeometry.Scheme.Hom.le_ker_of_openCover`).
 
 -/
 
@@ -79,8 +80,8 @@ theorem _root_.AlgebraicGeometry.Scheme.IdealSheafData.ext_of_comap_openCover
   rw [← I.iInf_map_comap_openCover 𝒰, ← J.iInf_map_comap_openCover 𝒰]
   simp only [h]
 
-/-- A morphism is bounded by an ideal sheaf if it is on each member of an open cover of the
-source, provided the morphism is quasi-compact. -/
+/-- If an ideal sheaf `I` on `Y` lies in the kernel of `𝒰.f a ≫ f` for every member `a` of an open
+cover `𝒰` of `X`, then `I ≤ f.ker`, provided `f` is quasi-compact. -/
 theorem _root_.AlgebraicGeometry.Scheme.Hom.le_ker_of_openCover {X Y : Scheme.{u}} (f : X ⟶ Y)
     [QuasiCompact f] (I : Y.IdealSheafData) (𝒰 : X.OpenCover) (h : ∀ a, I ≤ (𝒰.f a ≫ f).ker) :
     I ≤ f.ker := by
