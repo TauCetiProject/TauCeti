@@ -227,7 +227,7 @@ theorem Scheme.eq_of_SpecMap_comp_fromSpecResidueField {X : Scheme.{u}} {x : X}
 instance Scheme.Hom.isIso_residueFieldMap_of_surjectiveOnStalks {X Y : Scheme.{u}}
     (f : X ⟶ Y) [SurjectiveOnStalks f] (x : X) : IsIso (f.residueFieldMap x) := by
   exact (ConcreteCategory.isIso_iff_bijective _).mpr
-    ((TauCeti.AlgebraicGeometry.residueDegree_eq_one_iff f x).mp
+    ((f.residueDegree_eq_one_iff x).mp
       (f.residueDegree_eq_one_of_surjectiveOnStalks x))
 
 /-- If a composite preserves the residue field at a point, the second morphism preserves
