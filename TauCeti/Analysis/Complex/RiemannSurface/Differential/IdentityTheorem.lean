@@ -53,7 +53,7 @@ private theorem isOpen_order_locus (p : WithTop ℤ → Prop)
       ((chartAt ℂ x).map_target hw), (chartAt ℂ x).right_inv hw]
 
 /-- The infinite-order locus of an everywhere meromorphic differential is clopen. -/
-theorem isClopen_setOf_order_eq_top (hω : ∀ x, ω.MeromorphicAt x) :
+theorem isClopen_setOfPred_order_eq_top (hω : ∀ x, ω.MeromorphicAt x) :
     IsClopen {x | ω.order x = ⊤} := by
   have hchart (x : X) :
       IsClopen {z : (chartAt ℂ x).target |
@@ -72,11 +72,9 @@ theorem HolomorphicAt.apply_eq_zero_of_order_eq_top {x : X} (hω : ω.Holomorphi
     (hx : ω.order x = ⊤) : ω x = 0 := by
   have ha := (holomorphicAt_def ω x).1 hω
   have hc : ω.coeff (chartAt ℂ x) (chartAt ℂ x x) = 0 := by
-    apply tendsto_nhds_unique_of_eventuallyEq
-      (ha.continuousAt.tendsto.mono_left
-        (nhdsWithin_le_nhds (s := {chartAt ℂ x x}ᶜ)))
-      (continuousAt_const.tendsto.mono_left nhdsWithin_le_nhds)
-    exact _root_.meromorphicOrderAt_eq_top_iff.1 ((order_def ω x).symm.trans hx)
+    have ho := (order_def ω x).symm.trans hx
+    rw [ha.meromorphicOrderAt_eq, ENat.map_eq_top_iff] at ho
+    exact (analyticOrderAt_eq_top.1 ho).self_of_nhds
   rw [← (coeff_eq_iff ω (chart_mem_maximalAtlas x) (mem_chart_source ℂ x)).1 rfl,
     hc, zero_smul]
 
@@ -86,7 +84,7 @@ order at a point exactly when it is the zero differential. -/
 theorem order_eq_top_iff [PreconnectedSpace X] (hω : ∀ x, ω.HolomorphicAt x) (x : X) :
     ω.order x = ⊤ ↔ ω = 0 := by
   refine ⟨fun hx ↦ ?_, fun h ↦ by simp [h]⟩
-  have hu := (isClopen_setOf_order_eq_top fun y ↦ (hω y).meromorphicAt).eq_univ ⟨x, hx⟩
+  have hu := (isClopen_setOfPred_order_eq_top fun y ↦ (hω y).meromorphicAt).eq_univ ⟨x, hx⟩
   funext y
   exact (hω y).apply_eq_zero_of_order_eq_top (eq_univ_iff_forall.1 hu y)
 

@@ -46,55 +46,29 @@ namespace OneForm
 as a linear map into the meromorphic function field. -/
 def ratioLinearMap (ω : OneForm X) (hω : ∀ x, ω.MeromorphicAt x) :
     holomorphicOneForms X →ₗ[ℂ] MeromorphicFunction X where
-  toFun η := ratioFunction η.1 ω (fun x ↦ (mem_holomorphicOneForms.1 η.2 x).meromorphicAt) hω
-  map_add' η θ := by
-    apply MeromorphicFunction.eq_of_eventuallyEq_finitePart
-    intro x
-    filter_upwards [finitePart_ratioFunction_eventuallyEq
-      (fun y ↦ (mem_holomorphicOneForms.1 (η + θ).2 y).meromorphicAt) hω x,
-      MeromorphicFunction.finitePart_add_eventuallyEq
-        (ratioFunction η.1 ω (fun y ↦ (mem_holomorphicOneForms.1 η.2 y).meromorphicAt) hω)
-        (ratioFunction θ.1 ω (fun y ↦ (mem_holomorphicOneForms.1 θ.2 y).meromorphicAt) hω) x,
-      finitePart_ratioFunction_eventuallyEq
-        (fun y ↦ (mem_holomorphicOneForms.1 η.2 y).meromorphicAt) hω x,
-      finitePart_ratioFunction_eventuallyEq
-        (fun y ↦ (mem_holomorphicOneForms.1 θ.2 y).meromorphicAt) hω x] with y hsum hadd hη hθ
-    rw [hsum, hadd, Pi.add_apply, hη, hθ]
-    simp only [Submodule.coe_add, ratio_def, coeff_add, Pi.add_apply, add_div]
-  map_smul' c η := by
-    apply MeromorphicFunction.eq_of_eventuallyEq_finitePart
-    intro x
-    filter_upwards [finitePart_ratioFunction_eventuallyEq
-      (fun y ↦ (mem_holomorphicOneForms.1 (c • η).2 y).meromorphicAt) hω x,
-      MeromorphicFunction.finitePart_mul_eventuallyEq
-        (algebraMap ℂ (MeromorphicFunction X) c)
-        (ratioFunction η.1 ω (fun y ↦ (mem_holomorphicOneForms.1 η.2 y).meromorphicAt) hω) x,
-      finitePart_ratioFunction_eventuallyEq
-        (fun y ↦ (mem_holomorphicOneForms.1 η.2 y).meromorphicAt) hω x] with y hsmul hmul hη
-    simp only [RingHom.id_apply]
-    rw [Algebra.smul_def, hsmul, hmul, Pi.mul_apply, hη]
-    simp only [Submodule.coe_smul, ratio_def, coeff_const_smul, Pi.smul_apply,
-      smul_eq_mul, mul_div_assoc, MeromorphicFunction.finitePart_algebraMap]
+  toFun η := ratioFunction η.1 ω (holomorphicOneForms.meromorphicAt η) hω
+  map_add' η θ := ratioFunction_add
+    (holomorphicOneForms.meromorphicAt η) (holomorphicOneForms.meromorphicAt θ) hω
+  map_smul' c η := ratioFunction_smul c (holomorphicOneForms.meromorphicAt η) hω
 
 @[simp]
 theorem ratioLinearMap_apply (ω : OneForm X) (hω : ∀ x, ω.MeromorphicAt x)
     (η : holomorphicOneForms X) :
     ratioLinearMap ω hω η =
-      ratioFunction η.1 ω (fun x ↦ (mem_holomorphicOneForms.1 η.2 x).meromorphicAt) hω :=
+      ratioFunction η.1 ω (holomorphicOneForms.meromorphicAt η) hω :=
   (rfl)
 
-/-- Division by a differential of finite order everywhere loses no holomorphic differential. -/
+/-- Division by a meromorphic differential of finite order at one point loses no holomorphic
+differential. -/
 theorem ratioLinearMap_injective (ω : OneForm X) (hω : ∀ x, ω.MeromorphicAt x)
-    (hω₀ : ∀ x, ω.order x ≠ ⊤) : Injective (ratioLinearMap ω hω) := by
+    {x : X} (hx : ω.order x ≠ ⊤) : Injective (ratioLinearMap ω hω) := by
   intro η θ h
   apply sub_eq_zero.1
   apply Subtype.ext
   have hzero : ratioLinearMap ω hω (η - θ) = 0 := by
     rw [LinearMap.map_sub (M := holomorphicOneForms X) (ratioLinearMap ω hω), h, sub_self]
-  apply (order_eq_top_iff (mem_holomorphicOneForms.1 (η - θ).2) (Classical.arbitrary X)).1
-  have ho := order_ratioFunction_add_order
-    (fun x ↦ (mem_holomorphicOneForms.1 (η - θ).2 x).meromorphicAt) hω
-    (hω₀ (Classical.arbitrary X))
+  apply (order_eq_top_iff (mem_holomorphicOneForms.1 (η - θ).2) x).1
+  have ho := order_ratioFunction_add_order (holomorphicOneForms.meromorphicAt (η - θ)) hω hx
   rw [← ratioLinearMap_apply, hzero, AddValuation.map_zero, WithTop.top_add] at ho
   exact ho.symm
 
@@ -106,8 +80,7 @@ theorem ratioLinearMap_mem_range_toMeromorphic [CompactSpace X] (ω : OneForm X)
     ratioLinearMap ω hω η ∈ (divisorSections.toMeromorphic ω.divisor).range := by
   rw [divisorSections.mem_range_toMeromorphic_iff]
   intro x
-  have ho := order_ratioFunction_add_order
-    (fun y ↦ (mem_holomorphicOneForms.1 η.2 y).meromorphicAt) hω (hω₀ x)
+  have ho := order_ratioFunction_add_order (holomorphicOneForms.meromorphicAt η) hω (hω₀ x)
   rw [← ratioLinearMap_apply, ← coe_coeff_divisor hω (hω₀ x)] at ho
   simp only [AlgebraicGeometry.WeilDivisor.coeff] at ho
   have hn := (mem_holomorphicOneForms.1 η.2 x).order_nonneg
@@ -133,13 +106,13 @@ instance finiteDimensional_holomorphicOneForms [CompactSpace X] :
   have hω := mem_holomorphicOneForms.1 ω.2
   have hω₀ (x : X) : (ω : OneForm X).order x ≠ ⊤ := by
     exact fun hx ↦ hωne (Subtype.ext ((OneForm.order_eq_top_iff hω x).1 hx))
-  let F := OneForm.ratioLinearMap (ω : OneForm X) fun x ↦ (hω x).meromorphicAt
+  let F := OneForm.ratioLinearMap (ω : OneForm X) (holomorphicOneForms.meromorphicAt ω)
   let F' := F.codRestrict (divisorSections.toMeromorphic (ω : OneForm X).divisor).range
     (OneForm.ratioLinearMap_mem_range_toMeromorphic (ω : OneForm X)
-      (fun x ↦ (hω x).meromorphicAt) hω₀)
+      (holomorphicOneForms.meromorphicAt ω) hω₀)
   exact FiniteDimensional.of_injective F' fun η θ heq ↦
-    OneForm.ratioLinearMap_injective (ω : OneForm X)
-      (fun x ↦ (hω x).meromorphicAt) hω₀ (congrArg Subtype.val heq)
+    OneForm.ratioLinearMap_injective (ω : OneForm X) (holomorphicOneForms.meromorphicAt ω)
+      (hω₀ (Classical.arbitrary X)) (congrArg Subtype.val heq)
 
 /-- The global section space of the native holomorphic differential sheaf is finite-dimensional.
 This is the `H⁰(Ω)` space appearing in Serre duality. -/
