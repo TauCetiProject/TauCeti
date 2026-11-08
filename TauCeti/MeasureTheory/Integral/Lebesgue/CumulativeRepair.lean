@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Measure.CumulativeRepair
+public import TauCeti.MeasureTheory.Measure.Interval
 public import Mathlib.MeasureTheory.Measure.WithDensity
 public import Mathlib.Analysis.Normed.Group.Defs
 
