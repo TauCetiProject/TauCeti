@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import Mathlib.Analysis.SpecialFunctions.Sqrt
-import Mathlib.Data.Fin.Tuple.NatAntidiagonal
+public import Mathlib.Data.Fin.Tuple.NatAntidiagonal
 import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Ring
 
@@ -50,19 +50,34 @@ namespace Vertex
 
 variable {n : ℕ}
 
-instance : Finite (Vertex n) := by
-  let f (p : Vertex n) : ↥(Finset.Nat.antidiagonalTuple 3 n) :=
-    ⟨![p.x, p.y, p.z], by
-      rw [Finset.Nat.mem_antidiagonalTuple]
-      simpa [Fin.sum_univ_succ, add_assoc] using p.sum_eq⟩
-  apply Finite.of_injective f
-  intro p q h
-  have hc := congrArg Subtype.val h
-  exact Vertex.ext (congrFun hc 0) (congrFun hc 1) (congrFun hc 2)
+/-- The barycentric coordinates, indexed in the order `x,y,z`. -/
+def coord (p : Vertex n) : Fin 3 → ℕ := ![p.x, p.y, p.z]
 
-noncomputable instance : Fintype (Vertex n) := Fintype.ofFinite _
+@[simp] theorem coord_zero (p : Vertex n) : p.coord 0 = p.x := (rfl)
+@[simp] theorem coord_one (p : Vertex n) : p.coord 1 = p.y := (rfl)
+@[simp] theorem coord_two (p : Vertex n) : p.coord 2 = p.z := (rfl)
 
-/-- The corner `A = (n,0,0)`. The other two corners are its rotations. -/
+/-- Identify vertices with the computably enumerated triples of sum `n`. -/
+def equivAntidiagonalTuple : Vertex n ≃ ↥(Finset.Nat.antidiagonalTuple 3 n) where
+  toFun p := ⟨p.coord, by
+    rw [Finset.Nat.mem_antidiagonalTuple]
+    simpa [coord, Fin.sum_univ_succ, add_assoc] using p.sum_eq⟩
+  invFun t := ⟨t.1 0, t.1 1, t.1 2, by
+    have ht := Finset.Nat.mem_antidiagonalTuple.mp t.2
+    simpa [Fin.sum_univ_succ, add_assoc] using ht⟩
+  left_inv p := by ext <;> rfl
+  right_inv t := by
+    apply Subtype.ext
+    funext i
+    fin_cases i <;> rfl
+
+@[simp] theorem equivAntidiagonalTuple_apply (p : Vertex n) :
+    (equivAntidiagonalTuple p).val = p.coord := (rfl)
+
+instance : Fintype (Vertex n) := Fintype.ofEquiv _ equivAntidiagonalTuple.symm
+
+/-- The corner `A = (n,0,0)`. Its rotations are `B = (0,n,0)` and `C = (0,0,n)`;
+their coordinates simplify using `rotate_x`, `rotate_y`, and `rotate_z`. -/
 def cornerA (n : ℕ) : Vertex n := ⟨n, 0, 0, by omega⟩
 
 @[simp] theorem cornerA_x (n : ℕ) : (cornerA n).x = n := (rfl)
@@ -90,6 +105,18 @@ def reflect (p : Vertex n) : Vertex n := ⟨p.x, p.z, p.y, by have := p.sum_eq; 
 @[simp] theorem reflect_reflect (p : Vertex n) : p.reflect.reflect = p := by
   ext <;> rfl
 
+/-- Clockwise rotation is injective; its inverse is two clockwise rotations. -/
+theorem rotate_injective : Function.Injective (rotate (n := n)) := by
+  intro p q h
+  simpa using congrArg (fun r => r.rotate.rotate) h
+
+/-- Reflection is injective. -/
+theorem reflect_injective : Function.Injective (reflect (n := n)) :=
+  Function.Involutive.injective reflect_reflect
+
+@[simp] theorem reflect_cornerA (n : ℕ) : (cornerA n).reflect = cornerA n := by
+  ext <;> rfl
+
 /-- Reflection conjugates clockwise rotation to counterclockwise rotation. -/
 @[simp] theorem reflect_rotate (p : Vertex n) :
     p.rotate.reflect = p.reflect.rotate.rotate := by
@@ -107,11 +134,18 @@ def add {m : ℕ} (p : Vertex n) (q : Vertex m) : Vertex (n + m) :=
 def sqDist (p q : Vertex n) : ℤ :=
   ((p.x : ℤ) - q.x) ^ 2 + ((p.y : ℤ) - q.y) ^ 2 + ((p.z : ℤ) - q.z) ^ 2
 
-/-- Expand barycentric squared distance in coordinates. -/
-theorem sqDist_def (p q : Vertex n) : sqDist p q =
-    ((p.x : ℤ) - q.x) ^ 2 + ((p.y : ℤ) - q.y) ^ 2 + ((p.z : ℤ) - q.z) ^ 2 := (rfl)
-
 @[simp] theorem sqDist_self (p : Vertex n) : sqDist p p = 0 := by simp [sqDist]
+
+/-- Barycentric squared distance vanishes exactly at equal vertices. -/
+@[simp] theorem sqDist_eq_zero_iff (p q : Vertex n) : sqDist p q = 0 ↔ p = q := by
+  constructor
+  · intro h
+    rw [sqDist, add_eq_zero_iff_of_nonneg (add_nonneg (sq_nonneg _) (sq_nonneg _))
+      (sq_nonneg _), add_eq_zero_iff_of_nonneg (sq_nonneg _) (sq_nonneg _)] at h
+    simp only [sq_eq_zero_iff, sub_eq_zero, Int.natCast_inj] at h
+    exact Vertex.ext h.1.1 h.1.2 h.2
+  · rintro rfl
+    exact sqDist_self p
 
 /-- Barycentric squared distance is symmetric. -/
 theorem sqDist_comm (p q : Vertex n) : sqDist p q = sqDist q p := by
@@ -138,10 +172,10 @@ noncomputable def plane (p : Vertex n) : EuclideanSpace ℝ (Fin 2) :=
   !₂[(p.z : ℝ) + p.y / 2, Real.sqrt 3 * p.y / 2]
 
 @[simp] theorem plane_zero (p : Vertex n) :
-    p.plane 0 = (p.z : ℝ) + p.y / 2 := (rfl)
+    p.plane 0 = (p.z : ℝ) + p.y / 2 := by simp [plane]
 
 @[simp] theorem plane_one (p : Vertex n) :
-    p.plane 1 = Real.sqrt 3 * p.y / 2 := (rfl)
+    p.plane 1 = Real.sqrt 3 * p.y / 2 := by simp [plane]
 
 /-- Planar squared distances are half the barycentric squared distances. -/
 theorem dist_plane_sq (p q : Vertex n) :
@@ -149,22 +183,21 @@ theorem dist_plane_sq (p q : Vertex n) :
   have hp : (p.x : ℝ) + p.y + p.z = n := by exact_mod_cast p.sum_eq
   have hq : (q.x : ℝ) + q.y + q.z = n := by exact_mod_cast q.sum_eq
   have hs : Real.sqrt 3 ^ 2 = (3 : ℝ) := Real.sq_sqrt (by norm_num)
-  simp [EuclideanSpace.dist_sq_eq, plane, Fin.sum_univ_two, Real.dist_eq, sqDist]
-  nlinarith [sq_nonneg ((p.x : ℝ) - q.x + (p.y - q.y) + (p.z - q.z))]
+  have hdelta : (p.x : ℝ) - q.x = -((p.y - q.y) + (p.z - q.z)) := by
+    linarith [hp, hq]
+  simp only [EuclideanSpace.dist_sq_eq, Fin.sum_univ_two, plane_zero, plane_one,
+    Real.dist_eq, sq_abs, sqDist, Int.cast_add, Int.cast_pow, Int.cast_sub,
+    Int.cast_natCast]
+  rw [hdelta]
+  linear_combination ((p.y : ℝ) - q.y) ^ 2 / 4 * hs
 
 /-- The planar realization does not identify distinct lattice vertices. -/
 theorem plane_injective : Function.Injective (plane (n := n)) := by
   intro p q h
   have hd := dist_plane_sq p q
   rw [h, dist_self] at hd
-  simp only [sqDist, Int.cast_add, Int.cast_pow, Int.cast_sub, Int.cast_natCast] at hd
-  have hx : (p.x : ℝ) = q.x := by
-    nlinarith [sq_nonneg ((p.y : ℝ) - q.y), sq_nonneg ((p.z : ℝ) - q.z)]
-  have hy : (p.y : ℝ) = q.y := by
-    nlinarith [sq_nonneg ((p.x : ℝ) - q.x), sq_nonneg ((p.z : ℝ) - q.z)]
-  have hz : (p.z : ℝ) = q.z := by
-    nlinarith [sq_nonneg ((p.x : ℝ) - q.x), sq_nonneg ((p.y : ℝ) - q.y)]
-  exact Vertex.ext (by exact_mod_cast hx) (by exact_mod_cast hy) (by exact_mod_cast hz)
+  have hz : (sqDist p q : ℝ) = 0 := by simpa using hd.symm
+  exact (sqDist_eq_zero_iff p q).mp (by exact_mod_cast hz)
 
 end Vertex
 
@@ -279,12 +312,40 @@ theorem add {m : ℕ} (h : IsRhombus a b c d) (p : Vertex m) :
 
 end IsRhombus
 
+@[simp] theorem isRhombus_rotate_iff {n : ℕ} {a b c d : Vertex n} :
+    IsRhombus a.rotate b.rotate c.rotate d.rotate ↔ IsRhombus a b c d := by
+  constructor
+  · intro h
+    simpa using h.rotate.rotate
+  · exact IsRhombus.rotate
+
+@[simp] theorem isRhombus_reflect_iff {n : ℕ} {a b c d : Vertex n} :
+    IsRhombus a.reflect b.reflect c.reflect d.reflect ↔ IsRhombus a b c d := by
+  constructor
+  · intro h
+    simpa using h.reflect
+  · exact IsRhombus.reflect
+
+@[simp] theorem isRhombus_add_iff {m n : ℕ} (p : Vertex m) {a b c d : Vertex n} :
+    IsRhombus (p.add a) (p.add b) (p.add c) (p.add d) ↔ IsRhombus a b c d := by
+  constructor
+  · intro h
+    exact {
+      midpoint_x := by have := h.midpoint_x; simp only [Vertex.add_x] at this; omega
+      midpoint_y := by have := h.midpoint_y; simp only [Vertex.add_y] at this; omega
+      midpoint_z := by have := h.midpoint_z; simp only [Vertex.add_z] at this; omega
+      short := by simpa using h.short
+      long := by simpa using h.long
+      side_ab := by simpa using h.side_ab
+      side_bc := by simpa using h.side_bc
+      side_cd := by simpa using h.side_cd
+      side_da := by simpa using h.side_da }
+  · exact fun h => h.add p
+
 /-- The finite type of ordered unit rhombi in the size-`n` triangular lattice.
 The first and third entries are always the obtuse corners. -/
 abbrev Rhombus (n : ℕ) :=
   {t : Vertex n × Vertex n × Vertex n × Vertex n // IsRhombus t.1 t.2.1 t.2.2.1 t.2.2.2}
-
-instance (n : ℕ) : Finite (Rhombus n) := inferInstanceAs (Finite (Subtype _))
 
 /-- The size-two rhombus adjacent to `A`, with obtuse corners at the midpoints of
 `AB` and `CA`. Rotation gives the other two orientations; translation embeds it
