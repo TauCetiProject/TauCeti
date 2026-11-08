@@ -57,8 +57,8 @@ cyclic of order `n` with a distinguished generator, the one of invariant `1 / n`
 * `AddCircle.eq_torsionBy_of_natCard_eq`: a subgroup of `AddCircle p` with `n` elements is the
   `n`-torsion; equivalently, `AddCircle.exists_eq_torsionBy` writes every finite subgroup as a
   torsion subgroup, and `AddCircle.isAddCyclic_of_finite` shows that it is cyclic.
-* `AddMonoidHom.isCyclic_range_comp_toMultiplicativeRight`: a finite image of a group in a circle
-  `𝕜 ⧸ p ℤ`, through a character of a group `B` composed with a homomorphism into `B`, is cyclic.
+* `AddCircle.isCyclic_of_finite_multiplicative`: a finite subgroup of the multiplicative copy of a
+  circle `𝕜 ⧸ p ℤ` over a characteristic-zero division ring is cyclic.
 * `AddCircle.torsionBy_le_torsionBy_iff` and `AddCircle.torsionBy_inj`: the torsion subgroups
   are ordered by divisibility, and pairwise distinct.
 * `AddCircle.nsmul_coe_period_div` and `AddCircle.nsmul_coe_period_div_of_mul_eq`: scaling the
@@ -493,34 +493,21 @@ end Rat
 
 end AddCircle
 
-namespace AddMonoidHom
-
-/-- The image of a group under a composite of a homomorphism into a group `B` with a
-character of `B` in a circle `𝕜 ⧸ p ℤ` over a characteristic-zero division ring is cyclic, as
-soon as this image is finite. -/
-theorem isCyclic_range_comp_toMultiplicativeRight {𝕜 : Type*} [DivisionRing 𝕜] [CharZero 𝕜]
-    {p : 𝕜} {G B : Type*} [Group G] [Group B] (χ : Additive B →+ AddCircle p) (g : G →* B)
-    [Finite (χ.toMultiplicativeRight.comp g).range] :
-    IsCyclic (χ.toMultiplicativeRight.comp g).range := by
-  set f := χ.toMultiplicativeRight.comp g
-  -- The image of `f` embeds into the additive image `A` of the composite, a finite subgroup of ℚ/ℤ.
-  set A : AddSubgroup (AddCircle p) := (χ.comp (MonoidHom.toAdditive g)).range
-  have hA (y : f.range) : y.val.toAdd ∈ A := by
-    obtain ⟨σ, hσ⟩ := y.property
-    exact ⟨Additive.ofMul σ, by simpa [f] using congrArg Multiplicative.toAdd hσ⟩
-  have : Finite A := Finite.of_injective (fun a : A ↦ (⟨Multiplicative.ofAdd a.val, by
-      obtain ⟨σ, hσ⟩ := a.property
-      exact ⟨Additive.toMul σ, by simpa [f] using hσ⟩⟩ : f.range)) fun a b h ↦
-    Subtype.ext (congrArg (fun y : f.range ↦ y.val.toAdd) h)
+/-- Every finite subgroup of the multiplicative copy of a circle `𝕜 ⧸ p ℤ` over a
+characteristic-zero division ring is cyclic. -/
+theorem AddCircle.isCyclic_of_finite_multiplicative {𝕜 : Type*} [DivisionRing 𝕜] [CharZero 𝕜]
+    (p : 𝕜) (H : Subgroup (Multiplicative (AddCircle p))) [Finite H] : IsCyclic H := by
+  set A : AddSubgroup (AddCircle p) := Subgroup.toAddSubgroup' H
+  have : Finite A := Finite.of_injective
+    (fun a : A ↦ (⟨Multiplicative.ofAdd a.val, a.property⟩ : H)) fun a b h ↦
+    Subtype.ext (congrArg (fun y : H ↦ y.val.toAdd) h)
   have : IsAddCyclic A := AddCircle.isAddCyclic_of_finite p A
-  let j : f.range →* Multiplicative A := {
-    toFun := fun y ↦ Multiplicative.ofAdd ⟨y.val.toAdd, hA y⟩
+  let j : H →* Multiplicative A := {
+    toFun := fun y ↦ Multiplicative.ofAdd ⟨y.val.toAdd, y.property⟩
     map_one' := rfl
     map_mul' := fun _ _ ↦ rfl }
   exact isCyclic_of_injective j fun y z h ↦ Subtype.ext (Multiplicative.toAdd.injective
     (congrArg (fun t : Multiplicative A ↦ (t.toAdd : AddCircle p)) h))
-
-end AddMonoidHom
 
 namespace ZMod
 

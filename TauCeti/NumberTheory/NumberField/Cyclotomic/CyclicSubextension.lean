@@ -93,7 +93,7 @@ theorem exists_isTotallyComplex_isCyclic_subextension_two_pow (n : ℕ)
     fun y z h ↦ Subtype.ext (Multiplicative.toAdd.injective
       (congrArg (fun t : χ.range ↦ (t : AddCircle (1 : ℚ))) h))
   have : IsCyclic f.range :=
-    AddMonoidHom.isCyclic_range_comp_toMultiplicativeRight χ (hζ.autToPow K)
+    AddCircle.isCyclic_of_finite_multiplicative _ f.range
   have : IsCyclic ((Gal(L/K)) ⧸ f.ker) :=
     isCyclic_of_injective (QuotientGroup.quotientKerEquivRange f).toMonoidHom
       (QuotientGroup.quotientKerEquivRange f).injective
