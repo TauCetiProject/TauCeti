@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.MvPolynomial.Basic
 public import Mathlib.RingTheory.PowerSeries.Derivative
 import Mathlib.Algebra.CharP.Invertible
+import Mathlib.RingTheory.PowerSeries.Inverse
 
 /-!
 # Derivative identities for power series
@@ -297,6 +298,19 @@ theorem polynomial_map_algebraMap_smul {S : Type*} [CommSemiring S] [Algebra R S
   rw [Algebra.smul_def, Algebra.smul_def, algebraMap_apply', algebraMap_apply',
     ← Polynomial.polynomial_map_coe, ← Polynomial.polynomial_map_coe, Polynomial.map_map,
     ← IsScalarTower.algebraMap_eq]
+
+/-- Nonzero polynomials over the base field act injectively on power series over any
+commutative algebra. -/
+instance {k K : Type*} [Field k] [CommRing K] [Algebra k K] :
+    Module.IsTorsionFree (Polynomial k) K⟦X⟧ where
+  isSMulRegular p hp := by
+    have hp' : (p : k⟦X⟧) ≠ 0 := by simpa using hp.ne_zero
+    have hu := (isUnit_divided_by_X_pow_order hp').map (map (algebraMap k K))
+    intro f g hfg
+    simp only [Algebra.smul_def, algebraMap_apply'] at hfg
+    rw [← X_pow_order_mul_divXPowOrder (f := (p : k⟦X⟧))] at hfg
+    simp only [map_mul, map_pow, map_X, mul_assoc] at hfg
+    exact hu.mul_right_injective (X_pow_mul_injective hfg)
 
 end Algebra
 
