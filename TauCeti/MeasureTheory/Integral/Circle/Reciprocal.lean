@@ -26,51 +26,38 @@ namespace TauCeti
 
 /-- The contour integral of `z⁻¹ * (w - z)⁻¹` over a centered circle is `I` times the flat
 angular average of `(w - z)⁻¹`. -/
-theorem circleIntegral_inv_mul_sub_inv_eq {w : ℂ} {r : ℝ} (hr : 0 < r) :
+theorem circleIntegral_inv_mul_sub_inv_eq {w : ℂ} {r : ℝ} (hr : r ≠ 0) :
     (∮ z in C(0, r), z⁻¹ * (w - z)⁻¹) = I * ∫ θ in 0..2 * π, (w - circleMap 0 r θ)⁻¹ := by
   rw [circleIntegral, ← intervalIntegral.integral_const_mul]
   apply intervalIntegral.integral_congr
   intro θ _
   simp only [deriv_circleMap, smul_eq_mul]
-  have hθ : circleMap 0 r θ ≠ 0 := by
-    intro hz0
-    exact hr.ne (by simpa [hz0] using (mem_sphere_iff_norm.mp (circleMap_mem_sphere 0 hr.le θ)))
+  have hθ : circleMap 0 r θ ≠ 0 := circleMap_ne_center hr
   field_simp
-
-/-- The contour integral of `z⁻¹ * (0 - z)⁻¹` over a centered circle vanishes. -/
-theorem circleIntegral_inv_mul_zero_sub_inv {r : ℝ} (hr : 0 < r) :
-    (∮ z in C(0, r), z⁻¹ * ((0 : ℂ) - z)⁻¹) = 0 := by
-  calc
-    _ = ∮ z in C(0, r), (-1 : ℂ) * (z - 0)^(-2 : ℤ) := by
-      apply circleIntegral.integral_congr hr.le
-      intro z _
-      simp [zpow_neg, pow_two]
-    _ = -(∮ z in C(0, r), (z - 0)^(-2 : ℤ)) := by
-      rw [circleIntegral.integral_const_mul]
-      ring
-    _ = 0 := by rw [circleIntegral.integral_sub_zpow_of_ne (by decide)]; simp
 
 /-- Partial fractions for the contour integral of `z⁻¹ * (w - z)⁻¹` over a centered circle, for a
 nonzero pole `w` off the circle. -/
-theorem circleIntegral_inv_mul_sub_inv_eq_of_ne {w : ℂ} {r : ℝ} (hr : 0 < r) (hne : ‖w‖ ≠ r)
+theorem circleIntegral_inv_mul_sub_inv_eq_of_ne {w : ℂ} {r : ℝ} (hr : r ≠ 0) (hne : ‖w‖ ≠ |r|)
     (hw : w ≠ 0) :
     (∮ z in C(0, r), z⁻¹ * (w - z)⁻¹) =
       w⁻¹ * ((2 * π * I : ℂ) - ∮ z in C(0, r), (z - w)⁻¹) := by
-  have hz : ∀ z ∈ sphere (0 : ℂ) r, z ≠ 0 := by
+  have hz : ∀ z ∈ sphere (0 : ℂ) |r|, z ≠ 0 := by
     intro z hz hz0
-    exact hr.ne (by simpa [hz0] using (mem_sphere_iff_norm.mp hz))
-  have hzw : ∀ z ∈ sphere (0 : ℂ) r, z - w ≠ 0 := by
+    exact hr (abs_eq_zero.mp (by simpa [hz0] using (mem_sphere_iff_norm.mp hz).symm))
+  have hzw : ∀ z ∈ sphere (0 : ℂ) |r|, z - w ≠ 0 := by
     intro z hz heq
     exact hne (by simpa [sub_eq_zero.mp heq] using mem_sphere_iff_norm.mp hz)
   have h0 : CircleIntegrable (fun z : ℂ => z⁻¹) 0 r := by
     simpa only [sub_zero] using (circleIntegrable_sub_inv_iff (c := 0) (w := 0) (R := r)).mpr
-      (Or.inr (by simpa [abs_of_pos hr] using (ne_of_lt hr)))
+      (Or.inr (by simpa [eq_comm] using hr))
   have h1 : CircleIntegrable (fun z : ℂ => (z - w)⁻¹) 0 r :=
-    circleIntegrable_sub_inv_iff.mpr (Or.inr (by simpa [abs_of_pos hr] using hne))
+    circleIntegrable_sub_inv_iff.mpr (Or.inr (by simpa using hne))
+  have hcongr {f g : ℂ → ℂ} (h : EqOn f g (sphere 0 |r|)) :
+      (∮ z in C(0, r), f z) = ∮ z in C(0, r), g z :=
+    intervalIntegral.integral_congr fun θ _ => by simp only [h (circleMap_mem_sphere' 0 r θ)]
   calc
     _ = ∮ z in C(0, r), w⁻¹ * (z⁻¹ - (z - w)⁻¹) := by
-      apply circleIntegral.integral_congr hr.le
-      intro z hz'
+      refine hcongr fun z hz' => ?_
       have hz0 := hz z hz'
       have hzw0 := hzw z hz'
       have hwz0 : w - z ≠ 0 := sub_ne_zero.mpr (sub_ne_zero.mp hzw0).symm
@@ -79,20 +66,29 @@ theorem circleIntegral_inv_mul_sub_inv_eq_of_ne {w : ℂ} {r : ℝ} (hr : 0 < r)
     _ = _ := by
       rw [circleIntegral.integral_const_mul, circleIntegral.integral_sub h0 h1]
       simpa only [sub_zero] using congrArg (fun v => w⁻¹ * (v - ∮ z in C(0,r), (z - w)⁻¹))
-        (circleIntegral.integral_sub_center_inv 0 hr.ne')
+        (circleIntegral.integral_sub_center_inv 0 hr)
 
 /-- The flat angular average of the Cauchy kernel on a circle, away from the exceptional
 radius meeting its pole. The value at a zero pole is included. -/
 theorem integral_circleMap_sub_inv {w : ℂ} {r : ℝ} (hr : 0 < r) (hne : ‖w‖ ≠ r) :
     (∫ θ in 0..2 * π, (w - circleMap 0 r θ)⁻¹) =
       if r < ‖w‖ then (2 * π : ℂ) / w else 0 := by
-  have hangle := circleIntegral_inv_mul_sub_inv_eq (w := w) hr
+  have hangle := circleIntegral_inv_mul_sub_inv_eq (w := w) hr.ne'
   by_cases hw : w = 0
   · subst w
-    have hzero := (mul_eq_zero.mp (hangle ▸ circleIntegral_inv_mul_zero_sub_inv hr)).resolve_left
-      I_ne_zero
-    simpa [hr.not_gt] using hzero
-  · have hsplit := circleIntegral_inv_mul_sub_inv_eq_of_ne hr hne hw
+    have hzero : (∮ z in C(0, r), z⁻¹ * ((0 : ℂ) - z)⁻¹) = 0 := by
+      calc
+        _ = ∮ z in C(0, r), (-1 : ℂ) * (z - 0) ^ (-2 : ℤ) := by
+          apply circleIntegral.integral_congr hr.le
+          intro z _
+          simp [zpow_neg, pow_two]
+        _ = -(∮ z in C(0, r), (z - 0) ^ (-2 : ℤ)) := by
+          rw [circleIntegral.integral_const_mul]
+          ring
+        _ = 0 := by rw [circleIntegral.integral_sub_zpow_of_ne (by decide)]; simp
+    have hzero' := (mul_eq_zero.mp (hangle ▸ hzero)).resolve_left I_ne_zero
+    simpa [hr.not_gt] using hzero'
+  · have hsplit := circleIntegral_inv_mul_sub_inv_eq_of_ne hr.ne' (by rwa [abs_of_pos hr]) hw
     rw [hangle] at hsplit
     by_cases hwr : r < ‖w‖
     · rw [TauCeti.Contour.circleIntegral_sub_inv_eq_zero_of_lt_dist hr.le
