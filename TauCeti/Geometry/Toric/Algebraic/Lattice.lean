@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.Dual.BaseChange
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.TensorProduct.IsBaseChangeFree
+public import TauCeti.Algebra.Module.ZLattice.BaseChange
 public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
 import Mathlib.LinearAlgebra.Dual.Lemmas
@@ -61,6 +62,8 @@ forcing the integral and real ranks to agree.
   the componentwise lattice map.
 * `TauCeti.Toric.IsIntegralLattice.isZLattice`: in a normed space the image of an integral
   lattice is discrete, hence a `ZLattice` in Mathlib's sense.
+* `TauCeti.Toric.isIntegralLattice_subtype_of_isZLattice`: conversely, a full `ZLattice` in a
+  finite-dimensional space is an integral lattice for its inclusion.
 
 ## Implementation notes
 
@@ -344,6 +347,13 @@ theorem IsIntegralLattice.isZLattice (h : IsIntegralLattice i) :
     IsZLattice ℝ (LinearMap.range i.toIntLinearMap) :=
   haveI := h.discreteTopology
   ⟨by rw [LinearMap.coe_range]; exact h.span_range_eq_top⟩
+
+/-- Conversely, a full `ℤ`-lattice in Mathlib's sense, in a finite-dimensional normed real vector
+space, is an integral lattice for its inclusion: the space is the real scalar extension of the
+lattice. -/
+theorem isIntegralLattice_subtype_of_isZLattice [FiniteDimensional ℝ V] (L : Submodule ℤ V)
+    [DiscreteTopology L] [IsZLattice ℝ L] : IsIntegralLattice L.subtype.toAddMonoidHom :=
+  ⟨ZLattice.module_free ℝ L, ZLattice.module_finite ℝ L, ZLattice.isBaseChange_subtype ℝ L⟩
 
 end Discrete
 
