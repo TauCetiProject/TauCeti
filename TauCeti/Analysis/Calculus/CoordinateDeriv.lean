@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Data.List.Sublists
+public import TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList
 import TauCeti.Analysis.Calculus.ParametricFDeriv
 
 /-!
@@ -50,6 +51,10 @@ symbol calculus.
 * `TauCeti.coordinateDeriv_coordinateDeriv_comm`: partial derivatives in different variables
   commute.
 * `TauCeti.mixedDeriv`: the mixed position-frequency derivative `∂_x^α ∂_ξ^β`.
+* `TauCeti.mixedDeriv_eq_iteratedFDerivAlong`, `TauCeti.iteratedFDerivAlong_map_mixedDirection`:
+  for smooth functions, mixed derivatives are the iterated directional derivatives
+  `TauCeti.iteratedFDerivAlong` along words of position and frequency directions
+  (`TauCeti.mixedDirection`), in any interleaving.
 * `ContinuousLinearMap.coordinateDeriv_of_bilinear`, `ContinuousLinearMap.mixedDeriv_of_bilinear`:
   the Leibniz rules.
 -/
@@ -342,6 +347,73 @@ theorem mixedDeriv_nil_comp_fst (f : CoordinateSpace n → A) (α : List (Fin n)
     (x ξ : CoordinateSpace n) :
     mixedDeriv α [] (fun p => f p.1) x ξ = coordinateDeriv α f x := by
   simp only [mixedDeriv_def, coordinateDeriv_nil]
+
+section IteratedFDerivAlong
+
+/-! ### Comparison with iterated directional derivatives -/
+
+/-- Coordinate derivatives are the iterated directional derivatives along the standard basis
+vectors named by the word. -/
+theorem coordinateDeriv_eq_iteratedFDerivAlong (α : List (Fin n)) (f : CoordinateSpace n → A) :
+    coordinateDeriv α f = iteratedFDerivAlong ℝ (α.map fun j => EuclideanSpace.single j 1) f := by
+  induction α with
+  | nil => simp
+  | cons j α ih =>
+    funext x
+    rw [coordinateDeriv_cons, ih, List.map_cons, iteratedFDerivAlong_cons_apply]
+
+/-- The coordinate direction of `ℝⁿ × ℝⁿ` named by a letter: `Sum.inl j` is the `j`-th position
+direction `(eⱼ, 0)` and `Sum.inr j` the `j`-th frequency direction `(0, eⱼ)`. -/
+def mixedDirection : Fin n ⊕ Fin n → CoordinateSpace n × CoordinateSpace n :=
+  Sum.elim (fun j => (EuclideanSpace.single j 1, 0)) fun j => (0, EuclideanSpace.single j 1)
+
+@[simp]
+theorem mixedDirection_inl (j : Fin n) :
+    mixedDirection (Sum.inl j) = (EuclideanSpace.single j 1, 0) := (rfl)
+
+@[simp]
+theorem mixedDirection_inr (j : Fin n) :
+    mixedDirection (Sum.inr j) = (0, EuclideanSpace.single j 1) := (rfl)
+
+variable {a : CoordinateSpace n × CoordinateSpace n → A}
+
+/-- A mixed derivative of a smooth function is the iterated directional derivative along its
+position directions and its frequency directions, the latter being taken first. -/
+theorem mixedDeriv_eq_iteratedFDerivAlong (ha : ContDiff ℝ ∞ a) (α β : List (Fin n))
+    (x ξ : CoordinateSpace n) :
+    mixedDeriv α β a x ξ =
+      iteratedFDerivAlong ℝ ((α.map Sum.inl ++ β.map Sum.inr).map mixedDirection) a (x, ξ) := by
+  have hβ : ∀ y, coordinateDeriv β (fun η => a (y, η)) ξ =
+      iteratedFDerivAlong ℝ (β.map fun j => (0, EuclideanSpace.single j 1)) a (y, ξ) := by
+    intro y
+    rw [coordinateDeriv_eq_iteratedFDerivAlong, iteratedFDerivAlong_comp_of_hasFDerivAt
+      (fun η => hasFDerivAt_prodMk_right (𝕜 := ℝ) y η) ha _ (by exact_mod_cast le_top)]
+    simp [Function.comp_def]
+  rw [mixedDeriv_def, funext hβ, coordinateDeriv_eq_iteratedFDerivAlong,
+    iteratedFDerivAlong_comp_of_hasFDerivAt (fun y => hasFDerivAt_prodMk_left (𝕜 := ℝ) y ξ)
+      (ha.iteratedFDerivAlong (m := ∞) _ (by simp)) _ (by exact_mod_cast le_top),
+    ← iteratedFDerivAlong_append]
+  simp [Function.comp_def]
+
+/-- The iterated directional derivative of a smooth function along any word of position and
+frequency directions is the mixed derivative along its position letters and its frequency
+letters, whatever their interleaving. -/
+theorem iteratedFDerivAlong_map_mixedDirection (ha : ContDiff ℝ ∞ a) (w : List (Fin n ⊕ Fin n))
+    (p : CoordinateSpace n × CoordinateSpace n) :
+    iteratedFDerivAlong ℝ (w.map mixedDirection) a p =
+      mixedDeriv (w.filterMap Sum.getLeft?) (w.filterMap Sum.getRight?) a p.1 p.2 := by
+  have hperm : w.Perm ((w.filterMap Sum.getLeft?).map Sum.inl ++
+      (w.filterMap Sum.getRight?).map Sum.inr) := by
+    induction w with
+    | nil => rfl
+    | cons l w ih =>
+      cases l with
+      | inl j => simpa [List.filterMap_cons] using ih
+      | inr j => simpa [List.filterMap_cons] using (ih.cons (Sum.inr j)).trans List.perm_middle.symm
+  rw [mixedDeriv_eq_iteratedFDerivAlong ha,
+    (hperm.map mixedDirection).iteratedFDerivAlong_eq ha (by exact_mod_cast le_top)]
+
+end IteratedFDerivAlong
 
 section Linear
 

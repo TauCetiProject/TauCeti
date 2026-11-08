@@ -31,6 +31,8 @@ evaluated on the directions.
 * `TauCeti.iteratedFDerivAlong`: the iterated directional derivative along a list of directions.
 * `ContDiff.iteratedFDerivAlong`: differentiating a `C^n` map along `k` directions gives a map
   which is `C^m` whenever `m + k ≤ n`.
+* `ContDiffOn.iteratedFDerivAlong`, `TauCeti.iteratedFDerivAlong_add_apply_of_isOpen`: the
+  same smoothness, and additivity, for maps which are only `C^n` on an open set.
 * `TauCeti.iteratedFDerivAlong_comp_of_hasFDerivAt`: the chain rule for an affine change of
   variables.
 * `List.Perm.iteratedFDerivAlong_eq`: over `ℝ` or `ℂ`, reordering the directions does not change
@@ -141,6 +143,46 @@ theorem iteratedFDerivAlong_add {f g : E → F} (hf : ContDiff 𝕜 n f) (hg : C
     rw [iteratedFDerivAlong_cons_apply, ih hlt.le,
       fderiv_add (hf.differentiable_iteratedFDerivAlong vs hlt x)
         (hg.differentiable_iteratedFDerivAlong vs hlt x)]
+    rfl
+
+/-- Differentiating a map which is `C^n` on an open set `s` along `k` directions gives a map which
+is `C^m` on `s` whenever `m + k ≤ n`. -/
+theorem _root_.ContDiffOn.iteratedFDerivAlong {m : ℕ∞ω} {f : E → F} {s : Set E}
+    (hf : ContDiffOn 𝕜 n f s) (hs : IsOpen s) (vs : List E) (hvs : m + vs.length ≤ n) :
+    ContDiffOn 𝕜 m (iteratedFDerivAlong 𝕜 vs f) s := by
+  induction vs generalizing m with
+  | nil => exact hf.of_le (by simpa using hvs)
+  | cons v vs ih =>
+    refine ((ih (m := m + 1) ?_).fderiv_of_isOpen hs le_rfl).clm_apply contDiffOn_const
+    rwa [List.length_cons, Nat.cast_succ, add_comm (vs.length : ℕ∞ω), ← add_assoc] at hvs
+
+theorem _root_.ContDiffOn.differentiableOn_iteratedFDerivAlong {f : E → F} {s : Set E}
+    (hf : ContDiffOn 𝕜 n f s) (hs : IsOpen s) (vs : List E) (hvs : vs.length < n) :
+    DifferentiableOn 𝕜 (iteratedFDerivAlong 𝕜 vs f) s :=
+  (hf.iteratedFDerivAlong (m := 1) hs vs (by
+    rw [add_comm]
+    exact_mod_cast ENat.add_one_natCast_le_withTop_of_lt hvs)).differentiableOn one_ne_zero
+
+/-- Iterated directional derivatives are additive at the points of an open set on which both maps
+are `C^k`, for a list of `k` directions. -/
+theorem iteratedFDerivAlong_add_apply_of_isOpen {f g : E → F} {s : Set E}
+    (hf : ContDiffOn 𝕜 n f s) (hg : ContDiffOn 𝕜 n g s) (hs : IsOpen s) (vs : List E)
+    (hvs : vs.length ≤ n) {x : E} (hx : x ∈ s) :
+    iteratedFDerivAlong 𝕜 vs (f + g) x =
+      iteratedFDerivAlong 𝕜 vs f x + iteratedFDerivAlong 𝕜 vs g x := by
+  induction vs generalizing x with
+  | nil => rfl
+  | cons v vs ih =>
+    have hlt : (vs.length : ℕ∞ω) < n :=
+      lt_of_lt_of_le (by exact_mod_cast Nat.lt_succ_self _) hvs
+    have hev : iteratedFDerivAlong 𝕜 vs (f + g) =ᶠ[𝓝 x]
+        iteratedFDerivAlong 𝕜 vs f + iteratedFDerivAlong 𝕜 vs g := by
+      filter_upwards [hs.mem_nhds hx] with y hy
+      exact ih hlt.le hy
+    rw [iteratedFDerivAlong_cons_apply, hev.fderiv_eq,
+      fderiv_add ((hf.differentiableOn_iteratedFDerivAlong hs vs hlt).differentiableAt
+        (hs.mem_nhds hx)) ((hg.differentiableOn_iteratedFDerivAlong hs vs hlt).differentiableAt
+        (hs.mem_nhds hx))]
     rfl
 
 theorem iteratedFDerivAlong_neg (f : E → F) (vs : List E) :

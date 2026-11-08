@@ -7,9 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.FrequencyCutoff
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
-import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
-import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 
 /-!
 # The cut-off inverse of a symbol
@@ -22,15 +20,17 @@ the full-symbol calculus. For a frequency cutoff `χ`, the function
 `b(x, ξ) = χ(ξ / R) a(x, ξ)⁻¹`
 
 is then a symbol of order `-m` (`TauCeti.Symbol.cutoffInverse`): every mixed derivative satisfies
-`‖∂_x^α ∂_ξ^β b(x, ξ)‖ ≤ C ⟨ξ⟩^(-m - |β|)`. It inverts `a` up to the compactly frequency-supported
-error `1 - χ(ξ / R)`:
+`‖∂_x^α ∂_ξ^β b(x, ξ)‖ ≤ C ⟨ξ⟩^(-m - |β|)`. For every `R`, it inverts `a` up to the error
+`1 - χ(ξ / R)`:
 
 `a(x, ξ) b(x, ξ) = χ(ξ / R) · id`, `b(x, ξ) a(x, ξ) = χ(ξ / R) · id`
 
 (`TauCeti.Symbol.coefficient_comp_coefficient_cutoffInverse`,
-`TauCeti.Symbol.coefficient_cutoffInverse_comp_coefficient`), and `b` is the pointwise inverse
-once `‖ξ‖ ≥ 2|R|`. If `a` satisfies uniform estimates and the inverse bound holds with a constant
-independent of the position, `b` satisfies uniform estimates as well
+`TauCeti.Symbol.coefficient_cutoffInverse_comp_coefficient`). For `R ≠ 0` this error has compact
+frequency support, and `b` is the pointwise inverse once `‖ξ‖ ≥ 2|R|`
+(`TauCeti.Symbol.coefficient_cutoffInverse_of_two_mul_abs_le`); for `R = 0` the cutoff
+`χ(ξ / 0) = χ(0)` vanishes, so `b = 0`. If `a` satisfies uniform estimates and the inverse bound
+holds with a constant independent of the position, `b` satisfies uniform estimates as well
 (`TauCeti.Symbol.IsUniform.cutoffInverse`). This is the first step of the construction of a
 parametrix of an elliptic operator: `b` is the leading term of its symbol.
 
@@ -38,10 +38,12 @@ parametrix of an elliptic operator: `b` is the leading term of its symbol.
 
 The derivative estimates rest on the formula `∂(a⁻¹) = -a⁻¹ (∂a) a⁻¹`. Applied repeatedly, it
 writes every derivative of `a⁻¹` as a sum of products of `a⁻¹` with derivatives of `a`. Each
-product has the order `-m - |β|` by the Leibniz rule. The proof runs an induction on the number of
-derivatives, using iterated directional derivatives in `ℝⁿ × ℝⁿ` along arbitrary words of position
-and frequency directions. Their order may be rearranged by the symmetry of second derivatives,
-which identifies them with the mixed derivatives `TauCeti.mixedDeriv` of the symbol estimates.
+product has the order `-m - |β|` by the Leibniz rule. The inverse is only smooth on the open set
+where `a` is invertible, so the proof runs an induction on the number of derivatives, using the
+iterated directional derivatives `TauCeti.iteratedFDerivAlong` in `ℝⁿ × ℝⁿ` along arbitrary words
+of position and frequency directions (`TauCeti.mixedDirection`) and their calculus on open sets.
+For smooth functions these are the mixed derivatives `TauCeti.mixedDeriv` of the symbol estimates
+(`TauCeti.iteratedFDerivAlong_map_mixedDirection`).
 
 ## References
 
@@ -60,221 +62,26 @@ namespace TauCeti
 
 variable {n : ℕ}
 
-section WordDeriv
+section Bounds
 
-/-! ### Iterated directional derivatives along words of position and frequency directions -/
+/-! ### Symbol estimates along words, and the Leibniz rule
 
-variable {A : Type*} [NormedAddCommGroup A] [NormedSpace ℝ A]
-
-/-- The coordinate direction in `ℝⁿ × ℝⁿ` named by a letter: `inl j` is the `j`-th position
-direction and `inr j` the `j`-th frequency direction. -/
-private def wordDir : Fin n ⊕ Fin n → CoordinateSpace n × CoordinateSpace n :=
-  Sum.elim (fun j => (EuclideanSpace.single j 1, 0)) fun j => (0, EuclideanSpace.single j 1)
-
-/-- The iterated directional derivative of `f` along a word of position and frequency
-directions, the derivative along the first letter being taken first. -/
-private def wordDeriv : List (Fin n ⊕ Fin n) →
-    (CoordinateSpace n × CoordinateSpace n → A) → CoordinateSpace n × CoordinateSpace n → A
-  | [], f => f
-  | l :: w, f => wordDeriv w fun p => fderiv ℝ f p (wordDir l)
-
-private theorem wordDeriv_nil (f : CoordinateSpace n × CoordinateSpace n → A) :
-    wordDeriv [] f = f := (rfl)
-
-private theorem wordDeriv_cons (l : Fin n ⊕ Fin n) (w : List (Fin n ⊕ Fin n))
-    (f : CoordinateSpace n × CoordinateSpace n → A) :
-    wordDeriv (l :: w) f = wordDeriv w fun p => fderiv ℝ f p (wordDir l) := (rfl)
-
-private theorem wordDeriv_append (w₁ w₂ : List (Fin n ⊕ Fin n))
-    (f : CoordinateSpace n × CoordinateSpace n → A) :
-    wordDeriv (w₁ ++ w₂) f = wordDeriv w₂ (wordDeriv w₁ f) := by
-  induction w₁ generalizing f with
-  | nil => rfl
-  | cons l w ih => exact ih _
-
-/-- Iterated directional derivatives at a point only depend on the germ of the function. -/
-private theorem eventuallyEq_wordDeriv {f g : CoordinateSpace n × CoordinateSpace n → A}
-    {p : CoordinateSpace n × CoordinateSpace n} (h : f =ᶠ[𝓝 p] g) (w : List (Fin n ⊕ Fin n)) :
-    wordDeriv w f =ᶠ[𝓝 p] wordDeriv w g := by
-  induction w generalizing f g with
-  | nil => exact h
-  | cons l w ih =>
-    refine ih ?_
-    filter_upwards [h.fderiv (𝕜 := ℝ)] with q hq
-    rw [hq]
-
-private theorem wordDeriv_zero (w : List (Fin n ⊕ Fin n)) :
-    wordDeriv w (0 : CoordinateSpace n × CoordinateSpace n → A) = 0 := by
-  induction w with
-  | nil => rfl
-  | cons l w ih =>
-    have h : (fun p => fderiv ℝ (0 : CoordinateSpace n × CoordinateSpace n → A) p (wordDir l)) =
-        0 := by
-      funext p
-      simp
-    rw [wordDeriv_cons, h, ih]
-
-variable {U : Set (CoordinateSpace n × CoordinateSpace n)}
-
-/-- A directional derivative of a function smooth on an open set is smooth there. -/
-private theorem contDiffOn_fderiv_apply {f : CoordinateSpace n × CoordinateSpace n → A}
-    (hf : ContDiffOn ℝ ∞ f U) (hU : IsOpen U) (v : CoordinateSpace n × CoordinateSpace n) :
-    ContDiffOn ℝ ∞ (fun p => fderiv ℝ f p v) U :=
-  (hf.fderiv_of_isOpen hU (m := ∞) le_rfl).clm_apply contDiffOn_const
-
-private theorem contDiffOn_wordDeriv {f : CoordinateSpace n × CoordinateSpace n → A}
-    (hf : ContDiffOn ℝ ∞ f U) (hU : IsOpen U) (w : List (Fin n ⊕ Fin n)) :
-    ContDiffOn ℝ ∞ (wordDeriv w f) U := by
-  induction w generalizing f with
-  | nil => exact hf
-  | cons l w ih => exact ih (contDiffOn_fderiv_apply hf hU _)
-
-private theorem wordDeriv_add {f g : CoordinateSpace n × CoordinateSpace n → A}
-    (hf : ContDiffOn ℝ ∞ f U) (hg : ContDiffOn ℝ ∞ g U) (hU : IsOpen U)
-    (w : List (Fin n ⊕ Fin n)) {p : CoordinateSpace n × CoordinateSpace n} (hp : p ∈ U) :
-    wordDeriv w (fun q => f q + g q) p = wordDeriv w f p + wordDeriv w g p := by
-  induction w generalizing f g with
-  | nil => rfl
-  | cons l w ih =>
-    rw [wordDeriv_cons, wordDeriv_cons, wordDeriv_cons, ← ih (contDiffOn_fderiv_apply hf hU _)
-      (contDiffOn_fderiv_apply hg hU _)]
-    refine (eventuallyEq_wordDeriv ?_ w).eq_of_nhds
-    filter_upwards [hU.mem_nhds hp] with q hq
-    rw [fderiv_fun_add ((hf.differentiableOn (by simp)).differentiableAt (hU.mem_nhds hq))
-      ((hg.differentiableOn (by simp)).differentiableAt (hU.mem_nhds hq)),
-      add_apply]
-
-/-- Directional derivatives of a function smooth on an open set commute. -/
-private theorem fderiv_fderiv_apply_comm {g : CoordinateSpace n × CoordinateSpace n → A}
-    (hg : ContDiffOn ℝ ∞ g U) (hU : IsOpen U) {q : CoordinateSpace n × CoordinateSpace n}
-    (hq : q ∈ U) (v w : CoordinateSpace n × CoordinateSpace n) :
-    fderiv ℝ (fun y => fderiv ℝ g y v) q w = fderiv ℝ (fun y => fderiv ℝ g y w) q v := by
-  have hd : DifferentiableAt ℝ (fderiv ℝ g) q :=
-    ((hg.fderiv_of_isOpen hU (m := ∞) le_rfl).differentiableOn (by simp)).differentiableAt
-      (hU.mem_nhds hq)
-  have hsymm := (hg.contDiffAt (hU.mem_nhds hq)).isSymmSndFDerivAt (n := ∞) (by simp)
-  rw [fderiv_clm_apply_const_apply hd, fderiv_clm_apply_const_apply hd]
-  exact hsymm w v
-
-/-- A letter may be moved past any word without changing the iterated directional derivative of
-a smooth function. -/
-private theorem wordDeriv_cons_append {g : CoordinateSpace n × CoordinateSpace n → A}
-    (hg : ContDiffOn ℝ ∞ g U) (hU : IsOpen U) (l : Fin n ⊕ Fin n) (u v : List (Fin n ⊕ Fin n))
-    {p : CoordinateSpace n × CoordinateSpace n} (hp : p ∈ U) :
-    wordDeriv (l :: (u ++ v)) g p = wordDeriv (u ++ l :: v) g p := by
-  induction u generalizing g with
-  | nil => rfl
-  | cons l' u ih =>
-    simp only [List.cons_append, wordDeriv_cons]
-    rw [← ih (contDiffOn_fderiv_apply hg hU _), wordDeriv_cons]
-    refine (eventuallyEq_wordDeriv ?_ _).eq_of_nhds
-    filter_upwards [hU.mem_nhds hp] with q hq
-    exact fderiv_fderiv_apply_comm hg hU hq _ _
+A word `w : List (Fin n ⊕ Fin n)` of position letters `Sum.inl j` and frequency letters
+`Sum.inr j` names the iterated directional derivative `iteratedFDerivAlong ℝ (w.map mixedDirection)`
+on `ℝⁿ × ℝⁿ`; each frequency letter lowers the order of a symbol estimate by one. -/
 
 /-- The frequency letters of a word, in order. -/
 private def freqLetters (w : List (Fin n ⊕ Fin n)) : List (Fin n) := w.filterMap Sum.getRight?
-
-/-- The position letters of a word, in order. -/
-private def posLetters (w : List (Fin n ⊕ Fin n)) : List (Fin n) := w.filterMap Sum.getLeft?
-
-/-- The iterated directional derivative of a smooth function only depends on the frequency
-letters and the position letters of the word, not on how they are interleaved. -/
-private theorem wordDeriv_eq_sort {g : CoordinateSpace n × CoordinateSpace n → A}
-    (hg : ContDiffOn ℝ ∞ g U) (hU : IsOpen U) (w : List (Fin n ⊕ Fin n))
-    {p : CoordinateSpace n × CoordinateSpace n} (hp : p ∈ U) :
-    wordDeriv w g p =
-      wordDeriv ((freqLetters w).map Sum.inr ++ (posLetters w).map Sum.inl) g p := by
-  induction w generalizing g with
-  | nil => rfl
-  | cons l w ih =>
-    rw [wordDeriv_cons, ih (contDiffOn_fderiv_apply hg hU _), ← wordDeriv_cons]
-    cases l with
-    | inl j =>
-      simpa [freqLetters, posLetters, List.filterMap_cons] using
-        wordDeriv_cons_append hg hU (Sum.inl j) _ _ hp
-    | inr j => simp [freqLetters, posLetters, List.filterMap_cons]
-
-/-- A directional derivative along a frequency direction is a derivative of the frequency
-slice. -/
-private theorem fderiv_slice_snd {F : CoordinateSpace n × CoordinateSpace n → A}
-    {x ξ : CoordinateSpace n} (hF : DifferentiableAt ℝ F (x, ξ)) (v : CoordinateSpace n) :
-    fderiv ℝ (fun η => F (x, η)) ξ v = fderiv ℝ F (x, ξ) (0, v) := by
-  have h := (hF.hasFDerivAt.comp ξ (hasFDerivAt_prodMk_right (𝕜 := ℝ) x ξ)).fderiv
-  rw [Function.comp_def] at h
-  simp [h]
-
-/-- A directional derivative along a position direction is a derivative of the position
-slice. -/
-private theorem fderiv_slice_fst {F : CoordinateSpace n × CoordinateSpace n → A}
-    {x ξ : CoordinateSpace n} (hF : DifferentiableAt ℝ F (x, ξ)) (v : CoordinateSpace n) :
-    fderiv ℝ (fun y => F (y, ξ)) x v = fderiv ℝ F (x, ξ) (v, 0) := by
-  have h := (hF.hasFDerivAt.comp x (hasFDerivAt_prodMk_left (𝕜 := ℝ) x ξ)).fderiv
-  rw [Function.comp_def] at h
-  simp [h]
-
-private theorem contDiff_wordDeriv {f : CoordinateSpace n × CoordinateSpace n → A}
-    (hf : ContDiff ℝ ∞ f) (w : List (Fin n ⊕ Fin n)) : ContDiff ℝ ∞ (wordDeriv w f) :=
-  contDiffOn_univ.1 (contDiffOn_wordDeriv (contDiffOn_univ.2 hf) isOpen_univ w)
-
-private theorem coordinateDeriv_snd_eq_wordDeriv {f : CoordinateSpace n × CoordinateSpace n → A}
-    (hf : ContDiff ℝ ∞ f) (β : List (Fin n)) (x ξ : CoordinateSpace n) :
-    coordinateDeriv β (fun η => f (x, η)) ξ = wordDeriv (β.reverse.map Sum.inr) f (x, ξ) := by
-  induction β generalizing ξ with
-  | nil => simp [wordDeriv_nil]
-  | cons j β ih =>
-    have h : coordinateDeriv β (fun η => f (x, η)) =
-        fun η => wordDeriv (β.reverse.map Sum.inr) f (x, η) := funext ih
-    rw [coordinateDeriv_cons, h, List.reverse_cons, List.map_append, wordDeriv_append]
-    exact fderiv_slice_snd ((contDiff_wordDeriv hf _).differentiable (by simp) _) _
-
-private theorem coordinateDeriv_fst_eq_wordDeriv {f : CoordinateSpace n × CoordinateSpace n → A}
-    (hf : ContDiff ℝ ∞ f) (α : List (Fin n)) (x ξ : CoordinateSpace n) :
-    coordinateDeriv α (fun y => f (y, ξ)) x = wordDeriv (α.reverse.map Sum.inl) f (x, ξ) := by
-  induction α generalizing x with
-  | nil => simp [wordDeriv_nil]
-  | cons j α ih =>
-    have h : coordinateDeriv α (fun y => f (y, ξ)) =
-        fun y => wordDeriv (α.reverse.map Sum.inl) f (y, ξ) := funext ih
-    rw [coordinateDeriv_cons, h, List.reverse_cons, List.map_append, wordDeriv_append]
-    exact fderiv_slice_fst ((contDiff_wordDeriv hf _).differentiable (by simp) _) _
-
-/-- A mixed derivative is the iterated directional derivative along the word made of its
-frequency directions followed by its position directions. -/
-private theorem mixedDeriv_eq_wordDeriv {f : CoordinateSpace n × CoordinateSpace n → A}
-    (hf : ContDiff ℝ ∞ f) (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
-    mixedDeriv α β f x ξ =
-      wordDeriv (β.reverse.map Sum.inr ++ α.reverse.map Sum.inl) f (x, ξ) := by
-  have h : (fun y => coordinateDeriv β (fun η => f (y, η)) ξ) =
-      fun y => wordDeriv (β.reverse.map Sum.inr) f (y, ξ) :=
-    funext fun y => coordinateDeriv_snd_eq_wordDeriv hf β y ξ
-  rw [mixedDeriv_def, h, coordinateDeriv_fst_eq_wordDeriv (contDiff_wordDeriv hf _),
-    wordDeriv_append]
-
-/-- Every iterated directional derivative of a smooth function is a mixed derivative. -/
-private theorem wordDeriv_eq_mixedDeriv {f : CoordinateSpace n × CoordinateSpace n → A}
-    (hf : ContDiff ℝ ∞ f) (w : List (Fin n ⊕ Fin n)) (p : CoordinateSpace n × CoordinateSpace n) :
-    wordDeriv w f p = mixedDeriv (posLetters w).reverse (freqLetters w).reverse f p.1 p.2 := by
-  rw [mixedDeriv_eq_wordDeriv hf, List.reverse_reverse, List.reverse_reverse]
-  exact wordDeriv_eq_sort (contDiffOn_univ.2 hf) isOpen_univ w (mem_univ p)
-
-private theorem freqLetters_append_map (α β : List (Fin n)) :
-    freqLetters (β.map Sum.inr ++ α.map Sum.inl) = β := by
-  simp [freqLetters, Function.comp_def]
 
 /-- The order lost by a derivative along a letter: `1` for a frequency direction, `0` for a
 position direction. -/
 private def letterOrder : Fin n ⊕ Fin n → ℝ :=
   Sum.elim (fun _ => 0) fun _ => 1
 
-private theorem length_freqLetters_cons (l : Fin n ⊕ Fin n) (w : List (Fin n ⊕ Fin n)) :
-    ((freqLetters (l :: w)).length : ℝ) = letterOrder l + (freqLetters w).length := by
-  cases l <;> simp [freqLetters, letterOrder, List.filterMap_cons, add_comm]
-
-end WordDeriv
-
-section Bounds
-
-/-! ### Symbol estimates along words, and the Leibniz rule -/
+private theorem length_freqLetters_append_singleton (w : List (Fin n ⊕ Fin n))
+    (l : Fin n ⊕ Fin n) :
+    ((freqLetters (w ++ [l])).length : ℝ) = letterOrder l + (freqLetters w).length := by
+  cases l <;> simp [freqLetters, letterOrder, add_comm]
 
 private theorem weight_mul (ξ : CoordinateSpace n) (s t : ℝ) :
     (1 + ‖ξ‖ ^ 2) ^ (s / 2) * (1 + ‖ξ‖ ^ 2) ^ (t / 2) = (1 + ‖ξ‖ ^ 2) ^ ((s + t) / 2) := by
@@ -289,7 +96,8 @@ along words of length at most `k`. -/
 private def WordBounds (S : Set (CoordinateSpace n × CoordinateSpace n)) (μ : ℝ) (k : ℕ)
     (f : CoordinateSpace n × CoordinateSpace n → A) : Prop :=
   ∀ w : List (Fin n ⊕ Fin n), w.length ≤ k → ∃ C, ∀ p ∈ S,
-    ‖wordDeriv w f p‖ ≤ C * (1 + ‖p.2‖ ^ 2) ^ ((μ - (freqLetters w).length) / 2)
+    ‖iteratedFDerivAlong ℝ (w.map mixedDirection) f p‖ ≤
+      C * (1 + ‖p.2‖ ^ 2) ^ ((μ - (freqLetters w).length) / 2)
 
 variable {S : Set (CoordinateSpace n × CoordinateSpace n)} {μ : ℝ} {k : ℕ}
   {f : CoordinateSpace n × CoordinateSpace n → A}
@@ -300,14 +108,14 @@ private theorem WordBounds.mono {k' : ℕ} (h : WordBounds S μ k f) (hk : k' �
 
 /-- A directional derivative lowers the order by the order of its letter. -/
 private theorem WordBounds.fderiv_apply (h : WordBounds S μ (k + 1) f) (l : Fin n ⊕ Fin n) :
-    WordBounds S (μ - letterOrder l) k fun p => fderiv ℝ f p (wordDir l) := by
+    WordBounds S (μ - letterOrder l) k (iteratedFDerivAlong ℝ [mixedDirection l] f) := by
   intro w hw
-  obtain ⟨C, hC⟩ := h (l :: w) (by simpa using hw)
+  obtain ⟨C, hC⟩ := h (w ++ [l]) (by simpa using hw)
   refine ⟨C, fun p hp => ?_⟩
-  have e : μ - letterOrder l - (freqLetters w).length = μ - (freqLetters (l :: w)).length := by
-    rw [length_freqLetters_cons]
+  have e : μ - letterOrder l - (freqLetters w).length = μ - (freqLetters (w ++ [l])).length := by
+    rw [length_freqLetters_append_singleton]
     ring
-  rw [e]
+  rw [e, ← iteratedFDerivAlong_append, ← List.map_singleton, ← List.map_append]
   exact hC p hp
 
 /-- The symbol estimates of a smooth function, stated with mixed derivatives at the positions of
@@ -317,10 +125,10 @@ private theorem wordBounds_of_mixedDeriv (hf : ContDiff ℝ ∞ f) {T : Set (Coo
       ‖mixedDeriv α β f x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((μ - β.length) / 2))
     (hS : ∀ p ∈ S, p.1 ∈ T) (k : ℕ) : WordBounds S μ k f := by
   intro w _
-  obtain ⟨C, hC⟩ := hb (posLetters w).reverse (freqLetters w).reverse
+  obtain ⟨C, hC⟩ := hb (w.filterMap Sum.getLeft?) (freqLetters w)
   refine ⟨C, fun p hp => ?_⟩
-  rw [wordDeriv_eq_mixedDeriv hf]
-  simpa using hC p.1 (hS p hp) p.2
+  rw [iteratedFDerivAlong_map_mixedDirection hf]
+  exact hC p.1 (hS p hp) p.2
 
 variable {A₁ A₂ : Type*} [NormedAddCommGroup A₁] [NormedSpace ℝ A₁] [NormedAddCommGroup A₂]
   [NormedSpace ℝ A₂]
@@ -341,20 +149,16 @@ private theorem wordBounds_bilinear_nil (B : A₁ →L[ℝ] A₂ →L[ℝ] A)
     {f₁ : CoordinateSpace n × CoordinateSpace n → A₁}
     {f₂ : CoordinateSpace n × CoordinateSpace n → A₂} {ν : ℝ} (h₁ : WordBounds S μ k f₁)
     (h₂ : WordBounds S ν k f₂) : ∃ C, ∀ p ∈ S,
-      ‖wordDeriv [] (fun p => B (f₁ p) (f₂ p)) p‖ ≤
+      ‖iteratedFDerivAlong ℝ (([] : List (Fin n ⊕ Fin n)).map mixedDirection)
+          (fun p => B (f₁ p) (f₂ p)) p‖ ≤
         C * (1 + ‖p.2‖ ^ 2) ^ ((μ + ν - (freqLetters ([] : List (Fin n ⊕ Fin n))).length) / 2) := by
   obtain ⟨C, hC⟩ := h₁ [] (Nat.zero_le _)
   obtain ⟨D, hD⟩ := h₂ [] (Nat.zero_le _)
   refine ⟨‖B‖ * C * D, fun p hp => ?_⟩
   have h := norm_bilinear_le B (hC p hp) (hD p hp)
-  simp only [freqLetters, List.filterMap_nil, List.length_nil, CharP.cast_eq_zero, sub_zero] at h ⊢
+  simp only [freqLetters, List.filterMap_nil, List.length_nil, CharP.cast_eq_zero, sub_zero,
+    List.map_nil, iteratedFDerivAlong_nil] at h ⊢
   exact h
-
-private theorem contDiffOn_bilinear {U : Set (CoordinateSpace n × CoordinateSpace n)}
-    (B : A₁ →L[ℝ] A₂ →L[ℝ] A) {f₁ : CoordinateSpace n × CoordinateSpace n → A₁}
-    {f₂ : CoordinateSpace n × CoordinateSpace n → A₂} (h₁ : ContDiffOn ℝ ∞ f₁ U)
-    (h₂ : ContDiffOn ℝ ∞ f₂ U) : ContDiffOn ℝ ∞ (fun p => B (f₁ p) (f₂ p)) U :=
-  (B.contDiff.comp_contDiffOn h₁).clm_apply h₂
 
 /-- The Leibniz rule for symbol estimates: a bilinear expression in two functions smooth near
 `S`, satisfying estimates of orders `μ` and `ν` on `S`, satisfies estimates of order `μ + ν`. -/
@@ -371,36 +175,45 @@ private theorem WordBounds.bilinear (B : A₁ →L[ℝ] A₂ →L[ℝ] A)
     exact wordBounds_bilinear_nil B h₁ h₂
   | succ k ih =>
     intro w hw
-    cases w with
-    | nil => exact wordBounds_bilinear_nil B h₁ h₂
-    | cons l w =>
-      have hw' : w.length ≤ k := by simpa using hw
-      have hd₁ := contDiffOn_fderiv_apply hf₁ hU (wordDir l)
-      have hd₂ := contDiffOn_fderiv_apply hf₂ hU (wordDir l)
+    rcases w.eq_nil_or_concat' with rfl | ⟨w, l, rfl⟩
+    · exact wordBounds_bilinear_nil B h₁ h₂
+    · have hw' : w.length ≤ k := by simpa using hw
+      have hd₁ := hf₁.iteratedFDerivAlong (m := ∞) hU [mixedDirection l] (by simp)
+      have hd₂ := hf₂.iteratedFDerivAlong (m := ∞) hU [mixedDirection l] (by simp)
       obtain ⟨C₁, hC₁⟩ := ih hd₁ hf₂ (h₁.fderiv_apply l) (h₂.mono k.le_succ) w hw'
       obtain ⟨C₂, hC₂⟩ := ih hf₁ hd₂ (h₁.mono k.le_succ) (h₂.fderiv_apply l) w hw'
       refine ⟨C₁ + C₂, fun p hp => ?_⟩
-      have heq : wordDeriv (l :: w) (fun p => B (f₁ p) (f₂ p)) p =
-          wordDeriv w (fun q => B (fderiv ℝ f₁ q (wordDir l)) (f₂ q)) p +
-            wordDeriv w (fun q => B (f₁ q) (fderiv ℝ f₂ q (wordDir l))) p := by
-        rw [wordDeriv_cons, ← wordDeriv_add (contDiffOn_bilinear B hd₁ hf₂)
-          (contDiffOn_bilinear B hf₁ hd₂) hU w (hSU hp)]
-        refine (eventuallyEq_wordDeriv ?_ w).eq_of_nhds
+      have heq : iteratedFDerivAlong ℝ ((w ++ [l]).map mixedDirection)
+            (fun p => B (f₁ p) (f₂ p)) p =
+          iteratedFDerivAlong ℝ (w.map mixedDirection)
+              (fun q => B (iteratedFDerivAlong ℝ [mixedDirection l] f₁ q) (f₂ q)) p +
+            iteratedFDerivAlong ℝ (w.map mixedDirection)
+              (fun q => B (f₁ q) (iteratedFDerivAlong ℝ [mixedDirection l] f₂ q)) p := by
+        rw [List.map_append, iteratedFDerivAlong_append, List.map_singleton]
+        refine ((Filter.EventuallyEq.iteratedFDerivAlong ?_ _).eq_of_nhds).trans
+          (iteratedFDerivAlong_add_apply_of_isOpen
+            ((contDiffOn_const.clm_apply hd₁).clm_apply hf₂)
+            ((contDiffOn_const.clm_apply hf₁).clm_apply hd₂) hU _ (by exact_mod_cast le_top)
+            (hSU hp))
         filter_upwards [hU.mem_nhds (hSU hp)] with q hq
+        simp only [iteratedFDerivAlong_cons_apply, iteratedFDerivAlong_nil, Pi.add_apply]
         rw [B.fderiv_of_bilinear ((hf₁.differentiableOn (by simp)).differentiableAt
           (hU.mem_nhds hq)) ((hf₂.differentiableOn (by simp)).differentiableAt (hU.mem_nhds hq))]
         simp [add_comm]
       have e₁ : μ - letterOrder l + ν - (freqLetters w).length =
-          μ + ν - (freqLetters (l :: w)).length := by
-        rw [length_freqLetters_cons]
+          μ + ν - (freqLetters (w ++ [l])).length := by
+        rw [length_freqLetters_append_singleton]
         ring
       have e₂ : μ + (ν - letterOrder l) - (freqLetters w).length =
-          μ + ν - (freqLetters (l :: w)).length := by
-        rw [length_freqLetters_cons]
+          μ + ν - (freqLetters (w ++ [l])).length := by
+        rw [length_freqLetters_append_singleton]
         ring
       rw [heq]
-      calc _ ≤ ‖wordDeriv w (fun q => B (fderiv ℝ f₁ q (wordDir l)) (f₂ q)) p‖ +
-            ‖wordDeriv w (fun q => B (f₁ q) (fderiv ℝ f₂ q (wordDir l))) p‖ := norm_add_le _ _
+      calc _ ≤ ‖iteratedFDerivAlong ℝ (w.map mixedDirection)
+              (fun q => B (iteratedFDerivAlong ℝ [mixedDirection l] f₁ q) (f₂ q)) p‖ +
+            ‖iteratedFDerivAlong ℝ (w.map mixedDirection)
+              (fun q => B (f₁ q) (iteratedFDerivAlong ℝ [mixedDirection l] f₂ q)) p‖ :=
+            norm_add_le _ _
         _ ≤ _ := add_le_add (hC₁ p hp) (hC₂ p hp)
         _ = _ := by rw [e₁, e₂, add_mul]
 
@@ -564,10 +377,11 @@ private theorem wordBounds_inverse (a : Symbol n V W m) {T : Set (CoordinateSpac
   have hU := isOpen_setOf_isInvertible a
   have hSU : S ⊆ {p | (a.coefficient p).IsInvertible} := fun p hp => hinv p.1 hp.1 p.2 hp.2
   have hinvU := contDiffOn_inverse a
-  have hnil : ∃ C, ∀ p ∈ S, ‖wordDeriv [] (fun p => (a.coefficient p).inverse) p‖ ≤
+  have hnil : ∃ C, ∀ p ∈ S, ‖iteratedFDerivAlong ℝ (([] : List (Fin n ⊕ Fin n)).map mixedDirection)
+      (fun p => (a.coefficient p).inverse) p‖ ≤
       C * (1 + ‖p.2‖ ^ 2) ^ ((-m - (freqLetters ([] : List (Fin n ⊕ Fin n))).length) / 2) := by
     obtain ⟨C, hC⟩ := hC
-    exact ⟨C, fun p hp => by simpa [freqLetters, wordDeriv_nil] using hC p.1 hp.1 p.2 hp.2⟩
+    exact ⟨C, fun p hp => by simpa [freqLetters] using hC p.1 hp.1 p.2 hp.2⟩
   induction k with
   | zero =>
     intro w hw
@@ -575,32 +389,38 @@ private theorem wordBounds_inverse (a : Symbol n V W m) {T : Set (CoordinateSpac
     exact hnil
   | succ k ih =>
     intro w hw
-    cases w with
-    | nil => exact hnil
-    | cons l w =>
-      -- `∂_l (a⁻¹) = -a⁻¹ (∂_l a) a⁻¹`, a product of factors with known estimates.
-      have hda : ContDiffOn ℝ ∞ (fun p => fderiv ℝ a.coefficient p (wordDir l)) _ :=
-        contDiffOn_fderiv_apply (contDiffOn_univ.2 a.contDiff_coefficient) isOpen_univ (wordDir l)
+    rcases w.eq_nil_or_concat' with rfl | ⟨w, l, rfl⟩
+    · exact hnil
+    · -- `∂_l (a⁻¹) = -a⁻¹ (∂_l a) a⁻¹`, a product of factors with known estimates.
+      have hda : ContDiffOn ℝ ∞ (iteratedFDerivAlong ℝ [mixedDirection l] a.coefficient) univ :=
+        (a.contDiff_coefficient.iteratedFDerivAlong (m := ∞) _ (by simp)).contDiffOn
       have hdab : WordBounds S (m - letterOrder l) k
-          fun p => fderiv ℝ a.coefficient p (wordDir l) :=
+          (iteratedFDerivAlong ℝ [mixedDirection l] a.coefficient) :=
         (wordBounds_of_mixedDeriv (S := S) a.contDiff_coefficient ha (fun p hp => hp.1)
           (k + 1)).fderiv_apply l
       have h₁ := WordBounds.bilinear (compR W V W) hU hSU (hda.mono (subset_univ _)) hinvU hdab ih
-      have h₂ := WordBounds.bilinear (-compR W W V) hU hSU hinvU
-        (contDiffOn_bilinear _ (hda.mono (subset_univ _)) hinvU) ih h₁
+      have hcomp : ContDiffOn ℝ ∞ (fun p => compR W V W
+          (iteratedFDerivAlong ℝ [mixedDirection l] a.coefficient p) (a.coefficient p).inverse)
+          {p | (a.coefficient p).IsInvertible} :=
+        (contDiffOn_const.clm_apply (hda.mono (subset_univ _))).clm_apply hinvU
+      have h₂ := WordBounds.bilinear (-compR W W V) hU hSU hinvU hcomp ih h₁
       obtain ⟨C, hC⟩ := h₂ w (by simpa using hw)
       refine ⟨C, fun p hp => ?_⟩
-      have heq : wordDeriv (l :: w) (fun p => (a.coefficient p).inverse) p =
-          wordDeriv w (fun q => (-compR W W V) (a.coefficient q).inverse
-            (compR W V W (fderiv ℝ a.coefficient q (wordDir l)) (a.coefficient q).inverse)) p := by
-        rw [wordDeriv_cons]
-        refine (eventuallyEq_wordDeriv ?_ w).eq_of_nhds
+      have heq : iteratedFDerivAlong ℝ ((w ++ [l]).map mixedDirection)
+            (fun p => (a.coefficient p).inverse) p =
+          iteratedFDerivAlong ℝ (w.map mixedDirection) (fun q => (-compR W W V)
+            (a.coefficient q).inverse (compR W V W
+              (iteratedFDerivAlong ℝ [mixedDirection l] a.coefficient q)
+              (a.coefficient q).inverse)) p := by
+        rw [List.map_append, iteratedFDerivAlong_append, List.map_singleton]
+        refine (Filter.EventuallyEq.iteratedFDerivAlong ?_ _).eq_of_nhds
         filter_upwards [hU.mem_nhds (hSU hp)] with q hq
+        simp only [iteratedFDerivAlong_cons_apply, iteratedFDerivAlong_nil]
         rw [fderiv_inverse_apply a hq]
         simp
       have e : -m + (m - letterOrder l + -m) - (freqLetters w).length =
-          -m - (freqLetters (l :: w)).length := by
-        rw [length_freqLetters_cons]
+          -m - (freqLetters (w ++ [l])).length := by
+        rw [length_freqLetters_append_singleton]
         ring
       rw [heq, ← e]
       exact hC p hp
@@ -643,21 +463,20 @@ private theorem exists_bound_cutoffInverse (a : Symbol n V W m)
       {p | (a.coefficient p).IsInvertible} := fun p hp => hinv p.1 p.2 hp.2
   have hb := WordBounds.bilinear (ContinuousLinearMap.lsmul ℝ ℝ) (isOpen_setOf_isInvertible a)
     hSU (contDiff_cutoff χ R).contDiffOn (contDiffOn_inverse a)
-    (wordBounds_cutoff χ R _ (β.reverse.map Sum.inr ++ α.reverse.map Sum.inl).length)
+    (wordBounds_cutoff χ R _ (α.map Sum.inl ++ β.map Sum.inr).length)
     (wordBounds_inverse a ha (fun x _ ξ hξ => hinv x ξ hξ) hC _)
   obtain ⟨C, hC⟩ := hb _ le_rfl
   refine ⟨max C 0, le_max_right _ _, fun x hx ξ => ?_⟩
-  rw [mixedDeriv_eq_wordDeriv (contDiff_cutoffInverse a χ R hinv)]
+  rw [mixedDeriv_eq_iteratedFDerivAlong (contDiff_cutoffInverse a χ R hinv)]
   by_cases hξ : ‖R⁻¹ • ξ‖ < 1
-  · have hz := (eventuallyEq_wordDeriv (cutoff_smul_eventuallyEq_zero χ R
-      (fun p => (a.coefficient p).inverse) (p := (x, ξ)) hξ)
-      (β.reverse.map Sum.inr ++ α.reverse.map Sum.inl)).eq_of_nhds
-    beta_reduce at hz
-    rw [hz, wordDeriv_zero, Pi.zero_apply, norm_zero]
+  · rw [iteratedFDerivAlong_eq_zero_of_eventuallyEq_zero (cutoff_smul_eventuallyEq_zero χ R
+      (fun p => (a.coefficient p).inverse) (p := (x, ξ)) hξ), norm_zero]
     positivity
   · have h := hC (x, ξ) ⟨hx, le_norm_of_one_le_norm_inv_smul (not_lt.1 hξ)⟩
-    simp only [ContinuousLinearMap.lsmul_apply, zero_add, freqLetters_append_map,
-      List.length_reverse] at h
+    simp only [ContinuousLinearMap.lsmul_apply, zero_add] at h
+    have hβ : freqLetters (α.map Sum.inl ++ β.map Sum.inr) = β := by
+      simp [freqLetters, Function.comp_def]
+    rw [hβ] at h
     exact h.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity))
 
 /-- The cut-off inverse `χ(ξ / R) a(x, ξ)⁻¹` of a symbol `a` of order `m` that is invertible at
@@ -700,7 +519,8 @@ theorem coefficient_cutoffInverse_comp_coefficient (x ξ : CoordinateSpace n) :
   · simp [χ.apply_eq_zero_of_norm_le_one hξ]
   · simp [(hinv x ξ (le_norm_of_one_le_norm_inv_smul hξ.le)).inverse_comp_self]
 
-/-- At frequencies `‖ξ‖ ≥ 2 |R|` the cut-off inverse is the pointwise inverse of the symbol. -/
+/-- For a nonzero radius `R`, at frequencies `‖ξ‖ ≥ 2 |R|` the cut-off inverse is the pointwise
+inverse of the symbol. -/
 theorem coefficient_cutoffInverse_of_two_mul_abs_le (hR : R ≠ 0) {ξ : CoordinateSpace n}
     (hξ : 2 * |R| ≤ ‖ξ‖) (x : CoordinateSpace n) :
     (a.cutoffInverse χ R hinv hbound).coefficient (x, ξ) = (a.coefficient (x, ξ)).inverse := by
