@@ -199,7 +199,7 @@ theorem valuesEquiv_cutoffAverageHom (φ : (nerveCochainComplex C k M).X 0) :
   (valuesEquiv 0).apply_symm_apply _
 
 /-- **Contraction in degree `0`.** Prepending to the coboundary of a function on objects
-subtracts it from its cutoff average. -/
+gives the function minus its cutoff average. -/
 theorem cutoffPrepend_d_zero (φ : (nerveCochainComplex C k M).X 0) (σ : ComposableArrows C 0) :
     cutoffPrepend c 0 (valuesEquiv 1 ((nerveCochainComplex C k M).d 0 1 φ)) σ =
       valuesEquiv 0 φ σ - cutoffAverage c (valuesEquiv 0 φ) σ := by
