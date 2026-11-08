@@ -18,7 +18,7 @@ densities.
 
 ## Main results
 
-* `TauCeti.klDiv_withDensity_le_liminf`: if the densities of measures `p n ≪ ρ` converge
+* `TauCeti.klDiv_withDensity_le_liminf`: if the densities of measures `p n` converge
   `ρ`-almost everywhere to `g`, then `klDiv (ρ.withDensity g) ρ` is at most
   `liminf (klDiv (p n) ρ)`.
 -/
@@ -30,15 +30,14 @@ open scoped ENNReal
 
 namespace TauCeti
 
-/-- **Lower semicontinuity of relative entropy along density convergence.** If the densities of
-measures `p n` absolutely continuous with respect to `ρ` converge `ρ`-almost everywhere to `g`,
-then the measure with density `g` has relative entropy at most the `liminf` of
-the relative entropies `klDiv (p n) ρ`, by Fatou's lemma. -/
+/-- **Lower semicontinuity of relative entropy along density convergence.** If the densities
+`(p n).rnDeriv ρ` of measures `p n` converge `ρ`-almost everywhere to `g`, then the measure with
+density `g` has relative entropy at most the `liminf` of the relative entropies `klDiv (p n) ρ`,
+by Fatou's lemma. A measure which is not absolutely continuous has infinite entropy. -/
 theorem klDiv_withDensity_le_liminf {α : Type*} [MeasurableSpace α] {ρ : Measure α}
     {p : ℕ → Measure α} {g : α → ℝ}
     [IsFiniteMeasure ρ] [IsFiniteMeasure (ρ.withDensity fun z ↦ ENNReal.ofReal (g z))]
     [∀ n, IsFiniteMeasure (p n)]
-    (hac : ∀ n, p n ≪ ρ)
     (hlim : ∀ᵐ z ∂ρ, Tendsto (fun n ↦ ((p n).rnDeriv ρ z).toReal) atTop (𝓝 (g z))) :
     klDiv (ρ.withDensity fun z ↦ ENNReal.ofReal (g z)) ρ ≤
       liminf (fun n ↦ klDiv (p n) ρ) atTop := by
@@ -60,7 +59,10 @@ theorem klDiv_withDensity_le_liminf {α : Type*} [MeasurableSpace α] {ρ : Meas
           hz).liminf_eq.symm
     _ ≤ liminf (fun n ↦ ∫⁻ z, ENNReal.ofReal (klFun (F n z)) ∂ρ) atTop :=
         lintegral_liminf_le' fun n ↦ by fun_prop
-    _ = liminf (fun n ↦ klDiv (p n) ρ) atTop := by
-        simp_rw [F, ← klDiv_eq_lintegral_klFun_of_ac (hac _)]
+    _ ≤ liminf (fun n ↦ klDiv (p n) ρ) atTop := by
+        refine liminf_le_liminf (Eventually.of_forall fun n ↦ ?_)
+        by_cases h : p n ≪ ρ
+        · exact (klDiv_eq_lintegral_klFun_of_ac h).ge
+        · simp [klDiv_of_not_ac h]
 
 end TauCeti
