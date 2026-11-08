@@ -101,13 +101,14 @@ theorem IsCycle.exists_forall_adj_and_apply_apply_ne {u : V} {p : G.Walk u u} (h
   obtain ⟨i, hi, rfl⟩ := hp.exists_getVert_eq hs
   simp only [hinj i hi]
   refine ⟨p.adj_getVert_succ hi, p.getVert_mem_support _, ?_⟩
-  rcases Nat.lt_or_eq_of_le (show i + 1 ≤ p.length from hi) with hi' | hi'
+  obtain hi' | hi' : i + 1 < p.length ∨ i + 1 = p.length := by omega
   · -- Away from the end, the second successor of `p.getVert i` is `p.getVert (i + 2)`.
     rw [hinj _ hi']
     exact (hp.getVert_sub_one_ne_getVert_add_one (i := i + 1) hi'.le).symm
   · -- At the end, the successor is `u = p.getVert 0`, whose successor is `p.snd`.
     have h0 : idx u = 0 := by simpa using hinj 0 (by omega)
-    rw [hi', getVert_length, h0, show i = p.length - 1 by omega]
+    have hi'' : i = p.length - 1 := by omega
+    rw [hi', getVert_length, h0, hi'']
     exact hp.snd_ne_penultimate
 
 end Walk
