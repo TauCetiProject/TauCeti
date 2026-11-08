@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Realization.Basic
 public import Mathlib.LinearAlgebra.Matrix.Cartan.Realisation
--- Access the canonical construction only to supply its missing projection lemmas.
+-- Access the canonical construction for its projection lemmas and matrix conversion.
 import all Mathlib.LinearAlgebra.Matrix.Cartan.Realisation
 
 /-!
@@ -63,7 +63,7 @@ theorem toCartanRealization_corootSpan :
 
 /-- A Mathlib finite Cartan realization gives a minimal realization precisely when its
 coroots span; the perfect pairing alone does not impose this spanning condition. -/
-theorem isMinimal_toCartanRealization_iff [FiniteDimensional K N] :
+theorem isMinimal_toCartanRealization_iff :
     rl.toCartanRealization.IsMinimal ↔ Submodule.span K (Set.range rl.sCoroot) = ⊤ := by
   rw [← rl.toCartanRealization_corootSpan]
   exact rl.toCartanRealization.isMinimal_iff_corootSpan_eq_top
@@ -115,6 +115,44 @@ theorem isMinimal_toRealisation_toCartanRealization
     simp [Pi.basisFun_apply]
   rw [hb, Basis.span_eq]
 
+/-- Mathlib's canonical realization of the transposed matrix, converted to the coroot-row
+convention. Its Cartan matrix is `A`, not `A.transpose`. -/
+noncomputable def toCartanRealization :
+    TauCeti.CartanRealization (A.map (Int.cast : ℤ → K)) (I → K) :=
+  -- toRealisation_matrix identifies the canonical matrix with A.transpose, and the second
+  -- transpose introduced by the conversion cancels it definitionally.
+  (hA.transpose.toRealisation
+    (hA.transpose.isUnit_map K).invertible).toCartanRealization
+
+/-- The canonical coroot-row realization has the standard coordinate coroots. -/
+@[simp]
+theorem toCartanRealization_coroot (i : I) :
+    (hA.toCartanRealization (K := K)).coroot i = Pi.single i 1 := by
+  simp only [toCartanRealization, CartanMatrix.Realisation.toCartanRealization_coroot,
+    toRealisation_sCoroot]
+
+/-- Roots of the canonical coroot-row realization evaluate via the transposed matrix. -/
+@[simp]
+theorem toCartanRealization_root_apply (i : I) (h : I → K) :
+    (hA.toCartanRealization (K := K)).root i h =
+      (A.transpose.map (Int.cast : ℤ → K) *ᵥ h) i := by
+  simp only [toCartanRealization, CartanMatrix.Realisation.toCartanRealization_root_apply,
+    toRealisation_sRoot, toRealisation_pairing_apply, dotProduct_single_one]
+
+/-- The canonical coroot-row realization is minimal. -/
+theorem isMinimal_toCartanRealization :
+    (hA.toCartanRealization (K := K)).IsMinimal :=
+  hA.transpose.isMinimal_toRealisation_toCartanRealization _
+
+/-- Every minimal realization of a finite Cartan matrix agrees uniquely with the conversion
+of Mathlib's canonical realization of the transpose to the coroot-row convention. -/
+theorem existsUnique_equiv_toCartanRealization
+    {H : Type*} [AddCommGroup H] [Module K H]
+    (R : TauCeti.CartanRealization (A.map (Int.cast : ℤ → K)) H)
+    (hR : R.IsMinimal) :
+    ∃! e : H ≃ₗ[K] (I → K), R.map e = hA.toCartanRealization :=
+  R.existsUnique_equiv_of_isMinimal _ (hA.isUnit_map K) hR hA.isMinimal_toCartanRealization
+
 /-- Every minimal realization of `A` has a unique linear equivalence with `I → K` sending
 coroots to `Pi.single i 1` and carrying each root to the corresponding coordinate of
 `A.transpose.map Int.cast *ᵥ ·`. This identifies it with the realization obtained from Mathlib's
@@ -126,39 +164,25 @@ theorem existsUnique_linearEquiv_pi_of_isMinimal (hA : A.IsFiniteCartan)
     ∃! e : H ≃ₗ[K] (I → K),
       (∀ i, e (R.coroot i) = Pi.single i 1) ∧
       ∀ i h, (A.transpose.map (Int.cast : ℤ → K) *ᵥ e h) i = R.root i h := by
-  -- The target matrix is definitionally A.map Int.cast: toRealisation_matrix identifies
-  -- the canonical matrix with A.transpose, and Matrix.transpose_transpose cancels the
-  -- second transpose introduced by toCartanRealization.
-  let S : TauCeti.CartanRealization (A.map (Int.cast : ℤ → K)) (I → K) :=
-    (hA.transpose.toRealisation
-      (hA.transpose.isUnit_map K).invertible).toCartanRealization
-  have hS : S.IsMinimal := hA.transpose.isMinimal_toRealisation_toCartanRealization _
-  have hc (i : I) : S.coroot i = Pi.single i 1 := by
-    simp only [S, CartanMatrix.Realisation.toCartanRealization_coroot, toRealisation_sCoroot]
-  have hr (i : I) (h : I → K) :
-      S.root i h = (A.transpose.map (Int.cast : ℤ → K) *ᵥ h) i := by
-    simp only [S, CartanMatrix.Realisation.toCartanRealization_root_apply,
-      toRealisation_sRoot, toRealisation_pairing_apply, dotProduct_single_one]
-  apply (existsUnique_congr fun e => ?_).mp
-    (R.existsUnique_equiv_of_isMinimal S (hA.isUnit_map K) hR hS)
+  apply (existsUnique_congr fun e => ?_).mp (hA.existsUnique_equiv_toCartanRealization R hR)
   constructor
   · intro he
     constructor
     · intro i
-      simpa only [TauCeti.CartanRealization.map_coroot, hc] using
+      simpa only [TauCeti.CartanRealization.map_coroot, toCartanRealization_coroot] using
         congrArg (fun T => T.coroot i) he
     · intro i h
       simpa only [TauCeti.CartanRealization.map_root_apply,
-        LinearEquiv.symm_apply_apply, hr] using
+        LinearEquiv.symm_apply_apply, toCartanRealization_root_apply] using
         (congrArg (fun T => T.root i (e h)) he).symm
   · rintro ⟨hec, her⟩
     apply TauCeti.CartanRealization.ext
     · intro i
-      simpa only [TauCeti.CartanRealization.map_coroot, hc] using hec i
+      simpa only [TauCeti.CartanRealization.map_coroot, toCartanRealization_coroot] using hec i
     · intro i
       apply LinearMap.ext
       intro h
-      simpa only [TauCeti.CartanRealization.map_root_apply, hr,
+      simpa only [TauCeti.CartanRealization.map_root_apply, toCartanRealization_root_apply,
         LinearEquiv.apply_symm_apply] using (her i (e.symm h)).symm
 
 end Matrix.IsFiniteCartan

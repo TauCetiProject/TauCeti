@@ -367,19 +367,24 @@ theorem isMinimal_iff_cartanCenter_le_corootSpan :
     rw [inf_eq_left.mpr h] at hi
     omega
 
-/-- A finite-dimensional realization of a nonsingular matrix is minimal exactly when the
-simple coroots span its ambient space. -/
+omit [FiniteDimensional K H] in
+/-- A realization of a nonsingular matrix is minimal exactly when the simple coroots span
+its ambient space. Either condition implies finite dimensionality. -/
 theorem isMinimal_iff_corootSpan_eq_top [DecidableEq I] (hA : IsUnit A) :
     R.IsMinimal ↔ R.corootSpan = ⊤ := by
   classical
   have hrank := Matrix.rank_of_isUnit A hA
-  rw [R.isMinimal_iff, hrank]
   constructor
-  · intro h
+  · intro hR
+    let := hR.finiteDimensional
+    have h := R.isMinimal_iff.mp hR
+    rw [hrank] at h
     apply Submodule.eq_top_of_finrank_eq
     rw [R.finrank_corootSpan]
     omega
   · intro h
+    let := Module.Finite.of_basis (Basis.mk R.coroot_linearIndependent (le_of_eq h.symm))
+    rw [R.isMinimal_iff, hrank]
     have hd := R.finrank_corootSpan
     rw [h, finrank_top] at hd
     omega
@@ -497,8 +502,6 @@ isomorphism. Singular matrices need not have uniqueness. -/
 theorem existsUnique_equiv_of_isMinimal [DecidableEq I]
     (S : CartanRealization A H') (hA : IsUnit A) (hR : R.IsMinimal) (hS : S.IsMinimal) :
     ∃! e : H ≃ₗ[K] H', R.map e = S := by
-  let := hR.finiteDimensional
-  let := hS.finiteDimensional
   exact R.existsUnique_equiv_of_corootSpan_eq_top S
     ((R.isMinimal_iff_corootSpan_eq_top hA).mp hR)
     ((S.isMinimal_iff_corootSpan_eq_top hA).mp hS)
