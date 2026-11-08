@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import Mathlib.Probability.Kernel.Composition.CompMap
+public import Mathlib.Probability.Kernel.Invariance
 
 /-!
 # Powers of s-finite, finite and Markov kernels
@@ -14,6 +15,7 @@ Iterating an s-finite kernel remains s-finite; iterating a uniformly finite kern
 uniformly finite. The latter permits taking finite transition masses, and thus nonnegative real
 transition matrices, for every iterate.
 Iterating a Markov kernel also preserves the probability normalization of every row.
+Every power of a kernel preserves each of its invariant measures.
 
 The powers of a deterministic kernel are the deterministic kernels of the iterates. Restricting
 the Chapman–Kolmogorov integral to one intermediate state bounds `(κ ^ (m + n)) x s` below by
@@ -60,6 +62,16 @@ variable {α : Type*} [MeasurableSpace α]
 
 /-- The unit of the monoid of kernels `Kernel α α` is the identity kernel. -/
 theorem one_def : (1 : Kernel α α) = Kernel.id := (rfl)
+
+/-- Every power of a kernel preserves each of its invariant measures. -/
+@[simp]
+theorem Invariant.pow_comp {κ : Kernel α α} {ν : Measure α} (hν : κ.Invariant ν)
+    (n : ℕ) : (κ ^ n : Kernel α α) ∘ₘ ν = ν := by
+  induction n with
+  | zero => simp [one_def]
+  | succ n ih =>
+    simpa only [Nat.add_comm n 1, pow_add, pow_one, ← Measure.comp_assoc, ih]
+      using hν.def
 
 /-- A kernel intertwining two one-step kernels also intertwines all their powers. -/
 theorem comp_pow_eq_pow_comp_of_comp_eq {β : Type*} [MeasurableSpace β]

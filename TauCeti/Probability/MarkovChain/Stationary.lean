@@ -7,8 +7,6 @@ module
 
 public import Mathlib.Probability.Kernel.Invariance
 public import TauCeti.Probability.MarkovChain.MarkovProperty
-public import TauCeti.Probability.MarkovChain.Recurrence
-public import TauCeti.Probability.MarkovChain.Transient.Occupation
 
 /-!
 # Stationary Markov path laws
@@ -22,8 +20,7 @@ The result transfers to any realization of the chain: shifting its random path b
 number of steps preserves its law. Together with invariance of product measures for parallel
 kernels, this gives stationary independent product chains. Stationarity here does not assert
 convergence to equilibrium. No countability, irreducibility, aperiodicity, or probability
-normalization is required. Every atom of positive mass in a finite invariant measure
-is recurrent; this does not require irreducibility or countability.
+normalization is required.
 
 ## References
 
@@ -46,22 +43,6 @@ theorem Invariant.measurePreserving_shift_markovChainLaw (hν : κ.Invariant ν)
   refine ⟨measurable_shift, ?_⟩
   simpa only [Function.iterate_one, pow_one, hν.def] using
     ν.markovChainLaw_map_shift_iterate κ 1
-
-/-- Every positive-mass atom of a finite invariant measure is recurrent. No irreducibility,
-countability or aperiodicity assumption is needed. -/
-theorem Invariant.isRecurrent_of_apply_singleton_ne_zero [MeasurableSingletonClass α]
-    (hν : κ.Invariant ν) {x : α} (hx : ν {x} ≠ 0) : κ.IsRecurrent x := by
-  by_contra h
-  have hlim := κ.tendsto_pow_comp_apply_singleton_zero_of_return_lt_one
-    (isTransient_iff_return_probability_lt_one.mp (isTransient_iff.mpr h)) ν
-  have hpow (n : ℕ) : (κ ^ n : Kernel α α) ∘ₘ ν = ν := by
-    induction n with
-    | zero => simp [Kernel.one_def]
-    | succ n ih =>
-      simpa only [Nat.add_comm n 1, Kernel.pow_add, pow_one, ← Measure.comp_assoc, ih]
-        using hν.def
-  simp only [hpow] at hlim
-  exact hx (tendsto_nhds_unique tendsto_const_nhds hlim)
 
 end ProbabilityTheory.Kernel
 

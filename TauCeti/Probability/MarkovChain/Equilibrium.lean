@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.MarkovChain.Coupling.Convergence
 public import TauCeti.Probability.MarkovChain.Product.Basic
-public import TauCeti.Probability.MarkovChain.Stationary
+public import TauCeti.Probability.MarkovChain.Transient.Occupation
 
 /-!
 # Convergence to an invariant probability
@@ -59,13 +59,7 @@ theorem Invariant.tendsto_tvDist_pow_comp (hπ : κ.Invariant π) (hκ : κ.IsAp
     (hπ.parallelComp hπ).isRecurrent_of_apply_singleton_ne_zero (by
       simpa only [← Set.singleton_prod_singleton, Measure.prod_prod] using mul_ne_zero hx hx)
   have hlim := κ.tendsto_tvDist_pow_comp_of_parallelComp_isRecurrent hrec ν π
-  have hpow (n : ℕ) : (κ ^ n : Kernel α α) ∘ₘ π = π := by
-    induction n with
-    | zero => simp [Kernel.one_def]
-    | succ n ih =>
-      simpa only [Nat.add_comm n 1, Kernel.pow_add, pow_one, ← Measure.comp_assoc, ih]
-        using hπ.def
-  simpa only [hpow] using hlim
+  simpa only [hπ.pow_comp] using hlim
 
 end ProbabilityTheory.Kernel
 
