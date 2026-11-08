@@ -16,8 +16,8 @@ Affine-map uniqueness and two computational facts about `AffineMap.lineMap`.
 
 ## Main results
 
-* `AffineMap.eq_of_eq_at_two_points`: affine maps from a division ring that agree at two distinct
-  points are equal.
+* `AffineMap.ext_of_ne`: affine maps from a division ring that agree at two distinct points are
+  equal.
 * `AffineMap.apply_eq_add_mul_sub`: an affine function on the line is
   `s ↦ f 0 + s * (f 1 - f 0)`.
 * `AffineMap.lineMap_vsub_lineMap_eq_vsub_add_smul_sub_smul`: the difference of points on two
@@ -29,7 +29,7 @@ public section
 namespace AffineMap
 
 /-- Affine maps from a division ring that agree at two distinct points are equal. -/
-theorem eq_of_eq_at_two_points {k V P : Type*} [DivisionRing k] [AddCommGroup V] [Module k V]
+theorem ext_of_ne {k V P : Type*} [DivisionRing k] [AddCommGroup V] [Module k V]
     [AddTorsor V P] {f g : k →ᵃ[k] P} {a b : k} (hab : a ≠ b) (ha : f a = g a)
     (hb : f b = g b) : f = g := by
   ext c

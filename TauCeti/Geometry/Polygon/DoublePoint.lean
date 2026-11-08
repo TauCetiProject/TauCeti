@@ -287,13 +287,13 @@ variable [Ring R] [PartialOrder R] [AddCommGroup V] [Module R V]
 private theorem IsRegularProjection.edgePath_eq_of_overlap_endpoint
     (hπ : poly.IsRegularProjection R π) {i j : Fin n} {h : R → R}
     (hh : ∀ u, h u = lineMap (h 0) (h 1) u)
-    (hrel : ∀ u, π (lineMap (poly i) (poly (finRotate n i)) (h u)) =
-      π (lineMap (poly j) (poly (finRotate n j)) u))
+    (hrel : ∀ u, π (poly.edgePath R i (h u)) = π (poly.edgePath R j u))
     {u : R} (hu : u ∈ Icc (0 : R) 1)
     (hhu : lineMap (h 0) (h 1) u ∈ Icc (0 : R) 1)
     (hend : u = 0 ∨ u = 1 ∨ lineMap (h 0) (h 1) u = 0 ∨ lineMap (h 0) (h 1) u = 1) :
-    lineMap (poly i) (poly (finRotate n i)) (h u) = lineMap (poly j) (poly (finRotate n j)) u := by
+    poly.edgePath R i (h u) = poly.edgePath R j u := by
   rw [← hh u] at hhu hend
+  simp_rw [edgePath] at hrel ⊢
   have hX : lineMap (poly i) (poly (finRotate n i)) (h u) ∈ poly.edgeSet R i := ⟨_, hhu, rfl⟩
   have hY : lineMap (poly j) (poly (finRotate n j)) u ∈ poly.edgeSet R j := ⟨_, hu, rfl⟩
   have hXb := mem_iUnion.2 ⟨i, hX⟩
@@ -346,21 +346,16 @@ private theorem IsRegularProjection.edgePath_eq_of_eq_at_two
     (h₁ : poly.edgePath R i (h u₁) = poly.edgePath R j u₁)
     (h₂ : poly.edgePath R i (h u₂) = poly.edgePath R j u₂) :
     poly.edgePath R i (h t) = poly.edgePath R j t := by
-  let f : R →ᵃ[R] P := (poly.edgePath R i).comp (lineMap (h 0) (h 1))
-  let g : R →ᵃ[R] P := poly.edgePath R j
-  have h₁' : f u₁ = g u₁ := by
-    dsimp only [f, g, AffineMap.coe_comp, Function.comp_apply]
-    rw [← hh u₁]
+  have h' : h = lineMap (h 0) (h 1) := funext hh
+  have h₁' : ((poly.edgePath R i).comp (lineMap (h 0) (h 1))) u₁ = poly.edgePath R j u₁ := by
+    rw [AffineMap.comp_apply, ← congrFun h' u₁]
     exact h₁
-  have h₂' : f u₂ = g u₂ := by
-    dsimp only [f, g, AffineMap.coe_comp, Function.comp_apply]
-    rw [← hh u₂]
+  have h₂' : ((poly.edgePath R i).comp (lineMap (h 0) (h 1))) u₂ = poly.edgePath R j u₂ := by
+    rw [AffineMap.comp_apply, ← congrFun h' u₂]
     exact h₂
-  have hft : f t = poly.edgePath R i (h t) := by
-    dsimp [f]
-    rw [← hh t]
-  have hfg : f = g := AffineMap.eq_of_eq_at_two_points hu₁₂ h₁' h₂'
-  exact hft.symm.trans ((AffineMap.congr_fun hfg t).trans rfl)
+  have hfg : (poly.edgePath R i).comp (lineMap (h 0) (h 1)) = poly.edgePath R j :=
+    AffineMap.ext_of_ne hu₁₂ h₁' h₂'
+  simpa only [AffineMap.comp_apply, ← congrFun h' t] using AffineMap.congr_fun hfg t
 
 end AffineReparam
 
@@ -403,17 +398,13 @@ private theorem IsRegularProjection.subsingleton_setOf_mem_edgeSet_of_ne
     (hπ : poly.IsRegularProjection R π) {i j : Fin n} :
     {p : P × P | p.1 ∈ poly.edgeSet R i ∧ p.2 ∈ poly.edgeSet R j ∧ π p.1 = π p.2 ∧
       p.1 ≠ p.2}.Subsingleton := by
-  by_cases hij : i = j
-  · subst j
-    intro p hp q hq
-    exact False.elim (hp.2.2.2 (hπ.injOn_edgeSet i hp.1 hp.2.1 hp.2.2.1))
-  · rintro ⟨x, y⟩ ⟨hx, hy, hxy, hxy_ne⟩ ⟨x', y'⟩ ⟨hx', hy', hxy', _⟩
-    dsimp only at hx hy hxy hx' hy' hxy' hxy_ne
-    suffices hxx : x = x' by
-      subst hxx
-      rw [hπ.injOn_edgeSet j hy hy' (hxy.symm.trans hxy')]
-    by_contra hne
-    exact hxy_ne (hπ.eq_of_two_edgePairs hx hy hxy hx' hy' hxy' hne).1
+  rintro ⟨x, y⟩ ⟨hx, hy, hxy, hxy_ne⟩ ⟨x', y'⟩ ⟨hx', hy', hxy', _⟩
+  dsimp only at hx hy hxy hx' hy' hxy_ne
+  suffices hxx : x = x' by
+    subst hxx
+    rw [hπ.injOn_edgeSet j hy hy' (hxy.symm.trans hxy')]
+  by_contra hne
+  exact hxy_ne (hπ.eq_of_two_edgePairs hx hy hxy hx' hy' hxy' hne).1
 
 /-- **Two distinct edges cross at most once.** For an affine regular projection `π` of a simple
 polygon, two distinct edges contain at most one pair of points with the same image under `π`. For
