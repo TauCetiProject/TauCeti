@@ -32,7 +32,7 @@ The theorems take an ambient family `F` and continuous restrictions `f`, related
 * `TauCeti.isCompact_closure_range_iff_isLocallyBoundedOn`: for holomorphic families on an open
   set with proper target, relative compactness and local boundedness are equivalent.
 
-The forward direction uses `ArzelaAscoli.isCompact_closure_of_equicontinuous` and the Cauchy
+The forward direction uses `ArzelaAscoli.isCompact_closure_range_of_equicontinuous` and the Cauchy
 estimate in `TauCeti.IsLocallyBoundedOn.equicontinuousOn`. Properness turns the pointwise norm
 bounds into pointwise relative compactness; for a complex normed space it is equivalent to
 finite-dimensionality.
@@ -73,12 +73,9 @@ theorem isCompact_closure_range_of_isLocallyBoundedOn [ProperSpace E] (hΩ : IsO
     exact (equicontinuous_restrict_iff F).mpr (hb.equicontinuousOn hΩ hF)
   -- Arzelà–Ascoli in the compact-open topology: equicontinuity comes from Cauchy's estimate and
   -- pointwise relative compactness from local boundedness.
-  refine ArzelaAscoli.isCompact_closure_of_equicontinuous (by
-    rw [← Set.comp_rangeSplitting f]
-    exact heq.comp (Set.rangeSplitting f)) fun x => ?_
+  refine ArzelaAscoli.isCompact_closure_range_of_equicontinuous heq fun x => ?_
   obtain ⟨C, hC⟩ := hb.exists_forall_norm_le x.2
-  refine ⟨closedBall 0 C, isCompact_closedBall _ _, fun g hg => ?_⟩
-  obtain ⟨i, rfl⟩ := hg
+  refine ⟨closedBall 0 C, isCompact_closedBall _ _, fun i => ?_⟩
   simpa [hf i, mem_closedBall, dist_zero_right] using hC i
 
 /-- **Montel's theorem as an equivalence.** For a family of holomorphic maps of an open set
