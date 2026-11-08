@@ -455,15 +455,9 @@ theorem IsMetricCompatible.inner_eq_of_alongCurveWithin_eq_zero
 
 /-- A preconnected set of reals containing two distinct points has unique derivatives. -/
 private lemma uniqueDiffOn_of_isPreconnected (hconn : IsPreconnected s) {a b : ℝ}
-    (ha : a ∈ s) (hb : b ∈ s) (hab : a ≠ b) : UniqueDiffOn ℝ s := by
-  refine uniqueDiffOn_convex hconn.convex ⟨(a + b) / 2, interior_mono
-    (hconn.ordConnected.uIcc_subset ha hb) ?_⟩
-  rw [Set.uIcc, interior_Icc]
-  rcases hab.lt_or_gt with h | h
-  · simp only [min_eq_left h.le, max_eq_right h.le]
-    constructor <;> linarith
-  · simp only [min_eq_right h.le, max_eq_left h.le]
-    constructor <;> linarith
+    (ha : a ∈ s) (hb : b ∈ s) (hab : a ≠ b) : UniqueDiffOn ℝ s :=
+  uniqueDiffOn_convex hconn.convex <| (Set.nonempty_Ioo.2 (min_lt_max.2 hab)).mono <| by
+    simpa only [Set.uIcc, interior_Icc] using interior_mono (hconn.ordConnected.uIcc_subset ha hb)
 
 /-- **Uniqueness of parallel fields.** On a preconnected parameter set, two parallel tangent
 fields along a differentiable curve that agree at one parameter agree at every parameter of the
