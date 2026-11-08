@@ -36,11 +36,11 @@ instance RingHomIsometric.intCastRingHom {R : Type*} [SeminormedRing R]
 namespace TauCeti
 
 /-- For `‖t‖ ≤ 1`, the norm of `b + t • d` is at least `‖b‖ - ‖d‖`. -/
-theorem norm_sub_norm_le_norm_add_smul {𝕜 E : Type*} [NormedField 𝕜] [SeminormedAddCommGroup E]
-    [NormedSpace 𝕜 E] {b d : E} {t : 𝕜} (ht : ‖t‖ ≤ 1) : ‖b‖ - ‖d‖ ≤ ‖b + t • d‖ := by
-  have htd : ‖t • d‖ ≤ ‖d‖ := by
-    rw [norm_smul]
-    exact mul_le_of_le_one_left (norm_nonneg _) ht
+theorem norm_sub_norm_le_norm_add_smul {𝕜 E : Type*} [SeminormedAddGroup 𝕜]
+    [SeminormedAddCommGroup E] [SMulZeroClass 𝕜 E] [IsBoundedSMul 𝕜 E] {b d : E} {t : 𝕜}
+    (ht : ‖t‖ ≤ 1) : ‖b‖ - ‖d‖ ≤ ‖b + t • d‖ := by
+  have htd : ‖t • d‖ ≤ ‖d‖ :=
+    (norm_smul_le t d).trans (mul_le_of_le_one_left (norm_nonneg _) ht)
   have := norm_sub_norm_le b (-(t • d))
   rw [sub_neg_eq_add, norm_neg] at this
   linarith
