@@ -187,6 +187,15 @@ theorem tangentLinearEquiv_symm_apply [Fintype I] (b : I → B) :
 
 variable {H : Type*} [CommRing H] [Bialgebra R H]
 
+/-- A split-torus differential sends a coordinate derivation to the differential of the
+corresponding cocharacter of its target. -/
+private theorem derivationCompLieHom_coordinateDerivation (π : H →ₐc[R] A) (i : I) :
+    derivationCompLieHom (B := B) π (coordinateDerivation (R := R) (B := B) i) =
+      derivationCompLieHom (π.cocharacter (Finsupp.applyAddHom i).toMultiplicative)
+        ((MultiplicativeGroup.tangentLinearEquiv (R := R) (B := B)).symm 1) := by
+  rw [coordinateDerivation, ← LieHom.comp_apply, ← derivationCompLieHom_comp,
+    BialgHom.cocharacter_id_comp]
+
 /-- A split-torus differential sends a coordinate tangent vector to the differential of
 the corresponding cocharacter of its target. -/
 theorem derivationCompLieHom_tangentBasis [Finite I] (π : H →ₐc[R] A) (i : I) :
@@ -194,8 +203,8 @@ theorem derivationCompLieHom_tangentBasis [Finite I] (π : H →ₐc[R] A) (i : 
         (tangentBasis (R := R) (B := B) i) =
       derivationCompLieHom (π.cocharacter (Finsupp.applyAddHom i).toMultiplicative)
         ((MultiplicativeGroup.tangentLinearEquiv (R := R) (B := B)).symm 1) := by
-  rw [tangentBasis_apply, ← LieHom.comp_apply, ← derivationCompLieHom_comp,
-    BialgHom.cocharacter_id_comp]
+  rw [tangentBasis_apply]
+  exact derivationCompLieHom_coordinateDerivation π i
 
 /-- The tangent image of a finite split torus is the span of the differentials of its
 coordinate cocharacters. The map from the torus need not be an immersion. -/
@@ -223,12 +232,8 @@ theorem linearIndependent_derivationCompLieHom_cocharacter (π : H →ₐc[R] A)
     convert Pi.linearIndependent_single_one I B using 1
     ext i j
     simp [tangentCoordinates_coordinateDerivation, Pi.single_apply, eq_comm]
-  have key (i : I) : derivationCompLieHom (B := B) π (coordinateDerivation i) =
-      derivationCompLieHom (π.cocharacter (Finsupp.applyAddHom i).toMultiplicative)
-        ((MultiplicativeGroup.tangentLinearEquiv (R := R) (B := B)).symm 1) := by
-    rw [coordinateDerivation, ← LieHom.comp_apply, ← derivationCompLieHom_comp,
-      BialgHom.cocharacter_id_comp]
-  simpa only [Function.comp_def, LieHom.coe_toLinearMap, key] using
+  simpa only [Function.comp_def, LieHom.coe_toLinearMap,
+    derivationCompLieHom_coordinateDerivation] using
     hw.map' (derivationCompLieHom (B := B) π).toLinearMap (LinearMap.ker_eq_bot.mpr hπ)
 
 end
