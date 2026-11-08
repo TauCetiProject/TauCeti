@@ -173,28 +173,17 @@ theorem exists_f4Length_eq_one_pairing_ne_zero (α : Fin 48) :
   let P := f4SimplyConnectedRootDatum
   by_contra h
   push Not at h
-  have hzero : ∀ x ∈ Submodule.span ℤ (Set.range f4ShortRootWeight),
-      P.toLinearMap x (P.coroot α) = 0 := by
-    intro x hx
-    induction hx using Submodule.span_induction with
-    | mem x hx =>
-        obtain ⟨a, rfl⟩ := hx
-        by_cases ha : f4ShortRootWeight a = 0
-        · simp [ha]
-        · obtain ⟨β, hβ, hroot⟩ :=
-            (f4ShortRootWeight_ne_zero_iff_exists_shortRoot a).mp ha
-          have hroot' : P.root β = f4ShortRootWeight a := by
-            simpa only [P, f4SimplyConnectedRootDatum_root] using hroot
-          rw [← hroot', P.root_coroot_eq_pairing, h β hβ]
-    | zero => simp
-    | add x y _ _ ihx ihy => simp [ihx, ihy]
-    | smul a x _ ih =>
-        simp only [map_smul, LinearMap.smul_apply, ih, smul_zero]
-  have hmem : P.root α ∈ Submodule.span ℤ (Set.range f4ShortRootWeight) := by
-    rw [span_range_f4ShortRootWeight_eq_top]
-    exact Submodule.mem_top
-  have hbad := hzero (P.root α) hmem
-  rw [P.root_coroot_eq_pairing, P.pairing_same] at hbad
+  have hφ : P.toLinearMap.flip (P.coroot α) = 0 := by
+    refine LinearMap.ext_on_range span_range_f4ShortRootWeight_eq_top fun a => ?_
+    by_cases ha : f4ShortRootWeight a = 0
+    · simp [ha]
+    · obtain ⟨β, hβ, hroot⟩ := (f4ShortRootWeight_ne_zero_iff_exists_shortRoot a).mp ha
+      have hroot' : P.root β = f4ShortRootWeight a := by
+        simpa only [P, f4SimplyConnectedRootDatum_root] using hroot
+      rw [LinearMap.flip_apply, ← hroot', P.root_coroot_eq_pairing]
+      exact h β hβ
+  have hbad := LinearMap.congr_fun hφ (P.root α)
+  simp only [LinearMap.flip_apply, P.root_coroot_eq_pairing, P.pairing_same] at hbad
   norm_num at hbad
 
 end TauCeti.DynkinType
