@@ -45,7 +45,8 @@ sheaf cohomology and canonical invariants of `X_F` with their function-field cou
   Cl(F)`) to `TauCeti.canonicalClass` and has Euler-characteristic degree `2g - 2`, `g` global
   sections, and one-dimensional `H¹`. When `Ω_{X_F/k}` is invertible — in particular whenever
   `X_F` is smooth over `k` (`twoChartModel.smoothOfRelativeDimension_one`,
-  `twoChartModel.isInvertible_relativeDifferentials`) — `[Ω_{X_F/k}]` also
+  `twoChartModel.isInvertible_relativeDifferentials`), as it always is over a perfect field
+  (`twoChartModel.smoothOfRelativeDimension_one_of_perfectField`) — `[Ω_{X_F/k}]` also
   maps to `TauCeti.canonicalClass` and satisfies `deg Ω_{X_F/k} = 2g - 2`,
   `dim_k H⁰(X_F, Ω_{X_F/k}) = g`, and `dim_k H¹(X_F, Ω_{X_F/k}) = 1`.
 
