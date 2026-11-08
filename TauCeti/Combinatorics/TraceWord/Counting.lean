@@ -65,9 +65,7 @@ theorem card_image_range_le_card_nonloop_edges_add_one (w : ℕ → α) (n : ℕ
         · exact hv (mem_image.mpr ⟨i, mem_range.mpr (by omega), h.symm⟩)
         · exact hv (mem_image.mpr ⟨i + 1, mem_range.mpr (by omega), h.symm⟩)
       rw [card_insert_of_notMem hv]
-      conv_rhs =>
-        rw [range_add_one, filter_insert, ite_eq_left hne, image_insert, card_insert_of_notMem he]
-      omega
+      simpa [range_add_one, filter_insert, hne, he] using Nat.add_le_add_right ih 1
 
 /-- A cyclic word visits at most one more vertex than its number of distinct nonloop edges. -/
 theorem card_image_le_card_nonloop_cyclic_edges_add_one {k : ℕ} (w : Fin k → α) :
@@ -125,7 +123,7 @@ theorem two_mul_card_cyclic_edges_le_of_no_singleton_edge {k : ℕ} (w : Fin k �
 
 /-- A word of length `k` with no singleton edge visits at most `k / 2 + 1` vertices.
 Edges are unordered, and loops count as edges. -/
-theorem card_image_le_half_add_one_of_no_singleton_edge {k : ℕ} (w : Fin k → α)
+theorem card_image_le_div_two_add_one_of_no_singleton_edge {k : ℕ} (w : Fin k → α)
     (h : ∀ i, ∃ j ≠ i, s(w j, w (finRotate k j)) = s(w i, w (finRotate k i))) :
     #(univ.image w) ≤ k / 2 + 1 := by
   have hcount := two_mul_card_cyclic_edges_le_of_no_singleton_edge w h
