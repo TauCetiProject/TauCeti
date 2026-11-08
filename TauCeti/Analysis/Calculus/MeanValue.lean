@@ -11,6 +11,7 @@ import Mathlib.Analysis.Calculus.Deriv.AffineMap
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Convex.Basic
 public import Mathlib.Analysis.RCLike.Basic
+public import Mathlib.Topology.MetricSpace.Thickening
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.Mul
@@ -34,6 +35,9 @@ using its one-variable mean value inequality along the same line segment.
 Let `w` be a differentiable real function on a real normed space whose derivative has norm at
 most `L` on the band `{a ≤ w ≤ b}`. Starting from a point where `w ≥ b`, the function cannot reach
 the level `a` within distance `(b - a) / L` (`TauCeti.lt_apply_add_of_norm_fderiv_le`).
+Consequently the outer shell of the `r`-thickening of `{w ≥ 0}` lies in `{-(L r) < w < 0}` when
+`‖Dw‖ ≤ L` on `{-(L r) ≤ w ≤ 0}`
+(`Differentiable.thickening_sdiff_subset_preimage_Ioo_of_norm_fderiv_le`).
 
 Mathlib's `Convex.norm_image_sub_le_of_norm_fderiv_le` needs the derivative bound along the
 whole segment; here it is only assumed on the band, which is what is available near a level set
@@ -159,6 +163,22 @@ theorem lt_apply_add_of_norm_fderiv_le {w : E → ℝ} (hw : Differentiable ℝ 
     nlinarith [mul_nonneg hL (norm_nonneg z), hs₀I.1, hs₁I.2]
   linarith
 
+open Metric in
+/-- The mean value inequality: if `h` fixes `c` and `h - id` has derivative of norm at most `δ` on
+the closed ball of radius `2 r` about `c`, then `h - id` moves points of this ball by at most
+`δ * (2 * r)`. -/
+theorem norm_sub_le_of_norm_fderiv_sub_id_le {c : E} {h : E → E} {r δ : ℝ} (hr : 0 < r)
+    (hδ0 : 0 ≤ δ) (hhc : h c = c)
+    (hhd : ∀ x ∈ closedBall c (2 * r),
+      HasFDerivAt (fun y ↦ h y - y) (fderiv ℝ h x - ContinuousLinearMap.id ℝ E) x)
+    (hδ : ∀ x ∈ closedBall c (2 * r), ‖fderiv ℝ h x - ContinuousLinearMap.id ℝ E‖ ≤ δ)
+    {x : E} (hx : x ∈ closedBall c (2 * r)) : ‖h x - x‖ ≤ δ * (2 * r) := by
+  have := Convex.norm_image_sub_le_of_norm_fderiv_le (fun y hy ↦ (hhd y hy).differentiableAt)
+    (fun y hy ↦ (hhd y hy).fderiv ▸ hδ y hy) (convex_closedBall c (2 * r))
+    (mem_closedBall_self (by positivity)) hx
+  rw [hhc, sub_self, sub_zero] at this
+  exact this.trans (mul_le_mul_of_nonneg_left (mem_closedBall_iff_norm.1 hx) hδ0)
+
 open Real in
 /-- Mean value bound near `a > 0`: if `u` has derivative `f' r` of norm at most `D r^(β - 1)` at
 every `r > 0` (`0 ≤ β ≤ 1`), then `‖u b - u a‖ ≤ 2 D |b - a| a^(β - 1)` for `a / 2 ≤ b`. -/
@@ -185,6 +205,22 @@ theorem norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivAt {F : Type*} [NormedAddCom
     _ = _ := by ring
 
 end TauCeti
+
+/-- **The outer shell of a thickening of a superlevel set lies in a level band.** Let `w` be
+differentiable with `‖Dw‖ ≤ L` wherever `-(L r) ≤ w ≤ 0`. Then the part of the open
+`r`-neighbourhood of `{w ≥ 0}` outside `{w ≥ 0}` lies in `{-(L r) < w < 0}`. -/
+theorem Differentiable.thickening_sdiff_subset_preimage_Ioo_of_norm_fderiv_le {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {w : E → ℝ} (hw : Differentiable ℝ w) {L r : ℝ}
+    (hL : 0 < L) (hgrad : ∀ x, -(L * r) ≤ w x → w x ≤ 0 → ‖fderiv ℝ w x‖ ≤ L) :
+    Metric.thickening r {x | 0 ≤ w x} \ {x | 0 ≤ w x} ⊆ w ⁻¹' Ioo (-(L * r)) 0 := by
+  rintro x ⟨hx, hxs⟩
+  obtain ⟨p, hp, hpx⟩ := Metric.mem_thickening_iff.1 hx
+  refine ⟨?_, lt_of_not_ge hxs⟩
+  have := TauCeti.lt_apply_add_of_norm_fderiv_le hw (a := -(L * r)) (b := 0) hL.le hgrad
+    (hp : 0 ≤ w p) (z := x - p) (by
+      rw [← dist_eq_norm]
+      linarith [mul_lt_mul_of_pos_left hpx hL])
+  simpa using this
 
 namespace Convex
 

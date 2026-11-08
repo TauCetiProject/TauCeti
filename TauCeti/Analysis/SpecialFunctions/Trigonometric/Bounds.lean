@@ -20,6 +20,8 @@ nonpositive on `[π, 2π]`. For real `a < 1` the quantity `1 - a sin² θ` is po
 `[0, π / 2]`. Cosine is positive strictly between two
 angles in `[-π/2, π/2]`, in either orientation (`TauCeti.cos_pos_of_mem_uIoo`). On
 `(-π / 2, π / 2)` the square of the sine is less than `1`, so `sin (x / 2) ^ 2 < 1` for `|x| < π`.
+If `cos (2πr) < cos (2πx)` with `r ≥ 0`, then `x` lies within `r` of an integer
+(`TauCeti.exists_abs_sub_int_lt_of_cos_lt`).
 
 For angles `α, β > 0` and `γ ≥ 0` with
 `α + β + γ < π`, the quotient `(cos α cos β + cos γ) / (sin α sin β)` is greater than `1`; by the
@@ -119,6 +121,19 @@ theorem exists_pos_cosh_mul_sin_mul_sin_eq {α β γ : ℝ} (hα : 0 < α) (hβ 
   have hκ := one_lt_cos_mul_cos_add_cos_div_sin_mul_sin hα hβ hγ h
   refine ⟨arcosh _, arcosh_pos hκ, ?_⟩
   rw [cosh_arcosh hκ.le, div_mul_cancel₀ _ hs.ne']
+
+/-- If `cos (2πr) < cos (2πx)` for some `0 ≤ r`, then `x` lies within `r` of an integer. -/
+theorem exists_abs_sub_int_lt_of_cos_lt {x r : ℝ} (hr₀ : 0 ≤ r)
+    (h : cos (2 * π * r) < cos (2 * π * x)) : ∃ k : ℤ, |x - k| < r := by
+  refine ⟨round x, not_le.mp fun hle ↦ h.not_ge ?_⟩
+  have hy := abs_sub_round x
+  have hcos : cos (2 * π * x) = cos (2 * π * |x - round x|) := by
+    rw [← abs_of_pos (by positivity : 0 < 2 * π), ← abs_mul, abs_of_pos (by positivity : 0 < 2 * π),
+      cos_abs, mul_sub, ← cos_sub_int_mul_two_pi (2 * π * x) (round x)]
+    ring_nf
+  rw [hcos]
+  exact cos_le_cos_of_nonneg_of_le_pi (by positivity) (by nlinarith [pi_pos])
+    (by nlinarith [pi_pos])
 
 /-- Jordan's inequality in the form `θ ≤ π / 2 * sin θ` for `θ ∈ [0, π / 2]`, with the sine given
 as a value `s`. -/

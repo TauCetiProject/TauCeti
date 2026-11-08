@@ -92,7 +92,8 @@ Hamiltonians, it is `∂_s H_{(s, t)}`, and in particular for a continuation per
   `SymplecticForm.perturbedFDeriv_comp_add_right`) and the energy density
   (`SymplecticForm.floerEnergyDensity_congr_of_eventuallyEq`,
   `SymplecticForm.floerEnergyDensity_comp_add_right`); hence translations preserve the energy
-  (`SymplecticForm.lintegral_floerEnergyDensity_comp_add_right`).
+  (`SymplecticForm.lintegral_floerEnergyDensity_comp_add_right`) and the integrated curvature
+  (`SymplecticForm.lintegral_enorm_hamiltonianCurvature_comp_add_right`).
 
 ## References
 
@@ -518,6 +519,17 @@ theorem lintegral_floerEnergyDensity_comp_add_right (ω : SymplecticForm V)
   simp only [floerEnergyDensity_comp_add_right]
   exact hv.setLIntegral_comp_preimage_emb (measurableEmbedding_addRight v)
     (fun z ↦ ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z)) S
+
+/-- Translations of the domain preserve the integrated curvature along a map. -/
+theorem lintegral_enorm_hamiltonianCurvature_comp_add_right (ω : SymplecticForm V)
+    (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) (v : ℝ × ℝ) :
+    ∫⁻ z, ‖ω.hamiltonianCurvature (fun w ↦ Ks (w + v)) (fun w ↦ Kt (w + v)) z (u (z + v))‖ₑ =
+      ∫⁻ z, ‖ω.hamiltonianCurvature Ks Kt z (u z)‖ₑ := by
+  have hv : MeasurePreserving (· + v) volume volume :=
+    (measurePreserving_add_right volume v.1).prod (measurePreserving_add_right volume v.2)
+  simp only [hamiltonianCurvature_comp_add_right]
+  exact hv.lintegral_comp_emb (measurableEmbedding_addRight v)
+    (fun z ↦ ‖ω.hamiltonianCurvature Ks Kt z (u z)‖ₑ)
 
 variable {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
 

@@ -20,6 +20,7 @@ with `F`, so one vanishes exactly when the other does.
 
 * `TauCeti.mvfderiv_comp_apply_of_differentiableAt`: the chain rule when the outer map is
   between normed spaces.
+* `TauCeti.mvfderiv_scalar_comp`: the chain rule `d(φ ∘ g) = φ'(g x) • dg` for scalar `φ`.
 * `ContinuousLinearMap.mvfderiv_comp_apply`: the chain rule when the outer map is continuous
   linear.
 * `MDifferentiableAt.mvfderiv_prod_eq_add_apply`: the vector-valued derivative on a product
@@ -101,6 +102,17 @@ theorem mvfderiv_comp_apply_of_differentiableAt {g : M → F} {φ : F → F'} {x
   rw [mvfderiv_comp_apply x hφ.mdifferentiableAt hg, mvfderiv_eq_fderiv,
     ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
     NormedSpace.fromTangentSpace_apply, mvfderiv_apply_eq_mfderiv_apply]
+
+/-- The chain rule for a scalar function on a manifold followed by a scalar function
+differentiable at the relevant point: the derivative is scaled by `φ'(g x)`. -/
+theorem mvfderiv_scalar_comp {g : M → 𝕜} {φ : 𝕜 → 𝕜} {x : M} (hg : MDiffAt g x)
+    (hφ : DifferentiableAt 𝕜 φ (g x)) :
+    mvfderiv I (φ ∘ g) x = deriv φ (g x) • mvfderiv I g x := by
+  ext v
+  rw [mvfderiv_comp_apply_of_differentiableAt hφ hg, hφ.hasDerivAt.hasFDerivAt.fderiv]
+  simp only [ContinuousLinearMap.toSpanSingleton_apply, smul_apply]
+  -- Both sides are products of two scalars, the first read in the tangent space of `𝕜`.
+  exact mul_comm _ _
 
 /-- The chain rule for a vector-valued function on a manifold followed by a continuous linear map,
 evaluated on a tangent vector: the derivative of `L ∘ g` is `L` applied to the derivative of `g`. -/
