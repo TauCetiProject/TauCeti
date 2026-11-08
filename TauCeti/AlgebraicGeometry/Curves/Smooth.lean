@@ -21,9 +21,9 @@ points are discrete valuation rings by
 
 Conversely, over a perfect field `k` a curve whose local rings at codimension-one points are
 discrete valuation rings is smooth of relative dimension one over `k`: all its local rings are
-then regular (`TauCeti.AlgebraicGeometry.smooth_of_isRegularLocalRing_stalk`). So over a perfect
-field the regular proper curves are exactly the smooth ones. Over an imperfect field a regular
-curve need not be smooth.
+then regular (`AlgebraicGeometry.Scheme.Hom.smooth_of_isRegularLocalRing_stalk`). So over a
+perfect field the regular proper curves are exactly the smooth ones. Over an imperfect field a
+regular curve need not be smooth.
 
 ## Main results
 
@@ -61,7 +61,7 @@ theorem IsCurveOver.smoothOfRelativeDimension_one_of_perfectField [PerfectField 
   have (x : X) : IsRegularLocalRing (X.presheaf.stalk x) := by
     have := IsCurveOver.valuationRing_stalk k X x
     infer_instance
-  have := smooth_of_isRegularLocalRing_stalk (X ↘ Spec (.of k))
+  have := (X ↘ Spec (.of k)).smooth_of_isRegularLocalRing_stalk
   exact smoothOfRelativeDimension_of_topologicalKrullDim_eq _
     (IsCurveOver.topologicalKrullDim_eq_one k)
 

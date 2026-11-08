@@ -237,27 +237,34 @@ theorem exists_comp_eq_id_of_notMem_sq {x : R} (hxm : x ∈ maximalIdeal R)
     map_one]
 
 /-- **A minimal system of generators of `𝔪` is linearly independent modulo `𝔪²`.** Let
-`x₁, …, xₙ` generate the maximal ideal `𝔪` of a Noetherian local ring, with `n` the least number of
+`x₁, …, xₙ` generate the maximal ideal `𝔪` of a local ring, with `n` the least number of
 generators of `𝔪`. If `∑ cᵢ xᵢ ∈ 𝔪²`, then every coefficient `cᵢ` lies in `𝔪`. -/
-theorem mem_maximalIdeal_of_sum_mul_mem_sq [IsNoetherianRing R] {n : ℕ} {x : Fin n → R}
+theorem mem_maximalIdeal_of_sum_mul_mem_sq {n : ℕ} {x : Fin n → R}
     (hx : span (Set.range x) = maximalIdeal R) (hn : (maximalIdeal R).spanFinrank = n)
     {c : Fin n → R} (hc : ∑ i, c i * x i ∈ maximalIdeal R ^ 2) (i : Fin n) :
     c i ∈ maximalIdeal R := by
   have hxm (i : Fin n) : x i ∈ maximalIdeal R := hx ▸ subset_span ⟨i, rfl⟩
   -- The classes of the `xᵢ` span the cotangent space, whose dimension is `n`.
-  let v : Fin n → CotangentSpace R := fun i ↦ (maximalIdeal R).toCotangent ⟨x i, hxm i⟩
-  have hspan : ⊤ ≤ Submodule.span (ResidueField R) (Set.range v) := by
-    rw [top_le_iff, Set.range_comp' (maximalIdeal R).toCotangent
-      fun i ↦ (⟨x i, hxm i⟩ : maximalIdeal R), CotangentSpace.span_image_eq_top_iff]
+  let w : Fin n → maximalIdeal R := fun i ↦ ⟨x i, hxm i⟩
+  let v : Fin n → CotangentSpace R := fun i ↦ (maximalIdeal R).toCotangent (w i)
+  have hw : Submodule.span R (Set.range w) = ⊤ := by
     refine Submodule.map_injective_of_injective (maximalIdeal R).injective_subtype ?_
     rw [Submodule.map_span, Submodule.map_top, Submodule.range_subtype, ← Set.range_comp]
     exact hx
+  have hspan : ⊤ ≤ Submodule.span (ResidueField R) (Set.range v) := by
+    intro y _
+    obtain ⟨m, rfl⟩ := (maximalIdeal R).toCotangent_surjective y
+    have hm := Submodule.apply_mem_span_image_of_mem_span (maximalIdeal R).toCotangent
+      (hw.symm ▸ Submodule.mem_top : m ∈ Submodule.span R (Set.range w))
+    rw [← Set.range_comp'] at hm
+    exact Submodule.span_le_restrictScalars R (ResidueField R) _ hm
   have hli : LinearIndependent (ResidueField R) v :=
     linearIndependent_of_top_le_span_of_card_eq_finrank hspan (by
-      rw [Fintype.card_fin, ← hn, spanFinrank_maximalIdeal_eq_finrank_cotangentSpace])
+      rw [Fintype.card_fin, ← hn, spanFinrank_maximalIdeal_eq_finrank_cotangentSpace_of_fg
+        (hx ▸ Submodule.fg_span (Set.finite_range x))])
   have hsum : ∑ i, residue R (c i) • v i = 0 := by
     have : ∑ i, residue R (c i) • v i =
-        (maximalIdeal R).toCotangent (∑ i, c i • (⟨x i, hxm i⟩ : maximalIdeal R)) := by
+        (maximalIdeal R).toCotangent (∑ i, c i • w i) := by
       rw [map_sum]
       refine Finset.sum_congr rfl fun i _ ↦ ?_
       rw [map_smul, ← ResidueField.algebraMap_eq, algebraMap_smul]

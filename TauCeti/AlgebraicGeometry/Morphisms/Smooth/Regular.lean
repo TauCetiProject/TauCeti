@@ -36,8 +36,8 @@ curve `y ^ 2 = x ^ p - t` over `𝔽_p(t)`, for an odd prime `p`, is not smooth 
   locally Noetherian scheme with regular local rings has regular local rings.
 * `TauCeti.AlgebraicGeometry.isDiscreteValuationRing_stalk_of_smooth`: the local rings of an
   integral scheme smooth over a field at its codimension-one points are discrete valuation rings.
-* `TauCeti.AlgebraicGeometry.smooth_of_isRegularLocalRing_stalk`: a scheme locally of finite type
-  over a perfect field with regular local rings is smooth.
+* `AlgebraicGeometry.Scheme.Hom.smooth_of_isRegularLocalRing_stalk`: a scheme locally of finite
+  type over a perfect field with regular local rings is smooth.
 -/
 
 public section
@@ -74,6 +74,16 @@ theorem isDiscreteValuationRing_stalk_of_smooth (k : Type u) [Field k] {X : Sche
   have := isRegularLocalRing_stalk_of_smooth (X ↘ Spec (.of k)) (y : X)
   infer_instance
 
+end AlgebraicGeometry
+
+end TauCeti
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+open TauCeti TauCeti.AlgebraicGeometry
+
+universe u
+
 /-- **A regular scheme locally of finite type over a perfect field is smooth**: if `k` is perfect,
 `f : X ⟶ Spec k` is locally of finite type and every local ring of `X` is regular, then `f` is
 smooth. -/
@@ -92,6 +102,4 @@ theorem smooth_of_isRegularLocalRing_stalk {k : Type u} [Field k] [PerfectField 
     (isRegularRing_iff_isRegularLocalRing_stalk hU).mpr fun y _ ↦ inferInstance
   exact formallySmooth_of_isRegularLocalRing
 
-end AlgebraicGeometry
-
-end TauCeti
+end AlgebraicGeometry.Scheme.Hom

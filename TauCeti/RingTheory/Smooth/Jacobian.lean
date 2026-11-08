@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Smooth.Local
 public import Mathlib.RingTheory.Smooth.StandardSmooth
 import Mathlib.RingTheory.LocalRing.Module
+import TauCeti.RingTheory.Kaehler.Conormal
 
 /-!
 # Smoothness after inverting a Jacobian minor
@@ -129,9 +130,7 @@ theorem formallySmooth_of_ker_eq_span_of_sum_mul_mem_sq [IsLocalRing P] [IsLocal
     exact residue_surjective.comp hsurj
   have hJ : RingHom.ker (algebraMap P κ) = maximalIdeal P :=
     IsLocalRing.eq_maximalIdeal (RingHom.ker_isMaximal_of_surjective _ hκsurj)
-  obtain ⟨l, hl⟩ := (Algebra.FormallySmooth.iff_split_injection (R := K) hκsurj).mp inferInstance
-  have hinj : Function.Injective (kerCotangentToTensor K P κ) :=
-    Function.LeftInverse.injective fun x ↦ congr($hl x)
+  have hinj := kerCotangentToTensor_injective_of_formallySmooth (R := K) hκsurj
   refine (Algebra.FormallySmooth.iff_injective_cotangentComplexBaseChange P κ hsurj
     (hker ▸ Submodule.fg_span (Set.finite_range g))
     (by rw [ResidueField.algebraMap_eq, ker_residue])).2 ?_

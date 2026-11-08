@@ -11,7 +11,6 @@ public import TauCeti.AlgebraicGeometry.Modules.Differentials.Canonical
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Rank
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
 public import TauCeti.FieldTheory.FunctionField.Differential.Equiv
-import TauCeti.AlgebraicGeometry.Curves.Smooth
 import TauCeti.AlgebraicGeometry.Curves.TwoChartModel.Curve
 
 /-!
@@ -699,15 +698,6 @@ theorem finrank_cohomology_zero_sub_finrank_cohomology_zero_differentials_tensor
 end InvertibleDifferentials
 
 section Smooth
-
-/-- **Over a perfect field the two-chart model is smooth** of relative dimension one, for `x`
-transcendental over `k`: it is a regular curve. -/
-theorem smoothOfRelativeDimension_one_of_perfectField [PerfectField k]
-    (hxt : Transcendental k x) :
-    SmoothOfRelativeDimension 1 (twoChartModel hF hx ↘ Spec (.of k)) := by
-  have := isCurveOver (hF := hF) (hx := hx) hxt
-  have := isDiscreteValuationRing_stalk (hF := hF) (hx := hx) hxt
-  exact Scheme.IsCurveOver.smoothOfRelativeDimension_one_of_perfectField k _
 
 /-- If `twoChartModel hF hx` is smooth over `Spec k`, it is smooth of relative dimension one. -/
 theorem smoothOfRelativeDimension_one (hxt : Transcendental k x)
