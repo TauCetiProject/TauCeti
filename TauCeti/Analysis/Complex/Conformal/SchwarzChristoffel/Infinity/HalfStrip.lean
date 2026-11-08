@@ -178,7 +178,8 @@ theorem exists_mem_image_schwarzChristoffelPrimitive_iff_of_sum_eq_neg_one
     exact (dichotomy S hs (fun w hw => ⟨hw.1, ne_of_gt hw.2.1, ne_of_lt hw.2.2⟩)).resolve_right
       (fun h => h ⟨hwR, hwlo, hwhi⟩ (subset_closure hwU))
   -- The wider asymptotic strip gives exterior witnesses above and below the two rays.
-  obtain ⟨hlow, hhigh⟩ := outer_regions_subset_compl_closure (le_max_right R₁ R₂) dichotomy
+  obtain ⟨hlow, hhigh⟩ := outer_regions_subset_compl_closure
+    (lt_add_of_pos_right c.im Real.pi_pos) one_pos (le_max_right R₁ R₂) dichotomy
     (by rintro _ ⟨z, hz, rfl⟩; exact hbounds z hz)
   -- The boundary lines themselves are excluded because the image is open.
   refine ⟨R, fun w hwR => ⟨fun hwU => ?_, fun hw => hS ⟨hwR, hw⟩⟩⟩

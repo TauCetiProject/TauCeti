@@ -47,39 +47,40 @@ theorem bijOn_ofReal_mul_add_horizontalStrip {s : ℝ} (hs : 0 < s) (c : ℂ) (l
       rw [mul_div_cancel₀ _ hs.ne', sub_add_cancel]
     · simpa only [him] using hyv
 
-/-- If the set `U` is confined to a strip of width `π + 2` far to the right, and preconnected sets
-far to the right that avoid the two boundary heights lie wholly inside or wholly outside the
-closure of `U`, then the regions below and above the strip are outside the closure of `U`. -/
-theorem outer_regions_subset_compl_closure {U : Set ℂ} {c : ℂ} {R R₂ : ℝ} (hR : R₂ ≤ R)
+/-- If the set `U` is confined to the strip `l - δ < im < h + δ` far to the right, and preconnected
+sets far to the right that avoid the two boundary heights `l < h` lie wholly inside or wholly
+outside the closure of `U`, then the regions below `l` and above `h` are outside the closure
+of `U`. -/
+theorem outer_regions_subset_compl_closure {U : Set ℂ} {l h δ R R₂ : ℝ} (hlh : l < h) (hδ : 0 < δ)
+    (hR : R₂ ≤ R)
     (hdichotomy : ∀ s : Set ℂ, IsPreconnected s →
-      (∀ w ∈ s, R < w.re ∧ w.im ≠ c.im ∧ w.im ≠ c.im + Real.pi) → s ⊆ U ∨ s ⊆ (closure U)ᶜ)
-    (hbounds : ∀ w ∈ U, R₂ < w.re → c.im - 1 < w.im ∧ w.im < c.im + Real.pi + 1) :
-    {w : ℂ | R < w.re ∧ w.im < c.im} ⊆ (closure U)ᶜ ∧
-      {w : ℂ | R < w.re ∧ c.im + Real.pi < w.im} ⊆ (closure U)ᶜ := by
+      (∀ w ∈ s, R < w.re ∧ w.im ≠ l ∧ w.im ≠ h) → s ⊆ U ∨ s ⊆ (closure U)ᶜ)
+    (hbounds : ∀ w ∈ U, R₂ < w.re → l - δ < w.im ∧ w.im < h + δ) :
+    {w : ℂ | R < w.re ∧ w.im < l} ⊆ (closure U)ᶜ ∧
+      {w : ℂ | R < w.re ∧ h < w.im} ⊆ (closure U)ᶜ := by
   have hout (b : ℝ) (s : Set ℂ) (hs : IsPreconnected s)
-      (havoid : ∀ w ∈ s, R < w.re ∧ w.im ≠ c.im ∧ w.im ≠ c.im + Real.pi)
-      (hb : b < c.im - 1 ∨ c.im + Real.pi + 1 < b)
+      (havoid : ∀ w ∈ s, R < w.re ∧ w.im ≠ l ∧ w.im ≠ h)
+      (hb : b < l - δ ∨ h + δ < b)
       (hmem : (R + 1 : ℂ) + (b : ℂ) * I ∈ s) : s ⊆ (closure U)ᶜ := by
-    refine (hdichotomy s hs havoid).resolve_left fun h => ?_
+    refine (hdichotomy s hs havoid).resolve_left fun hsU => ?_
     have hwR : R₂ < ((R + 1 : ℂ) + (b : ℂ) * I).re := by
       simp only [add_re, ofReal_re, mul_I_re, ofReal_im, neg_zero, add_zero, one_re]
       exact hR.trans_lt (lt_add_one R)
-    have h := hbounds _ (h hmem) hwR
-    simp only [add_im, ofReal_im, mul_I_im, ofReal_re, zero_add, one_im] at h
+    have h' := hbounds _ (hsU hmem) hwR
+    simp only [add_im, ofReal_im, mul_I_im, ofReal_re, zero_add, one_im] at h'
     rcases hb with hb | hb <;> linarith
   refine ⟨?_, ?_⟩
-  · apply hout (c.im - 2) _ ((convex_halfSpace_re_gt R).inter
-      (convex_halfSpace_im_lt c.im)).isPreconnected
+  · apply hout (l - 2 * δ) _ ((convex_halfSpace_re_gt R).inter
+      (convex_halfSpace_im_lt l)).isPreconnected
     · intro w hw
-      exact ⟨hw.1, ne_of_lt hw.2,
-        ne_of_lt (hw.2.trans (lt_add_of_pos_right _ Real.pi_pos))⟩
+      exact ⟨hw.1, ne_of_lt hw.2, ne_of_lt (hw.2.trans hlh)⟩
     · left; linarith
-    · simp
-  · apply hout (c.im + Real.pi + 2) _ ((convex_halfSpace_re_gt R).inter
-      (convex_halfSpace_im_gt (c.im + Real.pi))).isPreconnected
+    · simpa using hδ
+  · apply hout (h + 2 * δ) _ ((convex_halfSpace_re_gt R).inter
+      (convex_halfSpace_im_gt h)).isPreconnected
     · intro w hw
-      exact ⟨hw.1, ne_of_gt ((lt_add_of_pos_right _ Real.pi_pos).trans hw.2), ne_of_gt hw.2⟩
+      exact ⟨hw.1, ne_of_gt (hlh.trans hw.2), ne_of_gt hw.2⟩
     · right; linarith
-    · simp
+    · simpa using hδ
 
 end TauCeti
