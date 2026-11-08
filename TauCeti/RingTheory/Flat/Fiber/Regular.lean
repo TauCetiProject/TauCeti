@@ -26,7 +26,7 @@ Cartier divisors, applied to a noetherian model of a smooth algebra.
 
 1. Let `q` be a prime of `R ⊗[A] B`, lying over the prime `p` of `R`, the prime `r` of `B` and
    the prime `p₀` of `A`. The fibre ring `κ(p₀) ⊗[A] B` embeds into `κ(p) ⊗[R] (R ⊗[A] B)`,
-   since `B` is flat over `A` (`Module.Flat.isSMulRegular_fiber_comap`). So `b` is a
+   by extension of residue fields (`Module.Flat.isSMulRegular_fiber_comap`). So `b` is a
    nonzerodivisor on it.
 2. By the local criterion over the noetherian local ring `A_{p₀}`, `b` is a nonzerodivisor on
    `B_r` and `B_r ⧸ (b)` is flat over `A`
@@ -37,7 +37,7 @@ Cartier divisors, applied to a noetherian model of a smooth algebra.
 
 ## Main results
 
-* `Module.Flat.isSMulRegular_fiber_comap`: for `B` flat over `A` and an `A`-algebra `R`,
+* `Module.Flat.isSMulRegular_fiber_comap`: for `A`-algebras `B` and `R`,
   regularity of `1 ⊗ (1 ⊗ b)` on a fibre ring of `R ⊗[A] B` over `R` gives regularity of `1 ⊗ b`
   on the fibre ring of `B` over the prime below.
 * `Module.Flat.isSMulRegular_localization_of_isSMulRegular_fiber`: for a noetherian flat algebra
@@ -60,23 +60,33 @@ variable {A R B : Type*} [CommRing A] [CommRing R] [CommRing B] [Algebra A R] [A
 
 namespace Module.Flat
 
-/-- Let `B` be flat over `A`, let `R` be an `A`-algebra and `p` a prime of `R`, lying over the prime
+/-- Let `B` and `R` be `A`-algebras and `p` a prime of `R`, lying over the prime
 `p₀` of `A`. If `1 ⊗ (1 ⊗ b)` is a nonzerodivisor on the fibre ring `κ(p) ⊗[R] (R ⊗[A] B)`, then
 `1 ⊗ b` is a nonzerodivisor on `κ(p₀) ⊗[A] B`, which embeds into it. -/
-theorem isSMulRegular_fiber_comap [Flat A B] (p : Ideal R) [p.IsPrime] {b : B}
+theorem isSMulRegular_fiber_comap (p : Ideal R) [p.IsPrime] {b : B}
     (h : IsSMulRegular (p.Fiber (R ⊗[A] B)) ((1 : p.ResidueField) ⊗ₜ[R] ((1 : R) ⊗ₜ[A] b))) :
     IsSMulRegular ((p.comap (algebraMap A R)).Fiber B)
       ((1 : (p.comap (algebraMap A R)).ResidueField) ⊗ₜ[A] b) := by
   let p₀ := p.comap (algebraMap A R)
   let ι : p₀.ResidueField →ₐ[A] p.ResidueField :=
     Ideal.ResidueField.mapₐ p₀ p (Algebra.ofId A R) rfl
-  -- `κ(p₀) ⊗[A] B → κ(p) ⊗[A] B ≃ κ(p) ⊗[R] (R ⊗[A] B)`, injective as `B` is flat.
+  let := ι.toRingHom.toAlgebra
+  have : IsScalarTower A p₀.ResidueField p.ResidueField :=
+    .of_algebraMap_eq fun a ↦ (ι.commutes a).symm
+  -- The comparison factors through extension of scalars along `κ(p₀) → κ(p)`.
   let φ : p₀.Fiber B →ₐ[A] p.Fiber (R ⊗[A] B) :=
     ((cancelBaseChange A R p.ResidueField p.ResidueField B).symm.toAlgHom.restrictScalars A).comp
       (map ι (AlgHom.id A B))
-  have hφ : Function.Injective φ :=
-    (cancelBaseChange A R p.ResidueField p.ResidueField B).symm.injective.comp
-      (rTensor_preserves_injective_linearMap (M := B) ι.toLinearMap ι.injective)
+  have hφ : Function.Injective φ := by
+    have hmap : Function.Injective (map ι (AlgHom.id A B)) := by
+      let e := cancelBaseChange A p₀.ResidueField p.ResidueField p.ResidueField B
+      have heq : map ι (AlgHom.id A B) =
+          (e.toAlgHom.restrictScalars A).comp
+            (includeRight.restrictScalars A) := by
+        ext; simp [e]
+      rw [heq]
+      exact e.injective.comp (includeRight_injective (RingHom.injective _))
+    exact (cancelBaseChange A R p.ResidueField p.ResidueField B).symm.injective.comp hmap
   have hb : φ ((1 : p₀.ResidueField) ⊗ₜ[A] b) = (1 : p.ResidueField) ⊗ₜ[R] ((1 : R) ⊗ₜ[A] b) := by
     simp [φ]
   intro x y hxy

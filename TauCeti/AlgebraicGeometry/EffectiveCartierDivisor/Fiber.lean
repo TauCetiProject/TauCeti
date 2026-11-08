@@ -429,25 +429,18 @@ private theorem IsEffectiveCartier.isSMulRegular_fiber_of_ideal_eq_span_singleto
       (algebraMap Γ(S, W) P.ResidueField)) ≫ hW.fromSpec))).IsEffectiveCartier)
     {a : Γ(X, U)} (hIa : I.ideal U = Ideal.span {a}) :
     IsSMulRegular (P.Fiber Γ(X, U)) ((1 : P.ResidueField) ⊗ₜ[Γ(S, W)] a) := by
-  -- It suffices that every `y` killed by `1 ⊗ a` is killed by an element outside every maximal
-  -- ideal `Q`.
+  -- It suffices that every `y` killed by `1 ⊗ a` vanishes at every maximal ideal `Q`.
   refine .of_right_eq_zero_of_smul fun y hy ↦ ?_
-  by_contra hy0
-  obtain ⟨Q, _, hyQ⟩ :=
-    Ideal.exists_le_maximal (Submodule.span (P.Fiber Γ(X, U)) {y}).annihilator <| by rwa
-      [Ne, Submodule.annihilator_eq_top_iff, Submodule.span_singleton_eq_bot]
+  refine eq_zero_of_localization y fun Q hQ ↦ ?_
   -- In the local ring at `Q`, the image of `1 ⊗ a` generates the same ideal as a nonzerodivisor
   -- `g`, so it is a nonzerodivisor.
   obtain ⟨g, hg, hIg⟩ := IsEffectiveCartier.exists_map_fiber_eq_span_singleton hW U hUW hφ P h Q
   rw [hIa, Ideal.map_span, Set.image_singleton, Ideal.map_span, Set.image_singleton,
     includeRight_apply] at hIg
   have hreg := hg.of_span_singleton_le hIg.symm.le
-  -- So `y` vanishes at `Q`, and is killed by an element outside `Q`.
-  have hy' : algebraMap (P.Fiber Γ(X, U)) (Localization.AtPrime Q) y = 0 := by
-    refine hreg.right_eq_zero_of_smul ?_
-    rw [smul_eq_mul, ← map_mul, ← smul_eq_mul, hy, map_zero]
-  obtain ⟨s, hs⟩ := (IsLocalization.map_eq_zero_iff Q.primeCompl _ y).mp hy'
-  exact s.2 (hyQ ((Submodule.mem_annihilator_span_singleton _ _).mpr hs))
+  -- So `y` vanishes at `Q`.
+  refine hreg.right_eq_zero_of_smul ?_
+  rw [smul_eq_mul, ← map_mul, ← smul_eq_mul, hy, map_zero]
 
 /-- **The fibre criterion for effective Cartier divisors on a smooth family.** Let `f : X ⟶ S` be
 smooth, and let `I` be an ideal sheaf on `X` whose closed subscheme is locally of finite
