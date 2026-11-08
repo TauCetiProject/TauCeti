@@ -84,7 +84,7 @@ theorem energyFormH1_one_zero_zero_eq_setIntegral_neg_laplacian_mul [DecidableEq
   have hO : MeasurableSet (Omega : Set (EuclideanSpace ℝ ι)) := Omega.isOpen.measurableSet
   have h1 := uniformlyEllipticOn_const_one_one (n := ι) (Omega : Set (EuclideanSpace ℝ ι))
   have hcoeff := memLp_energyIntegrand_of_bounds (mu := mu) (b := 0) (c := 0) (beta := 0)
-    (gamma := 0) h1.upper_nonneg aestronglyMeasurable_const aestronglyMeasurable_const
+    (gamma := 0) aestronglyMeasurable_const aestronglyMeasurable_const
     aestronglyMeasurable_const (fun _x hx eta xi => h1.upper_bound hx eta xi) (fun _ _ => by simp)
     (fun _ _ => by simp)
   have hf := hΔ.neg.coeFn_toLp

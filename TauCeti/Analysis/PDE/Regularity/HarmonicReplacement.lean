@@ -85,7 +85,7 @@ theorem UniformlyEllipticOn.mul_norm_gradient_sub_le [DecidableEq ι]
       energyFormH1 a 0 0 u (v : W1p mu Omega 2) = ⟪G, W1p.gradient (v : W1p mu Omega 2)⟫_ℝ) :
     lam * ‖W1p.gradient (u - w)‖ ≤ ‖G‖ := by
   have hcoeff := memLp_energyIntegrand_of_bounds (b := 0) (c := 0) (beta := 0) (gamma := 0)
-    h.upper_nonneg ha aestronglyMeasurable_const aestronglyMeasurable_const
+    ha aestronglyMeasurable_const aestronglyMeasurable_const
     (fun _x hx eta xi => h.upper_bound hx eta xi) (fun _ _ => by simp) (fun _ _ => by simp)
   have hd : u - w ∈ W1p0 mu Omega 2 := (ClosedSubmodule.mem_toSubmodule_iff _ _).2 huw
   -- Test the equation for `u - w` against `u - w` itself.

@@ -316,7 +316,7 @@ theorem exists_isCoercive_laplacian_intervalDomain (hab : a < b) :
   have h1 := uniformlyEllipticOn_const_one_one (n := Fin 1)
     (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))
   have hcoeff := memLp_energyIntegrand_of_bounds (mu := volume) (b := 0) (c := 0) (beta := 0)
-    (gamma := 0) h1.upper_nonneg
+    (gamma := 0)
     aestronglyMeasurable_const aestronglyMeasurable_const aestronglyMeasurable_const
     (fun _x hx eta xi ↦ h1.upper_bound hx eta xi) (fun _ _ ↦ by simp) (fun _ _ ↦ by simp)
   have hball : (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))) ⊆

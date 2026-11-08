@@ -224,7 +224,7 @@ theorem UniformlyEllipticOn.norm_gradient_differenceQuotient_le_of_lipschitzOnWi
     (continuousOn_of_continuousOn_matrixBilinearForm hK.continuousOn).aestronglyMeasurable
       Omega.isOpen.measurableSet
   have hcoeff : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict Omega) :=
-    memLp_energyIntegrand_of_bounds (beta := 0) (gamma := 0) ha.upper_nonneg hmeas
+    memLp_energyIntegrand_of_bounds (beta := 0) (gamma := 0) hmeas
       aestronglyMeasurable_const aestronglyMeasurable_const
       (fun x hx => ha.upper_bound hx) (fun _ _ => by simp) (fun _ _ => by simp)
   have hrev : ∀ s : ℝ, ∀ x, x + s • w ∈ Omega → x ∈ Omega := fun s x hx => by

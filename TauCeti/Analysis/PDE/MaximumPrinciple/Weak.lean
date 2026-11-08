@@ -312,7 +312,7 @@ theorem UniformlyEllipticOn.value_le_const_of_small_drift_of_poincare
       (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
         energyFormH1 a b c u (v : W1p mu Omega 2) ≤ 0) :
     ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ k := by
-  have hcoeff := memLp_energyIntegrand_of_bounds h.upper_nonneg ha hb hc
+  have hcoeff := memLp_energyIntegrand_of_bounds ha hb hc
     (fun x hx eta xi ↦ h.upper_bound hx eta xi) hb_bound hc_bound
   have hC := energyFormH1_poincare_constant_pos h.pos hbeta hP hsmall
   refine value_le_of_energyFormH1_nonpos hcoeff
@@ -345,7 +345,7 @@ theorem UniformlyEllipticOn.value_le_of_small_drift_of_poincare
         energyFormH1 a b c u (w : W1p mu Omega 2) ≤
           energyFormH1 a b c v (w : W1p mu Omega 2)) :
     ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ W1p.value v x := by
-  have hcoeff := memLp_energyIntegrand_of_bounds h.upper_nonneg ha hb hc
+  have hcoeff := memLp_energyIntegrand_of_bounds ha hb hc
     (fun x hx eta xi ↦ h.upper_bound hx eta xi) hb_bound hc_bound
   have hC := energyFormH1_poincare_constant_pos h.pos hbeta hP hsmall
   refine value_le_of_energyFormH1_le hcoeff hboundary hC ?_ huv

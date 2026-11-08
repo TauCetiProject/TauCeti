@@ -344,7 +344,7 @@ theorem exists_forall_energyFormH1_eq_iff
       ∀ w : W1p0 mu Omega 2,
         (∀ v : W1p0 mu Omega 2,
           energyFormH1 a b c (v : W1p mu Omega 2) (w : W1p mu Omega 2) = 0) → ℓ w = 0 := by
-  have hcoeff := memLp_energyIntegrand_of_bounds h.upper_nonneg ha hb hc
+  have hcoeff := memLp_energyIntegrand_of_bounds ha hb hc
     (fun _x hx eta xi => h.upper_bound hx eta xi) hb_bound hc_bound
   simpa only [energyFormH1L0_apply] using
     exists_forall_energyFormH1L0_eq_iff_of_garding hOmega hcoeff (half_pos h.pos)
@@ -368,7 +368,7 @@ theorem existsUnique_forall_energyFormH1_eq
     (ℓ : StrongDual ℝ (W1p0 mu Omega 2)) :
     ∃! u : W1p0 mu Omega 2, ∀ v : W1p0 mu Omega 2,
       energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) = ℓ v := by
-  have hcoeff := memLp_energyIntegrand_of_bounds h.upper_nonneg ha hb hc
+  have hcoeff := memLp_energyIntegrand_of_bounds ha hb hc
     (fun _x hx eta xi => h.upper_bound hx eta xi) hb_bound hc_bound
   simpa only [energyFormH1L0_apply] using
     existsUnique_forall_energyFormH1L0_eq_of_garding hOmega hcoeff (half_pos h.pos)

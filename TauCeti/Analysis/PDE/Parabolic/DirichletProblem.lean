@@ -156,7 +156,7 @@ private theorem ae_memLp_energyIntegrand :
       MemLp (fun x => energyIntegrand (a t x) (b t x) (c t x)) ⊤ (mu.restrict Omega) := by
   filter_upwards [ha.prodMk_left, hb.prodMk_left, hc.prodMk_left, hell, hb_bound, hc_bound]
     with t hat hbt hct hellt hbt' hct'
-  exact memLp_energyIntegrand_of_bounds hellt.upper_nonneg hat hbt hct
+  exact memLp_energyIntegrand_of_bounds hat hbt hct
     (fun _x hx eta xi => hellt.upper_bound hx eta xi) hbt' hct'
 
 omit ha hb hc in

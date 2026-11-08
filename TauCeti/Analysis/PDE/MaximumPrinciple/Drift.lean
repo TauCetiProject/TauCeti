@@ -270,7 +270,7 @@ theorem UniformlyEllipticOn.value_le_const_of_forall_eLpNorm_le
       (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
         energyFormH1 a b c u (v : W1p mu Omega 2) ≤ 0) :
     ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ k := by
-  have hcoeff := memLp_energyIntegrand_of_bounds h.upper_nonneg ha hb hc
+  have hcoeff := memLp_energyIntegrand_of_bounds ha hb hc
     (fun x hx eta xi ↦ h.upper_bound hx eta xi) hb_bound hc_bound
   set θ : ℝ := 2⁻¹ - q.toReal⁻¹
   have hθ : 0 < θ := by
@@ -352,7 +352,7 @@ theorem UniformlyEllipticOn.value_le_of_forall_eLpNorm_le
         energyFormH1 a b c u (w : W1p mu Omega 2) ≤
           energyFormH1 a b c v (w : W1p mu Omega 2)) :
     ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ W1p.value v x := by
-  have hcoeff := memLp_energyIntegrand_of_bounds h.upper_nonneg ha hb hc
+  have hcoeff := memLp_energyIntegrand_of_bounds ha hb hc
     (fun x hx eta xi ↦ h.upper_bound hx eta xi) hb_bound hc_bound
   have hsub := h.value_le_const_of_forall_eLpNorm_le ha hb hc hb_bound hc_bound hc_nonneg hq hsob
     le_rfl (u := u - v) (by rwa [W1p.posPartAbove_zero]) fun w hw ↦ by
@@ -464,7 +464,7 @@ theorem UniformlyEllipticOn.existsUnique_isWeakSolutionDirichlet_of_mass_nonneg 
   have hc'_bound : ∀ x ∈ Omega, ‖c x + κ‖ ≤ gamma + κ := fun x hx ↦
     (norm_add_le _ _).trans (by rw [Real.norm_of_nonneg hκ.le]; linarith [hc_bound x hx])
   have hc'_lower : ∀ x ∈ Omega, κ ≤ c x + κ := fun x hx ↦ le_add_of_nonneg_left (hc_nonneg x hx)
-  have hcoeff' := memLp_energyIntegrand_of_bounds h.upper_nonneg ha hb hc'
+  have hcoeff' := memLp_energyIntegrand_of_bounds ha hb hc'
     (fun x hx eta xi ↦ h.upper_bound hx eta xi) hb_bound hc'_bound
   have hmass : beta ^ 2 < 4 * lam * κ := by
     have : 4 * lam * κ = beta ^ 2 + 4 * lam := by

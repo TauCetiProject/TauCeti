@@ -231,7 +231,7 @@ theorem UniformlyEllipticOn.energyFormH1_contDiffComp_nonpos
   have hp : (2 : ℝ≥0∞) ≠ (∞ : ℝ≥0∞) := ENNReal.ofNat_ne_top
   set w := W1p.contDiffComp hp (hF.of_le one_le_two) hM hF0 u
   have hcoeff := memLp_energyIntegrand_of_bounds (mu := mu) (Omega := Omega) (a := a)
-    (b := 0) (c := 0) (beta := 0) (gamma := 0) h.upper_nonneg ha aestronglyMeasurable_const
+    (b := 0) (c := 0) (beta := 0) (gamma := 0) ha aestronglyMeasurable_const
     aestronglyMeasurable_const (fun _ hx η ξ => h.upper_bound hx η ξ) (fun _ _ => by simp)
     (fun _ _ => by simp)
   -- The set of `z` with `a(F(u), z⁺) ≤ 0` is closed and contains every test function.

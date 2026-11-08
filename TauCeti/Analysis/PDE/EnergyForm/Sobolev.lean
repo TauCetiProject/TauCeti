@@ -237,7 +237,7 @@ variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)}
 /-- Bounded measurable coefficients define an essentially bounded field of pointwise energy
 forms. Only the displayed upper bound on the principal part is needed; ellipticity is not. -/
 theorem memLp_energyIntegrand_of_bounds
-    (hLam : 0 ≤ Lam) (ha : AEStronglyMeasurable a (mu.restrict Omega))
+    (ha : AEStronglyMeasurable a (mu.restrict Omega))
     (hb : AEStronglyMeasurable b (mu.restrict Omega))
     (hc : AEStronglyMeasurable c (mu.restrict Omega))
     (ha_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)),
@@ -247,9 +247,13 @@ theorem memLp_energyIntegrand_of_bounds
     (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma) :
     MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega) := by
   refine memLp_top_of_bound (f := fun x => energyIntegrand (a x) (b x) (c x))
-    (aestronglyMeasurable_energyIntegrand ha hb hc) (Lam + beta + gamma) ?_
+    (aestronglyMeasurable_energyIntegrand ha hb hc) (max Lam 0 + beta + gamma) ?_
   exact (ae_mem_restrict (mu := mu) (Omega := Omega)).mono fun x hx =>
-    opNorm_energyIntegrand_le_of_bounds hLam (ha_bound x hx) (hb_bound x hx) (hc_bound x hx)
+    opNorm_energyIntegrand_le_of_bounds (le_max_right Lam 0)
+      (fun eta xi => (ha_bound x hx eta xi).trans
+        (mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right (le_max_left Lam 0)
+          (norm_nonneg _)) (norm_nonneg _)))
+      (hb_bound x hx) (hc_bound x hx)
 
 /-- Subtracting a constant from the mass coefficient preserves essential boundedness of the
 pointwise energy forms. -/
@@ -280,7 +284,6 @@ theorem memLp_energyIntegrand_of_continuous (hLam : ∀ x, ‖matrixBilinearForm
       ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x) ((0 : EuclideanSpace ℝ ι → ℝ) x)) ⊤
       (mu.restrict U) :=
   memLp_energyIntegrand_of_bounds (beta := 0) (gamma := 0)
-    ((norm_nonneg (matrixBilinearForm (a 0))).trans (hLam 0))
     (Continuous.aestronglyMeasurable (β := ι → ι → ℝ) <|
       continuous_of_continuous_matrixBilinearForm ha)
     aestronglyMeasurable_const aestronglyMeasurable_const
@@ -873,7 +876,7 @@ theorem integrable_energyIntegrand_jetField
     Integrable (fun x => energyIntegrand (a x) (b x) (c x) (jetField u x) (jetField v x))
       (mu.restrict Omega) :=
   PDE.integrable_energyIntegrand_jetField
-    (memLp_energyIntegrand_of_bounds h.upper_nonneg ha hb hc
+    (memLp_energyIntegrand_of_bounds ha hb hc
       (fun _x hx eta xi => h.upper_bound hx eta xi) hb_bound hc_bound) u v
 
 /-- **Boundedness of the energy form on `H¹(Ω)`.** For a uniformly elliptic principal

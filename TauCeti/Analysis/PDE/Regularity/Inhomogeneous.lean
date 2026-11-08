@@ -136,7 +136,7 @@ theorem exists_forall_energyFormH1_eq_zero_ae_abs_sub_le [Nonempty ι] {r : ℝ�
   -- The homogeneous part `h = u|_B - w`.
   have huB := energyFormH1_restrictL_eq_setIntegral hB hu
   have hcoeff := memLp_energyIntegrand_of_bounds (b := 0) (c := 0) (beta := 0) (gamma := 0)
-    hBell.upper_nonneg hBmeas aestronglyMeasurable_const aestronglyMeasurable_const
+    hBmeas aestronglyMeasurable_const aestronglyMeasurable_const
     (fun _x hx eta xi => hBell.upper_bound hx eta xi) (fun _ _ => by simp) (fun _ _ => by simp)
   refine ⟨W1p.restrictL hB u - (w : W1p mu B 2), fun v => ?_, ?_⟩
   · rw [energyFormH1_sub_left hcoeff, huB v, hw v, sub_self]

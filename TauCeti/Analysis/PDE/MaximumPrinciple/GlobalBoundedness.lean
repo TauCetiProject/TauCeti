@@ -129,7 +129,7 @@ private theorem toReal_eLpNorm_posPartAbove_le
   -- Ellipticity and the subsolution inequality tested against `w`.
   have hmem : ∀ᵐ x ∂ν, x ∈ (Omega : Set (EuclideanSpace ℝ ι)) :=
     ae_restrict_mem Omega.isOpen.measurableSet
-  have hcoeff := memLp_energyIntegrand_of_bounds (b := 0) (beta := 0) h.upper_nonneg ha
+  have hcoeff := memLp_energyIntegrand_of_bounds (b := 0) (beta := 0) ha
     aestronglyMeasurable_const hc (fun x hx eta xi => h.upper_bound hx eta xi)
     (fun _ _ => by simp) hc_bound
   have henergy : lam * ‖W1p.gradient w‖ ^ 2 ≤ ∫ x in Omega, f x * W1p.value w x ∂mu :=

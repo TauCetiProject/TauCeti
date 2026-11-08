@@ -388,7 +388,7 @@ theorem energyFormH1_meyersCoefficient_eq_zero (hμ0 : 0 < μ) (hμ1 : μ ≤ 1)
     (v : W1p0 volume Ω 2) :
     energyFormH1 (meyersCoefficient μ) 0 0 u (v : W1p volume Ω 2) = 0 := by
   have hcoeff := memLp_energyIntegrand_of_bounds (Omega := Ω) (mu := volume)
-    (b := 0) (c := 0) (beta := 0) (gamma := 0) (by positivity)
+    (a := meyersCoefficient μ) (b := 0) (c := 0) (beta := 0) (gamma := 0)
     stronglyMeasurable_meyersCoefficient.aestronglyMeasurable aestronglyMeasurable_const
     aestronglyMeasurable_const (fun x _ η ξ => abs_dotProduct_meyersCoefficient_mulVec_le x η ξ)
     (fun _ _ => by simp) (fun _ _ => by simp)

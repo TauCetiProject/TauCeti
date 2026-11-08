@@ -124,7 +124,7 @@ theorem UniformlyEllipticOn.mul_norm_gradient_restrictL_sub_le
           gcongr
           exact (haA x hx).trans (le_abs_self ε)
   have hcoeff : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict B) :=
-    memLp_energyIntegrand_of_bounds (beta := 0) (gamma := 0) (by positivity) ha
+    memLp_energyIntegrand_of_bounds (beta := 0) (gamma := 0) ha
       aestronglyMeasurable_const aestronglyMeasurable_const hbd (fun _ _ => by simp)
       (fun _ _ => by simp)
   -- The field `(A - a) ∇u` is square integrable on `B`, with norm at most `ε ‖∇u‖`.

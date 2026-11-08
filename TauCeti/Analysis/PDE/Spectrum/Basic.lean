@@ -643,7 +643,7 @@ theorem le_of_isDirichletEigenvalue_of_subset_ball
   obtain ⟨x, hx⟩ := nonempty_of_isDirichletEigenvalue hkappa
   have hbeta : 0 ≤ beta := (norm_nonneg _).trans (hb_bound x hx)
   have hR : 0 ≤ R := (Metric.mem_ball.1 (hball hx)).le.trans' dist_nonneg
-  have hcoeff := memLp_energyIntegrand_of_bounds h.upper_nonneg ha hb hc
+  have hcoeff := memLp_energyIntegrand_of_bounds ha hb hc
     (fun _x hx eta xi ↦ h.upper_bound hx eta xi) hb_bound hc_bound
   exact le_of_isDirichletEigenvalue hcoeff
     (isCoercive_energyFormH1L0 hcoeff
