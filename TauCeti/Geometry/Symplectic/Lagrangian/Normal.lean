@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.LinearAlgebra.Isomorphisms
 public import TauCeti.Geometry.Symplectic.Cotangent.Basic
 
@@ -59,8 +58,6 @@ Lagrangian neighbourhood theorem.
   descended pairing has kernel `(range g)^ω ⧸ range g` and is surjective.
 * `TauCeti.SymplecticForm.IsIsotropic.normalPairingQuotient_injective_iff`: it is injective
   exactly when the range is Lagrangian.
-* `TauCeti.SymplecticForm.isLagrangian_range_iff_ker_normalPairing_eq`: the range is Lagrangian
-  exactly when the kernel of the pairing is the range.
 
 ## References
 
@@ -96,11 +93,8 @@ theorem normalPairing_apply (v : V) (w : W) : ω.normalPairing g v w = ω (g w) 
 @[simp]
 theorem ker_normalPairing :
     LinearMap.ker (ω.normalPairing g) = ω.orthogonal (LinearMap.range g) := by
-  ext v
-  simp only [LinearMap.mem_ker, mem_orthogonal_iff, LinearMap.mem_range, forall_exists_index,
-    forall_apply_eq_imp_iff]
-  exact ⟨fun h w ↦ by simpa using LinearMap.congr_fun h w,
-    fun h ↦ LinearMap.ext fun w ↦ by simpa using h w⟩
+  rw [normalPairing, LinearMap.ker_comp, LinearMap.ker_dualMap_eq_dualAnnihilator_range]
+  exact Submodule.comap_dualAnnihilator_eq_orthogonalBilin _ _
 
 /-- The range of `g` pairs to zero with `v` exactly when `v` lies in its symplectic complement. -/
 theorem normalPairing_eq_zero_iff {v : V} :
@@ -137,14 +131,6 @@ theorem quotientOrthogonalEquivDual_mk [FiniteDimensional ℝ V] (hg : Function.
     (v : V) :
     ω.quotientOrthogonalEquivDual hg (Submodule.Quotient.mk v) = ω.normalPairing g v :=
   (rfl)
-
-/-- The range of an injective `g` is Lagrangian exactly when the vectors pairing to zero with it
-are the vectors of the range. -/
-theorem isLagrangian_range_iff_ker_normalPairing_eq :
-    ω.IsLagrangian (LinearMap.range g) ↔
-      LinearMap.ker (ω.normalPairing g) = LinearMap.range g := by
-  rw [ker_normalPairing, isLagrangian_iff, isIsotropic_iff_le, isCoisotropic_iff_le, and_comm,
-    ← le_antisymm_iff]
 
 variable {ω}
 
@@ -206,9 +192,8 @@ theorem IsIsotropic.normalPairingQuotient_injective_iff (h : ω.IsIsotropic (Lin
 def IsLagrangian.quotientEquivDual [FiniteDimensional ℝ V]
     (h : ω.IsLagrangian (LinearMap.range g)) (hg : Function.Injective g) :
     (V ⧸ LinearMap.range g) ≃ₗ[ℝ] Dual ℝ W :=
-  LinearEquiv.ofBijective h.isIsotropic.normalPairingQuotient
-    ⟨h.isIsotropic.normalPairingQuotient_injective_iff.mpr h,
-      h.isIsotropic.normalPairingQuotient_surjective hg⟩
+  (Submodule.quotEquivOfEq _ _ (le_antisymm (isIsotropic_iff_le.mp h.isIsotropic)
+    (isCoisotropic_iff_le.mp h.isCoisotropic))).trans (ω.quotientOrthogonalEquivDual hg)
 
 @[simp]
 theorem IsLagrangian.quotientEquivDual_mk [FiniteDimensional ℝ V]
@@ -234,8 +219,9 @@ theorem normalPairing_cotangentSymplecticForm_inl (z : U × Dual ℝ U) :
 identification of the normal quotient of the zero section of `U × U*` with `U*` sends the class
 of `(u, p)` to `p`. -/
 theorem quotientEquivDual_cotangentZeroSection_mk [FiniteDimensional ℝ U] (z : U × Dual ℝ U) :
-    (isLagrangian_cotangentZeroSection : cotangentSymplecticForm.IsLagrangian
-        (LinearMap.range (LinearMap.inl ℝ U (Dual ℝ U)))).quotientEquivDual
+    (cotangentZeroSection_eq_range_inl (V := U) ▸ isLagrangian_cotangentZeroSection :
+        cotangentSymplecticForm.IsLagrangian
+          (LinearMap.range (LinearMap.inl ℝ U (Dual ℝ U)))).quotientEquivDual
       LinearMap.inl_injective (Submodule.Quotient.mk z) = z.2 :=
   (IsLagrangian.quotientEquivDual_mk _ _ z).trans (normalPairing_cotangentSymplecticForm_inl z)
 

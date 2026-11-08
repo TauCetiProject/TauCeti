@@ -95,8 +95,7 @@ at `x` to the cotangent space `T*_x N`. -/
 def normalSpaceToCotangentOfIsIsotropic
     (hI : (hσ.symplecticFormAt (f x)).IsIsotropic (LinearMap.range (mfderiv J I f x).toLinearMap)) :
     f.NormalSpace x hn →L[ℝ] (TangentSpace J x →L[ℝ] ℝ) :=
-  haveI : FiniteDimensional ℝ (TangentSpace J x) :=
-    Module.Finite.of_injective _ (f.isImmersion.mfderiv_injective hn x)
+  haveI := f.finiteDimensional_tangentSpace x hn
   LinearMap.toContinuousLinearMap
     (LinearMap.toContinuousLinearMap.toLinearMap ∘ₗ hI.normalPairingQuotient :
       f.NormalSpace x hn →ₗ[ℝ] (TangentSpace J x →L[ℝ] ℝ))
@@ -111,6 +110,10 @@ theorem normalSpaceToCotangentOfIsIsotropic_normalClass
     f.normalSpaceToCotangentOfIsIsotropic x hn hI (f.normalClass x hn v) u =
       SmoothBundleForm.eval₂ σ (f x) (mfderiv J I f x u) v := by
   rw [normalClass_def]
+  -- `f.NormalSpace x hn` is the quotient by the tangent range, whose class map `mkQ` is
+  -- `Submodule.Quotient.mk`, and `LinearMap.toContinuousLinearMap` does not change values.
+  -- The definition is stated at `f.NormalSpace x hn`, so the conversion lemmas do not match
+  -- syntactically and the value is exposed by unfolding.
   change hI.normalPairingQuotient (Submodule.Quotient.mk v) u = _
   rw [SymplecticForm.IsIsotropic.normalPairingQuotient_mk, SymplecticForm.normalPairing_apply,
     SmoothTwoForm.IsNondegenerate.symplecticFormAt_apply, ContinuousLinearMap.coe_coe]
@@ -133,8 +136,7 @@ theorem normalSpaceToCotangentOfIsIsotropic_normalClass_eq_zero_iff
 theorem normalSpaceToCotangentOfIsIsotropic_surjective
     (hI : (hσ.symplecticFormAt (f x)).IsIsotropic (LinearMap.range (mfderiv J I f x).toLinearMap)) :
     Function.Surjective (f.normalSpaceToCotangentOfIsIsotropic x hn hI) := by
-  have : FiniteDimensional ℝ (TangentSpace J x) :=
-    Module.Finite.of_injective _ (f.isImmersion.mfderiv_injective hn x)
+  have := f.finiteDimensional_tangentSpace x hn
   exact LinearMap.toContinuousLinearMap.surjective.comp
     (hI.normalPairingQuotient_surjective (f.isImmersion.mfderiv_injective hn x))
 
@@ -144,8 +146,7 @@ theorem normalSpaceToCotangentOfIsIsotropic_injective_iff
     (hI : (hσ.symplecticFormAt (f x)).IsIsotropic (LinearMap.range (mfderiv J I f x).toLinearMap)) :
     Function.Injective (f.normalSpaceToCotangentOfIsIsotropic x hn hI) ↔
       (hσ.symplecticFormAt (f x)).IsLagrangian (LinearMap.range (mfderiv J I f x).toLinearMap) := by
-  have : FiniteDimensional ℝ (TangentSpace J x) :=
-    Module.Finite.of_injective _ (f.isImmersion.mfderiv_injective hn x)
+  have := f.finiteDimensional_tangentSpace x hn
   exact LinearMap.toContinuousLinearMap.injective.of_comp_iff _ |>.trans
     hI.normalPairingQuotient_injective_iff
 
@@ -160,8 +161,7 @@ def normalSpaceEquivCotangentOfIsLagrangian
     (hL : (hσ.symplecticFormAt (f x)).IsLagrangian
       (LinearMap.range (mfderiv J I f x).toLinearMap)) :
     f.NormalSpace x hn ≃L[ℝ] (TangentSpace J x →L[ℝ] ℝ) :=
-  haveI : FiniteDimensional ℝ (TangentSpace J x) :=
-    Module.Finite.of_injective _ (f.isImmersion.mfderiv_injective hn x)
+  haveI := f.finiteDimensional_tangentSpace x hn
   LinearEquiv.toContinuousLinearEquiv
     ((hL.quotientEquivDual (f.isImmersion.mfderiv_injective hn x)).trans
       LinearMap.toContinuousLinearMap)
@@ -175,6 +175,8 @@ theorem normalSpaceEquivCotangentOfIsLagrangian_normalClass
     f.normalSpaceEquivCotangentOfIsLagrangian x hn hL (f.normalClass x hn v) u =
       SmoothBundleForm.eval₂ σ (f x) (mfderiv J I f x u) v := by
   rw [normalClass_def]
+  -- As above: `toContinuousLinearEquiv` and `LinearMap.toContinuousLinearMap` do not change
+  -- values, and the class map of `f.NormalSpace x hn` is `Submodule.Quotient.mk`.
   change hL.quotientEquivDual (f.isImmersion.mfderiv_injective hn x)
     (Submodule.Quotient.mk v) u = _
   rw [SymplecticForm.IsLagrangian.quotientEquivDual_mk, SymplecticForm.normalPairing_apply,
