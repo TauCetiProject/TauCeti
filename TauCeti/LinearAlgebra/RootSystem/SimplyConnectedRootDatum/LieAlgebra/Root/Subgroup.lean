@@ -134,9 +134,10 @@ theorem dividedPower_chevalleySystem_smul_mem (γ : Fin t.numRoots) (n : ℕ) :
     exact dividedPower_weylAut_smul_mem _ _ ρ M hM (hnil (.inl i)) (hnil (.inr i)) _ _ _ n (hz n)
 
 include hM hnil in
-/-- A lattice stable under the simple-generator Kostant form is stable under the Kostant form
-of the Chevalley system indexed by all roots, with the same Cartan generators. -/
-theorem kostantForm_chevalleySystem_apply_mem
+/-- A lattice stable under the simple-generator Kostant form, on which the simple generators
+act nilpotently, is stable under the Kostant form of the Chevalley system indexed by all roots,
+with the same Cartan generators. No finite-dimensionality assumption is needed. -/
+theorem kostantForm_chevalleySystem_apply_mem_of_isNilpotent
     (u : _root_.UniversalEnvelopingAlgebra ℚ (t.lieAlgebra ht))
     (hu : u ∈ kostantForm (t.chevalleySystem ht) (t.lieBasis ht).h) :
     ∀ v ∈ M, ρ u v ∈ M := by
