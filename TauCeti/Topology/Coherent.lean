@@ -43,7 +43,8 @@ namespace Topology.IsCoherentWith
 
 /-- **Products with a locally compact space.** If `X` carries the topology coherent with a cover
 `S i` and `Z` is locally compact, then `Z × X` carries the topology coherent with the products
-`Z × S i`. -/
+`Z × S i`. The proof follows that of `Topology.IsQuotientMap.continuous_lift_prod_left` in
+`Mathlib.Topology.CompactOpen`. -/
 theorem univ_prod [LocallyCompactSpace Z] (hS : IsCoherentWith (range S)) (hSX : ⋃ i, S i = univ) :
     IsCoherentWith (range fun i ↦ (univ : Set Z) ×ˢ S i) := by
   refine .of_continuous_prop fun g hg ↦ ?_
@@ -100,7 +101,7 @@ continuous map on `X`, provided `X` carries the topology coherent with the cover
 noncomputable def liftCoherent : C(X, Z) :=
   mk (Set.liftCover S (fun i ↦ φ i) hφ hSX) <| hS.continuous_iff.2 <| forall_mem_range.2 fun i ↦ by
     rw [continuousOn_iff_continuous_domRestrict]
-    simpa +unfoldPartialApp only [Set.domRestrict, Set.liftCover_coe] using map_continuous (φ i)
+    exact (φ i).continuous.congr fun x ↦ (Set.liftCover_coe (f := fun i ↦ φ i) x).symm
 
 variable {S φ hφ hS hSX}
 
