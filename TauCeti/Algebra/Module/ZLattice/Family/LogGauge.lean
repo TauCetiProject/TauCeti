@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 public import TauCeti.Algebra.Module.ZLattice.Family.BaseChange.Basic
 public import TauCeti.Algebra.Module.ZLattice.Family.CyclicQuotient
 public import TauCeti.Algebra.Module.ZLattice.Family.Gauge
