@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.BrownianMotion.Filtered
+import TauCeti.Probability.Distributions.Gaussian.Moments
 import Mathlib.Probability.Independence.Integration
 
 /-!
@@ -38,42 +39,38 @@ namespace TauCeti.Probability.IsFilteredPreBrownianReal
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
   {ℱ : Filtration ℝ≥0 mΩ} {B : ℝ≥0 → Ω → ℝ}
 
-/-- A Brownian increment is independent of every measurable real coefficient known at its
-left endpoint. -/
-theorem indepFun_sub (hB : IsFilteredPreBrownianReal ℱ B P) {s t : ℝ≥0} (hst : s ≤ t)
-    {X : Ω → ℝ} (hX : Measurable[ℱ s] X) : IndepFun (B t - B s) X P :=
-  (IndepFun_iff_Indep _ _ _).mpr
-    (indep_of_indep_of_le_right (hB.indep_sub hst) hX.comap_le)
-
-/-- A weighted Brownian increment has mean zero when its integrable coefficient is known at
+/-- A weighted Brownian increment has mean zero when its measurable coefficient is known at
 the left endpoint. -/
 theorem integral_mul_sub (hB : IsFilteredPreBrownianReal ℱ B P) {s t : ℝ≥0} (hst : s ≤ t)
-    {X : Ω → ℝ} (hX : Measurable[ℱ s] X) (hXi : Integrable X P) :
+    {X : Ω → ℝ} (hX : Measurable[ℱ s] X) :
     ∫ ω, X ω * (B t ω - B s ω) ∂P = 0 := by
   have hlaw := hB.toIsPreBrownianReal.hasLaw_sub_of_le hst
   have h := (hB.indepFun_sub hst hX).symm.integral_fun_mul_eq_mul_integral
-    hXi.aestronglyMeasurable hlaw.aemeasurable.aestronglyMeasurable
+    (hX.mono (ℱ.le s) le_rfl).aestronglyMeasurable
+    hlaw.aemeasurable.aestronglyMeasurable
   have hm : (∫ ω, B t ω - B s ω ∂P) = 0 := by
     simpa only [Pi.sub_apply, integral_id_gaussianReal] using hlaw.integral_eq
   simpa only [Pi.sub_apply, hm, mul_zero] using h
 
-/-- The second moment of a weighted Brownian increment is its expected energy. The coefficient
-need only be square-integrable, not bounded. -/
+/-- The second moment of a weighted Brownian increment is its expected energy. No integrability
+hypothesis on the past-measurable coefficient is needed for this identity of totalized integrals. -/
 theorem integral_sq_mul_sub (hB : IsFilteredPreBrownianReal ℱ B P) {s t : ℝ≥0} (hst : s ≤ t)
-    {X : Ω → ℝ} (hX : Measurable[ℱ s] X) (hXi : MemLp X 2 P) :
+    {X : Ω → ℝ} (hX : Measurable[ℱ s] X) :
     ∫ ω, (X ω * (B t ω - B s ω)) ^ 2 ∂P =
       (∫ ω, X ω ^ 2 ∂P) * (↑t - ↑s) := by
   have hlaw := hB.toIsPreBrownianReal.hasLaw_sub_of_le hst
   have hind := (hB.indepFun_sub hst hX).symm.comp
     (measurable_id.pow_const 2) (measurable_id.pow_const 2)
-  have h := hind.integral_fun_mul_eq_mul_integral hXi.integrable_sq.aestronglyMeasurable
+  have h := hind.integral_fun_mul_eq_mul_integral
+    ((hX.mono (ℱ.le s) le_rfl).pow_const 2).aestronglyMeasurable
     ((hlaw.memLp (memLp_id_gaussianReal 2)).integrable_sq.aestronglyMeasurable)
   simp only [Function.comp_apply, id_eq, Pi.sub_apply] at h
   have hsecond : (∫ ω, (B t ω - B s ω) ^ 2 ∂P) = (↑t - ↑s : ℝ) := by
-    have hv := hlaw.variance_eq
-    rw [variance_eq_integral hlaw.aemeasurable, hlaw.integral_eq,
-      integral_id_gaussianReal] at hv
-    simpa [variance_id_gaussianReal, NNReal.coe_sub hst] using hv
+    calc
+      _ = ∫ x : ℝ, x ^ 2 ∂gaussianReal 0 (t - s) := hlaw.integral_comp (by fun_prop)
+      _ = (↑t - ↑s : ℝ) := by
+        rw [integral_sq_gaussianReal]
+        simp [NNReal.coe_sub hst]
   simpa only [mul_pow, hsecond] using h
 
 /-- A square-integrable coefficient known at the left endpoint gives a square-integrable
@@ -93,15 +90,13 @@ theorem memLp_mul_sub (hB : IsFilteredPreBrownianReal ℱ B P) {s t : ℝ≥0} (
 may depend on the past and on one another. -/
 theorem integral_mul_sub_mul_mul_sub (hB : IsFilteredPreBrownianReal ℱ B P)
     {s t u v : ℝ≥0} (hst : s ≤ t) (htu : t ≤ u) (huv : u ≤ v)
-    {X Y : Ω → ℝ} (hX : Measurable[ℱ s] X) (hY : Measurable[ℱ u] Y)
-    (hXi : MemLp X 2 P) (hYi : MemLp Y 2 P) :
+    {X Y : Ω → ℝ} (hX : Measurable[ℱ s] X) (hY : Measurable[ℱ u] Y) :
     ∫ ω, (X ω * (B t ω - B s ω)) * (Y ω * (B v ω - B u ω)) ∂P = 0 := by
   have hpast : Measurable[ℱ u] (fun ω => (X ω * (B t ω - B s ω)) * Y ω) :=
     ((hX.mono (ℱ.mono (hst.trans htu)) le_rfl).mul
       ((hB.adapted.measurable_le htu).sub
         (hB.adapted.measurable_le (hst.trans htu)))).mul hY
-  have hi := (hB.memLp_mul_sub hst hX hXi).integrable_mul hYi
-  simpa only [mul_assoc] using hB.integral_mul_sub huv hpast hi
+  simpa only [mul_assoc] using hB.integral_mul_sub huv hpast
 
 /-- **Elementary Brownian integral isometry.** On any finite chronologically ordered family
 of disjoint intervals, the second moment of the sum of weighted increments equals the sum of
@@ -120,15 +115,15 @@ theorem integral_sq_sum_mul_sub (hB : IsFilteredPreBrownianReal ℱ B P)
   have hU i (hi : i ∈ I) : MemLp (U i) 2 P :=
     hB.memLp_mul_sub (hst i hi) (hX i hi) (hXi i hi)
   have hmean i (hi : i ∈ I) : (∫ ω, U i ω ∂P) = 0 :=
-    hB.integral_mul_sub (hst i hi) (hX i hi) ((hXi i hi).integrable (by norm_num))
+    hB.integral_mul_sub (hst i hi) (hX i hi)
   have hcross i (hi : i ∈ I) j (hj : j ∈ I) (hij : i ≠ j) : cov[U i, U j; P] = 0 := by
     rw [covariance_eq_sub (hU i hi) (hU j hj), hmean i hi, hmean j hj, zero_mul, sub_zero]
     rcases lt_or_gt_of_ne hij with hij | hij
     · exact hB.integral_mul_sub_mul_mul_sub (hst i hi) (hdisj i hi j hj hij)
-        (hst j hj) (hX i hi) (hX j hj) (hXi i hi) (hXi j hj)
+        (hst j hj) (hX i hi) (hX j hj)
     · simpa only [Pi.mul_def, mul_comm] using
         hB.integral_mul_sub_mul_mul_sub (hst j hj) (hdisj j hj i hi hij)
-          (hst i hi) (hX j hj) (hX i hi) (hXi j hj) (hXi i hi)
+          (hst i hi) (hX j hj) (hX i hi)
   have hsum : MemLp (fun ω => ∑ i ∈ I, U i ω) 2 P := memLp_finsetSum I hU
   have hsum_mean : (∫ ω, ∑ i ∈ I, U i ω ∂P) = 0 := by
     rw [integral_finsetSum I (fun i hi => (hU i hi).integrable (by norm_num))]
@@ -142,7 +137,7 @@ theorem integral_sq_sum_mul_sub (hB : IsFilteredPreBrownianReal ℱ B P)
     covariance_self (hU i hi).aemeasurable,
     variance_eq_integral (hU i hi).aemeasurable, hmean i hi]
   simp only [sub_zero]
-  exact hB.integral_sq_mul_sub (hst i hi) (hX i hi) (hXi i hi)
+  exact hB.integral_sq_mul_sub (hst i hi) (hX i hi)
 
 /-- The elementary Brownian isometry at an arbitrary observation time. Intervals after `T`
 contribute zero and an interval straddling `T` contributes only its elapsed length. The
