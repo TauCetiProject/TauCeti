@@ -16,6 +16,7 @@ import TauCeti.Algebra.Module.Projective.LinearMap
 import TauCeti.Algebra.Module.Projective.Reduction
 import TauCeti.Algebra.Module.Projective.Trans
 import TauCeti.LinearAlgebra.Dimension.Localization
+import TauCeti.LinearAlgebra.Submodule.Quotient
 import TauCeti.NumberTheory.Padics.GroupAlgebra.Projective
 import TauCeti.RingTheory.Jacobson.Semiprimary
 import TauCeti.RingTheory.Semisimple.Multiplicity

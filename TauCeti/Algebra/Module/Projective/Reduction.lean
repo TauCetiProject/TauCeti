@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.SimpleModule.Basic
 public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.RingTheory.Artinian.Module
 import TauCeti.Algebra.Module.ProjectiveCover.Basic
+import TauCeti.LinearAlgebra.Submodule.Quotient
 import TauCeti.RingTheory.Jacobson.Semiprimary
 import TauCeti.RingTheory.Semisimple.Multiplicity
 

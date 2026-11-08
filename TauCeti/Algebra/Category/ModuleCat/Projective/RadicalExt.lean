@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.Ext.Presentation
 public import TauCeti.Algebra.Category.ModuleCat.Quotient
 public import Mathlib.Algebra.Category.ModuleCat.Ext.HasExt
+import TauCeti.LinearAlgebra.Submodule.Quotient
 public import TauCeti.RingTheory.Jacobson.Semiprimary
 
 /-!
