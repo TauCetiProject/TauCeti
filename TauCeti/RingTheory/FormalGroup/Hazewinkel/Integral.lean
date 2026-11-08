@@ -78,7 +78,7 @@ def universalHazewinkelIntegralFormalGroup : FormalGroup (MvPolynomial ℕ+ ℤ)
 /-- Extending the integral polynomial law to rational coefficients recovers the law
 defined by Hazewinkel's logarithm. -/
 @[simp high] -- Prefer the rational comparison to the general specialization rule.
-theorem map_universalHazewinkelIntegralFormalGroup :
+theorem map_intCast_universalHazewinkelIntegralFormalGroup :
     (universalHazewinkelIntegralFormalGroup p).map (MvPolynomial.map (Int.castRingHom ℚ)) =
       hazewinkelFormalGroup p (MvPolynomial.X : ℕ+ → MvPolynomial ℕ+ ℚ) := by
   apply FormalGroup.map_ofMap
@@ -86,7 +86,7 @@ theorem map_universalHazewinkelIntegralFormalGroup :
 instance : (universalHazewinkelIntegralFormalGroup p).IsComm := by
   have : ((universalHazewinkelIntegralFormalGroup p).map
       (MvPolynomial.map (Int.castRingHom ℚ))).IsComm := by
-    rw [map_universalHazewinkelIntegralFormalGroup]
+    rw [map_intCast_universalHazewinkelIntegralFormalGroup]
     infer_instance
   exact FormalGroup.isComm_of_map
     (MvPolynomial.map_injective (Int.castRingHom ℚ) Int.cast_injective)
@@ -132,7 +132,7 @@ theorem hazewinkelIntegralFormalGroup_X :
 
 /-- Mapping the integral polynomial law is specialization at the images of its generators. -/
 @[simp]
-theorem map_universalHazewinkelIntegralFormalGroup_eq_hazewinkelIntegralFormalGroup
+theorem map_universalHazewinkelIntegralFormalGroup
     (f : MvPolynomial ℕ+ ℤ →+* S) :
     (universalHazewinkelIntegralFormalGroup p).map f =
       hazewinkelIntegralFormalGroup p (f ∘ MvPolynomial.X) := by
@@ -147,7 +147,7 @@ theorem hazewinkelIntegralFormalGroup_eq_hazewinkelFormalGroup [Algebra ℚ R] (
       (MvPolynomial.map (Int.castRingHom ℚ)) = MvPolynomial.eval₂Hom (Int.castRingHom R) v := by
     ext <;> simp
   rw [hazewinkelIntegralFormalGroup_def, ← h, ← FormalGroup.map_comp,
-    map_universalHazewinkelIntegralFormalGroup, map_hazewinkelFormalGroup]
+    map_intCast_universalHazewinkelIntegralFormalGroup, map_hazewinkelFormalGroup]
   congr 1
   funext j
   exact MvPolynomial.eval₂_X _ _ _
