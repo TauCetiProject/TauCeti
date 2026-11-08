@@ -244,15 +244,23 @@ theorem isIso_singularHomologyMap_excisionMap_compl (Z : Set X) (h : closure Z �
   · exact Or.inr (h hx)
   · exact Or.inl hx
 
+/-- **Excision onto a neighbourhood of the closure.** If `U` is open and contains the closure of
+`K`, the inclusion of pairs `(U, U ∖ K) ⟶ (X, X ∖ K)` induces isomorphisms on relative singular
+homology. -/
+theorem isIso_singularHomologyMap_excisionMap_of_closure_subset {U K : Set X} (hU : IsOpen U)
+    (hKU : closure K ⊆ U) (n : ℕ) :
+    IsIso (TopPair.singularHomologyMap (excisionMap U Kᶜ) R n) := by
+  refine isIso_singularHomologyMap_excisionMap R U Kᶜ ?_ n
+  rw [hU.interior_eq, interior_compl]
+  exact Set.eq_univ_of_subset (Set.union_subset_union_left _ hKU) (Set.union_compl_self _)
+
 /-- **Excision onto a neighbourhood.** If `U` is open and contains the closed set `K`, the
 inclusion of pairs `(U, U ∖ K) ⟶ (X, X ∖ K)` induces isomorphisms on relative singular
 homology. -/
 theorem isIso_singularHomologyMap_excisionMap_of_isClosed_subset {U K : Set X} (hU : IsOpen U)
     (hK : IsClosed K) (hKU : K ⊆ U) (n : ℕ) :
-    IsIso (TopPair.singularHomologyMap (excisionMap U Kᶜ) R n) := by
-  refine isIso_singularHomologyMap_excisionMap R U Kᶜ ?_ n
-  rw [hU.interior_eq, hK.isOpen_compl.interior_eq]
-  exact Set.eq_univ_of_subset (Set.union_subset_union_left _ hKU) (Set.union_compl_self K)
+    IsIso (TopPair.singularHomologyMap (excisionMap U Kᶜ) R n) :=
+  isIso_singularHomologyMap_excisionMap_of_closure_subset R hU (hK.closure_eq.symm ▸ hKU) n
 
 variable {A B} {Y : TopCat.{w}} (g : X ⟶ Y) {A' B' : Set Y}
   (hA : Set.MapsTo g A A') (hB : Set.MapsTo g B B')
@@ -319,12 +327,8 @@ theorem isIso_singularHomologyMap_ofSubsetMap_compl_iff {U L₁ L₂ : Set X} (h
         fun _ hz ↦ Set.compl_subset_compl.2 h hz) R n) ↔
       IsIso (TopPair.singularHomologyMap (ofSubsetMap (𝟙 X) (Set.compl_subset_compl.2 h)) R n) := by
   have := isIso_singularHomologyMap_excisionMap_of_isClosed_subset R hU hL₁ hL₁U n
-  have := isIso_singularHomologyMap_excisionMap R U L₂ᶜ (by
-    rw [hU.interior_eq, interior_compl, Set.eq_univ_iff_forall]
-    intro x
-    by_cases hx : x ∈ closure L₂
-    · exact Or.inl (hL₁U (closure_minimal h hL₁ hx))
-    · exact Or.inr hx) n
+  have := isIso_singularHomologyMap_excisionMap_of_closure_subset R hU
+    ((closure_minimal h hL₁).trans hL₁U) n
   have hw := congrArg (TopPair.singularHomologyMap · R n)
     (interPairMap_comp_excisionMap (𝟙 X) (Set.mapsTo_id U) (Set.compl_subset_compl.2 h))
   simp only [TopPair.singularHomologyMap_comp] at hw
