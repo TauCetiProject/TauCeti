@@ -8,46 +8,19 @@ module
 public import Mathlib.NumberTheory.DirichletCharacter.Basic
 
 /-!
-# Quadratic characters under products and level changes
+# Quadratic characters under level changes
 
-Being quadratic is preserved by the two operations that assemble one Dirichlet character out of
-several: multiplying finitely many characters, and lifting a character to a multiple of its level.
+Being quadratic is preserved by lifting a Dirichlet character to a multiple of its level. That a
+finite product of quadratic characters is quadratic holds for arbitrary multiplicative characters
+(`MulChar.isQuadratic_prod`, in `TauCeti.NumberTheory.MulChar.Basic`).
 
 ## Main results
 
-* `MulChar.isQuadratic_prod`: a finite product of quadratic characters is quadratic.
 * `DirichletCharacter.isQuadratic_changeLevel`: lifting a quadratic character to a multiple of
   its level leaves it quadratic.
 -/
 
 public section
-
-namespace MulChar
-
-/-- A finite product of quadratic characters is quadratic. -/
-theorem isQuadratic_prod {M R ι : Type*} [CommMonoid M] [CommRing R]
-    {s : Finset ι} {χ : ι → MulChar M R} (hχ : ∀ i ∈ s, (χ i).IsQuadratic) :
-    (∏ i ∈ s, χ i).IsQuadratic := by
-  classical
-  induction s using Finset.induction_on with
-  | empty =>
-    intro a
-    by_cases ha : IsUnit a
-    · exact Or.inr (Or.inl (MulChar.one_apply ha))
-    · exact Or.inl (MulChar.map_nonunit 1 ha)
-  | @insert i s hi ih =>
-    intro a
-    rw [Finset.prod_insert hi, MulChar.mul_apply]
-    have hs := ih (fun j hj ↦ hχ j (Finset.mem_insert_of_mem hj)) a
-    rcases hχ i (Finset.mem_insert_self i s) a with hi0 | hi1 | hi2
-    · exact Or.inl (by simp [hi0])
-    · simpa [hi1] using hs
-    · rcases hs with hs0 | hs1 | hs2
-      · exact Or.inl (by simp [hi2, hs0])
-      · exact Or.inr (Or.inr (by simp [hi2, hs1]))
-      · exact Or.inr (Or.inl (by simp [hi2, hs2]))
-
-end MulChar
 
 namespace DirichletCharacter
 
