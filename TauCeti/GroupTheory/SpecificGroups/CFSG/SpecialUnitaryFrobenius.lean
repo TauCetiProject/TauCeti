@@ -304,26 +304,19 @@ private theorem natCard_galoisField :
       (d.characteristic ^ d.fieldExponent) ^ 2 := by
   rw [GaloisField.card _ _ (Nat.mul_ne_zero d.fieldExponent_pos.ne' two_ne_zero), pow_mul]
 
-/-- The `q`-power Frobenius of the field with `q²` elements raises to the power `p ^ e`. -/
-private theorem iterateFrobenius_galoisField_apply
-    (a : GaloisField d.characteristic (d.fieldExponent * 2)) :
-    iterateFrobenius _ d.characteristic d.fieldExponent a =
-      a ^ d.characteristic ^ d.fieldExponent := by
-  rw [coe_iterateFrobenius_galoisField, d.fieldOrder_eq_characteristic_pow]
-
 /-- The trace `t ↦ t + (-1) ^ r σ(t)` is onto the elements `s` with `σ(s) = (-1) ^ r s`. -/
 private theorem exists_add_neg_one_pow_mul_iterateFrobenius_eq
     {s : GaloisField d.characteristic (d.fieldExponent * 2)}
     (hs : iterateFrobenius _ d.characteristic d.fieldExponent s = (-1) ^ r * s) :
     ∃ t, t + (-1) ^ r * iterateFrobenius _ d.characteristic d.fieldExponent t = s := by
-  simp_rw [iterateFrobenius_galoisField_apply] at hs ⊢
+  simp_rw [iterateFrobenius_def] at hs ⊢
   exact FiniteField.exists_add_neg_one_pow_mul_pow_eq natCard_galoisField r hs
 
 /-- The trace `t ↦ t + (-1) ^ r σ(t)` has a nonzero kernel element. -/
 private theorem exists_ne_zero_add_neg_one_pow_mul_iterateFrobenius_eq_zero :
     ∃ a ≠ (0 : GaloisField d.characteristic (d.fieldExponent * 2)),
       a + (-1) ^ r * iterateFrobenius _ d.characteristic d.fieldExponent a = 0 := by
-  simp_rw [iterateFrobenius_galoisField_apply]
+  simp_rw [iterateFrobenius_def]
   exact FiniteField.exists_ne_zero_add_neg_one_pow_mul_pow_eq_zero natCard_galoisField r
 
 /-- **`SU_{r+1}(q)` acts transitively on its isotropic points.** The special isometry group of
