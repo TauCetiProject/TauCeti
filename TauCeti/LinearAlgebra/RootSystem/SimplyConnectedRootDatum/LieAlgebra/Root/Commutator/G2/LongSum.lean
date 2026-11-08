@@ -78,7 +78,8 @@ theorem commutatorElement_chevalleyRootSubgroup_G2_of_long_sum {α β γ : Fin G
       (g2_root_add_notMem_range_of_long_sum hγ (hadd.trans (add_comm _ _)))
 
 /-- Short `G₂` root subgroups whose sum is long commute in characteristic three. -/
-theorem commute_chevalleyRootSubgroup_G2_of_short_add_short_eq_long {α β γ : Fin G2.numRoots}
+theorem commute_chevalleyRootSubgroup_G2_of_short_add_short_eq_long_of_char_three
+    {α β γ : Fin G2.numRoots}
     (hα : g2Length α = 1) (hβ : g2Length β = 1) (hγ : g2Length γ = 3)
     (hadd : (G2.simplyConnectedRootDatum ht).root γ =
       (G2.simplyConnectedRootDatum ht).root α + (G2.simplyConnectedRootDatum ht).root β)
