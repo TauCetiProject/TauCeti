@@ -147,8 +147,7 @@ theorem im_exp_neg_mul_schwarzChristoffelVertex_sub_pos_of_long_turn
         (‖Vinf - schwarzChristoffelVertex a e z₀ (Fin.last n)‖ : ℂ) := by
     have h := schwarzChristoffelVertexAtInfinity_sub_boundary_eq_norm_mul
       a e z₀ (hfinite (Fin.last n)) (fun k _ ↦ ha.monotone k.le_last) hsumlt
-    rw [schwarzChristoffelBoundary_apply_prevertex a e z₀ (Fin.last n)
-      (hfinite (Fin.last n))] at h
+    rw [schwarzChristoffelBoundary_apply_prevertex a e z₀ (Fin.last n)] at h
     have hzero := schwarzChristoffelEdgeAngle_eq_zero_of_last_le
       a e ha.monotone (c := a (Fin.last n)) le_rfl
     rw [hzero, Complex.ofReal_zero, zero_mul, Complex.exp_zero, mul_one] at h
@@ -158,7 +157,7 @@ theorem im_exp_neg_mul_schwarzChristoffelVertex_sub_pos_of_long_turn
         (‖schwarzChristoffelVertex a e z₀ 0 - Vinf‖ : ℂ) := by
     have h := schwarzChristoffelBoundary_sub_vertexAtInfinity_eq_norm_mul
       a e z₀ (hfinite 0) (fun k _ ↦ ha.monotone k.zero_le) hsumlt
-    rw [schwarzChristoffelBoundary_apply_prevertex a e z₀ 0 (hfinite 0)] at h
+    rw [schwarzChristoffelBoundary_apply_prevertex a e z₀ 0] at h
     have hexp : Complex.exp (((Real.pi * (-2 : ℝ) : ℝ) : ℂ) * Complex.I) = 1 := by
       convert Complex.exp_int_mul_two_pi_mul_I (-1) using 1
       push_cast
@@ -185,11 +184,10 @@ theorem im_exp_neg_mul_schwarzChristoffelVertex_sub_pos_of_long_turn
     apply mul_pos
     · have hfirstNe := schwarzChristoffelBoundary_ne_vertexAtInfinity_of_forall_ge
         a e z₀ (hfinite 0) (fun k _ ↦ ha.monotone k.zero_le) hsumlt
-      rw [schwarzChristoffelBoundary_apply_prevertex a e z₀ 0 (hfinite 0)] at hfirstNe
+      rw [schwarzChristoffelBoundary_apply_prevertex a e z₀ 0] at hfirstNe
       have hlastNe := schwarzChristoffelBoundary_ne_vertexAtInfinity_of_forall_le
         a e z₀ (hfinite (Fin.last n)) (fun k _ ↦ ha.monotone k.le_last) hsumlt
-      rw [schwarzChristoffelBoundary_apply_prevertex a e z₀ (Fin.last n)
-        (hfinite (Fin.last n))] at hlastNe
+      rw [schwarzChristoffelBoundary_apply_prevertex a e z₀ (Fin.last n)] at hlastNe
       exact add_pos
         (norm_pos_iff.mpr (sub_ne_zero.mpr hfirstNe))
         (norm_pos_iff.mpr (sub_ne_zero.mpr hlastNe.symm))

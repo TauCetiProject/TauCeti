@@ -70,12 +70,12 @@ theorem schwarzChristoffelBoundary_injOn_prevertex_interval_of_edge_intersection
     have hmid : i.succ = j.castSucc :=
       Fin.ext (by simpa only [Fin.val_succ, Fin.val_castSucc] using hadj.symm)
     have hx' : x = a i.succ := by
-      rw [← schwarzChristoffelBoundary_apply_prevertex a e z₀ _ (hfinite _)] at hvertex
+      rw [← schwarzChristoffelBoundary_apply_prevertex a e z₀ _] at hvertex
       exact hinterval i hx ⟨ha i.castSucc_le_succ, le_rfl⟩ hvertex
     have hy' : y = a j.castSucc := by
       have hv : B y = schwarzChristoffelVertex a e z₀ i.succ := hxy.symm.trans hvertex
       rw [hmid] at hv
-      rw [← schwarzChristoffelBoundary_apply_prevertex a e z₀ _ (hfinite _)] at hv
+      rw [← schwarzChristoffelBoundary_apply_prevertex a e z₀ _] at hv
       exact hinterval j hy ⟨le_rfl, ha j.castSucc_le_succ⟩ hv
     exact hx'.trans ((congrArg a hmid).trans hy'.symm)
   by_cases hn : n = 0

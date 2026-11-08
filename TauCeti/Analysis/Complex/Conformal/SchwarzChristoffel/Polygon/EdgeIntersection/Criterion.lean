@@ -126,7 +126,7 @@ theorem schwarzChristoffelCompactifiedBoundary_injective_of_edge_intersections
         have hya : y = a 0 := hbounded
           ⟨(lt_of_not_ge hy₀).le, (lt_of_not_ge hyn).le⟩
           ⟨le_rfl, ha.monotone (Fin.zero_le _)⟩
-          (hyL.trans (schwarzChristoffelBoundary_apply_prevertex a e z₀ 0 (hfinite 0)).symm)
+          (hyL.trans (schwarzChristoffelBoundary_apply_prevertex a e z₀ 0).symm)
         exact (lt_of_not_ge hy₀).ne' hya
     · by_cases hyn : a (Fin.last (n + 1)) ≤ y
       · obtain ⟨i, hi⟩ := hmem x ⟨(lt_of_not_ge hx₀).le, (lt_of_not_ge hxn).le⟩
@@ -134,7 +134,7 @@ theorem schwarzChristoffelCompactifiedBoundary_injective_of_edge_intersections
         have hxa : x = a (Fin.last (n + 1)) := hbounded
           ⟨(lt_of_not_ge hx₀).le, (lt_of_not_ge hxn).le⟩
           ⟨ha.monotone (Fin.zero_le _), le_rfl⟩
-          (hxR.trans (schwarzChristoffelBoundary_apply_prevertex a e z₀ _ (hfinite _)).symm)
+          (hxR.trans (schwarzChristoffelBoundary_apply_prevertex a e z₀ _).symm)
         exact (lt_of_not_ge hxn).ne hxa
       · exact hxy.ne (hbounded
           ⟨(lt_of_not_ge hx₀).le, (lt_of_not_ge hxn).le⟩
@@ -161,7 +161,7 @@ theorem schwarzChristoffelCompactifiedBoundary_injective_of_edge_intersections
       exact (hleft i (B x) hi (heq ▸ hv)).symm.trans heq
     exact (schwarzChristoffelBoundary_ne_vertexAtInfinity_of_forall_ge
       a e z₀ (hfinite 0) hfirst hS)
-      ((schwarzChristoffelBoundary_apply_prevertex a e z₀ 0 (hfinite 0)).trans hLV)
+      ((schwarzChristoffelBoundary_apply_prevertex a e z₀ 0).trans hLV)
   exact (schwarzChristoffelCompactifiedBoundary_injective_iff a e z₀).2 ⟨hfiniteInj, hne⟩
 
 end TauCeti

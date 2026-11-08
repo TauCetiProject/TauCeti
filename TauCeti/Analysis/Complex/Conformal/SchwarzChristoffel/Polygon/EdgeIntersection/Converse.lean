@@ -72,7 +72,7 @@ theorem schwarzChristoffelPolygon_bounded_edges_adjacent_and_eq_vertex_of_injOn
     have hlow : a i.succ ≤ x := by rw [h, hxeq]; exact hy.1
     exact le_antisymm hx.2 hlow
   refine ⟨hadj, ?_⟩
-  rw [← schwarzChristoffelBoundary_apply_prevertex a e z₀ i.succ (hfinite _)]
+  rw [← schwarzChristoffelBoundary_apply_prevertex a e z₀ i.succ]
   exact congrArg B hparam
 
 /-- A bounded Schwarz--Christoffel side can meet the left closing side only
@@ -111,7 +111,7 @@ theorem schwarzChristoffelPolygon_bounded_edgeSet_last_eq_first_vertex_of_inject
   have hxeq : x = y := hB.1 hxy.symm
   have hxzero : x = a 0 := le_antisymm (hxeq ▸ hy) (ha.monotone (Fin.zero_le _)|>.trans hx.1)
   rw [hxzero]
-  exact schwarzChristoffelBoundary_apply_prevertex a e z₀ 0 (hfinite _)
+  exact schwarzChristoffelBoundary_apply_prevertex a e z₀ 0
 
 /-- A bounded Schwarz--Christoffel side can meet the right closing side only
 at the last finite vertex when the compactified boundary is injective. -/
@@ -151,7 +151,7 @@ theorem schwarzChristoffelPolygon_bounded_edgeSet_last_prevertex_eq_last_vertex_
   have hxlast : x = a (Fin.last (n + 1)) :=
     le_antisymm (hx.2.trans (ha.monotone (Fin.le_last _))) (hxeq ▸ hy)
   rw [hxlast]
-  exact schwarzChristoffelBoundary_apply_prevertex a e z₀ _ (hfinite _)
+  exact schwarzChristoffelBoundary_apply_prevertex a e z₀ _
 
 /-- The compactified Schwarz--Christoffel boundary is simple exactly when its
 bounded sides and closing sides have the indicated finite intersections. -/

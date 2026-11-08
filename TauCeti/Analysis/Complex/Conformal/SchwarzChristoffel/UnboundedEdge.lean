@@ -214,7 +214,7 @@ theorem schwarzChristoffelBoundary_image_Ici_prevertex (a e : ι → ℝ) (z₀ 
         (schwarzChristoffelVertexAtInfinity a e z₀) \
           {schwarzChristoffelVertexAtInfinity a e z₀} := by
   rw [schwarzChristoffelBoundary_image_Ici a e z₀ hj ha hS,
-    schwarzChristoffelBoundary_apply_prevertex a e z₀ j hj]
+    schwarzChristoffelBoundary_apply_prevertex a e z₀ j]
 
 /-- The finite endpoint of a right-hand unbounded Schwarz--Christoffel edge differs from its
 endpoint at infinity.  Thus the segment traced by the edge is nondegenerate. -/
@@ -426,7 +426,7 @@ theorem schwarzChristoffelBoundary_image_Iic_prevertex (a e : ι → ℝ) (z₀ 
         (schwarzChristoffelVertexAtInfinity a e z₀) \
           {schwarzChristoffelVertexAtInfinity a e z₀} := by
   rw [schwarzChristoffelBoundary_image_Iic a e z₀ hj ha hS,
-    schwarzChristoffelBoundary_apply_prevertex a e z₀ j hj]
+    schwarzChristoffelBoundary_apply_prevertex a e z₀ j]
 
 /-- The finite endpoint of a left-hand unbounded Schwarz--Christoffel edge differs from its
 endpoint at infinity.  Thus the segment traced by the edge is nondegenerate. -/

@@ -36,9 +36,8 @@ eventual polygon meet.
 
 * `TauCeti.tendsto_schwarzChristoffelPrimitive_boundary` -- the primitive tends to the boundary
   value wherever the total exponent is greater than `-1`.
-* `TauCeti.schwarzChristoffelBoundary_apply_prevertex` -- at a prevertex whose total exponent is
-  greater than `-1`, the boundary value is the previously constructed Schwarz--Christoffel
-  vertex.
+* `TauCeti.schwarzChristoffelBoundary_apply_prevertex` -- at a prevertex, the boundary value is the
+  previously constructed Schwarz--Christoffel vertex.
 * `TauCeti.schwarzChristoffelBoundary_change_base` -- changing the normalization point of the
   primitive subtracts a constant from the boundary map.
 * `TauCeti.schwarzChristoffelBoundary_sub_eq` -- an increment of the boundary map along an open
@@ -89,14 +88,13 @@ theorem schwarzChristoffelBoundary_eq_of_tendsto (a e : ι → ℝ) (z₀ : Uppe
   rw [schwarzChristoffelBoundary]
   exact extendFrom_eq (by rw [Complex.closure_setOfPred_lt_im]; simp) h
 
-/-- At a prevertex whose total exponent is greater than `-1`, the canonical
-Schwarz--Christoffel boundary value is the Schwarz--Christoffel vertex. -/
+/-- At a prevertex, the canonical Schwarz--Christoffel boundary value is the
+Schwarz--Christoffel vertex. Both sides are the limit of the primitive along the same filter. -/
 @[simp]
 theorem schwarzChristoffelBoundary_apply_prevertex (a e : ι → ℝ) (z₀ : UpperHalfPlane)
-    (j : ι) (he : -1 < ∑ i with a i = a j, e i) :
+    (j : ι) :
     schwarzChristoffelBoundary a e z₀ (a j) = schwarzChristoffelVertex a e z₀ j := by
-  exact schwarzChristoffelBoundary_eq_of_tendsto a e z₀ (a j)
-    (tendsto_schwarzChristoffelPrimitive a e z₀ j he)
+  rw [schwarzChristoffelBoundary, extendFrom, schwarzChristoffelVertex_eq_limUnder]
 
 private theorem exists_tendsto_schwarzChristoffelPrimitive_boundary (a e : ι → ℝ)
     (z₀ : UpperHalfPlane) (x : ℝ) (he : -1 < ∑ i with a i = x, e i) :

@@ -100,7 +100,7 @@ theorem schwarzChristoffelBoundary_image_Ici_eq_ray_prevertex (a e : ι → ℝ)
     schwarzChristoffelBoundary a e z₀ '' Ici (a j) =
       (fun t : ℝ => schwarzChristoffelVertex a e z₀ j + (t : ℂ)) '' Ici 0 := by
   rw [schwarzChristoffelBoundary_image_Ici_eq_ray a e z₀ hj ha hS,
-    schwarzChristoffelBoundary_apply_prevertex a e z₀ j hj]
+    schwarzChristoffelBoundary_apply_prevertex a e z₀ j]
 
 /-- **The left outer Schwarz--Christoffel edge is an infinite ray.** If the total exponent
 is at least `-1`, all prevertices with nonzero exponent lie at or to the right of `p`, and the
@@ -146,7 +146,7 @@ theorem schwarzChristoffelBoundary_image_Iic_eq_ray_prevertex (a e : ι → ℝ)
       (fun t : ℝ => schwarzChristoffelVertex a e z₀ j -
         (t : ℂ) * Complex.exp ((Real.pi * ∑ i, e i) * Complex.I)) '' Ici 0 := by
   rw [schwarzChristoffelBoundary_image_Iic_eq_ray a e z₀ hj ha hS,
-    schwarzChristoffelBoundary_apply_prevertex a e z₀ j hj]
+    schwarzChristoffelBoundary_apply_prevertex a e z₀ j]
 
 /-- **An unbounded Schwarz--Christoffel boundary is a chain of finite sides and two rays.**
 For ordered prevertices with integrable finite exponent sums and total exponent at least `-1`,

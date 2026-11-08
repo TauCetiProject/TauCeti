@@ -72,8 +72,8 @@ theorem affineIndependent_schwarzChristoffelPolygon_first (a e : Fin (n + 2) →
     exact (not_lt_of_ge (Fin.one_le_of_ne_zero h0i.ne')) hi1
   simpa only [schwarzChristoffelPolygon_apply_last,
     schwarzChristoffelPolygon_apply_castSucc,
-    schwarzChristoffelBoundary_apply_prevertex a e z₀ 0 hfirst.1,
-    schwarzChristoffelBoundary_apply_prevertex a e z₀ 1 hnext] using
+    schwarzChristoffelBoundary_apply_prevertex a e z₀ 0,
+    schwarzChristoffelBoundary_apply_prevertex a e z₀ 1] using
     affineIndependent_schwarzChristoffelBoundary_left_endpoint a e z₀ h01 hleft hfree hfirst
       hnext hS
 
@@ -107,8 +107,8 @@ theorem affineIndependent_schwarzChristoffelPolygon_last (a e : Fin (n + 2) → 
     omega
   simpa only [schwarzChristoffelPolygon_apply_castSucc,
     schwarzChristoffelPolygon_apply_last,
-    schwarzChristoffelBoundary_apply_prevertex a e z₀ (Fin.last n).castSucc hpreceding,
-    schwarzChristoffelBoundary_apply_prevertex a e z₀ (Fin.last (n + 1)) hlast.1] using
+    schwarzChristoffelBoundary_apply_prevertex a e z₀ (Fin.last n).castSucc,
+    schwarzChristoffelBoundary_apply_prevertex a e z₀ (Fin.last (n + 1))] using
     affineIndependent_schwarzChristoffelBoundary_right_endpoint a e z₀ horder hright hfree
       hpreceding hlast hS
 
@@ -128,7 +128,7 @@ theorem schwarzChristoffelPolygon_hasNondegenerateEdges (a e : Fin (n + 1) → �
       simp
     rw [finRotate_last, schwarzChristoffelPolygon_apply_last, hzero,
       schwarzChristoffelPolygon_apply_castSucc]
-    rw [← schwarzChristoffelBoundary_apply_prevertex a e z₀ 0 (hfinite 0)]
+    rw [← schwarzChristoffelBoundary_apply_prevertex a e z₀ 0]
     exact (schwarzChristoffelBoundary_ne_vertexAtInfinity_of_forall_ge a e z₀ (hfinite 0)
       (fun i _ ↦ ha.monotone i.zero_le) hS).symm
   · intro j
@@ -140,7 +140,7 @@ theorem schwarzChristoffelPolygon_hasNondegenerateEdges (a e : Fin (n + 1) → �
         simp
       rw [hrotate, schwarzChristoffelPolygon_apply_castSucc,
         schwarzChristoffelPolygon_apply_last]
-      rw [← schwarzChristoffelBoundary_apply_prevertex a e z₀ (Fin.last n) (hfinite _)]
+      rw [← schwarzChristoffelBoundary_apply_prevertex a e z₀ (Fin.last n)]
       exact schwarzChristoffelBoundary_ne_vertexAtInfinity_of_forall_le a e z₀ (hfinite _)
         (fun i _ ↦ ha.monotone i.le_last) hS
     · intro j

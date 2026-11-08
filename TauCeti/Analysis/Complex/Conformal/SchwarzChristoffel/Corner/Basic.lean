@@ -383,7 +383,7 @@ theorem tendsto_schwarzChristoffelPrimitive_sub_vertex_div_cpow (a e : ι → �
       (𝓝[upperHalfPlaneSet] (a j : ℂ))
       (𝓝 (schwarzChristoffelPrevertexCoefficient a e (a j) /
         ((∑ i with a i = a j, e i) + 1))) := by
-  simpa [schwarzChristoffelBoundary_apply_prevertex a e z₀ j he] using
+  simpa [schwarzChristoffelBoundary_apply_prevertex a e z₀ j] using
     tendsto_schwarzChristoffelPrimitive_sub_boundary_div_cpow a e z₀ (a j) he
 
 end TauCeti

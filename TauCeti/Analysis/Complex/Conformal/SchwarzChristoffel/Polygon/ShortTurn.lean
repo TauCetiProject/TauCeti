@@ -111,8 +111,8 @@ theorem schwarzChristoffelVertex_succ_sub_eq_norm_mul (a e : Fin (n + 1) → ℝ
   have hai : a i.castSucc < a i.succ := ha i.castSucc_lt_succ
   have hfree : ∀ k, e k ≠ 0 → a k ∉ Ioo (a i.castSucc) (a i.succ) :=
     fun k _ ↦ not_mem_Ioo_castSucc_succ a ha.monotone i k
-  simpa only [schwarzChristoffelBoundary_apply_prevertex a e z₀ i.castSucc hfinite_left,
-    schwarzChristoffelBoundary_apply_prevertex a e z₀ i.succ hfinite_right] using
+  simpa only [schwarzChristoffelBoundary_apply_prevertex a e z₀ i.castSucc,
+    schwarzChristoffelBoundary_apply_prevertex a e z₀ i.succ] using
     schwarzChristoffelBoundary_sub_eq_norm_mul a e z₀ hfree hfinite_left hfinite_right
       (x := a i.succ) (y := a i.castSucc) ⟨hai.le, le_rfl⟩ ⟨le_rfl, hai.le⟩ hai.le
 

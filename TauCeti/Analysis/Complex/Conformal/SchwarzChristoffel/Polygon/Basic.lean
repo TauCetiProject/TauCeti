@@ -102,15 +102,14 @@ theorem schwarzChristoffelPolygon_apply_last (a e : Fin (n + 1) → ℝ)
     (schwarzChristoffelVertex a e z₀) (Fin.last (n + 1)) = _
   exact Fin.lastCases_last
 
-/-- When a finite prevertex has integrable total exponent, the corresponding polygon vertex is
-the canonical boundary value of the Schwarz--Christoffel map there. -/
+/-- At a finite prevertex the corresponding polygon vertex is the canonical boundary value of the
+Schwarz--Christoffel map there. -/
 theorem schwarzChristoffelPolygon_apply_castSucc_eq_boundary (a e : Fin (n + 1) → ℝ)
-    (z₀ : UpperHalfPlane) (i : Fin (n + 1))
-    (hi : -1 < ∑ j with a j = a i, e j) :
+    (z₀ : UpperHalfPlane) (i : Fin (n + 1)) :
     schwarzChristoffelPolygon a e z₀ i.castSucc =
       schwarzChristoffelBoundary a e z₀ (a i) := by
   rw [schwarzChristoffelPolygon_apply_castSucc,
-    schwarzChristoffelBoundary_apply_prevertex a e z₀ i hi]
+    schwarzChristoffelBoundary_apply_prevertex a e z₀ i]
 
 /-! ### The three kinds of edge -/
 

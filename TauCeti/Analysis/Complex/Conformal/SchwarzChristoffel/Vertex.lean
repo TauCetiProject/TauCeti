@@ -257,6 +257,15 @@ at `a j` exceeds `-1`. -/
 def schwarzChristoffelVertex (a e : ι → ℝ) (z₀ : UpperHalfPlane) (j : ι) : ℂ :=
   limUnder (𝓝[upperHalfPlaneSet] ((a j : ℂ))) (schwarzChristoffelPrimitive a e z₀)
 
+-- The body of `schwarzChristoffelVertex` is not `@[expose]`d, so downstream modules rewrite with
+-- this.
+/-- `schwarzChristoffelVertex` unfolded: the limit of the primitive along the upper half-plane at
+the prevertex. -/
+theorem schwarzChristoffelVertex_eq_limUnder (a e : ι → ℝ) (z₀ : UpperHalfPlane) (j : ι) :
+    schwarzChristoffelVertex a e z₀ j =
+      limUnder (𝓝[upperHalfPlaneSet] ((a j : ℂ))) (schwarzChristoffelPrimitive a e z₀) := by
+  rfl
+
 /-- Coincident prevertices carry the same vertex: `schwarzChristoffelVertex` depends on the index
 `j` only through the prevertex `a j`. -/
 theorem schwarzChristoffelVertex_congr (a e : ι → ℝ) (z₀ : UpperHalfPlane) {j k : ι}

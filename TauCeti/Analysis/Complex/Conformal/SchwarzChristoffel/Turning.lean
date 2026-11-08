@@ -150,9 +150,9 @@ theorem affineIndependent_schwarzChristoffelVertex_of_adjacent (a e : ι → ℝ
     (hl : -1 < ∑ i with a i = a l, e i) :
     AffineIndependent ℝ ![schwarzChristoffelVertex a e z₀ j,
       schwarzChristoffelVertex a e z₀ k, schwarzChristoffelVertex a e z₀ l] := by
-  simpa only [schwarzChristoffelBoundary_apply_prevertex a e z₀ j hj,
-    schwarzChristoffelBoundary_apply_prevertex a e z₀ k hk,
-    schwarzChristoffelBoundary_apply_prevertex a e z₀ l hl] using
+  simpa only [schwarzChristoffelBoundary_apply_prevertex a e z₀ j,
+    schwarzChristoffelBoundary_apply_prevertex a e z₀ k,
+    schwarzChristoffelBoundary_apply_prevertex a e z₀ l] using
     affineIndependent_schwarzChristoffelBoundary_of_adjacent a e z₀ hjk hkl hjkFree hklFree
       hj hk hkSin hl
 

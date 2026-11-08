@@ -196,9 +196,8 @@ theorem schwarzChristoffelVertex_succ_sub_eq_sideIntegral_mul (a e : Fin (n + 1)
   have hFTC := intervalIntegral.integral_eq_sub_of_hasDerivAt_of_le hpq.le hcont
     (fun x hx ↦ hasDerivAt_schwarzChristoffelBoundary a e z₀ hfree hx) hint
   rw [intervalIntegral.integral_mul_const, intervalIntegral.integral_ofReal,
-    schwarzChristoffelBoundary_apply_prevertex a e z₀ i.succ (by rw [hsum]; exact hright),
-    schwarzChristoffelBoundary_apply_prevertex a e z₀ i.castSucc
-      (by rw [hsum]; exact hleft)] at hFTC
+    schwarzChristoffelBoundary_apply_prevertex a e z₀ i.succ,
+    schwarzChristoffelBoundary_apply_prevertex a e z₀ i.castSucc] at hFTC
   simpa only [schwarzChristoffelSideIntegral, p, q, C] using hFTC.symm
 
 /-- Every bounded Schwarz--Christoffel side has positive integral length when its endpoint

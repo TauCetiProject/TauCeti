@@ -333,8 +333,8 @@ theorem schwarzChristoffelBoundary_image_Icc_prevertex (a e : ι → ℝ) (z₀ 
     schwarzChristoffelBoundary a e z₀ '' Icc (a j) (a k) =
       segment ℝ (schwarzChristoffelVertex a e z₀ j) (schwarzChristoffelVertex a e z₀ k) := by
   rw [schwarzChristoffelBoundary_image_Icc a e z₀ hjk ha hj hk,
-    schwarzChristoffelBoundary_apply_prevertex a e z₀ j hj,
-    schwarzChristoffelBoundary_apply_prevertex a e z₀ k hk]
+    schwarzChristoffelBoundary_apply_prevertex a e z₀ j,
+    schwarzChristoffelBoundary_apply_prevertex a e z₀ k]
 
 /-- **The interiors of the straight sides of the Schwarz--Christoffel polygon.**  Between two
 prevertices with no prevertex of nonzero exponent strictly between them, and with both total
@@ -346,8 +346,8 @@ theorem schwarzChristoffelBoundary_image_Ioo_prevertex (a e : ι → ℝ) (z₀ 
     schwarzChristoffelBoundary a e z₀ '' Ioo (a j) (a k) =
       openSegment ℝ (schwarzChristoffelVertex a e z₀ j) (schwarzChristoffelVertex a e z₀ k) := by
   rw [schwarzChristoffelBoundary_image_Ioo a e z₀ hjk ha hj hk,
-    schwarzChristoffelBoundary_apply_prevertex a e z₀ j hj,
-    schwarzChristoffelBoundary_apply_prevertex a e z₀ k hk]
+    schwarzChristoffelBoundary_apply_prevertex a e z₀ j,
+    schwarzChristoffelBoundary_apply_prevertex a e z₀ k]
 
 /-- **A Schwarz--Christoffel side is nondegenerate.**  Two prevertices with no prevertex of nonzero
 exponent strictly between them, and with both total exponents greater than `-1`, carry distinct
@@ -356,8 +356,8 @@ theorem schwarzChristoffelVertex_ne (a e : ι → ℝ) (z₀ : UpperHalfPlane)
     {j k : ι} (hjk : a j < a k) (ha : ∀ i, e i ≠ 0 → a i ∉ Ioo (a j) (a k))
     (hj : -1 < ∑ i with a i = a j, e i) (hk : -1 < ∑ i with a i = a k, e i) :
     schwarzChristoffelVertex a e z₀ j ≠ schwarzChristoffelVertex a e z₀ k := by
-  rw [← schwarzChristoffelBoundary_apply_prevertex a e z₀ j hj,
-    ← schwarzChristoffelBoundary_apply_prevertex a e z₀ k hk]
+  rw [← schwarzChristoffelBoundary_apply_prevertex a e z₀ j,
+    ← schwarzChristoffelBoundary_apply_prevertex a e z₀ k]
   exact fun h => hjk.ne (schwarzChristoffelBoundary_injOn_Icc a e z₀ ha hj hk
     ⟨le_rfl, hjk.le⟩ ⟨hjk.le, le_rfl⟩ h)
 

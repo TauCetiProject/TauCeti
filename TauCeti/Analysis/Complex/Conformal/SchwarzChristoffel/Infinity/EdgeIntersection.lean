@@ -120,7 +120,7 @@ theorem schwarzChristoffelBoundary_injective_of_edge_intersections
       have hya : y = a 0 := hbounded
         ⟨(lt_of_not_ge hy₀).le, (lt_of_not_ge hyn).le⟩
         ⟨le_rfl, ha (Fin.zero_le _)⟩
-        (hyL.trans (schwarzChristoffelBoundary_apply_prevertex a e z₀ 0 (hfinite 0)).symm)
+        (hyL.trans (schwarzChristoffelBoundary_apply_prevertex a e z₀ 0).symm)
       exact (lt_of_not_ge hy₀).ne' hya
   · by_cases hyn : a (Fin.last (n + 1)) ≤ y
     · obtain ⟨i, hi⟩ := hmem x ⟨(lt_of_not_ge hx₀).le, (lt_of_not_ge hxn).le⟩
@@ -128,7 +128,7 @@ theorem schwarzChristoffelBoundary_injective_of_edge_intersections
       have hxa : x = a (Fin.last (n + 1)) := hbounded
         ⟨(lt_of_not_ge hx₀).le, (lt_of_not_ge hxn).le⟩
         ⟨ha (Fin.zero_le _), le_rfl⟩
-        (hxR.trans (schwarzChristoffelBoundary_apply_prevertex a e z₀ _ (hfinite _)).symm)
+        (hxR.trans (schwarzChristoffelBoundary_apply_prevertex a e z₀ _).symm)
       exact (lt_of_not_ge hxn).ne hxa
     · exact hxy.ne (hbounded
         ⟨(lt_of_not_ge hx₀).le, (lt_of_not_ge hxn).le⟩

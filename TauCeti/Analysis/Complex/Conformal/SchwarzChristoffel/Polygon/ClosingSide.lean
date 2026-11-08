@@ -68,7 +68,7 @@ theorem schwarzChristoffelVertex_last_lt_vertexAtInfinity_lt_vertex_zero
     (fun l _ ↦ ha.monotone l.le_last) (by rw [hsum]; norm_num)
   have hl := schwarzChristoffelVertexAtInfinity_lt_boundary a e z₀
     (hfinite 0) (fun l _ ↦ ha.monotone l.zero_le) hsum
-  rw [schwarzChristoffelBoundary_apply_prevertex a e z₀ _ (hfinite _)] at hr hl
+  rw [schwarzChristoffelBoundary_apply_prevertex a e z₀ _] at hr hl
   exact ⟨hr, hl⟩
 
 /-- **The vertex at infinity lies on the closing line.** Its imaginary part equals that of the
@@ -309,7 +309,7 @@ theorem im_schwarzChristoffelBoundary_first_lt (a e : Fin (n + 1) → ℝ)
     rw [← schwarzChristoffelBoundary_image_Icc_prevertex a e z₀
       (ha.monotone i.castSucc_le_succ) hfree (hfinite _) (hfinite _)]
     exact ⟨x, hxi, rfl⟩
-  rw [schwarzChristoffelBoundary_apply_prevertex a e z₀ 0 (hfinite 0)]
+  rw [schwarzChristoffelBoundary_apply_prevertex a e z₀ 0]
   by_contra! hle
   have hinj := schwarzChristoffelBoundary_injOn_Icc a e z₀ hfree (hfinite _) (hfinite _)
   by_cases hi : i.castSucc = 0
@@ -319,14 +319,14 @@ theorem im_schwarzChristoffelBoundary_first_lt (a e : Fin (n + 1) → ℝ)
       omega
     have heq := eq_of_mem_segment_schwarzChristoffelVertex_of_im_le a e z₀ ha he hsum _
       (Fin.succ_ne_zero i) hisucc hmem hle
-    rw [← schwarzChristoffelBoundary_apply_prevertex a e z₀ _ (hfinite _)] at heq
+    rw [← schwarzChristoffelBoundary_apply_prevertex a e z₀ _] at heq
     have hxeq := hinj hxi ⟨le_rfl, (ha i.castSucc_lt_succ).le⟩ heq
     rw [hi] at hxeq
     exact hx.1.ne' hxeq
   · have heq := eq_of_mem_segment_schwarzChristoffelVertex_of_im_le a e z₀ ha he hsum _
       hi (Fin.castSucc_lt_last i).ne (by rwa [segment_symm] at hmem) hle
     by_cases hiend : i.succ = Fin.last n
-    · rw [← schwarzChristoffelBoundary_apply_prevertex a e z₀ _ (hfinite _)] at heq
+    · rw [← schwarzChristoffelBoundary_apply_prevertex a e z₀ _] at heq
       have hxeq := hinj hxi ⟨(ha i.castSucc_lt_succ).le, le_rfl⟩ heq
       rw [hiend] at hxeq
       exact hx.2.ne hxeq
