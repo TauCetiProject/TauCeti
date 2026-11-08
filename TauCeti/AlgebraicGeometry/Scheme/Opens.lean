@@ -33,6 +33,9 @@ This file records general-purpose facts about open subsets of schemes.
   which a morphism `X ⟶ Y` maps into an affine open of `Y` cover `X`.
 * `AlgebraicGeometry.Scheme.Hom.appLE_eq_id_of_eq_id` identifies the restriction maps of a scheme
   endomorphism equal to the identity.
+* `AlgebraicGeometry.Scheme.Hom.preimage_eq_preimage_inf_of_comp_eq`: in a commutative square, the
+  preimage under `f'` of an open of the base lying over `W` lies in the preimage under `g'` of
+  `f⁻¹ W`.
 * `AlgebraicGeometry.Scheme.forall_affineOpens_map_of_le`: a condition on the restrictions of a
   section over `V` to all affine opens inside `V` is inherited by its restriction to any smaller
   open.
@@ -145,6 +148,16 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.appLE_eq_id_of_eq_id {f : X ⟶ X}
   subst hf
   rw [Scheme.Hom.appLE, Scheme.Hom.id_app]
   exact (Category.id_comp _).trans (X.presheaf.map_id _)
+
+/-- In a commutative square `g' ≫ f = f' ≫ g`, for an open `W' ⊆ g⁻¹ W` of the base `S'`, the
+preimage `f'⁻¹ W'` lies inside `g'⁻¹ (f⁻¹ W)`, so it equals its intersection with it. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.preimage_eq_preimage_inf_of_comp_eq
+    {X' S S' : Scheme.{u}} {f : X ⟶ S} {f' : X' ⟶ S'} {g : S' ⟶ S} {g' : X' ⟶ X}
+    (hw : g' ≫ f = f' ≫ g) {W : S.Opens} {W' : S'.Opens} (h : W' ≤ g ⁻¹ᵁ W) :
+    f' ⁻¹ᵁ W' = g' ⁻¹ᵁ (f ⁻¹ᵁ W) ⊓ f' ⁻¹ᵁ W' := by
+  refine (inf_eq_right.mpr ?_).symm
+  rw [← Scheme.Hom.comp_preimage, hw, Scheme.Hom.comp_preimage]
+  exact f'.preimage_mono h
 
 /-- A condition imposed on the restrictions of a section `b` over `V` to all affine opens inside `V`
 is inherited by the restriction of `b` to any smaller open `V'`. -/
