@@ -65,21 +65,16 @@ private theorem fractionalIdeal_eq_of_generators (D : ℤ) [Fact (¬ IsSquare D)
     linear_combination -(m : QuadraticAlgebra ℚ (D : ℚ) 0) * ht_a -
       (n : QuadraticAlgebra ℚ (D : ℚ) 0) * ht_gen
 
--- Mutual integral coordinates force the positive imaginary coefficient to be one half.
-/-- Every proper fractional ideal of the nonsquare quadratic order is a positive rational
-multiple of the ideal of a primitive positive-leading form of the given discriminant. -/
-theorem exists_pos_primitive_form_fractionalIdeal_eq (D : ℤ) [Fact (¬ IsSquare D)]
-    (hD : D % 4 = 0 ∨ D % 4 = 1)
-    (I : FractionalIdeal (nonZeroDivisors (QuadraticOrder.numberFieldOrder D hD).toSubalgebra)
-      (QuadraticAlgebra ℚ (D : ℚ) 0))
-    (hI : (QuadraticOrder.numberFieldOrder D hD).IsProperFractionalIdeal I) :
-    ∃ (f : BinaryQuadraticForm ℤ) (hf : f.discrim = D), f.IsPrimitive ∧ 0 < f.a ∧
-      ∃ r : ℚ, 0 < r ∧ I = FractionalIdeal.spanSingleton
-        (nonZeroDivisors (QuadraticOrder.numberFieldOrder D hD).toSubalgebra)
-        (r : QuadraticAlgebra ℚ (D : ℚ) 0) * f.fractionalIdeal D hf := by
-  let O := QuadraticOrder.numberFieldOrder D hD
-  -- Normalize the lattice to q times the span of 1 and a positive-imaginary element τ.
-  obtain ⟨q, β, hq, hβ, hgen⟩ := QuadraticOrder.exists_rational_axis_generators D hD I hI.ne_zero
+/-- A rational axis normalization of a lattice: after rescaling the second generator to `τ`,
+the quadratic relation of `τ` has a positive primitive integral denominator `a`. -/
+private theorem exists_primitive_relation_of_axis (D : ℤ) [Fact (¬ IsSquare D)] (q : ℚ)
+    (β : QuadraticAlgebra ℚ (D : ℚ) 0) (hq : 0 < q) (hβ : 0 < β.im) :
+    ∃ (τ : QuadraticAlgebra ℚ (D : ℚ) 0) (a b e : ℤ), 0 < τ.im ∧
+      (q : QuadraticAlgebra ℚ (D : ℚ) 0) * τ = β ∧ 0 < a ∧
+      (a : ℚ) * (2 * τ.re) = b ∧ (a : ℚ) * ((D : ℚ) * τ.im ^ 2 - τ.re ^ 2) = e ∧
+      (a : QuadraticAlgebra ℚ (D : ℚ) 0) * (τ * τ) =
+        (b : QuadraticAlgebra ℚ (D : ℚ) 0) * τ + (e : QuadraticAlgebra ℚ (D : ℚ) 0) ∧
+      ∃ u v w : ℤ, u * a + v * b + w * e = 1 := by
   let τ : QuadraticAlgebra ℚ (D : ℚ) 0 := q⁻¹ • β
   have hβτ : (q : QuadraticAlgebra ℚ (D : ℚ) 0) * τ = β := by
     rw [← Rat.smul_def]
@@ -89,8 +84,8 @@ theorem exists_pos_primitive_form_fractionalIdeal_eq (D : ℤ) [Fact (¬ IsSquar
   -- Clear the quadratic relation with a positive primitive integral denominator.
   let d := 2 * τ.re
   let c := (D : ℚ) * τ.im ^ 2 - τ.re ^ 2
-  have hτrel : τ * τ = (c : QuadraticAlgebra ℚ (D : ℚ) 0) +
-      (d : QuadraticAlgebra ℚ (D : ℚ) 0) * τ := by
+  have hτrel : τ * τ =
+      (c : QuadraticAlgebra ℚ (D : ℚ) 0) + (d : QuadraticAlgebra ℚ (D : ℚ) 0) * τ := by
     ext <;> simp [c, d] <;> ring
   obtain ⟨a, b, e, ha, hb, he, u, v, w, huvw⟩ :=
     Rat.exists_primitive_common_denominator d c
@@ -100,17 +95,32 @@ theorem exists_pos_primitive_form_fractionalIdeal_eq (D : ℤ) [Fact (¬ IsSquar
   have heK : (a : QuadraticAlgebra ℚ (D : ℚ) 0) * (c : QuadraticAlgebra ℚ (D : ℚ) 0) =
       (e : QuadraticAlgebra ℚ (D : ℚ) 0) := by
     exact_mod_cast congrArg (Rat.cast : ℚ → (QuadraticAlgebra ℚ (D : ℚ) 0)) he
-  have hrel : (a : QuadraticAlgebra ℚ (D : ℚ) 0) * (τ * τ) =
-      (b : QuadraticAlgebra ℚ (D : ℚ) 0) * τ + (e : QuadraticAlgebra ℚ (D : ℚ) 0) := by
-    rw [hτrel]
-    linear_combination τ * hbK + heK
+  refine ⟨τ, a, b, e, hτim, hβτ, ha, hb, he, ?_, u, v, w, huvw⟩
+  rw [hτrel]
+  linear_combination τ * hbK + heK
+
+/-- Properness of the ideal forces the imaginary coordinate of the normalized generator `τ`
+to satisfy `a * τ.im = 1 / 2`. -/
+private theorem mul_im_eq_half_of_proper (D : ℤ) [Fact (¬ IsSquare D)]
+    (hD : D % 4 = 0 ∨ D % 4 = 1)
+    (I : FractionalIdeal (nonZeroDivisors (QuadraticOrder.numberFieldOrder D hD).toSubalgebra)
+      (QuadraticAlgebra ℚ (D : ℚ) 0))
+    (hI : (QuadraticOrder.numberFieldOrder D hD).IsProperFractionalIdeal I)
+    (q : ℚ) (β τ : QuadraticAlgebra ℚ (D : ℚ) 0) (hq : 0 < q)
+    (hgen : ∀ z, z ∈ I ↔ ∃ m n : ℤ, m • (q : QuadraticAlgebra ℚ (D : ℚ) 0) + n • β = z)
+    (hτim : 0 < τ.im) (hβτ : (q : QuadraticAlgebra ℚ (D : ℚ) 0) * τ = β) (a b e : ℤ) (ha : 0 < a)
+    (hrel : (a : QuadraticAlgebra ℚ (D : ℚ) 0) * (τ * τ) =
+      (b : QuadraticAlgebra ℚ (D : ℚ) 0) * τ + (e : QuadraticAlgebra ℚ (D : ℚ) 0))
+    (hprim : ∃ u v w : ℤ, u * a + v * b + w * e = 1) :
+    (a : ℚ) * τ.im = 1 / 2 := by
+  let O := QuadraticOrder.numberFieldOrder D hD
   let θ : QuadraticAlgebra ℚ (D : ℚ) 0 := (a : QuadraticAlgebra ℚ (D : ℚ) 0) * τ
   -- Properness identifies the computed multiplier lattice with the given quadratic order.
   have hmult (x : QuadraticAlgebra ℚ (D : ℚ) 0) :
       (∀ z ∈ I, x * z ∈ I) ↔
-        ∃ m n : ℤ, x = m • (1 : QuadraticAlgebra ℚ (D : ℚ) 0) + n • θ := by
-    exact QuadraticOrder.forall_mul_mem_iff_exists_int_coefficients D hD I q β τ hq.ne'
-      hτim.ne' hgen hβτ a b e hrel ⟨u, v, w, huvw⟩ x
+        ∃ m n : ℤ, x = m • (1 : QuadraticAlgebra ℚ (D : ℚ) 0) + n • θ :=
+    QuadraticOrder.forall_mul_mem_iff_exists_int_coefficients D hD I q β τ hq.ne'
+      hτim.ne' hgen hβτ a b e hrel hprim x
   have hθ : θ ∈ O.toSubalgebra := by
     apply (O.isProperFractionalIdeal_iff I).mp hI θ
     exact (hmult θ).mpr ⟨0, 1, by simp⟩
@@ -131,13 +141,30 @@ theorem exists_pos_primitive_form_fractionalIdeal_eq (D : ℤ) [Fact (¬ IsSquar
   obtain ⟨M, N, hθrep⟩ := (QuadraticOrder.mem_toSubalgebra_iff D hD θ).mp hθorder
   obtain ⟨r, s, hgenrep⟩ :=
     (hmult (QuadraticOrder.generator D)).mp hgen_stable
-  -- Compare the integral order generators, with positivity fixing their orientation.
-  have hhalf : (a : ℚ) * τ.im = 1 / 2 :=
-    QuadraticOrder.mul_im_eq_half_of_mutual_generators D a ha τ hτim
-      M N r s hθrep hgenrep
+  -- Compare the integral order generators, with positivity fixing their orientation: mutual
+  -- integral coordinates force the positive imaginary coefficient to be one half.
+  exact QuadraticOrder.mul_im_eq_half_of_mutual_generators D a ha τ hτim
+    M N r s hθrep hgenrep
+
+/-- Every proper fractional ideal of the nonsquare quadratic order is a positive rational
+multiple of the ideal of a primitive positive-leading form of the given discriminant. -/
+theorem exists_pos_primitive_form_fractionalIdeal_eq (D : ℤ) [Fact (¬ IsSquare D)]
+    (hD : D % 4 = 0 ∨ D % 4 = 1)
+    (I : FractionalIdeal (nonZeroDivisors (QuadraticOrder.numberFieldOrder D hD).toSubalgebra)
+      (QuadraticAlgebra ℚ (D : ℚ) 0))
+    (hI : (QuadraticOrder.numberFieldOrder D hD).IsProperFractionalIdeal I) :
+    ∃ (f : BinaryQuadraticForm ℤ) (hf : f.discrim = D), f.IsPrimitive ∧ 0 < f.a ∧
+      ∃ r : ℚ, 0 < r ∧ I = FractionalIdeal.spanSingleton
+        (nonZeroDivisors (QuadraticOrder.numberFieldOrder D hD).toSubalgebra)
+        (r : QuadraticAlgebra ℚ (D : ℚ) 0) * f.fractionalIdeal D hf := by
+  -- Normalize the lattice to q times the span of 1 and a positive-imaginary element τ.
+  obtain ⟨q, β, hq, hβ, hgen⟩ := QuadraticOrder.exists_rational_axis_generators D hD I hI.ne_zero
+  obtain ⟨τ, a, b, e, hτim, hβτ, ha, hb, he, hrel, hprim⟩ :=
+    exists_primitive_relation_of_axis D q β hq hβ
+  obtain ⟨u, v, w, huvw⟩ := hprim
+  have hhalf := mul_im_eq_half_of_proper D hD I hI q β τ hq hgen hτim hβτ a b e ha hrel
+    ⟨u, v, w, huvw⟩
   -- Recover the discriminant and primitive coefficients from the cleared relation.
-  dsimp [d] at hb
-  dsimp [c] at he
   have hdisc : b ^ 2 + 4 * a * e = D := by
     apply Int.cast_injective (α := ℚ)
     push_cast
@@ -149,11 +176,11 @@ theorem exists_pos_primitive_form_fractionalIdeal_eq (D : ℤ) [Fact (¬ IsSquar
   have hp : f.IsPrimitive :=
     isPrimitive_of_linearCombination_eq_one f u (-v) (-w)
       (by simpa only [f, neg_mul_neg] using huvw)
-  have hθgen : θ = f.idealGenerator D := by
+  have hθgen : (a : QuadraticAlgebra ℚ (D : ℚ) 0) * τ = f.idealGenerator D := by
     ext
-    · simp [θ, f]
+    · simp [f]
       linear_combination hb / 2
-    · simpa [θ] using hhalf
+    · simpa using hhalf
   -- Compare the two integral generators to recover the ideal with positive rational scale.
   let t : ℚ := q / a
   have ht : 0 < t := div_pos hq (by exact_mod_cast ha)
@@ -164,9 +191,7 @@ theorem exists_pos_primitive_form_fractionalIdeal_eq (D : ℤ) [Fact (¬ IsSquar
     push_cast
     field_simp [haK]
   have ht_gen : (t : QuadraticAlgebra ℚ (D : ℚ) 0) * f.idealGenerator D = β := by
-    rw [← hθgen]
-    dsimp [θ]
-    rw [← mul_assoc, ht_a, hβτ]
+    rw [← hθgen, ← mul_assoc, ht_a, hβτ]
   refine ⟨f, hf, hp, ha, t, ht, ?_⟩
   exact fractionalIdeal_eq_of_generators D hD I f hf q t β hgen ht_a ht_gen
 
