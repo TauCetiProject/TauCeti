@@ -140,6 +140,27 @@ lemma monotone_renewalCountNat (ω : Ω) : Monotone fun t ↦ renewalCountNat T 
   · simp only [renewalCountNat_eq_zero_of_not_tendsto T hω]
     exact monotone_const
 
+variable {T} in
+/-- Before the observation time, the natural count is the finite sum over the
+completed arrivals at that time. The artificial arrival at index zero is omitted.
+On explosive paths both sides are zero by the count's exceptional-path convention. -/
+theorem renewalCountNat_eq_sum_range_of_le {ω : Ω} {s t : ℝ≥0} (hst : s ≤ t) :
+    renewalCountNat T s ω = ∑ k ∈ Finset.range (renewalCountNat T t ω),
+      if arrival T (k + 1) ω ≤ s then 1 else 0 := by
+  classical
+  by_cases hω : Tendsto (fun n ↦ arrival T n ω) atTop atTop
+  · have hsum (n : ℕ) :
+        (∑ k ∈ Finset.range n, if k + 1 ≤ renewalCountNat T s ω then 1 else 0) =
+          min n (renewalCountNat T s ω) := by
+      induction n with
+      | zero => simp
+      | succ n hn =>
+        rw [Finset.sum_range_succ, hn]
+        split_ifs with h <;> omega
+    simp_rw [← le_renewalCountNat_iff hω]
+    rw [hsum, min_eq_right (monotone_renewalCountNat T ω hst)]
+  · simp [hω]
+
 /-- The natural count is locally constant to the right, even on the exceptional event. -/
 lemma eventually_renewalCountNat_eq_nhdsGE (t : ℝ≥0) (ω : Ω) :
     ∀ᶠ s in 𝓝[≥] t, renewalCountNat T s ω = renewalCountNat T t ω := by
