@@ -24,7 +24,8 @@ import TauCeti.MeasureTheory.Covering.Vitali
 import TauCeti.MeasureTheory.Integral.Lebesgue.Truncation
 -- `TauCeti.Analysis.SpecialFunctions.Pow.NNReal` is imported privately: it supplies the
 -- cancellation `ENNReal.rpow_one_sub_le_of_le_mul_rpow` inside the proof of the vector-valued
--- inequality.
+-- inequality, and the constant identity `ENNReal.ofReal_mul_inv_two_rpow_div_mul_two_mul` inside
+-- the proofs of the strong-type inequalities.
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 
 /-!
@@ -452,17 +453,6 @@ theorem ae_maximalFunction_lt_top (μ : Measure E) [μ.IsAddHaarMeasure] (f : E 
 
 section StrongType
 
-/-- The constant that Marcinkiewicz interpolation at the height `2⁻¹ * t` produces from a weak-type
-`(1, 1)` constant `A` and the `L^∞` constant `1`. -/
-private theorem ofReal_mul_two_mul_eq (p : ℝ) (A : ℝ≥0∞) :
-    ENNReal.ofReal (p * (2 : ℝ)⁻¹ ^ (1 - p) / (p - 1)) * (2 * A) =
-      ENNReal.ofReal (2 * p * 2 ^ (p - 1) / (p - 1)) * A := by
-  have hinv : ((2 : ℝ))⁻¹ ^ (1 - p) = 2 ^ (p - 1) := by
-    rw [Real.inv_rpow (by norm_num), ← Real.rpow_neg (by norm_num), neg_sub]
-  have hsplit : 2 * p * 2 ^ (p - 1) / (p - 1) = 2 * (p * 2 ^ (p - 1) / (p - 1)) := by ring
-  rw [hinv, hsplit, ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2), ENNReal.ofReal_ofNat]
-  ring
-
 /-- **The Hardy–Littlewood maximal inequality**, the strong-type `(p, p)` bound for `1 < p < ∞`,
 as an inequality between the integrals `∫⁻ ‖·‖ₑ ^ p`:
 
@@ -475,7 +465,7 @@ theorem lintegral_rpow_maximalFunction_le (μ : Measure E) [μ.IsAddHaarMeasure]
     ∫⁻ x, maximalFunction μ f x ^ p ∂μ ≤
       ENNReal.ofReal (2 * p * 2 ^ (p - 1) / (p - 1)) * 4 ^ finrank ℝ E *
         ∫⁻ x, ‖f x‖ₑ ^ p ∂μ := by
-  rw [← ofReal_mul_two_mul_eq, ← maximalFunction_enorm μ f]
+  rw [← ENNReal.ofReal_mul_inv_two_rpow_div_mul_two_mul, ← maximalFunction_enorm μ f]
   simpa only [inv_inv, ENNReal.ofReal_ofNat, enorm_eq_self] using
     lintegral_rpow_le_of_mul_meas_lt_le_of_le_eLpNormEssSup
       (T := fun g => maximalFunction μ g) (A := 4 ^ finrank ℝ E) (b := 1)
@@ -741,7 +731,8 @@ theorem lintegral_rpow_maximalFunction_mul_le (μ : Measure E) [μ.IsAddHaarMeas
       ((measurable_maximalFunction μ f).pow_const p).aemeasurable,
     lintegral_withDensity_eq_lintegral_mul₀ hMw.aemeasurable (hf.pow_const p)] at hT
   simpa only [inv_inv, ENNReal.ofReal_ofNat, enorm_eq_self, maximalFunction_enorm,
-    ofReal_mul_two_mul_eq, Pi.mul_apply, mul_comm (w _), mul_comm (maximalFunction μ w _)] using hT
+    ENNReal.ofReal_mul_inv_two_rpow_div_mul_two_mul, Pi.mul_apply, mul_comm (w _),
+    mul_comm (maximalFunction μ w _)] using hT
 
 end Weighted
 
