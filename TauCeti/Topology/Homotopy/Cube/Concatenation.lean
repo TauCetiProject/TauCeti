@@ -131,20 +131,6 @@ theorem cubeSymmAt_cubeSymmAt (j : N) (f : C(Z × (I^N), Y)) :
     simp
   · simp [hij]
 
-/-- Each half of the concatenation along `j` sends the boundary of `I × I^N` into the boundary of
-`I × I^N`. -/
-private theorem update_mem_prodBoundary {j : N} {w : I × I^N} (hw : w ∈ Cube.prodBoundary N)
-    {a : I} (ha : w.2 j = 0 ∨ w.2 j = 1 → a = w.2 j) :
-    (w.1, Function.update w.2 j a) ∈ Cube.prodBoundary N := by
-  rcases Cube.mem_prodBoundary_iff.1 hw with hs | ⟨i, hi⟩
-  · exact Cube.mem_prodBoundary_iff.2 (.inl hs)
-  refine Cube.mem_prodBoundary_iff.2 (.inr ⟨i, ?_⟩)
-  dsimp only
-  by_cases hij : i = j
-  · subst hij
-    rwa [Function.update_self, ha hi]
-  · rwa [Function.update_of_ne hij]
-
 theorem mapsTo_cubeTransAt {B : Set Y} {j : N} {f g : C(I × (I^N), Y)}
     (hf : MapsTo f (Cube.prodBoundary N) B) (hg : MapsTo g (Cube.prodBoundary N) B)
     (h : ∀ s t, f (s, Function.update t j 1) = g (s, Function.update t j 0)) :
@@ -152,11 +138,11 @@ theorem mapsTo_cubeTransAt {B : Set Y} {j : N} {f g : C(I × (I^N), Y)}
   intro w hw
   rw [cubeTransAt_apply]
   split_ifs with hj
-  · refine hf (update_mem_prodBoundary hw fun h0 ↦ ?_)
+  · refine hf (Cube.update_mem_prodBoundary hw fun h0 ↦ ?_)
     rcases h0 with h0 | h0 <;> rw [h0] at hj ⊢
     · simp
     · norm_num at hj
-  · refine hg (update_mem_prodBoundary hw fun h0 ↦ ?_)
+  · refine hg (Cube.update_mem_prodBoundary hw fun h0 ↦ ?_)
     rcases h0 with h0 | h0 <;> rw [h0] at hj ⊢
     · norm_num at hj
     · ext; norm_num
