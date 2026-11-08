@@ -139,10 +139,10 @@ section Elliptic
 
 variable [W.IsElliptic]
 
-/-- **`0`-torsion is everything**: over an algebraically closed field the group of points of an
-elliptic curve is nontrivial, so it is not the `0`-torsion subgroup, which is the whole group. -/
-theorem torsionBy_zero_baseChange_ne_bot (Ω : Type*) [Field Ω] [IsAlgClosed Ω] [Algebra K Ω]
-    [DecidableEq Ω] :
+/-- Over a separably closed field `Ω`, the `0`-torsion subgroup of the points of an elliptic curve,
+which is the whole group, is nontrivial, since the curve has a nonzero point. -/
+private theorem torsionBy_zero_baseChange_ne_bot (Ω : Type*) [Field Ω] [IsSepClosed Ω]
+    [Algebra K Ω] [DecidableEq Ω] :
     AddSubgroup.torsionBy (W.baseChange Ω).toAffine.Point 0 ≠ ⊥ := by
   have : (W.baseChange Ω).IsElliptic := inferInstanceAs (W.map _).IsElliptic
   obtain ⟨P, hP⟩ := exists_ne (0 : (W.baseChange Ω).toAffine.Point)
@@ -158,7 +158,8 @@ theorem isSupersingular_iff_of_isAlgClosed (Ω : Type*) [Field Ω] [IsAlgClosed 
     W.IsSupersingular p ↔ AddSubgroup.torsionBy (W.baseChange Ω).toAffine.Point p = ⊥ := by
   classical
   obtain rfl | hp := eq_or_ne p 0
-  · exact iff_of_false (W.torsionBy_zero_baseChange_ne_bot (AlgebraicClosure K))
+  · rw [IsSupersingular, Nat.cast_zero]
+    exact iff_of_false (W.torsionBy_zero_baseChange_ne_bot (AlgebraicClosure K))
       (W.torsionBy_zero_baseChange_ne_bot Ω)
   -- Mathlib's ellipticity instance is stated for `W.map f`, which `W.baseChange A` unfolds to.
   have : (W.baseChange (AlgebraicClosure K)).IsElliptic := inferInstanceAs (W.map _).IsElliptic
