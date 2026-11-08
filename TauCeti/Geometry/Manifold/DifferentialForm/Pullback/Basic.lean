@@ -438,6 +438,22 @@ theorem mpullback_comp {f : M → M'} {g : M' → M''}
     mpullback I I'' (g ∘ f) ω = mpullback I I' f (mpullback I' I'' g ω) :=
   bundleMpullback_comp hf hg ω
 
+/-- Pullback reverses composition with a differentiable map `g` that does not change where the
+inner map `f` is differentiable. At points where `f` is not differentiable both pullbacks vanish,
+as the derivative is taken to be zero there. -/
+theorem mpullback_comp_of_mdifferentiableAt_comp_iff {f : M → M'} {g : M' → M''}
+    (hg : MDifferentiable I' I'' g)
+    (hfg : ∀ x, MDifferentiableAt I I'' (g ∘ f) x ↔ MDifferentiableAt I I' f x)
+    (ω : RoughForm I'' M'' F k) :
+    mpullback I I'' (g ∘ f) ω = mpullback I I' f (mpullback I' I'' g ω) := by
+  funext x
+  by_cases hfx : MDifferentiableAt I I' f x
+  · exact mpullback_comp_at hfx (hg _) ω
+  · have hgf : ¬MDifferentiableAt I I'' (g ∘ f) x := (hfg x).not.mpr hfx
+    ext v
+    simp only [mpullback_apply, Function.comp_apply, mfderiv_zero_of_not_mdifferentiableAt hfx,
+      mfderiv_zero_of_not_mdifferentiableAt hgf, zero_apply, map_zero]
+
 /-- Pullback of a degree-zero form is composition of its underlying function. -/
 @[simp]
 theorem mpullback_ofFunction (f : M → M') (a : M' → F) :
