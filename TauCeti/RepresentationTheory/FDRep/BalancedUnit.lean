@@ -165,12 +165,10 @@ private theorem unit_surjective_of_basis :
       rw [(F).endModule_smul, unitCoordinate_apply]
       exact Finsupp.notMem_support_iff.mp hi
     exact (smul_eq_zero.mp hz).resolve_right hx
-  let m := ∑ i ∈ t, op (d i) • b i
+  let m := b.repr.symm (Finsupp.ofSupportFinite (fun i => op (d i))
+    (t.finite_toSet.subset fun i hi => by_contra fun h => hi (by simp [hd i h])))
   have hm (i : ι) : b.repr m i = op (d i) := by
-    simp only [m, map_sum, map_smul, Module.Basis.repr_self]
-    by_cases hi : i ∈ t
-    · simp [Finsupp.single_apply, hi]
-    · simp [Finsupp.single_apply, hi, hd i hi]
+    simp [m, Finsupp.ofSupportFinite_coe]
   refine ⟨m, ?_⟩
   apply Representation.IntertwiningMap.ext
   apply LinearMap.ext
