@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.Analysis.Matrix.Frobenius
 public import TauCeti.Algebra.BigOperators.Finset.SquaredDeviation
 public import Mathlib.Data.Matrix.Basic
-public import Mathlib.LinearAlgebra.Matrix.Hermitian
 
 /-!
 # Finite-dimensional spectral oracle
@@ -32,6 +31,12 @@ namespace Matrix
 def diagonalOracleLoss {ι : Type*} [Fintype ι] [DecidableEq ι]
     (T : Matrix ι ι ℂ) (d : ι → ℝ) : ℝ :=
   ‖T - Matrix.diagonal (fun i => (d i : ℂ))‖ ^ 2
+
+/-- The oracle loss is the squared Frobenius norm of the estimation error. -/
+theorem diagonalOracleLoss_def {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (T : Matrix ι ι ℂ) (d : ι → ℝ) :
+    diagonalOracleLoss T d = ‖T - Matrix.diagonal (fun i => (d i : ℂ))‖ ^ 2 := by
+  rw [diagonalOracleLoss]
 
 /-- Diagonal loss is the sum of the squared entrywise differences. -/
 theorem diagonalOracleLoss_eq_sum {ι : Type*} [Fintype ι] [DecidableEq ι]
@@ -175,6 +180,14 @@ def diagonalBlockAverage {ι : Type*} (T : Matrix ι ι ℂ) (s : Finset ι) :
     ℝ :=
   (∑ i ∈ s, (T i i).re) / s.card
 
+/-- The block average is the sum of the real diagonal entries divided by its cardinality. -/
+theorem diagonalBlockAverage_def {ι : Type*} (T : Matrix ι ι ℂ) (s : Finset ι) :
+    diagonalBlockAverage T s = (∑ i ∈ s, (T i i).re) / s.card := by
+  rw [diagonalBlockAverage]
+
+@[simp] theorem diagonalBlockAverage_empty {ι : Type*} (T : Matrix ι ι ℂ) :
+    diagonalBlockAverage T ∅ = 0 := by simp [diagonalBlockAverage_def]
+
 /-- The block average is the real part of the trace of the coordinate compression,
 divided by the block's cardinality. -/
 theorem diagonalBlockAverage_eq_trace_compression {ι : Type*}
@@ -193,41 +206,13 @@ def diagonalBlockLoss {ι : Type*} (T : Matrix ι ι ℂ) (s : Finset ι)
     (c : ℝ) : ℝ :=
   ∑ i ∈ s, ((T i i).re - c) ^ 2
 
-/-- On any block, the squared-error loss is the loss at the average plus its excess. -/
-theorem diagonalBlockLoss_eq_diagonalBlockAverage_add {ι : Type*} (T : Matrix ι ι ℂ)
-    (s : Finset ι) (c : ℝ) :
-    diagonalBlockLoss T s c =
-      diagonalBlockLoss T s (diagonalBlockAverage T s) +
-        s.card * (c - diagonalBlockAverage T s) ^ 2 := by
-  simpa only [diagonalBlockLoss, diagonalBlockAverage] using
-    Finset.sum_sq_sub_mean s (fun i => (T i i).re) c
+/-- The block loss is the sum of its diagonal squared errors. -/
+theorem diagonalBlockLoss_def {ι : Type*} (T : Matrix ι ι ℂ) (s : Finset ι) (c : ℝ) :
+    diagonalBlockLoss T s c = ∑ i ∈ s, ((T i i).re - c) ^ 2 := by
+  rw [diagonalBlockLoss]
 
-/-- The average diagonal value is the unique minimizer when a diagonal estimator is required to
-be constant on a nonempty block. -/
-theorem diagonalBlockLoss_unique_minimizer {ι : Type*} (T : Matrix ι ι ℂ)
-    (s : Finset ι) (hs : s.Nonempty) :
-    ∀ c : ℝ, diagonalBlockLoss T s (diagonalBlockAverage T s) ≤ diagonalBlockLoss T s c ∧
-      (diagonalBlockLoss T s c = diagonalBlockLoss T s (diagonalBlockAverage T s) ↔
-        c = diagonalBlockAverage T s) := by
-  intro c
-  constructor
-  · simpa only [diagonalBlockLoss, diagonalBlockAverage] using
-      Finset.sum_sq_sub_mean_le s (fun i => (T i i).re) c
-  · simpa only [diagonalBlockLoss, diagonalBlockAverage] using
-      Finset.sum_sq_sub_mean_eq_iff s (fun i => (T i i).re) hs c
-
-/-- On a nonempty block, the average has the least squared-error loss. -/
-theorem diagonalBlockLoss_le {ι : Type*} (T : Matrix ι ι ℂ) (s : Finset ι)
-    (hs : s.Nonempty) (c : ℝ) :
-    diagonalBlockLoss T s (diagonalBlockAverage T s) ≤ diagonalBlockLoss T s c :=
-  (diagonalBlockLoss_unique_minimizer T s hs c).1
-
-/-- Equality with the block minimum characterizes the average. -/
-theorem diagonalBlockLoss_eq_iff {ι : Type*} (T : Matrix ι ι ℂ) (s : Finset ι)
-    (hs : s.Nonempty) (c : ℝ) :
-    diagonalBlockLoss T s c = diagonalBlockLoss T s (diagonalBlockAverage T s) ↔
-      c = diagonalBlockAverage T s :=
-  (diagonalBlockLoss_unique_minimizer T s hs c).2
+@[simp] theorem diagonalBlockLoss_empty {ι : Type*} (T : Matrix ι ι ℂ) (c : ℝ) :
+    diagonalBlockLoss T ∅ c = 0 := by simp [diagonalBlockLoss_def]
 
 end Matrix
 

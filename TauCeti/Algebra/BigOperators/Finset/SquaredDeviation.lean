@@ -36,8 +36,6 @@ theorem sum_sq_sub_mean {ι : Type*} (s : Finset ι) (t : ι → ℝ) (c : ℝ) 
     have hsum_centered : ∑ i ∈ s, (t i - a) = 0 := by
       rw [Finset.sum_sub_distrib, Finset.sum_const, nsmul_eq_mul, hsum]
       ring
-    change (∑ i ∈ s, (t i - c) ^ 2) =
-      (∑ i ∈ s, (t i - a) ^ 2) + s.card * (c - a) ^ 2
     calc
       (∑ i ∈ s, (t i - c) ^ 2) =
           ∑ i ∈ s, ((t i - a) ^ 2 + (c - a) ^ 2 - 2 * (t i - a) * (c - a)) := by

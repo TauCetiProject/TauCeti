@@ -128,15 +128,9 @@ theorem frobenius_norm_sq_conj_unitary {ι : Type*} [Fintype ι] [DecidableEq ι
   have hright : U * Uᴴ = 1 := by
     simpa only [star_eq_conjTranspose] using (mem_unitaryGroup_iff.mp hU)
   have hnorm (B : Matrix ι ι ℂ) : ((‖B‖ ^ 2 : ℝ) : ℂ) = (Bᴴ * B).trace := by
-    rw [frobenius_norm_sq_eq_sum_normSq]
-    simp only [Complex.ofReal_sum, trace, diag_apply, Matrix.mul_apply, conjTranspose_apply,
-      RCLike.star_def]
-    rw [Finset.sum_comm]
-    apply Finset.sum_congr rfl
-    intro i _
-    apply Finset.sum_congr rfl
-    intro j _
-    exact Complex.normSq_eq_conj_mul_self
+    rw [← frobenius_inner_eq_trace_conjTranspose_mul, inner_self_eq_norm_sq_to_K]
+    push_cast
+    rfl
   apply Complex.ofReal_injective
   rw [hnorm, hnorm]
   have hmul : (Uᴴ * A * U)ᴴ * (Uᴴ * A * U) = Uᴴ * (Aᴴ * A) * U := by
