@@ -64,7 +64,7 @@ variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [NormedAddCommGroup V]
 
 /-- A unitary representation has spectral gap exactly when the representation on the orthogonal
 complement of its fixed vectors has no almost invariant vectors. -/
-theorem hasSpectralGap_iff_not_hasAlmostInvariantVectors
+theorem hasSpectralGap_iff_not_invariantComplement_hasAlmostInvariantVectors
     (ρ : ContRepresentation 𝕜 G V) (hρ : ρ.IsUnitary) :
     ρ.HasSpectralGap ↔ ¬ hρ.invariantComplement.HasAlmostInvariantVectors := by
   rw [not_hasAlmostInvariantVectors_iff_exists_norm_sq_le]
