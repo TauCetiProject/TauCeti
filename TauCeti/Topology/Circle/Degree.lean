@@ -46,6 +46,10 @@ which the Maslov index of a loop of totally real subspaces is defined.
   of the degrees, and reversing a loop negates its degree.
 * `Circle.degree_mul`: the degree of a pointwise product of loops is the sum of the degrees.
 * `Circle.degree_map_pow`: the pointwise `n`-th power of a loop has `n` times its degree.
+* `Circle.expLoop`, `Circle.degree_expLoop`: the loop `t ↦ exp(2πit)`, going once
+  counterclockwise around the circle, has degree `1`.
+* `Circle.degree_eq_of_forall_eq_pow`: for `a, b > 0` the loop `t ↦ (z / ‖z‖)ⁿ`,
+  `z = a cos 2πt + i b sin 2πt`, has degree `n`.
 * `Circle.degree_inv`: the pointwise inverse of a loop has the opposite degree.
 * `Circle.degree_congr`: loops agreeing pointwise have the same degree.
 * `Circle.exists_forall_eq_add_of_exp_eq`: on a preconnected space, two continuous lifts of the
@@ -249,6 +253,78 @@ theorem degree_map_pow {x : Circle} (γ : Path x x) (n : ℕ) :
       ih]
     push_cast
     ring
+
+/-- The loop `t ↦ exp(2πit)` at `1`, going once counterclockwise around the unit circle. -/
+noncomputable def expLoop : Path (1 : Circle) 1 where
+  toFun t := exp (2 * π * t)
+  continuous_toFun := by fun_prop
+  source' := by simp
+  target' := by simp
+
+@[simp]
+theorem expLoop_apply (t : I) : expLoop t = exp (2 * π * t) :=
+  (rfl)
+
+/-- The counterclockwise loop `t ↦ exp(2πit)` has degree `1`: its angle lift `t ↦ 2πt` gains one
+full turn. -/
+@[simp]
+theorem degree_expLoop : degree expLoop = 1 :=
+  degree_eq_of_sub_eq expLoop (θ := fun t => 2 * π * t) (by fun_prop) (fun _ => rfl)
+    (n := 1) (by simp)
+
+/-- The numbers `a cos θ` and `b sin θ` do not vanish together for `a ≠ 0` and `b ≠ 0`. -/
+private theorem mul_cos_sq_add_mul_sin_sq_pos {a b : ℝ} (ha : a ≠ 0) (hb : b ≠ 0) (θ : ℝ) :
+    0 < (a * cos θ) ^ 2 + (b * sin θ) ^ 2 := by
+  have h1 := cos_sq_add_sin_sq θ
+  rcases eq_or_ne (sin θ) 0 with hs | hs
+  · rw [hs] at h1 ⊢
+    rw [mul_pow, show cos θ ^ 2 = 1 by linarith]
+    positivity
+  · positivity
+
+/-- For `a, b > 0`, a loop in the circle with values `(z / ‖z‖)ⁿ`, where
+`z = a cos 2πt + i b sin 2πt` runs once counterclockwise around an ellipse, has degree `n`:
+deforming `a` and `b` to `1` turns it into the pointwise `n`-th power of `Circle.expLoop`. -/
+theorem degree_eq_of_forall_eq_pow {x : Circle} (γ : Path x x) {a b : ℝ} (ha : 0 < a)
+    (hb : 0 < b) (n : ℕ)
+    (hγ : ∀ t : I, (γ t : ℂ) =
+      ((((a * cos (2 * π * t) : ℝ) : ℂ) + (b * sin (2 * π * t) : ℝ) * Complex.I) /
+        ‖((a * cos (2 * π * t) : ℝ) : ℂ) + (b * sin (2 * π * t) : ℝ) * Complex.I‖) ^ n) :
+    degree γ = n := by
+  -- Deform `a` and `b` linearly to `1`, through the positive numbers `(1 - s) c + s`.
+  have hc {c : ℝ} (hc : 0 < c) (s : I) : 0 < (1 - (s : ℝ)) * c + s := by
+    rcases s.2.1.eq_or_lt with h | h
+    · simpa [← h] using hc
+    · nlinarith [mul_nonneg (sub_nonneg.2 s.2.2) hc.le]
+  let z : I × I → ℂ := fun p ↦ (((1 - (p.1 : ℝ)) * a + p.1) * cos (2 * π * p.2) : ℝ) +
+    (((1 - (p.1 : ℝ)) * b + p.1) * sin (2 * π * p.2) : ℝ) * Complex.I
+  have hz (p : I × I) : 0 < ‖z p‖ := by
+    refine pos_of_mul_pos_left (a := ‖z p‖) ?_ (norm_nonneg (z p))
+    rw [← sq, Complex.sq_norm, Complex.normSq_add_mul_I]
+    exact mul_cos_sq_add_mul_sin_sq_pos (hc ha p.1).ne' (hc hb p.1).ne' _
+  have hzc : Continuous z := by fun_prop
+  let F : C(I × I, Circle) :=
+    { toFun p := ⟨z p / ‖z p‖, mem_sphere_zero_iff_norm.2 (by
+        rw [norm_div, Complex.norm_real, Real.norm_of_nonneg (norm_nonneg _),
+          div_self (hz p).ne'])⟩ ^ n
+      continuous_toFun := (Continuous.subtype_mk (hzc.div
+        (Complex.continuous_ofReal.comp hzc.norm) fun p ↦
+          Complex.ofReal_ne_zero.2 (hz p).ne') _).pow n }
+  have hF (p : I × I) : (F p : ℂ) = (z p / ‖z p‖) ^ n := coe_pow _ n
+  refine (degree_eq_of_homotopy γ (expLoop.map (continuous_pow n)) F (fun t ↦ ?_) (fun t ↦ ?_)
+    (fun s ↦ ?_)).trans (by simp)
+  · refine coe_injective ?_
+    rw [hF, hγ t]
+    simp [z]
+  · refine coe_injective ?_
+    rw [hF]
+    have h1 : z (1, t) = Complex.exp ((2 * π * t : ℝ) * Complex.I) := by
+      simp [z, Complex.exp_mul_I]
+    rw [h1, Complex.norm_exp_ofReal_mul_I]
+    simp
+  · refine coe_injective ?_
+    rw [hF, hF]
+    simp [z]
 
 /-- The pointwise inverse of a loop has the opposite degree. -/
 @[simp]
