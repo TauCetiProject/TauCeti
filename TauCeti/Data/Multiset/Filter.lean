@@ -21,7 +21,9 @@ It also counts the factors of a product of `if p x then a else 1` over a multise
 satisfying `p` is a product over all elements with the others replaced by `1`
 (`Multiset.prod_map_filter`). Finally, filtering a multiset of pairs on the second coordinate and
 projecting to the first recovers the multiplicities of the pairs
-(`Multiset.count_map_fst_filter_snd_eq`).
+(`Multiset.count_map_fst_filter_snd_eq`). In particular, tagging the elements of a family of
+multisets `μ j` with an injective label `g j` and adding them up, the part with label `g i`
+recovers `μ i` (`Multiset.map_fst_filter_sum_map_prodMk`).
 -/
 
 public section
@@ -54,6 +56,7 @@ theorem prod_map_filter {M : Type*} [CommMonoid M] (s : Multiset α) (f : α →
 
 /-- Filtering a multiset of pairs on the second coordinate `b` and projecting to the first
 coordinate counts `a` as often as the pair `(a, b)` occurs. -/
+@[simp]
 theorem count_map_fst_filter_snd_eq {β : Type*} [DecidableEq α] [DecidableEq β]
     (s : Multiset (α × β)) (a : α) (b : β) :
     ((s.filter (·.2 = b)).map Prod.fst).count a = s.count (a, b) := by
@@ -63,5 +66,41 @@ theorem count_map_fst_filter_snd_eq {β : Type*} [DecidableEq α] [DecidableEq �
   rcases x with ⟨x, y⟩
   simp only [Prod.mk.injEq]
   tauto
+
+section Tagged
+
+variable {β : Type*} [Fintype ι] [DecidableEq β] (μ : ι → Multiset α) {g : ι → β}
+
+/-- Tagging the elements of each `μ j` with an injective label `g j`, the pair `(a, g i)` occurs in
+the sum as often as `a` occurs in `μ i`. -/
+theorem count_sum_map_prodMk_of_injective [DecidableEq α] (hg : Function.Injective g) (a : α)
+    (i : ι) :
+    (∑ j, (μ j).map fun x ↦ (x, g j)).count (a, g i) = (μ i).count a := by
+  rw [count_sum', Finset.sum_eq_single i]
+  · exact count_map_eq_count' _ _ (fun x y hxy ↦ (Prod.ext_iff.1 hxy).1) a
+  · intro j _ hj
+    refine count_eq_zero_of_notMem fun hmem ↦ hj ?_
+    obtain ⟨x, _, hx⟩ := mem_map.1 hmem
+    exact hg (Prod.ext_iff.1 hx).2
+  · simp
+
+/-- Tagging the elements of each `μ j` with the label `g j`, no pair in the sum carries a label
+outside the range of `g`. -/
+theorem count_sum_map_prodMk_of_notMem_range [DecidableEq α] (a : α) {b : β}
+    (hb : b ∉ Set.range g) :
+    (∑ j, (μ j).map fun x ↦ (x, g j)).count (a, b) = 0 := by
+  rw [count_sum']
+  refine Finset.sum_eq_zero fun j _ ↦ count_eq_zero_of_notMem fun hmem ↦ hb ?_
+  obtain ⟨x, _, hx⟩ := mem_map.1 hmem
+  exact ⟨j, (Prod.ext_iff.1 hx).2⟩
+
+/-- Tagging the elements of each `μ j` with an injective label `g j` and adding them up, the
+elements with label `g i` are those of `μ i`. -/
+theorem map_fst_filter_sum_map_prodMk (hg : Function.Injective g) (i : ι) :
+    ((∑ j, (μ j).map fun x ↦ (x, g j)).filter (·.2 = g i)).map Prod.fst = μ i := by
+  classical
+  exact ext.2 fun a ↦ by rw [count_map_fst_filter_snd_eq, count_sum_map_prodMk_of_injective μ hg]
+
+end Tagged
 
 end Multiset

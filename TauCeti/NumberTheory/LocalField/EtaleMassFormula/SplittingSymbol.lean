@@ -72,6 +72,17 @@ parts. -/
 def ramificationPartition (σ : Multiset (ℕ × ℕ)) : Multiset ℕ :=
   (σ.bind fun x => Multiset.replicate x.1 (x.2 - 1)).filter (· ≠ 0)
 
+/-- The defining formula of `splittingSymbolAut`. -/
+theorem splittingSymbolAut_def (σ : Multiset (ℕ × ℕ)) :
+    splittingSymbolAut σ = (σ.map Prod.fst).prod * ∏ x ∈ σ.toFinset, (σ.count x)! :=
+  (rfl)
+
+/-- The defining formula of `ramificationPartition`. -/
+theorem ramificationPartition_def (σ : Multiset (ℕ × ℕ)) :
+    ramificationPartition σ =
+      (σ.bind fun x => Multiset.replicate x.1 (x.2 - 1)).filter (· ≠ 0) :=
+  (rfl)
+
 /-- `#Aut(σ)` as a product over any finite set of pairs containing the factors of `σ`: the factor
 `(f, e)` contributes `f ^ m * m !`, where `m` is its multiplicity in `σ`. -/
 theorem splittingSymbolAut_eq_prod_of_subset (σ : Multiset (ℕ × ℕ)) {s : Finset (ℕ × ℕ)}
@@ -92,6 +103,7 @@ theorem splittingSymbolAut_pos {σ : Multiset (ℕ × ℕ)} (hσ : ∀ x ∈ σ,
 
 /-- The parts of the ramification partition are the `e - 1 ≠ 0` for the factors `(f, e)` of `σ`
 with `f ≠ 0`. -/
+@[simp]
 theorem mem_ramificationPartition {σ : Multiset (ℕ × ℕ)} {t : ℕ} :
     t ∈ ramificationPartition σ ↔ t ≠ 0 ∧ ∃ x ∈ σ, x.1 ≠ 0 ∧ x.2 - 1 = t := by
   simp only [ramificationPartition, Multiset.mem_filter, Multiset.mem_bind,
@@ -112,8 +124,8 @@ theorem count_ramificationPartition (σ : Multiset (ℕ × ℕ)) {t : ℕ} (ht :
   rw [Multiset.count_replicate]
   split_ifs <;> omega
 
-/-- The sum of the ramification partition is `∑ f (e - 1)`, the exponent of the discriminant of
-the symbol. -/
+/-- The sum of the ramification partition is `∑ f (e - 1)` over the factors `(f, e)` of `σ`. -/
+@[simp]
 theorem sum_ramificationPartition (σ : Multiset (ℕ × ℕ)) :
     (ramificationPartition σ).sum = (σ.map fun x => x.1 * (x.2 - 1)).sum := by
   rw [ramificationPartition, Multiset.filter_bind, Multiset.sum_bind]
@@ -126,6 +138,7 @@ theorem sum_ramificationPartition (σ : Multiset (ℕ × ℕ)) :
 
 /-- The number of parts of the ramification partition is the total residue degree of the ramified
 factors, those with `2 ≤ e`. -/
+@[simp]
 theorem card_ramificationPartition (σ : Multiset (ℕ × ℕ)) :
     Multiset.card (ramificationPartition σ) =
       (σ.map fun x => if 2 ≤ x.2 then x.1 else 0).sum := by
@@ -164,29 +177,6 @@ section Grouping
 
 variable {S : Finset ℕ}
 
-private theorem count_sum_map_prodMk_coe (μ : S → Multiset ℕ) (f : ℕ) (i : S) :
-    (∑ j : S, (μ j).map fun a => (a, (j : ℕ))).count (f, (i : ℕ)) = (μ i).count f := by
-  rw [Multiset.count_sum', Finset.sum_eq_single i]
-  · exact Multiset.count_map_eq_count' _ _ (fun a b hab => (Prod.ext_iff.1 hab).1) f
-  · intro j _ hj
-    refine Multiset.count_eq_zero_of_notMem fun hmem => hj ?_
-    obtain ⟨a, _, ha⟩ := Multiset.mem_map.1 hmem
-    exact Subtype.ext (Prod.ext_iff.1 ha).2
-  · simp
-
-private theorem count_sum_map_prodMk_of_notMem (μ : S → Multiset ℕ) (f : ℕ) {e : ℕ}
-    (he : e ∉ S) :
-    (∑ j : S, (μ j).map fun a => (a, (j : ℕ))).count (f, e) = 0 := by
-  rw [Multiset.count_sum']
-  refine Finset.sum_eq_zero fun j _ => Multiset.count_eq_zero_of_notMem fun hmem => he ?_
-  obtain ⟨a, _, ha⟩ := Multiset.mem_map.1 hmem
-  simp only [Prod.mk.injEq] at ha
-  exact ha.2 ▸ j.2
-
-private theorem map_fst_filter_sum (μ : S → Multiset ℕ) (i : S) :
-    ((∑ j : S, (μ j).map fun a => (a, (j : ℕ))).filter (·.2 = (i : ℕ))).map Prod.fst = μ i :=
-  Multiset.ext.2 fun f => by rw [Multiset.count_map_fst_filter_snd_eq, count_sum_map_prodMk_coe]
-
 /-- The splitting symbols whose ramification indices lie in `S`, with total residue degree `m e`
 at each `e ∈ S`, are the families of partitions of the `m e`: group the factors by their
 ramification index. -/
@@ -205,15 +195,17 @@ private def symbolEquiv (S : Finset ℕ) (m : ℕ → ℕ) :
     · obtain ⟨e, _, hx⟩ := Multiset.mem_sum.1 hx
       obtain ⟨a, ha, rfl⟩ := Multiset.mem_map.1 hx
       exact ⟨(μ e).parts_pos ha, e.2⟩
-    · rw [← Multiset.sum_map_filter, map_fst_filter_sum (fun e => (μ e).parts) ⟨e, he⟩]
+    · rw [← Multiset.sum_map_filter,
+        Multiset.map_fst_filter_sum_map_prodMk (fun e => (μ e).parts) Subtype.val_injective ⟨e, he⟩]
       exact (μ ⟨e, he⟩).parts_sum⟩
   left_inv σ := Subtype.ext <| Multiset.ext.2 fun ⟨f, e⟩ => by
     by_cases he : e ∈ S
-    · exact (count_sum_map_prodMk_coe _ f ⟨e, he⟩).trans
+    · exact (Multiset.count_sum_map_prodMk_of_injective _ Subtype.val_injective f ⟨e, he⟩).trans
         (Multiset.count_map_fst_filter_snd_eq σ.1 f e)
-    · rw [count_sum_map_prodMk_of_notMem _ f he,
+    · rw [Multiset.count_sum_map_prodMk_of_notMem_range _ f (by simpa using he),
         Multiset.count_eq_zero_of_notMem fun hx => he (σ.2.1 _ hx).2]
-  right_inv μ := funext fun e => Nat.Partition.ext (map_fst_filter_sum (fun e => (μ e).parts) e)
+  right_inv μ := funext fun e => Nat.Partition.ext
+    (Multiset.map_fst_filter_sum_map_prodMk (fun e => (μ e).parts) Subtype.val_injective e)
 
 private theorem coe_symbolEquiv_symm (S : Finset ℕ) (m : ℕ → ℕ) (μ : (e : S) → (m e).Partition) :
     ((symbolEquiv S m).symm μ : Multiset (ℕ × ℕ)) =
@@ -234,7 +226,8 @@ private theorem splittingSymbolAut_sum_map_prodMk {m : ℕ → ℕ} (μ : (e : S
   · refine Finset.prod_congr rfl fun e _ => ?_
     rw [zPart_eq_prod_of_subset (μ e) (hA e)]
     refine Finset.prod_congr rfl fun f _ => ?_
-    rw [count_sum_map_prodMk_coe (fun e => (μ e).parts) f e]
+    rw [Multiset.count_sum_map_prodMk_of_injective (fun e => (μ e).parts) Subtype.val_injective f
+      e]
   · intro x hx
     obtain ⟨e, _, hx⟩ := Multiset.mem_sum.1 (Multiset.mem_toFinset.1 hx)
     obtain ⟨a, ha, rfl⟩ := Multiset.mem_map.1 hx
@@ -343,11 +336,7 @@ private theorem ramificationPartition_eq_and_sum_eq {σ : Multiset (ℕ × ℕ)}
 /-- **The splitting symbols with a given ramification partition have total automorphism weight
 one** ([Bhargava 2007, proof of Prop. 2.2]). For a partition `π` of `k` into at most `n - k`
 parts, the splitting symbols `σ` of degree `n` (pairs `(f, e)` of positive integers with
-`∑ f e = n`) whose ramification partition is `π` satisfy `∑ 1 / #Aut(σ) = 1`.
-
-The factors with ramification index `t + 1` have residue degrees adding up to the multiplicity of
-`t` in `π` for `t ≠ 0`, and to `n - k - #π` for `t = 0`; this is
-`tsum_one_div_splittingSymbolAut_eq_one` for these totals. -/
+`∑ f e = n`) whose ramification partition is `π` satisfy `∑ 1 / #Aut(σ) = 1`. -/
 theorem tsum_one_div_splittingSymbolAut_ramificationPartition (n k : ℕ) (π : k.Partition)
     (hπ : Multiset.card π.parts ≤ n - k) :
     ∑' σ : {σ : Multiset (ℕ × ℕ) // (∀ x ∈ σ, 0 < x.1 ∧ 0 < x.2) ∧
