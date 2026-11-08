@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Pullback
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
 import Mathlib.Analysis.Calculus.MeanValue
+import TauCeti.Analysis.Calculus.TangentCone.Basic
 
 /-!
 # Metric compatibility along a curve
@@ -453,12 +454,6 @@ theorem IsMetricCompatible.inner_eq_of_alongCurveWithin_eq_zero
     (fun t ht ↦ (hderiv t ht).differentiableWithinAt) (fun t ht ↦ ?_) ha hb
   simpa using (hderiv t ht).hasFDerivWithinAt.fderivWithin (hs t ht)
 
-/-- A preconnected set of reals containing two distinct points has unique derivatives. -/
-private lemma uniqueDiffOn_of_isPreconnected (hconn : IsPreconnected s) {a b : ℝ}
-    (ha : a ∈ s) (hb : b ∈ s) (hab : a ≠ b) : UniqueDiffOn ℝ s :=
-  uniqueDiffOn_convex hconn.convex <| (Set.nonempty_Ioo.2 (min_lt_max.2 hab)).mono <| by
-    simpa only [Set.uIcc, interior_Icc] using interior_mono (hconn.ordConnected.uIcc_subset ha hb)
-
 /-- **Uniqueness of parallel fields.** On a preconnected parameter set, two parallel tangent
 fields along a differentiable curve that agree at one parameter agree at every parameter of the
 set. -/
@@ -474,7 +469,7 @@ theorem IsMetricCompatible.eq_of_alongCurveWithin_eq_zero
     {a b : ℝ} (ha : a ∈ s) (hb : b ∈ s) (hinit : V a = W a) : V b = W b := by
   rcases eq_or_ne a b with rfl | hab
   · exact hinit
-  have hs := uniqueDiffOn_of_isPreconnected hconn ha hb hab
+  have hs := hconn.uniqueDiffOn ha hb hab
   have hVV := hcov.inner_eq_of_alongCurveWithin_eq_zero hs hconn hγ hV hV hV₀ hV₀ hb ha
   have hVW := hcov.inner_eq_of_alongCurveWithin_eq_zero hs hconn hγ hV hW hV₀ hW₀ hb ha
   have hWV := hcov.inner_eq_of_alongCurveWithin_eq_zero hs hconn hγ hW hV hW₀ hV₀ hb ha
@@ -499,7 +494,7 @@ theorem IsMetricCompatible.eq_of_alongCurve_eq_zero
     {a b : ℝ} (ha : a ∈ s) (hb : b ∈ s) (hinit : V a = W a) : V b = W b := by
   rcases eq_or_ne a b with rfl | hab
   · exact hinit
-  have hs := uniqueDiffOn_of_isPreconnected hconn ha hb hab
+  have hs := hconn.uniqueDiffOn ha hb hab
   have hγcoord (t : ℝ) (ht : t ∈ s) : DifferentiableAt ℝ (extChartAt I (γ t) ∘ γ) t :=
     ((mdifferentiableAt_extChartAt (I := I) (mem_chart_source H (γ t))).comp t
       (hγ t ht)).differentiableAt
