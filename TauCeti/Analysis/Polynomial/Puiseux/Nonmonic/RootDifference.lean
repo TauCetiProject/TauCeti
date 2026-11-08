@@ -111,10 +111,10 @@ theorem exists_analyticOnNhd_nonmonic_root_sub_eq_zpow_mul_unit
   -- Apply the Laurent difference theorem to this constructed normalized splitting.
   have hl : ∀ᶠ b in 𝓝 (x, (0 : ℂ)), b.2 ≠ 0 →
       (F (q b)).coeff d = b.2 ^ (n * a) * u (q b) :=
-    TauCeti.eventually_comp_pow_eq_pow_mul (G := fun b ↦ (F b).coeff d) hU hR' hn hR hlead hx
+    TauCeti.eventually_comp_pow_eq_pow_mul (G := fun b ↦ (F b).coeff d) hU hRpos hn hlead hx
   have hD : ∀ᶠ b in 𝓝 (x, (0 : ℂ)), b.2 ≠ 0 →
       (F (q b)).discr = b.2 ^ (n * c) * v (q b) :=
-    TauCeti.eventually_comp_pow_eq_pow_mul (G := fun b ↦ (F b).discr) hU hR' hn hR hdiscr hx
+    TauCeti.eventually_comp_pow_eq_pow_mul (G := fun b ↦ (F b).discr) hU hRpos hn hdiscr hx
   obtain ⟨e, w, hw, hw0, heq⟩ := TauCeti.exists_root_sub_eq_zpow_mul_unit
     (fun k ↦ hsa k _ hx') ((hv.comp hq hqfull) _ hx')
     (by simpa only [comp_apply, q, zero_pow hn] using hv0 _ hxR)
