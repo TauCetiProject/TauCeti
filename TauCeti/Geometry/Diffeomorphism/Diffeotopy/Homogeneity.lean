@@ -91,17 +91,13 @@ theorem eventually_exists_diffeotopy_final_apply_eq (hm : 1 ≤ m)
   refine ⟨compactlySupportedFlowDiffeotopy hm hv hL (fun z hz ↦ bumpChartField_eq_zero d hz) 1,
     _, hL, hρU, compactlySupportedFlowDiffeotopy_eqOn_compl hm hv hL _ 1, ?_⟩
   -- The segment `s ↦ e.symm (e x + s • d)` is the flow line of `x`.
-  have hseg : ∀ s ∈ Ioo (-2 : ℝ) 2, e x + s • d ∈ ball (e x) ρ.rIn := fun s hs ↦ by
-    rw [mem_ball, dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_eq_abs]
-    have hs' : |s| < 2 := abs_lt.2 hs
-    nlinarith [abs_nonneg s, norm_nonneg d, ρ.rIn_pos]
-  have h1 := (isMIntegralCurveOn_bumpChartField d hρt hseg).eqOn_maximalIntegralCurve (x := x)
-    (hv.of_le (by exact_mod_cast hm)) (by norm_num) (by simp [he])
-    (by norm_num : (1 : ℝ) ∈ Ioo (-2) 2)
+  have h1 := maximalIntegralCurve_bumpChartField_extChartAt_symm d hm hmn hρt (c := e x) (t := 1)
+    (by rw [sub_self, norm_zero, zero_add, abs_one, one_mul]; linarith [ρ.rIn_pos])
+  rw [he, extChartAt_to_inv] at h1
   rw [Diffeotopy.final_apply, compactlySupportedFlowDiffeotopy_apply]
   dsimp only
   rw [Set.Icc.coe_one, one_mul, h1]
-  simp only [one_smul, hd, add_sub_cancel]
+  simp only [one_smul, hd, he, add_sub_cancel]
   exact e.left_inv hys
 
 /-- **Homogeneity lemma.** For two points `x` and `y` of a preconnected open subset `U` of a
@@ -156,13 +152,9 @@ theorem isOpen_orbit_diffeomorph (hm : 1 ≤ m) (hmn : (m : ℕ∞ω) + 1 ≤ n)
 /-- The orbits of the diffeomorphism group of a finite-dimensional boundaryless manifold are open
 and closed. -/
 theorem isClopen_orbit_diffeomorph (hm : 1 ≤ m) (hmn : (m : ℕ∞ω) + 1 ≤ n) (x₀ : M) :
-    IsClopen (orbit (M ≃ₘ^m⟮I, I⟯ M) x₀) := by
-  refine ⟨isOpen_compl_iff.1 (isOpen_iff_mem_nhds.2 fun z hz ↦ ?_),
+    IsClopen (orbit (M ≃ₘ^m⟮I, I⟯ M) x₀) :=
+  ⟨isClosed_orbit_of_forall_isOpen_orbit (isOpen_orbit_diffeomorph hm hmn) x₀,
     isOpen_orbit_diffeomorph hm hmn x₀⟩
-  refine mem_of_superset ((isOpen_orbit_diffeomorph (I := I) hm hmn z).mem_nhds (mem_orbit_self z))
-    fun w hw hw₀ ↦ hz ?_
-  rw [← (orbit_eq_iff.2 hw).symm.trans (orbit_eq_iff.2 hw₀)]
-  exact mem_orbit_self z
 
 /-- **Transitivity.** The diffeomorphism group of a connected finite-dimensional boundaryless
 manifold acts transitively. -/

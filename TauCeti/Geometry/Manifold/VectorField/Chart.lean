@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
-public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import Mathlib.Geometry.Manifold.VectorField.Pullback
+public import TauCeti.Geometry.Manifold.IntegralCurve.Maximal
 
 /-!
 # Vector fields read in a chart
@@ -34,7 +34,8 @@ Milnor's proof of the homogeneity lemma.
 * `TauCeti.bumpChartField`: a constant field cut off by a bump function, read in the chart;
   `TauCeti.contMDiff_bumpChartField`, `TauCeti.bumpChartField_eq_zero` and
   `TauCeti.isMIntegralCurveOn_bumpChartField` record its smoothness, compact support and straight
-  flow lines near the centre.
+  flow lines near the centre; `TauCeti.maximalIntegralCurve_bumpChartField_extChartAt_symm`
+  identifies its maximal integral curves there with straight lines in the chart.
 
 ## References
 
@@ -245,6 +246,37 @@ theorem isMIntegralCurveOn_bumpChartField
       -- `TangentSpace 𝓘(ℝ, E) p` is `E` by definition.
       simp only [ρ.one_of_mem_closedBall (ball_subset_closedBall hp), one_smul]
       rfl) (hJ s hs)).hasMFDerivWithinAt
+
+/-- Near the centre of `ρ`, the maximal integral curve of the cut-off field `bumpChartField x ρ v`
+through `(extChartAt I x).symm c` is the straight line `t ↦ (extChartAt I x).symm (c + t • v)` in
+the chart, for every time `t` at which the segment from `c` to `c + t • v` stays in the inner ball
+of `ρ`. -/
+theorem maximalIntegralCurve_bumpChartField_extChartAt_symm [T2Space M]
+    [BoundarylessManifold I M] {n : ℕ∞ω} {m : ℕ∞} [IsManifold I n M] (hm : 1 ≤ m)
+    (hmn : (m : ℕ∞ω) + 1 ≤ n)
+    (hρ : closedBall (extChartAt I x x) ρ.rOut ⊆ (extChartAt I x).target) {c : E} {t : ℝ}
+    (hct : ‖c - extChartAt I x x‖ + |t| * ‖v‖ < ρ.rIn) :
+    maximalIntegralCurve (bumpChartField x ρ v) ((extChartAt I x).symm c) t =
+      (extChartAt I x).symm (c + t • v) := by
+  -- The segment `s ↦ c + s • v` stays in the inner ball of `ρ` for `|s| < |t| + δ`.
+  set δ := (ρ.rIn - ‖c - extChartAt I x x‖ - |t| * ‖v‖) / (‖v‖ + 1) with hδ
+  have hv1 : 0 < ‖v‖ + 1 := by positivity
+  have hδ0 : 0 < δ := div_pos (by linarith) hv1
+  have hδv : δ * (‖v‖ + 1) = ρ.rIn - ‖c - extChartAt I x x‖ - |t| * ‖v‖ :=
+    div_mul_cancel₀ _ hv1.ne'
+  have hseg : ∀ s ∈ Ioo (-(|t| + δ)) (|t| + δ), c + s • v ∈ ball (extChartAt I x x) ρ.rIn :=
+    fun s hs ↦ by
+      have hs' : |s| * ‖v‖ ≤ (|t| + δ) * ‖v‖ :=
+        mul_le_mul_of_nonneg_right (abs_lt.2 hs).le (norm_nonneg v)
+      rw [Metric.mem_ball, dist_eq_norm, add_sub_right_comm]
+      calc ‖c - extChartAt I x x + s • v‖ ≤ ‖c - extChartAt I x x‖ + |s| * ‖v‖ := by
+            rw [← Real.norm_eq_abs, ← norm_smul]; exact norm_add_le _ _
+        _ < ρ.rIn := by nlinarith
+  have h0 : (0 : ℝ) ∈ Ioo (-(|t| + δ)) (|t| + δ) :=
+    ⟨by linarith [abs_nonneg t], by linarith [abs_nonneg t]⟩
+  exact (isMIntegralCurveOn_bumpChartField v hρ hseg).eqOn_maximalIntegralCurve
+    ((contMDiff_bumpChartField v hmn hρ).of_le (by exact_mod_cast hm)) h0 (by simp)
+    (abs_lt.1 (lt_add_of_pos_right _ hδ0))
 
 end BumpChartField
 

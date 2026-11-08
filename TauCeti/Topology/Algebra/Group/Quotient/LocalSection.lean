@@ -118,7 +118,7 @@ theorem trivializationOfLocalSection_baseSet :
 
 /-- On the chart source, the fiber coordinate of `trivializationOfLocalSection` is
 `s (π g)⁻¹ * g`. -/
-@[to_additive /-- On the chart source, the fiber coordinate of
+@[to_additive (attr := simp) /-- On the chart source, the fiber coordinate of
 `trivializationOfLocalSection` is `-s (π g) + g`. -/]
 theorem trivializationOfLocalSection_fiberCoordinate {g : G} (hg : π g ∈ U) :
     ((trivializationOfLocalSection K hπ hK U hU s hs hsec g).2 : G) = (s (π g))⁻¹ * g :=

@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Diffeomorphism.Inversion
 public import TauCeti.Geometry.Manifold.Flow.Complete
 public import TauCeti.Geometry.Manifold.IntegralCurve.GlobalFlow
 public import TauCeti.Geometry.Manifold.VectorField.Chart
-public import TauCeti.Topology.Algebra.Group.Quotient.LocalSection
+public import TauCeti.Topology.Algebra.GroupAction.OrbitTrivialization
 
 /-!
 # Local sections of evaluation on the diffeomorphism group
@@ -35,8 +35,9 @@ continuous map into `Diff(M)`.
 Consequently evaluation at `x₀` is a locally trivial principal bundle over the orbit of `x₀`,
 with structure group the stabilizer `H` of `x₀`: over a neighbourhood of each point of the orbit
 it has the trivialization `g ↦ (g x₀, σ (g x₀)⁻¹ * g)` with inverse `(z, h) ↦ σ z * h`, for a
-local section `σ` (`TauCeti.exists_trivialization_diffeomorph_apply`), and these trivializations
-are equivariant for right multiplication by `H`. The orbits themselves are open and closed by the
+local section `σ` (`TauCeti.exists_trivialization_diffeomorph_apply`, by
+`TauCeti.orbitMapTrivialization`), and these trivializations are equivariant for right
+multiplication by `H`. The orbits themselves are open and closed by the
 homogeneity lemma (`TauCeti.isClopen_orbit_diffeomorph`).
 
 ## Main results
@@ -115,23 +116,10 @@ private theorem bumpFlow_apply_of_notMem {z : M}
 private theorem bumpFlow_extChartAt_symm {c : E} {t : ℝ}
     (hc : ‖c - extChartAt I x x‖ + |t| * (‖v‖ + 1) < ρ.rIn) :
     bumpFlow hm hmn hρ v t ((extChartAt I x).symm c) = (extChartAt I x).symm (c + t • v) := by
-  -- The segment `s ↦ c + s • v` stays in the ball where `ρ = 1` for `|s| < R`.
-  set R := (ρ.rIn - ‖c - extChartAt I x x‖) / (‖v‖ + 1) with hR
-  have hv1 : 0 < ‖v‖ + 1 := by positivity
-  have htR : |t| < R := by rw [hR, lt_div_iff₀ hv1]; linarith
-  have hseg : ∀ s ∈ Ioo (-R) R, c + s • v ∈ ball (extChartAt I x x) ρ.rIn := fun s hs ↦ by
-    have hs' : |s| * (‖v‖ + 1) < ρ.rIn - ‖c - extChartAt I x x‖ := by
-      rw [← lt_div_iff₀ hv1]
-      exact abs_lt.2 hs
-    rw [Metric.mem_ball, dist_eq_norm, add_sub_right_comm]
-    calc ‖c - extChartAt I x x + s • v‖ ≤ ‖c - extChartAt I x x‖ + |s| * ‖v‖ := by
-          rw [← Real.norm_eq_abs, ← norm_smul]; exact norm_add_le _ _
-      _ < ρ.rIn := by nlinarith [abs_nonneg s]
-  have hR0 : (0 : ℝ) ∈ Ioo (-R) R := ⟨by linarith [abs_nonneg t], by linarith [abs_nonneg t]⟩
   rw [bumpFlow_apply]
-  exact (isMIntegralCurveOn_bumpChartField v hρ hseg).eqOn_maximalIntegralCurve
-    ((contMDiff_bumpChartField v hmn hρ).of_le (by exact_mod_cast hm)) hR0 (by simp)
-    (abs_lt.1 htR)
+  refine maximalIntegralCurve_bumpChartField_extChartAt_symm v hm hmn hρ (hc.trans_le' ?_)
+  gcongr
+  exact le_add_of_nonneg_right zero_le_one
 
 omit [FiniteDimensional ℝ E] in
 private theorem norm_list_sum_smul_le (l : List (ℝ × E)) :
@@ -264,15 +252,6 @@ theorem exists_continuousOn_diffeomorph_apply_eq (hm : 1 ≤ m) (hmn : (m : ℕ�
 
 /-! ### Local triviality of evaluation -/
 
-omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I n M] [BoundarylessManifold I M]
-  [CompactSpace M] [IsManifold I m M] in
-/-- Two diffeomorphisms agree at `x₀` exactly when they differ on the right by an element of the
-stabilizer of `x₀`. -/
-private theorem apply_eq_apply_iff_inv_mul_mem_stabilizer (x₀ : M) (a b : M ≃ₘ^m⟮I, I⟯ M) :
-    a x₀ = b x₀ ↔ a⁻¹ * b ∈ stabilizer (M ≃ₘ^m⟮I, I⟯ M) x₀ := by
-  rw [mem_stabilizer_iff, mul_smul, inv_smul_eq_iff, Diffeomorph.smul_def, Diffeomorph.smul_def,
-    eq_comm]
-
 /-- A local section of evaluation at `x₀` over a neighbourhood of any point `y` of the orbit of
 `x₀`. -/
 private theorem exists_continuousOn_apply_eq_of_mem_orbit (hm : 1 ≤ m)
@@ -304,14 +283,14 @@ theorem exists_trivialization_diffeomorph_apply (hm : 1 ≤ m) (hmn : (m : ℕ�
       ∀ g ∈ e.source, ∀ h : stabilizer (M ≃ₘ^m⟮I, I⟯ M) x₀,
         e (g * h) = ((e g).1, (e g).2 * h) := by
   obtain ⟨U, hU, hyU, σ, hσ, hσU⟩ := exists_continuousOn_apply_eq_of_mem_orbit hm hmn hy
-  let e := (stabilizer _ x₀).trivializationOfLocalSection (Diffeomorph.continuous_eval_const x₀)
-    (apply_eq_apply_iff_inv_mul_mem_stabilizer x₀) U hU σ hσ hσU
-  have he : e.baseSet = U := Subgroup.trivializationOfLocalSection_baseSet
+  -- Evaluation `g ↦ g x₀` is the orbit map `g ↦ g • x₀` by definition (`Diffeomorph.smul_def`).
+  let e := orbitMapTrivialization x₀ (Diffeomorph.continuous_eval_const x₀) U hU σ hσ hσU
+  have he : e.baseSet = U := orbitMapTrivialization_baseSet
   have hsource (g : M ≃ₘ^m⟮I, I⟯ M) (hg : g ∈ e.source) : g x₀ ∈ U := he ▸ e.mem_source.1 hg
   refine ⟨σ, e, he ▸ hyU, he ▸ hσ, he ▸ hσU,
-    fun g hg ↦ Subgroup.trivializationOfLocalSection_fiberCoordinate (hsource g hg),
-    Subgroup.trivializationOfLocalSection_symm_apply,
-    fun g hg h ↦ Subgroup.trivializationOfLocalSection_apply_mul (g := g) (hsource g hg) h⟩
+    fun g hg ↦ orbitMapTrivialization_fiberCoordinate (hsource g hg),
+    orbitMapTrivialization_symm_apply,
+    fun g hg h ↦ orbitMapTrivialization_apply_mul (hsource g hg) h⟩
 
 end LocalSection
 
