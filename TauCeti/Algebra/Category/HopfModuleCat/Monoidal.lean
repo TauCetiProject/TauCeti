@@ -41,7 +41,8 @@ monoidal subcategory, whose structure is installed in
 See C. Kassel, *Quantum Groups*, Proposition III.5.1, for the tensor product of modules over a
 bialgebra, and M. Khovanov, *Hopfological algebra and categorification at a root of unity: the
 first steps*, §1, for its use on the category of all modules over a finite-dimensional Hopf
-algebra.
+algebra. The packaging follows Mathlib's monoidal structure on `CoalgCat`, which is also induced
+along the forgetful functor to modules.
 -/
 
 public noncomputable section

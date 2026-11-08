@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
-public import TauCeti.Algebra.Category.FiniteHopfModuleCat.Basic
+public import Mathlib.Algebra.Category.ModuleCat.Algebra
+public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 
 /-!
 # All modules over an algebra, as a home for coproduct tensor products
@@ -20,20 +21,15 @@ through the coproduct of a bialgebra, installed in
 
 Its objects are not Hopf modules in the sense of Larson–Sweedler, which also carry a coaction;
 the name records that this is the category of all modules containing Tau Ceti's
-`FiniteHopfModuleCat k H` of finite-dimensional modules.
+`FiniteHopfModuleCat k H` of finite-dimensional modules as a full subcategory.
 
 The underlying category requires only a `k`-algebra. The scalar-field action on an object is
-restriction of scalars along `algebraMap k H`, exactly as for `FiniteHopfModuleCat`, so that the
-inclusion `FiniteHopfModuleCat.toHopfModuleCat` of finite-dimensional modules is the identity on
-underlying modules. It is fully faithful; `ObjectProperty.fullyFaithfulι` gives the
-`Functor.FullyFaithful` structure.
+restriction of scalars along `algebraMap k H`.
 
 ## Main declarations
 
 * `TauCeti.HopfModuleCat k H`: all left `H`-modules in the universe of `k`.
 * `TauCeti.HopfModuleCat.forgetToModule`: the faithful forgetful functor to `k`-modules.
-* `TauCeti.FiniteHopfModuleCat.toHopfModuleCat`: the fully faithful inclusion of the
-  finite-dimensional modules, compatible with the two forgetful functors.
 -/
 
 public noncomputable section
@@ -111,8 +107,10 @@ variable (k : Type u) [Field k] (H : Type v) [Ring H] [Algebra k H]
 
 instance : Linear k (HopfModuleCat k H) := inferInstanceAs (Linear k (ModuleCat.{u} H))
 
--- Prefer the scalar-field action when `H = k`, so the canonical action is the one used.
-instance (priority := 1100) (M : HopfModuleCat k H) : Module k M :=
+-- The carrier reduces to the native carrier, so this instance also matches carriers of plain
+-- `ModuleCat` objects. Its low priority keeps their native action preferred there; on a
+-- `ModuleCat k` object, the restriction along `algebraMap k k` is not reducibly the native one.
+instance (priority := 900) (M : HopfModuleCat k H) : Module k M :=
   ((ModuleCat.restrictScalars (algebraMap k H)).obj (C := ModuleCat.{u} H) M).isModule
 
 instance (M : HopfModuleCat k H) : IsScalarTower k H M :=
@@ -140,32 +138,5 @@ instance : (forgetToModule k H).Linear k where
     exact (ModuleCat.restrictScalars.smul_def (algebraMap k H) r (f.hom x)).symm
 
 end HopfModuleCat
-
-namespace FiniteHopfModuleCat
-
-variable (k : Type u) [Field k] (H : Type v) [Ring H] [Algebra k H]
-
-/-- The inclusion of the finite-dimensional modules into all modules. -/
-abbrev toHopfModuleCat : FiniteHopfModuleCat k H ⥤ HopfModuleCat k H := incl k H
-
-/-- The inclusion keeps the underlying linear map of a morphism. -/
-@[simp]
-theorem toHopfModuleCat_map_hom {M N : FiniteHopfModuleCat k H} (f : M ⟶ N) :
-    ((toHopfModuleCat k H).map f).hom = f.hom.hom := (rfl)
-
-instance : (toHopfModuleCat k H).Full := inferInstanceAs (incl k H).Full
-
-instance : (toHopfModuleCat k H).Faithful := inferInstanceAs (incl k H).Faithful
-
-instance : (toHopfModuleCat k H).Additive := inferInstanceAs (incl k H).Additive
-
-instance : (toHopfModuleCat k H).Linear k := inferInstanceAs ((incl k H).Linear k)
-
-/-- The inclusion followed by the forgetful functor of all modules is the forgetful functor of
-the finite-dimensional modules. -/
-theorem toHopfModuleCat_comp_forgetToModule :
-    toHopfModuleCat k H ⋙ HopfModuleCat.forgetToModule k H = forgetToModule k H := (rfl)
-
-end FiniteHopfModuleCat
 
 end TauCeti

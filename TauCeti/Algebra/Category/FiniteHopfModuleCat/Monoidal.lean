@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Monoidal.Subcategory
+public import TauCeti.Algebra.Category.FiniteHopfModuleCat.Basic
 public import TauCeti.Algebra.Category.HopfModuleCat.Monoidal
 
 /-!
@@ -64,37 +65,28 @@ variable (k : Type u) [Field k] (H : Type v) [Ring H] [Bialgebra k H]
 
 /-- Finite-dimensional modules contain the trivial module and are closed under the coproduct
 tensor product. -/
-instance isMonoidal : ObjectProperty.IsMonoidal (C := HopfModuleCat k H)
-    fun M : ModuleCat.{u} H => Module.Finite k ((ModuleCat.restrictScalars (algebraMap k H)).obj M)
-    where
+instance isMonoidal : (HopfModuleCat.isFinite k H).IsMonoidal where
   prop_unit := (of (k := k) (H := H) (Trivial k H)).property
   prop_tensor M N hM hN :=
     have : Module.Finite k M := hM
     have : Module.Finite k N := hN
     (of (k := k) (H := H) (Tensor k H M N)).property
 
--- The property is given explicitly: instance search cannot infer it before unifying with the
--- type synonym `FiniteHopfModuleCat k H`.
 /-- Finite-dimensional modules over a bialgebra form a monoidal category under the tensor
 product over the base field, with `H` acting through its coproduct: the full monoidal
 subcategory of all modules. -/
 instance instMonoidalCategory : MonoidalCategory (FiniteHopfModuleCat k H) :=
-  ObjectProperty.fullMonoidalSubcategory (C := HopfModuleCat k H) fun M : ModuleCat.{u} H =>
-    Module.Finite k ((ModuleCat.restrictScalars (algebraMap k H)).obj M)
+  ObjectProperty.fullMonoidalSubcategory (HopfModuleCat.isFinite k H)
 
 instance : MonoidalPreadditive (FiniteHopfModuleCat k H) :=
-  ObjectProperty.instMonoidalPreadditiveFullSubcategory (C := HopfModuleCat k H)
-    fun M : ModuleCat.{u} H => Module.Finite k ((ModuleCat.restrictScalars (algebraMap k H)).obj M)
+  ObjectProperty.instMonoidalPreadditiveFullSubcategory (HopfModuleCat.isFinite k H)
 
 instance : MonoidalLinear k (FiniteHopfModuleCat k H) :=
-  ObjectProperty.instMonoidalLinearFullSubcategory (C := HopfModuleCat k H)
-    (fun M : ModuleCat.{u} H =>
-      Module.Finite k ((ModuleCat.restrictScalars (algebraMap k H)).obj M)) k
+  ObjectProperty.instMonoidalLinearFullSubcategory (HopfModuleCat.isFinite k H) k
 
 /-- The inclusion of finite-dimensional modules into all modules is monoidal. -/
 instance : (toHopfModuleCat k H).Monoidal :=
-  ObjectProperty.monoidalι (C := HopfModuleCat k H) fun M : ModuleCat.{u} H =>
-    Module.Finite k ((ModuleCat.restrictScalars (algebraMap k H)).obj M)
+  ObjectProperty.monoidalι (HopfModuleCat.isFinite k H)
 
 /-- The forgetful functor to `k`-modules, the inclusion followed by the forgetful functor of all
 modules, is monoidal. -/
@@ -110,52 +102,67 @@ variable {k H}
 @[simp]
 theorem toHopfModuleCat_μ (M N : FiniteHopfModuleCat k H) :
     Functor.LaxMonoidal.μ (toHopfModuleCat k H) M N = 𝟙 _ :=
-  (rfl)
+  ObjectProperty.ι_μ _ M N
 
 /-- The unit comparison of the inclusion into all modules is the identity
 (`ObjectProperty.ι_ε`). -/
 @[simp]
 theorem toHopfModuleCat_ε : Functor.LaxMonoidal.ε (toHopfModuleCat k H) = 𝟙 _ :=
-  (rfl)
+  ObjectProperty.ι_ε _
 
 end Inclusion
 
 section Struct
+
+/-! Mathlib's `ObjectProperty.fullMonoidalSubcategory` defines the tensor product, associator and
+unitors of a full monoidal subcategory as those of the ambient category on underlying objects
+(`ObjectProperty.homMk (f.hom ⊗ₘ g.hom)`, `ObjectProperty.isoMk (α_ M.obj N.obj P.obj)`, and so
+on). The underlying intertwiners below are therefore, by construction, those of
+`HopfModuleCat k H`, and each lemma is the corresponding `HopfModuleCat` lemma. -/
 
 variable {k H}
 variable {M M' N N' P : FiniteHopfModuleCat k H}
 
 /-- The tensor product of morphisms is the tensor product of the underlying intertwiners. -/
 theorem tensorHom_hom_hom (f : M ⟶ M') (g : N ⟶ N') :
-    (f ⊗ₘ g).hom.hom = tensorMap k H f.hom.hom g.hom.hom := (rfl)
+    (f ⊗ₘ g).hom.hom = tensorMap k H f.hom.hom g.hom.hom :=
+  HopfModuleCat.tensorHom_hom f.hom g.hom
 
 /-- Left whiskering tensors the underlying intertwiner with the identity on the left. -/
 theorem whiskerLeft_hom_hom (g : N ⟶ N') :
-    (M ◁ g).hom.hom = tensorMap k H LinearMap.id g.hom.hom := (rfl)
+    (M ◁ g).hom.hom = tensorMap k H LinearMap.id g.hom.hom :=
+  HopfModuleCat.whiskerLeft_hom g.hom
 
 /-- Right whiskering tensors the underlying intertwiner with the identity on the right. -/
 theorem whiskerRight_hom_hom (f : M ⟶ M') :
-    (f ▷ N).hom.hom = tensorMap k H f.hom.hom LinearMap.id := (rfl)
+    (f ▷ N).hom.hom = tensorMap k H f.hom.hom LinearMap.id :=
+  HopfModuleCat.whiskerRight_hom f.hom
 
 /-- The associator is the reassociation equivalence `BialgebraModule.assoc`. -/
 theorem associator_hom_hom :
-    (α_ M N P).hom.hom.hom = (assoc k H M N P).toLinearMap := (rfl)
+    (α_ M N P).hom.hom.hom = (assoc k H M N P).toLinearMap :=
+  HopfModuleCat.associator_hom_hom
 
 /-- The inverse associator is the inverse reassociation equivalence. -/
 theorem associator_inv_hom :
-    (α_ M N P).inv.hom.hom = (assoc k H M N P).symm.toLinearMap := (rfl)
+    (α_ M N P).inv.hom.hom = (assoc k H M N P).symm.toLinearMap :=
+  HopfModuleCat.associator_inv_hom
 
 /-- The left unitor is the left unit equivalence `BialgebraModule.lid`. -/
-theorem leftUnitor_hom_hom : (λ_ M).hom.hom.hom = (lid k H M).toLinearMap := (rfl)
+theorem leftUnitor_hom_hom : (λ_ M).hom.hom.hom = (lid k H M).toLinearMap :=
+  HopfModuleCat.leftUnitor_hom_hom
 
 /-- The inverse left unitor is the inverse left unit equivalence. -/
-theorem leftUnitor_inv_hom : (λ_ M).inv.hom.hom = (lid k H M).symm.toLinearMap := (rfl)
+theorem leftUnitor_inv_hom : (λ_ M).inv.hom.hom = (lid k H M).symm.toLinearMap :=
+  HopfModuleCat.leftUnitor_inv_hom
 
 /-- The right unitor is the right unit equivalence `BialgebraModule.rid`. -/
-theorem rightUnitor_hom_hom : (ρ_ M).hom.hom.hom = (rid k H M).toLinearMap := (rfl)
+theorem rightUnitor_hom_hom : (ρ_ M).hom.hom.hom = (rid k H M).toLinearMap :=
+  HopfModuleCat.rightUnitor_hom_hom
 
 /-- The inverse right unitor is the inverse right unit equivalence. -/
-theorem rightUnitor_inv_hom : (ρ_ M).inv.hom.hom = (rid k H M).symm.toLinearMap := (rfl)
+theorem rightUnitor_inv_hom : (ρ_ M).inv.hom.hom = (rid k H M).symm.toLinearMap :=
+  HopfModuleCat.rightUnitor_inv_hom
 
 /-- Morphisms out of a tensor product are determined by their values on pure tensors. -/
 @[ext]
