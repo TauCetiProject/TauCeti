@@ -9,6 +9,8 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.SphericalPendulum
 public import TauCeti.Geometry.Manifold.RegularValue.Level
 public import TauCeti.Geometry.Manifold.PullbackGroupoid
 public import Mathlib.Analysis.InnerProductSpace.Calculus
+import Mathlib.Analysis.Calculus.ContDiff.WithLp
+import Mathlib.Analysis.Calculus.FDeriv.WithLp
 import TauCeti.Geometry.Manifold.Immersion.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
@@ -35,6 +37,10 @@ hence its critical points and critical values, are defined.
 
 * `TauCeti.sphericalPendulumConstraint`: the constraint map `g`.
 * `TauCeti.isRegularValue_sphericalPendulumConstraint`: `(1, 0)` is a regular value of `g`.
+* `TauCeti.contDiff_sphericalPendulumEnergyMomentum` and
+  `TauCeti.fderiv_sphericalPendulumEnergyMomentum_apply`: the energy–momentum map `F = (H, J)` is
+  smooth on `ℝ³ × ℝ³`, with differential `dH (a, b) = ⟪p, b⟫ + a₃`,
+  `dJ (a, b) = a₁ p₂ - a₂ p₁ + q₁ b₂ - q₂ b₁`.
 * The instances `ChartedSpace (Fin 4 → ℝ) sphericalPendulumPhaseSpace` and
   `IsManifold 𝓘(ℝ, Fin 4 → ℝ) ∞ sphericalPendulumPhaseSpace`.
 * `TauCeti.isSmoothEmbedding_coe_sphericalPendulumPhaseSpace`: the phase space is a smoothly
@@ -91,6 +97,44 @@ theorem fderiv_sphericalPendulumConstraint_apply
   rw [h.fderiv]
   simp [fderivInnerCLM_apply]
 
+/-- The energy–momentum map, with the energy and the angular momentum unfolded. -/
+private theorem sphericalPendulumEnergyMomentum_eq_fun :
+    sphericalPendulumEnergyMomentum = fun y ↦ (‖y.2‖ ^ 2 * 2⁻¹ + y.1 2,
+      ⟪y.1, EuclideanSpace.single 0 1⟫_ℝ * ⟪y.2, EuclideanSpace.single 1 1⟫_ℝ -
+        ⟪y.1, EuclideanSpace.single 1 1⟫_ℝ * ⟪y.2, EuclideanSpace.single 0 1⟫_ℝ) := by
+  funext ⟨q, p⟩
+  rw [Prod.ext_iff, fst_sphericalPendulumEnergyMomentum, snd_sphericalPendulumEnergyMomentum,
+    sphericalPendulumHamiltonian_apply, angularMomentum_apply]
+  exact ⟨by ring, rfl⟩
+
+/-- The energy–momentum map of the spherical pendulum is smooth on `ℝ³ × ℝ³`. -/
+theorem contDiff_sphericalPendulumEnergyMomentum {n : WithTop ℕ∞} :
+    ContDiff ℝ n sphericalPendulumEnergyMomentum := by
+  rw [sphericalPendulumEnergyMomentum_eq_fun]
+  exact ((((contDiff_norm_sq ℝ).comp contDiff_snd).mul contDiff_const).add
+    ((contDiff_piLp_apply 2).comp contDiff_fst)).prodMk
+    (((contDiff_fst.inner ℝ contDiff_const).mul (contDiff_snd.inner ℝ contDiff_const)).sub
+      ((contDiff_fst.inner ℝ contDiff_const).mul (contDiff_snd.inner ℝ contDiff_const)))
+
+/-- The differential of the energy–momentum map: `dH (a, b) = ⟪p, b⟫ + a₃` and
+`dJ (a, b) = a₁ p₂ - a₂ p₁ + q₁ b₂ - q₂ b₁`. -/
+theorem fderiv_sphericalPendulumEnergyMomentum_apply
+    (x v : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)) :
+    fderiv ℝ sphericalPendulumEnergyMomentum x v =
+      (⟪x.2, v.2⟫_ℝ + v.1 2, v.1 0 * x.2 1 - v.1 1 * x.2 0 + x.1 0 * v.2 1 - x.1 1 * v.2 0) := by
+  -- The angular momentum component is `TauCeti.hasFDerivAt_angularMomentum`.
+  have h : HasFDerivAt (fun y : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3) ↦
+      (‖y.2‖ ^ 2 * 2⁻¹ + y.1 2,
+        ⟪y.1, EuclideanSpace.single 0 1⟫_ℝ * ⟪y.2, EuclideanSpace.single 1 1⟫_ℝ -
+          ⟪y.1, EuclideanSpace.single 1 1⟫_ℝ * ⟪y.2, EuclideanSpace.single 0 1⟫_ℝ)) _ x :=
+    ((((hasStrictFDerivAt_norm_sq x.2).hasFDerivAt.comp x hasFDerivAt_snd).mul_const _).add
+      ((PiLp.hasFDerivAt_apply 2 x.1 2).comp x hasFDerivAt_fst)).prodMk
+      ((hasFDerivAt_angularMomentum _ _ x).congr_of_eventuallyEq
+        (.of_forall fun y ↦ (angularMomentum_apply _ _ y.1 y.2).symm))
+  rw [sphericalPendulumEnergyMomentum_eq_fun, h.fderiv]
+  simp [EuclideanSpace.inner_single_left, EuclideanSpace.inner_single_right]
+  ring
+
 /-! ### The phase space as a regular level -/
 
 /-- `(1, 0)` is a regular value of the constraint map `(q, p) ↦ (‖q‖², ⟪q, p⟫)`: at a point of the
@@ -127,24 +171,37 @@ theorem coe_sphericalPendulumPhaseSpaceHomeomorph_symm_apply
       EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)) = x :=
   (rfl)
 
+/-- The smoothness of the constraint map along its level, in the form the regular-level atlas
+takes it. -/
+private theorem contMDiffAt_sphericalPendulumConstraint {m : WithTop ℕ∞} :
+    ∀ x, sphericalPendulumConstraint x = (1, 0) →
+      ContMDiffAt 𝓘(ℝ, EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)) 𝓘(ℝ, ℝ × ℝ) m
+        sphericalPendulumConstraint x :=
+  fun _ _ ↦ contDiff_sphericalPendulumConstraint.contMDiff.contMDiffAt
+
+/-- The regular level of the constraint map has dimension `6 - 2 = 4`. -/
+private theorem finrank_sub_finrank_sphericalPendulumConstraint :
+    finrank ℝ (EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)) - finrank ℝ (ℝ × ℝ) = 4 := by
+  simp
+
 /-- The preferred atlas of the regular level of the constraint map over `(1, 0)`. -/
 private noncomputable abbrev levelChartedSpace :
     ChartedSpace (Fin 4 → ℝ) {x // sphericalPendulumConstraint x = (1, 0)} :=
-  regularLevelChartedSpace (n := 4)
-    (fun x _ ↦ contDiff_sphericalPendulumConstraint.contMDiff.contMDiffAt)
-    isRegularValue_sphericalPendulumConstraint (by simp)
+  regularLevelChartedSpace contMDiffAt_sphericalPendulumConstraint
+    isRegularValue_sphericalPendulumConstraint finrank_sub_finrank_sphericalPendulumConstraint
 
 private theorem isManifold_levelChartedSpace :
     letI := levelChartedSpace
     IsManifold 𝓘(ℝ, Fin 4 → ℝ) ∞ {x // sphericalPendulumConstraint x = (1, 0)} :=
-  isManifold_regularLevel (n := 4) (m := ∞) (by simp)
-    (fun x _ ↦ contDiff_sphericalPendulumConstraint.contMDiff.contMDiffAt)
-    isRegularValue_sphericalPendulumConstraint (by simp)
+  isManifold_regularLevel (m := ∞) (by simp) contMDiffAt_sphericalPendulumConstraint
+    isRegularValue_sphericalPendulumConstraint finrank_sub_finrank_sphericalPendulumConstraint
 
 /-- The phase space `T*S²` of the spherical pendulum, with the atlas of the regular level
 `‖q‖² = 1`, `⟪q, p⟫ = 0` of `ℝ³ × ℝ³` (`TauCeti.regularLevelChartedSpace`), transported along
 `TauCeti.sphericalPendulumPhaseSpaceHomeomorph`. -/
 noncomputable instance : ChartedSpace (Fin 4 → ℝ) sphericalPendulumPhaseSpace :=
+  -- The body of a public instance is exposed, so it cannot mention the private
+  -- `levelChartedSpace`; this is the same term, up to the proofs of its hypotheses.
   letI := regularLevelChartedSpace (n := 4)
     (fun x _ ↦ contDiff_sphericalPendulumConstraint.contMDiff.contMDiffAt)
     isRegularValue_sphericalPendulumConstraint (by simp)
@@ -177,9 +234,9 @@ theorem isSmoothEmbedding_coe_sphericalPendulumPhaseSpace :
   refine ⟨?_, Topology.IsEmbedding.subtypeVal⟩
   rw [coe_eq_coe_comp_pullbackDiffeomorph]
   exact (isImmersionOfComplement_comp_diffeomorph _
-    (isImmersionOfComplement_coe_regularLevel (n := 4) (m := ∞) (by simp)
-      (fun x _ ↦ contDiff_sphericalPendulumConstraint.contMDiff.contMDiffAt)
-      isRegularValue_sphericalPendulumConstraint (by simp))).isImmersion
+    (isImmersionOfComplement_coe_regularLevel (m := ∞) (by simp)
+      contMDiffAt_sphericalPendulumConstraint isRegularValue_sphericalPendulumConstraint
+      finrank_sub_finrank_sphericalPendulumConstraint)).isImmersion
 
 /-- **The tangent space of the phase space** at `(q, p)` is the kernel of the differential of the
 constraint map: the vectors `(a, b)` of `ℝ³ × ℝ³` with `⟪q, a⟫ = 0` and `⟪q, b⟫ + ⟪a, p⟫ = 0`. -/
@@ -190,9 +247,9 @@ theorem range_mfderiv_coe_sphericalPendulumPhaseSpace (x : sphericalPendulumPhas
   let := levelChartedSpace
   have := isManifold_levelChartedSpace
   let e := sphericalPendulumPhaseSpaceHomeomorph.pullbackDiffeomorph 𝓘(ℝ, Fin 4 → ℝ) ∞
-  have hL := isSmoothEmbedding_coe_regularLevel (n := 4) (m := ∞) (by simp)
-    (fun x _ ↦ contDiff_sphericalPendulumConstraint.contMDiff.contMDiffAt)
-    isRegularValue_sphericalPendulumConstraint (by simp)
+  have hL := isSmoothEmbedding_coe_regularLevel (m := ∞) (by simp)
+    contMDiffAt_sphericalPendulumConstraint isRegularValue_sphericalPendulumConstraint
+    finrank_sub_finrank_sphericalPendulumConstraint
   -- The differential of the inclusion of the phase space is that of the regular level, composed
   -- with the invertible differential of `e`; the latter has range the kernel of `dg`.
   have h : (mfderiv 𝓘(ℝ, Fin 4 → ℝ) 𝓘(ℝ, EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3))

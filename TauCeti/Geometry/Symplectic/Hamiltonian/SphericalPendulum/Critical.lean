@@ -6,16 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.SphericalPendulum.PhaseSpace
-import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Critical points and critical values of the spherical pendulum
 
-Give the phase space `T*S² = {(q, p) : ‖q‖ = 1, ⟪q, p⟫ = 0}` of the spherical pendulum its
-structure of a smooth four-manifold, the regular level over `(1, 0)` of the constraint map
-`g(q, p) = (‖q‖², ⟪q, p⟫)`. This file determines the critical points and the critical values of
-the energy–momentum map `F = (H, J)` restricted to it, `H = ‖p‖² / 2 + q₃` and
-`J = q₁ p₂ - q₂ p₁`.
+This file works on the phase space `T*S² = {(q, p) : ‖q‖ = 1, ⟪q, p⟫ = 0}` of the spherical
+pendulum, with the smooth four-manifold structure of the regular level over `(1, 0)` of the
+constraint map `g(q, p) = (‖q‖², ⟪q, p⟫)` from
+`TauCeti.Geometry.Symplectic.Hamiltonian.SphericalPendulum.PhaseSpace`. It determines the critical
+points and the critical values of the energy–momentum map `F = (H, J)` restricted to it,
+`H = ‖p‖² / 2 + q₃` and `J = q₁ p₂ - q₂ p₁`.
 
 A point `x` is a regular point of `F` on the phase space exactly when `dF_x` maps the tangent
 space `ker dg_x` onto `ℝ²` (`TauCeti.isRegularPoint_sphericalPendulumEnergyMomentum_iff`). If it
@@ -42,7 +42,6 @@ value of the pendulum, is isolated among the critical values: every other value 
 
 ## Main results
 
-* `TauCeti.fderiv_sphericalPendulumEnergyMomentum_apply`: the differential of `F`.
 * `TauCeti.isRegularPoint_sphericalPendulumEnergyMomentum_iff`: regular points of `F` on the phase
   space, through the tangent space `ker dg`.
 * `TauCeti.not_isRegularPoint_sphericalPendulumEnergyMomentum_iff`: the critical points.
@@ -68,67 +67,7 @@ open scoped InnerProductSpace Manifold ContDiff Topology
 
 namespace TauCeti
 
-/-! ### The differential of the energy–momentum map -/
-
-/-- The energy–momentum map in coordinates. -/
-private theorem sphericalPendulumEnergyMomentum_eq_fun :
-    sphericalPendulumEnergyMomentum = fun y ↦
-      (‖y.2‖ ^ 2 * (1 / 2) + y.1 2, y.1 0 * y.2 1 - y.1 1 * y.2 0) := by
-  funext ⟨q, p⟩
-  rw [sphericalPendulumEnergyMomentum_apply, Prod.mk.injEq]
-  exact ⟨by ring, rfl⟩
-
-/-- A coordinate function of the position. -/
-private theorem hasFDerivAt_coord_fst (i : Fin 3)
-    (x : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)) :
-    HasFDerivAt (fun y : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3) ↦ y.1 i)
-      ((innerSL ℝ (EuclideanSpace.single i 1)).comp (ContinuousLinearMap.fst ℝ _ _)) x := by
-  refine (ContinuousLinearMap.hasFDerivAt _).congr_of_eventuallyEq (.of_forall fun y ↦ ?_)
-  simp [EuclideanSpace.inner_single_left]
-
-/-- A coordinate function of the momentum. -/
-private theorem hasFDerivAt_coord_snd (i : Fin 3)
-    (x : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)) :
-    HasFDerivAt (fun y : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3) ↦ y.2 i)
-      ((innerSL ℝ (EuclideanSpace.single i 1)).comp (ContinuousLinearMap.snd ℝ _ _)) x := by
-  refine (ContinuousLinearMap.hasFDerivAt _).congr_of_eventuallyEq (.of_forall fun y ↦ ?_)
-  simp [EuclideanSpace.inner_single_left]
-
-/-- The energy–momentum map of the spherical pendulum is smooth on `ℝ³ × ℝ³`. -/
-theorem contDiff_sphericalPendulumEnergyMomentum {n : WithTop ℕ∞} :
-    ContDiff ℝ n sphericalPendulumEnergyMomentum := by
-  have h1 (i : Fin 3) : ContDiff ℝ n
-      fun y : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3) ↦ y.1 i := by
-    convert ((innerSL ℝ (EuclideanSpace.single i (1 : ℝ))).comp
-      (ContinuousLinearMap.fst ℝ (EuclideanSpace ℝ (Fin 3)) (EuclideanSpace ℝ (Fin 3)))).contDiff
-      using 1
-    funext; simp [EuclideanSpace.inner_single_left]
-  have h2 (i : Fin 3) : ContDiff ℝ n
-      fun y : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3) ↦ y.2 i := by
-    convert ((innerSL ℝ (EuclideanSpace.single i (1 : ℝ))).comp
-      (ContinuousLinearMap.snd ℝ (EuclideanSpace ℝ (Fin 3)) (EuclideanSpace ℝ (Fin 3)))).contDiff
-      using 1
-    funext; simp [EuclideanSpace.inner_single_left]
-  rw [sphericalPendulumEnergyMomentum_eq_fun]
-  exact ((((contDiff_norm_sq ℝ).comp contDiff_snd).mul contDiff_const).add (h1 2)).prodMk
-    (((h1 0).mul (h2 1)).sub ((h1 1).mul (h2 0)))
-
-/-- The differential of the energy–momentum map: `dH (a, b) = ⟪p, b⟫ + a₃` and
-`dJ (a, b) = a₁ p₂ - a₂ p₁ + q₁ b₂ - q₂ b₁`. -/
-theorem fderiv_sphericalPendulumEnergyMomentum_apply
-    (x v : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)) :
-    fderiv ℝ sphericalPendulumEnergyMomentum x v =
-      (⟪x.2, v.2⟫_ℝ + v.1 2, v.1 0 * x.2 1 - v.1 1 * x.2 0 + x.1 0 * v.2 1 - x.1 1 * v.2 0) := by
-  have hp : HasFDerivAt (fun y : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3) ↦ ‖y.2‖ ^ 2)
-      _ x := (hasStrictFDerivAt_norm_sq x.2).hasFDerivAt.comp x hasFDerivAt_snd
-  have h : HasFDerivAt (fun y : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3) ↦
-      (‖y.2‖ ^ 2 * (1 / 2) + y.1 2, y.1 0 * y.2 1 - y.1 1 * y.2 0)) _ x :=
-    ((hp.mul_const (1 / 2 : ℝ)).add (hasFDerivAt_coord_fst 2 x)).prodMk
-    (((hasFDerivAt_coord_fst 0 x).mul (hasFDerivAt_coord_snd 1 x)).sub
-      ((hasFDerivAt_coord_fst 1 x).mul (hasFDerivAt_coord_snd 0 x)))
-  rw [sphericalPendulumEnergyMomentum_eq_fun, h.fderiv]
-  simp [EuclideanSpace.inner_single_left]
-  ring
+/-! ### Regular points -/
 
 /-- A point of the phase space is a regular point of the energy–momentum map `F = (H, J)` on the
 phase space exactly when the differential of `F` maps the tangent space `ker dg` onto `ℝ²`. -/
@@ -142,33 +81,12 @@ theorem isRegularPoint_sphericalPendulumEnergyMomentum_iff (x : sphericalPendulu
   have hF : MDifferentiableAt 𝓘(ℝ, EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3))
       𝓘(ℝ, ℝ × ℝ) sphericalPendulumEnergyMomentum x :=
     (contDiff_sphericalPendulumEnergyMomentum (n := 1)).contMDiff.mdifferentiableAt one_ne_zero
-  have hF' (z : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)) :
-      mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)) 𝓘(ℝ, ℝ × ℝ)
-        sphericalPendulumEnergyMomentum x z = fderiv ℝ sphericalPendulumEnergyMomentum x z := by
-    rw [mfderiv_eq_fderiv]
-    -- The two identifications `NormedSpace.fromTangentSpace` are the identity on vectors
-    -- (`NormedSpace.fromTangentSpace_apply`); `simp` cannot rewrite across the tangent fibres.
-    rfl
-  have hrange := range_mfderiv_coe_sphericalPendulumPhaseSpace x
-  have hcomp : (fun y : sphericalPendulumPhaseSpace ↦ sphericalPendulumEnergyMomentum y) =
-      sphericalPendulumEnergyMomentum ∘ Subtype.val := rfl
-  rw [isRegularPoint_iff, hcomp, mfderiv_comp x hF hval, ContinuousLinearMap.coe_comp]
-  constructor
-  · intro hs
-    refine Submodule.eq_top_iff'.2 fun w ↦ ?_
-    obtain ⟨u, hu⟩ := hs w
-    refine ⟨_, hrange ▸ LinearMap.mem_range_self _ u, ?_⟩
-    rw [← hu]
-    exact (hF' _).symm
-  · intro htop w
-    -- `w` lives in the tangent space of `ℝ × ℝ`; read it as a vector of `ℝ × ℝ`.
-    let w' : ℝ × ℝ := w
-    have hw : w' ∈ (⊤ : Submodule ℝ (ℝ × ℝ)) := Submodule.mem_top
-    rw [← htop] at hw
-    obtain ⟨v, hv, hvw⟩ := Submodule.mem_map.1 hw
-    rw [← hrange] at hv
-    obtain ⟨u, rfl⟩ := hv
-    exact ⟨u, (hF' _).trans hvw⟩
+  rw [show (fun y : sphericalPendulumPhaseSpace ↦ sphericalPendulumEnergyMomentum y) =
+      sphericalPendulumEnergyMomentum ∘ Subtype.val from rfl, isRegularPoint_comp_iff hF hval,
+    range_mfderiv_coe_sphericalPendulumPhaseSpace, mfderiv_eq_fderiv]
+  -- The identifications `NormedSpace.fromTangentSpace` of the tangent spaces with `ℝ³ × ℝ³` and
+  -- `ℝ × ℝ` are the identity.
+  rfl
 
 /-! ### Critical points -/
 
@@ -242,26 +160,6 @@ private theorem fderiv_coords (q p a b : EuclideanSpace ℝ (Fin 3)) :
   simp only [PiLp.inner_apply, Fin.sum_univ_three, RCLike.inner_apply, conj_trivial]
   refine ⟨Prod.ext ?_ ?_, Prod.ext ?_ ?_⟩ <;> dsimp only <;> ring
 
-/-- The coordinates of the constraints `‖q‖² = 1` and `⟪q, p⟫ = 0`. -/
-private theorem coords_of_mem_sphericalPendulumPhaseSpace {q p : EuclideanSpace ℝ (Fin 3)}
-    (hx : (q, p) ∈ sphericalPendulumPhaseSpace) :
-    q 0 ^ 2 + q 1 ^ 2 + q 2 ^ 2 = 1 ∧ q 0 * p 0 + q 1 * p 1 + q 2 * p 2 = 0 := by
-  obtain ⟨hq, hqp⟩ := mem_sphericalPendulumPhaseSpace.1 hx
-  have hq2 := EuclideanSpace.real_norm_sq_eq q
-  rw [hq, one_pow, Fin.sum_univ_three] at hq2
-  simp only [PiLp.inner_apply, Fin.sum_univ_three, RCLike.inner_apply, conj_trivial] at hqp
-  exact ⟨hq2.symm, by linear_combination hqp⟩
-
-/-- Points of the phase space with nonzero vertical angular momentum are away from the poles. -/
-private theorem apply_two_mem_Ioo_of_snd_ne_zero
-    {x : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)}
-    (hx : x ∈ sphericalPendulumPhaseSpace) (hJ : (sphericalPendulumEnergyMomentum x).2 ≠ 0) :
-    x.1 2 ∈ Ioo (-1) 1 :=
-  ((sq_lt_one_iff_abs_lt_one _).trans abs_lt).1 <| lt_of_le_of_ne
-    (by nlinarith [(apply_two_mem_Icc_of_mem_sphericalPendulumPhaseSpace hx).1,
-      (apply_two_mem_Icc_of_mem_sphericalPendulumPhaseSpace hx).2])
-    fun h1 ↦ hJ (snd_sphericalPendulumEnergyMomentum_eq_zero_of_sq_eq_one hx h1)
-
 /-- **Lagrange multipliers.** If `dF` does not map the tangent space `ker dg` of the phase space
 onto `ℝ²` at `(q, p)`, then some `(l, m) ≠ 0` and `(a, b)` satisfy `l dH + m dJ = a dg₁ + b dg₂`
 on `ℝ³ × ℝ³`, and the point is at rest at a pole or is a relative equilibrium. -/
@@ -272,6 +170,7 @@ private theorem pole_or_relativeEquilibrium_of_map_ne_top {q p : EuclideanSpace 
     (p = 0 ∧ q 2 ^ 2 = 1) ∨ (q 0 * p 1 - q 1 * p 0 ≠ 0 ∧ p 2 = 0 ∧
       (q 0 * p 1 - q 1 * p 0) ^ 2 * q 2 + (1 - q 2 ^ 2) ^ 2 = 0) := by
   obtain ⟨hq, hqp⟩ := coords_of_mem_sphericalPendulumPhaseSpace hx
+  dsimp only at hq hqp
   -- A nonzero functional `f = l (·).1 + m (·).2` on `ℝ²` kills `dF (ker dg)`.
   obtain ⟨f, hf0, hf⟩ :=
     Submodule.exists_dual_map_eq_bot_of_lt_top (lt_top_iff_ne_top.2 hne) inferInstance
@@ -310,13 +209,6 @@ private theorem pole_or_relativeEquilibrium_of_map_ne_top {q p : EuclideanSpace 
       LinearMap.smul_apply, LinearMap.coe_comp, comp_apply, LinearMap.fst_apply,
       LinearMap.snd_apply, ContinuousLinearMap.coe_coe, smul_eq_mul, hDdef, hDFdef, hD, hDF] at h
     rw [h, hf']
-  have ea0 := hev (EuclideanSpace.single 0 1) 0
-  have ea1 := hev (EuclideanSpace.single 1 1) 0
-  have ea2 := hev (EuclideanSpace.single 2 1) 0
-  have eb0 := hev 0 (EuclideanSpace.single 0 1)
-  have eb1 := hev 0 (EuclideanSpace.single 1 1)
-  have eb2 := hev 0 (EuclideanSpace.single 2 1)
-  simp at ea0 ea1 ea2 eb0 eb1 eb2
   -- The six coordinates of the multiplier equation.
   have ea0 := hev (EuclideanSpace.single 0 1) 0
   have ea1 := hev (EuclideanSpace.single 1 1) 0
@@ -324,7 +216,9 @@ private theorem pole_or_relativeEquilibrium_of_map_ne_top {q p : EuclideanSpace 
   have eb0 := hev 0 (EuclideanSpace.single 0 1)
   have eb1 := hev 0 (EuclideanSpace.single 1 1)
   have eb2 := hev 0 (EuclideanSpace.single 2 1)
-  simp at ea0 ea1 ea2 eb0 eb1 eb2
+  simp only [Fin.isValue, PiLp.single_eq_same, mul_one, ne_eq, one_ne_zero, not_false_eq_true,
+    PiLp.single_eq_of_ne, mul_zero, add_zero, Fin.reduceEq, PiLp.zero_apply, one_mul, zero_mul,
+    zero_add, sub_zero, zero_ne_one, zero_sub, mul_neg, sub_self] at ea0 ea1 ea2 eb0 eb1 eb2
   rcases lagrange_cases (a := c 0) (b := c 1) hq hqp hlm (by linarith) (by linarith)
     (by linarith) (by linarith) (by linarith) (by linarith) with
     ⟨hp0, hp1, hp2, hq2⟩ | h
@@ -342,6 +236,7 @@ private theorem map_ne_top_of_pole_or_relativeEquilibrium {q p : EuclideanSpace 
     (fderiv ℝ sphericalPendulumConstraint (q, p)).ker.map
       (fderiv ℝ sphericalPendulumEnergyMomentum (q, p) : _ →ₗ[ℝ] ℝ × ℝ) ≠ ⊤ := by
   obtain ⟨hq, hqp⟩ := coords_of_mem_sphericalPendulumPhaseSpace hx
+  dsimp only at hq hqp
   intro htop
   -- At a critical point no tangent vector has image `(1, 0)` under `dF`.
   have hw : ((1 : ℝ), (0 : ℝ)) ∈ (⊤ : Submodule ℝ (ℝ × ℝ)) := Submodule.mem_top
@@ -394,7 +289,8 @@ theorem not_isRegularPoint_sphericalPendulumEnergyMomentum_iff (x : sphericalPen
     simp [sphericalPendulumEnergyMomentum_apply]
   -- Away from the poles, minimizing `V_j` is the equation `j² z + (1 - z²)² = 0`.
   have hmin (hJ0 : (sphericalPendulumEnergyMomentum (q, p)).2 ≠ 0) :=
-    isMinOn_sphericalPendulumEffectivePotential_iff hJ0 (apply_two_mem_Ioo_of_snd_ne_zero hx hJ0)
+    isMinOn_sphericalPendulumEffectivePotential_iff hJ0
+      (apply_two_mem_Ioo_of_mem_sphericalPendulumPhaseSpace_of_snd_ne_zero hx hJ0)
   constructor
   · intro hne
     rcases pole_or_relativeEquilibrium_of_map_ne_top hx hne with h | ⟨hJ0, hp2, hcrit⟩
@@ -432,7 +328,8 @@ theorem image_setOf_not_isRegularPoint_sphericalPendulumEnergyMomentum :
     · -- The relative equilibria.
       dsimp only at hJ0 hp2 hmin ⊢
       right
-      have hz : q 2 ∈ Ioo (-1) 1 := apply_two_mem_Ioo_of_snd_ne_zero hx hJ0
+      have hz : q 2 ∈ Ioo (-1) 1 :=
+        apply_two_mem_Ioo_of_mem_sphericalPendulumPhaseSpace_of_snd_ne_zero hx hJ0
       have hH := fst_sphericalPendulumEnergyMomentum_eq hx
         (((sq_lt_one_iff_abs_lt_one _).trans abs_lt).2 hz)
       rw [hp2, zero_pow two_ne_zero, zero_div, add_zero] at hH
@@ -481,16 +378,22 @@ theorem isRegularValue_sphericalPendulumEnergyMomentum_iff (c : ℝ × ℝ) :
   simp only [mem_union, mem_insert_iff, mem_singleton_iff, mem_ofPred_eq, not_or, and_assoc,
     ne_eq]
 
-/-- **The focus–focus value is isolated.** Every value of the energy–momentum map close to
-`(1, 0)`, other than `(1, 0)` itself, is a regular value: near `(1, 0)` there are no relative
-equilibria, whose energies `min V_j ≤ V_j(0) = j² / 2` are small for small `j`. -/
+/-- A neighbourhood of `(1, 0)` free of the other critical values and inside the image of the
+energy–momentum map. -/
+private theorem setOf_lt_fst_and_sq_snd_lt_one_mem_nhds :
+    {c : ℝ × ℝ | 1 / 2 < c.1 ∧ c.2 ^ 2 < 1} ∈ 𝓝 ((1 : ℝ), (0 : ℝ)) :=
+  ((isOpen_lt continuous_const continuous_fst).inter
+    (isOpen_lt (continuous_snd.pow 2) continuous_const)).mem_nhds (by norm_num)
+
+/-- **The value `(1, 0)` of the upper equilibrium is an isolated critical value.** Every value of
+the energy–momentum map close to `(1, 0)`, other than `(1, 0)` itself, is a regular value: near
+`(1, 0)` there are no relative equilibria, whose energies `min V_j ≤ V_j(0) = j² / 2` are small for
+small `j`. -/
 theorem eventually_isRegularValue_sphericalPendulumEnergyMomentum_nhdsNE :
     ∀ᶠ c in 𝓝[≠] ((1 : ℝ), (0 : ℝ)), IsRegularValue 𝓘(ℝ, Fin 4 → ℝ) 𝓘(ℝ, ℝ × ℝ)
       (fun y : sphericalPendulumPhaseSpace ↦ sphericalPendulumEnergyMomentum y) c := by
-  have hU : {c : ℝ × ℝ | 1 / 2 < c.1 ∧ c.2 ^ 2 < 1} ∈ 𝓝 ((1 : ℝ), (0 : ℝ)) :=
-    ((isOpen_lt continuous_const continuous_fst).inter
-      (isOpen_lt (continuous_snd.pow 2) continuous_const)).mem_nhds (by norm_num)
-  filter_upwards [nhdsWithin_le_nhds hU, self_mem_nhdsWithin] with c ⟨hc1, hc2⟩ hne
+  filter_upwards [nhdsWithin_le_nhds setOf_lt_fst_and_sq_snd_lt_one_mem_nhds, self_mem_nhdsWithin]
+    with c ⟨hc1, hc2⟩ hne
   refine (isRegularValue_sphericalPendulumEnergyMomentum_iff c).2
     ⟨fun h ↦ by rw [h] at hc1; norm_num at hc1, hne, fun ⟨_, hleast⟩ ↦ ?_⟩
   -- The minimum of `V_j` is at most `V_j(0) = j² / 2 < 1 / 2`.
@@ -505,11 +408,8 @@ theorem mem_interior_image_sphericalPendulumEnergyMomentum :
     ((1 : ℝ), (0 : ℝ)) ∈
       interior (sphericalPendulumEnergyMomentum '' sphericalPendulumPhaseSpace) := by
   rw [mem_interior_iff_mem_nhds, image_sphericalPendulumEnergyMomentum]
-  have hU : {c : ℝ × ℝ | 1 / 2 < c.1 ∧ c.2 ^ 2 < 1} ∈ 𝓝 ((1 : ℝ), (0 : ℝ)) :=
-    ((isOpen_lt continuous_const continuous_fst).inter
-      (isOpen_lt (continuous_snd.pow 2) continuous_const)).mem_nhds (by norm_num)
   -- The height `z = 0` occurs in every fibre over `{1 / 2 < h, j² < 1}`.
-  filter_upwards [hU] with c ⟨hc1, hc2⟩
+  filter_upwards [setOf_lt_fst_and_sq_snd_lt_one_mem_nhds] with c ⟨hc1, hc2⟩
   exact ⟨0, by norm_num, by linarith, by nlinarith⟩
 
 end TauCeti
