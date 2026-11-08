@@ -20,6 +20,7 @@ import TauCeti.Analysis.Distribution.TestFunction.Translation
 import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
 
 /-!
 # Blow-ups at points of the reduced boundary
@@ -324,32 +325,6 @@ theorem measure_preimage_add_smul_inter_ball {r : ℝ} (hr : 0 < r) (ρ : ℝ) :
   rw [h, Measure.addHaar_preimage_smul μ hr.ne', measure_preimage_add,
     abs_of_pos (by positivity)]
 
-/-- Blow-ups of a null-measurable set are null-measurable. -/
-private theorem nullMeasurableSet_preimage_add_smul {t : Set E} (ht : NullMeasurableSet t μ)
-    {r : ℝ} (hr : r ≠ 0) : NullMeasurableSet ((fun y => x + r • y) ⁻¹' t) μ :=
-  (ht.preimage (measurePreserving_add_left μ x).quasiMeasurePreserving).preimage
-    (Measure.quasiMeasurePreserving_smul μ hr)
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [μ.IsAddHaarMeasure] in
-/-- Sets that agree on `ball x (r * R)` have blow-ups at scale `r` that agree on `ball 0 R`. -/
-private theorem preimage_add_smul_inter_ball_eq {a b : Set E} {r R : ℝ} (hr : 0 < r)
-    (h : a ∩ ball x (r * R) = b ∩ ball x (r * R)) :
-    (fun y => x + r • y) ⁻¹' a ∩ ball 0 R = (fun y => x + r • y) ⁻¹' b ∩ ball 0 R := by
-  have hball : (fun y => x + r • y) ⁻¹' ball x (r * R) = ball 0 R := by
-    simpa [abs_of_pos hr, add_comm] using
-      preimage_smul_vadd_ball_norm x (c := r) (norm_pos_iff.2 hr.ne') R
-  rw [← hball, ← preimage_inter, ← preimage_inter, h]
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [μ.IsAddHaarMeasure] in
-/-- Sets that agree on `ball x (r * R)` have blow-ups at scale `r` with the same symmetric
-difference with `c` inside every `K ⊆ ball 0 R`. -/
-private theorem preimage_add_smul_symmDiff_inter_eq {a b c K : Set E} {r R : ℝ} (hr : 0 < r)
-    (h : a ∩ ball x (r * R) = b ∩ ball x (r * R)) (hK : K ⊆ ball 0 R) :
-    (((fun y => x + r • y) ⁻¹' a) ∆ c) ∩ K = (((fun y => x + r • y) ⁻¹' b) ∆ c) ∩ K := by
-  have hK' : (fun y => x + r • y) ⁻¹' a ∩ K = (fun y => x + r • y) ⁻¹' b ∩ K := by
-    rw [← inter_eq_right.2 hK, ← inter_assoc, preimage_add_smul_inter_ball_eq hr h, inter_assoc]
-  rw [inter_symmDiff_distrib_right, inter_symmDiff_distrib_right, hK']
-
 omit [BorelSpace E] [μ.IsAddHaarMeasure] in
 /-- The scaling `r / r ^ n · n (r R) ^ (n - 1) ω = n R ^ (n - 1) ω` of the upper density bound
 under a blow-up, in positive dimension `n`. -/
@@ -448,7 +423,7 @@ private theorem exists_subseq_tendsto_measure_symmDiff_inter_preimage_add_smul_o
         (ofReal_div_pow_mul_ofReal_mul_pow (hpos i) R 2)
   obtain ⟨F, hF, φ, hφ, hconv⟩ := exists_subseq_tendsto_measure_symmDiff_inter_of_perimeter_le
     (Ω := ⊤) (s := fun i => (fun y => x + r i • y) ⁻¹' s')
-    (fun i => nullMeasurableSet_preimage_add_smul hs' (hpos i).ne') fun K hK _ => by
+    (fun i => hs'.preimage (μ.quasiMeasurePreserving_add_smul x (hpos i).ne')) fun K hK _ => by
       obtain ⟨R, hKR⟩ := hK.isBounded.subset_ball 0
       obtain ⟨M, hM⟩ := hbound (max R 1) (lt_max_of_lt_right one_pos)
       exact ⟨⟨ball 0 (max R 1), isOpen_ball⟩, hKR.trans (ball_subset_ball (le_max_left _ _)),
@@ -517,7 +492,7 @@ theorem perimeter_ball_zero_le_of_tendsto_measure_symmDiff_inter
       ≤ liminf (fun i => perimeter μ ⟨ball 0 R, isOpen_ball⟩
           ((fun y => x + r i • y) ⁻¹' (s ∩ Ω))) l :=
         perimeter_le_liminf ((hr.eventually self_mem_nhdsWithin).mono fun i hi =>
-          nullMeasurableSet_preimage_add_smul hsΩ (ne_of_gt hi)) hF fun K hK hKR =>
+          hsΩ.preimage (μ.quasiMeasurePreserving_add_smul x (ne_of_gt hi))) hF fun K hK hKR =>
             (hconv K hK).congr' (hagree.mono fun i hi =>
               congrArg μ (preimage_add_smul_symmDiff_inter_eq hi.1 hi.2.symm hKR))
     _ ≤ _ := by

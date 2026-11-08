@@ -24,6 +24,10 @@ scalars and their action. Balls and closed balls require `0 < ‖c‖`; spheres 
 `‖c‖ ≠ 0`. Over a normed division ring these conditions are equivalent to `c ≠ 0`, via
 `norm_pos_iff` and `norm_ne_zero_iff` respectively.
 
+Sets that agree on `ball x (r * R)` have preimages under the blow-up map `y ↦ x + r • y`,
+`r > 0`, that agree on `ball 0 R` (`TauCeti.preimage_add_smul_inter_ball_eq`), and hence the same
+symmetric difference with any set inside it (`TauCeti.preimage_add_smul_symmDiff_inter_eq`).
+
 The range formula identifies a positive real scaling of the unit sphere with the sphere
 of that radius in a seminormed real vector space. Two points on a sphere of nonzero radius
 centered at zero lie on the same line exactly when they are equal or antipodal.
@@ -83,6 +87,34 @@ theorem preimage_smul_vadd_sphere (x : P) {c : 𝕜} (hc : ‖c‖ ≠ 0) (r : �
   exact mul_right_inj' hc
 
 end Preimage
+
+section Locality
+
+open scoped symmDiff
+
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] {x : E} {r R : ℝ}
+
+/-- Sets that agree on `Metric.ball x (r * R)` have preimages under `y ↦ x + r • y`, `r > 0`, that
+agree on `Metric.ball 0 R`. -/
+theorem preimage_add_smul_inter_ball_eq {a b : Set E} (hr : 0 < r)
+    (h : a ∩ Metric.ball x (r * R) = b ∩ Metric.ball x (r * R)) :
+    (fun y ↦ x + r • y) ⁻¹' a ∩ Metric.ball 0 R = (fun y ↦ x + r • y) ⁻¹' b ∩ Metric.ball 0 R := by
+  have hball : (fun y ↦ x + r • y) ⁻¹' Metric.ball x (r * R) = Metric.ball 0 R := by
+    simpa [abs_of_pos hr, add_comm] using
+      preimage_smul_vadd_ball_norm x (c := r) (norm_pos_iff.2 hr.ne') R
+  rw [← hball, ← Set.preimage_inter, ← Set.preimage_inter, h]
+
+/-- Sets that agree on `Metric.ball x (r * R)` have preimages under `y ↦ x + r • y`, `r > 0`, with
+the same symmetric difference with `c` inside every `K ⊆ Metric.ball 0 R`. -/
+theorem preimage_add_smul_symmDiff_inter_eq {a b c K : Set E} (hr : 0 < r)
+    (h : a ∩ Metric.ball x (r * R) = b ∩ Metric.ball x (r * R)) (hK : K ⊆ Metric.ball 0 R) :
+    (((fun y ↦ x + r • y) ⁻¹' a) ∆ c) ∩ K = (((fun y ↦ x + r • y) ⁻¹' b) ∆ c) ∩ K := by
+  have hK' : (fun y ↦ x + r • y) ⁻¹' a ∩ K = (fun y ↦ x + r • y) ⁻¹' b ∩ K := by
+    rw [← Set.inter_eq_right.2 hK, ← Set.inter_assoc, preimage_add_smul_inter_ball_eq hr h,
+      Set.inter_assoc]
+  rw [Set.inter_symmDiff_distrib_right, Set.inter_symmDiff_distrib_right, hK']
+
+end Locality
 
 section Sphere
 

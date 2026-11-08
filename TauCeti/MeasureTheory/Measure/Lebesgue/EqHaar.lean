@@ -19,7 +19,9 @@ An affine map of a finite-dimensional real normed space multiplies every additiv
 by the absolute value of the determinant of its linear part
 (`MeasureTheory.Measure.addHaar_image_affineMap`, and
 `MeasureTheory.Measure.addHaar_image_affineEquiv` for affine equivalences), the affine form of
-Mathlib's `MeasureTheory.Measure.addHaar_image_linearMap`.
+Mathlib's `MeasureTheory.Measure.addHaar_image_linearMap`. The affine dilation `y ↦ x + r • y`,
+`r ≠ 0`, is quasi-measure-preserving for every additive Haar measure
+(`MeasureTheory.Measure.quasiMeasurePreserving_add_smul`).
 
 A linear map into a finite-dimensional real normed space that is not surjective has almost every
 fibre empty for every additive Haar measure on the codomain
@@ -86,6 +88,12 @@ the determinant of the linear part times the measure of the set. -/
 theorem addHaar_image_affineEquiv (f : F ≃ᵃ[ℝ] F) (s : Set F) :
     μ (f '' s) = ENNReal.ofReal |LinearMap.det (f.linear : F →ₗ[ℝ] F)| * μ s :=
   addHaar_image_affineMap μ (f : F →ᵃ[ℝ] F) s
+
+/-- The affine dilation `y ↦ x + r • y` with `r ≠ 0` is quasi-measure-preserving for an additive
+Haar measure, so preimages under it of null-measurable sets are null-measurable. -/
+theorem quasiMeasurePreserving_add_smul (x : F) {r : ℝ} (hr : r ≠ 0) :
+    QuasiMeasurePreserving (fun y ↦ x + r • y) μ μ :=
+  (measurePreserving_add_left μ x).quasiMeasurePreserving.comp (quasiMeasurePreserving_smul μ hr)
 
 end Affine
 
