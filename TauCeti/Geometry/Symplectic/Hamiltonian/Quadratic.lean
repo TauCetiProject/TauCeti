@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Lie.SkewAdjoint
 public import TauCeti.Analysis.Calculus.FDeriv.QuadraticMap
 public import TauCeti.Analysis.Calculus.Morse.Index
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap
+public import TauCeti.Geometry.Symplectic.Prod.Basic
 
 /-!
 # Quadratic Hamiltonians and the symplectic Lie algebra
@@ -40,6 +41,10 @@ Hamiltonian endomorphisms of their Hessians pairwise commute in `sp(V, ω)`. Thi
 data on which Williamson's classification of nondegenerate critical points of integrable systems
 operates.
 
+On a direct sum `(V₁ × V₂, ω₁ ⊕ ω₂)` the direct sum `Q₁ ⊕ Q₂` of quadratic forms has Hamiltonian
+endomorphism `A_{Q₁} × A_{Q₂}`, and the Poisson bracket is computed summandwise. Conversely, a
+quadratic form whose Hamiltonian endomorphism preserves both summands is a direct sum.
+
 ## Main definitions
 
 * `TauCeti.SymplecticForm.hamiltonianEnd ω`: the linear map `Q ↦ A_Q` from quadratic forms to
@@ -60,6 +65,12 @@ operates.
 * `TauCeti.SymplecticForm.hamiltonianEnd_quadraticPoissonBracket`: `A_{Q, R} = ⁅A_Q, A_R⁆`.
 * `TauCeti.SymplecticForm.quadraticPoissonBracket_eq_zero_iff`: `{Q, R} = 0` exactly when `A_Q`
   and `A_R` commute.
+* `TauCeti.SymplecticForm.hamiltonianEnd_prod`,
+  `TauCeti.SymplecticForm.quadraticPoissonBracket_prod`: `A_{Q₁ ⊕ Q₂} = A_{Q₁} × A_{Q₂}` and
+  `{Q₁ ⊕ Q₂, R₁ ⊕ R₂} = {Q₁, R₁} ⊕ {Q₂, R₂}` for the direct-sum symplectic form.
+* `TauCeti.SymplecticForm.exists_eq_prod_of_hamiltonianEnd_eq_prodMap`: a quadratic form on
+  `V₁ × V₂` whose Hamiltonian endomorphism is a product `a × b` is a direct sum `R₁ ⊕ R₂` with
+  `A_{R₁} = a` and `A_{R₂} = b`.
 * `TauCeti.SymplecticForm.hamiltonianVectorField_quadraticForm`,
   `TauCeti.SymplecticForm.poissonBracket_quadraticForm`: the Hamiltonian vector field of `Q` is
   `A_Q`, and the Poisson bracket of the functions `Q` and `R` is `{Q, R}`.
@@ -297,6 +308,69 @@ theorem quadraticPoissonBracket_eq_zero_iff {Q R : QuadraticForm ℝ V} :
     ω.quadraticPoissonBracket Q R = 0 ↔ Commute (ω.hamiltonianEnd Q) (ω.hamiltonianEnd R) := by
   rw [commute_iff_lie_eq, ← hamiltonianEnd_quadraticPoissonBracket,
     ← map_zero ω.hamiltonianEnd, ω.hamiltonianEnd_injective.eq_iff]
+
+/-- The Poisson bracket with the zero form vanishes. -/
+@[simp]
+theorem quadraticPoissonBracket_zero_left (R : QuadraticForm ℝ V) :
+    ω.quadraticPoissonBracket 0 R = 0 := by
+  ext v
+  simp
+
+/-- The Poisson bracket with the zero form vanishes. -/
+@[simp]
+theorem quadraticPoissonBracket_zero_right (Q : QuadraticForm ℝ V) :
+    ω.quadraticPoissonBracket Q 0 = 0 := by
+  ext v
+  simp
+
+/-! ### Direct sums -/
+
+section Prod
+
+variable {V₁ V₂ : Type*} [AddCommGroup V₁] [Module ℝ V₁] [FiniteDimensional ℝ V₁]
+  [AddCommGroup V₂] [Module ℝ V₂] [FiniteDimensional ℝ V₂]
+  (ω₁ : SymplecticForm V₁) (ω₂ : SymplecticForm V₂)
+
+/-- For the direct-sum symplectic form, the Hamiltonian endomorphism of a direct sum `Q₁ ⊕ Q₂` of
+quadratic forms is the product `A_{Q₁} × A_{Q₂}`. -/
+@[simp]
+theorem hamiltonianEnd_prod (Q₁ : QuadraticForm ℝ V₁) (Q₂ : QuadraticForm ℝ V₂) :
+    (ω₁.prod ω₂).hamiltonianEnd (Q₁.prod Q₂) =
+      (ω₁.hamiltonianEnd Q₁).prodMap (ω₂.hamiltonianEnd Q₂) :=
+  ((ω₁.prod ω₂).eq_hamiltonianEnd_iff.2 fun v w ↦ by simp).symm
+
+/-- For the direct-sum symplectic form, the Poisson bracket of direct sums of quadratic forms is
+computed summandwise: `{Q₁ ⊕ Q₂, R₁ ⊕ R₂} = {Q₁, R₁} ⊕ {Q₂, R₂}`. -/
+@[simp]
+theorem quadraticPoissonBracket_prod (Q₁ R₁ : QuadraticForm ℝ V₁) (Q₂ R₂ : QuadraticForm ℝ V₂) :
+    (ω₁.prod ω₂).quadraticPoissonBracket (Q₁.prod Q₂) (R₁.prod R₂) =
+      (ω₁.quadraticPoissonBracket Q₁ R₁).prod (ω₂.quadraticPoissonBracket Q₂ R₂) := by
+  ext v
+  simp
+
+variable {ω₁ ω₂} in
+/-- A quadratic form on `V₁ × V₂` whose Hamiltonian endomorphism, for the direct-sum symplectic
+form, is a product `a × b` is a direct sum `R₁ ⊕ R₂` of quadratic forms with `A_{R₁} = a` and
+`A_{R₂} = b`. -/
+theorem exists_eq_prod_of_hamiltonianEnd_eq_prodMap {R : QuadraticForm ℝ (V₁ × V₂)}
+    {a : Module.End ℝ V₁} {b : Module.End ℝ V₂}
+    (h : (ω₁.prod ω₂).hamiltonianEnd R = a.prodMap b) :
+    ∃ R₁ R₂, R = R₁.prod R₂ ∧ ω₁.hamiltonianEnd R₁ = a ∧ ω₂.hamiltonianEnd R₂ = b := by
+  have hpolar : ∀ v w, QuadraticMap.polar R v w = ω₁ (a v.1) w.1 + ω₂ (b v.2) w.2 := fun v w ↦ by
+    rw [← (ω₁.prod ω₂).apply_hamiltonianEnd, h]
+    simp
+  refine ⟨R.comp (LinearMap.inl ℝ V₁ V₂), R.comp (LinearMap.inr ℝ V₁ V₂), ?_,
+    (ω₁.eq_hamiltonianEnd_iff.2 fun v w ↦ ?_).symm, (ω₂.eq_hamiltonianEnd_iff.2 fun v w ↦ ?_).symm⟩
+  · -- The cross term `polar R (v, 0) (0, w)` vanishes since `A_R` preserves both summands.
+    ext ⟨v, w⟩
+    have hvw : ((v, w) : V₁ × V₂) = (v, 0) + (0, w) := by simp
+    have := QuadraticMap.map_add R (v, 0) (0, w)
+    rw [← hvw, hpolar] at this
+    simpa using this
+  · simpa [QuadraticMap.polar] using (hpolar (v, 0) (w, 0)).symm
+  · simpa [QuadraticMap.polar] using (hpolar (0, v) (0, w)).symm
+
+end Prod
 
 end Algebraic
 
