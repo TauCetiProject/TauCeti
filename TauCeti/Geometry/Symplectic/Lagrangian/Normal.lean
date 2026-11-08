@@ -241,12 +241,12 @@ theorem normalPairing_cotangentSymplecticForm_inl (z : U × Dual ℝ U) :
 
 /-- **The normal space of the zero section is the fibre.** For finite-dimensional `U`, the
 identification of the normal quotient of the zero section of `U × U*` with `U*` sends the class
-of `(u, p)` to `p`. -/
-theorem quotientEquivDual_cotangentZeroSection_mk [FiniteDimensional ℝ U] (z : U × Dual ℝ U) :
-    (cotangentZeroSection_eq_range_inl (V := U) ▸ isLagrangian_cotangentZeroSection :
-        cotangentSymplecticForm.IsLagrangian
-          (LinearMap.range (LinearMap.inl ℝ U (Dual ℝ U)))).quotientEquivDual
-      LinearMap.inl_injective (Submodule.Quotient.mk z) = z.2 :=
+of `(u, p)` to `p`. The hypothesis `h` is `isLagrangian_cotangentZeroSection`, transported along
+`cotangentZeroSection_eq_range_inl`. -/
+theorem quotientEquivDual_cotangentZeroSection_mk [FiniteDimensional ℝ U]
+    (h : cotangentSymplecticForm.IsLagrangian (LinearMap.range (LinearMap.inl ℝ U (Dual ℝ U))))
+    (z : U × Dual ℝ U) :
+    h.quotientEquivDual LinearMap.inl_injective (Submodule.Quotient.mk z) = z.2 :=
   (IsLagrangian.quotientEquivDual_mk _ _ z).trans (normalPairing_cotangentSymplecticForm_inl z)
 
 end Cotangent
