@@ -393,7 +393,7 @@ theorem finrank_cohomology_one_sheaf_eq_dim_sub (hxt : Transcendental k x)
       Divisor.dim (W - equivDivisor hxt D) := by
   let _ := isDiscreteValuationRing_stalk (hF := hF) (hx := hx) hxt
   let _ := isNoetherian (hF := hF) (hx := hx) hxt
-  obtain ⟨ω, -, hω, hgreat⟩ := exists_isGreatest_of_divisorClass_eq_canonicalClass hF hk hW
+  obtain ⟨ω, -, -, hgreat⟩ := exists_isGreatest_of_divisorClass_eq_canonicalClass hF hk hW
   have := SchemeWeilDivisor.finiteDimensional_cohomology_one_sheaf_of_isFunctionField
     (valuativeCriterion_existence hF hx) (coheight_le_one hxt)
     (isFunctionField_functionField hxt) D
