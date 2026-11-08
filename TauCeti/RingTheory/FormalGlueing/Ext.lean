@@ -89,6 +89,9 @@ theorem mapExt_bijective_of_primaryComponent_eq_top_right (f : R →+* S) (hf : 
   let := ModuleCat.preservesFiniteLimits_extendScalars_of_flat hf
   have : IsIso ((ModuleCat.extendRestrictScalarsAdj (algebraMap R S)).unit.app N) := by
     rw [ConcreteCategory.isIso_iff_bijective]
+    -- The unit is 1 ⊗ₜ · by ModuleCat.extendRestrictScalarsAdj_unit_app_apply.
+    -- The Module.compHom R-module structure on S used by extendScalars agrees definitionally
+    -- with the one induced by the Algebra R S instance supplied by algebraize.
     exact TauCeti.tensorProduct_mk_bijective_of_primaryComponent_eq_top (S := S) hI hN
   exact
     (ModuleCat.extendRestrictScalarsAdj (algebraMap R S)).mapExt_bijective_of_isIso_unit_app
