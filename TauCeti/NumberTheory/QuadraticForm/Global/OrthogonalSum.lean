@@ -154,13 +154,6 @@ namespace TauCeti.NumberField.QuadraticForm.GlobalFormInvariants
 -- Hilbert's product formula, used for the residual system, is stated for number fields in `Type`.
 variable {K : Type} [Field K] [NumberField K]
 
-/-- Raising the negative index from `m` to `m + 1` multiplies the real Hasse sign `(-1)^C(m, 2)` by
-`(-1)^m`, since `C(m + 1, 2) = C(m, 2) + m`. -/
-private theorem neg_one_pow_succ_choose_two_mul_neg_one_pow (m : ℕ) :
-    (-1 : ℤˣ) ^ (m + 1).choose 2 * (-1) ^ m = (-1) ^ m.choose 2 := by
-  rw [Nat.choose_succ_succ', Nat.choose_one_right, add_comm, pow_add, mul_assoc, ← pow_add,
-    Even.neg_one_pow ⟨m, rfl⟩, mul_one]
-
 /-- The system obtained from `I` by removing a line `⟨c⟩`, computed with a representative `δ` of the
 discriminant of `I`: rank `n - 1`, discriminant `δ c`, Hasse signs `s_v(I) · (c, δ c)_v`, and the
 positive index at a real place lowered by one where `c` is positive. -/
@@ -270,7 +263,7 @@ private theorem realHasse_residual (hI : I.IsAdmissible) {c δ : Kˣ} (hδ : squ
       · rw [ho.neg_one_pow, Units.squareClass_eq_squareClass_neg_one_iff_neg] at hdc
         rw [ho.neg_one_pow, hilbertSymbol_real_eq_neg_one_iff]
         exact ⟨by rwa [unitAtRealPlace_apply], hdc⟩
-    rw [hm', hm, hsym, neg_one_pow_succ_choose_two_mul_neg_one_pow]
+    rw [hm', hm, hsym, Nat.neg_one_pow_succ_choose_two_mul_neg_one_pow]
   · -- At a place where `c` is positive the negative index is unchanged and the symbol is `1`.
     have hp := hpos w hc
     simp only [hc, ↓reduceIte]
