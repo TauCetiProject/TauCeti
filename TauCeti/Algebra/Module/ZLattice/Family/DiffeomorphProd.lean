@@ -80,19 +80,11 @@ noncomputable def torusFamilyDiffeomorphProd :
     letI := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
     Diffeomorph (I.prod 𝓘(ℝ, E)) (I.prod 𝓘(ℝ, ι → ℝ)) (AddAction.orbitRel.Quotient Λ (Y × E))
       (Y × AddAction.orbitRel.Quotient (span ℤ (range (Pi.basisFun ℝ ι))) (ι → ℝ)) n := by
-  have heq (y : Y) : (periodBasis P b hinj y).equivFunL.toLinearEquiv =
-      (periodBasis P b hinj y).equivFun := by
-    ext v i
-    simp [Basis.equivFun_apply]
-  refine torusFamilyLinearDiffeomorphProd P (span ℤ (range (Pi.basisFun ℝ ι)))
-    (fun y ↦ (periodBasis P b hinj y).equivFunL) ?_ hinj hP
+  exact torusFamilyLinearDiffeomorphProd P (span ℤ (range (Pi.basisFun ℝ ι)))
+    (fun y ↦ (periodBasis P b hinj y).equivFunL)
+    (by simpa only [Basis.equivFunL_toLinearEquiv] using
+      map_range_periodBasis_equivFun P b hinj) hinj hP
     (contMDiff_periodBasis_equivFunL P b hinj hP)
-  intro y
-  ext v
-  rw [heq, Submodule.mem_map_equiv]
-  simpa only [LinearEquiv.restrictScalars_symm_apply, LinearEquiv.apply_symm_apply] using
-    (periodBasis_equivFun_mem_span_iff P b hinj y
-      ((periodBasis P b hinj y).equivFun.symm v)).symm
 
 /-- The smooth trivialization sends the class of `(y, v)` to `y` and the class of the period
 coordinates of `v` at `y`. -/
@@ -104,11 +96,8 @@ coordinates of `v` at `y`. -/
   let _ := periodAddAction P
   let _ := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
   rcases p with ⟨y, v⟩
-  simp only [torusFamilyDiffeomorphProd, torusFamilyLinearDiffeomorphProd_mk]
-  apply Prod.ext rfl
-  apply congrArg (Quotient.mk _)
-  ext i
-  simp
+  simp only [torusFamilyDiffeomorphProd, torusFamilyLinearDiffeomorphProd_mk,
+    ← ContinuousLinearEquiv.coe_toLinearEquiv, Basis.equivFunL_toLinearEquiv]
 
 /-- The inverse of the smooth trivialization sends `y` and the class of `x` to the class of
 `(y, ∑ i, x i • P y (b i))`. -/
