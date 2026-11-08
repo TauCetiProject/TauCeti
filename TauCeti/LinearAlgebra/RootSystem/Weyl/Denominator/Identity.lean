@@ -77,7 +77,7 @@ universe u v w x
 
 variable {ι : Type u} {R : Type v} {M : Type w} {N : Type x}
   [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-  (P : _root_.RootPairing ι R M N) [Finite ι] [CharZero R] (b : P.Base)
+  (P : _root_.RootPairing ι R M N) [Finite ι] (b : P.Base)
 
 section Reduced
 

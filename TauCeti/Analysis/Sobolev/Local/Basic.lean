@@ -10,18 +10,24 @@ public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import TauCeti.MeasureTheory.Function.LocallyIntegrable
+public import TauCeti.Topology.Sets.Opens
 
 /-!
 # Local vector-valued Sobolev classes on planar domains
 
 `TauCeti.MemLpLoc p U f` requires `Lᵖ` membership on every compact subset of `U`.
-`TauCeti.MemWkpLoc p Ω k f` requires iterated weak derivatives through order `k`, each locally
-`Lᵖ`. Derivatives take values in iterated continuous linear maps, rather than scalar jets.
+`TauCeti.MemWkpLoc p U k f` requires iterated weak derivatives through order `k` on
+`interior U`, with `Lᵖ` bounds on every compact subset of `U` itself. For half-discs these
+bounds reach the real axis, while test functions stay in the interior. On open sets this is
+the usual local Sobolev class. Derivatives take values in iterated continuous linear maps,
+rather than scalar jets.
 These predicates concern actual functions; almost-everywhere changes do not affect membership.
 They impose no global integrability condition on the possibly unbounded domain.
 
-This file supplies restriction, linearity, continuous-linear composition, decreasing the
-integrability exponent, and decreasing the derivative order. On open domains, local `L¹`
+This file supplies restriction to arbitrary subsets, linearity, continuous-linear composition,
+decreasing the integrability exponent, and decreasing the derivative order. Smoothness on an
+open neighbourhood gives membership, without requiring a global smooth extension.
+No boundary trace or extension across the boundary is asserted. On open domains, local `L¹`
 membership is identified with local integrability, supplying the native weak-derivative hypotheses.
 In positive order, completeness is inherited from the native weak-derivative predicate; the
 definitions admit every real normed codomain without an additional typeclass assumption.
@@ -129,61 +135,75 @@ theorem MemLpLoc.clm_comp (hf : MemLpLoc p U f) (A : F →L[ℝ] G) :
     MemLpLoc p U (fun z => A (f z)) :=
   fun K hK hc => A.comp_memLp' (hf K hK hc)
 
-/-- The iterated weak derivatives through order `k` exist on `Ω` and are locally `Lᵖ`.
+/-- The iterated weak derivatives through order `k` exist on `interior U` and are `Lᵖ` on
+every compact subset of `U`, including compact sets reaching its boundary.
 The first derivative takes values in `ℂ →L[ℝ] F`; higher derivatives iterate this construction.
-No integrability at infinity is required. -/
-def MemWkpLoc (p : ENNReal) (Ω : Opens ℂ) :
+No integrability at infinity or boundary trace is required. -/
+def MemWkpLoc (p : ENNReal) (U : Set ℂ) :
     (k : ℕ) → {F : Type*} → [NormedAddCommGroup F] → [NormedSpace ℝ F] → (ℂ → F) → Prop
-  | 0, _, _, _, f => MemLpLoc p Ω f
-  | k + 1, F, _, _, f => MemLpLoc p Ω f ∧
-      ∃ D : ℂ → ℂ →L[ℝ] F, HasWeakFDerivOn volume Ω f D ∧ MemWkpLoc p Ω k D
+  | 0, _, _, _, f => MemLpLoc p U f
+  | k + 1, F, _, _, f => MemLpLoc p U f ∧
+      ∃ D : ℂ → ℂ →L[ℝ] F, HasWeakFDerivOn volume (Opens.interior U) f D ∧ MemWkpLoc p U k D
 
-variable {Ω Ω' : Opens ℂ} {k l : ℕ}
+variable {Ω : Opens ℂ} {k l : ℕ}
 
 /-- At order zero the local Sobolev class is exactly the local `Lᵖ` class. -/
 @[simp]
-theorem memWkpLoc_zero_iff : MemWkpLoc p Ω 0 f ↔ MemLpLoc p Ω f := Iff.rfl
+theorem memWkpLoc_zero_iff : MemWkpLoc p U 0 f ↔ MemLpLoc p U f := Iff.rfl
 
 /-- The successor-order characterization supplies a weak derivative in the preceding class. -/
-theorem memWkpLoc_succ_iff : MemWkpLoc p Ω (k + 1) f ↔ MemLpLoc p Ω f ∧
-    ∃ D : ℂ → ℂ →L[ℝ] F, HasWeakFDerivOn volume Ω f D ∧ MemWkpLoc p Ω k D := Iff.rfl
+theorem memWkpLoc_succ_iff : MemWkpLoc p U (k + 1) f ↔ MemLpLoc p U f ∧
+    ∃ D : ℂ → ℂ →L[ℝ] F, HasWeakFDerivOn volume (Opens.interior U) f D ∧
+      MemWkpLoc p U k D := Iff.rfl
+
+/-- On an open domain, the successor-order weak derivative is tested on the domain itself. -/
+theorem memWkpLoc_succ_iff_of_isOpen : MemWkpLoc p Ω (k + 1) f ↔ MemLpLoc p Ω f ∧
+    ∃ D : ℂ → ℂ →L[ℝ] F, HasWeakFDerivOn volume Ω f D ∧ MemWkpLoc p Ω k D := by
+  simp only [memWkpLoc_succ_iff, Opens.interior_coe]
 
 /-- Every local Sobolev function is locally `Lᵖ`. -/
-theorem MemWkpLoc.memLpLoc (hf : MemWkpLoc p Ω k f) : MemLpLoc p Ω f := by
+theorem MemWkpLoc.memLpLoc (hf : MemWkpLoc p U k f) : MemLpLoc p U f := by
   cases k with
   | zero => exact hf
   | succ k => exact hf.1
 
 /-- A positive-order local Sobolev function has a weak derivative of the preceding order. -/
-theorem MemWkpLoc.exists_weakFDeriv (hf : MemWkpLoc p Ω (k + 1) f) :
-    ∃ D : ℂ → ℂ →L[ℝ] F, HasWeakFDerivOn volume Ω f D ∧ MemWkpLoc p Ω k D := hf.2
+theorem MemWkpLoc.exists_weakFDeriv (hf : MemWkpLoc p U (k + 1) f) :
+    ∃ D : ℂ → ℂ →L[ℝ] F, HasWeakFDerivOn volume (Opens.interior U) f D ∧
+      MemWkpLoc p U k D := hf.2
+
+/-- On an open domain, positive-order membership gives a weak derivative on that domain. -/
+theorem MemWkpLoc.exists_weakFDeriv_of_isOpen (hf : MemWkpLoc p Ω (k + 1) f) :
+    ∃ D : ℂ → ℂ →L[ℝ] F, HasWeakFDerivOn volume Ω f D ∧ MemWkpLoc p Ω k D :=
+  (memWkpLoc_succ_iff_of_isOpen.mp hf).2
 
 /-- Positive-order membership retains the completeness required by weak derivatives. -/
-theorem MemWkpLoc.completeSpace (hf : MemWkpLoc p Ω (k + 1) f) : CompleteSpace F := by
+theorem MemWkpLoc.completeSpace (hf : MemWkpLoc p U (k + 1) f) : CompleteSpace F := by
   obtain ⟨D, hD, _⟩ := hf.exists_weakFDeriv
   exact hD.completeSpace
 
-/-- Local Sobolev membership restricts to a smaller open domain. -/
-theorem MemWkpLoc.mono (hf : MemWkpLoc p Ω k f) (hΩ : Ω' ≤ Ω) :
-    MemWkpLoc p Ω' k f := by
+/-- Restriction preserves the interior weak derivatives and the bounds on compact subsets. -/
+theorem MemWkpLoc.mono (hf : MemWkpLoc p U k f) (hVU : V ⊆ U) :
+    MemWkpLoc p V k f := by
   induction k generalizing F with
-  | zero => exact hf.mono_set hΩ
+  | zero => exact hf.mono_set hVU
   | succ k ih =>
     obtain ⟨hp, D, hD, hk⟩ := hf
-    exact ⟨hp.mono_set hΩ, D, hD.mono hΩ, ih hk⟩
+    exact ⟨hp.mono_set hVU, D, hD.mono (interior_mono hVU), ih hk⟩
 
 /-- Almost-everywhere changes of the function preserve its local Sobolev class. -/
-theorem MemWkpLoc.congr_ae (hf : MemWkpLoc p Ω k f)
-    (hfg : f =ᵐ[volume.restrict (Ω : Set ℂ)] g) : MemWkpLoc p Ω k g := by
+theorem MemWkpLoc.congr_ae (hf : MemWkpLoc p U k f)
+    (hfg : f =ᵐ[volume.restrict U] g) : MemWkpLoc p U k g := by
   cases k with
   | zero => exact hf.congr_ae hfg
   | succ k =>
     obtain ⟨hp, D, hD, hk⟩ := hf
-    exact ⟨hp.congr_ae hfg, D, hD.congr_ae hfg, hk⟩
+    exact ⟨hp.congr_ae hfg, D,
+      hD.congr_ae (ae_mono (Measure.restrict_mono_set volume interior_subset) hfg), hk⟩
 
 /-- Decreasing the integrability exponent preserves each local derivative order. -/
-theorem MemWkpLoc.mono_exponent (hf : MemWkpLoc p Ω k f) (hqp : q ≤ p) :
-    MemWkpLoc q Ω k f := by
+theorem MemWkpLoc.mono_exponent (hf : MemWkpLoc p U k f) (hqp : q ≤ p) :
+    MemWkpLoc q U k f := by
   induction k generalizing F with
   | zero => exact hf.mono_exponent hqp
   | succ k ih =>
@@ -191,7 +211,7 @@ theorem MemWkpLoc.mono_exponent (hf : MemWkpLoc p Ω k f) (hqp : q ≤ p) :
     exact ⟨hp.mono_exponent hqp, D, hD, ih hk⟩
 
 /-- Dropping the top derivative preserves local Sobolev membership. -/
-theorem MemWkpLoc.of_succ (hf : MemWkpLoc p Ω (k + 1) f) : MemWkpLoc p Ω k f := by
+theorem MemWkpLoc.of_succ (hf : MemWkpLoc p U (k + 1) f) : MemWkpLoc p U k f := by
   induction k generalizing F with
   | zero => exact hf.1
   | succ k ih =>
@@ -199,21 +219,21 @@ theorem MemWkpLoc.of_succ (hf : MemWkpLoc p Ω (k + 1) f) : MemWkpLoc p Ω k f :
     exact ⟨hp, D, hD, ih hk⟩
 
 /-- Membership at any smaller derivative order follows from membership at a larger one. -/
-theorem MemWkpLoc.of_le (hf : MemWkpLoc p Ω k f) (hlk : l ≤ k) : MemWkpLoc p Ω l f := by
+theorem MemWkpLoc.of_le (hf : MemWkpLoc p U k f) (hlk : l ≤ k) : MemWkpLoc p U l f := by
   induction hlk with
   | refl => exact hf
   | step h ih => exact ih hf.of_succ
 
 /-- The zero function lies in every local Sobolev class with complete codomain. -/
 @[simp]
-theorem memWkpLoc_zero_fun [CompleteSpace F] : MemWkpLoc p Ω k (0 : ℂ → F) := by
+theorem memWkpLoc_zero_fun [CompleteSpace F] : MemWkpLoc p U k (0 : ℂ → F) := by
   induction k generalizing F with
   | zero => exact memLpLoc_zero
   | succ k ih => exact ⟨memLpLoc_zero, 0, hasWeakFDerivOn_zero, ih⟩
 
 /-- Local Sobolev membership is closed under addition. -/
-theorem MemWkpLoc.add (hf : MemWkpLoc p Ω k f) (hg : MemWkpLoc p Ω k g) :
-    MemWkpLoc p Ω k (f + g) := by
+theorem MemWkpLoc.add (hf : MemWkpLoc p U k f) (hg : MemWkpLoc p U k g) :
+    MemWkpLoc p U k (f + g) := by
   induction k generalizing F with
   | zero => exact hf.add hg
   | succ k ih =>
@@ -222,7 +242,7 @@ theorem MemWkpLoc.add (hf : MemWkpLoc p Ω k f) (hg : MemWkpLoc p Ω k g) :
     exact ⟨hp.add hq, D + D', hD.add hD', ih hk hk'⟩
 
 /-- Local Sobolev membership is closed under negation. -/
-theorem MemWkpLoc.neg (hf : MemWkpLoc p Ω k f) : MemWkpLoc p Ω k (-f) := by
+theorem MemWkpLoc.neg (hf : MemWkpLoc p U k f) : MemWkpLoc p U k (-f) := by
   induction k generalizing F with
   | zero => exact hf.neg
   | succ k ih =>
@@ -230,13 +250,13 @@ theorem MemWkpLoc.neg (hf : MemWkpLoc p Ω k f) : MemWkpLoc p Ω k (-f) := by
     exact ⟨hp.neg, -D, hD.neg, ih hk⟩
 
 /-- Local Sobolev membership is closed under subtraction. -/
-theorem MemWkpLoc.sub (hf : MemWkpLoc p Ω k f) (hg : MemWkpLoc p Ω k g) :
-    MemWkpLoc p Ω k (f - g) := by
+theorem MemWkpLoc.sub (hf : MemWkpLoc p U k f) (hg : MemWkpLoc p U k g) :
+    MemWkpLoc p U k (f - g) := by
   simpa only [sub_eq_add_neg] using hf.add hg.neg
 
 /-- Real scalar multiplication preserves local Sobolev membership. -/
-theorem MemWkpLoc.const_smul (hf : MemWkpLoc p Ω k f) (c : ℝ) :
-    MemWkpLoc p Ω k (c • f) := by
+theorem MemWkpLoc.const_smul (hf : MemWkpLoc p U k f) (c : ℝ) :
+    MemWkpLoc p U k (c • f) := by
   induction k generalizing F with
   | zero => exact hf.const_smul c
   | succ k ih =>
@@ -244,8 +264,8 @@ theorem MemWkpLoc.const_smul (hf : MemWkpLoc p Ω k f) (c : ℝ) :
     exact ⟨hp.const_smul c, c • D, hD.const_smul c, ih hk⟩
 
 /-- Continuous linear maps of the codomain preserve all local weak derivative orders. -/
-theorem MemWkpLoc.clm_comp [CompleteSpace G] (hf : MemWkpLoc p Ω k f)
-    (A : F →L[ℝ] G) : MemWkpLoc p Ω k (fun z => A (f z)) := by
+theorem MemWkpLoc.clm_comp [CompleteSpace G] (hf : MemWkpLoc p U k f)
+    (A : F →L[ℝ] G) : MemWkpLoc p U k (fun z => A (f z)) := by
   induction k generalizing F G with
   | zero => exact hf.clm_comp A
   | succ k ih =>
@@ -255,41 +275,43 @@ theorem MemWkpLoc.clm_comp [CompleteSpace G] (hf : MemWkpLoc p Ω k f)
 
 /-- Constant functions belong to every local Sobolev class. -/
 @[simp]
-theorem memWkpLoc_const [CompleteSpace F] (c : F) : MemWkpLoc p Ω k (fun _ => c) := by
+theorem memWkpLoc_const [CompleteSpace F] (c : F) : MemWkpLoc p U k (fun _ => c) := by
   cases k with
   | zero => exact memLpLoc_const c
   | succ k =>
     refine ⟨memLpLoc_const c, 0, ?_, memWkpLoc_zero_fun⟩
     apply hasWeakFDerivOn_iff.mpr
-    exact fun v => hasWeakLineDerivOn_const (μ := volume) (Ω := Ω) (v := v) c
+    exact fun v => hasWeakLineDerivOn_const (μ := volume) (Ω := Opens.interior U) (v := v) c
 
 /-- Finite sums of local Sobolev functions remain in the same class. -/
 theorem MemWkpLoc.sum {ι : Type*} [CompleteSpace F] (s : Finset ι)
-    {f : ι → ℂ → F} (hf : ∀ i ∈ s, MemWkpLoc p Ω k (f i)) :
-    MemWkpLoc p Ω k (fun z => ∑ i ∈ s, f i z) := by
+    {f : ι → ℂ → F} (hf : ∀ i ∈ s, MemWkpLoc p U k (f i)) :
+    MemWkpLoc p U k (fun z => ∑ i ∈ s, f i z) := by
   classical
   induction s using Finset.induction_on with
   | empty =>
     simpa only [Finset.sum_empty, Pi.zero_def] using
-      (memWkpLoc_zero_fun (p := p) (Ω := Ω) (k := k) (F := F))
+      (memWkpLoc_zero_fun (p := p) (U := U) (k := k) (F := F))
   | @insert i s hi ih =>
     simpa only [Finset.sum_insert hi, Pi.add_def] using
       (hf i (Finset.mem_insert_self i s)).add (ih fun j hj => hf j (Finset.mem_insert_of_mem hj))
 
-/-- A `Cᵏ` map on an open planar domain has locally `Lᵖ` weak derivatives through order `k`,
-for every exponent. Thus smooth and polynomial maps satisfy all local orders. -/
+/-- A map that is `Cᵏ` on an open neighbourhood of `U` has locally `Lᵖ` weak derivatives
+through order `k` on `U`, with bounds reaching its boundary, for every exponent. -/
 theorem _root_.ContDiffOn.memWkpLoc [CompleteSpace F]
-    (hf : ContDiffOn ℝ k f (Ω : Set ℂ)) : MemWkpLoc p Ω k f := by
+    (hf : ContDiffOn ℝ k f (Ω : Set ℂ)) (hU : U ⊆ Ω) : MemWkpLoc p U k f := by
   induction k generalizing F with
-  | zero => exact hf.continuousOn.memLpLoc
+  | zero => exact (hf.continuousOn.mono hU).memLpLoc
   | succ k ih =>
     have hD : ContDiffOn ℝ k (fderiv ℝ f) (Ω : Set ℂ) :=
       hf.fderiv_of_isOpen Ω.isOpen (by simp)
-    refine ⟨hf.continuousOn.memLpLoc, fderiv ℝ f, ?_, ih hD⟩
-    apply hasWeakFDerivOn_of_differentiableOn
-      (hf.continuousOn.locallyIntegrableOn Ω.isOpen.measurableSet)
-      (hD.continuousOn.locallyIntegrableOn Ω.isOpen.measurableSet)
-    intro z hz
-    exact (hf.differentiableOn (by simp)).differentiableAt (Ω.isOpen.mem_nhds hz)
+    refine ⟨(hf.continuousOn.mono hU).memLpLoc, fderiv ℝ f, ?_, ih hD⟩
+    have hweak : HasWeakFDerivOn volume Ω f (fderiv ℝ f) := by
+      apply hasWeakFDerivOn_of_differentiableOn
+        (hf.continuousOn.locallyIntegrableOn Ω.isOpen.measurableSet)
+        (hD.continuousOn.locallyIntegrableOn Ω.isOpen.measurableSet)
+      intro z hz
+      exact (hf.differentiableOn (by simp)).differentiableAt (Ω.isOpen.mem_nhds hz)
+    exact hweak.mono (interior_subset.trans hU)
 
 end TauCeti
