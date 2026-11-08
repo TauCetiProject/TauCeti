@@ -239,14 +239,9 @@ theorem ext_prodSMulCLM [FiniteDimensional ℝ E] [FiniteDimensional ℝ D] {G �
     (h : ∀ (ψ : 𝓓(O, ℝ)) (φ : 𝓓(Ω, ℝ)),
       T₁ (prodSMulCLM ψ hV.symm.subset φ) = T₂ (prodSMulCLM ψ hV.symm.subset φ)) :
     T₁ = T₂ := by
-  refine DFunLike.coe_injective (Continuous.ext_on (dense_span_prodSMulCLM hV)
-    (map_continuous T₁) (map_continuous T₂) fun x hx ↦ ?_)
-  induction hx using Submodule.span_induction with
-  | mem x hx =>
-    obtain ⟨p, rfl⟩ := hx
-    exact h p.1 p.2
-  | zero => simp
-  | add x y _ _ hx hy => simp [hx, hy]
-  | smul a x _ hx => simp [hx]
+  let B (T : 𝓕) : 𝓓(V, ℝ) →L[ℝ] G := ⟨T, map_continuous T⟩
+  have hT : B T₁ = B T₂ :=
+    ContinuousLinearMap.ext_on (dense_span_prodSMulCLM hV) <| by rintro _ ⟨p, rfl⟩; exact h p.1 p.2
+  exact DFunLike.coe_injective congr($hT)
 
 end TestFunction
