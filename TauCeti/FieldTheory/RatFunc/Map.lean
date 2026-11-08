@@ -177,7 +177,7 @@ open scoped Polynomial
 
 /-- On polynomials, Mathlib's coefficient map `RatFunc.mapRingHom φ` is `φ`. -/
 @[simp]
-theorem mapRingHom_algebraMap {K R : Type*} [Field K] [CommRing R] [IsDomain R]
+theorem mapRingHom_algebraMap {K R : Type*} [CommRing K] [IsDomain K] [CommRing R] [IsDomain R]
     (φ : K[X] →+* R[X]) (hφ : nonZeroDivisors K[X] ≤ (nonZeroDivisors R[X]).comap φ) (p : K[X]) :
     mapRingHom φ hφ (algebraMap K[X] (RatFunc K) p) = algebraMap R[X] (RatFunc R) (φ p) := by
   simpa [coe_mapRingHom_eq_coe_map] using map_apply_div φ hφ p 1

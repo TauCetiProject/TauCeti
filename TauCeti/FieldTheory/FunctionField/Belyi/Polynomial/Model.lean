@@ -8,7 +8,6 @@ module
 public import TauCeti.FieldTheory.FunctionField.Belyi.Model
 public import TauCeti.FieldTheory.FunctionField.Belyi.Polynomial.GaloisAction
 import TauCeti.Algebra.Polynomial.Belyi
-import TauCeti.FieldTheory.IsAlgClosed.Automorphism
 
 /-!
 # Polynomial Belyi pairs are defined over the field of their coefficients
@@ -27,13 +26,10 @@ unramified over `1`, and the Chebyshev map `t = 4 x (1 - x)`, of degree `2`, unr
 and ramified over `1` and `∞`. These are the algebraic counterparts of the analytic Belyi pairs
 `z ↦ z ^ n` and `z ↦ 4 z (1 - z)` on the Riemann sphere.
 
-A polynomial pair with coefficients in `K` is also fixed by every automorphism of `k` fixing `K`
-(`TauCeti.AlgebraicBelyiPair.IsoClass.smul_mk_ofPolynomial_eq_self`). The general statement for a
-class with a model over `K` (`TauCeti.AlgebraicBelyiPair.IsoClass.IsDefinedOver.smul_eq`) needs
-`k / K` algebraic; for polynomial pairs it holds over any `k`, such as `ℂ`. For rational
-coefficients the stabilizer of the class is therefore the whole of `Gal(k/ℚ)`: the Galois orbit
-of the class is a single point, and over an algebraically closed field, such as `ℂ` or
-`AlgebraicClosure ℚ`, its field of moduli is `ℚ`.
+The Galois-side counterparts, that automorphisms of `k` fixing the coefficients fix the class,
+are proved directly from the coefficients in
+`TauCeti.FieldTheory.FunctionField.Belyi.Polynomial.GaloisAction` and
+`TauCeti.FieldTheory.FunctionField.Belyi.Polynomial.FieldOfModuli`, without models.
 
 ## Main definitions
 
@@ -47,13 +43,6 @@ of the class is a single point, and over an algebraically closed field, such as 
 * `TauCeti.AlgebraicBelyiPair.IsoClass.isDefinedOver_mk_ofPolynomial_X_pow` and
   `TauCeti.AlgebraicBelyiPair.IsoClass.isDefinedOver_mk_ofPolynomial_C_four_mul_X_mul_one_sub_X`:
   the power map `x ^ n` and the Chebyshev map `4 x (1 - x)` are defined over `ℚ`.
-* `TauCeti.AlgebraicBelyiPair.IsoClass.smul_mk_ofPolynomial_eq_self`: automorphisms of `k` fixing
-  the coefficients of the polynomial fix the class.
-* `TauCeti.AlgebraicBelyiPair.IsoClass.stabilizer_mk_ofPolynomial_eq_top`,
-  `TauCeti.AlgebraicBelyiPair.IsoClass.trueOrbitSize_mk_ofPolynomial` and
-  `TauCeti.AlgebraicBelyiPair.IsoClass.fieldOfModuli_mk_ofPolynomial`: for rational coefficients
-  the class is fixed by `Gal(k/ℚ)`, its true orbit size is `1`, and over an algebraically closed
-  field its field of moduli is `ℚ`.
 
 ## References
 
@@ -105,10 +94,11 @@ image of `p` in `k[X]`. -/
 theorem ofPolynomialMap_aeval (p : K[X]) :
     ofPolynomialMap hq hcrit hq' hcrit' (aeval (ofPolynomialGen q hq hcrit) p) =
       aeval (ofPolynomialGen q' hq' hcrit') (p.map (algebraMap K k)) := by
-  simp only [ofPolynomialMap, RingHom.comp_apply, RingHom.coe_coe]
-  rw [← aeval_algHom_apply, ofPolynomialEquiv_ofPolynomialGen,
-    RatFunc.aeval_X_left_eq_algebraMap, RatFunc.mapRingHom_algebraMap, coe_mapRingHom,
-    ← RatFunc.aeval_X_left_eq_algebraMap, ← aeval_algHom_apply, ofPolynomialEquiv_symm_X]
+  -- Pass to `K(X)`, where the coefficient map sends `p` to its image in `k[X]`, then come back.
+  simp only [ofPolynomialMap, RingHom.comp_apply, RingHom.coe_coe, ← aeval_algHom_apply,
+    ofPolynomialEquiv_ofPolynomialGen, RatFunc.aeval_X_left_eq_algebraMap,
+    RatFunc.mapRingHom_algebraMap, coe_mapRingHom]
+  simp only [← RatFunc.aeval_X_left_eq_algebraMap, ← aeval_algHom_apply, ofPolynomialEquiv_symm_X]
 
 /-- The coefficient map fixes the coordinate `x`. -/
 @[simp]
@@ -183,49 +173,6 @@ theorem isDefinedOver_mk_ofPolynomial_C_four_mul_X_mul_one_sub_X
     (by simp)
   rw [← belyiPolynomial_one_one]
   exact criticalValues_belyiPolynomial_subset L 1 1
-
-end IsoClass
-
-/-! ### The Galois action on polynomial pairs with coefficients in a subfield -/
-
-namespace IsoClass
-
-variable {q' : k[X]} (hq' : 0 < q'.natDegree)
-  (hcrit' : ∀ (L : Type u) [Field L] [Algebra k L], q'.criticalValues L ⊆ {0, 1})
-
-/-- An automorphism of `k` fixing a subfield `K` that contains the coefficients of `q'` fixes the
-class of the polynomial Belyi pair `ofPolynomial q'`. Unlike
-`TauCeti.AlgebraicBelyiPair.IsoClass.IsDefinedOver.smul_eq`, this needs no algebraicity of `k`
-over `K`. -/
-theorem smul_mk_ofPolynomial_eq_self {K : Type*} [CommSemiring K] [Algebra K k]
-    (hK : q' ∈ lifts (algebraMap K k)) {g : k ≃ₐ[ℚ] k}
-    (hg : ∀ c : K, g (algebraMap K k c) = algebraMap K k c) :
-    g • mk (ofPolynomial q' hq' hcrit') = mk (ofPolynomial q' hq' hcrit') := by
-  obtain ⟨q, rfl⟩ := (mem_lifts _).mp hK
-  refine (smul_mk_ofPolynomial_eq_iff hq' hcrit' g).mpr ⟨1, 0, one_ne_zero, ?_⟩
-  have hgK : (MulSemiringAction.toRingHom _ k g).comp (algebraMap K k) = algebraMap K k :=
-    RingHom.ext fun c ↦ by simpa using hg c
-  rw [Polynomial.map_map, hgK]
-  simp
-
-/-- **A polynomial Belyi pair with rational coefficients is fixed by `Gal(k/ℚ)`**: the stabilizer
-of its class is the whole automorphism group of `k`. -/
-theorem stabilizer_mk_ofPolynomial_eq_top (hℚ : q' ∈ lifts (algebraMap ℚ k)) :
-    MulAction.stabilizer (k ≃ₐ[ℚ] k) (mk (ofPolynomial q' hq' hcrit')) = ⊤ :=
-  eq_top_iff.mpr fun g _ ↦ smul_mk_ofPolynomial_eq_self hq' hcrit' hℚ g.commutes
-
-/-- The Galois orbit of the class of a polynomial Belyi pair with rational coefficients is a single
-point: its true orbit size is `1`. -/
-theorem trueOrbitSize_mk_ofPolynomial (hℚ : q' ∈ lifts (algebraMap ℚ k)) :
-    (mk (ofPolynomial q' hq' hcrit')).trueOrbitSize = 1 := by
-  rw [trueOrbitSize_eq_index, stabilizer_mk_ofPolynomial_eq_top hq' hcrit' hℚ, Subgroup.index_top]
-
-/-- Over an algebraically closed field, such as `ℂ` or `AlgebraicClosure ℚ`, the field of moduli
-of the class of a polynomial Belyi pair with rational coefficients is `ℚ`. -/
-theorem fieldOfModuli_mk_ofPolynomial [IsAlgClosed k] (hℚ : q' ∈ lifts (algebraMap ℚ k)) :
-    (mk (ofPolynomial q' hq' hcrit')).fieldOfModuli = ⊥ := by
-  rw [fieldOfModuli_def, stabilizer_mk_ofPolynomial_eq_top hq' hcrit' hℚ,
-    IsAlgClosed.fixedField_top_eq_bot]
 
 end IsoClass
 
